@@ -15,6 +15,7 @@ REQUIRED = [
     T / "AGENT_SYSTEM.md",
     T / "CONTINUE_SESSION.md",
     T / "GOLDEN_TASKS.md",
+    T / "analyze_difficulty.py",
     T / "agents" / "PROTOCOL.md",
     T / "agents" / "PROMPTS.md",
     T / "agents" / "COMPREHENSIVE_REVIEWER.md",
@@ -101,13 +102,14 @@ def main() -> int:
     evals = texts.get(T / "reviewers" / "REVIEWER_EVALS.md", "")
     calibration = texts.get(T / "reviewers" / "CALIBRATION_DATASET.md", "")
     session_template = texts.get(T / "sessions" / "TEMPLATE.md", "")
+    difficulty_analyzer = texts.get(T / "analyze_difficulty.py", "")
 
-    if "Agent-system policy version: `2.0`" not in agent_system:
-        fail(errors, "AGENT_SYSTEM.md must declare policy version 2.0")
+    if "Agent-system policy version: `2.1`" not in agent_system:
+        fail(errors, "AGENT_SYSTEM.md must declare policy version 2.1")
     if "Policy version: `2.0`" not in protocol:
         fail(errors, "agents/PROTOCOL.md must declare policy version 2.0")
-    if "Prompt policy version: `2.0`" not in prompts:
-        fail(errors, "agents/PROMPTS.md must declare prompt policy version 2.0")
+    if "Prompt policy version: `2.1`" not in prompts:
+        fail(errors, "agents/PROMPTS.md must declare prompt policy version 2.1")
     if "Reviewer policy version: `1.0`" not in comprehensive:
         fail(errors, "agents/COMPREHENSIVE_REVIEWER.md must declare reviewer policy version 1.0")
     if "Panel policy version: `2.1`" not in panel:
@@ -146,6 +148,20 @@ def main() -> int:
     for required in ["INSUFFICIENT_EVIDENCE", "CONFIDENCE", "EVIDENCE_STATUS", "TASK_COMMIT", "ADJUDICATIONS"]:
         if required not in panel + protocol:
             fail(errors, f"review system missing required field/term: {required}")
+
+    for required in [
+        "Claude Opus 4.8 / Claude Code ×5",
+        "GPT-5.5 / Codex ×5",
+        "80%–<100%",
+        "100%",
+        "0/10",
+    ]:
+        if required not in agent_system:
+            fail(errors, f"AGENT_SYSTEM.md missing current difficulty policy marker: {required}")
+
+    for required in ["default=10", "partial_suite", "too_easy_reject", "expand_expected_tests"]:
+        if required not in difficulty_analyzer:
+            fail(errors, f"analyze_difficulty.py missing ten-run/parametrized-case support marker: {required}")
 
     try:
         registry = json.loads(criteria_raw) if criteria_raw else {}
@@ -227,7 +243,7 @@ def main() -> int:
     print(
         f"specialist_roles={len(ROLE_HEADINGS)} comprehensive_reviewer=1 "
         f"checklist_criteria={len(criteria)} reviewer_eval_seed_cases={len(case_ids)} "
-        f"schemas={len(schema_expectations)}"
+        f"schemas={len(schema_expectations)} difficulty_policy=combined_10"
     )
     return 0
 
