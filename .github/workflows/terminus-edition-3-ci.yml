@@ -132,6 +132,7 @@ jobs:
       STB_PORTKEY_PROJECT_ID: ${{ secrets.STB_PORTKEY_PROJECT_ID }}
       STB_VERSION: ${{ vars.STB_VERSION }}
       XDG_CONFIG_HOME: /tmp/stb-xdg-${{ github.run_id }}-${{ github.run_attempt }}-${{ matrix.task }}
+      VALIDATION_EVIDENCE_DIR: ${{ runner.temp }}/terminus-e3/${{ github.run_id }}/${{ github.run_attempt }}/${{ matrix.task }}
     steps:
       - uses: actions/checkout@v4
 
@@ -257,14 +258,42 @@ jobs:
         shell: bash
         run: bash ./terminus3.sh check "${{ matrix.task }}"
 
-      - name: Upload Harbor validation outputs
+      - name: Build validation evidence manifest
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$VALIDATION_EVIDENCE_DIR"
+          {
+            echo "# Terminus validation evidence"
+            echo
+            echo "- Task: ${{ matrix.task }}"
+            echo "- Workflow run: ${{ github.run_id }}"
+            echo "- Attempt: ${{ github.run_attempt }}"
+            echo "- Commit: ${{ github.sha }}"
+            echo
+            echo "## Reward files"
+            echo
+            while IFS= read -r reward_file; do
+              reward="$(tr -d '[:space:]' < "$reward_file" || true)"
+              printf -- '- `%s`: `%s`\n' "$reward_file" "$reward"
+            done < <(find "$VALIDATION_EVIDENCE_DIR" -type f -name reward.txt -print | sort)
+            echo
+            echo "## Evidence files"
+            echo
+            find "$VALIDATION_EVIDENCE_DIR" -type f -printf -- '- `%P`\n' | sort
+          } > "$VALIDATION_EVIDENCE_DIR/EVIDENCE.md"
+          cat "$VALIDATION_EVIDENCE_DIR/EVIDENCE.md" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload Harbor validation evidence
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: terminus-validation-${{ matrix.task }}-${{ github.run_id }}-${{ github.run_attempt }}
           path: ${{ runner.temp }}/terminus-e3/${{ github.run_id }}/${{ github.run_attempt }}/${{ matrix.task }}/
-          if-no-files-found: ignore
-          retention-days: 7
+          if-no-files-found: error
+          include-hidden-files: true
+          retention-days: 14
 
   difficulty:
     name: Difficulty ${{ matrix.label }} - ${{ inputs.task }}
@@ -285,6 +314,7 @@ jobs:
       STB_PORTKEY_PROJECT_ID: ${{ secrets.STB_PORTKEY_PROJECT_ID }}
       STB_VERSION: ${{ vars.STB_VERSION }}
       XDG_CONFIG_HOME: /tmp/stb-xdg-diff-${{ github.run_id }}-${{ github.run_attempt }}-${{ matrix.command }}
+      DIFFICULTY_EVIDENCE_DIR: ${{ runner.temp }}/terminus-e3-difficulty/${{ github.run_id }}/${{ github.run_attempt }}/${{ inputs.task }}/${{ matrix.command }}
     steps:
       - uses: actions/checkout@v4
 
@@ -306,6 +336,7 @@ jobs:
         run: |
           set -euo pipefail
           bash -n ./terminus3.sh
+          python3 -m py_compile .terminus/analyze_difficulty.py
           if [[ "$TASK" == /* || "$TASK" == *".."* || "$TASK" == */* ]]; then
             echo "::error::Task must be a top-level directory name"
             exit 1
@@ -342,22 +373,91 @@ jobs:
           bash ./terminus3.sh login --noninteractive
           bash ./terminus3.sh keys-refresh --noninteractive
 
-      - name: Run difficulty suite
+      - name: Run five-trial difficulty suite
+        id: difficulty_run
+        continue-on-error: true
         shell: bash
         env:
           TASK: ${{ inputs.task }}
           JOBS_DIR: ${{ runner.temp }}/terminus-e3-difficulty/${{ github.run_id }}/${{ github.run_attempt }}/${{ inputs.task }}/${{ matrix.command }}
         run: |
-          set -euo pipefail
+          set -uo pipefail
           mkdir -p "$JOBS_DIR"
-          bash ./terminus3.sh "${{ matrix.command }}" "$TASK"
+          set +e
+          bash ./terminus3.sh "${{ matrix.command }}" "$TASK" > >(tee "$JOBS_DIR/harbor-command.stdout.log") 2> >(tee "$JOBS_DIR/harbor-command.stderr.log" >&2)
+          rc=$?
+          set -e
+          printf '%s\n' "$rc" > "$JOBS_DIR/harbor-command.exit-code"
           echo "Difficulty jobs: $JOBS_DIR" >> "$GITHUB_STEP_SUMMARY"
+          exit "$rc"
 
-      - name: Upload difficulty outputs
+      - name: Evaluate five-run difficulty policy
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$DIFFICULTY_EVIDENCE_DIR"
+          set +e
+          python3 .terminus/analyze_difficulty.py \
+            "$DIFFICULTY_EVIDENCE_DIR" \
+            --expected 5 \
+            --json-out "$DIFFICULTY_EVIDENCE_DIR/difficulty-analysis.json" \
+            --markdown-out "$DIFFICULTY_EVIDENCE_DIR/difficulty-analysis.md"
+          policy_rc=$?
+          set -e
+          cat "$DIFFICULTY_EVIDENCE_DIR/difficulty-analysis.md" >> "$GITHUB_STEP_SUMMARY"
+          case "$policy_rc" in
+            0)
+              echo "Difficulty suite is in the target band."
+              ;;
+            20)
+              echo "::error::Difficulty suite is too easy: 4/5 or 5/5 trials passed. Recalibration required."
+              ;;
+            21)
+              echo "::error::No trials passed. Trajectory Analyst review is required before this can be treated as legitimate difficulty."
+              ;;
+            22)
+              echo "::error::Difficulty suite is incomplete; inspect Harbor/tool execution before calibration."
+              ;;
+            *)
+              echo "::error::Unexpected difficulty-analysis exit code: $policy_rc"
+              ;;
+          esac
+          exit "$policy_rc"
+
+      - name: Build difficulty evidence manifest
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$DIFFICULTY_EVIDENCE_DIR"
+          {
+            echo "# Difficulty evidence"
+            echo
+            echo "- Task: ${{ inputs.task }}"
+            echo "- Suite: ${{ matrix.label }}"
+            echo "- Workflow run: ${{ github.run_id }}"
+            echo "- Attempt: ${{ github.run_attempt }}"
+            echo "- Commit: ${{ github.sha }}"
+            echo
+            echo "## Reward files"
+            echo
+            while IFS= read -r reward_file; do
+              reward="$(tr -d '[:space:]' < "$reward_file" || true)"
+              printf -- '- `%s`: `%s`\n' "$reward_file" "$reward"
+            done < <(find "$DIFFICULTY_EVIDENCE_DIR" -type f -name reward.txt -print | sort)
+            echo
+            echo "## Agent / Harbor evidence files"
+            echo
+            find "$DIFFICULTY_EVIDENCE_DIR" -type f -printf -- '- `%P`\n' | sort
+          } > "$DIFFICULTY_EVIDENCE_DIR/EVIDENCE.md"
+
+      - name: Upload difficulty evidence
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: terminus-difficulty-${{ matrix.command }}-${{ inputs.task }}-${{ github.run_id }}-${{ github.run_attempt }}
           path: ${{ runner.temp }}/terminus-e3-difficulty/${{ github.run_id }}/${{ github.run_attempt }}/${{ inputs.task }}/${{ matrix.command }}/
-          if-no-files-found: ignore
-          retention-days: 7
+          if-no-files-found: error
+          include-hidden-files: true
+          retention-days: 14
