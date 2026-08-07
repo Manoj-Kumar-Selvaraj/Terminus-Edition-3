@@ -10,6 +10,7 @@ RUN apt-get update \
 
 WORKDIR /app/eod
 COPY eod/ /app/eod/
-RUN chmod +x /app/eod/bin/run_eod.sh \
+RUN mkdir -p /app/eod/state \
+ && chmod +x /app/eod/bin/run_eod.sh \
  && sqlite3 /app/eod/state/payment_eod.db < /app/eod/sql/schema.sql \
  && sqlite3 /app/eod/state/payment_eod.db < /app/eod/sql/seed.sql
