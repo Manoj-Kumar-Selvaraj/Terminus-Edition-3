@@ -1,0 +1,105 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "terminus-review-result-v2",
+  "title": "Terminus Specialist Review Result",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "role",
+    "review_id",
+    "task_commit",
+    "policy_version",
+    "verdict",
+    "confidence",
+    "evidence_status",
+    "summary",
+    "evidence",
+    "findings",
+    "missing_evidence",
+    "change_scope",
+    "do_not_change",
+    "next_gate"
+  ],
+  "properties": {
+    "role": {"type": "string", "minLength": 1},
+    "review_id": {"type": "string", "minLength": 1},
+    "task_commit": {"type": "string", "minLength": 7},
+    "policy_version": {"const": "2.0"},
+    "verdict": {
+      "enum": ["PASS", "REVISE", "REJECT", "INSUFFICIENT_EVIDENCE"]
+    },
+    "confidence": {"enum": ["HIGH", "MEDIUM", "LOW"]},
+    "evidence_status": {"enum": ["SUFFICIENT", "INSUFFICIENT"]},
+    "summary": {"type": "string"},
+    "evidence": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["type", "ref", "observation"],
+        "properties": {
+          "type": {
+            "enum": ["file", "rule", "test", "run", "job", "artifact", "trajectory", "public_reference", "review"]
+          },
+          "ref": {"type": "string", "minLength": 1},
+          "observation": {"type": "string", "minLength": 1}
+        }
+      }
+    },
+    "findings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "severity",
+          "status",
+          "criterion",
+          "evidence_refs",
+          "why_it_matters",
+          "minimal_remediation",
+          "regression_risk"
+        ],
+        "properties": {
+          "id": {"type": "string", "minLength": 1},
+          "severity": {"enum": ["BLOCKER", "HIGH", "MEDIUM", "LOW"]},
+          "status": {"enum": ["OBSERVED", "INFERRED"]},
+          "criterion": {"type": "string", "minLength": 1},
+          "evidence_refs": {
+            "type": "array",
+            "items": {"type": "string", "minLength": 1},
+            "minItems": 1
+          },
+          "why_it_matters": {"type": "string", "minLength": 1},
+          "minimal_remediation": {"type": "string"},
+          "regression_risk": {"type": "string"}
+        }
+      }
+    },
+    "missing_evidence": {
+      "type": "array",
+      "items": {"type": "string", "minLength": 1}
+    },
+    "change_scope": {
+      "type": "array",
+      "items": {"type": "string", "minLength": 1}
+    },
+    "do_not_change": {
+      "type": "array",
+      "items": {"type": "string", "minLength": 1}
+    },
+    "next_gate": {"type": "string"}
+  },
+  "allOf": [
+    {
+      "if": {"properties": {"verdict": {"const": "INSUFFICIENT_EVIDENCE"}}},
+      "then": {
+        "properties": {
+          "evidence_status": {"const": "INSUFFICIENT"},
+          "missing_evidence": {"minItems": 1}
+        }
+      }
+    }
+  ]
+}
