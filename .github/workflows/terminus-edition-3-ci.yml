@@ -27,6 +27,11 @@ concurrency:
   group: terminus-ci-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+# Required repo/org secrets:
+#   SNORKEL_API_KEY          Snorkel DaaS platform API key (stb login)
+# Optional:
+#   STB_PORTKEY_PROJECT_ID   Portkey project id when the account has multiple projects
+
 jobs:
   changed-tasks:
     name: Detect changed tasks
@@ -96,6 +101,11 @@ jobs:
       - self-hosted
       - linux
     timeout-minutes: 180
+    env:
+      CI: "true"
+      SNORKEL_API_KEY: ${{ secrets.SNORKEL_API_KEY }}
+      STB_PORTKEY_PROJECT_ID: ${{ secrets.STB_PORTKEY_PROJECT_ID }}
+      XDG_CONFIG_HOME: ${{ runner.temp }}/stb-xdg-${{ github.run_id }}-${{ github.run_attempt }}-${{ matrix.task }}
     steps:
       - uses: actions/checkout@v4
 
@@ -107,6 +117,19 @@ jobs:
           command -v stb
           docker info >/dev/null
           ./terminus3.sh version
+
+      - name: Noninteractive stb login + AI keys
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ -z "${SNORKEL_API_KEY:-}" ]]; then
+            echo "::error::Missing secret SNORKEL_API_KEY"
+            exit 1
+          fi
+          mkdir -p "$XDG_CONFIG_HOME/stb"
+          ./terminus3.sh login --noninteractive
+          ./terminus3.sh keys-refresh --noninteractive
+          echo "stb config: $XDG_CONFIG_HOME/stb/config.ini" >> "$GITHUB_STEP_SUMMARY"
 
       - name: Oracle must score 1
         shell: bash
@@ -169,6 +192,11 @@ jobs:
       - self-hosted
       - linux
     timeout-minutes: 720
+    env:
+      CI: "true"
+      SNORKEL_API_KEY: ${{ secrets.SNORKEL_API_KEY }}
+      STB_PORTKEY_PROJECT_ID: ${{ secrets.STB_PORTKEY_PROJECT_ID }}
+      XDG_CONFIG_HOME: ${{ runner.temp }}/stb-xdg-diff-${{ github.run_id }}-${{ github.run_attempt }}
     steps:
       - uses: actions/checkout@v4
 
@@ -190,6 +218,19 @@ jobs:
           command -v stb
           docker info >/dev/null
           ./terminus3.sh version
+
+      - name: Noninteractive stb login + AI keys
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ -z "${SNORKEL_API_KEY:-}" ]]; then
+            echo "::error::Missing secret SNORKEL_API_KEY"
+            exit 1
+          fi
+          mkdir -p "$XDG_CONFIG_HOME/stb"
+          ./terminus3.sh login --noninteractive
+          ./terminus3.sh keys-refresh --noninteractive
+          echo "stb config: $XDG_CONFIG_HOME/stb/config.ini" >> "$GITHUB_STEP_SUMMARY"
 
       - name: Run both official difficulty suites
         shell: bash

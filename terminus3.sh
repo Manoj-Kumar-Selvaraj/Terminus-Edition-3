@@ -84,8 +84,11 @@ Usage:
 
 Setup / auth
   install              Install/upgrade snorkelai-stb via uv
-  login                stb login
-  keys-refresh         stb keys refresh
+  login [--noninteractive]
+                       stb login, or write auth from SNORKEL_API_KEY (CI-safe)
+  keys-refresh [--noninteractive]
+                       stb keys refresh; noninteractive uses STB_PORTKEY_PROJECT_ID
+                       or the sole eligible project
   keys-show            stb keys show
   version              Show stb version
 
@@ -121,8 +124,147 @@ Examples:
   ./terminus3.sh validate terraform-aws-eks-weekend-fleet-cutover-plan
 
 Environment:
-  STB_BIN   Override stb binary (default: stb)
+  STB_BIN                 Override stb binary (default: stb)
+  SNORKEL_API_KEY         Platform API key (noninteractive login)
+  STB_PORTKEY_PROJECT_ID  Portkey project id (noninteractive keys-refresh)
+  XDG_CONFIG_HOME         Optional; stb config lives under $XDG_CONFIG_HOME/stb/
 EOF
+}
+
+stb_python() {
+  # Prefer the uv-tool interpreter that has snorkelai_stb installed.
+  if [[ -n "${STB_PY:-}" && -x "${STB_PY}" ]]; then
+    printf '%s\n' "$STB_PY"
+    return 0
+  fi
+  local candidates=(
+    "${HOME}/.local/share/uv/tools/snorkelai-stb/bin/python"
+    /root/.local/share/uv/tools/snorkelai-stb/bin/python
+  )
+  local c
+  for c in "${candidates[@]}"; do
+    if [[ -x "$c" ]]; then
+      printf '%s\n' "$c"
+      return 0
+    fi
+  done
+  command -v python3
+}
+
+cmd_login() {
+  need_stb
+  local noninteractive=0
+  local arg
+  for arg in "$@"; do
+    case "$arg" in
+      --noninteractive|-n) noninteractive=1 ;;
+      --help|-h)
+        echo "Usage: $0 login [--noninteractive]"
+        echo "Noninteractive requires SNORKEL_API_KEY in the environment."
+        return 0
+        ;;
+      *) die "unknown login option: $arg" ;;
+    esac
+  done
+
+  if [[ "$noninteractive" -eq 0 && -n "${SNORKEL_API_KEY:-}" && ( -n "${CI:-}" || ! -t 0 ) ]]; then
+    noninteractive=1
+  fi
+
+  if [[ "$noninteractive" -eq 0 ]]; then
+    "$STB_BIN" login "$@"
+    return 0
+  fi
+
+  if [[ -z "${SNORKEL_API_KEY:-}" ]]; then
+    die "noninteractive login requires SNORKEL_API_KEY"
+  fi
+
+  local py
+  py="$(stb_python)"
+  echo "==> Noninteractive stb login (writing auth.env + auth.api_key)"
+  SNORKEL_API_KEY="$(printf '%s' "$SNORKEL_API_KEY" | tr -d '[:space:]')"
+  export SNORKEL_API_KEY
+  "$py" - <<'PY'
+import os
+from snorkelai_stb.config import GlobalConfig
+from snorkelai_stb.constants import Env
+from snorkelai_stb.utils import get_current_user_info
+
+api_key = os.environ["SNORKEL_API_KEY"].strip()
+if not api_key:
+    raise SystemExit("SNORKEL_API_KEY is empty")
+os.environ["SNORKEL_API_KEY"] = api_key
+GlobalConfig.set("auth", "env", Env.PROD.value)
+print("Validating SNORKEL_API_KEY...")
+info = get_current_user_info()
+GlobalConfig.set("auth", "api_key", api_key)
+print("Logged in (noninteractive).")
+if isinstance(info, dict):
+    for key in ("email", "name", "id", "user_id", "username"):
+        if key in info:
+            print(f"  {key}: {info[key]}")
+PY
+}
+
+cmd_keys_refresh() {
+  need_stb
+  local noninteractive=0
+  local arg
+  for arg in "$@"; do
+    case "$arg" in
+      --noninteractive|-n) noninteractive=1 ;;
+      --help|-h)
+        echo "Usage: $0 keys-refresh [--noninteractive]"
+        echo "Noninteractive uses STB_PORTKEY_PROJECT_ID, a stored project id,"
+        echo "or the sole eligible Portkey project."
+        return 0
+        ;;
+      *) die "unknown keys-refresh option: $arg" ;;
+    esac
+  done
+
+  if [[ "$noninteractive" -eq 0 && -n "${CI:-}" ]]; then
+    noninteractive=1
+  fi
+
+  if [[ "$noninteractive" -eq 0 ]]; then
+    "$STB_BIN" keys refresh "$@"
+    return 0
+  fi
+
+  local py
+  py="$(stb_python)"
+  echo "==> Noninteractive stb keys refresh"
+  "$py" - <<'PY'
+import os
+from snorkelai_stb.portkey_utils import (
+    get_portkey_api_key_options,
+    get_stored_portkey_project_id,
+    refresh_portkey_config,
+    set_stored_portkey_project_id,
+)
+
+project_id = (os.environ.get("STB_PORTKEY_PROJECT_ID") or "").strip() or get_stored_portkey_project_id()
+if not project_id:
+    projects = get_portkey_api_key_options()
+    if not projects:
+        raise SystemExit("No eligible Portkey projects for this account")
+    if len(projects) != 1:
+        names = ", ".join(f"{p['name']} ({p['project_id']})" for p in projects)
+        raise SystemExit(
+            "Multiple Portkey projects; set STB_PORTKEY_PROJECT_ID to one of: "
+            + names
+        )
+    project_id = projects[0]["project_id"]
+    print(f"Using sole Portkey project: {projects[0]['name']} ({project_id})")
+else:
+    print(f"Using Portkey project_id: {project_id}")
+
+set_stored_portkey_project_id(project_id)
+refresh_portkey_config()
+print("AI credentials saved.")
+PY
 }
 
 cmd_install() {
@@ -272,8 +414,8 @@ main() {
       resolve_task "${1:?task required}"
       ;;
     install) cmd_install "$@" ;;
-    login) need_stb; "$STB_BIN" login "$@" ;;
-    keys-refresh) need_stb; "$STB_BIN" keys refresh "$@" ;;
+    login) cmd_login "$@" ;;
+    keys-refresh) cmd_keys_refresh "$@" ;;
     keys-show) need_stb; "$STB_BIN" keys show "$@" ;;
     version) need_stb; "$STB_BIN" --version "$@" ;;
     oracle) cmd_oracle "$@" ;;
