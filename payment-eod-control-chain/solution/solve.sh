@@ -2,7 +2,6 @@
 set -euo pipefail
 
 cp /solution/correct/paydup.cob /app/eod/cobol/paydup.cob
-cp /solution/correct/payexec.cob /app/eod/cobol/payexec.cob
 cp /solution/correct/schema.sql /app/eod/sql/schema.sql
 cp /solution/correct/run_eod.sh /app/eod/bin/run_eod.sh
 chmod +x /app/eod/bin/run_eod.sh
