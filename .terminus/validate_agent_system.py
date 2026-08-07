@@ -17,9 +17,12 @@ REQUIRED = [
     T / "GOLDEN_TASKS.md",
     T / "agents" / "PROTOCOL.md",
     T / "agents" / "PROMPTS.md",
+    T / "agents" / "COMPREHENSIVE_REVIEWER.md",
     T / "agents" / "schemas" / "context_packet.schema.json",
     T / "agents" / "schemas" / "review_result.schema.json",
     T / "reviewers" / "PRE_LLMAJ.md",
+    T / "reviewers" / "REVIEWER_CHECKLIST.md",
+    T / "reviewers" / "reviewer_criteria.json",
     T / "reviewers" / "HUMAN_WRITING_CALIBRATION.md",
     T / "reviewers" / "WRITING_EXAMPLE_BANK.md",
     T / "reviewers" / "LLMAJ_LEARNING_LOG.md",
@@ -59,10 +62,11 @@ PROTOCOL_TERMS = [
 
 PRE_LLMAJ_STAGES = [
     "Stage A — deterministic facts",
-    "Stage B — independent semantic reviews",
+    "Stage B — independent specialist reviews",
     "Stage C — evidence sufficiency",
-    "Stage D — disagreement scan",
-    "Stage E — aggregate",
+    "Stage D — comprehensive checklist cold review",
+    "Stage E — disagreement and omission scan",
+    "Stage F — aggregate",
 ]
 
 SECRET_PATTERNS = [
@@ -90,7 +94,10 @@ def main() -> int:
     agent_system = texts.get(T / "AGENT_SYSTEM.md", "")
     protocol = texts.get(T / "agents" / "PROTOCOL.md", "")
     prompts = texts.get(T / "agents" / "PROMPTS.md", "")
+    comprehensive = texts.get(T / "agents" / "COMPREHENSIVE_REVIEWER.md", "")
     panel = texts.get(T / "reviewers" / "PRE_LLMAJ.md", "")
+    checklist = texts.get(T / "reviewers" / "REVIEWER_CHECKLIST.md", "")
+    criteria_raw = texts.get(T / "reviewers" / "reviewer_criteria.json", "")
     evals = texts.get(T / "reviewers" / "REVIEWER_EVALS.md", "")
     calibration = texts.get(T / "reviewers" / "CALIBRATION_DATASET.md", "")
     session_template = texts.get(T / "sessions" / "TEMPLATE.md", "")
@@ -101,8 +108,12 @@ def main() -> int:
         fail(errors, "agents/PROTOCOL.md must declare policy version 2.0")
     if "Prompt policy version: `2.0`" not in prompts:
         fail(errors, "agents/PROMPTS.md must declare prompt policy version 2.0")
-    if "Panel policy version: `2.0`" not in panel:
-        fail(errors, "reviewers/PRE_LLMAJ.md must declare panel policy version 2.0")
+    if "Reviewer policy version: `1.0`" not in comprehensive:
+        fail(errors, "agents/COMPREHENSIVE_REVIEWER.md must declare reviewer policy version 1.0")
+    if "Panel policy version: `2.1`" not in panel:
+        fail(errors, "reviewers/PRE_LLMAJ.md must declare panel policy version 2.1")
+    if "Checklist snapshot version: `2026-08-08-user-supplied`" not in checklist:
+        fail(errors, "REVIEWER_CHECKLIST.md must declare the current checklist snapshot")
     if "Dataset policy version: `1.0`" not in calibration:
         fail(errors, "reviewers/CALIBRATION_DATASET.md must declare dataset policy version 1.0")
 
@@ -121,15 +132,44 @@ def main() -> int:
             fail(errors, f"PRE_LLMAJ.md missing required stage: {stage}")
 
     for required in [
+        "CHECKLIST_COVERAGE: 100%",
+        "Never stop after the first blocker",
+        "POLICY_CONFLICT",
+        "TEST_QUALITY_EVAL_DISPOSITIONS",
+        "TRIAL_ANALYSIS_DISPOSITIONS",
+    ]:
+        if required.lower() not in (checklist + comprehensive + panel).lower():
+            fail(errors, f"comprehensive reviewer system missing requirement: {required}")
+
+    for required in [
         "INSUFFICIENT_EVIDENCE",
         "CONFIDENCE",
         "EVIDENCE_STATUS",
         "TASK_COMMIT",
-        "PANEL_POLICY_VERSION",
         "ADJUDICATIONS",
     ]:
         if required not in panel + protocol:
             fail(errors, f"review system missing required field/term: {required}")
+
+    try:
+        registry = json.loads(criteria_raw) if criteria_raw else {}
+    except json.JSONDecodeError as exc:
+        fail(errors, f"invalid reviewer_criteria.json: {exc}")
+        registry = {}
+
+    criteria = registry.get("criteria", []) if isinstance(registry, dict) else []
+    ids = [item.get("id") for item in criteria if isinstance(item, dict)]
+    if len(criteria) < 60:
+        fail(errors, f"reviewer criteria registry should contain at least 60 criteria; found {len(criteria)}")
+    if len(ids) != len(set(ids)):
+        fail(errors, "reviewer criteria registry contains duplicate IDs")
+    for prefix in ["RC-INS-", "RC-ENV-", "RC-SOL-", "RC-VER-", "RC-TRIAL-", "RC-RUB-", "RC-STRUCT-", "RC-META-"]:
+        if not any(str(cid).startswith(prefix) for cid in ids):
+            fail(errors, f"reviewer criteria registry missing section prefix: {prefix}")
+    severities = {item.get("severity") for item in criteria if isinstance(item, dict)}
+    for severity in ["high", "medium", "low", "trial_medium", "informational"]:
+        if severity not in severities:
+            fail(errors, f"reviewer criteria registry missing severity type: {severity}")
 
     case_ids = set(re.findall(r"^### ([A-Z]+-[0-9]+)\b", evals, flags=re.MULTILINE))
     if len(case_ids) < 12:
@@ -185,7 +225,10 @@ def main() -> int:
         return 1
 
     print("Terminus agent-system validation PASS")
-    print(f"roles={len(ROLE_HEADINGS)} reviewer_eval_seed_cases={len(case_ids)} schemas={len(schema_expectations)}")
+    print(
+        f"specialist_roles={len(ROLE_HEADINGS)} checklist_criteria={len(criteria)} "
+        f"reviewer_eval_seed_cases={len(case_ids)} schemas={len(schema_expectations)}"
+    )
     return 0
 
 
