@@ -174,8 +174,8 @@ jobs:
           set -euo pipefail
           docker version
           docker info >/dev/null
-          ./terminus3.sh install
-          ./terminus3.sh version
+          bash ./terminus3.sh install
+          bash ./terminus3.sh version
           echo "stb version: $(stb --version)" >> "$GITHUB_STEP_SUMMARY"
 
       - name: Noninteractive stb login and AI key refresh
@@ -187,8 +187,8 @@ jobs:
             exit 1
           fi
           mkdir -p "$XDG_CONFIG_HOME/stb"
-          ./terminus3.sh login --noninteractive
-          ./terminus3.sh keys-refresh --noninteractive
+          bash ./terminus3.sh login --noninteractive
+          bash ./terminus3.sh keys-refresh --noninteractive
 
       - name: Oracle must score 1
         shell: bash
@@ -198,7 +198,7 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p "$JOBS_DIR"
-          ./terminus3.sh oracle "$TASK"
+          bash ./terminus3.sh oracle "$TASK"
 
           mapfile -t rewards < <(find "$JOBS_DIR" -type f -name reward.txt -print)
           (( ${#rewards[@]} > 0 )) || {
@@ -221,7 +221,7 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p "$JOBS_DIR"
-          ./terminus3.sh nop "$TASK"
+          bash ./terminus3.sh nop "$TASK"
 
           mapfile -t rewards < <(find "$JOBS_DIR" -type f -name reward.txt -print)
           (( ${#rewards[@]} > 0 )) || {
@@ -238,7 +238,7 @@ jobs:
 
       - name: Run Harbor LLMaJ check
         shell: bash
-        run: ./terminus3.sh check "${{ matrix.task }}"
+        run: bash ./terminus3.sh check "${{ matrix.task }}"
 
       - name: Upload Harbor validation outputs
         if: always()
@@ -298,8 +298,8 @@ jobs:
           set -euo pipefail
           docker version
           docker info >/dev/null
-          ./terminus3.sh install
-          ./terminus3.sh version
+          bash ./terminus3.sh install
+          bash ./terminus3.sh version
           echo "stb version: $(stb --version)" >> "$GITHUB_STEP_SUMMARY"
 
       - name: Noninteractive stb login and AI key refresh
@@ -311,8 +311,8 @@ jobs:
             exit 1
           fi
           mkdir -p "$XDG_CONFIG_HOME/stb"
-          ./terminus3.sh login --noninteractive
-          ./terminus3.sh keys-refresh --noninteractive
+          bash ./terminus3.sh login --noninteractive
+          bash ./terminus3.sh keys-refresh --noninteractive
 
       - name: Run difficulty suite
         shell: bash
@@ -322,7 +322,7 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p "$JOBS_DIR"
-          ./terminus3.sh "${{ matrix.command }}" "$TASK"
+          bash ./terminus3.sh "${{ matrix.command }}" "$TASK"
           echo "Difficulty jobs: $JOBS_DIR" >> "$GITHUB_STEP_SUMMARY"
 
       - name: Upload difficulty outputs
