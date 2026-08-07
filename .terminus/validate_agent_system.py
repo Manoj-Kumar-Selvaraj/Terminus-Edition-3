@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import json
 import re
 import sys
 from pathlib import Path
@@ -16,6 +17,8 @@ REQUIRED = [
     T / "GOLDEN_TASKS.md",
     T / "agents" / "PROTOCOL.md",
     T / "agents" / "PROMPTS.md",
+    T / "agents" / "schemas" / "context_packet.schema.json",
+    T / "agents" / "schemas" / "review_result.schema.json",
     T / "reviewers" / "PRE_LLMAJ.md",
     T / "reviewers" / "HUMAN_WRITING_CALIBRATION.md",
     T / "reviewers" / "WRITING_EXAMPLE_BANK.md",
@@ -150,6 +153,24 @@ def main() -> int:
         if required not in session_template:
             fail(errors, f"sessions/TEMPLATE.md missing gate/state section: {required}")
 
+    schema_expectations = {
+        T / "agents" / "schemas" / "context_packet.schema.json": "terminus-context-packet-v2",
+        T / "agents" / "schemas" / "review_result.schema.json": "terminus-review-result-v2",
+    }
+    for path, expected_id in schema_expectations.items():
+        raw = texts.get(path, "")
+        if not raw:
+            continue
+        try:
+            parsed = json.loads(raw)
+        except json.JSONDecodeError as exc:
+            fail(errors, f"invalid JSON schema {path.relative_to(ROOT)}: {exc}")
+            continue
+        if parsed.get("$id") != expected_id:
+            fail(errors, f"unexpected $id in {path.relative_to(ROOT)}")
+        if parsed.get("additionalProperties") is not False:
+            fail(errors, f"schema should reject undeclared top-level fields: {path.relative_to(ROOT)}")
+
     for path, text in texts.items():
         if not text:
             continue
@@ -164,7 +185,7 @@ def main() -> int:
         return 1
 
     print("Terminus agent-system validation PASS")
-    print(f"roles={len(ROLE_HEADINGS)} reviewer_eval_seed_cases={len(case_ids)}")
+    print(f"roles={len(ROLE_HEADINGS)} reviewer_eval_seed_cases={len(case_ids)} schemas={len(schema_expectations)}")
     return 0
 
 
