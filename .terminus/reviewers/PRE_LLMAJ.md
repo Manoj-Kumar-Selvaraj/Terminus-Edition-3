@@ -1,18 +1,18 @@
 # Pre-LLMaJ Review Panel
 
-Panel policy version: `2.0`
+Panel policy version: `2.1`
 
-Purpose: predict likely Harbor `check` failures before spending Harbor/model time. Pre-LLMaJ is not a replacement for Harbor LLMaJ.
+Purpose: predict likely Harbor `check` and human-review failures before spending Harbor/model time. Pre-LLMaJ is not a replacement for Harbor LLMaJ or final human review.
 
 Read first:
 - current authoritative Edition 3 rules;
 - `.terminus/AGENT_SYSTEM.md`;
 - `.terminus/agents/PROTOCOL.md`;
-- role prompts in `.terminus/agents/PROMPTS.md`.
+- `.terminus/agents/PROMPTS.md`;
+- `.terminus/reviewers/REVIEWER_CHECKLIST.md`;
+- `.terminus/reviewers/reviewer_criteria.json`.
 
-## Evidence basis
-
-The panel is calibrated against current Edition 3 rules, public Harbor quality lenses, previous Harbor/portal/human findings, and reviewer regression cases. Public benchmark rules never override current Edition 3 schema/process.
+The stored reviewer checklist snapshot was supplied by the project owner on 2026-08-08. Its public URL currently returns 404 through automated web access, so final-review policy freshness must be recorded rather than assumed.
 
 ## Stage A — deterministic facts
 
@@ -24,11 +24,11 @@ Run objective checks before semantic reviewers. Typical checks:
 - Python compile/ruff;
 - no obvious forbidden/backup/extraneous files;
 - Oracle/NOP reward evidence when credentials/runtime permit;
-- required reviewer/control-plane files exist and parse.
+- required reviewer/control-plane files and JSON registries parse.
 
 A deterministic failure blocks semantic PASS where applicable. Do not ask a model reviewer to debate an objective syntax/schema failure.
 
-## Stage B — independent semantic reviews
+## Stage B — independent specialist reviews
 
 Run these as independent cold reviews where inputs permit:
 
@@ -45,11 +45,9 @@ Run these as independent cold reviews where inputs permit:
 - Do not show reviewers each other’s verdicts before their reports are frozen.
 - Do not tell a reviewer that another role already passed/failed the task.
 - Do not reveal the desired aggregate outcome.
-- Do not let the Instruction/Documentation writers perform the final review.
+- Do not let Instruction/Documentation writers perform the final review.
 - Do not give writing reviewers hidden oracle/test implementation details; use solver-visible artifacts and a requirement summary.
 - Do not give Originality Reviewer the creator’s uniqueness rationale or prior originality result.
-
-The Orchestrator may run independent reviewers in parallel conceptually. In a single-chat implementation, emulate this by constructing isolated bounded context packets and not carrying prior reviewer conclusions into the next review.
 
 ## Stage C — evidence sufficiency
 
@@ -60,34 +58,62 @@ Every mandatory reviewer must provide:
 - `EVIDENCE_STATUS`;
 - concrete evidence refs for material findings.
 
-Panel rules:
+Rules:
 
 - `INSUFFICIENT_EVIDENCE` blocks aggregate PASS.
-- LOW-confidence PASS does not count as a final PASS; gather more evidence/review again.
-- A BLOCKER/HIGH finding without valid evidence is not automatically accepted as true; route to clarification/adjudication.
-- Reviewer count is not a vote count.
+- LOW-confidence PASS is not a final PASS; gather more evidence or re-review.
+- BLOCKER/HIGH findings without evidence are not automatically accepted as true; route to clarification/adjudication.
+- reviewer count is not a vote count.
 
-## Stage D — disagreement scan
+## Stage D — comprehensive checklist cold review
 
-After independent reports are frozen, the Orchestrator checks for contradictions.
+After specialist reviews are frozen but **before their verdicts are shown to the Comprehensive Reviewer**, run `.terminus/agents/COMPREHENSIVE_REVIEWER.md`.
 
-Examples:
-- Instruction Reviewer wants to remove a detail that Verifier Engineer says is required for fairness.
-- Originality Reviewer wants to restructure a task in a way Difficulty Reviewer says collapses legitimate reasoning.
-- Compliance says artifact inspection is required while Verifier flags implementation coupling.
-- Documentation claims a difficulty mechanism not supported by Task Architect/trajectory evidence.
+The Comprehensive Reviewer must independently inspect the task against **every criterion** in `.terminus/reviewers/reviewer_criteria.json` plus the cross-cutting checks in `.terminus/reviewers/REVIEWER_CHECKLIST.md`.
 
-If disagreement is material, invoke the Adjudicator under `.terminus/agents/PROTOCOL.md`. Do not average or majority-vote the verdicts.
+Required properties:
 
-## Stage E — aggregate
+- `CHECKLIST_COVERAGE: 100%`;
+- one status for every registry criterion;
+- all issues reported, not only the first blocker;
+- explicit dispositions for all available test-quality eval flags;
+- explicit dispositions for all available trial-analysis flags;
+- severity aggregation exactly follows the checklist, including special trial-analysis handling;
+- policy conflicts are surfaced rather than silently resolved;
+- missing acceptance-relevant evidence produces `INSUFFICIENT_EVIDENCE`.
 
-Only after deterministic checks, independent reviews, evidence sufficiency and any adjudication are complete, record:
+The Comprehensive Reviewer is a breadth backstop. It does **not** replace specialist reviewers. A task needs both specialist depth and comprehensive breadth.
+
+## Stage E — disagreement and omission scan
+
+Only after the specialist reports and Comprehensive Reviewer report are frozen may the Orchestrator compare them.
+
+Check for:
+
+- specialist finding absent from Comprehensive Reviewer;
+- Comprehensive Reviewer finding absent from relevant specialist;
+- contradictory severity or applicability decisions;
+- Instruction Reviewer asking to remove details that Verifier Engineer considers necessary for fairness;
+- Originality changes that Difficulty Reviewer says collapse legitimate reasoning;
+- Compliance and Verifier disagreement over artifact/source inspection;
+- Documentation claims unsupported by Task Architect/trajectory evidence;
+- checklist snapshot conflicts with current authoritative Edition 3 rule files.
+
+For a material disagreement, invoke Adjudicator. Do not average or majority-vote.
+
+An omission is itself useful reviewer-eval evidence: if the Comprehensive Reviewer repeatedly misses a criterion or a specialist repeatedly misses a cross-domain issue, add a regression case to `.terminus/reviewers/REVIEWER_EVALS.md`.
+
+## Stage F — aggregate
+
+Only after deterministic checks, specialist reviews, evidence sufficiency, Comprehensive Reviewer coverage, and any adjudication are complete, record:
 
 ```text
-PRE_LLMAJ: PASS | REVISE | REJECT | INSUFFICIENT_EVIDENCE
+PRE_LLMAJ: PASS | REVISE | REJECT | INSUFFICIENT_EVIDENCE | POLICY_CONFLICT
 TASK_COMMIT:
-PANEL_POLICY_VERSION: 2.0
-AGENT_PROMPT_POLICY_VERSION: 2.0
+PANEL_POLICY_VERSION: 2.1
+AGENT_PROMPT_POLICY_VERSION:
+CHECKLIST_VERSION:
+POLICY_FRESHNESS: CURRENT | UNVERIFIED | STALE
 STATIC_CHECK: PASS | FAIL
 TASK_ARCHITECT: PASS | REVISE | INSUFFICIENT_EVIDENCE
 VERIFIER: PASS | REVISE | INSUFFICIENT_EVIDENCE
@@ -96,58 +122,72 @@ DIFFICULTY_DESIGN: PASS | REVISE | INSUFFICIENT_EVIDENCE
 COMPLIANCE: PASS | REVISE | INSUFFICIENT_EVIDENCE
 INSTRUCTION: PASS | REVISE | INSUFFICIENT_EVIDENCE
 DOCUMENTATION: PASS | REVISE | INSUFFICIENT_EVIDENCE
+COMPREHENSIVE_REVIEW: APPROVE | APPROVE_WITH_NOTE | REQUEST_CHANGES | DECLINE | INSUFFICIENT_EVIDENCE | POLICY_CONFLICT
+CHECKLIST_COVERAGE: 100%
 ADJUDICATIONS: <none or review ids>
 OPEN_FINDINGS: <finding ids>
+POLICY_CONFLICTS: <none or ids>
 ```
 
 Aggregate PASS requires:
 
 - deterministic stage PASS;
-- every mandatory semantic reviewer PASS with SUFFICIENT evidence and at least MEDIUM confidence;
-- no unresolved BLOCKER/HIGH;
-- no unresolved reviewer conflict;
-- Originality not REJECT;
+- every mandatory specialist reviewer PASS with SUFFICIENT evidence and at least MEDIUM confidence;
+- Comprehensive Reviewer is `APPROVE` or an explicitly acceptable `APPROVE_WITH_NOTE` under severity policy;
+- checklist coverage is 100%;
+- no unresolved High failure;
+- no unresolved multiple ordinary Medium failures;
+- no valid special trial-analysis revision flag;
+- no unresolved reviewer disagreement;
+- no acceptance-relevant `POLICY_CONFLICT`;
+- Originality is not REJECT;
 - all reports apply to the same relevant task version and current reviewer policy.
 
-## Review matrix
+## Comprehensive severity rules
 
-| Quality lens | Primary owner | Block condition |
-| --- | --- | --- |
-| coherent/solvable contract | Task Architect | missing/unobservable end state, contradiction, impossible requirement |
-| genuine coupled reasoning | Task Architect + Difficulty | clerical checklist, obscure-fact difficulty, trivial local fix |
-| functional/deterministic grading | Verifier Engineer | subjective/flaky/source-preference grading where behavior is observable |
-| requirement↔test alignment | Verifier Engineer | req-gap, phantom spec, untested material requirement |
-| anti-cheat / no answer leakage | Verifier + Compliance | accessible oracle/tests/reward shortcut |
-| current E3 structural/security rules | Compliance | current BLOCKER/HIGH violation |
-| novelty/authenticity | Originality | clone/renamed topology or artificial benchmark construction |
-| instruction fairness/human quality | Instruction | material ambiguity, solution leakage, generated-looking rubric dump |
-| explanation quality | Documentation | unsupported/vague/benchmark-style explanation |
-| reviewability | Documentation + Architect | critical claims cannot be checked from supplied evidence |
-| structured output contract | Instruction + Verifier | solver cannot discover a legitimately graded schema |
-| package hygiene | Compliance | forbidden/extraneous/leaked files |
+The panel must preserve these distinctions:
+
+- **High:** one failure blocks acceptance.
+- **Ordinary Medium:** multiple failures block; one may be accepted only with a note.
+- **Low:** does not block on its own.
+- **Trial-analysis Medium:** each valid flag is judged independently; one valid `difficulty_crux`, `near_miss`, `refusals`, or `low_timeout` flag can require revision even when it is the only Medium issue.
+
+Do not flatten all Medium criteria into one policy.
+
+## Solvability policy conflict
+
+The supplied reviewer checklist defines task solvability across **10 runs**: every individual verifier test must pass at least once across those runs. The current local difficulty controller uses a custom **5-run** policy.
+
+Until this is explicitly reconciled by current authoritative project guidance:
+
+- do not claim five runs satisfy the checklist's ten-run solvability definition;
+- record the discrepancy as a policy conflict when a final review depends on it;
+- do not silently increase/decrease trial count solely from this cached snapshot without checking current authoritative rules.
 
 ## Producer loop
 
-If a reviewer returns REVISE:
+If a reviewer returns REVISE/REQUEST_CHANGES:
 
 1. freeze the report/finding IDs;
-2. route only the relevant findings to the appropriate producer/fixer;
+2. route only relevant findings to the appropriate producer/fixer;
 3. apply the smallest coherent change;
 4. calculate which reviews became stale using `PROTOCOL.md`;
-5. rerun those cold reviews; do not simply ask the writer to self-certify.
+5. rerun affected cold reviews;
+6. rerun Comprehensive Reviewer if any checklist-relevant artifact changed;
+7. do not let writers self-certify.
 
-If the same finding survives two fixes, trigger the circuit-breaker/adjudication process instead of repeatedly rewriting.
+If the same material finding survives two fixes, trigger circuit-breaker/adjudication rather than repeatedly rewriting.
 
 ## Harbor confirmation and learning
 
-Only `PRE_LLMAJ: PASS` permits the slow Harbor LLMaJ gate.
+Only `PRE_LLMAJ: PASS` permits slow Harbor LLMaJ.
 
-If Harbor finds an applicable issue that Pre-LLMaJ missed:
+If Harbor or a human reviewer finds an applicable issue that Pre-LLMaJ missed:
 
-- log it in `.terminus/reviewers/LLMAJ_LEARNING_LOG.md`;
-- map the miss to the responsible reviewer;
-- add/update a regression case in `.terminus/reviewers/REVIEWER_EVALS.md` where useful;
-- improve the reviewer policy/calibration only if the lesson generalizes;
-- regression-test the changed reviewer policy;
+- log it in `.terminus/reviewers/LLMAJ_LEARNING_LOG.md` or the appropriate reviewer-learning log;
+- map the miss to the responsible specialist and/or Comprehensive Reviewer criterion;
+- add/update a regression case in `.terminus/reviewers/REVIEWER_EVALS.md`;
+- improve reviewer policy/calibration only if the lesson generalizes;
+- regression-test the changed policy;
 - rerun Pre-LLMaJ;
 - retry Harbor only after local PASS.
