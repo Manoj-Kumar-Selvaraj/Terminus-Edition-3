@@ -14,6 +14,9 @@ This directory defines the operating model for taking one Terminus task from ide
 - `0/5` in this policy refers to an individual verifier test case, not to the number of complete agent runs that solve the whole task.
 - Complete-run rewards are used for the too-easy gate: at least two of five complete runs must fail. A suite may therefore have 0/5 complete solutions and still be viable only when every verifier test case is passed by at least one attempt and trajectory review confirms the failures are legitimate reasoning misses rather than task insufficiency.
 - Fix the smallest real cause. Do not rewrite the whole task to make one test pass.
+- GitHub repository state and GitHub Actions evidence are the durable operational source of truth. Chat history is replaceable working context.
+- Every active task must have a checkpoint at `.terminus/sessions/<task-name>.md`, created from `.terminus/sessions/TEMPLATE.md`.
+- A controller starting in a new chat must follow `.terminus/CONTINUE_SESSION.md` before changing the task.
 
 ## Agent 1: Task Architect
 
@@ -141,6 +144,25 @@ The controller must maintain these states:
 
 Any substantive task change after difficulty measurement invalidates the previous difficulty result and returns the task to `VALIDATING`.
 
+### Durable session checkpoint
+
+For every active task, the controller must maintain `.terminus/sessions/<task-name>.md`.
+
+Update the checkpoint after any of the following:
+- task push or branch/PR change;
+- CI run reaching a terminal state;
+- root-cause classification;
+- specialist handoff with a material decision;
+- task/verifier/instruction/environment fix;
+- Oracle/NOP/LLMaJ result;
+- difficulty suite result or per-test 0/5 finding;
+- compliance/human-quality audit decision;
+- package/submission-ready decision.
+
+The checkpoint must contain only durable operational facts and decisions. Never store secret values. Keep noisy transient debugging out of it. If the checkpoint disagrees with the repository, PR, Actions logs, or Harbor artifacts, live evidence wins and the checkpoint must be corrected before further changes.
+
+A new chat or controller instance must follow `.terminus/CONTINUE_SESSION.md`, read the checkpoint and live GitHub evidence, and resume from the first failed/incomplete gate. It must not require the user to reconstruct prior chat history.
+
 ## Handoff contract
 
 Every specialist handoff should use this shape:
@@ -192,6 +214,7 @@ ChatGPT scheduled tasks cannot provide a persistent two-minute watcher. Therefor
 - no verifier test case remains at 0/5;
 - final Compliance Auditor has no blocker/high issue;
 - Human Quality Reviewer finds no material AI-tone/leakage problem;
-- final package contains only allowed task contents.
+- final package contains only allowed task contents;
+- `.terminus/sessions/<task-name>.md` records the final gate evidence and `SUBMISSION_READY` state.
 
 Do not mark a task ready because one workflow is green.
