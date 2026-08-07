@@ -7,7 +7,7 @@ This directory defines the operating model for taking one Terminus task from ide
 - The task contract and current Terminus Edition 3 rules are the source of truth. Golden tasks are references, not templates to copy.
 - Tests grade observable behavior and resulting state, not implementation syntax.
 - A green CI run is necessary but not sufficient for submission readiness.
-- Oracle, NOP, LLMaJ, difficulty, compliance, human-quality, and packaging gates are independent.
+- Oracle, NOP, LLMaJ, difficulty, compliance, instruction-quality, human-quality, and packaging gates are independent.
 - Agent failures are evidence. Never harden or clarify a task from aggregate reward alone; read trajectories and verifier outcomes.
 - A task with 4/5 or 5/5 complete agent runs passing is too easy for the current acceptance target.
 - Across five agent attempts, **every verifier test case must pass in at least one attempt**. A verifier test case with 0/5 passes is not allowed and blocks acceptance until its trajectories are analyzed and the underlying instruction, environment, verifier, or task-design problem is resolved.
@@ -91,17 +91,37 @@ Do not harden by adding arbitrary requirements. Prefer deeper interaction betwee
 
 ## Agent 5: Human Quality Reviewer
 
-Mission: make instructions and explanations sound like a real engineering task while preserving the contract.
+Mission: review submission prose other than instruction.md for natural engineering voice and leakage.
 
 Owns:
-- AI-like cadence and synthetic essay structure;
-- over-prescription and solution leakage;
+- AI-like cadence and synthetic essay structure in explanations/README text;
+- over-prescription and solution leakage outside instruction.md;
 - unnatural repetition or benchmark boilerplate;
 - concise, natural engineering voice.
 
 Must not redesign technical behavior unless wording exposes a real contract problem.
 
-## Agent 6: Trajectory Analyst
+## Agent 6: Instruction Reviewer
+
+Mission: independently approve `instruction.md` as a concise, human engineering ticket while preserving every legitimately graded requirement.
+
+Owns:
+- instruction concision and natural voice;
+- outcome-focused wording rather than solution steps;
+- AI-like cadence, schema dumping, excessive file narration, repeated constraints, and benchmark boilerplate;
+- ambiguity and missing requirements exposed by the verifier/business contract;
+- solution leakage and accidental difficulty reduction.
+
+Rules:
+- Prefer one or two short paragraphs unless bullets materially improve clarity.
+- Do not remove a verifier-backed requirement merely to reduce word count.
+- Do not hide an essential requirement only in an internal contract file if the solver could not reasonably know to use it.
+- Compare `instruction.md` with the verifier and supplied business contract before passing.
+- Return `VERDICT`, `WORD_COUNT`, `MATERIAL_REQUIREMENTS_PRESERVED`, `ISSUES`, and `REPLACEMENT_TEXT` when revision is needed.
+
+This is a mandatory final gate and is independent of the Human Quality Reviewer.
+
+## Agent 7: Trajectory Analyst
 
 Mission: analyze Oracle and solver/agent logs before a task is recalibrated.
 
@@ -120,7 +140,7 @@ For every verifier test case with 0/5 passes, classify the blocker as exactly on
 
 A 0/5 test-case result is never accepted as-is. Even `legitimate_reasoning_wall` requires task-level review because the acceptance policy requires each verifier test case to pass in at least one of five attempts.
 
-## Agent 7: CI Orchestrator / Submission Controller
+## Agent 8: CI Orchestrator / Submission Controller
 
 Mission: own one active task session from first push until `SUBMISSION_READY`.
 
@@ -135,7 +155,8 @@ Routing:
 | schema, Docker, packaging, Edition 3 rule failure | Compliance Auditor |
 | 4/5 or 5/5 complete-run pass | Difficulty Reviewer + Task Architect |
 | any verifier test case at 0/5 | Trajectory Analyst, then Task Architect/Verifier Engineer as indicated |
-| AI-like wording or solution leakage | Human Quality Reviewer |
+| instruction is long, synthetic, unclear, or implementation-heavy | Instruction Reviewer |
+| AI-like wording outside instruction.md or explanation leakage | Human Quality Reviewer |
 | flaky Harbor/tool/auth/infrastructure failure | CI Orchestrator first; specialist only if task-caused |
 
 The controller must maintain these states:
@@ -156,7 +177,7 @@ Update the checkpoint after any of the following:
 - task/verifier/instruction/environment fix;
 - Oracle/NOP/LLMaJ result;
 - difficulty suite result or per-test 0/5 finding;
-- compliance/human-quality audit decision;
+- instruction/compliance/human-quality audit decision;
 - package/submission-ready decision.
 
 The checkpoint must contain only durable operational facts and decisions. Never store secret values. Keep noisy transient debugging out of it. If the checkpoint disagrees with the repository, PR, Actions logs, or Harbor artifacts, live evidence wins and the checkpoint must be corrected before further changes.
@@ -212,8 +233,9 @@ ChatGPT scheduled tasks cannot provide a persistent two-minute watcher. Therefor
 - at least two of five complete agent runs fail;
 - every verifier test case passes in at least one of the five agent attempts;
 - no verifier test case remains at 0/5;
+- final Instruction Reviewer verdict is `PASS`;
 - final Compliance Auditor has no blocker/high issue;
-- Human Quality Reviewer finds no material AI-tone/leakage problem;
+- Human Quality Reviewer finds no material AI-tone/leakage problem in submission prose;
 - final package contains only allowed task contents;
 - `.terminus/sessions/<task-name>.md` records the final gate evidence and `SUBMISSION_READY` state.
 
