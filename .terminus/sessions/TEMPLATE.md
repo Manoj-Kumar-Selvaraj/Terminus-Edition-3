@@ -1,18 +1,18 @@
 # Terminus Task Session
 
-Session schema version: `2.1`
+Session schema version: `2.2`
 
 This file is the durable operational checkpoint for one task. Keep it concise. Repository, current rules, CI/artifact evidence and current reviewer policy override stale prose here.
 
 ## Identity
 
 - Task: `<task-name>`
-- Controller state: `DRAFT | PUSHED | VALIDATING | FIXING | PRE_LLMAJ | LLMAJ | VALIDATED | DIFFICULTY_5X | RECALIBRATING | FINAL_AUDIT | SUBMISSION_READY | BLOCKED`
+- Controller state: `DRAFT | PUSHED | VALIDATING | FIXING | PRE_LLMAJ | LLMAJ | VALIDATED | DIFFICULTY_10X | RECALIBRATING | FINAL_AUDIT | SUBMISSION_READY | BLOCKED`
 - Working branch: `<branch>`
 - Pull request: `<number-or-none>`
-- Last checkpoint task commit: `<sha>`
-- Agent-system policy: `2.0`
-- Specialist prompt policy: `2.0`
+- Current task commit: `<sha>`
+- Agent-system policy: `2.1`
+- Specialist prompt policy: `2.1`
 - Pre-LLMaJ panel policy: `2.1`
 - Comprehensive reviewer policy: `1.0`
 - Reviewer checklist snapshot: `2026-08-08-user-supplied`
@@ -37,8 +37,10 @@ This file is the durable operational checkpoint for one task. Keep it concise. R
 | Comprehensive Reviewer | PENDING | checklist coverage must be 100% |
 | Pre-LLMaJ aggregate | PENDING | |
 | Harbor LLMaJ | PENDING | |
-| Difficulty trials | PENDING | |
-| Per-test solvability | PENDING | current 5-run vs supplied 10-run checklist policy may require conflict resolution |
+| GPT-5.5 difficulty ×5 | PENDING | diagnostic half of final trial set |
+| Claude Opus 4.8 difficulty ×5 | PENDING | diagnostic half of final trial set |
+| Combined difficulty ×10 | PENDING | final tier decision |
+| Per-test solvability 1/10 | PENDING | every individual verifier case must pass at least once across combined 10 |
 | Trial Analysis | PENDING | |
 | Final Compliance | PENDING | |
 | Final Human Quality | PENDING | |
@@ -62,7 +64,7 @@ Allowed status values: `PASS`, `APPROVE`, `APPROVE_WITH_NOTE`, `REVISE`, `REQUES
 ## Root-cause classification
 
 - Owner: `<role>`
-- Classification: `<ci_infrastructure | task_contract | environment | verifier | originality | template_risk | instruction_quality | documentation_quality | instruction_gap | environment_gap | verifier_gap | too_easy | test_case_0_pass | compliance | checklist_failure | policy_conflict | packaging | review_disagreement | insufficient_evidence | none>`
+- Classification: `<ci_infrastructure | task_contract | environment | verifier | originality | template_risk | instruction_quality | documentation_quality | instruction_gap | environment_gap | verifier_gap | too_easy_100_percent | test_case_0_of_10 | compliance | checklist_failure | policy_conflict | packaging | review_disagreement | insufficient_evidence | none>`
 - Evidence: `<run/job/artifact/file/review ids>`
 
 ## Next action
@@ -70,8 +72,6 @@ Allowed status values: `PASS`, `APPROVE`, `APPROVE_WITH_NOTE`, `REVISE`, `REQUES
 `<single evidence-driven next action>`
 
 ## Review evidence ledger
-
-Keep one line per current material semantic review.
 
 | Review | Review ID | Task commit | Policy version | Verdict | Confidence | Evidence status | Finding IDs |
 | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -85,7 +85,7 @@ Keep one line per current material semantic review.
 | Comprehensive Reviewer | | | 1.0 | PENDING | | | |
 | Human Quality | | | | PENDING | | | |
 
-A PASS/APPROVE is current only when its task commit/input scope and policy version remain applicable.
+A PASS/APPROVE is current only when its task/input scope and the role-specific policy change scope remain applicable. A policy update does not automatically stale unrelated roles if their decision contract/evidence rules did not change.
 
 ## Comprehensive reviewer checkpoint
 
@@ -124,18 +124,21 @@ Harbor LLMaJ must not run until aggregate is PASS.
 ## Difficulty / solvability checkpoint
 
 - Task commit: `<sha>`
-- Suite/model: `<model or not-run>`
-- Trials completed: `<count>`
-- Complete-run passes: `<count>`
-- Complete-run failures: `<count>`
-- Verifier test cases with zero passes: `<none or names>`
-- Difficulty evidence artifact: `<id/path>`
+- GPT-5.5 trials completed: `<0-5>`
+- GPT complete passes: `<0-5>`
+- Claude Opus 4.8 trials completed: `<0-5>`
+- Claude complete passes: `<0-5>`
+- Combined trials completed: `<0-10>`
+- Combined complete passes: `<0-10>`
+- Combined complete pass rate: `<percent>`
+- Measured tier: `FRONTIER | ADVANCED | CORE | BASE | TOO_EASY_REJECT | NOT_MEASURED`
+- Verifier test cases at 0/10: `<none or names>`
+- Difficulty evidence artifact(s): `<ids/paths>`
 - Result freshness: `CURRENT | STALE | NOT_RUN`
 - Trajectory review IDs: `<ids>`
-- Solvability policy used: `<authoritative policy reference>`
-- Solvability policy conflict: `<none or description>`
+- Solvability policy: `each individual verifier test passes at least once across the combined 10 official trials`
 
-Do not claim a five-run suite satisfies a checklist definition that explicitly requires ten runs unless current authoritative guidance resolves that difference.
+Tier mapping: `<20% frontier`, `20–<50 advanced`, `50–<80 core`, `80–<100 base`, `100% reject`. A five-run model suite is diagnostic only and cannot set the final tier or 1/10 solvability result by itself.
 
 ## Writing/originality checkpoints
 
