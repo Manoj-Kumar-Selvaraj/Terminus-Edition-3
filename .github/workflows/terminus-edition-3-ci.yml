@@ -12,7 +12,7 @@ on:
         required: true
         type: string
       mode:
-        description: Validation is cheap enough for PRs; difficulty runs both five-trial model suites
+        description: Run normal validation or the two five-trial difficulty suites
         required: true
         default: validate
         type: choice
@@ -27,10 +27,13 @@ concurrency:
   group: terminus-ci-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
-# Required repo/org secrets:
-#   SNORKEL_API_KEY          Snorkel DaaS platform API key (stb login)
-# Optional:
-#   STB_PORTKEY_PROJECT_ID   Portkey project id when the account has multiple projects
+# Required repository/org secret:
+#   SNORKEL_API_KEY          Snorkel platform API key used by noninteractive stb login
+# Optional secret:
+#   STB_PORTKEY_PROJECT_ID   Required only when the account has multiple eligible projects
+# Optional repository variable:
+#   STB_VERSION              Exact known-good snorkelai-stb version. Once CI proves a version,
+#                            set this variable so the internal Python auth API is reproducible.
 
 jobs:
   changed-tasks:
@@ -89,47 +92,73 @@ jobs:
           echo "count=${#tasks[@]}" >> "$GITHUB_OUTPUT"
           echo "Selected tasks: $json" >> "$GITHUB_STEP_SUMMARY"
 
+  untrusted-pr:
+    name: Trusted credentials required
+    needs: changed-tasks
+    if: >-
+      github.event_name == 'pull_request' &&
+      needs.changed-tasks.outputs.count != '0' &&
+      github.event.pull_request.head.repo.full_name != github.repository
+    runs-on: ubuntu-latest
+    steps:
+      - name: Reject secret-dependent validation on fork PRs
+        run: |
+          echo "::error::Terminus validation needs SNORKEL_API_KEY and will not expose it to a fork pull request."
+          echo "A maintainer must validate the task from a trusted branch or workflow_dispatch run."
+          exit 1
+
   validate:
     name: Validate ${{ matrix.task }}
     needs: changed-tasks
-    if: needs.changed-tasks.outputs.count != '0' && (github.event_name != 'workflow_dispatch' || inputs.mode == 'validate')
+    if: >-
+      needs.changed-tasks.outputs.count != '0' &&
+      (github.event_name != 'workflow_dispatch' || inputs.mode == 'validate') &&
+      (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository)
     strategy:
       fail-fast: false
       matrix:
         task: ${{ fromJSON(needs.changed-tasks.outputs.tasks) }}
-    runs-on:
-      - self-hosted
-      - linux
+    runs-on: ubuntu-latest
     timeout-minutes: 180
     env:
       CI: "true"
       SNORKEL_API_KEY: ${{ secrets.SNORKEL_API_KEY }}
       STB_PORTKEY_PROJECT_ID: ${{ secrets.STB_PORTKEY_PROJECT_ID }}
+      STB_VERSION: ${{ vars.STB_VERSION }}
       XDG_CONFIG_HOME: ${{ runner.temp }}/stb-xdg-${{ github.run_id }}-${{ github.run_attempt }}-${{ matrix.task }}
     steps:
       - uses: actions/checkout@v4
 
-      - name: Verify runner prerequisites
+      - name: Validate helper syntax
+        shell: bash
+        run: bash -n ./terminus3.sh
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v9.0.0
+        with:
+          enable-cache: false
+
+      - name: Install stb and verify Docker
         shell: bash
         run: |
           set -euo pipefail
-          command -v docker
-          command -v stb
+          docker version
           docker info >/dev/null
+          ./terminus3.sh install
           ./terminus3.sh version
+          echo "stb version: $(stb --version)" >> "$GITHUB_STEP_SUMMARY"
 
-      - name: Noninteractive stb login + AI keys
+      - name: Noninteractive stb login and AI key refresh
         shell: bash
         run: |
           set -euo pipefail
           if [[ -z "${SNORKEL_API_KEY:-}" ]]; then
-            echo "::error::Missing secret SNORKEL_API_KEY"
+            echo "::error::Missing repository/org secret SNORKEL_API_KEY"
             exit 1
           fi
           mkdir -p "$XDG_CONFIG_HOME/stb"
           ./terminus3.sh login --noninteractive
           ./terminus3.sh keys-refresh --noninteractive
-          echo "stb config: $XDG_CONFIG_HOME/stb/config.ini" >> "$GITHUB_STEP_SUMMARY"
 
       - name: Oracle must score 1
         shell: bash
@@ -177,35 +206,48 @@ jobs:
             }
           done
 
-      - name: Run Harbor structural check
+      - name: Run Harbor LLMaJ check
         shell: bash
         run: ./terminus3.sh check "${{ matrix.task }}"
 
-      - name: Run LLMaJ check
-        shell: bash
-        run: ./terminus3.sh check-llm "${{ matrix.task }}"
+      - name: Upload Harbor validation outputs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: terminus-validation-${{ matrix.task }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/terminus-e3/${{ github.run_id }}/${{ github.run_attempt }}/${{ matrix.task }}/
+          if-no-files-found: ignore
+          retention-days: 7
 
   difficulty:
-    name: GPT-5.5 x5 and Claude Opus 4.8 x5
+    name: Difficulty ${{ matrix.label }} - ${{ inputs.task }}
     if: github.event_name == 'workflow_dispatch' && inputs.mode == 'difficulty'
-    runs-on:
-      - self-hosted
-      - linux
-    timeout-minutes: 720
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - label: GPT-5.5 x5
+            command: diff-gpt
+          - label: Claude Opus 4.8 x5
+            command: diff-claude
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
     env:
       CI: "true"
       SNORKEL_API_KEY: ${{ secrets.SNORKEL_API_KEY }}
       STB_PORTKEY_PROJECT_ID: ${{ secrets.STB_PORTKEY_PROJECT_ID }}
-      XDG_CONFIG_HOME: ${{ runner.temp }}/stb-xdg-diff-${{ github.run_id }}-${{ github.run_attempt }}
+      STB_VERSION: ${{ vars.STB_VERSION }}
+      XDG_CONFIG_HOME: ${{ runner.temp }}/stb-xdg-diff-${{ github.run_id }}-${{ github.run_attempt }}-${{ matrix.command }}
     steps:
       - uses: actions/checkout@v4
 
-      - name: Validate task selection and runner
+      - name: Validate task selection and helper syntax
         shell: bash
         env:
           TASK: ${{ inputs.task }}
         run: |
           set -euo pipefail
+          bash -n ./terminus3.sh
           if [[ "$TASK" == /* || "$TASK" == *".."* || "$TASK" == */* ]]; then
             echo "::error::Task must be a top-level directory name"
             exit 1
@@ -214,31 +256,50 @@ jobs:
             echo "::error::No task.toml found in '$TASK'"
             exit 1
           }
-          command -v docker
-          command -v stb
-          docker info >/dev/null
-          ./terminus3.sh version
 
-      - name: Noninteractive stb login + AI keys
+      - name: Install uv
+        uses: astral-sh/setup-uv@v9.0.0
+        with:
+          enable-cache: false
+
+      - name: Install stb and verify Docker
+        shell: bash
+        run: |
+          set -euo pipefail
+          docker version
+          docker info >/dev/null
+          ./terminus3.sh install
+          ./terminus3.sh version
+          echo "stb version: $(stb --version)" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Noninteractive stb login and AI key refresh
         shell: bash
         run: |
           set -euo pipefail
           if [[ -z "${SNORKEL_API_KEY:-}" ]]; then
-            echo "::error::Missing secret SNORKEL_API_KEY"
+            echo "::error::Missing repository/org secret SNORKEL_API_KEY"
             exit 1
           fi
           mkdir -p "$XDG_CONFIG_HOME/stb"
           ./terminus3.sh login --noninteractive
           ./terminus3.sh keys-refresh --noninteractive
-          echo "stb config: $XDG_CONFIG_HOME/stb/config.ini" >> "$GITHUB_STEP_SUMMARY"
 
-      - name: Run both official difficulty suites
+      - name: Run difficulty suite
         shell: bash
         env:
           TASK: ${{ inputs.task }}
-          JOBS_DIR: ${{ runner.temp }}/terminus-e3-difficulty/${{ github.run_id }}/${{ github.run_attempt }}/${{ inputs.task }}
+          JOBS_DIR: ${{ runner.temp }}/terminus-e3-difficulty/${{ github.run_id }}/${{ github.run_attempt }}/${{ inputs.task }}/${{ matrix.command }}
         run: |
           set -euo pipefail
           mkdir -p "$JOBS_DIR"
-          ./terminus3.sh difficulty "$TASK"
+          ./terminus3.sh "${{ matrix.command }}" "$TASK"
           echo "Difficulty jobs: $JOBS_DIR" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload difficulty outputs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: terminus-difficulty-${{ matrix.command }}-${{ inputs.task }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/terminus-e3-difficulty/${{ github.run_id }}/${{ github.run_attempt }}/${{ inputs.task }}/${{ matrix.command }}/
+          if-no-files-found: ignore
+          retention-days: 7
