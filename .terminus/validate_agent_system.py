@@ -21,6 +21,7 @@ REQUIRED = [
     T / "reviewers" / "WRITING_EXAMPLE_BANK.md",
     T / "reviewers" / "LLMAJ_LEARNING_LOG.md",
     T / "reviewers" / "REVIEWER_EVALS.md",
+    T / "reviewers" / "CALIBRATION_DATASET.md",
     T / "reviewers" / "AGENT_DESIGN_RESEARCH.md",
     T / "sessions" / "TEMPLATE.md",
 ]
@@ -81,7 +82,6 @@ def read(path: Path, errors: list[str]) -> str:
 
 def main() -> int:
     errors: list[str] = []
-
     texts = {path: read(path, errors) for path in REQUIRED}
 
     agent_system = texts.get(T / "AGENT_SYSTEM.md", "")
@@ -89,6 +89,7 @@ def main() -> int:
     prompts = texts.get(T / "agents" / "PROMPTS.md", "")
     panel = texts.get(T / "reviewers" / "PRE_LLMAJ.md", "")
     evals = texts.get(T / "reviewers" / "REVIEWER_EVALS.md", "")
+    calibration = texts.get(T / "reviewers" / "CALIBRATION_DATASET.md", "")
     session_template = texts.get(T / "sessions" / "TEMPLATE.md", "")
 
     if "Agent-system policy version: `2.0`" not in agent_system:
@@ -99,6 +100,8 @@ def main() -> int:
         fail(errors, "agents/PROMPTS.md must declare prompt policy version 2.0")
     if "Panel policy version: `2.0`" not in panel:
         fail(errors, "reviewers/PRE_LLMAJ.md must declare panel policy version 2.0")
+    if "Dataset policy version: `1.0`" not in calibration:
+        fail(errors, "reviewers/CALIBRATION_DATASET.md must declare dataset policy version 1.0")
 
     for role in ROLE_HEADINGS:
         if role not in agent_system:
@@ -129,6 +132,10 @@ def main() -> int:
     if len(case_ids) < 12:
         fail(errors, f"REVIEWER_EVALS.md should contain at least 12 seed cases; found {len(case_ids)}")
 
+    for required in ["positive examples", "negative examples", "hard negatives", "hard positives", "holdout"]:
+        if required.lower() not in calibration.lower():
+            fail(errors, f"CALIBRATION_DATASET.md missing corpus requirement: {required}")
+
     for required in [
         "Pre-LLMaJ panel",
         "Originality & Authenticity",
@@ -137,9 +144,11 @@ def main() -> int:
         "Harbor LLMaJ",
         "Difficulty 5x",
         "Per-test 1/5 minimum",
+        "Adjudication ledger",
+        "Circuit breakers",
     ]:
         if required not in session_template:
-            fail(errors, f"sessions/TEMPLATE.md missing gate: {required}")
+            fail(errors, f"sessions/TEMPLATE.md missing gate/state section: {required}")
 
     for path, text in texts.items():
         if not text:
