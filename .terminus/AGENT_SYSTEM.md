@@ -8,9 +8,10 @@ This directory defines the operating model for taking one Terminus task from ide
 - Tests grade observable behavior and resulting state, not implementation syntax.
 - A green CI run is necessary but not sufficient for submission readiness.
 - Oracle, NOP, LLMaJ, difficulty, compliance, human-quality, and packaging gates are independent.
-- Agent failures are evidence. Never harden or clarify a task from aggregate pass rate alone; read the trajectories first.
-- A task that passes every difficulty trial is too easy for the current acceptance target.
-- A task that passes no difficulty trial must enter instruction/environment adequacy review before it can be considered genuinely hard.
+- Agent failures are evidence. Never harden or clarify a task from aggregate reward alone; read trajectories and verifier outcomes.
+- A task with 4/5 or 5/5 complete agent runs passing is too easy for the current acceptance target.
+- Across five agent attempts, every verifier test case must pass in at least one attempt. Any test case with 0/5 passes is an acceptance blocker until trajectories are analyzed and the instruction/environment/verifier gap is resolved.
+- A suite may have 0/5 complete solutions and still be viable if every individual verifier test is demonstrably achievable by at least one attempt and the failures are legitimate reasoning misses. This requires trajectory review, not automatic acceptance.
 - Fix the smallest real cause. Do not rewrite the whole task to make one test pass.
 
 ## Agent 1: Task Architect
@@ -40,6 +41,7 @@ Mission: make grading semantically complete, deterministic, and hard to game.
 Owns:
 - requirement-to-test coverage;
 - Oracle=1 and NOP=0 behavior;
+- per-test five-run attainability evidence;
 - weak assertions, phantom specs, vacuous tests, flaky execution;
 - restart/idempotency/edge-case coverage;
 - anti-cheat behavior without implementation inspection.
@@ -49,7 +51,7 @@ Must not:
 - invent requirements absent from instruction.md;
 - make the verifier accept the oracle by special casing it.
 
-Output: requirement-test matrix, defects by severity, minimal verifier changes, expected Oracle/NOP impact.
+Output: requirement-test matrix, defects by severity, minimal verifier changes, expected Oracle/NOP and per-test difficulty impact.
 
 ## Agent 3: Compliance Auditor
 
@@ -69,11 +71,17 @@ Report BLOCKER / HIGH / MEDIUM / LOW. Cosmetic issues are last.
 Mission: decide whether difficulty comes from legitimate reasoning rather than ambiguity, missing information, flakiness, or hidden implementation knowledge.
 
 Owns:
-- five-run reward distribution;
+- five-run complete-solution reward distribution;
+- per-test pass coverage across five attempts;
 - measured difficulty classification;
 - whether successful trajectories reveal an obvious shortcut;
 - whether failed trajectories share a legitimate reasoning miss;
-- hardening recommendations when 4/5 or 5/5 pass.
+- hardening recommendations when 4/5 or 5/5 complete runs pass.
+
+Acceptance policy:
+- 4/5 or 5/5 complete runs pass: too easy, recalibrate.
+- 0/5 through 3/5 complete runs pass: potentially acceptable only if at least two complete runs fail and every verifier test case passes in at least one of the five attempts.
+- Any verifier test case with 0/5 passes: mandatory trajectory review and remediation before acceptance.
 
 Do not harden by adding arbitrary requirements. Prefer deeper interaction between already-necessary invariants, realistic partial states, and meaningful edge cases.
 
@@ -96,17 +104,17 @@ Mission: analyze Oracle and solver/agent logs before a task is recalibrated.
 Owns:
 - clustering failures by root cause;
 - separating environment/tool failures from reasoning failures;
-- detecting a shared instruction gap when 0/5 trials pass;
-- identifying shortcuts when 4/5 or 5/5 pass;
+- analyzing any verifier test with 0/5 passes;
+- identifying shortcuts when 4/5 or 5/5 complete runs pass;
 - extracting the exact decision point where a solver diverges.
 
-For 0/5 pass, produce one of:
+For every verifier test case with 0/5 passes, classify the blocker as exactly one of:
 1. `instruction_gap` - required behavior cannot reasonably be inferred;
 2. `environment_gap` - necessary capability/data/tool is unavailable or misleading;
-3. `verifier_gap` - correct behavior is rejected or wrong behavior is accepted;
-4. `legitimate_frontier_failure` - contract is sufficient and failures are genuine reasoning misses.
+3. `verifier_gap` - correct behavior is rejected, wrong behavior is accepted, or the test itself is unreachable;
+4. `legitimate_reasoning_wall` - contract is sufficient, the test is demonstrably achievable, and all five failures are genuine reasoning misses.
 
-A 0/5 result is never accepted without this analysis.
+A 0/5 test-case result is never accepted without this analysis and evidence from agent/verifier logs.
 
 ## Agent 7: CI Orchestrator / Submission Controller
 
@@ -121,8 +129,8 @@ Routing:
 | task contract, environment design, missing invariant | Task Architect |
 | Oracle/NOP semantic mismatch, weak tests | Verifier Engineer |
 | schema, Docker, packaging, Edition 3 rule failure | Compliance Auditor |
-| 4/5 or 5/5 difficulty pass | Difficulty Reviewer + Task Architect |
-| 0/5 difficulty pass | Trajectory Analyst, then Task Architect/Verifier Engineer as indicated |
+| 4/5 or 5/5 complete-run pass | Difficulty Reviewer + Task Architect |
+| any verifier test case at 0/5 | Trajectory Analyst, then Task Architect/Verifier Engineer as indicated |
 | AI-like wording or solution leakage | Human Quality Reviewer |
 | flaky Harbor/tool/auth/infrastructure failure | CI Orchestrator first; specialist only if task-caused |
 
@@ -178,7 +186,9 @@ ChatGPT scheduled tasks cannot provide a persistent two-minute watcher. Therefor
 - LLMaJ/compliance check passes;
 - verifier tests pass ruff and are requirement-complete;
 - five-run difficulty policy passes;
-- any 0/5 or too-easy result has been analyzed and recalibrated;
+- at least two of five complete agent runs fail;
+- every verifier test case passes in at least one of the five agent attempts;
+- every 0/5 verifier test-case result has been analyzed and remediated;
 - final Compliance Auditor has no blocker/high issue;
 - Human Quality Reviewer finds no material AI-tone/leakage problem;
 - final package contains only allowed task contents.
