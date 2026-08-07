@@ -1,0 +1,203 @@
+name: Terminus Edition 3 CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+    inputs:
+      task:
+        description: Top-level task directory
+        required: true
+        type: string
+      mode:
+        description: Validation is cheap enough for PRs; difficulty runs both five-trial model suites
+        required: true
+        default: validate
+        type: choice
+        options:
+          - validate
+          - difficulty
+
+permissions:
+  contents: read
+
+concurrency:
+  group: terminus-ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  changed-tasks:
+    name: Detect changed tasks
+    runs-on: ubuntu-latest
+    outputs:
+      tasks: ${{ steps.tasks.outputs.tasks }}
+      count: ${{ steps.tasks.outputs.count }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - id: tasks
+        name: Build task matrix
+        shell: bash
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          MANUAL_TASK: ${{ inputs.task }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          set -euo pipefail
+
+          if [[ "$EVENT_NAME" == "workflow_dispatch" ]]; then
+            candidates="$MANUAL_TASK"
+          else
+            base="$BASE_SHA"
+            if [[ -z "$base" || "$base" =~ ^0+$ ]]; then
+              base="$(git rev-parse "$HEAD_SHA^" 2>/dev/null || git rev-list --max-parents=0 "$HEAD_SHA")"
+            fi
+            candidates="$(
+              git diff --name-only "$base" "$HEAD_SHA" |
+                awk -F/ 'NF > 1 { print $1 }' |
+                sort -u
+            )"
+          fi
+
+          tasks=()
+          while IFS= read -r candidate; do
+            [[ -n "$candidate" ]] || continue
+            if [[ "$candidate" == /* || "$candidate" == *".."* || "$candidate" == */* ]]; then
+              echo "::error::Invalid top-level task directory: $candidate"
+              exit 1
+            fi
+            if [[ -f "$candidate/task.toml" ]]; then
+              tasks+=("$candidate")
+            elif [[ "$EVENT_NAME" == "workflow_dispatch" ]]; then
+              echo "::error::No task.toml found in top-level directory '$candidate'"
+              exit 1
+            fi
+          done <<< "$candidates"
+
+          json="$(printf '%s\n' "${tasks[@]}" | jq -Rsc 'split("\n") | map(select(length > 0))')"
+          echo "tasks=$json" >> "$GITHUB_OUTPUT"
+          echo "count=${#tasks[@]}" >> "$GITHUB_OUTPUT"
+          echo "Selected tasks: $json" >> "$GITHUB_STEP_SUMMARY"
+
+  validate:
+    name: Validate ${{ matrix.task }}
+    needs: changed-tasks
+    if: needs.changed-tasks.outputs.count != '0' && (github.event_name != 'workflow_dispatch' || inputs.mode == 'validate')
+    strategy:
+      fail-fast: false
+      matrix:
+        task: ${{ fromJSON(needs.changed-tasks.outputs.tasks) }}
+    runs-on:
+      - self-hosted
+      - linux
+    timeout-minutes: 180
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Verify runner prerequisites
+        shell: bash
+        run: |
+          set -euo pipefail
+          command -v docker
+          command -v stb
+          docker info >/dev/null
+          ./terminus3.sh version
+
+      - name: Oracle must score 1
+        shell: bash
+        env:
+          TASK: ${{ matrix.task }}
+          JOBS_DIR: ${{ runner.temp }}/terminus-e3/${{ github.run_id }}/${{ github.run_attempt }}/${{ matrix.task }}/oracle
+        run: |
+          set -euo pipefail
+          mkdir -p "$JOBS_DIR"
+          ./terminus3.sh oracle "$TASK"
+
+          mapfile -t rewards < <(find "$JOBS_DIR" -type f -name reward.txt -print)
+          (( ${#rewards[@]} > 0 )) || {
+            echo "::error::Oracle produced no reward.txt"
+            exit 1
+          }
+          for reward_file in "${rewards[@]}"; do
+            reward="$(tr -d '[:space:]' < "$reward_file")"
+            [[ "$reward" == "1" || "$reward" == "1.0" ]] || {
+              echo "::error file=$reward_file::Oracle reward was '$reward'; expected 1"
+              exit 1
+            }
+          done
+
+      - name: NOP must score 0
+        shell: bash
+        env:
+          TASK: ${{ matrix.task }}
+          JOBS_DIR: ${{ runner.temp }}/terminus-e3/${{ github.run_id }}/${{ github.run_attempt }}/${{ matrix.task }}/nop
+        run: |
+          set -euo pipefail
+          mkdir -p "$JOBS_DIR"
+          ./terminus3.sh nop "$TASK"
+
+          mapfile -t rewards < <(find "$JOBS_DIR" -type f -name reward.txt -print)
+          (( ${#rewards[@]} > 0 )) || {
+            echo "::error::NOP produced no reward.txt"
+            exit 1
+          }
+          for reward_file in "${rewards[@]}"; do
+            reward="$(tr -d '[:space:]' < "$reward_file")"
+            [[ "$reward" == "0" || "$reward" == "0.0" ]] || {
+              echo "::error file=$reward_file::NOP reward was '$reward'; expected 0"
+              exit 1
+            }
+          done
+
+      - name: Run Harbor structural check
+        shell: bash
+        run: ./terminus3.sh check "${{ matrix.task }}"
+
+      - name: Run LLMaJ check
+        shell: bash
+        run: ./terminus3.sh check-llm "${{ matrix.task }}"
+
+  difficulty:
+    name: GPT-5.5 x5 and Claude Opus 4.8 x5
+    if: github.event_name == 'workflow_dispatch' && inputs.mode == 'difficulty'
+    runs-on:
+      - self-hosted
+      - linux
+    timeout-minutes: 720
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate task selection and runner
+        shell: bash
+        env:
+          TASK: ${{ inputs.task }}
+        run: |
+          set -euo pipefail
+          if [[ "$TASK" == /* || "$TASK" == *".."* || "$TASK" == */* ]]; then
+            echo "::error::Task must be a top-level directory name"
+            exit 1
+          fi
+          [[ -f "$TASK/task.toml" ]] || {
+            echo "::error::No task.toml found in '$TASK'"
+            exit 1
+          }
+          command -v docker
+          command -v stb
+          docker info >/dev/null
+          ./terminus3.sh version
+
+      - name: Run both official difficulty suites
+        shell: bash
+        env:
+          TASK: ${{ inputs.task }}
+          JOBS_DIR: ${{ runner.temp }}/terminus-e3-difficulty/${{ github.run_id }}/${{ github.run_attempt }}/${{ inputs.task }}
+        run: |
+          set -euo pipefail
+          mkdir -p "$JOBS_DIR"
+          ./terminus3.sh difficulty "$TASK"
+          echo "Difficulty jobs: $JOBS_DIR" >> "$GITHUB_STEP_SUMMARY"
