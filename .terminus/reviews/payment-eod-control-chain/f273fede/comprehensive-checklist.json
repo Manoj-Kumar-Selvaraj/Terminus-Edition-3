@@ -7,13 +7,13 @@
   "policy_freshness": "UNVERIFIED",
   "checklist_coverage_percent": 100,
   "recommendation": "INSUFFICIENT_EVIDENCE",
-  "counts": {"high_failures":0,"medium_failures":0,"low_failures":0,"insufficient_evidence":2,"not_applicable":18},
+  "counts": {"high_failures":0,"medium_failures":0,"low_failures":0,"insufficient_evidence":2,"not_applicable":21},
   "policy_conflicts": [
-    {"id":"PC-001","status":"OPEN","issue":"Supplied checklist defines solvability over 10 runs; existing local controller historically used five. Final difficulty acceptance cannot silently equate them."},
+    {"id":"PC-001","status":"RESOLVED","issue":"Supplied checklist defines solvability over 10 runs while each official model command uses five.","resolution":"TERMINUS_3_AI_INSTRUCTIONS.md confirms Claude Opus 4.8 x5 plus GPT-5.5 x5 and states their mean sets final difficulty. Final solvability/per-test coverage is therefore evaluated across the combined 10 trials; a five-run model suite is diagnostic only."},
     {"id":"PC-002","status":"RESOLVED","issue":"README/rubrics task-layout wording differs across sources.","resolution":"Current authoritative TERMINUS_3_AI_INSTRUCTIONS.md requires README.md in task layout and forbids rubrics.txt/rubric.txt in ZIP."},
     {"id":"PC-003","status":"RESOLVED","issue":"Metadata placement differed in supplied checklist snapshot.","resolution":"Current authoritative TERMINUS_3_AI_INSTRUCTIONS.md canonical task.toml keeps category/subcategory/tags/languages/difficulty/expert_time_estimate_hours top-level and author fields under [metadata]."}
   ],
-  "test_quality_eval_dispositions": {"req-gap":"NOT_AVAILABLE","weak-assertion":"NOT_AVAILABLE","phantom-spec":"NOT_AVAILABLE","flaky-execution":"NOT_AVAILABLE","vacuous-test":"NOT_AVAILABLE"},
+  "test_quality_eval_dispositions": {"req-gap":"INSUFFICIENT_EVIDENCE","weak-assertion":"INSUFFICIENT_EVIDENCE","phantom-spec":"INSUFFICIENT_EVIDENCE","flaky-execution":"INSUFFICIENT_EVIDENCE","vacuous-test":"INSUFFICIENT_EVIDENCE"},
   "trial_analysis_dispositions": {"task_specification":"NOT_APPLICABLE_PRE_TRIAL","reward_hacking":"NOT_APPLICABLE_PRE_TRIAL","difficulty_crux":"NOT_APPLICABLE_PRE_TRIAL","near_miss":"NOT_APPLICABLE_PRE_TRIAL","refusals":"NOT_APPLICABLE_PRE_TRIAL","low_timeout":"NOT_APPLICABLE_PRE_TRIAL"},
   "criteria": {
     "RC-INS-001":"PASS","RC-INS-002":"PASS","RC-INS-003":"PASS","RC-INS-004":"PASS","RC-INS-005":"PASS","RC-INS-006":"PASS","RC-INS-007":"PASS","RC-INS-008":"PASS","RC-INS-009":"PASS","RC-INS-010":"PASS",
@@ -27,7 +27,8 @@
   },
   "open_evidence": [
     "RC-ENV-011 requires a deterministic build-context size measurement for the current task tree.",
-    "RC-SOL-001 requires a fresh Oracle run for task commit f273fede; current CI is blocked before Oracle by Portkey refresh quota."
+    "RC-SOL-001 requires a fresh Oracle run for task commit f273fede; current CI is blocked before Oracle by Portkey refresh quota.",
+    "Official automated test-quality eval flags have not yet been produced for this current task revision; manual Verifier Engineer review is PASS but does not substitute for the platform helper eval."
   ],
   "all_findings": []
 }
