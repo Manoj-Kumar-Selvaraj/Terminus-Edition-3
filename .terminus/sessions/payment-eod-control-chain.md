@@ -3,24 +3,25 @@
 ## Identity
 
 - Task: `payment-eod-control-chain`
-- Controller state: `VALIDATED`
+- Controller state: `VALIDATING`
 - Working branch: `agent/ci-payment-eod-validate`
 - Pull request: `#2`
-- Last checkpoint task commit: `d0751b1d72a85a103c60015e41ee1654981410a6`
+- Last checkpoint task commit: `38eb445e976be327a8fb2064ff896df24a85cd7d`
 
 ## Current gates
 
 | Gate | Status | Evidence |
 | --- | --- | --- |
-| Preflight/static | PASS | run 31200979809 (#49) |
-| Ruff verifier | PASS | run 31200979809 (#49) |
-| STB auth/AI credentials | BLOCKED | later run attempt hit Portkey maximum refresh limit 20; prior successful runs prove credentials worked |
-| Oracle = 1 | PASS | run 31200979809 (#49); also passed run 31201744808 attempt 2 |
-| NOP = 0 | PASS | run 31200979809 (#49) |
-| LLMaJ | PASS | run 31200979809 (#49) |
-| Evidence manifest | PASS | fixed workflow; run 31201744808 attempts 1-3 prove manifest step succeeds |
+| Preflight/static | PASS | run 31200979809 (#49); no structural verifier change since |
+| Ruff verifier | PASS | run 31200979809 (#49); verifier unchanged |
+| STB auth/AI credentials | BLOCKED | active Edition-2 Portkey project/account reached maximum refresh limit 20 |
+| Oracle = 1 | PASS | run 31200979809 (#49); oracle/verifier behavior unchanged by instruction-only rewrite |
+| NOP = 0 | PASS | run 31200979809 (#49); starter/verifier behavior unchanged by instruction-only rewrite |
+| LLMaJ | STALE | instruction.md changed in 38eb445; rerun required when reusable AI credentials are available |
+| Evidence manifest | PASS | fixed workflow; later validation attempts prove manifest step succeeds |
 | Difficulty 5x | NOT_RUN | blocked until reusable AI credentials avoid fresh refresh consumption |
 | Per-test 1/5 minimum | NOT_RUN | difficulty not run |
+| Instruction Reviewer | PENDING | new dedicated final gate; current instruction rewritten to ~126 words but must receive an independent final PASS |
 | Compliance audit | PENDING | final audit not run |
 | Human quality audit | PENDING | final audit not run |
 | Final package | PENDING | task not submission-ready |
@@ -34,9 +35,13 @@ Successful task-gate run:
 - PR head: `c1ee91a81071830aa9c2eab4f880a3484abb12e9`
 - Result: Oracle PASS, NOP PASS, LLMaJ PASS. The job was red only because the old evidence-manifest shell command failed after all substantive gates had passed.
 
-Evidence-manifest fix:
-- Workflow commit: `3a881259758017973741eadc73e3a2a73cce23b4`
-- Later runs show `Build validation evidence manifest` PASS.
+Instruction revision:
+- `38eb445e976be327a8fb2064ff896df24a85cd7d` rewrote `instruction.md` from a dense schema-heavy specification into a concise two-paragraph incident ticket (~126 words).
+- The business behavior was not intentionally changed; output schemas and detailed business invariants remain in the supplied `/app/eod/contracts/eod_contract.md` referenced by the instruction.
+- Because instruction.md changed, LLMaJ and final text-quality review are stale/pending even though Oracle/NOP behavior evidence remains valid.
+
+CI clarity change:
+- `896eefc51b8e9b79d0ce50c1957307837f42de95` added `paths-ignore: .terminus/**` for pushes to main, so checkpoint-only controller updates no longer create misleading all-skipped green validation runs.
 
 Later infrastructure-only failures:
 - Run `31201744808` attempt 1: Snorkel `/users/me` returned HTTP 502 before task execution.
@@ -45,26 +50,29 @@ Later infrastructure-only failures:
 
 ## Current blocker
 
-Fresh GitHub-hosted runners currently require `stb keys refresh`, and the active Edition-2 Portkey project/account has reached its maximum refresh count. Do not burn further runs by repeatedly refreshing credentials. The task itself is validated; the next infrastructure objective is reusable model credentials that can be injected securely from GitHub Secrets (or another approved durable credential mechanism) without generating a new Portkey key on every runner.
+Fresh GitHub-hosted runners currently require `stb keys refresh`, and the active Edition-2 Portkey project/account has reached its maximum refresh count. Do not burn further runs by repeatedly refreshing credentials. The next infrastructure objective is reusable model credentials injected securely from GitHub Secrets (or another approved durable mechanism) without generating a new Portkey key on every runner.
 
 ## Root-cause classification
 
 - Owner: `CI Orchestrator`
 - Classification: `ci_infrastructure`
 - Evidence: run `31201744808` attempt 3 shows `Maximum refresh limit (20) reached` in `Authenticate stb and refresh AI credentials`.
-- Task edits required: `none`.
+- Task edits required for credential failure: `none`.
 
 ## Task fixes already completed
 
-1. Environment Dockerfile now creates `/app/eod/state` before initializing SQLite.
+1. Environment Dockerfile creates `/app/eod/state` before initializing SQLite.
 2. Oracle solution paths use Harbor's `/solution` mount instead of `/oracle`.
-3. Removed nonexistent `/solution/correct/payexec.cob` copy; the starter `PAYEXEC` program already satisfies its direct interface tests.
-4. Oracle now copies corrected `paydup.cob`, `schema.sql`, and `run_eod.sh`, rebuilds sample state, and executes the corrected EOD flow.
-5. Evidence-manifest shell enumeration was fixed and difficulty CI was aligned with the per-test 0/5 policy.
+3. Removed nonexistent `/solution/correct/payexec.cob` copy; starter PAYEXEC satisfies its direct interface tests.
+4. Oracle copies corrected `paydup.cob`, `schema.sql`, and `run_eod.sh`, rebuilds sample state, and executes the corrected EOD flow.
+5. Evidence-manifest shell enumeration was fixed and difficulty CI aligned with the per-test 0/5 policy.
+6. `instruction.md` was rewritten to a concise two-paragraph incident ticket (~126 words).
+7. Dedicated Instruction Reviewer was added as a mandatory final submission gate.
+8. `.terminus/**`-only pushes no longer trigger task validation on main.
 
 ## Next action
 
-Implement a secure reusable-AI-credential path for CI so fresh runners do not call Portkey refresh unnecessarily. Do not request or store secret values in chat or repository files. Once credentials are reusable, run one clean validation if needed, then run final five-trial difficulty calibration and inspect both complete-run distribution and per-verifier-test coverage.
+Implement a secure reusable-AI-credential path for CI so fresh runners do not consume another Portkey refresh. Then rerun LLMaJ/normal validation for the revised instruction, execute five-trial difficulty calibration, analyze complete-run and per-test coverage, and run the dedicated Instruction Reviewer before final compliance/human-quality/package gates.
 
 ## Difficulty checkpoint
 
@@ -79,12 +87,22 @@ Acceptance policy:
 - 4/5 or 5/5 complete solutions passing is too easy and requires recalibration.
 - At least two of five complete attempts must fail.
 - Every individual verifier test case must pass in at least one of five attempts.
-- Any verifier test case at 0/5 is an acceptance blocker; analyze all relevant trajectories and repair the task/instruction/environment/verifier until no test remains 0/5.
+- Any verifier test case at 0/5 is an acceptance blocker; analyze trajectories and repair the task/instruction/environment/verifier until no test remains 0/5.
+
+## Instruction review checkpoint
+
+- Verdict: `PENDING`
+- Word count: `~126`
+- Material requirements preserved: `intended yes; final dedicated review must verify against contract + verifier`
+- Evidence/review: `instruction revision commit 38eb445; final Instruction Reviewer not yet run`
+
+Any later instruction.md change makes this gate STALE until the dedicated Instruction Reviewer runs again.
 
 ## Decisions that must survive chat changes
 
 - Use current Terminus Edition 3 rule files and `.terminus/AGENT_SYSTEM.md` as authoritative local tasking guidance.
-- Use the seven-role agent system: Task Architect, Verifier Engineer, Compliance Auditor, Difficulty Reviewer, Human Quality Reviewer, Trajectory Analyst, CI Orchestrator / Submission Controller.
+- Use the eight-role agent system: Task Architect, Verifier Engineer, Compliance Auditor, Difficulty Reviewer, Human Quality Reviewer, Instruction Reviewer, Trajectory Analyst, CI Orchestrator / Submission Controller.
+- Instruction Reviewer is independent and mandatory at final submission even when Human Quality Reviewer passes.
 - The CI Orchestrator owns the active loop and routes evidence to specialist roles; the user should not need to manually choose agents for each failure.
 - Keep 25 pinned Terminal-Bench golden references under `.terminus/GOLDEN_TASKS.md` for calibration only, never as templates to copy.
 - GitHub repository + Actions evidence are the durable operational source of truth; chat history is replaceable.
@@ -101,6 +119,8 @@ Acceptance policy:
 
 ## Attempts / changes
 
+- `38eb445` — rewrote instruction.md to ~126 words, two concise incident-focused paragraphs; final Instruction Reviewer pending.
+- `896eefc` — checkpoint-only `.terminus/**` pushes no longer trigger main task-validation workflow.
 - `d0751b1` — removed nonexistent PAYEXEC oracle payload copy; next Oracle passed.
 - Run `31200979809` (#49) — Oracle=1, NOP=0, LLMaJ PASS; only old evidence-manifest command failed.
 - `3a88125` — fixed validation/difficulty evidence manifests and aligned difficulty messaging/`--tests-dir` with per-test policy.
@@ -113,7 +133,8 @@ Acceptance policy:
 - Do not call `stb keys refresh` repeatedly on fresh runners after the maximum refresh limit is reached.
 - Do not switch CI to the unallocated Edition 3 Portkey project unless account allocation has actually changed.
 - Do not modify task logic in response to HTTP 502/read-timeout/refresh-quota failures.
-- Do not run difficulty until reusable AI credentials are available, otherwise the five-run suites can be interrupted before producing analyzable trajectories.
+- Do not run difficulty until reusable AI credentials are available, otherwise five-run suites can be interrupted before producing analyzable trajectories.
+- Do not mark submission ready without a final dedicated Instruction Reviewer PASS.
 
 ## Resume rule
 
