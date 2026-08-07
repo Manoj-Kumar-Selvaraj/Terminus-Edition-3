@@ -1,6 +1,6 @@
 # Pre-LLMaJ Review Panel
 
-Panel policy version: `2.1`
+Panel policy version: `2.2`
 
 Purpose: predict likely Harbor `check` and human-review failures before spending Harbor/model time. Pre-LLMaJ is not a replacement for Harbor LLMaJ or final human review.
 
@@ -12,7 +12,7 @@ Read first:
 - `.terminus/reviewers/REVIEWER_CHECKLIST.md`;
 - `.terminus/reviewers/reviewer_criteria.json`.
 
-The stored reviewer checklist snapshot was supplied by the project owner on 2026-08-08. Its public URL currently returns 404 through automated web access, so final-review policy freshness must be recorded rather than assumed.
+The stored reviewer checklist snapshot was supplied by the project owner on 2026-08-08. Its public URL currently returns 404 through automated web access, so final-review policy freshness must be recorded rather than assumed. Where a checklist statement has been independently confirmed by current authoritative Edition 3 rules, record that resolution rather than preserving a false conflict.
 
 ## Stage A — deterministic facts
 
@@ -82,7 +82,7 @@ Required properties:
 - policy conflicts are surfaced rather than silently resolved;
 - missing acceptance-relevant evidence produces `INSUFFICIENT_EVIDENCE`.
 
-The Comprehensive Reviewer is a breadth backstop. It does **not** replace specialist reviewers. A task needs both specialist depth and comprehensive breadth.
+The Comprehensive Reviewer is a breadth backstop. It does not replace specialist reviewers. A task needs both specialist depth and comprehensive breadth.
 
 ## Stage E — disagreement and omission scan
 
@@ -110,7 +110,7 @@ Only after deterministic checks, specialist reviews, evidence sufficiency, Compr
 ```text
 PRE_LLMAJ: PASS | REVISE | REJECT | INSUFFICIENT_EVIDENCE | POLICY_CONFLICT
 TASK_COMMIT:
-PANEL_POLICY_VERSION: 2.1
+PANEL_POLICY_VERSION: 2.2
 AGENT_PROMPT_POLICY_VERSION:
 CHECKLIST_VERSION:
 POLICY_FRESHNESS: CURRENT | UNVERIFIED | STALE
@@ -141,7 +141,7 @@ Aggregate PASS requires:
 - no unresolved reviewer disagreement;
 - no acceptance-relevant `POLICY_CONFLICT`;
 - Originality is not REJECT;
-- all reports apply to the same relevant task version and current reviewer policy.
+- all reports apply to the same relevant task version and current role-specific reviewer policy.
 
 ## Comprehensive severity rules
 
@@ -154,15 +154,22 @@ The panel must preserve these distinctions:
 
 Do not flatten all Medium criteria into one policy.
 
-## Solvability policy conflict
+## Official difficulty/solvability interpretation
 
-The supplied reviewer checklist defines task solvability across **10 runs**: every individual verifier test must pass at least once across those runs. The current local difficulty controller uses a custom **5-run** policy.
+Current authoritative Edition 3 guidance confirms the two official evaluation suites:
 
-Until this is explicitly reconciled by current authoritative project guidance:
+- Claude Opus 4.8 / Claude Code ×5;
+- GPT-5.5 / Codex ×5.
 
-- do not claim five runs satisfy the checklist's ten-run solvability definition;
-- record the discrepancy as a policy conflict when a final review depends on it;
-- do not silently increase/decrease trial count solely from this cached snapshot without checking current authoritative rules.
+Their combined 10-run mean sets final difficulty. The reviewer checklist's “across 10 runs, every individual test passes at least once” solvability rule therefore applies across the **combined 10 official trials**.
+
+Consequences:
+
+- each five-run model suite is diagnostic only;
+- do not require 1/5 per-test success separately in both models;
+- do not call 4/5 or 5/5 in one model automatically too easy;
+- final tier uses the combined 10-run pass rate: `<20% frontier`, `20–<50% advanced`, `50–<80% core`, `80–<100% base`, `100% reject`;
+- any individual verifier test at 0/10 blocks solvability and requires trajectory analysis.
 
 ## Producer loop
 
