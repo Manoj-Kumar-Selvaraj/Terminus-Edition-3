@@ -3,7 +3,7 @@
 ## Identity
 
 - Task: `payment-eod-control-chain`
-- Controller state: `VALIDATING`
+- Controller state: `PRE_LLMAJ`
 - Working branch: `agent/ci-payment-eod-validate`
 - Pull request: `#2`
 - Last checkpoint task commit: `38eb445e976be327a8fb2064ff896df24a85cd7d`
@@ -13,129 +13,124 @@
 | Gate | Status | Evidence |
 | --- | --- | --- |
 | Preflight/static | PASS | run 31200979809 (#49); no structural verifier change since |
-| Ruff verifier | PASS | run 31200979809 (#49); verifier unchanged |
+| Ruff verifier | PASS | run 31200979809 (#49) |
 | STB auth/AI credentials | BLOCKED | active Edition-2 Portkey project/account reached maximum refresh limit 20 |
-| Oracle = 1 | PASS | run 31200979809 (#49); oracle/verifier behavior unchanged by instruction-only rewrite |
-| NOP = 0 | PASS | run 31200979809 (#49); starter/verifier behavior unchanged by instruction-only rewrite |
-| LLMaJ | STALE | instruction.md changed in 38eb445; rerun required when reusable AI credentials are available |
-| Evidence manifest | PASS | fixed workflow; later validation attempts prove manifest step succeeds |
-| Difficulty 5x | NOT_RUN | blocked until reusable AI credentials avoid fresh refresh consumption |
+| Oracle = 1 | PASS | run 31200979809 (#49) |
+| NOP = 0 | PASS | run 31200979809 (#49) |
+| Pre-LLMaJ panel | REVISE | baseline review after new panel implementation |
+| Originality & Authenticity | REVISE | duplicate risk LOW, template risk MEDIUM, realism HIGH |
+| Instruction Reviewer | PASS | revised ~126-word incident-style instruction; must rerun after any structural contract change |
+| Documentation Reviewer | REVISE | README still uses synthetic benchmark-style Difficulty/Solution/Verification structure and polished rubric-like prose |
+| Harbor LLMaJ | STALE | old task version passed run #49; instruction changed afterward; do not rerun until Pre-LLMaJ PASS and reusable credentials exist |
+| Difficulty 5x | NOT_RUN | blocked by Pre-LLMaJ findings and reusable-credential problem |
 | Per-test 1/5 minimum | NOT_RUN | difficulty not run |
-| Instruction Reviewer | PENDING | new dedicated final gate; current instruction rewritten to ~126 words but must receive an independent final PASS |
 | Compliance audit | PENDING | final audit not run |
 | Human quality audit | PENDING | final audit not run |
 | Final package | PENDING | task not submission-ready |
 
 ## Latest meaningful validation evidence
 
-Successful task-gate run:
-- Workflow run ID: `31200979809`
-- Run number: `49`
-- Validate job ID: `92940649690`
-- PR head: `c1ee91a81071830aa9c2eab4f880a3484abb12e9`
-- Result: Oracle PASS, NOP PASS, LLMaJ PASS. The job was red only because the old evidence-manifest shell command failed after all substantive gates had passed.
+- Run `31200979809` (#49): Oracle=1, NOP=0, Harbor LLMaJ PASS on the earlier instruction version; only the then-old evidence-manifest command failed after substantive gates.
+- `38eb445`: rewrote `instruction.md` to ~126 words. This makes Harbor LLMaJ text review stale even though Oracle/NOP functional evidence remains useful.
+- Later attempts were infrastructure-only failures: Snorkel HTTP 502, Harbor read timeout, then Portkey maximum refresh limit 20.
 
-Instruction revision:
-- `38eb445e976be327a8fb2064ff896df24a85cd7d` rewrote `instruction.md` from a dense schema-heavy specification into a concise two-paragraph incident ticket (~126 words).
-- The business behavior was not intentionally changed; output schemas and detailed business invariants remain in the supplied `/app/eod/contracts/eod_contract.md` referenced by the instruction.
-- Because instruction.md changed, LLMaJ and final text-quality review are stale/pending even though Oracle/NOP behavior evidence remains valid.
+## Pre-LLMaJ checkpoint
 
-CI clarity change:
-- `896eefc51b8e9b79d0ce50c1957307837f42de95` added `paths-ignore: .terminus/**` for pushes to main, so checkpoint-only controller updates no longer create misleading all-skipped green validation runs.
+- Aggregate: `REVISE`
+- Task Architect: `PASS` — coherent payment restart/reconciliation problem with credible cross-component invariants.
+- Verifier Engineer: `PASS` provisionally — semantic end-to-end scenarios, Oracle/NOP previously proven; final req↔test audit still required after structural changes.
+- Originality & Authenticity: `REVISE`
+- Difficulty design: `PASS` as Advanced candidate, not empirically calibrated.
+- Compliance: `PENDING` final audit.
+- Instruction: `PASS` on current wording.
+- Documentation: `REVISE`.
+- Open findings: reduce artificial benchmark construction signals in failure topology/supporting contract and rewrite README/explanations in natural engineering review voice before spending another Harbor LLMaJ run.
 
-Later infrastructure-only failures:
-- Run `31201744808` attempt 1: Snorkel `/users/me` returned HTTP 502 before task execution.
-- Run `31201744808` attempt 2: Oracle PASS; NOP Harbor call failed before trial execution with `The read operation timed out`.
-- Run `31201744808` attempt 3: STB login PASS; Portkey refresh failed with `Maximum refresh limit (20) reached` before task execution.
+## Originality & Authenticity baseline
+
+- Verdict: `REVISE`
+- Duplicate risk: `LOW`
+- Template risk: `MEDIUM`
+- Realism: `HIGH`
+- Provenance: payment EOD functional flow with COBOL decision programs, SQL durable state, shell orchestration, accounting/reconciliation/completion semantics.
+- Nearest public reference reviewed: Terminal-Bench `payments-pipeline-fix`; overlap is only financial/restart correctness. Its Python worker startup/overdraft-notification topology is materially different.
+- Distinctive features: COBOL + SQL + shell; internal-vs-external payment effects; reservation-before-clearing; ledger reconciliation; completion prerequisite; single authorization; restart idempotency.
+- Artificial-construction signal: current starter/supporting contract is unusually tidy, with a sequence of planted defects and documentation sections that align closely with verifier families. It can look like a benchmark assembled one invariant at a time rather than one organically coupled production incident.
+- Required structural review: consolidate the failure story around fewer coupled restart/reconciliation defects rather than a neat one-bug-per-requirement pattern; keep verifier coverage broad without making starter defects mirror the rubric one-to-one.
+
+## Instruction review checkpoint
+
+- Verdict: `PASS` on current version.
+- Word count: `~126`.
+- Human signal: `HIGH`.
+- AI-template signal: `LOW`.
+- Spec dump: `NONE` in `instruction.md`; detail is referenced through the supplied contract.
+- Rerun required after any structural task/contract change.
+
+## Documentation review checkpoint
+
+- Verdict: `REVISE`.
+- Main issue: README currently uses explicit `Difficulty rationale`, `Solution approach`, `Verification approach`, and source mapping in a polished, comprehensive benchmark voice. The content is useful, but the presentation reads as if written to satisfy a review rubric rather than as an engineer explaining the work.
+- Next documentation change should retain technical evidence while explaining the actual reasoning bottleneck, key invariant choices, and why the verifier catches plausible partial fixes. Avoid generic phrases and feature enumeration.
 
 ## Current blocker
 
-Fresh GitHub-hosted runners currently require `stb keys refresh`, and the active Edition-2 Portkey project/account has reached its maximum refresh count. Do not burn further runs by repeatedly refreshing credentials. The next infrastructure objective is reusable model credentials injected securely from GitHub Secrets (or another approved durable mechanism) without generating a new Portkey key on every runner.
+Two blockers remain before another expensive Harbor review:
 
-## Root-cause classification
+1. Pre-LLMaJ is `REVISE` because originality/authenticity and documentation need structural/prose work.
+2. Fresh GitHub-hosted runners cannot generate another Portkey key because the current Edition-2 allocation hit its refresh ceiling.
 
-- Owner: `CI Orchestrator`
-- Classification: `ci_infrastructure`
-- Evidence: run `31201744808` attempt 3 shows `Maximum refresh limit (20) reached` in `Authenticate stb and refresh AI credentials`.
-- Task edits required for credential failure: `none`.
-
-## Task fixes already completed
-
-1. Environment Dockerfile creates `/app/eod/state` before initializing SQLite.
-2. Oracle solution paths use Harbor's `/solution` mount instead of `/oracle`.
-3. Removed nonexistent `/solution/correct/payexec.cob` copy; starter PAYEXEC satisfies its direct interface tests.
-4. Oracle copies corrected `paydup.cob`, `schema.sql`, and `run_eod.sh`, rebuilds sample state, and executes the corrected EOD flow.
-5. Evidence-manifest shell enumeration was fixed and difficulty CI aligned with the per-test 0/5 policy.
-6. `instruction.md` was rewritten to a concise two-paragraph incident ticket (~126 words).
-7. Dedicated Instruction Reviewer was added as a mandatory final submission gate.
-8. `.terminus/**`-only pushes no longer trigger task validation on main.
+Neither blocker should be addressed by weakening verifier requirements.
 
 ## Next action
 
-Implement a secure reusable-AI-credential path for CI so fresh runners do not consume another Portkey refresh. Then rerun LLMaJ/normal validation for the revised instruction, execute five-trial difficulty calibration, analyze complete-run and per-test coverage, and run the dedicated Instruction Reviewer before final compliance/human-quality/package gates.
+Refine the current task structurally to reduce one-bug-per-requirement/template signals, then rewrite README/Difficulty/Solution/Verification through the Engineering Documentation Reviewer. Re-run Instruction/Originality/Verifier reviewers after that change. Only when aggregate Pre-LLMaJ=PASS should Harbor LLMaJ be retried; difficulty follows after reusable AI credentials are available.
 
 ## Difficulty checkpoint
 
 - Suite/model: `NOT_RUN`
 - Complete-run passes: `NOT_RUN`
 - Complete-run failures: `NOT_RUN`
-- Verifier test cases at 0/5: `NOT_RUN`
-- Difficulty evidence artifact: `none`
-- Result freshness: `NOT_RUN`
+- Verifier tests at 0/5: `NOT_RUN`
+- Evidence: `none`
+- Freshness: `NOT_RUN`
 
-Acceptance policy:
-- 4/5 or 5/5 complete solutions passing is too easy and requires recalibration.
-- At least two of five complete attempts must fail.
-- Every individual verifier test case must pass in at least one of five attempts.
-- Any verifier test case at 0/5 is an acceptance blocker; analyze trajectories and repair the task/instruction/environment/verifier until no test remains 0/5.
+Acceptance policy: at least two complete attempts fail; every verifier test must pass at least once among five attempts; 4/5 or 5/5 complete passes is too easy; any test at 0/5 blocks acceptance.
 
-## Instruction review checkpoint
+## Durable reviewer system
 
-- Verdict: `PENDING`
-- Word count: `~126`
-- Material requirements preserved: `intended yes; final dedicated review must verify against contract + verifier`
-- Evidence/review: `instruction revision commit 38eb445; final Instruction Reviewer not yet run`
-
-Any later instruction.md change makes this gate STALE until the dedicated Instruction Reviewer runs again.
+- Pre-LLMaJ panel: `.terminus/reviewers/PRE_LLMAJ.md`
+- Human-writing calibration: `.terminus/reviewers/HUMAN_WRITING_CALIBRATION.md`
+- Synthetic contrast/example bank: `.terminus/reviewers/WRITING_EXAMPLE_BANK.md`
+- Harbor feedback learning loop: `.terminus/reviewers/LLMAJ_LEARNING_LOG.md`
+- Specialist prompts: `.terminus/agents/PROMPTS.md`
+- Golden references: `.terminus/GOLDEN_TASKS.md`
 
 ## Decisions that must survive chat changes
 
-- Use current Terminus Edition 3 rule files and `.terminus/AGENT_SYSTEM.md` as authoritative local tasking guidance.
-- Use the eight-role agent system: Task Architect, Verifier Engineer, Compliance Auditor, Difficulty Reviewer, Human Quality Reviewer, Instruction Reviewer, Trajectory Analyst, CI Orchestrator / Submission Controller.
-- Instruction Reviewer is independent and mandatory at final submission even when Human Quality Reviewer passes.
-- The CI Orchestrator owns the active loop and routes evidence to specialist roles; the user should not need to manually choose agents for each failure.
-- Keep 25 pinned Terminal-Bench golden references under `.terminus/GOLDEN_TASKS.md` for calibration only, never as templates to copy.
-- GitHub repository + Actions evidence are the durable operational source of truth; chat history is replaceable.
-- After a substantive task/verifier/instruction/environment change, previous difficulty results become stale and normal validation must run again.
-- Infrastructure/network failures such as HTTP 502, read timeouts, or credential-generation quotas must not be treated as task/verifier failures.
+- Use the ten-role agent system in `.terminus/AGENT_SYSTEM.md`.
+- Originality & Authenticity review is mandatory before difficulty.
+- Pre-LLMaJ must PASS before slow Harbor `check` is invoked.
+- Harbor findings missed by Pre-LLMaJ must be converted into generalized reviewer calibration evidence before retrying.
+- Instruction and engineering-documentation writing are separate review roles.
+- Writing reviewers must read the calibration/example bank; do not merely prompt them to "sound human".
+- GitHub + CI/artifacts are durable state; chat is replaceable.
+- Infrastructure 502/timeouts/credential quotas are not task failures.
 
-## Known non-task infrastructure facts
+## Known infrastructure facts
 
-- CI uses `snorkelai-stb==2.4.1` as the known-good version.
-- Until an Edition 3 Portkey project is allocated, workflow defaults to Edition 2 Portkey project ID `bfe79c33-8ab0-4061-9849-08d3207c9927`.
-- `SNORKEL_API_KEY` is injected via GitHub Actions secret; never store its value in repository files or chat.
-- GitHub-hosted runners are used; no self-hosted runner is required.
-- Repeated `stb keys refresh` calls consume a finite refresh allowance and are not a sustainable per-run authentication strategy.
-
-## Attempts / changes
-
-- `38eb445` — rewrote instruction.md to ~126 words, two concise incident-focused paragraphs; final Instruction Reviewer pending.
-- `896eefc` — checkpoint-only `.terminus/**` pushes no longer trigger main task-validation workflow.
-- `d0751b1` — removed nonexistent PAYEXEC oracle payload copy; next Oracle passed.
-- Run `31200979809` (#49) — Oracle=1, NOP=0, LLMaJ PASS; only old evidence-manifest command failed.
-- `3a88125` — fixed validation/difficulty evidence manifests and aligned difficulty messaging/`--tests-dir` with per-test policy.
-- Run `31201744808` attempt 1 — HTTP 502 during Snorkel login; infrastructure only.
-- Run `31201744808` attempt 2 — Oracle=1; NOP Harbor call timed out before execution; infrastructure only.
-- Run `31201744808` attempt 3 — refresh limit 20 reached; infrastructure only.
+- CI uses `snorkelai-stb==2.4.1`.
+- Until Edition 3 allocation exists, the workflow defaults to Edition-2 Portkey project `bfe79c33-8ab0-4061-9849-08d3207c9927`.
+- Never store credential values in repository files or chat.
+- Repeated `stb keys refresh` on fresh hosted runners is not sustainable and has reached the current allowance.
 
 ## Do not retry blindly
 
-- Do not call `stb keys refresh` repeatedly on fresh runners after the maximum refresh limit is reached.
-- Do not switch CI to the unallocated Edition 3 Portkey project unless account allocation has actually changed.
-- Do not modify task logic in response to HTTP 502/read-timeout/refresh-quota failures.
-- Do not run difficulty until reusable AI credentials are available, otherwise five-run suites can be interrupted before producing analyzable trajectories.
-- Do not mark submission ready without a final dedicated Instruction Reviewer PASS.
+- Do not spend Harbor LLMaJ/model credentials while Pre-LLMaJ is REVISE.
+- Do not rerun Portkey refresh after the current max-refresh error.
+- Do not treat external auth/network failures as verifier failures.
+- Do not mark the current task submission-ready from run #49; instruction/originality/documentation/difficulty gates are newer and still incomplete.
 
 ## Resume rule
 
-A new chat/controller must first read `.terminus/CONTINUE_SESSION.md`, `.terminus/AGENT_SYSTEM.md`, this checkpoint, the current task files, PR #2, and the latest Actions evidence. Live GitHub/CI evidence overrides stale values in this file; update this checkpoint before making new task changes when they disagree.
+A new controller must read `.terminus/CONTINUE_SESSION.md`, `.terminus/AGENT_SYSTEM.md`, `.terminus/reviewers/PRE_LLMAJ.md`, this checkpoint, current task files, PR #2, and latest Actions/artifact evidence. Live evidence wins over stale checkpoint text.
