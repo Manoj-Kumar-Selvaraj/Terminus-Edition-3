@@ -125,7 +125,7 @@ jobs:
       SNORKEL_API_KEY: ${{ secrets.SNORKEL_API_KEY }}
       STB_PORTKEY_PROJECT_ID: ${{ secrets.STB_PORTKEY_PROJECT_ID }}
       STB_VERSION: ${{ vars.STB_VERSION }}
-      XDG_CONFIG_HOME: ${{ runner.temp }}/stb-xdg-${{ github.run_id }}-${{ github.run_attempt }}-${{ matrix.task }}
+      XDG_CONFIG_HOME: /tmp/stb-xdg-${{ github.run_id }}-${{ github.run_attempt }}-${{ matrix.task }}
     steps:
       - uses: actions/checkout@v4
 
@@ -267,7 +267,7 @@ jobs:
       SNORKEL_API_KEY: ${{ secrets.SNORKEL_API_KEY }}
       STB_PORTKEY_PROJECT_ID: ${{ secrets.STB_PORTKEY_PROJECT_ID }}
       STB_VERSION: ${{ vars.STB_VERSION }}
-      XDG_CONFIG_HOME: ${{ runner.temp }}/stb-xdg-diff-${{ github.run_id }}-${{ github.run_attempt }}-${{ matrix.command }}
+      XDG_CONFIG_HOME: /tmp/stb-xdg-diff-${{ github.run_id }}-${{ github.run_attempt }}-${{ matrix.command }}
     steps:
       - uses: actions/checkout@v4
 
