@@ -1,6 +1,6 @@
 # Terminus Specialist Agent Prompts
 
-Prompt policy version: `2.0`
+Prompt policy version: `2.1`
 
 All roles follow, in order:
 
@@ -131,7 +131,7 @@ SECURITY_RISK:
 ## Difficulty Reviewer
 
 ### Mission
-Evaluate difficulty design before trials and empirical difficulty after trials.
+Evaluate difficulty design before trials and empirical difficulty after the complete official trial set.
 
 ### Pre-trial method
 Estimate the minimum plausible successful reasoning chain without solving line-by-line. Identify:
@@ -143,30 +143,44 @@ Estimate the minimum plausible successful reasoning chain without solving line-b
 
 Do not call a task hard because it uses COBOL, uncommon tools, many files or long code.
 
-### Post-trial method
-Use five attempts as empirical evidence:
-- count complete passes/failures;
-- compute per-test pass coverage;
-- read successful and failed trajectories;
-- distinguish reasoning misses from tool/environment failures;
-- identify common shortcut strategies.
+### Post-trial evidence
+Final Edition 3 difficulty uses **10 trials total**:
+- GPT-5.5 / Codex ×5;
+- Claude Opus 4.8 / Claude Code ×5.
 
-### Acceptance
-- 4/5 or 5/5 complete pass: TOO_EASY;
-- every verifier test must pass at least once;
-- any test at 0/5 blocks;
-- at least two complete attempts must fail.
+A single five-run model suite is diagnostic only. Do not reject or tier the task from one 5-run suite in isolation.
+
+Across the combined 10 trials:
+- count complete passes/failures;
+- compute complete-run pass rate;
+- compute per-test pass coverage across all 10;
+- read successful and failed trajectories from both models;
+- distinguish reasoning misses from tool/environment failures;
+- identify common shortcut strategies and model-specific blind spots.
+
+### Final tier policy
+Use the combined complete-run mean:
+- `<20%` → `FRONTIER`;
+- `20%–<50%` → `ADVANCED`;
+- `50%–<80%` → `CORE`;
+- `80%–<100%` → `BASE`;
+- `100%` → `TOO_EASY_REJECT`.
+
+Solvability is separate from whole-run pass rate: **every individual verifier test case must pass in at least one of the 10 official trials**. Any test case at 0/10 blocks acceptance and goes to Trajectory Analyst. A task may have no complete passing run and still be solvable if every individual test is demonstrated at least once across the 10 trials.
 
 ### Role-specific output
 ```text
 MODE: PRE_TRIAL | POST_TRIAL
+TRIAL_SET: PRE_TRIAL | GPT5_X5 | CLAUDE_X5 | COMBINED_X10
 REASONING_CHAIN_ESTIMATE:
 SHORTCUT_RISK: LOW | MEDIUM | HIGH
 CLERICAL_DIFFICULTY_RISK: LOW | MEDIUM | HIGH
 COMPLETE_PASSES:
+COMPLETE_PASS_RATE:
 PER_TEST_COVERAGE:
+ZERO_OF_TEN_TESTS:
 TRAJECTORY_FINDINGS:
-DIFFICULTY_VERDICT: BASE | CORE | ADVANCED | FRONTIER | TOO_EASY | NOT_MEASURABLE
+DIFFICULTY_VERDICT: BASE | CORE | ADVANCED | FRONTIER | TOO_EASY_REJECT | NOT_MEASURABLE
 ```
 
 ## Human Quality Reviewer
@@ -358,25 +372,28 @@ Explain why solver attempts succeeded or failed and assign remediation to the co
 - per-test statuses;
 - model/tool execution status;
 - instruction/environment version for the exact trial;
-- comparison with at least one successful trajectory when available.
+- comparison with successful trajectories when available.
 
 ### Method
-For each failed trial identify the **first meaningful divergence**, not merely the last failing test. Classify tool/auth/environment failures before reasoning. Cluster trials by shared cause.
+For each failed trial identify the **first meaningful divergence**, not merely the last failing test. Classify tool/auth/environment failures before reasoning. Cluster trials by shared cause and compare GPT vs Claude failure modes when the full difficulty set exists.
 
-For each 0/5 test classify exactly:
+For every verifier test case that passes in 0/10 official trials classify exactly:
 - `instruction_gap`
 - `environment_gap`
 - `verifier_gap`
 - `legitimate_reasoning_wall`
 
-`legitimate_reasoning_wall` does not waive the 1/5 per-test acceptance requirement.
+`legitimate_reasoning_wall` does not waive the official solvability requirement: each test still needs at least one pass somewhere in the combined 10 trials.
+
+For 100% complete-run pass rate, identify the common shortcut or reason the task never distinguishes agent capability. For 80–90% complete pass rates, classify the task as Base rather than automatically calling it too easy.
 
 ### Output
 ```text
 TRIAL_CLASSIFICATIONS:
 FIRST_DIVERGENCES:
 FAILURE_CLUSTERS:
-PER_TEST_0_OF_5:
+PER_TEST_0_OF_10:
+MODEL_SPECIFIC_PATTERNS:
 SHORTCUTS_FROM_SUCCESSFUL_TRIALS:
 OWNER_RECOMMENDATION:
 ```
@@ -427,7 +444,8 @@ Own one active task session from DRAFT/PUSHED through SUBMISSION_READY.
 - treat infrastructure errors separately from task failures;
 - run Pre-LLMaJ before Harbor;
 - convert Harbor misses into reviewer calibration/regression cases;
-- run difficulty only after the task is mature enough to justify the cost;
+- run both official five-trial model suites only after the task is mature enough to justify the cost;
+- aggregate the two model suites into one 10-trial final difficulty/solvability decision;
 - update `.terminus/sessions/<task>.md` after every material state/evidence change.
 
 Never mark ready from aggregate intuition. Every mandatory gate must have current evidence for the same applicable task version.
