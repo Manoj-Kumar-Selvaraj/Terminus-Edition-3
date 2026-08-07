@@ -122,6 +122,8 @@ def main() -> int:
             fail(errors, f"AGENT_SYSTEM.md missing role: {role}")
         if role not in prompts:
             fail(errors, f"PROMPTS.md missing role prompt: {role}")
+    if "Comprehensive Reviewer" not in agent_system or "CHECKLIST_COVERAGE" not in comprehensive:
+        fail(errors, "Comprehensive Reviewer must be integrated into AGENT_SYSTEM and its contract")
 
     for term in PROTOCOL_TERMS:
         if term not in protocol:
@@ -141,13 +143,7 @@ def main() -> int:
         if required.lower() not in (checklist + comprehensive + panel).lower():
             fail(errors, f"comprehensive reviewer system missing requirement: {required}")
 
-    for required in [
-        "INSUFFICIENT_EVIDENCE",
-        "CONFIDENCE",
-        "EVIDENCE_STATUS",
-        "TASK_COMMIT",
-        "ADJUDICATIONS",
-    ]:
+    for required in ["INSUFFICIENT_EVIDENCE", "CONFIDENCE", "EVIDENCE_STATUS", "TASK_COMMIT", "ADJUDICATIONS"]:
         if required not in panel + protocol:
             fail(errors, f"review system missing required field/term: {required}")
 
@@ -180,14 +176,17 @@ def main() -> int:
             fail(errors, f"CALIBRATION_DATASET.md missing corpus requirement: {required}")
 
     for required in [
-        "Pre-LLMaJ panel",
+        "Pre-LLMaJ specialist panel",
         "Originality & Authenticity",
         "Instruction Reviewer",
         "Documentation Reviewer",
+        "Comprehensive Reviewer",
+        "Pre-LLMaJ aggregate",
         "Harbor LLMaJ",
-        "Difficulty 5x",
-        "Per-test 1/5 minimum",
+        "Difficulty trials",
+        "Per-test solvability",
         "Adjudication ledger",
+        "Policy-conflict ledger",
         "Circuit breakers",
     ]:
         if required not in session_template:
@@ -226,8 +225,9 @@ def main() -> int:
 
     print("Terminus agent-system validation PASS")
     print(
-        f"specialist_roles={len(ROLE_HEADINGS)} checklist_criteria={len(criteria)} "
-        f"reviewer_eval_seed_cases={len(case_ids)} schemas={len(schema_expectations)}"
+        f"specialist_roles={len(ROLE_HEADINGS)} comprehensive_reviewer=1 "
+        f"checklist_criteria={len(criteria)} reviewer_eval_seed_cases={len(case_ids)} "
+        f"schemas={len(schema_expectations)}"
     )
     return 0
 
