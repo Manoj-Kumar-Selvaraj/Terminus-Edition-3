@@ -1,5 +1,10 @@
 #!/usr/bin/env python3
-"""Evaluate a five-trial Harbor difficulty suite, including per-test coverage."""
+"""Analyze Harbor difficulty trials, including per-test solvability coverage.
+
+Edition 3 final difficulty is measured across ten agent runs: GPT-5.5 x5 plus
+Claude Opus 4.8 x5. Individual five-run model suites are useful diagnostics but
+are not final difficulty decisions by themselves.
+"""
 
 from __future__ import annotations
 
@@ -31,8 +36,8 @@ def parse_reward(path: Path) -> float:
         raise ValueError(f"invalid reward in {path}: {raw!r}") from exc
 
 
-def discover_expected_tests(tests_dir: Path | None) -> list[str]:
-    """Return pytest test function/method names declared in the verifier source."""
+def discover_declared_tests(tests_dir: Path | None) -> list[str]:
+    """Return verifier test function/method names declared in Python sources."""
     if tests_dir is None or not tests_dir.is_dir():
         return []
 
@@ -42,7 +47,6 @@ def discover_expected_tests(tests_dir: Path | None) -> list[str]:
             tree = ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
         except (OSError, SyntaxError, UnicodeDecodeError):
             continue
-
         for node in ast.walk(tree):
             if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)) and node.name.startswith("test_"):
                 names.add(node.name)
@@ -50,9 +54,8 @@ def discover_expected_tests(tests_dir: Path | None) -> list[str]:
 
 
 def normalize_nodeid(nodeid: str) -> str:
-    """Collapse a pytest node id to the test function/method name."""
-    leaf = nodeid.rsplit("::", 1)[-1]
-    return leaf.split("[", 1)[0]
+    """Return the pytest test leaf, preserving a parametrized case suffix."""
+    return nodeid.rsplit("::", 1)[-1]
 
 
 def parse_junit_file(path: Path) -> dict[str, set[str]]:
@@ -63,7 +66,7 @@ def parse_junit_file(path: Path) -> dict[str, set[str]]:
         return results
 
     for testcase in root.iter("testcase"):
-        name = testcase.attrib.get("name", "").split("[", 1)[0]
+        name = testcase.attrib.get("name", "")
         if not name.startswith("test_"):
             continue
         status = "PASSED"
@@ -103,10 +106,9 @@ def merge_results(target: dict[str, set[str]], source: dict[str, set[str]]) -> N
 
 
 def trial_root_for_reward(reward_file: Path, suite_dir: Path) -> Path:
-    """Use the Harbor job directory containing the reward as the trial evidence root."""
+    """Use the Harbor job directory containing the reward as trial evidence root."""
     current = reward_file.parent
     while current != suite_dir and current.parent != suite_dir:
-        # Harbor commonly stores reward under <trial>/verifier/reward.txt.
         if current.name in {"verifier", "agent", "oracle"}:
             return current.parent
         current = current.parent
@@ -115,16 +117,37 @@ def trial_root_for_reward(reward_file: Path, suite_dir: Path) -> Path:
 
 def collect_trial_test_results(trial_root: Path) -> dict[str, set[str]]:
     results: dict[str, set[str]] = defaultdict(set)
-
     for path in sorted(trial_root.rglob("*.xml")):
         merge_results(results, parse_junit_file(path))
-
     for path in sorted(trial_root.rglob("*")):
         if not path.is_file() or path.suffix.lower() not in TEXT_SUFFIXES:
             continue
         merge_results(results, parse_text_file(path))
-
     return results
+
+
+def expand_expected_tests(declared: list[str], observed: set[str]) -> list[str]:
+    """Expand declared pytest functions into observed parametrized cases when present."""
+    expected: list[str] = []
+    for base in declared:
+        variants = sorted(name for name in observed if name.startswith(base + "["))
+        if variants:
+            expected.extend(variants)
+        else:
+            expected.append(base)
+    return expected
+
+
+def tier_for_rate(rate: float) -> str:
+    if rate >= 1.0:
+        return "too_easy_reject"
+    if rate >= 0.8:
+        return "base"
+    if rate >= 0.5:
+        return "core"
+    if rate >= 0.2:
+        return "advanced"
+    return "frontier"
 
 
 def classify(
@@ -145,8 +168,19 @@ def classify(
     if not expected_tests:
         return (
             "test_inventory_missing",
-            "could not determine verifier test cases; per-test 0/5 policy cannot be evaluated",
+            "could not determine verifier test cases; per-test solvability cannot be evaluated",
             23,
+        )
+
+    # A single five-run model suite is diagnostic only. A test may be 0/5 for one
+    # model and still satisfy the official solvability criterion across all 10
+    # GPT+Claude runs, so do not reject a task from one partial suite alone.
+    if expected_trials < 10:
+        rate = complete_run_passes / trials_found if trials_found else 0.0
+        return (
+            "partial_suite",
+            f"diagnostic {trials_found}-run model suite complete ({complete_run_passes}/{trials_found} full passes, {rate:.0%}); combine both five-run model suites before final difficulty/solvability decisions",
+            0,
         )
 
     zero_pass_tests = [
@@ -155,76 +189,88 @@ def classify(
     if zero_pass_tests:
         return (
             "test_case_review_required",
-            "at least one verifier test case passed in 0/5 agent trials; inspect agent/verifier trajectories for instruction, environment, or verifier insufficiency before acceptance: "
+            f"at least one verifier test case passed in 0/{expected_trials} agent trials; inspect trajectories and remediate before acceptance: "
             + ", ".join(zero_pass_tests),
             21,
         )
 
-    # Complete-run pass count is used only for the too-easy gate. A suite may have
-    # 0/5 complete solutions and still be adequate if every verifier test case is
-    # demonstrably achievable by at least one of the five independent attempts.
-    if complete_run_passes >= 4:
+    rate = complete_run_passes / trials_found
+    tier = tier_for_rate(rate)
+    if tier == "too_easy_reject":
         return (
-            "too_easy",
-            f"{complete_run_passes}/{trials_found} complete runs passed; at least two complete runs must fail, so recalibration is required",
+            tier,
+            f"{complete_run_passes}/{trials_found} complete runs passed (100%); current Edition 3 policy rejects tasks that never fail",
             20,
         )
 
     return (
-        "target_band",
-        f"{complete_run_passes}/{trials_found} complete runs passed, at least two complete runs failed, and every verifier test case passed in at least one of five trials",
+        tier,
+        f"{complete_run_passes}/{trials_found} complete runs passed ({rate:.0%}); measured tier={tier}, and every verifier test case passed at least once across the {expected_trials} trials",
         0,
     )
 
 
 def main() -> int:
     parser = argparse.ArgumentParser()
-    parser.add_argument("suite_dir", type=Path)
-    parser.add_argument("--expected", type=int, default=5)
+    parser.add_argument("suite_dirs", type=Path, nargs="+")
+    parser.add_argument("--expected", type=int, default=10)
     parser.add_argument("--tests-dir", type=Path)
     parser.add_argument("--json-out", type=Path)
     parser.add_argument("--markdown-out", type=Path)
     args = parser.parse_args()
 
-    suite_dir = args.suite_dir.resolve()
+    suite_dirs = [path.resolve() for path in args.suite_dirs]
     tests_dir = args.tests_dir
-    if tests_dir is None:
-        # CI layout is .../<task>/<suite-command>; infer <repo>/<task>/tests.
-        inferred = Path.cwd() / suite_dir.parent.name / "tests"
+    if tests_dir is None and suite_dirs:
+        # CI diagnostic layout is commonly .../<task>/<suite-command>.
+        inferred = Path.cwd() / suite_dirs[0].parent.name / "tests"
         if inferred.is_dir():
             tests_dir = inferred
 
-    expected_tests = discover_expected_tests(tests_dir)
-    reward_files = sorted(suite_dir.rglob("reward.txt"))
+    declared_tests = discover_declared_tests(tests_dir)
+    trials: list[dict[str, object]] = []
+    seen_reward_paths: set[Path] = set()
+    all_observed_tests: set[str] = set()
 
-    trials = []
+    for suite_dir in suite_dirs:
+        for reward_file in sorted(suite_dir.rglob("reward.txt")):
+            resolved_reward = reward_file.resolve()
+            if resolved_reward in seen_reward_paths:
+                continue
+            seen_reward_paths.add(resolved_reward)
+            reward = parse_reward(reward_file)
+            trial_root = trial_root_for_reward(reward_file, suite_dir)
+            test_results = collect_trial_test_results(trial_root)
+            all_observed_tests.update(test_results)
+            trials.append(
+                {
+                    "suite_dir": str(suite_dir),
+                    "reward_path": str(reward_file),
+                    "trial_root": str(trial_root),
+                    "reward": reward,
+                    "complete_run_passed": reward >= 1.0,
+                    "test_results": {
+                        name: sorted(statuses) for name, statuses in sorted(test_results.items())
+                    },
+                }
+            )
+
+    expected_tests = expand_expected_tests(declared_tests, all_observed_tests)
     per_test_trial_passes: dict[str, int] = defaultdict(int)
     per_test_trial_observed: dict[str, int] = defaultdict(int)
     per_test_mixed: dict[str, int] = defaultdict(int)
 
-    for reward_file in reward_files:
-        reward = parse_reward(reward_file)
-        trial_root = trial_root_for_reward(reward_file, suite_dir)
-        test_results = collect_trial_test_results(trial_root)
-
+    for trial in trials:
+        test_results = trial["test_results"]
+        assert isinstance(test_results, dict)
         for name in expected_tests:
-            statuses = test_results.get(name, set())
+            statuses = set(test_results.get(name, []))
             if statuses:
                 per_test_trial_observed[name] += 1
             if statuses & PASS_STATES:
                 per_test_trial_passes[name] += 1
             if statuses & PASS_STATES and statuses - PASS_STATES:
                 per_test_mixed[name] += 1
-
-        trials.append(
-            {
-                "reward_path": str(reward_file),
-                "trial_root": str(trial_root),
-                "reward": reward,
-                "complete_run_passed": reward >= 1.0,
-                "test_results": {name: sorted(statuses) for name, statuses in sorted(test_results.items())},
-            }
-        )
 
     complete_run_passes = sum(1 for trial in trials if trial["complete_run_passed"])
     trials_found = len(trials)
@@ -238,7 +284,7 @@ def main() -> int:
             "failures_or_not_observed": args.expected - passes,
             "trials_with_explicit_result": observed,
             "mixed_result_trials": per_test_mixed[name],
-            "zero_of_five_pass": passes == 0 and args.expected == 5,
+            "zero_pass": passes == 0,
         }
 
     status, message, exit_code = classify(
@@ -249,13 +295,16 @@ def main() -> int:
         test_coverage=test_coverage,
     )
 
+    pass_rate = complete_run_passes / trials_found if trials_found else None
     payload = {
-        "suite_dir": str(suite_dir),
+        "suite_dirs": [str(path) for path in suite_dirs],
         "tests_dir": str(tests_dir) if tests_dir else None,
         "expected_trials": args.expected,
         "trials_found": trials_found,
         "complete_run_passes": complete_run_passes,
         "complete_run_failures": trials_found - complete_run_passes,
+        "complete_run_pass_rate": pass_rate,
+        "declared_test_functions": declared_tests,
         "expected_test_cases": expected_tests,
         "test_case_coverage": test_coverage,
         "status": status,
@@ -272,15 +321,16 @@ def main() -> int:
 
     if args.markdown_out:
         args.markdown_out.parent.mkdir(parents=True, exist_ok=True)
+        rate_text = "n/a" if pass_rate is None else f"{pass_rate:.0%}"
         lines = [
-            "# Difficulty suite result",
+            "# Difficulty result",
             "",
             f"- Status: **{status}**",
-            f"- Complete-run passes: **{complete_run_passes}/{trials_found}**",
+            f"- Complete-run passes: **{complete_run_passes}/{trials_found}** ({rate_text})",
             f"- Complete-run failures: **{trials_found - complete_run_passes}/{trials_found}**",
             f"- Decision: {message}",
             "",
-            "## Per-test coverage across agent trials",
+            "## Per-test solvability coverage",
             "",
             "| Test case | Passed trials | Explicit results | Mixed trials |",
             "| --- | ---: | ---: | ---: |",
