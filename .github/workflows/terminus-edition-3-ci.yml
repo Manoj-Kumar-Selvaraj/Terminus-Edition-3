@@ -29,11 +29,10 @@ concurrency:
 
 # Required repository/org secret:
 #   SNORKEL_API_KEY          Snorkel platform API key used by noninteractive stb login
-# Optional secret:
-#   STB_PORTKEY_PROJECT_ID   Required only when the account has multiple eligible projects
-# Optional repository variable:
-#   STB_VERSION              Exact known-good snorkelai-stb version. Once CI proves a version,
-#                            set this variable so the internal Python auth API is reproducible.
+# Optional overrides:
+#   STB_PORTKEY_PROJECT_ID   Secret override for the Edition 3 Portkey project
+#   TERMINUS_PROJECT_ID      Repository variable override for the Edition 3 project
+#   STB_VERSION              Repository variable override for the known-good stb version
 
 jobs:
   changed-tasks:
@@ -123,8 +122,8 @@ jobs:
     env:
       CI: "true"
       SNORKEL_API_KEY: ${{ secrets.SNORKEL_API_KEY }}
-      STB_PORTKEY_PROJECT_ID: ${{ secrets.STB_PORTKEY_PROJECT_ID }}
-      STB_VERSION: ${{ vars.STB_VERSION }}
+      STB_PORTKEY_PROJECT_ID: ${{ secrets.STB_PORTKEY_PROJECT_ID || vars.TERMINUS_PROJECT_ID || '3f2a9c1e-7b4d-4e88-9a15-c0d6e2f8b731' }}
+      STB_VERSION: ${{ vars.STB_VERSION || '2.4.1' }}
       XDG_CONFIG_HOME: /tmp/stb-xdg-${{ github.run_id }}-${{ github.run_attempt }}-${{ matrix.task }}
     steps:
       - uses: actions/checkout@v4
@@ -265,8 +264,8 @@ jobs:
     env:
       CI: "true"
       SNORKEL_API_KEY: ${{ secrets.SNORKEL_API_KEY }}
-      STB_PORTKEY_PROJECT_ID: ${{ secrets.STB_PORTKEY_PROJECT_ID }}
-      STB_VERSION: ${{ vars.STB_VERSION }}
+      STB_PORTKEY_PROJECT_ID: ${{ secrets.STB_PORTKEY_PROJECT_ID || vars.TERMINUS_PROJECT_ID || '3f2a9c1e-7b4d-4e88-9a15-c0d6e2f8b731' }}
+      STB_VERSION: ${{ vars.STB_VERSION || '2.4.1' }}
       XDG_CONFIG_HOME: /tmp/stb-xdg-diff-${{ github.run_id }}-${{ github.run_attempt }}-${{ matrix.command }}
     steps:
       - uses: actions/checkout@v4
