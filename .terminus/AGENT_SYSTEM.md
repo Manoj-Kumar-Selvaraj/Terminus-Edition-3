@@ -10,8 +10,9 @@ This directory defines the operating model for taking one Terminus task from ide
 - Oracle, NOP, LLMaJ, difficulty, compliance, human-quality, and packaging gates are independent.
 - Agent failures are evidence. Never harden or clarify a task from aggregate reward alone; read trajectories and verifier outcomes.
 - A task with 4/5 or 5/5 complete agent runs passing is too easy for the current acceptance target.
-- Across five agent attempts, every verifier test case must pass in at least one attempt. Any test case with 0/5 passes is an acceptance blocker until trajectories are analyzed and the instruction/environment/verifier gap is resolved.
-- A suite may have 0/5 complete solutions and still be viable if every individual verifier test is demonstrably achievable by at least one attempt and the failures are legitimate reasoning misses. This requires trajectory review, not automatic acceptance.
+- Across five agent attempts, **every verifier test case must pass in at least one attempt**. A verifier test case with 0/5 passes is not allowed and blocks acceptance until its trajectories are analyzed and the underlying instruction, environment, verifier, or task-design problem is resolved.
+- `0/5` in this policy refers to an individual verifier test case, not to the number of complete agent runs that solve the whole task.
+- Complete-run rewards are used for the too-easy gate: at least two of five complete runs must fail. A suite may therefore have 0/5 complete solutions and still be viable only when every verifier test case is passed by at least one attempt and trajectory review confirms the failures are legitimate reasoning misses rather than task insufficiency.
 - Fix the smallest real cause. Do not rewrite the whole task to make one test pass.
 
 ## Agent 1: Task Architect
@@ -81,7 +82,7 @@ Owns:
 Acceptance policy:
 - 4/5 or 5/5 complete runs pass: too easy, recalibrate.
 - 0/5 through 3/5 complete runs pass: potentially acceptable only if at least two complete runs fail and every verifier test case passes in at least one of the five attempts.
-- Any verifier test case with 0/5 passes: mandatory trajectory review and remediation before acceptance.
+- Any individual verifier test case with 0/5 passes: acceptance blocker. Trajectory Analyst review and remediation are mandatory.
 
 Do not harden by adding arbitrary requirements. Prefer deeper interaction between already-necessary invariants, realistic partial states, and meaningful edge cases.
 
@@ -114,7 +115,7 @@ For every verifier test case with 0/5 passes, classify the blocker as exactly on
 3. `verifier_gap` - correct behavior is rejected, wrong behavior is accepted, or the test itself is unreachable;
 4. `legitimate_reasoning_wall` - contract is sufficient, the test is demonstrably achievable, and all five failures are genuine reasoning misses.
 
-A 0/5 test-case result is never accepted without this analysis and evidence from agent/verifier logs.
+A 0/5 test-case result is never accepted as-is. Even `legitimate_reasoning_wall` requires task-level review because the acceptance policy requires each verifier test case to pass in at least one of five attempts.
 
 ## Agent 7: CI Orchestrator / Submission Controller
 
@@ -188,7 +189,7 @@ ChatGPT scheduled tasks cannot provide a persistent two-minute watcher. Therefor
 - five-run difficulty policy passes;
 - at least two of five complete agent runs fail;
 - every verifier test case passes in at least one of the five agent attempts;
-- every 0/5 verifier test-case result has been analyzed and remediated;
+- no verifier test case remains at 0/5;
 - final Compliance Auditor has no blocker/high issue;
 - Human Quality Reviewer finds no material AI-tone/leakage problem;
 - final package contains only allowed task contents.
