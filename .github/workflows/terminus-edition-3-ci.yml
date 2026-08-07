@@ -243,10 +243,14 @@ jobs:
             echo "- Commit: ${{ github.sha }}"
             echo
             echo "## Rewards"
-            while IFS= read -r f; do printf -- '- `%s`: `%s`\n' "${f#$EVIDENCE_DIR/}" "$(tr -d '[:space:]' < "$f")"; done < <(find "$EVIDENCE_DIR" -type f -name reward.txt -print | sort)
+            while IFS= read -r f; do
+              printf -- '- `%s`: `%s`\n' "${f#$EVIDENCE_DIR/}" "$(tr -d '[:space:]' < "$f")"
+            done < <(find "$EVIDENCE_DIR" -type f -name reward.txt -print | sort)
             echo
             echo "## Files"
-            find "$EVIDENCE_DIR" -type f -printf -- '- `%P`\n' | sort
+            while IFS= read -r f; do
+              printf -- '- `%s`\n' "${f#$EVIDENCE_DIR/}"
+            done < <(find "$EVIDENCE_DIR" -type f -print | sort)
           } > "$EVIDENCE_DIR/EVIDENCE.md"
           cat "$EVIDENCE_DIR/EVIDENCE.md" >> "$GITHUB_STEP_SUMMARY"
 
@@ -352,16 +356,18 @@ jobs:
           set +e
           python3 .terminus/analyze_difficulty.py "$EVIDENCE_DIR" \
             --expected 5 \
+            --tests-dir "${{ inputs.task }}/tests" \
             --json-out "$EVIDENCE_DIR/difficulty-analysis.json" \
             --markdown-out "$EVIDENCE_DIR/difficulty-analysis.md"
           rc=$?
           set -e
           cat "$EVIDENCE_DIR/difficulty-analysis.md" >> "$GITHUB_STEP_SUMMARY"
           case "$rc" in
-            0) echo "Difficulty suite is in target band: 1-3 passes." ;;
-            20) echo "::error::Too easy: 4/5 or 5/5 passed. Difficulty Reviewer + Task Architect recalibration required." ;;
-            21) echo "::error::0/5 passed. Trajectory Analyst review required before accepting difficulty." ;;
+            0) echo "Difficulty policy passed: at least two complete runs failed and every verifier test passed in at least one of five attempts." ;;
+            20) echo "::error::Too easy: 4/5 or 5/5 complete runs passed. Difficulty Reviewer + Task Architect recalibration required." ;;
+            21) echo "::error::At least one verifier test case is 0/5. Trajectory Analyst review and remediation required." ;;
             22) echo "::error::Incomplete five-trial evidence. Inspect Harbor/tool execution." ;;
+            23) echo "::error::Verifier test inventory could not be determined; per-test difficulty policy cannot be evaluated." ;;
             *) echo "::error::Unexpected difficulty analysis status $rc" ;;
           esac
           exit "$rc"
@@ -381,10 +387,14 @@ jobs:
             echo "- Commit: ${{ github.sha }}"
             echo
             echo "## Rewards"
-            while IFS= read -r f; do printf -- '- `%s`: `%s`\n' "${f#$EVIDENCE_DIR/}" "$(tr -d '[:space:]' < "$f")"; done < <(find "$EVIDENCE_DIR" -type f -name reward.txt -print | sort)
+            while IFS= read -r f; do
+              printf -- '- `%s`: `%s`\n' "${f#$EVIDENCE_DIR/}" "$(tr -d '[:space:]' < "$f")"
+            done < <(find "$EVIDENCE_DIR" -type f -name reward.txt -print | sort)
             echo
             echo "## Agent / Harbor files"
-            find "$EVIDENCE_DIR" -type f -printf -- '- `%P`\n' | sort
+            while IFS= read -r f; do
+              printf -- '- `%s`\n' "${f#$EVIDENCE_DIR/}"
+            done < <(find "$EVIDENCE_DIR" -type f -print | sort)
           } > "$EVIDENCE_DIR/EVIDENCE.md"
 
       - name: Upload difficulty evidence
