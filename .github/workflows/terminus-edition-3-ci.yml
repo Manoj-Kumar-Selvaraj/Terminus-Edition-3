@@ -195,7 +195,7 @@ jobs:
           bash ./terminus3.sh version
           echo "stb version: $(stb --version)" >> "$GITHUB_STEP_SUMMARY"
 
-      - name: Noninteractive stb login
+      - name: Noninteractive stb login and AI key refresh
         shell: bash
         run: |
           set -euo pipefail
@@ -205,16 +205,7 @@ jobs:
           fi
           mkdir -p "$XDG_CONFIG_HOME/stb"
           bash ./terminus3.sh login --noninteractive
-
-      - name: Show reusable AI credential command
-        shell: bash
-        run: |
-          set -euo pipefail
-          echo "### stb keys set" >> "$GITHUB_STEP_SUMMARY"
-          stb keys set --help | tee /tmp/stb-keys-set-help.txt
-          echo '```text' >> "$GITHUB_STEP_SUMMARY"
-          cat /tmp/stb-keys-set-help.txt >> "$GITHUB_STEP_SUMMARY"
-          echo '```' >> "$GITHUB_STEP_SUMMARY"
+          bash ./terminus3.sh keys-refresh --noninteractive
 
       - name: Oracle must score 1
         shell: bash
@@ -261,12 +252,6 @@ jobs:
               exit 1
             }
           done
-
-      - name: Refresh AI credentials for LLMaJ
-        shell: bash
-        run: |
-          set -euo pipefail
-          bash ./terminus3.sh keys-refresh --noninteractive
 
       - name: Run Harbor LLMaJ check
         shell: bash
