@@ -133,10 +133,40 @@ jobs:
         shell: bash
         run: bash -n ./terminus3.sh
 
+      - name: Validate task skeleton
+        shell: bash
+        env:
+          TASK: ${{ matrix.task }}
+        run: |
+          set -euo pipefail
+          required=(
+            "$TASK/task.toml"
+            "$TASK/instruction.md"
+            "$TASK/README.md"
+            "$TASK/environment"
+            "$TASK/solution/solve.sh"
+            "$TASK/tests/Dockerfile"
+            "$TASK/tests/test.sh"
+          )
+          for path in "${required[@]}"; do
+            [[ -e "$path" ]] || {
+              echo "::error::Missing required task path: $path"
+              exit 1
+            }
+          done
+          compgen -G "$TASK/tests/*.py" >/dev/null || {
+            echo "::error::No Python verifier tests found under $TASK/tests"
+            exit 1
+          }
+
       - name: Install uv
         uses: astral-sh/setup-uv@v9.0.0
         with:
           enable-cache: false
+
+      - name: Ruff verifier tests
+        shell: bash
+        run: uvx --from ruff==0.12.8 ruff check "${{ matrix.task }}/tests"
 
       - name: Install stb and verify Docker
         shell: bash
