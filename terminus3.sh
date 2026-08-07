@@ -16,6 +16,9 @@ cd "$ROOT"
 export PATH="${HOME}/.local/bin:/root/.local/bin:${PATH}"
 
 STB_BIN="${STB_BIN:-stb}"
+# Optional exact pin. CI should set this once a known-good stb version is recorded.
+STB_VERSION="${STB_VERSION:-}"
+STB_WHEEL_INDEX="${STB_WHEEL_INDEX:-https://snorkel-python-wheels.s3.us-west-2.amazonaws.com/stb/index.html}"
 # Absolute jobs dir avoids pathlib resolve() FileNotFoundError when harbor's
 # process cwd disappears mid-trial (common with compose teardown on /mnt/*).
 JOBS_DIR="${JOBS_DIR:-$ROOT/jobs}"
@@ -99,8 +102,8 @@ Task discovery
 Validation
   oracle <task>        stb harbor run -a oracle -p <task>
   nop <task>           stb harbor run -a nop -p <task>
-  check <task>         stb harbor check <task>  (LLMaJ; needs IS_SANDBOX=1 if root)
-  check-llm <task>     stb harbor check <task> -m claude-sonnet-4-6
+  check <task>         stb harbor check <task> -m claude-sonnet-4-6
+  check-llm <task>     Alias of check
   validate <task>      oracle + nop + check (sequential)
 
 Debug
@@ -125,6 +128,8 @@ Examples:
 
 Environment:
   STB_BIN                 Override stb binary (default: stb)
+  STB_VERSION             Optional exact snorkelai-stb version pin
+  STB_WHEEL_INDEX         Override stb wheel index
   SNORKEL_API_KEY         Platform API key (noninteractive login)
   STB_PORTKEY_PROJECT_ID  Portkey project id (noninteractive keys-refresh)
   XDG_CONFIG_HOME         Optional; stb config lives under $XDG_CONFIG_HOME/stb/
@@ -172,7 +177,7 @@ cmd_login() {
   fi
 
   if [[ "$noninteractive" -eq 0 ]]; then
-    "$STB_BIN" login "$@"
+    "$STB_BIN" login
     return 0
   fi
 
@@ -197,13 +202,9 @@ if not api_key:
 os.environ["SNORKEL_API_KEY"] = api_key
 GlobalConfig.set("auth", "env", Env.PROD.value)
 print("Validating SNORKEL_API_KEY...")
-info = get_current_user_info()
+get_current_user_info()
 GlobalConfig.set("auth", "api_key", api_key)
 print("Logged in (noninteractive).")
-if isinstance(info, dict):
-    for key in ("email", "name", "id", "user_id", "username"):
-        if key in info:
-            print(f"  {key}: {info[key]}")
 PY
 }
 
@@ -229,7 +230,7 @@ cmd_keys_refresh() {
   fi
 
   if [[ "$noninteractive" -eq 0 ]]; then
-    "$STB_BIN" keys refresh "$@"
+    "$STB_BIN" keys refresh
     return 0
   fi
 
@@ -271,13 +272,20 @@ cmd_install() {
   if ! command -v uv >/dev/null 2>&1; then
     die "uv not found. Install uv first: https://docs.astral.sh/uv/"
   fi
-  echo "==> Installing snorkelai-stb with uv"
-  uv tool install snorkelai-stb \
-    --find-links https://snorkel-python-wheels.s3.us-west-2.amazonaws.com/stb/index.html \
+
+  local package="snorkelai-stb"
+  if [[ -n "$STB_VERSION" ]]; then
+    package="snorkelai-stb==$STB_VERSION"
+  fi
+
+  echo "==> Installing $package with uv"
+  uv tool install "$package" \
+    --find-links "$STB_WHEEL_INDEX" \
     --python ">=3.12" \
     --force
-  echo "==> Done. Ensure ~/.local/bin (or uv tool bin dir) is on PATH."
-  command -v stb && stb --version || true
+  echo "==> Done."
+  command -v stb
+  stb --version
 }
 
 cmd_oracle() {
@@ -302,28 +310,17 @@ cmd_check() {
   need_stb
   local task; task="$(resolve_task "${1:?task required}")"
   shift || true
-  # harbor tasks check was removed; harbor check is the LLMaJ entrypoint.
   if [ "$(id -u)" -eq 0 ] && [ -z "${IS_SANDBOX:-}" ]; then
     export IS_SANDBOX=1
     echo "==> harbor check (IS_SANDBOX=1 for root): $task"
   else
     echo "==> harbor check: $task"
   fi
-  "$STB_BIN" harbor check "$task" "$@"
+  "$STB_BIN" harbor check "$task" -m claude-sonnet-4-6 "$@"
 }
 
 cmd_check_llm() {
-  need_stb
-  local task; task="$(resolve_task "${1:?task required}")"
-  shift || true
-  if [ "$(id -u)" -eq 0 ] && [ -z "${IS_SANDBOX:-}" ]; then
-    export IS_SANDBOX=1
-    echo "==> harbor check LLM (IS_SANDBOX=1 for root): $task"
-  else
-    echo "==> harbor check LLM: $task"
-  fi
-  # Short alias "sonnet" currently resolves to a bad model id via Claude Code.
-  "$STB_BIN" harbor check "$task" -m claude-sonnet-4-6 "$@"
+  cmd_check "$@"
 }
 
 cmd_validate() {
