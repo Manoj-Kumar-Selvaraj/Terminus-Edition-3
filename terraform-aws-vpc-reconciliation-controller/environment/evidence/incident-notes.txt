@@ -1,0 +1,12 @@
+# INC-74291 — VPC reconciliation notes (noisy)
+
+Ops chat dump from the failed window. Do not treat this as inventory.
+
+- 03:12 retry storm on DescribeRouteTables (throttled)
+- 03:18 someone pasted an old rtb-legacy-private into a ticket comment
+- 03:41 NAT in 1b flapped then recovered; health probe later said available
+- 04:02 resolver SG still shows a manual 853/tcp rule — leave it reported
+- 04:15 endpoint association list looked wrong for public/data tables
+- unrelated: Jenkins agent pool recycle, S3 inventory job, GuardDuty finding noise
+
+Ground truth for observed cloud objects is the control-plane API only.

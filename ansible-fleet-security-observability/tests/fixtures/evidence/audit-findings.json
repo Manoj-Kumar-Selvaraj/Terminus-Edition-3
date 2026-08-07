@@ -1,0 +1,74 @@
+{
+  "engagement": "fleet-weekend-harden",
+  "opened": "2026-08-01",
+  "auditor": "platform-sec",
+  "scope": [
+    "/app/edges/app",
+    "/app/edges/data",
+    "/app/edges/ops",
+    "/app/var/fleet-harden"
+  ],
+  "required_controls": [
+    "patch_stamp",
+    "packages_seal",
+    "auditd_bridge",
+    "node_metrics",
+    "promtail_audit_wire",
+    "observability_chain",
+    "falco_metrics_wire",
+    "metrics_firewall_scrape_cidr",
+    "ssh_password_disabled",
+    "scrape_mesh_role_faithful",
+    "scrape_mesh_order"
+  ],
+  "findings": [
+    {
+      "id": "FH-01",
+      "severity": "high",
+      "summary": "Patch window stamp on disk does not match the weekend stamp issued for this engagement.",
+      "remediation": "Install the contents of /app/environment/evidence/patch-stamp.txt on every edge. Do not use decoy-stamp.txt."
+    },
+    {
+      "id": "FH-02",
+      "severity": "high",
+      "summary": "Log shipper config is not wired to the local audit bridge, so auditd events never reach Loki.",
+      "remediation": "promtail.yml must set audit_bridge to 127.0.0.1 and the edge audit port."
+    },
+    {
+      "id": "FH-03",
+      "severity": "high",
+      "summary": "Runtime sensor rules omit the metrics/promtail ports the exporters actually bind.",
+      "remediation": "falco-rules.yml must cite the same metrics_port, audit_port and promtail_port the edge uses."
+    },
+    {
+      "id": "FH-04",
+      "severity": "critical",
+      "summary": "Metrics port is reachable outside the scrape CIDR; deny-default is missing.",
+      "remediation": "nft.allow must allow the metrics port only from 172.28.0.0/16 and deny 0.0.0.0/0."
+    },
+    {
+      "id": "FH-05",
+      "severity": "high",
+      "summary": "SSH still accepts password authentication on the hardened snippet.",
+      "remediation": "sshd_snippet must set PasswordAuthentication no, PermitRootLogin no, MaxAuthTries 3."
+    },
+    {
+      "id": "FH-06",
+      "severity": "medium",
+      "summary": "Scrape mesh labels or host order do not match inventory; app/data/ops identities can be swapped silently.",
+      "remediation": "targets.json must be edge-app, edge-data, edge-ops with fleet_role and chain_token equal to each inventory.json."
+    },
+    {
+      "id": "FH-07",
+      "severity": "high",
+      "summary": "Observability chain is broken: promtail ready and falco health do not carry the live audit chain_token.",
+      "remediation": "Promtail must fetch audit /healthz; falco must expose a wire containing that token and the cross ports."
+    },
+    {
+      "id": "FH-08",
+      "severity": "medium",
+      "summary": "Package seal looks present but does not list the required baseline set.",
+      "remediation": "packages.seal must be a JSON array whose sorted set equals ca-certificates, curl, procps, python3."
+    }
+  ]
+}

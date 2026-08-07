@@ -1,0 +1,6 @@
+[program:fleet-auditd]
+command=python3 {{ fleet_root }}/lib/fleet-auditd.py
+autostart=true
+autorestart=true
+stdout_logfile={{ fleet_root }}/var/lib/fleet-harden/fleet-auditd.log
+stderr_logfile={{ fleet_root }}/var/lib/fleet-harden/fleet-auditd.err

@@ -1,0 +1,37 @@
+#!/bin/bash
+# Apply the fleet harden Ansible site and leave live edge listeners up.
+set -euo pipefail
+
+ROOT=/app/environment/ansible
+VAR=/app/var/fleet-harden
+EDGES=/app/edges
+
+test -f /app/environment/docs/posture-contract.md
+test -f /app/environment/evidence/patch-stamp.txt
+test -f /app/environment/evidence/audit-findings.json
+test -d "$ROOT"
+
+mkdir -p "$VAR" "$EDGES/app" "$EDGES/data" "$EDGES/ops"
+chmod -R go-w "$ROOT" || true
+
+export ANSIBLE_HOST_KEY_CHECKING=False
+export ANSIBLE_RETRY_FILES_ENABLED=False
+export ANSIBLE_LOCALHOST_WARNING=False
+export ANSIBLE_INVENTORY_UNPARSED_WARNING=False
+
+cd "$ROOT"
+ansible-playbook -i inventory.ini site.yml
+
+COUNT=0
+if [ -f "$VAR/apply-count" ]; then
+  COUNT="$(tr -d '[:space:]' < "$VAR/apply-count" || true)"
+  case "$COUNT" in
+    ''|*[!0-9]*) COUNT=0 ;;
+  esac
+fi
+COUNT=$((COUNT + 1))
+printf '%s\n' "$COUNT" > "$VAR/apply-count"
+
+test -s "$VAR/posture-report.json"
+test -s "$VAR/scrape/targets.json"
+test -f "$VAR/stage-11.ok"

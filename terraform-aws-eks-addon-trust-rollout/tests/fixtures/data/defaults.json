@@ -1,0 +1,24 @@
+{
+  "cluster_name": "regulated-payments-eks",
+  "region": "us-east-1",
+  "account_id": "111122223333",
+  "oidc_provider_arn": "arn:aws:iam::111122223333:oidc-provider/oidc.eks.us-east-1.amazonaws.com/id/EXAMPLED429EXAMPLE",
+  "oidc_issuer_host": "oidc.eks.us-east-1.amazonaws.com/id/EXAMPLED429EXAMPLE",
+  "private_subnet_ids": ["subnet-priv-a", "subnet-priv-b"],
+  "node_role_arn": "arn:aws:iam::111122223333:role/regulated-payments-eks-node",
+  "system_taint": {
+    "key": "CriticalAddonsOnly",
+    "value": "true",
+    "effect": "NO_SCHEDULE"
+  },
+  "resolve_conflicts_on_update": "PRESERVE",
+  "upgrade_protected_tag": "UpgradeProtected",
+  "core_services": ["coredns", "ebs-csi-controller", "aws-load-balancer-controller", "vpc-cni"],
+  "drain_node": "ip-10-0-1-10.ec2.internal",
+  "forbidden_policy_actions": ["*", "iam:*", "AdministratorAccess"],
+  "allowed_policy_prefixes": {
+    "ebs_csi": ["ec2:AttachVolume", "ec2:CreateVolume", "ec2:DetachVolume", "ec2:DescribeVolumes", "ec2:CreateSnapshot", "ec2:DescribeSnapshots", "ec2:DeleteSnapshot"],
+    "load_balancer": ["elasticloadbalancing:*", "ec2:Describe*", "cognito-idp:Describe*", "acm:ListCertificates", "acm:DescribeCertificate", "iam:CreateServiceLinkedRole", "wafv2:GetWebACLForResource", "waf-regional:GetWebACLForResource"],
+    "karpenter": ["ec2:CreateFleet", "ec2:CreateLaunchTemplate", "ec2:CreateTags", "ec2:Describe*", "ec2:RunInstances", "ec2:TerminateInstances", "pricing:GetProducts", "ssm:GetParameter", "sqs:ReceiveMessage", "sqs:DeleteMessage", "sqs:GetQueueAttributes", "iam:PassRole"]
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "policy_version": "edge-2026-07",
+  "shared_waf_acl_name": "platform-edge-waf",
+  "scope": "CLOUDFRONT",
+  "distributions": ["static-api", "failover", "signed-content"],
+  "rate_based_rules": [{"name": "edge-rate-limit", "priority": 90, "limit": 2000, "aggregate_key_type": "IP", "action": "block"}],
+  "managed_rule_groups": [
+    {"name": "AWSManagedRulesCommonRuleSet", "vendor_name": "AWS", "priority": 10},
+    {"name": "AWSManagedRulesKnownBadInputsRuleSet", "vendor_name": "AWS", "priority": 20},
+    {"name": "AWSManagedRulesAmazonIpReputationList", "vendor_name": "AWS", "priority": 30}
+  ]
+}

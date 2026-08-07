@@ -1,0 +1,199 @@
+==> harbor check LLM: /root/tbench-tasks/ansible-fleet-security-observability
+
+🔎 Checking task quality...
+                              Task Quality Checks                               
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃ Check                        ┃ Outcome ┃ Explanation                         ┃
+┡━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
+│ Behavior In Task Description │ pass    │ instruction.md explicitly           │
+│                              │         │ references posture-contract.md as   │
+│                              │         │ the binding specification and       │
+│                              │         │ directs the agent to infer stage    │
+│                              │         │ order, port map, firewall/scrape    │
+│                              │         │ wiring, and report shape from it.   │
+│                              │         │ The contract comprehensively        │
+│                              │         │ documents every behavior the tests  │
+│                              │         │ exercise: stage markers (01–11),    │
+│                              │         │ port assignments per edge, config   │
+│                              │         │ file paths and required content     │
+│                              │         │ (promtail.yml, falco-rules.yml,     │
+│                              │         │ nft.allow, sshd_snippet),           │
+│                              │         │ posture-report.json and             │
+│                              │         │ targets.json schemas, listener      │
+│                              │         │ endpoints and body constraints,     │
+│                              │         │ idempotency requirement, and the    │
+│                              │         │ apply entrypoint. The output path   │
+│                              │         │ /app/var/fleet-harden/posture-repo… │
+│                              │         │ is stated directly in               │
+│                              │         │ instruction.md.                     │
+├──────────────────────────────┼─────────┼─────────────────────────────────────┤
+│ Behavior In Tests            │ pass    │ All behaviors described in          │
+│                              │         │ instruction.md (via                 │
+│                              │         │ posture-contract.md) are covered by │
+│                              │         │ tests: stage markers 01–11          │
+│                              │         │ (test_edge_stage_markers_and_inven… │
+│                              │         │ test_control_stage_markers_present… │
+│                              │         │ posture report schema/stamp         │
+│                              │         │ (test_posture_report_schema_and_st… │
+│                              │         │ firewall and SSH snippet content    │
+│                              │         │ (test_firewall_and_ssh_interact_wi… │
+│                              │         │ promtail and falco config           │
+│                              │         │ cross-wiring                        │
+│                              │         │ (test_promtail_and_falco_wire_cros… │
+│                              │         │ live listener body constraints      │
+│                              │         │ (test_live_listeners_match_role_la… │
+│                              │         │ scrape targets faithfulness         │
+│                              │         │ (test_scrape_targets_faithful_to_i… │
+│                              │         │ and idempotency                     │
+│                              │         │ (test_metamorphic_reapply_keeps_co… │
+│                              │         │ No contractually required behavior  │
+│                              │         │ is left untested.                   │
+├──────────────────────────────┼─────────┼─────────────────────────────────────┤
+│ Informative Test Structure   │ pass    │ test_outputs.py is well-organized:  │
+│                              │         │ a session-scoped autouse fixture    │
+│                              │         │ (live_edges) clearly handles        │
+│                              │         │ setup/teardown of listeners; each   │
+│                              │         │ test function has a descriptive     │
+│                              │         │ name and a one-line docstring       │
+│                              │         │ stating exactly what is being       │
+│                              │         │ checked (e.g., 'Posture report must │
+│                              │         │ match the contract schema and       │
+│                              │         │ authoritative stamp.', 'Scrape      │
+│                              │         │ targets must carry each edge's      │
+│                              │         │ inventory role and metrics port.'). │
+│                              │         │ CHECK_KEYS and EDGE_SPEC constants  │
+│                              │         │ are defined at module level and     │
+│                              │         │ commented inline. The structure is  │
+│                              │         │ readable and maintainable.          │
+├──────────────────────────────┼─────────┼─────────────────────────────────────┤
+│ Anti Cheating Measures       │ pass    │ The broken environment tree         │
+│                              │         │ contains eight distinct deliberate  │
+│                              │         │ bugs that all look plausible: wrong │
+│                              │         │ scrape CIDR (10.0.0.0/8 vs          │
+│                              │         │ 172.28.0.0/16), decoy stamp pointed │
+│                              │         │ at the wrong evidence file, swapped │
+│                              │         │ fleet_role values in host_vars,     │
+│                              │         │ open-world firewall rule without    │
+│                              │         │ deny, PasswordAuthentication yes,   │
+│                              │         │ missing audit_bridge in promtail    │
+│                              │         │ config, hardcoded fleet_role labels │
+│                              │         │ in scrape targets (bypassing        │
+│                              │         │ inventory), and softened live       │
+│                              │         │ checks in scrape_mesh. The          │
+│                              │         │ solution/ and tests/ directories    │
+│                              │         │ are not copied into the agent       │
+│                              │         │ image. The test fixtures reproduce  │
+│                              │         │ the same evidence files (stamp,     │
+│                              │         │ audit-findings) that exist in the   │
+│                              │         │ environment — this is necessary for │
+│                              │         │ the verifier to check correctness,  │
+│                              │         │ not a leak. The agent must read the │
+│                              │         │ contract and reason about the bugs  │
+│                              │         │ independently.                      │
+├──────────────────────────────┼─────────┼─────────────────────────────────────┤
+│ Structured Data Schema       │ pass    │ posture-contract.md §7 gives an     │
+│                              │         │ explicit normative table for every  │
+│                              │         │ field of posture-report.json        │
+│                              │         │ (status, patch_stamp, scrape_cidr,  │
+│                              │         │ edges, scrape_targets,              │
+│                              │         │ required_controls, checks with all  │
+│                              │         │ 11 required boolean keys). §6       │
+│                              │         │ specifies the exact JSON object     │
+│                              │         │ shape for each element of           │
+│                              │         │ targets.json ({host, port,          │
+│                              │         │ fleet_role}). §5 specifies required │
+│                              │         │ line content for promtail.yml,      │
+│                              │         │ falco-rules.yml, nft.allow, and     │
+│                              │         │ sshd_snippet. All schemas are       │
+│                              │         │ presented as normative rules, not   │
+│                              │         │ just illustrative examples.         │
+├──────────────────────────────┼─────────┼─────────────────────────────────────┤
+│ Pinned Dependencies          │ pass    │ Both Dockerfiles use the same       │
+│                              │         │ pinned base image                   │
+│                              │         │ (debian:bookworm-slim@sha256:4724b… │
+│                              │         │ The environment Dockerfile pins     │
+│                              │         │ ansible-core==2.17.6. The tests     │
+│                              │         │ Dockerfile pins                     │
+│                              │         │ ansible-core==2.17.6,               │
+│                              │         │ pytest==8.3.4,                      │
+│                              │         │ pytest-json-ctrf==0.3.5, and        │
+│                              │         │ requests==2.32.3. Apt packages are  │
+│                              │         │ not pinned, which is acceptable per │
+│                              │         │ the criterion.                      │
+├──────────────────────────────┼─────────┼─────────────────────────────────────┤
+│ Typos                        │ pass    │ No typos found in filenames, paths, │
+│                              │         │ commands, or variable names across  │
+│                              │         │ instruction.md, Dockerfiles,        │
+│                              │         │ Ansible roles, evidence files, test │
+│                              │         │ code, or solve.sh. All referenced   │
+│                              │         │ paths (/app/edges/app,              │
+│                              │         │ /app/edges/data,                    │
+│                              │         │ /app/var/fleet-harden,              │
+│                              │         │ /app/bin/fleet-harden-apply,        │
+│                              │         │ /app/environment/ansible, etc.) are │
+│                              │         │ consistent across all files.        │
+│                              │         │ Ansible variable names (fleet_root, │
+│                              │         │ fleet_role, fleet_metrics_port,     │
+│                              │         │ etc.) are spelled consistently      │
+│                              │         │ everywhere.                         │
+├──────────────────────────────┼─────────┼─────────────────────────────────────┤
+│ Tests Or Solution In Image   │ pass    │ The environment Dockerfile only     │
+│                              │         │ COPYs bin/, docs/, evidence/, and   │
+│                              │         │ ansible/ from the build context —   │
+│                              │         │ neither tests/ nor solution/ is     │
+│                              │         │ included. The tests Dockerfile      │
+│                              │         │ COPYs fixtures/ and test files, but │
+│                              │         │ not solution/. The agent runtime    │
+│                              │         │ image has no access to the correct  │
+│                              │         │ Ansible tree or test code.          │
+├──────────────────────────────┼─────────┼─────────────────────────────────────┤
+│ Test Deps In Image           │ pass    │ pytest, pytest-json-ctrf, and       │
+│                              │         │ requests are installed only in the  │
+│                              │         │ tests Dockerfile, not in the        │
+│                              │         │ environment Dockerfile.             │
+│                              │         │ ansible-core appears in both        │
+│                              │         │ images, but this is appropriate:    │
+│                              │         │ the environment image needs it for  │
+│                              │         │ the agent to run playbooks, and the │
+│                              │         │ tests image needs it for the        │
+│                              │         │ metamorphic re-apply test           │
+│                              │         │ (test_metamorphic_reapply_keeps_co… │
+│                              │         │ calls /app/bin/fleet-harden-apply   │
+│                              │         │ which runs ansible-playbook). No    │
+│                              │         │ test-only package leaks into the    │
+│                              │         │ agent runtime image.                │
+├──────────────────────────────┼─────────┼─────────────────────────────────────┤
+│ Hardcoded Solution           │ pass    │ solution/solve.sh copies the fixed  │
+│                              │         │ Ansible tree from                   │
+│                              │         │ solution/fixed/ansible into         │
+│                              │         │ /app/environment/ansible, then      │
+│                              │         │ calls /app/bin/fleet-harden-apply   │
+│                              │         │ twice. The apply script runs        │
+│                              │         │ ansible-playbook which executes 11  │
+│                              │         │ roles that dynamically probe        │
+│                              │         │ evidence files, start listeners,    │
+│                              │         │ generate config files, collect      │
+│                              │         │ inventory, and write both           │
+│                              │         │ targets.json and                    │
+│                              │         │ posture-report.json at runtime. The │
+│                              │         │ report content (patch_stamp,        │
+│                              │         │ scrape_targets, required_controls)  │
+│                              │         │ is derived from live files and      │
+│                              │         │ listeners, not hardcoded. The       │
+│                              │         │ double-run also validates           │
+│                              │         │ idempotency as required.            │
+├──────────────────────────────┼─────────┼─────────────────────────────────────┤
+│ File Reference Mentioned     │ pass    │ instruction.md explicitly names the │
+│                              │         │ posture report path                 │
+│                              │         │ (/app/var/fleet-harden/posture-rep… │
+│                              │         │ as the required output. All other   │
+│                              │         │ output files (targets.json,         │
+│                              │         │ stage-NN.ok markers,                │
+│                              │         │ inventory.json, nft.allow,          │
+│                              │         │ sshd_snippet, promtail.yml,         │
+│                              │         │ falco-rules.yml, patch-stamp) are   │
+│                              │         │ explicitly named in                 │
+│                              │         │ posture-contract.md, which          │
+│                              │         │ instruction.md tells the agent to   │
+│                              │         │ use as the binding specification.   │
+└──────────────────────────────┴─────────┴─────────────────────────────────────┘

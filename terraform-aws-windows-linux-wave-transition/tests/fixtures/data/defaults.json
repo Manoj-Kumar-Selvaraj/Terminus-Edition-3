@@ -1,0 +1,19 @@
+{
+  "region": "us-east-1",
+  "cutover_id": "CUT-2026-06-WINLINUX",
+  "migration_wave": "wave-3-prod-parallel",
+  "kms_key_id": "arn:aws:kms:us-east-1:111122223333:key/96b54ac0-1579-42db-8ed0-ec2linuxmigration",
+  "iam_instance_profile": "ssm-linux-core-prod",
+  "required_ssm_security_group": "sg-ssm-egress",
+  "forbidden_admin_groups": [
+    "sg-rdp-admin",
+    "sg-winrm-admin",
+    "sg-domain-join"
+  ],
+  "disable_api_termination": true,
+  "detailed_monitoring": true,
+  "ebs_optimized": true,
+  "metadata_http_tokens": "required",
+  "metadata_hop_limit": 1,
+  "metadata_instance_tags": "enabled"
+}

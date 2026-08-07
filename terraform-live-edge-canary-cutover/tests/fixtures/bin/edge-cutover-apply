@@ -1,0 +1,166 @@
+#!/usr/bin/env bash
+# edge-cutover-apply — build/start edgectl, terraform apply, write cutover seal.
+set -euo pipefail
+
+EDGE_ROOT="${EDGE_ROOT:-/app/var/edge}"
+STATE_DIR="${EDGE_ROOT}/state"
+TF_DIR="${EDGE_ROOT}/terraform"
+ENV_TF="/app/environment/terraform"
+EDGECTL_SRC="/app/environment/edgectl"
+EDGECTL_BIN="${EDGE_ROOT}/bin/edgectl"
+EDGECTL_CFG="${EDGE_ROOT}/edgectl.json"
+LISTEN="${EDGECTL_LISTEN:-127.0.0.1:8787}"
+BASE_URL="http://${LISTEN}"
+INVENTORY="${ENV_TF}/inventory/edge-fleet.auto.tfvars.json"
+SEAL="${EDGE_ROOT}/cutover-seal.json"
+PID_FILE="${EDGE_ROOT}/edgectl.pid"
+LOG_FILE="${EDGE_ROOT}/edgectl.log"
+
+mkdir -p "$EDGE_ROOT" "$STATE_DIR" "$TF_DIR" "${EDGE_ROOT}/bin" \
+  "${EDGE_ROOT}/observatory" "${EDGE_ROOT}/terraform-payloads"
+
+if [[ ! -f "$EDGECTL_CFG" ]]; then
+  cat >"$EDGECTL_CFG" <<'EOF'
+{
+  "version": "edgectl-1",
+  "tick_millis": 50,
+  "window_size": 200,
+  "unhealthy_error_rate": 1.0,
+  "base_error_rate": 0.0
+}
+EOF
+fi
+
+healthy() {
+  curl -fsS "${BASE_URL}/healthz" >/dev/null 2>&1
+}
+
+if ! healthy; then
+  if [[ ! -x "$EDGECTL_BIN" ]]; then
+    echo "edge-cutover-apply: building edgectl..."
+    ( cd "$EDGECTL_SRC" && go build -o "$EDGECTL_BIN" ./cmd/edgectl )
+  fi
+  if [[ -f "$PID_FILE" ]] && kill -0 "$(cat "$PID_FILE")" 2>/dev/null; then
+    echo "edge-cutover-apply: edgectl pid file present but healthz failed; restarting"
+    kill "$(cat "$PID_FILE")" 2>/dev/null || true
+    sleep 1
+  fi
+  echo "edge-cutover-apply: starting edgectl on ${LISTEN}"
+  nohup "$EDGECTL_BIN" \
+    -listen "$LISTEN" \
+    -state "$STATE_DIR" \
+    -config "$EDGECTL_CFG" \
+    >"$LOG_FILE" 2>&1 &
+  echo $! >"$PID_FILE"
+  for _ in $(seq 1 50); do
+    if healthy; then
+      break
+    fi
+    sleep 0.1
+  done
+  healthy || {
+    echo "edge-cutover-apply: edgectl failed to become healthy" >&2
+    tail -n 50 "$LOG_FILE" >&2 || true
+    exit 1
+  }
+fi
+
+# Ensure helper is on PATH expectations used by Terraform.
+if [[ ! -x /app/bin/edgectl-put ]]; then
+  echo "edge-cutover-apply: missing /app/bin/edgectl-put" >&2
+  exit 1
+fi
+
+export EDGECTL_BASE_URL="$BASE_URL"
+export TF_DATA_DIR="${TF_DIR}/.terraform"
+
+cd "$ENV_TF"
+terraform init -input=false -no-color
+terraform apply -input=false -auto-approve -no-color
+
+python3 - "$INVENTORY" "$BASE_URL" "$SEAL" <<'PY'
+import json, sys, urllib.request
+
+inv_path, base, seal_path = sys.argv[1:4]
+inv = json.load(open(inv_path, encoding="utf-8"))
+
+def get(path):
+    with urllib.request.urlopen(base + path) as r:
+        return json.load(r)
+
+snap = get("/v1/snapshot")
+metrics = get("/v1/metrics")
+
+networks = snap.get("networks") or {}
+pools = snap.get("pools") or {}
+canaries = snap.get("canaries") or {}
+wafs = snap.get("wafs") or {}
+tls_map = snap.get("tls") or {}
+dns_map = snap.get("dns") or {}
+
+route_id = inv["canary_route_id"]
+canary = canaries.get(route_id) or {}
+waf = wafs.get(inv["waf"]["id"]) or {}
+tls = tls_map.get(inv["tls_id"]) or {}
+blue = pools.get(inv["blue_pool"]["id"]) or {}
+green = pools.get(inv["green_pool"]["id"]) or {}
+
+def pool_healthy(p, inv_pool):
+    if not p:
+        return False
+    healthy = sum(1 for o in p.get("origins") or [] if o.get("healthy"))
+    return healthy >= int(inv_pool.get("min_healthy", 1))
+
+dns_key = f"{inv['dns_zone']}/{inv['dns_name']}"
+dns = dns_map.get(dns_key) or {}
+# Some stores key differently; also scan values.
+if not dns:
+    for rec in dns_map.values():
+        if rec.get("zone") == inv["dns_zone"] and rec.get("name") == inv["dns_name"]:
+            dns = rec
+            break
+
+ready_networks = sum(1 for n in networks.values() if n.get("status") == "ready")
+
+seal = {
+    "status": "ok",
+    "engagement": inv["engagement"],
+    "hostname": inv["edge_hostname"],
+    "canary_weight_green": int(canary.get("weight_green", metrics.get("canary_weight_green", 0))),
+    "dns_target_pool": dns.get("target_pool") or metrics.get("dns_target_pool") or "",
+    "waf_mode": waf.get("mode") or "",
+    "error_rate_pct": float(metrics.get("error_rate_pct", 0)),
+    "networks_ready": int(ready_networks),
+    "blue_healthy": bool(pool_healthy(blue, inv["blue_pool"])),
+    "green_healthy": bool(pool_healthy(green, inv["green_pool"])),
+    "tls_fingerprint": tls.get("fingerprint") or "",
+    "steps_applied": list(inv["canary_steps"]),
+}
+
+# Refuse to seal a non-contract posture (keeps NOP from writing a pretty lie).
+budget = float(inv["error_budget_pct"])
+ok = (
+    seal["canary_weight_green"] == 100
+    and seal["dns_target_pool"] == inv["green_pool"]["id"]
+    and seal["waf_mode"] == "enforce"
+    and seal["error_rate_pct"] <= budget
+    and seal["blue_healthy"]
+    and seal["green_healthy"]
+    and seal["tls_fingerprint"] == inv["tls_fingerprint"]
+    and seal["networks_ready"] >= len(inv.get("networks") or {})
+)
+if not ok:
+    raise SystemExit("edge-cutover-apply: live posture does not satisfy cutover-contract seal rules")
+
+with open(seal_path, "w", encoding="utf-8") as f:
+    json.dump(seal, f, indent=2)
+    f.write("\n")
+
+snap_path = seal_path.rsplit("/", 1)[0] + "/snapshot.json"
+with open(snap_path, "w", encoding="utf-8") as f:
+    json.dump(snap, f, indent=2)
+    f.write("\n")
+
+print(f"edge-cutover-apply: wrote {seal_path}")
+print(json.dumps(seal, indent=2))
+PY

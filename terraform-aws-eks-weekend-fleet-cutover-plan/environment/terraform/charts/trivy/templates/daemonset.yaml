@@ -1,0 +1,43 @@
+{{- if eq .Values.workloadKind "DaemonSet" }}
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: {{ .Release.Name }}
+  namespace: {{ .Release.Namespace }}
+spec:
+  selector:
+    matchLabels:
+      app: trivy
+      trivy.mode: {{ .Values.trivy.mode | quote }}
+  template:
+    metadata:
+      labels:
+        app: trivy
+        trivy.mode: {{ .Values.trivy.mode | quote }}
+    spec:
+      serviceAccountName: {{ .Values.serviceAccount.name }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+{{ toYaml . | indent 8 }}
+      {{- end }}
+      tolerations:
+{{ toYaml .Values.tolerations | indent 8 }}
+      containers:
+        - name: trivy
+          image: "{{ .Values.trivy.image.repository }}:{{ .Values.trivy.image.tag }}"
+          args:
+            - rootfs
+            - --scanners
+            - vuln
+            - /
+          volumeMounts:
+            - name: host-root
+              mountPath: /host
+              readOnly: true
+          resources:
+{{ toYaml .Values.resources | indent 12 }}
+      volumes:
+        - name: host-root
+          hostPath:
+            path: /
+{{- end }}

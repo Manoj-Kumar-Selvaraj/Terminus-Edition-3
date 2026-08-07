@@ -1,0 +1,58 @@
+---
+- name: inventory_probe - prepare edge directories
+  file:
+    path: "{{ item }}"
+    state: directory
+    mode: "0755"
+  loop:
+    - "{{ fleet_root }}/var/lib/fleet-harden"
+    - "{{ fleet_root }}/etc/fleet-harden"
+    - "{{ fleet_root }}/etc/supervisor/conf.d"
+    - "{{ fleet_root }}/lib"
+
+- name: inventory_probe - derive chain token
+  shell: |
+    python3 - <<'PY'
+    import hashlib, json, os
+    hostname = os.environ["INV_HOST"]
+    role = os.environ["INV_ROLE"]
+    ports = [os.environ[k] for k in ("A","M","P","F")]
+    raw = f"{hostname}|{role}|{ports[0]}|{ports[1]}|{ports[2]}|{ports[3]}".encode()
+    token = hashlib.sha256(raw).hexdigest()[:16]
+    doc = {
+      "hostname": hostname,
+      "role": role,
+      "metrics_port": int(os.environ["M"]),
+      "audit_port": int(os.environ["A"]),
+      "promtail_port": int(os.environ["P"]),
+      "falco_port": int(os.environ["F"]),
+      "chain_token": token,
+    }
+    open(os.environ["OUT"], "w", encoding="utf-8").write(json.dumps(doc, indent=2) + "\n")
+    print(token)
+    PY
+  args:
+    executable: /bin/bash
+  environment:
+    INV_HOST: "{{ inventory_hostname }}"
+    INV_ROLE: "{{ fleet_role }}"
+    M: "{{ fleet_metrics_port }}"
+    A: "{{ fleet_audit_port }}"
+    P: "{{ fleet_promtail_port }}"
+    F: "{{ fleet_falco_port }}"
+    OUT: "{{ fleet_root }}/var/lib/fleet-harden/inventory.json"
+  register: inventory_probe_token
+  changed_when: true
+
+- name: inventory_probe - persist chain token file
+  copy:
+    dest: "{{ fleet_root }}/var/lib/fleet-harden/chain.token"
+    mode: "0644"
+    content: "{{ inventory_probe_token.stdout | trim }}\n"
+
+- name: inventory_probe - write stage 01 marker
+  copy:
+    dest: "{{ fleet_root }}/var/lib/fleet-harden/stage-01.ok"
+    mode: "0644"
+    content: |
+      ok

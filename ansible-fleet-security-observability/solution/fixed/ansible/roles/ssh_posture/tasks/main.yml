@@ -1,0 +1,35 @@
+---
+- name: ssh_posture - require stage 08
+  stat:
+    path: "{{ fleet_root }}/var/lib/fleet-harden/stage-08.ok"
+  register: prior_08
+
+- name: ssh_posture - soft gate warns without stage 08
+  debug:
+    msg: "soft gate: missing stage-08.ok under {{ fleet_root }}"
+  when: fleet_soft_gates | bool and not prior_08.stat.exists
+
+- name: ssh_posture - fail closed without stage 08
+  fail:
+    msg: "stage-08.ok missing under {{ fleet_root }}"
+  when: not (fleet_soft_gates | bool) and not prior_08.stat.exists
+
+- name: ssh_posture - template snippet
+  template:
+    src: sshd_snippet.j2
+    dest: "{{ fleet_root }}/etc/fleet-harden/sshd_snippet"
+    mode: "0644"
+
+- name: ssh_posture - refuse password auth
+  assert:
+    that:
+      - "'PasswordAuthentication yes' not in lookup('file', fleet_root + '/etc/fleet-harden/sshd_snippet')"
+      - "'PasswordAuthentication no' in lookup('file', fleet_root + '/etc/fleet-harden/sshd_snippet')"
+    fail_msg: ssh still allows password authentication
+
+- name: ssh_posture - write stage 09 marker
+  copy:
+    dest: "{{ fleet_root }}/var/lib/fleet-harden/stage-09.ok"
+    mode: "0644"
+    content: |
+      ok

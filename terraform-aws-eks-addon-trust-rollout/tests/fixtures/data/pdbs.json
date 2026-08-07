@@ -1,0 +1,22 @@
+{
+  "required": [
+    {
+      "name": "coredns",
+      "namespace": "kube-system",
+      "min_available": 1,
+      "selector": {"k8s-app": "kube-dns"}
+    },
+    {
+      "name": "ebs-csi-controller",
+      "namespace": "kube-system",
+      "min_available": 1,
+      "selector": {"app": "ebs-csi-controller"}
+    },
+    {
+      "name": "aws-load-balancer-controller",
+      "namespace": "kube-system",
+      "min_available": 1,
+      "selector": {"app.kubernetes.io/name": "aws-load-balancer-controller"}
+    }
+  ]
+}

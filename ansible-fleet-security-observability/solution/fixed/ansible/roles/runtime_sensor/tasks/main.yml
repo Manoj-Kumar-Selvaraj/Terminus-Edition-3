@@ -1,0 +1,92 @@
+---
+- name: runtime_sensor - require stage 06
+  stat:
+    path: "{{ fleet_root }}/var/lib/fleet-harden/stage-06.ok"
+  register: prior_06
+
+- name: runtime_sensor - soft gate warns without stage 06
+  debug:
+    msg: "soft gate: missing stage-06.ok under {{ fleet_root }}"
+  when: fleet_soft_gates | bool and not prior_06.stat.exists
+
+- name: runtime_sensor - fail closed without stage 06
+  fail:
+    msg: "stage-06.ok missing under {{ fleet_root }}"
+  when: not (fleet_soft_gates | bool) and not prior_06.stat.exists
+
+- name: runtime_sensor - template falco rules
+  template:
+    src: falco-rules.yml.j2
+    dest: "{{ fleet_root }}/etc/fleet-harden/falco-rules.yml"
+    mode: "0644"
+
+- name: runtime_sensor - rules must cite all three ports
+  shell: |
+    grep -q "metrics_port: {{ fleet_metrics_port }}" "{{ fleet_root }}/etc/fleet-harden/falco-rules.yml"
+    grep -q "audit_port: {{ fleet_audit_port }}" "{{ fleet_root }}/etc/fleet-harden/falco-rules.yml"
+    grep -q "promtail_port: {{ fleet_promtail_port }}" "{{ fleet_root }}/etc/fleet-harden/falco-rules.yml"
+  args:
+    executable: /bin/bash
+  changed_when: false
+
+- name: runtime_sensor - template listener
+  template:
+    src: fleet-falco.py.j2
+    dest: "{{ fleet_root }}/lib/fleet-falco.py"
+    mode: "0755"
+  notify: restart fleet-falco
+
+- name: runtime_sensor - program conf
+  template:
+    src: fleet-falco.conf.j2
+    dest: "{{ fleet_root }}/etc/supervisor/conf.d/fleet-falco.conf"
+    mode: "0644"
+
+- name: runtime_sensor - stop previous listener if any
+  shell: |
+    if [ -f "{{ fleet_root }}/var/lib/fleet-harden/fleet-falco.pid" ]; then
+      kill "$(cat "{{ fleet_root }}/var/lib/fleet-harden/fleet-falco.pid")" 2>/dev/null || true
+      rm -f "{{ fleet_root }}/var/lib/fleet-harden/fleet-falco.pid"
+    fi
+    fuser -k "{{ fleet_falco_port }}/tcp" 2>/dev/null || true
+    true
+  args:
+    executable: /bin/bash
+  changed_when: false
+
+- name: runtime_sensor - start listener
+  shell: |
+    nohup python3 "{{ fleet_root }}/lib/fleet-falco.py" \
+      >"{{ fleet_root }}/var/lib/fleet-harden/fleet-falco.log" \
+      2>"{{ fleet_root }}/var/lib/fleet-harden/fleet-falco.err" &
+    echo $! > "{{ fleet_root }}/var/lib/fleet-harden/fleet-falco.pid"
+  args:
+    executable: /bin/bash
+
+- name: runtime_sensor - wait listen
+  wait_for:
+    host: 127.0.0.1
+    port: "{{ fleet_falco_port }}"
+    timeout: 45
+
+- name: runtime_sensor - probe endpoint
+  uri:
+    url: "http://127.0.0.1:{{ fleet_falco_port }}/healthz"
+    return_content: true
+    status_code: 200
+  register: runtime_sensor_probe
+
+- name: runtime_sensor - probe must expose observability wire
+  assert:
+    that:
+      - (fleet_metrics_port | string) in runtime_sensor_probe.content
+      - (fleet_promtail_port | string) in runtime_sensor_probe.content
+      - "'wire' in runtime_sensor_probe.content"
+    fail_msg: falco health missing cross-port wire
+
+- name: runtime_sensor - write stage 07 marker
+  copy:
+    dest: "{{ fleet_root }}/var/lib/fleet-harden/stage-07.ok"
+    mode: "0644"
+    content: |
+      ok

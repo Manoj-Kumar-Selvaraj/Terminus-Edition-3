@@ -1,0 +1,93 @@
+{
+  "account_id": "111122223333",
+  "ami_catalog": {
+    "images": {
+      "ami-0feed20260618": {
+        "architecture": "x86_64",
+        "deprecated": false,
+        "owner_account_id": "111122223333",
+        "state": "available"
+      },
+      "ami-unstable-latest": {
+        "architecture": "arm64",
+        "deprecated": false,
+        "owner_account_id": "999900001111",
+        "state": "available"
+      }
+    },
+    "latest": "ami-unstable-latest"
+  },
+  "app": "payments-api",
+  "artifact_bucket_arn": "arn:aws:s3:::release-artifacts-prod",
+  "asg": {
+    "pilot_size": 1,
+    "desired_capacity": 6,
+    "max_size": 9,
+    "max_unavailable": 1,
+    "min_size": 3,
+    "wave_size": 2
+  },
+  "ebs_volumes": [
+    {
+      "delete_on_termination": false,
+      "encrypted": true,
+      "kms_key_alias": "alias/payments-ebs",
+      "kms_key_arn": "arn:aws:kms:us-east-1:111122223333:key/payments",
+      "logical_name": "app-data",
+      "size_gb": 80
+    }
+  ],
+  "environment": "prod",
+  "instance_type": "m6i.large",
+  "metric_namespace": "Payments/EC2",
+  "network": {
+    "alb_security_group_id": "sg-prod-alb",
+    "endpoint_prefix_lists": [
+      "pl-logs",
+      "pl-s3",
+      "pl-ssm"
+    ],
+    "resolver_security_group_id": "sg-corp-resolver"
+  },
+  "placement": {
+    "minimum_azs": 3,
+    "subnets": [
+      {
+        "account_id": "111122223333",
+        "az": "us-east-1a",
+        "id": "subnet-app-a",
+        "tier": "private_app"
+      },
+      {
+        "account_id": "111122223333",
+        "az": "us-east-1b",
+        "id": "subnet-app-b",
+        "tier": "private_app"
+      },
+      {
+        "account_id": "111122223333",
+        "az": "us-east-1c",
+        "id": "subnet-app-c",
+        "tier": "private_app"
+      }
+    ]
+  },
+  "region": "us-east-1",
+  "release_artifact": {
+    "ami_id": "ami-0feed20260618",
+    "ami_owner_account_id": "111122223333",
+    "architecture": "x86_64",
+    "build_id": "build-20260618.4",
+    "commit_sha": "8b95c7a12f20",
+    "manifest_sha256": "658095c7da78c5be5ae5d39cca8163c69ab568bc2e1a7ceeee7b5c656d5e5bce",
+    "manifest_version": 2,
+    "user_data_sha256": "71b7db2dd3f5ec4597a63fd0b4ef0d61c451e45e39d726b655f45a2d98d3fa21"
+  },
+  "rollout": {
+    "candidate_health": "passing",
+    "fault_point": "none",
+    "owner_token": "deploy-20260618"
+  },
+  "schema_version": "ec2-module-config.v2",
+  "service_port": 8080
+}

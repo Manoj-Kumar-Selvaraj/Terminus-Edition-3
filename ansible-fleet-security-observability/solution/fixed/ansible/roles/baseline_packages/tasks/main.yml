@@ -1,0 +1,50 @@
+---
+- name: baseline_packages - require stage 01
+  stat:
+    path: "{{ fleet_root }}/var/lib/fleet-harden/stage-01.ok"
+  register: prior_01
+
+- name: baseline_packages - soft gate warns without stage 01
+  debug:
+    msg: "soft gate: missing stage-01.ok under {{ fleet_root }}"
+  when: fleet_soft_gates | bool and not prior_01.stat.exists
+
+- name: baseline_packages - fail closed without stage 01
+  fail:
+    msg: "stage-01.ok missing under {{ fleet_root }}"
+  when: not (fleet_soft_gates | bool) and not prior_01.stat.exists
+
+- name: baseline_packages - ensure packages present
+  apt:
+    name: "{{ item }}"
+    state: present
+    update_cache: false
+  loop: "{{ fleet_packages }}"
+
+- name: baseline_packages - python3 usable
+  command: python3 -V
+  changed_when: false
+
+- name: baseline_packages - curl usable
+  command: curl --version
+  changed_when: false
+
+- name: baseline_packages - record package seal
+  copy:
+    dest: "{{ fleet_root }}/var/lib/fleet-harden/packages.seal"
+    mode: "0644"
+    content: |
+      {{ fleet_required_packages | sort | to_json }}
+
+- name: baseline_packages - seal must match required sorted set
+  assert:
+    that:
+      - (lookup('file', fleet_root + '/var/lib/fleet-harden/packages.seal') | from_json | sort) == (fleet_required_packages | sort)
+    fail_msg: packages.seal does not match required package set
+
+- name: baseline_packages - write stage 02 marker
+  copy:
+    dest: "{{ fleet_root }}/var/lib/fleet-harden/stage-02.ok"
+    mode: "0644"
+    content: |
+      ok

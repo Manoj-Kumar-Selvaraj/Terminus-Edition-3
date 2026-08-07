@@ -1,0 +1,19 @@
+{
+  "name_prefix": "pay-egress",
+  "region": "us-east-1",
+  "account_id": "123456789012",
+  "runtime_queue_name": "payments-runtime-events",
+  "allowed_principal_arns": [
+    "arn:aws:iam::123456789012:role/payments-runtime",
+    "arn:aws:iam::123456789012:role/payment-reconciler"
+  ],
+  "artifact_bucket_arns": [
+    "arn:aws:s3:::payments-prod-artifacts",
+    "arn:aws:s3:::payments-prod-artifacts/*"
+  ],
+  "nat_enabled_azs": [],
+  "tags": {
+    "Environment": "prod",
+    "System": "payments-egress"
+  }
+}

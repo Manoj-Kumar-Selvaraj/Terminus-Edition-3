@@ -1,0 +1,76 @@
+---
+- name: node_metrics - require stage 04
+  stat:
+    path: "{{ fleet_root }}/var/lib/fleet-harden/stage-04.ok"
+  register: prior_04
+
+- name: node_metrics - soft gate warns without stage 04
+  debug:
+    msg: "soft gate: missing stage-04.ok under {{ fleet_root }}"
+  when: fleet_soft_gates | bool and not prior_04.stat.exists
+
+- name: node_metrics - fail closed without stage 04
+  fail:
+    msg: "stage-04.ok missing under {{ fleet_root }}"
+  when: not (fleet_soft_gates | bool) and not prior_04.stat.exists
+
+- name: node_metrics - template listener
+  template:
+    src: fleet-node-exporter.py.j2
+    dest: "{{ fleet_root }}/lib/fleet-node-exporter.py"
+    mode: "0755"
+  notify: restart fleet-node-exporter
+
+- name: node_metrics - program conf
+  template:
+    src: fleet-node-exporter.conf.j2
+    dest: "{{ fleet_root }}/etc/supervisor/conf.d/fleet-node-exporter.conf"
+    mode: "0644"
+
+- name: node_metrics - stop previous listener if any
+  shell: |
+    if [ -f "{{ fleet_root }}/var/lib/fleet-harden/fleet-node-exporter.pid" ]; then
+      kill "$(cat "{{ fleet_root }}/var/lib/fleet-harden/fleet-node-exporter.pid")" 2>/dev/null || true
+      rm -f "{{ fleet_root }}/var/lib/fleet-harden/fleet-node-exporter.pid"
+    fi
+    fuser -k "{{ fleet_metrics_port }}/tcp" 2>/dev/null || true
+    true
+  args:
+    executable: /bin/bash
+  changed_when: false
+
+- name: node_metrics - start listener
+  shell: |
+    nohup python3 "{{ fleet_root }}/lib/fleet-node-exporter.py" \
+      >"{{ fleet_root }}/var/lib/fleet-harden/fleet-node-exporter.log" \
+      2>"{{ fleet_root }}/var/lib/fleet-harden/fleet-node-exporter.err" &
+    echo $! > "{{ fleet_root }}/var/lib/fleet-harden/fleet-node-exporter.pid"
+  args:
+    executable: /bin/bash
+
+- name: node_metrics - wait listen
+  wait_for:
+    host: 127.0.0.1
+    port: "{{ fleet_metrics_port }}"
+    timeout: 45
+
+- name: node_metrics - probe endpoint
+  uri:
+    url: "http://127.0.0.1:{{ fleet_metrics_port }}/metrics"
+    return_content: true
+    status_code: 200
+  register: node_metrics_probe
+
+- name: node_metrics - probe must cite fleet_role
+  assert:
+    that:
+      - ("fleet_role=\"" + fleet_role + "\"") in node_metrics_probe.content
+    fail_msg: metrics missing fleet_role label
+  when: not (fleet_soft_gates | bool)
+
+- name: node_metrics - write stage 05 marker
+  copy:
+    dest: "{{ fleet_root }}/var/lib/fleet-harden/stage-05.ok"
+    mode: "0644"
+    content: |
+      ok

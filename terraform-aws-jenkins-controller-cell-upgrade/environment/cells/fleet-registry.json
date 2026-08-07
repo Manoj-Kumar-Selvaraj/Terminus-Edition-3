@@ -1,0 +1,41 @@
+{
+  "namespace": "jenkins",
+  "cells": {
+    "payments-controller": {
+      "service_account": "payments-controller",
+      "folder": "payments",
+      "routing_key": "shared",
+      "home_claim": "shared-jenkins-home",
+      "plugin_generation": "gen-1",
+      "az_preference": "us-east-1a"
+    },
+    "risk-controller": {
+      "service_account": "risk-controller",
+      "folder": "risk",
+      "routing_key": "shared",
+      "home_claim": "shared-jenkins-home",
+      "plugin_generation": "gen-3-incompatible",
+      "az_preference": "us-east-1b"
+    },
+    "platform-controller": {
+      "service_account": "platform-controller",
+      "folder": "platform",
+      "routing_key": "shared",
+      "home_claim": "shared-jenkins-home",
+      "plugin_generation": "gen-1",
+      "az_preference": "us-east-1c"
+    }
+  },
+  "jobs": {
+    "payments-release": {
+      "cell": "payments-controller",
+      "folder": "payments",
+      "required_plugins": ["workflow-aggregator"]
+    },
+    "risk-score": {
+      "cell": "payments-controller",
+      "folder": "risk",
+      "required_plugins": ["workflow-aggregator"]
+    }
+  }
+}

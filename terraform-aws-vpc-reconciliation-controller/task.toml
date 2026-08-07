@@ -1,0 +1,28 @@
+version = "2.0"
+name = "terraform-aws-vpc-reconciliation-controller"
+category = "Software"
+subcategory = "Systems"
+tags = ["terraform", "vpc", "reconciliation", "sqlite", "control-plane", "go"]
+languages = ["go", "hcl", "python", "bash"]
+difficulty = "frontier"
+expert_time_estimate_hours = 16
+artifacts = ["/app/cmd", "/app/go.mod", "/app/terraform", "/app/var/reconcile", "/app/output", "/app/bin"]
+
+[metadata]
+author_name = "anonymous"
+author_email = "anonymous@example.com"
+
+[verifier]
+timeout_sec = 2400
+environment_mode = "separate"
+
+[agent]
+timeout_sec = 9000
+
+[environment]
+network_mode = "public"
+build_timeout_sec = 1800
+cpus = 2
+memory_mb = 8192
+storage_mb = 10240
+workdir = "/app"

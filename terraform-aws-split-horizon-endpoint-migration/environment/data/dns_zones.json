@@ -1,0 +1,35 @@
+{
+  "zones": [
+    {
+      "key": "vpce",
+      "name": "vpce.staging.internal",
+      "owner_vpc_key": "shared",
+      "records": [
+        {"name": "ssm.vpce.staging.internal", "endpoint_key": "ssm"},
+        {"name": "ssmmessages.vpce.staging.internal", "endpoint_key": "ssmmessages"},
+        {"name": "ec2messages.vpce.staging.internal", "endpoint_key": "ec2messages"}
+      ]
+    },
+    {
+      "key": "shared-services",
+      "name": "shared.services.internal",
+      "owner_vpc_key": "shared",
+      "records": [
+        {"name": "api.shared.services.internal", "endpoint_key": "ssm"}
+      ]
+    },
+    {
+      "key": "overlap-shadow",
+      "name": "shared.services.internal",
+      "owner_vpc_key": "foreign",
+      "records": [
+        {"name": "api.shared.services.internal", "static_ipv4": "198.51.100.99"}
+      ]
+    }
+  ],
+  "foreign_vpc": {
+    "key": "foreign",
+    "cidr_block": "10.99.0.0/16",
+    "name": "foreign-account-vpc"
+  }
+}

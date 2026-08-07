@@ -1,0 +1,13 @@
+           MOVE SPACES TO H-LOCK-KEY
+           STRING "BAY:" FUNCTION TRIM(H-BAY)
+             INTO H-LOCK-KEY
+           END-STRING
+           EXEC SQL
+           SELECT COUNT(*) INTO :H-COUNT
+             FROM pg_advisory_xact_lock(
+                  hashtext(:H-LOCK-KEY))
+           END-EXEC
+           IF SQLCODE NOT = 0
+        SET SQL-FAILED TO TRUE
+        EXIT PARAGRAPH
+           END-IF.

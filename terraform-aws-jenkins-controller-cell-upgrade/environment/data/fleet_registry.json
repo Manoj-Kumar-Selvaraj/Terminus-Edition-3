@@ -1,0 +1,61 @@
+{
+  "namespace": "jenkins",
+  "cells": {
+    "payments-controller": {
+      "service_account": "payments-controller",
+      "folder": "payments",
+      "routing_key": "payments",
+      "home_claim": "payments-controller-home",
+      "plugin_generation": "gen-2",
+      "az_preference": "us-east-1a"
+    },
+    "risk-controller": {
+      "service_account": "risk-controller",
+      "folder": "risk",
+      "routing_key": "risk",
+      "home_claim": "risk-controller-home",
+      "plugin_generation": "gen-2",
+      "az_preference": "us-east-1b"
+    },
+    "platform-controller": {
+      "service_account": "platform-controller",
+      "folder": "platform",
+      "routing_key": "platform",
+      "home_claim": "platform-controller-home",
+      "plugin_generation": "gen-2",
+      "az_preference": "us-east-1c"
+    }
+  },
+  "jobs": {
+    "payments-release": {
+      "cell": "payments-controller",
+      "folder": "payments",
+      "required_plugins": ["workflow-aggregator", "git"]
+    },
+    "payments-settlement": {
+      "cell": "payments-controller",
+      "folder": "payments",
+      "required_plugins": ["workflow-aggregator", "credentials"]
+    },
+    "risk-score": {
+      "cell": "risk-controller",
+      "folder": "risk",
+      "required_plugins": ["workflow-aggregator", "git"]
+    },
+    "risk-limits": {
+      "cell": "risk-controller",
+      "folder": "risk",
+      "required_plugins": ["job-dsl", "credentials"]
+    },
+    "platform-deploy": {
+      "cell": "platform-controller",
+      "folder": "platform",
+      "required_plugins": ["kubernetes", "git"]
+    },
+    "platform-bootstrap": {
+      "cell": "platform-controller",
+      "folder": "platform",
+      "required_plugins": ["configuration-as-code", "matrix-auth"]
+    }
+  }
+}

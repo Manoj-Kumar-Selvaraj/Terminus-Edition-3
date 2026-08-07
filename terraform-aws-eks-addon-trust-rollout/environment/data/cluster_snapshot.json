@@ -1,0 +1,78 @@
+{
+  "cluster_name": "regulated-payments-eks",
+  "cluster_version": "1.29",
+  "region": "us-east-1",
+  "account_id": "111122223333",
+  "endpoint_public": false,
+  "endpoint_private": true,
+  "oidc_provider_arn": "arn:aws:iam::111122223333:oidc-provider/oidc.eks.us-east-1.amazonaws.com/id/EXAMPLED429EXAMPLE",
+  "oidc_issuer_host": "oidc.eks.us-east-1.amazonaws.com/id/EXAMPLED429EXAMPLE",
+  "vpc_id": "vpc-0regpay001",
+  "private_subnet_ids": ["subnet-priv-a", "subnet-priv-b"],
+  "cluster_security_group_id": "sg-eks-cluster",
+  "addons": {
+    "vpc-cni": {
+      "installed": "v1.16.0-eksbuild.1",
+      "status": "ACTIVE"
+    },
+    "kube-proxy": {
+      "installed": "v1.29.0-eksbuild.1",
+      "status": "ACTIVE"
+    },
+    "coredns": {
+      "installed": "v1.11.1-eksbuild.4",
+      "status": "ACTIVE"
+    },
+    "aws-ebs-csi-driver": {
+      "installed": "v1.28.0-eksbuild.1",
+      "status": "DEGRADED"
+    }
+  },
+  "controllers": {
+    "aws-load-balancer-controller": {
+      "installed": "v2.7.1",
+      "status": "DEGRADED"
+    },
+    "karpenter": {
+      "installed": "0.36.0",
+      "status": "ACTIVE"
+    }
+  },
+  "node_pools": {
+    "system": {
+      "desired": 2,
+      "ready": 2,
+      "labels": {"nodepool": "system"},
+      "nodes": ["ip-10-0-1-10.ec2.internal", "ip-10-0-1-11.ec2.internal"]
+    },
+    "apps": {
+      "desired": 3,
+      "ready": 3,
+      "labels": {"nodepool": "apps"},
+      "nodes": ["ip-10-0-2-20.ec2.internal", "ip-10-0-2-21.ec2.internal", "ip-10-0-2-22.ec2.internal"]
+    },
+    "batch": {
+      "desired": 1,
+      "ready": 1,
+      "labels": {"nodepool": "batch"},
+      "nodes": ["ip-10-0-3-30.ec2.internal"]
+    }
+  },
+  "service_accounts": [
+    {
+      "namespace": "kube-system",
+      "name": "ebs-csi-controller-sa",
+      "role_annotation": ""
+    },
+    {
+      "namespace": "kube-system",
+      "name": "aws-load-balancer-controller",
+      "role_annotation": ""
+    },
+    {
+      "namespace": "karpenter",
+      "name": "karpenter",
+      "role_annotation": ""
+    }
+  ]
+}

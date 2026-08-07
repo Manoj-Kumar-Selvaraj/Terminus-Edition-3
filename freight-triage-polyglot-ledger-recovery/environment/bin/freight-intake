@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+# Thin wrapper around the compiled Java intake service.
+set -euo pipefail
+ROOT="${FREIGHT_ROOT:-/app}"
+CLASSES="$ROOT/environment/intake/build/classes"
+if [ ! -d "$CLASSES" ]; then
+    echo "freight-intake: not built yet; run '$ROOT/environment/intake/build.sh'" >&2
+    exit 70
+fi
+exec java -cp "$CLASSES" com.freight.intake.IntakeMain "$@"

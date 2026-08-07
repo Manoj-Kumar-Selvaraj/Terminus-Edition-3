@@ -1,0 +1,6 @@
+[program:fleet-promtail]
+command=python3 {{ fleet_root }}/lib/fleet-promtail.py
+autostart=true
+autorestart=true
+stdout_logfile={{ fleet_root }}/var/lib/fleet-harden/fleet-promtail.log
+stderr_logfile={{ fleet_root }}/var/lib/fleet-harden/fleet-promtail.err

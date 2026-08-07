@@ -1,0 +1,112 @@
+#!/usr/bin/env bash
+# Build and run the whole freight triage stack end to end.
+#
+#   run-freight-suite [--root DIR] [--skip-build]
+#
+# Artifacts are written under <root>/output.
+set -euo pipefail
+
+ROOT="/app"
+SKIP_BUILD=0
+
+while [ "$#" -gt 0 ]; do
+    case "$1" in
+        --root)
+            ROOT="$2"
+            shift 2
+            ;;
+        --skip-build)
+            SKIP_BUILD=1
+            shift
+            ;;
+        -h|--help)
+            echo "usage: run-freight-suite [--root DIR] [--skip-build]"
+            exit 0
+            ;;
+        *)
+            echo "run-freight-suite: unknown argument $1" >&2
+            exit 64
+            ;;
+    esac
+done
+
+ENVIRONMENT="$ROOT/environment"
+OUTPUT="$ROOT/output"
+NATIVE="$ENVIRONMENT/native"
+INTAKE="$ENVIRONMENT/intake"
+RECONCILE="$ENVIRONMENT/reconcile"
+
+mkdir -p "$OUTPUT"
+
+if [ "$SKIP_BUILD" -eq 0 ]; then
+    echo "== build: native =="
+    make -C "$NATIVE" -j"$(nproc)" all
+
+    echo "== build: intake =="
+    bash "$INTAKE/build.sh"
+
+    echo "== build: reconcile =="
+    (cd "$RECONCILE" && go build -o build/reconcile ./cmd/reconcile)
+fi
+
+FREIGHTCTL="$NATIVE/build/freightctl"
+RECONCILE_BIN="$RECONCILE/build/reconcile"
+INTAKE_CLASSES="$INTAKE/build/classes"
+
+for artifact in "$FREIGHTCTL" "$RECONCILE_BIN"; do
+    if [ ! -x "$artifact" ]; then
+        echo "run-freight-suite: missing build artifact $artifact" >&2
+        exit 70
+    fi
+done
+if [ ! -d "$INTAKE_CLASSES" ]; then
+    echo "run-freight-suite: missing build artifact $INTAKE_CLASSES" >&2
+    exit 70
+fi
+
+echo "== stage 1: native ledger =="
+"$FREIGHTCTL" ledger --root "$ROOT" --out "$OUTPUT/ledger-snapshot.json"
+"$FREIGHTCTL" selftest --out "$OUTPUT/selftest-cpp.json"
+
+echo "== stage 2: intake replay =="
+java -cp "$INTAKE_CLASSES" com.freight.intake.IntakeMain replay \
+    --root "$ROOT" --out "$OUTPUT/intake-journal.json"
+java -cp "$INTAKE_CLASSES" com.freight.intake.IntakeMain selftest \
+    --out "$OUTPUT/selftest-java.json"
+
+echo "== stage 3: reconciliation =="
+"$RECONCILE_BIN" run --root "$ROOT" \
+    --out-report "$OUTPUT/audit-report.json" --out-csv "$OUTPUT/audit-ledger.csv"
+"$RECONCILE_BIN" selftest --out "$OUTPUT/selftest-go.json"
+
+echo "== stage 4: suite manifest =="
+{
+    printf '{\n'
+    printf '  "artifacts": [\n'
+    first=1
+    for name in audit-ledger.csv audit-report.json intake-journal.json ledger-snapshot.json \
+                selftest-cpp.json selftest-go.json selftest-java.json; do
+        path="$OUTPUT/$name"
+        if [ ! -f "$path" ]; then
+            echo "run-freight-suite: missing artifact $path" >&2
+            exit 71
+        fi
+        digest="$(sha256sum "$path" | cut -d' ' -f1)"
+        size="$(wc -c < "$path" | tr -d ' ')"
+        if [ "$first" -eq 0 ]; then
+            printf ',\n'
+        fi
+        first=0
+        printf '    {\n'
+        printf '      "bytes": %s,\n' "$size"
+        printf '      "name": "%s",\n' "$name"
+        printf '      "sha256": "%s"\n' "$digest"
+        printf '    }'
+    done
+    printf '\n  ],\n'
+    printf '  "schema_version": "freight-suite/2",\n'
+    printf '  "status": "ok"\n'
+    printf '}\n'
+} > "$OUTPUT/suite-manifest.json"
+
+echo "run-freight-suite: complete -> $OUTPUT"

@@ -1,0 +1,133 @@
+diff --git a/include/guardian/supervisor.hpp b/include/guardian/supervisor.hpp
+--- a/include/guardian/supervisor.hpp
++++ b/include/guardian/supervisor.hpp
+@@ -18,4 +18,5 @@ struct RuntimeUnit {
+   ChildProcess process;
+   bool desired{true};
+   bool replacement_pending{false};
++  bool block_pending{false};
+ };
+diff --git a/src/journal.cpp b/src/journal.cpp
+--- a/src/journal.cpp
++++ b/src/journal.cpp
+@@ -139,6 +139,9 @@ void Journal::recover() {
+     offset += static_cast<off_t>(sizeof(record));
+   }
+   if (tail_found) {
++    if (::ftruncate(fd_.get(), offset) < 0 || ::fdatasync(fd_.get()) < 0) {
++      throw Error(errno_message("truncate torn journal tail"));
++    }
+   }
+   next_sequence_ = expected;
+   if (::lseek(fd_.get(), 0, SEEK_END) < 0) {
+diff --git a/src/process.cpp b/src/process.cpp
+--- a/src/process.cpp
++++ b/src/process.cpp
+@@ -240,15 +240,7 @@ void signal_process_group(const ChildProcess& child, int signal_number) {
+   if (child.pgid <= 0) {
+     return;
+   }
+-  if (child.pidfd.valid()) {
+-    if (send_pidfd_signal(child.pidfd.get(), signal_number) == 0) {
+-      return;
+-    }
+-    if (errno != ENOSYS && errno != EINVAL && errno != ESRCH) {
+-      throw Error(errno_message("pidfd_send_signal"));
+-    }
+-  }
+-  if (::kill(child.pid, signal_number) < 0 && errno != ESRCH) {
+-    throw Error(errno_message("kill process"));
++  if (::kill(-child.pgid, signal_number) < 0 && errno != ESRCH) {
++    throw Error(errno_message("kill process group"));
+   }
+ }
+diff --git a/src/control.cpp b/src/control.cpp
+--- a/src/control.cpp
++++ b/src/control.cpp
+@@ -102,6 +102,7 @@ void ControlServer::accept_one() {
+       throw Error(errno_message("accept control connection"));
+     }
+ 
++    const std::string request = receive_packet(client.get());
+     ucred credentials{};
+     socklen_t length = sizeof(credentials);
+     if (::getsockopt(client.get(), SOL_SOCKET, SO_PEERCRED, &credentials,
+@@ -114,7 +115,6 @@ void ControlServer::accept_one() {
+       send_packet(client.get(), "ERR|code=ACCESS_DENIED\n");
+       continue;
+     }
+-    const std::string request = receive_packet(client.get());
+     if (request.empty()) {
+       send_packet(client.get(), "ERR|code=EMPTY_REQUEST\n");
+       continue;
+diff --git a/src/supervisor.cpp b/src/supervisor.cpp
+--- a/src/supervisor.cpp
++++ b/src/supervisor.cpp
+@@ -97,6 +97,8 @@ void Supervisor::acquire_lock() {
+ 
+ void Supervisor::initialize_kernel_state() {
+   acquire_lock();
+-
++  if (::prctl(PR_SET_CHILD_SUBREAPER, 1) < 0) {
++    throw Error(errno_message("enable child subreaper"));
++  }
+ 
+   sigset_t mask;
+@@ -158,6 +160,6 @@ bool Supervisor::dependencies_ready(const RuntimeUnit& unit) const {
+           return false;
+         }
+         const UnitState state = found->second.process.state;
+-        return state == UnitState::ready || state == UnitState::starting;
++        return state == UnitState::ready;
+       });
+ }
+@@ -287,5 +289,6 @@ void Supervisor::handle_ready_fd(int fd) {
+   std::array<char, 64> buffer{};
+   const ssize_t count = ::read(fd, buffer.data(), buffer.size());
+-  if (count > 0 && !unit.process.ready_seen) {
++  if (count > 0 && !unit.process.ready_seen &&
++      unit.process.state == UnitState::starting) {
+     unit.process.ready_seen = true;
+     unit.process.state = UnitState::ready;
+@@ -347,8 +350,9 @@ void Supervisor::finish_stopped(RuntimeUnit& unit, std::string detail) {
+   const int restarts = unit.process.restarts;
+   const bool replacement = unit.replacement_pending;
+   const bool desired = unit.desired;
++  const bool blocked = unit.block_pending;
+   unit.process = ChildProcess{};
+   unit.process.restarts = restarts;
+-  unit.process.state = UnitState::stopped;
++  unit.process.state = blocked ? UnitState::blocked : UnitState::stopped;
+   journal_.append("unit-stopped", name, old_pid, std::move(detail));
+   if (replacement && desired) {
+@@ -403,10 +407,12 @@ void Supervisor::block_dependents(const std::string& name) {
+     }
+     RuntimeUnit& unit = units_.at(dependent);
+     unit.desired = false;
++    unit.block_pending = true;
+     if (!stopped_state(unit.process.state)) {
+       request_stop(dependent, "blocked");
++    } else {
++      unit.process.state = UnitState::blocked;
+     }
+-    unit.process.state = UnitState::blocked;
+     journal_.append("unit-blocked", dependent, unit.process.pid, name);
+   }
+ }
+@@ -456,9 +463,5 @@ std::string Supervisor::reload_manifest() {
+     }
+   }
+   manifest_ = std::move(replacement);
+-  for (auto& [name, unit] : units_) {
+-    static_cast<void>(name);
+-    unit.process.restarts = 0;
+-  }
+   journal_.append("reload-accepted", "guardian", 0, "manifest");
+   schedule_ready_units();
+@@ -489,5 +492,6 @@ std::string Supervisor::handle_control(const std::string& request) {
+     if (words[0] == "START") {
+       RuntimeUnit& unit = found->second;
+       unit.desired = true;
++      unit.block_pending = false;
+       if (unit.process.state == UnitState::blocked ||
+           unit.process.state == UnitState::failed) {

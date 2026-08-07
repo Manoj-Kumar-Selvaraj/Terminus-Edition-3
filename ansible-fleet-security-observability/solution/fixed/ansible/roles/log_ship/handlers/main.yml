@@ -1,0 +1,14 @@
+---
+- name: restart fleet-promtail
+  shell: |
+    if [ -f "{{ fleet_root }}/var/lib/fleet-harden/fleet-promtail.pid" ]; then
+      kill "$(cat "{{ fleet_root }}/var/lib/fleet-harden/fleet-promtail.pid")" 2>/dev/null || true
+      rm -f "{{ fleet_root }}/var/lib/fleet-harden/fleet-promtail.pid"
+    fi
+    fuser -k "{{ fleet_promtail_port }}/tcp" 2>/dev/null || true
+    nohup python3 "{{ fleet_root }}/lib/fleet-promtail.py" \
+      >"{{ fleet_root }}/var/lib/fleet-harden/fleet-promtail.log" \
+      2>"{{ fleet_root }}/var/lib/fleet-harden/fleet-promtail.err" &
+    echo $! > "{{ fleet_root }}/var/lib/fleet-harden/fleet-promtail.pid"
+  args:
+    executable: /bin/bash

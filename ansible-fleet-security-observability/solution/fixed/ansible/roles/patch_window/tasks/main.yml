@@ -1,0 +1,35 @@
+---
+- name: patch_window - require stage 02
+  stat:
+    path: "{{ fleet_root }}/var/lib/fleet-harden/stage-02.ok"
+  register: prior_02
+
+- name: patch_window - soft gate warns without stage 02
+  debug:
+    msg: "soft gate: missing stage-02.ok under {{ fleet_root }}"
+  when: fleet_soft_gates | bool and not prior_02.stat.exists
+
+- name: patch_window - fail closed without stage 02
+  fail:
+    msg: "stage-02.ok missing under {{ fleet_root }}"
+  when: not (fleet_soft_gates | bool) and not prior_02.stat.exists
+
+- name: patch_window - install stamp from configured source
+  copy:
+    src: "{{ fleet_patch_stamp_src }}"
+    dest: "{{ fleet_root }}/etc/fleet-harden/patch-stamp"
+    mode: "0644"
+    remote_src: true
+
+- name: patch_window - refuse decoy stamps
+  assert:
+    that:
+      - not ((lookup('file', fleet_root + '/etc/fleet-harden/patch-stamp') | trim).startswith('DECOY-'))
+    fail_msg: decoy stamp installed
+
+- name: patch_window - write stage 03 marker
+  copy:
+    dest: "{{ fleet_root }}/var/lib/fleet-harden/stage-03.ok"
+    mode: "0644"
+    content: |
+      ok

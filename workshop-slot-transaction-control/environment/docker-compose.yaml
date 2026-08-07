@@ -1,0 +1,28 @@
+services:
+  main:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    depends_on:
+      database:
+        condition: service_healthy
+    environment:
+      WORKSHOP_DB: workshop@database:5432
+      WORKSHOP_DB_USER: workshop_app
+      WORKSHOP_DB_PASSWORD: workshop_local
+    command: ["sleep", "infinity"]
+
+  database:
+    build:
+      context: ./db
+    environment:
+      POSTGRES_DB: workshop
+      POSTGRES_USER: workshop_app
+      POSTGRES_PASSWORD: workshop_local
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U workshop_app -d workshop"]
+      interval: 2s
+      timeout: 2s
+      retries: 30
+    tmpfs:
+      - /var/lib/postgresql/data

@@ -1,0 +1,103 @@
+#!/usr/bin/env python3
+"""Plan staging + consumer, check legacy migration, run split-horizon lab."""
+from __future__ import annotations
+
+import json
+import os
+import shutil
+import subprocess
+import sys
+from pathlib import Path
+
+sys.path.insert(0, "/app")
+from endpoint_lab import run_lab  # noqa: E402
+
+STAGING = Path("/app/terraform/workspaces/staging")
+CONSUMER = Path("/app/terraform/workspaces/consumer")
+VAR = Path("/app/var/endpoint")
+OUTPUT = Path("/app/output")
+DATA = Path("/app/data")
+
+ENV = {
+    **os.environ,
+    "TF_CLI_CONFIG_FILE": "/app/terraform.tfrc",
+    "TF_IN_AUTOMATION": "1",
+    "CHECKPOINT_DISABLE": "1",
+    "AWS_ACCESS_KEY_ID": "test",
+    "AWS_SECRET_ACCESS_KEY": "test",
+    "AWS_DEFAULT_REGION": "us-east-1",
+}
+
+
+def run(cmd: list[str], cwd: Path) -> None:
+    proc = subprocess.run(cmd, cwd=str(cwd), env=ENV, text=True, capture_output=True)
+    if proc.returncode != 0:
+        sys.stderr.write(proc.stdout + proc.stderr)
+        raise SystemExit(proc.returncode)
+
+
+def show_json(plan_path: Path, cwd: Path) -> dict:
+    proc = subprocess.run(
+        ["terraform", "show", "-json", str(plan_path)],
+        cwd=str(cwd),
+        env=ENV,
+        text=True,
+        capture_output=True,
+        check=True,
+    )
+    return json.loads(proc.stdout)
+
+
+def plan_workspace(workspace: Path, out_name: str) -> dict:
+    run(["terraform", "init", "-backend=false", "-input=false"], workspace)
+    run(["terraform", "validate"], workspace)
+    out = VAR / out_name
+    run(
+        [
+            "terraform",
+            "plan",
+            "-refresh=false",
+            "-input=false",
+            f"-out={out}",
+        ],
+        workspace,
+    )
+    return show_json(out, workspace)
+
+
+def plan_with_legacy(workspace: Path) -> dict:
+    state_src = DATA / "legacy_state.json"
+    state_dst = VAR / "legacy.tfstate"
+    shutil.copy2(state_src, state_dst)
+    out = VAR / "legacy.tfplan"
+    run(
+        [
+            "terraform",
+            "plan",
+            "-refresh=false",
+            "-input=false",
+            f"-state={state_dst}",
+            f"-out={out}",
+        ],
+        workspace,
+    )
+    plan = show_json(out, workspace)
+    (VAR / "legacy-plan.json").write_text(json.dumps(plan) + "\n", encoding="utf-8")
+    return plan
+
+
+def main() -> int:
+    VAR.mkdir(parents=True, exist_ok=True)
+    OUTPUT.mkdir(parents=True, exist_ok=True)
+
+    staging_plan = plan_workspace(STAGING, "staging.tfplan")
+    consumer_plan = plan_workspace(CONSUMER, "consumer.tfplan")
+    legacy_plan = plan_with_legacy(STAGING)
+
+    evidence = run_lab(staging_plan, consumer_plan, legacy_plan)
+    print(json.dumps({"status": evidence["status"], "digest": evidence["evidence_digest"]}))
+    return 0 if evidence["status"] == "READY" else 1
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

@@ -1,0 +1,147 @@
+---
+- name: scrape_mesh - ensure control var dirs
+  file:
+    path: "{{ fleet_control_var }}/scrape"
+    state: directory
+    mode: "0755"
+
+- name: scrape_mesh - require stage-09 on every edge
+  stat:
+    path: "{{ item }}"
+  loop:
+    - /app/edges/app/var/lib/fleet-harden/stage-09.ok
+    - /app/edges/data/var/lib/fleet-harden/stage-09.ok
+    - /app/edges/ops/var/lib/fleet-harden/stage-09.ok
+  register: edge_ready
+
+- name: scrape_mesh - fail closed if any edge unfinished
+  assert:
+    that:
+      - item.stat.exists
+    fail_msg: edge missing stage-09.ok
+  loop: "{{ edge_ready.results }}"
+
+- name: scrape_mesh - read inventories
+  slurp:
+    src: "{{ item }}"
+  loop:
+    - /app/edges/app/var/lib/fleet-harden/inventory.json
+    - /app/edges/data/var/lib/fleet-harden/inventory.json
+    - /app/edges/ops/var/lib/fleet-harden/inventory.json
+  register: inv_raw
+
+- name: scrape_mesh - decode inventories
+  set_fact:
+    app_doc: "{{ inv_raw.results[0].content | b64decode | from_json }}"
+    data_doc: "{{ inv_raw.results[1].content | b64decode | from_json }}"
+    ops_doc: "{{ inv_raw.results[2].content | b64decode | from_json }}"
+
+- name: scrape_mesh - roles must match contract map
+  assert:
+    that:
+      - app_doc.role == 'app'
+      - data_doc.role == 'data'
+      - ops_doc.role == 'ops'
+      - app_doc.metrics_port != data_doc.metrics_port
+      - data_doc.metrics_port != ops_doc.metrics_port
+    fail_msg: edge roles or metrics ports are inconsistent
+
+- name: scrape_mesh - probe live app metrics
+  uri:
+    url: "http://127.0.0.1:{{ app_doc.metrics_port }}/metrics"
+    return_content: true
+    status_code: 200
+  register: app_metrics
+
+- name: scrape_mesh - probe live data metrics
+  uri:
+    url: "http://127.0.0.1:{{ data_doc.metrics_port }}/metrics"
+    return_content: true
+    status_code: 200
+  register: data_metrics
+
+- name: scrape_mesh - probe live ops metrics
+  uri:
+    url: "http://127.0.0.1:{{ ops_doc.metrics_port }}/metrics"
+    return_content: true
+    status_code: 200
+  register: ops_metrics
+
+- name: scrape_mesh - metrics labels must match inventory roles
+  assert:
+    that:
+      - "'fleet_role=\"app\"' in app_metrics.content"
+      - "'fleet_role=\"data\"' in data_metrics.content"
+      - "'fleet_role=\"ops\"' in ops_metrics.content"
+    fail_msg: live metrics label disagrees with inventory
+
+- name: scrape_mesh - probe app falco wire
+  uri:
+    url: "http://127.0.0.1:{{ app_doc.falco_port }}/healthz"
+    return_content: true
+    status_code: 200
+  register: app_falco
+
+- name: scrape_mesh - probe data falco wire
+  uri:
+    url: "http://127.0.0.1:{{ data_doc.falco_port }}/healthz"
+    return_content: true
+    status_code: 200
+  register: data_falco
+
+- name: scrape_mesh - probe ops falco wire
+  uri:
+    url: "http://127.0.0.1:{{ ops_doc.falco_port }}/healthz"
+    return_content: true
+    status_code: 200
+  register: ops_falco
+
+- name: scrape_mesh - falco wire must carry inventory chain tokens
+  assert:
+    that:
+      - app_doc.chain_token in app_falco.content
+      - data_doc.chain_token in data_falco.content
+      - ops_doc.chain_token in ops_falco.content
+      - "'wire' in app_falco.content"
+      - "'wire' in data_falco.content"
+      - "'wire' in ops_falco.content"
+    fail_msg: falco wire missing inventory chain token
+
+- name: scrape_mesh - firewalls must cite scrape cidr
+  slurp:
+    src: "{{ item }}"
+  loop:
+    - /app/edges/app/etc/fleet-harden/nft.allow
+    - /app/edges/data/etc/fleet-harden/nft.allow
+    - /app/edges/ops/etc/fleet-harden/nft.allow
+  register: fw_raw
+
+- name: scrape_mesh - assert cidr in every firewall
+  assert:
+    that:
+      - fleet_scrape_cidr in (item.content | b64decode)
+    fail_msg: firewall missing scrape cidr
+  loop: "{{ fw_raw.results }}"
+
+- name: scrape_mesh - write targets.json in inventory order
+  copy:
+    dest: "{{ fleet_control_var }}/scrape/targets.json"
+    mode: "0644"
+    content: |
+      [
+        {"host": "edge-app", "port": {{ app_doc.metrics_port }}, "fleet_role": "{{ app_doc.role }}", "chain_token": "{{ app_doc.chain_token }}"},
+        {"host": "edge-data", "port": {{ data_doc.metrics_port }}, "fleet_role": "{{ data_doc.role }}", "chain_token": "{{ data_doc.chain_token }}"},
+        {"host": "edge-ops", "port": {{ ops_doc.metrics_port }}, "fleet_role": "{{ ops_doc.role }}", "chain_token": "{{ ops_doc.chain_token }}"}
+      ]
+
+- name: scrape_mesh - targets parse as JSON
+  command: >-
+    python3 -c "import json; d=json.load(open('{{ fleet_control_var }}/scrape/targets.json')); assert [x['host'] for x in d]==['edge-app','edge-data','edge-ops']"
+  changed_when: false
+
+- name: scrape_mesh - write stage 10 marker
+  copy:
+    dest: "{{ fleet_control_var }}/stage-10.ok"
+    mode: "0644"
+    content: |
+      ok

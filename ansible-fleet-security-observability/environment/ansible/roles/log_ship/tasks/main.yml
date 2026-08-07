@@ -1,0 +1,83 @@
+---
+- name: log_ship - require stage 05
+  stat:
+    path: "{{ fleet_root }}/var/lib/fleet-harden/stage-05.ok"
+  register: prior_05
+
+- name: log_ship - soft gate warns without stage 05
+  debug:
+    msg: "soft gate: missing stage-05.ok under {{ fleet_root }}"
+  when: fleet_soft_gates | bool and not prior_05.stat.exists
+
+- name: log_ship - fail closed without stage 05
+  fail:
+    msg: "stage-05.ok missing under {{ fleet_root }}"
+  when: not (fleet_soft_gates | bool) and not prior_05.stat.exists
+
+- name: log_ship - write shipping config
+  copy:
+    dest: "{{ fleet_root }}/etc/fleet-harden/promtail.yml"
+    mode: "0644"
+    content: |
+      loki: {{ fleet_loki_url }}
+      metrics_port: {{ fleet_metrics_port }}
+
+- name: log_ship - require metrics listener still up
+  wait_for:
+    host: 127.0.0.1
+    port: "{{ fleet_metrics_port }}"
+    timeout: 5
+
+- name: log_ship - template listener
+  template:
+    src: fleet-promtail.py.j2
+    dest: "{{ fleet_root }}/lib/fleet-promtail.py"
+    mode: "0755"
+  notify: restart fleet-promtail
+
+- name: log_ship - program conf
+  template:
+    src: fleet-promtail.conf.j2
+    dest: "{{ fleet_root }}/etc/supervisor/conf.d/fleet-promtail.conf"
+    mode: "0644"
+
+- name: log_ship - stop previous listener if any
+  shell: |
+    if [ -f "{{ fleet_root }}/var/lib/fleet-harden/fleet-promtail.pid" ]; then
+      kill "$(cat "{{ fleet_root }}/var/lib/fleet-harden/fleet-promtail.pid")" 2>/dev/null || true
+      rm -f "{{ fleet_root }}/var/lib/fleet-harden/fleet-promtail.pid"
+    fi
+    fuser -k "{{ fleet_promtail_port }}/tcp" 2>/dev/null || true
+    true
+  args:
+    executable: /bin/bash
+  changed_when: false
+
+- name: log_ship - start listener
+  shell: |
+    nohup python3 "{{ fleet_root }}/lib/fleet-promtail.py" \
+      >"{{ fleet_root }}/var/lib/fleet-harden/fleet-promtail.log" \
+      2>"{{ fleet_root }}/var/lib/fleet-harden/fleet-promtail.err" &
+    echo $! > "{{ fleet_root }}/var/lib/fleet-harden/fleet-promtail.pid"
+  args:
+    executable: /bin/bash
+
+- name: log_ship - wait listen
+  wait_for:
+    host: 127.0.0.1
+    port: "{{ fleet_promtail_port }}"
+    timeout: 45
+
+- name: log_ship - probe endpoint
+  uri:
+    url: "http://127.0.0.1:{{ fleet_promtail_port }}/ready"
+    return_content: true
+    status_code: 200
+  register: log_ship_probe
+
+- name: log_ship - write stage 06 marker
+  copy:
+    dest: "{{ fleet_root }}/var/lib/fleet-harden/stage-06.ok"
+    mode: "0644"
+    content: |
+      ok

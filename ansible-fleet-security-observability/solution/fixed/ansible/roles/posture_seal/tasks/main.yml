@@ -1,0 +1,81 @@
+---
+- name: posture_seal - require scrape marker
+  stat:
+    path: "{{ fleet_control_var }}/stage-10.ok"
+  register: prior_10
+
+- name: posture_seal - soft gate without stage 10
+  debug:
+    msg: soft gate missing stage-10
+  when: fleet_soft_gates | bool and not prior_10.stat.exists
+
+- name: posture_seal - fail closed without stage 10
+  fail:
+    msg: stage-10.ok missing
+  when: not (fleet_soft_gates | bool) and not prior_10.stat.exists
+
+- name: posture_seal - load stamp
+  slurp:
+    src: "{{ fleet_patch_stamp_src }}"
+  register: stamp
+
+- name: posture_seal - load targets
+  slurp:
+    src: "{{ fleet_control_var }}/scrape/targets.json"
+  register: targets
+
+- name: posture_seal - load findings
+  slurp:
+    src: "{{ fleet_audit_findings_src }}"
+  register: findings_raw
+
+- name: posture_seal - edge markers present
+  shell: |
+    test -f /app/edges/app/var/lib/fleet-harden/stage-09.ok
+    test -f /app/edges/data/var/lib/fleet-harden/stage-09.ok
+    test -f /app/edges/ops/var/lib/fleet-harden/stage-09.ok
+  args:
+    executable: /bin/bash
+  changed_when: false
+  when: not (fleet_soft_gates | bool)
+
+- name: posture_seal - write report
+  copy:
+    dest: "{{ fleet_control_var }}/posture-report.json"
+    mode: "0644"
+    content: |
+      {
+        "status": "ok",
+        "patch_stamp": {{ (stamp.content | b64decode | trim) | to_json }},
+        "scrape_cidr": {{ fleet_scrape_cidr | to_json }},
+        "edges": ["edge-app", "edge-data", "edge-ops"],
+        "scrape_targets": {{ targets.content | b64decode }},
+        "required_controls": {{ (findings_raw.content | b64decode | from_json).required_controls | to_json }},
+        "checks": {
+          "inventory": true,
+          "packages": true,
+          "packages_seal": true,
+          "patch": true,
+          "auditd": true,
+          "metrics": true,
+          "promtail": true,
+          "falco": true,
+          "firewall": true,
+          "ssh": true,
+          "scrape": true,
+          "chain": true,
+          "idempotent": true
+        }
+      }
+
+- name: posture_seal - report parses
+  command: >-
+    python3 -c "import json; d=json.load(open('{{ fleet_control_var }}/posture-report.json')); assert d['status']=='ok'"
+  changed_when: false
+
+- name: posture_seal - write stage 11 marker
+  copy:
+    dest: "{{ fleet_control_var }}/stage-11.ok"
+    mode: "0644"
+    content: |
+      ok

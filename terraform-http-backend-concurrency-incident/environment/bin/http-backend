@@ -1,0 +1,14 @@
+#!/usr/bin/env python3
+"""Start the local HTTP Terraform backend."""
+from __future__ import annotations
+
+import os
+import sys
+from pathlib import Path
+
+sys.path.insert(0, "/app")
+from backend.server import main  # noqa: E402
+
+if __name__ == "__main__":
+    Path(os.environ.get("BACKEND_DATA_DIR", "/app/var/backend-store")).mkdir(parents=True, exist_ok=True)
+    main()

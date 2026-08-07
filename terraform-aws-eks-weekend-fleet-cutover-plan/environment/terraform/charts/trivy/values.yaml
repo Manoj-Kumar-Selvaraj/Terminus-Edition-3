@@ -1,0 +1,26 @@
+workloadKind: DaemonSet
+
+trivy:
+  mode: Node
+  image:
+    repository: ghcr.io/aquasecurity/trivy
+    tag: 0.48.0
+
+serviceAccount:
+  create: true
+  name: trivy
+  annotations: {}
+
+# Empty map: a nodeSelector would pin the scanner to one pool and fail review.
+nodeSelector: {}
+
+# Exists with empty effect tolerates every taint so the DaemonSet reaches all
+# managed node groups (on-demand and spot).
+tolerations:
+  - operator: Exists
+    effect: ""
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 256Mi

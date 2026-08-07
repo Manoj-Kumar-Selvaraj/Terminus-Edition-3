@@ -1,0 +1,23 @@
+failed upgrade trace — regulated-payments-eks — 2026-06-21T03:14:08Z
+
+operator: platform-oncall
+window: saturday maintenance
+
+sequence attempted (WRONG):
+  1. aws-ebs-csi-driver -> v1.31.0-eksbuild.1   # before vpc-cni/coredns ready
+  2. aws-load-balancer-controller -> v2.8.1
+  3. vpc-cni -> v1.18.1-eksbuild.1              # ran after dependents
+  4. drain ip-10-0-1-10.ec2.internal
+
+observations:
+- ebs-csi controller pods CrashLoop while CNI still on v1.16.0
+- IRSA role regulated-ebs-csi Condition StringEquals sub=system:nodes
+- LBC Helm value serviceAccount.annotations.eks.amazonaws.com/role-arn=""
+- karpenter trust subject copied from ebs-csi SA
+- no PodDisruptionBudget for coredns; drain evicted both replicas
+- CoreDNS Available=0/2 for 4m12s — customer DNS timeouts
+- regulated NodePool capacity-type included spot; settlement-ledger scheduled on spot replacement after interruption SQS event
+- plan preview showed replace on system node group identity (UpgradeProtected tag missing)
+
+abort: rolled controllers back to prior chart pins; cluster left DEGRADED on ebs-csi and LBC.
+next: infer compatibility order, restore exact SA trust, ship PDBs, keep regulated on-demand only, protect existing identities.

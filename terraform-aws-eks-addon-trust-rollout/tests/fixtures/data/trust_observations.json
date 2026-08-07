@@ -1,0 +1,35 @@
+{
+  "required_subjects": {
+    "ebs_csi": "system:serviceaccount:kube-system:ebs-csi-controller-sa",
+    "load_balancer": "system:serviceaccount:kube-system:aws-load-balancer-controller",
+    "karpenter": "system:serviceaccount:karpenter:karpenter"
+  },
+  "role_names": {
+    "ebs_csi": "regulated-ebs-csi",
+    "load_balancer": "regulated-lbc",
+    "karpenter": "regulated-karpenter"
+  },
+  "forbidden_subjects": [
+    "system:nodes",
+    "system:serviceaccount:*:*",
+    "*",
+    "system:serviceaccount:kube-system:default"
+  ],
+  "observations": [
+    {
+      "component": "ebs_csi",
+      "finding": "role trusts system:nodes instead of ebs-csi-controller-sa",
+      "severity": "high"
+    },
+    {
+      "component": "load_balancer",
+      "finding": "service account annotation empty after failed Helm set",
+      "severity": "high"
+    },
+    {
+      "component": "karpenter",
+      "finding": "trust subject reused ebs-csi SA",
+      "severity": "high"
+    }
+  ]
+}

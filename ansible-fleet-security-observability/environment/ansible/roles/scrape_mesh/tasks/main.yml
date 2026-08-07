@@ -1,0 +1,33 @@
+---
+- name: scrape_mesh - ensure control var dirs
+  file:
+    path: "{{ fleet_control_var }}/scrape"
+    state: directory
+    mode: "0755"
+
+- name: scrape_mesh - soft-check edge markers
+  shell: |
+    test -f /app/edges/app/var/lib/fleet-harden/stage-09.ok || true
+    test -f /app/edges/data/var/lib/fleet-harden/stage-09.ok || true
+    test -f /app/edges/ops/var/lib/fleet-harden/stage-09.ok || true
+  args:
+    executable: /bin/bash
+  changed_when: false
+
+- name: scrape_mesh - write targets with hardcoded roles and wrong order
+  copy:
+    dest: "{{ fleet_control_var }}/scrape/targets.json"
+    mode: "0644"
+    content: |
+      [
+        {"host": "edge-ops", "port": 9120, "fleet_role": "app"},
+        {"host": "edge-data", "port": 9110, "fleet_role": "data"},
+        {"host": "edge-app", "port": 9100, "fleet_role": "ops"}
+      ]
+
+- name: scrape_mesh - write stage 10 marker
+  copy:
+    dest: "{{ fleet_control_var }}/stage-10.ok"
+    mode: "0644"
+    content: |
+      ok

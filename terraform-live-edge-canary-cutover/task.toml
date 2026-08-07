@@ -1,0 +1,28 @@
+version = "2.0"
+name = "terraform-live-edge-canary-cutover"
+category = "Software"
+subcategory = "Systems"
+tags = ["terraform", "canary", "cutover", "edge", "live-traffic"]
+languages = ["hcl", "go", "bash"]
+difficulty = "advanced"
+expert_time_estimate_hours = 14
+artifacts = ["/app/var/edge", "/app/environment/terraform", "/app/environment/edgectl"]
+
+[metadata]
+author_name = "anonymous"
+author_email = "anonymous@example.com"
+
+[verifier]
+timeout_sec = 2400
+environment_mode = "separate"
+
+[agent]
+timeout_sec = 9000
+
+[environment]
+network_mode = "no-network"
+build_timeout_sec = 2400
+cpus = 2
+memory_mb = 8192
+storage_mb = 10240
+workdir = "/app"

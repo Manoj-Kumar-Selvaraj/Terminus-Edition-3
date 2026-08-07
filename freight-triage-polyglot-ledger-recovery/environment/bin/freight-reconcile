@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+# Thin wrapper around the compiled Go reconciler.
+set -euo pipefail
+ROOT="${FREIGHT_ROOT:-/app}"
+BINARY="$ROOT/environment/reconcile/build/reconcile"
+if [ ! -x "$BINARY" ]; then
+    echo "freight-reconcile: not built yet; run 'go build -o build/reconcile ./cmd/reconcile'" >&2
+    exit 70
+fi
+exec "$BINARY" "$@"

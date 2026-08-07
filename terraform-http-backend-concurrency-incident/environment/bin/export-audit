@@ -1,0 +1,34 @@
+#!/usr/bin/env python3
+"""Export backend audit history to /app/output/audit.json."""
+from __future__ import annotations
+
+import json
+import os
+import sys
+from pathlib import Path
+
+sys.path.insert(0, "/app")
+from backend.clock import Clock  # noqa: E402
+from backend.store import Store  # noqa: E402
+
+
+def main() -> int:
+    data_dir = Path(os.environ.get("BACKEND_DATA_DIR", "/app/var/backend-store"))
+    out = Path(os.environ.get("AUDIT_OUTPUT", "/app/output/audit.json"))
+    out.parent.mkdir(parents=True, exist_ok=True)
+    db = data_dir / "state.db"
+    if not db.exists():
+        sys.stderr.write(f"missing durable store: {db}\n")
+        return 1
+    store = Store(db, Clock())
+    try:
+        payload = store.export_audit()
+    finally:
+        store.close()
+    out.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    print(json.dumps({"events": len(payload["events"]), "path": str(out)}))
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

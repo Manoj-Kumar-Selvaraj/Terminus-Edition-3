@@ -1,0 +1,20 @@
+           MOVE 0 TO H-COUNT
+           EXEC SQL
+        SELECT COUNT(*) INTO :H-COUNT
+          FROM wire_operator
+         WHERE operator_id = :H-APPROVER
+           AND active = true
+           END-EXEC
+           IF SQLCODE NOT = 0
+        SET SQL-FAILED TO TRUE
+        EXIT PARAGRAPH
+           END-IF
+           IF H-COUNT = 0
+        PERFORM SET-UNKNOWN-OPERATOR
+        EXIT PARAGRAPH
+           END-IF
+           IF FUNCTION TRIM(H-APPROVER)
+                = FUNCTION TRIM(H-INITIATOR)
+        PERFORM SET-SAME-OPERATOR
+        EXIT PARAGRAPH
+           END-IF.

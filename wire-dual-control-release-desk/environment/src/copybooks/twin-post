@@ -1,0 +1,23 @@
+           COMPUTE H-NEW-DEBIT-BALANCE =
+               H-DEBIT-BALANCE - H-AMOUNT
+           EXEC SQL
+        INSERT INTO ledger_entry
+            (wire_id, account_id, amount_cents, side)
+        VALUES
+            (:H-WIRE, :H-DEBIT-ACCOUNT, :H-AMOUNT, 'DEBIT')
+           END-EXEC
+           IF SQLCODE NOT = 0
+        SET SQL-FAILED TO TRUE
+        EXIT PARAGRAPH
+           END-IF
+           EXEC SQL
+        UPDATE wire_account
+           SET balance_cents = :H-NEW-DEBIT-BALANCE
+         WHERE account_id = :H-DEBIT-ACCOUNT
+           END-EXEC
+           IF SQLCODE NOT = 0
+        SET SQL-FAILED TO TRUE
+        EXIT PARAGRAPH
+           END-IF
+           MOVE H-NEW-DEBIT-BALANCE TO H-DISPLAY-DEBIT
+           MOVE H-CREDIT-BALANCE TO H-DISPLAY-CREDIT.

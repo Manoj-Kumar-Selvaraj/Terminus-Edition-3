@@ -1,0 +1,28 @@
+version = "2.0"
+name = "terraform-http-backend-concurrency-incident"
+category = "Software"
+subcategory = "Systems"
+tags = ["terraform", "http-backend", "concurrency", "sqlite", "state-lock"]
+languages = ["python", "hcl", "bash"]
+difficulty = "frontier"
+expert_time_estimate_hours = 14
+artifacts = ["/app/backend", "/app/bin", "/app/terraform", "/app/var/backend-store", "/app/output", "/app/terraform.tfrc"]
+
+[metadata]
+author_name = "anonymous"
+author_email = "anonymous@example.com"
+
+[verifier]
+timeout_sec = 2400
+environment_mode = "separate"
+
+[agent]
+timeout_sec = 7200
+
+[environment]
+network_mode = "public"
+build_timeout_sec = 1800
+cpus = 2
+memory_mb = 8192
+storage_mb = 10240
+workdir = "/app"

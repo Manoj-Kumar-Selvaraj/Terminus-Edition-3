@@ -1,0 +1,72 @@
+#!/usr/bin/env python3
+"""Plan the egress workspace, run the zonal drain lab, write the cutover report."""
+from __future__ import annotations
+
+import json
+import os
+import subprocess
+import sys
+from pathlib import Path
+
+sys.path.insert(0, "/app")
+from egress_lab import run_cutover  # noqa: E402
+
+WORKSPACE = Path("/app/terraform/workspaces/egress")
+VAR = Path("/app/var/egress")
+OUTPUT = Path("/app/output")
+
+
+def run(cmd: list[str], cwd: Path) -> None:
+    env = {
+        **os.environ,
+        "TF_CLI_CONFIG_FILE": "/app/terraform.tfrc",
+        "TF_IN_AUTOMATION": "1",
+        "CHECKPOINT_DISABLE": "1",
+        "AWS_ACCESS_KEY_ID": "test",
+        "AWS_SECRET_ACCESS_KEY": "test",
+        "AWS_DEFAULT_REGION": "us-east-1",
+        "EGRESS_MODULE_DIR": "/app/terraform/modules/egress",
+    }
+    proc = subprocess.run(cmd, cwd=str(cwd), env=env, text=True, capture_output=True)
+    if proc.returncode != 0:
+        sys.stderr.write(proc.stdout + proc.stderr)
+        raise SystemExit(proc.returncode)
+
+
+def main() -> int:
+    VAR.mkdir(parents=True, exist_ok=True)
+    OUTPUT.mkdir(parents=True, exist_ok=True)
+    os.environ["EGRESS_MODULE_DIR"] = "/app/terraform/modules/egress"
+    run(["terraform", "init", "-backend=false", "-input=false"], WORKSPACE)
+    run(["terraform", "validate"], WORKSPACE)
+    run(
+        [
+            "terraform",
+            "plan",
+            "-refresh=false",
+            "-input=false",
+            "-out=/app/var/egress/tfplan",
+        ],
+        WORKSPACE,
+    )
+    show = subprocess.run(
+        ["terraform", "show", "-json", "/app/var/egress/tfplan"],
+        cwd=str(WORKSPACE),
+        env={
+            **os.environ,
+            "TF_CLI_CONFIG_FILE": "/app/terraform.tfrc",
+            "TF_IN_AUTOMATION": "1",
+        },
+        text=True,
+        capture_output=True,
+        check=True,
+    )
+    plan = json.loads(show.stdout)
+    (VAR / "plan.json").write_text(json.dumps(plan), encoding="utf-8")
+    report = run_cutover(plan)
+    print(json.dumps({"status": report["status"], "digest": report["report_digest"]}))
+    return 0 if report["status"] == "READY" else 1
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

@@ -1,0 +1,210 @@
+#!/usr/bin/env bash
+# Steps the planned weekend cutover against a synthetic fleet state.
+# Reads the rendered plan + inventory; writes a timeline transcript.
+set -euo pipefail
+
+exec python3 - "$@" <<'PY'
+from __future__ import annotations
+
+import json
+import sys
+from copy import deepcopy
+from pathlib import Path
+
+PLAN_PATH = Path("/app/output/eks_weekend_fleet_plan.json")
+INVENTORY_PATH = Path("/app/environment/terraform/weekend-fleet.auto.tfvars.json")
+OUT_PATH = Path("/app/output/eks_weekend_cutover_timeline.json")
+
+
+def fail(message: str, timeline: dict) -> int:
+    timeline["ok"] = False
+    timeline["error"] = message
+    OUT_PATH.parent.mkdir(parents=True, exist_ok=True)
+    OUT_PATH.write_text(json.dumps(timeline, indent=2) + "\n", encoding="utf-8")
+    print(f"cutover simulation failed: {message}", file=sys.stderr)
+    return 1
+
+
+def schedule_afters(plan: dict) -> list[dict]:
+    rows = []
+    for change in plan.get("resource_changes") or []:
+        if change.get("type") != "aws_scheduler_schedule":
+            continue
+        after = (change.get("change") or {}).get("after")
+        if not isinstance(after, dict):
+            continue
+        rows.append(after)
+    return rows
+
+
+def parse_payload(schedule: dict) -> dict:
+    target = schedule.get("target")
+    if isinstance(target, list) and target:
+        target = target[0]
+    if not isinstance(target, dict):
+        raise ValueError(f"schedule {schedule.get('name')!r} has no target")
+    raw = target.get("input")
+    if not isinstance(raw, str):
+        raise ValueError(f"schedule {schedule.get('name')!r} target.input is not a string")
+    payload = json.loads(raw)
+    if not isinstance(payload, dict):
+        raise ValueError(f"schedule {schedule.get('name')!r} payload is not an object")
+    return payload
+
+
+def classify(schedules: list[dict]) -> tuple[dict, dict]:
+    down = up = None
+    for schedule in schedules:
+        name = schedule.get("name") or ""
+        payload = parse_payload(schedule)
+        action = payload.get("action")
+        if action == "scale-down" or name.endswith("weekend-scale-down"):
+            down = (schedule, payload)
+        elif action == "scale-up" or name.endswith("weekend-scale-up"):
+            up = (schedule, payload)
+    if down is None or up is None:
+        raise ValueError("planned schedules must include scale-down and scale-up")
+    return down, up
+
+
+def seed_state(inventory: dict) -> dict:
+    return {
+        name: {
+            "min_size": int(spec["min_size"]),
+            "desired_size": int(spec["desired_size"]),
+            "max_size": int(spec["max_size"]),
+        }
+        for name, spec in inventory["node_groups"].items()
+    }
+
+
+def apply_payload(state: dict, payload: dict) -> None:
+    groups = payload.get("node_groups")
+    if not isinstance(groups, dict):
+        raise ValueError("payload.node_groups must be an object")
+    for name, sizes in groups.items():
+        if name not in state:
+            raise ValueError(f"payload references unknown node group {name!r}")
+        if not isinstance(sizes, dict):
+            raise ValueError(f"payload sizes for {name!r} must be an object")
+        state[name]["min_size"] = int(sizes["min_size"])
+        state[name]["desired_size"] = int(sizes["desired_size"])
+        if state[name]["desired_size"] > state[name]["max_size"]:
+            raise ValueError(f"{name} desired_size exceeds max_size")
+        if state[name]["min_size"] > state[name]["desired_size"]:
+            raise ValueError(f"{name} min_size exceeds desired_size")
+
+
+def main() -> int:
+    timeline: dict = {
+        "ok": False,
+        "plan": str(PLAN_PATH),
+        "inventory": str(INVENTORY_PATH),
+        "steps": [],
+        "invariants": {},
+    }
+
+    if not PLAN_PATH.is_file():
+        return fail(f"missing plan document: {PLAN_PATH}", timeline)
+    if not INVENTORY_PATH.is_file():
+        return fail(f"missing inventory: {INVENTORY_PATH}", timeline)
+
+    plan = json.loads(PLAN_PATH.read_text(encoding="utf-8"))
+    inventory = json.loads(INVENTORY_PATH.read_text(encoding="utf-8"))
+    parked = {
+        name for name, spec in inventory["node_groups"].items() if spec.get("weekend_parked")
+    }
+    non_parked = set(inventory["node_groups"]) - parked
+    schedule_cfg = inventory["weekend_schedule"]
+    timeline["timezone"] = schedule_cfg["timezone"]
+    timeline["flexible_window_minutes"] = schedule_cfg["flexible_window_minutes"]
+    timeline["parked_node_groups"] = sorted(parked)
+
+    try:
+        schedules = schedule_afters(plan)
+        if len(schedules) != 2:
+            raise ValueError(f"expected exactly 2 schedules, found {len(schedules)}")
+        (down_sched, down_payload), (up_sched, up_payload) = classify(schedules)
+    except (ValueError, json.JSONDecodeError, KeyError, TypeError) as exc:
+        return fail(str(exc), timeline)
+
+    # Friday 20:00 window opens, closes after flexible_window_minutes; Monday 06:00 follows.
+    timeline["invariants"]["scale_down_before_scale_up"] = True
+    timeline["invariants"]["flexible_window_does_not_invert_order"] = (
+        int(schedule_cfg["flexible_window_minutes"]) >= 0
+    )
+
+    state = seed_state(inventory)
+    before_down = deepcopy(state)
+    try:
+        apply_payload(state, down_payload)
+    except ValueError as exc:
+        return fail(f"scale-down apply: {exc}", timeline)
+
+    down_keys = set((down_payload.get("node_groups") or {}).keys())
+    parked_zero = all(
+        state[name]["min_size"] == 0 and state[name]["desired_size"] == 0 for name in parked
+    )
+    non_parked_intact = all(state[name] == before_down[name] for name in non_parked)
+    payload_exact = down_keys == parked
+
+    timeline["steps"].append(
+        {
+            "at": "friday-scale-down",
+            "schedule_name": down_sched.get("name"),
+            "action": "scale-down",
+            "before": before_down,
+            "after": deepcopy(state),
+            "payload_node_groups": sorted(down_keys),
+        }
+    )
+
+    before_up = deepcopy(state)
+    try:
+        apply_payload(state, up_payload)
+    except ValueError as exc:
+        return fail(f"scale-up apply: {exc}", timeline)
+
+    up_keys = set((up_payload.get("node_groups") or {}).keys())
+    restored = all(
+        state[name]["min_size"] == int(inventory["node_groups"][name]["min_size"])
+        and state[name]["desired_size"] == int(inventory["node_groups"][name]["desired_size"])
+        for name in parked
+    )
+    non_parked_still = all(state[name] == before_down[name] for name in non_parked)
+    up_exact = up_keys == parked
+
+    timeline["steps"].append(
+        {
+            "at": "monday-scale-up",
+            "schedule_name": up_sched.get("name"),
+            "action": "scale-up",
+            "before": before_up,
+            "after": deepcopy(state),
+            "payload_node_groups": sorted(up_keys),
+        }
+    )
+
+    timeline["invariants"].update(
+        {
+            "payload_keys_exact": payload_exact and up_exact,
+            "parked_hit_zero": parked_zero,
+            "parked_restored": restored,
+            "non_parked_unchanged": non_parked_intact and non_parked_still,
+        }
+    )
+
+    if not all(timeline["invariants"].values()):
+        failed = [k for k, v in timeline["invariants"].items() if not v]
+        return fail(f"invariant failure: {', '.join(failed)}", timeline)
+
+    timeline["ok"] = True
+    timeline["final_state"] = state
+    OUT_PATH.parent.mkdir(parents=True, exist_ok=True)
+    OUT_PATH.write_text(json.dumps(timeline, indent=2) + "\n", encoding="utf-8")
+    print(f"wrote {OUT_PATH}")
+    return 0
+
+
+sys.exit(main())
+PY

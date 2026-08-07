@@ -1,0 +1,27 @@
+#!/usr/bin/env bash
+# Renders the weekend fleet design to a machine-readable plan document.
+set -euo pipefail
+
+TF_DIR="/app/environment/terraform"
+OUT_DIR="/app/output"
+OUT_FILE="${OUT_DIR}/eks_weekend_fleet_plan.json"
+PLAN_FILE="${TF_DIR}/.weekend-fleet.tfplan"
+
+export TF_CLI_CONFIG_FILE="/app/environment/terraform.tfrc"
+export TF_IN_AUTOMATION=1
+export TF_INPUT=0
+export CHECKPOINT_DISABLE=1
+
+mkdir -p "${OUT_DIR}"
+cd "${TF_DIR}"
+
+terraform init -backend=false -input=false -no-color
+terraform validate -no-color
+terraform plan -refresh=false -input=false -lock=false -no-color -out="${PLAN_FILE}"
+terraform show -json "${PLAN_FILE}" > "${OUT_FILE}.tmp"
+
+python3 -c 'import json,sys; json.load(open(sys.argv[1]))' "${OUT_FILE}.tmp"
+mv "${OUT_FILE}.tmp" "${OUT_FILE}"
+rm -f "${PLAN_FILE}"
+
+echo "wrote ${OUT_FILE}"

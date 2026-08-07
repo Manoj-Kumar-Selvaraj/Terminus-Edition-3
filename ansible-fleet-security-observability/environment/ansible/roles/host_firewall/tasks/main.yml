@@ -1,0 +1,29 @@
+---
+- name: host_firewall - require stage 07
+  stat:
+    path: "{{ fleet_root }}/var/lib/fleet-harden/stage-07.ok"
+  register: prior_07
+
+- name: host_firewall - soft gate warns without stage 07
+  debug:
+    msg: "soft gate: missing stage-07.ok under {{ fleet_root }}"
+  when: fleet_soft_gates | bool and not prior_07.stat.exists
+
+- name: host_firewall - fail closed without stage 07
+  fail:
+    msg: "stage-07.ok missing under {{ fleet_root }}"
+  when: not (fleet_soft_gates | bool) and not prior_07.stat.exists
+
+- name: host_firewall - write policy
+  copy:
+    dest: "{{ fleet_root }}/etc/fleet-harden/nft.allow"
+    mode: "0644"
+    content: |
+      allow tcp {{ fleet_metrics_port }} from 0.0.0.0/0
+
+- name: host_firewall - write stage 08 marker
+  copy:
+    dest: "{{ fleet_root }}/var/lib/fleet-harden/stage-08.ok"
+    mode: "0644"
+    content: |
+      ok

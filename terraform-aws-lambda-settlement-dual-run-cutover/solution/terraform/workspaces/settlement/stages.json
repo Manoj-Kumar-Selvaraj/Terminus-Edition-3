@@ -1,0 +1,166 @@
+{
+  "stages": [
+    {
+      "name": "intake",
+      "function_name": "settlement-pipeline-intake",
+      "timeout_seconds": 30,
+      "reserved_concurrency": 4,
+      "memory_mb": 256,
+      "permissions": [
+        "logs:PutLogEvents",
+        "xray:PutTraceSegments"
+      ],
+      "alias": "live",
+      "package_hash": "c55d3f74559f13257279d4ef78e04e89e22c53a52d558c782983bc0f88238329"
+    },
+    {
+      "name": "verify_manifest",
+      "function_name": "settlement-pipeline-verify_manifest",
+      "timeout_seconds": 45,
+      "reserved_concurrency": 4,
+      "memory_mb": 256,
+      "permissions": [
+        "s3:GetObject",
+        "kms:Verify",
+        "logs:PutLogEvents"
+      ],
+      "alias": "live",
+      "package_hash": "47d92f6af8e1474d9d2b38c88a1d6b908f66f3c12432e0829eda19cb8c33cb69"
+    },
+    {
+      "name": "acquire_lock",
+      "function_name": "settlement-pipeline-acquire_lock",
+      "timeout_seconds": 20,
+      "reserved_concurrency": 8,
+      "memory_mb": 128,
+      "permissions": [
+        "dynamodb:PutItem",
+        "dynamodb:GetItem",
+        "logs:PutLogEvents"
+      ],
+      "alias": "live",
+      "package_hash": "0168ba5af0d61c4b9f6d905b9af7bc13b1ab50848ae595a39c1e0dec200dc0e2"
+    },
+    {
+      "name": "fetch_inputs",
+      "function_name": "settlement-pipeline-fetch_inputs",
+      "timeout_seconds": 120,
+      "reserved_concurrency": 12,
+      "memory_mb": 512,
+      "permissions": [
+        "s3:GetObject",
+        "logs:PutLogEvents"
+      ],
+      "alias": "live",
+      "package_hash": "8a9816c046492be65c074691326e9f825934b316fb2b4ed30a8761d1e8075af5"
+    },
+    {
+      "name": "validate_inputs",
+      "function_name": "settlement-pipeline-validate_inputs",
+      "timeout_seconds": 90,
+      "reserved_concurrency": 12,
+      "memory_mb": 512,
+      "permissions": [
+        "s3:GetObject",
+        "logs:PutLogEvents"
+      ],
+      "alias": "live",
+      "package_hash": "4f55a3c6caa194e63460fd2e9d3336da55186a58d0837956f100daaebf81b762"
+    },
+    {
+      "name": "transform_records",
+      "function_name": "settlement-pipeline-transform_records",
+      "timeout_seconds": 180,
+      "reserved_concurrency": 8,
+      "memory_mb": 1024,
+      "permissions": [
+        "s3:GetObject",
+        "s3:PutObject",
+        "logs:PutLogEvents"
+      ],
+      "alias": "live",
+      "package_hash": "5e57e19752d4be73c50e5a38ba5c8a42deeecd02e482b54c1fe73a2fb0dbd54a"
+    },
+    {
+      "name": "precheck_ledger",
+      "function_name": "settlement-pipeline-precheck_ledger",
+      "timeout_seconds": 60,
+      "reserved_concurrency": 6,
+      "memory_mb": 256,
+      "permissions": [
+        "dynamodb:GetItem",
+        "logs:PutLogEvents"
+      ],
+      "alias": "live",
+      "package_hash": "3f5fec5dbb507979b0038ae3badb9677fb1fb6c32642d8b5dd7cc390777d9964"
+    },
+    {
+      "name": "write_ledger",
+      "function_name": "settlement-pipeline-write_ledger",
+      "timeout_seconds": 120,
+      "reserved_concurrency": 6,
+      "memory_mb": 512,
+      "permissions": [
+        "dynamodb:PutItem",
+        "dynamodb:UpdateItem",
+        "logs:PutLogEvents"
+      ],
+      "alias": "live",
+      "package_hash": "76cc584cc78e1bcc102a94af4cb276758fc6be427fa3f8a105e74ca688060493"
+    },
+    {
+      "name": "build_report",
+      "function_name": "settlement-pipeline-build_report",
+      "timeout_seconds": 90,
+      "reserved_concurrency": 4,
+      "memory_mb": 512,
+      "permissions": [
+        "s3:PutObject",
+        "logs:PutLogEvents"
+      ],
+      "alias": "live",
+      "package_hash": "adce74901ae66ad1f2e6f7fd345f638b279336b7c059bdf69346dfce78ebd46d"
+    },
+    {
+      "name": "notify_partner",
+      "function_name": "settlement-pipeline-notify_partner",
+      "timeout_seconds": 30,
+      "reserved_concurrency": 4,
+      "memory_mb": 256,
+      "permissions": [
+        "events:PutEvents",
+        "logs:PutLogEvents"
+      ],
+      "alias": "live",
+      "package_hash": "354575b439c97cc7c34b99c2a74557ea418f37d1084eaa39e2d3856116fb8e97"
+    },
+    {
+      "name": "archive_batch",
+      "function_name": "settlement-pipeline-archive_batch",
+      "timeout_seconds": 60,
+      "reserved_concurrency": 4,
+      "memory_mb": 256,
+      "permissions": [
+        "s3:GetObject",
+        "s3:PutObject",
+        "s3:DeleteObject",
+        "logs:PutLogEvents"
+      ],
+      "alias": "live",
+      "package_hash": "45e6a4b9149d2c7b3e5f613de242c7d99b3cdd22754ccc90bf80006d07d457b8"
+    },
+    {
+      "name": "release_lock",
+      "function_name": "settlement-pipeline-release_lock",
+      "timeout_seconds": 20,
+      "reserved_concurrency": 8,
+      "memory_mb": 128,
+      "permissions": [
+        "dynamodb:DeleteItem",
+        "logs:PutLogEvents"
+      ],
+      "alias": "live",
+      "package_hash": "c52998f6ee6b8de4f3879d861673738579c438bbf57eae335e9bcde956da9a9d"
+    }
+  ]
+}

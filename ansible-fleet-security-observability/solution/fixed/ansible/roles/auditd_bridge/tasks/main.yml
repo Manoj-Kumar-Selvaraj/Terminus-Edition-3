@@ -1,0 +1,77 @@
+---
+- name: auditd_bridge - require stage 03
+  stat:
+    path: "{{ fleet_root }}/var/lib/fleet-harden/stage-03.ok"
+  register: prior_03
+
+- name: auditd_bridge - soft gate warns without stage 03
+  debug:
+    msg: "soft gate: missing stage-03.ok under {{ fleet_root }}"
+  when: fleet_soft_gates | bool and not prior_03.stat.exists
+
+- name: auditd_bridge - fail closed without stage 03
+  fail:
+    msg: "stage-03.ok missing under {{ fleet_root }}"
+  when: not (fleet_soft_gates | bool) and not prior_03.stat.exists
+
+- name: auditd_bridge - template listener
+  template:
+    src: fleet-auditd.py.j2
+    dest: "{{ fleet_root }}/lib/fleet-auditd.py"
+    mode: "0755"
+  notify: restart fleet-auditd
+
+- name: auditd_bridge - program conf
+  template:
+    src: fleet-auditd.conf.j2
+    dest: "{{ fleet_root }}/etc/supervisor/conf.d/fleet-auditd.conf"
+    mode: "0644"
+
+- name: auditd_bridge - stop previous listener if any
+  shell: |
+    if [ -f "{{ fleet_root }}/var/lib/fleet-harden/fleet-auditd.pid" ]; then
+      kill "$(cat "{{ fleet_root }}/var/lib/fleet-harden/fleet-auditd.pid")" 2>/dev/null || true
+      rm -f "{{ fleet_root }}/var/lib/fleet-harden/fleet-auditd.pid"
+    fi
+    fuser -k "{{ fleet_audit_port }}/tcp" 2>/dev/null || true
+    true
+  args:
+    executable: /bin/bash
+  changed_when: false
+
+- name: auditd_bridge - start listener
+  shell: |
+    nohup python3 "{{ fleet_root }}/lib/fleet-auditd.py" \
+      >"{{ fleet_root }}/var/lib/fleet-harden/fleet-auditd.log" \
+      2>"{{ fleet_root }}/var/lib/fleet-harden/fleet-auditd.err" &
+    echo $! > "{{ fleet_root }}/var/lib/fleet-harden/fleet-auditd.pid"
+  args:
+    executable: /bin/bash
+
+- name: auditd_bridge - wait listen
+  wait_for:
+    host: 127.0.0.1
+    port: "{{ fleet_audit_port }}"
+    timeout: 45
+
+- name: auditd_bridge - probe endpoint
+  uri:
+    url: "http://127.0.0.1:{{ fleet_audit_port }}/healthz"
+    return_content: true
+    status_code: 200
+  register: auditd_bridge_probe
+
+- name: auditd_bridge - probe must expose chain token
+  assert:
+    that:
+      - "'chain_token' in auditd_bridge_probe.content"
+      - "'auditd' in auditd_bridge_probe.content"
+    fail_msg: audit healthz missing chain_token
+  when: not (fleet_soft_gates | bool)
+
+- name: auditd_bridge - write stage 04 marker
+  copy:
+    dest: "{{ fleet_root }}/var/lib/fleet-harden/stage-04.ok"
+    mode: "0644"
+    content: |
+      ok

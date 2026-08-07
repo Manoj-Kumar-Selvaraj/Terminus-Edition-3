@@ -1,0 +1,15 @@
+# Failed cell upgrade — 2026-08-02
+
+07:10 UTC: Plugin bump attempted against all three controllers from a shared
+home mount under /jenkins-home. Public update-center fetches were blocked.
+
+07:18 UTC: risk-controller came up on gen-3-incompatible configuration-as-code
+and never finished JCasC. payments and platform restarted onto general nodes
+and lost exclusive claim locks; build history looked dual-written.
+
+07:31 UTC: Job router accepted risk-score on payments-controller because the
+fleet registry still listed a shared default cell. Sibling cells dropped below
+disruption budget when the shared PVC remounted.
+
+07:44 UTC: Rollback script pointed every cell at the same EFS access point and
+would have wiped completed builds on risk-controller.

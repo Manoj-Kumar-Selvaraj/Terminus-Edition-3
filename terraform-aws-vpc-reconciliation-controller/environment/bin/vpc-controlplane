@@ -1,0 +1,63 @@
+#!/usr/bin/env python3
+"""Start the VPC control-plane if it is not already healthy."""
+from __future__ import annotations
+
+import json
+import os
+import subprocess
+import sys
+import time
+import urllib.error
+import urllib.request
+from pathlib import Path
+
+ROOT = Path(os.environ.get("VPC_ROOT", "/app"))
+URL = os.environ.get("VPC_CONTROLPLANE_URL", "http://127.0.0.1:7432").rstrip("/")
+SEED = Path(os.environ.get("VPC_CP_SEED", str(ROOT / "seed")))
+PIDFILE = Path(os.environ.get("VPC_CP_PIDFILE", str(ROOT / "var/reconcile/controlplane.pid")))
+
+
+def healthy() -> bool:
+    try:
+        with urllib.request.urlopen(URL + "/health", timeout=1) as resp:
+            return resp.status == 200
+    except Exception:  # noqa: BLE001
+        return False
+
+
+def main() -> int:
+    if healthy():
+        print(json.dumps({"status": "already_up", "url": URL}))
+        return 0
+    PIDFILE.parent.mkdir(parents=True, exist_ok=True)
+    env = {
+        **os.environ,
+        "VPC_CP_SEED": str(SEED),
+        "VPC_CP_HOST": os.environ.get("VPC_CP_HOST", "127.0.0.1"),
+        "VPC_CP_PORT": os.environ.get("VPC_CP_PORT", "7432"),
+        "PYTHONPATH": str(ROOT),
+    }
+    log = open(PIDFILE.with_suffix(".log"), "w", encoding="utf-8")
+    proc = subprocess.Popen(
+        [
+            sys.executable,
+            "-c",
+            "from controlplane import main; raise SystemExit(main())",
+        ],
+        env=env,
+        stdout=log,
+        stderr=subprocess.STDOUT,
+        start_new_session=True,
+    )
+    PIDFILE.write_text(str(proc.pid), encoding="utf-8")
+    for _ in range(50):
+        if healthy():
+            print(json.dumps({"status": "started", "url": URL, "pid": proc.pid}))
+            return 0
+        time.sleep(0.1)
+    print(json.dumps({"status": "failed", "url": URL}), file=sys.stderr)
+    return 1
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

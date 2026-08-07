@@ -1,0 +1,35 @@
+[
+  {
+    "origin_id": "s3-static",
+    "type": "s3",
+    "bucket_name": "claims-static-prod",
+    "aws_account_id": "123456789012",
+    "region": "us-east-1",
+    "requires_oac": true,
+    "public_access_allowed": false
+  },
+  {
+    "origin_id": "api",
+    "type": "custom",
+    "domain_name": "api.claims.internal",
+    "custom_header_name": "X-Edge-Auth",
+    "custom_header_value": "edge-token-claims",
+    "protocol_policy": "https-only"
+  },
+  {
+    "origin_id": "maintenance",
+    "type": "custom",
+    "domain_name": "maintenance.claims.internal",
+    "protocol_policy": "https-only"
+  },
+  {
+    "origin_id": "failover-static",
+    "type": "s3",
+    "bucket_name": "claims-static-failover",
+    "aws_account_id": "210987654321",
+    "region": "us-west-2",
+    "requires_oac": true,
+    "public_access_allowed": false,
+    "static_only": true
+  }
+]

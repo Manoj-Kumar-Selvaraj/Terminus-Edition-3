@@ -1,0 +1,21 @@
+---
+- name: Harden every edge instance
+  hosts: edges
+  gather_facts: false
+  roles:
+    - inventory_probe
+    - baseline_packages
+    - patch_window
+    - auditd_bridge
+    - node_metrics
+    - log_ship
+    - runtime_sensor
+    - host_firewall
+    - ssh_posture
+
+- name: Wire scrape mesh and seal posture on control
+  hosts: control
+  gather_facts: false
+  roles:
+    - scrape_mesh
+    - posture_seal

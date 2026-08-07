@@ -1,0 +1,46 @@
+{
+  "environment": "staging",
+  "region": "us-east-1",
+  "vpc": {
+    "key": "shared",
+    "cidr_block": "10.42.0.0/16",
+    "name": "shared-staging-vpc"
+  },
+  "subnets": {
+    "public-a": {
+      "cidr_block": "10.42.0.0/24",
+      "az": "us-east-1a",
+      "tier": "public",
+      "route_table_key": "public-a"
+    },
+    "public-b": {
+      "cidr_block": "10.42.1.0/24",
+      "az": "us-east-1b",
+      "tier": "public",
+      "route_table_key": "public-b"
+    },
+    "private-a": {
+      "cidr_block": "10.42.16.0/20",
+      "az": "us-east-1a",
+      "tier": "private",
+      "route_table_key": "private-a"
+    },
+    "private-b": {
+      "cidr_block": "10.42.32.0/20",
+      "az": "us-east-1b",
+      "tier": "private",
+      "route_table_key": "private-b"
+    }
+  },
+  "route_tables": {
+    "public-a": {"tier": "public", "az": "us-east-1a"},
+    "public-b": {"tier": "public", "az": "us-east-1b"},
+    "private-a": {"tier": "private", "az": "us-east-1a", "nat_key": "nat-a"},
+    "private-b": {"tier": "private", "az": "us-east-1b", "nat_key": "nat-b"}
+  },
+  "nat_gateways": {
+    "nat-a": {"az": "us-east-1a", "eip": "198.51.100.10"},
+    "nat-b": {"az": "us-east-1b", "eip": "198.51.100.11"}
+  },
+  "internet_gateway_key": "igw"
+}

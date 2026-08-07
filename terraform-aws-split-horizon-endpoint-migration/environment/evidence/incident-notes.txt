@@ -1,0 +1,13 @@
+Incident: staging shared-network refactor review (offline)
+
+Private app hosts in 10.42.16.0/20 and 10.42.32.0/20 lost private S3 and
+DynamoDB paths after the for_each rewrite. Reachability still shows NAT for
+those prefixes. SSM Session Manager names sometimes answer from the public DNS
+view with the wrong address, and api.shared.services.internal flipped between
+two overlapping private zones depending on which resolver stub answered.
+
+Security review also flagged the shared interface endpoint SG still admitting
+0.0.0.0/0 on 443. One interface endpoint ENI landed in a public subnet during
+the refactor dry-run. Downstream consumer plan fails because legacy module
+outputs disappeared. Saved state still uses list-indexed private subnet and
+route-table addresses; the promotion plan must not replace those identities.

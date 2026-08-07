@@ -1,0 +1,229 @@
+#!/usr/bin/env python3
+"""Plan Terraform and drive settlement dual-run against the sealed runtime."""
+from __future__ import annotations
+
+import hashlib
+import json
+import os
+import shutil
+import subprocess
+import sys
+from pathlib import Path
+
+WORKSPACE = Path("/app/terraform/workspaces/settlement")
+VAR = Path("/app/var/settlement")
+OUTPUT = Path("/app/output")
+RUNTIME = Path("/opt/settlement-runtime")
+EXPECTED_HASH = Path("/opt/settlement-runtime.sha256")
+CTL_SRC = Path("/app")
+SAMPLE = Path("/app/data/requests/sample-v2.json")
+
+
+def run(cmd: list[str], cwd: Path | None = None, check: bool = True) -> subprocess.CompletedProcess:
+    env = {
+        **os.environ,
+        "TF_CLI_CONFIG_FILE": "/app/terraform.tfrc",
+        "TF_IN_AUTOMATION": "1",
+        "CHECKPOINT_DISABLE": "1",
+        "AWS_ACCESS_KEY_ID": "test",
+        "AWS_SECRET_ACCESS_KEY": "test",
+        "AWS_DEFAULT_REGION": "us-east-1",
+    }
+    proc = subprocess.run(cmd, cwd=str(cwd) if cwd else None, env=env, text=True, capture_output=True)
+    if check and proc.returncode != 0:
+        sys.stderr.write(proc.stdout + proc.stderr)
+        raise SystemExit(proc.returncode)
+    return proc
+
+
+def verify_runtime_hash() -> None:
+    digest = hashlib.sha256(RUNTIME.read_bytes()).hexdigest()
+    expected = EXPECTED_HASH.read_text(encoding="utf-8").strip().split()[0]
+    if digest != expected:
+        raise SystemExit(f"runtime binary hash mismatch: {digest} != {expected}")
+
+
+def build_ctl() -> Path:
+    out = Path("/tmp/settlementctl")
+    proc = run(["go", "build", "-o", str(out), "./cmd/settlementctl"], cwd=CTL_SRC, check=False)
+    if proc.returncode != 0:
+        sys.stderr.write(proc.stdout + proc.stderr)
+        raise SystemExit(proc.returncode)
+    return out
+
+
+def terraform_plan() -> dict:
+    VAR.mkdir(parents=True, exist_ok=True)
+    run(["terraform", "init", "-backend=false", "-input=false"], cwd=WORKSPACE)
+    run(["terraform", "validate"], cwd=WORKSPACE)
+    plan_path = VAR / "tfplan"
+    run(
+        ["terraform", "plan", "-refresh=false", "-input=false", f"-out={plan_path}"],
+        cwd=WORKSPACE,
+    )
+    show = run(["terraform", "show", "-json", str(plan_path)], cwd=WORKSPACE)
+    plan = json.loads(show.stdout)
+    (VAR / "plan.json").write_text(json.dumps(plan, indent=2) + "\n", encoding="utf-8")
+    return plan
+
+
+def runtime(args: list[str], stdin: dict | None = None) -> dict:
+    payload = "" if stdin is None else json.dumps(stdin)
+    proc = subprocess.run(
+        [str(RUNTIME), *args],
+        input=payload,
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+    if proc.returncode != 0:
+        raise SystemExit(proc.stderr or proc.stdout or "runtime failed")
+    line = proc.stdout.strip().splitlines()[-1] if proc.stdout.strip() else "{}"
+    return json.loads(line)
+
+
+def ctl_json(ctl: Path, args: list[str], check: bool = True) -> tuple[dict, int]:
+    proc = run([str(ctl), *args], check=False)
+    text = (proc.stdout or "").strip()
+    data = {}
+    if text:
+        # last JSON object on stdout
+        for line in reversed(text.splitlines()):
+            line = line.strip()
+            if line.startswith("{") or line.startswith("["):
+                data = json.loads(line)
+                break
+    if check and proc.returncode != 0:
+        sys.stderr.write(proc.stdout + proc.stderr)
+        raise SystemExit(proc.returncode)
+    return data, proc.returncode
+
+
+def effect_counts(effects: list) -> dict:
+    counts = {"ledger": 0, "report": 0, "notify": 0, "archive": 0}
+    seen = set()
+    for effect in effects:
+        key = effect.get("logical_key", "")
+        if key in seen:
+            continue
+        seen.add(key)
+        if "/ledger/" in key:
+            counts["ledger"] += 1
+        elif key.endswith("/report"):
+            counts["report"] += 1
+        elif key.endswith("/notify"):
+            counts["notify"] += 1
+        elif key.endswith("/archive"):
+            counts["archive"] += 1
+    return counts
+
+
+def report_digest(payload: dict) -> str:
+    stable = {
+        "status": payload["status"],
+        "active_generation": payload["active_generation"],
+        "writer": payload["writer"],
+        "execution_status": payload["execution_status"],
+        "effect_counts": payload["effect_counts"],
+        "runtime_writer": payload["runtime_writer"],
+        "plan_lambda_functions": payload["plan_lambda_functions"],
+        "plan_lambda_aliases": payload["plan_lambda_aliases"],
+    }
+    return hashlib.sha256(
+        json.dumps(stable, sort_keys=True, separators=(",", ":")).encode()
+    ).hexdigest()
+
+
+def count_plan_types(plan: dict) -> tuple[int, int]:
+    functions = 0
+    aliases = 0
+    for change in plan.get("resource_changes") or []:
+        typ = change.get("type")
+        if typ == "aws_lambda_function":
+            functions += 1
+        elif typ == "aws_lambda_alias":
+            aliases += 1
+    return functions, aliases
+
+
+def main() -> int:
+    OUTPUT.mkdir(parents=True, exist_ok=True)
+    # Fresh controller + runtime state so identical reruns stay deterministic.
+    if VAR.exists():
+        for child in VAR.iterdir():
+            if child.name in {"plan.json", "tfplan"}:
+                continue
+            if child.is_dir():
+                shutil.rmtree(child)
+            else:
+                child.unlink(missing_ok=True)
+    VAR.mkdir(parents=True, exist_ok=True)
+    verify_runtime_hash()
+    runtime(["reset"])
+    plan = terraform_plan()
+    ctl = build_ctl()
+    deploy, code = ctl_json(ctl, ["deploy", "--infra", str(WORKSPACE)])
+    if code != 0:
+        return code
+    # Ensure Lambda is primary writer for the rehearsal.
+    cut, code = ctl_json(ctl, ["cutover", "--generation", str(deploy.get("generation", 1)), "--writer", "lambda"])
+    if code != 0:
+        return code
+    # Work on a fresh request copy so reruns stay idempotent on the sample file.
+    req = json.loads(SAMPLE.read_text(encoding="utf-8"))
+    req["execution_id"] = "exec-dual-run-public"
+    req_path = VAR / "public-request.json"
+    req_path.write_text(json.dumps(req, indent=2) + "\n", encoding="utf-8")
+    cp, code = ctl_json(ctl, ["run", "--request", str(req_path)], check=False)
+    if code != 0 and cp.get("status") != "PARTIAL":
+        sys.stderr.write(json.dumps(cp) + "\n")
+        return code if code != 0 else 1
+    shadow, _ = ctl_json(ctl, ["jenkins-shadow", "--request", str(req_path)], check=False)
+    state = runtime(["inspect", "state"])
+    effects_raw = runtime(["inspect", "effects"])
+    if isinstance(effects_raw, list):
+        effects = effects_raw
+    elif isinstance(effects_raw, dict):
+        effects = effects_raw.get("effects") or state.get("effects") or []
+    else:
+        effects = state.get("effects") or []
+    fn_count, alias_count = count_plan_types(plan)
+    counts = effect_counts(effects)
+    item_count = len(req.get("items") or [])
+    ready = (
+        cp.get("status") in {"SUCCEEDED", "PARTIAL"}
+        and cut.get("writer") == "lambda"
+        and state.get("writer") == "lambda"
+        and shadow.get("wrote") is False
+        and fn_count >= 12
+        and alias_count >= 12
+        and counts["ledger"] == item_count
+        and counts["report"] == 1
+        and counts["notify"] == 1
+        and counts["archive"] == 1
+        and deploy.get("generation") == cut.get("active_generation")
+    )
+    payload = {
+        "status": "READY" if ready else "MISMATCH",
+        "active_generation": cut.get("active_generation"),
+        "writer": cut.get("writer"),
+        "epoch": cut.get("epoch"),
+        "execution_status": cp.get("status"),
+        "execution_id": cp.get("execution_id"),
+        "effect_counts": counts,
+        "plan_resource_count": len(plan.get("resource_changes") or []),
+        "plan_lambda_functions": fn_count,
+        "plan_lambda_aliases": alias_count,
+        "runtime_writer": state.get("writer"),
+        "runtime_effects": len(effects),
+        "deployment_digest": deploy.get("digest"),
+        "shadow_wrote": shadow.get("wrote"),
+    }
+    payload["report_digest"] = report_digest(payload)
+    (OUTPUT / "cutover-report.json").write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+    print(json.dumps({"status": payload["status"], "digest": payload["report_digest"]}))
+    return 0 if payload["status"] == "READY" else 1
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

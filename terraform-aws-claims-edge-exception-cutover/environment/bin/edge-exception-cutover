@@ -1,0 +1,79 @@
+#!/usr/bin/env python3
+"""Plan the edge workspace, start the local lab, and write cutover evidence."""
+from __future__ import annotations
+
+import json
+import os
+import subprocess
+import sys
+from pathlib import Path
+
+sys.path.insert(0, "/app")
+from edge_lab import (  # noqa: E402
+    normalize_plan,
+    run_probes,
+    start_lab,
+    stop_lab,
+    write_evidence,
+)
+
+WORKSPACE = Path("/app/terraform/workspaces/edge")
+VAR = Path("/app/var/edge")
+
+
+def run(cmd: list[str], cwd: Path) -> None:
+    env = {
+        **os.environ,
+        "TF_CLI_CONFIG_FILE": "/app/terraform.tfrc",
+        "TF_IN_AUTOMATION": "1",
+        "CHECKPOINT_DISABLE": "1",
+        "AWS_ACCESS_KEY_ID": "test",
+        "AWS_SECRET_ACCESS_KEY": "test",
+        "AWS_DEFAULT_REGION": "us-east-1",
+    }
+    proc = subprocess.run(cmd, cwd=str(cwd), env=env, text=True, capture_output=True)
+    if proc.returncode != 0:
+        sys.stderr.write(proc.stdout + proc.stderr)
+        raise SystemExit(proc.returncode)
+
+
+def main() -> int:
+    VAR.mkdir(parents=True, exist_ok=True)
+    run(["terraform", "init", "-backend=false", "-input=false"], WORKSPACE)
+    run(["terraform", "validate"], WORKSPACE)
+    run(
+        [
+            "terraform",
+            "plan",
+            "-refresh=false",
+            "-input=false",
+            "-out=/app/var/edge/tfplan",
+        ],
+        WORKSPACE,
+    )
+    show = subprocess.run(
+        ["terraform", "show", "-json", "/app/var/edge/tfplan"],
+        cwd=str(WORKSPACE),
+        env={
+            **os.environ,
+            "TF_CLI_CONFIG_FILE": "/app/terraform.tfrc",
+            "TF_IN_AUTOMATION": "1",
+        },
+        text=True,
+        capture_output=True,
+        check=True,
+    )
+    plan = json.loads(show.stdout)
+    graph = normalize_plan(plan)
+    state, servers, edge_urls = start_lab(graph)
+    try:
+        probes = run_probes(edge_urls, state)
+        evidence = write_evidence(plan, graph, probes, state)
+    finally:
+        stop_lab(servers)
+    print(json.dumps({"status": evidence["status"], "digest": evidence["evidence_digest"]}))
+    return 0 if evidence["status"] == "READY" else 1
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

@@ -1,0 +1,152 @@
+{
+  "version": 4,
+  "terraform_version": "1.9.8",
+  "serial": 1,
+  "lineage": "split-horizon-legacy-001",
+  "outputs": {},
+  "resources": [
+    {
+      "module": "module.network",
+      "mode": "managed",
+      "type": "aws_vpc",
+      "name": "this",
+      "provider": "provider[\"registry.terraform.io/hashicorp/aws\"]",
+      "instances": [
+        {
+          "schema_version": 1,
+          "attributes": {
+            "id": "vpc-staging-01",
+            "arn": "arn:aws:ec2:us-east-1:123456789012:vpc/vpc-staging-01",
+            "cidr_block": "10.42.0.0/16",
+            "enable_dns_hostnames": true,
+            "enable_dns_support": true,
+            "instance_tenancy": "default",
+            "enable_network_address_usage_metrics": false,
+            "assign_generated_ipv6_cidr_block": false,
+            "default_network_acl_id": "acl-staging",
+            "default_route_table_id": "rtb-default",
+            "default_security_group_id": "sg-default",
+            "dhcp_options_id": "dopt-staging",
+            "main_route_table_id": "rtb-main",
+            "owner_id": "123456789012",
+            "tags": {"Name": "shared-staging-vpc", "Environment": "staging"},
+            "tags_all": {"Name": "shared-staging-vpc", "Environment": "staging"}
+          }
+        }
+      ]
+    },
+    {
+      "module": "module.network",
+      "mode": "managed",
+      "type": "aws_subnet",
+      "name": "private",
+      "provider": "provider[\"registry.terraform.io/hashicorp/aws\"]",
+      "instances": [
+        {
+          "index_key": 0,
+          "schema_version": 1,
+          "attributes": {
+            "id": "subnet-private-a",
+            "arn": "arn:aws:ec2:us-east-1:123456789012:subnet/subnet-private-a",
+            "cidr_block": "10.42.16.0/20",
+            "availability_zone": "us-east-1a",
+            "availability_zone_id": "use1-az1",
+            "vpc_id": "vpc-staging-01",
+            "assign_ipv6_address_on_creation": false,
+            "enable_dns64": false,
+            "enable_resource_name_dns_a_record_on_launch": false,
+            "enable_resource_name_dns_aaaa_record_on_launch": false,
+            "ipv6_native": false,
+            "map_public_ip_on_launch": false,
+            "owner_id": "123456789012",
+            "tags": {"Name": "staging-private-a", "Tier": "private", "Environment": "staging"},
+            "tags_all": {"Name": "staging-private-a", "Tier": "private", "Environment": "staging"}
+          }
+        },
+        {
+          "index_key": 1,
+          "schema_version": 1,
+          "attributes": {
+            "id": "subnet-private-b",
+            "arn": "arn:aws:ec2:us-east-1:123456789012:subnet/subnet-private-b",
+            "cidr_block": "10.42.32.0/20",
+            "availability_zone": "us-east-1b",
+            "availability_zone_id": "use1-az2",
+            "vpc_id": "vpc-staging-01",
+            "assign_ipv6_address_on_creation": false,
+            "enable_dns64": false,
+            "enable_resource_name_dns_a_record_on_launch": false,
+            "enable_resource_name_dns_aaaa_record_on_launch": false,
+            "ipv6_native": false,
+            "map_public_ip_on_launch": false,
+            "owner_id": "123456789012",
+            "tags": {"Name": "staging-private-b", "Tier": "private", "Environment": "staging"},
+            "tags_all": {"Name": "staging-private-b", "Tier": "private", "Environment": "staging"}
+          }
+        }
+      ]
+    },
+    {
+      "module": "module.network",
+      "mode": "managed",
+      "type": "aws_route_table",
+      "name": "private",
+      "provider": "provider[\"registry.terraform.io/hashicorp/aws\"]",
+      "instances": [
+        {
+          "index_key": 0,
+          "schema_version": 0,
+          "attributes": {
+            "id": "rtb-private-a",
+            "arn": "arn:aws:ec2:us-east-1:123456789012:route-table/rtb-private-a",
+            "vpc_id": "vpc-staging-01",
+            "owner_id": "123456789012",
+            "route": [],
+            "tags": {"Name": "staging-private-a", "Tier": "private", "Environment": "staging"},
+            "tags_all": {"Name": "staging-private-a", "Tier": "private", "Environment": "staging"}
+          }
+        },
+        {
+          "index_key": 1,
+          "schema_version": 0,
+          "attributes": {
+            "id": "rtb-private-b",
+            "arn": "arn:aws:ec2:us-east-1:123456789012:route-table/rtb-private-b",
+            "vpc_id": "vpc-staging-01",
+            "owner_id": "123456789012",
+            "route": [],
+            "tags": {"Name": "staging-private-b", "Tier": "private", "Environment": "staging"},
+            "tags_all": {"Name": "staging-private-b", "Tier": "private", "Environment": "staging"}
+          }
+        }
+      ]
+    },
+    {
+      "module": "module.network",
+      "mode": "managed",
+      "type": "aws_security_group",
+      "name": "endpoint",
+      "provider": "provider[\"registry.terraform.io/hashicorp/aws\"]",
+      "instances": [
+        {
+          "index_key": 0,
+          "schema_version": 1,
+          "attributes": {
+            "id": "sg-vpce-staging",
+            "arn": "arn:aws:ec2:us-east-1:123456789012:security-group/sg-vpce-staging",
+            "name": "staging-vpce-shared",
+            "description": "Shared interface endpoint security group",
+            "vpc_id": "vpc-staging-01",
+            "owner_id": "123456789012",
+            "revoke_rules_on_delete": false,
+            "ingress": [],
+            "egress": [],
+            "tags": {"Environment": "staging"},
+            "tags_all": {"Environment": "staging"}
+          }
+        }
+      ]
+    }
+  ],
+  "check_results": null
+}

@@ -1,0 +1,15 @@
+Cutover AZ-PE-20260629 blocked after plan review.
+
+Observed:
+- app/data modeled as singleton subnets instead of topology map keys
+- default UDR next hop Internet instead of firewall VirtualAppliance
+- private endpoints / Private DNS zone groups missing from the reusable module
+- NSG Internet deny and tier rules not present
+- diagnostics, DDoS flag, VNet lock, and moved metadata dropped in the refactor
+
+Effective route dump (excerpt):
+  app 0.0.0.0/0 -> Internet
+  data 0.0.0.0/0 -> Internet
+
+DNS snapshot: storage and Key Vault names still resolve on public endpoints from
+the spoke. Endpoint subnet still has private endpoint network policies Enabled.

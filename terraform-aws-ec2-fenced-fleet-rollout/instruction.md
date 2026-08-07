@@ -1,0 +1,5 @@
+The payments API fleet picked an unapproved AMI alias during last week's rolling refresh, lost the control-plane reply after the pilot commit, and left a torn journal plus imported legacy addresses that still want destructive replacement. We have to finish one fenced release against the live inventory — not invent a greenfield ASG.
+
+Contracts and evidence are under `/app/docs` and `/app/evidence`; the working config is `/app/data/fleet_config.json`. Repair the Go controller under `/app/controller` and Terraform under `/app/terraform`, then run `/app/bin/fenced-fleet-rollout`. That command must regenerate `/app/var/fleet/plan.json`, commit through the trusted control plane at `/opt/ec2-controlplane`, and leave `/app/output/rollout-report.json` with `status` `READY` plus a stable `report_digest`. 
+
+Release provenance, private slot placement, pilot/wave capacity limits, slot-owned encrypted volumes, imported-state moves, report-only drift, owner fencing, and journal repair all have to hold together. A second identical run must keep the same digest; forging control-plane inventory from local files alone is not enough.

@@ -1,0 +1,21 @@
+{
+  "node_group_key": "jenkins_controllers",
+  "min_size": 3,
+  "desired_size": 3,
+  "labels": {
+    "workload": "jenkins-controller",
+    "dedicated": "jenkins"
+  },
+  "taints": [
+    {
+      "key": "dedicated",
+      "value": "jenkins",
+      "effect": "NO_SCHEDULE"
+    }
+  ],
+  "pdb": {
+    "max_unavailable": 0,
+    "min_available": 2
+  },
+  "zones": ["us-east-1a", "us-east-1b", "us-east-1c"]
+}

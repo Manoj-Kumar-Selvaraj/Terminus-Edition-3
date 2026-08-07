@@ -1,0 +1,14 @@
+---
+- name: restart fleet-falco
+  shell: |
+    if [ -f "{{ fleet_root }}/var/lib/fleet-harden/fleet-falco.pid" ]; then
+      kill "$(cat "{{ fleet_root }}/var/lib/fleet-harden/fleet-falco.pid")" 2>/dev/null || true
+      rm -f "{{ fleet_root }}/var/lib/fleet-harden/fleet-falco.pid"
+    fi
+    fuser -k "{{ fleet_falco_port }}/tcp" 2>/dev/null || true
+    nohup python3 "{{ fleet_root }}/lib/fleet-falco.py" \
+      >"{{ fleet_root }}/var/lib/fleet-harden/fleet-falco.log" \
+      2>"{{ fleet_root }}/var/lib/fleet-harden/fleet-falco.err" &
+    echo $! > "{{ fleet_root }}/var/lib/fleet-harden/fleet-falco.pid"
+  args:
+    executable: /bin/bash

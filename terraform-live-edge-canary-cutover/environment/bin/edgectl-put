@@ -1,0 +1,127 @@
+#!/usr/bin/env bash
+# edgectl-put — thin Terraform helper around the live edge control plane.
+set -euo pipefail
+
+BASE_URL="${EDGECTL_BASE_URL:-http://127.0.0.1:8787}"
+
+usage() {
+  cat <<'EOF'
+Usage:
+  edgectl-put network <json-file>
+  edgectl-put pool <json-file>
+  edgectl-put canary <json-file>
+  edgectl-put waf <json-file>
+  edgectl-put tls <json-file>
+  edgectl-put dns <json-file>
+  edgectl-put metrics-assert <max_error_rate> <expect_weight> <expect_pool>
+EOF
+}
+
+need_file() {
+  local f="$1"
+  if [[ ! -f "$f" ]]; then
+    echo "edgectl-put: missing json file: $f" >&2
+    exit 2
+  fi
+}
+
+json_field() {
+  # Minimal field extraction without requiring jq.
+  local file="$1" key="$2"
+  python3 - "$file" "$key" <<'PY'
+import json, sys
+doc = json.load(open(sys.argv[1], encoding="utf-8"))
+key = sys.argv[2]
+cur = doc
+for part in key.split("."):
+    if isinstance(cur, dict) and part in cur:
+        cur = cur[part]
+    else:
+        sys.exit(f"missing field {key}")
+if isinstance(cur, bool):
+    print("true" if cur else "false")
+elif cur is None:
+    print("")
+else:
+    print(cur)
+PY
+}
+
+put_json() {
+  local path="$1" file="$2"
+  curl -fsS -X PUT \
+    -H "Content-Type: application/json" \
+    --data-binary @"$file" \
+    "${BASE_URL}${path}"
+}
+
+cmd="${1:-}"
+case "$cmd" in
+  network)
+    need_file "${2:-}"
+    id="$(json_field "$2" id)"
+    put_json "/v1/networks/${id}" "$2"
+    ;;
+  pool)
+    need_file "${2:-}"
+    id="$(json_field "$2" id)"
+    put_json "/v1/pools/${id}" "$2"
+    ;;
+  canary)
+    need_file "${2:-}"
+    id="$(json_field "$2" id)"
+    put_json "/v1/canary/${id}" "$2"
+    ;;
+  waf)
+    need_file "${2:-}"
+    id="$(json_field "$2" id)"
+    put_json "/v1/waf/${id}" "$2"
+    ;;
+  tls)
+    need_file "${2:-}"
+    id="$(json_field "$2" id)"
+    put_json "/v1/tls/${id}" "$2"
+    ;;
+  dns)
+    need_file "${2:-}"
+    zone="$(json_field "$2" zone)"
+    name="$(json_field "$2" name)"
+    put_json "/v1/dns/${zone}/${name}" "$2"
+    ;;
+  metrics-assert)
+    max_err="${2:?max_error_rate required}"
+    expect_weight="${3:?expect_weight required}"
+    expect_pool="${4:?expect_pool required}"
+    metrics="$(curl -fsS "${BASE_URL}/v1/metrics")"
+    python3 - "$metrics" "$max_err" "$expect_weight" "$expect_pool" <<'PY'
+import json, sys
+m = json.loads(sys.argv[1])
+max_err = float(sys.argv[2])
+expect_weight = int(sys.argv[3])
+expect_pool = sys.argv[4]
+errs = []
+rate = float(m.get("error_rate_pct", 0))
+weight = int(m.get("canary_weight_green", -1))
+pool = str(m.get("dns_target_pool", ""))
+if rate > max_err:
+    errs.append(f"error_rate_pct {rate} exceeds budget {max_err}")
+if weight != expect_weight:
+    errs.append(f"canary_weight_green {weight} != {expect_weight}")
+if pool != expect_pool:
+    errs.append(f"dns_target_pool {pool!r} != {expect_pool!r}")
+if errs:
+    print("metrics-assert failed:", "; ".join(errs), file=sys.stderr)
+    sys.exit(1)
+print(json.dumps({"ok": True, "metrics": m}))
+PY
+    ;;
+  ""|-h|--help|help)
+    usage
+    exit 0
+    ;;
+  *)
+    echo "edgectl-put: unknown command: $cmd" >&2
+    usage >&2
+    exit 2
+    ;;
+esac

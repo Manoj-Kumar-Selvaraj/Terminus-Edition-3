@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+# Thin wrapper around the compiled native ledger engine.
+set -euo pipefail
+ROOT="${FREIGHT_ROOT:-/app}"
+BINARY="$ROOT/environment/native/build/freightctl"
+if [ ! -x "$BINARY" ]; then
+    echo "freightctl: not built yet; run 'make -C $ROOT/environment/native'" >&2
+    exit 70
+fi
+exec "$BINARY" "$@"

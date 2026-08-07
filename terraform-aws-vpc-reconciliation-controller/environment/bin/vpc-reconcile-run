@@ -1,0 +1,117 @@
+#!/usr/bin/env python3
+"""Public operator entry: control-plane + terraform plan + reconcile + report."""
+from __future__ import annotations
+
+import hashlib
+import json
+import os
+import shutil
+import subprocess
+import sys
+from pathlib import Path
+
+ROOT = Path("/app")
+WORKSPACE = ROOT / "terraform" / "workspaces" / "reconcile"
+VAR = ROOT / "var" / "reconcile"
+OUTPUT = ROOT / "output"
+BIN = ROOT / "bin" / "vpc-reconcile"
+
+
+def run(cmd: list[str], cwd: Path | None = None, check: bool = True) -> subprocess.CompletedProcess:
+    env = {
+        **os.environ,
+        "TF_CLI_CONFIG_FILE": "/app/terraform.tfrc",
+        "TF_IN_AUTOMATION": "1",
+        "CHECKPOINT_DISABLE": "1",
+        "AWS_ACCESS_KEY_ID": "test",
+        "AWS_SECRET_ACCESS_KEY": "test",
+        "AWS_DEFAULT_REGION": "us-east-1",
+        "CGO_ENABLED": "0",
+    }
+    proc = subprocess.run(cmd, cwd=str(cwd) if cwd else None, env=env, text=True, capture_output=True)
+    if check and proc.returncode != 0:
+        sys.stderr.write(proc.stdout + proc.stderr)
+        raise SystemExit(proc.returncode)
+    return proc
+
+
+def ensure_binary() -> None:
+    src = ROOT / "cmd" / "vpcreconcile"
+    if not src.exists():
+        raise SystemExit("missing /app/cmd/vpcreconcile")
+    run(["go", "build", "-o", str(BIN), "./cmd/vpcreconcile"], cwd=ROOT)
+
+
+def digest_obj(obj: object) -> str:
+    raw = json.dumps(obj, sort_keys=True, separators=(",", ":")).encode()
+    return hashlib.sha256(raw).hexdigest()
+
+
+def main() -> int:
+    VAR.mkdir(parents=True, exist_ok=True)
+    OUTPUT.mkdir(parents=True, exist_ok=True)
+
+    run([sys.executable, str(ROOT / "bin" / "vpc-controlplane")])
+    ensure_binary()
+
+    run(["terraform", "init", "-backend=false", "-input=false"], cwd=WORKSPACE)
+    run(["terraform", "validate"], cwd=WORKSPACE)
+    run(
+        [
+            "terraform",
+            "plan",
+            "-refresh=false",
+            "-input=false",
+            "-out",
+            str(VAR / "tfplan"),
+        ],
+        cwd=WORKSPACE,
+    )
+    show = run(["terraform", "show", "-json", str(VAR / "tfplan")], cwd=WORKSPACE)
+    plan = json.loads(show.stdout)
+    (VAR / "plan.json").write_text(json.dumps(plan), encoding="utf-8")
+    plan_digest = digest_obj(plan.get("planned_values") or plan)
+
+    # Keep artifacts narrow: drop provider cache from the transferable tree.
+    for junk in WORKSPACE.rglob(".terraform"):
+        if junk.is_dir():
+            shutil.rmtree(junk, ignore_errors=True)
+    for lock in WORKSPACE.rglob(".terraform.lock.hcl"):
+        lock.unlink(missing_ok=True)
+
+    owner = os.environ.get("VPC_RECONCILE_OWNER", "operator-1")
+    apply = run([str(BIN), "apply", "--root", str(ROOT), "--owner", owner, "--json"])
+    apply_out = json.loads(apply.stdout or "{}")
+    verify = run([str(BIN), "verify", "--root", str(ROOT), "--json"])
+    verify_out = json.loads(verify.stdout or "{}")
+    if not verify_out.get("valid") or verify_out.get("phase") != "READY":
+        print(json.dumps(verify_out), file=sys.stderr)
+        return 1
+
+    # Second apply for idempotency inside the operator path.
+    run([str(BIN), "apply", "--root", str(ROOT), "--owner", owner, "--json"])
+    verify2 = run([str(BIN), "verify", "--root", str(ROOT), "--json"])
+    verify2_out = json.loads(verify2.stdout or "{}")
+
+    report = {
+        "schema_version": "vpc-reconcile-report.1",
+        "status": "READY",
+        "config_digest": verify2_out.get("config_digest") or apply_out.get("config_digest"),
+        "plan_digest": plan_digest,
+        "state_digest": verify2_out.get("state_digest"),
+        "controlplane_token_route": verify2_out.get("controlplane_token_route"),
+        "controlplane_token_endpoint": verify2_out.get("controlplane_token_endpoint"),
+        "outputs": verify2_out.get("outputs") or {},
+    }
+    report["report_digest"] = digest_obj(
+        {k: v for k, v in report.items() if k != "report_digest"}
+    )
+    (OUTPUT / "reconciliation-report.json").write_text(
+        json.dumps(report, indent=2) + "\n", encoding="utf-8"
+    )
+    print(json.dumps({"status": report["status"], "report_digest": report["report_digest"]}))
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

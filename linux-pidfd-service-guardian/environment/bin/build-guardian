@@ -1,0 +1,8 @@
+#!/bin/sh
+set -eu
+cd /app/guardian
+cmake --fresh -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
+cmake --build build -j2
+install -m 0755 build/guardian bin/guardian
+install -m 0755 build/guardianctl bin/guardianctl
+install -m 0755 build/guardian-worker bin/guardian-worker

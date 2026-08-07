@@ -1,0 +1,17 @@
+{
+  "workloads": [
+    {
+      "name": "settlement-ledger",
+      "namespace": "regulated",
+      "required_nodepool": "regulated-on-demand",
+      "capacity_type": "on-demand",
+      "replicas": 2
+    }
+  ],
+  "nodepool": {
+    "name": "regulated-on-demand",
+    "capacity_types": ["on-demand"],
+    "private_subnets_only": true,
+    "discovery_tag_key": "karpenter.sh/discovery"
+  }
+}

@@ -1,0 +1,14 @@
+Stopped NAT drain — 2026-08-01 night window
+
+Timeline
+- T+0  use1b NAT marked draining; existing sessions kept
+- T+12 observed app hosts in use1b egressing via use1a EIP (cross-AZ)
+- T+18 data subnet route table briefly carried 0.0.0.0/0 toward NAT
+- T+25 S3 pulls from app still hit NAT instead of gateway endpoint prefix
+- T+40 window aborted; legacy private subnet/route addresses still in state
+
+Observations to reconcile
+- Same-AZ NAT binding must be hard; drain must refuse new flows, not rehome them
+- Data tier isolation is non-negotiable during drain
+- Gateway endpoints must own S3/DynamoDB prefixes on app and data tables
+- Continuity: private["use1a|b|c"] identities become app[*] without replace

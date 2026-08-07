@@ -1,0 +1,19 @@
+INC-5510 cache collision on private API
+severity: Sev2
+summary: GET /api/claims/42 returned X-Cache: HIT with a body that matched an earlier
+anonymous GET /static/banner.html fetch. Cache key ignored the path origin class.
+impact: private claim metadata served to unrelated clients.
+
+INC-5518 signed downloads too broad
+severity: Sev2
+summary: /private/downloads/pack.zip required a signature, but /private/other.zip and
+the default /* behavior also accepted trusted-key traffic. Exception feed only
+approves /private/downloads/*.
+impact: unsigned neighbors inheriting signed trust.
+
+INC-5524 failover without origin identity
+severity: Sev2
+summary: During a static outage drill, /failover/index.html answered from the DR
+bucket even when the request lacked the planned origin-access relation. Lab
+should fail closed without that identity.
+impact: direct-style access to private failover objects.

@@ -1,0 +1,81 @@
+#!/usr/bin/env python3
+"""Broken starter operator: init/apply without mirror provenance checks."""
+from __future__ import annotations
+
+import argparse
+import json
+import os
+import subprocess
+import sys
+import time
+import urllib.error
+import urllib.request
+from pathlib import Path
+
+
+def wait_healthy(base: str, timeout: float = 30.0) -> None:
+    deadline = time.time() + timeout
+    url = f"{base}/v1/control/health"
+    while time.time() < deadline:
+        try:
+            with urllib.request.urlopen(url, timeout=1) as resp:
+                if resp.status == 200:
+                    return
+        except (urllib.error.URLError, TimeoutError):
+            time.sleep(0.05)
+    raise SystemExit(f"backend not healthy: {url}")
+
+
+def run(cmd: list[str], cwd: Path, env: dict[str, str]) -> None:
+    proc = subprocess.run(cmd, cwd=str(cwd), env=env, text=True, capture_output=True)
+    if proc.returncode != 0:
+        sys.stderr.write(proc.stdout + proc.stderr)
+        raise SystemExit(proc.returncode)
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--workspace", required=True, choices=["prod", "stage"])
+    parser.add_argument("--marker", default="")
+    args = parser.parse_args()
+
+    port = os.environ.get("BACKEND_PORT", "18765")
+    host = os.environ.get("BACKEND_HOST", "127.0.0.1")
+    base = f"http://{host}:{port}"
+    wait_healthy(base)
+
+    root = Path(f"/app/terraform/workspaces/{args.workspace}")
+    env = {
+        **os.environ,
+        # BUG: allow falling through to direct installs when config is unset by callers.
+        "TF_IN_AUTOMATION": "1",
+        "CHECKPOINT_DISABLE": "1",
+        "BACKEND_BASE_URL": base,
+    }
+    if "TF_CLI_CONFIG_FILE" not in env:
+        pass
+    if args.marker:
+        env["TF_VAR_marker"] = args.marker
+
+    run(["terraform", "init", "-input=false", "-reconfigure"], root, env)
+    # BUG: no lockfile/mirror provenance verification before apply.
+    run(["terraform", "apply", "-input=false", "-auto-approve"], root, env)
+
+    state_url = f"{base}/v1/workspaces/{args.workspace}/state"
+    with urllib.request.urlopen(state_url) as resp:
+        remote = json.loads(resp.read().decode("utf-8"))
+    print(
+        json.dumps(
+            {
+                "workspace": args.workspace,
+                "serial": remote.get("serial"),
+                "lineage": remote.get("lineage"),
+            },
+            sort_keys=True,
+        )
+    )
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

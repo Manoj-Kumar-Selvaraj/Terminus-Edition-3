@@ -1,0 +1,28 @@
+version = "2.0"
+name = "terraform-aws-lambda-settlement-dual-run-cutover"
+category = "Software"
+subcategory = "Systems"
+tags = ["terraform", "lambda", "settlement", "cutover", "go", "idempotency"]
+languages = ["go", "hcl", "bash", "python"]
+difficulty = "frontier"
+expert_time_estimate_hours = 18
+artifacts = ["/app/cmd", "/app/internal", "/app/terraform", "/app/var/settlement", "/app/output", "/app/go.mod", "/app/bin"]
+
+[metadata]
+author_name = "anonymous"
+author_email = "anonymous@example.com"
+
+[verifier]
+timeout_sec = 3600
+environment_mode = "separate"
+
+[agent]
+timeout_sec = 10800
+
+[environment]
+network_mode = "public"
+build_timeout_sec = 2400
+cpus = 2
+memory_mb = 8192
+storage_mb = 10240
+workdir = "/app"

@@ -1,0 +1,28 @@
+version = "2.0"
+name = "terraform-aws-eks-addon-trust-rollout"
+category = "Software"
+subcategory = "Systems"
+tags = ["terraform", "eks", "irsa", "addons", "kubernetes", "rollout"]
+languages = ["hcl", "python", "yaml", "bash"]
+difficulty = "advanced"
+expert_time_estimate_hours = 14
+artifacts = ["/app/terraform", "/app/k8s", "/app/var/upgrade", "/app/output"]
+
+[metadata]
+author_name = "anonymous"
+author_email = "anonymous@example.com"
+
+[verifier]
+timeout_sec = 2400
+environment_mode = "separate"
+
+[agent]
+timeout_sec = 7200
+
+[environment]
+network_mode = "public"
+build_timeout_sec = 1800
+cpus = 2
+memory_mb = 8192
+storage_mb = 10240
+workdir = "/app"

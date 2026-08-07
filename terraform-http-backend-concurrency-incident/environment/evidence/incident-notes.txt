@@ -1,0 +1,9 @@
+Incident capture (noisy):
+
+- T+00 both pipelines targeted the new HTTP backend after the file backend freeze.
+- T+07 prod apply A held LOCK; apply B still wrote state somehow — lock ID in the POST was ignored on one code path.
+- T+12 stage release blocked behind prod even though keys differed; looked like one shared lock row.
+- T+19 client lost the 200 on state POST, retried, serial in remote state jumped by two while resources only moved once.
+- T+28 operator advanced a wall clock mentally for lease reclaim; backend still treated the old lease as live.
+- T+34 someone dropped a random provider zip beside the mirror and init accepted it when TF_CLI_CONFIG_FILE was unset in a wrapper.
+- Audit export was a text paste into Slack; we need structured /app/output/audit.json going forward.

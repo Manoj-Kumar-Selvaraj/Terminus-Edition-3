@@ -1,0 +1,9 @@
+[
+  {"distribution": "static-api", "path": "/api/*", "origin_id": "api", "cache_policy": "no-cache", "priority": 10, "allowed_methods": ["GET", "HEAD", "OPTIONS", "PUT", "POST", "PATCH", "DELETE"], "signed": false},
+  {"distribution": "static-api", "path": "/maintenance", "origin_id": "maintenance", "cache_policy": "no-cache", "priority": 20, "allowed_methods": ["GET", "HEAD", "OPTIONS"], "signed": false},
+  {"distribution": "static-api", "path": "/static/*", "origin_id": "s3-static", "cache_policy": "static-cache", "priority": 50, "allowed_methods": ["GET", "HEAD", "OPTIONS"], "signed": false},
+  {"distribution": "static-api", "path": "/*", "origin_id": "s3-static", "cache_policy": "default-static", "priority": 100, "allowed_methods": ["GET", "HEAD", "OPTIONS"], "signed": false},
+  {"distribution": "failover", "path": "/failover/*", "origin_id": "failover-static", "cache_policy": "static-cache", "priority": 10, "allowed_methods": ["GET", "HEAD", "OPTIONS"], "signed": false},
+  {"distribution": "signed-content", "path": "/private/downloads/*", "origin_id": "s3-static", "cache_policy": "signed-cache", "priority": 10, "allowed_methods": ["GET", "HEAD"], "signed": true},
+  {"distribution": "signed-content", "path": "/*", "origin_id": "s3-static", "cache_policy": "default-static", "priority": 100, "allowed_methods": ["GET", "HEAD", "OPTIONS"], "signed": false}
+]

@@ -1,0 +1,44 @@
+{
+  "cluster_version": "1.29",
+  "addons": {
+    "vpc-cni": {
+      "target": "v1.18.1-eksbuild.1",
+      "requires": [],
+      "order": 10,
+      "kind": "eks_addon"
+    },
+    "kube-proxy": {
+      "target": "v1.29.3-eksbuild.2",
+      "requires": ["vpc-cni"],
+      "order": 20,
+      "kind": "eks_addon"
+    },
+    "coredns": {
+      "target": "v1.11.3-eksbuild.1",
+      "requires": ["kube-proxy"],
+      "order": 30,
+      "kind": "eks_addon"
+    },
+    "aws-ebs-csi-driver": {
+      "target": "v1.31.0-eksbuild.1",
+      "requires": ["vpc-cni", "coredns"],
+      "order": 40,
+      "kind": "eks_addon",
+      "irsa_key": "ebs_csi"
+    },
+    "aws-load-balancer-controller": {
+      "target": "v2.8.1",
+      "requires": ["vpc-cni", "coredns"],
+      "order": 50,
+      "kind": "controller",
+      "irsa_key": "load_balancer"
+    },
+    "karpenter": {
+      "target": "0.37.0",
+      "requires": ["vpc-cni", "coredns", "aws-ebs-csi-driver"],
+      "order": 60,
+      "kind": "controller",
+      "irsa_key": "karpenter"
+    }
+  }
+}

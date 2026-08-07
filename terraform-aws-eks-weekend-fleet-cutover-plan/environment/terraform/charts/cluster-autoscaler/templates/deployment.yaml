@@ -1,0 +1,31 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}
+  namespace: {{ .Release.Namespace }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: cluster-autoscaler
+  template:
+    metadata:
+      labels:
+        app: cluster-autoscaler
+    spec:
+      serviceAccountName: {{ .Values.serviceAccount.name }}
+      containers:
+        - name: cluster-autoscaler
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          command:
+            - ./cluster-autoscaler
+            - --cloud-provider=aws
+            - --node-group-auto-discovery=asg:tag=k8s.io/cluster-autoscaler/enabled,k8s.io/cluster-autoscaler/{{ .Values.autoDiscovery.clusterName }}
+          {{- range $key, $value := .Values.extraArgs }}
+            - --{{ $key }}={{ $value }}
+          {{- end }}
+          env:
+            - name: AWS_REGION
+              value: {{ .Values.awsRegion | quote }}
+          resources:
+{{ toYaml .Values.resources | indent 12 }}

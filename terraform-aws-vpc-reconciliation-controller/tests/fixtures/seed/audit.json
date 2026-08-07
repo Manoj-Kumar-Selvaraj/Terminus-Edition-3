@@ -1,0 +1,37 @@
+{
+  "flow_log": {
+    "id": "fl-prod-existing",
+    "scope": "vpc",
+    "traffic_type": "ALL",
+    "destination": "cloud-watch-logs",
+    "log_group_arn": "arn:aws:logs:us-east-1:111122223333:log-group:/aws/vpc/prod-flow",
+    "metadata": {"ticket": "INC-74291", "collector": "flow-audit-2"}
+  },
+  "resolver_security_group": {
+    "id": "sg-resolver-inbound",
+    "ingress": [
+      {
+        "protocol": "tcp",
+        "from_port": 53,
+        "to_port": 53,
+        "cidr_blocks": ["172.16.20.10/32", "172.16.20.11/32"],
+        "owner": "terraform-aws-vpc-module"
+      },
+      {
+        "protocol": "udp",
+        "from_port": 53,
+        "to_port": 53,
+        "cidr_blocks": ["172.16.20.10/32", "172.16.20.11/32"],
+        "owner": "terraform-aws-vpc-module"
+      },
+      {
+        "protocol": "tcp",
+        "from_port": 853,
+        "to_port": 853,
+        "cidr_blocks": ["10.0.0.0/8"],
+        "owner": "manual"
+      }
+    ],
+    "metadata": {"ticket": "INC-74291", "observed_by": "sg-audit"}
+  }
+}
