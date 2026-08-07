@@ -1,0 +1,45 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "terminus-context-packet-v2",
+  "title": "Terminus Specialist Context Packet",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "review_id",
+    "policy_version",
+    "task",
+    "task_commit",
+    "state",
+    "role",
+    "question",
+    "authoritative_rules",
+    "evidence_allowed",
+    "evidence_excluded",
+    "prior_verdicts_visible",
+    "change_since_last_review"
+  ],
+  "properties": {
+    "review_id": {"type": "string", "minLength": 1},
+    "policy_version": {"const": "2.0"},
+    "task": {"type": "string", "minLength": 1},
+    "task_commit": {"type": "string", "minLength": 7},
+    "state": {"type": "string", "minLength": 1},
+    "role": {"type": "string", "minLength": 1},
+    "question": {"type": "string", "minLength": 1},
+    "authoritative_rules": {
+      "type": "array",
+      "items": {"type": "string", "minLength": 1},
+      "minItems": 1
+    },
+    "evidence_allowed": {
+      "type": "array",
+      "items": {"type": "string", "minLength": 1}
+    },
+    "evidence_excluded": {
+      "type": "array",
+      "items": {"type": "string", "minLength": 1}
+    },
+    "prior_verdicts_visible": {"type": "boolean"},
+    "change_since_last_review": {"type": "string"}
+  }
+}
