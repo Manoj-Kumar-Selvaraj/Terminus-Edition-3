@@ -1,0 +1,33 @@
+{
+  "review_id": "pay-eod-f273-comprehensive-01",
+  "task": "payment-eod-control-chain",
+  "task_commit": "f273fede5ae7bc994916e7d32f439eeda09b699c",
+  "reviewer_policy_version": "1.0",
+  "checklist_snapshot": "2026-08-08-user-supplied",
+  "policy_freshness": "UNVERIFIED",
+  "checklist_coverage_percent": 100,
+  "recommendation": "INSUFFICIENT_EVIDENCE",
+  "counts": {"high_failures":0,"medium_failures":0,"low_failures":0,"insufficient_evidence":2,"not_applicable":18},
+  "policy_conflicts": [
+    {"id":"PC-001","status":"OPEN","issue":"Supplied checklist defines solvability over 10 runs; existing local controller historically used five. Final difficulty acceptance cannot silently equate them."},
+    {"id":"PC-002","status":"RESOLVED","issue":"README/rubrics task-layout wording differs across sources.","resolution":"Current authoritative TERMINUS_3_AI_INSTRUCTIONS.md requires README.md in task layout and forbids rubrics.txt/rubric.txt in ZIP."},
+    {"id":"PC-003","status":"RESOLVED","issue":"Metadata placement differed in supplied checklist snapshot.","resolution":"Current authoritative TERMINUS_3_AI_INSTRUCTIONS.md canonical task.toml keeps category/subcategory/tags/languages/difficulty/expert_time_estimate_hours top-level and author fields under [metadata]."}
+  ],
+  "test_quality_eval_dispositions": {"req-gap":"NOT_AVAILABLE","weak-assertion":"NOT_AVAILABLE","phantom-spec":"NOT_AVAILABLE","flaky-execution":"NOT_AVAILABLE","vacuous-test":"NOT_AVAILABLE"},
+  "trial_analysis_dispositions": {"task_specification":"NOT_APPLICABLE_PRE_TRIAL","reward_hacking":"NOT_APPLICABLE_PRE_TRIAL","difficulty_crux":"NOT_APPLICABLE_PRE_TRIAL","near_miss":"NOT_APPLICABLE_PRE_TRIAL","refusals":"NOT_APPLICABLE_PRE_TRIAL","low_timeout":"NOT_APPLICABLE_PRE_TRIAL"},
+  "criteria": {
+    "RC-INS-001":"PASS","RC-INS-002":"PASS","RC-INS-003":"PASS","RC-INS-004":"PASS","RC-INS-005":"PASS","RC-INS-006":"PASS","RC-INS-007":"PASS","RC-INS-008":"PASS","RC-INS-009":"PASS","RC-INS-010":"PASS",
+    "RC-ENV-001":"PASS","RC-ENV-002":"PASS","RC-ENV-003":"PASS","RC-ENV-004":"PASS","RC-ENV-005":"PASS","RC-ENV-006":"PASS","RC-ENV-007":"PASS","RC-ENV-008":"PASS","RC-ENV-009":"PASS","RC-ENV-010":"PASS","RC-ENV-011":"INSUFFICIENT_EVIDENCE","RC-ENV-012":"PASS","RC-ENV-013":"PASS","RC-ENV-014":"PASS",
+    "RC-SOL-001":"INSUFFICIENT_EVIDENCE","RC-SOL-002":"PASS","RC-SOL-003":"PASS",
+    "RC-VER-001":"PASS","RC-VER-002":"PASS","RC-VER-003":"PASS","RC-VER-004":"PASS","RC-VER-005":"PASS","RC-VER-006":"PASS","RC-VER-007":"PASS","RC-VER-008":"NOT_APPLICABLE",
+    "RC-TRIAL-001":"NOT_APPLICABLE","RC-TRIAL-002":"NOT_APPLICABLE","RC-TRIAL-003":"NOT_APPLICABLE","RC-TRIAL-004":"NOT_APPLICABLE","RC-TRIAL-005":"NOT_APPLICABLE","RC-TRIAL-006":"NOT_APPLICABLE",
+    "RC-RUB-001":"NOT_APPLICABLE","RC-RUB-002":"NOT_APPLICABLE","RC-RUB-003":"NOT_APPLICABLE","RC-RUB-004":"NOT_APPLICABLE","RC-RUB-005":"NOT_APPLICABLE","RC-RUB-006":"NOT_APPLICABLE","RC-RUB-007":"NOT_APPLICABLE","RC-RUB-008":"NOT_APPLICABLE","RC-RUB-009":"NOT_APPLICABLE","RC-RUB-010":"NOT_APPLICABLE","RC-RUB-011":"NOT_APPLICABLE",
+    "RC-STRUCT-001":"PASS","RC-STRUCT-002":"PASS",
+    "RC-META-001":"PASS","RC-META-002":"NOT_APPLICABLE","RC-META-003":"PASS","RC-META-004":"NOT_APPLICABLE","RC-META-005":"PASS","RC-META-006":"PASS","RC-META-007":"NOT_APPLICABLE"
+  },
+  "open_evidence": [
+    "RC-ENV-011 requires a deterministic build-context size measurement for the current task tree.",
+    "RC-SOL-001 requires a fresh Oracle run for task commit f273fede; current CI is blocked before Oracle by Portkey refresh quota."
+  ],
+  "all_findings": []
+}

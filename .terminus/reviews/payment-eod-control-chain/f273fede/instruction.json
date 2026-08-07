@@ -1,0 +1,21 @@
+{
+  "role": "Instruction Reviewer",
+  "review_id": "pay-eod-f273-instruction-01",
+  "task_commit": "f273fede5ae7bc994916e7d32f439eeda09b699c",
+  "policy_version": "2.0",
+  "verdict": "PASS",
+  "confidence": "HIGH",
+  "evidence_status": "SUFFICIENT",
+  "summary": "The instruction is a 157-word, two-paragraph incident ticket with absolute paths and observable outcomes. The second paragraph is dense because current Edition 3 rules require exact structured-output schemas; the schema enumeration is therefore a legitimate specification requirement rather than hidden-test mirroring. It does not reveal the repair steps.",
+  "evidence": [
+    {"type":"file","ref":"payment-eod-control-chain/instruction.md@f273fede","observation":"Starts from the restart incident, names affected absolute paths, states replay/resume outcomes, and provides exact output schemas without implementation sequence."},
+    {"type":"file","ref":"payment-eod-control-chain/environment/eod/contracts/eod_contract.md@f273fede","observation":"Referenced solver-visible document supplies record layouts and business invariants rather than step-by-step fix guidance."},
+    {"type":"rule","ref":"TERMINUS_3_AI_INSTRUCTIONS.md section 5","observation":"Requires concise human prompt, absolute paths, no task name/hints, named output files and exact structured-output schemas."},
+    {"type":"review","ref":"HUMAN_WRITING_CALIBRATION hard-positive rule","observation":"Exact schemas can legitimately make an otherwise concise instruction denser when fairness requires them."}
+  ],
+  "findings": [],
+  "missing_evidence": [],
+  "change_scope": [],
+  "do_not_change": ["Do not remove required schema fields merely to make the prompt shorter.","Do not add stepwise SQL/COBOL implementation guidance."],
+  "next_gate": "Comprehensive checklist review"
+}

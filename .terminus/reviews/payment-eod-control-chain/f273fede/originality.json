@@ -1,0 +1,21 @@
+{
+  "role": "Originality & Authenticity Reviewer",
+  "review_id": "pay-eod-f273-originality-01",
+  "task_commit": "f273fede5ae7bc994916e7d32f439eeda09b699c",
+  "policy_version": "2.0",
+  "verdict": "PASS",
+  "confidence": "MEDIUM",
+  "evidence_status": "SUFFICIENT",
+  "summary": "Direct duplicate risk is low. The nearest obvious public COBOL task found is cobol-modernization, which asks for Python equivalence to an existing COBOL program; this task instead keeps COBOL decision programs and requires repair of a stateful payment EOD restart/reconciliation chain. The earlier one-bug-per-requirement signal has been reduced by consolidating the starter around replay/resume and finalization defects.",
+  "evidence": [
+    {"type":"public_reference","ref":"https://www.tbench.ai/benchmarks/terminal-bench-2/cobol-modernization","observation":"Public COBOL neighbor is a language-port/equivalence task, materially different in incident, state model, verifier topology, and expected solution."},
+    {"type":"file","ref":"payment-eod-control-chain/environment/eod/bin/run_eod.sh@f273fede","observation":"Starter failure topology now centers on broad restart action handling plus unsafe finalization rather than one isolated planted defect per test."},
+    {"type":"file","ref":"payment-eod-control-chain/environment/eod/contracts/eod_contract.md@f273fede","observation":"Document reads as restart/interface notes with record layouts and accounting invariants rather than a hidden-test walkthrough."},
+    {"type":"file","ref":"payment-eod-control-chain/README.md@f273fede","observation":"README is short operational orientation, not benchmark-rubric justification."}
+  ],
+  "findings": [],
+  "missing_evidence": [],
+  "change_scope": [],
+  "do_not_change": ["Do not imitate public COBOL modernization wording or topology.","Do not reintroduce a one-defect-per-test starter layout."],
+  "next_gate": "Comprehensive checklist review and empirical similarity/portal checks when available"
+}

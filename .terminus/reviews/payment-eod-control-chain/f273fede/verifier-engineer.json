@@ -1,0 +1,21 @@
+{
+  "role": "Verifier Engineer",
+  "review_id": "pay-eod-f273-verifier-01",
+  "task_commit": "f273fede5ae7bc994916e7d32f439eeda09b699c",
+  "policy_version": "2.0",
+  "verdict": "PASS",
+  "confidence": "HIGH",
+  "evidence_status": "SUFFICIENT",
+  "summary": "The current verifier is behavior-driven and maps the solver-visible restart contract to 12 independently visible test cases. The latest split of delivery/report/archive cases preserves per-test difficulty observability. No material phantom requirement or implementation-only assertion is apparent.",
+  "evidence": [
+    {"type":"file","ref":"payment-eod-control-chain/instruction.md@f273fede","observation":"Defines replay identity, resume semantics, authoritative state, exact artifacts, schemas, reconciliation/publication and close outcomes."},
+    {"type":"file","ref":"payment-eod-control-chain/tests/test_outputs.py@f273fede","observation":"Tests run submitted COBOL/shell behavior and inspect resulting DB/artifacts across 12 named cases; all test functions have informative docstrings."},
+    {"type":"file","ref":"payment-eod-control-chain/tests/test.sh@f273fede","observation":"Writes binary reward on normal success/failure and runs pytest with -rA for trajectory evidence."},
+    {"type":"job","ref":"Actions run 31210085292 job 92970609036","observation":"Ruff passed for the immediately preceding verifier revision; current split removes pytest parametrization/import and requires a new Ruff run, which is separately tracked by CI."}
+  ],
+  "findings": [],
+  "missing_evidence": [],
+  "change_scope": [],
+  "do_not_change": ["Do not replace semantic scenarios with source grep checks.","Do not collapse the three close prerequisites back into one parametrized difficulty node."],
+  "next_gate": "Current-commit preflight/Ruff, then Oracle/NOP when credentials permit"
+}

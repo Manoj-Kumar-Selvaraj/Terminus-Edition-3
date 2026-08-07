@@ -1,0 +1,23 @@
+{
+  "role": "Compliance Auditor",
+  "review_id": "pay-eod-f273-compliance-01",
+  "task_commit": "f273fede5ae7bc994916e7d32f439eeda09b699c",
+  "policy_version": "2.0",
+  "verdict": "PASS",
+  "confidence": "HIGH",
+  "evidence_status": "SUFFICIENT",
+  "summary": "No current Edition 3 structural/security blocker is visible. Core metadata stays top-level per the authoritative repository instructions; the task uses separate digest-pinned agent/verifier images, a non-trivial .dockerignore, baked verifier dependencies, no privileged/container-socket access, and no solution/test leakage into the agent image.",
+  "evidence": [
+    {"type":"rule","ref":"TERMINUS_3_AI_INSTRUCTIONS.md sections 2,4,5,7","observation":"Controls current layout, top-level task.toml fields, instruction shape, Docker/environment and verifier expectations."},
+    {"type":"file","ref":"payment-eod-control-chain/task.toml@f273fede","observation":"Canonical top-level fields, anonymous metadata, separate verifier, 5400s agent timeout, public network, absolute workdir."},
+    {"type":"file","ref":"payment-eod-control-chain/environment/Dockerfile@f273fede","observation":"Digest-pinned Debian base; one apt transaction; tmux/asciinema installed; only eod/ copied."},
+    {"type":"file","ref":"payment-eod-control-chain/environment/.dockerignore@f273fede","observation":"Excludes git/cache/env/solution/tests clutter."},
+    {"type":"file","ref":"payment-eod-control-chain/tests/Dockerfile@f273fede","observation":"Separate digest-pinned verifier image and pinned pytest dependency baked at build time."},
+    {"type":"file","ref":"payment-eod-control-chain/tests/test.sh@f273fede","observation":"No runtime package install; binary reward path is explicit."}
+  ],
+  "findings": [],
+  "missing_evidence": [],
+  "change_scope": [],
+  "do_not_change": ["Do not move category/tags/languages/difficulty/expert estimate under [metadata]; the current authoritative repository instructions require them top-level.","Do not add rubrics.txt to the task ZIP."],
+  "next_gate": "Deterministic size/package checks and current-commit runtime validation"
+}
