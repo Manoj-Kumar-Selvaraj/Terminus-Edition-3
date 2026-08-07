@@ -5,8 +5,6 @@ import sqlite3
 import subprocess
 from pathlib import Path
 
-import pytest
-
 ROOT = Path("/app/eod")
 DB = ROOT / "state" / "payment_eod.db"
 OUT = ROOT / "out"
@@ -275,14 +273,12 @@ def test_unbalanced_existing_external_effect_blocks_publication_and_removes_stal
     assert rows("SELECT COUNT(*) FROM success_authorizations") == [(0,)]
 
 
-@pytest.mark.parametrize(
-    "delivery_ack,report_complete,archive_complete",
-    [(0, 1, 1), (1, 0, 1), (1, 1, 0)],
-    ids=["delivery", "report", "archive"],
-)
-def test_each_close_prerequisite_can_hold_authorization(delivery_ack: int, report_complete: int, archive_complete: int):
-    """Balanced finance may publish responses, but any missing close prerequisite must keep completion held and unauthorized."""
-    seed = BASE_SEED.replace("('CYCLE-T1',1,1,1)", f"('CYCLE-T1',{delivery_ack},{report_complete},{archive_complete})")
+def assert_close_prerequisite_holds(delivery_ack: int, report_complete: int, archive_complete: int) -> None:
+    """Exercise one incomplete close prerequisite and assert balanced finance remains unauthorized."""
+    seed = BASE_SEED.replace(
+        "('CYCLE-T1',1,1,1)",
+        f"('CYCLE-T1',{delivery_ack},{report_complete},{archive_complete})",
+    )
     reset_db(seed)
     run_batch()
 
@@ -293,6 +289,21 @@ def test_each_close_prerequisite_can_hold_authorization(delivery_ack: int, repor
     assert rows("SELECT status FROM completion_register") == [("HELD",)]
     assert rows("SELECT COUNT(*) FROM success_authorizations") == [(0,)]
     assert not (OUT / "success_authorization.json").exists()
+
+
+def test_missing_delivery_acknowledgement_holds_authorization():
+    """Missing delivery acknowledgement must hold completion after balanced financial reconciliation."""
+    assert_close_prerequisite_holds(0, 1, 1)
+
+
+def test_missing_reporting_completion_holds_authorization():
+    """Missing reporting completion must hold completion after balanced financial reconciliation."""
+    assert_close_prerequisite_holds(1, 0, 1)
+
+
+def test_missing_archive_completion_holds_authorization():
+    """Missing archive completion must hold completion after balanced financial reconciliation."""
+    assert_close_prerequisite_holds(1, 1, 0)
 
 
 def test_pending_history_is_not_an_accepted_replay():
