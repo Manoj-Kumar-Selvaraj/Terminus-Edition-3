@@ -22,6 +22,7 @@ This file is the durable operational checkpoint for one Terminus task. It exists
 | LLMaJ | PENDING | |
 | Difficulty 5x | PENDING | |
 | Per-test 1/5 minimum | PENDING | |
+| Instruction Reviewer | PENDING | |
 | Compliance audit | PENDING | |
 | Human quality audit | PENDING | |
 | Final package | PENDING | |
@@ -43,8 +44,8 @@ Allowed status values: `PASS`, `FAIL`, `PENDING`, `STALE`, `BLOCKED`, `NOT_RUN`.
 
 ## Root-cause classification
 
-- Owner: `<CI Orchestrator | Task Architect | Verifier Engineer | Compliance Auditor | Difficulty Reviewer | Human Quality Reviewer | Trajectory Analyst>`
-- Classification: `<ci_infrastructure | task_contract | environment | verifier | instruction_gap | environment_gap | verifier_gap | too_easy | test_case_0_of_5 | human_quality | packaging | none>`
+- Owner: `<CI Orchestrator | Task Architect | Verifier Engineer | Compliance Auditor | Difficulty Reviewer | Instruction Reviewer | Human Quality Reviewer | Trajectory Analyst>`
+- Classification: `<ci_infrastructure | task_contract | environment | verifier | instruction_gap | environment_gap | verifier_gap | too_easy | test_case_0_of_5 | instruction_quality | human_quality | packaging | none>`
 - Evidence: `<run/job/artifact/log path>`
 
 ## Next action
@@ -61,6 +62,15 @@ Allowed status values: `PASS`, `FAIL`, `PENDING`, `STALE`, `BLOCKED`, `NOT_RUN`.
 - Result freshness: `CURRENT | STALE | NOT_RUN`
 
 Any substantive task, verifier, instruction, environment, or solution-contract change makes prior difficulty evidence `STALE` and returns the controller to `VALIDATING`.
+
+## Instruction review checkpoint
+
+- Verdict: `PASS | REVISE | PENDING | STALE`
+- Word count: `<count>`
+- Material requirements preserved: `<yes/no + note>`
+- Evidence/review: `<commit or review note>`
+
+Any subsequent `instruction.md` change makes this gate `STALE` until the dedicated Instruction Reviewer runs again.
 
 ## Decisions that must survive chat changes
 
