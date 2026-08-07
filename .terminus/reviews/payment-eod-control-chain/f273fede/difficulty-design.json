@@ -1,20 +1,22 @@
 {
   "role": "Difficulty Reviewer",
-  "review_id": "pay-eod-f273-difficulty-design-01",
+  "review_id": "pay-eod-f273-difficulty-design-02",
   "task_commit": "f273fede5ae7bc994916e7d32f439eeda09b699c",
-  "policy_version": "2.0",
+  "policy_version": "2.1",
   "verdict": "PASS",
   "confidence": "MEDIUM",
   "evidence_status": "SUFFICIENT",
-  "summary": "As a pre-trial design, Advanced is plausible. A solver must infer how duplicate identity, persisted financial effects, capacity, clearing, ledger recognition, reconciliation and close interact. Plausible local repairs can remain globally wrong. This is a design verdict only; measured difficulty remains unproven until agent trials run.",
+  "summary": "As a pre-trial design, Advanced remains plausible. A solver must connect duplicate identity, persisted financial effects, payer capacity, clearing, ledger recognition, reconciliation and close. Plausible local repairs can remain globally wrong. This does not set final difficulty: the final tier must come from the combined GPT-5.5 x5 plus Claude Opus 4.8 x5 complete-run mean, with every verifier test passing at least once across those 10 trials.",
   "evidence": [
     {"type":"file","ref":"payment-eod-control-chain/environment/eod/bin/run_eod.sh@f273fede","observation":"Broad restart branches make ALREADY_* states look like new execution while finalization can still publish/complete from inconsistent state."},
     {"type":"file","ref":"payment-eod-control-chain/environment/eod/sql/schema.sql@f273fede","observation":"Starter persistence layer does not itself enforce one financial effect, so solver must reason about DB and controller together."},
-    {"type":"file","ref":"payment-eod-control-chain/tests/test_outputs.py@f273fede","observation":"Scenarios probe clean, completed rerun, partial internal/external restart, reconciliation hold, eligibility, pending history, and close gates."}
+    {"type":"file","ref":"payment-eod-control-chain/tests/test_outputs.py@f273fede","observation":"Twelve named scenarios/test cases probe clean, completed rerun, partial internal/external restart, reconciliation hold, eligibility, pending history, and each close prerequisite."},
+    {"type":"rule","ref":"TERMINUS_3_AI_INSTRUCTIONS.md agent evaluation section","observation":"Claude Opus 4.8 x5 plus GPT-5.5 x5 are combined and their mean sets final difficulty."},
+    {"type":"review","ref":"Reviewer Checklist solvability guidance","observation":"Across 10 runs, each individual verifier test must pass at least once for the task to be considered solvable."}
   ],
   "findings": [],
   "missing_evidence": [],
   "change_scope": [],
-  "do_not_change": ["Do not harden with arbitrary thresholds or additional unrelated edge cases.","Do not set final difficulty from this pre-trial review."],
-  "next_gate": "Empirical difficulty/trajectory analysis after current Oracle/NOP/LLMaJ pass"
+  "do_not_change": ["Do not harden with arbitrary thresholds or unrelated edge cases.","Do not reject or tier the task from either five-run model suite alone.","Do not call 8/10 or 9/10 automatically too easy; those results are Base under current Edition 3 ranges."],
+  "next_gate": "Empirical combined 10-trial difficulty and trajectory analysis after current Oracle/NOP/LLMaJ pass"
 }
