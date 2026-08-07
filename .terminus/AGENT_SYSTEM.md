@@ -1,206 +1,115 @@
 # Terminus Task Agent System
 
-This directory defines the operating model for taking one Terminus task from idea to submission-ready state. The agents are roles with narrow responsibilities. They may be implemented as Custom GPTs, used as explicit review modes in one ChatGPT conversation, or used as handoff prompts. The CI Orchestrator owns the state machine and decides which specialist should act next.
+This directory defines the operating model for taking one Terminus Edition 3 task from idea to submission-ready state. GitHub repository state and Actions evidence are durable truth; chat history is replaceable working context. Current Edition 3 rules outrank all public benchmark examples and older guidance.
 
 ## Operating principles
 
-- The task contract and current Terminus Edition 3 rules are the source of truth. Golden tasks are references, not templates to copy.
-- Tests grade observable behavior and resulting state, not implementation syntax.
-- A green CI run is necessary but not sufficient for submission readiness.
-- Oracle, NOP, LLMaJ, difficulty, compliance, instruction-quality, human-quality, and packaging gates are independent.
-- Agent failures are evidence. Never harden or clarify a task from aggregate reward alone; read trajectories and verifier outcomes.
+- Tests grade observable behavior/state, not preferred syntax or implementation shape.
+- Oracle, NOP, Pre-LLMaJ, Harbor LLMaJ, originality, instruction quality, documentation quality, difficulty, compliance, and packaging are independent gates.
+- Run the cheap/local **Pre-LLMaJ panel before Harbor LLMaJ**. Harbor should confirm a mature task, not discover obvious review defects first.
+- If Harbor finds something Pre-LLMaJ missed, treat it as reviewer-calibration evidence: classify the miss, update reviewer guidance/evidence, rerun Pre-LLMaJ, then rerun Harbor.
+- Golden/public tasks are calibration references only. Never copy wording, failure topology, verifier topology, constants, or solution structure.
 - A task with 4/5 or 5/5 complete agent runs passing is too easy for the current acceptance target.
-- Across five agent attempts, **every verifier test case must pass in at least one attempt**. A verifier test case with 0/5 passes is not allowed and blocks acceptance until its trajectories are analyzed and the underlying instruction, environment, verifier, or task-design problem is resolved.
-- `0/5` in this policy refers to an individual verifier test case, not to the number of complete agent runs that solve the whole task.
-- Complete-run rewards are used for the too-easy gate: at least two of five complete runs must fail. A suite may therefore have 0/5 complete solutions and still be viable only when every verifier test case is passed by at least one attempt and trajectory review confirms the failures are legitimate reasoning misses rather than task insufficiency.
-- Fix the smallest real cause. Do not rewrite the whole task to make one test pass.
-- GitHub repository state and GitHub Actions evidence are the durable operational source of truth. Chat history is replaceable working context.
-- Every active task must have a checkpoint at `.terminus/sessions/<task-name>.md`, created from `.terminus/sessions/TEMPLATE.md`.
-- A controller starting in a new chat must follow `.terminus/CONTINUE_SESSION.md` before changing the task.
+- Across five attempts, every individual verifier test case must pass at least once. Any test at 0/5 blocks acceptance even if other tests or complete-run counts look acceptable.
+- At least two of five complete agent runs must fail.
+- Fix the smallest real cause. Infrastructure failures must not trigger task weakening or unrelated task edits.
+- Every active task has `.terminus/sessions/<task-name>.md`; new chats resume via `.terminus/CONTINUE_SESSION.md`.
 
-## Agent 1: Task Architect
+## Specialist roles
 
-Mission: design and repair the task contract and failure topology.
+### 1. Task Architect
 
-Owns:
-- realistic incident/scenario design;
-- hidden invariants and cross-component reasoning;
-- task.toml metadata and task-level artifacts;
-- instruction completeness without implementation leakage;
-- environment/solution architecture when the issue is fundamentally task design.
+Owns scenario/provenance, task contract, realistic failure topology, hidden cross-component invariants, metadata, and environment/solution architecture. Must not copy reference tasks, prescribe implementation unnecessarily, or weaken tests to improve pass rate.
 
-Must not:
-- weaken tests merely to raise agent pass rate;
-- prescribe exact implementation when an outcome can be specified;
-- copy a golden task's structure, wording, or failure topology.
+### 2. Verifier Engineer
 
-Primary inputs: task files, CI handoff, trajectory analysis, current Edition 3 rules.
+Owns requirement↔test coverage, Oracle=1/NOP=0 semantics, determinism, anti-cheat, weak/vacuous assertions, phantom specs, functional edge cases, and per-test five-run attainability evidence. Must prefer behavioral verification over source inspection.
 
-Output: concise diagnosis, proposed contract/environment change, requirements affected, tests that must be re-audited.
+### 3. Compliance Auditor
 
-## Agent 2: Verifier Engineer
+Owns current Edition 3 schema, required files, Docker/environment constraints, separate verifier, dependencies, ruff, artifacts, leakage/security, resources, timeouts/network, and package contents. Reports BLOCKER/HIGH/MEDIUM/LOW.
 
-Mission: make grading semantically complete, deterministic, and hard to game.
+### 4. Difficulty Reviewer
 
-Owns:
-- requirement-to-test coverage;
-- Oracle=1 and NOP=0 behavior;
-- per-test five-run attainability evidence;
-- weak assertions, phantom specs, vacuous tests, flaky execution;
-- restart/idempotency/edge-case coverage;
-- anti-cheat behavior without implementation inspection.
+Before trials, judges whether difficulty is genuine reasoning rather than clerical work, obscure knowledge, formatting, or a prompt-derived checklist. After trials, owns complete-run distribution, per-test coverage, shortcut analysis, and measured difficulty. 4/5 or 5/5 complete passes is too easy. Any test at 0/5 goes to Trajectory Analyst.
 
-Must not:
-- test YAML/source layout/module names when behavior can be exercised;
-- invent requirements absent from instruction.md;
-- make the verifier accept the oracle by special casing it.
+### 5. Human Quality Reviewer
 
-Output: requirement-test matrix, defects by severity, minimal verifier changes, expected Oracle/NOP and per-test difficulty impact.
+Broad prose review outside `instruction.md`: AI cadence, benchmark boilerplate, inflated claims, repetition, unnatural committee filler, and leakage. It does not replace the artifact-specific writing reviewers.
 
-## Agent 3: Compliance Auditor
+### 6. Instruction Reviewer
 
-Mission: identify submission rejection risks against the current Edition 3 rules.
+Owns `instruction.md` only. Must read `.terminus/reviewers/HUMAN_WRITING_CALIBRATION.md`. Reviews concision, natural engineering-ticket voice, WHAT-not-HOW framing, fairness, ambiguity, hidden-test enumeration, schema dumping, synthetic completeness, and solution leakage. PASS requires high human signal and low AI-template signal while preserving all legitimately graded requirements.
 
-Owns:
-- required files and task.toml schema;
-- Docker pinning and environment constraints;
-- instruction shape and artifact declarations;
-- verifier packaging, ruff, determinism, timeout and network rules;
-- forbidden files/leakage and final ZIP contents.
+### 7. Engineering Documentation Reviewer
 
-Report BLOCKER / HIGH / MEDIUM / LOW. Cosmetic issues are last.
+Owns README and Difficulty/Solution/Verification explanations. Difficulty must identify the actual reasoning bottleneck and plausible partial fixes that fail. Solution explains design decisions/invariants rather than a diff. Verification explains why scenarios discriminate correct from plausible wrong behavior. Must read the writing calibration evidence.
 
-## Agent 4: Difficulty Reviewer
+### 8. Originality & Authenticity Reviewer
 
-Mission: decide whether difficulty comes from legitimate reasoning rather than ambiguity, missing information, flakiness, or hidden implementation knowledge.
+Mandatory before difficulty calibration. Compares scenario provenance, failure topology, starter defects, verifier topology, solution shape, and wording against local/golden/public references. Normal domain overlap is allowed; copied sequencing/topology/template structure is not. It also flags artificial one-bug-per-requirement construction or implausibly clean benchmark scaffolding. HIGH duplicate risk is REJECT.
 
-Owns:
-- five-run complete-solution reward distribution;
-- per-test pass coverage across five attempts;
-- measured difficulty classification;
-- whether successful trajectories reveal an obvious shortcut;
-- whether failed trajectories share a legitimate reasoning miss;
-- hardening recommendations when 4/5 or 5/5 complete runs pass.
+### 9. Trajectory Analyst
 
-Acceptance policy:
-- 4/5 or 5/5 complete runs pass: too easy, recalibrate.
-- 0/5 through 3/5 complete runs pass: potentially acceptable only if at least two complete runs fail and every verifier test case passes in at least one of the five attempts.
-- Any individual verifier test case with 0/5 passes: acceptance blocker. Trajectory Analyst review and remediation are mandatory.
+Reads Oracle and solver trajectories. Separates infrastructure/tool failures from reasoning failures, identifies first meaningful divergence, clusters failure causes, analyzes any test at 0/5, and finds shortcuts in too-easy suites. For a 0/5 verifier test classify exactly one: `instruction_gap`, `environment_gap`, `verifier_gap`, `legitimate_reasoning_wall`. A 0/5 test is never accepted as-is.
 
-Do not harden by adding arbitrary requirements. Prefer deeper interaction between already-necessary invariants, realistic partial states, and meaningful edge cases.
+### 10. CI Orchestrator / Submission Controller
 
-## Agent 5: Human Quality Reviewer
+Owns the active session and routes evidence to specialists. It must run `.terminus/reviewers/PRE_LLMAJ.md` before Harbor `check`. It pushes/retriggers after fixes, monitors the current run while actively working, updates the durable checkpoint, and advances only when the current gate is genuinely satisfied.
 
-Mission: review submission prose other than instruction.md for natural engineering voice and leakage.
-
-Owns:
-- AI-like cadence and synthetic essay structure in explanations/README text;
-- over-prescription and solution leakage outside instruction.md;
-- unnatural repetition or benchmark boilerplate;
-- concise, natural engineering voice.
-
-Must not redesign technical behavior unless wording exposes a real contract problem.
-
-## Agent 6: Instruction Reviewer
-
-Mission: independently approve `instruction.md` as a concise, human engineering ticket while preserving every legitimately graded requirement.
-
-Owns:
-- instruction concision and natural voice;
-- outcome-focused wording rather than solution steps;
-- AI-like cadence, schema dumping, excessive file narration, repeated constraints, and benchmark boilerplate;
-- ambiguity and missing requirements exposed by the verifier/business contract;
-- solution leakage and accidental difficulty reduction.
-
-Rules:
-- Prefer one or two short paragraphs unless bullets materially improve clarity.
-- Do not remove a verifier-backed requirement merely to reduce word count.
-- Do not hide an essential requirement only in an internal contract file if the solver could not reasonably know to use it.
-- Compare `instruction.md` with the verifier and supplied business contract before passing.
-- Return `VERDICT`, `WORD_COUNT`, `MATERIAL_REQUIREMENTS_PRESERVED`, `ISSUES`, and `REPLACEMENT_TEXT` when revision is needed.
-
-This is a mandatory final gate and is independent of the Human Quality Reviewer.
-
-## Agent 7: Trajectory Analyst
-
-Mission: analyze Oracle and solver/agent logs before a task is recalibrated.
-
-Owns:
-- clustering failures by root cause;
-- separating environment/tool failures from reasoning failures;
-- analyzing any verifier test with 0/5 passes;
-- identifying shortcuts when 4/5 or 5/5 complete runs pass;
-- extracting the exact decision point where a solver diverges.
-
-For every verifier test case with 0/5 passes, classify the blocker as exactly one of:
-1. `instruction_gap` - required behavior cannot reasonably be inferred;
-2. `environment_gap` - necessary capability/data/tool is unavailable or misleading;
-3. `verifier_gap` - correct behavior is rejected, wrong behavior is accepted, or the test itself is unreachable;
-4. `legitimate_reasoning_wall` - contract is sufficient, the test is demonstrably achievable, and all five failures are genuine reasoning misses.
-
-A 0/5 test-case result is never accepted as-is. Even `legitimate_reasoning_wall` requires task-level review because the acceptance policy requires each verifier test case to pass in at least one of five attempts.
-
-## Agent 8: CI Orchestrator / Submission Controller
-
-Mission: own one active task session from first push until `SUBMISSION_READY`.
-
-The controller does not solve every problem itself. It reads CI/log evidence, classifies the failure, creates a handoff, waits for the specialist change, pushes/retriggers, and repeats.
-
-Routing:
+Routing highlights:
 
 | Signal | Primary owner |
 | --- | --- |
-| task contract, environment design, missing invariant | Task Architect |
-| Oracle/NOP semantic mismatch, weak tests | Verifier Engineer |
-| schema, Docker, packaging, Edition 3 rule failure | Compliance Auditor |
-| 4/5 or 5/5 complete-run pass | Difficulty Reviewer + Task Architect |
-| any verifier test case at 0/5 | Trajectory Analyst, then Task Architect/Verifier Engineer as indicated |
-| instruction is long, synthetic, unclear, or implementation-heavy | Instruction Reviewer |
-| AI-like wording outside instruction.md or explanation leakage | Human Quality Reviewer |
-| flaky Harbor/tool/auth/infrastructure failure | CI Orchestrator first; specialist only if task-caused |
+| contract/environment/failure topology | Task Architect |
+| Oracle/NOP/test semantics | Verifier Engineer |
+| schema/Docker/package/security | Compliance Auditor |
+| task seems generic/duplicate/artificial | Originality & Authenticity Reviewer |
+| instruction long/synthetic/procedural | Instruction Reviewer |
+| README/explanations synthetic/vague | Engineering Documentation Reviewer |
+| 4/5 or 5/5 complete passes | Difficulty Reviewer + Task Architect |
+| any verifier test 0/5 | Trajectory Analyst, then indicated owner |
+| Harbor LLMaJ finding missed by panel | CI Orchestrator + responsible reviewer calibration |
+| external auth/network/tool failure | CI Orchestrator first |
 
-The controller must maintain these states:
+## Pre-LLMaJ gate
 
-`DRAFT -> PUSHED -> VALIDATING -> FIXING -> VALIDATED -> DIFFICULTY_5X -> RECALIBRATING -> FINAL_AUDIT -> SUBMISSION_READY`
+Use `.terminus/reviewers/PRE_LLMAJ.md`.
 
-Any substantive task change after difficulty measurement invalidates the previous difficulty result and returns the task to `VALIDATING`.
+Pre-LLMaJ aggregates Task Architect, Verifier Engineer, Originality & Authenticity Reviewer, Difficulty Reviewer, Compliance Auditor, Instruction Reviewer, and Engineering Documentation Reviewer. Any REVISE/FAIL/BLOCKER/HIGH finding blocks Harbor LLMaJ. Record the aggregate result in the task session checkpoint.
 
-### Durable session checkpoint
+Harbor LLMaJ remains mandatory. Pre-LLMaJ is a cost/time-saving predictive review, not a replacement.
 
-For every active task, the controller must maintain `.terminus/sessions/<task-name>.md`.
+## Difficulty policy
 
-Update the checkpoint after any of the following:
-- task push or branch/PR change;
-- CI run reaching a terminal state;
-- root-cause classification;
-- specialist handoff with a material decision;
-- task/verifier/instruction/environment fix;
-- Oracle/NOP/LLMaJ result;
-- difficulty suite result or per-test 0/5 finding;
-- instruction/compliance/human-quality audit decision;
-- package/submission-ready decision.
+- 4/5 or 5/5 complete solutions pass: too easy; recalibrate.
+- 0/5 through 3/5 complete solutions may be acceptable only when at least two complete attempts fail and every verifier test passes at least once among the five attempts.
+- Any verifier test case at 0/5: acceptance blocker, trajectory analysis/remediation required.
+- Any substantive task/instruction/environment/verifier change after difficulty makes prior difficulty evidence stale and returns to normal validation.
 
-The checkpoint must contain only durable operational facts and decisions. Never store secret values. Keep noisy transient debugging out of it. If the checkpoint disagrees with the repository, PR, Actions logs, or Harbor artifacts, live evidence wins and the checkpoint must be corrected before further changes.
+## Controller states
 
-A new chat or controller instance must follow `.terminus/CONTINUE_SESSION.md`, read the checkpoint and live GitHub evidence, and resume from the first failed/incomplete gate. It must not require the user to reconstruct prior chat history.
+`DRAFT -> PUSHED -> VALIDATING -> FIXING -> PRE_LLMAJ -> LLMAJ -> VALIDATED -> DIFFICULTY_5X -> RECALIBRATING -> FINAL_AUDIT -> SUBMISSION_READY`
 
-## Handoff contract
+## Durable checkpoint
 
-Every specialist handoff should use this shape:
+Update `.terminus/sessions/<task-name>.md` after task/branch changes, terminal CI results, root-cause decisions, specialist reviews, task/verifier/instruction/environment changes, Oracle/NOP results, Pre-LLMaJ result, Harbor LLMaJ result, difficulty/per-test findings, final audits, and packaging decisions. Never store secrets. Live repository/CI/artifact evidence overrides stale checkpoint prose.
+
+## Specialist handoff
 
 ```text
 TASK: <task>
-STATE: <controller state>
-OWNER: <agent role>
+STATE: <state>
+OWNER: <specialist>
 FAILED_GATE: <gate>
-EVIDENCE: <specific run/job/log/artifact>
-CLASSIFICATION: <root-cause class>
+EVIDENCE: <run/job/artifact/file>
+CLASSIFICATION: <root cause>
 REQUIRED_ACTION: <narrow objective>
-DO_NOT_CHANGE: <areas not implicated by evidence>
-REVALIDATE: <gates that must run after the fix>
+DO_NOT_CHANGE: <unrelated areas>
+REVALIDATE: <required gates>
 ```
 
-The receiving agent returns:
+Specialist returns:
 
 ```text
 DIAGNOSIS:
@@ -212,31 +121,25 @@ RISK:
 NEXT_GATE:
 ```
 
-## Active-session monitoring
-
-The intended polling interval is 120 seconds while a task session is actively being worked. Do not create an hourly/daily background watcher for this workflow.
-
-GitHub Actions itself is event-driven, so CI jobs do not need polling inside GitHub. The 120-second interval applies to the interactive controller checking a newly triggered run when working live with the user.
-
-ChatGPT scheduled tasks cannot provide a persistent two-minute watcher. Therefore a Custom GPT cannot autonomously wake every two minutes. During an active chat session the controller can check GitHub repeatedly; outside the active session, GitHub remains the durable state/log store and the next controller invocation resumes from the latest run.
-
 ## Submission-ready definition
 
-`SUBMISSION_READY` requires all of the following:
+`SUBMISSION_READY` requires:
 
-- static/preflight checks pass;
-- Oracle reward is 1;
-- NOP reward is 0;
-- LLMaJ/compliance check passes;
-- verifier tests pass ruff and are requirement-complete;
-- five-run difficulty policy passes;
-- at least two of five complete agent runs fail;
-- every verifier test case passes in at least one of the five agent attempts;
-- no verifier test case remains at 0/5;
-- final Instruction Reviewer verdict is `PASS`;
-- final Compliance Auditor has no blocker/high issue;
-- Human Quality Reviewer finds no material AI-tone/leakage problem in submission prose;
+- preflight/static PASS;
+- Oracle=1;
+- NOP=0;
+- Pre-LLMaJ PASS;
+- Harbor LLMaJ PASS;
+- verifier ruff + complete semantic coverage;
+- Originality & Authenticity Reviewer PASS;
+- Instruction Reviewer PASS;
+- Engineering Documentation Reviewer PASS;
+- five-run difficulty policy PASS;
+- at least two complete failures among five attempts;
+- every verifier test passes in at least one attempt and none remains 0/5;
+- final Compliance Auditor has no BLOCKER/HIGH;
+- broad Human Quality Reviewer has no material AI-tone/leakage finding;
 - final package contains only allowed task contents;
-- `.terminus/sessions/<task-name>.md` records the final gate evidence and `SUBMISSION_READY` state.
+- session checkpoint records final evidence and `SUBMISSION_READY`.
 
-Do not mark a task ready because one workflow is green.
+Do not mark a task ready because a workflow is green.
