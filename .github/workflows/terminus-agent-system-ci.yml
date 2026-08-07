@@ -1,0 +1,44 @@
+name: Terminus Agent System CI
+
+on:
+  pull_request:
+    paths:
+      - '.terminus/**'
+      - '.github/workflows/terminus-agent-system-ci.yml'
+  push:
+    branches: [main]
+    paths:
+      - '.terminus/**'
+      - '.github/workflows/terminus-agent-system-ci.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: terminus-agent-system-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate-agent-system:
+    name: Validate reviewer/controller system
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate Python
+        run: python3 -m py_compile .terminus/validate_agent_system.py
+
+      - name: Validate agent system structure
+        run: python3 .terminus/validate_agent_system.py
+
+      - name: Check control-plane files stay outside task packages
+        shell: bash
+        run: |
+          set -euo pipefail
+          if find . -mindepth 2 -maxdepth 3 -type d -path '*/.terminus' -print -quit | grep -q .; then
+            echo '::error::Found nested .terminus directory under a task/workspace path.'
+            exit 1
+          fi
+          echo 'Control-plane files remain repository-level only.'
