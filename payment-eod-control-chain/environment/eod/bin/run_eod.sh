@@ -10,7 +10,7 @@ rm -f "$WORK"/* "$OUT"/*
 cobc -x -free -o "$WORK/paydup" "$ROOT/cobol/paydup.cob"
 cobc -x -free -o "$WORK/payexec" "$ROOT/cobol/payexec.cob"
 
-sqlite3 -separator '|' -noheader "$DB" "SELECT source_ref,payer_account,beneficiary_ref,amount_cents,currency,purpose,status FROM payment_history WHERE status IN ('ACCEPTED','COMPLETED','PENDING');" > "$WORK/history.psv"
+sqlite3 -separator '|' -noheader "$DB" "SELECT source_ref,payer_account,beneficiary_ref,amount_cents,currency,purpose,status FROM payment_history WHERE status IN ('ACCEPTED','COMPLETED');" > "$WORK/history.psv"
 sqlite3 -separator '|' -noheader "$DB" "SELECT payment_id,source_ref,payer_account,beneficiary_ref,amount_cents,currency,purpose FROM payments ORDER BY payment_id;" > "$WORK/dup_input.psv"
 "$WORK/paydup"
 
@@ -40,19 +40,22 @@ ORDER BY p.payment_id;" > "$WORK/exec_input.psv"
 "$WORK/payexec"
 
 while IFS='|' read -r pid action total amount fee tax reason; do
-  route=$(sqlite3 "$DB" "SELECT CASE WHEN beneficiary_account IS NULL THEN 'E' ELSE 'I' END FROM payments WHERE payment_id=$pid;")
   payer=$(sqlite3 "$DB" "SELECT payer_account FROM payments WHERE payment_id=$pid;")
   beneficiary=$(sqlite3 "$DB" "SELECT COALESCE(beneficiary_account,'') FROM payments WHERE payment_id=$pid;")
-  currency=$(sqlite3 "$DB" "SELECT currency FROM payments WHERE payment_id=$pid;")
-  if [ "$action" = "POST_INTERNAL" ] || [ "$action" = "ALREADY_INTERNAL" ]; then
-    sqlite3 "$DB" "BEGIN; INSERT INTO internal_postings(payment_id,debit_cents,beneficiary_credit_cents) VALUES($pid,$total,$amount); UPDATE accounts SET balance_cents=balance_cents-$total WHERE account_id='$payer'; UPDATE accounts SET balance_cents=balance_cents+$amount WHERE account_id='$beneficiary'; INSERT INTO ledger_entries(payment_id,side,account_code,amount_cents) VALUES($pid,'D','CUSTOMER_CONTROL',$total),($pid,'C','BENEFICIARY_CONTROL',$amount),($pid,'C','FEE_INCOME',$fee),($pid,'C','TAX_PAYABLE',$tax); INSERT OR REPLACE INTO payment_outcomes(payment_id,outcome,reason) VALUES($pid,'SUCCESS_INTERNAL','POSTED'); COMMIT;"
-  elif [ "$action" = "RESERVE_EXTERNAL" ] || [ "$action" = "ALREADY_EXTERNAL" ]; then
-    sqlite3 "$DB" "BEGIN; INSERT INTO reservations(payment_id,amount_cents,active) VALUES($pid,$total,1); INSERT INTO ledger_entries(payment_id,side,account_code,amount_cents) VALUES($pid,'D','CUSTOMER_RESERVED',$total),($pid,'C','CLEARING_PAYABLE',$amount),($pid,'C','FEE_INCOME',$fee),($pid,'C','TAX_PAYABLE',$tax); INSERT OR REPLACE INTO payment_outcomes(payment_id,outcome,reason) VALUES($pid,'SUCCESS_EXTERNAL','RESERVED'); COMMIT;"
-  else
-    sqlite3 "$DB" "INSERT OR REPLACE INTO payment_outcomes(payment_id,outcome,reason) VALUES($pid,'REJECTED','$reason');"
-  fi
+  case "$action" in
+    *INTERNAL)
+      sqlite3 "$DB" "BEGIN; INSERT INTO internal_postings(payment_id,debit_cents,beneficiary_credit_cents) VALUES($pid,$total,$amount); UPDATE accounts SET balance_cents=balance_cents-$total WHERE account_id='$payer'; UPDATE accounts SET balance_cents=balance_cents+$amount WHERE account_id='$beneficiary'; INSERT INTO ledger_entries(payment_id,side,account_code,amount_cents) VALUES($pid,'D','CUSTOMER_CONTROL',$total),($pid,'C','BENEFICIARY_CONTROL',$amount),($pid,'C','FEE_INCOME',$fee),($pid,'C','TAX_PAYABLE',$tax); INSERT OR REPLACE INTO payment_outcomes(payment_id,outcome,reason) VALUES($pid,'SUCCESS_INTERNAL','POSTED'); COMMIT;"
+      ;;
+    *EXTERNAL)
+      sqlite3 "$DB" "BEGIN; INSERT INTO reservations(payment_id,amount_cents,active) VALUES($pid,$total,1); INSERT INTO ledger_entries(payment_id,side,account_code,amount_cents) VALUES($pid,'D','CUSTOMER_RESERVED',$total),($pid,'C','CLEARING_PAYABLE',$amount),($pid,'C','FEE_INCOME',$fee),($pid,'C','TAX_PAYABLE',$tax); INSERT OR REPLACE INTO payment_outcomes(payment_id,outcome,reason) VALUES($pid,'SUCCESS_EXTERNAL','RESERVED'); COMMIT;"
+      ;;
+    *)
+      sqlite3 "$DB" "INSERT OR REPLACE INTO payment_outcomes(payment_id,outcome,reason) VALUES($pid,'REJECTED','$reason');"
+      ;;
+  esac
 done < "$WORK/exec_output.psv"
-sqlite3 "$DB" "INSERT INTO clearing_items(payment_id,amount_cents,currency) SELECT p.payment_id,p.amount_cents,p.currency FROM payments p JOIN payment_outcomes o ON o.payment_id=p.payment_id WHERE p.beneficiary_account IS NULL AND o.outcome IN ('ELIGIBLE','SUCCESS_EXTERNAL');"
+
+sqlite3 "$DB" "INSERT INTO clearing_items(payment_id,amount_cents,currency) SELECT p.payment_id,p.amount_cents,p.currency FROM payments p JOIN payment_outcomes o ON o.payment_id=p.payment_id WHERE p.beneficiary_account IS NULL AND o.outcome='SUCCESS_EXTERNAL';"
 
 cycle_id=$(sqlite3 "$DB" "SELECT cycle_id FROM cycles LIMIT 1;")
 business_date=$(sqlite3 "$DB" "SELECT business_date FROM cycles WHERE cycle_id='$cycle_id';")
@@ -74,6 +77,7 @@ ledger_debits=$(sqlite3 "$DB" "SELECT COALESCE(SUM(amount_cents),0) FROM ledger_
 ledger_credits=$(sqlite3 "$DB" "SELECT COALESCE(SUM(amount_cents),0) FROM ledger_entries WHERE side='C';")
 differences=0
 [ "$original_count" = "$final_count" ] || differences=$((differences+1))
+[ "$original_value" = "$response_value" ] || differences=$((differences+1))
 [ "$internal_success" = "$internal_postings" ] || differences=$((differences+1))
 [ "$external_success" = "$reservation_count" ] || differences=$((differences+1))
 [ "$external_success" = "$clearing_count" ] || differences=$((differences+1))

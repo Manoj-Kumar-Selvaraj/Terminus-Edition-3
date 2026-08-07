@@ -11,6 +11,16 @@ artifacts = ["/app/eod"]
 [metadata]
 author_name = "anonymous"
 author_email = "anonymous@example.com"
+category = "Software"
+subcategory = "Systems"
+tags = ["cobol", "sql", "batch-processing", "payments", "reconciliation"]
+languages = ["cobol", "bash", "sql"]
+difficulty = "advanced"
+expert_time_estimate_hours = 7
+difficulty_explanation = "The awkward part is restart state: a local fix can stop one duplicate and still replay a committed financial effect, consume the wrong payer capacity, or let a held cycle publish. The solver has to follow the same payment across COBOL decisions, persisted SQL state, reconciliation and close."
+solution_explanation = "Keep source-reference replay decisions in COBOL, resume already-authoritative postings or reservations instead of recreating them, make financial effects idempotent, and derive publication/completion from reconciliation plus the cycle close prerequisites."
+verification_explanation = "The tests rebuild independent cycle states and run the submitted batch end to end for clean, replay, partial-restart and held-cycle cases. Direct COBOL interface checks cover the decision programs, while database and artifact assertions verify that reruns preserve one authoritative financial result."
+relevant_experience = "Professional experience supporting mainframe batch payment processing and production operations."
 
 [verifier]
 timeout_sec = 1800

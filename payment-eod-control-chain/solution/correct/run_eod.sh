@@ -10,13 +10,12 @@ rm -f "$WORK"/* "$OUT"/*
 cobc -x -free -o "$WORK/paydup" "$ROOT/cobol/paydup.cob"
 cobc -x -free -o "$WORK/payexec" "$ROOT/cobol/payexec.cob"
 
-sqlite3 -separator '|' -noheader "$DB" "SELECT source_ref,payer_account,beneficiary_ref,amount_cents,currency,purpose,status FROM payment_history WHERE status IN ('ACCEPTED','COMPLETED','PENDING');" > "$WORK/history.psv"
+sqlite3 -separator '|' -noheader "$DB" "SELECT source_ref,payer_account,beneficiary_ref,amount_cents,currency,purpose,status FROM payment_history WHERE status IN ('ACCEPTED','COMPLETED');" > "$WORK/history.psv"
 sqlite3 -separator '|' -noheader "$DB" "SELECT payment_id,source_ref,payer_account,beneficiary_ref,amount_cents,currency,purpose FROM payments ORDER BY payment_id;" > "$WORK/dup_input.psv"
 "$WORK/paydup"
 
 while IFS='|' read -r pid outcome reason; do
   if [ "$outcome" = "DUPLICATE" ]; then
-    # A prior completed financial effect remains authoritative if one exists; otherwise duplicate is final.
     prior_effect=$(sqlite3 "$DB" "SELECT CASE WHEN EXISTS(SELECT 1 FROM internal_postings WHERE payment_id=$pid) THEN 'INTERNAL' WHEN EXISTS(SELECT 1 FROM reservations WHERE payment_id=$pid AND active=1) THEN 'EXTERNAL' ELSE 'NONE' END;")
     if [ "$prior_effect" = "NONE" ]; then
       sqlite3 "$DB" "INSERT INTO payment_outcomes(payment_id,outcome,reason) VALUES($pid,'DUPLICATE','$reason') ON CONFLICT(payment_id) DO UPDATE SET outcome='DUPLICATE',reason=excluded.reason;"
@@ -78,7 +77,6 @@ while IFS='|' read -r pid action total amount fee tax reason; do
   fi
 done < "$WORK/exec_output.psv"
 
-# Only authoritative active reservations can enter clearing, one item per payment.
 sqlite3 "$DB" "INSERT OR IGNORE INTO clearing_items(payment_id,amount_cents,currency)
 SELECT p.payment_id,p.amount_cents,p.currency
 FROM payments p
