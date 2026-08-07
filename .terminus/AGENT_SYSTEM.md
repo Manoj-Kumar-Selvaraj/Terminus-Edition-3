@@ -1,17 +1,17 @@
 # Terminus Edition 3 Agent System
 
-Agent-system policy version: `2.0`
+Agent-system policy version: `2.1`
 
-This directory defines the review and control plane for taking a Terminus Edition 3 task from idea to submission-ready. GitHub repository state, authoritative rule files, Actions/Harbor evidence, the comprehensive reviewer checklist, and versioned reviewer reports are durable truth; chat history is replaceable working context.
+This directory defines the review and control plane for taking a Terminus Edition 3 task from idea to submission-ready. GitHub repository state, current authoritative rule files, Actions/Harbor evidence, the comprehensive reviewer checklist, and versioned reviewer reports are durable truth; chat history is replaceable working context.
 
 Read `.terminus/agents/PROTOCOL.md` before invoking specialists. For acceptance/review work also read `.terminus/reviewers/REVIEWER_CHECKLIST.md`, `.terminus/reviewers/reviewer_criteria.json`, and `.terminus/agents/COMPREHENSIVE_REVIEWER.md`.
 
 ## Design principles
 
-- Use **one manager/controller**. Specialists answer bounded questions and return control.
+- Use one manager/controller. Specialists answer bounded questions and return control.
 - Deterministic facts are checked deterministically before model judgment.
 - Semantic specialists evaluate narrow dimensions independently and do not see prior verdicts by default.
-- A separate **Comprehensive Reviewer** independently walks every checklist criterion as the breadth backstop.
+- A separate Comprehensive Reviewer independently walks every checklist criterion as the breadth backstop.
 - The comprehensive review is exhaustive: finding one blocker never ends the review.
 - Writers never approve their own revisions.
 - Every material finding must be grounded in evidence and distinguish observed fact from inference.
@@ -22,6 +22,27 @@ Read `.terminus/agents/PROTOCOL.md` before invoking specialists. For acceptance/
 - Difficulty is empirical: complete rewards, per-test outcomes and trajectories are all relevant.
 - Reviewer prompts/checklists are production logic and must be regression-evaluated.
 - Current checklist criteria/severities can evolve; final acceptance must record checklist policy freshness.
+
+## Official difficulty and solvability policy
+
+Final Edition 3 agent evaluation uses **10 trials total**:
+
+- Claude Opus 4.8 / Claude Code ×5;
+- GPT-5.5 / Codex ×5.
+
+The mean complete-run success rate across all 10 trials sets final difficulty:
+
+- `<20%` → `frontier`;
+- `20%–<50%` → `advanced`;
+- `50%–<80%` → `core`;
+- `80%–<100%` → `base`;
+- `100%` → reject as too easy/no signal.
+
+A five-run model suite is diagnostic only. Do **not** reject a task because one model is 4/5 or 5/5 if the combined 10-run result is below 100%.
+
+Solvability is evaluated separately: across the combined 10 official trials, **every individual verifier test case must pass at least once**. A task can have 0/10 complete solutions and still be solvable if every individual test is demonstrated by at least one trial. Any verifier test case at 0/10 blocks acceptance and requires trajectory analysis/remediation.
+
+This policy supersedes older local wording that required two complete failures within each five-run suite or treated 4/5 as automatically too easy.
 
 ## Specialist roles
 
@@ -37,6 +58,8 @@ Decision right: does the verifier measure every legitimate solver-visible requir
 
 Owns requirement↔test coverage, Oracle/NOP semantics, test independence, edge cases, weak/vacuous assertions, phantom specs, flakiness, anti-cheat, config dependence and per-test attainability evidence. Prefer behavior/state checks over implementation preference when behavior is observable.
 
+For post-trial solvability, evaluate every individual test across the **combined 10 official trials**, not separately per five-run model suite.
+
 ### 3. Compliance Auditor
 
 Decision right: would the task be rejected for a current Edition 3 structural, environment, security, metadata or packaging rule?
@@ -47,9 +70,7 @@ Owns current schema, required files, Docker pinning/canonical images, separate v
 
 Decision right: is difficulty genuine, and after trials does empirical behavior meet the current authoritative acceptance policy?
 
-Before trials, evaluates coupled reasoning, plausible partial fixes, shortcut risk and clerical/obscurity difficulty. After trials, analyzes complete rewards, per-test results and trajectories.
-
-The stored checklist snapshot currently defines solvability across 10 runs while the local controller historically used 5. Until authoritative policy resolves that difference, the reviewer must record `POLICY_CONFLICT`; five runs must not be represented as proof of a ten-run criterion.
+Before trials, evaluates coupled reasoning, plausible partial fixes, shortcut risk and clerical/obscurity difficulty. After trials, combines both five-run model suites into one 10-trial decision, assigns the official tier from the combined pass rate, checks per-test 1/10 solvability, and reads trajectories from both models before recommending recalibration.
 
 ### 5. Human Quality Reviewer
 
@@ -85,7 +106,9 @@ Cold review. Compares scenario, requirement ordering, failure topology, starter 
 
 Decision right: what caused solver/difficulty failure, and which layer owns remediation?
 
-Reads successful/failed trajectories and per-test/tool evidence. Separates infrastructure/tool failures from reasoning failures, identifies first meaningful divergence, checks task specification/reward hacking/difficulty crux/near-miss/refusal/timeout evidence, and routes remediation appropriately.
+Reads successful/failed trajectories and per-test/tool evidence from both model suites. Separates infrastructure/tool failures from reasoning failures, identifies the first meaningful divergence, checks task specification/reward hacking/difficulty crux/near-miss/refusal/timeout evidence, compares model-specific failure patterns, and routes remediation appropriately.
+
+For every test at 0/10, classify the blocker as `instruction_gap`, `environment_gap`, `verifier_gap`, or `legitimate_reasoning_wall`. A `legitimate_reasoning_wall` does not waive the 1/10 solvability rule.
 
 ### 12. Adjudicator
 
@@ -95,18 +118,18 @@ Decision right: resolve material conflicts between frozen independent reviews us
 
 Decision right: after a full independent criterion walk, what is the checklist-level recommendation for the current task version?
 
-Uses `.terminus/agents/COMPREHENSIVE_REVIEWER.md`. This reviewer is a **breadth backstop** and is mandatory in Pre-LLMaJ/final review.
+Uses `.terminus/agents/COMPREHENSIVE_REVIEWER.md`. This reviewer is a breadth backstop and is mandatory in Pre-LLMaJ/final review.
 
 Required behavior:
 
 - independently walk every criterion in `.terminus/reviewers/reviewer_criteria.json`;
-- apply the detailed descriptions/severity rules in `.terminus/reviewers/REVIEWER_CHECKLIST.md`;
+- apply detailed descriptions/severity rules in `.terminus/reviewers/REVIEWER_CHECKLIST.md`;
 - `CHECKLIST_COVERAGE` must equal 100%;
 - never stop after first High/Medium finding;
 - enumerate all valid issues and actionable fixes;
 - disposition every available test-quality eval flag;
 - disposition every available trial-analysis flag;
-- preserve the special trial-analysis Medium handling rather than flattening it into the ordinary multiple-Medium rule;
+- preserve special trial-analysis Medium handling rather than flattening it into the ordinary multiple-Medium rule;
 - surface `POLICY_CONFLICT` when checklist snapshot and current authoritative rules differ;
 - return `INSUFFICIENT_EVIDENCE` rather than guessing when acceptance-relevant evidence is missing.
 
@@ -117,6 +140,8 @@ Specialist reviewers provide depth; the Comprehensive Reviewer provides full-sco
 Decision right: gate order, routing, state, repository writes/retries and final readiness.
 
 The Orchestrator constructs bounded context packets, runs deterministic gates first, preserves cold-review independence, runs specialist reviews, runs the Comprehensive Reviewer independently, compares frozen reports for omissions/conflicts, invokes Adjudicator as needed, enforces staleness, updates the task checkpoint and blocks expensive Harbor/difficulty work until local review is mature.
+
+For difficulty it must retain both model-suite evidence sets and make the final tier/solvability decision only after all 10 official trials are available.
 
 It must not convert LOW confidence, `INSUFFICIENT_EVIDENCE`, or acceptance-relevant `POLICY_CONFLICT` into PASS.
 
@@ -143,7 +168,7 @@ It must not convert LOW confidence, `INSUFFICIENT_EVIDENCE`, or acceptance-relev
 
 For a mature task:
 
-`deterministic preflight -> Oracle/NOP -> independent specialist Pre-LLMaJ reviews -> independent Comprehensive Reviewer checklist walk -> disagreement/omission scan -> adjudication -> Pre-LLMaJ aggregate -> Harbor LLMaJ -> difficulty/trial analysis -> final cold audits -> final Comprehensive Reviewer refresh if relevant -> package`
+`deterministic preflight -> Oracle/NOP -> independent specialist Pre-LLMaJ reviews -> independent Comprehensive Reviewer checklist walk -> disagreement/omission scan -> adjudication -> Pre-LLMaJ aggregate -> Harbor LLMaJ -> GPT×5 + Claude×5 -> combined 10-run difficulty/solvability + trajectory analysis -> final cold audits -> final Comprehensive Reviewer refresh if relevant -> package`
 
 Do not show the Comprehensive Reviewer specialist verdicts before its criterion walk is frozen. This makes it useful for detecting omissions rather than merely agreeing with specialist conclusions.
 
@@ -176,7 +201,7 @@ Use the stored comprehensive checklist exactly unless superseded by a current au
 - Low: does not block by itself.
 - Trial-analysis Medium: each valid flag is judged independently and may require revision even if it is the only Medium finding.
 
-Do not stop reviewing after a blocker. The reviewer feedback should enumerate all issues so one revision cycle can address everything known.
+Do not stop reviewing after a blocker. Reviewer feedback should enumerate all issues so one revision cycle can address everything known.
 
 ## Harbor/human learning loop
 
@@ -192,7 +217,7 @@ When Harbor or a human reviewer finds something local review missed:
 
 ## Controller states
 
-`DRAFT -> PUSHED -> VALIDATING -> FIXING -> PRE_LLMAJ -> LLMAJ -> VALIDATED -> DIFFICULTY -> RECALIBRATING -> FINAL_AUDIT -> SUBMISSION_READY`
+`DRAFT -> PUSHED -> VALIDATING -> FIXING -> PRE_LLMAJ -> LLMAJ -> VALIDATED -> DIFFICULTY_10X -> RECALIBRATING -> FINAL_AUDIT -> SUBMISSION_READY`
 
 `BLOCKED` is an overlay for circuit breakers, missing evidence, credential/quota issues, unresolved adjudication or policy conflict.
 
@@ -217,7 +242,9 @@ Record task commit, policy versions, checklist version/freshness, gate statuses,
 - Originality & Authenticity PASS;
 - Instruction Reviewer cold PASS;
 - Documentation Reviewer cold PASS;
-- difficulty/solvability policy satisfied under the current authoritative run-count rule;
+- all 10 official difficulty trials complete;
+- combined 10-run pass rate maps to a valid tier below 100%;
+- every verifier test case passes in at least one of the 10 official trials;
 - all trial-analysis flags examined and valid flags resolved;
 - no unresolved adjudication/circuit breaker;
 - final Compliance has no blocking issue;
