@@ -111,13 +111,11 @@ jobs:
     env:
       CI: "true"
       SNORKEL_API_KEY: ${{ secrets.SNORKEL_API_KEY }}
+      STB_AI_API_KEY: ${{ secrets.STB_AI_API_KEY }}
+      STB_AI_CONFIG_B64: ${{ secrets.STB_AI_CONFIG_B64 }}
       STB_PORTKEY_PROJECT_ID: ${{ secrets.STB_PORTKEY_PROJECT_ID }}
       STB_VERSION: ${{ vars.STB_VERSION }}
       STB_ALLOW_KEY_REFRESH: ${{ vars.STB_ALLOW_KEY_REFRESH }}
-      STB_AI_CONFIG_B64: ${{ secrets.STB_AI_CONFIG_B64 }}
-      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-      PORTKEY_API_KEY: ${{ secrets.PORTKEY_API_KEY }}
       XDG_CONFIG_HOME: /tmp/stb-xdg-${{ github.run_id }}-${{ github.run_attempt }}-${{ matrix.task }}
       EVIDENCE_DIR: /tmp/terminus-e3/${{ github.run_id }}/${{ github.run_attempt }}/${{ matrix.task }}
     steps:
@@ -169,8 +167,6 @@ jobs:
           docker info >/dev/null
           bash ./terminus3.sh install
           bash ./terminus3.sh version
-          mkdir -p "$EVIDENCE_DIR"
-          stb keys --help > "$EVIDENCE_DIR/stb-keys-help.txt" 2>&1 || true
           echo "stb version: $(stb --version)" >> "$GITHUB_STEP_SUMMARY"
 
       - name: Oracle must score 1
@@ -215,36 +211,40 @@ jobs:
             [[ "$r" == "0" || "$r" == "0.0" ]] || { echo "::error file=$f::NOP reward=$r expected=0"; exit 1; }
           done
 
-      - name: Prepare AI credentials for Harbor LLMaJ
+      - name: Prepare reusable AI credentials for Harbor LLMaJ
         shell: bash
         run: |
           set -euo pipefail
           mkdir -p "$XDG_CONFIG_HOME/stb"
 
-          restored=0
           if [[ -n "${STB_AI_CONFIG_B64:-}" ]]; then
             printf '%s' "$STB_AI_CONFIG_B64" | base64 --decode | tar -xzf - -C "$XDG_CONFIG_HOME/stb"
-            restored=1
-            echo "Restored static STB AI configuration from GitHub Secret."
+            echo "Restored reusable STB AI configuration."
           fi
 
           if [[ -n "${SNORKEL_API_KEY:-}" ]]; then
             bash ./terminus3.sh login --noninteractive
           fi
 
-          if (( restored == 1 )) || [[ -n "${OPENAI_API_KEY:-}" || -n "${ANTHROPIC_API_KEY:-}" || -n "${PORTKEY_API_KEY:-}" ]]; then
-            echo "Static/direct AI credentials detected; skipping stb keys refresh."
+          if [[ -n "${STB_AI_API_KEY:-}" ]]; then
+            bash ./terminus3.sh keys-set --noninteractive
+            echo "Installed reusable STB AI API key; no refresh requested."
+            exit 0
+          fi
+
+          if [[ -n "${STB_AI_CONFIG_B64:-}" ]]; then
+            echo "Using restored STB AI configuration; no refresh requested."
             exit 0
           fi
 
           case "${STB_ALLOW_KEY_REFRESH:-false}" in
             1|true|TRUE|yes|YES)
-              [[ -n "${SNORKEL_API_KEY:-}" ]] || { echo "::error::STB key refresh was explicitly enabled but SNORKEL_API_KEY is missing"; exit 1; }
-              echo "Explicit refresh fallback enabled; refreshing STB AI credentials once for this run."
+              [[ -n "${SNORKEL_API_KEY:-}" ]] || { echo "::error::Refresh explicitly enabled but SNORKEL_API_KEY is missing"; exit 1; }
+              echo "Explicit refresh fallback enabled for this run."
               bash ./terminus3.sh keys-refresh --noninteractive
               ;;
             *)
-              echo "::error::No reusable AI credential source is configured. Oracle/NOP completed without AI keys. Configure STB_AI_CONFIG_B64 or supported direct provider secrets; routine keys-refresh is disabled."
+              echo "::error::Oracle/NOP passed without AI credentials, but LLMaJ needs a reusable STB credential. Configure GitHub Secret STB_AI_API_KEY (preferred) or STB_AI_CONFIG_B64. Automatic keys-refresh is disabled."
               exit 1
               ;;
           esac
@@ -314,13 +314,11 @@ jobs:
     env:
       CI: "true"
       SNORKEL_API_KEY: ${{ secrets.SNORKEL_API_KEY }}
+      STB_AI_API_KEY: ${{ secrets.STB_AI_API_KEY }}
+      STB_AI_CONFIG_B64: ${{ secrets.STB_AI_CONFIG_B64 }}
       STB_PORTKEY_PROJECT_ID: ${{ secrets.STB_PORTKEY_PROJECT_ID }}
       STB_VERSION: ${{ vars.STB_VERSION }}
       STB_ALLOW_KEY_REFRESH: ${{ vars.STB_ALLOW_KEY_REFRESH }}
-      STB_AI_CONFIG_B64: ${{ secrets.STB_AI_CONFIG_B64 }}
-      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-      PORTKEY_API_KEY: ${{ secrets.PORTKEY_API_KEY }}
       XDG_CONFIG_HOME: /tmp/stb-xdg-diff-${{ github.run_id }}-${{ github.run_attempt }}-${{ matrix.command }}
       EVIDENCE_DIR: /tmp/terminus-e3-difficulty/${{ github.run_id }}/${{ github.run_attempt }}/${{ inputs.task }}/${{ matrix.command }}
     steps:
@@ -359,8 +357,6 @@ jobs:
           docker info >/dev/null
           bash ./terminus3.sh install
           bash ./terminus3.sh version
-          mkdir -p "$EVIDENCE_DIR"
-          stb keys --help > "$EVIDENCE_DIR/stb-keys-help.txt" 2>&1 || true
 
       - name: Prepare reusable AI credentials
         shell: bash
@@ -368,30 +364,34 @@ jobs:
           set -euo pipefail
           mkdir -p "$XDG_CONFIG_HOME/stb"
 
-          restored=0
           if [[ -n "${STB_AI_CONFIG_B64:-}" ]]; then
             printf '%s' "$STB_AI_CONFIG_B64" | base64 --decode | tar -xzf - -C "$XDG_CONFIG_HOME/stb"
-            restored=1
-            echo "Restored static STB AI configuration from GitHub Secret."
+            echo "Restored reusable STB AI configuration."
           fi
 
           if [[ -n "${SNORKEL_API_KEY:-}" ]]; then
             bash ./terminus3.sh login --noninteractive
           fi
 
-          if (( restored == 1 )) || [[ -n "${OPENAI_API_KEY:-}" || -n "${ANTHROPIC_API_KEY:-}" || -n "${PORTKEY_API_KEY:-}" ]]; then
-            echo "Static/direct AI credentials detected; skipping stb keys refresh."
+          if [[ -n "${STB_AI_API_KEY:-}" ]]; then
+            bash ./terminus3.sh keys-set --noninteractive
+            echo "Installed reusable STB AI API key; no refresh requested."
+            exit 0
+          fi
+
+          if [[ -n "${STB_AI_CONFIG_B64:-}" ]]; then
+            echo "Using restored STB AI configuration; no refresh requested."
             exit 0
           fi
 
           case "${STB_ALLOW_KEY_REFRESH:-false}" in
             1|true|TRUE|yes|YES)
-              [[ -n "${SNORKEL_API_KEY:-}" ]] || { echo "::error::STB key refresh was explicitly enabled but SNORKEL_API_KEY is missing"; exit 1; }
-              echo "Explicit refresh fallback enabled; refreshing STB AI credentials once for this run."
+              [[ -n "${SNORKEL_API_KEY:-}" ]] || { echo "::error::Refresh explicitly enabled but SNORKEL_API_KEY is missing"; exit 1; }
+              echo "Explicit refresh fallback enabled for this run."
               bash ./terminus3.sh keys-refresh --noninteractive
               ;;
             *)
-              echo "::error::No reusable AI credential source is configured. Configure STB_AI_CONFIG_B64 or supported direct provider secrets; routine keys-refresh is disabled."
+              echo "::error::No reusable STB AI credential configured. Set GitHub Secret STB_AI_API_KEY (preferred) or STB_AI_CONFIG_B64. Automatic keys-refresh is disabled."
               exit 1
               ;;
           esac
