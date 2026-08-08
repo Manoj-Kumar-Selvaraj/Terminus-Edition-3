@@ -1,0 +1,27 @@
+{
+  "role": "Verifier Engineer",
+  "review_id": "pay-eod-84d4436f-verifier-01",
+  "task_commit": "84d4436f027f1ba1dd6ac909f31aae3aaafe9554",
+  "policy_version": "2.2",
+  "verdict": "PASS",
+  "confidence": "HIGH",
+  "evidence_status": "SUFFICIENT",
+  "summary": "The verifier is outcome-based and covers the current solver-visible contract through 37 named cases. The final classification is empirically grounded: all 30 F2P cases fail the unmodified starter, all seven P2P cases pass it, and all 37 pass after the reference solution. Tests exercise submitted COBOL decisions and the full batch against seeded durable database states, then inspect financial state, reconciliation, publication and close outcomes rather than source syntax or implementation choices.",
+  "evidence": [
+    {"type":"file","ref":".terminus/designs/payment-eod-control-chain-test-map.json@84d4436f","observation":"Maps 37 tests to replay, eligibility, capacity, resume, idempotency, accounting, reconciliation, publication, close, interface, history and restart requirements."},
+    {"type":"file","ref":"payment-eod-control-chain/tests/test_outputs.py@84d4436f","observation":"Core cases compile/call COBOL interfaces and execute the batch in fresh, resumed, held and completed states while checking durable DB and output behavior."},
+    {"type":"file","ref":"payment-eod-control-chain/tests/test_regressions.py@84d4436f","observation":"Reviewer regressions cover current-cycle history, inconsistent resumed state, cross-cycle replay, blocked payer behavior and stable external CSV publication interfaces."},
+    {"type":"file","ref":"payment-eod-control-chain/tests/test.sh@84d4436f","observation":"Runs the complete verifier directory and writes only binary 0/1 reward without runtime dependency installation."},
+    {"type":"ci","ref":"Terminus CI run 31260035556 artifact 9022556589","observation":"Oracle collected 37 tests and passed 37; NOP collected 37 with exactly 30 failures and seven passes. Every test named test_p2p_* is among the seven NOP passes."},
+    {"type":"ci","ref":"Terminus CI run 31260035556","observation":"Preflight and Ruff pass before Oracle/NOP; both agents use the same verifier image and test entry point."}
+  ],
+  "findings": [],
+  "missing_evidence": [],
+  "change_scope": [],
+  "do_not_change": [
+    "Do not replace behavioral scenarios with grep, YAML/source-shape or implementation-pattern checks.",
+    "Do not force stable P2P behavior to fail NOP.",
+    "Do not weaken close/idempotency F2P assertions to preserve the 30-test F2P ceiling."
+  ],
+  "next_gate": "Comprehensive Reviewer after the remaining cold specialist reports are frozen"
+}
