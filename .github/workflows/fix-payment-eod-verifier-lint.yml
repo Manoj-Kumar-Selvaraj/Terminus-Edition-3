@@ -22,35 +22,44 @@ jobs:
         with:
           enable-cache: false
 
-      - name: Remove unused import and verify Ruff
+      - name: Apply exact lint cleanups and verify Ruff
         shell: bash
         run: |
           set -euo pipefail
-          diagnostic=.terminus/staging/payment-eod-ruff-diagnostic.txt
-          mkdir -p .terminus/staging
-          rm -f "$diagnostic"
-          sed -i '/^import pytest$/d' payment-eod-control-chain/tests/test_outputs.py
+          python3 - <<'PY'
+          from pathlib import Path
 
-          set +e
-          uvx --from ruff==0.12.8 ruff check payment-eod-control-chain/tests > "$diagnostic" 2>&1
-          rc=$?
-          set -e
+          path = Path('payment-eod-control-chain/tests/test_outputs.py')
+          text = path.read_text()
+          text = text.replace('import pytest\n\n', '')
+          text = text.replace(
+              "    DB.parent.mkdir(parents=True, exist_ok=True); DB.unlink(missing_ok=True)\n",
+              "    DB.parent.mkdir(parents=True, exist_ok=True)\n    DB.unlink(missing_ok=True)\n",
+          )
+          text = text.replace(
+              "    shutil.rmtree(OUT, ignore_errors=True); OUT.mkdir(parents=True, exist_ok=True)\n",
+              "    shutil.rmtree(OUT, ignore_errors=True)\n    OUT.mkdir(parents=True, exist_ok=True)\n",
+          )
+          text = text.replace(
+              "    con = sqlite3.connect(DB); con.executescript(SCHEMA.read_text()); con.execute('PRAGMA foreign_keys=OFF'); con.executescript(seed); con.commit(); con.close()\n",
+              "    con = sqlite3.connect(DB)\n    con.executescript(SCHEMA.read_text())\n    con.execute('PRAGMA foreign_keys=OFF')\n    con.executescript(seed)\n    con.commit()\n    con.close()\n",
+          )
+          text = text.replace(
+              "    reset_db(seed); run_batch()\n",
+              "    reset_db(seed)\n    run_batch()\n",
+          )
+          path.write_text(text)
+          PY
+
+          uvx --from ruff==0.12.8 ruff check payment-eod-control-chain/tests
+          python3 -m py_compile payment-eod-control-chain/tests/test_outputs.py
+
+          rm -f .terminus/staging/payment-eod-ruff-diagnostic.txt
+          rm -f .terminus/staging/payment-eod-lint-fix.ready
+          rm -f .github/workflows/fix-payment-eod-verifier-lint.yml
 
           git config user.name "terminus-ci"
           git config user.email "terminus-ci@users.noreply.github.com"
-
-          if (( rc != 0 )); then
-            git checkout -- payment-eod-control-chain/tests/test_outputs.py
-            git add "$diagnostic"
-            git commit -m "Capture payment EOD Ruff diagnostics"
-            git push origin HEAD:main
-            cat "$diagnostic"
-            exit "$rc"
-          fi
-
-          python3 -m py_compile payment-eod-control-chain/tests/test_outputs.py
-          rm -f "$diagnostic" .terminus/staging/payment-eod-lint-fix.ready
-          rm -f .github/workflows/fix-payment-eod-verifier-lint.yml
           git add -A
           git commit -m "Fix payment EOD verifier lint"
           git push origin HEAD:main
