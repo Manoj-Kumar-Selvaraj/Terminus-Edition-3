@@ -42,21 +42,4 @@ replace(
     "The legacy `large_system` profile may use scale numbers diagnostically only when the controller explicitly records why strict scale is inappropriate. New tasks requested to meet the large-system numbers must use `large_system_strict`. Both profiles still require structural authenticity.",
 )
 
-replace(
-    ".terminus/validate_review_freshness.py",
-    'return data.get("profile") == "large_system_strict"',
-    'return data.get("profile") == "large_system_strict"',
-)
-
-workflow = ROOT / ".github/workflows/terminus-agent-system-ci.yml"
-workflow_text = workflow.read_text(encoding="utf-8")
-workflow_text = workflow_text.replace("permissions:\n  contents: write\n", "permissions:\n  contents: read\n", 1)
-start = workflow_text.find("      # PR4_MIGRATION_BEGIN\n")
-end_marker = "      # PR4_MIGRATION_END\n"
-end = workflow_text.find(end_marker)
-if start < 0 or end < 0 or end < start:
-    raise SystemExit("terminus-agent-system-ci.yml: migration marker block not found")
-end += len(end_marker)
-workflow.write_text(workflow_text[:start] + workflow_text[end:], encoding="utf-8")
-
 Path(__file__).unlink()
