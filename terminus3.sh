@@ -28,10 +28,8 @@ mkdir -p "$JOBS_DIR"
 STABLE_CWD="${STABLE_CWD:-/tmp/terminus3-cwd}"
 mkdir -p "$STABLE_CWD"
 
-run_harbor() {
-  # Usage: run_harbor <stb-args...>
-  # Execute harbor with a durable cwd. Callers must pass -o/--jobs-dir themselves
-  # (or rely on the wrappers below).
+run_stb_harbor() {
+  # Model-backed STB wrapper. STB performs its own AI credential checks here.
   ( cd "$STABLE_CWD" && "$STB_BIN" "$@" )
 }
 
@@ -89,10 +87,13 @@ Setup / auth
   install              Install/upgrade snorkelai-stb via uv
   login [--noninteractive]
                        stb login, or write auth from SNORKEL_API_KEY (CI-safe)
+  keys-set [--noninteractive]
+                       Save an existing STB AI API key; noninteractive reads
+                       STB_AI_API_KEY and does not request a new credential
   keys-refresh [--noninteractive]
-                       stb keys refresh; noninteractive uses STB_PORTKEY_PROJECT_ID
-                       or the sole eligible project
+                       Request new STB AI credentials. Use sparingly.
   keys-show            stb keys show
+  keys-verify          stb keys verify
   version              Show stb version
 
 Task discovery
@@ -100,8 +101,8 @@ Task discovery
   path <task>          Print absolute task path
 
 Validation
-  oracle <task>        stb harbor run -a oracle -p <task>
-  nop <task>           stb harbor run -a nop -p <task>
+  oracle <task>        Harbor oracle utility agent (no STB AI key required)
+  nop <task>           Harbor nop utility agent (no STB AI key required)
   check <task>         stb harbor check <task> -m claude-sonnet-4-6
   check-llm <task>     Alias of check
   validate <task>      oracle + nop + check (sequential)
@@ -119,25 +120,26 @@ Convenience
   all-check            Run harbor check on every local task
   help                 Show this help
 
-Extra args after <task> are forwarded to stb.
+Extra args after <task> are forwarded to Harbor/STB.
 Examples:
   ./terminus3.sh oracle ansible-ci-control-plane
   ./terminus3.sh check freight-triage-polyglot-ledger-recovery
-  ./terminus3.sh diff-gpt ansible-ci-control-plane -- --some-stb-flag
+  ./terminus3.sh diff-gpt ansible-ci-control-plane
   ./terminus3.sh validate terraform-aws-eks-weekend-fleet-cutover-plan
 
 Environment:
   STB_BIN                 Override stb binary (default: stb)
   STB_VERSION             Optional exact snorkelai-stb version pin
   STB_WHEEL_INDEX         Override stb wheel index
+  STB_AI_API_KEY          Existing AI credential for noninteractive keys-set
   SNORKEL_API_KEY         Platform API key (noninteractive login)
-  STB_PORTKEY_PROJECT_ID  Portkey project id (noninteractive keys-refresh)
+  STB_PORTKEY_PROJECT_ID  Project id used only by keys-refresh
   XDG_CONFIG_HOME         Optional; stb config lives under $XDG_CONFIG_HOME/stb/
 EOF
 }
 
 stb_python() {
-  # Prefer the uv-tool interpreter that has snorkelai_stb installed.
+  # Prefer the uv-tool interpreter that has both snorkelai_stb and harbor installed.
   if [[ -n "${STB_PY:-}" && -x "${STB_PY}" ]]; then
     printf '%s\n' "$STB_PY"
     return 0
@@ -154,6 +156,15 @@ stb_python() {
     fi
   done
   command -v python3
+}
+
+run_harbor_utility() {
+  # STB 2.4.3 performs a global AI-key precheck even for oracle/nop. Those
+  # Harbor utility agents do not use an LLM, so invoke Harbor's Typer app
+  # directly through the Python environment installed with snorkelai-stb.
+  local py
+  py="$(stb_python)"
+  ( cd "$STABLE_CWD" && "$py" -c 'from harbor.cli.main import app; app()' "$@" )
 }
 
 cmd_login() {
@@ -206,6 +217,36 @@ get_current_user_info()
 GlobalConfig.set("auth", "api_key", api_key)
 print("Logged in (noninteractive).")
 PY
+}
+
+cmd_keys_set() {
+  need_stb
+  local noninteractive=0
+  local arg
+  for arg in "$@"; do
+    case "$arg" in
+      --noninteractive|-n) noninteractive=1 ;;
+      --help|-h)
+        echo "Usage: $0 keys-set [--noninteractive]"
+        echo "Noninteractive requires STB_AI_API_KEY in the environment."
+        return 0
+        ;;
+      *) die "unknown keys-set option: $arg" ;;
+    esac
+  done
+
+  if [[ "$noninteractive" -eq 0 && -n "${CI:-}" ]]; then
+    noninteractive=1
+  fi
+
+  if [[ "$noninteractive" -eq 0 ]]; then
+    "$STB_BIN" keys set
+    return 0
+  fi
+
+  [[ -n "${STB_AI_API_KEY:-}" ]] || die "noninteractive keys-set requires STB_AI_API_KEY"
+  echo "==> Installing existing STB AI credentials (no refresh)"
+  printf '%s\n' "$STB_AI_API_KEY" | "$STB_BIN" keys set
 }
 
 cmd_keys_refresh() {
@@ -292,18 +333,18 @@ cmd_oracle() {
   need_stb
   local task; task="$(resolve_task "${1:?task required}")"
   shift || true
-  echo "==> oracle: $task"
+  echo "==> oracle (direct Harbor utility agent): $task"
   echo "    jobs-dir: $JOBS_DIR"
-  run_harbor harbor run -a oracle -p "$task" -o "$JOBS_DIR" "$@"
+  run_harbor_utility run -a oracle -p "$task" -o "$JOBS_DIR" "$@"
 }
 
 cmd_nop() {
   need_stb
   local task; task="$(resolve_task "${1:?task required}")"
   shift || true
-  echo "==> nop: $task"
+  echo "==> nop (direct Harbor utility agent): $task"
   echo "    jobs-dir: $JOBS_DIR"
-  run_harbor harbor run -a nop -p "$task" -o "$JOBS_DIR" "$@"
+  run_harbor_utility run -a nop -p "$task" -o "$JOBS_DIR" "$@"
 }
 
 cmd_check() {
@@ -330,9 +371,9 @@ cmd_validate() {
   local task; task="$(resolve_task "$task_arg")"
   echo "==> validate: $task"
   echo "---- oracle ----"
-  run_harbor harbor run -a oracle -p "$task" -o "$JOBS_DIR" "$@"
+  run_harbor_utility run -a oracle -p "$task" -o "$JOBS_DIR" "$@"
   echo "---- nop ----"
-  run_harbor harbor run -a nop -p "$task" -o "$JOBS_DIR" "$@"
+  run_harbor_utility run -a nop -p "$task" -o "$JOBS_DIR" "$@"
   echo "---- check ----"
   if [ "$(id -u)" -eq 0 ] && [ -z "${IS_SANDBOX:-}" ]; then
     export IS_SANDBOX=1
@@ -354,7 +395,7 @@ cmd_diff_gpt() {
   local task; task="$(resolve_task "${1:?task required}")"
   shift || true
   echo "==> difficulty GPT-5.5 x5: $task"
-  run_harbor harbor run -m @openai/gpt-5.5 -p "$task" -k 5 -o "$JOBS_DIR" "$@"
+  run_stb_harbor harbor run -m @openai/gpt-5.5 -p "$task" -k 5 -o "$JOBS_DIR" "$@"
 }
 
 cmd_diff_claude() {
@@ -362,7 +403,7 @@ cmd_diff_claude() {
   local task; task="$(resolve_task "${1:?task required}")"
   shift || true
   echo "==> difficulty Claude Opus 4.8 x5: $task"
-  run_harbor harbor run -m @anthropic/claude-opus-4-8 -p "$task" -k 5 -o "$JOBS_DIR" "$@"
+  run_stb_harbor harbor run -m @anthropic/claude-opus-4-8 -p "$task" -k 5 -o "$JOBS_DIR" "$@"
 }
 
 cmd_difficulty() {
@@ -372,9 +413,9 @@ cmd_difficulty() {
   local task; task="$(resolve_task "$task_arg")"
   echo "==> full difficulty suite: $task"
   echo "---- GPT-5.5 x5 ----"
-  run_harbor harbor run -m @openai/gpt-5.5 -p "$task" -k 5 -o "$JOBS_DIR" "$@"
+  run_stb_harbor harbor run -m @openai/gpt-5.5 -p "$task" -k 5 -o "$JOBS_DIR" "$@"
   echo "---- Claude Opus 4.8 x5 ----"
-  run_harbor harbor run -m @anthropic/claude-opus-4-8 -p "$task" -k 5 -o "$JOBS_DIR" "$@"
+  run_stb_harbor harbor run -m @anthropic/claude-opus-4-8 -p "$task" -k 5 -o "$JOBS_DIR" "$@"
 }
 
 cmd_all_oracle() {
@@ -383,7 +424,7 @@ cmd_all_oracle() {
   while IFS= read -r t; do
     [[ -z "$t" ]] && continue
     echo "======== oracle: $t ========"
-    run_harbor harbor run -a oracle -p "$ROOT/$t" -o "$JOBS_DIR" "$@" || echo "FAILED: $t"
+    run_harbor_utility run -a oracle -p "$ROOT/$t" -o "$JOBS_DIR" "$@" || echo "FAILED: $t"
   done < <(list_tasks)
 }
 
@@ -412,8 +453,10 @@ main() {
       ;;
     install) cmd_install "$@" ;;
     login) cmd_login "$@" ;;
+    keys-set) cmd_keys_set "$@" ;;
     keys-refresh) cmd_keys_refresh "$@" ;;
     keys-show) need_stb; "$STB_BIN" keys show "$@" ;;
+    keys-verify) need_stb; "$STB_BIN" keys verify "$@" ;;
     version) need_stb; "$STB_BIN" --version "$@" ;;
     oracle) cmd_oracle "$@" ;;
     nop) cmd_nop "$@" ;;
