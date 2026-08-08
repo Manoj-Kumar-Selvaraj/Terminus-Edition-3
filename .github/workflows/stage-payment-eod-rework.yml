@@ -1,0 +1,48 @@
+name: Stage payment EOD large-system rework
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".terminus/staging/payment-eod-large-rework.tar.gz.b64"
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Expand staged task and create atomic rework commit
+        shell: bash
+        run: |
+          set -euo pipefail
+          stage=".terminus/staging/payment-eod-large-rework.tar.gz.b64"
+          tmp="$(mktemp -d)"
+          base64 --decode "$stage" > "$tmp/rework.tar.gz"
+          tar -xzf "$tmp/rework.tar.gz" -C "$tmp"
+
+          rm -rf payment-eod-control-chain
+          cp -a "$tmp/cobol_rework" payment-eod-control-chain
+          rm -rf payment-eod-control-chain/tests/__pycache__
+
+          mkdir -p .terminus/designs .terminus/research
+          cp "$tmp/cobol_rework_private/designs/payment-eod-control-chain.json" \
+             .terminus/designs/payment-eod-control-chain.json
+          cp "$tmp/cobol_rework_private/designs/payment-eod-control-chain-test-map.json" \
+             .terminus/designs/payment-eod-control-chain-test-map.json
+          cp "$tmp/cobol_rework_private/research/payment-eod-control-chain.md" \
+             .terminus/research/payment-eod-control-chain.md
+
+          rm -f "$stage" .github/workflows/stage-payment-eod-rework.yml
+
+          git config user.name "terminus-ci"
+          git config user.email "terminus-ci@users.noreply.github.com"
+          git add -A
+          git status --short
+          git commit -m "Rework payment EOD as large-system task"
+          git push origin HEAD:main
