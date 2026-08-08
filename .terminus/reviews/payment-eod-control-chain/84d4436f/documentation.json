@@ -1,0 +1,26 @@
+{
+  "role": "Engineering Documentation Reviewer",
+  "review_id": "pay-eod-84d4436f-documentation-01",
+  "task_commit": "84d4436f027f1ba1dd6ac909f31aae3aaafe9554",
+  "policy_version": "2.2",
+  "verdict": "PASS",
+  "confidence": "HIGH",
+  "evidence_status": "SUFFICIENT",
+  "summary": "The README and solver-visible operating notes read like engineering documentation for a payment batch rather than benchmark-facing justification. The README gives architecture and lifecycle orientation without exposing the oracle. Restart, interface and reconciliation/close notes provide concrete business invariants, record layouts and operational states that the solver needs to reason about a legacy system. The documents avoid synthetic Difficulty/Solution/Verification sections and do not narrate a file-by-file repair sequence.",
+  "evidence": [
+    {"type":"file","ref":"payment-eod-control-chain/README.md@84d4436f","observation":"Four short operational paragraphs explain COBOL/shell/SQLite roles, durable restart provenance, operator docs and the separation between reconciliation and close."},
+    {"type":"file","ref":"payment-eod-control-chain/environment/eod/docs/restart-operations.txt@84d4436f","observation":"Uses an operations-note format for replay identity, internal/external resume and capacity semantics."},
+    {"type":"file","ref":"payment-eod-control-chain/environment/eod/docs/interface-notes.txt@84d4436f","observation":"Documents each COBOL stdin/stdout interface and downstream file layout in the style of a batch support runbook."},
+    {"type":"file","ref":"payment-eod-control-chain/environment/eod/docs/reconciliation-close.txt@84d4436f","observation":"Documents finance controls, ledger shapes and close prerequisites without pointing to defective source lines or solution edits."},
+    {"type":"file","ref":"payment-eod-control-chain/instruction.md@84d4436f","observation":"Solver handoff delegates detail to the operational docs instead of duplicating them into an over-prescriptive prompt."}
+  ],
+  "findings": [],
+  "missing_evidence": [],
+  "change_scope": [],
+  "do_not_change": [
+    "Do not restore benchmark-facing Difficulty/Solution/Verification prose in README.",
+    "Do not turn operating notes into a checklist of defective functions or expected patches.",
+    "Do not remove stable interface/close semantics that are required for fair behavioral verification."
+  ],
+  "next_gate": "Comprehensive Reviewer with current deterministic evidence"
+}
