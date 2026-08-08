@@ -97,6 +97,7 @@ def role_contract_inputs(root: Path, role: str) -> list[Path]:
         root / "TERMINUS_3_AI_INSTRUCTIONS.md",
         t / "agents" / "PROTOCOL.md",
         t / "agents" / "PROMPTS.md",
+        t / "agents" / "PRODUCTION_AUTHENTICITY.md",
     ]
     if role == "Comprehensive Reviewer":
         inputs.extend(
