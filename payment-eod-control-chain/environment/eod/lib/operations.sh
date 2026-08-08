@@ -93,8 +93,6 @@ cycle_operational_health() {
     successful_internal_has_posting "$c" || failures=$((failures+1))
     successful_external_has_reservation "$c" || failures=$((failures+1))
     successful_external_has_clearing "$c" || failures=$((failures+1))
-    true
-    true
     printf '%s' "$failures"
 }
 
