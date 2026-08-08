@@ -1,0 +1,28 @@
+{
+  "role": "Originality & Authenticity Reviewer",
+  "review_id": "pay-eod-ff7394ff-originality-01",
+  "task_commit": "ff7394ff7bd05a5c851cd1a6a1f62e175c2cd011",
+  "policy_version": "2.2",
+  "verdict": "PASS",
+  "confidence": "MEDIUM_HIGH",
+  "evidence_status": "SUFFICIENT",
+  "summary": "The current task retains a distinct operational identity: legacy COBOL decision programs participate in a SQL-backed payment EOD restart chain whose failures propagate through financial effects, reconciliation, publication and close. The organic-starter rewrite materially reduces benchmark construction smell because the shell controls now contain plausible incomplete legacy logic instead of artificial no-op checks. The previously retrieved public Terminal-Bench COBOL neighbor, cobol-modernization, is a language-port/equivalence task rather than a stateful repair/restart problem; the current failure topology remains materially different.",
+  "evidence": [
+    {"type":"public_reference","ref":"https://www.tbench.ai/benchmarks/terminal-bench-2/cobol-modernization","observation":"Previously retrieved public COBOL neighbor asks for a Python reimplementation matching COBOL .DAT behavior; it does not retain a COBOL/shell/SQL restart-control topology."},
+    {"type":"file","ref":"payment-eod-control-chain/instruction.md@ff7394ff","observation":"Incident framing is specific to payment restart provenance and official EOD publication/close behavior rather than a generic code-repair template."},
+    {"type":"file","ref":"payment-eod-control-chain/environment/eod/lib/reconcile.sh@ff7394ff","observation":"Starter reconciliation contains recognizable legacy partial metrics: some controls exist but are mis-scoped or incomplete, which is more authentic than forced constants/no-op checks."},
+    {"type":"file","ref":"payment-eod-control-chain/environment/eod/lib/control.sh@ff7394ff","observation":"Controller uses plausible orphan/outcome-count checks and stage transitions, leaving deeper financial consistency gaps for the solver to diagnose."},
+    {"type":"file","ref":".terminus/designs/payment-eod-control-chain.json current control-plane","observation":"Private topology remains six causal clusters and 27 edges, reducing the risk that the visible task is merely a list of isolated benchmark mutations."}
+  ],
+  "findings": [],
+  "missing_evidence": [
+    "A fresh public registry search was attempted during this review but the web search service returned 503; the existing public comparison is therefore reused because the solver-facing scenario did not change. No private corpus-wide semantic-similarity service is available to this controller."
+  ],
+  "change_scope": [],
+  "do_not_change": [
+    "Do not reintroduce artificial no-op starter controls.",
+    "Do not copy the language-port structure or wording of public COBOL modernization tasks.",
+    "Do not expose private defect-count or causal-graph language to the solver."
+  ],
+  "next_gate": "Comprehensive uniqueness/authenticity backstop"
+}
