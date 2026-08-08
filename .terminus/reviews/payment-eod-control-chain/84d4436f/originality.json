@@ -1,0 +1,28 @@
+{
+  "role": "Originality & Authenticity Reviewer",
+  "review_id": "pay-eod-84d4436f-originality-01",
+  "task_commit": "84d4436f027f1ba1dd6ac909f31aae3aaafe9554",
+  "policy_version": "2.2",
+  "verdict": "PASS",
+  "confidence": "MEDIUM_HIGH",
+  "evidence_status": "SUFFICIENT",
+  "summary": "The task has a distinct operational identity: legacy COBOL decision interfaces embedded in a stateful payment EOD restart chain with SQL-backed exactly-once financial effects, reconciliation, publication and close gating. Current public Terminal-Bench searches found the obvious COBOL neighbor, cobol-modernization, but that task is a COBOL-to-Python equivalence port and does not share this restart-state topology. General financial/document and processing-pipeline tasks are also materially different in state model and expected work.",
+  "evidence": [
+    {"type":"public_reference","ref":"https://www.tbench.ai/benchmarks/terminal-bench-2/cobol-modernization","observation":"Public COBOL neighbor asks for Python reimplementation with identical .DAT outputs; it is not a stateful repair/restart task and does not retain COBOL interfaces."},
+    {"type":"public_search","ref":"Terminal-Bench public registry search on 2026-08-08","observation":"Payment/reconciliation searches surfaced generic financial-document and processing-pipeline tasks, not an EOD restart/reconciliation/close chain with the same failure topology."},
+    {"type":"file","ref":"payment-eod-control-chain/README.md@84d4436f","observation":"Operational framing is specific to durable payment restart provenance, internal posting/external reservation continuation and separate reconciliation/close phases."},
+    {"type":"file","ref":"payment-eod-control-chain/environment/eod/docs/interface-notes.txt@84d4436f","observation":"Eleven small COBOL decision interfaces plus official publication layouts create a domain-specific topology rather than a generic script-fixing prompt."},
+    {"type":"file","ref":".terminus/designs/payment-eod-control-chain.json@84d4436f","observation":"Six coupled causal clusters and 27 edges reduce the risk of a templated one-bug-per-test construction being visible to the solver."}
+  ],
+  "findings": [],
+  "missing_evidence": [
+    "No private corpus-wide semantic-similarity service was available in this controller; verdict is based on current public registry searches plus repository-specific topology."
+  ],
+  "change_scope": [],
+  "do_not_change": [
+    "Do not borrow wording or the language-port topology from cobol-modernization.",
+    "Do not flatten the incident into a generic batch-script repair prompt.",
+    "Do not expose the private defect inventory to make the task appear more distinctive."
+  ],
+  "next_gate": "Comprehensive originality/uniqueness checklist confirmation"
+}
