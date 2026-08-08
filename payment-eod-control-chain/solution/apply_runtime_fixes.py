@@ -135,3 +135,23 @@ replace_once(
 ''',
     'balanced incomplete controller lifecycle',
 )
+
+publish = Path('/app/eod/lib/publish.sh')
+replace_once(
+    publish,
+    '''write_response_staging() { local c="$1" p="$2"; db_csv "$(response_query "$c")" > "$p"; }
+write_clearing_staging() { local c="$1" p="$2"; db_csv "$(clearing_query "$c")" > "$p"; }
+''',
+    '''write_response_staging() {
+    local c="$1" p="$2"
+    printf 'payment_id,source_ref,outcome,reason\\n' > "$p"
+    "$SQLITE_BIN" -noheader -csv "$DB" "$(response_query "$c")" >> "$p"
+}
+write_clearing_staging() {
+    local c="$1" p="$2"
+    printf 'payment_id,source_ref,amount_cents,currency\\n' > "$p"
+    "$SQLITE_BIN" -noheader -csv "$DB" "$(clearing_query "$c")" >> "$p"
+}
+''',
+    'deterministic publication headers for empty result sets',
+)
