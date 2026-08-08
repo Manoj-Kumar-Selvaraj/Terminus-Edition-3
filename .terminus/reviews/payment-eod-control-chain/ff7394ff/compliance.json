@@ -1,0 +1,28 @@
+{
+  "role": "Compliance Auditor",
+  "review_id": "pay-eod-ff7394ff-compliance-01",
+  "task_commit": "ff7394ff7bd05a5c851cd1a6a1f62e175c2cd011",
+  "policy_version": "2.2",
+  "verdict": "PASS",
+  "confidence": "HIGH",
+  "evidence_status": "SUFFICIENT",
+  "summary": "The organic-starter rewrite changes only solver-visible application logic plus reference-solution mechanics; it does not introduce a packaging, privilege, networking or dependency violation. The current task retains top-level Edition 3 metadata, digest-pinned matching Debian agent/verifier bases, separate verifier execution, pinned pytest, .dockerignore answer isolation, ordinary resource limits and public network mode. The new solution filter/runtime-repair scripts are deterministic local transformations with no network fetch or hidden-verifier access.",
+  "evidence": [
+    {"type":"file","ref":"payment-eod-control-chain/task.toml@ff7394ff","observation":"Current Edition 3 top-level category/subcategory/tags/languages/difficulty/expert estimate/artifacts placement remains intact; separate verifier and bounded timeouts remain configured."},
+    {"type":"file","ref":"payment-eod-control-chain/environment/Dockerfile@ff7394ff","observation":"Agent image remains digest-pinned Debian bookworm-slim, installs required tools in one apt layer and copies only eod/."},
+    {"type":"file","ref":"payment-eod-control-chain/environment/.dockerignore@ff7394ff","observation":"Solution, tests, VCS metadata, caches, env files and archives remain excluded from the agent build context."},
+    {"type":"file","ref":"payment-eod-control-chain/tests/Dockerfile@ff7394ff","observation":"Verifier remains separate on the same digest-pinned base with pytest==8.4.1 pinned at build time."},
+    {"type":"file","ref":"payment-eod-control-chain/solution/filter_repair_patch.py@ff7394ff","observation":"New helper filters known organically rewritten runtime files out of the legacy aggregate patch; it reads/writes local temporary files only."},
+    {"type":"file","ref":"payment-eod-control-chain/solution/solve.sh@ff7394ff","observation":"Reference solution combines local patch parts, filters them, applies direct runtime/schema repairs and executes the real batch; no network or privilege escalation is used."},
+    {"type":"ci","ref":"Terminus CI 31260792025 (#159)","observation":"Preflight, Ruff, Docker/STB, Oracle and NOP pass on current organic-starter merge ref ec40c51... ."}
+  ],
+  "findings": [],
+  "missing_evidence": [],
+  "change_scope": [],
+  "do_not_change": [
+    "Do not copy solution/tests into the agent image.",
+    "Do not add runtime package downloads, Docker socket access or privileged execution.",
+    "Do not move required top-level task metadata back under metadata."
+  ],
+  "next_gate": "Instruction/Documentation current-version freeze, then Comprehensive Reviewer"
+}
