@@ -13,7 +13,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
 
 concurrency:
   group: terminus-agent-system-${{ github.workflow }}-${{ github.ref }}
@@ -29,23 +29,7 @@ jobs:
       # is not sufficient evidence.
       - uses: actions/checkout@v4
         with:
-          ref: ${{ github.head_ref || github.ref_name }}
           fetch-depth: 0
-
-      # PR4_MIGRATION_BEGIN
-      - name: Apply one-use PR4 policy migration
-        if: github.event_name == 'pull_request' && github.head_ref == 'agent-redesign'
-        shell: bash
-        run: |
-          set -euo pipefail
-          python3 .terminus/pr4_migrate.py
-          git config user.name 'terminus-control-plane'
-          git config user.email 'terminus-control-plane@users.noreply.github.com'
-          git add -A
-          git diff --cached --check
-          git commit -m 'Complete PR4 policy migration'
-          git push origin HEAD:${GITHUB_HEAD_REF}
-      # PR4_MIGRATION_END
 
       - name: Validate Python
         run: |
