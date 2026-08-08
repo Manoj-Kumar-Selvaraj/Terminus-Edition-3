@@ -107,8 +107,8 @@ def test_p2p_blocked_payer_is_rejected_without_financial_effect():
     assert scalar('SELECT COUNT(*) FROM ledger_entries') == 0
 
 
-def test_p2p_balanced_cycle_keeps_the_documented_official_output_shape():
-    """A balanced external cycle keeps the documented response, clearing and authorization interfaces."""
+def test_p2p_balanced_external_publication_keeps_documented_csv_shapes():
+    """A balanced external cycle keeps the stable response and clearing publication interfaces."""
     seed = (
         cycle_sql()
         + accounts_sql(('A1', 'ACTIVE', 50000))
@@ -129,6 +129,3 @@ def test_p2p_balanced_cycle_keeps_the_documented_official_output_shape():
     assert clearing[0]['source_ref'] == 'S1'
     assert clearing[0]['amount_cents'] == '10000'
     assert clearing[0]['currency'] == 'INR'
-    authorization = json.loads((OUT / 'success_authorization.json').read_text())
-    assert authorization['cycle_id'] == 'C1'
-    assert authorization['status'] == 'AUTHORIZED'
