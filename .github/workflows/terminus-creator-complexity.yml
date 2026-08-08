@@ -1,0 +1,58 @@
+name: Terminus Creator Complexity Gate
+
+on:
+  pull_request:
+    paths:
+      - "**/environment/**"
+      - "**/tests/**"
+      - ".terminus/designs/**"
+      - ".terminus/validate_task_complexity.py"
+      - ".terminus/agents/CREATION_PIPELINE.md"
+      - ".terminus/agents/CREATOR_PROMPTS.md"
+  push:
+    branches: [main]
+    paths:
+      - "**/environment/**"
+      - "**/tests/**"
+      - ".terminus/designs/**"
+      - ".terminus/validate_task_complexity.py"
+      - ".terminus/agents/CREATION_PIPELINE.md"
+      - ".terminus/agents/CREATOR_PROMPTS.md"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  large-system-profile:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate all large-system task designs
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m py_compile .terminus/validate_task_complexity.py
+
+          found=0
+          shopt -s nullglob
+          for manifest in .terminus/designs/*.json; do
+            task="$(basename "$manifest" .json)"
+            [[ "$task" == *-test-map ]] && continue
+            [[ -f "$task/task.toml" ]] || continue
+            profile="$(python3 - "$manifest" <<'PY'
+          import json
+          import sys
+          print(json.load(open(sys.argv[1], encoding='utf-8')).get('profile', ''))
+          PY
+          )"
+            [[ "$profile" == "large_system" ]] || continue
+            found=1
+            echo "==> large-system complexity gate: $task"
+            python3 .terminus/validate_task_complexity.py "$task"
+          done
+
+          if (( found == 0 )); then
+            echo "No large_system task manifests found."
+          fi
