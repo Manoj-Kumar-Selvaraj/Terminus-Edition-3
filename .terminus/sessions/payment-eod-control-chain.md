@@ -19,15 +19,17 @@ Session schema version: `2.4`
 
 ## Current task profile
 
-The solver-visible task/solution/verifier tree remains at `ff7394ff...`; this control-plane PR does not modify those task files. The private design is now explicitly `large_system_strict`, so future Creator Complexity evidence must satisfy both the numeric authoring floors and structural-authenticity checks.
+The solver-visible task/solution/verifier tree remains at `ff7394ff...`; control-plane PR #4 does not modify those task files. The private authoring design is explicitly `large_system_strict`, so Creator Complexity must satisfy both the project-owner numeric scale and structural-authenticity checks.
 
-Last task-version deterministic evidence remains Terminus Edition 3 CI run `31260792025` (#159): Oracle 37/37 with reward 1; NOP 30 F2P failures + 7 P2P passes with reward 0. Artifact `9022762311` records that run. Those results remain applicable because no task/verifier/solution path changed.
+Current strict Creator Complexity evidence is run `31265052075` (#43), job `93121741077`: 3,080 substantive solver-visible LOC, 29 defect manifestations, six root-cause clusters, all 29 manifestations interrelated across 27 causal edges / six cross-cluster pairs, and 37 verifier cases split 30 F2P + 7 P2P. The strict gate passed.
+
+Last task-version Oracle/NOP evidence remains Terminus Edition 3 CI run `31260792025` (#159): Oracle 37/37 with reward 1; NOP 30 F2P failures + 7 P2P passes with reward 0. Artifact `9022762311` records that run. Those results remain applicable because no task/verifier/solution path changed.
 
 ## Current gates
 
 | Gate | Status | Evidence / version |
 | --- | --- | --- |
-| Creator Complexity Gate | STALE | old run `31260792023` predates strict/authenticity gate policy; rerun control-plane gate |
+| Creator Complexity Gate | PASS | run `31265052075` (#43), job `93121741077`; strict profile 3080 LOC / 29 defects / 29 interrelated / 30 F2P / 7 P2P |
 | Preflight/static | PASS | run `31260792025` (#159) |
 | Ruff verifier | PASS | run `31260792025` (#159) |
 | STB auth/AI credentials | BLOCKED | reusable model credential not configured; automatic refresh disabled |
@@ -60,12 +62,14 @@ The old `ff7394ff` specialist reports were produced before protocol 2.1 and revi
 
 ## Current deterministic evidence
 
-- Creator Complexity old run: `31260792023` (#34), old profile/gate semantics; now stale for authoring-policy proof.
+- Creator Complexity run: `31265052075` (#43), job `93121741077`, strict gate PASS.
+- Complexity metrics: `substantive_loc=3080`, `defects=29`, `root_causes=6`, `interrelated=29`, `edges=27`, `cross_cluster_pairs=6`, `f2p=30`, `p2p=7`.
 - Terminus validation run: `31260792025` (#159).
 - Oracle: 37/37 pytest PASS, reward `1`.
 - NOP: exactly 30 `test_f2p_*` failures and seven `test_p2p_*` passes, reward `0`.
 - Artifact: `9022762311`, digest `sha256:d1e684b622607bae49044fc5023f7aa987fdea360ccd5eb489b66e5e79f1eca5`.
 - Oracle/NOP use the direct Harbor utility-agent path and do not consume AI key refreshes.
+- Control-plane PR #4 final validation before this checkpoint: Agent System CI run `31265052074` (#88) PASS with 45 regression tests, Ruff PASS, agent-system validator PASS, freshness PASS with zero warnings; Creator Complexity run `31265052075` (#43) PASS; Terminus Edition 3 CI run `31265052077` (#166) PASS.
 
 ## Difficulty policy
 
@@ -77,17 +81,17 @@ Oracle/NOP are key-free utility-agent gates. Model-backed Harbor LLMaJ/difficult
 
 ## Current blocker
 
-`Control-plane PR #4 must finish its regression/CI hardening. After the new protocol lands, Stage-B semantic reviews must be regenerated with v3 packets before Harbor LLMaJ.`
+`Control-plane PR #4 is implementation-complete and CI-green; it must be merged before the current task's semantic reviewers are regenerated under the authoritative v3 packet/result protocol.`
 
 ## Root-cause classification
 
-- Owner: `CI Orchestrator / control-plane implementation`
+- Owner: `CI Orchestrator / Submission Controller`
 - Classification: `review_disagreement / evidence-provenance migration`
-- Evidence: `PR #4; protocol 2.1; context/review schema v3`
+- Evidence: `PR #4; Agent System CI #88; Creator Complexity #43; protocol 2.1; context/review schema v3`
 
 ## Next action
 
-`Finish PR #4 control-plane CI. Then generate fresh v3 packets for the current ff7394ff task commit and rerun only the stale semantic Pre-LLMaJ roles; do not rerun Oracle/NOP unless a task-relevant file changes.`
+`Merge PR #4 when approved. Then generate fresh v3 packets for the current ff7394ff task commit and rerun only the stale semantic Pre-LLMaJ roles; do not rerun Oracle/NOP unless a task-relevant file changes.`
 
 ## Review evidence ledger
 
@@ -97,7 +101,7 @@ All stored `ff7394ff` semantic reports are historical/STALE under protocol 2.1. 
 
 - Oracle/NOP authoring blocker: `RESOLVED` by run #159.
 - AI refresh circuit breaker: `ACTIVE`; do not refresh automatically.
-- Control-plane provenance migration: `ACTIVE` until PR #4 CI is green and new packet-bound reviews can be issued.
+- Control-plane provenance migration: `RESOLVED`; PR #4 final control-plane CI is green.
 
 ## Do not retry blindly
 
