@@ -118,3 +118,20 @@ replace_once(
 ''',
     'balanced cycle waiting transition',
 )
+
+control = Path('/app/eod/lib/control.sh')
+replace_once(
+    control,
+    '''    if ! publish_cycle_after_reconciliation "$c"; then write_control_snapshot "$c"; return 1; fi
+    close_cycle_after_publication "$c" || true
+    write_control_snapshot "$c"
+''',
+    '''    if ! publish_cycle_after_reconciliation "$c"; then write_control_snapshot "$c"; return 1; fi
+    close_cycle_after_publication "$c" || true
+    if [[ "$(reconciliation_status_for_cycle "$c")" == BALANCED && "$(completion_status_for_cycle "$c")" != COMPLETED ]]; then
+        mark_cycle_waiting "$c"
+    fi
+    write_control_snapshot "$c"
+''',
+    'balanced incomplete controller lifecycle',
+)
