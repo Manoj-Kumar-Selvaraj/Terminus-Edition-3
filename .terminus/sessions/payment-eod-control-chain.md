@@ -8,8 +8,9 @@ Session schema version: `2.3`
 - Controller state: `PRE_LLMAJ`
 - Working branch: `agent/ci-payment-eod-validate`
 - Pull request: `#2`
-- Current task/policy commit: `9bd9ccab518c91b23f6426cf1084377c6f293047`
+- Current task content commit: `546d56bd6d6145fefda170a8e88ec6a4ae417152`
 - Functional task baseline before prose-only rewrite: `f273fede5ae7bc994916e7d32f439eeda09b699c`
+- Current CI credential architecture commits: `74d24f5cef38927d514ea19b6f6a7b602c6f2326`, `afffde925ada07fb3bf5a742cdadc02ab4d9835b`
 - Agent-system policy: `2.2`
 - Specialist prompt policy: `2.2`
 - Pre-LLMaJ panel policy: `2.1`
@@ -20,23 +21,23 @@ Session schema version: `2.3`
 
 | Gate | Status | Evidence / version |
 | --- | --- | --- |
-| Preflight/static | STALE | instruction/policy changed after run #60; functional task files unchanged |
-| Ruff verifier | PASS | run `31210474025` (#60), verifier unchanged |
-| STB/Docker setup | PASS | run `31210474025` (#60), environment unchanged |
-| STB AI credentials | BLOCKED | Portkey project refresh ceiling 20 reached before Oracle |
-| Oracle = 1 | INSUFFICIENT_EVIDENCE | current task version has not reached Oracle |
-| NOP = 0 | INSUFFICIENT_EVIDENCE | current task version has not reached NOP |
+| Preflight/static | PASS | run `31243438982` (#81) |
+| Ruff verifier | PASS | run `31243438982` (#81), 12 named tests |
+| STB/Docker setup | PASS | run `31243438982` (#81), STB 2.4.3 |
+| Oracle = 1 | PASS | run `31243438982` (#81), direct Harbor utility agent, no AI key/refresh |
+| NOP = 0 | PASS | run `31243438982` (#81), direct Harbor utility agent, no AI key/refresh |
+| Reusable STB AI credential | BLOCKED | `STB_AI_API_KEY` / `STB_AI_CONFIG_B64` not configured in GitHub yet; automatic refresh disabled |
 | Task Architect | PASS | `pay-eod-f273-task-architect-01`; task topology unchanged |
 | Verifier Engineer | PASS | `pay-eod-f273-verifier-01`; verifier/contract unchanged |
 | Originality & Authenticity | PASS | `pay-eod-f273-originality-01`; topology unchanged |
 | Difficulty design | PASS | `pay-eod-f273-difficulty-design-02`; functional task unchanged |
 | Compliance pre-review | PASS | `pay-eod-f273-compliance-01`; task structure/environment unchanged |
-| Instruction Reviewer | STALE | instruction rewritten under human-engineering writing policy 2.2 |
+| Instruction Reviewer | STALE | final instruction rewritten under human-engineering writing policy 2.2 |
 | Documentation Reviewer | PASS | README/explanations unchanged |
 | Human Quality | STALE | solver-facing prose changed and writing policy strengthened |
-| Comprehensive Reviewer | STALE | instruction criterion statuses must be refreshed under policy 2.2; prior report had 100% coverage/no observed severity failures |
+| Comprehensive Reviewer | STALE | instruction criteria must be refreshed under policy 2.2 |
 | Pre-LLMaJ aggregate | STALE | prose-related reviews invalidated by instruction rewrite |
-| Harbor LLMaJ | NOT_RUN | blocked by local refresh + credentials |
+| Harbor LLMaJ | NOT_RUN | waiting for reusable STB AI credential; no routine refresh allowed |
 | GPT-5.5 difficulty ×5 | NOT_RUN | diagnostic half of final trial set |
 | Claude Opus 4.8 difficulty ×5 | NOT_RUN | diagnostic half of final trial set |
 | Combined difficulty ×10 | NOT_RUN | final tier uses combined 10-run mean |
@@ -48,34 +49,46 @@ Session schema version: `2.3`
 
 ## Human-engineering writing revision
 
-The user correctly identified that the previous 157-word instruction was technically sufficient but still artificial. It was a compressed specification: it named several implementation files and then packed the entire output schema/publication contract into one dense second paragraph.
-
-Policy 2.2 now treats humanization as information selection rather than vocabulary change. Instruction Writer and Instruction Reviewer must apply:
+Policy 2.2 treats humanization as information selection rather than vocabulary change. Instruction Writer and Instruction Reviewer must apply:
 
 - **Jira/Slack handoff test:** would the text look normal as a real incident/change handoff without benchmark context?
 - **Reverse-outline test:** if sentences map neatly to verifier/rubric rows, rewrite around the operational concern.
 - **Selectivity rule:** use the instruction for incident, end state and non-obvious constraints; use solver-visible contracts for detailed schemas/protocols.
 - **Compressed-rubric rule:** short, polished prose can still be synthetic and must be revised.
 
-Current instruction opens from the restart incident, describes the authoritative durable state and replay identity, keeps the existing COBOL interfaces, points to the contract for detailed record/output definitions, and states publication/close behavior in operational terms rather than enumerating JSON fields.
-
 ## Current instruction
 
 ```text
-We hit a restart issue in the EOD payment batch under `/app/eod`. If an earlier attempt has already posted an internal payment or created an external reservation, a rerun can treat that durable state as new work. Fix the batch so it continues from `/app/eod/state/payment_eod.db` instead of applying the same financial effect again. We only consider it the same instruction when that source reference was already accepted; a new source reference is still new work even when the payment details match. Keep the existing decision interfaces in `/app/eod/cobol/paydup.cob` and `/app/eod/cobol/payexec.cob`; the runner is `/app/eod/bin/run_eod.sh`, the schema is `/app/eod/sql/schema.sql`, and the record/output contracts are in `/app/eod/contracts/eod_contract.md`.
+The EOD payment rerun is picking up durable work as if it were new. We’ve seen it after an internal posting and after an external reservation. Fix the restart path under `/app/eod` so it resumes from `/app/eod/state/payment_eod.db` instead of creating another financial effect. Replay control is by an already-accepted source reference; a new source reference is new work even when the rest of the payment looks the same. Keep the existing COBOL decision interfaces in `/app/eod/cobol/paydup.cob` and `/app/eod/cobol/payexec.cob`. The batch runner is `/app/eod/bin/run_eod.sh`, and the schema plus record/output rules are in `/app/eod/sql/schema.sql` and `/app/eod/contracts/eod_contract.md`.
 
-Every run should leave `/app/eod/out/reconciliation.json`. `/app/eod/out/customer_response.csv` and `/app/eod/out/clearing_submission.csv` should only be published when reconciliation passes, and `/app/eod/out/success_authorization.json` only after the normal close checks pass. A held rerun must not leave stale published files behind. Once a cycle has progressed, running it again should leave the same financial and close state rather than creating another result.
+Reconciliation still needs to be written to `/app/eod/out/reconciliation.json` on every run. Only publish `/app/eod/out/customer_response.csv` and `/app/eod/out/clearing_submission.csv` when reconciliation passes, and only write `/app/eod/out/success_authorization.json` after the normal close checks pass. If a rerun is held, don’t leave stale published files behind. Running the same progressed cycle again should leave one financial result, not another.
 ```
+
+## Credential architecture
+
+STB 2.4.3 performs a global AI-credential precheck even when invoked as `stb harbor run -a oracle` or `-a nop`. Harbor's underlying utility agents themselves do not require an LLM credential.
+
+This was verified by calling Harbor 0.20.0's Typer app directly through the Python environment installed with `snorkelai-stb`:
+
+- direct Harbor Oracle: exit `0`, reward `1`;
+- direct Harbor NOP: exit `0`, reward `0`;
+- no `stb keys refresh` was executed.
+
+`terminus3.sh` now uses direct Harbor for `oracle`, `nop`, `validate` utility phases and `all-oracle`. Model-backed `check` and difficulty commands remain on STB.
+
+For model-backed operations, the preferred reusable path is GitHub Secret `STB_AI_API_KEY`, installed with the supported `stb keys set` command through `terminus3.sh keys-set --noninteractive`. `STB_AI_CONFIG_B64` remains an alternate restored-config path. `STB_ALLOW_KEY_REFRESH` is an explicit emergency fallback only and is disabled by default.
+
+Do not assume `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, or `PORTKEY_API_KEY` bypass STB's own AI-key precheck unless future STB evidence proves it.
 
 ## Latest CI
 
 - Workflow: `Terminus Edition 3 CI`
-- Run ID: `31210474025`
-- Run number: `60`
-- Validate job ID: `92971840881`
-- Artifact ID: `9006464682`
-- Result before prose rewrite: Preflight PASS, Ruff PASS, STB/Docker PASS, credential refresh FAIL; model-dependent gates skipped.
-- Credential error remains `Maximum refresh limit (20) reached` for the Edition-2 Portkey allocation.
+- Run ID: `31243438982`
+- Run number: `81`
+- Validate job ID: `93068022716`
+- Result: Preflight PASS, Ruff PASS, STB 2.4.3 PASS, Oracle PASS reward 1, NOP PASS reward 0.
+- The job stopped at `Prepare reusable AI credentials for Harbor LLMaJ` because no `STB_AI_API_KEY`/`STB_AI_CONFIG_B64` is configured.
+- No AI credential refresh was requested or consumed.
 
 ## Difficulty / solvability checkpoint
 
@@ -87,17 +100,16 @@ Every run should leave `/app/eod/out/reconciliation.json`. `/app/eod/out/custome
 
 ## Circuit breaker
 
-- Status: `TRIPPED`
-- Trigger: hosted-run Portkey refresh limit 20 reached.
-- Required strategy change: reusable approved model credentials or a changed eligible project/allocation.
-- Do not repeat `stb keys refresh` on the exhausted allocation.
+- Old refresh-loop circuit breaker: `RESOLVED FOR ORACLE/NOP` by direct Harbor utility-agent execution.
+- AI refresh circuit breaker remains: `ACTIVE` for model-backed LLMaJ/difficulty. Do not call `stb keys refresh` automatically on hosted runners.
+- Required next credential action: configure one reusable valid STB AI credential as GitHub Secret `STB_AI_API_KEY`, or restore a known-good STB config with `STB_AI_CONFIG_B64`.
 
 ## Next action
 
-1. Cold-review the new instruction under policy 2.2 using the Jira/Slack, reverse-outline, selectivity and compressed-rubric checks.
-2. Refresh only instruction-related Comprehensive Reviewer criteria and Pre-LLMaJ aggregate; preserve unaffected specialist evidence.
-3. Retrigger cheap preflight/Ruff if useful; do not burn another credential refresh on the known exhausted path.
-4. Resolve reusable STB/Portkey credentials, then obtain fresh Oracle/NOP and continue through LLMaJ/difficulty.
+1. Cold-review the final instruction under policy 2.2 using Jira/Slack, reverse-outline, selectivity and compressed-rubric checks.
+2. Refresh instruction-related Comprehensive Reviewer criteria and Pre-LLMaJ aggregate; preserve unaffected specialist evidence.
+3. Configure reusable `STB_AI_API_KEY` without exposing it in chat. Then run Harbor LLMaJ; do not refresh merely because a runner is new.
+4. After LLMaJ PASS, run GPT×5 + Claude×5 and perform combined 10-trial difficulty/solvability + trajectory analysis.
 
 ## Do not retry blindly
 
@@ -105,6 +117,7 @@ Every run should leave `/app/eod/out/reconciliation.json`. `/app/eod/out/custome
 - Do not add slang, typos or invented story details as fake humanization.
 - Do not weaken or delete requirements; detailed requirements remain discoverable in `/app/eod/contracts/eod_contract.md`.
 - Do not invalidate functional reviews for this prose-only change.
+- Do not use routine `stb keys refresh` in CI.
 
 ## Resume rule
 
