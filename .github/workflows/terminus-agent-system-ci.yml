@@ -23,15 +23,38 @@ jobs:
   validate-agent-system:
     name: Validate reviewer/controller system
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
     steps:
+      # Review freshness is derived from per-task Git history, so shallow history
+      # is not sufficient evidence.
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Validate Python
-        run: python3 -m py_compile .terminus/validate_agent_system.py
+        run: |
+          python3 -m py_compile \
+            .terminus/validate_agent_system.py \
+            .terminus/review_contract.py \
+            .terminus/new_review_packet.py \
+            .terminus/validate_review_freshness.py \
+            .terminus/validate_task_complexity.py
+
+      - name: Install pinned control-plane test tools
+        run: python3 -m pip install --quiet ruff==0.14.10 pytest==8.4.1
+
+      - name: Lint control-plane Python
+        run: ruff check .terminus
+
+      - name: Run control-plane regression suite
+        run: python3 -m pytest .terminus/tests -q
 
       - name: Validate agent system structure
         run: python3 .terminus/validate_agent_system.py
+
+      - name: Validate current review freshness and commit binding
+        # --allow-stale is deliberately forbidden in CI.
+        run: python3 .terminus/validate_review_freshness.py
 
       - name: Check control-plane files stay outside task packages
         shell: bash

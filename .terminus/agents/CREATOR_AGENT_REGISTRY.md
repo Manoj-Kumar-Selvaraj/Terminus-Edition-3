@@ -4,11 +4,11 @@ Registry version: `1.0`
 
 This registry defines the producer agents used before independent review. Current Edition 3 rules always override this registry. Producers create or repair artifacts; they never issue final acceptance verdicts for their own work.
 
-## Large-system profile
+## Large-system profiles
 
-For Advanced/Frontier task creation, use `large_system` unless the controller explicitly records why a smaller system is more realistic.
+For tasks explicitly requested to meet the project owner's large-system scale, use `large_system_strict`. This is the default profile for Advanced/Frontier task creation unless the controller records why the incident is inherently smaller.
 
-Mandatory authoring targets for `large_system`:
+Mandatory authoring constraints for `large_system_strict`:
 
 - >= 3,000 substantive solver-visible runtime/configuration LOC. Exclude tests, solution, docs, generated/vendor content, blank lines, comments-only lines and duplicated filler.
 - Infrastructure tasks: 30-50 meaningful resources whose relationships affect observable behavior.
@@ -18,7 +18,9 @@ Mandatory authoring targets for `large_system`:
 - P2P/regression tests are added only where already-correct behavior needs protection; no fixed P2P quota.
 - The instruction remains concise and incident-oriented. It must not enumerate the defect graph or hidden test inventory.
 
-If the scenario cannot meet these targets without padding, hidden requirements or unrelated bugs, return `SCENARIO_TOO_SMALL` and select a richer scenario.
+The legacy `large_system` profile is diagnostic-scale only. Use it only when the controller records why enforcing strict numeric scale would require filler. Structural authenticity still blocks padding in both profiles.
+
+If a strict scenario cannot meet its constraints naturally, return `SCENARIO_TOO_SMALL` and select a richer scenario. Do not downgrade the profile merely to keep an undersized idea.
 
 ## Producer agents
 
@@ -32,7 +34,7 @@ Owns the solver-visible code/configuration system, fixtures, runtime topology, D
 
 ### A3 — Defect Topology Designer
 
-Owns `.terminus/designs/<task>.json`. Starts from 4-8 root-cause clusters and derives 20-30 manifestations with explicit causal edges and plausible partial-fix traps. At least 15 manifestations must participate in the graph. Does not design one isolated source typo per test.
+Owns `.terminus/designs/<task>.json`. Starts from 4-8 root-cause clusters and derives 20-30 manifestations with explicit causal edges and plausible partial-fix traps. At least 15 manifestations must participate in the graph for `large_system_strict`. Does not design one isolated source typo per test.
 
 ### A4 — Reference Solution Author
 
@@ -40,7 +42,7 @@ Owns the deterministic general repair from the approved solver-visible contract.
 
 ### A5 — Verifier Author
 
-Owns behavioral tests and `.terminus/designs/<task>-test-map.json`. Creates 25-30 independent F2P scenarios for `large_system`, plus P2P where needed. Tests observable behavior/state, not preferred implementation syntax. Every F2P must be empirically NOP-fail/Oracle-pass before candidate freeze.
+Owns behavioral tests and `.terminus/designs/<task>-test-map.json`. Creates 25-30 independent F2P scenarios for `large_system_strict`, plus P2P where needed. Tests observable behavior/state, not preferred implementation syntax. Every F2P must be empirically NOP-fail/Oracle-pass before candidate freeze.
 
 ### A6 — Human Writing Corpus Researcher
 
@@ -60,7 +62,7 @@ Integrates producer outputs and runs deterministic authoring checks: file struct
 
 ### A10 — Complexity Governor
 
-Independently challenges scale authenticity. It rejects dead-code/resource/test inflation even if numeric floors pass. Mandatory questions include whether 1,000 lines could be deleted without changing the operational system, whether resources are meaningful dependencies, and whether tests are real state/invariant variations rather than fixture renames.
+Independently challenges scale authenticity. It rejects dead-code/resource/test inflation even if strict numeric constraints pass. Mandatory questions include whether 1,000 lines could be deleted without changing the operational system, whether resources are meaningful dependencies, and whether tests are real state/invariant variations rather than fixture renames.
 
 ### A11 — Authoring Failure Diagnostician
 

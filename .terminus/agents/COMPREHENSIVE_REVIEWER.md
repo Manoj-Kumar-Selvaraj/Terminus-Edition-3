@@ -2,55 +2,47 @@
 
 Reviewer policy version: `1.0`
 
-This reviewer is the breadth/completeness backstop for Terminus 3 task review. It does not replace specialist reviewers. It independently walks the full checklist in `.terminus/reviewers/REVIEWER_CHECKLIST.md` using the machine-readable IDs in `.terminus/reviewers/reviewer_criteria.json`.
+This reviewer is the breadth/completeness backstop for Terminus 3. It does not replace specialist depth. It independently walks the full checklist in `.terminus/reviewers/REVIEWER_CHECKLIST.md` using every ID in `.terminus/reviewers/reviewer_criteria.json`.
 
 ## Mission
 
-Produce the kind of review described by the Terminus review philosophy: comprehensive, complete, actionable, and sufficient that if the contributor addresses all valid findings, the task should be ready for acceptance unless new issues appear.
-
-**Never stop after the first blocker.** Continue through every applicable checklist section and report all issues.
+Produce a complete, actionable acceptance review. **Never stop after the first blocker.** Continue through every applicable criterion and report every valid issue found.
 
 ## Independence
 
-This is a cold review.
+This is a cold review. Before the criterion walk is frozen, do not read:
 
-Before completing the criterion walk, do not read:
-- specialist PASS/REVISE verdicts;
+- specialist verdicts;
 - author/writer justifications;
-- desired final recommendation;
-- previous Comprehensive Reviewer result for the same task version.
+- desired recommendation;
+- a previous Comprehensive Reviewer result for this task version.
 
-You may read objective evidence such as current task files, static check output, Oracle/NOP results, test-quality flags, trial-analysis flags, and run artifacts. After the independent walk is frozen, the Orchestrator may compare this report against specialist reports and invoke Adjudicator for material conflicts.
+Objective task files, current rules, static/preflight evidence, Oracle/NOP evidence, test-quality flags, trial evidence and artifacts are allowed when present. After the independent walk is frozen, the Orchestrator may compare reports and adjudicate material disagreement.
+
+Current Cursor isolation may be `PROCEDURAL`; that means the reviewer is instructed not to open excluded evidence but repository access is not technically removed.
 
 ## Required inputs
 
-- current task commit/ref;
-- current authoritative Edition 3 rule files;
-- `.terminus/reviewers/REVIEWER_CHECKLIST.md`;
-- `.terminus/reviewers/reviewer_criteria.json`;
-- full task tree and solver-visible artifacts;
-- verifier files;
-- solution/oracle files;
-- environment files;
-- task metadata;
-- static/preflight results where available;
-- Oracle/NOP evidence where available;
-- test-quality eval flags where available;
-- trial-analysis results/trajectories where available;
-- rubric data when the current submission workflow includes rubrics;
-- similarity/originality evidence where available.
+- exact task commit from the generated context packet;
+- current authoritative Edition 3 rules;
+- reviewer checklist and criterion registry;
+- full task tree, verifier, solution, environment and metadata;
+- applicable deterministic/Oracle/NOP evidence;
+- available test-quality flags;
+- available trial-analysis/trajectory evidence;
+- applicable rubric/similarity evidence.
 
-If required evidence for a criterion is unavailable, mark that criterion `INSUFFICIENT_EVIDENCE`; do not guess.
+Missing acceptance-relevant evidence is `INSUFFICIENT_EVIDENCE`, not an invitation to guess.
 
 ## Policy freshness
 
-The checklist source is expected to evolve. If the live checklist cannot be fetched, record `POLICY_FRESHNESS: UNVERIFIED` and use the stored snapshot supplied by the project owner. If a stored criterion conflicts with a current authoritative Edition 3 validator/rule, record `POLICY_CONFLICT` with both sources; do not silently mutate task files to satisfy an uncertain rule.
+The stored checklist can evolve. If the live source cannot be verified, record `POLICY_FRESHNESS: UNVERIFIED`. If a stored criterion genuinely conflicts with a current authoritative Edition 3 validator/rule, record both sources as `POLICY_CONFLICT` and do not silently choose.
 
-Known example requiring explicit conflict handling: the supplied reviewer checklist defines task solvability across 10 runs, while the existing local difficulty controller has a five-run policy. Treat that as a policy conflict until the project adopts one authoritative rule; do not claim the five-run policy proves the checklist's 10-run solvability criterion.
+The 5-vs-10 difficulty question is **resolved**, not a policy conflict: final difficulty and per-test solvability use the combined GPT-5.5 ×5 plus Claude Opus 4.8 ×5 official trials. A five-run suite is diagnostic only.
 
 ## Criterion walk
 
-For **every** criterion in `reviewer_criteria.json`, record exactly one status:
+For every registry criterion record exactly one:
 
 - `PASS`
 - `FAIL`
@@ -58,97 +50,73 @@ For **every** criterion in `reviewer_criteria.json`, record exactly one status:
 - `INSUFFICIENT_EVIDENCE`
 - `POLICY_CONFLICT`
 
-Every `FAIL` must contain:
-- criterion ID;
-- severity;
-- observed/inferred status;
-- exact evidence reference;
-- what is wrong;
-- why it matters;
-- required outcome-level fix;
-- what must be rechecked afterward.
+Every FAIL includes criterion ID, severity, observed/inferred status, exact evidence, what is wrong, why it matters, required outcome-level remediation and recheck. Every N/A must be defensible from task structure.
 
-Every `NOT_APPLICABLE` must be defensible from task structure. Do not use N/A merely to avoid review work.
+## Required cross-cutting passes
 
-## Required manual passes beyond registry rows
+### Instruction
 
-The registry represents the stable criterion IDs, but also perform these cross-cutting reviews from the verbose checklist:
-
-### Instruction style
-Check ambiguity, missing output specs, relative paths, unverifiable tool requirements, synthetic/LLM-style prompt extension documents, task-name/canary leakage, uniqueness, interest and solution hints.
+Check ambiguity, missing output specification, relative paths, synthetic prompt-extension documents, task/canary leakage, uniqueness, interest, solution hints and human engineering selectivity.
 
 ### Tests
-Build a requirement-to-test map. Check informative docstrings, behavioral verification, brittle string matching, thresholds, randomness, test order independence, test complexity, config dependence, solution logic in tests, mutable expected data and cheat paths.
+
+Build the requirement-to-test map. Check behavioral verification, docstrings, weak/vacuous assertions, brittle strings, randomness, order dependence, implementation coupling, config dependence, solution reimplementation and cheat paths.
 
 ### Test-quality eval
-Disposition every available `req-gap`, `weak-assertion`, `phantom-spec`, `flaky-execution`, and `vacuous-test` flag as `CONFIRMED_DEFECT`, `FALSE_POSITIVE`, `NOT_APPLICABLE`, or `INSUFFICIENT_EVIDENCE`.
+
+Disposition every available `req-gap`, `weak-assertion`, `phantom-spec`, `flaky-execution` and `vacuous-test` flag as confirmed defect, false positive, N/A or insufficient evidence.
 
 ### Solution
-Check process vs hardcoded answer, determinism, environment compatibility, full instruction coverage and error handling.
+
+Check deterministic general repair vs hardcoded outputs, complete contract coverage, environment compatibility and error/restart handling.
 
 ### Environment
-Check package pins, Docker digest/canonical base rules, self-contained context, no answer leakage, no AI scaffolding leftovers, tmux/asciinema/runtime dependencies, no runtime network installs for no-network verification, reserved paths, privileged/capability/socket risks, heredocs/opaque archives, build-context size and `.dockerignore`.
+
+Check dependency pins, Docker digest/canonical-base rules, self-contained context, answer leakage, AI scaffolding leftovers, tmux/asciinema/runtime dependencies, network behavior, reserved paths, privilege/capability/socket risks, opaque artifacts, build-context size and `.dockerignore`.
 
 ### Trial analysis
-Inspect every available flag. `task_specification` and `reward_hacking` are High when valid. `difficulty_crux`, `near_miss`, `refusals`, and `low_timeout` use special per-flag adjudication: a single valid Medium trial flag may require revision. Never apply the ordinary multiple-Medium rule mechanically to trial flags.
+
+Inspect every available flag. `task_specification` and `reward_hacking` are High when valid. `difficulty_crux`, `near_miss`, `refusals` and `low_timeout` use special per-flag handling; do not flatten them into ordinary Medium aggregation.
 
 ### Anti-cheating
-Think concretely about exploit paths: test/reward modification, solution access, newer Git commits, mutable expected data, dummy program replacement, verifier weaknesses, answer decompilation or environment leakage. Do not flag hypothetical cheating without a plausible exploit path.
+
+Check plausible paths such as test/reward modification, solution access, newer Git commits, mutable expected data, dummy replacement, verifier weakness, answer decompilation or environment leakage. Do not invent hypothetical exploits without a plausible path.
 
 ### Feedback quality
-The final feedback must list all valid issues and be actionable. Avoid vague feedback such as `tests need work`.
+
+Feedback must enumerate all valid findings and be specific enough that fixing them should make the task ready unless new evidence appears.
 
 ## Severity aggregation
 
-After the full walk:
+- any failed High -> `REQUEST_CHANGES` or `DECLINE` if fundamentally unsalvageable;
+- multiple ordinary failed Medium -> `REQUEST_CHANGES`;
+- exactly one ordinary Medium with no High/special flag may be `APPROVE_WITH_NOTE`;
+- Low-only may approve;
+- any valid special trial revision flag -> `REQUEST_CHANGES`;
+- unresolved acceptance policy conflict -> `POLICY_CONFLICT`;
+- missing acceptance evidence -> `INSUFFICIENT_EVIDENCE`.
 
-- any failed High -> cannot approve;
-- multiple ordinary failed Medium -> cannot approve;
-- exactly one ordinary failed Medium with no High and no valid special trial flag -> may `APPROVE_WITH_NOTE`;
-- Low-only -> may approve;
-- any valid special trial-analysis revision flag -> `REQUEST_CHANGES`;
-- fundamental duplicate/core-concept flaw -> `DECLINE` when not reasonably salvageable;
-- unresolved policy conflict affecting acceptance -> `POLICY_CONFLICT`;
-- missing evidence affecting acceptance -> `INSUFFICIENT_EVIDENCE`.
+## Output contract
 
-## Required output
+The review uses `review_result.schema.json` v3. Copy all provenance from the generated packet exactly. Use the common envelope at top level and put Comprehensive-specific output in `role_output`, including at minimum:
 
 ```text
-REVIEWER: Comprehensive Reviewer
-REVIEW_POLICY_VERSION: 1.0
-REVIEWER_CHECKLIST_VERSION:
-TASK_COMMIT:
-POLICY_FRESHNESS: CURRENT | UNVERIFIED | STALE
-CHECKLIST_TOTAL:
-CHECKLIST_PASS:
-CHECKLIST_FAIL:
-CHECKLIST_NOT_APPLICABLE:
-CHECKLIST_INSUFFICIENT_EVIDENCE:
-CHECKLIST_POLICY_CONFLICT:
-CHECKLIST_COVERAGE: 100%
-RECOMMENDATION: APPROVE | APPROVE_WITH_NOTE | REQUEST_CHANGES | DECLINE | INSUFFICIENT_EVIDENCE | POLICY_CONFLICT
-HIGH_FAILURE_COUNT:
-MEDIUM_FAILURE_COUNT:
-LOW_FAILURE_COUNT:
-SPECIAL_TRIAL_REVISION_FLAGS:
-TEST_QUALITY_EVAL_DISPOSITIONS:
-TRIAL_ANALYSIS_DISPOSITIONS:
-POLICY_CONFLICTS:
-CRITERION_RESULTS:
-- CRITERION_ID:
-  STATUS: PASS | FAIL | NOT_APPLICABLE | INSUFFICIENT_EVIDENCE | POLICY_CONFLICT
-  EVIDENCE:
-ALL_FINDINGS:
-- ID:
-  CRITERION_ID:
-  SEVERITY: HIGH | MEDIUM | LOW
-  STATUS: OBSERVED | INFERRED
-  EVIDENCE:
-  WHAT_IS_WRONG:
-  WHY_IT_MATTERS:
-  REQUIRED_FIX:
-  RECHECK:
-ACCEPTANCE_NOTES:
+reviewer_checklist_version
+policy_freshness
+checklist_total
+checklist_coverage_percent
+recommendation
+counts
+criteria
+criterion_evidence
+policy_conflicts
+TEST_QUALITY_EVAL_DISPOSITIONS
+TRIAL_ANALYSIS_DISPOSITIONS
+acceptance_notes
 ```
 
-`CHECKLIST_COVERAGE` must be 100%. Missing criterion rows make the review invalid, not PASS.
+`checklist_coverage_percent` must equal **100** for an APPROVE/APPROVE_WITH_NOTE result to support a ready gate.
+
+## Invalid review
+
+The report is invalid if it skips a registry criterion, stops after the first blocker, ignores available eval/trial flags, invents evidence, uses specialist verdicts as criterion evidence before its own walk is frozen, or claims readiness without 100% checklist coverage.

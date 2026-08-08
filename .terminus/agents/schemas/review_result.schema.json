@@ -1,14 +1,21 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "terminus-review-result-v2",
+  "$id": "terminus-review-result-v3",
   "title": "Terminus Specialist Review Result",
   "type": "object",
   "additionalProperties": false,
   "required": [
+    "schema_version",
     "role",
     "review_id",
+    "task",
     "task_commit",
-    "policy_version",
+    "control_plane_commit",
+    "protocol_policy_version",
+    "prompt_policy_version",
+    "role_policy_version",
+    "role_contract_hash",
+    "context_packet",
     "verdict",
     "confidence",
     "evidence_status",
@@ -18,14 +25,34 @@
     "missing_evidence",
     "change_scope",
     "do_not_change",
-    "next_gate"
+    "next_gate",
+    "role_output"
   ],
   "properties": {
+    "schema_version": {"const": "3.0"},
     "role": {"type": "string", "minLength": 1},
     "review_id": {"type": "string", "minLength": 1},
+    "task": {"type": "string", "minLength": 1},
     "task_commit": {"type": "string", "minLength": 7},
-    "policy_version": {"enum": ["2.0", "2.1"]},
-    "verdict": {"enum": ["PASS", "REVISE", "REJECT", "INSUFFICIENT_EVIDENCE"]},
+    "control_plane_commit": {"type": "string", "minLength": 7},
+    "protocol_policy_version": {"type": "string", "minLength": 1},
+    "prompt_policy_version": {"type": "string", "minLength": 1},
+    "role_policy_version": {"type": "string", "minLength": 1},
+    "role_contract_hash": {"type": "string", "minLength": 16},
+    "context_packet": {"type": "string", "minLength": 1},
+    "verdict": {
+      "enum": [
+        "PASS",
+        "REVISE",
+        "REJECT",
+        "INSUFFICIENT_EVIDENCE",
+        "APPROVE",
+        "APPROVE_WITH_NOTE",
+        "REQUEST_CHANGES",
+        "DECLINE",
+        "POLICY_CONFLICT"
+      ]
+    },
     "confidence": {"enum": ["HIGH", "MEDIUM", "LOW"]},
     "evidence_status": {"enum": ["SUFFICIENT", "INSUFFICIENT"]},
     "summary": {"type": "string"},
@@ -36,7 +63,20 @@
         "additionalProperties": false,
         "required": ["type", "ref", "observation"],
         "properties": {
-          "type": {"enum": ["file", "rule", "test", "run", "job", "artifact", "trajectory", "public_reference", "review"]},
+          "type": {
+            "enum": [
+              "file",
+              "rule",
+              "test",
+              "run",
+              "job",
+              "artifact",
+              "trajectory",
+              "public_reference",
+              "review",
+              "ci"
+            ]
+          },
           "ref": {"type": "string", "minLength": 1},
           "observation": {"type": "string", "minLength": 1}
         }
@@ -47,23 +87,46 @@
       "items": {
         "type": "object",
         "additionalProperties": false,
-        "required": ["id", "severity", "status", "criterion", "evidence_refs", "why_it_matters", "minimal_remediation", "regression_risk"],
+        "required": [
+          "id",
+          "severity",
+          "status",
+          "criterion",
+          "evidence_refs",
+          "why_it_matters",
+          "minimal_remediation",
+          "regression_risk"
+        ],
         "properties": {
           "id": {"type": "string", "minLength": 1},
           "severity": {"enum": ["BLOCKER", "HIGH", "MEDIUM", "LOW"]},
           "status": {"enum": ["OBSERVED", "INFERRED"]},
           "criterion": {"type": "string", "minLength": 1},
-          "evidence_refs": {"type": "array", "items": {"type": "string", "minLength": 1}, "minItems": 1},
+          "evidence_refs": {
+            "type": "array",
+            "items": {"type": "string", "minLength": 1},
+            "minItems": 1
+          },
           "why_it_matters": {"type": "string", "minLength": 1},
           "minimal_remediation": {"type": "string"},
           "regression_risk": {"type": "string"}
         }
       }
     },
-    "missing_evidence": {"type": "array", "items": {"type": "string", "minLength": 1}},
-    "change_scope": {"type": "array", "items": {"type": "string", "minLength": 1}},
-    "do_not_change": {"type": "array", "items": {"type": "string", "minLength": 1}},
-    "next_gate": {"type": "string"}
+    "missing_evidence": {
+      "type": "array",
+      "items": {"type": "string", "minLength": 1}
+    },
+    "change_scope": {
+      "type": "array",
+      "items": {"type": "string", "minLength": 1}
+    },
+    "do_not_change": {
+      "type": "array",
+      "items": {"type": "string", "minLength": 1}
+    },
+    "next_gate": {"type": "string"},
+    "role_output": {"type": "object"}
   },
   "allOf": [
     {

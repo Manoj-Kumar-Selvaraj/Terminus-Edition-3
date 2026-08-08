@@ -1,12 +1,17 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "terminus-context-packet-v2",
+  "$id": "terminus-context-packet-v3",
   "title": "Terminus Specialist Context Packet",
   "type": "object",
   "additionalProperties": false,
   "required": [
+    "schema_version",
     "review_id",
-    "policy_version",
+    "protocol_policy_version",
+    "prompt_policy_version",
+    "role_policy_version",
+    "control_plane_commit",
+    "role_contract_hash",
     "task",
     "task_commit",
     "state",
@@ -16,11 +21,19 @@
     "evidence_allowed",
     "evidence_excluded",
     "prior_verdicts_visible",
-    "change_since_last_review"
+    "isolation_mode",
+    "change_since_last_review",
+    "output_schema",
+    "review_output_path"
   ],
   "properties": {
+    "schema_version": {"const": "3.0"},
     "review_id": {"type": "string", "minLength": 1},
-    "policy_version": {"const": "2.0"},
+    "protocol_policy_version": {"type": "string", "minLength": 1},
+    "prompt_policy_version": {"type": "string", "minLength": 1},
+    "role_policy_version": {"type": "string", "minLength": 1},
+    "control_plane_commit": {"type": "string", "minLength": 7},
+    "role_contract_hash": {"type": "string", "minLength": 16},
     "task": {"type": "string", "minLength": 1},
     "task_commit": {"type": "string", "minLength": 7},
     "state": {"type": "string", "minLength": 1},
@@ -40,6 +53,9 @@
       "items": {"type": "string", "minLength": 1}
     },
     "prior_verdicts_visible": {"type": "boolean"},
-    "change_since_last_review": {"type": "string"}
+    "isolation_mode": {"enum": ["PROCEDURAL", "MATERIALIZED"]},
+    "change_since_last_review": {"type": "string"},
+    "output_schema": {"type": "string", "minLength": 1},
+    "review_output_path": {"type": "string", "minLength": 1}
   }
 }
