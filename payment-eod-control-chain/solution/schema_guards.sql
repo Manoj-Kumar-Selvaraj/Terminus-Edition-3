@@ -14,6 +14,18 @@ BEGIN
     END;
 END;
 
+CREATE TRIGGER balanced_cycle_enters_waiting_close
+AFTER UPDATE OF reconciliation_status ON cycles
+FOR EACH ROW
+WHEN NEW.reconciliation_status = 'BALANCED'
+ AND NEW.completion_status <> 'COMPLETED'
+BEGIN
+    UPDATE cycles
+    SET state = 'RECONCILED',
+        completion_status = 'WAITING'
+    WHERE cycle_id = NEW.cycle_id;
+END;
+
 CREATE TRIGGER completed_cycle_requires_balanced_reconciliation
 BEFORE UPDATE OF completion_status ON cycles
 FOR EACH ROW
