@@ -1,0 +1,26 @@
+{
+  "role": "Instruction Reviewer",
+  "review_id": "pay-eod-84d4436f-instruction-01",
+  "task_commit": "84d4436f027f1ba1dd6ac909f31aae3aaafe9554",
+  "policy_version": "2.2",
+  "verdict": "PASS",
+  "confidence": "HIGH",
+  "evidence_status": "SUFFICIENT",
+  "summary": "The solver handoff is concise, operational and well specified. It names the restart symptom, the durable authority, replay identity, stable COBOL interface area, runner/schema/docs and official output paths, then states publication/close invariants in observable terms. It does not enumerate the 29 planted manifestations, prescribe SQL constraints or shell/COBOL edits, or expose test cases. All referenced filesystem paths are absolute.",
+  "evidence": [
+    {"type":"file","ref":"payment-eod-control-chain/instruction.md@84d4436f","observation":"Two short paragraphs describe the incident and success conditions; task folder/name is absent and no canary text appears."},
+    {"type":"file","ref":"payment-eod-control-chain/environment/eod/docs/restart-operations.txt@84d4436f","observation":"Referenced restart rules provide fairness-critical identity/resume semantics without revealing implementation changes."},
+    {"type":"file","ref":"payment-eod-control-chain/environment/eod/docs/interface-notes.txt@84d4436f","observation":"Referenced program/file interfaces define stable observable contracts and output layouts used by the verifier."},
+    {"type":"file","ref":"payment-eod-control-chain/environment/eod/docs/reconciliation-close.txt@84d4436f","observation":"Referenced finance-control notes make BALANCED versus RECONCILED/WAITING versus COMPLETED behavior explicit enough to solve without test leakage."},
+    {"type":"rule","ref":"TERMINUS_3_AI_INSTRUCTIONS.md instruction/task.toml guidance","observation":"Current handoff follows the concise-human-prompt and absolute-path requirements while keeping implementation freedom."}
+  ],
+  "findings": [],
+  "missing_evidence": [],
+  "change_scope": [],
+  "do_not_change": [
+    "Do not add a defect-by-defect repair checklist.",
+    "Do not remove fairness-critical replay provenance or close/publication behavior merely to shorten the prompt.",
+    "Do not mention hidden test names, test counts or the private design manifest in solver-facing text."
+  ],
+  "next_gate": "Documentation Reviewer then Comprehensive Reviewer"
+}
