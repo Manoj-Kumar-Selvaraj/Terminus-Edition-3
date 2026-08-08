@@ -206,12 +206,34 @@ collect_reconciliation_metrics() {
         FROM ledger_entries
         WHERE side='C';
     ")"
-    INVALID_EFFECT_COUNT=0
+    INVALID_EFFECT_COUNT="$(metric_scalar "
+        SELECT COUNT(*)
+        FROM payment_outcomes o
+        WHERE o.cycle_id='$(sql_escape "$cycle_id")'
+          AND o.outcome IN ('DUPLICATE','REJECTED')
+          AND EXISTS(SELECT 1 FROM internal_postings i WHERE i.payment_id=o.payment_id);
+    ")"
     local ext_mismatch int_mismatch
     ext_mismatch="$(count_external_mismatches "$cycle_id")"
     int_mismatch="$(count_internal_mismatches "$cycle_id")"
-    MISMATCH_COUNT=0
-    MISSING_LEDGER_COUNT=0
+    MISMATCH_COUNT="$(metric_scalar "
+        SELECT COUNT(*)
+        FROM clearing_items x
+        WHERE x.cycle_id='$(sql_escape "$cycle_id")'
+          AND NOT EXISTS(
+              SELECT 1 FROM reservations r
+              WHERE r.reservation_id=x.reservation_id
+                AND r.payment_id=x.payment_id
+                AND r.active=1
+          );
+    ")"
+    MISSING_LEDGER_COUNT="$(metric_scalar "
+        SELECT COUNT(*)
+        FROM payment_outcomes o
+        WHERE o.cycle_id='$(sql_escape "$cycle_id")'
+          AND o.outcome IN ('SUCCESS_INTERNAL','SUCCESS_EXTERNAL')
+          AND NOT EXISTS(SELECT 1 FROM ledger_entries l WHERE l.payment_id=o.payment_id);
+    ")"
 }
 
 reconciliation_decision() {
@@ -231,8 +253,7 @@ persist_reconciliation() {
     db_exec "
         INSERT INTO reconciliation_runs(
             cycle_id,status,
-            original_count,outcome_count,
-            original_value_cents,response_value_cents,
+            original_count,outcome_count,original_value_cents,response_value_cents,
             internal_success_count,internal_posting_count,
             external_success_count,reservation_count,clearing_count,
             reserved_debit_cents,clearing_value_cents,external_fee_tax_cents,
