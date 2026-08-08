@@ -14,6 +14,7 @@ python3 /solution/filter_repair_patch.py "$repair_patch" "$filtered_patch"
 patch -p1 < "$filtered_patch"
 rm -f "$repair_patch" "$filtered_patch"
 
+python3 /solution/apply_cobol_fixes.py
 python3 /solution/apply_runtime_fixes.py
 cat /solution/schema_guards.sql >> /app/eod/sql/schema.sql
 
