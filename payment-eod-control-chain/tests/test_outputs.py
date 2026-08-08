@@ -306,7 +306,7 @@ def test_f2p_blocked_internal_beneficiary_has_no_partial_financial_effect():
     assert scalar('SELECT COUNT(*) FROM ledger_entries') == 0
 
 
-def test_f2p_resume_internal_keeps_the_existing_posting_without_reapplying_balances():
+def test_p2p_resume_internal_keeps_the_existing_posting_without_reapplying_balances():
     """An authoritative internal posting must be resumed without a second payer debit or beneficiary credit."""
     seed = (
         cycle_sql()
