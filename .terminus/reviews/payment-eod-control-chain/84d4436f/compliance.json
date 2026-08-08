@@ -1,0 +1,29 @@
+{
+  "role": "Compliance Auditor",
+  "review_id": "pay-eod-84d4436f-compliance-01",
+  "task_commit": "84d4436f027f1ba1dd6ac909f31aae3aaafe9554",
+  "policy_version": "2.2",
+  "verdict": "PASS",
+  "confidence": "HIGH",
+  "evidence_status": "SUFFICIENT",
+  "summary": "The frozen task satisfies the current Edition 3 structural/environment rules visible to this controller. Required task metadata is top-level, the separate agent/verifier images use the same digest-pinned canonical Debian base, verifier Python dependency is pinned at image build time, the agent build copies only the solver environment, and .dockerignore excludes solution/tests and common repository clutter. Public networking matches the current Edition 3 default. Deterministic preflight, Ruff, Docker setup, Oracle and NOP all pass on the frozen merge ref.",
+  "evidence": [
+    {"type":"rule","ref":"TERMINUS_3_AI_INSTRUCTIONS.md task.toml/environment sections","observation":"Current canonical shape requires top-level category/subcategory/tags/languages/difficulty/expert estimate/artifacts and defaults network_mode to public."},
+    {"type":"file","ref":"payment-eod-control-chain/task.toml@84d4436f","observation":"Required top-level metadata is correctly nested; verifier is separate; 10800s agent and 1800s verifier timeouts are within current bounds; resources are ordinary CPU/RAM/storage."},
+    {"type":"file","ref":"payment-eod-control-chain/environment/Dockerfile@84d4436f","observation":"Digest-pinned Debian bookworm-slim base; one clean apt install; tmux/asciinema present; only eod/ is copied into the solver image."},
+    {"type":"file","ref":"payment-eod-control-chain/environment/.dockerignore@84d4436f","observation":"Excludes .git, caches, env files, solution, tests and archives from agent build context."},
+    {"type":"file","ref":"payment-eod-control-chain/tests/Dockerfile@84d4436f","observation":"Separate digest-pinned verifier image; pytest is pinned to 8.4.1 at build time."},
+    {"type":"file","ref":"payment-eod-control-chain/tests/test.sh@84d4436f","observation":"No runtime package installation or network fetch; binary reward is explicitly written."},
+    {"type":"ci","ref":"Terminus CI run 31260035556 / Complexity run 31260035557","observation":"Preflight, Ruff, Docker/STB, Oracle/NOP and large-system complexity checks pass on merge ref 20b2da243... ."},
+    {"type":"artifact","ref":"Validation artifact 9022556589","observation":"Entire deterministic evidence archive is about 0.6 MiB; the text-only solver environment represented inside it is far below the 100 MiB build-context ceiling."}
+  ],
+  "findings": [],
+  "missing_evidence": [],
+  "change_scope": [],
+  "do_not_change": [
+    "Do not move top-level task.toml fields back under metadata.",
+    "Do not copy solution/ or tests/ into the agent image.",
+    "Do not add unpinned non-apt runtime dependencies or Docker/socket privileges."
+  ],
+  "next_gate": "Instruction and Documentation reviews, then Comprehensive Reviewer"
+}
