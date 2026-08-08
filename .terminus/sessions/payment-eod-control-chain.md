@@ -36,16 +36,16 @@ Production-authenticity evidence proves 15,012 primary payment records / 135,637
 | STB auth/AI credentials | BLOCKED | reusable model credential not configured; automatic refresh disabled |
 | Oracle = 1 | PASS | PR #6 run `31271746650` (#181), artifact `9025864648`, 37/37 PASS, reward 1 |
 | NOP = 0 | PASS | PR #6 run `31271746650` (#181), artifact `9025864648`, all 30 F2P fail + all 7 P2P pass, reward 0 |
-| Pre-LLMaJ specialist panel | STALE | task and reviewer authenticity contract changed; generate fresh packet-bound reviews for `eb78d72a...` |
-| Task Architect | STALE | historical ff7394ff review predates production-hardening task and authenticity policy |
-| Verifier Engineer | STALE | historical ff7394ff review predates current task commit |
-| Originality & Authenticity | STALE | historical ff7394ff review predates production evidence/data/COBOL rewrite |
-| Difficulty design | STALE | historical ff7394ff review predates current task scale and implementation depth |
-| Compliance pre-review | STALE | historical ff7394ff review predates current task/control-plane files |
-| Instruction Reviewer | STALE | instruction materially changed to evidence-backed incident handoff and reviewer contract now includes production authenticity |
-| Documentation Reviewer | STALE | README materially changed and reviewer contract now includes production authenticity |
-| Comprehensive Reviewer | STALE | task and checklist evidence surface changed materially |
-| Pre-LLMaJ aggregate | STALE | all controlling semantic inputs are stale |
+| Pre-LLMaJ specialist panel | PENDING | fresh packet queue exists for task commit `eb78d72a`; no review result is promoted until independent reviewer runs finish |
+| Task Architect | PENDING | `.terminus/reviews/payment-eod-control-chain/eb78d72a/payment-eod-control-chain-eb78d72a-task-architect-8dc0fa4d15.packet.json` |
+| Verifier Engineer | PENDING | `.terminus/reviews/payment-eod-control-chain/eb78d72a/payment-eod-control-chain-eb78d72a-verifier-engineer-e4b6e3478c.packet.json` |
+| Originality & Authenticity | PENDING | `.terminus/reviews/payment-eod-control-chain/eb78d72a/payment-eod-control-chain-eb78d72a-originality-a79caa0a38.packet.json` |
+| Difficulty design | PENDING | `.terminus/reviews/payment-eod-control-chain/eb78d72a/payment-eod-control-chain-eb78d72a-difficulty-design-e84f87464a.packet.json` |
+| Compliance pre-review | PENDING | `.terminus/reviews/payment-eod-control-chain/eb78d72a/payment-eod-control-chain-eb78d72a-compliance-126981195d.packet.json` |
+| Instruction Reviewer | PENDING | `.terminus/reviews/payment-eod-control-chain/eb78d72a/payment-eod-control-chain-eb78d72a-instruction-b6eca1dca6.packet.json` |
+| Documentation Reviewer | PENDING | `.terminus/reviews/payment-eod-control-chain/eb78d72a/payment-eod-control-chain-eb78d72a-documentation-0fc71f6ce8.packet.json` |
+| Comprehensive Reviewer | PENDING | `.terminus/reviews/payment-eod-control-chain/eb78d72a/payment-eod-control-chain-eb78d72a-comprehensive-checklist-636231e726.packet.json` |
+| Pre-LLMaJ aggregate | PENDING | waiting for frozen independent specialist + Comprehensive results |
 | Harbor LLMaJ | NOT_RUN | requires fresh Pre-LLMaJ PASS and reusable model credential |
 | Difficulty trials | NOT_RUN | GPT-5.5 ×5 + Claude Opus 4.8 ×5 after Harbor LLMaJ |
 | GPT-5.5 difficulty ×5 | NOT_RUN | diagnostic half |
@@ -56,6 +56,14 @@ Production-authenticity evidence proves 15,012 primary payment records / 135,637
 | Final Compliance | PENDING | after model-backed evaluation |
 | Final Human Quality | PENDING | after model-backed evaluation |
 | Final package | PENDING | |
+
+## Fresh production-authenticity review queue
+
+Eight immutable context packets were generated on `main` with `.terminus/new_review_packet.py`. They bind the current task commit to protocol 2.1, prompt policy 2.2, the production-authenticity reviewer contract and role-specific evidence boundaries. The packet generator was removed after use; no temporary workflow remains.
+
+The packet files are contexts only. They do **not** count as reviewer PASS evidence. Each result must be produced in an independent role chat, written to the packet's exact `review_output_path`, and pass `.terminus/validate_review_freshness.py` before the corresponding gate can move from PENDING.
+
+The old ff7394ff review/result set remains immutable historical evidence and is intentionally not reused.
 
 ## Production-authenticity controls
 
@@ -81,25 +89,20 @@ The independent reviewer contract is bound to `PRODUCTION_AUTHENTICITY.md`. Revi
 - PR #6 Creator Complexity after checkpoint: run `31272058935` (#54), PASS.
 - Overall Edition 3 PR job stops only at the reusable AI-credential gate after Oracle/NOP; no AI-key refresh was consumed.
 
-## Why previous semantic evidence is stale
-
-The solver-visible instruction, README, seed state, incident evidence and all major COBOL decision programs changed. The reference solution also changed. In addition, `PRODUCTION_AUTHENTICITY.md` is part of reviewer role-contract hashing. The old ff7394ff packet/result set cannot support a current semantic PASS even where the conceptual requirement is similar.
-
-Do not rewrite or delete old reports. They remain historical evidence.
-
 ## Current blocker
 
-`The production-hardening task is merged and deterministic authoring gates are green. Generate fresh v3 semantic packets for task commit eb78d72a under the production-authenticity reviewer contract, then rerun independent Stage-B specialists, cold Comprehensive Reviewer and Pre-LLMaJ aggregate. Harbor/model-backed gates remain separately blocked by the missing reusable model credential.`
+`Independent packet-bound semantic reviewers have not yet run for eb78d72a. This chat is the creator/orchestrator context and must not self-certify those roles. After fresh semantic PASS/APPROVE and Pre-LLMaJ aggregate PASS, Harbor/model-backed gates remain separately blocked by the missing reusable model credential.`
 
 ## Next action
 
-`Generate fresh v3 packets on main for task commit eb78d72a. Run each semantic reviewer independently under the packet evidence boundary, then cold Comprehensive Reviewer, disagreement/omission scan and Pre-LLMaJ aggregate. Do not rerun Oracle/NOP unless a task-relevant file changes.`
+`Run the eight generated packets in independent reviewer chats. Freeze each result, run review-freshness validation, then disagreement/omission scan and Pre-LLMaJ aggregate. Do not rerun Oracle/NOP unless a task-relevant file changes.`
 
 ## Circuit breakers
 
 - Production-authenticity authoring blocker: `RESOLVED`.
 - Oracle/NOP authoring blocker: `RESOLVED` by run #181.
 - Old semantic evidence: `STALE`; never promote it back to PASS.
+- Fresh semantic evidence: `PENDING`; packet existence is not approval.
 - AI refresh circuit breaker: `ACTIVE`; never refresh routinely.
 - Model-backed evaluation: `BLOCKED` until fresh Pre-LLMaJ PASS and reusable credentials exist.
 
@@ -110,8 +113,9 @@ Do not rewrite or delete old reports. They remain historical evidence.
 - Do not invent unsupported incident backstory merely to sound human.
 - Do not weaken F2P behavior to change gate outcomes.
 - Do not rerun Oracle/NOP without a task/verifier/solution change.
+- Do not self-certify independent reviewer roles from the creator/orchestrator chat.
 - Do not run Harbor/model gates until fresh semantic Pre-LLMaJ PASS and reusable credentials exist.
 
 ## Resume rule
 
-Verify task commit `eb78d72a8920348ff950a1e811e6fda773d046e5` from Git, load `.terminus/agents/PRODUCTION_AUTHENTICITY.md`, and resume at fresh v3 semantic packet generation. The deterministic baseline is PR #6 run `31271746650` unless a later task-relevant commit supersedes it.
+Verify task commit `eb78d72a8920348ff950a1e811e6fda773d046e5` from Git, load `.terminus/agents/PRODUCTION_AUTHENTICITY.md`, and resume at the eight fresh packet-bound semantic reviews. The deterministic baseline is PR #6 run `31271746650` unless a later task-relevant commit supersedes it.
