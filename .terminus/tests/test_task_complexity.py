@@ -36,7 +36,7 @@ def edges() -> list[dict]:
     return [{"from": f"D{index:02d}", "to": f"D{index + 1:02d}"} for index in range(1, 20)]
 
 
-def test_entries() -> list[list[str]]:
+def case_entries() -> list[list[str]]:
     entries: list[list[str]] = []
     counter = 0
     for requirement, count in zip(REQUIREMENTS, F2P_SPREAD):
@@ -128,7 +128,7 @@ def repo(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
         (task / "environment" / "eod" / "lib" / f"module_{index}.sh").write_text(
             env_file(index), encoding="utf-8"
         )
-    entries = test_entries()
+    entries = case_entries()
     write_tests(root, entries)
     write_design(root)
     write_test_map(root, entries)
@@ -195,7 +195,7 @@ def test_empty_root_cause_cluster_fails(repo: Path, capsys: pytest.CaptureFixtur
 
 
 def test_untested_requirement_fails(repo: Path, capsys: pytest.CaptureFixture[str]) -> None:
-    entries = [entry for entry in test_entries() if entry[2] != REQUIREMENTS[-1]]
+    entries = [entry for entry in case_entries() if entry[2] != REQUIREMENTS[-1]]
     write_tests(repo, entries)
     write_test_map(repo, entries)
     assert gate.validate(TASK) == 1
@@ -203,7 +203,7 @@ def test_untested_requirement_fails(repo: Path, capsys: pytest.CaptureFixture[st
 
 
 def test_one_requirement_dominating_f2p_fails(repo: Path, capsys: pytest.CaptureFixture[str]) -> None:
-    entries = test_entries()
+    entries = case_entries()
     f2p_seen = 0
     for entry in entries:
         if entry[1] == "F2P":
@@ -216,13 +216,13 @@ def test_one_requirement_dominating_f2p_fails(repo: Path, capsys: pytest.Capture
 
 
 def test_test_map_drift_fails(repo: Path, capsys: pytest.CaptureFixture[str]) -> None:
-    write_test_map(repo, test_entries()[:-1])
+    write_test_map(repo, case_entries()[:-1])
     assert gate.validate(TASK) == 1
     assert "absent from test map" in capsys.readouterr().err
 
 
 def test_f2p_p2p_classification_mismatch_fails(repo: Path, capsys: pytest.CaptureFixture[str]) -> None:
-    entries = test_entries()
+    entries = case_entries()
     entries[0][1] = "P2P"
     write_test_map(repo, entries)
     assert gate.validate(TASK) == 1
@@ -230,7 +230,7 @@ def test_f2p_p2p_classification_mismatch_fails(repo: Path, capsys: pytest.Captur
 
 
 def test_invalid_test_map_class_fails(repo: Path, capsys: pytest.CaptureFixture[str]) -> None:
-    entries = test_entries()
+    entries = case_entries()
     entries[0][1] = "SMOKE"
     write_test_map(repo, entries)
     assert gate.validate(TASK) == 1
