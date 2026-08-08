@@ -1,6 +1,6 @@
 # Invoking a Terminus Specialist
 
-Invocation policy version: `1.2`
+Invocation policy version: `1.1`
 
 `PROTOCOL.md` defines the evidence contract. This file defines the operating sequence for one specialist review.
 
