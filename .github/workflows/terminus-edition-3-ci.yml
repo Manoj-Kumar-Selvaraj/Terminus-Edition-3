@@ -166,15 +166,6 @@ jobs:
           bash ./terminus3.sh version
           echo "stb version: $(stb --version)" >> "$GITHUB_STEP_SUMMARY"
 
-      - name: Authenticate stb and refresh AI credentials
-        shell: bash
-        run: |
-          set -euo pipefail
-          [[ -n "${SNORKEL_API_KEY:-}" ]] || { echo "::error::Missing SNORKEL_API_KEY"; exit 1; }
-          mkdir -p "$XDG_CONFIG_HOME/stb"
-          bash ./terminus3.sh login --noninteractive
-          bash ./terminus3.sh keys-refresh --noninteractive
-
       - name: Oracle must score 1
         shell: bash
         env:
@@ -216,6 +207,15 @@ jobs:
             r="$(tr -d '[:space:]' < "$f")"
             [[ "$r" == "0" || "$r" == "0.0" ]] || { echo "::error file=$f::NOP reward=$r expected=0"; exit 1; }
           done
+
+      - name: Authenticate AI credentials for Harbor LLMaJ
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ -n "${SNORKEL_API_KEY:-}" ]] || { echo "::error::Missing SNORKEL_API_KEY for Harbor LLMaJ"; exit 1; }
+          mkdir -p "$XDG_CONFIG_HOME/stb"
+          bash ./terminus3.sh login --noninteractive
+          bash ./terminus3.sh keys-refresh --noninteractive
 
       - name: Run Harbor LLMaJ check
         shell: bash
