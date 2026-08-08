@@ -1,0 +1,104 @@
+Downloading ruff (12.3MiB)
+ Downloaded ruff
+Installed 1 package in 1ms
+payment-eod-control-chain/tests/test_outputs.py:434:49: E702 Multiple statements on one line (semicolon)
+    |
+432 |         + prereq_sql('C1')
+433 |     )
+434 |     DB.parent.mkdir(parents=True, exist_ok=True); DB.unlink(missing_ok=True)
+    |                                                 ^ E702
+435 |     shutil.rmtree(OUT, ignore_errors=True); OUT.mkdir(parents=True, exist_ok=True)
+436 |     con = sqlite3.connect(DB); con.executescript(SCHEMA.read_text()); con.execute('PRAGMA foreign_keys=OFF'); con.executescript(seed)…
+    |
+
+payment-eod-control-chain/tests/test_outputs.py:435:43: E702 Multiple statements on one line (semicolon)
+    |
+433 |     )
+434 |     DB.parent.mkdir(parents=True, exist_ok=True); DB.unlink(missing_ok=True)
+435 |     shutil.rmtree(OUT, ignore_errors=True); OUT.mkdir(parents=True, exist_ok=True)
+    |                                           ^ E702
+436 |     con = sqlite3.connect(DB); con.executescript(SCHEMA.read_text()); con.execute('PRAGMA foreign_keys=OFF'); con.executescript(seed)…
+437 |     run_batch()
+    |
+
+payment-eod-control-chain/tests/test_outputs.py:436:30: E702 Multiple statements on one line (semicolon)
+    |
+434 |     DB.parent.mkdir(parents=True, exist_ok=True); DB.unlink(missing_ok=True)
+435 |     shutil.rmtree(OUT, ignore_errors=True); OUT.mkdir(parents=True, exist_ok=True)
+436 |     con = sqlite3.connect(DB); con.executescript(SCHEMA.read_text()); con.execute('PRAGMA foreign_keys=OFF'); con.executescript(seed)…
+    |                              ^ E702
+437 |     run_batch()
+438 |     rec = reconciliation()
+    |
+
+payment-eod-control-chain/tests/test_outputs.py:436:69: E702 Multiple statements on one line (semicolon)
+    |
+434 |     DB.parent.mkdir(parents=True, exist_ok=True); DB.unlink(missing_ok=True)
+435 |     shutil.rmtree(OUT, ignore_errors=True); OUT.mkdir(parents=True, exist_ok=True)
+436 |     con = sqlite3.connect(DB); con.executescript(SCHEMA.read_text()); con.execute('PRAGMA foreign_keys=OFF'); con.executescript(seed)…
+    |                                                                     ^ E702
+437 |     run_batch()
+438 |     rec = reconciliation()
+    |
+
+payment-eod-control-chain/tests/test_outputs.py:436:109: E702 Multiple statements on one line (semicolon)
+    |
+434 |     DB.parent.mkdir(parents=True, exist_ok=True); DB.unlink(missing_ok=True)
+435 |     shutil.rmtree(OUT, ignore_errors=True); OUT.mkdir(parents=True, exist_ok=True)
+436 |     con = sqlite3.connect(DB); con.executescript(SCHEMA.read_text()); con.execute('PRAGMA foreign_keys=OFF'); con.executescript(seed)…
+    |                                                                                                             ^ E702
+437 |     run_batch()
+438 |     rec = reconciliation()
+    |
+
+payment-eod-control-chain/tests/test_outputs.py:436:134: E702 Multiple statements on one line (semicolon)
+    |
+434 | …=True)
+435 | …ist_ok=True)
+436 | …con.execute('PRAGMA foreign_keys=OFF'); con.executescript(seed); con.commit(); con.close()
+    |                                                                 ^ E702
+437 | …
+438 | …
+    |
+
+payment-eod-control-chain/tests/test_outputs.py:436:148: E702 Multiple statements on one line (semicolon)
+    |
+434 | …
+435 | …
+436 | …RAGMA foreign_keys=OFF'); con.executescript(seed); con.commit(); con.close()
+    |                                                                 ^ E702
+437 | …
+438 | …
+    |
+
+payment-eod-control-chain/tests/test_outputs.py:449:19: E702 Multiple statements on one line (semicolon)
+    |
+447 |     """Balanced publication is not enough to complete the cycle before delivery acknowledgment."""
+448 |     seed = cycle_sql() + accounts_sql(('A1', 'ACTIVE', 50000), ('A2', 'ACTIVE', 1000)) + payment_sql(1, 'S1', 'A1', 'A2', 'A2', 10000…
+449 |     reset_db(seed); run_batch()
+    |                   ^ E702
+450 |     assert reconciliation()['status'] == 'BALANCED'
+451 |     assert rows("SELECT completion_status FROM cycles WHERE cycle_id='C1'") == [('WAITING',)]
+    |
+
+payment-eod-control-chain/tests/test_outputs.py:459:19: E702 Multiple statements on one line (semicolon)
+    |
+457 |     """A balanced cycle must wait when reporting has not completed."""
+458 |     seed = cycle_sql() + accounts_sql(('A1', 'ACTIVE', 50000), ('A2', 'ACTIVE', 1000)) + payment_sql(1, 'S1', 'A1', 'A2', 'A2', 10000…
+459 |     reset_db(seed); run_batch()
+    |                   ^ E702
+460 |     assert reconciliation()['status'] == 'BALANCED'
+461 |     assert rows("SELECT completion_status FROM cycles WHERE cycle_id='C1'") == [('WAITING',)]
+    |
+
+payment-eod-control-chain/tests/test_outputs.py:468:19: E702 Multiple statements on one line (semicolon)
+    |
+466 |     """A balanced cycle must wait when archival work has not completed."""
+467 |     seed = cycle_sql() + accounts_sql(('A1', 'ACTIVE', 50000), ('A2', 'ACTIVE', 1000)) + payment_sql(1, 'S1', 'A1', 'A2', 'A2', 10000…
+468 |     reset_db(seed); run_batch()
+    |                   ^ E702
+469 |     assert reconciliation()['status'] == 'BALANCED'
+470 |     assert rows("SELECT completion_status FROM cycles WHERE cycle_id='C1'") == [('WAITING',)]
+    |
+
+Found 10 errors.
