@@ -1,0 +1,35 @@
+{
+  "schema_version": "1.0",
+  "task": "payment-eod-control-chain",
+  "profile": "large_system_strict",
+  "production_authenticity": {
+    "incident_evidence": [
+      "environment/eod/log/archive/eod_CORP-ACH_20260808_run03.log",
+      "environment/eod/log/archive/eod_CORP-ACH_20260808_restart01.log",
+      "environment/eod/ops/shift-handoff.txt"
+    ],
+    "instruction_evidence_paths": ["/app/eod/log/archive", "/app/eod/ops"],
+    "cobol_depth": {
+      "directory": "environment/eod/cobol",
+      "min_programs": 14,
+      "min_substantive_lines_per_program": 70,
+      "min_decision_points_per_program": 8,
+      "min_paragraphs_per_program": 5,
+      "min_portfolio_syntax_features": 6
+    },
+    "stateful_dataset": {
+      "schema": "environment/eod/sql/schema.sql",
+      "seed": "environment/eod/sql/seed.sql",
+      "primary_table": "payments",
+      "min_records": 10000,
+      "max_records": 20000,
+      "min_distinct_cycles": 100,
+      "min_distinct_payers": 500,
+      "min_distinct_amounts": 1000,
+      "min_distinct_purposes": 4,
+      "min_distinct_currencies": 3,
+      "min_route_variants": 2,
+      "min_account_statuses": 3
+    }
+  }
+}
