@@ -75,7 +75,15 @@ run_payment_population() {
 post_execution_integrity() {
     local c="$1"
     stage_begin "$c" INTEGRITY
-    if true; then stage_done "$c" INTEGRITY; return 0; fi
+    local orphan_rows
+    orphan_rows=$((
+        $(safe_int "$(orphan_outcome_count "$c")") +
+        $(safe_int "$(orphan_posting_count "$c")") +
+        $(safe_int "$(orphan_reservation_count "$c")") +
+        $(safe_int "$(orphan_clearing_count "$c")") +
+        $(safe_int "$(orphan_ledger_count "$c")")
+    ))
+    if (( orphan_rows == 0 )); then stage_done "$c" INTEGRITY; return 0; fi
     stage_held "$c" INTEGRITY "durable payment state is internally inconsistent"
     return 1
 }
@@ -94,7 +102,10 @@ force_cycle_held() {
 reconcile_cycle_after_execution() {
     local c="$1"
     stage_begin "$c" RECONCILIATION_CONTROL
-    if false; then
+    local expected_outcomes actual_outcomes
+    expected_outcomes="$(cycle_payment_count "$c")"
+    actual_outcomes="$(cycle_outcome_count "$c")"
+    if (( $(safe_int "$actual_outcomes") < $(safe_int "$expected_outcomes") )); then
         force_cycle_held "$c" "one or more resumed financial effects are inconsistent"
         run_reconciliation "$c" >/dev/null || true
         db_exec "UPDATE cycles SET state='HELD',reconciliation_status='HELD' WHERE cycle_id='$(sql_escape "$c")';"
