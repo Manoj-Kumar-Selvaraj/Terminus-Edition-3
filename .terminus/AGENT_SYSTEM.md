@@ -1,6 +1,6 @@
 # Terminus Edition 3 Agent System
 
-Agent-system policy version: `2.1`
+Agent-system policy version: `2.2`
 
 This directory defines the review and control plane for taking a Terminus Edition 3 task from idea to submission-ready. GitHub repository state, current authoritative rule files, Actions/Harbor evidence, the comprehensive reviewer checklist, and versioned reviewer reports are durable truth; chat history is replaceable working context.
 
@@ -22,6 +22,30 @@ Read `.terminus/agents/PROTOCOL.md` before invoking specialists. For acceptance/
 - Difficulty is empirical: complete rewards, per-test outcomes and trajectories are all relevant.
 - Reviewer prompts/checklists are production logic and must be regression-evaluated.
 - Current checklist criteria/severities can evolve; final acceptance must record checklist policy freshness.
+- Humanization is an **information-selection problem**, not a vocabulary rewrite. Do not add slang, contractions, fake typos or artificial backstory merely to sound human.
+- A solver-facing instruction may be fully specified by the instruction **plus explicitly referenced solver-visible contracts**. Do not restate a contract merely to make the prompt look self-contained.
+- Concision alone is not enough: a short prompt that compresses the verifier into one polished paragraph is still synthetic.
+
+## Human engineering instruction policy
+
+`instruction.md` should read like a real Jira/Slack/on-call handoff rather than a benchmark specification.
+
+A normal engineering handoff usually contains:
+
+- the incident or requested change;
+- the system/location involved;
+- what must be true when the work is done;
+- one or two non-obvious constraints that a competent engineer could otherwise miss;
+- references to existing contracts/specs for detailed schemas, record layouts or protocol rules.
+
+It should **not** try to summarize every acceptance criterion, every edge case, or every verifier scenario. Related rules should be compressed into an operational invariant (for example, "a restart must not repeat financial work") rather than listed as one sentence per hidden test.
+
+Instruction Writer and Instruction Reviewer must apply both checks below:
+
+1. **Jira/Slack handoff test** — remove all benchmark context mentally. Would this text look normal if pasted into a real engineering ticket or incident handoff? If it reads like a formal grading specification, rewrite it.
+2. **Reverse-outline test** — outline what each sentence is doing. If the sentences map neatly to verifier cases/rubric rows, or the paragraph reads like a compressed hidden-test inventory, rewrite it around the operational concern instead.
+
+Exact output paths and schemas still follow authoritative Edition 3 requirements. When a solver-visible contract already defines lower-level schema/protocol details, prefer pointing to that contract over duplicating the field list in `instruction.md`.
 
 ## Official difficulty and solvability policy
 
@@ -76,17 +100,17 @@ Before trials, evaluates coupled reasoning, plausible partial fixes, shortcut ri
 
 Decision right: does the complete submission prose contain material AI cadence, benchmark boilerplate, inflated claims, unnatural filler or leakage missed by artifact-specific reviewers?
 
-This is a final broad cold review, not a writer role.
+This is a final broad cold review, not a writer role. It must treat synthetic completeness and compressed-rubric prose as quality defects even when grammar and factual coverage are otherwise good.
 
 ### 6. Instruction Writer
 
-Producer role only. Creates/revises `instruction.md` from an approved contract using the human-writing calibration/example bank. Must not receive hidden verifier/oracle details as a wording checklist. Cannot PASS its own gate.
+Producer role only. Creates/revises `instruction.md` from an approved contract using the human-writing calibration/example bank. Starts from the incident/change request and selects only the information a real maintainer would put in the handoff. Detailed schemas/protocols belong in referenced solver-visible documents when those documents already exist. Must apply the Jira/Slack handoff test and reverse-outline test before returning a draft. Must not receive hidden verifier/oracle details as a wording checklist. Cannot PASS its own gate.
 
 ### 7. Instruction Reviewer
 
-Decision right: is the current `instruction.md` a fair, concise, human engineering ticket with no material ambiguity, leakage or artificial rubric-style construction?
+Decision right: is the current `instruction.md` a fair, concise, selective human engineering ticket with no material ambiguity, leakage or artificial rubric-style construction?
 
-Cold review. Reads solver-visible referenced artifacts plus a requirement↔test summary, not writer rationale or hidden solution details. Checks concision, specificity, interest, no hints, uniqueness, absolute paths, human prompt styling and all applicable checklist instruction criteria.
+Cold review. Reads solver-visible referenced artifacts plus a requirement↔test summary, not writer rationale or hidden solution details. Checks concision, specificity, interest, no hints, uniqueness, absolute paths, human prompt styling and all applicable checklist instruction criteria. A concise instruction that reads like a compressed acceptance matrix must be REVISE, not PASS.
 
 ### 8. Documentation Writer
 
@@ -240,7 +264,7 @@ Record task commit, policy versions, checklist version/freshness, gate statuses,
 - Harbor LLMaJ PASS for the current applicable task version;
 - Verifier Engineer PASS with complete semantic coverage;
 - Originality & Authenticity PASS;
-- Instruction Reviewer cold PASS;
+- Instruction Reviewer cold PASS under the current human-engineering writing policy;
 - Documentation Reviewer cold PASS;
 - all 10 official difficulty trials complete;
 - combined 10-run pass rate maps to a valid tier below 100%;

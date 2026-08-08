@@ -104,12 +104,12 @@ def main() -> int:
     session_template = texts.get(T / "sessions" / "TEMPLATE.md", "")
     difficulty_analyzer = texts.get(T / "analyze_difficulty.py", "")
 
-    if "Agent-system policy version: `2.1`" not in agent_system:
-        fail(errors, "AGENT_SYSTEM.md must declare policy version 2.1")
+    if "Agent-system policy version: `2.2`" not in agent_system:
+        fail(errors, "AGENT_SYSTEM.md must declare policy version 2.2")
     if "Policy version: `2.0`" not in protocol:
         fail(errors, "agents/PROTOCOL.md must declare policy version 2.0")
-    if "Prompt policy version: `2.1`" not in prompts:
-        fail(errors, "agents/PROMPTS.md must declare prompt policy version 2.1")
+    if "Prompt policy version: `2.2`" not in prompts:
+        fail(errors, "agents/PROMPTS.md must declare prompt policy version 2.2")
     if "Reviewer policy version: `1.0`" not in comprehensive:
         fail(errors, "agents/COMPREHENSIVE_REVIEWER.md must declare reviewer policy version 1.0")
     if "Panel policy version: `2.1`" not in panel:
@@ -148,6 +148,15 @@ def main() -> int:
     for required in ["INSUFFICIENT_EVIDENCE", "CONFIDENCE", "EVIDENCE_STATUS", "TASK_COMMIT", "ADJUDICATIONS"]:
         if required not in panel + protocol:
             fail(errors, f"review system missing required field/term: {required}")
+
+    for required in [
+        "Jira/Slack handoff test",
+        "reverse-outline test",
+        "compressed rubric",
+        "information-selection problem",
+    ]:
+        if required.lower() not in (agent_system + prompts).lower():
+            fail(errors, f"human-writing policy missing required marker: {required}")
 
     for required in [
         "Claude Opus 4.8 / Claude Code ×5",
@@ -243,7 +252,8 @@ def main() -> int:
     print(
         f"specialist_roles={len(ROLE_HEADINGS)} comprehensive_reviewer=1 "
         f"checklist_criteria={len(criteria)} reviewer_eval_seed_cases={len(case_ids)} "
-        f"schemas={len(schema_expectations)} difficulty_policy=combined_10"
+        f"schemas={len(schema_expectations)} writing_policy=human_handoff_v2_2 "
+        f"difficulty_policy=combined_10"
     )
     return 0
 

@@ -1,6 +1,6 @@
 # Terminus Specialist Agent Prompts
 
-Prompt policy version: `2.1`
+Prompt policy version: `2.2`
 
 All roles follow, in order:
 
@@ -203,7 +203,8 @@ Perform the final broad cold prose review across the submission after artifact-s
 - contradictions between prose artifacts;
 - inflated unsupported claims;
 - solution/test leakage;
-- suspicious reuse of stock phrases across different tasks.
+- suspicious reuse of stock phrases across different tasks;
+- concise-but-exhaustive prose that reads like a compressed rubric rather than an engineer selecting the few details that matter.
 
 Do not rewrite merely to make prose stylistically different. Only material quality issues block.
 
@@ -211,6 +212,8 @@ Do not rewrite merely to make prose stylistically different. Only material quali
 
 ### Mission
 Produce the smallest fair `instruction.md` that sounds like a real engineer handing off a real incident/change request.
+
+Humanization here means **selecting information the way an engineer would**, not replacing formal words with casual ones.
 
 ### Read
 - approved task contract;
@@ -226,12 +229,26 @@ Produce the smallest fair `instruction.md` that sounds like a real engineer hand
 - previous reviewer PASS language to imitate.
 
 ### Method
-1. Identify the operational problem/request in one sentence.
-2. Identify the final observable state.
-3. Keep only constraints a competent engineer cannot safely infer from the supplied artifacts.
-4. Point to existing solver-visible contracts for detailed interfaces/schemas when natural.
-5. Remove implementation steps, justification filler and hidden-test enumeration.
-6. Re-read for fairness: every legitimately graded requirement must remain discoverable.
+1. Start with the actual incident/change request and the affected system. Do not start by summarizing the specification.
+2. State the end state in operational terms.
+3. Keep only constraints a competent engineer could not safely infer from the supplied system/docs.
+4. If a solver-visible contract already defines record layouts, schemas, protocol values or detailed invariants, point to it instead of copying those details into the instruction.
+5. Group related requirements into one operational invariant. Avoid one sentence per verifier family.
+6. Name required paths naturally, but do not narrate every file as a to-do list or imply the implementation sequence.
+7. Remove implementation steps, obvious justification, reviewer language and completeness filler.
+8. Re-read for fairness: every legitimately graded requirement must remain discoverable from the instruction plus the explicitly referenced solver-visible documents.
+9. Apply the **Jira/Slack handoff test**: imagine pasting the draft into a real team's ticket/channel with no benchmark context. If it sounds like acceptance criteria written for a grader, rewrite it.
+10. Apply the **reverse-outline test**: summarize the purpose of each sentence. If the sequence resembles hidden tests/rubric rows, or the draft feels like a compressed rubric, reorganize around the incident and end state.
+11. Do not add typos, slang, fake dates, fake customer impact or invented backstory merely to manufacture a human signal.
+
+### Strong default shape
+This is not a template, but most natural tickets need only:
+- the observed problem/request;
+- the desired operational outcome;
+- one or two easy-to-miss constraints;
+- a pointer to existing detailed documentation.
+
+Do not force 150–200 words. Word count is diagnostic; selectivity and fairness are the objective.
 
 ### Output
 Return only the proposed instruction plus a private-to-controller coverage note mapping its sentences/references to approved requirements. The coverage note is not copied into `instruction.md`.
@@ -239,7 +256,7 @@ Return only the proposed instruction plus a private-to-controller coverage note 
 ## Instruction Reviewer
 
 ### Mission
-Cold-review `instruction.md` for fairness, concision, human engineering voice and leakage.
+Cold-review `instruction.md` for fairness, concision, selective human engineering voice and leakage.
 
 ### Required calibration
 Read:
@@ -252,20 +269,34 @@ Read:
 Do not see the Instruction Writer rationale or previous Instruction Reviewer verdict before producing your own findings.
 
 ### Evaluate
-- Is the incident/request concrete rather than generic?
+- Does the first paragraph sound like an engineer reporting a real incident/request, or like a model trying to summarize a task?
 - Is the information selective rather than synthetically exhaustive?
+- Does the instruction rely appropriately on existing solver-visible contracts instead of repeating them?
+- Are related behaviors expressed as operational invariants rather than one test-shaped sentence each?
 - Are outcomes stated without prescribing implementation?
-- Are exact schemas inline only when they genuinely need to be?
+- Are exact schemas inline only when they genuinely cannot be discovered from the referenced artifacts?
 - Does the text mirror the verifier/rubric in suspicious sequence?
-- Are essential requirements still solver-visible?
-- Are paths/identifiers exact?
+- Are essential requirements still discoverable from the instruction + referenced documents?
+- Are paths/identifiers exact where the authoritative rules require them?
 - Does any wording leak the solution or make difficulty artificial?
+
+### Mandatory human-writing checks
+- **JIRA_SLACK_HANDOFF:** Would this look normal in a real engineering ticket/channel after removing benchmark context?
+- **REVERSE_OUTLINE_RISK:** Can the sentences be mapped suspiciously cleanly to verifier cases/rubric rows?
+- **SELECTIVITY:** Did the author choose the details a maintainer needs, or attempt synthetic completeness?
+- **COMPRESSED_RUBRIC:** Is this short only because a long checklist was packed into dense prose?
+
+A prompt can be technically complete, concise and grammatical and still fail this review if it reads like a compressed grader specification.
 
 ### Output
 ```text
 WORD_COUNT:
 HUMAN_SIGNAL: LOW | MEDIUM | HIGH
 AI_TEMPLATE_SIGNAL: LOW | MEDIUM | HIGH
+JIRA_SLACK_HANDOFF: PASS | FAIL
+REVERSE_OUTLINE_RISK: LOW | MEDIUM | HIGH
+SELECTIVITY: LOW | MEDIUM | HIGH
+COMPRESSED_RUBRIC: NONE | LOW | MEDIUM | HIGH
 OVER_PRESCRIPTION: NONE | LOW | MEDIUM | HIGH
 SPEC_DUMP: NONE | LOW | MEDIUM | HIGH
 MATERIAL_REQUIREMENTS_PRESERVED:
@@ -276,7 +307,7 @@ FAIRNESS_RISK:
 REPLACEMENT_TEXT: <only if REVISE>
 ```
 
-PASS requires HUMAN_SIGNAL=HIGH, AI_TEMPLATE_SIGNAL=LOW and no material fairness/leakage issue.
+PASS requires HUMAN_SIGNAL=HIGH, AI_TEMPLATE_SIGNAL=LOW, JIRA_SLACK_HANDOFF=PASS, SELECTIVITY=HIGH, REVERSE_OUTLINE_RISK no higher than LOW, COMPRESSED_RUBRIC no higher than LOW, and no material fairness/leakage issue.
 
 ## Documentation Writer
 
