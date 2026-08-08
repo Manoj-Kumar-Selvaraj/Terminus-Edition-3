@@ -26,13 +26,31 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          diagnostic=.terminus/staging/payment-eod-ruff-diagnostic.txt
+          mkdir -p .terminus/staging
+          rm -f "$diagnostic"
           sed -i '/^import pytest$/d' payment-eod-control-chain/tests/test_outputs.py
-          uvx --from ruff==0.12.8 ruff check payment-eod-control-chain/tests
-          python3 -m py_compile payment-eod-control-chain/tests/test_outputs.py
-          rm -f .terminus/staging/payment-eod-lint-fix.ready
-          rm -f .github/workflows/fix-payment-eod-verifier-lint.yml
+
+          set +e
+          uvx --from ruff==0.12.8 ruff check payment-eod-control-chain/tests > "$diagnostic" 2>&1
+          rc=$?
+          set -e
+
           git config user.name "terminus-ci"
           git config user.email "terminus-ci@users.noreply.github.com"
+
+          if (( rc != 0 )); then
+            git checkout -- payment-eod-control-chain/tests/test_outputs.py
+            git add "$diagnostic"
+            git commit -m "Capture payment EOD Ruff diagnostics"
+            git push origin HEAD:main
+            cat "$diagnostic"
+            exit "$rc"
+          fi
+
+          python3 -m py_compile payment-eod-control-chain/tests/test_outputs.py
+          rm -f "$diagnostic" .terminus/staging/payment-eod-lint-fix.ready
+          rm -f .github/workflows/fix-payment-eod-verifier-lint.yml
           git add -A
           git commit -m "Fix payment EOD verifier lint"
           git push origin HEAD:main
