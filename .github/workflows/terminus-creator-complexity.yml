@@ -8,8 +8,12 @@ on:
       - "**/tests/**"
       - ".terminus/designs/**"
       - ".terminus/validate_task_complexity.py"
+      - ".terminus/tests/test_task_complexity.py"
+      - ".terminus/agents/CREATION_CONTROLLER.md"
       - ".terminus/agents/CREATION_PIPELINE.md"
+      - ".terminus/agents/CREATOR_AGENT_REGISTRY.md"
       - ".terminus/agents/CREATOR_PROMPTS.md"
+      - ".github/workflows/terminus-creator-complexity.yml"
   push:
     branches: [main]
     paths:
@@ -17,8 +21,12 @@ on:
       - "**/tests/**"
       - ".terminus/designs/**"
       - ".terminus/validate_task_complexity.py"
+      - ".terminus/tests/test_task_complexity.py"
+      - ".terminus/agents/CREATION_CONTROLLER.md"
       - ".terminus/agents/CREATION_PIPELINE.md"
+      - ".terminus/agents/CREATOR_AGENT_REGISTRY.md"
       - ".terminus/agents/CREATOR_PROMPTS.md"
+      - ".github/workflows/terminus-creator-complexity.yml"
   workflow_dispatch:
 
 permissions:
@@ -27,10 +35,17 @@ permissions:
 jobs:
   large-system-profile:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
 
-      - name: Validate all large-system task designs
+      - name: Install pinned complexity test tools
+        run: python3 -m pip install --quiet pytest==8.4.1
+
+      - name: Complexity gate regression suite
+        run: python3 -m pytest .terminus/tests/test_task_complexity.py -q
+
+      - name: Validate all declared large-system profiles
         shell: bash
         run: |
           set -euo pipefail
@@ -48,12 +63,15 @@ jobs:
           print(json.load(open(sys.argv[1], encoding='utf-8')).get('profile', ''))
           PY
           )"
-            [[ "$profile" == "large_system" ]] || continue
-            found=1
-            echo "==> large-system complexity gate: $task"
-            python3 .terminus/validate_task_complexity.py "$task"
+            case "$profile" in
+              large_system|large_system_strict)
+                found=1
+                echo "==> creator complexity gate: $task ($profile)"
+                python3 .terminus/validate_task_complexity.py "$task"
+                ;;
+            esac
           done
 
           if (( found == 0 )); then
-            echo "No large_system task manifests found."
+            echo "No large-system task manifests found."
           fi
