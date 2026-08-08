@@ -309,7 +309,7 @@ Do not reject solely because optional `gpus`, `gpu_types`, or `docker_flags` are
 
 The supplied reviewer checklist defines *solvable* as: across 10 runs, every individual verifier test passes at least once, even if no single run passes the whole suite.
 
-The existing local controller currently uses a custom five-run difficulty policy. Until those are reconciled, record a `POLICY_CONFLICT` rather than treating five runs as equivalent to the checklist's ten-run solvability definition.
+The local controller is now reconciled with this definition: GPT-5.5 ×5 plus Claude Opus 4.8 ×5 form the combined 10 official trials. A five-run suite is diagnostic only and must not be represented as the final ten-run solvability result. The 5-vs-10 question is therefore not a `POLICY_CONFLICT` by itself.
 
 Review terminal recording, analysis/debug panes and trajectories. For failures ask whether the agent failed for a legitimate reasoning reason or because of ambiguity, verifier/environment defects, timeout, refusal or infrastructure.
 

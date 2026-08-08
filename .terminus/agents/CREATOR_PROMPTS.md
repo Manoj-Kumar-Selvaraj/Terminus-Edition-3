@@ -12,7 +12,7 @@ All creators read, in order:
 4. `.terminus/agents/PROTOCOL.md` where its evidence/staleness rules apply;
 5. the role-specific prompt below.
 
-For `large_system` tasks, numeric targets are authoring constraints, not permission to manufacture complexity. If the target cannot be met through meaningful system behavior, return `SCENARIO_TOO_SMALL` rather than pad the task.
+For `large_system_strict` tasks, numeric targets are hard authoring constraints in addition to structural-authenticity checks. If the target cannot be met through meaningful system behavior, return `SCENARIO_TOO_SMALL` rather than pad or silently downgrade the task. The legacy `large_system` profile uses numeric targets diagnostically only when the controller records why strict scale is inappropriate.
 
 ## Scenario Researcher
 

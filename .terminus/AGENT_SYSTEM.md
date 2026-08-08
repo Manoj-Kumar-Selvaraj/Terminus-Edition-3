@@ -29,7 +29,7 @@ Producer roles are defined in `CREATOR_AGENT_REGISTRY.md` and `CREATOR_PROMPTS.m
 
 ### Large-system scale
 
-For `large_system` and the explicit alias `large_system_strict`, the project-owner authoring requirements are hard constraints **and** structural authenticity must pass:
+For `large_system_strict`, the project-owner authoring requirements are hard constraints **and** structural authenticity must pass:
 
 - at least 3,000 substantive solver-visible runtime/configuration LOC;
 - infrastructure tasks: 30–50 meaningful resources;
@@ -40,7 +40,7 @@ For `large_system` and the explicit alias `large_system_strict`, the project-own
 
 Numbers never substitute for difficulty. Duplicate/dead code, fake resources, duplicate manifestations, flat causal graphs, test-map drift, mislabeled F2P/P2P cases, and suite inflation are blocking authoring defects. If the requested strict scale cannot be reached naturally, return `SCENARIO_TOO_SMALL` and select a richer incident rather than pad it.
 
-A non-strict coupled-system profile may use scale numbers diagnostically only when the controller explicitly records why strict large-system scale is inappropriate. It must still pass structural authenticity.
+The legacy `large_system` profile may use scale numbers diagnostically only when the controller explicitly records why strict scale is inappropriate. New tasks requested to meet the large-system numbers must use `large_system_strict`. Both profiles still require structural authenticity.
 
 ## Human engineering instruction policy
 
