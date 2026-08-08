@@ -5,7 +5,7 @@ RUN apt-get update \
  && rm -rf /var/lib/apt/lists/* \
  && python3 -m pip install --break-system-packages pytest==8.4.1
 
-RUN mkdir -p /app/eod /logs/verifier
+RUN mkdir -p /app/eod
 COPY test_outputs.py /tests/test_outputs.py
 COPY test.sh /tests/test.sh
 RUN chmod +x /tests/test.sh
