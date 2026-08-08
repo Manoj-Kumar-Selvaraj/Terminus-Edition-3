@@ -19,7 +19,7 @@ Session schema version: `2.4`
 
 ## Current task profile
 
-The solver-visible task/solution/verifier tree remains at `ff7394ff...`; control-plane PR #4 does not modify those task files. The private authoring design is explicitly `large_system_strict`, so Creator Complexity must satisfy both the project-owner numeric scale and structural-authenticity checks.
+The solver-visible task/solution/verifier tree remains at `ff7394ff...`; merged control-plane PR #4 did not modify those task files. The private authoring design is explicitly `large_system_strict`, so Creator Complexity must satisfy both the project-owner numeric scale and structural-authenticity checks.
 
 Current strict Creator Complexity evidence is run `31265052075` (#43), job `93121741077`: 3,080 substantive solver-visible LOC, 29 defect manifestations, six root-cause clusters, all 29 manifestations interrelated across 27 causal edges / six cross-cluster pairs, and 37 verifier cases split 30 F2P + 7 P2P. The strict gate passed.
 
@@ -35,7 +35,7 @@ Last task-version Oracle/NOP evidence remains Terminus Edition 3 CI run `3126079
 | STB auth/AI credentials | BLOCKED | reusable model credential not configured; automatic refresh disabled |
 | Oracle = 1 | PASS | run `31260792025` (#159), artifact `9022762311`, 37/37 pass, reward 1 |
 | NOP = 0 | PASS | run `31260792025` (#159), artifact `9022762311`, 30 F2P fail + 7 P2P pass, reward 0 |
-| Pre-LLMaJ specialist panel | STALE | legacy schema/protocol review set; must rerun under packet/result v3 |
+| Pre-LLMaJ specialist panel | STALE | legacy schema/protocol review set; regenerate under packet/result v3 |
 | Task Architect | STALE | historical `.terminus/reviews/payment-eod-control-chain/ff7394ff/task-architect.json` |
 | Verifier Engineer | STALE | historical `.terminus/reviews/payment-eod-control-chain/ff7394ff/verifier-engineer.json` |
 | Originality & Authenticity | STALE | historical `.terminus/reviews/payment-eod-control-chain/ff7394ff/originality.json` |
@@ -69,7 +69,8 @@ The old `ff7394ff` specialist reports were produced before protocol 2.1 and revi
 - NOP: exactly 30 `test_f2p_*` failures and seven `test_p2p_*` passes, reward `0`.
 - Artifact: `9022762311`, digest `sha256:d1e684b622607bae49044fc5023f7aa987fdea360ccd5eb489b66e5e79f1eca5`.
 - Oracle/NOP use the direct Harbor utility-agent path and do not consume AI key refreshes.
-- Control-plane PR #4 final validation before this checkpoint: Agent System CI run `31265052074` (#88) PASS with 45 regression tests, Ruff PASS, agent-system validator PASS, freshness PASS with zero warnings; Creator Complexity run `31265052075` (#43) PASS; Terminus Edition 3 CI run `31265052077` (#166) PASS.
+- Control-plane PR #4 merged to `main` as `515ae5a856ff382234f73083098e5330cd092250`.
+- Final pre-merge control-plane evidence: Agent System CI #89 PASS with 45 regression tests, Ruff PASS, agent-system validator PASS and freshness PASS with zero warnings; Creator Complexity #44 PASS; Terminus Edition 3 CI #167 PASS.
 
 ## Difficulty policy
 
@@ -81,27 +82,27 @@ Oracle/NOP are key-free utility-agent gates. Model-backed Harbor LLMaJ/difficult
 
 ## Current blocker
 
-`Control-plane PR #4 is implementation-complete and CI-green; it must be merged before the current task's semantic reviewers are regenerated under the authoritative v3 packet/result protocol.`
+`Fresh packet-bound v3 semantic reviews have not yet been generated for task commit ff7394ff. Harbor/model-backed gates remain additionally blocked until a reusable STB model credential is configured.`
 
 ## Root-cause classification
 
 - Owner: `CI Orchestrator / Submission Controller`
-- Classification: `review_disagreement / evidence-provenance migration`
-- Evidence: `PR #4; Agent System CI #88; Creator Complexity #43; protocol 2.1; context/review schema v3`
+- Classification: `evidence-provenance refresh`
+- Evidence: `control-plane merge 515ae5a856ff382234f73083098e5330cd092250; protocol 2.1; context/review schema v3`
 
 ## Next action
 
-`Merge PR #4 when approved. Then generate fresh v3 packets for the current ff7394ff task commit and rerun only the stale semantic Pre-LLMaJ roles; do not rerun Oracle/NOP unless a task-relevant file changes.`
+`Generate fresh v3 packets for the current ff7394ff task commit. Run the stale Stage-B semantic roles independently, then run the cold Comprehensive Reviewer, disagreement/omission scan and fresh Pre-LLMaJ aggregate. Do not rerun Oracle/NOP unless a task-relevant file changes.`
 
 ## Review evidence ledger
 
-All stored `ff7394ff` semantic reports are historical/STALE under protocol 2.1. No current v3 review has been generated yet.
+All stored `ff7394ff` semantic reports are historical/STALE under protocol 2.1. No current v3 semantic review has been generated yet.
 
 ## Circuit breakers
 
 - Oracle/NOP authoring blocker: `RESOLVED` by run #159.
 - AI refresh circuit breaker: `ACTIVE`; do not refresh automatically.
-- Control-plane provenance migration: `RESOLVED`; PR #4 final control-plane CI is green.
+- Control-plane provenance migration: `RESOLVED`; PR #4 merged at `515ae5a856ff382234f73083098e5330cd092250`.
 
 ## Do not retry blindly
 
@@ -113,4 +114,4 @@ All stored `ff7394ff` semantic reports are historical/STALE under protocol 2.1. 
 
 ## Resume rule
 
-A new controller follows `.terminus/CONTINUE_SESSION.md`, verifies the current task commit from Git, loads current protocol/schema/packet rules, inspects PR #4 and current CI, and resumes from the first stale or incomplete gate.
+A new controller follows `.terminus/CONTINUE_SESSION.md`, verifies the current task commit from Git, loads current protocol/schema/packet rules, inspects current `main` control-plane evidence, and resumes from the first stale or incomplete gate.
