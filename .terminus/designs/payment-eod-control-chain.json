@@ -39,222 +39,222 @@
       "component": "cobol/payelig.cob",
       "observable_failure": "Blocked internal beneficiaries are treated as eligible.",
       "root_cause": "RC-ELIGIBILITY",
-      "partial_fix_trap": "Shell-side checks cannot protect direct COBOL callers or later routing decisions."
+      "partial_fix_trap": "A shell-only status check does not repair the documented COBOL decision interface."
     },
     {
       "id": "D05",
       "component": "cobol/paymoney.cob",
-      "observable_failure": "Total debit can omit fee and tax.",
+      "observable_failure": "Total debit omits fee and tax.",
       "root_cause": "RC-ELIGIBILITY",
-      "partial_fix_trap": "Capacity and ledger logic may each still compute a different obligation after one formula is fixed."
+      "partial_fix_trap": "Correct capacity subtraction still approves payments when the requested debit is understated."
     },
     {
       "id": "D06",
       "component": "cobol/paycap.cob",
-      "observable_failure": "Capacity can ignore other active reservations for the payer.",
+      "observable_failure": "PAYCAP ignores reserved debit when calculating available capacity.",
       "root_cause": "RC-ELIGIBILITY",
-      "partial_fix_trap": "Using the full debit still overstates available capacity when outstanding reservations are excluded."
+      "partial_fix_trap": "A correct SQL reservation sum is ineffective if the decision program ignores it."
     },
     {
       "id": "D07",
-      "component": "lib/capacity.sh",
-      "observable_failure": "Shell capacity derives available funds from an incomplete reservation population.",
-      "root_cause": "RC-ELIGIBILITY",
-      "partial_fix_trap": "Correct PAYCAP arithmetic is fed the wrong reserved amount unless the database population is fixed."
+      "component": "cobol/payroute.cob",
+      "observable_failure": "Existing internal postings are routed to POST_INTERNAL again.",
+      "root_cause": "RC-RESUME",
+      "partial_fix_trap": "Database uniqueness can stop a duplicate row but cannot by itself preserve restart progress or balances."
     },
     {
       "id": "D08",
       "component": "cobol/payroute.cob",
-      "observable_failure": "Existing internal postings can be routed as fresh work.",
+      "observable_failure": "Existing external reservations are routed to RESERVE_EXTERNAL again.",
       "root_cause": "RC-RESUME",
-      "partial_fix_trap": "Shell resume detection is insufficient if the COBOL route decision still requests execution."
+      "partial_fix_trap": "Fixing clearing alone still permits a second reservation."
     },
     {
       "id": "D09",
-      "component": "cobol/payroute.cob",
-      "observable_failure": "Existing external reservations can be routed as a new reservation request.",
+      "component": "cobol/payrsv.cob",
+      "observable_failure": "A resumed reservation is accepted even when its durable debit is inconsistent.",
       "root_cause": "RC-RESUME",
-      "partial_fix_trap": "A reservation lookup alone cannot prevent duplicate financial work if the route decision ignores it."
+      "partial_fix_trap": "Resume routing is unsafe without validating the authoritative amount."
     },
     {
       "id": "D10",
-      "component": "cobol/payrsv.cob",
-      "observable_failure": "A reservation with a mismatched amount can be accepted for resume.",
+      "component": "cobol/payclr.cob",
+      "observable_failure": "Existing clearing is always recreated instead of retained.",
       "root_cause": "RC-RESUME",
-      "partial_fix_trap": "Existence is not consistency; downstream clearing can otherwise publish the wrong obligation."
+      "partial_fix_trap": "Reservation idempotency alone does not prevent duplicate clearing."
     },
     {
       "id": "D11",
-      "component": "cobol/payclr.cob",
-      "observable_failure": "An existing clearing item can be recreated instead of kept.",
-      "root_cause": "RC-RESUME",
-      "partial_fix_trap": "Reservation idempotency does not protect the clearing boundary."
+      "component": "cobol/payledger.cob",
+      "observable_failure": "Equal-or-greater debit is accepted and expected ledger row count is ignored.",
+      "root_cause": "RC-ACCOUNTING",
+      "partial_fix_trap": "Aggregate balance can look acceptable while an obligation is missing."
     },
     {
       "id": "D12",
-      "component": "lib/restart.sh",
-      "observable_failure": "Restart inspection can accept inconsistent durable external state.",
-      "root_cause": "RC-RESUME",
-      "partial_fix_trap": "COBOL decisions receive misleading state flags unless restart inspection validates relationships."
+      "component": "cobol/payrecon.cob",
+      "observable_failure": "Reconciliation effectively reduces the whole close control to a weak ledger comparison.",
+      "root_cause": "RC-ACCOUNTING",
+      "partial_fix_trap": "Fixing one SQL metric does not restore population, financial-effect, reservation and ledger invariants."
     },
     {
       "id": "D13",
-      "component": "lib/restart.sh",
-      "observable_failure": "Restart inspection can accept an inconsistent existing internal posting.",
-      "root_cause": "RC-RESUME",
-      "partial_fix_trap": "Idempotent routing is unsafe if the stored posting does not match the selected payment."
+      "component": "cobol/payclose.cob",
+      "observable_failure": "Close ignores report and archive completion.",
+      "root_cause": "RC-CLOSE",
+      "partial_fix_trap": "A balanced cycle can be authorized before operational close work is done."
     },
     {
       "id": "D14",
-      "component": "lib/financial.sh",
-      "observable_failure": "Internal resume can reapply account balances after a posting already exists.",
-      "root_cause": "RC-DB",
-      "partial_fix_trap": "Preserving the posting row is not enough if balance mutation is not guarded by the same exactly-once boundary."
+      "component": "cobol/paypub.cob",
+      "observable_failure": "Publication is allowed for HELD reconciliation.",
+      "root_cause": "RC-CLOSE",
+      "partial_fix_trap": "Close gating does not prevent stale official response/clearing files from escaping earlier."
     },
     {
       "id": "D15",
-      "component": "lib/financial.sh",
-      "observable_failure": "External resume can create another active reservation.",
-      "root_cause": "RC-DB",
-      "partial_fix_trap": "Route-level resume still duplicates money state unless insertion is protected by durable identity."
+      "component": "cobol/paystate.cob",
+      "observable_failure": "Any balanced cycle is labeled completed even when close is waiting.",
+      "root_cause": "RC-CLOSE",
+      "partial_fix_trap": "Correct reconciliation is not equivalent to completion."
     },
     {
       "id": "D16",
-      "component": "sql/schema.sql",
-      "observable_failure": "The database permits duplicate active financial state for one payment.",
-      "root_cause": "RC-DB",
-      "partial_fix_trap": "Application checks alone remain race-prone and do not make the database authoritative."
+      "component": "lib/financial.sh",
+      "observable_failure": "Reservation capacity query is global, includes wrong payers/inactive rows, and does not exclude the payment being resumed.",
+      "root_cause": "RC-ELIGIBILITY",
+      "partial_fix_trap": "Repairing PAYCAP without the authoritative reservation population still computes wrong capacity."
     },
     {
       "id": "D17",
-      "component": "cobol/payledger.cob",
-      "observable_failure": "Ledger validation can accept an incomplete route-specific ledger shape.",
+      "component": "lib/financial.sh",
+      "observable_failure": "Internal resume ledger reconstruction omits TAX_PAYABLE.",
       "root_cause": "RC-ACCOUNTING",
-      "partial_fix_trap": "A balanced aggregate can still omit tax, fee, principal or clearing obligations."
+      "partial_fix_trap": "Balances remain unchanged but reconciliation still becomes incomplete."
     },
     {
       "id": "D18",
-      "component": "lib/accounting.sh",
-      "observable_failure": "Resume can leave a successful payment with missing ledger obligations.",
+      "component": "lib/financial.sh",
+      "observable_failure": "External resume ledger reconstruction omits TAX_PAYABLE.",
       "root_cause": "RC-ACCOUNTING",
-      "partial_fix_trap": "Financial idempotency alone does not reconstruct accounting state that was only partially written."
+      "partial_fix_trap": "Reservation/clearing can look correct while accounting is incomplete."
     },
     {
       "id": "D19",
-      "component": "cobol/payrecon.cob",
-      "observable_failure": "Reconciliation can declare success from ledger equality while other financial invariants are broken.",
-      "root_cause": "RC-ACCOUNTING",
-      "partial_fix_trap": "Correct ledger shape still cannot prove reservation, clearing, population and lifecycle consistency."
+      "component": "lib/financial.sh",
+      "observable_failure": "Internal beneficiary credit update does not require an active beneficiary.",
+      "root_cause": "RC-ELIGIBILITY",
+      "partial_fix_trap": "Even if eligibility is fixed elsewhere, this removes the transaction-layer safety boundary."
     },
     {
       "id": "D20",
       "component": "lib/reconcile.sh",
-      "observable_failure": "Reconciliation metrics can include rows from another cycle.",
+      "observable_failure": "Reservation, clearing and ledger totals include other cycles.",
       "root_cause": "RC-ACCOUNTING",
-      "partial_fix_trap": "A correct decision program still receives polluted counts when shell queries are not cycle-scoped."
+      "partial_fix_trap": "A perfectly repaired payment path can still hold or balance incorrectly because the gate is not cycle scoped."
     },
     {
       "id": "D21",
       "component": "lib/reconcile.sh",
-      "observable_failure": "External reservation and clearing totals can be compared without all charges.",
+      "observable_failure": "The invalid-effect metric notices only internal postings, so reservations, clearing and ledger effects on DUPLICATE/REJECTED outcomes can escape reconciliation.",
       "root_cause": "RC-ACCOUNTING",
-      "partial_fix_trap": "Ledger balance does not prove the reserved debit equals clearing plus fee and tax."
+      "partial_fix_trap": "A legacy partial metric can hide duplicate-suppression defects even though it appears to check invalid effects."
     },
     {
       "id": "D22",
       "component": "lib/reconcile.sh",
-      "observable_failure": "Population counts can ignore rejected or held business when deciding a cycle is balanced.",
+      "observable_failure": "The mismatch metric checks orphan clearing links but misses inconsistent internal posting values and external reservation/clearing amounts.",
       "root_cause": "RC-ACCOUNTING",
-      "partial_fix_trap": "Financial totals may balance even though not every selected payment has a valid terminal or durable intermediate state."
+      "partial_fix_trap": "A structurally linked but financially inconsistent resume can still be published as balanced."
     },
     {
       "id": "D23",
-      "component": "cobol/paypub.cob",
-      "observable_failure": "Publication can be allowed when reconciliation is held.",
-      "root_cause": "RC-CLOSE",
-      "partial_fix_trap": "Removing stale files later cannot undo publication if the decision itself is permissive."
+      "component": "lib/reconcile.sh",
+      "observable_failure": "The missing-ledger metric detects only payments with no ledger rows, so an incomplete successful-payment ledger shape can pass the final gate.",
+      "root_cause": "RC-ACCOUNTING",
+      "partial_fix_trap": "Partial resume reconstruction can look present while still omitting a required accounting obligation."
     },
     {
       "id": "D24",
-      "component": "lib/publication.sh",
-      "observable_failure": "A held rerun can leave official artifacts created by an earlier successful attempt.",
-      "root_cause": "RC-CLOSE",
-      "partial_fix_trap": "Correct publication decisions still leak stale outputs unless the filesystem is normalized before/after a held rerun."
+      "component": "sql/schema.sql",
+      "observable_failure": "Multiple internal postings can exist for one payment.",
+      "root_cause": "RC-DB",
+      "partial_fix_trap": "Routing fixes lack a database last line of defense against replay races/retries."
     },
     {
       "id": "D25",
-      "component": "cobol/payclose.cob",
-      "observable_failure": "Close can ignore report or archive completion prerequisites.",
-      "root_cause": "RC-CLOSE",
-      "partial_fix_trap": "Delivery acknowledgement alone is insufficient for authorization."
+      "component": "sql/schema.sql",
+      "observable_failure": "Multiple active reservations can exist for one payment.",
+      "root_cause": "RC-DB",
+      "partial_fix_trap": "A second reservation survives if orchestration retries at the wrong point."
     },
     {
       "id": "D26",
-      "component": "lib/control.sh",
-      "observable_failure": "Balanced but not closable work can remain PENDING instead of durable RECONCILED/WAITING state.",
-      "root_cause": "RC-CLOSE",
-      "partial_fix_trap": "Fixing authorization gating alone leaves restart state ambiguous on the next invocation."
+      "component": "sql/schema.sql",
+      "observable_failure": "Multiple clearing items can exist for one payment.",
+      "root_cause": "RC-DB",
+      "partial_fix_trap": "Application-level KEEP logic is insufficient under repeated execution."
     },
     {
       "id": "D27",
-      "component": "lib/lifecycle.sh",
-      "observable_failure": "Completion state can advance before all close controls are satisfied.",
-      "root_cause": "RC-CLOSE",
-      "partial_fix_trap": "The authorization file can be withheld while the database is already incorrectly completed."
+      "component": "sql/schema.sql",
+      "observable_failure": "Duplicate ledger obligations for the same payment/side/account code are allowed.",
+      "root_cause": "RC-DB",
+      "partial_fix_trap": "Resume reconstruction can multiply accounting state."
     },
     {
       "id": "D28",
       "component": "sql/schema.sql",
-      "observable_failure": "Database lifecycle constraints permit authorization without a completed balanced cycle.",
+      "observable_failure": "Multiple success authorizations can be stored for one cycle.",
       "root_cause": "RC-DB",
-      "partial_fix_trap": "Shell checks are not authoritative if direct or future writes can violate the same invariant."
+      "partial_fix_trap": "Repeated close can emit more than one downstream authorization."
     },
     {
       "id": "D29",
-      "component": "lib/publication.sh",
-      "observable_failure": "A balanced internal-only cycle can fail publication because the clearing CSV has no data rows.",
-      "root_cause": "RC-CLOSE",
-      "partial_fix_trap": "Close logic never runs if a legitimate zero-row clearing interface is mistaken for a publication failure."
+      "component": "sql/schema.sql",
+      "observable_failure": "Clearing/completion/authorization transitions are not guarded by reservation/reconciliation/completion state.",
+      "root_cause": "RC-DB",
+      "partial_fix_trap": "Fixing uniqueness does not enforce ordering between financial and close phases."
     }
   ],
   "causal_edges": [
     {"from": "D01", "to": "D03"},
-    {"from": "D02", "to": "D01"},
-    {"from": "D03", "to": "D08"},
-    {"from": "D04", "to": "D08"},
+    {"from": "D02", "to": "D07"},
+    {"from": "D02", "to": "D08"},
     {"from": "D05", "to": "D06"},
-    {"from": "D07", "to": "D06"},
-    {"from": "D06", "to": "D09"},
-    {"from": "D08", "to": "D14"},
-    {"from": "D09", "to": "D15"},
-    {"from": "D10", "to": "D12"},
-    {"from": "D11", "to": "D12"},
-    {"from": "D12", "to": "D21"},
-    {"from": "D13", "to": "D14"},
-    {"from": "D14", "to": "D18"},
-    {"from": "D15", "to": "D21"},
-    {"from": "D16", "to": "D14"},
-    {"from": "D16", "to": "D15"},
-    {"from": "D17", "to": "D19"},
-    {"from": "D18", "to": "D17"},
-    {"from": "D20", "to": "D19"},
-    {"from": "D21", "to": "D19"},
-    {"from": "D22", "to": "D19"},
-    {"from": "D19", "to": "D23"},
-    {"from": "D23", "to": "D24"},
-    {"from": "D23", "to": "D25"},
-    {"from": "D25", "to": "D27"},
-    {"from": "D26", "to": "D27"},
-    {"from": "D28", "to": "D27"},
-    {"from": "D29", "to": "D25"}
+    {"from": "D16", "to": "D06"},
+    {"from": "D04", "to": "D19"},
+    {"from": "D07", "to": "D24"},
+    {"from": "D08", "to": "D25"},
+    {"from": "D08", "to": "D10"},
+    {"from": "D10", "to": "D26"},
+    {"from": "D09", "to": "D22"},
+    {"from": "D17", "to": "D11"},
+    {"from": "D17", "to": "D23"},
+    {"from": "D18", "to": "D11"},
+    {"from": "D18", "to": "D23"},
+    {"from": "D27", "to": "D11"},
+    {"from": "D20", "to": "D12"},
+    {"from": "D21", "to": "D12"},
+    {"from": "D22", "to": "D12"},
+    {"from": "D23", "to": "D12"},
+    {"from": "D12", "to": "D14"},
+    {"from": "D14", "to": "D13"},
+    {"from": "D13", "to": "D15"},
+    {"from": "D15", "to": "D28"},
+    {"from": "D25", "to": "D29"},
+    {"from": "D26", "to": "D29"},
+    {"from": "D28", "to": "D29"}
   ],
-  "requirements": [
-    "Replay identity uses already-accepted source reference, not commercial similarity.",
-    "Eligibility and capacity account for blocked participants, full debit and active reservations.",
-    "Restart routing treats durable posting/reservation/clearing state as authority and validates consistency.",
-    "Database-backed financial effects are exactly once across reruns.",
-    "Ledger obligations and reconciliation cover complete route-specific financial state with cycle scope.",
-    "Publication is gated by balanced reconciliation and held reruns remove stale official files.",
-    "Completion/authorization requires delivery, report and archive prerequisites and remains idempotent."
-  ]
+  "complexity_targets": {
+    "substantive_solver_visible_loc_min": 3000,
+    "defect_manifestations_min": 20,
+    "defect_manifestations_max": 30,
+    "interrelated_manifestations_min": 10,
+    "preferred_interrelated_manifestations": 15,
+    "f2p_tests_min": 25,
+    "f2p_tests_max": 30
+  },
+  "anti_padding_attestation": "All counted application libraries are sourced or called by the batch runtime; tests, solution and docs are excluded from the LOC floor.",
+  "status": "organic_starter_oracle_nop_validated_run_159"
 }
