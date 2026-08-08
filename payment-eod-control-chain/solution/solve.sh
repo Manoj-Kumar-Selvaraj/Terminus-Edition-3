@@ -8,6 +8,7 @@ cat \
   /solution/repair.part2.patch \
   /solution/repair.part3.patch \
   /solution/repair.part4.patch \
+  /solution/repair.part5.patch \
   > "$repair_patch"
 patch -p1 < "$repair_patch"
 rm -f "$repair_patch"
