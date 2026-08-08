@@ -1,9 +1,9 @@
-# Payment EOD restart control
+# Payments EOD batch control
 
-This package is a cut-down payment EOD chain used to reproduce a restart problem. Small COBOL programs make the business decisions, the shell controller moves the cycle through the batch stages, and SQLite holds the durable state.
+This repository contains the overnight payment settlement controller used by the CORP-ACH batch path. The shell controller coordinates COBOL decision programs, SQLite holds durable batch and financial state, and the files under `out/` are publication or operator artifacts derived from that state.
 
-The important cases start after some work has already committed. An internal posting may already exist, or an external payment may already have its reservation while clearing, reconciliation or close is still unfinished. On the next invocation that state has to be continued, not treated as another payment execution. Source-reference history has the same wrinkle: history written by the current cycle is restart state, while a source reference accepted by an earlier cycle is a replay.
+The current incident started during the 2026-08-08 EOD window after the run host stopped between financial stages. Operations kept the run and restart logs under `environment/eod/log/archive/` and left a short handoff under `environment/eod/ops/`. Those artifacts are the quickest way to understand what was already durable when the retry started.
 
-The files under `environment/eod/docs/` are the operating notes for those rules and for the COBOL/file interfaces. They deliberately describe the existing controls rather than the repair. The database remains the restart authority; the flat-file outputs are publication or operator artifacts derived from it.
+The restart rules and independent COBOL interfaces are documented under `environment/eod/docs/`. The important operational distinction is between work that is already authoritative in the database and work that is only missing downstream continuation. A restart may therefore need to retain a posting or reservation, rebuild a later accounting/clearing step, or hold the cycle when durable state no longer agrees with the payment.
 
-A balanced cycle can publish its customer response and clearing submission, but completion is a separate step. Delivery acknowledgement, reporting and archive work must all be finished before the authorization is written. A repeated completed run should therefore reproduce the same outward result without adding another posting, reservation, clearing item, ledger obligation or authorization.
+Reconciliation and close are separate controls. A balanced cycle may publish the customer and clearing files; authorization is later and depends on close prerequisites. The database is the recovery authority throughout the run.

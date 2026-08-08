@@ -1,0 +1,9 @@
+PAYMENTS OPS SHIFT HANDOFF — 08-AUG EOD
+
+CORP-ACH RUN-03 stopped after some payments had already crossed the financial boundary. Do not clean or rebuild payment_eod.db; that is the state we need to restart from.
+
+Retry1 was stopped by Ops. Payment 20001 already has an internal posting. Payments 20002 and 20009 already have external reservation state at different downstream stages. The controller looked like it was sending them through new-work decisions again.
+
+There are also old response/clearing files under /app/eod/out from the stopped retry. They are not evidence that the cycle published successfully.
+
+Use the normal restart/interface/reconciliation notes in /app/eod/docs. Keep the independent COBOL utility interfaces because Batch Control calls them directly during held-cycle diagnosis.
