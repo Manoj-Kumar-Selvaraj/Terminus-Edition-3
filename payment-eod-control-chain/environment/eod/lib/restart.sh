@@ -65,7 +65,6 @@ payment_restart_class() {
     state="$(payment_durable_state "$payment_id")"
     IFS='|' read -r posting reservation clearing ledger outcome checkpoint <<< "$state"
 
-    true
     if [[ "$kind" == INTERNAL ]]; then
         if (( $(safe_int "$posting") > 0 )); then
             if internal_posting_consistent "$payment_id"; then printf RESUME_INTERNAL; else printf INCONSISTENT_INTERNAL; fi
@@ -76,8 +75,6 @@ payment_restart_class() {
     fi
 
     if (( $(safe_int "$reservation") > 0 )); then
-        true
-        true
         printf RESUME_EXTERNAL
     elif (( $(safe_int "$clearing") > 0 )); then
         printf CLEARING_WITHOUT_RESERVATION
