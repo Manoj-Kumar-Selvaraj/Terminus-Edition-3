@@ -4,7 +4,7 @@ on:
   push:
     branches: [main]
     paths:
-      - ".terminus/staging/payment-eod-large-rework.tar.gz.b64"
+      - ".terminus/staging/payment-eod-large-rework.ready"
 
 permissions:
   contents: write
@@ -21,10 +21,18 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          stage=".terminus/staging/payment-eod-large-rework.tar.gz.b64"
+          stage_dir=".terminus/staging/payment-eod-large-rework"
+          ready=".terminus/staging/payment-eod-large-rework.ready"
           tmp="$(mktemp -d)"
-          base64 --decode "$stage" > "$tmp/rework.tar.gz"
+
+          cat "$stage_dir"/part-* | base64 --decode > "$tmp/rework.tar.gz"
+          gzip -t "$tmp/rework.tar.gz"
+          tar -tzf "$tmp/rework.tar.gz" >/dev/null
           tar -xzf "$tmp/rework.tar.gz" -C "$tmp"
+
+          test -f "$tmp/cobol_rework/task.toml"
+          test -f "$tmp/cobol_rework/tests/test_outputs.py"
+          test -f "$tmp/cobol_rework_private/designs/payment-eod-control-chain.json"
 
           rm -rf payment-eod-control-chain
           cp -a "$tmp/cobol_rework" payment-eod-control-chain
@@ -38,7 +46,7 @@ jobs:
           cp "$tmp/cobol_rework_private/research/payment-eod-control-chain.md" \
              .terminus/research/payment-eod-control-chain.md
 
-          rm -f "$stage" .github/workflows/stage-payment-eod-rework.yml
+          rm -rf "$stage_dir" "$ready" .github/workflows/stage-payment-eod-rework.yml
 
           git config user.name "terminus-ci"
           git config user.email "terminus-ci@users.noreply.github.com"
