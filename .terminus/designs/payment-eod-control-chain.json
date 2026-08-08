@@ -156,23 +156,23 @@
     {
       "id": "D21",
       "component": "lib/reconcile.sh",
-      "observable_failure": "Invalid effects on DUPLICATE/REJECTED outcomes are forced to zero.",
+      "observable_failure": "The invalid-effect metric notices only internal postings, so reservations, clearing and ledger effects on DUPLICATE/REJECTED outcomes can escape reconciliation.",
       "root_cause": "RC-ACCOUNTING",
-      "partial_fix_trap": "Duplicate suppression bugs can be hidden from reconciliation."
+      "partial_fix_trap": "A legacy partial metric can hide duplicate-suppression defects even though it appears to check invalid effects."
     },
     {
       "id": "D22",
       "component": "lib/reconcile.sh",
-      "observable_failure": "Durable posting/reservation/clearing mismatches are forced to zero.",
+      "observable_failure": "The mismatch metric checks orphan clearing links but misses inconsistent internal posting values and external reservation/clearing amounts.",
       "root_cause": "RC-ACCOUNTING",
-      "partial_fix_trap": "An inconsistent resume can be published as balanced."
+      "partial_fix_trap": "A structurally linked but financially inconsistent resume can still be published as balanced."
     },
     {
       "id": "D23",
       "component": "lib/reconcile.sh",
-      "observable_failure": "Missing successful-payment ledger obligations are forced to zero.",
+      "observable_failure": "The missing-ledger metric detects only payments with no ledger rows, so an incomplete successful-payment ledger shape can pass the final gate.",
       "root_cause": "RC-ACCOUNTING",
-      "partial_fix_trap": "Ledger reconstruction defects are masked by the final gate."
+      "partial_fix_trap": "Partial resume reconstruction can look present while still omitting a required accounting obligation."
     },
     {
       "id": "D24",
@@ -218,114 +218,33 @@
     }
   ],
   "causal_edges": [
-    {
-      "from": "D01",
-      "to": "D03"
-    },
-    {
-      "from": "D02",
-      "to": "D07"
-    },
-    {
-      "from": "D02",
-      "to": "D08"
-    },
-    {
-      "from": "D05",
-      "to": "D06"
-    },
-    {
-      "from": "D16",
-      "to": "D06"
-    },
-    {
-      "from": "D04",
-      "to": "D19"
-    },
-    {
-      "from": "D07",
-      "to": "D24"
-    },
-    {
-      "from": "D08",
-      "to": "D25"
-    },
-    {
-      "from": "D08",
-      "to": "D10"
-    },
-    {
-      "from": "D10",
-      "to": "D26"
-    },
-    {
-      "from": "D09",
-      "to": "D22"
-    },
-    {
-      "from": "D17",
-      "to": "D11"
-    },
-    {
-      "from": "D17",
-      "to": "D23"
-    },
-    {
-      "from": "D18",
-      "to": "D11"
-    },
-    {
-      "from": "D18",
-      "to": "D23"
-    },
-    {
-      "from": "D27",
-      "to": "D11"
-    },
-    {
-      "from": "D20",
-      "to": "D12"
-    },
-    {
-      "from": "D21",
-      "to": "D12"
-    },
-    {
-      "from": "D22",
-      "to": "D12"
-    },
-    {
-      "from": "D23",
-      "to": "D12"
-    },
-    {
-      "from": "D12",
-      "to": "D14"
-    },
-    {
-      "from": "D14",
-      "to": "D13"
-    },
-    {
-      "from": "D13",
-      "to": "D15"
-    },
-    {
-      "from": "D15",
-      "to": "D28"
-    },
-    {
-      "from": "D25",
-      "to": "D29"
-    },
-    {
-      "from": "D26",
-      "to": "D29"
-    },
-    {
-      "from": "D28",
-      "to": "D29"
-    }
+    {"from": "D01", "to": "D03"},
+    {"from": "D02", "to": "D07"},
+    {"from": "D02", "to": "D08"},
+    {"from": "D05", "to": "D06"},
+    {"from": "D16", "to": "D06"},
+    {"from": "D04", "to": "D19"},
+    {"from": "D07", "to": "D24"},
+    {"from": "D08", "to": "D25"},
+    {"from": "D08", "to": "D10"},
+    {"from": "D10", "to": "D26"},
+    {"from": "D09", "to": "D22"},
+    {"from": "D17", "to": "D11"},
+    {"from": "D17", "to": "D23"},
+    {"from": "D18", "to": "D11"},
+    {"from": "D18", "to": "D23"},
+    {"from": "D27", "to": "D11"},
+    {"from": "D20", "to": "D12"},
+    {"from": "D21", "to": "D12"},
+    {"from": "D22", "to": "D12"},
+    {"from": "D23", "to": "D12"},
+    {"from": "D12", "to": "D14"},
+    {"from": "D14", "to": "D13"},
+    {"from": "D13", "to": "D15"},
+    {"from": "D15", "to": "D28"},
+    {"from": "D25", "to": "D29"},
+    {"from": "D26", "to": "D29"},
+    {"from": "D28", "to": "D29"}
   ],
   "complexity_targets": {
     "substantive_solver_visible_loc_min": 3000,
@@ -337,5 +256,5 @@
     "f2p_tests_max": 30
   },
   "anti_padding_attestation": "All counted application libraries are sourced or called by the batch runtime; tests, solution and docs are excluded from the LOC floor.",
-  "status": "deterministic_reclassification_pending_oracle_nop"
+  "status": "organic_starter_oracle_nop_validated_run_159"
 }
