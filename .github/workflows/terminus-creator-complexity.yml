@@ -57,3 +57,37 @@ jobs:
           if (( found == 0 )); then
             echo "No large_system task manifests found."
           fi
+
+  payment-eod-test-body-maintenance:
+    if: github.event_name == 'pull_request' && github.event.pull_request.head.ref == 'agent/payment-eod-coverage-maint'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Apply missing payment EOD verifier bodies
+        shell: bash
+        run: |
+          set -euo pipefail
+          script=.terminus/maintenance/add_payment_eod_test_bodies.py
+          if [[ ! -f "$script" ]]; then
+            echo "No pending test-body maintenance."
+            exit 0
+          fi
+
+          python3 "$script"
+          python3 .terminus/validate_task_complexity.py payment-eod-control-chain
+          python3 -m pip install --quiet ruff==0.12.8
+          ruff check payment-eod-control-chain/tests
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git rm "$script"
+          git add payment-eod-control-chain/tests/test_outputs.py
+          git diff --cached --check
+          git commit -m "Add missing payment EOD verifier regression bodies"
+          git push origin HEAD:main
