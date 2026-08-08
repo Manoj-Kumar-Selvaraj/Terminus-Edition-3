@@ -60,6 +60,8 @@ The cold Comprehensive Reviewer covered 100% of the 61-criterion registry. Appli
 
 - Disagreement scan: `.terminus/reviews/payment-eod-control-chain/ff7394ff/disagreement-scan-v3.json`
 - Aggregate: `.terminus/reviews/payment-eod-control-chain/ff7394ff/pre-llmaj-aggregate-v3.json`
+- Control-plane validation: Agent System CI run `31268201338` (#103), job `93129662728` — 45 regression tests PASS, Ruff PASS, agent-system structure PASS, review-freshness PASS with 0 warnings.
+- Temporary validation PR #5 was closed without merge after the run succeeded.
 
 ## Deterministic evidence
 
@@ -67,11 +69,12 @@ The cold Comprehensive Reviewer covered 100% of the 61-criterion registry. Appli
 - Oracle/NOP: run `31260792025` (#159), artifact `9022762311`.
 - Oracle: 37/37 PASS, reward `1`.
 - NOP: all 30 F2P fail, all 7 P2P pass, reward `0`.
+- v3 review provenance/freshness: Agent System CI run `31268201338` (#103), job `93129662728`, PASS with zero freshness warnings.
 - Oracle/NOP use the direct Harbor utility-agent path and do not consume AI-key refreshes.
 
 ## Current blocker
 
-`Fresh Pre-LLMaJ is PASS. Harbor LLMaJ is blocked only by the missing reusable model credential.`
+`Fresh Pre-LLMaJ is PASS and machine-validated. Harbor LLMaJ is blocked only by the missing reusable model credential.`
 
 ## Next action
 
