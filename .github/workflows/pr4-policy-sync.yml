@@ -1,0 +1,99 @@
+name: PR4 one-use policy sync
+
+on:
+  push:
+    branches: [agent-redesign]
+    paths:
+      - '.github/workflows/pr4-policy-sync.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent-redesign
+          fetch-depth: 0
+
+      - name: Apply asserted control-plane text syncs
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+
+          def replace(path, old, new, count=1):
+              p = Path(path)
+              text = p.read_text(encoding='utf-8')
+              actual = text.count(old)
+              if actual < count:
+                  raise SystemExit(f"{path}: expected at least {count} occurrence(s), found {actual}: {old!r}")
+              p.write_text(text.replace(old, new, count), encoding='utf-8')
+
+          # Keep the established large_system profile strict. coupled_system is the
+          # explicit diagnostic-scale alternative.
+          replace(
+              '.terminus/validate_task_complexity.py',
+              '* ``large_system_strict`` keeps the project owner\'s scale requirements as hard\n  authoring constraints and also requires structural authenticity.\n* ``large_system`` uses the same scale numbers as diagnostics while still\n  blocking padding, flat defect graphs and dishonest test maps.',
+              '* ``large_system`` and ``large_system_strict`` keep the project owner\'s scale\n  requirements as hard authoring constraints and also require structural authenticity.\n* ``coupled_system`` uses the same scale numbers as diagnostics while still blocking\n  padding, flat defect graphs and dishonest test maps.'
+          )
+          replace(
+              '.terminus/validate_task_complexity.py',
+              'PROFILES = {"large_system", "large_system_strict"}\nSTRICT_PROFILE = "large_system_strict"',
+              'PROFILES = {"large_system", "large_system_strict", "coupled_system"}\nSTRICT_PROFILES = {"large_system", "large_system_strict"}'
+          )
+          replace(
+              '.terminus/validate_task_complexity.py',
+              'strict = profile == STRICT_PROFILE',
+              'strict = profile in STRICT_PROFILES'
+          )
+          replace(
+              '.terminus/tests/test_task_complexity.py',
+              'profile: str = "large_system",',
+              'profile: str = "coupled_system",'
+          )
+          replace(
+              '.github/workflows/terminus-creator-complexity.yml',
+              'large_system|large_system_strict)',
+              'large_system|large_system_strict|coupled_system)'
+          )
+
+          # Resolve the retired five-vs-ten policy conflict in the stored checklist.
+          replace(
+              '.terminus/reviewers/REVIEWER_CHECKLIST.md',
+              'The existing local controller currently uses a custom five-run difficulty policy. Until those are reconciled, record a `POLICY_CONFLICT` rather than treating five runs as equivalent to the checklist\'s ten-run solvability definition.',
+              'The local controller is now reconciled with this definition: GPT-5.5 ×5 plus Claude Opus 4.8 ×5 form the combined 10 official trials. A five-run suite is diagnostic only and must not be represented as the final ten-run solvability result. The 5-vs-10 question is therefore not a `POLICY_CONFLICT` by itself.'
+          )
+
+          # Keep creator policy explicit about strict scale and the diagnostic escape hatch.
+          replace(
+              '.terminus/agents/CREATOR_AGENT_REGISTRY.md',
+              'For Advanced/Frontier task creation, use `large_system` unless the controller explicitly records why a smaller system is more realistic.',
+              'For Advanced/Frontier task creation, `large_system` is the default strict profile; `large_system_strict` is an explicit alias. Use `coupled_system` only when the controller records why the incident is genuinely smaller and strict scale would require padding.'
+          )
+          replace(
+              '.terminus/agents/CREATION_CONTROLLER.md',
+              '### `large_system`\n\nUse by default for tasks explicitly requested to represent a sizeable production system.\n\nNumeric floors are **authoring constraints**, not Edition 3 acceptance substitutes. The official reviewer can still reject a task that is large but clerical, over-specified, synthetic or uninteresting.\n\n### Smaller profiles',
+              '### `large_system` / `large_system_strict`\n\nUse for tasks explicitly requested to represent a sizeable production system. Numeric floors are **hard authoring constraints** in addition to structural-authenticity checks; they are not Edition 3 acceptance substitutes. The official reviewer can still reject a large task that is clerical, over-specified, synthetic or uninteresting.\n\n### `coupled_system`\n\nUse only when the controller records why the incident is inherently smaller and strict scale would require filler. Numeric targets become diagnostics, but duplicate/dead code, flat defect topology, dishonest test maps and suite inflation still block.\n\n### Smaller profiles'
+          )
+          replace(
+              '.terminus/agents/CREATOR_PROMPTS.md',
+              'For `large_system` tasks, numeric targets are authoring constraints, not permission to manufacture complexity.',
+              'For `large_system` or `large_system_strict` tasks, numeric targets are hard authoring constraints, not permission to manufacture complexity. `coupled_system` may use those numbers diagnostically only when the controller records why strict scale would require padding.'
+          )
+          PY
+
+      - name: Remove this one-use workflow and commit
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm .github/workflows/pr4-policy-sync.yml
+          git config user.name 'terminus-control-plane'
+          git config user.email 'terminus-control-plane@users.noreply.github.com'
+          git add -A
+          git diff --cached --check
+          git commit -m 'Synchronize strict complexity and resolved difficulty policies'
+          git push origin HEAD:agent-redesign
