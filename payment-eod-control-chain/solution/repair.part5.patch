@@ -1,0 +1,55 @@
+--- a/lib/common.sh
++++ b/lib/common.sh
+@@ -111,7 +111,10 @@
+ remove_gated_outputs() {
+-    rm -f "$OUT_DIR/customer_response.csv"
++    rm -f \
++        "$OUT_DIR/customer_response.csv" \
++        "$OUT_DIR/clearing_submission.csv" \
++        "$OUT_DIR/success_authorization.json"
+ }
+ 
+ audit_event() {
+--- a/lib/financial.sh
++++ b/lib/financial.sh
+@@ -273,6 +273,17 @@
+     beneficiary_q="$(sql_escape "$beneficiary_account")"
+     cycle_q="$(sql_escape "$cycle_id")"
+ 
++    local payer_state payer_balance beneficiary_state
++    payer_state="$(db_rows "SELECT status,balance_cents FROM accounts WHERE account_id='$payer_q';")"
++    [[ -n "$payer_state" ]] || return 1
++    IFS='|' read -r payer_state payer_balance <<< "$payer_state"
++    [[ "$payer_state" == "ACTIVE" ]] || return 1
++    (( $(safe_int "$payer_balance") >= total_debit )) || return 1
++
++    beneficiary_state="$(db_scalar "SELECT COALESCE(status,'') FROM accounts WHERE account_id='$beneficiary_q';")"
++    [[ "$beneficiary_state" == "ACTIVE" ]] || return 1
++
+     db_exec "
+         BEGIN IMMEDIATE;
+ 
+@@ -283,11 +294,6 @@
+           AND status='ACTIVE'
+           AND balance_cents >= $total_debit;
+ 
+-        SELECT CASE WHEN changes() = 1
+-            THEN 1
+-            ELSE RAISE(ABORT,'payer debit precondition failed')
+-        END;
+-
+         UPDATE accounts
+         SET balance_cents=balance_cents+$amount_cents,
+             updated_at=datetime('now')
+@@ -295,11 +301,6 @@
+         WHERE account_id='$beneficiary_q'
+           AND status='ACTIVE';
+ 
+-        SELECT CASE WHEN changes() = 1
+-            THEN 1
+-            ELSE RAISE(ABORT,'beneficiary credit precondition failed')
+-        END;
+-
+         INSERT INTO internal_postings(
+             payment_id,cycle_id,payer_account,beneficiary_account,
+             debit_cents,beneficiary_credit_cents,posted_at
