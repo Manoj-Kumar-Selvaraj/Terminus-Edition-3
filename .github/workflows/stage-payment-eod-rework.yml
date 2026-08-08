@@ -17,34 +17,28 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Expand staged task and create atomic rework commit
+      - name: Apply transparent task patch and create atomic rework commit
         shell: bash
         run: |
           set -euo pipefail
           stage_dir=".terminus/staging/payment-eod-large-rework"
           ready=".terminus/staging/payment-eod-large-rework.ready"
-          tmp="$(mktemp -d)"
+          patch_file="$(mktemp)"
 
-          cat "$stage_dir"/part-* | base64 --decode > "$tmp/rework.tar.gz"
-          gzip -t "$tmp/rework.tar.gz"
-          tar -tzf "$tmp/rework.tar.gz" >/dev/null
-          tar -xzf "$tmp/rework.tar.gz" -C "$tmp"
-
-          test -f "$tmp/cobol_rework/task.toml"
-          test -f "$tmp/cobol_rework/tests/test_outputs.py"
-          test -f "$tmp/cobol_rework_private/designs/payment-eod-control-chain.json"
+          cat "$stage_dir"/part-*.patch > "$patch_file"
+          git apply --check "$patch_file"
 
           rm -rf payment-eod-control-chain
-          cp -a "$tmp/cobol_rework" payment-eod-control-chain
-          rm -rf payment-eod-control-chain/tests/__pycache__
+          rm -f .terminus/designs/payment-eod-control-chain.json \
+                .terminus/designs/payment-eod-control-chain-test-map.json \
+                .terminus/research/payment-eod-control-chain.md
+          git apply "$patch_file"
 
-          mkdir -p .terminus/designs .terminus/research
-          cp "$tmp/cobol_rework_private/designs/payment-eod-control-chain.json" \
-             .terminus/designs/payment-eod-control-chain.json
-          cp "$tmp/cobol_rework_private/designs/payment-eod-control-chain-test-map.json" \
-             .terminus/designs/payment-eod-control-chain-test-map.json
-          cp "$tmp/cobol_rework_private/research/payment-eod-control-chain.md" \
-             .terminus/research/payment-eod-control-chain.md
+          python3 .terminus/validate_task_complexity.py payment-eod-control-chain
+          python3 -m py_compile payment-eod-control-chain/tests/test_outputs.py
+          bash -n payment-eod-control-chain/solution/solve.sh
+          bash -n payment-eod-control-chain/environment/eod/bin/run_eod.sh
+          for f in payment-eod-control-chain/environment/eod/lib/*.sh; do bash -n "$f"; done
 
           rm -rf "$stage_dir" "$ready" .github/workflows/stage-payment-eod-rework.yml
 
