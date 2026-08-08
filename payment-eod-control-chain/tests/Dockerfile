@@ -7,5 +7,6 @@ RUN apt-get update \
 
 RUN mkdir -p /app/eod
 COPY test_outputs.py /tests/test_outputs.py
+COPY test_regressions.py /tests/test_regressions.py
 COPY test.sh /tests/test.sh
 RUN chmod +x /tests/test.sh
