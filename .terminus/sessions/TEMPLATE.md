@@ -1,8 +1,8 @@
 # Terminus Task Session
 
-Session schema version: `2.2`
+Session schema version: `2.4`
 
-This file is the durable operational checkpoint for one task. Keep it concise. Repository, current rules, CI/artifact evidence and current reviewer policy override stale prose here.
+This is the durable operational checkpoint for one task. Keep it evidence-oriented. Current repository/rules/Git/CI/review provenance override stale prose.
 
 ## Identity
 
@@ -10,10 +10,11 @@ This file is the durable operational checkpoint for one task. Keep it concise. R
 - Controller state: `DRAFT | PUSHED | VALIDATING | FIXING | PRE_LLMAJ | LLMAJ | VALIDATED | DIFFICULTY_10X | RECALIBRATING | FINAL_AUDIT | SUBMISSION_READY | BLOCKED`
 - Working branch: `<branch>`
 - Pull request: `<number-or-none>`
-- Current task commit: `<sha>`
-- Agent-system policy: `2.1`
-- Specialist prompt policy: `2.1`
-- Pre-LLMaJ panel policy: `2.1`
+- Current task commit: `<git-derived-sha>`
+- Agent-system policy: `2.3`
+- Specialist prompt policy: `2.2`
+- Specialist protocol policy: `2.1`
+- Pre-LLMaJ panel policy: `2.2`
 - Comprehensive reviewer policy: `1.0`
 - Reviewer checklist snapshot: `2026-08-08-user-supplied`
 
@@ -21,9 +22,10 @@ This file is the durable operational checkpoint for one task. Keep it concise. R
 
 | Gate | Status | Evidence / version |
 | --- | --- | --- |
+| Creator Complexity Gate | PENDING | required for strict large-system profile |
 | Preflight/static | PENDING | |
 | Ruff verifier | PENDING | |
-| STB auth/AI credentials | PENDING | |
+| STB auth/AI credentials | PENDING | infrastructure dependency; not itself submission proof |
 | Oracle = 1 | PENDING | |
 | NOP = 0 | PENDING | |
 | Pre-LLMaJ specialist panel | PENDING | |
@@ -37,16 +39,21 @@ This file is the durable operational checkpoint for one task. Keep it concise. R
 | Comprehensive Reviewer | PENDING | checklist coverage must be 100% |
 | Pre-LLMaJ aggregate | PENDING | |
 | Harbor LLMaJ | PENDING | |
-| GPT-5.5 difficulty ×5 | PENDING | diagnostic half of final trial set |
-| Claude Opus 4.8 difficulty ×5 | PENDING | diagnostic half of final trial set |
-| Combined difficulty ×10 | PENDING | final tier decision |
-| Per-test solvability 1/10 | PENDING | every individual verifier case must pass at least once across combined 10 |
-| Trial Analysis | PENDING | |
-| Final Compliance | PENDING | |
-| Final Human Quality | PENDING | |
+| Difficulty trials | PENDING | GPT-5.5 ×5 plus Claude Opus 4.8 ×5 |
+| GPT-5.5 difficulty ×5 | PENDING | diagnostic half |
+| Claude Opus 4.8 difficulty ×5 | PENDING | diagnostic half |
+| Combined difficulty ×10 | PENDING | final tier |
+| Per-test solvability 1/10 | PENDING | every verifier case passes at least once across combined 10 |
+| Trial Analysis | PENDING | packet-bound Trajectory Analyst review |
+| Final Compliance | PENDING | packet-bound Compliance Auditor review |
+| Final Human Quality | PENDING | packet-bound Human Quality Reviewer review |
 | Final package | PENDING | |
 
-Allowed status values: `PASS`, `APPROVE`, `APPROVE_WITH_NOTE`, `REVISE`, `REQUEST_CHANGES`, `FAIL`, `PENDING`, `STALE`, `BLOCKED`, `NOT_RUN`, `REJECT`, `DECLINE`, `INSUFFICIENT_EVIDENCE`, `POLICY_CONFLICT`.
+Allowed statuses: `PASS`, `APPROVE`, `APPROVE_WITH_NOTE`, `REVISE`, `REQUEST_CHANGES`, `FAIL`, `PENDING`, `STALE`, `BLOCKED`, `NOT_RUN`, `REJECT`, `DECLINE`, `INSUFFICIENT_EVIDENCE`, `POLICY_CONFLICT`.
+
+**Evidence rule:** semantic ready rows cite the exact current `.terminus/reviews/<task>/<commit>/<review-id>.json`; their matching packet/result provenance must validate. Deterministic ready rows cite current run/job/artifact/package evidence. A non-empty prose cell alone is not proof.
+
+`SUBMISSION_READY` requires the complete mandatory gate registry in `.terminus/validate_review_freshness.py`; deleting a row cannot delete a requirement.
 
 ## Latest CI
 
@@ -73,25 +80,28 @@ Allowed status values: `PASS`, `APPROVE`, `APPROVE_WITH_NOTE`, `REVISE`, `REQUES
 
 ## Review evidence ledger
 
-| Review | Review ID | Task commit | Policy version | Verdict | Confidence | Evidence status | Finding IDs |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| Task Architect | | | | PENDING | | | |
-| Verifier Engineer | | | | PENDING | | | |
-| Originality | | | | PENDING | | | |
-| Difficulty design | | | | PENDING | | | |
-| Compliance | | | | PENDING | | | |
-| Instruction | | | | PENDING | | | |
-| Documentation | | | | PENDING | | | |
-| Comprehensive Reviewer | | | 1.0 | PENDING | | | |
-| Human Quality | | | | PENDING | | | |
+| Review | Review ID | Task commit | Protocol | Prompt | Role policy | Role contract hash | Result path | Verdict | Confidence | Evidence |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Task Architect | | | | | | | | PENDING | | |
+| Verifier Engineer | | | | | | | | PENDING | | |
+| Originality | | | | | | | | PENDING | | |
+| Difficulty design | | | | | | | | PENDING | | |
+| Compliance pre-review | | | | | | | | PENDING | | |
+| Instruction | | | | | | | | PENDING | | |
+| Documentation | | | | | | | | PENDING | | |
+| Comprehensive Reviewer | | | | | 1.0 | | | PENDING | | |
+| Trial Analysis | | | | | | | | PENDING | | |
+| Final Compliance | | | | | | | | PENDING | | |
+| Final Human Quality | | | | | | | | PENDING | | |
 
-A PASS/APPROVE is current only when its task/input scope and the role-specific policy change scope remain applicable. A policy update does not automatically stale unrelated roles if their decision contract/evidence rules did not change.
+A role-contract change stales only the affected role when the task is unchanged; task changes follow the impact matrix in `PROTOCOL.md`. Historical legacy reports remain historical and are not rewritten into v3.
 
 ## Comprehensive reviewer checkpoint
 
 - Review ID: `<id>`
+- Result path: `<path>`
 - Task commit: `<sha>`
-- Reviewer policy: `1.0`
+- Role contract hash: `<hash>`
 - Checklist snapshot: `2026-08-08-user-supplied`
 - Policy freshness: `CURRENT | UNVERIFIED | STALE`
 - Checklist total: `<count>`
@@ -105,13 +115,14 @@ A PASS/APPROVE is current only when its task/input scope and the role-specific p
 - Trial-analysis dispositions: `<review/report reference>`
 - Policy conflicts: `<none or IDs>`
 
-`CHECKLIST_COVERAGE` must be 100% for the Comprehensive Reviewer to count as complete.
+`CHECKLIST_COVERAGE` must be 100% for an APPROVE/APPROVE_WITH_NOTE to support a ready gate.
 
 ## Pre-LLMaJ checkpoint
 
 - Aggregate: `PASS | REVISE | REJECT | PENDING | STALE | INSUFFICIENT_EVIDENCE | POLICY_CONFLICT`
+- Aggregate path: `<path>`
 - Task commit: `<sha>`
-- Panel policy: `2.1`
+- Panel policy: `2.2`
 - Static check: `<status>`
 - Comprehensive Reviewer: `<recommendation>`
 - Checklist coverage: `<percent>`
@@ -119,7 +130,7 @@ A PASS/APPROVE is current only when its task/input scope and the role-specific p
 - Open findings: `<finding IDs>`
 - Policy conflicts: `<none or IDs>`
 
-Harbor LLMaJ must not run until aggregate is PASS.
+Harbor LLMaJ cannot run until the aggregate is PASS.
 
 ## Difficulty / solvability checkpoint
 
@@ -132,23 +143,13 @@ Harbor LLMaJ must not run until aggregate is PASS.
 - Combined complete passes: `<0-10>`
 - Combined complete pass rate: `<percent>`
 - Measured tier: `FRONTIER | ADVANCED | CORE | BASE | TOO_EASY_REJECT | NOT_MEASURED`
-- Verifier test cases at 0/10: `<none or names>`
-- Difficulty evidence artifact(s): `<ids/paths>`
+- Verifier cases at 0/10: `<none or names>`
+- Difficulty artifact(s): `<ids/paths>`
 - Result freshness: `CURRENT | STALE | NOT_RUN`
-- Trajectory review IDs: `<ids>`
-- Solvability policy: `each individual verifier test passes at least once across the combined 10 official trials`
+- Trajectory review IDs/paths: `<ids/paths>`
+- Solvability policy: `every individual verifier case passes at least once across the combined 10 official trials`
 
-Tier mapping: `<20% frontier`, `20–<50 advanced`, `50–<80 core`, `80–<100 base`, `100% reject`. A five-run model suite is diagnostic only and cannot set the final tier or 1/10 solvability result by itself.
-
-## Writing/originality checkpoints
-
-- Instruction verdict: `<status>`
-- Instruction word count: `<count>`
-- Documentation verdict: `<status>`
-- Originality verdict: `<status>`
-- Duplicate risk: `LOW | MEDIUM | HIGH | PENDING`
-- Template risk: `LOW | MEDIUM | HIGH | PENDING`
-- Realism: `LOW | MEDIUM | HIGH | PENDING`
+Tier mapping: `<20% frontier`, `20–<50 advanced`, `50–<80 core`, `80–<100 base`, `100% reject`. A five-run suite is diagnostic only.
 
 ## Adjudication ledger
 
@@ -160,7 +161,7 @@ Tier mapping: `<20% frontier`, `20–<50 advanced`, `50–<80 core`, `80–<100 
 | Conflict ID | Source A | Source B | Impact | Resolution/status |
 | --- | --- | --- | --- | --- |
 
-Never silently resolve an acceptance-relevant conflict between the stored reviewer checklist and current authoritative Edition 3 validators/rules.
+Never silently resolve an acceptance-relevant current-rule conflict. The combined-ten difficulty rule is already resolved and is not itself a conflict.
 
 ## Circuit breakers
 
@@ -168,8 +169,6 @@ Never silently resolve an acceptance-relevant conflict between the stored review
 - Trigger: `<none or exact repeated failure/finding>`
 - Attempts: `<count>`
 - Required strategy change/evidence: `<none or action>`
-
-Do not repeat a tripped strategy until its dependency/evidence changes.
 
 ## Decisions that must survive chat changes
 
@@ -185,10 +184,6 @@ Newest first; keep only meaningful state-changing attempts.
 
 - `<commit/run/review> — <change/finding> — <result>`
 
-## Do not retry blindly
-
-- `<known dead end and evidence>`
-
 ## Resume rule
 
-A new controller must follow `.terminus/CONTINUE_SESSION.md`, load the current reviewer checklist and criterion registry, current policy files, this checkpoint, current task/PR/Actions/artifacts, reconcile review/task versions and policy conflicts, and correct stale state before changing anything.
+A new controller follows `.terminus/CONTINUE_SESSION.md`, reconciles this checkpoint with Git and live CI/artifact/review provenance, and corrects stale state before changing the task.
