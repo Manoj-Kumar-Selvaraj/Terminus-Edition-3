@@ -7,9 +7,11 @@ cat \
   /solution/repair.part1.patch \
   /solution/repair.part2.patch \
   /solution/repair.part3.patch \
+  /solution/repair.part4.patch \
   > "$repair_patch"
 patch -p1 < "$repair_patch"
 rm -f "$repair_patch"
+cat /solution/schema_guards.sql >> /app/eod/sql/schema.sql
 
 chmod +x /app/eod/bin/run_eod.sh /app/eod/lib/*.sh
 rm -rf /app/eod/.bin /app/eod/out
