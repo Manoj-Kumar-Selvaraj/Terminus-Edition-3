@@ -1,16 +1,16 @@
 version = "2.0"
 name = "payment-eod-control-chain"
-artifacts = ["/app/eod"]
-
-[metadata]
-author_name = "anonymous"
-author_email = "anonymous@example.com"
 category = "Software"
 subcategory = "Systems"
 tags = ["cobol", "sql", "batch-processing", "payments", "reconciliation", "idempotency"]
 languages = ["cobol", "bash", "sql"]
 difficulty = "advanced"
 expert_time_estimate_hours = 12
+artifacts = ["/app/eod"]
+
+[metadata]
+author_name = "anonymous"
+author_email = "anonymous@example.com"
 difficulty_explanation = "A restart can be correct at one layer and still be wrong at the next. Reusing an existing posting or reservation avoids one duplicate, but capacity, clearing, ledger and close state still have to agree with that resumed effect."
 solution_explanation = "Treat persisted postings and reservations as restart authority, validate them before resuming, rebuild only missing downstream state that is consistent with them, and enforce exactly-once financial and close effects at the database boundary."
 verification_explanation = "The tests seed fresh, partially completed, inconsistent and completed cycles and run the submitted batch against each state. Direct COBOL calls cover the documented decision interfaces; end-to-end cases check durable financial state, reconciliation, publication and close."
