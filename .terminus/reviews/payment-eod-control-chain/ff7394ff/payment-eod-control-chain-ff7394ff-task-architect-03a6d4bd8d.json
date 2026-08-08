@@ -1,0 +1,43 @@
+{
+  "schema_version": "3.0",
+  "role": "Task Architect",
+  "review_id": "payment-eod-control-chain-ff7394ff-task-architect-03a6d4bd8d",
+  "task": "payment-eod-control-chain",
+  "task_commit": "ff7394ff7bd05a5c851cd1a6a1f62e175c2cd011",
+  "control_plane_commit": "32d29190439d7b0927d16228af146c93da3e5a8c",
+  "protocol_policy_version": "2.1",
+  "prompt_policy_version": "2.2",
+  "role_policy_version": "1.0",
+  "role_contract_hash": "d79600c96f022187248525da01e7b46d20a7f8486eb4e6017542c23ef22adc3e",
+  "context_packet": ".terminus/reviews/payment-eod-control-chain/ff7394ff/payment-eod-control-chain-ff7394ff-task-architect-03a6d4bd8d.packet.json",
+  "verdict": "PASS",
+  "confidence": "HIGH",
+  "evidence_status": "SUFFICIENT",
+  "summary": "The task presents one coherent payment-batch restart incident with durable-state, accounting, publication and close invariants that interact across COBOL, shell and SQLite. The supplied contracts make the problem fair without turning the instruction into a bug checklist.",
+  "evidence": [
+    {"type":"file","ref":"payment-eod-control-chain/instruction.md","observation":"Incident-first two-paragraph handoff identifies restart duplication, stale publication and the durable database as restart authority."},
+    {"type":"file","ref":"payment-eod-control-chain/environment/eod/docs/restart-operations.txt","observation":"Operational notes define replay identity, internal/external resume semantics and capacity rules."},
+    {"type":"file","ref":"payment-eod-control-chain/environment/eod/docs/reconciliation-close.txt","observation":"Finance/close notes couple financial effects, ledger completeness, publication and completion prerequisites."},
+    {"type":"test","ref":".terminus/designs/payment-eod-control-chain-test-map.json","observation":"Twelve requirement groups are exercised across 37 behavioral cases rather than isolated one-file assertions."},
+    {"type":"run","ref":"Terminus Edition 3 CI run 31260792025 (#159)","observation":"Oracle passed 37/37 and NOP retained 7 P2P while failing all 30 F2P, supporting solvability and meaningful starter failure."}
+  ],
+  "findings": [],
+  "missing_evidence": [],
+  "change_scope": ["Fresh semantic review under protocol 2.1 / packet-result schema v3; solver-visible task content unchanged."],
+  "do_not_change": ["Do not weaken behavioral verifier coverage or exactly-once/restart invariants merely to improve agent pass rate."],
+  "next_gate": "Verifier Engineer",
+  "role_output": {
+    "SCENARIO_COHERENCE": "HIGH",
+    "SOLVABILITY": "HIGH",
+    "COUPLED_REASONING": "HIGH",
+    "ARTIFICIAL_CONSTRUCTION_RISK": "LOW",
+    "PLAUSIBLE_PARTIAL_FIXES": [
+      "Fix replay identity only, leaving resume routing able to repeat durable effects.",
+      "Prevent duplicate reservation rows only, while capacity, clearing or ledger reconstruction remains inconsistent.",
+      "Balance ledger totals only, while missing route-specific obligations or cross-cycle scope still permits a false balance.",
+      "Gate authorization only, while stale response/clearing publication can still escape a held retry."
+    ],
+    "CONTRACT_GAPS": [],
+    "STRUCTURAL_REMEDIATION": []
+  }
+}
