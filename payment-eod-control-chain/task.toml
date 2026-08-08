@@ -11,9 +11,9 @@ tags = ["cobol", "sql", "batch-processing", "payments", "reconciliation", "idemp
 languages = ["cobol", "bash", "sql"]
 difficulty = "advanced"
 expert_time_estimate_hours = 12
-difficulty_explanation = "The restart bug spans replay identity, durable financial state, capacity, clearing, ledger reconciliation and close gating. A local fix can stop one duplicate effect while leaving another resumed state or downstream gate inconsistent."
-solution_explanation = "Restore authoritative restart decisions around the existing posting/reservation state, enforce database idempotency, rebuild only missing consistent downstream state, and gate publication/completion on cycle-scoped reconciliation and close prerequisites."
-verification_explanation = "The verifier rebuilds the database into fresh, resumed, inconsistent and completed states, runs the batch end to end, and checks durable financial effects, reconciliation, publication and close behavior. It also exercises the COBOL interfaces directly."
+difficulty_explanation = "A restart can be correct at one layer and still be wrong at the next. Reusing an existing posting or reservation avoids one duplicate, but capacity, clearing, ledger and close state still have to agree with that resumed effect."
+solution_explanation = "Treat persisted postings and reservations as restart authority, validate them before resuming, rebuild only missing downstream state that is consistent with them, and enforce exactly-once financial and close effects at the database boundary."
+verification_explanation = "The tests seed fresh, partially completed, inconsistent and completed cycles and run the submitted batch against each state. Direct COBOL calls cover the documented decision interfaces; end-to-end cases check durable financial state, reconciliation, publication and close."
 relevant_experience = "Batch payment processing, COBOL, shell orchestration, SQL transaction semantics, ledger reconciliation and restart/idempotency controls."
 
 [verifier]
