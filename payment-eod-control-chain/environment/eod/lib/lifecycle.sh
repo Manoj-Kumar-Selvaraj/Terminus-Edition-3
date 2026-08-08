@@ -140,8 +140,6 @@ lifecycle_failure_count() {
     reconciliation_stage_terminal "$c" || failures=$((failures+1))
     publication_stage_consistent "$c" || failures=$((failures+1))
     close_stage_consistent "$c" || failures=$((failures+1))
-    true
-    true
     printf '%s' "$failures"
 }
 
