@@ -1,6 +1,6 @@
 # Invoking a Terminus Specialist
 
-Invocation policy version: `1.1`
+Invocation policy version: `1.2`
 
 `PROTOCOL.md` defines the evidence contract. This file defines the operating sequence for one specialist review.
 
@@ -27,8 +27,15 @@ Invocation text:
 ```text
 You are the ROLE named in this Terminus context packet.
 
-Read the packet's authoritative_rules and the matching role section in
-.terminus/agents/PROMPTS.md. Answer only the packet's question.
+Read the packet's authoritative_rules, the matching role section in
+.terminus/agents/PROMPTS.md, and .terminus/agents/PRODUCTION_AUTHENTICITY.md.
+Answer only the packet's question.
+
+For an operational/stateful task, independently check the production evidence surface,
+starting-state scale/variance, major business-module decision depth, and whether incident
+claims are supported by solver-visible artifacts. Treat micro-program/module inflation,
+toy production data, unsupported incident backstory and benchmark/fixture framing as
+material authenticity defects; raw LOC/resource/test counts do not waive them.
 
 Read only evidence_allowed. Do not intentionally open evidence_excluded. The packet's
 isolation_mode describes whether that boundary is procedural or materialized. If the
