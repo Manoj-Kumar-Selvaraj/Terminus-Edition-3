@@ -2,95 +2,66 @@
 
 Registry version: `1.0`
 
-This registry defines the producer agents used before independent review. Current Edition 3 rules always override this registry. Producers create or repair artifacts; they never issue final acceptance verdicts for their own work.
+Producer roles create/repair task artifacts before independent review. Every producer reads current Edition 3 rules, `.terminus/agents/CREATION_PIPELINE.md`, and `.terminus/agents/PRODUCTION_AUTHENTICITY.md`. Producers never issue final acceptance for their own work.
 
-## Large-system profiles
+## `large_system_strict`
 
-For tasks explicitly requested to meet the project owner's large-system scale, use `large_system_strict`. This is the default profile for Advanced/Frontier task creation unless the controller records why the incident is inherently smaller.
+Default for large production-style Advanced/Frontier authoring unless a smaller profile is explicitly justified:
+- >= **3,000** substantive solver-visible runtime/configuration LOC;
+- infrastructure: **30–50** meaningful interacting resources;
+- **20–30** defect manifestations from fewer root causes;
+- >=15 interrelated manifestations;
+- **25–30** F2P tests;
+- P2P as needed.
 
-Mandatory authoring constraints for `large_system_strict`:
+If natural scope cannot meet this without filler, return `SCENARIO_TOO_SMALL`.
 
-- >= 3,000 substantive solver-visible runtime/configuration LOC. Exclude tests, solution, docs, generated/vendor content, blank lines, comments-only lines and duplicated filler.
-- Infrastructure tasks: 30-50 meaningful resources whose relationships affect observable behavior.
-- 20-30 tracked defect manifestations derived from materially fewer root-cause clusters.
-- >= 15 defect manifestations participating in causal/interdependency edges.
-- 25-30 F2P behavioral tests. Every F2P must fail against the starter/NOP state for a substantive reason and pass against Oracle.
-- P2P/regression tests are added only where already-correct behavior needs protection; no fixed P2P quota.
-- The instruction remains concise and incident-oriented. It must not enumerate the defect graph or hidden test inventory.
+## Production authenticity
 
-The legacy `large_system` profile is diagnostic-scale only. Use it only when the controller records why enforcing strict numeric scale would require filler. Structural authenticity still blocks padding in both profiles.
-
-If a strict scenario cannot meet its constraints naturally, return `SCENARIO_TOO_SMALL` and select a richer scenario. Do not downgrade the profile merely to keep an undersized idea.
+For operational/stateful strict tasks:
+- require solver-visible incident logs plus handoff/state/operator evidence;
+- data-backed tasks normally start with **10,000–20,000** deterministic varied primary records;
+- reject thin business logic or micro-program/module inflation;
+- reject benchmark/fixture framing in incident prose;
+- require `.terminus/validate_runtime_authenticity.py` PASS in addition to the ordinary complexity gate.
 
 ## Producer agents
 
 ### A1 — Scenario Researcher
-
-Owns incident discovery, operational persona, system boundary, public-reference research and duplicate-risk analysis. Produces 3-5 structurally different candidates. Learns failure shapes from public incidents but never copies issue wording, benchmark topology or requirement ordering.
+Owns incident discovery, persona, evidence that would exist after the incident, scale fit, public-reference research and duplicate risk.
 
 ### A2 — System Architect / Environment Builder
-
-Owns the solver-visible code/configuration system, fixtures, runtime topology, Docker environment and operational artifacts. Must prove runtime reachability for counted modules/resources and must not use generated/dead code to hit the scale floor. Does not read the final Oracle while building the starter.
+Owns runtime topology, realistic state/data, solver-visible incident evidence and starter code/config. Major modules must be reachable and substantive. It does not read the final Oracle while building the starter.
 
 ### A3 — Defect Topology Designer
-
-Owns `.terminus/designs/<task>.json`. Starts from 4-8 root-cause clusters and derives 20-30 manifestations with explicit causal edges and plausible partial-fix traps. At least 15 manifestations must participate in the graph for `large_system_strict`. Does not design one isolated source typo per test.
+Owns the private causal graph: normally 4–8 root causes, 20–30 manifestations, cross-component/cross-cluster edges and partial-fix traps.
 
 ### A4 — Reference Solution Author
-
-Owns the deterministic general repair from the approved solver-visible contract. Does not read hidden verifier bodies before the first Oracle implementation is frozen. Restores durable invariants rather than patching fixture-specific outputs.
+Owns the deterministic general repair. No hidden-test special casing.
 
 ### A5 — Verifier Author
+Owns behavioral verifier and private test map. Strict tasks use 25–30 independent F2P cases plus P2P as needed; F2P is empirically starter-fail/Oracle-pass.
 
-Owns behavioral tests and `.terminus/designs/<task>-test-map.json`. Creates 25-30 independent F2P scenarios for `large_system_strict`, plus P2P where needed. Tests observable behavior/state, not preferred implementation syntax. Every F2P must be empirically NOP-fail/Oracle-pass before candidate freeze.
-
-### A6 — Human Writing Corpus Researcher
-
-Owns public human-engineering writing calibration. Searches real issue/incident/ticket sources across multiple ecosystems, verifies source provenance, and records only metadata plus generalized information-selection observations. Never copies long prose or turns source wording into a template. Produces/maintains the human engineering source corpus and a per-task calibration sample packet.
+### A6 — Human Writing Corpus Researcher / Human Writing Researcher
+Owns public source-backed calibration. It extracts information-selection patterns, never a phrase bank. It applies the incident-evidence test and must flag invented production backstory.
 
 ### A7 — Instruction Writer
-
-Owns `instruction.md`. Receives the incident, solver-visible docs/contracts, approved operational invariants and a calibration packet from A6. It must not receive hidden test names/bodies, private defect IDs or the Oracle diff as a sentence checklist. Writes the shortest fair Jira/Slack/on-call style handoff that satisfies current Edition 3 instruction rules.
+Owns `instruction.md`. It points to actual logs/state/runbooks, states the operational ask, and avoids hidden-test-shaped completeness.
 
 ### A8 — Documentation Writer
-
-Owns reviewer-facing README and Difficulty/Solution/Verification explanations after functional evidence exists. Does not inflate solver-facing instructions and does not claim empirically proven difficulty before trials.
+Owns README and submission explanations. It must not describe the task as a benchmark, fixture, cut-down reproduction, or package built for evaluation.
 
 ### A9 — Task Assembly Agent
-
-Integrates producer outputs and runs deterministic authoring checks: file structure, metadata, build inputs, lint/syntax, complexity profile, Oracle, NOP, F2P/P2P empirical matrix and leakage/package hygiene. It cannot approve its own task.
+Runs structure, metadata, lint, complexity, runtime-authenticity, Oracle/NOP and leakage gates.
 
 ### A10 — Complexity Governor
-
-Independently challenges scale authenticity. It rejects dead-code/resource/test inflation even if strict numeric constraints pass. Mandatory questions include whether 1,000 lines could be deleted without changing the operational system, whether resources are meaningful dependencies, and whether tests are real state/invariant variations rather than fixture renames.
+Challenges padding, toy state, micro-module inflation and task realism even when numeric minima pass.
 
 ### A11 — Authoring Failure Diagnostician
-
-Owns Oracle/NOP authoring failures before semantic review. Reads CI/Harbor evidence and classifies the first meaningful failure as one of:
-
-- `environment_authoring_bug`
-- `oracle_implementation_bug`
-- `verifier_authoring_bug`
-- `starter_state_bug`
-- `contract_gap`
-- `infrastructure/transient`
-
-It routes only the smallest implicated layer back to the responsible producer. It must not weaken a legitimate behavioral test merely to obtain reward 1/0. Multiple failing tests that share one authoring root cause are treated as one repair problem.
+Classifies deterministic failures as environment/oracle/verifier/starter/contract/infrastructure and routes only the implicated layer.
 
 ## Creation order
 
-`A1 Scenario Researcher -> A2 System Architect -> A3 Defect Topology -> A4 Reference Solution -> A5 Verifier Author -> A6 Human Writing Corpus Researcher -> A7 Instruction Writer -> A8 Documentation Writer -> A9 Task Assembly -> A10 Complexity Governor -> deterministic Oracle/NOP`
+`A1 -> A2 -> A3 -> A4 -> A5 -> A6 -> A7 -> A8 -> A9 -> A10 -> deterministic Oracle/NOP`
 
-If Oracle/NOP fails, invoke `A11 Authoring Failure Diagnostician`, route the narrow repair, and repeat A9/A10 as affected.
-
-Only a deterministic frozen candidate enters the independent review system.
-
-## Isolation rules
-
-- A2 must not construct starter state by diffing against the final Oracle.
-- A4 must not read hidden verifier bodies before its first implementation is frozen.
-- A5 must not use Oracle source as its expected-value calculator.
-- A6 may read public sources but cannot write task requirements from them.
-- A7 must not see test/defect inventories as prose inputs.
-- A9/A10 cannot substitute numeric success for realism or task quality.
-- No producer can issue the corresponding independent reviewer PASS.
+Only a frozen deterministic candidate enters independent review.
