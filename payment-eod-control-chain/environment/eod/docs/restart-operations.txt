@@ -1,0 +1,24 @@
+PAYMENTS EOD - RESTART NOTES
+Owner: Payments Operations / Batch Control
+
+The database under /app/eod/state is the restart point. Do not reconstruct completed financial work from the flat files. A cycle may be restarted after population, after an internal posting, after the external reservation, after clearing creation, after reconciliation, or after publication.
+
+Source replay
+-------------
+The source reference is the instruction identity. If that reference was already ACCEPTED or COMPLETED by an earlier cycle, the incoming item is a replay and should be returned as DUPLICATE. Matching payer, beneficiary, amount, currency or purpose is useful investigation data but is not a replay key. Recurring business with a new source reference must remain eligible.
+
+History written by the current cycle is not evidence that the same payment became a cross-cycle duplicate. On restart, durable state belonging to the current payment/cycle is resumed.
+
+Internal route
+--------------
+An existing internal_postings row is the authoritative financial effect. If its debit and beneficiary credit still agree with the payment, retain it. Do not debit or credit the accounts again. Missing ledger rows may be restored from that authoritative posting/payment data; inconsistent posting amounts put the cycle on hold.
+
+External route
+--------------
+The active reservation is the durable debit-side effect. Clearing belongs to that reservation and may only be created after a matching active reservation exists. If the reservation already exists, reuse it. A missing clearing item can be rebuilt from a consistent reservation; a different reservation amount or clearing amount is a hold condition.
+
+Capacity
+--------
+Available payer capacity is the current account balance less other active reservations for that payer. Ignore inactive reservations and reservations owned by other payers. When checking a payment that already owns the reservation being resumed, do not subtract that same reservation a second time. The requested debit is amount + fee + tax.
+
+A rejected or duplicate item must not acquire a posting, active reservation, clearing item or ledger obligation.

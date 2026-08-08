@@ -1,0 +1,375 @@
++    END-IF
+     COMPUTE AMOUNT-CENTS = FUNCTION NUMVAL(AMOUNT-TEXT)
+-    MOVE AMOUNT-CENTS TO TOTAL-DEBIT
++    COMPUTE FEE-CENTS = FUNCTION NUMVAL(FEE-TEXT)
++    COMPUTE TAX-CENTS = FUNCTION NUMVAL(TAX-TEXT)
++    COMPUTE TOTAL-DEBIT = AMOUNT-CENTS + FEE-CENTS + TAX-CENTS
+     DISPLAY TOTAL-DEBIT
+     STOP RUN.
+--- a/cobol/paypub.cob
++++ b/cobol/paypub.cob
+@@ -1,13 +1,24 @@
+ >>SOURCE FORMAT FREE
+ IDENTIFICATION DIVISION.
+ PROGRAM-ID. PAYPUB.
++
+ DATA DIVISION.
+ WORKING-STORAGE SECTION.
+-01 INPUT-LINE PIC X(512).
+-01 RECON-STATUS PIC X(16).
+-01 STALE-FOUND PIC X.
++01 INPUT-LINE                     PIC X(512).
++01 RECON-STATUS                   PIC X(16).
++01 STALE-FOUND                    PIC X.
++01 OUTPUT-CODE                    PIC X(24).
++
+ PROCEDURE DIVISION.
+ MAIN.
+     ACCEPT INPUT-LINE
+-    DISPLAY "PUBLISH"
++    UNSTRING INPUT-LINE DELIMITED BY "|"
++        INTO RECON-STATUS STALE-FOUND
++    END-UNSTRING
++    IF RECON-STATUS = "BALANCED"
++        MOVE "PUBLISH" TO OUTPUT-CODE
++    ELSE
++        MOVE "HOLD" TO OUTPUT-CODE
++    END-IF
++    DISPLAY FUNCTION TRIM(OUTPUT-CODE)
+     STOP RUN.
+--- a/cobol/payrecon.cob
++++ b/cobol/payrecon.cob
+@@ -1,26 +1,108 @@
+ >>SOURCE FORMAT FREE
+ IDENTIFICATION DIVISION.
+ PROGRAM-ID. PAYRECON.
++
+ DATA DIVISION.
+ WORKING-STORAGE SECTION.
+-01 INPUT-LINE PIC X(1024).
+-01 D-TEXT PIC X(24).
+-01 C-TEXT PIC X(24).
+-01 D PIC 9(14).
+-01 C PIC 9(14).
++01 INPUT-LINE                     PIC X(1024).
++01 ORIGINAL-COUNT-TEXT            PIC X(16).
++01 OUTCOME-COUNT-TEXT             PIC X(16).
++01 ORIGINAL-VALUE-TEXT            PIC X(24).
++01 RESPONSE-VALUE-TEXT            PIC X(24).
++01 INT-SUCCESS-TEXT               PIC X(16).
++01 INT-POST-TEXT                  PIC X(16).
++01 EXT-SUCCESS-TEXT               PIC X(16).
++01 RESERVATION-TEXT               PIC X(16).
++01 CLEARING-TEXT                  PIC X(16).
++01 RESERVED-DEBIT-TEXT            PIC X(24).
++01 CLEARING-VALUE-TEXT            PIC X(24).
++01 EXTERNAL-FEE-TAX-TEXT          PIC X(24).
++01 LEDGER-DEBITS-TEXT             PIC X(24).
++01 LEDGER-CREDITS-TEXT            PIC X(24).
++01 INVALID-EFFECT-TEXT            PIC X(16).
++01 MISMATCH-TEXT                  PIC X(16).
++01 MISSING-LEDGER-TEXT            PIC X(16).
++01 ORIGINAL-COUNT                 PIC 9(9).
++01 OUTCOME-COUNT                  PIC 9(9).
++01 ORIGINAL-VALUE                 PIC 9(14).
++01 RESPONSE-VALUE                 PIC 9(14).
++01 INT-SUCCESS                    PIC 9(9).
++01 INT-POST                       PIC 9(9).
++01 EXT-SUCCESS                    PIC 9(9).
++01 RESERVATION-COUNT              PIC 9(9).
++01 CLEARING-COUNT                 PIC 9(9).
++01 RESERVED-DEBIT                 PIC 9(14).
++01 CLEARING-VALUE                 PIC 9(14).
++01 EXTERNAL-FEE-TAX               PIC 9(14).
++01 LEDGER-DEBITS                  PIC 9(14).
++01 LEDGER-CREDITS                 PIC 9(14).
++01 INVALID-EFFECT                 PIC 9(9).
++01 MISMATCH-COUNT                 PIC 9(9).
++01 MISSING-LEDGER                 PIC 9(9).
++01 OUTPUT-CODE                    PIC X(16).
++
+ PROCEDURE DIVISION.
+ MAIN.
+     ACCEPT INPUT-LINE
+     UNSTRING INPUT-LINE DELIMITED BY "|"
+-        INTO D-TEXT D-TEXT D-TEXT D-TEXT D-TEXT D-TEXT
+-             D-TEXT D-TEXT D-TEXT D-TEXT D-TEXT D-TEXT
+-             D-TEXT C-TEXT
++        INTO ORIGINAL-COUNT-TEXT OUTCOME-COUNT-TEXT
++             ORIGINAL-VALUE-TEXT RESPONSE-VALUE-TEXT
++             INT-SUCCESS-TEXT INT-POST-TEXT
++             EXT-SUCCESS-TEXT RESERVATION-TEXT CLEARING-TEXT
++             RESERVED-DEBIT-TEXT CLEARING-VALUE-TEXT EXTERNAL-FEE-TAX-TEXT
++             LEDGER-DEBITS-TEXT LEDGER-CREDITS-TEXT
++             INVALID-EFFECT-TEXT MISMATCH-TEXT MISSING-LEDGER-TEXT
+     END-UNSTRING
+-    COMPUTE D = FUNCTION NUMVAL(D-TEXT)
+-    COMPUTE C = FUNCTION NUMVAL(C-TEXT)
+-    IF D = C
+-        DISPLAY "BALANCED"
+-    ELSE
+-        DISPLAY "HELD"
++    PERFORM CONVERT-VALUES
++    MOVE "BALANCED" TO OUTPUT-CODE
++    IF ORIGINAL-COUNT NOT = OUTCOME-COUNT
++        MOVE "HELD" TO OUTPUT-CODE
+     END-IF
++    IF ORIGINAL-VALUE NOT = RESPONSE-VALUE
++        MOVE "HELD" TO OUTPUT-CODE
++    END-IF
++    IF INT-SUCCESS NOT = INT-POST
++        MOVE "HELD" TO OUTPUT-CODE
++    END-IF
++    IF EXT-SUCCESS NOT = RESERVATION-COUNT
++        MOVE "HELD" TO OUTPUT-CODE
++    END-IF
++    IF EXT-SUCCESS NOT = CLEARING-COUNT
++        MOVE "HELD" TO OUTPUT-CODE
++    END-IF
++    IF RESERVED-DEBIT NOT = CLEARING-VALUE + EXTERNAL-FEE-TAX
++        MOVE "HELD" TO OUTPUT-CODE
++    END-IF
++    IF LEDGER-DEBITS NOT = LEDGER-CREDITS
++        MOVE "HELD" TO OUTPUT-CODE
++    END-IF
++    IF INVALID-EFFECT NOT = 0
++        MOVE "HELD" TO OUTPUT-CODE
++    END-IF
++    IF MISMATCH-COUNT NOT = 0
++        MOVE "HELD" TO OUTPUT-CODE
++    END-IF
++    IF MISSING-LEDGER NOT = 0
++        MOVE "HELD" TO OUTPUT-CODE
++    END-IF
++    DISPLAY FUNCTION TRIM(OUTPUT-CODE)
+     STOP RUN.
++
++CONVERT-VALUES.
++    COMPUTE ORIGINAL-COUNT = FUNCTION NUMVAL(ORIGINAL-COUNT-TEXT)
++    COMPUTE OUTCOME-COUNT = FUNCTION NUMVAL(OUTCOME-COUNT-TEXT)
++    COMPUTE ORIGINAL-VALUE = FUNCTION NUMVAL(ORIGINAL-VALUE-TEXT)
++    COMPUTE RESPONSE-VALUE = FUNCTION NUMVAL(RESPONSE-VALUE-TEXT)
++    COMPUTE INT-SUCCESS = FUNCTION NUMVAL(INT-SUCCESS-TEXT)
++    COMPUTE INT-POST = FUNCTION NUMVAL(INT-POST-TEXT)
++    COMPUTE EXT-SUCCESS = FUNCTION NUMVAL(EXT-SUCCESS-TEXT)
++    COMPUTE RESERVATION-COUNT = FUNCTION NUMVAL(RESERVATION-TEXT)
++    COMPUTE CLEARING-COUNT = FUNCTION NUMVAL(CLEARING-TEXT)
++    COMPUTE RESERVED-DEBIT = FUNCTION NUMVAL(RESERVED-DEBIT-TEXT)
++    COMPUTE CLEARING-VALUE = FUNCTION NUMVAL(CLEARING-VALUE-TEXT)
++    COMPUTE EXTERNAL-FEE-TAX = FUNCTION NUMVAL(EXTERNAL-FEE-TAX-TEXT)
++    COMPUTE LEDGER-DEBITS = FUNCTION NUMVAL(LEDGER-DEBITS-TEXT)
++    COMPUTE LEDGER-CREDITS = FUNCTION NUMVAL(LEDGER-CREDITS-TEXT)
++    COMPUTE INVALID-EFFECT = FUNCTION NUMVAL(INVALID-EFFECT-TEXT)
++    COMPUTE MISMATCH-COUNT = FUNCTION NUMVAL(MISMATCH-TEXT)
++    COMPUTE MISSING-LEDGER = FUNCTION NUMVAL(MISSING-LEDGER-TEXT).
+--- a/cobol/payroute.cob
++++ b/cobol/payroute.cob
+@@ -1,24 +1,43 @@
+ >>SOURCE FORMAT FREE
+ IDENTIFICATION DIVISION.
+ PROGRAM-ID. PAYROUTE.
++
+ DATA DIVISION.
+ WORKING-STORAGE SECTION.
+-01 INPUT-LINE PIC X(512).
+-01 BENEFICIARY-KIND PIC X(16).
+-01 EXISTING-POSTING PIC X.
+-01 EXISTING-RESERVATION PIC X.
+-01 EXISTING-CLEARING PIC X.
+-01 OUTPUT-CODE PIC X(32).
++01 INPUT-LINE                     PIC X(512).
++01 BENEFICIARY-KIND               PIC X(16).
++01 EXISTING-POSTING               PIC X.
++01 EXISTING-RESERVATION           PIC X.
++01 EXISTING-CLEARING              PIC X.
++01 OUTPUT-CODE                    PIC X(32).
++01 FIELD-COUNT                    PIC 9 VALUE 0.
++
+ PROCEDURE DIVISION.
+ MAIN.
+     ACCEPT INPUT-LINE
+     UNSTRING INPUT-LINE DELIMITED BY "|"
+         INTO BENEFICIARY-KIND EXISTING-POSTING EXISTING-RESERVATION EXISTING-CLEARING
++        COUNT IN FIELD-COUNT
+     END-UNSTRING
+-    IF BENEFICIARY-KIND = "INTERNAL"
+-        MOVE "POST_INTERNAL" TO OUTPUT-CODE
+-    ELSE
+-        MOVE "RESERVE_EXTERNAL" TO OUTPUT-CODE
++    IF FIELD-COUNT < 4
++        DISPLAY "INVALID"
++        STOP RUN
+     END-IF
++    EVALUATE BENEFICIARY-KIND
++        WHEN "INTERNAL"
++            IF EXISTING-POSTING = "Y"
++                MOVE "RESUME_INTERNAL" TO OUTPUT-CODE
++            ELSE
++                MOVE "POST_INTERNAL" TO OUTPUT-CODE
++            END-IF
++        WHEN "EXTERNAL"
++            IF EXISTING-RESERVATION = "Y"
++                MOVE "RESUME_EXTERNAL" TO OUTPUT-CODE
++            ELSE
++                MOVE "RESERVE_EXTERNAL" TO OUTPUT-CODE
++            END-IF
++        WHEN OTHER
++            MOVE "INVALID" TO OUTPUT-CODE
++    END-EVALUATE
+     DISPLAY FUNCTION TRIM(OUTPUT-CODE)
+     STOP RUN.
+--- a/cobol/payrsv.cob
++++ b/cobol/payrsv.cob
+@@ -1,14 +1,39 @@
+ >>SOURCE FORMAT FREE
+ IDENTIFICATION DIVISION.
+ PROGRAM-ID. PAYRSV.
++
+ DATA DIVISION.
+ WORKING-STORAGE SECTION.
+-01 INPUT-LINE PIC X(512).
+-01 EXPECTED-TEXT PIC X(20).
+-01 ACTUAL-TEXT PIC X(20).
+-01 ACTIVE-FLAG PIC X.
++01 INPUT-LINE                     PIC X(512).
++01 EXPECTED-TEXT                  PIC X(20).
++01 ACTUAL-TEXT                    PIC X(20).
++01 ACTIVE-FLAG                    PIC X.
++01 EXPECTED-CENTS                 PIC 9(12) VALUE 0.
++01 ACTUAL-CENTS                   PIC 9(12) VALUE 0.
++01 OUTPUT-CODE                    PIC X(32).
++01 FIELD-COUNT                    PIC 9 VALUE 0.
++
+ PROCEDURE DIVISION.
+ MAIN.
+     ACCEPT INPUT-LINE
+-    DISPLAY "RESERVATION_OK"
++    UNSTRING INPUT-LINE DELIMITED BY "|"
++        INTO EXPECTED-TEXT ACTUAL-TEXT ACTIVE-FLAG
++        COUNT IN FIELD-COUNT
++    END-UNSTRING
++    IF FIELD-COUNT < 3
++        DISPLAY "INVALID"
++        STOP RUN
++    END-IF
++    COMPUTE EXPECTED-CENTS = FUNCTION NUMVAL(EXPECTED-TEXT)
++    COMPUTE ACTUAL-CENTS = FUNCTION NUMVAL(ACTUAL-TEXT)
++    IF ACTIVE-FLAG NOT = "Y"
++        MOVE "NOT_ACTIVE" TO OUTPUT-CODE
++    ELSE
++        IF EXPECTED-CENTS = ACTUAL-CENTS
++            MOVE "RESERVATION_OK" TO OUTPUT-CODE
++        ELSE
++            MOVE "RESERVATION_MISMATCH" TO OUTPUT-CODE
++        END-IF
++    END-IF
++    DISPLAY FUNCTION TRIM(OUTPUT-CODE)
+     STOP RUN.
+--- a/cobol/paystate.cob
++++ b/cobol/paystate.cob
+@@ -1,21 +1,29 @@
+ >>SOURCE FORMAT FREE
+ IDENTIFICATION DIVISION.
+ PROGRAM-ID. PAYSTATE.
++
+ DATA DIVISION.
+ WORKING-STORAGE SECTION.
+-01 INPUT-LINE PIC X(512).
+-01 CURRENT-STATE PIC X(24).
+-01 RECON-STATUS PIC X(16).
+-01 CLOSE-DECISION PIC X(24).
++01 INPUT-LINE                     PIC X(512).
++01 CURRENT-STATE                  PIC X(24).
++01 RECON-STATUS                   PIC X(16).
++01 CLOSE-DECISION                 PIC X(24).
++01 OUTPUT-CODE                    PIC X(24).
++
+ PROCEDURE DIVISION.
+ MAIN.
+     ACCEPT INPUT-LINE
+     UNSTRING INPUT-LINE DELIMITED BY "|"
+         INTO CURRENT-STATE RECON-STATUS CLOSE-DECISION
+     END-UNSTRING
+-    IF RECON-STATUS = "BALANCED"
+-        DISPLAY "COMPLETED"
++    IF RECON-STATUS = "HELD"
++        MOVE "HELD" TO OUTPUT-CODE
+     ELSE
+-        DISPLAY "HELD"
++        IF CLOSE-DECISION = "COMPLETE"
++            MOVE "COMPLETED" TO OUTPUT-CODE
++        ELSE
++            MOVE "RECONCILED" TO OUTPUT-CODE
++        END-IF
+     END-IF
++    DISPLAY FUNCTION TRIM(OUTPUT-CODE)
+     STOP RUN.
+--- a/lib/accounting.sh
++++ b/lib/accounting.sh
+@@ -31,7 +31,7 @@
+     debit="$(safe_int "$(ledger_payment_debits "$payment_id")")"
+     credit="$(safe_int "$(ledger_payment_credits "$payment_id")")"
+     [[ "$debit" == "$expected" && "$credit" == "$expected" ]] || return 1
+-    true
++    [[ "$(ledger_payment_row_count "$payment_id")" == 4 ]] || return 1
+     [[ "$(ledger_account_code_count "$payment_id" CUSTOMER_CONTROL)" == 1 ]] || return 1
+     [[ "$(ledger_account_code_count "$payment_id" BENEFICIARY_CONTROL)" == 1 ]] || return 1
+     [[ "$(ledger_account_code_count "$payment_id" FEE_INCOME)" == 1 ]] || return 1
+@@ -51,7 +51,7 @@
+     debit="$(safe_int "$(ledger_payment_debits "$payment_id")")"
+     credit="$(safe_int "$(ledger_payment_credits "$payment_id")")"
+     [[ "$debit" == "$expected" && "$credit" == "$expected" ]] || return 1
+-    true
++    [[ "$(ledger_payment_row_count "$payment_id")" == 4 ]] || return 1
+     [[ "$(ledger_account_code_count "$payment_id" CUSTOMER_RESERVED)" == 1 ]] || return 1
+     [[ "$(ledger_account_code_count "$payment_id" CLEARING_PAYABLE)" == 1 ]] || return 1
+     [[ "$(ledger_account_code_count "$payment_id" FEE_INCOME)" == 1 ]] || return 1
+@@ -116,7 +116,7 @@
+ cycle_accounting_contract_valid() {
+     local c="$1"
+     (( $(safe_int "$(cycle_accounting_failure_count "$c")") == 0 )) || return 1
+-    true
++    cycle_reservation_equation_valid "$c" || return 1
+     cycle_ledger_equation_valid "$c"
+ }
+ 
+--- a/lib/capacity.sh
++++ b/lib/capacity.sh
+@@ -7,7 +7,7 @@
+ }
+ payer_active_reservations() {
+     local payer="$1"
+-    db_scalar "SELECT COALESCE(SUM(amount_cents),0) FROM reservations WHERE active=1;"
++    db_scalar "SELECT COALESCE(SUM(amount_cents),0) FROM reservations WHERE payer_account='$(sql_escape "$payer")' AND active=1;"
+ }
+ payer_available_capacity() {
+     local payer="$1" balance reserved
+--- a/lib/close.sh
++++ b/lib/close.sh
+@@ -15,7 +15,7 @@
+     status="$(reconciliation_status_for_cycle "$c")"
+     flags="$(prerequisite_flags "$c")"
+     IFS='|' read -r delivery report archive <<< "$flags"
+-    cobol_call payclose "$status|$delivery|1|1"
++    cobol_call payclose "$status|$delivery|$report|$archive"
+ }
+ 
+ record_delivery_ack_event() {
+@@ -45,7 +45,7 @@
+     [[ "$current" != COMPLETED ]] || return 0
+     balanced_reconciliation_present "$c" || return 2
+     publication_prerequisite_present "$c" || return 3
+-    true
++    completion_prerequisites_present "$c" || return 4
+     db_exec "
+       UPDATE cycles
+       SET completion_status='COMPLETED',state='COMPLETED',completed_at=COALESCE(completed_at,datetime('now'))
+@@ -69,7 +69,7 @@
+ 
+ create_authorization_once() {
+     local c="$1"
+-    balanced_reconciliation_present "$c" || return 1
++    [[ "$(completion_status_for_cycle "$c")" == COMPLETED ]] || return 1
+     balanced_reconciliation_present "$c" || return 2
+     local business_date source run_id
+     business_date="$(cycle_field "$c" business_date)"

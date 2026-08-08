@@ -1,0 +1,19 @@
+01  WS-PAYMENT-RECORD.
+    05  WS-PAYMENT-ID             PIC 9(9).
+    05  WS-CYCLE-ID               PIC X(32).
+    05  WS-SOURCE-REF             PIC X(64).
+    05  WS-PAYER-ACCOUNT          PIC X(32).
+    05  WS-BENEFICIARY-REF        PIC X(64).
+    05  WS-BENEFICIARY-ACCOUNT    PIC X(32).
+    05  WS-AMOUNT-CENTS           PIC 9(12).
+    05  WS-FEE-CENTS              PIC 9(9).
+    05  WS-TAX-CENTS              PIC 9(9).
+    05  WS-CURRENCY               PIC X(3).
+    05  WS-PURPOSE                PIC X(32).
+    05  WS-PAYER-STATUS           PIC X(16).
+    05  WS-BENEFICIARY-STATUS     PIC X(16).
+    05  WS-EXISTING-POSTING       PIC X.
+    05  WS-EXISTING-RESERVATION   PIC X.
+    05  WS-EXISTING-CLEARING      PIC X.
+    05  WS-HISTORY-SOURCE-SEEN    PIC X.
+    05  WS-COMMERCIAL-SIMILAR     PIC X.

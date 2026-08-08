@@ -1,7 +1,9 @@
-# Payment EOD batch
+# Payment EOD restart control
 
-This fixture models the end-of-day part of a corporate payment cycle after upstream validation, risk and pricing have already completed. Durable state lives in SQLite under `/app/eod/state`; `PAYDUP` and `PAYEXEC` make the duplicate/execution decisions; `/app/eod/bin/run_eod.sh` coordinates the financial work and cycle close.
+This task presents a restart defect in a legacy payment EOD chain built from small COBOL decision programs, a shell controller and SQLite durable state. The happy path is intentionally less important than the partially completed states: the batch has to distinguish a replay from recurring business, resume authoritative postings/reservations, preserve capacity and accounting semantics, and keep publication/close gates tied to reconciliation.
 
-Restart behavior is the point of the exercise. The same runner may see a fresh payment, an accepted source replay, or a payment whose posting or reservation was committed before the previous run stopped. Those states remain in the database and must be treated as authoritative on the next invocation.
+The environment is arranged the way an operations-facing batch package commonly is: the controller and libraries live under `bin/` and `lib/`, COBOL decisions under `cobol/`, SQL state under `sql/`, and a few short operating/interface notes under `docs/`. Those notes describe the existing business controls and record contracts; they are not a solution walkthrough.
 
-Record layouts, financial invariants and published-file schemas are kept in `/app/eod/contracts/eod_contract.md`. `/app/eod/sql/seed.sql` is only a sample cycle for local inspection; it is not the complete business contract.
+The reference repair treats the database as the restart authority, makes financial effects unique at the database boundary, and reconstructs only missing downstream state when the durable effect itself is consistent. Reconciliation is cycle-scoped and checks population, financial-effect, reservation/clearing and ledger invariants. Publication is withheld on a held reconciliation, while completion additionally requires delivery, report and archive prerequisites.
+
+The verifier uses independent database scenarios rather than source inspection. Fail-to-pass cases cover replay identity, resumed postings/reservations, payer capacity, atomic internal execution, reservation-before-clearing, accounting completeness, reconciliation isolation, held publication, close prerequisites and repeated completed runs. Pass-to-pass cases protect stable output/interface behavior.

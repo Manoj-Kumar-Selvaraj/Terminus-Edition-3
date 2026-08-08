@@ -5,378 +5,510 @@ import sqlite3
 import subprocess
 from pathlib import Path
 
-ROOT = Path("/app/eod")
-DB = ROOT / "state" / "payment_eod.db"
-OUT = ROOT / "out"
-SCHEMA = ROOT / "sql" / "schema.sql"
-RUNNER = ROOT / "bin" / "run_eod.sh"
+import pytest
 
-BASE_SEED = """
-INSERT INTO cycles(cycle_id,business_date,source,run_id) VALUES
-('CYCLE-T1','2026-08-07','CORP-ACH','RUN-T1');
-INSERT INTO accounts(account_id,status,balance_cents) VALUES
-('A100','ACTIVE',250000),('A200','ACTIVE',50000),('A300','ACTIVE',300000),('A400','ACTIVE',90000);
-INSERT INTO payment_history(source_ref,payer_account,beneficiary_ref,amount_cents,currency,purpose,status) VALUES
-('SRC-REPLAY-1','A300','A400',12000,'INR','TRANSFER','COMPLETED'),
-('SRC-OLD-EXT','A300','B-EXT-1',25000,'INR','VENDOR','ACCEPTED');
-INSERT INTO payments(payment_id,cycle_id,source_ref,payer_account,beneficiary_ref,beneficiary_account,amount_cents,fee_cents,tax_cents,currency,purpose) VALUES
-(1,'CYCLE-T1','SRC-INT-1','A100','A200','A200',30000,100,50,'INR','TRANSFER'),
-(2,'CYCLE-T1','SRC-EXT-1','A300','B-EXT-1',NULL,25000,200,100,'INR','VENDOR'),
-(3,'CYCLE-T1','SRC-REPLAY-1','A300','A400','A400',12000,0,0,'INR','TRANSFER'),
-(4,'CYCLE-T1','SRC-EXT-2','A300','B-EXT-1',NULL,25000,200,100,'INR','VENDOR');
-INSERT INTO cycle_prerequisites(cycle_id,delivery_ack,report_complete,archive_complete)
-VALUES ('CYCLE-T1',1,1,1);
-"""
+ROOT = Path('/app/eod')
+DB = ROOT / 'state' / 'payment_eod.db'
+OUT = ROOT / 'out'
+SCHEMA = ROOT / 'sql' / 'schema.sql'
+RUNNER = ROOT / 'bin' / 'run_eod.sh'
+COBOL = ROOT / 'cobol'
+VERIFY_BIN = Path('/tmp/eod-verifier-bin')
 
 
 def reset_db(seed_sql: str) -> None:
-    """Recreate authoritative SQL state and remove artifacts for an independent scenario."""
+    """Recreate authoritative state and output directories for one independent scenario."""
     DB.parent.mkdir(parents=True, exist_ok=True)
-    if DB.exists():
-        DB.unlink()
+    DB.unlink(missing_ok=True)
     shutil.rmtree(OUT, ignore_errors=True)
     OUT.mkdir(parents=True, exist_ok=True)
     con = sqlite3.connect(DB)
-    con.executescript(SCHEMA.read_text())
-    con.executescript(seed_sql)
-    con.commit()
-    con.close()
+    try:
+        con.execute('PRAGMA foreign_keys=ON')
+        con.executescript(SCHEMA.read_text())
+        con.executescript(seed_sql)
+        con.commit()
+    finally:
+        con.close()
 
 
 def run_batch() -> subprocess.CompletedProcess[str]:
-    """Execute the submitted shell batch controller and capture diagnostic output."""
+    """Run the submitted EOD controller end to end."""
     return subprocess.run(
-        ["bash", str(RUNNER)],
+        ['bash', str(RUNNER)],
         cwd=ROOT,
         text=True,
         capture_output=True,
-        timeout=120,
+        timeout=180,
         check=True,
     )
 
 
 def rows(sql: str):
-    """Return query rows from the authoritative database."""
+    """Return rows from the task database without mutating it."""
     con = sqlite3.connect(DB)
     try:
+        con.execute('PRAGMA foreign_keys=ON')
         return con.execute(sql).fetchall()
     finally:
         con.close()
 
 
+def scalar(sql: str):
+    """Return the first scalar value from a query."""
+    result = rows(sql)
+    return result[0][0] if result else None
+
+
 def read_csv(path: Path):
-    """Read one published CSV artifact as dictionaries."""
-    with path.open(newline="") as f:
-        return list(csv.DictReader(f))
-
-
-def csv_header(path: Path):
-    """Return the declared CSV header fields in order."""
-    with path.open(newline="") as f:
-        return next(csv.reader(f))
+    """Read one CSV artifact into dictionaries."""
+    with path.open(newline='') as handle:
+        return list(csv.DictReader(handle))
 
 
 def reconciliation():
-    """Load the required reconciliation artifact."""
-    return json.loads((OUT / "reconciliation.json").read_text())
+    """Load the required reconciliation report."""
+    return json.loads((OUT / 'reconciliation.json').read_text())
 
 
-def test_balanced_cycle_preserves_population_and_financial_semantics():
-    """A clean cycle must classify replay correctly, preserve one financial effect per success, and reconcile."""
-    reset_db(BASE_SEED)
+def compile_and_call(program: str, input_record: str) -> str:
+    """Compile and invoke one documented COBOL decision interface."""
+    VERIFY_BIN.mkdir(parents=True, exist_ok=True)
+    binary = VERIFY_BIN / program
+    subprocess.run(
+        [
+            'cobc',
+            '-x',
+            '-free',
+            '-I',
+            str(COBOL / 'copybooks'),
+            '-o',
+            str(binary),
+            str(COBOL / f'{program}.cob'),
+        ],
+        check=True,
+        text=True,
+        capture_output=True,
+        timeout=60,
+    )
+    completed = subprocess.run(
+        [str(binary)],
+        input=input_record + '\n',
+        text=True,
+        capture_output=True,
+        check=True,
+        timeout=30,
+    )
+    return completed.stdout.strip()
+
+
+def cycle_sql(cycle='C1', date='2026-08-08', run='RUN-1', state='OPEN', recon='PENDING', close='PENDING'):
+    """Build a cycle insert used by verifier scenarios."""
+    return (
+        "INSERT INTO cycles(cycle_id,business_date,source,run_id,state,reconciliation_status,completion_status) "
+        f"VALUES('{cycle}','{date}','CORP-ACH','{run}','{state}','{recon}','{close}');\n"
+    )
+
+
+def prereq_sql(cycle='C1', delivery=1, report=1, archive=1):
+    """Build close-prerequisite input for a cycle."""
+    return (
+        "INSERT INTO cycle_prerequisites(cycle_id,delivery_ack,report_complete,archive_complete) "
+        f"VALUES('{cycle}',{delivery},{report},{archive});\n"
+    )
+
+
+def accounts_sql(*accounts):
+    """Build account rows as (id,status,balance) tuples."""
+    values = ','.join(f"('{a}','{status}',{balance},'INR')" for a, status, balance in accounts)
+    return f"INSERT INTO accounts(account_id,status,balance_cents,currency) VALUES {values};\n"
+
+
+def payment_sql(
+    payment_id,
+    source_ref,
+    payer,
+    beneficiary_ref,
+    beneficiary_account,
+    amount,
+    fee=0,
+    tax=0,
+    cycle='C1',
+    seq=10,
+    purpose='TRANSFER',
+):
+    """Build one input payment row."""
+    beneficiary_sql = 'NULL' if beneficiary_account is None else f"'{beneficiary_account}'"
+    return (
+        "INSERT INTO payments(payment_id,cycle_id,source_ref,payer_account,beneficiary_ref,beneficiary_account,"
+        "amount_cents,fee_cents,tax_cents,currency,purpose,received_seq) VALUES("
+        f"{payment_id},'{cycle}','{source_ref}','{payer}','{beneficiary_ref}',{beneficiary_sql},"
+        f"{amount},{fee},{tax},'INR','{purpose}',{seq});\n"
+    )
+
+
+def history_sql(source_ref, payer, beneficiary_ref, amount, status='ACCEPTED', cycle=None, purpose='TRANSFER'):
+    """Build one historical source-reference record."""
+    cycle_sql_value = 'NULL' if cycle is None else f"'{cycle}'"
+    return (
+        "INSERT INTO payment_history(source_ref,accepted_cycle_id,payer_account,beneficiary_ref,amount_cents,currency,purpose,status) VALUES("
+        f"'{source_ref}',{cycle_sql_value},'{payer}','{beneficiary_ref}',{amount},'INR','{purpose}','{status}');\n"
+    )
+
+
+def financial_snapshot():
+    """Capture durable financial state while ignoring timestamps and diagnostic records."""
+    return {
+        'accounts': rows('SELECT account_id,balance_cents FROM accounts ORDER BY account_id'),
+        'postings': rows('SELECT payment_id,cycle_id,payer_account,beneficiary_account,debit_cents,beneficiary_credit_cents FROM internal_postings ORDER BY posting_id'),
+        'reservations': rows('SELECT payment_id,cycle_id,payer_account,amount_cents,active FROM reservations ORDER BY reservation_id'),
+        'clearing': rows('SELECT payment_id,cycle_id,reservation_id,source_ref,amount_cents,currency,status FROM clearing_items ORDER BY clearing_id'),
+        'ledger': rows('SELECT payment_id,cycle_id,side,account_code,amount_cents FROM ledger_entries ORDER BY entry_id'),
+        'auth': rows('SELECT cycle_id,business_date,source,run_id,status FROM success_authorizations ORDER BY authorization_id'),
+    }
+
+
+# ---------------------------------------------------------------------------
+# F2P: documented COBOL decision interfaces
+# ---------------------------------------------------------------------------
+
+
+def test_f2p_paydup_commercial_similarity_is_not_a_replay():
+    """PAYDUP must use accepted source identity rather than commercial similarity as the replay key."""
+    assert compile_and_call('paydup', 'N|Y|N|COMPLETED') == 'NEW'
+
+
+def test_f2p_payelig_blocks_an_ineligible_internal_beneficiary():
+    """PAYELIG must reject an internal transfer whose beneficiary account is blocked."""
+    assert compile_and_call('payelig', 'ACTIVE|BLOCKED|INTERNAL') == 'REJECT_BENEFICIARY'
+
+
+def test_f2p_paymoney_includes_fee_and_tax_in_total_debit():
+    """PAYMONEY must calculate the full debit rather than principal alone."""
+    assert int(compile_and_call('paymoney', '10000|200|100')) == 10300
+
+
+def test_f2p_paycap_subtracts_other_active_reservations():
+    """PAYCAP must compare the debit with balance after active reservations are removed."""
+    assert compile_and_call('paycap', '50000|30000|25000') == 'INSUFFICIENT_CAPACITY'
+
+
+def test_f2p_payroute_resumes_an_existing_internal_posting():
+    """PAYROUTE must classify an existing internal posting as resumable work."""
+    assert compile_and_call('payroute', 'INTERNAL|Y|N|N') == 'RESUME_INTERNAL'
+
+
+def test_f2p_payroute_resumes_an_existing_external_reservation():
+    """PAYROUTE must classify an existing external reservation as resumable work."""
+    assert compile_and_call('payroute', 'EXTERNAL|N|Y|N') == 'RESUME_EXTERNAL'
+
+
+def test_f2p_payrsv_rejects_a_mismatched_reservation_amount():
+    """PAYRSV must hold a reservation whose durable debit differs from the expected debit."""
+    assert compile_and_call('payrsv', '10300|10000|Y') == 'RESERVATION_MISMATCH'
+
+
+def test_f2p_payclr_keeps_an_existing_clearing_item():
+    """PAYCLR must retain a clearing item already linked to a matching reservation."""
+    assert compile_and_call('payclr', 'Y|Y|Y') == 'KEEP_CLEARING'
+
+
+def test_f2p_payledger_requires_the_complete_ledger_shape():
+    """PAYLEDGER must reject equal debit/credit totals when required ledger rows are missing."""
+    assert compile_and_call('payledger', '10300|10300|4|3') == 'LEDGER_INCOMPLETE'
+
+
+def test_f2p_payrecon_checks_more_than_ledger_equality():
+    """PAYRECON must hold a cycle with an invalid financial effect even when the ledger totals balance."""
+    record = '1|1|10000|10000|0|0|0|0|0|0|0|0|0|0|1|0|0'
+    assert compile_and_call('payrecon', record) == 'HELD'
+
+
+def test_f2p_payclose_requires_report_and_archive_completion():
+    """PAYCLOSE must not complete a balanced cycle when report/archive work is unfinished."""
+    assert compile_and_call('payclose', 'BALANCED|1|0|1') == 'WAIT_CLOSE'
+
+
+def test_f2p_paypub_holds_publication_when_reconciliation_is_held():
+    """PAYPUB must gate official publication on BALANCED reconciliation."""
+    assert compile_and_call('paypub', 'HELD') == 'HOLD'
+
+
+def test_f2p_paystate_keeps_a_balanced_but_unclosed_cycle_reconciled():
+    """PAYSTATE must not label balanced-but-waiting work as completed."""
+    assert compile_and_call('paystate', 'PROCESSING|BALANCED|WAIT_CLOSE') == 'RECONCILED'
+
+
+# ---------------------------------------------------------------------------
+# F2P: end-to-end restart and control scenarios
+# ---------------------------------------------------------------------------
+
+
+def test_f2p_distinct_source_with_matching_commercial_details_executes_normally():
+    """A new source reference remains new business even when prior commercial details are identical."""
+    seed = (
+        cycle_sql()
+        + accounts_sql(('A1', 'ACTIVE', 50000), ('A2', 'ACTIVE', 1000))
+        + history_sql('OLD-1', 'A1', 'A2', 10000, status='COMPLETED')
+        + payment_sql(1, 'NEW-1', 'A1', 'A2', 'A2', 10000)
+        + prereq_sql()
+    )
+    reset_db(seed)
     run_batch()
+    assert rows("SELECT outcome FROM payment_outcomes WHERE payment_id=1") == [('SUCCESS_INTERNAL',)]
+    assert rows('SELECT COUNT(*) FROM internal_postings WHERE payment_id=1') == [(1,)]
 
-    assert csv_header(OUT / "customer_response.csv") == ["payment_id", "source_ref", "outcome", "reason"]
-    assert csv_header(OUT / "clearing_submission.csv") == ["payment_id", "source_ref", "amount_cents", "currency"]
 
-    response = {int(r["payment_id"]): r for r in read_csv(OUT / "customer_response.csv")}
-    assert set(response) == {1, 2, 3, 4}
-    assert response[1]["outcome"] == "SUCCESS_INTERNAL"
-    assert response[2]["outcome"] == "SUCCESS_EXTERNAL"
-    assert response[3]["outcome"] == "DUPLICATE"
-    assert response[4]["outcome"] == "SUCCESS_EXTERNAL"
+def test_f2p_capacity_uses_principal_fee_and_tax():
+    """A payer with capacity for principal but not total debit must be rejected without a partial effect."""
+    seed = (
+        cycle_sql()
+        + accounts_sql(('A1', 'ACTIVE', 10000), ('A2', 'ACTIVE', 1000))
+        + payment_sql(1, 'S1', 'A1', 'A2', 'A2', 9900, fee=100, tax=50)
+        + prereq_sql()
+    )
+    reset_db(seed)
+    run_batch()
+    assert rows('SELECT outcome FROM payment_outcomes WHERE payment_id=1') == [('REJECTED',)]
+    assert scalar('SELECT COUNT(*) FROM internal_postings') == 0
+    assert rows("SELECT balance_cents FROM accounts WHERE account_id='A1'") == [(10000,)]
 
+
+def test_f2p_other_active_reservations_for_the_payer_reduce_new_capacity():
+    """A new external payment must account for another active reservation owned by the same payer."""
+    seed = (
+        cycle_sql('C0', '2026-08-01', 'OLD', state='COMPLETED', recon='BALANCED', close='COMPLETED')
+        + cycle_sql()
+        + accounts_sql(('A1', 'ACTIVE', 50000))
+        + payment_sql(999, 'OLD-RSV', 'A1', 'B0', None, 30000, cycle='C0', seq=1, purpose='VENDOR')
+        + payment_sql(1, 'S1', 'A1', 'B1', None, 25000, fee=200, tax=100)
+        + "INSERT INTO reservations(payment_id,cycle_id,payer_account,amount_cents,active) VALUES(999,'C0','A1',30000,1);\n"
+        + prereq_sql()
+    )
+    reset_db(seed)
+    run_batch()
+    assert rows('SELECT outcome FROM payment_outcomes WHERE payment_id=1') == [('REJECTED',)]
+    assert scalar('SELECT COUNT(*) FROM reservations WHERE payment_id=1 AND active=1') == 0
+
+
+def test_f2p_blocked_internal_beneficiary_has_no_partial_financial_effect():
+    """A blocked internal beneficiary must leave both account balances and all financial-effect tables untouched."""
+    seed = (
+        cycle_sql()
+        + accounts_sql(('A1', 'ACTIVE', 50000), ('A2', 'BLOCKED', 1000))
+        + payment_sql(1, 'S1', 'A1', 'A2', 'A2', 10000, fee=100, tax=50)
+        + prereq_sql()
+    )
+    reset_db(seed)
+    before = rows('SELECT account_id,balance_cents FROM accounts ORDER BY account_id')
+    run_batch()
+    assert rows('SELECT account_id,balance_cents FROM accounts ORDER BY account_id') == before
+    assert rows('SELECT outcome FROM payment_outcomes WHERE payment_id=1') == [('REJECTED',)]
+    assert scalar('SELECT COUNT(*) FROM internal_postings') == 0
+    assert scalar('SELECT COUNT(*) FROM ledger_entries') == 0
+
+
+def test_f2p_resume_internal_keeps_the_existing_posting_without_reapplying_balances():
+    """An authoritative internal posting must be resumed without a second payer debit or beneficiary credit."""
+    seed = (
+        cycle_sql()
+        + accounts_sql(('A1', 'ACTIVE', 39850), ('A2', 'ACTIVE', 11000))
+        + payment_sql(1, 'S1', 'A1', 'A2', 'A2', 10000, fee=100, tax=50)
+        + "INSERT INTO internal_postings(payment_id,cycle_id,payer_account,beneficiary_account,debit_cents,beneficiary_credit_cents) VALUES(1,'C1','A1','A2',10150,10000);\n"
+        + "INSERT INTO ledger_entries(payment_id,cycle_id,side,account_code,amount_cents) VALUES"
+          "(1,'C1','D','CUSTOMER_CONTROL',10150),(1,'C1','C','BENEFICIARY_CONTROL',10000),"
+          "(1,'C1','C','FEE_INCOME',100),(1,'C1','C','TAX_PAYABLE',50);\n"
+        + prereq_sql()
+    )
+    reset_db(seed)
+    before = rows('SELECT account_id,balance_cents FROM accounts ORDER BY account_id')
+    run_batch()
+    assert rows('SELECT account_id,balance_cents FROM accounts ORDER BY account_id') == before
+    assert scalar('SELECT COUNT(*) FROM internal_postings WHERE payment_id=1') == 1
+    assert scalar('SELECT COUNT(*) FROM ledger_entries WHERE payment_id=1') == 4
+
+
+def test_f2p_resume_internal_restores_a_missing_tax_ledger_obligation():
+    """A consistent resumed posting may restore missing ledger detail without repeating the financial posting."""
+    seed = (
+        cycle_sql()
+        + accounts_sql(('A1', 'ACTIVE', 39850), ('A2', 'ACTIVE', 11000))
+        + payment_sql(1, 'S1', 'A1', 'A2', 'A2', 10000, fee=100, tax=50)
+        + "INSERT INTO internal_postings(payment_id,cycle_id,payer_account,beneficiary_account,debit_cents,beneficiary_credit_cents) VALUES(1,'C1','A1','A2',10150,10000);\n"
+        + "INSERT INTO ledger_entries(payment_id,cycle_id,side,account_code,amount_cents) VALUES"
+          "(1,'C1','D','CUSTOMER_CONTROL',10150),(1,'C1','C','BENEFICIARY_CONTROL',10000),(1,'C1','C','FEE_INCOME',100);\n"
+        + prereq_sql()
+    )
+    reset_db(seed)
+    before = rows('SELECT account_id,balance_cents FROM accounts ORDER BY account_id')
+    run_batch()
+    assert rows('SELECT account_id,balance_cents FROM accounts ORDER BY account_id') == before
+    assert rows("SELECT amount_cents FROM ledger_entries WHERE payment_id=1 AND account_code='TAX_PAYABLE'") == [(50,)]
+    assert reconciliation()['status'] == 'BALANCED'
+
+
+def test_f2p_resume_external_keeps_one_active_reservation():
+    """A partially completed external payment must reuse its active reservation rather than create another one."""
+    seed = (
+        cycle_sql()
+        + accounts_sql(('A1', 'ACTIVE', 50000))
+        + payment_sql(1, 'S1', 'A1', 'B1', None, 10000, fee=200, tax=100)
+        + "INSERT INTO reservations(payment_id,cycle_id,payer_account,amount_cents,active) VALUES(1,'C1','A1',10300,1);\n"
+        + "INSERT INTO clearing_items(payment_id,cycle_id,reservation_id,source_ref,amount_cents,currency,status) "
+          "SELECT 1,'C1',reservation_id,'S1',10000,'INR','READY' FROM reservations WHERE payment_id=1;\n"
+        + "INSERT INTO ledger_entries(payment_id,cycle_id,side,account_code,amount_cents) VALUES"
+          "(1,'C1','D','CUSTOMER_RESERVED',10300),(1,'C1','C','CLEARING_PAYABLE',10000),"
+          "(1,'C1','C','FEE_INCOME',200),(1,'C1','C','TAX_PAYABLE',100);\n"
+        + prereq_sql()
+    )
+    reset_db(seed)
+    run_batch()
+    assert scalar('SELECT COUNT(*) FROM reservations WHERE payment_id=1 AND active=1') == 1
+    assert scalar('SELECT COUNT(*) FROM clearing_items WHERE payment_id=1') == 1
+
+
+def test_f2p_resume_external_can_rebuild_missing_clearing_and_ledger_state():
+    """A matching active reservation is sufficient restart authority to rebuild missing clearing/ledger state once."""
+    seed = (
+        cycle_sql()
+        + accounts_sql(('A1', 'ACTIVE', 50000))
+        + payment_sql(1, 'S1', 'A1', 'B1', None, 10000, fee=200, tax=100)
+        + "INSERT INTO reservations(payment_id,cycle_id,payer_account,amount_cents,active) VALUES(1,'C1','A1',10300,1);\n"
+        + prereq_sql()
+    )
+    reset_db(seed)
+    run_batch()
+    assert scalar('SELECT COUNT(*) FROM reservations WHERE payment_id=1 AND active=1') == 1
+    assert rows('SELECT amount_cents,currency FROM clearing_items WHERE payment_id=1') == [(10000, 'INR')]
+    assert scalar('SELECT COUNT(*) FROM ledger_entries WHERE payment_id=1') == 4
+    assert reconciliation()['status'] == 'BALANCED'
+
+
+def test_f2p_mismatched_external_reservation_holds_the_cycle_and_blocks_publication():
+    """A resumed reservation with the wrong durable debit must hold reconciliation and all official outputs."""
+    seed = (
+        cycle_sql()
+        + accounts_sql(('A1', 'ACTIVE', 50000))
+        + payment_sql(1, 'S1', 'A1', 'B1', None, 10000, fee=200, tax=100)
+        + "INSERT INTO reservations(payment_id,cycle_id,payer_account,amount_cents,active) VALUES(1,'C1','A1',9999,1);\n"
+        + prereq_sql()
+    )
+    reset_db(seed)
+    run_batch()
+    assert reconciliation()['status'] == 'HELD'
+    assert rows("SELECT reconciliation_status,state FROM cycles WHERE cycle_id='C1'") == [('HELD', 'HELD')]
+    assert not (OUT / 'customer_response.csv').exists()
+    assert not (OUT / 'clearing_submission.csv').exists()
+    assert not (OUT / 'success_authorization.json').exists()
+
+
+def test_f2p_held_rerun_removes_stale_official_artifacts():
+    """A held invocation must remove official files left from an earlier successful-looking attempt."""
+    seed = (
+        cycle_sql()
+        + accounts_sql(('A1', 'ACTIVE', 50000))
+        + payment_sql(1, 'S1', 'A1', 'B1', None, 10000, fee=200, tax=100)
+        + "INSERT INTO reservations(payment_id,cycle_id,payer_account,amount_cents,active) VALUES(1,'C1','A1',9999,1);\n"
+        + prereq_sql()
+    )
+    reset_db(seed)
+    (OUT / 'customer_response.csv').write_text('stale\n')
+    (OUT / 'clearing_submission.csv').write_text('stale\n')
+    (OUT / 'success_authorization.json').write_text('{"status":"AUTHORIZED"}\n')
+    run_batch()
+    assert reconciliation()['status'] == 'HELD'
+    for name in ('customer_response.csv', 'clearing_submission.csv', 'success_authorization.json'):
+        assert not (OUT / name).exists()
+
+
+def test_f2p_reconciliation_is_scoped_to_the_selected_cycle():
+    """Unrelated durable state from another cycle must not contaminate the current cycle reconciliation totals."""
+    seed = (
+        cycle_sql('C0', '2026-08-01', 'OLD', state='COMPLETED', recon='BALANCED', close='COMPLETED')
+        + cycle_sql('C1', '2026-08-08', 'RUN-1')
+        + accounts_sql(('A0', 'ACTIVE', 90000), ('A1', 'ACTIVE', 50000), ('A2', 'ACTIVE', 1000))
+        + payment_sql(1, 'S1', 'A1', 'A2', 'A2', 10000, fee=100, tax=50, cycle='C1')
+        + "INSERT INTO reservations(payment_id,cycle_id,payer_account,amount_cents,active) VALUES(900,'C0','A0',70000,1);\n"
+        + "INSERT INTO ledger_entries(payment_id,cycle_id,side,account_code,amount_cents) VALUES(900,'C0','D','CUSTOMER_RESERVED',70000),(900,'C0','C','CLEARING_PAYABLE',70000);\n"
+        + prereq_sql('C1')
+    )
+    DB.parent.mkdir(parents=True, exist_ok=True); DB.unlink(missing_ok=True)
+    shutil.rmtree(OUT, ignore_errors=True); OUT.mkdir(parents=True, exist_ok=True)
+    con = sqlite3.connect(DB); con.executescript(SCHEMA.read_text()); con.execute('PRAGMA foreign_keys=OFF'); con.executescript(seed); con.commit(); con.close()
+    run_batch()
     rec = reconciliation()
-    assert rec == {
-        "cycle_id": "CYCLE-T1",
-        "status": "BALANCED",
-        "original_count": 4,
-        "final_count": 4,
-        "original_value_cents": 92000,
-        "response_value_cents": 92000,
-        "internal_success_count": 1,
-        "internal_posting_count": 1,
-        "external_success_count": 2,
-        "reservation_count": 2,
-        "clearing_count": 2,
-        "reserved_debit_cents": 50600,
-        "clearing_value_cents": 50000,
-        "external_fee_tax_cents": 600,
-        "ledger_debits_cents": 80750,
-        "ledger_credits_cents": 80750,
-        "difference_count": 0,
-    }
-
-    assert rows("SELECT balance_cents FROM accounts WHERE account_id='A100'") == [(219850,)]
-    assert rows("SELECT balance_cents FROM accounts WHERE account_id='A200'") == [(80000,)]
-    assert {int(r["payment_id"]) for r in read_csv(OUT / "clearing_submission.csv")} == {2, 4}
-
-    ledger = set(rows("SELECT payment_id,side,account_code,amount_cents FROM ledger_entries"))
-    assert ledger == {
-        (1, "D", "CUSTOMER_CONTROL", 30150),
-        (1, "C", "BENEFICIARY_CONTROL", 30000),
-        (1, "C", "FEE_INCOME", 100),
-        (1, "C", "TAX_PAYABLE", 50),
-        (2, "D", "CUSTOMER_RESERVED", 25300),
-        (2, "C", "CLEARING_PAYABLE", 25000),
-        (2, "C", "FEE_INCOME", 200),
-        (2, "C", "TAX_PAYABLE", 100),
-        (4, "D", "CUSTOMER_RESERVED", 25300),
-        (4, "C", "CLEARING_PAYABLE", 25000),
-        (4, "C", "FEE_INCOME", 200),
-        (4, "C", "TAX_PAYABLE", 100),
-    }
-    assert rows(
-        "SELECT (SELECT COUNT(*) FROM internal_postings WHERE payment_id=3),"
-        "(SELECT COUNT(*) FROM reservations WHERE payment_id=3 AND active=1),"
-        "(SELECT COUNT(*) FROM clearing_items WHERE payment_id=3),"
-        "(SELECT COUNT(*) FROM ledger_entries WHERE payment_id=3)"
-    ) == [(0, 0, 0, 0)]
-
-    assert json.loads((OUT / "success_authorization.json").read_text()) == {
-        "cycle_id": "CYCLE-T1",
-        "business_date": "2026-08-07",
-        "source": "CORP-ACH",
-        "run_id": "RUN-T1",
-        "status": "AUTHORIZED",
-    }
-    assert rows("SELECT completion_status FROM cycles") == [("COMPLETED",)]
+    assert rec['cycle_id'] == 'C1'
+    assert rec['status'] == 'BALANCED'
+    assert rec['reservation_count'] == 0
+    assert rec['ledger_debits_cents'] == 10150
+    assert rec['ledger_credits_cents'] == 10150
 
 
-def test_rerunning_a_completed_cycle_does_not_repeat_financial_effects():
-    """Running the same completed cycle twice must preserve one posting, reservation, clearing, ledger, and authorization effect."""
-    reset_db(BASE_SEED)
+def test_f2p_missing_delivery_ack_blocks_completion_and_authorization():
+    """Balanced publication is not enough to complete the cycle before delivery acknowledgment."""
+    seed = cycle_sql() + accounts_sql(('A1', 'ACTIVE', 50000), ('A2', 'ACTIVE', 1000)) + payment_sql(1, 'S1', 'A1', 'A2', 'A2', 10000) + prereq_sql(delivery=0)
+    reset_db(seed); run_batch()
+    assert reconciliation()['status'] == 'BALANCED'
+    assert rows("SELECT completion_status FROM cycles WHERE cycle_id='C1'") == [('WAITING',)]
+    assert scalar('SELECT COUNT(*) FROM success_authorizations') == 0
+    assert not (OUT / 'success_authorization.json').exists()
+
+
+def test_f2p_missing_report_completion_blocks_completion_and_authorization():
+    """A balanced cycle must wait when reporting has not completed."""
+    seed = cycle_sql() + accounts_sql(('A1', 'ACTIVE', 50000), ('A2', 'ACTIVE', 1000)) + payment_sql(1, 'S1', 'A1', 'A2', 'A2', 10000) + prereq_sql(report=0)
+    reset_db(seed); run_batch()
+    assert reconciliation()['status'] == 'BALANCED'
+    assert rows("SELECT completion_status FROM cycles WHERE cycle_id='C1'") == [('WAITING',)]
+    assert scalar('SELECT COUNT(*) FROM success_authorizations') == 0
+
+
+def test_f2p_missing_archive_completion_blocks_completion_and_authorization():
+    """A balanced cycle must wait when archival work has not completed."""
+    seed = cycle_sql() + accounts_sql(('A1', 'ACTIVE', 50000), ('A2', 'ACTIVE', 1000)) + payment_sql(1, 'S1', 'A1', 'A2', 'A2', 10000) + prereq_sql(archive=0)
+    reset_db(seed); run_batch()
+    assert reconciliation()['status'] == 'BALANCED'
+    assert rows("SELECT completion_status FROM cycles WHERE cycle_id='C1'") == [('WAITING',)]
+    assert scalar('SELECT COUNT(*) FROM success_authorizations') == 0
+
+
+def test_f2p_completed_rerun_preserves_exactly_one_financial_and_close_result():
+    """Rerunning an already completed mixed cycle must leave every durable financial and close effect unchanged."""
+    seed = (
+        cycle_sql()
+        + accounts_sql(('A1', 'ACTIVE', 100000), ('A2', 'ACTIVE', 1000), ('A3', 'ACTIVE', 100000))
+        + payment_sql(1, 'I1', 'A1', 'A2', 'A2', 10000, fee=100, tax=50, seq=10)
+        + payment_sql(2, 'E1', 'A3', 'B1', None, 20000, fee=200, tax=100, seq=20, purpose='VENDOR')
+        + prereq_sql()
+    )
+    reset_db(seed)
     run_batch()
-    first = {
-        "balances": rows("SELECT account_id,balance_cents FROM accounts ORDER BY account_id"),
-        "postings": rows("SELECT payment_id,debit_cents,beneficiary_credit_cents FROM internal_postings ORDER BY payment_id"),
-        "reservations": rows("SELECT payment_id,amount_cents,active FROM reservations ORDER BY payment_id"),
-        "clearing": rows("SELECT payment_id,amount_cents,currency FROM clearing_items ORDER BY payment_id"),
-        "ledger": rows("SELECT payment_id,side,account_code,amount_cents FROM ledger_entries ORDER BY payment_id,side,account_code"),
-    }
+    first = financial_snapshot()
+    assert rows("SELECT completion_status,reconciliation_status FROM cycles WHERE cycle_id='C1'") == [('COMPLETED', 'BALANCED')]
     run_batch()
-    second = {
-        "balances": rows("SELECT account_id,balance_cents FROM accounts ORDER BY account_id"),
-        "postings": rows("SELECT payment_id,debit_cents,beneficiary_credit_cents FROM internal_postings ORDER BY payment_id"),
-        "reservations": rows("SELECT payment_id,amount_cents,active FROM reservations ORDER BY payment_id"),
-        "clearing": rows("SELECT payment_id,amount_cents,currency FROM clearing_items ORDER BY payment_id"),
-        "ledger": rows("SELECT payment_id,side,account_code,amount_cents FROM ledger_entries ORDER BY payment_id,side,account_code"),
-    }
+    second = financial_snapshot()
     assert second == first
-    assert rows("SELECT COUNT(*) FROM success_authorizations") == [(1,)]
-    assert reconciliation()["status"] == "BALANCED"
+    assert scalar('SELECT COUNT(*) FROM internal_postings WHERE payment_id=1') == 1
+    assert scalar('SELECT COUNT(*) FROM reservations WHERE payment_id=2 AND active=1') == 1
+    assert scalar('SELECT COUNT(*) FROM clearing_items WHERE payment_id=2') == 1
+    assert scalar('SELECT COUNT(*) FROM success_authorizations WHERE cycle_id=\'C1\'') == 1
 
 
-def test_resume_uses_existing_external_reservation_instead_of_creating_another():
-    """A partial external state must be resumed once and its active reservation must still reduce later payer capacity."""
-    seed = """
-    INSERT INTO cycles(cycle_id,business_date,source,run_id) VALUES('CYCLE-T2','2026-08-08','CORP-ACH','RUN-T2');
-    INSERT INTO accounts(account_id,status,balance_cents) VALUES('A500','ACTIVE',50000);
-    INSERT INTO payments(payment_id,cycle_id,source_ref,payer_account,beneficiary_ref,beneficiary_account,amount_cents,fee_cents,tax_cents,currency,purpose) VALUES
-    (20,'CYCLE-T2','SRC-20','A500','B20',NULL,30000,200,100,'INR','VENDOR'),
-    (21,'CYCLE-T2','SRC-21','A500','B21',NULL,25000,200,100,'INR','VENDOR');
-    INSERT INTO reservations(payment_id,amount_cents,active) VALUES(20,30300,1);
-    INSERT INTO ledger_entries(payment_id,side,account_code,amount_cents) VALUES
-    (20,'D','CUSTOMER_RESERVED',30300),(20,'C','CLEARING_PAYABLE',30000),(20,'C','FEE_INCOME',200),(20,'C','TAX_PAYABLE',100);
-    INSERT INTO cycle_prerequisites(cycle_id,delivery_ack,report_complete,archive_complete) VALUES('CYCLE-T2',1,1,1);
-    """
-    reset_db(seed)
-    run_batch()
-
-    assert rows("SELECT payment_id,COUNT(*) FROM reservations WHERE active=1 GROUP BY payment_id ORDER BY payment_id") == [(20, 1)]
-    assert rows("SELECT payment_id,outcome FROM payment_outcomes ORDER BY payment_id") == [
-        (20, "SUCCESS_EXTERNAL"),
-        (21, "REJECTED"),
-    ]
-    assert rows("SELECT payment_id FROM clearing_items ORDER BY payment_id") == [(20,)]
-    assert reconciliation()["status"] == "BALANCED"
+# ---------------------------------------------------------------------------
+# P2P: stable interfaces not implicated by the incident
+# ---------------------------------------------------------------------------
 
 
-def test_resume_uses_existing_internal_posting_without_reapplying_balances_or_ledger():
-    """A partially completed internal payment must retain its existing posting and ledger as the authoritative effect."""
-    seed = """
-    INSERT INTO cycles(cycle_id,business_date,source,run_id) VALUES('CYCLE-T3','2026-08-09','CORP-ACH','RUN-T3');
-    INSERT INTO accounts(account_id,status,balance_cents) VALUES('A600','ACTIVE',79850),('A601','ACTIVE',25000);
-    INSERT INTO payments(payment_id,cycle_id,source_ref,payer_account,beneficiary_ref,beneficiary_account,amount_cents,fee_cents,tax_cents,currency,purpose)
-    VALUES(30,'CYCLE-T3','SRC-30','A600','A601','A601',20000,100,50,'INR','TRANSFER');
-    INSERT INTO internal_postings(payment_id,debit_cents,beneficiary_credit_cents) VALUES(30,20150,20000);
-    INSERT INTO ledger_entries(payment_id,side,account_code,amount_cents) VALUES
-    (30,'D','CUSTOMER_CONTROL',20150),(30,'C','BENEFICIARY_CONTROL',20000),(30,'C','FEE_INCOME',100),(30,'C','TAX_PAYABLE',50);
-    INSERT INTO cycle_prerequisites(cycle_id,delivery_ack,report_complete,archive_complete) VALUES('CYCLE-T3',1,1,1);
-    """
-    reset_db(seed)
-    before_balances = rows("SELECT account_id,balance_cents FROM accounts ORDER BY account_id")
-    before_ledger = rows("SELECT payment_id,side,account_code,amount_cents FROM ledger_entries ORDER BY entry_id")
-    run_batch()
-
-    assert rows("SELECT account_id,balance_cents FROM accounts ORDER BY account_id") == before_balances
-    assert rows("SELECT COUNT(*) FROM internal_postings WHERE payment_id=30") == [(1,)]
-    assert rows("SELECT payment_id,side,account_code,amount_cents FROM ledger_entries ORDER BY entry_id") == before_ledger
-    assert rows("SELECT outcome FROM payment_outcomes WHERE payment_id=30") == [("SUCCESS_INTERNAL",)]
-    assert reconciliation()["status"] == "BALANCED"
+def test_p2p_payguard_reports_equal_values_as_consistent():
+    """The existing numeric consistency helper remains available to restart logic."""
+    assert compile_and_call('payguard', 'AMOUNT|10000|10000') == 'CONSISTENT'
 
 
-def test_ineligible_internal_beneficiary_has_no_partial_financial_result():
-    """An internal payment rejected at execution time must leave balances, postings, and ledger state untouched."""
-    seed = """
-    INSERT INTO cycles(cycle_id,business_date,source,run_id) VALUES('CYCLE-T4','2026-08-10','CORP-ACH','RUN-T4');
-    INSERT INTO accounts(account_id,status,balance_cents) VALUES('A700','ACTIVE',100000),('A701','BLOCKED',5000);
-    INSERT INTO payments(payment_id,cycle_id,source_ref,payer_account,beneficiary_ref,beneficiary_account,amount_cents,fee_cents,tax_cents,currency,purpose)
-    VALUES(40,'CYCLE-T4','SRC-40','A700','A701','A701',20000,100,50,'INR','TRANSFER');
-    INSERT INTO cycle_prerequisites(cycle_id,delivery_ack,report_complete,archive_complete) VALUES('CYCLE-T4',1,1,1);
-    """
-    reset_db(seed)
-    run_batch()
-
-    assert rows("SELECT account_id,balance_cents FROM accounts ORDER BY account_id") == [("A700", 100000), ("A701", 5000)]
-    assert rows("SELECT COUNT(*) FROM internal_postings") == [(0,)]
-    assert rows("SELECT COUNT(*) FROM ledger_entries") == [(0,)]
-    assert rows("SELECT outcome FROM payment_outcomes WHERE payment_id=40") == [("REJECTED",)]
-    assert reconciliation()["status"] == "BALANCED"
+def test_p2p_payhist_keeps_successful_business_in_accepted_history():
+    """Successful outcomes continue to map to accepted source-reference history."""
+    assert compile_and_call('payhist', 'SUCCESS_EXTERNAL|') == 'ACCEPTED'
 
 
-def test_unbalanced_existing_external_effect_blocks_publication_and_removes_stale_artifacts():
-    """A mismatched reservation must hold reconciliation and a held rerun must leave no official stale publication or authorization."""
-    seed = """
-    INSERT INTO cycles(cycle_id,business_date,source,run_id) VALUES('CYCLE-T5','2026-08-11','CORP-ACH','RUN-T5');
-    INSERT INTO accounts(account_id,status,balance_cents) VALUES('A800','ACTIVE',100000);
-    INSERT INTO payments(payment_id,cycle_id,source_ref,payer_account,beneficiary_ref,beneficiary_account,amount_cents,fee_cents,tax_cents,currency,purpose)
-    VALUES(50,'CYCLE-T5','SRC-50','A800','B50',NULL,10000,100,0,'INR','VENDOR');
-    INSERT INTO reservations(payment_id,amount_cents,active) VALUES(50,9999,1);
-    INSERT INTO ledger_entries(payment_id,side,account_code,amount_cents) VALUES
-    (50,'D','CUSTOMER_RESERVED',9999),(50,'C','CLEARING_PAYABLE',9899),(50,'C','FEE_INCOME',100);
-    INSERT INTO cycle_prerequisites(cycle_id,delivery_ack,report_complete,archive_complete) VALUES('CYCLE-T5',1,1,1);
-    """
-    reset_db(seed)
-    (OUT / "customer_response.csv").write_text("stale\n")
-    (OUT / "clearing_submission.csv").write_text("stale\n")
-    (OUT / "success_authorization.json").write_text("{}\n")
-    run_batch()
-
-    rec = reconciliation()
-    assert rec["status"] == "HELD"
-    assert rec["difference_count"] > 0
-    assert not (OUT / "customer_response.csv").exists()
-    assert not (OUT / "clearing_submission.csv").exists()
-    assert not (OUT / "success_authorization.json").exists()
-    assert rows("SELECT completion_status FROM cycles") == [("HELD",)]
-    assert rows("SELECT COUNT(*) FROM success_authorizations") == [(0,)]
-
-
-def assert_close_prerequisite_holds(delivery_ack: int, report_complete: int, archive_complete: int) -> None:
-    """Exercise one incomplete close prerequisite and assert balanced finance remains unauthorized."""
-    seed = BASE_SEED.replace(
-        "('CYCLE-T1',1,1,1)",
-        f"('CYCLE-T1',{delivery_ack},{report_complete},{archive_complete})",
-    )
-    reset_db(seed)
-    run_batch()
-
-    assert reconciliation()["status"] == "BALANCED"
-    assert (OUT / "customer_response.csv").exists()
-    assert (OUT / "clearing_submission.csv").exists()
-    assert rows("SELECT completion_status FROM cycles") == [("HELD",)]
-    assert rows("SELECT status FROM completion_register") == [("HELD",)]
-    assert rows("SELECT COUNT(*) FROM success_authorizations") == [(0,)]
-    assert not (OUT / "success_authorization.json").exists()
-
-
-def test_missing_delivery_acknowledgement_holds_authorization():
-    """Missing delivery acknowledgement must hold completion after balanced financial reconciliation."""
-    assert_close_prerequisite_holds(0, 1, 1)
-
-
-def test_missing_reporting_completion_holds_authorization():
-    """Missing reporting completion must hold completion after balanced financial reconciliation."""
-    assert_close_prerequisite_holds(1, 0, 1)
-
-
-def test_missing_archive_completion_holds_authorization():
-    """Missing archive completion must hold completion after balanced financial reconciliation."""
-    assert_close_prerequisite_holds(1, 1, 0)
-
-
-def test_pending_history_is_not_an_accepted_replay():
-    """A pending history row with the same source reference must not be treated as an already accepted duplicate."""
-    seed = """
-    INSERT INTO cycles(cycle_id,business_date,source,run_id) VALUES('CYCLE-T6','2026-08-12','CORP-ACH','RUN-T6');
-    INSERT INTO accounts(account_id,status,balance_cents) VALUES('A900','ACTIVE',100000);
-    INSERT INTO payment_history(source_ref,payer_account,beneficiary_ref,amount_cents,currency,purpose,status)
-    VALUES('SRC-PENDING','A900','B90',15000,'INR','VENDOR','PENDING');
-    INSERT INTO payments(payment_id,cycle_id,source_ref,payer_account,beneficiary_ref,beneficiary_account,amount_cents,fee_cents,tax_cents,currency,purpose)
-    VALUES(60,'CYCLE-T6','SRC-PENDING','A900','B90',NULL,15000,100,50,'INR','VENDOR');
-    INSERT INTO cycle_prerequisites(cycle_id,delivery_ack,report_complete,archive_complete) VALUES('CYCLE-T6',1,1,1);
-    """
-    reset_db(seed)
-    run_batch()
-
-    assert rows("SELECT outcome FROM payment_outcomes WHERE payment_id=60") == [("SUCCESS_EXTERNAL",)]
-    assert rows("SELECT COUNT(*) FROM reservations WHERE payment_id=60 AND active=1") == [(1,)]
-    assert rows("SELECT COUNT(*) FROM clearing_items WHERE payment_id=60") == [(1,)]
-    assert reconciliation()["status"] == "BALANCED"
-
-
-def test_cobol_duplicate_interface_uses_accepted_source_reference_not_commercial_similarity():
-    """The submitted PAYDUP interface must separate an exact accepted replay from a commercially similar new instruction."""
-    work = ROOT / "work"
-    work.mkdir(parents=True, exist_ok=True)
-    (work / "history.psv").write_text("OLD-1|A1|BEN-X|10000|INR|VENDOR|ACCEPTED\n")
-    (work / "dup_input.psv").write_text(
-        "1|OLD-1|A1|BEN-X|10000|INR|VENDOR\n"
-        "2|NEW-2|A1|BEN-X|10000|INR|VENDOR\n"
-    )
-    binary = Path("/tmp/paydup_direct")
-    subprocess.run(
-        ["cobc", "-x", "-free", "-o", str(binary), str(ROOT / "cobol" / "paydup.cob")],
-        check=True,
-        capture_output=True,
-        text=True,
-    )
-    subprocess.run([str(binary)], check=True, capture_output=True, text=True)
-    result = {}
-    for line in (work / "dup_output.psv").read_text().splitlines():
-        parts = [part.strip() for part in line.split("|")]
-        result[int(parts[0])] = parts[1]
-    assert result == {1: "DUPLICATE", 2: "UNIQUE"}
-
-
-def test_cobol_execution_interface_handles_resume_eligibility_and_capacity():
-    """The submitted PAYEXEC interface must distinguish resumed effects, eligibility rejection, capacity rejection, and new execution."""
-    work = ROOT / "work"
-    work.mkdir(parents=True, exist_ok=True)
-    (work / "exec_input.psv").write_text(
-        "10|I|ACTIVE|ACTIVE|50000|10000|100|50|NONE\n"
-        "11|E|ACTIVE|NA|50000|20000|200|100|EXTERNAL\n"
-        "12|I|ACTIVE|BLOCKED|50000|10000|0|0|NONE\n"
-        "13|E|ACTIVE|NA|9000|10000|0|0|NONE\n"
-        "14|E|BLOCKED|NA|50000|10000|0|0|NONE\n"
-    )
-    binary = Path("/tmp/payexec_direct")
-    subprocess.run(
-        ["cobc", "-x", "-free", "-o", str(binary), str(ROOT / "cobol" / "payexec.cob")],
-        check=True,
-        capture_output=True,
-        text=True,
-    )
-    subprocess.run([str(binary)], check=True, capture_output=True, text=True)
-    actions = {}
-    for line in (work / "exec_output.psv").read_text().splitlines():
-        parts = [part.strip() for part in line.split("|")]
-        actions[int(parts[0])] = parts[1]
-    assert actions == {
-        10: "POST_INTERNAL",
-        11: "ALREADY_EXTERNAL",
-        12: "REJECT",
-        13: "REJECT",
-        14: "REJECT",
-    }
+def test_p2p_payhist_keeps_rejected_business_rejected():
+    """Rejected outcomes continue to map to rejected source-reference history."""
+    assert compile_and_call('payhist', 'REJECTED|') == 'REJECTED'

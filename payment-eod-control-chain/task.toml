@@ -1,28 +1,32 @@
 version = "2.0"
 name = "payment-eod-control-chain"
-category = "Software"
-subcategory = "Systems"
-tags = ["cobol", "sql", "batch-processing", "payments", "reconciliation"]
-languages = ["cobol", "bash", "sql"]
-difficulty = "advanced"
-expert_time_estimate_hours = 7
 artifacts = ["/app/eod"]
 
 [metadata]
 author_name = "anonymous"
 author_email = "anonymous@example.com"
+category = "Software"
+subcategory = "Systems"
+tags = ["cobol", "sql", "batch-processing", "payments", "reconciliation", "idempotency"]
+languages = ["cobol", "bash", "sql"]
+difficulty = "advanced"
+expert_time_estimate_hours = 12
+difficulty_explanation = "The restart bug spans replay identity, durable financial state, capacity, clearing, ledger reconciliation and close gating. A local fix can stop one duplicate effect while leaving another resumed state or downstream gate inconsistent."
+solution_explanation = "Restore authoritative restart decisions around the existing posting/reservation state, enforce database idempotency, rebuild only missing consistent downstream state, and gate publication/completion on cycle-scoped reconciliation and close prerequisites."
+verification_explanation = "The verifier rebuilds the database into fresh, resumed, inconsistent and completed states, runs the batch end to end, and checks durable financial effects, reconciliation, publication and close behavior. It also exercises the COBOL interfaces directly."
+relevant_experience = "Batch payment processing, COBOL, shell orchestration, SQL transaction semantics, ledger reconciliation and restart/idempotency controls."
 
 [verifier]
 timeout_sec = 1800
 environment_mode = "separate"
 
 [agent]
-timeout_sec = 5400
+timeout_sec = 10800
 
 [environment]
 network_mode = "public"
-build_timeout_sec = 900
+build_timeout_sec = 1200
 cpus = 2
 memory_mb = 8192
-storage_mb = 10240
+storage_mb = 12288
 workdir = "/app/eod"

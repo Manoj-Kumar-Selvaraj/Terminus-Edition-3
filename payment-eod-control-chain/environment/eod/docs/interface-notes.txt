@@ -1,0 +1,71 @@
+PAYMENTS EOD - PROGRAM AND FILE INTERFACE NOTES
+
+The controller is /app/eod/bin/run_eod.sh. The COBOL programs under /app/eod/cobol are small decision programs called by the controller. They read one pipe-delimited record on stdin and print one decision on stdout. Keep these interfaces stable; batch operations uses the binaries independently when diagnosing a held cycle.
+
+PAYDUP
+  input : source_seen|commercial_similar|current_cycle_ref|history_status
+  output: DUPLICATE, NEW or INVALID
+
+PAYELIG
+  input : payer_status|beneficiary_status|route_type
+  output: ELIGIBLE, REJECT_PAYER, REJECT_BENEFICIARY or INVALID
+
+PAYMONEY
+  input : amount_cents|fee_cents|tax_cents
+  output: total debit in cents
+
+PAYCAP
+  input : balance_cents|other_active_reserved_cents|total_debit_cents
+  output: CAPACITY_OK or INSUFFICIENT_CAPACITY
+
+PAYROUTE
+  input : INTERNAL/EXTERNAL|posting_present|reservation_present|clearing_present
+  output: POST_INTERNAL, RESUME_INTERNAL, RESERVE_EXTERNAL, RESUME_EXTERNAL or INVALID
+
+PAYRSV
+  input : expected_debit_cents|reservation_debit_cents|active_flag
+  output: RESERVATION_OK, RESERVATION_MISMATCH, NOT_ACTIVE or INVALID
+
+PAYCLR
+  input : reservation_present|clearing_present|reservation_match
+  output: CREATE_CLEARING, KEEP_CLEARING, HOLD_NO_RESERVATION, HOLD_RESERVATION_MISMATCH or INVALID
+
+PAYLEDGER
+  input : debit_cents|credit_cents|expected_row_count|actual_row_count
+  output: LEDGER_OK, LEDGER_UNBALANCED, LEDGER_INCOMPLETE or INVALID
+
+PAYRECON
+  input fields, in order:
+    original_count|outcome_count|original_value|response_value|
+    internal_success|internal_posting|external_success|reservation_count|clearing_count|
+    reserved_debit|clearing_value|external_fee_tax|ledger_debits|ledger_credits|
+    invalid_effect_count|mismatch_count|missing_ledger_count
+  output: BALANCED or HELD
+
+PAYCLOSE
+  input : reconciliation_status|delivery_ack|report_complete|archive_complete
+  output: COMPLETE, WAIT_CLOSE, HOLD or INVALID
+
+PAYPUB
+  input : reconciliation_status
+  output: PUBLISH or HOLD
+
+Official output files
+---------------------
+/app/eod/out/reconciliation.json is written for every invocation. It includes the selected cycle, BALANCED/HELD status, population/value counts, financial-effect counts, reservation/clearing values, ledger totals and mismatch counters.
+
+/app/eod/out/customer_response.csv
+  header: payment_id,source_ref,outcome,reason
+  one row for every input payment in received order
+
+/app/eod/out/clearing_submission.csv
+  header: payment_id,source_ref,amount_cents,currency
+  one row for every successful external payment that has a clearing item
+
+/app/eod/out/success_authorization.json
+  fields: cycle_id,business_date,source,run_id,status
+  status is AUTHORIZED
+
+The customer response and clearing submission are official publication artifacts. They must not remain from a held invocation. success_authorization.json is a close marker, not a reconciliation marker.
+
+Other files under /app/eod/out (restart_report.json, capacity_report.json, payment_state.csv, audit_timeline.csv, checkpoints.csv, control_snapshot.json and operations_summary.json) are operator diagnostics. They are not downstream authorization.

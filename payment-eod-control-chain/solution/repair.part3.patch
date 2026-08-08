@@ -1,0 +1,363 @@
+ remove_gated_outputs() {
+-    rm -f "$OUT_DIR/customer_response.csv"
++    rm -f \
++        "$OUT_DIR/customer_response.csv" \
++        "$OUT_DIR/clearing_submission.csv" \
++        "$OUT_DIR/success_authorization.json"
+ }
+ 
+ audit_event() {
+--- a/lib/control.sh
++++ b/lib/control.sh
+@@ -75,7 +75,7 @@
+ post_execution_integrity() {
+     local c="$1"
+     stage_begin "$c" INTEGRITY
+-    if true; then stage_done "$c" INTEGRITY; return 0; fi
++    if assert_cycle_relational_integrity "$c" && cycle_accounting_contract_valid "$c"; then stage_done "$c" INTEGRITY; return 0; fi
+     stage_held "$c" INTEGRITY "durable payment state is internally inconsistent"
+     return 1
+ }
+@@ -94,7 +94,7 @@
+ reconcile_cycle_after_execution() {
+     local c="$1"
+     stage_begin "$c" RECONCILIATION_CONTROL
+-    if false; then
++    if held_execution_outcomes_present "$c"; then
+         force_cycle_held "$c" "one or more resumed financial effects are inconsistent"
+         run_reconciliation "$c" >/dev/null || true
+         db_exec "UPDATE cycles SET state='HELD',reconciliation_status='HELD' WHERE cycle_id='$(sql_escape "$c")';"
+@@ -162,7 +162,11 @@
+         return 1
+     fi
+ 
+-    reconcile_cycle_after_execution "$c" || true
++    if ! reconcile_cycle_after_execution "$c"; then
++        remove_gated_outputs
++        write_control_snapshot "$c"
++        return 1
++    fi
+     if ! publish_cycle_after_reconciliation "$c"; then write_control_snapshot "$c"; return 1; fi
+     close_cycle_after_publication "$c" || true
+     write_control_snapshot "$c"
+--- a/lib/financial.sh
++++ b/lib/financial.sh
+@@ -18,15 +18,8 @@
+     source_seen="$(db_scalar "
+         SELECT CASE WHEN EXISTS(
+             SELECT 1 FROM payment_history
+-            WHERE (
+-                    source_ref='$(sql_escape "$source_ref")'
+-                 OR (
+-                    payer_account='$(sql_escape "$payer_account")'
+-                    AND beneficiary_ref='$(sql_escape "$beneficiary_ref")'
+-                    AND amount_cents=$amount_cents
+-                    AND currency='$(sql_escape "$currency")'
+-                 )
+-            )
++            WHERE source_ref='$(sql_escape "$source_ref")'
++              AND COALESCE(accepted_cycle_id,'') <> '$(sql_escape "$cycle_id")'
+               AND status IN ('ACCEPTED','COMPLETED')
+         ) THEN 'Y' ELSE 'N' END;
+     ")"
+@@ -116,7 +109,10 @@
+     local exclude_payment_id="${2:-0}"
+     db_scalar "
+         SELECT COALESCE(SUM(amount_cents),0)
+-        FROM reservations;
++        FROM reservations
++        WHERE payer_account='$(sql_escape "$payer_account")'
++          AND active=1
++          AND payment_id <> $exclude_payment_id;
+     "
+ }
+ 
+@@ -232,6 +228,9 @@
+         VALUES($payment_id,'$(sql_escape "$cycle_id")','C','FEE_INCOME',$fee_cents,datetime('now'))
+         ON CONFLICT(payment_id,side,account_code) DO NOTHING;
+ 
++        INSERT INTO ledger_entries(payment_id,cycle_id,side,account_code,amount_cents,created_at)
++        VALUES($payment_id,'$(sql_escape "$cycle_id")','C','TAX_PAYABLE',$tax_cents,datetime('now'))
++        ON CONFLICT(payment_id,side,account_code) DO NOTHING;
+     "
+ }
+ 
+@@ -256,6 +255,9 @@
+         VALUES($payment_id,'$(sql_escape "$cycle_id")','C','FEE_INCOME',$fee_cents,datetime('now'))
+         ON CONFLICT(payment_id,side,account_code) DO NOTHING;
+ 
++        INSERT INTO ledger_entries(payment_id,cycle_id,side,account_code,amount_cents,created_at)
++        VALUES($payment_id,'$(sql_escape "$cycle_id")','C','TAX_PAYABLE',$tax_cents,datetime('now'))
++        ON CONFLICT(payment_id,side,account_code) DO NOTHING;
+     "
+ }
+ 
+@@ -293,7 +295,7 @@
+         SET balance_cents=balance_cents+$amount_cents,
+             updated_at=datetime('now')
+         WHERE account_id='$beneficiary_q'
+-;
++          AND status='ACTIVE';
+ 
+         SELECT CASE WHEN changes() = 1
+             THEN 1
+--- a/lib/integrity.sh
++++ b/lib/integrity.sh
+@@ -163,11 +163,15 @@
+ orphan_clearing|$(orphan_clearing_count "$c")
+ orphan_ledger|$(orphan_ledger_count "$c")
+ multiple_internal_postings|$(multiple_internal_posting_count "$c")
++multiple_active_reservations|$(multiple_active_reservation_count "$c")
+ multiple_clearing|$(multiple_clearing_count "$c")
+ multiple_authorizations|$(multiple_authorization_count "$c")
++clearing_without_reservation|$(clearing_without_active_reservation_count "$c")
++reservation_amount_mismatch|$(reservation_amount_mismatch_count "$c")
+ clearing_amount_mismatch|$(clearing_amount_mismatch_count "$c")
+ internal_posting_mismatch|$(internal_posting_amount_mismatch_count "$c")
+ financial_effect_on_non_success|$(financial_effect_on_non_success_count "$c")
++ledger_duplicate_key|$(ledger_duplicate_key_count "$c")
+ ledger_zero_noise|$(ledger_zero_amount_noise_count "$c")
+ ledger_unbalanced_payment|$(ledger_unbalanced_payment_count "$c")
+ METRICS
+--- a/lib/lifecycle.sh
++++ b/lib/lifecycle.sh
+@@ -140,8 +140,8 @@
+     reconciliation_stage_terminal "$c" || failures=$((failures+1))
+     publication_stage_consistent "$c" || failures=$((failures+1))
+     close_stage_consistent "$c" || failures=$((failures+1))
+-    true
+-    true
++    completion_audit_consistent "$c" || failures=$((failures+1))
++    publication_audit_consistent "$c" || failures=$((failures+1))
+     printf '%s' "$failures"
+ }
+ 
+--- a/lib/operations.sh
++++ b/lib/operations.sh
+@@ -93,8 +93,8 @@
+     successful_internal_has_posting "$c" || failures=$((failures+1))
+     successful_external_has_reservation "$c" || failures=$((failures+1))
+     successful_external_has_clearing "$c" || failures=$((failures+1))
+-    true
+-    true
++    non_success_has_no_effect "$c" || failures=$((failures+1))
++    assert_cycle_relational_integrity "$c" || failures=$((failures+1))
+     printf '%s' "$failures"
+ }
+ 
+@@ -158,8 +158,5 @@
+     write_checkpoint_csv "$c"
+     write_restart_report "$c"
+     write_capacity_report "$c"
+-    population_summary_json "$c" > "$OUT_DIR/population_report.json"
+-    accounting_summary_json "$c" > "$OUT_DIR/accounting_report.json"
+-    lifecycle_summary_json "$c" > "$OUT_DIR/lifecycle_report.json"
+     write_operations_summary "$c"
+ }
+--- a/lib/publish.sh
++++ b/lib/publish.sh
+@@ -41,13 +41,13 @@
+     local c="$1" p="$2"
+     [[ -f "$p" ]] || return 1
+     [[ "$(head -n 1 "$p" | tr -d '\r')" == 'payment_id,source_ref,outcome,reason' ]] || return 1
+-    return 0
++    [[ "$(count_csv_data_rows "$p")" == "$(expected_response_rows "$c")" ]]
+ }
+ validate_clearing_staging() {
+     local c="$1" p="$2"
+     [[ -f "$p" ]] || return 1
+     [[ "$(head -n 1 "$p" | tr -d '\r')" == 'payment_id,source_ref,amount_cents,currency' ]] || return 1
+-    return 0
++    [[ "$(count_csv_data_rows "$p")" == "$(expected_clearing_rows "$c")" ]]
+ }
+ 
+ publication_status() {
+@@ -79,7 +79,7 @@
+ 
+ publish_balanced_cycle() {
+     local c="$1" reconciliation_status="$2"
+-    local decision; decision="PUBLISH"
++    local decision; decision="$(cobol_call paypub "$reconciliation_status")"
+     if [[ "$decision" != PUBLISH ]]; then
+         remove_gated_outputs
+         mark_publication_held "$c"
+@@ -124,5 +124,10 @@
+ publication_guard() {
+     local c="$1" status
+     status="$(cycle_field "$c" reconciliation_status)"
++    if [[ "$status" != BALANCED ]]; then
++        remove_gated_outputs
++        mark_publication_held "$c"
++        return 1
++    fi
+     publish_balanced_cycle "$c" "$status"
+ }
+--- a/lib/reconcile.sh
++++ b/lib/reconcile.sh
+@@ -183,11 +183,13 @@
+     RESERVED_DEBIT="$(metric_scalar "
+         SELECT COALESCE(SUM(amount_cents),0)
+         FROM reservations
+-        WHERE active=1;
++        WHERE cycle_id='$(sql_escape "$cycle_id")'
++          AND active=1;
+     ")"
+     CLEARING_VALUE="$(metric_scalar "
+         SELECT COALESCE(SUM(amount_cents),0)
+-        FROM clearing_items;
++        FROM clearing_items
++        WHERE cycle_id='$(sql_escape "$cycle_id")';
+     ")"
+     EXTERNAL_FEE_TAX="$(metric_scalar "
+         SELECT COALESCE(SUM(p.fee_cents+p.tax_cents),0)
+@@ -199,19 +201,21 @@
+     LEDGER_DEBITS="$(metric_scalar "
+         SELECT COALESCE(SUM(amount_cents),0)
+         FROM ledger_entries
+-        WHERE side='D';
++        WHERE cycle_id='$(sql_escape "$cycle_id")'
++          AND side='D';
+     ")"
+     LEDGER_CREDITS="$(metric_scalar "
+         SELECT COALESCE(SUM(amount_cents),0)
+         FROM ledger_entries
+-        WHERE side='C';
+-    ")"
+-    INVALID_EFFECT_COUNT=0
++        WHERE cycle_id='$(sql_escape "$cycle_id")'
++          AND side='C';
++    ")"
++    INVALID_EFFECT_COUNT="$(count_invalid_financial_effects "$cycle_id")"
+     local ext_mismatch int_mismatch
+     ext_mismatch="$(count_external_mismatches "$cycle_id")"
+     int_mismatch="$(count_internal_mismatches "$cycle_id")"
+-    MISMATCH_COUNT=0
+-    MISSING_LEDGER_COUNT=0
++    MISMATCH_COUNT=$((ext_mismatch + int_mismatch))
++    MISSING_LEDGER_COUNT="$(count_missing_ledger "$cycle_id")"
+ }
+ 
+ reconciliation_decision() {
+--- a/lib/restart.sh
++++ b/lib/restart.sh
+@@ -65,7 +65,7 @@
+     state="$(payment_durable_state "$payment_id")"
+     IFS='|' read -r posting reservation clearing ledger outcome checkpoint <<< "$state"
+ 
+-    true
++    if payment_has_conflicting_effect_families "$payment_id"; then printf CONFLICTING_EFFECTS; return; fi
+     if [[ "$kind" == INTERNAL ]]; then
+         if (( $(safe_int "$posting") > 0 )); then
+             if internal_posting_consistent "$payment_id"; then printf RESUME_INTERNAL; else printf INCONSISTENT_INTERNAL; fi
+@@ -76,8 +76,8 @@
+     fi
+ 
+     if (( $(safe_int "$reservation") > 0 )); then
+-        true
+-        true
++        if ! external_reservation_consistent "$payment_id"; then printf INCONSISTENT_EXTERNAL; return; fi
++        if (( $(safe_int "$clearing") > 0 )) && ! external_clearing_consistent "$payment_id"; then printf INCONSISTENT_EXTERNAL; return; fi
+         printf RESUME_EXTERNAL
+     elif (( $(safe_int "$clearing") > 0 )); then
+         printf CLEARING_WITHOUT_RESERVATION
+--- a/sql/schema.sql
++++ b/sql/schema.sql
+@@ -80,7 +80,8 @@
+     beneficiary_credit_cents INTEGER NOT NULL CHECK (beneficiary_credit_cents > 0),
+     posted_at TEXT,
+     FOREIGN KEY (payment_id) REFERENCES payments(payment_id),
+-    FOREIGN KEY (cycle_id) REFERENCES cycles(cycle_id)
++    FOREIGN KEY (cycle_id) REFERENCES cycles(cycle_id),
++    UNIQUE (payment_id)
+ );
+ 
+ CREATE TABLE reservations (
+@@ -96,8 +97,9 @@
+     FOREIGN KEY (cycle_id) REFERENCES cycles(cycle_id)
+ );
+ 
+-CREATE INDEX one_active_reservation_per_payment
+-ON reservations(payment_id, active);
++CREATE UNIQUE INDEX one_active_reservation_per_payment
++ON reservations(payment_id)
++WHERE active = 1;
+ 
+ CREATE INDEX reservations_by_payer_active
+ ON reservations(payer_account, active);
+@@ -115,7 +117,8 @@
+     created_at TEXT,
+     FOREIGN KEY (payment_id) REFERENCES payments(payment_id),
+     FOREIGN KEY (cycle_id) REFERENCES cycles(cycle_id),
+-    FOREIGN KEY (reservation_id) REFERENCES reservations(reservation_id)
++    FOREIGN KEY (reservation_id) REFERENCES reservations(reservation_id),
++    UNIQUE (payment_id)
+ );
+ 
+ CREATE TABLE ledger_entries (
+@@ -127,7 +130,8 @@
+     amount_cents INTEGER NOT NULL CHECK (amount_cents >= 0),
+     created_at TEXT,
+     FOREIGN KEY (payment_id) REFERENCES payments(payment_id),
+-    FOREIGN KEY (cycle_id) REFERENCES cycles(cycle_id)
++    FOREIGN KEY (cycle_id) REFERENCES cycles(cycle_id),
++    UNIQUE (payment_id, side, account_code)
+ );
+ 
+ CREATE INDEX ledger_entries_cycle_side
+@@ -169,7 +173,8 @@
+     run_id TEXT NOT NULL,
+     status TEXT NOT NULL CHECK (status = 'AUTHORIZED'),
+     authorized_at TEXT,
+-    FOREIGN KEY (cycle_id) REFERENCES cycles(cycle_id)
++    FOREIGN KEY (cycle_id) REFERENCES cycles(cycle_id),
++    UNIQUE (cycle_id)
+ );
+ 
+ CREATE TABLE work_checkpoints (
+@@ -226,3 +231,46 @@
+ CREATE INDEX reconciliation_runs_cycle
+ ON reconciliation_runs(cycle_id, reconciliation_id);
+ 
++CREATE TRIGGER clearing_requires_active_reservation
++BEFORE INSERT ON clearing_items
++FOR EACH ROW
++BEGIN
++    SELECT CASE
++        WHEN NOT EXISTS (
++            SELECT 1
++            FROM reservations r
++            WHERE r.reservation_id = NEW.reservation_id
++              AND r.payment_id = NEW.payment_id
++              AND r.cycle_id = NEW.cycle_id
++              AND r.active = 1
++        )
++        THEN RAISE(ABORT, 'active reservation required before clearing')
++    END;
++END;
++
++CREATE TRIGGER completed_cycle_requires_balanced_reconciliation
++BEFORE UPDATE OF completion_status ON cycles
++FOR EACH ROW
++WHEN NEW.completion_status = 'COMPLETED'
++BEGIN
++    SELECT CASE
++        WHEN NEW.reconciliation_status <> 'BALANCED'
++        THEN RAISE(ABORT, 'balanced reconciliation required for completion')
++    END;
++END;
++
++CREATE TRIGGER authorization_requires_completed_cycle
++BEFORE INSERT ON success_authorizations
++FOR EACH ROW
++BEGIN
++    SELECT CASE
++        WHEN NOT EXISTS (
++            SELECT 1
++            FROM cycles c
++            WHERE c.cycle_id = NEW.cycle_id
++              AND c.completion_status = 'COMPLETED'
++              AND c.reconciliation_status = 'BALANCED'
++        )
++        THEN RAISE(ABORT, 'completed cycle required for authorization')
++    END;
++END;

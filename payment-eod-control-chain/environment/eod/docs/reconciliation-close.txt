@@ -1,0 +1,44 @@
+PAYMENTS EOD - FINANCE CONTROL / CLOSE NOTES
+
+Reconciliation is cycle scoped. State from another business date or run must not change the selected cycle's totals.
+
+For a cycle to be BALANCED:
+- every input payment has exactly one response outcome and the response population/value matches input population/value;
+- each SUCCESS_INTERNAL has one authoritative internal posting;
+- each SUCCESS_EXTERNAL has one active reservation and one clearing item linked to that reservation;
+- active external reservation debit equals clearing principal plus fee and tax for those successful external payments;
+- ledger debit equals ledger credit;
+- every successful payment has the complete ledger shape for its route;
+- DUPLICATE and REJECTED payments have no financial effect;
+- an existing posting/reservation/clearing must agree with the current payment data.
+
+Internal ledger shape
+---------------------
+Debit  CUSTOMER_CONTROL     amount + fee + tax
+Credit BENEFICIARY_CONTROL  amount
+Credit FEE_INCOME           fee
+Credit TAX_PAYABLE          tax
+
+External ledger shape
+---------------------
+Debit  CUSTOMER_RESERVED    amount + fee + tax
+Credit CLEARING_PAYABLE     amount
+Credit FEE_INCOME           fee
+Credit TAX_PAYABLE          tax
+
+A fee or tax can be zero, but the obligation row is still part of the expected four-row ledger shape. This lets reconciliation distinguish a missing obligation from a legitimate zero-valued charge.
+
+Publication and close
+---------------------
+BALANCED permits publication of customer_response.csv and clearing_submission.csv. HELD does not; remove stale copies left by an earlier invocation.
+
+Completion is later than reconciliation. A cycle is COMPLETED only after all of the following are true:
+  reconciliation_status = BALANCED
+  response/clearing publication recorded complete
+  delivery_ack = 1
+  report_complete = 1
+  archive_complete = 1
+
+If reconciliation is balanced but one of the close prerequisites is missing, keep the cycle RECONCILED/WAITING. Do not create success_authorization.json yet.
+
+The success authorization is unique for the cycle and is written only after completion. Re-running a completed cycle may regenerate official files from durable state, but must not create another posting, reservation, clearing item, ledger obligation, completion record or authorization.
