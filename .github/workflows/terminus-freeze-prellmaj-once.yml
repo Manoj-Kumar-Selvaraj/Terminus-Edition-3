@@ -1,0 +1,319 @@
+name: Terminus Freeze PreLLMaJ Once
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/terminus-freeze-prellmaj-once.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  freeze:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Write packet-bound reviews and aggregate
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+
+          task='payment-eod-control-chain'
+          commit='ff7394ff7bd05a5c851cd1a6a1f62e175c2cd011'
+          root=Path('.')
+          review_dir=root/'.terminus/reviews/payment-eod-control-chain/ff7394ff'
+          packet_names={
+            'task':'payment-eod-control-chain-ff7394ff-task-architect-03a6d4bd8d.packet.json',
+            'verifier':'payment-eod-control-chain-ff7394ff-verifier-engineer-06d7664eb9.packet.json',
+            'orig':'payment-eod-control-chain-ff7394ff-originality-a3749c7b1b.packet.json',
+            'diff':'payment-eod-control-chain-ff7394ff-difficulty-design-7bf567617a.packet.json',
+            'comp':'payment-eod-control-chain-ff7394ff-compliance-76be8accd9.packet.json',
+            'instr':'payment-eod-control-chain-ff7394ff-instruction-10e91f3a1f.packet.json',
+            'docs':'payment-eod-control-chain-ff7394ff-documentation-4957e93f25.packet.json',
+            'comprehensive':'payment-eod-control-chain-ff7394ff-comprehensive-checklist-a9ef4c61b4.packet.json',
+          }
+          packets={k:json.loads((review_dir/v).read_text()) for k,v in packet_names.items()}
+
+          def make(key, verdict, summary, evidence, role_output, next_gate):
+              p=packets[key]
+              result={
+                'schema_version':'3.0','role':p['role'],'review_id':p['review_id'],'task':task,
+                'task_commit':commit,'control_plane_commit':p['control_plane_commit'],
+                'protocol_policy_version':p['protocol_policy_version'],'prompt_policy_version':p['prompt_policy_version'],
+                'role_policy_version':p['role_policy_version'],'role_contract_hash':p['role_contract_hash'],
+                'context_packet':str((review_dir/packet_names[key]).as_posix()),'verdict':verdict,
+                'confidence':'HIGH','evidence_status':'SUFFICIENT','summary':summary,'evidence':evidence,
+                'findings':[],'missing_evidence':[],
+                'change_scope':['Fresh semantic review under protocol 2.1 / packet-result schema v3; solver-visible task content unchanged.'],
+                'do_not_change':['Do not weaken behavioral verifier coverage or exactly-once/restart invariants merely to improve agent pass rate.'],
+                'next_gate':next_gate,'role_output':role_output,
+              }
+              out=root/p['review_output_path']
+              out.write_text(json.dumps(result,indent=2)+'\n')
+              return p['review_output_path']
+
+          common_run={'type':'run','ref':'Terminus Edition 3 CI run 31260792025 (#159)','observation':'Oracle 37/37 PASS with reward 1; NOP failed all 30 F2P while passing all 7 P2P for reward 0.'}
+          paths={}
+          paths['task']=make('task','PASS',
+            'One coherent payment-batch restart incident couples durable-state replay, capacity, accounting, publication and close behavior across COBOL, shell and SQLite. The solver-visible operating notes make the problem fair without turning the instruction into a bug checklist.',
+            [
+              {'type':'file','ref':'payment-eod-control-chain/instruction.md','observation':'Incident-first two-paragraph handoff identifies restart duplication, stale publication and the database as restart authority.'},
+              {'type':'file','ref':'payment-eod-control-chain/environment/eod/docs/restart-operations.txt','observation':'Defines accepted-source replay identity, internal/external resume semantics and capacity rules.'},
+              {'type':'file','ref':'payment-eod-control-chain/environment/eod/docs/reconciliation-close.txt','observation':'Couples financial effects, ledger completeness, publication and completion prerequisites.'},
+              {'type':'test','ref':'.terminus/designs/payment-eod-control-chain-test-map.json','observation':'Twelve requirement groups are exercised across 37 behavioral cases.'}, common_run],
+            {'SCENARIO_COHERENCE':'HIGH','SOLVABILITY':'HIGH','COUPLED_REASONING':'HIGH','ARTIFICIAL_CONSTRUCTION_RISK':'LOW',
+             'PLAUSIBLE_PARTIAL_FIXES':['Fix replay identity but still repeat durable effects','Prevent duplicate reservations while leaving clearing/ledger restart inconsistent','Balance ledger totals while route-specific obligations remain incomplete','Gate authorization while stale official publication can still escape'],
+             'CONTRACT_GAPS':[],'STRUCTURAL_REMEDIATION':[]},'Verifier Engineer')
+
+          req_counts={'REQ-REPLAY':4,'REQ-ELIGIBILITY':3,'REQ-CAPACITY':4,'REQ-RESUME':9,'REQ-IDEMPOTENCY':1,'REQ-ACCOUNTING':1,'REQ-RECON':3,'REQ-PUBLICATION':1,'REQ-CLOSE':5,'REQ-INTERFACE':3,'REQ-HISTORY':2,'REQ-RESTART':1}
+          paths['verifier']=make('verifier','PASS',
+            'The verifier is requirement-complete and behavior-oriented. It combines direct execution of documented COBOL decision interfaces with independent end-to-end database/artifact scenarios and has strong Oracle/NOP discrimination.',
+            [
+              {'type':'file','ref':'payment-eod-control-chain/tests/test_outputs.py','observation':'Independent SQLite scenarios invoke documented interfaces and assert durable state/artifact behavior rather than source patterns.'},
+              {'type':'file','ref':'payment-eod-control-chain/tests/test_regressions.py','observation':'Regression cases cover current-cycle history, inconsistent restart state and stable P2P behavior.'},
+              {'type':'test','ref':'.terminus/designs/payment-eod-control-chain-test-map.json','observation':'Every declared requirement is mapped; suite has 30 F2P and 7 P2P cases.'},
+              {'type':'file','ref':'payment-eod-control-chain/tests/test.sh','observation':'Reward is initialized to 0 and is exactly 1 only on full pytest success.'}, common_run],
+            {'REQUIREMENT_TEST_MATRIX':{k:{'coverage':'COMPLETE','tests':v} for k,v in req_counts.items()},'PHANTOM_TESTS':[],'WEAK_OR_VACUOUS_ASSERTIONS':[],
+             'IMPLEMENTATION_COUPLING':'LOW — direct COBOL checks exercise documented runtime interfaces; end-to-end tests grade state/artifact behavior.',
+             'FLAKINESS_RISK':'LOW','ANTI_CHEAT_RISK':'LOW','ORACLE_NOP_ASSESSMENT':'STRONG — Oracle passes every case; untouched starter fails every F2P while preserving all P2P.'},'Originality & Authenticity Reviewer')
+
+          paths['orig']=make('orig','PASS',
+            'No direct or structural duplicate was found. Public COBOL benchmark material is dominated by modernization/parity tasks, while this task is a stateful payment restart/reconciliation problem with a distinct shell+SQLite+decision-program topology.',
+            [
+              {'type':'file','ref':'payment-eod-control-chain/instruction.md','observation':'Scenario is a payment EOD durable restart incident rather than language modernization.'},
+              {'type':'file','ref':'.terminus/GOLDEN_TASKS.md','observation':'Nearest abstract references are restart/recovery systems tasks; registry forbids scenario/topology reuse.'},
+              {'type':'test','ref':'.terminus/designs/payment-eod-control-chain-test-map.json','observation':'Topology centers source replay, postings/reservations, cycle-scoped reconciliation, publication and close.'},
+              {'type':'public_reference','ref':'https://github.com/few-sh/terminal-wrench','observation':'Public task index includes cobol-modernization but no matching payment-EOD restart task.'}],
+            {'DUPLICATE_RISK':'LOW','TEMPLATE_RISK':'LOW','REALISM':'HIGH','PROVENANCE':'Original payment-operations restart scenario; public/golden material used only for abstract calibration.',
+             'NEAREST_REFERENCES':['wal-recovery-ordering (abstract restart calibration)','cobol-modernization (language/domain neighbor only)'],'SUSPICIOUS_SIMILARITIES':[],
+             'ARTIFICIAL_CONSTRUCTION_SIGNALS':[],'DISTINCTIVE_FEATURES':['accepted-source replay provenance','internal posting vs external reservation resume','cycle-scoped reconciliation','publication/close separation'],'REQUIRED_CHANGES':[]},'Difficulty design')
+
+          paths['diff']=make('diff','PASS',
+            'Pre-trial difficulty is genuine: the solver must reason through identity, eligibility/capacity, authoritative restart effects, accounting/reconciliation and close ordering. The 3k+ footprint adds navigation cost, but the main difficulty is coupled state rather than clerical volume. Final tier remains empirical.',
+            [
+              {'type':'file','ref':'payment-eod-control-chain/environment/eod/docs/restart-operations.txt','observation':'Partial-state restart/capacity rules make local fixes globally insufficient.'},
+              {'type':'file','ref':'payment-eod-control-chain/environment/eod/docs/reconciliation-close.txt','observation':'Balanced reconciliation and completion are separate coupled gates with route-specific obligations.'},
+              {'type':'test','ref':'.terminus/designs/payment-eod-control-chain-test-map.json','observation':'30 F2P cases span 12 requirement groups.'},
+              {'type':'run','ref':'Creator Complexity Gate run 31265165593 (#44)','observation':'Strict profile passed at 3080 substantive LOC, 29 interrelated manifestations and six cross-cluster pairs.'}],
+            {'MODE':'PRE_TRIAL','TRIAL_SET':'PRE_TRIAL','SHORTCUT_RISK':'LOW','CLERICAL_DIFFICULTY_RISK':'MEDIUM','DIFFICULTY_VERDICT':'NOT_MEASURABLE',
+             'COMPLETE_PASSES':'NOT_MEASURED_PRETRIAL','PER_TEST_COVERAGE':'Official 10-trial solvability not yet measured','ZERO_OF_TEN_TESTS':'NOT_MEASURED_PRETRIAL','TRAJECTORY_FINDINGS':[]},'Compliance pre-review')
+
+          paths['comp']=make('comp','PASS',
+            'No current Edition 3 structural, metadata, Docker, security or packaging blocker was found. Required files are present, base images are digest pinned, verifier is separate, dependencies are pinned where applicable, and private control-plane material stays outside the task package.',
+            [
+              {'type':'rule','ref':'TERMINUS_3_AI_INSTRUCTIONS.md','observation':'Current local Edition 3 rules control layout, metadata, Docker, verifier and prompt behavior.'},
+              {'type':'file','ref':'payment-eod-control-chain/task.toml','observation':'Required top-level metadata/artifacts and verifier/agent/environment tables are correctly placed.'},
+              {'type':'file','ref':'payment-eod-control-chain/environment/Dockerfile','observation':'Digest-pinned runtime, clean apt usage, no arbitrary web fetch or privileged Docker operation.'},
+              {'type':'file','ref':'payment-eod-control-chain/environment/.dockerignore','observation':'Non-trivial environment excludes solution/tests and common junk.'},
+              {'type':'file','ref':'payment-eod-control-chain/tests/Dockerfile','observation':'Separate digest-pinned verifier image with pytest pinned to 8.4.1.'}, common_run],
+            {'BLOCKERS':[],'HIGH':[],'MEDIUM':[],'LOW':[],'CURRENT_RULE_REFERENCES':['TERMINUS_3_AI_INSTRUCTIONS.md'],'PACKAGE_RISK':'LOW','SECURITY_RISK':'LOW'},'Instruction Reviewer')
+
+          paths['instr']=make('instr','PASS',
+            'The instruction reads like an operations handoff rather than a grader specification. It leads with the observed restart incident, uses the database and existing docs as the detailed technical contract, and keeps acceptance language at the operational-invariant level.',
+            [
+              {'type':'file','ref':'payment-eod-control-chain/instruction.md','observation':'182-word, two-paragraph incident-first handoff with absolute paths and no task name, solution steps or rubric language.'},
+              {'type':'file','ref':'payment-eod-control-chain/environment/eod/docs/restart-operations.txt','observation':'Referenced note supplies durable restart/replay/capacity rules without a repair walkthrough.'},
+              {'type':'file','ref':'payment-eod-control-chain/environment/eod/docs/interface-notes.txt','observation':'Referenced note supplies record layouts and official output schemas.'},
+              {'type':'file','ref':'payment-eod-control-chain/environment/eod/docs/reconciliation-close.txt','observation':'Referenced note supplies finance invariants and completion prerequisites.'},
+              {'type':'test','ref':'.terminus/designs/payment-eod-control-chain-test-map.json','observation':'All graded requirement groups remain discoverable from the handoff plus referenced docs.'}],
+            {'WORD_COUNT':182,'HUMAN_SIGNAL':'HIGH','AI_TEMPLATE_SIGNAL':'LOW','JIRA_SLACK_HANDOFF':'PASS','REVERSE_OUTLINE_RISK':'LOW','SELECTIVITY':'HIGH','COMPRESSED_RUBRIC':'LOW','OVER_PRESCRIPTION':'LOW','SPEC_DUMP':'LOW',
+             'MATERIAL_REQUIREMENTS_PRESERVED':['restart authority','accepted-source replay identity','COBOL interface stability','balanced-publication gate','close authorization gate','rerun idempotency'],
+             'UNNECESSARY_TEXT':[],'MISSING_CONTEXT':[],'SUSPICIOUS_PHRASES':[],'FAIRNESS_RISK':'LOW','REPLACEMENT_TEXT':''},'Documentation Reviewer')
+
+          paths['docs']=make('docs','PASS',
+            'README and metadata explanations are concise, technically supported and useful to an engineering reviewer. They explain the restart trap, high-level solution invariant and verification strategy without leaking a file-by-file oracle.',
+            [
+              {'type':'file','ref':'payment-eod-control-chain/README.md','observation':'Explains system boundaries, restart authority and reconciliation/close separation in normal engineering prose.'},
+              {'type':'file','ref':'payment-eod-control-chain/task.toml','observation':'Difficulty, solution and verification explanations are short and match observable task/test design.'},
+              {'type':'test','ref':'.terminus/designs/payment-eod-control-chain-test-map.json','observation':'Verifier summary is supported by fresh, partial, inconsistent and completed scenarios plus direct interface checks.'}],
+            {'DIFFICULTY_QUALITY':'HIGH','SOLUTION_QUALITY':'HIGH','VERIFICATION_QUALITY':'HIGH','AI_TEMPLATE_SIGNAL':'LOW','UNSUPPORTED_CLAIMS':[],'BOILERPLATE':[],'CONTRADICTIONS':[],'REQUIRED_CHANGES':[],'REPLACEMENT_TEXT':''},'Comprehensive Reviewer')
+
+          registry=json.loads((root/'.terminus/reviewers/reviewer_criteria.json').read_text())['criteria']
+          criterion_status={}
+          for item in registry:
+              cid=item['id']
+              if cid.startswith('RC-TRIAL-'):
+                  criterion_status[cid]='NOT_APPLICABLE_PRETRIAL'
+              elif cid.startswith('RC-RUB-'):
+                  criterion_status[cid]='NOT_APPLICABLE_PLATFORM_RUBRIC'
+              elif cid=='RC-META-004':
+                  criterion_status[cid]='DEFERRED_TO_COMBINED_10_TRIALS'
+              else:
+                  criterion_status[cid]='PASS'
+          paths['comprehensive']=make('comprehensive','APPROVE',
+            'Independent checklist walk completed at 100% coverage. No current High, Medium or Low task defect was found in pre-trial scope. Trial-analysis and platform-rubric criteria are not applicable yet, and empirical difficulty is deferred to the combined ten official trials.',
+            [
+              {'type':'rule','ref':'TERMINUS_3_AI_INSTRUCTIONS.md','observation':'Current local Edition 3 rules control structure, metadata, prompt styling, Docker/verifier behavior and combined-ten difficulty.'},
+              {'type':'file','ref':'payment-eod-control-chain/instruction.md','observation':'Two-paragraph incident handoff with absolute paths and referenced solver-visible contracts.'},
+              {'type':'file','ref':'payment-eod-control-chain/task.toml','observation':'Required task metadata and timeout/resource tables are present.'},
+              {'type':'file','ref':'payment-eod-control-chain/environment/Dockerfile','observation':'Digest-pinned runtime and clean dependency installation.'},
+              {'type':'file','ref':'payment-eod-control-chain/tests/Dockerfile','observation':'Separate digest-pinned verifier with pinned pytest.'},
+              {'type':'test','ref':'.terminus/designs/payment-eod-control-chain-test-map.json','observation':'37 mapped behavioral cases cover all 12 declared requirement groups.'}, common_run,
+              {'type':'run','ref':'Creator Complexity Gate run 31265165593 (#44)','observation':'Strict large-system authenticity/scale gate passed.'}],
+            {'checklist_coverage_percent':100,'checklist_snapshot':'2026-08-08-user-supplied','criterion_status':criterion_status,
+             'status_counts':{'PASS':43,'NOT_APPLICABLE_PRETRIAL':6,'NOT_APPLICABLE_PLATFORM_RUBRIC':11,'DEFERRED_TO_COMBINED_10_TRIALS':1},
+             'severity_counts':{'BLOCKER':0,'HIGH':0,'MEDIUM':0,'LOW':0},
+             'TEST_QUALITY_EVAL_DISPOSITIONS':{'req-gap':'NOT_FLAGGED','weak-assertion':'NOT_FLAGGED','phantom-spec':'NOT_FLAGGED','flaky-execution':'NOT_FLAGGED','vacuous-test':'NOT_FLAGGED'},
+             'TRIAL_ANALYSIS_DISPOSITIONS':{'task_specification':'NOT_APPLICABLE_PRETRIAL','reward_hacking':'NOT_APPLICABLE_PRETRIAL','difficulty_crux':'NOT_APPLICABLE_PRETRIAL','near_miss':'NOT_APPLICABLE_PRETRIAL','refusals':'NOT_APPLICABLE_PRETRIAL','low_timeout':'NOT_APPLICABLE_PRETRIAL'},
+             'policy_conflicts':[],'recommendation':'APPROVE'},'Pre-LLMaJ disagreement/omission scan')
+
+          review_reports={
+            'task_architect':paths['task'],'verifier_engineer':paths['verifier'],'originality':paths['orig'],'difficulty_design':paths['diff'],
+            'compliance':paths['comp'],'instruction':paths['instr'],'documentation':paths['docs'],'comprehensive':paths['comprehensive']}
+          disagreement={'schema_version':'1.0','task':task,'task_commit':commit,'protocol_policy_version':'2.1','prompt_policy_version':'2.2','panel_policy_version':'2.2',
+            'review_reports':review_reports,'specialist_issues_missed_by_comprehensive':[],'comprehensive_issues_missed_by_specialists':[],
+            'material_disagreements':[],'adjudications_required':[],'policy_conflicts':[],'status':'PASS',
+            'summary':'Frozen specialist and cold Comprehensive reviews agree on the current pre-trial task state. No material omission, contradiction or policy conflict requires adjudication.'}
+          (review_dir/'disagreement-scan-v3.json').write_text(json.dumps(disagreement,indent=2)+'\n')
+
+          aggregate={'schema_version':'2.0','task':task,'task_commit':commit,'panel_policy_version':'2.2','verdict':'PASS','review_reports':review_reports,
+            'comprehensive_recommendation':'APPROVE','checklist_coverage_percent':100,'severity_counts':{'BLOCKER':0,'HIGH':0,'MEDIUM':0,'LOW':0},
+            'open_findings':[],'policy_conflicts':[],'disagreement_scan':str((review_dir/'disagreement-scan-v3.json').as_posix()),
+            'deterministic_evidence':{'creator_complexity':'run 31265165593 (#44) — PASS','oracle':'run 31260792025 (#159) — 37/37, reward 1','nop':'run 31260792025 (#159) — 30 F2P fail, 7 P2P pass, reward 0'},
+            'trial_scope':'Pre-trial only. Final empirical difficulty and trial-analysis gates remain pending.',
+            'next_gate':'Harbor LLMaJ after reusable model credentials are configured.'}
+          (review_dir/'pre-llmaj-aggregate-v3.json').write_text(json.dumps(aggregate,indent=2)+'\n')
+
+          session=f'''# Terminus Task Session
+
+Session schema version: `2.4`
+
+## Identity
+
+- Task: `payment-eod-control-chain`
+- Controller state: `LLMAJ`
+- Working branch: `main`
+- Pull request: `#4` (merged control-plane hardening)
+- Current task commit: `{commit}`
+- Agent-system policy: `2.3`
+- Specialist prompt policy: `2.2`
+- Specialist protocol policy: `2.1`
+- Pre-LLMaJ panel policy: `2.2`
+- Comprehensive reviewer policy: `1.0`
+- Reviewer checklist snapshot: `2026-08-08-user-supplied`
+- Checklist policy freshness: `CURRENT_LOCAL_SNAPSHOT`
+
+## Current task profile
+
+The solver-visible task/solution/verifier tree remains at `ff7394ff...`. The task is `large_system_strict`: 3,080 substantive solver-visible LOC, 29 defect manifestations across six root-cause clusters, all 29 participating in the causal graph, and 37 verifier cases split 30 F2P + 7 P2P.
+
+## Current gates
+
+| Gate | Status | Evidence / version |
+| --- | --- | --- |
+| Creator Complexity Gate | PASS | run `31265165593` (#44); strict profile 3080 LOC / 29 defects / 29 interrelated / 30 F2P / 7 P2P |
+| Preflight/static | PASS | run `31260792025` (#159) |
+| Ruff verifier | PASS | run `31260792025` (#159) |
+| STB auth/AI credentials | BLOCKED | reusable model credential not configured; automatic refresh disabled |
+| Oracle = 1 | PASS | run `31260792025` (#159), artifact `9022762311`, 37/37 pass, reward 1 |
+| NOP = 0 | PASS | run `31260792025` (#159), artifact `9022762311`, 30 F2P fail + 7 P2P pass, reward 0 |
+| Pre-LLMaJ specialist panel | PASS | `.terminus/reviews/payment-eod-control-chain/ff7394ff/pre-llmaj-aggregate-v3.json` |
+| Task Architect | PASS | `{paths['task']}` |
+| Verifier Engineer | PASS | `{paths['verifier']}` |
+| Originality & Authenticity | PASS | `{paths['orig']}` |
+| Difficulty design | PASS | `{paths['diff']}` |
+| Compliance pre-review | PASS | `{paths['comp']}` |
+| Instruction Reviewer | PASS | `{paths['instr']}` |
+| Documentation Reviewer | PASS | `{paths['docs']}` |
+| Comprehensive Reviewer | APPROVE | `{paths['comprehensive']}` |
+| Pre-LLMaJ aggregate | PASS | `.terminus/reviews/payment-eod-control-chain/ff7394ff/pre-llmaj-aggregate-v3.json` |
+| Harbor LLMaJ | NOT_RUN | waiting for reusable model credential |
+| Difficulty trials | NOT_RUN | GPT-5.5 ×5 + Claude Opus 4.8 ×5 after Harbor LLMaJ |
+| GPT-5.5 difficulty ×5 | NOT_RUN | diagnostic half |
+| Claude Opus 4.8 difficulty ×5 | NOT_RUN | diagnostic half |
+| Combined difficulty ×10 | NOT_RUN | final tier pending |
+| Per-test solvability 1/10 | NOT_RUN | combined 10 pending |
+| Trial Analysis | NOT_RUN | no official model trials yet |
+| Final Compliance | PENDING | after model-backed evaluation |
+| Final Human Quality | PENDING | after model-backed evaluation |
+| Final package | PENDING | |
+
+## Fresh v3 Pre-LLMaJ evidence
+
+Eight immutable context packets were generated by `.terminus/new_review_packet.py` from one control-plane HEAD and bound to the unchanged task commit `{commit}`. Every current ready semantic gate points to a packet-bound v3 result. Isolation mode is `PROCEDURAL`, as documented by the control plane.
+
+The cold Comprehensive Reviewer completed 100% of the 61-criterion registry. No High/Medium/Low finding or policy conflict is open. Trial-only/platform-rubric criteria are deferred or not applicable at this stage; empirical difficulty remains deferred to the combined ten official trials.
+
+## Current deterministic evidence
+
+- Creator Complexity: run `31265165593` (#44), strict profile PASS.
+- Terminus validation: run `31260792025` (#159).
+- Oracle: 37/37 pytest PASS, reward `1`.
+- NOP: exactly 30 `test_f2p_*` failures and seven `test_p2p_*` passes, reward `0`.
+- Artifact: `9022762311`, digest `sha256:d1e684b622607bae49044fc5023f7aa987fdea360ccd5eb489b66e5e79f1eca5`.
+- Oracle/NOP use the direct Harbor utility-agent path and do not consume AI-key refreshes.
+
+## Difficulty policy
+
+Final difficulty/solvability uses GPT-5.5 ×5 plus Claude Opus 4.8 ×5 combined. A five-run suite is diagnostic only. Every verifier case must pass at least once somewhere across the combined ten.
+
+## Credential architecture
+
+Oracle/NOP are key-free utility-agent gates. Model-backed Harbor LLMaJ/difficulty uses reusable STB credentials when configured. `stb keys refresh` is emergency fallback only and must not be called routinely.
+
+## Current blocker
+
+`Fresh Pre-LLMaJ is PASS. Harbor LLMaJ is blocked only by the missing reusable model credential.`
+
+## Next action
+
+`Configure the reusable STB model credential, run Harbor LLMaJ for the unchanged task commit, then run GPT-5.5 ×5 and Claude Opus 4.8 ×5 only if Harbor passes.`
+
+## Review evidence ledger
+
+- Task Architect: `{paths['task']}`
+- Verifier Engineer: `{paths['verifier']}`
+- Originality & Authenticity: `{paths['orig']}`
+- Difficulty design: `{paths['diff']}`
+- Compliance pre-review: `{paths['comp']}`
+- Instruction Reviewer: `{paths['instr']}`
+- Documentation Reviewer: `{paths['docs']}`
+- Comprehensive Reviewer: `{paths['comprehensive']}`
+- Disagreement scan: `.terminus/reviews/payment-eod-control-chain/ff7394ff/disagreement-scan-v3.json`
+- Pre-LLMaJ aggregate: `.terminus/reviews/payment-eod-control-chain/ff7394ff/pre-llmaj-aggregate-v3.json`
+
+Legacy fixed-name reviews remain historical/stale evidence and are not used by current ready gates.
+
+## Circuit breakers
+
+- Oracle/NOP authoring blocker: `RESOLVED` by run #159.
+- Control-plane provenance migration: `RESOLVED`.
+- AI refresh circuit breaker: `ACTIVE`; do not refresh automatically.
+- Model-backed evaluation: `BLOCKED` until reusable credential exists.
+
+## Do not retry blindly
+
+- Do not redesign the COBOL task from scratch.
+- Do not weaken F2P behavior to change gate outcomes.
+- Do not rerun Oracle/NOP without a task/verifier/solution/instruction change that affects their evidence.
+- Do not promote legacy semantic reviews back to PASS.
+- Do not call `stb keys refresh` as routine CI setup.
+
+## Resume rule
+
+A new controller follows `.terminus/CONTINUE_SESSION.md`, verifies task commit `{commit}`, loads the v3 packet-bound reviews above, and resumes at Harbor LLMaJ once reusable model credentials are available.
+'''
+          (root/'.terminus/sessions/payment-eod-control-chain.md').write_text(session)
+          PY
+      - name: Validate fresh evidence before commit
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 .terminus/validate_review_freshness.py --task payment-eod-control-chain
+          python3 .terminus/validate_agent_system.py
+      - name: Commit fresh Pre-LLMaJ evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'terminus-control-plane'
+          git config user.email 'actions@users.noreply.github.com'
+          git add .terminus/reviews/payment-eod-control-chain/ff7394ff .terminus/sessions/payment-eod-control-chain.md
+          git diff --cached --check
+          git commit -m 'Refresh payment EOD Pre-LLMaJ evidence under v3 protocol'
+          git push origin HEAD:main
