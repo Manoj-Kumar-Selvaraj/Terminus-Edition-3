@@ -5,8 +5,6 @@ import sqlite3
 import subprocess
 from pathlib import Path
 
-import pytest
-
 ROOT = Path('/app/eod')
 DB = ROOT / 'state' / 'payment_eod.db'
 OUT = ROOT / 'out'
@@ -432,9 +430,16 @@ def test_f2p_reconciliation_is_scoped_to_the_selected_cycle():
         + "INSERT INTO ledger_entries(payment_id,cycle_id,side,account_code,amount_cents) VALUES(900,'C0','D','CUSTOMER_RESERVED',70000),(900,'C0','C','CLEARING_PAYABLE',70000);\n"
         + prereq_sql('C1')
     )
-    DB.parent.mkdir(parents=True, exist_ok=True); DB.unlink(missing_ok=True)
-    shutil.rmtree(OUT, ignore_errors=True); OUT.mkdir(parents=True, exist_ok=True)
-    con = sqlite3.connect(DB); con.executescript(SCHEMA.read_text()); con.execute('PRAGMA foreign_keys=OFF'); con.executescript(seed); con.commit(); con.close()
+    DB.parent.mkdir(parents=True, exist_ok=True)
+    DB.unlink(missing_ok=True)
+    shutil.rmtree(OUT, ignore_errors=True)
+    OUT.mkdir(parents=True, exist_ok=True)
+    con = sqlite3.connect(DB)
+    con.executescript(SCHEMA.read_text())
+    con.execute('PRAGMA foreign_keys=OFF')
+    con.executescript(seed)
+    con.commit()
+    con.close()
     run_batch()
     rec = reconciliation()
     assert rec['cycle_id'] == 'C1'
@@ -447,7 +452,8 @@ def test_f2p_reconciliation_is_scoped_to_the_selected_cycle():
 def test_f2p_missing_delivery_ack_blocks_completion_and_authorization():
     """Balanced publication is not enough to complete the cycle before delivery acknowledgment."""
     seed = cycle_sql() + accounts_sql(('A1', 'ACTIVE', 50000), ('A2', 'ACTIVE', 1000)) + payment_sql(1, 'S1', 'A1', 'A2', 'A2', 10000) + prereq_sql(delivery=0)
-    reset_db(seed); run_batch()
+    reset_db(seed)
+    run_batch()
     assert reconciliation()['status'] == 'BALANCED'
     assert rows("SELECT completion_status FROM cycles WHERE cycle_id='C1'") == [('WAITING',)]
     assert scalar('SELECT COUNT(*) FROM success_authorizations') == 0
@@ -457,7 +463,8 @@ def test_f2p_missing_delivery_ack_blocks_completion_and_authorization():
 def test_f2p_missing_report_completion_blocks_completion_and_authorization():
     """A balanced cycle must wait when reporting has not completed."""
     seed = cycle_sql() + accounts_sql(('A1', 'ACTIVE', 50000), ('A2', 'ACTIVE', 1000)) + payment_sql(1, 'S1', 'A1', 'A2', 'A2', 10000) + prereq_sql(report=0)
-    reset_db(seed); run_batch()
+    reset_db(seed)
+    run_batch()
     assert reconciliation()['status'] == 'BALANCED'
     assert rows("SELECT completion_status FROM cycles WHERE cycle_id='C1'") == [('WAITING',)]
     assert scalar('SELECT COUNT(*) FROM success_authorizations') == 0
@@ -466,7 +473,8 @@ def test_f2p_missing_report_completion_blocks_completion_and_authorization():
 def test_f2p_missing_archive_completion_blocks_completion_and_authorization():
     """A balanced cycle must wait when archival work has not completed."""
     seed = cycle_sql() + accounts_sql(('A1', 'ACTIVE', 50000), ('A2', 'ACTIVE', 1000)) + payment_sql(1, 'S1', 'A1', 'A2', 'A2', 10000) + prereq_sql(archive=0)
-    reset_db(seed); run_batch()
+    reset_db(seed)
+    run_batch()
     assert reconciliation()['status'] == 'BALANCED'
     assert rows("SELECT completion_status FROM cycles WHERE cycle_id='C1'") == [('WAITING',)]
     assert scalar('SELECT COUNT(*) FROM success_authorizations') == 0
