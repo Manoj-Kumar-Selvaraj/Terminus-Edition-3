@@ -1,0 +1,28 @@
+{
+  "role": "Difficulty Reviewer",
+  "review_id": "pay-eod-84d4436f-difficulty-design-01",
+  "task_commit": "84d4436f027f1ba1dd6ac909f31aae3aaafe9554",
+  "policy_version": "2.2",
+  "verdict": "PASS",
+  "confidence": "HIGH_FOR_DESIGN_MEDIUM_FOR_FINAL_TIER",
+  "evidence_status": "SUFFICIENT_FOR_PRE_TRIAL_ONLY",
+  "summary": "Advanced is plausible as a pre-trial design label. The solver must reason across more than 3,000 substantive runtime lines, eleven COBOL decision interfaces, shell orchestration and SQL durability while preserving restart provenance, route-specific exactly-once effects, accounting completeness, cycle-scoped reconciliation and delayed close authorization. The 29 manifestations are not independent trivia: six root-cause clusters and 27 causal edges create partial-fix traps. Final difficulty remains explicitly unmeasured until the authorized combined model trials are run later.",
+  "evidence": [
+    {"type":"ci","ref":"Creator Complexity run 31260035557","observation":"3055 substantive solver-visible LOC, 29 manifestations, six root causes, 29 interrelated manifestations and 27 causal edges; 37 tests with 30 F2P."},
+    {"type":"file","ref":".terminus/designs/payment-eod-control-chain.json@84d4436f","observation":"Each root-cause cluster has downstream partial-fix traps; identity, resume, accounting and close defects cross COBOL/shell/SQL boundaries."},
+    {"type":"file","ref":"payment-eod-control-chain/environment/eod/docs/restart-operations.txt@84d4436f","observation":"A correct solution must distinguish cross-cycle replay from current-cycle restart state and validate durable internal/external effects before continuation."},
+    {"type":"file","ref":"payment-eod-control-chain/environment/eod/docs/reconciliation-close.txt@84d4436f","observation":"Balanced reconciliation is separate from completion, with population, route, ledger and operational-close invariants."},
+    {"type":"ci","ref":"Terminus CI run 31260035556 artifact 9022556589","observation":"The untouched starter fails all 30 F2P cases while the reference solution passes all 37, showing a broad non-trivial repair surface without verifier contradiction."}
+  ],
+  "findings": [],
+  "missing_evidence": [
+    "No GPT-5.5 or Claude Opus 4.8 difficulty trials were run, by explicit orchestration policy. The final empirical tier is therefore pending."
+  ],
+  "change_scope": [],
+  "do_not_change": [
+    "Do not add arbitrary edge cases solely to raise failure rate.",
+    "Do not infer final difficulty from Oracle/NOP or LOC counts.",
+    "Do not run model difficulty trials before Pre-LLMaJ and Harbor LLMaJ gates permit them."
+  ],
+  "next_gate": "Pre-LLMaJ aggregate; empirical difficulty only after later authorized model trials"
+}
