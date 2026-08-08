@@ -1,0 +1,26 @@
+{
+  "role": "Verifier Engineer",
+  "review_id": "pay-eod-ff7394ff-verifier-01",
+  "task_commit": "ff7394ff7bd05a5c851cd1a6a1f62e175c2cd011",
+  "policy_version": "2.2",
+  "verdict": "PASS",
+  "confidence": "HIGH",
+  "evidence_status": "SUFFICIENT",
+  "summary": "The unchanged 37-case verifier remains aligned to the current organic starter and reference solution. Current CI provides empirical classification rather than relying on names: all 30 F2P cases fail the starter, all seven P2P cases pass it, and all 37 pass after the current filtered-patch/direct-runtime Oracle repair. Assertions exercise COBOL interfaces, durable SQL state, official publications, reconciliation and close behavior rather than source syntax or patch structure.",
+  "evidence": [
+    {"type":"file","ref":".terminus/designs/payment-eod-control-chain-test-map.json current control-plane","observation":"All 37 tests remain mapped to the solver-visible replay, eligibility, capacity, resume, idempotency, accounting, reconciliation, publication, close, interface, history and restart contracts; empirical status is synchronized to run #159."},
+    {"type":"file","ref":"payment-eod-control-chain/tests/test_outputs.py@ff7394ff","observation":"Core verifier seeds fresh, resumed, inconsistent and completed database states, invokes COBOL decisions and runs the batch end-to-end."},
+    {"type":"file","ref":"payment-eod-control-chain/tests/test_regressions.py@ff7394ff","observation":"Focused regressions cover current-cycle history provenance, inconsistent resumed effects, cross-cycle replay, blocked payer behavior and stable CSV interfaces."},
+    {"type":"artifact","ref":"run 31260792025 artifact 9022762311","observation":"Oracle test stdout: 37 passed in 73.60s. NOP test stdout: 30 failed, seven passed in 63.80s; the seven passing tests are exactly the declared P2P cases."},
+    {"type":"ci","ref":"Terminus CI run 31260792025 (#159)","observation":"Preflight, Ruff, Docker/STB, Oracle and NOP all pass on merge ref ec40c51...; model credential preparation fails later and does not affect deterministic gate evidence."}
+  ],
+  "findings": [],
+  "missing_evidence": [],
+  "change_scope": [],
+  "do_not_change": [
+    "Do not add source-grep or implementation-pattern assertions to distinguish the organic starter from the repaired solution.",
+    "Do not weaken any of the 30 F2P behaviors to preserve NOP reward zero.",
+    "Do not relabel stable P2P cases as F2P when the starter demonstrably passes them."
+  ],
+  "next_gate": "Current-version comprehensive review after specialist freeze"
+}
