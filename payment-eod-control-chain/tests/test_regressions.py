@@ -28,6 +28,13 @@ def test_f2p_current_cycle_history_is_restart_state_not_cross_cycle_replay():
     run_batch()
     assert rows("SELECT outcome FROM payment_outcomes WHERE payment_id=1") == [('SUCCESS_INTERNAL',)]
     assert scalar('SELECT COUNT(*) FROM internal_postings WHERE payment_id=1') == 1
+    assert json.loads((OUT / 'success_authorization.json').read_text()) == {
+        'cycle_id': 'C1',
+        'business_date': '2026-08-08',
+        'source': 'CORP-ACH',
+        'run_id': 'RUN-1',
+        'status': 'AUTHORIZED',
+    }
 
 
 def test_f2p_inconsistent_internal_posting_holds_the_cycle():
