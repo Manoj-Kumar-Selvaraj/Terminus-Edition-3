@@ -1,20 +1,21 @@
 name: Fix payment EOD verifier lint
 
 on:
-  push:
-    branches: [main]
+  pull_request:
     paths:
-      - ".terminus/staging/payment-eod-lint-fix.ready"
+      - "payment-eod-control-chain/.ci-validation-trigger"
 
 permissions:
   contents: write
 
 jobs:
   fix:
+    if: github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
+          ref: main
           fetch-depth: 0
 
       - uses: astral-sh/setup-uv@v9.0.0
