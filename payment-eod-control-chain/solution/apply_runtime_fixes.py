@@ -78,3 +78,43 @@ replace_once(
     '',
     'invalid beneficiary RAISE expression',
 )
+
+close = Path('/app/eod/lib/close.sh')
+replace_once(
+    close,
+    '''close_cycle() {
+    local c="$1" decision
+    record_delivery_ack_event "$c"
+    decision="$(close_decision "$c")"
+    if [[ "$decision" == COMPLETE ]] && complete_cycle_once "$c"; then
+        create_authorization_once "$c"
+        return 0
+    fi
+    mark_cycle_waiting "$c"
+    remove_authorization_when_incomplete "$c"
+    return 1
+}
+''',
+    '''close_cycle() {
+    local c="$1" decision
+    record_delivery_ack_event "$c"
+    decision="$(close_decision "$c")"
+
+    if [[ "$decision" != COMPLETE ]]; then
+        mark_cycle_waiting "$c"
+        remove_authorization_when_incomplete "$c"
+        return 1
+    fi
+
+    if complete_cycle_once "$c"; then
+        create_authorization_once "$c"
+        return 0
+    fi
+
+    mark_cycle_waiting "$c"
+    remove_authorization_when_incomplete "$c"
+    return 1
+}
+''',
+    'balanced cycle waiting transition',
+)
