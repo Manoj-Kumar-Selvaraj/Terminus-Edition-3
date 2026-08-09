@@ -5,7 +5,7 @@ Session schema version: `2.4`
 ## Identity
 
 - Task: `jetstream-regional-stream-continuity`
-- Controller state: `DETERMINISTIC_VALIDATION`
+- Controller state: `FROZEN_CANDIDATE`
 - Working branch: `task/jetstream-quality-interlock`
 - Pull request: `#12`
 - Current task commit: `0f0947acc7abeeaf0b41ca3fa5a4ae5ff9fa793a`
@@ -17,31 +17,31 @@ Session schema version: `2.4`
 
 ## Current task profile
 
-The task remains `large_system_strict` with 5,530 substantive solver-visible runtime/configuration LOC, 26 mapped requirements and exactly 40 tests = 30 F2P + 10 P2P. Fourth-cycle Q4 remediation retains the natural handoff, clarifies the delegated confirmed-watermark and post-publish fencing boundaries, adds the pinned live-NATS verifier dependencies, and makes the inherited hub-sequence defect behaviorally observable through the already-documented highest contiguous archive-origin progress output. No undocumented reconciliation-checksum requirement is graded.
+The task remains `large_system_strict` with 5,530 substantive solver-visible runtime/configuration LOC, 26 mapped requirements and exactly 40 tests = 30 F2P + 10 P2P. Fourth-cycle Q4 remediation retains the natural handoff, clarifies the delegated confirmed-watermark and post-publish fencing boundaries, adds pinned live-NATS verifier dependencies, and makes the inherited hub-sequence defect behaviorally observable through the already-documented highest contiguous archive-origin progress output. No undocumented reconciliation-checksum requirement is graded.
 
 ## Current gates
 
 | Gate | Status | Evidence / version |
 | --- | --- | --- |
 | Q1 Spec Gap Repair | PASS | No hidden-test checklist expansion. |
-| Q2 Verifier Coverage Repair | FIX_APPLIED_PENDING_RERUN | Eight `0fe5c749` Q4 findings repaired; suite remains 30 F2P + 10 P2P. |
-| Q3 Spec Ambiguity Repair | FIX_APPLIED_PENDING_RERUN | Confirmed watermark and in-flight fencing semantics clarified in the existing delegated contract. |
-| Q5 Oracle & Runtime Repair | FIX_APPLIED_PENDING_RERUN | Reference reconciliation and shared post-publish fence behavior repaired. |
-| Q7 Task Format Enforcer | PENDING_FRESH_EVIDENCE | Fresh Preflight/Ruff/build/package evidence required. |
-| Creator Complexity Gate | PENDING_RERUN | Previous targeted runs preserved 5,530 LOC / 40 / 30+10 / 26 requirements; require clean-head rerun. |
-| Production Authenticity Gate | PENDING_RERUN | Require exact current-head evidence. |
-| Agent System / review freshness | PENDING_RERUN | Session rebound to task commit `0f0947...`; old reviews are historical. |
-| Preflight/static | PENDING | Fresh Edition-3 run required. |
-| Ruff verifier | PENDING | Fresh Edition-3 evidence required. |
-| Environment/verifier build | PENDING | Fresh run required with pinned NATS Server 2.14.3 and nats-py 2.15.0. |
-| Oracle = 1 | PENDING | Target 40/40 PASS. |
-| NOP = 0 | PENDING | Target exactly 30 F2P FAIL + 10 P2P PASS. |
-| F2P/P2P empirical matrix | PENDING | Require fresh artifact. |
-| Leakage/package checks | PENDING_FRESH_EVIDENCE | Require clean-head Agent-System/package-isolation evidence. |
-| FROZEN_CANDIDATE | NOT_REACHED | Older freezes are stale. |
-| Q4 Spec-Test Contract Reviewer | STALE_REVISE | `0fe5c749` Q4 = REVISE/HIGH/SUFFICIENT; commit `df1821de1e2602627d2c3d526e8e1bc68d952d76`. |
-| Q6 Production Logic Auditor | STALE_PASS | `0fe5c749` Q6 = PASS/HIGH/SUFFICIENT; commit `b00746103e4a7e4e4704da81e22aa68ed2afe897`; exact task binding moved. |
-| Quality Interlock | PENDING | Requires deterministic refreeze and fresh packet-bound Q4 + Q6 PASS. |
+| Q2 Verifier Coverage Repair | PASS | Eight `0fe5c749` Q4 findings repaired; suite remains exactly 30 F2P + 10 P2P and fresh matrix discriminates all 30 F2Ps. |
+| Q3 Spec Ambiguity Repair | PASS | Confirmed watermark and in-flight fencing semantics are explicit in the existing delegated contract. |
+| Q5 Oracle & Runtime Repair | PASS | Reference reconciliation and shared post-publish fence behavior satisfy Oracle 40/40. |
+| Q7 Task Format Enforcer | PASS | Edition-3 run `31320157239`, job `93261764319`: Preflight, Ruff, verifier build all passed. |
+| Creator Complexity Gate | PASS | clean-head run `31320157230`; 5,530 substantive LOC / 40 tests / 30 F2P / 10 P2P / 26 requirements. |
+| Production Authenticity Gate | PASS | clean-head run `31320157219`. |
+| Agent System / review freshness | PASS | clean-head run `31320157222`; control-plane regressions, structure, current task binding and package isolation passed. |
+| Preflight/static | PASS | run `31320157239`, job `93261764319`. |
+| Ruff verifier | PASS | run `31320157239`, job `93261764319`. |
+| Environment/verifier build | PASS | run `31320157239`, job `93261764319`; pinned NATS Server 2.14.3 and nats-py 2.15.0 verifier dependencies built successfully. |
+| Oracle = 1 | PASS | run `31320157239`, job `93261764319`; 40/40 PASS. |
+| NOP = 0 | PASS | run `31320157239`, job `93261764319`; reward 0 with exactly 30 F2P FAIL + 10 P2P PASS. |
+| F2P/P2P empirical matrix | PASS | artifact `9039953729`, sha256 `357b913ba35e479986d5cc878141dab53e05f34c67041b49c8ba55ff04a7350a`; Oracle 40/40, NOP exactly 30/10. |
+| Leakage/package checks | PASS | Agent-System run `31320157222` passed current binding and package isolation. |
+| FROZEN_CANDIDATE | PASS | Task commit `0f0947acc7abeeaf0b41ca3fa5a4ae5ff9fa793a`. |
+| Q4 Spec-Test Contract Reviewer | PENDING_PACKET | All Q4 results through `0fe5c749` are stale after current task changes; generate fresh packet. |
+| Q6 Production Logic Auditor | PENDING_PACKET | All Q6 results through `0fe5c749` are stale after current task changes; generate fresh packet. |
+| Quality Interlock | PENDING | Requires fresh packet-bound Q4 + Q6 PASS for `0f0947...`. |
 | Task Architect | PENDING | after Quality Interlock |
 | Verifier Engineer | PENDING | after Quality Interlock |
 | Originality & Authenticity | PENDING | after Quality Interlock |
@@ -53,7 +53,7 @@ The task remains `large_system_strict` with 5,530 substantive solver-visible run
 | Pre-LLMaJ aggregate | PENDING | after specialist and Comprehensive reviews |
 | Q8 GPT Perspective Simulation | PENDING | after Pre-LLMaJ PASS |
 | Q8 Claude Perspective Simulation | PENDING | after Pre-LLMaJ PASS |
-| Harbor LLMaJ | PENDING | later gate |
+| Harbor LLMaJ | PENDING | later gate; reusable AI credentials remain separate from deterministic freeze |
 | GPT-5.5 difficulty ×5 | NOT_RUN | later official gate |
 | Claude Opus 4.8 difficulty ×5 | NOT_RUN | later official gate |
 | Combined difficulty ×10 | NOT_RUN | later official gate |
@@ -79,7 +79,7 @@ The current candidate repairs the `0fe5c749` Q4 BLOCKER/HIGH findings without in
 10. Failed effect commit cannot advance either application-effect or ack progress.
 11. Hub delivery positions are proven non-authoritative by shifting only `hub_stream_sequence` values while requiring the documented highest contiguous archive-origin sequence and convergence truth to remain origin-based. The inherited starter intentionally miscomputes that exposed progress field from hub positions; the reference implementation remains origin-identity based.
 
-Semantic remediation commit `54fbe9d73f485f5d3a944bef261146d663e32d35` initially failed Oracle collection because the verifier image lacked the production runtime's NATS dependency. Commit `0d28c545ff6b0b7afb4c1b9900bbfb9b44f8a887` added the same pinned NATS Server 2.14.3 and `nats-py==2.15.0` to the verifier image. Run `31319563943` then produced Oracle 40/40, but NOP yielded 29 F2P failures + 11 passes because the hub-sequence F2P was nondiscriminating after removal of the contradictory sparse-watermark fixture. A competing checksum-invariance edit was rejected as a potential phantom contract requirement. Current task commit `0f0947acc7abeeaf0b41ca3fa5a4ae5ff9fa793a` instead removes that checksum assertion and makes the inherited starter expose its intended hub-position/origin-progress confusion through the already-contracted `highest_contiguous_archive_origin_sequence` field. All temporary writer workflows used for this correction are removed.
+Semantic remediation commit `54fbe9d73f485f5d3a944bef261146d663e32d35` initially failed Oracle collection because the verifier image lacked the production runtime's NATS dependency. Commit `0d28c545ff6b0b7afb4c1b9900bbfb9b44f8a887` added the same pinned NATS Server 2.14.3 and `nats-py==2.15.0` to the verifier image. Run `31319563943` then produced Oracle 40/40, but NOP yielded 29 F2P failures + 11 passes because the hub-sequence F2P was nondiscriminating. A competing checksum-invariance edit was rejected as a potential phantom contract requirement. Current task commit `0f0947acc7abeeaf0b41ca3fa5a4ae5ff9fa793a` removes that checksum assertion and makes the inherited starter expose its intended hub-position/origin-progress confusion through the already-contracted `highest_contiguous_archive_origin_sequence` field. Fresh run `31320157239` proves Oracle 40/40 and NOP exactly 30 F2P failures + 10 P2P passes.
 
 ## Historical provenance
 
@@ -90,11 +90,12 @@ Semantic remediation commit `54fbe9d73f485f5d3a944bef261146d663e32d35` initially
 - `0fe5c749...` artifact `9038780101`: Oracle 40/40, NOP 30/10; stale.
 - `54fbe9d...` run `31319258652`, artifact `9039693749`: Oracle collection failed because verifier NATS dependencies were absent; superseded.
 - `0d28c545...` run `31319563943`, artifact `9039793353`: Oracle 40/40; NOP 29 F2P FAIL + 11 PASS; superseded.
+- `0f0947...` run `31320157239`, artifact `9039953729`: accepted current deterministic evidence; Oracle 40/40, NOP 30/10.
 
 ## Current blocker
 
-Run the full deterministic matrix on task commit `0f0947acc7abeeaf0b41ca3fa5a4ae5ff9fa793a`. Require clean-head Agent-System, Complexity and Production Authenticity plus Preflight/Ruff/build, Oracle 40/40 and NOP exactly 30 F2P FAIL + 10 P2P PASS.
+Generate fresh immutable Q4 and Q6 packets bound to task commit `0f0947acc7abeeaf0b41ca3fa5a4ae5ff9fa793a`, then run both reviewers independently in cold contexts. Historical Q4/Q6 verdicts do not satisfy the current Quality Interlock.
 
 ## Next action
 
-If the exact matrix passes, restore `FROZEN_CANDIDATE`, generate a new immutable Q4/Q6 packet pair bound to `0f0947acc7abeeaf0b41ca3fa5a4ae5ff9fa793a`, remove the packet helper, verify packet-head freshness/package isolation, update PR #12 and rerun both cold reviewers independently.
+Generate and commit the repository-native Q4/Q6 packet pair, remove any temporary packet-generation helper, verify clean-head Agent-System freshness/package isolation, update PR #12, then invoke fresh Q4 and Q6 in separate cold contexts.
