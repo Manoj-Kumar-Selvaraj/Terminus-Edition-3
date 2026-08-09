@@ -1,0 +1,35 @@
+name: Generate JetStream Quality Review Packets
+
+on:
+  push:
+    branches:
+      - task/jetstream-quality-interlock
+
+permissions:
+  contents: read
+
+jobs:
+  packets:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Generate Q4 and Q6 packets
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 .terminus/new_review_packet.py jetstream-regional-stream-continuity spec-test-contract \
+            --state FROZEN_CANDIDATE \
+            --change "Q1-Q3/Q7 coverage pass complete; verifier now has 30 F2P and 8 P2P with fresh Oracle/NOP evidence"
+          python3 .terminus/new_review_packet.py jetstream-regional-stream-continuity production-logic \
+            --state FROZEN_CANDIDATE \
+            --change "Strict task frozen after current complexity/authenticity and 30-F2P/8-P2P Oracle/NOP validation"
+          find .terminus/reviews/jetstream-regional-stream-continuity/fc137e82 -name '*.packet.json' -type f -print -exec cat {} \;
+      - name: Upload immutable generated packets
+        uses: actions/upload-artifact@v4
+        with:
+          name: jetstream-q4-q6-packets-${{ github.run_id }}
+          path: .terminus/reviews/jetstream-regional-stream-continuity/fc137e82/*.packet.json
+          if-no-files-found: error
+          retention-days: 14
