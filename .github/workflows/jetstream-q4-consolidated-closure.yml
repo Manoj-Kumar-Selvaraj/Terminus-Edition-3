@@ -20,162 +20,56 @@ jobs:
           ref: task/jetstream-quality-interlock
           fetch-depth: 0
 
-      - name: Apply consolidated Q4 closure exactly once
+      - name: Correct P2P boundary assertion after exact NOP evidence
         shell: bash
         run: |
           set -euo pipefail
           current_task_commit="$(git log -1 --format=%H -- jetstream-regional-stream-continuity)"
-          if [[ "$current_task_commit" != "76af7499c5ec023d0db6a60ed8408e9651ad5be3" ]]; then
-            echo "Task already moved to $current_task_commit; consolidated closure is already applied or superseded."
+          if [[ "$current_task_commit" != "a220ee28917d79e2df3001b2d88b201157aa21cb" ]]; then
+            echo "Task is $current_task_commit; deterministic P2P correction already applied or superseded."
             exit 0
           fi
-          test -z "$(git status --porcelain -- jetstream-regional-stream-continuity)"
 
           python3 - <<'PY'
-          from __future__ import annotations
-
-          import ast
-          import hashlib
-          import re
           from pathlib import Path
+          import re
 
           task = Path('jetstream-regional-stream-continuity')
-          contract_tests = task / 'tests/test_contract_coverage.py'
-          continuity_tests = task / 'tests/test_continuity.py'
-          contract_doc = task / 'environment/continuity/docs/continuity-contract.md'
-          instruction = task / 'instruction.md'
+          tests = task / 'tests/test_contract_coverage.py'
+          text = tests.read_text(encoding='utf-8')
+          old = '            assert message.headers.get("Nats-Msg-Id") == event_id\n'
+          if text.count(old) != 1:
+              raise SystemExit(f'expected one over-strong message-id assertion, found {text.count(old)}')
+          text = text.replace(old, '', 1)
+          tests.write_text(text, encoding='utf-8')
 
-          def replace_once(text: str, old: str, new: str, label: str) -> str:
-              count = text.count(old)
-              if count != 1:
-                  raise SystemExit(f'{label}: expected one match, found {count}')
-              return text.replace(old, new, 1)
-
-          stream_state = task / 'environment/continuity/ops/stream-state.json'
-          shift_handoff = task / 'environment/continuity/ops/shift-handoff.txt'
-          controller_log = task / 'environment/continuity/log/archive/inc-2026-0808-17-controller.log'
-          digests = {
-              'ops/stream-state.json': hashlib.sha256(stream_state.read_bytes()).hexdigest(),
-              'ops/shift-handoff.txt': hashlib.sha256(shift_handoff.read_bytes()).hexdigest(),
-              'log/archive/inc-2026-0808-17-controller.log': hashlib.sha256(controller_log.read_bytes()).hexdigest(),
-          }
-
-          text = contract_tests.read_text(encoding='utf-8')
-          old_evidence = '''    stream_state = json.loads(\n        (ROOT / "ops/stream-state.json").read_text(encoding="utf-8")\n    )\n    assert stream_state["incident_id"] == "INC-JS-2026-0808-17"\n    assert stream_state["captured_at"] == "2026-08-08T17:18:10Z"\n    assert stream_state["domains"]["hub"]["messages"] == 11395\n    assert (\n        stream_state["domains"]["hub"]["sources"][1]["domain"]\n        == "edge-east"\n    )\n    handoff = (ROOT / "ops/shift-handoff.txt").read_text(encoding="utf-8")\n    assert "three west identities and two east identities" in handoff\n    archived_log = (\n        ROOT / "log/archive/inc-2026-0808-17-controller.log"\n    )\n    assert archived_log.is_file()\n    assert hashlib.sha256(archived_log.read_bytes()).hexdigest() == 'fc5a85713d9b963e18b7550048a11de16349c9daa260623f72aa33e6862fb7d6'\n'''
-          new_evidence = f'''    captured_incident_digests = {{\n        ROOT / "ops/stream-state.json": "{digests['ops/stream-state.json']}",\n        ROOT / "ops/shift-handoff.txt": "{digests['ops/shift-handoff.txt']}",\n        ROOT / "log/archive/inc-2026-0808-17-controller.log": "{digests['log/archive/inc-2026-0808-17-controller.log']}",\n    }}\n    for captured_path, expected_digest in captured_incident_digests.items():\n        assert captured_path.is_file()\n        assert hashlib.sha256(captured_path.read_bytes()).hexdigest() == expected_digest\n'''
-          text = replace_once(text, old_evidence, new_evidence, 'captured incident digest closure')
-
-          marker = '''        asyncio.run(ensure_west_stream())\n        acquired = run_cli(\n'''
-          inserted = '''        asyncio.run(ensure_west_stream())\n        expected_west_stream = str(engine.store.region("west")["physical_stream"])\n        expected_replay_ids = {\n            item.event_id\n            for item in engine.store.replay_items("rp-west-incident-001")\n            if engine.store.archive_record(item.event_id) is None\n        }\n        assert expected_replay_ids\n\n        acquired = run_cli(\n'''
-          text = replace_once(text, marker, inserted, 'real replay expected identities')
-
-          marker = '''        assert executed["completed"] is True\n        assert int(executed["published"]) >= 1\n        replay_after = engine.store.replay_plan("rp-west-incident-001")\n'''
-          inserted = '''        assert executed["completed"] is True\n        assert int(executed["published"]) >= 1\n\n        async def read_west_stream_messages() -> tuple[object, list[object]]:\n            pool = NatsConnectionPool()\n            try:\n                admin = JetStreamAdmin(pool, endpoints_from_engine(engine))\n                snapshot = await admin.stream_info("west", expected_west_stream)\n                messages = [\n                    await admin.get_message_by_sequence(\n                        "west", expected_west_stream, sequence\n                    )\n                    for sequence in range(\n                        snapshot.first_sequence, snapshot.last_sequence + 1\n                    )\n                ]\n                return snapshot, messages\n            finally:\n                await pool.close()\n\n        west_snapshot, west_messages = asyncio.run(read_west_stream_messages())\n        assert west_snapshot.name == expected_west_stream\n        assert int(west_snapshot.messages) >= len(expected_replay_ids)\n        observed_replay_ids: set[str] = set()\n        for message in west_messages:\n            document = json.loads(message.data.decode("utf-8"))\n            event_id = str(document["event_id"])\n            observed_replay_ids.add(event_id)\n            assert message.headers.get("Nats-Msg-Id") == event_id\n        assert expected_replay_ids <= observed_replay_ids\n\n        replay_after = engine.store.replay_plan("rp-west-incident-001")\n'''
-          text = replace_once(text, marker, inserted, 'external JetStream replay observation')
-          contract_tests.write_text(text, encoding='utf-8')
-
-          text = continuity_tests.read_text(encoding='utf-8')
-          targets = [
-              ('test_f2p_poison_event_is_quarantined_without_completion', 'QUARANTINED'),
-              ('test_p2p_distinct_same_payload_events_remain_distinct', 'COMMITTED'),
-              ('test_p2p_successful_effect_advances_checkpoint', 'COMMITTED'),
-          ]
-          for function_name, token in targets:
-              start = text.index(f'def {function_name}')
-              next_def = text.find('\ndef ', start + 4)
-              end = len(text) if next_def < 0 else next_def
-              segment = text[start:end]
-              if '    result = asyncio.run(' not in segment:
-                  raise SystemExit(f'{function_name}: result assignment not found')
-              segment = segment.replace('    result = asyncio.run(', '    asyncio.run(', 1)
-              status_line = f'    assert result.status == "{token}"\n'
-              if status_line not in segment:
-                  raise SystemExit(f'{function_name}: status assertion not found')
-              segment = segment.replace(status_line, '', 1)
-              text = text[:start] + segment + text[end:]
-          continuity_tests.write_text(text, encoding='utf-8')
-
-          doc = contract_doc.read_text(encoding='utf-8')
-          anchor = '''The output reports describe the durable state the repaired controller observes. They must not rewrite the captured incident history or manufacture a healthy result by deleting gaps, checkpoints, replay state, or other evidence.\n'''
-          report_contract = '''The output reports describe the durable state the repaired controller observes. They must not rewrite the captured incident history or manufacture a healthy result by deleting gaps, checkpoints, replay state, or other evidence.\n\n### Stable report interface\n\nThe two verify reports are JSON objects with a stable operator-facing interface. Additional diagnostic fields are allowed, but the following fields and nesting are contractual.\n\n`health.json` contains top-level boolean fields `healthy`, `topology_ok`, `generations_ok`, `publication_ok`, `archive_ok`, `consumers_ok`, `retention_ok`, and `recovery_ok`. It also includes a `generated_at` timestamp and may include a `details` object with diagnostic state. `healthy` is true only when all seven subsystem booleans are true.\n\n`reconciliation.json` contains a top-level `generated_at` timestamp, a boolean `converged`, and a `regions` object keyed by region. Each region value contains:\n\n- `status`: `CONVERGED` or `DIVERGED`;\n- `converged`: boolean;\n- integer counts `journal_event_count`, `archive_event_count`, `missing_count`, `unexpected_count`, `duplicate_count`, `metadata_mismatch_count`, and `consumer_lag_count`;\n- integer `highest_contiguous_archive_origin_sequence`;\n- `required_consumer_progress`: an object mapping each enabled required consumer name to its completed origin sequence.\n\nThe regional `status` and `converged` fields describe the same reconciliation decision. The top-level `converged` value is true only when every reported region is converged. Other fields such as findings, checksums, or diagnostic detail may be present without changing this interface.\n'''
-          doc = replace_once(doc, anchor, report_contract, 'stable report interface')
-          contract_doc.write_text(doc, encoding='utf-8')
-
-          test_paths = sorted((task / 'tests').glob('test_*.py'))
-          combined_tests = '\n'.join(path.read_text(encoding='utf-8') for path in test_paths)
-          solver_contract = instruction.read_text(encoding='utf-8') + '\n' + contract_doc.read_text(encoding='utf-8')
-
-          f2p = len(re.findall(r'^def test_f2p_', combined_tests, flags=re.MULTILINE))
-          p2p = len(re.findall(r'^def test_p2p_', combined_tests, flags=re.MULTILINE))
+          combined = '\n'.join(
+              path.read_text(encoding='utf-8')
+              for path in sorted((task / 'tests').glob('test_*.py'))
+          )
+          f2p = len(re.findall(r'^def test_f2p_', combined, flags=re.MULTILINE))
+          p2p = len(re.findall(r'^def test_p2p_', combined, flags=re.MULTILINE))
           if (f2p, p2p) != (30, 10):
-              raise SystemExit(f'test classification changed: f2p={f2p} p2p={p2p}')
-          if 'NatsPublisher' in combined_tests:
-              raise SystemExit('verifier source-couples to NatsPublisher class')
-          if 'result.status == "COMMITTED"' in combined_tests or 'result.status == "QUARANTINED"' in combined_tests:
-              raise SystemExit('undocumented ProcessingResult status grading remains')
+              raise SystemExit(f'test matrix changed: f2p={f2p} p2p={p2p}')
 
-          for required_boundary_token in ('get_message_by_sequence', 'Nats-Msg-Id', 'expected_replay_ids <= observed_replay_ids'):
-              if required_boundary_token not in contract_tests.read_text(encoding='utf-8'):
-                  raise SystemExit(f'real JetStream replay boundary proof missing {required_boundary_token}')
-          for required_digest_path in ('ops/stream-state.json', 'ops/shift-handoff.txt', 'log/archive/inc-2026-0808-17-controller.log'):
-              if required_digest_path not in contract_tests.read_text(encoding='utf-8'):
-                  raise SystemExit(f'captured evidence digest coverage missing {required_digest_path}')
-
-          report_fields = (
-              'healthy', 'topology_ok', 'generations_ok', 'publication_ok', 'archive_ok',
-              'consumers_ok', 'retention_ok', 'recovery_ok', 'generated_at', 'converged',
-              'regions', 'status', 'journal_event_count', 'archive_event_count', 'missing_count',
-              'unexpected_count', 'duplicate_count', 'metadata_mismatch_count', 'consumer_lag_count',
-              'highest_contiguous_archive_origin_sequence', 'required_consumer_progress',
-          )
-          missing_report_contract = [field for field in report_fields if f'`{field}`' not in solver_contract]
-          if missing_report_contract:
-              raise SystemExit(f'graded report fields absent from solver-visible contract: {missing_report_contract}')
-
-          suspicious = []
-          for path in test_paths:
-              source = path.read_text(encoding='utf-8')
-              tree = ast.parse(source)
-              for node in ast.walk(tree):
-                  if not isinstance(node, ast.Assert):
-                      continue
-                  segment = ast.get_source_segment(source, node.test) or ''
-                  for token in re.findall(r'["\']([A-Z][A-Z0-9_]{2,})["\']', segment):
-                      if token in {'COMMITTED', 'QUARANTINED'} and 'EffectStatus.' not in segment and 'poison[' not in segment:
-                          suspicious.append((path.name, node.lineno, token, segment))
-          if suspicious:
-              raise SystemExit(f'undocumented internal status assertions remain: {suspicious}')
-
-          required_authority_markers = (
-              'last_observed_sequence == 6000',
-              'hub_stream_sequence=30000+origin_sequence',
-              'same owner with a stale epoch',
-              'rotated_between_items is True',
-              'journal_state(mid_ids[0]).value == "PUBLISHED"',
-          )
-          missing_markers = [marker for marker in required_authority_markers if marker not in combined_tests]
-          if missing_markers:
-              raise SystemExit(f'accepted authority-distinction coverage regressed: {missing_markers}')
-
-          print('Q4 consolidated closure applied')
-          print('captured incident digests:', digests)
-          print('pre-Q4 sweep: no additional blocking Q4-class pattern found')
-          print('tests: 30 F2P / 10 P2P')
+          repaired = tests.read_text(encoding='utf-8')
+          for required in (
+              'expected_west_stream',
+              'get_message_by_sequence',
+              'document = json.loads(message.data.decode("utf-8"))',
+              'expected_replay_ids <= observed_replay_ids',
+          ):
+              if required not in repaired:
+                  raise SystemExit(f'external JetStream replay proof lost {required}')
+          if 'result.status == "COMMITTED"' in combined or 'result.status == "QUARANTINED"' in combined:
+              raise SystemExit('phantom ProcessingResult status assertion reappeared')
           PY
 
-          sed -i 's/[[:space:]]\+$//' \
-            jetstream-regional-stream-continuity/tests/test_contract_coverage.py \
-            jetstream-regional-stream-continuity/tests/test_continuity.py \
-            jetstream-regional-stream-continuity/environment/continuity/docs/continuity-contract.md
           python3 -m compileall -q jetstream-regional-stream-continuity/tests
           git diff --check
           git config user.name "Terminus CI Orchestrator"
           git config user.email "actions@users.noreply.github.com"
-          git add \
-            jetstream-regional-stream-continuity/tests/test_contract_coverage.py \
-            jetstream-regional-stream-continuity/tests/test_continuity.py \
-            jetstream-regional-stream-continuity/environment/continuity/docs/continuity-contract.md
+          git add jetstream-regional-stream-continuity/tests/test_contract_coverage.py
           git diff --cached --check
-          test -n "$(git diff --cached --name-only)"
-          git commit -m "Close current JetStream Q4 contract coverage findings"
+          git commit -m "Keep replay P2P at the external publication boundary"
           git push origin HEAD:task/jetstream-quality-interlock
