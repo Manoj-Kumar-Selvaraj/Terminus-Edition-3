@@ -24,9 +24,9 @@ Session schema version: `2.4`
 | Q2 Verifier Coverage Repair | REVISE | Q4 result `d28d169713b5df74755c19037f2dfb79b9e9c08a`; findings `Q4-D7E131F9-01`, `-02`, `-03` |
 | Q3 Spec Ambiguity Repair | PASS | latest Q4 reports no grading-relevant ambiguity |
 | Q7 Task Format Enforcer | PASS | current frozen candidate retained; no task tree change during reviewer-policy migration |
-| Creator Complexity Gate | PASS | run `31327893703` |
-| Preflight/static | PASS | Edition-3 run `31327893697`, job `93281244115` |
-| Ruff verifier | PASS | Edition-3 run `31327893697`, job `93281244115` |
+| Creator Complexity Gate | PASS | control-plane head run `31331005567`; task baseline run `31327893703` |
+| Preflight/static | PASS | Edition-3 task run `31327893697`, job `93281244115` |
+| Ruff verifier | PASS | Edition-3 task run `31327893697`, job `93281244115` |
 | STB auth/AI credentials | FAIL | reusable-AI credential preparation failed after deterministic validation; not freeze evidence |
 | Oracle = 1 | PASS | artifact `9042083147`; exactly 40/40 PASS |
 | NOP = 0 | PASS | artifact `9042083147`; exactly 30 F2P FAIL + 10 P2P PASS |
@@ -64,7 +64,9 @@ Task commit `d7e131f962753acce119afba5f63bd525203d9c7` remains the last fully de
 - Artifact `9042083147`, sha256 `c4b39b856b746604c0d121ff72bde3f2f9ed9210be5c3498662395f5aaebccd2`: Oracle exactly 40/40 PASS; NOP exactly 30 F2P FAIL + 10 P2P PASS.
 - Creator Complexity run `31327893703`: PASS.
 - Production Authenticity run `31327893712`: PASS.
-- Agent System/package-isolation run `31327893701`: PASS under the previous control-plane policy; new policy validation must be green before fresh packets are generated.
+- Agent System/package-isolation run `31327893701`: PASS under the previous reviewer contract.
+- Upgraded control-plane ordinary CI on commit `e434a4ce8f848cb010152115897bc68d16dbf394`: Agent System run `31331005616` PASS; Creator Complexity run `31331005567` PASS; Production Authenticity run `31331005563` PASS.
+- Upgraded Agent System regression suite is 73 tests after the final session-template guard; the preceding upgrade run established 72/72 plus agent-system PASS, and the final ordinary Agent System workflow is PASS.
 - Harbor was not run.
 
 ## Current blocker
@@ -88,13 +90,15 @@ The live control plane now requires:
 - one normal consolidated repair/refreeze budget after an exhaustive Q4 REVISE; a later finding on unchanged previously-reviewable evidence is `LATENT_REVIEWER_OMISSION` and must be adjudicated before another blind repair cycle;
 - Q6 packets/results to carry a conservative production `review_scope_hash` over task `task.toml` plus the full solver-visible `environment/` tree. Once a new-policy Q6 PASS exists, tests/solution/instruction-only changes may preserve it when that scope hash and role contract remain unchanged; production-scope changes still stale Q6.
 
+The implementation is enforced by the packet generator, JSON schemas, freshness validator, quality-interlock validator, regression tests and `.terminus/classify_review_delta.py`; this is not a prose-only policy change.
+
 ## Review evidence ledger
 
 | Review | Review ID | Task commit | Protocol | Prompt | Role policy | Result path | Verdict | Confidence | Evidence status |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | Q4 Spec-Test Contract Reviewer (historical old contract) | `jetstream-regional-stream-continuity-d7e131f9-spec-test-contract-a159fbe550` | `d7e131f962753acce119afba5f63bd525203d9c7` | 2.1 | 2.2 | 1.0 | `.terminus/reviews/jetstream-regional-stream-continuity/d7e131f9/jetstream-regional-stream-continuity-d7e131f9-spec-test-contract-a159fbe550.json` | REVISE | HIGH | SUFFICIENT |
 | Q6 Production Logic Auditor (historical old contract) | `jetstream-regional-stream-continuity-d7e131f9-production-logic-b112d746a8` | `d7e131f962753acce119afba5f63bd525203d9c7` | 2.1 | 2.2 | 1.0 | `.terminus/reviews/jetstream-regional-stream-continuity/d7e131f9/jetstream-regional-stream-continuity-d7e131f9-production-logic-b112d746a8.json` | PASS | HIGH | SUFFICIENT |
-| Q4 Spec-Test Contract Reviewer (next) | | next frozen task commit | 2.2 | 2.2 | 1.1 | | PENDING | | |
+| Q4 Spec-Test Contract Reviewer (next) | | next frozen task commit | 2.2 | 2.2 | 1.1 | | PENDING | | exhaustive one-pass contract |
 | Q6 Production Logic Auditor (next) | | next frozen task commit | 2.2 | 2.2 | 1.1 | | PENDING | | scope hash required |
 
 ## Circuit breaker / no-drip state
