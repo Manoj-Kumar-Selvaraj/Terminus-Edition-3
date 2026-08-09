@@ -1,6 +1,6 @@
 # Specialist Execution Protocol
 
-Policy version: `2.1`
+Policy version: `2.2`
 
 This protocol defines how Terminus specialists are invoked, isolated, bound to evidence, and invalidated. It applies whether roles run in Cursor, ChatGPT, or another agent runtime.
 
@@ -29,13 +29,14 @@ Packet schema version `3.0` records:
 
 ```text
 REVIEW_ID: <unique execution id>
-PROTOCOL_POLICY_VERSION: 2.1
+PROTOCOL_POLICY_VERSION: 2.2
 PROMPT_POLICY_VERSION: <current prompt policy>
 ROLE_POLICY_VERSION: <role contract version>
 CONTROL_PLANE_COMMIT: <git HEAD when packet is generated>
 ROLE_CONTRACT_HASH: <hash of the policy/calibration inputs governing this role>
 TASK: <task>
 TASK_COMMIT: <git-derived task commit>
+REVIEW_SCOPE_HASH: <optional role-scoped evidence hash; currently required for Q6>
 STATE: <controller state>
 ROLE: <specialist>
 QUESTION: <one decision this role owns>
@@ -103,23 +104,23 @@ MISSING_EVIDENCE: <none or exact item>
 
 ## 7. Change impact and staleness
 
-A current review is bound to both **task state** and **role contract**.
+A current review is bound to both **task evidence state** and **role contract**.
 
-Task binding is the exact `task_commit`. Role binding is the exact `role_contract_hash` generated from the policy/calibration inputs relevant to that role. This avoids two opposite errors: preserving a review after its governing role contract changed, and invalidating unrelated roles merely because some other role's prompt changed.
+Exact `task_commit` binding remains the default. Role binding is the exact `role_contract_hash` generated from the policy/calibration inputs relevant to that role. One narrow exception exists for explicitly scope-reusable roles: currently only Q6 Production Logic Auditor. Q6 packets/results carry `review_scope_hash`, computed over task `task.toml` plus the full solver-visible `environment/` tree. A Q6 PASS may remain current across a later task commit only when the recomputed current scope hash exactly matches the packet/result hash and the Q6 role contract is still current. Q4 is never scope-reusable because tests and solver-visible contracts are its evidence surface. This avoids both preserving a review after relevant evidence changed and invalidating Q6 merely because an unrelated verifier-only file changed.
 
 Typical task invalidation:
 
 | Change | Reviews normally made stale |
 | --- | --- |
-| `instruction.md` | Instruction, requirement/test alignment, Harbor LLMaJ, difficulty; Originality if framing materially changes |
-| solver-visible contract | Instruction, Verifier, Originality, Harbor LLMaJ, difficulty |
-| tests | Verifier, difficulty, Oracle/NOP evidence; Instruction alignment if requirements changed |
-| starter/environment | Task Architect, Verifier, Originality, Oracle/NOP, difficulty |
-| oracle/reference solution only | Oracle validity plus solution-quality dimensions |
+| `instruction.md` | Instruction, Q4, requirement/test alignment, Harbor LLMaJ, difficulty; Originality if framing materially changes. Q6 may remain current only through an unchanged recorded Q6 production-scope hash. |
+| solver-visible contract | Instruction, Verifier, Q4, Originality, Harbor LLMaJ, difficulty. If the contract lives under `environment/`, Q6 is stale because its scope hash changes. |
+| tests | Verifier, Q4, difficulty, Oracle/NOP evidence; Instruction alignment if requirements changed. Q6 may remain current only through an unchanged recorded Q6 production-scope hash. |
+| starter/environment | Task Architect, Verifier, Q4, Q6, Originality, Oracle/NOP, difficulty; any `environment/` change invalidates Q6 scope reuse |
+| oracle/reference solution only | Oracle validity plus solution-quality dimensions; Q6 may remain current if its production scope is unchanged |
 | README/explanations only | Documentation + Human Quality |
 | governing prompt/calibration for one role | that role's contract hash changes and its review becomes stale |
 
-A review whose task commit or role-contract hash is no longer current is `STALE`, regardless of its old verdict. `STALE` is never PASS.
+A review whose required evidence surface or role-contract hash is no longer current is `STALE`. For exact-commit roles, a task-commit mismatch is stale. For the explicitly scope-reusable Q6 role, an otherwise-current PASS may survive a task-commit mismatch only when packet/result/current `review_scope_hash` values are identical. `STALE` is never PASS.
 
 Historical reviews remain immutable evidence. They are not required to satisfy every future schema version merely because the control plane evolved. Only a review being used to support a current ready gate must satisfy the current review schema/provenance contract.
 
@@ -140,6 +141,7 @@ PROTOCOL_POLICY_VERSION:
 PROMPT_POLICY_VERSION:
 ROLE_POLICY_VERSION:
 ROLE_CONTRACT_HASH:
+REVIEW_SCOPE_HASH: <required only for scope-reusable roles; copy exactly from packet>
 CONTEXT_PACKET: <exact .packet.json path>
 VERDICT:
 CONFIDENCE:
@@ -154,7 +156,7 @@ NEXT_GATE:
 ROLE_OUTPUT: <role-specific object>
 ```
 
-`role_output` is the only location for the role-specific block defined in `PROMPTS.md`; do not flatten role-specific fields into the common envelope.
+`role_output` is the only location for the role-specific block defined in `PROMPTS.md`; do not flatten role-specific fields into the common envelope. `review_scope_hash` is common provenance metadata, not a role-output conclusion.
 
 A PASS means no material issue within that role's scope, not that the whole task is accepted.
 
@@ -185,10 +187,11 @@ For a current ready semantic gate, `.terminus/validate_review_freshness.py` requ
 - protocol, prompt and role policy versions;
 - control-plane commit recorded at invocation;
 - role-contract hash;
+- review-scope hash for scope-reusable roles;
 - packet `review_output_path`;
 - result `context_packet` path.
 
-A packet generated for one review cannot be reused to legitimize another result.
+A packet generated for one review cannot be reused to legitimize another result. Scope reuse never permits changing the original packet/result task commit; it only permits the current gate validator to retain a prior Q6 PASS when the separately recorded scope hash proves the Q6 evidence surface is unchanged.
 
 ## 11. Adjudication
 
@@ -196,15 +199,24 @@ Do not resolve semantic disagreement by majority vote. Invoke Adjudicator when m
 
 The adjudicator receives frozen reports only after the independent reviewers complete, plus controlling rules/evidence, and no desired verdict.
 
+### Latent reviewer omission / no-drip rule
+
+An exhaustive Q4 result is a completeness claim over the evidence it inspected. After one Orchestrator-authorized consolidated repair/refreeze cycle, a later Q4 finding must be classified against the task diff before starting another normal repair cycle. If the finding rests entirely on evidence that was unchanged and fully reviewable in the previous exhaustive Q4 scope, classify it `LATENT_REVIEWER_OMISSION` and route it to Adjudication. Do not silently waive the finding: the Adjudicator may uphold it and require repair, but the pipeline must not enter another blind Q4 patch loop without that disposition. A finding introduced by, or materially touching, the repair diff is a legitimate regression/new-scope finding and may route normally.
+
+`.terminus/classify_review_delta.py` provides a deterministic first-pass classification from evidence refs and changed task paths; semantic equivalence still belongs to the Orchestrator/Adjudicator.
+
 ## 12. Circuit breakers
 
 Stop blind iteration when:
 
 - the same infrastructure failure occurs twice without new evidence;
 - the same semantic finding survives two attempted fixes;
+- an exhaustive Q4 `REVISE` has already received one consolidated normal repair/refreeze cycle and the next Q4 raises a finding on unchanged previously reviewable scope; classify that finding `LATENT_REVIEWER_OMISSION` and adjudicate before another repair;
 - three consecutive task changes fail to advance a gate;
 - reviewer disagreement cannot be resolved from available evidence;
 - credentials/quota/network make the next expensive run predictably futile.
+
+For Q4, the default normal budget after an exhaustive result is one consolidated repair/refreeze cycle, not an open-ended sequence of narrow patches. Newly introduced regressions may still be repaired; latent unchanged-scope findings require Adjudicator disposition first.
 
 Record `BLOCKED`, the evidence, and the required strategy change before retrying.
 
@@ -226,6 +238,7 @@ For every material review/fix cycle preserve:
 - control-plane commit at invocation;
 - protocol/prompt/role policy versions;
 - role-contract hash;
+- review-scope hash when present;
 - context packet path;
 - result path;
 - verdict/confidence/evidence status;
@@ -239,7 +252,7 @@ This is the durable local agent trace.
 
 Session rows are not self-authenticating.
 
-- Semantic PASS/APPROVE rows must cite an exact current v3 review file whose packet/result provenance validates.
+- Semantic PASS/APPROVE rows must cite an exact current v3 review file whose packet/result provenance validates. For Q6, a Protocol-valid unchanged production-scope hash may preserve currentness across an unrelated task commit.
 - Deterministic rows such as Oracle/NOP/Ruff/Harbor/difficulty must cite current run/job/artifact evidence.
 - `SUBMISSION_READY` requires the complete mandatory gate registry; deleting a row does not delete the requirement.
 - Final Compliance, Final Human Quality and Trial Analysis are semantic gates and require their own current review evidence.
