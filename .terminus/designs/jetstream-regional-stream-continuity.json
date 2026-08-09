@@ -1,0 +1,58 @@
+{
+  "schema_version": "1.0",
+  "profile": "large_system_strict",
+  "task_kind": "software",
+  "task": "jetstream-regional-stream-continuity",
+  "root_cause_clusters": {
+    "RC1_EVENT_IDENTITY": "Publisher and replay paths do not share one stable event identity contract across reconnects and delayed retries.",
+    "RC2_ORIGIN_GENERATION": "Origin stream incarnation/generation is not persisted or validated, so a recreated origin can reuse low stream sequences behind an old checkpoint.",
+    "RC3_ARCHIVE_TOPOLOGY": "Hub archive/source topology permits ambiguous local writes and has inconsistent domain/name routing across edge origins.",
+    "RC4_PROCESSING_ATOMICITY": "Consumer side effects, checkpoint advancement and JetStream acknowledgements are ordered independently instead of through an idempotent durable processing record.",
+    "RC5_RECONCILIATION_AUTHORITY": "Reconciliation compares aggregate/hub sequence positions rather than stable region-generation-origin-sequence/event identity.",
+    "RC6_RETENTION_REPLAY": "Retention and journal cleanup use local age/ack observations instead of the minimum durable convergence watermark across archive and required consumers.",
+    "RC7_FENCING_RECOVERY": "Recovery workers and replay planners lack durable fencing/lease ownership and can race after reconnect or process restart."
+  },
+  "defects": [
+    {"id":"D01","component":"publisher","observable_failure":"A reconnect retry can publish the same accepted event under a different JetStream message id.","root_cause":"RC1_EVENT_IDENTITY","partial_fix_trap":"Extending the server duplicate window reduces immediate duplicates but delayed replay still produces a new message id."},
+    {"id":"D02","component":"publisher","observable_failure":"The edge journal can mark an event published before a positive JetStream publish acknowledgement is durable.","root_cause":"RC1_EVENT_IDENTITY","partial_fix_trap":"Retrying all PUBLISHED rows recovers some losses but duplicates events whose first publish actually committed."},
+    {"id":"D03","component":"replay","observable_failure":"Delayed replay deduplicates by origin sequence only and can collapse different stream generations.","root_cause":"RC1_EVENT_IDENTITY","partial_fix_trap":"Adding region to the key still aliases a recreated origin that restarts its sequence space."},
+    {"id":"D04","component":"replay","observable_failure":"The replay planner can enqueue an event already represented in the hub archive when server-side duplicate tracking has expired.","root_cause":"RC1_EVENT_IDENTITY","partial_fix_trap":"Relying on the JetStream duplicate window only works for short disconnects."},
+
+    {"id":"D05","component":"origin-registry","observable_failure":"A lower origin sequence after edge stream recreation is accepted as normal continuation.","root_cause":"RC2_ORIGIN_GENERATION","partial_fix_trap":"Resetting the checkpoint restores ingestion but silently merges two incompatible origin incarnations."},
+    {"id":"D06","component":"origin-registry","observable_failure":"The west origin generation recorded in SQLite can disagree with the generation advertised in event headers.","root_cause":"RC2_ORIGIN_GENERATION","partial_fix_trap":"Trusting only the newest header lets historical rows be reinterpreted under the new generation."},
+    {"id":"D07","component":"recovery-planner","observable_failure":"Recovery automatically replays across an unapproved origin-generation transition instead of holding it for operator action.","root_cause":"RC2_ORIGIN_GENERATION","partial_fix_trap":"Pausing all west traffic avoids corruption but also blocks valid events from the current confirmed generation."},
+
+    {"id":"D08","component":"stream-catalog","observable_failure":"Edge origin streams use the same physical stream name in multiple JetStream domains.","root_cause":"RC3_ARCHIVE_TOPOLOGY","partial_fix_trap":"Changing only the hub source name leaves flow-control/domain routing ambiguous for the other origin."},
+    {"id":"D09","component":"stream-catalog","observable_failure":"The hub archive accepts a local raw telemetry subject in addition to its configured sources.","root_cause":"RC3_ARCHIVE_TOPOLOGY","partial_fix_trap":"Blocking the worker publish path still leaves the archive writable by any other local client with that subject."},
+    {"id":"D10","component":"stream-catalog","observable_failure":"One hub source points at the wrong JetStream domain and remains perpetually lagged after reconnect.","root_cause":"RC3_ARCHIVE_TOPOLOGY","partial_fix_trap":"Manually copying the missing events hides the bad source contract until the next disconnect."},
+    {"id":"D11","component":"worker-routing","observable_failure":"Derived processing output is published back onto the raw archive subject and becomes indistinguishable from sourced telemetry.","root_cause":"RC3_ARCHIVE_TOPOLOGY","partial_fix_trap":"Filtering the current consumer prevents a loop but the raw archive remains contaminated for other consumers."},
+
+    {"id":"D12","component":"consumer-worker","observable_failure":"A durable checkpoint can advance before the corresponding business effect is committed.","root_cause":"RC4_PROCESSING_ATOMICITY","partial_fix_trap":"Moving the checkpoint later still duplicates the effect if the process crashes between effect commit and acknowledgement."},
+    {"id":"D13","component":"consumer-worker","observable_failure":"The same event can create two downstream effect rows after redelivery following a crash.","root_cause":"RC4_PROCESSING_ATOMICITY","partial_fix_trap":"Acking earlier suppresses duplicates by creating a loss window instead."},
+    {"id":"D14","component":"consumer-worker","observable_failure":"A poison event can advance the consumer checkpoint even though its effect was quarantined rather than completed.","root_cause":"RC4_PROCESSING_ATOMICITY","partial_fix_trap":"Never advancing on poison data stalls all later valid events behind one bad record."},
+    {"id":"D15","component":"consumer-worker","observable_failure":"A restart reconstructs consumer progress from the JetStream ack floor without validating the application effect ledger.","root_cause":"RC4_PROCESSING_ATOMICITY","partial_fix_trap":"Trusting only SQLite has the opposite problem when an acknowledgement committed after the last local snapshot."},
+
+    {"id":"D16","component":"reconciler","observable_failure":"East and west completeness are inferred from the hub aggregate stream sequence, which interleaves sourced origins.","root_cause":"RC5_RECONCILIATION_AUTHORITY","partial_fix_trap":"Comparing only total counts can still miss a gap that is offset by a duplicate from the other region."},
+    {"id":"D17","component":"reconciler","observable_failure":"Two records with the same payload but different event identities are incorrectly treated as duplicates.","root_cause":"RC5_RECONCILIATION_AUTHORITY","partial_fix_trap":"Switching to payload hash plus timestamp still collides for legitimate repeated sensor readings."},
+    {"id":"D18","component":"reconciler","observable_failure":"A duplicate event can mask a missing event because reconciliation compares only per-region counts.","root_cause":"RC5_RECONCILIATION_AUTHORITY","partial_fix_trap":"Adding a checksum without stable ordering can produce nondeterministic mismatch reports."},
+    {"id":"D19","component":"reconciler","observable_failure":"The health report declares convergence while a required consumer checkpoint remains behind the archived origin watermark.","root_cause":"RC5_RECONCILIATION_AUTHORITY","partial_fix_trap":"Checking only one named consumer misses another configured required consumer."},
+
+    {"id":"D20","component":"retention-controller","observable_failure":"Edge journal rows can be deleted by age even while the hub archive is missing those event identities.","root_cause":"RC6_RETENTION_REPLAY","partial_fix_trap":"Increasing max age only delays the same data-loss condition during a longer carrier outage."},
+    {"id":"D21","component":"retention-controller","observable_failure":"Cleanup uses the hub archive watermark without considering a lagging required durable consumer.","root_cause":"RC6_RETENTION_REPLAY","partial_fix_trap":"Using the slowest consumer alone can retain rows that never reached the archive in the first place."},
+    {"id":"D22","component":"retention-controller","observable_failure":"A replay plan can reference journal rows that cleanup removes before the plan is executed.","root_cause":"RC6_RETENTION_REPLAY","partial_fix_trap":"Pinning only currently RUNNING plans still allows APPROVED plans to lose their source rows."},
+    {"id":"D23","component":"retention-controller","observable_failure":"Archive retention can expire raw telemetry before the configured replay/disconnect recovery horizon.","root_cause":"RC6_RETENTION_REPLAY","partial_fix_trap":"Changing only the archive age leaves the edge journal cleanup boundary unsafe."},
+
+    {"id":"D24","component":"lease-store","observable_failure":"Two recovery workers can both believe they own the same region after a lease expires and is reacquired.","root_cause":"RC7_FENCING_RECOVERY","partial_fix_trap":"Extending lease duration reduces overlap but does not fence an old worker that wakes up late."},
+    {"id":"D25","component":"recovery-worker","observable_failure":"A stale worker can continue applying replay actions after another worker has acquired a newer lease epoch.","root_cause":"RC7_FENCING_RECOVERY","partial_fix_trap":"Checking owner name only fails when the same process identity is restarted and reacquires ownership."},
+    {"id":"D26","component":"recovery-planner","observable_failure":"Concurrent planners can create overlapping replay ranges for the same region and generation.","root_cause":"RC7_FENCING_RECOVERY","partial_fix_trap":"Deduplicating exact range strings still permits partially overlapping plans to execute concurrently."}
+  ],
+  "causal_edges": [
+    {"from":"D01","to":"D04"},{"from":"D02","to":"D18"},{"from":"D03","to":"D05"},{"from":"D04","to":"D13"},
+    {"from":"D05","to":"D07"},{"from":"D05","to":"D16"},{"from":"D06","to":"D17"},{"from":"D07","to":"D26"},
+    {"from":"D08","to":"D10"},{"from":"D09","to":"D11"},{"from":"D10","to":"D16"},{"from":"D11","to":"D18"},
+    {"from":"D12","to":"D15"},{"from":"D13","to":"D18"},{"from":"D14","to":"D19"},{"from":"D15","to":"D19"},
+    {"from":"D16","to":"D20"},{"from":"D17","to":"D18"},{"from":"D18","to":"D20"},{"from":"D19","to":"D21"},
+    {"from":"D20","to":"D22"},{"from":"D21","to":"D23"},{"from":"D22","to":"D26"},{"from":"D23","to":"D20"},
+    {"from":"D24","to":"D25"},{"from":"D25","to":"D13"},{"from":"D25","to":"D26"},{"from":"D26","to":"D04"}
+  ]
+}
