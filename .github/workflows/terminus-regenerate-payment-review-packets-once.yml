@@ -1,0 +1,41 @@
+name: Terminus Regenerate Payment Review Packets Once
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/terminus-regenerate-payment-review-packets-once.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Generate immutable reviewer packets
+        shell: bash
+        run: |
+          set -euo pipefail
+          change='Production Authenticity policy 1.1 adds portfolio-level cloned thick-module detection after PR #7. Solver-visible payment task content remains unchanged at eb78d72a.'
+          python3 .terminus/new_review_packet.py payment-eod-control-chain task-architect --change "$change"
+          python3 .terminus/new_review_packet.py payment-eod-control-chain verifier-engineer --change "$change"
+          python3 .terminus/new_review_packet.py payment-eod-control-chain originality --change "$change"
+          python3 .terminus/new_review_packet.py payment-eod-control-chain difficulty-design --change "$change"
+          python3 .terminus/new_review_packet.py payment-eod-control-chain compliance --change "$change"
+          python3 .terminus/new_review_packet.py payment-eod-control-chain instruction --change "$change"
+          python3 .terminus/new_review_packet.py payment-eod-control-chain documentation --change "$change"
+          python3 .terminus/new_review_packet.py payment-eod-control-chain comprehensive-checklist --change "$change"
+      - name: Commit packet set
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'terminus-control-plane'
+          git config user.email 'actions@users.noreply.github.com'
+          git add .terminus/reviews/payment-eod-control-chain/eb78d72a/*.packet.json
+          git diff --cached --check
+          git commit -m 'Regenerate payment EOD review packets for production policy 1.1'
+          git push origin HEAD:main
