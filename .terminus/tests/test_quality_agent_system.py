@@ -4,10 +4,12 @@ from __future__ import annotations
 
 import importlib.util
 import re
+import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 T = ROOT / ".terminus"
+sys.path.insert(0, str(T))
 
 
 def _load_module(name: str, path: Path):
