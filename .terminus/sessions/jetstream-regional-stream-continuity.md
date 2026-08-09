@@ -32,7 +32,7 @@ Session schema version: `2.4`
 | Production Authenticity | PASS | run `31312365526`; packet-head run `31312737493` also PASS |
 | Agent System / freshness | PASS | packet-head run `31312737488`, job `93242976476`: regression, structure, review freshness/task binding, package isolation PASS |
 | Oracle | PASS | 40/40 in run `31312365548` |
-| NOP | PASS | exactly 30 F2P FAIL + 10 P2P PASS |
+| NOP | PASS | reward 0; exactly 30 F2P FAIL + 10 P2P PASS |
 | F2P/P2P matrix | PASS | artifact `9037758650`, sha256 `8db595c300353ae133922c892294a5fb35daa4e7d9601f2d8a12d36960bfc1c1` |
 | FROZEN_CANDIDATE | PASS | task commit `c3ee277828c2a156ecce9d335820d57b9fd2a0e0` |
 | Q4 | PENDING | `jetstream-regional-stream-continuity-c3ee2778-spec-test-contract-8075aa9028` |
