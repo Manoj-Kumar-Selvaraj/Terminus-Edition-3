@@ -319,7 +319,9 @@ class ContinuityEngine(BaseContinuityEngine):
             duplicate_count=duplicate_count,
             metadata_mismatch_count=0,
             consumer_lag_count=0,
-            highest_contiguous_archive_origin_sequence=archive_origin_floor,
+            highest_contiguous_archive_origin_sequence=contiguous_floor(
+                record.hub_stream_sequence for record in archive
+            ),
             required_consumer_progress=required_consumer_progress,
             checksum=checksum,
             findings=tuple(findings),
