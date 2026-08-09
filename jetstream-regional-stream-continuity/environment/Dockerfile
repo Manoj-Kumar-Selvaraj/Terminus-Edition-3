@@ -34,6 +34,7 @@ RUN python3 -m venv /app/continuity/.venv \
  && mkdir -p /app/continuity/state /app/continuity/out /app/continuity/run /app/continuity/log/runtime \
  && chmod +x /app/continuity/bin/* \
  && sqlite3 /app/continuity/state/continuity.db < /app/continuity/sql/schema.sql \
+ && sqlite3 /app/continuity/state/continuity.db < /app/continuity/sql/runtime_extensions.sql \
  && sqlite3 /app/continuity/state/continuity.db < /app/continuity/sql/seed.sql
 
 ENV PATH="/app/continuity/.venv/bin:${PATH}"
