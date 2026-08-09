@@ -1,6 +1,6 @@
 # Terminus Production Authenticity Policy
 
-Policy version: `1.0`
+Policy version: `1.1`
 
 This policy augments the Edition 3 creator and reviewer rules for tasks that claim to model an operational, production, stateful, or large-system incident. It is a local authoring gate, not a replacement for official Edition 3 acceptance rules.
 
@@ -39,6 +39,14 @@ The exact syntax is not a quota. The gate measures whether the domain decision i
 
 If a creator can delete most of a program and preserve the entire business decision, treat the program as thin business logic and revise the architecture rather than adding decorative statements.
 
+### Portfolio diversity
+
+Per-program depth is necessary but not sufficient. A creator must not take one large program skeleton, copy it across the portfolio, and change only `PROGRAM-ID`, field names, literals, or paragraph labels. That is the same scale-inflation defect as many one-line modules, just hidden inside larger files.
+
+For COBOL-heavy strict tasks, run `.terminus/validate_business_module_diversity.py <task>` in addition to the per-program depth gate. It rejects logic-equivalent modules and blocks a portfolio when an overwhelming fraction shares the same paragraph-count/control-flow signature. Renaming paragraphs does not make a copied template distinct.
+
+Common lifecycle conventions across programs are allowed. What must differ is the actual domain processing topology: the records inspected, validation stages, state classifications, calculations, business branches and failure handling should reflect each program's responsibility.
+
 ## Creator obligations
 
 Scenario Researcher:
@@ -48,7 +56,8 @@ Scenario Researcher:
 System Architect / Environment Builder:
 - create the production evidence surface before instruction drafting;
 - create representative deterministic starting state;
-- keep major business modules substantial and runtime-reachable.
+- keep major business modules substantial and runtime-reachable;
+- reject both micro-program inflation and copied thick-template inflation.
 
 Human Writing Researcher / Instruction Writer:
 - apply an **incident evidence test**: “Which solver-visible artifact supports each claimed incident fact?”
@@ -57,7 +66,8 @@ Human Writing Researcher / Instruction Writer:
 
 Task Assembly / Complexity Governor:
 - run `.terminus/validate_runtime_authenticity.py <task>`;
-- block thin business logic, toy state, benchmark framing or missing incident evidence even when LOC/defect/test counts pass.
+- run `.terminus/validate_business_module_diversity.py <task>` for declared business-language portfolios;
+- block thin business logic, copied business-program templates, toy state, benchmark framing or missing incident evidence even when LOC/defect/test counts pass.
 
 ## Reviewer obligations
 
@@ -65,6 +75,7 @@ Task Architect, Originality & Authenticity Reviewer, Human Quality Reviewer and 
 - production incident asserted with no solver-visible evidence surface;
 - toy-sized or homogeneous state presented as representative production data;
 - many micro-programs/resources whose real decision logic is trivial and exists mainly to inflate scale;
+- many superficially large programs created from one repeated control-flow skeleton rather than distinct domain responsibilities;
 - solver-facing prose that describes the benchmark construction instead of the inherited operational problem.
 
 These checks do not require a task to imitate any particular company. They require the claimed operational setting to be internally credible and evidenced.
