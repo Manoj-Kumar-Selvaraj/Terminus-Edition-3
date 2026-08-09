@@ -1,0 +1,136 @@
+{
+  "schema_version": "3.0",
+  "role": "Spec-Test Contract Reviewer",
+  "review_id": "jetstream-regional-stream-continuity-d7e131f9-spec-test-contract-a159fbe550",
+  "task": "jetstream-regional-stream-continuity",
+  "task_commit": "d7e131f962753acce119afba5f63bd525203d9c7",
+  "control_plane_commit": "45b110b2645f60a3e82f7e2a74a15ea2cd6e93f7",
+  "protocol_policy_version": "2.1",
+  "prompt_policy_version": "2.2",
+  "role_policy_version": "1.0",
+  "role_contract_hash": "696aa3da8960a5c5ee1b093d2b8bced4e3f95fba130883ee4afc58c846251832",
+  "context_packet": ".terminus/reviews/jetstream-regional-stream-continuity/d7e131f9/jetstream-regional-stream-continuity-d7e131f9-spec-test-contract-a159fbe550.packet.json",
+  "verdict": "REVISE",
+  "confidence": "HIGH",
+  "evidence_status": "SUFFICIENT",
+  "summary": "The solver-visible handoff remains natural and the verifier has broad substantive coverage, including a genuine external west JetStream replay observation, full-content hashes for the three named captured incident artifacts, independently recomputed report truth, and an actual 30 F2P + 10 P2P partition. Bidirectional alignment is nevertheless not clean. Three material contract boundaries remain only partially graded: replay publication is not checked for the contractual event_id == Nats-Msg-Id identity at the external JetStream boundary; the declared edge-journal retention horizon is not graded separately from JetStream stream max-age policy; and the stable report interface requires generated_at timestamps in both reports but the verifier never asserts them. Under the Q4 contract, any material untested requirement requires REVISE.",
+  "evidence": [
+    {
+      "type": "rule",
+      "ref": ".terminus/agents/QUALITY_AGENT_PROMPTS.md#Q4",
+      "observation": "Q4 must independently map solver-visible requirements to verifier behaviors in both directions; any material phantom test, material untested requirement, or grading-relevant ambiguity requires REVISE."
+    },
+    {
+      "type": "rule",
+      "ref": ".terminus/agents/QUALITY_AGENT_REGISTRY.md#Q4",
+      "observation": "Q4 is read-only, packet-bound, and requires complete bidirectional alignment plus delegated-contract and natural-handoff checks."
+    },
+    {
+      "type": "file",
+      "ref": "jetstream-regional-stream-continuity/instruction.md@d7e131f962753acce119afba5f63bd525203d9c7",
+      "observation": "The instruction delegates durability and replay rules to /app/continuity/docs, requires captured incident history to remain intact, preserves existing event envelope/operator entrypoints, and requires truthful final health/reconciliation reports."
+    },
+    {
+      "type": "file",
+      "ref": "jetstream-regional-stream-continuity/environment/continuity/docs/continuity-contract.md@d7e131f962753acce119afba5f63bd525203d9c7",
+      "observation": "The delegated contract defines stable event_id/Nats-Msg-Id identity for every first-publish and replay attempt, distinguishes edge journal durability from JetStream origin durability, requires journal/archive retention to cover the recovery horizon, defines fencing/replay/consumer/reconciliation invariants, and requires generated_at in both stable report interfaces."
+    },
+    {
+      "type": "test",
+      "ref": "jetstream-regional-stream-continuity/tests/test_continuity.py@d7e131f962753acce119afba5f63bd525203d9c7",
+      "observation": "The main verifier meaningfully exercises identity, publish acknowledgement, generation handling, topology, archive metadata, consumer effects/checkpoints, reconciliation, replay planning, durable dedupe, retention watermarks, fencing, derived routing, and preserved positive behaviors. Its recovery-horizon test asserts edge and hub JetStream max_age_seconds, but does not assert an edge-journal retention horizon."
+    },
+    {
+      "type": "test",
+      "ref": "jetstream-regional-stream-continuity/tests/test_contract_coverage.py@d7e131f962753acce119afba5f63bd525203d9c7",
+      "observation": "The supplemental verifier independently recomputes report truth from SQLite/config, hashes all three named captured incident artifacts by full SHA-256, checks diagnostic CLI non-mutation over protected recovery state, and runs execute-replay against a real west JetStream then reads physical stream payloads. It does not inspect the externally published Nats-Msg-Id header and does not assert generated_at in either report."
+    },
+    {
+      "type": "file",
+      "ref": ".terminus/designs/jetstream-regional-stream-continuity-test-map.json@d7e131f962753acce119afba5f63bd525203d9c7",
+      "observation": "Used only for classification cross-check: the declared suite partition is exactly 40 tests, 30 F2P and 10 P2P; independent verifier inspection is consistent with that split."
+    },
+    {
+      "type": "file",
+      "ref": "jetstream-regional-stream-continuity/environment/continuity/config/continuity.json@d7e131f962753acce119afba5f63bd525203d9c7",
+      "observation": "The solver-visible configuration exposes JetStream stream max-age policies separately from the durable SQLite journal behavior, reinforcing that testing stream max_age alone does not grade the contract's distinct journal-retention obligation."
+    }
+  ],
+  "findings": [
+    {
+      "id": "Q4-D7E131F9-01",
+      "severity": "HIGH",
+      "status": "OBSERVED",
+      "criterion": "Every material replay/publication identity requirement must be graded at the behavioral boundary it constrains.",
+      "evidence_refs": [
+        "jetstream-regional-stream-continuity/environment/continuity/docs/continuity-contract.md@d7e131f962753acce119afba5f63bd525203d9c7",
+        "jetstream-regional-stream-continuity/tests/test_continuity.py@d7e131f962753acce119afba5f63bd525203d9c7",
+        "jetstream-regional-stream-continuity/tests/test_contract_coverage.py@d7e131f962753acce119afba5f63bd525203d9c7"
+      ],
+      "why_it_matters": "The public contract requires event_id to be the application Nats-Msg-Id for all first-publish and replay attempts. Unit/mocked publish checks establish the engine's normal message-id choice, and the real replay P2P proves payload event identities physically arrive on the west stream, but that external test never examines the published Nats-Msg-Id header. A repair could preserve payload event_id while using a different replay dedupe header and still satisfy the current external assertion, weakening exactly-once behavior after reconnect/replay.",
+      "minimal_remediation": "Add a behaviorally scoped replay assertion that observes the actual external publication identity used by JetStream and proves the replay publication uses the contractual stable event identity, without converting a preserved P2P into an F2P defect duplicate or relying only on a private helper return value.",
+      "regression_risk": "The added check must preserve the intended 30 F2P + 10 P2P classification and should avoid asserting incidental header formatting beyond the documented stable event/message identity invariant."
+    },
+    {
+      "id": "Q4-D7E131F9-02",
+      "severity": "HIGH",
+      "status": "OBSERVED",
+      "criterion": "Every material solver-visible retention requirement must have meaningful verifier coverage.",
+      "evidence_refs": [
+        "jetstream-regional-stream-continuity/environment/continuity/docs/continuity-contract.md@d7e131f962753acce119afba5f63bd525203d9c7",
+        "jetstream-regional-stream-continuity/tests/test_continuity.py@d7e131f962753acce119afba5f63bd525203d9c7",
+        "jetstream-regional-stream-continuity/environment/continuity/config/continuity.json@d7e131f962753acce119afba5f63bd525203d9c7"
+      ],
+      "why_it_matters": "The contract explicitly treats the edge journal and JetStream origin as separate durability layers and requires both edge-journal retention and hub raw-archive retention to cover maximum disconnect + replay + safety margin. The current horizon test checks east/west JetStream stream max_age_seconds and hub stream max_age_seconds. It does not grade whether the durable edge journal itself is retained for that declared recovery horizon. An implementation can therefore satisfy the stream-age assertions while making journal data eligible for removal earlier than the contractual recovery horizon once other watermark conditions permit it.",
+      "minimal_remediation": "Grade the durable journal's time-horizon protection with an observable retention/cleanup scenario tied to the declared maximum disconnect + replay + safety margin, or clarify the solver-visible contract if a different durable setting is intended to be authoritative.",
+      "regression_risk": "Do not conflate minimum journal age, convergence watermarks, replay pins, or JetStream max_age with the separate recovery-horizon guarantee; preserve legitimate cleanup of sufficiently old, fully safe rows."
+    },
+    {
+      "id": "Q4-D7E131F9-03",
+      "severity": "MEDIUM",
+      "status": "OBSERVED",
+      "criterion": "Stable report-interface fields declared solver-visible must be meaningfully graded.",
+      "evidence_refs": [
+        "jetstream-regional-stream-continuity/environment/continuity/docs/continuity-contract.md@d7e131f962753acce119afba5f63bd525203d9c7",
+        "jetstream-regional-stream-continuity/tests/test_contract_coverage.py@d7e131f962753acce119afba5f63bd525203d9c7"
+      ],
+      "why_it_matters": "The delegated stable report interface explicitly requires a generated_at timestamp in health.json and reconciliation.json. The verifier parses both files and independently validates the substantive booleans, counts, convergence state, and consumer progress, but never asserts generated_at exists or is a timestamp. A solver can omit both contractual fields and still pass the report test.",
+      "minimal_remediation": "Assert presence and timestamp validity of generated_at in both reports while leaving timestamp value/format flexibility consistent with the existing contract.",
+      "regression_risk": "Avoid freezing a specific wall-clock instant or incidental serialization; grade only the documented timestamp field requirement."
+    }
+  ],
+  "missing_evidence": [],
+  "change_scope": [],
+  "do_not_change": [
+    "Q4 is read-only; do not repair task files from this review.",
+    "Do not use historical Q4/Q6 results, remediation claims, deterministic PASS, or desired acceptance outcome as evidence.",
+    "Do not weaken independent report truth checks, full-content captured-incident hashing, diagnostic non-mutation checks, fencing semantics, or the real external JetStream replay observation."
+  ],
+  "next_gate": "Route the three Q4 findings to the appropriate spec/verifier owners under the CI Orchestrator; after any task/verifier change, refreeze deterministic evidence and generate a new independent Q4 packet. Do not advance this task through QUALITY_INTERLOCK_PASS on this Q4 result.",
+  "role_output": {
+    "REQUIREMENT_TEST_MATRIX": {
+      "identity_and_publication": "PARTIAL: stable event identity and acknowledged publish transitions are graded, but external replay Nats-Msg-Id identity is not observed.",
+      "generation": "COVERED: pending/approval/monotonicity and historical generation preservation are exercised.",
+      "topology_and_routing": "COVERED: unique physical names, source domains, source-only hub raw archive, and derived/raw isolation are exercised.",
+      "consumer_exactly_once_and_restart": "COVERED: single durable effects, crash-before-ack redelivery, checkpoint ordering, poison quarantine, and ack-floor/application-ledger gaps are exercised.",
+      "reconciliation_and_convergence": "COVERED: identity-based membership, offsetting gap/duplicate, metadata integrity, confirmed watermark, required-consumer progress, and independently recomputed report truth are exercised.",
+      "replay_planning_and_fencing": "COVERED except for external replay message-id observation: missing-only planning, unapproved generation block, overlap prevention, entry/between-item/post-publish fencing, stale lease renewal/release, and terminal replay-pin behavior are exercised.",
+      "retention": "PARTIAL: archive/consumer/replay-pin bounds, minimum age, explicit holds, positive cleanup, and JetStream stream horizons are exercised; the distinct durable edge-journal recovery horizon is not.",
+      "operator_reports": "PARTIAL: materialization and independently recomputed report content are exercised, but generated_at in both stable interfaces is untested.",
+      "diagnostic_and_recovery_cli": "COVERED: diagnostic protected-state non-mutation and generation/replay/lease/retention entrypoint operation are exercised, including real west JetStream replay payload observation.",
+      "captured_incident_evidence": "COVERED at full-content boundary for the three named captured artifacts via SHA-256 equality without freezing generated /out reports or the copied mutable runtime database."
+    },
+    "PHANTOM_TEST_CONTRACTS": [],
+    "UNTESTED_REQUIREMENTS": [
+      "Replay publication's documented event_id == Nats-Msg-Id identity is not observed at the real external replay boundary.",
+      "The durable edge journal's documented recovery-horizon retention guarantee is not graded separately from JetStream stream max-age policy.",
+      "health.json generated_at and reconciliation.json generated_at are documented stable-interface fields but are not asserted."
+    ],
+    "AMBIGUITIES": [],
+    "DELEGATED_CONTRACT_CHECK": "PASS for discoverability: instruction.md naturally delegates durability/replay details to /app/continuity/docs, and continuity-contract.md contains the graded topology, publication, generation, processing, reconciliation, replay, fencing, retention, operator and report-interface rules. The defects are verifier-coverage gaps, not missing delegation.",
+    "SPEC_DUMP_RISK": "LOW",
+    "BIDIRECTIONAL_ALIGNMENT": "FAIL",
+    "SUITE_PARTITION": "40 total = 30 F2P + 10 P2P; classification cross-checked against the allowed private test map and independently consistent with the inspected verifier definitions.",
+    "P2P_BOUNDARY_ASSESSMENT": "The P2P suite is generally non-vacuous and preserves real behavior. In particular, the recovery CLI P2P starts west JetStream, executes the real replay CLI, and independently reads the physical stream. Its remaining gap is that it validates payload event identities, not the contractual external Nats-Msg-Id identity."
+  }
+}
