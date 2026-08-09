@@ -4,13 +4,13 @@
   "requirements": {
     "REQ-01": "Accepted events use one stable event/message identity across publish retries and reconnect replay.",
     "REQ-02": "The edge journal records publish success only after a positive durable publish acknowledgement.",
-    "REQ-03": "Origin generation/incarnation is explicit; lower sequence after an unapproved generation change is held rather than merged.",
+    "REQ-03": "Origin generation/incarnation is explicit; lower sequence after an unapproved generation change is held rather than merged, and historical events retain their accepted generation.",
     "REQ-04": "The central raw archive is populated by configured sources only and does not accept local raw telemetry writes.",
     "REQ-05": "Physical origin stream names and JetStream domain mappings are unambiguous across regions.",
     "REQ-06": "Every archived event retains region, origin generation, origin sequence and event identity metadata.",
     "REQ-07": "A redelivered event cannot create the same downstream business effect twice.",
     "REQ-08": "Application effect state, checkpoint advancement and acknowledgement decisions preserve crash-safe processing semantics.",
-    "REQ-09": "Poison events are quarantined without falsely marking the effect complete or losing later valid work.",
+    "REQ-09": "Poison events are quarantined without falsely marking the effect complete or losing completed application-progress semantics.",
     "REQ-10": "Restart progress validates JetStream consumer state against the durable application effect/checkpoint ledger.",
     "REQ-11": "Reconciliation compares stable event/origin identity, not hub aggregate sequence equivalence.",
     "REQ-12": "Reconciliation detects a missing event even when an extra duplicate keeps aggregate counts equal.",
@@ -21,9 +21,11 @@
     "REQ-17": "Edge journal cleanup never crosses the slowest required durable consumer watermark.",
     "REQ-18": "Rows referenced by approved or running replay plans remain pinned until the plan reaches a terminal state.",
     "REQ-19": "Configured raw archive/journal retention covers the declared maximum disconnect and replay recovery horizon.",
-    "REQ-20": "Recovery ownership uses monotonically increasing fencing epochs and stale workers cannot apply actions.",
+    "REQ-20": "Recovery ownership uses monotonically increasing fencing epochs; expiry/reacquisition advances the epoch even for the same owner id, and stale workers cannot apply replay actions.",
     "REQ-21": "Concurrent recovery planners cannot create overlapping active replay ranges for one region and generation.",
-    "REQ-22": "Derived processing output is isolated from the raw sourced archive subject space."
+    "REQ-22": "Derived processing output is isolated from the raw sourced archive subject space.",
+    "REQ-23": "Cleanup excludes rows newer than the minimum journal age and rows carrying an explicit retention hold.",
+    "REQ-24": "The submitted repair materializes health.json and reconciliation.json under /app/continuity/out/ without rewriting captured incident state to manufacture success."
   },
   "tests": [
     ["test_f2p_retry_uses_stable_event_id", "F2P", "REQ-01"],
@@ -54,12 +56,16 @@
     ["test_f2p_stale_recovery_worker_is_fenced", "F2P", "REQ-20"],
     ["test_f2p_overlapping_active_replay_plan_is_rejected", "F2P", "REQ-21"],
     ["test_f2p_derived_output_never_reenters_raw_archive", "F2P", "REQ-22"],
+    ["test_f2p_expired_lease_reacquired_by_same_owner_advances_epoch", "F2P", "REQ-20"],
+    ["test_f2p_final_health_and_reconciliation_reports_are_materialized", "F2P", "REQ-24"],
 
     ["test_p2p_distinct_same_payload_events_remain_distinct", "P2P", "REQ-01"],
     ["test_p2p_confirmed_generation_continues_monotonically", "P2P", "REQ-03"],
     ["test_p2p_successful_effect_advances_checkpoint", "P2P", "REQ-08"],
     ["test_p2p_fully_converged_old_rows_are_cleanup_eligible", "P2P", "REQ-16"],
     ["test_p2p_current_lease_owner_can_renew_same_epoch", "P2P", "REQ-20"],
-    ["test_p2p_nonoverlapping_replay_ranges_can_coexist", "P2P", "REQ-21"]
+    ["test_p2p_nonoverlapping_replay_ranges_can_coexist", "P2P", "REQ-21"],
+    ["test_p2p_cleanup_respects_minimum_age_and_explicit_holds", "P2P", "REQ-23"],
+    ["test_p2p_generation_approval_does_not_rewrite_historical_events", "P2P", "REQ-03"]
   ]
 }
