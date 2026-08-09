@@ -1,5 +1,10 @@
 PRAGMA foreign_keys = ON;
 
+DROP INDEX IF EXISTS idx_origin_active_generation;
+CREATE UNIQUE INDEX IF NOT EXISTS idx_origin_one_live_status
+ON origin_generations(region,status)
+WHERE status IN ('CONFIRMED','PENDING_APPROVAL');
+
 CREATE TABLE IF NOT EXISTS effect_dispatches (
     dispatch_id INTEGER PRIMARY KEY AUTOINCREMENT,
     consumer_name TEXT NOT NULL REFERENCES consumer_registry(consumer_name),
