@@ -1,6 +1,6 @@
 # Terminus Edition 3 Quality Agent Prompts
 
-Quality-agent prompt policy version: `1.0`
+Quality-agent prompt policy version: `1.1`
 
 All roles read current authoritative Edition 3 rules, `.terminus/AGENT_SYSTEM.md`, `.terminus/agents/PROTOCOL.md`, `.terminus/agents/QUALITY_AGENT_REGISTRY.md`, and this file. Producer/fixer roles return evidence and proposed changes but never self-certify acceptance. Reviewer roles use the normal packet-bound v3 review envelope.
 
@@ -101,25 +101,39 @@ SPEC_DUMP_RISK: LOW | MEDIUM | HIGH
 ## Q4 — Spec-Test Contract Reviewer
 
 ### Mission
-Independently certify bidirectional alignment between solver-visible specification and verifier semantics.
+Independently certify complete bidirectional alignment between the solver-visible specification and verifier semantics. Q4 is a breadth review, not a first-defect detector.
 
 ### Independence
-Do not read Q1/Q2/Q3 conclusions or Verifier Author coverage claims until your own matrix is frozen. Read the actual solver-visible contract and verifier independently.
+Do not read Q1/Q2/Q3 conclusions or Verifier Author coverage claims until your own matrix is frozen. Read the actual solver-visible contract and verifier independently. A cold reviewer must not use a previous Q4 result to decide what to inspect.
 
-### Required method
-1. Extract material solver-visible requirements into `REQ-*`.
-2. Extract substantive verifier behaviors into `TEST-CONTRACT-*` without using test names as requirements.
-3. Map requirement -> tests.
-4. Map test behavior -> discoverable requirement.
-5. Identify ambiguity that changes accepted behavior.
-6. Inspect delegated/reference documents to verify the instruction actually points to the required details.
-7. Inspect instruction shape for test-dump/compressed-rubric leakage created while closing gaps.
+### Exhaustive required method
+1. Freeze a complete inventory of every material solver-visible requirement before deciding verdict.
+2. Freeze a complete inventory of every substantive verifier behavior, including stable output/schema fields and externally observable integration boundaries.
+3. Map every material requirement -> one or more meaningful behavioral assertions; mark complete, partial, vacuous or absent coverage.
+4. Map every substantive verifier behavior -> a discoverable solver-visible requirement; identify phantom implementation choices, hidden labels and private return-value contracts.
+5. Inspect every delegated/reference document named by the instruction and every stable public interface the verifier grades.
+6. Inspect all F2P and P2P boundaries for behavioral ownership, preservation intent, external-boundary bypasses, circular oracles and vacuous preservation tests.
+7. Inspect ambiguity that changes accepted behavior, authority, ordering, units, timestamps, identity, restart/idempotency, failure handling or path scope.
+8. Inspect instruction/contract shape for hidden-test dump or compressed-rubric leakage created while closing gaps.
+9. Perform a second adversarial omission sweep after the first matrix is complete: search for unasserted SHALL/MUST/stable-interface obligations and verifier assertions not represented in the frozen reverse matrix.
+10. Return all material findings discovered across the complete allowed scope in this one result. Finding one reason for `REVISE` is never permission to stop the review.
+
+### Exhaustiveness rule
+A Q4 result is a completeness claim over the evidence the packet allows. Before returning `PASS` or `REVISE`, the reviewer must complete the forward matrix, reverse matrix, delegated-contract walk, F2P/P2P boundary walk, output-interface walk and second omission sweep. If any required evidence cannot be inspected far enough to complete those walks, return `INSUFFICIENT_EVIDENCE` and name the missing evidence instead of returning a partial `REVISE`.
+
+### Materiality
+- `BLOCKER` and `HIGH` findings are always blocking.
+- `MEDIUM` is blocking only when the defect can change solver pass/fail, externally observable correctness, safety/durability, or compliance with a documented stable public interface.
+- `LOW` is advisory and does not block Quality Interlock unless an authoritative rule explicitly makes that condition mandatory.
+- Cosmetic completeness, preferred implementation, incidental serialization and non-contractual internal vocabulary are not promoted to blocking findings merely because they can be asserted.
 
 ### Verdict rules
 - any material phantom test -> `REVISE`;
 - any material untested requirement -> `REVISE`;
 - any grading-relevant ambiguity -> `REVISE`;
-- `PASS` requires all three dimensions clean.
+- any blocking finding ID -> `REVISE`;
+- `PASS` requires the exhaustive walk to be complete and `BLOCKING_FINDING_IDS` to be empty;
+- advisory findings may accompany `PASS` only when their non-blocking materiality is explicit.
 
 ### Role output
 ```text
@@ -130,6 +144,19 @@ AMBIGUITIES:
 DELEGATED_CONTRACT_CHECK:
 SPEC_DUMP_RISK: LOW | MEDIUM | HIGH
 BIDIRECTIONAL_ALIGNMENT: PASS | FAIL
+BLOCKING_FINDING_IDS:
+ADVISORY_FINDING_IDS:
+EXHAUSTIVENESS:
+  REQUIREMENTS_ENUMERATED: COMPLETE | INCOMPLETE
+  VERIFIER_BEHAVIORS_ENUMERATED: COMPLETE | INCOMPLETE
+  FORWARD_MATRIX_COMPLETE: YES | NO
+  REVERSE_MATRIX_COMPLETE: YES | NO
+  DELEGATED_CONTRACTS_COMPLETE: YES | NO
+  P2P_BOUNDARIES_COMPLETE: YES | NO
+  F2P_BOUNDARIES_COMPLETE: YES | NO
+  OUTPUT_INTERFACES_COMPLETE: YES | NO
+  SECOND_PASS_OMISSION_SWEEP: PASS | INCOMPLETE
+  UNINSPECTED_SCOPE:
 ```
 
 ## Q5 — Oracle & Runtime Repair Specialist
@@ -176,6 +203,9 @@ Do not treat Complexity Governor PASS, LOC count, or production-authenticity val
 6. Estimate what behavior would disappear if ~25% of solver-visible core code were removed.
 7. Compare data/state volume to actual logic branches that consume it.
 8. Separate production complexity from generated/vendor/comment/config-volume noise.
+
+### Scope-preserved reuse
+The packet for Q6 carries a top-level `review_scope_hash` over the Q6 production evidence surface. Copy that exact field unchanged into the top-level review result. The current scope is deliberately conservative: task `task.toml` plus the complete solver-visible `environment/` tree. A later task commit may reuse a Q6 PASS only when the current recomputed scope hash is byte-for-byte identical, the packet/result hash matches, the Q6 role contract is still current, and no Q6 evidence-surface file changed. Tests-only, solution-only or instruction-only edits do not by themselves require another Q6 run. Any change under the Q6 scope invalidates reuse.
 
 ### Role output
 ```text
