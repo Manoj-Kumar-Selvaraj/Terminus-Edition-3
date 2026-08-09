@@ -6,9 +6,9 @@ Session schema version: `2.4`
 
 - Task: `jetstream-regional-stream-continuity`
 - Controller state: `DETERMINISTIC_VALIDATION`
-- Working branch: `task/jetstream-regional-stream-continuity`
-- Pull request: `#10` (draft creation/validation PR)
-- Current task commit: `795fe7f6f1f44c8f54d0c2b8d8d7a00362db1a75`
+- Working branch: `task/jetstream-quality-interlock`
+- Pull request: `#12` (draft quality-interlock validation PR)
+- Current task commit: `fc137e823b43b939f7005cc598f41fe10e84e3c1`
 - Agent-system policy: `2.3`
 - Specialist prompt policy: `2.2`
 - Specialist protocol policy: `2.1`
@@ -20,64 +20,110 @@ Session schema version: `2.4`
 
 ## Current task profile
 
-`jetstream-regional-stream-continuity` models a three-domain NATS JetStream regional telemetry continuity incident. Two edge domains accept telemetry into durable journals/origin streams while a hub sources both origins, maintains an application archive index, drives required durable consumers and controls replay/retention. The inherited reconnect state intentionally disagrees across edge journal membership, hub archive membership, application effects/checkpoints, JetStream acknowledgement evidence, replay plans and cleanup watermarks.
+This is a `large_system_strict` three-domain NATS JetStream continuity task. Two edge domains accept telemetry into durable journals/origin streams; a hub sources both origins, maintains the durable archive index, drives required consumers, and coordinates replay, fencing and retention. The deterministic state contains 12,000 primary telemetry events plus device, generation, archive, effect, checkpoint, replay and retention state. The private topology remains seven root-cause clusters and 26 manifestations with cross-cluster causal edges.
 
-The strict design contains seven materially different root-cause clusters and 26 observable manifestations with cross-cluster causal edges. The verifier map contains 28 F2P behavioral cases and six P2P preservation cases. The deterministic state contains 12,000 primary telemetry events plus device, generation, archive, effect, checkpoint, replay and retention state. Solver-visible incident evidence is the archived controller log, shift handoff and captured stream-state artifact.
+The merged Q1-Q8 workflow was applied after PR #10. Q1 found no verifier-only requirement that needed to be copied into the handoff. Q2 found solver-visible contract behavior that was not graded. Q3 found ambiguity between repairing the controller and rewriting captured incident state. Q7 found that a newly added verifier file was not copied into the separate verifier image. The resulting verifier now contains exactly 30 F2P scenarios and 8 P2P preservation scenarios.
 
-## Producer sequence
+## Current gates
 
-| Producer gate | Status | Evidence |
+| Gate | Status | Evidence / version |
 | --- | --- | --- |
-| Scenario Researcher | COMPLETE | `.terminus/research/jetstream-regional-stream-continuity.md` |
-| System Architect / Environment Builder | COMPLETE | task environment, three NATS domains, deterministic 12k-event state, logs/ops/docs |
-| Defect Topology Designer | COMPLETE | `.terminus/designs/jetstream-regional-stream-continuity.json`: 7 clusters / 26 manifestations / cross-cluster graph |
-| Reference Solution Author | COMPLETE | `jetstream-regional-stream-continuity/solution/` |
-| Verifier Author | COMPLETE_PENDING_EMPIRICAL_MATRIX | 28 F2P + 6 P2P in `tests/test_continuity.py`; private test map present |
-| Human Writing Researcher | COMPLETE | `.terminus/research/jetstream-regional-stream-continuity-human-writing.md` |
-| Instruction Writer | COMPLETE_PENDING_COLD_REVIEW | `instruction.md` points to evidence and operational contract |
-| Documentation Writer | COMPLETE_PENDING_COLD_REVIEW | `README.md` + task metadata explanations |
-| Task Assembly Agent | IN_PROGRESS | fresh-head environment/Oracle/NOP evidence pending |
-| Complexity Governor | PENDING_FRESH_HEAD_EVIDENCE | strict gate has repeatedly passed, but exact task commit moved for verifier artifact packaging |
-| Authoring Failure Diagnostician | ACTIVE_AS_NEEDED | deterministic failures are routed to the responsible layer without weakening legitimate verifier behavior |
+| Q1 Spec Gap Repair | PASS | instruction plus referenced continuity contract cover the graded behaviors without hidden-test-shaped expansion; no task text was added solely from test names |
+| Q2 Verifier Coverage Repair | PENDING | coverage repair authored: same-owner expired-lease fencing and final report materialization added as F2P; retention age/hold and historical generation ownership added as P2P; fresh empirical matrix required |
+| Q3 Spec Ambiguity Repair | PASS | `instruction.md` now says repair the control plane while preserving captured incident history; detailed contract narrows poison/fencing/operator semantics |
+| Q7 Task Format Enforcer | PENDING | verifier Dockerfile now copies `test_contract_coverage.py`; fresh Preflight/Ruff/package evidence required |
+| Q5 Oracle & Runtime Repair | NOT_RUN | invoke only if fresh Oracle/runtime evidence fails |
+| Creator Complexity Gate | PENDING | prior PR #10 strict complexity PASS is historical because the task tree changed |
+| Production Authenticity Gate | PENDING | prior PR #10 authenticity PASS is historical because the task tree changed |
+| Preflight/static | PENDING | fresh PR #12 evidence required |
+| Ruff verifier | PENDING | fresh PR #12 evidence required |
+| Oracle = 1 | PENDING | PR #10 run `31299220704`, job `93209204486` passed Oracle on the previous 28-F2P/6-P2P task version; current 30-F2P/8-P2P version requires rerun |
+| NOP = 0 | PENDING | PR #10 run `31299220704`, job `93209204486` passed NOP on the previous task version; current version requires rerun |
+| F2P/P2P empirical matrix | PENDING | target is 30 F2P starter-fail/Oracle-pass and 8 P2P preserved |
+| Leakage/package checks | PENDING | fresh task package evidence required |
+| FROZEN_CANDIDATE | NOT_REACHED | requires all deterministic freeze conditions on the current task commit |
+| Q4 Spec-Test Contract Reviewer | PENDING | independent packet-bound review only after deterministic freeze |
+| Q6 Production Logic Auditor | PENDING | independent packet-bound review only after deterministic freeze; must assess reachable non-toy production logic, not raw LOC alone |
+| Quality Interlock | PENDING | requires current Q4 PASS + Q6 PASS plus completed producer/deterministic gates |
+| Task Architect | PENDING | normal cold Stage-B review after quality interlock |
+| Verifier Engineer | PENDING | normal cold Stage-B review after quality interlock |
+| Originality & Authenticity | PENDING | normal cold Stage-B review after quality interlock |
+| Difficulty design | PENDING | normal cold Stage-B review after quality interlock |
+| Compliance pre-review | PENDING | normal cold Stage-B review after quality interlock |
+| Instruction Reviewer | PENDING | normal cold Stage-B review after quality interlock |
+| Documentation Reviewer | PENDING | normal cold Stage-B review after quality interlock |
+| Comprehensive Reviewer | PENDING | after specialist reports; checklist coverage must be 100% |
+| Pre-LLMaJ aggregate | PENDING | requires current specialist + comprehensive evidence |
+| Q8 GPT Perspective | PENDING | isolated diagnostic solve after Pre-LLMaJ PASS; not official model evidence |
+| Q8 Claude Perspective | PENDING | isolated diagnostic solve after Pre-LLMaJ PASS; not official model evidence |
+| Harbor LLMaJ | PENDING | after Pre-LLMaJ and Q8 diagnostic interlock |
+| GPT-5.5 difficulty ×5 | NOT_RUN | official later gate |
+| Claude Opus 4.8 difficulty ×5 | NOT_RUN | official later gate |
+| Combined difficulty ×10 | NOT_RUN | final tier pending |
+| Per-test solvability 1/10 | NOT_RUN | every verifier case must pass at least once across combined ten |
+| Trial Analysis | NOT_RUN | after official trials |
+| Final Compliance | PENDING | final packet-bound review |
+| Final Human Quality | PENDING | final packet-bound review |
+| Final package | PENDING | |
 
-## Deterministic gate registry
+## Q1-Q3 coverage changes
 
-| Gate | Status | Evidence / note |
-| --- | --- | --- |
-| Creator Complexity Gate | STALE_PASS | latest nearby strict complexity run passed before verifier artifact packaging changed the task commit; rerun required by provenance |
-| Production Authenticity Gate | STALE_PASS | latest nearby production-authenticity run passed before verifier artifact packaging changed the task commit; rerun required by provenance |
-| Agent System / control-plane regressions | STALE_PASS | latest nearby Agent-System run passed; exact branch head rerun required |
-| Preflight/static | STALE_PASS | main validation passed preflight on prior task commit; artifact boundary changed afterward |
-| Ruff verifier | STALE_PASS | Ruff passed on prior task commit after the F401-only verifier config fix; rerun required |
-| Environment build | STALE_PASS | Oracle run on prior task commit built environment and verifier images successfully |
-| Oracle = 1 | FIX_APPLIED_PENDING_RERUN | run `31298999790`, job `93208674425` reached verifier but reward `0` because separate verifier received only `/app/continuity/out`; artifacts now export `/app/continuity` and verifier workdir is prepared to receive it |
-| NOP = 0 | PENDING | prior run was skipped after Oracle failure; fresh run pending |
-| F2P empirical matrix | PENDING | must prove every one of 28 F2P starter-fail / Oracle-pass |
-| P2P empirical matrix | PENDING | must prove intended six preservation cases |
-| Leakage/package checks | PENDING | after deterministic runtime validation |
-| FROZEN_CANDIDATE | NOT_REACHED | creator cannot advance until all deterministic freeze conditions have current evidence |
+- The natural handoff still delegates detailed invariants to `/app/continuity/docs/continuity-contract.md`; no sentence-per-test acceptance list was introduced.
+- The handoff now distinguishes repairing the continuity controller from mutating the captured incident history.
+- The detailed contract no longer promises an untested checksum construction or a blanket lease/audit rule for every recovery mutation.
+- Recovery fencing now explicitly states that expiry/reacquisition advances the epoch even when the restarted worker reuses the same owner id.
+- Operator-output semantics now explicitly bind `continuityctl verify` to `/app/continuity/out/health.json` and `/app/continuity/out/reconciliation.json` and prohibit manufacturing success by deleting incident evidence.
 
-## Scale and authenticity intent
+## Verifier delta
 
-- solver-visible runtime/configuration requirement: `>3000` substantive reachable LOC; strict complexity gate has passed on prior nearby heads and must be fresh on the exact current commit;
-- 12,000 deterministic primary `event_journal` records with domain-specific variance across regions, devices, sites, event types, payload sizes, priorities and publish states;
-- 7 root-cause clusters;
-- 26 observable defect manifestations;
-- 28 F2P tests;
-- 6 P2P tests;
-- incident evidence: controller log + shift handoff + stream-state capture;
-- major logic lives in the domain model, transactional store, continuity/recovery engine, JetStream runtime integration and operator CLI rather than generated/dead padding.
+New F2P scenarios:
+- expired lease reacquired by the same owner id must advance the fence epoch and invalidate the old token;
+- the submitted Oracle repair must leave both requested operator JSON reports under `/app/continuity/out/`.
 
-## Control-plane maintenance performed during creation
+New P2P preservation scenarios:
+- cleanup excludes both young rows and explicit retention holds even below the convergence watermark;
+- approving a new origin generation does not rewrite historical event generation identity.
 
-`.terminus/validate_runtime_authenticity.py` was generalized so strict non-payment tasks can declare domain-neutral scalar SQL variance checks. COBOL depth is evaluated only when explicitly declared. Historical payment behavior remains the fallback when no generic variance profile is declared. Regression coverage is in `.terminus/tests/test_runtime_authenticity_generic.py`; the test dataset uses a deterministic digit cross-join rather than recursive row generation.
+Private requirement/test mapping is current in `.terminus/designs/jetstream-regional-stream-continuity-test-map.json`: 24 solver-visible requirement groups, 30 F2P tests and 8 P2P tests.
 
-The repository also contained a genuinely stale `payment-eod-control-chain` session after task commit `ee7df06085a5...` changed solver-visible files. That unrelated session was corrected by preserving its historical evidence as `STALE` and returning its controller state to deterministic validation; the payment task itself was not changed.
+## Historical deterministic evidence
 
-## Semantic review status
+PR #10 head `360fc26a9454697c0e25b4646298d79c625290b8` produced:
+- Creator Complexity run `31299220688`: PASS;
+- Agent System run `31299220689`: PASS;
+- Production Authenticity run `31299220690`: PASS;
+- Edition 3 validation run `31299220704`, JetStream job `93209204486`: Preflight PASS, Ruff PASS, Docker/install PASS, Oracle PASS, NOP PASS. The workflow failed only at reusable AI-credential preparation, so Harbor was skipped.
 
-No independent semantic reviewer has been invoked and no producer result is represented as acceptance evidence. Task Architect, Verifier Engineer, Originality, Difficulty Design, Compliance, Instruction, Documentation and Comprehensive Reviewer remain pending until a deterministic `FROZEN_CANDIDATE` exists and fresh packet-bound reviews are generated.
+Those results are historical because the task changed for the Q1-Q8 pass. They are diagnostic evidence only, not current gate PASS.
+
+## Current blocker
+
+`Fresh PR #12 deterministic evidence is required. Q4/Q6 cannot be invoked as acceptance reviewers until the current 30-F2P/8-P2P task reaches FROZEN_CANDIDATE.`
+
+## Root-cause classification
+
+- Owner: `CI Orchestrator`
+- Classification: `none`
+- Evidence: `PR #12 current task commit fc137e823b43b939f7005cc598f41fe10e84e3c1`
 
 ## Next action
 
-Use live PR #10 Actions on the exact current task commit. Resume from environment build -> Oracle -> NOP -> empirical F2P/P2P matrix -> leakage/package checks. If a deterministic failure occurs, route it to the smallest responsible producer and preserve the verifier requirement unless the contract itself is proven wrong.
+`Read PR #12 Actions for strict complexity, production authenticity, Preflight/Ruff, Oracle, NOP and empirical verifier behavior. Route any failure to Q5 or the smallest responsible producer without weakening a legitimate requirement.`
+
+## Circuit breakers
+
+- Status: `CLEAR`
+- Trigger: `none`
+- Attempts: `0`
+- Required strategy change/evidence: `none`
+
+## Decisions that must survive chat changes
+
+- Q1-Q8 from merged PR #11 are now part of the authoritative control plane.
+- Keep F2P count at 30; do not add another F2P without consolidating/removing a genuinely duplicate case.
+- Captured incident state is evidence and must not be rewritten merely to make final reports green.
+- Q4 and Q6 are independent packet-bound reviewers; producer work in this session cannot self-certify those gates.
+
+## Resume rule
+
+Resolve the current task commit from Git and inspect live PR #12 CI before changing the task. If the task tree is unchanged and deterministic gates are green, advance to `FROZEN_CANDIDATE`, then generate fresh Q4 and Q6 review packets under the merged quality-agent contracts.
