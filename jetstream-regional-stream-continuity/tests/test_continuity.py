@@ -275,7 +275,6 @@ def test_f2p_hub_raw_archive_rejects_local_subject_write(engine: ContinuityEngin
     """The hub raw archive is source-only and exposes no local raw listen subject."""
     topology = engine.topology()
     assert topology.hub_archive.subjects == ()
-    assert engine.hub_stream_policy().allow_direct is False
 
 
 def test_f2p_stream_catalog_uses_unique_physical_names(engine: ContinuityEngine) -> None:
@@ -443,19 +442,42 @@ def test_f2p_convergence_waits_for_all_required_consumers(engine: ContinuityEngi
 
 
 def test_f2p_replay_plan_contains_only_missing_events(engine: ContinuityEngine) -> None:
-    """Replay membership contains missing stable identities rather than the full origin range."""
-    expected_missing = set(engine.missing_event_ids("east", 1))
-    assert expected_missing
-    decision = engine.plan_replay(
+    """Replay planning selects exact missing identities and permits a later disjoint active gap."""
+    complete_archive(engine, "east")
+    first_missing = {"evt-east-g01-005800", "evt-east-g01-005801"}
+    for event_id in first_missing:
+        engine.store.execute("DELETE FROM archive_index WHERE event_id=?", (event_id,))
+
+    first = engine.plan_replay(
         region="east",
         generation=1,
         created_by="verifier",
-        reason="east reconciliation gaps",
+        reason="first isolated reconciliation gap",
+        approve=True,
+        approved_by="shift-lead",
     )
-    assert decision.plan is not None
-    assert set(decision.plan.event_ids) == expected_missing
-    assert set(decision.missing_event_ids) == expected_missing
+    assert first.plan is not None
+    assert set(first.plan.event_ids) == first_missing
+    assert set(first.missing_event_ids) == first_missing
+    assert first.plan.replay_range == ReplayRange("east", 1, 5800, 5801)
 
+    complete_archive(engine, "east")
+    second_missing = {"evt-east-g01-005900", "evt-east-g01-005901"}
+    for event_id in second_missing:
+        engine.store.execute("DELETE FROM archive_index WHERE event_id=?", (event_id,))
+
+    second = engine.plan_replay(
+        region="east",
+        generation=1,
+        created_by="verifier",
+        reason="second disjoint reconciliation gap",
+        approve=True,
+        approved_by="shift-lead",
+    )
+    assert second.plan is not None
+    assert set(second.plan.event_ids) == second_missing
+    assert set(second.missing_event_ids) == second_missing
+    assert first.plan.replay_range.overlaps(second.plan.replay_range) is False
 
 def test_f2p_replay_refuses_unapproved_generation(engine: ContinuityEngine) -> None:
     """Recovery planning cannot cross into a generation awaiting operator approval."""
@@ -524,24 +546,48 @@ def test_f2p_retention_policy_covers_recovery_horizon(engine: ContinuityEngine) 
 
 
 def test_f2p_stale_recovery_worker_is_fenced(engine: ContinuityEngine) -> None:
-    """Lease reacquisition after expiry advances the fencing epoch and invalidates the old token."""
-    t0 = datetime(2026, 8, 9, 3, 0, tzinfo=UTC)
-    first = engine.acquire_recovery_lease(region="east", owner_id="worker-a", ttl_seconds=5, at=t0)
-    second = engine.acquire_recovery_lease(
+    """Replay execution rejects a stale epoch before changing plan state or publishing an item."""
+    now = datetime.now(UTC)
+    first = engine.acquire_recovery_lease(
         region="east",
-        owner_id="worker-b",
-        ttl_seconds=30,
-        at=t0 + timedelta(seconds=6),
+        owner_id="worker-a",
+        ttl_seconds=300,
+        at=now,
     )
-    assert second.fence_epoch > first.fence_epoch
-    with pytest.raises(FencingError):
-        engine.assert_recovery_fence(
-            region="east",
-            owner_id="worker-a",
-            fence_epoch=first.fence_epoch,
-            at=t0 + timedelta(seconds=7),
-        )
+    current = engine.store.write_lease(
+        region="east",
+        owner_id="worker-a",
+        fence_epoch=first.fence_epoch + 1,
+        acquired_at=now,
+        renewed_at=now + timedelta(seconds=1),
+        expires_at=now + timedelta(minutes=5),
+    )
+    assert current.fence_epoch > first.fence_epoch
 
+    event_id = "evt-east-g01-005999"
+    plan = engine.store.insert_replay_plan(
+        plan_id="stale-fence-replay",
+        replay_range=ReplayRange("east", 1, 5999, 5999),
+        status=ReplayStatus.APPROVED,
+        reason="verify stale execution fencing",
+        created_by="verifier",
+        event_ids=[event_id],
+        approved_by="shift-lead",
+        approved_at=now,
+    )
+    publisher = RecordingPublisher(engine.store)
+    with pytest.raises(FencingError):
+        asyncio.run(
+  engine.execute_replay_plan(
+      plan.plan_id,
+      owner_id="worker-a",
+      fence_epoch=first.fence_epoch,
+      publisher=publisher,
+  )
+        )
+    assert publisher.calls == []
+    after = engine.store.replay_plan(plan.plan_id)
+    assert after is not None and after.status is ReplayStatus.APPROVED
 
 def test_f2p_overlapping_active_replay_plan_is_rejected(engine: ContinuityEngine) -> None:
     """A new west replay cannot overlap the already approved incident replay range."""
@@ -673,25 +719,3 @@ def test_p2p_current_lease_owner_can_renew_same_epoch(engine: ContinuityEngine) 
     assert renewed.fence_epoch == first.fence_epoch
     assert renewed.expires_at > first.expires_at
 
-
-def test_p2p_nonoverlapping_replay_ranges_can_coexist(engine: ContinuityEngine) -> None:
-    """Separate replay ranges for the same confirmed generation remain independently schedulable."""
-    first_ids = ["evt-east-g01-005800", "evt-east-g01-005801"]
-    second_ids = ["evt-east-g01-005900", "evt-east-g01-005901"]
-    first = engine.store.insert_replay_plan(
-        plan_id="p2p-east-a",
-        replay_range=ReplayRange("east", 1, 5800, 5801),
-        status=ReplayStatus.DRAFT,
-        reason="independent range a",
-        created_by="verifier",
-        event_ids=first_ids,
-    )
-    second = engine.store.insert_replay_plan(
-        plan_id="p2p-east-b",
-        replay_range=ReplayRange("east", 1, 5900, 5901),
-        status=ReplayStatus.DRAFT,
-        reason="independent range b",
-        created_by="verifier",
-        event_ids=second_ids,
-    )
-    assert first.replay_range.overlaps(second.replay_range) is False

@@ -25,47 +25,204 @@
     "REQ-21": "Concurrent recovery planners cannot create overlapping active replay ranges for one region and generation.",
     "REQ-22": "Derived processing output is isolated from the raw sourced archive subject space.",
     "REQ-23": "Cleanup excludes rows newer than the minimum journal age and rows carrying an explicit retention hold.",
-    "REQ-24": "The submitted repair materializes health.json and reconciliation.json under /app/continuity/out/ without rewriting captured incident state to manufacture success."
+    "REQ-24": "The submitted repair materializes health.json and reconciliation.json under /app/continuity/out/ without rewriting captured incident state to manufacture success.",
+    "REQ-25": "continuityctl inspect, reconcile and verify may record diagnostic reconciliation observations but must not apply replay, retention or equivalent recovery-state mutations."
   },
   "tests": [
-    ["test_f2p_retry_uses_stable_event_id", "F2P", "REQ-01"],
-    ["test_f2p_reconnect_retry_does_not_mint_new_identity", "F2P", "REQ-01"],
-    ["test_f2p_publish_failure_does_not_mark_journal_published", "F2P", "REQ-02"],
-    ["test_f2p_publish_ack_transitions_journal_once", "F2P", "REQ-02"],
-    ["test_f2p_generation_regression_is_held", "F2P", "REQ-03"],
-    ["test_f2p_generation_header_mismatch_is_rejected", "F2P", "REQ-03"],
-    ["test_f2p_hub_raw_archive_rejects_local_subject_write", "F2P", "REQ-04"],
-    ["test_f2p_stream_catalog_uses_unique_physical_names", "F2P", "REQ-05"],
-    ["test_f2p_source_domains_match_edge_ownership", "F2P", "REQ-05"],
-    ["test_f2p_archive_metadata_preserves_origin_identity", "F2P", "REQ-06"],
-    ["test_f2p_redelivery_creates_single_effect", "F2P", "REQ-07"],
-    ["test_f2p_crash_after_effect_before_ack_is_idempotent", "F2P", "REQ-08"],
-    ["test_f2p_checkpoint_does_not_advance_before_effect_commit", "F2P", "REQ-08"],
-    ["test_f2p_poison_event_is_quarantined_without_completion", "F2P", "REQ-09"],
-    ["test_f2p_restart_detects_ack_floor_effect_ledger_gap", "F2P", "REQ-10"],
-    ["test_f2p_reconcile_ignores_hub_sequence_equivalence", "F2P", "REQ-11"],
-    ["test_f2p_reconcile_finds_offsetting_gap_and_duplicate", "F2P", "REQ-12"],
-    ["test_f2p_convergence_waits_for_all_required_consumers", "F2P", "REQ-13"],
-    ["test_f2p_replay_plan_contains_only_missing_events", "F2P", "REQ-14"],
-    ["test_f2p_replay_refuses_unapproved_generation", "F2P", "REQ-14"],
-    ["test_f2p_delayed_retry_dedupes_beyond_server_window", "F2P", "REQ-15"],
-    ["test_f2p_cleanup_stops_at_archive_watermark", "F2P", "REQ-16"],
-    ["test_f2p_cleanup_stops_at_slowest_required_consumer", "F2P", "REQ-17"],
-    ["test_f2p_cleanup_preserves_rows_for_active_replay_plan", "F2P", "REQ-18"],
-    ["test_f2p_retention_policy_covers_recovery_horizon", "F2P", "REQ-19"],
-    ["test_f2p_stale_recovery_worker_is_fenced", "F2P", "REQ-20"],
-    ["test_f2p_overlapping_active_replay_plan_is_rejected", "F2P", "REQ-21"],
-    ["test_f2p_derived_output_never_reenters_raw_archive", "F2P", "REQ-22"],
-    ["test_f2p_expired_lease_reacquired_by_same_owner_advances_epoch", "F2P", "REQ-20"],
-    ["test_f2p_final_health_and_reconciliation_reports_are_materialized", "F2P", "REQ-24"],
-
-    ["test_p2p_distinct_same_payload_events_remain_distinct", "P2P", "REQ-01"],
-    ["test_p2p_confirmed_generation_continues_monotonically", "P2P", "REQ-03"],
-    ["test_p2p_successful_effect_advances_checkpoint", "P2P", "REQ-08"],
-    ["test_p2p_fully_converged_old_rows_are_cleanup_eligible", "P2P", "REQ-16"],
-    ["test_p2p_current_lease_owner_can_renew_same_epoch", "P2P", "REQ-20"],
-    ["test_p2p_nonoverlapping_replay_ranges_can_coexist", "P2P", "REQ-21"],
-    ["test_p2p_cleanup_respects_minimum_age_and_explicit_holds", "P2P", "REQ-23"],
-    ["test_p2p_generation_approval_does_not_rewrite_historical_events", "P2P", "REQ-03"]
+    [
+      "test_f2p_retry_uses_stable_event_id",
+      "F2P",
+      "REQ-01"
+    ],
+    [
+      "test_f2p_reconnect_retry_does_not_mint_new_identity",
+      "F2P",
+      "REQ-01"
+    ],
+    [
+      "test_f2p_publish_failure_does_not_mark_journal_published",
+      "F2P",
+      "REQ-02"
+    ],
+    [
+      "test_f2p_publish_ack_transitions_journal_once",
+      "F2P",
+      "REQ-02"
+    ],
+    [
+      "test_f2p_generation_regression_is_held",
+      "F2P",
+      "REQ-03"
+    ],
+    [
+      "test_f2p_generation_header_mismatch_is_rejected",
+      "F2P",
+      "REQ-03"
+    ],
+    [
+      "test_f2p_hub_raw_archive_rejects_local_subject_write",
+      "F2P",
+      "REQ-04"
+    ],
+    [
+      "test_f2p_stream_catalog_uses_unique_physical_names",
+      "F2P",
+      "REQ-05"
+    ],
+    [
+      "test_f2p_source_domains_match_edge_ownership",
+      "F2P",
+      "REQ-05"
+    ],
+    [
+      "test_f2p_archive_metadata_preserves_origin_identity",
+      "F2P",
+      "REQ-06"
+    ],
+    [
+      "test_f2p_redelivery_creates_single_effect",
+      "F2P",
+      "REQ-07"
+    ],
+    [
+      "test_f2p_crash_after_effect_before_ack_is_idempotent",
+      "F2P",
+      "REQ-08"
+    ],
+    [
+      "test_f2p_checkpoint_does_not_advance_before_effect_commit",
+      "F2P",
+      "REQ-08"
+    ],
+    [
+      "test_f2p_poison_event_is_quarantined_without_completion",
+      "F2P",
+      "REQ-09"
+    ],
+    [
+      "test_f2p_restart_detects_ack_floor_effect_ledger_gap",
+      "F2P",
+      "REQ-10"
+    ],
+    [
+      "test_f2p_reconcile_ignores_hub_sequence_equivalence",
+      "F2P",
+      "REQ-11"
+    ],
+    [
+      "test_f2p_reconcile_finds_offsetting_gap_and_duplicate",
+      "F2P",
+      "REQ-12"
+    ],
+    [
+      "test_f2p_convergence_waits_for_all_required_consumers",
+      "F2P",
+      "REQ-13"
+    ],
+    [
+      "test_f2p_replay_plan_contains_only_missing_events",
+      "F2P",
+      "REQ-14"
+    ],
+    [
+      "test_f2p_replay_refuses_unapproved_generation",
+      "F2P",
+      "REQ-14"
+    ],
+    [
+      "test_f2p_delayed_retry_dedupes_beyond_server_window",
+      "F2P",
+      "REQ-15"
+    ],
+    [
+      "test_f2p_cleanup_stops_at_archive_watermark",
+      "F2P",
+      "REQ-16"
+    ],
+    [
+      "test_f2p_cleanup_stops_at_slowest_required_consumer",
+      "F2P",
+      "REQ-17"
+    ],
+    [
+      "test_f2p_cleanup_preserves_rows_for_active_replay_plan",
+      "F2P",
+      "REQ-18"
+    ],
+    [
+      "test_f2p_retention_policy_covers_recovery_horizon",
+      "F2P",
+      "REQ-19"
+    ],
+    [
+      "test_f2p_stale_recovery_worker_is_fenced",
+      "F2P",
+      "REQ-20"
+    ],
+    [
+      "test_f2p_overlapping_active_replay_plan_is_rejected",
+      "F2P",
+      "REQ-21"
+    ],
+    [
+      "test_f2p_derived_output_never_reenters_raw_archive",
+      "F2P",
+      "REQ-22"
+    ],
+    [
+      "test_f2p_expired_lease_reacquired_by_same_owner_advances_epoch",
+      "F2P",
+      "REQ-20"
+    ],
+    [
+      "test_f2p_final_health_and_reconciliation_reports_are_materialized",
+      "F2P",
+      "REQ-24"
+    ],
+    [
+      "test_p2p_distinct_same_payload_events_remain_distinct",
+      "P2P",
+      "REQ-01"
+    ],
+    [
+      "test_p2p_confirmed_generation_continues_monotonically",
+      "P2P",
+      "REQ-03"
+    ],
+    [
+      "test_p2p_successful_effect_advances_checkpoint",
+      "P2P",
+      "REQ-08"
+    ],
+    [
+      "test_p2p_fully_converged_old_rows_are_cleanup_eligible",
+      "P2P",
+      "REQ-16"
+    ],
+    [
+      "test_p2p_current_lease_owner_can_renew_same_epoch",
+      "P2P",
+      "REQ-20"
+    ],
+    [
+      "test_p2p_cleanup_respects_minimum_age_and_explicit_holds",
+      "P2P",
+      "REQ-23"
+    ],
+    [
+      "test_p2p_generation_approval_does_not_rewrite_historical_events",
+      "P2P",
+      "REQ-03"
+    ],
+    [
+      "test_p2p_diagnostic_cli_commands_do_not_mutate_recovery_state",
+      "P2P",
+      "REQ-25"
+    ],
+    [
+      "test_p2p_stale_lease_release_is_rejected",
+      "P2P",
+      "REQ-20"
+    ]
   ]
 }

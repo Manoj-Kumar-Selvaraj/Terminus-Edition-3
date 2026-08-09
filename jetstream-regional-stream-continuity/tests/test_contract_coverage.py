@@ -1,7 +1,9 @@
 from __future__ import annotations
 
+import hashlib
 import json
 import shutil
+import subprocess
 import sqlite3
 import sys
 from datetime import UTC, datetime, timedelta
@@ -72,6 +74,40 @@ def _set_required_consumers(engine: ContinuityEngine, region: str, sequence: int
         )
 
 
+def _operator_root(tmp_path: Path) -> Path:
+    root = tmp_path / "operator-runtime"
+    (root / "state").mkdir(parents=True)
+    (root / "config").mkdir(parents=True)
+    (root / "out").mkdir(parents=True)
+    shutil.copy2(ROOT / "state/continuity.db", root / "state/continuity.db")
+    shutil.copy2(ROOT / "config/continuity.json", root / "config/continuity.json")
+    return root
+
+
+def _protected_state_digest(database: Path) -> str:
+    tables = (
+        "event_journal",
+        "archive_index",
+        "origin_generations",
+        "processing_effects",
+        "consumer_checkpoints",
+        "replay_plans",
+        "replay_plan_items",
+        "recovery_leases",
+        "retention_watermarks",
+    )
+    connection = sqlite3.connect(database)
+    try:
+        digest = hashlib.sha256()
+        for table in tables:
+  rows = connection.execute(f'SELECT * FROM "{table}" ORDER BY rowid').fetchall()
+  digest.update(table.encode("utf-8"))
+  digest.update(json.dumps(rows, separators=(",", ":"), default=str).encode("utf-8"))
+        return digest.hexdigest()
+    finally:
+        connection.close()
+
+
 # ---- F2P: solver-visible contract gaps ---------------------------------------------------
 
 
@@ -103,27 +139,95 @@ def test_f2p_expired_lease_reacquired_by_same_owner_advances_epoch(
         )
 
 
-def test_f2p_final_health_and_reconciliation_reports_are_materialized() -> None:
-    """The submitted repair leaves the requested operator JSON reports in the runtime output directory."""
+def test_f2p_final_health_and_reconciliation_reports_are_materialized(tmp_path: Path) -> None:
+    """Final reports match independently recomputed durable state and preserve captured incident evidence."""
     health_path = ROOT / "out/health.json"
     reconciliation_path = ROOT / "out/reconciliation.json"
-
     assert health_path.is_file(), "solution must materialize /app/continuity/out/health.json"
-    assert reconciliation_path.is_file(), (
-        "solution must materialize /app/continuity/out/reconciliation.json"
-    )
+    assert reconciliation_path.is_file(), "solution must materialize /app/continuity/out/reconciliation.json"
 
     health = json.loads(health_path.read_text(encoding="utf-8"))
     reconciliation = json.loads(reconciliation_path.read_text(encoding="utf-8"))
+    expected_database = tmp_path / "expected-report-state.db"
+    shutil.copy2(ROOT / "state/continuity.db", expected_database)
+    expected_engine = ContinuityEngine.from_json_file(
+        ContinuityStore(expected_database), ROOT / "config/continuity.json"
+    )
+    expected_health = expected_engine.inspect_health().as_dict()
+    expected_regions = {
+        region: summary.as_dict()
+        for region, summary in expected_engine.reconcile_all().items()
+    }
 
-    assert isinstance(health, dict)
-    assert "healthy" in health and "details" in health
-    assert isinstance(reconciliation, dict)
-    assert "converged" in reconciliation and "regions" in reconciliation
+    for key in (
+        "healthy", "topology_ok", "generations_ok", "publication_ok",
+        "archive_ok", "consumers_ok", "retention_ok", "recovery_ok",
+    ):
+        assert health[key] == expected_health[key]
+
     assert set(reconciliation["regions"]) == {"east", "west"}
+    assert reconciliation["converged"] == all(
+        summary["converged"] for summary in expected_regions.values()
+    )
+    fields = (
+        "status", "journal_event_count", "archive_event_count", "missing_count",
+        "unexpected_count", "duplicate_count", "metadata_mismatch_count",
+        "consumer_lag_count", "checksum", "findings", "converged",
+    )
+    for region, expected in expected_regions.items():
+        actual = reconciliation["regions"][region]
+        for field in fields:
+  assert actual[field] == expected[field]
 
+    connection = sqlite3.connect(ROOT / "state/continuity.db")
+    try:
+        assert connection.execute("SELECT COUNT(*) FROM event_journal").fetchone()[0] == 12000
+        assert connection.execute("SELECT COUNT(*) FROM consumer_checkpoints").fetchone()[0] >= 4
+        assert connection.execute(
+  "SELECT COUNT(*) FROM replay_plans WHERE status IN ('APPROVED','RUNNING')"
+        ).fetchone()[0] >= 1
+    finally:
+        connection.close()
+
+    stream_state = json.loads((ROOT / "ops/stream-state.json").read_text(encoding="utf-8"))
+    assert stream_state["incident_id"] == "INC-JS-2026-0808-17"
+    assert stream_state["captured_at"] == "2026-08-08T17:18:10Z"
+    assert stream_state["domains"]["hub"]["messages"] == 11395
+    assert stream_state["domains"]["hub"]["sources"][1]["domain"] == "edge-east"
+    handoff = (ROOT / "ops/shift-handoff.txt").read_text(encoding="utf-8")
+    assert "three west identities and two east identities" in handoff
 
 # ---- P2P: already-correct detailed contract behavior ------------------------------------
+
+
+def test_p2p_diagnostic_cli_commands_do_not_mutate_recovery_state(tmp_path: Path) -> None:
+    """Inspect, reconcile and verify may record observations but do not mutate recovery state."""
+    runtime_root = _operator_root(tmp_path)
+    database = runtime_root / "state/continuity.db"
+    before = _protected_state_digest(database)
+    for command in ("inspect", "reconcile", "verify"):
+        completed = subprocess.run(
+  [str(ROOT / "bin/continuityctl"), command, "--root", str(runtime_root), "--compact"],
+  check=False, capture_output=True, text=True, timeout=45,
+        )
+        assert completed.returncode in {0, 2}, completed.stderr
+        assert _protected_state_digest(database) == before
+
+
+def test_p2p_stale_lease_release_is_rejected(contract_engine: ContinuityEngine) -> None:
+    """A stale epoch cannot release the currently owned recovery lease."""
+    now = datetime.now(UTC)
+    current = contract_engine.store.write_lease(
+        region="east", owner_id="release-worker", fence_epoch=7,
+        acquired_at=now, renewed_at=now, expires_at=now + timedelta(minutes=5),
+    )
+    with pytest.raises(FencingError):
+        contract_engine.store.release_lease(
+  "east", owner_id="release-worker", fence_epoch=6,
+  at=now + timedelta(seconds=1),
+        )
+    after = contract_engine.store.current_lease("east")
+    assert after is not None and after.fence_epoch == current.fence_epoch
 
 
 def test_p2p_cleanup_respects_minimum_age_and_explicit_holds(
