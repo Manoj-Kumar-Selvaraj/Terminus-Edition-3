@@ -6,13 +6,20 @@ on:
       - task/jetstream-quality-interlock
     paths:
       - .github/workflows/jetstream-q4-three-gap-closure.yml
+  pull_request:
+    branches:
+      - main
+    paths:
+      - .github/workflows/jetstream-q4-three-gap-closure.yml
 
 permissions:
   contents: write
 
 jobs:
   repair:
-    if: github.event.head_commit.message == 'Invoke consolidated Q4 three-gap closure'
+    if: >-
+      (github.event_name == 'push' && github.event.head_commit.message == 'Expose consolidated Q4 closure runner on PR') ||
+      (github.event_name == 'pull_request' && github.head_ref == 'task/jetstream-quality-interlock')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
