@@ -699,7 +699,10 @@ class ContinuityEngine(BaseContinuityEngine):
             region=region,
             generation=generation,
             safe_sequence=safe_sequence,
-            minimum_age_seconds=policy.journal_min_age_seconds,
+            minimum_age_seconds=max(
+                policy.journal_min_age_seconds,
+                policy.required_horizon_seconds,
+            ),
             at=at,
             limit=limit,
         )

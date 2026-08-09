@@ -190,6 +190,13 @@ def test_f2p_final_health_and_reconciliation_reports_are_materialized(
     assert reconciliation_path.is_file()
     health = json.loads(health_path.read_text(encoding="utf-8"))
     reconciliation = json.loads(reconciliation_path.read_text(encoding="utf-8"))
+    for report in (health, reconciliation):
+        generated_at = report.get("generated_at")
+        assert isinstance(generated_at, str) and generated_at
+        parsed_generated_at = datetime.fromisoformat(
+            generated_at.replace("Z", "+00:00")
+        )
+        assert parsed_generated_at.tzinfo is not None
     config = json.loads(
         (runtime_root / "config/continuity.json").read_text(encoding="utf-8")
     )
