@@ -7,7 +7,7 @@ Session schema version: `2.4`
 - Task: `payment-eod-control-chain`
 - Controller state: `PRE_LLMAJ`
 - Working branch: `main`
-- Pull request: `#6` (merged task production hardening); `#7` (merged cloned-module control-plane hardening)
+- Pull request: `#6` (merged task production hardening); `#7` (merged cloned-module control-plane hardening); `#8` (closed validation-only, not merged)
 - Current task commit: `eb78d72a8920348ff950a1e811e6fda773d046e5`
 - Agent-system policy: `2.3`
 - Specialist prompt policy: `2.2`
@@ -86,6 +86,8 @@ The independent reviewer contract is bound to `PRODUCTION_AUTHENTICITY.md`. Revi
 - Incident evidence: two archived `.log` files plus one shift-handoff `.txt` file.
 - Creator Complexity: PR #7 run `31294714679` (#59), PASS.
 - PR #7 Agent System CI: run `31294714670` (#120), PASS.
+- Post-PR #7 packet/session validation: temporary PR #8 Agent System CI run `31294882020` (#123), job `93198238532`, PASS; `55 passed`, Ruff PASS, agent-system validation PASS, review-freshness PASS with `warnings=0`.
+- Temporary PR #8 was closed without merge after validation succeeded.
 - Terminus Edition 3 deterministic task validation remains PR #6 run `31271746650` (#181), job `93138826901`, because PR #7 changed only control-plane policy/code and the private production-authenticity manifest, not solver-visible task/verifier/solution content.
 - Artifact: `9025864648`, digest `sha256:7154ac5a57f8b256120f89d5a35de72dadd67f5516e925736f22866a97cc2ba8`.
 - Oracle: `37 passed`, reward `1`.
@@ -125,4 +127,4 @@ The independent reviewer contract is bound to `PRODUCTION_AUTHENTICITY.md`. Revi
 
 ## Resume rule
 
-Verify task commit `eb78d72a8920348ff950a1e811e6fda773d046e5` from Git, load `.terminus/agents/PRODUCTION_AUTHENTICITY.md`, and resume at the eight post-PR #7 packet-bound semantic reviews. The deterministic task baseline remains PR #6 run `31271746650`; the latest production-authenticity/control-plane baseline is PR #7 run `31294714699`.
+Verify task commit `eb78d72a8920348ff950a1e811e6fda773d046e5` from Git, load `.terminus/agents/PRODUCTION_AUTHENTICITY.md`, and resume at the eight post-PR #7 packet-bound semantic reviews. The deterministic task baseline remains PR #6 run `31271746650`; the latest production-authenticity/control-plane baseline is PR #7 run `31294714699`; post-PR #7 review-freshness baseline is PR #8 run `31294882020`.
