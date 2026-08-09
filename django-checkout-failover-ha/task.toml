@@ -1,0 +1,32 @@
+version = "2.0"
+name = "django-checkout-failover-ha"
+category = "Software"
+subcategory = "Systems"
+tags = ["django", "sqlite", "failover", "checkout", "idempotency", "cache"]
+languages = ["python", "bash", "sql"]
+difficulty = "advanced"
+expert_time_estimate_hours = 14
+artifacts = ["/app/ha"]
+
+[metadata]
+author_name = "anonymous"
+author_email = "anonymous@example.com"
+difficulty_explanation = "Place/pay/reload disagree across two shop files after a writer cutover. Fixing DATABASES['default'] still leaves AZ-B posting to replica, a green /healthz still admits traffic during double-writer, django_session pins disappear on the lagged file, and capture retries create a second webhook row."
+solution_explanation = "Keep a single fenced writer by epoch, send mutations only there, gate replica reads on seq watermarks plus a shared pins cache, copy business rows without cloning a writable lease, and emit one capture effect per attempt_id. /readyz follows those checks, not process-up."
+verification_explanation = "The verifier rebuilds both shop files from the submitted Django app, drives checkout over WSGI and manage.py, and checks writer placement, seq-gated reads, pin survival, capture uniqueness, /readyz, and failover-status.json."
+relevant_experience = "Django multi-database routing, checkout idempotency, cache-backed read-your-writes, and on-call failover."
+
+[verifier]
+timeout_sec = 2400
+environment_mode = "separate"
+
+[agent]
+timeout_sec = 10800
+
+[environment]
+network_mode = "public"
+build_timeout_sec = 1800
+cpus = 2
+memory_mb = 6144
+storage_mb = 12288
+workdir = "/app/ha"

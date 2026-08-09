@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+set -euo pipefail
+ROOT="${HA_ROOT:-/app/ha}"
+export HA_ROOT="$ROOT"
+export DJANGO_SETTINGS_MODULE=shopdesk.settings
+export PYTHONPATH="$ROOT${PYTHONPATH:+:$PYTHONPATH}"
+mkdir -p "$ROOT/state" "$ROOT/out"
+if [[ ! -f "$ROOT/state/primary.sqlite" ]]; then
+  sqlite3 "$ROOT/state/primary.sqlite" < "$ROOT/sql/schema.sql"
+  sqlite3 "$ROOT/state/primary.sqlite" < "$ROOT/sql/seed.sql"
+fi
+if [[ ! -f "$ROOT/state/standby.sqlite" ]]; then
+  sqlite3 "$ROOT/state/standby.sqlite" < "$ROOT/sql/schema.sql"
+  sqlite3 "$ROOT/state/standby.sqlite" < "$ROOT/sql/standby_seed.sql"
+fi
+exec true
