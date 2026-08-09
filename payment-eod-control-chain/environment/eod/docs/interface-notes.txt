@@ -50,6 +50,24 @@ PAYPUB
   input : reconciliation_status
   output: PUBLISH or HOLD
 
+PAYSTATE
+  input : current_state|reconciliation_status|close_decision
+  output: PROCESSING, RECONCILED, COMPLETED, HELD or INVALID
+  close_decision is the PAYCLOSE result. BALANCED with COMPLETE is COMPLETED.
+  BALANCED with WAIT_CLOSE or HOLD stays RECONCILED. HELD reconciliation stays HELD.
+
+PAYHIST
+  input : outcome|current_history
+  output: ACCEPTED, REJECTED, INVALID, or the preserved current_history value
+  SUCCESS_INTERNAL / SUCCESS_EXTERNAL map to ACCEPTED. REJECTED stays REJECTED.
+  DUPLICATE keeps the existing history status rather than inventing a new one.
+
+PAYGUARD
+  input : kind|expected_cents|actual_cents
+  output: CONSISTENT, INCONSISTENT or INVALID
+  kind is a comparison label such as AMOUNT, INTERNAL_DEBIT, INTERNAL_CREDIT,
+  RESERVATION_DEBIT, CLEARING_AMOUNT, CLEARING_PRINCIPAL, LEDGER_DEBIT or LEDGER_CREDIT.
+
 Official output files
 ---------------------
 /app/eod/out/reconciliation.json is written for every invocation. It includes the selected cycle, BALANCED/HELD status, population/value counts, financial-effect counts, reservation/clearing values, ledger totals and mismatch counters.

@@ -174,67 +174,79 @@ def financial_snapshot():
 def test_f2p_paydup_commercial_similarity_is_not_a_replay():
     """PAYDUP must use accepted source identity rather than commercial similarity as the replay key."""
     assert compile_and_call('paydup', 'N|Y|N|COMPLETED') == 'NEW'
+    assert compile_and_call('paydup', 'Y|Y|Y|ACCEPTED') == 'NEW'
 
 
 def test_f2p_payelig_blocks_an_ineligible_internal_beneficiary():
     """PAYELIG must reject an internal transfer whose beneficiary account is blocked."""
     assert compile_and_call('payelig', 'ACTIVE|BLOCKED|INTERNAL') == 'REJECT_BENEFICIARY'
+    assert compile_and_call('payelig', 'ACTIVE|CLOSED|INTERNAL') == 'REJECT_BENEFICIARY'
 
 
 def test_f2p_paymoney_includes_fee_and_tax_in_total_debit():
     """PAYMONEY must calculate the full debit rather than principal alone."""
     assert int(compile_and_call('paymoney', '10000|200|100')) == 10300
+    assert int(compile_and_call('paymoney', '2500|10|5')) == 2515
 
 
 def test_f2p_paycap_subtracts_other_active_reservations():
     """PAYCAP must compare the debit with balance after active reservations are removed."""
     assert compile_and_call('paycap', '50000|30000|25000') == 'INSUFFICIENT_CAPACITY'
+    assert compile_and_call('paycap', '80000|60000|25000') == 'INSUFFICIENT_CAPACITY'
 
 
 def test_f2p_payroute_resumes_an_existing_internal_posting():
     """PAYROUTE must classify an existing internal posting as resumable work."""
     assert compile_and_call('payroute', 'INTERNAL|Y|N|N') == 'RESUME_INTERNAL'
+    assert compile_and_call('payroute', 'INTERNAL|Y|N|Y') == 'RESUME_INTERNAL'
 
 
 def test_f2p_payroute_resumes_an_existing_external_reservation():
     """PAYROUTE must classify an existing external reservation as resumable work."""
     assert compile_and_call('payroute', 'EXTERNAL|N|Y|N') == 'RESUME_EXTERNAL'
+    assert compile_and_call('payroute', 'EXTERNAL|N|Y|Y') == 'RESUME_EXTERNAL'
 
 
 def test_f2p_payrsv_rejects_a_mismatched_reservation_amount():
     """PAYRSV must hold a reservation whose durable debit differs from the expected debit."""
     assert compile_and_call('payrsv', '10300|10000|Y') == 'RESERVATION_MISMATCH'
+    assert compile_and_call('payrsv', '9900|10000|Y') == 'RESERVATION_MISMATCH'
 
 
 def test_f2p_payclr_keeps_an_existing_clearing_item():
     """PAYCLR must retain a clearing item already linked to a matching reservation."""
     assert compile_and_call('payclr', 'Y|Y|Y') == 'KEEP_CLEARING'
+    assert compile_and_call('payclr', 'Y|Y|N') == 'HOLD_RESERVATION_MISMATCH'
 
 
 def test_f2p_payledger_requires_the_complete_ledger_shape():
     """PAYLEDGER must reject equal debit/credit totals when required ledger rows are missing."""
     assert compile_and_call('payledger', '10300|10300|4|3') == 'LEDGER_INCOMPLETE'
+    assert compile_and_call('payledger', '5000|5000|4|1') == 'LEDGER_INCOMPLETE'
 
 
 def test_f2p_payrecon_checks_more_than_ledger_equality():
     """PAYRECON must hold a cycle with an invalid financial effect even when the ledger totals balance."""
-    record = '1|1|10000|10000|0|0|0|0|0|0|0|0|0|0|1|0|0'
-    assert compile_and_call('payrecon', record) == 'HELD'
+    assert compile_and_call('payrecon', '1|1|10000|10000|0|0|0|0|0|0|0|0|0|0|1|0|0') == 'HELD'
+    assert compile_and_call('payrecon', '2|2|20000|20000|0|0|0|0|0|0|0|0|0|0|0|1|0') == 'HELD'
 
 
 def test_f2p_payclose_requires_report_and_archive_completion():
     """PAYCLOSE must not complete a balanced cycle when report/archive work is unfinished."""
     assert compile_and_call('payclose', 'BALANCED|1|0|1') == 'WAIT_CLOSE'
+    assert compile_and_call('payclose', 'BALANCED|1|1|0') == 'WAIT_CLOSE'
 
 
 def test_f2p_paypub_holds_publication_when_reconciliation_is_held():
     """PAYPUB must gate official publication on BALANCED reconciliation."""
     assert compile_and_call('paypub', 'HELD') == 'HOLD'
+    assert compile_and_call('paypub', 'PENDING') == 'HOLD'
 
 
 def test_f2p_paystate_keeps_a_balanced_but_unclosed_cycle_reconciled():
     """PAYSTATE must not label balanced-but-waiting work as completed."""
     assert compile_and_call('paystate', 'PROCESSING|BALANCED|WAIT_CLOSE') == 'RECONCILED'
+    assert compile_and_call('paystate', 'OPEN|BALANCED|HOLD') == 'RECONCILED'
 
 
 # ---------------------------------------------------------------------------
