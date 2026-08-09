@@ -4,6 +4,13 @@
 This gate complements validate_task_complexity.py. The complexity gate proves scale,
 causal coupling and test-map honesty; this gate rejects toy business logic, toy seed
 state and benchmark-only incident presentation.
+
+The stateful dataset validator supports two modes:
+
+* the historical payment profile when ``variance_queries`` is absent;
+* a domain-neutral declarative profile where task authors provide named scalar SQL
+  variance checks. This keeps the 10k-20k strict state-volume requirement without
+  forcing unrelated domains to imitate payment column names.
 """
 
 from __future__ import annotations
@@ -87,7 +94,12 @@ def cobol_metrics(path: Path) -> dict[str, object]:
         if re.fullmatch(r"[A-Z0-9][A-Z0-9-]+\.", upper) and upper not in DIVISION_OR_SECTION:
             paragraphs += 1
     features = {name for name, pattern in COBOL_FEATURE_PATTERNS.items() if pattern.search(text)}
-    return {"loc": cobol_substantive_lines(text), "decisions": decisions, "paragraphs": paragraphs, "features": features}
+    return {
+        "loc": cobol_substantive_lines(text),
+        "decisions": decisions,
+        "paragraphs": paragraphs,
+        "features": features,
+    }
 
 
 def validate_cobol(task_dir: Path, cfg: dict, errors: list[str]) -> dict[str, object]:
@@ -110,19 +122,44 @@ def validate_cobol(task_dir: Path, cfg: dict, errors: list[str]) -> dict[str, ob
         detail[program.name] = metrics
         portfolio_features.update(metrics["features"])
         if int(metrics["loc"]) < min_loc:
-            errors.append(f"{program.relative_to(task_dir)} has only {metrics['loc']} substantive lines; minimum is {min_loc}. Thin wrapper/micro-program logic is not production-authentic.")
+            errors.append(
+                f"{program.relative_to(task_dir)} has only {metrics['loc']} substantive lines; "
+                f"minimum is {min_loc}. Thin wrapper/micro-program logic is not production-authentic."
+            )
         if int(metrics["decisions"]) < min_decisions:
-            errors.append(f"{program.relative_to(task_dir)} has only {metrics['decisions']} decision/processing points; minimum is {min_decisions}. A large file around one IF/EVALUATE does not count.")
+            errors.append(
+                f"{program.relative_to(task_dir)} has only {metrics['decisions']} decision/processing points; "
+                f"minimum is {min_decisions}. A large file around one IF/EVALUATE does not count."
+            )
         if int(metrics["paragraphs"]) < min_paragraphs:
-            errors.append(f"{program.relative_to(task_dir)} has only {metrics['paragraphs']} procedure paragraphs; minimum is {min_paragraphs}.")
+            errors.append(
+                f"{program.relative_to(task_dir)} has only {metrics['paragraphs']} procedure paragraphs; "
+                f"minimum is {min_paragraphs}."
+            )
         if int(metrics["loc"]) >= min_loc and int(metrics["decisions"]) / max(int(metrics["loc"]), 1) < 0.06:
-            errors.append(f"{program.relative_to(task_dir)} has low executable decision density; inspect for LOC padding around trivial business logic.")
+            errors.append(
+                f"{program.relative_to(task_dir)} has low executable decision density; "
+                "inspect for LOC padding around trivial business logic."
+            )
     if len(portfolio_features) < min_features:
-        errors.append(f"COBOL portfolio uses only {len(portfolio_features)} substantive syntax families ({', '.join(sorted(portfolio_features))}); require at least {min_features}")
-    return {"program_count": len(programs), "portfolio_features": sorted(portfolio_features), "programs": detail}
+        errors.append(
+            f"COBOL portfolio uses only {len(portfolio_features)} substantive syntax families "
+            f"({', '.join(sorted(portfolio_features))}); require at least {min_features}"
+        )
+    return {
+        "program_count": len(programs),
+        "portfolio_features": sorted(portfolio_features),
+        "programs": detail,
+    }
 
 
-def validate_incident_evidence(task_dir: Path, cfg: dict, instruction: str, readme: str, errors: list[str]) -> dict[str, object]:
+def validate_incident_evidence(
+    task_dir: Path,
+    cfg: dict,
+    instruction: str,
+    readme: str,
+    errors: list[str],
+) -> dict[str, object]:
     evidence = cfg.get("incident_evidence", [])
     if not isinstance(evidence, list) or len(evidence) < 2:
         errors.append("production_authenticity.incident_evidence must name at least two solver-visible artifacts")
@@ -141,7 +178,10 @@ def validate_incident_evidence(task_dir: Path, cfg: dict, instruction: str, read
     if evidence and ".log" not in suffixes:
         errors.append("operational incident profile requires at least one solver-visible .log artifact")
     if evidence and len(suffixes) < 2:
-        errors.append("incident evidence must include more than one artifact type (for example log + handoff/state note)")
+        errors.append(
+            "incident evidence must include more than one artifact type "
+            "(for example log + handoff/state note)"
+        )
     instruction_paths = cfg.get("instruction_evidence_paths", [])
     if not isinstance(instruction_paths, list) or not instruction_paths:
         errors.append("production_authenticity.instruction_evidence_paths must be declared")
@@ -152,7 +192,10 @@ def validate_incident_evidence(task_dir: Path, cfg: dict, instruction: str, read
     lower_readme = readme.lower()
     for phrase in SYNTHETIC_README_PHRASES:
         if phrase in lower_readme:
-            errors.append(f"README contains benchmark/fixture framing {phrase!r}; production profile must orient to the inherited system")
+            errors.append(
+                f"README contains benchmark/fixture framing {phrase!r}; "
+                "production profile must orient to the inherited system"
+            )
     return {"evidence_files": existing, "evidence_types": sorted(suffixes)}
 
 
@@ -161,7 +204,96 @@ def _query_scalar(con: sqlite3.Connection, sql: str) -> int:
     return int(row[0] if row and row[0] is not None else 0)
 
 
-def validate_seed_dataset(task_dir: Path, cfg: dict, strict: bool, errors: list[str]) -> dict[str, int]:
+def _validate_record_bounds(cfg: dict, strict: bool, errors: list[str]) -> tuple[int, int]:
+    min_records = int(cfg.get("min_records", 0))
+    max_records = int(cfg.get("max_records", 0))
+    if strict and min_records < 10000:
+        errors.append(
+            f"strict stateful production profile min_records={min_records}; require at least 10000"
+        )
+    if strict and (max_records < min_records or max_records > 20000):
+        errors.append(
+            f"strict stateful production profile max_records={max_records}; require min<=max<=20000"
+        )
+    return min_records, max_records
+
+
+def _generic_variance_metrics(
+    con: sqlite3.Connection,
+    cfg: dict,
+    errors: list[str],
+) -> tuple[dict[str, int], dict[str, tuple[int, int | None]]]:
+    raw = cfg.get("variance_queries")
+    if not isinstance(raw, dict) or not raw:
+        return {}, {}
+    metrics: dict[str, int] = {}
+    checks: dict[str, tuple[int, int | None]] = {}
+    for name, specification in raw.items():
+        metric_name = str(name)
+        if not re.fullmatch(r"[A-Za-z][A-Za-z0-9_-]{0,63}", metric_name):
+            errors.append(f"invalid stateful variance metric name: {metric_name!r}")
+            continue
+        if not isinstance(specification, dict):
+            errors.append(f"variance query {metric_name!r} must be an object")
+            continue
+        sql = str(specification.get("sql", "")).strip()
+        if not sql:
+            errors.append(f"variance query {metric_name!r} has no SQL")
+            continue
+        if ";" in sql.rstrip(";"):
+            errors.append(f"variance query {metric_name!r} must contain one read-only scalar statement")
+            continue
+        if not re.match(r"(?is)^\s*(SELECT|WITH)\b", sql):
+            errors.append(f"variance query {metric_name!r} must be a SELECT/WITH scalar query")
+            continue
+        try:
+            metrics[metric_name] = _query_scalar(con, sql)
+        except sqlite3.Error as exc:
+            errors.append(f"variance query {metric_name!r} failed: {exc}")
+            continue
+        minimum = int(specification.get("min", 1))
+        maximum_raw = specification.get("max")
+        maximum = None if maximum_raw is None else int(maximum_raw)
+        checks[metric_name] = (minimum, maximum)
+    return metrics, checks
+
+
+def _legacy_payment_metrics(
+    con: sqlite3.Connection,
+    table: str,
+    cfg: dict,
+) -> tuple[dict[str, int], dict[str, tuple[int, int | None]]]:
+    metrics = {
+        "cycles": _query_scalar(con, f"SELECT COUNT(DISTINCT cycle_id) FROM {table}"),
+        "payers": _query_scalar(con, f"SELECT COUNT(DISTINCT payer_account) FROM {table}"),
+        "amounts": _query_scalar(con, f"SELECT COUNT(DISTINCT amount_cents) FROM {table}"),
+        "purposes": _query_scalar(con, f"SELECT COUNT(DISTINCT purpose) FROM {table}"),
+        "currencies": _query_scalar(con, f"SELECT COUNT(DISTINCT currency) FROM {table}"),
+        "routes": _query_scalar(
+            con,
+            f"SELECT COUNT(DISTINCT CASE WHEN beneficiary_account IS NULL "
+            f"THEN 'EXTERNAL' ELSE 'INTERNAL' END) FROM {table}",
+        ),
+        "account_statuses": _query_scalar(con, "SELECT COUNT(DISTINCT status) FROM accounts"),
+    }
+    checks = {
+        "cycles": (int(cfg.get("min_distinct_cycles", 1)), None),
+        "payers": (int(cfg.get("min_distinct_payers", 1)), None),
+        "amounts": (int(cfg.get("min_distinct_amounts", 1)), None),
+        "purposes": (int(cfg.get("min_distinct_purposes", 1)), None),
+        "currencies": (int(cfg.get("min_distinct_currencies", 1)), None),
+        "routes": (int(cfg.get("min_route_variants", 1)), None),
+        "account_statuses": (int(cfg.get("min_account_statuses", 1)), None),
+    }
+    return metrics, checks
+
+
+def validate_seed_dataset(
+    task_dir: Path,
+    cfg: dict,
+    strict: bool,
+    errors: list[str],
+) -> dict[str, int]:
     schema_rel = str(cfg.get("schema", ""))
     seed_rel = str(cfg.get("seed", ""))
     schema_path = task_dir / schema_rel
@@ -174,33 +306,34 @@ def validate_seed_dataset(task_dir: Path, cfg: dict, strict: bool, errors: list[
         return {}
     seed_text = seed_path.read_text(encoding="utf-8")
     if re.search(r"\brandom\s*\(", seed_text, flags=re.IGNORECASE):
-        errors.append("seed.sql uses SQLite random(); production seed variance must be deterministic/reproducible")
+        errors.append(
+            "seed.sql uses SQLite random(); production seed variance must be deterministic/reproducible"
+        )
     table = str(cfg.get("primary_table", "payments"))
     if not re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*", table):
         errors.append(f"invalid primary seed table name: {table!r}")
         return {}
-    min_records = int(cfg.get("min_records", 0))
-    max_records = int(cfg.get("max_records", 0))
-    if strict and min_records < 10000:
-        errors.append(f"strict stateful production profile min_records={min_records}; require at least 10000")
-    if strict and (max_records < min_records or max_records > 20000):
-        errors.append(f"strict stateful production profile max_records={max_records}; require min<=max<=20000")
+    min_records, max_records = _validate_record_bounds(cfg, strict, errors)
     con = sqlite3.connect(":memory:")
+    metrics: dict[str, int] = {}
+    checks: dict[str, tuple[int, int | None]] = {}
     try:
         con.executescript(schema_path.read_text(encoding="utf-8"))
         con.executescript(seed_text)
-        metrics = {
-            "records": _query_scalar(con, f"SELECT COUNT(*) FROM {table}"),
-            "cycles": _query_scalar(con, f"SELECT COUNT(DISTINCT cycle_id) FROM {table}"),
-            "payers": _query_scalar(con, f"SELECT COUNT(DISTINCT payer_account) FROM {table}"),
-            "amounts": _query_scalar(con, f"SELECT COUNT(DISTINCT amount_cents) FROM {table}"),
-            "purposes": _query_scalar(con, f"SELECT COUNT(DISTINCT purpose) FROM {table}"),
-            "currencies": _query_scalar(con, f"SELECT COUNT(DISTINCT currency) FROM {table}"),
-            "routes": _query_scalar(con, f"SELECT COUNT(DISTINCT CASE WHEN beneficiary_account IS NULL THEN 'EXTERNAL' ELSE 'INTERNAL' END) FROM {table}"),
-        }
-        metrics["account_statuses"] = _query_scalar(con, "SELECT COUNT(DISTINCT status) FROM accounts")
+        metrics["records"] = _query_scalar(con, f'SELECT COUNT(*) FROM "{table}"')
+        checks["records"] = (min_records, max_records)
+        generic_metrics, generic_checks = _generic_variance_metrics(con, cfg, errors)
+        if generic_checks:
+            metrics.update(generic_metrics)
+            checks.update(generic_checks)
+        else:
+            legacy_metrics, legacy_checks = _legacy_payment_metrics(con, table, cfg)
+            metrics.update(legacy_metrics)
+            checks.update(legacy_checks)
         total_rows = 0
-        for (name,) in con.execute("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'"):
+        for (name,) in con.execute(
+            "SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'"
+        ):
             total_rows += _query_scalar(con, f'SELECT COUNT(*) FROM "{name}"')
         metrics["database_rows"] = total_rows
     except sqlite3.Error as exc:
@@ -208,21 +341,11 @@ def validate_seed_dataset(task_dir: Path, cfg: dict, strict: bool, errors: list[
         return {}
     finally:
         con.close()
-    checks = {
-        "records": (min_records, max_records),
-        "cycles": (int(cfg.get("min_distinct_cycles", 1)), None),
-        "payers": (int(cfg.get("min_distinct_payers", 1)), None),
-        "amounts": (int(cfg.get("min_distinct_amounts", 1)), None),
-        "purposes": (int(cfg.get("min_distinct_purposes", 1)), None),
-        "currencies": (int(cfg.get("min_distinct_currencies", 1)), None),
-        "routes": (int(cfg.get("min_route_variants", 1)), None),
-        "account_statuses": (int(cfg.get("min_account_statuses", 1)), None),
-    }
     for key, (minimum, maximum) in checks.items():
         actual = metrics.get(key, 0)
         if actual < minimum:
             errors.append(f"seed {key}={actual} is below required {minimum}")
-        if maximum and actual > maximum:
+        if maximum is not None and actual > maximum:
             errors.append(f"seed {key}={actual} exceeds allowed {maximum}")
     return metrics
 
@@ -231,17 +354,29 @@ def validate(task_name: str) -> int:
     task_dir = ROOT / task_name
     if not (task_dir / "task.toml").is_file():
         die(f"task not found: {task_name}")
-    manifest = load_json(ROOT / ".terminus" / "designs" / f"{task_name}.json", "design manifest")
+    manifest = load_json(
+        ROOT / ".terminus" / "designs" / f"{task_name}.json",
+        "design manifest",
+    )
     profile = str(manifest.get("profile", ""))
     strict = profile == STRICT_PROFILE
     companion = ROOT / ".terminus" / "designs" / f"{task_name}-production.json"
     if companion.is_file():
-        cfg = load_json(companion, "production-authenticity manifest").get("production_authenticity")
+        cfg = load_json(companion, "production-authenticity manifest").get(
+            "production_authenticity"
+        )
     else:
         cfg = manifest.get("production_authenticity")
     if cfg is None:
-        if strict and str(manifest.get("task_kind", "")).lower() in {"software", "database", "operations"}:
-            print("ERROR: strict stateful/operational task has no production_authenticity profile", file=sys.stderr)
+        if strict and str(manifest.get("task_kind", "")).lower() in {
+            "software",
+            "database",
+            "operations",
+        }:
+            print(
+                "ERROR: strict stateful/operational task has no production_authenticity profile",
+                file=sys.stderr,
+            )
             return 1
         print("production_authenticity=not-declared; no runtime-authenticity policy applies")
         return 0
@@ -253,24 +388,48 @@ def validate(task_name: str) -> int:
     instruction = instruction_path.read_text(encoding="utf-8") if instruction_path.is_file() else ""
     readme = readme_path.read_text(encoding="utf-8") if readme_path.is_file() else ""
     incident = validate_incident_evidence(task_dir, cfg, instruction, readme, errors)
-    cobol_cfg = cfg.get("cobol_depth", {})
-    cobol = validate_cobol(task_dir, cobol_cfg, errors) if isinstance(cobol_cfg, dict) else {}
+
+    cobol: dict[str, object] = {}
+    if "cobol_depth" in cfg:
+        cobol_cfg = cfg.get("cobol_depth")
+        if isinstance(cobol_cfg, dict):
+            cobol = validate_cobol(task_dir, cobol_cfg, errors)
+        else:
+            errors.append("production_authenticity.cobol_depth must be an object when declared")
+
     dataset_cfg = cfg.get("stateful_dataset", {})
-    dataset = validate_seed_dataset(task_dir, dataset_cfg, strict, errors) if isinstance(dataset_cfg, dict) and dataset_cfg else {}
+    dataset = (
+        validate_seed_dataset(task_dir, dataset_cfg, strict, errors)
+        if isinstance(dataset_cfg, dict) and dataset_cfg
+        else {}
+    )
     if strict and not dataset:
         errors.append("strict production profile requires a validated stateful_dataset")
+
     print(f"task={task_name} profile={profile} strict={str(strict).lower()}")
     if dataset:
         print("seed=" + " ".join(f"{key}={value}" for key, value in sorted(dataset.items())))
     if cobol:
-        print(f"cobol_programs={cobol.get('program_count', 0)} syntax_features={','.join(cobol.get('portfolio_features', []))}")
+        print(
+            f"cobol_programs={cobol.get('program_count', 0)} "
+            f"syntax_features={','.join(cobol.get('portfolio_features', []))}"
+        )
         for name, metrics in sorted(cobol.get("programs", {}).items()):
-            print(f"  {name}: loc={metrics['loc']} decisions={metrics['decisions']} paragraphs={metrics['paragraphs']}")
-    print(f"incident_evidence={len(incident.get('evidence_files', []))} types={','.join(incident.get('evidence_types', []))}")
+            print(
+                f"  {name}: loc={metrics['loc']} decisions={metrics['decisions']} "
+                f"paragraphs={metrics['paragraphs']}"
+            )
+    print(
+        f"incident_evidence={len(incident.get('evidence_files', []))} "
+        f"types={','.join(incident.get('evidence_types', []))}"
+    )
     if errors:
         for error in errors:
             print(f"ERROR: {error}", file=sys.stderr)
-        print(f"production-authenticity gate: FAIL ({len(errors)} finding(s))", file=sys.stderr)
+        print(
+            f"production-authenticity gate: FAIL ({len(errors)} finding(s))",
+            file=sys.stderr,
+        )
         return 1
     print("production-authenticity gate: PASS")
     return 0
