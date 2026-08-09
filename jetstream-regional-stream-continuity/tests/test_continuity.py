@@ -518,30 +518,34 @@ def test_f2p_restart_detects_ack_floor_effect_ledger_gap(
 def test_f2p_reconcile_ignores_hub_sequence_equivalence(
     engine: ContinuityEngine,
 ) -> None:
-    """Hub delivery positions do not replace the confirmed origin watermark."""
+    """Changing only hub delivery positions cannot change stable archive reconciliation truth."""
     complete_archive(engine, "east")
     for consumer in engine.store.required_consumers():
         set_checkpoint(engine, consumer, "east", effect=6000)
-    engine.store.execute(
-        "UPDATE archive_index SET hub_stream_sequence=30000+origin_sequence "
-        "WHERE region='east' AND generation=1"
-    )
 
     generation = engine.store.confirmed_generation("east")
     assert generation is not None
     assert generation.last_observed_sequence == 6000
-    summary = engine.reconcile_region("east", 1)
-    assert summary.journal_event_count == 6000
-    assert summary.archive_event_count == 6000
-    assert summary.missing_count == 0
-    assert summary.unexpected_count == 0
-    assert summary.metadata_mismatch_count == 0
-    assert summary.consumer_lag_count == 0
-    assert summary.highest_contiguous_archive_origin_sequence == 6000
-    assert summary.required_consumer_progress == {
-        consumer: 6000 for consumer in engine.store.required_consumers()
-    }
-    assert summary.converged is True
+    baseline = engine.reconcile_region("east", 1)
+    assert baseline.converged is True
+    assert baseline.highest_contiguous_archive_origin_sequence == 6000
+
+    engine.store.execute(
+        "UPDATE archive_index SET hub_stream_sequence=30000+origin_sequence "
+        "WHERE region='east' AND generation=1"
+    )
+    shifted = engine.reconcile_region("east", 1)
+
+    assert shifted.journal_event_count == baseline.journal_event_count == 6000
+    assert shifted.archive_event_count == baseline.archive_event_count == 6000
+    assert shifted.missing_count == baseline.missing_count == 0
+    assert shifted.unexpected_count == baseline.unexpected_count == 0
+    assert shifted.metadata_mismatch_count == baseline.metadata_mismatch_count == 0
+    assert shifted.consumer_lag_count == baseline.consumer_lag_count == 0
+    assert shifted.highest_contiguous_archive_origin_sequence == 6000
+    assert shifted.required_consumer_progress == baseline.required_consumer_progress
+    assert shifted.checksum == baseline.checksum
+    assert shifted.converged is True
 
 
 def test_f2p_reconcile_finds_offsetting_gap_and_duplicate(
