@@ -1,0 +1,322 @@
+name: JetStream Q4 Remediation PR
+
+on:
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: write
+
+jobs:
+  remediate:
+    if: github.event.pull_request.head.ref == 'task/jetstream-quality-interlock'
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: task/jetstream-quality-interlock
+          fetch-depth: 0
+      - name: Apply verifier-only Q4 repairs
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 <<'PY'
+          from __future__ import annotations
+
+          import json
+          import re
+          from pathlib import Path
+
+          test_path = Path('jetstream-regional-stream-continuity/tests/test_continuity.py')
+          coverage_path = Path('jetstream-regional-stream-continuity/tests/test_contract_coverage.py')
+          map_path = Path('.terminus/designs/jetstream-regional-stream-continuity-test-map.json')
+
+          text = test_path.read_text(encoding='utf-8')
+          text, count = re.subn(
+              r'(    assert topology\.hub_archive\.subjects == \(\)\n)    assert engine\.hub_stream_policy\(\)\.allow_direct is False\n',
+              r'\1', text, count=1,
+          )
+          if count != 1 and 'allow_direct is False' in text:
+              raise SystemExit('failed to remove unsupported allow_direct assertion')
+
+          replay = '''def test_f2p_replay_plan_contains_only_missing_events(engine: ContinuityEngine) -> None:
+              """Replay planning selects exact missing identities and permits a later disjoint active gap."""
+              complete_archive(engine, "east")
+              first_missing = {"evt-east-g01-005800", "evt-east-g01-005801"}
+              for event_id in first_missing:
+                  engine.store.execute("DELETE FROM archive_index WHERE event_id=?", (event_id,))
+
+              first = engine.plan_replay(
+                  region="east",
+                  generation=1,
+                  created_by="verifier",
+                  reason="first isolated reconciliation gap",
+                  approve=True,
+                  approved_by="shift-lead",
+              )
+              assert first.plan is not None
+              assert set(first.plan.event_ids) == first_missing
+              assert set(first.missing_event_ids) == first_missing
+              assert first.plan.replay_range == ReplayRange("east", 1, 5800, 5801)
+
+              complete_archive(engine, "east")
+              second_missing = {"evt-east-g01-005900", "evt-east-g01-005901"}
+              for event_id in second_missing:
+                  engine.store.execute("DELETE FROM archive_index WHERE event_id=?", (event_id,))
+
+              second = engine.plan_replay(
+                  region="east",
+                  generation=1,
+                  created_by="verifier",
+                  reason="second disjoint reconciliation gap",
+                  approve=True,
+                  approved_by="shift-lead",
+              )
+              assert second.plan is not None
+              assert set(second.plan.event_ids) == second_missing
+              assert set(second.missing_event_ids) == second_missing
+              assert first.plan.replay_range.overlaps(second.plan.replay_range) is False
+          '''.replace('          ', '')
+          text, count = re.subn(
+              r'def test_f2p_replay_plan_contains_only_missing_events\(engine: ContinuityEngine\) -> None:\n.*?(?=\ndef test_f2p_replay_refuses_unapproved_generation)',
+              replay.rstrip() + '\n', text, count=1, flags=re.S,
+          )
+          if count != 1 and 'permits a later disjoint active gap' not in text:
+              raise SystemExit('failed to replace replay planning test')
+
+          fence = '''def test_f2p_stale_recovery_worker_is_fenced(engine: ContinuityEngine) -> None:
+              """Replay execution rejects a stale epoch before changing plan state or publishing an item."""
+              now = datetime.now(UTC)
+              first = engine.acquire_recovery_lease(
+                  region="east",
+                  owner_id="worker-a",
+                  ttl_seconds=300,
+                  at=now,
+              )
+              current = engine.store.write_lease(
+                  region="east",
+                  owner_id="worker-a",
+                  fence_epoch=first.fence_epoch + 1,
+                  acquired_at=now,
+                  renewed_at=now + timedelta(seconds=1),
+                  expires_at=now + timedelta(minutes=5),
+              )
+              assert current.fence_epoch > first.fence_epoch
+
+              event_id = "evt-east-g01-005999"
+              plan = engine.store.insert_replay_plan(
+                  plan_id="stale-fence-replay",
+                  replay_range=ReplayRange("east", 1, 5999, 5999),
+                  status=ReplayStatus.APPROVED,
+                  reason="verify stale execution fencing",
+                  created_by="verifier",
+                  event_ids=[event_id],
+                  approved_by="shift-lead",
+                  approved_at=now,
+              )
+              publisher = RecordingPublisher(engine.store)
+              with pytest.raises(FencingError):
+                  asyncio.run(
+                      engine.execute_replay_plan(
+                          plan.plan_id,
+                          owner_id="worker-a",
+                          fence_epoch=first.fence_epoch,
+                          publisher=publisher,
+                      )
+                  )
+              assert publisher.calls == []
+              after = engine.store.replay_plan(plan.plan_id)
+              assert after is not None and after.status is ReplayStatus.APPROVED
+          '''.replace('          ', '')
+          text, count = re.subn(
+              r'def test_f2p_stale_recovery_worker_is_fenced\(engine: ContinuityEngine\) -> None:\n.*?(?=\ndef test_f2p_overlapping_active_replay_plan_is_rejected)',
+              fence.rstrip() + '\n', text, count=1, flags=re.S,
+          )
+          if count != 1 and 'before changing plan state' not in text:
+              raise SystemExit('failed to replace stale fencing test')
+
+          text = re.sub(
+              r'\n\ndef test_p2p_nonoverlapping_replay_ranges_can_coexist\(engine: ContinuityEngine\) -> None:\n.*\Z',
+              '\n', text, count=1, flags=re.S,
+          )
+          test_path.write_text(text, encoding='utf-8')
+
+          coverage = coverage_path.read_text(encoding='utf-8')
+          if 'import hashlib\n' not in coverage:
+              coverage = coverage.replace(
+                  'import json\nimport shutil\n',
+                  'import hashlib\nimport json\nimport shutil\nimport subprocess\n',
+                  1,
+              )
+
+          marker = '# ---- F2P: solver-visible contract gaps ---------------------------------------------------\n'
+          helpers = '''def _operator_root(tmp_path: Path) -> Path:
+              root = tmp_path / "operator-runtime"
+              (root / "state").mkdir(parents=True)
+              (root / "config").mkdir(parents=True)
+              (root / "out").mkdir(parents=True)
+              shutil.copy2(ROOT / "state/continuity.db", root / "state/continuity.db")
+              shutil.copy2(ROOT / "config/continuity.json", root / "config/continuity.json")
+              return root
+
+
+          def _protected_state_digest(database: Path) -> str:
+              tables = (
+                  "event_journal",
+                  "archive_index",
+                  "origin_generations",
+                  "processing_effects",
+                  "consumer_checkpoints",
+                  "replay_plans",
+                  "replay_plan_items",
+                  "recovery_leases",
+                  "retention_watermarks",
+              )
+              connection = sqlite3.connect(database)
+              try:
+                  digest = hashlib.sha256()
+                  for table in tables:
+                      rows = connection.execute(f'SELECT * FROM "{table}" ORDER BY rowid').fetchall()
+                      digest.update(table.encode("utf-8"))
+                      digest.update(json.dumps(rows, separators=(",", ":"), default=str).encode("utf-8"))
+                  return digest.hexdigest()
+              finally:
+                  connection.close()
+
+
+          '''.replace('          ', '')
+          if 'def _protected_state_digest' not in coverage:
+              coverage = coverage.replace(marker, helpers + marker, 1)
+
+          report = '''def test_f2p_final_health_and_reconciliation_reports_are_materialized(tmp_path: Path) -> None:
+              """Final reports match independently recomputed durable state and preserve captured incident evidence."""
+              health_path = ROOT / "out/health.json"
+              reconciliation_path = ROOT / "out/reconciliation.json"
+              assert health_path.is_file(), "solution must materialize /app/continuity/out/health.json"
+              assert reconciliation_path.is_file(), "solution must materialize /app/continuity/out/reconciliation.json"
+
+              health = json.loads(health_path.read_text(encoding="utf-8"))
+              reconciliation = json.loads(reconciliation_path.read_text(encoding="utf-8"))
+              expected_database = tmp_path / "expected-report-state.db"
+              shutil.copy2(ROOT / "state/continuity.db", expected_database)
+              expected_engine = ContinuityEngine.from_json_file(
+                  ContinuityStore(expected_database), ROOT / "config/continuity.json"
+              )
+              expected_health = expected_engine.inspect_health().as_dict()
+              expected_regions = {
+                  region: summary.as_dict()
+                  for region, summary in expected_engine.reconcile_all().items()
+              }
+
+              for key in (
+                  "healthy", "topology_ok", "generations_ok", "publication_ok",
+                  "archive_ok", "consumers_ok", "retention_ok", "recovery_ok",
+              ):
+                  assert health[key] == expected_health[key]
+
+              assert set(reconciliation["regions"]) == {"east", "west"}
+              assert reconciliation["converged"] == all(
+                  summary["converged"] for summary in expected_regions.values()
+              )
+              fields = (
+                  "status", "journal_event_count", "archive_event_count", "missing_count",
+                  "unexpected_count", "duplicate_count", "metadata_mismatch_count",
+                  "consumer_lag_count", "checksum", "findings", "converged",
+              )
+              for region, expected in expected_regions.items():
+                  actual = reconciliation["regions"][region]
+                  for field in fields:
+                      assert actual[field] == expected[field]
+
+              connection = sqlite3.connect(ROOT / "state/continuity.db")
+              try:
+                  assert connection.execute("SELECT COUNT(*) FROM event_journal").fetchone()[0] == 12000
+                  assert connection.execute("SELECT COUNT(*) FROM consumer_checkpoints").fetchone()[0] >= 4
+                  assert connection.execute(
+                      "SELECT COUNT(*) FROM replay_plans WHERE status IN ('APPROVED','RUNNING')"
+                  ).fetchone()[0] >= 1
+              finally:
+                  connection.close()
+
+              stream_state = json.loads((ROOT / "ops/stream-state.json").read_text(encoding="utf-8"))
+              assert stream_state["incident_id"] == "INC-JS-2026-0808-17"
+              assert stream_state["captured_at"] == "2026-08-08T17:18:10Z"
+              assert stream_state["domains"]["hub"]["messages"] == 11395
+              assert stream_state["domains"]["hub"]["sources"][1]["domain"] == "edge-east"
+              handoff = (ROOT / "ops/shift-handoff.txt").read_text(encoding="utf-8")
+              assert "three west identities and two east identities" in handoff
+          '''.replace('          ', '')
+          coverage, count = re.subn(
+              r'def test_f2p_final_health_and_reconciliation_reports_are_materialized\([^\n]*\) -> None:\n.*?(?=\n\n# ---- P2P:)',
+              report.rstrip(), coverage, count=1, flags=re.S,
+          )
+          if count != 1 and 'independently recomputed durable state' not in coverage:
+              raise SystemExit('failed to replace report test')
+
+          p2p_marker = '# ---- P2P: already-correct detailed contract behavior ------------------------------------\n'
+          additions = '''
+
+          def test_p2p_diagnostic_cli_commands_do_not_mutate_recovery_state(tmp_path: Path) -> None:
+              """Inspect, reconcile and verify may record observations but do not mutate recovery state."""
+              runtime_root = _operator_root(tmp_path)
+              database = runtime_root / "state/continuity.db"
+              before = _protected_state_digest(database)
+              for command in ("inspect", "reconcile", "verify"):
+                  completed = subprocess.run(
+                      [str(ROOT / "bin/continuityctl"), command, "--root", str(runtime_root), "--compact"],
+                      check=False, capture_output=True, text=True, timeout=45,
+                  )
+                  assert completed.returncode in {0, 2}, completed.stderr
+                  assert _protected_state_digest(database) == before
+
+
+          def test_p2p_stale_lease_release_is_rejected(contract_engine: ContinuityEngine) -> None:
+              """A stale epoch cannot release the currently owned recovery lease."""
+              now = datetime.now(UTC)
+              current = contract_engine.store.write_lease(
+                  region="east", owner_id="release-worker", fence_epoch=7,
+                  acquired_at=now, renewed_at=now, expires_at=now + timedelta(minutes=5),
+              )
+              with pytest.raises(FencingError):
+                  contract_engine.store.release_lease(
+                      "east", owner_id="release-worker", fence_epoch=6,
+                      at=now + timedelta(seconds=1),
+                  )
+              after = contract_engine.store.current_lease("east")
+              assert after is not None and after.fence_epoch == current.fence_epoch
+          '''.replace('          ', '')
+          if 'test_p2p_diagnostic_cli_commands_do_not_mutate_recovery_state' not in coverage:
+              coverage = coverage.replace(p2p_marker, p2p_marker + additions, 1)
+          coverage_path.write_text(coverage, encoding='utf-8')
+
+          mapping = json.loads(map_path.read_text(encoding='utf-8'))
+          mapping['requirements']['REQ-25'] = (
+              'continuityctl inspect, reconcile and verify may record diagnostic reconciliation observations '
+              'but must not apply replay, retention or equivalent recovery-state mutations.'
+          )
+          mapping['tests'] = [
+              row for row in mapping['tests']
+              if row[0] != 'test_p2p_nonoverlapping_replay_ranges_can_coexist'
+          ]
+          names = {row[0] for row in mapping['tests']}
+          for row in (
+              ['test_p2p_diagnostic_cli_commands_do_not_mutate_recovery_state', 'P2P', 'REQ-25'],
+              ['test_p2p_stale_lease_release_is_rejected', 'P2P', 'REQ-20'],
+          ):
+              if row[0] not in names:
+                  mapping['tests'].append(row)
+          map_path.write_text(json.dumps(mapping, indent=2) + '\n', encoding='utf-8')
+          PY
+
+          git config user.name 'Terminus CI Orchestrator'
+          git config user.email 'actions@users.noreply.github.com'
+          git add jetstream-regional-stream-continuity/tests/test_continuity.py \
+            jetstream-regional-stream-continuity/tests/test_contract_coverage.py \
+            .terminus/designs/jetstream-regional-stream-continuity-test-map.json
+          if git diff --cached --quiet; then
+            echo 'No verifier remediation changes to commit.'
+            exit 0
+          fi
+          git commit -m 'Repair JetStream verifier after Q4 review'
+          git push origin HEAD:task/jetstream-quality-interlock
