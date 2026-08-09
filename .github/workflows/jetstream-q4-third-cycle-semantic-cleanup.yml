@@ -34,9 +34,21 @@ jobs:
             jetstream-regional-stream-continuity/tests/test_contract_coverage.py
           )
 
-          git diff -w "$base" "$repaired" -- "${files[@]}" > /tmp/q4-semantic.patch
+          # Restore the pre-remediation formatting, then replay the exact semantic
+          # transformation embedded in the already-reviewed remediation helper.
           git checkout "$base" -- "${files[@]}"
-          git apply /tmp/q4-semantic.patch
+          python3 <<'PY'
+          import textwrap
+          from pathlib import Path
+
+          helper = Path('.github/workflows/jetstream-q4-third-cycle-remediation.yml').read_text(encoding='utf-8')
+          marker = "          python3 <<'PY'\n"
+          start = helper.index(marker) + len(marker)
+          end = helper.index("\n          PY\n", start)
+          script = textwrap.dedent(helper[start:end])
+          Path('/tmp/q4-remediate-semantic.py').write_text(script, encoding='utf-8')
+          PY
+          python3 /tmp/q4-remediate-semantic.py
 
           python3 -m pip install --quiet ruff==0.12.8
           ruff check jetstream-regional-stream-continuity/tests
@@ -51,11 +63,11 @@ jobs:
 
           echo '--- semantic diff stat vs c3ee2778 ---'
           git diff --stat "$base" -- "${files[@]}"
-          echo '--- whitespace-ignored diff stat vs repaired commit ---'
-          git diff -w --stat "$repaired" -- "${files[@]}"
+          echo '--- whitespace-ignored difference vs formatted repair ---'
+          git diff -w --stat "$repaired" -- "${files[@]}" || true
 
-          if git diff --quiet; then
-            echo 'No cleanup changes needed'
+          if git diff --quiet "$repaired" -- "${files[@]}"; then
+            echo 'No formatting cleanup changes needed'
             exit 0
           fi
           git config user.name 'Terminus CI Orchestrator'
