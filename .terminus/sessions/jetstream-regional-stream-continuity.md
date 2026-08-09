@@ -35,25 +35,19 @@ The second Q4 remediation did not change solver-visible production/runtime/confi
 | Q7 Task Format Enforcer | PASS | run `31312365548`, job `93242032230`: Preflight, Ruff and environment/verifier build PASS |
 | Creator Complexity Gate | PASS | clean-head run `31312365535`; 5,488 LOC / 40 tests / 30 F2P / 10 P2P / 26 requirements |
 | Production Authenticity Gate | PASS | clean-head run `31312365526`; solver-visible production runtime unchanged |
-| Agent System / review freshness | PASS_PENDING_PACKET_HEAD_CHECK | run `31312365523` passed before current packets; rerun required after packet commit/removal cleanup |
+| Agent System / review freshness | PENDING_CLEAN_PACKET_HEAD | require final clean-head run after current packet/session commits |
 | Preflight/static | PASS | run `31312365548`, job `93242032230` |
 | Ruff verifier | PASS | run `31312365548`, job `93242032230` |
 | Environment/verifier build | PASS | run `31312365548`, job `93242032230` |
 | Oracle = 1 | PASS | run `31312365548`, job `93242032230`; Oracle 40/40 |
 | NOP = 0 | PASS | run `31312365548`, job `93242032230` |
 | F2P/P2P empirical matrix | PASS | artifact `9037758650`, sha256 `8db595c300353ae133922c892294a5fb35daa4e7d9601f2d8a12d36960bfc1c1`: NOP exactly 30 F2P FAIL + 10 P2P PASS |
-| Leakage/package checks | PASS_PENDING_PACKET_HEAD_CHECK | rerun Agent-System package isolation after packet commit |
+| Leakage/package checks | PENDING_CLEAN_PACKET_HEAD | require final Agent-System package isolation after packet/session commits |
 | FROZEN_CANDIDATE | PASS | task commit `c3ee277828c2a156ecce9d335820d57b9fd2a0e0` |
 | Q4 Spec-Test Contract Reviewer | PENDING | fresh packet `jetstream-regional-stream-continuity-c3ee2778-spec-test-contract-8075aa9028` committed |
 | Q6 Production Logic Auditor | PENDING | fresh packet `jetstream-regional-stream-continuity-c3ee2778-production-logic-f3f77e859e` committed |
 | Quality Interlock | PENDING | requires current packet-bound Q4 + Q6 PASS with sufficient evidence |
-| Task Architect | PENDING | after Quality Interlock |
-| Verifier Engineer | PENDING | after Quality Interlock |
-| Originality & Authenticity | PENDING | after Quality Interlock |
-| Difficulty design | PENDING | after Quality Interlock |
-| Compliance pre-review | PENDING | after Quality Interlock |
-| Instruction Reviewer | PENDING | after Quality Interlock |
-| Documentation Reviewer | PENDING | after Quality Interlock |
+| Stage-B specialists | PENDING | after Quality Interlock |
 | Comprehensive Reviewer | PENDING | after Stage-B |
 | Pre-LLMaJ aggregate | PENDING | after current specialists + Comprehensive |
 | Q8 GPT Perspective | PENDING | after Pre-LLMaJ PASS |
@@ -89,10 +83,10 @@ Current validation run `31312365548`, job `93242032230`, artifact `9037758650`, 
 - Docker/STB environment and verifier build PASS.
 - Oracle reward 1; all 40 verifier tests PASS.
 - NOP reward 0; exactly all 30 `test_f2p_*` cases FAIL and all 10 `test_p2p_*` cases PASS.
-- The hub-sequence reconciliation F2P is now one of the 30 intended NOP failures.
-- Later reusable-AI-credential preparation fails because `STB_AI_API_KEY`/`STB_AI_CONFIG_B64` is absent; that downstream dependency occurs after valid Oracle/NOP and does not invalidate deterministic freeze.
+- The hub-sequence reconciliation F2P is one of the intended NOP failures.
+- Later reusable-AI-credential preparation fails because `STB_AI_API_KEY`/`STB_AI_CONFIG_B64` is absent; this occurs after valid Oracle/NOP and does not invalidate the deterministic freeze.
 
-Rejected historical attempts remain documented in Git/Actions but are not acceptance evidence: `31311540936` (2 verifier fixture failures), `31311783264` (NOP only 29/11 despite reward 0), and `31312142740` (invalid second active-generation fixture).
+Rejected historical attempts are not acceptance evidence: `31311540936` (two verifier fixture failures), `31311783264` (NOP only 29/11 despite reward 0), and `31312142740` (invalid second active-generation fixture).
 
 ## Fresh Q4/Q6 packet provenance
 
@@ -125,17 +119,17 @@ All prior results are historical/stale and cannot satisfy the current interlock.
 
 ## Current blocker
 
-`Run fresh Q4 and Q6 independently using the committed c3ee2778 packet files. Commit each exact result JSON to its declared review_output_path. Validate result provenance and only then evaluate QUALITY_INTERLOCK_PASS.`
+`Complete a clean-head Agent-System freshness/package-isolation run with the c3ee2778 packets committed, then run fresh Q4 and Q6 independently using those packet files. Commit each exact result JSON and only then evaluate QUALITY_INTERLOCK_PASS.`
 
 ## Root-cause classification
 
 - Owner: `CI Orchestrator`
 - Classification: `none`
-- Evidence: `deterministic freeze and fresh reviewer packets are current; next dependency is independent semantic review`
+- Evidence: `deterministic freeze and fresh reviewer packets are current; next dependency is final packet freshness check then independent semantic review`
 
 ## Next action
 
-`Complete cold Q4 and Q6 reviews for c3ee2778 in separate contexts, commit exact result JSONs, then resume Quality Interlock aggregation. If either returns REVISE, route only its concrete findings to the responsible producer and repeat affected deterministic/provenance gates.`
+`Require clean-head Agent-System PASS after packet/session commits. Then complete cold Q4 and Q6 reviews for c3ee2778 in separate contexts, commit exact result JSONs, and resume Quality Interlock aggregation.`
 
 ## Circuit breakers
 
@@ -155,4 +149,4 @@ All prior results are historical/stale and cannot satisfy the current interlock.
 
 ## Resume rule
 
-Resolve current task commit from Git and require `c3ee277828c2a156ecce9d335820d57b9fd2a0e0` unless a newer task-file commit exists. Validate committed c3ee2778 Q4/Q6 results before Quality Interlock aggregation.
+Resolve current task commit from Git and require `c3ee277828c2a156ecce9d335820d57b9fd2a0e0` unless a newer task-file commit exists. Require clean packet-head Agent-System PASS and validate committed c3ee2778 Q4/Q6 results before Quality Interlock aggregation.
