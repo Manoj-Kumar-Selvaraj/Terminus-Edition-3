@@ -4,6 +4,8 @@ Registry version: `1.0`
 
 Producer roles create/repair task artifacts before independent review. Every producer reads current Edition 3 rules, `.terminus/agents/CREATION_PIPELINE.md`, and `.terminus/agents/PRODUCTION_AUTHENTICITY.md`. Producers never issue final acceptance for their own work.
 
+The creator system is extended by `.terminus/agents/QUALITY_AGENT_REGISTRY.md`. Q1, Q2, Q3, Q5 and Q7 are producer/fixer roles; Q4, Q6 and Q8 are independent/diagnostic quality roles and cannot approve work they authored.
+
 ## `large_system_strict`
 
 Default for large production-style Advanced/Frontier authoring unless a smaller profile is explicitly justified:
@@ -60,8 +62,20 @@ Challenges padding, toy state, micro-module inflation and task realism even when
 ### A11 — Authoring Failure Diagnostician
 Classifies deterministic failures as environment/oracle/verifier/starter/contract/infrastructure and routes only the implicated layer.
 
+## Quality repair overlay
+
+After the verifier and instruction exist, the Orchestrator runs the repair-capable quality agents before expensive review:
+
+- **Q1 Spec Gap Repairer** — closes test-required behavior missing from solver-visible spec using natural invariant-level wording, never a test dump.
+- **Q2 Verifier Coverage Repairer** — closes solver-visible requirements that lack meaningful behavioral tests.
+- **Q3 Spec Ambiguity Repairer** — removes grading-relevant ambiguity while preserving implementation freedom.
+- **Q7 Task Format Enforcer** — repairs exact task/task.toml/Docker/verifier/solution/package-format defects from current rules.
+- **Q5 Oracle & Runtime Repair Specialist** — invoked only when Oracle/build/runtime evidence fails; repairs the smallest responsible layer and never weakens legitimate tests.
+
+After deterministic freeze, **Q4 Spec-Test Contract Reviewer** and **Q6 Production Logic Auditor** independently judge alignment and production-grade logic before Pre-LLMaJ. **Q8 Model Perspective Difficulty Simulator** runs two diagnostic cold solve perspectives after Pre-LLMaJ PASS and before expensive official model-backed difficulty trials.
+
 ## Creation order
 
-`A1 -> A2 -> A3 -> A4 -> A5 -> A6 -> A7 -> A8 -> A9 -> A10 -> deterministic Oracle/NOP`
+`A1 -> A2 -> A3 -> A4 -> A5 -> A6 -> A7 -> Q1 -> Q2 -> Q3 -> A8 -> Q7 -> A9 -> A10 -> deterministic Oracle/NOP (Q5 on failure)`
 
-Only a frozen deterministic candidate enters independent review.
+Only a frozen deterministic candidate that also passes the Q4/Q6 quality interlock enters normal Pre-LLMaJ review.
