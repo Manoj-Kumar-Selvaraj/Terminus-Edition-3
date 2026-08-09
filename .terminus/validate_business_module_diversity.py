@@ -2,9 +2,9 @@
 """Reject copied business-module portfolios that inflate production complexity.
 
 Per-file size/decision thresholds are not enough: an author could copy one large
-COBOL template many times and change only PROGRAM-ID, literals or field names.
-This gate compares the business programs as a portfolio and blocks byte/logic
-clones and overwhelming structural-template reuse.
+COBOL template many times and change only PROGRAM-ID, literals, field names or
+paragraph labels. This gate compares the business programs as a portfolio and
+blocks logic clones and overwhelming structural-template reuse.
 """
 
 from __future__ import annotations
@@ -69,24 +69,23 @@ def substantive_lines(text: str) -> list[str]:
 
 
 def canonical_logic(text: str) -> str:
-    """Canonicalize only identity/noise; preserve business logic and paragraph names."""
-    lines = substantive_lines(text)
+    """Canonicalize only identity/noise; preserve actual business statements."""
     normalized: list[str] = []
-    for line in lines:
+    for line in substantive_lines(text):
         line = re.sub(r"^PROGRAM-ID\.\s+[A-Z0-9-]+\.$", "PROGRAM-ID. <PROGRAM>.", line)
         line = re.sub(r"\b20\d{2}-\d{2}-\d{2}\b", "<DATE>", line)
         normalized.append(line)
     return "\n".join(normalized)
 
 
-def paragraph_names(text: str) -> tuple[str, ...]:
-    names: list[str] = []
+def paragraph_count(text: str) -> int:
+    count = 0
     for line in substantive_lines(text):
         if line in DIVISION_OR_SECTION:
             continue
         if re.fullmatch(r"[A-Z0-9][A-Z0-9-]+\.", line):
-            names.append(line[:-1])
-    return tuple(names)
+            count += 1
+    return count
 
 
 def control_signature(text: str) -> tuple[str, ...]:
@@ -99,8 +98,10 @@ def control_signature(text: str) -> tuple[str, ...]:
     return tuple(signature)
 
 
-def structural_signature(text: str) -> tuple[tuple[str, ...], tuple[str, ...]]:
-    return paragraph_names(text), control_signature(text)
+def structural_signature(text: str) -> tuple[int, tuple[str, ...]]:
+    # Paragraph labels themselves are intentionally ignored: merely renaming
+    # DECIDE-RESULT to ASSESS-CAPACITY must not evade clone detection.
+    return paragraph_count(text), control_signature(text)
 
 
 def program_metrics(directory: Path) -> dict[str, dict[str, object]]:
@@ -122,7 +123,7 @@ def validate_directory(directory: Path, *, max_structural_clone_fraction: float 
         return errors
 
     exact_groups: dict[str, list[str]] = defaultdict(list)
-    structural_groups: dict[tuple[tuple[str, ...], tuple[str, ...]], list[str]] = defaultdict(list)
+    structural_groups: dict[tuple[int, tuple[str, ...]], list[str]] = defaultdict(list)
     for name, item in metrics.items():
         exact_groups[str(item["canonical_hash"])].append(name)
         structural_groups[item["structural_signature"]].append(name)  # type: ignore[index]
@@ -138,7 +139,7 @@ def validate_directory(directory: Path, *, max_structural_clone_fraction: float 
     limit = max(3, math.ceil(len(metrics) * max_structural_clone_fraction))
     if len(largest) >= limit:
         errors.append(
-            f"{len(largest)} of {len(metrics)} business modules share the same paragraph/control-flow "
+            f"{len(largest)} of {len(metrics)} business modules share the same paragraph-count/control-flow "
             f"signature (limit before rejection: {limit - 1}); copied thick templates are scale padding: "
             + ", ".join(sorted(largest))
         )
