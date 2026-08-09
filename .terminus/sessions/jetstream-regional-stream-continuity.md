@@ -24,7 +24,7 @@ Session schema version: `2.4`
 | Q2 Verifier Coverage Repair | PASS | consolidated repair task commit `440aa83862a3234678e27bd70319623735964173` |
 | Q3 Spec Ambiguity Repair | PASS | no solver-visible ambiguity introduced by closure |
 | Q7 Task Format Enforcer | PASS | no package-format change; package-isolation validation passed |
-| Creator Complexity Gate | PASS | task-validation run `31332216483`; packet-head run `31332666279` |
+| Creator Complexity Gate | PASS | task-validation run `31332216483`; final handoff run `31332720025` |
 | Preflight/static | PASS | Edition-3 run `31332216470`, job `93292224707` |
 | Ruff verifier | PASS | Edition-3 run `31332216470`, job `93292224707` |
 | STB auth/AI credentials | FAIL | credential preparation failed only after deterministic validation; not freeze evidence |
@@ -87,7 +87,7 @@ Additional gates:
 Packet-generation invocation/control-plane commit: `11b652fe4483c199031dd9ace0f7e69750411d9b`.
 Generated packet commit: `bfd3496c68d528723d8609ae5d9787797fffdbca`.
 Packet-generation run `31332603237`: generation job `93293119012` PASS and reviewer/controller validation job `93293119068` PASS.
-Packet-handoff head validation: Agent System run `31332666274`, job `93293276485` PASS; Creator Complexity run `31332666279` PASS; Production Authenticity run `31332666277` PASS.
+Final durable handoff validation: Agent System run `31332720030` PASS; Creator Complexity run `31332720025` PASS; Production Authenticity run `31332720031` PASS.
 
 ### Q4 Spec-Test Contract Reviewer 1.1
 
