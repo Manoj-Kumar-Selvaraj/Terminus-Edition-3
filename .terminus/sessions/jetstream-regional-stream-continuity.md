@@ -39,8 +39,8 @@ The task remains `large_system_strict` with 5,523 substantive solver-visible run
 | F2P/P2P empirical matrix | PASS | artifact `9038780101`, sha256 `0ea0b3c63f14e72cfb8cc710b16f21b5fa765e14982579c9488662bff743b233`; Oracle 40/40, NOP exactly 30/10. |
 | Leakage/package checks | PASS | Agent-System run `31316002121` passed current commit binding and package isolation. |
 | FROZEN_CANDIDATE | PASS | Task commit `0fe5c749b7b1e389ef764032ce65a38676b51e8d`. |
-| Q4 Spec-Test Contract Reviewer | PENDING_PACKET | All Q4 results through `c3ee2778` are stale after current task changes; generate fresh packet. |
-| Q6 Production Logic Auditor | PENDING_PACKET | All Q6 results through `c3ee2778` are stale after current task changes; generate fresh packet. |
+| Q4 Spec-Test Contract Reviewer | PENDING_REVIEW | `.terminus/reviews/jetstream-regional-stream-continuity/0fe5c749/jetstream-regional-stream-continuity-0fe5c749-spec-test-contract-cadbbdaef6.packet.json` |
+| Q6 Production Logic Auditor | PENDING_REVIEW | `.terminus/reviews/jetstream-regional-stream-continuity/0fe5c749/jetstream-regional-stream-continuity-0fe5c749-production-logic-26fa0094f8.packet.json` |
 | Quality Interlock | PENDING | Requires fresh packet-bound Q4 + Q6 PASS for `0fe5c749...`. |
 | Task Architect | PENDING | after Quality Interlock |
 | Verifier Engineer | PENDING | after Quality Interlock |
@@ -77,6 +77,28 @@ Independent Q4 on `c3ee277828c2a156ecce9d335820d57b9fd2a0e0` returned `REVISE/HI
 
 The first post-remediation Oracle attempt at `c21c6e2...` failed only because an initial verifier fixture directly corrupted `origin_sequence` and could not deserialize. Commit `0fe5c749b7b1e389ef764032ce65a38676b51e8d` replaced that fixture with a model-valid source-ownership mismatch and added matching reference validation. The fresh accepted deterministic run `31316002097` then produced Oracle 40/40 and NOP exactly 30 F2P failures + 10 P2P passes.
 
+## Fresh Q4/Q6 packet provenance
+
+Repository-native packet generation run `31316258524` produced artifact `9038825677`, sha256 `24f0f38896d0731fdcb26d2d77e8e51f9db6e22d24430e020e36bb7a39f6484b`. The exact generated packet bytes were committed and the temporary packet workflow was removed.
+
+Q4 review id:
+`jetstream-regional-stream-continuity-0fe5c749-spec-test-contract-cadbbdaef6`
+
+Q4 packet:
+`.terminus/reviews/jetstream-regional-stream-continuity/0fe5c749/jetstream-regional-stream-continuity-0fe5c749-spec-test-contract-cadbbdaef6.packet.json`
+
+Q4 result path:
+`.terminus/reviews/jetstream-regional-stream-continuity/0fe5c749/jetstream-regional-stream-continuity-0fe5c749-spec-test-contract-cadbbdaef6.json`
+
+Q6 review id:
+`jetstream-regional-stream-continuity-0fe5c749-production-logic-26fa0094f8`
+
+Q6 packet:
+`.terminus/reviews/jetstream-regional-stream-continuity/0fe5c749/jetstream-regional-stream-continuity-0fe5c749-production-logic-26fa0094f8.packet.json`
+
+Q6 result path:
+`.terminus/reviews/jetstream-regional-stream-continuity/0fe5c749/jetstream-regional-stream-continuity-0fe5c749-production-logic-26fa0094f8.json`
+
 ## Historical provenance
 
 - `fc137e82...`: Q4 REVISE; Q6 PASS.
@@ -88,8 +110,8 @@ The first post-remediation Oracle attempt at `c21c6e2...` failed only because an
 
 ## Current blocker
 
-Generate fresh immutable Q4 and Q6 packets bound to task commit `0fe5c749b7b1e389ef764032ce65a38676b51e8d`, then run both reviewers independently in cold contexts. Historical Q4/Q6 verdicts do not satisfy the current Quality Interlock.
+Run fresh independent Q4 and Q6 reviews in separate cold contexts using the packet paths above. Historical Q4/Q6 verdicts do not satisfy the current Quality Interlock.
 
 ## Next action
 
-Generate and commit the repository-native fresh Q4/Q6 packet pair, remove any temporary packet-generation helper, verify clean-head Agent-System freshness/package isolation, then invoke fresh Q4 and Q6 in separate cold contexts.
+After both fresh result JSONs are committed unchanged to their packet-declared output paths, validate the live packet/result bindings and evaluate `QUALITY_INTERLOCK_PASS`.
