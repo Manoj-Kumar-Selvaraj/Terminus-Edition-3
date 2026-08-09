@@ -26,29 +26,24 @@ jobs:
 
           tests = Path('jetstream-regional-stream-continuity/tests/test_continuity.py')
           text = tests.read_text(encoding='utf-8')
-          old = '''    engine.store.execute(
-              "UPDATE archive_index SET hub_stream_sequence=origin_sequence-1 "
-              "WHERE region='east' AND generation=1"
-          )'''.replace('          ', '')
-          new = '''    engine.store.execute(
-              "UPDATE archive_index SET hub_stream_sequence=1000000+origin_sequence "
-              "WHERE region='east' AND generation=1"
-          )'''.replace('          ', '')
-          if old not in text:
-              raise SystemExit('hub sequence setup target not found')
+          old = 'hub_stream_sequence=origin_sequence-1'
+          new = 'hub_stream_sequence=1000000+origin_sequence'
+          if text.count(old) != 1:
+              raise SystemExit(f'expected one hub sequence setup target, found {text.count(old)}')
           tests.write_text(text.replace(old, new, 1), encoding='utf-8')
 
           coverage = Path('jetstream-regional-stream-continuity/tests/test_contract_coverage.py')
           text = coverage.read_text(encoding='utf-8')
-          old = '''        "exercise preserved recovery CLI",
-              "--root",'''.replace('          ', '')
-          new = '''        "exercise preserved recovery CLI",
-              "--approve",
-              "--approved-by",
-              "cli-contract-test",
-              "--root",'''.replace('          ', '')
-          if old not in text:
-              raise SystemExit('CLI plan setup target not found')
+          old = '        "exercise preserved recovery CLI",\n        "--root",\n'
+          new = (
+              '        "exercise preserved recovery CLI",\n'
+              '        "--approve",\n'
+              '        "--approved-by",\n'
+              '        "cli-contract-test",\n'
+              '        "--root",\n'
+          )
+          if text.count(old) != 1:
+              raise SystemExit(f'expected one CLI plan setup target, found {text.count(old)}')
           coverage.write_text(text.replace(old, new, 1), encoding='utf-8')
           PY
           python3 -m pip install --quiet ruff==0.12.8
