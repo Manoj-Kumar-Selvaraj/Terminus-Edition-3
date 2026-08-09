@@ -27,20 +27,20 @@ Session schema version: `2.4`
 | Creator Complexity Gate | PASS | run `31332216483` |
 | Preflight/static | PASS | Edition-3 run `31332216470`, job `93292224707` |
 | Ruff verifier | PASS | Edition-3 run `31332216470`, job `93292224707` |
-| STB auth/AI credentials | FAIL | credential preparation failed only after deterministic validation; not freeze evidence |
+| STB auth/AI credentials | FAIL | failed only after deterministic validation; not freeze evidence |
 | Oracle = 1 | PASS | artifact `9043289949`; exactly 40/40 PASS |
 | NOP = 0 | PASS | artifact `9043289949`; exactly 30 F2P FAIL + 10 P2P PASS |
-| Q4 Spec-Test Contract Reviewer | PENDING | packet `.terminus/reviews/jetstream-regional-stream-continuity/440aa838/jetstream-regional-stream-continuity-440aa838-spec-test-contract-7c5bbb5a2b.packet.json` |
-| Q6 Production Logic Auditor | PENDING | packet `.terminus/reviews/jetstream-regional-stream-continuity/440aa838/jetstream-regional-stream-continuity-440aa838-production-logic-a277a01448.packet.json`; scope hash `4007f243d3e31219716e8f3af0549644839141f37695a367f2f7732906f77a81` |
-| Quality Interlock | PENDING | requires both fresh current-policy reviewers PASS |
-| Pre-LLMaJ specialist panel | PENDING | not authorized before Quality Interlock PASS |
-| Task Architect | PENDING | Stage-B not authorized |
-| Verifier Engineer | PENDING | Stage-B not authorized |
-| Originality & Authenticity | PENDING | Stage-B not authorized |
-| Difficulty design | PENDING | Stage-B not authorized |
-| Compliance pre-review | PENDING | Stage-B not authorized |
-| Instruction Reviewer | PENDING | Stage-B not authorized |
-| Documentation Reviewer | PENDING | Stage-B not authorized |
+| Q4 Spec-Test Contract Reviewer | PENDING | `.terminus/reviews/jetstream-regional-stream-continuity/440aa838/jetstream-regional-stream-continuity-440aa838-spec-test-contract-7c5bbb5a2b.packet.json` |
+| Q6 Production Logic Auditor | PENDING | `.terminus/reviews/jetstream-regional-stream-continuity/440aa838/jetstream-regional-stream-continuity-440aa838-production-logic-a277a01448.packet.json`; scope `4007f243d3e31219716e8f3af0549644839141f37695a367f2f7732906f77a81` |
+| Quality Interlock | PENDING | fresh Q4 + Q6 PASS required |
+| Pre-LLMaJ specialist panel | PENDING | not authorized |
+| Task Architect | PENDING | not authorized |
+| Verifier Engineer | PENDING | not authorized |
+| Originality & Authenticity | PENDING | not authorized |
+| Difficulty design | PENDING | not authorized |
+| Compliance pre-review | PENDING | not authorized |
+| Instruction Reviewer | PENDING | not authorized |
+| Documentation Reviewer | PENDING | not authorized |
 | Comprehensive Reviewer | PENDING | not authorized |
 | Pre-LLMaJ aggregate | PENDING | not authorized |
 | Q8 GPT Perspective Simulation | PENDING | not authorized |
@@ -56,38 +56,22 @@ Session schema version: `2.4`
 | Final Human Quality | PENDING | not authorized |
 | Final package | PENDING | not authorized |
 
-## Frozen candidate
+## Frozen evidence
 
-Exact task commit `440aa83862a3234678e27bd70319623735964173` is frozen after one consolidated closure of the three known Q4 verifier-coverage findings. Exactly 40 tests remain: 30 F2P + 10 P2P.
+Task commit `440aa83862a3234678e27bd70319623735964173` is the exact frozen candidate. Edition-3 run `31332216470`, job `93292224707`: Preflight, Ruff and verifier setup PASS; Oracle reward 1 with exactly 40/40 PASS; NOP reward 0 with exactly 30 F2P failures + 10 P2P passes. Artifact `9043289949`, digest `sha256:c355c40a2623398412b120b0915173e14a961e30ba15fe7bbc4e86a40683b84a`. Harbor was skipped after the later credentials step failed. Complexity `31332216483` PASS; Production Authenticity `31332216476` PASS; freeze-head Agent System `31332560995` / `93293013618` PASS.
 
-Edition-3 run `31332216470`, job `93292224707`: Preflight PASS, Ruff PASS, verifier setup PASS, Oracle reward `1` with exactly `40 passed`, NOP reward `0` with exactly `30 failed, 10 passed`. All NOP failures are F2P and all NOP passes are P2P. Artifact `9043289949`, digest `sha256:c355c40a2623398412b120b0915173e14a961e30ba15fe7bbc4e86a40683b84a`. Harbor was skipped after the later credential step failed.
+The closure repaired all three known Q4 coverage gaps together while keeping exactly 40 = 30 F2P + 10 P2P: real external replay `Nats-Msg-Id == event_id` coverage at an existing F2P boundary, durable journal recovery-horizon cleanup coverage with the narrow reference repair, and parseable timezone-aware `generated_at` report coverage.
 
-Creator Complexity `31332216483` PASS; Production Authenticity `31332216476` PASS; freeze-head Agent System `31332560995` / `93293013618` PASS. Packet-generation run `31332603237` passed both generation and reviewer/controller validation. Subsequent handoff Agent System runs, including `31332766913` / `93293527946`, passed freshness/commit binding and package isolation.
+## Fresh review handoff
 
-## Fresh immutable review packets
+Packet generation commit `bfd3496c68d528723d8609ae5d9787797fffdbca`, run `31332603237`, generation job `93293119012` PASS and reviewer/controller validation job `93293119068` PASS. Subsequent Agent System validation `31332766913` / `93293527946` PASS.
 
-Generated packet commit: `bfd3496c68d528723d8609ae5d9787797fffdbca` from invocation/control-plane commit `11b652fe4483c199031dd9ace0f7e69750411d9b`.
+Q4 1.1: review ID `jetstream-regional-stream-continuity-440aa838-spec-test-contract-7c5bbb5a2b`; packet `.terminus/reviews/jetstream-regional-stream-continuity/440aa838/jetstream-regional-stream-continuity-440aa838-spec-test-contract-7c5bbb5a2b.packet.json`; result `.terminus/reviews/jetstream-regional-stream-continuity/440aa838/jetstream-regional-stream-continuity-440aa838-spec-test-contract-7c5bbb5a2b.json`. Q4 is exact-task-commit-bound and must complete the exhaustive one-pass forward/reverse matrix, delegated-contract/output-interface, F2P/P2P, and second omission sweep before returning all material findings together.
 
-### Q4 1.1
+Q6 1.1: review ID `jetstream-regional-stream-continuity-440aa838-production-logic-a277a01448`; packet `.terminus/reviews/jetstream-regional-stream-continuity/440aa838/jetstream-regional-stream-continuity-440aa838-production-logic-a277a01448.packet.json`; result `.terminus/reviews/jetstream-regional-stream-continuity/440aa838/jetstream-regional-stream-continuity-440aa838-production-logic-a277a01448.json`; scope hash `4007f243d3e31219716e8f3af0549644839141f37695a367f2f7732906f77a81`.
 
-- Review ID: `jetstream-regional-stream-continuity-440aa838-spec-test-contract-7c5bbb5a2b`
-- Packet: `.terminus/reviews/jetstream-regional-stream-continuity/440aa838/jetstream-regional-stream-continuity-440aa838-spec-test-contract-7c5bbb5a2b.packet.json`
-- Result: `.terminus/reviews/jetstream-regional-stream-continuity/440aa838/jetstream-regional-stream-continuity-440aa838-spec-test-contract-7c5bbb5a2b.json`
-- Protocol 2.2 / prompt 2.2 / role policy 1.1; exact-task-commit-bound, no reusable scope hash.
-- Mandatory exhaustive one-pass review: full requirement/verifier inventories, both mapping directions, delegated contracts/output interfaces, all F2P/P2P boundaries, second omission sweep, all material findings in the same result.
-
-### Q6 1.1
-
-- Review ID: `jetstream-regional-stream-continuity-440aa838-production-logic-a277a01448`
-- Packet: `.terminus/reviews/jetstream-regional-stream-continuity/440aa838/jetstream-regional-stream-continuity-440aa838-production-logic-a277a01448.packet.json`
-- Result: `.terminus/reviews/jetstream-regional-stream-continuity/440aa838/jetstream-regional-stream-continuity-440aa838-production-logic-a277a01448.json`
-- Protocol 2.2 / prompt 2.2 / role policy 1.1.
-- `review_scope_hash`: `4007f243d3e31219716e8f3af0549644839141f37695a367f2f7732906f77a81`.
-
-## No-drip rule
-
-This closure consumes the one normal consolidated repair/refreeze cycle for the known findings. After the fresh exhaustive Q4 1.1 result, a later finding resting entirely on unchanged previously-reviewable evidence is `LATENT_REVIEWER_OMISSION` and routes to Adjudicator before another normal repair loop. Genuine repair-introduced regressions may route normally.
+Under Protocol 2.2, this is the one normal consolidated repair/refreeze cycle for the known Q4 findings. After the fresh exhaustive Q4, a later finding resting entirely on unchanged previously-reviewable evidence is `LATENT_REVIEWER_OMISSION` and routes to Adjudicator before another normal repair loop.
 
 ## Next action
 
-Run Q4 and Q6 independently in two separate cold chats, in parallel. Do not reveal either result to the other reviewer before both freeze. Do not run Stage-B, Pre-LLMaJ, Q8, Harbor, or model trials until both current-policy reviewers PASS and Quality Interlock is validated.
+Run Q4 and Q6 independently in separate cold chats in parallel. Do not expose either result to the other reviewer. Do not proceed to Stage-B, Pre-LLMaJ, Q8, Harbor or model trials until both current-policy reviews PASS and Quality Interlock validates.
