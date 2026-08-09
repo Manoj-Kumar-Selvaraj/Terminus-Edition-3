@@ -118,3 +118,19 @@ Rows newer than the configured minimum journal age are never cleanup candidates.
 `continuityctl inspect`, `continuityctl reconcile`, and `continuityctl verify` are diagnostic operations: they may record reconciliation runs/findings, but they do not apply replay or retention mutations. `continuityctl verify` writes `/app/continuity/out/health.json` and `/app/continuity/out/reconciliation.json`.
 
 The output reports describe the durable state the repaired controller observes. They must not rewrite the captured incident history or manufacture a healthy result by deleting gaps, checkpoints, replay state, or other evidence.
+
+### Stable report interface
+
+The two verify reports are JSON objects with a stable operator-facing interface. Additional diagnostic fields are allowed, but the following fields and nesting are contractual.
+
+`health.json` contains top-level boolean fields `healthy`, `topology_ok`, `generations_ok`, `publication_ok`, `archive_ok`, `consumers_ok`, `retention_ok`, and `recovery_ok`. It also includes a `generated_at` timestamp and may include a `details` object with diagnostic state. `healthy` is true only when all seven subsystem booleans are true.
+
+`reconciliation.json` contains a top-level `generated_at` timestamp, a boolean `converged`, and a `regions` object keyed by region. Each region value contains:
+
+- `status`: `CONVERGED` or `DIVERGED`;
+- `converged`: boolean;
+- integer counts `journal_event_count`, `archive_event_count`, `missing_count`, `unexpected_count`, `duplicate_count`, `metadata_mismatch_count`, and `consumer_lag_count`;
+- integer `highest_contiguous_archive_origin_sequence`;
+- `required_consumer_progress`: an object mapping each enabled required consumer name to its completed origin sequence.
+
+The regional `status` and `converged` fields describe the same reconciliation decision. The top-level `converged` value is true only when every reported region is converged. Other fields such as findings, checksums, or diagnostic detail may be present without changing this interface.

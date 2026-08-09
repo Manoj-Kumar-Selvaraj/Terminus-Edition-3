@@ -440,23 +440,14 @@ def test_f2p_final_health_and_reconciliation_reports_are_materialized(
     finally:
         connection.close()
 
-    stream_state = json.loads(
-        (ROOT / "ops/stream-state.json").read_text(encoding="utf-8")
-    )
-    assert stream_state["incident_id"] == "INC-JS-2026-0808-17"
-    assert stream_state["captured_at"] == "2026-08-08T17:18:10Z"
-    assert stream_state["domains"]["hub"]["messages"] == 11395
-    assert (
-        stream_state["domains"]["hub"]["sources"][1]["domain"]
-        == "edge-east"
-    )
-    handoff = (ROOT / "ops/shift-handoff.txt").read_text(encoding="utf-8")
-    assert "three west identities and two east identities" in handoff
-    archived_log = (
-        ROOT / "log/archive/inc-2026-0808-17-controller.log"
-    )
-    assert archived_log.is_file()
-    assert hashlib.sha256(archived_log.read_bytes()).hexdigest() == 'fc5a85713d9b963e18b7550048a11de16349c9daa260623f72aa33e6862fb7d6'
+    captured_incident_digests = {
+        ROOT / "ops/stream-state.json": "763397e13b62c237dc37a0d1601a438e9a9247a681aaacb625f8f3425b154b1c",
+        ROOT / "ops/shift-handoff.txt": "4a1b66e39bff8de9db528a0927fb37017a060aba4994c25939a0225fa8361be0",
+        ROOT / "log/archive/inc-2026-0808-17-controller.log": "fc5a85713d9b963e18b7550048a11de16349c9daa260623f72aa33e6862fb7d6",
+    }
+    for captured_path, expected_digest in captured_incident_digests.items():
+        assert captured_path.is_file()
+        assert hashlib.sha256(captured_path.read_bytes()).hexdigest() == expected_digest
 
 
 # ---- P2P: already-correct detailed contract behavior ------------------------------------
@@ -689,6 +680,14 @@ def test_p2p_recovery_cli_entrypoints_remain_operational(tmp_path: Path) -> None
                 await pool.close()
 
         asyncio.run(ensure_west_stream())
+        expected_west_stream = str(engine.store.region("west")["physical_stream"])
+        expected_replay_ids = {
+            item.event_id
+            for item in engine.store.replay_items("rp-west-incident-001")
+            if engine.store.archive_record(item.event_id) is None
+        }
+        assert expected_replay_ids
+
         acquired = run_cli(
             "lease",
             "--root",
@@ -716,6 +715,35 @@ def test_p2p_recovery_cli_entrypoints_remain_operational(tmp_path: Path) -> None
         )
         assert executed["completed"] is True
         assert int(executed["published"]) >= 1
+
+        async def read_west_stream_messages() -> tuple[object, list[object]]:
+            pool = NatsConnectionPool()
+            try:
+                admin = JetStreamAdmin(pool, endpoints_from_engine(engine))
+                snapshot = await admin.stream_info("west", expected_west_stream)
+                messages = [
+                    await admin.get_message_by_sequence(
+                        "west", expected_west_stream, sequence
+                    )
+                    for sequence in range(
+                        snapshot.first_sequence, snapshot.last_sequence + 1
+                    )
+                ]
+                return snapshot, messages
+            finally:
+                await pool.close()
+
+        west_snapshot, west_messages = asyncio.run(read_west_stream_messages())
+        assert west_snapshot.name == expected_west_stream
+        assert int(west_snapshot.messages) >= len(expected_replay_ids)
+        observed_replay_ids: set[str] = set()
+        for message in west_messages:
+            document = json.loads(message.data.decode("utf-8"))
+            event_id = str(document["event_id"])
+            observed_replay_ids.add(event_id)
+            assert message.headers.get("Nats-Msg-Id") == event_id
+        assert expected_replay_ids <= observed_replay_ids
+
         replay_after = engine.store.replay_plan("rp-west-incident-001")
         assert (
             replay_after is not None

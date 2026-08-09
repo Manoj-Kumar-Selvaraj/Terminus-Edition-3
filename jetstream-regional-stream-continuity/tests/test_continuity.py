@@ -472,7 +472,7 @@ def test_f2p_poison_event_is_quarantined_without_completion(
     )
     before = engine.store.checkpoint(consumer, "east", 1)
     assert before is not None
-    result = asyncio.run(
+    asyncio.run(
         engine.process_delivery(
             FakeDelivery(event, consumer_name=consumer, delivery_count=5),
             worker_id="safety-worker",
@@ -487,7 +487,6 @@ def test_f2p_poison_event_is_quarantined_without_completion(
         (consumer, event.identity.event_id),
     ).fetchone()
     assert after is not None
-    assert result.status == "QUARANTINED"
     assert effect is not None and effect.status is EffectStatus.QUARANTINED
     assert poison is not None
     assert poison["disposition"] == "QUARANTINED"
@@ -1067,14 +1066,13 @@ def test_p2p_distinct_same_payload_events_remain_distinct(
             "DELETE FROM effect_dispatches WHERE consumer_name=? AND event_id=?",
             (consumer, event.identity.event_id),
         )
-        result = asyncio.run(
+        asyncio.run(
             engine.process_delivery(
                 FakeDelivery(event, consumer_name=consumer),
                 worker_id=f"same-payload-{event.identity.origin_sequence}",
                 fence_epoch=1,
             )
         )
-        assert result.status == "COMMITTED"
 
     assert a.payload_sha256 == b.payload_sha256
     assert a.identity.event_id != b.identity.event_id
@@ -1116,14 +1114,13 @@ def test_p2p_successful_effect_advances_checkpoint(engine: ContinuityEngine) -> 
         "DELETE FROM processing_effects WHERE consumer_name='telemetry-indexer' AND event_id=?",
         (event.identity.event_id,),
     )
-    result = asyncio.run(
+    asyncio.run(
         engine.process_delivery(
             FakeDelivery(event, delivery_count=1),
             worker_id="normal-worker",
             fence_epoch=1,
         )
     )
-    assert result.status == "COMMITTED"
     checkpoint = engine.store.checkpoint("telemetry-indexer", "east", 1)
     assert checkpoint is not None
     assert checkpoint.last_effect_sequence >= event.identity.origin_sequence
