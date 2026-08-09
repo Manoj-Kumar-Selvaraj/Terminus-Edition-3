@@ -8,7 +8,7 @@ Session schema version: `2.4`
 - Controller state: `DETERMINISTIC_VALIDATION`
 - Working branch: `task/jetstream-regional-stream-continuity`
 - Pull request: `#10` (draft creation/validation PR)
-- Current task commit: `dedbf4456e5aa8def9693558adf63d57edbe3a9a`
+- Current task commit: `795fe7f6f1f44c8f54d0c2b8d8d7a00362db1a75`
 - Agent-system policy: `2.3`
 - Specialist prompt policy: `2.2`
 - Specialist protocol policy: `2.1`
@@ -36,22 +36,22 @@ The strict design contains seven materially different root-cause clusters and 26
 | Human Writing Researcher | COMPLETE | `.terminus/research/jetstream-regional-stream-continuity-human-writing.md` |
 | Instruction Writer | COMPLETE_PENDING_COLD_REVIEW | `instruction.md` points to evidence and operational contract |
 | Documentation Writer | COMPLETE_PENDING_COLD_REVIEW | `README.md` + task metadata explanations |
-| Task Assembly Agent | IN_PROGRESS | fresh-head Ruff/environment/Oracle/NOP evidence pending |
-| Complexity Governor | PENDING_FRESH_HEAD_EVIDENCE | strict gate has repeatedly passed, but exact task commit moved for verifier Ruff configuration |
+| Task Assembly Agent | IN_PROGRESS | fresh-head environment/Oracle/NOP evidence pending |
+| Complexity Governor | PENDING_FRESH_HEAD_EVIDENCE | strict gate has repeatedly passed, but exact task commit moved for verifier artifact packaging |
 | Authoring Failure Diagnostician | ACTIVE_AS_NEEDED | deterministic failures are routed to the responsible layer without weakening legitimate verifier behavior |
 
 ## Deterministic gate registry
 
 | Gate | Status | Evidence / note |
 | --- | --- | --- |
-| Creator Complexity Gate | STALE_PASS | run `31298920569` passed on task commit `1df881cd`; exact task commit moved only for verifier Ruff config, so rerun is required by provenance |
-| Production Authenticity Gate | STALE_PASS | run `31298920580` passed on task commit `1df881cd`; rerun required on exact current task commit |
-| Agent System / control-plane regressions | PASS_CONTROL_PLANE | run `31298920589`, job `93208472473` passed all Agent-System steps on PR #10 before the task-only Ruff config commit; fresh global run still required for exact branch head |
-| Preflight/static | STALE_PASS | main validation run `31298920577`, job `93208472785` passed Preflight before task-only Ruff config commit |
-| Ruff verifier | FIX_APPLIED_PENDING_RERUN | prior main validation stopped at Ruff; `tests/ruff.toml` now scopes F401 only for `test_continuity.py` |
-| Environment build | PENDING | Oracle/NOP jobs did not reach environment build because Ruff failed first |
-| Oracle = 1 | PENDING | main validation rerun pending |
-| NOP = 0 | PENDING | main validation rerun pending |
+| Creator Complexity Gate | STALE_PASS | latest nearby strict complexity run passed before verifier artifact packaging changed the task commit; rerun required by provenance |
+| Production Authenticity Gate | STALE_PASS | latest nearby production-authenticity run passed before verifier artifact packaging changed the task commit; rerun required by provenance |
+| Agent System / control-plane regressions | STALE_PASS | latest nearby Agent-System run passed; exact branch head rerun required |
+| Preflight/static | STALE_PASS | main validation passed preflight on prior task commit; artifact boundary changed afterward |
+| Ruff verifier | STALE_PASS | Ruff passed on prior task commit after the F401-only verifier config fix; rerun required |
+| Environment build | STALE_PASS | Oracle run on prior task commit built environment and verifier images successfully |
+| Oracle = 1 | FIX_APPLIED_PENDING_RERUN | run `31298999790`, job `93208674425` reached verifier but reward `0` because separate verifier received only `/app/continuity/out`; artifacts now export `/app/continuity` and verifier workdir is prepared to receive it |
+| NOP = 0 | PENDING | prior run was skipped after Oracle failure; fresh run pending |
 | F2P empirical matrix | PENDING | must prove every one of 28 F2P starter-fail / Oracle-pass |
 | P2P empirical matrix | PENDING | must prove intended six preservation cases |
 | Leakage/package checks | PENDING | after deterministic runtime validation |
@@ -80,4 +80,4 @@ No independent semantic reviewer has been invoked and no producer result is repr
 
 ## Next action
 
-Use live PR #10 Actions on the exact current task commit. Resume from Ruff -> environment build -> Oracle -> NOP -> empirical F2P/P2P matrix -> leakage/package checks. If a deterministic failure occurs, route it to the smallest responsible producer and preserve the verifier requirement unless the contract itself is proven wrong.
+Use live PR #10 Actions on the exact current task commit. Resume from environment build -> Oracle -> NOP -> empirical F2P/P2P matrix -> leakage/package checks. If a deterministic failure occurs, route it to the smallest responsible producer and preserve the verifier requirement unless the contract itself is proven wrong.
