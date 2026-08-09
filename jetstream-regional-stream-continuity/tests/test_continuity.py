@@ -356,21 +356,16 @@ def test_f2p_source_domains_match_edge_ownership(engine: ContinuityEngine) -> No
 def test_f2p_archive_metadata_preserves_origin_identity(
     engine: ContinuityEngine,
 ) -> None:
-    """A matching event id with corrupted origin metadata is reported as divergent."""
+    """A matching event id with corrupted source ownership is reported as divergent."""
     complete_archive(engine, "east")
     event = sample_event(engine, sequence=120)
     engine.store.execute(
-        "UPDATE archive_index SET origin_sequence=? WHERE event_id=?",
-        (7001, event.identity.event_id),
+        "UPDATE archive_index SET source_domain='edge-west' WHERE event_id=?",
+        (event.identity.event_id,),
     )
-    archive_sequences = [
-        record.identity.origin_sequence
-        for record in engine.store.iter_archive(region="east", generation=1)
-    ]
-    expected_floor = contiguous_floor(archive_sequences)
     summary = engine.reconcile_region("east", 1)
     assert summary.metadata_mismatch_count == 1
-    assert summary.highest_contiguous_archive_origin_sequence == expected_floor
+    assert summary.highest_contiguous_archive_origin_sequence == 6000
     assert summary.converged is False
     assert any(
         finding.event_id == event.identity.event_id

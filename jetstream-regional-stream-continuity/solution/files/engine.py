@@ -382,6 +382,9 @@ class ContinuityEngine(BaseContinuityEngine):
         unexpected_ids = sorted(archive_ids - journal_ids)
         findings: list[Finding] = []
         metadata_mismatch_count = 0
+        region_row = self.store.region(region)
+        expected_source_stream = str(region_row["physical_stream"])
+        expected_source_domain = str(region_row["jetstream_domain"])
 
         for event_id in missing_ids:
             event = journal_by_id[event_id]
@@ -427,6 +430,10 @@ class ContinuityEngine(BaseContinuityEngine):
                 mismatches.append("origin_sequence")
             if event.payload_sha256.lower() != record.payload_sha256.lower():
                 mismatches.append("payload_sha256")
+            if record.source_stream != expected_source_stream:
+                mismatches.append("source_stream")
+            if record.source_domain != expected_source_domain:
+                mismatches.append("source_domain")
             if mismatches:
                 metadata_mismatch_count += 1
                 findings.append(
