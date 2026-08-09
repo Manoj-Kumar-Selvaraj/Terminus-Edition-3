@@ -483,29 +483,34 @@ def test_f2p_reconcile_ignores_hub_sequence_equivalence(
     engine: ContinuityEngine,
 ) -> None:
     """Complete stable origin identities converge independently of hub delivery positions."""
-    generation = 9
+    complete_archive(engine, "east")
+    for consumer in engine.store.required_consumers():
+        set_checkpoint(engine, consumer, "east", effect=6000)
+
     engine.store.execute(
-        "INSERT INTO origin_generations(region,generation,stream_fingerprint,first_sequence,last_observed_sequence,status,approved_by,approved_at,detected_at) "
-        "VALUES('east',?,'east-sequence-independence',60000,60002,'CONFIRMED','verifier','2026-08-09T07:00:00Z','2026-08-09T06:59:00Z')",
-        (generation,),
+        "UPDATE origin_generations SET last_observed_sequence=60002 "
+        "WHERE region='east' AND generation=1"
+    )
+    engine.store.execute(
+        "UPDATE archive_index SET hub_stream_sequence=30000+origin_sequence "
+        "WHERE region='east' AND generation=1"
     )
 
     for offset, source_event_id in enumerate(
         ("evt-east-g01-000101", "evt-east-g01-000102", "evt-east-g01-000103")
     ):
         origin_sequence = 60000 + offset
-        event_id = f"evt-east-g09-{origin_sequence:06d}"
+        event_id = f"evt-east-g01-{origin_sequence:06d}"
         engine.store.execute(
             "INSERT INTO event_journal("
             "journal_id,event_id,region,generation,origin_sequence,device_id,site_id,event_type,event_time,accepted_at,"
             "payload_json,payload_sha256,payload_bytes,priority,publish_state,publish_attempts,last_publish_at,publish_ack_stream,"
             "publish_ack_sequence,archive_confirmed_at,retention_hold) "
-            "SELECT ?,?,'east',?,?,device_id,site_id,event_type,event_time,accepted_at,payload_json,payload_sha256,payload_bytes,priority,"
+            "SELECT ?,?,'east',1,?,device_id,site_id,event_type,event_time,accepted_at,payload_json,payload_sha256,payload_bytes,priority,"
             "'ARCHIVED',1,accepted_at,'EDGE_EAST_TELEMETRY',?,accepted_at,0 FROM event_journal WHERE event_id=?",
             (
                 900000 + offset,
                 event_id,
-                generation,
                 origin_sequence,
                 origin_sequence,
                 source_event_id,
@@ -513,17 +518,18 @@ def test_f2p_reconcile_ignores_hub_sequence_equivalence(
         )
         engine.store.execute(
             "INSERT INTO archive_index(event_id,region,generation,origin_sequence,hub_stream_sequence,payload_sha256,archived_at,source_stream,source_domain,duplicate_observation_count) "
-            "SELECT event_id,'east',generation,origin_sequence,?,payload_sha256,accepted_at,'EDGE_EAST_TELEMETRY','edge-east',0 "
+            "SELECT event_id,'east',1,origin_sequence,?,payload_sha256,accepted_at,'EDGE_EAST_TELEMETRY','edge-east',0 "
             "FROM event_journal WHERE event_id=?",
             (50000 + offset, event_id),
         )
 
-    summary = engine.reconcile_region("east", generation)
-    assert summary.journal_event_count == 3
-    assert summary.archive_event_count == 3
+    summary = engine.reconcile_region("east", 1)
+    assert summary.journal_event_count == 6003
+    assert summary.archive_event_count == 6003
     assert summary.missing_count == 0
     assert summary.unexpected_count == 0
     assert summary.metadata_mismatch_count == 0
+    assert summary.consumer_lag_count == 0
     assert "SEQUENCE_LAG" not in finding_types(summary)
     assert summary.converged is True
 
