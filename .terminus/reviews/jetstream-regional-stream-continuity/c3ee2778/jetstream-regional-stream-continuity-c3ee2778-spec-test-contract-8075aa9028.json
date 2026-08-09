@@ -1,0 +1,367 @@
+{
+  "schema_version": "3.0",
+  "role": "Spec-Test Contract Reviewer",
+  "review_id": "jetstream-regional-stream-continuity-c3ee2778-spec-test-contract-8075aa9028",
+  "task": "jetstream-regional-stream-continuity",
+  "task_commit": "c3ee277828c2a156ecce9d335820d57b9fd2a0e0",
+  "control_plane_commit": "b808be642a160160953284d8d69a4c52601d133d",
+  "protocol_policy_version": "2.1",
+  "prompt_policy_version": "2.2",
+  "role_policy_version": "1.0",
+  "role_contract_hash": "696aa3da8960a5c5ee1b093d2b8bced4e3f95fba130883ee4afc58c846251832",
+  "context_packet": ".terminus/reviews/jetstream-regional-stream-continuity/c3ee2778/jetstream-regional-stream-continuity-c3ee2778-spec-test-contract-8075aa9028.packet.json",
+  "verdict": "REVISE",
+  "confidence": "HIGH",
+  "evidence_status": "SUFFICIENT",
+  "summary": "Cold Q4 review finds substantial legitimate coverage, including physical-stream publish acknowledgement, stable event-identity reconciliation, durable post-window archive/effect idempotency, mid-plan replay fencing, diagnostic CLI non-mutation, and non-diagnostic recovery CLI execution. However the bidirectional contract is not clean. The verifier requires undocumented diagnostic literals, leaves material reconciliation metadata/progress semantics and stale-renewal/terminal-unpin edges incompletely graded, does not prove that quarantined poison input cannot commit a business effect, and derives report truth through the submitted ContinuityEngine itself. These are material phantom/coverage/independence defects under the Q4 decision rule, so PASS is not supportable.",
+  "evidence": [
+    {
+      "type": "rule",
+      "ref": ".terminus/agents/QUALITY_AGENT_REGISTRY.md@b808be642a160160953284d8d69a4c52601d133d",
+      "observation": "Q4 must independently rebuild both requirement-to-test and test-to-requirement mappings; a material phantom test, materially untested solver requirement, or grading-relevant ambiguity requires REVISE."
+    },
+    {
+      "type": "rule",
+      "ref": ".terminus/agents/QUALITY_AGENT_PROMPTS.md@b808be642a160160953284d8d69a4c52601d133d",
+      "observation": "Q4 is required to separate solver requirements from verifier behaviors, map both directions, check delegated contracts and ambiguity, and reject hidden-test dump or undocumented grading behavior."
+    },
+    {
+      "type": "file",
+      "ref": "jetstream-regional-stream-continuity/instruction.md@c3ee277828c2a156ecce9d335820d57b9fd2a0e0",
+      "observation": "The handoff is concise and explicitly delegates durability/replay detail to /app/continuity/docs while requiring event-identity convergence, crash-safe consumers, held ambiguous generations, retention safety, preserved incident history, operator entrypoints, and truthful final reports."
+    },
+    {
+      "type": "file",
+      "ref": "jetstream-regional-stream-continuity/environment/continuity/docs/continuity-contract.md@c3ee277828c2a156ecce9d335820d57b9fd2a0e0",
+      "observation": "The solver-visible contract defines stable event identity, origin metadata, generation approval, physical stream topology, publish acknowledgement boundaries, effect/checkpoint ordering, reconciliation semantics and outputs, replay planning/fencing, retention, diagnostic non-mutation, and report integrity."
+    },
+    {
+      "type": "test",
+      "ref": "jetstream-regional-stream-continuity/tests/test_continuity.py@c3ee277828c2a156ecce9d335820d57b9fd2a0e0",
+      "observation": "The main verifier behaviorally exercises stable retry identity, correct/wrong physical-stream acknowledgements, generation holds, topology, effects/checkpoints, hub-sequence-independent reconciliation, missing/unexpected identity detection, replay, post-window dedupe, retention watermarks, and replay fence rotation between two replay items."
+    },
+    {
+      "type": "test",
+      "ref": "jetstream-regional-stream-continuity/tests/test_contract_coverage.py@c3ee277828c2a156ecce9d335820d57b9fd2a0e0",
+      "observation": "The supplemental verifier exercises expired-lease reacquisition, output materialization, protected-state digests around diagnostic CLI commands, stale lease release, retention age/hold behavior, generation-history preservation, and real continuityctl recovery/generation/replay/lease/retention entrypoints."
+    },
+    {
+      "type": "file",
+      "ref": "jetstream-regional-stream-continuity/tests/Dockerfile@c3ee277828c2a156ecce9d335820d57b9fd2a0e0",
+      "observation": "The verifier image copies both test_continuity.py and test_contract_coverage.py, so both modules are part of the executed pytest surface."
+    },
+    {
+      "type": "file",
+      "ref": "jetstream-regional-stream-continuity/environment/continuity/continuity/engine.py@c3ee277828c2a156ecce9d335820d57b9fd2a0e0",
+      "observation": "The broken starter visibly mints retry-dependent message ids, marks publication before acknowledgement, auto-approves generation changes, reconciles by counts/hub sequence, plans replay from aggregate position, ignores consumer/replay retention bounds, and routes derived output back to raw subjects; the principal F2P families therefore target actual starter defects rather than merely restating already-correct behavior."
+    },
+    {
+      "type": "file",
+      "ref": "jetstream-regional-stream-continuity/environment/continuity/bin/continuityctl@c3ee277828c2a156ecce9d335820d57b9fd2a0e0",
+      "observation": "The operator entrypoint executes continuity.starter_cli, which rebinds the inherited CLI to continuity.engine; the CLI tests therefore reach the submitted production controller path."
+    }
+  ],
+  "findings": [
+    {
+      "id": "Q4-01",
+      "severity": "HIGH",
+      "status": "OBSERVED",
+      "criterion": "Every substantive verifier assertion must map to a discoverable solver-visible requirement and enforce behavior rather than undocumented implementation vocabulary.",
+      "evidence_refs": [
+        "jetstream-regional-stream-continuity/environment/continuity/docs/continuity-contract.md@c3ee277828c2a156ecce9d335820d57b9fd2a0e0",
+        "jetstream-regional-stream-continuity/tests/test_continuity.py@c3ee277828c2a156ecce9d335820d57b9fd2a0e0"
+      ],
+      "why_it_matters": "The wrong-stream publish test requires the persisted error_code literal ACK_STREAM_MISMATCH, and reconciliation tests require exact finding_type literals such as ARCHIVE_METADATA_MISMATCH, MISSING_ARCHIVE_EVENT, UNEXPECTED_ARCHIVE_EVENT and CONSUMER_LAG. The solver-visible contract specifies the observable failure/reconciliation semantics but does not define this diagnostic label vocabulary. A correct implementation can leave a wrong-stream publish retryable and report the required reconciliation facts under different stable diagnostic labels yet fail grading.",
+      "minimal_remediation": "Grade the observable state/outcome without requiring undocumented label strings, or, only if those codes are genuinely an operator-facing compatibility contract, define the required diagnostic-code vocabulary in a natural solver-visible contract and keep the instruction selective.",
+      "regression_risk": "Removing the literal assertions without retaining the state/count/finding-semantic checks could weaken wrong-stream and reconciliation discrimination; preserve the behavioral assertions while decoupling them from undocumented names."
+    },
+    {
+      "id": "Q4-02",
+      "severity": "HIGH",
+      "status": "OBSERVED",
+      "criterion": "Every material solver-visible reconciliation requirement must have meaningful behavioral coverage at the stable event/origin boundary.",
+      "evidence_refs": [
+        "jetstream-regional-stream-continuity/environment/continuity/docs/continuity-contract.md@c3ee277828c2a156ecce9d335820d57b9fd2a0e0",
+        "jetstream-regional-stream-continuity/tests/test_continuity.py@c3ee277828c2a156ecce9d335820d57b9fd2a0e0",
+        "jetstream-regional-stream-continuity/environment/continuity/continuity/model.py@c3ee277828c2a156ecce9d335820d57b9fd2a0e0"
+      ],
+      "why_it_matters": "The contract requires reconciliation to validate origin metadata for every event-id match and to produce the highest contiguous archive origin sequence plus required-consumer progress. The only archive-metadata corruption scenario changes payload_sha256, not region/generation/origin_sequence (or source ownership), and no verifier assertion requires the highest-contiguous origin watermark as reconciliation output. The current ReconciliationSummary interface itself exposes counts/mismatch counts/findings but no explicit highest-contiguous archive-origin field. An implementation can therefore match by event_id, validate payload only, omit a required progress output, and still satisfy the present tests.",
+      "minimal_remediation": "Add outcome-based cases with a matching event_id but corrupted origin metadata and independently grade the reported highest contiguous archive-origin watermark/consumer progress. Keep hub aggregate stream sequence explicitly irrelevant.",
+      "regression_risk": "Do not turn the verifier into field-by-field implementation inspection; construct durable archive/journal states and assert the operator-visible reconciliation result at the contract boundary."
+    },
+    {
+      "id": "Q4-03",
+      "severity": "HIGH",
+      "status": "OBSERVED",
+      "criterion": "Consumer-effect tests must enforce the complete poison/quarantine invariant, not only checkpoint non-advancement.",
+      "evidence_refs": [
+        "jetstream-regional-stream-continuity/environment/continuity/docs/continuity-contract.md@c3ee277828c2a156ecce9d335820d57b9fd2a0e0",
+        "jetstream-regional-stream-continuity/tests/test_continuity.py@c3ee277828c2a156ecce9d335820d57b9fd2a0e0"
+      ],
+      "why_it_matters": "The contract states that quarantine is not a completed business effect and must not count as completed application progress. The poison test verifies QUARANTINED status and unchanged effect/ack checkpoints, but it does not verify that no committed processing_effect/effect_dispatch was created for the quarantined event. A partial fix can keep checkpoints unchanged while still emitting or committing a business effect and pass this test.",
+      "minimal_remediation": "At the durable effect boundary, assert that the quarantined event has no committed business effect/confirmed dispatch while retaining the existing checkpoint assertions.",
+      "regression_risk": "Do not prohibit the quarantine audit record itself; distinguish quarantine evidence from the committed business-effect ledger."
+    },
+    {
+      "id": "Q4-04",
+      "severity": "HIGH",
+      "status": "OBSERVED",
+      "criterion": "Recovery fencing must grade every solver-visible current-token mutation rule that can corrupt lease ownership.",
+      "evidence_refs": [
+        "jetstream-regional-stream-continuity/environment/continuity/docs/continuity-contract.md@c3ee277828c2a156ecce9d335820d57b9fd2a0e0",
+        "jetstream-regional-stream-continuity/tests/test_continuity.py@c3ee277828c2a156ecce9d335820d57b9fd2a0e0",
+        "jetstream-regional-stream-continuity/tests/test_contract_coverage.py@c3ee277828c2a156ecce9d335820d57b9fd2a0e0"
+      ],
+      "why_it_matters": "The suite strongly grades stale replay entry, a fence transition between replay items, expired same-owner reacquisition, current-owner renewal, and stale release. The contract separately requires lease renewal to require the current token, but there is no stale-epoch renewal scenario. A renewal implementation that accepts a stale epoch can pass the existing fencing tests while violating the durable lease contract.",
+      "minimal_remediation": "Exercise renewal with the correct owner but a stale fence epoch after an epoch transition, require rejection, and verify the current lease epoch/expiry are unchanged.",
+      "regression_risk": "Preserve the existing happy-path renewal test proving that a current owner renews without incrementing its epoch."
+    },
+    {
+      "id": "Q4-05",
+      "severity": "HIGH",
+      "status": "OBSERVED",
+      "criterion": "Replay retention pinning must be graded across both active and terminal plan states.",
+      "evidence_refs": [
+        "jetstream-regional-stream-continuity/environment/continuity/docs/continuity-contract.md@c3ee277828c2a156ecce9d335820d57b9fd2a0e0",
+        "jetstream-regional-stream-continuity/tests/test_continuity.py@c3ee277828c2a156ecce9d335820d57b9fd2a0e0",
+        "jetstream-regional-stream-continuity/tests/test_contract_coverage.py@c3ee277828c2a156ecce9d335820d57b9fd2a0e0"
+      ],
+      "why_it_matters": "The contract pins journal rows for approved/running replay only until the plan reaches a terminal state. The verifier proves that an active approved plan constrains cleanup and separately proves that a replay can become COMPLETED, but it never recomputes retention after terminalization to prove that the completed plan no longer pins its rows. An implementation that continues to treat terminal plans as retention authority can pass and cause unbounded over-retention.",
+      "minimal_remediation": "Create or complete a replay plan, establish archive/consumer convergence and row age, then recompute retention and assert that the terminal plan no longer supplies the active replay pin while other safety bounds still apply.",
+      "regression_risk": "Keep the existing active-plan pin case so the fix cannot accidentally unpin approved/running recovery work."
+    },
+    {
+      "id": "Q4-06",
+      "severity": "HIGH",
+      "status": "OBSERVED",
+      "criterion": "Final report/state-integrity grading must derive expected truth independently from durable observed state rather than from the submitted reporting implementation.",
+      "evidence_refs": [
+        "jetstream-regional-stream-continuity/instruction.md@c3ee277828c2a156ecce9d335820d57b9fd2a0e0",
+        "jetstream-regional-stream-continuity/environment/continuity/docs/continuity-contract.md@c3ee277828c2a156ecce9d335820d57b9fd2a0e0",
+        "jetstream-regional-stream-continuity/tests/test_contract_coverage.py@c3ee277828c2a156ecce9d335820d57b9fd2a0e0"
+      ],
+      "why_it_matters": "The output test correctly checks file existence and preserved incident state, but it computes expected health and reconciliation by instantiating the submitted ContinuityEngine on a copy of the same database and then compares the files to inspect_health()/reconcile_all(). That is self-referential for semantic truth. For example, a submitted recovery-health implementation can report recovery_ok=true despite the durable active replay plan; the test's expected_health will repeat the same lie, while the separate database assertion merely confirms that an active plan still exists.",
+      "minimal_remediation": "Derive grading-critical report expectations directly from SQLite/solver-visible captured state for representative unhealthy and converged facts (for example active replay plan, pending generation, consumer gap, archive membership), then compare the materialized reports to those independently observed facts. The submitted engine may be used to write reports but not as the oracle for their truth.",
+      "regression_risk": "Retain the current preservation checks for incident files and durable table counts; replace only the self-referential semantic oracle portions."
+    }
+  ],
+  "missing_evidence": [],
+  "change_scope": [
+    "Verifier/spec alignment only; this review does not prescribe task implementation changes.",
+    "Any remediation should be limited to verifier coverage/observable assertions and, only if intentionally contractual, solver-visible diagnostic-code documentation."
+  ],
+  "do_not_change": [
+    "Do not weaken the stable event-identity, physical-stream acknowledgement, post-window idempotency, mid-replay fencing, diagnostic non-mutation, or CLI behavioral checks.",
+    "Do not use solution implementation details or historical reviewer outcomes as justification for the Q4 repair."
+  ],
+  "next_gate": "Return to the CI Orchestrator for Q4-owned remediation routing; this Q4 result cannot support QUALITY_INTERLOCK_PASS until a fresh packet-bound Q4 review on the remediated task commit passes.",
+  "role_output": {
+    "requirement_test_matrix": [
+      {
+        "req_id": "REQ-01",
+        "requirement": "Stable event_id is the first-publish/retry/replay message identity.",
+        "tests": [
+          "stable retry identity",
+          "reconnect retry identity",
+          "same-payload distinct identity"
+        ],
+        "coverage": "COMPLETE"
+      },
+      {
+        "req_id": "REQ-02",
+        "requirement": "Origin region/generation/sequence/event identity and payload authority remain coherent end to end.",
+        "tests": [
+          "generation header rejection",
+          "archive payload mismatch"
+        ],
+        "coverage": "PARTIAL"
+      },
+      {
+        "req_id": "REQ-03",
+        "requirement": "Ambiguous origin reincarnation is held pending approval and historical accepted generation is preserved.",
+        "tests": [
+          "generation regression hold",
+          "unapproved generation rejection",
+          "confirmed monotonic generation",
+          "generation approval history preservation"
+        ],
+        "coverage": "COMPLETE"
+      },
+      {
+        "req_id": "REQ-04",
+        "requirement": "Hub raw archive is source-only with unique physical streams/correct domains and derived output outside raw subjects.",
+        "tests": [
+          "source-only hub",
+          "unique physical names",
+          "source-domain ownership",
+          "derived subject isolation"
+        ],
+        "coverage": "COMPLETE"
+      },
+      {
+        "req_id": "REQ-05",
+        "requirement": "Journal publish success occurs only after positive acknowledgement from the expected physical stream; failures remain retryable.",
+        "tests": [
+          "publish timeout state",
+          "correct/wrong-stream acknowledgement"
+        ],
+        "coverage": "COMPLETE_WITH_PHANTOM_LITERAL"
+      },
+      {
+        "req_id": "REQ-06",
+        "requirement": "Consumer effects are idempotent by consumer/event identity across redelivery and crash boundaries.",
+        "tests": [
+          "redelivery single effect",
+          "crash after effect before ack",
+          "post-window effect dedupe"
+        ],
+        "coverage": "COMPLETE"
+      },
+      {
+        "req_id": "REQ-07",
+        "requirement": "Checkpoint/effect/ack ordering is crash safe and JetStream ack-floor is not sole application authority.",
+        "tests": [
+          "effect commit failure checkpoint",
+          "crash redelivery",
+          "ack-floor/effect-ledger gap",
+          "successful effect checkpoint"
+        ],
+        "coverage": "COMPLETE"
+      },
+      {
+        "req_id": "REQ-08",
+        "requirement": "Poison quarantine is neither a committed business effect nor completed application progress.",
+        "tests": [
+          "poison quarantine checkpoint test"
+        ],
+        "coverage": "PARTIAL"
+      },
+      {
+        "req_id": "REQ-09",
+        "requirement": "Reconciliation uses stable event/origin identity, not hub aggregate sequence or aggregate counts.",
+        "tests": [
+          "hub-sequence independence",
+          "offsetting missing/unexpected identities"
+        ],
+        "coverage": "COMPLETE"
+      },
+      {
+        "req_id": "REQ-10",
+        "requirement": "Reconciliation validates matching-event origin metadata and payload checksum.",
+        "tests": [
+          "payload checksum corruption"
+        ],
+        "coverage": "PARTIAL"
+      },
+      {
+        "req_id": "REQ-11",
+        "requirement": "Reconciliation exposes missing/unexpected/mismatch information, highest contiguous archive-origin progress and required-consumer progress.",
+        "tests": [
+          "identity gap/extra",
+          "consumer lag",
+          "materialized report comparison"
+        ],
+        "coverage": "PARTIAL"
+      },
+      {
+        "req_id": "REQ-12",
+        "requirement": "Convergence requires archive completeness and every required consumer through the confirmed watermark.",
+        "tests": [
+          "required-consumer lag blocks convergence"
+        ],
+        "coverage": "COMPLETE"
+      },
+      {
+        "req_id": "REQ-13",
+        "requirement": "Replay planning contains only missing stable identities for one approved generation and active ranges do not overlap.",
+        "tests": [
+          "missing-only/disjoint replay plan",
+          "unapproved generation block",
+          "overlap rejection"
+        ],
+        "coverage": "COMPLETE"
+      },
+      {
+        "req_id": "REQ-14",
+        "requirement": "Already archived identities are durable no-ops and archive/effect identity remains idempotent beyond server duplicate windows.",
+        "tests": [
+          "post-window archive/effect dedupe",
+          "CLI replay completion with archived state"
+        ],
+        "coverage": "COMPLETE"
+      },
+      {
+        "req_id": "REQ-15",
+        "requirement": "Approved/running replay pins journal authority only until terminal state.",
+        "tests": [
+          "active replay pin",
+          "CLI replay terminalization"
+        ],
+        "coverage": "PARTIAL"
+      },
+      {
+        "req_id": "REQ-16",
+        "requirement": "Recovery fencing increments on expired reacquisition, rejects stale replay during execution, and requires current tokens for renewal/release.",
+        "tests": [
+          "expired same-owner reacquisition",
+          "stale replay entry and mid-plan rotation",
+          "current renewal",
+          "stale release"
+        ],
+        "coverage": "PARTIAL"
+      },
+      {
+        "req_id": "REQ-17",
+        "requirement": "Retention is bounded by contiguous archive progress, slowest required consumer, active replay pin, minimum age/holds and recovery horizon.",
+        "tests": [
+          "archive watermark",
+          "slowest consumer",
+          "active replay pin",
+          "minimum age/hold",
+          "recovery horizon",
+          "eligible converged old rows"
+        ],
+        "coverage": "COMPLETE_EXCEPT_TERMINAL_PIN_EDGE"
+      },
+      {
+        "req_id": "REQ-18",
+        "requirement": "Diagnostic inspect/reconcile/verify do not mutate recovery state except permitted reconciliation observations.",
+        "tests": [
+          "protected-state digest around diagnostic CLI commands"
+        ],
+        "coverage": "COMPLETE"
+      },
+      {
+        "req_id": "REQ-19",
+        "requirement": "Final health/reconciliation reports are materialized, preserve captured incident evidence and truthfully describe durable state.",
+        "tests": [
+          "final report materialization/state preservation"
+        ],
+        "coverage": "PARTIAL_SELF_REFERENTIAL"
+      },
+      {
+        "req_id": "REQ-20",
+        "requirement": "Existing non-diagnostic generation/replay/lease/execution/retention continuityctl entrypoints remain operational against durable state.",
+        "tests": [
+          "recovery CLI entrypoint preservation"
+        ],
+        "coverage": "COMPLETE"
+      }
+    ],
+    "phantom_test_contracts": [
+      "Undocumented persisted error_code literal ACK_STREAM_MISMATCH.",
+      "Undocumented reconciliation finding_type literals ARCHIVE_METADATA_MISMATCH, MISSING_ARCHIVE_EVENT, UNEXPECTED_ARCHIVE_EVENT and CONSUMER_LAG."
+    ],
+    "untested_requirements": [
+      "Origin metadata mismatch detection for a matching event identity is not independently exercised; the metadata test corrupts only payload_sha256.",
+      "Highest contiguous archive origin sequence is required as reconciliation progress but is not independently graded as an output.",
+      "Quarantine is not checked for absence of a committed/confirmed business effect.",
+      "Stale-epoch lease renewal rejection and non-mutation are not exercised.",
+      "Retention is not recomputed after replay terminalization to prove terminal plans stop pinning journal rows."
+    ],
+    "ambiguities": [],
+    "delegated_contract_check": "PASS for discoverability: instruction.md naturally delegates detailed durability/replay rules to /app/continuity/docs/, and continuity-contract.md supplies the material operational semantics. The defects are verifier alignment/independence defects, not missing handoff context.",
+    "spec_dump_risk": "LOW",
+    "bidirectional_alignment": "REVISE"
+  }
+}
