@@ -1,0 +1,70 @@
+name: JetStream Current Review Packets
+
+on:
+  push:
+    branches:
+      - task/jetstream-quality-interlock
+    paths:
+      - .github/workflows/jetstream-current-review-packets.yml
+
+permissions:
+  contents: write
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out exact invocation commit
+        uses: actions/checkout@v4
+        with:
+          ref: task/jetstream-quality-interlock
+          fetch-depth: 0
+
+      - name: Generate immutable Q4 and Q6 packets
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git status --porcelain -- jetstream-regional-stream-continuity)" = ""
+          task_commit="$(git log -1 --format=%H -- jetstream-regional-stream-continuity)"
+          test "$task_commit" = "76af7499c5ec023d0db6a60ed8408e9651ad5be3"
+
+          python3 .terminus/new_review_packet.py \
+            jetstream-regional-stream-continuity \
+            spec-test-contract \
+            --state FROZEN_CANDIDATE \
+            --change "Independent Q4 on 0f0947 returned REVISE/HIGH/SUFFICIENT with two HIGH coverage findings. Q2 strengthened existing REQ-13 confirmed-watermark and REQ-20 between-items fencing F2P scenarios without increasing the 30 F2P + 10 P2P suite; Q5 removed stale-authority replay-item mutation revealed by the new fence boundary. Refrozen at 76af7499 with 5,527 substantive LOC, 40 tests, Oracle 40/40 and NOP exactly 30 F2P fail + 10 P2P pass."
+
+          python3 .terminus/new_review_packet.py \
+            jetstream-regional-stream-continuity \
+            production-logic \
+            --state FROZEN_CANDIDATE \
+            --change "Task refrozen at 76af7499 after two Q4 coverage findings: REQ-13 fixtures now distinguish confirmed generation last_observed_sequence from journal/archive extent, and REQ-20 independently exercises stale fencing between completed replay items. Shared replay policy now stops before stale next-item mutation. Runtime remains 5,527 substantive LOC; fresh Oracle 40/40 and NOP exactly 30 F2P fail + 10 P2P pass."
+
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          root = Path('.terminus/reviews/jetstream-regional-stream-continuity/76af7499')
+          packets = sorted(root.glob('*.packet.json'))
+          assert len(packets) == 2, packets
+          roles = {json.loads(p.read_text())['role'] for p in packets}
+          assert roles == {'Spec-Test Contract Reviewer', 'Production Logic Auditor'}, roles
+          for p in packets:
+              data = json.loads(p.read_text())
+              assert data['task_commit'] == '76af7499c5ec023d0db6a60ed8408e9651ad5be3'
+              assert data['state'] == 'FROZEN_CANDIDATE'
+              print(p)
+              print(data['review_id'])
+              print(data['review_output_path'])
+          PY
+
+      - name: Commit exact generated packets and remove one-shot workflow
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "Terminus CI Orchestrator"
+          git config user.email "actions@users.noreply.github.com"
+          git rm .github/workflows/jetstream-current-review-packets.yml
+          git add .terminus/reviews/jetstream-regional-stream-continuity/76af7499/
+          git diff --cached --check
+          git commit -m "Generate fresh JetStream Q4 Q6 packets for 76af7499"
+          git push origin HEAD:task/jetstream-quality-interlock
