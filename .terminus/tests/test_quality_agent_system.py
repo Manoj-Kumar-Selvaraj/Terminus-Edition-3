@@ -99,3 +99,86 @@ def test_q4_is_bidirectional_and_q6_is_not_loc_only() -> None:
     assert "LOC count" in q6
     assert "reachability" in q6.lower()
     assert ">=3,000 substantive reachable" in q6
+
+
+def test_quality_interlock_validator_accepts_current_pre_freeze_sessions() -> None:
+    quality = _load_module("quality_interlock_current", T / "validate_quality_interlock.py")
+    report = quality.validate()
+    assert report.errors == []
+    assert report.stale == []
+
+
+def test_frozen_candidate_cannot_skip_producer_quality_gates() -> None:
+    quality = _load_module("quality_interlock_freeze", T / "validate_quality_interlock.py")
+    original = quality.current_task_commit
+    quality.current_task_commit = lambda root, task: "a" * 40
+    try:
+        report = quality.freshness.Report()
+        quality.validate_session(
+            {
+                "path": ROOT / ".terminus/sessions/fake-task.md",
+                "task": "fake-task",
+                "state": "FROZEN_CANDIDATE",
+                "gates": [],
+            },
+            report,
+        )
+    finally:
+        quality.current_task_commit = original
+    joined = "\n".join(report.errors)
+    for gate in (
+        "Q1 Spec Gap Repair",
+        "Q2 Verifier Coverage Repair",
+        "Q3 Spec Ambiguity Repair",
+        "Q7 Task Format Enforcer",
+    ):
+        assert gate in joined
+
+
+def test_pre_llmaj_cannot_skip_q4_q6_quality_interlock() -> None:
+    quality = _load_module("quality_interlock_prellmaj", T / "validate_quality_interlock.py")
+    original = quality.current_task_commit
+    quality.current_task_commit = lambda root, task: "b" * 40
+    producer_gates = [
+        {"label": display, "status": "PASS", "evidence": "producer evidence"}
+        for display in quality.PRODUCER_GATES.values()
+    ]
+    try:
+        report = quality.freshness.Report()
+        quality.validate_session(
+            {
+                "path": ROOT / ".terminus/sessions/fake-task.md",
+                "task": "fake-task",
+                "state": "PRE_LLMAJ",
+                "gates": producer_gates,
+            },
+            report,
+        )
+    finally:
+        quality.current_task_commit = original
+    joined = "\n".join(report.errors)
+    assert "Q4 Spec-Test Contract Reviewer" in joined
+    assert "Q6 Production Logic Auditor" in joined
+    assert "Quality Interlock" in joined
+
+
+def test_model_backed_states_require_both_q8_perspectives() -> None:
+    quality = _load_module("quality_interlock_model", T / "validate_quality_interlock.py")
+    original = quality.current_task_commit
+    quality.current_task_commit = lambda root, task: "c" * 40
+    try:
+        report = quality.freshness.Report()
+        quality.validate_session(
+            {
+                "path": ROOT / ".terminus/sessions/fake-task.md",
+                "task": "fake-task",
+                "state": "LLMAJ",
+                "gates": [],
+            },
+            report,
+        )
+    finally:
+        quality.current_task_commit = original
+    joined = "\n".join(report.errors)
+    assert "Q8 GPT Perspective Simulation" in joined
+    assert "Q8 Claude Perspective Simulation" in joined
