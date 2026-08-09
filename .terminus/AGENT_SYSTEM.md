@@ -4,7 +4,7 @@ Agent-system policy version: `2.3`
 
 This directory is the control plane for creating, reviewing and advancing Terminus Edition 3 tasks. Repository state, current authoritative rules, Git history, generated review packets/results, Actions/Harbor evidence and durable session checkpoints are evidence. Chat history is replaceable working context.
 
-Read `.terminus/agents/PROTOCOL.md` before semantic work, `.terminus/agents/INVOKE.md` before starting a specialist review, and `.terminus/CURSOR_OPERATING.md` when Cursor is the execution surface. Creation uses `.terminus/agents/CREATION_CONTROLLER.md` and `.terminus/agents/CREATOR_AGENT_REGISTRY.md`. Acceptance review uses the reviewer checklist, criterion registry and Comprehensive Reviewer contract.
+Read `.terminus/agents/PROTOCOL.md` before semantic work, `.terminus/agents/INVOKE.md` before starting a specialist review, and `.terminus/CURSOR_OPERATING.md` when Cursor is the execution surface. Creation uses `.terminus/agents/CREATION_CONTROLLER.md` and `.terminus/agents/CREATOR_AGENT_REGISTRY.md`. The additive eight-agent quality interlock is defined by `.terminus/agents/QUALITY_AGENT_REGISTRY.md` and `.terminus/agents/QUALITY_AGENT_PROMPTS.md`. Acceptance review uses the reviewer checklist, criterion registry and Comprehensive Reviewer contract.
 
 ## Non-negotiable principles
 
@@ -23,9 +23,26 @@ Read `.terminus/agents/PROTOCOL.md` before semantic work, `.terminus/agents/INVO
 
 New tasks go through the producer-side controller before independent review:
 
-`Scenario Research -> System Architecture -> Defect Topology -> Environment/Starter -> Reference Solution -> Verifier -> Human Writing Research -> Instruction -> Documentation -> Assembly -> Complexity Governor -> deterministic Oracle/NOP -> FROZEN_CANDIDATE`
+`Scenario Research -> System Architecture -> Defect Topology -> Environment/Starter -> Reference Solution -> Verifier -> Human Writing Research -> Instruction -> Spec Alignment -> Documentation -> Format Gate -> Assembly -> Complexity Governor -> deterministic Oracle/NOP -> FROZEN_CANDIDATE`
 
-Producer roles are defined in `CREATOR_AGENT_REGISTRY.md` and `CREATOR_PROMPTS.md`.
+Producer roles are defined in `CREATOR_AGENT_REGISTRY.md` and `CREATOR_PROMPTS.md`. The quality overlay adds Q1/Q2/Q3/Q5/Q7 producer/fixers and Q4/Q6/Q8 independent/diagnostic agents.
+
+### Eight-agent quality interlock
+
+The quality agents have narrow decision rights:
+
+- **Q1 Spec Gap Repairer** — detects legitimate graded behavior that is missing from solver-visible specification and repairs it naturally at the invariant/contract level. It must never turn hidden tests into an instruction checklist.
+- **Q2 Verifier Coverage Repairer** — finds material solver-visible requirements that are not meaningfully tested and adds behavioral coverage.
+- **Q3 Spec Ambiguity Repairer** — removes grading-relevant ambiguity while preserving natural prose and implementation freedom.
+- **Q4 Spec-Test Contract Reviewer** — independent packet-bound reviewer that rebuilds both directions of the requirement/test matrix and checks ambiguity plus spec-dump risk.
+- **Q5 Oracle & Runtime Repair Specialist** — deep deterministic troubleshooter for build, dependency, startup, state, application, Oracle, harness and infrastructure failures. It cannot weaken a legitimate test merely to obtain green.
+- **Q6 Production Logic Auditor** — independent packet-bound reviewer of core logic depth, reachability, module diversity, coupling, toy/padding risk and production credibility. Raw LOC is not sufficient.
+- **Q7 Task Format Enforcer** — deterministic-first producer enforcing exact current task folder, `task.toml`, Docker, verifier, solution, artifact/package and isolation rules.
+- **Q8 Model Perspective Difficulty Simulator** — two separate cold diagnostic solve simulations, `GPT_PERSPECTIVE` and `CLAUDE_PERSPECTIVE`. These are explicitly simulations and never official model evidence.
+
+Authoring alignment runs after instruction/verifier creation: `Q1 -> Q2 -> Q3`. Q7 runs before expensive runtime gates. Q5 is invoked only when deterministic runtime/Oracle evidence fails.
+
+After deterministic freeze, **Q4 and Q6 must independently PASS with sufficient evidence on the exact task commit before normal Pre-LLMaJ begins**. After `PRE_LLMAJ: PASS`, Q8 runs both isolated perspectives before expensive model-backed evaluation. One perspective may not see the other result before both freeze.
 
 ### Large-system scale
 
@@ -41,6 +58,8 @@ For `large_system_strict`, the project-owner authoring requirements are hard con
 Numbers never substitute for difficulty. Duplicate/dead code, fake resources, duplicate manifestations, flat causal graphs, test-map drift, mislabeled F2P/P2P cases, and suite inflation are blocking authoring defects. If the requested strict scale cannot be reached naturally, return `SCENARIO_TOO_SMALL` and select a richer incident rather than pad it.
 
 The legacy `large_system` profile may use scale numbers diagnostically only when the controller explicitly records why strict scale is inappropriate. New tasks requested to meet the large-system numbers must use `large_system_strict`. Both profiles still require structural authenticity.
+
+Q6 applies an additional removal/reachability test: strict PASS requires >=3,000 substantive **reachable** solver-visible runtime/configuration LOC and no HIGH toy/padding risk.
 
 ## Human engineering instruction policy
 
@@ -61,6 +80,8 @@ Instruction Writer and Instruction Reviewer apply:
 1. **Jira/Slack handoff test** — would this look normal in a real engineering ticket with benchmark context removed?
 2. **Reverse-outline test** — if sentences map suspiciously cleanly to verifier/rubric rows, rewrite around the incident and operational invariant.
 
+Q1 uses the same tests when closing verifier->spec gaps. Q4 independently checks that completeness fixes did not become a hidden-test dump.
+
 ## Official difficulty and solvability policy
 
 Final evaluation is 10 official trials total:
@@ -80,6 +101,8 @@ A five-run model suite is diagnostic only. The 5-vs-10 question is resolved; do 
 
 Solvability is separate: every individual verifier case must pass at least once somewhere across the combined 10 official trials. Any 0/10 case blocks acceptance and requires trajectory analysis.
 
+Q8 is an earlier diagnostic simulation only. `GPT_PERSPECTIVE`/`CLAUDE_PERSPECTIVE` output cannot set the tier, satisfy per-test solvability, or be represented as actual GPT-5.5/Claude Opus 4.8 evidence.
+
 ## Review evidence provenance
 
 Current semantic review evidence uses context/result schema v3.
@@ -97,6 +120,8 @@ Every review execution records:
 - exact review output path.
 
 `.terminus/new_review_packet.py` generates the packet and refuses dirty task/governing-policy state. `.terminus/validate_review_freshness.py` validates current ready evidence and packet/result binding.
+
+Q4, Q6 and both Q8 perspective executions use the same provenance machinery. Q1/Q2/Q3/Q5/Q7 are producer/fixer evidence and cannot be promoted to semantic PASS.
 
 Historical legacy reports are retained as immutable history; they are not forced through every future schema. They also cannot support a current PASS merely because they once passed.
 
@@ -156,6 +181,10 @@ Decision right: resolve material conflicts between frozen reviews using controll
 
 Breadth backstop. Independently walks 100% of the criterion registry and verbose checklist before specialist verdicts are shown. It reports all issues, not only the first blocker, and dispositions every available test-quality/trial-analysis flag.
 
+### Quality specialists
+
+Detailed missions, evidence boundaries and outputs for Q1–Q8 are authoritative in `.terminus/agents/QUALITY_AGENT_REGISTRY.md` and `.terminus/agents/QUALITY_AGENT_PROMPTS.md`.
+
 ### CI Orchestrator / Submission Controller
 
 Owns routing, deterministic evidence, packet generation, staleness, circuit breakers, session state and final readiness. It cannot manufacture PASS from incomplete evidence.
@@ -164,9 +193,17 @@ Owns routing, deterministic evidence, packet generation, staleness, circuit brea
 
 | Signal | Owner |
 | --- | --- |
+| verifier-required behavior absent from solver spec | Q1 Spec Gap Repairer |
+| solver requirement not meaningfully tested | Q2 Verifier Coverage Repairer |
+| grading-relevant spec ambiguity | Q3 Spec Ambiguity Repairer |
+| independent bidirectional spec/test contract | Q4 Spec-Test Contract Reviewer |
+| Oracle/build/runtime/application/harness failure | Q5 Oracle & Runtime Repair Specialist |
+| production-grade code depth/reachability/padding | Q6 Production Logic Auditor |
+| task/task.toml/Docker/solution/test/package format | Q7 Task Format Enforcer |
+| pre-model GPT/Claude strategy simulation | Q8 Model Perspective Difficulty Simulator |
 | scenario/contract/failure topology | Task Architect |
 | verifier coverage/quality/Oracle-NOP semantics | Verifier Engineer |
-| schema/Docker/security/metadata/package | Compliance Auditor |
+| schema/Docker/security/metadata/package acceptance review | Compliance Auditor |
 | instruction creation/repair | Instruction Writer |
 | instruction fairness/style/leakage | Instruction Reviewer |
 | README/explanation creation | Documentation Writer |
@@ -180,13 +217,13 @@ Owns routing, deterministic evidence, packet generation, staleness, circuit brea
 
 ## Review order
 
-For a mature frozen candidate:
+For a mature candidate:
 
-`deterministic preflight -> Oracle/NOP -> packet-bound Stage-B specialists -> cold Comprehensive Reviewer -> omission/conflict scan -> adjudication -> Pre-LLMaJ aggregate -> Harbor LLMaJ -> GPT×5 + Claude×5 -> combined 10-run difficulty/solvability -> Trajectory Analyst -> final Compliance + Human Quality -> package`
+`deterministic preflight -> Oracle/NOP -> FROZEN_CANDIDATE -> Q4 Spec-Test Contract Reviewer + Q6 Production Logic Auditor -> QUALITY_INTERLOCK_PASS -> packet-bound Stage-B specialists -> cold Comprehensive Reviewer -> omission/conflict scan -> adjudication -> Pre-LLMaJ aggregate -> Q8 GPT_PERSPECTIVE + CLAUDE_PERSPECTIVE -> Harbor LLMaJ -> GPT×5 + Claude×5 -> combined 10-run difficulty/solvability -> Trajectory Analyst -> final Compliance + Human Quality -> package`
 
-Do not show Comprehensive Reviewer specialist verdicts before its criterion walk is frozen.
+Do not show Comprehensive Reviewer specialist verdicts before its criterion walk is frozen. Do not show Q4 Q1/Q2/Q3 conclusions before Q4 freezes its own matrix. Do not show either Q8 perspective the other result before both simulations freeze.
 
-Use `.terminus/reviewers/PRE_LLMAJ.md` panel policy 2.2.
+Use `.terminus/reviewers/PRE_LLMAJ.md` panel policy 2.2 for the ordinary Pre-LLMaJ panel; the quality interlock is an additive earlier gate and Q8 is a later diagnostic simulation.
 
 ## Checklist severity
 
@@ -203,15 +240,21 @@ Reviewers continue after a blocker so one revision cycle receives all known issu
 
 Task changes stale the affected roles according to `PROTOCOL.md`. Governing reviewer-policy/calibration changes are tracked by role-contract hash so unrelated roles need not be rerun merely because another role changed.
 
+Q4 normally stales on instruction, referenced solver-visible contract, verifier/test, or grading-semantics changes. Q6 normally stales on solver-visible runtime/config/environment/data/reachability changes. Q8 stales on any solver-visible task change that could alter the simulated solve.
+
 Session prose cannot resurrect a stale review. Every current ready semantic row must cite an exact v3 review result whose packet/provenance validates.
 
 ## Circuit breakers
 
 Repeated infrastructure failures, repeated unresolved semantic findings, no-progress task changes, unresolved review conflicts, or predictably futile credential/model retries trip `BLOCKED`. Do not repeat a tripped strategy without new evidence/dependency change.
 
+Q5 stops after two identical failures without new evidence. Persistent spec/test disagreement after two Q1/Q2/Q3 repair cycles routes to Q4/Adjudicator rather than repeated prose/test churn.
+
 ## Durable state
 
 Each task has `.terminus/sessions/<task>.md`. Store current task commit, policy versions, current gate status/evidence, review IDs/paths, checklist coverage, findings/conflicts, run/artifact IDs, circuit breakers and next action. Never store secrets or raw chat transcripts.
+
+Quality-aware sessions should record Q1/Q2/Q3/Q7 producer status, Q4/Q6 packet/result paths, Q5 repair evidence when invoked, and both Q8 simulation result paths when executed. Simulation rows must be labeled diagnostic, not official model evidence.
 
 ## Submission-ready definition
 
@@ -219,6 +262,7 @@ Each task has `.terminus/sessions/<task>.md`. Store current task commit, policy 
 
 - deterministic/static and verifier lint evidence;
 - Oracle = 1 and NOP = 0;
+- quality interlock Q4 + Q6 current PASS for tasks advanced under this workflow;
 - current Stage-B semantic reviews;
 - Comprehensive Reviewer acceptable recommendation with 100% coverage;
 - Pre-LLMaJ aggregate PASS;
@@ -230,5 +274,7 @@ Each task has `.terminus/sessions/<task>.md`. Store current task commit, policy 
 - Final Human Quality current PASS;
 - final package evidence;
 - no unresolved policy conflict, adjudication, circuit breaker, stale/insufficient semantic gate or open blocking finding.
+
+Q8 diagnostic simulation is strongly required by this quality workflow before expensive model-backed evaluation, but it never substitutes for the official model gates.
 
 `.terminus/validate_review_freshness.py` enforces the commit/provenance and mandatory-gate invariants. A green workflow or a non-empty session evidence cell alone is never sufficient.

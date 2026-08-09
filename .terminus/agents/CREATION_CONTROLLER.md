@@ -2,11 +2,11 @@
 
 Policy version: `1.0`
 
-This controller is mandatory for new/rebuilt tasks. Current Edition 3 rules override local policy on conflict. Every creation run also applies `.terminus/agents/PRODUCTION_AUTHENTICITY.md`.
+This controller is mandatory for new/rebuilt tasks. Current Edition 3 rules override local policy on conflict. Every creation run also applies `.terminus/agents/PRODUCTION_AUTHENTICITY.md` and the additive quality interlock in `.terminus/agents/QUALITY_AGENT_REGISTRY.md`.
 
 ## States
 
-`IDEA -> RESEARCHING -> ARCHITECTING -> DEFECT_DESIGN -> ENVIRONMENT_BUILD -> ORACLE_BUILD -> VERIFIER_BUILD -> HUMAN_WRITING_RESEARCH -> INSTRUCTION_DRAFT -> DOCUMENTATION_DRAFT -> ASSEMBLY -> COMPLEXITY_GATE -> RUNTIME_AUTHENTICITY -> DETERMINISTIC_VALIDATION -> FROZEN_CANDIDATE`
+`IDEA -> RESEARCHING -> ARCHITECTING -> DEFECT_DESIGN -> ENVIRONMENT_BUILD -> ORACLE_BUILD -> VERIFIER_BUILD -> HUMAN_WRITING_RESEARCH -> INSTRUCTION_DRAFT -> SPEC_ALIGNMENT -> DOCUMENTATION_DRAFT -> FORMAT_GATE -> ASSEMBLY -> COMPLEXITY_GATE -> RUNTIME_AUTHENTICITY -> DETERMINISTIC_VALIDATION -> FROZEN_CANDIDATE -> QUALITY_INTERLOCK`
 
 `BLOCKED` may overlay any state.
 
@@ -39,14 +39,43 @@ For an operational/stateful strict task, before Instruction Writer or review:
 5. **Verifier Author** — behavioral F2P/P2P verifier from solver-visible contract.
 6. **Human Writing Researcher** — public human-engineering calibration and task-specific writing profile.
 7. **Instruction Writer** — evidence-backed handoff, not compressed rubric.
-8. **Documentation Writer** — reviewer-facing explanations without benchmark framing.
-9. **Task Assembly Agent** — deterministic authoring checks.
-10. **Complexity Governor** — scale + authenticity adversarial review.
-11. **Authoring Failure Diagnostician** — route Oracle/NOP failures to the smallest responsible producer.
+8. **Q1 Spec Gap Repairer** — closes legitimate graded behavior absent from solver-visible specification using natural invariant-level prose/contracts.
+9. **Q2 Verifier Coverage Repairer** — adds behavioral coverage for material solver-visible requirements that are not tested.
+10. **Q3 Spec Ambiguity Repairer** — resolves grading-relevant ambiguity without over-prescribing implementation.
+11. **Documentation Writer** — reviewer-facing explanations without benchmark framing.
+12. **Q7 Task Format Enforcer** — exact current folder/task.toml/Docker/verifier/solution/package conformance before expensive gates.
+13. **Task Assembly Agent** — deterministic authoring checks.
+14. **Complexity Governor** — scale + authenticity adversarial review.
+15. **Authoring Failure Diagnostician** — coarse deterministic failure routing.
+16. **Q5 Oracle & Runtime Repair Specialist** — deep repair for Oracle/build/runtime/application/harness failures after evidence identifies the failing boundary.
+17. **Q4 Spec-Test Contract Reviewer** — independent bidirectional spec/test/ambiguity review on the frozen candidate.
+18. **Q6 Production Logic Auditor** — independent production-grade code/reachability/coupling review on the frozen candidate.
+19. **Q8 Model Perspective Difficulty Simulator** — two diagnostic cold solve simulations after Pre-LLMaJ PASS; never official difficulty evidence.
+
+## Spec alignment state
+
+`SPEC_ALIGNMENT` is producer-side and must finish before documentation/assembly:
+- Q1 reports no unresolved material verifier->spec gap;
+- Q2 reports no unresolved material spec->verifier gap;
+- Q3 reports no unresolved grading-relevant ambiguity;
+- any instruction change remains natural engineer handoff prose and does not mirror tests.
+
+These producers do not certify the result. Q4 performs the later independent contract review.
+
+## Deterministic failure routing
+
+On Oracle/build/runtime failure:
+1. preserve run/job/artifact/log evidence;
+2. use Authoring Failure Diagnostician for coarse ownership if needed;
+3. invoke Q5 for deep `ENVIRONMENT | BUILD | DEPENDENCY | STARTUP | STATE | APPLICATION | ORACLE | VERIFIER_HARNESS | INFRASTRUCTURE | CONTRACT` diagnosis;
+4. repair only the smallest coherent responsible layer;
+5. never weaken a legitimate verifier requirement merely to obtain reward 1.
 
 ## Freeze conditions
 
 `FROZEN_CANDIDATE` requires:
+- Q1/Q2/Q3 producer alignment complete with no unresolved material gap/ambiguity;
+- Q7 current exact-format check PASS;
 - structure/static/lint PASS;
 - complexity gate PASS;
 - runtime-authenticity PASS;
@@ -58,4 +87,11 @@ For an operational/stateful strict task, before Instruction Writer or review:
 - intended P2P preserved;
 - no solution/test leakage.
 
-A creator cannot convert its own evidence into independent review approval.
+## Quality interlock
+
+A frozen candidate does not begin normal Pre-LLMaJ until:
+- Q4 Spec-Test Contract Reviewer returns packet-bound `PASS`, confidence >= MEDIUM, evidence `SUFFICIENT`;
+- Q6 Production Logic Auditor returns packet-bound `PASS`, confidence >= MEDIUM, evidence `SUFFICIENT`;
+- both reviews apply to the exact task commit.
+
+If either returns REVISE, route findings to the smallest responsible producer, invalidate affected evidence, and rerun the quality interlock. A creator cannot convert its own evidence into independent review approval.

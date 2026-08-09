@@ -20,6 +20,9 @@ ROLE_POLICY_VERSIONS = {
     "Comprehensive Reviewer": "1.0",
     "Trajectory Analyst": "1.0",
     "Adjudicator": "1.0",
+    "Spec-Test Contract Reviewer": "1.0",
+    "Production Logic Auditor": "1.0",
+    "Model Perspective Difficulty Simulator": "1.0",
 }
 
 ROLE_PROMPT_HEADINGS = {
@@ -34,6 +37,15 @@ ROLE_PROMPT_HEADINGS = {
     "Comprehensive Reviewer": "Comprehensive Reviewer",
     "Trajectory Analyst": "Trajectory Analyst",
     "Adjudicator": "Adjudicator",
+    "Spec-Test Contract Reviewer": "Q4 — Spec-Test Contract Reviewer",
+    "Production Logic Auditor": "Q6 — Production Logic Auditor",
+    "Model Perspective Difficulty Simulator": "Q8 — Model Perspective Difficulty Simulator",
+}
+
+QUALITY_REVIEW_ROLES = {
+    "Spec-Test Contract Reviewer",
+    "Production Logic Auditor",
+    "Model Perspective Difficulty Simulator",
 }
 
 WRITING_ROLES = {
@@ -79,14 +91,18 @@ def policy_versions(root: Path) -> dict[str, str]:
         "session_schema": declared_version(t / "sessions" / "TEMPLATE.md", "Session schema version"),
         "operating": declared_version(t / "CURSOR_OPERATING.md", "Operating policy version"),
         "invocation": declared_version(t / "agents" / "INVOKE.md", "Invocation policy version"),
+        "quality_registry": declared_version(
+            t / "agents" / "QUALITY_AGENT_REGISTRY.md", "Quality-agent registry version"
+        ),
+        "quality_prompts": declared_version(
+            t / "agents" / "QUALITY_AGENT_PROMPTS.md", "Quality-agent prompt policy version"
+        ),
     }
 
 
 def markdown_section(text: str, heading: str) -> str:
     """Return one level-2 Markdown section including its heading."""
-    pattern = re.compile(
-        rf"(?ms)^## {re.escape(heading)}\s*$.*?(?=^## |\Z)"
-    )
+    pattern = re.compile(rf"(?ms)^## {re.escape(heading)}\s*$.*?(?=^## |\Z)")
     match = pattern.search(text)
     return match.group(0).strip() if match else ""
 
@@ -99,6 +115,13 @@ def role_contract_inputs(root: Path, role: str) -> list[Path]:
         t / "agents" / "PROMPTS.md",
         t / "agents" / "PRODUCTION_AUTHENTICITY.md",
     ]
+    if role in QUALITY_REVIEW_ROLES:
+        inputs.extend(
+            [
+                t / "agents" / "QUALITY_AGENT_REGISTRY.md",
+                t / "agents" / "QUALITY_AGENT_PROMPTS.md",
+            ]
+        )
     if role == "Comprehensive Reviewer":
         inputs.extend(
             [
@@ -123,9 +146,14 @@ def role_contract_hash(root: Path, role: str) -> str:
     """Hash exactly the policy/calibration inputs that govern one reviewer role."""
     t = root / ".terminus"
     prompt_path = t / "agents" / "PROMPTS.md"
+    quality_prompt_path = t / "agents" / "QUALITY_AGENT_PROMPTS.md"
     prompt_text = prompt_path.read_text(encoding="utf-8") if prompt_path.is_file() else ""
+    quality_prompt_text = (
+        quality_prompt_path.read_text(encoding="utf-8") if quality_prompt_path.is_file() else ""
+    )
     heading = ROLE_PROMPT_HEADINGS.get(role, role)
     role_prompt = markdown_section(prompt_text, heading)
+    quality_role_prompt = markdown_section(quality_prompt_text, heading)
 
     h = hashlib.sha256()
     h.update(f"role={role}\nrole_policy={ROLE_POLICY_VERSIONS.get(role, '')}\n".encode())
@@ -133,6 +161,8 @@ def role_contract_hash(root: Path, role: str) -> str:
         h.update(f"\n--- {path.relative_to(root)} ---\n".encode())
         if path == prompt_path:
             h.update(role_prompt.encode("utf-8"))
+        elif path == quality_prompt_path:
+            h.update(quality_role_prompt.encode("utf-8"))
         elif path.is_file():
             h.update(path.read_bytes())
         else:
