@@ -1,0 +1,337 @@
+{
+  "schema_version": "3.0",
+  "role": "Spec-Test Contract Reviewer",
+  "review_id": "jetstream-regional-stream-continuity-fc137e82-spec-test-contract-ad62d62204",
+  "task": "jetstream-regional-stream-continuity",
+  "task_commit": "fc137e823b43b939f7005cc598f41fe10e84e3c1",
+  "control_plane_commit": "fd82579efbe1ed3fbfd81e9b7d5be75fb23a4f60",
+  "protocol_policy_version": "2.1",
+  "prompt_policy_version": "2.2",
+  "role_policy_version": "1.0",
+  "role_contract_hash": "696aa3da8960a5c5ee1b093d2b8bced4e3f95fba130883ee4afc58c846251832",
+  "context_packet": ".terminus/reviews/jetstream-regional-stream-continuity/fc137e82/jetstream-regional-stream-continuity-fc137e82-spec-test-contract-ad62d62204.packet.json",
+  "verdict": "REVISE",
+  "confidence": "HIGH",
+  "evidence_status": "SUFFICIENT",
+  "summary": "The core JetStream continuity contract is substantially represented by the verifier, and the 30 F2P / 8 P2P classification is broadly coherent, but bidirectional alignment is not clean. One F2P case grades an implementation/configuration property (`hub_stream_policy().allow_direct is False`) that is not required by the solver-visible write-isolation contract. More importantly, several safety-critical solver-visible requirements are only partially or superficially graded: diagnostic commands being mutation-free; final reports truthfully representing durable state without deleting incident evidence; and replay fencing being enforced at replay execution boundaries rather than only by the standalone lease/fence primitive. One P2P coexistence case is also weak because it bypasses the planner and proves only that two constructed ranges do not mathematically overlap. Under the Q4 contract, a material phantom assertion or materially under-tested requirement requires REVISE. The appropriate repair owner is the verifier/coverage producer layer, primarily Q2, not the instruction writer.",
+  "evidence": [
+    {
+      "type": "rule",
+      "ref": ".terminus/agents/QUALITY_AGENT_REGISTRY.md@fd82579efbe1ed3fbfd81e9b7d5be75fb23a4f60",
+      "observation": "Q4 must independently verify every substantive verifier assertion against discoverable solver-visible requirements and every material solver-visible requirement against meaningful coverage; one phantom test or untested material requirement requires REVISE. fileciteturn8file0L2-L2"
+    },
+    {
+      "type": "rule",
+      "ref": ".terminus/agents/QUALITY_AGENT_PROMPTS.md@fd82579efbe1ed3fbfd81e9b7d5be75fb23a4f60",
+      "observation": "The required Q4 method is a bidirectional requirement/test reconstruction, ambiguity check, delegated-contract check, and spec-dump review, with PASS requiring all dimensions clean. fileciteturn9file0L2-L2"
+    },
+    {
+      "type": "file",
+      "ref": "jetstream-regional-stream-continuity/instruction.md@fc137e823b43b939f7005cc598f41fe10e84e3c1",
+      "observation": "The instruction delegates durability/replay semantics to `/app/continuity/docs/` and explicitly requires safe crash/reconnect recovery, held ambiguous generation resets, retention safety, and final health/reconciliation reports that describe durable state rather than conceal incident gaps. fileciteturn12file0L2-L2"
+    },
+    {
+      "type": "file",
+      "ref": "jetstream-regional-stream-continuity/environment/continuity/docs/continuity-contract.md@fc137e823b43b939f7005cc598f41fe10e84e3c1",
+      "observation": "The delegated contract specifies source-only hub ingestion, event identity/generation semantics, crash-safe effect/checkpoint ordering, reconciliation, replay fencing, retention, mutation-free diagnostic operations, and truthful operator reports. fileciteturn17file0L2-L2"
+    },
+    {
+      "type": "test",
+      "ref": "jetstream-regional-stream-continuity/tests/test_continuity.py@fc137e823b43b939f7005cc598f41fe10e84e3c1",
+      "observation": "The primary verifier provides behavioral F2P coverage for identity, publication state, generations, topology, processing, reconciliation, replay, retention and fencing, plus preservation cases. The hub raw-write test additionally asserts `hub_stream_policy().allow_direct is False`. fileciteturn21file0L2-L2"
+    },
+    {
+      "type": "test",
+      "ref": "jetstream-regional-stream-continuity/tests/test_contract_coverage.py@fc137e823b43b939f7005cc598f41fe10e84e3c1",
+      "observation": "The supplemental verifier closes four advertised cases: same-owner expired-lease epoch advancement, report materialization, minimum-age/retention-hold preservation, and historical-generation preservation. Its report test checks only file existence and shallow JSON keys/region membership, not report correspondence to durable state or incident-state preservation. fileciteturn31file0L2-L2"
+    },
+    {
+      "type": "file",
+      "ref": "jetstream-regional-stream-continuity/environment/continuity/config/continuity.json@fc137e823b43b939f7005cc598f41fe10e84e3c1",
+      "observation": "The starter hub stream policy has `allow_direct: true` while the topology separately exposes a local raw subject. The contract requires removal of an ingestion path; it does not state that direct-read capability must be disabled. fileciteturn36file0L2-L2"
+    },
+    {
+      "type": "test",
+      "ref": ".terminus/designs/jetstream-regional-stream-continuity-test-map.json@fc137e823b43b939f7005cc598f41fe10e84e3c1",
+      "observation": "Classification metadata identifies 30 F2P and 8 P2P cases covering REQ-01 through REQ-24. Q4 used this only for classification, not as authoritative coverage rationale. fileciteturn24file0L2-L2"
+    }
+  ],
+  "findings": [
+    {
+      "id": "Q4-001",
+      "severity": "HIGH",
+      "status": "OBSERVED",
+      "criterion": "Every substantive verifier behavior must map to a discoverable solver-visible requirement; tests must grade observable contract behavior rather than an unnecessary implementation/configuration choice.",
+      "evidence_refs": [
+        "jetstream-regional-stream-continuity/environment/continuity/docs/continuity-contract.md: Stream topology",
+        "jetstream-regional-stream-continuity/tests/test_continuity.py: test_f2p_hub_raw_archive_rejects_local_subject_write",
+        "jetstream-regional-stream-continuity/environment/continuity/config/continuity.json: hub_stream_policy"
+      ],
+      "why_it_matters": "The solver-visible contract requires the hub raw archive to be a receiving/source stream that does not subscribe to a local raw subject through which arbitrary hub clients can insert indistinguishable records. The verifier correctly checks that `hub_archive.subjects == ()`, but it also independently requires `allow_direct is False`. `allow_direct` is not stated as part of the write-isolation requirement, so a solver can satisfy the specified ingestion invariant while failing this extra assertion. This is a phantom test contract and couples grading to a particular configuration choice beyond the stated operational outcome.",
+      "minimal_remediation": "Smallest responsible producer layer: Q2 / Verifier Coverage Repairer (or Verifier Author). Remove the unsupported `allow_direct is False` assertion and retain an observable check that local raw publication cannot enter the sourced archive. If disabling direct access is genuinely an intended operational requirement, route first to Q1/Q3 to establish that requirement naturally in the solver-visible contract rather than silently grading it.",
+      "regression_risk": "Low if the unsupported assertion is replaced with an actual local-write rejection/insertion-path behavioral check. Do not weaken the source-only ingestion invariant itself."
+    },
+    {
+      "id": "Q4-002",
+      "severity": "HIGH",
+      "status": "OBSERVED",
+      "criterion": "Every material solver-visible requirement that should be graded must have meaningful behavioral coverage.",
+      "evidence_refs": [
+        "jetstream-regional-stream-continuity/instruction.md: final health/reconciliation reporting requirement",
+        "jetstream-regional-stream-continuity/environment/continuity/docs/continuity-contract.md: Operator outputs",
+        "jetstream-regional-stream-continuity/tests/test_contract_coverage.py: test_f2p_final_health_and_reconciliation_reports_are_materialized"
+      ],
+      "why_it_matters": "The contract requires the final reports to describe the durable state actually observed and explicitly forbids manufacturing health by deleting gaps, checkpoints, replay state or captured evidence. The only dedicated final-output test proves that two JSON files exist and contain a few top-level keys with east/west region entries. A solver could emit syntactically valid but false or stale reports and still satisfy that test. The verifier's isolated engine reconciliation unit tests do not establish that the submitted `/out` artifacts correspond to the final durable incident state or that incident evidence was preserved.",
+      "minimal_remediation": "Smallest responsible producer layer: Q2 / Verifier Coverage Repairer. Add outcome-based verification that derives key expected health/reconciliation facts independently from the preserved durable database/captured state and compares them with the submitted reports. Also verify that required captured incident evidence remains intact. Do not prescribe report-generation implementation.",
+      "regression_risk": "Medium. The added verifier must independently compute only contract-significant facts and avoid duplicating the solution implementation or freezing incidental JSON formatting."
+    },
+    {
+      "id": "Q4-003",
+      "severity": "HIGH",
+      "status": "OBSERVED",
+      "criterion": "Safety-critical replay fencing semantics in the delegated solver-visible contract require meaningful verifier coverage at the operation where the safety property matters.",
+      "evidence_refs": [
+        "jetstream-regional-stream-continuity/environment/continuity/docs/continuity-contract.md: Recovery fencing",
+        "jetstream-regional-stream-continuity/tests/test_continuity.py: test_f2p_stale_recovery_worker_is_fenced",
+        "jetstream-regional-stream-continuity/tests/test_contract_coverage.py: test_f2p_expired_lease_reacquired_by_same_owner_advances_epoch",
+        "jetstream-regional-stream-continuity/tests/test_continuity.py: test_p2p_current_lease_owner_can_renew_same_epoch"
+      ],
+      "why_it_matters": "The contract does more than define monotonically increasing fence epochs. It says replay execution validates owner and fence epoch before execution and again while applying replay items, and that renewal and release require the current token. Current tests prove epoch advancement, the standalone `assert_recovery_fence` primitive, and valid renewal. They do not demonstrate that replay execution itself rejects stale ownership at its execution boundaries, including after ownership changes during a replay, nor that stale release is rejected. A solver can therefore repair the lease primitives while leaving the actual recovery mutation path insufficiently fenced.",
+      "minimal_remediation": "Smallest responsible producer layer: Q2 / Verifier Coverage Repairer. Add behavioral replay-execution cases using stale/current fence tokens, including an ownership change between replay-item applications where the public/runtime interface permits it, plus stale release rejection if release is an exposed recovery operation.",
+      "regression_risk": "Medium. Exercise the public recovery behavior rather than asserting private call order or requiring a particular internal fencing helper."
+    },
+    {
+      "id": "Q4-004",
+      "severity": "HIGH",
+      "status": "OBSERVED",
+      "criterion": "Explicit solver-visible diagnostic-operation safety requirements must be graded when violating them could mutate recovery or retention state.",
+      "evidence_refs": [
+        "jetstream-regional-stream-continuity/environment/continuity/docs/continuity-contract.md: Operator outputs",
+        "jetstream-regional-stream-continuity/README.md: continuityctl inspect/reconcile/recover/verify operator entrypoints",
+        "jetstream-regional-stream-continuity/tests/test_continuity.py",
+        "jetstream-regional-stream-continuity/tests/test_contract_coverage.py"
+      ],
+      "why_it_matters": "The delegated contract explicitly says `continuityctl inspect`, `reconcile`, and `verify` are diagnostic operations which may record reconciliation observations but must not apply replay or retention mutations. The verifier exercises reconciliation/health engine methods and checks final files, but contains no behavioral before/after assertion proving that these operator diagnostics leave replay plans, cleanup-sensitive journal state and other protected recovery state unchanged. This is a material operator-safety invariant, not optional documentation.",
+      "minimal_remediation": "Smallest responsible producer layer: Q2 / Verifier Coverage Repairer. Execute the diagnostic entrypoints against controlled durable state and compare contract-relevant mutation surfaces before and after, allowing the documented reconciliation-run/finding records to change.",
+      "regression_risk": "Low to medium. The test must allow the diagnostic bookkeeping explicitly permitted by the contract and prohibit only replay/retention or equivalent recovery-state mutation."
+    },
+    {
+      "id": "Q4-005",
+      "severity": "MEDIUM",
+      "status": "OBSERVED",
+      "criterion": "P2P cases should meaningfully preserve solver-visible behavior rather than provide vacuous coverage.",
+      "evidence_refs": [
+        "jetstream-regional-stream-continuity/environment/continuity/docs/continuity-contract.md: non-overlapping replay plans may coexist",
+        "jetstream-regional-stream-continuity/tests/test_continuity.py: test_p2p_nonoverlapping_replay_ranges_can_coexist",
+        ".terminus/designs/jetstream-regional-stream-continuity-test-map.json: REQ-21 P2P classification"
+      ],
+      "why_it_matters": "The P2P classification itself is appropriate because coexistence is already-correct behavior that should survive the repair. However, the case directly inserts two replay plans through the store and finishes by asserting only that their `ReplayRange` values do not overlap. It does not exercise the planner/conflict path whose contract permits non-overlapping plans to coexist. A regression that incorrectly rejects every second active plan could therefore escape this preservation test.",
+      "minimal_remediation": "Smallest responsible producer layer: Q2 / Verifier Coverage Repairer. Keep this as P2P, but exercise the actual replay-planning/conflict interface for two non-overlapping plans and assert both remain schedulable.",
+      "regression_risk": "Low. Preserve the intended P2P classification and avoid requiring an internal storage representation."
+    }
+  ],
+  "missing_evidence": [],
+  "change_scope": [
+    "Verifier/tests only for Q4-001 through Q4-005 unless the producer determines that `allow_direct = false` is itself an intended public requirement.",
+    "Private test-map classification/coverage metadata may be updated to reflect the repaired behavioral scenarios.",
+    "If `allow_direct = false` is intentionally mandatory, Q1/Q3 owns the smallest solver-visible contract clarification before verifier enforcement."
+  ],
+  "do_not_change": [
+    "Do not weaken the source-only raw archive requirement.",
+    "Do not weaken stable event identity, generation hold, exactly-once effect, reconciliation, retention or fencing invariants merely to make tests easier.",
+    "Do not expose hidden test names, fixtures or implementation recipes in instruction.md.",
+    "Do not convert the concise incident handoff into a verifier checklist.",
+    "Do not change F2P/P2P labels merely to obtain desired counts; classification should follow starter-failing repair behavior versus already-correct preservation behavior."
+  ],
+  "next_gate": "Route acceptance-relevant verifier coverage findings to Q2 / Verifier Coverage Repairer, rerun affected deterministic Oracle/NOP evidence, create a fresh FROZEN_CANDIDATE commit, and generate a new packet-bound independent Q4 review.",
+  "role_output": {
+    "REQUIREMENT_TEST_MATRIX": [
+      {
+        "requirement": "REQ-01 stable event/message identity across retries/reconnects; distinct real events remain distinct",
+        "tests": [
+          "test_f2p_retry_uses_stable_event_id",
+          "test_f2p_reconnect_retry_does_not_mint_new_identity",
+          "test_f2p_delayed_retry_dedupes_beyond_server_window",
+          "test_p2p_distinct_same_payload_events_remain_distinct"
+        ],
+        "coverage": "COMPLETE"
+      },
+      {
+        "requirement": "REQ-02 publish success only after positive expected-stream acknowledgement",
+        "tests": [
+          "test_f2p_publish_failure_does_not_mark_journal_published",
+          "test_f2p_publish_ack_transitions_journal_once"
+        ],
+        "coverage": "COMPLETE"
+      },
+      {
+        "requirement": "REQ-03 explicit origin generations, pending approval on incarnation reset, header/registry agreement, historical generation preservation",
+        "tests": [
+          "test_f2p_generation_regression_is_held",
+          "test_f2p_generation_header_mismatch_is_rejected",
+          "test_p2p_confirmed_generation_continues_monotonically",
+          "test_p2p_generation_approval_does_not_rewrite_historical_events"
+        ],
+        "coverage": "COMPLETE"
+      },
+      {
+        "requirement": "REQ-04 source-only hub raw archive with no arbitrary local raw insertion path",
+        "tests": [
+          "test_f2p_hub_raw_archive_rejects_local_subject_write"
+        ],
+        "coverage": "PARTIAL_WITH_PHANTOM_ASSERTION"
+      },
+      {
+        "requirement": "REQ-05 unique physical stream identities and correct edge-domain source mappings",
+        "tests": [
+          "test_f2p_stream_catalog_uses_unique_physical_names",
+          "test_f2p_source_domains_match_edge_ownership"
+        ],
+        "coverage": "COMPLETE"
+      },
+      {
+        "requirement": "REQ-06 archived identities preserve origin metadata and payload authority",
+        "tests": [
+          "test_f2p_archive_metadata_preserves_origin_identity"
+        ],
+        "coverage": "MEANINGFUL"
+      },
+      {
+        "requirement": "REQ-07 redelivery cannot duplicate committed business effects",
+        "tests": [
+          "test_f2p_redelivery_creates_single_effect"
+        ],
+        "coverage": "COMPLETE"
+      },
+      {
+        "requirement": "REQ-08 crash-safe effect, checkpoint and acknowledgement transitions",
+        "tests": [
+          "test_f2p_crash_after_effect_before_ack_is_idempotent",
+          "test_f2p_checkpoint_does_not_advance_before_effect_commit",
+          "test_p2p_successful_effect_advances_checkpoint"
+        ],
+        "coverage": "MEANINGFUL"
+      },
+      {
+        "requirement": "REQ-09 poison input quarantined without false completion",
+        "tests": [
+          "test_f2p_poison_event_is_quarantined_without_completion"
+        ],
+        "coverage": "COMPLETE"
+      },
+      {
+        "requirement": "REQ-10 restart health reconciles JetStream acknowledgement evidence against durable application state",
+        "tests": [
+          "test_f2p_restart_detects_ack_floor_effect_ledger_gap"
+        ],
+        "coverage": "COMPLETE"
+      },
+      {
+        "requirement": "REQ-11/12 reconciliation by stable identity and detection of offsetting missing/unexpected records",
+        "tests": [
+          "test_f2p_reconcile_ignores_hub_sequence_equivalence",
+          "test_f2p_reconcile_finds_offsetting_gap_and_duplicate"
+        ],
+        "coverage": "COMPLETE"
+      },
+      {
+        "requirement": "REQ-13 convergence requires archive plus every enabled required consumer through confirmed watermark",
+        "tests": [
+          "test_f2p_convergence_waits_for_all_required_consumers"
+        ],
+        "coverage": "COMPLETE"
+      },
+      {
+        "requirement": "REQ-14/15 replay only missing stable identities for approved generation and remains idempotent beyond server duplicate window",
+        "tests": [
+          "test_f2p_replay_plan_contains_only_missing_events",
+          "test_f2p_replay_refuses_unapproved_generation",
+          "test_f2p_delayed_retry_dedupes_beyond_server_window"
+        ],
+        "coverage": "COMPLETE"
+      },
+      {
+        "requirement": "REQ-16/17/18/19/23 retention bounded by archive, required consumers, replay pins, age/holds and recovery horizon",
+        "tests": [
+          "test_f2p_cleanup_stops_at_archive_watermark",
+          "test_f2p_cleanup_stops_at_slowest_required_consumer",
+          "test_f2p_cleanup_preserves_rows_for_active_replay_plan",
+          "test_f2p_retention_policy_covers_recovery_horizon",
+          "test_p2p_fully_converged_old_rows_are_cleanup_eligible",
+          "test_p2p_cleanup_respects_minimum_age_and_explicit_holds"
+        ],
+        "coverage": "MEANINGFUL"
+      },
+      {
+        "requirement": "REQ-20 lease epoch monotonicity and replay execution fencing",
+        "tests": [
+          "test_f2p_stale_recovery_worker_is_fenced",
+          "test_f2p_expired_lease_reacquired_by_same_owner_advances_epoch",
+          "test_p2p_current_lease_owner_can_renew_same_epoch"
+        ],
+        "coverage": "PARTIAL"
+      },
+      {
+        "requirement": "REQ-21 overlapping active replay ranges rejected while non-overlapping ranges may coexist",
+        "tests": [
+          "test_f2p_overlapping_active_replay_plan_is_rejected",
+          "test_p2p_nonoverlapping_replay_ranges_can_coexist"
+        ],
+        "coverage": "PARTIAL"
+      },
+      {
+        "requirement": "REQ-22 derived output cannot re-enter raw sourced namespace",
+        "tests": [
+          "test_f2p_derived_output_never_reenters_raw_archive"
+        ],
+        "coverage": "COMPLETE"
+      },
+      {
+        "requirement": "REQ-24 diagnostic outputs materialized, truthful to durable state, and incident history not rewritten; diagnostic commands do not apply replay/retention mutations",
+        "tests": [
+          "test_f2p_final_health_and_reconciliation_reports_are_materialized"
+        ],
+        "coverage": "PARTIAL"
+      }
+    ],
+    "PHANTOM_TEST_CONTRACTS": [
+      {
+        "test_behavior": "Hub source-only F2P additionally requires `hub_stream_policy().allow_direct is False`.",
+        "reason": "The delegated contract forbids a local raw ingestion path but does not require disabling this separate policy property.",
+        "finding": "Q4-001"
+      }
+    ],
+    "UNTESTED_REQUIREMENTS": [
+      {
+        "requirement": "Diagnostic `inspect`, `reconcile`, and `verify` operations must not apply replay or retention mutations.",
+        "coverage": "NONE at operator-behavior level",
+        "finding": "Q4-004"
+      },
+      {
+        "requirement": "Final reports must correspond to durable incident state and may not manufacture health by deleting gaps/checkpoints/replay evidence.",
+        "coverage": "PARTIAL; existence and shallow schema only",
+        "finding": "Q4-002"
+      },
+      {
+        "requirement": "Replay execution must enforce owner/fence token before and during replay application; token-sensitive release must reject stale ownership.",
+        "coverage": "PARTIAL; primitive fencing/epoch and valid renewal tested, replay mutation boundary not demonstrated",
+        "finding": "Q4-003"
+      }
+    ],
+    "AMBIGUITIES": [],
+    "DELEGATED_CONTRACT_CHECK": {
+      "status": "PASS",
+      "details": "The instruction's durability/replay delegation resolves to `/app/continuity/docs/continuity-contract.md`, which contains substantive identity, generation, topology, processing, reconciliation, replay, fencing, retention and operator-output semantics. The problem is verifier coverage/alignment, not a missing delegated document."
+    },
+    "SPEC_DUMP_RISK": "LOW",
+    "F2P_P2P_CLASSIFICATION": {
+      "status": "GENERALLY_APPROPRIATE",
+      "counts": {
+        "F2P": 30,
+        "P2P": 8
+      },
+      "notes": "The F2P set generally targets broken starter behaviors and the P2P set preserves already-correct behavior. The non-overlapping replay P2P case is correctly classified but presently too weak/vacuous to establish the intended preservation property."
+    },
+    "BIDIRECTIONAL_ALIGNMENT": "FAIL"
+  }
+}
