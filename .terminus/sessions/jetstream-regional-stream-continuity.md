@@ -35,7 +35,7 @@ After the first Q4 review, verifier-only remediation preserved the production ru
 | Q5 Oracle & Runtime Repair | NOT_RUN | no runtime/application defect triggered; Oracle is green after verifier remediation |
 | Creator Complexity Gate | PASS | run `31305137639`, job `93224149636`: `substantive_loc=5488`, `tests_total=39`, `f2p=30`, `p2p=9`, `requirements=25`; clean session-head run `31305175399` also PASS |
 | Production Authenticity Gate | PASS | repaired task run `31305137645` PASS; clean session-head run `31305175433` PASS |
-| Agent System / review freshness | PASS | clean session-head run `31305175397`, job `93224248263`: regression suite, structure, review freshness/commit binding and package isolation PASS |
+| Agent System / review freshness | PASS | run `31305175397`, job `93224248263`: regression suite, structure, review freshness/commit binding and package isolation PASS before fresh packet recording; cleaned-head rerun required after packet/session commits |
 | Preflight/static | PASS | run `31305175400`, job `93224301255` |
 | Ruff verifier | PASS | run `31305175400`, job `93224301255` |
 | Environment/verifier build | PASS | run `31305175400`, job `93224301255` |
@@ -44,8 +44,8 @@ After the first Q4 review, verifier-only remediation preserved the production ru
 | F2P/P2P empirical matrix | PASS | artifact `9035735832`, sha256 `851bbf38aead1e8a71f247d3cc365a0397b1ae3969cf7cdc2203b87315f2bdc9`: every `test_f2p_*` fails on NOP and passes on Oracle; every `test_p2p_*` passes on both |
 | Leakage/package checks | PASS | solver-visible production files were unchanged by Q4 remediation; environment `.dockerignore` remains isolated; Agent-System package isolation PASS |
 | FROZEN_CANDIDATE | PASS | exact task commit `a57ed7e6afeadaa8228f7c9eda82e09fedb789c6`; all deterministic freeze conditions above are current |
-| Q4 Spec-Test Contract Reviewer | PENDING_FRESH_PACKET | historical `fc137e82` review was `REVISE/HIGH/SUFFICIENT`; its findings are repaired; new exact-commit packet/result required |
-| Q6 Production Logic Auditor | PENDING_FRESH_PACKET | historical `fc137e82` review was `PASS/HIGH/SUFFICIENT`; production logic is unchanged, but exact task-commit provenance requires a new packet/result |
+| Q4 Spec-Test Contract Reviewer | PENDING_REVIEW | fresh packet `jetstream-regional-stream-continuity-a57ed7e6-spec-test-contract-0fec10b4cd`; result must be written to its packet-declared output path |
+| Q6 Production Logic Auditor | PENDING_REVIEW | fresh packet `jetstream-regional-stream-continuity-a57ed7e6-production-logic-f26d6870da`; result must be written to its packet-declared output path |
 | Quality Interlock | PENDING | requires fresh current-commit Q4 PASS + Q6 PASS with sufficient evidence |
 | Task Architect | PENDING | after Quality Interlock |
 | Verifier Engineer | PENDING | after Quality Interlock |
@@ -96,39 +96,45 @@ Artifact digest: `sha256:851bbf38aead1e8a71f247d3cc365a0397b1ae3969cf7cdc2203b87
 
 The Edition-3 workflow remains red only at the later reusable-AI-credential preparation step because `STB_AI_API_KEY`/`STB_AI_CONFIG_B64` is not configured. Oracle/NOP and all deterministic freeze evidence completed before that downstream dependency.
 
+## Fresh Q4/Q6 packet provenance
+
+The repository packet generator ran successfully in GitHub Actions run `31305436621`. Packet artifact `9035780392` has sha256 `7d40478a462b2cedb530598802dedb3b1abd102bfa86fc27ac60b407af17bc5f`. The temporary packet-generation workflow was removed after committing the exact generated packets.
+
+### Fresh Q4
+
+- Review ID: `jetstream-regional-stream-continuity-a57ed7e6-spec-test-contract-0fec10b4cd`
+- Task commit: `a57ed7e6afeadaa8228f7c9eda82e09fedb789c6`
+- Role: `Spec-Test Contract Reviewer`
+- Role contract hash: `696aa3da8960a5c5ee1b093d2b8bced4e3f95fba130883ee4afc58c846251832`
+- Packet: `.terminus/reviews/jetstream-regional-stream-continuity/a57ed7e6/jetstream-regional-stream-continuity-a57ed7e6-spec-test-contract-0fec10b4cd.packet.json`
+- Expected result: `.terminus/reviews/jetstream-regional-stream-continuity/a57ed7e6/jetstream-regional-stream-continuity-a57ed7e6-spec-test-contract-0fec10b4cd.json`
+
+### Fresh Q6
+
+- Review ID: `jetstream-regional-stream-continuity-a57ed7e6-production-logic-f26d6870da`
+- Task commit: `a57ed7e6afeadaa8228f7c9eda82e09fedb789c6`
+- Role: `Production Logic Auditor`
+- Role contract hash: `d133a8d561746bb33b8622cb3e564feccfbfe669e9e601f1d0dba95762dfb29b`
+- Packet: `.terminus/reviews/jetstream-regional-stream-continuity/a57ed7e6/jetstream-regional-stream-continuity-a57ed7e6-production-logic-f26d6870da.packet.json`
+- Expected result: `.terminus/reviews/jetstream-regional-stream-continuity/a57ed7e6/jetstream-regional-stream-continuity-a57ed7e6-production-logic-f26d6870da.json`
+
 ## Historical semantic provenance
 
-### Historical Q4 — REVISE, resolved and stale
-
-- Review ID: `jetstream-regional-stream-continuity-fc137e82-spec-test-contract-ad62d62204`
-- Task commit: `fc137e823b43b939f7005cc598f41fe10e84e3c1`
-- Verdict: `REVISE`
-- Confidence: `HIGH`
-- Evidence: `SUFFICIENT`
-
-### Historical Q6 — PASS, stale by task commit
-
-- Review ID: `jetstream-regional-stream-continuity-fc137e82-production-logic-823edb7564`
-- Task commit: `fc137e823b43b939f7005cc598f41fe10e84e3c1`
-- Verdict: `PASS`
-- Confidence: `HIGH`
-- Evidence: `SUFFICIENT`
-
-Neither historical result satisfies the current Quality Interlock because current task commit is `a57ed7e6afeadaa8228f7c9eda82e09fedb789c6`.
+The prior `fc137e82` Q4 `REVISE` and Q6 `PASS` remain preserved as historical evidence only. Neither can satisfy the current Quality Interlock because their exact task-commit binding is stale.
 
 ## Current blocker
 
-`Generate fresh immutable Q4 spec-test-contract and Q6 production-logic review packets against task commit a57ed7e6afeadaa8228f7c9eda82e09fedb789c6. Then run both reviewers cold in independent contexts and commit their exact result JSONs. QUALITY_INTERLOCK_PASS is not claimed until both current results validate.`
+`Run the fresh Q4 and fresh Q6 packet-bound reviews in separate cold contexts. Commit each exact result JSON to its packet-declared output path. QUALITY_INTERLOCK_PASS is not claimed until both current results validate.`
 
 ## Root-cause classification
 
 - Owner: `CI Orchestrator`
 - Classification: `none`
-- Evidence: `Q4 verifier-contract findings are repaired and deterministic validation is green; next dependency is fresh exact-commit independent semantic review`
+- Evidence: `Q4 findings are repaired, deterministic validation is green, and fresh exact-commit semantic packets are committed; only independent cold review remains`
 
 ## Next action
 
-`Generate fresh v3 Q4/Q6 packets for task commit a57ed7e6afeadaa8228f7c9eda82e09fedb789c6. Preserve the historical fc137e82 packets/results as history only. Invoke fresh Q4 and Q6 independently; if both PASS with sufficient evidence and current provenance, aggregate QUALITY_INTERLOCK_PASS and proceed to ordinary Stage-B reviewers.`
+`Invoke fresh Q4 and Q6 independently using the a57ed7e6 packets. If both return PASS with at least MEDIUM confidence and SUFFICIENT evidence and validate against the packet/task/role hashes, aggregate QUALITY_INTERLOCK_PASS and proceed to ordinary Stage-B reviewers. Any REVISE finding routes only to its responsible producer and invalidates affected downstream evidence.`
 
 ## Circuit breakers
 
@@ -143,10 +149,10 @@ Neither historical result satisfies the current Quality Interlock because curren
 - Keep F2P count at 30; current verifier is 30 F2P + 9 P2P.
 - Captured incident state remains evidence and must not be rewritten to manufacture a healthy report.
 - Current frozen task commit is `a57ed7e6afeadaa8228f7c9eda82e09fedb789c6`.
-- Historical Q4 was REVISE and drove the current verifier repair; historical Q6 was PASS but both are stale by exact task-commit provenance.
-- A fresh Q4 and a fresh Q6 are mandatory before Quality Interlock even though production runtime files did not change.
-- Harbor/model credential failure is downstream and does not invalidate the current deterministic freeze.
+- Fresh current review IDs are Q4 `...spec-test-contract-0fec10b4cd` and Q6 `...production-logic-f26d6870da`.
+- Historical Q4/Q6 under `fc137e82` are stale and may not satisfy the current interlock.
+- Harbor/model credential failure is downstream and does not invalidate deterministic freeze.
 
 ## Resume rule
 
-Resolve current task commit from Git and require `a57ed7e6afeadaa8228f7c9eda82e09fedb789c6` unless a newer task-file commit exists. Verify the cited deterministic runs/artifact remain current, then resume with fresh generated Q4/Q6 packets and independent cold results.
+Resolve current task commit from Git and require `a57ed7e6afeadaa8228f7c9eda82e09fedb789c6` unless a newer task-file commit exists. Require fresh Q4/Q6 result files matching the packet paths above, validate their provenance, and only then evaluate Quality Interlock aggregation.
