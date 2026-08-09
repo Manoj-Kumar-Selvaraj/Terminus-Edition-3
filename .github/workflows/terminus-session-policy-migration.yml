@@ -1,0 +1,60 @@
+name: Terminus session policy identity migration
+
+on:
+  push:
+    branches:
+      - task/jetstream-quality-interlock
+    paths:
+      - .github/workflows/terminus-session-policy-migration.yml
+
+permissions:
+  contents: write
+
+jobs:
+  migrate:
+    if: github.event.head_commit.message == 'Invoke session policy identity migration'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: task/jetstream-quality-interlock
+          fetch-depth: 0
+
+      - name: Update historical session policy identity
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path('.terminus/sessions/payment-eod-control-chain.md')
+          text = path.read_text(encoding='utf-8')
+          replacements = {
+              '- Agent-system policy: `2.3`': '- Agent-system policy: `2.4`',
+              '- Specialist protocol policy: `2.1`': '- Specialist protocol policy: `2.2`',
+          }
+          for old, new in replacements.items():
+              count = text.count(old)
+              if count != 1:
+                  raise SystemExit(f'expected one {old!r}, found {count}')
+              text = text.replace(old, new, 1)
+          path.write_text(text, encoding='utf-8')
+          PY
+          rm .github/workflows/terminus-session-policy-migration.yml
+
+      - name: Validate repository-wide session freshness
+        shell: bash
+        run: |
+          set -euo pipefail
+          python .terminus/validate_review_freshness.py
+          python .terminus/validate_quality_interlock.py
+
+      - name: Commit migration and self-delete
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name actions
+          git config user.email actions@users.noreply.github.com
+          git add .terminus/sessions/payment-eod-control-chain.md .github/workflows/terminus-session-policy-migration.yml
+          git diff --cached --check
+          git commit -m "Migrate durable sessions to Protocol 2.2 identity"
+          git push origin HEAD:task/jetstream-quality-interlock
