@@ -10,14 +10,15 @@ ROOT = Path(__file__).resolve().parents[1]
 T = ROOT / ".terminus"
 
 REQUIRED = {
-    T / "agents/PRODUCTION_AUTHENTICITY.md": ["Production evidence surface", "10,000–20,000", "Business-logic depth", "incident evidence test", "thin business logic", "Reviewer obligations"],
+    T / "agents/PRODUCTION_AUTHENTICITY.md": ["Production evidence surface", "10,000–20,000", "Business-logic depth", "Portfolio diversity", "incident evidence test", "thin business logic", "copied thick-template inflation", "Reviewer obligations"],
     T / "agents/CREATION_PIPELINE.md": ["PRODUCTION_AUTHENTICITY.md", "validate_runtime_authenticity.py", "production evidence surface", "10,000–20,000", "thin business logic"],
     T / "agents/CREATION_CONTROLLER.md": ["PRODUCTION_AUTHENTICITY.md", "RUNTIME_AUTHENTICITY", "10,000–20,000", "one IF = one program"],
     T / "agents/CREATOR_AGENT_REGISTRY.md": ["PRODUCTION_AUTHENTICITY.md", "10,000–20,000", "micro-program", "validate_runtime_authenticity.py"],
     T / "agents/INVOKE.md": ["PRODUCTION_AUTHENTICITY.md", "production evidence surface", "micro-program/module inflation", "toy production data", "unsupported incident backstory"],
     T / "review_contract.py": ["PRODUCTION_AUTHENTICITY.md", "role_contract_inputs"],
     T / "validate_runtime_authenticity.py": ["SYNTHETIC_README_PHRASES", "min_substantive_lines_per_program", "min_decision_points_per_program", "min_records", "10000", "20000", "random()"],
-    ROOT / ".github/workflows/terminus-production-authenticity.yml": ["instruction.md", "README.md", "validate_runtime_authenticity.py", "test_runtime_authenticity.py"],
+    T / "validate_business_module_diversity.py": ["canonical_logic", "structural_signature", "logic-equivalent", "copied thick templates", "max_structural_clone_fraction"],
+    ROOT / ".github/workflows/terminus-production-authenticity.yml": ["instruction.md", "README.md", "validate_runtime_authenticity.py", "validate_business_module_diversity.py", "test_runtime_authenticity.py", "test_business_module_diversity.py"],
 }
 
 
