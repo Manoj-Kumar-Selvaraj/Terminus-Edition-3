@@ -50,9 +50,8 @@ from .store import ContinuityStore, RetentionWatermark
 
 
 class Publisher(Protocol):
-    async def publish(
-        self, event: EventEnvelope, *, message_id: str, expected_stream: str
-    ) -> PublishAck: ...
+    async def publish(self, event: EventEnvelope, *, message_id: str, expected_stream: str) -> PublishAck:
+        ...
 
 
 class Delivery(Protocol):
@@ -61,9 +60,11 @@ class Delivery(Protocol):
     delivery_count: int
     jetstream_ack_floor: int
 
-    async def ack(self) -> None: ...
+    async def ack(self) -> None:
+        ...
 
-    async def nak(self, delay_seconds: int | None = None) -> None: ...
+    async def nak(self, delay_seconds: int | None = None) -> None:
+        ...
 
 
 @dataclass(frozen=True)
@@ -118,16 +119,12 @@ class RecoveryOutcome:
 
 
 class ContinuityEngine:
-    def __init__(
-        self, store: ContinuityStore, *, config: Mapping[str, Any] | None = None
-    ) -> None:
+    def __init__(self, store: ContinuityStore, *, config: Mapping[str, Any] | None = None) -> None:
         self.store = store
         self.config = dict(config or {})
 
     @classmethod
-    def from_json_file(
-        cls, store: ContinuityStore, path: str | Path
-    ) -> "ContinuityEngine":
+    def from_json_file(cls, store: ContinuityStore, path: str | Path) -> "ContinuityEngine":
         document = json.loads(Path(path).read_text(encoding="utf-8"))
         if not isinstance(document, Mapping):
             raise ContractError("continuity config must be a JSON object")
@@ -139,9 +136,7 @@ class ContinuityEngine:
             raise ContractError(f"missing region configuration for {region!r}")
         value = regions[region]
         if not isinstance(value, Mapping):
-            raise ContractError(
-                f"region configuration for {region!r} must be an object"
-            )
+            raise ContractError(f"region configuration for {region!r} must be an object")
         return value
 
     def topology(self) -> Topology:
@@ -205,16 +200,12 @@ class ContinuityEngine:
         expected_stream = self.expected_stream_for_event(event)
         attempt_no = self.store.begin_publish_attempt(
             event.identity.event_id,
-            message_id=self.message_id_for_event(
-                event, attempt_no=self._next_attempt(event.identity.event_id)
-            ),
+            message_id=self.message_id_for_event(event, attempt_no=self._next_attempt(event.identity.event_id)),
             requested_stream=expected_stream,
         )
         message_id = self.message_id_for_event(event, attempt_no=attempt_no)
         try:
-            ack = await publisher.publish(
-                event, message_id=message_id, expected_stream=expected_stream
-            )
+            ack = await publisher.publish(event, message_id=message_id, expected_stream=expected_stream)
         except TimeoutError as exc:
             self.store.finish_publish_attempt(
                 event.identity.event_id,
@@ -250,9 +241,7 @@ class ContinuityEngine:
         attempts = self.store.publish_attempts(event_id)
         return len(attempts) + 1
 
-    def validate_origin_observation(
-        self, observation: OriginObservation
-    ) -> OriginGeneration:
+    def validate_origin_observation(self, observation: OriginObservation) -> OriginGeneration:
         region_cfg = self.region_config(observation.region)
         expected_stream = str(region_cfg["stream_name"])
         expected_domain = str(region_cfg["domain"])
@@ -303,9 +292,7 @@ class ContinuityEngine:
         )
 
     def validate_event_generation(self, event: EventEnvelope) -> OriginGeneration:
-        generation = self.store.generation(
-            event.identity.region, event.identity.generation
-        )
+        generation = self.store.generation(event.identity.region, event.identity.generation)
         if generation is None:
             raise GenerationConflict(
                 f"event {event.identity.event_id} references unknown generation {event.identity.generation}"
@@ -316,15 +303,9 @@ class ContinuityEngine:
             )
         return generation
 
-    def _consumer_effect_payload(
-        self, consumer_name: str, event: EventEnvelope
-    ) -> Mapping[str, Any]:
+    def _consumer_effect_payload(self, consumer_name: str, event: EventEnvelope) -> Mapping[str, Any]:
         consumer = next(
-            (
-                item
-                for item in self.store.consumers()
-                if str(item["consumer_name"]) == consumer_name
-            ),
+            (item for item in self.store.consumers() if str(item["consumer_name"]) == consumer_name),
             None,
         )
         if consumer is None:
@@ -395,9 +376,7 @@ class ContinuityEngine:
             )
 
         existing = self.store.effect(delivery.consumer_name, event.identity.event_id)
-        duplicate_effect = (
-            existing is not None and existing.status is EffectStatus.COMMITTED
-        )
+        duplicate_effect = existing is not None and existing.status is EffectStatus.COMMITTED
         checkpoint = self.store.advance_ack_checkpoint(
             consumer_name=delivery.consumer_name,
             identity=event.identity,
@@ -434,28 +413,20 @@ class ContinuityEngine:
             detail={"delivery_count": delivery.delivery_count, "worker_id": worker_id},
         )
 
-    def _journal_identity_rows(
-        self, region: str, generation: int
-    ) -> dict[str, EventEnvelope]:
+    def _journal_identity_rows(self, region: str, generation: int) -> dict[str, EventEnvelope]:
         return {
             event.identity.event_id: event
             for event in self.store.iter_events(region=region, generation=generation)
         }
 
-    def _archive_identity_rows(
-        self, region: str, generation: int
-    ) -> dict[str, ArchiveRecord]:
+    def _archive_identity_rows(self, region: str, generation: int) -> dict[str, ArchiveRecord]:
         return {
             record.identity.event_id: record
             for record in self.store.iter_archive(region=region, generation=generation)
         }
 
-    def _count_duplicate_observations(
-        self, archive: Mapping[str, ArchiveRecord]
-    ) -> int:
-        return sum(
-            1 for record in archive.values() if record.duplicate_observation_count > 0
-        )
+    def _count_duplicate_observations(self, archive: Mapping[str, ArchiveRecord]) -> int:
+        return sum(1 for record in archive.values() if record.duplicate_observation_count > 0)
 
     def _required_consumer_lag(
         self,
@@ -497,12 +468,8 @@ class ContinuityEngine:
         duplicate_count = self._count_duplicate_observations(archive)
         metadata_mismatch_count = 0
 
-        journal_sequences = sorted(
-            event.identity.origin_sequence for event in journal.values()
-        )
-        archive_sequences = sorted(
-            record.identity.hub_stream_sequence for record in archive.values()
-        )
+        journal_sequences = sorted(event.identity.origin_sequence for event in journal.values())
+        archive_sequences = sorted(record.identity.hub_stream_sequence for record in archive.values())
         journal_floor = contiguous_floor(journal_sequences)
         archive_floor = contiguous_floor(archive_sequences)
         archive_origin_floor = contiguous_floor(
@@ -543,17 +510,9 @@ class ContinuityEngine:
             )
 
         target_sequence = min(journal_floor, archive_floor)
-        findings.extend(
-            self._required_consumer_lag(region, generation, target_sequence)
-        )
-        checksum = sha256_text(
-            f"{region}:{generation}:{journal_count}:{archive_count}:{archive_floor}"
-        )
-        blocking = [
-            f
-            for f in findings
-            if f.severity in {FindingSeverity.ERROR, FindingSeverity.BLOCKER}
-        ]
+        findings.extend(self._required_consumer_lag(region, generation, target_sequence))
+        checksum = sha256_text(f"{region}:{generation}:{journal_count}:{archive_count}:{archive_floor}")
+        blocking = [f for f in findings if f.severity in {FindingSeverity.ERROR, FindingSeverity.BLOCKER}]
         status = ReconcileStatus.CONVERGED if not blocking else ReconcileStatus.DIVERGED
         summary = ReconciliationSummary(
             run_id=run_id,
@@ -564,9 +523,7 @@ class ContinuityEngine:
             unexpected_count=unexpected_count,
             duplicate_count=duplicate_count,
             metadata_mismatch_count=metadata_mismatch_count,
-            consumer_lag_count=sum(
-                1 for f in findings if f.finding_type == "CONSUMER_LAG"
-            ),
+            consumer_lag_count=sum(1 for f in findings if f.finding_type == "CONSUMER_LAG"),
             highest_contiguous_archive_origin_sequence=archive_origin_floor,
             required_consumer_progress=required_consumer_progress,
             checksum=checksum,
@@ -602,11 +559,7 @@ class ContinuityEngine:
         archive = self._archive_identity_rows(region, generation)
         if len(journal) <= len(archive):
             return ()
-        missing = [
-            event.identity.event_id
-            for event in journal.values()
-            if event.identity.origin_sequence > len(archive)
-        ]
+        missing = [event.identity.event_id for event in journal.values() if event.identity.origin_sequence > len(archive)]
         return tuple(sorted(missing))
 
     def plan_replay(
@@ -632,13 +585,9 @@ class ContinuityEngine:
         if not sequences:
             return ReplayDecision(None, (), None)
         replay_range = ReplayRange(region, generation, min(sequences), max(sequences))
-        for active in self.store.active_replay_plans(
-            region=region, generation=generation
-        ):
+        for active in self.store.active_replay_plans(region=region, generation=generation):
             if active.replay_range == replay_range:
-                raise ReplayConflict(
-                    f"an active replay plan already covers {replay_range.as_dict()}"
-                )
+                raise ReplayConflict(f"an active replay plan already covers {replay_range.as_dict()}")
         status = ReplayStatus.APPROVED if approve else ReplayStatus.DRAFT
         approval_time = utcnow() if approve else None
         plan_id = f"rp-{region}-g{generation}-{uuid.uuid4().hex[:10]}"
@@ -648,12 +597,7 @@ class ContinuityEngine:
             status=status,
             reason=reason,
             created_by=created_by,
-            event_ids=[
-                event.identity.event_id
-                for event in self.store.iter_events(
-                    region=region, generation=generation
-                )
-            ],
+            event_ids=[event.identity.event_id for event in self.store.iter_events(region=region, generation=generation)],
             approved_by=approved_by if approve else None,
             approved_at=approval_time,
         )
@@ -745,17 +689,13 @@ class ContinuityEngine:
         if plan is None:
             raise ContractError(f"unknown replay plan {plan_id}")
         if plan.status not in {ReplayStatus.APPROVED, ReplayStatus.RUNNING}:
-            raise ContractError(
-                f"replay plan {plan_id} is not executable from {plan.status.value}"
-            )
+            raise ContractError(f"replay plan {plan_id} is not executable from {plan.status.value}")
         self.assert_recovery_fence(
             region=plan.replay_range.region,
             owner_id=owner_id,
             fence_epoch=fence_epoch,
         )
-        self.store.update_replay_status(
-            plan_id, ReplayStatus.RUNNING, fence_epoch=fence_epoch
-        )
+        self.store.update_replay_status(plan_id, ReplayStatus.RUNNING, fence_epoch=fence_epoch)
         counters = defaultdict(int)
         for item in self.store.replay_items(plan_id):
             try:
@@ -765,23 +705,17 @@ class ContinuityEngine:
                     fence_epoch=fence_epoch,
                 )
             except FencingError as exc:
-                self.store.update_replay_item(
-                    plan_id, item.event_id, state="HELD", error=str(exc)
-                )
+                self.store.update_replay_item(plan_id, item.event_id, state="HELD", error=str(exc))
                 counters["held"] += 1
                 continue
             if self.store.archive_record(item.event_id) is not None:
-                self.store.update_replay_item(
-                    plan_id, item.event_id, state="ALREADY_ARCHIVED"
-                )
+                self.store.update_replay_item(plan_id, item.event_id, state="ALREADY_ARCHIVED")
                 counters["already_archived"] += 1
                 continue
             try:
                 await self.publish_event(item.event_id, publisher)
             except GenerationConflict as exc:
-                self.store.update_replay_item(
-                    plan_id, item.event_id, state="HELD", error=str(exc)
-                )
+                self.store.update_replay_item(plan_id, item.event_id, state="HELD", error=str(exc))
                 counters["held"] += 1
             except Exception as exc:
                 self.store.update_replay_item(
@@ -826,9 +760,7 @@ class ContinuityEngine:
     ) -> RetentionDecision:
         policy = self.retention_policy(region)
         archive_sequence = self.store.highest_archive_sequence(region, generation)
-        consumer_sequence = self.store.slowest_required_consumer_sequence(
-            region, generation
-        )
+        consumer_sequence = self.store.slowest_required_consumer_sequence(region, generation)
         replay_pin = self.store.first_active_replay_sequence(region, generation)
         safe_sequence = archive_sequence
         watermark = RetentionWatermark(
@@ -862,9 +794,7 @@ class ContinuityEngine:
 
     def apply_retention(self, decision: RetentionDecision) -> int:
         if not decision.horizon_safe:
-            raise ContractError(
-                "retention horizon is shorter than disconnect+replay+safety requirement"
-            )
+            raise ContractError("retention horizon is shorter than disconnect+replay+safety requirement")
         if not decision.eligible_event_ids:
             return 0
         placeholders = ",".join("?" for _ in decision.eligible_event_ids)
@@ -876,9 +806,7 @@ class ContinuityEngine:
 
     def derived_subject_for(self, event: EventEnvelope, *, consumer_name: str) -> str:
         safe_consumer = consumer_name.replace("_", "-")
-        return (
-            f"telemetry.raw.{event.identity.region}.{safe_consumer}.{event.event_type}"
-        )
+        return f"telemetry.raw.{event.identity.region}.{safe_consumer}.{event.event_type}"
 
     def publication_health(self) -> tuple[bool, dict[str, Any]]:
         counts = self.store.journal_counts()
@@ -886,28 +814,15 @@ class ContinuityEngine:
         retry = counts.get(PublishState.RETRY.value, 0)
         publishing = counts.get(PublishState.PUBLISHING.value, 0)
         ok = blocked == 0 and retry == 0 and publishing == 0
-        return ok, {
-            "states": counts,
-            "held": blocked,
-            "retry": retry,
-            "publishing": publishing,
-        }
+        return ok, {"states": counts, "held": blocked, "retry": retry, "publishing": publishing}
 
     def generation_health(self) -> tuple[bool, dict[str, Any]]:
         details: dict[str, Any] = {}
         ok = True
         for region in ("east", "west"):
             generations = self.store.list_generations(region)
-            pending = [
-                item
-                for item in generations
-                if item.status is GenerationStatus.PENDING_APPROVAL
-            ]
-            confirmed = [
-                item
-                for item in generations
-                if item.status is GenerationStatus.CONFIRMED
-            ]
+            pending = [item for item in generations if item.status is GenerationStatus.PENDING_APPROVAL]
+            confirmed = [item for item in generations if item.status is GenerationStatus.CONFIRMED]
             details[region] = {
                 "confirmed": [item.as_dict() for item in confirmed],
                 "pending": [item.as_dict() for item in pending],
@@ -921,9 +836,7 @@ class ContinuityEngine:
         ok = True
         for consumer_name in self.store.required_consumers():
             checkpoints = self.store.checkpoints(consumer_name)
-            details[consumer_name] = [
-                checkpoint.as_dict() for checkpoint in checkpoints
-            ]
+            details[consumer_name] = [checkpoint.as_dict() for checkpoint in checkpoints]
             for checkpoint in checkpoints:
                 if checkpoint.state_gap != 0:
                     ok = False
@@ -988,9 +901,7 @@ class ContinuityEngine:
         destination = Path(path)
         destination.parent.mkdir(parents=True, exist_ok=True)
         temporary = destination.with_suffix(destination.suffix + ".tmp")
-        temporary.write_text(
-            json.dumps(document, indent=2, sort_keys=True) + "\n", encoding="utf-8"
-        )
+        temporary.write_text(json.dumps(document, indent=2, sort_keys=True) + "\n", encoding="utf-8")
         temporary.replace(destination)
 
     def write_health_report(self, path: str | Path) -> HealthReport:
@@ -1002,9 +913,7 @@ class ContinuityEngine:
         results = self.reconcile_all()
         document = {
             "generated_at": to_iso(utcnow()),
-            "regions": {
-                region: summary.as_dict() for region, summary in results.items()
-            },
+            "regions": {region: summary.as_dict() for region, summary in results.items()},
             "converged": all(summary.converged for summary in results.values()),
         }
         self.write_report(path, document)

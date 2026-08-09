@@ -247,9 +247,7 @@ def test_f2p_publish_ack_transitions_journal_once(engine: ContinuityEngine) -> N
     wrong_stream = str(engine.store.region("west")["physical_stream"])
     wrong_publisher = RecordingPublisher(engine.store, ack_stream=wrong_stream)
     with pytest.raises(ContractError):
-        asyncio.run(
-            engine.publish_event(wrong_event.identity.event_id, wrong_publisher)
-        )
+        asyncio.run(engine.publish_event(wrong_event.identity.event_id, wrong_publisher))
     assert wrong_publisher.calls[0]["journal_state_during_publish"] == "PUBLISHING"
     assert engine.store.journal_state(wrong_event.identity.event_id).value == "RETRY"
     attempt = engine.store.publish_attempts(wrong_event.identity.event_id)[-1]

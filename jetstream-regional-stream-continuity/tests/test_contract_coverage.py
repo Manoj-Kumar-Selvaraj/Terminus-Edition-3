@@ -161,12 +161,8 @@ def test_f2p_final_health_and_reconciliation_reports_are_materialized() -> None:
     """Final reports agree with independently observed durable state and preserve incident evidence."""
     health_path = ROOT / "out/health.json"
     reconciliation_path = ROOT / "out/reconciliation.json"
-    assert health_path.is_file(), (
-        "solution must materialize /app/continuity/out/health.json"
-    )
-    assert reconciliation_path.is_file(), (
-        "solution must materialize /app/continuity/out/reconciliation.json"
-    )
+    assert health_path.is_file(), "solution must materialize /app/continuity/out/health.json"
+    assert reconciliation_path.is_file(), "solution must materialize /app/continuity/out/reconciliation.json"
 
     health = json.loads(health_path.read_text(encoding="utf-8"))
     reconciliation = json.loads(reconciliation_path.read_text(encoding="utf-8"))
@@ -232,25 +228,17 @@ def test_f2p_final_health_and_reconciliation_reports_are_materialized() -> None:
                 (region, generation),
             ).fetchall()
             journal = {
-                str(row["event_id"]): (
-                    int(row["origin_sequence"]),
-                    str(row["payload_sha256"]).lower(),
-                )
+                str(row["event_id"]): (int(row["origin_sequence"]), str(row["payload_sha256"]).lower())
                 for row in journal_rows
             }
             archive = {
-                str(row["event_id"]): (
-                    int(row["origin_sequence"]),
-                    str(row["payload_sha256"]).lower(),
-                )
+                str(row["event_id"]): (int(row["origin_sequence"]), str(row["payload_sha256"]).lower())
                 for row in archive_rows
             }
             missing_ids = set(journal) - set(archive)
             unexpected_ids = set(archive) - set(journal)
             metadata_mismatch_count = sum(
-                1
-                for event_id in set(journal) & set(archive)
-                if journal[event_id] != archive[event_id]
+                1 for event_id in set(journal) & set(archive) if journal[event_id] != archive[event_id]
             )
             duplicate_count = sum(
                 int(row["duplicate_observation_count"]) for row in archive_rows
@@ -321,23 +309,13 @@ def test_f2p_final_health_and_reconciliation_reports_are_materialized() -> None:
         ):
             assert health["healthy"] is False
 
-        assert (
-            connection.execute("SELECT COUNT(*) FROM event_journal").fetchone()[0]
-            == 12000
-        )
-        assert (
-            connection.execute("SELECT COUNT(*) FROM consumer_checkpoints").fetchone()[
-                0
-            ]
-            >= 4
-        )
+        assert connection.execute("SELECT COUNT(*) FROM event_journal").fetchone()[0] == 12000
+        assert connection.execute("SELECT COUNT(*) FROM consumer_checkpoints").fetchone()[0] >= 4
         assert active_plans >= 1
     finally:
         connection.close()
 
-    stream_state = json.loads(
-        (ROOT / "ops/stream-state.json").read_text(encoding="utf-8")
-    )
+    stream_state = json.loads((ROOT / "ops/stream-state.json").read_text(encoding="utf-8"))
     assert stream_state["incident_id"] == "INC-JS-2026-0808-17"
     assert stream_state["captured_at"] == "2026-08-08T17:18:10Z"
     assert stream_state["domains"]["hub"]["messages"] == 11395

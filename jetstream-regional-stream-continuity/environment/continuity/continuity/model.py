@@ -164,20 +164,14 @@ class EventIdentity:
         ensure_positive(self.origin_sequence, "origin_sequence")
         match = _EVENT_ID_RE.fullmatch(self.event_id)
         if not match:
-            raise ContractError(
-                f"event_id does not follow stable identity format: {self.event_id!r}"
-            )
+            raise ContractError(f"event_id does not follow stable identity format: {self.event_id!r}")
         id_region, id_generation, id_sequence = match.groups()
         if id_region != self.region:
             raise ContractError("event_id region disagrees with envelope region")
         if int(id_generation) != self.generation:
-            raise ContractError(
-                "event_id generation disagrees with envelope generation"
-            )
+            raise ContractError("event_id generation disagrees with envelope generation")
         if int(id_sequence) != self.origin_sequence:
-            raise ContractError(
-                "event_id sequence disagrees with envelope origin_sequence"
-            )
+            raise ContractError("event_id sequence disagrees with envelope origin_sequence")
 
     @property
     def tuple_key(self) -> tuple[str, int, int, str]:
@@ -297,9 +291,7 @@ class EventEnvelope:
         identity_data = data.get("identity") or data
         identity = EventIdentity(
             region=str(identity_data["region"]),
-            generation=int(
-                identity_data.get("generation", identity_data.get("origin_generation"))
-            ),
+            generation=int(identity_data.get("generation", identity_data.get("origin_generation"))),
             origin_sequence=int(identity_data["origin_sequence"]),
             event_id=str(identity_data["event_id"]),
         )
@@ -337,11 +329,7 @@ class StreamRef:
             ensure_subject(subject)
 
     def as_dict(self) -> dict[str, Any]:
-        return {
-            "name": self.name,
-            "domain": self.domain,
-            "subjects": list(self.subjects),
-        }
+        return {"name": self.name, "domain": self.domain, "subjects": list(self.subjects)}
 
 
 @dataclass(frozen=True)
@@ -421,17 +409,11 @@ class RetentionPolicy:
         ensure_positive(self.stream_max_age_seconds, "stream_max_age_seconds")
         ensure_positive(self.maximum_disconnect_seconds, "maximum_disconnect_seconds")
         ensure_positive(self.maximum_replay_seconds, "maximum_replay_seconds")
-        ensure_positive(
-            self.safety_margin_seconds, "safety_margin_seconds", allow_zero=True
-        )
+        ensure_positive(self.safety_margin_seconds, "safety_margin_seconds", allow_zero=True)
 
     @property
     def required_horizon_seconds(self) -> int:
-        return (
-            self.maximum_disconnect_seconds
-            + self.maximum_replay_seconds
-            + self.safety_margin_seconds
-        )
+        return self.maximum_disconnect_seconds + self.maximum_replay_seconds + self.safety_margin_seconds
 
     @property
     def stream_horizon_safe(self) -> bool:
@@ -461,19 +443,14 @@ class OriginGeneration:
             raise ContractError(f"unsupported region {self.region!r}")
         ensure_positive(self.generation, "generation")
         ensure_positive(self.first_sequence, "first_sequence", allow_zero=True)
-        ensure_positive(
-            self.last_observed_sequence, "last_observed_sequence", allow_zero=True
-        )
+        ensure_positive(self.last_observed_sequence, "last_observed_sequence", allow_zero=True)
         ensure_name(self.stream_fingerprint, "stream_fingerprint")
         if self.status is GenerationStatus.CONFIRMED and self.approved_at is None:
             raise ContractError("confirmed generation requires approved_at")
 
     def accepts_sequence(self, sequence: int) -> bool:
         ensure_positive(sequence, "sequence")
-        return (
-            self.status is GenerationStatus.CONFIRMED
-            and sequence >= self.first_sequence
-        )
+        return self.status is GenerationStatus.CONFIRMED and sequence >= self.first_sequence
 
     def as_dict(self) -> dict[str, Any]:
         return {
@@ -529,11 +506,7 @@ class ArchiveRecord:
         ensure_name(self.source_domain, "source_domain")
         if not re.fullmatch(r"[0-9a-fA-F]{64}", self.payload_sha256):
             raise ContractError("archive payload hash is invalid")
-        ensure_positive(
-            self.duplicate_observation_count,
-            "duplicate_observation_count",
-            allow_zero=True,
-        )
+        ensure_positive(self.duplicate_observation_count, "duplicate_observation_count", allow_zero=True)
 
     def stable_key(self) -> str:
         i = self.identity
@@ -612,16 +585,10 @@ class ConsumerCheckpoint:
         if self.region not in {"east", "west"}:
             raise ContractError(f"invalid checkpoint region {self.region!r}")
         ensure_positive(self.generation, "generation")
-        ensure_positive(
-            self.last_effect_sequence, "last_effect_sequence", allow_zero=True
-        )
+        ensure_positive(self.last_effect_sequence, "last_effect_sequence", allow_zero=True)
         ensure_positive(self.last_ack_sequence, "last_ack_sequence", allow_zero=True)
-        ensure_positive(
-            self.jetstream_ack_floor, "jetstream_ack_floor", allow_zero=True
-        )
-        if self.last_event_id is not None and not _EVENT_ID_RE.fullmatch(
-            self.last_event_id
-        ):
+        ensure_positive(self.jetstream_ack_floor, "jetstream_ack_floor", allow_zero=True)
+        if self.last_event_id is not None and not _EVENT_ID_RE.fullmatch(self.last_event_id):
             raise ContractError("checkpoint last_event_id is invalid")
 
     @property
@@ -634,11 +601,7 @@ class ConsumerCheckpoint:
 
     @property
     def is_consistent(self) -> bool:
-        return (
-            self.last_effect_sequence
-            == self.last_ack_sequence
-            == self.jetstream_ack_floor
-        )
+        return self.last_effect_sequence == self.last_ack_sequence == self.jetstream_ack_floor
 
     def as_dict(self) -> dict[str, Any]:
         return {
@@ -675,10 +638,7 @@ class ReplayRange:
     def overlaps(self, other: "ReplayRange") -> bool:
         if self.region != other.region or self.generation != other.generation:
             return False
-        return (
-            self.start_sequence <= other.end_sequence
-            and other.start_sequence <= self.end_sequence
-        )
+        return self.start_sequence <= other.end_sequence and other.start_sequence <= self.end_sequence
 
     def contains(self, sequence: int) -> bool:
         return self.start_sequence <= sequence <= self.end_sequence
@@ -709,15 +669,9 @@ class ReplayPlan:
         ensure_name(self.created_by, "created_by")
         if not self.reason.strip():
             raise ContractError("replay plan reason cannot be blank")
-        if self.status in {
-            ReplayStatus.APPROVED,
-            ReplayStatus.RUNNING,
-            ReplayStatus.COMPLETED,
-        }:
+        if self.status in {ReplayStatus.APPROVED, ReplayStatus.RUNNING, ReplayStatus.COMPLETED}:
             if self.approved_at is None or not self.approved_by:
-                raise ContractError(
-                    "approved/running/completed replay plan requires approval metadata"
-                )
+                raise ContractError("approved/running/completed replay plan requires approval metadata")
         if self.fence_epoch is not None:
             ensure_positive(self.fence_epoch, "fence_epoch")
         if len(self.event_ids) != len(set(self.event_ids)):
@@ -762,17 +716,11 @@ class LeaseToken:
     def expired(self, at: datetime | None = None) -> bool:
         return (at or utcnow()) >= self.expires_at
 
-    def assert_current(
-        self, *, owner_id: str, fence_epoch: int, at: datetime | None = None
-    ) -> None:
+    def assert_current(self, *, owner_id: str, fence_epoch: int, at: datetime | None = None) -> None:
         if owner_id != self.owner_id:
-            raise FencingError(
-                f"lease owner mismatch: expected {self.owner_id}, got {owner_id}"
-            )
+            raise FencingError(f"lease owner mismatch: expected {self.owner_id}, got {owner_id}")
         if fence_epoch != self.fence_epoch:
-            raise FencingError(
-                f"stale fence epoch: expected {self.fence_epoch}, got {fence_epoch}"
-            )
+            raise FencingError(f"stale fence epoch: expected {self.fence_epoch}, got {fence_epoch}")
         if self.expired(at):
             raise FencingError("lease has expired")
 
@@ -865,19 +813,13 @@ class ReconciliationSummary:
         )
         for consumer_name, sequence in self.required_consumer_progress.items():
             ensure_name(consumer_name, "required_consumer_progress consumer")
-            ensure_positive(
-                sequence, "required_consumer_progress sequence", allow_zero=True
-            )
+            ensure_positive(sequence, "required_consumer_progress sequence", allow_zero=True)
         if not re.fullmatch(r"[0-9a-f]{64}", self.checksum):
             raise ContractError("reconciliation checksum must be sha256 hex")
 
     @property
     def blocking_findings(self) -> tuple[Finding, ...]:
-        return tuple(
-            f
-            for f in self.findings
-            if f.severity in {FindingSeverity.ERROR, FindingSeverity.BLOCKER}
-        )
+        return tuple(f for f in self.findings if f.severity in {FindingSeverity.ERROR, FindingSeverity.BLOCKER})
 
     @property
     def converged(self) -> bool:
@@ -959,35 +901,22 @@ class Topology:
         names = [stream.name for stream in self.edge_streams.values()]
         names.append(self.hub_archive.name)
         if len(names) != len(set(names)):
-            raise ContractError(
-                "physical stream names must be unique across connected domains"
-            )
+            raise ContractError("physical stream names must be unique across connected domains")
         for region, stream in self.edge_streams.items():
             matching = [source for source in self.sources if source.region == region]
             if len(matching) != 1:
-                raise ContractError(
-                    f"region {region} must have exactly one hub source binding"
-                )
+                raise ContractError(f"region {region} must have exactly one hub source binding")
             source = matching[0]
-            if (
-                source.origin.name != stream.name
-                or source.origin.domain != stream.domain
-            ):
-                raise ContractError(
-                    f"hub source binding for {region} does not match the edge owner"
-                )
+            if source.origin.name != stream.name or source.origin.domain != stream.domain:
+                raise ContractError(f"hub source binding for {region} does not match the edge owner")
         for subject in self.raw_archive_subjects:
             ensure_subject(subject)
         ensure_subject(self.derived_subject_prefix + ".>")
         if self.hub_archive.subjects:
-            raise ContractError(
-                "raw hub archive must be source-only and may not expose local listen subjects"
-            )
+            raise ContractError("raw hub archive must be source-only and may not expose local listen subjects")
         for subject in self.raw_archive_subjects:
             if subject.startswith(self.derived_subject_prefix + "."):
-                raise ContractError(
-                    "derived subject space overlaps raw archive subject space"
-                )
+                raise ContractError("derived subject space overlaps raw archive subject space")
 
     def source_for(self, region: str) -> SourceBinding:
         for source in self.sources:
@@ -1003,9 +932,7 @@ class Topology:
 
     def as_dict(self) -> dict[str, Any]:
         return {
-            "edge_streams": {
-                region: stream.as_dict() for region, stream in self.edge_streams.items()
-            },
+            "edge_streams": {region: stream.as_dict() for region, stream in self.edge_streams.items()},
             "hub_archive": self.hub_archive.as_dict(),
             "sources": [source.as_dict() for source in self.sources],
             "raw_archive_subjects": list(self.raw_archive_subjects),
@@ -1060,12 +987,8 @@ class Topology:
             edge_streams=edge_streams,
             hub_archive=hub,
             sources=tuple(sources),
-            raw_archive_subjects=tuple(
-                str(v) for v in data.get("raw_archive_subjects", ())
-            ),
-            derived_subject_prefix=str(
-                data.get("derived_subject_prefix", "telemetry.derived")
-            ),
+            raw_archive_subjects=tuple(str(v) for v in data.get("raw_archive_subjects", ())),
+            derived_subject_prefix=str(data.get("derived_subject_prefix", "telemetry.derived")),
         )
 
 
@@ -1081,9 +1004,7 @@ def contiguous_floor(sequences: Iterable[int], *, start: int = 1) -> int:
     return expected - 1
 
 
-def collapse_ranges(
-    sequences: Iterable[int], *, region: str, generation: int
-) -> tuple[ReplayRange, ...]:
+def collapse_ranges(sequences: Iterable[int], *, region: str, generation: int) -> tuple[ReplayRange, ...]:
     ordered = sorted(set(int(value) for value in sequences))
     if not ordered:
         return ()
@@ -1106,9 +1027,7 @@ def assert_non_overlapping(ranges: Iterable[ReplayRange]) -> None:
             if current.region != other.region or current.generation != other.generation:
                 continue
             if current.overlaps(other):
-                raise ReplayConflict(
-                    f"overlapping replay ranges: {current.as_dict()} and {other.as_dict()}"
-                )
+                raise ReplayConflict(f"overlapping replay ranges: {current.as_dict()} and {other.as_dict()}")
             if other.start_sequence > current.end_sequence:
                 break
 
@@ -1120,15 +1039,9 @@ def deterministic_effect_key(consumer_name: str, event_id: str) -> str:
     return f"{consumer_name}:{event_id}"
 
 
-def deterministic_effect_hash(
-    effect_type: str, event_id: str, payload: Mapping[str, Any]
-) -> str:
+def deterministic_effect_hash(effect_type: str, event_id: str, payload: Mapping[str, Any]) -> str:
     ensure_name(effect_type, "effect_type")
-    document = {
-        "effect_type": effect_type,
-        "event_id": event_id,
-        "payload": dict(payload),
-    }
+    document = {"effect_type": effect_type, "event_id": event_id, "payload": dict(payload)}
     return sha256_text(canonical_json(document))
 
 
