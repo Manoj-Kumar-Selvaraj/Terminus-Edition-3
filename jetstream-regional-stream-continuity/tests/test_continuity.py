@@ -577,16 +577,59 @@ def test_f2p_reconcile_finds_offsetting_gap_and_duplicate(
 def test_f2p_convergence_waits_for_all_required_consumers(
     engine: ContinuityEngine,
 ) -> None:
-    """A complete archive reports required-consumer progress and waits for the slowest application."""
+    """Confirmed generation watermark, not a coincident journal extent, gates convergence."""
     complete_archive(engine, "east")
-    set_checkpoint(engine, "telemetry-indexer", "east", effect=6000)
-    set_checkpoint(engine, "safety-state-projector", "east", effect=5999)
-    summary = engine.reconcile_region("east", 1)
-    assert summary.converged is False
-    assert summary.consumer_lag_count >= 1
-    assert summary.highest_contiguous_archive_origin_sequence == 6000
-    assert summary.required_consumer_progress["telemetry-indexer"] == 6000
-    assert summary.required_consumer_progress["safety-state-projector"] == 5999
+    engine.store.execute(
+        "DELETE FROM archive_index WHERE region='east' AND generation=1 AND origin_sequence>5990"
+    )
+    engine.store.execute(
+        "DELETE FROM event_journal WHERE region='east' AND generation=1 AND origin_sequence>5990"
+    )
+    required = engine.store.required_consumers()
+    for consumer in required:
+        set_checkpoint(engine, consumer, "east", effect=5990)
+
+    generation = engine.store.confirmed_generation("east")
+    assert generation is not None
+    assert generation.last_observed_sequence == 6000
+    assert (
+        int(
+            engine.store.scalar(
+                "SELECT MAX(origin_sequence) FROM event_journal WHERE region='east' AND generation=1"
+            )
+            or 0
+        )
+        == 5990
+    )
+    assert (
+        int(
+            engine.store.scalar(
+                "SELECT MAX(origin_sequence) FROM archive_index WHERE region='east' AND generation=1"
+            )
+            or 0
+        )
+        == 5990
+    )
+
+    lagging = engine.reconcile_region("east", 1)
+    assert lagging.converged is False
+    assert lagging.highest_contiguous_archive_origin_sequence == 5990
+    assert lagging.consumer_lag_count == len(required)
+    assert set(lagging.required_consumer_progress) == set(required)
+    assert all(value == 5990 for value in lagging.required_consumer_progress.values())
+
+    engine.store.execute(
+        "UPDATE origin_generations SET last_observed_sequence=5990 "
+        "WHERE region='east' AND generation=1 AND status='CONFIRMED'"
+    )
+    aligned_generation = engine.store.confirmed_generation("east")
+    assert aligned_generation is not None
+    assert aligned_generation.last_observed_sequence == 5990
+    aligned = engine.reconcile_region("east", 1)
+    assert aligned.converged is True
+    assert aligned.consumer_lag_count == 0
+    assert aligned.highest_contiguous_archive_origin_sequence == 5990
+    assert all(value == 5990 for value in aligned.required_consumer_progress.values())
 
 
 # ---- F2P: replay -------------------------------------------------------------------------
@@ -762,8 +805,11 @@ def test_f2p_retention_policy_covers_recovery_horizon(engine: ContinuityEngine) 
 # ---- F2P: fencing and routing -------------------------------------------------------------
 
 
-def test_f2p_stale_recovery_worker_is_fenced(engine: ContinuityEngine) -> None:
-    """Replay fences stale workers at entry and before post-publish recovery mutations."""
+def test_f2p_stale_recovery_worker_is_fenced(
+    engine: ContinuityEngine,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Replay fences stale workers at entry, between items, and after an in-flight publish."""
     now = datetime.now(UTC)
     first = engine.acquire_recovery_lease(
         region="east",
@@ -871,6 +917,86 @@ def test_f2p_stale_recovery_worker_is_fenced(engine: ContinuityEngine) -> None:
     assert items[mid_ids[1]].state == "PENDING"
     assert after_plan is not None and after_plan.status is ReplayStatus.RUNNING
     assert engine.store.journal_state(mid_ids[0]).value == "PUBLISHED"
+
+    between_ids = ["evt-east-g01-005997", "evt-east-g01-005998"]
+    for event_id in between_ids:
+        engine.store.execute("DELETE FROM archive_index WHERE event_id=?", (event_id,))
+    between_plan = engine.store.insert_replay_plan(
+        plan_id="stale-fence-between-items",
+        replay_range=ReplayRange("east", 1, 5997, 5998),
+        status=ReplayStatus.APPROVED,
+        reason="verify stale token is rejected between completed replay items",
+        created_by="verifier",
+        event_ids=between_ids,
+        approved_by="shift-lead",
+        approved_at=now,
+    )
+
+    original_update_replay_item = engine.store.update_replay_item
+    rotated_between_items = False
+
+    def rotate_after_first_completed_item(
+        plan_id: str,
+        event_id: str,
+        *,
+        state: str,
+        error: str | None = None,
+        increment_attempt: bool = False,
+        at: datetime | None = None,
+    ) -> None:
+        nonlocal rotated_between_items
+        original_update_replay_item(
+            plan_id,
+            event_id,
+            state=state,
+            error=error,
+            increment_attempt=increment_attempt,
+            at=at,
+        )
+        if (
+            plan_id == between_plan.plan_id
+            and event_id == between_ids[0]
+            and state == "PUBLISHED"
+            and not rotated_between_items
+        ):
+            lease = engine.store.current_lease("east")
+            assert lease is not None
+            rotated_at = datetime.now(UTC)
+            engine.store.write_lease(
+                region="east",
+                owner_id=lease.owner_id,
+                fence_epoch=lease.fence_epoch + 1,
+                acquired_at=lease.acquired_at,
+                renewed_at=rotated_at,
+                expires_at=rotated_at + timedelta(minutes=5),
+            )
+            rotated_between_items = True
+
+    monkeypatch.setattr(
+        engine.store,
+        "update_replay_item",
+        rotate_after_first_completed_item,
+    )
+    between_publisher = RecordingPublisher(engine.store)
+    with pytest.raises(FencingError):
+        asyncio.run(
+            engine.execute_replay_plan(
+                between_plan.plan_id,
+                owner_id=current.owner_id,
+                fence_epoch=current.fence_epoch,
+                publisher=between_publisher,
+            )
+        )
+    between_items = {
+        item.event_id: item
+        for item in engine.store.replay_items(between_plan.plan_id)
+    }
+    after_between_plan = engine.store.replay_plan(between_plan.plan_id)
+    assert rotated_between_items is True
+    assert [call["event_id"] for call in between_publisher.calls] == [between_ids[0]]
+    assert between_items[between_ids[0]].state == "PUBLISHED"
+    assert between_items[between_ids[1]].state == "PENDING"
+    assert after_between_plan is not None and after_between_plan.status is ReplayStatus.RUNNING
 
 
 def test_f2p_overlapping_active_replay_plan_is_rejected(
