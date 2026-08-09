@@ -157,10 +157,8 @@ def test_f2p_expired_lease_reacquired_by_same_owner_advances_epoch(
         )
 
 
-def test_f2p_final_health_and_reconciliation_reports_are_materialized(
-    tmp_path: Path,
-) -> None:
-    """Final reports match independently recomputed durable state and preserve incident evidence."""
+def test_f2p_final_health_and_reconciliation_reports_are_materialized() -> None:
+    """Final reports agree with independently observed durable state and preserve incident evidence."""
     health_path = ROOT / "out/health.json"
     reconciliation_path = ROOT / "out/reconciliation.json"
     assert health_path.is_file(), (
@@ -173,54 +171,156 @@ def test_f2p_final_health_and_reconciliation_reports_are_materialized(
     health = json.loads(health_path.read_text(encoding="utf-8"))
     reconciliation = json.loads(reconciliation_path.read_text(encoding="utf-8"))
 
-    expected_database = tmp_path / "expected-report-state.db"
-    shutil.copy2(ROOT / "state/continuity.db", expected_database)
-    expected_engine = ContinuityEngine.from_json_file(
-        ContinuityStore(expected_database),
-        ROOT / "config/continuity.json",
-    )
-    expected_health = expected_engine.inspect_health().as_dict()
-    expected_regions = {
-        region: summary.as_dict()
-        for region, summary in expected_engine.reconcile_all().items()
-    }
-
-    for key in (
-        "healthy",
-        "topology_ok",
-        "generations_ok",
-        "publication_ok",
-        "archive_ok",
-        "consumers_ok",
-        "retention_ok",
-        "recovery_ok",
-    ):
-        assert health[key] == expected_health[key]
-
-    assert set(reconciliation["regions"]) == {"east", "west"}
-    assert reconciliation["converged"] == all(
-        summary["converged"] for summary in expected_regions.values()
-    )
-    fields = (
-        "status",
-        "journal_event_count",
-        "archive_event_count",
-        "missing_count",
-        "unexpected_count",
-        "duplicate_count",
-        "metadata_mismatch_count",
-        "consumer_lag_count",
-        "checksum",
-        "findings",
-        "converged",
-    )
-    for region, expected in expected_regions.items():
-        actual = reconciliation["regions"][region]
-        for field in fields:
-            assert actual[field] == expected[field]
+    def contiguous_floor(values: list[int]) -> int:
+        present = set(values)
+        floor = 0
+        while floor + 1 in present:
+            floor += 1
+        return floor
 
     connection = sqlite3.connect(ROOT / "state/continuity.db")
+    connection.row_factory = sqlite3.Row
     try:
+        required_consumers = [
+            str(row["consumer_name"])
+            for row in connection.execute(
+                "SELECT consumer_name FROM consumer_registry WHERE required=1 AND enabled=1 ORDER BY consumer_name"
+            ).fetchall()
+        ]
+        active_plans = int(
+            connection.execute(
+                "SELECT COUNT(*) FROM replay_plans WHERE status IN ('APPROVED','RUNNING')"
+            ).fetchone()[0]
+        )
+        expected_recovery_ok = active_plans == 0
+
+        expected_generations_ok = True
+        expected_publication_ok = (
+            int(
+                connection.execute(
+                    "SELECT COUNT(*) FROM event_journal WHERE publish_state IN ('PUBLISHING','RETRY','HELD')"
+                ).fetchone()[0]
+            )
+            == 0
+        )
+        expected_consumers_ok = True
+        expected_region_convergence: dict[str, bool] = {}
+
+        assert set(reconciliation["regions"]) == {"east", "west"}
+        for region in ("east", "west"):
+            confirmed = connection.execute(
+                "SELECT generation FROM origin_generations WHERE region=? AND status='CONFIRMED' ORDER BY generation",
+                (region,),
+            ).fetchall()
+            pending_count = int(
+                connection.execute(
+                    "SELECT COUNT(*) FROM origin_generations WHERE region=? AND status='PENDING_APPROVAL'",
+                    (region,),
+                ).fetchone()[0]
+            )
+            if len(confirmed) != 1 or pending_count:
+                expected_generations_ok = False
+            assert confirmed, f"{region} must retain a confirmed generation"
+            generation = int(confirmed[-1]["generation"])
+
+            journal_rows = connection.execute(
+                "SELECT event_id,origin_sequence,payload_sha256 FROM event_journal WHERE region=? AND generation=?",
+                (region, generation),
+            ).fetchall()
+            archive_rows = connection.execute(
+                "SELECT event_id,origin_sequence,payload_sha256,duplicate_observation_count FROM archive_index WHERE region=? AND generation=?",
+                (region, generation),
+            ).fetchall()
+            journal = {
+                str(row["event_id"]): (
+                    int(row["origin_sequence"]),
+                    str(row["payload_sha256"]).lower(),
+                )
+                for row in journal_rows
+            }
+            archive = {
+                str(row["event_id"]): (
+                    int(row["origin_sequence"]),
+                    str(row["payload_sha256"]).lower(),
+                )
+                for row in archive_rows
+            }
+            missing_ids = set(journal) - set(archive)
+            unexpected_ids = set(archive) - set(journal)
+            metadata_mismatch_count = sum(
+                1
+                for event_id in set(journal) & set(archive)
+                if journal[event_id] != archive[event_id]
+            )
+            duplicate_count = sum(
+                int(row["duplicate_observation_count"]) for row in archive_rows
+            )
+            journal_floor = contiguous_floor([value[0] for value in journal.values()])
+            archive_floor = contiguous_floor([value[0] for value in archive.values()])
+            target = min(journal_floor, archive_floor)
+
+            progress: dict[str, int] = {}
+            for consumer_name in required_consumers:
+                checkpoint = connection.execute(
+                    "SELECT last_effect_sequence,last_ack_sequence,jetstream_ack_floor FROM consumer_checkpoints "
+                    "WHERE consumer_name=? AND region=? AND generation=?",
+                    (consumer_name, region, generation),
+                ).fetchone()
+                if checkpoint is None:
+                    progress[consumer_name] = 0
+                    expected_consumers_ok = False
+                    continue
+                effect_sequence = int(checkpoint["last_effect_sequence"])
+                ack_sequence = int(checkpoint["last_ack_sequence"])
+                js_floor = int(checkpoint["jetstream_ack_floor"])
+                progress[consumer_name] = min(effect_sequence, ack_sequence)
+                if not (effect_sequence == ack_sequence == js_floor):
+                    expected_consumers_ok = False
+
+            consumer_lag_count = sum(
+                1 for sequence in progress.values() if sequence < target
+            )
+            expected_converged = (
+                not missing_ids
+                and not unexpected_ids
+                and metadata_mismatch_count == 0
+                and consumer_lag_count == 0
+            )
+            expected_region_convergence[region] = expected_converged
+
+            actual = reconciliation["regions"][region]
+            assert actual["status"] == (
+                "CONVERGED" if expected_converged else "DIVERGED"
+            )
+            assert actual["journal_event_count"] == len(journal)
+            assert actual["archive_event_count"] == len(archive)
+            assert actual["missing_count"] == len(missing_ids)
+            assert actual["unexpected_count"] == len(unexpected_ids)
+            assert actual["duplicate_count"] == duplicate_count
+            assert actual["metadata_mismatch_count"] == metadata_mismatch_count
+            assert actual["consumer_lag_count"] == consumer_lag_count
+            assert actual["highest_contiguous_archive_origin_sequence"] == archive_floor
+            assert actual["required_consumer_progress"] == progress
+            assert actual["converged"] is expected_converged
+
+        expected_archive_ok = all(expected_region_convergence.values())
+        assert health["generations_ok"] is expected_generations_ok
+        assert health["publication_ok"] is expected_publication_ok
+        assert health["archive_ok"] is expected_archive_ok
+        assert health["consumers_ok"] is expected_consumers_ok
+        assert health["recovery_ok"] is expected_recovery_ok
+        assert reconciliation["converged"] is expected_archive_ok
+        if not all(
+            (
+                expected_generations_ok,
+                expected_publication_ok,
+                expected_archive_ok,
+                expected_consumers_ok,
+                expected_recovery_ok,
+            )
+        ):
+            assert health["healthy"] is False
+
         assert (
             connection.execute("SELECT COUNT(*) FROM event_journal").fetchone()[0]
             == 12000
@@ -231,9 +331,6 @@ def test_f2p_final_health_and_reconciliation_reports_are_materialized(
             ]
             >= 4
         )
-        active_plans = connection.execute(
-            "SELECT COUNT(*) FROM replay_plans WHERE status IN ('APPROVED','RUNNING')"
-        ).fetchone()[0]
         assert active_plans >= 1
     finally:
         connection.close()
@@ -456,6 +553,13 @@ def test_p2p_recovery_cli_entrypoints_remain_operational(tmp_path: Path) -> None
     assert executed["completed"] is True
     replay_after = engine.store.replay_plan("rp-west-incident-001")
     assert replay_after is not None and replay_after.status.value == "COMPLETED"
+    terminal_retention = engine.compute_retention_decision(
+        region="west",
+        generation=1,
+        at=datetime(2026, 8, 9, 7, 30, tzinfo=UTC),
+        limit=5,
+    )
+    assert terminal_retention.replay_pin_sequence is None
 
     renewed = run_cli(
         "lease",

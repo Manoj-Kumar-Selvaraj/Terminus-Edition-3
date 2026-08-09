@@ -24,6 +24,7 @@ from .model import (
     ReplayRange,
     ReplayStatus,
     RetentionPolicy,
+    contiguous_floor,
     sha256_text,
     to_iso,
     utcnow,
@@ -63,7 +64,9 @@ class ContinuityEngine(BaseContinuityEngine):
             (to_iso(utcnow()), event.identity.event_id),
         )
         try:
-            ack = await publisher.publish(event, message_id=message_id, expected_stream=expected_stream)
+            ack = await publisher.publish(
+                event, message_id=message_id, expected_stream=expected_stream
+            )
         except TimeoutError as exc:
             self.store.finish_publish_attempt(
                 event.identity.event_id,
@@ -161,7 +164,11 @@ class ContinuityEngine(BaseContinuityEngine):
         detail: Mapping[str, Any],
     ) -> None:
         consumer = next(
-            (row for row in self.store.consumers() if str(row["consumer_name"]) == consumer_name),
+            (
+                row
+                for row in self.store.consumers()
+                if str(row["consumer_name"]) == consumer_name
+            ),
             None,
         )
         if consumer is None:
@@ -177,7 +184,9 @@ class ContinuityEngine(BaseContinuityEngine):
                 to_iso(utcnow()),
                 worker_id,
                 fence_epoch,
-                __import__("json").dumps(dict(detail), sort_keys=True, separators=(",", ":")),
+                __import__("json").dumps(
+                    dict(detail), sort_keys=True, separators=(",", ":")
+                ),
             ),
         )
 
@@ -217,7 +226,9 @@ class ContinuityEngine(BaseContinuityEngine):
             )
 
         existing = self.store.effect(delivery.consumer_name, event.identity.event_id)
-        duplicate_effect = existing is not None and existing.status is EffectStatus.COMMITTED
+        duplicate_effect = (
+            existing is not None and existing.status is EffectStatus.COMMITTED
+        )
         checkpoint = self.store.advance_ack_checkpoint(
             consumer_name=delivery.consumer_name,
             identity=event.identity,
@@ -283,8 +294,19 @@ class ContinuityEngine(BaseContinuityEngine):
                     remediation_hint="replay the trailing archive gap",
                 )
             )
-        highest_journal = max((event.identity.origin_sequence for event in journal), default=0)
+        highest_journal = max(
+            (event.identity.origin_sequence for event in journal), default=0
+        )
         highest_hub = max((record.hub_stream_sequence for record in archive), default=0)
+        archive_origin_floor = contiguous_floor(
+            record.identity.origin_sequence for record in archive
+        )
+        required_consumer_progress: dict[str, int] = {}
+        for consumer_name in self.store.required_consumers():
+            checkpoint = self.store.checkpoint(consumer_name, region, generation)
+            required_consumer_progress[consumer_name] = (
+                0 if checkpoint is None else checkpoint.application_sequence
+            )
         if highest_hub < highest_journal:
             findings.append(
                 Finding(
@@ -297,7 +319,9 @@ class ContinuityEngine(BaseContinuityEngine):
                     observed_value=str(highest_hub),
                 )
             )
-        checksum = sha256_text(f"{region}:{generation}:{journal_count}:{archive_count}:{highest_hub}")
+        checksum = sha256_text(
+            f"{region}:{generation}:{journal_count}:{archive_count}:{highest_hub}"
+        )
         status = ReconcileStatus.CONVERGED if not findings else ReconcileStatus.DIVERGED
         summary = ReconciliationSummary(
             run_id=run_id,
@@ -309,6 +333,8 @@ class ContinuityEngine(BaseContinuityEngine):
             duplicate_count=duplicate_count,
             metadata_mismatch_count=0,
             consumer_lag_count=0,
+            highest_contiguous_archive_origin_sequence=archive_origin_floor,
+            required_consumer_progress=required_consumer_progress,
             checksum=checksum,
             findings=tuple(findings),
         )
@@ -360,9 +386,13 @@ class ContinuityEngine(BaseContinuityEngine):
             min(event.identity.origin_sequence for event in all_events),
             max(event.identity.origin_sequence for event in all_events),
         )
-        for active in self.store.active_replay_plans(region=region, generation=generation):
+        for active in self.store.active_replay_plans(
+            region=region, generation=generation
+        ):
             if active.replay_range == replay_range:
-                raise ReplayConflict(f"an active replay plan already covers {replay_range.as_dict()}")
+                raise ReplayConflict(
+                    f"an active replay plan already covers {replay_range.as_dict()}"
+                )
         plan = self.store.insert_replay_plan(
             plan_id=f"rp-{region}-g{generation}-{__import__('uuid').uuid4().hex[:10]}",
             replay_range=replay_range,
@@ -436,7 +466,9 @@ class ContinuityEngine(BaseContinuityEngine):
     ) -> RetentionDecision:
         policy = self.retention_policy(region)
         archive_sequence = self.store.highest_archive_sequence(region, generation)
-        consumer_sequence = self.store.slowest_required_consumer_sequence(region, generation)
+        consumer_sequence = self.store.slowest_required_consumer_sequence(
+            region, generation
+        )
         replay_pin = self.store.first_active_replay_sequence(region, generation)
         safe_sequence = archive_sequence
         self.store.write_retention_watermark(
@@ -470,11 +502,15 @@ class ContinuityEngine(BaseContinuityEngine):
         )
 
     def derived_subject_for(self, event: EventEnvelope, *, consumer_name: str) -> str:
-        return f"telemetry.raw.{event.identity.region}.{consumer_name}.{event.event_type}"
+        return (
+            f"telemetry.raw.{event.identity.region}.{consumer_name}.{event.event_type}"
+        )
 
     def consumer_health(self) -> tuple[bool, dict[str, Any]]:
         details: dict[str, Any] = {}
         for consumer_name in self.store.required_consumers():
             checkpoints = self.store.checkpoints(consumer_name)
-            details[consumer_name] = [checkpoint.as_dict() for checkpoint in checkpoints]
+            details[consumer_name] = [
+                checkpoint.as_dict() for checkpoint in checkpoints
+            ]
         return True, details

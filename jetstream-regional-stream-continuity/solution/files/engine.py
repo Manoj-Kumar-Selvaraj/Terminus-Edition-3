@@ -470,6 +470,12 @@ class ContinuityEngine(BaseContinuityEngine):
         ]
         journal_floor = contiguous_floor(journal_sequences)
         target = min(journal_floor, archive_floor)
+        required_consumer_progress: dict[str, int] = {}
+        for consumer_name in self.store.required_consumers():
+            checkpoint = self.store.checkpoint(consumer_name, region, generation)
+            required_consumer_progress[consumer_name] = (
+                0 if checkpoint is None else checkpoint.application_sequence
+            )
         consumer_findings = self._required_consumer_lag(region, generation, target)
         findings.extend(consumer_findings)
 
@@ -491,6 +497,8 @@ class ContinuityEngine(BaseContinuityEngine):
             duplicate_count=duplicate_count,
             metadata_mismatch_count=metadata_mismatch_count,
             consumer_lag_count=len(consumer_findings),
+            highest_contiguous_archive_origin_sequence=archive_floor,
+            required_consumer_progress=required_consumer_progress,
             checksum=checksum,
             findings=tuple(findings),
         )

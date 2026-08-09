@@ -235,15 +235,16 @@ def test_f2p_publish_failure_does_not_mark_journal_published(
 def test_f2p_publish_ack_transitions_journal_once(engine: ContinuityEngine) -> None:
     """Only an acknowledgement for the expected physical stream may publish a journal row."""
     event = sample_event(engine, sequence=5985)
+    expected_stream = str(engine.store.region("east")["physical_stream"])
     publisher = RecordingPublisher(engine.store)
     ack = asyncio.run(engine.publish_event(event.identity.event_id, publisher))
     assert publisher.calls[0]["journal_state_during_publish"] == "PUBLISHING"
     assert publisher.calls[0]["message_id"] == event.identity.event_id
-    assert ack.stream == engine.store.region("east")["physical_stream"]
+    assert ack.stream == expected_stream
     assert engine.store.journal_state(event.identity.event_id).value == "PUBLISHED"
 
     wrong_event = sample_event(engine, sequence=5984)
-    wrong_stream = engine.store.region("west")["physical_stream"]
+    wrong_stream = str(engine.store.region("west")["physical_stream"])
     wrong_publisher = RecordingPublisher(engine.store, ack_stream=wrong_stream)
     with pytest.raises(ContractError):
         asyncio.run(
@@ -253,7 +254,8 @@ def test_f2p_publish_ack_transitions_journal_once(engine: ContinuityEngine) -> N
     assert engine.store.journal_state(wrong_event.identity.event_id).value == "RETRY"
     attempt = engine.store.publish_attempts(wrong_event.identity.event_id)[-1]
     assert attempt["outcome"] == "ERROR"
-    assert attempt["error_code"] == "ACK_STREAM_MISMATCH"
+    assert attempt["requested_stream"] == expected_stream
+    assert attempt["message_id"] == wrong_event.identity.event_id
 
 
 # ---- F2P: origin generation ---------------------------------------------------------------
@@ -356,15 +358,26 @@ def test_f2p_source_domains_match_edge_ownership(engine: ContinuityEngine) -> No
 def test_f2p_archive_metadata_preserves_origin_identity(
     engine: ContinuityEngine,
 ) -> None:
-    """Reconciliation detects an archived payload/identity record that no longer matches its journal authority."""
+    """A matching event id with corrupted origin metadata is reported as divergent."""
     complete_archive(engine, "east")
     event = sample_event(engine, sequence=120)
     engine.store.execute(
-        "UPDATE archive_index SET payload_sha256=? WHERE event_id=?",
-        ("0" * 64, event.identity.event_id),
+        "UPDATE archive_index SET origin_sequence=? WHERE event_id=?",
+        (7001, event.identity.event_id),
     )
+    archive_sequences = [
+        record.identity.origin_sequence
+        for record in engine.store.iter_archive(region="east", generation=1)
+    ]
+    expected_floor = contiguous_floor(archive_sequences)
     summary = engine.reconcile_region("east", 1)
-    assert "ARCHIVE_METADATA_MISMATCH" in finding_types(summary)
+    assert summary.metadata_mismatch_count == 1
+    assert summary.highest_contiguous_archive_origin_sequence == expected_floor
+    assert summary.converged is False
+    assert any(
+        finding.event_id == event.identity.event_id
+        for finding in summary.blocking_findings
+    )
 
 
 # ---- F2P: consumer processing -------------------------------------------------------------
@@ -440,23 +453,33 @@ def test_f2p_checkpoint_does_not_advance_before_effect_commit(
 def test_f2p_poison_event_is_quarantined_without_completion(
     engine: ContinuityEngine,
 ) -> None:
-    """Quarantining poison input does not mark its application effect checkpoint complete."""
+    """Quarantine records audit evidence without committing or dispatching a business effect."""
     event = sample_event(engine, sequence=5680)
-    before = engine.store.checkpoint("safety-state-projector", "east", 1)
+    consumer = "safety-state-projector"
+    engine.store.execute(
+        "DELETE FROM processing_effects WHERE consumer_name=? AND event_id=?",
+        (consumer, event.identity.event_id),
+    )
+    engine.store.execute(
+        "DELETE FROM effect_dispatches WHERE consumer_name=? AND event_id=?",
+        (consumer, event.identity.event_id),
+    )
+    before = engine.store.checkpoint(consumer, "east", 1)
     assert before is not None
     result = asyncio.run(
         engine.process_delivery(
-            FakeDelivery(
-                event, consumer_name="safety-state-projector", delivery_count=5
-            ),
+            FakeDelivery(event, consumer_name=consumer, delivery_count=5),
             worker_id="safety-worker",
             fence_epoch=1,
             poison_predicate=lambda _: True,
         )
     )
-    after = engine.store.checkpoint("safety-state-projector", "east", 1)
+    after = engine.store.checkpoint(consumer, "east", 1)
+    effect = engine.store.effect(consumer, event.identity.event_id)
     assert after is not None
     assert result.status == "QUARANTINED"
+    assert effect is not None and effect.status is EffectStatus.QUARANTINED
+    assert dispatch_count(engine, consumer, event.identity.event_id) == 0
     assert after.last_effect_sequence == before.last_effect_sequence
     assert after.last_ack_sequence == before.last_ack_sequence
 
@@ -482,7 +505,7 @@ def test_f2p_restart_detects_ack_floor_effect_ledger_gap(
 def test_f2p_reconcile_ignores_hub_sequence_equivalence(
     engine: ContinuityEngine,
 ) -> None:
-    """Complete stable origin identities converge independently of hub delivery positions."""
+    """Stable origin completeness and reported progress are independent of hub delivery positions."""
     complete_archive(engine, "east")
     for consumer in engine.store.required_consumers():
         set_checkpoint(engine, consumer, "east", effect=6000)
@@ -530,40 +553,53 @@ def test_f2p_reconcile_ignores_hub_sequence_equivalence(
     assert summary.unexpected_count == 0
     assert summary.metadata_mismatch_count == 0
     assert summary.consumer_lag_count == 0
-    assert "SEQUENCE_LAG" not in finding_types(summary)
+    assert summary.highest_contiguous_archive_origin_sequence == 6000
+    assert summary.required_consumer_progress == {
+        consumer: 6000 for consumer in engine.store.required_consumers()
+    }
     assert summary.converged is True
 
 
 def test_f2p_reconcile_finds_offsetting_gap_and_duplicate(
     engine: ContinuityEngine,
 ) -> None:
-    """Equal aggregate counts do not hide one missing authority event plus one unexpected archive event."""
+    """Equal counts still expose the missing and unexpected stable identities."""
     complete_archive(engine, "east")
     missing = "evt-east-g01-000123"
+    unexpected = "evt-east-g01-999999"
     engine.store.execute("DELETE FROM archive_index WHERE event_id=?", (missing,))
     engine.store.execute(
         "INSERT INTO archive_index(event_id,region,generation,origin_sequence,hub_stream_sequence,payload_sha256,archived_at,source_stream,source_domain,duplicate_observation_count) "
-        "VALUES('evt-east-g01-999999','east',1,999999,9999999,?,'2026-08-09T00:00:00Z','EDGE_EAST_TELEMETRY','edge-east',0)",
-        ("f" * 64,),
+        "VALUES(?,'east',1,999999,9999999,?,'2026-08-09T00:00:00Z','EDGE_EAST_TELEMETRY','edge-east',0)",
+        (unexpected, "f" * 64),
     )
     summary = engine.reconcile_region("east", 1)
-    types = finding_types(summary)
     assert summary.journal_event_count == summary.archive_event_count
-    assert "MISSING_ARCHIVE_EVENT" in types
-    assert "UNEXPECTED_ARCHIVE_EVENT" in types
+    assert summary.missing_count == 1
+    assert summary.unexpected_count == 1
+    assert summary.highest_contiguous_archive_origin_sequence == 122
+    assert summary.converged is False
+    blocking_ids = {
+        finding.event_id
+        for finding in summary.blocking_findings
+        if finding.event_id is not None
+    }
+    assert {missing, unexpected} <= blocking_ids
 
 
 def test_f2p_convergence_waits_for_all_required_consumers(
     engine: ContinuityEngine,
 ) -> None:
-    """A complete archive is not converged while one required consumer is behind."""
+    """A complete archive reports required-consumer progress and waits for the slowest application."""
     complete_archive(engine, "east")
     set_checkpoint(engine, "telemetry-indexer", "east", effect=6000)
     set_checkpoint(engine, "safety-state-projector", "east", effect=5999)
     summary = engine.reconcile_region("east", 1)
     assert summary.converged is False
     assert summary.consumer_lag_count >= 1
-    assert "CONSUMER_LAG" in finding_types(summary)
+    assert summary.highest_contiguous_archive_origin_sequence == 6000
+    assert summary.required_consumer_progress["telemetry-indexer"] == 6000
+    assert summary.required_consumer_progress["safety-state-projector"] == 5999
 
 
 # ---- F2P: replay -------------------------------------------------------------------------
@@ -975,7 +1011,7 @@ def test_p2p_fully_converged_old_rows_are_cleanup_eligible(
 
 
 def test_p2p_current_lease_owner_can_renew_same_epoch(engine: ContinuityEngine) -> None:
-    """A healthy current owner renews its lease without changing the fencing epoch."""
+    """Current-token renewal succeeds, while the same owner with a stale epoch cannot mutate the lease."""
     t0 = datetime(2026, 8, 9, 6, 0, tzinfo=UTC)
     first = engine.acquire_recovery_lease(
         region="west", owner_id="worker-a", ttl_seconds=30, at=t0
@@ -989,3 +1025,25 @@ def test_p2p_current_lease_owner_can_renew_same_epoch(engine: ContinuityEngine) 
     )
     assert renewed.fence_epoch == first.fence_epoch
     assert renewed.expires_at > first.expires_at
+
+    rotated_at = t0 + timedelta(seconds=11)
+    current = engine.store.write_lease(
+        region="west",
+        owner_id="worker-a",
+        fence_epoch=renewed.fence_epoch + 1,
+        acquired_at=renewed.acquired_at,
+        renewed_at=rotated_at,
+        expires_at=rotated_at + timedelta(seconds=45),
+    )
+    with pytest.raises(FencingError):
+        engine.renew_recovery_lease(
+            region="west",
+            owner_id="worker-a",
+            fence_epoch=renewed.fence_epoch,
+            ttl_seconds=300,
+            at=rotated_at + timedelta(seconds=1),
+        )
+    after = engine.store.current_lease("west")
+    assert after is not None
+    assert after.fence_epoch == current.fence_epoch
+    assert after.expires_at == current.expires_at
