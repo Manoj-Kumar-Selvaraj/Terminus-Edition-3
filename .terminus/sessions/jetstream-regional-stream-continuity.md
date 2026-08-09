@@ -5,7 +5,7 @@ Session schema version: `2.4`
 ## Identity
 
 - Task: `jetstream-regional-stream-continuity`
-- Controller state: `DETERMINISTIC_VALIDATION`
+- Controller state: `FROZEN_CANDIDATE`
 - Working branch: `task/jetstream-quality-interlock`
 - Pull request: `#12`
 - Current task commit: `0fe5c749b7b1e389ef764032ce65a38676b51e8d`
@@ -17,31 +17,31 @@ Session schema version: `2.4`
 
 ## Current task profile
 
-The task remains `large_system_strict` with 5,523 substantive solver-visible runtime/config LOC and 40 tests: exactly 30 F2P + 10 P2P across 26 mapped requirements. Third-cycle Q4 remediation preserves the existing natural solver-visible contract. Formatting-only churn was removed. The latest two-file correction replaces an invalid archive-identity corruption fixture with a model-valid source-ownership mismatch and teaches the reference reconciliation to validate source stream/domain ownership.
+The task remains `large_system_strict` with 5,523 substantive solver-visible runtime/config LOC and 40 tests: exactly 30 F2P + 10 P2P across 26 mapped requirements. Third-cycle Q4 remediation preserves the existing natural solver-visible contract. Formatting-only churn was removed. Reconciliation now exposes the already-contracted contiguous archive-origin and required-consumer progress outputs, and source ownership is validated at the reconciliation boundary.
 
 ## Current gates
 
 | Gate | Status | Evidence / version |
 | --- | --- | --- |
 | Q1 Spec Gap Repair | PASS | Existing solver-visible continuity requirements remain authoritative; no requirement weakened. |
-| Q2 Verifier Coverage Repair | FIX_APPLIED_PENDING_RERUN | Six `c3ee2778` Q4 findings remediated; latest model-valid source-ownership fixture replaces the Oracle-invalid origin-sequence mutation. |
-| Q3 Spec Ambiguity Repair | PASS | No new solver-visible ambiguity introduced. |
-| Q5 Oracle & Runtime Repair | FIX_APPLIED_PENDING_RERUN | Reconciliation progress outputs and source-ownership validation added to the reference behavior required by the existing contract. |
-| Q7 Task Format Enforcer | PENDING_FRESH_EVIDENCE | Require fresh Preflight/Ruff/build/package evidence. |
-| Creator Complexity Gate | PASS | run `31315928272`, job `93251042414`; 5,523 LOC / 40 tests / 30 F2P / 10 P2P / 26 requirements. |
-| Production Authenticity Gate | PENDING_RERUN | Require exact clean-head evidence for current task commit. |
-| Agent System / review freshness | PENDING_RERUN | Session rebound to task commit `0fe5c749...`. |
-| Preflight/static | PENDING | Fresh Edition-3 run required. |
-| Ruff verifier | PENDING | Fresh Edition-3 run required. |
-| Environment/verifier build | PENDING | Fresh Edition-3 run required. |
-| Oracle = 1 | PENDING | Target 40/40 PASS. |
-| NOP = 0 | PENDING | Target exactly 30 F2P FAIL + 10 P2P PASS. |
-| F2P/P2P empirical matrix | PENDING | Require fresh current-task evidence. |
-| Leakage/package checks | PENDING_FRESH_EVIDENCE | Require current Agent-System/package-isolation evidence. |
-| FROZEN_CANDIDATE | NOT_REACHED | All earlier freezes are stale after task changes. |
-| Q4 Spec-Test Contract Reviewer | STALE_REVISE | `c3ee2778` Q4 REVISE/HIGH/SUFFICIENT drove this repair. |
-| Q6 Production Logic Auditor | STALE_PASS | `c3ee2778` Q6 PASS/HIGH/SUFFICIENT is historical only; task commit moved. |
-| Quality Interlock | PENDING | Requires deterministic refreeze plus fresh packet-bound Q4 and Q6 PASS. |
+| Q2 Verifier Coverage Repair | PASS | Six `c3ee2778` Q4 findings remediated without increasing F2P count; final verifier remains 30 F2P + 10 P2P. |
+| Q3 Spec Ambiguity Repair | PASS | No new solver-visible ambiguity introduced; undocumented diagnostic-literal dependencies removed. |
+| Q5 Oracle & Runtime Repair | PASS | Reconciliation progress outputs and source-ownership validation added to the reference behavior required by the existing contract; Oracle 40/40. |
+| Q7 Task Format Enforcer | PASS | run `31316002097`, job `93251243482`; Preflight/Ruff/build and task structure passed before deterministic scoring. |
+| Creator Complexity Gate | PASS | run `31316002094`; 5,523 substantive LOC / 40 tests / 30 F2P / 10 P2P / 26 requirements. |
+| Production Authenticity Gate | PASS | run `31316002152`; exact current solver-visible task tree passed production-authenticity validation. |
+| Agent System / review freshness | PASS | run `31316002121`; control-plane regressions, agent-system structure, current commit binding and package isolation passed. |
+| Preflight/static | PASS | run `31316002097`, job `93251243482`. |
+| Ruff verifier | PASS | run `31316002097`, job `93251243482`. |
+| Environment/verifier build | PASS | run `31316002097`, job `93251243482`. |
+| Oracle = 1 | PASS | run `31316002097`, job `93251243482`; Oracle 40/40 PASS. |
+| NOP = 0 | PASS | run `31316002097`, job `93251243482`; reward 0 with exactly 30 F2P FAIL + 10 P2P PASS. |
+| F2P/P2P empirical matrix | PASS | artifact `9038780101`, sha256 `0ea0b3c63f14e72cfb8cc710b16f21b5fa765e14982579c9488662bff743b233`; Oracle 40/40, NOP exactly 30/10. |
+| Leakage/package checks | PASS | Agent-System run `31316002121` passed current commit binding and package isolation. |
+| FROZEN_CANDIDATE | PASS | Task commit `0fe5c749b7b1e389ef764032ce65a38676b51e8d`. |
+| Q4 Spec-Test Contract Reviewer | PENDING_PACKET | All Q4 results through `c3ee2778` are stale after current task changes; generate fresh packet. |
+| Q6 Production Logic Auditor | PENDING_PACKET | All Q6 results through `c3ee2778` are stale after current task changes; generate fresh packet. |
+| Quality Interlock | PENDING | Requires fresh packet-bound Q4 + Q6 PASS for `0fe5c749...`. |
 | Task Architect | PENDING | after Quality Interlock |
 | Verifier Engineer | PENDING | after Quality Interlock |
 | Originality & Authenticity | PENDING | after Quality Interlock |
@@ -53,7 +53,7 @@ The task remains `large_system_strict` with 5,523 substantive solver-visible run
 | Pre-LLMaJ aggregate | PENDING | after specialist and Comprehensive reviews |
 | Q8 GPT Perspective Simulation | PENDING | after Pre-LLMaJ PASS |
 | Q8 Claude Perspective Simulation | PENDING | after Pre-LLMaJ PASS |
-| Harbor LLMaJ | PENDING | later gate |
+| Harbor LLMaJ | PENDING | later gate; reusable AI credentials remain separate from deterministic freeze |
 | GPT-5.5 difficulty ×5 | NOT_RUN | later official gate |
 | Claude Opus 4.8 difficulty ×5 | NOT_RUN | later official gate |
 | Combined difficulty ×10 | NOT_RUN | later official gate |
@@ -65,17 +65,17 @@ The task remains `large_system_strict` with 5,523 substantive solver-visible run
 
 ## Third-cycle Q4 remediation
 
-The six `c3ee2778` Q4 findings were routed to Q2 plus the minimal Q5/interface work required by Q4-02:
+Independent Q4 on `c3ee277828c2a156ecce9d335820d57b9fd2a0e0` returned `REVISE/HIGH/SUFFICIENT` with six findings. The current task version addresses them without expanding `instruction.md` or increasing F2P count:
 
 1. Verifier assertions no longer require undocumented diagnostic label literals.
-2. `ReconciliationSummary` now exposes highest contiguous archive-origin sequence and required-consumer progress as already promised by the solver-visible contract.
-3. Origin-metadata coverage uses a matching stable event id with incorrect source ownership (`source_domain`) and grades divergence/event linkage without constructing an invalid `EventIdentity`.
+2. `ReconciliationSummary` exposes highest contiguous archive-origin sequence and required-consumer progress as already promised by the solver-visible contract.
+3. Origin/source metadata coverage uses a matching stable event id with incorrect source ownership and grades divergence/event linkage without creating an invalid `EventIdentity`.
 4. Poison quarantine proves no confirmed business dispatch and no completed application progress while preserving the quarantine audit record.
 5. Same-owner stale-epoch renewal is rejected without altering the current lease.
 6. Terminal replay completion is followed by retention recomputation proving the replay pin is released.
 7. Final report truth is derived independently from SQLite durable state rather than the submitted engine.
 
-The first post-remediation Oracle run `31315717242`, job `93250556532`, failed exactly one test because the initial test fixture directly changed `archive_index.origin_sequence`; that row violated the model's stable event-id invariant and failed deserialization before reconciliation. This was classified `VERIFIER_HARNESS`, not product behavior. Commit `0fe5c749b7b1e389ef764032ce65a38676b51e8d` replaces only that fixture and adds reference source-ownership validation. Strict/Ruff/pycompile checks passed before push.
+The first post-remediation Oracle attempt at `c21c6e2...` failed only because an initial verifier fixture directly corrupted `origin_sequence` and could not deserialize. Commit `0fe5c749b7b1e389ef764032ce65a38676b51e8d` replaced that fixture with a model-valid source-ownership mismatch and added matching reference validation. The fresh accepted deterministic run `31316002097` then produced Oracle 40/40 and NOP exactly 30 F2P failures + 10 P2P passes.
 
 ## Historical provenance
 
@@ -84,11 +84,12 @@ The first post-remediation Oracle run `31315717242`, job `93250556532`, failed e
 - `c3ee2778...`: Q4 REVISE/HIGH/SUFFICIENT; Q6 PASS/HIGH/SUFFICIENT; both stale.
 - `c3ee2778...` artifact `9037758650`: Oracle 40/40 and NOP 30/10; stale.
 - `c21c6e2...` run `31315717242`: Oracle 39/40 due only to invalid verifier fixture; superseded.
+- `0fe5c749...` run `31316002097`, artifact `9038780101`: accepted current deterministic evidence.
 
 ## Current blocker
 
-Run fresh deterministic validation on task commit `0fe5c749b7b1e389ef764032ce65a38676b51e8d`. Require strict gates, Preflight/Ruff/build, Oracle 40/40 and NOP exactly 30 F2P FAIL + 10 P2P PASS. Do not refreeze on partial evidence.
+Generate fresh immutable Q4 and Q6 packets bound to task commit `0fe5c749b7b1e389ef764032ce65a38676b51e8d`, then run both reviewers independently in cold contexts. Historical Q4/Q6 verdicts do not satisfy the current Quality Interlock.
 
 ## Next action
 
-If the current task commit passes the full deterministic matrix and exact-head strict/authenticity/freshness gates, restore `FROZEN_CANDIDATE`, generate a new repository-native Q4/Q6 packet pair, remove the packet helper, and rerun both reviewers in separate cold contexts.
+Generate and commit the repository-native fresh Q4/Q6 packet pair, remove any temporary packet-generation helper, verify clean-head Agent-System freshness/package isolation, then invoke fresh Q4 and Q6 in separate cold contexts.
