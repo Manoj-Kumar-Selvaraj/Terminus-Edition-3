@@ -72,6 +72,15 @@ def test_quality_review_roles_have_provenance_contract_versions() -> None:
         assert contract.ROLE_PROMPT_HEADINGS[role]
 
 
+def test_session_template_tracks_current_quality_policy_identity() -> None:
+    template = (T / "sessions/TEMPLATE.md").read_text(encoding="utf-8")
+    assert "- Agent-system policy: `2.4`" in template
+    assert "- Specialist protocol policy: `2.2`" in template
+    assert "| Q4 Spec-Test Contract Reviewer |" in template
+    assert "| Q6 Production Logic Auditor |" in template
+    assert "Role policy | Role contract hash | Scope hash |" in template
+
+
 def test_q6_is_only_scope_reusable_quality_role() -> None:
     contract = _load_module("quality_scope_contract", T / "review_contract.py")
     assert contract.SCOPE_REUSABLE_ROLES == {"Production Logic Auditor"}
