@@ -9,9 +9,9 @@ Session schema version: `2.4`
 - Working branch: `main`
 - Pull request: `#6` (merged production hardening); `#7` (merged production-policy hardening); `#8` (closed validation-only)
 - Current task commit: `2c0fab5a0be9f9d3d5d01bdaba9e49c6a56ac953`
-- Agent-system policy: `2.3`
+- Agent-system policy: `2.4`
 - Specialist prompt policy: `2.2`
-- Specialist protocol policy: `2.1`
+- Specialist protocol policy: `2.2`
 - Pre-LLMaJ panel policy: `2.2`
 - Comprehensive reviewer policy: `1.0`
 - Production-authenticity policy: `1.1`
