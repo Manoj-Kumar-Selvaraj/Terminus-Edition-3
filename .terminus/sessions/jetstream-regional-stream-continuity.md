@@ -39,8 +39,8 @@ The task remains `large_system_strict` with 5,530 substantive solver-visible run
 | F2P/P2P empirical matrix | PASS | artifact `9039953729`, sha256 `357b913ba35e479986d5cc878141dab53e05f34c67041b49c8ba55ff04a7350a`; Oracle 40/40, NOP exactly 30/10. |
 | Leakage/package checks | PASS | Agent-System run `31320157222` passed current binding and package isolation. |
 | FROZEN_CANDIDATE | PASS | Task commit `0f0947acc7abeeaf0b41ca3fa5a4ae5ff9fa793a`. |
-| Q4 Spec-Test Contract Reviewer | PENDING_PACKET | All Q4 results through `0fe5c749` are stale after current task changes; generate fresh packet. |
-| Q6 Production Logic Auditor | PENDING_PACKET | All Q6 results through `0fe5c749` are stale after current task changes; generate fresh packet. |
+| Q4 Spec-Test Contract Reviewer | PENDING_REVIEW | packet `jetstream-regional-stream-continuity-0f0947ac-spec-test-contract-b6a2908b36`; exact output path under `.terminus/reviews/.../0f0947ac/`. |
+| Q6 Production Logic Auditor | PENDING_REVIEW | packet `jetstream-regional-stream-continuity-0f0947ac-production-logic-dae81333d9`; exact output path under `.terminus/reviews/.../0f0947ac/`. |
 | Quality Interlock | PENDING | Requires fresh packet-bound Q4 + Q6 PASS for `0f0947...`. |
 | Task Architect | PENDING | after Quality Interlock |
 | Verifier Engineer | PENDING | after Quality Interlock |
@@ -81,6 +81,17 @@ The current candidate repairs the `0fe5c749` Q4 BLOCKER/HIGH findings without in
 
 Semantic remediation commit `54fbe9d73f485f5d3a944bef261146d663e32d35` initially failed Oracle collection because the verifier image lacked the production runtime's NATS dependency. Commit `0d28c545ff6b0b7afb4c1b9900bbfb9b44f8a887` added the same pinned NATS Server 2.14.3 and `nats-py==2.15.0` to the verifier image. Run `31319563943` then produced Oracle 40/40, but NOP yielded 29 F2P failures + 11 passes because the hub-sequence F2P was nondiscriminating. A competing checksum-invariance edit was rejected as a potential phantom contract requirement. Current task commit `0f0947acc7abeeaf0b41ca3fa5a4ae5ff9fa793a` removes that checksum assertion and makes the inherited starter expose its intended hub-position/origin-progress confusion through the already-contracted `highest_contiguous_archive_origin_sequence` field. Fresh run `31320157239` proves Oracle 40/40 and NOP exactly 30 F2P failures + 10 P2P passes.
 
+## Fresh review packets
+
+Repository-native packet generation run `31320404144` succeeded. Artifact `9039985895` has sha256 `c9620970402c9fd1e0d6e29e25ebae0522053fe0bc318f1fffbbfacc380fd426`. Exact generated packet bytes were committed and the temporary generator was removed.
+
+- Q4 review id: `jetstream-regional-stream-continuity-0f0947ac-spec-test-contract-b6a2908b36`
+- Q4 packet: `.terminus/reviews/jetstream-regional-stream-continuity/0f0947ac/jetstream-regional-stream-continuity-0f0947ac-spec-test-contract-b6a2908b36.packet.json`
+- Q4 result: `.terminus/reviews/jetstream-regional-stream-continuity/0f0947ac/jetstream-regional-stream-continuity-0f0947ac-spec-test-contract-b6a2908b36.json`
+- Q6 review id: `jetstream-regional-stream-continuity-0f0947ac-production-logic-dae81333d9`
+- Q6 packet: `.terminus/reviews/jetstream-regional-stream-continuity/0f0947ac/jetstream-regional-stream-continuity-0f0947ac-production-logic-dae81333d9.packet.json`
+- Q6 result: `.terminus/reviews/jetstream-regional-stream-continuity/0f0947ac/jetstream-regional-stream-continuity-0f0947ac-production-logic-dae81333d9.json`
+
 ## Historical provenance
 
 - `fc137e82...`: Q4 REVISE; Q6 PASS.
@@ -94,8 +105,8 @@ Semantic remediation commit `54fbe9d73f485f5d3a944bef261146d663e32d35` initially
 
 ## Current blocker
 
-Generate fresh immutable Q4 and Q6 packets bound to task commit `0f0947acc7abeeaf0b41ca3fa5a4ae5ff9fa793a`, then run both reviewers independently in cold contexts. Historical Q4/Q6 verdicts do not satisfy the current Quality Interlock.
+Execute the fresh Q4 and Q6 packets independently in separate cold contexts and commit each frozen result to its packet-declared output path. Historical reviewer verdicts do not satisfy the current Quality Interlock.
 
 ## Next action
 
-Generate and commit the repository-native Q4/Q6 packet pair, remove any temporary packet-generation helper, verify clean-head Agent-System freshness/package isolation, update PR #12, then invoke fresh Q4 and Q6 in separate cold contexts.
+After both results are committed, validate packet/result provenance and run the machine Quality Interlock. If both current reviews are PASS with sufficient evidence and the interlock validator passes, advance to the next live Stage-B state.
