@@ -698,16 +698,11 @@ class ContinuityEngine:
         self.store.update_replay_status(plan_id, ReplayStatus.RUNNING, fence_epoch=fence_epoch)
         counters = defaultdict(int)
         for item in self.store.replay_items(plan_id):
-            try:
-                self.assert_recovery_fence(
-                    region=plan.replay_range.region,
-                    owner_id=owner_id,
-                    fence_epoch=fence_epoch,
-                )
-            except FencingError as exc:
-                self.store.update_replay_item(plan_id, item.event_id, state="HELD", error=str(exc))
-                counters["held"] += 1
-                continue
+            self.assert_recovery_fence(
+                region=plan.replay_range.region,
+                owner_id=owner_id,
+                fence_epoch=fence_epoch,
+            )
             if self.store.archive_record(item.event_id) is not None:
                 self.store.update_replay_item(plan_id, item.event_id, state="ALREADY_ARCHIVED")
                 counters["already_archived"] += 1
