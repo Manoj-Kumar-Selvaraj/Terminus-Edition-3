@@ -1,0 +1,65 @@
+name: JetStream Q4 Third-Cycle Semantic Cleanup
+
+on:
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: write
+
+jobs:
+  cleanup:
+    if: github.head_ref == 'task/jetstream-quality-interlock'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: task/jetstream-quality-interlock
+          fetch-depth: 0
+
+      - name: Remove remediation formatting-only churn
+        shell: bash
+        run: |
+          set -euo pipefail
+          base=c3ee277828c2a156ecce9d335820d57b9fd2a0e0
+          repaired=d6a2cd9fdb61f37be7d59f004875c0991218d02c
+          files=(
+            .terminus/designs/jetstream-regional-stream-continuity-test-map.json
+            jetstream-regional-stream-continuity/environment/continuity/continuity/model.py
+            jetstream-regional-stream-continuity/environment/continuity/continuity/policy.py
+            jetstream-regional-stream-continuity/environment/continuity/continuity/engine.py
+            jetstream-regional-stream-continuity/solution/files/engine.py
+            jetstream-regional-stream-continuity/tests/test_continuity.py
+            jetstream-regional-stream-continuity/tests/test_contract_coverage.py
+          )
+
+          git diff -w "$base" "$repaired" -- "${files[@]}" > /tmp/q4-semantic.patch
+          git checkout "$base" -- "${files[@]}"
+          git apply /tmp/q4-semantic.patch
+
+          python3 -m pip install --quiet ruff==0.12.8
+          ruff check jetstream-regional-stream-continuity/tests
+          python3 -m py_compile \
+            jetstream-regional-stream-continuity/environment/continuity/continuity/model.py \
+            jetstream-regional-stream-continuity/environment/continuity/continuity/policy.py \
+            jetstream-regional-stream-continuity/environment/continuity/continuity/engine.py \
+            jetstream-regional-stream-continuity/solution/files/engine.py \
+            jetstream-regional-stream-continuity/tests/test_continuity.py \
+            jetstream-regional-stream-continuity/tests/test_contract_coverage.py
+          python3 .terminus/validate_task_complexity.py jetstream-regional-stream-continuity
+
+          echo '--- semantic diff stat vs c3ee2778 ---'
+          git diff --stat "$base" -- "${files[@]}"
+          echo '--- whitespace-ignored diff stat vs repaired commit ---'
+          git diff -w --stat "$repaired" -- "${files[@]}"
+
+          if git diff --quiet; then
+            echo 'No cleanup changes needed'
+            exit 0
+          fi
+          git config user.name 'Terminus CI Orchestrator'
+          git config user.email 'actions@users.noreply.github.com'
+          git add "${files[@]}"
+          git commit -m 'Remove formatting churn from JetStream Q4 remediation'
+          git push origin HEAD:task/jetstream-quality-interlock
