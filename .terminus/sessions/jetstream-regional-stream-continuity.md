@@ -13,6 +13,7 @@ Session schema version: `2.4`
 - Specialist prompt policy: `2.2`
 - Specialist protocol policy: `2.1`
 - Pre-LLMaJ panel policy: `2.2`
+- Comprehensive reviewer policy: `1.0`
 - Production-authenticity policy: `1.1`
 - Reviewer checklist snapshot: `2026-08-08-user-supplied`
 - Checklist policy freshness: `CURRENT_LOCAL_SNAPSHOT`
