@@ -7,6 +7,7 @@ RUN apt-get update \
  && mkdir -p /app/continuity /logs/verifier /tests
 
 COPY test_continuity.py /tests/test_continuity.py
+COPY test_contract_coverage.py /tests/test_contract_coverage.py
 COPY test.sh /tests/test.sh
 RUN chmod +x /tests/test.sh
 
