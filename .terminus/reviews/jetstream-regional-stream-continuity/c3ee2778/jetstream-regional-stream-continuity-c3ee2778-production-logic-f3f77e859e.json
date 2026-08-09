@@ -13,106 +13,107 @@
   "verdict": "PASS",
   "confidence": "HIGH",
   "evidence_status": "SUFFICIENT",
-  "summary": "The solver-visible continuity controller is a substantive, reachable production-style system rather than LOC padding. The real continuityctl entrypoint binds the active ContinuityEngine into a shared operator CLI that drives SQLite durable state, real local NATS JetStream domains, stream/source topology bootstrap, publication, archive synchronization, durable consumer effects and checkpoints, reconciliation, generation authority, replay, recovery leases/fencing, retention and health reporting. Major modules are behaviorally differentiated and mutually dependent. The 12,000-event seeded incident and operator artifacts populate the same state model consumed by runtime branches, including archive gaps, consumer lag, duplicate-effect exposure, an active replay plan and unsafe cleanup state. Cross-module invariants create genuine partial-fix traps, and removing roughly a quarter of the core would eliminate material operational behavior. No material Q6 production-logic defect was found within the packet-authorized evidence boundary.",
+  "summary": "The solver-visible system is a coupled regional continuity controller rather than LOC padding. Real operator entrypoints drive live three-domain NATS JetStream processes and a WAL-backed SQLite durability layer through differentiated model, persistence, policy, runtime and CLI modules. Publication, archive reconciliation, generation identity, consumer effects/checkpoints, replay, fencing and retention share durable identities and watermarks, creating credible cross-module partial-fix traps. Deterministic 12,000-event state plus controller-log, handoff and captured-stream evidence exercise the same state dimensions. The reachable engine override layer overlaps some base-policy logic, so it was not relied on as diversity/scale evidence; even discounting that overlap, the distinct runtime/configuration surface remains substantial and materially necessary. No material toy-logic, unreachable-filler, clone-padding or shortcut-entrypoint concern was found within the packet-bound Q6 scope.",
   "evidence": [
     {
       "type": "rule",
-      "ref": ".terminus/agents/QUALITY_AGENT_REGISTRY.md#Q6---Production-Logic-Auditor",
-      "observation": "Q6 requires independent assessment of entrypoint reachability, substantive branching/state/persistence/integration behavior, module differentiation, meaningful state volume, cross-module partial-fix traps, removal impact, and padding risk; raw LOC or other gate verdicts are insufficient."
+      "ref": ".terminus/agents/QUALITY_AGENT_PROMPTS.md#Q6---Production-Logic-Auditor",
+      "observation": "Q6 requires independent reconstruction from code, entrypoints, state, data and interactions; it explicitly requires reachability, module-diversity, clone/filler inspection, cross-module traps, a roughly-25-percent removal test, and separation of substantive runtime complexity from LOC/config/generated noise."
     },
     {
       "type": "rule",
-      "ref": ".terminus/agents/QUALITY_AGENT_PROMPTS.md#Q6---Production-Logic-Auditor",
-      "observation": "The required method traces real entrypoints and major modules, checks wrappers/clones/unreachable filler, identifies partial-fix traps, applies a roughly 25% removal test, and requires at least 3,000 substantive reachable solver-visible runtime/config LOC for large_system_strict."
+      "ref": ".terminus/agents/PROTOCOL.md",
+      "observation": "The review is packet-bound, evidence-bound and independent; PASS means no material issue in this role's scope and cannot be inferred from other reviewer or validator verdicts."
     },
     {
       "type": "file",
       "ref": "jetstream-regional-stream-continuity/environment/continuity/bin/continuityctl",
-      "observation": "The solver-visible operator executable directly invokes python -m continuity.starter_cli under the task runtime root; it is not a verifier-only launcher."
+      "observation": "The operator entrypoint executes python -m continuity.starter_cli under the shipped runtime root; it does not emit fixed verifier output or route to a separate test-only implementation."
     },
     {
       "type": "file",
       "ref": "jetstream-regional-stream-continuity/environment/continuity/continuity/starter_cli.py",
-      "observation": "The inherited operator surface binds cli.ContinuityEngine to the active engine.ContinuityEngine and then delegates to the shared cli.main, while database initialization applies the runtime schema extension. Starter behavior therefore traverses the same CLI/runtime/store path a repair changes."
+      "observation": "The starter binding replaces the inherited CLI engine with continuity.engine.ContinuityEngine and then delegates to the same CLI main, so solver-visible repairs are reached by the production operator interface."
     },
     {
       "type": "file",
       "ref": "jetstream-regional-stream-continuity/environment/continuity/continuity/cli.py",
-      "observation": "The shared CLI constructs ContinuityStore plus ContinuityEngine from durable state/config and exposes operational commands for health, reconciliation, generation decisions, replay planning/execution, recovery leases, retention, NATS lab lifecycle, archive sync, durable consumers, reset and final verification."
+      "observation": "CLI handlers reach SQLite initialization, health/reconciliation, generation approval, replay planning/execution, lease operations, retention, live lab lifecycle, archive synchronization and durable-consumer processing; async and synchronous handlers are dispatched through one real parser/main path."
     },
     {
       "type": "file",
       "ref": "jetstream-regional-stream-continuity/environment/continuity/continuity/runtime.py",
-      "observation": "Runtime code performs real NATS connections and JetStream API requests, validates publish acknowledgements, creates/updates streams and durable consumers, pulls and acks/naks messages, synchronizes hub messages into the archive index, and starts/stops three nats-server processes with readiness monitoring."
-    },
-    {
-      "type": "file",
-      "ref": "jetstream-regional-stream-continuity/environment/continuity/continuity/policy.py",
-      "observation": "The controller implements topology/policy interpretation, publication state transitions, generation validation, differentiated consumer effects, effect/checkpoint sequencing, identity-based reconciliation, replay plans, lease/fence checks, replay execution, retention decisions/application and composite health reporting."
-    },
-    {
-      "type": "file",
-      "ref": "jetstream-regional-stream-continuity/environment/continuity/continuity/engine.py",
-      "observation": "The active inherited controller overrides production methods on the real operator path, including publication, generation observation, consumer dispatch/effect processing, reconciliation, replay planning, recovery ownership and retention. The override layer changes operational state behavior rather than adding decorative modules or constant-output shells."
+      "observation": "Runtime code performs real nats-py connections, domain-aware JetStream API requests, stream/consumer creation, publish acknowledgements, pull-consumer ack/nak, hub archive message retrieval, archive materialization and nats-server process lifecycle/monitoring."
     },
     {
       "type": "file",
       "ref": "jetstream-regional-stream-continuity/environment/continuity/continuity/store.py",
-      "observation": "The SQLite store uses WAL and explicit transactions and persists publish attempts, generation transitions, archive identity/collisions, idempotent effects, separate ack/effect checkpoints, reconciliation runs/findings, replay plans/items, recovery leases, retention watermarks/holds and a multi-table state digest."
+      "observation": "The store implements WAL-backed SQLite transactions and durable publication attempts, generations, archive identities, idempotent effects, separate effect/ack checkpoints, reconciliation findings, replay plans/items, leases, retention watermarks/holds and deterministic state digests."
+    },
+    {
+      "type": "file",
+      "ref": "jetstream-regional-stream-continuity/environment/continuity/continuity/policy.py",
+      "observation": "The policy engine couples config/topology with publication state, generation validation, effect processing, reconciliation, consumer lag, replay planning/execution, repeated recovery-fence checks, retention decisions, health aggregation and atomic reports."
     },
     {
       "type": "file",
       "ref": "jetstream-regional-stream-continuity/environment/continuity/continuity/model.py",
-      "observation": "The domain model enforces stable region/generation/origin event identity, envelope integrity, subjects, stream/source topology, retention horizon arithmetic, replay ranges/status, lease owner/epoch/expiry fencing and reconciliation/health semantics."
+      "observation": "Domain models enforce stable event identity, generation/origin-sequence consistency, event-envelope constraints, JetStream subjects/stream topology, retention horizons, replay ranges and explicit state enums; these invariants are consumed by store/policy/runtime code."
+    },
+    {
+      "type": "file",
+      "ref": "jetstream-regional-stream-continuity/environment/continuity/continuity/engine.py",
+      "observation": "The inherited solver repair surface is a reachable subclass with behavior-changing overrides across publication, generation handling, effect dispatch, reconciliation, replay, fencing and retention. It contains overlap with base policy, but the overlap is operationally reached and was discounted rather than counted as independent module diversity."
     },
     {
       "type": "file",
       "ref": "jetstream-regional-stream-continuity/environment/continuity/sql/schema.sql",
-      "observation": "The durable schema contains interrelated tables and constraints for regions, origin generations, a local event journal, publish attempts, archive identity, consumer registry/effects/checkpoints, poison events, reconciliation, replay, leases, retention and operator actions rather than disconnected fixture tables."
-    },
-    {
-      "type": "file",
-      "ref": "jetstream-regional-stream-continuity/environment/continuity/sql/runtime_extensions.sql",
-      "observation": "Runtime extensions add persisted effect dispatch observations and origin observations used by the active controller, reinforcing crash/idempotency and generation-state behavior rather than static volume."
+      "observation": "The durable schema materially links regions/generations, event journal, publish attempts, archive index, consumer registry/effects/checkpoints, poison events, reconciliation, replay, recovery leases, retention policies/watermarks, operator actions and runtime state with constraints/indexes."
     },
     {
       "type": "file",
       "ref": "jetstream-regional-stream-continuity/environment/continuity/sql/seed.sql",
-      "observation": "The deterministic seed creates 12,000 varied telemetry events across two regions and 240 devices, with publish states/attempts, archive membership and deliberate gaps, duplicate observations, two required consumer effect histories at different progress points, retention watermarks and an approved replay plan. This volume is directly queried and mutated by production logic."
+      "observation": "The deterministic seed creates 12,000 varied journal events across two regions, 240 devices, multiple event types/payload sizes/priorities and publication states, thousands of archive/effect rows, differentiated required-consumer checkpoints, retention watermarks and a concrete approved replay plan; the data dimensions are consumed by runtime branches rather than existing as inert bulk."
     },
     {
       "type": "file",
       "ref": "jetstream-regional-stream-continuity/environment/continuity/config/continuity.json",
-      "observation": "The configuration defines distinct east/west JetStream domains, a hub archive with source bindings and subject transforms, three consumers with different effect roles/criticality, and recovery/retention timing consumed by the runtime and controller."
+      "observation": "Configuration defines east/west/hub JetStream domains, stream/source topology, stream policies, three behaviorally distinct consumers and recovery limits used directly by bootstrap, publication, topology validation, consumer effects and retention/recovery logic."
     },
     {
       "type": "file",
-      "ref": "jetstream-regional-stream-continuity/environment/continuity/ops/shift-handoff.txt",
-      "observation": "The operator handoff describes a carrier disconnect/reconnect, five archive identity gaps, divergent application versus JetStream consumer progress, a duplicate effect, cleanup conflicting with consumer/replay authority, and generation-reset handling; these states correspond to the shipped durable model and operational commands."
+      "ref": "jetstream-regional-stream-continuity/environment/continuity/config/nats/hub.conf",
+      "observation": "The hub is a real JetStream server configuration with persistent file storage, domain separation, monitor endpoint and leaf-node listener; edge configuration connects to it as a real leaf topology."
     },
     {
       "type": "file",
       "ref": "jetstream-regional-stream-continuity/environment/continuity/log/archive/inc-2026-0808-17-controller.log",
-      "observation": "The incident log records concrete journal/archive counts, duplicate publish attempts, effect redelivery, checkpoint divergence, an approved replay range, retention inputs and an operator halt, aligning with the deterministic seeded incident rather than unsupported backstory."
+      "observation": "The controller log records the west disconnect/reconnect, local journaling, replay publications, five archive gaps across east/west, duplicate effect evidence, consumer/application checkpoint disagreement, approved replay and cleanup/replay guard halt using identifiers present in seeded state."
+    },
+    {
+      "type": "file",
+      "ref": "jetstream-regional-stream-continuity/environment/continuity/ops/shift-handoff.txt",
+      "observation": "The independent operator handoff describes the same continuity hazards in operational terms and explicitly preserves edge-journal authority, generation decisions, replay/cleanup holds and existing continuityctl/event-envelope interfaces."
+    },
+    {
+      "type": "file",
+      "ref": "jetstream-regional-stream-continuity/environment/continuity/ops/stream-state.json",
+      "observation": "Captured state quantifies 6,000 messages per edge, 11,395 hub messages, per-consumer application and JetStream progress, and cleanup preview values including the active west replay pin; those values align with the persisted incident state and retention/reconciliation logic."
+    },
+    {
+      "type": "file",
+      "ref": "jetstream-regional-stream-continuity/environment/Dockerfile",
+      "observation": "The environment installs a pinned real nats-server and nats-py runtime, initializes the shipped SQLite schema/extensions/seed, and exposes the same /app/continuity state/run/log/output directories used by the operator workflows."
     }
   ],
   "findings": [],
   "missing_evidence": [],
-  "change_scope": [
-    "Read-only Q6 semantic audit of packet-authorized evidence at task commit c3ee277828c2a156ecce9d335820d57b9fd2a0e0.",
-    "Publication of this frozen review result at the packet-declared output path only."
-  ],
+  "change_scope": [],
   "do_not_change": [
-    "task files",
-    "tests",
-    "solution",
-    "review packet",
-    "session files",
-    "control-plane files",
-    "workflow files",
-    "PR metadata"
+    "Task files, tests, solution, packet, session, control-plane files, workflow files, and PR metadata.",
+    "Any repository file other than the packet-declared Q6 result JSON path."
   ],
-  "next_gate": "Return to the CI Orchestrator for quality-interlock aggregation; this Q6 result alone does not advance task state.",
+  "next_gate": "Return the frozen Q6 result to the CI Orchestrator for packet-bound quality-interlock aggregation; Q6 makes no whole-task acceptance decision.",
   "role_output": {
     "CORE_LOGIC_DEPTH": "HIGH",
     "RUNTIME_REACHABILITY": "HIGH",
@@ -120,48 +121,54 @@
     "CROSS_COMPONENT_COUPLING": "HIGH",
     "TOY_LOGIC_RISK": "LOW",
     "PADDING_RISK": "LOW",
-    "SUBSTANTIVE_LOC_ASSESSMENT": "PASS. Independent source-span inspection gives a conservative lower bound above 3,650 lines across six reachable Python core modules alone because substantive content is present at/after store.py line 1200, model.py line 700, policy.py line 650, cli.py line 450, runtime.py line 350 and engine.py line 300. Those sampled spans contain durable state machines, domain validation, reconciliation/replay/retention logic, live JetStream integration and operator routing rather than generated/comment/vendor filler. Additional substantive SQL schema/extensions and runtime configuration are not needed to clear the 3,000-line threshold.",
+    "SUBSTANTIVE_LOC_ASSESSMENT": "PASS. By inspected file extent, the Python core is roughly 5.1k source lines across model/store/policy/runtime/cli/engine/starter_cli before SQL/config/scripts. engine.py intentionally overlaps several base-policy workflows, so that overlap is discounted as diversity/scale evidence. Excluding that overlay, the distinct model/store/policy/runtime/CLI code is roughly 4.6k source lines; adding the behavior-bearing SQLite schema/seed/runtime extensions and NATS/continuity/operator configuration takes the distinct reachable runtime/configuration surface beyond 5k. The inspected volume is dominated by branches, transactions, state machines, protocol integration and durable state rather than comments, vendor/generated code, giant lookup tables or constant-output shells.",
     "MAJOR_MODULES": [
       {
         "module": "continuity/model.py",
-        "responsibility": "Domain identities, envelopes, topology and policy objects, replay/reconciliation/health state and fencing token invariants.",
-        "reachability": "Imported by store, policy, runtime, engine and CLI; invalid state is rejected on normal publication, archive, replay, consumer and topology paths."
+        "responsibility": "Stable event/generation identity, topology, stream/retention/replay models and validation invariants.",
+        "reachability": "Consumed by policy, store, runtime and CLI paths for parsing, validation, publication and reports."
       },
       {
-        "module": "continuity/store.py plus sql/schema.sql/runtime_extensions.sql",
-        "responsibility": "Transactional SQLite durability for journal publication, archive identity, generations, consumer effects/checkpoints, reconciliation, replay, recovery ownership and retention.",
-        "reachability": "Constructed by every stateful operator command; mutated from publication, archive sync, consumer processing, replay and retention paths."
+        "module": "continuity/store.py",
+        "responsibility": "Transactional SQLite authority for journal/publication/archive/effects/checkpoints/reconciliation/replay/leases/retention.",
+        "reachability": "Constructed for every engine from CLI state path and mutated/read by all operational workflows."
       },
       {
         "module": "continuity/policy.py",
-        "responsibility": "Shared continuity state machine and operational invariants across topology, publish, generation, consumers, reconciliation, replay/fencing, retention and reporting.",
-        "reachability": "Base class of the active engine; non-overridden methods such as replay execution, lease renewal, retention application and health/reporting execute on the active subclass."
-      },
-      {
-        "module": "continuity/engine.py",
-        "responsibility": "Inherited active controller layer containing the starter incident behavior and overrides for the same production state transitions.",
-        "reachability": "Explicitly rebound into the shared CLI by starter_cli and therefore exercised by continuityctl, not by a separate verifier-only interface."
+        "responsibility": "Continuity state machines and cross-subsystem decisions for publication, generations, consumers, reconciliation, replay, fencing, retention and health.",
+        "reachability": "Base of the solver-visible engine invoked by CLI handlers and live runtime adapters."
       },
       {
         "module": "continuity/runtime.py",
-        "responsibility": "Live NATS/JetStream integration, stream/source/consumer bootstrap, publication acknowledgements, pull-consumer delivery, archive materialization and local process lifecycle.",
-        "reachability": "Called directly by lab-start, archive-sync, execute-replay and run-consumer operator commands and delegates state transitions back to the active engine/store."
+        "responsibility": "Live NATS/JetStream protocol integration, stream/source/consumer bootstrap, publication, pull delivery, archive synchronization and server lifecycle.",
+        "reachability": "Instantiated directly by lab-start, archive-sync, execute-replay and run-consumer CLI workflows."
       },
       {
-        "module": "continuity/cli.py plus starter_cli.py and bin/continuityctl",
-        "responsibility": "Operator control plane that wires config, SQLite state, controller and JetStream runtime into inspect/reconcile/generation/replay/fencing/retention/runtime workflows.",
-        "reachability": "This is the solver-visible executable surface itself."
+        "module": "continuity/cli.py + starter_cli.py + bin",
+        "responsibility": "Operator command surface and binding of inherited handlers to the solver-visible engine.",
+        "reachability": "continuityctl and helper shell scripts dispatch directly through this chain."
+      },
+      {
+        "module": "continuity/engine.py",
+        "responsibility": "Reachable inherited defect/repair overlay for publication, generation, effect dispatch, reconciliation, replay, fencing and retention behavior.",
+        "reachability": "starter_cli explicitly installs this class into the production CLI; overlap with base policy is not counted as independent diversity."
+      },
+      {
+        "module": "sql/*.sql + config/*.json + config/nats/*.conf",
+        "responsibility": "Durable relational constraints/state population plus concrete three-domain JetStream topology and operating policies.",
+        "reachability": "Docker initialization, CLI database setup, engine config loading and live NATS bootstrap consume these artifacts."
       }
     ],
     "PARTIAL_FIX_TRAPS": [
-      "Publication identity spans event journal state, publish-attempt message IDs, JetStream expected-stream acknowledgements, generation watermarks and later archive membership; fixing only retry behavior can still duplicate or misclassify archive state.",
-      "Origin generation changes alter accepted event identity and therefore validation, reconciliation grouping, replay ranges/items and checkpoint namespaces; treating a lower sequence as ordinary lag breaks multiple subsystems.",
-      "Durable consumer correctness crosses JetStream delivery/ack behavior, processing_effects idempotency, effect dispatch, and separate acknowledgement versus application-effect checkpoints, exposing crash/redelivery ordering failures that local ack-only fixes do not solve.",
-      "Replay execution consumes persisted plans/items, journal events, current archive membership, publication logic and recovery lease/fence state; ownership can become stale during a multi-item replay and must affect mutation paths continuously.",
-      "Retention eligibility is coupled to archive progress, the slowest required consumer, active replay pinning, age and per-event hold state plus the stream horizon; an archive-only cleanup rule can delete required replay/application authority.",
-      "Hub topology is consumed by RuntimeBootstrap source transforms and ArchiveSynchronizer interpretation, so a source-domain/config correction must agree with model topology validation and downstream origin metadata."
+      "Publication correctness crosses stable event identity, publish-attempt persistence, Nats-Msg-Id/expected-stream headers, acknowledgements and archive membership; changing only retry code can still duplicate or misclassify an event.",
+      "Origin recreation crosses topology source ownership, generation records, event identity validation, reconciliation and replay authority; accepting a lower sequence as old history can silently mix generations.",
+      "Consumer recovery crosses JetStream delivery/ack, deterministic effect identity, durable PREPARED/COMMITTED state and separate application effect/ack checkpoints; fixing only acknowledgement handling can preserve duplicate external effects after a crash/redelivery.",
+      "Replay crosses reconciliation-derived missing identities, persisted plan/item state, generation validity, archive idempotency, live publication and recovery ownership; a locally successful publish can still leave plan/archive state unsafe.",
+      "Recovery fencing crosses durable lease ownership, fence epoch, expiry/renewal and every replay mutation; validating ownership only at acquisition does not protect later mutations.",
+      "Retention crosses archive progress, slowest required consumer, active replay pin, age, explicit holds and the disconnect+replay+safety horizon; using archive progress alone can delete authoritative journal rows still needed by another subsystem.",
+      "Topology changes cross configuration validation, source-domain ownership and live RuntimeBootstrap stream/source creation, so a config-only local correction must remain consistent with model invariants and archive synchronization."
     ],
-    "REMOVAL_TEST": "PASS. Removing roughly one quarter of the core cannot be done without deleting a material production capability: removing runtime.py eliminates live JetStream topology/publication/consumer/archive behavior; removing store.py/SQL eliminates durable continuity state and crash/idempotency semantics; removing policy.py/engine.py eliminates the cross-subsystem state machine and recovery/retention logic; removing model.py eliminates identity/topology/fence invariants; removing the CLI/binding layer disconnects operator workflows from the implementation. The system is therefore not a large decorative shell around a small grading core.",
+    "REMOVAL_TEST": "Removing roughly one major quarter of the core materially destroys required behavior: removing store/state logic eliminates durable publication/effect/replay/fencing/retention authority; removing runtime integration eliminates real JetStream streams, consumers, archive sync and publication; removing policy/engine logic eliminates reconciliation, generation, replay, retention and health state transitions; removing model/topology invariants makes event/generation/source identity unenforceable; removing CLI/operator routing makes the shipped operational workflows unreachable. These are not interchangeable wrappers, so large-scale deletion cannot preserve the claimed continuity-control behavior.",
     "REQUIRED_CHANGES": []
   }
 }
