@@ -487,7 +487,7 @@ def test_f2p_reconcile_ignores_hub_sequence_equivalence(
     for consumer in engine.store.required_consumers():
         set_checkpoint(engine, consumer, "east", effect=6000)
     engine.store.execute(
-        "UPDATE archive_index SET hub_stream_sequence=origin_sequence-1 "
+        "UPDATE archive_index SET hub_stream_sequence=1000000+origin_sequence "
         "WHERE region='east' AND generation=1"
     )
     summary = engine.reconcile_region("east", 1)
