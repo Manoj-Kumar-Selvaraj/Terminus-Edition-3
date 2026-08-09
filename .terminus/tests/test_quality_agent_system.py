@@ -61,14 +61,24 @@ def test_packet_generator_exposes_independent_quality_review_packets() -> None:
 
 def test_quality_review_roles_have_provenance_contract_versions() -> None:
     contract = _load_module("quality_review_contract", T / "review_contract.py")
-    for role in (
-        "Spec-Test Contract Reviewer",
-        "Production Logic Auditor",
-        "Model Perspective Difficulty Simulator",
-    ):
-        assert contract.ROLE_POLICY_VERSIONS[role] == "1.0"
+    expected = {
+        "Spec-Test Contract Reviewer": "1.1",
+        "Production Logic Auditor": "1.1",
+        "Model Perspective Difficulty Simulator": "1.0",
+    }
+    for role, version in expected.items():
+        assert contract.ROLE_POLICY_VERSIONS[role] == version
         assert role in contract.QUALITY_REVIEW_ROLES
         assert contract.ROLE_PROMPT_HEADINGS[role]
+
+
+def test_q6_is_only_scope_reusable_quality_role() -> None:
+    contract = _load_module("quality_scope_contract", T / "review_contract.py")
+    assert contract.SCOPE_REUSABLE_ROLES == {"Production Logic Auditor"}
+    task = "jetstream-regional-stream-continuity"
+    q6_hash = contract.review_scope_hash(ROOT, task, "Production Logic Auditor")
+    assert len(q6_hash) == 64
+    assert contract.review_scope_hash(ROOT, task, "Spec-Test Contract Reviewer") == ""
 
 
 def test_difficulty_perspectives_are_isolated_and_non_official() -> None:
@@ -90,15 +100,27 @@ def test_spec_gap_agent_forbids_test_dump_wording() -> None:
     assert "reverse-outline" in q1.lower()
 
 
-def test_q4_is_bidirectional_and_q6_is_not_loc_only() -> None:
+def test_q4_is_exhaustive_bidirectional_and_q6_is_not_loc_only() -> None:
     prompts = (T / "agents/QUALITY_AGENT_PROMPTS.md").read_text(encoding="utf-8")
     q4 = prompts.split("## Q4 — Spec-Test Contract Reviewer", 1)[1].split("## Q5 —", 1)[0]
     q6 = prompts.split("## Q6 — Production Logic Auditor", 1)[1].split("## Q7 —", 1)[0]
-    assert "requirement -> tests" in q4
-    assert "test behavior -> discoverable requirement" in q4
+    assert "Map every material requirement ->" in q4
+    assert "Map every substantive verifier behavior ->" in q4
+    assert "second adversarial omission sweep" in q4
+    assert "BLOCKING_FINDING_IDS" in q4
+    assert "EXHAUSTIVENESS" in q4
+    assert "Finding one reason for `REVISE` is never permission to stop" in q4
     assert "LOC count" in q6
     assert "reachability" in q6.lower()
     assert ">=3,000 substantive reachable" in q6
+    assert "review_scope_hash" in q6
+
+
+def test_protocol_has_no_drip_adjudication_rule() -> None:
+    protocol = (T / "agents/PROTOCOL.md").read_text(encoding="utf-8")
+    assert "LATENT_REVIEWER_OMISSION" in protocol
+    assert "one consolidated repair/refreeze cycle" in protocol
+    assert ".terminus/classify_review_delta.py" in protocol
 
 
 def test_quality_interlock_validator_accepts_current_pre_freeze_sessions() -> None:
