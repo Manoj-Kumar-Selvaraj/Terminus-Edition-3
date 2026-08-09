@@ -1,0 +1,151 @@
+{
+  "schema_version": "3.0",
+  "role": "Production Logic Auditor",
+  "review_id": "jetstream-regional-stream-continuity-440aa838-production-logic-a277a01448",
+  "task": "jetstream-regional-stream-continuity",
+  "task_commit": "440aa83862a3234678e27bd70319623735964173",
+  "control_plane_commit": "11b652fe4483c199031dd9ace0f7e69750411d9b",
+  "protocol_policy_version": "2.2",
+  "prompt_policy_version": "2.2",
+  "role_policy_version": "1.1",
+  "role_contract_hash": "3bee3ba7208ffc2555317ebad7b4d51c88005c06e1460ab3d2a316633769aedc",
+  "review_scope_hash": "4007f243d3e31219716e8f3af0549644839141f37695a367f2f7732906f77a81",
+  "context_packet": ".terminus/reviews/jetstream-regional-stream-continuity/440aa838/jetstream-regional-stream-continuity-440aa838-production-logic-a277a01448.packet.json",
+  "verdict": "PASS",
+  "confidence": "HIGH",
+  "evidence_status": "SUFFICIENT",
+  "summary": "The solver-visible system is a substantive production-style JetStream continuity control plane, not a LOC shell. continuityctl reaches the task ContinuityEngine, transactional SQLite authority, real NATS/JetStream administration and publication, hub archive synchronization, durable consumer effects/checkpoints, replay/fencing, retention, reconciliation and state-derived reports. The frozen starter intentionally violates several target invariants, but those failures are on these real production paths and require cross-module repairs; they are not verifier-only shims. The major Python runtime plus SQL/config/operator assets exceeds 5,000 gross solver-visible lines, and discounting thin adapters, limited inherited override duplication and non-executable noise still leaves comfortably more than the live Q6 3,000-LOC substantive reachable threshold. No material toy-logic or padding defect was found.",
+  "evidence": [
+    {
+      "type": "rule",
+      "ref": ".terminus/agents/QUALITY_AGENT_REGISTRY.md",
+      "observation": "Q6 1.1 requires real-entrypoint reachability, substantive branching/state/error/persistence behavior, module differentiation, cross-component coupling, removal impact and padding/toy-risk judgment; raw LOC alone is insufficient."
+    },
+    {
+      "type": "rule",
+      "ref": ".terminus/agents/QUALITY_AGENT_PROMPTS.md",
+      "observation": "The live Q6 method requires tracing major modules, checking clones/wrappers/unreachable filler, partial-fix traps and the approximately-25-percent removal test, and separating substantive logic from generated/vendor/comment/configuration volume."
+    },
+    {
+      "type": "file",
+      "ref": "jetstream-regional-stream-continuity/environment/continuity/bin/continuityctl",
+      "observation": "The shipped operator binary launches python -m continuity.starter_cli under /app/continuity."
+    },
+    {
+      "type": "file",
+      "ref": "jetstream-regional-stream-continuity/environment/continuity/continuity/starter_cli.py",
+      "observation": "The operator adapter binds the inherited CLI to the task ContinuityEngine and applies the runtime schema extension, so commands reach the task production implementation rather than a verifier-only wrapper."
+    },
+    {
+      "type": "file",
+      "ref": "jetstream-regional-stream-continuity/environment/continuity/continuity/cli.py",
+      "observation": "Real operator commands reach health/reconciliation, generation approval, replay plan/execution, leases, retention, three-domain lab bootstrap, archive sync, durable-consumer draining and reports; execute-replay constructs NatsPublisher."
+    },
+    {
+      "type": "file",
+      "ref": "jetstream-regional-stream-continuity/environment/continuity/continuity/runtime.py",
+      "observation": "Contains real NATS connection/process lifecycle, domain-aware JetStream API operations, NatsPublisher physical ack validation, durable pulls, source-based hub bootstrap and archive synchronization."
+    },
+    {
+      "type": "file",
+      "ref": "jetstream-regional-stream-continuity/environment/continuity/continuity/model.py",
+      "observation": "Enforces stable event/origin identity, topology/source ownership, replay ranges/approval, exact lease owner/epoch/expiry, deterministic effect identity, checkpoint semantics and recovery-horizon math."
+    },
+    {
+      "type": "file",
+      "ref": "jetstream-regional-stream-continuity/environment/continuity/continuity/store.py",
+      "observation": "Implements WAL-backed transactional publication attempts/acks, generations, archive provenance/collision checks, effects/quarantine/checkpoints, reconciliation, replay items, leases, retention watermarks/holds/age filtering and state digest."
+    },
+    {
+      "type": "file",
+      "ref": "jetstream-regional-stream-continuity/environment/continuity/continuity/policy.py",
+      "observation": "Provides inherited continuity orchestration used by the task subclass for topology/configuration, generation/event validation, effects, reconciliation, replay/lease/retention lifecycle, subsystem health and reports."
+    },
+    {
+      "type": "file",
+      "ref": "jetstream-regional-stream-continuity/environment/continuity/continuity/engine.py",
+      "observation": "The task subclass places the intentional defects on the same publication, generation, consumer, reconciliation, replay/fencing and retention paths used by continuityctl and the real store/runtime."
+    },
+    {
+      "type": "file",
+      "ref": "jetstream-regional-stream-continuity/environment/continuity/sql/schema.sql",
+      "observation": "The durable schema models journal publication and physical ack metadata, archive identity/source provenance, consumers/effects/checkpoints/quarantine, reconciliation, replay, leases, retention and operator state with constraints/indexes."
+    },
+    {
+      "type": "file",
+      "ref": "jetstream-regional-stream-continuity/environment/continuity/sql/seed.sql",
+      "observation": "Seeds 12,000 east/west journal events, incomplete archive membership, retry tails, required-consumer lag, retention watermarks and an approved west replay; this state directly drives runtime branches."
+    },
+    {
+      "type": "file",
+      "ref": "jetstream-regional-stream-continuity/environment/continuity/config/continuity.json",
+      "observation": "Defines edge-east, edge-west and hub domains, regional stream policies, hub sources, consumers and recovery horizons; its deliberate starter inconsistencies are consumed by the real topology/bootstrap path."
+    },
+    {
+      "type": "file",
+      "ref": "jetstream-regional-stream-continuity/environment/continuity/config/nats/east.conf",
+      "observation": "Defines a distinct edge-east JetStream process/store linked by leafnode to the hub."
+    },
+    {
+      "type": "file",
+      "ref": "jetstream-regional-stream-continuity/environment/continuity/config/nats/west.conf",
+      "observation": "Defines a distinct edge-west JetStream process/store linked by leafnode to the hub."
+    },
+    {
+      "type": "file",
+      "ref": "jetstream-regional-stream-continuity/environment/continuity/config/nats/hub.conf",
+      "observation": "Defines the separate hub JetStream process/store and leafnode listener."
+    },
+    {
+      "type": "file",
+      "ref": "jetstream-regional-stream-continuity/environment/continuity/ops/shift-handoff.txt",
+      "observation": "The captured incident coherently links reconnect gaps, duplicate effects, ack/effect divergence, unsafe cleanup, replay pins and generation authority."
+    },
+    {
+      "type": "file",
+      "ref": "jetstream-regional-stream-continuity/environment/continuity/ops/stream-state.json",
+      "observation": "The captured state carries matching domain/source lag, consumer progress and cleanup hazards that correspond to durable runtime state."
+    },
+    {
+      "type": "file",
+      "ref": "jetstream-regional-stream-continuity/environment/Dockerfile",
+      "observation": "The environment installs a pinned real nats-server and nats-py and initializes the SQLite runtime under /app/continuity, not a simulation-only harness."
+    }
+  ],
+  "findings": [],
+  "missing_evidence": [],
+  "change_scope": [],
+  "do_not_change": [
+    "jetstream-regional-stream-continuity/**",
+    "tests/verifier or solution/reference artifacts",
+    ".terminus policy, packet, session, design, or other review files"
+  ],
+  "next_gate": "Return this frozen Q6 result to the CI Orchestrator for Quality Interlock aggregation; Q6 does not advance the task itself.",
+  "role_output": {
+    "CORE_LOGIC_DEPTH": "HIGH",
+    "RUNTIME_REACHABILITY": "HIGH",
+    "MODULE_DIVERSITY": "HIGH",
+    "CROSS_COMPONENT_COUPLING": "HIGH",
+    "TOY_LOGIC_RISK": "LOW",
+    "PADDING_RISK": "LOW",
+    "SUBSTANTIVE_LOC_ASSESSMENT": "The six primary Python modules (model, store, policy, engine, runtime, cli) are roughly five thousand source lines before SQL/config/operator assets. Large sections are executable validation, branching, transactions, SQL state transitions, JetStream protocol handling, recovery and diagnostics. Thin continuityctl/starter_cli adapters, limited policy/engine override duplication, and a small unused repair affordance do not drive the scale; after discounting them, reachable substantive runtime/configuration remains comfortably above 3,000 LOC.",
+    "MAJOR_MODULES": [
+      "model.py — shared domain identities/invariants for events, archive provenance, topology, effects/checkpoints, replay, leases and retention; imported throughout runtime/store/orchestration.",
+      "store.py + SQL — transactional durable authority for journal publication/acks, generations, archive, effects/quarantine/checkpoints, reconciliation, replay, leases and retention.",
+      "policy.py — inherited continuity orchestration for configuration/topology, generation validation, effects, reconciliation, replay/lease/retention, health and reports.",
+      "engine.py — reachable defect-bearing overrides for publication, generation observation, consumer dispatch/effect ordering, reconciliation, replay/fencing and retention; repairs must act on real durable/runtime interfaces.",
+      "runtime.py — real NATS/JetStream administration, physical publication acknowledgement, durable pulls, hub sourcing/archive sync and nats-server process lifecycle.",
+      "cli.py + starter_cli + continuityctl — external operator control plane wiring the task engine, store and real runtime; no separate verifier-only recovery path."
+    ],
+    "PARTIAL_FIX_TRAPS": [
+      "Stable event identity crosses journal, NATS headers, replay and archive; fixing retry message-id alone does not fix premature durable publication/ack ordering, and vice versa.",
+      "Topology/source ownership and generation authority span config, model validation, durable origin generations and runtime bootstrap; a cosmetic stream fix is insufficient.",
+      "LeaseToken models exact epoch/owner/expiry, while replay performs pre/post-publish fencing and durable publish state changes; the starter's epoch/in-flight faults require coordinated lease issuance, fence validation and mutation ordering.",
+      "Replay-item terminal labels are progress metadata, not archive authority: execute_replay_plan rechecks durable archive membership, so later replay work cannot safely rely on stale completed-item state alone.",
+      "Consumer correctness spans real pull delivery, dispatch, deterministic effect records, quarantine, effect checkpoint, ack checkpoint and JetStream ack floor; ordering/idempotency cannot be repaired in one table.",
+      "Reconciliation/replay/retention share origin identity, archive provenance, required-consumer progress, active replay pins, holds, age and disconnect+replay+safety horizon; fixing only counts or only age leaves unsafe behavior."
+    ],
+    "REMOVAL_TEST": "PASS. Removing approximately 25% cannot be confined to inert padding: runtime.py removes physical JetStream behavior; store/schema removes durable authority; model.py removes shared invariants; policy/engine removes recovery/reconciliation/consumer/retention orchestration; CLI wiring removes operator reachability. Thin adapters and inherited override duplication are far below one quarter of the substantive core.",
+    "REQUIRED_CHANGES": []
+  }
+}
