@@ -368,13 +368,26 @@ class ContinuityEngine(BaseContinuityEngine):
 
     def reconcile_region(self, region: str, generation: int) -> ReconciliationSummary:
         run_id = self.store.create_reconciliation_run(mode="DRY_RUN")
+        generation_record = self.store.generation(region, generation)
+        if (
+            generation_record is None
+            or generation_record.status is not GenerationStatus.CONFIRMED
+        ):
+            raise ContractError(
+                f"reconciliation requires confirmed generation {region}/{generation}"
+            )
+        confirmed_watermark = generation_record.last_observed_sequence
         journal_by_id = {
             event.identity.event_id: event
-            for event in self.store.iter_events(region=region, generation=generation)
+            for event in self.store.iter_events(
+                region=region, generation=generation
+            )
         }
         archive_by_id = {
             record.identity.event_id: record
-            for record in self.store.iter_archive(region=region, generation=generation)
+            for record in self.store.iter_archive(
+                region=region, generation=generation
+            )
         }
         journal_ids = set(journal_by_id)
         archive_ids = set(archive_by_id)
@@ -452,7 +465,8 @@ class ContinuityEngine(BaseContinuityEngine):
                 )
 
         duplicate_count = sum(
-            record.duplicate_observation_count for record in archive_by_id.values()
+            record.duplicate_observation_count
+            for record in archive_by_id.values()
         )
         if duplicate_count:
             findings.append(
@@ -469,34 +483,52 @@ class ContinuityEngine(BaseContinuityEngine):
             )
 
         archive_sequences = [
-            record.identity.origin_sequence for record in archive_by_id.values()
+            record.identity.origin_sequence
+            for record in archive_by_id.values()
         ]
         archive_floor = contiguous_floor(archive_sequences)
-        journal_sequences = [
-            event.identity.origin_sequence for event in journal_by_id.values()
-        ]
-        journal_floor = contiguous_floor(journal_sequences)
-        target = min(journal_floor, archive_floor)
+        if archive_floor < confirmed_watermark:
+            findings.append(
+                Finding(
+                    severity=FindingSeverity.ERROR,
+                    finding_type="ARCHIVE_WATERMARK_LAG",
+                    message="hub archive has not reached the confirmed origin watermark",
+                    region=region,
+                    generation=generation,
+                    origin_sequence=archive_floor,
+                    expected_value=str(confirmed_watermark),
+                    observed_value=str(archive_floor),
+                    remediation_hint="reconcile and replay missing origin identities before declaring convergence",
+                )
+            )
+
         required_consumer_progress: dict[str, int] = {}
         for consumer_name in self.store.required_consumers():
-            checkpoint = self.store.checkpoint(consumer_name, region, generation)
+            checkpoint = self.store.checkpoint(
+                consumer_name, region, generation
+            )
             required_consumer_progress[consumer_name] = (
                 0 if checkpoint is None else checkpoint.application_sequence
             )
-        consumer_findings = self._required_consumer_lag(region, generation, target)
+        consumer_findings = self._required_consumer_lag(
+            region, generation, confirmed_watermark
+        )
         findings.extend(consumer_findings)
 
         checksum = report_checksum(archive_by_id.values())
         blocking = [
             finding
             for finding in findings
-            if finding.severity in {FindingSeverity.ERROR, FindingSeverity.BLOCKER}
+            if finding.severity
+            in {FindingSeverity.ERROR, FindingSeverity.BLOCKER}
         ]
         summary = ReconciliationSummary(
             run_id=run_id,
-            status=ReconcileStatus.CONVERGED
-            if not blocking
-            else ReconcileStatus.DIVERGED,
+            status=(
+                ReconcileStatus.CONVERGED
+                if not blocking
+                else ReconcileStatus.DIVERGED
+            ),
             journal_event_count=len(journal_by_id),
             archive_event_count=len(archive_by_id),
             missing_count=len(missing_ids),

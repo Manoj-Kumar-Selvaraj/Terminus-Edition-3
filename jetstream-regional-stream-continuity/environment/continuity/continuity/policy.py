@@ -714,6 +714,13 @@ class ContinuityEngine:
                 continue
             try:
                 await self.publish_event(item.event_id, publisher)
+                self.assert_recovery_fence(
+                    region=plan.replay_range.region,
+                    owner_id=owner_id,
+                    fence_epoch=fence_epoch,
+                )
+            except FencingError:
+                raise
             except GenerationConflict as exc:
                 self.store.update_replay_item(plan_id, item.event_id, state="HELD", error=str(exc))
                 counters["held"] += 1

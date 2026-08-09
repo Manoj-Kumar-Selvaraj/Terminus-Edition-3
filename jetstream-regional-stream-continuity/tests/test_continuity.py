@@ -249,11 +249,9 @@ def test_f2p_publish_ack_transitions_journal_once(engine: ContinuityEngine) -> N
     with pytest.raises(ContractError):
         asyncio.run(engine.publish_event(wrong_event.identity.event_id, wrong_publisher))
     assert wrong_publisher.calls[0]["journal_state_during_publish"] == "PUBLISHING"
+    assert wrong_publisher.calls[0]["expected_stream"] == expected_stream
+    assert wrong_publisher.calls[0]["message_id"] == wrong_event.identity.event_id
     assert engine.store.journal_state(wrong_event.identity.event_id).value == "RETRY"
-    attempt = engine.store.publish_attempts(wrong_event.identity.event_id)[-1]
-    assert attempt["outcome"] == "ERROR"
-    assert attempt["requested_stream"] == expected_stream
-    assert attempt["message_id"] == wrong_event.identity.event_id
 
 
 # ---- F2P: origin generation ---------------------------------------------------------------
@@ -356,21 +354,31 @@ def test_f2p_source_domains_match_edge_ownership(engine: ContinuityEngine) -> No
 def test_f2p_archive_metadata_preserves_origin_identity(
     engine: ContinuityEngine,
 ) -> None:
-    """A matching event id with corrupted source ownership is reported as divergent."""
+    """Model-valid source/checksum mismatches are reported at reconciliation."""
     complete_archive(engine, "east")
-    event = sample_event(engine, sequence=120)
+    source_event = sample_event(engine, sequence=120)
+    checksum_event = sample_event(engine, sequence=121)
     engine.store.execute(
         "UPDATE archive_index SET source_domain='edge-west' WHERE event_id=?",
-        (event.identity.event_id,),
+        (source_event.identity.event_id,),
+    )
+    engine.store.execute(
+        "UPDATE archive_index SET payload_sha256=? WHERE event_id=?",
+        ("0" * 64, checksum_event.identity.event_id),
     )
     summary = engine.reconcile_region("east", 1)
-    assert summary.metadata_mismatch_count == 1
+    assert summary.metadata_mismatch_count == 2
     assert summary.highest_contiguous_archive_origin_sequence == 6000
     assert summary.converged is False
-    assert any(
-        finding.event_id == event.identity.event_id
+    blocking_ids = {
+        finding.event_id
         for finding in summary.blocking_findings
-    )
+        if finding.event_id is not None
+    }
+    assert {
+        source_event.identity.event_id,
+        checksum_event.identity.event_id,
+    } <= blocking_ids
 
 
 # ---- F2P: consumer processing -------------------------------------------------------------
@@ -417,7 +425,7 @@ def test_f2p_checkpoint_does_not_advance_before_effect_commit(
     engine: ContinuityEngine,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    """A failed effect commit cannot leave the application acknowledgement checkpoint ahead."""
+    """A failed effect commit cannot leave either application checkpoint ahead."""
     event = sample_event(engine, sequence=5698)
     engine.store.execute(
         "DELETE FROM processing_effects WHERE consumer_name='telemetry-indexer' AND event_id=?",
@@ -440,15 +448,20 @@ def test_f2p_checkpoint_does_not_advance_before_effect_commit(
         )
     after = engine.store.checkpoint("telemetry-indexer", "east", 1)
     assert after is not None
+    assert after.last_effect_sequence == before.last_effect_sequence
     assert after.last_ack_sequence == before.last_ack_sequence
 
 
 def test_f2p_poison_event_is_quarantined_without_completion(
     engine: ContinuityEngine,
 ) -> None:
-    """Quarantine records audit evidence without committing or dispatching a business effect."""
+    """Quarantine persists audit evidence without completing a business effect."""
     event = sample_event(engine, sequence=5680)
     consumer = "safety-state-projector"
+    engine.store.execute(
+        "DELETE FROM poison_events WHERE consumer_name=? AND event_id=?",
+        (consumer, event.identity.event_id),
+    )
     engine.store.execute(
         "DELETE FROM processing_effects WHERE consumer_name=? AND event_id=?",
         (consumer, event.identity.event_id),
@@ -469,9 +482,16 @@ def test_f2p_poison_event_is_quarantined_without_completion(
     )
     after = engine.store.checkpoint(consumer, "east", 1)
     effect = engine.store.effect(consumer, event.identity.event_id)
+    poison = engine.store.execute(
+        "SELECT disposition,delivery_count FROM poison_events WHERE consumer_name=? AND event_id=?",
+        (consumer, event.identity.event_id),
+    ).fetchone()
     assert after is not None
     assert result.status == "QUARANTINED"
     assert effect is not None and effect.status is EffectStatus.QUARANTINED
+    assert poison is not None
+    assert poison["disposition"] == "QUARANTINED"
+    assert int(poison["delivery_count"]) >= 5
     assert dispatch_count(engine, consumer, event.identity.event_id) == 0
     assert after.last_effect_sequence == before.last_effect_sequence
     assert after.last_ack_sequence == before.last_ack_sequence
@@ -498,50 +518,21 @@ def test_f2p_restart_detects_ack_floor_effect_ledger_gap(
 def test_f2p_reconcile_ignores_hub_sequence_equivalence(
     engine: ContinuityEngine,
 ) -> None:
-    """Stable origin completeness and reported progress are independent of hub delivery positions."""
+    """Hub delivery positions do not replace the confirmed origin watermark."""
     complete_archive(engine, "east")
     for consumer in engine.store.required_consumers():
         set_checkpoint(engine, consumer, "east", effect=6000)
-
-    engine.store.execute(
-        "UPDATE origin_generations SET last_observed_sequence=60002 "
-        "WHERE region='east' AND generation=1"
-    )
     engine.store.execute(
         "UPDATE archive_index SET hub_stream_sequence=30000+origin_sequence "
         "WHERE region='east' AND generation=1"
     )
 
-    for offset, source_event_id in enumerate(
-        ("evt-east-g01-000101", "evt-east-g01-000102", "evt-east-g01-000103")
-    ):
-        origin_sequence = 60000 + offset
-        event_id = f"evt-east-g01-{origin_sequence:06d}"
-        engine.store.execute(
-            "INSERT INTO event_journal("
-            "journal_id,event_id,region,generation,origin_sequence,device_id,site_id,event_type,event_time,accepted_at,"
-            "payload_json,payload_sha256,payload_bytes,priority,publish_state,publish_attempts,last_publish_at,publish_ack_stream,"
-            "publish_ack_sequence,archive_confirmed_at,retention_hold) "
-            "SELECT ?,?,'east',1,?,device_id,site_id,event_type,event_time,accepted_at,payload_json,payload_sha256,payload_bytes,priority,"
-            "'ARCHIVED',1,accepted_at,'EDGE_EAST_TELEMETRY',?,accepted_at,0 FROM event_journal WHERE event_id=?",
-            (
-                900000 + offset,
-                event_id,
-                origin_sequence,
-                origin_sequence,
-                source_event_id,
-            ),
-        )
-        engine.store.execute(
-            "INSERT INTO archive_index(event_id,region,generation,origin_sequence,hub_stream_sequence,payload_sha256,archived_at,source_stream,source_domain,duplicate_observation_count) "
-            "SELECT event_id,'east',1,origin_sequence,?,payload_sha256,accepted_at,'EDGE_EAST_TELEMETRY','edge-east',0 "
-            "FROM event_journal WHERE event_id=?",
-            (50000 + offset, event_id),
-        )
-
+    generation = engine.store.confirmed_generation("east")
+    assert generation is not None
+    assert generation.last_observed_sequence == 6000
     summary = engine.reconcile_region("east", 1)
-    assert summary.journal_event_count == 6003
-    assert summary.archive_event_count == 6003
+    assert summary.journal_event_count == 6000
+    assert summary.archive_event_count == 6000
     assert summary.missing_count == 0
     assert summary.unexpected_count == 0
     assert summary.metadata_mismatch_count == 0
@@ -769,7 +760,7 @@ def test_f2p_retention_policy_covers_recovery_horizon(engine: ContinuityEngine) 
 
 
 def test_f2p_stale_recovery_worker_is_fenced(engine: ContinuityEngine) -> None:
-    """Replay rejects a stale token at entry and revalidates fencing between applied items."""
+    """Replay fences stale workers at entry and before post-publish recovery mutations."""
     now = datetime.now(UTC)
     first = engine.acquire_recovery_lease(
         region="east",
@@ -823,7 +814,7 @@ def test_f2p_stale_recovery_worker_is_fenced(engine: ContinuityEngine) -> None:
         plan_id="stale-fence-mid-plan",
         replay_range=ReplayRange("west", 1, 5998, 5999),
         status=ReplayStatus.APPROVED,
-        reason="verify fence revalidation between replay items",
+        reason="verify fence after an in-flight replay publication",
         created_by="verifier",
         event_ids=mid_ids,
         approved_by="shift-lead",
@@ -858,23 +849,25 @@ def test_f2p_stale_recovery_worker_is_fenced(engine: ContinuityEngine) -> None:
             return ack
 
     publisher = FenceRotatingPublisher(engine.store)
-    outcome = asyncio.run(
-        engine.execute_replay_plan(
-            mid_plan.plan_id,
-            owner_id=west_lease.owner_id,
-            fence_epoch=west_lease.fence_epoch,
-            publisher=publisher,
+    with pytest.raises(FencingError):
+        asyncio.run(
+            engine.execute_replay_plan(
+                mid_plan.plan_id,
+                owner_id=west_lease.owner_id,
+                fence_epoch=west_lease.fence_epoch,
+                publisher=publisher,
+            )
         )
-    )
     items = {
-        item.event_id: item for item in engine.store.replay_items(mid_plan.plan_id)
+        item.event_id: item
+        for item in engine.store.replay_items(mid_plan.plan_id)
     }
+    after_plan = engine.store.replay_plan(mid_plan.plan_id)
     assert len(publisher.calls) == 1
-    assert items[mid_ids[0]].state == "PUBLISHED"
-    assert items[mid_ids[1]].state == "HELD"
-    assert outcome.published == 1
-    assert outcome.held == 1
-    assert outcome.completed is False
+    assert items[mid_ids[0]].state == "PENDING"
+    assert items[mid_ids[1]].state == "PENDING"
+    assert after_plan is not None and after_plan.status is ReplayStatus.RUNNING
+    assert engine.store.journal_state(mid_ids[0]).value == "PUBLISHED"
 
 
 def test_f2p_overlapping_active_replay_plan_is_rejected(
@@ -906,7 +899,7 @@ def test_f2p_derived_output_never_reenters_raw_archive(
 def test_p2p_distinct_same_payload_events_remain_distinct(
     engine: ContinuityEngine,
 ) -> None:
-    """Two legitimate repeated readings remain distinct when their event identities differ."""
+    """Distinct stable identities survive a real durable effect boundary even with equal payloads."""
     first = sample_event(engine, sequence=100)
     second = sample_event(engine, sequence=101)
     payload = {"reading": 77, "quality": "GOOD"}
@@ -935,9 +928,34 @@ def test_p2p_distinct_same_payload_events_remain_distinct(
         payload_bytes=64,
         priority=second.priority,
     )
+    consumer = "telemetry-indexer"
+    for event in (a, b):
+        engine.store.execute(
+            "DELETE FROM processing_effects WHERE consumer_name=? AND event_id=?",
+            (consumer, event.identity.event_id),
+        )
+        engine.store.execute(
+            "DELETE FROM effect_dispatches WHERE consumer_name=? AND event_id=?",
+            (consumer, event.identity.event_id),
+        )
+        result = asyncio.run(
+            engine.process_delivery(
+                FakeDelivery(event, consumer_name=consumer),
+                worker_id=f"same-payload-{event.identity.origin_sequence}",
+                fence_epoch=1,
+            )
+        )
+        assert result.status == "COMMITTED"
+
     assert a.payload_sha256 == b.payload_sha256
     assert a.identity.event_id != b.identity.event_id
-    assert a.message_id != b.message_id
+    assert dispatch_count(engine, consumer, a.identity.event_id) == 1
+    assert dispatch_count(engine, consumer, b.identity.event_id) == 1
+    effect_a = engine.store.effect(consumer, a.identity.event_id)
+    effect_b = engine.store.effect(consumer, b.identity.event_id)
+    assert effect_a is not None and effect_a.status is EffectStatus.COMMITTED
+    assert effect_b is not None and effect_b.status is EffectStatus.COMMITTED
+    assert effect_a.identity.event_id != effect_b.identity.event_id
 
 
 def test_p2p_confirmed_generation_continues_monotonically(

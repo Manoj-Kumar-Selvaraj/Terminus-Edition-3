@@ -77,7 +77,7 @@ For each confirmed `(region, generation)`, reconciliation produces:
 - highest contiguous archive origin sequence;
 - required-consumer progress.
 
-The overall system is `CONVERGED` only when the archive is complete through the confirmed watermark and every enabled required consumer has an application checkpoint through that same watermark.
+For a confirmed `(region, generation)`, the confirmed watermark is the generation registry's `last_observed_sequence`. Archive completeness through that watermark requires the highest contiguous archived origin sequence to reach it. The overall system is `CONVERGED` only when the archive is complete through that confirmed watermark and every enabled required consumer has an application checkpoint through the same value.
 
 ## Replay
 
@@ -93,7 +93,7 @@ Approved and running plans pin their referenced journal rows against cleanup unt
 
 A recovery lease has an owner id, expiry and monotonically increasing `fence_epoch`. Reacquiring an expired lease increments the epoch. An older epoch is stale even when a restarted process reuses the same owner id.
 
-Replay execution validates the current owner and fence epoch before execution and again while applying replay items. Lease renewal and release also require the current token. Planning a replay or approving a generation is an explicit durable control-plane change, but those planning/approval actions are not themselves defined as lease-protected replay execution.
+Replay execution validates the current owner and fence epoch before execution and again while applying replay items. When an external replay publish returns, the worker revalidates the same token before writing replay-item state or terminal replay-plan state. If the token became stale while the publish was in flight, the publish acknowledgement may remain as journal/publication evidence, but the stale worker stops with a fencing error and does not write replay-item or terminal plan state after that acknowledgement. Lease renewal and release also require the current token. Planning a replay or approving a generation is an explicit durable control-plane change, but those planning/approval actions are not themselves defined as lease-protected replay execution.
 
 Lease renewal by the current owner preserves its current epoch while extending expiry.
 

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import hashlib
 import json
 import shutil
@@ -16,6 +17,12 @@ sys.path.insert(0, str(ROOT))
 
 from continuity.engine import ContinuityEngine  # noqa: E402
 from continuity.model import FencingError, GenerationStatus  # noqa: E402
+from continuity.runtime import (  # noqa: E402
+    JetStreamAdmin,
+    LabProcessManager,
+    NatsConnectionPool,
+    endpoints_from_engine,
+)
 from continuity.store import ContinuityStore  # noqa: E402
 
 
@@ -157,15 +164,35 @@ def test_f2p_expired_lease_reacquired_by_same_owner_advances_epoch(
         )
 
 
-def test_f2p_final_health_and_reconciliation_reports_are_materialized() -> None:
-    """Final reports agree with independently observed durable state and preserve incident evidence."""
-    health_path = ROOT / "out/health.json"
-    reconciliation_path = ROOT / "out/reconciliation.json"
-    assert health_path.is_file(), "solution must materialize /app/continuity/out/health.json"
-    assert reconciliation_path.is_file(), "solution must materialize /app/continuity/out/reconciliation.json"
+def test_f2p_final_health_and_reconciliation_reports_are_materialized(
+    tmp_path: Path,
+) -> None:
+    """Verify emits independently truthful reports and preserves captured incident evidence."""
+    runtime_root = _operator_root(tmp_path)
+    completed = subprocess.run(
+        [
+            str(ROOT / "bin/continuityctl"),
+            "verify",
+            "--root",
+            str(runtime_root),
+            "--compact",
+        ],
+        check=False,
+        capture_output=True,
+        text=True,
+        timeout=45,
+    )
+    assert completed.returncode in {0, 2}, completed.stderr
 
+    health_path = runtime_root / "out/health.json"
+    reconciliation_path = runtime_root / "out/reconciliation.json"
+    assert health_path.is_file()
+    assert reconciliation_path.is_file()
     health = json.loads(health_path.read_text(encoding="utf-8"))
     reconciliation = json.loads(reconciliation_path.read_text(encoding="utf-8"))
+    config = json.loads(
+        (runtime_root / "config/continuity.json").read_text(encoding="utf-8")
+    )
 
     def contiguous_floor(values: list[int]) -> int:
         present = set(values)
@@ -174,7 +201,54 @@ def test_f2p_final_health_and_reconciliation_reports_are_materialized() -> None:
             floor += 1
         return floor
 
-    connection = sqlite3.connect(ROOT / "state/continuity.db")
+    topology = config["topology"]
+    edge_streams = topology["edge_streams"]
+    hub_archive = topology["hub_archive"]
+    sources = {item["region"]: item for item in topology["sources"]}
+    physical_names = [
+        hub_archive["name"],
+        edge_streams["east"]["name"],
+        edge_streams["west"]["name"],
+    ]
+    expected_topology_ok = (
+        len(physical_names) == len(set(physical_names))
+        and not hub_archive.get("subjects")
+        and all(
+            edge_streams[region]["name"]
+            == config["regions"][region]["stream_name"]
+            and edge_streams[region]["domain"]
+            == config["regions"][region]["domain"]
+            and sources[region]["origin"]["name"]
+            == edge_streams[region]["name"]
+            and sources[region]["origin"]["domain"]
+            == edge_streams[region]["domain"]
+            for region in ("east", "west")
+        )
+        and str(topology["derived_subject_prefix"]).startswith(
+            "telemetry.derived"
+        )
+        and not str(topology["derived_subject_prefix"]).startswith(
+            "telemetry.raw"
+        )
+    )
+
+    recovery = config["recovery"]
+    required_horizon = (
+        int(recovery["maximum_disconnect_seconds"])
+        + int(recovery["maximum_replay_seconds"])
+        + int(recovery["safety_margin_seconds"])
+    )
+    expected_retention_ok = (
+        all(
+            int(config["regions"][region]["stream_policy"]["max_age_seconds"])
+            >= required_horizon
+            for region in ("east", "west")
+        )
+        and int(config["hub_stream_policy"]["max_age_seconds"])
+        >= required_horizon
+    )
+
+    connection = sqlite3.connect(runtime_root / "state/continuity.db")
     connection.row_factory = sqlite3.Row
     try:
         required_consumers = [
@@ -189,7 +263,6 @@ def test_f2p_final_health_and_reconciliation_reports_are_materialized() -> None:
             ).fetchone()[0]
         )
         expected_recovery_ok = active_plans == 0
-
         expected_generations_ok = True
         expected_publication_ok = (
             int(
@@ -205,7 +278,8 @@ def test_f2p_final_health_and_reconciliation_reports_are_materialized() -> None:
         assert set(reconciliation["regions"]) == {"east", "west"}
         for region in ("east", "west"):
             confirmed = connection.execute(
-                "SELECT generation FROM origin_generations WHERE region=? AND status='CONFIRMED' ORDER BY generation",
+                "SELECT generation,last_observed_sequence FROM origin_generations "
+                "WHERE region=? AND status='CONFIRMED' ORDER BY generation",
                 (region,),
             ).fetchall()
             pending_count = int(
@@ -218,34 +292,60 @@ def test_f2p_final_health_and_reconciliation_reports_are_materialized() -> None:
                 expected_generations_ok = False
             assert confirmed, f"{region} must retain a confirmed generation"
             generation = int(confirmed[-1]["generation"])
+            confirmed_watermark = int(
+                confirmed[-1]["last_observed_sequence"]
+            )
+            region_row = connection.execute(
+                "SELECT physical_stream,jetstream_domain FROM regions WHERE region=?",
+                (region,),
+            ).fetchone()
+            assert region_row is not None
+            expected_stream = str(region_row["physical_stream"])
+            expected_domain = str(region_row["jetstream_domain"])
 
             journal_rows = connection.execute(
-                "SELECT event_id,origin_sequence,payload_sha256 FROM event_journal WHERE region=? AND generation=?",
+                "SELECT event_id,origin_sequence,payload_sha256 FROM event_journal "
+                "WHERE region=? AND generation=?",
                 (region, generation),
             ).fetchall()
             archive_rows = connection.execute(
-                "SELECT event_id,origin_sequence,payload_sha256,duplicate_observation_count FROM archive_index WHERE region=? AND generation=?",
+                "SELECT event_id,origin_sequence,payload_sha256,source_stream,source_domain,duplicate_observation_count "
+                "FROM archive_index WHERE region=? AND generation=?",
                 (region, generation),
             ).fetchall()
             journal = {
-                str(row["event_id"]): (int(row["origin_sequence"]), str(row["payload_sha256"]).lower())
+                str(row["event_id"]): (
+                    int(row["origin_sequence"]),
+                    str(row["payload_sha256"]).lower(),
+                )
                 for row in journal_rows
             }
             archive = {
-                str(row["event_id"]): (int(row["origin_sequence"]), str(row["payload_sha256"]).lower())
+                str(row["event_id"]): (
+                    int(row["origin_sequence"]),
+                    str(row["payload_sha256"]).lower(),
+                    str(row["source_stream"]),
+                    str(row["source_domain"]),
+                )
                 for row in archive_rows
             }
             missing_ids = set(journal) - set(archive)
             unexpected_ids = set(archive) - set(journal)
             metadata_mismatch_count = sum(
-                1 for event_id in set(journal) & set(archive) if journal[event_id] != archive[event_id]
+                1
+                for event_id in set(journal) & set(archive)
+                if journal[event_id][0] != archive[event_id][0]
+                or journal[event_id][1] != archive[event_id][1]
+                or archive[event_id][2] != expected_stream
+                or archive[event_id][3] != expected_domain
             )
             duplicate_count = sum(
-                int(row["duplicate_observation_count"]) for row in archive_rows
+                int(row["duplicate_observation_count"])
+                for row in archive_rows
             )
-            journal_floor = contiguous_floor([value[0] for value in journal.values()])
-            archive_floor = contiguous_floor([value[0] for value in archive.values()])
-            target = min(journal_floor, archive_floor)
+            archive_floor = contiguous_floor(
+                [value[0] for value in archive.values()]
+            )
 
             progress: dict[str, int] = {}
             for consumer_name in required_consumers:
@@ -262,14 +362,19 @@ def test_f2p_final_health_and_reconciliation_reports_are_materialized() -> None:
                 ack_sequence = int(checkpoint["last_ack_sequence"])
                 js_floor = int(checkpoint["jetstream_ack_floor"])
                 progress[consumer_name] = min(effect_sequence, ack_sequence)
-                if not (effect_sequence == ack_sequence == js_floor):
+                if not (
+                    effect_sequence == ack_sequence == js_floor
+                ):
                     expected_consumers_ok = False
 
             consumer_lag_count = sum(
-                1 for sequence in progress.values() if sequence < target
+                1
+                for sequence in progress.values()
+                if sequence < confirmed_watermark
             )
             expected_converged = (
-                not missing_ids
+                archive_floor >= confirmed_watermark
+                and not missing_ids
                 and not unexpected_ids
                 and metadata_mismatch_count == 0
                 and consumer_lag_count == 0
@@ -285,43 +390,73 @@ def test_f2p_final_health_and_reconciliation_reports_are_materialized() -> None:
             assert actual["missing_count"] == len(missing_ids)
             assert actual["unexpected_count"] == len(unexpected_ids)
             assert actual["duplicate_count"] == duplicate_count
-            assert actual["metadata_mismatch_count"] == metadata_mismatch_count
+            assert (
+                actual["metadata_mismatch_count"]
+                == metadata_mismatch_count
+            )
             assert actual["consumer_lag_count"] == consumer_lag_count
-            assert actual["highest_contiguous_archive_origin_sequence"] == archive_floor
+            assert (
+                actual["highest_contiguous_archive_origin_sequence"]
+                == archive_floor
+            )
             assert actual["required_consumer_progress"] == progress
             assert actual["converged"] is expected_converged
 
         expected_archive_ok = all(expected_region_convergence.values())
-        assert health["generations_ok"] is expected_generations_ok
-        assert health["publication_ok"] is expected_publication_ok
-        assert health["archive_ok"] is expected_archive_ok
-        assert health["consumers_ok"] is expected_consumers_ok
-        assert health["recovery_ok"] is expected_recovery_ok
-        assert reconciliation["converged"] is expected_archive_ok
-        if not all(
+        expected_healthy = all(
             (
+                expected_topology_ok,
                 expected_generations_ok,
                 expected_publication_ok,
                 expected_archive_ok,
                 expected_consumers_ok,
+                expected_retention_ok,
                 expected_recovery_ok,
             )
-        ):
-            assert health["healthy"] is False
+        )
+        assert health["topology_ok"] is expected_topology_ok
+        assert health["generations_ok"] is expected_generations_ok
+        assert health["publication_ok"] is expected_publication_ok
+        assert health["archive_ok"] is expected_archive_ok
+        assert health["consumers_ok"] is expected_consumers_ok
+        assert health["retention_ok"] is expected_retention_ok
+        assert health["recovery_ok"] is expected_recovery_ok
+        assert health["healthy"] is expected_healthy
+        assert reconciliation["converged"] is expected_archive_ok
 
-        assert connection.execute("SELECT COUNT(*) FROM event_journal").fetchone()[0] == 12000
-        assert connection.execute("SELECT COUNT(*) FROM consumer_checkpoints").fetchone()[0] >= 4
+        assert (
+            connection.execute(
+                "SELECT COUNT(*) FROM event_journal"
+            ).fetchone()[0]
+            == 12000
+        )
+        assert (
+            connection.execute(
+                "SELECT COUNT(*) FROM consumer_checkpoints"
+            ).fetchone()[0]
+            >= 4
+        )
         assert active_plans >= 1
     finally:
         connection.close()
 
-    stream_state = json.loads((ROOT / "ops/stream-state.json").read_text(encoding="utf-8"))
+    stream_state = json.loads(
+        (ROOT / "ops/stream-state.json").read_text(encoding="utf-8")
+    )
     assert stream_state["incident_id"] == "INC-JS-2026-0808-17"
     assert stream_state["captured_at"] == "2026-08-08T17:18:10Z"
     assert stream_state["domains"]["hub"]["messages"] == 11395
-    assert stream_state["domains"]["hub"]["sources"][1]["domain"] == "edge-east"
+    assert (
+        stream_state["domains"]["hub"]["sources"][1]["domain"]
+        == "edge-east"
+    )
     handoff = (ROOT / "ops/shift-handoff.txt").read_text(encoding="utf-8")
     assert "three west identities and two east identities" in handoff
+    archived_log = (
+        ROOT / "log/archive/inc-2026-0808-17-controller.log"
+    )
+    assert archived_log.is_file()
+    assert hashlib.sha256(archived_log.read_bytes()).hexdigest() == 'fc5a85713d9b963e18b7550048a11de16349c9daa260623f72aa33e6862fb7d6'
 
 
 # ---- P2P: already-correct detailed contract behavior ------------------------------------
@@ -439,7 +574,7 @@ def test_p2p_generation_approval_does_not_rewrite_historical_events(
 
 
 def test_p2p_recovery_cli_entrypoints_remain_operational(tmp_path: Path) -> None:
-    """Existing generation, replay, lease, execute and retention commands remain wired to durable state."""
+    """Generation, replay, lease and retention CLI paths remain wired, including a real replay publish."""
     runtime_root = _operator_root(tmp_path)
     database = runtime_root / "state/continuity.db"
     engine = ContinuityEngine.from_json_file(
@@ -485,7 +620,9 @@ def test_p2p_recovery_cli_entrypoints_remain_operational(tmp_path: Path) -> None
         str(runtime_root),
         "--compact",
     )
-    assert any(plan["plan_id"] == planned["plan"]["plan_id"] for plan in listed)
+    assert any(
+        plan["plan_id"] == planned["plan"]["plan_id"] for plan in listed
+    )
 
     retention = run_cli(
         "retention",
@@ -500,74 +637,129 @@ def test_p2p_recovery_cli_entrypoints_remain_operational(tmp_path: Path) -> None
         allowed={0, 2},
     )
     assert retention["region"] == "east"
-    assert "safe_sequence" in retention and "eligible_event_ids" in retention
+    assert "safe_sequence" in retention
+    assert "eligible_event_ids" in retention
 
-    _complete_archive(engine, "west")
-    acquired = run_cli(
-        "lease",
-        "--root",
-        str(runtime_root),
-        "--compact",
-        "acquire",
-        "west",
-        "--owner",
-        "cli-recovery-worker",
-        "--ttl",
-        "300",
+    nats_config_dir = runtime_root / "config/nats"
+    nats_config_dir.mkdir(parents=True, exist_ok=True)
+    west_store = runtime_root / "state/nats/west"
+    west_store.mkdir(parents=True, exist_ok=True)
+    (nats_config_dir / "west.conf").write_text(
+        "\n".join(
+            (
+                "server_name: EDGE-WEST-CONTRACT-TEST",
+                "port: 4224",
+                "http: 8224",
+                "jetstream {",
+                f'  store_dir: "{west_store}"',
+                '  domain: "edge-west"',
+                "  max_mem_store: 67108864",
+                "  max_file_store: 268435456",
+                "}",
+                "",
+            )
+        ),
+        encoding="utf-8",
     )
-    epoch = int(acquired["fence_epoch"])
+    manager = LabProcessManager(runtime_root)
+    manager.start_one("west")
+    try:
+        manager.wait_monitor("http://127.0.0.1:8224", timeout=10)
 
-    executed = run_cli(
-        "execute-replay",
-        "rp-west-incident-001",
-        "--owner",
-        "cli-recovery-worker",
-        "--epoch",
-        str(epoch),
-        "--root",
-        str(runtime_root),
-        "--compact",
-    )
-    assert executed["completed"] is True
-    replay_after = engine.store.replay_plan("rp-west-incident-001")
-    assert replay_after is not None and replay_after.status.value == "COMPLETED"
-    terminal_retention = engine.compute_retention_decision(
-        region="west",
-        generation=1,
-        at=datetime(2026, 8, 9, 7, 30, tzinfo=UTC),
-        limit=5,
-    )
-    assert terminal_retention.replay_pin_sequence is None
+        async def ensure_west_stream() -> None:
+            pool = NatsConnectionPool()
+            try:
+                admin = JetStreamAdmin(pool, endpoints_from_engine(engine))
+                await admin.upsert_stream(
+                    "west",
+                    str(engine.store.region("west")["physical_stream"]),
+                    {
+                        "subjects": ["telemetry.west.>"],
+                        "retention": "limits",
+                        "storage": "file",
+                        "num_replicas": 1,
+                        "duplicate_window": 120 * 1_000_000_000,
+                        "max_age": 259200 * 1_000_000_000,
+                        "allow_direct": False,
+                        "deny_delete": True,
+                        "deny_purge": True,
+                    },
+                )
+            finally:
+                await pool.close()
 
-    renewed = run_cli(
-        "lease",
-        "--root",
-        str(runtime_root),
-        "--compact",
-        "renew",
-        "west",
-        "--owner",
-        "cli-recovery-worker",
-        "--epoch",
-        str(epoch),
-        "--ttl",
-        "300",
-    )
-    assert int(renewed["fence_epoch"]) == epoch
-    released = run_cli(
-        "lease",
-        "--root",
-        str(runtime_root),
-        "--compact",
-        "release",
-        "west",
-        "--owner",
-        "cli-recovery-worker",
-        "--epoch",
-        str(epoch),
-    )
-    assert released["released"] is True
-    assert engine.store.current_lease("west") is None
+        asyncio.run(ensure_west_stream())
+        acquired = run_cli(
+            "lease",
+            "--root",
+            str(runtime_root),
+            "--compact",
+            "acquire",
+            "west",
+            "--owner",
+            "cli-recovery-worker",
+            "--ttl",
+            "300",
+        )
+        epoch = int(acquired["fence_epoch"])
+
+        executed = run_cli(
+            "execute-replay",
+            "rp-west-incident-001",
+            "--owner",
+            "cli-recovery-worker",
+            "--epoch",
+            str(epoch),
+            "--root",
+            str(runtime_root),
+            "--compact",
+        )
+        assert executed["completed"] is True
+        assert int(executed["published"]) >= 1
+        replay_after = engine.store.replay_plan("rp-west-incident-001")
+        assert (
+            replay_after is not None
+            and replay_after.status.value == "COMPLETED"
+        )
+        terminal_retention = engine.compute_retention_decision(
+            region="west",
+            generation=1,
+            at=datetime(2026, 8, 9, 7, 30, tzinfo=UTC),
+            limit=5,
+        )
+        assert terminal_retention.replay_pin_sequence is None
+
+        renewed = run_cli(
+            "lease",
+            "--root",
+            str(runtime_root),
+            "--compact",
+            "renew",
+            "west",
+            "--owner",
+            "cli-recovery-worker",
+            "--epoch",
+            str(epoch),
+            "--ttl",
+            "300",
+        )
+        assert int(renewed["fence_epoch"]) == epoch
+        released = run_cli(
+            "lease",
+            "--root",
+            str(runtime_root),
+            "--compact",
+            "release",
+            "west",
+            "--owner",
+            "cli-recovery-worker",
+            "--epoch",
+            str(epoch),
+        )
+        assert released["released"] is True
+        assert engine.store.current_lease("west") is None
+    finally:
+        manager.stop_one("west")
 
     pending = engine.store.record_pending_generation(
         "east",
@@ -599,5 +791,6 @@ def test_p2p_recovery_cli_entrypoints_remain_operational(tmp_path: Path) -> None
         "--compact",
     )
     assert any(
-        row["generation"] == 2 and row["status"] == "CONFIRMED" for row in generations
+        row["generation"] == 2 and row["status"] == "CONFIRMED"
+        for row in generations
     )
