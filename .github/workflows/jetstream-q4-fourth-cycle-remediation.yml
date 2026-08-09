@@ -1,0 +1,1315 @@
+name: JetStream Q4 Fourth-Cycle Remediation
+
+on:
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: write
+
+jobs:
+  remediate:
+    if: github.head_ref == 'task/jetstream-quality-interlock'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: task/jetstream-quality-interlock
+          fetch-depth: 0
+
+      - name: Apply packet-bound Q4 remediation
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 <<'PY'
+          from __future__ import annotations
+
+          import ast
+          import hashlib
+          import json
+          import textwrap
+          from pathlib import Path
+
+          TASK = Path('jetstream-regional-stream-continuity')
+
+          def replace_once(path: Path, old: str, new: str) -> None:
+              text = path.read_text(encoding='utf-8')
+              if new in text:
+                  return
+              if old not in text:
+                  raise SystemExit(f'missing replacement anchor in {path}: {old[:160]!r}')
+              path.write_text(text.replace(old, new, 1), encoding='utf-8')
+
+          def replace_top_function(path: Path, name: str, replacement: str) -> None:
+              source = path.read_text(encoding='utf-8')
+              tree = ast.parse(source)
+              node = next(
+                  (
+                      item
+                      for item in tree.body
+                      if isinstance(item, (ast.FunctionDef, ast.AsyncFunctionDef))
+                      and item.name == name
+                  ),
+                  None,
+              )
+              if node is None:
+                  raise SystemExit(f'function {name} not found in {path}')
+              replacement = textwrap.dedent(replacement).lstrip()
+              if not replacement.endswith('\n'):
+                  replacement += '\n'
+              lines = source.splitlines(keepends=True)
+              lines[node.lineno - 1 : node.end_lineno] = [replacement]
+              updated = ''.join(lines)
+              ast.parse(updated)
+              path.write_text(updated, encoding='utf-8')
+
+          def replace_class_method(
+              path: Path, class_name: str, name: str, replacement: str
+          ) -> None:
+              source = path.read_text(encoding='utf-8')
+              tree = ast.parse(source)
+              class_node = next(
+                  (
+                      item
+                      for item in tree.body
+                      if isinstance(item, ast.ClassDef) and item.name == class_name
+                  ),
+                  None,
+              )
+              if class_node is None:
+                  raise SystemExit(f'class {class_name} not found in {path}')
+              node = next(
+                  (
+                      item
+                      for item in class_node.body
+                      if isinstance(item, (ast.FunctionDef, ast.AsyncFunctionDef))
+                      and item.name == name
+                  ),
+                  None,
+              )
+              if node is None:
+                  raise SystemExit(f'method {class_name}.{name} not found in {path}')
+              replacement = textwrap.indent(
+                  textwrap.dedent(replacement).lstrip(), ' ' * 4
+              )
+              if not replacement.endswith('\n'):
+                  replacement += '\n'
+              lines = source.splitlines(keepends=True)
+              lines[node.lineno - 1 : node.end_lineno] = [replacement]
+              updated = ''.join(lines)
+              ast.parse(updated)
+              path.write_text(updated, encoding='utf-8')
+
+          # Q4-F001 and Q4-F006: make the already-visible contract precise at the
+          # confirmed watermark and at the post-publish fencing mutation boundary.
+          contract = TASK / 'environment/continuity/docs/continuity-contract.md'
+          replace_once(
+              contract,
+              '''The overall system is `CONVERGED` only when the archive is complete through the confirmed watermark and every enabled required consumer has an application checkpoint through that same watermark.\n''',
+              '''For a confirmed `(region, generation)`, the confirmed watermark is the generation registry's `last_observed_sequence`. Archive completeness through that watermark requires the highest contiguous archived origin sequence to reach it. The overall system is `CONVERGED` only when the archive is complete through that confirmed watermark and every enabled required consumer has an application checkpoint through the same value.\n''',
+          )
+          replace_once(
+              contract,
+              '''Replay execution validates the current owner and fence epoch before execution and again while applying replay items. Lease renewal and release also require the current token. Planning a replay or approving a generation is an explicit durable control-plane change, but those planning/approval actions are not themselves defined as lease-protected replay execution.\n''',
+              '''Replay execution validates the current owner and fence epoch before execution and again while applying replay items. When an external replay publish returns, the worker revalidates the same token before writing replay-item state or terminal replay-plan state. If the token became stale while the publish was in flight, the publish acknowledgement may remain as journal/publication evidence, but the stale worker stops with a fencing error and does not write replay-item or terminal plan state after that acknowledgement. Lease renewal and release also require the current token. Planning a replay or approving a generation is an explicit durable control-plane change, but those planning/approval actions are not themselves defined as lease-protected replay execution.\n''',
+          )
+
+          tests = TASK / 'tests/test_continuity.py'
+
+          # Q4-F002: retain the documented wrong-stream behavioral boundary and
+          # remove the private publish-attempt outcome vocabulary assertion.
+          replace_top_function(
+              tests,
+              'test_f2p_publish_ack_transitions_journal_once',
+              r'''
+              def test_f2p_publish_ack_transitions_journal_once(engine: ContinuityEngine) -> None:
+                  """Only an acknowledgement for the expected physical stream may publish a journal row."""
+                  event = sample_event(engine, sequence=5985)
+                  expected_stream = str(engine.store.region("east")["physical_stream"])
+                  publisher = RecordingPublisher(engine.store)
+                  ack = asyncio.run(engine.publish_event(event.identity.event_id, publisher))
+                  assert publisher.calls[0]["journal_state_during_publish"] == "PUBLISHING"
+                  assert publisher.calls[0]["message_id"] == event.identity.event_id
+                  assert ack.stream == expected_stream
+                  assert engine.store.journal_state(event.identity.event_id).value == "PUBLISHED"
+
+                  wrong_event = sample_event(engine, sequence=5984)
+                  wrong_stream = str(engine.store.region("west")["physical_stream"])
+                  wrong_publisher = RecordingPublisher(engine.store, ack_stream=wrong_stream)
+                  with pytest.raises(ContractError):
+                      asyncio.run(engine.publish_event(wrong_event.identity.event_id, wrong_publisher))
+                  assert wrong_publisher.calls[0]["journal_state_during_publish"] == "PUBLISHING"
+                  assert wrong_publisher.calls[0]["expected_stream"] == expected_stream
+                  assert wrong_publisher.calls[0]["message_id"] == wrong_event.identity.event_id
+                  assert engine.store.journal_state(wrong_event.identity.event_id).value == "RETRY"
+              ''',
+          )
+
+          # Q4-F003: exercise both source ownership and a model-valid checksum
+          # mismatch without constructing an invalid EventIdentity.
+          replace_top_function(
+              tests,
+              'test_f2p_archive_metadata_preserves_origin_identity',
+              r'''
+              def test_f2p_archive_metadata_preserves_origin_identity(
+                  engine: ContinuityEngine,
+              ) -> None:
+                  """Model-valid source/checksum mismatches are reported at reconciliation."""
+                  complete_archive(engine, "east")
+                  source_event = sample_event(engine, sequence=120)
+                  checksum_event = sample_event(engine, sequence=121)
+                  engine.store.execute(
+                      "UPDATE archive_index SET source_domain='edge-west' WHERE event_id=?",
+                      (source_event.identity.event_id,),
+                  )
+                  engine.store.execute(
+                      "UPDATE archive_index SET payload_sha256=? WHERE event_id=?",
+                      ("0" * 64, checksum_event.identity.event_id),
+                  )
+                  summary = engine.reconcile_region("east", 1)
+                  assert summary.metadata_mismatch_count == 2
+                  assert summary.highest_contiguous_archive_origin_sequence == 6000
+                  assert summary.converged is False
+                  blocking_ids = {
+                      finding.event_id
+                      for finding in summary.blocking_findings
+                      if finding.event_id is not None
+                  }
+                  assert {
+                      source_event.identity.event_id,
+                      checksum_event.identity.event_id,
+                  } <= blocking_ids
+              ''',
+          )
+
+          # Close the narrow REQ-007 matrix gap at the same existing failure test.
+          replace_top_function(
+              tests,
+              'test_f2p_checkpoint_does_not_advance_before_effect_commit',
+              r'''
+              def test_f2p_checkpoint_does_not_advance_before_effect_commit(
+                  engine: ContinuityEngine,
+                  monkeypatch: pytest.MonkeyPatch,
+              ) -> None:
+                  """A failed effect commit cannot leave either application checkpoint ahead."""
+                  event = sample_event(engine, sequence=5698)
+                  engine.store.execute(
+                      "DELETE FROM processing_effects WHERE consumer_name='telemetry-indexer' AND event_id=?",
+                      (event.identity.event_id,),
+                  )
+                  before = engine.store.checkpoint("telemetry-indexer", "east", 1)
+                  assert before is not None
+
+                  def fail_commit(*args: Any, **kwargs: Any) -> Any:
+                      raise RuntimeError("simulated effect store failure")
+
+                  monkeypatch.setattr(engine.store, "commit_effect", fail_commit)
+                  with pytest.raises(RuntimeError):
+                      asyncio.run(
+                          engine.process_delivery(
+                              FakeDelivery(event, delivery_count=1),
+                              worker_id="fault-worker",
+                              fence_epoch=1,
+                          )
+                      )
+                  after = engine.store.checkpoint("telemetry-indexer", "east", 1)
+                  assert after is not None
+                  assert after.last_effect_sequence == before.last_effect_sequence
+                  assert after.last_ack_sequence == before.last_ack_sequence
+              ''',
+          )
+
+          # Q4-F004: require the separate durable poison/quarantine evidence row.
+          replace_top_function(
+              tests,
+              'test_f2p_poison_event_is_quarantined_without_completion',
+              r'''
+              def test_f2p_poison_event_is_quarantined_without_completion(
+                  engine: ContinuityEngine,
+              ) -> None:
+                  """Quarantine persists audit evidence without completing a business effect."""
+                  event = sample_event(engine, sequence=5680)
+                  consumer = "safety-state-projector"
+                  engine.store.execute(
+                      "DELETE FROM poison_events WHERE consumer_name=? AND event_id=?",
+                      (consumer, event.identity.event_id),
+                  )
+                  engine.store.execute(
+                      "DELETE FROM processing_effects WHERE consumer_name=? AND event_id=?",
+                      (consumer, event.identity.event_id),
+                  )
+                  engine.store.execute(
+                      "DELETE FROM effect_dispatches WHERE consumer_name=? AND event_id=?",
+                      (consumer, event.identity.event_id),
+                  )
+                  before = engine.store.checkpoint(consumer, "east", 1)
+                  assert before is not None
+                  result = asyncio.run(
+                      engine.process_delivery(
+                          FakeDelivery(event, consumer_name=consumer, delivery_count=5),
+                          worker_id="safety-worker",
+                          fence_epoch=1,
+                          poison_predicate=lambda _: True,
+                      )
+                  )
+                  after = engine.store.checkpoint(consumer, "east", 1)
+                  effect = engine.store.effect(consumer, event.identity.event_id)
+                  poison = engine.store.execute(
+                      "SELECT disposition,delivery_count FROM poison_events WHERE consumer_name=? AND event_id=?",
+                      (consumer, event.identity.event_id),
+                  ).fetchone()
+                  assert after is not None
+                  assert result.status == "QUARANTINED"
+                  assert effect is not None and effect.status is EffectStatus.QUARANTINED
+                  assert poison is not None
+                  assert poison["disposition"] == "QUARANTINED"
+                  assert int(poison["delivery_count"]) >= 5
+                  assert dispatch_count(engine, consumer, event.identity.event_id) == 0
+                  assert after.last_effect_sequence == before.last_effect_sequence
+                  assert after.last_ack_sequence == before.last_ack_sequence
+              ''',
+          )
+
+          # Q4-F001: isolate hub aggregate position from origin authority without
+          # fabricating a sparse confirmed watermark that contradicts the contract.
+          replace_top_function(
+              tests,
+              'test_f2p_reconcile_ignores_hub_sequence_equivalence',
+              r'''
+              def test_f2p_reconcile_ignores_hub_sequence_equivalence(
+                  engine: ContinuityEngine,
+              ) -> None:
+                  """Hub delivery positions do not replace the confirmed origin watermark."""
+                  complete_archive(engine, "east")
+                  for consumer in engine.store.required_consumers():
+                      set_checkpoint(engine, consumer, "east", effect=6000)
+                  engine.store.execute(
+                      "UPDATE archive_index SET hub_stream_sequence=30000+origin_sequence "
+                      "WHERE region='east' AND generation=1"
+                  )
+
+                  generation = engine.store.confirmed_generation("east")
+                  assert generation is not None
+                  assert generation.last_observed_sequence == 6000
+                  summary = engine.reconcile_region("east", 1)
+                  assert summary.journal_event_count == 6000
+                  assert summary.archive_event_count == 6000
+                  assert summary.missing_count == 0
+                  assert summary.unexpected_count == 0
+                  assert summary.metadata_mismatch_count == 0
+                  assert summary.consumer_lag_count == 0
+                  assert summary.highest_contiguous_archive_origin_sequence == 6000
+                  assert summary.required_consumer_progress == {
+                      consumer: 6000 for consumer in engine.store.required_consumers()
+                  }
+                  assert summary.converged is True
+              ''',
+          )
+
+          # Q4-F006: stale in-flight publisher may preserve publication evidence,
+          # but may not write replay-item/terminal state after its epoch rotates.
+          replace_top_function(
+              tests,
+              'test_f2p_stale_recovery_worker_is_fenced',
+              r'''
+              def test_f2p_stale_recovery_worker_is_fenced(engine: ContinuityEngine) -> None:
+                  """Replay fences stale workers at entry and before post-publish recovery mutations."""
+                  now = datetime.now(UTC)
+                  first = engine.acquire_recovery_lease(
+                      region="east",
+                      owner_id="worker-a",
+                      ttl_seconds=300,
+                      at=now,
+                  )
+                  current = engine.store.write_lease(
+                      region="east",
+                      owner_id="worker-a",
+                      fence_epoch=first.fence_epoch + 1,
+                      acquired_at=now,
+                      renewed_at=now + timedelta(seconds=1),
+                      expires_at=now + timedelta(minutes=5),
+                  )
+                  assert current.fence_epoch > first.fence_epoch
+
+                  entry_event = "evt-east-g01-005999"
+                  entry_plan = engine.store.insert_replay_plan(
+                      plan_id="stale-fence-entry",
+                      replay_range=ReplayRange("east", 1, 5999, 5999),
+                      status=ReplayStatus.APPROVED,
+                      reason="verify stale execution fencing at entry",
+                      created_by="verifier",
+                      event_ids=[entry_event],
+                      approved_by="shift-lead",
+                      approved_at=now,
+                  )
+                  with pytest.raises(FencingError):
+                      asyncio.run(
+                          engine.execute_replay_plan(
+                              entry_plan.plan_id,
+                              owner_id="worker-a",
+                              fence_epoch=first.fence_epoch,
+                              publisher=RecordingPublisher(engine.store),
+                          )
+                      )
+                  after_entry = engine.store.replay_plan(entry_plan.plan_id)
+                  assert after_entry is not None and after_entry.status is ReplayStatus.APPROVED
+
+                  west_lease = engine.acquire_recovery_lease(
+                      region="west",
+                      owner_id="worker-mid-plan",
+                      ttl_seconds=300,
+                      at=now,
+                  )
+                  mid_ids = ["evt-west-g01-005998", "evt-west-g01-005999"]
+                  for event_id in mid_ids:
+                      engine.store.execute("DELETE FROM archive_index WHERE event_id=?", (event_id,))
+                  mid_plan = engine.store.insert_replay_plan(
+                      plan_id="stale-fence-mid-plan",
+                      replay_range=ReplayRange("west", 1, 5998, 5999),
+                      status=ReplayStatus.APPROVED,
+                      reason="verify fence after an in-flight replay publication",
+                      created_by="verifier",
+                      event_ids=mid_ids,
+                      approved_by="shift-lead",
+                      approved_at=now,
+                  )
+
+                  class FenceRotatingPublisher(RecordingPublisher):
+                      async def publish(
+                          self,
+                          event: EventEnvelope,
+                          *,
+                          message_id: str,
+                          expected_stream: str,
+                      ) -> PublishAck:
+                          ack = await super().publish(
+                              event,
+                              message_id=message_id,
+                              expected_stream=expected_stream,
+                          )
+                          if len(self.calls) == 1:
+                              lease = engine.store.current_lease("west")
+                              assert lease is not None
+                              rotated_at = datetime.now(UTC)
+                              engine.store.write_lease(
+                                  region="west",
+                                  owner_id=lease.owner_id,
+                                  fence_epoch=lease.fence_epoch + 1,
+                                  acquired_at=lease.acquired_at,
+                                  renewed_at=rotated_at,
+                                  expires_at=rotated_at + timedelta(minutes=5),
+                              )
+                          return ack
+
+                  publisher = FenceRotatingPublisher(engine.store)
+                  with pytest.raises(FencingError):
+                      asyncio.run(
+                          engine.execute_replay_plan(
+                              mid_plan.plan_id,
+                              owner_id=west_lease.owner_id,
+                              fence_epoch=west_lease.fence_epoch,
+                              publisher=publisher,
+                          )
+                      )
+                  items = {
+                      item.event_id: item
+                      for item in engine.store.replay_items(mid_plan.plan_id)
+                  }
+                  after_plan = engine.store.replay_plan(mid_plan.plan_id)
+                  assert len(publisher.calls) == 1
+                  assert items[mid_ids[0]].state == "PENDING"
+                  assert items[mid_ids[1]].state == "PENDING"
+                  assert after_plan is not None and after_plan.status is ReplayStatus.RUNNING
+                  assert engine.store.journal_state(mid_ids[0]).value == "PUBLISHED"
+              ''',
+          )
+
+          # Q4-F005: same-payload preservation now crosses the durable effect
+          # dedupe/dispatch boundary while remaining a P2P on the starter.
+          replace_top_function(
+              tests,
+              'test_p2p_distinct_same_payload_events_remain_distinct',
+              r'''
+              def test_p2p_distinct_same_payload_events_remain_distinct(
+                  engine: ContinuityEngine,
+              ) -> None:
+                  """Distinct stable identities survive a real durable effect boundary even with equal payloads."""
+                  first = sample_event(engine, sequence=100)
+                  second = sample_event(engine, sequence=101)
+                  payload = {"reading": 77, "quality": "GOOD"}
+                  digest = sha256_text(canonical_json(payload))
+                  a = EventEnvelope(
+                      identity=first.identity,
+                      device_id=first.device_id,
+                      site_id=first.site_id,
+                      event_type=first.event_type,
+                      event_time=first.event_time,
+                      accepted_at=first.accepted_at,
+                      payload=payload,
+                      payload_sha256=digest,
+                      payload_bytes=64,
+                      priority=first.priority,
+                  )
+                  b = EventEnvelope(
+                      identity=second.identity,
+                      device_id=second.device_id,
+                      site_id=second.site_id,
+                      event_type=second.event_type,
+                      event_time=second.event_time,
+                      accepted_at=second.accepted_at,
+                      payload=payload,
+                      payload_sha256=digest,
+                      payload_bytes=64,
+                      priority=second.priority,
+                  )
+                  consumer = "telemetry-indexer"
+                  for event in (a, b):
+                      engine.store.execute(
+                          "DELETE FROM processing_effects WHERE consumer_name=? AND event_id=?",
+                          (consumer, event.identity.event_id),
+                      )
+                      engine.store.execute(
+                          "DELETE FROM effect_dispatches WHERE consumer_name=? AND event_id=?",
+                          (consumer, event.identity.event_id),
+                      )
+                      result = asyncio.run(
+                          engine.process_delivery(
+                              FakeDelivery(event, consumer_name=consumer),
+                              worker_id=f"same-payload-{event.identity.origin_sequence}",
+                              fence_epoch=1,
+                          )
+                      )
+                      assert result.status == "COMMITTED"
+
+                  assert a.payload_sha256 == b.payload_sha256
+                  assert a.identity.event_id != b.identity.event_id
+                  assert dispatch_count(engine, consumer, a.identity.event_id) == 1
+                  assert dispatch_count(engine, consumer, b.identity.event_id) == 1
+                  effect_a = engine.store.effect(consumer, a.identity.event_id)
+                  effect_b = engine.store.effect(consumer, b.identity.event_id)
+                  assert effect_a is not None and effect_a.status is EffectStatus.COMMITTED
+                  assert effect_b is not None and effect_b.status is EffectStatus.COMMITTED
+                  assert effect_a.identity.event_id != effect_b.identity.event_id
+              ''',
+          )
+
+          coverage = TASK / 'tests/test_contract_coverage.py'
+          replace_once(coverage, 'import hashlib\n', 'import asyncio\nimport hashlib\n')
+          replace_once(
+              coverage,
+              'from continuity.store import ContinuityStore  # noqa: E402\n',
+              '''from continuity.runtime import (  # noqa: E402\n    JetStreamAdmin,\n    LabProcessManager,\n    NatsConnectionPool,\n    endpoints_from_engine,\n)\nfrom continuity.store import ContinuityStore  # noqa: E402\n''',
+          )
+
+          # Q4-F007/F008: invoke the real verify entrypoint on an isolated durable
+          # copy, independently derive all material health dimensions, and preserve
+          # the exact captured archived controller log.
+          log_path = TASK / 'environment/continuity/log/archive/inc-2026-0808-17-controller.log'
+          log_digest = hashlib.sha256(log_path.read_bytes()).hexdigest()
+          report_replacement = r'''
+          def test_f2p_final_health_and_reconciliation_reports_are_materialized(
+              tmp_path: Path,
+          ) -> None:
+              """Verify emits independently truthful reports and preserves captured incident evidence."""
+              runtime_root = _operator_root(tmp_path)
+              completed = subprocess.run(
+                  [
+                      str(ROOT / "bin/continuityctl"),
+                      "verify",
+                      "--root",
+                      str(runtime_root),
+                      "--compact",
+                  ],
+                  check=False,
+                  capture_output=True,
+                  text=True,
+                  timeout=45,
+              )
+              assert completed.returncode in {0, 2}, completed.stderr
+
+              health_path = runtime_root / "out/health.json"
+              reconciliation_path = runtime_root / "out/reconciliation.json"
+              assert health_path.is_file()
+              assert reconciliation_path.is_file()
+              health = json.loads(health_path.read_text(encoding="utf-8"))
+              reconciliation = json.loads(reconciliation_path.read_text(encoding="utf-8"))
+              config = json.loads(
+                  (runtime_root / "config/continuity.json").read_text(encoding="utf-8")
+              )
+
+              def contiguous_floor(values: list[int]) -> int:
+                  present = set(values)
+                  floor = 0
+                  while floor + 1 in present:
+                      floor += 1
+                  return floor
+
+              topology = config["topology"]
+              edge_streams = topology["edge_streams"]
+              hub_archive = topology["hub_archive"]
+              sources = {item["region"]: item for item in topology["sources"]}
+              physical_names = [
+                  hub_archive["name"],
+                  edge_streams["east"]["name"],
+                  edge_streams["west"]["name"],
+              ]
+              expected_topology_ok = (
+                  len(physical_names) == len(set(physical_names))
+                  and not hub_archive.get("subjects")
+                  and all(
+                      edge_streams[region]["name"]
+                      == config["regions"][region]["stream_name"]
+                      and edge_streams[region]["domain"]
+                      == config["regions"][region]["domain"]
+                      and sources[region]["origin"]["name"]
+                      == edge_streams[region]["name"]
+                      and sources[region]["origin"]["domain"]
+                      == edge_streams[region]["domain"]
+                      for region in ("east", "west")
+                  )
+                  and str(topology["derived_subject_prefix"]).startswith(
+                      "telemetry.derived"
+                  )
+                  and not str(topology["derived_subject_prefix"]).startswith(
+                      "telemetry.raw"
+                  )
+              )
+
+              recovery = config["recovery"]
+              required_horizon = (
+                  int(recovery["maximum_disconnect_seconds"])
+                  + int(recovery["maximum_replay_seconds"])
+                  + int(recovery["safety_margin_seconds"])
+              )
+              expected_retention_ok = (
+                  all(
+                      int(config["regions"][region]["stream_policy"]["max_age_seconds"])
+                      >= required_horizon
+                      for region in ("east", "west")
+                  )
+                  and int(config["hub_stream_policy"]["max_age_seconds"])
+                  >= required_horizon
+              )
+
+              connection = sqlite3.connect(runtime_root / "state/continuity.db")
+              connection.row_factory = sqlite3.Row
+              try:
+                  required_consumers = [
+                      str(row["consumer_name"])
+                      for row in connection.execute(
+                          "SELECT consumer_name FROM consumer_registry WHERE required=1 AND enabled=1 ORDER BY consumer_name"
+                      ).fetchall()
+                  ]
+                  active_plans = int(
+                      connection.execute(
+                          "SELECT COUNT(*) FROM replay_plans WHERE status IN ('APPROVED','RUNNING')"
+                      ).fetchone()[0]
+                  )
+                  expected_recovery_ok = active_plans == 0
+                  expected_generations_ok = True
+                  expected_publication_ok = (
+                      int(
+                          connection.execute(
+                              "SELECT COUNT(*) FROM event_journal WHERE publish_state IN ('PUBLISHING','RETRY','HELD')"
+                          ).fetchone()[0]
+                      )
+                      == 0
+                  )
+                  expected_consumers_ok = True
+                  expected_region_convergence: dict[str, bool] = {}
+
+                  assert set(reconciliation["regions"]) == {"east", "west"}
+                  for region in ("east", "west"):
+                      confirmed = connection.execute(
+                          "SELECT generation,last_observed_sequence FROM origin_generations "
+                          "WHERE region=? AND status='CONFIRMED' ORDER BY generation",
+                          (region,),
+                      ).fetchall()
+                      pending_count = int(
+                          connection.execute(
+                              "SELECT COUNT(*) FROM origin_generations WHERE region=? AND status='PENDING_APPROVAL'",
+                              (region,),
+                          ).fetchone()[0]
+                      )
+                      if len(confirmed) != 1 or pending_count:
+                          expected_generations_ok = False
+                      assert confirmed, f"{region} must retain a confirmed generation"
+                      generation = int(confirmed[-1]["generation"])
+                      confirmed_watermark = int(
+                          confirmed[-1]["last_observed_sequence"]
+                      )
+                      region_row = connection.execute(
+                          "SELECT physical_stream,jetstream_domain FROM regions WHERE region=?",
+                          (region,),
+                      ).fetchone()
+                      assert region_row is not None
+                      expected_stream = str(region_row["physical_stream"])
+                      expected_domain = str(region_row["jetstream_domain"])
+
+                      journal_rows = connection.execute(
+                          "SELECT event_id,origin_sequence,payload_sha256 FROM event_journal "
+                          "WHERE region=? AND generation=?",
+                          (region, generation),
+                      ).fetchall()
+                      archive_rows = connection.execute(
+                          "SELECT event_id,origin_sequence,payload_sha256,source_stream,source_domain,duplicate_observation_count "
+                          "FROM archive_index WHERE region=? AND generation=?",
+                          (region, generation),
+                      ).fetchall()
+                      journal = {
+                          str(row["event_id"]): (
+                              int(row["origin_sequence"]),
+                              str(row["payload_sha256"]).lower(),
+                          )
+                          for row in journal_rows
+                      }
+                      archive = {
+                          str(row["event_id"]): (
+                              int(row["origin_sequence"]),
+                              str(row["payload_sha256"]).lower(),
+                              str(row["source_stream"]),
+                              str(row["source_domain"]),
+                          )
+                          for row in archive_rows
+                      }
+                      missing_ids = set(journal) - set(archive)
+                      unexpected_ids = set(archive) - set(journal)
+                      metadata_mismatch_count = sum(
+                          1
+                          for event_id in set(journal) & set(archive)
+                          if journal[event_id][0] != archive[event_id][0]
+                          or journal[event_id][1] != archive[event_id][1]
+                          or archive[event_id][2] != expected_stream
+                          or archive[event_id][3] != expected_domain
+                      )
+                      duplicate_count = sum(
+                          int(row["duplicate_observation_count"])
+                          for row in archive_rows
+                      )
+                      archive_floor = contiguous_floor(
+                          [value[0] for value in archive.values()]
+                      )
+
+                      progress: dict[str, int] = {}
+                      for consumer_name in required_consumers:
+                          checkpoint = connection.execute(
+                              "SELECT last_effect_sequence,last_ack_sequence,jetstream_ack_floor FROM consumer_checkpoints "
+                              "WHERE consumer_name=? AND region=? AND generation=?",
+                              (consumer_name, region, generation),
+                          ).fetchone()
+                          if checkpoint is None:
+                              progress[consumer_name] = 0
+                              expected_consumers_ok = False
+                              continue
+                          effect_sequence = int(checkpoint["last_effect_sequence"])
+                          ack_sequence = int(checkpoint["last_ack_sequence"])
+                          js_floor = int(checkpoint["jetstream_ack_floor"])
+                          progress[consumer_name] = min(effect_sequence, ack_sequence)
+                          if not (
+                              effect_sequence == ack_sequence == js_floor
+                          ):
+                              expected_consumers_ok = False
+
+                      consumer_lag_count = sum(
+                          1
+                          for sequence in progress.values()
+                          if sequence < confirmed_watermark
+                      )
+                      expected_converged = (
+                          archive_floor >= confirmed_watermark
+                          and not missing_ids
+                          and not unexpected_ids
+                          and metadata_mismatch_count == 0
+                          and consumer_lag_count == 0
+                      )
+                      expected_region_convergence[region] = expected_converged
+
+                      actual = reconciliation["regions"][region]
+                      assert actual["status"] == (
+                          "CONVERGED" if expected_converged else "DIVERGED"
+                      )
+                      assert actual["journal_event_count"] == len(journal)
+                      assert actual["archive_event_count"] == len(archive)
+                      assert actual["missing_count"] == len(missing_ids)
+                      assert actual["unexpected_count"] == len(unexpected_ids)
+                      assert actual["duplicate_count"] == duplicate_count
+                      assert (
+                          actual["metadata_mismatch_count"]
+                          == metadata_mismatch_count
+                      )
+                      assert actual["consumer_lag_count"] == consumer_lag_count
+                      assert (
+                          actual["highest_contiguous_archive_origin_sequence"]
+                          == archive_floor
+                      )
+                      assert actual["required_consumer_progress"] == progress
+                      assert actual["converged"] is expected_converged
+
+                  expected_archive_ok = all(expected_region_convergence.values())
+                  expected_healthy = all(
+                      (
+                          expected_topology_ok,
+                          expected_generations_ok,
+                          expected_publication_ok,
+                          expected_archive_ok,
+                          expected_consumers_ok,
+                          expected_retention_ok,
+                          expected_recovery_ok,
+                      )
+                  )
+                  assert health["topology_ok"] is expected_topology_ok
+                  assert health["generations_ok"] is expected_generations_ok
+                  assert health["publication_ok"] is expected_publication_ok
+                  assert health["archive_ok"] is expected_archive_ok
+                  assert health["consumers_ok"] is expected_consumers_ok
+                  assert health["retention_ok"] is expected_retention_ok
+                  assert health["recovery_ok"] is expected_recovery_ok
+                  assert health["healthy"] is expected_healthy
+                  assert reconciliation["converged"] is expected_archive_ok
+
+                  assert (
+                      connection.execute(
+                          "SELECT COUNT(*) FROM event_journal"
+                      ).fetchone()[0]
+                      == 12000
+                  )
+                  assert (
+                      connection.execute(
+                          "SELECT COUNT(*) FROM consumer_checkpoints"
+                      ).fetchone()[0]
+                      >= 4
+                  )
+                  assert active_plans >= 1
+              finally:
+                  connection.close()
+
+              stream_state = json.loads(
+                  (ROOT / "ops/stream-state.json").read_text(encoding="utf-8")
+              )
+              assert stream_state["incident_id"] == "INC-JS-2026-0808-17"
+              assert stream_state["captured_at"] == "2026-08-08T17:18:10Z"
+              assert stream_state["domains"]["hub"]["messages"] == 11395
+              assert (
+                  stream_state["domains"]["hub"]["sources"][1]["domain"]
+                  == "edge-east"
+              )
+              handoff = (ROOT / "ops/shift-handoff.txt").read_text(encoding="utf-8")
+              assert "three west identities and two east identities" in handoff
+              archived_log = (
+                  ROOT / "log/archive/inc-2026-0808-17-controller.log"
+              )
+              assert archived_log.is_file()
+              assert hashlib.sha256(archived_log.read_bytes()).hexdigest() == __LOG_DIGEST__
+          '''
+          report_replacement = report_replacement.replace(
+              '__LOG_DIGEST__', repr(log_digest)
+          )
+          replace_top_function(
+              coverage,
+              'test_f2p_final_health_and_reconciliation_reports_are_materialized',
+              report_replacement,
+          )
+
+          # Q4-F005: preserve the CLI surface through a real NatsPublisher publish
+          # on an isolated west JetStream server, without depending on broken hub
+          # topology or full-lab bootstrap in the NOP task.
+          replace_top_function(
+              coverage,
+              'test_p2p_recovery_cli_entrypoints_remain_operational',
+              r'''
+              def test_p2p_recovery_cli_entrypoints_remain_operational(tmp_path: Path) -> None:
+                  """Generation, replay, lease and retention CLI paths remain wired, including a real replay publish."""
+                  runtime_root = _operator_root(tmp_path)
+                  database = runtime_root / "state/continuity.db"
+                  engine = ContinuityEngine.from_json_file(
+                      ContinuityStore(database), runtime_root / "config/continuity.json"
+                  )
+                  engine.store.execute("DELETE FROM recovery_leases")
+
+                  def run_cli(*args: str, allowed: set[int] = {0}) -> dict[str, object]:
+                      completed = subprocess.run(
+                          [str(ROOT / "bin/continuityctl"), *args],
+                          check=False,
+                          capture_output=True,
+                          text=True,
+                          timeout=45,
+                      )
+                      assert completed.returncode in allowed, completed.stderr
+                      return json.loads(completed.stdout)
+
+                  planned = run_cli(
+                      "plan-replay",
+                      "east",
+                      "--generation",
+                      "1",
+                      "--created-by",
+                      "cli-contract-test",
+                      "--reason",
+                      "exercise preserved recovery CLI",
+                      "--approve",
+                      "--approved-by",
+                      "cli-contract-test",
+                      "--root",
+                      str(runtime_root),
+                      "--compact",
+                  )
+                  assert planned["blocked_reason"] is None
+                  assert planned["plan"] is not None
+
+                  listed = run_cli(
+                      "list-replay",
+                      "--region",
+                      "east",
+                      "--root",
+                      str(runtime_root),
+                      "--compact",
+                  )
+                  assert any(
+                      plan["plan_id"] == planned["plan"]["plan_id"] for plan in listed
+                  )
+
+                  retention = run_cli(
+                      "retention",
+                      "east",
+                      "--generation",
+                      "1",
+                      "--limit",
+                      "5",
+                      "--root",
+                      str(runtime_root),
+                      "--compact",
+                      allowed={0, 2},
+                  )
+                  assert retention["region"] == "east"
+                  assert "safe_sequence" in retention
+                  assert "eligible_event_ids" in retention
+
+                  nats_config_dir = runtime_root / "config/nats"
+                  nats_config_dir.mkdir(parents=True, exist_ok=True)
+                  west_store = runtime_root / "state/nats/west"
+                  west_store.mkdir(parents=True, exist_ok=True)
+                  (nats_config_dir / "west.conf").write_text(
+                      "\n".join(
+                          (
+                              "server_name: EDGE-WEST-CONTRACT-TEST",
+                              "port: 4224",
+                              "http: 8224",
+                              "jetstream {",
+                              f'  store_dir: "{west_store}"',
+                              '  domain: "edge-west"',
+                              "  max_mem_store: 67108864",
+                              "  max_file_store: 268435456",
+                              "}",
+                              "",
+                          )
+                      ),
+                      encoding="utf-8",
+                  )
+                  manager = LabProcessManager(runtime_root)
+                  manager.start_one("west")
+                  try:
+                      manager.wait_monitor("http://127.0.0.1:8224", timeout=10)
+
+                      async def ensure_west_stream() -> None:
+                          pool = NatsConnectionPool()
+                          try:
+                              admin = JetStreamAdmin(pool, endpoints_from_engine(engine))
+                              await admin.upsert_stream(
+                                  "west",
+                                  str(engine.store.region("west")["physical_stream"]),
+                                  {
+                                      "subjects": ["telemetry.west.>"],
+                                      "retention": "limits",
+                                      "storage": "file",
+                                      "num_replicas": 1,
+                                      "duplicate_window": 120 * 1_000_000_000,
+                                      "max_age": 259200 * 1_000_000_000,
+                                      "allow_direct": False,
+                                      "deny_delete": True,
+                                      "deny_purge": True,
+                                  },
+                              )
+                          finally:
+                              await pool.close()
+
+                      asyncio.run(ensure_west_stream())
+                      acquired = run_cli(
+                          "lease",
+                          "--root",
+                          str(runtime_root),
+                          "--compact",
+                          "acquire",
+                          "west",
+                          "--owner",
+                          "cli-recovery-worker",
+                          "--ttl",
+                          "300",
+                      )
+                      epoch = int(acquired["fence_epoch"])
+
+                      executed = run_cli(
+                          "execute-replay",
+                          "rp-west-incident-001",
+                          "--owner",
+                          "cli-recovery-worker",
+                          "--epoch",
+                          str(epoch),
+                          "--root",
+                          str(runtime_root),
+                          "--compact",
+                      )
+                      assert executed["completed"] is True
+                      assert int(executed["published"]) >= 1
+                      replay_after = engine.store.replay_plan("rp-west-incident-001")
+                      assert (
+                          replay_after is not None
+                          and replay_after.status.value == "COMPLETED"
+                      )
+                      terminal_retention = engine.compute_retention_decision(
+                          region="west",
+                          generation=1,
+                          at=datetime(2026, 8, 9, 7, 30, tzinfo=UTC),
+                          limit=5,
+                      )
+                      assert terminal_retention.replay_pin_sequence is None
+
+                      renewed = run_cli(
+                          "lease",
+                          "--root",
+                          str(runtime_root),
+                          "--compact",
+                          "renew",
+                          "west",
+                          "--owner",
+                          "cli-recovery-worker",
+                          "--epoch",
+                          str(epoch),
+                          "--ttl",
+                          "300",
+                      )
+                      assert int(renewed["fence_epoch"]) == epoch
+                      released = run_cli(
+                          "lease",
+                          "--root",
+                          str(runtime_root),
+                          "--compact",
+                          "release",
+                          "west",
+                          "--owner",
+                          "cli-recovery-worker",
+                          "--epoch",
+                          str(epoch),
+                      )
+                      assert released["released"] is True
+                      assert engine.store.current_lease("west") is None
+                  finally:
+                      manager.stop_one("west")
+
+                  pending = engine.store.record_pending_generation(
+                      "east",
+                      generation=2,
+                      stream_fingerprint="cli-pending-generation-2",
+                      first_sequence=1,
+                      last_observed_sequence=10,
+                      at=datetime(2026, 8, 9, 7, 0, tzinfo=UTC),
+                  )
+                  assert pending.status is GenerationStatus.PENDING_APPROVAL
+                  approved = run_cli(
+                      "approve-generation",
+                      "east",
+                      "2",
+                      "--approved-by",
+                      "cli-contract-test",
+                      "--root",
+                      str(runtime_root),
+                      "--compact",
+                  )
+                  assert approved["status"] == "CONFIRMED"
+
+                  generations = run_cli(
+                      "generations",
+                      "--region",
+                      "east",
+                      "--root",
+                      str(runtime_root),
+                      "--compact",
+                  )
+                  assert any(
+                      row["generation"] == 2 and row["status"] == "CONFIRMED"
+                      for row in generations
+                  )
+              ''',
+          )
+
+          # Q4-F006 production behavior: after a publish returns, stale authority
+          # cannot mutate replay-item/terminal state. FencingError itself must not
+          # be folded into a generic FAILED item outcome.
+          policy = TASK / 'environment/continuity/continuity/policy.py'
+          replace_once(
+              policy,
+              '''            try:\n                await self.publish_event(item.event_id, publisher)\n            except GenerationConflict as exc:\n''',
+              '''            try:\n                await self.publish_event(item.event_id, publisher)\n                self.assert_recovery_fence(\n                    region=plan.replay_range.region,\n                    owner_id=owner_id,\n                    fence_epoch=fence_epoch,\n                )\n            except FencingError:\n                raise\n            except GenerationConflict as exc:\n''',
+          )
+
+          # Q4-F001 reference behavior: confirmed generation high watermark, not a
+          # lower contiguous journal/archive minimum, is the convergence authority.
+          solution = TASK / 'solution/files/engine.py'
+          replace_class_method(
+              solution,
+              'ContinuityEngine',
+              'reconcile_region',
+              r'''
+              def reconcile_region(self, region: str, generation: int) -> ReconciliationSummary:
+                  run_id = self.store.create_reconciliation_run(mode="DRY_RUN")
+                  generation_record = self.store.generation(region, generation)
+                  if (
+                      generation_record is None
+                      or generation_record.status is not GenerationStatus.CONFIRMED
+                  ):
+                      raise ContractError(
+                          f"reconciliation requires confirmed generation {region}/{generation}"
+                      )
+                  confirmed_watermark = generation_record.last_observed_sequence
+                  journal_by_id = {
+                      event.identity.event_id: event
+                      for event in self.store.iter_events(
+                          region=region, generation=generation
+                      )
+                  }
+                  archive_by_id = {
+                      record.identity.event_id: record
+                      for record in self.store.iter_archive(
+                          region=region, generation=generation
+                      )
+                  }
+                  journal_ids = set(journal_by_id)
+                  archive_ids = set(archive_by_id)
+                  missing_ids = sorted(journal_ids - archive_ids)
+                  unexpected_ids = sorted(archive_ids - journal_ids)
+                  findings: list[Finding] = []
+                  metadata_mismatch_count = 0
+                  region_row = self.store.region(region)
+                  expected_source_stream = str(region_row["physical_stream"])
+                  expected_source_domain = str(region_row["jetstream_domain"])
+
+                  for event_id in missing_ids:
+                      event = journal_by_id[event_id]
+                      findings.append(
+                          Finding(
+                              severity=FindingSeverity.ERROR,
+                              finding_type="MISSING_ARCHIVE_EVENT",
+                              message="accepted edge event is absent from the hub archive",
+                              region=region,
+                              generation=generation,
+                              origin_sequence=event.identity.origin_sequence,
+                              event_id=event_id,
+                              expected_value="present",
+                              observed_value="missing",
+                              remediation_hint="replay this stable event identity after validating its origin generation",
+                          )
+                      )
+                  for event_id in unexpected_ids:
+                      record = archive_by_id[event_id]
+                      findings.append(
+                          Finding(
+                              severity=FindingSeverity.BLOCKER,
+                              finding_type="UNEXPECTED_ARCHIVE_EVENT",
+                              message="hub raw archive contains an event outside the edge journal authority",
+                              region=region,
+                              generation=generation,
+                              origin_sequence=record.identity.origin_sequence,
+                              event_id=event_id,
+                              expected_value="absent",
+                              observed_value="present",
+                              remediation_hint="identify the local/raw write path before continuing replay",
+                          )
+                      )
+                  for event_id in sorted(journal_ids & archive_ids):
+                      event = journal_by_id[event_id]
+                      record = archive_by_id[event_id]
+                      mismatches: list[str] = []
+                      if event.identity.region != record.identity.region:
+                          mismatches.append("region")
+                      if event.identity.generation != record.identity.generation:
+                          mismatches.append("generation")
+                      if event.identity.origin_sequence != record.identity.origin_sequence:
+                          mismatches.append("origin_sequence")
+                      if event.payload_sha256.lower() != record.payload_sha256.lower():
+                          mismatches.append("payload_sha256")
+                      if record.source_stream != expected_source_stream:
+                          mismatches.append("source_stream")
+                      if record.source_domain != expected_source_domain:
+                          mismatches.append("source_domain")
+                      if mismatches:
+                          metadata_mismatch_count += 1
+                          findings.append(
+                              Finding(
+                                  severity=FindingSeverity.BLOCKER,
+                                  finding_type="ARCHIVE_METADATA_MISMATCH",
+                                  message="archive event identity metadata disagrees with its edge journal authority",
+                                  region=region,
+                                  generation=generation,
+                                  origin_sequence=event.identity.origin_sequence,
+                                  event_id=event_id,
+                                  expected_value=",".join(mismatches),
+                                  observed_value="mismatch",
+                                  remediation_hint="hold the affected generation and repair source identity propagation",
+                              )
+                          )
+
+                  duplicate_count = sum(
+                      record.duplicate_observation_count
+                      for record in archive_by_id.values()
+                  )
+                  if duplicate_count:
+                      findings.append(
+                          Finding(
+                              severity=FindingSeverity.WARNING,
+                              finding_type="DUPLICATE_OBSERVATIONS",
+                              message="the archive observed duplicate deliveries for stable event identities",
+                              region=region,
+                              generation=generation,
+                              expected_value="0",
+                              observed_value=str(duplicate_count),
+                              remediation_hint="retain stable message ids and application idempotency; server duplicate windows are not replay authority",
+                          )
+                      )
+
+                  archive_sequences = [
+                      record.identity.origin_sequence
+                      for record in archive_by_id.values()
+                  ]
+                  archive_floor = contiguous_floor(archive_sequences)
+                  if archive_floor < confirmed_watermark:
+                      findings.append(
+                          Finding(
+                              severity=FindingSeverity.ERROR,
+                              finding_type="ARCHIVE_WATERMARK_LAG",
+                              message="hub archive has not reached the confirmed origin watermark",
+                              region=region,
+                              generation=generation,
+                              origin_sequence=archive_floor,
+                              expected_value=str(confirmed_watermark),
+                              observed_value=str(archive_floor),
+                              remediation_hint="reconcile and replay missing origin identities before declaring convergence",
+                          )
+                      )
+
+                  required_consumer_progress: dict[str, int] = {}
+                  for consumer_name in self.store.required_consumers():
+                      checkpoint = self.store.checkpoint(
+                          consumer_name, region, generation
+                      )
+                      required_consumer_progress[consumer_name] = (
+                          0 if checkpoint is None else checkpoint.application_sequence
+                      )
+                  consumer_findings = self._required_consumer_lag(
+                      region, generation, confirmed_watermark
+                  )
+                  findings.extend(consumer_findings)
+
+                  checksum = report_checksum(archive_by_id.values())
+                  blocking = [
+                      finding
+                      for finding in findings
+                      if finding.severity
+                      in {FindingSeverity.ERROR, FindingSeverity.BLOCKER}
+                  ]
+                  summary = ReconciliationSummary(
+                      run_id=run_id,
+                      status=(
+                          ReconcileStatus.CONVERGED
+                          if not blocking
+                          else ReconcileStatus.DIVERGED
+                      ),
+                      journal_event_count=len(journal_by_id),
+                      archive_event_count=len(archive_by_id),
+                      missing_count=len(missing_ids),
+                      unexpected_count=len(unexpected_ids),
+                      duplicate_count=duplicate_count,
+                      metadata_mismatch_count=metadata_mismatch_count,
+                      consumer_lag_count=len(consumer_findings),
+                      highest_contiguous_archive_origin_sequence=archive_floor,
+                      required_consumer_progress=required_consumer_progress,
+                      checksum=checksum,
+                      findings=tuple(findings),
+                  )
+                  for finding in findings:
+                      self.store.add_finding(run_id, finding)
+                  self.store.finish_reconciliation_run(
+                      run_id,
+                      status=summary.status.value,
+                      journal_event_count=summary.journal_event_count,
+                      archive_event_count=summary.archive_event_count,
+                      missing_count=summary.missing_count,
+                      duplicate_count=summary.duplicate_count,
+                      metadata_mismatch_count=summary.metadata_mismatch_count,
+                      consumer_lag_count=summary.consumer_lag_count,
+                      checksum=summary.checksum,
+                      summary=summary.as_dict(),
+                  )
+                  return summary
+              ''',
+          )
+
+          # Keep the private test map synchronized with the clarified visible
+          # contract while retaining exactly the same 40 test classifications.
+          test_map_path = Path(
+              '.terminus/designs/jetstream-regional-stream-continuity-test-map.json'
+          )
+          test_map = json.loads(test_map_path.read_text(encoding='utf-8'))
+          test_map['requirements']['REQ-13'] = (
+              'Overall convergence requires the highest contiguous hub archive origin sequence '
+              'and every configured required durable consumer application checkpoint to reach '
+              'the confirmed generation last_observed_sequence watermark.'
+          )
+          test_map['requirements']['REQ-20'] = (
+              'Recovery ownership uses monotonically increasing fencing epochs; expiry/reacquisition '
+              'advances the epoch even for the same owner id, replay rejects stale tokens before '
+              'execution, between items, and after an in-flight publish before replay-state mutation, '
+              'and stale renewal/release cannot mutate the current lease.'
+          )
+          test_map_path.write_text(
+              json.dumps(test_map, indent=2) + '\n', encoding='utf-8'
+          )
+          PY
+
+          python3 -m pip install --quiet ruff==0.12.8
+          ruff check jetstream-regional-stream-continuity/tests
+          python3 -m py_compile \
+            jetstream-regional-stream-continuity/environment/continuity/continuity/policy.py \
+            jetstream-regional-stream-continuity/solution/files/engine.py \
+            jetstream-regional-stream-continuity/tests/test_continuity.py \
+            jetstream-regional-stream-continuity/tests/test_contract_coverage.py
+          python3 .terminus/validate_task_complexity.py jetstream-regional-stream-continuity
+
+          echo '--- remediation diff stat ---'
+          git diff --stat
+          echo '--- task test classification ---'
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          data = json.loads(Path('.terminus/designs/jetstream-regional-stream-continuity-test-map.json').read_text())
+          kinds = [row[1] for row in data['tests']]
+          print('total', len(kinds), 'f2p', kinds.count('F2P'), 'p2p', kinds.count('P2P'))
+          assert len(kinds) == 40
+          assert kinds.count('F2P') == 30
+          assert kinds.count('P2P') == 10
+          PY
+
+          if git diff --quiet; then
+            echo 'No remediation changes needed'
+            exit 0
+          fi
+          git config user.name 'Terminus CI Orchestrator'
+          git config user.email 'actions@users.noreply.github.com'
+          git add \
+            .terminus/designs/jetstream-regional-stream-continuity-test-map.json \
+            jetstream-regional-stream-continuity/environment/continuity/docs/continuity-contract.md \
+            jetstream-regional-stream-continuity/environment/continuity/continuity/policy.py \
+            jetstream-regional-stream-continuity/solution/files/engine.py \
+            jetstream-regional-stream-continuity/tests/test_continuity.py \
+            jetstream-regional-stream-continuity/tests/test_contract_coverage.py
+          git commit -m 'Remediate fourth-cycle JetStream Q4 findings'
+          git push origin HEAD:task/jetstream-quality-interlock
