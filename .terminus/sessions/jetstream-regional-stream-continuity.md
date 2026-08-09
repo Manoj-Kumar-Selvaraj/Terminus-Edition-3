@@ -8,7 +8,7 @@ Session schema version: `2.4`
 - Controller state: `DETERMINISTIC_VALIDATION`
 - Working branch: `task/jetstream-quality-interlock`
 - Pull request: `#12` (draft quality-interlock validation PR)
-- Current task commit: `de8efb320ade9c445963ab49edf0cd1bf5958073`
+- Current task commit: `4f5fe54b2acf8629c6582e06fd3cf3a3b097e57f`
 - Agent-system policy: `2.3`
 - Specialist prompt policy: `2.2`
 - Specialist protocol policy: `2.1`
@@ -22,31 +22,31 @@ Session schema version: `2.4`
 
 This remains the `large_system_strict` three-domain NATS JetStream continuity task. Solver-visible runtime/configuration remains 5,488 substantive LOC with 12,000 deterministic primary telemetry events, seven root-cause clusters, 26 interrelated manifestations, 28 causal edges, 11 cross-cluster pairs and 11 affected components.
 
-The second Q4 remediation did not change solver-visible production/runtime/configuration files. It strengthened verifier coverage, added one preservation P2P, repaired one reference-solution omission for wrong-stream acknowledgements, and updated the private test map. Current strict verifier shape is 40 tests: exactly 30 F2P + 10 P2P across 26 mapped requirement groups.
+The second Q4 remediation does not change solver-visible production/runtime/configuration. The current verifier/test-map shape is 40 tests: exactly 30 F2P + 10 P2P across 26 mapped requirements. One reference-solution correction rejects wrong-stream publish acknowledgements. Commit `4f5fe54b2acf8629c6582e06fd3cf3a3b097e57f` contains only two verifier setup corrections after the first fresh Oracle exposed test-construction errors.
 
 ## Current gates
 
 | Gate | Status | Evidence / version |
 | --- | --- | --- |
-| Q1 Spec Gap Repair | PASS | unchanged; all grading semantics remain discoverable from `instruction.md` plus referenced solver-visible continuity contract; no hidden-test checklist added |
-| Q2 Verifier Coverage Repair | FIX_APPLIED_PENDING_RERUN | fresh Q4 on `a57ed7e6...` returned REVISE/HIGH/SUFFICIENT with five coverage findings; verifier repairs landed in `de8efb320ade9c445963ab49edf0cd1bf5958073` while retaining exactly 30 F2P |
-| Q3 Spec Ambiguity Repair | PASS | fresh Q4 found no grading ambiguity and no phantom requirement |
-| Q5 Oracle & Runtime Repair | FIX_APPLIED_PENDING_RERUN | reference solution now rejects positive publish acknowledgements from the wrong physical stream and leaves the event retryable; fresh Oracle required |
-| Q7 Task Format Enforcer | PENDING_FRESH_EVIDENCE | verifier changed; require fresh Preflight/Ruff/build/package evidence |
-| Creator Complexity Gate | PASS | remediation workflow local strict validator and clean-head run `31311491000`: 5,488 LOC / 40 tests / 30 F2P / 10 P2P / 26 requirements |
-| Production Authenticity Gate | PASS | clean-head run `31311490993` PASS; solver-visible production runtime unchanged |
-| Agent System / review freshness | PENDING_RERUN | run `31311491001` correctly failed because the session still named stale `a57ed7e6...`; this commit reconciles session to `de8efb320...` |
-| Preflight/static | PENDING | fresh task commit `de8efb320...` |
-| Ruff verifier | PENDING | fresh task commit `de8efb320...` |
-| Environment/verifier build | PENDING | fresh task commit `de8efb320...` |
+| Q1 Spec Gap Repair | PASS | unchanged; grading semantics remain discoverable from `instruction.md` plus referenced continuity contract |
+| Q2 Verifier Coverage Repair | FIX_APPLIED_PENDING_RERUN | five second-cycle Q4 coverage findings addressed while F2P remains exactly 30 |
+| Q3 Spec Ambiguity Repair | PASS | latest Q4 found no ambiguity or phantom requirement |
+| Q5 Oracle & Runtime Repair | FIX_APPLIED_PENDING_RERUN | reference solution rejects positive acknowledgements from wrong physical stream and leaves the journal retryable |
+| Q7 Task Format Enforcer | PENDING_FRESH_EVIDENCE | require fresh Preflight/Ruff/build/package evidence |
+| Creator Complexity Gate | PASS_PENDING_EXACT_HEAD_RERUN | remediation/test-setup workflows both report strict PASS: 5,488 LOC / 40 tests / 30 F2P / 10 P2P / 26 requirements |
+| Production Authenticity Gate | PASS_PENDING_EXACT_HEAD_RERUN | solver-visible production runtime unchanged; exact-head rerun required |
+| Agent System / review freshness | PENDING_RERUN | this commit reconciles session to current task commit |
+| Preflight/static | PENDING | current task commit `4f5fe54b...` |
+| Ruff verifier | PENDING | current task commit `4f5fe54b...` |
+| Environment/verifier build | PENDING | current task commit `4f5fe54b...` |
 | Oracle = 1 | PENDING | target 40/40 PASS |
 | NOP = 0 | PENDING | target exactly 30 F2P FAIL + 10 P2P PASS |
 | F2P/P2P empirical matrix | PENDING | target Oracle 40/40; NOP 30 F2P fail + 10 P2P pass |
-| Leakage/package checks | PENDING_FRESH_EVIDENCE | task runtime untouched; rerun exact-head checks |
-| FROZEN_CANDIDATE | NOT_REACHED | previous freeze became stale when verifier/reference-solution task files changed |
-| Q4 Spec-Test Contract Reviewer | STALE_REVISE | `jetstream-regional-stream-continuity-a57ed7e6-spec-test-contract-0fec10b4cd`: REVISE/HIGH/SUFFICIENT; drove this repair |
-| Q6 Production Logic Auditor | STALE_PASS | `jetstream-regional-stream-continuity-a57ed7e6-production-logic-f26d6870da`: PASS/HIGH/SUFFICIENT; exact task-commit binding is now stale |
-| Quality Interlock | PENDING | requires deterministic refreeze and fresh packet-bound Q4 + Q6 PASS |
+| Leakage/package checks | PENDING_FRESH_EVIDENCE | rerun exact-head checks |
+| FROZEN_CANDIDATE | NOT_REACHED | all older freezes are stale after verifier/reference changes |
+| Q4 Spec-Test Contract Reviewer | STALE_REVISE | `a57ed7e6` result REVISE/HIGH/SUFFICIENT drove current repair |
+| Q6 Production Logic Auditor | STALE_PASS | `a57ed7e6` result PASS/HIGH/SUFFICIENT; exact task binding stale |
+| Quality Interlock | PENDING | requires deterministic refreeze then fresh packet-bound Q4 + Q6 PASS |
 | Task Architect | PENDING | after Quality Interlock |
 | Verifier Engineer | PENDING | after Quality Interlock |
 | Originality & Authenticity | PENDING | after Quality Interlock |
@@ -68,56 +68,40 @@ The second Q4 remediation did not change solver-visible production/runtime/confi
 | Final Human Quality | PENDING | final packet-bound review |
 | Final package | PENDING | |
 
-## Second fresh Q4 result
+## Second Q4 review and remediation
 
-The independent Q4 review bound to task commit `a57ed7e6afeadaa8228f7c9eda82e09fedb789c6` returned `REVISE`, confidence `HIGH`, evidence `SUFFICIENT`. It found no phantom verifier behavior and no ambiguity, but identified five remaining material coverage gaps:
+Independent Q4 on `a57ed7e6afeadaa8228f7c9eda82e09fedb789c6` returned `REVISE/HIGH/SUFFICIENT`; independent Q6 returned `PASS/HIGH/SUFFICIENT`. Q4 found five remaining coverage gaps: expected-stream publish acknowledgements, hub-sequence-independent reconciliation, durable post-window dedupe outcomes, fencing revalidation during multi-item replay, and preservation of non-diagnostic recovery CLI entrypoints.
 
-1. Positive publish acknowledgement had no wrong-stream case, so the expected-physical-stream boundary was only partially graded.
-2. Reconciliation claimed independence from hub aggregate delivery sequence but never perturbed that sequence while holding origin identities complete.
-3. The post-duplicate-window case checked stable message id only, not durable archive/effect duplicate prevention.
-4. Replay fencing was checked only stale-before-entry, not after a fence transition between replay items.
-5. The instruction says not to replace existing operator entrypoints, but non-diagnostic recovery `continuityctl` generation/replay/lease/retention/execution wiring lacked interface-level coverage.
+The verifier/reference repair in `de8efb320ade9c445963ab49edf0cd1bf5958073` addresses all five without changing solver-visible production runtime or expanding `instruction.md`:
 
-Q6 on the same `a57ed7e6...` commit independently returned `PASS/HIGH/SUFFICIENT` with no production-logic findings, but its exact-commit binding is stale after this verifier/reference-solution revision.
+1. Existing publish F2P now rejects a positive ack from the wrong physical stream; Q5/reference solution records `ACK_STREAM_MISMATCH` and leaves `RETRY`.
+2. Existing reconciliation F2P perturbs hub delivery sequence while preserving complete stable identities and consumer convergence.
+3. Existing delayed-retry F2P verifies one durable effect/dispatch and one archive identity after a post-window duplicate/redelivery.
+4. Existing stale-worker F2P now changes fencing epoch after the first item of a two-item replay and requires the second item to be held.
+5. New P2P uses the real `continuityctl` interface for plan/list replay, retention, lease acquire/renew/release, replay execution, generation approval and generation listing against isolated copied state.
 
-## Round-two Q2/Q5 remediation
+The first full Oracle attempt for `de8efb320...` (run `31311540936`, artifact `9037536923`) failed 2/40 because of verifier setup errors rather than product behavior: the hub-sequence mutation collided with a globally unique DB key, and the CLI P2P created a DRAFT plan then expected the active-plan listing to return it. Commit `4f5fe54b2acf8629c6582e06fd3cf3a3b097e57f` corrects only those setups: hub positions are moved to a non-colliding high range, and the CLI-created replay plan is approved before active listing. Ruff, py_compile and strict complexity passed before that test-only commit was pushed.
 
-Commit `de8efb320ade9c445963ab49edf0cd1bf5958073` changes only verifier files, the reference solution, and the private test map. Solver-visible production/runtime/configuration is unchanged.
+## Historical provenance
 
-- Existing F2P publish-ack case now tests a positive acknowledgement from the wrong physical stream and requires rejection, `RETRY`, and an `ACK_STREAM_MISMATCH` terminal attempt rather than `PUBLISHED`.
-- Existing F2P reconciliation case completes the archive, advances all required consumers, deliberately makes hub delivery positions non-equivalent to origin sequences, and requires origin-based convergence with no synthetic sequence-lag finding.
-- Existing F2P delayed-retry case now proves one durable consumer effect/dispatch and one archive identity remain after a deterministic post-window duplicate/redelivery, in addition to stable message ids.
-- Existing stale-worker F2P now retains the stale-before-entry assertion and adds a two-item replay where the fence epoch changes after the first publish; the second item must be held and not published.
-- Added one P2P using the real `continuityctl` entrypoint against isolated copied state to exercise `plan-replay`, `list-replay`, `retention`, `lease acquire/renew/release`, `execute-replay`, `approve-generation`, and `generations` through observable state.
-- Q5/reference solution adds expected-stream acknowledgement validation and records wrong-stream acknowledgement as a retryable `ACK_STREAM_MISMATCH` failure.
-- Private map is now 26 requirements, 30 F2P, 10 P2P.
+- `fc137e82...`: Q4 REVISE/HIGH/SUFFICIENT; Q6 PASS/HIGH/SUFFICIENT.
+- `a57ed7e6...`: Q4 REVISE/HIGH/SUFFICIENT; Q6 PASS/HIGH/SUFFICIENT.
+- `a57ed7e6...` deterministic artifact `9035735832`: Oracle 39/39, NOP 30 F2P fail + 9 P2P pass; stale after current verifier changes.
 
-The temporary remediation workflow was removed immediately after producing the task commit. Its own Ruff, py_compile, and strict complexity checks passed before push.
-
-## Historical deterministic evidence
-
-The prior `a57ed7e6...` freeze had Oracle 39/39 and NOP exactly 30 F2P FAIL + 9 P2P PASS in run `31305175400`, artifact `9035735832`. That evidence is now stale because the verifier and reference solution changed.
-
-## Historical semantic provenance
-
-- `fc137e82...` Q4: REVISE/HIGH/SUFFICIENT; Q6: PASS/HIGH/SUFFICIENT.
-- `a57ed7e6...` Q4: REVISE/HIGH/SUFFICIENT; Q6: PASS/HIGH/SUFFICIENT.
-
-All four results remain historical evidence only. No prior Q4/Q6 result may satisfy the interlock for `de8efb320...`.
+No historical Q4/Q6 result satisfies the current interlock.
 
 ## Current blocker
 
-`Complete fresh deterministic validation for task commit de8efb320ade9c445963ab49edf0cd1bf5958073. Require strict gates, Preflight/Ruff/build, Oracle=1, NOP=0, Oracle 40/40 and NOP exactly 30 F2P FAIL + 10 P2P PASS. Only then refreeze and generate new Q4/Q6 packets.`
+`Run fresh deterministic validation on task commit 4f5fe54b2acf8629c6582e06fd3cf3a3b097e57f. Require strict gates, Preflight/Ruff/build, Oracle=1, NOP=0, Oracle 40/40 and NOP exactly 30 F2P FAIL + 10 P2P PASS. Only then refreeze and generate new Q4/Q6 packets.`
 
 ## Root-cause classification
 
-- Owner: `Q2 Verifier Coverage Repairer` with one `Q5 Reference Solution` correction
-- Classification: `VERIFIER_CONTRACT_COVERAGE`
-- Evidence: `fresh Q4 REVISE on a57ed7e6 identified five explicit solver-visible behaviors that remained only partially graded; Q6 found no production-logic defect`
+- Owner: `Q2 Verifier Coverage Repairer` plus one `Q5 Reference Solution` correction
+- Current failed-boundary classification: `VERIFIER_HARNESS` for the two corrected test setups; no new runtime/contract defect established
 
 ## Next action
 
-`Read live PR #12 CI on the reconciled head. If deterministic evidence passes, set FROZEN_CANDIDATE for de8efb320..., generate repository-native fresh Q4 and Q6 packets, remove packet-generation helper, and rerun both reviewers in separate cold contexts. Any Oracle failure routes to Q5; any verifier-contract defect routes to Q2.`
+`Inspect live PR #12 Actions on the reconciled head. If the 40-test deterministic matrix passes, set FROZEN_CANDIDATE for 4f5fe54b..., generate repository-native fresh Q4/Q6 packets, remove packet-generation helper, then rerun Q4 and Q6 in separate cold contexts.`
 
 ## Circuit breakers
 
@@ -129,14 +113,13 @@ All four results remain historical evidence only. No prior Q4/Q6 result may sati
 ## Decisions that must survive chat changes
 
 - Q1-Q8 remain authoritative.
-- Keep F2P at exactly 30; current target suite is 30 F2P + 10 P2P.
-- Do not weaken the solver-visible continuity contract to avoid coverage work.
-- Do not expand `instruction.md` into a hidden-test checklist.
-- Captured incident state remains immutable evidence; do not manufacture healthy reports.
-- Current task commit is `de8efb320ade9c445963ab49edf0cd1bf5958073` unless a newer task-file commit exists.
-- Current `a57ed7e6` Q4/Q6 results are stale after task revision.
-- Harbor AI-credential failure is downstream of deterministic validation.
+- Keep F2P exactly 30; current verifier is 30 F2P + 10 P2P.
+- Do not weaken solver-visible requirements to avoid coverage work.
+- Do not expand the natural instruction into a hidden-test checklist.
+- Solver-visible production/runtime/configuration is unchanged by the second Q4 cycle.
+- Current task commit is `4f5fe54b2acf8629c6582e06fd3cf3a3b097e57f` unless a newer task-file commit exists.
+- All Q4/Q6 results through `a57ed7e6` are historical/stale for current interlock.
 
 ## Resume rule
 
-Resolve current task commit from Git and require `de8efb320ade9c445963ab49edf0cd1bf5958073` unless a newer task-file commit exists. Inspect live PR #12 Actions. Refreeze only after the 40-test Oracle/NOP matrix and strict gates are current; then generate and run fresh packet-bound Q4/Q6 reviews.
+Resolve current task commit from Git and require `4f5fe54b2acf8629c6582e06fd3cf3a3b097e57f` unless a newer task-file commit exists. Inspect live PR #12 deterministic evidence. Refreeze only after current Oracle/NOP and strict gates pass, then generate fresh packet-bound Q4/Q6 reviews.
