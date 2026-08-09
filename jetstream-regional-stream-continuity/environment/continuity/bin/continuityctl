@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+set -euo pipefail
+ROOT="${CONTINUITY_ROOT:-/app/continuity}"
+export PYTHONPATH="$ROOT${PYTHONPATH:+:$PYTHONPATH}"
+exec "$ROOT/.venv/bin/python" -m continuity.cli "$@"
