@@ -1,0 +1,44 @@
+name: Generate Fresh JetStream 0F0947 Q4 Q6 Packets
+
+on:
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  generate:
+    if: github.head_ref == 'task/jetstream-quality-interlock'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: task/jetstream-quality-interlock
+          fetch-depth: 0
+
+      - name: Generate immutable Q4 and Q6 packets
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 .terminus/new_review_packet.py \
+            jetstream-regional-stream-continuity \
+            spec-test-contract \
+            --state FROZEN_CANDIDATE \
+            --change 'Fourth-cycle Q4 findings remediated without increasing test count; refrozen at 0f0947 with 5,530 substantive LOC, 40 tests = 30 F2P + 10 P2P, Oracle 40/40 and NOP exactly 30 F2P fail + 10 P2P pass. Confirmed-watermark, model-valid reconciliation metadata, poison evidence, live-NATS recovery CLI, in-flight fencing, independent report truth and archived-log preservation are now graded at their solver-visible behavioral boundaries.'
+          python3 .terminus/new_review_packet.py \
+            jetstream-regional-stream-continuity \
+            production-logic \
+            --state FROZEN_CANDIDATE \
+            --change 'Refrozen at 0f0947 after fourth-cycle verifier/contract/reference remediation. Production architecture remains the same; runtime changes are narrow: post-publish fence revalidation and the starter exposure of its existing hub-position/origin-progress defect. Verifier infrastructure now exercises real NatsPublisher replay against isolated JetStream.'
+          mkdir -p /tmp/jetstream-q4-q6
+          cp .terminus/reviews/jetstream-regional-stream-continuity/0f0947/*.packet.json /tmp/jetstream-q4-q6/
+          ls -l /tmp/jetstream-q4-q6
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: jetstream-q4-q6-0f0947-${{ github.run_id }}
+          path: /tmp/jetstream-q4-q6/
+          if-no-files-found: error
+          retention-days: 14
