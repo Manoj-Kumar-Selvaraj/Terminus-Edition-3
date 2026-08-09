@@ -30,7 +30,17 @@ CREATE TABLE events(
 
 def seed_sql(count: int = 10050) -> str:
     return f"""
-WITH RECURSIVE n(x) AS (VALUES(1) UNION ALL SELECT x+1 FROM n WHERE x<{count})
+WITH digits(d) AS (
+    VALUES(0),(1),(2),(3),(4),(5),(6),(7),(8),(9)
+), n(x) AS (
+    SELECT a.d + 10*b.d + 100*c.d + 1000*d.d + 10000*e.d + 1
+    FROM digits a
+    CROSS JOIN digits b
+    CROSS JOIN digits c
+    CROSS JOIN digits d
+    CROSS JOIN (SELECT 0 AS d UNION ALL SELECT 1 AS d) e
+    WHERE a.d + 10*b.d + 100*c.d + 1000*d.d + 10000*e.d < {count}
+)
 INSERT INTO events(event_id,region,device_id,event_type,priority)
 SELECT x,
        CASE x%2 WHEN 0 THEN 'east' ELSE 'west' END,
