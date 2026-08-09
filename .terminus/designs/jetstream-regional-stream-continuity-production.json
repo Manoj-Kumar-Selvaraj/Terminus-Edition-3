@@ -1,0 +1,56 @@
+{
+  "schema_version": "1.0",
+  "task": "jetstream-regional-stream-continuity",
+  "production_authenticity": {
+    "incident_evidence": [
+      "environment/continuity/log/archive/inc-2026-0808-17-controller.log",
+      "environment/continuity/ops/shift-handoff.txt",
+      "environment/continuity/ops/stream-state.json"
+    ],
+    "instruction_evidence_paths": [
+      "/app/continuity/log/archive",
+      "/app/continuity/ops"
+    ],
+    "stateful_dataset": {
+      "schema": "environment/continuity/sql/schema.sql",
+      "seed": "environment/continuity/sql/seed.sql",
+      "primary_table": "event_journal",
+      "min_records": 10000,
+      "max_records": 20000,
+      "variance_queries": {
+        "regions": {
+          "sql": "SELECT COUNT(DISTINCT region) FROM event_journal",
+          "min": 2
+        },
+        "devices": {
+          "sql": "SELECT COUNT(DISTINCT device_id) FROM event_journal",
+          "min": 100
+        },
+        "sites": {
+          "sql": "SELECT COUNT(DISTINCT site_id) FROM event_journal",
+          "min": 10
+        },
+        "event_types": {
+          "sql": "SELECT COUNT(DISTINCT event_type) FROM event_journal",
+          "min": 8
+        },
+        "payload_sizes": {
+          "sql": "SELECT COUNT(DISTINCT payload_bytes) FROM event_journal",
+          "min": 500
+        },
+        "priorities": {
+          "sql": "SELECT COUNT(DISTINCT priority) FROM event_journal",
+          "min": 10
+        },
+        "publish_states": {
+          "sql": "SELECT COUNT(DISTINCT publish_state) FROM event_journal",
+          "min": 4
+        },
+        "consumer_roles": {
+          "sql": "SELECT COUNT(DISTINCT consumer_name) FROM consumer_registry",
+          "min": 3
+        }
+      }
+    }
+  }
+}
