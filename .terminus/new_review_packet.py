@@ -17,6 +17,7 @@ from review_contract import (
     governing_policy_dirty,
     policy_versions,
     role_contract_hash,
+    review_scope_hash,
     task_tree_dirty,
     validate_schema,
 )
@@ -292,7 +293,7 @@ def build(
     authoritative_rules = list(COMMON_RULES)
     if bool(spec.get("quality")):
         authoritative_rules.extend(QUALITY_RULES)
-    return {
+    packet = {
         "schema_version": "3.0",
         "review_id": review_id,
         "protocol_policy_version": versions["protocol"],
@@ -314,6 +315,10 @@ def build(
         "output_schema": ".terminus/agents/schemas/review_result.schema.json",
         "review_output_path": output_path,
     }
+    scope_hash = review_scope_hash(ROOT, task, role)
+    if scope_hash:
+        packet["review_scope_hash"] = scope_hash
+    return packet
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -388,6 +393,8 @@ def main(argv: list[str] | None = None) -> int:
         f"role={packet['role']} task_commit={commit[:12]} "
         f"role_contract={packet['role_contract_hash'][:12]} isolation=PROCEDURAL"
     )
+    if packet.get("review_scope_hash"):
+        print(f"review_scope={packet['review_scope_hash'][:12]}")
     print("Open a new chat for this role and use this packet as the first review context.")
     return 0
 
