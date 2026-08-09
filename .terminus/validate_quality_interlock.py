@@ -10,7 +10,6 @@ states. Q8 remains diagnostic and never substitutes for official model trials.
 from __future__ import annotations
 
 import argparse
-import json
 import sys
 from pathlib import Path
 
