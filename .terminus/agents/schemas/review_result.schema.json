@@ -39,6 +39,7 @@
     "prompt_policy_version": {"type": "string", "minLength": 1},
     "role_policy_version": {"type": "string", "minLength": 1},
     "role_contract_hash": {"type": "string", "minLength": 16},
+    "review_scope_hash": {"type": "string", "minLength": 16},
     "context_packet": {"type": "string", "minLength": 1},
     "verdict": {
       "enum": [
@@ -135,6 +136,74 @@
         "properties": {
           "evidence_status": {"const": "INSUFFICIENT"},
           "missing_evidence": {"minItems": 1}
+        }
+      }
+    },
+    {
+      "if": {"properties": {"role": {"const": "Production Logic Auditor"}}},
+      "then": {
+        "required": ["review_scope_hash"]
+      }
+    },
+    {
+      "if": {"properties": {"role": {"const": "Spec-Test Contract Reviewer"}}},
+      "then": {
+        "properties": {
+          "role_output": {
+            "type": "object",
+            "required": [
+              "REQUIREMENT_TEST_MATRIX",
+              "PHANTOM_TEST_CONTRACTS",
+              "UNTESTED_REQUIREMENTS",
+              "AMBIGUITIES",
+              "DELEGATED_CONTRACT_CHECK",
+              "SPEC_DUMP_RISK",
+              "BIDIRECTIONAL_ALIGNMENT",
+              "BLOCKING_FINDING_IDS",
+              "ADVISORY_FINDING_IDS",
+              "EXHAUSTIVENESS"
+            ],
+            "properties": {
+              "BLOCKING_FINDING_IDS": {
+                "type": "array",
+                "items": {"type": "string", "minLength": 1}
+              },
+              "ADVISORY_FINDING_IDS": {
+                "type": "array",
+                "items": {"type": "string", "minLength": 1}
+              },
+              "EXHAUSTIVENESS": {
+                "type": "object",
+                "required": [
+                  "REQUIREMENTS_ENUMERATED",
+                  "VERIFIER_BEHAVIORS_ENUMERATED",
+                  "FORWARD_MATRIX_COMPLETE",
+                  "REVERSE_MATRIX_COMPLETE",
+                  "DELEGATED_CONTRACTS_COMPLETE",
+                  "P2P_BOUNDARIES_COMPLETE",
+                  "F2P_BOUNDARIES_COMPLETE",
+                  "OUTPUT_INTERFACES_COMPLETE",
+                  "SECOND_PASS_OMISSION_SWEEP",
+                  "UNINSPECTED_SCOPE"
+                ],
+                "properties": {
+                  "REQUIREMENTS_ENUMERATED": {"enum": ["COMPLETE", "INCOMPLETE"]},
+                  "VERIFIER_BEHAVIORS_ENUMERATED": {"enum": ["COMPLETE", "INCOMPLETE"]},
+                  "FORWARD_MATRIX_COMPLETE": {"enum": ["YES", "NO"]},
+                  "REVERSE_MATRIX_COMPLETE": {"enum": ["YES", "NO"]},
+                  "DELEGATED_CONTRACTS_COMPLETE": {"enum": ["YES", "NO"]},
+                  "P2P_BOUNDARIES_COMPLETE": {"enum": ["YES", "NO"]},
+                  "F2P_BOUNDARIES_COMPLETE": {"enum": ["YES", "NO"]},
+                  "OUTPUT_INTERFACES_COMPLETE": {"enum": ["YES", "NO"]},
+                  "SECOND_PASS_OMISSION_SWEEP": {"enum": ["PASS", "INCOMPLETE"]},
+                  "UNINSPECTED_SCOPE": {
+                    "type": "array",
+                    "items": {"type": "string"}
+                  }
+                }
+              }
+            }
+          }
         }
       }
     }
