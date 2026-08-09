@@ -73,7 +73,7 @@ def test_overwhelming_structural_template_reuse_fails(tmp_path: Path) -> None:
             program(f"PAY{idx}", variant=idx + 1, structural_variant=True)
         )
     errors = gate.validate_directory(directory)
-    assert any("paragraph/control-flow signature" in error for error in errors)
+    assert any("paragraph-count/control-flow signature" in error for error in errors)
 
 
 def test_structurally_diverse_portfolio_passes(tmp_path: Path) -> None:
