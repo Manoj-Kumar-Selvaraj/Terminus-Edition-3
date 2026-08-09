@@ -1,0 +1,646 @@
+name: JetStream Q4 Round 2 Remediation
+
+on:
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: write
+
+jobs:
+  remediate:
+    if: github.event.pull_request.head.ref == 'task/jetstream-quality-interlock'
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: task/jetstream-quality-interlock
+          fetch-depth: 0
+      - name: Apply Q2 coverage repairs and Q5 reference-solution repair
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 <<'PY'
+          from __future__ import annotations
+
+          import ast
+          import json
+          import textwrap
+          from pathlib import Path
+
+          root = Path('.')
+          tests_path = root / 'jetstream-regional-stream-continuity/tests/test_continuity.py'
+          coverage_path = root / 'jetstream-regional-stream-continuity/tests/test_contract_coverage.py'
+          solution_path = root / 'jetstream-regional-stream-continuity/solution/files/engine.py'
+          map_path = root / '.terminus/designs/jetstream-regional-stream-continuity-test-map.json'
+
+          def replace_top_level(source: str, node_type: type[ast.AST], name: str, replacement: str) -> str:
+              tree = ast.parse(source)
+              node = next(
+                  (n for n in tree.body if isinstance(n, node_type) and getattr(n, 'name', None) == name),
+                  None,
+              )
+              if node is None or not hasattr(node, 'end_lineno'):
+                  raise SystemExit(f'cannot find top-level {name}')
+              lines = source.splitlines(keepends=True)
+              repl = textwrap.dedent(replacement).strip('\n') + '\n'
+              lines[node.lineno - 1 : node.end_lineno] = [repl]
+              return ''.join(lines)
+
+          def replace_method(source: str, class_name: str, method_name: str, replacement: str) -> str:
+              tree = ast.parse(source)
+              cls = next(
+                  (n for n in tree.body if isinstance(n, ast.ClassDef) and n.name == class_name),
+                  None,
+              )
+              if cls is None:
+                  raise SystemExit(f'cannot find class {class_name}')
+              node = next(
+                  (n for n in cls.body if isinstance(n, (ast.FunctionDef, ast.AsyncFunctionDef)) and n.name == method_name),
+                  None,
+              )
+              if node is None or not hasattr(node, 'end_lineno'):
+                  raise SystemExit(f'cannot find method {class_name}.{method_name}')
+              lines = source.splitlines(keepends=True)
+              repl = textwrap.indent(textwrap.dedent(replacement).strip('\n'), '    ') + '\n'
+              lines[node.lineno - 1 : node.end_lineno] = [repl]
+              return ''.join(lines)
+
+          tests = tests_path.read_text(encoding='utf-8')
+          if '    ContractError,\n' not in tests:
+              tests = tests.replace('    EffectStatus,\n', '    ContractError,\n    EffectStatus,\n', 1)
+
+          tests = replace_top_level(
+              tests,
+              ast.ClassDef,
+              'RecordingPublisher',
+              '''
+              class RecordingPublisher:
+                  def __init__(
+                      self,
+                      store: ContinuityStore,
+                      *,
+                      timeout: bool = False,
+                      ack_stream: str | None = None,
+                  ) -> None:
+                      self.store = store
+                      self.timeout = timeout
+                      self.ack_stream = ack_stream
+                      self.calls: list[dict[str, Any]] = []
+
+                  async def publish(
+                      self,
+                      event: EventEnvelope,
+                      *,
+                      message_id: str,
+                      expected_stream: str,
+                  ) -> PublishAck:
+                      self.calls.append(
+                          {
+                              "event_id": event.identity.event_id,
+                              "message_id": message_id,
+                              "expected_stream": expected_stream,
+                              "journal_state_during_publish": self.store.journal_state(
+                                  event.identity.event_id
+                              ).value,
+                          }
+                      )
+                      if self.timeout:
+                          raise TimeoutError("simulated publish timeout")
+                      return PublishAck(
+                          event_id=event.identity.event_id,
+                          stream=self.ack_stream or expected_stream,
+                          sequence=event.identity.origin_sequence,
+                          duplicate=False,
+                          acknowledged_at=datetime(2026, 8, 9, 0, 0, tzinfo=UTC),
+                      )
+              ''',
+          )
+
+          tests = replace_top_level(
+              tests,
+              ast.FunctionDef,
+              'test_f2p_publish_ack_transitions_journal_once',
+              '''
+              def test_f2p_publish_ack_transitions_journal_once(engine: ContinuityEngine) -> None:
+                  """Only an acknowledgement for the expected physical stream may publish a journal row."""
+                  event = sample_event(engine, sequence=5985)
+                  publisher = RecordingPublisher(engine.store)
+                  ack = asyncio.run(engine.publish_event(event.identity.event_id, publisher))
+                  assert publisher.calls[0]["journal_state_during_publish"] == "PUBLISHING"
+                  assert publisher.calls[0]["message_id"] == event.identity.event_id
+                  assert ack.stream == engine.store.region("east")["physical_stream"]
+                  assert engine.store.journal_state(event.identity.event_id).value == "PUBLISHED"
+
+                  wrong_event = sample_event(engine, sequence=5984)
+                  wrong_stream = engine.store.region("west")["physical_stream"]
+                  wrong_publisher = RecordingPublisher(engine.store, ack_stream=wrong_stream)
+                  with pytest.raises(ContractError):
+                      asyncio.run(engine.publish_event(wrong_event.identity.event_id, wrong_publisher))
+                  assert wrong_publisher.calls[0]["journal_state_during_publish"] == "PUBLISHING"
+                  assert engine.store.journal_state(wrong_event.identity.event_id).value == "RETRY"
+                  attempt = engine.store.publish_attempts(wrong_event.identity.event_id)[-1]
+                  assert attempt["outcome"] == "ERROR"
+                  assert attempt["error_code"] == "ACK_STREAM_MISMATCH"
+              ''',
+          )
+
+          tests = replace_top_level(
+              tests,
+              ast.FunctionDef,
+              'test_f2p_reconcile_ignores_hub_sequence_equivalence',
+              '''
+              def test_f2p_reconcile_ignores_hub_sequence_equivalence(engine: ContinuityEngine) -> None:
+                  """Complete stable origin identities converge even when hub delivery positions are unrelated."""
+                  complete_archive(engine, "east")
+                  for consumer in engine.store.required_consumers():
+                      set_checkpoint(engine, consumer, "east", effect=6000)
+                  engine.store.execute(
+                      "UPDATE archive_index SET hub_stream_sequence=origin_sequence-1 "
+                      "WHERE region='east' AND generation=1"
+                  )
+                  summary = engine.reconcile_region("east", 1)
+                  assert summary.missing_count == 0
+                  assert summary.unexpected_count == 0
+                  assert summary.metadata_mismatch_count == 0
+                  assert "SEQUENCE_LAG" not in finding_types(summary)
+                  assert summary.converged is True
+              ''',
+          )
+
+          tests = replace_top_level(
+              tests,
+              ast.FunctionDef,
+              'test_f2p_delayed_retry_dedupes_beyond_server_window',
+              '''
+              def test_f2p_delayed_retry_dedupes_beyond_server_window(engine: ContinuityEngine) -> None:
+                  """Durable archive/effect identity prevents duplicates after server-side dedupe is no longer authority."""
+                  event = sample_event(engine, region="west", sequence=5800)
+                  engine.store.execute(
+                      "DELETE FROM processing_effects WHERE consumer_name='telemetry-indexer' AND event_id=?",
+                      (event.identity.event_id,),
+                  )
+                  engine.store.execute(
+                      "DELETE FROM effect_dispatches WHERE consumer_name='telemetry-indexer' AND event_id=?",
+                      (event.identity.event_id,),
+                  )
+
+                  asyncio.run(
+                      engine.process_delivery(
+                          FakeDelivery(event, delivery_count=1),
+                          worker_id="first-window-worker",
+                          fence_epoch=1,
+                      )
+                  )
+                  asyncio.run(
+                      engine.process_delivery(
+                          FakeDelivery(event, delivery_count=300),
+                          worker_id="post-window-worker",
+                          fence_epoch=1,
+                      )
+                  )
+
+                  assert dispatch_count(engine, "telemetry-indexer", event.identity.event_id) == 1
+                  assert int(
+                      engine.store.scalar(
+                          "SELECT COUNT(*) FROM processing_effects WHERE consumer_name=? AND event_id=?",
+                          ("telemetry-indexer", event.identity.event_id),
+                      )
+                      or 0
+                  ) == 1
+                  effect = engine.store.effect("telemetry-indexer", event.identity.event_id)
+                  assert effect is not None and effect.status is EffectStatus.COMMITTED
+
+                  complete_archive(engine, "west")
+                  archive_before = engine.store.archive_record(event.identity.event_id)
+                  assert archive_before is not None
+                  assert engine.store.upsert_archive_record(archive_before) is False
+                  assert int(
+                      engine.store.scalar(
+                          "SELECT COUNT(*) FROM archive_index WHERE event_id=?",
+                          (event.identity.event_id,),
+                      )
+                      or 0
+                  ) == 1
+
+                  ids = {engine.message_id_for_event(event, attempt_no=n) for n in (1, 2, 30, 300)}
+                  assert ids == {event.identity.event_id}
+              ''',
+          )
+
+          tests = replace_top_level(
+              tests,
+              ast.FunctionDef,
+              'test_f2p_stale_recovery_worker_is_fenced',
+              '''
+              def test_f2p_stale_recovery_worker_is_fenced(engine: ContinuityEngine) -> None:
+                  """Replay rejects a stale token at entry and revalidates fencing between applied items."""
+                  now = datetime.now(UTC)
+                  first = engine.acquire_recovery_lease(
+                      region="east",
+                      owner_id="worker-a",
+                      ttl_seconds=300,
+                      at=now,
+                  )
+                  current = engine.store.write_lease(
+                      region="east",
+                      owner_id="worker-a",
+                      fence_epoch=first.fence_epoch + 1,
+                      acquired_at=now,
+                      renewed_at=now + timedelta(seconds=1),
+                      expires_at=now + timedelta(minutes=5),
+                  )
+                  assert current.fence_epoch > first.fence_epoch
+
+                  entry_event = "evt-east-g01-005999"
+                  entry_plan = engine.store.insert_replay_plan(
+                      plan_id="stale-fence-entry",
+                      replay_range=ReplayRange("east", 1, 5999, 5999),
+                      status=ReplayStatus.APPROVED,
+                      reason="verify stale execution fencing at entry",
+                      created_by="verifier",
+                      event_ids=[entry_event],
+                      approved_by="shift-lead",
+                      approved_at=now,
+                  )
+                  with pytest.raises(FencingError):
+                      asyncio.run(
+                          engine.execute_replay_plan(
+                              entry_plan.plan_id,
+                              owner_id="worker-a",
+                              fence_epoch=first.fence_epoch,
+                              publisher=RecordingPublisher(engine.store),
+                          )
+                      )
+                  after_entry = engine.store.replay_plan(entry_plan.plan_id)
+                  assert after_entry is not None and after_entry.status is ReplayStatus.APPROVED
+
+                  west_lease = engine.acquire_recovery_lease(
+                      region="west",
+                      owner_id="worker-mid-plan",
+                      ttl_seconds=300,
+                      at=now,
+                  )
+                  mid_ids = ["evt-west-g01-005998", "evt-west-g01-005999"]
+                  for event_id in mid_ids:
+                      engine.store.execute("DELETE FROM archive_index WHERE event_id=?", (event_id,))
+                  mid_plan = engine.store.insert_replay_plan(
+                      plan_id="stale-fence-mid-plan",
+                      replay_range=ReplayRange("west", 1, 5998, 5999),
+                      status=ReplayStatus.APPROVED,
+                      reason="verify fence revalidation between replay items",
+                      created_by="verifier",
+                      event_ids=mid_ids,
+                      approved_by="shift-lead",
+                      approved_at=now,
+                  )
+
+                  class FenceRotatingPublisher(RecordingPublisher):
+                      async def publish(
+                          self,
+                          event: EventEnvelope,
+                          *,
+                          message_id: str,
+                          expected_stream: str,
+                      ) -> PublishAck:
+                          ack = await super().publish(
+                              event,
+                              message_id=message_id,
+                              expected_stream=expected_stream,
+                          )
+                          if len(self.calls) == 1:
+                              lease = engine.store.current_lease("west")
+                              assert lease is not None
+                              rotated_at = datetime.now(UTC)
+                              engine.store.write_lease(
+                                  region="west",
+                                  owner_id=lease.owner_id,
+                                  fence_epoch=lease.fence_epoch + 1,
+                                  acquired_at=lease.acquired_at,
+                                  renewed_at=rotated_at,
+                                  expires_at=rotated_at + timedelta(minutes=5),
+                              )
+                          return ack
+
+                  publisher = FenceRotatingPublisher(engine.store)
+                  outcome = asyncio.run(
+                      engine.execute_replay_plan(
+                          mid_plan.plan_id,
+                          owner_id=west_lease.owner_id,
+                          fence_epoch=west_lease.fence_epoch,
+                          publisher=publisher,
+                      )
+                  )
+                  items = {item.event_id: item for item in engine.store.replay_items(mid_plan.plan_id)}
+                  assert len(publisher.calls) == 1
+                  assert items[mid_ids[0]].state == "PUBLISHED"
+                  assert items[mid_ids[1]].state == "HELD"
+                  assert outcome.published == 1
+                  assert outcome.held == 1
+                  assert outcome.completed is False
+              ''',
+          )
+
+          ast.parse(tests)
+          tests_path.write_text(tests, encoding='utf-8')
+
+          coverage = coverage_path.read_text(encoding='utf-8')
+          if 'def test_p2p_recovery_cli_entrypoints_remain_operational' not in coverage:
+              coverage = coverage.rstrip() + textwrap.dedent(
+                  '''
+
+
+                  def test_p2p_recovery_cli_entrypoints_remain_operational(tmp_path: Path) -> None:
+                      """Existing generation, replay, lease, execute and retention commands remain wired to durable state."""
+                      runtime_root = _operator_root(tmp_path)
+                      database = runtime_root / "state/continuity.db"
+                      engine = ContinuityEngine.from_json_file(
+                          ContinuityStore(database), runtime_root / "config/continuity.json"
+                      )
+                      engine.store.execute("DELETE FROM recovery_leases")
+
+                      def run_cli(*args: str, allowed: set[int] = {0}) -> dict[str, object]:
+                          completed = subprocess.run(
+                              [str(ROOT / "bin/continuityctl"), *args],
+                              check=False,
+                              capture_output=True,
+                              text=True,
+                              timeout=45,
+                          )
+                          assert completed.returncode in allowed, completed.stderr
+                          return json.loads(completed.stdout)
+
+                      planned = run_cli(
+                          "plan-replay",
+                          "east",
+                          "--generation",
+                          "1",
+                          "--created-by",
+                          "cli-contract-test",
+                          "--reason",
+                          "exercise preserved recovery CLI",
+                          "--root",
+                          str(runtime_root),
+                          "--compact",
+                      )
+                      assert planned["blocked_reason"] is None
+                      assert planned["plan"] is not None
+
+                      listed = run_cli(
+                          "list-replay",
+                          "--region",
+                          "east",
+                          "--root",
+                          str(runtime_root),
+                          "--compact",
+                      )
+                      assert any(plan["plan_id"] == planned["plan"]["plan_id"] for plan in listed)
+
+                      retention = run_cli(
+                          "retention",
+                          "east",
+                          "--generation",
+                          "1",
+                          "--limit",
+                          "5",
+                          "--root",
+                          str(runtime_root),
+                          "--compact",
+                          allowed={0, 2},
+                      )
+                      assert retention["region"] == "east"
+                      assert "safe_sequence" in retention and "eligible_event_ids" in retention
+
+                      _complete_archive(engine, "west")
+                      acquired = run_cli(
+                          "lease",
+                          "--root",
+                          str(runtime_root),
+                          "--compact",
+                          "acquire",
+                          "west",
+                          "--owner",
+                          "cli-recovery-worker",
+                          "--ttl",
+                          "300",
+                      )
+                      epoch = int(acquired["fence_epoch"])
+
+                      executed = run_cli(
+                          "execute-replay",
+                          "rp-west-incident-001",
+                          "--owner",
+                          "cli-recovery-worker",
+                          "--epoch",
+                          str(epoch),
+                          "--root",
+                          str(runtime_root),
+                          "--compact",
+                      )
+                      assert executed["completed"] is True
+                      replay_after = engine.store.replay_plan("rp-west-incident-001")
+                      assert replay_after is not None and replay_after.status.value == "COMPLETED"
+
+                      renewed = run_cli(
+                          "lease",
+                          "--root",
+                          str(runtime_root),
+                          "--compact",
+                          "renew",
+                          "west",
+                          "--owner",
+                          "cli-recovery-worker",
+                          "--epoch",
+                          str(epoch),
+                          "--ttl",
+                          "300",
+                      )
+                      assert int(renewed["fence_epoch"]) == epoch
+                      released = run_cli(
+                          "lease",
+                          "--root",
+                          str(runtime_root),
+                          "--compact",
+                          "release",
+                          "west",
+                          "--owner",
+                          "cli-recovery-worker",
+                          "--epoch",
+                          str(epoch),
+                      )
+                      assert released["released"] is True
+                      assert engine.store.current_lease("west") is None
+
+                      pending = engine.store.record_pending_generation(
+                          "east",
+                          generation=2,
+                          stream_fingerprint="cli-pending-generation-2",
+                          first_sequence=1,
+                          last_observed_sequence=10,
+                          at=datetime(2026, 8, 9, 7, 0, tzinfo=UTC),
+                      )
+                      assert pending.status is GenerationStatus.PENDING_APPROVAL
+                      approved = run_cli(
+                          "approve-generation",
+                          "east",
+                          "2",
+                          "--approved-by",
+                          "cli-contract-test",
+                          "--root",
+                          str(runtime_root),
+                          "--compact",
+                      )
+                      assert approved["status"] == "CONFIRMED"
+
+                      generations = run_cli(
+                          "generations",
+                          "--region",
+                          "east",
+                          "--root",
+                          str(runtime_root),
+                          "--compact",
+                      )
+                      assert any(
+                          row["generation"] == 2 and row["status"] == "CONFIRMED"
+                          for row in generations
+                      )
+                  '''
+              ) + '\n'
+          ast.parse(coverage)
+          coverage_path.write_text(coverage, encoding='utf-8')
+
+          solution = solution_path.read_text(encoding='utf-8')
+          solution = replace_method(
+              solution,
+              'ContinuityEngine',
+              'publish_event',
+              '''
+              async def publish_event(self, event_id: str, publisher: Publisher) -> PublishAck:
+                  event = self.store.event_by_id(event_id)
+                  if event is None:
+                      raise ContractError(f"event {event_id} is not in the edge journal")
+                  generation = self.validate_event_generation(event)
+                  if generation.status is not GenerationStatus.CONFIRMED:
+                      self.store.mark_held(event.identity.event_id, reason="origin generation is not confirmed")
+                      raise ContractError(f"event {event.identity.event_id} belongs to an unconfirmed generation")
+                  expected_stream = self.expected_stream_for_event(event)
+                  attempt_no = self._next_attempt(event.identity.event_id)
+                  message_id = self.message_id_for_event(event, attempt_no=attempt_no)
+                  attempt_no = self.store.begin_publish_attempt(
+                      event.identity.event_id,
+                      message_id=message_id,
+                      requested_stream=expected_stream,
+                  )
+                  try:
+                      ack = await publisher.publish(
+                          event,
+                          message_id=message_id,
+                          expected_stream=expected_stream,
+                      )
+                  except TimeoutError as exc:
+                      self.store.finish_publish_attempt(
+                          event.identity.event_id,
+                          attempt_no,
+                          outcome="TIMEOUT",
+                          error_code="PUBLISH_TIMEOUT",
+                          error_text=str(exc),
+                      )
+                      raise
+                  except Exception as exc:
+                      self.store.finish_publish_attempt(
+                          event.identity.event_id,
+                          attempt_no,
+                          outcome="ERROR",
+                          error_code=type(exc).__name__,
+                          error_text=str(exc),
+                      )
+                      raise
+                  if ack.stream != expected_stream:
+                      message = (
+                          f"publish acknowledgement stream {ack.stream} does not match "
+                          f"expected {expected_stream}"
+                      )
+                      self.store.finish_publish_attempt(
+                          event.identity.event_id,
+                          attempt_no,
+                          outcome="ERROR",
+                          error_code="ACK_STREAM_MISMATCH",
+                          error_text=message,
+                      )
+                      raise ContractError(message)
+                  self.store.finish_publish_attempt(
+                      event.identity.event_id,
+                      attempt_no,
+                      outcome="DUPLICATE_ACK" if ack.duplicate else "ACKED",
+                      ack=ack,
+                  )
+                  self.store.update_generation_high_watermark(
+                      event.identity.region,
+                      event.identity.generation,
+                      event.identity.origin_sequence,
+                  )
+                  return ack
+              ''',
+          )
+          ast.parse(solution)
+          solution_path.write_text(solution, encoding='utf-8')
+
+          mapping = json.loads(map_path.read_text(encoding='utf-8'))
+          mapping['requirements']['REQ-02'] = (
+              'The edge journal records publish success only after a positive durable publish acknowledgement '
+              'for the expected physical origin stream; wrong-stream acknowledgements remain retryable failures.'
+          )
+          mapping['requirements']['REQ-11'] = (
+              'Reconciliation compares stable event/origin identity; hub aggregate delivery sequence is not an '
+              'edge completeness or convergence key.'
+          )
+          mapping['requirements']['REQ-15'] = (
+              'A delayed retry remains idempotent after JetStream server-side duplicate tracking may have expired; '
+              'durable archive identity and consumer effect identity still prevent duplicate durable outcomes.'
+          )
+          mapping['requirements']['REQ-20'] = (
+              'Recovery ownership uses monotonically increasing fencing epochs; expiry/reacquisition advances the '
+              'epoch even for the same owner id, replay rejects stale tokens before execution and revalidates them '
+              'while applying items, and stale renewal/release cannot mutate the current lease.'
+          )
+          mapping['requirements']['REQ-26'] = (
+              'Existing non-diagnostic continuityctl generation, replay, lease, execution and retention entrypoints '
+              'remain wired to their durable operational behavior.'
+          )
+          names = {row[0] for row in mapping['tests']}
+          new_row = [
+              'test_p2p_recovery_cli_entrypoints_remain_operational',
+              'P2P',
+              'REQ-26',
+          ]
+          if new_row[0] not in names:
+              mapping['tests'].append(new_row)
+          map_path.write_text(json.dumps(mapping, indent=2) + '\n', encoding='utf-8')
+          PY
+
+          python3 -m pip install --quiet ruff==0.12.8
+          ruff format \
+            jetstream-regional-stream-continuity/tests/test_continuity.py \
+            jetstream-regional-stream-continuity/tests/test_contract_coverage.py \
+            jetstream-regional-stream-continuity/solution/files/engine.py
+          ruff check jetstream-regional-stream-continuity/tests
+          python3 -m py_compile \
+            jetstream-regional-stream-continuity/tests/test_continuity.py \
+            jetstream-regional-stream-continuity/tests/test_contract_coverage.py \
+            jetstream-regional-stream-continuity/solution/files/engine.py
+          python3 .terminus/validate_task_complexity.py jetstream-regional-stream-continuity
+
+          git config user.name 'Terminus CI Orchestrator'
+          git config user.email 'actions@users.noreply.github.com'
+          git add \
+            jetstream-regional-stream-continuity/tests/test_continuity.py \
+            jetstream-regional-stream-continuity/tests/test_contract_coverage.py \
+            jetstream-regional-stream-continuity/solution/files/engine.py \
+            .terminus/designs/jetstream-regional-stream-continuity-test-map.json
+          if git diff --cached --quiet; then
+            echo 'No Q4 round-two remediation changes to commit.'
+            exit 0
+          fi
+          git commit -m 'Repair JetStream verifier after fresh Q4 review'
+          git push origin HEAD:task/jetstream-quality-interlock
