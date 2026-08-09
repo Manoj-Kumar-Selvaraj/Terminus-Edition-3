@@ -31,6 +31,11 @@ COMMON_RULES = [
     ".terminus/agents/PROMPTS.md",
 ]
 
+QUALITY_RULES = [
+    ".terminus/agents/QUALITY_AGENT_REGISTRY.md",
+    ".terminus/agents/QUALITY_AGENT_PROMPTS.md",
+]
+
 WRITER_HIDDEN = [
     "solution/",
     "tests/ bodies",
@@ -180,6 +185,80 @@ ROLES: dict[str, dict[str, object]] = {
         ],
         "excluded": ["a desired verdict", "reviews that are not yet frozen"],
     },
+    "spec-test-contract": {
+        "role": "Spec-Test Contract Reviewer",
+        "question": "Is every substantive verifier behavior discoverable from the solver-visible contract, every material requirement tested, and every grading-relevant statement unambiguous?",
+        "allowed": [
+            "instruction.md",
+            "all solver-visible contracts referenced by instruction.md",
+            "tests/",
+            "test map when needed to identify classification only",
+            "environment interfaces required to interpret observable behavior",
+        ],
+        "excluded": [
+            "Q1/Q2/Q3 conclusions before the independent matrix is frozen",
+            "Verifier Author coverage rationale",
+            "previous Spec-Test Contract Reviewer verdict",
+            "other specialist verdicts",
+            "desired aggregate outcome",
+        ],
+        "quality": True,
+    },
+    "production-logic": {
+        "role": "Production Logic Auditor",
+        "question": "Is the solver-visible core genuinely complex, reachable, coupled, non-toy and credible as production logic rather than LOC or module padding?",
+        "allowed": [
+            "task.toml",
+            "solver-visible environment/runtime/configuration code",
+            "entrypoints and operator workflows",
+            "runtime-authenticity and complexity reports",
+            "representative data/state and incident evidence",
+        ],
+        "excluded": [
+            "Complexity Governor verdict as a conclusion to copy",
+            "creator claims that code is production-grade",
+            "previous Production Logic Auditor verdict",
+            "other specialist verdicts",
+            "desired difficulty tier",
+        ],
+        "quality": True,
+    },
+    "difficulty-sim-gpt": {
+        "role": "Model Perspective Difficulty Simulator",
+        "question": "In a cold GPT/Codex-style diagnostic solve, what strategy, shortcuts, first divergence and likely difficulty signal emerge? This is simulation, not official GPT evidence.",
+        "allowed": [
+            "solver-visible task workspace only before solve",
+            "normal task tools/runtime",
+            "final verifier outcome only after the simulated solve is frozen",
+        ],
+        "excluded": [
+            "solution/",
+            "hidden tests before solve",
+            "private defect graph/test map",
+            "previous solver trajectories",
+            "Claude-perspective result",
+            "desired tier",
+        ],
+        "quality": True,
+    },
+    "difficulty-sim-claude": {
+        "role": "Model Perspective Difficulty Simulator",
+        "question": "In a cold Claude/Claude-Code-style diagnostic solve, what strategy, shortcuts, first divergence and likely difficulty signal emerge? This is simulation, not official Claude evidence.",
+        "allowed": [
+            "solver-visible task workspace only before solve",
+            "normal task tools/runtime",
+            "final verifier outcome only after the simulated solve is frozen",
+        ],
+        "excluded": [
+            "solution/",
+            "hidden tests before solve",
+            "private defect graph/test map",
+            "previous solver trajectories",
+            "GPT-perspective result",
+            "desired tier",
+        ],
+        "quality": True,
+    },
 }
 
 
@@ -210,6 +289,9 @@ def build(
     contract_hash = role_contract_hash(ROOT, role)
     review_id = review_id or f"{task}-{commit[:8]}-{role_key}-{uuid.uuid4().hex[:10]}"
     output_path = f".terminus/reviews/{task}/{commit[:8]}/{review_id}.json"
+    authoritative_rules = list(COMMON_RULES)
+    if bool(spec.get("quality")):
+        authoritative_rules.extend(QUALITY_RULES)
     return {
         "schema_version": "3.0",
         "review_id": review_id,
@@ -223,7 +305,7 @@ def build(
         "state": state,
         "role": role,
         "question": str(spec["question"]),
-        "authoritative_rules": COMMON_RULES,
+        "authoritative_rules": authoritative_rules,
         "evidence_allowed": list(spec["allowed"]),
         "evidence_excluded": list(spec["excluded"]),
         "prior_verdicts_visible": False,
