@@ -8,7 +8,9 @@ on:
       - "**/environment/**"
       - ".terminus/designs/**"
       - ".terminus/validate_runtime_authenticity.py"
+      - ".terminus/validate_business_module_diversity.py"
       - ".terminus/tests/test_runtime_authenticity.py"
+      - ".terminus/tests/test_business_module_diversity.py"
       - ".terminus/agents/PRODUCTION_AUTHENTICITY.md"
       - ".terminus/agents/CREATION_CONTROLLER.md"
       - ".terminus/agents/CREATION_PIPELINE.md"
@@ -22,7 +24,9 @@ on:
       - "**/environment/**"
       - ".terminus/designs/**"
       - ".terminus/validate_runtime_authenticity.py"
+      - ".terminus/validate_business_module_diversity.py"
       - ".terminus/tests/test_runtime_authenticity.py"
+      - ".terminus/tests/test_business_module_diversity.py"
       - ".terminus/agents/PRODUCTION_AUTHENTICITY.md"
       - ".terminus/agents/CREATION_CONTROLLER.md"
       - ".terminus/agents/CREATION_PIPELINE.md"
@@ -43,13 +47,19 @@ jobs:
         run: python3 -m pip install --quiet pytest==8.4.1
       - name: Production-authenticity policy
         run: python3 .terminus/validate_production_policy.py
-      - name: Runtime-authenticity regression suite
-        run: python3 -m pytest .terminus/tests/test_runtime_authenticity.py -q
+      - name: Production-authenticity regression suite
+        run: >-
+          python3 -m pytest
+          .terminus/tests/test_runtime_authenticity.py
+          .terminus/tests/test_business_module_diversity.py
+          -q
       - name: Validate declared production profiles
         shell: bash
         run: |
           set -euo pipefail
-          python3 -m py_compile .terminus/validate_runtime_authenticity.py
+          python3 -m py_compile \
+            .terminus/validate_runtime_authenticity.py \
+            .terminus/validate_business_module_diversity.py
           found=0
           shopt -s nullglob
           for manifest in .terminus/designs/*-production.json; do
@@ -58,6 +68,7 @@ jobs:
             found=1
             echo "==> production authenticity: $task"
             python3 .terminus/validate_runtime_authenticity.py "$task"
+            python3 .terminus/validate_business_module_diversity.py "$task"
           done
           if (( found == 0 )); then
             echo "No production-authenticity manifests found."
