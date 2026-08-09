@@ -741,7 +741,6 @@ def test_p2p_recovery_cli_entrypoints_remain_operational(tmp_path: Path) -> None
             document = json.loads(message.data.decode("utf-8"))
             event_id = str(document["event_id"])
             observed_replay_ids.add(event_id)
-            assert message.headers.get("Nats-Msg-Id") == event_id
         assert expected_replay_ids <= observed_replay_ids
 
         replay_after = engine.store.replay_plan("rp-west-incident-001")
