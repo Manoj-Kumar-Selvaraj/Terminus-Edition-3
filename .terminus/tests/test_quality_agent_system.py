@@ -96,5 +96,6 @@ def test_q4_is_bidirectional_and_q6_is_not_loc_only() -> None:
     q6 = prompts.split("## Q6 — Production Logic Auditor", 1)[1].split("## Q7 —", 1)[0]
     assert "requirement -> tests" in q4
     assert "test behavior -> discoverable requirement" in q4
-    assert "Raw LOC" in q6
+    assert "LOC count" in q6
+    assert "reachability" in q6.lower()
     assert ">=3,000 substantive reachable" in q6
