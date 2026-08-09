@@ -3,7 +3,7 @@
   "task": "jetstream-regional-stream-continuity",
   "requirements": {
     "REQ-01": "Accepted events use one stable event/message identity across publish retries and reconnect replay.",
-    "REQ-02": "The edge journal records publish success only after a positive durable publish acknowledgement.",
+    "REQ-02": "The edge journal records publish success only after a positive durable publish acknowledgement for the expected physical origin stream; wrong-stream acknowledgements remain retryable failures.",
     "REQ-03": "Origin generation/incarnation is explicit; lower sequence after an unapproved generation change is held rather than merged, and historical events retain their accepted generation.",
     "REQ-04": "The central raw archive is populated by configured sources only and does not accept local raw telemetry writes.",
     "REQ-05": "Physical origin stream names and JetStream domain mappings are unambiguous across regions.",
@@ -12,21 +12,22 @@
     "REQ-08": "Application effect state, checkpoint advancement and acknowledgement decisions preserve crash-safe processing semantics.",
     "REQ-09": "Poison events are quarantined without falsely marking the effect complete or losing completed application-progress semantics.",
     "REQ-10": "Restart progress validates JetStream consumer state against the durable application effect/checkpoint ledger.",
-    "REQ-11": "Reconciliation compares stable event/origin identity, not hub aggregate sequence equivalence.",
+    "REQ-11": "Reconciliation compares stable event/origin identity; hub aggregate delivery sequence is not an edge completeness or convergence key.",
     "REQ-12": "Reconciliation detects a missing event even when an extra duplicate keeps aggregate counts equal.",
     "REQ-13": "Overall convergence requires the hub archive and every configured required durable consumer to reach confirmed origin watermarks.",
     "REQ-14": "Replay planning selects only missing stable event identities/ranges for an approved region generation.",
-    "REQ-15": "A delayed retry remains idempotent after JetStream server-side duplicate tracking may have expired.",
+    "REQ-15": "A delayed retry remains idempotent after JetStream server-side duplicate tracking may have expired; durable archive identity and consumer effect identity still prevent duplicate durable outcomes.",
     "REQ-16": "Edge journal cleanup never crosses the confirmed hub archive watermark.",
     "REQ-17": "Edge journal cleanup never crosses the slowest required durable consumer watermark.",
     "REQ-18": "Rows referenced by approved or running replay plans remain pinned until the plan reaches a terminal state.",
     "REQ-19": "Configured raw archive/journal retention covers the declared maximum disconnect and replay recovery horizon.",
-    "REQ-20": "Recovery ownership uses monotonically increasing fencing epochs; expiry/reacquisition advances the epoch even for the same owner id, and stale workers cannot apply replay actions.",
+    "REQ-20": "Recovery ownership uses monotonically increasing fencing epochs; expiry/reacquisition advances the epoch even for the same owner id, replay rejects stale tokens before execution and revalidates them while applying items, and stale renewal/release cannot mutate the current lease.",
     "REQ-21": "Concurrent recovery planners cannot create overlapping active replay ranges for one region and generation.",
     "REQ-22": "Derived processing output is isolated from the raw sourced archive subject space.",
     "REQ-23": "Cleanup excludes rows newer than the minimum journal age and rows carrying an explicit retention hold.",
     "REQ-24": "The submitted repair materializes health.json and reconciliation.json under /app/continuity/out/ without rewriting captured incident state to manufacture success.",
-    "REQ-25": "continuityctl inspect, reconcile and verify may record diagnostic reconciliation observations but must not apply replay, retention or equivalent recovery-state mutations."
+    "REQ-25": "continuityctl inspect, reconcile and verify may record diagnostic reconciliation observations but must not apply replay, retention or equivalent recovery-state mutations.",
+    "REQ-26": "Existing non-diagnostic continuityctl generation, replay, lease, execution and retention entrypoints remain wired to their durable operational behavior."
   },
   "tests": [
     [
@@ -223,6 +224,11 @@
       "test_p2p_stale_lease_release_is_rejected",
       "P2P",
       "REQ-20"
+    ],
+    [
+      "test_p2p_recovery_cli_entrypoints_remain_operational",
+      "P2P",
+      "REQ-26"
     ]
   ]
 }

@@ -51,8 +51,12 @@ class ContinuityEngine(BaseContinuityEngine):
             raise ContractError(f"event {event_id} is not in the edge journal")
         generation = self.validate_event_generation(event)
         if generation.status is not GenerationStatus.CONFIRMED:
-            self.store.mark_held(event.identity.event_id, reason="origin generation is not confirmed")
-            raise ContractError(f"event {event.identity.event_id} belongs to an unconfirmed generation")
+            self.store.mark_held(
+                event.identity.event_id, reason="origin generation is not confirmed"
+            )
+            raise ContractError(
+                f"event {event.identity.event_id} belongs to an unconfirmed generation"
+            )
         expected_stream = self.expected_stream_for_event(event)
         attempt_no = self._next_attempt(event.identity.event_id)
         message_id = self.message_id_for_event(event, attempt_no=attempt_no)
@@ -62,7 +66,11 @@ class ContinuityEngine(BaseContinuityEngine):
             requested_stream=expected_stream,
         )
         try:
-            ack = await publisher.publish(event, message_id=message_id, expected_stream=expected_stream)
+            ack = await publisher.publish(
+                event,
+                message_id=message_id,
+                expected_stream=expected_stream,
+            )
         except TimeoutError as exc:
             self.store.finish_publish_attempt(
                 event.identity.event_id,
@@ -81,6 +89,19 @@ class ContinuityEngine(BaseContinuityEngine):
                 error_text=str(exc),
             )
             raise
+        if ack.stream != expected_stream:
+            message = (
+                f"publish acknowledgement stream {ack.stream} does not match "
+                f"expected {expected_stream}"
+            )
+            self.store.finish_publish_attempt(
+                event.identity.event_id,
+                attempt_no,
+                outcome="ERROR",
+                error_code="ACK_STREAM_MISMATCH",
+                error_text=message,
+            )
+            raise ContractError(message)
         self.store.finish_publish_attempt(
             event.identity.event_id,
             attempt_no,
@@ -223,7 +244,11 @@ class ContinuityEngine(BaseContinuityEngine):
         if self._dispatch_count(consumer_name, event.identity.event_id) > 0:
             return False
         consumer = next(
-            (row for row in self.store.consumers() if str(row["consumer_name"]) == consumer_name),
+            (
+                row
+                for row in self.store.consumers()
+                if str(row["consumer_name"]) == consumer_name
+            ),
             None,
         )
         if consumer is None:
@@ -281,11 +306,16 @@ class ContinuityEngine(BaseContinuityEngine):
                     event.identity.region,
                     event.identity.generation,
                 ),
-                detail={"delivery_count": delivery.delivery_count, "effect_complete": False},
+                detail={
+                    "delivery_count": delivery.delivery_count,
+                    "effect_complete": False,
+                },
             )
 
         existing = self.store.effect(delivery.consumer_name, event.identity.event_id)
-        duplicate_effect = existing is not None and existing.status is EffectStatus.COMMITTED
+        duplicate_effect = (
+            existing is not None and existing.status is EffectStatus.COMMITTED
+        )
         payload = self._consumer_effect_payload(delivery.consumer_name, event)
         if not duplicate_effect:
             effect = self.store.prepare_effect(
@@ -414,7 +444,9 @@ class ContinuityEngine(BaseContinuityEngine):
                     )
                 )
 
-        duplicate_count = sum(record.duplicate_observation_count for record in archive_by_id.values())
+        duplicate_count = sum(
+            record.duplicate_observation_count for record in archive_by_id.values()
+        )
         if duplicate_count:
             findings.append(
                 Finding(
@@ -429,9 +461,13 @@ class ContinuityEngine(BaseContinuityEngine):
                 )
             )
 
-        archive_sequences = [record.identity.origin_sequence for record in archive_by_id.values()]
+        archive_sequences = [
+            record.identity.origin_sequence for record in archive_by_id.values()
+        ]
         archive_floor = contiguous_floor(archive_sequences)
-        journal_sequences = [event.identity.origin_sequence for event in journal_by_id.values()]
+        journal_sequences = [
+            event.identity.origin_sequence for event in journal_by_id.values()
+        ]
         journal_floor = contiguous_floor(journal_sequences)
         target = min(journal_floor, archive_floor)
         consumer_findings = self._required_consumer_lag(region, generation, target)
@@ -445,7 +481,9 @@ class ContinuityEngine(BaseContinuityEngine):
         ]
         summary = ReconciliationSummary(
             run_id=run_id,
-            status=ReconcileStatus.CONVERGED if not blocking else ReconcileStatus.DIVERGED,
+            status=ReconcileStatus.CONVERGED
+            if not blocking
+            else ReconcileStatus.DIVERGED,
             journal_event_count=len(journal_by_id),
             archive_event_count=len(archive_by_id),
             missing_count=len(missing_ids),
@@ -494,7 +532,9 @@ class ContinuityEngine(BaseContinuityEngine):
         if generation_record is None:
             return ReplayDecision(None, (), "unknown generation")
         if generation_record.status is not GenerationStatus.CONFIRMED:
-            return ReplayDecision(None, (), "origin generation requires operator approval")
+            return ReplayDecision(
+                None, (), "origin generation requires operator approval"
+            )
         missing = self.missing_event_ids(region, generation)
         if not missing:
             return ReplayDecision(None, (), None)
@@ -503,7 +543,9 @@ class ContinuityEngine(BaseContinuityEngine):
         sequences = [event.identity.origin_sequence for event in missing_events]
         ranges = collapse_ranges(sequences, region=region, generation=generation)
         replay_range = ReplayRange(region, generation, min(sequences), max(sequences))
-        for active in self.store.active_replay_plans(region=region, generation=generation):
+        for active in self.store.active_replay_plans(
+            region=region, generation=generation
+        ):
             if active.replay_range.overlaps(replay_range):
                 raise ReplayConflict(
                     f"active replay plan {active.plan_id} overlaps requested range {replay_range.as_dict()}"
@@ -588,7 +630,9 @@ class ContinuityEngine(BaseContinuityEngine):
             for record in self.store.iter_archive(region=region, generation=generation)
         ]
         archive_sequence = contiguous_floor(archive_sequences)
-        consumer_sequence = self.store.slowest_required_consumer_sequence(region, generation)
+        consumer_sequence = self.store.slowest_required_consumer_sequence(
+            region, generation
+        )
         replay_pin = self.store.first_active_replay_sequence(region, generation)
         candidates_for_min = [archive_sequence, consumer_sequence]
         if replay_pin is not None:
@@ -632,7 +676,9 @@ class ContinuityEngine(BaseContinuityEngine):
         ok = True
         for consumer_name in self.store.required_consumers():
             checkpoints = self.store.checkpoints(consumer_name)
-            details[consumer_name] = [checkpoint.as_dict() for checkpoint in checkpoints]
+            details[consumer_name] = [
+                checkpoint.as_dict() for checkpoint in checkpoints
+            ]
             for checkpoint in checkpoints:
                 if not checkpoint.is_consistent:
                     ok = False

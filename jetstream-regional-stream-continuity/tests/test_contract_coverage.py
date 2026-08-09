@@ -23,7 +23,9 @@ def _build_database(path: Path) -> None:
     connection = sqlite3.connect(path)
     try:
         connection.executescript((ROOT / "sql/schema.sql").read_text(encoding="utf-8"))
-        connection.executescript((ROOT / "sql/runtime_extensions.sql").read_text(encoding="utf-8"))
+        connection.executescript(
+            (ROOT / "sql/runtime_extensions.sql").read_text(encoding="utf-8")
+        )
         connection.executescript((ROOT / "sql/seed.sql").read_text(encoding="utf-8"))
         connection.commit()
     finally:
@@ -38,7 +40,9 @@ def contract_baseline_database(tmp_path_factory: pytest.TempPathFactory) -> Path
 
 
 @pytest.fixture
-def contract_engine(tmp_path: Path, contract_baseline_database: Path) -> ContinuityEngine:
+def contract_engine(
+    tmp_path: Path, contract_baseline_database: Path
+) -> ContinuityEngine:
     database = tmp_path / "continuity.db"
     shutil.copy2(contract_baseline_database, database)
     store = ContinuityStore(database)
@@ -62,7 +66,9 @@ def _complete_archive(engine: ContinuityEngine, region: str) -> None:
     )
 
 
-def _set_required_consumers(engine: ContinuityEngine, region: str, sequence: int) -> None:
+def _set_required_consumers(
+    engine: ContinuityEngine, region: str, sequence: int
+) -> None:
     for consumer in engine.store.required_consumers():
         event_id = f"evt-{region}-g01-{sequence:06d}"
         engine.store.execute(
@@ -70,7 +76,15 @@ def _set_required_consumers(engine: ContinuityEngine, region: str, sequence: int
             "VALUES(?,?,1,?,?,?,?,?) ON CONFLICT(consumer_name,region,generation) DO UPDATE SET "
             "last_effect_sequence=excluded.last_effect_sequence,last_ack_sequence=excluded.last_ack_sequence,last_event_id=excluded.last_event_id,"
             "jetstream_ack_floor=excluded.jetstream_ack_floor,updated_at=excluded.updated_at",
-            (consumer, region, sequence, sequence, event_id, sequence, "2026-08-09T00:00:00Z"),
+            (
+                consumer,
+                region,
+                sequence,
+                sequence,
+                event_id,
+                sequence,
+                "2026-08-09T00:00:00Z",
+            ),
         )
 
 
@@ -100,7 +114,9 @@ def _protected_state_digest(database: Path) -> str:
     try:
         digest = hashlib.sha256()
         for table in tables:
-            rows = connection.execute(f'SELECT * FROM "{table}" ORDER BY rowid').fetchall()
+            rows = connection.execute(
+                f'SELECT * FROM "{table}" ORDER BY rowid'
+            ).fetchall()
             digest.update(table.encode("utf-8"))
             digest.update(
                 json.dumps(rows, separators=(",", ":"), default=str).encode("utf-8")
@@ -147,7 +163,9 @@ def test_f2p_final_health_and_reconciliation_reports_are_materialized(
     """Final reports match independently recomputed durable state and preserve incident evidence."""
     health_path = ROOT / "out/health.json"
     reconciliation_path = ROOT / "out/reconciliation.json"
-    assert health_path.is_file(), "solution must materialize /app/continuity/out/health.json"
+    assert health_path.is_file(), (
+        "solution must materialize /app/continuity/out/health.json"
+    )
     assert reconciliation_path.is_file(), (
         "solution must materialize /app/continuity/out/reconciliation.json"
     )
@@ -203,8 +221,16 @@ def test_f2p_final_health_and_reconciliation_reports_are_materialized(
 
     connection = sqlite3.connect(ROOT / "state/continuity.db")
     try:
-        assert connection.execute("SELECT COUNT(*) FROM event_journal").fetchone()[0] == 12000
-        assert connection.execute("SELECT COUNT(*) FROM consumer_checkpoints").fetchone()[0] >= 4
+        assert (
+            connection.execute("SELECT COUNT(*) FROM event_journal").fetchone()[0]
+            == 12000
+        )
+        assert (
+            connection.execute("SELECT COUNT(*) FROM consumer_checkpoints").fetchone()[
+                0
+            ]
+            >= 4
+        )
         active_plans = connection.execute(
             "SELECT COUNT(*) FROM replay_plans WHERE status IN ('APPROVED','RUNNING')"
         ).fetchone()[0]
@@ -212,7 +238,9 @@ def test_f2p_final_health_and_reconciliation_reports_are_materialized(
     finally:
         connection.close()
 
-    stream_state = json.loads((ROOT / "ops/stream-state.json").read_text(encoding="utf-8"))
+    stream_state = json.loads(
+        (ROOT / "ops/stream-state.json").read_text(encoding="utf-8")
+    )
     assert stream_state["incident_id"] == "INC-JS-2026-0808-17"
     assert stream_state["captured_at"] == "2026-08-08T17:18:10Z"
     assert stream_state["domains"]["hub"]["messages"] == 11395
@@ -224,7 +252,9 @@ def test_f2p_final_health_and_reconciliation_reports_are_materialized(
 # ---- P2P: already-correct detailed contract behavior ------------------------------------
 
 
-def test_p2p_diagnostic_cli_commands_do_not_mutate_recovery_state(tmp_path: Path) -> None:
+def test_p2p_diagnostic_cli_commands_do_not_mutate_recovery_state(
+    tmp_path: Path,
+) -> None:
     """Inspect, reconcile and verify may record observations but do not mutate recovery state."""
     runtime_root = _operator_root(tmp_path)
     database = runtime_root / "state/continuity.db"
@@ -331,3 +361,158 @@ def test_p2p_generation_approval_does_not_rewrite_historical_events(
     assert after is not None
     assert after.identity.generation == 1
     assert after.identity.origin_sequence == historical.identity.origin_sequence
+
+
+def test_p2p_recovery_cli_entrypoints_remain_operational(tmp_path: Path) -> None:
+    """Existing generation, replay, lease, execute and retention commands remain wired to durable state."""
+    runtime_root = _operator_root(tmp_path)
+    database = runtime_root / "state/continuity.db"
+    engine = ContinuityEngine.from_json_file(
+        ContinuityStore(database), runtime_root / "config/continuity.json"
+    )
+    engine.store.execute("DELETE FROM recovery_leases")
+
+    def run_cli(*args: str, allowed: set[int] = {0}) -> dict[str, object]:
+        completed = subprocess.run(
+            [str(ROOT / "bin/continuityctl"), *args],
+            check=False,
+            capture_output=True,
+            text=True,
+            timeout=45,
+        )
+        assert completed.returncode in allowed, completed.stderr
+        return json.loads(completed.stdout)
+
+    planned = run_cli(
+        "plan-replay",
+        "east",
+        "--generation",
+        "1",
+        "--created-by",
+        "cli-contract-test",
+        "--reason",
+        "exercise preserved recovery CLI",
+        "--root",
+        str(runtime_root),
+        "--compact",
+    )
+    assert planned["blocked_reason"] is None
+    assert planned["plan"] is not None
+
+    listed = run_cli(
+        "list-replay",
+        "--region",
+        "east",
+        "--root",
+        str(runtime_root),
+        "--compact",
+    )
+    assert any(plan["plan_id"] == planned["plan"]["plan_id"] for plan in listed)
+
+    retention = run_cli(
+        "retention",
+        "east",
+        "--generation",
+        "1",
+        "--limit",
+        "5",
+        "--root",
+        str(runtime_root),
+        "--compact",
+        allowed={0, 2},
+    )
+    assert retention["region"] == "east"
+    assert "safe_sequence" in retention and "eligible_event_ids" in retention
+
+    _complete_archive(engine, "west")
+    acquired = run_cli(
+        "lease",
+        "--root",
+        str(runtime_root),
+        "--compact",
+        "acquire",
+        "west",
+        "--owner",
+        "cli-recovery-worker",
+        "--ttl",
+        "300",
+    )
+    epoch = int(acquired["fence_epoch"])
+
+    executed = run_cli(
+        "execute-replay",
+        "rp-west-incident-001",
+        "--owner",
+        "cli-recovery-worker",
+        "--epoch",
+        str(epoch),
+        "--root",
+        str(runtime_root),
+        "--compact",
+    )
+    assert executed["completed"] is True
+    replay_after = engine.store.replay_plan("rp-west-incident-001")
+    assert replay_after is not None and replay_after.status.value == "COMPLETED"
+
+    renewed = run_cli(
+        "lease",
+        "--root",
+        str(runtime_root),
+        "--compact",
+        "renew",
+        "west",
+        "--owner",
+        "cli-recovery-worker",
+        "--epoch",
+        str(epoch),
+        "--ttl",
+        "300",
+    )
+    assert int(renewed["fence_epoch"]) == epoch
+    released = run_cli(
+        "lease",
+        "--root",
+        str(runtime_root),
+        "--compact",
+        "release",
+        "west",
+        "--owner",
+        "cli-recovery-worker",
+        "--epoch",
+        str(epoch),
+    )
+    assert released["released"] is True
+    assert engine.store.current_lease("west") is None
+
+    pending = engine.store.record_pending_generation(
+        "east",
+        generation=2,
+        stream_fingerprint="cli-pending-generation-2",
+        first_sequence=1,
+        last_observed_sequence=10,
+        at=datetime(2026, 8, 9, 7, 0, tzinfo=UTC),
+    )
+    assert pending.status is GenerationStatus.PENDING_APPROVAL
+    approved = run_cli(
+        "approve-generation",
+        "east",
+        "2",
+        "--approved-by",
+        "cli-contract-test",
+        "--root",
+        str(runtime_root),
+        "--compact",
+    )
+    assert approved["status"] == "CONFIRMED"
+
+    generations = run_cli(
+        "generations",
+        "--region",
+        "east",
+        "--root",
+        str(runtime_root),
+        "--compact",
+    )
+    assert any(
+        row["generation"] == 2 and row["status"] == "CONFIRMED" for row in generations
+    )
