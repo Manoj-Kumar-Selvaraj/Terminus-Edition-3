@@ -14,11 +14,13 @@ WITH digits(d) AS (
     SELECT a.d + 10*b.d + 100*c.d + 1
     FROM digits a CROSS JOIN digits b CROSS JOIN digits c
     WHERE a.d + 10*b.d + 100*c.d < 120
+), regions(region) AS (
+    VALUES('east'),('west')
 )
 INSERT INTO device_registry(device_id, region, site_id, device_type, status, installed_at, criticality, last_seen_at)
 SELECT
-    printf('dev-%s-%03d', CASE WHEN n % 2 = 0 THEN 'east' ELSE 'west' END, n),
-    CASE WHEN n % 2 = 0 THEN 'east' ELSE 'west' END,
+    printf('dev-%s-%03d', region, n),
+    region,
     printf('site-%02d', 1 + (n % 12)),
     CASE n % 6
         WHEN 0 THEN 'pressure-sensor'
@@ -36,7 +38,7 @@ SELECT
     printf('2025-%02d-%02dT08:00:00Z', 1 + (n % 12), 1 + (n % 27)),
     CASE n % 8 WHEN 0 THEN 'SAFETY' WHEN 1 THEN 'HIGH' WHEN 2 THEN 'HIGH' WHEN 3 THEN 'MEDIUM' ELSE 'LOW' END,
     '2026-08-08T18:00:00Z'
-FROM nums;
+FROM nums CROSS JOIN regions;
 
 WITH digits(d) AS (
     VALUES(0),(1),(2),(3),(4),(5),(6),(7),(8),(9)
@@ -101,7 +103,7 @@ SELECT
         'sample_no', x,
         'site', printf('site-%02d', site_no)
     ),
-    lower(hex(printf('%064d', (x * 2654435761) % 1000000007))),
+    printf('%064x', (x * 2654435761) % 2147483647),
     payload_bytes,
     priority,
     CASE
