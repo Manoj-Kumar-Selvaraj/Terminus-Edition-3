@@ -12,9 +12,18 @@ After the task and governing control-plane policy are committed:
 python3 .terminus/new_review_packet.py <task> <role> --change "what changed"
 ```
 
-Available role keys:
+Available ordinary role keys:
 
 `task-architect`, `verifier-engineer`, `originality`, `difficulty-design`, `compliance`, `instruction`, `documentation`, `human-quality`, `comprehensive-checklist`, `trajectory`, `adjudication`.
+
+Additional quality-review role keys:
+
+- `spec-test-contract` -> Q4 Spec-Test Contract Reviewer;
+- `production-logic` -> Q6 Production Logic Auditor;
+- `difficulty-sim-gpt` -> Q8 GPT-perspective diagnostic solve;
+- `difficulty-sim-claude` -> Q8 Claude-perspective diagnostic solve.
+
+Q1/Q2/Q3/Q5/Q7 are producer/fixer agents and are routed directly by the Orchestrator; they do not generate semantic PASS evidence for their own work.
 
 The generator refuses a dirty task or dirty governing reviewer policy, derives the task/control-plane commits, computes the role-contract hash, assigns a unique review ID, records `evidence_excluded`, validates schema v3, and writes an immutable `*.packet.json` beside the future result path.
 
@@ -22,14 +31,17 @@ The generator refuses a dirty task or dirty governing reviewer policy, derives t
 
 Open a new chat for the role. Use the packet as the first review context. Do not reuse a producer/fixer chat or a chat that already performed another reviewer role when cold independence matters.
 
+For Q8, `difficulty-sim-gpt` and `difficulty-sim-claude` are separate cold executions. Do not show either perspective the other result before both freeze.
+
 Invocation text:
 
 ```text
 You are the ROLE named in this Terminus context packet.
 
-Read the packet's authoritative_rules, the matching role section in
-.terminus/agents/PROMPTS.md, and .terminus/agents/PRODUCTION_AUTHENTICITY.md.
-Answer only the packet's question.
+Read the packet's authoritative_rules. For ordinary roles, read the matching role section
+in .terminus/agents/PROMPTS.md. For Q4/Q6/Q8 quality roles, read the matching section in
+.terminus/agents/QUALITY_AGENT_PROMPTS.md. Also read
+.terminus/agents/PRODUCTION_AUTHENTICITY.md where applicable. Answer only the packet's question.
 
 For an operational/stateful task, independently check the production evidence surface,
 starting-state scale/variance, major business-module decision depth, and whether incident
@@ -46,7 +58,7 @@ Return JSON matching .terminus/agents/schemas/review_result.schema.json v3. Copy
 provenance fields exactly from the packet: review_id, task, task_commit,
 control_plane_commit, protocol_policy_version, prompt_policy_version,
 role_policy_version, role_contract_hash. Set context_packet to this packet's repository
-path. Put the role-specific PROMPTS.md output inside role_output; do not add undeclared
+path. Put the role-specific prompt output inside role_output; do not add undeclared
 top-level fields.
 
 Use evidence refs for every material finding. LOW confidence or insufficient evidence
@@ -61,6 +73,13 @@ Then run:
 python3 .terminus/validate_review_freshness.py --task <task>
 ```
 
+## Quality-role boundaries
+
+- Q4 may read verifier behavior because its decision right is bidirectional spec/test alignment, but it must not use test names/fixtures as solver-facing wording.
+- Q6 evaluates solver-visible production logic independently of Complexity Governor and raw LOC reports.
+- Q8 gets solver-visible task evidence only before solve. `solution/`, hidden tests, private defect/test maps, prior trajectories, desired tier and the other perspective result remain excluded.
+- Q8 output must explicitly state that it is simulated diagnostic evidence, not actual GPT-5.5/Claude Opus 4.8 trial evidence.
+
 ## Exclusion boundary
 
 The generator is the single source for per-role allowed/excluded evidence. Important examples:
@@ -70,6 +89,8 @@ The generator is the single source for per-role allowed/excluded evidence. Impor
 - Originality excludes the creator's uniqueness claim and prior originality verdict.
 - Difficulty excludes the desired tier.
 - Adjudicator may see frozen disputed reviews only after those reviews are complete.
+- Q4 excludes Q1/Q2/Q3 conclusions until its own matrix is frozen.
+- Q8 perspectives exclude one another until both runs freeze.
 
 Current Cursor review isolation is `PROCEDURAL`, not an ACL. This process reduces anchoring; it does not physically remove repository access.
 
@@ -83,4 +104,8 @@ Current Cursor review isolation is `PROCEDURAL`, not an ACL. This process reduce
 
 ## Ordering
 
-Deterministic checks and Oracle/NOP first, then independent Stage-B specialists, then the cold Comprehensive Reviewer, then disagreement/adjudication, then Pre-LLMaJ aggregate. Harbor and model trials remain later gates.
+For the quality-agent workflow:
+
+`deterministic freeze -> Q4 Spec-Test Contract Reviewer + Q6 Production Logic Auditor -> QUALITY_INTERLOCK_PASS -> ordinary Pre-LLMaJ specialists/comprehensive/aggregate -> Q8 GPT and Claude diagnostic perspectives -> Harbor/model gates`.
+
+Q8 is diagnostic. It cannot replace Harbor LLMaJ or the official GPT x5 + Claude x5 difficulty trials.
