@@ -1,0 +1,87 @@
+name: JetStream Q4 Hub Sequence Discriminator Repair
+
+on:
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: write
+
+jobs:
+  repair:
+    if: github.head_ref == 'task/jetstream-quality-interlock'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: task/jetstream-quality-interlock
+          fetch-depth: 0
+
+      - name: Repair hub-sequence F2P discriminator
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 <<'PY'
+          import ast
+          import textwrap
+          from pathlib import Path
+
+          path = Path('jetstream-regional-stream-continuity/tests/test_continuity.py')
+          source = path.read_text(encoding='utf-8')
+          tree = ast.parse(source)
+          node = next(
+              item for item in tree.body
+              if isinstance(item, ast.FunctionDef)
+              and item.name == 'test_f2p_reconcile_ignores_hub_sequence_equivalence'
+          )
+          replacement = textwrap.dedent(r'''
+          def test_f2p_reconcile_ignores_hub_sequence_equivalence(
+              engine: ContinuityEngine,
+          ) -> None:
+              """Changing only hub delivery positions cannot change stable archive reconciliation truth."""
+              complete_archive(engine, "east")
+              for consumer in engine.store.required_consumers():
+                  set_checkpoint(engine, consumer, "east", effect=6000)
+
+              generation = engine.store.confirmed_generation("east")
+              assert generation is not None
+              assert generation.last_observed_sequence == 6000
+              baseline = engine.reconcile_region("east", 1)
+              assert baseline.converged is True
+              assert baseline.highest_contiguous_archive_origin_sequence == 6000
+
+              engine.store.execute(
+                  "UPDATE archive_index SET hub_stream_sequence=30000+origin_sequence "
+                  "WHERE region='east' AND generation=1"
+              )
+              shifted = engine.reconcile_region("east", 1)
+
+              assert shifted.journal_event_count == baseline.journal_event_count == 6000
+              assert shifted.archive_event_count == baseline.archive_event_count == 6000
+              assert shifted.missing_count == baseline.missing_count == 0
+              assert shifted.unexpected_count == baseline.unexpected_count == 0
+              assert shifted.metadata_mismatch_count == baseline.metadata_mismatch_count == 0
+              assert shifted.consumer_lag_count == baseline.consumer_lag_count == 0
+              assert shifted.highest_contiguous_archive_origin_sequence == 6000
+              assert shifted.required_consumer_progress == baseline.required_consumer_progress
+              assert shifted.checksum == baseline.checksum
+              assert shifted.converged is True
+          ''').lstrip()
+          lines = source.splitlines(keepends=True)
+          lines[node.lineno - 1:node.end_lineno] = [replacement]
+          updated = ''.join(lines)
+          ast.parse(updated)
+          path.write_text(updated, encoding='utf-8')
+          PY
+
+          python3 -m pip install --quiet ruff==0.12.8
+          ruff check jetstream-regional-stream-continuity/tests
+          python3 -m py_compile jetstream-regional-stream-continuity/tests/test_continuity.py
+          python3 .terminus/validate_task_complexity.py jetstream-regional-stream-continuity
+
+          git config user.name 'Terminus CI Orchestrator'
+          git config user.email 'actions@users.noreply.github.com'
+          git add jetstream-regional-stream-continuity/tests/test_continuity.py
+          git commit -m 'Restore hub-sequence F2P discrimination'
+          git push origin HEAD:task/jetstream-quality-interlock
