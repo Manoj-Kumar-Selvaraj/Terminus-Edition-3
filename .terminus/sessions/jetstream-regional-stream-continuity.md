@@ -5,10 +5,10 @@ Session schema version: `2.4`
 ## Identity
 
 - Task: `jetstream-regional-stream-continuity`
-- Controller state: `BLOCKED`
+- Controller state: `DETERMINISTIC_VALIDATION`
 - Working branch: `task/jetstream-quality-interlock`
 - Pull request: `#12`
-- Current task commit: `d7e131f962753acce119afba5f63bd525203d9c7`
+- Current task commit: `440aa83862a3234678e27bd70319623735964173`
 - Agent-system policy: `2.4`
 - Specialist prompt policy: `2.2`
 - Specialist protocol policy: `2.2`
@@ -20,19 +20,19 @@ Session schema version: `2.4`
 
 | Gate | Status | Evidence / version |
 | --- | --- | --- |
-| Q1 Spec Gap Repair | PASS | previously completed; latest Q4 reports coverage gaps rather than missing/ambiguous solver contract |
-| Q2 Verifier Coverage Repair | REVISE | Q4 result `d28d169713b5df74755c19037f2dfb79b9e9c08a`; findings `Q4-D7E131F9-01`, `-02`, `-03` |
-| Q3 Spec Ambiguity Repair | PASS | latest Q4 reports no grading-relevant ambiguity |
-| Q7 Task Format Enforcer | PASS | current frozen candidate retained; no task tree change during reviewer-policy migration |
-| Creator Complexity Gate | PASS | control-plane head run `31331005567`; task baseline run `31327893703` |
-| Preflight/static | PASS | Edition-3 task run `31327893697`, job `93281244115` |
-| Ruff verifier | PASS | Edition-3 task run `31327893697`, job `93281244115` |
-| STB auth/AI credentials | FAIL | reusable-AI credential preparation failed after deterministic validation; not freeze evidence |
-| Oracle = 1 | PASS | artifact `9042083147`; exactly 40/40 PASS |
-| NOP = 0 | PASS | artifact `9042083147`; exactly 30 F2P FAIL + 10 P2P PASS |
-| Q4 Spec-Test Contract Reviewer | STALE | historical old-contract result `.terminus/reviews/jetstream-regional-stream-continuity/d7e131f9/jetstream-regional-stream-continuity-d7e131f9-spec-test-contract-a159fbe550.json`; `REVISE/HIGH/SUFFICIENT`; role policy changed to 1.1 |
-| Q6 Production Logic Auditor | STALE | historical old-contract result `.terminus/reviews/jetstream-regional-stream-continuity/d7e131f9/jetstream-regional-stream-continuity-d7e131f9-production-logic-b112d746a8.json`; `PASS/HIGH/SUFFICIENT`; role policy changed to 1.1 and old packet has no scope hash |
-| Quality Interlock | BLOCKED | Q4 coverage findings require one consolidated Q2 repair; fresh new-policy Q4/Q6 evidence required afterward |
+| Q1 Spec Gap Repair | PASS | solver-visible contract unchanged by current repair; old Q4 reported coverage gaps, not missing requirements |
+| Q2 Verifier Coverage Repair | PASS | consolidated repair commit `440aa83862a3234678e27bd70319623735964173`; closes all three known Q4 coverage findings |
+| Q3 Spec Ambiguity Repair | PASS | solver-visible contract unchanged; no grading-relevant ambiguity reported |
+| Q7 Task Format Enforcer | PASS | no package-format change in current repair |
+| Creator Complexity Gate | PENDING | fresh exact-candidate validation required |
+| Preflight/static | PENDING | fresh exact-candidate validation required |
+| Ruff verifier | PENDING | fresh exact-candidate validation required |
+| STB auth/AI credentials | PENDING | infrastructure dependency; not freeze evidence |
+| Oracle = 1 | PENDING | must be exactly 40/40 on `440aa838...` |
+| NOP = 0 | PENDING | must remain exactly 30 F2P FAIL + 10 P2P PASS |
+| Q4 Spec-Test Contract Reviewer | STALE | all d7e131f9 Q4 evidence predates task repair and current Q4 1.1 contract |
+| Q6 Production Logic Auditor | STALE | all d7e131f9 Q6 evidence predates Q6 1.1 scope-hash provenance |
+| Quality Interlock | PENDING | deterministic refreeze and fresh Q4/Q6 required |
 | Pre-LLMaJ specialist panel | PENDING | not authorized before Quality Interlock PASS |
 | Task Architect | PENDING | Stage-B not authorized |
 | Verifier Engineer | PENDING | Stage-B not authorized |
@@ -56,59 +56,31 @@ Session schema version: `2.4`
 | Final Human Quality | PENDING | not authorized |
 | Final package | PENDING | not authorized |
 
-## Deterministic evidence for current task commit
+## Consolidated Q4 closure candidate
 
-Task commit `d7e131f962753acce119afba5f63bd525203d9c7` remains the last fully deterministic frozen candidate. No task-directory file was changed by the reviewer-policy migration.
+Repair commit `440aa83862a3234678e27bd70319623735964173` was produced by Agent System run `31332123297`, job `93291929858`; every repair-job step passed, including exact frozen-baseline verification, deterministic patching, Python compile checks, the static 40-test / 30-F2P / 10-P2P shape check, and self-cleanup of temporary orchestration files.
 
-- Edition-3 run `31327893697`, job `93281244115`: Preflight PASS, Ruff PASS, environment/verifier setup PASS, Oracle reward 1, NOP reward 0.
-- Artifact `9042083147`, sha256 `c4b39b856b746604c0d121ff72bde3f2f9ed9210be5c3498662395f5aaebccd2`: Oracle exactly 40/40 PASS; NOP exactly 30 F2P FAIL + 10 P2P PASS.
-- Creator Complexity run `31327893703`: PASS.
-- Production Authenticity run `31327893712`: PASS.
-- Agent System/package-isolation run `31327893701`: PASS under the previous reviewer contract.
-- Upgraded control-plane ordinary CI on commit `e434a4ce8f848cb010152115897bc68d16dbf394`: Agent System run `31331005616` PASS; Creator Complexity run `31331005567` PASS; Production Authenticity run `31331005563` PASS.
-- Upgraded Agent System regression suite is 73 tests after the final session-template guard; the preceding upgrade run established 72/72 plus agent-system PASS, and the final ordinary Agent System workflow is PASS.
-- Harbor was not run.
+The repair is intentionally narrow:
 
-## Current blocker
+1. Existing F2P stable-identity coverage now crosses a real edge-west JetStream replay boundary with the real `NatsPublisher`, reads stored messages externally, and requires physical `Nats-Msg-Id` to equal payload `event_id` for each expected replay identity. The preserved recovery CLI P2P was not strengthened, avoiding the previous 31/9 NOP partition failure.
+2. Existing F2P retention coverage now separately proves durable SQLite journal cleanup preserves a row still inside the full disconnect + replay + safety recovery horizon while allowing a sufficiently old safe row. The reference engine receives the narrow corresponding fix by using the larger of minimum journal age and required recovery horizon; starter runtime code is unchanged.
+3. Existing report F2P now requires non-empty, timezone-aware parseable `generated_at` values in both `health.json` and `reconciliation.json`, while retaining independent truth reconstruction and full captured-evidence digest checks.
+4. Private REQ-19/REQ-24 test-map descriptions were aligned with the already solver-visible contract; no new tests were added.
 
-Independent Q4 on `d7e131f9...` returned `REVISE / HIGH / SUFFICIENT` at result commit `d28d169713b5df74755c19037f2dfb79b9e9c08a` with three material verifier-coverage findings:
+## Historical baseline
 
-1. the real replay publication check observes payload `event_id` at the physical west JetStream boundary but not the contractual external `Nats-Msg-Id == event_id` identity;
-2. the durable SQLite edge-journal recovery-horizon guarantee is not separately graded from JetStream stream `max_age`;
-3. documented `generated_at` fields in `health.json` and `reconciliation.json` are not asserted.
+The previous frozen task commit `d7e131f962753acce119afba5f63bd525203d9c7` had Oracle exactly 40/40 and NOP exactly 30 F2P FAIL + 10 P2P PASS in Edition-3 run `31327893697`, artifact `9042083147`; Complexity `31327893703`, Production Authenticity `31327893712`, and Agent System/package isolation `31327893701` passed. Harbor was not run.
 
-Q6 on the same task commit returned `PASS / HIGH / SUFFICIENT` at `d99e501eed8de2d8c83beef9e2f1c18341eb9c99` with no findings.
-
-Both old packet-bound results are now policy-stale because Q4/Q6 role policy moved from 1.0 to 1.1 and Protocol moved to 2.2. The historical findings/verdicts remain evidence but cannot support a current ready gate.
-
-## Reviewer-control-plane upgrade
-
-The live control plane now requires:
-
-- Q4 to inventory the complete solver-visible requirement set and complete substantive verifier behavior set, complete both mapping directions, walk delegated contracts, F2P/P2P boundaries and stable output interfaces, perform a second omission sweep, and return all material findings in one result;
-- explicit Q4 materiality: BLOCKER/HIGH block; MEDIUM blocks only when it changes solver pass/fail, externally observable correctness, safety/durability or a documented stable public interface; LOW is advisory unless an authoritative rule makes it mandatory;
-- one normal consolidated repair/refreeze budget after an exhaustive Q4 REVISE; a later finding on unchanged previously-reviewable evidence is `LATENT_REVIEWER_OMISSION` and must be adjudicated before another blind repair cycle;
-- Q6 packets/results to carry a conservative production `review_scope_hash` over task `task.toml` plus the full solver-visible `environment/` tree. Once a new-policy Q6 PASS exists, tests/solution/instruction-only changes may preserve it when that scope hash and role contract remain unchanged; production-scope changes still stale Q6.
-
-The implementation is enforced by the packet generator, JSON schemas, freshness validator, quality-interlock validator, regression tests and `.terminus/classify_review_delta.py`; this is not a prose-only policy change.
-
-## Review evidence ledger
-
-| Review | Review ID | Task commit | Protocol | Prompt | Role policy | Result path | Verdict | Confidence | Evidence status |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| Q4 Spec-Test Contract Reviewer (historical old contract) | `jetstream-regional-stream-continuity-d7e131f9-spec-test-contract-a159fbe550` | `d7e131f962753acce119afba5f63bd525203d9c7` | 2.1 | 2.2 | 1.0 | `.terminus/reviews/jetstream-regional-stream-continuity/d7e131f9/jetstream-regional-stream-continuity-d7e131f9-spec-test-contract-a159fbe550.json` | REVISE | HIGH | SUFFICIENT |
-| Q6 Production Logic Auditor (historical old contract) | `jetstream-regional-stream-continuity-d7e131f9-production-logic-b112d746a8` | `d7e131f962753acce119afba5f63bd525203d9c7` | 2.1 | 2.2 | 1.0 | `.terminus/reviews/jetstream-regional-stream-continuity/d7e131f9/jetstream-regional-stream-continuity-d7e131f9-production-logic-b112d746a8.json` | PASS | HIGH | SUFFICIENT |
-| Q4 Spec-Test Contract Reviewer (next) | | next frozen task commit | 2.2 | 2.2 | 1.1 | | PENDING | | exhaustive one-pass contract |
-| Q6 Production Logic Auditor (next) | | next frozen task commit | 2.2 | 2.2 | 1.1 | | PENDING | | scope hash required |
+Historical Q4 result commit `d28d169713b5df74755c19037f2dfb79b9e9c08a` was `REVISE/HIGH/SUFFICIENT` with the three coverage findings now addressed. Historical Q6 result commit `d99e501eed8de2d8c83beef9e2f1c18341eb9c99` was `PASS/HIGH/SUFFICIENT` with no findings. Both are stale for current acceptance.
 
 ## Circuit breaker / no-drip state
 
-- Status: `TRIPPED` for the old repeated Q4 patch-loop strategy.
-- Required strategy: one consolidated Q2 closure for the three known findings, deterministic refreeze, then one exhaustive new-policy Q4 review. Do not return to narrow one-finding-at-a-time repairs.
-- The new Protocol-2.2 latent-omission rule applies prospectively to exhaustive Q4 results produced under the new role contract. It is not retroactively asserted for old Q4 1.0 results.
+- Old repeated narrow Q4 patch-loop strategy remains retired.
+- This is the single consolidated repair/refreeze cycle for the currently known findings.
+- After refreeze, Q4 1.1 must perform its exhaustive one-pass audit and return all material findings together.
+- After that exhaustive Q4 cycle, any later finding resting entirely on unchanged previously-reviewable evidence is classified `LATENT_REVIEWER_OMISSION` and routed to Adjudicator before another normal repair loop.
+- Fresh Q6 1.1 must record `review_scope_hash`; once a new-policy Q6 PASS exists, later verifier-only changes may reuse it only when the production scope hash and role contract remain unchanged.
 
 ## Next action
 
-Route the three known Q4 findings together to Q2 Verifier Coverage Repair. Preserve exactly 40 tests = 30 F2P + 10 P2P, rerun deterministic validation, and only after a clean refreeze generate fresh Q4 1.1 and Q6 1.1 packets. The fresh Q4 must perform the new exhaustive one-pass audit. The fresh Q6 must record its production `review_scope_hash`; after that, future verifier-only repairs can retain Q6 if the production scope remains byte-identical.
-
-Do not run Stage-B, Harbor or model trials and do not claim `QUALITY_INTERLOCK_PASS` until current-policy evidence validates.
+Run fresh deterministic validation for exact task commit `440aa83862a3234678e27bd70319623735964173`. Freeze only if Preflight, Ruff, verifier setup, Oracle exactly 40/40, NOP exactly 30 F2P FAIL + 10 P2P PASS, Creator Complexity, Production Authenticity, and Agent System/package isolation all pass. Then generate one fresh Q4 1.1 packet and one fresh Q6 1.1 packet for the same frozen task commit. Do not run Stage-B, Harbor or model trials before current-policy Quality Interlock PASS.
