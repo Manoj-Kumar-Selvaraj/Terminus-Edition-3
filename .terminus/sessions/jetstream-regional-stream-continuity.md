@@ -28,19 +28,19 @@ The task remains `large_system_strict` with 5,530 substantive solver-visible run
 | Q3 Spec Ambiguity Repair | PASS | Confirmed watermark and in-flight fencing semantics are explicit in the existing delegated contract. |
 | Q5 Oracle & Runtime Repair | PASS | Reference reconciliation and shared post-publish fence behavior satisfy Oracle 40/40. |
 | Q7 Task Format Enforcer | PASS | Edition-3 run `31320157239`, job `93261764319`: Preflight, Ruff, verifier build all passed. |
-| Creator Complexity Gate | PASS | clean-head run `31320157230`; 5,530 substantive LOC / 40 tests / 30 F2P / 10 P2P / 26 requirements. |
-| Production Authenticity Gate | PASS | clean-head run `31320157219`. |
-| Agent System / review freshness | PASS | clean-head run `31320157222`; control-plane regressions, structure, current task binding and package isolation passed. |
+| Creator Complexity Gate | PASS | deterministic-head run `31320157230`; packet-head run `31320710727`; 5,530 substantive LOC / 40 tests / 30 F2P / 10 P2P / 26 requirements. |
+| Production Authenticity Gate | PASS | deterministic-head run `31320157219`; packet-head run `31320710734`. |
+| Agent System / review freshness | PASS | deduplicated packet-head run `31320710733`, job `93263115624`; control-plane regressions, structure, current review freshness/commit binding and package isolation passed. |
 | Preflight/static | PASS | run `31320157239`, job `93261764319`. |
 | Ruff verifier | PASS | run `31320157239`, job `93261764319`. |
 | Environment/verifier build | PASS | run `31320157239`, job `93261764319`; pinned NATS Server 2.14.3 and nats-py 2.15.0 verifier dependencies built successfully. |
 | Oracle = 1 | PASS | run `31320157239`, job `93261764319`; 40/40 PASS. |
 | NOP = 0 | PASS | run `31320157239`, job `93261764319`; reward 0 with exactly 30 F2P FAIL + 10 P2P PASS. |
 | F2P/P2P empirical matrix | PASS | artifact `9039953729`, sha256 `357b913ba35e479986d5cc878141dab53e05f34c67041b49c8ba55ff04a7350a`; Oracle 40/40, NOP exactly 30/10. |
-| Leakage/package checks | PASS | Agent-System run `31320157222` passed current binding and package isolation. |
+| Leakage/package checks | PASS | deduplicated packet-head Agent-System run `31320710733` passed package isolation/current review binding. |
 | FROZEN_CANDIDATE | PASS | Task commit `0f0947acc7abeeaf0b41ca3fa5a4ae5ff9fa793a`. |
-| Q4 Spec-Test Contract Reviewer | PENDING_REVIEW | packet `jetstream-regional-stream-continuity-0f0947ac-spec-test-contract-b6a2908b36`; exact output path under `.terminus/reviews/.../0f0947ac/`. |
-| Q6 Production Logic Auditor | PENDING_REVIEW | packet `jetstream-regional-stream-continuity-0f0947ac-production-logic-dae81333d9`; exact output path under `.terminus/reviews/.../0f0947ac/`. |
+| Q4 Spec-Test Contract Reviewer | PENDING_REVIEW | packet `jetstream-regional-stream-continuity-0f0947ac-spec-test-contract-b6a2908b36`. |
+| Q6 Production Logic Auditor | PENDING_REVIEW | packet `jetstream-regional-stream-continuity-0f0947ac-production-logic-dae81333d9`. |
 | Quality Interlock | PENDING | Requires fresh packet-bound Q4 + Q6 PASS for `0f0947...`. |
 | Task Architect | PENDING | after Quality Interlock |
 | Verifier Engineer | PENDING | after Quality Interlock |
@@ -83,7 +83,7 @@ Semantic remediation commit `54fbe9d73f485f5d3a944bef261146d663e32d35` initially
 
 ## Fresh review packets
 
-Repository-native packet generation run `31320404144` succeeded. Artifact `9039985895` has sha256 `c9620970402c9fd1e0d6e29e25ebae0522053fe0bc318f1fffbbfacc380fd426`. Exact generated packet bytes were committed and the temporary generator was removed.
+Repository-native packet generation run `31320404144` succeeded. Artifact `9039985895` has sha256 `c9620970402c9fd1e0d6e29e25ebae0522053fe0bc318f1fffbbfacc380fd426`. Exact generated packet bytes were committed and the temporary generator was removed. A concurrently generated duplicate packet pair was deleted before reviewer invocation; the following pair is the sole authoritative current pair.
 
 - Q4 review id: `jetstream-regional-stream-continuity-0f0947ac-spec-test-contract-b6a2908b36`
 - Q4 packet: `.terminus/reviews/jetstream-regional-stream-continuity/0f0947ac/jetstream-regional-stream-continuity-0f0947ac-spec-test-contract-b6a2908b36.packet.json`
@@ -105,7 +105,7 @@ Repository-native packet generation run `31320404144` succeeded. Artifact `90399
 
 ## Current blocker
 
-Execute the fresh Q4 and Q6 packets independently in separate cold contexts and commit each frozen result to its packet-declared output path. Historical reviewer verdicts do not satisfy the current Quality Interlock.
+Execute the sole authoritative fresh Q4 and Q6 packets independently in separate cold contexts and commit each frozen result to its packet-declared output path. Historical reviewer verdicts do not satisfy the current Quality Interlock.
 
 ## Next action
 
