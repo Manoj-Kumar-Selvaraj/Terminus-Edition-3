@@ -28,7 +28,7 @@ Session schema version: `2.4`
 | Ruff verifier | PASS | deterministic run `31388325311`, job `93453835600`, artifact `9062701370` |
 | Oracle = 1 | PASS | deterministic run `31388325311`, job `93453835600`, artifact `9062701370`: exactly 40/40 PASS in 49.24s, reward `1` |
 | NOP = 0 | PASS | deterministic run `31388325311`, job `93453835600`, artifact `9062701370`: exactly 30 F2P FAIL + 10 P2P PASS in 38.11s, reward `0` |
-| Q4 Spec-Test Contract Reviewer | STALE | frozen `f73b6c9a` REVISE result remains historical; fresh exact-commit Q4 is reserved for the CI Orchestrator/reviewer |
+| Q4 Spec-Test Contract Reviewer | PENDING | fresh packet `.terminus/reviews/jetstream-regional-stream-continuity/065cf6f0/jetstream-regional-stream-continuity-065cf6f0-spec-test-contract-8244aef647.packet.json`; packet commit `08b2929efbdd7be002cb7ec112ae2abf63e55299` |
 | Q6 Production Logic Auditor | PASS | scope-preserved result `.terminus/reviews/jetstream-regional-stream-continuity/440aa838/jetstream-regional-stream-continuity-440aa838-production-logic-a277a01448.json`; scope hash `4007f243d3e31219716e8f3af0549644839141f37695a367f2f7732906f77a81` |
 | Adjudicator | REQUEST_CHANGES | `.terminus/reviews/jetstream-regional-stream-continuity/f73b6c9a/jetstream-regional-stream-continuity-f73b6c9a-adjudication-e8e3160e31.json`; result commit `ef7261f07652deee49d5e06c587216f732b5e5cd`; HIGH / SUFFICIENT / BOTH_PARTLY |
 | Quality Interlock | BLOCKED | consolidated closure repair and deterministic refreeze complete; fresh exact-commit Q4 must still PASS |
@@ -78,6 +78,19 @@ GitHub Actions validated exact task commit `065cf6f02c08abf86074d3886069b22ef478
 
 The temporary deterministic-only workflow override used for this evidence is restored in the following `[skip ci]` checkpoint commit, so it cannot trigger another workflow and the repository's standing workflow policy remains unchanged.
 
+## Fresh exact-commit Q4 packet
+
+- Review ID: `jetstream-regional-stream-continuity-065cf6f0-spec-test-contract-8244aef647`
+- Packet: `.terminus/reviews/jetstream-regional-stream-continuity/065cf6f0/jetstream-regional-stream-continuity-065cf6f0-spec-test-contract-8244aef647.packet.json`
+- Packet commit: `08b2929efbdd7be002cb7ec112ae2abf63e55299`
+- Review output: `.terminus/reviews/jetstream-regional-stream-continuity/065cf6f0/jetstream-regional-stream-continuity-065cf6f0-spec-test-contract-8244aef647.json`
+- Task commit: `065cf6f02c08abf86074d3886069b22ef47831f6`
+- Control-plane commit in packet: `38fcd7a2d517131f7a00d05ed8396524e6b43299`
+- Role contract hash: `6e2c71cc269351932c341f876d32d61b48cd53c7865c0e6b929882321cad39c9`
+- State / isolation: `FROZEN_CANDIDATE / PROCEDURAL`
+
+The packet was generated only after durable CI evidence and final workflow restoration. It is ready for the existing independent Q4 reviewer; no Q4 verdict has been issued yet.
+
 ## Frozen adjudication
 
 - Review ID: `jetstream-regional-stream-continuity-f73b6c9a-adjudication-e8e3160e31`
@@ -120,7 +133,7 @@ The adjudicator authorizes exactly one consolidated closure repair. It must pres
 
 ## Next action
 
-CI Orchestrator: generate a fresh repository-prescribed Q4 packet bound to task commit `065cf6f02c08abf86074d3886069b22ef47831f6` and the durable evidence above, then return it to the existing independent Q4 reviewer. Preserve Q6 reuse only under the unchanged hash above. Do not enter Stage-B before Q4 PASS.
+Return the fresh packet above to the existing independent Q4 reviewer and request one exhaustive packet-bound review of task commit `065cf6f02c08abf86074d3886069b22ef47831f6`. Preserve Q6 reuse only under the unchanged hash above. Do not enter Stage-B before Q4 PASS.
 
 ## Review evidence ledger
 
@@ -155,6 +168,7 @@ CI Orchestrator: generate a fresh repository-prescribed Q4 packet bound to task 
 
 Newest first:
 
+- `08b2929efbdd7be002cb7ec112ae2abf63e55299` - generated fresh exact-commit Q4 packet `jetstream-regional-stream-continuity-065cf6f0-spec-test-contract-8244aef647` after durable deterministic refreeze.
 - Deterministic CI trigger `4340563f082a3107fa347fb8df44630783172c26` - GitHub run `31388325311`, validation job `93453835600`, artifact `9062701370`; exact Oracle/NOP boundary PASS and Harbor steps SKIPPED.
 - `065cf6f02c08abf86074d3886069b22ef47831f6` - single adjudicator-authorized Q2/Q3 closure repair for Q4-001 through Q4-012; deterministic local refreeze Oracle 40/40 and NOP 30 F2P fail + 10 P2P pass; Q6 scope hash unchanged.
 
