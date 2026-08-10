@@ -1,6 +1,6 @@
 # Terminus CI Orchestrator / Submission Controller
 
-Orchestrator policy version: `1.1`
+Orchestrator policy version: `1.2`
 
 This is the portable execution contract for the one agent that owns routing, gate order, evidence reconciliation and durable task state. It can run in a normal ChatGPT chat with the connected GitHub repository, in Cursor, or in another repository-aware chat surface. The execution surface does not change the evidence standard.
 
@@ -60,6 +60,23 @@ The invocation supplies a task name. Before routing work:
 8. Resume from the first genuinely incomplete, failed, stale or blocked gate.
 
 If the execution surface cannot inspect a required run/log/artifact or execute a validator, record exactly what is unavailable and return `INSUFFICIENT_EVIDENCE`. Do not ask the user to restate evidence that is available through Git, the session, the PR or accessible CI artifacts.
+
+## Cursor local execution
+
+When Cursor is the execution surface and a local terminal is available, use the attached laptop as the default environment for deterministic development work. Do not merely recommend a command that can be run safely and directly in the repository.
+
+The Cursor agent must:
+
+- resolve the local repository root, active branch and working-tree state before execution;
+- preserve unrelated user changes and keep every command scoped to the repository or an explicitly approved temporary directory;
+- run relevant tests, linters, format checks, validators, builds, package checks and Docker-based verification directly on the laptop;
+- use the locally installed CPU, memory, filesystem, Docker engine and toolchains as needed for the authorized task;
+- prefer the smallest relevant check first, then broaden validation in proportion to the change and risk;
+- capture each material command, exit code and concise result in its evidence;
+- report a missing tool, dependency, permission or reproducibility mismatch precisely instead of pretending the command ran;
+- avoid destructive, privileged, secret-dependent, network-expanding or externally billed actions unless the user has authorized them.
+
+Local results are fast preflight evidence. They do not replace required GitHub Actions/Harbor evidence bound to the current head SHA. After local checks pass, push or dispatch work only when already authorized, then reconcile the remote run separately.
 
 ## Control loop
 
@@ -220,6 +237,7 @@ OWNER:
 ALLOWED_EVIDENCE:
 EXCLUDED_EVIDENCE:
 ACTION_TAKEN_OR_PROPOSED:
+LOCAL_EXECUTION_STATUS:
 POLLING_STATUS:
 SESSION_UPDATE:
 CIRCUIT_BREAKER:
