@@ -203,7 +203,7 @@ def main() -> int:
     require_declared(errors, protocol, protocol_path, "Policy version", "2.2")
     require_declared(errors, invoke, invoke_path, "Invocation policy version", "1.1")
     require_declared(
-        errors, orchestrator, orchestrator_path, "Orchestrator policy version", "1.0"
+        errors, orchestrator, orchestrator_path, "Orchestrator policy version", "1.1"
     )
     require_declared(errors, prompts, prompts_path, "Prompt policy version", "2.2")
     require_declared(errors, comprehensive, comprehensive_path, "Reviewer policy version", "1.0")
@@ -237,6 +237,10 @@ def main() -> int:
         "Control loop",
         "Gate order",
         "GitHub Actions evidence",
+        "Bounded active-chat polling",
+        "POLL_INTERVAL_SECONDS: 30",
+        "MAX_POLL_MINUTES: 20",
+        "POLLING_STATUS",
         "Routing",
         "Review packets and independence",
         "Write boundary",
@@ -257,6 +261,7 @@ def main() -> int:
         "exactly one active task",
         "first genuinely incomplete, failed, stale or blocked",
         "Do not perform the routed role",
+        "bounded active-chat polling contract",
         "INSUFFICIENT_EVIDENCE",
     ]:
         if marker.lower() not in cursor_orchestrator.lower():
