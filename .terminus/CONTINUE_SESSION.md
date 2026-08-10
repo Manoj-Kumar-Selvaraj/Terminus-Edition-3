@@ -10,17 +10,18 @@ Before changing a task:
 
 1. Read current authoritative Edition 3 rules.
 2. Read `.terminus/AGENT_SYSTEM.md`.
-3. Read `.terminus/agents/PROTOCOL.md` and `.terminus/agents/INVOKE.md`.
-4. Read `.terminus/agents/QUALITY_AGENT_REGISTRY.md`; read `.terminus/agents/QUALITY_AGENT_PROMPTS.md` only for the quality role being invoked.
-5. When running locally in Cursor, read `.terminus/CURSOR_OPERATING.md`.
-6. For acceptance/review decisions, read the reviewer checklist and criterion registry.
-7. Read the relevant specialist prompt only for the role being invoked.
-8. Read `.terminus/reviewers/PRE_LLMAJ.md` near semantic review.
-9. Read `.terminus/sessions/<task>.md`.
-10. Resolve the current task commit from Git rather than trusting session prose.
-11. Inspect current PR/branch and applicable Actions/Harbor runs, jobs, logs and artifacts.
-12. Run `.terminus/validate_review_freshness.py --task <task>` before relying on stored semantic PASS evidence.
-13. Resume from the first genuinely incomplete, failed or stale gate.
+3. When acting as the controller, read `.terminus/agents/CI_ORCHESTRATOR.md`.
+4. Read `.terminus/agents/PROTOCOL.md` and `.terminus/agents/INVOKE.md`.
+5. Read `.terminus/agents/QUALITY_AGENT_REGISTRY.md`; read `.terminus/agents/QUALITY_AGENT_PROMPTS.md` only for the quality role being invoked.
+6. When running locally in Cursor, read `.terminus/CURSOR_OPERATING.md`.
+7. For acceptance/review decisions, read the reviewer checklist and criterion registry.
+8. Read the relevant specialist prompt only for the role being invoked.
+9. Read `.terminus/reviewers/PRE_LLMAJ.md` near semantic review.
+10. Read `.terminus/sessions/<task>.md`.
+11. Resolve the current task commit from Git rather than trusting session prose.
+12. Inspect current PR/branch and applicable Actions/Harbor runs, jobs, logs and artifacts.
+13. Run `.terminus/validate_review_freshness.py --task <task>` before relying on stored semantic PASS evidence.
+14. Resume from the first genuinely incomplete, failed or stale gate.
 
 ## Quality-agent resume rule
 
