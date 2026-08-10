@@ -17,7 +17,7 @@ For one active task, decide:
 - whether a circuit breaker must stop repeated work;
 - whether every mandatory gate supports advancement or `SUBMISSION_READY`.
 
-The Orchestrator may update the durable session from verified evidence. It does not author task implementation, repair artifacts, issue semantic PASS, adjudicate reviewer disagreement, or waive mandatory gates.
+The Orchestrator may update the durable session from verified evidence. It does not author task implementation, repair artifacts, issue semantic PASS, adjudicate reviewer disagreement, or waive mandatory gates. It does not perform the routed producer/fixer or reviewer role.
 
 ## Trust order
 
