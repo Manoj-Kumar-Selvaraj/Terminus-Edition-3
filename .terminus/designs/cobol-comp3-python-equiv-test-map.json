@@ -1,0 +1,13 @@
+{
+  "schema_version": "1.0",
+  "task": "cobol-comp3-python-equiv",
+  "instruction_requirements": [
+    {"id": "R1", "text": "Signed COMP-3 C/D/F with scale-preserving decimals", "tests": ["test_f2p_public_positive_comp3_qoh", "test_f2p_public_unit_cost_scale_three", "test_f2p_public_negative_qoh_sign_d", "test_f2p_unsigned_reorder_sign_f", "test_f2p_holdout_negative_packed_fields", "test_f2p_holdout_unsigned_reorder_max", "test_f2p_invalid_sign_nibble_is_record_error"]},
+    {"id": "R2", "text": "REDEFINES shares bytes", "tests": ["test_f2p_redefines_shares_status_byte", "test_f2p_holdout_redefines_status"]},
+    {"id": "R3", "text": "ODO uses depending-on count for byte length", "tests": ["test_f2p_public_first_record_byte_length", "test_f2p_public_zero_odo_byte_length", "test_f2p_holdout_odo_two_bins_mixed_signs", "test_f2p_holdout_second_record_zero_odo", "test_f2p_invalid_odo_count_is_record_error"]},
+    {"id": "R4", "text": "equivalence-report.json schema and summary flags", "tests": ["test_f2p_summary_flags_true_on_public_tape", "test_f2p_cli_default_writes_contract_path", "test_f2p_rerun_is_byte_identical"]},
+    {"id": "R5", "text": "Unknown flags exit 2 without clobber", "tests": ["test_f2p_unknown_flag_exits_without_clobber"]},
+    {"id": "R6", "text": "Public layout/sample/evidence retained", "tests": ["test_p2p_layout_and_sample_retained", "test_p2p_incident_evidence_present"]},
+    {"id": "R7", "text": "Display padding and scale-0 strings", "tests": ["test_f2p_display_fields_keep_pic_padding"]}
+  ]
+}

@@ -1,0 +1,22 @@
+{
+  "schema_version": "1.0",
+  "profile": "large_system",
+  "strict_scale_note": "COMP-3 SKU unpacker is naturally below large_system_strict LOC. Profile is large_system without padding.",
+  "task_kind": "languages",
+  "task": "cobol-comp3-python-equiv",
+  "resource_count": 6,
+  "root_cause_clusters": {
+    "RC1_COMP3": "COMP-3 is pretty-printed as hex; C/D/F signs and implied decimals are ignored.",
+    "RC2_REDEFINES": "REDEFINES fields advance the cursor instead of rereading the target offset.",
+    "RC3_ODO": "OCCURS always consumes the maximum span instead of the depending-on count."
+  },
+  "defects": [
+    {"id": "D01", "component": "unpack_comp3", "observable_failure": "QOH rendered as hex.", "root_cause": "RC1_COMP3", "partial_fix_trap": "Hardcoding public sample strings."},
+    {"id": "D02", "component": "unpack_comp3", "observable_failure": "Negative QOH loses the minus.", "root_cause": "RC1_COMP3", "partial_fix_trap": "Special-casing one SKU."},
+    {"id": "D03", "component": "unpack_comp3", "observable_failure": "Scale-3 UNIT-COST drops trailing zeros.", "root_cause": "RC1_COMP3", "partial_fix_trap": "float formatting."},
+    {"id": "D04", "component": "unpack_record", "observable_failure": "ACTIVE-FLAG reads a later byte.", "root_cause": "RC2_REDEFINES", "partial_fix_trap": "Copying STATUS-BYTE after the fact."},
+    {"id": "D05", "component": "unpack_record", "observable_failure": "BIN-COUNT 0 still consumes max OCCURS bytes.", "root_cause": "RC3_ODO", "partial_fix_trap": "Skipping emission but still advancing max."},
+    {"id": "D06", "component": "unpack_record", "observable_failure": "Illegal sign nibble accepted.", "root_cause": "RC1_COMP3", "partial_fix_trap": "Treating E as positive."},
+    {"id": "D07", "component": "unpack_record", "observable_failure": "ODO count outside min..max accepted.", "root_cause": "RC3_ODO", "partial_fix_trap": "Clamping silently."}
+  ]
+}

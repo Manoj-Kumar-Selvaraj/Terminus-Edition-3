@@ -1,7 +1,30 @@
 from __future__ import annotations
 
-from src.layout import Layout, Odo
+from src.layout import Layout, Odo, Pic
 from src.unpack import unpack_record
+
+
+def _looks_packed_value(value: object, scale: int) -> bool:
+    if not isinstance(value, str) or not value:
+        return False
+    # Starter hex dumps are [0-9a-f]+ with even length and no sign/decimal form.
+    if all(ch in "0123456789abcdef" for ch in value) and "." not in value and "-" not in value:
+        if len(value) >= 2 and len(value) % 2 == 0 and any(ch.isalpha() for ch in value):
+            return False
+    try:
+        if scale == 0:
+            int(value)
+            return True
+        if "." not in value:
+            return False
+        whole, frac = value.split(".", 1)
+        if not frac or len(frac) != scale:
+            return False
+        int(whole)
+        int(frac)
+        return True
+    except ValueError:
+        return False
 
 
 def evaluate(layout: Layout, blob: bytes, source: str) -> dict:
@@ -17,24 +40,47 @@ def evaluate(layout: Layout, blob: bytes, source: str) -> dict:
             records.append(
                 {"index": index, "byte_length": 0, "error": error or "empty", "fields": fields}
             )
+            signed_ok = False
             break
-        qoh = fields.get("QOH")
-        if error or not (isinstance(qoh, str) and "." in qoh):
-            signed_ok = False
-        if isinstance(qoh, str) and qoh.startswith("-") is False and fields.get("SKU-CODE", "").startswith("SKU-00000002"):
-            signed_ok = False
+
+        if error:
+            lowered = error.lower()
+            if "sign" in lowered or "comp3" in lowered or "digit" in lowered:
+                signed_ok = False
+            if "odo" in lowered:
+                odo_ok = False
+
+        for item in layout.fields:
+            if isinstance(item, Pic) and item.comp3:
+                if not _looks_packed_value(fields.get(item.name), item.scale):
+                    signed_ok = False
+            elif isinstance(item, Odo):
+                depending = fields.get(item.depending_on)
+                entries = fields.get(item.name)
+                if not isinstance(entries, list) or depending is None:
+                    odo_ok = False
+                else:
+                    try:
+                        if len(entries) != int(depending):
+                            odo_ok = False
+                    except (TypeError, ValueError):
+                        odo_ok = False
+                for pic in item.fields:
+                    if not pic.comp3:
+                        continue
+                    for entry in entries or []:
+                        if not _looks_packed_value(entry.get(pic.name), pic.scale):
+                            signed_ok = False
+
         if fields.get("STATUS-BYTE") != fields.get("ACTIVE-FLAG"):
             redef_ok = False
-        odo = next((item for item in layout.fields if isinstance(item, Odo)), None)
-        if odo and isinstance(fields.get(odo.name), list):
-            depending = fields.get(odo.depending_on, 0)
-            if len(fields[odo.name]) != int(depending or 0):
-                odo_ok = False
+
         records.append(
             {"index": index, "byte_length": length, "error": error, "fields": fields}
         )
         offset += length
         index += 1
+
     return {
         "layout_id": layout.layout_id,
         "source_records": source,

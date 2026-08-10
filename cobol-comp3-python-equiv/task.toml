@@ -11,6 +11,10 @@ artifacts = ["/app/equiv"]
 [metadata]
 author_name = "anonymous"
 author_email = "anonymous@example.com"
+difficulty_explanation = "Must implement packed COMP-3 C/D/F with scale, REDEFINES without advancing the cursor, and ODO lengths that do not consume the max span. Hidden holdouts and invalid-sign/ODO cases punish hex dumps and max-span walks. Unofficial n/8 not measured."
+solution_explanation = "Replace unpack_comp3/unpack_record to decode nibbles with scale-preserving decimal strings, honor REDEFINES starts, and iterate OCCURS by the depending-on count; run equiv-eval to write the public report."
+verification_explanation = "Verifier checks public sample decimals and byte lengths, sealed holdouts, invalid sign/ODO error records, CLI unknown-flag non-clobber, and that layout/sample files remain."
+relevant_experience = "COBOL packed decimal, record layouts, Python binary parsers."
 
 [verifier]
 timeout_sec = 1800

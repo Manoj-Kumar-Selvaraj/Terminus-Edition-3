@@ -6,37 +6,44 @@ Session schema version: `2.4`
 
 - Task: `cobol-comp3-python-equiv`
 - Controller state: `DRAFT`
-- Working branch: none
+- Working branch: `task/cobol-comp3-python-equiv`
 - Pull request: none
-- Current task commit: uncommitted
-- Agent-system policy: `2.3`
+- Current task commit: uncommitted local rework
+- Agent-system policy: `2.4`
+- Specialist prompt policy: `2.2`
+- Specialist protocol policy: `2.1`
+- Pre-LLMaJ panel policy: `2.2`
+- Comprehensive reviewer policy: `1.0`
 - Reviewer checklist snapshot: `2026-08-08-user-supplied`
 
 ## Current task profile
 
-Software/Languages warehouse SKU tape unpacker: COMP-3 C/D/F, REDEFINES, OCCURS DEPENDING ON. Not a payment/claims/depot ledger. No OpenAI, no GnuCOBOL, no trial network. Holdouts sealed in verifier tests. No design.json/test-map (controller asked design+test-map for tasks 1 and 2 only).
+Software/Languages warehouse SKU tape unpacker: COMP-3 C/D/F, REDEFINES, OCCURS DEPENDING ON. Not a payment/claims/depot ledger. No OpenAI, no GnuCOBOL, no trial network. Holdouts and invalid-sign/ODO fixtures sealed in verifier tests.
 
 ## Current gates
 
 | Gate | Status | Evidence / version |
 | --- | --- | --- |
-| Q1 Spec Gap Repair | PENDING | |
-| Q2 Verifier Coverage Repair | PENDING | 16 F2P / 1 P2P |
+| Q1 Spec Gap Repair | PENDING | producer rework added incident paths + invalid-record contract coverage |
+| Q2 Verifier Coverage Repair | PENDING | F2P includes holdouts + invalid sign/ODO + rerun |
+| Q3 Spec Ambiguity Repair | PENDING | |
 | Q7 Task Format Enforcer | PENDING | |
-| Oracle = 1 | PENDING | |
-| NOP = 0 | PENDING | |
+| Oracle = 1 | PASS | Harbor `/tmp/e3-cobol-equiv-jobs/2026-08-11__00-13-19` trial `cobol-comp3-python-equiv__63YHogS` reward 1 |
+| NOP = 0 | PASS | Harbor `/tmp/e3-cobol-equiv-jobs/2026-08-11__00-14-42` trial `cobol-comp3-python-equiv__ovBoSbo` reward 0 |
 | Q4 Spec-Test Contract Reviewer | PENDING | do not self-certify |
 | Q6 Production Logic Auditor | PENDING | do not self-certify |
+| Difficulty trials | PENDING | tier provisional `advanced` |
 
 ## Current blocker
 
-Local unpack verification + Harbor oracle/NOP. Do not self-certify Q4/Q6.
+Independent Q4/Q6 in other chats after commit/freeze. Format gate (Q7) and Pre-LLMaJ still open.
 
 ## Next action
 
-Run fixed unpack against public sample and holdout hex, then Harbor.
-
+Commit the rework on `task/cobol-comp3-python-equiv` when authorized, then open packet-bound Q4 and Q6 in fresh chats.
 ## Decisions that must survive chat changes
 
 - Domain is warehouse catalog / SKU tape, not EOD payments.
 - Verifier checks decimals/bytes against sealed expected; oracle implements real COMP-3.
+- `git apply` outside `/app/.git` is not trusted; not applicable here (Python install oracle).
+- Q4/Q6 must not be self-certified from the producer chat.

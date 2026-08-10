@@ -14,15 +14,17 @@ DEFAULT_OUT = Path("/app/equiv/out/equivalence-report.json")
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(prog="equiv-eval")
+    parser = argparse.ArgumentParser(prog="equiv-eval", add_help=True)
     parser.add_argument("--layout", default=str(DEFAULT_LAYOUT))
     parser.add_argument("--records", default=str(DEFAULT_RECORDS))
     parser.add_argument("--out", default=str(DEFAULT_OUT))
     try:
         args = parser.parse_args(sys.argv[1:] if argv is None else argv)
     except SystemExit as exc:
+        # Unknown flags / --help: never rewrite the report artifact.
         code = exc.code if isinstance(exc.code, int) else 2
-        return code
+        return code if code is not None else 0
+
     layout = load_layout(args.layout)
     blob = Path(args.records).read_bytes()
     report = evaluate(layout, blob, args.records)

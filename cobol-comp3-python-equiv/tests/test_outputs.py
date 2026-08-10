@@ -189,3 +189,56 @@ def test_p2p_layout_and_sample_retained():
     assert LAYOUT.is_file()
     assert PUBLIC.is_file()
     assert PUBLIC.stat().st_size == 72
+
+
+def _fixture_bytes(name: str) -> bytes:
+    hex_chars = []
+    for line in Path(f"/tests/fixtures/{name}").read_text(encoding="utf-8").splitlines():
+        stripped = line.strip()
+        if not stripped or stripped.startswith("#"):
+            continue
+        hex_chars.append(stripped)
+    return bytes.fromhex("".join(hex_chars))
+
+
+def test_f2p_invalid_sign_nibble_is_record_error():
+    """A non C/D/F packed sign nibble becomes a record error and fails signed summary."""
+    target = Path("/tmp/invalid-sign.dat")
+    out = Path("/tmp/invalid-sign-report.json")
+    target.write_bytes(_fixture_bytes("invalid-sign.hex"))
+    cp = _run(["--layout", str(LAYOUT), "--records", str(target), "--out", str(out)])
+    assert cp.returncode == 1, cp.stderr
+    data = json.loads(out.read_text(encoding="utf-8"))
+    assert data["records"][0]["error"]
+    assert "sign" in data["records"][0]["error"].lower()
+    assert data["summary"]["comp3_signed_ok"] is False
+    assert data["summary"]["error_count"] >= 1
+
+
+def test_f2p_invalid_odo_count_is_record_error():
+    """BIN-COUNT outside the OCCURS bounds is a record error and fails ODO summary."""
+    target = Path("/tmp/invalid-odo.dat")
+    out = Path("/tmp/invalid-odo-report.json")
+    target.write_bytes(_fixture_bytes("invalid-odo.hex"))
+    cp = _run(["--layout", str(LAYOUT), "--records", str(target), "--out", str(out)])
+    assert cp.returncode == 1, cp.stderr
+    data = json.loads(out.read_text(encoding="utf-8"))
+    assert data["records"][0]["error"]
+    assert "odo" in data["records"][0]["error"].lower()
+    assert data["summary"]["odo_lengths_ok"] is False
+    assert data["summary"]["error_count"] >= 1
+
+
+def test_f2p_rerun_is_byte_identical():
+    """A second default equiv-eval run rewrites the same report bytes."""
+    before = REPORT.read_bytes()
+    cp = _run()
+    assert cp.returncode == 0, cp.stderr
+    assert REPORT.read_bytes() == before
+
+
+def test_p2p_incident_evidence_present():
+    """Public handoff and incident log remain on the submitted tree."""
+    assert (ROOT / "ops" / "handoff.md").is_file()
+    assert (ROOT / "log" / "unpack-incident.log").is_file()
+    assert (ROOT / "docs" / "record-layout.md").is_file()
