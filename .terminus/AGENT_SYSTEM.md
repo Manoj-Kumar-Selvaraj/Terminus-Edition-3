@@ -4,7 +4,7 @@ Agent-system policy version: `2.4`
 
 This directory is the control plane for creating, reviewing and advancing Terminus Edition 3 tasks. Repository state, current authoritative rules, Git history, generated review packets/results, Actions/Harbor evidence and durable session checkpoints are evidence. Chat history is replaceable working context.
 
-Read `.terminus/agents/PROTOCOL.md` before semantic work, `.terminus/agents/INVOKE.md` before starting a specialist review, and `.terminus/CURSOR_OPERATING.md` when Cursor is the execution surface. Creation uses `.terminus/agents/CREATION_CONTROLLER.md` and `.terminus/agents/CREATOR_AGENT_REGISTRY.md`. The additive eight-agent quality interlock is defined by `.terminus/agents/QUALITY_AGENT_REGISTRY.md` and `.terminus/agents/QUALITY_AGENT_PROMPTS.md`. Acceptance review uses the reviewer checklist, criterion registry and Comprehensive Reviewer contract.
+Read `.terminus/agents/CI_ORCHESTRATOR.md` when starting or resuming the controller, `.terminus/agents/PROTOCOL.md` before semantic work, `.terminus/agents/INVOKE.md` before starting a specialist review, and `.terminus/CURSOR_OPERATING.md` when Cursor is the execution surface. Creation uses `.terminus/agents/CREATION_CONTROLLER.md` and `.terminus/agents/CREATOR_AGENT_REGISTRY.md`. The additive eight-agent quality interlock is defined by `.terminus/agents/QUALITY_AGENT_REGISTRY.md` and `.terminus/agents/QUALITY_AGENT_PROMPTS.md`. Acceptance review uses the reviewer checklist, criterion registry and Comprehensive Reviewer contract.
 
 ## Non-negotiable principles
 
@@ -190,6 +190,8 @@ Detailed missions, evidence boundaries and outputs for Q1–Q8 are authoritative
 ### CI Orchestrator / Submission Controller
 
 Owns routing, deterministic evidence, packet generation, staleness, circuit breakers, session state and final readiness. It cannot manufacture PASS from incomplete evidence.
+
+The portable execution contract is `.terminus/agents/CI_ORCHESTRATOR.md`; the project-scoped callable agent is `.cursor/agents/terminus-ci-orchestrator.md`. The Orchestrator remains a controller rather than a producer or semantic reviewer and must route role work into separate chats.
 
 ## Routing
 

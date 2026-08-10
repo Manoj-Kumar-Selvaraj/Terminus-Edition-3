@@ -14,6 +14,10 @@ One Cursor chat performs exactly one logical role:
 
 Do not combine creator and reviewer authority in one context. Writers/builders never approve their own revision. A reviewer chat that has already seen excluded evidence is not cold for that role.
 
+## Project CI Orchestrator agent
+
+Use `.cursor/agents/terminus-ci-orchestrator.md` to start or resume the controller for one task. Its authoritative portable contract is `.terminus/agents/CI_ORCHESTRATOR.md`. The controller reconciles repository and CI evidence, identifies the first non-current gate and creates a one-role handoff; it does not perform the routed producer, fixer or reviewer role in the same chat.
+
 ## Packet required
 
 Every new semantic review starts from `.terminus/new_review_packet.py`. The generated packet binds the role to `TASK_COMMIT`, protocol/prompt/role policy, `ROLE_CONTRACT_HASH`, and a unique review output path.

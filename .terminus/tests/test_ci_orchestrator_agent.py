@@ -1,0 +1,89 @@
+"""Regression coverage for the dedicated Terminus CI Orchestrator agent."""
+
+from __future__ import annotations
+
+import re
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[2]
+T = ROOT / ".terminus"
+PORTABLE = T / "agents" / "CI_ORCHESTRATOR.md"
+PROJECT_AGENT = ROOT / ".cursor" / "agents" / "terminus-ci-orchestrator.md"
+
+
+def test_portable_orchestrator_contract_is_complete() -> None:
+    text = PORTABLE.read_text(encoding="utf-8")
+    assert "Orchestrator policy version: `1.0`" in text
+    for heading in (
+        "## Decision right",
+        "## Trust order",
+        "## Bootstrap",
+        "## Control loop",
+        "## Gate order",
+        "## GitHub Actions evidence",
+        "## Routing",
+        "## Review packets and independence",
+        "## Write boundary",
+        "## Circuit breakers",
+        "## Required response",
+        "## Submission-ready boundary",
+    ):
+        assert heading in text
+
+
+def test_orchestrator_routes_without_self_certifying() -> None:
+    text = PORTABLE.read_text(encoding="utf-8")
+    for marker in (
+        "first genuinely incomplete, failed, stale or blocked gate",
+        "assign exactly one responsible role",
+        "Do not perform that role inside the Orchestrator context",
+        "does not author task implementation",
+        "does not perform the routed producer/fixer or reviewer role",
+        "INSUFFICIENT_EVIDENCE",
+        "NEXT_AGENT_PROMPT",
+    ):
+        assert marker in text
+
+
+def test_orchestrator_requires_commit_bound_ci_and_review_evidence() -> None:
+    text = PORTABLE.read_text(encoding="utf-8")
+    for marker in (
+        "head SHA",
+        "run ID and run number",
+        "job ID",
+        "log or artifact IDs",
+        "role-contract hash",
+        "new immutable review ID",
+        "A green check is a pointer to evidence, not proof by itself",
+    ):
+        assert marker in text
+
+
+def test_project_agent_frontmatter_and_contract_reference() -> None:
+    text = PROJECT_AGENT.read_text(encoding="utf-8")
+    match = re.match(r"^---\n(.*?)\n---\n", text, flags=re.DOTALL)
+    assert match is not None
+    frontmatter = match.group(1)
+    assert re.search(r"(?m)^name: terminus-ci-orchestrator$", frontmatter)
+    assert re.search(r"(?m)^description: .+", frontmatter)
+    assert ".terminus/agents/CI_ORCHESTRATOR.md" in text
+    assert "exactly one active task" in text
+    assert "Do not perform the routed role" in text
+
+
+def test_orchestrator_is_integrated_into_control_plane_and_ci() -> None:
+    files = {
+        "agent system": T / "AGENT_SYSTEM.md",
+        "bootstrap": T / "CONTINUE_SESSION.md",
+        "operating law": T / "CURSOR_OPERATING.md",
+        "invocation": T / "agents" / "INVOKE.md",
+        "prompt registry": T / "agents" / "PROMPTS.md",
+    }
+    combined = "\n".join(path.read_text(encoding="utf-8") for path in files.values())
+    assert ".terminus/agents/CI_ORCHESTRATOR.md" in combined
+    assert ".cursor/agents/terminus-ci-orchestrator.md" in combined
+
+    workflow = (
+        ROOT / ".github" / "workflows" / "terminus-agent-system-ci.yml"
+    ).read_text(encoding="utf-8")
+    assert ".cursor/agents/**" in workflow

@@ -459,6 +459,8 @@ RECHECK:
 
 ## CI Orchestrator / Submission Controller
 
+The complete portable execution contract is `.terminus/agents/CI_ORCHESTRATOR.md`; the callable project agent is `.cursor/agents/terminus-ci-orchestrator.md`. This summary remains for registry compatibility.
+
 ### Mission
 Own one active task session from DRAFT/PUSHED through SUBMISSION_READY.
 
