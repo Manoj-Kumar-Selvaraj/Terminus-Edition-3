@@ -23,6 +23,7 @@ REQUIRED = [
     T / "validate_task_complexity.py",
     T / "agents" / "PROTOCOL.md",
     T / "agents" / "INVOKE.md",
+    T / "agents" / "CI_ORCHESTRATOR.md",
     T / "agents" / "PROMPTS.md",
     T / "agents" / "COMPREHENSIVE_REVIEWER.md",
     T / "agents" / "CREATION_CONTROLLER.md",
@@ -43,6 +44,7 @@ REQUIRED = [
     T / "reviewers" / "AGENT_DESIGN_RESEARCH.md",
     T / "reviews" / "README.md",
     T / "sessions" / "TEMPLATE.md",
+    ROOT / ".cursor" / "agents" / "terminus-ci-orchestrator.md",
 ]
 
 REVIEW_ROLE_HEADINGS = [
@@ -157,6 +159,8 @@ def main() -> int:
     operating_path = T / "CURSOR_OPERATING.md"
     protocol_path = T / "agents" / "PROTOCOL.md"
     invoke_path = T / "agents" / "INVOKE.md"
+    orchestrator_path = T / "agents" / "CI_ORCHESTRATOR.md"
+    cursor_orchestrator_path = ROOT / ".cursor" / "agents" / "terminus-ci-orchestrator.md"
     prompts_path = T / "agents" / "PROMPTS.md"
     comprehensive_path = T / "agents" / "COMPREHENSIVE_REVIEWER.md"
     panel_path = T / "reviewers" / "PRE_LLMAJ.md"
@@ -173,6 +177,8 @@ def main() -> int:
     operating = texts.get(operating_path, "")
     protocol = texts.get(protocol_path, "")
     invoke = texts.get(invoke_path, "")
+    orchestrator = texts.get(orchestrator_path, "")
+    cursor_orchestrator = texts.get(cursor_orchestrator_path, "")
     prompts = texts.get(prompts_path, "")
     comprehensive = texts.get(comprehensive_path, "")
     panel = texts.get(panel_path, "")
@@ -196,6 +202,9 @@ def main() -> int:
     require_declared(errors, operating, operating_path, "Operating policy version", "1.1")
     require_declared(errors, protocol, protocol_path, "Policy version", "2.2")
     require_declared(errors, invoke, invoke_path, "Invocation policy version", "1.1")
+    require_declared(
+        errors, orchestrator, orchestrator_path, "Orchestrator policy version", "1.0"
+    )
     require_declared(errors, prompts, prompts_path, "Prompt policy version", "2.2")
     require_declared(errors, comprehensive, comprehensive_path, "Reviewer policy version", "1.0")
     require_declared(errors, panel, panel_path, "Panel policy version", "2.2")
@@ -220,6 +229,46 @@ def main() -> int:
     for marker in CREATOR_ROLE_MARKERS:
         if marker.lower() not in creator_text.lower():
             fail(errors, f"creator system missing role marker: {marker}")
+
+    for marker in [
+        "Decision right",
+        "Trust order",
+        "Bootstrap",
+        "Control loop",
+        "Gate order",
+        "GitHub Actions evidence",
+        "Routing",
+        "Review packets and independence",
+        "Write boundary",
+        "Circuit breakers",
+        "Required response",
+        "Submission-ready boundary",
+        "first genuinely incomplete, failed, stale or blocked gate",
+        "INSUFFICIENT_EVIDENCE",
+        "NEXT_AGENT_PROMPT",
+    ]:
+        if marker.lower() not in orchestrator.lower():
+            fail(errors, f"CI_ORCHESTRATOR.md missing control marker: {marker}")
+
+    if not re.search(r"(?m)^---\s*$.*?^name:\s*terminus-ci-orchestrator\s*$.*?^description:\s*.+?^---\s*$", cursor_orchestrator, flags=re.DOTALL):
+        fail(errors, "project CI Orchestrator agent has invalid or incomplete YAML frontmatter")
+    for marker in [
+        ".terminus/agents/CI_ORCHESTRATOR.md",
+        "exactly one active task",
+        "first genuinely incomplete, failed, stale or blocked",
+        "Do not perform the routed role",
+        "INSUFFICIENT_EVIDENCE",
+    ]:
+        if marker.lower() not in cursor_orchestrator.lower():
+            fail(errors, f"project CI Orchestrator agent missing marker: {marker}")
+
+    integration_text = agent_system + bootstrap + operating + invoke + prompts
+    for marker in [
+        ".terminus/agents/CI_ORCHESTRATOR.md",
+        ".cursor/agents/terminus-ci-orchestrator.md",
+    ]:
+        if marker not in integration_text:
+            fail(errors, f"agent-system integration missing CI Orchestrator path: {marker}")
 
     for marker in PROTOCOL_MARKERS:
         if marker.lower() not in protocol.lower():
@@ -417,7 +466,8 @@ def main() -> int:
         f"review_roles={len(REVIEW_ROLE_HEADINGS)} creator_markers={len(CREATOR_ROLE_MARKERS)} "
         f"checklist_criteria={len(criteria)} reviewer_eval_seed_cases={len(case_ids)} "
         "schemas=v3 provenance=packet_bound writing_policy=human_handoff "
-        "difficulty_policy=combined_10 complexity_policy=strict_plus_authenticity"
+        "difficulty_policy=combined_10 complexity_policy=strict_plus_authenticity "
+        "orchestrator_agent=project_scoped"
     )
     return 0
 
