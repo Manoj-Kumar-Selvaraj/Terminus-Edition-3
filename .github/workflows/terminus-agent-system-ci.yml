@@ -13,94 +13,20 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
 
 concurrency:
   group: terminus-agent-system-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  repair-jetstream-q4:
-    name: Apply exhaustive Q4 1.1 consolidated repair
-    if: github.event_name == 'pull_request' && github.head_ref == 'task/jetstream-quality-interlock'
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          ref: task/jetstream-quality-interlock
-          fetch-depth: 0
-
-      - name: Verify authorized baseline
-        shell: bash
-        run: |
-          set -euo pipefail
-          test "$(git log -1 --format=%H -- jetstream-regional-stream-continuity)" = "440aa83862a3234678e27bd70319623735964173"
-          test -f .terminus/tmp_jetstream_q4_1_1_repair.py
-          grep -q '"verdict": "REVISE"' .terminus/reviews/jetstream-regional-stream-continuity/440aa838/jetstream-regional-stream-continuity-440aa838-spec-test-contract-7c5bbb5a2b.json
-          grep -q '"verdict": "PASS"' .terminus/reviews/jetstream-regional-stream-continuity/440aa838/jetstream-regional-stream-continuity-440aa838-production-logic-a277a01448.json
-          grep -q '"review_scope_hash": "4007f243d3e31219716e8f3af0549644839141f37695a367f2f7732906f77a81"' .terminus/reviews/jetstream-regional-stream-continuity/440aa838/jetstream-regional-stream-continuity-440aa838-production-logic-a277a01448.json
-
-      - name: Apply single consolidated repair
-        run: python3 .terminus/tmp_jetstream_q4_1_1_repair.py
-
-      - name: Validate repair shape
-        shell: bash
-        run: |
-          set -euo pipefail
-          python3 -m py_compile \
-            jetstream-regional-stream-continuity/tests/test_continuity.py \
-            jetstream-regional-stream-continuity/tests/test_contract_coverage.py \
-            jetstream-regional-stream-continuity/solution/files/engine.py
-          python3 - <<'PY'
-          import ast
-          from pathlib import Path
-          total = f2p = p2p = 0
-          for path in (
-              Path('jetstream-regional-stream-continuity/tests/test_continuity.py'),
-              Path('jetstream-regional-stream-continuity/tests/test_contract_coverage.py'),
-          ):
-              tree = ast.parse(path.read_text(encoding='utf-8'))
-              for node in tree.body:
-                  if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)) and node.name.startswith('test_'):
-                      total += 1
-                      if node.name.startswith('test_f2p_'):
-                          f2p += 1
-                      elif node.name.startswith('test_p2p_'):
-                          p2p += 1
-          assert (total, f2p, p2p) == (40, 30, 10), (total, f2p, p2p)
-          PY
-          if git diff --name-only -- jetstream-regional-stream-continuity/environment | grep -q .; then
-            echo '::error::Consolidated Q4 repair changed solver-visible environment; Q6 scope reuse would be invalid.'
-            git diff --name-only -- jetstream-regional-stream-continuity/environment
-            exit 1
-          fi
-          git diff --check
-
-      - name: Commit repair and restore registered workflow
-        shell: bash
-        run: |
-          set -euo pipefail
-          git fetch origin main
-          git checkout origin/main -- .github/workflows/terminus-agent-system-ci.yml
-          rm .terminus/tmp_jetstream_q4_1_1_repair.py
-          git config user.name actions
-          git config user.email actions@users.noreply.github.com
-          git add \
-            .github/workflows/terminus-agent-system-ci.yml \
-            .terminus/tmp_jetstream_q4_1_1_repair.py \
-            jetstream-regional-stream-continuity/tests/test_continuity.py \
-            jetstream-regional-stream-continuity/tests/test_contract_coverage.py \
-            jetstream-regional-stream-continuity/solution/files/engine.py
-          git diff --cached --check
-          git commit -m 'Close exhaustive Q4 1.1 findings'
-          git push origin HEAD:task/jetstream-quality-interlock
-
   validate-agent-system:
     name: Validate reviewer/controller system
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
+      # Review freshness is derived from per-task Git history, so shallow history
+      # is not sufficient evidence.
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
@@ -127,6 +53,7 @@ jobs:
         run: python3 .terminus/validate_agent_system.py
 
       - name: Validate current review freshness and commit binding
+        # --allow-stale is deliberately forbidden in CI.
         run: python3 .terminus/validate_review_freshness.py
 
       - name: Check control-plane files stay outside task packages

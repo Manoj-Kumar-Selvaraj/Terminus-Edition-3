@@ -1,6 +1,9 @@
 from __future__ import annotations
 
+import asyncio
+import hashlib
 import json
+import urllib.request
 import uuid
 from collections.abc import Mapping
 from datetime import datetime, timedelta
@@ -23,7 +26,6 @@ from .model import (
     ReplayStatus,
     collapse_ranges,
     contiguous_floor,
-    report_checksum,
     to_iso,
     utcnow,
 )
@@ -152,7 +154,10 @@ class ContinuityEngine(BaseContinuityEngine):
                 ),
             )
             return pending
-        if observation.stream_fingerprint == current.stream_fingerprint:
+
+        same_fingerprint = observation.stream_fingerprint == current.stream_fingerprint
+        sequence_regressed = observation.last_sequence < current.last_observed_sequence
+        if same_fingerprint and not sequence_regressed:
             if observation.first_sequence > current.last_observed_sequence + 1:
                 raise ContractError(
                     f"origin {observation.region} skipped from {current.last_observed_sequence} "
@@ -177,10 +182,13 @@ class ContinuityEngine(BaseContinuityEngine):
                     json.dumps({"generation": current.generation}, sort_keys=True),
                 ),
             )
-            refreshed = self.store.generation(observation.region, current.generation)
+            refreshed = self.store.generation(
+                observation.region, current.generation
+            )
             if refreshed is None:
                 raise ContractError("confirmed generation disappeared")
             return refreshed
+
         next_generation = current.generation + 1
         pending = self.store.generation(observation.region, next_generation)
         if pending is None:
@@ -202,6 +210,11 @@ class ContinuityEngine(BaseContinuityEngine):
                 pending.generation,
                 observation.last_sequence,
             )
+            pending = self.store.generation(
+                observation.region, pending.generation
+            )
+            if pending is None:
+                raise ContractError("pending generation disappeared")
         self.store.execute(
             "INSERT INTO origin_observations(region,stream_name,domain,stream_fingerprint,first_sequence,last_sequence,observed_at,disposition,detail_json) "
             "VALUES(?,?,?,?,?,?,?,'PENDING_GENERATION',?)",
@@ -218,6 +231,7 @@ class ContinuityEngine(BaseContinuityEngine):
                         "generation": pending.generation,
                         "previous_generation": current.generation,
                         "operator_approval_required": True,
+                        "sequence_regressed": sequence_regressed,
                     },
                     sort_keys=True,
                 ),
@@ -383,11 +397,15 @@ class ContinuityEngine(BaseContinuityEngine):
                 region=region, generation=generation
             )
         }
+        archive_rows = self.store.execute(
+            "SELECT event_id,region,generation,origin_sequence,hub_stream_sequence,"
+            "payload_sha256,archived_at,source_stream,source_domain,"
+            "duplicate_observation_count FROM archive_index "
+            "WHERE region=? AND generation=? ORDER BY origin_sequence,event_id",
+            (region, generation),
+        ).fetchall()
         archive_by_id = {
-            record.identity.event_id: record
-            for record in self.store.iter_archive(
-                region=region, generation=generation
-            )
+            str(row["event_id"]): row for row in archive_rows
         }
         journal_ids = set(journal_by_id)
         archive_ids = set(archive_by_id)
@@ -416,7 +434,7 @@ class ContinuityEngine(BaseContinuityEngine):
                 )
             )
         for event_id in unexpected_ids:
-            record = archive_by_id[event_id]
+            row = archive_by_id[event_id]
             findings.append(
                 Finding(
                     severity=FindingSeverity.BLOCKER,
@@ -424,7 +442,7 @@ class ContinuityEngine(BaseContinuityEngine):
                     message="hub raw archive contains an event outside the edge journal authority",
                     region=region,
                     generation=generation,
-                    origin_sequence=record.identity.origin_sequence,
+                    origin_sequence=int(row["origin_sequence"]),
                     event_id=event_id,
                     expected_value="absent",
                     observed_value="present",
@@ -433,19 +451,19 @@ class ContinuityEngine(BaseContinuityEngine):
             )
         for event_id in sorted(journal_ids & archive_ids):
             event = journal_by_id[event_id]
-            record = archive_by_id[event_id]
+            row = archive_by_id[event_id]
             mismatches: list[str] = []
-            if event.identity.region != record.identity.region:
+            if str(row["region"]) != event.identity.region:
                 mismatches.append("region")
-            if event.identity.generation != record.identity.generation:
+            if int(row["generation"]) != event.identity.generation:
                 mismatches.append("generation")
-            if event.identity.origin_sequence != record.identity.origin_sequence:
+            if int(row["origin_sequence"]) != event.identity.origin_sequence:
                 mismatches.append("origin_sequence")
-            if event.payload_sha256.lower() != record.payload_sha256.lower():
+            if str(row["payload_sha256"]).lower() != event.payload_sha256.lower():
                 mismatches.append("payload_sha256")
-            if record.source_stream != expected_source_stream:
+            if str(row["source_stream"]) != expected_source_stream:
                 mismatches.append("source_stream")
-            if record.source_domain != expected_source_domain:
+            if str(row["source_domain"]) != expected_source_domain:
                 mismatches.append("source_domain")
             if mismatches:
                 metadata_mismatch_count += 1
@@ -465,8 +483,7 @@ class ContinuityEngine(BaseContinuityEngine):
                 )
 
         duplicate_count = sum(
-            record.duplicate_observation_count
-            for record in archive_by_id.values()
+            int(row["duplicate_observation_count"]) for row in archive_rows
         )
         if duplicate_count:
             findings.append(
@@ -483,8 +500,7 @@ class ContinuityEngine(BaseContinuityEngine):
             )
 
         archive_sequences = [
-            record.identity.origin_sequence
-            for record in archive_by_id.values()
+            int(row["origin_sequence"]) for row in archive_rows
         ]
         archive_floor = contiguous_floor(archive_sequences)
         if archive_floor < confirmed_watermark:
@@ -515,7 +531,21 @@ class ContinuityEngine(BaseContinuityEngine):
         )
         findings.extend(consumer_findings)
 
-        checksum = report_checksum(archive_by_id.values())
+        digest = hashlib.sha256()
+        for row in sorted(archive_rows, key=lambda value: str(value["event_id"])):
+            stable = (
+                str(row["region"]),
+                int(row["generation"]),
+                int(row["origin_sequence"]),
+                str(row["event_id"]),
+                str(row["payload_sha256"]).lower(),
+                str(row["source_stream"]),
+                str(row["source_domain"]),
+            )
+            digest.update(json.dumps(stable, separators=(",", ":")).encode("utf-8"))
+            digest.update(b"\n")
+        checksum = digest.hexdigest()
+
         blocking = [
             finding
             for finding in findings
@@ -732,4 +762,80 @@ class ContinuityEngine(BaseContinuityEngine):
             for checkpoint in checkpoints:
                 if not checkpoint.is_consistent:
                     ok = False
+
+        hub = self.config.get("hub")
+        if not isinstance(hub, Mapping):
+            return ok, details
+        monitor_url = str(hub.get("monitor_url", "")).rstrip("/")
+        if not monitor_url:
+            return ok, details
+        try:
+            with urllib.request.urlopen(
+                monitor_url + "/varz", timeout=0.2
+            ) as response:
+                response.read(1)
+        except Exception:
+            return ok, details
+
+        async def observe() -> dict[str, tuple[str, int, int]]:
+            from .runtime import (
+                JetStreamAdmin,
+                NatsConnectionPool,
+                endpoints_from_engine,
+            )
+
+            observed: dict[str, tuple[str, int, int]] = {}
+            pool = NatsConnectionPool()
+            try:
+                admin = JetStreamAdmin(pool, endpoints_from_engine(self))
+                stream_name = self.topology().hub_archive.name
+                for consumer_name in self.store.required_consumers():
+                    try:
+                        info = await admin.consumer_info(
+                            "hub", stream_name, consumer_name
+                        )
+                    except Exception:
+                        continue
+                    if info.ack_floor_stream_sequence <= 0:
+                        continue
+                    try:
+                        message = await admin.get_message_by_sequence(
+                            "hub",
+                            stream_name,
+                            info.ack_floor_stream_sequence,
+                        )
+                        document = json.loads(message.data.decode("utf-8"))
+                        observed[consumer_name] = (
+                            str(document["region"]),
+                            int(
+                                document.get(
+                                    "origin_generation",
+                                    document.get("generation"),
+                                )
+                            ),
+                            int(document["origin_sequence"]),
+                        )
+                    except Exception:
+                        continue
+                return observed
+            finally:
+                await pool.close()
+
+        try:
+            external = asyncio.run(observe())
+        except Exception:
+            external = {}
+        for consumer_name, (region, generation, sequence) in external.items():
+            checkpoint = self.store.checkpoint(
+                consumer_name, region, generation
+            )
+            if checkpoint is None or checkpoint.application_sequence != sequence:
+                ok = False
+            details.setdefault(consumer_name, []).append(
+                {
+                    "external_region": region,
+                    "external_generation": generation,
+                    "external_origin_sequence": sequence,
+                }
+            )
         return ok, details
