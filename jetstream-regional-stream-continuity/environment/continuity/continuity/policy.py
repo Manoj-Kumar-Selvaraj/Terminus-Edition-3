@@ -472,6 +472,15 @@ class ContinuityEngine:
         archive_sequences = sorted(record.identity.hub_stream_sequence for record in archive.values())
         journal_floor = contiguous_floor(journal_sequences)
         archive_floor = contiguous_floor(archive_sequences)
+        archive_origin_floor = contiguous_floor(
+            sorted(record.identity.origin_sequence for record in archive.values())
+        )
+        required_consumer_progress: dict[str, int] = {}
+        for consumer_name in self.store.required_consumers():
+            checkpoint = self.store.checkpoint(consumer_name, region, generation)
+            required_consumer_progress[consumer_name] = (
+                0 if checkpoint is None else checkpoint.application_sequence
+            )
 
         if archive_count != journal_count:
             findings.append(
@@ -515,6 +524,8 @@ class ContinuityEngine:
             duplicate_count=duplicate_count,
             metadata_mismatch_count=metadata_mismatch_count,
             consumer_lag_count=sum(1 for f in findings if f.finding_type == "CONSUMER_LAG"),
+            highest_contiguous_archive_origin_sequence=archive_origin_floor,
+            required_consumer_progress=required_consumer_progress,
             checksum=checksum,
             findings=tuple(findings),
         )
@@ -687,22 +698,24 @@ class ContinuityEngine:
         self.store.update_replay_status(plan_id, ReplayStatus.RUNNING, fence_epoch=fence_epoch)
         counters = defaultdict(int)
         for item in self.store.replay_items(plan_id):
-            try:
-                self.assert_recovery_fence(
-                    region=plan.replay_range.region,
-                    owner_id=owner_id,
-                    fence_epoch=fence_epoch,
-                )
-            except FencingError as exc:
-                self.store.update_replay_item(plan_id, item.event_id, state="HELD", error=str(exc))
-                counters["held"] += 1
-                continue
+            self.assert_recovery_fence(
+                region=plan.replay_range.region,
+                owner_id=owner_id,
+                fence_epoch=fence_epoch,
+            )
             if self.store.archive_record(item.event_id) is not None:
                 self.store.update_replay_item(plan_id, item.event_id, state="ALREADY_ARCHIVED")
                 counters["already_archived"] += 1
                 continue
             try:
                 await self.publish_event(item.event_id, publisher)
+                self.assert_recovery_fence(
+                    region=plan.replay_range.region,
+                    owner_id=owner_id,
+                    fence_epoch=fence_epoch,
+                )
+            except FencingError:
+                raise
             except GenerationConflict as exc:
                 self.store.update_replay_item(plan_id, item.event_id, state="HELD", error=str(exc))
                 counters["held"] += 1

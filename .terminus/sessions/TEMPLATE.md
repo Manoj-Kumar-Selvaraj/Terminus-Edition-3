@@ -11,9 +11,9 @@ This is the durable operational checkpoint for one task. Keep it evidence-orient
 - Working branch: `<branch>`
 - Pull request: `<number-or-none>`
 - Current task commit: `<git-derived-sha>`
-- Agent-system policy: `2.3`
+- Agent-system policy: `2.4`
 - Specialist prompt policy: `2.2`
-- Specialist protocol policy: `2.1`
+- Specialist protocol policy: `2.2`
 - Pre-LLMaJ panel policy: `2.2`
 - Comprehensive reviewer policy: `1.0`
 - Reviewer checklist snapshot: `2026-08-08-user-supplied`
@@ -32,9 +32,9 @@ This is the durable operational checkpoint for one task. Keep it evidence-orient
 | STB auth/AI credentials | PENDING | infrastructure dependency; not itself submission proof |
 | Oracle = 1 | PENDING | Q5 owns deep repair when this/runtime fails |
 | NOP = 0 | PENDING | |
-| Q4 Spec-Test Contract Reviewer | PENDING | packet-bound independent quality interlock |
-| Q6 Production Logic Auditor | PENDING | packet-bound independent quality interlock |
-| Quality Interlock | PENDING | Q4 PASS + Q6 PASS on exact task commit |
+| Q4 Spec-Test Contract Reviewer | PENDING | packet-bound independent exhaustive quality-interlock review; exact current task commit |
+| Q6 Production Logic Auditor | PENDING | packet-bound independent quality-interlock review; exact task commit or Protocol-valid unchanged production scope |
+| Quality Interlock | PENDING | Q4 current PASS + Q6 current/scope-preserved PASS |
 | Pre-LLMaJ specialist panel | PENDING | |
 | Task Architect | PENDING | |
 | Verifier Engineer | PENDING | |
@@ -60,7 +60,7 @@ This is the durable operational checkpoint for one task. Keep it evidence-orient
 
 Allowed statuses: `PASS`, `APPROVE`, `APPROVE_WITH_NOTE`, `REVISE`, `REQUEST_CHANGES`, `FAIL`, `PENDING`, `STALE`, `BLOCKED`, `NOT_RUN`, `REJECT`, `DECLINE`, `INSUFFICIENT_EVIDENCE`, `POLICY_CONFLICT`, `DIAGNOSTIC_COMPLETE`.
 
-**Evidence rule:** semantic ready rows cite the exact current `.terminus/reviews/<task>/<commit>/<review-id>.json`; their matching packet/result provenance must validate. Deterministic ready rows cite current run/job/artifact/package evidence. Producer quality rows cite concrete artifact/change/run evidence and cannot self-certify Q4/Q6. A non-empty prose cell alone is not proof.
+**Evidence rule:** semantic ready rows cite the exact current `.terminus/reviews/<task>/<commit>/<review-id>.json`; their matching packet/result provenance must validate. Q6 may retain a prior PASS across an unrelated task commit only when Protocol-valid packet/result/current `review_scope_hash` values are identical and the Q6 role contract remains current. Deterministic ready rows cite current run/job/artifact/package evidence. Producer quality rows cite concrete artifact/change/run evidence and cannot self-certify Q4/Q6. A non-empty prose cell alone is not proof.
 
 `SUBMISSION_READY` requires the complete mandatory gate registry in `.terminus/validate_review_freshness.py` plus the quality-interlock enforcement in `.terminus/validate_quality_interlock.py`; deleting a row cannot delete a requirement.
 
@@ -80,7 +80,7 @@ Allowed statuses: `PASS`, `APPROVE`, `APPROVE_WITH_NOTE`, `REVISE`, `REQUEST_CHA
 ## Root-cause classification
 
 - Owner: `<role>`
-- Classification: `<ci_infrastructure | task_contract | environment | verifier | originality | template_risk | instruction_quality | documentation_quality | instruction_gap | untested_requirement | spec_ambiguity | oracle_runtime | production_logic | format_compliance | environment_gap | verifier_gap | too_easy_100_percent | test_case_0_of_10 | compliance | checklist_failure | policy_conflict | packaging | review_disagreement | insufficient_evidence | none>`
+- Classification: `<ci_infrastructure | task_contract | environment | verifier | originality | template_risk | instruction_quality | documentation_quality | instruction_gap | untested_requirement | spec_ambiguity | oracle_runtime | production_logic | format_compliance | environment_gap | verifier_gap | too_easy_100_percent | test_case_0_of_10 | compliance | checklist_failure | policy_conflict | packaging | review_disagreement | latent_reviewer_omission | insufficient_evidence | none>`
 - Evidence: `<run/job/artifact/file/review ids>`
 
 ## Next action
@@ -89,25 +89,25 @@ Allowed statuses: `PASS`, `APPROVE`, `APPROVE_WITH_NOTE`, `REVISE`, `REQUEST_CHA
 
 ## Review evidence ledger
 
-| Review | Review ID | Task commit | Protocol | Prompt | Role policy | Role contract hash | Result path | Verdict | Confidence | Evidence |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| Q4 Spec-Test Contract Reviewer | | | | | 1.0 | | | PENDING | | |
-| Q6 Production Logic Auditor | | | | | 1.0 | | | PENDING | | |
-| Task Architect | | | | | | | | PENDING | | |
-| Verifier Engineer | | | | | | | | PENDING | | |
-| Originality | | | | | | | | PENDING | | |
-| Difficulty design | | | | | | | | PENDING | | |
-| Compliance pre-review | | | | | | | | PENDING | | |
-| Instruction | | | | | | | | PENDING | | |
-| Documentation | | | | | | | | PENDING | | |
-| Comprehensive Reviewer | | | | | 1.0 | | | PENDING | | |
-| Q8 GPT Perspective Simulation | | | | | 1.0 | | | PENDING | | diagnostic only |
-| Q8 Claude Perspective Simulation | | | | | 1.0 | | | PENDING | | diagnostic only |
-| Trial Analysis | | | | | | | | PENDING | | |
-| Final Compliance | | | | | | | | PENDING | | |
-| Final Human Quality | | | | | | | | PENDING | | |
+| Review | Review ID | Task commit | Protocol | Prompt | Role policy | Role contract hash | Scope hash | Result path | Verdict | Confidence | Evidence |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Q4 Spec-Test Contract Reviewer | | | 2.2 | 2.2 | 1.1 | | n/a | | PENDING | | exhaustive one-pass review required |
+| Q6 Production Logic Auditor | | | 2.2 | 2.2 | 1.1 | | | | PENDING | | production scope hash required |
+| Task Architect | | | | | | | | | PENDING | | |
+| Verifier Engineer | | | | | | | | | PENDING | | |
+| Originality | | | | | | | | | PENDING | | |
+| Difficulty design | | | | | | | | | PENDING | | |
+| Compliance pre-review | | | | | | | | | PENDING | | |
+| Instruction | | | | | | | | | PENDING | | |
+| Documentation | | | | | | | | | PENDING | | |
+| Comprehensive Reviewer | | | | | 1.0 | | | | PENDING | | |
+| Q8 GPT Perspective Simulation | | | | | 1.0 | | | | PENDING | | diagnostic only |
+| Q8 Claude Perspective Simulation | | | | | 1.0 | | | | PENDING | | diagnostic only |
+| Trial Analysis | | | | | | | | | PENDING | | |
+| Final Compliance | | | | | | | | | PENDING | | |
+| Final Human Quality | | | | | | | | | PENDING | | |
 
-A role-contract change stales only the affected role when the task is unchanged; task changes follow the impact matrix in `PROTOCOL.md`. Historical legacy reports remain historical and are not rewritten into v3.
+A role-contract change stales only the affected role when the task is unchanged. Task changes follow the impact matrix in `PROTOCOL.md`; Q6 is the only quality reviewer whose PASS may survive a task-commit change through an identical validated production-scope hash. Historical legacy reports remain historical and are not rewritten into v3.
 
 ## Quality interlock checkpoint
 
@@ -118,11 +118,16 @@ A role-contract change stales only the affected role when the task is unchanged;
 - Q5 Oracle/runtime repair evidence: `<none or failure class + commit/run>`
 - Q4 review ID/result: `<id / path>`
 - Q4 verdict/confidence/evidence: `<verdict / confidence / sufficiency>`
+- Q4 exhaustiveness: `<COMPLETE / INCOMPLETE plus any uninspected scope>`
 - Q6 review ID/result: `<id / path>`
 - Q6 verdict/confidence/evidence: `<verdict / confidence / sufficiency>`
+- Q6 production scope hash: `<hash or pending>`
+- Q6 scope reuse: `<none or old-task-commit -> current-task-commit with identical hash>`
 - Quality interlock: `PASS | REVISE | PENDING | STALE | INSUFFICIENT_EVIDENCE`
 
-Normal Pre-LLMaJ cannot start until Q4 and Q6 independently PASS with sufficient evidence and at least MEDIUM confidence on the exact task commit.
+Normal Pre-LLMaJ cannot start until Q4 independently PASSes with sufficient evidence and at least MEDIUM confidence on the exact current task commit, and Q6 independently PASSes with sufficient evidence and at least MEDIUM confidence either on that exact task commit or under Protocol-valid unchanged production-scope reuse.
+
+After an exhaustive Q4 `REVISE`, the default normal budget is one consolidated repair/refreeze cycle. If the next Q4 raises a material finding whose evidence was unchanged and fully reviewable in the previous exhaustive Q4 scope, classify it `LATENT_REVIEWER_OMISSION` and route to Adjudicator before another normal repair loop. Do not waive the finding; adjudication decides whether repair is still required.
 
 ## Comprehensive reviewer checkpoint
 

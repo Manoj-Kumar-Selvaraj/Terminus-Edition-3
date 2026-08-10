@@ -24,6 +24,7 @@ from .model import (
     ReplayRange,
     ReplayStatus,
     RetentionPolicy,
+    contiguous_floor,
     sha256_text,
     to_iso,
     utcnow,
@@ -285,6 +286,15 @@ class ContinuityEngine(BaseContinuityEngine):
             )
         highest_journal = max((event.identity.origin_sequence for event in journal), default=0)
         highest_hub = max((record.hub_stream_sequence for record in archive), default=0)
+        archive_origin_floor = contiguous_floor(
+            record.identity.origin_sequence for record in archive
+        )
+        required_consumer_progress: dict[str, int] = {}
+        for consumer_name in self.store.required_consumers():
+            checkpoint = self.store.checkpoint(consumer_name, region, generation)
+            required_consumer_progress[consumer_name] = (
+                0 if checkpoint is None else checkpoint.application_sequence
+            )
         if highest_hub < highest_journal:
             findings.append(
                 Finding(
@@ -309,6 +319,10 @@ class ContinuityEngine(BaseContinuityEngine):
             duplicate_count=duplicate_count,
             metadata_mismatch_count=0,
             consumer_lag_count=0,
+            highest_contiguous_archive_origin_sequence=contiguous_floor(
+                record.hub_stream_sequence for record in archive
+            ),
+            required_consumer_progress=required_consumer_progress,
             checksum=checksum,
             findings=tuple(findings),
         )

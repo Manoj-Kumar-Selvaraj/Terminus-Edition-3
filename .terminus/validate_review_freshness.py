@@ -20,6 +20,7 @@ from review_contract import (
     ROLE_POLICY_VERSIONS,
     current_task_commit,
     policy_versions,
+    review_scope_hash,
     role_contract_hash,
     task_tree_dirty,
     validate_schema,
@@ -60,6 +61,12 @@ SEMANTIC_GATES: dict[str, GateSpec] = {
     "comprehensive reviewer": GateSpec(
         "Comprehensive Reviewer", frozenset(COMPREHENSIVE_READY)
     ),
+    "q4 spec-test contract reviewer": GateSpec(
+        "Spec-Test Contract Reviewer", frozenset(SPECIALIST_READY)
+    ),
+    "q6 production logic auditor": GateSpec(
+        "Production Logic Auditor", frozenset(SPECIALIST_READY)
+    ),
     "trial analysis": GateSpec("Trajectory Analyst", frozenset(SPECIALIST_READY)),
     "final compliance": GateSpec("Compliance Auditor", frozenset(SPECIALIST_READY)),
     "final human quality": GateSpec("Human Quality Reviewer", frozenset(SPECIALIST_READY)),
@@ -73,6 +80,8 @@ CANONICAL_ALIASES: tuple[tuple[str, str], ...] = (
     ("ruff verifier", "Ruff verifier"),
     ("oracle = 1", "Oracle = 1"),
     ("nop = 0", "NOP = 0"),
+    ("q4 spec-test contract reviewer", "Q4 Spec-Test Contract Reviewer"),
+    ("q6 production logic auditor", "Q6 Production Logic Auditor"),
     ("task architect", "Task Architect"),
     ("verifier engineer", "Verifier Engineer"),
     ("originality", "Originality & Authenticity"),
@@ -99,6 +108,8 @@ BASE_SUBMISSION_READY_GATES = {
     "Ruff verifier",
     "Oracle = 1",
     "NOP = 0",
+    "Q4 Spec-Test Contract Reviewer",
+    "Q6 Production Logic Auditor",
     "Task Architect",
     "Verifier Engineer",
     "Originality & Authenticity",
@@ -177,6 +188,8 @@ def semantic_gate_spec(label: str) -> GateSpec | None:
         "pre-llmaj aggregate",
         "pre-llmaj specialist panel",
         "comprehensive reviewer",
+        "q4 spec-test contract reviewer",
+        "q6 production logic auditor",
         "documentation reviewer",
         "instruction reviewer",
         "difficulty design",
@@ -266,6 +279,42 @@ def load_json(path: Path, report: Report, context: str) -> dict | None:
     return data
 
 
+def validate_q4_ready_result(rel: Path, data: dict, report: Report) -> None:
+    role_output = data.get("role_output", {})
+    exhaustive = role_output.get("EXHAUSTIVENESS", {})
+    finding_ids = {str(item.get("id", "")) for item in data.get("findings", [])}
+    blocking = set(role_output.get("BLOCKING_FINDING_IDS", []))
+    advisory = set(role_output.get("ADVISORY_FINDING_IDS", []))
+
+    if "" in finding_ids:
+        report.error(f"{rel}: Q4 findings must have non-empty IDs")
+    if blocking & advisory:
+        report.error(f"{rel}: Q4 finding IDs cannot be both blocking and advisory")
+    if finding_ids != blocking | advisory:
+        report.error(
+            f"{rel}: Q4 must classify every finding ID as blocking or advisory exactly once"
+        )
+
+    required_complete = {
+        "REQUIREMENTS_ENUMERATED": "COMPLETE",
+        "VERIFIER_BEHAVIORS_ENUMERATED": "COMPLETE",
+        "FORWARD_MATRIX_COMPLETE": "YES",
+        "REVERSE_MATRIX_COMPLETE": "YES",
+        "DELEGATED_CONTRACTS_COMPLETE": "YES",
+        "P2P_BOUNDARIES_COMPLETE": "YES",
+        "F2P_BOUNDARIES_COMPLETE": "YES",
+        "OUTPUT_INTERFACES_COMPLETE": "YES",
+        "SECOND_PASS_OMISSION_SWEEP": "PASS",
+    }
+    for key, value in required_complete.items():
+        if exhaustive.get(key) != value:
+            report.error(f"{rel}: Q4 PASS requires EXHAUSTIVENESS.{key}={value}")
+    if exhaustive.get("UNINSPECTED_SCOPE"):
+        report.error(f"{rel}: Q4 PASS cannot have uninspected scope")
+    if blocking:
+        report.error(f"{rel}: Q4 PASS cannot contain blocking finding IDs")
+
+
 def validate_packet_and_review(
     review_path: Path,
     data: dict,
@@ -293,9 +342,23 @@ def validate_packet_and_review(
     if data["task"] != task:
         report.error(f"{rel}: records task {data['task']!r}, expected {task!r}")
     if data["task_commit"] != truth_commit:
-        report.staleness(
-            f"{rel}: reviews task commit {data['task_commit'][:12]}, current task commit is {truth_commit[:12]}"
-        )
+        recorded_scope = str(data.get("review_scope_hash", ""))
+        current_scope = review_scope_hash(ROOT, task, expected_role)
+        if (
+            expected_role == "Production Logic Auditor"
+            and recorded_scope
+            and current_scope
+            and recorded_scope == current_scope
+        ):
+            report.warn(
+                f"{rel}: reusing Q6 across task commit {data['task_commit'][:12]} -> "
+                f"{truth_commit[:12]} because the validated production review_scope_hash is unchanged"
+            )
+        else:
+            report.staleness(
+                f"{rel}: reviews task commit {data['task_commit'][:12]}, "
+                f"current task commit is {truth_commit[:12]}"
+            )
     if not data["task_commit"].startswith(review_path.parent.name):
         report.error(
             f"{rel}: filed under {review_path.parent.name}/ but records task_commit {data['task_commit'][:12]}"
@@ -362,15 +425,34 @@ def validate_packet_and_review(
             report.error(
                 f"{rel}: {review_key} does not match context packet {packet_path.relative_to(ROOT)}"
             )
+
+    if expected_role == "Production Logic Auditor":
+        recorded_scope = str(data.get("review_scope_hash", ""))
+        packet_scope = str(packet.get("review_scope_hash", ""))
+        current_scope = review_scope_hash(ROOT, task, expected_role)
+        if not recorded_scope or recorded_scope != packet_scope:
+            report.error(f"{rel}: Q6 review_scope_hash must match its packet")
+        elif recorded_scope != current_scope:
+            report.staleness(
+                f"{rel}: Q6 production scope changed "
+                f"({recorded_scope[:12]} != {current_scope[:12]})"
+            )
+
     if packet["review_output_path"] != str(rel):
         report.error(
-            f"{packet_path.relative_to(ROOT)}: review_output_path is {packet['review_output_path']!r}, expected {str(rel)!r}"
+            f"{packet_path.relative_to(ROOT)}: review_output_path is "
+            f"{packet['review_output_path']!r}, expected {str(rel)!r}"
         )
 
     if expected_role == "Comprehensive Reviewer":
         coverage = data.get("role_output", {}).get("checklist_coverage_percent")
         if coverage != 100:
-            report.error(f"{rel}: Comprehensive Reviewer ready verdict requires checklist_coverage_percent=100")
+            report.error(
+                f"{rel}: Comprehensive Reviewer ready verdict requires checklist_coverage_percent=100"
+            )
+
+    if expected_role == "Spec-Test Contract Reviewer" and data.get("verdict") == "PASS":
+        validate_q4_ready_result(rel, data, report)
 
 
 def validate_aggregate(
@@ -524,7 +606,9 @@ def check_session(path: Path, report: Report) -> None:
         validate_deterministic_gate(gate, report)
 
     if session["state"].upper() == "SUBMISSION_READY":
-        canonical_status = {canonical_gate(g["label"]): g["status"].upper() for g in session["gates"]}
+        canonical_status = {
+            canonical_gate(g["label"]): g["status"].upper() for g in session["gates"]
+        }
         required = set(BASE_SUBMISSION_READY_GATES)
         if strict_profile(task):
             required.add("Creator Complexity Gate")

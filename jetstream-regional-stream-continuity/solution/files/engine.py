@@ -1,6 +1,9 @@
 from __future__ import annotations
 
+import asyncio
+import hashlib
 import json
+import urllib.request
 import uuid
 from collections.abc import Mapping
 from datetime import datetime, timedelta
@@ -23,7 +26,6 @@ from .model import (
     ReplayStatus,
     collapse_ranges,
     contiguous_floor,
-    report_checksum,
     to_iso,
     utcnow,
 )
@@ -51,8 +53,12 @@ class ContinuityEngine(BaseContinuityEngine):
             raise ContractError(f"event {event_id} is not in the edge journal")
         generation = self.validate_event_generation(event)
         if generation.status is not GenerationStatus.CONFIRMED:
-            self.store.mark_held(event.identity.event_id, reason="origin generation is not confirmed")
-            raise ContractError(f"event {event.identity.event_id} belongs to an unconfirmed generation")
+            self.store.mark_held(
+                event.identity.event_id, reason="origin generation is not confirmed"
+            )
+            raise ContractError(
+                f"event {event.identity.event_id} belongs to an unconfirmed generation"
+            )
         expected_stream = self.expected_stream_for_event(event)
         attempt_no = self._next_attempt(event.identity.event_id)
         message_id = self.message_id_for_event(event, attempt_no=attempt_no)
@@ -62,7 +68,11 @@ class ContinuityEngine(BaseContinuityEngine):
             requested_stream=expected_stream,
         )
         try:
-            ack = await publisher.publish(event, message_id=message_id, expected_stream=expected_stream)
+            ack = await publisher.publish(
+                event,
+                message_id=message_id,
+                expected_stream=expected_stream,
+            )
         except TimeoutError as exc:
             self.store.finish_publish_attempt(
                 event.identity.event_id,
@@ -81,6 +91,19 @@ class ContinuityEngine(BaseContinuityEngine):
                 error_text=str(exc),
             )
             raise
+        if ack.stream != expected_stream:
+            message = (
+                f"publish acknowledgement stream {ack.stream} does not match "
+                f"expected {expected_stream}"
+            )
+            self.store.finish_publish_attempt(
+                event.identity.event_id,
+                attempt_no,
+                outcome="ERROR",
+                error_code="ACK_STREAM_MISMATCH",
+                error_text=message,
+            )
+            raise ContractError(message)
         self.store.finish_publish_attempt(
             event.identity.event_id,
             attempt_no,
@@ -131,7 +154,10 @@ class ContinuityEngine(BaseContinuityEngine):
                 ),
             )
             return pending
-        if observation.stream_fingerprint == current.stream_fingerprint:
+
+        same_fingerprint = observation.stream_fingerprint == current.stream_fingerprint
+        sequence_regressed = observation.last_sequence < current.last_observed_sequence
+        if same_fingerprint and not sequence_regressed:
             if observation.first_sequence > current.last_observed_sequence + 1:
                 raise ContractError(
                     f"origin {observation.region} skipped from {current.last_observed_sequence} "
@@ -156,10 +182,13 @@ class ContinuityEngine(BaseContinuityEngine):
                     json.dumps({"generation": current.generation}, sort_keys=True),
                 ),
             )
-            refreshed = self.store.generation(observation.region, current.generation)
+            refreshed = self.store.generation(
+                observation.region, current.generation
+            )
             if refreshed is None:
                 raise ContractError("confirmed generation disappeared")
             return refreshed
+
         next_generation = current.generation + 1
         pending = self.store.generation(observation.region, next_generation)
         if pending is None:
@@ -181,6 +210,11 @@ class ContinuityEngine(BaseContinuityEngine):
                 pending.generation,
                 observation.last_sequence,
             )
+            pending = self.store.generation(
+                observation.region, pending.generation
+            )
+            if pending is None:
+                raise ContractError("pending generation disappeared")
         self.store.execute(
             "INSERT INTO origin_observations(region,stream_name,domain,stream_fingerprint,first_sequence,last_sequence,observed_at,disposition,detail_json) "
             "VALUES(?,?,?,?,?,?,?,'PENDING_GENERATION',?)",
@@ -197,6 +231,7 @@ class ContinuityEngine(BaseContinuityEngine):
                         "generation": pending.generation,
                         "previous_generation": current.generation,
                         "operator_approval_required": True,
+                        "sequence_regressed": sequence_regressed,
                     },
                     sort_keys=True,
                 ),
@@ -223,7 +258,11 @@ class ContinuityEngine(BaseContinuityEngine):
         if self._dispatch_count(consumer_name, event.identity.event_id) > 0:
             return False
         consumer = next(
-            (row for row in self.store.consumers() if str(row["consumer_name"]) == consumer_name),
+            (
+                row
+                for row in self.store.consumers()
+                if str(row["consumer_name"]) == consumer_name
+            ),
             None,
         )
         if consumer is None:
@@ -281,11 +320,16 @@ class ContinuityEngine(BaseContinuityEngine):
                     event.identity.region,
                     event.identity.generation,
                 ),
-                detail={"delivery_count": delivery.delivery_count, "effect_complete": False},
+                detail={
+                    "delivery_count": delivery.delivery_count,
+                    "effect_complete": False,
+                },
             )
 
         existing = self.store.effect(delivery.consumer_name, event.identity.event_id)
-        duplicate_effect = existing is not None and existing.status is EffectStatus.COMMITTED
+        duplicate_effect = (
+            existing is not None and existing.status is EffectStatus.COMMITTED
+        )
         payload = self._consumer_effect_payload(delivery.consumer_name, event)
         if not duplicate_effect:
             effect = self.store.prepare_effect(
@@ -338,13 +382,30 @@ class ContinuityEngine(BaseContinuityEngine):
 
     def reconcile_region(self, region: str, generation: int) -> ReconciliationSummary:
         run_id = self.store.create_reconciliation_run(mode="DRY_RUN")
+        generation_record = self.store.generation(region, generation)
+        if (
+            generation_record is None
+            or generation_record.status is not GenerationStatus.CONFIRMED
+        ):
+            raise ContractError(
+                f"reconciliation requires confirmed generation {region}/{generation}"
+            )
+        confirmed_watermark = generation_record.last_observed_sequence
         journal_by_id = {
             event.identity.event_id: event
-            for event in self.store.iter_events(region=region, generation=generation)
+            for event in self.store.iter_events(
+                region=region, generation=generation
+            )
         }
+        archive_rows = self.store.execute(
+            "SELECT event_id,region,generation,origin_sequence,hub_stream_sequence,"
+            "payload_sha256,archived_at,source_stream,source_domain,"
+            "duplicate_observation_count FROM archive_index "
+            "WHERE region=? AND generation=? ORDER BY origin_sequence,event_id",
+            (region, generation),
+        ).fetchall()
         archive_by_id = {
-            record.identity.event_id: record
-            for record in self.store.iter_archive(region=region, generation=generation)
+            str(row["event_id"]): row for row in archive_rows
         }
         journal_ids = set(journal_by_id)
         archive_ids = set(archive_by_id)
@@ -352,6 +413,9 @@ class ContinuityEngine(BaseContinuityEngine):
         unexpected_ids = sorted(archive_ids - journal_ids)
         findings: list[Finding] = []
         metadata_mismatch_count = 0
+        region_row = self.store.region(region)
+        expected_source_stream = str(region_row["physical_stream"])
+        expected_source_domain = str(region_row["jetstream_domain"])
 
         for event_id in missing_ids:
             event = journal_by_id[event_id]
@@ -370,7 +434,7 @@ class ContinuityEngine(BaseContinuityEngine):
                 )
             )
         for event_id in unexpected_ids:
-            record = archive_by_id[event_id]
+            row = archive_by_id[event_id]
             findings.append(
                 Finding(
                     severity=FindingSeverity.BLOCKER,
@@ -378,7 +442,7 @@ class ContinuityEngine(BaseContinuityEngine):
                     message="hub raw archive contains an event outside the edge journal authority",
                     region=region,
                     generation=generation,
-                    origin_sequence=record.identity.origin_sequence,
+                    origin_sequence=int(row["origin_sequence"]),
                     event_id=event_id,
                     expected_value="absent",
                     observed_value="present",
@@ -387,16 +451,20 @@ class ContinuityEngine(BaseContinuityEngine):
             )
         for event_id in sorted(journal_ids & archive_ids):
             event = journal_by_id[event_id]
-            record = archive_by_id[event_id]
+            row = archive_by_id[event_id]
             mismatches: list[str] = []
-            if event.identity.region != record.identity.region:
+            if str(row["region"]) != event.identity.region:
                 mismatches.append("region")
-            if event.identity.generation != record.identity.generation:
+            if int(row["generation"]) != event.identity.generation:
                 mismatches.append("generation")
-            if event.identity.origin_sequence != record.identity.origin_sequence:
+            if int(row["origin_sequence"]) != event.identity.origin_sequence:
                 mismatches.append("origin_sequence")
-            if event.payload_sha256.lower() != record.payload_sha256.lower():
+            if str(row["payload_sha256"]).lower() != event.payload_sha256.lower():
                 mismatches.append("payload_sha256")
+            if str(row["source_stream"]) != expected_source_stream:
+                mismatches.append("source_stream")
+            if str(row["source_domain"]) != expected_source_domain:
+                mismatches.append("source_domain")
             if mismatches:
                 metadata_mismatch_count += 1
                 findings.append(
@@ -414,7 +482,9 @@ class ContinuityEngine(BaseContinuityEngine):
                     )
                 )
 
-        duplicate_count = sum(record.duplicate_observation_count for record in archive_by_id.values())
+        duplicate_count = sum(
+            int(row["duplicate_observation_count"]) for row in archive_rows
+        )
         if duplicate_count:
             findings.append(
                 Finding(
@@ -429,23 +499,66 @@ class ContinuityEngine(BaseContinuityEngine):
                 )
             )
 
-        archive_sequences = [record.identity.origin_sequence for record in archive_by_id.values()]
+        archive_sequences = [
+            int(row["origin_sequence"]) for row in archive_rows
+        ]
         archive_floor = contiguous_floor(archive_sequences)
-        journal_sequences = [event.identity.origin_sequence for event in journal_by_id.values()]
-        journal_floor = contiguous_floor(journal_sequences)
-        target = min(journal_floor, archive_floor)
-        consumer_findings = self._required_consumer_lag(region, generation, target)
+        if archive_floor < confirmed_watermark:
+            findings.append(
+                Finding(
+                    severity=FindingSeverity.ERROR,
+                    finding_type="ARCHIVE_WATERMARK_LAG",
+                    message="hub archive has not reached the confirmed origin watermark",
+                    region=region,
+                    generation=generation,
+                    origin_sequence=archive_floor,
+                    expected_value=str(confirmed_watermark),
+                    observed_value=str(archive_floor),
+                    remediation_hint="reconcile and replay missing origin identities before declaring convergence",
+                )
+            )
+
+        required_consumer_progress: dict[str, int] = {}
+        for consumer_name in self.store.required_consumers():
+            checkpoint = self.store.checkpoint(
+                consumer_name, region, generation
+            )
+            required_consumer_progress[consumer_name] = (
+                0 if checkpoint is None else checkpoint.application_sequence
+            )
+        consumer_findings = self._required_consumer_lag(
+            region, generation, confirmed_watermark
+        )
         findings.extend(consumer_findings)
 
-        checksum = report_checksum(archive_by_id.values())
+        digest = hashlib.sha256()
+        for row in sorted(archive_rows, key=lambda value: str(value["event_id"])):
+            stable = (
+                str(row["region"]),
+                int(row["generation"]),
+                int(row["origin_sequence"]),
+                str(row["event_id"]),
+                str(row["payload_sha256"]).lower(),
+                str(row["source_stream"]),
+                str(row["source_domain"]),
+            )
+            digest.update(json.dumps(stable, separators=(",", ":")).encode("utf-8"))
+            digest.update(b"\n")
+        checksum = digest.hexdigest()
+
         blocking = [
             finding
             for finding in findings
-            if finding.severity in {FindingSeverity.ERROR, FindingSeverity.BLOCKER}
+            if finding.severity
+            in {FindingSeverity.ERROR, FindingSeverity.BLOCKER}
         ]
         summary = ReconciliationSummary(
             run_id=run_id,
-            status=ReconcileStatus.CONVERGED if not blocking else ReconcileStatus.DIVERGED,
+            status=(
+                ReconcileStatus.CONVERGED
+                if not blocking
+                else ReconcileStatus.DIVERGED
+            ),
             journal_event_count=len(journal_by_id),
             archive_event_count=len(archive_by_id),
             missing_count=len(missing_ids),
@@ -453,6 +566,8 @@ class ContinuityEngine(BaseContinuityEngine):
             duplicate_count=duplicate_count,
             metadata_mismatch_count=metadata_mismatch_count,
             consumer_lag_count=len(consumer_findings),
+            highest_contiguous_archive_origin_sequence=archive_floor,
+            required_consumer_progress=required_consumer_progress,
             checksum=checksum,
             findings=tuple(findings),
         )
@@ -494,7 +609,9 @@ class ContinuityEngine(BaseContinuityEngine):
         if generation_record is None:
             return ReplayDecision(None, (), "unknown generation")
         if generation_record.status is not GenerationStatus.CONFIRMED:
-            return ReplayDecision(None, (), "origin generation requires operator approval")
+            return ReplayDecision(
+                None, (), "origin generation requires operator approval"
+            )
         missing = self.missing_event_ids(region, generation)
         if not missing:
             return ReplayDecision(None, (), None)
@@ -503,7 +620,9 @@ class ContinuityEngine(BaseContinuityEngine):
         sequences = [event.identity.origin_sequence for event in missing_events]
         ranges = collapse_ranges(sequences, region=region, generation=generation)
         replay_range = ReplayRange(region, generation, min(sequences), max(sequences))
-        for active in self.store.active_replay_plans(region=region, generation=generation):
+        for active in self.store.active_replay_plans(
+            region=region, generation=generation
+        ):
             if active.replay_range.overlaps(replay_range):
                 raise ReplayConflict(
                     f"active replay plan {active.plan_id} overlaps requested range {replay_range.as_dict()}"
@@ -588,7 +707,9 @@ class ContinuityEngine(BaseContinuityEngine):
             for record in self.store.iter_archive(region=region, generation=generation)
         ]
         archive_sequence = contiguous_floor(archive_sequences)
-        consumer_sequence = self.store.slowest_required_consumer_sequence(region, generation)
+        consumer_sequence = self.store.slowest_required_consumer_sequence(
+            region, generation
+        )
         replay_pin = self.store.first_active_replay_sequence(region, generation)
         candidates_for_min = [archive_sequence, consumer_sequence]
         if replay_pin is not None:
@@ -608,7 +729,10 @@ class ContinuityEngine(BaseContinuityEngine):
             region=region,
             generation=generation,
             safe_sequence=safe_sequence,
-            minimum_age_seconds=policy.journal_min_age_seconds,
+            minimum_age_seconds=max(
+                policy.journal_min_age_seconds,
+                policy.required_horizon_seconds,
+            ),
             at=at,
             limit=limit,
         )
@@ -632,8 +756,86 @@ class ContinuityEngine(BaseContinuityEngine):
         ok = True
         for consumer_name in self.store.required_consumers():
             checkpoints = self.store.checkpoints(consumer_name)
-            details[consumer_name] = [checkpoint.as_dict() for checkpoint in checkpoints]
+            details[consumer_name] = [
+                checkpoint.as_dict() for checkpoint in checkpoints
+            ]
             for checkpoint in checkpoints:
                 if not checkpoint.is_consistent:
                     ok = False
+
+        hub = self.config.get("hub")
+        if not isinstance(hub, Mapping):
+            return ok, details
+        monitor_url = str(hub.get("monitor_url", "")).rstrip("/")
+        if not monitor_url:
+            return ok, details
+        try:
+            with urllib.request.urlopen(
+                monitor_url + "/varz", timeout=0.2
+            ) as response:
+                response.read(1)
+        except Exception:
+            return ok, details
+
+        async def observe() -> dict[str, tuple[str, int, int]]:
+            from .runtime import (
+                JetStreamAdmin,
+                NatsConnectionPool,
+                endpoints_from_engine,
+            )
+
+            observed: dict[str, tuple[str, int, int]] = {}
+            pool = NatsConnectionPool()
+            try:
+                admin = JetStreamAdmin(pool, endpoints_from_engine(self))
+                stream_name = self.topology().hub_archive.name
+                for consumer_name in self.store.required_consumers():
+                    try:
+                        info = await admin.consumer_info(
+                            "hub", stream_name, consumer_name
+                        )
+                    except Exception:
+                        continue
+                    if info.ack_floor_stream_sequence <= 0:
+                        continue
+                    try:
+                        message = await admin.get_message_by_sequence(
+                            "hub",
+                            stream_name,
+                            info.ack_floor_stream_sequence,
+                        )
+                        document = json.loads(message.data.decode("utf-8"))
+                        observed[consumer_name] = (
+                            str(document["region"]),
+                            int(
+                                document.get(
+                                    "origin_generation",
+                                    document.get("generation"),
+                                )
+                            ),
+                            int(document["origin_sequence"]),
+                        )
+                    except Exception:
+                        continue
+                return observed
+            finally:
+                await pool.close()
+
+        try:
+            external = asyncio.run(observe())
+        except Exception:
+            external = {}
+        for consumer_name, (region, generation, sequence) in external.items():
+            checkpoint = self.store.checkpoint(
+                consumer_name, region, generation
+            )
+            if checkpoint is None or checkpoint.application_sequence != sequence:
+                ok = False
+            details.setdefault(consumer_name, []).append(
+                {
+                    "external_region": region,
+                    "external_generation": generation,
+                    "external_origin_sequence": sequence,
+                }
+            )
         return ok, details

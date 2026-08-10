@@ -62,7 +62,7 @@ A successful processing transition is:
 
 If a process crashes after effect commit but before acknowledgement, redelivery must observe the committed effect and finish without duplicating it.
 
-Poison input is recorded in the quarantine table. Quarantine is not equivalent to a successful business effect. The controller may continue later valid work when its consumer semantics permit it, but it must not falsely report the poison event as completed.
+Poison input is recorded in the quarantine table. Quarantine is not a completed business effect and must not be counted as completed application progress for that event.
 
 ## Reconciliation
 
@@ -75,10 +75,9 @@ For each confirmed `(region, generation)`, reconciliation produces:
 - origin metadata mismatches;
 - payload checksum mismatches;
 - highest contiguous archive origin sequence;
-- required-consumer progress;
-- a deterministic checksum over the ordered stable identities.
+- required-consumer progress.
 
-The overall system is `CONVERGED` only when the archive is complete through the confirmed watermark and every enabled required consumer has an application checkpoint through that same watermark.
+For a confirmed `(region, generation)`, the confirmed watermark is the generation registry's `last_observed_sequence`. Archive completeness through that watermark requires the highest contiguous archived origin sequence to reach it. The overall system is `CONVERGED` only when the archive is complete through that confirmed watermark and every enabled required consumer has an application checkpoint through the same value.
 
 ## Replay
 
@@ -92,7 +91,9 @@ Approved and running plans pin their referenced journal rows against cleanup unt
 
 ## Recovery fencing
 
-A recovery lease has an owner id, expiry and monotonically increasing `fence_epoch`. Reacquiring an expired lease increments the epoch. Every recovery mutation validates the current owner and epoch. A worker holding an older epoch is stale even if its owner id happens to match a newly restarted process.
+A recovery lease has an owner id, expiry and monotonically increasing `fence_epoch`. Reacquiring an expired lease increments the epoch. An older epoch is stale even when a restarted process reuses the same owner id.
+
+Replay execution validates the current owner and fence epoch before execution and again while applying replay items. When an external replay publish returns, the worker revalidates the same token before writing replay-item state or terminal replay-plan state. If the token became stale while the publish was in flight, the publish acknowledgement may remain as journal/publication evidence, but the stale worker stops with a fencing error and does not write replay-item or terminal plan state after that acknowledgement. Lease renewal and release also require the current token. Planning a replay or approving a generation is an explicit durable control-plane change, but those planning/approval actions are not themselves defined as lease-protected replay execution.
 
 Lease renewal by the current owner preserves its current epoch while extending expiry.
 
@@ -114,4 +115,22 @@ Rows newer than the configured minimum journal age are never cleanup candidates.
 
 ## Operator outputs
 
-`continuityctl inspect` and `continuityctl reconcile` are safe read-oriented operations. Recovery mutations require a valid lease/fence and produce auditable entries. The final files under `/app/continuity/out/` are JSON reports intended for operators and automation; they describe observed durable state rather than inferred success from process exit alone.
+`continuityctl inspect`, `continuityctl reconcile`, and `continuityctl verify` are diagnostic operations: they may record reconciliation runs/findings, but they do not apply replay or retention mutations. `continuityctl verify` writes `/app/continuity/out/health.json` and `/app/continuity/out/reconciliation.json`.
+
+The output reports describe the durable state the repaired controller observes. They must not rewrite the captured incident history or manufacture a healthy result by deleting gaps, checkpoints, replay state, or other evidence.
+
+### Stable report interface
+
+The two verify reports are JSON objects with a stable operator-facing interface. Additional diagnostic fields are allowed, but the following fields and nesting are contractual.
+
+`health.json` contains top-level boolean fields `healthy`, `topology_ok`, `generations_ok`, `publication_ok`, `archive_ok`, `consumers_ok`, `retention_ok`, and `recovery_ok`. It also includes a `generated_at` timestamp and may include a `details` object with diagnostic state. `healthy` is true only when all seven subsystem booleans are true.
+
+`reconciliation.json` contains a top-level `generated_at` timestamp, a boolean `converged`, and a `regions` object keyed by region. Each region value contains:
+
+- `status`: `CONVERGED` or `DIVERGED`;
+- `converged`: boolean;
+- integer counts `journal_event_count`, `archive_event_count`, `missing_count`, `unexpected_count`, `duplicate_count`, `metadata_mismatch_count`, and `consumer_lag_count`;
+- integer `highest_contiguous_archive_origin_sequence`;
+- `required_consumer_progress`: an object mapping each enabled required consumer name to its completed origin sequence.
+
+The regional `status` and `converged` fields describe the same reconciliation decision. The top-level `converged` value is true only when every reported region is converged. Other fields such as findings, checksums, or diagnostic detail may be present without changing this interface.

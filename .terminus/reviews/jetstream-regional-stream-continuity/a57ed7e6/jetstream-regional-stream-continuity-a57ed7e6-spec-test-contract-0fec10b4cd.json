@@ -1,0 +1,189 @@
+{
+  "schema_version": "3.0",
+  "role": "Spec-Test Contract Reviewer",
+  "review_id": "jetstream-regional-stream-continuity-a57ed7e6-spec-test-contract-0fec10b4cd",
+  "task": "jetstream-regional-stream-continuity",
+  "task_commit": "a57ed7e6afeadaa8228f7c9eda82e09fedb789c6",
+  "control_plane_commit": "8938ad7f67462efedbbf88516823ea1a878c775a",
+  "protocol_policy_version": "2.1",
+  "prompt_policy_version": "2.2",
+  "role_policy_version": "1.0",
+  "role_contract_hash": "696aa3da8960a5c5ee1b093d2b8bced4e3f95fba130883ee4afc58c846251832",
+  "context_packet": ".terminus/reviews/jetstream-regional-stream-continuity/a57ed7e6/jetstream-regional-stream-continuity-a57ed7e6-spec-test-contract-0fec10b4cd.packet.json",
+  "verdict": "REVISE",
+  "confidence": "HIGH",
+  "evidence_status": "SUFFICIENT",
+  "summary": "The solver-visible handoff and delegated continuity contract are discoverable, natural, and unambiguous, and I found no material phantom verifier behavior. Bidirectional alignment still fails because five material public behaviors are only partially graded: wrong-stream publish acknowledgements, reconciliation independence from hub aggregate sequence, durable exactly-once behavior beyond the JetStream duplicate window, fencing loss during an active multi-item replay, and preservation of non-diagnostic continuityctl recovery entrypoints.",
+  "evidence": [
+    {
+      "type": "rule",
+      "ref": ".terminus/agents/QUALITY_AGENT_REGISTRY.md",
+      "observation": "Q4 independently rebuilds both directions of the contract/test matrix; any material phantom test, untested requirement, or grading-relevant ambiguity requires REVISE."
+    },
+    {
+      "type": "rule",
+      "ref": ".terminus/agents/QUALITY_AGENT_PROMPTS.md",
+      "observation": "Q4 must map solver-visible requirements to substantive verifier behavior, map verifier behavior back to discoverable requirements, inspect delegated documents, and check spec-dump risk."
+    },
+    {
+      "type": "file",
+      "ref": "jetstream-regional-stream-continuity/instruction.md",
+      "observation": "The handoff delegates detailed durability/replay rules to /app/continuity/docs and requires exactly-once convergence, crash/reconnect safety, generation holds, retention safety, truthful reports, incident-history preservation, and preservation of event/operator entrypoints."
+    },
+    {
+      "type": "file",
+      "ref": "jetstream-regional-stream-continuity/environment/continuity/docs/continuity-contract.md",
+      "observation": "The delegated contract explicitly defines stable identity, expected-stream publish acknowledgement, generation/topology semantics, crash-safe processing, origin-identity reconciliation, durable dedupe beyond the server duplicate window, repeated replay fencing, retention, diagnostic non-mutation, and report integrity."
+    },
+    {
+      "type": "test",
+      "ref": "jetstream-regional-stream-continuity/tests/test_continuity.py",
+      "observation": "The main suite covers identity, publish timing, generation, topology, consumer processing, reconciliation, replay planning, retention, entry fencing, routing, and preservation cases, but does not distinguish all explicit contract sub-behaviors."
+    },
+    {
+      "type": "test",
+      "ref": "jetstream-regional-stream-continuity/tests/test_contract_coverage.py",
+      "observation": "Supplemental coverage meaningfully exercises same-owner lease reacquisition, final report/state integrity, real diagnostic continuityctl non-mutation, stale lease release, minimum-age/hold retention, and generation-history preservation."
+    },
+    {
+      "type": "file",
+      "ref": "jetstream-regional-stream-continuity/environment/continuity/continuity/cli.py",
+      "observation": "The operator interface includes generation approval, replay planning/execution, lease operations, and retention as well as the three diagnostic commands; only the diagnostics are invoked through continuityctl by the verifier."
+    },
+    {
+      "type": "file",
+      "ref": "jetstream-regional-stream-continuity/environment/continuity/continuity/runtime.py",
+      "observation": "The real NATS publisher emits the event envelope and checks the acknowledgement stream, while the publish unit test uses a fake publisher that always returns the requested stream."
+    },
+    {
+      "type": "test",
+      "ref": "jetstream-regional-stream-continuity/tests/test.sh",
+      "observation": "The launcher runs pytest over the full /tests directory, making both reviewed verifier modules grading-active."
+    }
+  ],
+  "findings": [
+    {
+      "id": "Q4-01",
+      "severity": "HIGH",
+      "status": "OBSERVED",
+      "criterion": "Expected-stream publish acknowledgement is a material public durability requirement and must be behaviorally graded.",
+      "evidence_refs": [
+        "jetstream-regional-stream-continuity/environment/continuity/docs/continuity-contract.md",
+        "jetstream-regional-stream-continuity/tests/test_continuity.py",
+        "jetstream-regional-stream-continuity/environment/continuity/continuity/runtime.py"
+      ],
+      "why_it_matters": "The contract permits PUBLISHED only after a positive acknowledgement for the expected physical stream. The success fake always returns that stream, so accepting a positive acknowledgement from another stream can pass the current publish assertions.",
+      "minimal_remediation": "Add a wrong-stream positive-ack scenario and require rejection/non-publication without prescribing where validation is implemented.",
+      "regression_risk": "Low if asserted only at the publish/journal outcome boundary."
+    },
+    {
+      "id": "Q4-02",
+      "severity": "HIGH",
+      "status": "OBSERVED",
+      "criterion": "Reconciliation must grade origin completeness independently of hub aggregate stream sequence.",
+      "evidence_refs": [
+        "jetstream-regional-stream-continuity/environment/continuity/docs/continuity-contract.md",
+        "jetstream-regional-stream-continuity/tests/test_continuity.py"
+      ],
+      "why_it_matters": "The contract explicitly says hub aggregate sequence is only a delivery position and must not be an edge completeness key. The current test reports baseline missing identities but never perturbs hub sequence, so an implementation can still use aggregate sequence for watermark/convergence decisions and pass.",
+      "minimal_remediation": "Add a reconciliation case with correct stable origin identities but deliberately non-equivalent hub delivery sequences and assert origin-based completeness/convergence.",
+      "regression_risk": "Low to medium; assert reconciliation outcomes rather than internal query/order choices."
+    },
+    {
+      "id": "Q4-03",
+      "severity": "HIGH",
+      "status": "OBSERVED",
+      "criterion": "Exactly-once replay beyond the JetStream duplicate window must be graded at the durable archive/effect identity boundary.",
+      "evidence_refs": [
+        "jetstream-regional-stream-continuity/environment/continuity/docs/continuity-contract.md",
+        "jetstream-regional-stream-continuity/tests/test_continuity.py"
+      ],
+      "why_it_matters": "The contract states that server duplicate tracking is insufficient after its window and requires durable archive/effect identity protection. The delayed-retry case only checks message-id reuse across attempt numbers, which is the mechanism the contract says is insufficient by itself.",
+      "minimal_remediation": "Exercise a deterministically post-window replay/duplicate observation for an already represented event identity and assert that no second durable archive identity or committed effect is created.",
+      "regression_risk": "Medium; encode the post-window condition without real-time sleeps and assert only durable outcomes."
+    },
+    {
+      "id": "Q4-04",
+      "severity": "HIGH",
+      "status": "OBSERVED",
+      "criterion": "Replay fencing must be graded both before execution and again while replay items are being applied.",
+      "evidence_refs": [
+        "jetstream-regional-stream-continuity/environment/continuity/docs/continuity-contract.md",
+        "jetstream-regional-stream-continuity/tests/test_continuity.py"
+      ],
+      "why_it_matters": "The stale-worker case makes the token stale before replay starts, proving only the entry check. It cannot distinguish a one-time fence check from the required revalidation between items, leaving the split-brain mid-replay case ungraded.",
+      "minimal_remediation": "Use a multi-item replay, change the lease after the first item boundary, and assert later items are not applied under the stale epoch.",
+      "regression_risk": "Medium; control the lease transition deterministically and assert publication/plan outcomes, not loop structure."
+    },
+    {
+      "id": "Q4-05",
+      "severity": "MEDIUM",
+      "status": "OBSERVED",
+      "criterion": "The material solver-visible requirement to preserve existing operator entrypoints needs coverage at the operator interface.",
+      "evidence_refs": [
+        "jetstream-regional-stream-continuity/instruction.md",
+        "jetstream-regional-stream-continuity/environment/continuity/ops/shift-handoff.txt",
+        "jetstream-regional-stream-continuity/environment/continuity/continuity/cli.py",
+        "jetstream-regional-stream-continuity/tests/test_continuity.py",
+        "jetstream-regional-stream-continuity/tests/test_contract_coverage.py"
+      ],
+      "why_it_matters": "Only inspect, reconcile, and verify are invoked through continuityctl. Recovery commands are graded through engine/store calls, so a repair can keep core semantics correct while deleting, renaming, or miswiring generation/replay/lease/retention CLI entrypoints and still pass.",
+      "minimal_remediation": "Add lightweight behavioral smoke coverage for the non-diagnostic recovery entrypoints using an isolated runtime root and valid arguments, checking command wiring and observable state only.",
+      "regression_risk": "Low to medium if checks remain interface/state based rather than parser snapshots."
+    }
+  ],
+  "missing_evidence": [],
+  "change_scope": [
+    "Route Q4-01 through Q4-05 to Q2 Verifier Coverage Repairer; the missing semantics are already explicit in solver-visible material.",
+    "After verifier-only repair, rerun affected deterministic Oracle/NOP evidence, refreeze, and generate a new Q4 packet."
+  ],
+  "do_not_change": [
+    "Do not expand instruction.md into a hidden-test checklist; the current handoff delegates detailed semantics naturally.",
+    "Do not weaken the continuity contract to match current verifier coverage.",
+    "Do not modify task/runtime files as part of this Q4 review."
+  ],
+  "next_gate": "Q2 Verifier Coverage Repairer, then fresh deterministic validation/refreeze and a new independent Q4 review.",
+  "role_output": {
+    "requirement_test_matrix": [
+      "REQ-Q4-01 stable event/message identity and envelope preservation -> COMPLETE",
+      "REQ-Q4-02 positive acknowledgement must be for expected physical stream -> PARTIAL (wrong-stream ack untested)",
+      "REQ-Q4-03 generation hold/approval/monotonicity/history -> COMPLETE",
+      "REQ-Q4-04 source-only topology, unique names/domains, derived isolation -> COMPLETE",
+      "REQ-Q4-05 crash-safe idempotent consumer effects/checkpoints/poison/restart -> COMPLETE",
+      "REQ-Q4-06 origin-identity reconciliation independent of hub aggregate sequence -> PARTIAL (aggregate sequence not varied)",
+      "REQ-Q4-07 missing-only replay plus durable exactly-once beyond server duplicate window -> PARTIAL (durable post-window duplicate rejection untested)",
+      "REQ-Q4-08 lease fencing including revalidation during replay -> PARTIAL (mid-plan fence loss untested)",
+      "REQ-Q4-09 retention horizon/archive/consumer/replay-pin/min-age/hold semantics -> COMPLETE",
+      "REQ-Q4-10 diagnostic continuityctl non-mutation -> COMPLETE",
+      "REQ-Q4-11 truthful final report/state integrity -> COMPLETE",
+      "REQ-Q4-12 preserved non-diagnostic continuityctl recovery entrypoints -> PARTIAL (CLI boundary untested)"
+    ],
+    "test_contracts": [
+      "TEST-CONTRACT-01 identity retry/reconnect and repeated-payload preservation",
+      "TEST-CONTRACT-02 publish timeout/success transition timing; expected-stream happy path only",
+      "TEST-CONTRACT-03 generation regression/continuation/approval/history",
+      "TEST-CONTRACT-04 topology/source/domain/archive-metadata/derived-subject behavior",
+      "TEST-CONTRACT-05 consumer idempotency/crash/checkpoint/poison/restart state",
+      "TEST-CONTRACT-06 reconciliation identity/count/metadata/consumer convergence; no hub-sequence perturbation",
+      "TEST-CONTRACT-07 replay missing-only/approval/non-overlap/pins/stable message id; no durable post-window duplicate case",
+      "TEST-CONTRACT-08 stale entry/reacquisition/renewal/release fencing; no mid-replay transition",
+      "TEST-CONTRACT-09 retention bounds/horizon/eligibility/min-age/holds",
+      "TEST-CONTRACT-10 real diagnostic continuityctl commands with protected-state digest",
+      "TEST-CONTRACT-11 independent final report recomputation and incident preservation",
+      "TEST-CONTRACT-12 recovery semantics via engine/store, not non-diagnostic CLI wiring"
+    ],
+    "phantom_test_contracts": [],
+    "untested_requirements": [
+      "REQ-Q4-02 wrong-stream acknowledgement rejection/non-publication",
+      "REQ-Q4-06 invariance to hub aggregate delivery sequence",
+      "REQ-Q4-07 durable archive/effect duplicate rejection beyond server duplicate window",
+      "REQ-Q4-08 replay fence revalidation after execution begins",
+      "REQ-Q4-12 non-diagnostic continuityctl recovery entrypoint preservation"
+    ],
+    "ambiguities": [],
+    "delegated_contract_check": "PASS: instruction.md delegates to /app/continuity/docs; continuity-contract.md contains all detailed graded semantics and the ops artifacts substantiate incident-specific report checks.",
+    "p2p_boundary_assessment": "MOSTLY_SOUND: the diagnostic P2P uses the real CLI and permits only contract-authorized reconciliation observations; generation approval/release hit the same durable methods used by CLI. The separate CLI finding is missing non-diagnostic interface coverage.",
+    "spec_dump_risk": "LOW",
+    "bidirectional_alignment": "FAIL"
+  }
+}

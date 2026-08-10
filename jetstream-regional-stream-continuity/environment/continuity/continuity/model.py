@@ -789,6 +789,8 @@ class ReconciliationSummary:
     duplicate_count: int
     metadata_mismatch_count: int
     consumer_lag_count: int
+    highest_contiguous_archive_origin_sequence: int
+    required_consumer_progress: Mapping[str, int]
     checksum: str
     findings: tuple[Finding, ...] = ()
 
@@ -804,6 +806,14 @@ class ReconciliationSummary:
             "consumer_lag_count",
         ):
             ensure_positive(getattr(self, name), name, allow_zero=True)
+        ensure_positive(
+            self.highest_contiguous_archive_origin_sequence,
+            "highest_contiguous_archive_origin_sequence",
+            allow_zero=True,
+        )
+        for consumer_name, sequence in self.required_consumer_progress.items():
+            ensure_name(consumer_name, "required_consumer_progress consumer")
+            ensure_positive(sequence, "required_consumer_progress sequence", allow_zero=True)
         if not re.fullmatch(r"[0-9a-f]{64}", self.checksum):
             raise ContractError("reconciliation checksum must be sha256 hex")
 
@@ -826,6 +836,8 @@ class ReconciliationSummary:
             "duplicate_count": self.duplicate_count,
             "metadata_mismatch_count": self.metadata_mismatch_count,
             "consumer_lag_count": self.consumer_lag_count,
+            "highest_contiguous_archive_origin_sequence": self.highest_contiguous_archive_origin_sequence,
+            "required_consumer_progress": dict(self.required_consumer_progress),
             "checksum": self.checksum,
             "findings": [finding.as_dict() for finding in self.findings],
             "converged": self.converged,

@@ -3,63 +3,233 @@
   "task": "jetstream-regional-stream-continuity",
   "requirements": {
     "REQ-01": "Accepted events use one stable event/message identity across publish retries and reconnect replay.",
-    "REQ-02": "The edge journal records publish success only after a positive durable publish acknowledgement.",
-    "REQ-03": "Origin generation/incarnation is explicit; lower sequence after an unapproved generation change is held rather than merged.",
+    "REQ-02": "The edge journal records publish success only after a positive durable publish acknowledgement for the expected physical origin stream; wrong-stream acknowledgements remain retryable failures.",
+    "REQ-03": "Origin generation/incarnation is explicit; physical recreation and same-fingerprint sequence regression independently create a held transition, and historical events retain their accepted generation.",
     "REQ-04": "The central raw archive is populated by configured sources only and does not accept local raw telemetry writes.",
     "REQ-05": "Physical origin stream names and JetStream domain mappings are unambiguous across regions.",
-    "REQ-06": "Every archived event retains region, origin generation, origin sequence and event identity metadata.",
-    "REQ-07": "A redelivered event cannot create the same downstream business effect twice.",
-    "REQ-08": "Application effect state, checkpoint advancement and acknowledgement decisions preserve crash-safe processing semantics.",
-    "REQ-09": "Poison events are quarantined without falsely marking the effect complete or losing later valid work.",
+    "REQ-06": "Every archived event retains region, origin generation, origin sequence and event identity metadata, and reconciliation observably diverges when any association is wrong.",
+    "REQ-07": "A redelivered event cannot create the same downstream business effect twice, while the same event remains independently effective for each required consumer name.",
+    "REQ-08": "Application effect state and its checkpoint advance before acknowledgement; an ACK-boundary failure leaves ACK progress unchanged and redelivery remains idempotent.",
+    "REQ-09": "Poison events are quarantined without falsely marking the effect complete or losing completed application-progress semantics.",
     "REQ-10": "Restart progress validates JetStream consumer state against the durable application effect/checkpoint ledger.",
-    "REQ-11": "Reconciliation compares stable event/origin identity, not hub aggregate sequence equivalence.",
-    "REQ-12": "Reconciliation detects a missing event even when an extra duplicate keeps aggregate counts equal.",
-    "REQ-13": "Overall convergence requires the hub archive and every configured required durable consumer to reach confirmed origin watermarks.",
-    "REQ-14": "Replay planning selects only missing stable event identities/ranges for an approved region generation.",
-    "REQ-15": "A delayed retry remains idempotent after JetStream server-side duplicate tracking may have expired.",
+    "REQ-11": "Reconciliation compares stable event/origin identity rather than hub delivery positions and reports the highest contiguous archive origin sequence plus required-consumer progress.",
+    "REQ-12": "Reconciliation reports isolated duplicate observations and isolated metadata mismatches with unambiguous counts, and still detects offsetting missing/unexpected identities.",
+    "REQ-13": "Overall convergence requires the highest contiguous hub archive origin sequence and every configured required durable consumer application checkpoint to reach the confirmed generation last_observed_sequence watermark.",
+    "REQ-14": "Replay planning selects only currently missing stable identities for an approved generation; execution publishes absent events, leaves already archived events untouched and exposes terminal outcomes without private item-label grading.",
+    "REQ-15": "A delayed retry remains idempotent after JetStream server-side duplicate tracking may have expired; durable archive identity and consumer effect identity still prevent duplicate durable outcomes.",
     "REQ-16": "Edge journal cleanup never crosses the confirmed hub archive watermark.",
     "REQ-17": "Edge journal cleanup never crosses the slowest required durable consumer watermark.",
     "REQ-18": "Rows referenced by approved or running replay plans remain pinned until the plan reaches a terminal state.",
-    "REQ-19": "Configured raw archive/journal retention covers the declared maximum disconnect and replay recovery horizon.",
-    "REQ-20": "Recovery ownership uses monotonically increasing fencing epochs and stale workers cannot apply actions.",
-    "REQ-21": "Concurrent recovery planners cannot create overlapping active replay ranges for one region and generation.",
-    "REQ-22": "Derived processing output is isolated from the raw sourced archive subject space."
+    "REQ-19": "Physical raw-stream max_age and effective durable edge-journal cleanup age independently cover the declared maximum disconnect, replay and safety recovery horizon.",
+    "REQ-20": "Recovery ownership uses monotonically increasing fencing epochs; expiry/reacquisition advances the epoch even for the same owner id, replay rejects stale tokens before execution, between items, and after an in-flight publish before replay-state mutation, and stale renewal/release cannot mutate the current lease.",
+    "REQ-21": "Concurrent disjoint active replay plans may coexist for one region and generation, while overlapping active ranges are rejected.",
+    "REQ-22": "Derived processing output is isolated from the raw sourced archive subject space.",
+    "REQ-23": "Cleanup excludes rows newer than the minimum journal age and rows carrying an explicit retention hold.",
+    "REQ-24": "The submitted repair materializes truthful health.json and reconciliation.json reports, applies the documented independent health-flag meanings, and records report creation time as semantic RFC 3339 text or finite Unix seconds without rewriting captured incident state.",
+    "REQ-25": "continuityctl inspect, reconcile and verify may record diagnostic reconciliation observations but must not apply replay, retention or equivalent recovery-state mutations.",
+    "REQ-26": "Existing non-diagnostic continuityctl generation, replay, lease, execution and retention entrypoints remain wired to their durable operational behavior.",
+    "REQ-27": "A real three-domain bootstrap materializes east, west and source-only hub streams with the required source domains and physical max_age; a west replay then reaches REGIONAL_RAW_ARCHIVE exactly once per stable event identity with origin metadata intact."
   },
   "tests": [
-    ["test_f2p_retry_uses_stable_event_id", "F2P", "REQ-01"],
-    ["test_f2p_reconnect_retry_does_not_mint_new_identity", "F2P", "REQ-01"],
-    ["test_f2p_publish_failure_does_not_mark_journal_published", "F2P", "REQ-02"],
-    ["test_f2p_publish_ack_transitions_journal_once", "F2P", "REQ-02"],
-    ["test_f2p_generation_regression_is_held", "F2P", "REQ-03"],
-    ["test_f2p_generation_header_mismatch_is_rejected", "F2P", "REQ-03"],
-    ["test_f2p_hub_raw_archive_rejects_local_subject_write", "F2P", "REQ-04"],
-    ["test_f2p_stream_catalog_uses_unique_physical_names", "F2P", "REQ-05"],
-    ["test_f2p_source_domains_match_edge_ownership", "F2P", "REQ-05"],
-    ["test_f2p_archive_metadata_preserves_origin_identity", "F2P", "REQ-06"],
-    ["test_f2p_redelivery_creates_single_effect", "F2P", "REQ-07"],
-    ["test_f2p_crash_after_effect_before_ack_is_idempotent", "F2P", "REQ-08"],
-    ["test_f2p_checkpoint_does_not_advance_before_effect_commit", "F2P", "REQ-08"],
-    ["test_f2p_poison_event_is_quarantined_without_completion", "F2P", "REQ-09"],
-    ["test_f2p_restart_detects_ack_floor_effect_ledger_gap", "F2P", "REQ-10"],
-    ["test_f2p_reconcile_ignores_hub_sequence_equivalence", "F2P", "REQ-11"],
-    ["test_f2p_reconcile_finds_offsetting_gap_and_duplicate", "F2P", "REQ-12"],
-    ["test_f2p_convergence_waits_for_all_required_consumers", "F2P", "REQ-13"],
-    ["test_f2p_replay_plan_contains_only_missing_events", "F2P", "REQ-14"],
-    ["test_f2p_replay_refuses_unapproved_generation", "F2P", "REQ-14"],
-    ["test_f2p_delayed_retry_dedupes_beyond_server_window", "F2P", "REQ-15"],
-    ["test_f2p_cleanup_stops_at_archive_watermark", "F2P", "REQ-16"],
-    ["test_f2p_cleanup_stops_at_slowest_required_consumer", "F2P", "REQ-17"],
-    ["test_f2p_cleanup_preserves_rows_for_active_replay_plan", "F2P", "REQ-18"],
-    ["test_f2p_retention_policy_covers_recovery_horizon", "F2P", "REQ-19"],
-    ["test_f2p_stale_recovery_worker_is_fenced", "F2P", "REQ-20"],
-    ["test_f2p_overlapping_active_replay_plan_is_rejected", "F2P", "REQ-21"],
-    ["test_f2p_derived_output_never_reenters_raw_archive", "F2P", "REQ-22"],
-
-    ["test_p2p_distinct_same_payload_events_remain_distinct", "P2P", "REQ-01"],
-    ["test_p2p_confirmed_generation_continues_monotonically", "P2P", "REQ-03"],
-    ["test_p2p_successful_effect_advances_checkpoint", "P2P", "REQ-08"],
-    ["test_p2p_fully_converged_old_rows_are_cleanup_eligible", "P2P", "REQ-16"],
-    ["test_p2p_current_lease_owner_can_renew_same_epoch", "P2P", "REQ-20"],
-    ["test_p2p_nonoverlapping_replay_ranges_can_coexist", "P2P", "REQ-21"]
+    [
+      "test_f2p_retry_uses_stable_event_id",
+      "F2P",
+      "REQ-27"
+    ],
+    [
+      "test_f2p_reconnect_retry_does_not_mint_new_identity",
+      "F2P",
+      "REQ-01"
+    ],
+    [
+      "test_f2p_publish_failure_does_not_mark_journal_published",
+      "F2P",
+      "REQ-02"
+    ],
+    [
+      "test_f2p_publish_ack_transitions_journal_once",
+      "F2P",
+      "REQ-02"
+    ],
+    [
+      "test_f2p_generation_regression_is_held",
+      "F2P",
+      "REQ-03"
+    ],
+    [
+      "test_f2p_generation_header_mismatch_is_rejected",
+      "F2P",
+      "REQ-03"
+    ],
+    [
+      "test_f2p_hub_raw_archive_rejects_local_subject_write",
+      "F2P",
+      "REQ-04"
+    ],
+    [
+      "test_f2p_stream_catalog_uses_unique_physical_names",
+      "F2P",
+      "REQ-05"
+    ],
+    [
+      "test_f2p_source_domains_match_edge_ownership",
+      "F2P",
+      "REQ-05"
+    ],
+    [
+      "test_f2p_archive_metadata_preserves_origin_identity",
+      "F2P",
+      "REQ-06"
+    ],
+    [
+      "test_f2p_redelivery_creates_single_effect",
+      "F2P",
+      "REQ-07"
+    ],
+    [
+      "test_f2p_crash_after_effect_before_ack_is_idempotent",
+      "F2P",
+      "REQ-08"
+    ],
+    [
+      "test_f2p_checkpoint_does_not_advance_before_effect_commit",
+      "F2P",
+      "REQ-08"
+    ],
+    [
+      "test_f2p_poison_event_is_quarantined_without_completion",
+      "F2P",
+      "REQ-09"
+    ],
+    [
+      "test_f2p_restart_detects_ack_floor_effect_ledger_gap",
+      "F2P",
+      "REQ-10"
+    ],
+    [
+      "test_f2p_reconcile_ignores_hub_sequence_equivalence",
+      "F2P",
+      "REQ-11"
+    ],
+    [
+      "test_f2p_reconcile_finds_offsetting_gap_and_duplicate",
+      "F2P",
+      "REQ-12"
+    ],
+    [
+      "test_f2p_convergence_waits_for_all_required_consumers",
+      "F2P",
+      "REQ-13"
+    ],
+    [
+      "test_f2p_replay_plan_contains_only_missing_events",
+      "F2P",
+      "REQ-14"
+    ],
+    [
+      "test_f2p_replay_refuses_unapproved_generation",
+      "F2P",
+      "REQ-14"
+    ],
+    [
+      "test_f2p_delayed_retry_dedupes_beyond_server_window",
+      "F2P",
+      "REQ-15"
+    ],
+    [
+      "test_f2p_cleanup_stops_at_archive_watermark",
+      "F2P",
+      "REQ-16"
+    ],
+    [
+      "test_f2p_cleanup_stops_at_slowest_required_consumer",
+      "F2P",
+      "REQ-17"
+    ],
+    [
+      "test_f2p_cleanup_preserves_rows_for_active_replay_plan",
+      "F2P",
+      "REQ-18"
+    ],
+    [
+      "test_f2p_retention_policy_covers_recovery_horizon",
+      "F2P",
+      "REQ-19"
+    ],
+    [
+      "test_f2p_stale_recovery_worker_is_fenced",
+      "F2P",
+      "REQ-20"
+    ],
+    [
+      "test_f2p_overlapping_active_replay_plan_is_rejected",
+      "F2P",
+      "REQ-21"
+    ],
+    [
+      "test_f2p_derived_output_never_reenters_raw_archive",
+      "F2P",
+      "REQ-22"
+    ],
+    [
+      "test_f2p_expired_lease_reacquired_by_same_owner_advances_epoch",
+      "F2P",
+      "REQ-20"
+    ],
+    [
+      "test_f2p_final_health_and_reconciliation_reports_are_materialized",
+      "F2P",
+      "REQ-24"
+    ],
+    [
+      "test_p2p_distinct_same_payload_events_remain_distinct",
+      "P2P",
+      "REQ-01"
+    ],
+    [
+      "test_p2p_confirmed_generation_continues_monotonically",
+      "P2P",
+      "REQ-03"
+    ],
+    [
+      "test_p2p_successful_effect_advances_checkpoint",
+      "P2P",
+      "REQ-08"
+    ],
+    [
+      "test_p2p_fully_converged_old_rows_are_cleanup_eligible",
+      "P2P",
+      "REQ-16"
+    ],
+    [
+      "test_p2p_current_lease_owner_can_renew_same_epoch",
+      "P2P",
+      "REQ-20"
+    ],
+    [
+      "test_p2p_cleanup_respects_minimum_age_and_explicit_holds",
+      "P2P",
+      "REQ-23"
+    ],
+    [
+      "test_p2p_generation_approval_does_not_rewrite_historical_events",
+      "P2P",
+      "REQ-03"
+    ],
+    [
+      "test_p2p_diagnostic_cli_commands_do_not_mutate_recovery_state",
+      "P2P",
+      "REQ-25"
+    ],
+    [
+      "test_p2p_stale_lease_release_is_rejected",
+      "P2P",
+      "REQ-20"
+    ],
+    [
+      "test_p2p_recovery_cli_entrypoints_remain_operational",
+      "P2P",
+      "REQ-26"
+    ]
   ]
 }

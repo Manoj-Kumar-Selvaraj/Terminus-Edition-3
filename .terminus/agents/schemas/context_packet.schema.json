@@ -34,6 +34,7 @@
     "role_policy_version": {"type": "string", "minLength": 1},
     "control_plane_commit": {"type": "string", "minLength": 7},
     "role_contract_hash": {"type": "string", "minLength": 16},
+    "review_scope_hash": {"type": "string", "minLength": 16},
     "task": {"type": "string", "minLength": 1},
     "task_commit": {"type": "string", "minLength": 7},
     "state": {"type": "string", "minLength": 1},
@@ -57,5 +58,17 @@
     "change_since_last_review": {"type": "string"},
     "output_schema": {"type": "string", "minLength": 1},
     "review_output_path": {"type": "string", "minLength": 1}
-  }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "role": {"const": "Production Logic Auditor"}
+        }
+      },
+      "then": {
+        "required": ["review_scope_hash"]
+      }
+    }
+  ]
 }

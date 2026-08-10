@@ -1,0 +1,41 @@
+{
+  "schema_version": "3.0",
+  "review_id": "jetstream-regional-stream-continuity-d7e131f9-spec-test-contract-a159fbe550",
+  "protocol_policy_version": "2.1",
+  "prompt_policy_version": "2.2",
+  "role_policy_version": "1.0",
+  "control_plane_commit": "45b110b2645f60a3e82f7e2a74a15ea2cd6e93f7",
+  "role_contract_hash": "696aa3da8960a5c5ee1b093d2b8bced4e3f95fba130883ee4afc58c846251832",
+  "task": "jetstream-regional-stream-continuity",
+  "task_commit": "d7e131f962753acce119afba5f63bd525203d9c7",
+  "state": "FROZEN_CANDIDATE",
+  "role": "Spec-Test Contract Reviewer",
+  "question": "Is every substantive verifier behavior discoverable from the solver-visible contract, every material requirement tested, and every grading-relevant statement unambiguous?",
+  "authoritative_rules": [
+    "TERMINUS_3_AI_INSTRUCTIONS.md",
+    ".terminus/AGENT_SYSTEM.md",
+    ".terminus/agents/PROTOCOL.md",
+    ".terminus/agents/PROMPTS.md",
+    ".terminus/agents/QUALITY_AGENT_REGISTRY.md",
+    ".terminus/agents/QUALITY_AGENT_PROMPTS.md"
+  ],
+  "evidence_allowed": [
+    "instruction.md",
+    "all solver-visible contracts referenced by instruction.md",
+    "tests/",
+    "test map when needed to identify classification only",
+    "environment interfaces required to interpret observable behavior"
+  ],
+  "evidence_excluded": [
+    "Q1/Q2/Q3 conclusions before the independent matrix is frozen",
+    "Verifier Author coverage rationale",
+    "previous Spec-Test Contract Reviewer verdict",
+    "other specialist verdicts",
+    "desired aggregate outcome"
+  ],
+  "prior_verdicts_visible": false,
+  "isolation_mode": "PROCEDURAL",
+  "change_since_last_review": "Consolidated Q4 closure on the frozen d7e131f9 task tree: the existing real-NATS execute-replay P2P now independently reads the expected physical west JetStream stream and proves expected stable replay payload identities are present; all three named captured incident artifacts use full SHA-256 preservation; the delegated continuity contract now documents the stable graded health/reconciliation report interface; redundant in-process ProcessingResult.status token assertions were removed while durable behavior checks remain. The suite remains exactly 40 tests = 30 F2P + 10 P2P. Fresh deterministic evidence is Oracle 40/40 and NOP exactly 30 F2P fail + 10 P2P pass.",
+  "output_schema": ".terminus/agents/schemas/review_result.schema.json",
+  "review_output_path": ".terminus/reviews/jetstream-regional-stream-continuity/d7e131f9/jetstream-regional-stream-continuity-d7e131f9-spec-test-contract-a159fbe550.json"
+}

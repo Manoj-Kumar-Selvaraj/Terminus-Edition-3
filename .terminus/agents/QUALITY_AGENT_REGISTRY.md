@@ -1,6 +1,6 @@
 # Terminus Edition 3 Quality Agent Registry
 
-Quality-agent registry version: `1.0`
+Quality-agent registry version: `1.1`
 
 This registry adds eight narrow agents around the existing creator/reviewer system. It does not replace the CI Orchestrator, Verifier Engineer, Instruction Reviewer, Complexity Governor, Compliance Auditor, Difficulty Reviewer, or Comprehensive Reviewer. The purpose is to catch expensive authoring failures earlier and route them to a specialist with one decision right.
 
@@ -11,7 +11,7 @@ All quality agents read current authoritative Edition 3 rules first, then `.term
 - Repair agents may change only their owned artifact class after Orchestrator routing. They never issue acceptance PASS for their own revision.
 - Review agents are read-only and packet-bound under the normal v3 review provenance rules.
 - A read-only quality reviewer that finds a defect routes it to the responsible repair agent; it does not silently patch the task.
-- A task change stales any quality review whose evidence surface changed.
+- A task change stales any quality review whose evidence surface changed. Exact task-commit binding remains the default; Q6 is the only scope-reusable quality role and may remain current across a tests/spec-only task commit when its recorded production-scope hash is unchanged and all other provenance remains current.
 - Hidden verifier details may be used only by roles explicitly allowed to compare verifier behavior against the solver-visible contract. They must not copy test names, fixture values, assertion ordering, or hidden expected values into solver-facing prose.
 
 ## Q1 — Spec Gap Repairer
@@ -62,18 +62,26 @@ All quality agents read current authoritative Edition 3 rules first, then `.term
 
 **Type:** independent read-only semantic reviewer.
 
-**Decision right:** is the complete grading contract bidirectionally aligned and unambiguous?
+**Decision right:** is the complete grading contract bidirectionally aligned and unambiguous after an exhaustive walk of the entire allowed scope?
 
-It independently rebuilds the requirement/test matrix rather than trusting Q1–Q3 or Verifier Author notes.
+It independently rebuilds the requirement/test matrix rather than trusting Q1–Q3 or Verifier Author notes. Q4 is not allowed to stop after the first blocking defect merely because the verdict is already known.
 
-Mandatory checks:
-1. Every substantive verifier assertion maps to a discoverable solver-visible requirement.
-2. Every material solver-visible requirement has meaningful verifier coverage.
-3. No material requirement admits multiple grading-relevant interpretations.
-4. Fixes for completeness have not turned `instruction.md` into a hidden-test dump or compressed rubric.
-5. Referenced documents actually contain the detail the instruction delegates to them.
+Mandatory exhaustive checks:
+1. Inventory every material solver-visible requirement.
+2. Inventory every substantive verifier behavior.
+3. Complete requirement -> verifier coverage for the full inventory.
+4. Complete verifier behavior -> discoverable requirement for the full inventory.
+5. Walk every delegated solver-visible contract and stable graded output interface.
+6. Walk all F2P/P2P behavioral boundaries, including external integrations, preservation intent, circular oracles and bypass risk.
+7. Walk all grading-relevant ambiguity and authority boundaries.
+8. Perform a second adversarial omission sweep after the first matrix is frozen.
+9. Report all blocking findings from the complete review in the same result.
 
-A single material phantom test, untested material requirement, or grading-relevant ambiguity is `REVISE`.
+A reviewer that cannot complete the exhaustive walk because evidence is unavailable returns `INSUFFICIENT_EVIDENCE`, not a partial `REVISE`.
+
+Materiality is explicit: `BLOCKER/HIGH` always block; `MEDIUM` blocks only when it can change solver pass/fail, observable correctness, safety/durability or a documented stable public interface; `LOW` is advisory unless an authoritative rule makes it mandatory. `PASS` requires no blocking findings and a complete exhaustiveness block.
+
+A single material phantom test, material untested requirement, or grading-relevant ambiguity is still `REVISE`; exhaustiveness makes the review more complete, not easier.
 
 ## Q5 — Oracle & Runtime Repair Specialist
 
@@ -107,6 +115,8 @@ Mandatory checks:
 - complexity comes from domain invariants and state transitions, not chores, file count, comments, generated code, vendored code, or duplicate resources.
 
 Verdict is independent of Complexity Governor and production-authenticity validator output.
+
+Q6 uses a conservative production evidence-scope hash over task `task.toml` plus the full solver-visible `environment/` tree. Once a Q6 PASS is produced under the current scoped-freshness contract, a later task commit may retain it only when that scope hash is unchanged and packet/result/role-contract provenance remains current. Any production-scope change makes Q6 stale.
 
 ## Q7 — Task Format Enforcer
 
@@ -169,15 +179,15 @@ Before independent Pre-LLMaJ:
 
 `FROZEN_CANDIDATE -> Q4 Spec-Test Contract Reviewer -> Q6 Production Logic Auditor -> QUALITY_INTERLOCK_PASS`
 
-Only after both Q4 and Q6 independently pass with sufficient evidence may normal Pre-LLMaJ begin.
+Only after Q4 passes on the current exact task commit and Q6 independently passes with sufficient evidence—either on that exact task commit or under the Protocol-defined unchanged Q6 production-scope hash—may normal Pre-LLMaJ begin.
 
 After `PRE_LLMAJ: PASS` and before expensive model-backed evaluation, run Q8 in both isolated perspectives. A simulation finding may route the task back for repair, but simulation output never substitutes for Harbor LLMaJ or the official 10 difficulty trials.
 
 ## Quality interlock PASS
 
 `QUALITY_INTERLOCK_PASS` requires:
-- Q4 `PASS`, confidence >= MEDIUM, evidence `SUFFICIENT`;
-- Q6 `PASS`, confidence >= MEDIUM, evidence `SUFFICIENT`;
+- Q4 `PASS`, confidence >= MEDIUM, evidence `SUFFICIENT` on the exact current task commit;
+- Q6 `PASS`, confidence >= MEDIUM, evidence `SUFFICIENT`, either on the exact task commit or retained by the Protocol-defined unchanged Q6 production-scope hash;
 - no unresolved Q1/Q2/Q3 finding;
 - Q7 exact-format checks current for the task commit;
 - Oracle/NOP deterministic evidence current;

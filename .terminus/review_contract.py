@@ -20,8 +20,8 @@ ROLE_POLICY_VERSIONS = {
     "Comprehensive Reviewer": "1.0",
     "Trajectory Analyst": "1.0",
     "Adjudicator": "1.0",
-    "Spec-Test Contract Reviewer": "1.0",
-    "Production Logic Auditor": "1.0",
+    "Spec-Test Contract Reviewer": "1.1",
+    "Production Logic Auditor": "1.1",
     "Model Perspective Difficulty Simulator": "1.0",
 }
 
@@ -47,6 +47,8 @@ QUALITY_REVIEW_ROLES = {
     "Production Logic Auditor",
     "Model Perspective Difficulty Simulator",
 }
+
+SCOPE_REUSABLE_ROLES = {"Production Logic Auditor"}
 
 WRITING_ROLES = {
     "Instruction Reviewer",
@@ -183,6 +185,46 @@ def current_task_commit(root: Path, task: str) -> str:
 def task_tree_dirty(root: Path, task: str) -> bool:
     code, out = git(root, "status", "--porcelain", "--", task)
     return code == 0 and bool(out)
+
+
+def review_scope_paths(root: Path, task: str, role: str) -> list[Path]:
+    """Return the conservative task evidence surface eligible for scoped reuse."""
+    if role not in SCOPE_REUSABLE_ROLES:
+        return []
+    root = root.resolve()
+    task_root = (root / task).resolve()
+    paths: list[Path] = []
+    task_toml = task_root / "task.toml"
+    if task_toml.is_file():
+        paths.append(task_toml)
+    environment = task_root / "environment"
+    if environment.is_dir():
+        for candidate in environment.rglob("*"):
+            if not candidate.is_file():
+                continue
+            resolved = candidate.resolve()
+            try:
+                resolved.relative_to(task_root)
+            except ValueError as exc:
+                raise ValueError(f"scope path escapes task root: {candidate}") from exc
+            paths.append(resolved)
+    return sorted(set(paths), key=lambda path: path.relative_to(root).as_posix())
+
+
+def review_scope_hash(root: Path, task: str, role: str) -> str:
+    """Hash the role-specific task evidence surface; empty means exact-commit-only."""
+    paths = review_scope_paths(root, task, role)
+    if not paths:
+        return ""
+    root = root.resolve()
+    h = hashlib.sha256()
+    h.update(f"scope-v1\nrole={role}\ntask={task}\n".encode("utf-8"))
+    for path in paths:
+        rel = path.relative_to(root).as_posix()
+        data = path.read_bytes()
+        h.update(f"\n--- {rel} {len(data)} ---\n".encode("utf-8"))
+        h.update(data)
+    return h.hexdigest()
 
 
 def governing_policy_dirty(root: Path, role: str) -> bool:
