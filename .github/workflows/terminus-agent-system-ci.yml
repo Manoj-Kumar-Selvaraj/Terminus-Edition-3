@@ -52,13 +52,16 @@ jobs:
         run: python3 -m pytest .terminus/tests -q
 
       - name: Validate agent system structure
+        if: ${{ !cancelled() }}
         run: python3 .terminus/validate_agent_system.py
 
       - name: Validate current review freshness and commit binding
+        if: ${{ !cancelled() }}
         # --allow-stale is deliberately forbidden in CI.
         run: python3 .terminus/validate_review_freshness.py
 
       - name: Check control-plane files stay outside task packages
+        if: ${{ !cancelled() }}
         shell: bash
         run: |
           set -euo pipefail
