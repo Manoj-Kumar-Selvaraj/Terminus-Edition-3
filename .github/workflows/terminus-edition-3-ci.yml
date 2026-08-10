@@ -110,6 +110,8 @@ jobs:
     timeout-minutes: 180
     env:
       CI: "true"
+      DETERMINISTIC_ONLY: "true"
+      TASK_COMMIT: "065cf6f02c08abf86074d3886069b22ef47831f6"
       SNORKEL_API_KEY: ${{ secrets.SNORKEL_API_KEY }}
       STB_AI_API_KEY: ${{ secrets.STB_AI_API_KEY }}
       STB_AI_CONFIG_B64: ${{ secrets.STB_AI_CONFIG_B64 }}
@@ -120,6 +122,8 @@ jobs:
       EVIDENCE_DIR: /tmp/terminus-e3/${{ github.run_id }}/${{ github.run_attempt }}/${{ matrix.task }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.TASK_COMMIT }}
 
       - name: Resolve CI defaults
         shell: bash
@@ -212,6 +216,7 @@ jobs:
           done
 
       - name: Prepare reusable AI credentials for Harbor LLMaJ
+        if: env.DETERMINISTIC_ONLY != 'true'
         shell: bash
         run: |
           set -euo pipefail
@@ -250,6 +255,7 @@ jobs:
           esac
 
       - name: Run Harbor LLMaJ check
+        if: env.DETERMINISTIC_ONLY != 'true'
         shell: bash
         env:
           JOBS_DIR: /tmp/terminus-e3/${{ github.run_id }}/${{ github.run_attempt }}/${{ matrix.task }}/llmaj
@@ -274,7 +280,8 @@ jobs:
             echo
             echo "- Task: ${{ matrix.task }}"
             echo "- Run: ${{ github.run_id }} attempt ${{ github.run_attempt }}"
-            echo "- Commit: ${{ github.sha }}"
+            echo "- Workflow commit: ${{ github.sha }}"
+            echo "- Exact task commit: $TASK_COMMIT"
             echo
             echo "## Rewards"
             while IFS= read -r f; do
