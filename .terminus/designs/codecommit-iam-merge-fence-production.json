@@ -1,0 +1,26 @@
+{
+  "schema_version": "1.0",
+  "task": "codecommit-iam-merge-fence",
+  "production_authenticity": {
+    "incident_evidence": [
+      "environment/codecommit/log/authz.jsonl",
+      "environment/codecommit/ops/handoff.md",
+      "environment/codecommit/ops/principals.json",
+      "environment/codecommit/policies/developer.json"
+    ],
+    "instruction_evidence_paths": [
+      "/app/codecommit/log/authz.jsonl",
+      "/app/codecommit/ops",
+      "/app/codecommit/policies",
+      "/app/codecommit/docs/iam-git-contract.md"
+    ],
+    "stateful_dataset": {
+      "schema": "bare git repos under var/repos plus prs.json and triggers.jsonl",
+      "seed": "environment/codecommit/lib/cc/seed.py",
+      "primary_table": "refs/heads/main",
+      "min_records": 1,
+      "max_records": 20,
+      "notes": "Image build seeds ledger.git with an initial commit. Verifier tests recreate an isolated CC_ROOT and do not depend on that seed beyond code presence."
+    }
+  }
+}

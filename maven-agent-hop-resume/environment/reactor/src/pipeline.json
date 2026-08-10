@@ -1,0 +1,14 @@
+{
+  "run_id": "b-1842",
+  "library": {"name": "platform-lib", "version": "1.4.2"},
+  "env": {
+    "NEXUS_PASSWORD": "nexus-s3cr3t-1842",
+    "BUILD_TOKEN": "tok-nightly-9f3a"
+  },
+  "stages": [
+    {"name": "checkout", "kind": "scm", "agent": "linux"},
+    {"name": "compile", "kind": "maven", "agent": "maven", "goal": "compile", "stash": "reactor-classes"},
+    {"name": "test", "kind": "maven", "agent": "maven", "goal": "test", "unstash": "reactor-classes"},
+    {"name": "package", "kind": "docker", "agent": "docker", "unstash": "reactor-classes"}
+  ]
+}

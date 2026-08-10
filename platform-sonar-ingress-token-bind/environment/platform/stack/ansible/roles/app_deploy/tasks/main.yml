@@ -1,0 +1,40 @@
+---
+- name: Login to ECR when registry is set
+  shell: |
+    aws ecr get-login-password --region {{ aws_region | default('us-east-1') }} | \
+    docker login --username AWS --password-stdin {{ ecr_registry }}
+  changed_when: false
+  when: ecr_registry is defined and ecr_registry != ""
+
+- name: Create application directory
+  file:
+    path: "/opt/app/{{ app_name }}"
+    state: directory
+    mode: "0755"
+
+- name: Write compose file
+  copy:
+    dest: "/opt/app/{{ app_name }}/docker-compose.yml"
+    content: |
+      services:
+        app:
+          image: "{{ image_name }}:{{ image_tag }}"
+          ports:
+            - "{{ container_port }}:{{ container_port }}"
+          healthcheck:
+            test: ["CMD", "curl", "-f", "http://127.0.0.1:{{ container_port }}/health"]
+            interval: 10s
+            retries: 6
+
+- name: Start application
+  shell: |
+    cd /opt/app/{{ app_name }}
+    docker compose up -d
+  changed_when: false
+
+- name: Wait for health
+  uri:
+    url: "http://127.0.0.1:{{ container_port }}/health"
+    status_code: 200
+  retries: 10
+  delay: 2

@@ -1,0 +1,51 @@
+{
+  "schema_version": "1.0",
+  "task": "hris-midcycle-payroll-close",
+  "production_authenticity": {
+    "incident_evidence": [
+      "environment/hris/log/archive/close-2026W32.log",
+      "environment/hris/ops/payroll-ticket.txt"
+    ],
+    "instruction_evidence_paths": [
+      "/app/hris/log/archive",
+      "/app/hris/ops"
+    ],
+    "stateful_dataset": {
+      "schema": "environment/hris/sql/schema.sql",
+      "seed": "environment/hris/sql/seed.sql",
+      "primary_table": "employees",
+      "min_records": 12000,
+      "max_records": 12000,
+      "variance_queries": {
+        "depts": {
+          "sql": "SELECT COUNT(DISTINCT department_id) FROM assignments",
+          "min": 8
+        },
+        "flsa_classes": {
+          "sql": "SELECT COUNT(DISTINCT flsa_status) FROM assignments",
+          "min": 2
+        },
+        "statuses": {
+          "sql": "SELECT COUNT(DISTINCT status) FROM employees",
+          "min": 5
+        },
+        "locations": {
+          "sql": "SELECT COUNT(DISTINCT location_id) FROM employees",
+          "min": 10
+        },
+        "cost_centers": {
+          "sql": "SELECT COUNT(DISTINCT cost_center) FROM assignments",
+          "min": 16
+        },
+        "leave_plans": {
+          "sql": "SELECT COUNT(DISTINCT leave_plan) FROM assignments",
+          "min": 4
+        },
+        "hire_dates": {
+          "sql": "SELECT COUNT(DISTINCT hire_date) FROM employees",
+          "min": 50
+        }
+      }
+    }
+  }
+}

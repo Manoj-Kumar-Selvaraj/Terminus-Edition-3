@@ -1,0 +1,40 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "PullLedger",
+      "Effect": "Allow",
+      "Action": ["codecommit:GitPull"],
+      "Resource": "arn:local:codecommit:local:000000000000:ledger"
+    },
+    {
+      "Sid": "PushMainMfaOffice",
+      "Effect": "Allow",
+      "Action": ["codecommit:GitPush"],
+      "Resource": "arn:local:codecommit:local:000000000000:ledger",
+      "Condition": {
+        "StringEquals": {"codecommit:References": "refs/heads/main"},
+        "Bool": {"aws:MultiFactorAuthPresent": "true"},
+        "IpAddress": {"aws:SourceIp": "10.8.0.0/16"}
+      }
+    },
+    {
+      "Sid": "PushReleaseListed",
+      "Effect": "Allow",
+      "Action": ["codecommit:GitPush"],
+      "Resource": "arn:local:codecommit:local:000000000000:ledger",
+      "Condition": {
+        "StringEquals": {"codecommit:References": "refs/heads/release"}
+      }
+    },
+    {
+      "Sid": "DenyReleasePush",
+      "Effect": "Deny",
+      "Action": ["codecommit:GitPush"],
+      "Resource": "arn:local:codecommit:local:000000000000:ledger",
+      "Condition": {
+        "StringEquals": {"codecommit:References": "refs/heads/release"}
+      }
+    }
+  ]
+}

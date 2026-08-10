@@ -1,0 +1,3 @@
+Nightly b-1842 died mid-test after the agent hop. Crash trail is `/app/reactor/log/crash.log`; the live journal is `/app/reactor/var/journal.json`. Drive the interpreter only through `/app/reactor/bin/pipe` (`run`, `resume`, `status`).
+
+`/app/reactor/docs/pipeline-contract.md` is binding for library pins, agent labels, stash hops, incremental fingerprints under `/app/reactor/var/fingerprints`, resume durability, and archive redaction under `/app/reactor/var/archive`. Get `resume` to a `success` journal without rerunning durable work, without scheduling a maven stage on a docker-only agent, and without leaking pipeline secrets into the archive. Leave the contract alone.

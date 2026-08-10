@@ -1,0 +1,45 @@
+{
+  "schema_version": "1.0",
+  "profile": "large_system",
+  "strict_scale_note": "SCENARIO_TOO_SMALL for large_system_strict without padding. Natural hop/resume interpreter is a few hundred reachable LOC plus a tiny reactor tree; cloning dummy modules or Jenkins XML would only inflate the gate.",
+  "task_kind": "software",
+  "task": "maven-agent-hop-resume",
+  "root_cause_clusters": {
+    "RC1_RESUME_DURABILITY": "Resume ignores durable journal results and rebuilds from checkout.",
+    "RC2_LIBRARY_PIN": "Shared-library resolution loads the newest on-disk version instead of the pipeline pin.",
+    "RC3_AGENT_LABELS": "Stage kind is not enforced against agent labels, so maven work can run on docker-only nodes.",
+    "RC4_INCREMENTAL_FP": "Content-hash fingerprints do not gate module skip, so unchanged modules always rebuild.",
+    "RC5_STASH_HOP": "Named stash is dropped or not required across the maven-to-docker hop.",
+    "RC6_ARCHIVE_REDACT": "Pipeline secret env values are written into the run archive."
+  },
+  "defects": [
+    {"id":"D01","component":"runner","observable_failure":"resume clears completed_stages and replays checkout.","root_cause":"RC1_RESUME_DURABILITY","partial_fix_trap":"Skipping only scm still reruns a durable compile."},
+    {"id":"D02","component":"runner","observable_failure":"resume mints a new run_id instead of continuing b-1842.","root_cause":"RC1_RESUME_DURABILITY","partial_fix_trap":"Keeping the id but wiping stage records still rebuilds everything."},
+    {"id":"D03","component":"runner","observable_failure":"illegal test results on docker-07 stay durable across resume.","root_cause":"RC1_RESUME_DURABILITY","partial_fix_trap":"Retrying only failed_module leaves common marked ok on an illegal agent."},
+    {"id":"D04","component":"runner","observable_failure":"compile.ok pre-crash markers are overwritten on resume.","root_cause":"RC1_RESUME_DURABILITY","partial_fix_trap":"Copying markers aside then rebuilding still spends a full compile hop."},
+    {"id":"D05","component":"library","observable_failure":"platform-lib 1.5.0 is loaded although the pin is 1.4.2.","root_cause":"RC2_LIBRARY_PIN","partial_fix_trap":"Hardcoding 1.4.2 in the journal without reading the pin breaks the next bump."},
+    {"id":"D06","component":"library","observable_failure":"library resolve sorts directory names and takes the last semver.","root_cause":"RC2_LIBRARY_PIN","partial_fix_trap":"Picking the first directory still ignores the exact pin."},
+    {"id":"D07","component":"library","observable_failure":"incremental flag comes from 1.5.0 so skip never engages.","root_cause":"RC2_LIBRARY_PIN","partial_fix_trap":"Forcing incremental true while still loading 1.5.0 leaves redact_secrets false."},
+    {"id":"D08","component":"agents","observable_failure":"select_agent returns docker-07 for kind maven.","root_cause":"RC3_AGENT_LABELS","partial_fix_trap":"Preferring linux label alone still admits the docker-only node."},
+    {"id":"D09","component":"agents","observable_failure":"a maven stage recorded agent_labels without maven.","root_cause":"RC3_AGENT_LABELS","partial_fix_trap":"Relabeling docker-07 to include maven in the inventory falsifies the pool."},
+    {"id":"D10","component":"runner","observable_failure":"missing maven label still marks compile ok.","root_cause":"RC3_AGENT_LABELS","partial_fix_trap":"Catching the error and continuing on docker hides the refuse-closed rule."},
+    {"id":"D11","component":"fingerprint","observable_failure":"second run rebuilds every module although hashes match.","root_cause":"RC4_INCREMENTAL_FP","partial_fix_trap":"Skipping all modules including those whose deps just rebuilt hides downstream invalidation."},
+    {"id":"D12","component":"fingerprint","observable_failure":"editing web still skips web because skip ignores upstream skip-only.","root_cause":"RC4_INCREMENTAL_FP","partial_fix_trap":"Rebuilding every module after any edit works but breaks incremental."},
+    {"id":"D13","component":"fingerprint","observable_failure":"fingerprint files are never written after a successful module.","root_cause":"RC4_INCREMENTAL_FP","partial_fix_trap":"Writing fingerprints without consulting them on the next run is a no-op."},
+    {"id":"D14","component":"stash","observable_failure":"resume drops reactor-classes before the docker hop.","root_cause":"RC5_STASH_HOP","partial_fix_trap":"Recreating an empty stash name lets package proceed without artifacts."},
+    {"id":"D15","component":"stash","observable_failure":"package succeeds when the named stash map is empty.","root_cause":"RC5_STASH_HOP","partial_fix_trap":"Checking only that the stash key exists still allows modules=[]."},
+    {"id":"D16","component":"stash","observable_failure":"docker package writes image.ok without unstash.","root_cause":"RC5_STASH_HOP","partial_fix_trap":"Always requiring stash on scm as well blocks checkout."},
+    {"id":"D17","component":"archive","observable_failure":"NEXUS_PASSWORD appears in var/archive/b-1842.log.","root_cause":"RC6_ARCHIVE_REDACT","partial_fix_trap":"Deleting the archive file fails the operator evidence path."},
+    {"id":"D18","component":"archive","observable_failure":"BUILD_TOKEN is copied into the env dump verbatim.","root_cause":"RC6_ARCHIVE_REDACT","partial_fix_trap":"Redacting only PASSWORD suffix leaves TOKEN values exposed."},
+    {"id":"D19","component":"archive","observable_failure":"redact_secrets from 1.5.0 is false so *** is never applied.","root_cause":"RC6_ARCHIVE_REDACT","partial_fix_trap":"Hardcoded *** without loading 1.4.2 still fails the pin journal check."},
+    {"id":"D20","component":"cli","observable_failure":"unknown pipe verbs rewrite journal status.","root_cause":"RC1_RESUME_DURABILITY","partial_fix_trap":"Exiting 1 after a partial status write still mutates state."}
+  ],
+  "causal_edges": [
+    {"from":"D05","to":"D07"},{"from":"D07","to":"D11"},{"from":"D05","to":"D19"},
+    {"from":"D08","to":"D03"},{"from":"D03","to":"D01"},{"from":"D01","to":"D04"},
+    {"from":"D01","to":"D14"},{"from":"D14","to":"D15"},{"from":"D15","to":"D16"},
+    {"from":"D06","to":"D05"},{"from":"D11","to":"D12"},{"from":"D13","to":"D11"},
+    {"from":"D09","to":"D10"},{"from":"D10","to":"D08"},{"from":"D19","to":"D17"},
+    {"from":"D17","to":"D18"},{"from":"D02","to":"D01"},{"from":"D20","to":"D02"}
+  ]
+}

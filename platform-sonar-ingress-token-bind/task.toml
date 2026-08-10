@@ -1,0 +1,32 @@
+version = "2.0"
+name = "platform-sonar-ingress-token-bind"
+category = "Software"
+subcategory = "Systems"
+tags = ["jenkins", "sonarqube", "ingress", "jcasc", "external-dns"]
+languages = ["python", "yaml", "hcl", "bash"]
+difficulty = "advanced"
+expert_time_estimate_hours = 16
+artifacts = ["/app/platform/stack", "/app/platform/var", "/app/platform/ops"]
+
+[metadata]
+author_name = "anonymous"
+author_email = "anonymous@example.com"
+difficulty_explanation = "Post-deploy Sonar token bind couples JCasC secret mounts, a shared ALB group, ExternalDNS sync ownership, JDBC ternary identity, EFS uid isolation, and SSM-only Ansible. Partial fixes (split listeners, RDS hostname scans, SSH on the runner, wiping Jenkins home) fail interacting checks. Official combined n/8 not yet measured."
+solution_explanation = "Align secret keys and JCasC interpolation with the TFC analysis token, keep all three hosts on platform-ingress with the contracted healthchecks, publish DNS under txtOwnerId platform-mvp-dev, use host-only JDBC address with embedded postgres off, pin Jenkins home to uid 1000 Retain, zero controller executors on platform-control, and dispatch Ansible only via SSM."
+verification_explanation = "Verifier reloads the trusted engine from submitted stack/var/ops and probes live host-header HTTP, token validation, zone+TXT owner, JDBC identity, EFS uid/paths, schedule, and SSM log, plus in-memory mutations for empty token and sonar-down bind refusal."
+relevant_experience = "Jenkins JCasC, SonarQube JDBC, AWS ALB Ingress groups, ExternalDNS, EFS access points, SSM-only runners."
+
+[verifier]
+timeout_sec = 1800
+environment_mode = "separate"
+
+[agent]
+timeout_sec = 7200
+
+[environment]
+network_mode = "public"
+build_timeout_sec = 900
+cpus = 2
+memory_mb = 8192
+storage_mb = 10240
+workdir = "/app/platform"

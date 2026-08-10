@@ -1,0 +1,32 @@
+version = "2.0"
+name = "wiki-creation-counter-flap"
+category = "Software"
+subcategory = "Systems"
+tags = ["fastapi", "prometheus", "probes", "sqlite", "replicas"]
+languages = ["python", "bash"]
+difficulty = "advanced"
+expert_time_estimate_hours = 8
+artifacts = ["/app/wiki"]
+
+[metadata]
+author_name = "anonymous"
+author_email = "anonymous@example.com"
+difficulty_explanation = "Live vs ready vs durable creation counters across two replica processes after a DB flap. Putting DB on liveness zeros in-memory counters while rows survive. Unofficial n/8 not measured."
+solution_explanation = "Keep live process-only, ready on SELECT 1, 404 missing authors, reconstitute users_created_total and posts_created_total from table counts, expose both replica scrapes, write probe and reconcile reports from live probes."
+verification_explanation = "Verifier flaps and restores the submitted wiki DB, checks probe split, counter vs COUNT(*), authorship 404, and report schemas."
+relevant_experience = "Kubernetes probes, Prometheus process counters, FastAPI+SQLAlchemy."
+
+[verifier]
+timeout_sec = 1800
+environment_mode = "separate"
+
+[agent]
+timeout_sec = 5400
+
+[environment]
+network_mode = "public"
+build_timeout_sec = 900
+cpus = 2
+memory_mb = 8192
+storage_mb = 10240
+workdir = "/app/wiki"

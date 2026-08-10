@@ -1,0 +1,17 @@
+2026-08-09T21:12:51Z terraform apply -auto-approve (workspace platform-mvp-dev)
+2026-08-09T21:13:08Z helm_release.sonarqube: Modifying... [id=sonarqube]
+2026-08-09T21:13:40Z helm_release.jenkins: Modifying... [id=jenkins]
+2026-08-09T21:14:11Z kubernetes_secret.jenkins_sonarqube: secret jenkins/jenkins-sonarqube-token configured
+2026-08-09T21:14:22Z WaitForRollout jenkins/jenkins: 1/1 ready
+2026-08-09T21:14:33Z external-dns[kube-system]: level=error msg="failed to sync record" name=sonar.platform.test err="owner id mismatch (have platform-mvp)"
+2026-08-09T21:14:34Z external-dns[kube-system]: level=info msg="skipping endpoint" name=sonar.platform.internal reason="outside domain filter"
+2026-08-09T21:14:41Z aws-load-balancer-controller: targetgroupbind sonar-platform-test healthcheck failed path=/login code=404
+2026-08-09T21:14:42Z aws-load-balancer-controller: listener rule host=sonar.platform.test action=503 (unhealthy)
+2026-08-09T21:14:55Z sonarqube[web]: jdbc.ping failed url=jdbc:postgresql://platform-mvp-sonarqube.cluster.platform.test:5432:5432/sonarqube
+2026-08-09T21:14:56Z sonarqube[web]: GET /api/system/status -> {"status":"DOWN","cause":"Database connection failed"}
+2026-08-09T21:15:08Z jenkins[casc]: credentials.system loaded id=sonar-token (blank secret)
+2026-08-09T21:15:09Z jenkins[casc]: unclassified.sonarGlobalConfiguration installations[0].name=Default
+2026-08-09T21:15:18Z jenkins[web]: GET /login 200
+2026-08-09T21:15:19Z jenkins[web]: withSonarQubeEnv unauthorized host=platform-mvp-sonarqube.cluster.platform.test
+2026-08-09T21:15:31Z ssm: SendCommand rejected (InvalidInstanceId) instance=
+2026-08-09T21:15:44Z apply complete: 0 failed / 12 changed

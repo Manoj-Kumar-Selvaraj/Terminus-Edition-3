@@ -1,0 +1,11 @@
+run=b-1842
+library=platform-lib@1.5.0
+env:
+  BUILD_TOKEN=tok-nightly-9f3a
+  NEXUS_PASSWORD=nexus-s3cr3t-1842
+events:
+checkout checkout on linux-01
+compile rebuilt common on maven-03
+compile rebuilt core on maven-03
+compile rebuilt web on maven-03
+test crashed module=core agent=docker-07

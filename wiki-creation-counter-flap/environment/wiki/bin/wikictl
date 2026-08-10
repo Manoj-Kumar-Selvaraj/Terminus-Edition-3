@@ -1,0 +1,161 @@
+#!/usr/bin/env python3
+from __future__ import annotations
+
+import json
+import os
+import signal
+import subprocess
+import sys
+import time
+import urllib.error
+import urllib.request
+from pathlib import Path
+
+ROOT = Path(os.environ.get("WIKI_ROOT", "/app/wiki"))
+DB = Path(os.environ.get("WIKI_DB", str(ROOT / "var" / "wiki.db")))
+FLAPPED = DB.with_suffix(".db.flapped")
+PIDS = ROOT / "var" / "replicas.pids"
+OUT = ROOT / "out"
+HOSTS = ("127.0.0.1:8001", "127.0.0.1:8002")
+
+
+def _get(url: str) -> tuple[int, str]:
+    try:
+        with urllib.request.urlopen(url, timeout=3) as resp:
+            return resp.status, resp.read().decode("utf-8")
+    except urllib.error.HTTPError as exc:
+        return exc.code, exc.read().decode("utf-8")
+    except Exception as exc:
+        return 0, str(exc)
+
+
+def serve() -> None:
+    ROOT.joinpath("var").mkdir(parents=True, exist_ok=True)
+    env = os.environ.copy()
+    env["PYTHONPATH"] = str(ROOT) + (os.pathsep + env["PYTHONPATH"] if env.get("PYTHONPATH") else "")
+    env["WIKI_ROOT"] = str(ROOT)
+    env["WIKI_DB"] = str(DB)
+    pids = []
+    for port in (8001, 8002):
+        proc = subprocess.Popen(
+            [
+                sys.executable,
+                "-m",
+                "uvicorn",
+                "app.main:app",
+                "--host",
+                "127.0.0.1",
+                "--port",
+                str(port),
+            ],
+            cwd=str(ROOT),
+            env=env,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
+        pids.append(str(proc.pid))
+    PIDS.write_text("\n".join(pids) + "\n", encoding="utf-8")
+    for _ in range(40):
+        code, _ = _get("http://127.0.0.1:8001/health/startup")
+        if code == 200:
+            print("served")
+            return
+        time.sleep(0.15)
+    raise SystemExit("serve failed")
+
+
+def seed() -> None:
+    import sqlite3
+
+    DB.parent.mkdir(parents=True, exist_ok=True)
+    con = sqlite3.connect(str(DB))
+    con.executescript((ROOT / "sql" / "schema.sql").read_text(encoding="utf-8"))
+    if con.execute("SELECT COUNT(*) FROM users").fetchone()[0] == 0:
+        con.executescript((ROOT / "sql" / "seed.sql").read_text(encoding="utf-8"))
+    con.commit()
+    con.close()
+    print("seeded")
+
+
+def flap() -> None:
+    if DB.is_file():
+        DB.replace(FLAPPED)
+    print("flapped")
+
+
+def restore() -> None:
+    if FLAPPED.is_file():
+        FLAPPED.replace(DB)
+    print("restored")
+
+
+def _metric(body: str, name: str) -> float:
+    total = 0.0
+    for line in body.splitlines():
+        if line.startswith(name + " ") or line.startswith(name + "{"):
+            total += float(line.rsplit(" ", 1)[-1])
+    return total
+
+
+def report() -> None:
+    OUT.mkdir(parents=True, exist_ok=True)
+    probe = {"db_present": DB.is_file()}
+    for host in HOSTS:
+        port = host.split(":")[1]
+        lcode, lbody = _get(f"http://{host}/health/live")
+        rcode, _ = _get(f"http://{host}/health/ready")
+        probe[f"live_{port}"] = "alive" if lcode == 200 and "alive" in lbody else "down"
+        probe[f"ready_{port}"] = "ready" if rcode == 200 else "not_ready"
+    users = posts = 0
+    if DB.is_file():
+        import sqlite3
+
+        con = sqlite3.connect(str(DB))
+        users = int(con.execute("SELECT COUNT(*) FROM users").fetchone()[0])
+        posts = int(con.execute("SELECT COUNT(*) FROM posts").fetchone()[0])
+        con.close()
+    um = pm = 0.0
+    for host in HOSTS:
+        code, body = _get(f"http://{host}/metrics")
+        if code == 200:
+            um = max(um, _metric(body, "users_created_total"))
+            pm = max(pm, _metric(body, "posts_created_total"))
+    reconcile = {
+        "users_table": users,
+        "posts_table": posts,
+        "users_metric": int(um),
+        "posts_metric": int(pm),
+        "reconciled": int(um) == users and int(pm) == posts and users > 0,
+        "scrape_targets": list(HOSTS),
+    }
+    (OUT / "probe-matrix.json").write_text(json.dumps(probe, indent=2) + "\n", encoding="utf-8")
+    (OUT / "creation-reconcile.json").write_text(
+        json.dumps(reconcile, indent=2) + "\n", encoding="utf-8"
+    )
+    print(json.dumps({"probe": probe, "reconcile": reconcile}))
+
+
+def stop() -> None:
+    if not PIDS.is_file():
+        return
+    for line in PIDS.read_text(encoding="utf-8").splitlines():
+        try:
+            os.kill(int(line.strip()), signal.SIGTERM)
+        except OSError:
+            pass
+    PIDS.unlink(missing_ok=True)
+
+
+def main() -> int:
+    if len(sys.argv) < 2:
+        print("usage: wikictl serve|seed|flap|restore|report|stop", file=sys.stderr)
+        return 2
+    cmd = sys.argv[1]
+    {"serve": serve, "seed": seed, "flap": flap, "restore": restore, "report": report, "stop": stop}[
+        cmd
+    ]()
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

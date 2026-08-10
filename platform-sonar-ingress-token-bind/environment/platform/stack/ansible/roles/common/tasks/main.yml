@@ -1,0 +1,20 @@
+---
+- name: Ensure ansible workdir exists
+  file:
+    path: /opt/ansible
+    state: directory
+    mode: "0755"
+
+- name: Reject SSH transport on AWS runners
+  fail:
+    msg: AWS runners must use ansible_connection=aws_ssm
+  when: ansible_connection != "aws_ssm"
+
+- name: Record runner instance
+  set_fact:
+    runner_instance_id: "{{ ansible_aws_ssm_instance_id | default(lookup('env', 'ANSIBLE_RUNNER_ID')) }}"
+
+- name: Fail when runner instance is missing
+  fail:
+    msg: ANSIBLE_RUNNER_ID / ansible_aws_ssm_instance_id is required
+  when: runner_instance_id is not defined or runner_instance_id | length == 0
