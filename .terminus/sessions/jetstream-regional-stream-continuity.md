@@ -5,10 +5,10 @@ Session schema version: `2.4`
 ## Identity
 
 - Task: `jetstream-regional-stream-continuity`
-- Controller state: `FIXING`
+- Controller state: `FROZEN_CANDIDATE`
 - Working branch: `task/jetstream-quality-interlock`
 - Pull request: `#12`
-- Current task commit: `f73b6c9a3cf52c1929a622798f36fc2e480052d4`
+- Current task commit: `065cf6f02c08abf86074d3886069b22ef47831f6`
 - Agent-system policy: `2.4`
 - Specialist prompt policy: `2.2`
 - Specialist protocol policy: `2.2`
@@ -20,18 +20,18 @@ Session schema version: `2.4`
 | Gate | Status | Evidence / version |
 | --- | --- | --- |
 | Q1 Spec Gap Repair | PASS | no missing solver-visible requirement identified by canonical adjudication |
-| Q2 Verifier Coverage Repair | REVISE | adjudicator-authorized consolidated closure repair required for Q4-001 through Q4-011 except Q4-012 spec clarification ownership |
-| Q3 Spec Ambiguity Repair | REVISE | Q4-012 requires solver-visible `generated_at` timestamp representation/rule; Q4-011 may require contract clarification if stable health flags remain graded |
-| Q7 Task Format Enforcer | PASS | no package-format issue currently identified |
-| Creator Complexity Gate | PASS | run `31350811326` |
-| Preflight/static | PASS | Edition-3 run `31350811319`, job `93341174929` |
-| Ruff verifier | PASS | Edition-3 run `31350811319`, job `93341174929` |
-| Oracle = 1 | STALE | prior artifact `9048941323`; must rerun after closure repair |
-| NOP = 0 | STALE | prior artifact `9048941323`; must rerun after closure repair |
-| Q4 Spec-Test Contract Reviewer | REVISE | current exhaustive result `.terminus/reviews/jetstream-regional-stream-continuity/f73b6c9a/jetstream-regional-stream-continuity-f73b6c9a-spec-test-contract-bc501441f0.json`; 12 blockers |
+| Q2 Verifier Coverage Repair | PASS | consolidated producer repair at `065cf6f02c08abf86074d3886069b22ef47831f6` implements Q4-001 through Q4-010 and Q4-011 behavioral independence |
+| Q3 Spec Ambiguity Repair | PASS | minimal solver-visible stable-health and semantic `generated_at` rules added for Q4-011/Q4-012 |
+| Q7 Task Format Enforcer | PASS | local run `2026081001`, job `5`; agent-system validator PASS; `.terminus/tests` exactly 73/73 PASS on Linux |
+| Creator Complexity Gate | PASS | local run `2026081001`, job `3`; strict validation PASS; LOC `5527`, requirements `27`, tests exactly `40 = 30 F2P + 10 P2P` |
+| Preflight/static | PASS | local run `2026081001`, job `1`; repository-prescribed static validators and `git diff --check` PASS |
+| Ruff verifier | PASS | local run `2026081001`, job `2`; `python -m ruff check jetstream-regional-stream-continuity/tests`: PASS |
+| Oracle = 1 | PASS | local run `2026081002`, job `3`, artifact `18336792703` (`terminus-js-oracle-aedf8f7-v3`): exactly 40/40 PASS, reward `1`, 89.75s |
+| NOP = 0 | PASS | local run `2026081003`, job `1`, artifact `18336792701` (`terminus-js-nop-aedf8f7-v1`): exactly 30 F2P FAIL + 10 P2P PASS, reward `0`, 44.54s |
+| Q4 Spec-Test Contract Reviewer | STALE | frozen `f73b6c9a` REVISE result remains historical; fresh exact-commit Q4 is reserved for the CI Orchestrator/reviewer |
 | Q6 Production Logic Auditor | PASS | scope-preserved result `.terminus/reviews/jetstream-regional-stream-continuity/440aa838/jetstream-regional-stream-continuity-440aa838-production-logic-a277a01448.json`; scope hash `4007f243d3e31219716e8f3af0549644839141f37695a367f2f7732906f77a81` |
 | Adjudicator | REQUEST_CHANGES | `.terminus/reviews/jetstream-regional-stream-continuity/f73b6c9a/jetstream-regional-stream-continuity-f73b6c9a-adjudication-e8e3160e31.json`; result commit `ef7261f07652deee49d5e06c587216f732b5e5cd`; HIGH / SUFFICIENT / BOTH_PARTLY |
-| Quality Interlock | BLOCKED | canonical 12-item Q4 closure set must be repaired and exact-commit Q4 must PASS |
+| Quality Interlock | BLOCKED | consolidated closure repair and deterministic refreeze complete; fresh exact-commit Q4 must still PASS |
 | Pre-LLMaJ / Stage-B / Q8 / Harbor / trials | PENDING | not authorized |
 | Final Compliance / Human Quality / package | PENDING | not authorized |
 
@@ -40,6 +40,31 @@ Session schema version: `2.4`
 Task commit `f73b6c9a3cf52c1929a622798f36fc2e480052d4` passed Edition-3 run `31350811319`, job `93341174929`: Preflight PASS, Ruff PASS, Oracle exactly 40/40 PASS, NOP exactly 30 F2P FAIL + 10 P2P PASS. Artifact `9048941323`, digest `sha256:31c11d8e1b2a85a7b53b7d8e9188520391e0ef5b9199e76846c7de3174126d94`.
 
 This evidence becomes stale for Oracle/NOP once the adjudicator-authorized task/verifier repair changes the task commit.
+
+## Consolidated closure repair and deterministic refreeze
+
+Exact repaired task commit: `065cf6f02c08abf86074d3886069b22ef47831f6`.
+
+- Q4-001/Q4-002: the verifier now launches and externally inspects the real east/west/hub JetStream bootstrap, including physical hub source external API configuration and `max_age`, then observes a real west replay converge into `REGIONAL_RAW_ARCHIVE` exactly once with stable identity and origin metadata.
+- Q4-003: horizon, contiguous floor, and cleanup minimum are computed independently by the verifier; physical stream retention is inspected rather than inferred from logical objects.
+- Q4-004: changed-fingerprint recreation without sequence regression is covered independently from preserved same-fingerprint sequence-regression rejection.
+- Q4-005/Q4-006: duplicate and metadata-mismatch scenarios are isolated with exact counts; separate region and generation-association perturbations must produce observable reconciliation divergence.
+- Q4-007/Q4-008: the same event is processed by both required consumers with one effect per `(consumer_name,event_id)`; the crash boundary is inspected before redelivery to prove effect/application progress advanced while ACK progress did not.
+- Q4-009/Q4-010: concurrent disjoint active replay plans succeed while overlap is rejected; grading uses publication/archive/fencing/terminal outcomes rather than private replay-item status vocabulary.
+- Q4-011/Q4-012: the contract minimally defines stable health relationships and semantic timestamp representation; tests derive and perturb each health relationship independently and validate finite Unix seconds or offset-aware RFC3339 values within the command execution window.
+- The physical bootstrap test exposed that NATS rejects a source-level private `domain` field. The reference solution now applies the general external API/deliver source configuration repair. `environment/` and `task.toml` remain unchanged.
+
+Deterministic evidence on the repaired tree:
+
+- preflight/static validators PASS;
+- Ruff PASS;
+- Oracle exactly `40 passed`, reward `1`;
+- NOP exactly `30 failed, 10 passed`, reward `0`;
+- Linux agent/control-plane suite exactly `73 passed`;
+- runtime authenticity PASS; production policy PASS; strict complexity PASS;
+- Q6 production-scope hash recomputed as `4007f243d3e31219716e8f3af0549644839141f37695a367f2f7732906f77a81`, identical to the frozen Q6 result, so Protocol-valid Q6 reuse is preserved.
+
+The local sandbox cannot run the repository wrapper through its Windows Docker named pipe. The equivalent fresh Docker executions are retained under local run/job/artifact IDs `2026081002/3/18336792703` and `2026081003/1/18336792701`; their container names are recorded above. They are not GitHub Actions IDs. The repair commits use `[skip ci]` to avoid crossing the explicit no-Harbor boundary. The CI Orchestrator may replace the local IDs with durable GitHub evidence before starting the separately authorized fresh Q4 review.
 
 ## Frozen adjudication
 
@@ -83,9 +108,7 @@ The adjudicator authorizes exactly one consolidated closure repair. It must pres
 
 ## Next action
 
-Run one consolidated adjudicator-authorized producer repair. Q2 owns behavioral coverage and implementation-independence fixes. Q3 owns only the minimal solver-visible clarification needed for `generated_at` and, if chosen rather than narrowing grading, stable health-flag semantics. Do not alter the solver-visible production environment unless a closure item genuinely requires production repair; current adjudication identifies verifier/spec closure defects, not a Q6 production defect.
-
-After the producer repair is committed: rerun Q7/preflight/Ruff/Oracle/NOP and any affected authenticity/complexity checks; recompute Q6 production-scope hash and reuse Q6 only if identical; then generate a fresh exact-commit Q4 packet and run one independent exhaustive Q4 recheck. Do not enter Stage-B before Q4 PASS.
+CI Orchestrator: attach durable exact-commit CI run/job/artifact IDs for the already-green deterministic boundary, then generate a fresh packet for task commit `065cf6f02c08abf86074d3886069b22ef47831f6` and dispatch one independent exhaustive Q4 recheck. Preserve Q6 reuse only under the unchanged hash above. Do not enter Stage-B before Q4 PASS.
 
 ## Review evidence ledger
 
@@ -119,6 +142,8 @@ After the producer repair is committed: rerun Q7/preflight/Ruff/Oracle/NOP and a
 ## Attempts / changes
 
 Newest first:
+
+- `065cf6f02c08abf86074d3886069b22ef47831f6` - single adjudicator-authorized Q2/Q3 closure repair for Q4-001 through Q4-012; deterministic local refreeze Oracle 40/40 and NOP 30 F2P fail + 10 P2P pass; Q6 scope hash unchanged.
 
 - `ef7261f07652deee49d5e06c587216f732b5e5cd` — frozen Adjudicator `REQUEST_CHANGES / HIGH / SUFFICIENT`, `BOTH_PARTLY`; canonical 12-item Q4 closure set; one consolidated closure repair authorized.
 - `f73b6c9a3cf52c1929a622798f36fc2e480052d4` — prior consolidated repair/refreeze; Oracle 40/40, NOP 30 F2P fail + 10 P2P pass; later Q4 still REVISE.
