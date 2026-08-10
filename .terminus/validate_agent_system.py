@@ -203,7 +203,7 @@ def main() -> int:
     require_declared(errors, protocol, protocol_path, "Policy version", "2.2")
     require_declared(errors, invoke, invoke_path, "Invocation policy version", "1.1")
     require_declared(
-        errors, orchestrator, orchestrator_path, "Orchestrator policy version", "1.1"
+        errors, orchestrator, orchestrator_path, "Orchestrator policy version", "1.2"
     )
     require_declared(errors, prompts, prompts_path, "Prompt policy version", "2.2")
     require_declared(errors, comprehensive, comprehensive_path, "Reviewer policy version", "1.0")
@@ -234,6 +234,9 @@ def main() -> int:
         "Decision right",
         "Trust order",
         "Bootstrap",
+        "Cursor local execution",
+        "use the attached laptop as the default environment",
+        "LOCAL_EXECUTION_STATUS",
         "Control loop",
         "Gate order",
         "GitHub Actions evidence",
@@ -261,6 +264,8 @@ def main() -> int:
         "exactly one active task",
         "first genuinely incomplete, failed, stale or blocked",
         "Do not perform the routed role",
+        "attached laptop's local terminal and hardware",
+        "Docker checks yourself",
         "bounded active-chat polling contract",
         "INSUFFICIENT_EVIDENCE",
     ]:
