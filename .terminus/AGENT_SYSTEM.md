@@ -195,6 +195,8 @@ The portable execution contract is `.terminus/agents/CI_ORCHESTRATOR.md`; the pr
 
 When asked to wait for a queued or running GitHub Actions check, it may use bounded read-only active-chat polling under that contract. This does not create an unattended watcher; monitoring after the chat turn requires event-driven GitHub automation or an explicitly configured scheduled automation.
 
+In Cursor, the Orchestrator uses the attached laptop's terminal and hardware for safe repository-scoped tests, linters, validators, builds, package checks and Docker verification. Local execution is preflight evidence and does not replace required current-head CI evidence.
+
 ## Routing
 
 | Signal | Owner |
