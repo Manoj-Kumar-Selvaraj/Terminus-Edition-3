@@ -13,11 +13,12 @@ PROJECT_AGENT = ROOT / ".cursor" / "agents" / "terminus-ci-orchestrator.md"
 
 def test_portable_orchestrator_contract_is_complete() -> None:
     text = PORTABLE.read_text(encoding="utf-8")
-    assert "Orchestrator policy version: `1.1`" in text
+    assert "Orchestrator policy version: `1.2`" in text
     for heading in (
         "## Decision right",
         "## Trust order",
         "## Bootstrap",
+        "## Cursor local execution",
         "## Control loop",
         "## Gate order",
         "## GitHub Actions evidence",
@@ -60,6 +61,25 @@ def test_orchestrator_requires_commit_bound_ci_and_review_evidence() -> None:
         assert marker in text
 
 
+
+
+def test_cursor_agent_uses_attached_laptop_for_preflight() -> None:
+    portable = PORTABLE.read_text(encoding="utf-8")
+    project_agent = PROJECT_AGENT.read_text(encoding="utf-8")
+    for marker in (
+        "use the attached laptop as the default environment",
+        "tests, linters, format checks, validators, builds, package checks and Docker-based verification",
+        "Do not merely recommend a command",
+        "LOCAL_EXECUTION_STATUS",
+        "do not replace required GitHub Actions/Harbor evidence",
+    ):
+        assert marker in portable
+    for marker in (
+        "attached laptop's local terminal and hardware",
+        "Run relevant tests, linters, validators, builds, package checks and Docker checks yourself",
+        "Treat local results as preflight evidence",
+    ):
+        assert marker in project_agent
 
 def test_orchestrator_bounds_active_chat_polling() -> None:
     portable = PORTABLE.read_text(encoding="utf-8")
