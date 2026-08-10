@@ -13,68 +13,20 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
 
 concurrency:
   group: terminus-agent-system-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  fix-jetstream-restart-assertion:
-    name: Correct Q4 restart-health assertion
-    if: github.event_name == 'pull_request' && github.head_ref == 'task/jetstream-quality-interlock'
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          ref: task/jetstream-quality-interlock
-          fetch-depth: 0
-
-      - name: Verify repair baseline
-        shell: bash
-        run: |
-          set -euo pipefail
-          test "$(git log -1 --format=%H -- jetstream-regional-stream-continuity)" = "8c1c61eac9a0430e0326b8f615247506fd45daa3"
-          test -f .terminus/tmp_fix_q4_restart_assertion.py
-
-      - name: Apply assertion correction
-        run: python3 .terminus/tmp_fix_q4_restart_assertion.py
-
-      - name: Validate correction
-        shell: bash
-        run: |
-          set -euo pipefail
-          python3 -m py_compile jetstream-regional-stream-continuity/tests/test_continuity.py
-          grep -q 'persisted.application_sequence == 5600' jetstream-regional-stream-continuity/tests/test_continuity.py
-          if git diff --name-only -- jetstream-regional-stream-continuity/environment | grep -q .; then
-            echo '::error::Assertion correction changed environment scope.'
-            exit 1
-          fi
-          git diff --check
-
-      - name: Commit correction and restore workflow
-        shell: bash
-        run: |
-          set -euo pipefail
-          git fetch origin main
-          git checkout origin/main -- .github/workflows/terminus-agent-system-ci.yml
-          rm .terminus/tmp_fix_q4_restart_assertion.py
-          git config user.name actions
-          git config user.email actions@users.noreply.github.com
-          git add \
-            .github/workflows/terminus-agent-system-ci.yml \
-            .terminus/tmp_fix_q4_restart_assertion.py \
-            jetstream-regional-stream-continuity/tests/test_continuity.py
-          git diff --cached --check
-          git commit -m 'Correct restart-health assertion'
-          git push origin HEAD:task/jetstream-quality-interlock
-
   validate-agent-system:
     name: Validate reviewer/controller system
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
+      # Review freshness is derived from per-task Git history, so shallow history
+      # is not sufficient evidence.
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
@@ -101,6 +53,7 @@ jobs:
         run: python3 .terminus/validate_agent_system.py
 
       - name: Validate current review freshness and commit binding
+        # --allow-stale is deliberately forbidden in CI.
         run: python3 .terminus/validate_review_freshness.py
 
       - name: Check control-plane files stay outside task packages

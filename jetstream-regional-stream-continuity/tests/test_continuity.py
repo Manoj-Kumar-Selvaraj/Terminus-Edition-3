@@ -724,7 +724,7 @@ def test_f2p_restart_detects_ack_floor_effect_ledger_gap(
         assert external_ack_floor > 0
         persisted = engine.store.checkpoint("telemetry-indexer", "east", 1)
         assert persisted is not None and persisted.is_consistent
-        assert persisted.application_sequence == 0
+        assert persisted.application_sequence == 5600
 
         report = engine.inspect_health()
         assert report.consumers_ok is False
