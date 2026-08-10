@@ -7,8 +7,8 @@ Session schema version: `2.4`
 - Task: `cobol-comp3-python-equiv`
 - Controller state: `DRAFT`
 - Working branch: `task/cobol-comp3-python-equiv`
-- Pull request: none
-- Current task commit: uncommitted local rework
+- Pull request: pending (branch pushed; `gh` auth needed for PR create)
+- Current task commit: `32de80a57ddbc38acd33d36cac598c69abe99da8`
 - Agent-system policy: `2.4`
 - Specialist prompt policy: `2.2`
 - Specialist protocol policy: `2.1`
