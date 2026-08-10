@@ -1,0 +1,58 @@
+{
+  "schema_version": "1.0",
+  "profile": "large_system_strict",
+  "task_kind": "software",
+  "task": "django-checkout-failover-ha",
+  "root_cause_clusters": {
+    "RC1_WRITE_AFFINITY": "Django write routing still honors leftover AZ affinity and can target a standby or demoted node.",
+    "RC2_STICKY_READ": "Post-write reads are not pinned to the primary for a lag-safe window, so confirmation views observe standby state.",
+    "RC3_LAG_GATE": "Standby read eligibility uses wall-clock or heartbeat age instead of durable primary/standby LSN watermarks.",
+    "RC4_PIN_STORE": "Sticky pin and session affinity are stored on a replica-backed session table, so the pin itself can be stale or lost.",
+    "RC5_FENCING": "Primary fencing is name-based without a monotonic lease epoch, so a demoted node remains writable (split-brain).",
+    "RC6_IDEMPOTENCY": "Fulfillment/webhook side effects are not keyed by checkout attempt identity across retry and dual-node replay.",
+    "RC7_READINESS": "Liveness success is treated as traffic readiness, so /readyz stays green during split-brain, lag, or unfenced roles."
+  },
+  "defects": [
+    {"id":"D01","component":"db-router","observable_failure":"AZ-B place-order writes are routed to the standby alias after promotion.","root_cause":"RC1_WRITE_AFFINITY","partial_fix_trap":"Forcing DATABASES default to the new host still leaves the AZ-B router branch writing replica."},
+    {"id":"D02","component":"db-router","observable_failure":"A payment capture UPDATE can execute on a connection that is not the fenced primary.","root_cause":"RC1_WRITE_AFFINITY","partial_fix_trap":"Retrying failed captures on default hides the affinity bug until the next AZ-B request."},
+    {"id":"D03","component":"standby-role","observable_failure":"The standby database accepts INSERT/UPDATE instead of failing read-only.","root_cause":"RC1_WRITE_AFFINITY","partial_fix_trap":"Application try/except fallback to primary masks stray writes instead of fencing them."},
+    {"id":"D04","component":"db-router","observable_failure":"Inventory reservation rows can diverge between primary and standby because writes split across aliases.","root_cause":"RC1_WRITE_AFFINITY","partial_fix_trap":"Re-running apply-standby copies the split but does not stop new split writes."},
+
+    {"id":"D05","component":"sticky-router","observable_failure":"Immediately after place-order, GET confirmation reads a cart that still looks unpaid.","root_cause":"RC2_STICKY_READ","partial_fix_trap":"Routing all reads to primary removes lag bugs but defeats the replica and hides pin-store defects."},
+    {"id":"D06","component":"sticky-router","observable_failure":"A shopper without a recent write is forced onto the primary forever, so lag gating is never exercised.","root_cause":"RC2_STICKY_READ","partial_fix_trap":"A permanent primary pin looks consistent but is not a sticky window."},
+    {"id":"D07","component":"sticky-router","observable_failure":"Sticky state is honored only for the same gunicorn AZ that performed the write.","root_cause":"RC2_STICKY_READ","partial_fix_trap":"Sticky cookies scoped to AZ-A break when the load balancer lands the reload on AZ-B."},
+
+    {"id":"D08","component":"lag-probe","observable_failure":"Standby is marked read-eligible while applied LSN is behind the primary write LSN of recent orders.","root_cause":"RC3_LAG_GATE","partial_fix_trap":"Checking replica heartbeat age can be fresh while replay has not applied those LSNs."},
+    {"id":"D09","component":"lag-probe","observable_failure":"Lag bytes are computed from row counts rather than primary versus applied watermarks.","root_cause":"RC3_LAG_GATE","partial_fix_trap":"Equal counts can hide a gap offset by a duplicate standby row."},
+    {"id":"D10","component":"replica-apply","observable_failure":"apply-standby copies fencing lease rows and can resurrect a demoted primary epoch.","root_cause":"RC3_LAG_GATE","partial_fix_trap":"Skipping only heartbeat tables still clones lease ownership onto the standby."},
+    {"id":"D11","component":"replica-apply","observable_failure":"Standby apply stops at a hardcoded order id and never catches the incident window.","root_cause":"RC3_LAG_GATE","partial_fix_trap":"Raising the cutoff once heals current lag but breaks the next failover window."},
+
+    {"id":"D12","component":"session-backend","observable_failure":"Sticky pin stored in Django DB sessions is read from the standby and misses the just-written pin.","root_cause":"RC4_PIN_STORE","partial_fix_trap":"Writing sessions to primary still couples pin durability to database role changes."},
+    {"id":"D13","component":"session-backend","observable_failure":"Cache alias used for pins shares the replica database wrapper after DATABASES remap.","root_cause":"RC4_PIN_STORE","partial_fix_trap":"LocMem cache on one node is not visible to the other AZ gunicorn."},
+    {"id":"D14","component":"session-backend","observable_failure":"A pin written on AZ-A is invisible to AZ-B because it lives in process-local memory.","root_cause":"RC4_PIN_STORE","partial_fix_trap":"Sticky cookies without a server store can be stripped or replayed across shoppers."},
+
+    {"id":"D15","component":"fence-lease","observable_failure":"Old primary remains writable after promote because fencing matches node name without epoch.","root_cause":"RC5_FENCING","partial_fix_trap":"Stopping gunicorn on AZ-A hides split-brain until that node is restarted."},
+    {"id":"D16","component":"fence-lease","observable_failure":"Two nodes can both hold writable=true for resource checkout-primary.","root_cause":"RC5_FENCING","partial_fix_trap":"Last-writer-wins heartbeat still allows overlapping writable windows."},
+    {"id":"D17","component":"fence-lease","observable_failure":"A stale worker continues writes after a newer lease epoch has been issued.","root_cause":"RC5_FENCING","partial_fix_trap":"Checking owner string fails when the same node id reacquires a new epoch."},
+    {"id":"D18","component":"fence-lease","observable_failure":"Promote-standby flips roles without invalidating the demoted node's write permit.","root_cause":"RC5_FENCING","partial_fix_trap":"Updating DATABASES hostnames without fencing leaves both wrappers writable."},
+
+    {"id":"D19","component":"fulfillment","observable_failure":"Retrying place-order with the same checkout attempt id inserts a second webhook side effect.","root_cause":"RC6_IDEMPOTENCY","partial_fix_trap":"Deduplicating by order_ref still doubles when the first attempt crashed before order_ref existed."},
+    {"id":"D20","component":"fulfillment","observable_failure":"AZ-A and AZ-B workers both deliver the capture webhook for one attempt.","root_cause":"RC6_IDEMPOTENCY","partial_fix_trap":"A distributed lock without a durable attempt key loses the effect if the lock holder dies after send."},
+    {"id":"D21","component":"fulfillment","observable_failure":"Inventory decrement runs twice for one paid attempt after dual-node replay.","root_cause":"RC6_IDEMPOTENCY","partial_fix_trap":"Clamping quantity at zero hides the double decrement instead of making the effect idempotent."},
+    {"id":"D22","component":"fulfillment","observable_failure":"Side-effect status can be delivered before the order row is committed on the fenced primary.","root_cause":"RC6_IDEMPOTENCY","partial_fix_trap":"Sending after HTTP 200 still races if the write was on the unfenced standby."},
+
+    {"id":"D23","component":"health-api","observable_failure":"/readyz returns 200 while two writable primaries exist.","root_cause":"RC7_READINESS","partial_fix_trap":"Checking that at least one node is up is liveness, not readiness."},
+    {"id":"D24","component":"health-api","observable_failure":"/readyz returns 200 while replica applied LSN is behind the configured lag threshold.","root_cause":"RC7_READINESS","partial_fix_trap":"Ignoring replica role entirely makes ready depend only on primary ping."},
+    {"id":"D25","component":"health-api","observable_failure":"/healthz and /readyz share the same process-up probe.","root_cause":"RC7_READINESS","partial_fix_trap":"Renaming the path without changing the predicate keeps unsafe nodes in rotation."},
+    {"id":"D26","component":"health-report","observable_failure":"health.json reports ready true while reconcile.json still lists split-brain or duplicate effects.","root_cause":"RC7_READINESS","partial_fix_trap":"Writing static ready true after a manual failover note does not recompute live invariants."}
+  ],
+  "causal_edges": [
+    {"from":"D01","to":"D04"},{"from":"D01","to":"D03"},{"from":"D02","to":"D22"},{"from":"D03","to":"D16"},
+    {"from":"D04","to":"D09"},{"from":"D05","to":"D08"},{"from":"D06","to":"D24"},{"from":"D07","to":"D14"},
+    {"from":"D08","to":"D05"},{"from":"D09","to":"D24"},{"from":"D10","to":"D15"},{"from":"D11","to":"D08"},
+    {"from":"D12","to":"D05"},{"from":"D13","to":"D12"},{"from":"D14","to":"D07"},{"from":"D15","to":"D16"},
+    {"from":"D16","to":"D23"},{"from":"D17","to":"D02"},{"from":"D18","to":"D15"},{"from":"D19","to":"D20"},
+    {"from":"D20","to":"D21"},{"from":"D22","to":"D19"},{"from":"D23","to":"D26"},{"from":"D24","to":"D26"},
+    {"from":"D25","to":"D23"},{"from":"D21","to":"D26"},{"from":"D18","to":"D01"},{"from":"D17","to":"D20"}
+  ]
+}

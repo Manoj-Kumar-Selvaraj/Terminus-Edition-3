@@ -1,0 +1,13 @@
+[08/Aug/2026 21:04:12] WARNING promote advertised writer=az-b
+[08/Aug/2026 21:04:13] WARNING az-a ha_fence_lease writable=1 epoch=3 still held
+[08/Aug/2026 21:07:02] ERROR shopdesk.router az=az-b alias=replica model=checkout.Order view=place
+[08/Aug/2026 21:07:44] ERROR sqlite replica accepted INSERT checkout_order order_ref=ORD-19990
+[08/Aug/2026 21:11:19] ERROR confirmation shopper=shp-4412 status=OPEN alias=replica seq_gap=330
+[08/Aug/2026 21:11:20] WARNING sticky miss key=sticky:shopper:4412 store=django_session alias=replica
+[08/Aug/2026 21:14:03] ERROR capture twice attempt_id=att-inc-20001 boxes=az-a,az-b
+[08/Aug/2026 21:14:08] ERROR capture twice attempt_id=att-inc-20007 boxes=az-a,az-b
+[08/Aug/2026 21:14:11] ERROR capture twice attempt_id=att-inc-20012 boxes=az-a,az-b
+[08/Aug/2026 21:16:40] WARNING sync_standby stopped at checkout_order.id<=19800
+[08/Aug/2026 21:17:55] ERROR sync_standby copied ha_fence_lease writable=1 onto standby
+[08/Aug/2026 21:18:01] INFO GET /healthz 200 az-a
+[08/Aug/2026 21:18:01] INFO GET /readyz 200 az-a (same probe as healthz)

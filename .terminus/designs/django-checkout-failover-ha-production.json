@@ -1,0 +1,55 @@
+{
+  "schema_version": "1.0",
+  "task": "django-checkout-failover-ha",
+  "production_authenticity": {
+    "incident_evidence": [
+      "environment/ha/notes/oncall.md",
+      "environment/ha/logs/captured/shopdesk-error.log"
+    ],
+    "instruction_evidence_paths": [
+      "/app/ha/notes/oncall.md",
+      "/app/ha/logs/captured"
+    ],
+    "stateful_dataset": {
+      "schema": "environment/ha/sql/schema.sql",
+      "seed": "environment/ha/sql/seed.sql",
+      "primary_table": "checkout_order",
+      "min_records": 20000,
+      "max_records": 20000,
+      "variance_queries": {
+        "warehouses": {
+          "sql": "SELECT COUNT(DISTINCT warehouse_id) FROM checkout_order",
+          "min": 8
+        },
+        "shoppers": {
+          "sql": "SELECT COUNT(DISTINCT shopper_id) FROM checkout_order",
+          "min": 4000
+        },
+        "statuses": {
+          "sql": "SELECT COUNT(DISTINCT status) FROM checkout_order",
+          "min": 6
+        },
+        "currencies": {
+          "sql": "SELECT COUNT(DISTINCT currency) FROM checkout_order",
+          "min": 5
+        },
+        "amounts": {
+          "sql": "SELECT COUNT(DISTINCT total_cents) FROM checkout_order",
+          "min": 500
+        },
+        "channels": {
+          "sql": "SELECT COUNT(DISTINCT channel) FROM checkout_order",
+          "min": 6
+        },
+        "az_origins": {
+          "sql": "SELECT COUNT(DISTINCT az_origin) FROM checkout_order",
+          "min": 2
+        },
+        "placed_days": {
+          "sql": "SELECT COUNT(DISTINCT DATE(placed_at)) FROM checkout_order",
+          "min": 200
+        }
+      }
+    }
+  }
+}
