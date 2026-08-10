@@ -5,6 +5,7 @@ import json
 import shutil
 import sqlite3
 import sys
+from collections import Counter
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any
@@ -27,7 +28,6 @@ from continuity.model import (  # noqa: E402
     ReplayRange,
     ReplayStatus,
     canonical_json,
-    contiguous_floor,
     parse_iso,
     sha256_text,
 )
@@ -37,6 +37,7 @@ from continuity.runtime import (  # noqa: E402
     LabProcessManager,
     NatsConnectionPool,
     NatsPublisher,
+    RuntimeBootstrap,
     endpoints_from_engine,
 )
 from continuity.store import ContinuityStore  # noqa: E402
@@ -122,6 +123,73 @@ def _build_database(path: Path) -> None:
         connection.commit()
     finally:
         connection.close()
+
+
+def _write_three_domain_lab_configs(root: Path) -> None:
+    config_dir = root / "config/nats"
+    config_dir.mkdir(parents=True)
+    stores = {name: root / "state/nats" / name for name in ("hub", "east", "west")}
+    for store in stores.values():
+        store.mkdir(parents=True)
+    (config_dir / "hub.conf").write_text(
+        "\n".join(
+            (
+                "server_name: HUB-CONTINUITY-F2P",
+                "port: 4222",
+                "http: 8222",
+                "jetstream {",
+                f'  store_dir: "{stores["hub"]}"',
+                '  domain: "hub"',
+                "  max_mem_store: 67108864",
+                "  max_file_store: 268435456",
+                "}",
+                "leafnodes {",
+                "  port: 7422",
+                "  authorization {",
+                '    users = [{user: "leaf", password: "continuity-leaf"}]',
+                "  }",
+                "}",
+                "",
+            )
+        ),
+        encoding="utf-8",
+    )
+    for region, port, monitor, domain in (
+        ("east", 4223, 8223, "edge-east"),
+        ("west", 4224, 8224, "edge-west"),
+    ):
+        (config_dir / f"{region}.conf").write_text(
+            "\n".join(
+                (
+                    f"server_name: EDGE-{region.upper()}-CONTINUITY-F2P",
+                    f"port: {port}",
+                    f"http: {monitor}",
+                    "jetstream {",
+                    f'  store_dir: "{stores[region]}"',
+                    f'  domain: "{domain}"',
+                    "  max_mem_store: 67108864",
+                    "  max_file_store: 268435456",
+                    "}",
+                    "leafnodes {",
+                    "  remotes = [",
+                    "    {",
+                    '      url: "nats://leaf:continuity-leaf@127.0.0.1:7422"',
+                    "    }",
+                    "  ]",
+                    "}",
+                    "",
+                )
+            ),
+            encoding="utf-8",
+        )
+
+
+def _expected_contiguous_floor(values: list[int]) -> int:
+    present = set(values)
+    floor = 0
+    while floor + 1 in present:
+        floor += 1
+    return floor
 
 
 @pytest.fixture(scope="session")
@@ -213,31 +281,9 @@ def dispatch_count(engine: ContinuityEngine, consumer: str, event_id: str) -> in
 def test_f2p_retry_uses_stable_event_id(
     engine: ContinuityEngine, tmp_path: Path
 ) -> None:
-    """Physical replay preserves the complete stable origin identity and message headers."""
-    runtime_root = tmp_path / "stable-replay-identity"
-    nats_config_dir = runtime_root / "config/nats"
-    west_store = runtime_root / "state/nats/west"
-    nats_config_dir.mkdir(parents=True)
-    west_store.mkdir(parents=True)
-    (nats_config_dir / "west.conf").write_text(
-        "\n".join(
-            (
-                "server_name: EDGE-WEST-F2P-IDENTITY",
-                "port: 4224",
-                "http: 8224",
-                "jetstream {",
-                f'  store_dir: "{west_store}"',
-                '  domain: "edge-west"',
-                "  max_mem_store: 67108864",
-                "  max_file_store: 268435456",
-                "}",
-                "",
-            )
-        ),
-        encoding="utf-8",
-    )
-
-    expected_stream = str(engine.store.region("west")["physical_stream"])
+    """A real three-domain replay reaches the sourced hub archive exactly once."""
+    runtime_root = tmp_path / "three-domain-convergence"
+    _write_three_domain_lab_configs(runtime_root)
     expected_replay_ids = {
         item.event_id
         for item in engine.store.replay_items("rp-west-incident-001")
@@ -251,9 +297,9 @@ def test_f2p_retry_uses_stable_event_id(
     assert all(event is not None for event in expected_events.values())
 
     manager = LabProcessManager(runtime_root)
-    manager.start_one("west")
+    manager.start_all()
     try:
-        manager.wait_monitor("http://127.0.0.1:8224", timeout=10)
+        manager.wait_all(timeout=10)
         lease = engine.acquire_recovery_lease(
             region="west",
             owner_id="f2p-stable-identity-worker",
@@ -261,48 +307,98 @@ def test_f2p_retry_uses_stable_event_id(
             at=datetime.now(UTC),
         )
 
-        async def publish_and_observe() -> tuple[object, list[object]]:
+        async def publish_and_observe() -> tuple[object, dict[str, object], list[object]]:
             pool = NatsConnectionPool()
             try:
                 endpoints = endpoints_from_engine(engine)
                 admin = JetStreamAdmin(pool, endpoints)
-                await admin.upsert_stream(
-                    "west",
-                    expected_stream,
-                    {
-                        "subjects": ["telemetry.west.>"],
-                        "retention": "limits",
-                        "storage": "file",
-                        "num_replicas": 1,
-                        "duplicate_window": 120 * 1_000_000_000,
-                        "max_age": 259200 * 1_000_000_000,
-                        "allow_direct": False,
-                        "deny_delete": True,
-                        "deny_purge": True,
-                    },
-                )
+                snapshots = await RuntimeBootstrap(engine, admin).ensure_all()
                 outcome = await engine.execute_replay_plan(
                     "rp-west-incident-001",
                     owner_id="f2p-stable-identity-worker",
                     fence_epoch=lease.fence_epoch,
                     publisher=NatsPublisher(pool, endpoints["west"]),
                 )
-                snapshot = await admin.stream_info("west", expected_stream)
+
+                snapshot = snapshots["hub"]
+                for _ in range(100):
+                    snapshot = await admin.stream_info(
+                        "hub", "REGIONAL_RAW_ARCHIVE"
+                    )
+                    if snapshot.messages >= len(expected_replay_ids):
+                        break
+                    await asyncio.sleep(0.05)
                 messages = [
                     await admin.get_message_by_sequence(
-                        "west", expected_stream, sequence
+                        "hub", "REGIONAL_RAW_ARCHIVE", sequence
                     )
                     for sequence in range(
                         snapshot.first_sequence, snapshot.last_sequence + 1
                     )
                 ]
-                return outcome, messages
+                return outcome, snapshots, messages
             finally:
                 await pool.close()
 
-        outcome, messages = asyncio.run(publish_and_observe())
+        outcome, snapshots, messages = asyncio.run(publish_and_observe())
         assert outcome.completed is True
-        observed: set[str] = set()
+        expected_physical = {
+            "east": ("EDGE_EAST_TELEMETRY", "edge-east", ["telemetry.east.>"]),
+            "west": ("EDGE_WEST_TELEMETRY", "edge-west", ["telemetry.west.>"]),
+            "hub": ("REGIONAL_RAW_ARCHIVE", "hub", []),
+        }
+        for endpoint, (name, domain, subjects) in expected_physical.items():
+            snapshot = snapshots[endpoint]
+            assert snapshot.name == name
+            assert snapshot.domain == domain
+            assert list(snapshot.config.get("subjects", [])) == subjects
+
+        source_configs = snapshots["hub"].config.get("sources", [])
+        assert isinstance(source_configs, list)
+
+        def source_domain(source: dict[str, Any]) -> str:
+            direct = source.get("domain")
+            if direct:
+                return str(direct)
+            external = source.get("external")
+            if isinstance(external, dict):
+                api = str(external.get("api", ""))
+                prefix, suffix = "$JS.", ".API"
+                if api.startswith(prefix) and api.endswith(suffix):
+                    return api[len(prefix) : -len(suffix)]
+            return ""
+
+        observed_sources = {
+            (str(source.get("name", "")), source_domain(source))
+            for source in source_configs
+            if isinstance(source, dict)
+        }
+        assert observed_sources == {
+            ("EDGE_EAST_TELEMETRY", "edge-east"),
+            ("EDGE_WEST_TELEMETRY", "edge-west"),
+        }
+
+        retention_row = engine.store.execute(
+            "SELECT maximum_disconnect_seconds,maximum_replay_seconds,safety_margin_seconds "
+            "FROM retention_policies WHERE region='west'"
+        ).fetchone()
+        assert retention_row is not None
+        expected_horizon_seconds = sum(
+            int(retention_row[column])
+            for column in (
+                "maximum_disconnect_seconds",
+                "maximum_replay_seconds",
+                "safety_margin_seconds",
+            )
+        )
+        for snapshot in snapshots.values():
+            if not hasattr(snapshot, "config"):
+                continue
+            assert int(snapshot.config["max_age"]) >= (
+                expected_horizon_seconds * 1_000_000_000
+            )
+
+        observed_counts: Counter[str] = Counter()
         for message in messages:
             document = json.loads(message.data.decode("utf-8"))
             event_id = str(document["event_id"])
@@ -310,7 +406,7 @@ def test_f2p_retry_uses_stable_event_id(
                 continue
             event = expected_events[event_id]
             assert event is not None
-            observed.add(event_id)
+            observed_counts[event_id] += 1
             assert document["region"] == event.identity.region
             assert int(document["origin_generation"]) == event.identity.generation
             assert int(document["origin_sequence"]) == event.identity.origin_sequence
@@ -325,9 +421,9 @@ def test_f2p_retry_uses_stable_event_id(
             }
             for key, value in expected_headers.items():
                 assert message.headers.get(key) == value
-        assert observed == expected_replay_ids
+        assert observed_counts == Counter({event_id: 1 for event_id in expected_replay_ids})
     finally:
-        manager.stop_one("west")
+        manager.stop_all()
 
 
 def test_f2p_reconnect_retry_does_not_mint_new_identity(
@@ -400,23 +496,27 @@ def test_f2p_generation_regression_is_held(engine: ContinuityEngine) -> None:
 
 
 def test_f2p_generation_header_mismatch_is_rejected(engine: ContinuityEngine) -> None:
-    """Events from a newly observed generation remain ineligible until the generation is approved."""
+    """Physical recreation is held even when its sequence has not regressed."""
+    current = engine.store.confirmed_generation("west")
+    assert current is not None
     observation = OriginObservation(
         region="west",
         stream_name=str(engine.region_config("west")["stream_name"]),
         domain=str(engine.region_config("west")["domain"]),
         stream_fingerprint="west-new-incarnation-aa91",
-        first_sequence=1,
-        last_sequence=10,
+        first_sequence=current.last_observed_sequence,
+        last_sequence=current.last_observed_sequence + 10,
         observed_at=datetime(2026, 8, 9, 1, 5, tzinfo=UTC),
     )
     pending = engine.validate_origin_observation(observation)
     event = EventEnvelope.from_mapping(
         {
-            "event_id": "evt-west-g02-000001",
+            "event_id": (
+                f"evt-west-g02-{current.last_observed_sequence + 1:06d}"
+            ),
             "region": "west",
             "origin_generation": 2,
-            "origin_sequence": 1,
+            "origin_sequence": current.last_observed_sequence + 1,
             "device_id": "dev-west-001",
             "site_id": "site-01",
             "event_type": "pressure.sample",
@@ -428,7 +528,12 @@ def test_f2p_generation_header_mismatch_is_rejected(engine: ContinuityEngine) ->
             "priority": 5,
         }
     )
+    assert pending.generation == current.generation + 1
     assert pending.status is GenerationStatus.PENDING_APPROVAL
+    still_current = engine.store.confirmed_generation("west")
+    assert still_current is not None
+    assert still_current.generation == current.generation
+    assert still_current.last_observed_sequence == current.last_observed_sequence
     with pytest.raises(Exception):
         engine.validate_event_generation(event)
 
@@ -476,61 +581,115 @@ def test_f2p_source_domains_match_edge_ownership(engine: ContinuityEngine) -> No
 def test_f2p_archive_metadata_preserves_origin_identity(
     engine: ContinuityEngine,
 ) -> None:
-    """Every documented archive-origin metadata dimension can independently block convergence."""
+    """Each archive-origin authority dimension independently changes reconciliation truth."""
     complete_archive(engine, "east")
-    domain_event = sample_event(engine, sequence=120)
-    checksum_event = sample_event(engine, sequence=121)
-    stream_event = sample_event(engine, sequence=122)
-    sequence_event = sample_event(engine, sequence=123)
     engine.store.execute(
-        "UPDATE archive_index SET source_domain='edge-west' WHERE event_id=?",
-        (domain_event.identity.event_id,),
+        "UPDATE archive_index SET duplicate_observation_count=0 WHERE region='east'"
     )
-    engine.store.execute(
-        "UPDATE archive_index SET payload_sha256=? WHERE event_id=?",
-        ("0" * 64, checksum_event.identity.event_id),
-    )
-    engine.store.execute(
-        "UPDATE archive_index SET source_stream='WRONG_EDGE_STREAM' WHERE event_id=?",
-        (stream_event.identity.event_id,),
-    )
-    engine.store.execute(
-        "UPDATE archive_index SET origin_sequence=7000 WHERE event_id=?",
-        (sequence_event.identity.event_id,),
-    )
+    event = sample_event(engine, sequence=120)
+    expected_stream = "EDGE_EAST_TELEMETRY"
+    expected_domain = "edge-east"
 
-    summary = engine.reconcile_region("east", 1)
-    assert summary.converged is False
-    blocking_ids = {
-        finding.event_id
-        for finding in summary.blocking_findings
-        if finding.event_id is not None
-    }
-    assert {
-        domain_event.identity.event_id,
-        checksum_event.identity.event_id,
-        stream_event.identity.event_id,
-        sequence_event.identity.event_id,
-    } <= blocking_ids
+    metadata_cases = (
+        ("source_domain", "edge-west", expected_domain),
+        ("payload_sha256", "0" * 64, event.payload_sha256),
+        ("source_stream", "WRONG_EDGE_STREAM", expected_stream),
+        ("origin_sequence", 7000, event.identity.origin_sequence),
+    )
+    for column, wrong_value, restored_value in metadata_cases:
+        engine.store.execute(
+            f'UPDATE archive_index SET "{column}"=? WHERE event_id=?',
+            (wrong_value, event.identity.event_id),
+        )
+        summary = engine.reconcile_region("east", 1)
+        assert summary.converged is False
+        assert summary.metadata_mismatch_count == 1
+        assert summary.duplicate_count == 0
+        assert event.identity.event_id in {
+            finding.event_id
+            for finding in summary.blocking_findings
+            if finding.event_id is not None
+        }
+        engine.store.execute(
+            f'UPDATE archive_index SET "{column}"=? WHERE event_id=?',
+            (restored_value, event.identity.event_id),
+        )
+
+    engine.store.execute(
+        "DELETE FROM archive_index WHERE region='west' AND generation=1 "
+        "AND origin_sequence=?",
+        (event.identity.origin_sequence,),
+    )
+    for column, wrong_value, restored_value in (
+        ("region", "west", "east"),
+        ("generation", 2, 1),
+    ):
+        engine.store.execute(
+            f'UPDATE archive_index SET "{column}"=? WHERE event_id=?',
+            (wrong_value, event.identity.event_id),
+        )
+        summary = engine.reconcile_region("east", 1)
+        assert summary.converged is False
+        assert summary.missing_count == 1
+        assert event.identity.event_id in {
+            finding.event_id
+            for finding in summary.blocking_findings
+            if finding.event_id is not None
+        }
+        engine.store.execute(
+            f'UPDATE archive_index SET "{column}"=? WHERE event_id=?',
+            (restored_value, event.identity.event_id),
+        )
+
+    restored = engine.reconcile_region("east", 1)
+    assert restored.metadata_mismatch_count == 0
+    assert restored.missing_count == 0
 
 
 # ---- F2P: consumer processing -------------------------------------------------------------
 
 
 def test_f2p_redelivery_creates_single_effect(engine: ContinuityEngine) -> None:
-    """Redelivery may revalidate an event but emits the downstream effect only once."""
+    """The same event creates one effect independently for each required consumer."""
     event = sample_event(engine, sequence=5700)
-    engine.store.execute(
-        "DELETE FROM processing_effects WHERE consumer_name='telemetry-indexer' AND event_id=?",
-        (event.identity.event_id,),
+    consumers = ("telemetry-indexer", "safety-state-projector")
+    assert set(consumers) <= set(engine.store.required_consumers())
+    for consumer in consumers:
+        engine.store.execute(
+            "DELETE FROM processing_effects WHERE consumer_name=? AND event_id=?",
+            (consumer, event.identity.event_id),
+        )
+        engine.store.execute(
+            "DELETE FROM effect_dispatches WHERE consumer_name=? AND event_id=?",
+            (consumer, event.identity.event_id),
+        )
+        first = FakeDelivery(event, consumer_name=consumer, delivery_count=1)
+        second = FakeDelivery(event, consumer_name=consumer, delivery_count=2)
+        asyncio.run(
+            engine.process_delivery(
+                first, worker_id=f"{consumer}-w1", fence_epoch=1
+            )
+        )
+        asyncio.run(
+            engine.process_delivery(
+                second, worker_id=f"{consumer}-w2", fence_epoch=1
+            )
+        )
+
+    for consumer in consumers:
+        assert dispatch_count(engine, consumer, event.identity.event_id) == 1
+        effect = engine.store.effect(consumer, event.identity.event_id)
+        assert effect is not None and effect.status is EffectStatus.COMMITTED
+    assert (
+        int(
+            engine.store.scalar(
+                "SELECT COUNT(*) FROM processing_effects WHERE event_id=? AND status='COMMITTED'",
+                (event.identity.event_id,),
+            )
+            or 0
+        )
+        == 2
     )
-    first = FakeDelivery(event, delivery_count=1)
-    second = FakeDelivery(event, delivery_count=2)
-    asyncio.run(engine.process_delivery(first, worker_id="w1", fence_epoch=1))
-    asyncio.run(engine.process_delivery(second, worker_id="w2", fence_epoch=1))
-    assert dispatch_count(engine, "telemetry-indexer", event.identity.event_id) == 1
-    effect = engine.store.effect("telemetry-indexer", event.identity.event_id)
-    assert effect is not None and effect.status is EffectStatus.COMMITTED
 
 
 def test_f2p_crash_after_effect_before_ack_is_idempotent(
@@ -542,16 +701,31 @@ def test_f2p_crash_after_effect_before_ack_is_idempotent(
         "DELETE FROM processing_effects WHERE consumer_name='telemetry-indexer' AND event_id=?",
         (event.identity.event_id,),
     )
+    before = engine.store.checkpoint("telemetry-indexer", "east", 1)
+    assert before is not None
     crashing = FakeDelivery(event, delivery_count=1, fail_ack=True)
     with pytest.raises(RuntimeError):
         asyncio.run(
             engine.process_delivery(crashing, worker_id="crash-worker", fence_epoch=1)
         )
+
+    after_ack_failure = engine.store.checkpoint("telemetry-indexer", "east", 1)
+    effect = engine.store.effect("telemetry-indexer", event.identity.event_id)
+    assert after_ack_failure is not None
+    assert effect is not None and effect.status is EffectStatus.COMMITTED
+    assert after_ack_failure.last_effect_sequence >= event.identity.origin_sequence
+    assert after_ack_failure.last_effect_sequence > before.last_effect_sequence
+    assert after_ack_failure.last_ack_sequence == before.last_ack_sequence
+    assert after_ack_failure.jetstream_ack_floor == before.jetstream_ack_floor
+
     redelivery = FakeDelivery(event, delivery_count=2)
     asyncio.run(
         engine.process_delivery(redelivery, worker_id="restart-worker", fence_epoch=1)
     )
     assert dispatch_count(engine, "telemetry-indexer", event.identity.event_id) == 1
+    after_redelivery = engine.store.checkpoint("telemetry-indexer", "east", 1)
+    assert after_redelivery is not None
+    assert after_redelivery.last_ack_sequence >= event.identity.origin_sequence
 
 
 def test_f2p_checkpoint_does_not_advance_before_effect_commit(
@@ -770,8 +944,26 @@ def test_f2p_reconcile_ignores_hub_sequence_equivalence(
 def test_f2p_reconcile_finds_offsetting_gap_and_duplicate(
     engine: ContinuityEngine,
 ) -> None:
-    """Equal counts still expose the missing and unexpected stable identities."""
+    """Duplicate observations and offsetting identity gaps have independent counts."""
     complete_archive(engine, "east")
+    engine.store.execute(
+        "UPDATE archive_index SET duplicate_observation_count=0 WHERE region='east'"
+    )
+    duplicate = "evt-east-g01-000122"
+    engine.store.execute(
+        "UPDATE archive_index SET duplicate_observation_count=2 WHERE event_id=?",
+        (duplicate,),
+    )
+    duplicate_only = engine.reconcile_region("east", 1)
+    assert duplicate_only.duplicate_count == 2
+    assert duplicate_only.metadata_mismatch_count == 0
+    assert duplicate_only.missing_count == 0
+    assert duplicate_only.unexpected_count == 0
+    engine.store.execute(
+        "UPDATE archive_index SET duplicate_observation_count=0 WHERE event_id=?",
+        (duplicate,),
+    )
+
     missing = "evt-east-g01-000123"
     unexpected = "evt-east-g01-999999"
     engine.store.execute("DELETE FROM archive_index WHERE event_id=?", (missing,))
@@ -784,6 +976,8 @@ def test_f2p_reconcile_finds_offsetting_gap_and_duplicate(
     assert summary.journal_event_count == summary.archive_event_count
     assert summary.missing_count == 1
     assert summary.unexpected_count == 1
+    assert summary.duplicate_count == 0
+    assert summary.metadata_mismatch_count == 0
     assert summary.highest_contiguous_archive_origin_sequence == 122
     assert summary.converged is False
     blocking_ids = {
@@ -856,7 +1050,7 @@ def test_f2p_convergence_waits_for_all_required_consumers(
 
 
 def test_f2p_replay_plan_contains_only_missing_events(engine: ContinuityEngine) -> None:
-    """Replay execution uses current archive membership, not stale replay-item completion state."""
+    """Disjoint active plans coexist and execution obeys current archive authority."""
     complete_archive(engine, "east")
     first_missing = {"evt-east-g01-005800", "evt-east-g01-005801"}
     for event_id in first_missing:
@@ -875,56 +1069,6 @@ def test_f2p_replay_plan_contains_only_missing_events(engine: ContinuityEngine) 
     assert set(first.missing_event_ids) == first_missing
     assert first.plan.replay_range == ReplayRange("east", 1, 5800, 5801)
 
-    resume_id = "evt-east-g01-005800"
-    late_archive_id = "evt-east-g01-005801"
-    engine.store.update_replay_item(
-        first.plan.plan_id,
-        resume_id,
-        state="PUBLISHED",
-        increment_attempt=True,
-    )
-    late_event = engine.store.event_by_id(late_archive_id)
-    assert late_event is not None
-    engine.store.execute(
-        "INSERT INTO archive_index(event_id,region,generation,origin_sequence,hub_stream_sequence,payload_sha256,archived_at,source_stream,source_domain,duplicate_observation_count) "
-        "VALUES(?,?,?,?,?,?,?,?,?,0)",
-        (
-            late_event.identity.event_id,
-            late_event.identity.region,
-            late_event.identity.generation,
-            late_event.identity.origin_sequence,
-            900_000 + late_event.identity.origin_sequence,
-            late_event.payload_sha256,
-            "2026-08-09T02:00:00Z",
-            str(engine.store.region("east")["physical_stream"]),
-            str(engine.store.region("east")["jetstream_domain"]),
-        ),
-    )
-
-    lease = engine.acquire_recovery_lease(
-        region="east",
-        owner_id="resume-authority-worker",
-        ttl_seconds=300,
-        at=datetime.now(UTC),
-    )
-    publisher = RecordingPublisher(engine.store)
-    outcome = asyncio.run(
-        engine.execute_replay_plan(
-            first.plan.plan_id,
-            owner_id="resume-authority-worker",
-            fence_epoch=lease.fence_epoch,
-            publisher=publisher,
-        )
-    )
-    assert outcome.completed is True
-    assert [call["event_id"] for call in publisher.calls] == [resume_id]
-    first_items = {
-        item.event_id: item.state
-        for item in engine.store.replay_items(first.plan.plan_id)
-    }
-    assert first_items[resume_id] == "PUBLISHED"
-    assert first_items[late_archive_id] == "ALREADY_ARCHIVED"
-
     complete_archive(engine, "east")
     second_missing = {"evt-east-g01-005900", "evt-east-g01-005901"}
     for event_id in second_missing:
@@ -942,6 +1086,51 @@ def test_f2p_replay_plan_contains_only_missing_events(engine: ContinuityEngine) 
     assert set(second.plan.event_ids) == second_missing
     assert set(second.missing_event_ids) == second_missing
     assert first.plan.replay_range.overlaps(second.plan.replay_range) is False
+    active_plan_ids = {
+        plan.plan_id
+        for plan in engine.store.active_replay_plans(region="east", generation=1)
+    }
+    assert {first.plan.plan_id, second.plan.plan_id} <= active_plan_ids
+
+    resume_id = "evt-east-g01-005800"
+    late_archive_id = "evt-east-g01-005801"
+    engine.store.update_replay_item(
+        first.plan.plan_id,
+        resume_id,
+        state="PUBLISHED",
+        increment_attempt=True,
+    )
+    engine.store.execute("DELETE FROM archive_index WHERE event_id=?", (resume_id,))
+    late_archive_before = engine.store.archive_record(late_archive_id)
+    assert late_archive_before is not None
+
+    lease = engine.acquire_recovery_lease(
+        region="east",
+        owner_id="resume-authority-worker",
+        ttl_seconds=300,
+        at=datetime.now(UTC),
+    )
+    publisher = RecordingPublisher(engine.store)
+    outcome = asyncio.run(
+        engine.execute_replay_plan(
+            first.plan.plan_id,
+            owner_id="resume-authority-worker",
+            fence_epoch=lease.fence_epoch,
+            publisher=publisher,
+        )
+    )
+    assert outcome.completed is True
+    assert outcome.published == 1
+    assert outcome.already_archived == 1
+    assert outcome.failed == 0
+    assert [call["event_id"] for call in publisher.calls] == [resume_id]
+    assert engine.store.journal_state(resume_id).value == "PUBLISHED"
+    assert engine.store.archive_record(late_archive_id) == late_archive_before
+    first_after = engine.store.replay_plan(first.plan.plan_id)
+    second_after = engine.store.replay_plan(second.plan.plan_id)
+    assert first_after is not None and first_after.status is ReplayStatus.COMPLETED
+    assert second_after is not None
+    assert second_after.status in {ReplayStatus.APPROVED, ReplayStatus.RUNNING}
 
 
 def test_f2p_replay_refuses_unapproved_generation(engine: ContinuityEngine) -> None:
@@ -1035,13 +1224,15 @@ def test_f2p_cleanup_stops_at_archive_watermark(engine: ContinuityEngine) -> Non
         record.identity.origin_sequence
         for record in engine.store.iter_archive(region="east", generation=1)
     ]
-    expected_floor = contiguous_floor(archive_sequences)
+    expected_floor = _expected_contiguous_floor(archive_sequences)
     slowest = engine.store.slowest_required_consumer_sequence("east", 1)
     assert expected_floor < slowest
     assert engine.store.first_active_replay_sequence("east", 1) is None
     decision = engine.compute_retention_decision(region="east", generation=1)
+    expected_safe_sequence = min(expected_floor, slowest)
     assert decision.archive_sequence == expected_floor
-    assert decision.safe_sequence == expected_floor
+    assert expected_safe_sequence == expected_floor
+    assert decision.safe_sequence == expected_safe_sequence
 
 
 def test_f2p_cleanup_stops_at_slowest_required_consumer(
@@ -1057,9 +1248,11 @@ def test_f2p_cleanup_stops_at_slowest_required_consumer(
     assert engine.store.first_active_replay_sequence("east", 1) is None
 
     decision = engine.compute_retention_decision(region="east", generation=1)
+    expected_safe_sequence = min(6000, 4200)
     assert decision.archive_sequence == 6000
     assert decision.required_consumer_sequence == 4200
-    assert decision.safe_sequence == 4200
+    assert expected_safe_sequence == 4200
+    assert decision.safe_sequence == expected_safe_sequence
 
 
 def test_f2p_cleanup_preserves_rows_for_active_replay_plan(
@@ -1070,24 +1263,44 @@ def test_f2p_cleanup_preserves_rows_for_active_replay_plan(
     for consumer in engine.store.required_consumers():
         set_checkpoint(engine, consumer, "west", effect=6000)
     decision = engine.compute_retention_decision(region="west", generation=1)
+    expected_safe_sequence = min(6000, 6000, 5311 - 1)
     assert decision.archive_sequence == 6000
     assert decision.required_consumer_sequence == 6000
     assert decision.replay_pin_sequence == 5311
-    assert decision.safe_sequence == 5310
+    assert expected_safe_sequence == 5310
+    assert decision.safe_sequence == expected_safe_sequence
 
 
 def test_f2p_retention_policy_covers_recovery_horizon(engine: ContinuityEngine) -> None:
     """JetStream and durable journal retention enforce the exact recovery-horizon boundary."""
     policy = engine.retention_policy("east")
+    policy_row = engine.store.execute(
+        "SELECT journal_min_age_seconds,maximum_disconnect_seconds,"
+        "maximum_replay_seconds,safety_margin_seconds "
+        "FROM retention_policies WHERE region='east'"
+    ).fetchone()
+    assert policy_row is not None
+    expected_horizon_seconds = sum(
+        int(policy_row[column])
+        for column in (
+            "maximum_disconnect_seconds",
+            "maximum_replay_seconds",
+            "safety_margin_seconds",
+        )
+    )
+    expected_cleanup_age_seconds = max(
+        int(policy_row["journal_min_age_seconds"]), expected_horizon_seconds
+    )
+    assert policy.required_horizon_seconds == expected_horizon_seconds
     assert (
         engine.edge_stream_policy("east").max_age_seconds
-        >= policy.required_horizon_seconds
+        >= expected_horizon_seconds
     )
     assert (
         engine.edge_stream_policy("west").max_age_seconds
-        >= policy.required_horizon_seconds
+        >= expected_horizon_seconds
     )
-    assert engine.hub_stream_policy().max_age_seconds >= policy.required_horizon_seconds
+    assert engine.hub_stream_policy().max_age_seconds >= expected_horizon_seconds
 
     complete_archive(engine, "east")
     for consumer in engine.store.required_consumers():
@@ -1099,14 +1312,16 @@ def test_f2p_retention_policy_covers_recovery_horizon(engine: ContinuityEngine) 
     engine.store.execute(
         "UPDATE event_journal SET retention_hold=0,accepted_at=? WHERE event_id=?",
         (
-            (at - timedelta(seconds=policy.required_horizon_seconds - 1)).isoformat(),
+            (at - timedelta(seconds=expected_cleanup_age_seconds - 1)).isoformat(),
             within_horizon,
         ),
     )
     engine.store.execute(
         "UPDATE event_journal SET retention_hold=0,accepted_at=? WHERE event_id=?",
         (
-            (at - timedelta(seconds=policy.required_horizon_seconds + 1)).isoformat(),
+            (
+                at - timedelta(seconds=expected_cleanup_age_seconds + 1)
+            ).isoformat(),
             beyond_horizon,
         ),
     )
@@ -1179,6 +1394,9 @@ def test_f2p_stale_recovery_worker_is_fenced(
     mid_ids = ["evt-west-g01-005998", "evt-west-g01-005999"]
     for event_id in mid_ids:
         engine.store.execute("DELETE FROM archive_index WHERE event_id=?", (event_id,))
+    mid_journal_before = {
+        event_id: engine.store.journal_state(event_id) for event_id in mid_ids
+    }
     mid_plan = engine.store.insert_replay_plan(
         plan_id="stale-fence-mid-plan",
         replay_range=ReplayRange("west", 1, 5998, 5999),
@@ -1227,20 +1445,18 @@ def test_f2p_stale_recovery_worker_is_fenced(
                 publisher=publisher,
             )
         )
-    items = {
-        item.event_id: item
-        for item in engine.store.replay_items(mid_plan.plan_id)
-    }
     after_plan = engine.store.replay_plan(mid_plan.plan_id)
     assert len(publisher.calls) == 1
-    assert items[mid_ids[0]].state == "PENDING"
-    assert items[mid_ids[1]].state == "PENDING"
     assert after_plan is not None and after_plan.status is ReplayStatus.RUNNING
     assert engine.store.journal_state(mid_ids[0]).value == "PUBLISHED"
+    assert engine.store.journal_state(mid_ids[1]) is mid_journal_before[mid_ids[1]]
 
     between_ids = ["evt-east-g01-005997", "evt-east-g01-005998"]
     for event_id in between_ids:
         engine.store.execute("DELETE FROM archive_index WHERE event_id=?", (event_id,))
+    between_journal_before = {
+        event_id: engine.store.journal_state(event_id) for event_id in between_ids
+    }
     between_plan = engine.store.insert_replay_plan(
         plan_id="stale-fence-between-items",
         replay_range=ReplayRange("east", 1, 5997, 5998),
@@ -1276,7 +1492,6 @@ def test_f2p_stale_recovery_worker_is_fenced(
         if (
             plan_id == between_plan.plan_id
             and event_id == between_ids[0]
-            and state == "PUBLISHED"
             and not rotated_between_items
         ):
             lease = engine.store.current_lease("east")
@@ -1307,15 +1522,14 @@ def test_f2p_stale_recovery_worker_is_fenced(
                 publisher=between_publisher,
             )
         )
-    between_items = {
-        item.event_id: item
-        for item in engine.store.replay_items(between_plan.plan_id)
-    }
     after_between_plan = engine.store.replay_plan(between_plan.plan_id)
     assert rotated_between_items is True
     assert [call["event_id"] for call in between_publisher.calls] == [between_ids[0]]
-    assert between_items[between_ids[0]].state == "PUBLISHED"
-    assert between_items[between_ids[1]].state == "PENDING"
+    assert engine.store.journal_state(between_ids[0]).value == "PUBLISHED"
+    assert (
+        engine.store.journal_state(between_ids[1])
+        is between_journal_before[between_ids[1]]
+    )
     assert after_between_plan is not None and after_between_plan.status is ReplayStatus.RUNNING
 
 

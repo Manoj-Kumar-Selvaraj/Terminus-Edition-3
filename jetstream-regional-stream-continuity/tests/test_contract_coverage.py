@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 import hashlib
 import json
+import math
 import shutil
 import sqlite3
 import subprocess
@@ -133,6 +134,23 @@ def _protected_state_digest(database: Path) -> str:
         connection.close()
 
 
+def _semantic_report_timestamp(value: object) -> datetime:
+    if isinstance(value, bool):
+        raise AssertionError("boolean is not a report timestamp")
+    if isinstance(value, (int, float)):
+        assert math.isfinite(float(value))
+        return datetime.fromtimestamp(float(value), tz=UTC)
+    assert isinstance(value, str)
+    normalized = value.strip()
+    assert normalized
+    if normalized.endswith("Z"):
+        normalized = normalized[:-1] + "+00:00"
+    parsed = datetime.fromisoformat(normalized)
+    assert parsed.tzinfo is not None
+    assert parsed.utcoffset() is not None
+    return parsed.astimezone(UTC)
+
+
 # ---- F2P: solver-visible contract gaps ---------------------------------------------------
 
 
@@ -169,6 +187,7 @@ def test_f2p_final_health_and_reconciliation_reports_are_materialized(
 ) -> None:
     """Verify emits contract-defined truthful reports and preserves captured incident evidence."""
     runtime_root = _operator_root(tmp_path)
+    started_at = datetime.now(UTC) - timedelta(seconds=1)
     completed = subprocess.run(
         [
             str(ROOT / "bin/continuityctl"),
@@ -182,6 +201,7 @@ def test_f2p_final_health_and_reconciliation_reports_are_materialized(
         text=True,
         timeout=45,
     )
+    completed_at = datetime.now(UTC) + timedelta(seconds=1)
     assert completed.returncode in {0, 2}, completed.stderr
 
     health_path = runtime_root / "out/health.json"
@@ -193,10 +213,8 @@ def test_f2p_final_health_and_reconciliation_reports_are_materialized(
 
     for report in (health, reconciliation):
         assert "generated_at" in report
-        timestamp = report["generated_at"]
-        assert isinstance(timestamp, (str, int, float))
-        if isinstance(timestamp, str):
-            assert timestamp.strip()
+        generated_at = _semantic_report_timestamp(report["generated_at"])
+        assert started_at <= generated_at <= completed_at
 
     subsystem_fields = (
         "topology_ok",
@@ -211,6 +229,9 @@ def test_f2p_final_health_and_reconciliation_reports_are_materialized(
         assert isinstance(health[field], bool)
     assert isinstance(health["healthy"], bool)
     assert health["healthy"] is all(health[field] for field in subsystem_fields)
+    operator_config = json.loads(
+        (runtime_root / "config/continuity.json").read_text(encoding="utf-8")
+    )
 
     def contiguous_floor(values: list[int]) -> int:
         present = set(values)
@@ -348,6 +369,87 @@ def test_f2p_final_health_and_reconciliation_reports_are_materialized(
         assert reconciliation["converged"] is all(
             expected_region_convergence.values()
         )
+        topology = operator_config["topology"]
+        edge_streams = topology["edge_streams"]
+        source_pairs = {
+            (
+                source["region"],
+                source["origin"]["name"],
+                source["origin"]["domain"],
+            )
+            for source in topology["sources"]
+        }
+        region_pairs = {
+            (
+                str(row["region"]),
+                str(row["physical_stream"]),
+                str(row["jetstream_domain"]),
+            )
+            for row in connection.execute(
+                "SELECT region,physical_stream,jetstream_domain FROM regions"
+            ).fetchall()
+        }
+        physical_names = {
+            str(edge_streams[region]["name"]) for region in ("east", "west")
+        }
+        physical_names.add(str(topology["hub_archive"]["name"]))
+        expected_topology_ok = (
+            len(physical_names) == 3
+            and topology["hub_archive"]["subjects"] == []
+            and source_pairs == region_pairs
+        )
+        expected_generations_ok = all(
+            connection.execute(
+                "SELECT COUNT(*) FROM origin_generations "
+                "WHERE region=? AND status='CONFIRMED'",
+                (region,),
+            ).fetchone()[0]
+            == 1
+            and connection.execute(
+                "SELECT COUNT(*) FROM origin_generations "
+                "WHERE region=? AND status='PENDING_APPROVAL'",
+                (region,),
+            ).fetchone()[0]
+            == 0
+            for region in ("east", "west")
+        )
+        expected_publication_ok = (
+            connection.execute(
+                "SELECT COUNT(*) FROM event_journal "
+                "WHERE publish_state IN ('HELD','RETRY','PUBLISHING')"
+            ).fetchone()[0]
+            == 0
+        )
+        expected_consumers_ok = (
+            connection.execute(
+                "SELECT COUNT(*) FROM consumer_checkpoints "
+                "WHERE last_effect_sequence<>last_ack_sequence "
+                "OR last_ack_sequence<>jetstream_ack_floor"
+            ).fetchone()[0]
+            == 0
+        )
+        retention_rows = connection.execute(
+            "SELECT stream_max_age_seconds,maximum_disconnect_seconds,"
+            "maximum_replay_seconds,safety_margin_seconds FROM retention_policies"
+        ).fetchall()
+        expected_retention_ok = all(
+            int(row["stream_max_age_seconds"])
+            >= int(row["maximum_disconnect_seconds"])
+            + int(row["maximum_replay_seconds"])
+            + int(row["safety_margin_seconds"])
+            for row in retention_rows
+        )
+        expected_health = {
+            "topology_ok": expected_topology_ok,
+            "generations_ok": expected_generations_ok,
+            "publication_ok": expected_publication_ok,
+            "archive_ok": all(expected_region_convergence.values()),
+            "consumers_ok": expected_consumers_ok,
+            "retention_ok": expected_retention_ok,
+            "recovery_ok": active_plans == 0,
+        }
+        for field, expected in expected_health.items():
+            assert health[field] is expected
         assert (
             connection.execute("SELECT COUNT(*) FROM event_journal").fetchone()[0]
             == 12000
@@ -361,6 +463,59 @@ def test_f2p_final_health_and_reconciliation_reports_are_materialized(
         assert active_plans >= 1
     finally:
         connection.close()
+
+    def fresh_health_engine(name: str) -> ContinuityEngine:
+        database = tmp_path / f"health-{name}.db"
+        shutil.copy2(ROOT / "state/continuity.db", database)
+        return ContinuityEngine.from_json_file(
+            ContinuityStore(database), ROOT / "config/continuity.json"
+        )
+
+    topology_engine = fresh_health_engine("topology")
+    topology_engine.config.pop("topology")
+    assert topology_engine.inspect_health().topology_ok is False
+
+    generation_engine = fresh_health_engine("generation")
+    generation_engine.store.record_pending_generation(
+        "east",
+        generation=2,
+        stream_fingerprint="health-generation-2",
+        first_sequence=6000,
+        last_observed_sequence=6010,
+        at=datetime.now(UTC),
+    )
+    assert generation_engine.inspect_health().generations_ok is False
+
+    publication_engine = fresh_health_engine("publication")
+    publication_engine.store.execute(
+        "UPDATE event_journal SET publish_state='PUBLISHED' "
+        "WHERE publish_state IN ('HELD','RETRY','PUBLISHING')"
+    )
+    assert publication_engine.inspect_health().publication_ok is True
+
+    archive_engine = fresh_health_engine("archive")
+    for region in ("east", "west"):
+        _complete_archive(archive_engine, region)
+        _set_required_consumers(archive_engine, region, 6000)
+    assert archive_engine.inspect_health().archive_ok is True
+
+    consumer_engine = fresh_health_engine("consumer")
+    consumer_engine.store.execute(
+        "UPDATE consumer_checkpoints SET last_ack_sequence=last_effect_sequence-1 "
+        "WHERE consumer_name='telemetry-indexer' AND region='east' AND generation=1"
+    )
+    assert consumer_engine.inspect_health().consumers_ok is False
+
+    retention_engine = fresh_health_engine("retention")
+    retention_engine.store.execute(
+        "UPDATE retention_policies SET stream_max_age_seconds=1 WHERE region='east'"
+    )
+    assert retention_engine.inspect_health().retention_ok is False
+
+    recovery_engine = fresh_health_engine("recovery")
+    recovery_engine.store.execute("DELETE FROM replay_plan_items")
+    recovery_engine.store.execute("DELETE FROM replay_plans")
+    assert recovery_engine.inspect_health().recovery_ok is True
 
     captured_incident_digests = {
         ROOT / "ops/stream-state.json": "763397e13b62c237dc37a0d1601a438e9a9247a681aaacb625f8f3425b154b1c",

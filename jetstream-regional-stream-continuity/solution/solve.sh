@@ -3,6 +3,9 @@ set -euo pipefail
 ROOT="${CONTINUITY_ROOT:-/app/continuity}"
 install -m 0644 /solution/files/engine.py "$ROOT/continuity/engine.py"
 install -m 0644 /solution/files/continuity.json "$ROOT/config/continuity.json"
+if grep -Fq '"domain": source.origin.domain,' "$ROOT/continuity/runtime.py"; then
+  patch --silent -d "$ROOT" -p1 < /solution/files/runtime-domain-source.patch
+fi
 "$ROOT/.venv/bin/python" -m py_compile \
   "$ROOT/continuity/model.py" \
   "$ROOT/continuity/store.py" \
