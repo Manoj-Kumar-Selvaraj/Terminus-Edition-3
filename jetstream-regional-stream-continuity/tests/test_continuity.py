@@ -659,7 +659,7 @@ def test_f2p_restart_detects_ack_floor_effect_ledger_gap(
         encoding="utf-8",
     )
     set_checkpoint(
-        engine, "telemetry-indexer", "east", effect=0, ack=0, js_floor=0
+        engine, "telemetry-indexer", "east", effect=5600, ack=5600, js_floor=5600
     )
     event = sample_event(engine, region="east", sequence=5650)
     manager = LabProcessManager(runtime_root)
