@@ -56,28 +56,13 @@ Session schema version: `2.4`
 | Final Human Quality | PENDING | not authorized |
 | Final package | PENDING | not authorized |
 
-## Exhaustive Q4 result and consolidated closure
+## Consolidated closure and frozen evidence
 
-Q4 1.1 on prior frozen task commit `440aa83862a3234678e27bd70319623735964173` completed the full Protocol-2.2 exhaustive method and returned `REVISE / HIGH / SUFFICIENT` at result commit `6466ce263f6e24d3956e78287e2fa0bc9f3ee0d5`, with 12 blocking findings (5 HIGH, 7 MEDIUM), all review-completion flags complete, second omission sweep PASS, and no uninspected scope.
+Prior exhaustive Q4 1.1 on task commit `440aa83862a3234678e27bd70319623735964173` returned `REVISE / HIGH / SUFFICIENT` with 12 blocking findings and complete exhaustive coverage. The single Protocol-2.2 consolidated repair addressed all 12 together without adding tests or changing `jetstream-regional-stream-continuity/environment/`. Two subsequent Oracle failures were limited to verifier-fixture inconsistencies introduced by the strengthened live restart-health test; fixes `8c1c61ea...` and `f73b6c9a...` corrected only that fixture/assertion within the same authorized repair cycle.
 
-The single authorized consolidated repair addressed all 12 findings without adding tests or changing `jetstream-regional-stream-continuity/environment/`. The final exact task commit is `f73b6c9a3cf52c1929a622798f36fc2e480052d4`. It strengthens existing F2P boundaries for exact durable journal horizon, live JetStream consumer progress, replay resume/archive authority, no ACK before durable effect completion, same-fingerprint sequence reset handling, full physical origin identity/header propagation, reconciliation metadata corruption, exact retention minima, and removes undocumented/private report, poison-effect and consumer-gap assumptions.
+Exact frozen task commit: `f73b6c9a3cf52c1929a622798f36fc2e480052d4`.
 
-Two Oracle attempts during repair validation exposed only verifier-fixture inconsistencies in the newly strengthened live restart-health case: artifact `9048691791` showed an invalid zero application origin; artifact `9048799316` then showed one stale assertion still expecting zero. Corrections `8c1c61ea...` and `f73b6c9a...` changed only that verifier fixture/assertion and remained inside the same consolidated repair validation cycle.
-
-## Frozen deterministic evidence
-
-Exact task commit: `f73b6c9a3cf52c1929a622798f36fc2e480052d4`.
-
-Edition-3 run `31350811319`, job `93341174929`:
-- Preflight PASS;
-- Ruff verifier PASS;
-- verifier/environment setup PASS;
-- Oracle reward 1 with exactly 40/40 PASS;
-- NOP reward 0 with exactly 30 F2P failures + 10 P2P passes;
-- validation artifact `9048941323`, digest `sha256:31c11d8e1b2a85a7b53b7d8e9188520391e0ef5b9199e76846c7de3174126d94`;
-- reusable-AI credentials failed only afterward and Harbor was skipped.
-
-Creator Complexity run `31350811326`: PASS. Production Authenticity run `31350811305`: PASS. Agent System/freshness run `31350811298`: PASS, including exact Q6 result-path recognition and scope-preserved freshness. Refreeze-head Agent System run `31351086355`: PASS.
+Edition-3 run `31350811319`, job `93341174929`: Preflight PASS, Ruff PASS, setup PASS, Oracle exactly 40/40 PASS, NOP exactly 30 F2P FAIL + 10 P2P PASS. Artifact `9048941323`, digest `sha256:31c11d8e1b2a85a7b53b7d8e9188520391e0ef5b9199e76846c7de3174126d94`. Creator Complexity `31350811326` PASS. Production Authenticity `31350811305` PASS. Agent System/freshness `31350811298` PASS; refreeze-head Agent System `31351086355` PASS.
 
 ## Fresh Q4 handoff
 
@@ -87,17 +72,17 @@ Packet commit: `d864b91bfa7da846b75285609d42a222d067010c`.
 - Packet: `.terminus/reviews/jetstream-regional-stream-continuity/f73b6c9a/jetstream-regional-stream-continuity-f73b6c9a-spec-test-contract-bc501441f0.packet.json`
 - Result: `.terminus/reviews/jetstream-regional-stream-continuity/f73b6c9a/jetstream-regional-stream-continuity-f73b6c9a-spec-test-contract-bc501441f0.json`
 - Task commit: `f73b6c9a3cf52c1929a622798f36fc2e480052d4`
-- Protocol: `2.2`; prompt policy: `2.2`; Q4 role policy: `1.1`
-- Q4 remains exact-task-commit-bound and has no reusable scope hash.
+- Protocol `2.2`, prompt `2.2`, role policy `1.1`
+- Q4 is exact-task-commit-bound and has no reusable scope hash.
 
 ## Q6 scope preservation
 
-Q6 1.1 result `.terminus/reviews/jetstream-regional-stream-continuity/440aa838/jetstream-regional-stream-continuity-440aa838-production-logic-a277a01448.json` at commit `cf30ef12025138a22a7f80fa374452546d6bcd9b` is `PASS / HIGH / SUFFICIENT` with scope hash `4007f243d3e31219716e8f3af0549644839141f37695a367f2f7732906f77a81`. The consolidated repair and verifier-fixture corrections changed tests/reference artifacts only; the complete solver-visible `environment/` tree and `task.toml` are unchanged. Current `validate_review_freshness.py` accepts the Q6 PASS for this task commit by Protocol-2.2 scope reuse.
+Q6 1.1 result `.terminus/reviews/jetstream-regional-stream-continuity/440aa838/jetstream-regional-stream-continuity-440aa838-production-logic-a277a01448.json` at commit `cf30ef12025138a22a7f80fa374452546d6bcd9b` is `PASS / HIGH / SUFFICIENT` with scope hash `4007f243d3e31219716e8f3af0549644839141f37695a367f2f7732906f77a81`. The complete solver-visible `environment/` tree and `task.toml` are unchanged, and `validate_review_freshness.py` accepts the prior Q6 PASS for the current task by Protocol-2.2 scope reuse.
 
 ## Circuit breaker / no-drip state
 
-The one normal consolidated repair/refreeze cycle following the exhaustive Q4 1.1 `REVISE` is now consumed and complete. The next Q4 must again be exhaustive. If that new Q4 reports a finding resting entirely on unchanged evidence that was fully reviewable in the prior exhaustive scope, classify it with `.terminus/classify_review_delta.py`; `LATENT_REVIEWER_OMISSION` must route to Adjudicator before any further normal repair. Genuine repair-introduced regressions may route normally.
+The one normal consolidated repair/refreeze cycle is consumed. After the next exhaustive Q4 freezes, any finding resting entirely on unchanged evidence that was fully reviewable in the prior exhaustive scope must be classified with `.terminus/classify_review_delta.py`; `LATENT_REVIEWER_OMISSION` routes to Adjudicator before any further normal repair. Genuine repair-introduced regressions may route normally.
 
 ## Next action
 
-Run the fresh exhaustive Q4 1.1 independently from the packet above. Do not rerun Q6 and do not expose the prior Q4 finding list or Q6 verdict to the Q4 reviewer. After Q4 freezes, the CI Orchestrator must validate the result and classify any REVISE finding under Protocol 2.2 before deciding whether Quality Interlock can pass or Adjudicator is required. Do not proceed to Stage-B, Pre-LLMaJ, Q8, Harbor or model trials until fresh Q4 PASS plus scope-preserved Q6 PASS validate Quality Interlock.
+Run only the fresh exhaustive Q4 1.1 independently from the packet above. Do not rerun Q6 and do not expose the prior Q4 finding list or Q6 verdict to the Q4 reviewer. After Q4 freezes, validate the result and classify any REVISE finding under Protocol 2.2 before deciding whether Quality Interlock can pass or Adjudicator is required. Do not proceed to Stage-B, Pre-LLMaJ, Q8, Harbor or model trials until fresh Q4 PASS plus scope-preserved Q6 PASS validate Quality Interlock.
