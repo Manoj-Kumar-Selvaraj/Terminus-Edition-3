@@ -1,0 +1,45 @@
+{
+  "schema_version": "1.0",
+  "profile": "large_system",
+  "strict_scale_note": "SCENARIO_TOO_SMALL for large_system_strict without padding. Natural close engine plus 12k seed is the authentic surface; cloning extra HR modules would only inflate LOC.",
+  "task_kind": "operations",
+  "task": "hris-midcycle-payroll-close",
+  "root_cause_clusters": {
+    "RC1_EFFECTIVE_DATED": "Close reads assignment as of period start, so mid-cycle transfers do not move FLSA, leave, or cost center.",
+    "RC2_FLSA_OT": "Overtime math always uses non-exempt 1.5x, including exempt salary heads.",
+    "RC3_CUTOFF": "Punches after payroll cutoff_at are included in hours.",
+    "RC4_DOUBLE_CLOSE": "A second close appends register lines instead of failing closed.",
+    "RC5_LEAVE_EXC": "Leave accrual is not day-prorated and missing_out still counts hours.",
+    "RC6_IDP": "Local fake IdP token is not validated."
+  },
+  "defects": [
+    {"id":"D01","component":"close","observable_failure":"E000001 register cost_center stays CC-WH-02 after a 2026-08-04 transfer.","root_cause":"RC1_EFFECTIVE_DATED","partial_fix_trap":"Updating only the dump still leaves payroll-register on the old center."},
+    {"id":"D02","component":"close","observable_failure":"E000001 flsa_status stays non_exempt at period end.","root_cause":"RC1_EFFECTIVE_DATED","partial_fix_trap":"Flipping the label without changing OT math still pays 1.5x on exempt days."},
+    {"id":"D03","component":"close","observable_failure":"retro-journal has no org_transfer row for the in-period move.","root_cause":"RC1_EFFECTIVE_DATED","partial_fix_trap":"Writing a stub entry without pre/post hours fails the split schema."},
+    {"id":"D04","component":"close","observable_failure":"leave accrual ignores the post-transfer PTO-EX rate.","root_cause":"RC1_EFFECTIVE_DATED","partial_fix_trap":"Using only the ending plan over-accrues the first NE day."},
+    {"id":"D05","component":"close","observable_failure":"E000002 exempt line has overtime_pay greater than zero.","root_cause":"RC2_FLSA_OT","partial_fix_trap":"Capping hours at 40 without zeroing exempt OT still fabricates premium."},
+    {"id":"D06","component":"close","observable_failure":"exempt salary is converted to an hourly rate and paid OT.","root_cause":"RC2_FLSA_OT","partial_fix_trap":"Skipping OT but still paying hourly plus salary double pays regular."},
+    {"id":"D07","component":"close","observable_failure":"E000001 leftover hours after 40 earn OT though those hours fall on exempt days.","root_cause":"RC2_FLSA_OT","partial_fix_trap":"Zeroing all OT for anyone who transferred hides non-exempt OT on other employees."},
+    {"id":"D08","component":"close","observable_failure":"E000004 regular+OT hours include the 19:00 post-cutoff pair.","root_cause":"RC3_CUTOFF","partial_fix_trap":"Dropping only unmatched after-cutoff ins still keeps a matched late pair."},
+    {"id":"D09","component":"close","observable_failure":"cutoff filter uses period end date instead of cutoff_at timestamp.","root_cause":"RC3_CUTOFF","partial_fix_trap":"Comparing dates without times still admits 19:00 on cutoff day."},
+    {"id":"D10","component":"close","observable_failure":"second close-payroll returns 0 and grows employee_count.","root_cause":"RC4_DOUBLE_CLOSE","partial_fix_trap":"Returning non-zero after rewriting the file still mutates the register."},
+    {"id":"D11","component":"close","observable_failure":"second close concatenates prior lines into payroll-register.json.","root_cause":"RC4_DOUBLE_CLOSE","partial_fix_trap":"INSERT OR REPLACE on payroll_closes without guarding the files still appends JSON."},
+    {"id":"D12","component":"close","observable_failure":"retro-journal is rewritten on the second close.","root_cause":"RC4_DOUBLE_CLOSE","partial_fix_trap":"Leaving retro untouched while appending the register splits the pair."},
+    {"id":"D13","component":"close","observable_failure":"E000006 missing_out day still contributes eight hours.","root_cause":"RC5_LEAVE_EXC","partial_fix_trap":"Listing the exception without dropping hours fails the hour total."},
+    {"id":"D14","component":"close","observable_failure":"pending leave for E000003 is counted as taken.","root_cause":"RC5_LEAVE_EXC","partial_fix_trap":"Counting all leave_requests statuses inflates taken hours."},
+    {"id":"D15","component":"close","observable_failure":"leave accrual uses the single period-start plan with no day split.","root_cause":"RC5_LEAVE_EXC","partial_fix_trap":"Averaging two plans 50/50 ignores actual work-day membership."},
+    {"id":"D16","component":"auth","observable_failure":"close-payroll succeeds when idp.token contents are wrong.","root_cause":"RC6_IDP","partial_fix_trap":"Checking only that the file exists still accepts a forged token."},
+    {"id":"D17","component":"auth","observable_failure":"dump token_ok is true for a mismatched token file.","root_cause":"RC6_IDP","partial_fix_trap":"Hardcoding token_ok true in dump hides a broken require_token."},
+    {"id":"D18","component":"close","observable_failure":"terminated employees appear on the register.","root_cause":"RC1_EFFECTIVE_DATED","partial_fix_trap":"Dropping only status=terminated at hire date still includes later terms."},
+    {"id":"D19","component":"close","observable_failure":"register lines are not sorted by employee_id.","root_cause":"RC4_DOUBLE_CLOSE","partial_fix_trap":"Sorting after an append still duplicates ids."},
+    {"id":"D20","component":"commands","observable_failure":"transfer writes a future-dated row that close never reads.","root_cause":"RC1_EFFECTIVE_DATED","partial_fix_trap":"Moving the effective date to period start falsifies the split hours."}
+  ],
+  "causal_edges": [
+    {"from":"D20","to":"D01"},{"from":"D01","to":"D02"},{"from":"D02","to":"D07"},
+    {"from":"D02","to":"D03"},{"from":"D04","to":"D15"},{"from":"D05","to":"D06"},
+    {"from":"D07","to":"D05"},{"from":"D08","to":"D09"},{"from":"D10","to":"D11"},
+    {"from":"D11","to":"D12"},{"from":"D11","to":"D19"},{"from":"D13","to":"D14"},
+    {"from":"D16","to":"D17"},{"from":"D18","to":"D01"},{"from":"D03","to":"D04"},
+    {"from":"D06","to":"D07"},{"from":"D15","to":"D04"},{"from":"D09","to":"D08"}
+  ]
+}

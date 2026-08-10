@@ -1,0 +1,55 @@
+{
+  "schema_version": "1.0",
+  "task": "platform-sonar-ingress-token-bind",
+  "production_authenticity": {
+    "incident_evidence": [
+      "environment/platform/log/apply-rebind.log",
+      "environment/platform/ops/handoff.md"
+    ],
+    "instruction_evidence_paths": [
+      "/app/platform/log/apply-rebind.log",
+      "/app/platform/ops/handoff.md"
+    ],
+    "stateful_dataset": {
+      "schema": "environment/platform/sql/schema.sql",
+      "seed": "environment/platform/sql/seed.sql",
+      "primary_table": "sonar_analysis",
+      "min_records": 12000,
+      "max_records": 12000,
+      "variance_queries": {
+        "projects": {
+          "sql": "SELECT COUNT(DISTINCT project_key) FROM sonar_analysis",
+          "min": 40
+        },
+        "statuses": {
+          "sql": "SELECT COUNT(DISTINCT status) FROM sonar_analysis",
+          "min": 5
+        },
+        "scanners": {
+          "sql": "SELECT COUNT(DISTINCT scanner) FROM sonar_analysis",
+          "min": 4
+        },
+        "gate_results": {
+          "sql": "SELECT COUNT(DISTINCT gate_result) FROM sonar_analysis",
+          "min": 4
+        },
+        "authors": {
+          "sql": "SELECT COUNT(DISTINCT author) FROM sonar_analysis",
+          "min": 80
+        },
+        "days": {
+          "sql": "SELECT COUNT(DISTINCT substr(started_at, 1, 10)) FROM sonar_analysis",
+          "min": 180
+        },
+        "token_kinds": {
+          "sql": "SELECT COUNT(DISTINCT token_kind) FROM sonar_analysis",
+          "min": 3
+        },
+        "branches": {
+          "sql": "SELECT COUNT(DISTINCT branch) FROM sonar_analysis",
+          "min": 6
+        }
+      }
+    }
+  }
+}

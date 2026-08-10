@@ -1,0 +1,22 @@
+{
+  "schema_version": "1.0",
+  "profile": "large_system",
+  "strict_scale_note": "Two-replica FastAPI wiki flap is naturally below large_system_strict LOC. Profile is large_system without padding.",
+  "task_kind": "systems",
+  "task": "wiki-creation-counter-flap",
+  "resource_count": 8,
+  "root_cause_clusters": {
+    "RC1_LIVE_DB": "Liveness queries the database so a flap restarts pods.",
+    "RC2_COUNTER": "Prometheus creation series are process-local Counters and never rebound from COUNT(*).",
+    "RC3_AUTHOR_404": "Missing user_id on POST /posts is not a 404 with User not found.",
+    "RC4_POST_ID": "Create-post JSON uses id instead of post_id."
+  },
+  "defects": [
+    {"id": "D01", "component": "live", "observable_failure": "/health/live 503 or 500 when wiki.db is absent.", "root_cause": "RC1_LIVE_DB", "partial_fix_trap": "Caching the last ready result still couples live to a prior ping."},
+    {"id": "D02", "component": "ready", "observable_failure": "sqlite connect recreates an empty db during flap so ready returns 200.", "root_cause": "RC1_LIVE_DB", "partial_fix_trap": "Catching OperationalError but opening with default create mode."},
+    {"id": "D03", "component": "metrics", "observable_failure": "users_created_total is 0 after restore while users has thousands of rows.", "root_cause": "RC2_COUNTER", "partial_fix_trap": "Incrementing on scrape by request rate, not table counts."},
+    {"id": "D04", "component": "metrics", "observable_failure": "Only one replica scrape is correct; the other stays at 0.", "root_cause": "RC2_COUNTER", "partial_fix_trap": "Hardcoding a constant in one process."},
+    {"id": "D05", "component": "posts", "observable_failure": "Unknown user_id returns 400/500.", "root_cause": "RC3_AUTHOR_404", "partial_fix_trap": "Mapping IntegrityError to 422."},
+    {"id": "D06", "component": "posts", "observable_failure": "Successful create returns id not post_id.", "root_cause": "RC4_POST_ID", "partial_fix_trap": "Returning both fields."}
+  ]
+}

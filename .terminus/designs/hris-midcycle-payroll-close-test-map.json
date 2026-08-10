@@ -1,0 +1,36 @@
+{
+  "schema_version": "1.0",
+  "task": "hris-midcycle-payroll-close",
+  "requirements": {
+    "R_TRANSFER": "In-period org transfer changes cost center, FLSA class, and leave accrual together.",
+    "R_RETRO": "Retro journal records the org_transfer split with pre/post hours and pay.",
+    "R_FLSA": "Exempt employees earn no OT premium; non-exempt OT is 1.5x after 40 hours.",
+    "R_CUTOFF": "Punches after cutoff_at are ignored.",
+    "R_LEAVE_EXC": "Approved leave counts as taken; missing_out drops hours and is listed.",
+    "R_DOUBLE": "Second close-payroll exits 4 and leaves output bytes unchanged.",
+    "R_POP": "Terminated employees omitted; lines sorted; dump reports 12000 employees.",
+    "R_TOKEN": "Wrong local IdP token fails closed."
+  },
+  "tests": [
+    ["test_f2p_register_schema_and_period", "F2P", "R_POP"],
+    ["test_f2p_transfer_moves_cost_center", "F2P", "R_TRANSFER"],
+    ["test_f2p_transfer_moves_flsa_class", "F2P", "R_TRANSFER"],
+    ["test_f2p_transfer_zeroes_exempt_overtime", "F2P", "R_FLSA"],
+    ["test_f2p_transfer_leave_accrual_is_prorated", "F2P", "R_TRANSFER"],
+    ["test_f2p_retro_journal_records_org_transfer", "F2P", "R_RETRO"],
+    ["test_f2p_exempt_employee_never_gets_ot_pay", "F2P", "R_FLSA"],
+    ["test_f2p_non_exempt_overtime_uses_time_and_a_half", "F2P", "R_FLSA"],
+    ["test_f2p_punches_after_cutoff_ignored", "F2P", "R_CUTOFF"],
+    ["test_f2p_approved_leave_hours_taken", "F2P", "R_LEAVE_EXC"],
+    ["test_f2p_missing_out_exception_listed", "F2P", "R_LEAVE_EXC"],
+    ["test_f2p_terminated_employees_omitted", "F2P", "R_POP"],
+    ["test_f2p_lines_sorted_by_employee_id", "F2P", "R_POP"],
+    ["test_f2p_dump_reports_seed_scale_and_close", "F2P", "R_POP"],
+    ["test_f2p_double_close_fails_and_keeps_bytes", "F2P", "R_DOUBLE"],
+    ["test_f2p_invalid_token_rejected", "F2P", "R_TOKEN"],
+    ["test_f2p_hidden_transfer_changes_all_three_axes", "F2P", "R_TRANSFER"],
+    ["test_p2p_contract_and_idp_files_remain", "P2P", "R_TOKEN"],
+    ["test_p2p_period_cutoff_unchanged", "P2P", "R_CUTOFF"],
+    ["test_p2p_hrctl_binary_executable", "P2P", "R_POP"]
+  ]
+}

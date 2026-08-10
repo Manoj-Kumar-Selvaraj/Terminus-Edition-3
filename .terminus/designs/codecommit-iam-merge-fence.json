@@ -1,0 +1,49 @@
+{
+  "schema_version": "1.0",
+  "profile": "large_system",
+  "strict_scale_note": "Natural IAM+git lab is below large_system_strict padding. Profile is large_system, not strict.",
+  "task_kind": "security",
+  "task": "codecommit-iam-merge-fence",
+  "resource_count": 22,
+  "root_cause_clusters": {
+    "RC1_ACTION_MATCH": "Git verbs match by prefix; Action * ignores resource ARN.",
+    "RC2_CONDITIONS": "Bool MFA and IpAddress CIDR are skipped; Deny statements are dropped.",
+    "RC3_QUORUM": "Author, duplicates, and off-pool stamps count toward required approvals.",
+    "RC4_MERGE": "merge creates a merge commit instead of fast-forwarding the dest ref.",
+    "RC5_TRIGGER": "deliver mints a new event_id and always appends the journal."
+  },
+  "defects": [
+    {"id":"D01","component":"iam-action","observable_failure":"codecommit:GitPull allow matches GitPush.","root_cause":"RC1_ACTION_MATCH","partial_fix_trap":"Splitting clone/push binaries still shares the matcher."},
+    {"id":"D02","component":"iam-action","observable_failure":"Action * on sandbox authorizes ledger merge.","root_cause":"RC1_ACTION_MATCH","partial_fix_trap":"Removing sandbox policy hides the resource check."},
+    {"id":"D03","component":"iam-bool","observable_failure":"Main push without MFA is allowed from the office CIDR.","root_cause":"RC2_CONDITIONS","partial_fix_trap":"Hard-denying all main pushes breaks MFA office use."},
+    {"id":"D04","component":"iam-ip","observable_failure":"MFA push from 203.0.113.0/24 is allowed.","root_cause":"RC2_CONDITIONS","partial_fix_trap":"String-equals on the CIDR text denies legitimate 10.8.12.4."},
+    {"id":"D05","component":"iam-deny","observable_failure":"Allow+Deny on release lets the push through.","root_cause":"RC2_CONDITIONS","partial_fix_trap":"Deleting the Allow instead of honoring Deny."},
+    {"id":"D06","component":"iam-missing-bool","observable_failure":"Absent MFA context is treated as true.","root_cause":"RC2_CONDITIONS","partial_fix_trap":"Defaulting MFA true for reviewers breaks GitPush."},
+    {"id":"D07","component":"approve","observable_failure":"Author stamp counts toward quorum.","root_cause":"RC3_QUORUM","partial_fix_trap":"Banning author from approve API still needs pool math."},
+    {"id":"D08","component":"approve","observable_failure":"Two stamps from rev-a satisfy required=2.","root_cause":"RC3_QUORUM","partial_fix_trap":"Rejecting the second approve call breaks idempotent UI retries."},
+    {"id":"D09","component":"approve","observable_failure":"pipeline-bot stamp fills the second seat.","root_cause":"RC3_QUORUM","partial_fix_trap":"Allow-listing only rev-a/rev-b in CLI ignores the JSON rule."},
+    {"id":"D10","component":"approve-store","observable_failure":"prs.json approvals list contains duplicates.","root_cause":"RC3_QUORUM","partial_fix_trap":"Deduping only at merge time leaves a lying store."},
+    {"id":"D11","component":"merge","observable_failure":"Divergent dest still merges with a merge commit.","root_cause":"RC4_MERGE","partial_fix_trap":"git merge without --ff-only looks green in the happy path."},
+    {"id":"D12","component":"merge","observable_failure":"Successful merge dest has two parents.","root_cause":"RC4_MERGE","partial_fix_trap":"Squash merge changes the commit id contracted by deliver."},
+    {"id":"D13","component":"merge-iam","observable_failure":"Developer merge succeeds after reviewer quorum.","root_cause":"RC1_ACTION_MATCH","partial_fix_trap":"Checking principal==rev-* ignores attached policies."},
+    {"id":"D14","component":"merge-ip","observable_failure":"Reviewer merge from a public IP succeeds.","root_cause":"RC2_CONDITIONS","partial_fix_trap":"Reusing push MFA rules on merge is extra-contract."},
+    {"id":"D15","component":"trigger","observable_failure":"Second deliver appends a second jsonl line.","root_cause":"RC5_TRIGGER","partial_fix_trap":"Truncating the file loses a later different commit."},
+    {"id":"D16","component":"trigger-id","observable_failure":"event_id is a random uuid.","root_cause":"RC5_TRIGGER","partial_fix_trap":"Hashing timestamp still changes across calls."},
+    {"id":"D17","component":"trigger-ref","observable_failure":"deliver does not normalize main vs refs/heads/main.","root_cause":"RC5_TRIGGER","partial_fix_trap":"Accepting only one spelling breaks the CLI contract."},
+    {"id":"D18","component":"iam-branch","observable_failure":"ben can push refs/heads/dev/alice via the unconditioned GitPull statement.","root_cause":"RC1_ACTION_MATCH","partial_fix_trap":"Blocking all cross-user branches in git hooks skips IAM."},
+    {"id":"D19","component":"iam-intern","observable_failure":"pull-only intern can push main.","root_cause":"RC1_ACTION_MATCH","partial_fix_trap":"Disabling intern clone to stop the push."},
+    {"id":"D20","component":"quorum-config","observable_failure":"required is hardcoded to len>=1.","root_cause":"RC3_QUORUM","partial_fix_trap":"Embedding pool names in Python drifts from approval-rules.json."},
+    {"id":"D21","component":"merge-fast-forward-flag","observable_failure":"JSON reports fast_forward true after a merge commit.","root_cause":"RC4_MERGE","partial_fix_trap":"Lying about the flag without updating the dest ref."},
+    {"id":"D22","component":"trigger-keys","observable_failure":"Journal objects omit pipeline or reorder contracted keys.","root_cause":"RC5_TRIGGER","partial_fix_trap":"Pretty-printed JSON breaks jsonl consumers."}
+  ],
+  "causal_edges": [
+    {"from":"D01","to":"D03"},{"from":"D01","to":"D19"},{"from":"D01","to":"D18"},
+    {"from":"D02","to":"D13"},{"from":"D03","to":"D06"},{"from":"D04","to":"D14"},
+    {"from":"D06","to":"D03"},{"from":"D05","to":"D01"},{"from":"D07","to":"D08"},
+    {"from":"D08","to":"D10"},{"from":"D09","to":"D07"},{"from":"D10","to":"D08"},
+    {"from":"D11","to":"D12"},{"from":"D12","to":"D21"},{"from":"D13","to":"D11"},
+    {"from":"D14","to":"D04"},{"from":"D15","to":"D16"},{"from":"D16","to":"D17"},
+    {"from":"D17","to":"D15"},{"from":"D18","to":"D01"},{"from":"D19","to":"D03"},
+    {"from":"D20","to":"D09"},{"from":"D21","to":"D15"},{"from":"D22","to":"D16"}
+  ]
+}

@@ -1,0 +1,39 @@
+{
+  "run_id": "b-1842",
+  "status": "crashed",
+  "library": {"name": "platform-lib", "version": "1.5.0"},
+  "completed_stages": ["checkout", "compile"],
+  "resume_from": "test",
+  "stages": {
+    "checkout": {
+      "status": "ok",
+      "agent_id": "linux-01",
+      "agent_labels": ["linux", "scm"],
+      "modules_ok": [],
+      "skipped_modules": [],
+      "failed_module": null
+    },
+    "compile": {
+      "status": "ok",
+      "agent_id": "maven-03",
+      "agent_labels": ["linux", "maven"],
+      "modules_ok": ["common", "core", "web"],
+      "skipped_modules": [],
+      "failed_module": null
+    },
+    "test": {
+      "status": "crashed",
+      "agent_id": "docker-07",
+      "agent_labels": ["linux", "docker"],
+      "modules_ok": ["common"],
+      "skipped_modules": [],
+      "failed_module": "core"
+    }
+  },
+  "stash": {
+    "reactor-classes": {
+      "modules": ["common", "core", "web"],
+      "created_stage": "compile"
+    }
+  }
+}

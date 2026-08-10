@@ -1,0 +1,12 @@
+2026-04-11T02:14:08Z tenant=acme identity=alice op=mkdir path=/drop mode=02771 result=ok
+2026-04-11T02:14:19Z tenant=acme identity=alice op=setfacl path=/drop default=1 entries=u::rwx,g::rwx,g:review:r-x,m::rwx,o::--- result=ok
+2026-04-11T02:15:03Z tenant=acme identity=alice op=create path=/drop/inv-441.bin size=200 result=ok
+2026-04-11T02:15:11Z tenant=acme identity=cara op=read path=/drop/inv-441.bin result=EACCES
+2026-04-11T02:16:40Z tenant=acme identity=erin op=create path=/drop/tmp-erin.dat size=80 result=ok
+2026-04-11T02:16:55Z tenant=acme identity=bob op=unlink path=/drop/tmp-erin.dat result=ok note=unexpected
+2026-04-11T02:18:02Z tenant=acme identity=alice op=stat path=/drop/inv-441.bin gid=1001 note=expected_staff_gid
+2026-04-11T02:21:18Z tenant=globex identity=drew op=create path=/notices/n1 size=200 result=ok
+2026-04-11T02:21:19Z tenant=globex identity=drew op=create path=/notices/n2 size=200 result=ok
+2026-04-11T02:21:20Z tenant=globex identity=drew op=create path=/notices/n3 size=200 result=ENOSPC
+2026-04-11T02:33:47Z tenant=acme identity=alice op=rename src=/drop/inv-441.bin dst=/drop/../../globex/stray.bin result=ok note=path_walk
+2026-04-11T02:34:01Z tenant=globex identity=drew op=stat path=/stray.bin result=ok

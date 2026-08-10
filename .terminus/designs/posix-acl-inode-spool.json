@@ -1,0 +1,50 @@
+{
+  "schema_version": "1.0",
+  "profile": "large_system",
+  "strict_scale_note": "Natural userspace VFS incident is well below large_system_strict padding. Profile is large_system without the strict LOC/resource gate.",
+  "task_kind": "systems",
+  "task": "posix-acl-inode-spool",
+  "resource_count": 24,
+  "root_cause_clusters": {
+    "RC1_DEFAULT_ACL": "Parent default ACL is not copied onto new children as access/default ACLs, and umask still subtracts.",
+    "RC2_STICKY": "Restricted deletion flag is ignored or only checks one owner.",
+    "RC3_SETGID": "New objects keep the creator primary gid and new dirs drop the setgid bit.",
+    "RC4_QUOTA": "Usage is counted in bytes, directories skip inode charge, and hard links double-count.",
+    "RC5_TENANT_PATH": "Join-then-normalize rename/link can leave /t/<tenant>.",
+    "RC6_ACL_MASK": "Named entries ignore the mask; chmod does not refresh the group class; --default writes the access ACL.",
+    "RC7_WALK": "Path walk skips execute on ancestors and link skips dest-dir write."
+  },
+  "defects": [
+    {"id":"D01","component":"vfs-create","observable_failure":"New file has no named review ACL from the parent default.","root_cause":"RC1_DEFAULT_ACL","partial_fix_trap":"setfacl on each new file hides missing inheritance."},
+    {"id":"D02","component":"vfs-mkdir","observable_failure":"New directory does not receive a copy of the parent default ACL.","root_cause":"RC1_DEFAULT_ACL","partial_fix_trap":"Copying access ACL only still drops default on grandchildren."},
+    {"id":"D03","component":"vfs-create","observable_failure":"umask is applied even when a default ACL is present.","root_cause":"RC1_DEFAULT_ACL","partial_fix_trap":"Hardcoding 0666 ignores requested mode intersection."},
+    {"id":"D04","component":"setfacl","observable_failure":"--default replaces the access ACL instead of acl_default.","root_cause":"RC6_ACL_MASK","partial_fix_trap":"Writing both ACLs the same still clobbers a distinct access ACL."},
+    {"id":"D05","component":"getfacl","observable_failure":"default_entries is always empty.","root_cause":"RC6_ACL_MASK","partial_fix_trap":"Printing access entries twice fakes inheritance."},
+    {"id":"D06","component":"unlink","observable_failure":"Sticky directories allow any writer to unlink.","root_cause":"RC2_STICKY","partial_fix_trap":"Denying all unlinks except root breaks owner cleanup."},
+    {"id":"D07","component":"rename","observable_failure":"Overwrite in a sticky dir skips dest ownership.","root_cause":"RC2_STICKY","partial_fix_trap":"Blocking all overwrites hides the dest sticky rule."},
+    {"id":"D08","component":"create","observable_failure":"New file gid is the creator primary gid on a setgid dir.","root_cause":"RC3_SETGID","partial_fix_trap":"Forcing staff gid globally breaks globex."},
+    {"id":"D09","component":"mkdir","observable_failure":"New subdirectory drops the setgid bit.","root_cause":"RC3_SETGID","partial_fix_trap":"chmod g+s after mkdir fails under a later umask/ACL path."},
+    {"id":"D10","component":"quota","observable_failure":"blocks_used equals file byte length.","root_cause":"RC4_QUOTA","partial_fix_trap":"Dividing by 1024 still disagrees with blksize 512."},
+    {"id":"D11","component":"quota","observable_failure":"513-byte file charges one block via floor divide.","root_cause":"RC4_QUOTA","partial_fix_trap":"Always charging 1 block fails larger payloads."},
+    {"id":"D12","component":"quota","observable_failure":"Directories do not increment inodes_used.","root_cause":"RC4_QUOTA","partial_fix_trap":"Counting only files lets mkdir exhaust nothing."},
+    {"id":"D13","component":"link","observable_failure":"Hard link increments inode quota.","root_cause":"RC4_QUOTA","partial_fix_trap":"Skipping nlink update makes unlink delete data early."},
+    {"id":"D14","component":"unlink","observable_failure":"Unlink frees blocks while nlink remains > 0.","root_cause":"RC4_QUOTA","partial_fix_trap":"Never freeing quota fails the last-link case."},
+    {"id":"D15","component":"paths","observable_failure":"rename /drop/../../globex/x leaves the tenant prefix.","root_cause":"RC5_TENANT_PATH","partial_fix_trap":"Rejecting all .. paths blocks valid /a/../b."},
+    {"id":"D16","component":"acl-check","observable_failure":"Named user/group grants ignore the mask.","root_cause":"RC6_ACL_MASK","partial_fix_trap":"Clearing named entries instead of applying the mask."},
+    {"id":"D17","component":"chmod","observable_failure":"chmod does not rewrite mask/user::/other:: on ACL inodes.","root_cause":"RC6_ACL_MASK","partial_fix_trap":"Dropping the ACL on chmod loses named entries."},
+    {"id":"D18","component":"walk","observable_failure":"Missing execute on an ancestor still reaches a writable leaf.","root_cause":"RC7_WALK","partial_fix_trap":"Requiring read on ancestors breaks search-only paths."},
+    {"id":"D19","component":"link","observable_failure":"link does not require write on the destination directory.","root_cause":"RC7_WALK","partial_fix_trap":"Requiring write on the source file blocks read-only linkers."},
+    {"id":"D20","component":"cli","observable_failure":"--default flag is discarded before setfacl.","root_cause":"RC6_ACL_MASK","partial_fix_trap":"Parsing the flag but still calling default=False."},
+    {"id":"D21","component":"quota","observable_failure":"Hard limit compare uses byte charge so tiny files hit ENOSPC early.","root_cause":"RC4_QUOTA","partial_fix_trap":"Raising blocks_hard in tenants.json papers over the unit bug."},
+    {"id":"D22","component":"sticky","observable_failure":"Directory owner cannot be distinguished from an unrelated writer.","root_cause":"RC2_STICKY","partial_fix_trap":"Allowing any group member restores the original leak."}
+  ],
+  "causal_edges": [
+    {"from":"D04","to":"D01"},{"from":"D20","to":"D04"},{"from":"D05","to":"D02"},
+    {"from":"D01","to":"D03"},{"from":"D02","to":"D01"},{"from":"D16","to":"D17"},
+    {"from":"D17","to":"D16"},{"from":"D06","to":"D07"},{"from":"D22","to":"D06"},
+    {"from":"D08","to":"D09"},{"from":"D10","to":"D11"},{"from":"D11","to":"D21"},
+    {"from":"D12","to":"D10"},{"from":"D13","to":"D14"},{"from":"D14","to":"D13"},
+    {"from":"D15","to":"D07"},{"from":"D18","to":"D19"},{"from":"D19","to":"D15"},
+    {"from":"D03","to":"D16"},{"from":"D21","to":"D12"}
+  ]
+}

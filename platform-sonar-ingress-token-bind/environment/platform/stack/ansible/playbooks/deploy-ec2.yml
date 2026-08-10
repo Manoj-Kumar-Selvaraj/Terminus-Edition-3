@@ -1,0 +1,12 @@
+---
+- name: Deploy application to AWS runners via SSM
+  hosts: runners
+  become: true
+  vars:
+    image_name: "{{ ecr_registry | default('platform-mvp/sample-app') }}"
+    image_tag: "{{ image_tag | default('latest') }}"
+    container_port: "{{ app_port | default(3000) }}"
+    app_name: "{{ app_name | default('sample-app') }}"
+  roles:
+    - common
+    - app_deploy

@@ -1,0 +1,27 @@
+{
+  "schema_version": "1.0",
+  "task": "posix-acl-inode-spool",
+  "production_authenticity": {
+    "incident_evidence": [
+      "environment/spool/log/spool-incident.log",
+      "environment/spool/ops/handoff.md",
+      "environment/spool/ops/tenants.json",
+      "environment/spool/ops/identities.json"
+    ],
+    "instruction_evidence_paths": [
+      "/app/spool/log/spool-incident.log",
+      "/app/spool/ops/handoff.md",
+      "/app/spool/ops/tenants.json",
+      "/app/spool/ops/identities.json",
+      "/app/spool/docs/vfs-contract.md"
+    ],
+    "stateful_dataset": {
+      "schema": "SQLite inodes/dentries/blobs/quota under /app/spool/var/spool.db",
+      "seed": "environment/spool/lib/spool/seed.py",
+      "primary_table": "inodes",
+      "min_records": 8,
+      "max_records": 40,
+      "notes": "Seed builds acme /drop and globex /notices plus two small blobs so the agent can reproduce the night-shift trace. Verifier tests reset SPOOL_ROOT and do not depend on seed rows."
+    }
+  }
+}

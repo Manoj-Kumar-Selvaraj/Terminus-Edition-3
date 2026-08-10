@@ -1,0 +1,22 @@
+jenkins:
+  systemMessage: Platform MVP Jenkins
+  numExecutors: 2
+  mode: EXCLUSIVE
+  globalNodeProperties:
+    - envVars:
+        ANSIBLE_RUNNER_ID: ""
+        SONAR_URL: http://platform-mvp-sonarqube.cluster.platform.test
+credentials:
+  system:
+    domainCredentials:
+      - credentials:
+          - string:
+              id: sonar-token
+              secret: "${token}"
+unclassified:
+  sonarGlobalConfiguration:
+    buildWrapperEnabled: true
+    installations:
+      - name: Default
+        serverUrl: http://platform-mvp-sonarqube.cluster.platform.test
+        credentialsId: sonar-token

@@ -1,0 +1,37 @@
+{
+  "schema_version": "1.0",
+  "task": "maven-agent-hop-resume",
+  "requirements": {
+    "R_RESUME": "Resume continues journal run_id b-1842 to status success without minting a new run.",
+    "R_DURABLE": "Durable legal stages are not rebuilt; illegal docker test results are discarded.",
+    "R_LIBRARY": "Resolved library matches the exact pipeline pin platform-lib@1.4.2.",
+    "R_AGENTS": "Maven stages run only on maven-labeled agents and fail closed when none exist.",
+    "R_INCREMENTAL": "Unchanged module fingerprints skip; a rebuilt dependency forces downstream rebuild.",
+    "R_STASH": "Named stash survives the docker hop and package fails without it.",
+    "R_REDACT": "Archive log must not contain pipeline secret values.",
+    "R_CLI": "status prints the journal; unknown commands exit 2 without writing state."
+  },
+  "tests": [
+    ["test_f2p_resume_journal_is_success", "F2P", "R_RESUME"],
+    ["test_f2p_resume_keeps_nightly_run_id", "F2P", "R_RESUME"],
+    ["test_f2p_compile_not_rebuilt_on_resume", "F2P", "R_DURABLE"],
+    ["test_f2p_illegal_docker_test_result_discarded", "F2P", "R_DURABLE"],
+    ["test_f2p_completed_stages_cover_pipeline_order", "F2P", "R_DURABLE"],
+    ["test_f2p_library_pin_is_exact", "F2P", "R_LIBRARY"],
+    ["test_f2p_test_stage_used_maven_agent", "F2P", "R_AGENTS"],
+    ["test_f2p_maven_stage_fails_without_maven_label", "F2P", "R_AGENTS"],
+    ["test_f2p_fingerprint_files_exist_for_modules", "F2P", "R_INCREMENTAL"],
+    ["test_f2p_second_run_skips_unchanged_modules", "F2P", "R_INCREMENTAL"],
+    ["test_f2p_changed_module_rebuilds_downstream", "F2P", "R_INCREMENTAL"],
+    ["test_f2p_stash_survives_docker_package_hop", "F2P", "R_STASH"],
+    ["test_f2p_package_fails_without_named_stash", "F2P", "R_STASH"],
+    ["test_f2p_archive_redacts_pipeline_secrets", "F2P", "R_REDACT"],
+    ["test_f2p_status_cli_matches_journal_file", "F2P", "R_CLI"],
+    ["test_f2p_unknown_command_exits_before_journal_write", "F2P", "R_CLI"],
+    ["test_f2p_crash_log_names_failed_hop", "F2P", "R_RESUME"],
+    ["test_p2p_pipeline_library_pin_untouched", "P2P", "R_LIBRARY"],
+    ["test_p2p_module_graph_preserved", "P2P", "R_INCREMENTAL"],
+    ["test_p2p_crash_log_file_retained", "P2P", "R_RESUME"],
+    ["test_p2p_pipe_binary_still_dispatches", "P2P", "R_CLI"]
+  ]
+}
