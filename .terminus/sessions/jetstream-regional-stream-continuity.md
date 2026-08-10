@@ -30,7 +30,7 @@ Session schema version: `2.4`
 | STB auth/AI credentials | FAIL | failed only after deterministic validation; not freeze evidence |
 | Oracle = 1 | PASS | artifact `9048941323`; exactly 40/40 PASS |
 | NOP = 0 | PASS | artifact `9048941323`; exactly 30 F2P FAIL + 10 P2P PASS |
-| Q4 Spec-Test Contract Reviewer | PENDING | fresh exhaustive Q4 1.1 packet required for exact task commit `f73b6c9a...` |
+| Q4 Spec-Test Contract Reviewer | PENDING | `.terminus/reviews/jetstream-regional-stream-continuity/f73b6c9a/jetstream-regional-stream-continuity-f73b6c9a-spec-test-contract-bc501441f0.packet.json`; fresh exhaustive Q4 1.1 required |
 | Q6 Production Logic Auditor | PASS | `.terminus/reviews/jetstream-regional-stream-continuity/440aa838/jetstream-regional-stream-continuity-440aa838-production-logic-a277a01448.json`; result commit `cf30ef12025138a22a7f80fa374452546d6bcd9b`; production scope hash `4007f243d3e31219716e8f3af0549644839141f37695a367f2f7732906f77a81`; current freshness validation confirms scope-preserved reuse |
 | Quality Interlock | PENDING | fresh exhaustive Q4 PASS plus scope-preserved Q6 PASS required |
 | Pre-LLMaJ specialist panel | PENDING | not authorized |
@@ -77,7 +77,18 @@ Edition-3 run `31350811319`, job `93341174929`:
 - validation artifact `9048941323`, digest `sha256:31c11d8e1b2a85a7b53b7d8e9188520391e0ef5b9199e76846c7de3174126d94`;
 - reusable-AI credentials failed only afterward and Harbor was skipped.
 
-Creator Complexity run `31350811326`: PASS. Production Authenticity run `31350811305`: PASS. Agent System/freshness run `31350811298`: PASS, including exact Q6 result-path recognition and scope-preserved freshness.
+Creator Complexity run `31350811326`: PASS. Production Authenticity run `31350811305`: PASS. Agent System/freshness run `31350811298`: PASS, including exact Q6 result-path recognition and scope-preserved freshness. Refreeze-head Agent System run `31351086355`: PASS.
+
+## Fresh Q4 handoff
+
+Packet commit: `d864b91bfa7da846b75285609d42a222d067010c`.
+
+- Review ID: `jetstream-regional-stream-continuity-f73b6c9a-spec-test-contract-bc501441f0`
+- Packet: `.terminus/reviews/jetstream-regional-stream-continuity/f73b6c9a/jetstream-regional-stream-continuity-f73b6c9a-spec-test-contract-bc501441f0.packet.json`
+- Result: `.terminus/reviews/jetstream-regional-stream-continuity/f73b6c9a/jetstream-regional-stream-continuity-f73b6c9a-spec-test-contract-bc501441f0.json`
+- Task commit: `f73b6c9a3cf52c1929a622798f36fc2e480052d4`
+- Protocol: `2.2`; prompt policy: `2.2`; Q4 role policy: `1.1`
+- Q4 remains exact-task-commit-bound and has no reusable scope hash.
 
 ## Q6 scope preservation
 
@@ -89,4 +100,4 @@ The one normal consolidated repair/refreeze cycle following the exhaustive Q4 1.
 
 ## Next action
 
-Generate one fresh exhaustive Q4 1.1 packet bound to exact task commit `f73b6c9a3cf52c1929a622798f36fc2e480052d4`. Do not regenerate Q6 because production scope is Protocol-valid and unchanged. Run the fresh Q4 independently. Do not proceed to Stage-B, Pre-LLMaJ, Q8, Harbor or model trials until fresh Q4 PASS plus scope-preserved Q6 PASS validate Quality Interlock.
+Run the fresh exhaustive Q4 1.1 independently from the packet above. Do not rerun Q6 and do not expose the prior Q4 finding list or Q6 verdict to the Q4 reviewer. After Q4 freezes, the CI Orchestrator must validate the result and classify any REVISE finding under Protocol 2.2 before deciding whether Quality Interlock can pass or Adjudicator is required. Do not proceed to Stage-B, Pre-LLMaJ, Q8, Harbor or model trials until fresh Q4 PASS plus scope-preserved Q6 PASS validate Quality Interlock.
