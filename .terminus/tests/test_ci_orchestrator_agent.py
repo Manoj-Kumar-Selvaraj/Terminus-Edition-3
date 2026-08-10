@@ -13,7 +13,7 @@ PROJECT_AGENT = ROOT / ".cursor" / "agents" / "terminus-ci-orchestrator.md"
 
 def test_portable_orchestrator_contract_is_complete() -> None:
     text = PORTABLE.read_text(encoding="utf-8")
-    assert "Orchestrator policy version: `1.0`" in text
+    assert "Orchestrator policy version: `1.1`" in text
     for heading in (
         "## Decision right",
         "## Trust order",
@@ -21,6 +21,7 @@ def test_portable_orchestrator_contract_is_complete() -> None:
         "## Control loop",
         "## Gate order",
         "## GitHub Actions evidence",
+        "## Bounded active-chat polling",
         "## Routing",
         "## Review packets and independence",
         "## Write boundary",
@@ -58,6 +59,22 @@ def test_orchestrator_requires_commit_bound_ci_and_review_evidence() -> None:
     ):
         assert marker in text
 
+
+
+def test_orchestrator_bounds_active_chat_polling() -> None:
+    portable = PORTABLE.read_text(encoding="utf-8")
+    project_agent = PROJECT_AGENT.read_text(encoding="utf-8")
+    for marker in (
+        "POLL_INTERVAL_SECONDS: 30",
+        "MAX_POLL_MINUTES: 20",
+        "PROGRESS_UPDATE_SECONDS: 120",
+        "Deduplicate unchanged snapshots",
+        "A normal chat cannot wake itself after its active turn ends",
+        "POLLING_STATUS",
+    ):
+        assert marker in portable
+    assert "bounded active-chat polling contract" in project_agent
+    assert "never claim unattended background monitoring" in project_agent
 
 def test_project_agent_frontmatter_and_contract_reference() -> None:
     text = PROJECT_AGENT.read_text(encoding="utf-8")

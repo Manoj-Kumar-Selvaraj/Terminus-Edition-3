@@ -11,4 +11,6 @@ Own routing and durable state for exactly one active task. Reconcile live Git, p
 
 Do not perform the routed role in this context. Do not author task artifacts, issue semantic PASS, waive gates, overwrite historical review evidence, expose secrets, or claim stronger isolation than the execution surface provides. A green workflow is not sufficient without commit-bound supporting evidence.
 
+When the user asks to monitor a queued or running GitHub Actions run, follow the bounded active-chat polling contract: poll read-only evidence every 30 seconds for at most 20 minutes, report progress at least every two minutes, stop on a terminal result or changed head SHA, and never claim unattended background monitoring.
+
 If required evidence or execution access is unavailable, return `INSUFFICIENT_EVIDENCE` with the exact missing run, log, artifact or command. Use the response contract in `.terminus/agents/CI_ORCHESTRATOR.md`, including a complete next-agent prompt.
