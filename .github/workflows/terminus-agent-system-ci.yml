@@ -13,71 +13,20 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
 
 concurrency:
   group: terminus-agent-system-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  generate-jetstream-q4-packet:
-    name: Generate fresh exhaustive JetStream Q4 packet
-    if: github.event_name == 'pull_request' && github.head_ref == 'task/jetstream-quality-interlock'
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          ref: task/jetstream-quality-interlock
-          fetch-depth: 0
-
-      - name: Verify refrozen candidate
-        shell: bash
-        run: |
-          set -euo pipefail
-          test "$(git log -1 --format=%H -- jetstream-regional-stream-continuity)" = "f73b6c9a3cf52c1929a622798f36fc2e480052d4"
-          grep -q -- '- Controller state: `FROZEN_CANDIDATE`' .terminus/sessions/jetstream-regional-stream-continuity.md
-          python3 .terminus/validate_review_freshness.py --task jetstream-regional-stream-continuity
-          test ! -d .terminus/reviews/jetstream-regional-stream-continuity/f73b6c9a
-
-      - name: Generate immutable Q4 packet
-        shell: bash
-        run: |
-          set -euo pipefail
-          python3 .terminus/new_review_packet.py \
-            jetstream-regional-stream-continuity \
-            spec-test-contract \
-            --state FROZEN_CANDIDATE \
-            --change 'Single Protocol-2.2 consolidated repair after exhaustive Q4 REVISE: all 12 findings addressed together across existing verifier/reference boundaries; exact 40=30 F2P+10 P2P preserved; Oracle 40/40 and NOP 30/10; production environment unchanged so prior Q6 scope hash remains valid. Two Oracle revalidation failures were fixture-only corrections inside the same repair cycle (valid positive checkpoint and stale assertion).'
-          packets=(.terminus/reviews/jetstream-regional-stream-continuity/f73b6c9a/*.packet.json)
-          test "${#packets[@]}" -eq 1
-          grep -q '"task_commit": "f73b6c9a3cf52c1929a622798f36fc2e480052d4"' "${packets[0]}"
-          grep -q '"role_policy_version": "1.1"' "${packets[0]}"
-          if grep -q '"review_scope_hash"' "${packets[0]}"; then
-            echo '::error::Q4 packet must not carry reusable scope hash.'
-            exit 1
-          fi
-
-      - name: Commit packet and restore workflow
-        shell: bash
-        run: |
-          set -euo pipefail
-          git fetch origin main
-          git checkout origin/main -- .github/workflows/terminus-agent-system-ci.yml
-          git config user.name actions
-          git config user.email actions@users.noreply.github.com
-          git add \
-            .github/workflows/terminus-agent-system-ci.yml \
-            .terminus/reviews/jetstream-regional-stream-continuity/f73b6c9a/
-          git diff --cached --check
-          git commit -m 'Generate fresh exhaustive Q4 packet for f73b6c9a'
-          git push origin HEAD:task/jetstream-quality-interlock
-
   validate-agent-system:
     name: Validate reviewer/controller system
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
+      # Review freshness is derived from per-task Git history, so shallow history
+      # is not sufficient evidence.
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
@@ -104,6 +53,7 @@ jobs:
         run: python3 .terminus/validate_agent_system.py
 
       - name: Validate current review freshness and commit binding
+        # --allow-stale is deliberately forbidden in CI.
         run: python3 .terminus/validate_review_freshness.py
 
       - name: Check control-plane files stay outside task packages
