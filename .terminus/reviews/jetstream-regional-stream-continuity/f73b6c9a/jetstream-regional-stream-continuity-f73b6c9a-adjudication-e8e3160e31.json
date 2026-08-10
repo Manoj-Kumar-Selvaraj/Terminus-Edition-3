@@ -1,0 +1,409 @@
+{
+  "schema_version": "3.0",
+  "role": "Adjudicator",
+  "review_id": "jetstream-regional-stream-continuity-f73b6c9a-adjudication-e8e3160e31",
+  "task": "jetstream-regional-stream-continuity",
+  "task_commit": "f73b6c9a3cf52c1929a622798f36fc2e480052d4",
+  "control_plane_commit": "251481862c9a0f821f08fa4579a2c94458f60520",
+  "protocol_policy_version": "2.2",
+  "prompt_policy_version": "2.2",
+  "role_policy_version": "1.0",
+  "role_contract_hash": "db19dbfb32a2614b6da732365e91fc5a25c1df35da1b61ef75c3c2b5775cbb43",
+  "context_packet": ".terminus/reviews/jetstream-regional-stream-continuity/f73b6c9a/jetstream-regional-stream-continuity-f73b6c9a-adjudication-e8e3160e31.packet.json",
+  "verdict": "REQUEST_CHANGES",
+  "confidence": "HIGH",
+  "evidence_status": "SUFFICIENT",
+  "summary": "BOTH_PARTLY. Prior exhaustive Q4 controls Protocol-2.2 no-drip classification for unchanged fully reviewable scope; current Q4 is independently upheld where materially supported by the solver-visible contract or repair-touched regression. Canonical closure keeps all 12 current blockers: six pure LATENT_REVIEWER_OMISSION, three mixed latent/repair-touched, Q4-009 repair-introduced, and Q4-011/Q4-012 narrowed incomplete repairs. No unresolved or waived blocker. Return control to the CI Orchestrator; do not run Q4 or Stage-B from this adjudicator execution.",
+  "evidence": [
+    {
+      "type": "artifact",
+      "ref": ".terminus/reviews/jetstream-regional-stream-continuity/f73b6c9a/jetstream-regional-stream-continuity-f73b6c9a-adjudication-e8e3160e31.packet.json",
+      "observation": "Authoritative packet fixes scope, provenance, allowed evidence, schema and output path for task commit f73b6c9a3cf52c1929a622798f36fc2e480052d4."
+    },
+    {
+      "type": "rule",
+      "ref": ".terminus/AGENT_SYSTEM.md",
+      "observation": "Policy 2.4: Q4 is exhaustive; after one consolidated repair/refreeze, later findings on unchanged fully reviewable evidence route as LATENT_REVIEWER_OMISSION; repair-touched regressions route normally."
+    },
+    {
+      "type": "rule",
+      "ref": ".terminus/agents/PROTOCOL.md",
+      "observation": "Protocol 2.2: no majority vote; semantic delta controls over path overlap; latent omission is adjudicated, not automatically waived; circuit breaker prevents blind repair loops."
+    },
+    {
+      "type": "rule",
+      "ref": ".terminus/agents/PROMPTS.md#Adjudicator",
+      "observation": "Adjudicator 1.0 resolves frozen-review conflict by controlling rule/evidence and scope reconciliation."
+    },
+    {
+      "type": "file",
+      "ref": "jetstream-regional-stream-continuity/environment/continuity/docs/continuity-contract.md",
+      "observation": "Unchanged contract defines physical topology/source mapping, edge-to-hub convergence, independent generation-reset signals, (consumer_name,event_id), checkpoint-before-ACK, reconciliation outputs, concurrent disjoint active replay, retention, and stable reports."
+    },
+    {
+      "type": "file",
+      "ref": "jetstream-regional-stream-continuity/instruction.md",
+      "observation": "Unchanged instruction requires exactly-once edge-to-hub convergence, safe crash/reconnect processing, held ambiguous generation resets, safe retention and truthful reports."
+    },
+    {
+      "type": "file",
+      "ref": "jetstream-regional-stream-continuity/environment/continuity/continuity/runtime.py",
+      "observation": "Unchanged RuntimeBootstrap separately materializes physical JetStream streams/sources, so logical topology assertions do not observe the external configuration."
+    },
+    {
+      "type": "review",
+      "ref": ".terminus/reviews/jetstream-regional-stream-continuity/440aa838/jetstream-regional-stream-continuity-440aa838-spec-test-contract-7c5bbb5a2b.json",
+      "observation": "Frozen exhaustive Q4 on 440aa838: 12 blockers, exhaustive/second-pass complete; marked topology R05, idempotency R08 and disjoint replay R16 FULL; separately found earlier retention/count/health/timestamp/replay/checkpoint/generation/archive gaps."
+    },
+    {
+      "type": "review",
+      "ref": ".terminus/reviews/jetstream-regional-stream-continuity/f73b6c9a/jetstream-regional-stream-continuity-f73b6c9a-spec-test-contract-bc501441f0.json",
+      "observation": "Frozen exhaustive Q4 on f73b6c9a: 12 current blockers now under adjudication."
+    },
+    {
+      "type": "artifact",
+      "ref": "git-diff:440aa83862a3234678e27bd70319623735964173..f73b6c9a3cf52c1929a622798f36fc2e480052d4",
+      "observation": "Task delta is only solution/files/engine.py, tests/test_continuity.py and tests/test_contract_coverage.py; instruction, contract, runtime and solver-visible environment are unchanged. Old/new verifier and solution files were semantically inspected."
+    },
+    {
+      "type": "run",
+      "ref": "github-actions:31350811319/job:93341174929",
+      "observation": "Frozen refreeze: Preflight/Ruff/Oracle/NOP passed; Oracle reward 1.0, NOP reward 0.0. Later job failure was LLMaJ credential preparation, so deterministic separation is established but semantic Q4 acceptance is not."
+    }
+  ],
+  "findings": [
+    {
+      "id": "ADJ-Q4-001",
+      "severity": "HIGH",
+      "status": "OBSERVED",
+      "criterion": "Physical JetStream topology/source materialization must be behaviorally verified, not only logical topology objects.",
+      "evidence_refs": [
+        ".terminus/reviews/jetstream-regional-stream-continuity/440aa838/jetstream-regional-stream-continuity-440aa838-spec-test-contract-7c5bbb5a2b.json",
+        ".terminus/reviews/jetstream-regional-stream-continuity/f73b6c9a/jetstream-regional-stream-continuity-f73b6c9a-spec-test-contract-bc501441f0.json",
+        "jetstream-regional-stream-continuity/environment/continuity/docs/continuity-contract.md",
+        "git-diff:440aa83862a3234678e27bd70319623735964173..f73b6c9a3cf52c1929a622798f36fc2e480052d4"
+      ],
+      "why_it_matters": "A solver can satisfy engine.topology() assertions while RuntimeBootstrap materializes a different external JetStream stream/source configuration, violating a physical solver-visible contract.",
+      "minimal_remediation": "Add a contract-derived external JetStream bootstrap/topology check for east, west, hub and hub sources.",
+      "regression_risk": "Keep expectations external/contract-derived; avoid asserting RuntimeBootstrap internals beyond observable JetStream configuration."
+    },
+    {
+      "id": "ADJ-Q4-002",
+      "severity": "HIGH",
+      "status": "OBSERVED",
+      "criterion": "The verifier must observe real edge-to-hub source convergence exactly once by stable event identity.",
+      "evidence_refs": [
+        ".terminus/reviews/jetstream-regional-stream-continuity/440aa838/jetstream-regional-stream-continuity-440aa838-spec-test-contract-7c5bbb5a2b.json",
+        ".terminus/reviews/jetstream-regional-stream-continuity/f73b6c9a/jetstream-regional-stream-continuity-f73b6c9a-spec-test-contract-bc501441f0.json",
+        "jetstream-regional-stream-continuity/environment/continuity/docs/continuity-contract.md",
+        "git-diff:440aa83862a3234678e27bd70319623735964173..f73b6c9a3cf52c1929a622798f36fc2e480052d4"
+      ],
+      "why_it_matters": "The task's core recovery outcome is edge-to-hub convergence; observing only the edge publish boundary cannot distinguish a broken hub source path.",
+      "minimal_remediation": "Observe a real edge event/replay sourced into REGIONAL_RAW_ARCHIVE exactly once with stable identity/origin metadata.",
+      "regression_risk": "Use deterministic polling/time bounds and stable event identity to avoid timing-only flakiness; do not infer convergence from counters."
+    },
+    {
+      "id": "ADJ-Q4-003",
+      "severity": "HIGH",
+      "status": "OBSERVED",
+      "criterion": "Retention grading must use verifier-independent horizon/contiguity oracles and observe physical raw-stream retention.",
+      "evidence_refs": [
+        ".terminus/reviews/jetstream-regional-stream-continuity/440aa838/jetstream-regional-stream-continuity-440aa838-spec-test-contract-7c5bbb5a2b.json",
+        ".terminus/reviews/jetstream-regional-stream-continuity/f73b6c9a/jetstream-regional-stream-continuity-f73b6c9a-spec-test-contract-bc501441f0.json",
+        "jetstream-regional-stream-continuity/environment/continuity/docs/continuity-contract.md",
+        "git-diff:440aa83862a3234678e27bd70319623735964173..f73b6c9a3cf52c1929a622798f36fc2e480052d4"
+      ],
+      "why_it_matters": "Using implementation-derived expected values can make the verifier agree with the same wrong formula/helper, and logical policy values do not prove the physical stream retains data for the required horizon.",
+      "minimal_remediation": "Use verifier-owned horizon/contiguity calculations and inspect physical JetStream max_age; assert exact cleanup minimum.",
+      "regression_risk": "Do not import expected horizon or contiguous-floor logic from the implementation under test; preserve age/hold/replay-pin boundaries."
+    },
+    {
+      "id": "ADJ-Q4-004",
+      "severity": "HIGH",
+      "status": "OBSERVED",
+      "criterion": "Physical origin recreation and sequence regression are independent generation-transition signals.",
+      "evidence_refs": [
+        ".terminus/reviews/jetstream-regional-stream-continuity/440aa838/jetstream-regional-stream-continuity-440aa838-spec-test-contract-7c5bbb5a2b.json",
+        ".terminus/reviews/jetstream-regional-stream-continuity/f73b6c9a/jetstream-regional-stream-continuity-f73b6c9a-spec-test-contract-bc501441f0.json",
+        "jetstream-regional-stream-continuity/environment/continuity/docs/continuity-contract.md",
+        "git-diff:440aa83862a3234678e27bd70319623735964173..f73b6c9a3cf52c1929a622798f36fc2e480052d4"
+      ],
+      "why_it_matters": "An implementation that recognizes only sequence regression or only fingerprint recreation can pass coupled tests while violating the independent OR condition in the contract.",
+      "minimal_remediation": "Add changed-fingerprint recreation without sequence regression, retaining the independent same-fingerprint regression case.",
+      "regression_risk": "Retain both normal monotonic continuation and same-fingerprint regression coverage so the added recreation case does not collapse the two signals again."
+    },
+    {
+      "id": "ADJ-Q4-005",
+      "severity": "MEDIUM",
+      "status": "OBSERVED",
+      "criterion": "Contractual reconciliation duplicate/metadata count fields need non-vacuous, unambiguous behavioral checks.",
+      "evidence_refs": [
+        ".terminus/reviews/jetstream-regional-stream-continuity/440aa838/jetstream-regional-stream-continuity-440aa838-spec-test-contract-7c5bbb5a2b.json",
+        ".terminus/reviews/jetstream-regional-stream-continuity/f73b6c9a/jetstream-regional-stream-continuity-f73b6c9a-spec-test-contract-bc501441f0.json",
+        "jetstream-regional-stream-continuity/environment/continuity/docs/continuity-contract.md",
+        "git-diff:440aa83862a3234678e27bd70319623735964173..f73b6c9a3cf52c1929a622798f36fc2e480052d4"
+      ],
+      "why_it_matters": "A verifier that checks only nonnegative integer shape cannot detect wrong duplicate/mismatch aggregation, while the contract exposes these operator-facing count fields.",
+      "minimal_remediation": "Use isolated duplicate and metadata-mismatch fixtures with unambiguous expected counts; do not invent combined count semantics.",
+      "regression_risk": "Avoid re-freezing the prior undocumented checksum aggregation; isolate cases or explicitly document combined semantics first."
+    },
+    {
+      "id": "ADJ-Q4-006",
+      "severity": "MEDIUM",
+      "status": "OBSERVED",
+      "criterion": "Reconciliation must reject wrong archive region/generation association for a matched stable event authority.",
+      "evidence_refs": [
+        ".terminus/reviews/jetstream-regional-stream-continuity/440aa838/jetstream-regional-stream-continuity-440aa838-spec-test-contract-7c5bbb5a2b.json",
+        ".terminus/reviews/jetstream-regional-stream-continuity/f73b6c9a/jetstream-regional-stream-continuity-f73b6c9a-spec-test-contract-bc501441f0.json",
+        "jetstream-regional-stream-continuity/environment/continuity/docs/continuity-contract.md",
+        "git-diff:440aa83862a3234678e27bd70319623735964173..f73b6c9a3cf52c1929a622798f36fc2e480052d4"
+      ],
+      "why_it_matters": "Region and generation are stable origin authority fields; leaving them unchallenged allows reconciliation implementations that ignore material identity dimensions.",
+      "minimal_remediation": "Perturb archive region and generation association and require observable reconciliation divergence without requiring a private finding label.",
+      "regression_risk": "Do not mandate a private finding type; missing/unexpected or metadata divergence is acceptable if the bad association is observably rejected."
+    },
+    {
+      "id": "ADJ-Q4-007",
+      "severity": "MEDIUM",
+      "status": "OBSERVED",
+      "criterion": "Idempotent effect identity must exercise both dimensions of (consumer_name,event_id).",
+      "evidence_refs": [
+        ".terminus/reviews/jetstream-regional-stream-continuity/440aa838/jetstream-regional-stream-continuity-440aa838-spec-test-contract-7c5bbb5a2b.json",
+        ".terminus/reviews/jetstream-regional-stream-continuity/f73b6c9a/jetstream-regional-stream-continuity-f73b6c9a-spec-test-contract-bc501441f0.json",
+        "jetstream-regional-stream-continuity/environment/continuity/docs/continuity-contract.md",
+        "git-diff:440aa83862a3234678e27bd70319623735964173..f73b6c9a3cf52c1929a622798f36fc2e480052d4"
+      ],
+      "why_it_matters": "Testing only one consumer allows an implementation keyed solely by event_id to collapse effects across distinct required consumers.",
+      "minimal_remediation": "Process the same event through two required consumers and prove one effect per (consumer,event).",
+      "regression_risk": "Use required consumers that are valid for the same fixture event; do not accidentally test unrelated filter behavior."
+    },
+    {
+      "id": "ADJ-Q4-008",
+      "severity": "MEDIUM",
+      "status": "OBSERVED",
+      "criterion": "The crash-after-effect-before-ACK boundary must observe checkpoint state before redelivery.",
+      "evidence_refs": [
+        ".terminus/reviews/jetstream-regional-stream-continuity/440aa838/jetstream-regional-stream-continuity-440aa838-spec-test-contract-7c5bbb5a2b.json",
+        ".terminus/reviews/jetstream-regional-stream-continuity/f73b6c9a/jetstream-regional-stream-continuity-f73b6c9a-spec-test-contract-bc501441f0.json",
+        "jetstream-regional-stream-continuity/environment/continuity/docs/continuity-contract.md",
+        "git-diff:440aa83862a3234678e27bd70319623735964173..f73b6c9a3cf52c1929a622798f36fc2e480052d4"
+      ],
+      "why_it_matters": "Without the intermediate crash-state assertion, a solver can delay application checkpoint advancement until redelivery and still satisfy final-state idempotency.",
+      "minimal_remediation": "After ACK failure and before redelivery, assert effect/application checkpoint advanced while ACK progress did not.",
+      "regression_risk": "Preserve the already-added commit-failure no-ACK test and final redelivery idempotency while adding the intermediate state check."
+    },
+    {
+      "id": "ADJ-Q4-009",
+      "severity": "MEDIUM",
+      "status": "OBSERVED",
+      "criterion": "Non-overlapping active replay plans for the same region/generation must be shown to coexist concurrently.",
+      "evidence_refs": [
+        ".terminus/reviews/jetstream-regional-stream-continuity/440aa838/jetstream-regional-stream-continuity-440aa838-spec-test-contract-7c5bbb5a2b.json",
+        ".terminus/reviews/jetstream-regional-stream-continuity/f73b6c9a/jetstream-regional-stream-continuity-f73b6c9a-spec-test-contract-bc501441f0.json",
+        "jetstream-regional-stream-continuity/environment/continuity/docs/continuity-contract.md",
+        "git-diff:440aa83862a3234678e27bd70319623735964173..f73b6c9a3cf52c1929a622798f36fc2e480052d4"
+      ],
+      "why_it_matters": "If the first plan is terminal before the second is created, the suite no longer proves the explicit contract that disjoint active plans may coexist.",
+      "minimal_remediation": "Keep one approved/running plan active while successfully creating a non-overlapping second plan; retain overlap rejection.",
+      "regression_risk": "Preserve overlap rejection and execution-time archive-authority coverage; add a separate concurrent-disjoint positive case rather than undoing those repairs."
+    },
+    {
+      "id": "ADJ-Q4-010",
+      "severity": "MEDIUM",
+      "status": "OBSERVED",
+      "criterion": "Verifier assertions must not freeze undocumented private replay-item status vocabulary.",
+      "evidence_refs": [
+        ".terminus/reviews/jetstream-regional-stream-continuity/440aa838/jetstream-regional-stream-continuity-440aa838-spec-test-contract-7c5bbb5a2b.json",
+        ".terminus/reviews/jetstream-regional-stream-continuity/f73b6c9a/jetstream-regional-stream-continuity-f73b6c9a-spec-test-contract-bc501441f0.json",
+        "jetstream-regional-stream-continuity/environment/continuity/docs/continuity-contract.md",
+        "git-diff:440aa83862a3234678e27bd70319623735964173..f73b6c9a3cf52c1929a622798f36fc2e480052d4"
+      ],
+      "why_it_matters": "Exact private state labels impose undocumented implementation choices and can reject a behaviorally correct solver.",
+      "minimal_remediation": "Replace exact private replay-item status strings with observable publication/archive/fencing/terminal outcomes unless statuses are made contractual.",
+      "regression_risk": "Do not weaken fencing/archive-authority outcomes when removing exact item-state strings."
+    },
+    {
+      "id": "ADJ-Q4-011",
+      "severity": "MEDIUM",
+      "status": "OBSERVED",
+      "criterion": "Stable health subsystem booleans must be meaningfully truthful only to solver-visible semantics; hard-coded self-report cannot pass.",
+      "evidence_refs": [
+        ".terminus/reviews/jetstream-regional-stream-continuity/440aa838/jetstream-regional-stream-continuity-440aa838-spec-test-contract-7c5bbb5a2b.json",
+        ".terminus/reviews/jetstream-regional-stream-continuity/f73b6c9a/jetstream-regional-stream-continuity-f73b6c9a-spec-test-contract-bc501441f0.json",
+        "jetstream-regional-stream-continuity/environment/continuity/docs/continuity-contract.md",
+        "git-diff:440aa83862a3234678e27bd70319623735964173..f73b6c9a3cf52c1929a622798f36fc2e480052d4"
+      ],
+      "why_it_matters": "A stable health report whose subsystem fields can be hard-coded is not a truthful operator report, but hidden exact predicates would also be non-contractual; the closure must preserve this boundary.",
+      "minimal_remediation": "Either define solver-visible semantics for stable health flags and perturb them independently, or narrow graded claims; do not restore private predicates.",
+      "regression_risk": "Do not restore the previous private health predicates unless their semantics are first made solver-visible; grade only explicit durable/external conditions."
+    },
+    {
+      "id": "ADJ-Q4-012",
+      "severity": "MEDIUM",
+      "status": "OBSERVED",
+      "criterion": "generated_at must be semantically a timestamp under a solver-visible representation contract.",
+      "evidence_refs": [
+        ".terminus/reviews/jetstream-regional-stream-continuity/440aa838/jetstream-regional-stream-continuity-440aa838-spec-test-contract-7c5bbb5a2b.json",
+        ".terminus/reviews/jetstream-regional-stream-continuity/f73b6c9a/jetstream-regional-stream-continuity-f73b6c9a-spec-test-contract-bc501441f0.json",
+        "jetstream-regional-stream-continuity/environment/continuity/docs/continuity-contract.md",
+        "git-diff:440aa83862a3234678e27bd70319623735964173..f73b6c9a3cf52c1929a622798f36fc2e480052d4"
+      ],
+      "why_it_matters": "Accepting arbitrary nonempty text/numbers permits a report field called timestamp to contain no timestamp, while requiring an undocumented exact encoding would be equally unfair.",
+      "minimal_remediation": "Define a solver-visible generated_at timestamp representation/rule and validate semantic timestamp values without an undocumented format.",
+      "regression_risk": "Do not silently choose a timestamp encoding in the verifier; align contract and verifier before enforcing syntax."
+    }
+  ],
+  "missing_evidence": [],
+  "change_scope": [
+    "This adjudicator execution writes only the packet review_output_path.",
+    "Any future producer remediation must be explicitly routed by the CI Orchestrator and limited to this frozen canonical closure set."
+  ],
+  "do_not_change": [
+    "Do not modify task/verifier/solution/environment/instruction/captured incident/session state during this adjudicator execution.",
+    "Do not treat Oracle/NOP PASS as semantic acceptance.",
+    "Do not reintroduce private replay statuses, private health predicates or an undocumented generated_at encoding.",
+    "Do not run another Q4 or advance Stage-B before Orchestrator routing."
+  ],
+  "next_gate": "Return control to the CI Orchestrator. It may authorize one consolidated adjudicated closure repair and deterministic refreeze before any later exact-commit Q4 recheck; Stage-B remains blocked.",
+  "role_output": {
+    "DECISION": "BOTH_PARTLY",
+    "CONTROLLING_RULE_OR_EVIDENCE": "Protocol 2.2 no-drip/circuit-breaker controls procedural classification; the unchanged solver-visible instruction/contract plus the exact 440aa838..f73b6c9a semantic diff control materiality. Prior Q4 controls latent-omission classification for unchanged fully reviewable scope; current Q4 controls only findings independently supported by contract or repair-touched regression. Oracle/NOP green is not semantic acceptance.",
+    "SCOPE_RECONCILIATION": "Do not choose either frozen Q4 wholesale. The prior exhaustiveness claim binds no-drip provenance; the current report can still identify materially valid latent omissions, which are not waived. Repair-touched defects route normally. Q4-005/Q4-010/Q4-011/Q4-012 are narrowed so closure does not recreate prior phantom/private contracts.",
+    "REASON": "Pure latent omissions: Q4-001, Q4-002, Q4-004, Q4-006, Q4-007, Q4-008. Mixed latent/repair-touched: Q4-003, Q4-005, Q4-010. Repair-introduced regression: Q4-009. Incomplete prior repairs: Q4-011, Q4-012. All remain materially blocking after narrowing; evidence is sufficient.",
+    "REQUIRED_ACTION": "Freeze the 12 dispositions as the canonical Q4 closure set and return control to the CI Orchestrator. Any remediation must be one consolidated adjudicator-authorized closure repair, preserving external behavioral grading and verifier-independent expected values.",
+    "RECHECK": "After Orchestrator-authorized closure repair and deterministic refreeze, perform the protocol-required exact-commit Q4 recheck with this closure set as mandatory regression coverage. Any later finding resting entirely on unchanged fully reviewable evidence must again route through latent-omission adjudication, not a blind repair loop.",
+    "DISPOSITIONS": [
+      {
+        "current_finding_id": "Q4-001",
+        "classification": "LATENT_REVIEWER_OMISSION",
+        "disposition": "UPHOLD",
+        "underlying_requirement": "VALID_MATERIAL",
+        "basis": "The contract, RuntimeBootstrap, and physical-materialization surface were unchanged and fully reviewable at 440aa838; prior Q4 nevertheless marked R05 physical topology FULL. The repair did not introduce the logical-vs-physical observation gap.",
+        "required_action": "Add a contract-derived external JetStream bootstrap/topology check for east, west, hub and hub sources."
+      },
+      {
+        "current_finding_id": "Q4-002",
+        "classification": "LATENT_REVIEWER_OMISSION",
+        "disposition": "UPHOLD",
+        "underlying_requirement": "VALID_MATERIAL",
+        "basis": "Edge-to-hub physical convergence was required by the unchanged instruction/contract before 440aa838. The prior exhaustive Q4 observed only west-origin physical replay and did not require observation of sourced arrival in REGIONAL_RAW_ARCHIVE.",
+        "required_action": "Observe a real edge event/replay sourced into REGIONAL_RAW_ARCHIVE exactly once with stable identity/origin metadata."
+      },
+      {
+        "current_finding_id": "Q4-003",
+        "classification": "MIXED_LATENT_AND_REPAIR_TOUCHED",
+        "disposition": "UPHOLD",
+        "underlying_requirement": "VALID_MATERIAL",
+        "basis": "The missing physical max_age observation and use of a solver-owned contiguous_floor as oracle were already reviewable before repair; the repair additionally changed the horizon boundary to use policy.required_horizon_seconds from the implementation under test, making the exact-horizon check circular. This is not a wholly latent finding and not a wholly new regression.",
+        "required_action": "Use verifier-owned horizon/contiguity calculations and inspect physical JetStream max_age; assert exact cleanup minimum."
+      },
+      {
+        "current_finding_id": "Q4-004",
+        "classification": "LATENT_REVIEWER_OMISSION",
+        "disposition": "UPHOLD",
+        "underlying_requirement": "VALID_MATERIAL",
+        "basis": "The unchanged contract says physical recreation OR a sequence lower than the confirmed checkpoint triggers a pending generation. Prior Q4-005 caught only the missing same-fingerprint sequence-regression case; it did not independently test changed fingerprint/recreation without a sequence regression.",
+        "required_action": "Add changed-fingerprint recreation without sequence regression, retaining the independent same-fingerprint regression case."
+      },
+      {
+        "current_finding_id": "Q4-005",
+        "classification": "MIXED_PRIOR_INCOMPLETE_REPAIR_AND_LATENT_OMISSION",
+        "disposition": "UPHOLD_NARROWED",
+        "underlying_requirement": "VALID_MATERIAL",
+        "basis": "Prior Q4-007 already identified ambiguous duplicate/metadata count semantics. The repair responded by weakening exact count assertions to type/nonnegative checks, which is an incomplete repair. Separately, the absence of an actual duplicate-observation scenario pre-existed and is a latent omission.",
+        "required_action": "Use isolated duplicate and metadata-mismatch fixtures with unambiguous expected counts; do not invent combined count semantics."
+      },
+      {
+        "current_finding_id": "Q4-006",
+        "classification": "LATENT_REVIEWER_OMISSION",
+        "disposition": "UPHOLD",
+        "underlying_requirement": "VALID_MATERIAL",
+        "basis": "Region and origin_generation are listed as end-to-end origin fields in the unchanged contract. Prior Q4-006 requested source_stream and origin_sequence dimensions but omitted region/generation even though the same archive-identity surface was fully reviewable.",
+        "required_action": "Perturb archive region and generation association and require observable reconciliation divergence without requiring a private finding label."
+      },
+      {
+        "current_finding_id": "Q4-007",
+        "classification": "LATENT_REVIEWER_OMISSION",
+        "disposition": "UPHOLD",
+        "underlying_requirement": "VALID_MATERIAL",
+        "basis": "The unchanged contract explicitly defines the effect key as (consumer_name,event_id), while the prior exhaustive Q4 marked R08 FULL using only same-consumer redelivery and distinct-event cases. The missing consumer-name dimension was fully reviewable and untouched by repair.",
+        "required_action": "Process the same event through two required consumers and prove one effect per (consumer,event)."
+      },
+      {
+        "current_finding_id": "Q4-008",
+        "classification": "LATENT_REVIEWER_OMISSION",
+        "disposition": "UPHOLD",
+        "underlying_requirement": "VALID_MATERIAL",
+        "basis": "The crash-after-effect-before-ACK test and the contract ordering were already present before repair. Prior Q4-004 added only the commit-failure no-ACK assertion and missed the need to inspect checkpoint state immediately after an ACK-boundary crash.",
+        "required_action": "After ACK failure and before redelivery, assert effect/application checkpoint advanced while ACK progress did not."
+      },
+      {
+        "current_finding_id": "Q4-009",
+        "classification": "REPAIR_INTRODUCED_REGRESSION",
+        "disposition": "UPHOLD",
+        "underlying_requirement": "VALID_MATERIAL",
+        "basis": "At 440aa838 the replay test created a second disjoint plan while the first approved plan was still active, and prior Q4 explicitly marked R16 FULL. During repair of execution-time archive authority, the test began executing the first plan to completion before creating the second, removing the concurrent-disjoint positive boundary.",
+        "required_action": "Keep one approved/running plan active while successfully creating a non-overlapping second plan; retain overlap rejection."
+      },
+      {
+        "current_finding_id": "Q4-010",
+        "classification": "MIXED_REPAIR_INTRODUCED_AND_LATENT_IMPLEMENTATION_COUPLING",
+        "disposition": "UPHOLD_NARROWED",
+        "underlying_requirement": "VALID_MATERIAL_AS_IMPLEMENTATION_INDEPENDENCE",
+        "basis": "The repair added exact ALREADY_ARCHIVED/PUBLISHED replay-item state assertions while closing prior Q4-003. Exact PENDING/PUBLISHED state strings also existed in the stale-fence test before repair and were missed by the prior exhaustive Q4. The contract defines archive-authority/no-op and fencing effects, not replay-item private vocabulary.",
+        "required_action": "Replace exact private replay-item status strings with observable publication/archive/fencing/terminal outcomes unless statuses are made contractual."
+      },
+      {
+        "current_finding_id": "Q4-011",
+        "classification": "PRIOR_FINDING_INCOMPLETELY_REPAIRED",
+        "disposition": "UPHOLD_NARROWED",
+        "underlying_requirement": "VALID_MATERIAL_ONLY_AT_SOLVER_VISIBLE_SEMANTICS",
+        "basis": "Prior Q4-012 correctly rejected hidden exact predicates for the seven health booleans and allowed either documenting their semantics or grading only contract-defined relations/outcomes. The repair removed the hidden predicates but retained seven contractual subsystem flags while independently validating almost none of their truth, allowing hard-coded booleans to pass.",
+        "required_action": "Either define solver-visible semantics for stable health flags and perturb them independently, or narrow graded claims; do not restore private predicates."
+      },
+      {
+        "current_finding_id": "Q4-012",
+        "classification": "PRIOR_FINDING_INCOMPLETELY_REPAIRED",
+        "disposition": "UPHOLD_NARROWED",
+        "underlying_requirement": "VALID_MATERIAL_STABLE_INTERFACE",
+        "basis": "Prior Q4-011 rejected requiring a timezone-aware ISO string because the contract said only timestamp. The repair removed that phantom format but now accepts any nonempty string and arbitrary number, so a non-timestamp can pass while the representation remains ambiguous.",
+        "required_action": "Define a solver-visible generated_at timestamp representation/rule and validate semantic timestamp values without an undocumented format."
+      }
+    ],
+    "CANONICAL_CLOSURE_SET": [
+      "Q4-001",
+      "Q4-002",
+      "Q4-003",
+      "Q4-004",
+      "Q4-005",
+      "Q4-006",
+      "Q4-007",
+      "Q4-008",
+      "Q4-009",
+      "Q4-010",
+      "Q4-011",
+      "Q4-012"
+    ],
+    "PURE_LATENT_REVIEWER_OMISSIONS": [
+      "Q4-001",
+      "Q4-002",
+      "Q4-004",
+      "Q4-006",
+      "Q4-007",
+      "Q4-008"
+    ],
+    "MIXED_LATENT_AND_REPAIR_TOUCHED": [
+      "Q4-003",
+      "Q4-005",
+      "Q4-010"
+    ],
+    "REPAIR_INTRODUCED_OR_INCOMPLETE": [
+      "Q4-009",
+      "Q4-011",
+      "Q4-012"
+    ],
+    "REJECTED_OR_DOWNGRADED": [],
+    "UNRESOLVED": [],
+    "NO_DRIP_EFFECT": "The closure surface is frozen here. No current blocker may start an unbounded ordinary repair/re-review loop; later unchanged-scope novelty must be adjudicated."
+  }
+}
