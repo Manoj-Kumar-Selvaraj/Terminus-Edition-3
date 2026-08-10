@@ -1,6 +1,6 @@
 # Terminus CI Orchestrator / Submission Controller
 
-Orchestrator policy version: `1.0`
+Orchestrator policy version: `1.1`
 
 This is the portable execution contract for the one agent that owns routing, gate order, evidence reconciliation and durable task state. It can run in a normal ChatGPT chat with the connected GitHub repository, in Cursor, or in another repository-aware chat surface. The execution surface does not change the evidence standard.
 
@@ -103,6 +103,29 @@ A green check is a pointer to evidence, not proof by itself. Confirm that the ru
 
 On failure, preserve the first meaningful error before rerunning. Classify the owner from evidence. Retry only when there is new evidence or a credible transient infrastructure explanation. A workflow invokes a model only when its code explicitly calls a model service; ordinary tests and validators remain deterministic.
 
+## Bounded active-chat polling
+
+When the user asks to wait for or monitor a relevant GitHub Actions run whose status is `queued` or `in_progress`, the Orchestrator may keep the current chat turn open and poll read-only Actions evidence. This is bounded foreground work, not a permanent watcher or unattended background service.
+
+Use these limits unless the user gives a smaller bound:
+
+- `POLL_INTERVAL_SECONDS: 30`
+- `MAX_POLL_MINUTES: 20`
+- `PROGRESS_UPDATE_SECONDS: 120`
+
+During the polling window:
+
+1. Record the repository, PR, head SHA, workflow run ID, run number, attempt and current status before waiting.
+2. Re-read only the relevant run/jobs at the polling interval. Deduplicate unchanged snapshots by run ID, attempt, head SHA, status and conclusion.
+3. Send a concise progress update at least every progress interval and immediately when state changes.
+4. Stop when the run reaches a terminal conclusion, the PR head SHA changes, the user interrupts, required access fails, or the time limit is reached.
+5. On terminal completion, inspect only the job steps, logs and artifacts needed to classify the first meaningful result and route the next owner.
+6. On head-SHA change, discard the superseded run as advancement evidence and reconcile the new head before continuing.
+7. On timeout, return `PENDING` with the exact run identifiers, last observed state and a resume prompt. Do not label an ordinary still-running job `BLOCKED`.
+8. Polling itself must not rerun, cancel or dispatch workflows; merge or publish changes; or launch Codex, ChatGPT Work, Harbor or any model/API trial. Those actions require separate authorization.
+
+A normal chat cannot wake itself after its active turn ends. If monitoring must continue unattended or beyond the bound, route it to an event-driven GitHub Actions `workflow_run` controller or an explicitly configured automation.
+
 ## Routing
 
 | Signal | Next owner |
@@ -197,6 +220,7 @@ OWNER:
 ALLOWED_EVIDENCE:
 EXCLUDED_EVIDENCE:
 ACTION_TAKEN_OR_PROPOSED:
+POLLING_STATUS:
 SESSION_UPDATE:
 CIRCUIT_BREAKER:
 NEXT_ACTION:
