@@ -4,6 +4,12 @@ Invocation policy version: `1.1`
 
 `PROTOCOL.md` defines the evidence contract. This file defines the operating sequence for one specialist review.
 
+## Start the Orchestrator
+
+The CI Orchestrator is not a semantic reviewer and does not receive a review packet. Start it with the project agent `.cursor/agents/terminus-ci-orchestrator.md` or use `.terminus/agents/CI_ORCHESTRATOR.md` as the first prompt in a normal repository-connected chat. Supply exactly one task name. It reconciles Git, session and CI evidence, then returns a separate one-role handoff for the first non-current gate.
+
+Do not reuse the Orchestrator chat as the routed producer, fixer or reviewer chat. Results return to the Orchestrator for provenance validation and durable session updates.
+
 ## Generate, do not hand-write
 
 After the task and governing control-plane policy are committed:
