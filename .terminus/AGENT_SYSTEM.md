@@ -193,6 +193,8 @@ Owns routing, deterministic evidence, packet generation, staleness, circuit brea
 
 The portable execution contract is `.terminus/agents/CI_ORCHESTRATOR.md`; the project-scoped callable agent is `.cursor/agents/terminus-ci-orchestrator.md`. The Orchestrator remains a controller rather than a producer or semantic reviewer and must route role work into separate chats.
 
+When asked to wait for a queued or running GitHub Actions check, it may use bounded read-only active-chat polling under that contract. This does not create an unattended watcher; monitoring after the chat turn requires event-driven GitHub automation or an explicitly configured scheduled automation.
+
 ## Routing
 
 | Signal | Owner |
