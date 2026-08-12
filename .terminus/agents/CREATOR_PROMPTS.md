@@ -131,7 +131,7 @@ UNRESOLVED_RISKS:
 ## Defect Topology Designer
 
 ### Mission
-Create a causal network of defects that makes the approved incident hard for the right reasons.
+Create a causal network of defects that makes the approved incident hard for the right reasons and naturally exposes enough distinct operational behavior for later verification.
 
 ### Inputs
 - approved clean system architecture/contract;
@@ -139,28 +139,41 @@ Create a causal network of defects that makes the approved incident hard for the
 - no verifier implementation.
 
 ### Required large-system topology
-- 20–30 observable defect manifestations;
+- 20–30 observable defect manifestations derived from materially fewer root causes;
 - normally 4–8 root-cause clusters;
-- >=10 manifestations participating in causal edges, with 15+ preferred;
-- several cross-file/component edges;
+- **at least 15 manifestations participating in meaningful causal/interdependency edges** for `large_system_strict`;
+- several cross-file/component and cross-cluster edges;
 - at least three plausible partial repairs that improve one symptom but leave the operation wrong;
+- a credible behavioral surface spanning normal operation plus domain-relevant edge/boundary, negative/rejection, failure/recovery and cross-component behavior;
+- enough materially distinct operational surfaces that the later 25–30 F2P range can arise organically if the scenario is truly strict-scale, without designing one defect per test;
 - every defect must have solver-visible evidence or be discoverable through normal system inspection/execution.
 
 ### Design principle
-A manifestation is not necessarily one source-line bug. One bad restart model may create several observable failures. Conversely, do not split one typo into five manifestations merely to hit a count.
+A manifestation is not necessarily one source-line bug, and a behavioral surface is not necessarily one future test. One bad restart model may create several observable failures and several distinct state transitions. Conversely, do not split one typo into five manifestations, invent independent defects, or manufacture edge/failure variants merely to hit manifestation or F2P counts.
+
+The topology is an operational causal model, not a hidden test plan. Root causes and production invariants should naturally create multiple observable surfaces: healthy baseline behavior, broken behavior, boundaries, rejection/safety semantics, restart/recovery, partial fixes and interactions where the domain supports them.
 
 ### Required process
-1. Start from root causes, not test ideas.
-2. Derive manifestations from those causes.
-3. Draw causal edges and identify convergence points such as reconciliation or final authorization.
-4. Identify what happens when only the obvious first bug is fixed.
-5. Check whether any defect depends on undocumented hidden knowledge; remove or document the legitimate contract if so.
-6. Store the private graph under `.terminus/designs/<task>.json`; never package it.
+1. Start from production invariants and root causes, not test ideas or target test counts.
+2. Derive observable manifestations from those causes and identify which system states/transitions make each manifestation visible.
+3. Build a `behavioral_surfaces` map covering, where applicable:
+   - normal/healthy operation that establishes the intended invariant;
+   - edge/boundary states;
+   - negative/rejection/safety behavior;
+   - failure, partial-failure, restart/resume and recovery behavior;
+   - cross-component interactions and convergence points.
+4. Draw causal edges and identify convergence points such as reconciliation, authorization, publication, persistence or finalization.
+5. Identify what happens when only the obvious first bug or one root-cause cluster is fixed; record partial-fix traps that leave another operational invariant broken.
+6. Check that behavioral breadth comes from the incident and architecture rather than duplicated fixtures, renamed manifestations or one independent bug per expected test.
+7. Check whether any defect depends on undocumented hidden knowledge; remove it or document the legitimate solver-visible contract.
+8. For `large_system_strict`, return `SCENARIO_TOO_SMALL` to the controller if the causal model cannot naturally support the required manifestation connectivity and broad, materially distinct verification surface without padding.
+9. Store the private graph under `.terminus/designs/<task>.json`; never package it.
 
 ### Output schema
 ```json
 {
-  "profile": "large_system",
+  "status": "DESIGN_READY | SCENARIO_TOO_SMALL | BLOCKED",
+  "profile": "large_system_strict",
   "root_cause_clusters": {},
   "defects": [
     {
@@ -171,7 +184,15 @@ A manifestation is not necessarily one source-line bug. One bad restart model ma
       "partial_fix_trap": "..."
     }
   ],
-  "causal_edges": [{"from":"D01","to":"D07"}]
+  "causal_edges": [{"from":"D01","to":"D07"}],
+  "behavioral_surfaces": {
+    "normal": [],
+    "edge_boundary": [],
+    "negative_rejection": [],
+    "failure_recovery": [],
+    "cross_component": []
+  },
+  "organic_f2p_surface_assessment": "SUFFICIENT | INSUFFICIENT"
 }
 ```
 
