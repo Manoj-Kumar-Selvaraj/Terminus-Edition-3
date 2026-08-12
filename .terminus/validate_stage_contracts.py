@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import json
+import re
 import sys
 from pathlib import Path
 
@@ -11,6 +12,9 @@ ROOT = Path(__file__).resolve().parents[1]
 T = ROOT / ".terminus"
 REGISTRY_PATH = T / "agents" / "stage_contracts.json"
 SCHEMA_PATH = T / "agents" / "schemas" / "stage_contracts.schema.json"
+STAGE_POLICY_PATH = T / "agents" / "STAGE_CONTRACTS.md"
+INSTRUCTION_POLICY_PATH = T / "agents" / "INSTRUCTION_POLICY.md"
+AGENT_SYSTEM_PATH = T / "AGENT_SYSTEM.md"
 
 REQUIRED_STAGE_IDS = {
     "RULE_RESOLUTION",
@@ -76,6 +80,47 @@ VALID_ROLE_CLASSES = {
 
 NON_STAGE_TRANSITIONS = {"FROZEN_CANDIDATE", "END"}
 
+AGENT_SYSTEM_BINDING_MARKERS = [
+    "Structured execution bindings",
+    ".terminus/agents/stage_contracts.json",
+    ".terminus/agents/STAGE_CONTRACTS.md",
+    ".terminus/agents/schemas/stage_contracts.schema.json",
+    ".terminus/agents/INSTRUCTION_POLICY.md",
+    "INPUT CONTRACT",
+    "OUTPUT CONTRACT",
+    "DETERMINISTIC VALIDATORS",
+    "SEMANTIC REVIEWERS",
+    "FAILURE ROUTES",
+    "SUCCESS TRANSITION",
+    "STALE_ON",
+]
+
+STAGE_POLICY_MARKERS = [
+    "Stage-contract policy version: `1.0`",
+    "Canonical stage fields",
+    "Validator honesty rule",
+    "Input/output contract rule",
+    "Runtime prompt projection",
+    "Section-to-stage bindings",
+    "Failure routing principle",
+    "Staleness principle",
+]
+
+INSTRUCTION_POLICY_MARKERS = [
+    "Instruction policy version: `1.0`",
+    "<=2 short paragraphs or <=20 concise bullets",
+    "Required instruction content",
+    "Instruction versus solver-visible documentation",
+    "Implementation-diagnosis boundary",
+    "Current-state claims and evidence",
+    "Jira/Slack handoff test",
+    "Requirement-completeness test",
+    "Reverse-outline test",
+    "Spec-file-loophole test",
+    "Current-state evidence test",
+    "Structured processing contract",
+]
+
 
 def fail(errors: list[str], message: str) -> None:
     errors.append(message)
@@ -90,6 +135,13 @@ def load_json(path: Path, errors: list[str]) -> object:
     except json.JSONDecodeError as exc:
         fail(errors, f"invalid JSON in {path.relative_to(ROOT)}: {exc}")
         return {}
+
+
+def load_text(path: Path, errors: list[str]) -> str:
+    if not path.is_file():
+        fail(errors, f"missing required file: {path.relative_to(ROOT)}")
+        return ""
+    return path.read_text(encoding="utf-8")
 
 
 def ensure_string_list(errors: list[str], stage_id: str, field: str, value: object) -> None:
@@ -113,10 +165,26 @@ def validate_file_references(errors: list[str], stage_id: str, field: str, refs:
             fail(errors, f"{stage_id}: {field} references missing repository file {ref}")
 
 
+def require_markers(errors: list[str], text: str, path: Path, markers: list[str]) -> None:
+    for marker in markers:
+        if marker.lower() not in text.lower():
+            fail(errors, f"{path.relative_to(ROOT)} missing required marker: {marker}")
+
+
 def main() -> int:
     errors: list[str] = []
     registry = load_json(REGISTRY_PATH, errors)
     schema = load_json(SCHEMA_PATH, errors)
+    stage_policy = load_text(STAGE_POLICY_PATH, errors)
+    instruction_policy = load_text(INSTRUCTION_POLICY_PATH, errors)
+    agent_system = load_text(AGENT_SYSTEM_PATH, errors)
+
+    require_markers(errors, stage_policy, STAGE_POLICY_PATH, STAGE_POLICY_MARKERS)
+    require_markers(errors, instruction_policy, INSTRUCTION_POLICY_PATH, INSTRUCTION_POLICY_MARKERS)
+    require_markers(errors, agent_system, AGENT_SYSTEM_PATH, AGENT_SYSTEM_BINDING_MARKERS)
+
+    if not re.search(r"Agent-system policy version: `[^`]+`", agent_system):
+        fail(errors, "AGENT_SYSTEM.md must declare an Agent-system policy version")
 
     if isinstance(schema, dict):
         if schema.get("$id") != "terminus-stage-contracts-v1":
@@ -242,6 +310,25 @@ def main() -> int:
         if isinstance(transition, str) and transition not in id_set | NON_STAGE_TRANSITIONS:
             fail(errors, f"{stage.get('id', '<unknown>')}: success_transition references unknown stage/state {transition!r}")
 
+    instruction_stage = next(
+        (stage for stage in stages if isinstance(stage, dict) and stage.get("id") == "INSTRUCTION_DRAFT"),
+        None,
+    )
+    if isinstance(instruction_stage, dict):
+        policy_files = instruction_stage.get("policy_files", [])
+        if ".terminus/agents/INSTRUCTION_POLICY.md" not in policy_files:
+            fail(errors, "INSTRUCTION_DRAFT must bind .terminus/agents/INSTRUCTION_POLICY.md")
+        required_inputs = instruction_stage.get("input_contract", {}).get("required_fields", [])
+        for field in [
+            "ENGINEERING_OBJECTIVE",
+            "REQUIRED_END_STATE",
+            "FUNCTIONAL_REQUIREMENTS",
+            "REFERENCED_DOCS",
+            "REQUIRED_OUTPUTS",
+        ]:
+            if field not in required_inputs:
+                fail(errors, f"INSTRUCTION_DRAFT missing required input contract field {field}")
+
     if errors:
         print("Terminus stage-contract validation FAILED:")
         for item in errors:
@@ -249,7 +336,10 @@ def main() -> int:
         return 1
 
     print("Terminus stage-contract validation PASS")
-    print(f"contract_version=1.0 stages={len(stages)} required_stages={len(REQUIRED_STAGE_IDS)}")
+    print(
+        f"contract_version=1.0 stages={len(stages)} required_stages={len(REQUIRED_STAGE_IDS)} "
+        "instruction_policy=1.0 structured_bindings=present"
+    )
     return 0
 
 
