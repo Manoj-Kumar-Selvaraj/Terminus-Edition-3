@@ -4,13 +4,17 @@ Creator prompt policy version: `1.0`
 
 These are producer prompts. They are intentionally separate from the independent reviewer prompts in `PROMPTS.md`. A producer may revise its own artifact after findings are routed back, but it may never issue the acceptance verdict for that artifact.
 
+Before any creator runs, the Creation Controller must provide the pinned `CREATION_RULE_CONTEXT` produced by `RULE_RESOLUTION`. Creators use that rule baseline rather than independently substituting a newer or different repository baseline mid-run.
+
 All creators read, in order:
 
-1. current authoritative Edition 3 rules;
-2. `.terminus/reviewers/REVIEWER_CHECKLIST.md`;
+1. controller-provided `CREATION_RULE_CONTEXT` (including the pinned `TERMINUS_3_AI_INSTRUCTIONS.md` task rules, control-plane commit, active validators and creation profile);
+2. `.terminus/reviewers/REVIEWER_CHECKLIST.md` as resolved by that context;
 3. `.terminus/agents/CREATION_PIPELINE.md`;
 4. `.terminus/agents/PROTOCOL.md` where its evidence/staleness rules apply;
 5. the role-specific prompt below.
+
+If a creator detects that governing task rules materially differ from the pinned context, it must return control to the Creation Controller for rule re-resolution instead of silently continuing under a mixed baseline.
 
 For `large_system_strict` tasks, numeric targets are hard authoring constraints in addition to structural-authenticity checks. If the target cannot be met through meaningful system behavior, return `SCENARIO_TOO_SMALL` rather than pad or silently downgrade the task. The legacy `large_system` profile uses numeric targets diagnostically only when the controller records why strict scale is inappropriate.
 
