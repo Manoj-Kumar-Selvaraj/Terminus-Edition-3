@@ -64,7 +64,7 @@ For an operational/stateful strict task, before Instruction Writer or review:
 
 1. **Scenario Researcher** — incident candidates, evidence surface, persona, normal workflow, originality and scale fit.
 2. **System Architect / Environment Builder** — runtime topology, representative state, logs/operator evidence, starter implementation.
-3. **Defect Topology Designer** — private causal graph and partial-fix traps.
+3. **Defect Topology Designer** — private causal graph, strict manifestation connectivity, behavioral-surface breadth across normal/edge/negative/failure/recovery/cross-component behavior, and partial-fix traps; returns `SCENARIO_TOO_SMALL` when strict breadth would require padding.
 4. **Reference Solution Author** — general deterministic repair.
 5. **Verifier Author** — behavioral F2P/P2P verifier from solver-visible contract, including sufficient positive, edge, negative and failure-path scenarios according to operational risk.
 6. **Human Writing Researcher** — public human-engineering calibration and task-specific writing profile.
