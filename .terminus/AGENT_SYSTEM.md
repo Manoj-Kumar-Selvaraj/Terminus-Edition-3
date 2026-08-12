@@ -90,9 +90,11 @@ Read `.terminus/agents/CI_ORCHESTRATOR.md` when starting or resuming the control
 
 ## Creation system
 
-New tasks go through the producer-side controller before independent review:
+New tasks go through the producer-side controller before independent review. Before scenario design, the controller resolves and pins the authoritative task-rule baseline, active validators and creation profile for the run:
 
-`Scenario Research -> System Architecture -> Defect Topology -> Environment/Starter -> Reference Solution -> Verifier -> Human Writing Research -> Instruction -> Spec Alignment -> Documentation -> Format Gate -> Assembly -> Complexity Governor -> deterministic Oracle/NOP -> FROZEN_CANDIDATE`
+`Rule Resolution -> Creation Profile -> Scenario Research -> System Architecture -> Defect Topology -> Environment/Starter -> Reference Solution -> Verifier -> Human Writing Research -> Instruction -> Spec Alignment -> Documentation -> Format Gate -> Assembly -> Complexity Governor -> Runtime Authenticity -> deterministic Oracle/NOP -> FROZEN_CANDIDATE`
+
+`TERMINUS_3_AI_INSTRUCTIONS.md` is the repository-wide task-rule source for creation; `.terminus/agents/CREATION_CONTROLLER.md` defines how the controller resolves the complete `CREATION_RULE_CONTEXT` and handles rule changes/conflicts before freeze.
 
 Producer roles are defined in `CREATOR_AGENT_REGISTRY.md` and `CREATOR_PROMPTS.md`. The quality overlay adds Q1/Q2/Q3/Q5/Q7 producer/fixers and Q4/Q6/Q8 independent/diagnostic agents.
 
