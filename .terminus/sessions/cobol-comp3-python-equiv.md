@@ -40,7 +40,7 @@ Independent Q4/Q6 in other chats after commit/freeze. Format gate (Q7) and Pre-L
 
 ## Next action
 
-Commit the rework on `task/cobol-comp3-python-equiv` when authorized, then open packet-bound Q4 and Q6 in fresh chats.
+Open two independent chats: Q4 using packet `bedae4bb8e`, Q6 using packet `955995d986`. Create the PR via the GitHub new-PR URL (local `gh` is not authenticated).
 ## Decisions that must survive chat changes
 
 - Domain is warehouse catalog / SKU tape, not EOD payments.
