@@ -77,6 +77,24 @@ CREATOR_ROLE_MARKERS = [
     "Authoring Failure Diagnostician",
 ]
 
+AGENT_SYSTEM_INVARIANT_MARKERS = [
+    "Policy scope and ownership",
+    "Policy precedence and conflicts",
+    "Agent classes and write authority",
+    "State, verdict and freshness namespaces",
+    "Control-plane artifact model",
+    "Fact, evidence, judgment and state",
+    "Single authoritative decision owner",
+    "Idempotency and retry discipline",
+    "Runtime prompt projection",
+    "CONTROLLER",
+    "PRODUCER",
+    "FIXER",
+    "REVIEWER",
+    "ADJUDICATOR",
+    "SIMULATOR",
+]
+
 PROTOCOL_MARKERS = [
     "Generated context packet",
     "Independence rules",
@@ -218,6 +236,10 @@ def main() -> int:
         fail(errors, "REVIEWER_CHECKLIST.md must declare the current checklist snapshot")
     if "Dataset policy version: `1.0`" not in calibration:
         fail(errors, "CALIBRATION_DATASET.md must declare dataset policy version 1.0")
+
+    for marker in AGENT_SYSTEM_INVARIANT_MARKERS:
+        if marker.lower() not in agent_system.lower():
+            fail(errors, f"AGENT_SYSTEM.md missing control-plane invariant marker: {marker}")
 
     for role in REVIEW_ROLE_HEADINGS:
         if role not in agent_system:
@@ -474,6 +496,7 @@ def main() -> int:
     print("Terminus agent-system validation PASS")
     print(
         f"review_roles={len(REVIEW_ROLE_HEADINGS)} creator_markers={len(CREATOR_ROLE_MARKERS)} "
+        f"agent_system_invariants={len(AGENT_SYSTEM_INVARIANT_MARKERS)} "
         f"checklist_criteria={len(criteria)} reviewer_eval_seed_cases={len(case_ids)} "
         "schemas=v3 provenance=packet_bound writing_policy=human_handoff "
         "difficulty_policy=combined_10 complexity_policy=strict_plus_authenticity "
