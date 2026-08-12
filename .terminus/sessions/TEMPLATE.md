@@ -113,7 +113,7 @@ A role-contract change stales only the affected role when the task is unchanged.
 
 - Q1 spec-gap status/evidence: `<status / paths or finding IDs>`
 - Q2 verifier-coverage status/evidence: `<status / paths or finding IDs>`
-- Q3 ambiguity status/evidence: `<status / paths or finding IDs>`
+- Q3 ambiguity status/evidence: `<status / run/path>`
 - Q7 format status/evidence: `<status / run/path>`
 - Q5 Oracle/runtime repair evidence: `<none or failure class + commit/run>`
 - Q4 review ID/result: `<id / path>`
@@ -207,8 +207,8 @@ Tier mapping: `<20% frontier`, `20–<50 advanced`, `50–<80 core`, `80–<100 
 
 ## Policy-conflict ledger
 
-| Conflict ID | Source A | Source B | Impact | Resolution/status |
-| --- | --- | --- | --- | --- |
+| Conflict ID | Source A | Source B | Affected Gate | Impact | Resolution/status |
+| --- | --- | --- | --- | --- | --- |
 
 Never silently resolve an acceptance-relevant current-rule conflict. The combined-ten difficulty rule is already resolved and is not itself a conflict.
 
