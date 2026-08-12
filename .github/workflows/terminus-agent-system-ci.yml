@@ -37,6 +37,7 @@ jobs:
         run: |
           python3 -m py_compile \
             .terminus/validate_agent_system.py \
+            .terminus/validate_stage_contracts.py \
             .terminus/review_contract.py \
             .terminus/new_review_packet.py \
             .terminus/validate_review_freshness.py \
@@ -54,6 +55,10 @@ jobs:
       - name: Validate agent system structure
         if: ${{ !cancelled() }}
         run: python3 .terminus/validate_agent_system.py
+
+      - name: Validate structured stage contracts
+        if: ${{ !cancelled() }}
+        run: python3 .terminus/validate_stage_contracts.py
 
       - name: Validate current review freshness and commit binding
         if: ${{ !cancelled() }}
