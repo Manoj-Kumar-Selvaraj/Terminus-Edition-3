@@ -89,6 +89,7 @@ CREATION_BOOTSTRAP_MARKERS = [
 ]
 
 STRICT_CREATION_MARKERS = [
+    "engineering work package",
     "no upper target",
     "organically",
     "production characteristics",
@@ -99,6 +100,11 @@ STRICT_CREATION_MARKERS = [
     "starter/NOP-fail",
     "Oracle-pass",
     "SCENARIO_TOO_SMALL",
+    "<=20",
+    "material functional",
+    "spec-file-loophole",
+    "what must work",
+    "implementation diagnosis",
 ]
 
 AGENT_SYSTEM_INVARIANT_MARKERS = [
