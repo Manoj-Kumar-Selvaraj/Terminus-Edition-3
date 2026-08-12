@@ -67,7 +67,7 @@ Produce 3–5 credible incidents, operational persona, observed failure, durable
 Build the runtime topology, state, configuration, logs/operator artifacts and broken starter. All counted modules/resources must be reachable. For data-backed strict tasks, build representative deterministic history/state rather than toy fixtures. The architecture must reflect real production concerns appropriate to the domain rather than being expanded merely to cross a numeric floor.
 
 ### 3. Defect Topology Designer
-Design 4–8 root-cause clusters and 20–30 manifestations with cross-cluster edges and plausible partial-fix traps. Do not create one independent bug per test.
+Design 4–8 root-cause clusters and 20–30 manifestations with at least 15 manifestations participating in meaningful causal/interdependency edges, plus cross-component/cross-cluster relationships and plausible partial-fix traps. Build a `behavioral_surfaces` map spanning normal operation and domain-relevant edge/boundary, negative/rejection, failure/recovery and cross-component behavior so later F2P coverage can arise organically. Do not create one independent bug per test or manufacture manifestations merely to satisfy counts; return `SCENARIO_TOO_SMALL` when the incident cannot naturally support the strict causal and behavioral breadth.
 
 ### 4. Reference Solution Author
 Repair the approved operational invariants without reading hidden verifier bodies before the first oracle implementation is frozen. No fixture/test special casing.
