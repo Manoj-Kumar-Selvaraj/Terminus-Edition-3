@@ -10,6 +10,12 @@ This file defines system-wide authority, trust boundaries, agent classes and dec
 
 It does not define individual runnable prompts, per-agent tool permissions, packet/result schemas, task-specific evidence surfaces or role-specific procedures. Those are owned by the referenced protocol, controller, registry, prompt, schema and reviewer-policy files. A narrower policy may specialize a system-wide rule within its declared decision right, but it must not silently contradict this file.
 
+## Policy precedence and conflicts
+
+When authoritative control-plane documents disagree, apply this policy order: repository-wide mandatory rules and active validators; this `AGENT_SYSTEM.md`; `.terminus/agents/PROTOCOL.md` for lifecycle, evidence, freshness and isolation semantics; the role-specific policy within that role's declared decision right; the generated packet for execution-specific evidence binding; the durable task session; then chat or historical prose. A generated packet or session may narrow execution state but cannot override governing policy.
+
+If two applicable authoritative sources cannot be reconciled by specialization, record `POLICY_CONFLICT`, identify the conflicting sources and affected gate, and stop advancement until the conflict is resolved. Never choose the desired outcome, newest prose or majority interpretation as an implicit tie-breaker.
+
 Read `.terminus/agents/CI_ORCHESTRATOR.md` when starting or resuming the controller, `.terminus/agents/PROTOCOL.md` before semantic work, `.terminus/agents/INVOKE.md` before starting a specialist review, and `.terminus/CURSOR_OPERATING.md` when Cursor is the execution surface. Creation uses `.terminus/agents/CREATION_CONTROLLER.md` and `.terminus/agents/CREATOR_AGENT_REGISTRY.md`. The additive eight-agent quality interlock is defined by `.terminus/agents/QUALITY_AGENT_REGISTRY.md` and `.terminus/agents/QUALITY_AGENT_PROMPTS.md`. Acceptance review uses the reviewer checklist, criterion registry and Comprehensive Reviewer contract.
 
 ## Non-negotiable principles
