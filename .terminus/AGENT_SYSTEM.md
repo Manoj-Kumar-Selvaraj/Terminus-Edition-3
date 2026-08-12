@@ -16,6 +16,62 @@ When authoritative control-plane documents disagree, apply this policy order: re
 
 If two applicable authoritative sources cannot be reconciled by specialization, record `POLICY_CONFLICT`, identify the conflicting sources and affected gate, and stop advancement until the conflict is resolved. Never choose the desired outcome, newest prose or majority interpretation as an implicit tie-breaker.
 
+## Agent classes and write authority
+
+Every callable agent has one primary control-plane class:
+
+- **CONTROLLER** — observes state, validates evidence, chooses the next owner and records controller state; it does not create task artifacts or issue semantic acceptance judgments.
+- **PRODUCER** — creates authorized task or documentation artifacts; it cannot independently certify the revision it produced.
+- **FIXER** — modifies an authorized remediation scope after a routed defect; it cannot independently certify its repair.
+- **REVIEWER** — evaluates one bounded decision right against allowed evidence; reviewed task scope is read-only and its writes are limited to authorized review evidence/results.
+- **ADJUDICATOR** — resolves material conflicts between frozen judgments using controlling evidence; it does not silently repair the task while retaining adjudication authority.
+- **SIMULATOR** — produces diagnostic model-perspective evidence only; simulation output is never official acceptance or model-trial evidence.
+
+Write authority follows the class and the narrower role contract. Controllers may write durable control-plane/session state explicitly allowed by their contract; producers/fixers may write only the routed artifact scope; reviewers/adjudicators/simulators may write only their authorized evidence/result artifacts. A role must not expand its write scope merely because the execution surface technically permits it.
+
+## State, verdict and freshness namespaces
+
+Do not use one status word as if it represented every layer of the system.
+
+- **Task/controller state** describes lifecycle position or routing condition, such as `FROZEN_CANDIDATE`, `QUALITY_INTERLOCK_PASS`, `BLOCKED` or `SUBMISSION_READY`.
+- **Role verdict** is the bounded conclusion returned by a reviewer, fixer, simulator or other role and uses only that role's declared/schema-valid vocabulary.
+- **Evidence sufficiency/freshness** describes whether required evidence is available and current, including concepts such as `SUFFICIENT`, `INSUFFICIENT` and `STALE` under the Protocol and schemas.
+
+A role verdict does not directly become task state. The Orchestrator advances task state only after validating all required evidence, provenance, freshness and predecessor gates for the transition.
+
+## Control-plane artifact model
+
+The control plane is layered:
+
+`system policy -> role contract -> generated invocation packet -> execution result -> validated durable session state`
+
+System policy defines global invariants. A role contract narrows one decision right and its permissions. A generated packet binds one execution to the exact task/control-plane evidence surface. The execution result records that role's bounded conclusion. The durable session is a reconciled controller view derived from validated repository, CI and review evidence; it is not an independent source of acceptance truth.
+
+## Fact, evidence, judgment and state
+
+Keep these concepts distinct:
+
+- **FACT** — a directly observable or machine-verifiable condition, such as a Git SHA, file hash, test exit code or workflow conclusion.
+- **EVIDENCE** — preserved material that supports a decision, such as a file reference, packet, result, CI log, artifact or recorded fact bound to provenance.
+- **JUDGMENT** — a semantic conclusion issued by the role that owns that decision right.
+- **STATE** — the Orchestrator's validated representation of where the task currently sits in the workflow.
+
+State transitions must be justified by the required facts/evidence/judgments for that transition. Session prose, desired outcome or an unsupported agent statement cannot substitute for them.
+
+## Single authoritative decision owner
+
+Every acceptance-relevant semantic decision has exactly one authoritative owner role at a time. Other agents may supply facts, evidence, diagnostics or remediation, but they do not override that decision right. When valid frozen judgments materially conflict across different required decision rights, route the conflict through the defined Adjudicator path rather than majority vote or Orchestrator intuition.
+
+## Idempotency and retry discipline
+
+Controller routing is expected to be idempotent: with the same task commit, control-plane commit, applicable role contracts and materially unchanged evidence, repeated reconciliation should identify the same first non-current gate and the same owning role. A changed external run state or newly discovered evidence is a changed input, not an idempotency violation.
+
+A retry of a failed or blocked strategy requires at least one meaningful change: new diagnostic evidence, changed task evidence, changed governing policy/role contract, changed external dependency, or an explicitly different remediation strategy. Otherwise it is a no-progress repetition and must respect the Protocol circuit breakers.
+
+## Runtime prompt projection
+
+Do not inject the entire control plane into every specialist execution merely because it is available. Runtime prompts/packets should project the minimum authoritative policy, role contract, allowed evidence, exclusions, permissions, output contract and completion conditions needed for that role while preserving all governing invariants. Unrelated role detail should remain out of the runtime context unless required for conflict resolution or evidence interpretation.
+
 Read `.terminus/agents/CI_ORCHESTRATOR.md` when starting or resuming the controller, `.terminus/agents/PROTOCOL.md` before semantic work, `.terminus/agents/INVOKE.md` before starting a specialist review, and `.terminus/CURSOR_OPERATING.md` when Cursor is the execution surface. Creation uses `.terminus/agents/CREATION_CONTROLLER.md` and `.terminus/agents/CREATOR_AGENT_REGISTRY.md`. The additive eight-agent quality interlock is defined by `.terminus/agents/QUALITY_AGENT_REGISTRY.md` and `.terminus/agents/QUALITY_AGENT_PROMPTS.md`. Acceptance review uses the reviewer checklist, criterion registry and Comprehensive Reviewer contract.
 
 ## Non-negotiable principles
