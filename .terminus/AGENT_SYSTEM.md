@@ -92,9 +92,11 @@ Read `.terminus/agents/CI_ORCHESTRATOR.md` when starting or resuming the control
 
 New tasks go through the producer-side controller before independent review. Before scenario design, the controller resolves and pins the authoritative task-rule baseline, active validators and creation profile for the run:
 
-`Rule Resolution -> Creation Profile -> Scenario Research -> System Architecture -> Defect Topology -> Environment/Starter -> Reference Solution -> Verifier -> Human Writing Research -> Instruction -> Spec Alignment -> Documentation -> Format Gate -> Assembly -> Complexity Governor -> Runtime Authenticity -> deterministic Oracle/NOP -> FROZEN_CANDIDATE`
+`Rule Resolution -> Creation Profile -> Work-Package Research -> System Architecture -> Defect Topology -> Environment/Starter -> Reference Solution -> Verifier -> Human Writing Research -> Instruction -> Spec Alignment -> Documentation -> Format Gate -> Assembly -> Complexity Governor -> Runtime Authenticity -> deterministic Oracle/NOP -> FROZEN_CANDIDATE`
 
 `TERMINUS_3_AI_INSTRUCTIONS.md` is the repository-wide task-rule source for creation; `.terminus/agents/CREATION_CONTROLLER.md` defines how the controller resolves the complete `CREATION_RULE_CONTEXT` and handles rule changes/conflicts before freeze.
+
+For `large_system_strict`, the default scenario shape is a **substantial coherent production engineering work package**, not a localized bug/incident padded into a large environment. Suitable work packages include feature/reliability completion, recovery implementation, migration completion, platform modernization, operability completion, security hardening, state-model rework, integration completion, or incident-driven remediation spanning several coupled responsibilities/invariants. An incident may motivate the work, but should not be the sole source of difficulty.
 
 Producer roles are defined in `CREATOR_AGENT_REGISTRY.md` and `CREATOR_PROMPTS.md`. The quality overlay adds Q1/Q2/Q3/Q5/Q7 producer/fixers and Q4/Q6/Q8 independent/diagnostic agents.
 
@@ -102,10 +104,10 @@ Producer roles are defined in `CREATOR_AGENT_REGISTRY.md` and `CREATOR_PROMPTS.m
 
 The quality agents have narrow decision rights:
 
-- **Q1 Spec Gap Repairer** — detects legitimate graded behavior that is missing from solver-visible specification and repairs it naturally at the invariant/contract level. It must never turn hidden tests into an instruction checklist.
+- **Q1 Spec Gap Repairer** — detects legitimate graded behavior that is missing from solver-visible specification and repairs it naturally at the invariant/contract level. It must keep every material task requirement discoverable without turning hidden tests into an instruction checklist or moving task goals into prompt-extension docs.
 - **Q2 Verifier Coverage Repairer** — finds material solver-visible requirements that are not meaningfully tested and adds behavioral coverage.
 - **Q3 Spec Ambiguity Repairer** — removes grading-relevant ambiguity while preserving natural prose and implementation freedom.
-- **Q4 Spec-Test Contract Reviewer** — independent packet-bound reviewer that exhaustively rebuilds both directions of the requirement/test matrix, stable output/interface coverage, F2P/P2P boundaries and ambiguity, then performs a second omission sweep before returning all findings in one result.
+- **Q4 Spec-Test Contract Reviewer** — independent packet-bound reviewer that exhaustively rebuilds both directions of the requirement/test matrix, stable output/interface coverage, F2P/P2P boundaries and ambiguity, then performs a second omission sweep before returning all findings in one result. It also checks that material requirements remain solver-visible without turning `instruction.md` or environment docs into hidden-test/prompt-extension dumps.
 - **Q5 Oracle & Runtime Repair Specialist** — deep deterministic troubleshooter for build, dependency, startup, state, application, Oracle, harness and infrastructure failures. It cannot weaken a legitimate test merely to obtain green.
 - **Q6 Production Logic Auditor** — independent packet-bound reviewer of core logic depth, reachability, module diversity, coupling, toy/padding risk and production credibility. Raw LOC is not sufficient. Q6 is the only scope-reusable quality reviewer and may retain a current PASS across an unrelated task change only when its production-scope hash is unchanged.
 - **Q7 Task Format Enforcer** — deterministic-first producer enforcing exact current task folder, `task.toml`, Docker, verifier, solution, artifact/package and isolation rules.
@@ -123,14 +125,14 @@ For `large_system_strict`, numeric requirements are hard minimum floors/ranges *
 - Count only meaningful production/domain implementation. Duplicate code, generated/vendor material, dead or unreachable modules, repeated boilerplate, unnecessary abstractions, copied templates, micro-module inflation or other code whose main purpose is crossing the floor does not satisfy substantive scale.
 - The codebase must exhibit credible production characteristics appropriate to its domain: differentiated modules/responsibilities, real runtime/build/operator entrypoints, realistic state/data, validation/error handling, configuration, operational workflows, meaningful inter-component coupling, and persistence/restart/recovery/idempotency/failure handling where applicable.
 - Infrastructure tasks use 30–50 meaningful interacting resources when that scale is natural; decorative/copy resources do not count.
-- Track 20–30 defect manifestations derived from materially fewer root-cause clusters, with at least 15 manifestations participating in meaningful causal/interdependency relationships.
+- Track 20–30 defect/incomplete-behavior manifestations derived from materially fewer root-cause clusters, with at least 15 manifestations participating in meaningful causal/interdependency relationships.
 - Build **25–30 non-duplicative F2P behavioral tests organically** from materially distinct requirements, states, transitions, failure modes and interactions. Do not invent, split, rename, parameter-duplicate or weaken cases merely to reach the range. Every F2P must empirically starter/NOP-fail and Oracle-pass.
 - Add P2P/regression cases according to actual preservation risk, not to inflate suite size.
 - Include sufficient domain-relevant **edge and boundary behavior** according to operational risk, such as partial/exhausted state, boundary values, repeated operations, restart/resume, ordering-sensitive state or cross-component combinations where applicable.
 - Include sufficient **negative and failure-path behavior** where relevant, such as malformed/invalid inputs, unauthorized or forbidden operations, rejected transitions, stale/fenced state, dependency/partial failures and safe recovery. These cases remain F2P or P2P according to their starter-to-Oracle transition; they are not a third taxonomy.
 - Edge/negative cases must exercise materially different invariants, operational boundaries, rejection/safety semantics, recovery paths or state transitions rather than duplicate happy paths with changed fixture values.
 
-Numbers never substitute for difficulty or authenticity. Duplicate/dead/unreachable code, fake/decorative resources, duplicate manifestations, flat causal graphs, test-map drift, mislabeled F2P/P2P cases, quota-driven F2P construction, artificial edge cases and suite inflation are blocking authoring defects. If the requested strict scale, production character or behavioral breadth cannot be reached naturally, return `SCENARIO_TOO_SMALL` and select a richer incident rather than pad it.
+Numbers never substitute for difficulty or authenticity. Duplicate/dead/unreachable code, fake/decorative resources, unrelated requirement piling, duplicate manifestations, flat causal graphs, test-map drift, mislabeled F2P/P2P cases, quota-driven F2P construction, artificial edge cases and suite inflation are blocking authoring defects. If the requested strict scale, production character or behavioral breadth cannot be reached naturally, return `SCENARIO_TOO_SMALL` and select a richer engineering work package rather than pad it.
 
 The legacy `large_system` profile may use scale numbers diagnostically only when the controller explicitly records why strict scale is inappropriate. New tasks requested to meet the large-system numbers must use `large_system_strict`. Both profiles still require structural authenticity.
 
@@ -138,24 +140,39 @@ Q6 applies an additional removal/reachability test: strict PASS requires >=3,000
 
 ## Human engineering instruction policy
 
-`instruction.md` is an engineer handoff, not a compressed hidden-test inventory.
+`instruction.md` is a concise engineering work request, not a compressed hidden-test inventory and not an implementation diagnosis.
+
+Edition 3 allows **<=2 short paragraphs or <=20 concise bullets**. For a large strict task, use as many concise bullets as materially needed up to 20; brevity must never cause omission of a material requirement needed for a fair solve.
 
 The writer should normally give:
 
-- the incident/change request;
-- the affected system/location;
-- the operational end state;
-- only the few non-obvious constraints a competent maintainer could miss;
-- references to solver-visible contracts/specs for detailed schemas/protocols.
+- the engineering objective/change request;
+- the affected system/location as needed;
+- the required operational end state;
+- **all material functional and operational requirements** needed for a fair solve;
+- material preservation, compatibility and safety requirements;
+- required absolute output/artifact paths and exact structured-output schema where governing Edition 3 rules require them;
+- concise references to solver-visible technical documentation.
 
-Do not restate every test case or detailed contract merely to look complete. Humanization is information selection, not slang, fake typos or invented backstory.
+Solver-visible docs may contain normal engineering context such as repository/folder/component layout, architecture/state models, runtime/operator entrypoints, schemas/record layouts, protocol semantics, API/CLI contracts and runbooks. They must not become a second prompt used to hide the actual task goal/material functional requirements or evade the instruction length limit.
+
+Do not tell the solver which module/function is incomplete, buggy or responsible unless that implementation diagnosis would naturally be part of the supplied engineering request and is independently supported by solver-visible evidence. Desired end-state requirements may simply state **what must work**; the solver should determine implementation gaps from the system itself.
+
+The intended boundary is:
+
+`instruction = what must work -> docs/contracts = how the inherited system is organized/governed -> code/runtime = what exists now -> solver = identify implementation gaps and repair/complete them`
+
+Humanization is information selection and realistic grouping of a substantial work request, not slang, fake typos, invented backstory, or artificial omission of requirements.
 
 Instruction Writer and Instruction Reviewer apply:
 
-1. **Jira/Slack handoff test** — would this look normal in a real engineering ticket with benchmark context removed?
-2. **Reverse-outline test** — if sentences map suspiciously cleanly to verifier/rubric rows, rewrite around the incident and operational invariant.
+1. **Jira/Slack handoff test** — would this look normal as a substantial engineering ticket/change request with benchmark context removed?
+2. **Requirement-completeness test** — are all material functional/operational requirements needed for a fair solve present in `instruction.md` or legitimately discoverable from referenced technical contracts without hiding the task goal in docs?
+3. **Reverse-outline test** — if bullets/sentences map suspiciously one-to-one to verifier/rubric rows, regroup them around meaningful system responsibilities/invariants without omitting legitimate requirements.
+4. **Spec-file-loophole test** — do referenced docs remain ordinary technical documentation rather than a second prompt or repair map?
+5. **Current-state evidence test** — only when the instruction asserts current conditions/events, identify the solver-visible evidence supporting those claims; desired requirements are not incident claims.
 
-Q1 uses the same tests when closing verifier->spec gaps. Q4 independently checks that completeness fixes did not become a hidden-test dump.
+Q1 uses the same tests when closing verifier->spec gaps. Q4 independently checks both completeness and that completeness fixes did not become a hidden-test dump or prompt-extension loophole.
 
 ## Official difficulty and solvability policy
 
@@ -207,7 +224,7 @@ Current Cursor isolation is `PROCEDURAL`: excluded evidence is an operating boun
 
 ### Task Architect
 
-Decision right: is the scenario, contract and failure topology coherent, fair, realistic and technically sufficient?
+Decision right: is the engineering work package, contract and failure/incompleteness topology coherent, fair, realistic and technically sufficient?
 
 ### Verifier Engineer
 
@@ -227,11 +244,11 @@ Decision right: does final submission prose contain material synthetic cadence, 
 
 ### Instruction Writer
 
-Producer only. Writes/revises `instruction.md` from approved incident, solver-visible contracts and human-writing calibration. It never sees hidden tests/defect IDs/oracle as a wording checklist and cannot approve its own draft.
+Producer only. Writes/revises `instruction.md` from the approved engineering work package, complete material functional/operational requirements, solver-visible contracts and human-writing calibration. It never sees hidden tests/defect IDs/oracle as a wording checklist, does not diagnose implementation gaps unnecessarily, and cannot approve its own draft.
 
 ### Instruction Reviewer
 
-Cold decision right: is the instruction fair, selective, human engineering prose with no material ambiguity, leakage or compressed-rubric construction?
+Cold decision right: is the instruction complete, fair, concise within the Edition 3 shape, natural as an engineering work request, free of material ambiguity/leakage/compressed-rubric construction, and correctly separated from solver-visible technical docs?
 
 ### Documentation Writer
 
@@ -283,7 +300,7 @@ In Cursor, the Orchestrator uses the attached laptop's terminal and hardware for
 | production-grade code depth/reachability/padding | Q6 Production Logic Auditor |
 | task/task.toml/Docker/solution/test/package format | Q7 Task Format Enforcer |
 | pre-model GPT/Claude strategy simulation | Q8 Model Perspective Difficulty Simulator |
-| scenario/contract/failure topology | Task Architect |
+| work-package/contract/failure topology | Task Architect |
 | verifier coverage/quality/Oracle-NOP semantics | Verifier Engineer |
 | schema/Docker/security/metadata/package acceptance review | Compliance Auditor |
 | instruction creation/repair | Instruction Writer |
