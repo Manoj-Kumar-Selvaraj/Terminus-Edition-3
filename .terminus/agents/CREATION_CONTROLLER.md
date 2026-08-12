@@ -6,9 +6,34 @@ This controller is mandatory for new/rebuilt tasks. Current Edition 3 rules over
 
 ## States
 
-`IDEA -> RESEARCHING -> ARCHITECTING -> DEFECT_DESIGN -> ENVIRONMENT_BUILD -> ORACLE_BUILD -> VERIFIER_BUILD -> HUMAN_WRITING_RESEARCH -> INSTRUCTION_DRAFT -> SPEC_ALIGNMENT -> DOCUMENTATION_DRAFT -> FORMAT_GATE -> ASSEMBLY -> COMPLEXITY_GATE -> RUNTIME_AUTHENTICITY -> DETERMINISTIC_VALIDATION -> FROZEN_CANDIDATE -> QUALITY_INTERLOCK`
+`CREATION_REQUEST -> RULE_RESOLUTION -> IDEA -> RESEARCHING -> ARCHITECTING -> DEFECT_DESIGN -> ENVIRONMENT_BUILD -> ORACLE_BUILD -> VERIFIER_BUILD -> HUMAN_WRITING_RESEARCH -> INSTRUCTION_DRAFT -> SPEC_ALIGNMENT -> DOCUMENTATION_DRAFT -> FORMAT_GATE -> ASSEMBLY -> COMPLEXITY_GATE -> RUNTIME_AUTHENTICITY -> DETERMINISTIC_VALIDATION -> FROZEN_CANDIDATE -> QUALITY_INTERLOCK`
 
 `BLOCKED` may overlay any state.
+
+## Creation bootstrap / rule resolution
+
+No producer starts scenario design until the controller has resolved one creation-rule context for the run.
+
+At `RULE_RESOLUTION`, the controller must:
+1. resolve the exact control-plane commit used for creation;
+2. read the current repository-wide task rules in `TERMINUS_3_AI_INSTRUCTIONS.md`;
+3. read `.terminus/reviewers/REVIEWER_CHECKLIST.md`, `.terminus/agents/CREATION_PIPELINE.md`, `.terminus/agents/PRODUCTION_AUTHENTICITY.md` and `.terminus/agents/QUALITY_AGENT_REGISTRY.md`;
+4. resolve active task-format, complexity, runtime-authenticity, verifier and packaging validators/CI that enforce those rules;
+5. resolve the creation profile, including whether `large_system_strict` applies and any explicitly justified narrower profile;
+6. apply the control-plane precedence rule and stop with `POLICY_CONFLICT` if applicable authoritative sources cannot be reconciled.
+
+The controller then provides a pinned `CREATION_RULE_CONTEXT` to every producer handoff containing at minimum:
+
+```text
+CONTROL_PLANE_COMMIT:
+RULE_SOURCES:
+ACTIVE_VALIDATORS:
+CREATION_PROFILE:
+NETWORK/ENVIRONMENT_CONSTRAINTS:
+KNOWN_POLICY_CONFLICTS:
+```
+
+Downstream creators may read narrower role-specific policy as required, but they must not silently substitute a different repository rule baseline. Once task identity exists, persist the resolved context or an exact reference to it in the durable task session. If governing task rules materially change before freeze, rerun `RULE_RESOLUTION`, reconcile the delta and invalidate affected producer evidence before continuing.
 
 ## Strict large-system constraints
 
@@ -74,6 +99,7 @@ On Oracle/build/runtime failure:
 ## Freeze conditions
 
 `FROZEN_CANDIDATE` requires:
+- current creation-rule context reconciled against governing task rules;
 - Q1/Q2/Q3 producer alignment complete with no unresolved material gap/ambiguity;
 - Q7 current exact-format check PASS;
 - structure/static/lint PASS;
