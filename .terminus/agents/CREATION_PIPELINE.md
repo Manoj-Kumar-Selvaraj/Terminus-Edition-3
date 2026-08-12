@@ -2,7 +2,23 @@
 
 Creation policy version: `1.0`
 
-Creation and independent review are separate systems. Every creator reads the current Edition 3 rules, this file, `.terminus/agents/PRODUCTION_AUTHENTICITY.md`, `.terminus/agents/QUALITY_AGENT_REGISTRY.md`, and its role prompt. Producers create evidence and artifacts; they do not approve their own work.
+Creation and independent review are separate systems. Before any producer starts, the Creation Controller resolves and pins the current Edition 3 task-rule context for the run. Every creator then uses that `CREATION_RULE_CONTEXT`, this file, `.terminus/agents/PRODUCTION_AUTHENTICITY.md`, `.terminus/agents/QUALITY_AGENT_REGISTRY.md`, and its role prompt. Producers create evidence and artifacts; they do not approve their own work.
+
+## Creation bootstrap / rule resolution
+
+Creation begins with controller-owned rule resolution, not with Scenario Research.
+
+The controller resolves:
+- the exact control-plane commit;
+- `TERMINUS_3_AI_INSTRUCTIONS.md` as the repository-wide task-rule source;
+- `.terminus/reviewers/REVIEWER_CHECKLIST.md`;
+- this creation policy;
+- `.terminus/agents/PRODUCTION_AUTHENTICITY.md`;
+- `.terminus/agents/QUALITY_AGENT_REGISTRY.md`;
+- active task-format, complexity, runtime-authenticity, verifier and packaging validators/CI;
+- the requested/applicable creation profile and network/environment constraints.
+
+The resolved baseline is handed to creators as `CREATION_RULE_CONTEXT`. If applicable authoritative sources conflict, stop with `POLICY_CONFLICT` before scenario design. If governing task rules materially change during creation, the controller reruns rule resolution and reconciles/invalidate affected producer evidence before continuing.
 
 ## Default strict profile
 
@@ -23,6 +39,7 @@ Numbers never waive authenticity. If the incident needs filler to hit the profil
 Operational/stateful tasks must also satisfy `.terminus/agents/PRODUCTION_AUTHENTICITY.md`.
 
 Before `FROZEN_CANDIDATE`:
+- the creation-rule context is current against governing task rules;
 - a **production evidence surface** exists in the solver-visible environment;
 - incident claims in `instruction.md` are supported by logs/state/handoff evidence;
 - data-backed strict tasks normally start with **10,000–20,000** deterministic, varied primary business records;
@@ -32,6 +49,9 @@ Before `FROZEN_CANDIDATE`:
 For COBOL/business-language systems, reject “one IF = one program” construction. Parsing, validation, state classification, multiple business branches and real control-flow paragraphs should be present where the business decision warrants them. Do not pad a trivial comparison with declarations or dead paragraphs merely to satisfy the gate.
 
 ## Mandatory producer sequence
+
+### 0. Creation Controller — Rule Resolution
+Resolve and pin the authoritative task-rule baseline, active validators, creation profile and environment/network constraints. No producer stage starts until `CREATION_RULE_CONTEXT` is available and any policy conflict is resolved.
 
 ### 1. Scenario Researcher
 Produce 3–5 credible incidents, operational persona, observed failure, durable state, evidence that would realistically exist, originality references, and scale fit. A production incident without plausible evidence artifacts is rejected.
@@ -67,7 +87,7 @@ Find competing interpretations that would change grading. Clarify authority, ide
 Write reviewer-facing material from evidence. Do not call the environment a benchmark, fixture, cut-down reproduction or package built to demonstrate a bug.
 
 ### 12. Q7 Task Format Enforcer
-Read current authoritative rules and active enforcement/CI before checking exact task structure, `task.toml`, Dockerfiles, verifier image/launcher, solution layout, artifact boundaries, dependency pins, package isolation and forbidden files. Repair deterministic format issues before expensive runtime gates.
+Read the pinned creation-rule context plus current active enforcement/CI before checking exact task structure, `task.toml`, Dockerfiles, verifier image/launcher, solution layout, artifact boundaries, dependency pins, package isolation and forbidden files. Repair deterministic format issues before expensive runtime gates.
 
 ### 13. Task Assembly Agent
 Run structure/metadata, lint/syntax, `.terminus/validate_task_complexity.py`, `.terminus/validate_runtime_authenticity.py`, Oracle, NOP, F2P/P2P empirical matrix and leakage checks.
@@ -100,10 +120,11 @@ Each perspective receives only solver-visible task evidence before attempting th
 
 ## Flow
 
-`IDEA -> RESEARCHING -> ARCHITECTING -> DEFECT_DESIGN -> ENVIRONMENT_BUILD -> ORACLE_BUILD -> VERIFIER_BUILD -> HUMAN_WRITING_RESEARCH -> INSTRUCTION_DRAFT -> SPEC_ALIGNMENT(Q1/Q2/Q3) -> DOCUMENTATION_DRAFT -> FORMAT_GATE(Q7) -> ASSEMBLY -> COMPLEXITY_GATE -> RUNTIME_AUTHENTICITY -> DETERMINISTIC_VALIDATION(Q5 on failure) -> FROZEN_CANDIDATE -> QUALITY_INTERLOCK(Q4/Q6) -> PRE_LLMAJ -> Q8 GPT/CLAUDE perspectives -> Harbor/model gates`
+`CREATION_REQUEST -> RULE_RESOLUTION -> IDEA -> RESEARCHING -> ARCHITECTING -> DEFECT_DESIGN -> ENVIRONMENT_BUILD -> ORACLE_BUILD -> VERIFIER_BUILD -> HUMAN_WRITING_RESEARCH -> INSTRUCTION_DRAFT -> SPEC_ALIGNMENT(Q1/Q2/Q3) -> DOCUMENTATION_DRAFT -> FORMAT_GATE(Q7) -> ASSEMBLY -> COMPLEXITY_GATE -> RUNTIME_AUTHENTICITY -> DETERMINISTIC_VALIDATION(Q5 on failure) -> FROZEN_CANDIDATE -> QUALITY_INTERLOCK(Q4/Q6) -> PRE_LLMAJ -> Q8 GPT/CLAUDE perspectives -> Harbor/model gates`
 
 ## Independence
 
+- Every creator uses the pinned `CREATION_RULE_CONTEXT`; no creator silently substitutes a different repository rule baseline.
 - Environment Builder does not build by diffing against the final Oracle.
 - Reference Solution Author does not use hidden tests as implementation recipes.
 - Verifier Author does not calculate expected values from Oracle source.
