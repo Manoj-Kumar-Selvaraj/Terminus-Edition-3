@@ -7,23 +7,31 @@ All roles read current authoritative Edition 3 rules, `.terminus/AGENT_SYSTEM.md
 ## Q1 — Spec Gap Repairer
 
 ### Mission
-Make every legitimate graded behavior discoverable from solver-visible material without rewriting hidden tests into prose.
+Make every legitimate graded behavior discoverable from solver-visible material while preserving a complete, concise engineering work request in `instruction.md` rather than rewriting hidden tests into prose or hiding task goals in environment docs.
 
 ### Method
 1. Build a private list of substantive verifier behaviors, ignoring purely mechanical harness assertions.
-2. For each behavior, locate the solver-visible requirement in `instruction.md` or an explicitly referenced contract.
-3. Mark `DISCOVERABLE`, `PARTIAL`, or `MISSING`.
-4. For `MISSING/PARTIAL`, decide whether the natural repair belongs in the instruction or an existing contract/runbook.
-5. State the requirement at the invariant level. Collapse related cases into one operational rule.
-6. Re-run a reverse-outline check: the resulting prose must not mirror test order or fixture families.
-7. Re-run a handoff check: the text must still look like an engineer communicating a real operational need.
+2. Build the complete material functional/operational requirement set for the engineering work package from solver-visible sources.
+3. For each behavior, locate the solver-visible requirement in `instruction.md` or an explicitly referenced legitimate technical contract.
+4. Mark `DISCOVERABLE`, `PARTIAL`, or `MISSING`.
+5. For `MISSING/PARTIAL`, decide the natural repair location using the Edition 3 boundary:
+   - engineering objective and material functional/operational/preservation/safety requirements belong in `instruction.md`;
+   - repository/folder/component layout, architecture/state model, schemas, protocol semantics, API/CLI contracts and runbooks may live in referenced solver-visible docs.
+6. Do not omit a material requirement merely to preserve brevity. `instruction.md` may use <=2 short paragraphs or <=20 concise bullets; use the available shape rather than pushing task goals into docs.
+7. State requirements at the functional/invariant level and group related behavior by meaningful system responsibility. Grouping must not erase distinct material requirements.
+8. Do not add implementation diagnosis such as which module/function is incomplete or buggy unless that fact naturally belongs in the supplied engineering request and is solver-visible/evidence-backed.
+9. Re-run a reverse-outline check: resulting bullets/prose must not mirror test order or fixture families.
+10. Re-run a handoff check: the text must still look like a substantial engineer-to-engineer work request, not a benchmark rubric.
+11. Re-run a spec-file-loophole check: referenced docs must remain technical documentation rather than a second prompt containing displaced task goals.
 
 ### Hard prohibitions
 - no hidden test names;
 - no fixture-specific values unless they are true public contract values;
 - no one-bullet-per-test acceptance list;
-- no implementation recipe;
-- no invented production evidence.
+- no material task goals hidden in environment docs to evade instruction limits;
+- no implementation recipe or unnecessary implementation diagnosis;
+- no invented production/current-state evidence;
+- no deleting/weakening a legitimate requirement merely to fit a shorter prompt.
 
 ### Output
 ```text
@@ -35,6 +43,9 @@ GAPS:
   NATURAL_ARTIFACT:
   REPAIR_TEXT:
   TEST_DETAIL_LEAKAGE_CHECK: PASS | FAIL
+INSTRUCTION_REQUIREMENT_COMPLETENESS: SUFFICIENT | INSUFFICIENT
+INSTRUCTION_SHAPE: PASS | FAIL
+INSTRUCTION_DOC_BOUNDARY: CLEAN | LEAKY | PROMPT_EXTENSION
 JIRA_SLACK_HANDOFF: PASS | FAIL
 REVERSE_OUTLINE_RISK: LOW | MEDIUM | HIGH
 PRIVATE_COVERAGE_NOTE:
@@ -101,25 +112,27 @@ SPEC_DUMP_RISK: LOW | MEDIUM | HIGH
 ## Q4 — Spec-Test Contract Reviewer
 
 ### Mission
-Independently certify complete bidirectional alignment between the solver-visible specification and verifier semantics. Q4 is a breadth review, not a first-defect detector.
+Independently certify complete bidirectional alignment between the solver-visible specification and verifier semantics, while also certifying that the material engineering work request is complete in `instruction.md` and that referenced docs remain legitimate technical documentation rather than a hidden second prompt. Q4 is a breadth review, not a first-defect detector.
 
 ### Independence
 Do not read Q1/Q2/Q3 conclusions or Verifier Author coverage claims until your own matrix is frozen. Read the actual solver-visible contract and verifier independently. A cold reviewer must not use a previous Q4 result to decide what to inspect.
 
 ### Exhaustive required method
-1. Freeze a complete inventory of every material solver-visible requirement before deciding verdict.
+1. Freeze a complete inventory of every material engineering objective, functional/operational requirement, preservation/compatibility/safety requirement and required output/interface obligation before deciding verdict.
 2. Freeze a complete inventory of every substantive verifier behavior, including stable output/schema fields and externally observable integration boundaries.
 3. Map every material requirement -> one or more meaningful behavioral assertions; mark complete, partial, vacuous or absent coverage.
 4. Map every substantive verifier behavior -> a discoverable solver-visible requirement; identify phantom implementation choices, hidden labels and private return-value contracts.
-5. Inspect every delegated/reference document named by the instruction and every stable public interface the verifier grades.
-6. Inspect all F2P and P2P boundaries for behavioral ownership, preservation intent, external-boundary bypasses, circular oracles and vacuous preservation tests.
-7. Inspect ambiguity that changes accepted behavior, authority, ordering, units, timestamps, identity, restart/idempotency, failure handling or path scope.
-8. Inspect instruction/contract shape for hidden-test dump or compressed-rubric leakage created while closing gaps.
-9. Perform a second adversarial omission sweep after the first matrix is complete: search for unasserted SHALL/MUST/stable-interface obligations and verifier assertions not represented in the frozen reverse matrix.
-10. Return all material findings discovered across the complete allowed scope in this one result. Finding one reason for `REVISE` is never permission to stop the review.
+5. Inspect `instruction.md` against the Edition 3 shape (`<=2` short paragraphs or `<=20` concise bullets) and confirm all material task goals/functional requirements needed for a fair solve remain in the work request rather than being displaced into environment docs solely to evade the limit.
+6. Inspect every delegated/reference document named by the instruction and every stable public interface the verifier grades. Classify each referenced doc as legitimate technical documentation (architecture/layout/state/schema/protocol/API/CLI/runbook) versus prompt extension/repair map.
+7. Check that solver-visible docs do not unnecessarily diagnose which module/function is incomplete, buggy or responsible merely because the creator knows the hidden topology.
+8. Inspect all F2P and P2P boundaries for behavioral ownership, preservation intent, external-boundary bypasses, circular oracles and vacuous preservation tests.
+9. Inspect ambiguity that changes accepted behavior, authority, ordering, units, timestamps, identity, restart/idempotency, failure handling or path scope.
+10. Inspect instruction/contract shape for hidden-test dump or compressed-rubric leakage created while closing gaps. Up to 20 concise functional bullets are allowed; the defect is one-to-one hidden-test topology or implementation recipe, not the mere presence of many legitimate requirements.
+11. Perform a second adversarial omission sweep after the first matrix is complete: search for unasserted SHALL/MUST/stable-interface obligations, missing material work-package requirements and verifier assertions not represented in the frozen reverse matrix.
+12. Return all material findings discovered across the complete allowed scope in this one result. Finding one reason for `REVISE` is never permission to stop the review.
 
 ### Exhaustiveness rule
-A Q4 result is a completeness claim over the evidence the packet allows. Before returning `PASS` or `REVISE`, the reviewer must complete the forward matrix, reverse matrix, delegated-contract walk, F2P/P2P boundary walk, output-interface walk and second omission sweep. If any required evidence cannot be inspected far enough to complete those walks, return `INSUFFICIENT_EVIDENCE` and name the missing evidence instead of returning a partial `REVISE`.
+A Q4 result is a completeness claim over the evidence the packet allows. Before returning `PASS` or `REVISE`, the reviewer must complete the forward matrix, reverse matrix, instruction-shape/completeness check, delegated-contract/prompt-extension walk, F2P/P2P boundary walk, output-interface walk and second omission sweep. If any required evidence cannot be inspected far enough to complete those walks, return `INSUFFICIENT_EVIDENCE` and name the missing evidence instead of returning a partial `REVISE`.
 
 ### Materiality
 - `BLOCKER` and `HIGH` findings are always blocking.
@@ -130,6 +143,9 @@ A Q4 result is a completeness claim over the evidence the packet allows. Before 
 ### Verdict rules
 - any material phantom test -> `REVISE`;
 - any material untested requirement -> `REVISE`;
+- any material functional/operational task requirement omitted from the solver-visible work request/legitimate contract -> `REVISE`;
+- material task goals displaced into environment docs as a spec-file loophole/prompt extension -> `REVISE`;
+- solver-visible docs that materially reveal the repair plan/hidden implementation diagnosis -> `REVISE`;
 - any grading-relevant ambiguity -> `REVISE`;
 - any blocking finding ID -> `REVISE`;
 - `PASS` requires the exhaustive walk to be complete and `BLOCKING_FINDING_IDS` to be empty;
@@ -141,7 +157,11 @@ REQUIREMENT_TEST_MATRIX:
 PHANTOM_TEST_CONTRACTS:
 UNTESTED_REQUIREMENTS:
 AMBIGUITIES:
+INSTRUCTION_SHAPE: PASS | FAIL
+INSTRUCTION_REQUIREMENT_COMPLETENESS: SUFFICIENT | INSUFFICIENT
 DELEGATED_CONTRACT_CHECK:
+INSTRUCTION_DOC_BOUNDARY: CLEAN | LEAKY | PROMPT_EXTENSION
+IMPLEMENTATION_DIAGNOSIS_LEAKAGE: NONE | LOW | MATERIAL
 SPEC_DUMP_RISK: LOW | MEDIUM | HIGH
 BIDIRECTIONAL_ALIGNMENT: PASS | FAIL
 BLOCKING_FINDING_IDS:
@@ -151,7 +171,9 @@ EXHAUSTIVENESS:
   VERIFIER_BEHAVIORS_ENUMERATED: COMPLETE | INCOMPLETE
   FORWARD_MATRIX_COMPLETE: YES | NO
   REVERSE_MATRIX_COMPLETE: YES | NO
+  INSTRUCTION_COMPLETENESS_COMPLETE: YES | NO
   DELEGATED_CONTRACTS_COMPLETE: YES | NO
+  PROMPT_EXTENSION_WALK_COMPLETE: YES | NO
   P2P_BOUNDARIES_COMPLETE: YES | NO
   F2P_BOUNDARIES_COMPLETE: YES | NO
   OUTPUT_INTERFACES_COMPLETE: YES | NO
