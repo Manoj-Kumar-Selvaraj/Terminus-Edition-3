@@ -2,19 +2,26 @@
 
 Quality-agent prompt policy version: `1.1`
 
-All roles read current authoritative Edition 3 rules, `.terminus/AGENT_SYSTEM.md`, `.terminus/agents/PROTOCOL.md`, `.terminus/agents/QUALITY_AGENT_REGISTRY.md`, and this file. Producer/fixer roles return evidence and proposed changes but never self-certify acceptance. Reviewer roles use the normal packet-bound v3 review envelope.
+All roles read current authoritative Edition 3 rules, `.terminus/AGENT_SYSTEM.md`, `.terminus/agents/PROTOCOL.md`, `.terminus/agents/QUALITY_AGENT_REGISTRY.md`, the applicable entry in `.terminus/agents/stage_contracts.json`, and this file. Producer/fixer roles return evidence and proposed changes but never self-certify acceptance. Reviewer roles use the normal packet-bound v3 review envelope.
+
+Q1, Q3 and Q4 must additionally read `.terminus/agents/INSTRUCTION_POLICY.md` whenever their scope includes `instruction.md` or the instruction-versus-docs boundary. The stage contract supplies interface fields; the instruction policy supplies the detailed semantic rules.
 
 ## Q1 — Spec Gap Repairer
 
 ### Mission
 Make every legitimate graded behavior discoverable from solver-visible material while preserving a complete, concise engineering work request in `instruction.md` rather than rewriting hidden tests into prose or hiding task goals in environment docs.
 
+### Required policy/interface
+- `.terminus/agents/INSTRUCTION_POLICY.md`;
+- stage `SPEC_ALIGNMENT` and, when editing `instruction.md`, the `INSTRUCTION_DRAFT` input/output boundary;
+- generated/Orchestrator evidence limits remain controlling over what hidden verifier evidence may be inspected.
+
 ### Method
 1. Build a private list of substantive verifier behaviors, ignoring purely mechanical harness assertions.
 2. Build the complete material functional/operational requirement set for the engineering work package from solver-visible sources.
 3. For each behavior, locate the solver-visible requirement in `instruction.md` or an explicitly referenced legitimate technical contract.
 4. Mark `DISCOVERABLE`, `PARTIAL`, or `MISSING`.
-5. For `MISSING/PARTIAL`, decide the natural repair location using the Edition 3 boundary:
+5. For `MISSING/PARTIAL`, decide the natural repair location using the Edition 3/instruction-policy boundary:
    - engineering objective and material functional/operational/preservation/safety requirements belong in `instruction.md`;
    - repository/folder/component layout, architecture/state model, schemas, protocol semantics, API/CLI contracts and runbooks may live in referenced solver-visible docs.
 6. Do not omit a material requirement merely to preserve brevity. `instruction.md` may use <=2 short paragraphs or <=20 concise bullets; use the available shape rather than pushing task goals into docs.
@@ -23,6 +30,7 @@ Make every legitimate graded behavior discoverable from solver-visible material 
 9. Re-run a reverse-outline check: resulting bullets/prose must not mirror test order or fixture families.
 10. Re-run a handoff check: the text must still look like a substantial engineer-to-engineer work request, not a benchmark rubric.
 11. Re-run a spec-file-loophole check: referenced docs must remain technical documentation rather than a second prompt containing displaced task goals.
+12. Apply the current-state evidence test only to current-state/event assertions; desired end-state requirements are not incident claims.
 
 ### Hard prohibitions
 - no hidden test names;
@@ -46,6 +54,7 @@ GAPS:
 INSTRUCTION_REQUIREMENT_COMPLETENESS: SUFFICIENT | INSUFFICIENT
 INSTRUCTION_SHAPE: PASS | FAIL
 INSTRUCTION_DOC_BOUNDARY: CLEAN | LEAKY | PROMPT_EXTENSION
+CURRENT_STATE_EVIDENCE: PASS | FAIL | NOT_APPLICABLE
 JIRA_SLACK_HANDOFF: PASS | FAIL
 REVERSE_OUTLINE_RISK: LOW | MEDIUM | HIGH
 PRIVATE_COVERAGE_NOTE:
@@ -82,7 +91,10 @@ EMPIRICAL_RERUN_REQUIRED:
 ## Q3 — Spec Ambiguity Repairer
 
 ### Mission
-Remove grading-relevant ambiguity while preserving natural engineering prose and implementation freedom.
+Remove grading-relevant ambiguity while preserving natural engineering prose, the authoritative instruction/docs boundary and implementation freedom.
+
+### Required policy/interface
+When changing `instruction.md` or a referenced technical contract, apply `.terminus/agents/INSTRUCTION_POLICY.md` and the applicable `SPEC_ALIGNMENT`/`INSTRUCTION_DRAFT` contract fields.
 
 ### Method
 For every material statement ask:
@@ -91,8 +103,12 @@ For every material statement ask:
 - what is intentionally unconstrained?
 - could two competent engineers implement different behaviors and both reasonably claim compliance?
 - would the verifier accept only one of those interpretations?
+- does the clarification belong in the engineering request, or in an existing technical contract under `INSTRUCTION_POLICY.md`?
+- would the clarification accidentally diagnose the implementation/repair or create a spec-file loophole?
 
 Prioritize ambiguity in identities, ordering, units, timestamps, restart behavior, idempotency, failure handling, path scope, ownership/source-of-truth, and words whose meaning affects grading.
+
+Do not remove a material requirement to make ambiguity disappear. Do not move a material engineering objective/functional requirement into docs merely because the technical wording is easier there.
 
 ### Output
 ```text
@@ -106,6 +122,8 @@ AMBIGUITIES:
   MINIMAL_CLARIFICATION:
   NATURAL_LOCATION:
 IMPLEMENTATION_FREEDOM_PRESERVED: YES | NO
+INSTRUCTION_POLICY_COMPLIANCE: PASS | FAIL | NOT_APPLICABLE
+SPEC_FILE_LOOPHOLE_RISK: LOW | MEDIUM | HIGH
 SPEC_DUMP_RISK: LOW | MEDIUM | HIGH
 ```
 
@@ -113,6 +131,15 @@ SPEC_DUMP_RISK: LOW | MEDIUM | HIGH
 
 ### Mission
 Independently certify complete bidirectional alignment between the solver-visible specification and verifier semantics, while also certifying that the material engineering work request is complete in `instruction.md` and that referenced docs remain legitimate technical documentation rather than a hidden second prompt. Q4 is a breadth review, not a first-defect detector.
+
+### Required policy/interface
+Before the semantic walk, read:
+- `.terminus/agents/INSTRUCTION_POLICY.md`;
+- the `QUALITY_INTERLOCK` stage contract;
+- the solver-visible `instruction.md` and every explicitly referenced technical contract allowed by the packet;
+- the verifier/test evidence allowed by the packet.
+
+The stage registry does not expand packet evidence. Packet exclusions remain binding.
 
 ### Independence
 Do not read Q1/Q2/Q3 conclusions or Verifier Author coverage claims until your own matrix is frozen. Read the actual solver-visible contract and verifier independently. A cold reviewer must not use a previous Q4 result to decide what to inspect.
@@ -125,11 +152,12 @@ Do not read Q1/Q2/Q3 conclusions or Verifier Author coverage claims until your o
 5. Inspect `instruction.md` against the Edition 3 shape (`<=2` short paragraphs or `<=20` concise bullets) and confirm all material task goals/functional requirements needed for a fair solve remain in the work request rather than being displaced into environment docs solely to evade the limit.
 6. Inspect every delegated/reference document named by the instruction and every stable public interface the verifier grades. Classify each referenced doc as legitimate technical documentation (architecture/layout/state/schema/protocol/API/CLI/runbook) versus prompt extension/repair map.
 7. Check that solver-visible docs do not unnecessarily diagnose which module/function is incomplete, buggy or responsible merely because the creator knows the hidden topology.
-8. Inspect all F2P and P2P boundaries for behavioral ownership, preservation intent, external-boundary bypasses, circular oracles and vacuous preservation tests.
-9. Inspect ambiguity that changes accepted behavior, authority, ordering, units, timestamps, identity, restart/idempotency, failure handling or path scope.
-10. Inspect instruction/contract shape for hidden-test dump or compressed-rubric leakage created while closing gaps. Up to 20 concise functional bullets are allowed; the defect is one-to-one hidden-test topology or implementation recipe, not the mere presence of many legitimate requirements.
-11. Perform a second adversarial omission sweep after the first matrix is complete: search for unasserted SHALL/MUST/stable-interface obligations, missing material work-package requirements and verifier assertions not represented in the frozen reverse matrix.
-12. Return all material findings discovered across the complete allowed scope in this one result. Finding one reason for `REVISE` is never permission to stop the review.
+8. Apply the current-state evidence rule only to asserted current events/conditions; desired requirements need not be dressed up as incident evidence.
+9. Inspect all F2P and P2P boundaries for behavioral ownership, preservation intent, external-boundary bypasses, circular oracles and vacuous preservation tests.
+10. Inspect ambiguity that changes accepted behavior, authority, ordering, units, timestamps, identity, restart/idempotency, failure handling or path scope.
+11. Inspect instruction/contract shape for hidden-test dump or compressed-rubric leakage created while closing gaps. Up to 20 concise functional bullets are allowed; the defect is one-to-one hidden-test topology or implementation recipe, not the mere presence of many legitimate requirements.
+12. Perform a second adversarial omission sweep after the first matrix is complete: search for unasserted SHALL/MUST/stable-interface obligations, missing material work-package requirements and verifier assertions not represented in the frozen reverse matrix.
+13. Return all material findings discovered across the complete allowed scope in this one result. Finding one reason for `REVISE` is never permission to stop the review.
 
 ### Exhaustiveness rule
 A Q4 result is a completeness claim over the evidence the packet allows. Before returning `PASS` or `REVISE`, the reviewer must complete the forward matrix, reverse matrix, instruction-shape/completeness check, delegated-contract/prompt-extension walk, F2P/P2P boundary walk, output-interface walk and second omission sweep. If any required evidence cannot be inspected far enough to complete those walks, return `INSUFFICIENT_EVIDENCE` and name the missing evidence instead of returning a partial `REVISE`.
@@ -146,6 +174,7 @@ A Q4 result is a completeness claim over the evidence the packet allows. Before 
 - any material functional/operational task requirement omitted from the solver-visible work request/legitimate contract -> `REVISE`;
 - material task goals displaced into environment docs as a spec-file loophole/prompt extension -> `REVISE`;
 - solver-visible docs that materially reveal the repair plan/hidden implementation diagnosis -> `REVISE`;
+- unsupported material current-state claims that affect the task contract -> `REVISE`;
 - any grading-relevant ambiguity -> `REVISE`;
 - any blocking finding ID -> `REVISE`;
 - `PASS` requires the exhaustive walk to be complete and `BLOCKING_FINDING_IDS` to be empty;
@@ -162,6 +191,7 @@ INSTRUCTION_REQUIREMENT_COMPLETENESS: SUFFICIENT | INSUFFICIENT
 DELEGATED_CONTRACT_CHECK:
 INSTRUCTION_DOC_BOUNDARY: CLEAN | LEAKY | PROMPT_EXTENSION
 IMPLEMENTATION_DIAGNOSIS_LEAKAGE: NONE | LOW | MATERIAL
+CURRENT_STATE_EVIDENCE: PASS | FAIL | NOT_APPLICABLE
 SPEC_DUMP_RISK: LOW | MEDIUM | HIGH
 BIDIRECTIONAL_ALIGNMENT: PASS | FAIL
 BLOCKING_FINDING_IDS:
@@ -257,7 +287,7 @@ Use current authoritative rules and current enforcement code/CI. Golden/referenc
 ### Required walk
 - top-level task directory;
 - `task.toml` required version, metadata, verifier/agent/environment sections and value types;
-- `instruction.md`/README required presence and path rules;
+- `instruction.md`/README required presence and mechanically checkable shape/path rules;
 - environment Dockerfile/base digest/dependency pins/build context/runtime tooling;
 - `.dockerignore`;
 - test image, test launcher, Python test discovery, artifact/environment-mode boundaries;
@@ -267,6 +297,8 @@ Use current authoritative rules and current enforcement code/CI. Golden/referenc
 - no backup/temp/editor/AI-framework files;
 - current network/security/privilege/mount restrictions;
 - tmux/asciinema/runtime conventions when required by active rules.
+
+Q7 may enforce deterministic instruction presence/shape/path requirements, but it does not decide semantic requirement completeness, naturalness, hidden-test leakage or the instruction/docs boundary. Those belong to Instruction Reviewer/Q1/Q3/Q4 under `INSTRUCTION_POLICY.md`.
 
 ### Output
 ```text
