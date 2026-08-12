@@ -44,6 +44,7 @@ REQUIRED = [
     T / "reviewers" / "AGENT_DESIGN_RESEARCH.md",
     T / "reviews" / "README.md",
     T / "sessions" / "TEMPLATE.md",
+    ROOT / "TERMINUS_3_AI_INSTRUCTIONS.md",
     ROOT / ".cursor" / "agents" / "terminus-ci-orchestrator.md",
 ]
 
@@ -75,6 +76,15 @@ CREATOR_ROLE_MARKERS = [
     "Task Assembly",
     "Complexity Governor",
     "Authoring Failure Diagnostician",
+]
+
+CREATION_BOOTSTRAP_MARKERS = [
+    "RULE_RESOLUTION",
+    "CREATION_RULE_CONTEXT",
+    "TERMINUS_3_AI_INSTRUCTIONS.md",
+    "ACTIVE_VALIDATORS",
+    "CREATION_PROFILE",
+    "POLICY_CONFLICT",
 ]
 
 AGENT_SYSTEM_INVARIANT_MARKERS = [
@@ -187,6 +197,7 @@ def main() -> int:
     session_path = T / "sessions" / "TEMPLATE.md"
     creator_registry_path = T / "agents" / "CREATOR_AGENT_REGISTRY.md"
     creator_controller_path = T / "agents" / "CREATION_CONTROLLER.md"
+    creation_pipeline_path = T / "agents" / "CREATION_PIPELINE.md"
     creator_prompts_path = T / "agents" / "CREATOR_PROMPTS.md"
     source_corpus_path = T / "reviewers" / "HUMAN_ENGINEERING_SOURCE_CORPUS.md"
 
@@ -205,6 +216,7 @@ def main() -> int:
     session_template = texts.get(session_path, "")
     creator_registry = texts.get(creator_registry_path, "")
     creator_controller = texts.get(creator_controller_path, "")
+    creation_pipeline = texts.get(creation_pipeline_path, "")
     creator_prompts = texts.get(creator_prompts_path, "")
     source_corpus = texts.get(source_corpus_path, "")
     difficulty_analyzer = texts.get(T / "analyze_difficulty.py", "")
@@ -251,6 +263,11 @@ def main() -> int:
     for marker in CREATOR_ROLE_MARKERS:
         if marker.lower() not in creator_text.lower():
             fail(errors, f"creator system missing role marker: {marker}")
+
+    creation_bootstrap_text = agent_system + creator_controller + creation_pipeline + creator_prompts
+    for marker in CREATION_BOOTSTRAP_MARKERS:
+        if marker.lower() not in creation_bootstrap_text.lower():
+            fail(errors, f"creation system missing rule-resolution marker: {marker}")
 
     for marker in [
         "Decision right",
@@ -496,6 +513,7 @@ def main() -> int:
     print("Terminus agent-system validation PASS")
     print(
         f"review_roles={len(REVIEW_ROLE_HEADINGS)} creator_markers={len(CREATOR_ROLE_MARKERS)} "
+        f"creation_bootstrap_markers={len(CREATION_BOOTSTRAP_MARKERS)} "
         f"agent_system_invariants={len(AGENT_SYSTEM_INVARIANT_MARKERS)} "
         f"checklist_criteria={len(criteria)} reviewer_eval_seed_cases={len(case_ids)} "
         "schemas=v3 provenance=packet_bound writing_policy=human_handoff "
