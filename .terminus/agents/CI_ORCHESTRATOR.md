@@ -137,7 +137,7 @@ Perform one routing cycle at a time:
 3. **Locate** — select the earliest mandatory gate that cannot currently advance and resolve its registered stage ID when applicable.
 4. **Resolve contract** — verify owner, required/optional inputs, output/status contract, validators/reviewers, failure routes, transition and staleness triggers from `stage_contracts.json`.
 5. **Route** — assign exactly one responsible role and define its allowed and excluded evidence.
-6. **Handoff** — return a complete prompt for a fresh role-specific chat. Include the bounded stage input/output contract; do not perform that role inside the Orchestrator context.
+6. **Handoff** — return a complete prompt for a fresh role-specific chat. Include the bounded stage input/output contract. **Do not perform that role inside the Orchestrator context.**
 7. **Receive** — inspect the resulting commit, CI evidence or packet-bound review result.
 8. **Validate** — confirm stage output fields/status, commit, schema, provenance, confidence, evidence sufficiency and gate-specific completion.
 9. **Record** — update `.terminus/sessions/<task>.md` only from validated evidence, including persisted artifact references and the next single action.
