@@ -10,6 +10,28 @@ This controller is mandatory for new/rebuilt tasks. Current Edition 3 rules over
 
 `BLOCKED` may overlay any state.
 
+The canonical structured interfaces for execution stages are in `.terminus/agents/stage_contracts.json`, with semantics in `.terminus/agents/STAGE_CONTRACTS.md`. Those contracts specialize routing/interface structure and never override higher-precedence Edition 3 or Protocol rules.
+
+## Structured stage-contract routing
+
+Before invoking a registered creation stage, the controller must:
+
+1. resolve the stage entry from `.terminus/agents/stage_contracts.json`;
+2. verify the declared primary owner and role class match the intended invocation;
+3. load the stage's applicable `policy_files` and `prompt_files` under normal precedence;
+4. verify every `input_contract.required_fields` item is available, current and allowed by the role's evidence boundary;
+5. pass only the minimum relevant allowed input fields rather than the entire control plane;
+6. require the role to return one declared `output_contract.status_values` value plus every required output field;
+7. preserve declared `persisted_artifacts` and evidence references when the stage produces durable evidence;
+8. run only the listed deterministic validators that actually apply and exist; semantic reviewers remain semantic owners and are not replaced by validator output;
+9. route failures using the declared common `failure_routes`, unless current evidence/higher-precedence policy requires a smaller or stricter owner;
+10. advance only to the declared `success_transition` after evidence and predecessor requirements are satisfied;
+11. invalidate prior stage evidence when a material `stale_on` dependency changes, subject to stricter Protocol exact-commit/scope-hash rules.
+
+A stage registry field is not permission to disclose excluded evidence. The generated role packet/evidence boundary still controls what an agent may see.
+
+For `INSTRUCTION_DRAFT`, `.terminus/agents/INSTRUCTION_POLICY.md` is mandatory detailed policy in addition to the stage input/output contract.
+
 ## Creation bootstrap / rule resolution
 
 No producer starts scenario design until the controller has resolved one creation-rule context for the run.
@@ -17,7 +39,7 @@ No producer starts scenario design until the controller has resolved one creatio
 At `RULE_RESOLUTION`, the controller must:
 1. resolve the exact control-plane commit used for creation;
 2. read the current repository-wide task rules in `TERMINUS_3_AI_INSTRUCTIONS.md`;
-3. read `.terminus/reviewers/REVIEWER_CHECKLIST.md`, `.terminus/agents/CREATION_PIPELINE.md`, `.terminus/agents/PRODUCTION_AUTHENTICITY.md` and `.terminus/agents/QUALITY_AGENT_REGISTRY.md`;
+3. read `.terminus/reviewers/REVIEWER_CHECKLIST.md`, `.terminus/agents/CREATION_PIPELINE.md`, `.terminus/agents/PRODUCTION_AUTHENTICITY.md`, `.terminus/agents/QUALITY_AGENT_REGISTRY.md`, `.terminus/agents/STAGE_CONTRACTS.md` and `.terminus/agents/stage_contracts.json`;
 4. resolve active task-format, complexity, runtime-authenticity, verifier and packaging validators/CI that enforce those rules;
 5. resolve the creation profile, including whether `large_system_strict` applies and any explicitly justified narrower profile;
 6. apply the control-plane precedence rule and stop with `POLICY_CONFLICT` if applicable authoritative sources cannot be reconciled.
@@ -54,6 +76,8 @@ The default strict task is not one localized bug report transplanted into a larg
 If this work-package scale, behavioral diversity, edge/failure coverage or production character cannot be reached naturally, return `SCENARIO_TOO_SMALL`. Never pad, silently downgrade, pile unrelated requirements together or build toward the numbers for their own sake.
 
 ## Instruction / documentation contract
+
+The detailed authoritative instruction contract is `.terminus/agents/INSTRUCTION_POLICY.md`; the machine interface is stage `INSTRUCTION_DRAFT` in `.terminus/agents/stage_contracts.json`.
 
 Edition 3 allows `instruction.md` to use **<=2 short paragraphs or <=20 concise bullets**. For a strict work package, the controller must allow enough concise bullets to state the complete material work request; brevity is not permission to omit requirements.
 
@@ -104,6 +128,8 @@ For an operational/stateful strict task, before Instruction Writer or review:
 18. **Q6 Production Logic Auditor** — independent production-grade code/reachability/coupling review on the frozen candidate.
 19. **Q8 Model Perspective Difficulty Simulator** — two diagnostic cold solve simulations after Pre-LLMaJ PASS; never official difficulty evidence.
 
+The detailed expected input/output fields for these lifecycle stages are not duplicated here; they are resolved from `stage_contracts.json` at invocation time.
+
 ## Spec alignment state
 
 `SPEC_ALIGNMENT` is producer-side and must finish before documentation/assembly:
@@ -129,6 +155,7 @@ On Oracle/build/runtime failure:
 
 `FROZEN_CANDIDATE` requires:
 - current creation-rule context reconciled against governing task rules;
+- all required registered creation-stage inputs/outputs/evidence current through `DETERMINISTIC_VALIDATION`;
 - Q1/Q2/Q3 producer alignment complete with no unresolved material gap/ambiguity;
 - Q7 current exact-format check PASS;
 - structure/static/lint PASS;
@@ -150,9 +177,9 @@ On Oracle/build/runtime failure:
 
 ## Quality interlock
 
-A frozen candidate does not begin normal Pre-LLMaJ until:
+A frozen candidate does not begin normal Pre-LLMaJ until stage `QUALITY_INTERLOCK` is satisfied:
 - Q4 Spec-Test Contract Reviewer returns packet-bound `PASS`, confidence >= MEDIUM, evidence `SUFFICIENT`;
 - Q6 Production Logic Auditor returns packet-bound `PASS`, confidence >= MEDIUM, evidence `SUFFICIENT`;
-- both reviews apply to the exact task commit.
+- both reviews satisfy current exact-commit/scope-freshness rules.
 
 If either returns REVISE, route findings to the smallest responsible producer, invalidate affected evidence, and rerun the quality interlock. A creator cannot convert its own evidence into independent review approval.
