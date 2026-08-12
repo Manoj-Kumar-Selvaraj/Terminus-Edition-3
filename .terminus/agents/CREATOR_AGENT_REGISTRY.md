@@ -40,7 +40,7 @@ Owns incident discovery, persona, evidence that would exist after the incident, 
 Owns runtime topology, realistic state/data, solver-visible incident evidence and starter code/config. Major modules must be reachable, substantive and differentiated by real production responsibility. It does not read the final Oracle while building the starter.
 
 ### A3 — Defect Topology Designer
-Owns the private causal graph: normally 4–8 root causes, 20–30 manifestations, cross-component/cross-cluster edges and partial-fix traps.
+Owns the private causal graph and behavioral-surface design: normally 4–8 root causes, 20–30 manifestations, at least 15 strict-profile manifestations participating in meaningful causal/interdependency edges, cross-component/cross-cluster relationships and partial-fix traps. It maps normal, edge/boundary, negative/rejection, failure/recovery and cross-component surfaces so later F2P coverage can arise organically, without one defect per test or count-driven manifestations. If that breadth cannot arise naturally, it returns `SCENARIO_TOO_SMALL`.
 
 ### A4 — Reference Solution Author
 Owns the deterministic general repair. No hidden-test special casing.
