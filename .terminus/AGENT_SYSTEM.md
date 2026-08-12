@@ -4,6 +4,12 @@ Agent-system policy version: `2.4`
 
 This directory is the control plane for creating, reviewing and advancing Terminus Edition 3 tasks. Repository state, current authoritative rules, Git history, generated review packets/results, Actions/Harbor evidence and durable session checkpoints are evidence. Chat history is replaceable working context.
 
+## Policy scope and ownership
+
+This file defines system-wide authority, trust boundaries, agent classes and decision rights, global independence rules, gate ordering, evidence/freshness principles, escalation semantics and submission readiness.
+
+It does not define individual runnable prompts, per-agent tool permissions, packet/result schemas, task-specific evidence surfaces or role-specific procedures. Those are owned by the referenced protocol, controller, registry, prompt, schema and reviewer-policy files. A narrower policy may specialize a system-wide rule within its declared decision right, but it must not silently contradict this file.
+
 Read `.terminus/agents/CI_ORCHESTRATOR.md` when starting or resuming the controller, `.terminus/agents/PROTOCOL.md` before semantic work, `.terminus/agents/INVOKE.md` before starting a specialist review, and `.terminus/CURSOR_OPERATING.md` when Cursor is the execution surface. Creation uses `.terminus/agents/CREATION_CONTROLLER.md` and `.terminus/agents/CREATOR_AGENT_REGISTRY.md`. The additive eight-agent quality interlock is defined by `.terminus/agents/QUALITY_AGENT_REGISTRY.md` and `.terminus/agents/QUALITY_AGENT_PROMPTS.md`. Acceptance review uses the reviewer checklist, criterion registry and Comprehensive Reviewer contract.
 
 ## Non-negotiable principles
