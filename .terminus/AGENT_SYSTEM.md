@@ -14,7 +14,7 @@ It does not define individual runnable prompts, per-agent tool permissions, pack
 
 When authoritative control-plane documents disagree, apply this policy order: repository-wide mandatory rules and active validators; this `AGENT_SYSTEM.md`; `.terminus/agents/PROTOCOL.md` for lifecycle, evidence, freshness and isolation semantics; the role-specific policy within that role's declared decision right; the generated packet for execution-specific evidence binding; the durable task session; then chat or historical prose. A generated packet or session may narrow execution state but cannot override governing policy.
 
-If two applicable authoritative sources cannot be reconciled by specialization, record `POLICY_CONFLICT`, identify the conflicting sources and affected gate, and stop advancement until the conflict is resolved. Never choose the desired outcome, newest prose or majority interpretation as an implicit tie-breaker.
+If two applicable authoritative sources cannot be reconciled by specialization, record `POLICY_CONFLICT`, identify the conflicting sources and affected gate, and stop advancement until the conflict is resolved. Record active policy conflicts in the task's `.terminus/sessions/<task>.md` **Policy-conflict ledger**. Never choose the desired outcome, newest prose or majority interpretation as an implicit tie-breaker.
 
 ## Agent classes and write authority
 
