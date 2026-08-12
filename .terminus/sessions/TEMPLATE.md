@@ -113,7 +113,7 @@ A role-contract change stales only the affected role when the task is unchanged.
 
 - Q1 spec-gap status/evidence: `<status / paths or finding IDs>`
 - Q2 verifier-coverage status/evidence: `<status / paths or finding IDs>`
-- Q3 ambiguity status/evidence: `<status / run/path>`
+- Q3 ambiguity status/evidence: `<status / paths or finding IDs>`
 - Q7 format status/evidence: `<status / run/path>`
 - Q5 Oracle/runtime repair evidence: `<none or failure class + commit/run>`
 - Q4 review ID/result: `<id / path>`
