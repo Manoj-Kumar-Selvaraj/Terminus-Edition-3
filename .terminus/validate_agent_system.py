@@ -30,6 +30,7 @@ REQUIRED = [
     T / "agents" / "CREATION_PIPELINE.md",
     T / "agents" / "CREATOR_AGENT_REGISTRY.md",
     T / "agents" / "CREATOR_PROMPTS.md",
+    T / "agents" / "PRODUCTION_AUTHENTICITY.md",
     T / "agents" / "schemas" / "context_packet.schema.json",
     T / "agents" / "schemas" / "review_result.schema.json",
     T / "reviewers" / "PRE_LLMAJ.md",
@@ -44,6 +45,7 @@ REQUIRED = [
     T / "reviewers" / "AGENT_DESIGN_RESEARCH.md",
     T / "reviews" / "README.md",
     T / "sessions" / "TEMPLATE.md",
+    ROOT / "TERMINUS_3_AI_INSTRUCTIONS.md",
     ROOT / ".cursor" / "agents" / "terminus-ci-orchestrator.md",
 ]
 
@@ -75,6 +77,52 @@ CREATOR_ROLE_MARKERS = [
     "Task Assembly",
     "Complexity Governor",
     "Authoring Failure Diagnostician",
+]
+
+CREATION_BOOTSTRAP_MARKERS = [
+    "RULE_RESOLUTION",
+    "CREATION_RULE_CONTEXT",
+    "TERMINUS_3_AI_INSTRUCTIONS.md",
+    "ACTIVE_VALIDATORS",
+    "CREATION_PROFILE",
+    "POLICY_CONFLICT",
+]
+
+STRICT_CREATION_MARKERS = [
+    "engineering work package",
+    "no upper target",
+    "organically",
+    "production characteristics",
+    "edge",
+    "boundary",
+    "negative",
+    "failure-path",
+    "starter/NOP-fail",
+    "Oracle-pass",
+    "SCENARIO_TOO_SMALL",
+    "<=20",
+    "material functional",
+    "spec-file-loophole",
+    "what must work",
+    "implementation diagnosis",
+]
+
+AGENT_SYSTEM_INVARIANT_MARKERS = [
+    "Policy scope and ownership",
+    "Policy precedence and conflicts",
+    "Agent classes and write authority",
+    "State, verdict and freshness namespaces",
+    "Control-plane artifact model",
+    "Fact, evidence, judgment and state",
+    "Single authoritative decision owner",
+    "Idempotency and retry discipline",
+    "Runtime prompt projection",
+    "CONTROLLER",
+    "PRODUCER",
+    "FIXER",
+    "REVIEWER",
+    "ADJUDICATOR",
+    "SIMULATOR",
 ]
 
 PROTOCOL_MARKERS = [
@@ -169,7 +217,9 @@ def main() -> int:
     session_path = T / "sessions" / "TEMPLATE.md"
     creator_registry_path = T / "agents" / "CREATOR_AGENT_REGISTRY.md"
     creator_controller_path = T / "agents" / "CREATION_CONTROLLER.md"
+    creation_pipeline_path = T / "agents" / "CREATION_PIPELINE.md"
     creator_prompts_path = T / "agents" / "CREATOR_PROMPTS.md"
+    production_authenticity_path = T / "agents" / "PRODUCTION_AUTHENTICITY.md"
     source_corpus_path = T / "reviewers" / "HUMAN_ENGINEERING_SOURCE_CORPUS.md"
 
     agent_system = texts.get(agent_system_path, "")
@@ -187,7 +237,9 @@ def main() -> int:
     session_template = texts.get(session_path, "")
     creator_registry = texts.get(creator_registry_path, "")
     creator_controller = texts.get(creator_controller_path, "")
+    creation_pipeline = texts.get(creation_pipeline_path, "")
     creator_prompts = texts.get(creator_prompts_path, "")
+    production_authenticity = texts.get(production_authenticity_path, "")
     source_corpus = texts.get(source_corpus_path, "")
     difficulty_analyzer = texts.get(T / "analyze_difficulty.py", "")
     packet_generator = texts.get(T / "new_review_packet.py", "")
@@ -212,12 +264,17 @@ def main() -> int:
     require_declared(errors, creator_registry, creator_registry_path, "Registry version", "1.0")
     require_declared(errors, creator_controller, creator_controller_path, "Policy version", "1.0")
     require_declared(errors, creator_prompts, creator_prompts_path, "Creator prompt policy version", "1.0")
+    require_declared(errors, production_authenticity, production_authenticity_path, "Policy version", "1.1")
     require_declared(errors, source_corpus, source_corpus_path, "Corpus version", "1.0")
 
     if "Checklist snapshot version: `2026-08-08-user-supplied`" not in checklist:
         fail(errors, "REVIEWER_CHECKLIST.md must declare the current checklist snapshot")
     if "Dataset policy version: `1.0`" not in calibration:
         fail(errors, "CALIBRATION_DATASET.md must declare dataset policy version 1.0")
+
+    for marker in AGENT_SYSTEM_INVARIANT_MARKERS:
+        if marker.lower() not in agent_system.lower():
+            fail(errors, f"AGENT_SYSTEM.md missing control-plane invariant marker: {marker}")
 
     for role in REVIEW_ROLE_HEADINGS:
         if role not in agent_system:
@@ -229,6 +286,18 @@ def main() -> int:
     for marker in CREATOR_ROLE_MARKERS:
         if marker.lower() not in creator_text.lower():
             fail(errors, f"creator system missing role marker: {marker}")
+
+    creation_bootstrap_text = agent_system + creator_controller + creation_pipeline + creator_prompts
+    for marker in CREATION_BOOTSTRAP_MARKERS:
+        if marker.lower() not in creation_bootstrap_text.lower():
+            fail(errors, f"creation system missing rule-resolution marker: {marker}")
+
+    strict_creation_text = "\n".join(
+        [agent_system, creator_registry, creator_controller, creation_pipeline, creator_prompts, production_authenticity]
+    )
+    for marker in STRICT_CREATION_MARKERS:
+        if marker.lower() not in strict_creation_text.lower():
+            fail(errors, f"strict creation policy missing organic-scale/coverage marker: {marker}")
 
     for marker in [
         "Decision right",
@@ -474,6 +543,9 @@ def main() -> int:
     print("Terminus agent-system validation PASS")
     print(
         f"review_roles={len(REVIEW_ROLE_HEADINGS)} creator_markers={len(CREATOR_ROLE_MARKERS)} "
+        f"creation_bootstrap_markers={len(CREATION_BOOTSTRAP_MARKERS)} "
+        f"strict_creation_markers={len(STRICT_CREATION_MARKERS)} "
+        f"agent_system_invariants={len(AGENT_SYSTEM_INVARIANT_MARKERS)} "
         f"checklist_criteria={len(criteria)} reviewer_eval_seed_cases={len(case_ids)} "
         "schemas=v3 provenance=packet_bound writing_policy=human_handoff "
         "difficulty_policy=combined_10 complexity_policy=strict_plus_authenticity "

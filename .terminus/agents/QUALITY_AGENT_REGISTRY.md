@@ -16,19 +16,19 @@ All quality agents read current authoritative Edition 3 rules first, then `.term
 
 ## Q1 — Spec Gap Repairer
 
-**Purpose:** find legitimate verifier-required behavior that is not discoverable from `instruction.md` plus explicitly referenced solver-visible contracts, then repair the solver-visible specification naturally.
+**Purpose:** find legitimate verifier-required behavior that is not discoverable from the solver-visible work request plus explicitly referenced technical contracts, then repair the specification without losing complete material functional requirements or leaking hidden test topology.
 
-**Owns:** solver-visible specification coverage gaps only.
+**Owns:** solver-visible specification coverage gaps and the instruction-vs-doc natural location of a missing requirement.
 
 **May read:** instruction, referenced contracts/runbooks, verifier requirement/assertion summary, and—when necessary—the verifier body for evidence. Hidden test details are treated as confidential evidence, never as wording source.
 
-**May change:** `instruction.md` and existing solver-visible contract/runbook files only when the missing requirement belongs there.
+**May change:** `instruction.md` and existing solver-visible contract/runbook files only when the missing requirement naturally belongs there.
 
-**Must not:** dump test cases into the instruction, create one sentence per test, copy hidden values/test names, prescribe implementation, or invent an incident fact to justify a requirement.
+**Must not:** dump test cases into the instruction, create one sentence per test, copy hidden values/test names, prescribe implementation, diagnose which module/function is buggy without legitimate solver-visible basis, move material task goals into docs to evade the instruction limit, or invent a current-state/incident fact to justify a requirement.
 
-**Repair rule:** prefer one operational invariant or a pointer to an existing contract over enumerating edge cases. After editing, apply the Jira/Slack handoff and reverse-outline tests.
+**Repair rule:** keep the complete engineering objective and all material functional/operational/preservation/safety requirements discoverable in the work request under the Edition 3 `<=2` short paragraphs or `<=20` concise bullets shape. Technical architecture/layout/state/schema/protocol/API/CLI/runbook detail may live in referenced docs. Group related cases around meaningful responsibilities/invariants without erasing distinct material requirements. After editing, apply Jira/Slack handoff, requirement-completeness, reverse-outline and spec-file-loophole tests.
 
-**Output:** gap IDs, affected solver-visible requirement, evidence showing the requirement is graded, chosen natural location, concise repair, and a private coverage note.
+**Output:** gap IDs, affected solver-visible requirement, evidence showing the requirement is graded, chosen natural location, concise repair, instruction-shape/completeness status, instruction/docs boundary status, and a private coverage note.
 
 ## Q2 — Verifier Coverage Repairer
 
@@ -54,7 +54,7 @@ All quality agents read current authoritative Edition 3 rules first, then `.term
 
 **May change:** instruction and referenced solver-visible contracts. It does not add new behavior merely to make wording more detailed.
 
-**Must preserve:** natural incident handoff style, information selectivity, implementation freedom, and existing legitimate difficulty.
+**Must preserve:** the complete material engineering work request, natural Jira/change-request style, information selectivity, implementation freedom, the Edition 3 instruction shape, and the boundary between task goals in `instruction.md` and technical detail in referenced docs.
 
 **Output:** ambiguity IDs, competing interpretations, grading consequence, minimal clarification, and why the clarification belongs in the chosen artifact.
 
@@ -62,26 +62,29 @@ All quality agents read current authoritative Edition 3 rules first, then `.term
 
 **Type:** independent read-only semantic reviewer.
 
-**Decision right:** is the complete grading contract bidirectionally aligned and unambiguous after an exhaustive walk of the entire allowed scope?
+**Decision right:** is the complete grading contract bidirectionally aligned and unambiguous after an exhaustive walk of the entire allowed scope, with a complete material work request in `instruction.md` and no prompt-extension/repair-map misuse of solver-visible docs?
 
 It independently rebuilds the requirement/test matrix rather than trusting Q1–Q3 or Verifier Author notes. Q4 is not allowed to stop after the first blocking defect merely because the verdict is already known.
 
 Mandatory exhaustive checks:
-1. Inventory every material solver-visible requirement.
+1. Inventory every material engineering objective, functional/operational requirement, preservation/compatibility/safety requirement and stable output/interface obligation.
 2. Inventory every substantive verifier behavior.
 3. Complete requirement -> verifier coverage for the full inventory.
 4. Complete verifier behavior -> discoverable requirement for the full inventory.
-5. Walk every delegated solver-visible contract and stable graded output interface.
-6. Walk all F2P/P2P behavioral boundaries, including external integrations, preservation intent, circular oracles and bypass risk.
-7. Walk all grading-relevant ambiguity and authority boundaries.
-8. Perform a second adversarial omission sweep after the first matrix is frozen.
-9. Report all blocking findings from the complete review in the same result.
+5. Check `instruction.md` against the Edition 3 `<=2` short paragraphs or `<=20` concise bullets shape and verify that material task goals remain in the work request rather than being displaced into docs merely to evade the limit.
+6. Walk every delegated solver-visible contract and stable graded output interface; distinguish legitimate architecture/layout/state/schema/protocol/API/CLI/runbook documentation from a second prompt or repair map.
+7. Check for unnecessary implementation diagnosis that tells the solver which module/function is incomplete/buggy merely because the author knows the hidden topology.
+8. Walk all F2P/P2P behavioral boundaries, including external integrations, preservation intent, circular oracles and bypass risk.
+9. Walk all grading-relevant ambiguity and authority boundaries.
+10. Check hidden-test/compressed-rubric leakage; up to 20 concise functional bullets are allowed, and the defect is one-to-one test topology or implementation recipe—not the mere presence of many legitimate requirements.
+11. Perform a second adversarial omission sweep after the first matrix is frozen.
+12. Report all blocking findings from the complete review in the same result.
 
 A reviewer that cannot complete the exhaustive walk because evidence is unavailable returns `INSUFFICIENT_EVIDENCE`, not a partial `REVISE`.
 
 Materiality is explicit: `BLOCKER/HIGH` always block; `MEDIUM` blocks only when it can change solver pass/fail, observable correctness, safety/durability or a documented stable public interface; `LOW` is advisory unless an authoritative rule makes it mandatory. `PASS` requires no blocking findings and a complete exhaustiveness block.
 
-A single material phantom test, material untested requirement, or grading-relevant ambiguity is still `REVISE`; exhaustiveness makes the review more complete, not easier.
+A single material phantom test, material untested requirement, grading-relevant ambiguity, material work-request omission, spec-file loophole/prompt-extension defect, or material repair-plan leakage is still `REVISE`; exhaustiveness makes the review more complete, not easier.
 
 ## Q5 — Oracle & Runtime Repair Specialist
 
@@ -127,9 +130,11 @@ Q6 uses a conservative production evidence-scope hash over task `task.toml` plus
 It checks current authoritative rules and active CI/preflight scripts for, at minimum:
 - top-level task directory and required files;
 - `task.toml` version/sections/field placement/types/current metadata contract;
-- `environment/Dockerfile`, `.dockerignore`, build context, digest pins, dependency pinning and runtime tooling;
-- verifier mode, `tests/Dockerfile`, `tests/test.sh`, test discovery and timeout/artifact boundaries;
-- `solution/solve.sh` placement, executable behavior, deterministic/re-runnable Oracle structure and no verifier mutation;
+- `instruction.md`/README required presence and path rules;
+- environment Dockerfile/base digest/dependency pins/build context/runtime tooling;
+- `.dockerignore`;
+- test image, test launcher, Python test discovery and timeout/artifact boundaries;
+- solution directory and `solve.sh` deterministic executable contract;
 - environment/solution/tests isolation and leakage;
 - package-excluded private `.terminus` design/review artifacts;
 - required tmux/asciinema/runtime conventions where current rules require them;
@@ -169,7 +174,7 @@ Q8 is diagnostic only. It cannot set the official tier or satisfy the official G
 
 Authoring/repair loop:
 
-`Verifier built -> instruction drafted -> Q1 spec-gap repair -> Q2 verifier-coverage repair -> Q3 ambiguity repair -> Q7 format enforcement -> Assembly/Complexity/Authenticity -> Oracle/NOP`
+`Verifier built -> instruction drafted -> Q1 spec-gap + instruction-boundary repair -> Q2 verifier-coverage repair -> Q3 ambiguity repair -> Q7 format enforcement -> Assembly/Complexity/Authenticity -> Oracle/NOP`
 
 On Oracle/runtime failure:
 
@@ -177,7 +182,7 @@ On Oracle/runtime failure:
 
 Before independent Pre-LLMaJ:
 
-`FROZEN_CANDIDATE -> Q4 Spec-Test Contract Reviewer -> Q6 Production Logic Auditor -> QUALITY_INTERLOCK_PASS`
+`FROZEN_CANDIDATE -> Q4 Spec-Test/Instruction-Contract Reviewer -> Q6 Production Logic Auditor -> QUALITY_INTERLOCK_PASS`
 
 Only after Q4 passes on the current exact task commit and Q6 independently passes with sufficient evidence—either on that exact task commit or under the Protocol-defined unchanged Q6 production-scope hash—may normal Pre-LLMaJ begin.
 
