@@ -173,7 +173,7 @@ The topology is an operational causal model, not a hidden test plan. Root causes
 ```json
 {
   "status": "DESIGN_READY | SCENARIO_TOO_SMALL | BLOCKED",
-  "profile": "large_system_strict",
+  "profile": "<applicable creation profile>",
   "root_cause_clusters": {},
   "defects": [
     {
