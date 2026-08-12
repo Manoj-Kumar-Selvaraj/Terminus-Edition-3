@@ -115,22 +115,26 @@ Authoring alignment runs after instruction/verifier creation: `Q1 -> Q2 -> Q3`. 
 
 After deterministic freeze, **Q4 must independently PASS with sufficient evidence on the exact task commit; Q6 must independently PASS with sufficient evidence either on that exact task commit or under the Protocol-defined unchanged Q6 production-scope hash before normal Pre-LLMaJ begins**. After `PRE_LLMAJ: PASS`, Q8 runs both isolated perspectives before expensive model-backed evaluation. One perspective may not see the other result before both freeze.
 
-### Large-system scale
+### Large-system scale and production authenticity
 
-For `large_system_strict`, the project-owner authoring requirements are hard constraints **and** structural authenticity must pass:
+For `large_system_strict`, numeric requirements are hard minimum floors/ranges **and** structural authenticity must pass. They are not quotas or preferred target sizes.
 
-- at least 3,000 substantive solver-visible runtime/configuration LOC;
-- infrastructure tasks: 30–50 meaningful resources;
-- 20–30 tracked defect manifestations derived from fewer root-cause clusters;
-- at least 15 manifestations participating in the causal/interdependency graph;
-- 25–30 F2P behavioral tests, each empirically starter/NOP-fail and Oracle-pass;
-- P2P/regression cases according to actual preservation risk.
+- **At least 3,000 substantive, reachable solver-visible runtime/configuration LOC, with no upper target.** `3,000` is a floor, not a goal to approach; a coherent system may naturally require 5,000, 10,000 or more substantive lines.
+- Count only meaningful production/domain implementation. Duplicate code, generated/vendor material, dead or unreachable modules, repeated boilerplate, unnecessary abstractions, copied templates, micro-module inflation or other code whose main purpose is crossing the floor does not satisfy substantive scale.
+- The codebase must exhibit credible production characteristics appropriate to its domain: differentiated modules/responsibilities, real runtime/build/operator entrypoints, realistic state/data, validation/error handling, configuration, operational workflows, meaningful inter-component coupling, and persistence/restart/recovery/idempotency/failure handling where applicable.
+- Infrastructure tasks use 30–50 meaningful interacting resources when that scale is natural; decorative/copy resources do not count.
+- Track 20–30 defect manifestations derived from materially fewer root-cause clusters, with at least 15 manifestations participating in meaningful causal/interdependency relationships.
+- Build **25–30 non-duplicative F2P behavioral tests organically** from materially distinct requirements, states, transitions, failure modes and interactions. Do not invent, split, rename, parameter-duplicate or weaken cases merely to reach the range. Every F2P must empirically starter/NOP-fail and Oracle-pass.
+- Add P2P/regression cases according to actual preservation risk, not to inflate suite size.
+- Include sufficient domain-relevant **edge and boundary behavior** according to operational risk, such as partial/exhausted state, boundary values, repeated operations, restart/resume, ordering-sensitive state or cross-component combinations where applicable.
+- Include sufficient **negative and failure-path behavior** where relevant, such as malformed/invalid inputs, unauthorized or forbidden operations, rejected transitions, stale/fenced state, dependency/partial failures and safe recovery. These cases remain F2P or P2P according to their starter-to-Oracle transition; they are not a third taxonomy.
+- Edge/negative cases must exercise materially different invariants, operational boundaries, rejection/safety semantics, recovery paths or state transitions rather than duplicate happy paths with changed fixture values.
 
-Numbers never substitute for difficulty. Duplicate/dead code, fake resources, duplicate manifestations, flat causal graphs, test-map drift, mislabeled F2P/P2P cases, and suite inflation are blocking authoring defects. If the requested strict scale cannot be reached naturally, return `SCENARIO_TOO_SMALL` and select a richer incident rather than pad it.
+Numbers never substitute for difficulty or authenticity. Duplicate/dead/unreachable code, fake/decorative resources, duplicate manifestations, flat causal graphs, test-map drift, mislabeled F2P/P2P cases, quota-driven F2P construction, artificial edge cases and suite inflation are blocking authoring defects. If the requested strict scale, production character or behavioral breadth cannot be reached naturally, return `SCENARIO_TOO_SMALL` and select a richer incident rather than pad it.
 
 The legacy `large_system` profile may use scale numbers diagnostically only when the controller explicitly records why strict scale is inappropriate. New tasks requested to meet the large-system numbers must use `large_system_strict`. Both profiles still require structural authenticity.
 
-Q6 applies an additional removal/reachability test: strict PASS requires >=3,000 substantive **reachable** solver-visible runtime/configuration LOC and no HIGH toy/padding risk.
+Q6 applies an additional removal/reachability test: strict PASS requires >=3,000 substantive **reachable production/domain** solver-visible runtime/configuration LOC as a floor, no HIGH toy/padding risk, and credible production characteristics. Raw LOC alone can never produce PASS.
 
 ## Human engineering instruction policy
 
