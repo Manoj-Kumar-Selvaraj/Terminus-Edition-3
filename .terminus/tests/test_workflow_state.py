@@ -112,7 +112,7 @@ def _record(
         "schema_version": "1.0",
         "invocation_id": _invocation_id(f"{stage_id}:{attempt}"),
         "stage_id": stage_id,
-        "role_id": "CI_ORCHESTRATOR",
+        "role_id": resolver.execution_authority.primary_role_for_stage(stage_id),
         "authority": {
             "task_id": task_id,
             "task_commit": commit,
