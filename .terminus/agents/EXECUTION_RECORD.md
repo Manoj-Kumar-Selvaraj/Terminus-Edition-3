@@ -10,6 +10,7 @@ Canonical implementation:
 - `.terminus/agents/schemas/execution_outcomes.schema.json`
 - `.terminus/agents/schemas/stage_result.schema.json`
 - `.terminus/agents/schemas/execution_record.schema.json`
+- `.terminus/execution/authority.py`
 - `.terminus/execution/record.py`
 - `.terminus/execution/result_cli.py`
 - `.terminus/validate_execution_record.py`
@@ -18,9 +19,9 @@ Canonical implementation:
 
 A result may affect workflow state only through this chain:
 
-`valid READY invocation + matching invocation_id + legal stage status + declared output keys + status-specific required outputs + valid route key when routed -> execution record -> transition decision`
+`valid READY invocation + executable stage role + matching invocation_id + legal stage status + declared output keys + status-specific required outputs + valid route key when routed -> execution record -> transition decision`
 
-A prose answer, chat statement, reviewer conclusion, cache hit, or unbound JSON object does not advance a Terminus stage by itself.
+A prose answer, chat statement, reviewer conclusion, cache hit, retrieval-observer permission or unbound JSON object does not advance a Terminus stage by itself.
 
 ## Explicit status semantics
 
@@ -63,9 +64,13 @@ The recorder recomputes the supplied invocation identity using the same canonica
 - `invocation_id` does not match the invocation content;
 - the result names a different invocation ID;
 - the stage/role/output contract has been altered inside the invocation packet;
+- the invocation role is not in the stage's executable-role set from `.terminus/execution/authority.py`;
+- a controller/retrieval observer has been forged into a producer/reviewer executor;
 - the loaded execution-outcome contract does not byte-match the invocation's bound `control_plane_commit`.
 
-The record copies the invocation's stage, role and authority envelope. It never accepts replacement task/control-plane/packet identities from the result payload.
+The record copies the invocation's stage, executable role and authority envelope. It never accepts replacement task/control-plane/packet identities from the result payload.
+
+Retrieval audience remains separate: a controller may be allowed to inspect a stage's evidence for orchestration without being allowed to produce that stage's execution record. Record validation rechecks executable authority even if a forged invocation ID is internally self-consistent.
 
 ## Output validation
 
@@ -131,6 +136,8 @@ The canonical durable location for a task-scoped record is:
 Controller-only/non-task bootstrap records may be stored under an explicitly selected control-plane execution path when durable persistence is useful. Persistence is optional for ephemeral local diagnostics but mandatory whenever a later stage/session relies on the result as durable evidence.
 
 A persisted execution record is audit history, not mutable workflow memory. If its task/control-plane/evidence bindings go stale, create a new invocation/record rather than rewriting historical provenance.
+
+The append-only task execution ledger and derived current-state rules are defined by `.terminus/agents/WORKFLOW_STATE.md`. The record is durable provenance; the materialized workflow snapshot is rebuildable derived state.
 
 ## Normal ChatGPT portability
 
