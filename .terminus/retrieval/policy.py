@@ -13,17 +13,11 @@ from .models import InvocationContext
 ALL_STAGES = "ALL_AUTHORIZED_STAGES"
 ALL_ROLES = "ALL_AUTHORIZED_ROLES"
 
-# The A2 lifecycle deliberately uses one human owner label for two distinct
-# invocations. Retrieval must resolve the executable role from the stage, not
-# from that ambiguous display label.
 _STAGE_OWNER_OVERRIDES = {
     "SYSTEM_ARCHITECTURE": "A2_SYSTEM_ARCHITECT",
     "ENVIRONMENT_BUILD": "A2_ENVIRONMENT_BUILDER",
 }
 
-# PRE_LLMAJ intentionally describes a grouped reviewer panel in prose. Retrieval
-# needs the concrete canonical roles so a generic group label cannot become an
-# authorization wildcard.
 _STAGE_ROLE_OVERRIDES = {
     "PRE_LLMAJ": frozenset(
         {
@@ -92,7 +86,6 @@ class RetrievalPolicy:
         return canonical
 
     def _canonical_stage_participant(self, label: str) -> str:
-        """Resolve a stage owner/reviewer display label to one canonical role ID."""
         direct = self.role_aliases.get(label)
         if direct in self.role_ids:
             return str(direct)
@@ -120,7 +113,6 @@ class RetrievalPolicy:
         return next(iter(matches))
 
     def allowed_roles_for_stage(self, stage_id: str) -> frozenset[str]:
-        """Return canonical roles permitted to retrieve under one stage authority."""
         stage = self.stages.get(stage_id)
         if stage is None:
             raise ValueError(f"unknown retrieval stage id: {stage_id}")
@@ -185,7 +177,6 @@ class RetrievalPolicy:
             raise ValueError(f"missing visibility contract for {stage_id}") from exc
 
     def mandatory_exact_paths(self, stage_id: str) -> tuple[str, ...]:
-        """Policy/prompt files that must be exact-read, never similarity-selected."""
         stage = self.stages.get(stage_id)
         if stage is None:
             raise ValueError(f"unknown retrieval stage id: {stage_id}")
@@ -211,7 +202,6 @@ class RetrievalPolicy:
     def authorize_chunk(
         self, metadata: Mapping[str, Any], context: InvocationContext
     ) -> AuthorizationDecision:
-        """Return an explicit allow/deny decision for one metadata-valid chunk."""
         try:
             context = self.validate_context(context)
         except ValueError as exc:
@@ -229,6 +219,13 @@ class RetrievalPolicy:
             return AuthorizationDecision(False, "source/sensitivity profile mismatch")
         if metadata.get("solver_visible") is not profile.get("default_solver_visible"):
             return AuthorizationDecision(False, "source/solver-visible profile mismatch")
+
+        if source_kind == "REVIEW_RESULT" and context.role_id != "CI_ORCHESTRATOR":
+            producer_hash = metadata.get("role_contract_hash")
+            if not producer_hash or not context.role_contract_hash:
+                return AuthorizationDecision(False, "review result requires producer role-contract binding")
+            if str(producer_hash) != str(context.role_contract_hash):
+                return AuthorizationDecision(False, "cold-review result producer mismatch")
 
         allowed = self.authorized_evidence_classes(context)
         if evidence_class not in allowed:
@@ -259,19 +256,10 @@ class RetrievalPolicy:
         freshness = set(metadata.get("freshness_scope", []))
         binding_checks = {
             "TASK_COMMIT": ("task_commit", context.task_commit),
-            "CONTROL_PLANE_COMMIT": (
-                "control_plane_commit",
-                context.control_plane_commit,
-            ),
-            "ROLE_CONTRACT_HASH": (
-                "role_contract_hash",
-                context.role_contract_hash,
-            ),
+            "CONTROL_PLANE_COMMIT": ("control_plane_commit", context.control_plane_commit),
+            "ROLE_CONTRACT_HASH": ("role_contract_hash", context.role_contract_hash),
             "PACKET_BINDING": ("packet_binding", context.packet_binding),
-            "REVIEW_SCOPE_HASH": (
-                "review_scope_hash",
-                context.review_scope_hash,
-            ),
+            "REVIEW_SCOPE_HASH": ("review_scope_hash", context.review_scope_hash),
             "CI_RUN_ID": ("ci_run_id", context.ci_run_id),
         }
         for scope, (field, current) in binding_checks.items():
