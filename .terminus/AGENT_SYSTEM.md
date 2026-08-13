@@ -10,7 +10,7 @@ This file defines system-wide authority, trust boundaries, agent classes and dec
 
 It does not define every runnable prompt, per-agent tool permission, detailed artifact schema, task-specific evidence surface or role-specific procedure. Those are owned by the referenced protocol, controller, registry, prompt, schema and reviewer-policy files. A narrower policy may specialize a system-wide rule within its declared decision right, but it must not silently contradict this file.
 
-Execution-relevant lifecycle sections are bound to canonical stage IDs in `.terminus/agents/stage_contracts.json`, explained by `.terminus/agents/STAGE_CONTRACTS.md` and structurally described by `.terminus/agents/schemas/stage_contracts.schema.json`. Detailed instruction semantics are owned by `.terminus/agents/INSTRUCTION_POLICY.md`.
+Execution-relevant lifecycle sections are bound to canonical stage IDs in `.terminus/agents/stage_contracts.json`, explained by `.terminus/agents/STAGE_CONTRACTS.md` and structurally described by `.terminus/agents/schemas/stage_contracts.schema.json`. Detailed instruction semantics are owned by `.terminus/agents/INSTRUCTION_POLICY.md`. Evidence/retrieval authorization is owned by `.terminus/agents/EVIDENCE_VISIBILITY.md`; retrieval/index metadata and canonical retrieval role IDs are owned by `.terminus/agents/RETRIEVAL_METADATA.md` and `.terminus/agents/retrieval_metadata.json`.
 
 `AGENT_SYSTEM.md` therefore answers **what the control plane requires, who owns it, where the detailed contract lives, how it is validated/reviewed, what state/evidence it produces, and where failures route**. Lower-level files answer how a bounded role performs that work.
 
@@ -47,7 +47,7 @@ Do not use one status word as if it represented every layer of the system.
 
 A role verdict does not directly become task state. The Orchestrator advances task state only after validating all required evidence, provenance, freshness and predecessor gates for the transition.
 
-Stage `output_contract.status_values` are stage-interface vocabulary. A status is not automatically a task state unless this policy/controller explicitly defines the transition.
+Stage `output_contract.status_values` are stage-interface vocabulary. A status is not automatically a task state unless this policy/controller explicitly defines the transition. In particular, `FROZEN_CANDIDATE` is controller-owned and may only be entered from successful `DETERMINISTIC_VALIDATION`; A9 `ASSEMBLY` returns `ASSEMBLED`, not freeze.
 
 ## Control-plane artifact model
 
@@ -58,6 +58,8 @@ The control plane is layered:
 System policy defines global invariants. A stage contract defines lifecycle owner, input/output interface, evidence, validation/review and routing. A role contract narrows one decision right and its permissions. A generated packet binds one execution to the exact task/control-plane evidence surface. The execution result records that role's bounded conclusion. The durable session is a reconciled controller view derived from validated repository, CI and review evidence; it is not an independent source of acceptance truth.
 
 Persisted cross-agent artifacts should use a machine-readable schema when doing so materially improves reliable consumption. Ephemeral handoffs may use structured fields without creating one schema file per stage.
+
+A7 is an explicit example: the controller-owned `.terminus/contracts/<task>/solver-visible-requirements.json` is a schema-valid sanitized handoff defined by `.terminus/agents/schemas/solver_visible_requirement_contract.schema.json`. Its content is safe to project into `instruction.md`, but the control-plane artifact itself is not a second solver-facing specification and is retrieval-metadata classified `solver_visible=false`.
 
 ## Fact, evidence, judgment and state
 
@@ -78,6 +80,8 @@ Every acceptance-relevant semantic decision has exactly one authoritative owner 
 
 Each execution stage in `stage_contracts.json` declares one primary `owner`. `semantic_reviewers` may review/support the stage but do not silently replace that owner unless the lifecycle explicitly transfers the decision right.
 
+Q4 and Q6 are special independence boundaries: they are cold, packet-bound post-freeze reviewers. They must not appear as semantic reviewers on pre-freeze creation stages and may only execute through `QUALITY_INTERLOCK` after `FROZEN_CANDIDATE` is current.
+
 ## Idempotency and retry discipline
 
 Controller routing is expected to be idempotent: with the same task commit, control-plane commit, applicable role contracts and materially unchanged evidence, repeated reconciliation should identify the same first non-current gate and the same owning role. A changed external run state or newly discovered evidence is a changed input, not an idempotency violation.
@@ -91,6 +95,8 @@ Common failure ownership is declared by each stage's `failure_routes`; the contr
 Do not inject the entire control plane into every specialist execution merely because it is available. Runtime prompts/packets should project the minimum authoritative policy, role contract, allowed evidence, exclusions, permissions, output contract and completion conditions needed for that role while preserving all governing invariants. Unrelated role detail should remain out of the runtime context unless required for conflict resolution or evidence interpretation.
 
 Before invoking an execution stage, the controller resolves its entry in `.terminus/agents/stage_contracts.json` and projects only the applicable stage ID, owner, policy/prompt references, allowed available inputs, exclusions, required output/status fields, evidence requirement, completion condition and failure route. The registry is an interface catalog, not permission to pass excluded evidence.
+
+Any retrieval/index-backed context projection additionally resolves `.terminus/agents/evidence_visibility.json` and `.terminus/agents/retrieval_metadata.json`. Authorization/visibility and freshness filtering happen before exact/lexical/vector ranking. Canonical stage/role applicability is narrowing metadata only and never expands a packet/role evidence boundary.
 
 Read `.terminus/agents/CI_ORCHESTRATOR.md` when starting or resuming the controller, `.terminus/agents/PROTOCOL.md` before semantic work, `.terminus/agents/INVOKE.md` before starting a specialist review, and `.terminus/CURSOR_OPERATING.md` when Cursor is the execution surface. Creation uses `.terminus/agents/CREATION_CONTROLLER.md`, `.terminus/agents/CREATOR_AGENT_REGISTRY.md`, `.terminus/agents/CREATION_PIPELINE.md` and the relevant creation stage contract. The additive eight-agent quality interlock is defined by `.terminus/agents/QUALITY_AGENT_REGISTRY.md` and `.terminus/agents/QUALITY_AGENT_PROMPTS.md`. Acceptance review uses the reviewer checklist, criterion registry and Comprehensive Reviewer contract.
 
@@ -107,18 +113,20 @@ The main system bindings are:
 | System area | Stage contract(s) | Main policy/prompt surfaces | Machine enforcement / semantic judgment |
 | --- | --- | --- | --- |
 | creation bootstrap/rule resolution | `RULE_RESOLUTION` | `CREATION_CONTROLLER.md`, `CREATION_PIPELINE.md`, Edition 3 rules | `validate_agent_system.py`; controller conflict resolution |
-| work-package selection | `WORK_PACKAGE_RESEARCH` | `CREATOR_PROMPTS.md`, `PRODUCTION_AUTHENTICITY.md` | semantic Task Architect / originality review |
-| architecture and starter | `SYSTEM_ARCHITECTURE`, `ENVIRONMENT_BUILD` | `CREATOR_PROMPTS.md`, `PRODUCTION_AUTHENTICITY.md` | complexity/runtime-authenticity validators plus Q6 semantic audit |
-| defect/incomplete-behavior design | `DEFECT_TOPOLOGY` | `CREATOR_PROMPTS.md`, `CREATION_PIPELINE.md` | complexity structural checks plus semantic architecture/complexity judgment |
+| work-package selection | `WORK_PACKAGE_RESEARCH` | `CREATOR_PROMPTS.md`, `PRODUCTION_AUTHENTICITY.md` | Task Architect / originality review |
+| architecture and starter | `SYSTEM_ARCHITECTURE`, `ENVIRONMENT_BUILD` | `A2_PHASE_PROMPTS.md`, `CREATOR_PROMPTS.md`, `PRODUCTION_AUTHENTICITY.md` | producer-side Task Architect/Complexity Governor support; deterministic authenticity gates later; **no Q6 invocation pre-freeze** |
+| defect/incomplete-behavior design | `DEFECT_TOPOLOGY` | `CREATOR_PROMPTS.md`, `CREATION_PIPELINE.md` | complexity structural checks plus Task Architect/Complexity Governor judgment |
 | reference solution | `REFERENCE_SOLUTION` | `CREATOR_PROMPTS.md` | deterministic runtime later; Verifier Engineer semantic review |
-| verifier authoring | `VERIFIER_BUILD` | `CREATOR_PROMPTS.md` | verifier lint/complexity checks; Q2/Q4/Verifier Engineer |
-| human-writing calibration | `HUMAN_WRITING_RESEARCH` | human-writing corpus/calibration + researcher prompts | semantic Human Quality review |
-| instruction | `INSTRUCTION_DRAFT`, `SPEC_ALIGNMENT` | `INSTRUCTION_POLICY.md`, `CREATOR_PROMPTS.md`, `QUALITY_AGENT_PROMPTS.md` | Q7 only for mechanical shape/path rules; Instruction Reviewer/Q1/Q3/Q4 for semantics |
+| verifier authoring | `VERIFIER_BUILD` | `CREATOR_PROMPTS.md` | verifier lint/complexity checks; Q2/Verifier Engineer; **Q4 only post-freeze** |
+| human-writing calibration | `HUMAN_WRITING_RESEARCH` | human-writing corpus/calibration + researcher prompts | Human Quality calibration review |
+| instruction | `INSTRUCTION_DRAFT`, `SPEC_ALIGNMENT` | `INSTRUCTION_POLICY.md`, requirement projection schema, `CREATOR_PROMPTS.md`, `QUALITY_AGENT_PROMPTS.md` | projection schema/hash/provenance + Q7 mechanical checks; Instruction Reviewer/Q1/Q2/Q3 producer-side alignment; **Q4 only post-freeze** |
 | documentation | `DOCUMENTATION_DRAFT` | `CREATOR_PROMPTS.md`, `PROMPTS.md` | Engineering Documentation/Human Quality review |
 | format/package | `FORMAT_GATE` | Edition 3 rules, Q7 prompt | current format/package validators + Compliance review |
-| assembly/deterministic validation | `ASSEMBLY`, `DETERMINISTIC_VALIDATION` | creation pipeline/creator prompts | complexity/authenticity validators + Oracle/NOP execution |
-| large-system complexity/authenticity | `COMPLEXITY_GATE`, `RUNTIME_AUTHENTICITY` | `PRODUCTION_AUTHENTICITY.md`, creator prompts | `validate_task_complexity.py`, `validate_runtime_authenticity.py`, business-module diversity when applicable; Q6 semantic audit |
-| frozen quality interlock | `QUALITY_INTERLOCK` | Protocol, quality registry/prompts, instruction policy | `validate_quality_interlock.py`, `validate_review_freshness.py`; Q4/Q6 |
+| assembly | `ASSEMBLY` | `A9_ASSEMBLY_PROMPT.md`, creation pipeline | task-tree/static/lint/leakage checks; returns `ASSEMBLED`, never freeze |
+| large-system complexity | `COMPLEXITY_GATE` | `PRODUCTION_AUTHENTICITY.md`, creator prompts | `validate_task_complexity.py` + A10 Complexity Governor; **no Q6 invocation pre-freeze** |
+| runtime authenticity | `RUNTIME_AUTHENTICITY` | `PRODUCTION_AUTHENTICITY.md` | `validate_runtime_authenticity.py`, business-module diversity when applicable; controller gate |
+| deterministic validation / freeze entry | `DETERMINISTIC_VALIDATION` -> `FROZEN_CANDIDATE` | creation pipeline/quality prompts + completion contract | Oracle/NOP/F2P/P2P execution; controller alone records freeze |
+| frozen quality interlock | `QUALITY_INTERLOCK` | Protocol, quality registry/prompts, instruction policy | `validate_quality_interlock.py`, `validate_review_freshness.py`; cold packet-bound Q4/Q6 |
 | ordinary Pre-LLMaJ review | `PRE_LLMAJ` | `PRE_LLMAJ.md`, `PROMPTS.md`, Comprehensive Reviewer | freshness/provenance validation + specialist/comprehensive judgment |
 | pre-model diagnostic | `MODEL_DIAGNOSTIC` | Q8 registry/prompt | provenance checks; diagnostic simulation only |
 | official difficulty/solvability | `OFFICIAL_MODEL_TRIALS`, `TRIAL_ANALYSIS` | this policy + role prompts | `analyze_difficulty.py`; Difficulty Reviewer/Trajectory Analyst |
@@ -149,7 +157,7 @@ New tasks go through the producer-side controller before independent review. Bef
 
 The structured creation contracts are:
 
-`RULE_RESOLUTION -> WORK_PACKAGE_RESEARCH -> SYSTEM_ARCHITECTURE -> DEFECT_TOPOLOGY -> ENVIRONMENT_BUILD -> REFERENCE_SOLUTION -> VERIFIER_BUILD -> HUMAN_WRITING_RESEARCH -> INSTRUCTION_DRAFT -> SPEC_ALIGNMENT -> DOCUMENTATION_DRAFT -> FORMAT_GATE -> ASSEMBLY -> COMPLEXITY_GATE -> RUNTIME_AUTHENTICITY -> DETERMINISTIC_VALIDATION`
+`RULE_RESOLUTION -> WORK_PACKAGE_RESEARCH -> SYSTEM_ARCHITECTURE -> DEFECT_TOPOLOGY -> ENVIRONMENT_BUILD -> REFERENCE_SOLUTION -> VERIFIER_BUILD -> HUMAN_WRITING_RESEARCH -> INSTRUCTION_DRAFT -> SPEC_ALIGNMENT -> DOCUMENTATION_DRAFT -> FORMAT_GATE -> ASSEMBLY -> COMPLEXITY_GATE -> RUNTIME_AUTHENTICITY -> DETERMINISTIC_VALIDATION -> FROZEN_CANDIDATE -> QUALITY_INTERLOCK`
 
 `TERMINUS_3_AI_INSTRUCTIONS.md` is the repository-wide task-rule source for creation; `.terminus/agents/CREATION_CONTROLLER.md` defines how the controller resolves the complete `CREATION_RULE_CONTEXT` and handles rule changes/conflicts before freeze.
 
@@ -164,9 +172,9 @@ The quality agents have narrow decision rights:
 - **Q1 Spec Gap Repairer** — detects legitimate graded behavior that is missing from solver-visible specification and repairs it naturally at the invariant/contract level. It must keep every material task requirement discoverable without turning hidden tests into an instruction checklist or moving task goals into prompt-extension docs.
 - **Q2 Verifier Coverage Repairer** — finds material solver-visible requirements that are not meaningfully tested and adds behavioral coverage.
 - **Q3 Spec Ambiguity Repairer** — removes grading-relevant ambiguity while preserving natural prose and implementation freedom.
-- **Q4 Spec-Test Contract Reviewer** — independent packet-bound reviewer that exhaustively rebuilds both directions of the requirement/test matrix, stable output/interface coverage, F2P/P2P boundaries and ambiguity, then performs a second omission sweep before returning all findings in one result. It also checks that material requirements remain solver-visible without turning `instruction.md` or environment docs into hidden-test/prompt-extension dumps.
+- **Q4 Spec-Test Contract Reviewer** — independent packet-bound reviewer that exhaustively rebuilds both directions of the requirement/test matrix, stable output/interface coverage, F2P/P2P boundaries and ambiguity, then performs a second omission sweep before returning all findings in one result. Q4 runs only on the frozen candidate through `QUALITY_INTERLOCK` and never as a pre-freeze producer-side semantic reviewer.
 - **Q5 Oracle & Runtime Repair Specialist** — deep deterministic troubleshooter for build, dependency, startup, state, application, Oracle, harness and infrastructure failures. It cannot weaken a legitimate test merely to obtain green.
-- **Q6 Production Logic Auditor** — independent packet-bound reviewer of core logic depth, reachability, module diversity, coupling, toy/padding risk and production credibility. Raw LOC is not sufficient. Q6 is the only scope-reusable quality reviewer and may retain a current PASS across an unrelated task change only when its production-scope hash is unchanged.
+- **Q6 Production Logic Auditor** — independent packet-bound reviewer of core logic depth, reachability, module diversity, coupling, toy/padding risk and production credibility. Q6 runs only after freeze through `QUALITY_INTERLOCK`; raw LOC or earlier complexity/authenticity gates are not Q6 approval. Q6 is the only scope-reusable quality reviewer and may retain a current PASS across an unrelated task change only when its production-scope hash is unchanged.
 - **Q7 Task Format Enforcer** — deterministic-first producer enforcing exact current task folder, `task.toml`, Docker, verifier, solution, artifact/package and isolation rules.
 - **Q8 Model Perspective Difficulty Simulator** — two separate cold diagnostic solve simulations, `GPT_PERSPECTIVE` and `CLAUDE_PERSPECTIVE`. These are explicitly simulations and never official model evidence.
 
@@ -176,7 +184,7 @@ After deterministic freeze, **Q4 must independently PASS with sufficient evidenc
 
 ### Large-system scale and production authenticity
 
-Control-plane binding: `WORK_PACKAGE_RESEARCH`, `SYSTEM_ARCHITECTURE`, `DEFECT_TOPOLOGY`, `ENVIRONMENT_BUILD`, `COMPLEXITY_GATE`, `RUNTIME_AUTHENTICITY`. Detailed policy: `.terminus/agents/PRODUCTION_AUTHENTICITY.md`, creation pipeline/registry/prompts. Deterministic validators include `.terminus/validate_task_complexity.py`, `.terminus/validate_runtime_authenticity.py` and `.terminus/validate_business_module_diversity.py` when applicable. Independent production semantic judgment is owned by Q6.
+Control-plane binding: `WORK_PACKAGE_RESEARCH`, `SYSTEM_ARCHITECTURE`, `DEFECT_TOPOLOGY`, `ENVIRONMENT_BUILD`, `COMPLEXITY_GATE`, `RUNTIME_AUTHENTICITY`. Detailed policy: `.terminus/agents/PRODUCTION_AUTHENTICITY.md`, creation pipeline/registry/prompts. Deterministic validators include `.terminus/validate_task_complexity.py`, `.terminus/validate_runtime_authenticity.py` and `.terminus/validate_business_module_diversity.py` when applicable. A10/controller gates provide producer-side complexity/authenticity evidence; independent production semantic acceptance is owned by Q6 only at post-freeze `QUALITY_INTERLOCK`.
 
 For `large_system_strict`, numeric requirements are hard minimum floors/ranges **and** structural authenticity must pass. They are not quotas or preferred target sizes.
 
@@ -195,13 +203,13 @@ Numbers never substitute for difficulty or authenticity. Duplicate/dead/unreacha
 
 The legacy `large_system` profile may use scale numbers diagnostically only when the controller explicitly records why strict scale is inappropriate. New tasks requested to meet the large-system numbers must use `large_system_strict`. Both profiles still require structural authenticity.
 
-Q6 applies an additional removal/reachability test: strict PASS requires >=3,000 substantive **reachable production/domain** solver-visible runtime/configuration LOC as a floor, no HIGH toy/padding risk, and credible production characteristics. Raw LOC alone can never produce PASS.
+Q6 applies an additional removal/reachability test after freeze: strict PASS requires >=3,000 substantive **reachable production/domain** solver-visible runtime/configuration LOC as a floor, no HIGH toy/padding risk, and credible production characteristics. Raw LOC alone can never produce PASS.
 
 ## Human engineering instruction policy
 
 Detailed authoritative policy: `.terminus/agents/INSTRUCTION_POLICY.md`.
 
-Control-plane binding: `INSTRUCTION_DRAFT` followed by `SPEC_ALIGNMENT`. Primary producer: A7 Instruction Writer. Repair owners: Q1 for legitimate verifier->spec gaps and Q3 for grading-relevant ambiguity. Q7 enforces only mechanically checkable format/path rules within its decision right. Independent semantic checks are owned by Instruction Reviewer and Q4; Human Quality and Comprehensive Reviewer provide later breadth checks.
+Control-plane binding: `INSTRUCTION_DRAFT` followed by producer-side `SPEC_ALIGNMENT`. Primary producer: A7 Instruction Writer. Before A7, the controller produces the schema-valid `APPROVED_SOLVER_VISIBLE_REQUIREMENT_CONTRACT` at `.terminus/contracts/<task>/solver-visible-requirements.json`. Repair owners are Q1 for legitimate verifier->spec gaps, Q2 for spec->verifier gaps and Q3 for grading-relevant ambiguity. Q7 enforces only mechanically checkable format/path rules. Instruction Reviewer provides authoring-time semantic review; **Q4 is not invoked until the frozen `QUALITY_INTERLOCK`**. Human Quality and Comprehensive Reviewer provide later breadth checks.
 
 The system-level invariant is:
 
@@ -213,7 +221,17 @@ The boundary is:
 
 `instruction = what must work -> docs/contracts = how the inherited system is organized/governed -> code/runtime = what exists now -> solver = identify implementation gaps and repair/complete them`
 
+The controller-owned requirement projection is a sanitized cross-agent handoff, not another solver-facing spec. It must exclude private defect topology, hidden test/F2P/P2P maps, Oracle diffs, repair locations and prior reviewer findings. A7 must block/regenerate the projection rather than widening its evidence surface when material input is missing.
+
 The detailed Jira/Slack handoff, requirement-completeness, reverse-outline, spec-file-loophole, current-state evidence, output-schema and leakage rules are defined only in `INSTRUCTION_POLICY.md` and projected into the relevant role execution.
+
+## Retrieval/index metadata policy
+
+Detailed policy: `.terminus/agents/RETRIEVAL_METADATA.md`; machine registry: `.terminus/agents/retrieval_metadata.json`; schemas: `retrieval_chunk.schema.json` and `retrieval_manifest.schema.json`; validator: `.terminus/validate_retrieval_metadata.py`.
+
+Retrieval never establishes authority. The controller first resolves stage/role/packet authority and evidence visibility, then validates provenance/freshness and canonical stage/role applicability, then performs exact/structured retrieval, and only afterward may lexical/vector ranking occur.
+
+Source profiles are fail-closed: source kind fixes evidence class, sensitivity, solver-visible boolean, required binding fields and required freshness scopes. Canonical role IDs are used for indexed applicability; typo/arbitrary role or stage identifiers are invalid metadata rather than empty-result fallbacks. A cache hit never grants visibility and is revalidated against current authorization/freshness before use.
 
 ## Official difficulty and solvability policy
 
@@ -291,7 +309,7 @@ Decision right: does final submission prose contain material synthetic cadence, 
 
 ### Instruction Writer
 
-Producer only. Writes/revises `instruction.md` under `.terminus/agents/INSTRUCTION_POLICY.md` from the approved engineering work package, complete material functional/operational requirements, solver-visible contracts and human-writing calibration. It never sees hidden tests/defect IDs/oracle as a wording checklist, does not diagnose implementation gaps unnecessarily, and cannot approve its own draft.
+Producer only. Writes/revises `instruction.md` under `.terminus/agents/INSTRUCTION_POLICY.md` from the current `APPROVED_SOLVER_VISIBLE_REQUIREMENT_CONTRACT`, solver-visible referenced contracts and human-writing calibration. It never sees hidden tests/defect IDs/oracle/prior reviews as a wording checklist, does not diagnose implementation gaps unnecessarily, and cannot approve its own draft.
 
 ### Instruction Reviewer
 
@@ -346,9 +364,9 @@ The table below is the human routing summary. For registered lifecycle stages, `
 | verifier-required behavior absent from solver spec | Q1 Spec Gap Repairer |
 | solver requirement not meaningfully tested | Q2 Verifier Coverage Repairer |
 | grading-relevant spec ambiguity | Q3 Spec Ambiguity Repairer |
-| independent bidirectional spec/test contract | Q4 Spec-Test Contract Reviewer |
+| independent bidirectional spec/test contract on frozen candidate | Q4 Spec-Test Contract Reviewer |
 | Oracle/build/runtime/application/harness failure | Q5 Oracle & Runtime Repair Specialist |
-| production-grade code depth/reachability/padding | Q6 Production Logic Auditor |
+| independent production-grade code depth/reachability/padding on frozen candidate | Q6 Production Logic Auditor |
 | task/task.toml/Docker/solution/test/package format | Q7 Task Format Enforcer |
 | pre-model GPT/Claude strategy simulation | Q8 Model Perspective Difficulty Simulator |
 | work-package/contract/failure topology | Task Architect |
@@ -408,7 +426,7 @@ Session prose cannot resurrect a stale review. Every current ready semantic row 
 
 Repeated infrastructure failures, repeated unresolved semantic findings, no-progress task changes, unresolved review conflicts, or predictably futile credential/model retries trip `BLOCKED`. Do not repeat a tripped strategy without new evidence/dependency change.
 
-Q5 stops after two identical failures without new evidence. Persistent spec/test disagreement after two Q1/Q2/Q3 repair cycles routes to Q4/Adjudicator rather than repeated prose/test churn. For Q4 specifically, one consolidated normal repair/refreeze cycle follows an exhaustive `REVISE`; unchanged-scope findings after that require Adjudicator disposition before another repair.
+Q5 stops after two identical failures without new evidence. Persistent spec/test disagreement after two Q1/Q2/Q3 repair cycles blocks freeze and routes through the applicable contract/policy owner; Q4 is reserved for the independent post-freeze review rather than serving as a producer-side arbitration shortcut. For Q4 specifically, one consolidated normal repair/refreeze cycle follows an exhaustive `REVISE`; unchanged-scope findings after that require Adjudicator disposition before another repair.
 
 A stage `failure_route` never overrides a tripped circuit breaker.
 
