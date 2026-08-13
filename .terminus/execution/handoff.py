@@ -76,9 +76,9 @@ class ExecutorHandoffBuilder:
             "result_contract": result_contract,
             "invocation": dict(invocation),
         }
-        packet["handoff_id"] = stable_id("handoff", packet)
         if mode is ExecutorMode.MANUAL_CHAT:
             packet["handoff_text"] = self._manual_chat_text(packet)
+        packet["handoff_id"] = stable_id("handoff", packet)
         return packet
 
     @staticmethod
