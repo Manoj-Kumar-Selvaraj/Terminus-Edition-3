@@ -16,6 +16,10 @@ from .store import RetrievalStore
 
 _REPOSITORY_DYNAMIC = frozenset({"REVIEW_PACKET", "REVIEW_RESULT", "SESSION_STATE"})
 _EXTERNAL_DYNAMIC = frozenset({"CI_RUNTIME", "MODEL_TRIAL", "FINAL_PACKAGE", "PUBLIC_REFERENCE"})
+_PRODUCER_ROLE_ALIASES = {
+    "Spec-Test Contract Reviewer": "Q4_SPEC_TEST_CONTRACT_REVIEWER",
+    "Production Logic Auditor": "Q6_PRODUCTION_LOGIC_AUDITOR",
+}
 _SESSION_POLICY_FIELDS = {
     "Agent-system policy": "agent_system",
     "Specialist prompt policy": "specialist_prompt",
@@ -54,7 +58,7 @@ class DynamicEvidenceIngestor:
         control_plane_commit = self._required_sha(payload, "control_plane_commit")
         role_contract_hash = self._required_text(payload, "role_contract_hash")
         packet_binding = self._required_text(payload, "review_id")
-        producer_role = self.policy.canonical_role(self._required_text(payload, "role"))
+        producer_role = self._producer_role(self._required_text(payload, "role"))
 
         expected_path = PurePosixPath(".terminus") / "reviews" / task_id
         path = PurePosixPath(source_path)
@@ -104,7 +108,7 @@ class DynamicEvidenceIngestor:
         control_plane_commit = self._required_sha(payload, "control_plane_commit")
         role_contract_hash = self._required_text(payload, "role_contract_hash")
         packet_binding = self._required_text(payload, "review_id")
-        self.policy.canonical_role(self._required_text(payload, "role"))
+        self._producer_role(self._required_text(payload, "role"))
 
         path = PurePosixPath(source_path)
         expected_path = PurePosixPath(".terminus") / "reviews" / task_id
@@ -371,6 +375,9 @@ class DynamicEvidenceIngestor:
                 f"dynamic evidence roles are not authorized for stage {stage_id}: {sorted(invalid)}"
             )
         return canonical
+
+    def _producer_role(self, value: str) -> str:
+        return self.policy.canonical_role(_PRODUCER_ROLE_ALIASES.get(value, value))
 
     def _read_git_blob(self, source_commit: str, source_path: str) -> tuple[bytes, str]:
         if not re.fullmatch(r"[0-9a-f]{40,64}", source_commit):
