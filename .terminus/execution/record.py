@@ -9,10 +9,12 @@ import subprocess
 from pathlib import Path
 from typing import Any, Mapping
 
+from retrieval.models import InvocationContext
 from retrieval.policy import RetrievalPolicy
 
 from .acceptance import StageAcceptancePredicates
 from .authority import ExecutionAuthority
+from .external_gate import validate_external_result
 from .invocation import StageInvocationBuilder
 
 _SHA = re.compile(r"^[0-9a-f]{40,64}$")
@@ -25,8 +27,23 @@ _OUTCOME_SNAPSHOT_PATHS = (
     ".terminus/agents/execution_outcomes.json",
     ".terminus/agents/stage_acceptance_predicates.json",
     ".terminus/agents/schemas/stage_acceptance_predicates.schema.json",
+    ".terminus/agents/schemas/stage_invocation.schema.json",
+    ".terminus/agents/schemas/stage_result.schema.json",
     ".terminus/agents/EXECUTION_RECORD.md",
     ".terminus/agents/stage_contract_completion.json",
+)
+_EVIDENCE_SENSITIVE_STAGES = frozenset(
+    {
+        "QUALITY_INTERLOCK",
+        "PRE_LLMAJ",
+        "MODEL_DIAGNOSTIC_AGGREGATE",
+        "HARBOR_LLMAJ",
+        "OFFICIAL_MODEL_TRIALS",
+        "TRIAL_ANALYSIS",
+        "DIFFICULTY_ASSESSMENT",
+        "FINAL_REVIEW",
+        "SUBMISSION_READY",
+    }
 )
 
 
@@ -55,6 +72,7 @@ class ExecutionRecordBuilder:
         if result_dict["invocation_id"] != invocation_dict["invocation_id"]:
             raise ValueError("stage result invocation_id does not match invocation")
 
+        validate_external_result(self.policy, invocation_dict, result_dict)
         stage_id = str(invocation_dict["stage"]["stage_id"])
         role_id = str(invocation_dict["stage"]["role_id"])
         stage_outcome = self.outcomes["stages"].get(stage_id)
@@ -71,6 +89,8 @@ class ExecutionRecordBuilder:
         if disposition == "ADVANCE":
             self.acceptance.validate(stage_id, status, outputs)
         evidence_refs = self._validate_evidence_refs(result_dict["evidence_refs"])
+        if disposition == "ADVANCE":
+            self._validate_advancing_evidence(stage_id, outputs, evidence_refs)
 
         route_key: str | None = None
         blocking_reason: str | None = None
@@ -136,12 +156,15 @@ class ExecutionRecordBuilder:
             "transition": transition,
             "validation": {
                 "invocation_identity_valid": True,
+                "invocation_policy_valid": True,
+                "retrieval_context_authorized": True,
                 "status_legal": True,
                 "output_keys_valid": True,
                 "required_outputs_satisfied": required_satisfied,
                 "task_lineage_valid": True,
                 "task_commit_change_authorized": True,
                 "acceptance_predicates_satisfied": True,
+                "evidence_binding_satisfied": True,
                 "evidence_refs_count": len(evidence_refs),
             },
         }
@@ -199,7 +222,26 @@ class ExecutionRecordBuilder:
         self.invocation_builder._require_loaded_contract_snapshot(control_commit)
         self._require_outcome_snapshot(control_commit)
         self._validate_canonical_stage_projection(packet)
+        self._validate_input_projection(packet)
+        self._validate_evidence_projection(packet)
+        self._validate_retrieval_projection(packet)
         return packet
+
+    def _context_from_invocation(self, packet: Mapping[str, Any]) -> InvocationContext:
+        authority = packet["authority"]
+        stage = packet["stage"]
+        return InvocationContext(
+            stage_id=str(stage["stage_id"]),
+            role_id=str(stage["role_id"]),
+            task_id=authority.get("task_id"),
+            task_commit=authority.get("task_commit"),
+            control_plane_commit=authority.get("control_plane_commit"),
+            role_contract_hash=authority.get("role_contract_hash"),
+            packet_binding=authority.get("packet_binding"),
+            review_scope_hash=authority.get("review_scope_hash"),
+            ci_run_id=authority.get("ci_run_id"),
+            policy_versions=authority.get("policy_versions", {}),
+        )
 
     def _validate_canonical_stage_projection(self, packet: Mapping[str, Any]) -> None:
         stage_id = str(packet["stage"]["stage_id"])
@@ -235,15 +277,168 @@ class ExecutionRecordBuilder:
                 "invocation acceptance predicate projection does not match canonical contract"
             )
         expected_routing = {
-            "failure_routes": {str(key): str(value) for key, value in stage.get("failure_routes", {}).items()},
+            "failure_routes": {
+                str(key): str(value) for key, value in stage.get("failure_routes", {}).items()
+            },
             "success_transition": str(stage.get("success_transition", "")),
             "stale_on": [str(value) for value in stage.get("stale_on", [])],
         }
         if packet.get("routing") != expected_routing:
             raise ValueError("invocation routing does not match canonical stage contract")
+
+    def _validate_input_projection(self, packet: Mapping[str, Any]) -> None:
+        stage_id = str(packet["stage"]["stage_id"])
+        contract = self.policy.stages[stage_id].get("input_contract", {})
+        expected_required = [str(value) for value in contract.get("required_fields", [])]
+        allowed_optional = {str(value) for value in contract.get("optional_fields", [])}
+        inputs = packet.get("inputs")
+        if not isinstance(inputs, dict) or set(inputs) != {"required", "optional"}:
+            raise ValueError("invocation input projection is invalid")
+        required = inputs.get("required")
+        optional = inputs.get("optional")
+        if not isinstance(required, dict) or not isinstance(optional, dict):
+            raise ValueError("invocation input projection must contain objects")
+        if list(required) != expected_required:
+            raise ValueError("invocation required inputs do not match canonical stage contract")
+        unknown_optional = set(optional) - allowed_optional
+        if unknown_optional:
+            raise ValueError(
+                f"invocation contains undeclared optional inputs: {sorted(unknown_optional)}"
+            )
+        if set(required) & set(optional):
+            raise ValueError("invocation required/optional inputs overlap")
+        if packet.get("missing_required_inputs") != []:
+            raise ValueError("READY invocation must not report missing required inputs")
+        ignored = packet.get("ignored_input_count")
+        if not isinstance(ignored, int) or isinstance(ignored, bool) or ignored < 0:
+            raise ValueError("invocation ignored_input_count is invalid")
+
+    def _validate_evidence_projection(self, packet: Mapping[str, Any]) -> None:
+        stage_id = str(packet["stage"]["stage_id"])
+        stage = self.policy.stages[stage_id]
+        evidence = packet.get("evidence")
+        if not isinstance(evidence, dict):
+            raise ValueError("invocation evidence projection is invalid")
+        context = self._context_from_invocation(packet)
+        canonical_authorized = set(self.policy.authorized_evidence_classes(context))
+        authorized = set(evidence.get("authorized_evidence_classes", []))
+        excluded = set(evidence.get("excluded_evidence_classes", []))
+        if authorized != canonical_authorized:
+            raise ValueError("invocation authorized evidence classes do not match canonical policy")
+        if excluded != set(self.policy.evidence_classes) - canonical_authorized:
+            raise ValueError("invocation excluded evidence classes do not match canonical policy")
+        if evidence.get("retrieval_mode") != self.policy.retrieval_mode(stage_id):
+            raise ValueError("invocation retrieval mode does not match canonical policy")
         exact_reads = list(self.policy.mandatory_exact_paths(stage_id))
-        if packet.get("evidence", {}).get("mandatory_exact_reads") != exact_reads:
+        if evidence.get("mandatory_exact_reads") != exact_reads:
             raise ValueError("invocation exact-read projection does not match canonical stage contract")
+        expected_required = [str(value) for value in stage.get("evidence_required", [])]
+        if evidence.get("evidence_required") != expected_required:
+            raise ValueError("invocation evidence requirements do not match canonical stage contract")
+
+    def _validate_retrieval_projection(self, packet: Mapping[str, Any]) -> None:
+        retrieval = packet.get("retrieval")
+        if not isinstance(retrieval, dict):
+            raise ValueError("invocation retrieval projection is invalid")
+        status = retrieval.get("status")
+        query = retrieval.get("query")
+        items = retrieval.get("retrieved_context")
+        chars = retrieval.get("retrieved_chars")
+        if not isinstance(items, list) or not isinstance(chars, int) or isinstance(chars, bool):
+            raise ValueError("invocation retrieval context shape is invalid")
+        if chars != sum(len(str(item.get("content", ""))) for item in items if isinstance(item, dict)):
+            raise ValueError("invocation retrieved_chars does not match projected content")
+        if status == "NOT_REQUESTED":
+            if query is not None or items or chars:
+                raise ValueError("NOT_REQUESTED retrieval projection is inconsistent")
+            return
+        if status == "DIRECT_READ_FALLBACK":
+            if not isinstance(query, str) or not query.strip() or items or chars:
+                raise ValueError("DIRECT_READ_FALLBACK retrieval projection is inconsistent")
+            return
+        if status != "INDEXED_CONTEXT":
+            raise ValueError("READY invocation has illegal retrieval status")
+        if not isinstance(query, str) or not query.strip():
+            raise ValueError("INDEXED_CONTEXT requires a non-empty retrieval query")
+
+        context = self._context_from_invocation(packet)
+        authorized = set(packet["evidence"]["authorized_evidence_classes"])
+        mode = str(packet["evidence"]["retrieval_mode"])
+        for index, item in enumerate(items):
+            if not isinstance(item, dict):
+                raise ValueError(f"retrieved_context[{index}] must be an object")
+            if item.get("truncated") is True:
+                raise ValueError(
+                    "durable execution rejects truncated retrieved context because content provenance cannot be revalidated"
+                )
+            source_kind = item.get("source_kind")
+            profile = self.policy.source_profiles.get(source_kind)
+            if not isinstance(profile, dict):
+                raise ValueError(f"retrieved_context[{index}] has unknown source kind")
+            evidence_class = item.get("evidence_class")
+            if evidence_class != profile.get("default_evidence_class"):
+                raise ValueError(f"retrieved_context[{index}] source/evidence profile mismatch")
+            if evidence_class not in authorized:
+                raise ValueError(f"retrieved_context[{index}] evidence class is not authorized")
+            if mode == "SOLVER_VISIBLE_ONLY" and profile.get("default_solver_visible") is not True:
+                raise ValueError(f"retrieved_context[{index}] violates solver-visible-only retrieval")
+            self._validate_source_path(item, profile, context)
+            content = item.get("content")
+            content_hash = item.get("content_hash")
+            if not isinstance(content, str):
+                raise ValueError(f"retrieved_context[{index}] content must be a string")
+            actual = "sha256:" + hashlib.sha256(content.encode("utf-8")).hexdigest()
+            if content_hash != actual:
+                raise ValueError(f"retrieved_context[{index}] content hash mismatch")
+
+    def _validate_source_path(
+        self,
+        item: Mapping[str, Any],
+        profile: Mapping[str, Any],
+        context: InvocationContext,
+    ) -> None:
+        source_kind = str(item.get("source_kind"))
+        path = item.get("source_path")
+        if profile.get("repository_backed"):
+            if not isinstance(path, str) or not path:
+                raise ValueError(f"repository-backed {source_kind} requires source_path")
+        if not isinstance(path, str):
+            return
+        task = context.task_id or ""
+        prefix = f"{task}/" if task else ""
+        if source_kind == "TASK_INSTRUCTION" and path != f"{task}/instruction.md":
+            raise ValueError("TASK_INSTRUCTION source_path does not match task")
+        if source_kind in {"TASK_DOCUMENTATION", "TASK_CODE", "TASK_CONFIGURATION"}:
+            if not prefix or not path.startswith(prefix):
+                raise ValueError(f"{source_kind} source_path does not match task")
+            relative = path[len(prefix) :]
+            if relative.startswith("solution/") or relative.startswith("tests/"):
+                raise ValueError(f"{source_kind} may not relabel solution/verifier content")
+        if source_kind == "SOLUTION_ORACLE" and not path.startswith(f"{task}/solution/"):
+            raise ValueError("SOLUTION_ORACLE source_path does not match task")
+        if source_kind == "VERIFIER_PRIVATE" and not path.startswith(f"{task}/tests/"):
+            raise ValueError("VERIFIER_PRIVATE source_path does not match task")
+        if source_kind == "SOLVER_VISIBLE_REQUIREMENT_CONTRACT":
+            expected = f".terminus/contracts/{task}/solver-visible-requirements.json"
+            if path != expected:
+                raise ValueError("solver-visible requirement contract path does not match task")
+        if source_kind in {
+            "PRIVATE_WORK_PACKAGE_DESIGN",
+            "PRIVATE_SYSTEM_ARCHITECTURE",
+            "PRIVATE_DEFECT_TOPOLOGY",
+            "PRIVATE_TEST_MAP",
+        } and not path.startswith(".terminus/designs/"):
+            raise ValueError("private design source_path is invalid")
+        if source_kind in {"REVIEW_PACKET", "REVIEW_RESULT"} and not path.startswith(
+            f".terminus/reviews/{task}/"
+        ):
+            raise ValueError("review evidence source_path does not match task")
+        if source_kind == "SESSION_STATE" and path != f".terminus/sessions/{task}.md":
+            raise ValueError("session source_path does not match task")
+        if source_kind.startswith("CONTROL_PLANE_") and not (
+            path == "TERMINUS_3_AI_INSTRUCTIONS.md" or path.startswith(".terminus/")
+        ):
+            raise ValueError("control-plane source_path is invalid")
 
     def _validate_result_shape(self, result: Mapping[str, Any]) -> dict[str, Any]:
         try:
@@ -255,15 +450,25 @@ class ExecutionRecordBuilder:
         if not isinstance(payload, dict):
             raise ValueError("stage result must be one JSON object")
         allowed = {
-            "schema_version", "invocation_id", "output_task_commit", "status",
-            "outputs", "evidence_refs", "route_key", "blocking_reason",
+            "schema_version",
+            "invocation_id",
+            "output_task_commit",
+            "status",
+            "outputs",
+            "evidence_refs",
+            "route_key",
+            "blocking_reason",
         }
         unknown = set(payload) - allowed
         if unknown:
             raise ValueError(f"stage result has unknown fields: {sorted(unknown)}")
         required = {
-            "schema_version", "invocation_id", "output_task_commit", "status",
-            "outputs", "evidence_refs",
+            "schema_version",
+            "invocation_id",
+            "output_task_commit",
+            "status",
+            "outputs",
+            "evidence_refs",
         }
         missing = required - set(payload)
         if missing:
@@ -272,7 +477,9 @@ class ExecutionRecordBuilder:
             raise ValueError("unsupported stage result schema_version")
         if not isinstance(payload["invocation_id"], str):
             raise ValueError("stage result invocation_id must be a string")
-        if not isinstance(payload["output_task_commit"], str) or not _SHA.fullmatch(payload["output_task_commit"]):
+        if not isinstance(payload["output_task_commit"], str) or not _SHA.fullmatch(
+            payload["output_task_commit"]
+        ):
             raise ValueError("stage result output_task_commit must be a full Git commit")
         if not isinstance(payload["status"], str) or not payload["status"]:
             raise ValueError("stage result status must be a non-empty string")
@@ -300,21 +507,36 @@ class ExecutionRecordBuilder:
             raise ValueError(f"stage result has undeclared output fields: {sorted(unknown)}")
         if status in set(stage_outcome.get("full_output_statuses", [])):
             missing = [
-                name for name in invocation["output_contract"]["required_fields"]
+                name
+                for name in invocation["output_contract"]["required_fields"]
                 if name not in outputs or outputs[name] is None
             ]
             if missing:
-                raise ValueError(f"status {status} missing required stage outputs: {sorted(missing)}")
+                raise ValueError(
+                    f"status {status} missing required stage outputs: {sorted(missing)}"
+                )
 
-    def _validate_task_lineage(self, invocation: Mapping[str, Any], output_task_commit: str) -> dict[str, Any]:
+    def _validate_task_lineage(
+        self, invocation: Mapping[str, Any], output_task_commit: str
+    ) -> dict[str, Any]:
         input_task_commit = str(invocation["authority"]["task_commit"])
         self.invocation_builder._require_git_commit(output_task_commit, "output_task_commit")
         ancestry = subprocess.run(
-            ["git", "-C", str(self.root), "merge-base", "--is-ancestor", input_task_commit, output_task_commit],
+            [
+                "git",
+                "-C",
+                str(self.root),
+                "merge-base",
+                "--is-ancestor",
+                input_task_commit,
+                output_task_commit,
+            ],
             capture_output=True,
         )
         if ancestry.returncode != 0:
-            raise ValueError("output_task_commit must equal or descend from the invocation task_commit")
+            raise ValueError(
+                "output_task_commit must equal or descend from the invocation task_commit"
+            )
         changed = output_task_commit != input_task_commit
         role_class = str(invocation["stage"]["role_class"])
         if changed and role_class not in _TASK_MUTATING_ROLE_CLASSES:
@@ -332,7 +554,9 @@ class ExecutionRecordBuilder:
                 raise ValueError(f"evidence_refs[{index}] must be an object")
             unknown = set(value) - {"kind", "ref", "content_hash"}
             if unknown:
-                raise ValueError(f"evidence_refs[{index}] has unknown fields: {sorted(unknown)}")
+                raise ValueError(
+                    f"evidence_refs[{index}] has unknown fields: {sorted(unknown)}"
+                )
             kind = value.get("kind")
             ref = value.get("ref")
             if kind not in _EVIDENCE_KINDS:
@@ -348,6 +572,123 @@ class ExecutionRecordBuilder:
             refs.append(item)
         return refs
 
+    def _validate_advancing_evidence(
+        self,
+        stage_id: str,
+        outputs: Mapping[str, Any],
+        refs: list[dict[str, Any]],
+    ) -> None:
+        if stage_id not in _EVIDENCE_SENSITIVE_STAGES:
+            return
+        hashed = [ref for ref in refs if "content_hash" in ref]
+        if not hashed:
+            raise ValueError(f"ADVANCE for {stage_id} requires immutable hashed evidence_refs")
+
+        if stage_id == "QUALITY_INTERLOCK":
+            for field in ("Q4_RESULT", "Q6_RESULT"):
+                value = outputs.get(field)
+                if not isinstance(value, Mapping):
+                    raise ValueError(f"{field} must be an object")
+                review_id = value.get("review_id")
+                if not isinstance(review_id, str) or not review_id:
+                    raise ValueError(f"{field} must include review_id for evidence binding")
+                self._require_ref_identity(hashed, review_id, {"RESULT"}, field)
+            return
+
+        if stage_id == "PRE_LLMAJ":
+            self._require_count(hashed, {"RESULT"}, 6, "PRE_LLMAJ specialist/panel results")
+            return
+
+        if stage_id == "MODEL_DIAGNOSTIC_AGGREGATE":
+            self._require_count(hashed, {"RESULT"}, 2, "Q8 frozen perspective results")
+            return
+
+        if stage_id == "HARBOR_LLMAJ":
+            run_id = outputs.get("HARBOR_RUN_ID") or outputs.get("EXTERNAL_RUN_ID")
+            if not isinstance(run_id, (str, int)) or not str(run_id).strip():
+                raise ValueError("HARBOR_LLMAJ PASS requires HARBOR_RUN_ID")
+            self._require_ref_identity(
+                hashed, str(run_id).strip(), {"RUN", "EXTERNAL"}, "Harbor run"
+            )
+            return
+
+        if stage_id == "OFFICIAL_MODEL_TRIALS":
+            run_ids = self._official_trial_run_ids(outputs)
+            if len(run_ids) != 10:
+                raise ValueError("official trials require 10 distinct run_id values")
+            for run_id in run_ids:
+                self._require_ref_identity(
+                    hashed, run_id, {"RUN", "EXTERNAL"}, "official model trial"
+                )
+            return
+
+        if stage_id == "TRIAL_ANALYSIS":
+            self._require_count(hashed, {"RUN", "EXTERNAL"}, 10, "official trial trajectories")
+            return
+
+        if stage_id == "DIFFICULTY_ASSESSMENT":
+            self._require_count(hashed, {"RUN", "EXTERNAL"}, 10, "official trial evidence")
+            trajectory = outputs.get("TRAJECTORY_ANALYSIS_RESULT")
+            if not isinstance(trajectory, Mapping):
+                raise ValueError("TRAJECTORY_ANALYSIS_RESULT must be an object")
+            record_id = trajectory.get("record_id")
+            if not isinstance(record_id, str) or not record_id:
+                raise ValueError(
+                    "TRAJECTORY_ANALYSIS_RESULT must include record_id for evidence binding"
+                )
+            self._require_ref_identity(hashed, record_id, {"RESULT"}, "trajectory analysis")
+            return
+
+        if stage_id == "FINAL_REVIEW":
+            for field in ("FINAL_COMPLIANCE", "FINAL_HUMAN_QUALITY"):
+                value = outputs.get(field)
+                if not isinstance(value, Mapping):
+                    raise ValueError(f"{field} must be an object")
+                review_id = value.get("review_id")
+                if not isinstance(review_id, str) or not review_id:
+                    raise ValueError(f"{field} must include review_id for evidence binding")
+                self._require_ref_identity(hashed, review_id, {"RESULT"}, field)
+            self._require_count(
+                hashed, {"ARTIFACT", "FILE", "EXTERNAL"}, 1, "final package evidence"
+            )
+            return
+
+        if stage_id == "SUBMISSION_READY":
+            self._require_count(hashed, {"RESULT"}, 1, "validated gate result")
+            self._require_count(
+                hashed, {"ARTIFACT", "FILE", "EXTERNAL"}, 1, "submission package evidence"
+            )
+
+    def _official_trial_run_ids(self, outputs: Mapping[str, Any]) -> set[str]:
+        run_ids: set[str] = set()
+        for field in ("GPT_5_5_TRIALS", "CLAUDE_OPUS_4_8_TRIALS"):
+            values = outputs.get(field)
+            if not isinstance(values, list):
+                raise ValueError(f"{field} must be an array")
+            for index, value in enumerate(values):
+                if not isinstance(value, Mapping):
+                    raise ValueError(f"{field}[{index}] must be an object with run_id")
+                run_id = value.get("run_id")
+                if not isinstance(run_id, (str, int)) or not str(run_id).strip():
+                    raise ValueError(f"{field}[{index}] requires run_id")
+                run_ids.add(str(run_id).strip())
+        return run_ids
+
+    @staticmethod
+    def _require_count(
+        refs: list[dict[str, Any]], kinds: set[str], count: int, label: str
+    ) -> None:
+        matching = {ref["ref"] for ref in refs if ref["kind"] in kinds}
+        if len(matching) < count:
+            raise ValueError(f"{label} requires at least {count} distinct hashed evidence refs")
+
+    @staticmethod
+    def _require_ref_identity(
+        refs: list[dict[str, Any]], identity: str, kinds: set[str], label: str
+    ) -> None:
+        if not any(ref["kind"] in kinds and identity in ref["ref"] for ref in refs):
+            raise ValueError(f"{label} evidence ref does not bind identity {identity}")
+
     @staticmethod
     def _disposition(stage_outcome: Mapping[str, Any], status: str) -> str:
         memberships: list[str] = []
@@ -360,7 +701,9 @@ class ExecutionRecordBuilder:
         if status in stage_outcome.get("block_statuses", []):
             memberships.append("BLOCK")
         if len(memberships) != 1:
-            raise ValueError(f"status {status} must have exactly one execution disposition; found {memberships}")
+            raise ValueError(
+                f"status {status} must have exactly one execution disposition; found {memberships}"
+            )
         return memberships[0]
 
     def _resolve_route_key(
@@ -378,9 +721,13 @@ class ExecutionRecordBuilder:
         if not isinstance(route_key, str) or not route_key:
             raise ValueError(f"status {status} requires an explicit route_key")
         if route_key not in allowed:
-            raise ValueError(f"route_key {route_key} is not allowed for status {status}: {sorted(allowed)}")
+            raise ValueError(
+                f"route_key {route_key} is not allowed for status {status}: {sorted(allowed)}"
+            )
         if route_key not in invocation["routing"]["failure_routes"]:
-            raise ValueError(f"route_key {route_key} is not declared by the stage failure_routes")
+            raise ValueError(
+                f"route_key {route_key} is not declared by the stage failure_routes"
+            )
         return route_key
 
     def _advance_transition(self, invocation: Mapping[str, Any]) -> dict[str, Any]:
@@ -413,7 +760,8 @@ class ExecutionRecordBuilder:
             ).stdout
             if current != committed:
                 raise ValueError(
-                    "control_plane_commit does not match loaded execution-record contracts: " + relative
+                    "control_plane_commit does not match loaded execution-record contracts: "
+                    + relative
                 )
 
     def _load_json(self, relative: str) -> dict[str, Any]:
@@ -424,7 +772,9 @@ class ExecutionRecordBuilder:
 
     @staticmethod
     def _record_id(record: Mapping[str, Any]) -> str:
-        payload = json.dumps(record, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
+        payload = json.dumps(
+            record, sort_keys=True, separators=(",", ":"), ensure_ascii=False
+        )
         return "rec_" + hashlib.sha256(payload.encode("utf-8")).hexdigest()
 
     @staticmethod
