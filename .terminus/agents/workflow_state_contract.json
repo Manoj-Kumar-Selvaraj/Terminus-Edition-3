@@ -14,11 +14,15 @@
     "task_scoped_state_requires_exact_task_commit": true,
     "all_state_requires_exact_control_plane_commit": true,
     "materialized_state_is_derived_not_authoritative": true,
+    "materialized_state_is_ignored_rebuildable": true,
+    "execution_ledger_is_durable_provenance": true,
+    "execution_and_workflow_state_are_not_static_rag_sources": true,
     "legacy_session_is_not_implicit_execution_evidence": true
   },
   "staleness_rules": [
     "a record with a different task commit is stale for the selected task snapshot",
     "a record with a different control-plane commit is stale for the selected control-plane snapshot",
+    "a downstream record whose ledger event predates the latest selected current executable predecessor event is stale even when commits are unchanged",
     "a stale, missing or blocked upstream node makes every later historical record stale by dependency propagation",
     "an explicitly invalidated evidence reference makes the record that cites it stale",
     "a content-hash mismatch for an explicitly refreshed evidence reference makes the citing record stale",
