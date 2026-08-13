@@ -1,0 +1,79 @@
+{
+  "predicate_version": "1.0",
+  "stages": {
+    "RULE_RESOLUTION": {
+      "RULES_RESOLVED": [
+        {"path": "KNOWN_POLICY_CONFLICTS", "op": "empty"}
+      ]
+    },
+    "SPEC_ALIGNMENT": {
+      "ALIGNED": [
+        {"path": "Q1_STATUS", "op": "in", "value": ["NO_GAP", "PASS"]},
+        {"path": "Q2_STATUS", "op": "in", "value": ["COVERED", "PASS"]},
+        {"path": "Q3_STATUS", "op": "in", "value": ["CLEAR", "PASS"]}
+      ]
+    },
+    "RUNTIME_AUTHENTICITY": {
+      "PASS": [
+        {"path": "RUNTIME_AUTHENTICITY_STATUS", "op": "eq", "value": "PASS"}
+      ]
+    },
+    "DETERMINISTIC_VALIDATION": {
+      "PASS": [
+        {"path": "ORACLE_REWARD", "op": "eq", "value": 1},
+        {"path": "NOP_REWARD", "op": "eq", "value": 0},
+        {"path": "F2P_EMPIRICAL_MATRIX", "op": "nonempty"},
+        {"path": "P2P_EMPIRICAL_MATRIX", "op": "nonempty"}
+      ]
+    },
+    "QUALITY_INTERLOCK": {
+      "QUALITY_INTERLOCK_PASS": [
+        {"path": "Q4_RESULT.verdict", "op": "eq", "value": "PASS"},
+        {"path": "Q4_RESULT.confidence", "op": "in", "value": ["HIGH", "MEDIUM"]},
+        {"path": "Q4_RESULT.evidence_status", "op": "eq", "value": "SUFFICIENT"},
+        {"path": "Q4_RESULT.missing_evidence", "op": "empty"},
+        {"path": "Q6_RESULT.verdict", "op": "eq", "value": "PASS"},
+        {"path": "Q6_RESULT.confidence", "op": "in", "value": ["HIGH", "MEDIUM"]},
+        {"path": "Q6_RESULT.evidence_status", "op": "eq", "value": "SUFFICIENT"},
+        {"path": "Q6_RESULT.missing_evidence", "op": "empty"},
+        {"path": "EVIDENCE_SUFFICIENCY", "op": "in", "value": ["SUFFICIENT", true]}
+      ]
+    },
+    "PRE_LLMAJ": {
+      "PASS": [
+        {"path": "STAGE_A", "op": "eq", "value": "PASS"},
+        {"path": "STAGE_B", "op": "eq", "value": "PASS"},
+        {"path": "STAGE_C", "op": "eq", "value": "PASS"},
+        {"path": "STAGE_D", "op": "eq", "value": "PASS"},
+        {"path": "STAGE_E", "op": "eq", "value": "PASS"},
+        {"path": "STAGE_F", "op": "eq", "value": "PASS"}
+      ]
+    },
+    "OFFICIAL_MODEL_TRIALS": {
+      "COMPLETE": [
+        {"path": "GPT_5_5_TRIALS", "op": "length_eq", "value": 5},
+        {"path": "CLAUDE_OPUS_4_8_TRIALS", "op": "length_eq", "value": 5},
+        {"path": "PER_TEST_SOLVABILITY", "op": "nonempty"}
+      ]
+    },
+    "FINAL_REVIEW": {
+      "PASS": [
+        {"path": "FINAL_COMPLIANCE.verdict", "op": "in", "value": ["PASS", "APPROVE", "APPROVE_WITH_NOTE"]},
+        {"path": "FINAL_COMPLIANCE.confidence", "op": "in", "value": ["HIGH", "MEDIUM"]},
+        {"path": "FINAL_COMPLIANCE.evidence_status", "op": "eq", "value": "SUFFICIENT"},
+        {"path": "FINAL_COMPLIANCE.missing_evidence", "op": "empty"},
+        {"path": "FINAL_HUMAN_QUALITY.verdict", "op": "in", "value": ["PASS", "APPROVE", "APPROVE_WITH_NOTE"]},
+        {"path": "FINAL_HUMAN_QUALITY.confidence", "op": "in", "value": ["HIGH", "MEDIUM"]},
+        {"path": "FINAL_HUMAN_QUALITY.evidence_status", "op": "eq", "value": "SUFFICIENT"},
+        {"path": "FINAL_HUMAN_QUALITY.missing_evidence", "op": "empty"},
+        {"path": "FINAL_PACKAGE_EVIDENCE", "op": "nonempty"}
+      ]
+    },
+    "SUBMISSION_READY": {
+      "SUBMISSION_READY": [
+        {"path": "READINESS_STATUS", "op": "eq", "value": "SUBMISSION_READY"},
+        {"path": "GATE_EVIDENCE", "op": "nonempty"}
+      ]
+    }
+  }
+}
