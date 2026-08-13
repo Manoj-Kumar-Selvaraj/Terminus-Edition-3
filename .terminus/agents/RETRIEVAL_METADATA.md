@@ -202,7 +202,7 @@ A chunk is eligible only when:
 
 Only then may exact, lexical/BM25, embedding/vector, hybrid fusion, reranking, or cached retrieval scores be considered.
 
-## Implemented caching contract
+## Caching implication — Implemented caching contract
 
 The reference local engine implements three reuse layers:
 
