@@ -2,7 +2,7 @@
 
 Workflow-state policy version: `1.0`
 
-This layer derives the current task workflow view from immutable execution records, their append-only ledger, the selected exact task commit, the selected exact control-plane commit, the canonical stage contracts, the non-executable state contract, and any explicit evidence-freshness overrides. It is a controller aid, not an acceptance authority.
+This layer derives the current task workflow view from immutable execution records, their append-only ledger, the selected current task commit, the selected control-plane commit, canonical stage/state contracts, machine acceptance predicates and explicit evidence-freshness overrides. It is a controller aid, not an acceptance authority.
 
 Canonical machine contract: `.terminus/agents/workflow_state_contract.json`.
 
@@ -18,87 +18,122 @@ Implementation:
 
 ## Authority
 
-The state resolver never turns historical chat, desired outcome, an old session, or a materialized state file into acceptance evidence. The authoritative chain remains:
+The state resolver never turns historical chat, desired outcome, an old session, or a **materialized state file into acceptance evidence**. The authoritative derivation remains:
 
-`stage/role contract -> invocation -> validated execution record -> hash-chained ledger -> derived workflow state`.
+`stage/role contract -> invocation(input task commit) -> validated result(output task commit) -> execution record -> hash-chained ledger -> derived workflow state`.
 
-A materialized `.terminus/workflows/<task>/state.json` is a deterministic cache/view. It must be discarded or regenerated whenever its task commit, control-plane commit, ledger head, or explicit freshness input changes. `.terminus/workflows/` is intentionally ignored by Git; `.terminus/executions/` is not ignored because its immutable records and ledger are durable provenance.
+A materialized `.terminus/workflows/<task>/state.json` is rebuildable. Discard/regenerate it whenever the current task commit, control-plane commit, ledger head or explicit freshness input changes. `.terminus/workflows/` is ignored by Git; `.terminus/executions/` is durable provenance and is not ignored.
 
-Legacy `.terminus/sessions/<task>.md` remains useful controller context under existing policy, but it is not silently converted into execution records. Migration requires explicit evidence-backed records; missing history must remain `MISSING` rather than fabricated.
+Legacy `.terminus/sessions/<task>.md` remains controller/migration context. It is not silently converted into execution history, and missing records remain `MISSING` rather than being fabricated from session prose.
 
-Execution records, execution ledgers and materialized workflow snapshots are not ordinary static RAG sources. The generic repository indexer must leave `.terminus/executions/` and `.terminus/workflows/` outside its automatic control-plane/task scan. Any future retrieval exposure of this state requires an explicit provenance-aware adapter and the normal evidence-visibility authorization path.
+Execution records/ledgers/workflow snapshots are excluded from ordinary static RAG. Any future retrieval exposure requires an explicit provenance-aware adapter and normal evidence authorization.
+
+## Bootstrap and task identity
+
+Before `RULE_RESOLUTION`, the controller reserves the stable task ID and identifies an exact existing Git commit as the bootstrap/input task snapshot. This lets the task ledger begin at stage 0 even before a new task directory has been materialized.
+
+Do not create a taskless durable pre-history and later relabel it. A taskless stage invocation can be an ephemeral preview only.
 
 ## Ledger
 
-Every persisted task-scoped execution record is stored at:
+Every persisted task execution record lives at:
 
 `.terminus/executions/<task>/<invocation_id>.result.json`
 
-and referenced by exactly one append-only ledger event in:
+and is referenced by exactly one append-only event in:
 
 `.terminus/executions/<task>/ledger.jsonl`.
 
-Each event binds sequence, previous event ID, record ID, invocation ID, stage, exact task/control-plane commits, canonical record path, and SHA-256 of the record bytes. The event ID is a SHA-256 over the event payload excluding `event_id`.
+Each event binds sequence, previous event ID, record/invocation/stage/task IDs, **input task commit**, **output task commit**, control-plane commit, canonical record path and record SHA-256. The event ID hashes the event payload excluding `event_id`.
 
-The controller writes the immutable record before appending the event. A crash that leaves an orphan record without a ledger event is safe: the state resolver ignores it. Re-appending the same exact record is idempotent. A duplicate record ID with different content, duplicate event ID, broken sequence, broken previous-event link, missing record, record-hash mismatch, or path escape fails closed.
+The record is written before the event. Orphan records are ignored. Exact re-append is idempotent. Duplicate/conflicting identity, broken sequence/hash chain, missing/tampered record or path escape fails closed.
 
-## Record selection
+## Record selection and temporal ordering
 
-For each stage, state resolution uses the last valid ledger event for that stage. This is how retries and repairs supersede earlier attempts without rewriting history.
+For each stage, state resolution uses the **last valid ledger event for that stage**. Later retry/route/block/success attempts supersede earlier attempts without rewriting history.
 
-A later `RETRY`, `ROUTE`, or `BLOCK` result therefore supersedes an earlier `ADVANCE` for the same stage. A later successful attempt supersedes the earlier failed attempt.
+Ledger sequence remains a dependency boundary. A downstream selected event must occur after the latest selected current executable predecessor. Therefore an upstream rerun invalidates older downstream results **even when the task/control commits are unchanged**. The resolver explicitly reports that the downstream record **predates the latest current predecessor execution**.
 
-Ledger sequence is also a dependency boundary. For a downstream stage to remain current, its selected ledger event must occur **after** the selected current event of every executable predecessor. Therefore an upstream rerun invalidates older downstream results even when the task commit and control-plane commit did not change. Same-commit semantic repair/review cycles cannot preserve evidence that predates the repaired predecessor merely because hashes still match.
+This preserves the invariant that **downstream acceptance cannot survive a non-current predecessor**.
+
+## Task commit lineage
+
+A workflow is not a set of records that all happen to mention the final Git SHA. It is an attributable chain:
+
+`bootstrap A -> stage A→A -> producer A→B -> reviewer B→B -> fixer B→C -> controller C→C ...`
+
+For a stage to be current:
+
+1. `task_lineage.input_task_commit` must equal the invocation authority task commit;
+2. except for the first current record, that input commit must equal the previous current executable stage's output commit;
+3. the output commit must equal or descend from the input commit;
+4. the output commit must remain on the ancestry of the selected current task commit;
+5. only producer/fixer role classes may change input→output commit;
+6. record identity, transition semantics and machine acceptance predicates must remain valid;
+7. explicit evidence freshness must remain current;
+8. predecessor and ledger temporal order must remain current.
+
+This solves the producer false-staleness problem: a valid producer record `A→B` is not invalid simply because later stages advance the task to `C`. What matters is that the current execution chain is `A→B→...→C`.
+
+### Unattributed task change
+
+If the current Git task commit is ahead of the latest current recorded output commit and the next stage has no execution record accounting for that change, the workflow does **not** silently absorb the new commit or rerun everything from stage 0. It returns `BLOCKED` with `UNATTRIBUTED_CHANGE` lineage so the controller can identify the responsible producer/fixer action and record/reconcile it.
+
+If the recorded output commit is not on the current task lineage, lineage is `BROKEN` and advancement is blocked/stale as applicable.
+
+The derived snapshot exposes:
+
+```text
+LINEAGE.STATUS: UNINITIALIZED | CURRENT | UNATTRIBUTED_CHANGE | BROKEN
+LINEAGE.BOOTSTRAP_TASK_COMMIT:
+LINEAGE.RECORDED_TASK_COMMIT:
+LINEAGE.CURRENT_TASK_COMMIT:
+```
 
 ## Currentness
 
-A stage record can be `CURRENT` only when:
-- its task ID and exact task commit match the selected task snapshot;
-- its exact control-plane commit matches the selected control-plane snapshot;
-- its record ID/hash and execution semantics are valid under that control-plane snapshot;
-- none of its explicit evidence refs is invalidated by the supplied freshness overlay;
-- all predecessor nodes in the canonical workflow are current;
-- its ledger event is temporally newer than the latest selected current executable predecessor event;
-- its disposition is `ADVANCE` to the exact next registered stage/state/END.
+A stage node is:
 
-If the latest record exists but its task/control/evidence/temporal binding is no longer current, the stage is `STALE`. If no ledger event exists, it is `MISSING`. A current `ROUTE`, `RETRY`, or `BLOCK` record makes that node `BLOCKED` for forward progress and carries the required controller action.
+- `CURRENT` only when its authority, lineage, value predicates, evidence, predecessor dependency and temporal order all validate;
+- `STALE` when a selected historical record no longer fits current control/task/evidence/lineage state;
+- `MISSING` when no event exists and no unattributed commit needs reconciliation;
+- `BLOCKED` for a current route/retry/block result, invalid state entry, or unattributed task mutation.
 
-Once an upstream node is not current, later historical records are marked `STALE` by dependency propagation even if their own hashes still match. Downstream acceptance cannot survive a non-current predecessor.
+A record may legitimately have an input/output commit older than the current HEAD when later current records connect it to HEAD. Exact-current equality is required at the **end of the attributable chain**, not independently for every historical stage.
+
+## Machine acceptance predicates
+
+When a selected record has `ADVANCE`, state reconstruction re-evaluates `.terminus/agents/stage_acceptance_predicates.json`. A stored flag saying “predicate passed” is not trusted by itself.
+
+This prevents a hand-forged or stale aggregate record from advancing merely because it says `PASS` and contains the required keys. Semantic judgments still come from their owning reviewer evidence; predicates only ensure the aggregate faithfully reflects those judgments/facts.
 
 ## FROZEN_CANDIDATE
 
-`FROZEN_CANDIDATE` is a non-executable controller state between `DETERMINISTIC_VALIDATION` and `QUALITY_INTERLOCK`.
+`FROZEN_CANDIDATE` is the non-executable controller state between `DETERMINISTIC_VALIDATION` and `QUALITY_INTERLOCK`.
 
-The resolver validates it from current predecessor records. At minimum it requires:
-- current successful `FORMAT_GATE`;
-- current successful `COMPLEXITY_GATE`;
-- current successful `RUNTIME_AUTHENTICITY`;
-- current successful `DETERMINISTIC_VALIDATION`;
-- Oracle reward exactly `1`;
-- NOP reward exactly `0`;
-- present F2P/P2P empirical matrices;
-- no unresolved policy conflicts in the current rule-resolution record.
-
-Failure of that state validation blocks `QUALITY_INTERLOCK`; it never silently jumps over freeze.
+It requires current successful FORMAT, COMPLEXITY, RUNTIME_AUTHENTICITY and DETERMINISTIC_VALIDATION records, Oracle reward 1, NOP reward 0, present F2P/P2P empirical matrices and no unresolved rule conflict. Failure blocks `QUALITY_INTERLOCK`; freeze is never inferred from branch freshness or prose.
 
 ## Evidence freshness overlay
 
-Task/control commits are always checked. Additional dynamic freshness may be supplied explicitly through an evidence-freshness object. Each ref may be marked `CURRENT`, `STALE`, or `MISSING` and may supply its current content hash.
-
-An explicit `STALE`/`MISSING` status or a mismatching current hash invalidates every record that cites that ref and propagates staleness downstream. Absence from the overlay does not invent a change; stricter Protocol/packet/domain freshness validators remain authoritative and may still reject the evidence.
+Task commit lineage is always checked. Additional evidence may be explicitly marked `CURRENT | STALE | MISSING` and may carry a content hash. Explicit stale/missing or changed hash invalidates the citing record and downstream dependencies. Absence from the overlay does not override stricter Protocol/packet freshness rules.
 
 ## Next action
 
-The resolver emits one deterministic `next` action:
-- `INVOKE_STAGE` — first missing/stale executable stage; includes primary role and declared inputs;
-- `RETRY_STAGE` — latest current result requires the same stage to rerun;
-- `ROUTE` — latest current result requires one registered failure route;
-- `BLOCKED` — explicit blocking result or invalid non-executable state;
-- `VALIDATE_STATE` — a non-executable state needs controller validation;
-- `END` — every stage/state is current and `SUBMISSION_READY` advanced to END.
+The resolver emits exactly one:
 
-The primary role is the canonical stage owner, not an arbitrary allowed reviewer/controller role.
+- `INVOKE_STAGE` — first genuinely missing/stale stage;
+- `RETRY_STAGE` — current result requires the same stage again;
+- `ROUTE` — current result requires a registered failure route;
+- `BLOCKED` — explicit block/state failure/**unattributed commit**;
+- `VALIDATE_STATE` — non-executable state needs controller validation;
+- `END` — all stages/states are current and the recorded output lineage equals current task commit.
+
+The primary role is always the canonical stage owner, not any role that happens to have retrieval visibility.
+
+## Controller recording rule
+
+When `controller_cli.py record` accepts a producer/fixer result, it appends the immutable record and then rematerializes workflow state against the record's **output task commit**. Do not rematerialize against the invocation's older input commit after the stage created a new commit.
 
 ## Normal ChatGPT portability
 
-Local Python provides deterministic `status`, `next`, `record`, and `continue` helpers. When unavailable, a normal ChatGPT conversation may read the same ledger/records/contracts through GitHub and apply the same rules. The helper is an execution adapter, not a required service.
+Local Python provides deterministic `status`, `next`, `record` and `continue` helpers. When it is unavailable, a **normal ChatGPT conversation** may read the same Git commits, ledger, records and contracts through connected GitHub and apply the same rules. The helper is an execution adapter, not a required service.
