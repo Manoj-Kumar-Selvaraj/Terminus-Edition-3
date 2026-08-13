@@ -20,7 +20,7 @@ _CODE_SUFFIXES = {
     ".scala", ".php", ".pl", ".ps1", ".groovy", ".cob", ".cbl",
 }
 _DOC_SUFFIXES = {".md", ".rst", ".adoc", ".txt"}
-CHUNKER_VERSION = "structural-v1"
+CHUNKER_VERSION = "structural-v2"
 
 
 class RepositoryIndexer:
@@ -42,41 +42,68 @@ class RepositoryIndexer:
         task_path: str | None = None,
         task_id: str | None = None,
         commit: str | None = None,
+        control_plane_commit: str | None = None,
+        task_commit: str | None = None,
         include_private_design: bool = False,
     ) -> dict[str, Any]:
-        control_plane_commit = commit or self._git("rev-parse", "HEAD").strip()
-        task_commit = control_plane_commit if task_path else None
+        """Index one control-plane snapshot and, optionally, one task snapshot.
+
+        ``commit`` is retained as a compatibility shorthand for callers whose task
+        and control plane intentionally share one Git snapshot. New callers should
+        pass the two bindings explicitly whenever they differ.
+        """
+        if commit and (control_plane_commit or task_commit):
+            raise ValueError(
+                "--commit cannot be combined with explicit control-plane/task commits"
+            )
+        default_commit = commit or self._git("rev-parse", "HEAD").strip()
+        resolved_control_commit = control_plane_commit or default_commit
+        resolved_task_commit = (
+            task_commit or default_commit if task_path is not None else None
+        )
         if task_path and not task_id:
             task_id = PurePosixPath(task_path.rstrip("/")).name
 
-        tracked = self._git("ls-tree", "-r", "--name-only", control_plane_commit).splitlines()
-        selected: list[tuple[str, str]] = []
-        for relative in tracked:
+        selected: dict[str, tuple[str, str]] = {}
+        for relative in self._tracked_paths(resolved_control_commit):
             source_kind = self.classify_path(
                 relative,
-                task_path=task_path,
-                include_private_design=include_private_design,
+                task_path=None,
+                include_private_design=False,
             )
-            if source_kind:
-                selected.append((relative, source_kind))
+            if source_kind and source_kind.startswith("CONTROL_PLANE_"):
+                selected[relative] = (source_kind, resolved_control_commit)
 
-        document_summaries: list[tuple[str, str, str]] = []
+        if task_path and resolved_task_commit:
+            for relative in self._tracked_paths(resolved_task_commit):
+                source_kind = self.classify_path(
+                    relative,
+                    task_path=task_path,
+                    include_private_design=include_private_design,
+                )
+                if source_kind and not source_kind.startswith("CONTROL_PLANE_"):
+                    selected[relative] = (source_kind, resolved_task_commit)
+
+        document_summaries: list[tuple[str, str, str, str]] = []
         source_kind_counts: Counter[str] = Counter()
         evidence_class_counts: Counter[str] = Counter()
         chunk_count = 0
 
-        for relative, source_kind in selected:
+        for relative, (source_kind, source_commit) in sorted(selected.items()):
             result = self.index_git_file(
                 relative,
                 source_kind,
-                control_plane_commit=control_plane_commit,
+                source_commit=source_commit,
+                control_plane_commit=resolved_control_commit,
                 task_id=task_id,
-                task_commit=task_commit,
+                task_commit=resolved_task_commit,
             )
             if result is None:
                 continue
             document_id, document_hash, chunks = result
-            document_summaries.append((relative, document_id, document_hash))
+            document_summaries.append(
+                (relative, source_commit, document_id, document_hash)
+            )
             source_kind_counts[source_kind] += len(chunks)
             evidence_class = self.policy.source_profiles[source_kind][
                 "default_evidence_class"
@@ -93,7 +120,7 @@ class RepositoryIndexer:
             "evidence_visibility_version": self.policy.visibility_registry[
                 "visibility_version"
             ],
-            "control_plane_commit": control_plane_commit,
+            "control_plane_commit": resolved_control_commit,
             "source_set_hash": f"sha256:{source_set_hash}",
             "index_scope": "MIXED_AUTHORIZED" if task_path else "CONTROL_PLANE",
             "chunk_count": chunk_count,
@@ -106,7 +133,7 @@ class RepositoryIndexer:
         }
         if task_path:
             manifest["task_id"] = task_id
-            manifest["task_commit"] = task_commit
+            manifest["task_commit"] = resolved_task_commit
         manifest_id = f"manifest_{self._hash_json(manifest)}"
         self.store.put_manifest(manifest_id, manifest)
         return manifest
@@ -116,21 +143,23 @@ class RepositoryIndexer:
         relative: str,
         source_kind: str,
         *,
+        source_commit: str,
         control_plane_commit: str,
         task_id: str | None,
         task_commit: str | None,
     ) -> tuple[str, str, list[tuple[dict[str, Any], str]]] | None:
         profile = self.policy.source_profiles[source_kind]
-        blob_sha = self._git(
-            "rev-parse", f"{control_plane_commit}:{relative}"
-        ).strip()
+        blob_sha = self._git("rev-parse", f"{source_commit}:{relative}").strip()
         source_uri = f"git://repository/{relative}"
         document_id = "doc_" + hashlib.sha256(
             f"{source_uri}\0{blob_sha}".encode()
         ).hexdigest()
         strategy = profile["chunk_strategy"]
+        parse_strategy = self._parse_cache_strategy(relative, strategy)
 
-        cached = self.store.get_parse_cache(blob_sha, strategy, CHUNKER_VERSION)
+        cached = self.store.get_parse_cache(
+            blob_sha, parse_strategy, CHUNKER_VERSION
+        )
         if cached is not None:
             full_content_hash = str(cached["content_hash"])
             raw_chunks = [self._raw_chunk_from_cache(item) for item in cached["chunks"]]
@@ -141,7 +170,7 @@ class RepositoryIndexer:
                     "-C",
                     str(self.root),
                     "show",
-                    f"{control_plane_commit}:{relative}",
+                    f"{source_commit}:{relative}",
                 ],
                 check=True,
                 capture_output=True,
@@ -153,12 +182,12 @@ class RepositoryIndexer:
             full_content_hash = hashlib.sha256(raw).hexdigest()
             raw_chunks = chunk_text(Path(relative), text, strategy)
             cache_key = hashlib.sha256(
-                f"{blob_sha}\0{strategy}\0{CHUNKER_VERSION}".encode()
+                f"{blob_sha}\0{parse_strategy}\0{CHUNKER_VERSION}".encode()
             ).hexdigest()
             self.store.put_parse_cache(
                 cache_key=cache_key,
                 source_version=blob_sha,
-                strategy=strategy,
+                strategy=parse_strategy,
                 chunker_version=CHUNKER_VERSION,
                 content_hash=full_content_hash,
                 chunks=[self._raw_chunk_to_cache(item) for item in raw_chunks],
@@ -318,6 +347,12 @@ class RepositoryIndexer:
         return [ALL_ROLES]
 
     @staticmethod
+    def _parse_cache_strategy(relative: str, strategy: str) -> str:
+        """Include parser identity so equal blobs under unlike languages do not alias."""
+        suffix = PurePosixPath(relative).suffix.lower() or "<none>"
+        return f"{strategy}|suffix={suffix}"
+
+    @staticmethod
     def _raw_chunk_to_cache(chunk: RawChunk) -> dict[str, Any]:
         return {
             "content": chunk.content,
@@ -342,6 +377,9 @@ class RepositoryIndexer:
             line_start=int(value["line_start"]) if value.get("line_start") is not None else None,
             line_end=int(value["line_end"]) if value.get("line_end") is not None else None,
         )
+
+    def _tracked_paths(self, commit: str) -> list[str]:
+        return self._git("ls-tree", "-r", "--name-only", commit).splitlines()
 
     def _git(self, *args: str) -> str:
         return subprocess.run(
