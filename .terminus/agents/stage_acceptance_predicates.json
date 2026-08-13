@@ -49,11 +49,64 @@
         {"path": "STAGE_F", "op": "eq", "value": "PASS"}
       ]
     },
+    "MODEL_DIAGNOSTIC_GPT": {
+      "EXECUTED": [
+        {"path": "PERSPECTIVE", "op": "eq", "value": "GPT_PERSPECTIVE"},
+        {"path": "EXECUTION", "op": "eq", "value": "EXECUTED"}
+      ],
+      "SIMULATION_NOT_EXECUTED": [
+        {"path": "PERSPECTIVE", "op": "eq", "value": "GPT_PERSPECTIVE"},
+        {"path": "EXECUTION", "op": "eq", "value": "SIMULATION_NOT_EXECUTED"}
+      ]
+    },
+    "MODEL_DIAGNOSTIC_CLAUDE": {
+      "EXECUTED": [
+        {"path": "PERSPECTIVE", "op": "eq", "value": "CLAUDE_PERSPECTIVE"},
+        {"path": "EXECUTION", "op": "eq", "value": "EXECUTED"}
+      ],
+      "SIMULATION_NOT_EXECUTED": [
+        {"path": "PERSPECTIVE", "op": "eq", "value": "CLAUDE_PERSPECTIVE"},
+        {"path": "EXECUTION", "op": "eq", "value": "SIMULATION_NOT_EXECUTED"}
+      ]
+    },
+    "MODEL_DIAGNOSTIC_AGGREGATE": {
+      "COMPLETE": [
+        {"path": "GPT_PERSPECTIVE_RESULT.EXECUTION", "op": "eq", "value": "EXECUTED"},
+        {"path": "CLAUDE_PERSPECTIVE_RESULT.EXECUTION", "op": "eq", "value": "EXECUTED"},
+        {"path": "ISOLATION_CHECK", "op": "eq", "value": "PASS"}
+      ],
+      "DIAGNOSTIC_NOT_EXECUTED": [
+        {"path": "GPT_PERSPECTIVE_RESULT", "op": "nonempty"},
+        {"path": "CLAUDE_PERSPECTIVE_RESULT", "op": "nonempty"},
+        {"path": "ISOLATION_CHECK", "op": "eq", "value": "PASS"}
+      ]
+    },
+    "HARBOR_LLMAJ": {
+      "PASS": [
+        {"path": "HARBOR_RESULT", "op": "eq", "value": "PASS"},
+        {"path": "HARBOR_RUN_ID", "op": "nonempty"},
+        {"path": "HARBOR_EVIDENCE", "op": "nonempty"}
+      ]
+    },
     "OFFICIAL_MODEL_TRIALS": {
       "COMPLETE": [
         {"path": "GPT_5_5_TRIALS", "op": "length_eq", "value": 5},
         {"path": "CLAUDE_OPUS_4_8_TRIALS", "op": "length_eq", "value": 5},
         {"path": "PER_TEST_SOLVABILITY", "op": "nonempty"}
+      ]
+    },
+    "TRIAL_ANALYSIS": {
+      "COMPLETE": [
+        {"path": "ZERO_OF_TEN_DISPOSITION", "op": "in", "value": ["NONE", "RESOLVED"]}
+      ]
+    },
+    "DIFFICULTY_ASSESSMENT": {
+      "PASS": [
+        {"path": "COMBINED_SUCCESS_RATE", "op": "lt", "value": 1.0},
+        {"path": "PER_TEST_SOLVABILITY", "op": "all_gte", "value": 1},
+        {"path": "ZERO_OF_TEN_TESTS", "op": "empty"},
+        {"path": "DECLARED_TIER", "op": "eq_path", "value": "EMPIRICAL_TIER"},
+        {"path": "TRAJECTORY_ANALYSIS_RESULT.status", "op": "eq", "value": "COMPLETE"}
       ]
     },
     "FINAL_REVIEW": {
