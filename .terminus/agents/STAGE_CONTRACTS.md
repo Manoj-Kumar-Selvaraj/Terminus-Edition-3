@@ -12,8 +12,10 @@ The lifecycle registry is complemented by:
 - `.terminus/agents/retrieval_metadata.json` and `.terminus/agents/RETRIEVAL_METADATA.md` for the canonical provenance/chunk/index envelope;
 - `.terminus/agents/DYNAMIC_EVIDENCE_INGESTION.md` for explicit provenance-aware persistence of review, session, CI, model-trial, final-package and public-reference evidence;
 - `.terminus/agents/RETRIEVAL_ENGINE.md` and `.terminus/retrieval/` for the optional local exact/BM25/vector/hybrid retrieval adapter and its caches;
+- `.terminus/execution/authority.py` for executable-role authority distinct from broader retrieval/routing visibility;
 - `.terminus/agents/STAGE_INVOCATION.md` and `.terminus/execution/invocation.py` for deterministic bounded stage/role handoffs;
-- `.terminus/agents/EXECUTION_RECORD.md`, `.terminus/agents/execution_outcomes.json` and `.terminus/execution/record.py` for result binding and explicit ADVANCE/ROUTE/RETRY/BLOCK transitions.
+- `.terminus/agents/EXECUTION_RECORD.md`, `.terminus/agents/execution_outcomes.json` and `.terminus/execution/record.py` for result binding and explicit ADVANCE/ROUTE/RETRY/BLOCK transitions;
+- `.terminus/agents/WORKFLOW_STATE.md`, `.terminus/agents/workflow_state_contract.json`, `.terminus/execution/ledger.py` and `.terminus/execution/state.py` for durable execution provenance, derived currentness, dependency staleness and deterministic next-action resolution.
 
 `AGENT_SYSTEM.md` remains the system-wide policy/ownership source. These files specialize execution structure; they do not override higher-precedence Edition 3 rules, Protocol evidence boundaries, packet exclusions, or role authority.
 
@@ -109,24 +111,43 @@ The controller must preserve narrower packet/role exclusions when constructing t
 
 The local index is built from immutable Git blobs and is commit-bound. Dynamic review/session/CI/model/final/public evidence is not auto-classified by the repository scanner because packet hashes, run IDs and role/review-scope bindings must come from explicit provenance-aware ingestion or direct reads. The implemented `DynamicEvidenceIngestor` performs that optional persistence only after pre-persistence authorization.
 
+Retrieval audience is intentionally broader than executable-role authority. A controller may inspect a producer/reviewer stage for routing and freshness without becoming that stage's executor. `.terminus/execution/authority.py` is the canonical executable-role resolver used by invocation, record and workflow-state validation.
+
 ## Stage invocation and execution recording
 
-Before a registered role is actually invoked, the controller applies `.terminus/agents/STAGE_INVOCATION.md` and compiles one bounded invocation packet. The packet binds the exact stage/role, task/control-plane identity, declared inputs, exact reads, evidence ceiling, optional retrieved context, legal output contract and routing/staleness contract. A packet with missing required stage inputs is non-executable.
+Before a registered role is actually invoked, the controller applies `.terminus/agents/STAGE_INVOCATION.md` and compiles one bounded invocation packet. The packet binds the exact stage/executable role, task/control-plane identity, declared inputs, exact reads, evidence ceiling, optional retrieved context, legal output contract and routing/staleness contract. A packet with missing required stage inputs is non-executable.
 
 After the role returns, the controller applies `.terminus/agents/EXECUTION_RECORD.md`. A result can affect workflow state only when it:
 
 1. names the exact `invocation_id` it executed;
-2. returns one legal status for that stage;
-3. returns only declared output fields;
-4. satisfies the status-specific full-output requirement from `.terminus/agents/execution_outcomes.json`;
-5. supplies an allowed failure-route key when the status is routed and no unique default exists;
-6. binds material evidence through explicit references rather than prose claims.
+2. was produced under a role authorized to execute that stage, not merely observe/retrieve it;
+3. returns one legal status for that stage;
+4. returns only declared output fields;
+5. satisfies the status-specific full-output requirement from `.terminus/agents/execution_outcomes.json`;
+6. supplies an allowed failure-route key when the status is routed and no unique default exists;
+7. binds material evidence through explicit references rather than prose claims.
 
 The canonical result compiler emits one immutable execution record and one disposition: `ADVANCE | ROUTE | RETRY | BLOCK`. A chat statement such as “PASS” or “done” does not advance a stage by itself.
 
 `ADVANCE` follows the stage's exact `success_transition`. `RETRY` repeats the current stage. `ROUTE` carries the exact declared failure-route instruction without guessing a stage ID from prose. `BLOCK` has no target and requires an explicit blocking reason.
 
 When an advancing target is a non-executable state such as `FROZEN_CANDIDATE`, the record sets `requires_state_validation=true`; the controller must still satisfy the state's entry contract before exiting it to the next executable stage.
+
+## Durable workflow state and next-action resolution
+
+Task-scoped execution records are durable provenance under `.terminus/executions/<task>/`. They are referenced by a hash-chained append-only `ledger.jsonl`. The record is written before its ledger event; an orphan record without a ledger event is ignored by current-state resolution. Re-appending the exact same immutable record is idempotent, while broken sequence/hash/path/record bindings fail closed.
+
+`.terminus/execution/state.py` derives a current workflow view from the selected exact task commit, exact control-plane commit, the canonical stage/state chain, the last valid ledger event for each stage and any explicit evidence-freshness overlay. It emits `CURRENT | STALE | MISSING | BLOCKED` for every executable stage plus registered non-executable states.
+
+Currentness is dependency-sensitive, not just hash-sensitive. A downstream selected execution must occur after the latest selected current executable predecessor. Therefore a same-commit upstream rerun makes older downstream records stale even when task/control-plane SHAs are unchanged. A stale/missing/blocked predecessor propagates non-currentness downstream.
+
+`FROZEN_CANDIDATE` remains a derived non-executable state. It is current only after its entry requirements are satisfied from current predecessor records; it never becomes current solely because deterministic validation once returned PASS.
+
+The resolver emits one deterministic next action: `INVOKE_STAGE | RETRY_STAGE | ROUTE | BLOCKED | VALIDATE_STATE | END`. `.terminus/execution/controller_cli.py` exposes `record`, `status`, `next`, `materialize` and `continue` helpers.
+
+`.terminus/workflows/<task>/state.json` is a rebuildable derived snapshot and is ignored by Git. `.terminus/executions/` is durable provenance and is not ignored. Neither execution records/ledgers nor derived workflow snapshots are automatically indexed by the generic static RAG scanner; any future retrieval exposure requires an explicit provenance-aware adapter.
+
+Legacy `.terminus/sessions/<task>.md` remains continuity/context during migration but is not silently transformed into execution evidence. Missing ledger history remains `MISSING` unless current evidence is explicitly validated and recorded.
 
 ## Creation stage index
 
@@ -193,7 +214,7 @@ Where Protocol defines a stricter exact-commit or scope-hash rule, that stricter
 
 Retrieval indexes, dynamic projections and caches are subject to the same principle. `.terminus/agents/retrieval_metadata.json` declares content/commit/policy/packet freshness scopes for indexed units; a retrieval cache, index hit or ingested dynamic projection is unusable when any declared binding is stale. Parse/chunk reuse is keyed by immutable source version + chunking strategy/version, embedding reuse is keyed by content/provider identity, and retrieval-result reuse is authority/query/index-bound and re-authorized before use. Semantic verdicts are never cached by this layer.
 
-Invocation packets and execution records are immutable provenance objects. A stale dependency invalidates their use for advancement; it does not authorize rewriting their historical task/control-plane/evidence identity. Create a new invocation and result record when rerunning stale work.
+Invocation packets, execution records and ledger events are immutable provenance objects. A stale dependency invalidates their use for advancement; it does not authorize rewriting historical task/control-plane/evidence identity. Create a new invocation, record and ledger event when rerunning stale work. Derived workflow state is regenerated rather than treated as durable proof.
 
 ## Layer resolution
 
@@ -206,7 +227,9 @@ Controllers resolve the structured contract in this order:
 5. `retrieval_metadata.json` — immutable source identity, chunking, applicability and freshness metadata for the already-authorized candidate pool;
 6. `DYNAMIC_EVIDENCE_INGESTION.md` / `DynamicEvidenceIngestor` — optional explicit persistence of authorized dynamic evidence with embedded/source provenance verification;
 7. `RETRIEVAL_ENGINE.md` / `.terminus/retrieval/` — optional exact/BM25/vector/hybrid ranking, context assembly and cache reuse over that authorized pool;
-8. `STAGE_INVOCATION.md` / `StageInvocationBuilder` — bounded executable handoff compiled from the resolved authority and declared stage interface;
-9. `EXECUTION_RECORD.md` / `execution_outcomes.json` / `ExecutionRecordBuilder` — validated result binding and deterministic ADVANCE/ROUTE/RETRY/BLOCK transition.
+8. `execution/authority.py` — executable-role set, narrower than or equal to retrieval/routing visibility;
+9. `STAGE_INVOCATION.md` / `StageInvocationBuilder` — bounded executable handoff compiled from executable authority and the declared stage interface;
+10. `EXECUTION_RECORD.md` / `execution_outcomes.json` / `ExecutionRecordBuilder` — validated result binding and deterministic ADVANCE/ROUTE/RETRY/BLOCK transition;
+11. `WORKFLOW_STATE.md` / `ExecutionLedger` / `WorkflowStateResolver` — append-only durable execution history, current/stale dependency resolution and deterministic next action.
 
-A lower layer may narrow an earlier layer; it may never widen a higher-precedence policy or evidence boundary. Dynamic ingestion, retrieval, invocation compilation, result recording and caching consume the same resolved contract and cannot bypass phase, freeze, visibility or freshness rules.
+A lower layer may narrow an earlier layer; it may never widen a higher-precedence policy or evidence boundary. Dynamic ingestion, retrieval, invocation compilation, result recording, state materialization and caching consume the same resolved contract and cannot bypass phase, freeze, visibility, execution authority or freshness rules.
