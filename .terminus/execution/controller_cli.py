@@ -11,12 +11,14 @@ from typing import Any
 
 if __package__ in {None, ""}:
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+    from execution.external_gate import project_external_state, validate_external_result
     from execution.invocation import StageInvocationBuilder
     from execution.ledger import ExecutionLedger
     from execution.record import ExecutionRecordBuilder
     from execution.state import WorkflowStateResolver
     from retrieval.models import InvocationContext
 else:
+    from .external_gate import project_external_state, validate_external_result
     from .invocation import StageInvocationBuilder
     from .ledger import ExecutionLedger
     from .record import ExecutionRecordBuilder
@@ -91,16 +93,22 @@ def build_parser() -> argparse.ArgumentParser:
     return parser
 
 
-def _resolve_state(root: Path, args: argparse.Namespace) -> tuple[WorkflowStateResolver, dict[str, Any]]:
+def _resolve_state(
+    root: Path, args: argparse.Namespace
+) -> tuple[WorkflowStateResolver, dict[str, Any]]:
     resolver = WorkflowStateResolver(root)
-    freshness = _json_object(args.freshness_json, "--freshness-json") if args.freshness_json else None
+    freshness = (
+        _json_object(args.freshness_json, "--freshness-json")
+        if args.freshness_json
+        else None
+    )
     snapshot = resolver.resolve(
         task_id=args.task_id,
         task_commit=args.task_commit,
         control_plane_commit=args.control_plane_commit,
         freshness_overlay=freshness,
     )
-    return resolver, snapshot
+    return resolver, project_external_state(root, resolver, snapshot)
 
 
 def _continue_payload(
@@ -113,7 +121,19 @@ def _continue_payload(
         "state_snapshot_id": snapshot["state_snapshot_id"],
         "next": next_action,
     }
-    if next_action["action"] not in {"INVOKE_STAGE", "RETRY_STAGE"}:
+    if next_action["action"] == "AWAIT_EXTERNAL_GATE":
+        payload["invocation"] = None
+        payload["dispatch"] = {
+            "status": "AWAITING_EXTERNAL_RESULT",
+            "stage_id": next_action["stage_id"],
+            "external_run_id": next_action.get("external_run_id"),
+        }
+        return payload
+    if next_action["action"] not in {
+        "INVOKE_STAGE",
+        "RETRY_STAGE",
+        "DISPATCH_EXTERNAL_GATE",
+    }:
         payload["invocation"] = None
         return payload
 
@@ -136,6 +156,12 @@ def _continue_payload(
         max_chars=args.max_chars,
     )
     payload["invocation"] = packet
+    if next_action["action"] == "DISPATCH_EXTERNAL_GATE":
+        payload["dispatch"] = {
+            "status": "READY_TO_DISPATCH" if packet.get("readiness") == "READY" else "BLOCKED",
+            "stage_id": stage_id,
+            "external_gate": True,
+        }
     return payload
 
 
@@ -165,15 +191,22 @@ def main(argv: list[str] | None = None) -> int:
 
     invocation = _json_object(args.invocation, "--invocation")
     result = _json_object(args.result, "--result")
-    record = ExecutionRecordBuilder(root).build(invocation, result)
+    builder = ExecutionRecordBuilder(root)
+    validate_external_result(builder.policy, invocation, result)
+    record = builder.build(invocation, result)
     authority = record.get("authority")
-    lineage = record.get("task_lineage")
-    if not isinstance(authority, dict) or not isinstance(lineage, dict):
-        raise ValueError("execution record authority/task_lineage is invalid")
+    if not isinstance(authority, dict):
+        raise ValueError("execution record authority is invalid")
     task_id = authority.get("task_id")
-    task_commit = lineage.get("output_task_commit")
     control_commit = authority.get("control_plane_commit")
-    if not all(isinstance(value, str) and value for value in (task_id, task_commit, control_commit)):
+    lineage = record.get("task_lineage")
+    output_task_commit = (
+        lineage.get("output_task_commit") if isinstance(lineage, dict) else None
+    )
+    if not all(
+        isinstance(value, str) and value
+        for value in (task_id, output_task_commit, control_commit)
+    ):
         raise ValueError(
             "record persistence requires task_id, output_task_commit and control_plane_commit"
         )
@@ -182,14 +215,19 @@ def main(argv: list[str] | None = None) -> int:
     event = ledger.append(record)
     response: dict[str, Any] = {"record": record, "ledger_event": event}
     if not args.no_materialize:
-        freshness = _json_object(args.freshness_json, "--freshness-json") if args.freshness_json else None
+        freshness = (
+            _json_object(args.freshness_json, "--freshness-json")
+            if args.freshness_json
+            else None
+        )
         resolver = WorkflowStateResolver(root)
         snapshot = resolver.resolve(
             task_id=task_id,
-            task_commit=task_commit,
+            task_commit=output_task_commit,
             control_plane_commit=control_commit,
             freshness_overlay=freshness,
         )
+        snapshot = project_external_state(root, resolver, snapshot)
         resolver.materialize(snapshot)
         response["state"] = snapshot
     _write_or_print(response, args.output)
