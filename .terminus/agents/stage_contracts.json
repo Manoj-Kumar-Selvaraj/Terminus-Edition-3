@@ -77,7 +77,7 @@
         ".terminus/agents/CREATOR_AGENT_REGISTRY.md",
         ".terminus/agents/PRODUCTION_AUTHENTICITY.md"
       ],
-      "prompt_files": [".terminus/agents/CREATOR_PROMPTS.md"],
+      "prompt_files": [".terminus/agents/CREATOR_PROMPTS.md", ".terminus/agents/A2_PHASE_PROMPTS.md"],
       "input_contract": {
         "required_fields": ["CREATION_RULE_CONTEXT", "APPROVED_WORK_PACKAGE", "APPROVED_OPERATIONAL_REQUIREMENTS"],
         "optional_fields": ["DOMAIN_REFERENCE_ARCHITECTURE", "EXISTING_TECHNICAL_CONTRACTS"]
@@ -90,7 +90,7 @@
       },
       "evidence_required": ["component/resource graph", "runtime/operator reachability plan", "state/persistence model", "production-characteristic rationale"],
       "deterministic_validators": [],
-      "semantic_reviewers": ["Task Architect", "Q6 Production Logic Auditor"],
+      "semantic_reviewers": ["Task Architect"],
       "failure_routes": {
         "SCENARIO_TOO_SMALL": "Creation Controller -> WORK_PACKAGE_RESEARCH",
         "ARCHITECTURE_GAP": "A2 System Architect / Environment Builder",
@@ -140,27 +140,28 @@
         ".terminus/agents/CREATION_PIPELINE.md",
         ".terminus/agents/PRODUCTION_AUTHENTICITY.md"
       ],
-      "prompt_files": [".terminus/agents/CREATOR_PROMPTS.md"],
+      "prompt_files": [".terminus/agents/CREATOR_PROMPTS.md", ".terminus/agents/A2_PHASE_PROMPTS.md"],
       "input_contract": {
-        "required_fields": ["CREATION_RULE_CONTEXT", "CLEAN_SYSTEM_ARCHITECTURE", "DEFECT_TOPOLOGY"],
-        "optional_fields": ["DOMAIN_FIXTURE_PLAN", "SOLVER_VISIBLE_DOC_PLAN"]
+        "required_fields": ["CREATION_RULE_CONTEXT", "CLEAN_SYSTEM_ARCHITECTURE", "DEFECT_TOPOLOGY", "SOLVER_VISIBLE_DOC_PLAN"],
+        "optional_fields": ["DOMAIN_FIXTURE_PLAN"]
       },
       "output_contract": {
-        "status_values": ["BUILT", "SCENARIO_TOO_SMALL", "BLOCKED"],
+        "status_values": ["BUILT", "SCENARIO_TOO_SMALL", "ARCHITECTURE_GAP", "BLOCKED"],
         "required_fields": ["COMPONENT_GRAPH", "ENTRYPOINTS", "SOLVER_VISIBLE_DOCS", "INSTRUCTION_DOC_BOUNDARY", "SUBSTANTIVE_LOC", "PRODUCTION_CHARACTERISTICS", "RUNTIME_REACHABILITY_NOTES", "ENVIRONMENT_RULE_CHECKS"],
         "optional_fields": ["RESOURCE_COUNT", "UNRESOLVED_RISKS"],
         "persisted_artifacts": ["<task>/environment/"]
       },
       "evidence_required": ["reachable starter runtime", "representative deterministic state", "normal engineering docs/contracts", "runtime/operator evidence where applicable"],
       "deterministic_validators": [".terminus/validate_task_complexity.py <task>", ".terminus/validate_runtime_authenticity.py <task>", ".terminus/validate_business_module_diversity.py <task> when applicable"],
-      "semantic_reviewers": ["Q6 Production Logic Auditor", "Complexity Governor"],
+      "semantic_reviewers": ["Complexity Governor"],
       "failure_routes": {
         "TOY_OR_PADDED_SYSTEM": "A2 System Architect / Environment Builder",
         "SCENARIO_TOO_SMALL": "Creation Controller -> WORK_PACKAGE_RESEARCH",
+        "ARCHITECTURE_GAP": "Creation Controller -> SYSTEM_ARCHITECTURE",
         "FORMAT_ERROR": "Q7 Task Format Enforcer"
       },
       "success_transition": "REFERENCE_SOLUTION",
-      "stale_on": ["architecture change", "defect-topology change", "environment rule change", "solver-visible environment change"]
+      "stale_on": ["architecture change", "defect-topology change", "solver-visible documentation plan change", "environment rule change", "solver-visible environment change"]
     },
     {
       "id": "REFERENCE_SOLUTION",
@@ -208,7 +209,7 @@
       },
       "evidence_required": ["requirement-to-test map", "behavioral scenario families", "F2P/P2P classification", "test independence"],
       "deterministic_validators": ["verifier lint/static checks", ".terminus/validate_task_complexity.py <task>"],
-      "semantic_reviewers": ["Q2 Verifier Coverage Repairer", "Q4 Spec-Test Contract Reviewer", "Verifier Engineer"],
+      "semantic_reviewers": ["Q2 Verifier Coverage Repairer", "Verifier Engineer"],
       "failure_routes": {
         "REQUIREMENT_GAP": "Q1 Spec Gap Repairer / contract owner",
         "SCENARIO_TOO_SMALL": "Creation Controller -> WORK_PACKAGE_RESEARCH",
@@ -263,8 +264,8 @@
       ],
       "prompt_files": [".terminus/agents/CREATOR_PROMPTS.md"],
       "input_contract": {
-        "required_fields": ["CREATION_RULE_CONTEXT", "ENGINEERING_OBJECTIVE", "REQUIRED_END_STATE", "FUNCTIONAL_REQUIREMENTS", "PRESERVATION_REQUIREMENTS", "SAFETY_REQUIREMENTS", "REFERENCED_DOCS", "REQUIRED_OUTPUTS"],
-        "optional_fields": ["AFFECTED_SYSTEM_LOCATION", "CURRENT_STATE_CLAIMS", "CURRENT_STATE_EVIDENCE"]
+        "required_fields": ["CREATION_RULE_CONTEXT", "APPROVED_SOLVER_VISIBLE_REQUIREMENT_CONTRACT", "TASK_WRITING_PROFILE"],
+        "optional_fields": ["CURRENT_STATE_EVIDENCE"]
       },
       "output_contract": {
         "status_values": ["READY", "REWRITE_REQUIRED", "BLOCKED"],
@@ -272,18 +273,19 @@
         "optional_fields": ["CURRENT_STATE_EVIDENCE", "UNRESOLVED_GAPS"],
         "persisted_artifacts": ["<task>/instruction.md"]
       },
-      "evidence_required": ["complete material requirement set", "instruction/docs boundary", "absolute required output paths", "current-state evidence only when claimed"],
-      "deterministic_validators": ["Q7 structural/path checks where mechanically enforceable"],
-      "semantic_reviewers": ["Instruction Reviewer", "Q1 Spec Gap Repairer", "Q3 Spec Ambiguity Repairer", "Q4 Spec-Test Contract Reviewer"],
+      "evidence_required": ["schema-valid current solver-visible requirement contract", "complete material requirement set", "instruction/docs boundary", "absolute required output paths", "current-state evidence only when claimed"],
+      "deterministic_validators": ["solver-visible requirement contract schema/hash/provenance checks", "Q7 structural/path checks where mechanically enforceable"],
+      "semantic_reviewers": ["Instruction Reviewer", "Q1 Spec Gap Repairer", "Q3 Spec Ambiguity Repairer"],
       "failure_routes": {
         "MISSING_REQUIREMENT": "Q1 Spec Gap Repairer",
+        "STALE_OR_INVALID_REQUIREMENT_CONTRACT": "Creation Controller -> requirement owner/Q1 -> regenerate projection",
         "AMBIGUITY": "Q3 Spec Ambiguity Repairer",
         "HIDDEN_TEST_OR_REPAIR_LEAKAGE": "A7 Instruction Writer",
         "SPEC_FILE_LOOPHOLE": "A7 Instruction Writer / Q1 Spec Gap Repairer",
         "FORMAT_OR_PATH_ERROR": "Q7 Task Format Enforcer"
       },
       "success_transition": "SPEC_ALIGNMENT",
-      "stale_on": ["material requirement change", "referenced solver-visible contract change", "required output/schema change", "instruction-policy change"]
+      "stale_on": ["solver-visible requirement contract change", "material requirement change", "referenced solver-visible contract change", "required output/schema change", "instruction-policy change"]
     },
     {
       "id": "SPEC_ALIGNMENT",
@@ -307,12 +309,12 @@
       },
       "evidence_required": ["Q1 no unresolved verifier->spec gap", "Q2 no unresolved spec->verifier gap", "Q3 no unresolved grading-relevant ambiguity"],
       "deterministic_validators": [],
-      "semantic_reviewers": ["Q4 Spec-Test Contract Reviewer"],
+      "semantic_reviewers": ["Q1 Spec Gap Repairer", "Q2 Verifier Coverage Repairer", "Q3 Spec Ambiguity Repairer"],
       "failure_routes": {
         "VERIFIER_TO_SPEC_GAP": "Q1 Spec Gap Repairer",
         "SPEC_TO_VERIFIER_GAP": "Q2 Verifier Coverage Repairer",
         "AMBIGUITY": "Q3 Spec Ambiguity Repairer",
-        "PERSISTENT_DISAGREEMENT": "Q4 / Adjudicator under circuit-breaker policy"
+        "PERSISTENT_DISAGREEMENT": "Creation Controller -> block freeze and route to the applicable contract/policy owner"
       },
       "success_transition": "DOCUMENTATION_DRAFT",
       "stale_on": ["instruction change", "referenced contract change", "verifier change", "grading-semantics change"]
@@ -378,25 +380,26 @@
       "owner": "A9 Task Assembly Agent",
       "role_class": "PRODUCER",
       "policy_files": [".terminus/agents/CREATION_PIPELINE.md", ".terminus/agents/PRODUCTION_AUTHENTICITY.md"],
-      "prompt_files": [".terminus/agents/CREATOR_PROMPTS.md"],
+      "prompt_files": [".terminus/agents/A9_ASSEMBLY_PROMPT.md"],
       "input_contract": {
         "required_fields": ["CURRENT_TASK", "CURRENT_ORACLE", "CURRENT_VERIFIER", "SPEC_ALIGNMENT_STATUS", "FORMAT_STATUS"],
         "optional_fields": ["PRIVATE_DEFECT_GRAPH", "PRIVATE_TEST_MAP"]
       },
       "output_contract": {
-        "status_values": ["FROZEN_CANDIDATE", "RETURN_TO_PRODUCER", "BLOCKED"],
-        "required_fields": ["TASK_COMMIT", "STRUCTURE", "SUBSTANTIVE_REACHABLE_LOC", "PRODUCTION_CHARACTERISTICS", "COMPLEXITY_GATE", "F2P_ORGANICITY", "EDGE_BOUNDARY_COVERAGE", "NEGATIVE_FAILURE_COVERAGE", "ORACLE", "NOP", "F2P_EMPIRICAL_MATRIX", "P2P_EMPIRICAL_MATRIX", "LEAKAGE_CHECK", "NEXT_REVIEW_GATE"],
+        "status_values": ["ASSEMBLED", "RETURN_TO_PRODUCER", "BLOCKED"],
+        "required_fields": ["TASK_COMMIT", "STRUCTURE", "INSTRUCTION_SHAPE", "INSTRUCTION_REQUIREMENT_COMPLETENESS", "INSTRUCTION_DOC_BOUNDARY", "SUBSTANTIVE_REACHABLE_LOC_EVIDENCE", "PRODUCTION_CHARACTERISTIC_EVIDENCE", "F2P_ORGANICITY_EVIDENCE", "EDGE_BOUNDARY_COVERAGE_EVIDENCE", "NEGATIVE_FAILURE_COVERAGE_EVIDENCE", "LEAKAGE_CHECK", "STATIC_CHECKS", "NEXT_GATE"],
         "optional_fields": [],
         "persisted_artifacts": []
       },
-      "evidence_required": ["structure/static/lint evidence", "Oracle/NOP evidence", "F2P/P2P empirical matrix", "leakage checks"],
-      "deterministic_validators": [".terminus/validate_task_complexity.py <task>", ".terminus/validate_runtime_authenticity.py <task>", "Oracle/NOP verifier execution"],
-      "semantic_reviewers": ["Complexity Governor"],
+      "evidence_required": ["assembled task structure", "assembly-local static/lint evidence", "instruction/docs boundary", "leakage/package checks", "evidence prepared for later complexity/runtime/deterministic gates"],
+      "deterministic_validators": ["task structure/static/lint checks", "leakage/package checks"],
+      "semantic_reviewers": [],
       "failure_routes": {
-        "ORACLE_OR_RUNTIME_FAILURE": "Q5 Oracle & Runtime Repair Specialist",
+        "STRUCTURE_OR_STATIC_FAILURE": "A9 Task Assembly Agent / Q7 Task Format Enforcer as evidence indicates",
         "FORMAT_FAILURE": "Q7 Task Format Enforcer",
         "SPEC_ALIGNMENT_FAILURE": "Q1/Q2/Q3",
-        "ARCHITECTURE_FAILURE": "A2 System Architect / Environment Builder"
+        "LEAKAGE_FAILURE": "A9 Task Assembly Agent / responsible producer",
+        "ARCHITECTURE_EVIDENCE_GAP": "A2 System Architect / Environment Builder"
       },
       "success_transition": "COMPLEXITY_GATE",
       "stale_on": ["task artifact change", "solution change", "verifier change", "policy/validator change"]
@@ -420,7 +423,7 @@
       },
       "evidence_required": ["removal/reachability analysis", "scale authenticity", "test organicity", "behavioral breadth"],
       "deterministic_validators": [".terminus/validate_task_complexity.py <task>"],
-      "semantic_reviewers": ["Q6 Production Logic Auditor"],
+      "semantic_reviewers": [],
       "failure_routes": {
         "REVISE": "smallest responsible producer",
         "SCENARIO_TOO_SMALL": "Creation Controller -> WORK_PACKAGE_RESEARCH"
@@ -447,7 +450,7 @@
       },
       "evidence_required": ["runtime authenticity validator output", "business module diversity output when applicable"],
       "deterministic_validators": [".terminus/validate_runtime_authenticity.py <task>", ".terminus/validate_business_module_diversity.py <task> when applicable"],
-      "semantic_reviewers": ["Q6 Production Logic Auditor"],
+      "semantic_reviewers": [],
       "failure_routes": {
         "PRODUCTION_AUTHENTICITY_FAILURE": "A2 System Architect / Environment Builder",
         "BUSINESS_MODULE_DIVERSITY_FAILURE": "A2 System Architect / Environment Builder",
