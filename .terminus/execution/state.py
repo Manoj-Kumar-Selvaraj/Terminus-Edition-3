@@ -43,6 +43,7 @@ class WorkflowStateResolver:
             ".terminus/agents/workflow_state_contract.json"
         )
         self.record_builder = ExecutionRecordBuilder(self.root, self.policy)
+        self.execution_authority = self.record_builder.execution_authority
         self.chain = self._canonical_chain()
 
     def resolve(
@@ -329,8 +330,11 @@ class WorkflowStateResolver:
         if payload.get("stage_id") != stage_id:
             return "latest execution record stage_id does not match ledger stage"
         role_id = payload.get("role_id")
-        if not isinstance(role_id, str) or role_id not in self.policy.allowed_roles_for_stage(stage_id):
-            return "latest execution record role is not authorized for this stage"
+        if (
+            not isinstance(role_id, str)
+            or role_id not in self.execution_authority.roles_for_stage(stage_id)
+        ):
+            return "latest execution record role is not authorized to execute this stage"
 
         stage = self.policy.stages[stage_id]
         output_contract = stage.get("output_contract", {})
@@ -554,7 +558,7 @@ class WorkflowStateResolver:
 
         stage = self.policy.stages[node_id]
         owner = str(stage.get("owner", ""))
-        role_id = self._primary_role_for_stage(node_id)
+        role_id = self.execution_authority.primary_role_for_stage(node_id)
         inputs = stage.get("input_contract", {})
         base = {
             "stage_id": node_id,
@@ -597,17 +601,6 @@ class WorkflowStateResolver:
                 or "stage blocks forward progress"
             ),
         }
-
-    def _primary_role_for_stage(self, stage_id: str) -> str:
-        if stage_id == "SYSTEM_ARCHITECTURE":
-            return "A2_SYSTEM_ARCHITECT"
-        if stage_id == "ENVIRONMENT_BUILD":
-            return "A2_ENVIRONMENT_BUILDER"
-        stage = self.policy.stages[stage_id]
-        owner = stage.get("owner")
-        if not isinstance(owner, str) or not owner.strip():
-            raise ValueError(f"stage {stage_id} has no primary owner")
-        return self.policy._canonical_stage_participant(owner)
 
     @staticmethod
     def _attach_event_identity(node: dict[str, Any], event: Mapping[str, Any]) -> None:
