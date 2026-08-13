@@ -53,7 +53,8 @@ class ExecutionRecordBuilder(_core.ExecutionRecordBuilder):
         ]
         if not resolved:
             raise ValueError(
-                f"ADVANCE for {stage_id} requires repository-resolved immutable evidence_refs"
+                f"ADVANCE for {stage_id} requires immutable hashed evidence_refs "
+                "that resolve to repository bytes or commits"
             )
         return super()._validate_advancing_evidence(stage_id, outputs, resolved)
 
