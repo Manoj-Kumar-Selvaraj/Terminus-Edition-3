@@ -9,7 +9,6 @@ import subprocess
 from pathlib import Path
 from typing import Any, Mapping
 
-from retrieval.models import InvocationContext
 from retrieval.policy import RetrievalPolicy
 
 from .invocation import StageInvocationBuilder
