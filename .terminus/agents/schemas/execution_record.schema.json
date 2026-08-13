@@ -35,15 +35,18 @@
     "validation": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["invocation_identity_valid", "status_legal", "output_keys_valid", "required_outputs_satisfied", "task_lineage_valid", "task_commit_change_authorized", "acceptance_predicates_satisfied", "evidence_refs_count"],
+      "required": ["invocation_identity_valid", "invocation_policy_valid", "retrieval_context_authorized", "status_legal", "output_keys_valid", "required_outputs_satisfied", "task_lineage_valid", "task_commit_change_authorized", "acceptance_predicates_satisfied", "evidence_binding_satisfied", "evidence_refs_count"],
       "properties": {
         "invocation_identity_valid": {"const": true},
+        "invocation_policy_valid": {"const": true},
+        "retrieval_context_authorized": {"const": true},
         "status_legal": {"const": true},
         "output_keys_valid": {"const": true},
         "required_outputs_satisfied": {"type": "boolean"},
         "task_lineage_valid": {"const": true},
         "task_commit_change_authorized": {"const": true},
         "acceptance_predicates_satisfied": {"const": true},
+        "evidence_binding_satisfied": {"const": true},
         "evidence_refs_count": {"type": "integer", "minimum": 0}
       }
     }
@@ -81,10 +84,10 @@
     "evidenceRef": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["kind", "ref"],
+      "required": ["kind", "ref", "content_hash"],
       "properties": {
         "kind": {"enum": ["ARTIFACT", "RUN", "PACKET", "RESULT", "COMMIT", "FILE", "EXTERNAL", "OTHER"]},
-        "ref": {"type": "string", "minLength": 1},
+        "ref": {"type": "string", "pattern": "^(git:|commit:|run:|external:).+"},
         "content_hash": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"}
       }
     }
