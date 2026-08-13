@@ -149,13 +149,13 @@ One Orchestrator chat may persist across the task. Every producer/fixer and ever
 
 Use the controlling policy files for exact applicability. The normal order is:
 
-`creation/spec alignment -> Q7 format -> assembly/complexity/authenticity -> deterministic preflight -> Oracle/NOP -> FROZEN_CANDIDATE -> Q4/Q6 quality interlock -> Pre-LLMaJ specialists -> cold Comprehensive Reviewer -> omission/conflict scan -> adjudication if needed -> Pre-LLMaJ aggregate -> Q8 isolated perspectives -> Harbor LLMaJ -> GPT x5 + Claude x5 -> combined ten-run difficulty and per-test solvability -> Trajectory Analyst -> Final Compliance -> Final Human Quality -> final package -> SUBMISSION_READY`
+`creation/spec alignment -> Q7 format -> assembly/complexity/authenticity -> deterministic preflight -> Oracle/NOP -> FROZEN_CANDIDATE -> Q4/Q6 quality interlock -> Pre-LLMaJ specialists -> cold Comprehensive Reviewer -> omission/conflict scan -> adjudication if needed -> Pre-LLMaJ aggregate -> Q8 GPT perspective -> Q8 Claude perspective -> Q8 aggregate -> Harbor LLMaJ -> GPT x5 + Claude x5 -> combined ten-run evidence -> Trajectory Analyst -> Difficulty Reviewer empirical assessment -> Final Compliance -> Final Human Quality -> final package -> SUBMISSION_READY`
 
 The registered high-level transition chain is:
 
-`QUALITY_INTERLOCK -> PRE_LLMAJ -> MODEL_DIAGNOSTIC -> OFFICIAL_MODEL_TRIALS -> TRIAL_ANALYSIS -> FINAL_REVIEW -> SUBMISSION_READY`
+`QUALITY_INTERLOCK -> PRE_LLMAJ -> MODEL_DIAGNOSTIC_GPT -> MODEL_DIAGNOSTIC_CLAUDE -> MODEL_DIAGNOSTIC_AGGREGATE -> HARBOR_LLMAJ -> OFFICIAL_MODEL_TRIALS -> TRIAL_ANALYSIS -> DIFFICULTY_ASSESSMENT -> FINAL_REVIEW -> SUBMISSION_READY`
 
-The registry does not eliminate required unregistered/external sub-gates such as Harbor LLMaJ. Never skip backward dependencies because a later workflow is green or because a registry transition is coarser than the full policy order.
+`HARBOR_LLMAJ` and `OFFICIAL_MODEL_TRIALS` are first-class `EXTERNAL_GATE` stages. Their pending/completed state is reconciled through the workflow-state contract; pending state is not PASS evidence. Never skip backward dependencies because a later workflow is green.
 
 ## GitHub Actions evidence
 
@@ -219,6 +219,7 @@ The table is the human summary. For registered stages, also use `stage_contracts
 | exhaustive checklist decision | Comprehensive Reviewer |
 | material reviewer conflict or latent unchanged-scope Q4 finding | Adjudicator |
 | model-run failure analysis or a verifier case at 0/10 | Trajectory Analyst |
+| empirical post-trial tier/solvability | Difficulty Reviewer |
 | authentication, network, runner or provider failure | Orchestrator infrastructure classification first |
 | final structure/security/package acceptance | Final Compliance |
 | final prose/leakage/authenticity | Final Human Quality |
