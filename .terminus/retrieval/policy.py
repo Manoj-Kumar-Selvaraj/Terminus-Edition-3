@@ -8,6 +8,8 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Mapping
 
+from review_contract import role_contract_hash as current_role_contract_hash
+
 from .models import InvocationContext
 
 ALL_STAGES = "ALL_AUTHORIZED_STAGES"
@@ -32,6 +34,23 @@ _STAGE_ROLE_OVERRIDES = {
             "ADJUDICATOR",
         }
     )
+}
+
+_REVIEW_ROLE_LABELS = {
+    "Q4_SPEC_TEST_CONTRACT_REVIEWER": "Spec-Test Contract Reviewer",
+    "Q6_PRODUCTION_LOGIC_AUDITOR": "Production Logic Auditor",
+    "Q8_MODEL_PERSPECTIVE_DIFFICULTY_SIMULATOR": "Model Perspective Difficulty Simulator",
+    "TASK_ARCHITECT": "Task Architect",
+    "VERIFIER_ENGINEER": "Verifier Engineer",
+    "ORIGINALITY_AUTHENTICITY_REVIEWER": "Originality & Authenticity Reviewer",
+    "DIFFICULTY_REVIEWER": "Difficulty Reviewer",
+    "COMPLIANCE_AUDITOR": "Compliance Auditor",
+    "INSTRUCTION_REVIEWER": "Instruction Reviewer",
+    "ENGINEERING_DOCUMENTATION_REVIEWER": "Engineering Documentation Reviewer",
+    "HUMAN_QUALITY_REVIEWER": "Human Quality Reviewer",
+    "COMPREHENSIVE_REVIEWER": "Comprehensive Reviewer",
+    "TRAJECTORY_ANALYST": "Trajectory Analyst",
+    "ADJUDICATOR": "Adjudicator",
 }
 
 
@@ -221,10 +240,13 @@ class RetrievalPolicy:
             return AuthorizationDecision(False, "source/solver-visible profile mismatch")
 
         if source_kind == "REVIEW_RESULT" and context.role_id != "CI_ORCHESTRATOR":
-            producer_hash = metadata.get("role_contract_hash")
-            if not producer_hash or not context.role_contract_hash:
-                return AuthorizationDecision(False, "review result requires producer role-contract binding")
-            if str(producer_hash) != str(context.role_contract_hash):
+            role_label = _REVIEW_ROLE_LABELS.get(context.role_id)
+            if role_label is None:
+                return AuthorizationDecision(False, "review result consumer is not a reviewer role")
+            expected_hash = current_role_contract_hash(self.root, role_label)
+            if context.role_contract_hash != expected_hash:
+                return AuthorizationDecision(False, "review result consumer role-contract hash mismatch")
+            if metadata.get("role_contract_hash") != expected_hash:
                 return AuthorizationDecision(False, "cold-review result producer mismatch")
 
         allowed = self.authorized_evidence_classes(context)
