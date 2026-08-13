@@ -14,6 +14,7 @@ Schemas:
 Implementation:
 - `.terminus/execution/ledger.py`;
 - `.terminus/execution/state.py`;
+- `.terminus/execution/external_gate.py`;
 - `.terminus/execution/controller_cli.py`.
 
 ## Authority
@@ -117,22 +118,32 @@ It requires current successful FORMAT, COMPLEXITY, RUNTIME_AUTHENTICITY and DETE
 
 Task commit lineage is always checked. Additional evidence may be explicitly marked `CURRENT | STALE | MISSING` and may carry a content hash. Explicit stale/missing or changed hash invalidates the citing record and downstream dependencies. Absence from the overlay does not override stricter Protocol/packet freshness rules.
 
+## External evaluation gate projection
+
+`HARBOR_LLMAJ` and `OFFICIAL_MODEL_TRIALS` are first-class `EXTERNAL_GATE` stages. They remain ordinary ledger/state nodes with canonical owner identities, task/control-plane lineage, immutable records and acceptance predicates; only their execution adapter differs from a callable repository agent.
+
+A missing external gate projects to `DISPATCH_EXTERNAL_GATE`. A current `DISPATCHED` record projects to `AWAIT_EXTERNAL_GATE` and preserves its immutable external run identity. Dispatch/await state is not PASS evidence, and a controller must not redispatch blindly while a current bound run is pending.
+
 ## Next action
 
-The resolver emits exactly one:
+The resolver/controller emits exactly one:
 
-- `INVOKE_STAGE` — first genuinely missing/stale stage;
-- `RETRY_STAGE` — current result requires the same stage again;
+- `INVOKE_STAGE` — first genuinely missing/stale callable stage;
+- `RETRY_STAGE` — current callable-stage result requires the same stage again;
+- `DISPATCH_EXTERNAL_GATE` — first genuinely missing/stale external evaluation stage requires dispatch;
+- `AWAIT_EXTERNAL_GATE` — a current bound external run is pending;
 - `ROUTE` — current result requires a registered failure route;
 - `BLOCKED` — explicit block/state failure/**unattributed commit**;
 - `VALIDATE_STATE` — non-executable state needs controller validation;
 - `END` — all stages/states are current and the recorded output lineage equals current task commit.
 
-The primary role is always the canonical stage owner, not any role that happens to have retrieval visibility.
+The primary role is always the canonical stage owner, not any role that happens to have retrieval visibility. An external-gate owner is an external execution identity, not a callable repository agent.
 
 ## Controller recording rule
 
 When `controller_cli.py record` accepts a producer/fixer result, it appends the immutable record and then rematerializes workflow state against the record's **output task commit**. Do not rematerialize against the invocation's older input commit after the stage created a new commit.
+
+External-gate results use the same immutable record/ledger contract and must pass external run-identity validation before they can be recorded as current completion evidence.
 
 ## Normal ChatGPT portability
 
