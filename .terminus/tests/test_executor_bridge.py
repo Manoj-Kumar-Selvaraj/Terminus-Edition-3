@@ -1,17 +1,30 @@
 from __future__ import annotations
 
+import json
+import subprocess
 import sys
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / ".terminus"))
 
+from execution.controller_cli import _continue_payload  # noqa: E402
 from execution.executor import ExecutorMode  # noqa: E402
 from execution.handoff import ExecutorHandoffBuilder  # noqa: E402
 from execution.invocation import StageInvocationBuilder  # noqa: E402
 from execution.runner import ExecutorRunner  # noqa: E402
+
+
+def _head() -> str:
+    return subprocess.run(
+        ["git", "-C", str(ROOT), "rev-parse", "HEAD"],
+        check=True,
+        capture_output=True,
+        text=True,
+    ).stdout.strip()
 
 
 def _invocation() -> dict[str, object]:
@@ -170,3 +183,51 @@ def test_prepare_is_non_mutating() -> None:
     assert prepared["stage_result"] is None
     assert prepared["recorded"] is False
     assert prepared["workflow_state_mutated"] is False
+
+
+def test_controller_continue_can_prepare_manual_handoff(tmp_path: Path) -> None:
+    commit = _head()
+    inputs = tmp_path / "inputs.json"
+    inputs.write_text(json.dumps({"CREATION_REQUEST": "executor bridge test"}), encoding="utf-8")
+    args = SimpleNamespace(
+        task_id="executor-controller-test",
+        task_commit=commit,
+        control_plane_commit=commit,
+        inputs_json=str(inputs),
+        query=None,
+        db=None,
+        retrieval_limit=10,
+        max_chars=30000,
+        prepare_executor="MANUAL_CHAT",
+    )
+    snapshot = {
+        "state_snapshot_id": "state_test",
+        "next": {
+            "action": "INVOKE_STAGE",
+            "stage_id": "RULE_RESOLUTION",
+            "primary_role_id": "CREATION_CONTROLLER",
+        },
+    }
+    payload = _continue_payload(ROOT, args, snapshot)
+    assert payload["invocation"]["readiness"] == "READY"
+    assert payload["executor_handoff"]["executor_mode"] == "MANUAL_CHAT"
+    assert (
+        payload["executor_handoff"]["invocation_id"]
+        == payload["invocation"]["invocation_id"]
+    )
+
+
+def test_external_await_never_prepares_executor_handoff() -> None:
+    args = SimpleNamespace(prepare_executor="MANUAL_CHAT")
+    snapshot = {
+        "state_snapshot_id": "state_external",
+        "next": {
+            "action": "AWAIT_EXTERNAL_GATE",
+            "stage_id": "HARBOR_LLMAJ",
+            "external_run_id": "run-42",
+        },
+    }
+    payload = _continue_payload(ROOT, args, snapshot)
+    assert payload["invocation"] is None
+    assert payload["executor_handoff"] is None
+    assert payload["dispatch"]["status"] == "AWAITING_EXTERNAL_RESULT"
