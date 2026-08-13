@@ -6,6 +6,7 @@ This policy defines the executable handoff envelope used to invoke one registere
 
 Canonical implementation:
 
+- `.terminus/execution/authority.py`
 - `.terminus/execution/invocation.py`
 - `.terminus/execution/cli.py`
 - `.terminus/agents/schemas/stage_invocation.schema.json`
@@ -15,7 +16,7 @@ Canonical implementation:
 
 A stage invocation is a projection of already-authoritative contracts:
 
-`stage contract + canonical stage-authorized role + exact task/control-plane identity + narrower packet/role restrictions + declared stage inputs + optional authorized retrieval context -> bounded invocation packet`
+`stage contract + canonical executable role + exact task/control-plane identity + narrower packet/role restrictions + declared stage inputs + optional authorized retrieval context -> bounded invocation packet`
 
 The packet is execution data, not semantic authority. It must never contain hidden chain-of-thought, private scratchpad reasoning, or an inferred PASS/acceptance decision.
 
@@ -36,7 +37,7 @@ Input values may be scalar, structured JSON, or explicit artifact references. Du
 Every invocation records:
 
 - `stage_id`;
-- canonical `role_id`;
+- canonical executable `role_id`;
 - stage owner and role class;
 - `control_plane_commit`;
 - task ID/task commit when task-scoped execution is identified;
@@ -50,7 +51,22 @@ The local canonical builder verifies that task/control commits exist in reposito
 
 This keeps the packet honest when task and control-plane snapshots differ and prevents a caller from combining current in-memory contracts with a stale or invented control-plane SHA.
 
-The role must be authorized for the stage according to `.terminus/retrieval/policy.py`; a canonical role cannot borrow another stage's authority.
+## Execution authority versus retrieval audience
+
+Retrieval/routing visibility and execution authority are intentionally different contracts.
+
+`.terminus/retrieval/policy.py` may authorize controllers such as `CI_ORCHESTRATOR` or `CREATION_CONTROLLER` to inspect evidence for a stage so they can route work, build packets, assess freshness and coordinate the lifecycle. That observation permission does **not** make the controller an executor for a producer/reviewer stage.
+
+`.terminus/execution/authority.py` derives the executable role set from the stage owner plus explicitly declared semantic reviewer executions. Examples:
+
+- `WORK_PACKAGE_RESEARCH` is executable by A1, not by CI Orchestrator merely because CI can inspect it;
+- `SYSTEM_ARCHITECTURE` resolves to the A2 System Architect phase role;
+- `ENVIRONMENT_BUILD` resolves to the A2 Environment Builder phase role;
+- controller-owned stages remain executable by their actual controller owner;
+- `QUALITY_INTERLOCK` supports its controller owner and the explicitly declared Q4/Q6 reviewer executions;
+- `PRE_LLMAJ` expands its grouped specialist/reviewer declarations to concrete canonical reviewer roles without converting generic observer access into execution authority.
+
+The executable role set must always be a subset of the stage's retrieval audience. A canonical role cannot borrow another stage's execution authority, and controller observation cannot be promoted into producer/reviewer execution authority.
 
 ## Mandatory exact reads
 
@@ -108,7 +124,8 @@ The schema deliberately has no `chain_of_thought`, `reasoning`, `scratchpad`, or
 Fail closed when:
 
 - stage or role is unknown;
-- role is not authorized for the stage;
+- role is not authorized to execute the stage;
+- controller/retrieval observation permission is incorrectly used as execution authority;
 - control-plane commit is missing, unavailable, or does not match the loaded machine contracts;
 - a mandatory exact-read path does not exist at the bound control-plane commit;
 - task ID/task commit binding is incomplete or its commit is unavailable;
