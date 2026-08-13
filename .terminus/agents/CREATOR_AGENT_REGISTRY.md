@@ -1,6 +1,6 @@
 # Terminus Edition 3 Creator Agent Registry
 
-Registry version: `1.0`
+Registry version: `1.1`
 
 Producer roles create/repair task artifacts before independent review. Every producer reads current Edition 3 rules, `.terminus/agents/CREATION_PIPELINE.md`, and `.terminus/agents/PRODUCTION_AUTHENTICITY.md`. Producers never issue final acceptance for their own work.
 
@@ -46,10 +46,14 @@ For operational/stateful strict tasks:
 Owns engineering work-package discovery: objective/end state, major coupled requirement families, inherited production system/state, persona, public-reference research, duplicate risk and scale fit. For strict tasks it must reject one localized incident/bug unless the contained environment naturally supports the required production and behavioral breadth without padding.
 
 ### A2 — System Architect / Environment Builder
-Owns runtime topology, realistic state/data, solver-visible technical docs, current-state evidence where appropriate, and starter code/config. Major modules must be reachable, substantive and differentiated by real production responsibility. Docs explain structure/contracts without becoming a prompt extension or telling the solver where the repair is. It does not read the final Oracle while building the starter.
+A2 is invoked in **two distinct stages with different contracts** and must not collapse them into one pass.
+
+**Architecture-design invocation (`SYSTEM_ARCHITECTURE`)** owns only the clean inherited-system design: component/resource graph, runtime/operator entrypoints, state/persistence model, technical-documentation plan, production characteristics, scale fit and reachability plan. It must not inject defects, create the broken starter, or consume private defect topology that does not exist yet.
+
+**Environment-materialization invocation (`ENVIRONMENT_BUILD`)** runs only after A3 has produced the approved defect/incomplete-behavior topology. It materializes the solver-visible runtime, realistic state/data, technical docs, current-state evidence where appropriate, and starter code/config according to the clean architecture plus the approved topology. Major modules must be reachable, substantive and differentiated by real production responsibility. Docs explain structure/contracts without becoming a prompt extension or telling the solver where the repair is. It does not read the final Oracle while building the starter and does not add untracked surprise defects.
 
 ### A3 — Defect Topology Designer
-Owns the private causal graph and behavioral-surface design: normally 4–8 root causes, 20–30 manifestations, at least 15 strict-profile manifestations participating in meaningful causal/interdependency edges, cross-component/cross-cluster relationships and partial-fix traps. It maps normal, edge/boundary, negative/rejection, failure/recovery and cross-component surfaces so later F2P coverage can arise organically, without one defect per test or count-driven manifestations. If that breadth cannot arise naturally, it returns `SCENARIO_TOO_SMALL`.
+Owns the private causal graph and behavioral-surface design **against the approved clean architecture before the starter is materialized**: normally 4–8 root causes, 20–30 manifestations, at least 15 strict-profile manifestations participating in meaningful causal/interdependency edges, cross-component/cross-cluster relationships and partial-fix traps. It maps normal, edge/boundary, negative/rejection, failure/recovery and cross-component surfaces so later F2P coverage can arise organically, without one defect per test or count-driven manifestations. If that breadth cannot arise naturally, it returns `SCENARIO_TOO_SMALL`.
 
 ### A4 — Reference Solution Author
 Owns the deterministic general repair/completion. No hidden-test special casing.
@@ -89,6 +93,6 @@ After deterministic freeze, **Q4 Spec-Test Contract Reviewer** and **Q6 Producti
 
 ## Creation order
 
-`A1 -> A2 -> A3 -> A4 -> A5 -> A6 -> A7 -> Q1 -> Q2 -> Q3 -> A8 -> Q7 -> A9 -> A10 -> deterministic Oracle/NOP (Q5 on failure)`
+`A1 -> A2(SYSTEM_ARCHITECTURE design-only) -> A3 -> A2(ENVIRONMENT_BUILD materialization) -> A4 -> A5 -> A6 -> A7 -> Q1 -> Q2 -> Q3 -> A8 -> Q7 -> A9 -> A10 -> runtime-authenticity -> deterministic Oracle/NOP (Q5 on failure) -> FROZEN_CANDIDATE`
 
 Only a frozen deterministic candidate that also passes the Q4/Q6 quality interlock enters normal Pre-LLMaJ review.
