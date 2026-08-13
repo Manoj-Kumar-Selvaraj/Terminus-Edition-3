@@ -16,7 +16,7 @@ Canonical implementation:
 
 A stage invocation is a projection of already-authoritative contracts:
 
-`stage contract + canonical executable role + exact task/control-plane identity + narrower packet/role restrictions + declared stage inputs + optional authorized retrieval context -> bounded invocation packet`
+`stage contract + canonical executable owner role + exact task/control-plane identity + narrower packet/role restrictions + declared stage inputs + optional authorized retrieval context -> bounded invocation packet`
 
 The packet is execution data, not semantic authority. It must never contain hidden chain-of-thought, private scratchpad reasoning, or an inferred PASS/acceptance decision.
 
@@ -37,7 +37,7 @@ Input values may be scalar, structured JSON, or explicit artifact references. Du
 Every invocation records:
 
 - `stage_id`;
-- canonical executable `role_id`;
+- canonical executable owner `role_id`;
 - stage owner and role class;
 - `control_plane_commit`;
 - task ID/task commit when task-scoped execution is identified;
@@ -53,20 +53,22 @@ This keeps the packet honest when task and control-plane snapshots differ and pr
 
 ## Execution authority versus retrieval audience
 
-Retrieval/routing visibility and execution authority are intentionally different contracts.
+Retrieval/routing visibility and aggregate-stage execution authority are intentionally different contracts.
 
-`.terminus/retrieval/policy.py` may authorize controllers such as `CI_ORCHESTRATOR` or `CREATION_CONTROLLER` to inspect evidence for a stage so they can route work, build packets, assess freshness and coordinate the lifecycle. That observation permission does **not** make the controller an executor for a producer/reviewer stage.
+`.terminus/retrieval/policy.py` may authorize controllers or semantic reviewers to inspect evidence for a stage so they can route work, build packets, assess freshness and perform their narrower decision right. That observation/review permission does **not** make them the executor of the aggregate stage contract.
 
-`.terminus/execution/authority.py` derives the executable role set from the stage owner plus explicitly declared semantic reviewer executions. Examples:
+`.terminus/execution/authority.py` resolves exactly one executable owner role for each registered aggregate stage. Examples:
 
 - `WORK_PACKAGE_RESEARCH` is executable by A1, not by CI Orchestrator merely because CI can inspect it;
 - `SYSTEM_ARCHITECTURE` resolves to the A2 System Architect phase role;
 - `ENVIRONMENT_BUILD` resolves to the A2 Environment Builder phase role;
-- controller-owned stages remain executable by their actual controller owner;
-- `QUALITY_INTERLOCK` supports its controller owner and the explicitly declared Q4/Q6 reviewer executions;
-- `PRE_LLMAJ` expands its grouped specialist/reviewer declarations to concrete canonical reviewer roles without converting generic observer access into execution authority.
+- controller-owned aggregate stages are executable by their actual controller owner;
+- `QUALITY_INTERLOCK` is executed/aggregated by its controller owner; Q4 and Q6 remain independent packet-bound reviewers whose results become stage inputs/evidence rather than alternative emitters of the aggregate `QUALITY_INTERLOCK` status;
+- `PRE_LLMAJ` is executed/aggregated by its controller owner; Stage-B specialists, Comprehensive Reviewer and routed Adjudicator use their own reviewer contracts and feed the aggregate stage rather than sharing its output schema.
 
-The executable role set must always be a subset of the stage's retrieval audience. A canonical role cannot borrow another stage's execution authority, and controller observation cannot be promoted into producer/reviewer execution authority.
+This separation preserves the single-owner rule and keeps the execution ledger unambiguous: one aggregate stage has one owner-issued stage result. Semantic reviewer conclusions stay independent evidence with their own packet/result provenance.
+
+The executable owner must also be inside the stage's retrieval audience. A canonical role cannot borrow another stage's execution authority, and controller/reviewer observation cannot be promoted into aggregate-stage execution authority.
 
 ## Mandatory exact reads
 
@@ -93,19 +95,19 @@ Retrieved context never expands stage/role/packet evidence authority and never s
 
 ## Output contract projection
 
-Every invocation includes the selected stage's:
+Every invocation includes the selected aggregate stage's:
 
 - legal `status_values`;
 - required and optional output fields;
 - persisted-artifact declarations;
 - deterministic validators;
-- semantic reviewers;
+- semantic reviewers that provide required semantic evidence;
 - required evidence description;
 - failure routes;
 - success transition;
 - staleness triggers.
 
-The executor must return one legal stage status and the fields required for that status/execution. A later execution-record/state-transition layer validates the returned result; the invocation builder itself does not certify completion.
+The stage owner must return one legal aggregate-stage status and the fields required for that status/execution. Semantic reviewers return through their role-specific packet/result contracts, not by pretending their verdict is the aggregate stage status. A later execution-record/state-transition layer validates the owner's returned result; the invocation builder itself does not certify completion.
 
 ## Deterministic identity
 
@@ -124,8 +126,8 @@ The schema deliberately has no `chain_of_thought`, `reasoning`, `scratchpad`, or
 Fail closed when:
 
 - stage or role is unknown;
-- role is not authorized to execute the stage;
-- controller/retrieval observation permission is incorrectly used as execution authority;
+- role is not the canonical executable owner of the aggregate stage;
+- controller/reviewer retrieval observation is incorrectly used as aggregate-stage execution authority;
 - control-plane commit is missing, unavailable, or does not match the loaded machine contracts;
 - a mandatory exact-read path does not exist at the bound control-plane commit;
 - task ID/task commit binding is incomplete or its commit is unavailable;
@@ -137,4 +139,4 @@ Return a non-executable blocked packet, rather than raising, only for ordinary m
 
 ## Portability
 
-This contract remains executable from normal ChatGPT. A chat executor can consume the generated structure conceptually or reconstruct it through exact GitHub reads when local execution is unavailable. The local builder is the canonical machine implementation, not a requirement that every ChatGPT surface run Python or SQLite.
+This contract remains executable from normal ChatGPT. A chat executor can consume the generated structure conceptually or reconstruct it through exact GitHub reads when local execution is unavailable. Independent reviewer chats continue to use their generated reviewer packets/role contracts; the owning controller then consumes their current results when executing the aggregate stage. The local builder is the canonical machine implementation, not a requirement that every ChatGPT surface run Python or SQLite.
