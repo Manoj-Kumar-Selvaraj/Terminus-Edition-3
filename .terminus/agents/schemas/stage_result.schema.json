@@ -19,7 +19,7 @@
         "required": ["kind", "ref"],
         "properties": {
           "kind": {"enum": ["ARTIFACT", "RUN", "PACKET", "RESULT", "COMMIT", "FILE", "EXTERNAL", "OTHER"]},
-          "ref": {"type": "string", "minLength": 1},
+          "ref": {"type": "string", "pattern": "^(git:|commit:|run:|external:).+"},
           "content_hash": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"}
         }
       }
