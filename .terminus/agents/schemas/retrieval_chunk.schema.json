@@ -33,9 +33,9 @@
       "enum": [
         "CONTROL_PLANE_MARKDOWN","CONTROL_PLANE_JSON","CONTROL_PLANE_CODE",
         "TASK_INSTRUCTION","TASK_DOCUMENTATION","TASK_CODE","TASK_CONFIGURATION",
-        "PRIVATE_DESIGN","SOLUTION_ORACLE","VERIFIER_PRIVATE","REVIEW_PACKET",
-        "REVIEW_RESULT","SESSION_STATE","CI_RUNTIME","MODEL_TRIAL","FINAL_PACKAGE",
-        "PUBLIC_REFERENCE"
+        "SOLVER_VISIBLE_REQUIREMENT_CONTRACT","PRIVATE_DESIGN","SOLUTION_ORACLE",
+        "VERIFIER_PRIVATE","REVIEW_PACKET","REVIEW_RESULT","SESSION_STATE",
+        "CI_RUNTIME","MODEL_TRIAL","FINAL_PACKAGE","PUBLIC_REFERENCE"
       ]
     },
     "source_version": {"type": "string", "minLength": 1},
@@ -50,18 +50,12 @@
         "PUBLIC_REFERENCE","MODEL_TRIAL_EVIDENCE","FINAL_PACKAGE_EVIDENCE"
       ]
     },
-    "sensitivity": {
-      "type": "string",
-      "enum": ["PUBLIC","SOLVER_VISIBLE","CONTROL_PLANE","PRIVATE","RESTRICTED"]
-    },
+    "sensitivity": {"type": "string", "enum": ["PUBLIC","SOLVER_VISIBLE","CONTROL_PLANE","PRIVATE","RESTRICTED"]},
     "solver_visible": {"type": "boolean"},
     "task_id": {"type": "string", "minLength": 1},
     "task_commit": {"type": "string", "pattern": "^[0-9a-f]{40,64}$"},
     "control_plane_commit": {"type": "string", "pattern": "^[0-9a-f]{40,64}$"},
-    "policy_versions": {
-      "type": "object",
-      "additionalProperties": {"type": "string", "minLength": 1}
-    },
+    "policy_versions": {"type": "object", "minProperties": 1, "additionalProperties": {"type": "string", "minLength": 1}},
     "role_contract_hash": {"type": "string", "minLength": 8},
     "packet_binding": {"type": "string", "minLength": 8},
     "review_scope_hash": {"type": "string", "minLength": 8},
@@ -70,13 +64,38 @@
       "type": "array",
       "minItems": 1,
       "uniqueItems": true,
-      "items": {"type": "string", "minLength": 1}
+      "items": {
+        "type": "string",
+        "enum": [
+          "ALL_AUTHORIZED_STAGES","RULE_RESOLUTION","WORK_PACKAGE_RESEARCH","SYSTEM_ARCHITECTURE",
+          "DEFECT_TOPOLOGY","ENVIRONMENT_BUILD","REFERENCE_SOLUTION","VERIFIER_BUILD",
+          "HUMAN_WRITING_RESEARCH","INSTRUCTION_DRAFT","SPEC_ALIGNMENT","DOCUMENTATION_DRAFT",
+          "FORMAT_GATE","ASSEMBLY","COMPLEXITY_GATE","RUNTIME_AUTHENTICITY",
+          "DETERMINISTIC_VALIDATION","QUALITY_INTERLOCK","PRE_LLMAJ","MODEL_DIAGNOSTIC",
+          "OFFICIAL_MODEL_TRIALS","TRIAL_ANALYSIS","FINAL_REVIEW","SUBMISSION_READY"
+        ]
+      }
     },
     "role_applicability": {
       "type": "array",
       "minItems": 1,
       "uniqueItems": true,
-      "items": {"type": "string", "minLength": 1}
+      "items": {
+        "type": "string",
+        "enum": [
+          "ALL_AUTHORIZED_ROLES","CREATION_CONTROLLER","CI_ORCHESTRATOR","A1_SCENARIO_RESEARCHER",
+          "A2_SYSTEM_ARCHITECT","A2_ENVIRONMENT_BUILDER","A3_DEFECT_TOPOLOGY_DESIGNER",
+          "A4_REFERENCE_SOLUTION_AUTHOR","A5_VERIFIER_AUTHOR","A6_HUMAN_WRITING_RESEARCHER",
+          "A7_INSTRUCTION_WRITER","A8_DOCUMENTATION_WRITER","A9_TASK_ASSEMBLY_AGENT",
+          "A10_COMPLEXITY_GOVERNOR","A11_AUTHORING_FAILURE_DIAGNOSTICIAN","Q1_SPEC_GAP_REPAIRER",
+          "Q2_VERIFIER_COVERAGE_REPAIRER","Q3_SPEC_AMBIGUITY_REPAIRER","Q4_SPEC_TEST_CONTRACT_REVIEWER",
+          "Q5_ORACLE_RUNTIME_REPAIR_SPECIALIST","Q6_PRODUCTION_LOGIC_AUDITOR","Q7_TASK_FORMAT_ENFORCER",
+          "Q8_MODEL_PERSPECTIVE_DIFFICULTY_SIMULATOR","TASK_ARCHITECT","ORIGINALITY_AUTHENTICITY_REVIEWER",
+          "VERIFIER_ENGINEER","HUMAN_QUALITY_REVIEWER","INSTRUCTION_REVIEWER",
+          "ENGINEERING_DOCUMENTATION_REVIEWER","COMPLIANCE_AUDITOR","COMPREHENSIVE_REVIEWER",
+          "ADJUDICATOR","DIFFICULTY_REVIEWER","TRAJECTORY_ANALYST","OFFICIAL_MODEL_EVALUATION_GATE"
+        ]
+      }
     },
     "freshness_scope": {
       "type": "array",
@@ -106,5 +125,44 @@
     "line_end": {"type": "integer", "minimum": 1},
     "ordinal": {"type": "integer", "minimum": 0},
     "indexed_at": {"type": "string", "format": "date-time"}
-  }
+  },
+  "allOf": [
+    {
+      "if": {"properties": {"stage_applicability": {"contains": {"const": "ALL_AUTHORIZED_STAGES"}}}},
+      "then": {"properties": {"stage_applicability": {"maxItems": 1}}}
+    },
+    {
+      "if": {"properties": {"role_applicability": {"contains": {"const": "ALL_AUTHORIZED_ROLES"}}}},
+      "then": {"properties": {"role_applicability": {"maxItems": 1}}}
+    },
+    {"if":{"properties":{"freshness_scope":{"contains":{"const":"GIT_BLOB_SHA"}}}},"then":{"required":["git_blob_sha"]}},
+    {"if":{"properties":{"freshness_scope":{"contains":{"const":"TASK_COMMIT"}}}},"then":{"required":["task_commit"]}},
+    {"if":{"properties":{"freshness_scope":{"contains":{"const":"CONTROL_PLANE_COMMIT"}}}},"then":{"required":["control_plane_commit"]}},
+    {"if":{"properties":{"freshness_scope":{"contains":{"const":"POLICY_VERSION"}}}},"then":{"required":["policy_versions"]}},
+    {"if":{"properties":{"freshness_scope":{"contains":{"const":"ROLE_CONTRACT_HASH"}}}},"then":{"required":["role_contract_hash"]}},
+    {"if":{"properties":{"freshness_scope":{"contains":{"const":"PACKET_BINDING"}}}},"then":{"required":["packet_binding"]}},
+    {"if":{"properties":{"freshness_scope":{"contains":{"const":"REVIEW_SCOPE_HASH"}}}},"then":{"required":["review_scope_hash"]}},
+    {"if":{"properties":{"freshness_scope":{"contains":{"const":"CI_RUN_ID"}}}},"then":{"required":["ci_run_id"]}},
+
+    {"if":{"properties":{"source_kind":{"const":"CONTROL_PLANE_MARKDOWN"}}},"then":{"required":["source_path","git_blob_sha","control_plane_commit"],"properties":{"evidence_class":{"const":"CONTROL_PLANE_POLICY"},"sensitivity":{"const":"CONTROL_PLANE"},"solver_visible":{"const":false},"freshness_scope":{"allOf":[{"contains":{"const":"GIT_BLOB_SHA"}},{"contains":{"const":"CONTROL_PLANE_COMMIT"}}]}}}},
+    {"if":{"properties":{"source_kind":{"const":"CONTROL_PLANE_JSON"}}},"then":{"required":["source_path","git_blob_sha","control_plane_commit"],"properties":{"evidence_class":{"const":"CONTROL_PLANE_POLICY"},"sensitivity":{"const":"CONTROL_PLANE"},"solver_visible":{"const":false},"freshness_scope":{"allOf":[{"contains":{"const":"GIT_BLOB_SHA"}},{"contains":{"const":"CONTROL_PLANE_COMMIT"}}]}}}},
+    {"if":{"properties":{"source_kind":{"const":"CONTROL_PLANE_CODE"}}},"then":{"required":["source_path","git_blob_sha","control_plane_commit"],"properties":{"evidence_class":{"const":"CONTROL_PLANE_POLICY"},"sensitivity":{"const":"CONTROL_PLANE"},"solver_visible":{"const":false},"freshness_scope":{"allOf":[{"contains":{"const":"GIT_BLOB_SHA"}},{"contains":{"const":"CONTROL_PLANE_COMMIT"}}]}}}},
+
+    {"if":{"properties":{"source_kind":{"const":"TASK_INSTRUCTION"}}},"then":{"required":["source_path","git_blob_sha","task_id","task_commit"],"properties":{"evidence_class":{"const":"SOLVER_VISIBLE_TASK"},"sensitivity":{"const":"SOLVER_VISIBLE"},"solver_visible":{"const":true},"freshness_scope":{"allOf":[{"contains":{"const":"GIT_BLOB_SHA"}},{"contains":{"const":"TASK_COMMIT"}}]}}}},
+    {"if":{"properties":{"source_kind":{"const":"TASK_DOCUMENTATION"}}},"then":{"required":["source_path","git_blob_sha","task_id","task_commit"],"properties":{"evidence_class":{"const":"SOLVER_VISIBLE_TASK"},"sensitivity":{"const":"SOLVER_VISIBLE"},"solver_visible":{"const":true},"freshness_scope":{"allOf":[{"contains":{"const":"GIT_BLOB_SHA"}},{"contains":{"const":"TASK_COMMIT"}}]}}}},
+    {"if":{"properties":{"source_kind":{"const":"TASK_CODE"}}},"then":{"required":["source_path","git_blob_sha","task_id","task_commit"],"properties":{"evidence_class":{"const":"SOLVER_VISIBLE_TASK"},"sensitivity":{"const":"SOLVER_VISIBLE"},"solver_visible":{"const":true},"freshness_scope":{"allOf":[{"contains":{"const":"GIT_BLOB_SHA"}},{"contains":{"const":"TASK_COMMIT"}}]}}}},
+    {"if":{"properties":{"source_kind":{"const":"TASK_CONFIGURATION"}}},"then":{"required":["source_path","git_blob_sha","task_id","task_commit"],"properties":{"evidence_class":{"const":"SOLVER_VISIBLE_TASK"},"sensitivity":{"const":"SOLVER_VISIBLE"},"solver_visible":{"const":true},"freshness_scope":{"allOf":[{"contains":{"const":"GIT_BLOB_SHA"}},{"contains":{"const":"TASK_COMMIT"}}]}}}},
+    {"if":{"properties":{"source_kind":{"const":"SOLVER_VISIBLE_REQUIREMENT_CONTRACT"}}},"then":{"required":["source_path","git_blob_sha","task_id","task_commit","control_plane_commit"],"properties":{"evidence_class":{"const":"SOLVER_VISIBLE_TASK"},"sensitivity":{"const":"SOLVER_VISIBLE"},"solver_visible":{"const":true},"freshness_scope":{"allOf":[{"contains":{"const":"GIT_BLOB_SHA"}},{"contains":{"const":"TASK_COMMIT"}},{"contains":{"const":"CONTROL_PLANE_COMMIT"}}]}}}},
+
+    {"if":{"properties":{"source_kind":{"const":"PRIVATE_DESIGN"}}},"then":{"required":["source_path","git_blob_sha","task_id","task_commit","control_plane_commit"],"properties":{"evidence_class":{"const":"PRIVATE_CREATION_DESIGN"},"sensitivity":{"const":"PRIVATE"},"solver_visible":{"const":false},"freshness_scope":{"allOf":[{"contains":{"const":"GIT_BLOB_SHA"}},{"contains":{"const":"TASK_COMMIT"}},{"contains":{"const":"CONTROL_PLANE_COMMIT"}}]}}}},
+    {"if":{"properties":{"source_kind":{"const":"SOLUTION_ORACLE"}}},"then":{"required":["source_path","git_blob_sha","task_id","task_commit"],"properties":{"evidence_class":{"const":"SOLUTION_ORACLE"},"sensitivity":{"const":"RESTRICTED"},"solver_visible":{"const":false},"freshness_scope":{"allOf":[{"contains":{"const":"GIT_BLOB_SHA"}},{"contains":{"const":"TASK_COMMIT"}}]}}}},
+    {"if":{"properties":{"source_kind":{"const":"VERIFIER_PRIVATE"}}},"then":{"required":["source_path","git_blob_sha","task_id","task_commit"],"properties":{"evidence_class":{"const":"VERIFIER_PRIVATE"},"sensitivity":{"const":"RESTRICTED"},"solver_visible":{"const":false},"freshness_scope":{"allOf":[{"contains":{"const":"GIT_BLOB_SHA"}},{"contains":{"const":"TASK_COMMIT"}}]}}}},
+    {"if":{"properties":{"source_kind":{"const":"REVIEW_PACKET"}}},"then":{"required":["source_path","git_blob_sha","task_id","task_commit","control_plane_commit","role_contract_hash","packet_binding"],"properties":{"evidence_class":{"const":"CURRENT_REVIEW_PACKET"},"sensitivity":{"const":"CONTROL_PLANE"},"solver_visible":{"const":false},"freshness_scope":{"allOf":[{"contains":{"const":"GIT_BLOB_SHA"}},{"contains":{"const":"TASK_COMMIT"}},{"contains":{"const":"CONTROL_PLANE_COMMIT"}},{"contains":{"const":"ROLE_CONTRACT_HASH"}},{"contains":{"const":"PACKET_BINDING"}}]}}}},
+    {"if":{"properties":{"source_kind":{"const":"REVIEW_RESULT"}}},"then":{"required":["source_path","git_blob_sha","task_id","task_commit","control_plane_commit","role_contract_hash","packet_binding"],"properties":{"evidence_class":{"const":"PRIOR_REVIEW_RESULTS"},"sensitivity":{"const":"RESTRICTED"},"solver_visible":{"const":false},"freshness_scope":{"allOf":[{"contains":{"const":"GIT_BLOB_SHA"}},{"contains":{"const":"TASK_COMMIT"}},{"contains":{"const":"CONTROL_PLANE_COMMIT"}},{"contains":{"const":"ROLE_CONTRACT_HASH"}},{"contains":{"const":"PACKET_BINDING"}}]}}}},
+    {"if":{"properties":{"source_kind":{"const":"SESSION_STATE"}}},"then":{"required":["source_path","git_blob_sha","task_id","task_commit","control_plane_commit","policy_versions"],"properties":{"evidence_class":{"const":"DURABLE_SESSION_STATE"},"sensitivity":{"const":"CONTROL_PLANE"},"solver_visible":{"const":false},"freshness_scope":{"allOf":[{"contains":{"const":"GIT_BLOB_SHA"}},{"contains":{"const":"TASK_COMMIT"}},{"contains":{"const":"CONTROL_PLANE_COMMIT"}},{"contains":{"const":"POLICY_VERSION"}}]}}}},
+    {"if":{"properties":{"source_kind":{"const":"CI_RUNTIME"}}},"then":{"required":["task_id","task_commit","ci_run_id"],"properties":{"evidence_class":{"const":"CI_RUNTIME_EVIDENCE"},"sensitivity":{"const":"CONTROL_PLANE"},"solver_visible":{"const":false},"freshness_scope":{"allOf":[{"contains":{"const":"CONTENT_HASH"}},{"contains":{"const":"TASK_COMMIT"}},{"contains":{"const":"CI_RUN_ID"}}]}}}},
+    {"if":{"properties":{"source_kind":{"const":"MODEL_TRIAL"}}},"then":{"required":["task_id","task_commit"],"properties":{"evidence_class":{"const":"MODEL_TRIAL_EVIDENCE"},"sensitivity":{"const":"RESTRICTED"},"solver_visible":{"const":false},"freshness_scope":{"allOf":[{"contains":{"const":"CONTENT_HASH"}},{"contains":{"const":"TASK_COMMIT"}}]}}}},
+    {"if":{"properties":{"source_kind":{"const":"FINAL_PACKAGE"}}},"then":{"required":["task_id","task_commit"],"properties":{"evidence_class":{"const":"FINAL_PACKAGE_EVIDENCE"},"sensitivity":{"const":"CONTROL_PLANE"},"solver_visible":{"const":false},"freshness_scope":{"allOf":[{"contains":{"const":"CONTENT_HASH"}},{"contains":{"const":"TASK_COMMIT"}}]}}}},
+    {"if":{"properties":{"source_kind":{"const":"PUBLIC_REFERENCE"}}},"then":{"properties":{"evidence_class":{"const":"PUBLIC_REFERENCE"},"sensitivity":{"const":"PUBLIC"},"solver_visible":{"const":false},"freshness_scope":{"contains":{"const":"EXTERNAL_CONTENT_HASH"}}}}}
+  ]
 }
