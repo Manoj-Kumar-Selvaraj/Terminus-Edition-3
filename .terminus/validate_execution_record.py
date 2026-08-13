@@ -13,6 +13,7 @@ ROOT = Path(__file__).resolve().parents[1]
 T = ROOT / ".terminus"
 sys.path.insert(0, str(T))
 
+from execution.authority import ExecutionAuthority  # noqa: E402
 from execution.invocation import StageInvocationBuilder  # noqa: E402
 from execution.record import ExecutionRecordBuilder  # noqa: E402
 from retrieval.models import InvocationContext  # noqa: E402
@@ -24,6 +25,7 @@ REQUIRED = [
     T / "agents" / "schemas" / "execution_outcomes.schema.json",
     T / "agents" / "schemas" / "stage_result.schema.json",
     T / "agents" / "schemas" / "execution_record.schema.json",
+    T / "execution" / "authority.py",
     T / "execution" / "record.py",
     T / "execution" / "result_cli.py",
     T / "tests" / "test_execution_record.py",
@@ -98,6 +100,7 @@ def main() -> int:
             errors.append(f"{label} schema must fail closed on top-level properties")
 
     policy = RetrievalPolicy(ROOT)
+    execution_authority = ExecutionAuthority(policy)
     outcomes = _load(T / "agents" / "execution_outcomes.json")
     completion = _load(T / "agents" / "stage_contract_completion.json")
     if outcomes.get("outcome_version") != "1.0":
@@ -196,11 +199,12 @@ def main() -> int:
             str(field): {"validator": str(field)}
             for field in stage["input_contract"]["required_fields"]
         }
+        role_id = execution_authority.primary_role_for_stage(stage_id)
         try:
             invocation = invocation_builder.build(
                 InvocationContext(
                     stage_id=stage_id,
-                    role_id="CI_ORCHESTRATOR",
+                    role_id=role_id,
                     control_plane_commit=head,
                 ),
                 inputs,
@@ -216,6 +220,8 @@ def main() -> int:
         except Exception as exc:  # pragma: no cover - validator reports all stages
             errors.append(f"{stage_id}: failed execution-record compilation: {exc}")
             continue
+        if record["role_id"] != role_id:
+            errors.append(f"{stage_id}: execution record role drift")
         if record["disposition"] != "ADVANCE":
             errors.append(f"{stage_id}: canonical advance result did not ADVANCE")
         if record["transition"]["target"] != stage["success_transition"]:
@@ -224,6 +230,9 @@ def main() -> int:
 
     if len(record_ids) != len(policy.stages):
         errors.append("canonical per-stage records did not produce unique record IDs")
+
+    if "CI_ORCHESTRATOR" in execution_authority.roles_for_stage("WORK_PACKAGE_RESEARCH"):
+        errors.append("controller observer must not execute WORK_PACKAGE_RESEARCH")
 
     if errors:
         print("Terminus execution-record validation FAILED:")
@@ -234,9 +243,9 @@ def main() -> int:
     print("Terminus execution-record validation PASS")
     print(
         "execution_record=1.0 outcomes=1.0 stages=23 status_partition=total "
-        "result_binding=invocation_exact outputs=declared route_keys=registered "
-        "transition=advance_route_retry_block frozen_state=validation_required "
-        "record_identity=deterministic reasoning=not_persisted"
+        "result_binding=invocation_exact execution_authority=stage_roles_only "
+        "outputs=declared route_keys=registered transition=advance_route_retry_block "
+        "frozen_state=validation_required record_identity=deterministic reasoning=not_persisted"
     )
     return 0
 
