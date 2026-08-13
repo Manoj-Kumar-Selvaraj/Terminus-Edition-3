@@ -4,7 +4,7 @@
   "title": "Terminus Execution Record",
   "type": "object",
   "additionalProperties": false,
-  "required": ["schema_version", "record_id", "invocation_id", "stage_id", "role_id", "authority", "status", "disposition", "outputs", "evidence_refs", "transition", "validation"],
+  "required": ["schema_version", "record_id", "invocation_id", "stage_id", "role_id", "authority", "task_lineage", "status", "disposition", "outputs", "evidence_refs", "transition", "validation"],
   "properties": {
     "schema_version": {"const": "1.0"},
     "record_id": {"type": "string", "pattern": "^rec_[0-9a-f]{64}$"},
@@ -12,6 +12,7 @@
     "stage_id": {"type": "string", "minLength": 1},
     "role_id": {"type": "string", "minLength": 1},
     "authority": {"$ref": "#/$defs/authority"},
+    "task_lineage": {"$ref": "#/$defs/taskLineage"},
     "status": {"type": "string", "minLength": 1},
     "disposition": {"enum": ["ADVANCE", "ROUTE", "RETRY", "BLOCK"]},
     "outputs": {"type": "object"},
@@ -34,37 +35,30 @@
     "validation": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["invocation_identity_valid", "status_legal", "output_keys_valid", "required_outputs_satisfied", "evidence_refs_count"],
+      "required": ["invocation_identity_valid", "status_legal", "output_keys_valid", "required_outputs_satisfied", "task_lineage_valid", "task_commit_change_authorized", "acceptance_predicates_satisfied", "evidence_refs_count"],
       "properties": {
         "invocation_identity_valid": {"const": true},
         "status_legal": {"const": true},
         "output_keys_valid": {"const": true},
         "required_outputs_satisfied": {"type": "boolean"},
+        "task_lineage_valid": {"const": true},
+        "task_commit_change_authorized": {"const": true},
+        "acceptance_predicates_satisfied": {"const": true},
         "evidence_refs_count": {"type": "integer", "minimum": 0}
       }
     }
   },
   "allOf": [
-    {
-      "if": {"properties": {"disposition": {"const": "ROUTE"}}},
-      "then": {"required": ["route_key"]}
-    },
-    {
-      "if": {"properties": {"disposition": {"const": "BLOCK"}}},
-      "then": {"required": ["blocking_reason"]}
-    }
+    {"if": {"properties": {"disposition": {"const": "ROUTE"}}}, "then": {"required": ["route_key"]}},
+    {"if": {"properties": {"disposition": {"const": "BLOCK"}}}, "then": {"required": ["blocking_reason"]}}
   ],
   "$defs": {
     "authority": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["control_plane_commit", "policy_versions"],
-      "dependentRequired": {
-        "task_id": ["task_commit"],
-        "task_commit": ["task_id"]
-      },
+      "required": ["task_id", "task_commit", "control_plane_commit", "policy_versions"],
       "properties": {
-        "task_id": {"type": "string", "minLength": 1},
+        "task_id": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$"},
         "task_commit": {"type": "string", "pattern": "^[0-9a-f]{40,64}$"},
         "control_plane_commit": {"type": "string", "pattern": "^[0-9a-f]{40,64}$"},
         "role_contract_hash": {"type": "string", "minLength": 8},
@@ -72,6 +66,16 @@
         "review_scope_hash": {"type": "string", "minLength": 8},
         "ci_run_id": {"type": ["string", "integer"]},
         "policy_versions": {"type": "object", "additionalProperties": {"type": "string"}}
+      }
+    },
+    "taskLineage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["input_task_commit", "output_task_commit", "task_changed"],
+      "properties": {
+        "input_task_commit": {"type": "string", "pattern": "^[0-9a-f]{40,64}$"},
+        "output_task_commit": {"type": "string", "pattern": "^[0-9a-f]{40,64}$"},
+        "task_changed": {"type": "boolean"}
       }
     },
     "evidenceRef": {

@@ -6,24 +6,20 @@
   "additionalProperties": false,
   "required": [
     "schema_version", "event_id", "sequence", "previous_event_id", "record_id",
-    "invocation_id", "stage_id", "task_id", "task_commit", "control_plane_commit",
-    "record_path", "record_hash"
+    "invocation_id", "stage_id", "task_id", "input_task_commit", "output_task_commit",
+    "control_plane_commit", "record_path", "record_hash"
   ],
   "properties": {
     "schema_version": {"const": "1.0"},
     "event_id": {"type": "string", "pattern": "^evt_[0-9a-f]{64}$"},
     "sequence": {"type": "integer", "minimum": 1},
-    "previous_event_id": {
-      "oneOf": [
-        {"type": "null"},
-        {"type": "string", "pattern": "^evt_[0-9a-f]{64}$"}
-      ]
-    },
+    "previous_event_id": {"oneOf": [{"type": "null"}, {"type": "string", "pattern": "^evt_[0-9a-f]{64}$"}]},
     "record_id": {"type": "string", "pattern": "^rec_[0-9a-f]{64}$"},
     "invocation_id": {"type": "string", "pattern": "^inv_[0-9a-f]{64}$"},
     "stage_id": {"type": "string", "minLength": 1},
     "task_id": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$"},
-    "task_commit": {"type": "string", "pattern": "^[0-9a-f]{40,64}$"},
+    "input_task_commit": {"type": "string", "pattern": "^[0-9a-f]{40,64}$"},
+    "output_task_commit": {"type": "string", "pattern": "^[0-9a-f]{40,64}$"},
     "control_plane_commit": {"type": "string", "pattern": "^[0-9a-f]{40,64}$"},
     "record_path": {"type": "string", "pattern": "^\\.terminus/executions/[A-Za-z0-9][A-Za-z0-9._-]*/inv_[0-9a-f]{64}\\.result\\.json$"},
     "record_hash": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"}
