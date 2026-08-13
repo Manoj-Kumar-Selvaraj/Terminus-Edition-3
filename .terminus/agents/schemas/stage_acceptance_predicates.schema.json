@@ -1,0 +1,47 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "terminus-stage-acceptance-predicates-v1",
+  "title": "Terminus Stage Acceptance Predicates",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["predicate_version", "stages"],
+  "properties": {
+    "predicate_version": {"const": "1.0"},
+    "stages": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": {
+          "type": "array",
+          "items": {"$ref": "#/$defs/predicate"}
+        }
+      }
+    }
+  },
+  "$defs": {
+    "predicate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "op"],
+      "properties": {
+        "path": {"type": "string", "minLength": 1},
+        "op": {"enum": ["eq", "in", "empty", "nonempty", "length_eq"]},
+        "value": {}
+      },
+      "allOf": [
+        {
+          "if": {"properties": {"op": {"enum": ["eq", "in", "length_eq"]}}},
+          "then": {"required": ["value"]}
+        },
+        {
+          "if": {"properties": {"op": {"const": "in"}}},
+          "then": {"properties": {"value": {"type": "array", "minItems": 1}}}
+        },
+        {
+          "if": {"properties": {"op": {"const": "length_eq"}}},
+          "then": {"properties": {"value": {"type": "integer", "minimum": 0}}}
+        }
+      ]
+    }
+  }
+}
