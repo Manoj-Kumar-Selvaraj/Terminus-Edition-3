@@ -1,8 +1,10 @@
-"""Canonical execution-role authority derived from stage contracts.
+"""Canonical execution-role authority derived from stage ownership.
 
-Retrieval audiences are intentionally broader because controllers must be able to
-inspect/rout a stage without becoming that stage's executor. This module keeps
-that observation permission separate from executable role authority.
+Retrieval audiences are intentionally broader because controllers and reviewers may
+need to inspect/rout a stage without becoming that stage's executor. Generic stage
+invocation/record/state authority belongs only to the canonical stage owner.
+Semantic reviewers remain independent evidence providers under their own
+packet/role contracts; their results are inputs to the owning aggregate stage.
 """
 
 from __future__ import annotations
@@ -17,7 +19,7 @@ _OWNER_OVERRIDES = {
 
 
 class ExecutionAuthority:
-    """Resolve roles that may actually execute one registered stage."""
+    """Resolve the single canonical executor of each registered aggregate stage."""
 
     def __init__(self, policy: RetrievalPolicy):
         self.policy = policy
@@ -28,57 +30,29 @@ class ExecutionAuthority:
             raise ValueError(f"unknown execution stage id: {stage_id}")
         override = _OWNER_OVERRIDES.get(stage_id)
         if override is not None:
-            return override
-        owner = stage.get("owner")
-        if not isinstance(owner, str) or not owner.strip():
-            raise ValueError(f"stage {stage_id} has no canonical execution owner")
-        return self.policy._canonical_stage_participant(owner)
+            role = override
+        else:
+            owner = stage.get("owner")
+            if not isinstance(owner, str) or not owner.strip():
+                raise ValueError(f"stage {stage_id} has no canonical execution owner")
+            role = self.policy._canonical_stage_participant(owner)
+        if role not in self.policy.role_ids:
+            raise ValueError(f"stage {stage_id} owner role is not canonical: {role}")
+        if role not in self.policy.allowed_roles_for_stage(stage_id):
+            raise ValueError(
+                f"stage {stage_id} owner execution authority exceeds retrieval authority"
+            )
+        return role
 
     def roles_for_stage(self, stage_id: str) -> frozenset[str]:
-        """Return owner + declared semantic executors/reviewers, excluding observers."""
-        stage = self.policy.stages.get(stage_id)
-        if stage is None:
-            raise ValueError(f"unknown execution stage id: {stage_id}")
+        """Return exactly the aggregate stage owner role.
 
-        retrieval_roles = set(self.policy.allowed_roles_for_stage(stage_id))
-        primary = self.primary_role_for_stage(stage_id)
-        roles: set[str] = {primary}
-
-        # Declared semantic reviewers are legitimate role-specific executions under
-        # this stage. PRE_LLMAJ uses a grouped label in the registry, so the
-        # retrieval policy has already expanded it into concrete canonical roles;
-        # keep all non-observer roles from that expansion.
-        reviewers = stage.get("semantic_reviewers", [])
-        if not isinstance(reviewers, list):
-            raise ValueError(f"stage {stage_id} semantic_reviewers must be a list")
-        grouped_reviewer = any(
-            isinstance(value, str) and value.strip() == "Stage-B specialists"
-            for value in reviewers
-        )
-        if grouped_reviewer:
-            roles.update(
-                retrieval_roles
-                - {"CI_ORCHESTRATOR", "CREATION_CONTROLLER"}
-            )
-        else:
-            for reviewer in reviewers:
-                if not isinstance(reviewer, str) or not reviewer.strip():
-                    raise ValueError(f"stage {stage_id} has invalid semantic reviewer")
-                roles.add(self.policy._canonical_stage_participant(reviewer))
-
-        # A controller is executable only when it is the actual stage owner or is
-        # explicitly named as a semantic reviewer; generic routing/observation
-        # access from RetrievalPolicy is never inherited as execution authority.
-        unknown = roles - self.policy.role_ids
-        if unknown:
-            raise ValueError(
-                f"stage {stage_id} execution roles are not canonical: {sorted(unknown)}"
-            )
-        if not roles.issubset(retrieval_roles):
-            raise ValueError(
-                f"stage {stage_id} execution authority exceeds retrieval authority"
-            )
-        return frozenset(roles)
+        `semantic_reviewers` are not alternative executors of the aggregate stage.
+        They use their packet-bound or role-specific contracts and feed evidence to
+        the owner, which alone emits the stage status/output consumed by the
+        execution ledger.
+        """
+        return frozenset({self.primary_role_for_stage(stage_id)})
 
     def validate_context(self, context: InvocationContext) -> InvocationContext:
         canonical = self.policy.canonical_role(context.role_id)
@@ -87,6 +61,6 @@ class ExecutionAuthority:
             raise ValueError(
                 f"execution role {canonical} is not authorized for stage {context.stage_id}"
             )
-        # RetrievalPolicy performs the remaining canonicalization and verifies that
-        # the execution role can also see this stage's retrieval envelope.
+        # RetrievalPolicy performs remaining canonicalization/evidence checks. The
+        # execution role must be both the stage owner and a permitted retrieval role.
         return self.policy.validate_context(context)
