@@ -67,6 +67,16 @@ class RetrievalStore:
             CREATE INDEX IF NOT EXISTS idx_chunks_evidence_class ON chunks(evidence_class);
             CREATE INDEX IF NOT EXISTS idx_chunks_task ON chunks(task_id, task_commit);
             CREATE INDEX IF NOT EXISTS idx_chunks_control_plane ON chunks(control_plane_commit);
+            CREATE TABLE IF NOT EXISTS parse_cache (
+                cache_key TEXT PRIMARY KEY,
+                source_version TEXT NOT NULL,
+                strategy TEXT NOT NULL,
+                chunker_version TEXT NOT NULL,
+                content_hash TEXT NOT NULL,
+                chunks_json TEXT NOT NULL,
+                created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+            );
+            CREATE INDEX IF NOT EXISTS idx_parse_cache_source ON parse_cache(source_version, strategy, chunker_version);
             CREATE TABLE IF NOT EXISTS embeddings (
                 chunk_id TEXT NOT NULL REFERENCES chunks(chunk_id) ON DELETE CASCADE,
                 provider TEXT NOT NULL,
@@ -113,6 +123,54 @@ class RetrievalStore:
     @staticmethod
     def _json(value: Mapping[str, Any]) -> str:
         return json.dumps(value, sort_keys=True, separators=(",", ":"))
+
+    def get_parse_cache(
+        self, source_version: str, strategy: str, chunker_version: str
+    ) -> dict[str, Any] | None:
+        row = self.connection.execute(
+            """
+            SELECT content_hash, chunks_json FROM parse_cache
+            WHERE source_version = ? AND strategy = ? AND chunker_version = ?
+            """,
+            (source_version, strategy, chunker_version),
+        ).fetchone()
+        if row is None:
+            return None
+        return {
+            "content_hash": row["content_hash"],
+            "chunks": json.loads(row["chunks_json"]),
+        }
+
+    def put_parse_cache(
+        self,
+        *,
+        cache_key: str,
+        source_version: str,
+        strategy: str,
+        chunker_version: str,
+        content_hash: str,
+        chunks: Sequence[Mapping[str, Any]],
+    ) -> None:
+        self.connection.execute(
+            """
+            INSERT INTO parse_cache(
+                cache_key, source_version, strategy, chunker_version, content_hash, chunks_json
+            ) VALUES (?, ?, ?, ?, ?, ?)
+            ON CONFLICT(cache_key) DO UPDATE SET
+                content_hash=excluded.content_hash,
+                chunks_json=excluded.chunks_json,
+                created_at=CURRENT_TIMESTAMP
+            """,
+            (
+                cache_key,
+                source_version,
+                strategy,
+                chunker_version,
+                content_hash,
+                json.dumps(list(chunks), sort_keys=True, separators=(",", ":")),
+            ),
+        )
+        self.connection.commit()
 
     def upsert_document(self, metadata: Mapping[str, Any]) -> None:
         self.connection.execute(
@@ -415,11 +473,13 @@ class RetrievalStore:
     def stats(self) -> dict[str, Any]:
         documents = self.connection.execute("SELECT COUNT(*) FROM documents").fetchone()[0]
         chunks = self.connection.execute("SELECT COUNT(*) FROM chunks").fetchone()[0]
+        parse_cache = self.connection.execute("SELECT COUNT(*) FROM parse_cache").fetchone()[0]
         embeddings = self.connection.execute("SELECT COUNT(*) FROM embeddings").fetchone()[0]
         cached = self.connection.execute("SELECT COUNT(*) FROM retrieval_cache").fetchone()[0]
         return {
             "documents": documents,
             "chunks": chunks,
+            "parse_cache_entries": parse_cache,
             "embeddings": embeddings,
             "retrieval_cache_entries": cached,
             "fts5": self.fts_available,
