@@ -32,6 +32,8 @@ A stage registry field is not permission to disclose excluded evidence. The gene
 
 For `INSTRUCTION_DRAFT`, `.terminus/agents/INSTRUCTION_POLICY.md` is mandatory detailed policy in addition to the stage input/output contract.
 
+Independent packet-bound acceptance reviewers such as Q4 and Q6 are never invoked merely because a pre-freeze producer stage mentions related semantics. Q4/Q6 execution begins only at the post-freeze `QUALITY_INTERLOCK` under their generated packets.
+
 ## Creation bootstrap / rule resolution
 
 No producer starts scenario design until the controller has resolved one creation-rule context for the run.
@@ -96,6 +98,20 @@ The intended separation is:
 
 Do not require the instruction to narrate which internal component/function is incomplete or buggy. Such implementation diagnosis is normally solver work unless it would naturally be part of the engineering handoff and is independently supported by solver-visible evidence.
 
+### Sanitized requirement projection for A7
+
+Before invoking `INSTRUCTION_DRAFT`, the controller must build and validate one `APPROVED_SOLVER_VISIBLE_REQUIREMENT_CONTRACT` at:
+
+`.terminus/contracts/<task>/solver-visible-requirements.json`
+
+using `.terminus/agents/schemas/solver_visible_requirement_contract.schema.json`.
+
+The projection is derived only from the approved work-package objective/end state, material functional/operational requirements, preservation/compatibility/safety obligations, required outputs, and legitimate solver-visible contracts/current-state evidence. It is classified as solver-safe requirement material even though the durable copy lives in the control plane.
+
+The projection must exclude private defect topology, private test maps, hidden verifier assertions/names, Oracle implementation/diffs, repair locations and prior reviewer findings. The controller records `requirement_contract_hash`, source task commit and control-plane commit. Any material requirement, referenced-contract, task-commit or governing instruction-policy change invalidates the projection.
+
+A7 consumes this projection plus writing calibration. It must not reconstruct missing requirements from private creator/verifier/oracle evidence. If the projection is incomplete or stale, route back to the requirement owner/Q1 and regenerate it rather than widening A7 evidence access.
+
 ## Mandatory production-authenticity checks
 
 For an operational/stateful strict task, before Instruction Writer or review:
@@ -114,13 +130,13 @@ For an operational/stateful strict task, before Instruction Writer or review:
 4. **Reference Solution Author** — general deterministic repair/completion.
 5. **Verifier Author** — behavioral F2P/P2P verifier from solver-visible requirements/contracts, including sufficient positive, edge, negative and failure-path scenarios according to operational risk.
 6. **Human Writing Researcher** — public human-engineering calibration across substantial Jira/issues/change requests and incident handoffs; distinguishes required end state from evidence-backed current-state facts.
-7. **Instruction Writer** — complete concise work request within the Edition 3 shape, normally up to 20 bullets where needed; states material functional requirements without implementation diagnosis or compressed hidden-test topology.
+7. **Instruction Writer** — complete concise work request within the Edition 3 shape from the approved solver-visible requirement contract; states material functional requirements without implementation diagnosis or compressed hidden-test topology.
 8. **Q1 Spec Gap Repairer** — closes legitimate graded behavior absent from solver-visible specification while preserving the instruction/documentation boundary and never omitting material requirements for brevity.
 9. **Q2 Verifier Coverage Repairer** — adds behavioral coverage for material solver-visible requirements that are not tested.
 10. **Q3 Spec Ambiguity Repairer** — resolves grading-relevant ambiguity without over-prescribing implementation.
 11. **Documentation Writer** — reviewer-facing explanations without benchmark framing.
 12. **Q7 Task Format Enforcer** — exact current folder/task.toml/Docker/verifier/solution/package conformance before expensive gates.
-13. **Task Assembly Agent** — deterministic authoring checks, including instruction shape/completeness and instruction/docs boundary.
+13. **Task Assembly Agent** — assembles the producer outputs and runs assembly-local structure/static/leakage checks; it does not create `FROZEN_CANDIDATE` or substitute for later complexity/runtime/deterministic gates.
 14. **Complexity Governor** — scale + authenticity adversarial review, including whether the task is a substantial coherent work package.
 15. **Authoring Failure Diagnostician** — coarse deterministic failure routing.
 16. **Q5 Oracle & Runtime Repair Specialist** — deep repair for Oracle/build/runtime/application/harness failures after evidence identifies the failing boundary.
@@ -153,7 +169,9 @@ On Oracle/build/runtime failure:
 
 ## Freeze conditions
 
-`FROZEN_CANDIDATE` requires:
+`FROZEN_CANDIDATE` is created only by the controller after successful `DETERMINISTIC_VALIDATION`; no producer-stage status may create or imply freeze.
+
+It requires:
 - current creation-rule context reconciled against governing task rules;
 - all required registered creation-stage inputs/outputs/evidence current through `DETERMINISTIC_VALIDATION`;
 - Q1/Q2/Q3 producer alignment complete with no unresolved material gap/ambiguity;
