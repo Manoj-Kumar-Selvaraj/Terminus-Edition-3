@@ -10,6 +10,7 @@ from pathlib import Path, PurePosixPath
 from typing import Any, Iterable
 
 from .chunking import chunk_text
+from .models import RawChunk
 from .policy import ALL_ROLES, ALL_STAGES, RetrievalPolicy
 from .store import RetrievalStore
 
@@ -19,6 +20,7 @@ _CODE_SUFFIXES = {
     ".scala", ".php", ".pl", ".ps1", ".groovy", ".cob", ".cbl",
 }
 _DOC_SUFFIXES = {".md", ".rst", ".adoc", ".txt"}
+CHUNKER_VERSION = "structural-v1"
 
 
 class RepositoryIndexer:
@@ -122,21 +124,45 @@ class RepositoryIndexer:
         blob_sha = self._git(
             "rev-parse", f"{control_plane_commit}:{relative}"
         ).strip()
-        raw = subprocess.run(
-            ["git", "-C", str(self.root), "show", f"{control_plane_commit}:{relative}"],
-            check=True,
-            capture_output=True,
-        ).stdout
-        try:
-            text = raw.decode("utf-8")
-        except UnicodeDecodeError:
-            return None
-
-        full_content_hash = hashlib.sha256(raw).hexdigest()
         source_uri = f"git://repository/{relative}"
         document_id = "doc_" + hashlib.sha256(
             f"{source_uri}\0{blob_sha}".encode()
         ).hexdigest()
+        strategy = profile["chunk_strategy"]
+
+        cached = self.store.get_parse_cache(blob_sha, strategy, CHUNKER_VERSION)
+        if cached is not None:
+            full_content_hash = str(cached["content_hash"])
+            raw_chunks = [self._raw_chunk_from_cache(item) for item in cached["chunks"]]
+        else:
+            raw = subprocess.run(
+                [
+                    "git",
+                    "-C",
+                    str(self.root),
+                    "show",
+                    f"{control_plane_commit}:{relative}",
+                ],
+                check=True,
+                capture_output=True,
+            ).stdout
+            try:
+                text = raw.decode("utf-8")
+            except UnicodeDecodeError:
+                return None
+            full_content_hash = hashlib.sha256(raw).hexdigest()
+            raw_chunks = chunk_text(Path(relative), text, strategy)
+            cache_key = hashlib.sha256(
+                f"{blob_sha}\0{strategy}\0{CHUNKER_VERSION}".encode()
+            ).hexdigest()
+            self.store.put_parse_cache(
+                cache_key=cache_key,
+                source_version=blob_sha,
+                strategy=strategy,
+                chunker_version=CHUNKER_VERSION,
+                content_hash=full_content_hash,
+                chunks=[self._raw_chunk_to_cache(item) for item in raw_chunks],
+            )
 
         base: dict[str, Any] = {
             "metadata_contract_version": self.policy.metadata_registry[
@@ -170,8 +196,6 @@ class RepositoryIndexer:
         document_meta["content_hash"] = f"sha256:{full_content_hash}"
         self.store.upsert_document(document_meta)
 
-        strategy = profile["chunk_strategy"]
-        raw_chunks = chunk_text(Path(relative), text, strategy)
         chunks: list[tuple[dict[str, Any], str]] = []
         for raw_chunk in raw_chunks:
             chunk_hash = hashlib.sha256(raw_chunk.content.encode("utf-8")).hexdigest()
@@ -292,6 +316,32 @@ class RepositoryIndexer:
                 "CREATION_CONTROLLER",
             ]
         return [ALL_ROLES]
+
+    @staticmethod
+    def _raw_chunk_to_cache(chunk: RawChunk) -> dict[str, Any]:
+        return {
+            "content": chunk.content,
+            "chunk_type": chunk.chunk_type,
+            "structural_locator": chunk.structural_locator,
+            "ordinal": chunk.ordinal,
+            "section_path": list(chunk.section_path),
+            "symbol": chunk.symbol,
+            "line_start": chunk.line_start,
+            "line_end": chunk.line_end,
+        }
+
+    @staticmethod
+    def _raw_chunk_from_cache(value: dict[str, Any]) -> RawChunk:
+        return RawChunk(
+            content=str(value["content"]),
+            chunk_type=str(value["chunk_type"]),
+            structural_locator=str(value["structural_locator"]),
+            ordinal=int(value["ordinal"]),
+            section_path=tuple(str(item) for item in value.get("section_path", [])),
+            symbol=str(value["symbol"]) if value.get("symbol") is not None else None,
+            line_start=int(value["line_start"]) if value.get("line_start") is not None else None,
+            line_end=int(value["line_end"]) if value.get("line_end") is not None else None,
+        )
 
     def _git(self, *args: str) -> str:
         return subprocess.run(
