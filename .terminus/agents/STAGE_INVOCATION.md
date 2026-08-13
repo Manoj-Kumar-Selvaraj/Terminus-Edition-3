@@ -24,7 +24,7 @@ The packet is execution data, not semantic authority. It must never contain hidd
 The builder reads `input_contract.required_fields` and `input_contract.optional_fields` from `.terminus/agents/stage_contracts.json`.
 
 - only declared required/optional fields may be projected to `inputs`;
-- undeclared supplied fields are omitted and listed in `ignored_input_fields`;
+- undeclared supplied fields are omitted entirely; only `ignored_input_count` is retained so even a rejected private field name is not leaked to the invoked role;
 - missing required fields are listed in `missing_required_inputs`;
 - a packet with missing required fields has `readiness=BLOCKED_MISSING_INPUTS` and is not executable;
 - the builder must not fabricate a missing value from retrieval similarity, chat memory, or an unrelated durable artifact.
@@ -46,11 +46,17 @@ Every invocation records:
 
 A task ID without an exact task commit, or a task commit without a task ID, is invalid. A control-plane commit is always required for a reproducible invocation.
 
+The local canonical builder verifies that task/control commits exist in repository history. It also refuses to label the currently loaded stage/visibility/retrieval/invocation contracts as a different `control_plane_commit`: the machine contract files at that commit must byte-match the loaded contracts. Known supplied policy-version bindings are cross-checked against the actual policy files at that same commit.
+
+This keeps the packet honest when task and control-plane snapshots differ and prevents a caller from combining current in-memory contracts with a stale or invented control-plane SHA.
+
 The role must be authorized for the stage according to `.terminus/retrieval/policy.py`; a canonical role cannot borrow another stage's authority.
 
 ## Mandatory exact reads
 
 All stage `policy_files` and `prompt_files` are returned under `mandatory_exact_reads` and must be read exactly by the executor. Similarity retrieval never substitutes for them.
+
+The canonical local builder also verifies every declared exact-read path exists at `control_plane_commit` before issuing the packet.
 
 The packet records references and the control-plane commit; it does not inline whole policies by default. Normal ChatGPT may satisfy these reads through the GitHub connector. Local/Codex/Work execution may read them from the exact Git snapshot.
 
@@ -62,11 +68,12 @@ Retrieval state is one of:
 
 - `INDEXED_CONTEXT` — authorized indexed evidence was queried;
 - `DIRECT_READ_FALLBACK` — retrieval was requested but no usable local index exists;
-- `NOT_REQUESTED` — no retrieval query was requested.
+- `NOT_REQUESTED` — no retrieval query was requested;
+- `SKIPPED_BLOCKED_INPUTS` — the caller requested retrieval, but declared required stage inputs are missing, so the builder does not expose additional indexed evidence to a non-executable handoff.
 
 The absence of a local index does not make an otherwise valid stage invocation impossible. The executor continues through direct exact reads of authorized evidence.
 
-Retrieved context never expands stage/role/packet evidence authority and never satisfies a missing required stage input automatically.
+Retrieved context never expands stage/role/packet evidence authority and never satisfies a missing required stage input automatically. Retrieved-context schema is fail closed and permits only the provenance/content/ranking fields emitted by the canonical context builder.
 
 ## Output contract projection
 
@@ -86,7 +93,9 @@ The executor must return one legal stage status and the fields required for that
 
 ## Deterministic identity
 
-`invocation_id` is derived from the canonical packet content excluding the ID itself. The digest therefore changes when authority bindings, projected inputs, output contract, exact-read set, exclusions or retrieved chunk provenance change.
+`invocation_id` is derived from the canonical packet content excluding the ID itself. The digest changes when authority bindings, projected inputs, output contract, exact-read set, exclusions, retrieval order/content or retrieved chunk provenance change.
+
+Diagnostic retrieval score magnitudes are explicitly excluded from invocation identity. The retrieval cache is allowed to reconstruct diagnostic scores from rank order, so cached-versus-fresh score telemetry must not produce two invocation IDs for the same authorized ordered evidence set.
 
 Timestamps are deliberately not part of the identity. Rebuilding the same bounded invocation from the same immutable state yields the same `invocation_id`.
 
@@ -100,8 +109,10 @@ Fail closed when:
 
 - stage or role is unknown;
 - role is not authorized for the stage;
-- control-plane commit is missing/invalid;
-- task ID/task commit binding is incomplete;
+- control-plane commit is missing, unavailable, or does not match the loaded machine contracts;
+- a mandatory exact-read path does not exist at the bound control-plane commit;
+- task ID/task commit binding is incomplete or its commit is unavailable;
+- a known supplied policy-version binding is stale against the bound control-plane commit;
 - a narrower evidence restriction references an unknown evidence class;
 - retrieval context cannot pass the existing authorization/freshness policy.
 
