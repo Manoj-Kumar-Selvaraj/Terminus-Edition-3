@@ -13,6 +13,8 @@ Supported modes are:
 - `MANUAL_CHAT`: produces a paste-ready bounded handoff for a fresh authorized chat session. No hosted-model API is required.
 - `LOCAL_COMMAND`: passes the handoff JSON on stdin to one argv command and expects one StageResult JSON object on stdout. The process is always started with `shell=False`.
 
+`controller_cli continue` may optionally prepare the handoff in the same response for normal `INVOKE_STAGE` or `RETRY_STAGE` actions. External gates remain dispatch/await-only and never become executor handoffs.
+
 ## DO
 
 - execute only the stage and role named in the invocation;
@@ -34,6 +36,19 @@ Supported modes are:
 - add undeclared result fields;
 - persist private scratchpad or hidden reasoning fields;
 - invent evidence, review, run, commit, or policy identities.
+
+## Controller + manual-chat example
+
+```bash
+python .terminus/execution/controller_cli.py continue \
+  --task-id <task> \
+  --task-commit <task-commit> \
+  --control-plane-commit <control-commit> \
+  --inputs-json /tmp/stage-inputs.json \
+  --prepare-executor MANUAL_CHAT
+```
+
+For an ordinary invoke/retry action, the JSON response contains both `invocation` and `executor_handoff`. For `DISPATCH_EXTERNAL_GATE` or `AWAIT_EXTERNAL_GATE`, `executor_handoff` remains `null` and the existing dispatch contract remains authoritative.
 
 ## Manual-chat example
 
