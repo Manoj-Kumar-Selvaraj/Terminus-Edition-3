@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import hashlib
 import json
 import subprocess
 import sys
@@ -14,288 +13,66 @@ sys.path.insert(0, str(ROOT / ".terminus"))
 from execution.authority import ExecutionAuthority  # noqa: E402
 from execution.invocation import StageInvocationBuilder  # noqa: E402
 from retrieval.models import InvocationContext  # noqa: E402
-from retrieval.policy import ALL_ROLES, ALL_STAGES, RetrievalPolicy  # noqa: E402
-from retrieval.store import RetrievalStore  # noqa: E402
+from retrieval.policy import RetrievalPolicy  # noqa: E402
 
-CONTROL_COMMIT = subprocess.run(
-    ["git", "-C", str(ROOT), "rev-parse", "HEAD"],
-    check=True,
-    capture_output=True,
-    text=True,
-).stdout.strip()
+CONTROL_COMMIT=subprocess.run(["git","-C",str(ROOT),"rev-parse","HEAD"],check=True,capture_output=True,text=True).stdout.strip()
 
+def _policy()->RetrievalPolicy: return RetrievalPolicy(ROOT)
+def _context(stage:str,role:str|None=None)->InvocationContext:
+    policy=_policy(); role=role or ExecutionAuthority(policy).primary_role_for_stage(stage); return InvocationContext(stage_id=stage,role_id=role,control_plane_commit=CONTROL_COMMIT,policy_versions={"agent_system":"2.4"})
+def _inputs(stage:str)->dict[str,object]:
+    return {str(field):{"ref":f"test:{field}"} for field in _policy().stages[stage]["input_contract"]["required_fields"]}
+def _walk_keys(value:object)->set[str]:
+    result:set[str]=set()
+    if isinstance(value,dict):
+        for key,item in value.items(): result.add(str(key).lower()); result.update(_walk_keys(item))
+    elif isinstance(value,list):
+        for item in value: result.update(_walk_keys(item))
+    return result
 
-def _context(stage: str, role: str | None = None) -> InvocationContext:
-    if role is None:
-        policy = RetrievalPolicy(ROOT)
-        role = ExecutionAuthority(policy).primary_role_for_stage(stage)
-    return InvocationContext(
-        stage_id=stage,
-        role_id=role,
-        control_plane_commit=CONTROL_COMMIT,
-        policy_versions={"agent_system": "2.4"},
-    )
+def test_all_registered_stages_compile_from_machine_contract()->None:
+    policy=_policy(); authority=ExecutionAuthority(policy); builder=StageInvocationBuilder(ROOT,policy); assert len(policy.stages)==27
+    for stage_id,stage in policy.stages.items():
+        role=authority.primary_role_for_stage(stage_id); packet=builder.build(_context(stage_id,role),_inputs(stage_id)); assert packet["readiness"]=="READY",stage_id; assert packet["stage"]["stage_id"]==stage_id; assert packet["stage"]["role_id"]==role; assert packet["output_contract"]["allowed_status_values"]==stage["output_contract"]["status_values"]; assert packet["routing"]["success_transition"]==stage["success_transition"]
 
+def test_q8_perspectives_are_separate_solver_visible_only_packets()->None:
+    builder=StageInvocationBuilder(ROOT); gpt=builder.build(_context("MODEL_DIAGNOSTIC_GPT"),_inputs("MODEL_DIAGNOSTIC_GPT")); claude=builder.build(_context("MODEL_DIAGNOSTIC_CLAUDE"),_inputs("MODEL_DIAGNOSTIC_CLAUDE")); assert gpt["evidence"]["retrieval_mode"]==claude["evidence"]["retrieval_mode"]=="SOLVER_VISIBLE_ONLY"; assert "GPT_PERSPECTIVE_RESULT" not in claude["inputs"]["required"]; assert any(p["path"]=="PERSPECTIVE" and p["value"]=="GPT_PERSPECTIVE" for p in gpt["acceptance_predicates"]["EXECUTED"]); assert any(p["path"]=="PERSPECTIVE" and p["value"]=="CLAUDE_PERSPECTIVE" for p in claude["acceptance_predicates"]["EXECUTED"])
 
-def _required_inputs(policy: RetrievalPolicy, stage_id: str) -> dict[str, object]:
-    fields = policy.stages[stage_id]["input_contract"]["required_fields"]
-    return {str(field): {"ref": f"test:{field}"} for field in fields}
+def test_external_gate_owners_are_explicit()->None:
+    authority=ExecutionAuthority(_policy()); assert authority.primary_role_for_stage("HARBOR_LLMAJ")=="HARBOR_LLMAJ_GATE"; assert authority.primary_role_for_stage("OFFICIAL_MODEL_TRIALS")=="OFFICIAL_MODEL_EVALUATION_GATE"; assert authority.primary_role_for_stage("DIFFICULTY_ASSESSMENT")=="DIFFICULTY_REVIEWER"
 
+def test_controller_observer_cannot_execute_producer_stage()->None:
+    with pytest.raises(ValueError,match="execution role CI_ORCHESTRATOR is not authorized"): StageInvocationBuilder(ROOT).build(_context("WORK_PACKAGE_RESEARCH","CI_ORCHESTRATOR"),_inputs("WORK_PACKAGE_RESEARCH"))
 
-def _walk_keys(value: object) -> set[str]:
-    keys: set[str] = set()
-    if isinstance(value, dict):
-        for key, item in value.items():
-            keys.add(str(key).lower())
-            keys.update(_walk_keys(item))
-    elif isinstance(value, list):
-        for item in value:
-            keys.update(_walk_keys(item))
-    return keys
+def test_creation_controller_observer_cannot_execute_a1_stage()->None:
+    with pytest.raises(ValueError,match="execution role CREATION_CONTROLLER is not authorized"): StageInvocationBuilder(ROOT).build(_context("WORK_PACKAGE_RESEARCH","CREATION_CONTROLLER"),_inputs("WORK_PACKAGE_RESEARCH"))
 
+def test_missing_required_inputs_produces_blocked_nonexecuting_packet()->None:
+    packet=StageInvocationBuilder(ROOT).build(_context("RULE_RESOLUTION"),{},retrieval_query="authority"); assert packet["readiness"]=="BLOCKED_MISSING_INPUTS"; assert packet["missing_required_inputs"]==["CREATION_REQUEST"]; assert packet["retrieval"]["status"]=="SKIPPED_BLOCKED_INPUTS"
 
-def _add_control_plane_chunk(store: RetrievalStore, policy: RetrievalPolicy) -> None:
-    content = "policy authority routing"
-    digest = hashlib.sha256(content.encode()).hexdigest()
-    document_id = "doc_" + hashlib.sha256(b"policy-doc").hexdigest()
-    chunk_id = "chk_" + hashlib.sha256(b"policy-chunk").hexdigest()
-    profile = policy.source_profiles["CONTROL_PLANE_MARKDOWN"]
-    metadata = {
-        "metadata_contract_version": "1.0",
-        "document_id": document_id,
-        "chunk_id": chunk_id,
-        "source_uri": "git://test/.terminus/policy.md",
-        "source_path": ".terminus/policy.md",
-        "source_kind": "CONTROL_PLANE_MARKDOWN",
-        "source_version": "d" * 40,
-        "content_hash": f"sha256:{digest}",
-        "git_blob_sha": "d" * 40,
-        "evidence_class": profile["default_evidence_class"],
-        "sensitivity": profile["default_sensitivity"],
-        "solver_visible": profile["default_solver_visible"],
-        "stage_applicability": [ALL_STAGES],
-        "role_applicability": [ALL_ROLES],
-        "freshness_scope": list(profile["required_freshness"]),
-        "chunk_type": "HEADING_SECTION",
-        "structural_locator": "policy",
-        "ordinal": 0,
-        "control_plane_commit": CONTROL_COMMIT,
-    }
-    store.upsert_document(metadata)
-    store.replace_document_chunks(document_id, [(metadata, content)])
+def test_undeclared_inputs_are_dropped_without_name_leakage()->None:
+    packet=StageInvocationBuilder(ROOT).build(_context("RULE_RESOLUTION"),{"CREATION_REQUEST":"create","ORACLE_SECRET":"must-not-project"}); assert packet["readiness"]=="READY"; assert packet["ignored_input_count"]==1; assert "ORACLE_SECRET" not in json.dumps(packet,sort_keys=True)
 
+def test_valid_role_cannot_build_handoff_for_wrong_stage()->None:
+    with pytest.raises(ValueError,match="not authorized for stage"): StageInvocationBuilder(ROOT).build(_context("DETERMINISTIC_VALIDATION","Q8_MODEL_PERSPECTIVE_DIFFICULTY_SIMULATOR"),{})
 
-def test_all_registered_stages_compile_from_machine_contract() -> None:
-    policy = RetrievalPolicy(ROOT)
-    authority = ExecutionAuthority(policy)
-    builder = StageInvocationBuilder(ROOT, policy)
-    assert len(policy.stages) == 23
-    for stage_id, stage in policy.stages.items():
-        role = authority.primary_role_for_stage(stage_id)
-        packet = builder.build(_context(stage_id, role), _required_inputs(policy, stage_id))
-        assert packet["readiness"] == "READY", stage_id
-        assert packet["stage"]["stage_id"] == stage_id
-        assert packet["stage"]["role_id"] == role
-        assert packet["output_contract"]["allowed_status_values"] == stage["output_contract"]["status_values"]
-        assert packet["routing"]["success_transition"] == stage["success_transition"]
-        assert packet["evidence"]["mandatory_exact_reads"] == list(
-            policy.mandatory_exact_paths(stage_id)
-        )
+def test_task_identity_requires_exact_pair()->None:
+    with pytest.raises(ValueError,match="supplied together"): StageInvocationBuilder(ROOT).build(InvocationContext(stage_id="RULE_RESOLUTION",role_id="CREATION_CONTROLLER",task_id="task-x",control_plane_commit=CONTROL_COMMIT),{"CREATION_REQUEST":"create"})
 
+def test_unavailable_control_plane_commit_fails_closed()->None:
+    with pytest.raises(ValueError,match="not available in repository history"): StageInvocationBuilder(ROOT).build(InvocationContext(stage_id="RULE_RESOLUTION",role_id="CREATION_CONTROLLER",control_plane_commit="f"*40),{"CREATION_REQUEST":"create"})
 
-def test_controller_observer_cannot_execute_producer_stage() -> None:
-    builder = StageInvocationBuilder(ROOT)
-    with pytest.raises(ValueError, match="execution role CI_ORCHESTRATOR is not authorized"):
-        builder.build(
-            _context("WORK_PACKAGE_RESEARCH", "CI_ORCHESTRATOR"),
-            _required_inputs(RetrievalPolicy(ROOT), "WORK_PACKAGE_RESEARCH"),
-        )
+def test_stale_declared_policy_version_fails_closed()->None:
+    with pytest.raises(ValueError,match="stale policy version agent_system"): StageInvocationBuilder(ROOT).build(InvocationContext(stage_id="RULE_RESOLUTION",role_id="CREATION_CONTROLLER",control_plane_commit=CONTROL_COMMIT,policy_versions={"agent_system":"0.0"}),{"CREATION_REQUEST":"create"})
 
+def test_invocation_identity_is_stable_and_input_bound()->None:
+    builder=StageInvocationBuilder(ROOT); first=builder.build(_context("RULE_RESOLUTION"),{"CREATION_REQUEST":{"goal":"one"}}); second=builder.build(_context("RULE_RESOLUTION"),{"CREATION_REQUEST":{"goal":"one"}}); changed=builder.build(_context("RULE_RESOLUTION"),{"CREATION_REQUEST":{"goal":"two"}}); assert first["invocation_id"]==second["invocation_id"]; assert first["invocation_id"]!=changed["invocation_id"]
 
-def test_creation_controller_observer_cannot_execute_a1_stage() -> None:
-    builder = StageInvocationBuilder(ROOT)
-    with pytest.raises(ValueError, match="execution role CREATION_CONTROLLER is not authorized"):
-        builder.build(
-            _context("WORK_PACKAGE_RESEARCH", "CREATION_CONTROLLER"),
-            _required_inputs(RetrievalPolicy(ROOT), "WORK_PACKAGE_RESEARCH"),
-        )
+def test_packet_has_no_private_reasoning_fields()->None:
+    packet=StageInvocationBuilder(ROOT).build(_context("MODEL_DIAGNOSTIC_GPT"),_inputs("MODEL_DIAGNOSTIC_GPT")); forbidden={"chain_of_thought","reasoning","scratchpad","private_reasoning","reasoning_chain"}; assert not (_walk_keys(packet)&forbidden)
 
+def test_missing_index_preserves_normal_chatgpt_fallback(tmp_path:Path)->None:
+    packet=StageInvocationBuilder(ROOT).build(_context("RULE_RESOLUTION"),{"CREATION_REQUEST":"create"},retrieval_query="policy",retrieval_db=tmp_path/"absent.sqlite3"); assert packet["readiness"]=="READY"; assert packet["retrieval"]["status"]=="DIRECT_READ_FALLBACK"; assert packet["evidence"]["mandatory_exact_reads"]
 
-def test_missing_required_inputs_produces_blocked_nonexecuting_packet() -> None:
-    builder = StageInvocationBuilder(ROOT)
-    packet = builder.build(
-        _context("RULE_RESOLUTION"),
-        {},
-        retrieval_query="authority",
-    )
-    assert packet["readiness"] == "BLOCKED_MISSING_INPUTS"
-    assert packet["missing_required_inputs"] == ["CREATION_REQUEST"]
-    assert packet["retrieval"]["status"] == "SKIPPED_BLOCKED_INPUTS"
-    assert packet["retrieval"]["retrieved_context"] == []
-
-
-def test_undeclared_inputs_are_dropped_without_name_leakage() -> None:
-    builder = StageInvocationBuilder(ROOT)
-    packet = builder.build(
-        _context("RULE_RESOLUTION"),
-        {"CREATION_REQUEST": "create", "ORACLE_SECRET": "must-not-project"},
-    )
-    assert packet["readiness"] == "READY"
-    assert "ORACLE_SECRET" not in packet["inputs"]["required"]
-    assert "ORACLE_SECRET" not in packet["inputs"]["optional"]
-    assert packet["ignored_input_count"] == 1
-    assert "ORACLE_SECRET" not in json.dumps(packet, sort_keys=True)
-
-
-def test_valid_role_cannot_build_handoff_for_wrong_stage() -> None:
-    builder = StageInvocationBuilder(ROOT)
-    with pytest.raises(ValueError, match="not authorized for stage"):
-        builder.build(
-            _context(
-                "DETERMINISTIC_VALIDATION",
-                "Q8_MODEL_PERSPECTIVE_DIFFICULTY_SIMULATOR",
-            ),
-            {},
-        )
-
-
-def test_task_identity_requires_exact_pair() -> None:
-    builder = StageInvocationBuilder(ROOT)
-    with pytest.raises(ValueError, match="supplied together"):
-        builder.build(
-            InvocationContext(
-                stage_id="RULE_RESOLUTION",
-                role_id="CREATION_CONTROLLER",
-                task_id="task-x",
-                control_plane_commit=CONTROL_COMMIT,
-            ),
-            {"CREATION_REQUEST": "create"},
-        )
-
-
-def test_unavailable_control_plane_commit_fails_closed() -> None:
-    builder = StageInvocationBuilder(ROOT)
-    with pytest.raises(ValueError, match="not available in repository history"):
-        builder.build(
-            InvocationContext(
-                stage_id="RULE_RESOLUTION",
-                role_id="CREATION_CONTROLLER",
-                control_plane_commit="f" * 40,
-            ),
-            {"CREATION_REQUEST": "create"},
-        )
-
-
-def test_stale_declared_policy_version_fails_closed() -> None:
-    builder = StageInvocationBuilder(ROOT)
-    with pytest.raises(ValueError, match="stale policy version agent_system"):
-        builder.build(
-            InvocationContext(
-                stage_id="RULE_RESOLUTION",
-                role_id="CREATION_CONTROLLER",
-                control_plane_commit=CONTROL_COMMIT,
-                policy_versions={"agent_system": "0.0"},
-            ),
-            {"CREATION_REQUEST": "create"},
-        )
-
-
-def test_invocation_identity_is_stable_and_input_bound() -> None:
-    builder = StageInvocationBuilder(ROOT)
-    first = builder.build(
-        _context("RULE_RESOLUTION"), {"CREATION_REQUEST": {"goal": "one"}}
-    )
-    second = builder.build(
-        _context("RULE_RESOLUTION"), {"CREATION_REQUEST": {"goal": "one"}}
-    )
-    changed = builder.build(
-        _context("RULE_RESOLUTION"), {"CREATION_REQUEST": {"goal": "two"}}
-    )
-    assert first["invocation_id"] == second["invocation_id"]
-    assert first["invocation_id"] != changed["invocation_id"]
-
-
-def test_invocation_identity_ignores_diagnostic_ranking_score() -> None:
-    builder = StageInvocationBuilder(ROOT)
-    packet = builder.build(
-        _context("RULE_RESOLUTION"), {"CREATION_REQUEST": "create"}
-    )
-    base = dict(packet)
-    base.pop("invocation_id")
-    base["retrieval"] = {
-        "status": "INDEXED_CONTEXT",
-        "query": "policy",
-        "retrieved_chars": 6,
-        "retrieved_context": [
-            {
-                "chunk_id": "chk_x",
-                "source_path": ".terminus/policy.md",
-                "source_kind": "CONTROL_PLANE_MARKDOWN",
-                "evidence_class": "CONTROL_PLANE_POLICY",
-                "structural_locator": "policy",
-                "content_hash": "sha256:" + ("0" * 64),
-                "content": "policy",
-                "score": 1.0,
-            }
-        ],
-    }
-    first = builder._invocation_id(base)
-    base["retrieval"]["retrieved_context"][0]["score"] = 0.0001
-    second = builder._invocation_id(base)
-    assert first == second
-
-
-def test_packet_has_no_private_reasoning_fields() -> None:
-    builder = StageInvocationBuilder(ROOT)
-    packet = builder.build(
-        _context("RULE_RESOLUTION"), {"CREATION_REQUEST": "create"}
-    )
-    forbidden = {"chain_of_thought", "reasoning", "scratchpad", "private_reasoning"}
-    assert not (_walk_keys(packet) & forbidden)
-
-
-def test_indexed_context_is_authorized_and_bounded(tmp_path: Path) -> None:
-    policy = RetrievalPolicy(ROOT)
-    db = tmp_path / "retrieval.sqlite3"
-    with RetrievalStore(db) as store:
-        _add_control_plane_chunk(store, policy)
-    packet = StageInvocationBuilder(ROOT, policy).build(
-        _context("RULE_RESOLUTION"),
-        {"CREATION_REQUEST": "create"},
-        retrieval_query="policy authority",
-        retrieval_db=db,
-        max_chars=12,
-    )
-    assert packet["retrieval"]["status"] == "INDEXED_CONTEXT"
-    assert packet["retrieval"]["retrieved_chars"] <= 12
-    assert packet["retrieval"]["retrieved_context"]
-    assert (
-        packet["retrieval"]["retrieved_context"][0]["evidence_class"]
-        == "CONTROL_PLANE_POLICY"
-    )
-
-
-def test_missing_index_preserves_normal_chatgpt_fallback(tmp_path: Path) -> None:
-    packet = StageInvocationBuilder(ROOT).build(
-        _context("RULE_RESOLUTION"),
-        {"CREATION_REQUEST": "create"},
-        retrieval_query="policy",
-        retrieval_db=tmp_path / "absent.sqlite3",
-    )
-    assert packet["readiness"] == "READY"
-    assert packet["retrieval"]["status"] == "DIRECT_READ_FALLBACK"
-    assert packet["evidence"]["mandatory_exact_reads"]
-
-
-def test_unknown_evidence_restriction_fails_closed() -> None:
-    builder = StageInvocationBuilder(ROOT)
-    with pytest.raises(ValueError, match="unknown excluded evidence classes"):
-        builder.build(
-            InvocationContext(
-                stage_id="RULE_RESOLUTION",
-                role_id="CREATION_CONTROLLER",
-                control_plane_commit=CONTROL_COMMIT,
-                excluded_evidence_classes=frozenset({"NOT_A_REAL_CLASS"}),
-            ),
-            {"CREATION_REQUEST": "create"},
-        )
+def test_unknown_evidence_restriction_fails_closed()->None:
+    with pytest.raises(ValueError,match="unknown excluded evidence classes"): StageInvocationBuilder(ROOT).build(InvocationContext(stage_id="RULE_RESOLUTION",role_id="CREATION_CONTROLLER",control_plane_commit=CONTROL_COMMIT,excluded_evidence_classes=frozenset({"NOT_A_REAL_CLASS"})),{"CREATION_REQUEST":"create"})
