@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import hashlib
+import json
+import subprocess
 import sys
 from pathlib import Path
 
@@ -14,8 +16,12 @@ from retrieval.models import InvocationContext  # noqa: E402
 from retrieval.policy import ALL_ROLES, ALL_STAGES, RetrievalPolicy  # noqa: E402
 from retrieval.store import RetrievalStore  # noqa: E402
 
-CONTROL_COMMIT = "c" * 40
-TASK_COMMIT = "a" * 40
+CONTROL_COMMIT = subprocess.run(
+    ["git", "-C", str(ROOT), "rev-parse", "HEAD"],
+    check=True,
+    capture_output=True,
+    text=True,
+).stdout.strip()
 
 
 def _context(stage: str, role: str = "CI_ORCHESTRATOR") -> InvocationContext:
@@ -104,7 +110,7 @@ def test_missing_required_inputs_produces_blocked_nonexecuting_packet() -> None:
     assert packet["retrieval"]["retrieved_context"] == []
 
 
-def test_undeclared_inputs_are_not_projected() -> None:
+def test_undeclared_inputs_are_dropped_without_name_leakage() -> None:
     builder = StageInvocationBuilder(ROOT)
     packet = builder.build(
         _context("RULE_RESOLUTION"),
@@ -113,14 +119,18 @@ def test_undeclared_inputs_are_not_projected() -> None:
     assert packet["readiness"] == "READY"
     assert "ORACLE_SECRET" not in packet["inputs"]["required"]
     assert "ORACLE_SECRET" not in packet["inputs"]["optional"]
-    assert packet["ignored_input_fields"] == ["ORACLE_SECRET"]
+    assert packet["ignored_input_count"] == 1
+    assert "ORACLE_SECRET" not in json.dumps(packet, sort_keys=True)
 
 
 def test_valid_role_cannot_build_handoff_for_wrong_stage() -> None:
     builder = StageInvocationBuilder(ROOT)
     with pytest.raises(ValueError, match="not authorized for stage"):
         builder.build(
-            _context("DETERMINISTIC_VALIDATION", "Q8_MODEL_PERSPECTIVE_DIFFICULTY_SIMULATOR"),
+            _context(
+                "DETERMINISTIC_VALIDATION",
+                "Q8_MODEL_PERSPECTIVE_DIFFICULTY_SIMULATOR",
+            ),
             {},
         )
 
@@ -139,6 +149,33 @@ def test_task_identity_requires_exact_pair() -> None:
         )
 
 
+def test_unavailable_control_plane_commit_fails_closed() -> None:
+    builder = StageInvocationBuilder(ROOT)
+    with pytest.raises(ValueError, match="not available in repository history"):
+        builder.build(
+            InvocationContext(
+                stage_id="RULE_RESOLUTION",
+                role_id="CI_ORCHESTRATOR",
+                control_plane_commit="f" * 40,
+            ),
+            {"CREATION_REQUEST": "create"},
+        )
+
+
+def test_stale_declared_policy_version_fails_closed() -> None:
+    builder = StageInvocationBuilder(ROOT)
+    with pytest.raises(ValueError, match="stale policy version agent_system"):
+        builder.build(
+            InvocationContext(
+                stage_id="RULE_RESOLUTION",
+                role_id="CI_ORCHESTRATOR",
+                control_plane_commit=CONTROL_COMMIT,
+                policy_versions={"agent_system": "0.0"},
+            ),
+            {"CREATION_REQUEST": "create"},
+        )
+
+
 def test_invocation_identity_is_stable_and_input_bound() -> None:
     builder = StageInvocationBuilder(ROOT)
     first = builder.build(
@@ -152,6 +189,36 @@ def test_invocation_identity_is_stable_and_input_bound() -> None:
     )
     assert first["invocation_id"] == second["invocation_id"]
     assert first["invocation_id"] != changed["invocation_id"]
+
+
+def test_invocation_identity_ignores_diagnostic_ranking_score() -> None:
+    builder = StageInvocationBuilder(ROOT)
+    packet = builder.build(
+        _context("RULE_RESOLUTION"), {"CREATION_REQUEST": "create"}
+    )
+    base = dict(packet)
+    base.pop("invocation_id")
+    base["retrieval"] = {
+        "status": "INDEXED_CONTEXT",
+        "query": "policy",
+        "retrieved_chars": 6,
+        "retrieved_context": [
+            {
+                "chunk_id": "chk_x",
+                "source_path": ".terminus/policy.md",
+                "source_kind": "CONTROL_PLANE_MARKDOWN",
+                "evidence_class": "CONTROL_PLANE_POLICY",
+                "structural_locator": "policy",
+                "content_hash": "sha256:" + ("0" * 64),
+                "content": "policy",
+                "score": 1.0,
+            }
+        ],
+    }
+    first = builder._invocation_id(base)
+    base["retrieval"]["retrieved_context"][0]["score"] = 0.0001
+    second = builder._invocation_id(base)
+    assert first == second
 
 
 def test_packet_has_no_private_reasoning_fields() -> None:
@@ -178,7 +245,10 @@ def test_indexed_context_is_authorized_and_bounded(tmp_path: Path) -> None:
     assert packet["retrieval"]["status"] == "INDEXED_CONTEXT"
     assert packet["retrieval"]["retrieved_chars"] <= 12
     assert packet["retrieval"]["retrieved_context"]
-    assert packet["retrieval"]["retrieved_context"][0]["evidence_class"] == "CONTROL_PLANE_POLICY"
+    assert (
+        packet["retrieval"]["retrieved_context"][0]["evidence_class"]
+        == "CONTROL_PLANE_POLICY"
+    )
 
 
 def test_missing_index_preserves_normal_chatgpt_fallback(tmp_path: Path) -> None:
