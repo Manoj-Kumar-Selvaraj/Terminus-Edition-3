@@ -161,12 +161,6 @@ class RepositoryIndexer:
                 return None
             base["task_id"] = task_id
             base["task_commit"] = task_commit
-        elif source_kind == "SOLVER_VISIBLE_REQUIREMENT_CONTRACT":
-            return None
-
-        if source_kind == "SOLVER_VISIBLE_REQUIREMENT_CONTRACT":
-            base["task_id"] = task_id
-            base["task_commit"] = task_commit
 
         missing = [field for field in profile["required_bindings"] if not base.get(field)]
         if missing:
@@ -215,15 +209,23 @@ class RepositoryIndexer:
     ) -> str | None:
         path = PurePosixPath(relative)
         value = path.as_posix()
+        selected_task = (
+            PurePosixPath(task_path.rstrip("/")).name if task_path else None
+        )
 
         if value.startswith(".terminus/cache/") or value.startswith(".terminus/retrieval/"):
             return None
         if value.startswith(".terminus/contracts/") and value.endswith(
             "/solver-visible-requirements.json"
         ):
-            return "SOLVER_VISIBLE_REQUIREMENT_CONTRACT"
+            parts = path.parts
+            if selected_task and len(parts) >= 4 and parts[2] == selected_task:
+                return "SOLVER_VISIBLE_REQUIREMENT_CONTRACT"
+            return None
         if include_private_design and value.startswith(".terminus/designs/"):
-            return "PRIVATE_DESIGN"
+            if selected_task and path.name.startswith(selected_task):
+                return "PRIVATE_DESIGN"
+            return None
         if value.startswith(".terminus/reviews/") or value.startswith(
             ".terminus/sessions/"
         ):
