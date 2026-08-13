@@ -2,15 +2,18 @@
 
 Execution-record policy version: `1.0`
 
-This policy defines how one completed stage invocation is converted into a durable, machine-readable execution record and a deterministic transition decision. It consumes the bounded invocation produced under `.terminus/agents/STAGE_INVOCATION.md`; it does not create new role authority, infer missing evidence, or certify semantic correctness beyond the declared stage/result contract.
+This policy defines how one completed stage invocation is converted into a durable, machine-readable execution record and a deterministic transition decision. It consumes the bounded invocation produced under `.terminus/agents/STAGE_INVOCATION.md`; it does not create new role authority, infer missing evidence, or replace the semantic reviewer that owns a judgment.
 
 Canonical implementation:
 
 - `.terminus/agents/execution_outcomes.json`
+- `.terminus/agents/stage_acceptance_predicates.json`
 - `.terminus/agents/schemas/execution_outcomes.schema.json`
+- `.terminus/agents/schemas/stage_acceptance_predicates.schema.json`
 - `.terminus/agents/schemas/stage_result.schema.json`
 - `.terminus/agents/schemas/execution_record.schema.json`
 - `.terminus/execution/authority.py`
+- `.terminus/execution/acceptance.py`
 - `.terminus/execution/record.py`
 - `.terminus/execution/result_cli.py`
 - `.terminus/validate_execution_record.py`
@@ -19,126 +22,156 @@ Canonical implementation:
 
 A result may affect workflow state only through this chain:
 
-`valid READY invocation + executable stage role + matching invocation_id + legal stage status + declared output keys + status-specific required outputs + valid route key when routed -> execution record -> transition decision`
+`valid READY invocation + executable stage role + exact input task commit + matching invocation_id + legal stage status + declared outputs + valid output task commit lineage + status-specific acceptance predicates + valid route key when routed -> execution record -> transition decision`
 
 A prose answer, chat statement, reviewer conclusion, cache hit, retrieval-observer permission or unbound JSON object does not advance a Terminus stage by itself.
+
+## Bootstrap identity
+
+Durable lifecycle recording starts at `RULE_RESOLUTION`, so the controller reserves a safe stable `task_id` **before** that stage and binds the first invocation to an exact existing Git `task_commit`. For a new task that has not yet materialized task files, this commit is the repository/bootstrap snapshot from which creation begins. It is not evidence that task artifacts already exist.
+
+A taskless invocation may still be compiled for an ephemeral preview, but it cannot be persisted into the task execution ledger. Do not invent a later task ID and retroactively rewrite earlier execution history.
 
 ## Explicit status semantics
 
 `.terminus/agents/execution_outcomes.json` classifies every legal status of every registered stage into exactly one disposition:
 
-- `ADVANCE` — this status may follow the stage's declared `success_transition` after required outputs validate;
-- `ROUTE` — this status returns control through one declared `failure_routes` key; it never guesses a destination from free-form prose;
-- `RETRY` — this status repeats the same stage because the stage has not yet reached its advancing condition;
-- `BLOCK` — this status stops execution until the controller resolves the blocking condition.
+- `ADVANCE` — the status may follow the declared `success_transition` only after required outputs, task lineage and acceptance predicates validate;
+- `ROUTE` — return control through one declared `failure_routes` key;
+- `RETRY` — repeat the same stage because the advancing condition is not yet satisfied;
+- `BLOCK` — stop until the controller resolves the blocking condition.
 
-No legal stage status may remain unclassified. No status may appear in more than one disposition.
+No legal stage status may remain unclassified or belong to more than one disposition.
 
 Examples:
 
 - `FORMAT_GATE: FORMAT_PASS -> ADVANCE`;
-- `FORMAT_GATE: FIXED -> RETRY`, because the gate must be rerun until it actually reports `FORMAT_PASS`;
-- `MODEL_DIAGNOSTIC: SIMULATION_NOT_EXECUTED -> ADVANCE`, because Q8 is diagnostic and must not become fabricated official evidence;
-- `DETERMINISTIC_VALIDATION: PASS -> ADVANCE` to the non-executable `FROZEN_CANDIDATE` state, which still requires its explicit state-entry validation before `QUALITY_INTERLOCK`;
-- `QUALITY_INTERLOCK: REVISE -> ROUTE` with an allowed route key such as `Q4_REVISE` or `Q6_REVISE`.
+- `FORMAT_GATE: FIXED -> RETRY`;
+- `DETERMINISTIC_VALIDATION: PASS -> ADVANCE` only when Oracle=1, NOP=0 and F2P/P2P matrices are present;
+- `QUALITY_INTERLOCK: QUALITY_INTERLOCK_PASS -> ADVANCE` only when the embedded current Q4/Q6 results themselves satisfy the declared PASS/confidence/evidence predicates;
+- `QUALITY_INTERLOCK: REVISE -> ROUTE` through an allowed route such as `Q4_REVISE` or `Q6_REVISE`.
 
 ## Result envelope
 
-The executor returns a compact stage-result envelope containing:
+Every executor result contains:
 
 - `schema_version`;
-- the exact `invocation_id` it executed;
+- the exact `invocation_id`;
+- `output_task_commit` — the task snapshot after this execution;
 - one legal stage `status`;
-- `outputs`, limited to fields declared by the invocation output contract;
-- `evidence_refs`, as explicit artifact/run/packet/result/commit/file/external references;
-- `route_key` only when the outcome contract requires or permits routing;
-- `blocking_reason` when disposition is `BLOCK`.
+- `outputs`, limited to declared stage fields;
+- `evidence_refs`;
+- `route_key` only for routed outcomes when required;
+- `blocking_reason` for `BLOCK`.
 
-The envelope has no chain-of-thought, scratchpad or private-reasoning field.
+The result contains no chain-of-thought, scratchpad or private-reasoning field.
+
+### Do
+
+- report the exact committed task snapshot actually produced or inspected;
+- commit authorized producer/fixer changes before returning a result that relies on them;
+- preserve evidence references for every acceptance-relevant external/reviewer fact;
+- return a non-advancing status when a required predicate is not satisfied.
+
+### Do not
+
+- report the invocation commit as `output_task_commit` after changing task artifacts;
+- point `output_task_commit` at an uncommitted working tree, unrelated branch or non-descendant commit;
+- let a controller, reviewer, simulator or external gate mutate the task snapshot while retaining that role authority;
+- label a stage `PASS` merely because all required output *keys* are present;
+- weaken or fabricate embedded reviewer/run evidence to satisfy an aggregate predicate.
 
 ## Invocation binding
 
-The recorder recomputes the supplied invocation identity using the same canonical identity rule as `StageInvocationBuilder`. A result is rejected when:
+The recorder recomputes the invocation identity and rejects a result when the invocation is not `READY`, the invocation ID does not match, stage/role/output/routing projection has been altered, or the role is not the stage's canonical executable owner.
 
-- the invocation is not `READY`;
-- `invocation_id` does not match the invocation content;
-- the result names a different invocation ID;
-- the stage/role/output contract has been altered inside the invocation packet;
-- the invocation role is not in the stage's executable-role set from `.terminus/execution/authority.py`;
-- a controller/retrieval observer has been forged into a producer/reviewer executor;
-- the loaded execution-outcome contract does not byte-match the invocation's bound `control_plane_commit`.
+Durable recording additionally requires `authority.task_id` and `authority.task_commit`. The invocation `task_commit` is always the **input task snapshot**. The result cannot replace task/control/packet authority fields; it supplies only the separately validated `output_task_commit`.
 
-The record copies the invocation's stage, executable role and authority envelope. It never accepts replacement task/control-plane/packet identities from the result payload.
+Retrieval audience remains separate. A controller may inspect a producer/reviewer stage without becoming that stage's executor.
 
-Retrieval audience remains separate: a controller may be allowed to inspect a stage's evidence for orchestration without being allowed to produce that stage's execution record. Record validation rechecks executable authority even if a forged invocation ID is internally self-consistent.
+## Task commit lineage
+
+Every execution record persists:
+
+```text
+TASK_LINEAGE:
+  INPUT_TASK_COMMIT:  <invocation authority.task_commit>
+  OUTPUT_TASK_COMMIT: <result output_task_commit>
+  TASK_CHANGED:       true | false
+```
+
+Rules:
+
+1. both commits must exist in repository history;
+2. `OUTPUT_TASK_COMMIT` must equal or descend from `INPUT_TASK_COMMIT`;
+3. only `PRODUCER` and `FIXER` role classes may return a different output commit;
+4. `CONTROLLER`, `REVIEWER`, `ADJUDICATOR`, `SIMULATOR` and other non-mutating classes must preserve the exact input commit;
+5. the next recorded stage must consume the previous current stage's output commit;
+6. an unrecorded commit between stages is not silently absorbed by workflow state.
+
+This allows a real lifecycle such as `A -> producer -> B -> reviewer/controller -> B -> fixer -> C` without making the earlier valid record stale merely because the task is now at C.
 
 ## Output validation
 
-All returned output keys must be declared by the invocation as required or optional stage outputs. Unknown output keys fail closed rather than being silently persisted.
+All output keys must be declared by the stage contract. Unknown keys fail closed. `full_output_statuses` declares statuses that require every stage-required output field; every advancing status is a full-output status.
 
-`full_output_statuses` in `execution_outcomes.json` declares which statuses require every stage `required_fields` entry. Advancing statuses are always full-output statuses. Routed/retry statuses may also require the full output contract when the stage can reasonably produce it; evidence-insufficiency and hard-block conditions may remain partial.
+The recorder never fills missing outputs from retrieval, chat memory, previous reviews or another record.
 
-A missing required output for a full-output status rejects the result. The recorder never fills an output from retrieval, chat memory, previous reviews or a prior execution record.
+## Acceptance predicates
+
+Field presence is not sufficient for acceptance. `.terminus/agents/stage_acceptance_predicates.json` defines fail-closed, status-specific value predicates for gates where an aggregate/status could otherwise self-assert success.
+
+The predicate engine supports only simple auditable operations: equality, membership, empty/non-empty and exact collection length. It does **not** perform semantic reviewing. It verifies that the aggregate stage faithfully represents already-owned evidence.
+
+Examples include:
+
+- no unresolved policy conflicts for `RULES_RESOLVED`;
+- Q1/Q2/Q3 success values for `SPEC_ALIGNMENT: ALIGNED`;
+- runtime-authenticity status actually equal to PASS;
+- Oracle/NOP/F2P/P2P facts for deterministic validation;
+- Q4/Q6 PASS + adequate confidence + sufficient evidence for the quality interlock;
+- all Pre-LLMaJ A–F aggregate stages marked PASS;
+- exactly five GPT and five Claude official trials before `COMPLETE`;
+- current successful Final Compliance/Human Quality evidence before `FINAL_REVIEW: PASS`;
+- non-empty mandatory gate evidence before `SUBMISSION_READY`.
+
+An `ADVANCE` result that fails a declared predicate is rejected before a durable execution record is created. A later state reconstruction rechecks the same predicates so a hand-forged historical record cannot bypass them.
 
 ## Route validation
 
-For `ROUTE` statuses:
-
-- the route key must be one of the outcome contract's `allowed_route_keys`;
-- a `default_route_key` may be used only when the outcome contract explicitly declares one;
-- the final route key must exist in the invocation's `failure_routes` map;
-- the execution record carries the exact registered `route_instruction` string;
-- the transition engine does not parse that prose into an invented stage ID.
-
-If the route outcome permits several owners, the role/controller must provide the route key that matches the observed failure class.
+For `ROUTE` statuses the route key must be allowed by the outcome contract and exist in the stage's `failure_routes`. A default route is legal only when explicitly declared. The record preserves the registered route instruction; it does not parse free-form prose into a new destination.
 
 ## Transition semantics
 
-The execution record emits one transition decision:
+- `ADVANCE` -> declared success transition;
+- `RETRY` -> same stage;
+- `ROUTE` -> registered route key/instruction;
+- `BLOCK` -> no target and a mandatory blocking reason.
 
-- `ADVANCE` -> target is the invocation's `success_transition`;
-- `RETRY` -> target is the current stage;
-- `ROUTE` -> target kind is `ROUTE`, with route key/instruction and no fabricated stage target;
-- `BLOCK` -> no target; `blocking_reason` is mandatory.
-
-Advance targets are classified as:
-
-- `STAGE` when the target is another registered executable stage;
-- `STATE` when the target is a registered non-executable state such as `FROZEN_CANDIDATE`;
-- `END` for terminal submission completion.
-
-An `ADVANCE` into a non-executable state sets `requires_state_validation=true`. The execution record is not proof that the state-entry requirements themselves have been satisfied.
+Advance targets are `STAGE`, `STATE` or `END`. An `ADVANCE` to a non-executable state such as `FROZEN_CANDIDATE` sets `requires_state_validation=true`; the record alone is not proof that state-entry requirements are satisfied.
 
 ## FROZEN_CANDIDATE boundary
 
-`DETERMINISTIC_VALIDATION: PASS` may produce an execution-record transition toward `FROZEN_CANDIDATE`, but the controller must still validate the state contract in `.terminus/agents/stage_contract_completion.json`, including current format, complexity, runtime-authenticity, Oracle/NOP/F2P/P2P and policy-conflict evidence.
-
-Only after that state-entry contract is current may the controller exit the state to `QUALITY_INTERLOCK`.
+`DETERMINISTIC_VALIDATION: PASS` may transition toward `FROZEN_CANDIDATE`, but the controller still validates the state contract, including current format, complexity, runtime authenticity, Oracle/NOP/F2P/P2P and policy-conflict evidence. Only then may the controller proceed to `QUALITY_INTERLOCK`.
 
 ## Deterministic record identity
 
-`record_id` is content-derived from the validated invocation ID, stage/role authority, status, outputs, evidence references, route/block fields and transition decision. It does not include timestamps or hidden reasoning.
-
-Equivalent validated results against the same invocation produce the same record ID. A changed status, output, evidence reference, route or invocation produces a different ID.
+`record_id` is content-derived from invocation ID, stage/role authority, task lineage, status, outputs, evidence references, route/block fields and transition. It contains no timestamps or hidden reasoning. Equivalent validated results produce the same ID; any lineage/evidence/status/output change changes the ID.
 
 ## Evidence references
 
-Execution records preserve references; they do not make a referenced artifact authoritative merely by naming it. Protocol, packet provenance, review freshness, CI run identity and evidence-specific validators remain responsible for deciding whether a reference is current and sufficient.
-
-Semantic acceptance is never inferred from the mere existence or count of evidence references.
+Execution records preserve references; they do not make the referenced material authoritative merely by naming it. Protocol, packet provenance, review freshness, CI identity and evidence-specific validators remain controlling. Semantic acceptance is never inferred from evidence count alone.
 
 ## Persistence
 
-The canonical durable location for a task-scoped record is:
+The canonical durable location is:
 
 `.terminus/executions/<task>/<invocation_id>.result.json`
 
-Controller-only/non-task bootstrap records may be stored under an explicitly selected control-plane execution path when durable persistence is useful. Persistence is optional for ephemeral local diagnostics but mandatory whenever a later stage/session relies on the result as durable evidence.
+Every durable task execution belongs to the task-scoped ledger. There is no hidden taskless bootstrap history: reserve the task identity first. Historical records are immutable; when evidence or contracts go stale, create a new invocation/result rather than rewriting provenance.
 
-A persisted execution record is audit history, not mutable workflow memory. If its task/control-plane/evidence bindings go stale, create a new invocation/record rather than rewriting historical provenance.
-
-The append-only task execution ledger and derived current-state rules are defined by `.terminus/agents/WORKFLOW_STATE.md`. The record is durable provenance; the materialized workflow snapshot is rebuildable derived state.
+The append-only ledger and derived state rules are defined in `.terminus/agents/WORKFLOW_STATE.md`.
 
 ## Normal ChatGPT portability
 
-Normal ChatGPT can still execute the workflow without running the Python recorder locally. The repository contract is authoritative: a chat/controller may construct the same result envelope and persist it through GitHub tooling when authorized. The local implementation is the canonical validator/transition compiler and CI backstop, not a requirement that every chat surface expose a Python runtime.
+Normal ChatGPT can apply the same contract through connected GitHub tooling when local Python is unavailable. The local implementation is the canonical validator/transition compiler and CI backstop; it does not make the workflow dependent on a particular agent runtime.
