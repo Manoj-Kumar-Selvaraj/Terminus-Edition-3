@@ -42,9 +42,42 @@ def _resolved_ref(kind: str, identity: str):
     }
 
 
+def _check_reference_mode_boundary() -> None:
+    builder = trust.ExecutionRecordBuilder(
+        trust.ROOT,
+        trust.RetrievalPolicy(trust.ROOT),
+    )
+    digest = "sha256:" + hashlib.sha256(b"external-record").hexdigest()
+    value = builder.evidence_ref_verifier.validate(
+        {
+            "kind": "RUN",
+            "ref": f"run:test:harbor-run-1#{digest}",
+            "content_hash": digest,
+        },
+        0,
+    )
+    if builder.evidence_ref_verifier.is_resolved(value):
+        raise AssertionError("external pointer incorrectly classified as repository-resolved")
+    try:
+        builder._validate_advancing_evidence(
+            "HARBOR_LLMAJ",
+            {"HARBOR_RUN_ID": "harbor-run-1"},
+            [value],
+        )
+    except ValueError as exc:
+        if "resolve to repository bytes or commits" not in str(exc):
+            raise
+    else:
+        raise AssertionError("acceptance-sensitive advance accepted unresolved evidence")
+
+
 trust._outputs = _outputs_with_external_batch
 trust._eref = _resolved_ref
 
 
 if __name__ == "__main__":
-    raise SystemExit(trust.main())
+    result = trust.main()
+    if result == 0:
+        _check_reference_mode_boundary()
+        print("resolved_evidence=repository_bytes_or_commit unresolved_external=non_advancing")
+    raise SystemExit(result)
