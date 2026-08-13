@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+from collections.abc import Mapping as ABCMapping
 from pathlib import Path
 from typing import Any, Mapping
 
@@ -11,7 +12,21 @@ class StageAcceptancePredicates:
     """Validate status-specific acceptance predicates before ADVANCE is recorded."""
 
     version = "1.0"
-    allowed_ops = frozenset({"eq", "in", "empty", "nonempty", "length_eq"})
+    allowed_ops = frozenset(
+        {
+            "eq",
+            "in",
+            "empty",
+            "nonempty",
+            "length_eq",
+            "lt",
+            "lte",
+            "gt",
+            "gte",
+            "all_gte",
+            "eq_path",
+        }
+    )
 
     def __init__(self, root: Path):
         self.root = root.resolve()
@@ -32,13 +47,20 @@ class StageAcceptancePredicates:
         for predicate in self.predicates_for(stage_id, status):
             path = str(predicate["path"])
             op = str(predicate["op"])
-            value = self._resolve(outputs, path)
+            observed = self._resolve(outputs, path)
             expected = predicate.get("value")
-            passed = self._evaluate(op, value, expected)
+            if op == "eq_path":
+                assert isinstance(expected, str)
+                comparison = self._resolve(outputs, expected)
+                passed = observed == comparison
+                expected_display: Any = {"path": expected, "value": comparison}
+            else:
+                passed = self._evaluate(op, observed, expected)
+                expected_display = expected
             if not passed:
                 raise ValueError(
                     f"acceptance predicate failed for {stage_id}/{status}: "
-                    f"{path} {op} {expected!r}; observed {value!r}"
+                    f"{path} {op} {expected_display!r}; observed {observed!r}"
                 )
 
     def _load(self) -> dict[str, Any]:
@@ -90,7 +112,17 @@ class StageAcceptancePredicates:
             raise ValueError(
                 f"acceptance predicate {stage_id}/{status}[{index}] has invalid op"
             )
-        if op in {"eq", "in", "length_eq"} and "value" not in predicate:
+        if op in {
+            "eq",
+            "in",
+            "length_eq",
+            "lt",
+            "lte",
+            "gt",
+            "gte",
+            "all_gte",
+            "eq_path",
+        } and "value" not in predicate:
             raise ValueError(
                 f"acceptance predicate {stage_id}/{status}[{index}] requires value"
             )
@@ -106,6 +138,18 @@ class StageAcceptancePredicates:
             raise ValueError(
                 f"acceptance predicate {stage_id}/{status}[{index}] length must be non-negative"
             )
+        if op in {"lt", "lte", "gt", "gte", "all_gte"} and not self._is_number(
+            predicate.get("value")
+        ):
+            raise ValueError(
+                f"acceptance predicate {stage_id}/{status}[{index}] numeric op requires numeric value"
+            )
+        if op == "eq_path" and (
+            not isinstance(predicate.get("value"), str) or not predicate["value"].strip()
+        ):
+            raise ValueError(
+                f"acceptance predicate {stage_id}/{status}[{index}] eq_path requires a non-empty path"
+            )
 
     @staticmethod
     def _resolve(outputs: Mapping[str, Any], path: str) -> Any:
@@ -116,8 +160,8 @@ class StageAcceptancePredicates:
             current = current[part]
         return current
 
-    @staticmethod
-    def _evaluate(op: str, observed: Any, expected: Any) -> bool:
+    @classmethod
+    def _evaluate(cls, op: str, observed: Any, expected: Any) -> bool:
         if op == "eq":
             return observed == expected
         if op == "in":
@@ -131,4 +175,30 @@ class StageAcceptancePredicates:
                 return len(observed) == expected
             except TypeError:
                 return False
+        if op in {"lt", "lte", "gt", "gte"}:
+            if not cls._is_number(observed) or not cls._is_number(expected):
+                return False
+            if op == "lt":
+                return observed < expected
+            if op == "lte":
+                return observed <= expected
+            if op == "gt":
+                return observed > expected
+            return observed >= expected
+        if op == "all_gte":
+            if isinstance(observed, ABCMapping):
+                values = list(observed.values())
+            elif isinstance(observed, (list, tuple, set, frozenset)):
+                values = list(observed)
+            else:
+                return False
+            return bool(values) and all(
+                cls._is_number(item) and item >= expected for item in values
+            )
+        if op == "eq_path":
+            raise ValueError("eq_path is evaluated against the complete output object")
         raise ValueError(f"unsupported acceptance predicate op: {op}")
+
+    @staticmethod
+    def _is_number(value: Any) -> bool:
+        return isinstance(value, (int, float)) and not isinstance(value, bool)
