@@ -27,10 +27,11 @@
     "phaseConstraint": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["execution_mode", "owner_invocation", "requires_prior", "must_not_consume", "must_not_produce", "required_semantics"],
+      "required": ["execution_mode", "owner_invocation", "phase_prompt_file", "requires_prior", "must_not_consume", "must_not_produce", "required_semantics"],
       "properties": {
         "execution_mode": {"type": "string", "enum": ["DESIGN_ONLY", "PRIVATE_DESIGN", "MATERIALIZATION"]},
         "owner_invocation": {"type": "string", "minLength": 1},
+        "phase_prompt_file": {"type": "string", "minLength": 1},
         "requires_prior": {"$ref": "#/$defs/stringArray"},
         "must_not_consume": {"$ref": "#/$defs/stringArray"},
         "must_not_produce": {"$ref": "#/$defs/stringArray"},
