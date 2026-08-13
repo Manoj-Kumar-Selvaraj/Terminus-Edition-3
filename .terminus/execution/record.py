@@ -225,6 +225,15 @@ class ExecutionRecordBuilder:
         }
         if packet.get("output_contract") != expected_output:
             raise ValueError("invocation output contract does not match canonical stage contract")
+        expected_acceptance = {}
+        for status in expected_output["allowed_status_values"]:
+            predicates = self.acceptance.predicates_for(stage_id, status)
+            if predicates:
+                expected_acceptance[status] = predicates
+        if packet.get("acceptance_predicates") != expected_acceptance:
+            raise ValueError(
+                "invocation acceptance predicate projection does not match canonical contract"
+            )
         expected_routing = {
             "failure_routes": {str(key): str(value) for key, value in stage.get("failure_routes", {}).items()},
             "success_transition": str(stage.get("success_transition", "")),
