@@ -41,6 +41,7 @@ jobs:
             .terminus/validate_retrieval_metadata.py \
             .terminus/validate_retrieval_engine.py \
             .terminus/validate_stage_invocation.py \
+            .terminus/validate_execution_record.py \
             .terminus/review_contract.py \
             .terminus/new_review_packet.py \
             .terminus/validate_review_freshness.py \
@@ -75,6 +76,10 @@ jobs:
       - name: Validate executable stage invocations
         if: ${{ !cancelled() }}
         run: python3 .terminus/validate_stage_invocation.py
+
+      - name: Validate execution records and transitions
+        if: ${{ !cancelled() }}
+        run: python3 .terminus/validate_execution_record.py
 
       - name: Validate current review freshness and commit binding
         if: ${{ !cancelled() }}
