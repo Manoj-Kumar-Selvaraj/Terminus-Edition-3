@@ -11,6 +11,7 @@ from typing import Any, Mapping
 
 from retrieval.policy import RetrievalPolicy
 
+from .authority import ExecutionAuthority
 from .invocation import StageInvocationBuilder
 
 _SHA256 = re.compile(r"^sha256:[0-9a-f]{64}$")
@@ -32,6 +33,7 @@ class ExecutionRecordBuilder:
     def __init__(self, root: Path, policy: RetrievalPolicy | None = None):
         self.root = root.resolve()
         self.policy = policy or RetrievalPolicy(self.root)
+        self.execution_authority = ExecutionAuthority(self.policy)
         self.invocation_builder = StageInvocationBuilder(self.root, self.policy)
         self.outcomes = self._load_json(".terminus/agents/execution_outcomes.json")
         self.completion = self._load_json(".terminus/agents/stage_contract_completion.json")
@@ -170,9 +172,11 @@ class ExecutionRecordBuilder:
             raise ValueError("invocation stage_id is not registered")
         if not isinstance(role_id, str):
             raise ValueError("invocation role_id is invalid")
-        allowed_roles = self.policy.allowed_roles_for_stage(stage_id)
-        if role_id not in allowed_roles:
-            raise ValueError(f"role {role_id} is not authorized for stage {stage_id}")
+        executable_roles = self.execution_authority.roles_for_stage(stage_id)
+        if role_id not in executable_roles:
+            raise ValueError(
+                f"role {role_id} is not authorized to execute stage {stage_id}"
+            )
 
         control_commit = authority.get("control_plane_commit")
         if not isinstance(control_commit, str):
