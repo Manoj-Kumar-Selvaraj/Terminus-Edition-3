@@ -12,7 +12,7 @@
     "authority",
     "inputs",
     "missing_required_inputs",
-    "ignored_input_fields",
+    "ignored_input_count",
     "evidence",
     "retrieval",
     "output_contract",
@@ -67,11 +67,7 @@
       "uniqueItems": true,
       "items": {"type": "string", "minLength": 1}
     },
-    "ignored_input_fields": {
-      "type": "array",
-      "uniqueItems": true,
-      "items": {"type": "string", "minLength": 1}
-    },
+    "ignored_input_count": {"type": "integer", "minimum": 0},
     "evidence": {
       "type": "object",
       "additionalProperties": false,
@@ -91,7 +87,25 @@
       "properties": {
         "status": {"enum": ["INDEXED_CONTEXT", "DIRECT_READ_FALLBACK", "NOT_REQUESTED", "SKIPPED_BLOCKED_INPUTS"]},
         "query": {"type": ["string", "null"]},
-        "retrieved_context": {"type": "array", "items": {"type": "object"}},
+        "retrieved_context": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["chunk_id", "source_kind", "evidence_class", "structural_locator", "content_hash", "content", "score"],
+            "properties": {
+              "chunk_id": {"type": "string", "minLength": 1},
+              "source_path": {"type": ["string", "null"]},
+              "source_kind": {"type": "string", "minLength": 1},
+              "evidence_class": {"type": "string", "minLength": 1},
+              "structural_locator": {"type": ["string", "null"]},
+              "content_hash": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"},
+              "content": {"type": "string"},
+              "score": {"type": "number"},
+              "truncated": {"type": "boolean"}
+            }
+          }
+        },
         "retrieved_chars": {"type": "integer", "minimum": 0}
       }
     },
