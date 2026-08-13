@@ -17,6 +17,8 @@ from retrieval.store import RetrievalStore  # noqa: E402
 
 REQUIRED = [
     T / "agents" / "RETRIEVAL_ENGINE.md",
+    T / "agents" / "RETRIEVAL_METADATA.md",
+    T / "agents" / "STAGE_CONTRACTS.md",
     T / "retrieval" / "__init__.py",
     T / "retrieval" / "models.py",
     T / "retrieval" / "policy.py",
@@ -27,6 +29,7 @@ REQUIRED = [
     T / "retrieval" / "engine.py",
     T / "retrieval" / "cli.py",
     T / "tests" / "test_retrieval_engine.py",
+    T / "tests" / "test_retrieval_cache.py",
 ]
 
 POLICY_MARKERS = [
@@ -43,6 +46,32 @@ POLICY_MARKERS = [
     "Agent integration",
 ]
 
+STAGE_MARKERS = [
+    "Retrieval adapter contract",
+    "mandatory_exact_reads",
+    "optional projection adapter",
+    "direct exact repository/GitHub reads",
+    "RETRIEVAL_ENGINE.md",
+]
+
+METADATA_MARKERS = [
+    "Implemented caching contract",
+    "parse/chunk cache",
+    "embedding cache",
+    "retrieval-result cache",
+    "Reference retrieval engine",
+    "Dynamic evidence boundary",
+]
+
+
+def _require_markers(
+    errors: list[str], text: str, label: str, markers: list[str]
+) -> None:
+    lower = text.lower()
+    for marker in markers:
+        if marker.lower() not in lower:
+            errors.append(f"{label} missing marker: {marker}")
+
 
 def main() -> int:
     errors: list[str] = []
@@ -51,9 +80,16 @@ def main() -> int:
             errors.append(f"missing required file: {path.relative_to(ROOT)}")
 
     policy_text = (T / "agents" / "RETRIEVAL_ENGINE.md").read_text(encoding="utf-8")
-    for marker in POLICY_MARKERS:
-        if marker.lower() not in policy_text.lower():
-            errors.append(f"RETRIEVAL_ENGINE.md missing marker: {marker}")
+    _require_markers(errors, policy_text, "RETRIEVAL_ENGINE.md", POLICY_MARKERS)
+
+    stage_text = (T / "agents" / "STAGE_CONTRACTS.md").read_text(encoding="utf-8")
+    _require_markers(errors, stage_text, "STAGE_CONTRACTS.md", STAGE_MARKERS)
+
+    metadata_text = (T / "agents" / "RETRIEVAL_METADATA.md").read_text(encoding="utf-8")
+    _require_markers(errors, metadata_text, "RETRIEVAL_METADATA.md", METADATA_MARKERS)
+    stale_future_marker = "What this step intentionally does not implement"
+    if stale_future_marker.lower() in metadata_text.lower():
+        errors.append("RETRIEVAL_METADATA.md still describes the retrieval engine as unimplemented")
 
     policy = RetrievalPolicy(ROOT)
     if len(policy.stages) != 23:
@@ -79,6 +115,8 @@ def main() -> int:
             stats = store.stats()
             if stats["documents"] != 0 or stats["chunks"] != 0:
                 errors.append("fresh retrieval store is not empty")
+            if stats.get("parse_cache_entries") != 0:
+                errors.append("fresh retrieval parse cache is not empty")
             if "fts5" not in stats:
                 errors.append("retrieval store must report lexical backend availability")
 
@@ -92,7 +130,8 @@ def main() -> int:
     print(
         "engine=1.0 stages=23 canonical_roles=34 "
         "exact_reads=mandatory lexical=fts5_or_bm25 vector=pluggable "
-        "hybrid=rrf caches=authorization_bound portability=direct_read_fallback"
+        "hybrid=rrf caches=parse_embedding_result authorization=pre_rank "
+        "integration=stage_adapter portability=direct_read_fallback"
     )
     return 0
 
