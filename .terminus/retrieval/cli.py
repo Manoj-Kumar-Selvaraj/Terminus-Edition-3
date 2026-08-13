@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""CLI for building and querying the local Terminus retrieval index."""
+"""CLI for building, ingesting, and querying the local Terminus retrieval index."""
 
 from __future__ import annotations
 
@@ -14,6 +14,7 @@ if __package__ in {None, ""}:
     from retrieval.embeddings import HashingEmbedder, SentenceTransformerEmbedder
     from retrieval.engine import RetrievalEngine
     from retrieval.indexer import RepositoryIndexer
+    from retrieval.ingestion import DynamicEvidenceIngestor
     from retrieval.models import InvocationContext, RetrievalQuery
     from retrieval.policy import RetrievalPolicy
     from retrieval.store import RetrievalStore
@@ -21,9 +22,13 @@ else:
     from .embeddings import HashingEmbedder, SentenceTransformerEmbedder
     from .engine import RetrievalEngine
     from .indexer import RepositoryIndexer
+    from .ingestion import DynamicEvidenceIngestor
     from .models import InvocationContext, RetrievalQuery
     from .policy import RetrievalPolicy
     from .store import RetrievalStore
+
+_REPOSITORY_DYNAMIC = ("REVIEW_PACKET", "REVIEW_RESULT", "SESSION_STATE")
+_EXTERNAL_DYNAMIC = ("CI_RUNTIME", "MODEL_TRIAL", "FINAL_PACKAGE", "PUBLIC_REFERENCE")
 
 
 def _head(root: Path) -> str:
@@ -129,6 +134,16 @@ def _common_retrieval_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--embedder", default="hashing")
 
 
+def _projection_arguments(parser: argparse.ArgumentParser) -> None:
+    parser.add_argument("--stage", required=True)
+    parser.add_argument(
+        "--role",
+        action="append",
+        required=True,
+        help="consumer role allowed to retrieve this evidence projection; repeatable",
+    )
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--root", default=".")
@@ -145,6 +160,27 @@ def build_parser() -> argparse.ArgumentParser:
     build.add_argument("--control-plane-commit")
     build.add_argument("--task-commit")
     build.add_argument("--include-private-design", action="store_true")
+
+    ingest_repo = subparsers.add_parser(
+        "ingest-repository",
+        help="explicitly ingest a review packet/result or durable session from Git",
+    )
+    ingest_repo.add_argument("--source-kind", choices=_REPOSITORY_DYNAMIC, required=True)
+    ingest_repo.add_argument("--source-path", required=True)
+    ingest_repo.add_argument("--source-commit", required=True)
+    _projection_arguments(ingest_repo)
+
+    ingest_external = subparsers.add_parser(
+        "ingest-external",
+        help="explicitly ingest CI, trial, final-package, or public-reference evidence",
+    )
+    ingest_external.add_argument("--source-kind", choices=_EXTERNAL_DYNAMIC, required=True)
+    ingest_external.add_argument("--input", required=True, help="UTF-8 evidence file")
+    ingest_external.add_argument("--source-uri", required=True)
+    ingest_external.add_argument("--task-id")
+    ingest_external.add_argument("--task-commit")
+    ingest_external.add_argument("--ci-run-id")
+    _projection_arguments(ingest_external)
 
     retrieve = subparsers.add_parser("retrieve", help="retrieve authorized chunks")
     _common_retrieval_arguments(retrieve)
@@ -178,6 +214,39 @@ def main(argv: list[str] | None = None) -> int:
             )
             print(json.dumps(manifest, indent=2, sort_keys=True))
             return 0
+
+        if args.command == "ingest-repository":
+            ingestor = DynamicEvidenceIngestor(root, store, policy)
+            kwargs = {
+                "source_path": args.source_path,
+                "source_commit": args.source_commit,
+                "stage_id": args.stage,
+                "role_ids": args.role,
+            }
+            if args.source_kind == "REVIEW_PACKET":
+                payload = ingestor.ingest_review_packet(**kwargs)
+            elif args.source_kind == "REVIEW_RESULT":
+                payload = ingestor.ingest_review_result(**kwargs)
+            else:
+                payload = ingestor.ingest_session_state(**kwargs)
+            print(json.dumps(payload, indent=2, sort_keys=True))
+            return 0
+
+        if args.command == "ingest-external":
+            content = Path(args.input).read_text(encoding="utf-8")
+            payload = DynamicEvidenceIngestor(root, store, policy).ingest_external(
+                source_kind=args.source_kind,
+                content=content,
+                source_uri=args.source_uri,
+                stage_id=args.stage,
+                role_ids=args.role,
+                task_id=args.task_id,
+                task_commit=args.task_commit,
+                ci_run_id=args.ci_run_id,
+            )
+            print(json.dumps(payload, indent=2, sort_keys=True))
+            return 0
+
         if args.command == "stats":
             print(json.dumps(store.stats(), indent=2, sort_keys=True))
             return 0
