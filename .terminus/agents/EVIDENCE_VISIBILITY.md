@@ -84,6 +84,20 @@ At minimum:
 - `OFFICIAL_MODEL_TRIALS` receives the solver-visible task plus only the minimum authoritative/evaluation-bound context;
 - review/evaluation stages never infer permission from repository readability alone.
 
+## Retrieval metadata binding
+
+Evidence visibility determines **whether a source class is eligible**. `.terminus/agents/RETRIEVAL_METADATA.md` and `.terminus/agents/retrieval_metadata.json` determine **how an eligible source is identified, versioned, chunked, filtered for freshness, and represented in an index**.
+
+The two contracts must remain separate:
+
+`evidence visibility = authorization boundary`
+
+`retrieval metadata = provenance/indexing envelope`
+
+Retrieval metadata never grants access. A chunk tagged with a permitted stage/role applicability value is still ineligible when its evidence class is excluded by this policy, a narrower role policy, or the active review packet.
+
+`.terminus/validate_retrieval_metadata.py` cross-checks retrieval source profiles and schemas against this evidence-class registry so an indexer cannot silently invent an unclassified evidence category.
+
 ## Future RAG requirement
 
 Before vector/semantic RAG is enabled, the retrieval layer must accept at least:
