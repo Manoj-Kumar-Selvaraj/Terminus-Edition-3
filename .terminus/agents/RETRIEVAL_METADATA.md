@@ -6,7 +6,7 @@ This policy defines the canonical metadata envelope for repository/control-plane
 
 It does **not** authorize access to content. Authorization is resolved first from `.terminus/agents/evidence_visibility.json`, the selected stage's permitted role set, role policy, Protocol, and packet-specific allowed/excluded evidence. Retrieval metadata only describes an already-classified source and provides enough provenance/freshness information to filter it safely.
 
-The executable reference engine is defined by `.terminus/agents/RETRIEVAL_ENGINE.md` and `.terminus/retrieval/`.
+The executable reference engine is defined by `.terminus/agents/RETRIEVAL_ENGINE.md` and `.terminus/retrieval/`. Explicit dynamic evidence ingestion is specialized by `.terminus/agents/DYNAMIC_EVIDENCE_INGESTION.md`.
 
 ## Core rule
 
@@ -28,7 +28,7 @@ A concrete indexed unit must conform to `.terminus/agents/schemas/retrieval_chun
 
 A generated index manifest must conform to `.terminus/agents/schemas/retrieval_manifest.schema.json`.
 
-The metadata contract is validated by `.terminus/validate_retrieval_metadata.py`; the executable engine is separately validated by `.terminus/validate_retrieval_engine.py`. Both run from Agent System CI.
+The metadata contract is validated by `.terminus/validate_retrieval_metadata.py`; the executable engine and dynamic ingestor are separately validated by `.terminus/validate_retrieval_engine.py`. Both run from Agent System CI.
 
 ## Identity and provenance
 
@@ -42,6 +42,8 @@ Path, filename, heading text, task name, or semantic similarity alone are never 
 Repository-backed sources record `source_path`, `git_blob_sha` and `content_hash`. Non-repository evidence records an equivalent immutable `source_version` and `content_hash` plus the source-profile bindings that apply.
 
 Control-plane and task freshness are independent. A task-scoped index may read task artifacts from `task_commit` while authoritative policy is read from a different `control_plane_commit`; a shared commit is a valid special case, not an implicit assumption.
+
+Dynamic evidence adds a deterministic stage/consumer-role projection fragment to `source_uri`. This creates distinct safe projected document identities for the same immutable source version without changing its underlying content provenance.
 
 ## Required metadata envelope
 
@@ -91,6 +93,8 @@ Human display names are mapped to stable canonical role IDs through `role_aliase
 
 Applicability is a secondary narrowing mechanism. It never expands the evidence visibility granted by the stage/role/packet contract. Likewise, `ALL_AUTHORIZED_ROLES` means all roles already authorized for the selected stage; it is not permission for an unrelated canonical role to borrow that stage's authority.
 
+For dynamic review evidence, producer provenance and consumer applicability are deliberately separate. The review artifact retains its frozen `role_contract_hash`/`packet_binding`; `role_applicability` names the role that may consume that projected artifact.
+
 ### Structural chunk location
 
 - `chunk_type`
@@ -124,7 +128,7 @@ The v1 contract recognizes these source kinds:
 
 `SOLVER_VISIBLE_REQUIREMENT_CONTRACT` is the sanitized controller-owned A7 handoff defined by `INSTRUCTION_POLICY.md`. Its content is solver-safe requirement material, but the durable control-plane artifact remains `solver_visible=false`; it is not a second solver-facing specification.
 
-Adding a source kind requires updating the machine contract, chunk schema and validator. Indexers must not invent arbitrary categories.
+Adding a source kind requires updating the machine contract, chunk schema and validator. Indexers and dynamic adapters must not invent arbitrary categories.
 
 ## Source-profile constraints
 
@@ -231,6 +235,7 @@ Semantic judgments, reviewer verdicts and acceptance decisions are not cached by
 `.terminus/retrieval/` currently provides:
 
 - independent commit-bound Git-blob indexing for control-plane and task snapshots;
+- explicit provenance-aware ingestion for review packets/results, session state, CI runtime evidence, model trials, final package evidence and public references;
 - SQLite document/chunk/manifests storage;
 - exact metadata/path/symbol/section/text retrieval;
 - SQLite FTS5 lexical retrieval with deterministic Python BM25 fallback;
@@ -250,14 +255,26 @@ The reference engine does not require an OpenAI API key, a hosted vector databas
 
 The default repository scanner intentionally does not auto-ingest review packets/results, CI logs, session snapshots, model trials or final package evidence merely because those files/data exist. Those evidence types require exact provenance such as packet binding, role-contract hash, review-scope hash, CI run ID or external trial identity.
 
-A future/provenance-aware ingestion adapter may add them only when it can supply the required metadata truthfully. Until then, packet-bound and dynamic evidence remains directly read through the existing GitHub/CI/controller workflow.
+The implemented `DynamicEvidenceIngestor` in `.terminus/retrieval/ingestion.py` is the only reference path for persisting those source kinds into the local retrieval store. Its governing contract is `.terminus/agents/DYNAMIC_EVIDENCE_INGESTION.md`.
+
+Repository-backed dynamic evidence is read from an explicit immutable Git `source_commit` and checked against embedded task/control-plane/review/session bindings. Session policy identities are cross-checked against actual policy files at that source commit rather than trusted from the session itself.
+
+External dynamic evidence is never auto-fetched by the local engine. An authorized controller/executor supplies exact content and origin URI from the GitHub/CI/Harbor/model/submission workflow; the ingestor assigns a content-addressed `source_version` and validates all source-profile task/run bindings before persistence.
+
+Dynamic evidence is projected to one stage and explicit consumer-role set, and the same authorization function used at retrieval time must approve every projection before it is stored. Missing or contradictory provenance fails closed.
+
+Normal ChatGPT may continue to bypass local persistence and read the same dynamic evidence directly through authorized connectors. The ingestor is an optimization/auditability layer, not a new authority source.
 
 ## Anti-leakage invariants
 
 - a valid canonical role cannot borrow the evidence authority of an unrelated stage;
+- an active review packet may be projected only to its own reviewer role and/or CI Orchestrator, never another specialist merely sharing the stage;
+- review-result producer provenance is not rewritten to match its retrieval consumer;
+- stale session policy claims cannot self-authenticate; they must match policy files at the immutable source commit;
 - `SOLUTION_ORACLE`, `VERIFIER_PRIVATE`, private creator design, prior reviews, and model-trial evidence remain inaccessible to solver-visible-only executions even if their vectors/cache rows are physically colocated;
 - a `SOLUTION_ORACLE` chunk cannot be metadata-valid with `solver_visible=true` or evidence class `SOLVER_VISIBLE_TASK`;
 - task and control-plane commits are separate freshness bindings and must not be silently conflated;
+- external dynamic evidence changes source version when its content changes;
 - a changed authorized candidate pool invalidates retrieval-result cache reuse even if no new global manifest was written;
 - a changed task/control-plane commit must not reuse stale chunks merely because the path and text similarity remain high;
 - a role/packet exclusion always wins over stage applicability metadata;
