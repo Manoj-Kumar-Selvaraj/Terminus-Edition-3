@@ -60,14 +60,10 @@ class RetrievalEngine:
 
         authority_hash = self._authority_hash(context)
         query_hash = self._query_hash(query, mode)
-        manifest = self.store.latest_manifest() or {}
-        cache_key = self._sha(
-            authority_hash,
-            query_hash,
-            str(manifest.get("source_set_hash", "no-manifest")),
-        )
+        candidate_set_hash = self._candidate_set_hash(authorized)
+        cache_key = self._sha(authority_hash, query_hash, candidate_set_hash)
         cached = self.store.get_cached_result(cache_key)
-        if cached:
+        if cached is not None:
             cached_rows = self.store.rows_by_ids(cached)
             still_authorized = [
                 row
@@ -112,28 +108,39 @@ class RetrievalEngine:
         max_chars: int = 30000,
     ) -> dict[str, Any]:
         """Return exact-read requirements plus bounded authorized retrieved context."""
+        if max_chars < 0:
+            raise ValueError("max_chars must be non-negative")
         context = self.policy.validate_context(context)
         results = self.retrieve(context, query)
         included: list[dict[str, Any]] = []
         used = 0
         for result in results:
-            if used + len(result.content) > max_chars and included:
+            remaining = max_chars - used
+            if remaining <= 0:
                 break
-            included.append(
-                {
-                    "chunk_id": result.chunk_id,
-                    "source_path": result.metadata.get("source_path"),
-                    "source_kind": result.metadata.get("source_kind"),
-                    "evidence_class": result.metadata.get("evidence_class"),
-                    "structural_locator": result.metadata.get("structural_locator"),
-                    "content": result.content,
-                    "score": result.fused_score
-                    or result.lexical_score
-                    or result.vector_score
-                    or result.exact_score,
-                }
-            )
-            used += len(result.content)
+            content = result.content
+            truncated = len(content) > remaining
+            if truncated:
+                content = content[:remaining]
+            item = {
+                "chunk_id": result.chunk_id,
+                "source_path": result.metadata.get("source_path"),
+                "source_kind": result.metadata.get("source_kind"),
+                "evidence_class": result.metadata.get("evidence_class"),
+                "structural_locator": result.metadata.get("structural_locator"),
+                "content_hash": result.metadata.get("content_hash"),
+                "content": content,
+                "score": result.fused_score
+                or result.lexical_score
+                or result.vector_score
+                or result.exact_score,
+            }
+            if truncated:
+                item["truncated"] = True
+            included.append(item)
+            used += len(content)
+            if truncated:
+                break
         return {
             "stage_id": context.stage_id,
             "role_id": context.role_id,
@@ -363,6 +370,20 @@ class RetrievalEngine:
         }
         return RetrievalEngine._sha(
             json.dumps(payload, sort_keys=True, separators=(",", ":"))
+        )
+
+    @staticmethod
+    def _candidate_set_hash(rows: Sequence[dict[str, Any]]) -> str:
+        """Bind cached rankings to the actual authorized pre-rank candidate pool."""
+        identities = sorted(
+            (
+                str(row["chunk_id"]),
+                str(row["metadata"].get("content_hash", "")),
+            )
+            for row in rows
+        )
+        return RetrievalEngine._sha(
+            json.dumps(identities, separators=(",", ":"))
         )
 
     @staticmethod
