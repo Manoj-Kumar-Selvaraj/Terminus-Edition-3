@@ -39,10 +39,12 @@ jobs:
             .terminus/validate_agent_system.py \
             .terminus/validate_stage_contracts.py \
             .terminus/validate_retrieval_metadata.py \
+            .terminus/validate_retrieval_engine.py \
             .terminus/review_contract.py \
             .terminus/new_review_packet.py \
             .terminus/validate_review_freshness.py \
             .terminus/validate_task_complexity.py
+          python3 -m compileall -q .terminus/retrieval
 
       - name: Install pinned control-plane test tools
         run: python3 -m pip install --quiet ruff==0.14.10 pytest==8.4.1
@@ -64,6 +66,10 @@ jobs:
       - name: Validate retrieval metadata contract
         if: ${{ !cancelled() }}
         run: python3 .terminus/validate_retrieval_metadata.py
+
+      - name: Validate retrieval engine
+        if: ${{ !cancelled() }}
+        run: python3 .terminus/validate_retrieval_engine.py
 
       - name: Validate current review freshness and commit binding
         if: ${{ !cancelled() }}
