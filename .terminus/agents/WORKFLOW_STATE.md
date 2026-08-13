@@ -22,9 +22,11 @@ The state resolver never turns historical chat, desired outcome, an old session,
 
 `stage/role contract -> invocation -> validated execution record -> hash-chained ledger -> derived workflow state`.
 
-A materialized `.terminus/workflows/<task>/state.json` is a deterministic cache/view. It must be discarded or regenerated whenever its task commit, control-plane commit, ledger head, or explicit freshness input changes.
+A materialized `.terminus/workflows/<task>/state.json` is a deterministic cache/view. It must be discarded or regenerated whenever its task commit, control-plane commit, ledger head, or explicit freshness input changes. `.terminus/workflows/` is intentionally ignored by Git; `.terminus/executions/` is not ignored because its immutable records and ledger are durable provenance.
 
 Legacy `.terminus/sessions/<task>.md` remains useful controller context under existing policy, but it is not silently converted into execution records. Migration requires explicit evidence-backed records; missing history must remain `MISSING` rather than fabricated.
+
+Execution records, execution ledgers and materialized workflow snapshots are not ordinary static RAG sources. The generic repository indexer must leave `.terminus/executions/` and `.terminus/workflows/` outside its automatic control-plane/task scan. Any future retrieval exposure of this state requires an explicit provenance-aware adapter and the normal evidence-visibility authorization path.
 
 ## Ledger
 
@@ -46,6 +48,8 @@ For each stage, state resolution uses the last valid ledger event for that stage
 
 A later `RETRY`, `ROUTE`, or `BLOCK` result therefore supersedes an earlier `ADVANCE` for the same stage. A later successful attempt supersedes the earlier failed attempt.
 
+Ledger sequence is also a dependency boundary. For a downstream stage to remain current, its selected ledger event must occur **after** the selected current event of every executable predecessor. Therefore an upstream rerun invalidates older downstream results even when the task commit and control-plane commit did not change. Same-commit semantic repair/review cycles cannot preserve evidence that predates the repaired predecessor merely because hashes still match.
+
 ## Currentness
 
 A stage record can be `CURRENT` only when:
@@ -54,9 +58,10 @@ A stage record can be `CURRENT` only when:
 - its record ID/hash and execution semantics are valid under that control-plane snapshot;
 - none of its explicit evidence refs is invalidated by the supplied freshness overlay;
 - all predecessor nodes in the canonical workflow are current;
+- its ledger event is temporally newer than the latest selected current executable predecessor event;
 - its disposition is `ADVANCE` to the exact next registered stage/state/END.
 
-If the latest record exists but its task/control/evidence binding is no longer current, the stage is `STALE`. If no ledger event exists, it is `MISSING`. A current `ROUTE`, `RETRY`, or `BLOCK` record makes that node `BLOCKED` for forward progress and carries the required controller action.
+If the latest record exists but its task/control/evidence/temporal binding is no longer current, the stage is `STALE`. If no ledger event exists, it is `MISSING`. A current `ROUTE`, `RETRY`, or `BLOCK` record makes that node `BLOCKED` for forward progress and carries the required controller action.
 
 Once an upstream node is not current, later historical records are marked `STALE` by dependency propagation even if their own hashes still match. Downstream acceptance cannot survive a non-current predecessor.
 
