@@ -76,11 +76,11 @@ EVIDENCE_CLASSES = {
     "PRIVATE_CREATION_DESIGN",
     "SOLUTION_ORACLE",
     "VERIFIER_PRIVATE",
-    "CURRENT_REVIEW_PACKETS",
+    "CURRENT_REVIEW_PACKET",
     "PRIOR_REVIEW_RESULTS",
     "CI_RUNTIME_EVIDENCE",
     "DURABLE_SESSION_STATE",
-    "PUBLIC_REFERENCES",
+    "PUBLIC_REFERENCE",
     "MODEL_TRIAL_EVIDENCE",
     "FINAL_PACKAGE_EVIDENCE",
 }
@@ -269,17 +269,19 @@ def validate_visibility(errors: list[str], stage_ids: set[str]) -> tuple[str, in
 
     require_markers(errors, policy, VISIBILITY_POLICY, [
         "Evidence visibility policy version: `1.1`",
-        "required evidence",
-        "allowed optional evidence",
-        "excluded evidence",
-        "retrieval",
-        "RAG",
+        "required_evidence_classes",
+        "allowed_optional_evidence_classes",
+        "excluded_evidence_classes",
+        "Retrieval modes",
+        "Future RAG requirement",
     ])
 
     if visibility.get("visibility_version") != "1.1":
         errors.append("evidence visibility registry must declare visibility_version 1.1")
-    if schema.get("$id") != "terminus-evidence-visibility-v1.1":
-        errors.append("evidence-visibility schema must declare $id terminus-evidence-visibility-v1.1")
+    if schema.get("$id") != "terminus-evidence-visibility-v1":
+        errors.append("evidence-visibility schema must declare $id terminus-evidence-visibility-v1")
+    if schema.get("additionalProperties") is not False:
+        errors.append("evidence-visibility schema must reject undeclared top-level fields")
 
     classes = visibility.get("evidence_classes")
     if not isinstance(classes, dict) or set(classes) != EVIDENCE_CLASSES:
@@ -287,28 +289,42 @@ def validate_visibility(errors: list[str], stage_ids: set[str]) -> tuple[str, in
         errors.append(f"evidence classes mismatch missing={sorted(EVIDENCE_CLASSES-actual)} extra={sorted(actual-EVIDENCE_CLASSES)}")
         classes = {}
 
-    entries = visibility.get("stages")
-    if not isinstance(entries, dict):
-        errors.append("evidence_visibility.stages must be an object")
-        entries = {}
+    raw_entries = visibility.get("stages")
+    if not isinstance(raw_entries, list):
+        errors.append("evidence_visibility.stages must be a list")
+        raw_entries = []
+
+    entries: dict[str, dict] = {}
+    for index, entry in enumerate(raw_entries):
+        if not isinstance(entry, dict):
+            errors.append(f"evidence_visibility.stages[{index}] must be an object")
+            continue
+        stage_id = entry.get("stage_id")
+        if not isinstance(stage_id, str) or not stage_id:
+            errors.append(f"evidence_visibility.stages[{index}] missing valid stage_id")
+            continue
+        if stage_id in entries:
+            errors.append(f"duplicate evidence visibility stage {stage_id}")
+        entries[stage_id] = entry
+
     if set(entries) != stage_ids:
         errors.append(f"evidence visibility stage coverage mismatch missing={sorted(stage_ids-set(entries))} extra={sorted(set(entries)-stage_ids)}")
 
     for stage_id, contract in entries.items():
-        if not isinstance(contract, dict):
-            errors.append(f"{stage_id}: visibility contract must be object")
-            continue
-        required = set(string_list(errors, f"{stage_id}.visibility.required", contract.get("required")))
-        allowed = set(string_list(errors, f"{stage_id}.visibility.allowed_optional", contract.get("allowed_optional")))
-        excluded = set(string_list(errors, f"{stage_id}.visibility.excluded", contract.get("excluded")))
+        required = set(string_list(errors, f"{stage_id}.required_evidence_classes", contract.get("required_evidence_classes")))
+        allowed = set(string_list(errors, f"{stage_id}.allowed_optional_evidence_classes", contract.get("allowed_optional_evidence_classes")))
+        excluded = set(string_list(errors, f"{stage_id}.excluded_evidence_classes", contract.get("excluded_evidence_classes")))
         if (required & allowed) or (required & excluded) or (allowed & excluded):
-            errors.append(f"{stage_id}: visibility buckets overlap")
+            errors.append(f"{stage_id}: evidence visibility buckets overlap")
         if required | allowed | excluded != EVIDENCE_CLASSES:
             errors.append(f"{stage_id}: every evidence class must be classified exactly once")
         if contract.get("retrieval_mode") not in VALID_RETRIEVAL_MODES:
             errors.append(f"{stage_id}: invalid retrieval_mode {contract.get('retrieval_mode')!r}")
-        if contract.get("output_disposition") not in VALID_OUTPUT_DISPOSITIONS:
-            errors.append(f"{stage_id}: invalid output_disposition {contract.get('output_disposition')!r}")
+        dispositions = set(string_list(errors, f"{stage_id}.output_disposition", contract.get("output_disposition")))
+        if not dispositions:
+            errors.append(f"{stage_id}: output_disposition cannot be empty")
+        if not dispositions <= VALID_OUTPUT_DISPOSITIONS:
+            errors.append(f"{stage_id}: invalid output_disposition values {sorted(dispositions-VALID_OUTPUT_DISPOSITIONS)}")
 
     critical = {
         "INSTRUCTION_DRAFT": {"PRIVATE_CREATION_DESIGN", "SOLUTION_ORACLE", "VERIFIER_PRIVATE", "PRIOR_REVIEW_RESULTS"},
@@ -316,13 +332,12 @@ def validate_visibility(errors: list[str], stage_ids: set[str]) -> tuple[str, in
         "MODEL_DIAGNOSTIC": {"PRIVATE_CREATION_DESIGN", "SOLUTION_ORACLE", "VERIFIER_PRIVATE", "PRIOR_REVIEW_RESULTS", "MODEL_TRIAL_EVIDENCE"},
     }
     for stage_id, required_exclusions in critical.items():
-        contract = entries.get(stage_id, {})
-        excluded = set(contract.get("excluded", [])) if isinstance(contract, dict) else set()
+        excluded = set(entries.get(stage_id, {}).get("excluded_evidence_classes", []))
         missing = required_exclusions - excluded
         if missing:
             errors.append(f"{stage_id}: missing critical exclusions {sorted(missing)}")
 
-    if isinstance(entries.get("MODEL_DIAGNOSTIC"), dict) and entries["MODEL_DIAGNOSTIC"].get("retrieval_mode") != "SOLVER_VISIBLE_ONLY":
+    if entries.get("MODEL_DIAGNOSTIC", {}).get("retrieval_mode") != "SOLVER_VISIBLE_ONLY":
         errors.append("MODEL_DIAGNOSTIC must use SOLVER_VISIBLE_ONLY retrieval mode")
 
     return str(visibility.get("visibility_version", "?")), len(entries), len(classes)
@@ -357,6 +372,8 @@ def validate_completion(errors: list[str], stages: dict[str, dict]) -> str:
         errors.append("stage completion overlay must declare completion_version 1.2")
     if schema.get("$id") != "terminus-stage-contract-completion-v1.2":
         errors.append("stage-completion schema must declare $id terminus-stage-contract-completion-v1.2")
+    if schema.get("additionalProperties") is not False:
+        errors.append("stage-completion schema must reject undeclared top-level fields")
     if completion.get("canonical_creation_chain") != EXPECTED_CHAIN:
         errors.append("stage completion canonical_creation_chain does not match required chain")
 
@@ -386,16 +403,14 @@ def validate_completion(errors: list[str], stages: dict[str, dict]) -> str:
             errors.append(f"{stage_id}: phase_prompt_file does not exist: {prompt}")
 
     for stage_id in ("SYSTEM_ARCHITECTURE", "ENVIRONMENT_BUILD"):
-        phase = phases.get(stage_id, {})
-        if isinstance(phase, dict) and phase.get("phase_prompt_file") != ".terminus/agents/A2_PHASE_PROMPTS.md":
+        if phases.get(stage_id, {}).get("phase_prompt_file") != ".terminus/agents/A2_PHASE_PROMPTS.md":
             errors.append(f"{stage_id}: must use .terminus/agents/A2_PHASE_PROMPTS.md")
 
-    arch = phases.get("SYSTEM_ARCHITECTURE", {})
-    if isinstance(arch, dict) and "DEFECT_TOPOLOGY" not in set(arch.get("must_not_consume", [])):
+    if "DEFECT_TOPOLOGY" not in set(phases.get("SYSTEM_ARCHITECTURE", {}).get("must_not_consume", [])):
         errors.append("SYSTEM_ARCHITECTURE must not consume DEFECT_TOPOLOGY")
 
-    freeze_states = completion.get("state_contracts")
-    freeze = freeze_states.get("FROZEN_CANDIDATE") if isinstance(freeze_states, dict) else None
+    states = completion.get("state_contracts")
+    freeze = states.get("FROZEN_CANDIDATE") if isinstance(states, dict) else None
     if not isinstance(freeze, dict):
         errors.append("completion overlay must define FROZEN_CANDIDATE")
     else:
