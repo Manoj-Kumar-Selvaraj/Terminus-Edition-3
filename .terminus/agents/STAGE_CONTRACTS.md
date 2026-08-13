@@ -9,7 +9,8 @@ The canonical machine-readable lifecycle registry is `.terminus/agents/stage_con
 The lifecycle registry is complemented by:
 - `.terminus/agents/evidence_visibility.json` and `.terminus/agents/EVIDENCE_VISIBILITY.md` for v1.1 evidence/retrieval authorization;
 - `.terminus/agents/stage_contract_completion.json` and `.terminus/agents/STAGE_CONTRACT_COMPLETION.md` for v1.2 phase ordering and explicit lifecycle-state semantics;
-- `.terminus/agents/retrieval_metadata.json` and `.terminus/agents/RETRIEVAL_METADATA.md` for the canonical provenance/chunk/index envelope used by future exact, lexical, vector and cached retrieval.
+- `.terminus/agents/retrieval_metadata.json` and `.terminus/agents/RETRIEVAL_METADATA.md` for the canonical provenance/chunk/index envelope;
+- `.terminus/agents/RETRIEVAL_ENGINE.md` and `.terminus/retrieval/` for the optional local exact/BM25/vector/hybrid retrieval adapter and its caches.
 
 `AGENT_SYSTEM.md` remains the system-wide policy/ownership source. These files specialize execution structure; they do not override higher-precedence Edition 3 rules, Protocol evidence boundaries, packet exclusions, or role authority.
 
@@ -87,7 +88,21 @@ The controller should project, for the selected stage:
 
 Do not inject the entire stage registry or entire control plane when one bounded contract is sufficient.
 
-When retrieval is used, the controller first resolves stage/role/packet authorization and then applies `.terminus/agents/RETRIEVAL_METADATA.md`. Metadata may narrow candidate selection through provenance, applicability and freshness; it never expands the evidence pool authorized by the stage/role/packet contract.
+When retrieval is available, the controller first resolves stage/role/packet authorization, exact-reads the stage-declared `policy_files`/`prompt_files`, then applies `.terminus/agents/RETRIEVAL_METADATA.md` and `.terminus/agents/RETRIEVAL_ENGINE.md` only to select additional authorized evidence. Retrieval is an optional projection adapter, not a new lifecycle stage and not an authority source. Metadata, ranking or cache hits may narrow/select context; they never expand the evidence pool authorized by the stage/role/packet contract.
+
+If the local retrieval index is absent or the execution surface cannot run it, continue through direct exact repository/GitHub reads of the same authorized evidence. Missing RAG infrastructure by itself is not `INSUFFICIENT_EVIDENCE` when the required evidence remains directly accessible.
+
+## Retrieval adapter contract
+
+For a registered stage, the controller may use `.terminus/retrieval/cli.py context` or the equivalent library API after stage resolution. The adapter returns:
+
+- `mandatory_exact_reads` — stage policy/prompt files that must still be read exactly;
+- `authorized_evidence_classes` — the resolved evidence-class ceiling after stage/role restrictions;
+- bounded retrieved chunks with source path/kind, evidence class, structural locator and score.
+
+The controller must preserve narrower packet/role exclusions when constructing the `InvocationContext`. Packet-bound reviewers remain packet-bound even when the physical SQLite index contains broader material.
+
+The local index is built from immutable Git blobs and is commit-bound. Dynamic review/CI/model evidence is not auto-classified by the repository scanner because packet hashes, run IDs and role/review-scope bindings must come from explicit provenance-aware ingestion or direct reads.
 
 ## Creation stage index
 
@@ -150,7 +165,7 @@ When evidence indicates a different owner than the registry's common failure rou
 
 Where Protocol defines a stricter exact-commit or scope-hash rule, that stricter rule controls. Stage contracts must never be used to preserve evidence that Protocol declares stale.
 
-Retrieval indexes and caches are subject to the same principle. `.terminus/agents/retrieval_metadata.json` declares content/commit/policy/packet freshness scopes for indexed units; a retrieval cache or index hit is unusable when any declared binding is stale.
+Retrieval indexes and caches are subject to the same principle. `.terminus/agents/retrieval_metadata.json` declares content/commit/policy/packet freshness scopes for indexed units; a retrieval cache or index hit is unusable when any declared binding is stale. Parse/chunk reuse is keyed by immutable source version + chunking strategy/version, embedding reuse is keyed by content/provider identity, and retrieval-result reuse is authority/query/index-bound and re-authorized before use. Semantic verdicts are never cached by this layer.
 
 ## Layer resolution
 
@@ -160,6 +175,7 @@ Controllers resolve the structured contract in this order:
 2. `stage_contract_completion.json` — phase ordering and explicit non-executable state boundaries;
 3. `evidence_visibility.json` — required/optional/excluded evidence classes and retrieval mode;
 4. role/packet-specific rules — narrower evidence and provenance restrictions;
-5. `retrieval_metadata.json` — immutable source identity, chunking, applicability and freshness metadata for the already-authorized candidate pool.
+5. `retrieval_metadata.json` — immutable source identity, chunking, applicability and freshness metadata for the already-authorized candidate pool;
+6. `RETRIEVAL_ENGINE.md` / `.terminus/retrieval/` — optional exact/BM25/vector/hybrid ranking, context assembly and cache reuse over that authorized pool.
 
-A lower layer may narrow an earlier layer; it may never widen a higher-precedence policy or evidence boundary. Future RAG/caching must consume the same resolved contract and cannot bypass phase, freeze, visibility or freshness rules.
+A lower layer may narrow an earlier layer; it may never widen a higher-precedence policy or evidence boundary. Retrieval/caching consumes the same resolved contract and cannot bypass phase, freeze, visibility or freshness rules.
