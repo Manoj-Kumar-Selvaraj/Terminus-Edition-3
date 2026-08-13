@@ -4,6 +4,7 @@
     "SYSTEM_ARCHITECTURE": {
       "execution_mode": "DESIGN_ONLY",
       "owner_invocation": "A2 System Architect",
+      "phase_prompt_file": ".terminus/agents/A2_PHASE_PROMPTS.md",
       "requires_prior": ["WORK_PACKAGE_RESEARCH"],
       "must_not_consume": ["DEFECT_TOPOLOGY", "SOLUTION_ORACLE", "VERIFIER_PRIVATE"],
       "must_not_produce": ["BROKEN_STARTER", "DEFECT_INJECTION", "<task>/environment/"],
@@ -18,6 +19,7 @@
     "DEFECT_TOPOLOGY": {
       "execution_mode": "PRIVATE_DESIGN",
       "owner_invocation": "A3 Defect Topology Designer",
+      "phase_prompt_file": ".terminus/agents/CREATOR_PROMPTS.md",
       "requires_prior": ["SYSTEM_ARCHITECTURE"],
       "must_not_consume": ["SOLUTION_ORACLE", "VERIFIER_PRIVATE"],
       "must_not_produce": ["<task>/environment/", "<task>/tests/"],
@@ -32,6 +34,7 @@
     "ENVIRONMENT_BUILD": {
       "execution_mode": "MATERIALIZATION",
       "owner_invocation": "A2 Environment Builder",
+      "phase_prompt_file": ".terminus/agents/A2_PHASE_PROMPTS.md",
       "requires_prior": ["SYSTEM_ARCHITECTURE", "DEFECT_TOPOLOGY"],
       "must_not_consume": ["SOLUTION_ORACLE", "VERIFIER_PRIVATE"],
       "must_not_produce": ["UNTRACKED_DEFECTS"],
@@ -111,6 +114,7 @@
     "SYSTEM_ARCHITECTURE is design-only and precedes DEFECT_TOPOLOGY",
     "DEFECT_TOPOLOGY is private design against the clean architecture and precedes starter materialization",
     "ENVIRONMENT_BUILD is the second A2 invocation and consumes both clean architecture and approved defect topology",
+    "A2 phase invocations use the stage-specific prompt contract in A2_PHASE_PROMPTS.md",
     "FROZEN_CANDIDATE is an exact-evidence lifecycle state, not a free-form label",
     "any stale_on trigger invalidates the affected state/evidence before advancement"
   ]
