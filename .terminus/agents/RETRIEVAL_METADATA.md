@@ -115,7 +115,10 @@ The v1 contract recognizes these source kinds:
 - `TASK_CODE`
 - `TASK_CONFIGURATION`
 - `SOLVER_VISIBLE_REQUIREMENT_CONTRACT`
-- `PRIVATE_DESIGN`
+- `PRIVATE_WORK_PACKAGE_DESIGN`
+- `PRIVATE_SYSTEM_ARCHITECTURE`
+- `PRIVATE_DEFECT_TOPOLOGY`
+- `PRIVATE_TEST_MAP`
 - `SOLUTION_ORACLE`
 - `VERIFIER_PRIVATE`
 - `REVIEW_PACKET`
@@ -127,6 +130,10 @@ The v1 contract recognizes these source kinds:
 - `PUBLIC_REFERENCE`
 
 `SOLVER_VISIBLE_REQUIREMENT_CONTRACT` is the sanitized controller-owned A7 handoff defined by `INSTRUCTION_POLICY.md`. Its content is solver-safe requirement material, but the durable control-plane artifact remains `solver_visible=false`; it is not a second solver-facing specification.
+
+Private creation material is split by decision surface rather than indexed as one broad `PRIVATE_DESIGN` bucket. The repository indexer recognizes only the declared work-package, architecture, defect-topology and test-map filename contracts and assigns each subtype narrow stage applicability. An unknown `.terminus/designs/*` artifact is not indexed merely because it is private JSON/Markdown.
+
+`REVIEW_RESULT` means a **current, provenance-bound review result projection**, not a generic historical verdict bucket. It is classified as `CURRENT_REVIEW_PACKET`, remains `solver_visible=false`, and requires task/control-plane/role-contract/packet bindings. Historical prior results remain governed by the `PRIOR_REVIEW_RESULTS` evidence class and are not made current by relabeling.
 
 Adding a source kind requires updating the machine contract, chunk schema and validator. Indexers and dynamic adapters must not invent arbitrary categories.
 
@@ -154,6 +161,7 @@ Preferred boundaries:
 - Markdown policy/docs: heading subtree, preserving heading ancestry in `section_path`;
 - stage/visibility/metadata JSON: one stage/evidence-class/profile object per chunk where practical;
 - solver-visible requirement projection: one coherent requirement family/object without mixing private design material;
+- private creation design: one declared work-package/architecture/defect-topology/test-map object family, never a mixed private bucket;
 - source code: module/class/function/symbol boundary, with file/module context attached;
 - instruction: whole instruction when within the Edition 3 concise limit; otherwise paragraph/bullet groups without separating a requirement from its qualifiers;
 - review packet: packet identity/allowed evidence/excluded evidence/result schema as deterministic sections, never mixed with prior results;
@@ -268,11 +276,12 @@ Normal ChatGPT may continue to bypass local persistence and read the same dynami
 ## Anti-leakage invariants
 
 - a valid canonical role cannot borrow the evidence authority of an unrelated stage;
-- an active review packet may be projected only to its own reviewer role and/or CI Orchestrator, never another specialist merely sharing the stage;
-- review-result producer provenance is not rewritten to match its retrieval consumer;
+- an active review packet/result may be projected only to its authorized reviewer/controller consumer set, never another specialist merely sharing the stage;
+- current review-result producer provenance is not rewritten to match its retrieval consumer, and historical results are not relabeled current;
 - stale session policy claims cannot self-authenticate; they must match policy files at the immutable source commit;
 - `SOLUTION_ORACLE`, `VERIFIER_PRIVATE`, private creator design, prior reviews, and model-trial evidence remain inaccessible to solver-visible-only executions even if their vectors/cache rows are physically colocated;
 - a `SOLUTION_ORACLE` chunk cannot be metadata-valid with `solver_visible=true` or evidence class `SOLVER_VISIBLE_TASK`;
+- unknown private-design filenames fail closed instead of inheriting a broad private source profile;
 - task and control-plane commits are separate freshness bindings and must not be silently conflated;
 - external dynamic evidence changes source version when its content changes;
 - a changed authorized candidate pool invalidates retrieval-result cache reuse even if no new global manifest was written;
