@@ -128,8 +128,10 @@ The main system bindings are:
 | deterministic validation / freeze entry | `DETERMINISTIC_VALIDATION` -> `FROZEN_CANDIDATE` | creation pipeline/quality prompts + completion contract | Oracle/NOP/F2P/P2P execution; controller alone records freeze |
 | frozen quality interlock | `QUALITY_INTERLOCK` | Protocol, quality registry/prompts, instruction policy | `validate_quality_interlock.py`, `validate_review_freshness.py`; cold packet-bound Q4/Q6 |
 | ordinary Pre-LLMaJ review | `PRE_LLMAJ` | `PRE_LLMAJ.md`, `PROMPTS.md`, Comprehensive Reviewer | freshness/provenance validation + specialist/comprehensive judgment |
-| pre-model diagnostic | `MODEL_DIAGNOSTIC` | Q8 registry/prompt | provenance checks; diagnostic simulation only |
-| official difficulty/solvability | `OFFICIAL_MODEL_TRIALS`, `TRIAL_ANALYSIS` | this policy + role prompts | `analyze_difficulty.py`; Difficulty Reviewer/Trajectory Analyst |
+| isolated pre-model diagnostics | `MODEL_DIAGNOSTIC_GPT`, `MODEL_DIAGNOSTIC_CLAUDE`, `MODEL_DIAGNOSTIC_AGGREGATE` | Q8 registry/prompt | solver-visible-only provenance/isolation checks; diagnostics only, never official evidence |
+| Harbor LLMaJ | `HARBOR_LLMAJ` | this policy + Orchestrator contract | external dispatch/await + immutable run/result provenance; PASS mandatory before official trials |
+| official model trials / trajectory analysis | `OFFICIAL_MODEL_TRIALS`, `TRIAL_ANALYSIS` | this policy + role prompts | `analyze_difficulty.py`; exact 5+5 trials + Trajectory Analyst |
+| empirical difficulty decision | `DIFFICULTY_ASSESSMENT` | this policy + Difficulty Reviewer prompt | `analyze_difficulty.py` + acceptance predicates; tier/solvability decision after trajectory analysis |
 | final review/package | `FINAL_REVIEW` | reviewer checklist + prompts | package/freshness validators; Compliance + Human Quality |
 | submission readiness | `SUBMISSION_READY` | Orchestrator/Protocol/this policy | `validate_review_freshness.py`; controller gate reconciliation |
 
@@ -235,14 +237,20 @@ Source profiles are fail-closed: source kind fixes evidence class, sensitivity, 
 
 ## Official difficulty and solvability policy
 
-Control-plane binding: `MODEL_DIAGNOSTIC`, `OFFICIAL_MODEL_TRIALS`, `TRIAL_ANALYSIS`. Detailed reviewer prompts live in `.terminus/agents/QUALITY_AGENT_PROMPTS.md` and `.terminus/agents/PROMPTS.md`; deterministic aggregation uses `.terminus/analyze_difficulty.py`.
+Control-plane binding: `MODEL_DIAGNOSTIC_GPT`, `MODEL_DIAGNOSTIC_CLAUDE`, `MODEL_DIAGNOSTIC_AGGREGATE`, `HARBOR_LLMAJ`, `OFFICIAL_MODEL_TRIALS`, `TRIAL_ANALYSIS`, `DIFFICULTY_ASSESSMENT`. Detailed reviewer prompts live in `.terminus/agents/QUALITY_AGENT_PROMPTS.md` and `.terminus/agents/PROMPTS.md`; deterministic aggregation uses `.terminus/analyze_difficulty.py`.
+
+The evaluation sequence is mandatory and ordered:
+
+`PRE_LLMAJ -> GPT diagnostic -> Claude diagnostic -> Q8 aggregate -> Harbor LLMaJ -> official 5+5 trials -> trajectory analysis -> empirical difficulty assessment`.
+
+Harbor LLMaJ must return a current, provenance-bound `PASS` before official model trials are dispatched. A `DISPATCHED` Harbor record is pending state, never acceptance evidence.
 
 Final evaluation is 10 official trials total:
 
 - GPT-5.5 / Codex ×5;
 - Claude Opus 4.8 / Claude Code ×5.
 
-Combined complete-run success sets the tier:
+Combined complete-run success sets the empirical tier:
 
 - `<20%` frontier;
 - `20%–<50%` advanced;
@@ -252,13 +260,15 @@ Combined complete-run success sets the tier:
 
 A five-run model suite is diagnostic only. The 5-vs-10 question is resolved; do not create a `POLICY_CONFLICT` for it.
 
-Solvability is separate: every individual verifier case must pass at least once somewhere across the combined 10 official trials. Any 0/10 case blocks acceptance and requires trajectory analysis.
+Solvability is separate: every individual verifier case must pass at least once somewhere across the combined 10 official trials. Any 0/10 case blocks acceptance and requires trajectory analysis/remediation before difficulty can PASS.
 
-Q8 is an earlier diagnostic simulation only. `GPT_PERSPECTIVE`/`CLAUDE_PERSPECTIVE` output cannot set the tier, satisfy per-test solvability, or be represented as actual GPT-5.5/Claude Opus 4.8 evidence.
+`TRIAL_ANALYSIS` owns trajectory/failure classification. `DIFFICULTY_ASSESSMENT` is a separate Difficulty Reviewer decision right and may PASS only when the combined success rate is below 100%, every verifier case is at least 1/10, no unresolved 0/10 case remains, trajectory analysis is complete and the declared metadata tier matches the empirical tier.
+
+Q8 is an earlier diagnostic simulation only. `GPT_PERSPECTIVE`/`CLAUDE_PERSPECTIVE` output cannot set the tier, satisfy per-test solvability, or be represented as actual GPT-5.5/Claude Opus 4.8 evidence. Each perspective is isolated until frozen; only `MODEL_DIAGNOSTIC_AGGREGATE` may compare them.
 
 ## Review evidence provenance
 
-Control-plane bindings: `QUALITY_INTERLOCK`, `PRE_LLMAJ`, `MODEL_DIAGNOSTIC`, `TRIAL_ANALYSIS`, `FINAL_REVIEW`, `SUBMISSION_READY`. Governing lifecycle/freshness policy: `.terminus/agents/PROTOCOL.md`. Packet creation: `.terminus/new_review_packet.py`. Freshness/readiness enforcement: `.terminus/validate_review_freshness.py`. Packet/result schemas: `.terminus/agents/schemas/context_packet.schema.json` and `review_result.schema.json`.
+Control-plane bindings: `QUALITY_INTERLOCK`, `PRE_LLMAJ`, `MODEL_DIAGNOSTIC_GPT`, `MODEL_DIAGNOSTIC_CLAUDE`, `MODEL_DIAGNOSTIC_AGGREGATE`, `HARBOR_LLMAJ`, `OFFICIAL_MODEL_TRIALS`, `TRIAL_ANALYSIS`, `DIFFICULTY_ASSESSMENT`, `FINAL_REVIEW`, `SUBMISSION_READY`. Governing lifecycle/freshness policy: `.terminus/agents/PROTOCOL.md`. Packet creation: `.terminus/new_review_packet.py`. Freshness/readiness enforcement: `.terminus/validate_review_freshness.py`. Packet/result schemas: `.terminus/agents/schemas/context_packet.schema.json` and `review_result.schema.json`.
 
 Current semantic review evidence uses context/result schema v3.
 
@@ -277,7 +287,7 @@ Every review execution records:
 
 `.terminus/new_review_packet.py` generates the packet and refuses dirty task/governing-policy state. `.terminus/validate_review_freshness.py` validates current ready evidence and packet/result binding. Q6 scoped reuse never rewrites its original task commit; freshness is retained only when packet/result/current production-scope hashes match exactly.
 
-Q4, Q6 and both Q8 perspective executions use the same provenance machinery. Q1/Q2/Q3/Q5/Q7 are producer/fixer evidence and cannot be promoted to semantic PASS.
+Q4, Q6 and both Q8 perspective executions use the same provenance machinery. Q1/Q2/Q3/Q5/Q7 are producer/fixer evidence and cannot be promoted to semantic PASS. External Harbor/model-trial evidence additionally carries immutable external run identity and cannot be inferred from dispatch/session prose.
 
 Historical legacy reports are retained as immutable history; they are not forced through every future schema. They also cannot support a current PASS merely because they once passed.
 
@@ -301,7 +311,7 @@ Decision right: would the current task be rejected for Edition 3 structure, envi
 
 ### Difficulty Reviewer
 
-Decision right: before trials, is difficulty genuine reasoning rather than clerical volume; after all 10 trials, what is the measured tier/solvability evidence?
+Decision right: after the complete official 10-run evidence and trajectory analysis are current, what is the empirical tier/solvability disposition, and does it match the declared task metadata tier without any 100%-success or 0/10-case acceptance defect? Pre-trial model-family diagnostics belong to Q8, not Difficulty Reviewer.
 
 ### Human Quality Reviewer
 
@@ -377,7 +387,7 @@ The table below is the human routing summary. For registered lifecycle stages, `
 | README/explanation creation | Documentation Writer |
 | README/explanation quality | Engineering Documentation Reviewer |
 | duplicate/template/artificial construction | Originality Reviewer |
-| pre/post-trial difficulty | Difficulty Reviewer |
+| empirical post-trial tier/solvability | Difficulty Reviewer |
 | trial failures/per-test 0-of-10 | Trajectory Analyst |
 | full checklist breadth | Comprehensive Reviewer |
 | material reviewer conflict or latent unchanged-scope Q4 finding | Adjudicator |
@@ -385,17 +395,19 @@ The table below is the human routing summary. For registered lifecycle stages, `
 
 ## Review order
 
-Structured bindings: `QUALITY_INTERLOCK -> PRE_LLMAJ -> MODEL_DIAGNOSTIC -> OFFICIAL_MODEL_TRIALS -> TRIAL_ANALYSIS -> FINAL_REVIEW -> SUBMISSION_READY`.
+Structured bindings:
+
+`QUALITY_INTERLOCK -> PRE_LLMAJ -> MODEL_DIAGNOSTIC_GPT -> MODEL_DIAGNOSTIC_CLAUDE -> MODEL_DIAGNOSTIC_AGGREGATE -> HARBOR_LLMAJ -> OFFICIAL_MODEL_TRIALS -> TRIAL_ANALYSIS -> DIFFICULTY_ASSESSMENT -> FINAL_REVIEW -> SUBMISSION_READY`.
 
 For a mature candidate:
 
-`deterministic preflight -> Oracle/NOP -> FROZEN_CANDIDATE -> Q4 Spec-Test Contract Reviewer + Q6 Production Logic Auditor -> QUALITY_INTERLOCK_PASS -> packet-bound Stage-B specialists -> cold Comprehensive Reviewer -> omission/conflict scan -> adjudication -> Pre-LLMaJ aggregate -> Q8 GPT_PERSPECTIVE + CLAUDE_PERSPECTIVE -> Harbor LLMaJ -> GPT×5 + Claude×5 -> combined 10-run difficulty/solvability -> Trajectory Analyst -> final Compliance + Human Quality -> package`
+`deterministic preflight -> Oracle/NOP -> FROZEN_CANDIDATE -> Q4 Spec-Test Contract Reviewer + Q6 Production Logic Auditor -> QUALITY_INTERLOCK_PASS -> packet-bound Stage-B specialists -> cold Comprehensive Reviewer -> omission/conflict scan -> adjudication -> Pre-LLMaJ aggregate -> Q8 GPT_PERSPECTIVE -> Q8 CLAUDE_PERSPECTIVE -> Q8 aggregate -> Harbor LLMaJ -> GPT×5 + Claude×5 -> combined 10-run evidence -> Trajectory Analyst -> Difficulty Reviewer empirical tier/solvability -> final Compliance + Human Quality -> package`
 
 Do not show Comprehensive Reviewer specialist verdicts before its criterion walk is frozen. Do not show Q4 Q1/Q2/Q3 conclusions before Q4 freezes its own matrix. Do not show either Q8 perspective the other result before both simulations freeze.
 
 Use `.terminus/reviewers/PRE_LLMAJ.md` panel policy 2.2 for the ordinary Pre-LLMaJ panel; the quality interlock is an additive earlier gate and Q8 is a later diagnostic simulation.
 
-Harbor LLMaJ is a required external gate even though the current machine registry focuses on repository-agent stage interfaces. The registry may not be used to skip or reorder externally required evaluation.
+Harbor LLMaJ is a first-class mandatory `EXTERNAL_GATE` stage. The controller dispatches it only after both Q8 perspectives and the aggregate are current, records immutable run identity, projects a dispatched run to `AWAIT_EXTERNAL_GATE`, and may advance to official trials only from a current provenance-bound Harbor PASS.
 
 ## Checklist severity
 
@@ -416,7 +428,7 @@ Stage-contract `stale_on` entries provide structured dependency hints. They supp
 
 Task changes stale the affected roles according to `PROTOCOL.md`. Governing reviewer-policy/calibration changes are tracked by role-contract hash so unrelated roles need not be rerun merely because another role changed.
 
-Q4 stales on instruction, referenced solver-visible contract, verifier/test, or grading-semantics changes and always requires the exact current task commit. Q6 stales on `task.toml` or solver-visible `environment/` changes; tests-only, solution-only or instruction-only task changes may preserve Q6 only when its recorded production-scope hash remains identical. Q8 stales on any solver-visible task change that could alter the simulated solve.
+Q4 stales on instruction, referenced solver-visible contract, verifier/test, or grading-semantics changes and always requires the exact current task commit. Q6 stales on `task.toml` or solver-visible `environment/` changes; tests-only, solution-only or instruction-only task changes may preserve Q6 only when its recorded production-scope hash remains identical. Q8 stales on any solver-visible task change that could alter either simulated solve or the frozen aggregate.
 
 After an exhaustive Q4 `REVISE`, the default normal budget is one consolidated repair/refreeze cycle. If the next Q4 raises a finding whose evidence was unchanged and fully reviewable in the previous exhaustive scope, classify it `LATENT_REVIEWER_OMISSION` and route to Adjudicator instead of starting another blind repair cycle. Newly introduced or repair-touched regressions may still route normally.
 
@@ -436,7 +448,7 @@ Each task has `.terminus/sessions/<task>.md`. Store current task commit, policy 
 
 For registered stages, durable session reconciliation should preserve references to the stage's required persisted artifacts/evidence rather than copying whole artifacts into session prose.
 
-Quality-aware sessions should record Q1/Q2/Q3/Q7 producer status, Q4/Q6 packet/result paths, Q5 repair evidence when invoked, and both Q8 simulation result paths when executed. When Q6 is retained across an unrelated task commit, record the unchanged `review_scope_hash` and the old/new task commits explicitly. Simulation rows must be labeled diagnostic, not official model evidence.
+Quality-aware sessions should record Q1/Q2/Q3/Q7 producer status, Q4/Q6 packet/result paths, Q5 repair evidence when invoked, both Q8 perspective result paths plus the aggregate, Harbor run/result identity, official model-trial evidence, trajectory analysis and Difficulty Assessment when reached. When Q6 is retained across an unrelated task commit, record the unchanged `review_scope_hash` and the old/new task commits explicitly. Simulation rows must be labeled diagnostic, not official model evidence.
 
 ## Submission-ready definition
 
@@ -450,15 +462,17 @@ Control-plane binding: `SUBMISSION_READY`. Expected input/output, evidence and c
 - current Stage-B semantic reviews;
 - Comprehensive Reviewer acceptable recommendation with 100% coverage;
 - Pre-LLMaJ aggregate PASS;
+- both Q8 perspective stages and the Q8 aggregate current (a permitted `SIMULATION_NOT_EXECUTED` remains diagnostic/non-official rather than being invented as a solve);
 - Harbor LLMaJ PASS;
-- all 10 model trials complete with tier below 100%;
+- all 10 model trials complete with combined success below 100%;
 - every verifier case at least 1/10;
 - Trial Analysis complete and all valid flags resolved;
+- Difficulty Assessment PASS with declared tier matching empirical tier;
 - Final Compliance current PASS;
 - Final Human Quality current PASS;
 - final package evidence;
 - no unresolved policy conflict, adjudication, circuit breaker, stale/insufficient semantic gate or open blocking finding.
 
-Q8 diagnostic simulation is strongly required by this quality workflow before expensive model-backed evaluation, but it never substitutes for the official model gates.
+Q8 diagnostic execution is a mandatory lifecycle step before Harbor/model-backed evaluation, but its output never substitutes for Harbor or the official model gates. If a simulation cannot execute, the stage must record `SIMULATION_NOT_EXECUTED` rather than fabricating model evidence.
 
 `.terminus/validate_review_freshness.py` enforces the provenance, scope-freshness and mandatory-gate invariants. A green workflow or a non-empty session evidence cell alone is never sufficient.
