@@ -340,11 +340,13 @@ If a disposable task workspace and command execution are available, attempt the 
 These are diagnostic strategy priors, not claims about actual proprietary model internals.
 
 ### Role output
+Persist only concise diagnostic observations; never persist hidden chain-of-thought, scratchpad, or private reasoning.
+
 ```text
 PERSPECTIVE: GPT_PERSPECTIVE | CLAUDE_PERSPECTIVE
 EXECUTION: EXECUTED | SIMULATION_NOT_EXECUTED
+DIAGNOSTIC_SUMMARY:
 FIRST_DIAGNOSIS:
-REASONING_CHAIN:
 FILES_TOUCHED:
 SHORTCUTS_ATTEMPTED:
 FIRST_MEANINGFUL_DIVERGENCE:
