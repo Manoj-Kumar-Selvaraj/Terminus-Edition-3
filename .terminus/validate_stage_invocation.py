@@ -37,6 +37,7 @@ POLICY_MARKERS = [
     "Deterministic identity",
     "No hidden reasoning",
     "Normal ChatGPT",
+    "single-owner rule",
 ]
 
 CODE_MARKERS = [
@@ -159,6 +160,11 @@ def main() -> int:
             str(field): {"ref": f"validator:{field}"} for field in required_fields
         }
         role_id = execution_authority.primary_role_for_stage(stage_id)
+        roles = execution_authority.roles_for_stage(stage_id)
+        if roles != frozenset({role_id}):
+            errors.append(
+                f"stage {stage_id} aggregate execution must have exactly one owner role; found {sorted(roles)}"
+            )
         try:
             packet = builder.build(
                 InvocationContext(
@@ -202,6 +208,12 @@ def main() -> int:
         errors.append("CI Orchestrator retrieval visibility must not grant A1 execution authority")
     if "CREATION_CONTROLLER" in execution_authority.roles_for_stage("WORK_PACKAGE_RESEARCH"):
         errors.append("Creation Controller routing visibility must not grant A1 execution authority")
+    if "Q4_SPEC_TEST_CONTRACT_REVIEWER" not in policy.allowed_roles_for_stage("QUALITY_INTERLOCK"):
+        errors.append("Q4 must retain review/retrieval access inside QUALITY_INTERLOCK")
+    if "Q4_SPEC_TEST_CONTRACT_REVIEWER" in execution_authority.roles_for_stage("QUALITY_INTERLOCK"):
+        errors.append("Q4 packet review must not become aggregate QUALITY_INTERLOCK execution authority")
+    if execution_authority.roles_for_stage("QUALITY_INTERLOCK") != frozenset({"CI_ORCHESTRATOR"}):
+        errors.append("QUALITY_INTERLOCK aggregate execution must belong only to CI_ORCHESTRATOR")
 
     blocked = builder.build(
         InvocationContext(
@@ -251,6 +263,25 @@ def main() -> int:
         if "execution role CI_ORCHESTRATOR is not authorized" not in str(exc):
             errors.append(f"controller observer rejection used unexpected error: {exc}")
 
+    try:
+        builder.build(
+            InvocationContext(
+                stage_id="QUALITY_INTERLOCK",
+                role_id="Q4_SPEC_TEST_CONTRACT_REVIEWER",
+                control_plane_commit=control_commit,
+            ),
+            {
+                str(field): {"ref": f"validator:{field}"}
+                for field in policy.stages["QUALITY_INTERLOCK"]["input_contract"][
+                    "required_fields"
+                ]
+            },
+        )
+        errors.append("Q4 reviewer was incorrectly accepted as aggregate QUALITY_INTERLOCK executor")
+    except ValueError as exc:
+        if "execution role Q4_SPEC_TEST_CONTRACT_REVIEWER is not authorized" not in str(exc):
+            errors.append(f"Q4 aggregate-stage rejection used unexpected error: {exc}")
+
     if errors:
         print("Terminus stage-invocation validation FAILED:")
         for error in errors:
@@ -260,10 +291,10 @@ def main() -> int:
     print("Terminus stage-invocation validation PASS")
     print(
         "invocation=1.0 stages=23 projection=declared_inputs_only "
-        "authority=executable_role_task_control_snapshot retrieval_audience=separate "
-        "exact_reads=mandatory retrieval=optional missing_inputs=blocked "
-        "ignored_names=not_leaked identity=score_independent reasoning=not_persisted "
-        "portability=normal_chatgpt_fallback"
+        "authority=single_stage_owner retrieval_review_audience=separate "
+        "semantic_reviewers=packet_bound_evidence_providers exact_reads=mandatory "
+        "retrieval=optional missing_inputs=blocked ignored_names=not_leaked "
+        "identity=score_independent reasoning=not_persisted portability=normal_chatgpt_fallback"
     )
     return 0
 
