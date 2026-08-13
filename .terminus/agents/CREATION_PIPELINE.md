@@ -1,6 +1,6 @@
 # Terminus Edition 3 Task Creation Pipeline
 
-Creation policy version: `1.0`
+Creation policy version: `1.1`
 
 Creation and independent review are separate systems. Before any producer starts, the Creation Controller resolves and pins the current Edition 3 task-rule context for the run. Every creator then uses that `CREATION_RULE_CONTEXT`, this file, `.terminus/agents/PRODUCTION_AUTHENTICITY.md`, `.terminus/agents/QUALITY_AGENT_REGISTRY.md`, and its role prompt. Producers create evidence and artifacts; they do not approve their own work.
 
@@ -87,11 +87,14 @@ Resolve and pin the authoritative task-rule baseline, active validators, creatio
 ### 1. Scenario Researcher
 Produce 3–5 credible **engineering work-package** candidates, not merely isolated incidents. For each candidate define the engineering objective, operational persona, required end state, major coupled requirement families, inherited system/state that makes the work meaningful, originality references, and scale fit. An incident/change history may provide context, but strict difficulty should come from completing or repairing a substantial coupled work package. Confirm the candidate can naturally support a substantive production codebase above the 3,000-LOC floor, organic F2P diversity, and realistic normal/edge/failure behavior without unrelated requirements or filler.
 
-### 2. System Architect / Environment Builder
-Build the runtime topology, state, configuration, solver-visible technical docs, logs/operator artifacts where appropriate, and broken/incomplete starter. All counted modules/resources must be reachable. For data-backed strict tasks, build representative deterministic history/state rather than toy fixtures. The architecture must reflect real production concerns appropriate to the domain rather than being expanded merely to cross a numeric floor. Technical docs should explain structure/contracts naturally without diagnosing which implementation pieces the solver must change.
+### 2A. System Architect — clean architecture design
+Design only the inherited production system shape before any private defect/incomplete-behavior topology exists. Produce the component/resource graph, runtime/operator entrypoints, state/persistence model, solver-visible technical-documentation plan, production characteristics, scale fit and reachability plan. **Do not create the broken starter and do not inject defects at this stage.** The output is the clean architecture contract consumed by A3.
 
 ### 3. Defect Topology Designer
-Design 4–8 root-cause clusters and 20–30 manifestations with at least 15 manifestations participating in meaningful causal/interdependency edges, plus cross-component/cross-cluster relationships and plausible partial-fix traps. Build a `behavioral_surfaces` map spanning normal operation and domain-relevant edge/boundary, negative/rejection, failure/recovery and cross-component behavior so later F2P coverage can arise organically. Do not create one independent bug per test or manufacture manifestations merely to satisfy counts; return `SCENARIO_TOO_SMALL` when the work package cannot naturally support the strict causal and behavioral breadth.
+Against the approved clean architecture, design 4–8 root-cause clusters and 20–30 manifestations with at least 15 manifestations participating in meaningful causal/interdependency edges, plus cross-component/cross-cluster relationships and plausible partial-fix traps. Build a `behavioral_surfaces` map spanning normal operation and domain-relevant edge/boundary, negative/rejection, failure/recovery and cross-component behavior so later F2P coverage can arise organically. Do not create one independent bug per test or manufacture manifestations merely to satisfy counts; return `SCENARIO_TOO_SMALL` when the work package cannot naturally support the strict causal and behavioral breadth.
+
+### 2B. Environment Builder — starter materialization
+Re-invoke A2 only after the A3 topology is approved. Materialize the solver-visible runtime, state, configuration, technical docs, logs/operator artifacts where appropriate, and broken/incomplete starter from **both** the clean architecture and approved defect topology. All counted modules/resources must be reachable. For data-backed strict tasks, build representative deterministic history/state rather than toy fixtures. Inject only approved defect/incomplete behaviors; do not add untracked surprise bugs. Technical docs should explain structure/contracts naturally without diagnosing which implementation pieces the solver must change.
 
 ### 4. Reference Solution Author
 Repair/complete the approved operational invariants without reading hidden verifier bodies before the first oracle implementation is frozen. No fixture/test special casing.
@@ -126,8 +129,11 @@ Run structure/metadata, lint/syntax, `.terminus/validate_task_complexity.py`, `.
 ### 14. Complexity Governor
 Challenge both scale and realism. Treat 3,000 LOC as a floor with no upper target. Ask whether the architecture naturally requires its code/resources/tests, whether 1,000 lines could disappear without changing the operational system, whether data is meaningfully varied, whether the work package is substantial rather than one localized defect, whether modules have differentiated production responsibilities, whether F2P cases represent distinct states/invariants rather than quota padding, and whether edge/negative/failure coverage is sufficient for the operational risk.
 
-### 15. Authoring Failure Diagnostician / Q5 Oracle & Runtime Repair Specialist
-When deterministic execution fails, preserve the first meaningful failure and classify ownership. Q5 then performs deep repair at the smallest responsible boundary: environment, build, dependency, startup, state, application, Oracle, verifier harness, infrastructure or contract. Never weaken a legitimate test simply to obtain green.
+### 15. Runtime authenticity / deterministic validation / failure diagnosis
+Run runtime-authenticity gates and exact Oracle/NOP/F2P/P2P validation on the candidate task commit. When deterministic execution fails, preserve the first meaningful failure and classify ownership. Q5 performs deep repair at the smallest responsible boundary: environment, build, dependency, startup, state, application, Oracle, verifier harness, infrastructure or contract. Never weaken a legitimate test simply to obtain green.
+
+### 16. Freeze boundary
+Only after all required deterministic validation succeeds may the controller record `FROZEN_CANDIDATE`. The freeze is a **state contract**, not a synonym for “latest branch looks good”: it binds the exact task commit, current rule context, current verifier/oracle evidence, current structure/complexity/runtime-authenticity evidence, and unresolved-conflict status. Any acceptance-relevant task/policy/validator change invalidates the freeze and routes back to the earliest affected stage.
 
 ## Frozen candidate quality interlock
 
@@ -151,11 +157,14 @@ Each perspective receives only solver-visible task evidence before attempting th
 
 ## Flow
 
-`CREATION_REQUEST -> RULE_RESOLUTION -> IDEA -> RESEARCHING -> ARCHITECTING -> DEFECT_DESIGN -> ENVIRONMENT_BUILD -> ORACLE_BUILD -> VERIFIER_BUILD -> HUMAN_WRITING_RESEARCH -> INSTRUCTION_DRAFT -> SPEC_ALIGNMENT(Q1/Q2/Q3) -> DOCUMENTATION_DRAFT -> FORMAT_GATE(Q7) -> ASSEMBLY -> COMPLEXITY_GATE -> RUNTIME_AUTHENTICITY -> DETERMINISTIC_VALIDATION(Q5 on failure) -> FROZEN_CANDIDATE -> QUALITY_INTERLOCK(Q4/Q6) -> PRE_LLMAJ -> Q8 GPT/CLAUDE perspectives -> Harbor/model gates`
+`CREATION_REQUEST -> RULE_RESOLUTION -> WORK_PACKAGE_RESEARCH -> SYSTEM_ARCHITECTURE(design-only) -> DEFECT_TOPOLOGY -> ENVIRONMENT_BUILD(materialization) -> REFERENCE_SOLUTION -> VERIFIER_BUILD -> HUMAN_WRITING_RESEARCH -> INSTRUCTION_DRAFT -> SPEC_ALIGNMENT(Q1/Q2/Q3) -> DOCUMENTATION_DRAFT -> FORMAT_GATE(Q7) -> ASSEMBLY -> COMPLEXITY_GATE -> RUNTIME_AUTHENTICITY -> DETERMINISTIC_VALIDATION(Q5 on failure) -> FROZEN_CANDIDATE -> QUALITY_INTERLOCK(Q4/Q6) -> PRE_LLMAJ -> Q8 GPT/CLAUDE perspectives -> Harbor/model gates`
 
 ## Independence
 
 - Every creator uses the pinned `CREATION_RULE_CONTEXT`; no creator silently substitutes a different repository rule baseline.
+- The first A2 invocation is architecture design only and cannot consume/inject A3 defect topology.
+- A3 designs against the approved clean architecture before the broken starter is materialized.
+- The second A2 invocation materializes only the approved architecture/topology and does not invent extra defects.
 - Environment Builder does not build by diffing against the final Oracle.
 - Reference Solution Author does not use hidden tests as implementation recipes.
 - Verifier Author does not calculate expected values from Oracle source.
