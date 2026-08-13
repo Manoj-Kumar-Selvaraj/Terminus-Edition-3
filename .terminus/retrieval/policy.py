@@ -21,6 +21,25 @@ _STAGE_OWNER_OVERRIDES = {
     "ENVIRONMENT_BUILD": "A2_ENVIRONMENT_BUILDER",
 }
 
+# PRE_LLMAJ intentionally describes a grouped reviewer panel in prose. Retrieval
+# needs the concrete canonical roles so a generic group label cannot become an
+# authorization wildcard.
+_STAGE_ROLE_OVERRIDES = {
+    "PRE_LLMAJ": frozenset(
+        {
+            "TASK_ARCHITECT",
+            "VERIFIER_ENGINEER",
+            "ORIGINALITY_AUTHENTICITY_REVIEWER",
+            "DIFFICULTY_REVIEWER",
+            "COMPLIANCE_AUDITOR",
+            "INSTRUCTION_REVIEWER",
+            "ENGINEERING_DOCUMENTATION_REVIEWER",
+            "COMPREHENSIVE_REVIEWER",
+            "ADJUDICATOR",
+        }
+    )
+}
+
 
 @dataclass(frozen=True)
 class AuthorizationDecision:
@@ -110,22 +129,26 @@ class RetrievalPolicy:
         if stage.get("lifecycle") == "creation":
             roles.add("CREATION_CONTROLLER")
 
-        override = _STAGE_OWNER_OVERRIDES.get(stage_id)
-        if override:
-            roles.add(override)
+        owner_override = _STAGE_OWNER_OVERRIDES.get(stage_id)
+        if owner_override:
+            roles.add(owner_override)
         else:
             owner = stage.get("owner")
             if not isinstance(owner, str) or not owner.strip():
                 raise ValueError(f"stage {stage_id} has no canonical owner")
             roles.add(self._canonical_stage_participant(owner))
 
-        reviewers = stage.get("semantic_reviewers", [])
-        if not isinstance(reviewers, list):
-            raise ValueError(f"stage {stage_id} semantic_reviewers must be a list")
-        for reviewer in reviewers:
-            if not isinstance(reviewer, str) or not reviewer.strip():
-                raise ValueError(f"stage {stage_id} has invalid semantic reviewer")
-            roles.add(self._canonical_stage_participant(reviewer))
+        explicit_roles = _STAGE_ROLE_OVERRIDES.get(stage_id)
+        if explicit_roles is not None:
+            roles.update(explicit_roles)
+        else:
+            reviewers = stage.get("semantic_reviewers", [])
+            if not isinstance(reviewers, list):
+                raise ValueError(f"stage {stage_id} semantic_reviewers must be a list")
+            for reviewer in reviewers:
+                if not isinstance(reviewer, str) or not reviewer.strip():
+                    raise ValueError(f"stage {stage_id} has invalid semantic reviewer")
+                roles.add(self._canonical_stage_participant(reviewer))
         return frozenset(roles)
 
     def validate_context(self, context: InvocationContext) -> InvocationContext:
