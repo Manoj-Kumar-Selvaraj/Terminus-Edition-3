@@ -1,0 +1,34 @@
+{
+  "workflow_state_version": "1.0",
+  "ledger_version": "1.0",
+  "materialized_state_version": "1.0",
+  "record_selection": "LAST_LEDGER_EVENT_PER_STAGE",
+  "stage_status_values": ["CURRENT", "STALE", "MISSING", "BLOCKED"],
+  "next_action_values": ["INVOKE_STAGE", "RETRY_STAGE", "ROUTE", "BLOCKED", "VALIDATE_STATE", "END"],
+  "paths": {
+    "execution_record": ".terminus/executions/<task>/<invocation_id>.result.json",
+    "execution_ledger": ".terminus/executions/<task>/ledger.jsonl",
+    "materialized_state": ".terminus/workflows/<task>/state.json"
+  },
+  "authority_rules": {
+    "task_scoped_state_requires_exact_task_commit": true,
+    "all_state_requires_exact_control_plane_commit": true,
+    "materialized_state_is_derived_not_authoritative": true,
+    "legacy_session_is_not_implicit_execution_evidence": true
+  },
+  "staleness_rules": [
+    "a record with a different task commit is stale for the selected task snapshot",
+    "a record with a different control-plane commit is stale for the selected control-plane snapshot",
+    "a stale, missing or blocked upstream node makes every later historical record stale by dependency propagation",
+    "an explicitly invalidated evidence reference makes the record that cites it stale",
+    "a content-hash mismatch for an explicitly refreshed evidence reference makes the citing record stale",
+    "a non-current FROZEN_CANDIDATE state prevents QUALITY_INTERLOCK and all later nodes from being current"
+  ],
+  "ledger_rules": {
+    "append_only": true,
+    "hash_chained": true,
+    "record_before_event": true,
+    "duplicate_record_append_is_idempotent": true,
+    "orphan_record_without_ledger_event_is_ignored": true
+  }
+}
