@@ -8,7 +8,9 @@ This policy defines execution semantics for local exact, lexical/BM25, vector an
 
 Every retrieval invocation applies this sequence:
 
-`registered stage + canonical role + packet/role restrictions -> evidence visibility -> freshness/provenance -> authorized candidate set -> exact/structured | lexical/BM25 | vector | hybrid ranking -> bounded context assembly`
+`registered stage + stage-authorized canonical role + packet/role restrictions -> evidence visibility -> freshness/provenance -> authorized candidate set -> exact/structured | lexical/BM25 | vector | hybrid ranking -> bounded context assembly`
+
+A canonical stage ID and a canonical role ID are not sufficient independently. The role must be permitted for that stage. A valid role must not borrow another stage's evidence authority.
 
 No ranker may search an unrestricted corpus and filter forbidden results afterward.
 
@@ -34,7 +36,13 @@ The baseline workflow therefore requires no OpenAI API key, hosted vector databa
 
 ## Commit-bound indexing
 
-Repository indexing reads immutable Git blobs from a selected commit, not dirty working-tree content. The index manifest binds:
+Repository indexing reads immutable Git blobs, not dirty working-tree content. The control-plane snapshot and task snapshot are independent bindings:
+
+- `control_plane_commit` selects authoritative control-plane sources;
+- `task_commit` selects task-scoped sources;
+- `--commit` exists only as a compatibility shorthand when both intentionally share one Git snapshot.
+
+The index manifest binds:
 
 - metadata contract version;
 - evidence visibility version;
@@ -49,12 +57,26 @@ Task-specific private design and sanitized requirement-contract sources must mat
 
 Dynamic evidence such as CI logs, review packets/results, session snapshots, model trials and final package evidence requires an explicit provenance adapter or metadata-valid ingestion path. The default repository scanner must not invent packet bindings, run IDs, role hashes or review-scope hashes.
 
+## Stage-role authorization
+
+Retrieval resolves the executable role set for the selected stage before evidence filtering.
+
+- the stage owner is permitted;
+- the CI Orchestrator may perform bounded retrieval for routing/reconciliation;
+- the Creation Controller may perform bounded retrieval for creation stages;
+- declared semantic reviewers are permitted only where they actually belong to that stage;
+- `SYSTEM_ARCHITECTURE` and `ENVIRONMENT_BUILD` resolve to their distinct A2 executable roles;
+- `PRE_LLMAJ` expands the prose label `Stage-B specialists` only to the explicit seven specialist roles in `PRE_LLMAJ.md`, plus the Comprehensive Reviewer and routed Adjudicator.
+
+A grouped display label never becomes a retrieval wildcard. Unknown or ambiguous participant mappings fail closed.
+
 ## Authorization and freshness
 
 `.terminus/agents/evidence_visibility.json` is the stage visibility contract. `.terminus/agents/retrieval_metadata.json` is the source/freshness contract. Role/packet allowed/excluded evidence may only narrow stage access.
 
 A chunk is eligible only when all applicable conditions pass:
 
+- the invocation role is authorized for the selected stage;
 - source profile matches evidence class, sensitivity and `solver_visible` value;
 - evidence class is required/allowed and not excluded;
 - stage and canonical role applicability match;
@@ -64,7 +86,7 @@ A chunk is eligible only when all applicable conditions pass:
 - role-contract, packet, review-scope and CI-run bindings match when declared;
 - policy-version bindings match when declared.
 
-Missing required invocation bindings fail closed.
+Missing required invocation bindings fail closed. Task-scoped CLI retrieval requires an explicit `--task-commit`; it never guesses the task commit from the control-plane commit.
 
 ## Ranking modes
 
@@ -91,16 +113,33 @@ Apply the normal authorized retrieval path with the additional mandatory `solver
 
 The local engine may return exact authorized preparation/context references, but it does not claim to replace the external model/evaluation boundary defined by the stage.
 
+## Structural parse/cache identity
+
+The parse/chunk cache uses immutable Git blob identity plus the structural strategy, parser/file-type discriminator and chunker version. This matters because the same bytes stored under different language/file-type semantics can require different structural parsing.
+
+Cache reuse reuses parsing work only. Current task/control-plane bindings are attached again when the source is indexed for the active snapshots.
+
 ## Caching
 
-The implementation has two safe caches:
+The implementation has three safe reuse layers:
 
+- **parse/chunk cache** keyed by immutable Git blob + parser-aware structural strategy + chunker version;
 - **embedding cache** keyed by chunk ID + provider + provider version + content hash;
-- **retrieval-result cache** keyed by authority hash + query hash + current index source-set hash.
+- **retrieval-result cache** keyed by authority hash + query hash + the actual authorized pre-rank candidate-set hash.
+
+A global or merely latest manifest is not sufficient cache identity. If an eligible candidate is added, removed or changes content, the candidate-set hash changes and the ranking cache misses.
 
 A retrieval cache stores chunk identities, not permission. Every cache hit is reloaded and re-authorized against the current invocation before use. Any stale/unauthorized chunk invalidates that cache hit.
 
+Cached `SearchResult` score values are diagnostic ranking telemetry, not evidence, gate status or acceptance input. Current cache reuse preserves authorized result ordering; callers must not make control-plane decisions from score magnitude. If score components ever become a decision-bearing interface, they must be persisted exactly or recomputed rather than reconstructed from cached rank order.
+
 Semantic reviewer verdicts are not cached by this retrieval engine. Review reuse remains governed exclusively by Protocol provenance/scope rules.
+
+## Bounded context assembly
+
+`context_bundle(..., max_chars=N)` never emits more than `N` retrieved-content characters. If the final eligible chunk does not fit, the engine includes only the remaining prefix, carries the full chunk `content_hash`, and marks the item `truncated=true`.
+
+`mandatory_exact_reads` are references to authoritative files and are outside this retrieved-content character budget because the executor must exact-read them separately.
 
 ## Normal ChatGPT portability
 
@@ -109,14 +148,18 @@ The retrieval engine is an optimization and context-selection layer, not a requi
 When a local checkout/Work/Codex execution surface is available, the same stage invocation may build/query the local index through:
 
 ```bash
-python .terminus/retrieval/cli.py --root . build --task-path <task-path> --task-id <task-id>
+python .terminus/retrieval/cli.py --root . build \
+  --task-path <task-path> \
+  --task-id <task-id> \
+  --task-commit <task-sha> \
+  --control-plane-commit <control-plane-sha>
 
 python .terminus/retrieval/cli.py --root . context \
   --stage <STAGE_ID> \
   --role <CANONICAL_ROLE_ID> \
   --task-id <task-id> \
-  --task-commit <sha> \
-  --control-plane-commit <sha> \
+  --task-commit <task-sha> \
+  --control-plane-commit <control-plane-sha> \
   --query '<evidence question>'
 ```
 
@@ -126,7 +169,7 @@ Controllers must treat retrieval output as bounded evidence context, not as an a
 
 Before invoking a registered role, a controller should:
 
-1. resolve the stage contract and canonical role;
+1. resolve the stage contract and verify the canonical role is authorized for that stage;
 2. exact-read mandatory policy/prompt files;
 3. resolve packet/role evidence exclusions and freshness bindings;
 4. use retrieval, when available, only for additional authorized evidence selection;
@@ -140,7 +183,10 @@ Reviewers with packet-bound evidence remain packet-bound. The existence of an in
 Return/block rather than guess when:
 
 - stage or role ID is unknown;
+- a valid role is not authorized for the selected stage;
+- a grouped/ambiguous stage participant cannot resolve to an explicit canonical role set;
 - required task/control-plane/packet/role freshness binding is missing;
+- task and control-plane snapshots are incorrectly conflated when their commits differ;
 - an indexed chunk contradicts its registered source profile;
 - an index manifest is bound to the wrong task/control-plane commit;
 - a solver-visible-only invocation would require a private/control-plane shadow source;
