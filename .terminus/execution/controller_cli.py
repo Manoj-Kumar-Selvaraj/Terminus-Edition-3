@@ -167,13 +167,16 @@ def main(argv: list[str] | None = None) -> int:
     result = _json_object(args.result, "--result")
     record = ExecutionRecordBuilder(root).build(invocation, result)
     authority = record.get("authority")
-    if not isinstance(authority, dict):
-        raise ValueError("execution record authority is invalid")
+    lineage = record.get("task_lineage")
+    if not isinstance(authority, dict) or not isinstance(lineage, dict):
+        raise ValueError("execution record authority/task_lineage is invalid")
     task_id = authority.get("task_id")
-    task_commit = authority.get("task_commit")
+    task_commit = lineage.get("output_task_commit")
     control_commit = authority.get("control_plane_commit")
     if not all(isinstance(value, str) and value for value in (task_id, task_commit, control_commit)):
-        raise ValueError("record persistence requires task_id, task_commit and control_plane_commit")
+        raise ValueError(
+            "record persistence requires task_id, output_task_commit and control_plane_commit"
+        )
 
     ledger = ExecutionLedger(root, task_id)
     event = ledger.append(record)
