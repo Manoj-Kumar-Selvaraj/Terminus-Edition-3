@@ -73,6 +73,7 @@ class WorkflowStateResolver:
         upstream_current = True
         first_non_current: dict[str, Any] | None = None
         previous_node_id: str | None = None
+        last_current_stage_sequence = 0
 
         for index, descriptor in enumerate(self.chain):
             node_id = descriptor["node_id"]
@@ -82,6 +83,7 @@ class WorkflowStateResolver:
                 if index + 1 < len(self.chain)
                 else "END"
             )
+            event: dict[str, Any] | None = None
 
             if node_kind == "STATE":
                 node = self._state_node(
@@ -109,6 +111,17 @@ class WorkflowStateResolver:
                         "status": "MISSING",
                         "reason": "no execution-ledger event exists for this stage",
                     }
+                elif int(event["sequence"]) <= last_current_stage_sequence:
+                    node = {
+                        "node_id": node_id,
+                        "node_kind": "STAGE",
+                        "status": "STALE",
+                        "reason": (
+                            "latest execution record predates the latest current predecessor execution; "
+                            "the downstream stage must be rerun even when task/control commits are unchanged"
+                        ),
+                    }
+                    self._attach_event_identity(node, event)
                 else:
                     record = event_records[event["event_id"]]
                     node = self._evaluate_stage_record(
@@ -128,6 +141,8 @@ class WorkflowStateResolver:
                 upstream_current = False
                 if first_non_current is None:
                     first_non_current = node
+            elif event is not None:
+                last_current_stage_sequence = int(event["sequence"])
             previous_node_id = node_id
 
         next_action = self._next_action(
