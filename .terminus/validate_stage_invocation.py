@@ -13,6 +13,7 @@ ROOT = Path(__file__).resolve().parents[1]
 T = ROOT / ".terminus"
 sys.path.insert(0, str(T))
 
+from execution.authority import ExecutionAuthority  # noqa: E402
 from execution.invocation import StageInvocationBuilder  # noqa: E402
 from retrieval.models import InvocationContext  # noqa: E402
 from retrieval.policy import RetrievalPolicy  # noqa: E402
@@ -21,6 +22,7 @@ REQUIRED = [
     T / "agents" / "STAGE_INVOCATION.md",
     T / "agents" / "schemas" / "stage_invocation.schema.json",
     T / "execution" / "__init__.py",
+    T / "execution" / "authority.py",
     T / "execution" / "invocation.py",
     T / "execution" / "cli.py",
     T / "tests" / "test_stage_invocation.py",
@@ -50,6 +52,7 @@ CODE_MARKERS = [
     "_validate_policy_versions",
     "item.pop(\"score\", None)",
     "_invocation_id",
+    "execution_authority.validate_context",
 ]
 
 CLI_MARKERS = [
@@ -121,8 +124,8 @@ def main() -> int:
         errors.append(
             f"stage invocation schema exposes private reasoning fields: {sorted(forbidden_schema)}"
         )
-    authority = schema.get("properties", {}).get("authority", {})
-    dependent = authority.get("dependentRequired", {})
+    authority_schema = schema.get("properties", {}).get("authority", {})
+    dependent = authority_schema.get("dependentRequired", {})
     if dependent.get("task_id") != ["task_commit"]:
         errors.append("schema must bind task_id to task_commit")
     if dependent.get("task_commit") != ["task_id"]:
@@ -138,6 +141,7 @@ def main() -> int:
         errors.append("retrieved_context items must be fail-closed objects")
 
     policy = RetrievalPolicy(ROOT)
+    execution_authority = ExecutionAuthority(policy)
     builder = StageInvocationBuilder(ROOT, policy)
     control_commit = subprocess.run(
         ["git", "-C", str(ROOT), "rev-parse", "HEAD"],
@@ -154,11 +158,12 @@ def main() -> int:
         inputs = {
             str(field): {"ref": f"validator:{field}"} for field in required_fields
         }
+        role_id = execution_authority.primary_role_for_stage(stage_id)
         try:
             packet = builder.build(
                 InvocationContext(
                     stage_id=stage_id,
-                    role_id="CI_ORCHESTRATOR",
+                    role_id=role_id,
                     control_plane_commit=control_commit,
                     policy_versions={"agent_system": "2.4"},
                 ),
@@ -171,6 +176,8 @@ def main() -> int:
             errors.append(f"stage {stage_id} did not compile READY")
         if packet["missing_required_inputs"]:
             errors.append(f"stage {stage_id} reports unexpected missing inputs")
+        if packet["stage"]["role_id"] != role_id:
+            errors.append(f"stage {stage_id} execution role drift")
         if (
             packet["output_contract"]["allowed_status_values"]
             != stage["output_contract"]["status_values"]
@@ -189,10 +196,17 @@ def main() -> int:
     if len(invocation_ids) != len(policy.stages):
         errors.append("distinct stage projections did not produce distinct invocation IDs")
 
+    if "CI_ORCHESTRATOR" not in policy.allowed_roles_for_stage("WORK_PACKAGE_RESEARCH"):
+        errors.append("CI Orchestrator must retain retrieval/routing visibility for creation stages")
+    if "CI_ORCHESTRATOR" in execution_authority.roles_for_stage("WORK_PACKAGE_RESEARCH"):
+        errors.append("CI Orchestrator retrieval visibility must not grant A1 execution authority")
+    if "CREATION_CONTROLLER" in execution_authority.roles_for_stage("WORK_PACKAGE_RESEARCH"):
+        errors.append("Creation Controller routing visibility must not grant A1 execution authority")
+
     blocked = builder.build(
         InvocationContext(
             stage_id="RULE_RESOLUTION",
-            role_id="CI_ORCHESTRATOR",
+            role_id="CREATION_CONTROLLER",
             control_plane_commit=control_commit,
         ),
         {},
@@ -208,7 +222,7 @@ def main() -> int:
     projected = builder.build(
         InvocationContext(
             stage_id="RULE_RESOLUTION",
-            role_id="CI_ORCHESTRATOR",
+            role_id="CREATION_CONTROLLER",
             control_plane_commit=control_commit,
         ),
         {"CREATION_REQUEST": "create", "UNDECLARED_SECRET": "drop"},
@@ -217,6 +231,25 @@ def main() -> int:
         errors.append("undeclared input count drift")
     if "UNDECLARED_SECRET" in json.dumps(projected, sort_keys=True):
         errors.append("undeclared input name leaked into invocation packet")
+
+    try:
+        builder.build(
+            InvocationContext(
+                stage_id="WORK_PACKAGE_RESEARCH",
+                role_id="CI_ORCHESTRATOR",
+                control_plane_commit=control_commit,
+            ),
+            {
+                str(field): {"ref": f"validator:{field}"}
+                for field in policy.stages["WORK_PACKAGE_RESEARCH"]["input_contract"][
+                    "required_fields"
+                ]
+            },
+        )
+        errors.append("controller observer was incorrectly accepted as A1 executor")
+    except ValueError as exc:
+        if "execution role CI_ORCHESTRATOR is not authorized" not in str(exc):
+            errors.append(f"controller observer rejection used unexpected error: {exc}")
 
     if errors:
         print("Terminus stage-invocation validation FAILED:")
@@ -227,9 +260,10 @@ def main() -> int:
     print("Terminus stage-invocation validation PASS")
     print(
         "invocation=1.0 stages=23 projection=declared_inputs_only "
-        "authority=stage_role_task_control_snapshot exact_reads=mandatory retrieval=optional "
-        "missing_inputs=blocked ignored_names=not_leaked identity=score_independent "
-        "reasoning=not_persisted portability=normal_chatgpt_fallback"
+        "authority=executable_role_task_control_snapshot retrieval_audience=separate "
+        "exact_reads=mandatory retrieval=optional missing_inputs=blocked "
+        "ignored_names=not_leaked identity=score_independent reasoning=not_persisted "
+        "portability=normal_chatgpt_fallback"
     )
     return 0
 
