@@ -1,0 +1,59 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "terminus-retrieval-manifest-v1",
+  "title": "Terminus Retrieval Index Manifest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "manifest_version",
+    "metadata_contract_version",
+    "evidence_visibility_version",
+    "control_plane_commit",
+    "source_set_hash",
+    "index_scope",
+    "chunk_count",
+    "document_count",
+    "source_kind_counts",
+    "evidence_class_counts"
+  ],
+  "properties": {
+    "manifest_version": {"const": "1.0"},
+    "metadata_contract_version": {"const": "1.0"},
+    "evidence_visibility_version": {"const": "1.1"},
+    "control_plane_commit": {"type": "string", "pattern": "^[0-9a-f]{40,64}$"},
+    "task_id": {"type": "string", "minLength": 1},
+    "task_commit": {"type": "string", "pattern": "^[0-9a-f]{40,64}$"},
+    "source_set_hash": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"},
+    "index_scope": {
+      "type": "string",
+      "enum": ["CONTROL_PLANE","TASK","REVIEW","EVALUATION","MIXED_AUTHORIZED"]
+    },
+    "chunk_count": {"type": "integer", "minimum": 0},
+    "document_count": {"type": "integer", "minimum": 0},
+    "source_kind_counts": {
+      "type": "object",
+      "additionalProperties": {"type": "integer", "minimum": 0}
+    },
+    "evidence_class_counts": {
+      "type": "object",
+      "additionalProperties": {"type": "integer", "minimum": 0}
+    },
+    "policy_versions": {
+      "type": "object",
+      "additionalProperties": {"type": "string", "minLength": 1}
+    },
+    "role_contract_hashes": {
+      "type": "object",
+      "additionalProperties": {"type": "string", "minLength": 8}
+    },
+    "packet_bindings": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {"type": "string", "minLength": 8}
+    },
+    "built_at": {"type": "string", "format": "date-time"},
+    "backend": {"type": "string", "minLength": 1},
+    "embedding_model": {"type": "string", "minLength": 1},
+    "lexical_index_version": {"type": "string", "minLength": 1}
+  }
+}
