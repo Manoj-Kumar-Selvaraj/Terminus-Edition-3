@@ -22,26 +22,24 @@ _STATE_SNAPSHOT_PATHS = (
     ".terminus/agents/stage_contracts.json",
     ".terminus/agents/stage_contract_completion.json",
     ".terminus/agents/execution_outcomes.json",
+    ".terminus/agents/stage_acceptance_predicates.json",
     ".terminus/agents/workflow_state_contract.json",
     ".terminus/agents/WORKFLOW_STATE.md",
 )
+_TASK_MUTATING_ROLE_CLASSES = frozenset({"PRODUCER", "FIXER"})
 
 
 class WorkflowStateResolver:
-    """Materialize CURRENT/STALE/MISSING/BLOCKED nodes and the next action."""
+    """Materialize CURRENT/STALE/MISSING/BLOCKED nodes and deterministic next action."""
 
     schema_version = "1.0"
 
     def __init__(self, root: Path, policy: RetrievalPolicy | None = None):
         self.root = root.resolve()
         self.policy = policy or RetrievalPolicy(self.root)
-        self.completion = self._load_json(
-            ".terminus/agents/stage_contract_completion.json"
-        )
+        self.completion = self._load_json(".terminus/agents/stage_contract_completion.json")
         self.outcomes = self._load_json(".terminus/agents/execution_outcomes.json")
-        self.state_contract = self._load_json(
-            ".terminus/agents/workflow_state_contract.json"
-        )
+        self.state_contract = self._load_json(".terminus/agents/workflow_state_contract.json")
         self.record_builder = ExecutionRecordBuilder(self.root, self.policy)
         self.execution_authority = self.record_builder.execution_authority
         self.chain = self._canonical_chain()
@@ -75,15 +73,13 @@ class WorkflowStateResolver:
         first_non_current: dict[str, Any] | None = None
         previous_node_id: str | None = None
         last_current_stage_sequence = 0
+        lineage_commit: str | None = None
+        bootstrap_task_commit: str | None = None
 
         for index, descriptor in enumerate(self.chain):
             node_id = descriptor["node_id"]
             node_kind = descriptor["node_kind"]
-            expected_next = (
-                self.chain[index + 1]["node_id"]
-                if index + 1 < len(self.chain)
-                else "END"
-            )
+            expected_next = self.chain[index + 1]["node_id"] if index + 1 < len(self.chain) else "END"
             event: dict[str, Any] | None = None
 
             if node_kind == "STATE":
@@ -106,12 +102,23 @@ class WorkflowStateResolver:
                     if event is not None:
                         self._attach_event_identity(node, event)
                 elif event is None:
-                    node = {
-                        "node_id": node_id,
-                        "node_kind": "STAGE",
-                        "status": "MISSING",
-                        "reason": "no execution-ledger event exists for this stage",
-                    }
+                    if lineage_commit is not None and lineage_commit != task_commit:
+                        node = {
+                            "node_id": node_id,
+                            "node_kind": "STAGE",
+                            "status": "BLOCKED",
+                            "reason": (
+                                "current task commit is ahead of the latest recorded stage output; "
+                                "the task change is unattributed to a producer/fixer execution record"
+                            ),
+                        }
+                    else:
+                        node = {
+                            "node_id": node_id,
+                            "node_kind": "STAGE",
+                            "status": "MISSING",
+                            "reason": "no execution-ledger event exists for this stage",
+                        }
                 elif int(event["sequence"]) <= last_current_stage_sequence:
                     node = {
                         "node_id": node_id,
@@ -131,7 +138,8 @@ class WorkflowStateResolver:
                         event,
                         record,
                         task_id=task_id,
-                        task_commit=task_commit,
+                        current_task_commit=task_commit,
+                        expected_input_task_commit=lineage_commit,
                         control_plane_commit=control_plane_commit,
                         freshness_overlay=overlay,
                     )
@@ -143,13 +151,33 @@ class WorkflowStateResolver:
                 if first_non_current is None:
                     first_non_current = node
             elif event is not None:
+                record = event_records[event["event_id"]]
+                lineage = record.get("task_lineage", {})
+                if isinstance(lineage, Mapping):
+                    input_commit = lineage.get("input_task_commit")
+                    output_commit = lineage.get("output_task_commit")
+                    if bootstrap_task_commit is None and isinstance(input_commit, str):
+                        bootstrap_task_commit = input_commit
+                    if isinstance(output_commit, str):
+                        lineage_commit = output_commit
                 last_current_stage_sequence = int(event["sequence"])
             previous_node_id = node_id
 
-        next_action = self._next_action(
-            first_non_current,
-            selected_records=selected_records,
+        lineage = self._lineage_snapshot(
+            bootstrap_task_commit=bootstrap_task_commit,
+            recorded_task_commit=lineage_commit,
+            current_task_commit=task_commit,
         )
+        next_action = self._next_action(first_non_current, selected_records=selected_records)
+        if first_non_current is None and lineage["status"] != "CURRENT":
+            next_action = {
+                "action": "BLOCKED",
+                "blocking_reason": (
+                    "workflow records do not account for the current task commit; "
+                    f"lineage status is {lineage['status']}"
+                ),
+            }
+
         summary_counter = Counter(node["status"] for node in nodes)
         summary = {
             key: int(summary_counter.get(key, 0))
@@ -169,6 +197,7 @@ class WorkflowStateResolver:
             "control_plane_commit": control_plane_commit,
             "ledger_head_event_id": events[-1]["event_id"] if events else None,
             "ledger_event_count": len(events),
+            "lineage": lineage,
             "nodes": nodes,
             "summary": summary,
             "next": next_action,
@@ -186,9 +215,7 @@ class WorkflowStateResolver:
             raise ValueError("workflow snapshot is missing task_id")
         ExecutionLedger._validate_task_id(task_id)
         path = self.root / ".terminus" / "workflows" / task_id / "state.json"
-        rendered = (
-            json.dumps(snapshot, indent=2, sort_keys=True, ensure_ascii=False) + "\n"
-        ).encode("utf-8")
+        rendered = (json.dumps(snapshot, indent=2, sort_keys=True, ensure_ascii=False) + "\n").encode("utf-8")
         path.parent.mkdir(parents=True, exist_ok=True)
         if path.exists() and path.read_bytes() == rendered:
             return path
@@ -225,14 +252,11 @@ class WorkflowStateResolver:
                 if not isinstance(state, dict):
                     raise ValueError(f"invalid state contract {target}")
                 if state.get("entry_from") != current:
-                    raise ValueError(
-                        f"state {target} entry_from does not match predecessor {current}"
-                    )
+                    raise ValueError(f"state {target} entry_from does not match predecessor {current}")
                 target = str(state.get("exit_to", ""))
             if target not in self.policy.stages:
                 raise ValueError(f"workflow transition target is not registered: {target}")
             current = target
-
         if seen_stages != set(self.policy.stages):
             missing = sorted(set(self.policy.stages) - seen_stages)
             extra = sorted(seen_stages - set(self.policy.stages))
@@ -249,7 +273,8 @@ class WorkflowStateResolver:
         record: Mapping[str, Any],
         *,
         task_id: str,
-        task_commit: str,
+        current_task_commit: str,
+        expected_input_task_commit: str | None,
         control_plane_commit: str,
         freshness_overlay: Mapping[str, Any],
     ) -> dict[str, Any]:
@@ -260,22 +285,50 @@ class WorkflowStateResolver:
             "reason": "execution record has not been validated",
         }
         self._attach_event_identity(node, event)
-
         authority = record.get("authority")
-        if not isinstance(authority, dict):
-            node["reason"] = "latest execution record has invalid authority"
+        lineage = record.get("task_lineage")
+        if not isinstance(authority, dict) or not isinstance(lineage, dict):
+            node["reason"] = "latest execution record has invalid authority/task_lineage"
             return node
         if authority.get("task_id") != task_id:
             node["status"] = "STALE"
             node["reason"] = "latest execution record belongs to a different task_id"
             return node
-        if authority.get("task_commit") != task_commit:
-            node["status"] = "STALE"
-            node["reason"] = "latest execution record is bound to a different task commit"
-            return node
         if authority.get("control_plane_commit") != control_plane_commit:
             node["status"] = "STALE"
             node["reason"] = "latest execution record is bound to a different control-plane commit"
+            return node
+
+        input_commit = lineage.get("input_task_commit")
+        output_commit = lineage.get("output_task_commit")
+        if authority.get("task_commit") != input_commit:
+            node["status"] = "STALE"
+            node["reason"] = "record authority task_commit does not equal task_lineage input_task_commit"
+            return node
+        if expected_input_task_commit is not None and input_commit != expected_input_task_commit:
+            node["status"] = "STALE"
+            node["reason"] = (
+                "latest execution record input_task_commit does not match the latest current predecessor output_task_commit"
+            )
+            return node
+        if not isinstance(input_commit, str) or not isinstance(output_commit, str):
+            node["status"] = "STALE"
+            node["reason"] = "latest execution record task lineage commits are invalid"
+            return node
+        try:
+            self._require_commit(input_commit, "record input_task_commit")
+            self._require_commit(output_commit, "record output_task_commit")
+        except ValueError as exc:
+            node["status"] = "STALE"
+            node["reason"] = str(exc)
+            return node
+        if not self._is_ancestor(input_commit, output_commit):
+            node["status"] = "STALE"
+            node["reason"] = "record output_task_commit is not a descendant of input_task_commit"
+            return node
+        if not self._is_ancestor(output_commit, current_task_commit):
+            node["status"] = "STALE"
+            node["reason"] = "record output_task_commit is not on the current task commit lineage"
             return node
 
         semantic_error = self._current_record_error(record, stage_id, expected_next)
@@ -313,9 +366,7 @@ class WorkflowStateResolver:
         expected_next: str,
     ) -> str | None:
         try:
-            payload = json.loads(
-                json.dumps(record, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
-            )
+            payload = json.loads(json.dumps(record, sort_keys=True, separators=(",", ":"), ensure_ascii=False))
         except (TypeError, ValueError):
             return "latest execution record is not JSON-compatible"
         if not isinstance(payload, dict):
@@ -330,13 +381,35 @@ class WorkflowStateResolver:
         if payload.get("stage_id") != stage_id:
             return "latest execution record stage_id does not match ledger stage"
         role_id = payload.get("role_id")
-        if (
-            not isinstance(role_id, str)
-            or role_id not in self.execution_authority.roles_for_stage(stage_id)
-        ):
+        if not isinstance(role_id, str) or role_id not in self.execution_authority.roles_for_stage(stage_id):
             return "latest execution record role is not authorized to execute this stage"
 
         stage = self.policy.stages[stage_id]
+        lineage = payload.get("task_lineage")
+        if not isinstance(lineage, dict):
+            return "latest execution record task_lineage is invalid"
+        input_commit = lineage.get("input_task_commit")
+        output_commit = lineage.get("output_task_commit")
+        changed = lineage.get("task_changed")
+        if not isinstance(input_commit, str) or not isinstance(output_commit, str):
+            return "latest execution record task_lineage commits are invalid"
+        if not isinstance(changed, bool) or changed != (input_commit != output_commit):
+            return "latest execution record task_changed flag is inconsistent"
+        if changed and stage.get("role_class") not in _TASK_MUTATING_ROLE_CLASSES:
+            return "latest execution record changes task commit from a non-mutating role class"
+
+        validation = payload.get("validation")
+        required_flags = {
+            "invocation_identity_valid",
+            "status_legal",
+            "output_keys_valid",
+            "task_lineage_valid",
+            "task_commit_change_authorized",
+            "acceptance_predicates_satisfied",
+        }
+        if not isinstance(validation, dict) or any(validation.get(flag) is not True for flag in required_flags):
+            return "latest execution record is missing a required successful validation flag"
+
         output_contract = stage.get("output_contract", {})
         legal_statuses = set(output_contract.get("status_values", []))
         status = payload.get("status")
@@ -355,19 +428,21 @@ class WorkflowStateResolver:
         outputs = payload.get("outputs")
         if not isinstance(outputs, dict):
             return "latest execution record outputs are invalid"
-        declared = set(output_contract.get("required_fields", [])) | set(
-            output_contract.get("optional_fields", [])
-        )
+        declared = set(output_contract.get("required_fields", [])) | set(output_contract.get("optional_fields", []))
         if set(outputs) - declared:
             return "latest execution record contains undeclared output fields"
         if status in set(outcome.get("full_output_statuses", [])):
             missing = [
-                name
-                for name in output_contract.get("required_fields", [])
+                name for name in output_contract.get("required_fields", [])
                 if name not in outputs or outputs[name] is None
             ]
             if missing:
                 return f"latest execution record is missing required outputs: {sorted(missing)}"
+        if expected_disposition == "ADVANCE":
+            try:
+                self.record_builder.acceptance.validate(stage_id, str(status), outputs)
+            except ValueError as exc:
+                return str(exc)
 
         transition = payload.get("transition")
         if not isinstance(transition, dict):
@@ -376,10 +451,8 @@ class WorkflowStateResolver:
             if transition.get("action") != "ADVANCE" or transition.get("target") != expected_next:
                 return "latest ADVANCE transition does not reach the canonical next node"
             expected_kind = (
-                "END"
-                if expected_next == "END"
-                else "STATE"
-                if expected_next in self.completion.get("state_contracts", {})
+                "END" if expected_next == "END"
+                else "STATE" if expected_next in self.completion.get("state_contracts", {})
                 else "STAGE"
             )
             if transition.get("target_kind") != expected_kind:
@@ -407,9 +480,7 @@ class WorkflowStateResolver:
         return None
 
     @staticmethod
-    def _freshness_error(
-        record: Mapping[str, Any], freshness_overlay: Mapping[str, Any]
-    ) -> str | None:
+    def _freshness_error(record: Mapping[str, Any], freshness_overlay: Mapping[str, Any]) -> str | None:
         bindings = freshness_overlay.get("bindings", {})
         if not isinstance(bindings, dict):
             return "freshness overlay bindings are invalid"
@@ -478,16 +549,15 @@ class WorkflowStateResolver:
 
         def require_status(stage: str, status: str) -> bool:
             record = records.get(stage)
-            ok = isinstance(record, Mapping) and record.get("status") == status
-            checks.append(f"{stage} status == {status}: {'PASS' if ok else 'FAIL'}")
-            return ok
+            passed = isinstance(record, Mapping) and record.get("status") == status
+            checks.append(f"{stage} status == {status}: {'PASS' if passed else 'FAIL'}")
+            return passed
 
         ok = True
         ok &= require_status("FORMAT_GATE", "FORMAT_PASS")
         ok &= require_status("COMPLEXITY_GATE", "PASS")
         ok &= require_status("RUNTIME_AUTHENTICITY", "PASS")
         ok &= require_status("DETERMINISTIC_VALIDATION", "PASS")
-
         deterministic = records.get("DETERMINISTIC_VALIDATION", {})
         outputs = deterministic.get("outputs", {}) if isinstance(deterministic, Mapping) else {}
         oracle_ok = isinstance(outputs, Mapping) and outputs.get("ORACLE_REWARD") == 1
@@ -503,20 +573,12 @@ class WorkflowStateResolver:
             ]
         )
         ok &= oracle_ok and nop_ok and f2p_ok and p2p_ok
-
         rules = records.get("RULE_RESOLUTION", {})
         rule_outputs = rules.get("outputs", {}) if isinstance(rules, Mapping) else {}
-        conflicts = (
-            rule_outputs.get("KNOWN_POLICY_CONFLICTS")
-            if isinstance(rule_outputs, Mapping)
-            else None
-        )
+        conflicts = rule_outputs.get("KNOWN_POLICY_CONFLICTS") if isinstance(rule_outputs, Mapping) else None
         conflict_free = conflicts in (None, False, "", [], {})
-        checks.append(
-            f"no unresolved policy conflicts: {'PASS' if conflict_free else 'FAIL'}"
-        )
+        checks.append(f"no unresolved policy conflicts: {'PASS' if conflict_free else 'FAIL'}")
         ok &= conflict_free
-
         return (
             bool(ok),
             checks,
@@ -539,21 +601,13 @@ class WorkflowStateResolver:
                 return {
                     "action": "BLOCKED",
                     "state_id": node_id,
-                    "owner": str(
-                        self.completion["state_contracts"][node_id].get(
-                            "owner", "Creation Controller"
-                        )
-                    ),
+                    "owner": str(self.completion["state_contracts"][node_id].get("owner", "Creation Controller")),
                     "blocking_reason": str(node["reason"]),
                 }
             return {
                 "action": "VALIDATE_STATE",
                 "state_id": node_id,
-                "owner": str(
-                    self.completion["state_contracts"][node_id].get(
-                        "owner", "Creation Controller"
-                    )
-                ),
+                "owner": str(self.completion["state_contracts"][node_id].get("owner", "Creation Controller")),
             }
 
         stage = self.policy.stages[node_id]
@@ -569,13 +623,12 @@ class WorkflowStateResolver:
         }
         if node["status"] in {"MISSING", "STALE"}:
             return {"action": "INVOKE_STAGE", **base}
-
         record = selected_records.get(node_id)
         if not isinstance(record, Mapping):
             return {
                 "action": "BLOCKED",
                 **base,
-                "blocking_reason": "blocked stage has no selected execution record",
+                "blocking_reason": str(node.get("reason") or "blocked stage has no selected execution record"),
             }
         disposition = record.get("disposition")
         if disposition == "RETRY":
@@ -586,27 +639,50 @@ class WorkflowStateResolver:
                 "action": "ROUTE",
                 **base,
                 "route_key": str(record.get("route_key", "")),
-                "route_instruction": str(
-                    transition.get("route_instruction", "")
-                    if isinstance(transition, Mapping)
-                    else ""
-                ),
+                "route_instruction": str(transition.get("route_instruction", "") if isinstance(transition, Mapping) else ""),
             }
         return {
             "action": "BLOCKED",
             **base,
-            "blocking_reason": str(
-                record.get("blocking_reason")
-                or node.get("reason")
-                or "stage blocks forward progress"
-            ),
+            "blocking_reason": str(record.get("blocking_reason") or node.get("reason") or "stage blocks forward progress"),
         }
+
+    def _lineage_snapshot(
+        self,
+        *,
+        bootstrap_task_commit: str | None,
+        recorded_task_commit: str | None,
+        current_task_commit: str,
+    ) -> dict[str, Any]:
+        if recorded_task_commit is None:
+            status = "UNINITIALIZED"
+        elif recorded_task_commit == current_task_commit:
+            status = "CURRENT"
+        elif self._is_ancestor(recorded_task_commit, current_task_commit):
+            status = "UNATTRIBUTED_CHANGE"
+        else:
+            status = "BROKEN"
+        return {
+            "status": status,
+            "bootstrap_task_commit": bootstrap_task_commit,
+            "recorded_task_commit": recorded_task_commit,
+            "current_task_commit": current_task_commit,
+        }
+
+    def _is_ancestor(self, ancestor: str, descendant: str) -> bool:
+        result = subprocess.run(
+            ["git", "-C", str(self.root), "merge-base", "--is-ancestor", ancestor, descendant],
+            capture_output=True,
+        )
+        return result.returncode == 0
 
     @staticmethod
     def _attach_event_identity(node: dict[str, Any], event: Mapping[str, Any]) -> None:
         node["record_id"] = str(event["record_id"])
         node["invocation_id"] = str(event["invocation_id"])
         node["ledger_event_id"] = str(event["event_id"])
+        node["input_task_commit"] = str(event["input_task_commit"])
+        node["output_task_commit"] = str(event["output_task_commit"])
 
     def _normalize_freshness_overlay(
         self, value: Mapping[str, Any] | None
@@ -614,9 +690,7 @@ class WorkflowStateResolver:
         if value is None:
             return {"schema_version": "1.0", "bindings": {}}, None
         try:
-            payload = json.loads(
-                json.dumps(value, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
-            )
+            payload = json.loads(json.dumps(value, sort_keys=True, separators=(",", ":"), ensure_ascii=False))
         except (TypeError, ValueError) as exc:
             raise ValueError("freshness overlay must be JSON-compatible") from exc
         if not isinstance(payload, dict) or set(payload) != {"schema_version", "bindings"}:
@@ -640,12 +714,7 @@ class WorkflowStateResolver:
             reason = binding.get("reason")
             if reason is not None and (not isinstance(reason, str) or not reason.strip()):
                 raise ValueError(f"freshness overlay binding {ref} has invalid reason")
-        rendered = json.dumps(
-            payload,
-            sort_keys=True,
-            separators=(",", ":"),
-            ensure_ascii=False,
-        ).encode("utf-8")
+        rendered = json.dumps(payload, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode("utf-8")
         return payload, "sha256:" + hashlib.sha256(rendered).hexdigest()
 
     def _require_contract_snapshot(self, commit: str) -> None:
@@ -658,8 +727,7 @@ class WorkflowStateResolver:
             ).stdout
             if current != committed:
                 raise ValueError(
-                    "control_plane_commit does not match loaded workflow-state contracts: "
-                    f"{relative}"
+                    "control_plane_commit does not match loaded workflow-state contracts: " + relative
                 )
 
     def _require_commit(self, commit: str, label: str) -> None:
@@ -689,16 +757,9 @@ class WorkflowStateResolver:
 
     @staticmethod
     def _snapshot_id(snapshot: Mapping[str, Any]) -> str:
-        payload = json.loads(
-            json.dumps(snapshot, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
-        )
+        payload = json.loads(json.dumps(snapshot, sort_keys=True, separators=(",", ":"), ensure_ascii=False))
         payload.pop("state_snapshot_id", None)
-        rendered = json.dumps(
-            payload,
-            sort_keys=True,
-            separators=(",", ":"),
-            ensure_ascii=False,
-        )
+        rendered = json.dumps(payload, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
         return "state_" + hashlib.sha256(rendered.encode("utf-8")).hexdigest()
 
     @staticmethod
@@ -711,6 +772,7 @@ class WorkflowStateResolver:
             "control_plane_commit": snapshot["control_plane_commit"],
             "ledger_head_event_id": snapshot["ledger_head_event_id"],
             "ledger_event_count": snapshot["ledger_event_count"],
+            "lineage": snapshot["lineage"],
             "nodes": snapshot["nodes"],
             "summary": snapshot["summary"],
             "next": snapshot["next"],

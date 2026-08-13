@@ -6,7 +6,7 @@
   "additionalProperties": false,
   "required": [
     "schema_version", "state_snapshot_id", "task_id", "task_commit", "control_plane_commit",
-    "ledger_head_event_id", "ledger_event_count", "nodes", "summary", "next", "derived_from"
+    "ledger_head_event_id", "ledger_event_count", "lineage", "nodes", "summary", "next", "derived_from"
   ],
   "properties": {
     "schema_version": {"const": "1.0"},
@@ -14,13 +14,19 @@
     "task_id": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$"},
     "task_commit": {"type": "string", "pattern": "^[0-9a-f]{40,64}$"},
     "control_plane_commit": {"type": "string", "pattern": "^[0-9a-f]{40,64}$"},
-    "ledger_head_event_id": {
-      "oneOf": [
-        {"type": "null"},
-        {"type": "string", "pattern": "^evt_[0-9a-f]{64}$"}
-      ]
-    },
+    "ledger_head_event_id": {"oneOf": [{"type": "null"}, {"type": "string", "pattern": "^evt_[0-9a-f]{64}$"}]},
     "ledger_event_count": {"type": "integer", "minimum": 0},
+    "lineage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "bootstrap_task_commit", "recorded_task_commit", "current_task_commit"],
+      "properties": {
+        "status": {"enum": ["UNINITIALIZED", "CURRENT", "UNATTRIBUTED_CHANGE", "BROKEN"]},
+        "bootstrap_task_commit": {"type": ["string", "null"], "pattern": "^[0-9a-f]{40,64}$"},
+        "recorded_task_commit": {"type": ["string", "null"], "pattern": "^[0-9a-f]{40,64}$"},
+        "current_task_commit": {"type": "string", "pattern": "^[0-9a-f]{40,64}$"}
+      }
+    },
     "nodes": {
       "type": "array",
       "items": {
@@ -35,13 +41,12 @@
           "record_id": {"type": "string", "pattern": "^rec_[0-9a-f]{64}$"},
           "invocation_id": {"type": "string", "pattern": "^inv_[0-9a-f]{64}$"},
           "ledger_event_id": {"type": "string", "pattern": "^evt_[0-9a-f]{64}$"},
+          "input_task_commit": {"type": "string", "pattern": "^[0-9a-f]{40,64}$"},
+          "output_task_commit": {"type": "string", "pattern": "^[0-9a-f]{40,64}$"},
           "disposition": {"enum": ["ADVANCE", "ROUTE", "RETRY", "BLOCK"]},
           "route_key": {"type": "string", "minLength": 1},
           "blocking_reason": {"type": "string", "minLength": 1},
-          "entry_requirements": {
-            "type": "array",
-            "items": {"type": "string", "minLength": 1}
-          }
+          "entry_requirements": {"type": "array", "items": {"type": "string", "minLength": 1}}
         }
       }
     },
@@ -78,17 +83,8 @@
       "additionalProperties": false,
       "required": ["record_ids", "freshness_overlay_hash"],
       "properties": {
-        "record_ids": {
-          "type": "array",
-          "uniqueItems": true,
-          "items": {"type": "string", "pattern": "^rec_[0-9a-f]{64}$"}
-        },
-        "freshness_overlay_hash": {
-          "oneOf": [
-            {"type": "null"},
-            {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"}
-          ]
-        }
+        "record_ids": {"type": "array", "uniqueItems": true, "items": {"type": "string", "pattern": "^rec_[0-9a-f]{64}$"}},
+        "freshness_overlay_hash": {"oneOf": [{"type": "null"}, {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"}]}
       }
     }
   }
