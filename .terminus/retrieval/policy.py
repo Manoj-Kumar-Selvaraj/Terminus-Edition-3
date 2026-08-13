@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import re
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Mapping
@@ -11,6 +12,14 @@ from .models import InvocationContext
 
 ALL_STAGES = "ALL_AUTHORIZED_STAGES"
 ALL_ROLES = "ALL_AUTHORIZED_ROLES"
+
+# The A2 lifecycle deliberately uses one human owner label for two distinct
+# invocations. Retrieval must resolve the executable role from the stage, not
+# from that ambiguous display label.
+_STAGE_OWNER_OVERRIDES = {
+    "SYSTEM_ARCHITECTURE": "A2_SYSTEM_ARCHITECT",
+    "ENVIRONMENT_BUILD": "A2_ENVIRONMENT_BUILDER",
+}
 
 
 @dataclass(frozen=True)
@@ -53,16 +62,81 @@ class RetrievalPolicy:
             raise ValueError(f"expected object in {path}")
         return value
 
+    @staticmethod
+    def _normalize_participant(value: str) -> str:
+        return re.sub(r"[^A-Z0-9]+", "_", value.upper()).strip("_")
+
     def canonical_role(self, role: str) -> str:
         canonical = self.role_aliases.get(role, role)
         if canonical not in self.role_ids:
             raise ValueError(f"unknown retrieval role id: {role}")
         return canonical
 
+    def _canonical_stage_participant(self, label: str) -> str:
+        """Resolve a stage owner/reviewer display label to one canonical role ID."""
+        direct = self.role_aliases.get(label)
+        if direct in self.role_ids:
+            return str(direct)
+        if label in self.role_ids:
+            return label
+
+        target = self._normalize_participant(label)
+        matches: set[str] = set()
+        for alias, role_id in self.role_aliases.items():
+            alias_key = self._normalize_participant(alias)
+            if (
+                alias_key == target
+                or alias_key.endswith(f"_{target}")
+                or target.endswith(f"_{alias_key}")
+            ):
+                matches.add(role_id)
+        for role_id in self.role_ids:
+            role_key = self._normalize_participant(role_id)
+            if role_key == target or role_key.endswith(f"_{target}"):
+                matches.add(role_id)
+        if len(matches) != 1:
+            raise ValueError(
+                f"stage participant {label!r} does not resolve uniquely to a canonical role"
+            )
+        return next(iter(matches))
+
+    def allowed_roles_for_stage(self, stage_id: str) -> frozenset[str]:
+        """Return canonical roles permitted to retrieve under one stage authority."""
+        stage = self.stages.get(stage_id)
+        if stage is None:
+            raise ValueError(f"unknown retrieval stage id: {stage_id}")
+
+        roles: set[str] = {"CI_ORCHESTRATOR"}
+        if stage.get("lifecycle") == "creation":
+            roles.add("CREATION_CONTROLLER")
+
+        override = _STAGE_OWNER_OVERRIDES.get(stage_id)
+        if override:
+            roles.add(override)
+        else:
+            owner = stage.get("owner")
+            if not isinstance(owner, str) or not owner.strip():
+                raise ValueError(f"stage {stage_id} has no canonical owner")
+            roles.add(self._canonical_stage_participant(owner))
+
+        reviewers = stage.get("semantic_reviewers", [])
+        if not isinstance(reviewers, list):
+            raise ValueError(f"stage {stage_id} semantic_reviewers must be a list")
+        for reviewer in reviewers:
+            if not isinstance(reviewer, str) or not reviewer.strip():
+                raise ValueError(f"stage {stage_id} has invalid semantic reviewer")
+            roles.add(self._canonical_stage_participant(reviewer))
+        return frozenset(roles)
+
     def validate_context(self, context: InvocationContext) -> InvocationContext:
         if context.stage_id not in self.stages:
             raise ValueError(f"unknown retrieval stage id: {context.stage_id}")
         canonical = self.canonical_role(context.role_id)
+        allowed_roles = self.allowed_roles_for_stage(context.stage_id)
+        if canonical not in allowed_roles:
+            raise ValueError(
+                f"retrieval role {canonical} is not authorized for stage {context.stage_id}"
+            )
         if canonical == context.role_id:
             return context
         return InvocationContext(
