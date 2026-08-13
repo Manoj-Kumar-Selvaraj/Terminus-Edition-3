@@ -12,16 +12,22 @@ Before changing a task:
 2. Read `.terminus/AGENT_SYSTEM.md`.
 3. When acting as the controller, read `.terminus/agents/CI_ORCHESTRATOR.md`.
 4. Read `.terminus/agents/PROTOCOL.md` and `.terminus/agents/INVOKE.md`.
-5. Read `.terminus/agents/QUALITY_AGENT_REGISTRY.md`; read `.terminus/agents/QUALITY_AGENT_PROMPTS.md` only for the quality role being invoked.
-6. When running locally in Cursor, read `.terminus/CURSOR_OPERATING.md`.
-7. For acceptance/review decisions, read the reviewer checklist and criterion registry.
-8. Read the relevant specialist prompt only for the role being invoked.
-9. Read `.terminus/reviewers/PRE_LLMAJ.md` near semantic review.
-10. Read `.terminus/sessions/<task>.md`.
-11. Resolve the current task commit from Git rather than trusting session prose.
-12. Inspect current PR/branch and applicable Actions/Harbor runs, jobs, logs and artifacts.
-13. Run `.terminus/validate_review_freshness.py --task <task>` before relying on stored semantic PASS evidence.
-14. Resume from the first genuinely incomplete, failed or stale gate.
+5. Read `.terminus/agents/STAGE_CONTRACTS.md`, `.terminus/agents/WORKFLOW_STATE.md`, and the canonical machine contracts they reference.
+6. Read `.terminus/agents/QUALITY_AGENT_REGISTRY.md`; read `.terminus/agents/QUALITY_AGENT_PROMPTS.md` only for the quality role being invoked.
+7. When running locally in Cursor, read `.terminus/CURSOR_OPERATING.md`.
+8. For acceptance/review decisions, read the reviewer checklist and criterion registry.
+9. Read the relevant specialist prompt only for the role being invoked.
+10. Read `.terminus/reviewers/PRE_LLMAJ.md` near semantic review.
+11. Read `.terminus/sessions/<task>.md` as legacy/durable controller context, not as independent acceptance authority.
+12. Resolve the current task commit from Git rather than trusting session prose.
+13. Inspect current PR/branch and applicable Actions/Harbor runs, jobs, logs and artifacts.
+14. Run `.terminus/validate_review_freshness.py --task <task>` before relying on stored semantic PASS evidence.
+15. If `.terminus/executions/<task>/ledger.jsonl` exists, derive the current workflow view from the hash-chained execution ledger using `.terminus/execution/controller_cli.py status`; locally materialize `.terminus/workflows/<task>/state.json` when useful. Do not trust an old materialized state snapshot without re-deriving it for the exact task/control-plane commits.
+16. Resume from the deterministic `next` action when the ledger/state layer is present; otherwise use the legacy first genuinely incomplete, failed or stale gate rule without fabricating missing execution history.
+
+The execution ledger and materialized workflow state are additive to the existing session/freshness system during migration. Historical session PASS text is never auto-converted into execution records. If a task predates the ledger, missing records remain `MISSING` unless current evidence is explicitly validated and recorded through the current invocation/result/record contract.
+
+When local Python is unavailable, a normal ChatGPT conversation may reconstruct the same state directly from the canonical stage contracts, `.terminus/executions/<task>/ledger.jsonl`, referenced immutable records, exact current task/control-plane commits, and any explicit evidence-freshness information. The helper CLI is an execution adapter, not a prerequisite for correctness.
 
 ## Quality-agent resume rule
 
@@ -97,14 +103,16 @@ Never store or repeat API keys, passwords, Portkey credentials, GitHub tokens or
 
 ## Active-session loop
 
-1. inspect live evidence;
-2. classify infrastructure vs task/control-plane failure;
-3. apply the smallest justified producer/fixer change;
-4. run the applicable deterministic checks;
-5. run Q1/Q2/Q3/Q7 when their evidence surface changed;
-6. mark affected semantic evidence stale using exact-task or role-scoped freshness as defined by Protocol;
-7. generate a fresh Q4 packet whenever its evidence surface changes; generate a fresh Q6 packet only when no current Protocol-valid Q6 PASS can be retained by unchanged production-scope hash;
-8. update the durable checkpoint from actual evidence.
+1. inspect live evidence and exact task/control-plane commits;
+2. derive/reconcile workflow state from the execution ledger when present;
+3. classify infrastructure vs task/control-plane failure;
+4. apply the smallest justified producer/fixer change;
+5. run the applicable deterministic checks;
+6. run Q1/Q2/Q3/Q7 when their evidence surface changed;
+7. mark affected semantic evidence stale using exact-task or role-scoped freshness as defined by Protocol;
+8. generate a fresh Q4 packet whenever its evidence surface changes; generate a fresh Q6 packet only when no current Protocol-valid Q6 PASS can be retained by unchanged production-scope hash;
+9. validate the returned result against its invocation, persist the immutable execution record, append its hash-chained ledger event, and re-materialize workflow state;
+10. update the durable checkpoint from actual evidence rather than rewriting historical records.
 
 This is interactive work, not a background promise.
 
