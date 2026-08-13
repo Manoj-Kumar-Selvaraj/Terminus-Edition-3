@@ -73,6 +73,14 @@ class RetrievalPolicy:
         self.stages = {
             item["id"]: item for item in self.stage_registry.get("stages", [])
         }
+        for stage in self.stages.values():
+            contract = stage.get("input_contract")
+            if not isinstance(contract, dict):
+                continue
+            for field in ("required_fields", "optional_fields"):
+                values = contract.get(field)
+                if isinstance(values, list):
+                    contract[field] = sorted(str(value) for value in values)
         self.visibility = {
             item["stage_id"]: item
             for item in self.visibility_registry.get("stages", [])
