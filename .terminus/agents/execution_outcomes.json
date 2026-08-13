@@ -1,0 +1,206 @@
+{
+  "outcome_version": "1.0",
+  "dispositions": ["ADVANCE", "ROUTE", "RETRY", "BLOCK"],
+  "stages": {
+    "RULE_RESOLUTION": {
+      "advance_statuses": ["RULES_RESOLVED"],
+      "route_statuses": {"POLICY_CONFLICT": {"allowed_route_keys": ["POLICY_CONFLICT"], "default_route_key": "POLICY_CONFLICT"}},
+      "retry_statuses": [],
+      "block_statuses": ["BLOCKED"],
+      "full_output_statuses": ["RULES_RESOLVED", "POLICY_CONFLICT"]
+    },
+    "WORK_PACKAGE_RESEARCH": {
+      "advance_statuses": ["CANDIDATES_READY"],
+      "route_statuses": {"SCENARIO_TOO_SMALL": {"allowed_route_keys": ["SCENARIO_TOO_SMALL"], "default_route_key": "SCENARIO_TOO_SMALL"}},
+      "retry_statuses": [],
+      "block_statuses": ["BLOCKED"],
+      "full_output_statuses": ["CANDIDATES_READY", "SCENARIO_TOO_SMALL"]
+    },
+    "SYSTEM_ARCHITECTURE": {
+      "advance_statuses": ["ARCHITECTURE_READY"],
+      "route_statuses": {"SCENARIO_TOO_SMALL": {"allowed_route_keys": ["SCENARIO_TOO_SMALL"], "default_route_key": "SCENARIO_TOO_SMALL"}},
+      "retry_statuses": [],
+      "block_statuses": ["BLOCKED"],
+      "full_output_statuses": ["ARCHITECTURE_READY", "SCENARIO_TOO_SMALL"]
+    },
+    "DEFECT_TOPOLOGY": {
+      "advance_statuses": ["DESIGN_READY"],
+      "route_statuses": {"SCENARIO_TOO_SMALL": {"allowed_route_keys": ["SCENARIO_TOO_SMALL"], "default_route_key": "SCENARIO_TOO_SMALL"}},
+      "retry_statuses": [],
+      "block_statuses": ["BLOCKED"],
+      "full_output_statuses": ["DESIGN_READY", "SCENARIO_TOO_SMALL"]
+    },
+    "ENVIRONMENT_BUILD": {
+      "advance_statuses": ["BUILT"],
+      "route_statuses": {
+        "SCENARIO_TOO_SMALL": {"allowed_route_keys": ["SCENARIO_TOO_SMALL"], "default_route_key": "SCENARIO_TOO_SMALL"},
+        "ARCHITECTURE_GAP": {"allowed_route_keys": ["ARCHITECTURE_GAP"], "default_route_key": "ARCHITECTURE_GAP"}
+      },
+      "retry_statuses": [],
+      "block_statuses": ["BLOCKED"],
+      "full_output_statuses": ["BUILT", "SCENARIO_TOO_SMALL", "ARCHITECTURE_GAP"]
+    },
+    "REFERENCE_SOLUTION": {
+      "advance_statuses": ["IMPLEMENTED"],
+      "route_statuses": {"CONTRACT_GAP": {"allowed_route_keys": ["CONTRACT_GAP"], "default_route_key": "CONTRACT_GAP"}},
+      "retry_statuses": [],
+      "block_statuses": ["BLOCKED"],
+      "full_output_statuses": ["IMPLEMENTED", "CONTRACT_GAP"]
+    },
+    "VERIFIER_BUILD": {
+      "advance_statuses": ["VERIFIER_READY"],
+      "route_statuses": {
+        "REQUIREMENT_GAP": {"allowed_route_keys": ["REQUIREMENT_GAP"], "default_route_key": "REQUIREMENT_GAP"},
+        "SCENARIO_TOO_SMALL": {"allowed_route_keys": ["SCENARIO_TOO_SMALL"], "default_route_key": "SCENARIO_TOO_SMALL"}
+      },
+      "retry_statuses": [],
+      "block_statuses": ["BLOCKED"],
+      "full_output_statuses": ["VERIFIER_READY", "REQUIREMENT_GAP", "SCENARIO_TOO_SMALL"]
+    },
+    "HUMAN_WRITING_RESEARCH": {
+      "advance_statuses": ["CALIBRATED"],
+      "route_statuses": {},
+      "retry_statuses": [],
+      "block_statuses": ["BLOCKED"],
+      "full_output_statuses": ["CALIBRATED"]
+    },
+    "INSTRUCTION_DRAFT": {
+      "advance_statuses": ["READY"],
+      "route_statuses": {
+        "REWRITE_REQUIRED": {
+          "allowed_route_keys": ["MISSING_REQUIREMENT", "STALE_OR_INVALID_REQUIREMENT_CONTRACT", "AMBIGUITY", "HIDDEN_TEST_OR_REPAIR_LEAKAGE", "SPEC_FILE_LOOPHOLE", "FORMAT_OR_PATH_ERROR"]
+        }
+      },
+      "retry_statuses": [],
+      "block_statuses": ["BLOCKED"],
+      "full_output_statuses": ["READY", "REWRITE_REQUIRED"]
+    },
+    "SPEC_ALIGNMENT": {
+      "advance_statuses": ["ALIGNED"],
+      "route_statuses": {
+        "REPAIR_REQUIRED": {
+          "allowed_route_keys": ["VERIFIER_TO_SPEC_GAP", "SPEC_TO_VERIFIER_GAP", "AMBIGUITY", "PERSISTENT_DISAGREEMENT"]
+        }
+      },
+      "retry_statuses": [],
+      "block_statuses": ["BLOCKED"],
+      "full_output_statuses": ["ALIGNED", "REPAIR_REQUIRED"]
+    },
+    "DOCUMENTATION_DRAFT": {
+      "advance_statuses": ["DOCUMENTATION_READY"],
+      "route_statuses": {
+        "REWRITE_REQUIRED": {"allowed_route_keys": ["UNSUPPORTED_CLAIM", "LEAKAGE_OR_SYNTHETIC_PROSE"]}
+      },
+      "retry_statuses": [],
+      "block_statuses": ["BLOCKED"],
+      "full_output_statuses": ["DOCUMENTATION_READY", "REWRITE_REQUIRED"]
+    },
+    "FORMAT_GATE": {
+      "advance_statuses": ["FORMAT_PASS"],
+      "route_statuses": {"POLICY_CONFLICT": {"allowed_route_keys": ["POLICY_CONFLICT"], "default_route_key": "POLICY_CONFLICT"}},
+      "retry_statuses": ["FIXED"],
+      "block_statuses": ["BLOCKED"],
+      "full_output_statuses": ["FORMAT_PASS", "FIXED", "POLICY_CONFLICT"]
+    },
+    "ASSEMBLY": {
+      "advance_statuses": ["ASSEMBLED"],
+      "route_statuses": {
+        "RETURN_TO_PRODUCER": {"allowed_route_keys": ["STRUCTURE_OR_STATIC_FAILURE", "FORMAT_FAILURE", "SPEC_ALIGNMENT_FAILURE", "LEAKAGE_FAILURE", "ARCHITECTURE_EVIDENCE_GAP"]}
+      },
+      "retry_statuses": [],
+      "block_statuses": ["BLOCKED"],
+      "full_output_statuses": ["ASSEMBLED", "RETURN_TO_PRODUCER"]
+    },
+    "COMPLEXITY_GATE": {
+      "advance_statuses": ["PASS"],
+      "route_statuses": {
+        "REVISE": {"allowed_route_keys": ["REVISE"], "default_route_key": "REVISE"},
+        "SCENARIO_TOO_SMALL": {"allowed_route_keys": ["SCENARIO_TOO_SMALL"], "default_route_key": "SCENARIO_TOO_SMALL"}
+      },
+      "retry_statuses": [],
+      "block_statuses": [],
+      "full_output_statuses": ["PASS", "REVISE", "SCENARIO_TOO_SMALL"]
+    },
+    "RUNTIME_AUTHENTICITY": {
+      "advance_statuses": ["PASS"],
+      "route_statuses": {
+        "FAIL": {"allowed_route_keys": ["PRODUCTION_AUTHENTICITY_FAILURE", "BUSINESS_MODULE_DIVERSITY_FAILURE", "RUNTIME_FAILURE"]}
+      },
+      "retry_statuses": [],
+      "block_statuses": ["BLOCKED"],
+      "full_output_statuses": ["PASS", "FAIL"]
+    },
+    "DETERMINISTIC_VALIDATION": {
+      "advance_statuses": ["PASS"],
+      "route_statuses": {
+        "FAIL": {"allowed_route_keys": ["RUNTIME_OR_ORACLE_FAILURE", "VERIFIER_CONTRACT_FAILURE"]}
+      },
+      "retry_statuses": [],
+      "block_statuses": ["BLOCKED"],
+      "full_output_statuses": ["PASS"]
+    },
+    "QUALITY_INTERLOCK": {
+      "advance_statuses": ["QUALITY_INTERLOCK_PASS"],
+      "route_statuses": {
+        "REVISE": {"allowed_route_keys": ["Q4_REVISE", "Q6_REVISE", "LATENT_REVIEWER_OMISSION"]},
+        "INSUFFICIENT_EVIDENCE": {"allowed_route_keys": ["INSUFFICIENT_EVIDENCE"], "default_route_key": "INSUFFICIENT_EVIDENCE"}
+      },
+      "retry_statuses": [],
+      "block_statuses": ["BLOCKED"],
+      "full_output_statuses": ["QUALITY_INTERLOCK_PASS", "REVISE"]
+    },
+    "PRE_LLMAJ": {
+      "advance_statuses": ["PASS"],
+      "route_statuses": {
+        "REVISE": {"allowed_route_keys": ["SPECIALIST_REVISE", "REVIEWER_CONFLICT"]},
+        "INSUFFICIENT_EVIDENCE": {"allowed_route_keys": ["INSUFFICIENT_EVIDENCE"], "default_route_key": "INSUFFICIENT_EVIDENCE"}
+      },
+      "retry_statuses": [],
+      "block_statuses": ["BLOCKED"],
+      "full_output_statuses": ["PASS", "REVISE"]
+    },
+    "MODEL_DIAGNOSTIC": {
+      "advance_statuses": ["EXECUTED", "SIMULATION_NOT_EXECUTED"],
+      "route_statuses": {},
+      "retry_statuses": [],
+      "block_statuses": ["BLOCKED"],
+      "full_output_statuses": ["EXECUTED", "SIMULATION_NOT_EXECUTED"]
+    },
+    "OFFICIAL_MODEL_TRIALS": {
+      "advance_statuses": ["COMPLETE"],
+      "route_statuses": {},
+      "retry_statuses": ["INCOMPLETE"],
+      "block_statuses": ["BLOCKED"],
+      "full_output_statuses": ["COMPLETE"]
+    },
+    "TRIAL_ANALYSIS": {
+      "advance_statuses": ["COMPLETE"],
+      "route_statuses": {
+        "REVISE": {"allowed_route_keys": ["TASK_DEFECT", "ENVIRONMENT_TOOL_FRICTION"]},
+        "INSUFFICIENT_EVIDENCE": {"allowed_route_keys": ["INSUFFICIENT_EVIDENCE"], "default_route_key": "INSUFFICIENT_EVIDENCE"}
+      },
+      "retry_statuses": [],
+      "block_statuses": [],
+      "full_output_statuses": ["COMPLETE", "REVISE"]
+    },
+    "FINAL_REVIEW": {
+      "advance_statuses": ["PASS"],
+      "route_statuses": {
+        "REVISE": {"allowed_route_keys": ["COMPLIANCE_REVISE", "HUMAN_QUALITY_REVISE"]},
+        "INSUFFICIENT_EVIDENCE": {"allowed_route_keys": ["INSUFFICIENT_EVIDENCE"], "default_route_key": "INSUFFICIENT_EVIDENCE"}
+      },
+      "retry_statuses": [],
+      "block_statuses": ["BLOCKED"],
+      "full_output_statuses": ["PASS", "REVISE"]
+    },
+    "SUBMISSION_READY": {
+      "advance_statuses": ["SUBMISSION_READY"],
+      "route_statuses": {
+        "NOT_READY": {"allowed_route_keys": ["FIRST_NON_CURRENT_GATE", "POLICY_CONFLICT"]}
+      },
+      "retry_statuses": [],
+      "block_statuses": ["BLOCKED"],
+      "full_output_statuses": ["SUBMISSION_READY", "NOT_READY"]
+    }
+  }
+}
