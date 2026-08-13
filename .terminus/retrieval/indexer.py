@@ -22,6 +22,13 @@ _CODE_SUFFIXES = {
 _DOC_SUFFIXES = {".md", ".rst", ".adoc", ".txt"}
 CHUNKER_VERSION = "structural-v2"
 
+_PRIVATE_DESIGN_STAGE_APPLICABILITY = {
+    "PRIVATE_WORK_PACKAGE_DESIGN": ["SYSTEM_ARCHITECTURE", "DEFECT_TOPOLOGY"],
+    "PRIVATE_SYSTEM_ARCHITECTURE": ["DEFECT_TOPOLOGY", "ENVIRONMENT_BUILD", "REFERENCE_SOLUTION"],
+    "PRIVATE_DEFECT_TOPOLOGY": ["ENVIRONMENT_BUILD", "REFERENCE_SOLUTION", "ASSEMBLY", "COMPLEXITY_GATE"],
+    "PRIVATE_TEST_MAP": ["SPEC_ALIGNMENT", "ASSEMBLY", "COMPLEXITY_GATE", "DETERMINISTIC_VALIDATION"],
+}
+
 
 class RepositoryIndexer:
     """Build a local index from immutable Git blobs, never dirty working-tree text."""
@@ -165,13 +172,7 @@ class RepositoryIndexer:
             raw_chunks = [self._raw_chunk_from_cache(item) for item in cached["chunks"]]
         else:
             raw = subprocess.run(
-                [
-                    "git",
-                    "-C",
-                    str(self.root),
-                    "show",
-                    f"{source_commit}:{relative}",
-                ],
+                ["git", "-C", str(self.root), "show", f"{source_commit}:{relative}"],
                 check=True,
                 capture_output=True,
             ).stdout
@@ -276,8 +277,22 @@ class RepositoryIndexer:
                 return "SOLVER_VISIBLE_REQUIREMENT_CONTRACT"
             return None
         if include_private_design and value.startswith(".terminus/designs/"):
-            if selected_task and path.name.startswith(selected_task):
-                return "PRIVATE_DESIGN"
+            if not selected_task:
+                return None
+            if path.name == f"{selected_task}.json":
+                return "PRIVATE_DEFECT_TOPOLOGY"
+            if path.name == f"{selected_task}-test-map.json":
+                return "PRIVATE_TEST_MAP"
+            if path.name in {
+                f"{selected_task}-work-package.json",
+                f"{selected_task}-work-package.md",
+            }:
+                return "PRIVATE_WORK_PACKAGE_DESIGN"
+            if path.name in {
+                f"{selected_task}-architecture.json",
+                f"{selected_task}-architecture.md",
+            }:
+                return "PRIVATE_SYSTEM_ARCHITECTURE"
             return None
         if value.startswith(".terminus/reviews/") or value.startswith(
             ".terminus/sessions/"
@@ -333,6 +348,8 @@ class RepositoryIndexer:
     def _stage_applicability(source_kind: str) -> list[str]:
         if source_kind == "SOLVER_VISIBLE_REQUIREMENT_CONTRACT":
             return ["INSTRUCTION_DRAFT", "SPEC_ALIGNMENT"]
+        if source_kind in _PRIVATE_DESIGN_STAGE_APPLICABILITY:
+            return list(_PRIVATE_DESIGN_STAGE_APPLICABILITY[source_kind])
         return [ALL_STAGES]
 
     @staticmethod
