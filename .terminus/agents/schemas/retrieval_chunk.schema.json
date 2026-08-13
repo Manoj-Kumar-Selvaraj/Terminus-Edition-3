@@ -1,0 +1,110 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "terminus-retrieval-chunk-v1",
+  "title": "Terminus Retrieval Chunk Metadata",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "metadata_contract_version",
+    "document_id",
+    "chunk_id",
+    "source_uri",
+    "source_kind",
+    "source_version",
+    "content_hash",
+    "evidence_class",
+    "sensitivity",
+    "solver_visible",
+    "stage_applicability",
+    "role_applicability",
+    "freshness_scope",
+    "chunk_type",
+    "structural_locator",
+    "ordinal"
+  ],
+  "properties": {
+    "metadata_contract_version": {"const": "1.0"},
+    "document_id": {"type": "string", "minLength": 8},
+    "chunk_id": {"type": "string", "minLength": 8},
+    "source_uri": {"type": "string", "minLength": 1},
+    "source_path": {"type": "string", "minLength": 1},
+    "source_kind": {
+      "type": "string",
+      "enum": [
+        "CONTROL_PLANE_MARKDOWN","CONTROL_PLANE_JSON","CONTROL_PLANE_CODE",
+        "TASK_INSTRUCTION","TASK_DOCUMENTATION","TASK_CODE","TASK_CONFIGURATION",
+        "PRIVATE_DESIGN","SOLUTION_ORACLE","VERIFIER_PRIVATE","REVIEW_PACKET",
+        "REVIEW_RESULT","SESSION_STATE","CI_RUNTIME","MODEL_TRIAL","FINAL_PACKAGE",
+        "PUBLIC_REFERENCE"
+      ]
+    },
+    "source_version": {"type": "string", "minLength": 1},
+    "content_hash": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"},
+    "git_blob_sha": {"type": "string", "pattern": "^[0-9a-f]{40,64}$"},
+    "evidence_class": {
+      "type": "string",
+      "enum": [
+        "CONTROL_PLANE_POLICY","SOLVER_VISIBLE_TASK","PRIVATE_CREATION_DESIGN",
+        "SOLUTION_ORACLE","VERIFIER_PRIVATE","CURRENT_REVIEW_PACKET",
+        "PRIOR_REVIEW_RESULTS","CI_RUNTIME_EVIDENCE","DURABLE_SESSION_STATE",
+        "PUBLIC_REFERENCE","MODEL_TRIAL_EVIDENCE","FINAL_PACKAGE_EVIDENCE"
+      ]
+    },
+    "sensitivity": {
+      "type": "string",
+      "enum": ["PUBLIC","SOLVER_VISIBLE","CONTROL_PLANE","PRIVATE","RESTRICTED"]
+    },
+    "solver_visible": {"type": "boolean"},
+    "task_id": {"type": "string", "minLength": 1},
+    "task_commit": {"type": "string", "pattern": "^[0-9a-f]{40,64}$"},
+    "control_plane_commit": {"type": "string", "pattern": "^[0-9a-f]{40,64}$"},
+    "policy_versions": {
+      "type": "object",
+      "additionalProperties": {"type": "string", "minLength": 1}
+    },
+    "role_contract_hash": {"type": "string", "minLength": 8},
+    "packet_binding": {"type": "string", "minLength": 8},
+    "review_scope_hash": {"type": "string", "minLength": 8},
+    "ci_run_id": {"type": ["integer","string"]},
+    "stage_applicability": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {"type": "string", "minLength": 1}
+    },
+    "role_applicability": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {"type": "string", "minLength": 1}
+    },
+    "freshness_scope": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "enum": [
+          "CONTENT_HASH","GIT_BLOB_SHA","TASK_COMMIT","CONTROL_PLANE_COMMIT",
+          "POLICY_VERSION","ROLE_CONTRACT_HASH","PACKET_BINDING","REVIEW_SCOPE_HASH",
+          "CI_RUN_ID","EXTERNAL_CONTENT_HASH"
+        ]
+      }
+    },
+    "chunk_type": {
+      "type": "string",
+      "enum": [
+        "DOCUMENT","HEADING_SECTION","BULLET_GROUP","JSON_OBJECT","CODE_MODULE",
+        "CODE_CLASS","CODE_FUNCTION","CODE_SYMBOL","PACKET_SECTION","SESSION_SECTION",
+        "CI_STEP","LOG_EVENT_WINDOW","EXTERNAL_SECTION"
+      ]
+    },
+    "structural_locator": {"type": "string", "minLength": 1},
+    "section_path": {"type": "array", "items": {"type": "string"}},
+    "symbol": {"type": "string", "minLength": 1},
+    "line_start": {"type": "integer", "minimum": 1},
+    "line_end": {"type": "integer", "minimum": 1},
+    "ordinal": {"type": "integer", "minimum": 0},
+    "indexed_at": {"type": "string", "format": "date-time"}
+  }
+}
