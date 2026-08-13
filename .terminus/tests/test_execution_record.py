@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 import json
 import subprocess
 import sys
@@ -15,6 +16,8 @@ from execution.invocation import StageInvocationBuilder  # noqa: E402
 from execution.record import ExecutionRecordBuilder  # noqa: E402
 from retrieval.models import InvocationContext  # noqa: E402
 from retrieval.policy import RetrievalPolicy  # noqa: E402
+
+_SENTINEL = object()
 
 
 def _git(*args: str) -> str:
@@ -54,8 +57,9 @@ def _invocation(
     )
 
 
-def _review_pass() -> dict[str, object]:
+def _review_pass(review_id: str) -> dict[str, object]:
     return {
+        "review_id": review_id,
         "verdict": "PASS",
         "confidence": "MEDIUM",
         "evidence_status": "SUFFICIENT",
@@ -76,11 +80,7 @@ def _full_outputs(invocation: dict[str, object]) -> dict[str, object]:
     if stage_id == "RULE_RESOLUTION":
         outputs["KNOWN_POLICY_CONFLICTS"] = []
     elif stage_id == "SPEC_ALIGNMENT":
-        outputs.update(
-            Q1_STATUS="NO_GAP",
-            Q2_STATUS="COVERED",
-            Q3_STATUS="CLEAR",
-        )
+        outputs.update(Q1_STATUS="NO_GAP", Q2_STATUS="COVERED", Q3_STATUS="CLEAR")
     elif stage_id == "RUNTIME_AUTHENTICITY":
         outputs["RUNTIME_AUTHENTICITY_STATUS"] = "PASS"
     elif stage_id == "DETERMINISTIC_VALIDATION":
@@ -92,8 +92,8 @@ def _full_outputs(invocation: dict[str, object]) -> dict[str, object]:
         )
     elif stage_id == "QUALITY_INTERLOCK":
         outputs.update(
-            Q4_RESULT=_review_pass(),
-            Q6_RESULT=_review_pass(),
+            Q4_RESULT=_review_pass("q4-review"),
+            Q6_RESULT=_review_pass("q6-review"),
             EVIDENCE_SUFFICIENCY="SUFFICIENT",
         )
     elif stage_id == "PRE_LLMAJ":
@@ -127,9 +127,12 @@ def _full_outputs(invocation: dict[str, object]) -> dict[str, object]:
         )
     elif stage_id == "OFFICIAL_MODEL_TRIALS":
         outputs.update(
-            GPT_5_5_TRIALS=[{"trial": index} for index in range(5)],
+            GPT_5_5_TRIALS=[
+                {"trial": index, "run_id": f"gpt-run-{index}"} for index in range(5)
+            ],
             CLAUDE_OPUS_4_8_TRIALS=[
-                {"trial": index} for index in range(5)
+                {"trial": index, "run_id": f"claude-run-{index}"}
+                for index in range(5)
             ],
             COMBINED_SUCCESS_RATE=0.5,
             PER_TEST_SOLVABILITY={"case-a": 1},
@@ -147,12 +150,15 @@ def _full_outputs(invocation: dict[str, object]) -> dict[str, object]:
             COMBINED_SUCCESS_RATE=0.5,
             PER_TEST_SOLVABILITY={"case-a": 1},
             ZERO_OF_TEN_TESTS=[],
-            TRAJECTORY_ANALYSIS_RESULT={"status": "COMPLETE"},
+            TRAJECTORY_ANALYSIS_RESULT={
+                "status": "COMPLETE",
+                "record_id": "trajectory-result",
+            },
         )
     elif stage_id == "FINAL_REVIEW":
         outputs.update(
-            FINAL_COMPLIANCE=_review_pass(),
-            FINAL_HUMAN_QUALITY=_review_pass(),
+            FINAL_COMPLIANCE=_review_pass("final-compliance"),
+            FINAL_HUMAN_QUALITY=_review_pass("final-human-quality"),
             FINAL_PACKAGE_EVIDENCE={"manifest": "ok"},
         )
     elif stage_id == "SUBMISSION_READY":
@@ -163,6 +169,49 @@ def _full_outputs(invocation: dict[str, object]) -> dict[str, object]:
     return outputs
 
 
+def _eref(kind: str, ref: str) -> dict[str, str]:
+    return {
+        "kind": kind,
+        "ref": ref,
+        "content_hash": "sha256:" + hashlib.sha256(ref.encode()).hexdigest(),
+    }
+
+
+def _evidence_refs(
+    invocation: dict[str, object], outputs: dict[str, object]
+) -> list[dict[str, str]]:
+    stage = invocation["stage"]
+    assert isinstance(stage, dict)
+    stage_id = str(stage["stage_id"])
+    if stage_id == "QUALITY_INTERLOCK":
+        return [_eref("RESULT", "q4-review"), _eref("RESULT", "q6-review")]
+    if stage_id == "PRE_LLMAJ":
+        return [_eref("RESULT", f"prellmaj-result-{index}") for index in range(6)]
+    if stage_id == "MODEL_DIAGNOSTIC_AGGREGATE":
+        return [_eref("RESULT", "q8-gpt-result"), _eref("RESULT", "q8-claude-result")]
+    if stage_id == "HARBOR_LLMAJ":
+        return [_eref("RUN", str(outputs["HARBOR_RUN_ID"]))]
+    if stage_id in {"OFFICIAL_MODEL_TRIALS", "TRIAL_ANALYSIS", "DIFFICULTY_ASSESSMENT"}:
+        refs = [
+            _eref("RUN", f"gpt-run-{index}") for index in range(5)
+        ] + [_eref("RUN", f"claude-run-{index}") for index in range(5)]
+        if stage_id == "DIFFICULTY_ASSESSMENT":
+            refs.append(_eref("RESULT", "trajectory-result"))
+        return refs
+    if stage_id == "FINAL_REVIEW":
+        return [
+            _eref("RESULT", "final-compliance"),
+            _eref("RESULT", "final-human-quality"),
+            _eref("ARTIFACT", "final-package"),
+        ]
+    if stage_id == "SUBMISSION_READY":
+        return [
+            _eref("RESULT", "final-review-result"),
+            _eref("ARTIFACT", "submission-package"),
+        ]
+    return []
+
+
 def _result(
     invocation: dict[str, object],
     status: str,
@@ -171,16 +220,24 @@ def _result(
     output_task_commit: str | None = None,
     route_key: str | None = None,
     blocking_reason: str | None = None,
+    evidence_refs: object = _SENTINEL,
 ) -> dict[str, object]:
     authority = invocation["authority"]
     assert isinstance(authority, dict)
+    actual_outputs = outputs if outputs is not None else {}
+    refs = (
+        _evidence_refs(invocation, actual_outputs)
+        if evidence_refs is _SENTINEL
+        else evidence_refs
+    )
+    assert isinstance(refs, list)
     payload: dict[str, object] = {
         "schema_version": "1.0",
         "invocation_id": invocation["invocation_id"],
         "output_task_commit": output_task_commit or authority["task_commit"],
         "status": status,
-        "outputs": outputs if outputs is not None else {},
-        "evidence_refs": [],
+        "outputs": actual_outputs,
+        "evidence_refs": refs,
     }
     if route_key is not None:
         payload["route_key"] = route_key
@@ -189,11 +246,16 @@ def _result(
     return payload
 
 
+def _rehash(invocation: dict[str, object]) -> None:
+    identity = dict(invocation)
+    identity.pop("invocation_id", None)
+    invocation["invocation_id"] = StageInvocationBuilder._invocation_id(identity)
+
+
 def test_deterministic_pass_targets_frozen_state_with_validation_required() -> None:
     invocation = _invocation("DETERMINISTIC_VALIDATION")
     record = ExecutionRecordBuilder(ROOT).build(
-        invocation,
-        _result(invocation, "PASS", outputs=_full_outputs(invocation)),
+        invocation, _result(invocation, "PASS", outputs=_full_outputs(invocation))
     )
     assert record["disposition"] == "ADVANCE"
     assert record["transition"]["target"] == "FROZEN_CANDIDATE"
@@ -204,8 +266,7 @@ def test_deterministic_pass_targets_frozen_state_with_validation_required() -> N
 def test_format_fixed_retries_until_format_pass() -> None:
     invocation = _invocation("FORMAT_GATE")
     record = ExecutionRecordBuilder(ROOT).build(
-        invocation,
-        _result(invocation, "FIXED", outputs=_full_outputs(invocation)),
+        invocation, _result(invocation, "FIXED", outputs=_full_outputs(invocation))
     )
     assert record["disposition"] == "RETRY"
     assert record["transition"]["target"] == "FORMAT_GATE"
@@ -214,11 +275,7 @@ def test_format_fixed_retries_until_format_pass() -> None:
 @pytest.mark.parametrize(
     ("stage_id", "next_stage", "perspective"),
     [
-        (
-            "MODEL_DIAGNOSTIC_GPT",
-            "MODEL_DIAGNOSTIC_CLAUDE",
-            "GPT_PERSPECTIVE",
-        ),
+        ("MODEL_DIAGNOSTIC_GPT", "MODEL_DIAGNOSTIC_CLAUDE", "GPT_PERSPECTIVE"),
         (
             "MODEL_DIAGNOSTIC_CLAUDE",
             "MODEL_DIAGNOSTIC_AGGREGATE",
@@ -227,23 +284,14 @@ def test_format_fixed_retries_until_format_pass() -> None:
     ],
 )
 def test_model_diagnostic_unavailable_remains_non_official(
-    stage_id: str,
-    next_stage: str,
-    perspective: str,
+    stage_id: str, next_stage: str, perspective: str
 ) -> None:
     invocation = _invocation(stage_id)
     outputs = _full_outputs(invocation)
-    outputs.update(
-        PERSPECTIVE=perspective,
-        EXECUTION="SIMULATION_NOT_EXECUTED",
-    )
+    outputs.update(PERSPECTIVE=perspective, EXECUTION="SIMULATION_NOT_EXECUTED")
     record = ExecutionRecordBuilder(ROOT).build(
         invocation,
-        _result(
-            invocation,
-            "SIMULATION_NOT_EXECUTED",
-            outputs=outputs,
-        ),
+        _result(invocation, "SIMULATION_NOT_EXECUTED", outputs=outputs),
     )
     assert record["disposition"] == "ADVANCE"
     assert record["transition"]["target"] == next_stage
@@ -258,18 +306,30 @@ def test_q8_perspectives_are_isolated_at_invocation_boundary() -> None:
 def test_harbor_pass_is_required_before_official_trials() -> None:
     invocation = _invocation("HARBOR_LLMAJ")
     record = ExecutionRecordBuilder(ROOT).build(
-        invocation,
-        _result(invocation, "PASS", outputs=_full_outputs(invocation)),
+        invocation, _result(invocation, "PASS", outputs=_full_outputs(invocation))
     )
     assert record["transition"]["target"] == "OFFICIAL_MODEL_TRIALS"
     assert record["outputs"]["HARBOR_RESULT"] == "PASS"
+
+
+def test_sensitive_advance_rejects_empty_evidence_refs() -> None:
+    invocation = _invocation("HARBOR_LLMAJ")
+    with pytest.raises(ValueError, match="requires immutable hashed evidence_refs"):
+        ExecutionRecordBuilder(ROOT).build(
+            invocation,
+            _result(
+                invocation,
+                "PASS",
+                outputs=_full_outputs(invocation),
+                evidence_refs=[],
+            ),
+        )
 
 
 def test_difficulty_pass_rejects_empirical_invalidity() -> None:
     invocation = _invocation("DIFFICULTY_ASSESSMENT")
     builder = ExecutionRecordBuilder(ROOT)
     base = _full_outputs(invocation)
-
     mutations = {
         "perfect": {"COMBINED_SUCCESS_RATE": 1.0},
         "zero": {
@@ -282,17 +342,13 @@ def test_difficulty_pass_rejects_empirical_invalidity() -> None:
         outputs = json.loads(json.dumps(base))
         outputs.update(changes)
         with pytest.raises(ValueError, match="acceptance predicate failed"):
-            builder.build(
-                invocation,
-                _result(invocation, "PASS", outputs=outputs),
-            )
+            builder.build(invocation, _result(invocation, "PASS", outputs=outputs))
 
 
 def test_unambiguous_route_uses_declared_default_key() -> None:
     invocation = _invocation("COMPLEXITY_GATE")
     record = ExecutionRecordBuilder(ROOT).build(
-        invocation,
-        _result(invocation, "REVISE", outputs=_full_outputs(invocation)),
+        invocation, _result(invocation, "REVISE", outputs=_full_outputs(invocation))
     )
     assert record["route_key"] == "REVISE"
 
@@ -303,11 +359,7 @@ def test_ambiguous_route_requires_explicit_failure_class() -> None:
     with pytest.raises(ValueError, match="requires an explicit route_key"):
         builder.build(
             invocation,
-            _result(
-                invocation,
-                "REWRITE_REQUIRED",
-                outputs=_full_outputs(invocation),
-            ),
+            _result(invocation, "REWRITE_REQUIRED", outputs=_full_outputs(invocation)),
         )
     record = builder.build(
         invocation,
@@ -328,11 +380,7 @@ def test_block_requires_reason_and_never_advances() -> None:
         builder.build(invocation, _result(invocation, "BLOCKED"))
     record = builder.build(
         invocation,
-        _result(
-            invocation,
-            "BLOCKED",
-            blocking_reason="rule source unavailable",
-        ),
+        _result(invocation, "BLOCKED", blocking_reason="rule source unavailable"),
     )
     assert record["disposition"] == "BLOCK"
     assert record["transition"]["target"] is None
@@ -341,45 +389,30 @@ def test_block_requires_reason_and_never_advances() -> None:
 def test_illegal_status_and_undeclared_outputs_fail_closed() -> None:
     invocation = _invocation("RULE_RESOLUTION")
     builder = ExecutionRecordBuilder(ROOT)
-    with pytest.raises(
-        ValueError,
-        match="exactly one execution disposition|illegal stage status",
-    ):
+    with pytest.raises(ValueError, match="exactly one execution disposition|illegal stage status"):
         builder.build(
             invocation,
-            _result(
-                invocation,
-                "TOTALLY_GREEN",
-                outputs=_full_outputs(invocation),
-            ),
+            _result(invocation, "TOTALLY_GREEN", outputs=_full_outputs(invocation)),
         )
     bad = _full_outputs(invocation)
     bad["PRIVATE_SECRET"] = "no"
     with pytest.raises(ValueError, match="undeclared output fields"):
-        builder.build(
-            invocation,
-            _result(invocation, "RULES_RESOLVED", outputs=bad),
-        )
+        builder.build(invocation, _result(invocation, "RULES_RESOLVED", outputs=bad))
 
 
 def test_full_output_status_cannot_omit_required_field() -> None:
-    invocation = _invocation("RULE_RESOLUTION")
+    invocation = _invocation("RULE_RESOLVED" if False else "RULE_RESOLUTION")
     outputs = _full_outputs(invocation)
     outputs.pop(next(iter(outputs)))
     with pytest.raises(ValueError, match="missing required stage outputs"):
         ExecutionRecordBuilder(ROOT).build(
-            invocation,
-            _result(invocation, "RULES_RESOLVED", outputs=outputs),
+            invocation, _result(invocation, "RULES_RESOLVED", outputs=outputs)
         )
 
 
 def test_result_must_bind_exact_invocation_id() -> None:
     invocation = _invocation("RULE_RESOLUTION")
-    result = _result(
-        invocation,
-        "RULES_RESOLVED",
-        outputs=_full_outputs(invocation),
-    )
+    result = _result(invocation, "RULES_RESOLVED", outputs=_full_outputs(invocation))
     result["invocation_id"] = "inv_" + ("0" * 64)
     with pytest.raises(ValueError, match="does not match invocation"):
         ExecutionRecordBuilder(ROOT).build(invocation, result)
@@ -389,20 +422,10 @@ def test_self_consistent_but_forged_routing_is_rejected() -> None:
     invocation = _invocation("RULE_RESOLUTION")
     forged = json.loads(json.dumps(invocation))
     forged["routing"]["success_transition"] = "END"
-    identity = dict(forged)
-    identity.pop("invocation_id")
-    forged["invocation_id"] = StageInvocationBuilder._invocation_id(identity)
-    with pytest.raises(
-        ValueError,
-        match="routing does not match canonical stage contract",
-    ):
+    _rehash(forged)
+    with pytest.raises(ValueError, match="routing does not match canonical stage contract"):
         ExecutionRecordBuilder(ROOT).build(
-            forged,
-            _result(
-                forged,
-                "RULES_RESOLVED",
-                outputs=_full_outputs(forged),
-            ),
+            forged, _result(forged, "RULES_RESOLVED", outputs=_full_outputs(forged))
         )
 
 
@@ -410,30 +433,124 @@ def test_observer_role_cannot_be_forged_into_executable_record() -> None:
     invocation = _invocation("WORK_PACKAGE_RESEARCH")
     forged = json.loads(json.dumps(invocation))
     forged["stage"]["role_id"] = "CI_ORCHESTRATOR"
-    identity = dict(forged)
-    identity.pop("invocation_id")
-    forged["invocation_id"] = StageInvocationBuilder._invocation_id(identity)
-    with pytest.raises(
-        ValueError,
-        match="not authorized to execute stage WORK_PACKAGE_RESEARCH",
-    ):
+    _rehash(forged)
+    with pytest.raises(ValueError, match="not authorized to execute stage WORK_PACKAGE_RESEARCH"):
         ExecutionRecordBuilder(ROOT).build(
-            forged,
-            _result(
-                forged,
-                "CANDIDATES_READY",
-                outputs=_full_outputs(forged),
-            ),
+            forged, _result(forged, "CANDIDATES_READY", outputs=_full_outputs(forged))
+        )
+
+
+def test_rehashed_claude_invocation_cannot_inject_gpt_result_input() -> None:
+    invocation = _invocation("MODEL_DIAGNOSTIC_CLAUDE")
+    forged = json.loads(json.dumps(invocation))
+    forged["inputs"]["optional"]["GPT_PERSPECTIVE_RESULT"] = {"verdict": "easy"}
+    _rehash(forged)
+    with pytest.raises(ValueError, match="undeclared optional inputs"):
+        ExecutionRecordBuilder(ROOT).build(
+            forged, _result(forged, "EXECUTED", outputs=_full_outputs(forged))
+        )
+
+
+def test_rehashed_q8_invocation_cannot_widen_evidence_classes() -> None:
+    invocation = _invocation("MODEL_DIAGNOSTIC_GPT")
+    forged = json.loads(json.dumps(invocation))
+    forged["evidence"]["authorized_evidence_classes"].append("SOLUTION_ORACLE")
+    forged["evidence"]["excluded_evidence_classes"].remove("SOLUTION_ORACLE")
+    _rehash(forged)
+    with pytest.raises(ValueError, match="authorized evidence classes"):
+        ExecutionRecordBuilder(ROOT).build(
+            forged, _result(forged, "EXECUTED", outputs=_full_outputs(forged))
+        )
+
+
+def test_rehashed_q8_invocation_cannot_inject_oracle_context() -> None:
+    invocation = _invocation("MODEL_DIAGNOSTIC_GPT")
+    forged = json.loads(json.dumps(invocation))
+    content = "secret oracle repair"
+    forged["retrieval"] = {
+        "status": "INDEXED_CONTEXT",
+        "query": "repair",
+        "retrieved_context": [
+            {
+                "chunk_id": "chk_forged",
+                "source_path": "execution-record-test/solution/solve.py",
+                "source_kind": "SOLUTION_ORACLE",
+                "evidence_class": "SOLUTION_ORACLE",
+                "structural_locator": "document",
+                "content_hash": "sha256:" + hashlib.sha256(content.encode()).hexdigest(),
+                "content": content,
+                "score": 1.0,
+            }
+        ],
+        "retrieved_chars": len(content),
+    }
+    _rehash(forged)
+    with pytest.raises(ValueError, match="evidence class is not authorized"):
+        ExecutionRecordBuilder(ROOT).build(
+            forged, _result(forged, "EXECUTED", outputs=_full_outputs(forged))
+        )
+
+
+def test_rehashed_q8_invocation_cannot_relabel_oracle_as_task_code() -> None:
+    invocation = _invocation("MODEL_DIAGNOSTIC_GPT")
+    forged = json.loads(json.dumps(invocation))
+    content = "secret oracle repair"
+    forged["retrieval"] = {
+        "status": "INDEXED_CONTEXT",
+        "query": "repair",
+        "retrieved_context": [
+            {
+                "chunk_id": "chk_forged",
+                "source_path": "execution-record-test/solution/solve.py",
+                "source_kind": "TASK_CODE",
+                "evidence_class": "SOLVER_VISIBLE_TASK",
+                "structural_locator": "document",
+                "content_hash": "sha256:" + hashlib.sha256(content.encode()).hexdigest(),
+                "content": content,
+                "score": 1.0,
+            }
+        ],
+        "retrieved_chars": len(content),
+    }
+    _rehash(forged)
+    with pytest.raises(ValueError, match="may not relabel solution/verifier content"):
+        ExecutionRecordBuilder(ROOT).build(
+            forged, _result(forged, "EXECUTED", outputs=_full_outputs(forged))
+        )
+
+
+def test_rehashed_q8_invocation_cannot_tamper_retrieved_content_hash() -> None:
+    invocation = _invocation("MODEL_DIAGNOSTIC_GPT")
+    forged = json.loads(json.dumps(invocation))
+    content = "solver-visible instruction"
+    forged["retrieval"] = {
+        "status": "INDEXED_CONTEXT",
+        "query": "instruction",
+        "retrieved_context": [
+            {
+                "chunk_id": "chk_forged",
+                "source_path": "execution-record-test/instruction.md",
+                "source_kind": "TASK_INSTRUCTION",
+                "evidence_class": "SOLVER_VISIBLE_TASK",
+                "structural_locator": "document",
+                "content_hash": "sha256:" + ("0" * 64),
+                "content": content,
+                "score": 1.0,
+            }
+        ],
+        "retrieved_chars": len(content),
+    }
+    _rehash(forged)
+    with pytest.raises(ValueError, match="content hash mismatch"):
+        ExecutionRecordBuilder(ROOT).build(
+            forged, _result(forged, "EXECUTED", outputs=_full_outputs(forged))
         )
 
 
 def test_producer_may_advance_task_commit_on_descendant_lineage() -> None:
     current = _head()
     parent = _git("rev-parse", "HEAD^")
-    invocation = _invocation(
-        "WORK_PACKAGE_RESEARCH",
-        task_commit=parent,
-    )
+    invocation = _invocation("WORK_PACKAGE_RESEARCH", task_commit=parent)
     record = ExecutionRecordBuilder(ROOT).build(
         invocation,
         _result(
@@ -469,10 +586,7 @@ def test_controller_may_not_mutate_task_commit() -> None:
 def test_output_commit_must_descend_from_invocation_commit() -> None:
     current = _head()
     parent = _git("rev-parse", "HEAD^")
-    invocation = _invocation(
-        "WORK_PACKAGE_RESEARCH",
-        task_commit=current,
-    )
+    invocation = _invocation("WORK_PACKAGE_RESEARCH", task_commit=current)
     with pytest.raises(ValueError, match="equal or descend"):
         ExecutionRecordBuilder(ROOT).build(
             invocation,
@@ -493,32 +607,18 @@ def test_aggregate_pass_predicate_rejects_bad_q4_value() -> None:
     with pytest.raises(ValueError, match="acceptance predicate failed"):
         ExecutionRecordBuilder(ROOT).build(
             invocation,
-            _result(
-                invocation,
-                "QUALITY_INTERLOCK_PASS",
-                outputs=outputs,
-            ),
+            _result(invocation, "QUALITY_INTERLOCK_PASS", outputs=outputs),
         )
 
 
 def test_record_identity_is_deterministic_and_lineage_evidence_bound() -> None:
     invocation = _invocation("RULE_RESOLUTION")
-    result = _result(
-        invocation,
-        "RULES_RESOLVED",
-        outputs=_full_outputs(invocation),
-    )
+    result = _result(invocation, "RULES_RESOLVED", outputs=_full_outputs(invocation))
     builder = ExecutionRecordBuilder(ROOT)
     first = builder.build(invocation, result)
     second = builder.build(invocation, result)
     assert first["record_id"] == second["record_id"]
 
     changed = json.loads(json.dumps(result))
-    changed["evidence_refs"] = [
-        {
-            "kind": "RUN",
-            "ref": "github-actions://run/123",
-            "content_hash": "sha256:" + ("1" * 64),
-        }
-    ]
+    changed["evidence_refs"] = [_eref("RUN", "github-actions://run/123")]
     assert builder.build(invocation, changed)["record_id"] != first["record_id"]
