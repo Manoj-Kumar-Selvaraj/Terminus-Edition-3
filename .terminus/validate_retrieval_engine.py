@@ -19,6 +19,7 @@ REQUIRED = [
     ROOT / ".gitignore",
     T / "agents" / "RETRIEVAL_ENGINE.md",
     T / "agents" / "RETRIEVAL_METADATA.md",
+    T / "agents" / "DYNAMIC_EVIDENCE_INGESTION.md",
     T / "agents" / "STAGE_CONTRACTS.md",
     T / "retrieval" / "__init__.py",
     T / "retrieval" / "models.py",
@@ -27,11 +28,13 @@ REQUIRED = [
     T / "retrieval" / "store.py",
     T / "retrieval" / "embeddings.py",
     T / "retrieval" / "indexer.py",
+    T / "retrieval" / "ingestion.py",
     T / "retrieval" / "engine.py",
     T / "retrieval" / "cli.py",
     T / "tests" / "test_retrieval_engine.py",
     T / "tests" / "test_retrieval_cache.py",
     T / "tests" / "test_retrieval_architecture.py",
+    T / "tests" / "test_dynamic_evidence_ingestion.py",
 ]
 
 POLICY_MARKERS = [
@@ -63,6 +66,19 @@ METADATA_MARKERS = [
     "retrieval-result cache",
     "Reference retrieval engine",
     "Dynamic evidence boundary",
+    "DynamicEvidenceIngestor",
+    "DYNAMIC_EVIDENCE_INGESTION.md",
+]
+
+DYNAMIC_POLICY_MARKERS = [
+    "Dynamic evidence ingestion policy version: `1.0`",
+    "explicitly projected, never discovered-and-trusted",
+    "Repository-backed provenance",
+    "External provenance",
+    "Pre-persistence authorization",
+    "Producer provenance vs consumer applicability",
+    "Normal ChatGPT",
+    "Never repair, infer, or fabricate missing provenance",
 ]
 
 ENGINE_MARKERS = [
@@ -79,6 +95,21 @@ INDEXER_MARKERS = [
     "structural-v2",
 ]
 
+INGESTION_MARKERS = [
+    "DynamicEvidenceIngestor",
+    "REVIEW_PACKET",
+    "REVIEW_RESULT",
+    "SESSION_STATE",
+    "CI_RUNTIME",
+    "MODEL_TRIAL",
+    "FINAL_PACKAGE",
+    "PUBLIC_REFERENCE",
+    "terminus-projection",
+    "session policy bindings do not match control-plane snapshot",
+    "missing required provenance bindings",
+    "_validate_projection",
+]
+
 POLICY_CODE_MARKERS = [
     "allowed_roles_for_stage",
     "not authorized for stage",
@@ -89,6 +120,8 @@ CLI_MARKERS = [
     "--task-id requires an explicit --task-commit",
     "--control-plane-commit",
     "--task-commit",
+    "ingest-repository",
+    "ingest-external",
 ]
 
 
@@ -122,11 +155,25 @@ def main() -> int:
     stale_future_marker = "What this step intentionally does not implement"
     if stale_future_marker.lower() in metadata_text.lower():
         errors.append("RETRIEVAL_METADATA.md still describes the retrieval engine as unimplemented")
+    if "future/provenance-aware ingestion adapter may add them" in metadata_text.lower():
+        errors.append("RETRIEVAL_METADATA.md still describes dynamic ingestion as future work")
+
+    dynamic_policy = (T / "agents" / "DYNAMIC_EVIDENCE_INGESTION.md").read_text(
+        encoding="utf-8"
+    )
+    _require_markers(
+        errors,
+        dynamic_policy,
+        "DYNAMIC_EVIDENCE_INGESTION.md",
+        DYNAMIC_POLICY_MARKERS,
+    )
 
     engine_text = (T / "retrieval" / "engine.py").read_text(encoding="utf-8")
     _require_markers(errors, engine_text, "engine.py", ENGINE_MARKERS)
     indexer_text = (T / "retrieval" / "indexer.py").read_text(encoding="utf-8")
     _require_markers(errors, indexer_text, "indexer.py", INDEXER_MARKERS)
+    ingestion_text = (T / "retrieval" / "ingestion.py").read_text(encoding="utf-8")
+    _require_markers(errors, ingestion_text, "ingestion.py", INGESTION_MARKERS)
     policy_code = (T / "retrieval" / "policy.py").read_text(encoding="utf-8")
     _require_markers(errors, policy_code, "policy.py", POLICY_CODE_MARKERS)
     cli_text = (T / "retrieval" / "cli.py").read_text(encoding="utf-8")
@@ -172,6 +219,18 @@ def main() -> int:
     ):
         errors.append("QUALITY_INTERLOCK must permit the packet-bound Q6 reviewer")
 
+    dynamic_kinds = {
+        "REVIEW_PACKET",
+        "REVIEW_RESULT",
+        "SESSION_STATE",
+        "CI_RUNTIME",
+        "MODEL_TRIAL",
+        "FINAL_PACKAGE",
+        "PUBLIC_REFERENCE",
+    }
+    if not dynamic_kinds.issubset(policy.source_kinds):
+        errors.append("dynamic ingestion kinds must remain registered retrieval source kinds")
+
     vector = HashingEmbedder().embed(["replay recovery"])[0]
     if len(vector) != 384:
         errors.append("default hashing embedder must emit 384 dimensions")
@@ -200,7 +259,8 @@ def main() -> int:
         "exact_reads=mandatory lexical=fts5_or_bm25 vector=pluggable "
         "hybrid=rrf caches=parse_embedding_result authorization=pre_rank_stage_role "
         "bindings=independent_task_control candidate_cache=bound context=bounded "
-        "integration=stage_adapter portability=direct_read_fallback cache_state=ignored"
+        "dynamic_ingestion=explicit_provenance integration=stage_adapter "
+        "portability=direct_read_fallback cache_state=ignored"
     )
     return 0
 
