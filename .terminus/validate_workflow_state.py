@@ -49,10 +49,18 @@ def main() -> int:
         ".terminus/execution/state.py",
         ".terminus/execution/controller_cli.py",
         ".terminus/tests/test_workflow_state.py",
+        ".terminus/tests/test_workflow_temporal_order.py",
+        ".terminus/tests/test_retrieval_workflow_state_exclusion.py",
     ]
     missing = [path for path in required_paths if not (ROOT / path).is_file()]
     if missing:
         fail(f"missing workflow-state files: {missing}")
+
+    gitignore = (ROOT / ".gitignore").read_text(encoding="utf-8")
+    if ".terminus/workflows/" not in gitignore:
+        fail("derived .terminus/workflows/ state must remain ignored/rebuildable")
+    if ".terminus/executions/" in gitignore:
+        fail("durable .terminus/executions/ provenance must not be ignored")
 
     policy = (ROOT / ".terminus" / "agents" / "WORKFLOW_STATE.md").read_text(
         encoding="utf-8"
@@ -69,6 +77,14 @@ def main() -> int:
     for marker in markers:
         if marker not in policy_lower:
             fail(f"WORKFLOW_STATE.md missing required invariant marker: {marker}")
+
+    state_code = (ROOT / ".terminus" / "execution" / "state.py").read_text(
+        encoding="utf-8"
+    )
+    if "last_current_stage_sequence" not in state_code:
+        fail("state resolver must enforce temporal predecessor ordering")
+    if "predates the latest current predecessor execution" not in state_code:
+        fail("state resolver must explain same-commit temporal staleness")
 
     resolver = WorkflowStateResolver(ROOT)
     if len(resolver.policy.stages) != 23:
@@ -126,9 +142,9 @@ def main() -> int:
     print("Terminus workflow-state validation PASS")
     print(
         "workflow_state=1.0 ledger=1.0 stages=23 nodes=24 "
-        "record_selection=last_event staleness=dependency_propagated "
-        "freeze=derived_state next=deterministic legacy_sessions=not_inferred "
-        "portability=normal_chatgpt_fallback"
+        "record_selection=last_event staleness=commit_evidence_temporal_dependency "
+        "freeze=derived_state next=deterministic durable=executions derived=workflows_ignored "
+        "legacy_sessions=not_inferred portability=normal_chatgpt_fallback"
     )
     return 0
 
