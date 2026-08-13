@@ -14,6 +14,8 @@ Canonical implementation:
 - `.terminus/agents/schemas/execution_record.schema.json`
 - `.terminus/execution/authority.py`
 - `.terminus/execution/acceptance.py`
+- `.terminus/execution/evidence_refs.py`
+- `.terminus/execution/record_core.py`
 - `.terminus/execution/record.py`
 - `.terminus/execution/result_cli.py`
 - `.terminus/validate_execution_record.py`
@@ -22,7 +24,7 @@ Canonical implementation:
 
 A result may affect workflow state only through this chain:
 
-`valid READY invocation + canonical stage/input/evidence/retrieval projection + executable stage role + exact input task commit + matching invocation_id + legal stage status + declared outputs + valid output task commit lineage + status-specific acceptance predicates + immutable evidence bindings when required + valid route key when routed -> execution record -> transition decision`
+`valid READY invocation + canonical stage/input/evidence/retrieval projection + executable stage role + exact input task commit + matching invocation_id + legal stage status + declared outputs + valid output task commit lineage + status-specific acceptance predicates + resolvable immutable evidence bindings when required + valid route key when routed -> execution record -> transition decision`
 
 A prose answer, chat statement, reviewer conclusion, cache hit, retrieval-observer permission or unbound JSON object does not advance a Terminus stage by itself.
 
@@ -49,8 +51,8 @@ Examples:
 - `FORMAT_GATE: FIXED -> RETRY`;
 - `DETERMINISTIC_VALIDATION: PASS -> ADVANCE` only when Oracle=1, NOP=0 and F2P/P2P matrices are present;
 - `QUALITY_INTERLOCK: QUALITY_INTERLOCK_PASS -> ADVANCE` only when the embedded current Q4/Q6 results satisfy the declared PASS/confidence/evidence predicates **and** are bound to immutable result references;
-- `HARBOR_LLMAJ: PASS -> ADVANCE` only when the current external run identity and hashed run evidence agree;
-- `OFFICIAL_MODEL_TRIALS: COMPLETE -> ADVANCE` only after the external batch identity and all ten distinct per-trial run identities are present;
+- `HARBOR_LLMAJ: PASS -> ADVANCE` only when the current external run identity is captured in immutable repository evidence and the reference resolves to those bytes;
+- `OFFICIAL_MODEL_TRIALS: COMPLETE -> ADVANCE` only after the external batch identity and all ten distinct per-trial run identities are captured in immutable evidence;
 - `QUALITY_INTERLOCK: REVISE -> ROUTE` through an allowed route such as `Q4_REVISE` or `Q6_REVISE`.
 
 ## Result envelope
@@ -74,6 +76,7 @@ The result contains no chain-of-thought, scratchpad or private-reasoning field.
 - commit authorized producer/fixer changes before returning a result that relies on them;
 - inspect the invocation's declared acceptance predicates before choosing an advancing status;
 - preserve immutable evidence references for every acceptance-relevant external/reviewer fact;
+- capture acceptance-relevant external run evidence into immutable repository bytes before using it to advance a sensitive gate;
 - preserve reviewer IDs, external run IDs, trial run IDs and package identities needed to bind output values to evidence;
 - return a non-advancing status when a required predicate or evidence binding is not satisfied;
 - use the canonical execution recorder for external-gate results as well as ordinary stages.
@@ -84,7 +87,8 @@ The result contains no chain-of-thought, scratchpad or private-reasoning field.
 - point `output_task_commit` at an uncommitted working tree, unrelated branch or non-descendant commit;
 - let a controller, reviewer, simulator or external gate mutate the task snapshot while retaining that role authority;
 - label a stage `PASS` merely because all required output *keys* are present;
-- return an acceptance-sensitive PASS/COMPLETE with empty or unhashed evidence references;
+- return an acceptance-sensitive PASS/COMPLETE with empty, unhashed or unresolved evidence references;
+- hash an evidence label or run ID and treat that self-consistent string as proof that the referenced result/run exists;
 - widen the invocation's evidence classes, insert undeclared inputs, relabel Oracle/verifier material as solver-visible content, or replace retrieved content and recompute `invocation_id`;
 - weaken or fabricate embedded reviewer/run evidence to satisfy an aggregate predicate;
 - rely on a CLI-specific validation path: the canonical recorder itself owns external-result and evidence checks.
@@ -164,21 +168,30 @@ An `ADVANCE` result that fails a declared predicate is rejected before a durable
 
 ## Evidence binding
 
-Evidence references are not decorative metadata. Acceptance-sensitive advancing stages require immutable `content_hash`-bound references in addition to valid output values.
+Evidence references are not decorative metadata. Result envelopes accept only the controlled reference schemes `git:`, `commit:`, `run:` and `external:`. Durable records normalize every accepted reference to a `content_hash`-bound identity.
 
-The canonical recorder currently enforces, at minimum:
+The canonical repository-resolved formats are:
 
-- `QUALITY_INTERLOCK` — current Q4 and Q6 `review_id` values must each bind to hashed `RESULT` evidence;
+- `git:<commit>:<path>#<identity>` — `<commit>` must exist; the referenced path must exist at that exact commit; `content_hash` must equal the SHA-256 of the exact Git bytes; and when an identity fragment is supplied, that identity must occur in the captured artifact;
+- `commit:<sha>` — the commit must exist and the recorder derives/verifies the deterministic commit-identity hash.
+
+`run:<provider>:<run-id>#sha256:<digest>` and `external:<provider>:<id>#sha256:<digest>` may be retained as non-authoritative provenance/telemetry pointers. Their self-addressed digest proves only that the pointer is internally well-formed; it does **not** prove the external result exists or has the claimed contents. Therefore these pointers do not count toward acceptance-sensitive `ADVANCE` decisions.
+
+For an external run to become gate evidence, capture its result/trajectory/manifest into immutable repository bytes and reference those bytes with `git:<commit>:<path>#<run-id>` (or another exact identity present in the artifact). This prevents “hash the label itself” from satisfying a gate while retaining portable pointers for non-acceptance telemetry.
+
+Acceptance-sensitive advancing stages count only repository-resolved `git:`/`commit:` evidence. The canonical recorder currently enforces, at minimum:
+
+- `QUALITY_INTERLOCK` — current Q4 and Q6 `review_id` values must each bind exactly to resolved `RESULT` evidence;
 - `PRE_LLMAJ` — the aggregate must retain the independent specialist/panel result set;
 - `MODEL_DIAGNOSTIC_AGGREGATE` — both frozen Q8 perspective results must be referenced;
-- `HARBOR_LLMAJ` — Harbor run identity must bind to hashed run/external evidence;
-- `OFFICIAL_MODEL_TRIALS` — all ten distinct official trial `run_id` values must bind to immutable run evidence;
+- `HARBOR_LLMAJ` — Harbor run identity must bind exactly to captured resolved run/external evidence;
+- `OFFICIAL_MODEL_TRIALS` — all ten distinct official trial `run_id` values must bind to immutable captured run evidence;
 - `TRIAL_ANALYSIS` — all ten official trajectories remain evidence-bound;
 - `DIFFICULTY_ASSESSMENT` — the ten official runs plus the Trajectory Analyst record are bound;
 - `FINAL_REVIEW` — Compliance and Human Quality review IDs plus package evidence are bound;
 - `SUBMISSION_READY` — validated gate result evidence and final package evidence are retained.
 
-An evidence reference never becomes authoritative merely because it is named. Packet provenance, role-contract identity, task/control commit freshness, CI/external run identity and evidence-specific validators remain controlling.
+An evidence reference never becomes authoritative merely because it is named or self-hashed. Packet provenance, role-contract identity, task/control commit freshness, CI/external run identity and evidence-specific validators remain controlling.
 
 ## Route validation
 
