@@ -6,13 +6,15 @@ import hashlib
 import json
 import re
 import subprocess
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 from typing import Any, Mapping
 from urllib.parse import unquote
 
 _SHA = re.compile(r"^[0-9a-f]{40,64}$")
 _SHA256 = re.compile(r"^sha256:[0-9a-f]{64}$")
-_GIT_KINDS = frozenset({"ARTIFACT", "PACKET", "RESULT", "FILE"})
+_GIT_KINDS = frozenset(
+    {"ARTIFACT", "PACKET", "RESULT", "FILE", "RUN", "EXTERNAL", "OTHER"}
+)
 _EXTERNAL_KINDS = frozenset({"ARTIFACT", "RUN", "EXTERNAL", "OTHER"})
 
 
@@ -58,6 +60,34 @@ class EvidenceReferenceVerifier:
             f"evidence_refs[{index}] must use git:, commit:, run:, or external: identity"
         )
 
+    @staticmethod
+    def is_resolved(value: Mapping[str, Any]) -> bool:
+        """Return whether one ref resolves to immutable repository bytes/commit identity."""
+        ref = value.get("ref")
+        return isinstance(ref, str) and (
+            ref.startswith("git:") or ref.startswith("commit:")
+        )
+
+    @staticmethod
+    def identity(value: Mapping[str, Any]) -> str | None:
+        """Return the exact identity carried by one validated evidence reference."""
+        ref = value.get("ref")
+        if not isinstance(ref, str):
+            return None
+        if ref.startswith("git:"):
+            _location, marker, fragment = ref[len("git:") :].partition("#")
+            return unquote(fragment).strip() if marker and fragment.strip() else None
+        if ref.startswith("commit:"):
+            value = ref[len("commit:") :].strip()
+            return value if value else None
+        if ref.startswith("run:") or ref.startswith("external:"):
+            identity, _marker, _digest = ref.rpartition("#")
+            _prefix, separator, rest = identity.partition(":")
+            _provider, separator2, item_id = rest.partition(":")
+            if separator and separator2 and item_id.strip():
+                return item_id.strip()
+        return None
+
     def _validate_git(
         self,
         kind: str,
@@ -73,8 +103,17 @@ class EvidenceReferenceVerifier:
         path = unquote(encoded_path)
         if not colon or not _SHA.fullmatch(commit) or not path:
             raise ValueError(f"evidence_refs[{index}] has invalid git reference")
-        if path.startswith("/") or ".." in Path(path).parts:
+        posix_path = PurePosixPath(path)
+        if (
+            path.startswith("/")
+            or "\\" in path
+            or any(part == ".." for part in posix_path.parts)
+        ):
             raise ValueError(f"evidence_refs[{index}] git path is unsafe")
+        if kind in {"RUN", "EXTERNAL"} and not (separator and fragment.strip()):
+            raise ValueError(
+                f"evidence_refs[{index}] git {kind.lower()} evidence requires identity fragment"
+            )
         self._require_commit(commit, index)
         raw = subprocess.run(
             ["git", "-C", str(self.root), "show", f"{commit}:{path}"],
@@ -118,6 +157,7 @@ class EvidenceReferenceVerifier:
         content_hash: Any,
         index: int,
     ) -> dict[str, Any]:
+        """Validate a self-addressed external identity; it is not repository-resolved."""
         if not isinstance(content_hash, str):
             raise ValueError(
                 f"evidence_refs[{index}] external evidence requires content_hash"
