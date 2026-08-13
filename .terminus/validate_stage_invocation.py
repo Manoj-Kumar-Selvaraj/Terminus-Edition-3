@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import json
+import subprocess
 import sys
 from pathlib import Path
 from typing import Any
@@ -38,13 +39,16 @@ POLICY_MARKERS = [
 
 CODE_MARKERS = [
     "BLOCKED_MISSING_INPUTS",
-    "ignored_input_fields",
+    "ignored_input_count",
     "mandatory_exact_reads",
     "authorized_evidence_classes",
     "SKIPPED_BLOCKED_INPUTS",
     "DIRECT_READ_FALLBACK",
     "allowed_status_values",
     "success_transition",
+    "_require_loaded_contract_snapshot",
+    "_validate_policy_versions",
+    "item.pop(\"score\", None)",
     "_invocation_id",
 ]
 
@@ -123,17 +127,33 @@ def main() -> int:
         errors.append("schema must bind task_id to task_commit")
     if dependent.get("task_commit") != ["task_id"]:
         errors.append("schema must bind task_commit to task_id")
+    retrieval_items = (
+        schema.get("properties", {})
+        .get("retrieval", {})
+        .get("properties", {})
+        .get("retrieved_context", {})
+        .get("items", {})
+    )
+    if retrieval_items.get("additionalProperties") is not False:
+        errors.append("retrieved_context items must be fail-closed objects")
 
     policy = RetrievalPolicy(ROOT)
     builder = StageInvocationBuilder(ROOT, policy)
-    control_commit = "c" * 40
+    control_commit = subprocess.run(
+        ["git", "-C", str(ROOT), "rev-parse", "HEAD"],
+        check=True,
+        capture_output=True,
+        text=True,
+    ).stdout.strip()
     if len(policy.stages) != 23:
         errors.append(f"expected 23 stages, found {len(policy.stages)}")
 
     invocation_ids: set[str] = set()
     for stage_id, stage in policy.stages.items():
         required_fields = stage.get("input_contract", {}).get("required_fields", [])
-        inputs = {str(field): {"ref": f"validator:{field}"} for field in required_fields}
+        inputs = {
+            str(field): {"ref": f"validator:{field}"} for field in required_fields
+        }
         try:
             packet = builder.build(
                 InvocationContext(
@@ -151,7 +171,10 @@ def main() -> int:
             errors.append(f"stage {stage_id} did not compile READY")
         if packet["missing_required_inputs"]:
             errors.append(f"stage {stage_id} reports unexpected missing inputs")
-        if packet["output_contract"]["allowed_status_values"] != stage["output_contract"]["status_values"]:
+        if (
+            packet["output_contract"]["allowed_status_values"]
+            != stage["output_contract"]["status_values"]
+        ):
             errors.append(f"stage {stage_id} status vocabulary drift")
         if packet["routing"]["success_transition"] != stage["success_transition"]:
             errors.append(f"stage {stage_id} success transition drift")
@@ -190,10 +213,10 @@ def main() -> int:
         ),
         {"CREATION_REQUEST": "create", "UNDECLARED_SECRET": "drop"},
     )
-    if projected["ignored_input_fields"] != ["UNDECLARED_SECRET"]:
-        errors.append("undeclared input is not reported as ignored")
-    if "UNDECLARED_SECRET" in json.dumps(projected["inputs"], sort_keys=True):
-        errors.append("undeclared input leaked into projected inputs")
+    if projected["ignored_input_count"] != 1:
+        errors.append("undeclared input count drift")
+    if "UNDECLARED_SECRET" in json.dumps(projected, sort_keys=True):
+        errors.append("undeclared input name leaked into invocation packet")
 
     if errors:
         print("Terminus stage-invocation validation FAILED:")
@@ -204,9 +227,9 @@ def main() -> int:
     print("Terminus stage-invocation validation PASS")
     print(
         "invocation=1.0 stages=23 projection=declared_inputs_only "
-        "authority=stage_role_task_control exact_reads=mandatory retrieval=optional "
-        "missing_inputs=blocked identity=deterministic reasoning=not_persisted "
-        "portability=normal_chatgpt_fallback"
+        "authority=stage_role_task_control_snapshot exact_reads=mandatory retrieval=optional "
+        "missing_inputs=blocked ignored_names=not_leaked identity=score_independent "
+        "reasoning=not_persisted portability=normal_chatgpt_fallback"
     )
     return 0
 
