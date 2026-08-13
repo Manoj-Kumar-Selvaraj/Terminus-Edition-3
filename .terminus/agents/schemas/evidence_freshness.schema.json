@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "terminus-evidence-freshness-v1",
+  "title": "Terminus Evidence Freshness Overlay",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "bindings"],
+  "properties": {
+    "schema_version": {"const": "1.0"},
+    "bindings": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["status"],
+        "properties": {
+          "status": {"enum": ["CURRENT", "STALE", "MISSING"]},
+          "content_hash": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"},
+          "reason": {"type": "string", "minLength": 1}
+        }
+      }
+    }
+  }
+}
