@@ -11,17 +11,17 @@
     "invocation_id": {"type": "string", "pattern": "^inv_[0-9a-f]{64}$"},
     "stage_id": {"type": "string", "minLength": 1},
     "role_id": {"type": "string", "minLength": 1},
-    "authority": {"type": "object"},
+    "authority": {"$ref": "#/$defs/authority"},
     "status": {"type": "string", "minLength": 1},
     "disposition": {"enum": ["ADVANCE", "ROUTE", "RETRY", "BLOCK"]},
     "outputs": {"type": "object"},
-    "evidence_refs": {"type": "array", "items": {"type": "object"}},
+    "evidence_refs": {"type": "array", "items": {"$ref": "#/$defs/evidenceRef"}},
     "route_key": {"type": "string", "minLength": 1},
     "blocking_reason": {"type": "string", "minLength": 1},
     "transition": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["action", "target_kind", "requires_state_validation"],
+      "required": ["action", "target", "target_kind", "requires_state_validation"],
       "properties": {
         "action": {"enum": ["ADVANCE", "ROUTE", "RETRY", "BLOCK"]},
         "target": {"type": ["string", "null"]},
@@ -41,6 +41,47 @@
         "output_keys_valid": {"const": true},
         "required_outputs_satisfied": {"type": "boolean"},
         "evidence_refs_count": {"type": "integer", "minimum": 0}
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": {"properties": {"disposition": {"const": "ROUTE"}}},
+      "then": {"required": ["route_key"]}
+    },
+    {
+      "if": {"properties": {"disposition": {"const": "BLOCK"}}},
+      "then": {"required": ["blocking_reason"]}
+    }
+  ],
+  "$defs": {
+    "authority": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["control_plane_commit", "policy_versions"],
+      "dependentRequired": {
+        "task_id": ["task_commit"],
+        "task_commit": ["task_id"]
+      },
+      "properties": {
+        "task_id": {"type": "string", "minLength": 1},
+        "task_commit": {"type": "string", "pattern": "^[0-9a-f]{40,64}$"},
+        "control_plane_commit": {"type": "string", "pattern": "^[0-9a-f]{40,64}$"},
+        "role_contract_hash": {"type": "string", "minLength": 8},
+        "packet_binding": {"type": "string", "minLength": 8},
+        "review_scope_hash": {"type": "string", "minLength": 8},
+        "ci_run_id": {"type": ["string", "integer"]},
+        "policy_versions": {"type": "object", "additionalProperties": {"type": "string"}}
+      }
+    },
+    "evidenceRef": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "ref"],
+      "properties": {
+        "kind": {"enum": ["ARTIFACT", "RUN", "PACKET", "RESULT", "COMMIT", "FILE", "EXTERNAL", "OTHER"]},
+        "ref": {"type": "string", "minLength": 1},
+        "content_hash": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"}
       }
     }
   }
