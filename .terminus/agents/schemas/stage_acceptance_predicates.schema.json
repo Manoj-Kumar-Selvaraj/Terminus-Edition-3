@@ -25,12 +25,12 @@
       "required": ["path", "op"],
       "properties": {
         "path": {"type": "string", "minLength": 1},
-        "op": {"enum": ["eq", "in", "empty", "nonempty", "length_eq"]},
+        "op": {"enum": ["eq", "in", "empty", "nonempty", "length_eq", "lt", "lte", "gt", "gte", "all_gte", "eq_path"]},
         "value": {}
       },
       "allOf": [
         {
-          "if": {"properties": {"op": {"enum": ["eq", "in", "length_eq"]}}},
+          "if": {"properties": {"op": {"enum": ["eq", "in", "length_eq", "lt", "lte", "gt", "gte", "all_gte", "eq_path"]}}},
           "then": {"required": ["value"]}
         },
         {
@@ -40,6 +40,14 @@
         {
           "if": {"properties": {"op": {"const": "length_eq"}}},
           "then": {"properties": {"value": {"type": "integer", "minimum": 0}}}
+        },
+        {
+          "if": {"properties": {"op": {"enum": ["lt", "lte", "gt", "gte", "all_gte"]}}},
+          "then": {"properties": {"value": {"type": "number"}}}
+        },
+        {
+          "if": {"properties": {"op": {"const": "eq_path"}}},
+          "then": {"properties": {"value": {"type": "string", "minLength": 1}}}
         }
       ]
     }
