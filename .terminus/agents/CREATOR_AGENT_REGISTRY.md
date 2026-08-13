@@ -4,7 +4,7 @@ Registry version: `1.0`
 
 Producer roles create/repair task artifacts before independent review. Every producer reads current Edition 3 rules, `.terminus/agents/CREATION_PIPELINE.md`, and `.terminus/agents/PRODUCTION_AUTHENTICITY.md`. Producers never issue final acceptance for their own work.
 
-The creator system is extended by `.terminus/agents/QUALITY_AGENT_REGISTRY.md`. Q1, Q2, Q3, Q5 and Q7 are producer/fixer roles; Q4, Q6 and Q8 are independent/diagnostic quality roles and cannot approve work they authored.
+The creator system is extended by `.terminus/agents/QUALITY_AGENT_REGISTRY.md`. Q1, Q2, Q3, Q5 and Q7 are producer/fixer roles; Q4, Q6 and Q8 are independent/diagnostic quality roles and cannot approve work they authored. Q4 and Q6 are post-freeze packet-bound reviewers and are not producer-side semantic reviewers.
 
 ## `large_system_strict`
 
@@ -28,6 +28,8 @@ Edition 3 allows `instruction.md` to use **<=2 short paragraphs or <=20 concise 
 `instruction.md` owns the engineering objective plus all material functional/operational, preservation, compatibility and safety requirements needed for a fair solve. Solver-visible docs may explain repository/folder/component layout, architecture/state models, runtime/operator entrypoints, schemas/record layouts, protocol semantics, API/CLI contracts and runbooks. Docs must not become a second prompt used to hide the task goal/material requirements or expose the repair plan.
 
 The normal boundary is: **instruction = what must work; docs/contracts = how the inherited system is organized/governed; code/runtime = what exists now; solver = determine implementation gaps and repair/complete them.**
+
+A7 receives the controller-produced `APPROVED_SOLVER_VISIBLE_REQUIREMENT_CONTRACT` defined by `.terminus/agents/INSTRUCTION_POLICY.md` and `.terminus/agents/schemas/solver_visible_requirement_contract.schema.json`. It must not reconstruct missing requirements from private defect topology, hidden verifier material, Oracle diffs or prior reviews.
 
 ## Production authenticity
 
@@ -65,13 +67,13 @@ Owns behavioral verifier and private test map. Strict tasks use 25–30 independ
 Owns public source-backed calibration across substantial Jira/issues/change requests as well as incident handoffs. It extracts information-selection patterns, never a phrase bank; distinguishes desired end state from current-state evidence; and flags invented backstory or implementation diagnosis.
 
 ### A7 — Instruction Writer
-Owns `instruction.md`. It states the complete engineering objective and all material functional/operational requirements within <=2 short paragraphs or <=20 concise bullets, uses solver-visible docs for technical structure/contracts, and avoids implementation diagnosis, prompt-extension docs and hidden-test-shaped completeness.
+Owns `instruction.md`. It consumes the current schema-valid `APPROVED_SOLVER_VISIBLE_REQUIREMENT_CONTRACT`, states the complete engineering objective and all material functional/operational requirements within <=2 short paragraphs or <=20 concise bullets, uses solver-visible docs for technical structure/contracts, and avoids implementation diagnosis, prompt-extension docs and hidden-test-shaped completeness.
 
 ### A8 — Documentation Writer
 Owns README and submission explanations. It must not describe the task as a benchmark, fixture, cut-down reproduction, or package built for evaluation.
 
 ### A9 — Task Assembly Agent
-Runs structure, metadata, lint, complexity, runtime-authenticity, instruction-shape/completeness, instruction/docs boundary, Oracle/NOP and leakage gates, including evidence that LOC/test/resource scale is substantive rather than quota-driven.
+Owns **assembly only**: task-tree coherence, metadata/static/lint readiness, instruction/docs boundary checks, package/leakage boundaries, and preparation of evidence consumed by later gates. Its executable contract is `.terminus/agents/A9_ASSEMBLY_PROMPT.md`. A9 returns `ASSEMBLED`, not `FROZEN_CANDIDATE`, and does not issue Complexity Governor PASS, runtime-authenticity PASS, Oracle/NOP/F2P/P2P evidence, Q4 PASS or Q6 PASS.
 
 ### A10 — Complexity Governor
 Challenges localized-task padding, toy state, duplicated/unreachable code, micro-module inflation, F2P quota-padding, insufficient edge/failure coverage, instruction/docs leakage and task realism even when numeric minima pass.
@@ -89,10 +91,12 @@ After the verifier and instruction exist, the Orchestrator runs the repair-capab
 - **Q7 Task Format Enforcer** — repairs exact task/task.toml/Docker/verifier/solution/package-format defects from current rules.
 - **Q5 Oracle & Runtime Repair Specialist** — invoked only when Oracle/build/runtime evidence fails; repairs the smallest responsible layer and never weakens legitimate tests.
 
-After deterministic freeze, **Q4 Spec-Test Contract Reviewer** and **Q6 Production Logic Auditor** independently judge alignment and production-grade logic before Pre-LLMaJ. Q4 also checks that complete functional requirements remain solver-visible without turning either `instruction.md` or environment docs into a hidden-test/prompt-extension dump. **Q8 Model Perspective Difficulty Simulator** runs two diagnostic cold solve perspectives after Pre-LLMaJ PASS and before expensive official model-backed difficulty trials.
+After `ASSEMBLY`, A10 owns `COMPLEXITY_GATE`, then the controller owns `RUNTIME_AUTHENTICITY` and `DETERMINISTIC_VALIDATION`. Only after those gates pass may the controller record `FROZEN_CANDIDATE`.
+
+After deterministic freeze, **Q4 Spec-Test Contract Reviewer** and **Q6 Production Logic Auditor** independently judge alignment and production-grade logic at `QUALITY_INTERLOCK` before Pre-LLMaJ. They do not appear as semantic reviewers on pre-freeze creation stages. Q4 also checks that complete functional requirements remain solver-visible without turning either `instruction.md` or environment docs into a hidden-test/prompt-extension dump. **Q8 Model Perspective Difficulty Simulator** runs two diagnostic cold solve perspectives after Pre-LLMaJ PASS and before expensive official model-backed difficulty trials.
 
 ## Creation order
 
-`A1 -> A2(SYSTEM_ARCHITECTURE design-only) -> A3 -> A2(ENVIRONMENT_BUILD materialization) -> A4 -> A5 -> A6 -> A7 -> Q1 -> Q2 -> Q3 -> A8 -> Q7 -> A9 -> A10 -> runtime-authenticity -> deterministic Oracle/NOP (Q5 on failure) -> FROZEN_CANDIDATE`
+`A1 -> A2(SYSTEM_ARCHITECTURE design-only) -> A3 -> A2(ENVIRONMENT_BUILD materialization) -> A4 -> A5 -> A6 -> A7 -> Q1 -> Q2 -> Q3 -> A8 -> Q7 -> A9(ASSEMBLED) -> A10 -> runtime-authenticity -> deterministic Oracle/NOP (Q5 on failure) -> FROZEN_CANDIDATE -> Q4/Q6 QUALITY_INTERLOCK`
 
 Only a frozen deterministic candidate that also passes the Q4/Q6 quality interlock enters normal Pre-LLMaJ review.
