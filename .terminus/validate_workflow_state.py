@@ -57,16 +57,17 @@ def main() -> int:
     policy = (ROOT / ".terminus" / "agents" / "WORKFLOW_STATE.md").read_text(
         encoding="utf-8"
     )
+    policy_lower = policy.lower()
     markers = [
         "materialized state file into acceptance evidence",
         "last valid ledger event for that stage",
         "downstream acceptance cannot survive a non-current predecessor",
-        "FROZEN_CANDIDATE",
-        "Legacy `.terminus/sessions/<task>.md`",
-        "normal ChatGPT conversation",
+        "frozen_candidate",
+        "legacy `.terminus/sessions/<task>.md`",
+        "normal chatgpt conversation",
     ]
     for marker in markers:
-        if marker not in policy:
+        if marker not in policy_lower:
             fail(f"WORKFLOW_STATE.md missing required invariant marker: {marker}")
 
     resolver = WorkflowStateResolver(ROOT)
