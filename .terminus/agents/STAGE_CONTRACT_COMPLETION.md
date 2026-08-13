@@ -4,11 +4,11 @@ Completion policy version: `1.2`
 
 This file closes lifecycle ambiguities that should not be inferred independently by creator/controller agents. It supplements `.terminus/agents/stage_contracts.json` without changing the authority of Edition 3 rules, `.terminus/AGENT_SYSTEM.md`, `.terminus/agents/PROTOCOL.md`, packet evidence boundaries, or role-specific exclusions.
 
-The machine-readable companion is `.terminus/agents/stage_contract_completion.json`; its schema is `.terminus/agents/schemas/stage_contract_completion.schema.json`.
+The machine-readable companion is `.terminus/agents/stage_contract_completion.json`; its schema is `.terminus/agents/schemas/stage_contract_completion.schema.json`. A2 phase-specific executable prompts live in `.terminus/agents/A2_PHASE_PROMPTS.md`.
 
 ## A2 two-phase contract
 
-A2 is one role with two separate invocations.
+A2 is one role with two separate invocations. The phase-specific prompt is mandatory for both A2 invocations and specializes the shared A2 obligations in `CREATOR_PROMPTS.md`.
 
 ### `SYSTEM_ARCHITECTURE` — design only
 
@@ -53,6 +53,7 @@ The validator must reject at least these contradictions:
 - A2 described as building the broken starter before A3;
 - A3 described as operating on an already defect-injected starter when the clean architecture is the approved design input;
 - `ENVIRONMENT_BUILD` not depending on both `SYSTEM_ARCHITECTURE` and `DEFECT_TOPOLOGY`;
+- either A2 phase not using `.terminus/agents/A2_PHASE_PROMPTS.md`;
 - deterministic validation advancing directly to semantic review without an evidence-bound freeze state;
 - any alternate creation chain that reverses the three design/materialization phases.
 
