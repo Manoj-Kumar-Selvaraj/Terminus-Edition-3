@@ -40,11 +40,12 @@ jobs:
             .terminus/validate_stage_contracts.py \
             .terminus/validate_retrieval_metadata.py \
             .terminus/validate_retrieval_engine.py \
+            .terminus/validate_stage_invocation.py \
             .terminus/review_contract.py \
             .terminus/new_review_packet.py \
             .terminus/validate_review_freshness.py \
             .terminus/validate_task_complexity.py
-          python3 -m compileall -q .terminus/retrieval
+          python3 -m compileall -q .terminus/retrieval .terminus/execution
 
       - name: Install pinned control-plane test tools
         run: python3 -m pip install --quiet ruff==0.14.10 pytest==8.4.1
@@ -70,6 +71,10 @@ jobs:
       - name: Validate retrieval engine
         if: ${{ !cancelled() }}
         run: python3 .terminus/validate_retrieval_engine.py
+
+      - name: Validate executable stage invocations
+        if: ${{ !cancelled() }}
+        run: python3 .terminus/validate_stage_invocation.py
 
       - name: Validate current review freshness and commit binding
         if: ${{ !cancelled() }}
