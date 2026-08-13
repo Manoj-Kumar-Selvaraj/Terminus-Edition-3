@@ -11,6 +11,7 @@ import pytest
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / ".terminus"))
 
+from execution.authority import ExecutionAuthority  # noqa: E402
 from execution.invocation import StageInvocationBuilder  # noqa: E402
 from retrieval.models import InvocationContext  # noqa: E402
 from retrieval.policy import ALL_ROLES, ALL_STAGES, RetrievalPolicy  # noqa: E402
@@ -24,7 +25,10 @@ CONTROL_COMMIT = subprocess.run(
 ).stdout.strip()
 
 
-def _context(stage: str, role: str = "CI_ORCHESTRATOR") -> InvocationContext:
+def _context(stage: str, role: str | None = None) -> InvocationContext:
+    if role is None:
+        policy = RetrievalPolicy(ROOT)
+        role = ExecutionAuthority(policy).primary_role_for_stage(stage)
     return InvocationContext(
         stage_id=stage,
         role_id=role,
@@ -83,17 +87,37 @@ def _add_control_plane_chunk(store: RetrievalStore, policy: RetrievalPolicy) -> 
 
 def test_all_registered_stages_compile_from_machine_contract() -> None:
     policy = RetrievalPolicy(ROOT)
+    authority = ExecutionAuthority(policy)
     builder = StageInvocationBuilder(ROOT, policy)
     assert len(policy.stages) == 23
     for stage_id, stage in policy.stages.items():
-        packet = builder.build(_context(stage_id), _required_inputs(policy, stage_id))
+        role = authority.primary_role_for_stage(stage_id)
+        packet = builder.build(_context(stage_id, role), _required_inputs(policy, stage_id))
         assert packet["readiness"] == "READY", stage_id
         assert packet["stage"]["stage_id"] == stage_id
-        assert packet["stage"]["role_id"] == "CI_ORCHESTRATOR"
+        assert packet["stage"]["role_id"] == role
         assert packet["output_contract"]["allowed_status_values"] == stage["output_contract"]["status_values"]
         assert packet["routing"]["success_transition"] == stage["success_transition"]
         assert packet["evidence"]["mandatory_exact_reads"] == list(
             policy.mandatory_exact_paths(stage_id)
+        )
+
+
+def test_controller_observer_cannot_execute_producer_stage() -> None:
+    builder = StageInvocationBuilder(ROOT)
+    with pytest.raises(ValueError, match="execution role CI_ORCHESTRATOR is not authorized"):
+        builder.build(
+            _context("WORK_PACKAGE_RESEARCH", "CI_ORCHESTRATOR"),
+            _required_inputs(RetrievalPolicy(ROOT), "WORK_PACKAGE_RESEARCH"),
+        )
+
+
+def test_creation_controller_observer_cannot_execute_a1_stage() -> None:
+    builder = StageInvocationBuilder(ROOT)
+    with pytest.raises(ValueError, match="execution role CREATION_CONTROLLER is not authorized"):
+        builder.build(
+            _context("WORK_PACKAGE_RESEARCH", "CREATION_CONTROLLER"),
+            _required_inputs(RetrievalPolicy(ROOT), "WORK_PACKAGE_RESEARCH"),
         )
 
 
@@ -141,7 +165,7 @@ def test_task_identity_requires_exact_pair() -> None:
         builder.build(
             InvocationContext(
                 stage_id="RULE_RESOLUTION",
-                role_id="CI_ORCHESTRATOR",
+                role_id="CREATION_CONTROLLER",
                 task_id="task-x",
                 control_plane_commit=CONTROL_COMMIT,
             ),
@@ -155,7 +179,7 @@ def test_unavailable_control_plane_commit_fails_closed() -> None:
         builder.build(
             InvocationContext(
                 stage_id="RULE_RESOLUTION",
-                role_id="CI_ORCHESTRATOR",
+                role_id="CREATION_CONTROLLER",
                 control_plane_commit="f" * 40,
             ),
             {"CREATION_REQUEST": "create"},
@@ -168,7 +192,7 @@ def test_stale_declared_policy_version_fails_closed() -> None:
         builder.build(
             InvocationContext(
                 stage_id="RULE_RESOLUTION",
-                role_id="CI_ORCHESTRATOR",
+                role_id="CREATION_CONTROLLER",
                 control_plane_commit=CONTROL_COMMIT,
                 policy_versions={"agent_system": "0.0"},
             ),
@@ -269,7 +293,7 @@ def test_unknown_evidence_restriction_fails_closed() -> None:
         builder.build(
             InvocationContext(
                 stage_id="RULE_RESOLUTION",
-                role_id="CI_ORCHESTRATOR",
+                role_id="CREATION_CONTROLLER",
                 control_plane_commit=CONTROL_COMMIT,
                 excluded_evidence_classes=frozenset({"NOT_A_REAL_CLASS"}),
             ),
