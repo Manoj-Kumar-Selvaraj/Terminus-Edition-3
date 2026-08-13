@@ -11,15 +11,20 @@ from typing import Any, Mapping
 
 from retrieval.policy import RetrievalPolicy
 
+from .acceptance import StageAcceptancePredicates
 from .authority import ExecutionAuthority
 from .invocation import StageInvocationBuilder
 
+_SHA = re.compile(r"^[0-9a-f]{40,64}$")
 _SHA256 = re.compile(r"^sha256:[0-9a-f]{64}$")
 _EVIDENCE_KINDS = frozenset(
     {"ARTIFACT", "RUN", "PACKET", "RESULT", "COMMIT", "FILE", "EXTERNAL", "OTHER"}
 )
+_TASK_MUTATING_ROLE_CLASSES = frozenset({"PRODUCER", "FIXER"})
 _OUTCOME_SNAPSHOT_PATHS = (
     ".terminus/agents/execution_outcomes.json",
+    ".terminus/agents/stage_acceptance_predicates.json",
+    ".terminus/agents/schemas/stage_acceptance_predicates.schema.json",
     ".terminus/agents/EXECUTION_RECORD.md",
     ".terminus/agents/stage_contract_completion.json",
 )
@@ -37,6 +42,7 @@ class ExecutionRecordBuilder:
         self.invocation_builder = StageInvocationBuilder(self.root, self.policy)
         self.outcomes = self._load_json(".terminus/agents/execution_outcomes.json")
         self.completion = self._load_json(".terminus/agents/stage_contract_completion.json")
+        self.acceptance = StageAcceptancePredicates(self.root)
 
     def build(
         self,
@@ -46,7 +52,6 @@ class ExecutionRecordBuilder:
         """Return a validated immutable execution record or fail closed."""
         invocation_dict = self._validate_invocation(invocation)
         result_dict = self._validate_result_shape(result)
-
         if result_dict["invocation_id"] != invocation_dict["invocation_id"]:
             raise ValueError("stage result invocation_id does not match invocation")
 
@@ -60,12 +65,15 @@ class ExecutionRecordBuilder:
         disposition = self._disposition(stage_outcome, status)
         outputs = dict(result_dict["outputs"])
         self._validate_outputs(invocation_dict, stage_outcome, status, outputs)
+        task_lineage = self._validate_task_lineage(
+            invocation_dict, str(result_dict["output_task_commit"])
+        )
+        if disposition == "ADVANCE":
+            self.acceptance.validate(stage_id, status, outputs)
         evidence_refs = self._validate_evidence_refs(result_dict["evidence_refs"])
 
         route_key: str | None = None
         blocking_reason: str | None = None
-        transition: dict[str, Any]
-
         if disposition == "ADVANCE":
             if "route_key" in result_dict or "blocking_reason" in result_dict:
                 raise ValueError("ADVANCE result must not carry route_key or blocking_reason")
@@ -114,13 +122,13 @@ class ExecutionRecordBuilder:
         required_satisfied = all(
             key in outputs and outputs[key] is not None for key in required_fields
         )
-
         record: dict[str, Any] = {
             "schema_version": self.schema_version,
             "invocation_id": invocation_dict["invocation_id"],
             "stage_id": stage_id,
             "role_id": role_id,
             "authority": invocation_dict["authority"],
+            "task_lineage": task_lineage,
             "status": status,
             "disposition": disposition,
             "outputs": outputs,
@@ -131,6 +139,9 @@ class ExecutionRecordBuilder:
                 "status_legal": True,
                 "output_keys_valid": True,
                 "required_outputs_satisfied": required_satisfied,
+                "task_lineage_valid": True,
+                "task_commit_change_authorized": True,
+                "acceptance_predicates_satisfied": True,
                 "evidence_refs_count": len(evidence_refs),
             },
         }
@@ -138,7 +149,6 @@ class ExecutionRecordBuilder:
             record["route_key"] = route_key
         if blocking_reason is not None:
             record["blocking_reason"] = blocking_reason
-
         record["record_id"] = self._record_id(record)
         return self._ordered_record(record)
 
@@ -158,8 +168,7 @@ class ExecutionRecordBuilder:
             raise ValueError("invocation missing invocation_id")
         identity_payload = dict(packet)
         identity_payload.pop("invocation_id", None)
-        expected = self.invocation_builder._invocation_id(identity_payload)
-        if invocation_id != expected:
+        if invocation_id != self.invocation_builder._invocation_id(identity_payload):
             raise ValueError("invocation_id does not match invocation content")
 
         stage = packet.get("stage")
@@ -172,11 +181,16 @@ class ExecutionRecordBuilder:
             raise ValueError("invocation stage_id is not registered")
         if not isinstance(role_id, str):
             raise ValueError("invocation role_id is invalid")
-        executable_roles = self.execution_authority.roles_for_stage(stage_id)
-        if role_id not in executable_roles:
-            raise ValueError(
-                f"role {role_id} is not authorized to execute stage {stage_id}"
-            )
+        if role_id not in self.execution_authority.roles_for_stage(stage_id):
+            raise ValueError(f"role {role_id} is not authorized to execute stage {stage_id}")
+
+        task_id = authority.get("task_id")
+        task_commit = authority.get("task_commit")
+        if not isinstance(task_id, str) or not task_id.strip():
+            raise ValueError("durable execution requires a reserved task_id before RULE_RESOLUTION")
+        if not isinstance(task_commit, str) or not _SHA.fullmatch(task_commit):
+            raise ValueError("durable execution requires an exact input task_commit before RULE_RESOLUTION")
+        self.invocation_builder._require_git_commit(task_commit, "task_commit")
 
         control_commit = authority.get("control_plane_commit")
         if not isinstance(control_commit, str):
@@ -200,7 +214,6 @@ class ExecutionRecordBuilder:
         }
         if projected_stage != expected_stage:
             raise ValueError("invocation stage projection does not match canonical stage contract")
-
         output = stage.get("output_contract", {})
         expected_output = {
             "allowed_status_values": [str(value) for value in output.get("status_values", [])],
@@ -212,11 +225,8 @@ class ExecutionRecordBuilder:
         }
         if packet.get("output_contract") != expected_output:
             raise ValueError("invocation output contract does not match canonical stage contract")
-
         expected_routing = {
-            "failure_routes": {
-                str(key): str(value) for key, value in stage.get("failure_routes", {}).items()
-            },
+            "failure_routes": {str(key): str(value) for key, value in stage.get("failure_routes", {}).items()},
             "success_transition": str(stage.get("success_transition", "")),
             "stale_on": [str(value) for value in stage.get("stale_on", [])],
         }
@@ -236,18 +246,16 @@ class ExecutionRecordBuilder:
         if not isinstance(payload, dict):
             raise ValueError("stage result must be one JSON object")
         allowed = {
-            "schema_version",
-            "invocation_id",
-            "status",
-            "outputs",
-            "evidence_refs",
-            "route_key",
-            "blocking_reason",
+            "schema_version", "invocation_id", "output_task_commit", "status",
+            "outputs", "evidence_refs", "route_key", "blocking_reason",
         }
         unknown = set(payload) - allowed
         if unknown:
             raise ValueError(f"stage result has unknown fields: {sorted(unknown)}")
-        required = {"schema_version", "invocation_id", "status", "outputs", "evidence_refs"}
+        required = {
+            "schema_version", "invocation_id", "output_task_commit", "status",
+            "outputs", "evidence_refs",
+        }
         missing = required - set(payload)
         if missing:
             raise ValueError(f"stage result missing fields: {sorted(missing)}")
@@ -255,6 +263,8 @@ class ExecutionRecordBuilder:
             raise ValueError("unsupported stage result schema_version")
         if not isinstance(payload["invocation_id"], str):
             raise ValueError("stage result invocation_id must be a string")
+        if not isinstance(payload["output_task_commit"], str) or not _SHA.fullmatch(payload["output_task_commit"]):
+            raise ValueError("stage result output_task_commit must be a full Git commit")
         if not isinstance(payload["status"], str) or not payload["status"]:
             raise ValueError("stage result status must be a non-empty string")
         if not isinstance(payload["outputs"], dict):
@@ -279,17 +289,32 @@ class ExecutionRecordBuilder:
         unknown = set(outputs) - declared
         if unknown:
             raise ValueError(f"stage result has undeclared output fields: {sorted(unknown)}")
-        full_statuses = set(stage_outcome.get("full_output_statuses", []))
-        if status in full_statuses:
+        if status in set(stage_outcome.get("full_output_statuses", [])):
             missing = [
-                name
-                for name in invocation["output_contract"]["required_fields"]
+                name for name in invocation["output_contract"]["required_fields"]
                 if name not in outputs or outputs[name] is None
             ]
             if missing:
-                raise ValueError(
-                    f"status {status} missing required stage outputs: {sorted(missing)}"
-                )
+                raise ValueError(f"status {status} missing required stage outputs: {sorted(missing)}")
+
+    def _validate_task_lineage(self, invocation: Mapping[str, Any], output_task_commit: str) -> dict[str, Any]:
+        input_task_commit = str(invocation["authority"]["task_commit"])
+        self.invocation_builder._require_git_commit(output_task_commit, "output_task_commit")
+        ancestry = subprocess.run(
+            ["git", "-C", str(self.root), "merge-base", "--is-ancestor", input_task_commit, output_task_commit],
+            capture_output=True,
+        )
+        if ancestry.returncode != 0:
+            raise ValueError("output_task_commit must equal or descend from the invocation task_commit")
+        changed = output_task_commit != input_task_commit
+        role_class = str(invocation["stage"]["role_class"])
+        if changed and role_class not in _TASK_MUTATING_ROLE_CLASSES:
+            raise ValueError(f"stage role_class {role_class} may not change the task commit")
+        return {
+            "input_task_commit": input_task_commit,
+            "output_task_commit": output_task_commit,
+            "task_changed": changed,
+        }
 
     def _validate_evidence_refs(self, values: list[Any]) -> list[dict[str, Any]]:
         refs: list[dict[str, Any]] = []
@@ -298,9 +323,7 @@ class ExecutionRecordBuilder:
                 raise ValueError(f"evidence_refs[{index}] must be an object")
             unknown = set(value) - {"kind", "ref", "content_hash"}
             if unknown:
-                raise ValueError(
-                    f"evidence_refs[{index}] has unknown fields: {sorted(unknown)}"
-                )
+                raise ValueError(f"evidence_refs[{index}] has unknown fields: {sorted(unknown)}")
             kind = value.get("kind")
             ref = value.get("ref")
             if kind not in _EVIDENCE_KINDS:
@@ -328,9 +351,7 @@ class ExecutionRecordBuilder:
         if status in stage_outcome.get("block_statuses", []):
             memberships.append("BLOCK")
         if len(memberships) != 1:
-            raise ValueError(
-                f"status {status} must have exactly one execution disposition; found {memberships}"
-            )
+            raise ValueError(f"status {status} must have exactly one execution disposition; found {memberships}")
         return memberships[0]
 
     def _resolve_route_key(
@@ -344,20 +365,13 @@ class ExecutionRecordBuilder:
         if not isinstance(semantics, dict):
             raise ValueError(f"status {status} has no route semantics")
         allowed = set(semantics.get("allowed_route_keys", []))
-        route_key = supplied
-        if route_key is None:
-            route_key = semantics.get("default_route_key")
+        route_key = supplied if supplied is not None else semantics.get("default_route_key")
         if not isinstance(route_key, str) or not route_key:
             raise ValueError(f"status {status} requires an explicit route_key")
         if route_key not in allowed:
-            raise ValueError(
-                f"route_key {route_key} is not allowed for status {status}: {sorted(allowed)}"
-            )
-        failure_routes = invocation["routing"]["failure_routes"]
-        if route_key not in failure_routes:
-            raise ValueError(
-                f"route_key {route_key} is not declared by the stage failure_routes"
-            )
+            raise ValueError(f"route_key {route_key} is not allowed for status {status}: {sorted(allowed)}")
+        if route_key not in invocation["routing"]["failure_routes"]:
+            raise ValueError(f"route_key {route_key} is not declared by the stage failure_routes")
         return route_key
 
     def _advance_transition(self, invocation: Mapping[str, Any]) -> dict[str, Any]:
@@ -390,8 +404,7 @@ class ExecutionRecordBuilder:
             ).stdout
             if current != committed:
                 raise ValueError(
-                    "control_plane_commit does not match loaded execution-record contracts: "
-                    f"{relative}"
+                    "control_plane_commit does not match loaded execution-record contracts: " + relative
                 )
 
     def _load_json(self, relative: str) -> dict[str, Any]:
@@ -402,12 +415,7 @@ class ExecutionRecordBuilder:
 
     @staticmethod
     def _record_id(record: Mapping[str, Any]) -> str:
-        payload = json.dumps(
-            record,
-            sort_keys=True,
-            separators=(",", ":"),
-            ensure_ascii=False,
-        )
+        payload = json.dumps(record, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
         return "rec_" + hashlib.sha256(payload.encode("utf-8")).hexdigest()
 
     @staticmethod
@@ -419,6 +427,7 @@ class ExecutionRecordBuilder:
             "stage_id": record["stage_id"],
             "role_id": record["role_id"],
             "authority": record["authority"],
+            "task_lineage": record["task_lineage"],
             "status": record["status"],
             "disposition": record["disposition"],
             "outputs": record["outputs"],
