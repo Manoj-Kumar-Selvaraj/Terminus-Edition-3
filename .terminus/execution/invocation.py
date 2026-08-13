@@ -14,6 +14,8 @@ from retrieval.models import InvocationContext, RetrievalQuery
 from retrieval.policy import RetrievalPolicy
 from retrieval.store import RetrievalStore
 
+from .authority import ExecutionAuthority
+
 _SHA = re.compile(r"^[0-9a-f]{40,64}$")
 _VALID_SENSITIVITIES = frozenset(
     {"PUBLIC", "SOLVER_VISIBLE", "CONTROL_PLANE", "PRIVATE", "RESTRICTED"}
@@ -44,6 +46,7 @@ class StageInvocationBuilder:
     def __init__(self, root: Path, policy: RetrievalPolicy | None = None):
         self.root = root.resolve()
         self.policy = policy or RetrievalPolicy(self.root)
+        self.execution_authority = ExecutionAuthority(self.policy)
 
     def build(
         self,
@@ -178,7 +181,7 @@ class StageInvocationBuilder:
         return self._ordered_packet(packet)
 
     def _validate_authority(self, context: InvocationContext) -> InvocationContext:
-        context = self.policy.validate_context(context)
+        context = self.execution_authority.validate_context(context)
         if not context.control_plane_commit or not _SHA.fullmatch(
             context.control_plane_commit
         ):
