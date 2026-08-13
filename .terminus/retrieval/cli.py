@@ -54,12 +54,13 @@ def _embedder(value: str):
 
 def _context(args: argparse.Namespace, root: Path) -> InvocationContext:
     control_plane_commit = args.control_plane_commit or _head(root)
-    task_commit = args.task_commit or (control_plane_commit if args.task_id else None)
+    if args.task_id and not args.task_commit:
+        raise ValueError("--task-id requires an explicit --task-commit")
     return InvocationContext(
         stage_id=args.stage,
         role_id=args.role,
         task_id=args.task_id,
-        task_commit=task_commit,
+        task_commit=args.task_commit,
         control_plane_commit=control_plane_commit,
         role_contract_hash=args.role_contract_hash,
         packet_binding=args.packet_binding,
@@ -137,7 +138,12 @@ def build_parser() -> argparse.ArgumentParser:
     build = subparsers.add_parser("build", help="build/update the commit-bound index")
     build.add_argument("--task-path")
     build.add_argument("--task-id")
-    build.add_argument("--commit")
+    build.add_argument(
+        "--commit",
+        help="compatibility shorthand when task and control plane share one commit",
+    )
+    build.add_argument("--control-plane-commit")
+    build.add_argument("--task-commit")
     build.add_argument("--include-private-design", action="store_true")
 
     retrieve = subparsers.add_parser("retrieve", help="retrieve authorized chunks")
@@ -166,6 +172,8 @@ def main(argv: list[str] | None = None) -> int:
                 task_path=args.task_path,
                 task_id=args.task_id,
                 commit=args.commit,
+                control_plane_commit=args.control_plane_commit,
+                task_commit=args.task_commit,
                 include_private_design=args.include_private_design,
             )
             print(json.dumps(manifest, indent=2, sort_keys=True))
