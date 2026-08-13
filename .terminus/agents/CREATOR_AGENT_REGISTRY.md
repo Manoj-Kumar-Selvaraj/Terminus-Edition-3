@@ -1,6 +1,6 @@
 # Terminus Edition 3 Creator Agent Registry
 
-Registry version: `1.1`
+Registry version: `1.0`
 
 Producer roles create/repair task artifacts before independent review. Every producer reads current Edition 3 rules, `.terminus/agents/CREATION_PIPELINE.md`, and `.terminus/agents/PRODUCTION_AUTHENTICITY.md`. Producers never issue final acceptance for their own work.
 
