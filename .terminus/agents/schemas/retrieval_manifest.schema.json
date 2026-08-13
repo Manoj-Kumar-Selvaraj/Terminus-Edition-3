@@ -24,36 +24,68 @@
     "task_id": {"type": "string", "minLength": 1},
     "task_commit": {"type": "string", "pattern": "^[0-9a-f]{40,64}$"},
     "source_set_hash": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"},
-    "index_scope": {
-      "type": "string",
-      "enum": ["CONTROL_PLANE","TASK","REVIEW","EVALUATION","MIXED_AUTHORIZED"]
-    },
+    "index_scope": {"type": "string", "enum": ["CONTROL_PLANE","TASK","REVIEW","EVALUATION","MIXED_AUTHORIZED"]},
     "chunk_count": {"type": "integer", "minimum": 0},
     "document_count": {"type": "integer", "minimum": 0},
     "source_kind_counts": {
       "type": "object",
+      "propertyNames": {
+        "enum": [
+          "CONTROL_PLANE_MARKDOWN","CONTROL_PLANE_JSON","CONTROL_PLANE_CODE",
+          "TASK_INSTRUCTION","TASK_DOCUMENTATION","TASK_CODE","TASK_CONFIGURATION",
+          "SOLVER_VISIBLE_REQUIREMENT_CONTRACT","PRIVATE_DESIGN","SOLUTION_ORACLE",
+          "VERIFIER_PRIVATE","REVIEW_PACKET","REVIEW_RESULT","SESSION_STATE",
+          "CI_RUNTIME","MODEL_TRIAL","FINAL_PACKAGE","PUBLIC_REFERENCE"
+        ]
+      },
       "additionalProperties": {"type": "integer", "minimum": 0}
     },
     "evidence_class_counts": {
       "type": "object",
+      "propertyNames": {
+        "enum": [
+          "CONTROL_PLANE_POLICY","SOLVER_VISIBLE_TASK","PRIVATE_CREATION_DESIGN",
+          "SOLUTION_ORACLE","VERIFIER_PRIVATE","CURRENT_REVIEW_PACKET",
+          "PRIOR_REVIEW_RESULTS","CI_RUNTIME_EVIDENCE","DURABLE_SESSION_STATE",
+          "PUBLIC_REFERENCE","MODEL_TRIAL_EVIDENCE","FINAL_PACKAGE_EVIDENCE"
+        ]
+      },
       "additionalProperties": {"type": "integer", "minimum": 0}
     },
-    "policy_versions": {
-      "type": "object",
-      "additionalProperties": {"type": "string", "minLength": 1}
-    },
+    "policy_versions": {"type": "object", "additionalProperties": {"type": "string", "minLength": 1}},
     "role_contract_hashes": {
       "type": "object",
+      "propertyNames": {
+        "enum": [
+          "CREATION_CONTROLLER","CI_ORCHESTRATOR","A1_SCENARIO_RESEARCHER","A2_SYSTEM_ARCHITECT",
+          "A2_ENVIRONMENT_BUILDER","A3_DEFECT_TOPOLOGY_DESIGNER","A4_REFERENCE_SOLUTION_AUTHOR",
+          "A5_VERIFIER_AUTHOR","A6_HUMAN_WRITING_RESEARCHER","A7_INSTRUCTION_WRITER",
+          "A8_DOCUMENTATION_WRITER","A9_TASK_ASSEMBLY_AGENT","A10_COMPLEXITY_GOVERNOR",
+          "A11_AUTHORING_FAILURE_DIAGNOSTICIAN","Q1_SPEC_GAP_REPAIRER","Q2_VERIFIER_COVERAGE_REPAIRER",
+          "Q3_SPEC_AMBIGUITY_REPAIRER","Q4_SPEC_TEST_CONTRACT_REVIEWER","Q5_ORACLE_RUNTIME_REPAIR_SPECIALIST",
+          "Q6_PRODUCTION_LOGIC_AUDITOR","Q7_TASK_FORMAT_ENFORCER","Q8_MODEL_PERSPECTIVE_DIFFICULTY_SIMULATOR",
+          "TASK_ARCHITECT","ORIGINALITY_AUTHENTICITY_REVIEWER","VERIFIER_ENGINEER","HUMAN_QUALITY_REVIEWER",
+          "INSTRUCTION_REVIEWER","ENGINEERING_DOCUMENTATION_REVIEWER","COMPLIANCE_AUDITOR",
+          "COMPREHENSIVE_REVIEWER","ADJUDICATOR","DIFFICULTY_REVIEWER","TRAJECTORY_ANALYST",
+          "OFFICIAL_MODEL_EVALUATION_GATE"
+        ]
+      },
       "additionalProperties": {"type": "string", "minLength": 8}
     },
-    "packet_bindings": {
-      "type": "array",
-      "uniqueItems": true,
-      "items": {"type": "string", "minLength": 8}
-    },
+    "packet_bindings": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 8}},
     "built_at": {"type": "string", "format": "date-time"},
     "backend": {"type": "string", "minLength": 1},
     "embedding_model": {"type": "string", "minLength": 1},
     "lexical_index_version": {"type": "string", "minLength": 1}
-  }
+  },
+  "allOf": [
+    {
+      "if": {"properties": {"index_scope": {"const": "TASK"}}},
+      "then": {"required": ["task_id", "task_commit"]}
+    },
+    {
+      "if": {"properties": {"index_scope": {"enum": ["REVIEW", "EVALUATION"]}}},
+      "then": {"required": ["task_id", "task_commit"]}
+    }
+  ]
 }
