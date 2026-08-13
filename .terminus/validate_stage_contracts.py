@@ -21,109 +21,62 @@ COMPLETION = A / "stage_contract_completion.json"
 COMPLETION_SCHEMA = A / "schemas" / "stage_contract_completion.schema.json"
 COMPLETION_POLICY = A / "STAGE_CONTRACT_COMPLETION.md"
 A2_PHASE_PROMPTS = A / "A2_PHASE_PROMPTS.md"
+A9_PROMPT = A / "A9_ASSEMBLY_PROMPT.md"
 STAGE_POLICY = A / "STAGE_CONTRACTS.md"
 INSTRUCTION_POLICY = A / "INSTRUCTION_POLICY.md"
+REQUIREMENT_SCHEMA = A / "schemas" / "solver_visible_requirement_contract.schema.json"
 CREATION_PIPELINE = A / "CREATION_PIPELINE.md"
 CREATOR_REGISTRY = A / "CREATOR_AGENT_REGISTRY.md"
 AGENT_SYSTEM = T / "AGENT_SYSTEM.md"
 
 REQUIRED_STAGE_IDS = {
-    "RULE_RESOLUTION",
-    "WORK_PACKAGE_RESEARCH",
-    "SYSTEM_ARCHITECTURE",
-    "DEFECT_TOPOLOGY",
-    "ENVIRONMENT_BUILD",
-    "REFERENCE_SOLUTION",
-    "VERIFIER_BUILD",
-    "HUMAN_WRITING_RESEARCH",
-    "INSTRUCTION_DRAFT",
-    "SPEC_ALIGNMENT",
-    "DOCUMENTATION_DRAFT",
-    "FORMAT_GATE",
-    "ASSEMBLY",
-    "COMPLEXITY_GATE",
-    "RUNTIME_AUTHENTICITY",
-    "DETERMINISTIC_VALIDATION",
-    "QUALITY_INTERLOCK",
-    "PRE_LLMAJ",
-    "MODEL_DIAGNOSTIC",
-    "OFFICIAL_MODEL_TRIALS",
-    "TRIAL_ANALYSIS",
-    "FINAL_REVIEW",
+    "RULE_RESOLUTION", "WORK_PACKAGE_RESEARCH", "SYSTEM_ARCHITECTURE",
+    "DEFECT_TOPOLOGY", "ENVIRONMENT_BUILD", "REFERENCE_SOLUTION",
+    "VERIFIER_BUILD", "HUMAN_WRITING_RESEARCH", "INSTRUCTION_DRAFT",
+    "SPEC_ALIGNMENT", "DOCUMENTATION_DRAFT", "FORMAT_GATE", "ASSEMBLY",
+    "COMPLEXITY_GATE", "RUNTIME_AUTHENTICITY", "DETERMINISTIC_VALIDATION",
+    "QUALITY_INTERLOCK", "PRE_LLMAJ", "MODEL_DIAGNOSTIC",
+    "OFFICIAL_MODEL_TRIALS", "TRIAL_ANALYSIS", "FINAL_REVIEW",
     "SUBMISSION_READY",
 }
 
+EXPECTED_CHAIN = [
+    "RULE_RESOLUTION", "WORK_PACKAGE_RESEARCH", "SYSTEM_ARCHITECTURE",
+    "DEFECT_TOPOLOGY", "ENVIRONMENT_BUILD", "REFERENCE_SOLUTION",
+    "VERIFIER_BUILD", "HUMAN_WRITING_RESEARCH", "INSTRUCTION_DRAFT",
+    "SPEC_ALIGNMENT", "DOCUMENTATION_DRAFT", "FORMAT_GATE", "ASSEMBLY",
+    "COMPLEXITY_GATE", "RUNTIME_AUTHENTICITY", "DETERMINISTIC_VALIDATION",
+    "FROZEN_CANDIDATE", "QUALITY_INTERLOCK",
+]
+
+PREFREEZE_STAGES = set(EXPECTED_CHAIN[:EXPECTED_CHAIN.index("FROZEN_CANDIDATE")])
+COLD_REVIEWERS = {"Q4 Spec-Test Contract Reviewer", "Q6 Production Logic Auditor"}
+
 REQUIRED_STAGE_KEYS = {
-    "id",
-    "lifecycle",
-    "owner",
-    "role_class",
-    "policy_files",
-    "prompt_files",
-    "input_contract",
-    "output_contract",
-    "evidence_required",
-    "deterministic_validators",
-    "semantic_reviewers",
-    "failure_routes",
-    "success_transition",
-    "stale_on",
+    "id", "lifecycle", "owner", "role_class", "policy_files", "prompt_files",
+    "input_contract", "output_contract", "evidence_required",
+    "deterministic_validators", "semantic_reviewers", "failure_routes",
+    "success_transition", "stale_on",
 }
 
 EVIDENCE_CLASSES = {
-    "CONTROL_PLANE_POLICY",
-    "SOLVER_VISIBLE_TASK",
-    "PRIVATE_CREATION_DESIGN",
-    "SOLUTION_ORACLE",
-    "VERIFIER_PRIVATE",
-    "CURRENT_REVIEW_PACKET",
-    "PRIOR_REVIEW_RESULTS",
-    "CI_RUNTIME_EVIDENCE",
-    "DURABLE_SESSION_STATE",
-    "PUBLIC_REFERENCE",
-    "MODEL_TRIAL_EVIDENCE",
-    "FINAL_PACKAGE_EVIDENCE",
+    "CONTROL_PLANE_POLICY", "SOLVER_VISIBLE_TASK", "PRIVATE_CREATION_DESIGN",
+    "SOLUTION_ORACLE", "VERIFIER_PRIVATE", "CURRENT_REVIEW_PACKET",
+    "PRIOR_REVIEW_RESULTS", "CI_RUNTIME_EVIDENCE", "DURABLE_SESSION_STATE",
+    "PUBLIC_REFERENCE", "MODEL_TRIAL_EVIDENCE", "FINAL_PACKAGE_EVIDENCE",
 }
-
-EXPECTED_CHAIN = [
-    "RULE_RESOLUTION",
-    "WORK_PACKAGE_RESEARCH",
-    "SYSTEM_ARCHITECTURE",
-    "DEFECT_TOPOLOGY",
-    "ENVIRONMENT_BUILD",
-    "REFERENCE_SOLUTION",
-    "VERIFIER_BUILD",
-    "HUMAN_WRITING_RESEARCH",
-    "INSTRUCTION_DRAFT",
-    "SPEC_ALIGNMENT",
-    "DOCUMENTATION_DRAFT",
-    "FORMAT_GATE",
-    "ASSEMBLY",
-    "COMPLEXITY_GATE",
-    "RUNTIME_AUTHENTICITY",
-    "DETERMINISTIC_VALIDATION",
-    "FROZEN_CANDIDATE",
-    "QUALITY_INTERLOCK",
-]
 
 VALID_LIFECYCLES = {"creation", "review", "evaluation", "submission"}
 VALID_ROLE_CLASSES = {
-    "CONTROLLER",
-    "PRODUCER",
-    "FIXER",
-    "REVIEWER",
-    "ADJUDICATOR",
-    "SIMULATOR",
-    "EXTERNAL_GATE",
+    "CONTROLLER", "PRODUCER", "FIXER", "REVIEWER", "ADJUDICATOR",
+    "SIMULATOR", "EXTERNAL_GATE",
 }
-VALID_RETRIEVAL_MODES = {"EXACT_ONLY", "FILTERED_HYBRID", "SOLVER_VISIBLE_ONLY", "EXTERNAL_BOUND"}
+VALID_RETRIEVAL_MODES = {
+    "EXACT_ONLY", "FILTERED_HYBRID", "SOLVER_VISIBLE_ONLY", "EXTERNAL_BOUND"
+}
 VALID_OUTPUT_DISPOSITIONS = {
-    "EPHEMERAL",
-    "DURABLE_CONTROL_PLANE",
-    "PRIVATE_CONTROL_PLANE",
-    "TASK_ARTIFACT",
-    "REVIEW_EVIDENCE",
-    "EXTERNAL_EVIDENCE",
+    "EPHEMERAL", "DURABLE_CONTROL_PLANE", "PRIVATE_CONTROL_PLANE",
+    "TASK_ARTIFACT", "REVIEW_EVIDENCE", "EXTERNAL_EVIDENCE",
 }
 NON_STAGE_TRANSITIONS = {"FROZEN_CANDIDATE", "END"}
 
@@ -208,24 +161,29 @@ def validate_base(errors: list[str]) -> tuple[dict[str, dict], str]:
         if not isinstance(stage.get("owner"), str) or not stage.get("owner", "").strip():
             errors.append(f"{stage_id}: owner must be non-empty")
 
-        for field in ("policy_files", "prompt_files", "evidence_required", "deterministic_validators", "semantic_reviewers", "stale_on"):
+        for field in (
+            "policy_files", "prompt_files", "evidence_required",
+            "deterministic_validators", "semantic_reviewers", "stale_on",
+        ):
             string_list(errors, f"{stage_id}.{field}", stage.get(field))
 
         for field in ("policy_files", "prompt_files"):
             refs = stage.get(field)
-            if not isinstance(refs, list):
-                continue
-            for ref in refs:
-                if isinstance(ref, str) and (ref.startswith(".terminus/") or ref == "TERMINUS_3_AI_INSTRUCTIONS.md"):
-                    if not (ROOT / ref).exists():
+            if isinstance(refs, list):
+                for ref in refs:
+                    if isinstance(ref, str) and (
+                        ref.startswith(".terminus/") or ref == "TERMINUS_3_AI_INSTRUCTIONS.md"
+                    ) and not (ROOT / ref).exists():
                         errors.append(f"{stage_id}.{field} references missing file {ref}")
 
         inputs = stage.get("input_contract")
         if not isinstance(inputs, dict) or set(inputs) != {"required_fields", "optional_fields"}:
             errors.append(f"{stage_id}.input_contract must contain required_fields and optional_fields only")
         else:
-            string_list(errors, f"{stage_id}.input_contract.required_fields", inputs.get("required_fields"))
-            string_list(errors, f"{stage_id}.input_contract.optional_fields", inputs.get("optional_fields"))
+            required = string_list(errors, f"{stage_id}.input_contract.required_fields", inputs.get("required_fields"))
+            optional = string_list(errors, f"{stage_id}.input_contract.optional_fields", inputs.get("optional_fields"))
+            if set(required) & set(optional):
+                errors.append(f"{stage_id}.input_contract required/optional fields overlap")
 
         outputs = stage.get("output_contract")
         expected_output_keys = {"status_values", "required_fields", "optional_fields", "persisted_artifacts"}
@@ -236,28 +194,81 @@ def validate_base(errors: list[str]) -> tuple[dict[str, dict], str]:
                 values = string_list(errors, f"{stage_id}.output_contract.{field}", outputs.get(field))
                 if field in {"status_values", "required_fields"} and not values:
                     errors.append(f"{stage_id}.output_contract.{field} cannot be empty")
+            if set(outputs.get("required_fields", [])) & set(outputs.get("optional_fields", [])):
+                errors.append(f"{stage_id}.output_contract required/optional fields overlap")
 
         routes = stage.get("failure_routes")
-        if not isinstance(routes, dict) or any(not isinstance(k, str) or not k or not isinstance(v, str) or not v.strip() for k, v in routes.items()):
+        if not isinstance(routes, dict) or any(
+            not isinstance(k, str) or not k or not isinstance(v, str) or not v.strip()
+            for k, v in routes.items()
+        ):
             errors.append(f"{stage_id}.failure_routes must map non-empty strings to non-empty strings")
 
-    missing = REQUIRED_STAGE_IDS - set(stages)
-    if missing:
-        errors.append(f"stage registry missing required stages {sorted(missing)}")
+    if set(stages) != REQUIRED_STAGE_IDS:
+        errors.append(
+            f"stage registry coverage mismatch missing={sorted(REQUIRED_STAGE_IDS-set(stages))} "
+            f"extra={sorted(set(stages)-REQUIRED_STAGE_IDS)}"
+        )
 
     known_targets = set(stages) | NON_STAGE_TRANSITIONS
     for stage_id, stage in stages.items():
-        transition = stage.get("success_transition")
-        if transition not in known_targets:
-            errors.append(f"{stage_id}: unknown success_transition {transition!r}")
+        if stage.get("success_transition") not in known_targets:
+            errors.append(f"{stage_id}: unknown success_transition {stage.get('success_transition')!r}")
 
+    # A7 must consume one sanitized requirement projection, not loose/private-derived requirements.
     instruction = stages.get("INSTRUCTION_DRAFT", {})
     if ".terminus/agents/INSTRUCTION_POLICY.md" not in instruction.get("policy_files", []):
         errors.append("INSTRUCTION_DRAFT must bind INSTRUCTION_POLICY.md")
-    required_inputs = set(instruction.get("input_contract", {}).get("required_fields", []))
-    for field in {"ENGINEERING_OBJECTIVE", "REQUIRED_END_STATE", "FUNCTIONAL_REQUIREMENTS", "REFERENCED_DOCS", "REQUIRED_OUTPUTS"}:
-        if field not in required_inputs:
-            errors.append(f"INSTRUCTION_DRAFT missing required input {field}")
+    instruction_inputs = set(instruction.get("input_contract", {}).get("required_fields", []))
+    if "APPROVED_SOLVER_VISIBLE_REQUIREMENT_CONTRACT" not in instruction_inputs:
+        errors.append("INSTRUCTION_DRAFT must require APPROVED_SOLVER_VISIBLE_REQUIREMENT_CONTRACT")
+    forbidden_loose_inputs = {
+        "ENGINEERING_OBJECTIVE", "REQUIRED_END_STATE", "FUNCTIONAL_REQUIREMENTS",
+        "PRESERVATION_REQUIREMENTS", "SAFETY_REQUIREMENTS", "REFERENCED_DOCS",
+        "REQUIRED_OUTPUTS",
+    }
+    leaked = instruction_inputs & forbidden_loose_inputs
+    if leaked:
+        errors.append(f"INSTRUCTION_DRAFT must not require loose requirement inputs {sorted(leaked)}")
+
+    # A2 phase prompt and registry must agree exactly on the reviewed interface points.
+    architecture = stages.get("SYSTEM_ARCHITECTURE", {})
+    environment = stages.get("ENVIRONMENT_BUILD", {})
+    for stage_id, stage in (("SYSTEM_ARCHITECTURE", architecture), ("ENVIRONMENT_BUILD", environment)):
+        if ".terminus/agents/A2_PHASE_PROMPTS.md" not in stage.get("prompt_files", []):
+            errors.append(f"{stage_id} must bind A2_PHASE_PROMPTS.md")
+    env_inputs = set(environment.get("input_contract", {}).get("required_fields", []))
+    if "SOLVER_VISIBLE_DOC_PLAN" not in env_inputs:
+        errors.append("ENVIRONMENT_BUILD must require SOLVER_VISIBLE_DOC_PLAN")
+    env_status = set(environment.get("output_contract", {}).get("status_values", []))
+    if "ARCHITECTURE_GAP" not in env_status:
+        errors.append("ENVIRONMENT_BUILD must declare ARCHITECTURE_GAP status")
+
+    # Assembly is not freeze. Only deterministic validation may transition to the freeze state.
+    assembly = stages.get("ASSEMBLY", {})
+    assembly_status = set(assembly.get("output_contract", {}).get("status_values", []))
+    if "FROZEN_CANDIDATE" in assembly_status:
+        errors.append("ASSEMBLY must not return FROZEN_CANDIDATE")
+    if "ASSEMBLED" not in assembly_status:
+        errors.append("ASSEMBLY must declare ASSEMBLED status")
+    if ".terminus/agents/A9_ASSEMBLY_PROMPT.md" not in assembly.get("prompt_files", []):
+        errors.append("ASSEMBLY must bind A9_ASSEMBLY_PROMPT.md")
+    forbidden_assembly_outputs = {"ORACLE", "NOP", "F2P_EMPIRICAL_MATRIX", "P2P_EMPIRICAL_MATRIX", "COMPLEXITY_GATE"}
+    present = set(assembly.get("output_contract", {}).get("required_fields", [])) & forbidden_assembly_outputs
+    if present:
+        errors.append(f"ASSEMBLY must not own downstream gate outputs {sorted(present)}")
+    if stages.get("DETERMINISTIC_VALIDATION", {}).get("success_transition") != "FROZEN_CANDIDATE":
+        errors.append("DETERMINISTIC_VALIDATION must be the only executable transition into FROZEN_CANDIDATE")
+
+    # Cold independent Q4/Q6 are post-freeze only.
+    for stage_id in PREFREEZE_STAGES:
+        reviewers = set(stages.get(stage_id, {}).get("semantic_reviewers", []))
+        bad = reviewers & COLD_REVIEWERS
+        if bad:
+            errors.append(f"{stage_id}: pre-freeze semantic_reviewers contain cold reviewer(s) {sorted(bad)}")
+    qi_reviewers = set(stages.get("QUALITY_INTERLOCK", {}).get("semantic_reviewers", []))
+    if not COLD_REVIEWERS <= qi_reviewers:
+        errors.append("QUALITY_INTERLOCK must own both Q4 and Q6 cold semantic review")
 
     return stages, str(registry.get("contract_version", "?"))
 
@@ -269,11 +280,8 @@ def validate_visibility(errors: list[str], stage_ids: set[str]) -> tuple[str, in
 
     require_markers(errors, policy, VISIBILITY_POLICY, [
         "Evidence visibility policy version: `1.1`",
-        "required_evidence_classes",
-        "allowed_optional_evidence_classes",
-        "excluded_evidence_classes",
-        "Retrieval modes",
-        "Future RAG requirement",
+        "required_evidence_classes", "allowed_optional_evidence_classes",
+        "excluded_evidence_classes", "Retrieval modes", "Future RAG requirement",
     ])
 
     if visibility.get("visibility_version") != "1.1":
@@ -286,7 +294,10 @@ def validate_visibility(errors: list[str], stage_ids: set[str]) -> tuple[str, in
     classes = visibility.get("evidence_classes")
     if not isinstance(classes, dict) or set(classes) != EVIDENCE_CLASSES:
         actual = set(classes) if isinstance(classes, dict) else set()
-        errors.append(f"evidence classes mismatch missing={sorted(EVIDENCE_CLASSES-actual)} extra={sorted(actual-EVIDENCE_CLASSES)}")
+        errors.append(
+            f"evidence classes mismatch missing={sorted(EVIDENCE_CLASSES-actual)} "
+            f"extra={sorted(actual-EVIDENCE_CLASSES)}"
+        )
         classes = {}
 
     raw_entries = visibility.get("stages")
@@ -308,7 +319,10 @@ def validate_visibility(errors: list[str], stage_ids: set[str]) -> tuple[str, in
         entries[stage_id] = entry
 
     if set(entries) != stage_ids:
-        errors.append(f"evidence visibility stage coverage mismatch missing={sorted(stage_ids-set(entries))} extra={sorted(set(entries)-stage_ids)}")
+        errors.append(
+            f"evidence visibility stage coverage mismatch missing={sorted(stage_ids-set(entries))} "
+            f"extra={sorted(set(entries)-stage_ids)}"
+        )
 
     for stage_id, contract in entries.items():
         required = set(string_list(errors, f"{stage_id}.required_evidence_classes", contract.get("required_evidence_classes")))
@@ -350,15 +364,12 @@ def validate_completion(errors: list[str], stages: dict[str, dict]) -> str:
     pipeline = load_text(CREATION_PIPELINE, errors)
     registry_text = load_text(CREATOR_REGISTRY, errors)
     phase_prompts = load_text(A2_PHASE_PROMPTS, errors)
+    a9_prompt = load_text(A9_PROMPT, errors)
 
     require_markers(errors, policy, COMPLETION_POLICY, [
-        "Completion policy version: `1.2`",
-        "A2 two-phase contract",
-        "SYSTEM_ARCHITECTURE",
-        "ENVIRONMENT_BUILD",
-        "Freeze-state contract",
-        "FROZEN_CANDIDATE",
-        "Canonical creation chain",
+        "Completion policy version: `1.2`", "A2 two-phase contract",
+        "SYSTEM_ARCHITECTURE", "ENVIRONMENT_BUILD", "Freeze-state contract",
+        "FROZEN_CANDIDATE", "Canonical creation chain",
     ])
     require_markers(errors, phase_prompts, A2_PHASE_PROMPTS, [
         "A2 phase prompt policy version: `1.0`",
@@ -366,6 +377,11 @@ def validate_completion(errors: list[str], stages: dict[str, dict]) -> str:
         "`ENVIRONMENT_BUILD` — A2 Environment Builder",
         "not starter materialization",
         "Inject **only** the approved A3 defect/incomplete-behavior topology",
+        "ARCHITECTURE_GAP",
+    ])
+    require_markers(errors, a9_prompt, A9_PROMPT, [
+        "Assembly prompt policy version: `1.0`", "STATUS: ASSEMBLED",
+        "does **not** create `FROZEN_CANDIDATE`", "NEXT_GATE: COMPLEXITY_GATE",
     ])
 
     if completion.get("completion_version") != "1.2":
@@ -397,10 +413,8 @@ def validate_completion(errors: list[str], stages: dict[str, dict]) -> str:
         if set(phase.get("requires_prior", [])) != prior:
             errors.append(f"{stage_id}: requires_prior must be {sorted(prior)}")
         prompt = phase.get("phase_prompt_file")
-        if not isinstance(prompt, str) or not prompt:
-            errors.append(f"{stage_id}: phase_prompt_file is required")
-        elif not (ROOT / prompt).is_file():
-            errors.append(f"{stage_id}: phase_prompt_file does not exist: {prompt}")
+        if not isinstance(prompt, str) or not prompt or not (ROOT / prompt).is_file():
+            errors.append(f"{stage_id}: phase_prompt_file is missing/invalid: {prompt!r}")
 
     for stage_id in ("SYSTEM_ARCHITECTURE", "ENVIRONMENT_BUILD"):
         if phases.get(stage_id, {}).get("phase_prompt_file") != ".terminus/agents/A2_PHASE_PROMPTS.md":
@@ -414,17 +428,21 @@ def validate_completion(errors: list[str], stages: dict[str, dict]) -> str:
     if not isinstance(freeze, dict):
         errors.append("completion overlay must define FROZEN_CANDIDATE")
     else:
+        if freeze.get("owner") != "Creation Controller":
+            errors.append("FROZEN_CANDIDATE must be owned by Creation Controller")
         if freeze.get("entry_from") != "DETERMINISTIC_VALIDATION":
             errors.append("FROZEN_CANDIDATE entry_from must be DETERMINISTIC_VALIDATION")
         if freeze.get("exit_to") != "QUALITY_INTERLOCK":
             errors.append("FROZEN_CANDIDATE exit_to must be QUALITY_INTERLOCK")
         required = set(freeze.get("required_inputs", []))
-        for field in {"CURRENT_TASK_COMMIT", "CREATION_RULE_CONTEXT", "ORACLE_REWARD", "NOP_REWARD", "F2P_EMPIRICAL_MATRIX", "P2P_EMPIRICAL_MATRIX", "UNRESOLVED_POLICY_CONFLICTS"}:
+        for field in {
+            "CURRENT_TASK_COMMIT", "CREATION_RULE_CONTEXT", "FORMAT_STATUS",
+            "COMPLEXITY_STATUS", "RUNTIME_AUTHENTICITY_STATUS", "ORACLE_REWARD",
+            "NOP_REWARD", "F2P_EMPIRICAL_MATRIX", "P2P_EMPIRICAL_MATRIX",
+            "UNRESOLVED_POLICY_CONFLICTS",
+        }:
             if field not in required:
                 errors.append(f"FROZEN_CANDIDATE missing required input {field}")
-
-    if stages.get("DETERMINISTIC_VALIDATION", {}).get("success_transition") != "FROZEN_CANDIDATE":
-        errors.append("DETERMINISTIC_VALIDATION must transition to FROZEN_CANDIDATE")
 
     require_markers(errors, pipeline, CREATION_PIPELINE, [
         "### 2A. System Architect — clean architecture design",
@@ -449,47 +467,35 @@ def main() -> int:
     agent_system = load_text(AGENT_SYSTEM, errors)
     stage_policy = load_text(STAGE_POLICY, errors)
     instruction_policy = load_text(INSTRUCTION_POLICY, errors)
+    requirement_schema = load_json(REQUIREMENT_SCHEMA, errors)
 
     require_markers(errors, agent_system, AGENT_SYSTEM, [
-        "Structured execution bindings",
-        ".terminus/agents/stage_contracts.json",
-        ".terminus/agents/STAGE_CONTRACTS.md",
-        ".terminus/agents/INSTRUCTION_POLICY.md",
-        "INPUT CONTRACT",
-        "OUTPUT CONTRACT",
-        "DETERMINISTIC VALIDATORS",
-        "SEMANTIC REVIEWERS",
-        "FAILURE ROUTES",
-        "SUCCESS TRANSITION",
-        "STALE_ON",
+        "Structured execution bindings", ".terminus/agents/stage_contracts.json",
+        ".terminus/agents/STAGE_CONTRACTS.md", ".terminus/agents/INSTRUCTION_POLICY.md",
+        "INPUT CONTRACT", "OUTPUT CONTRACT", "DETERMINISTIC VALIDATORS",
+        "SEMANTIC REVIEWERS", "FAILURE ROUTES", "SUCCESS TRANSITION", "STALE_ON",
     ])
     if not re.search(r"Agent-system policy version: `[^`]+`", agent_system):
         errors.append("AGENT_SYSTEM.md must declare an Agent-system policy version")
 
     require_markers(errors, stage_policy, STAGE_POLICY, [
-        "Stage-contract policy version: `1.0`",
-        "Canonical stage fields",
-        "Validator honesty rule",
-        "Input/output contract rule",
-        "Runtime prompt projection",
-        "Section-to-stage bindings",
-        "Failure routing principle",
-        "Staleness principle",
+        "Stage-contract policy version: `1.0`", "Canonical stage fields",
+        "Validator honesty rule", "Input/output contract rule", "Runtime prompt projection",
+        "Section-to-stage bindings", "Failure routing principle", "Staleness principle",
     ])
     require_markers(errors, instruction_policy, INSTRUCTION_POLICY, [
-        "Instruction policy version: `1.0`",
-        "<=2 short paragraphs or <=20 concise bullets",
-        "Required instruction content",
-        "Instruction versus solver-visible documentation",
-        "Implementation-diagnosis boundary",
-        "Current-state claims and evidence",
-        "Jira/Slack handoff test",
-        "Requirement-completeness test",
-        "Reverse-outline test",
-        "Spec-file-loophole test",
-        "Current-state evidence test",
-        "Structured processing contract",
+        "Instruction policy version: `1.0`", "<=2 short paragraphs or <=20 concise bullets",
+        "Required instruction content", "Approved solver-visible requirement projection",
+        "solver_visible_requirement_contract.schema.json",
+        "Instruction versus solver-visible documentation", "Implementation-diagnosis boundary",
+        "Current-state claims and evidence", "Jira/Slack handoff test",
+        "Requirement-completeness test", "Reverse-outline test", "Spec-file-loophole test",
+        "Current-state evidence test", "Structured processing contract",
     ])
+    if requirement_schema.get("$id") != "terminus-solver-visible-requirement-contract-v1":
+        errors.append("solver-visible requirement projection schema has wrong/missing $id")
+    if requirement_schema.get("additionalProperties") is not False:
+        errors.append("solver-visible requirement projection schema must reject undeclared fields")
 
     stages, contract_version = validate_base(errors)
     visibility_version, visibility_stage_count, evidence_class_count = validate_visibility(errors, set(stages))
@@ -503,10 +509,13 @@ def main() -> int:
 
     print("Terminus stage-contract validation PASS")
     print(
-        f"contract_version={contract_version} visibility_version={visibility_version} completion_version={completion_version} "
-        f"stages={len(stages)} visibility_stages={visibility_stage_count} evidence_classes={evidence_class_count} "
-        f"required_stages={len(REQUIRED_STAGE_IDS)} instruction_policy=1.0 structured_bindings=present "
-        "retrieval_boundaries=classified lifecycle_completion=explicit phase_prompts=bound freeze_state=explicit"
+        f"contract_version={contract_version} visibility_version={visibility_version} "
+        f"completion_version={completion_version} stages={len(stages)} "
+        f"visibility_stages={visibility_stage_count} evidence_classes={evidence_class_count} "
+        f"required_stages={len(REQUIRED_STAGE_IDS)} instruction_policy=1.0 "
+        "structured_bindings=present retrieval_boundaries=classified "
+        "lifecycle_completion=explicit phase_prompts=bound freeze_state=controller_only "
+        "prefreeze_independence=preserved requirement_projection=bound"
     )
     return 0
 
