@@ -30,6 +30,33 @@ The writer should normally state, as applicable:
 
 Do not omit a material requirement merely to make the handoff shorter or more conversational. Human engineering prose can be concise while still being complete at the functional-contract level.
 
+## Approved solver-visible requirement projection
+
+The Instruction Writer must not reconstruct its requirement inventory from private creator topology, the Oracle, hidden verifier material, or prior review findings.
+
+Before `INSTRUCTION_DRAFT`, the Creation Controller produces one sanitized `APPROVED_SOLVER_VISIBLE_REQUIREMENT_CONTRACT` from the approved engineering work package and legitimate solver-visible contracts. The durable control-plane representation is:
+
+`.terminus/contracts/<task>/solver-visible-requirements.json`
+
+and must conform to `.terminus/agents/schemas/solver_visible_requirement_contract.schema.json`.
+
+The projection contains only material that is safe to expose as part of the solver-visible work request or referenced technical contract:
+
+- engineering objective;
+- required end state;
+- material functional/operational requirements;
+- preservation, compatibility and safety requirements;
+- referenced solver-visible documentation;
+- required outputs and schemas;
+- current-state claims plus solver-visible evidence references only when such claims are made;
+- exact task/control-plane provenance and a content hash.
+
+It must **not** contain private defect IDs, causal edges, hidden test names/assertions, private F2P/P2P mapping, Oracle diffs, repair locations, or prior reviewer findings.
+
+The projection is a controller-owned handoff artifact, not a new solver-facing spec file. Its purpose is to make the A7 input boundary explicit and contamination-resistant; `instruction.md` and legitimate referenced task documentation remain the actual solver-visible specification.
+
+Any material requirement or referenced-contract change invalidates the projection. A7 must stop with `BLOCKED` rather than silently filling a missing requirement from private creator or verifier evidence.
+
 ## Instruction versus solver-visible documentation
 
 Use this boundary:
@@ -127,17 +154,19 @@ Where a structured output is required, the exact externally graded schema belong
 
 ## Role ownership
 
-- **Instruction Writer** — produces/revises `instruction.md` under this policy.
+- **Instruction Writer** — produces/revises `instruction.md` under this policy from the approved solver-visible requirement projection.
 - **Q1 Spec Gap Repairer** — repairs legitimate verifier->spec gaps without hidden-test leakage or spec-file loopholes.
 - **Q3 Spec Ambiguity Repairer** — clarifies grading-relevant ambiguity while preserving the instruction/docs boundary and implementation freedom.
 - **Instruction Reviewer** — cold semantic review of completeness, fairness, concision, naturalness and leakage.
-- **Q4 Spec-Test Contract Reviewer** — independently verifies bidirectional requirement/test alignment plus instruction completeness and documentation-boundary integrity.
+- **Q4 Spec-Test Contract Reviewer** — independently verifies bidirectional requirement/test alignment plus instruction completeness and documentation-boundary integrity only after deterministic freeze through the packet-bound quality interlock.
 - **Human Quality Reviewer** — checks final solver-facing prose for synthetic/benchmark-shaped writing and unsupported claims.
 - **Comprehensive Reviewer** — breadth backstop across the current instruction-related criterion registry.
 
 ## Structured processing contract
 
 The canonical stage metadata, expected inputs/outputs, validators/reviewers, failure routes and staleness triggers for instruction work are defined by stage `INSTRUCTION_DRAFT` and related alignment/review stages in `.terminus/agents/stage_contracts.json`.
+
+`INSTRUCTION_DRAFT` consumes `APPROVED_SOLVER_VISIBLE_REQUIREMENT_CONTRACT` rather than a loose collection of independently sourced requirement fields. The controller validates its schema/hash/provenance and then projects only the fields A7 needs.
 
 Role prompts should consume the stage contract and this policy rather than restating this entire document at runtime. Runtime projection should include only the fields and policy excerpts required by the role.
 
