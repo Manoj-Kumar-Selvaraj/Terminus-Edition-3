@@ -10,6 +10,7 @@ import pytest
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / ".terminus"))
 
+from execution.authority import ExecutionAuthority  # noqa: E402
 from execution.invocation import StageInvocationBuilder  # noqa: E402
 from execution.record import ExecutionRecordBuilder  # noqa: E402
 from retrieval.models import InvocationContext  # noqa: E402
@@ -27,6 +28,7 @@ def _head() -> str:
 
 def _invocation(stage_id: str) -> dict[str, object]:
     policy = RetrievalPolicy(ROOT)
+    role_id = ExecutionAuthority(policy).primary_role_for_stage(stage_id)
     stage = policy.stages[stage_id]
     inputs = {
         str(field): {"ref": f"test:{field}"}
@@ -35,7 +37,7 @@ def _invocation(stage_id: str) -> dict[str, object]:
     return StageInvocationBuilder(ROOT, policy).build(
         InvocationContext(
             stage_id=stage_id,
-            role_id="CI_ORCHESTRATOR",
+            role_id=role_id,
             control_plane_commit=_head(),
         ),
         inputs,
@@ -202,6 +204,22 @@ def test_self_consistent_but_forged_routing_is_rejected() -> None:
     forged["invocation_id"] = StageInvocationBuilder._invocation_id(identity_payload)
     result = _result(forged, "RULES_RESOLVED", outputs=_full_outputs(forged))
     with pytest.raises(ValueError, match="routing does not match canonical stage contract"):
+        ExecutionRecordBuilder(ROOT).build(forged, result)
+
+
+def test_observer_role_cannot_be_forged_into_executable_invocation_record() -> None:
+    invocation = _invocation("WORK_PACKAGE_RESEARCH")
+    forged = json.loads(json.dumps(invocation))
+    forged["stage"]["role_id"] = "CI_ORCHESTRATOR"
+    identity_payload = dict(forged)
+    identity_payload.pop("invocation_id")
+    forged["invocation_id"] = StageInvocationBuilder._invocation_id(identity_payload)
+    result = _result(
+        forged,
+        "CANDIDATES_READY",
+        outputs=_full_outputs(forged),
+    )
+    with pytest.raises(ValueError, match="not authorized to execute stage WORK_PACKAGE_RESEARCH"):
         ExecutionRecordBuilder(ROOT).build(forged, result)
 
 
