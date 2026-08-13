@@ -5,6 +5,7 @@ from __future__ import annotations
 import hashlib
 import json
 import re
+import subprocess
 from pathlib import Path
 from typing import Any, Mapping
 
@@ -17,6 +18,22 @@ _SHA = re.compile(r"^[0-9a-f]{40,64}$")
 _VALID_SENSITIVITIES = frozenset(
     {"PUBLIC", "SOLVER_VISIBLE", "CONTROL_PLANE", "PRIVATE", "RESTRICTED"}
 )
+_CONTRACT_SNAPSHOT_PATHS = (
+    ".terminus/agents/stage_contracts.json",
+    ".terminus/agents/evidence_visibility.json",
+    ".terminus/agents/retrieval_metadata.json",
+    ".terminus/agents/STAGE_INVOCATION.md",
+)
+_POLICY_VERSION_SOURCES = {
+    "agent_system": (".terminus/AGENT_SYSTEM.md", "Agent-system policy version"),
+    "specialist_prompt": (".terminus/agents/PROMPTS.md", "Prompt policy version"),
+    "specialist_protocol": (".terminus/agents/PROTOCOL.md", "Policy version"),
+    "pre_llmaj_panel": (".terminus/reviewers/PRE_LLMAJ.md", "Panel policy version"),
+    "comprehensive_reviewer": (
+        ".terminus/agents/COMPREHENSIVE_REVIEWER.md",
+        "Reviewer policy version",
+    ),
+}
 
 
 class StageInvocationBuilder:
@@ -44,8 +61,12 @@ class StageInvocationBuilder:
         input_contract = stage.get("input_contract", {})
         output_contract = stage.get("output_contract", {})
 
-        required_names = tuple(str(value) for value in input_contract.get("required_fields", []))
-        optional_names = tuple(str(value) for value in input_contract.get("optional_fields", []))
+        required_names = tuple(
+            str(value) for value in input_contract.get("required_fields", [])
+        )
+        optional_names = tuple(
+            str(value) for value in input_contract.get("optional_fields", [])
+        )
         declared = set(required_names) | set(optional_names)
 
         supplied = dict(available_inputs)
@@ -57,13 +78,18 @@ class StageInvocationBuilder:
             name: supplied[name] for name in optional_names if name in supplied
         }
         missing = [name for name in required_names if name not in supplied]
-        ignored = sorted(set(supplied) - declared)
+        ignored_count = len(set(supplied) - declared)
         readiness = "BLOCKED_MISSING_INPUTS" if missing else "READY"
 
         authorized = sorted(self.policy.authorized_evidence_classes(context))
         excluded = sorted(self.policy.evidence_classes - set(authorized))
         mandatory_exact_reads = list(
             self.policy.mandatory_exact_paths(context.stage_id)
+        )
+        self._require_paths_at_commit(
+            context.control_plane_commit,
+            mandatory_exact_reads,
+            "mandatory exact read",
         )
 
         retrieval = self._retrieval_projection(
@@ -107,7 +133,7 @@ class StageInvocationBuilder:
                 "optional": optional_inputs,
             },
             "missing_required_inputs": missing,
-            "ignored_input_fields": ignored,
+            "ignored_input_count": ignored_count,
             "evidence": {
                 "retrieval_mode": self.policy.retrieval_mode(context.stage_id),
                 "mandatory_exact_reads": mandatory_exact_reads,
@@ -157,10 +183,15 @@ class StageInvocationBuilder:
             context.control_plane_commit
         ):
             raise ValueError("stage invocation requires an exact control_plane_commit")
+        self._require_git_commit(context.control_plane_commit, "control_plane_commit")
+        self._require_loaded_contract_snapshot(context.control_plane_commit)
+
         if bool(context.task_id) != bool(context.task_commit):
             raise ValueError("task_id and task_commit must be supplied together")
-        if context.task_commit and not _SHA.fullmatch(context.task_commit):
-            raise ValueError("task_commit must be a full hexadecimal Git commit")
+        if context.task_commit:
+            if not _SHA.fullmatch(context.task_commit):
+                raise ValueError("task_commit must be a full hexadecimal Git commit")
+            self._require_git_commit(context.task_commit, "task_commit")
 
         allowed = context.allowed_evidence_classes
         if allowed is not None:
@@ -169,7 +200,9 @@ class StageInvocationBuilder:
                 raise ValueError(
                     f"unknown allowed evidence classes: {sorted(unknown)}"
                 )
-        unknown_excluded = set(context.excluded_evidence_classes) - self.policy.evidence_classes
+        unknown_excluded = (
+            set(context.excluded_evidence_classes) - self.policy.evidence_classes
+        )
         if unknown_excluded:
             raise ValueError(
                 f"unknown excluded evidence classes: {sorted(unknown_excluded)}"
@@ -182,7 +215,75 @@ class StageInvocationBuilder:
                 raise ValueError(
                     f"unknown allowed sensitivities: {sorted(unknown_sensitivity)}"
                 )
+        self._validate_policy_versions(context)
         return context
+
+    def _require_loaded_contract_snapshot(self, commit: str) -> None:
+        """Refuse to label current in-memory contracts as a different Git snapshot."""
+        for relative in _CONTRACT_SNAPSHOT_PATHS:
+            current = (self.root / relative).read_bytes()
+            committed = self._git_bytes("show", f"{commit}:{relative}")
+            if current != committed:
+                raise ValueError(
+                    "control_plane_commit does not match the loaded stage-invocation contracts: "
+                    f"{relative}"
+                )
+
+    def _validate_policy_versions(self, context: InvocationContext) -> None:
+        for key, supplied in context.policy_versions.items():
+            source = _POLICY_VERSION_SOURCES.get(key)
+            if source is None:
+                continue
+            path, label = source
+            text = self._git_text("show", f"{context.control_plane_commit}:{path}")
+            match = re.search(
+                rf"^{re.escape(label)}:\s*`([^`]+)`\s*$",
+                text,
+                flags=re.MULTILINE,
+            )
+            if not match:
+                raise ValueError(
+                    f"cannot resolve {key} policy version at control_plane_commit"
+                )
+            actual = match.group(1).strip()
+            if str(supplied) != actual:
+                raise ValueError(
+                    f"stale policy version {key}: supplied {supplied}, current {actual}"
+                )
+
+    def _require_paths_at_commit(
+        self, commit: str, paths: list[str], label: str
+    ) -> None:
+        for path in paths:
+            result = subprocess.run(
+                ["git", "-C", str(self.root), "cat-file", "-e", f"{commit}:{path}"],
+                capture_output=True,
+            )
+            if result.returncode != 0:
+                raise ValueError(f"{label} missing at control_plane_commit: {path}")
+
+    def _require_git_commit(self, commit: str, label: str) -> None:
+        result = subprocess.run(
+            ["git", "-C", str(self.root), "cat-file", "-e", f"{commit}^{{commit}}"],
+            capture_output=True,
+        )
+        if result.returncode != 0:
+            raise ValueError(f"{label} is not available in repository history: {commit}")
+
+    def _git_text(self, *args: str) -> str:
+        return subprocess.run(
+            ["git", "-C", str(self.root), *args],
+            check=True,
+            capture_output=True,
+            text=True,
+        ).stdout
+
+    def _git_bytes(self, *args: str) -> bytes:
+        return subprocess.run(
+            ["git", "-C", str(self.root), *args],
+            check=True,
+            capture_output=True,
+        ).stdout
 
     @staticmethod
     def _validate_json_inputs(values: Mapping[str, Any]) -> None:
@@ -253,7 +354,19 @@ class StageInvocationBuilder:
 
     @staticmethod
     def _invocation_id(packet: Mapping[str, Any]) -> str:
-        payload = json.dumps(packet, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
+        """Bind to authoritative content/provenance, not diagnostic rank score magnitudes."""
+        identity = json.loads(
+            json.dumps(packet, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
+        )
+        for item in identity.get("retrieval", {}).get("retrieved_context", []):
+            if isinstance(item, dict):
+                item.pop("score", None)
+        payload = json.dumps(
+            identity,
+            sort_keys=True,
+            separators=(",", ":"),
+            ensure_ascii=False,
+        )
         return "inv_" + hashlib.sha256(payload.encode("utf-8")).hexdigest()
 
     @staticmethod
@@ -266,7 +379,7 @@ class StageInvocationBuilder:
             "authority": packet["authority"],
             "inputs": packet["inputs"],
             "missing_required_inputs": packet["missing_required_inputs"],
-            "ignored_input_fields": packet["ignored_input_fields"],
+            "ignored_input_count": packet["ignored_input_count"],
             "evidence": packet["evidence"],
             "retrieval": packet["retrieval"],
             "output_contract": packet["output_contract"],
