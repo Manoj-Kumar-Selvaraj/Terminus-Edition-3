@@ -14,11 +14,13 @@ Future retrieval MUST apply this order:
 
 Never search the whole corpus and remove forbidden material after ranking. Excluded evidence must not enter the candidate pool.
 
+Retrieval metadata is **fail closed**. A chunk whose source kind, evidence class, sensitivity, solver visibility, applicability, or required freshness binding disagree with the registered source profile is invalid and must not enter any retrieval index.
+
 ## Canonical machine contract
 
-The machine-readable field contract is `.terminus/agents/retrieval_metadata.json`.
+The machine-readable field/source-profile contract is `.terminus/agents/retrieval_metadata.json`.
 
-A concrete indexed unit must conform to `.terminus/agents/schemas/retrieval_chunk.schema.json`.
+A concrete indexed unit must conform to `.terminus/agents/schemas/retrieval_chunk.schema.json` **and** the semantic checks in `.terminus/validate_retrieval_metadata.py`.
 
 A generated index manifest must conform to `.terminus/agents/schemas/retrieval_manifest.schema.json`.
 
@@ -33,7 +35,7 @@ Every indexed unit has two identities:
 
 Path, filename, heading text, task name, or semantic similarity alone are never sufficient identity.
 
-Repository-backed sources should record both `git_blob_sha` and `content_hash`. Non-repository evidence must record an equivalent immutable `source_version` and `content_hash`.
+Repository-backed sources record `source_path`, `git_blob_sha` and `content_hash`. Non-repository evidence records an equivalent immutable `source_version` and `content_hash` plus the source-profile bindings that apply.
 
 ## Required metadata envelope
 
@@ -52,13 +54,15 @@ Every concrete retrieval chunk records:
 
 ### Evidence classification
 
-- `evidence_class` — exactly one class declared by `evidence_visibility.json`;
-- `sensitivity` — `PUBLIC | SOLVER_VISIBLE | CONTROL_PLANE | PRIVATE | RESTRICTED`;
-- `solver_visible` — explicit boolean, never inferred only from directory location.
+- `evidence_class` — exactly one class declared by `evidence_visibility.json` and fixed by the source profile;
+- `sensitivity` — `PUBLIC | SOLVER_VISIBLE | CONTROL_PLANE | PRIVATE | RESTRICTED`, fixed by the source profile;
+- `solver_visible` — explicit boolean fixed by the source profile, never inferred from path or chosen by the indexer.
+
+For example, `SOLUTION_ORACLE` can only be indexed as evidence class `SOLUTION_ORACLE`, sensitivity `RESTRICTED`, `solver_visible=false`. An indexer may not relabel it as solver-visible merely because it is textually relevant.
 
 ### Commit/policy binding
 
-Where applicable:
+Where required by the source profile:
 
 - `task_id`
 - `task_commit`
@@ -66,14 +70,18 @@ Where applicable:
 - `policy_versions`
 - `role_contract_hash`
 - `packet_binding`
+- `review_scope_hash`
+- `ci_run_id`
 
-Fields that do not apply are omitted rather than filled with invented sentinel values.
+If a freshness scope is declared, its corresponding binding field must exist. A chunk cannot claim `TASK_COMMIT` freshness without carrying `task_commit`, or `PACKET_BINDING` freshness without carrying `packet_binding`.
 
 ### Applicability
 
-- `stage_applicability` — explicit registered stage IDs or `ALL_AUTHORIZED_STAGES` only for genuinely global control-plane material;
-- `role_applicability` — explicit role names/classes or `ALL_AUTHORIZED_ROLES` only when appropriate;
-- `freshness_scope` — what change invalidates reuse of this indexed unit for retrieval decisions.
+- `stage_applicability` — only canonical stage IDs from `stage_contracts.json`, or `ALL_AUTHORIZED_STAGES` by itself;
+- `role_applicability` — only canonical role IDs declared by `retrieval_metadata.json`, or `ALL_AUTHORIZED_ROLES` by itself;
+- `freshness_scope` — what changes invalidate reuse of this indexed unit.
+
+Human display names are mapped to stable canonical role IDs through `role_aliases`; arbitrary role strings are not legal retrieval metadata.
 
 Applicability is a secondary narrowing mechanism. It never expands the evidence visibility granted by the stage/role/packet contract.
 
@@ -96,6 +104,7 @@ The v1 contract recognizes these source kinds:
 - `TASK_DOCUMENTATION`
 - `TASK_CODE`
 - `TASK_CONFIGURATION`
+- `SOLVER_VISIBLE_REQUIREMENT_CONTRACT`
 - `PRIVATE_DESIGN`
 - `SOLUTION_ORACLE`
 - `VERIFIER_PRIVATE`
@@ -107,7 +116,24 @@ The v1 contract recognizes these source kinds:
 - `FINAL_PACKAGE`
 - `PUBLIC_REFERENCE`
 
-Adding a source kind requires updating the machine contract and validator; indexers must not silently invent arbitrary categories.
+`SOLVER_VISIBLE_REQUIREMENT_CONTRACT` is the sanitized controller-owned A7 handoff defined by `INSTRUCTION_POLICY.md`. Its content is solver-safe requirement material even though its durable copy lives under `.terminus/contracts/...`; directory location never overrides explicit metadata classification.
+
+Adding a source kind requires updating the machine contract, chunk schema and validator. Indexers must not invent arbitrary categories.
+
+## Source-profile constraints
+
+Each source kind declares:
+
+- fixed evidence class;
+- fixed sensitivity;
+- fixed `solver_visible` value;
+- whether it is repository-backed;
+- whether it is task-scoped;
+- preferred structural chunk strategy;
+- mandatory binding fields;
+- mandatory freshness scopes.
+
+Both the JSON Schema and the Python validator enforce these constraints. Retrieval backends consume already-validated chunks; they do not reinterpret source classification.
 
 ## Chunking policy
 
@@ -117,6 +143,7 @@ Preferred boundaries:
 
 - Markdown policy/docs: heading subtree, preserving heading ancestry in `section_path`;
 - stage/visibility/metadata JSON: one stage/evidence-class/profile object per chunk where practical;
+- solver-visible requirement projection: one coherent requirement family/object without mixing private design material;
 - source code: module/class/function/symbol boundary, with file/module context attached;
 - instruction: whole instruction when within the Edition 3 concise limit; otherwise paragraph/bullet groups without separating a requirement from its qualifiers;
 - review packet: packet identity/allowed evidence/excluded evidence/result schema as deterministic sections, never mixed with prior results;
@@ -141,7 +168,7 @@ Token-window splitting may be used only inside an oversized structural unit and 
 - `CI_RUN_ID`
 - `EXTERNAL_CONTENT_HASH`
 
-Retrieval/cache reuse is valid only while every declared scope remains current for the invocation.
+Retrieval/cache reuse is valid only while every declared scope remains current for the invocation and every scope has its required binding value.
 
 ## Retrieval filtering contract
 
@@ -149,7 +176,7 @@ Before ranking, a retrieval controller must resolve:
 
 ```text
 STAGE_ID
-ROLE
+CANONICAL_ROLE_ID
 TASK_ID / TASK_COMMIT when applicable
 CONTROL_PLANE_COMMIT
 ROLE_CONTRACT_HASH when applicable
@@ -162,11 +189,12 @@ CURRENT_FRESHNESS_BINDINGS
 
 A chunk is eligible only when:
 
-1. its `evidence_class` is required/allowed for the invocation and not excluded by any higher-precedence contract;
-2. its sensitivity is permitted for the role;
-3. all applicable task/control-plane/policy/packet freshness bindings match;
-4. stage/role applicability matches;
-5. solver-only executions see only solver-visible task content plus the minimum execution contract explicitly permitted by policy.
+1. it passes the source-profile/schema/semantic metadata validator;
+2. its `evidence_class` is required/allowed for the invocation and not excluded by any higher-precedence contract;
+3. its sensitivity is permitted for the role;
+4. all applicable task/control-plane/policy/packet freshness bindings match;
+5. canonical stage/role applicability matches;
+6. solver-only executions see only solver-visible task content plus the minimum execution contract explicitly permitted by policy.
 
 Only then may exact, lexical, BM25, embedding/vector, reranker, or cached retrieval scores be considered.
 
@@ -178,15 +206,17 @@ Future caches should key at minimum on:
 
 and on:
 
-`stage_id + role + task_commit + control_plane_commit + evidence_policy_hash + freshness_bindings + query_hash` for retrieval-result reuse.
+`stage_id + canonical_role_id + task_commit + control_plane_commit + evidence_policy_hash + freshness_bindings + query_hash` for retrieval-result reuse.
 
 A cached retrieval result must be re-filtered/revalidated against current authorization and freshness before use. A cache hit never grants visibility.
 
 ## Anti-leakage invariants
 
 - `SOLUTION_ORACLE`, `VERIFIER_PRIVATE`, private creator design, prior reviews, and model-trial evidence remain inaccessible to solver-visible-only executions even if their embeddings are colocated physically.
+- A `SOLUTION_ORACLE` chunk cannot be metadata-valid with `solver_visible=true` or evidence class `SOLVER_VISIBLE_TASK`.
 - A changed task/control-plane commit must not reuse stale chunks merely because the path and text similarity remain high.
 - A role/packet exclusion always wins over stage applicability metadata.
+- Arbitrary/typo role or stage identifiers are invalid metadata, not empty-result fallbacks.
 - Semantic ranking must never infer authority or provenance.
 - Retrieval metadata and index manifests are control-plane artifacts and must not be packaged into solver-visible tasks unless explicitly required by Edition 3 rules.
 
