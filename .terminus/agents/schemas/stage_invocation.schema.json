@@ -38,6 +38,10 @@
       "type": "object",
       "additionalProperties": false,
       "required": ["control_plane_commit", "policy_versions"],
+      "dependentRequired": {
+        "task_id": ["task_commit"],
+        "task_commit": ["task_id"]
+      },
       "properties": {
         "task_id": {"type": "string", "minLength": 1},
         "task_commit": {"type": "string", "pattern": "^[0-9a-f]{40,64}$"},
@@ -85,7 +89,7 @@
       "additionalProperties": false,
       "required": ["status", "query", "retrieved_context", "retrieved_chars"],
       "properties": {
-        "status": {"enum": ["INDEXED_CONTEXT", "DIRECT_READ_FALLBACK", "NOT_REQUESTED"]},
+        "status": {"enum": ["INDEXED_CONTEXT", "DIRECT_READ_FALLBACK", "NOT_REQUESTED", "SKIPPED_BLOCKED_INPUTS"]},
         "query": {"type": ["string", "null"]},
         "retrieved_context": {"type": "array", "items": {"type": "object"}},
         "retrieved_chars": {"type": "integer", "minimum": 0}
@@ -123,10 +127,6 @@
     {
       "if": {"properties": {"readiness": {"const": "BLOCKED_MISSING_INPUTS"}}},
       "then": {"properties": {"missing_required_inputs": {"minItems": 1}}}
-    },
-    {
-      "if": {"required": ["task_id"]},
-      "then": {"required": ["task_commit"]}
     }
   ]
 }
