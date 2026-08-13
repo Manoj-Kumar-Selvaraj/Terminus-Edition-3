@@ -2,19 +2,21 @@
 
 Retrieval metadata policy version: `1.0`
 
-This policy defines the canonical metadata envelope for any repository/control-plane content that may later participate in exact, lexical, semantic/vector retrieval or retrieval caching.
+This policy defines the canonical metadata envelope for repository/control-plane content participating in exact, lexical, vector/hybrid retrieval or retrieval caching.
 
 It does **not** authorize access to content. Authorization is resolved first from `.terminus/agents/evidence_visibility.json`, role policy, Protocol, and packet-specific allowed/excluded evidence. Retrieval metadata only describes an already-classified source and provides enough provenance/freshness information to filter it safely.
 
+The executable reference engine is defined by `.terminus/agents/RETRIEVAL_ENGINE.md` and `.terminus/retrieval/`.
+
 ## Core rule
 
-Future retrieval MUST apply this order:
+Retrieval MUST apply this order:
 
-`stage/role/packet authority -> evidence visibility filter -> freshness/provenance filter -> exact/structured lookup -> lexical/vector ranking -> context assembly`
+`stage/role/packet authority -> evidence visibility filter -> freshness/provenance filter -> authorized candidate pool -> exact/structured | lexical/BM25 | vector/hybrid ranking -> context assembly`
 
 Never search the whole corpus and remove forbidden material after ranking. Excluded evidence must not enter the candidate pool.
 
-Retrieval metadata is **fail closed**. A chunk whose source kind, evidence class, sensitivity, solver visibility, applicability, or required freshness binding disagree with the registered source profile is invalid and must not enter any retrieval index.
+Retrieval metadata is **fail closed**. A chunk whose source kind, evidence class, sensitivity, solver visibility, applicability, or required freshness binding disagree with the registered source profile is invalid and must not enter any retrieval result.
 
 ## Canonical machine contract
 
@@ -24,7 +26,7 @@ A concrete indexed unit must conform to `.terminus/agents/schemas/retrieval_chun
 
 A generated index manifest must conform to `.terminus/agents/schemas/retrieval_manifest.schema.json`.
 
-The metadata contract is validated by `.terminus/validate_retrieval_metadata.py` and is also invoked from Agent System CI.
+The metadata contract is validated by `.terminus/validate_retrieval_metadata.py`; the executable engine is separately validated by `.terminus/validate_retrieval_engine.py`. Both run from Agent System CI.
 
 ## Identity and provenance
 
@@ -116,7 +118,7 @@ The v1 contract recognizes these source kinds:
 - `FINAL_PACKAGE`
 - `PUBLIC_REFERENCE`
 
-`SOLVER_VISIBLE_REQUIREMENT_CONTRACT` is the sanitized controller-owned A7 handoff defined by `INSTRUCTION_POLICY.md`. Its content is solver-safe requirement material even though its durable copy lives under `.terminus/contracts/...`; directory location never overrides explicit metadata classification.
+`SOLVER_VISIBLE_REQUIREMENT_CONTRACT` is the sanitized controller-owned A7 handoff defined by `INSTRUCTION_POLICY.md`. Its content is solver-safe requirement material, but the durable control-plane artifact remains `solver_visible=false`; it is not a second solver-facing specification.
 
 Adding a source kind requires updating the machine contract, chunk schema and validator. Indexers must not invent arbitrary categories.
 
@@ -152,6 +154,8 @@ Preferred boundaries:
 - public references: page/section units with canonical source URL/content hash and retrieval timestamp where available.
 
 Token-window splitting may be used only inside an oversized structural unit and must preserve overlap/span provenance. It must not be the primary chunking strategy for policy, packet, or stage-contract material.
+
+The reference indexer caches structural parse/chunk results by immutable Git blob SHA + chunk strategy + chunker version. Reuse of those chunks does **not** reuse task/control-plane authority: current invocation metadata bindings are attached again when the document is indexed for a new commit/scope.
 
 ## Freshness scopes
 
@@ -194,32 +198,53 @@ A chunk is eligible only when:
 3. its sensitivity is permitted for the role;
 4. all applicable task/control-plane/policy/packet freshness bindings match;
 5. canonical stage/role applicability matches;
-6. solver-only executions see only solver-visible task content plus the minimum execution contract explicitly permitted by policy.
+6. solver-only executions see only `solver_visible=true` chunks.
 
-Only then may exact, lexical, BM25, embedding/vector, reranker, or cached retrieval scores be considered.
+Only then may exact, lexical/BM25, embedding/vector, hybrid fusion, reranking, or cached retrieval scores be considered.
 
-## Caching implication
+## Implemented caching contract
 
-Future caches should key at minimum on:
+The reference local engine implements three reuse layers:
 
-`content_hash + metadata_contract_version` for parsing/chunk/embedding reuse;
+- **parse/chunk cache** — immutable source version + chunking strategy/version -> structural chunks;
+- **embedding cache** — chunk ID + embedding provider/version + content hash -> vector;
+- **retrieval-result cache** — authority hash + query hash + current index source-set hash -> ordered chunk IDs.
 
-and on:
+A cached retrieval result is reloaded and re-authorized against the current invocation before use. A cache hit never grants visibility.
 
-`stage_id + canonical_role_id + task_commit + control_plane_commit + evidence_policy_hash + freshness_bindings + query_hash` for retrieval-result reuse.
+Semantic judgments, reviewer verdicts and acceptance decisions are not cached by this engine. Any permitted reviewer reuse remains governed exclusively by Protocol provenance/scope rules.
 
-A cached retrieval result must be re-filtered/revalidated against current authorization and freshness before use. A cache hit never grants visibility.
+## Reference retrieval engine
+
+`.terminus/retrieval/` currently provides:
+
+- commit-bound Git-blob indexing;
+- SQLite document/chunk/manifests storage;
+- exact metadata/path/symbol/section/text retrieval;
+- SQLite FTS5 lexical retrieval with deterministic Python BM25 fallback;
+- a pluggable embedding interface;
+- dependency-free deterministic hashing vectors as the default offline vector provider;
+- optional local `sentence-transformers` semantic embeddings when explicitly installed;
+- reciprocal-rank fusion across exact + lexical + vector ranking;
+- bounded context-bundle generation with `mandatory_exact_reads` separated from retrieved evidence;
+- the three authorization-bound caches above.
+
+The default hashing provider is a portable vector baseline, **not** a claim of state-of-the-art semantic embeddings. Higher-quality local/hosted embedding providers may implement the same provider interface without changing evidence authorization.
+
+The reference engine does not require an OpenAI API key, a hosted vector database or a background service. Normal ChatGPT can continue the workflow through direct authorized GitHub reads when the local index is unavailable.
+
+## Dynamic evidence boundary
+
+The default repository scanner intentionally does not auto-ingest review packets/results, CI logs, session snapshots, model trials or final package evidence merely because those files/data exist. Those evidence types require exact provenance such as packet binding, role-contract hash, review-scope hash, CI run ID or external trial identity.
+
+A future/provenance-aware ingestion adapter may add them only when it can supply the required metadata truthfully. Until then, packet-bound and dynamic evidence remains directly read through the existing GitHub/CI/controller workflow.
 
 ## Anti-leakage invariants
 
-- `SOLUTION_ORACLE`, `VERIFIER_PRIVATE`, private creator design, prior reviews, and model-trial evidence remain inaccessible to solver-visible-only executions even if their embeddings are colocated physically.
+- `SOLUTION_ORACLE`, `VERIFIER_PRIVATE`, private creator design, prior reviews, and model-trial evidence remain inaccessible to solver-visible-only executions even if their vectors/cache rows are physically colocated.
 - A `SOLUTION_ORACLE` chunk cannot be metadata-valid with `solver_visible=true` or evidence class `SOLVER_VISIBLE_TASK`.
 - A changed task/control-plane commit must not reuse stale chunks merely because the path and text similarity remain high.
 - A role/packet exclusion always wins over stage applicability metadata.
 - Arbitrary/typo role or stage identifiers are invalid metadata, not empty-result fallbacks.
 - Semantic ranking must never infer authority or provenance.
-- Retrieval metadata and index manifests are control-plane artifacts and must not be packaged into solver-visible tasks unless explicitly required by Edition 3 rules.
-
-## What this step intentionally does not implement
-
-This policy does not choose a vector database, embedding model, BM25 implementation, reranker, storage backend, or remote service. Those are retrieval-engine implementation choices to be made only after this metadata/authorization contract is stable.
+- Retrieval metadata, SQLite indexes and cache/manifests are control-plane artifacts and must not be packaged into solver-visible tasks.
