@@ -1,0 +1,211 @@
+{
+  "metadata_contract_version": "1.0",
+  "identity": {
+    "document_id_components": [
+      "source_uri",
+      "source_version"
+    ],
+    "chunk_id_components": [
+      "document_id",
+      "structural_locator",
+      "content_hash"
+    ],
+    "hash_algorithm": "sha256"
+  },
+  "source_kinds": [
+    "CONTROL_PLANE_MARKDOWN",
+    "CONTROL_PLANE_JSON",
+    "CONTROL_PLANE_CODE",
+    "TASK_INSTRUCTION",
+    "TASK_DOCUMENTATION",
+    "TASK_CODE",
+    "TASK_CONFIGURATION",
+    "PRIVATE_DESIGN",
+    "SOLUTION_ORACLE",
+    "VERIFIER_PRIVATE",
+    "REVIEW_PACKET",
+    "REVIEW_RESULT",
+    "SESSION_STATE",
+    "CI_RUNTIME",
+    "MODEL_TRIAL",
+    "FINAL_PACKAGE",
+    "PUBLIC_REFERENCE"
+  ],
+  "chunk_types": [
+    "DOCUMENT",
+    "HEADING_SECTION",
+    "BULLET_GROUP",
+    "JSON_OBJECT",
+    "CODE_MODULE",
+    "CODE_CLASS",
+    "CODE_FUNCTION",
+    "CODE_SYMBOL",
+    "PACKET_SECTION",
+    "SESSION_SECTION",
+    "CI_STEP",
+    "LOG_EVENT_WINDOW",
+    "EXTERNAL_SECTION"
+  ],
+  "freshness_scopes": [
+    "CONTENT_HASH",
+    "GIT_BLOB_SHA",
+    "TASK_COMMIT",
+    "CONTROL_PLANE_COMMIT",
+    "POLICY_VERSION",
+    "ROLE_CONTRACT_HASH",
+    "PACKET_BINDING",
+    "REVIEW_SCOPE_HASH",
+    "CI_RUN_ID",
+    "EXTERNAL_CONTENT_HASH"
+  ],
+  "sensitivity_values": [
+    "PUBLIC",
+    "SOLVER_VISIBLE",
+    "CONTROL_PLANE",
+    "PRIVATE",
+    "RESTRICTED"
+  ],
+  "global_applicability_tokens": {
+    "stage": "ALL_AUTHORIZED_STAGES",
+    "role": "ALL_AUTHORIZED_ROLES"
+  },
+  "required_chunk_fields": [
+    "metadata_contract_version",
+    "document_id",
+    "chunk_id",
+    "source_uri",
+    "source_kind",
+    "source_version",
+    "content_hash",
+    "evidence_class",
+    "sensitivity",
+    "solver_visible",
+    "stage_applicability",
+    "role_applicability",
+    "freshness_scope",
+    "chunk_type",
+    "structural_locator",
+    "ordinal"
+  ],
+  "optional_chunk_fields": [
+    "source_path",
+    "git_blob_sha",
+    "task_id",
+    "task_commit",
+    "control_plane_commit",
+    "policy_versions",
+    "role_contract_hash",
+    "packet_binding",
+    "review_scope_hash",
+    "ci_run_id",
+    "section_path",
+    "symbol",
+    "line_start",
+    "line_end",
+    "indexed_at"
+  ],
+  "source_profiles": {
+    "CONTROL_PLANE_MARKDOWN": {
+      "default_evidence_class": "CONTROL_PLANE_POLICY",
+      "default_sensitivity": "CONTROL_PLANE",
+      "chunk_strategy": "HEADING_SECTION",
+      "required_freshness": ["GIT_BLOB_SHA", "CONTROL_PLANE_COMMIT"]
+    },
+    "CONTROL_PLANE_JSON": {
+      "default_evidence_class": "CONTROL_PLANE_POLICY",
+      "default_sensitivity": "CONTROL_PLANE",
+      "chunk_strategy": "JSON_OBJECT",
+      "required_freshness": ["GIT_BLOB_SHA", "CONTROL_PLANE_COMMIT"]
+    },
+    "CONTROL_PLANE_CODE": {
+      "default_evidence_class": "CONTROL_PLANE_POLICY",
+      "default_sensitivity": "CONTROL_PLANE",
+      "chunk_strategy": "CODE_SYMBOL",
+      "required_freshness": ["GIT_BLOB_SHA", "CONTROL_PLANE_COMMIT"]
+    },
+    "TASK_INSTRUCTION": {
+      "default_evidence_class": "SOLVER_VISIBLE_TASK",
+      "default_sensitivity": "SOLVER_VISIBLE",
+      "chunk_strategy": "DOCUMENT",
+      "required_freshness": ["GIT_BLOB_SHA", "TASK_COMMIT"]
+    },
+    "TASK_DOCUMENTATION": {
+      "default_evidence_class": "SOLVER_VISIBLE_TASK",
+      "default_sensitivity": "SOLVER_VISIBLE",
+      "chunk_strategy": "HEADING_SECTION",
+      "required_freshness": ["GIT_BLOB_SHA", "TASK_COMMIT"]
+    },
+    "TASK_CODE": {
+      "default_evidence_class": "SOLVER_VISIBLE_TASK",
+      "default_sensitivity": "SOLVER_VISIBLE",
+      "chunk_strategy": "CODE_SYMBOL",
+      "required_freshness": ["GIT_BLOB_SHA", "TASK_COMMIT"]
+    },
+    "TASK_CONFIGURATION": {
+      "default_evidence_class": "SOLVER_VISIBLE_TASK",
+      "default_sensitivity": "SOLVER_VISIBLE",
+      "chunk_strategy": "DOCUMENT",
+      "required_freshness": ["GIT_BLOB_SHA", "TASK_COMMIT"]
+    },
+    "PRIVATE_DESIGN": {
+      "default_evidence_class": "PRIVATE_CREATION_DESIGN",
+      "default_sensitivity": "PRIVATE",
+      "chunk_strategy": "JSON_OBJECT",
+      "required_freshness": ["CONTENT_HASH", "TASK_COMMIT", "CONTROL_PLANE_COMMIT"]
+    },
+    "SOLUTION_ORACLE": {
+      "default_evidence_class": "SOLUTION_ORACLE",
+      "default_sensitivity": "RESTRICTED",
+      "chunk_strategy": "CODE_SYMBOL",
+      "required_freshness": ["GIT_BLOB_SHA", "TASK_COMMIT"]
+    },
+    "VERIFIER_PRIVATE": {
+      "default_evidence_class": "VERIFIER_PRIVATE",
+      "default_sensitivity": "RESTRICTED",
+      "chunk_strategy": "CODE_SYMBOL",
+      "required_freshness": ["GIT_BLOB_SHA", "TASK_COMMIT"]
+    },
+    "REVIEW_PACKET": {
+      "default_evidence_class": "CURRENT_REVIEW_PACKET",
+      "default_sensitivity": "CONTROL_PLANE",
+      "chunk_strategy": "PACKET_SECTION",
+      "required_freshness": ["CONTENT_HASH", "TASK_COMMIT", "CONTROL_PLANE_COMMIT", "ROLE_CONTRACT_HASH", "PACKET_BINDING"]
+    },
+    "REVIEW_RESULT": {
+      "default_evidence_class": "PRIOR_REVIEW_RESULTS",
+      "default_sensitivity": "RESTRICTED",
+      "chunk_strategy": "DOCUMENT",
+      "required_freshness": ["CONTENT_HASH", "TASK_COMMIT", "ROLE_CONTRACT_HASH"]
+    },
+    "SESSION_STATE": {
+      "default_evidence_class": "DURABLE_SESSION_STATE",
+      "default_sensitivity": "CONTROL_PLANE",
+      "chunk_strategy": "SESSION_SECTION",
+      "required_freshness": ["CONTENT_HASH", "CONTROL_PLANE_COMMIT", "POLICY_VERSION"]
+    },
+    "CI_RUNTIME": {
+      "default_evidence_class": "CI_RUNTIME_EVIDENCE",
+      "default_sensitivity": "CONTROL_PLANE",
+      "chunk_strategy": "CI_STEP",
+      "required_freshness": ["CONTENT_HASH", "CI_RUN_ID"]
+    },
+    "MODEL_TRIAL": {
+      "default_evidence_class": "MODEL_TRIAL_EVIDENCE",
+      "default_sensitivity": "RESTRICTED",
+      "chunk_strategy": "DOCUMENT",
+      "required_freshness": ["CONTENT_HASH", "TASK_COMMIT"]
+    },
+    "FINAL_PACKAGE": {
+      "default_evidence_class": "FINAL_PACKAGE_EVIDENCE",
+      "default_sensitivity": "CONTROL_PLANE",
+      "chunk_strategy": "DOCUMENT",
+      "required_freshness": ["CONTENT_HASH", "TASK_COMMIT"]
+    },
+    "PUBLIC_REFERENCE": {
+      "default_evidence_class": "PUBLIC_REFERENCE",
+      "default_sensitivity": "PUBLIC",
+      "chunk_strategy": "EXTERNAL_SECTION",
+      "required_freshness": ["EXTERNAL_CONTENT_HASH"]
+    }
+  }
+}
