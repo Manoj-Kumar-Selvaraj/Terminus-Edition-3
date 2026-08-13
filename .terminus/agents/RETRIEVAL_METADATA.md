@@ -14,6 +14,8 @@ Retrieval MUST apply this order:
 
 `stage + stage-authorized role + packet authority -> evidence visibility filter -> freshness/provenance filter -> authorized candidate pool -> exact/structured | lexical/BM25 | vector/hybrid ranking -> bounded context assembly`
 
+The legacy shorthand **stage/role/packet authority** refers to this same first step; it does not mean that any canonical role may use any canonical stage.
+
 Never search the whole corpus and remove forbidden material after ranking. Excluded evidence must not enter the candidate pool.
 
 Retrieval metadata is **fail closed**. A chunk whose source kind, evidence class, sensitivity, solver visibility, applicability, or required freshness binding disagree with the registered source profile is invalid and must not enter any retrieval result.
