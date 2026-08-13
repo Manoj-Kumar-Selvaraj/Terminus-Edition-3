@@ -5,18 +5,9 @@
   "type": "object",
   "additionalProperties": false,
   "required": [
-    "schema_version",
-    "invocation_id",
-    "readiness",
-    "stage",
-    "authority",
-    "inputs",
-    "missing_required_inputs",
-    "ignored_input_count",
-    "evidence",
-    "retrieval",
-    "output_contract",
-    "routing"
+    "schema_version", "invocation_id", "readiness", "stage", "authority", "inputs",
+    "missing_required_inputs", "ignored_input_count", "evidence", "retrieval",
+    "output_contract", "acceptance_predicates", "routing"
   ],
   "properties": {
     "schema_version": {"const": "1.0"},
@@ -38,10 +29,7 @@
       "type": "object",
       "additionalProperties": false,
       "required": ["control_plane_commit", "policy_versions"],
-      "dependentRequired": {
-        "task_id": ["task_commit"],
-        "task_commit": ["task_id"]
-      },
+      "dependentRequired": {"task_id": ["task_commit"], "task_commit": ["task_id"]},
       "properties": {
         "task_id": {"type": "string", "minLength": 1},
         "task_commit": {"type": "string", "pattern": "^[0-9a-f]{40,64}$"},
@@ -57,16 +45,9 @@
       "type": "object",
       "additionalProperties": false,
       "required": ["required", "optional"],
-      "properties": {
-        "required": {"type": "object"},
-        "optional": {"type": "object"}
-      }
+      "properties": {"required": {"type": "object"}, "optional": {"type": "object"}}
     },
-    "missing_required_inputs": {
-      "type": "array",
-      "uniqueItems": true,
-      "items": {"type": "string", "minLength": 1}
-    },
+    "missing_required_inputs": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
     "ignored_input_count": {"type": "integer", "minimum": 0},
     "evidence": {
       "type": "object",
@@ -122,6 +103,14 @@
         "semantic_reviewers": {"type": "array", "items": {"type": "string", "minLength": 1}}
       }
     },
+    "acceptance_predicates": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "array",
+        "minItems": 1,
+        "items": {"$ref": "#/$defs/predicate"}
+      }
+    },
     "routing": {
       "type": "object",
       "additionalProperties": false,
@@ -130,6 +119,18 @@
         "failure_routes": {"type": "object", "additionalProperties": {"type": "string"}},
         "success_transition": {"type": "string", "minLength": 1},
         "stale_on": {"type": "array", "items": {"type": "string", "minLength": 1}}
+      }
+    }
+  },
+  "$defs": {
+    "predicate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "op"],
+      "properties": {
+        "path": {"type": "string", "minLength": 1},
+        "op": {"enum": ["eq", "in", "empty", "nonempty", "length_eq"]},
+        "value": {}
       }
     }
   },
