@@ -1,0 +1,47 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "terminus-execution-record-v1",
+  "title": "Terminus Execution Record",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "record_id", "invocation_id", "stage_id", "role_id", "authority", "status", "disposition", "outputs", "evidence_refs", "transition", "validation"],
+  "properties": {
+    "schema_version": {"const": "1.0"},
+    "record_id": {"type": "string", "pattern": "^rec_[0-9a-f]{64}$"},
+    "invocation_id": {"type": "string", "pattern": "^inv_[0-9a-f]{64}$"},
+    "stage_id": {"type": "string", "minLength": 1},
+    "role_id": {"type": "string", "minLength": 1},
+    "authority": {"type": "object"},
+    "status": {"type": "string", "minLength": 1},
+    "disposition": {"enum": ["ADVANCE", "ROUTE", "RETRY", "BLOCK"]},
+    "outputs": {"type": "object"},
+    "evidence_refs": {"type": "array", "items": {"type": "object"}},
+    "route_key": {"type": "string", "minLength": 1},
+    "blocking_reason": {"type": "string", "minLength": 1},
+    "transition": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["action", "target_kind", "requires_state_validation"],
+      "properties": {
+        "action": {"enum": ["ADVANCE", "ROUTE", "RETRY", "BLOCK"]},
+        "target": {"type": ["string", "null"]},
+        "target_kind": {"enum": ["STAGE", "STATE", "END", "ROUTE", "NONE"]},
+        "route_key": {"type": "string", "minLength": 1},
+        "route_instruction": {"type": "string", "minLength": 1},
+        "requires_state_validation": {"type": "boolean"}
+      }
+    },
+    "validation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["invocation_identity_valid", "status_legal", "output_keys_valid", "required_outputs_satisfied", "evidence_refs_count"],
+      "properties": {
+        "invocation_identity_valid": {"const": true},
+        "status_legal": {"const": true},
+        "output_keys_valid": {"const": true},
+        "required_outputs_satisfied": {"type": "boolean"},
+        "evidence_refs_count": {"type": "integer", "minimum": 0}
+      }
+    }
+  }
+}
