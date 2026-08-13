@@ -1,0 +1,56 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "terminus-stage-contract-completion-v1.2",
+  "title": "Terminus Stage Contract Completion Overlay",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["completion_version", "phase_constraints", "state_contracts", "canonical_creation_chain", "routing_invariants"],
+  "properties": {
+    "completion_version": {"const": "1.2"},
+    "phase_constraints": {
+      "type": "object",
+      "additionalProperties": {"$ref": "#/$defs/phaseConstraint"}
+    },
+    "state_contracts": {
+      "type": "object",
+      "additionalProperties": {"$ref": "#/$defs/stateContract"}
+    },
+    "canonical_creation_chain": {"$ref": "#/$defs/stringArray"},
+    "routing_invariants": {"$ref": "#/$defs/stringArray"}
+  },
+  "$defs": {
+    "stringArray": {
+      "type": "array",
+      "items": {"type": "string", "minLength": 1},
+      "uniqueItems": true
+    },
+    "phaseConstraint": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["execution_mode", "owner_invocation", "phase_prompt_file", "requires_prior", "must_not_consume", "must_not_produce", "required_semantics"],
+      "properties": {
+        "execution_mode": {"type": "string", "enum": ["DESIGN_ONLY", "PRIVATE_DESIGN", "MATERIALIZATION"]},
+        "owner_invocation": {"type": "string", "minLength": 1},
+        "phase_prompt_file": {"type": "string", "minLength": 1},
+        "requires_prior": {"$ref": "#/$defs/stringArray"},
+        "must_not_consume": {"$ref": "#/$defs/stringArray"},
+        "must_not_produce": {"$ref": "#/$defs/stringArray"},
+        "required_semantics": {"$ref": "#/$defs/stringArray"}
+      }
+    },
+    "stateContract": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["owner", "entry_from", "exit_to", "required_inputs", "entry_requirements", "persisted_state", "stale_on"],
+      "properties": {
+        "owner": {"type": "string", "minLength": 1},
+        "entry_from": {"type": "string", "minLength": 1},
+        "exit_to": {"type": "string", "minLength": 1},
+        "required_inputs": {"$ref": "#/$defs/stringArray"},
+        "entry_requirements": {"$ref": "#/$defs/stringArray"},
+        "persisted_state": {"$ref": "#/$defs/stringArray"},
+        "stale_on": {"$ref": "#/$defs/stringArray"}
+      }
+    }
+  }
+}

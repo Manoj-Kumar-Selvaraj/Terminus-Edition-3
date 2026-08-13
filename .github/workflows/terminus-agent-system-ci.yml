@@ -37,10 +37,17 @@ jobs:
         run: |
           python3 -m py_compile \
             .terminus/validate_agent_system.py \
+            .terminus/validate_stage_contracts.py \
+            .terminus/validate_retrieval_metadata.py \
+            .terminus/validate_retrieval_engine.py \
+            .terminus/validate_stage_invocation.py \
+            .terminus/validate_execution_record.py \
+            .terminus/validate_workflow_state.py \
             .terminus/review_contract.py \
             .terminus/new_review_packet.py \
             .terminus/validate_review_freshness.py \
             .terminus/validate_task_complexity.py
+          python3 -m compileall -q .terminus/retrieval .terminus/execution
 
       - name: Install pinned control-plane test tools
         run: python3 -m pip install --quiet ruff==0.14.10 pytest==8.4.1
@@ -54,6 +61,30 @@ jobs:
       - name: Validate agent system structure
         if: ${{ !cancelled() }}
         run: python3 .terminus/validate_agent_system.py
+
+      - name: Validate structured stage contracts
+        if: ${{ !cancelled() }}
+        run: python3 .terminus/validate_stage_contracts.py
+
+      - name: Validate retrieval metadata contract
+        if: ${{ !cancelled() }}
+        run: python3 .terminus/validate_retrieval_metadata.py
+
+      - name: Validate retrieval engine
+        if: ${{ !cancelled() }}
+        run: python3 .terminus/validate_retrieval_engine.py
+
+      - name: Validate executable stage invocations
+        if: ${{ !cancelled() }}
+        run: python3 .terminus/validate_stage_invocation.py
+
+      - name: Validate execution records and transitions
+        if: ${{ !cancelled() }}
+        run: python3 .terminus/validate_execution_record.py
+
+      - name: Validate workflow state materialization
+        if: ${{ !cancelled() }}
+        run: python3 .terminus/validate_workflow_state.py
 
       - name: Validate current review freshness and commit binding
         if: ${{ !cancelled() }}

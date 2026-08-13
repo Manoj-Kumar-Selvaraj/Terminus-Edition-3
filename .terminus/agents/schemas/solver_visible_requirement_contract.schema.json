@@ -1,0 +1,96 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "terminus-solver-visible-requirement-contract-v1",
+  "title": "Terminus Solver-Visible Requirement Contract",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "contract_version",
+    "task_id",
+    "requirement_contract_hash",
+    "engineering_objective",
+    "required_end_state",
+    "functional_requirements",
+    "preservation_requirements",
+    "compatibility_requirements",
+    "safety_requirements",
+    "referenced_docs",
+    "required_outputs",
+    "source_task_commit",
+    "control_plane_commit",
+    "private_sources_excluded"
+  ],
+  "properties": {
+    "contract_version": {"const": "1.0"},
+    "task_id": {"type": "string", "minLength": 1},
+    "requirement_contract_hash": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"},
+    "engineering_objective": {"type": "string", "minLength": 1},
+    "affected_system_location": {"type": "string", "minLength": 1},
+    "required_end_state": {"type": "string", "minLength": 1},
+    "functional_requirements": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {"type": "string", "minLength": 1}
+    },
+    "preservation_requirements": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {"type": "string", "minLength": 1}
+    },
+    "compatibility_requirements": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {"type": "string", "minLength": 1}
+    },
+    "safety_requirements": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {"type": "string", "minLength": 1}
+    },
+    "referenced_docs": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {"type": "string", "pattern": "^/"}
+    },
+    "required_outputs": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["path"],
+        "properties": {
+          "path": {"type": "string", "pattern": "^/"},
+          "schema": {"type": ["object", "array", "string"]},
+          "notes": {"type": "string"}
+        }
+      }
+    },
+    "current_state_claims": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {"type": "string", "minLength": 1}
+    },
+    "current_state_evidence": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {"type": "string", "minLength": 1}
+    },
+    "source_task_commit": {"type": "string", "pattern": "^[0-9a-f]{40,64}$"},
+    "control_plane_commit": {"type": "string", "pattern": "^[0-9a-f]{40,64}$"},
+    "private_sources_excluded": {"const": true}
+  },
+  "allOf": [
+    {
+      "if": {
+        "required": ["current_state_claims"],
+        "properties": {"current_state_claims": {"minItems": 1}}
+      },
+      "then": {
+        "required": ["current_state_evidence"],
+        "properties": {"current_state_evidence": {"minItems": 1}}
+      }
+    }
+  ]
+}

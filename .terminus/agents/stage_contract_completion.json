@@ -1,0 +1,121 @@
+{
+  "completion_version": "1.2",
+  "phase_constraints": {
+    "SYSTEM_ARCHITECTURE": {
+      "execution_mode": "DESIGN_ONLY",
+      "owner_invocation": "A2 System Architect",
+      "phase_prompt_file": ".terminus/agents/A2_PHASE_PROMPTS.md",
+      "requires_prior": ["WORK_PACKAGE_RESEARCH"],
+      "must_not_consume": ["DEFECT_TOPOLOGY", "SOLUTION_ORACLE", "VERIFIER_PRIVATE"],
+      "must_not_produce": ["BROKEN_STARTER", "DEFECT_INJECTION", "<task>/environment/"],
+      "required_semantics": [
+        "clean component/resource graph",
+        "runtime/operator entrypoints",
+        "state/persistence model",
+        "solver-visible documentation plan",
+        "production-characteristic and scale-fit rationale"
+      ]
+    },
+    "DEFECT_TOPOLOGY": {
+      "execution_mode": "PRIVATE_DESIGN",
+      "owner_invocation": "A3 Defect Topology Designer",
+      "phase_prompt_file": ".terminus/agents/CREATOR_PROMPTS.md",
+      "requires_prior": ["SYSTEM_ARCHITECTURE"],
+      "must_not_consume": ["SOLUTION_ORACLE", "VERIFIER_PRIVATE"],
+      "must_not_produce": ["<task>/environment/", "<task>/tests/"],
+      "required_semantics": [
+        "design against approved clean architecture",
+        "root-cause/incomplete-behavior topology",
+        "causal/interdependency edges",
+        "behavioral surfaces",
+        "partial-fix traps"
+      ]
+    },
+    "ENVIRONMENT_BUILD": {
+      "execution_mode": "MATERIALIZATION",
+      "owner_invocation": "A2 Environment Builder",
+      "phase_prompt_file": ".terminus/agents/A2_PHASE_PROMPTS.md",
+      "requires_prior": ["SYSTEM_ARCHITECTURE", "DEFECT_TOPOLOGY"],
+      "must_not_consume": ["SOLUTION_ORACLE", "VERIFIER_PRIVATE"],
+      "must_not_produce": ["UNTRACKED_DEFECTS"],
+      "required_semantics": [
+        "materialize approved clean architecture",
+        "inject only approved defect/incomplete behaviors",
+        "produce solver-visible runtime/state/docs",
+        "preserve reachability and production authenticity"
+      ]
+    }
+  },
+  "state_contracts": {
+    "FROZEN_CANDIDATE": {
+      "owner": "Creation Controller",
+      "entry_from": "DETERMINISTIC_VALIDATION",
+      "exit_to": "QUALITY_INTERLOCK",
+      "required_inputs": [
+        "CURRENT_TASK_COMMIT",
+        "CREATION_RULE_CONTEXT",
+        "FORMAT_STATUS",
+        "COMPLEXITY_STATUS",
+        "RUNTIME_AUTHENTICITY_STATUS",
+        "ORACLE_REWARD",
+        "NOP_REWARD",
+        "F2P_EMPIRICAL_MATRIX",
+        "P2P_EMPIRICAL_MATRIX",
+        "UNRESOLVED_POLICY_CONFLICTS"
+      ],
+      "entry_requirements": [
+        "format/packaging gates current for exact task commit",
+        "complexity gate current and passing",
+        "runtime-authenticity gate current and passing",
+        "Oracle reward equals 1",
+        "NOP reward equals 0",
+        "every intended F2P is starter/NOP-fail and Oracle-pass",
+        "intended P2P preservation is current",
+        "no unresolved applicable policy conflict"
+      ],
+      "persisted_state": [
+        "exact task commit",
+        "creation/control-plane policy identity",
+        "deterministic evidence references",
+        "next gate QUALITY_INTERLOCK"
+      ],
+      "stale_on": [
+        "task artifact change",
+        "solution change",
+        "verifier change",
+        "solver-visible contract change affecting acceptance",
+        "governing creation/task policy change",
+        "applicable validator change",
+        "deterministic evidence invalidation"
+      ]
+    }
+  },
+  "canonical_creation_chain": [
+    "RULE_RESOLUTION",
+    "WORK_PACKAGE_RESEARCH",
+    "SYSTEM_ARCHITECTURE",
+    "DEFECT_TOPOLOGY",
+    "ENVIRONMENT_BUILD",
+    "REFERENCE_SOLUTION",
+    "VERIFIER_BUILD",
+    "HUMAN_WRITING_RESEARCH",
+    "INSTRUCTION_DRAFT",
+    "SPEC_ALIGNMENT",
+    "DOCUMENTATION_DRAFT",
+    "FORMAT_GATE",
+    "ASSEMBLY",
+    "COMPLEXITY_GATE",
+    "RUNTIME_AUTHENTICITY",
+    "DETERMINISTIC_VALIDATION",
+    "FROZEN_CANDIDATE",
+    "QUALITY_INTERLOCK"
+  ],
+  "routing_invariants": [
+    "SYSTEM_ARCHITECTURE is design-only and precedes DEFECT_TOPOLOGY",
+    "DEFECT_TOPOLOGY is private design against the clean architecture and precedes starter materialization",
+    "ENVIRONMENT_BUILD is the second A2 invocation and consumes both clean architecture and approved defect topology",
+    "A2 phase invocations use the stage-specific prompt contract in A2_PHASE_PROMPTS.md",
+    "FROZEN_CANDIDATE is an exact-evidence lifecycle state, not a free-form label",
+    "any stale_on trigger invalidates the affected state/evidence before advancement"
+  ]
+}

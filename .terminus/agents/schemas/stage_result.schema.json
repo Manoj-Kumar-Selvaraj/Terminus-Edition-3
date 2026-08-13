@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "terminus-stage-result-v1",
+  "title": "Terminus Stage Result Envelope",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "invocation_id", "output_task_commit", "status", "outputs", "evidence_refs"],
+  "properties": {
+    "schema_version": {"const": "1.0"},
+    "invocation_id": {"type": "string", "pattern": "^inv_[0-9a-f]{64}$"},
+    "output_task_commit": {"type": "string", "pattern": "^[0-9a-f]{40,64}$"},
+    "status": {"type": "string", "minLength": 1},
+    "outputs": {"type": "object"},
+    "evidence_refs": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["kind", "ref"],
+        "properties": {
+          "kind": {"enum": ["ARTIFACT", "RUN", "PACKET", "RESULT", "COMMIT", "FILE", "EXTERNAL", "OTHER"]},
+          "ref": {"type": "string", "pattern": "^(git:|commit:|run:|external:).+"},
+          "content_hash": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"}
+        }
+      }
+    },
+    "route_key": {"type": "string", "minLength": 1},
+    "blocking_reason": {"type": "string", "minLength": 1}
+  }
+}

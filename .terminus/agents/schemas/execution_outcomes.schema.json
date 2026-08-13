@@ -1,0 +1,67 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "terminus-execution-outcomes-v1",
+  "title": "Terminus Execution Outcome Contract",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["outcome_version", "dispositions", "stages"],
+  "properties": {
+    "outcome_version": {"const": "1.0"},
+    "dispositions": {
+      "type": "array",
+      "const": ["ADVANCE", "ROUTE", "RETRY", "BLOCK"]
+    },
+    "stages": {
+      "type": "object",
+      "minProperties": 1,
+      "additionalProperties": {"$ref": "#/$defs/stageOutcome"}
+    }
+  },
+  "$defs": {
+    "routeSemantics": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["allowed_route_keys"],
+      "properties": {
+        "allowed_route_keys": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {"type": "string", "minLength": 1}
+        },
+        "default_route_key": {"type": "string", "minLength": 1}
+      }
+    },
+    "stageOutcome": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["advance_statuses", "route_statuses", "retry_statuses", "block_statuses", "full_output_statuses"],
+      "properties": {
+        "advance_statuses": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {"type": "string", "minLength": 1}
+        },
+        "route_statuses": {
+          "type": "object",
+          "additionalProperties": {"$ref": "#/$defs/routeSemantics"}
+        },
+        "retry_statuses": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {"type": "string", "minLength": 1}
+        },
+        "block_statuses": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {"type": "string", "minLength": 1}
+        },
+        "full_output_statuses": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {"type": "string", "minLength": 1}
+        }
+      }
+    }
+  }
+}

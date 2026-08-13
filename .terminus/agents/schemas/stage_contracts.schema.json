@@ -1,0 +1,87 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "terminus-stage-contracts-v1",
+  "title": "Terminus Stage Contract Registry",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["contract_version", "stages"],
+  "properties": {
+    "contract_version": {
+      "type": "string",
+      "const": "1.0"
+    },
+    "stages": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/stage"
+      }
+    }
+  },
+  "$defs": {
+    "stringArray": {
+      "type": "array",
+      "items": {"type": "string"},
+      "uniqueItems": true
+    },
+    "ioContract": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["required_fields", "optional_fields"],
+      "properties": {
+        "required_fields": {"$ref": "#/$defs/stringArray"},
+        "optional_fields": {"$ref": "#/$defs/stringArray"}
+      }
+    },
+    "outputContract": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status_values", "required_fields", "optional_fields", "persisted_artifacts"],
+      "properties": {
+        "status_values": {"$ref": "#/$defs/stringArray"},
+        "required_fields": {"$ref": "#/$defs/stringArray"},
+        "optional_fields": {"$ref": "#/$defs/stringArray"},
+        "persisted_artifacts": {"$ref": "#/$defs/stringArray"}
+      }
+    },
+    "stage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "lifecycle",
+        "owner",
+        "role_class",
+        "policy_files",
+        "prompt_files",
+        "input_contract",
+        "output_contract",
+        "evidence_required",
+        "deterministic_validators",
+        "semantic_reviewers",
+        "failure_routes",
+        "success_transition",
+        "stale_on"
+      ],
+      "properties": {
+        "id": {"type": "string", "pattern": "^[A-Z][A-Z0-9_]*$"},
+        "lifecycle": {"type": "string", "enum": ["creation", "review", "evaluation", "submission"]},
+        "owner": {"type": "string", "minLength": 1},
+        "role_class": {"type": "string", "enum": ["CONTROLLER", "PRODUCER", "FIXER", "REVIEWER", "ADJUDICATOR", "SIMULATOR", "EXTERNAL_GATE"]},
+        "policy_files": {"$ref": "#/$defs/stringArray"},
+        "prompt_files": {"$ref": "#/$defs/stringArray"},
+        "input_contract": {"$ref": "#/$defs/ioContract"},
+        "output_contract": {"$ref": "#/$defs/outputContract"},
+        "evidence_required": {"$ref": "#/$defs/stringArray"},
+        "deterministic_validators": {"$ref": "#/$defs/stringArray"},
+        "semantic_reviewers": {"$ref": "#/$defs/stringArray"},
+        "failure_routes": {
+          "type": "object",
+          "additionalProperties": {"type": "string", "minLength": 1}
+        },
+        "success_transition": {"type": "string", "minLength": 1},
+        "stale_on": {"$ref": "#/$defs/stringArray"}
+      }
+    }
+  }
+}

@@ -14,6 +14,8 @@ All creators read, in order:
 4. `.terminus/agents/PROTOCOL.md` where its evidence/staleness rules apply;
 5. the role-specific prompt below.
 
+Stage-specific execution prompts are narrower contracts and control their bounded invocation. A2 must additionally follow `.terminus/agents/A2_PHASE_PROMPTS.md`; A9 uses `.terminus/agents/A9_ASSEMBLY_PROMPT.md` as its executable stage prompt.
+
 If a creator detects that governing task rules materially differ from the pinned context, it must return control to the Creation Controller for rule re-resolution instead of silently continuing under a mixed baseline.
 
 For `large_system_strict` tasks, numeric requirements are hard **minimum floors/ranges**, not quotas or preferred target sizes. `>=3,000` substantive reachable LOC has no upper target; a naturally coherent production system may be 5,000, 10,000 or more lines. The 25–30 F2P range must arise organically from materially distinct behavior rather than manufactured test count. Strict tasks should normally be substantial production **engineering work packages**, not one localized incident/bug. If production scale, coupled requirement breadth, behavioral diversity, edge/failure coverage or authenticity cannot be achieved naturally, return `SCENARIO_TOO_SMALL` rather than pad or silently downgrade the task. The legacy `large_system` profile uses numeric targets diagnostically only when the controller records why strict scale is inappropriate.
@@ -85,14 +87,13 @@ WHY_THIS_ONE:
 ## System Architect / Environment Builder
 
 ### Mission
-Build a realistic solver-visible system and broken/incomplete initial state from the approved engineering work package and contract.
+Shared A2 production obligations live here; the invocation boundary is always controlled by `.terminus/agents/A2_PHASE_PROMPTS.md`.
+
+- `SYSTEM_ARCHITECTURE` designs the clean inherited system only and must not create the starter or consume/inject A3 topology.
+- `ENVIRONMENT_BUILD` runs only after A3 and materializes the starter from the approved clean architecture + approved defect/incomplete-behavior topology.
 
 ### Inputs
-- approved work package;
-- approved operational contract;
-- current Edition 3 environment rules;
-- creation profile;
-- no final oracle implementation.
+The phase-specific input contract in `A2_PHASE_PROMPTS.md` and `stage_contracts.json` is authoritative. No A2 phase may read the final Oracle implementation.
 
 ### Large-system obligations
 - **>=3,000 substantive, reachable solver-visible code/config LOC with no upper target**; do not design toward exactly or barely above 3,000;
@@ -110,14 +111,14 @@ Build a realistic solver-visible system and broken/incomplete initial state from
 Create normal engineering documentation where useful for repository/folder/component layout, runtime/operator entrypoints, architecture/state model, schemas/record layouts, protocol semantics, API/CLI contracts and runbooks. These docs may define legitimate technical contracts, but they must not diagnose which implementation pieces are incomplete/buggy or relocate the actual task objective/material functional requirements out of `instruction.md` to evade the Edition 3 instruction limit.
 
 ### Required process
-1. Draw the component/resource graph first.
+1. During `SYSTEM_ARCHITECTURE`, draw the clean component/resource graph, entrypoints, state/persistence model and documentation plan; do not inject defects.
 2. Identify which files a real maintainer would inherit: runtime code, config, schemas, record layouts, architecture docs and runbooks/contracts.
-3. Build the clean *shape* of the production system before injecting defects/incompleteness.
-4. Ensure each major subsystem is exercised by the real entrypoint or documented operator workflow.
-5. Ensure the system has realistic operational characteristics for its domain instead of synthetic code added merely to cross a LOC floor.
-6. Inject only the defects/incomplete behaviors supplied by Defect Topology Designer; do not add untracked surprise bugs.
-7. Make solver-visible diagnostics realistic where current-state evidence is appropriate: logs, status tables, output files, existing documentation. Diagnostics may reveal state, never the hidden repair recipe.
-8. Measure substantive LOC/resources and label any questionable counted artifact for the Complexity Governor.
+3. Ensure each major subsystem is exercised by the real entrypoint or documented operator workflow.
+4. Ensure the system has realistic operational characteristics for its domain instead of synthetic code added merely to cross a LOC floor.
+5. During `ENVIRONMENT_BUILD`, inject only the defects/incomplete behaviors supplied by Defect Topology Designer; do not add untracked surprise bugs.
+6. Make solver-visible diagnostics realistic where current-state evidence is appropriate: logs, status tables, output files, existing documentation. Diagnostics may reveal state, never the hidden repair recipe.
+7. Measure substantive LOC/resources and label any questionable counted artifact for the Complexity Governor.
+8. If materialization reveals an architectural mismatch, return `ARCHITECTURE_GAP` rather than inventing an untracked defect.
 
 ### Do not
 - read or copy the final solution files while creating the starter;
@@ -129,19 +130,7 @@ Create normal engineering documentation where useful for repository/folder/compo
 - add 50 resources that do not interact.
 
 ### Output
-```text
-STATUS: BUILT | SCENARIO_TOO_SMALL | BLOCKED
-COMPONENT_GRAPH:
-ENTRYPOINTS:
-SOLVER_VISIBLE_DOCS:
-INSTRUCTION_DOC_BOUNDARY:
-SUBSTANTIVE_LOC:
-PRODUCTION_CHARACTERISTICS:
-RESOURCE_COUNT:
-RUNTIME_REACHABILITY_NOTES:
-ENVIRONMENT_RULE_CHECKS:
-UNRESOLVED_RISKS:
-```
+Use the exact phase-specific output contract in `.terminus/agents/A2_PHASE_PROMPTS.md` and `.terminus/agents/stage_contracts.json`.
 
 ## Defect Topology Designer
 
@@ -253,7 +242,7 @@ RISKS_FOR_INDEPENDENT_VERIFIER:
 Write the behavioral verifier from the approved instruction/contracts, independently of the oracle implementation.
 
 ### Isolation
-The Verifier Author may know the intended operational invariants but must not use the oracle source as a calculator. It does not become the final Verifier Engineer reviewer.
+The Verifier Author may know the intended operational invariants but must not use the oracle source as a calculator. It does not become the final Verifier Engineer reviewer. Q4 is not invoked during verifier authoring; Q4 is a post-freeze packet-bound reviewer.
 
 ### Required process
 1. Extract stable requirement IDs from solver-visible instruction + referenced contracts.
@@ -304,7 +293,7 @@ SOLVER_LOGIC_REIMPLEMENTATION_RISK:
 ## Instruction Writer
 
 ### Mission
-Write a concise real-engineer work request that states the complete objective and material functional/operational requirements without turning the defect/test inventory or implementation diagnosis into prose.
+Write a concise real-engineer work request from the current sanitized requirement projection without turning defect/test inventory or implementation diagnosis into prose.
 
 ### Mandatory calibration before each new task
 Read:
@@ -324,11 +313,11 @@ Sample at least 8 real-source entries spanning at least 4 ecosystems. Include su
 This is prompt-time calibration, not permission to copy wording.
 
 ### Inputs
-- approved engineering work package;
-- approved material functional/operational requirement set;
-- solver-visible system/docs;
-- approved operational invariants;
-- absolute paths that the agent genuinely needs.
+- current schema-valid `APPROVED_SOLVER_VISIBLE_REQUIREMENT_CONTRACT` produced by the Creation Controller;
+- `TASK_WRITING_PROFILE` / human-writing calibration;
+- only the solver-visible docs/current-state evidence referenced by that contract when needed.
+
+If the requirement projection is missing, stale or incomplete, return `BLOCKED`/route through the controller. Do not reconstruct missing requirements from private creator topology, hidden verifier material, Oracle diffs or prior reviews.
 
 ### Authoritative Edition 3 shape
 Use **<=2 short paragraphs or <=20 concise bullets**. For a large strict task, use as many concise bullets as materially needed up to 20; do not treat brevity as permission to omit required behavior.
@@ -347,6 +336,7 @@ Solver-visible docs may contain normal engineering detail such as repository/fol
 - F2P/P2P names;
 - private defect IDs/causal graph details;
 - oracle implementation diff;
+- prior reviewer findings;
 - public benchmark wording.
 
 ### Drafting process
@@ -395,53 +385,9 @@ Produce reviewer-facing README/metadata explanations after implementation eviden
 
 ## Task Assembly Agent
 
-### Mission
-Assemble producer outputs into one frozen candidate and prove deterministic authoring gates before review.
+The executable A9 contract is `.terminus/agents/A9_ASSEMBLY_PROMPT.md`. This shared section intentionally contains no independent A9 status schema so the two prompt surfaces cannot drift.
 
-### Required checks
-- required file structure/current metadata;
-- environment build inputs stay inside environment context;
-- digest/base/dependency/runtime rules;
-- shell/Python syntax and verifier lint;
-- `.terminus/validate_task_complexity.py <task>` for `large_system`;
-- for `large_system_strict`, verify >=3,000 **substantive reachable production/domain LOC as a floor with no upper target**, excluding duplicate/generated/vendor/dead/unreachable/unnecessary/boilerplate-only inflation;
-- verify production characteristics appropriate to the domain: differentiated modules/responsibilities, real entrypoints, realistic state/data, validation/error handling, operational coupling and lifecycle/recovery behavior where applicable;
-- verify 25–30 F2P cases are materially distinct and organically justified rather than quota padding;
-- verify sufficient edge/boundary/negative/failure-path coverage and that negative cases remain classified F2P/P2P;
-- verify `instruction.md` uses <=2 short paragraphs or <=20 concise bullets, contains the complete material functional/operational work request, and does not use solver-visible docs as a prompt-extension loophole;
-- verify architecture/folder/schema/protocol details live in appropriate solver-visible documentation where useful without exposing the repair plan;
-- Oracle reward 1;
-- NOP reward 0;
-- every expected F2P test fails in the starter/NOP evidence and passes in Oracle evidence;
-- P2P expectations pass in both when classified as already-correct behavior;
-- no solution/tests leak into environment;
-- private design files remain outside packaged task;
-- task package contains no creator/reviewer scaffolding.
-
-### Circuit breaker
-If Oracle/NOP evidence shows the architecture itself is flawed, route back to the responsible producer. Do not weaken a legitimate test merely to obtain green CI.
-
-### Output
-```text
-STATUS: FROZEN_CANDIDATE | RETURN_TO_PRODUCER | BLOCKED
-TASK_COMMIT:
-STRUCTURE:
-INSTRUCTION_SHAPE:
-INSTRUCTION_REQUIREMENT_COMPLETENESS:
-INSTRUCTION_DOC_BOUNDARY:
-SUBSTANTIVE_REACHABLE_LOC:
-PRODUCTION_CHARACTERISTICS:
-COMPLEXITY_GATE:
-F2P_ORGANICITY:
-EDGE_BOUNDARY_COVERAGE:
-NEGATIVE_FAILURE_COVERAGE:
-ORACLE:
-NOP:
-F2P_EMPIRICAL_MATRIX:
-P2P_EMPIRICAL_MATRIX:
-LEAKAGE_CHECK:
-NEXT_REVIEW_GATE:
-```
+A9 assembles producer outputs and performs assembly-local structure/static/lint/instruction-doc-boundary/leakage checks. It returns `ASSEMBLED | RETURN_TO_PRODUCER | BLOCKED` under the dedicated prompt. It does **not** return `FROZEN_CANDIDATE`, issue Complexity Governor PASS, issue runtime-authenticity PASS, or own Oracle/NOP/F2P/P2P execution. Only the Creation Controller may record `FROZEN_CANDIDATE` after `COMPLEXITY_GATE -> RUNTIME_AUTHENTICITY -> DETERMINISTIC_VALIDATION` succeeds.
 
 ## Complexity Governor
 
@@ -475,6 +421,8 @@ Independently inspect whether requested scale reflects real system complexity ra
 - `instruction.md` states the material engineering objective/requirements within the Edition 3 shape without becoming a hidden-test inventory;
 - solver-visible docs provide legitimate technical context rather than acting as a second prompt or revealing the repair plan;
 - task remains understandable as one coherent engineering work package.
+
+Q6 is not invoked by this pre-freeze gate. A10 produces the creator-side complexity judgment; Q6 later performs the independent packet-bound production-logic audit only after freeze at `QUALITY_INTERLOCK`.
 
 ### Mandatory adversarial questions
 - Is this a substantial engineering work package, or one localized incident/bug whose missing real-world context is being replaced with benchmark padding?
