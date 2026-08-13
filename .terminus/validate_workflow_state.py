@@ -21,12 +21,33 @@ def fail(message: str) -> None:
 
 
 def main() -> int:
-    contract = json.loads((ROOT / ".terminus/agents/workflow_state_contract.json").read_text(encoding="utf-8"))
-    if contract.get("workflow_state_version") != "1.0" or contract.get("ledger_version") != "1.0":
+    contract = json.loads(
+        (ROOT / ".terminus/agents/workflow_state_contract.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    if (
+        contract.get("workflow_state_version") != "1.0"
+        or contract.get("ledger_version") != "1.0"
+    ):
         fail("workflow-state and ledger versions must remain 1.0")
-    if contract.get("stage_status_values") != ["CURRENT", "STALE", "MISSING", "BLOCKED"]:
+    if contract.get("stage_status_values") != [
+        "CURRENT",
+        "STALE",
+        "MISSING",
+        "BLOCKED",
+    ]:
         fail("workflow stage status vocabulary drift")
-    expected_actions = {"INVOKE_STAGE", "RETRY_STAGE", "ROUTE", "BLOCKED", "VALIDATE_STATE", "END"}
+    expected_actions = {
+        "INVOKE_STAGE",
+        "RETRY_STAGE",
+        "DISPATCH_EXTERNAL_GATE",
+        "AWAIT_EXTERNAL_GATE",
+        "ROUTE",
+        "BLOCKED",
+        "VALIDATE_STATE",
+        "END",
+    }
     if set(contract.get("next_action_values", [])) != expected_actions:
         fail("workflow next-action vocabulary is incomplete")
 
@@ -39,9 +60,11 @@ def main() -> int:
         ".terminus/execution/ledger.py",
         ".terminus/execution/state.py",
         ".terminus/execution/controller_cli.py",
+        ".terminus/execution/external_gate.py",
         ".terminus/tests/test_workflow_state.py",
         ".terminus/tests/test_workflow_temporal_order.py",
         ".terminus/tests/test_retrieval_workflow_state_exclusion.py",
+        ".terminus/tests/test_external_gate_controller.py",
     ]
     missing = [path for path in required_paths if not (ROOT / path).is_file()]
     if missing:
@@ -53,7 +76,9 @@ def main() -> int:
     if ".terminus/executions/" in gitignore:
         fail("durable .terminus/executions/ provenance must not be ignored")
 
-    policy = (ROOT / ".terminus/agents/WORKFLOW_STATE.md").read_text(encoding="utf-8").lower()
+    policy = (
+        ROOT / ".terminus/agents/WORKFLOW_STATE.md"
+    ).read_text(encoding="utf-8").lower()
     markers = [
         "materialized state file into acceptance evidence",
         "last valid ledger event for that stage",
@@ -78,36 +103,86 @@ def main() -> int:
     ):
         if marker not in state_code:
             fail(f"state resolver missing lineage/acceptance marker: {marker}")
-    controller_code = (ROOT / ".terminus/execution/controller_cli.py").read_text(encoding="utf-8")
-    if 'lineage.get("output_task_commit")' not in controller_code:
-        fail("controller record flow must rematerialize at output_task_commit")
+    controller_code = (
+        ROOT / ".terminus/execution/controller_cli.py"
+    ).read_text(encoding="utf-8")
+    for marker in (
+        'lineage.get("output_task_commit")',
+        "project_external_state",
+        "DISPATCH_EXTERNAL_GATE",
+        "AWAIT_EXTERNAL_GATE",
+    ):
+        if marker not in controller_code:
+            fail(f"controller flow missing marker: {marker}")
 
-    state_schema = json.loads((ROOT / ".terminus/agents/schemas/workflow_state.schema.json").read_text(encoding="utf-8"))
-    if state_schema.get("$id") != "terminus-workflow-state-v1" or "lineage" not in state_schema.get("required", []):
+    state_schema = json.loads(
+        (ROOT / ".terminus/agents/schemas/workflow_state.schema.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    if (
+        state_schema.get("$id") != "terminus-workflow-state-v1"
+        or "lineage" not in state_schema.get("required", [])
+    ):
         fail("workflow state schema must require lineage")
-    ledger_schema = json.loads((ROOT / ".terminus/agents/schemas/execution_ledger_event.schema.json").read_text(encoding="utf-8"))
+    next_action_enum = set(
+        state_schema.get("properties", {})
+        .get("next", {})
+        .get("properties", {})
+        .get("action", {})
+        .get("enum", [])
+    )
+    if next_action_enum != expected_actions:
+        fail("workflow state schema next-action enum drift")
+
+    ledger_schema = json.loads(
+        (
+            ROOT
+            / ".terminus/agents/schemas/execution_ledger_event.schema.json"
+        ).read_text(encoding="utf-8")
+    )
     required_ledger = set(ledger_schema.get("required", []))
-    if not {"input_task_commit", "output_task_commit"} <= required_ledger or "task_commit" in required_ledger:
+    if not {"input_task_commit", "output_task_commit"} <= required_ledger:
         fail("ledger event schema must bind explicit input/output task commits")
+    if "task_commit" in required_ledger:
+        fail("ledger event schema must not use ambiguous task_commit")
 
     resolver = WorkflowStateResolver(ROOT)
-    if len(resolver.policy.stages) != 23 or len(resolver.chain) != 24:
-        fail("workflow resolver must expose 23 stages plus FROZEN_CANDIDATE")
-    if resolver.chain[0] != {"node_id": "RULE_RESOLUTION", "node_kind": "STAGE"}:
+    expected_stage_count = len(resolver.policy.stages)
+    expected_node_count = expected_stage_count + 1
+    if len(resolver.chain) != expected_node_count:
+        fail(
+            "workflow resolver chain must contain every registered stage plus "
+            "FROZEN_CANDIDATE"
+        )
+    if resolver.chain[0] != {
+        "node_id": "RULE_RESOLUTION",
+        "node_kind": "STAGE",
+    }:
         fail("workflow chain must start at RULE_RESOLUTION")
-    if resolver.chain[-1] != {"node_id": "SUBMISSION_READY", "node_kind": "STAGE"}:
+    if resolver.chain[-1] != {
+        "node_id": "SUBMISSION_READY",
+        "node_kind": "STAGE",
+    }:
         fail("workflow chain must end at SUBMISSION_READY")
+    if sum(node["node_id"] == "FROZEN_CANDIDATE" for node in resolver.chain) != 1:
+        fail("workflow chain must contain exactly one FROZEN_CANDIDATE state")
 
     head = subprocess.run(
-        ["git", "-C", str(ROOT), "rev-parse", "HEAD"], check=True, capture_output=True, text=True
+        ["git", "-C", str(ROOT), "rev-parse", "HEAD"],
+        check=True,
+        capture_output=True,
+        text=True,
     ).stdout.strip()
     snapshot = resolver.resolve(
         task_id="workflow-validator-no-ledger",
         task_commit=head,
         control_plane_commit=head,
     )
-    if snapshot["next"].get("stage_id") != "RULE_RESOLUTION" or snapshot["next"].get("action") != "INVOKE_STAGE":
+    if snapshot["next"].get("stage_id") != "RULE_RESOLUTION":
         fail("empty ledger must start with RULE_RESOLUTION")
+    if snapshot["next"].get("action") != "INVOKE_STAGE":
+        fail("empty ledger must invoke RULE_RESOLUTION")
     if snapshot["lineage"].get("status") != "UNINITIALIZED":
         fail("empty ledger must expose UNINITIALIZED lineage")
 
@@ -136,15 +211,20 @@ def main() -> int:
         events = ledger.load(validate_record_files=True)
         if len(events) != 1 or events[0]["sequence"] != 1:
             fail("ledger must contain exactly one idempotently appended event")
-        if events[0]["input_task_commit"] != "a" * 40 or events[0]["output_task_commit"] != "a" * 40:
-            fail("ledger event did not persist task commit lineage")
+        if events[0]["input_task_commit"] != "a" * 40:
+            fail("ledger event did not persist input task commit")
+        if events[0]["output_task_commit"] != "a" * 40:
+            fail("ledger event did not persist output task commit")
 
     print("Terminus workflow-state validation PASS")
     print(
-        "workflow_state=1.0 ledger=1.0 stages=23 nodes=24 "
+        "workflow_state=1.0 ledger=1.0 "
+        f"stages={expected_stage_count} nodes={expected_node_count} "
         "record_selection=last_event staleness=evidence_temporal_dependency "
-        "commit_lineage=input_output unattributed_changes=blocked predicates=revalidated "
-        "freeze=derived_state next=deterministic durable=executions derived=workflows_ignored "
+        "commit_lineage=input_output unattributed_changes=blocked "
+        "predicates=revalidated freeze=derived_state "
+        "external_gates=dispatch_await next=deterministic "
+        "durable=executions derived=workflows_ignored "
         "legacy_sessions=not_inferred portability=normal_chatgpt_fallback"
     )
     return 0
