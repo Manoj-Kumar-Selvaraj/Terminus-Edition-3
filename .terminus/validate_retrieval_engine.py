@@ -16,6 +16,7 @@ from retrieval.policy import RetrievalPolicy  # noqa: E402
 from retrieval.store import RetrievalStore  # noqa: E402
 
 REQUIRED = [
+    ROOT / ".gitignore",
     T / "agents" / "RETRIEVAL_ENGINE.md",
     T / "agents" / "RETRIEVAL_METADATA.md",
     T / "agents" / "STAGE_CONTRACTS.md",
@@ -79,6 +80,10 @@ def main() -> int:
         if not path.is_file():
             errors.append(f"missing required file: {path.relative_to(ROOT)}")
 
+    gitignore = (ROOT / ".gitignore").read_text(encoding="utf-8")
+    if ".terminus/cache/" not in gitignore:
+        errors.append(".gitignore must exclude .terminus/cache/")
+
     policy_text = (T / "agents" / "RETRIEVAL_ENGINE.md").read_text(encoding="utf-8")
     _require_markers(errors, policy_text, "RETRIEVAL_ENGINE.md", POLICY_MARKERS)
 
@@ -131,7 +136,7 @@ def main() -> int:
         "engine=1.0 stages=23 canonical_roles=34 "
         "exact_reads=mandatory lexical=fts5_or_bm25 vector=pluggable "
         "hybrid=rrf caches=parse_embedding_result authorization=pre_rank "
-        "integration=stage_adapter portability=direct_read_fallback"
+        "integration=stage_adapter portability=direct_read_fallback cache_state=ignored"
     )
     return 0
 
