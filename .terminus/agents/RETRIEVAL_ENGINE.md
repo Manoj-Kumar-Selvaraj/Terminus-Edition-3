@@ -27,6 +27,7 @@ The reference implementation lives in `.terminus/retrieval/` and uses:
 - SQLite for documents/chunks/manifests/caches;
 - SQLite FTS5 when available, with deterministic in-process BM25 fallback;
 - structural chunking from the metadata contract;
+- explicit provenance-aware dynamic evidence ingestion;
 - a pluggable embedding interface;
 - dependency-free signed feature hashing as the default offline vector provider;
 - optional local `sentence-transformers` embeddings when that package/model is explicitly installed;
@@ -55,7 +56,30 @@ The index manifest binds:
 
 Task-specific private design and sanitized requirement-contract sources must match the selected task identity. An indexer must not silently rebind artifacts from another task.
 
-Dynamic evidence such as CI logs, review packets/results, session snapshots, model trials and final package evidence requires an explicit provenance adapter or metadata-valid ingestion path. The default repository scanner must not invent packet bindings, run IDs, role hashes or review-scope hashes.
+The default repository scanner intentionally excludes review packets/results, session state and external runtime/trial/package evidence. File presence alone is not provenance.
+
+## Dynamic evidence ingestion
+
+`.terminus/retrieval/ingestion.py` implements the explicit dynamic path governed by `.terminus/agents/DYNAMIC_EVIDENCE_INGESTION.md`.
+
+Repository-backed dynamic evidence is accepted only through an explicit full Git `source_commit`:
+
+- `REVIEW_PACKET` derives task/control-plane commits, review ID, role contract and producer role from the packet itself;
+- `REVIEW_RESULT` preserves the frozen producer packet/role bindings while allowing a separately authorized retrieval consumer;
+- `SESSION_STATE` derives task/policy identities and cross-checks those policy versions against the actual policy files at the same source commit.
+
+Externally supplied dynamic evidence is never auto-fetched by the local engine:
+
+- `CI_RUNTIME` requires task ID, task commit and CI run ID;
+- `MODEL_TRIAL` requires task ID and task commit;
+- `FINAL_PACKAGE` requires task ID and task commit;
+- `PUBLIC_REFERENCE` is content-addressed and stage/role projected.
+
+All external evidence uses a content-addressed `source_version`, so changing the content creates a new immutable version even when the origin URI is unchanged.
+
+Dynamic evidence is stored as an explicit stage/consumer-role projection. Before persistence, the ingestor calls the same authorization policy used at retrieval time for every declared consumer. An excluded evidence class, wrong stage-role pair, missing freshness binding or packet-role mismatch blocks ingestion.
+
+An active packet may be projected only to its own reviewer role and/or `CI_ORCHESTRATOR`. Review-result producer provenance is not rewritten to match a later controller consumer.
 
 ## Stage-role authorization
 
@@ -133,7 +157,7 @@ A retrieval cache stores chunk identities, not permission. Every cache hit is re
 
 Cached `SearchResult` score values are diagnostic ranking telemetry, not evidence, gate status or acceptance input. Current cache reuse preserves authorized result ordering; callers must not make control-plane decisions from score magnitude. If score components ever become a decision-bearing interface, they must be persisted exactly or recomputed rather than reconstructed from cached rank order.
 
-Semantic reviewer verdicts are not cached by this retrieval engine. Review reuse remains governed exclusively by Protocol provenance/scope rules.
+Semantic reviewer verdicts are not cached by this retrieval engine. A `REVIEW_RESULT` may be indexed as provenance-bound evidence only where the stage visibility contract permits it; that does not convert the verdict into reusable acceptance authority.
 
 ## Bounded context assembly
 
@@ -143,7 +167,7 @@ Semantic reviewer verdicts are not cached by this retrieval engine. Review reuse
 
 ## Normal ChatGPT portability
 
-The retrieval engine is an optimization and context-selection layer, not a required execution surface. Normal ChatGPT can continue the workflow by exact-reading the stage contract/policy files and authorized repository evidence through connected GitHub tools even when `.terminus/cache/retrieval.sqlite3` does not exist.
+The retrieval engine is an optimization and context-selection layer, not a required execution surface. Normal ChatGPT can continue the workflow by exact-reading the stage contract/policy files and authorized repository/dynamic evidence through connected GitHub/CI tools even when `.terminus/cache/retrieval.sqlite3` does not exist.
 
 When a local checkout/Work/Codex execution surface is available, the same stage invocation may build/query the local index through:
 
@@ -153,6 +177,23 @@ python .terminus/retrieval/cli.py --root . build \
   --task-id <task-id> \
   --task-commit <task-sha> \
   --control-plane-commit <control-plane-sha>
+
+python .terminus/retrieval/cli.py --root . ingest-repository \
+  --source-kind REVIEW_PACKET \
+  --source-path .terminus/reviews/<task>/<review>.packet.json \
+  --source-commit <commit-containing-packet> \
+  --stage QUALITY_INTERLOCK \
+  --role Q4_SPEC_TEST_CONTRACT_REVIEWER
+
+python .terminus/retrieval/cli.py --root . ingest-external \
+  --source-kind CI_RUNTIME \
+  --input /path/to/exact-run-evidence.txt \
+  --source-uri github-actions://<repo>/run/<run>/job/<job> \
+  --task-id <task-id> \
+  --task-commit <task-sha> \
+  --ci-run-id <run> \
+  --stage DETERMINISTIC_VALIDATION \
+  --role CI_ORCHESTRATOR
 
 python .terminus/retrieval/cli.py --root . context \
   --stage <STAGE_ID> \
@@ -172,11 +213,12 @@ Before invoking a registered role, a controller should:
 1. resolve the stage contract and verify the canonical role is authorized for that stage;
 2. exact-read mandatory policy/prompt files;
 3. resolve packet/role evidence exclusions and freshness bindings;
-4. use retrieval, when available, only for additional authorized evidence selection;
-5. include retrieved chunk provenance in the invocation packet or handoff when material;
-6. continue using direct exact reads when retrieval is unavailable or unnecessary.
+4. optionally ingest explicitly sourced dynamic evidence when local persistence/retrieval is useful;
+5. use retrieval, when available, only for additional authorized evidence selection;
+6. include retrieved chunk provenance in the invocation packet or handoff when material;
+7. continue using direct exact reads when retrieval/ingestion is unavailable or unnecessary.
 
-Reviewers with packet-bound evidence remain packet-bound. The existence of an index never expands the packet.
+Reviewers with packet-bound evidence remain packet-bound. The existence of an index or ingested dynamic evidence never expands the packet.
 
 ## Failure behavior
 
@@ -187,7 +229,13 @@ Return/block rather than guess when:
 - a grouped/ambiguous stage participant cannot resolve to an explicit canonical role set;
 - required task/control-plane/packet/role freshness binding is missing;
 - task and control-plane snapshots are incorrectly conflated when their commits differ;
+- a dynamic repository artifact contradicts its embedded task/review/session provenance;
+- a session policy identity does not match policy files at its source commit;
+- external dynamic evidence lacks required task/run provenance;
+- an active packet is projected to an unrelated reviewer;
 - an indexed chunk contradicts its registered source profile;
 - an index manifest is bound to the wrong task/control-plane commit;
 - a solver-visible-only invocation would require a private/control-plane shadow source;
 - a requested ranker would broaden an `EXACT_ONLY` or external-bound stage.
+
+Never repair, infer or fabricate missing dynamic-evidence provenance during ingestion.
