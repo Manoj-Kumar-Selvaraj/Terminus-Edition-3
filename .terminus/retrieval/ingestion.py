@@ -27,6 +27,16 @@ _SESSION_POLICY_FIELDS = {
     "Pre-LLMaJ panel policy": "pre_llmaj_panel",
     "Comprehensive reviewer policy": "comprehensive_reviewer",
 }
+_POLICY_VERSION_SOURCES = {
+    "agent_system": (".terminus/AGENT_SYSTEM.md", "Agent-system policy version"),
+    "specialist_prompt": (".terminus/agents/PROMPTS.md", "Prompt policy version"),
+    "specialist_protocol": (".terminus/agents/PROTOCOL.md", "Policy version"),
+    "pre_llmaj_panel": (".terminus/reviewers/PRE_LLMAJ.md", "Panel policy version"),
+    "comprehensive_reviewer": (
+        ".terminus/agents/COMPREHENSIVE_REVIEWER.md",
+        "Reviewer policy version",
+    ),
+}
 
 
 class DynamicEvidenceIngestor:
@@ -59,6 +69,8 @@ class DynamicEvidenceIngestor:
         role_contract_hash = self._required_text(payload, "role_contract_hash")
         packet_binding = self._required_text(payload, "review_id")
         producer_role = self._producer_role(self._required_text(payload, "role"))
+        self._require_git_commit(task_commit, "task_commit")
+        self._require_git_commit(control_plane_commit, "control_plane_commit")
 
         expected_path = PurePosixPath(".terminus") / "reviews" / task_id
         path = PurePosixPath(source_path)
@@ -109,6 +121,8 @@ class DynamicEvidenceIngestor:
         role_contract_hash = self._required_text(payload, "role_contract_hash")
         packet_binding = self._required_text(payload, "review_id")
         self._producer_role(self._required_text(payload, "role"))
+        self._require_git_commit(task_commit, "task_commit")
+        self._require_git_commit(control_plane_commit, "control_plane_commit")
 
         path = PurePosixPath(source_path)
         expected_path = PurePosixPath(".terminus") / "reviews" / task_id
@@ -149,15 +163,26 @@ class DynamicEvidenceIngestor:
         stage_id: str,
         role_ids: Sequence[str],
     ) -> dict[str, Any]:
-        """Ingest a durable session snapshot and derive identity/policy bindings from it."""
+        """Ingest a durable session snapshot and verify its policy identities."""
         raw, blob_sha = self._read_git_blob(source_commit, source_path)
         text = raw.decode("utf-8")
         task_id = self._session_value(text, "Task")
         task_commit = self._session_sha(text, "Current task commit")
+        self._require_git_commit(task_commit, "task_commit")
         policy_versions = {
             key: self._session_value(text, label)
             for label, key in _SESSION_POLICY_FIELDS.items()
         }
+        actual_policy_versions = self._policy_versions_at_commit(source_commit)
+        mismatches = {
+            key: (policy_versions.get(key), actual_policy_versions.get(key))
+            for key in actual_policy_versions
+            if policy_versions.get(key) != actual_policy_versions.get(key)
+        }
+        if mismatches:
+            raise ValueError(
+                f"session policy bindings do not match control-plane snapshot: {mismatches}"
+            )
         expected = f".terminus/sessions/{task_id}.md"
         if PurePosixPath(source_path).as_posix() != expected:
             raise ValueError("session path does not match embedded task")
@@ -238,6 +263,9 @@ class DynamicEvidenceIngestor:
         profile = self.policy.source_profiles.get(source_kind)
         if not isinstance(profile, dict):
             raise ValueError(f"unknown source kind: {source_kind}")
+        expected_repository_backed = source_kind in _REPOSITORY_DYNAMIC
+        if bool(profile.get("repository_backed")) is not expected_repository_backed:
+            raise ValueError(f"source profile backing mismatch for {source_kind}")
 
         projection_uri = self._projection_uri(origin_source_uri, stage_id, role_ids)
         document_id = "doc_" + self._sha(projection_uri, source_version)
@@ -332,6 +360,8 @@ class DynamicEvidenceIngestor:
             "task_id": task_id,
             "task_commit": task_commit,
             "control_plane_commit": control_plane_commit,
+            "policy_versions": dict(policy_versions) if policy_versions else None,
+            "role_contract_hash": role_contract_hash,
             "packet_binding": packet_binding,
             "review_scope_hash": review_scope_hash,
             "ci_run_id": ci_run_id,
@@ -379,9 +409,32 @@ class DynamicEvidenceIngestor:
     def _producer_role(self, value: str) -> str:
         return self.policy.canonical_role(_PRODUCER_ROLE_ALIASES.get(value, value))
 
+    def _policy_versions_at_commit(self, commit: str) -> dict[str, str]:
+        versions: dict[str, str] = {}
+        for key, (path, label) in _POLICY_VERSION_SOURCES.items():
+            text = self._git_text("show", f"{commit}:{path}")
+            match = re.search(
+                rf"^{re.escape(label)}:\s*`([^`]+)`\s*$",
+                text,
+                flags=re.MULTILINE,
+            )
+            if not match:
+                raise ValueError(f"cannot resolve {key} policy version at {commit}")
+            versions[key] = match.group(1).strip()
+        return versions
+
+    def _require_git_commit(self, commit: str, label: str) -> None:
+        result = subprocess.run(
+            ["git", "-C", str(self.root), "cat-file", "-e", f"{commit}^{{commit}}"],
+            capture_output=True,
+        )
+        if result.returncode != 0:
+            raise ValueError(f"embedded {label} is not present in repository history")
+
     def _read_git_blob(self, source_commit: str, source_path: str) -> tuple[bytes, str]:
         if not re.fullmatch(r"[0-9a-f]{40,64}", source_commit):
             raise ValueError("source_commit must be a full hexadecimal Git commit")
+        self._require_git_commit(source_commit, "source_commit")
         blob_sha = self._git_text("rev-parse", f"{source_commit}:{source_path}").strip()
         raw = subprocess.run(
             ["git", "-C", str(self.root), "show", f"{source_commit}:{source_path}"],
