@@ -1,0 +1,25 @@
+name: Temporary COBOL Q4 adjudication packet
+
+on:
+  push:
+    branches:
+      - task/cobol-comp3-python-equiv-completion
+    paths:
+      - .github/workflows/tmp-cobol-q4-adjudication-packet.yml
+
+permissions:
+  contents: read
+
+jobs:
+  packet:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Generate canonical packet
+        run: |
+          python3 .terminus/new_review_packet.py cobol-comp3-python-equiv adjudication \
+            --state FROZEN_CANDIDATE \
+            --change "Adjudicate whether current Q4-STC-003 and Q4-STC-004 are latent reviewer omissions after the prior exhaustive bf242838 Q4; Q4-STC-001 and Q4-STC-002 are excluded from this dispute." \
+            --print
