@@ -159,7 +159,7 @@ json.dump({{
         [sys.executable, "-c", code],
         timeout_seconds=20,
     )
-    assert response["status"] == "EXECUTED"
+    assert response["status"] == "EXECUTED", response
     assert response["command"]["shell"] is False
     assert response["sandbox"]["backend"] == "BWRAP"
     assert response["sandbox"]["read_only"] is True
@@ -178,7 +178,7 @@ def test_local_command_enforces_live_output_limit() -> None:
         [sys.executable, "-c", "import sys; sys.stdout.write('x' * 2000000)"],
         timeout_seconds=20,
     )
-    assert response["status"] == "OUTPUT_LIMIT_EXCEEDED"
+    assert response["status"] == "OUTPUT_LIMIT_EXCEEDED", response
     assert response["stage_result"] is None
 
 
