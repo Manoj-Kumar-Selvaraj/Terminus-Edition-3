@@ -1,0 +1,181 @@
+{
+  "schema_version": "3.0",
+  "role": "Adjudicator",
+  "review_id": "cobol-comp3-python-equiv-d2bf8685-adjudication-93878871ea",
+  "task": "cobol-comp3-python-equiv",
+  "task_commit": "d2bf8685258c89fbe9db77531788c56c2bef15a8",
+  "control_plane_commit": "b3cf0ed45c925ea7a892528b737a5b79b8fdbd14",
+  "protocol_policy_version": "2.2",
+  "prompt_policy_version": "2.2",
+  "role_policy_version": "1.0",
+  "role_contract_hash": "ae7523f7674adecdb0ca242024e8ee1cc0483105b249621469ec288184485cca",
+  "context_packet": ".terminus/reviews/cobol-comp3-python-equiv/d2bf8685/cobol-comp3-python-equiv-d2bf8685-adjudication-93878871ea.packet.json",
+  "verdict": "REQUEST_CHANGES",
+  "confidence": "HIGH",
+  "evidence_status": "SUFFICIENT",
+  "summary": "BOTH_PARTLY. Q4-STC-003 is materially correct and is a pure LATENT_REVIEWER_OMISSION: the same P2P incident-evidence existence check and the same absence of an explicit final-state preservation obligation were fully reviewable in the prior exhaustive bf242838 Q4, which nevertheless marked that P2P preservation coverage complete. Q4-STC-004 is also materially correct at MEDIUM, but its no-drip classification is mixed: the redefines_ok false-state coverage defect is a pure latent omission, while the current odo_lengths_ok 'true-only' verifier surface materially touches the repair diff because the prior mismatched invalid-ODO=false assertion was removed. The documented max-span false semantic itself is unchanged and was never correctly exercised in either version. Neither finding is rejected or downgraded. Both require controlling remediation before a fresh packet-bound Q4 can pass.",
+  "evidence": [
+    {
+      "type": "artifact",
+      "ref": ".terminus/reviews/cobol-comp3-python-equiv/d2bf8685/cobol-comp3-python-equiv-d2bf8685-adjudication-93878871ea.packet.json",
+      "observation": "The packet fixes the Adjudicator role, task commit d2bf8685258c89fbe9db77531788c56c2bef15a8, allowed frozen-review evidence, v3 schema, and immutable output path for this bounded dispute."
+    },
+    {
+      "type": "rule",
+      "ref": ".terminus/agents/PROTOCOL.md#latent-reviewer-omission-no-drip-rule",
+      "observation": "Protocol 2.2 classifies a later Q4 finding as LATENT_REVIEWER_OMISSION when it rests entirely on unchanged evidence that was fully reviewable in the prior exhaustive Q4; findings introduced by or materially touching the repair diff may route as regression/new-scope, and latent findings are adjudicated rather than waived."
+    },
+    {
+      "type": "rule",
+      "ref": ".terminus/AGENT_SYSTEM.md",
+      "observation": "Agent-system policy 2.4 makes Q4 exhaustive, requires complete P2P and stable-interface review, and routes material frozen-review disagreement through Adjudicator rather than majority vote."
+    },
+    {
+      "type": "rule",
+      "ref": ".terminus/agents/PROMPTS.md#Adjudicator",
+      "observation": "Adjudicator resolves completed-review disagreement by controlling rule/evidence, scope reconciliation, and required action without compromise voting."
+    },
+    {
+      "type": "rule",
+      "ref": ".terminus/agents/QUALITY_AGENT_REGISTRY.md#Q4-Spec-Test-Contract-Reviewer",
+      "observation": "Q4 must inventory preservation requirements and stable output obligations, walk every F2P/P2P boundary including preservation intent and circular oracles, perform a second omission sweep, and treat material phantom tests or untested requirements as blocking."
+    },
+    {
+      "type": "rule",
+      "ref": ".terminus/agents/QUALITY_AGENT_PROMPTS.md#Q4-Spec-Test-Contract-Reviewer",
+      "observation": "Q4 must map every substantive verifier behavior to a discoverable requirement, map every material stable-interface obligation to meaningful non-vacuous coverage, inspect preservation intent/circular oracles, and report MEDIUM as blocking when it changes pass/fail or a documented stable public interface."
+    },
+    {
+      "type": "rule",
+      "ref": ".terminus/agents/INSTRUCTION_POLICY.md",
+      "observation": "Material preservation/compatibility requirements belong in the engineering work request, while referenced technical documentation may carry schemas/layout/protocol detail; brevity does not authorize omission of a material preservation obligation."
+    },
+    {
+      "type": "review",
+      "ref": ".terminus/reviews/cobol-comp3-python-equiv/bf242838/cobol-comp3-python-equiv-bf242838-spec-test-contract-c1744a7ef9.json",
+      "observation": "The prior exhaustive Q4 declared requirements/verifier behaviors complete, P2P boundaries complete, output interfaces complete and second-pass omission sweep PASS. It explicitly classified referenced layout/sample/incident evidence retention as COMPLETE_AS_P2P_PRESERVATION, REDEFINES coverage as COMPLETE using direct equality plus summary success, and ODO core behavior as complete apart from a separate summary-contract mismatch."
+    },
+    {
+      "type": "review",
+      "ref": ".terminus/reviews/cobol-comp3-python-equiv/d2bf8685/cobol-comp3-python-equiv-d2bf8685-spec-test-contract-73aef64c20.json",
+      "observation": "The current replacement Q4 raises only the disputed STC-003 preservation-contract gap and STC-004 false-state summary-semantic coverage gap within this adjudication scope."
+    },
+    {
+      "type": "file",
+      "ref": "cobol-comp3-python-equiv/instruction.md@bf242838a5a985583d43e9ca919c03e4c3f9459d",
+      "observation": "The prior instruction referenced handoff.md, unpack-incident.log and record-layout.md as shift notes/contract inputs but stated no final-state requirement that those incident-note artifacts remain present after the solve."
+    },
+    {
+      "type": "file",
+      "ref": "cobol-comp3-python-equiv/instruction.md@d2bf8685258c89fbe9db77531788c56c2bef15a8",
+      "observation": "The current instruction keeps the same references and still states no final-state preservation obligation; its relevant change is removal of the separate offline/model-API sentence."
+    },
+    {
+      "type": "test",
+      "ref": "cobol-comp3-python-equiv/tests/test_outputs.py@bf242838a5a985583d43e9ca919c03e4c3f9459d",
+      "observation": "The prior verifier already contained test_p2p_incident_evidence_present requiring handoff.md, unpack-incident.log and record-layout.md to exist. It asserted redefines_ok true only on a correct tape. For odo_lengths_ok it asserted true on correct parsing and also asserted false for an invalid ODO count, even though that false condition did not match the documented max-span-consumption semantic."
+    },
+    {
+      "type": "test",
+      "ref": "cobol-comp3-python-equiv/tests/test_outputs.py@d2bf8685258c89fbe9db77531788c56c2bef15a8",
+      "observation": "The incident-evidence P2P existence test is unchanged. The current verifier still asserts redefines_ok and odo_lengths_ok true on correct tapes, but the prior invalid-ODO odo_lengths_ok=false assertion has been removed; no verifier case independently exercises either documented false semantic."
+    },
+    {
+      "type": "file",
+      "ref": "cobol-comp3-python-equiv/environment/equiv/docs/record-layout.md@bf242838a5a985583d43e9ca919c03e4c3f9459d",
+      "observation": "The prior stable report contract defined odo_lengths_ok=false specifically when a record consumed the max OCCURS span instead of the depending-on count, and redefines_ok=false when a REDEFINES field was unpacked from a later offset than its target."
+    },
+    {
+      "type": "file",
+      "ref": "cobol-comp3-python-equiv/environment/equiv/docs/record-layout.md@d2bf8685258c89fbe9db77531788c56c2bef15a8",
+      "observation": "Those odo_lengths_ok and redefines_ok false-state definitions are unchanged; the relevant document change only removed the unrelated 'Offline only' CLI sentence."
+    }
+  ],
+  "findings": [
+    {
+      "id": "ADJ-Q4-003",
+      "severity": "MEDIUM",
+      "status": "OBSERVED",
+      "criterion": "A P2P preservation assertion that changes solver pass/fail must correspond to discoverable preservation intent; a later finding on unchanged fully reviewed P2P scope is subject to Protocol 2.2 no-drip classification.",
+      "evidence_refs": [
+        ".terminus/agents/QUALITY_AGENT_REGISTRY.md#Q4-Spec-Test-Contract-Reviewer",
+        ".terminus/agents/INSTRUCTION_POLICY.md",
+        "cobol-comp3-python-equiv/instruction.md@bf242838a5a985583d43e9ca919c03e4c3f9459d",
+        "cobol-comp3-python-equiv/instruction.md@d2bf8685258c89fbe9db77531788c56c2bef15a8",
+        "cobol-comp3-python-equiv/tests/test_outputs.py@bf242838a5a985583d43e9ca919c03e4c3f9459d",
+        "cobol-comp3-python-equiv/tests/test_outputs.py@d2bf8685258c89fbe9db77531788c56c2bef15a8",
+        ".terminus/reviews/cobol-comp3-python-equiv/bf242838/cobol-comp3-python-equiv-bf242838-spec-test-contract-c1744a7ef9.json"
+      ],
+      "why_it_matters": "Q4-STC-003 is correct: the unchanged verifier grades continued existence of incident-note artifacts even though the work request only points to them as evidence/context and never makes their final-state retention a required invariant. A solver can delete or replace those notes and fail grading without violating an explicit preservation contract. The prior exhaustive Q4 had the exact same P2P check and explicitly marked that preservation coverage complete, so this is a pure LATENT_REVIEWER_OMISSION rather than a remediation-introduced defect.",
+      "minimal_remediation": "Orchestrator must route one explicit adjudication-controlled repair: if retaining the incident evidence is genuinely material, add a narrowly scoped preservation requirement to the engineering work request and keep the matching P2P test; otherwise remove the incident-note existence assertions from grading. Then refreeze and run a fresh packet-bound Q4. Do not start another blind Q4 patch loop without this disposition.",
+      "regression_risk": "Do not add a broad 'preserve everything' rule. Preserve only artifacts whose continued presence is an actual operational/regression invariant; keep legitimate layout/sample runtime dependencies separately testable."
+    },
+    {
+      "id": "ADJ-Q4-004",
+      "severity": "MEDIUM",
+      "status": "OBSERVED",
+      "criterion": "Documented stable output-interface semantics require meaningful non-circular coverage; no-drip classification follows the semantic defect, while components materially touching the repair diff must be identified separately.",
+      "evidence_refs": [
+        ".terminus/agents/QUALITY_AGENT_REGISTRY.md#Q4-Spec-Test-Contract-Reviewer",
+        ".terminus/agents/QUALITY_AGENT_PROMPTS.md#Q4-Spec-Test-Contract-Reviewer",
+        "cobol-comp3-python-equiv/environment/equiv/docs/record-layout.md@bf242838a5a985583d43e9ca919c03e4c3f9459d",
+        "cobol-comp3-python-equiv/environment/equiv/docs/record-layout.md@d2bf8685258c89fbe9db77531788c56c2bef15a8",
+        "cobol-comp3-python-equiv/tests/test_outputs.py@bf242838a5a985583d43e9ca919c03e4c3f9459d",
+        "cobol-comp3-python-equiv/tests/test_outputs.py@d2bf8685258c89fbe9db77531788c56c2bef15a8",
+        ".terminus/reviews/cobol-comp3-python-equiv/bf242838/cobol-comp3-python-equiv-bf242838-spec-test-contract-c1744a7ef9.json"
+      ],
+      "why_it_matters": "Q4-STC-004 is materially correct and remains MEDIUM-blocking because odo_lengths_ok and redefines_ok are documented stable public fields whose false semantics can be hardcoded away while the verifier relies on direct parsing checks plus successful true values. The redefines_ok defect is a pure LATENT_REVIEWER_OMISSION: its contract and true-only coverage were unchanged and the prior exhaustive Q4 explicitly called REDEFINES coverage complete. The odo_lengths_ok component is mixed: the contract's max-span false semantic was unchanged and never correctly exercised at bf242838, but the current true-only test surface materially touches remediation because the prior invalid-ODO=false assertion was removed to resolve a different phantom-semantic finding. Thus the underlying correct false-semantic coverage gap predates remediation, while the exact current verifier shape is remediation-touched.",
+      "minimal_remediation": "Treat the two summary diagnostics explicitly. Either redefine each field around an input-observable/testable condition and add verifier-owned false-state scenarios, provide another non-circular way to verify the documented false semantics, or remove/narrow the untestable false-state guarantees from the stable public contract while retaining the stronger direct ODO/REDEFINES parsing assertions. Refreeze and rerun Q4 after the owning spec/verifier repair.",
+      "regression_risk": "Do not replace direct ODO/REDEFINES correctness assertions with self-reported booleans, and do not reintroduce the prior invalid-ODO=false mismatch unless the public field definition is intentionally changed to include that condition."
+    }
+  ],
+  "missing_evidence": [],
+  "change_scope": [
+    "Adjudication only; no task implementation, instruction, contract or verifier file was modified by this role.",
+    "Q4-STC-003 classification: LATENT_REVIEWER_OMISSION, upheld at MEDIUM.",
+    "Q4-STC-004 classification: MIXED_LATENT_REVIEWER_OMISSION_AND_REMEDIATION_TOUCHED, upheld at MEDIUM; redefines component is pure latent, odo component has an unchanged semantic gap plus a repair-touched verifier surface."
+  ],
+  "do_not_change": [
+    "Do not adjudicate or alter Q4-STC-001 or Q4-STC-002; they remain remediation-owned outside this dispute.",
+    "Do not weaken legitimate COMP-3, ODO, REDEFINES, CLI, record-framing or stable report-schema behavior merely to obtain Q4 PASS.",
+    "Do not overwrite historical Q4 or adjudication evidence.",
+    "Do not modify task implementation files from the Adjudicator role.",
+    "Do not merge PR #22 from this role."
+  ],
+  "next_gate": "REQUEST_CHANGES: return to the CI Orchestrator. Apply the adjudication-controlled narrow repair for Q4-STC-003 and the smallest owning spec/verifier repair for Q4-STC-004, preserving Q4-STC-001/Q4-STC-002 ownership. Refreeze the resulting task commit and generate one fresh packet-bound exhaustive Q4; do not continue a blind no-drip patch loop.",
+  "role_output": {
+    "DECISION": "BOTH_PARTLY",
+    "CONTROLLING_RULE_OR_EVIDENCE": [
+      "Protocol 2.2 latent-reviewer-omission/no-drip rule",
+      "Q4 mandatory P2P preservation-intent and circular-oracle/stable-interface walks",
+      "Instruction Policy requirement that material preservation obligations be discoverable in the work request",
+      "Prior exhaustive Q4's explicit P2P/output-interface completeness claims",
+      "Semantic comparison of bf242838 and d2bf8685 instruction, record-layout contract and verifier behavior"
+    ],
+    "SCOPE_RECONCILIATION": {
+      "Q4-STC-003": {
+        "material_correctness": "UPHELD",
+        "severity": "MEDIUM",
+        "prior_scope_status": "UNCHANGED_AND_FULLY_REVIEWABLE",
+        "classification": "LATENT_REVIEWER_OMISSION",
+        "remediation_introduced_or_touched": "NO",
+        "controlling_observation": "The incident-evidence existence test is unchanged and no explicit final-state preservation obligation existed at either commit; prior Q4 nevertheless marked the P2P retention requirement complete and its P2P sweep complete."
+      },
+      "Q4-STC-004": {
+        "material_correctness": "UPHELD",
+        "severity": "MEDIUM",
+        "prior_scope_status": "MIXED",
+        "classification": "MIXED_LATENT_REVIEWER_OMISSION_AND_REMEDIATION_TOUCHED",
+        "components": {
+          "redefines_ok_false_semantics": "LATENT_REVIEWER_OMISSION: contract and true-only coverage unchanged and fully reviewable; prior Q4 explicitly marked REDEFINES coverage complete.",
+          "odo_lengths_ok_false_semantics": "MIXED: documented max-span false semantic unchanged and never correctly tested in either version, but current true-only grading surface materially touches remediation because the prior mismatched invalid-ODO=false assertion was removed."
+        },
+        "remediation_introduced_or_touched": "PARTLY_TOUCHED_NOT_INTRODUCED",
+        "controlling_observation": "The semantic coverage defect predates remediation, but one current verifier manifestation directly changed during repair."
+      }
+    },
+    "REASON": "The current Q4 findings are judged from controlling rules and semantic evidence, not desired outcome or reviewer count. STC-003 is the exact no-drip case: unchanged P2P grading plus unchanged absence of preservation intent was explicitly reviewed and incorrectly accepted in the prior exhaustive Q4. STC-004 is also substantively valid, but Protocol requires a finer split because the ODO assertion surface changed during remediation even though the correct documented false branch remained uncovered before and after that change.",
+    "REQUIRED_ACTION": "Uphold both findings. For STC-003, perform the adjudication-authorized narrow preservation-contract/test alignment. For STC-004, repair the stable summary-field contract/coverage without circular self-certification and without weakening direct ODO/REDEFINES behavioral checks. Then refreeze and run a fresh exhaustive Q4. No finding is waived because it is latent.",
+    "RECHECK": "Fresh packet-bound Q4 on the new task commit must re-walk P2P preservation intent, both summary fields' stable semantics and meaningful false-state coverage, all affected output interfaces, and the full second-pass omission sweep. Q4-STC-001/Q4-STC-002 remain outside this adjudication and must be reconciled by their existing repair owners."
+  }
+}
