@@ -11,9 +11,9 @@ artifacts = ["/app/equiv"]
 [metadata]
 author_name = "anonymous"
 author_email = "anonymous@example.com"
-difficulty_explanation = "Requires packed COMP-3 C/D/F sign-class validation, exact scale preservation, REDEFINES aliasing, and ODO record lengths. Sealed holdouts plus malformed sign, padding, and ODO cases defeat hex dumps and max-span walks."
-solution_explanation = "Implement typed COMP-3 decoding with signed C/D versus unsigned F validation and zero-pad checks, honor REDEFINES target offsets, iterate ODO by the bounded depending-on count, and emit the contracted evaluator report."
-verification_explanation = "Verifier checks public and sealed packed values, record byte lengths, REDEFINES, ODO, invalid sign classes and pad nibbles, invalid ODO counts, deterministic CLI output, and retained public incident context."
+difficulty_explanation = "Requires packed COMP-3 C/D/F sign-class validation, exact scale preservation, REDEFINES aliasing, and ODO record lengths. Sealed holdouts plus malformed sign, padding, digit, and ODO cases defeat hex dumps and max-span walks."
+solution_explanation = "Implement typed COMP-3 decoding with signed C/D versus unsigned F validation, decimal-digit and zero-pad checks, honor REDEFINES target offsets, iterate ODO by the bounded depending-on count, and emit the contracted evaluator report."
+verification_explanation = "Verifier checks public and sealed packed values, record byte lengths, REDEFINES, ODO, invalid sign/digit/pad nibbles, invalid ODO counts, stable report fields and failed-record boundaries, semantic rerun stability, and retained public incident context."
 relevant_experience = "COBOL packed decimal, variable record layouts, Python binary parsing, defensive malformed-record handling."
 
 [verifier]
