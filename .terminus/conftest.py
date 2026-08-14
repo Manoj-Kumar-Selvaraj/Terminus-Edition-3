@@ -38,12 +38,12 @@ _ALLOWED_SIGNERS.write_text(
     "\n".join(f"{issuer} {_public_material}" for issuer in _AUTHORITY_ISSUERS) + "\n",
     encoding="utf-8",
 )
-os.environ["TERMINUS_AUTHORITY_TEST_MODE"] = "1"
-os.environ["TERMINUS_TEST_AUTHORITY_ALLOWED_SIGNERS"] = str(_ALLOWED_SIGNERS)
 os.environ["TERMINUS_TEST_AUTHORITY_PRIVATE_KEY"] = str(_AUTHORITY_KEY)
 os.environ.pop("TERMINUS_AUTHORITY_ALLOWED_SIGNERS", None)
+os.environ.pop("TERMINUS_TEST_AUTHORITY_ALLOWED_SIGNERS", None)
 sys.path.insert(0, str(ROOT / ".terminus" / "tests"))
 
+from authority.receipts import AuthorityReceiptValidator  # noqa: E402
 from authority_helpers import sign_receipt  # noqa: E402
 from feedback.ingestion import FeedbackIngestor  # noqa: E402
 from feedback.model import FeedbackSource, Severity  # noqa: E402
@@ -245,6 +245,12 @@ def _control_plane_test_compatibility(
     request: pytest.FixtureRequest,
     monkeypatch: pytest.MonkeyPatch,
 ):
+    if request.node.name != "test_production_trust_root_cannot_be_selected_by_caller":
+        monkeypatch.setattr(
+            AuthorityReceiptValidator,
+            "_allowed_signers",
+            lambda _self: _ALLOWED_SIGNERS,
+        )
     _install_authenticated_human_fixture(request, monkeypatch)
     _install_finding_authority_fixture(request, monkeypatch)
     _legacy_policy_routing_fixture(request, monkeypatch)
