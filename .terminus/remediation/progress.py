@@ -7,7 +7,6 @@ from pathlib import Path
 from typing import Any, Mapping
 
 from execution.ledger import ExecutionLedger
-from execution.record import ExecutionRecordBuilder
 
 from feedback.registry import LearningStore
 from feedback.schema_validation import LearningSchemaValidator
@@ -21,7 +20,6 @@ class RemediationProgressValidator:
         self.store = store or LearningStore(self.root)
         self.schemas = LearningSchemaValidator(self.root)
         self.planner = RemediationPlanner(self.root, store=self.store)
-        self.record_builder = ExecutionRecordBuilder(self.root)
 
     def packet_for(
         self, *, finding_id: str, remediation_id: str | None = None
@@ -177,10 +175,14 @@ class RemediationProgressValidator:
         )
 
     def _record(self, event: Mapping[str, Any]) -> dict[str, Any]:
+        # Lazy import avoids the learning-context -> closure -> remediation cycle
+        # while retaining full canonical replay at the consumption boundary.
+        from execution.record import ExecutionRecordBuilder
+
         path = (self.root / str(event["record_path"])).resolve()
         if self.root not in path.parents:
             raise ValueError("remediation record path escapes repository root")
         value = json.loads(path.read_text(encoding="utf-8"))
         if not isinstance(value, dict):
             raise ValueError("remediation execution record must be an object")
-        return self.record_builder.validate_persisted_record(value)
+        return ExecutionRecordBuilder(self.root).validate_persisted_record(value)
