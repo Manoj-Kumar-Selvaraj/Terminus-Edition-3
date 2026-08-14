@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import hashlib
+import subprocess
 from pathlib import Path, PurePosixPath
 from typing import Any, Iterable, Mapping
 
@@ -19,7 +21,6 @@ _SEVERITY_ORDER = {
     Severity.HIGH.value: 3,
     Severity.CRITICAL.value: 4,
 }
-_TRUSTED_POLICY_RESOLVERS = frozenset({"ADJUDICATOR", "CI_ORCHESTRATOR"})
 _AUTHORITATIVE_PREFIXES = (
     "TERMINUS_3_AI_INSTRUCTIONS.md",
     ".terminus/AGENT_SYSTEM.md",
@@ -55,7 +56,9 @@ class FindingNormalizer:
         task_ids = {event["task"]["task_id"] for event in values}
         commits = {event["task"]["task_commit"] for event in values}
         if len(task_ids) != 1 or len(commits) != 1:
-            raise ValueError("one finding cannot combine feedback from different task snapshots")
+            raise ValueError(
+                "one finding cannot combine feedback from different task snapshots"
+            )
 
         categories = {
             str(event["observation"].get("category"))
@@ -65,7 +68,9 @@ class FindingNormalizer:
         state = FindingState.OPEN.value
         if "POLICY_CONFLICT" in categories:
             if categories != {"POLICY_CONFLICT"}:
-                raise ValueError("policy-conflict feedback cannot be mixed with ordinary categories")
+                raise ValueError(
+                    "policy-conflict feedback cannot be mixed with ordinary categories"
+                )
             self._validate_policy_conflict(values)
             state = FindingState.POLICY_CONFLICT.value
             category = "POLICY_CONFLICT"
@@ -104,10 +109,14 @@ class FindingNormalizer:
             "signals": self._unique(event["feedback_id"] for event in values),
             "ownership": {
                 "introduced_stage": introduced_stage,
-                "should_have_been_caught_by": self._unique(should_have_been_caught_by or []),
+                "should_have_been_caught_by": self._unique(
+                    should_have_been_caught_by or []
+                ),
                 "repair_stages": stages,
                 "repair_roles": roles,
-                "detected_by": self._unique(event["source"]["type"] for event in values),
+                "detected_by": self._unique(
+                    event["source"]["type"] for event in values
+                ),
             },
             "problem": {
                 "task_specific": "\n".join(
@@ -116,24 +125,37 @@ class FindingNormalizer:
                 ),
                 "generalized": generalized_problem.strip(),
                 "root_cause_class": root_cause_class.strip(),
-                "escape_depth": len(self._unique(should_have_been_caught_by or [])),
+                "escape_depth": len(
+                    self._unique(should_have_been_caught_by or [])
+                ),
             },
             "closure": {
                 "conditions": closure_conditions
-                or ["The repaired task independently passes the detector that exposed this finding."],
+                or [
+                    "The repaired task independently passes the detector that exposed this finding."
+                ],
                 "verification_owner": verification_owner,
                 "verified_by_feedback": [],
             },
         }
         if not generalized_problem.strip() or not root_cause_class.strip():
-            raise ValueError("generalized_problem and root_cause_class are required")
+            raise ValueError(
+                "generalized_problem and root_cause_class are required"
+            )
         finding["finding_id"] = finding_identity(finding)
         self.schemas.validate("finding", finding)
-        self.store.findings.append(finding)
+        self.store.record_finding(finding)
         return finding
 
     def _validate_policy_conflict(self, events: list[Mapping[str, Any]]) -> None:
-        """Require trusted, structured authoritative-source conflict semantics."""
+        """Require trusted exact-rule evidence for a real semantic contradiction.
+
+        A policy conflict cannot be admitted merely by naming two policy files.
+        Every event must be asserted by a human reviewer or canonical Adjudicator,
+        and must bind two exact immutable rule excerpts plus their incompatible
+        required outcomes at the affected lifecycle gate.
+        """
+        normalized_claim: tuple[str, tuple[tuple[str, str, str, str, str], ...], str] | None = None
         for event in events:
             provenance = event["provenance"]
             source = event["source"]
@@ -141,27 +163,119 @@ class FindingNormalizer:
                 source["type"] == "HUMAN_REVIEW"
                 and provenance["trust_status"] == "HUMAN_ASSERTED"
             ) or (
-                source["producer"] in _TRUSTED_POLICY_RESOLVERS
+                source["producer"] == "ADJUDICATOR"
                 and provenance["trust_status"] == "REPOSITORY_RESOLVED"
             )
             if not trusted:
                 raise ValueError(
-                    "POLICY_CONFLICT requires trusted human or adjudicator/orchestrator provenance"
+                    "POLICY_CONFLICT requires trusted human or Adjudicator semantic authority"
                 )
             detail = event["observation"].get("value")
             if not isinstance(detail, Mapping):
-                raise ValueError("POLICY_CONFLICT requires structured observation.value")
-            sources = detail.get("conflicting_sources")
+                raise ValueError(
+                    "POLICY_CONFLICT requires structured observation.value"
+                )
             gate = detail.get("affected_gate")
-            if not isinstance(sources, list) or len(set(map(str, sources))) < 2:
-                raise ValueError("POLICY_CONFLICT requires at least two conflicting authoritative sources")
-            for source_path in sources:
-                if not isinstance(source_path, str) or not self._authoritative_source(source_path):
-                    raise ValueError(
-                        f"POLICY_CONFLICT source is not an authoritative repository rule: {source_path}"
-                    )
             if not isinstance(gate, str) or gate not in self.policy.stages:
-                raise ValueError("POLICY_CONFLICT affected_gate must be a registered lifecycle stage")
+                raise ValueError(
+                    "POLICY_CONFLICT affected_gate must be a registered lifecycle stage"
+                )
+            statement = detail.get("conflict_statement")
+            if not isinstance(statement, str) or not statement.strip():
+                raise ValueError(
+                    "POLICY_CONFLICT requires an explicit semantic conflict_statement"
+                )
+            rules = detail.get("rules")
+            if not isinstance(rules, list) or len(rules) < 2:
+                raise ValueError(
+                    "POLICY_CONFLICT requires at least two exact authoritative rules"
+                )
+            normalized_rules: list[tuple[str, str, str, str, str]] = []
+            outcomes: set[str] = set()
+            for rule in rules:
+                normalized = self._validate_policy_rule(rule)
+                normalized_rules.append(normalized)
+                outcomes.add(normalized[4])
+            if len({item[0:3] for item in normalized_rules}) < 2:
+                raise ValueError(
+                    "POLICY_CONFLICT requires two distinct authoritative rule identities"
+                )
+            if len(outcomes) < 2:
+                raise ValueError(
+                    "POLICY_CONFLICT rules must assert incompatible required_outcome values"
+                )
+            claim = (
+                gate,
+                tuple(sorted(normalized_rules)),
+                statement.strip(),
+            )
+            if normalized_claim is None:
+                normalized_claim = claim
+            elif claim != normalized_claim:
+                raise ValueError(
+                    "POLICY_CONFLICT feedback events disagree on the exact contradiction"
+                )
+
+    def _validate_policy_rule(
+        self, value: Any
+    ) -> tuple[str, str, str, str, str]:
+        if not isinstance(value, Mapping):
+            raise ValueError("POLICY_CONFLICT rule evidence must be an object")
+        source_path = value.get("source")
+        source_commit = value.get("source_commit")
+        rule_id = value.get("rule_id")
+        rule_text = value.get("rule_text")
+        rule_hash = value.get("rule_hash")
+        required_outcome = value.get("required_outcome")
+        for label, field in (
+            ("source", source_path),
+            ("source_commit", source_commit),
+            ("rule_id", rule_id),
+            ("rule_text", rule_text),
+            ("rule_hash", rule_hash),
+            ("required_outcome", required_outcome),
+        ):
+            if not isinstance(field, str) or not field.strip():
+                raise ValueError(f"POLICY_CONFLICT rule requires {label}")
+        assert isinstance(source_path, str)
+        assert isinstance(source_commit, str)
+        assert isinstance(rule_id, str)
+        assert isinstance(rule_text, str)
+        assert isinstance(rule_hash, str)
+        assert isinstance(required_outcome, str)
+        if not self._authoritative_source(source_path):
+            raise ValueError(
+                f"POLICY_CONFLICT source is not an authoritative repository rule: {source_path}"
+            )
+        if not self._reachable_commit(source_commit):
+            raise ValueError(
+                "POLICY_CONFLICT source_commit is not on authorized repository lineage"
+            )
+        raw = subprocess.run(
+            ["git", "-C", str(self.root), "show", f"{source_commit}:{source_path}"],
+            check=False,
+            capture_output=True,
+        )
+        if raw.returncode != 0:
+            raise ValueError("POLICY_CONFLICT authoritative source revision is unavailable")
+        text = raw.stdout.decode("utf-8")
+        excerpt = rule_text.strip()
+        if excerpt not in text:
+            raise ValueError(
+                "POLICY_CONFLICT rule_text is not present in the exact authoritative source revision"
+            )
+        expected_hash = "sha256:" + hashlib.sha256(
+            excerpt.encode("utf-8")
+        ).hexdigest()
+        if rule_hash != expected_hash:
+            raise ValueError("POLICY_CONFLICT rule_hash does not bind rule_text")
+        return (
+            source_path,
+            source_commit,
+            rule_id.strip(),
+            expected_hash,
+            required_outcome.strip(),
+        )
 
     def _authoritative_source(self, value: str) -> bool:
         path = PurePosixPath(value)
@@ -171,6 +285,29 @@ class FindingNormalizer:
             value.startswith(prefix) for prefix in _AUTHORITATIVE_PREFIXES[1:]
         )
         return allowed and (self.root / value).is_file()
+
+    def _reachable_commit(self, commit: str) -> bool:
+        head = subprocess.run(
+            ["git", "-C", str(self.root), "rev-parse", "HEAD"],
+            check=True,
+            capture_output=True,
+            text=True,
+        ).stdout.strip()
+        return (
+            subprocess.run(
+                [
+                    "git",
+                    "-C",
+                    str(self.root),
+                    "merge-base",
+                    "--is-ancestor",
+                    commit,
+                    head,
+                ],
+                capture_output=True,
+            ).returncode
+            == 0
+        )
 
     @staticmethod
     def _unique(values: Iterable[str]) -> list[str]:
