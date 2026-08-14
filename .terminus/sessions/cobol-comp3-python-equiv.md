@@ -35,8 +35,8 @@ This is the single consolidated repair/refreeze after the exhaustive Q4 REVISE a
 | Ruff verifier | PASS | Edition-3 run `31815982778`, job `94817751331` |
 | Oracle = 1 | PASS | Edition-3 run `31815982778`, job `94817751331`, artifact `9225067086`: current verifier suite reward 1; Creator gate confirms 27 mapped/unclassified=0 tests and test.sh runs both verifier modules |
 | NOP = 0 | PASS | Edition-3 run `31815982778`, job `94817751331`, artifact `9225067086`: reward 0 |
-| Q4 Spec-Test Contract Reviewer | PENDING | replacement packet/result required for exact remediated task commit `d2bf8685258c89fbe9db77531788c56c2bef15a8` |
-| Q6 Production Logic Auditor | PENDING | replacement packet/result required because solver-visible production scope changed during Q4 remediation |
+| Q4 Spec-Test Contract Reviewer | PENDING | packet `.terminus/reviews/cobol-comp3-python-equiv/d2bf8685/cobol-comp3-python-equiv-d2bf8685-spec-test-contract-73aef64c20.packet.json`; independent replacement result not yet recorded |
+| Q6 Production Logic Auditor | PENDING | packet `.terminus/reviews/cobol-comp3-python-equiv/d2bf8685/cobol-comp3-python-equiv-d2bf8685-production-logic-f50b73e14c.packet.json`; independent replacement result not yet recorded |
 | Quality Interlock | PENDING | replacement Q4 PASS + replacement Q6 PASS required; no second ordinary remediation loop |
 
 ## Q4 remediation disposition
@@ -63,13 +63,24 @@ This is the single consolidated repair/refreeze after the exhaustive Q4 REVISE a
 - Q6 at `bf242838...`: `.terminus/reviews/cobol-comp3-python-equiv/bf242838/cobol-comp3-python-equiv-bf242838-production-logic-b950c2f7a4.json` — `PASS/HIGH/SUFFICIENT`, no findings, commit `81e5de78e5ae224b033415283bd2a665acc267ae`.
 - The old Q6 result is not reused because `task.toml` and solver-visible `environment/equiv/docs/record-layout.md` changed, so the conservative production-scope hash changed.
 
+## Current review packets
+
+- Packet control-plane commit: `ebabd4933873e4c44306eff80140fae35a088476`.
+- Q4 role contract: `0c40044ec13f0109a5526301cac6e5d2f52f5596d006bee2cdcaa90c0771d7f6`.
+- Q4 packet: `.terminus/reviews/cobol-comp3-python-equiv/d2bf8685/cobol-comp3-python-equiv-d2bf8685-spec-test-contract-73aef64c20.packet.json`.
+- Q4 output: `.terminus/reviews/cobol-comp3-python-equiv/d2bf8685/cobol-comp3-python-equiv-d2bf8685-spec-test-contract-73aef64c20.json`.
+- Q6 role contract: `8eb84a3715c4805f762325ceaa890339fc966a2a475cb58986578a15418c5378`.
+- Q6 production scope: `3935f9e2a3b0898368c4a56cae822a2769cabb73d18a7c300d8d9decda5ddb45`.
+- Q6 packet: `.terminus/reviews/cobol-comp3-python-equiv/d2bf8685/cobol-comp3-python-equiv-d2bf8685-production-logic-f50b73e14c.packet.json`.
+- Q6 output: `.terminus/reviews/cobol-comp3-python-equiv/d2bf8685/cobol-comp3-python-equiv-d2bf8685-production-logic-f50b73e14c.json`.
+
 ## Current blocker
 
 Exactly one replacement packet-bound Q4 review and one replacement packet-bound Q6 review are required for the remediated frozen candidate. Harbor LLMaJ remains separately blocked by invalid/missing reusable AI credentials.
 
 ## Next action
 
-Derive current Q4/Q6 role hashes plus the new Q6 production-scope hash from the canonical review contract, generate immutable replacement packets for task commit `d2bf8685258c89fbe9db77531788c56c2bef15a8`, then run Q4 and Q6 once each in fresh independent chats. If the replacement Q4 raises a material finding on evidence unchanged and fully reviewable in the previous exhaustive Q4 scope, classify it `LATENT_REVIEWER_OMISSION` and route to Adjudicator rather than beginning another ordinary repair loop.
+Run replacement Q4 and Q6 once each in fresh independent reviewer chats using the exact packets above. If both are current PASS/HIGH-or-MEDIUM/SUFFICIENT, record them and advance the quality interlock. If replacement Q4 raises a material finding on evidence unchanged and fully reviewable in the previous exhaustive Q4 scope, classify it `LATENT_REVIEWER_OMISSION` and route to Adjudicator rather than beginning another ordinary repair loop.
 
 ## Decisions that must survive chat changes
 
