@@ -19,6 +19,7 @@ from execution.invocation import (  # noqa: E402
     StageInvocationBuilder,
 )
 from execution.invocation_guard import CanonicalInvocationGuard  # noqa: E402
+from execution.record import ExecutionRecordBuilder  # noqa: E402
 from feedback.closure import FindingClosure  # noqa: E402
 from feedback.ingestion import FeedbackIngestor  # noqa: E402
 from feedback.model import FeedbackSource, content_hash  # noqa: E402
@@ -69,13 +70,27 @@ def _store(tmp_path: Path) -> LearningStore:
     )
 
 
-def _source_binding(identity: str) -> dict[str, str]:
-    raw = (ROOT / _SOURCE_FIXTURE).read_bytes()
+def _git_binding(path: str, identity: str) -> dict[str, str]:
+    raw = (ROOT / path).read_bytes()
     return {
         "kind": "RESULT",
-        "ref": f"git:{_head()}:{_SOURCE_FIXTURE}#{quote(identity, safe='')}",
+        "ref": f"git:{_head()}:{path}#{quote(identity, safe='')}",
         "content_hash": "sha256:" + hashlib.sha256(raw).hexdigest(),
     }
+
+
+def _source_binding(identity: str) -> dict[str, str]:
+    return _git_binding(_SOURCE_FIXTURE, identity)
+
+
+def _trusted_review_binding(
+    task_id: str,
+    identity: str = "Q4_SPEC_TEST_CONTRACT_REVIEWER",
+) -> dict[str, str]:
+    return _git_binding(
+        f".terminus/reviews/{task_id}/trusted-feedback-source.json",
+        identity,
+    )
 
 
 def _external_binding(identity: str) -> dict[str, str]:
@@ -138,14 +153,17 @@ def _closed_finding(
     initial = _finding(store, [_event(store, task_id=task_id)])
     closure = FindingClosure(ROOT, store=store)
     repaired = closure.mark_repaired(str(initial["finding_id"]), _head())
-    verification = _event(
-        store,
-        source="INDEPENDENT_REVIEW",
-        task_id=task_id,
-        category="EXTERNAL_BOUNDARY",
-        stage="VERIFIER_BUILD",
-        message="Independent verification confirms observable external-boundary coverage.",
+    verification = FeedbackIngestor(ROOT, store=store).capture(
+        source_type="INDEPENDENT_REVIEW",
         producer="Q4_SPEC_TEST_CONTRACT_REVIEWER",
+        task_id=task_id,
+        task_commit=_head(),
+        severity="HIGH",
+        message="Independent verification confirms observable external-boundary coverage.",
+        category="EXTERNAL_BOUNDARY",
+        stage_hint="VERIFIER_BUILD",
+        source_binding=_trusted_review_binding(task_id),
+        captured_at="2026-08-14T00:00:00Z",
     )
     return closure.verify(
         str(repaired["finding_id"]),
@@ -365,6 +383,27 @@ def test_external_pointer_feedback_cannot_close_finding(tmp_path: Path) -> None:
         )
 
 
+def test_arbitrary_repository_artifact_cannot_close_finding(tmp_path: Path) -> None:
+    store = _store(tmp_path)
+    finding = _finding(store, [_event(store, task_id="feedback-test")])
+    repaired = FindingClosure(ROOT, store=store).mark_repaired(
+        str(finding["finding_id"]), _head()
+    )
+    verification = _event(
+        store,
+        source="INDEPENDENT_REVIEW",
+        producer="Q4_SPEC_TEST_CONTRACT_REVIEWER",
+        task_id="feedback-test",
+        message="A repository file outside the review namespace claims closure.",
+    )
+    with pytest.raises(ValueError, match="controlled review namespace"):
+        FindingClosure(ROOT, store=store).verify(
+            str(repaired["finding_id"]),
+            verifier_role="Q4_SPEC_TEST_CONTRACT_REVIEWER",
+            verification_feedback=[verification],
+        )
+
+
 def test_spoofed_verifier_producer_cannot_close_finding(tmp_path: Path) -> None:
     store = _store(tmp_path)
     finding = _finding(store, [_event(store, task_id="feedback-spoof-close")])
@@ -401,7 +440,7 @@ def test_only_trusted_verified_or_closed_findings_become_lessons(tmp_path: Path)
     registry = LessonRegistry(ROOT, store=store)
     with pytest.raises(ValueError, match="not independently verified"):
         registry.from_finding(open_finding, future_rule="Do the better thing.")
-    closed = _closed_finding(store, task_id="feedback-lesson-test")
+    closed = _closed_finding(store)
     lesson = registry.from_finding(
         closed,
         future_rule="Verify external effects at the observable boundary.",
@@ -426,7 +465,7 @@ def test_synthetic_closed_finding_without_trusted_feedback_cannot_train(tmp_path
 
 def test_learning_projection_strips_raw_task_answer_and_historical_ids(tmp_path: Path) -> None:
     store = _store(tmp_path)
-    closed = _closed_finding(store, task_id="feedback-private-test")
+    closed = _closed_finding(store)
     lesson = LessonRegistry(ROOT, store=store).from_finding(
         closed,
         future_rule="Verify external effects at the observable boundary.",
@@ -446,7 +485,7 @@ def test_learning_projection_strips_raw_task_answer_and_historical_ids(tmp_path:
 
 def test_active_lessons_are_stage_and_role_scoped(tmp_path: Path) -> None:
     store = _store(tmp_path)
-    closed = _closed_finding(store, task_id="feedback-scope-test")
+    closed = _closed_finding(store)
     LessonRegistry(ROOT, store=store).from_finding(
         closed,
         future_rule="Verify external effects at the observable boundary.",
@@ -513,6 +552,19 @@ def test_rehashed_learning_tamper_is_rejected_before_execution() -> None:
     _rehash(packet)
     with pytest.raises(ValueError, match="learning context"):
         CanonicalInvocationGuard(ROOT).validate(packet)
+
+
+def test_task_mutation_scope_protects_control_plane() -> None:
+    allowed = ExecutionRecordBuilder._task_mutation_path_allowed
+    assert allowed("demo-task", "demo-task/environment/app.py")
+    assert allowed("demo-task", ".terminus/designs/demo-task.json")
+    assert allowed("demo-task", ".terminus/designs/demo-task-test-map.json")
+    assert allowed("demo-task", ".terminus/contracts/demo-task/requirements.json")
+    assert not allowed("demo-task", ".terminus/reviews/demo-task/fake-result.json")
+    assert not allowed("demo-task", ".terminus/learning/knowledge/lessons.jsonl")
+    assert not allowed("demo-task", ".terminus/agents/PROTOCOL.md")
+    assert not allowed("demo-task", ".github/workflows/fake.yml")
+    assert not allowed("demo-task", "another-task/file.py")
 
 
 def test_remediation_interlock_routes_open_finding_to_owner(tmp_path: Path) -> None:
@@ -626,7 +678,7 @@ def test_private_state_is_gitignored_but_generalized_knowledge_is_portable() -> 
 
 def test_learning_context_replays_exact_bound_heads(tmp_path: Path) -> None:
     store = _store(tmp_path)
-    closed = _closed_finding(store, task_id="feedback-context-head")
+    closed = _closed_finding(store)
     LessonRegistry(ROOT, store=store).from_finding(
         closed,
         future_rule="Verify external effects at the observable boundary.",
@@ -635,7 +687,7 @@ def test_learning_context_replays_exact_bound_heads(tmp_path: Path) -> None:
     context = builder.build(
         stage_id="VERIFIER_BUILD",
         role_id="A5_VERIFIER_AUTHOR",
-        task_id="feedback-context-head",
+        task_id="feedback-test",
         task_commit=_head(),
     )
     original_heads = dict(context["registry_heads"])
@@ -643,14 +695,14 @@ def test_learning_context_replays_exact_bound_heads(tmp_path: Path) -> None:
         store,
         source="PORTAL_CI",
         producer="portal-ci",
-        task_id="feedback-context-head",
+        task_id="feedback-test",
         message="Later feedback appended after the invocation was issued.",
     )
     builder.validate_projection(
         context,
         stage_id="VERIFIER_BUILD",
         role_id="A5_VERIFIER_AUTHOR",
-        task_id="feedback-context-head",
+        task_id="feedback-test",
         task_commit=_head(),
     )
     assert context["registry_heads"] == original_heads
