@@ -13,6 +13,8 @@ from .model import FindingState, finding_identity
 from .registry import LearningStore
 from .schema_validation import LearningSchemaValidator
 
+_CONFLICT_RESOLVERS = frozenset({"ADJUDICATOR", "CI_ORCHESTRATOR"})
+
 
 class FindingClosure:
     def __init__(self, root: Path, *, store: LearningStore | None = None):
@@ -29,6 +31,45 @@ class FindingClosure:
         updated = copy.deepcopy(finding)
         updated["state"] = FindingState.REPAIRED.value
         updated["closure"]["repaired_task_commit"] = repaired_task_commit
+        self._append_same_identity(updated, finding_id)
+        return updated
+
+    def resolve_conflict(
+        self,
+        finding_id: str,
+        *,
+        resolution_feedback: list[Mapping[str, Any]],
+    ) -> dict[str, Any]:
+        """Adjudicate a conflict finding so replacement findings can be normalized separately."""
+        finding = self._latest(finding_id)
+        if finding["state"] not in {"FEEDBACK_CONFLICT", "POLICY_CONFLICT"}:
+            raise ValueError("only feedback/policy conflicts can use conflict resolution")
+        feedback_ids: list[str] = []
+        for event in resolution_feedback:
+            self.schemas.validate("feedback", event)
+            if event["task"]["task_id"] != finding["task_id"]:
+                raise ValueError("conflict resolution feedback belongs to another task")
+            self._require_descendant(finding["task_commit"], event["task"]["task_commit"])
+            source = event["source"]
+            provenance = event["provenance"]
+            if source["type"] == "HUMAN_REVIEW" and provenance["trust_status"] == "HUMAN_ASSERTED":
+                feedback_ids.append(str(event["feedback_id"]))
+                continue
+            if source["producer"] not in _CONFLICT_RESOLVERS:
+                raise ValueError("automated conflict resolution requires Adjudicator or CI Orchestrator")
+            if provenance["trust_status"] != "REPOSITORY_RESOLVED":
+                raise ValueError("automated conflict resolution must resolve to repository evidence")
+            binding = provenance.get("source_binding")
+            if not isinstance(binding, Mapping) or not self.evidence.is_resolved(binding):
+                raise ValueError("conflict resolution source_binding is not repository-resolved")
+            if self.evidence.identity(binding) != source["producer"]:
+                raise ValueError("conflict resolution evidence does not bind resolver identity")
+            feedback_ids.append(str(event["feedback_id"]))
+        if not feedback_ids:
+            raise ValueError("conflict resolution requires at least one trusted feedback event")
+        updated = copy.deepcopy(finding)
+        updated["state"] = FindingState.WONT_FIX.value
+        updated["closure"]["verified_by_feedback"] = list(dict.fromkeys(feedback_ids))
         self._append_same_identity(updated, finding_id)
         return updated
 
