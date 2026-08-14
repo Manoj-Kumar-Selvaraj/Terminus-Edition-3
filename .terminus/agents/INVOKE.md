@@ -1,6 +1,6 @@
 # Invoking a Terminus Specialist
 
-Invocation policy version: `1.2`
+Invocation policy version: `1.1`
 
 `PROTOCOL.md` defines the evidence contract. This file defines the operating sequence for one specialist review.
 
@@ -117,7 +117,7 @@ python3 .terminus/validate_review_freshness.py --task <task>
 The generator is the single source for per-role allowed/excluded evidence. Important examples:
 
 - Instruction Reviewer excludes `solution/`, hidden test bodies, private defect IDs, writer rationale and its prior verdict.
-- Comprehensive Reviewer excludes all specialist verdicts until its criterion walk is frozen.
+- Comprehensive Reviewer excludes all specialist verdicts until its own criterion walk is frozen.
 - Originality excludes the creator's uniqueness claim and prior originality verdict.
 - Difficulty excludes the desired tier.
 - Adjudicator may see frozen disputed reviews only after those reviews are complete.
