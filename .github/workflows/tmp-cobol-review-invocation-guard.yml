@@ -1,0 +1,23 @@
+name: Temporary COBOL review invocation guard
+
+on:
+  push:
+    branches:
+      - task/cobol-comp3-python-equiv-completion
+    paths:
+      - .github/workflows/tmp-cobol-review-invocation-guard.yml
+
+permissions:
+  contents: read
+
+jobs:
+  guard:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Validate Q4 invocation
+        run: python3 .terminus/validate_review_invocation.py .terminus/reviews/cobol-comp3-python-equiv/73d67e25/cobol-comp3-python-equiv-73d67e25-spec-test-contract-d809ade313.packet.json
+      - name: Validate Q6 invocation
+        run: python3 .terminus/validate_review_invocation.py .terminus/reviews/cobol-comp3-python-equiv/73d67e25/cobol-comp3-python-equiv-73d67e25-production-logic-256d230311.packet.json
