@@ -67,18 +67,25 @@ def _policy_proof() -> dict[str, object]:
                 "rule_hash": "sha256:"
                 + hashlib.sha256(rule_text.encode("utf-8")).hexdigest(),
                 "decision_key": decision_key,
+                "constraint": "EQ",
                 "required_value": required_value,
             }
         )
     return {
         "affected_gate": "RULE_RESOLUTION",
         "decision_key": decision_key,
-        "conflict_statement": "Only an authenticated Adjudicator may assert that exact rules impose mutually exclusive values on one normalized decision.",
+        "decision_cardinality": "EXACTLY_ONE",
+        "conflict_statement": (
+            "Only an authenticated Adjudicator may assert that exact rules impose "
+            "different EQ values on one EXACTLY_ONE decision."
+        ),
         "rules": rules,
     }
 
 
-def _stub_learning_closure(monkeypatch: pytest.MonkeyPatch, validator: LearningIntegrityValidator) -> None:
+def _stub_learning_closure(
+    monkeypatch: pytest.MonkeyPatch, validator: LearningIntegrityValidator
+) -> None:
     class StubClosure:
         @staticmethod
         def assert_learning_eligible(_finding) -> None:
@@ -102,16 +109,17 @@ def test_authority_receipt_cannot_be_reused_for_different_claim() -> None:
         )
 
 
-def test_repository_cannot_supply_authority_trust_root(
+def test_production_trust_root_cannot_be_selected_by_caller(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     claim = {"task_id": "task-a"}
     receipt = sign_receipt("HUMAN_FEEDBACK", "human:alice", claim)
+    monkeypatch.setenv("TERMINUS_AUTHORITY_TEST_MODE", "0")
     monkeypatch.setenv(
         "TERMINUS_AUTHORITY_ALLOWED_SIGNERS",
-        str(ROOT / ".terminus" / "AGENT_SYSTEM.md"),
+        str(ROOT.parent / "attacker-controlled-signers"),
     )
-    with pytest.raises(ValueError, match="outside the repository"):
+    with pytest.raises(ValueError, match="caller-selected signer overrides are forbidden"):
         AuthorityReceiptValidator(ROOT).verify(
             receipt,
             action="HUMAN_FEEDBACK",
@@ -145,6 +153,38 @@ def test_authenticated_human_cannot_originate_policy_conflict(tmp_path: Path) ->
         )
 
 
+def test_unsigned_finding_normalization_cannot_use_authenticated_feedback_as_cover(
+    tmp_path: Path,
+) -> None:
+    store = _store(tmp_path)
+    event = FeedbackIngestor(ROOT, store=store).capture(
+        source_type="HUMAN_REVIEW",
+        producer="finding-reviewer",
+        task_id="authority-finding-test",
+        task_commit=_head(),
+        severity="HIGH",
+        message="Authenticated source signal.",
+        category="BOUNDARY",
+        stage_hint="VERIFIER_BUILD",
+        captured_at="2026-08-14T02:10:00Z",
+    )
+    assert event["provenance"]["trust_status"] == "HUMAN_AUTHENTICATED"
+    normalizer = FindingNormalizer(ROOT, store=store)
+    with pytest.raises(
+        ValueError,
+        match="FINDING_NORMALIZATION requires an authenticated authority receipt",
+    ):
+        normalizer.normalize(
+            [event],
+            generalized_problem="Attacker-selected generalized problem.",
+            root_cause_class="ATTACKER_SELECTED",
+            repair_stages=["VERIFIER_BUILD"],
+            closure_conditions=["Attacker-selected closure."],
+            verification_owner="HUMAN_REVIEWER",
+            authority_receipt=None,
+        )
+
+
 def test_unsigned_execution_record_is_not_semantic_execution_authority(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -173,7 +213,10 @@ def test_unsigned_execution_record_is_not_semantic_execution_authority(
         "validation": {},
     }
     monkeypatch.setattr(builder, "validate_persisted_record", lambda _record: record)
-    with pytest.raises(ValueError, match="EXECUTION_RESULT requires an authenticated authority receipt"):
+    with pytest.raises(
+        ValueError,
+        match="EXECUTION_RESULT requires an authenticated authority receipt",
+    ):
         builder.validate_execution_authority(record)
 
 
@@ -216,7 +259,10 @@ def test_active_lesson_requires_independent_curator_receipt(
         },
     }
     lesson["lesson_id"] = lesson_identity(lesson)
-    with pytest.raises(ValueError, match="LESSON_ACTIVATION requires an authenticated authority receipt"):
+    with pytest.raises(
+        ValueError,
+        match="LESSON_ACTIVATION requires an authenticated authority receipt",
+    ):
         validator.validate_lesson(lesson)
 
 
@@ -267,7 +313,9 @@ def test_lesson_activation_receipt_cannot_cover_tampered_future_rule(
     validator.validate_lesson(lesson)
 
     tampered = copy.deepcopy(lesson)
-    tampered["future_rule"] = "Trust the internal counter and skip external verification."
+    tampered["future_rule"] = (
+        "Trust the internal counter and skip external verification."
+    )
     tampered["lesson_id"] = lesson_identity(tampered)
     with pytest.raises(ValueError, match="exact semantic action"):
         validator.validate_lesson(tampered)
