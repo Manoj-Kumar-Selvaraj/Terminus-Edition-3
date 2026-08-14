@@ -17,6 +17,9 @@ _ROLE_BY_PRODUCER = {
     "Q6_PRODUCTION_LOGIC_AUDITOR": "Production Logic Auditor",
     "ADJUDICATOR": "Adjudicator",
 }
+_REVIEW_FEEDBACK_SOURCES = frozenset(
+    {"INDEPENDENT_REVIEW", "REVIEWER_REVIEW", "FINAL_REVIEW"}
+)
 _SOURCE_NAMESPACE = ".terminus/feedback/source_evidence/"
 _TEST_SOURCE_LEDGER = ".terminus/tests/fixtures/feedback_source_identities.json"
 _REVIEW_NAMESPACE = ".terminus/reviews/"
@@ -44,9 +47,26 @@ class ProvenanceValidator:
             # deliberately not upgraded to repository-authenticated authority.
             return validated
         evidence_commit, path, fragment = self._git_location(ref)
+
+        if source_type in _REVIEW_FEEDBACK_SOURCES and path.startswith(
+            f"{_REVIEW_NAMESPACE}{task_id}/"
+        ):
+            # A canonical review result is itself the authoritative source event.
+            # Negative/insufficient reviews may still be captured as feedback;
+            # closure separately requires sufficient, confident, passing authority.
+            return self.validate_review_result(
+                binding=validated,
+                producer=producer,
+                task_id=task_id,
+                task_commit=task_commit,
+                require_passing=False,
+                require_sufficient=False,
+                require_confidence=False,
+            )
+
         if not (path.startswith(_SOURCE_NAMESPACE) or path == _TEST_SOURCE_LEDGER):
             raise ValueError(
-                "repository-resolved automated feedback must use the controlled source-evidence namespace"
+                "repository-resolved automated feedback must use a canonical review RESULT or the controlled source-evidence namespace"
             )
         self._require_reachable(evidence_commit)
         payload = self._git_json(evidence_commit, path, "automated feedback source artifact")
@@ -120,6 +140,8 @@ class ProvenanceValidator:
         task_commit: str,
         require_passing: bool,
         conflict_resolution: bool = False,
+        require_sufficient: bool = True,
+        require_confidence: bool = True,
     ) -> dict[str, Any]:
         validated = self.evidence.validate(binding, 0)
         ref = validated.get("ref")
@@ -132,7 +154,7 @@ class ProvenanceValidator:
         self._require_reachable(evidence_commit)
         payload = self._git_json(evidence_commit, path, "trusted review RESULT")
 
-        role = _ROLE_BY_PRODUCER.get(producer)
+        role = self._canonical_role(producer)
         if role is None:
             if producer != "CI_ORCHESTRATOR":
                 raise ValueError(f"no canonical review role is registered for {producer}")
@@ -143,6 +165,7 @@ class ProvenanceValidator:
                 task_commit=task_commit,
                 evidence_commit=evidence_commit,
                 require_passing=require_passing,
+                require_sufficient=require_sufficient,
                 conflict_resolution=conflict_resolution,
             )
             return validated
@@ -156,14 +179,24 @@ class ProvenanceValidator:
             raise ValueError("trusted review RESULT role does not match verification owner")
         if payload.get("task") != task_id or payload.get("task_commit") != task_commit:
             raise ValueError("trusted review RESULT is not bound to the exact verification task commit")
-        if payload.get("evidence_status") != "SUFFICIENT":
+        if require_sufficient and payload.get("evidence_status") != "SUFFICIENT":
             raise ValueError("trusted review RESULT has insufficient evidence")
-        if payload.get("confidence") not in {"MEDIUM", "HIGH"}:
+        if require_confidence and payload.get("confidence") not in {"MEDIUM", "HIGH"}:
             raise ValueError("trusted review RESULT confidence is insufficient for closure")
         if require_passing and payload.get("verdict") not in _PASSING:
             raise ValueError("trusted review RESULT does not carry a passing outcome")
-        if conflict_resolution and payload.get("verdict") not in _PASSING:
-            raise ValueError("conflict-resolution RESULT does not carry a successful disposition")
+        if conflict_resolution:
+            if role != "Adjudicator":
+                raise ValueError("canonical reviewer conflict resolution requires the Adjudicator role")
+            role_output = payload.get("role_output")
+            if (
+                payload.get("verdict") not in _PASSING
+                or not isinstance(role_output, Mapping)
+                or role_output.get("CONFLICT_RESOLUTION") != "RESOLVED"
+            ):
+                raise ValueError(
+                    "Adjudicator conflict RESULT lacks explicit successful CONFLICT_RESOLUTION"
+                )
         if payload.get("role_policy_version") != ROLE_POLICY_VERSIONS.get(role):
             raise ValueError("trusted review RESULT role policy version is stale")
         versions = policy_versions(self.root)
@@ -179,6 +212,12 @@ class ProvenanceValidator:
         self._require_ancestor(control_plane, evidence_commit, "review control-plane commit")
         self._validate_packet(payload, evidence_commit=evidence_commit, result_path=path)
         return validated
+
+    def _canonical_role(self, producer: str) -> str | None:
+        mapped = _ROLE_BY_PRODUCER.get(producer)
+        if mapped is not None:
+            return mapped
+        return producer if producer in ROLE_POLICY_VERSIONS else None
 
     def _validate_packet(
         self, payload: Mapping[str, Any], *, evidence_commit: str, result_path: str
@@ -219,6 +258,7 @@ class ProvenanceValidator:
         task_commit: str,
         evidence_commit: str,
         require_passing: bool,
+        require_sufficient: bool,
         conflict_resolution: bool,
     ) -> None:
         required = {
@@ -231,7 +271,7 @@ class ProvenanceValidator:
         for key, expected in required.items():
             if payload.get(key) != expected:
                 raise ValueError(f"orchestrator RESULT {key} is missing or mismatched")
-        if payload.get("evidence_status") != "SUFFICIENT":
+        if require_sufficient and payload.get("evidence_status") != "SUFFICIENT":
             raise ValueError("orchestrator RESULT has insufficient evidence")
         if require_passing and payload.get("result") != "PASS":
             raise ValueError("orchestrator RESULT does not carry PASS")
