@@ -1,0 +1,44 @@
+name: Temporary COBOL final Q4 coverage packet
+
+on:
+  push:
+    branches:
+      - task/cobol-comp3-python-equiv-completion
+    paths:
+      - .github/workflows/tmp-cobol-q4-final-coverage-packet.yml
+
+permissions:
+  contents: read
+
+jobs:
+  packet:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Verify reusable Q6 production scope
+        run: |
+          python3 - <<'PY'
+          import json
+          import sys
+          from pathlib import Path
+          sys.path.insert(0, ".terminus")
+          from review_contract import review_scope_hash
+          expected = "5272db80b02b8cf40fb5435617d12a831755e11847597fbcc28f18986d069dff"
+          current = review_scope_hash(Path.cwd(), "cobol-comp3-python-equiv", "Production Logic Auditor")
+          result = json.loads(Path(".terminus/reviews/cobol-comp3-python-equiv/73d67e25/cobol-comp3-python-equiv-73d67e25-production-logic-256d230311.json").read_text())
+          print(f"current_q6_scope={current}")
+          print(f"recorded_q6_scope={result['review_scope_hash']}")
+          assert current == expected == result["review_scope_hash"]
+          assert result["verdict"] == "PASS"
+          assert result["confidence"] != "LOW"
+          assert result["evidence_status"] == "SUFFICIENT"
+          print("Q6_SCOPE_REUSE_READY")
+          PY
+      - name: Generate final Q4 packet
+        run: |
+          python3 .terminus/new_review_packet.py cobol-comp3-python-equiv spec-test-contract \
+            --state FROZEN_CANDIDATE \
+            --change "Verifier-only remediation for Q4-001/Q4-002: the --layout test now uses a semantically different layout and matching record data, and complete malformed packed records must report the determinable 44-byte boundary. No instruction, task.toml, environment, or implementation files changed." \
+            --print
