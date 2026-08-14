@@ -8,7 +8,7 @@ Default inputs:
 - records `/app/equiv/samples/sku-public.dat`
 - output `/app/equiv/out/equivalence-report.json`
 
-Flags: `--layout PATH --records PATH --out PATH`. Unknown flags exit 2 without writing output. Offline only.
+Flags: `--layout PATH --records PATH --out PATH`. Unknown flags exit 2 without writing output.
 
 ## Storage rules
 
