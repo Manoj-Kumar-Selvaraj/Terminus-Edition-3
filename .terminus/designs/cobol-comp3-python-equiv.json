@@ -1,0 +1,36 @@
+{
+  "schema_version": "2.0",
+  "profile": "large_system",
+  "strict_scale_note": "The COMP-3 SKU unpacker is intentionally compact domain logic. Use the non-strict profile; do not pad solver-visible LOC to satisfy large-system scale diagnostics.",
+  "task_kind": "languages",
+  "task": "cobol-comp3-python-equiv",
+  "root_cause_clusters": {
+    "RC1_COMP3_ENCODING": "Packed decimal is treated as opaque bytes instead of a typed digit/sign/scale encoding.",
+    "RC2_REDEFINES": "REDEFINES is modeled as sequential storage instead of an alias over the target bytes.",
+    "RC3_ODO": "OCCURS DEPENDING ON is modeled as its maximum span instead of the runtime depending-on count.",
+    "RC4_REPORT_SEMANTICS": "Evaluation summaries are inferred from SKU-specific values instead of parser outcomes and layout semantics."
+  },
+  "defects": [
+    {"id": "D01", "component": "unpack_comp3", "observable_failure": "QOH is rendered as hexadecimal bytes instead of a decimal value.", "root_cause": "RC1_COMP3_ENCODING", "partial_fix_trap": "Hard-code the public QOH string."},
+    {"id": "D02", "component": "unpack_comp3", "observable_failure": "A D-nibble negative packed value loses its negative sign.", "root_cause": "RC1_COMP3_ENCODING", "partial_fix_trap": "Special-case one negative SKU."},
+    {"id": "D03", "component": "unpack_comp3", "observable_failure": "Implied decimal scale and trailing zeroes are not preserved exactly.", "root_cause": "RC1_COMP3_ENCODING", "partial_fix_trap": "Convert through binary float formatting."},
+    {"id": "D04", "component": "unpack_comp3", "observable_failure": "Signed fields accept the unsigned F sign or unsigned fields accept signed C/D signs.", "root_cause": "RC1_COMP3_ENCODING", "partial_fix_trap": "Accept every COBOL sign nibble without consulting the field signedness."},
+    {"id": "D05", "component": "unpack_comp3", "observable_failure": "A non-zero left storage pad nibble is silently discarded.", "root_cause": "RC1_COMP3_ENCODING", "partial_fix_trap": "Slice the last N digit nibbles without validating discarded storage."},
+    {"id": "D06", "component": "unpack_record", "observable_failure": "ACTIVE-FLAG reads a later byte instead of sharing STATUS-BYTE storage.", "root_cause": "RC2_REDEFINES", "partial_fix_trap": "Copy the public STATUS value after parsing instead of honoring alias offsets."},
+    {"id": "D07", "component": "unpack_record", "observable_failure": "BIN-COUNT zero still consumes the maximum OCCURS span and misaligns the next record.", "root_cause": "RC3_ODO", "partial_fix_trap": "Emit fewer entries but still advance by the maximum allocation."},
+    {"id": "D08", "component": "unpack_record", "observable_failure": "An ODO count outside the declared min/max range is accepted or clamped.", "root_cause": "RC3_ODO", "partial_fix_trap": "Clamp invalid counts and hide malformed input."},
+    {"id": "D09", "component": "report.evaluate", "observable_failure": "Malformed packed fields can leave comp3_signed_ok true because the summary is SKU-specific.", "root_cause": "RC4_REPORT_SEMANTICS", "partial_fix_trap": "Check one known negative QOH instead of every packed field and parser error."},
+    {"id": "D10", "component": "report.evaluate", "observable_failure": "Malformed ODO input can leave odo_lengths_ok true or produce misleading record traversal.", "root_cause": "RC4_REPORT_SEMANTICS", "partial_fix_trap": "Compare only emitted list length without honoring parser errors."}
+  ],
+  "causal_edges": [
+    {"from": "D01", "to": "D09"},
+    {"from": "D02", "to": "D09"},
+    {"from": "D03", "to": "D09"},
+    {"from": "D04", "to": "D09"},
+    {"from": "D05", "to": "D09"},
+    {"from": "D06", "to": "D09"},
+    {"from": "D07", "to": "D10"},
+    {"from": "D08", "to": "D10"},
+    {"from": "D09", "to": "D10"}
+  ]
+}

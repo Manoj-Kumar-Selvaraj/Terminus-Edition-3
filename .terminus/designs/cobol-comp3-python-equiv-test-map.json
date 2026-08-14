@@ -1,0 +1,43 @@
+{
+  "schema_version": "2.0",
+  "task": "cobol-comp3-python-equiv",
+  "requirements": {
+    "R1_COMP3_VALUES": "Valid signed/unsigned COMP-3 values decode to scale-preserving decimal strings.",
+    "R2_COMP3_VALIDITY": "Packed sign class, digit nibbles, and storage padding are validated rather than normalized away.",
+    "R3_REDEFINES": "REDEFINES fields read the target bytes without advancing the record cursor.",
+    "R4_ODO": "OCCURS DEPENDING ON uses the actual bounded count for entries and record byte length.",
+    "R5_REPORT_CLI": "The evaluator writes the contracted report, derives honest summary flags, is deterministic, and does not clobber output on argument errors.",
+    "R6_PUBLIC_CONTEXT": "Display padding, public task inputs, and incident/handoff context remain available to the solver."
+  },
+  "tests": [
+    ["test_f2p_public_positive_comp3_qoh", "F2P", "R1_COMP3_VALUES"],
+    ["test_f2p_public_unit_cost_scale_three", "F2P", "R1_COMP3_VALUES"],
+    ["test_f2p_public_negative_qoh_sign_d", "F2P", "R1_COMP3_VALUES"],
+    ["test_f2p_unsigned_reorder_sign_f", "F2P", "R1_COMP3_VALUES"],
+    ["test_f2p_holdout_negative_packed_fields", "F2P", "R1_COMP3_VALUES"],
+    ["test_f2p_holdout_unsigned_reorder_max", "F2P", "R1_COMP3_VALUES"],
+
+    ["test_f2p_invalid_sign_nibble_is_record_error", "F2P", "R2_COMP3_VALIDITY"],
+    ["test_f2p_signed_field_rejects_unsigned_f_sign", "F2P", "R2_COMP3_VALIDITY"],
+    ["test_f2p_unsigned_field_rejects_signed_c_and_d_signs", "F2P", "R2_COMP3_VALIDITY"],
+    ["test_f2p_comp3_requires_zero_left_pad_nibble", "F2P", "R2_COMP3_VALIDITY"],
+
+    ["test_f2p_redefines_shares_status_byte", "F2P", "R3_REDEFINES"],
+    ["test_f2p_holdout_redefines_status", "F2P", "R3_REDEFINES"],
+
+    ["test_f2p_public_first_record_byte_length", "F2P", "R4_ODO"],
+    ["test_f2p_public_zero_odo_byte_length", "F2P", "R4_ODO"],
+    ["test_f2p_holdout_odo_two_bins_mixed_signs", "F2P", "R4_ODO"],
+    ["test_f2p_holdout_second_record_zero_odo", "F2P", "R4_ODO"],
+    ["test_f2p_invalid_odo_count_is_record_error", "F2P", "R4_ODO"],
+
+    ["test_f2p_summary_flags_true_on_public_tape", "F2P", "R5_REPORT_CLI"],
+    ["test_f2p_unknown_flag_exits_without_clobber", "F2P", "R5_REPORT_CLI"],
+    ["test_f2p_cli_default_writes_contract_path", "F2P", "R5_REPORT_CLI"],
+    ["test_f2p_rerun_is_byte_identical", "F2P", "R5_REPORT_CLI"],
+
+    ["test_f2p_display_fields_keep_pic_padding", "F2P", "R6_PUBLIC_CONTEXT"],
+    ["test_p2p_layout_and_sample_retained", "P2P", "R6_PUBLIC_CONTEXT"],
+    ["test_p2p_incident_evidence_present", "P2P", "R6_PUBLIC_CONTEXT"]
+  ]
+}
