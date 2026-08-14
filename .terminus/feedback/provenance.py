@@ -51,9 +51,10 @@ class ProvenanceValidator:
         if source_type in _REVIEW_FEEDBACK_SOURCES and path.startswith(
             f"{_REVIEW_NAMESPACE}{task_id}/"
         ):
-            # A canonical review result is itself the authoritative source event.
-            # Negative/insufficient reviews may still be captured as feedback;
-            # closure separately requires sufficient, confident, passing authority.
+            # Canonical review results are themselves source events. Historical
+            # negative/insufficient results remain ingestible feedback after
+            # policy evolution; closure replays them with current-contract,
+            # confidence, sufficiency and passing requirements enabled.
             return self.validate_review_result(
                 binding=validated,
                 producer=producer,
@@ -62,6 +63,7 @@ class ProvenanceValidator:
                 require_passing=False,
                 require_sufficient=False,
                 require_confidence=False,
+                require_current_contract=False,
             )
 
         if not (path.startswith(_SOURCE_NAMESPACE) or path == _TEST_SOURCE_LEDGER):
@@ -142,6 +144,7 @@ class ProvenanceValidator:
         conflict_resolution: bool = False,
         require_sufficient: bool = True,
         require_confidence: bool = True,
+        require_current_contract: bool = True,
     ) -> dict[str, Any]:
         validated = self.evidence.validate(binding, 0)
         ref = validated.get("ref")
@@ -166,6 +169,7 @@ class ProvenanceValidator:
                 evidence_commit=evidence_commit,
                 require_passing=require_passing,
                 require_sufficient=require_sufficient,
+                require_current_contract=require_current_contract,
                 conflict_resolution=conflict_resolution,
             )
             return validated
@@ -197,15 +201,16 @@ class ProvenanceValidator:
                 raise ValueError(
                     "Adjudicator conflict RESULT lacks explicit successful CONFLICT_RESOLUTION"
                 )
-        if payload.get("role_policy_version") != ROLE_POLICY_VERSIONS.get(role):
-            raise ValueError("trusted review RESULT role policy version is stale")
-        versions = policy_versions(self.root)
-        if payload.get("protocol_policy_version") != versions.get("protocol"):
-            raise ValueError("trusted review RESULT protocol policy version is stale")
-        if payload.get("prompt_policy_version") != versions.get("prompts"):
-            raise ValueError("trusted review RESULT prompt policy version is stale")
-        if payload.get("role_contract_hash") != role_contract_hash(self.root, role):
-            raise ValueError("trusted review RESULT role contract hash is stale")
+        if require_current_contract:
+            if payload.get("role_policy_version") != ROLE_POLICY_VERSIONS.get(role):
+                raise ValueError("trusted review RESULT role policy version is stale")
+            versions = policy_versions(self.root)
+            if payload.get("protocol_policy_version") != versions.get("protocol"):
+                raise ValueError("trusted review RESULT protocol policy version is stale")
+            if payload.get("prompt_policy_version") != versions.get("prompts"):
+                raise ValueError("trusted review RESULT prompt policy version is stale")
+            if payload.get("role_contract_hash") != role_contract_hash(self.root, role):
+                raise ValueError("trusted review RESULT role contract hash is stale")
         control_plane = payload.get("control_plane_commit")
         if not isinstance(control_plane, str) or not control_plane:
             raise ValueError("trusted review RESULT is missing control_plane_commit")
@@ -259,6 +264,7 @@ class ProvenanceValidator:
         evidence_commit: str,
         require_passing: bool,
         require_sufficient: bool,
+        require_current_contract: bool,
         conflict_resolution: bool,
     ) -> None:
         required = {
@@ -283,13 +289,14 @@ class ProvenanceValidator:
         if not isinstance(control_plane, str) or not control_plane:
             raise ValueError("orchestrator RESULT is missing control_plane_commit")
         self._require_ancestor(control_plane, evidence_commit, "orchestrator control-plane commit")
-        versions = policy_versions(self.root)
-        policy = payload.get("policy_versions")
-        if not isinstance(policy, Mapping):
-            raise ValueError("orchestrator RESULT is missing policy_versions")
-        for key in ("agent_system", "protocol", "prompts"):
-            if policy.get(key) != versions.get(key):
-                raise ValueError(f"orchestrator RESULT {key} policy version is stale")
+        if require_current_contract:
+            versions = policy_versions(self.root)
+            policy = payload.get("policy_versions")
+            if not isinstance(policy, Mapping):
+                raise ValueError("orchestrator RESULT is missing policy_versions")
+            for key in ("agent_system", "protocol", "prompts"):
+                if policy.get(key) != versions.get(key):
+                    raise ValueError(f"orchestrator RESULT {key} policy version is stale")
 
     def _git_location(self, ref: str) -> tuple[str, str, str | None]:
         body = ref[len("git:") :]
