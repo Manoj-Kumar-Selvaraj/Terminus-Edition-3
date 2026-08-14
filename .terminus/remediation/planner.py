@@ -1,0 +1,89 @@
+"""Plan controlled multi-stage repairs from canonical findings."""
+
+from __future__ import annotations
+
+import json
+from pathlib import Path
+from typing import Any, Mapping
+
+from execution.authority import ExecutionAuthority
+from retrieval.policy import RetrievalPolicy
+
+from feedback.model import stable_id
+from feedback.registry import LearningStore
+from feedback.schema_validation import LearningSchemaValidator
+
+_DEFAULT_PROHIBITED = [
+    "Do not edit or suppress the detector that exposed the finding merely to make the check pass.",
+    "Do not fabricate evidence, reviewer closure, CI success, model results, or task commits.",
+    "Do not let a repair agent close its own finding; closure requires independent verification.",
+    "Do not broaden reviewer access to raw historical findings when generalized lessons are sufficient.",
+]
+
+
+class RemediationPlanner:
+    def __init__(self, root: Path, *, store: LearningStore | None = None):
+        self.root = root.resolve()
+        self.store = store or LearningStore(self.root)
+        self.schemas = LearningSchemaValidator(self.root)
+        self.policy = RetrievalPolicy(self.root)
+        self.authority = ExecutionAuthority(self.policy)
+        contract = json.loads(
+            (self.root / ".terminus" / "agents" / "stage_contracts.json").read_text(
+                encoding="utf-8"
+            )
+        )
+        self.stage_order = {
+            stage["id"]: index for index, stage in enumerate(contract["stages"])
+        }
+
+    def plan(self, finding: Mapping[str, Any]) -> dict[str, Any]:
+        self.schemas.validate("finding", finding)
+        if finding["state"] in {"CLOSED", "VERIFIED", "WONT_FIX"}:
+            raise ValueError("closed/verified findings do not require a remediation plan")
+        stages = sorted(
+            finding["ownership"]["repair_stages"],
+            key=lambda stage_id: self.stage_order.get(stage_id, 10_000),
+        )
+        steps = []
+        for ordinal, stage_id in enumerate(stages, start=1):
+            if stage_id not in self.policy.stages:
+                raise ValueError(f"unregistered repair stage: {stage_id}")
+            role_id = self.authority.primary_role_for_stage(stage_id)
+            steps.append(
+                {
+                    "ordinal": ordinal,
+                    "stage_id": stage_id,
+                    "role_id": role_id,
+                    "responsibility": f"Repair {finding['category']} at its owning lifecycle boundary.",
+                    "required_behavior": finding["problem"]["generalized"],
+                    "closure_conditions": list(finding["closure"]["conditions"]),
+                }
+            )
+        packet: dict[str, Any] = {
+            "schema_version": "1.0",
+            "finding_id": finding["finding_id"],
+            "task_id": finding["task_id"],
+            "input_task_commit": finding["task_commit"],
+            "steps": steps,
+            "closure_owner": finding["closure"]["verification_owner"],
+            "prohibited_shortcuts": list(_DEFAULT_PROHIBITED),
+        }
+        packet["remediation_id"] = stable_id("remediation", packet)
+        self.schemas.validate("remediation", packet)
+        self.store.remediations.append(packet)
+        return packet
+
+    @staticmethod
+    def context_for_stage(packet: Mapping[str, Any], stage_id: str) -> dict[str, Any] | None:
+        for step in packet["steps"]:
+            if step["stage_id"] == stage_id:
+                return {
+                    "remediation_id": packet["remediation_id"],
+                    "finding_id": packet["finding_id"],
+                    "responsibility": step["responsibility"],
+                    "required_behavior": step["required_behavior"],
+                    "closure_conditions": list(step["closure_conditions"]),
+                    "prohibited_shortcuts": list(packet["prohibited_shortcuts"]),
+                }
+        return None
