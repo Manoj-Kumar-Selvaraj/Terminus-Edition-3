@@ -6,6 +6,7 @@ import subprocess
 from pathlib import Path
 from typing import Any, Mapping
 
+from learning.context import LearningContextBuilder
 from retrieval.policy import RetrievalPolicy
 
 from . import record_core as _core
@@ -20,11 +21,12 @@ _EVIDENCE_SENSITIVE_STAGES = _core._EVIDENCE_SENSITIVE_STAGES
 
 
 class ExecutionRecordBuilder(_core.ExecutionRecordBuilder):
-    """Extend the core recorder with resolvable evidence and handoff provenance."""
+    """Extend the core recorder with evidence, handoff and learning provenance."""
 
     def __init__(self, root: Path, policy: RetrievalPolicy | None = None):
         super().__init__(root, policy)
         self.evidence_ref_verifier = EvidenceReferenceVerifier(self.root)
+        self.learning_context = LearningContextBuilder(self.root)
 
     def build(
         self,
@@ -50,6 +52,22 @@ class ExecutionRecordBuilder(_core.ExecutionRecordBuilder):
         mutable["handoff_id"] = handoff_id
         mutable["record_id"] = self._record_id(mutable)
         return self._ordered_record(mutable)
+
+    def _validate_invocation(self, invocation: Mapping[str, Any]) -> dict[str, Any]:
+        packet = super()._validate_invocation(invocation)
+        learning = packet.get("learning")
+        if not isinstance(learning, Mapping):
+            raise ValueError("invocation is missing canonical learning context")
+        authority = packet["authority"]
+        stage = packet["stage"]
+        self.learning_context.validate_projection(
+            learning,
+            stage_id=str(stage["stage_id"]),
+            role_id=str(stage["role_id"]),
+            task_id=authority.get("task_id"),
+            task_commit=authority.get("task_commit"),
+        )
+        return packet
 
     def _validate_evidence_refs(self, values: list[Any]) -> list[dict[str, Any]]:
         refs: list[dict[str, Any]] = []
