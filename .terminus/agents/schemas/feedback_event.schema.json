@@ -42,15 +42,34 @@
         "metric": {"type": "string", "minLength": 1},
         "value": {},
         "expected": {},
-        "evidence": {"type": "array", "items": {"type": "object"}}
+        "evidence": {"type": "array", "items": {"$ref": "#/$defs/evidenceRef"}}
       }
     },
     "provenance": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["captured_at", "content_hash"],
+      "required": ["captured_at", "content_hash", "trust_status", "source_binding"],
       "properties": {
         "captured_at": {"type": "string", "format": "date-time"},
+        "content_hash": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"},
+        "trust_status": {"enum": ["HUMAN_ASSERTED", "REPOSITORY_RESOLVED", "EXTERNAL_POINTER_ONLY"]},
+        "source_binding": {
+          "oneOf": [
+            {"type": "null"},
+            {"$ref": "#/$defs/evidenceRef"}
+          ]
+        }
+      }
+    }
+  },
+  "$defs": {
+    "evidenceRef": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "ref", "content_hash"],
+      "properties": {
+        "kind": {"enum": ["ARTIFACT", "RUN", "PACKET", "RESULT", "COMMIT", "FILE", "EXTERNAL", "OTHER"]},
+        "ref": {"type": "string", "pattern": "^(?:git:|commit:|run:|external:).+"},
         "content_hash": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"}
       }
     }
