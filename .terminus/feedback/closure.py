@@ -3,20 +3,18 @@
 from __future__ import annotations
 
 import copy
-import json
 import subprocess
 from pathlib import Path
 from typing import Any, Mapping
-from urllib.parse import unquote
 
-from execution.evidence_refs import EvidenceReferenceVerifier
+from remediation.progress import RemediationProgressValidator
 
 from .model import FindingState, finding_identity
+from .provenance import ProvenanceValidator
 from .registry import LearningStore
 from .schema_validation import LearningSchemaValidator
 
 _CONFLICT_RESOLVERS = frozenset({"ADJUDICATOR", "CI_ORCHESTRATOR"})
-_PASSING_RESULT_OUTCOMES = frozenset({"PASS", "APPROVE", "APPROVE_WITH_NOTE"})
 
 
 class FindingClosure:
@@ -24,16 +22,34 @@ class FindingClosure:
         self.root = root.resolve()
         self.store = store or LearningStore(self.root)
         self.schemas = LearningSchemaValidator(self.root)
-        self.evidence = EvidenceReferenceVerifier(self.root)
+        self.provenance = ProvenanceValidator(self.root)
+        self.remediation = RemediationProgressValidator(self.root, store=self.store)
 
-    def mark_repaired(self, finding_id: str, repaired_task_commit: str) -> dict[str, Any]:
+    def mark_repaired(
+        self,
+        finding_id: str,
+        repaired_task_commit: str,
+        *,
+        remediation_id: str,
+    ) -> dict[str, Any]:
+        """Move to REPAIRED only after the bound remediation ledger is complete."""
         finding = self._latest(finding_id)
         if finding["state"] not in {"OPEN", "ASSIGNED"}:
             raise ValueError(f"finding cannot move to REPAIRED from {finding['state']}")
         self._require_descendant(finding["task_commit"], repaired_task_commit)
+        packet = self.remediation.require_complete(
+            finding_id=finding_id,
+            remediation_id=remediation_id,
+            repaired_task_commit=repaired_task_commit,
+        )
+        if packet["task_id"] != finding["task_id"]:
+            raise ValueError("remediation packet belongs to another task")
+        if packet["input_task_commit"] != finding["task_commit"]:
+            raise ValueError("remediation packet does not bind the finding snapshot")
         updated = copy.deepcopy(finding)
         updated["state"] = FindingState.REPAIRED.value
         updated["closure"]["repaired_task_commit"] = repaired_task_commit
+        updated["closure"]["remediation_id"] = remediation_id
         self._append_same_identity(updated, finding_id)
         return updated
 
@@ -43,7 +59,7 @@ class FindingClosure:
         *,
         resolution_feedback: list[Mapping[str, Any]],
     ) -> dict[str, Any]:
-        """Adjudicate a conflict finding so replacement findings can be normalized separately."""
+        """Retire a conflict only after trusted semantic adjudication."""
         finding = self._latest(finding_id)
         if finding["state"] not in {"FEEDBACK_CONFLICT", "POLICY_CONFLICT"}:
             raise ValueError("only feedback/policy conflicts can use conflict resolution")
@@ -52,25 +68,32 @@ class FindingClosure:
             self.schemas.validate("feedback", event)
             if event["task"]["task_id"] != finding["task_id"]:
                 raise ValueError("conflict resolution feedback belongs to another task")
-            self._require_descendant(finding["task_commit"], event["task"]["task_commit"])
+            resolution_commit = str(event["task"]["task_commit"])
+            self._require_descendant(finding["task_commit"], resolution_commit)
             source = event["source"]
             provenance = event["provenance"]
             if source["type"] == "HUMAN_REVIEW" and provenance["trust_status"] == "HUMAN_ASSERTED":
+                category = event["observation"].get("category")
+                if category != "CONFLICT_RESOLUTION":
+                    raise ValueError("human conflict resolution must be explicitly classified")
                 feedback_ids.append(str(event["feedback_id"]))
                 continue
-            if source["producer"] not in _CONFLICT_RESOLVERS:
+            producer = str(source["producer"])
+            if producer not in _CONFLICT_RESOLVERS:
                 raise ValueError("automated conflict resolution requires Adjudicator or CI Orchestrator")
             if provenance["trust_status"] != "REPOSITORY_RESOLVED":
                 raise ValueError("automated conflict resolution must resolve to repository evidence")
             binding = provenance.get("source_binding")
             if not isinstance(binding, Mapping):
-                raise ValueError("conflict resolution source_binding is not repository-resolved")
-            validated_binding = self.evidence.validate(binding, 0)
-            if not self.evidence.is_resolved(validated_binding):
-                raise ValueError("conflict resolution source_binding is not repository-resolved")
-            if self.evidence.identity(validated_binding) != source["producer"]:
-                raise ValueError("conflict resolution evidence does not bind resolver identity")
-            self._validate_controlled_review_binding(finding, validated_binding)
+                raise ValueError("conflict resolution is missing canonical RESULT evidence")
+            self.provenance.validate_review_result(
+                binding=binding,
+                producer=producer,
+                task_id=str(finding["task_id"]),
+                task_commit=resolution_commit,
+                require_passing=True,
+                conflict_resolution=True,
+            )
             feedback_ids.append(str(event["feedback_id"]))
         if not feedback_ids:
             raise ValueError("conflict resolution requires at least one trusted feedback event")
@@ -98,8 +121,16 @@ class FindingClosure:
                 "verification role does not match finding closure verification_owner"
             )
         repaired_commit = finding["closure"].get("repaired_task_commit")
+        remediation_id = finding["closure"].get("remediation_id")
         if not isinstance(repaired_commit, str) or not repaired_commit:
             raise ValueError("REPAIRED finding is missing repaired_task_commit")
+        if not isinstance(remediation_id, str) or not remediation_id:
+            raise ValueError("REPAIRED finding is missing remediation_id")
+        self.remediation.require_complete(
+            finding_id=finding_id,
+            remediation_id=remediation_id,
+            repaired_task_commit=repaired_commit,
+        )
         feedback_ids: list[str] = []
         for event in verification_feedback:
             self._validate_verification_event(
@@ -119,13 +150,21 @@ class FindingClosure:
         return updated
 
     def assert_learning_eligible(self, finding: Mapping[str, Any]) -> None:
-        """Fail closed unless a verified finding is backed by trusted closure evidence."""
+        """Replay both remediation and closure evidence before learning."""
         self.schemas.validate("finding", finding)
         if finding.get("state") not in {"VERIFIED", "CLOSED"}:
             raise ValueError("finding is not independently verified/closed")
         repaired_commit = finding["closure"].get("repaired_task_commit")
+        remediation_id = finding["closure"].get("remediation_id")
         if not isinstance(repaired_commit, str) or not repaired_commit:
             raise ValueError("verified finding is missing repaired_task_commit")
+        if not isinstance(remediation_id, str) or not remediation_id:
+            raise ValueError("verified finding is missing remediation_id")
+        self.remediation.require_complete(
+            finding_id=str(finding["finding_id"]),
+            remediation_id=remediation_id,
+            repaired_task_commit=repaired_commit,
+        )
         verifier_role = str(finding["closure"]["verification_owner"])
         feedback_ids = finding["closure"].get("verified_by_feedback", [])
         if not isinstance(feedback_ids, list) or not feedback_ids:
@@ -163,84 +202,19 @@ class FindingClosure:
                 raise ValueError("human closure requires HUMAN_REVIEW asserted feedback")
             return
         if provenance["trust_status"] != "REPOSITORY_RESOLVED":
-            raise ValueError("verification feedback must resolve to immutable repository evidence")
+            raise ValueError("verification feedback must resolve to canonical repository review evidence")
         if source["producer"] != verifier_role:
             raise ValueError("verification feedback producer does not match verification owner")
         binding = provenance.get("source_binding")
         if not isinstance(binding, Mapping):
-            raise ValueError("verification feedback source_binding is not repository-resolved")
-        validated_binding = self.evidence.validate(binding, 0)
-        if not self.evidence.is_resolved(validated_binding):
-            raise ValueError("verification feedback source_binding is not repository-resolved")
-        if self.evidence.identity(validated_binding) != verifier_role:
-            raise ValueError("verification evidence does not bind the verification owner identity")
-        self._validate_controlled_review_binding(
-            finding,
-            validated_binding,
-            require_passing_result=True,
-            verification_task_commit=verification_task_commit,
+            raise ValueError("verification feedback is missing canonical RESULT evidence")
+        self.provenance.validate_review_result(
+            binding=binding,
+            producer=verifier_role,
+            task_id=str(finding["task_id"]),
+            task_commit=verification_task_commit,
+            require_passing=True,
         )
-
-    def _validate_controlled_review_binding(
-        self,
-        finding: Mapping[str, Any],
-        binding: Mapping[str, Any],
-        *,
-        require_passing_result: bool = False,
-        verification_task_commit: str | None = None,
-    ) -> None:
-        if binding.get("kind") != "RESULT":
-            raise ValueError("trusted closure evidence must use kind RESULT")
-        ref = binding.get("ref")
-        if not isinstance(ref, str) or not ref.startswith("git:"):
-            raise ValueError("trusted closure evidence must be a git artifact")
-        location = ref[len("git:") :].partition("#")[0]
-        commit, separator, encoded_path = location.partition(":")
-        if not separator:
-            raise ValueError("trusted closure evidence has invalid git location")
-        path = unquote(encoded_path)
-        expected = f".terminus/reviews/{finding['task_id']}/"
-        if not path.startswith(expected):
-            raise ValueError(
-                "trusted closure evidence must come from the task's controlled review namespace"
-            )
-        if not require_passing_result:
-            return
-
-        raw = subprocess.run(
-            ["git", "-C", str(self.root), "show", f"{commit}:{path}"],
-            check=False,
-            capture_output=True,
-        )
-        if raw.returncode != 0:
-            raise ValueError("trusted closure RESULT artifact is unavailable")
-        try:
-            payload = json.loads(raw.stdout.decode("utf-8"))
-        except (UnicodeDecodeError, json.JSONDecodeError) as exc:
-            raise ValueError("trusted closure RESULT artifact must be JSON") from exc
-        if not isinstance(payload, Mapping):
-            raise ValueError("trusted closure RESULT artifact must be a JSON object")
-
-        result_task = payload.get("task", payload.get("task_id"))
-        if not isinstance(result_task, str) or result_task != finding["task_id"]:
-            raise ValueError("trusted closure RESULT artifact does not bind the finding task")
-
-        outcome = payload.get("verdict", payload.get("result"))
-        if not isinstance(outcome, str) or outcome not in _PASSING_RESULT_OUTCOMES:
-            raise ValueError("trusted closure RESULT artifact does not carry a passing outcome")
-
-        evidence_status = payload.get("evidence_status")
-        if evidence_status is not None and evidence_status != "SUFFICIENT":
-            raise ValueError("trusted closure RESULT artifact has insufficient evidence")
-
-        reviewed_task_commit = payload.get("task_commit")
-        if reviewed_task_commit is not None:
-            if not isinstance(reviewed_task_commit, str) or not reviewed_task_commit:
-                raise ValueError("trusted closure RESULT artifact has invalid task_commit")
-            if verification_task_commit is None or reviewed_task_commit != verification_task_commit:
-                raise ValueError(
-                    "trusted closure RESULT artifact is not bound to the verification task commit"
-                )
 
     def _latest(self, finding_id: str) -> dict[str, Any]:
         finding = self.store.findings.get_latest("finding_id", finding_id)
