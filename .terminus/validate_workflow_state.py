@@ -12,8 +12,12 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / ".terminus"))
 
+from execution.authority import ExecutionAuthority  # noqa: E402
+from execution.invocation import StageInvocationBuilder  # noqa: E402
 from execution.ledger import ExecutionLedger  # noqa: E402
+from execution.record import ExecutionRecordBuilder  # noqa: E402
 from execution.state import WorkflowStateResolver  # noqa: E402
+from retrieval.models import InvocationContext  # noqa: E402
 
 
 def fail(message: str) -> None:
@@ -186,24 +190,54 @@ def main() -> int:
     if snapshot["lineage"].get("status") != "UNINITIALIZED":
         fail("empty ledger must expose UNINITIALIZED lineage")
 
+    # Ledger idempotency is exercised with a full canonical record in an
+    # isolated clone. This keeps the validator aligned with the production
+    # invariant that raw record dictionaries are never persistence authority.
     with tempfile.TemporaryDirectory() as temp:
-        temp_root = Path(temp)
+        temp_root = Path(temp) / "repo"
+        subprocess.run(
+            ["git", "clone", "--quiet", "--shared", str(ROOT), str(temp_root)],
+            check=True,
+        )
+        temp_head = subprocess.run(
+            ["git", "-C", str(temp_root), "rev-parse", "HEAD"],
+            check=True,
+            capture_output=True,
+            text=True,
+        ).stdout.strip()
+        temp_resolver = WorkflowStateResolver(temp_root)
+        role_id = ExecutionAuthority(temp_resolver.policy).primary_role_for_stage(
+            "RULE_RESOLUTION"
+        )
+        invocation = StageInvocationBuilder(temp_root, temp_resolver.policy).build(
+            InvocationContext(
+                stage_id="RULE_RESOLUTION",
+                role_id=role_id,
+                task_id="ledger-validator",
+                task_commit=temp_head,
+                control_plane_commit=temp_head,
+            ),
+            {"CREATION_REQUEST": {"validator": True}},
+        )
+        record = ExecutionRecordBuilder(temp_root, temp_resolver.policy).build(
+            invocation,
+            {
+                "schema_version": "1.0",
+                "invocation_id": invocation["invocation_id"],
+                "output_task_commit": temp_head,
+                "status": "RULES_RESOLVED",
+                "outputs": {
+                    "CONTROL_PLANE_COMMIT": temp_head,
+                    "RULE_SOURCES": ["TERMINUS_3_AI_INSTRUCTIONS.md"],
+                    "ACTIVE_VALIDATORS": ["validate_agent_system.py"],
+                    "CREATION_PROFILE": "validator",
+                    "NETWORK_ENVIRONMENT_CONSTRAINTS": {},
+                    "KNOWN_POLICY_CONFLICTS": [],
+                },
+                "evidence_refs": [],
+            },
+        )
         ledger = ExecutionLedger(temp_root, "ledger-validator")
-        record = {
-            "record_id": "rec_" + "1" * 64,
-            "invocation_id": "inv_" + "2" * 64,
-            "stage_id": "RULE_RESOLUTION",
-            "authority": {
-                "task_id": "ledger-validator",
-                "task_commit": "a" * 40,
-                "control_plane_commit": "b" * 40,
-            },
-            "task_lineage": {
-                "input_task_commit": "a" * 40,
-                "output_task_commit": "a" * 40,
-                "task_changed": False,
-            },
-        }
         first = ledger.append(record)
         second = ledger.append(record)
         if first != second:
@@ -211,9 +245,9 @@ def main() -> int:
         events = ledger.load(validate_record_files=True)
         if len(events) != 1 or events[0]["sequence"] != 1:
             fail("ledger must contain exactly one idempotently appended event")
-        if events[0]["input_task_commit"] != "a" * 40:
+        if events[0]["input_task_commit"] != temp_head:
             fail("ledger event did not persist input task commit")
-        if events[0]["output_task_commit"] != "a" * 40:
+        if events[0]["output_task_commit"] != temp_head:
             fail("ledger event did not persist output task commit")
 
     print("Terminus workflow-state validation PASS")
