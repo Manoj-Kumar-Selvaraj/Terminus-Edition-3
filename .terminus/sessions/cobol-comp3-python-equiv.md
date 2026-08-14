@@ -35,7 +35,7 @@ This is the single consolidated repair/refreeze after the exhaustive Q4 REVISE a
 | Ruff verifier | PASS | Edition-3 run `31815982778`, job `94817751331` |
 | Oracle = 1 | PASS | Edition-3 run `31815982778`, job `94817751331`, artifact `9225067086`: current verifier suite reward 1; Creator gate confirms 27 mapped/unclassified=0 tests and test.sh runs both verifier modules |
 | NOP = 0 | PASS | Edition-3 run `31815982778`, job `94817751331`, artifact `9225067086`: reward 0 |
-| Q4 Spec-Test Contract Reviewer | PENDING | packet `.terminus/reviews/cobol-comp3-python-equiv/d2bf8685/cobol-comp3-python-equiv-d2bf8685-spec-test-contract-73aef64c20.packet.json`; independent replacement result not yet recorded |
+| Q4 Spec-Test Contract Reviewer | PENDING | packet `.terminus/reviews/cobol-comp3-python-equiv/d2bf8685/cobol-comp3-python-equiv-d2bf8685-spec-test-contract-73aef64c20.packet.json`; prior attempted rerun used stale `bf242838...` packet and is non-advancing |
 | Q6 Production Logic Auditor | PENDING | packet `.terminus/reviews/cobol-comp3-python-equiv/d2bf8685/cobol-comp3-python-equiv-d2bf8685-production-logic-f50b73e14c.packet.json`; independent replacement result not yet recorded |
 | Quality Interlock | PENDING | replacement Q4 PASS + replacement Q6 PASS required; no second ordinary remediation loop |
 
@@ -74,13 +74,21 @@ This is the single consolidated repair/refreeze after the exhaustive Q4 REVISE a
 - Q6 packet: `.terminus/reviews/cobol-comp3-python-equiv/d2bf8685/cobol-comp3-python-equiv-d2bf8685-production-logic-f50b73e14c.packet.json`.
 - Q6 output: `.terminus/reviews/cobol-comp3-python-equiv/d2bf8685/cobol-comp3-python-equiv-d2bf8685-production-logic-f50b73e14c.json`.
 
+## Stale review execution incident
+
+A subsequent Q4 chat reviewed the old `bf242838a5a985583d43e9ca919c03e4c3f9459d` packet instead of the replacement `d2bf8685...` packet. It correctly refused to overwrite the already-existing immutable old result path. That execution is `STALE/NON_ADVANCING` and is not a replacement Q4 result.
+
+The stale chat also proposed two additional hypotheses: vacuous `--layout PATH` override coverage and the strict direct instruction-path naming rule. They are not yet frozen current-candidate findings because Protocol 2.2 permits Adjudication only from frozen reports. If a correctly packet-bound Q4 on `d2bf8685...` raises either on evidence unchanged and fully reviewable in the previous exhaustive Q4 scope, run `.terminus/classify_review_delta.py` and route any `LATENT_REVIEWER_OMISSION` to Adjudicator before any further ordinary repair.
+
+To prevent recurrence, the control plane now has `.terminus/validate_review_invocation.py` plus regression tests. `.terminus/agents/INVOKE.md` requires this fail-closed pre-dispatch check before semantic inspection. It rejects stale task commits, dirty task state, stale role/scope provenance, path-binding mismatch, and an already-populated immutable result path.
+
 ## Current blocker
 
-Exactly one replacement packet-bound Q4 review and one replacement packet-bound Q6 review are required for the remediated frozen candidate. Harbor LLMaJ remains separately blocked by invalid/missing reusable AI credentials.
+Exactly one correctly packet-bound replacement Q4 review and one replacement Q6 review are required for the remediated frozen candidate. No Adjudicator packet is valid yet because there is no frozen current-candidate Q4 result carrying the new hypotheses. Harbor LLMaJ remains separately blocked by invalid/missing reusable AI credentials.
 
 ## Next action
 
-Run replacement Q4 and Q6 once each in fresh independent reviewer chats using the exact packets above. If both are current PASS with non-LOW confidence and SUFFICIENT evidence, record them and advance the quality interlock. If replacement Q4 raises a material finding on evidence unchanged and fully reviewable in the previous exhaustive Q4 scope, classify it `LATENT_REVIEWER_OMISSION` and route to Adjudicator rather than beginning another ordinary repair loop.
+Run the pre-dispatch invocation guard for the exact `d2bf8685...` Q4/Q6 packets, then run Q4 and Q6 once each in fresh independent reviewer chats. If both are current PASS with non-LOW confidence and SUFFICIENT evidence, record them and advance the quality interlock. If the correctly bound replacement Q4 raises a material finding on evidence unchanged and fully reviewable in the previous exhaustive Q4 scope, classify it with `.terminus/classify_review_delta.py` and route `LATENT_REVIEWER_OMISSION` findings to Adjudicator rather than beginning another ordinary repair loop.
 
 ## Decisions that must survive chat changes
 
@@ -91,6 +99,7 @@ Run replacement Q4 and Q6 once each in fresh independent reviewer chats using th
 - Report tests grade documented semantics, not JSON whitespace/key ordering or internal error-message wording.
 - The task does not require offline/no-model-API operation; live network policy remains `public`.
 - Never reuse stale Q4/Q6/Harbor evidence as current acceptance.
+- Never dispatch a semantic review packet unless `.terminus/validate_review_invocation.py` reports `REVIEW_INVOCATION_READY` or the equivalent checks are independently established in a remote-only surface.
 - Do not self-certify independent Q4/Q6 results.
 - Do not broaden this task to unrelated repository baseline debt.
-- This is the single consolidated repair/refreeze cycle allowed after the exhaustive Q4 REVISE.
+- This is the single consolidated repair/refreeze cycle allowed after the exhaustive Q4 REVISE; latent unchanged-scope findings require Adjudicator disposition before another ordinary repair.
