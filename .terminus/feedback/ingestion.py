@@ -11,6 +11,7 @@ from typing import Any, Mapping
 from execution.evidence_refs import EvidenceReferenceVerifier
 
 from .model import FeedbackSource, Severity, content_hash, feedback_identity
+from .provenance import ProvenanceValidator
 from .registry import LearningStore
 from .schema_validation import LearningSchemaValidator
 
@@ -21,6 +22,7 @@ class FeedbackIngestor:
         self.store = store or LearningStore(self.root)
         self.schemas = LearningSchemaValidator(self.root)
         self.evidence = EvidenceReferenceVerifier(self.root)
+        self.provenance = ProvenanceValidator(self.root)
 
     def capture(
         self,
@@ -57,6 +59,8 @@ class FeedbackIngestor:
         validated_binding = self._source_binding(
             source_kind=source_kind,
             producer=producer.strip(),
+            task_id=task_id,
+            task_commit=task_commit,
             run_id=run_id,
             source_binding=source_binding,
         )
@@ -118,6 +122,8 @@ class FeedbackIngestor:
         *,
         source_kind: FeedbackSource,
         producer: str,
+        task_id: str,
+        task_commit: str,
         run_id: str | int | None,
         source_binding: Mapping[str, Any] | None,
     ) -> dict[str, Any] | None:
@@ -129,16 +135,14 @@ class FeedbackIngestor:
             raise ValueError(
                 f"{source_kind.value} feedback requires immutable source_binding evidence"
             )
-        validated = self.evidence.validate(source_binding, 0)
-        identity = self.evidence.identity(validated)
-        expected = {producer}
-        if run_id is not None:
-            expected.add(str(run_id))
-        if identity not in expected:
-            raise ValueError(
-                f"{source_kind.value} source_binding identity must match producer or run_id"
-            )
-        return validated
+        return self.provenance.validate_source_binding(
+            source_type=source_kind.value,
+            producer=producer,
+            task_id=task_id,
+            task_commit=task_commit,
+            run_id=run_id,
+            binding=source_binding,
+        )
 
     def _require_commit(self, commit: str) -> None:
         result = subprocess.run(
