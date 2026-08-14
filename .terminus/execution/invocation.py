@@ -87,21 +87,31 @@ class StageInvocationBuilder:
         input_contract = stage.get("input_contract", {})
         output_contract = stage.get("output_contract", {})
 
-        required_names = tuple(str(value) for value in input_contract.get("required_fields", []))
-        optional_names = tuple(str(value) for value in input_contract.get("optional_fields", []))
+        required_names = tuple(
+            str(value) for value in input_contract.get("required_fields", [])
+        )
+        optional_names = tuple(
+            str(value) for value in input_contract.get("optional_fields", [])
+        )
         declared = set(required_names) | set(optional_names)
 
         supplied = dict(available_inputs)
         self._validate_json_inputs(supplied)
-        required_inputs = {name: supplied[name] for name in required_names if name in supplied}
-        optional_inputs = {name: supplied[name] for name in optional_names if name in supplied}
+        required_inputs = {
+            name: supplied[name] for name in required_names if name in supplied
+        }
+        optional_inputs = {
+            name: supplied[name] for name in optional_names if name in supplied
+        }
         missing = [name for name in required_names if name not in supplied]
         ignored_count = len(set(supplied) - declared)
         readiness = "BLOCKED_MISSING_INPUTS" if missing else "READY"
 
         authorized = sorted(self.policy.authorized_evidence_classes(context))
         excluded = sorted(self.policy.evidence_classes - set(authorized))
-        mandatory_exact_reads = list(self.policy.mandatory_exact_paths(context.stage_id))
+        mandatory_exact_reads = list(
+            self.policy.mandatory_exact_paths(context.stage_id)
+        )
         self._require_paths_at_commit(
             context.control_plane_commit,
             mandatory_exact_reads,
@@ -122,72 +132,247 @@ class StageInvocationBuilder:
             task_id=context.task_id,
             task_commit=context.task_commit,
         )
+
+        authority: dict[str, Any] = {
+            "control_plane_commit": context.control_plane_commit,
+            "policy_versions": dict(sorted(context.policy_versions.items())),
+        }
+        optional_authority = {
+            "task_id": context.task_id,
+            "task_commit": context.task_commit,
+            "role_contract_hash": context.role_contract_hash,
+            "packet_binding": context.packet_binding,
+            "review_scope_hash": context.review_scope_hash,
+            "ci_run_id": context.ci_run_id,
+        }
+        authority.update(
+            {
+                key: value
+                for key, value in optional_authority.items()
+                if value is not None
+            }
+        )
+
+        status_values = [
+            str(value) for value in output_contract.get("status_values", [])
+        ]
+        acceptance_predicates = {
+            status: self.acceptance.predicates_for(context.stage_id, status)
+            for status in status_values
+            if self.acceptance.predicates_for(context.stage_id, status)
+        }
+
         packet: dict[str, Any] = {
             "schema_version": self.schema_version,
             "readiness": readiness,
-            "authority": {
-                "task_id": context.task_id,
-                "task_commit": context.task_commit,
-                "control_plane_commit": context.control_plane_commit,
-            },
             "stage": {
                 "stage_id": context.stage_id,
                 "role_id": context.role_id,
-                "owner": stage["owner"],
-                "role_class": stage["role_class"],
+                "owner": str(stage.get("owner", "")),
+                "role_class": str(stage.get("role_class", "")),
+                "lifecycle": str(stage.get("lifecycle", "")),
             },
-            "policy": {
-                "versions": self._policy_versions(),
-                "control_plane_snapshot": self._contract_snapshot(
-                    context.control_plane_commit
-                ),
-                "mandatory_exact_reads": mandatory_exact_reads,
+            "authority": authority,
+            "inputs": {
+                "required": required_inputs,
+                "optional": optional_inputs,
             },
-            "input_contract": {
-                "required_fields": list(required_names),
-                "optional_fields": list(optional_names),
-                "required_inputs": required_inputs,
-                "optional_inputs": optional_inputs,
-                "missing_required_fields": missing,
-                "ignored_undeclared_input_count": ignored_count,
-            },
-            "output_contract": {
-                "allowed_status_values": list(output_contract.get("status_values", [])),
-                "required_fields": list(output_contract.get("required_fields", [])),
-                "optional_fields": list(output_contract.get("optional_fields", [])),
-                "persisted_artifacts": list(output_contract.get("persisted_artifacts", [])),
-            },
+            "missing_required_inputs": missing,
+            "ignored_input_count": ignored_count,
             "evidence": {
-                "authorized_classes": authorized,
-                "excluded_classes": excluded,
+                "retrieval_mode": self.policy.retrieval_mode(context.stage_id),
+                "mandatory_exact_reads": mandatory_exact_reads,
+                "authorized_evidence_classes": authorized,
+                "excluded_evidence_classes": excluded,
+                "evidence_required": [
+                    str(value) for value in stage.get("evidence_required", [])
+                ],
             },
             "retrieval": retrieval,
             "learning": learning,
+            "output_contract": {
+                "allowed_status_values": status_values,
+                "required_fields": [
+                    str(value)
+                    for value in output_contract.get("required_fields", [])
+                ],
+                "optional_fields": [
+                    str(value)
+                    for value in output_contract.get("optional_fields", [])
+                ],
+                "persisted_artifacts": [
+                    str(value)
+                    for value in output_contract.get("persisted_artifacts", [])
+                ],
+                "deterministic_validators": [
+                    str(value)
+                    for value in stage.get("deterministic_validators", [])
+                ],
+                "semantic_reviewers": [
+                    str(value) for value in stage.get("semantic_reviewers", [])
+                ],
+            },
+            "acceptance_predicates": acceptance_predicates,
+            "routing": {
+                "failure_routes": {
+                    str(key): str(value)
+                    for key, value in stage.get("failure_routes", {}).items()
+                },
+                "success_transition": str(stage.get("success_transition", "")),
+                "stale_on": [str(value) for value in stage.get("stale_on", [])],
+            },
         }
         packet["invocation_id"] = self._invocation_id(packet)
-        return packet
-
-    @staticmethod
-    def _invocation_id(packet: Mapping[str, Any]) -> str:
-        canonical = json.dumps(
-            packet,
-            sort_keys=True,
-            separators=(",", ":"),
-            ensure_ascii=False,
-        )
-        return "inv_" + hashlib.sha256(canonical.encode("utf-8")).hexdigest()
+        return self._ordered_packet(packet)
 
     def _validate_authority(self, context: InvocationContext) -> InvocationContext:
-        if context.stage_id not in self.policy.stages:
-            raise ValueError(f"unknown stage_id: {context.stage_id}")
-        expected_role = self.execution_authority.primary_role_for_stage(context.stage_id)
-        if context.role_id != expected_role:
+        context = self.execution_authority.validate_context(context)
+        if (
+            not context.control_plane_commit
+            or not _SHA.fullmatch(context.control_plane_commit)
+        ):
             raise ValueError(
-                f"role_id {context.role_id} is not the primary authority for {context.stage_id}; expected {expected_role}"
+                "stage invocation requires an exact control_plane_commit"
             )
-        self._require_git_commit(context.task_commit, "task_commit")
-        self._require_git_commit(context.control_plane_commit, "control_plane_commit")
+        self._require_git_commit(
+            context.control_plane_commit, "control_plane_commit"
+        )
+        self._require_loaded_contract_snapshot(context.control_plane_commit)
+
+        if bool(context.task_id) != bool(context.task_commit):
+            raise ValueError("task_id and task_commit must be supplied together")
+        if context.task_commit:
+            if not _SHA.fullmatch(context.task_commit):
+                raise ValueError(
+                    "task_commit must be a full hexadecimal Git commit"
+                )
+            self._require_git_commit(context.task_commit, "task_commit")
+
+        allowed = context.allowed_evidence_classes
+        if allowed is not None:
+            unknown = set(allowed) - self.policy.evidence_classes
+            if unknown:
+                raise ValueError(
+                    f"unknown allowed evidence classes: {sorted(unknown)}"
+                )
+        unknown_excluded = (
+            set(context.excluded_evidence_classes) - self.policy.evidence_classes
+        )
+        if unknown_excluded:
+            raise ValueError(
+                f"unknown excluded evidence classes: {sorted(unknown_excluded)}"
+            )
+        if context.allowed_sensitivities is not None:
+            unknown_sensitivity = (
+                set(context.allowed_sensitivities) - _VALID_SENSITIVITIES
+            )
+            if unknown_sensitivity:
+                raise ValueError(
+                    f"unknown allowed sensitivities: {sorted(unknown_sensitivity)}"
+                )
+        self._validate_policy_versions(context)
         return context
+
+    def _require_loaded_contract_snapshot(self, commit: str) -> None:
+        """Refuse to label current in-memory contracts as a different Git snapshot."""
+        for relative in _CONTRACT_SNAPSHOT_PATHS:
+            current = (self.root / relative).read_bytes()
+            committed = self._git_bytes("show", f"{commit}:{relative}")
+            if current != committed:
+                raise ValueError(
+                    "control_plane_commit does not match the loaded stage-invocation contracts: "
+                    f"{relative}"
+                )
+
+    def _validate_policy_versions(self, context: InvocationContext) -> None:
+        for key, supplied in context.policy_versions.items():
+            source = _POLICY_VERSION_SOURCES.get(key)
+            if source is None:
+                continue
+            path, label = source
+            text = self._git_text(
+                "show", f"{context.control_plane_commit}:{path}"
+            )
+            match = re.search(
+                rf"^{re.escape(label)}:\s*`([^`]+)`\s*$",
+                text,
+                flags=re.MULTILINE,
+            )
+            if not match:
+                raise ValueError(
+                    f"cannot resolve {key} policy version at control_plane_commit"
+                )
+            actual = match.group(1).strip()
+            if str(supplied) != actual:
+                raise ValueError(
+                    f"stale policy version {key}: supplied {supplied}, current {actual}"
+                )
+
+    def _require_paths_at_commit(
+        self, commit: str, paths: list[str], label: str
+    ) -> None:
+        for path in paths:
+            result = subprocess.run(
+                [
+                    "git",
+                    "-C",
+                    str(self.root),
+                    "cat-file",
+                    "-e",
+                    f"{commit}:{path}",
+                ],
+                capture_output=True,
+            )
+            if result.returncode != 0:
+                raise ValueError(
+                    f"{label} missing at control_plane_commit: {path}"
+                )
+
+    def _require_git_commit(self, commit: str, label: str) -> None:
+        result = subprocess.run(
+            [
+                "git",
+                "-C",
+                str(self.root),
+                "cat-file",
+                "-e",
+                f"{commit}^{{commit}}",
+            ],
+            capture_output=True,
+        )
+        if result.returncode != 0:
+            raise ValueError(
+                f"{label} is not available in repository history: {commit}"
+            )
+
+    def _git_text(self, *args: str) -> str:
+        return subprocess.run(
+            ["git", "-C", str(self.root), *args],
+            check=True,
+            capture_output=True,
+            text=True,
+        ).stdout
+
+    def _git_bytes(self, *args: str) -> bytes:
+        return subprocess.run(
+            ["git", "-C", str(self.root), *args],
+            check=True,
+            capture_output=True,
+        ).stdout
+
+    @staticmethod
+    def _validate_json_inputs(values: Mapping[str, Any]) -> None:
+        for key in values:
+            if not isinstance(key, str) or not key:
+                raise ValueError(
+                    "stage invocation input names must be non-empty strings"
+                )
+        try:
+            json.dumps(values, sort_keys=True, separators=(",", ":"))
+        except (TypeError, ValueError) as exc:
+            raise ValueError(
+                "stage invocation inputs must be JSON-compatible"
+            ) from exc
 
     def _retrieval_projection(
         self,
@@ -199,74 +384,90 @@ class StageInvocationBuilder:
         max_chars: int,
         executable: bool,
     ) -> dict[str, Any]:
-        if not executable or not query:
+        normalized_query = query.strip() if query and query.strip() else None
+        if normalized_query is None:
             return {
-                "mode": "DECLARED_EXACT_READS_ONLY",
-                "documents": [],
-                "document_count": 0,
-                "query": query or "",
+                "status": "NOT_REQUESTED",
+                "query": None,
+                "retrieved_context": [],
+                "retrieved_chars": 0,
             }
-        if db_path is None:
-            db_path = self.root / ".terminus" / "retrieval" / "retrieval.db"
-        store = RetrievalStore(db_path)
-        try:
-            engine = RetrievalEngine(self.root, store, self.policy)
-            result = engine.query(
-                RetrievalQuery(
-                    context=context,
-                    query=query,
-                    limit=limit,
-                    max_chars=max_chars,
-                )
-            )
-        finally:
-            store.close()
-        return result
-
-    def _policy_versions(self) -> dict[str, str]:
-        versions: dict[str, str] = {}
-        for key, (relative, marker) in _POLICY_VERSION_SOURCES.items():
-            text = (self.root / relative).read_text(encoding="utf-8")
-            match = re.search(rf"{re.escape(marker)}:\s*`([^`]+)`", text)
-            if not match:
-                raise ValueError(f"cannot resolve {key} policy version from {relative}")
-            versions[key] = match.group(1)
-        return versions
-
-    def _contract_snapshot(self, commit: str) -> dict[str, str]:
-        snapshot: dict[str, str] = {}
-        for relative in _CONTRACT_SNAPSHOT_PATHS:
-            raw = subprocess.run(
-                ["git", "-C", str(self.root), "show", f"{commit}:{relative}"],
-                check=True,
-                capture_output=True,
-            ).stdout
-            snapshot[relative] = "sha256:" + hashlib.sha256(raw).hexdigest()
-        return snapshot
-
-    def _require_paths_at_commit(
-        self, commit: str, paths: list[str], label: str
-    ) -> None:
-        for relative in paths:
-            result = subprocess.run(
-                ["git", "-C", str(self.root), "cat-file", "-e", f"{commit}:{relative}"],
-                capture_output=True,
-            )
-            if result.returncode != 0:
-                raise ValueError(f"{label} path is unavailable at control plane commit: {relative}")
-
-    def _require_git_commit(self, commit: str, label: str) -> None:
-        if not isinstance(commit, str) or not _SHA.fullmatch(commit):
-            raise ValueError(f"{label} must be a full Git commit")
-        result = subprocess.run(
-            ["git", "-C", str(self.root), "cat-file", "-e", f"{commit}^{{commit}}"],
-            capture_output=True,
+        if not executable:
+            return {
+                "status": "SKIPPED_BLOCKED_INPUTS",
+                "query": normalized_query,
+                "retrieved_context": [],
+                "retrieved_chars": 0,
+            }
+        if limit <= 0:
+            raise ValueError("retrieval_limit must be positive")
+        if max_chars < 0:
+            raise ValueError("max_chars must be non-negative")
+        path = (
+            db_path.resolve()
+            if db_path is not None
+            else self.root / ".terminus" / "cache" / "retrieval.sqlite3"
         )
-        if result.returncode != 0:
-            raise ValueError(f"{label} is unavailable in repository history")
+        if not path.is_file():
+            return {
+                "status": "DIRECT_READ_FALLBACK",
+                "query": normalized_query,
+                "retrieved_context": [],
+                "retrieved_chars": 0,
+            }
+        with RetrievalStore(path) as store:
+            engine = RetrievalEngine(self.root, store, policy=self.policy)
+            bundle = engine.context_bundle(
+                context,
+                RetrievalQuery(text=normalized_query, limit=limit),
+                max_chars=max_chars,
+            )
+        return {
+            "status": "INDEXED_CONTEXT",
+            "query": normalized_query,
+            "retrieved_context": bundle["retrieved_context"],
+            "retrieved_chars": int(bundle["retrieved_chars"]),
+        }
 
-    def _validate_json_inputs(self, value: Mapping[str, Any]) -> None:
-        try:
-            json.dumps(value, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
-        except (TypeError, ValueError) as exc:
-            raise ValueError("stage invocation inputs must be JSON-compatible") from exc
+    @staticmethod
+    def _invocation_id(packet: Mapping[str, Any]) -> str:
+        """Bind to authoritative content/provenance, not diagnostic rank score magnitudes."""
+        identity = json.loads(
+            json.dumps(
+                packet,
+                sort_keys=True,
+                separators=(",", ":"),
+                ensure_ascii=False,
+            )
+        )
+        for item in identity.get("retrieval", {}).get(
+            "retrieved_context", []
+        ):
+            if isinstance(item, dict):
+                item.pop("score", None)
+        payload = json.dumps(
+            identity,
+            sort_keys=True,
+            separators=(",", ":"),
+            ensure_ascii=False,
+        )
+        return "inv_" + hashlib.sha256(payload.encode("utf-8")).hexdigest()
+
+    @staticmethod
+    def _ordered_packet(packet: Mapping[str, Any]) -> dict[str, Any]:
+        return {
+            "schema_version": packet["schema_version"],
+            "invocation_id": packet["invocation_id"],
+            "readiness": packet["readiness"],
+            "stage": packet["stage"],
+            "authority": packet["authority"],
+            "inputs": packet["inputs"],
+            "missing_required_inputs": packet["missing_required_inputs"],
+            "ignored_input_count": packet["ignored_input_count"],
+            "evidence": packet["evidence"],
+            "retrieval": packet["retrieval"],
+            "learning": packet["learning"],
+            "output_contract": packet["output_contract"],
+            "acceptance_predicates": packet["acceptance_predicates"],
+            "routing": packet["routing"],
+        }
