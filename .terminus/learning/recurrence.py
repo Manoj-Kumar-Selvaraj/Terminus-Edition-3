@@ -6,6 +6,7 @@ from collections import defaultdict
 from pathlib import Path
 from typing import Any
 
+from feedback.closure import FindingClosure
 from feedback.model import pattern_identity
 from feedback.registry import LearningStore
 from feedback.schema_validation import LearningSchemaValidator
@@ -16,6 +17,7 @@ class RecurrenceAnalyzer:
         self.root = root.resolve()
         self.store = store or LearningStore(self.root)
         self.schemas = LearningSchemaValidator(self.root)
+        self.closure = FindingClosure(self.root, store=self.store)
 
     def analyze(self, *, policy_candidate_distinct_tasks: int = 3) -> list[dict[str, Any]]:
         if policy_candidate_distinct_tasks < 2:
@@ -25,6 +27,8 @@ class RecurrenceAnalyzer:
             for finding in self.store.findings.latest_by("finding_id")
             if finding.get("state") in {"VERIFIED", "CLOSED"}
         ]
+        for finding in findings:
+            self.closure.assert_learning_eligible(finding)
         lessons = self.store.lessons.latest_by("lesson_id")
         lesson_by_source: dict[str, list[str]] = defaultdict(list)
         for lesson in lessons:
