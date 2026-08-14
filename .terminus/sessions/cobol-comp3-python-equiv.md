@@ -5,7 +5,7 @@ Session schema version: `2.4`
 ## Identity
 
 - Task: `cobol-comp3-python-equiv`
-- Controller state: `SPEC_ALIGNMENT`
+- Controller state: `FROZEN_CANDIDATE`
 - Working branch: `task/cobol-comp3-python-equiv-completion`
 - Pull request: `#22`
 - Current task commit: `bf242838a5a985583d43e9ca919c03e4c3f9459d`
@@ -26,18 +26,18 @@ The abandoned branch `task/cobol-comp3-python-equiv@51723cbca1013fea7b1f7ca3cf05
 
 | Gate | Status | Evidence / version |
 | --- | --- | --- |
-| Q1 Spec Gap Repair | IN_PROGRESS | recovered contract plus signed/unsigned sign-class and storage-pad requirements |
-| Q2 Verifier Coverage Repair | IN_PROGRESS | 22 F2P / 2 P2P mapped tests; current CI rerun pending after verifier-image packaging repair |
-| Q3 Spec Ambiguity Repair | IN_PROGRESS | malformed sign class, storage pad, illegal sign nibble, ODO range, and record-boundary cases |
-| Q7 Task Format Enforcer | PENDING | current-head CI evidence pending |
-| Creator Complexity Gate | PENDING | task-specific run `31807846984` passed at prior head; rerun pending for current task commit |
-| Preflight/static | PENDING | rerun pending for current task commit |
-| Ruff verifier | PENDING | rerun pending for current task commit |
-| Oracle = 1 | PENDING | prior run `31807847210` exposed verifier image packaging omission; fixed in `bf242838a5a985583d43e9ca919c03e4c3f9459d` |
-| NOP = 0 | PENDING | fresh run waits on Oracle |
-| Q4 Spec-Test Contract Reviewer | PENDING | generate only after one current exact-commit freeze |
-| Q6 Production Logic Auditor | PENDING | generate only after one current exact-commit freeze |
-| Quality Interlock | PENDING | bounded final Q4/Q6 interlock only; no recursive cold-review loop |
+| Q1 Spec Gap Repair | PASS | task commit `bf242838a5a985583d43e9ca919c03e4c3f9459d`: contract reconciled for signed/unsigned sign class, zero storage pad, deterministic malformed-record byte boundaries, REDEFINES, and ODO |
+| Q2 Verifier Coverage Repair | PASS | task commit `bf242838a5a985583d43e9ca919c03e4c3f9459d`: 24 mapped tests, 22 F2P / 2 P2P across six requirements; Oracle run `31808250840` job `94792334675` |
+| Q3 Spec Ambiguity Repair | PASS | task commit `bf242838a5a985583d43e9ca919c03e4c3f9459d`: malformed sign class, storage pad, illegal sign nibble, ODO range, and record-boundary behavior made explicit and tested |
+| Q7 Task Format Enforcer | PASS | Edition-3 run `31808250840` job `94792334675`: task format/preflight path accepted current task package |
+| Creator Complexity Gate | PASS | run `31808250839` job `94792306458`: this task PASS with 10 defects, 4 root causes, 9 causal edges, 24 mapped tests; overall workflow later fails unrelated `wiki-creation-counter-flap` |
+| Preflight/static | PASS | Edition-3 run `31808250840` job `94792334675` |
+| Ruff verifier | PASS | Edition-3 run `31808250840` job `94792334675` |
+| Oracle = 1 | PASS | Edition-3 run `31808250840` job `94792334675`, artifact `9222093520`: 24/24 tests pass, reward 1 |
+| NOP = 0 | PASS | Edition-3 run `31808250840` job `94792334675`, artifact `9222093520`: 22 F2P fail / 2 P2P retention checks pass, reward 0 |
+| Q4 Spec-Test Contract Reviewer | PENDING | one fresh packet/result required for exact task commit `bf242838a5a985583d43e9ca919c03e4c3f9459d` |
+| Q6 Production Logic Auditor | PENDING | one fresh packet/result required for exact task commit `bf242838a5a985583d43e9ca919c03e4c3f9459d` |
+| Quality Interlock | PENDING | one bounded Q4/Q6 interlock only; no recursive cold-review loop |
 
 ## Current deterministic evidence
 
@@ -45,18 +45,19 @@ The abandoned branch `task/cobol-comp3-python-equiv@51723cbca1013fea7b1f7ca3cf05
 - Reference sealed holdout: PASS — two records, byte lengths `60` and `28`, negative/scaled COMP-3 and ODO behavior correct.
 - Strict malformed COMP-3 probes: PASS — signed field rejects `F`; unsigned field rejects `C` and `D`; non-zero left storage pad is rejected while the parser preserves the 44-byte record boundary.
 - Existing malformed fixtures: PASS — illegal sign and out-of-range ODO become record errors.
-- Creator Complexity run `31807846984` evaluated this task as PASS at the immediately preceding head: 10 defects, 4 root causes, 9 causal edges, 24 mapped tests (22 F2P / 2 P2P). Its overall workflow failed later on unrelated `wiki-creation-counter-flap` baseline debt.
-- Production Authenticity run `31807847016` failed before task inspection because live control-plane policy documents lack four markers required by `validate_production_policy.py`; this is repository baseline debt, not task evidence.
-- Agent System run `31807847069` showed the known `platform-sonar-ingress-token-bind` quality-interlock baseline failure and review-freshness baseline debt. This session's noncanonical identity labels found in that run are corrected by this checkpoint.
-- Edition-3 run `31807847210` passed preflight and Ruff but Oracle collected zero verifier tests because `tests/Dockerfile` did not copy the newly added `test_comp3_contract.py`. Commit `bf242838a5a985583d43e9ca919c03e4c3f9459d` changes the verifier image to copy all `test_*.py` files.
+- Edition-3 run `31808250840` is exact current-head deterministic evidence: preflight PASS, Ruff PASS, Oracle PASS, NOP PASS. It turns red only at Harbor credential preparation because no Harbor API key/provider credential is configured.
+- Creator Complexity run `31808250839` explicitly evaluates `cobol-comp3-python-equiv` as PASS: 10 defects, 4 root-cause clusters, 9 causal edges, 24 mapped tests (22 F2P / 2 P2P). Its overall workflow fails later on unrelated `wiki-creation-counter-flap` baseline debt.
+- Agent System run `31808250834` has no freshness error for this task after the schema repair. Its regression failure is the existing `platform-sonar-ingress-token-bind` Q1/Q2/Q3/Q7 state; its review-freshness errors are other stale sessions/tasks.
+- Production Authenticity remains repository baseline debt: the workflow fails before task inspection because current control-plane policy documents lack markers required by `validate_production_policy.py`.
+- Historical Harbor evidence at `32de80a57ddbc38acd33d36cac598c69abe99da8` remains stale and is not used for this freeze.
 
 ## Current blocker
 
-Fresh Edition-3 Oracle/NOP evidence on `bf242838a5a985583d43e9ca919c03e4c3f9459d` or its task-equivalent current commit. Historical Harbor evidence at `32de80a57ddbc38acd33d36cac598c69abe99da8` remains stale and is not acceptance evidence.
+The frozen candidate needs exactly one current, packet-bound Q4 Spec-Test Contract review and one current, packet-bound Q6 Production Logic audit. Model-based Harbor validation is separately blocked by missing CI credentials and is not being misrepresented as complete.
 
 ## Next action
 
-Use current PR #22 CI to verify the packaging repair. Repair only concrete task-owned deterministic failures. Once current Oracle=1 and NOP=0 are durable, mark Q1/Q2/Q3/Q7 complete, freeze once, and run the single bounded Q4/Q6 interlock required by the live workflow.
+Generate fresh Q4 and Q6 packets for exact task commit `bf242838a5a985583d43e9ca919c03e4c3f9459d`, then obtain the single independent results required by the bounded quality interlock. Do not modify the task tree after freeze unless a concrete blocking defect is proven; any such change invalidates this freeze and its review binding.
 
 ## Decisions that must survive chat changes
 
@@ -66,4 +67,5 @@ Use current PR #22 CI to verify the packaging repair. Repair only concrete task-
 - REDEFINES aliases target storage and ODO consumes only the actual bounded count.
 - Never reuse the old branch's Q4/Q6 packets or Harbor runs as fresh acceptance evidence.
 - Do not self-certify independent Q4/Q6 results.
-- Do not broaden this task to repair unrelated control-plane, `platform-sonar`, or `wiki-creation-counter-flap` baseline debt.
+- Do not broaden this task to repair unrelated control-plane, `platform-sonar`, `wiki-creation-counter-flap`, Production Authenticity policy-marker, or global review-freshness baseline debt.
+- This task gets one bounded Q4/Q6 interlock, not an open-ended cold-review/remediation loop.
