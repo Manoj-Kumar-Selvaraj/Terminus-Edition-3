@@ -14,6 +14,8 @@ from feedback.model import LessonState, lesson_identity
 from feedback.registry import LearningStore
 from feedback.schema_validation import LearningSchemaValidator
 
+from .integrity import LearningIntegrityValidator
+
 
 class LessonRegistry:
     def __init__(self, root: Path, *, store: LearningStore | None = None):
@@ -23,6 +25,7 @@ class LessonRegistry:
         self.policy = RetrievalPolicy(self.root)
         self.authority = ExecutionAuthority(self.policy)
         self.closure = FindingClosure(self.root, store=self.store)
+        self.integrity = LearningIntegrityValidator(self.root, store=self.store)
 
     def from_finding(
         self,
@@ -53,7 +56,9 @@ class LessonRegistry:
         )
         lesson: dict[str, Any] = {
             "schema_version": "1.0",
-            "state": LessonState.ACTIVE.value if activate else LessonState.CANDIDATE.value,
+            "state": LessonState.ACTIVE.value
+            if activate
+            else LessonState.CANDIDATE.value,
             "category": finding["category"],
             "failure_pattern": finding["problem"]["generalized"],
             "root_cause_class": finding["problem"]["root_cause_class"],
@@ -78,13 +83,15 @@ class LessonRegistry:
             merged["sources"] = self._unique(
                 list(existing["sources"]) + [finding["finding_id"]]
             )
-            merged["promotion"] = self._promotion(merged["sources"], existing)
+            merged["promotion"] = self._promotion(merged["sources"])
             if activate:
                 merged["state"] = LessonState.ACTIVE.value
             lesson = merged
         self.schemas.validate("lesson", lesson)
+        if lesson["state"] == LessonState.ACTIVE.value:
+            self.integrity.validate_lesson(lesson)
         if existing != lesson:
-            self.store.lessons.append(lesson)
+            self.store.record_lesson(lesson)
         return lesson
 
     def set_state(self, lesson_id: str, state: LessonState | str) -> dict[str, Any]:
@@ -96,20 +103,22 @@ class LessonRegistry:
         if lesson_identity(updated) != lesson_id:
             raise ValueError("lesson semantic identity changed during state transition")
         self.schemas.validate("lesson", updated)
+        if updated["state"] == LessonState.ACTIVE.value:
+            self.integrity.validate_lesson(updated)
         if updated != lesson:
-            self.store.lessons.append(updated)
+            self.store.record_lesson(updated)
         return updated
 
     def active(self, *, chain_head: str | None = None) -> list[dict[str, Any]]:
-        return [
-            row
-            for row in self.store.lessons.latest_by("lesson_id", chain_head=chain_head)
-            if row.get("state") == "ACTIVE"
-        ]
+        active: list[dict[str, Any]] = []
+        for row in self.store.lessons.latest_by("lesson_id", chain_head=chain_head):
+            if row.get("state") != "ACTIVE":
+                continue
+            self.integrity.validate_lesson(row)
+            active.append(row)
+        return active
 
-    def _promotion(
-        self, sources: list[str], existing: Mapping[str, Any]
-    ) -> dict[str, Any]:
+    def _promotion(self, sources: list[str]) -> dict[str, Any]:
         findings = {
             item["finding_id"]: item
             for item in self.store.findings.latest_by("finding_id")
@@ -120,13 +129,10 @@ class LessonRegistry:
                 raise ValueError(f"lesson source finding is unavailable: {source}")
             self.closure.assert_learning_eligible(finding)
         task_ids = {findings[source]["task_id"] for source in sources}
-        previous = existing.get("promotion", {})
-        occurrences = max(len(sources), int(previous.get("occurrences", 1)))
-        distinct_tasks = max(len(task_ids), int(previous.get("distinct_tasks", 1)))
         return {
-            "occurrences": occurrences,
-            "distinct_tasks": distinct_tasks,
-            "policy_candidate": distinct_tasks >= 3,
+            "occurrences": len(sources),
+            "distinct_tasks": len(task_ids),
+            "policy_candidate": len(task_ids) >= 3,
         }
 
     @staticmethod
