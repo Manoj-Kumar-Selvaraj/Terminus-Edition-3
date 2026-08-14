@@ -7,9 +7,12 @@ from pathlib import Path
 from typing import Any, Mapping
 
 from execution.ledger import ExecutionLedger
+from execution.record import ExecutionRecordBuilder
 
 from feedback.registry import LearningStore
 from feedback.schema_validation import LearningSchemaValidator
+
+from .planner import RemediationPlanner
 
 
 class RemediationProgressValidator:
@@ -17,32 +20,46 @@ class RemediationProgressValidator:
         self.root = root.resolve()
         self.store = store or LearningStore(self.root)
         self.schemas = LearningSchemaValidator(self.root)
+        self.planner = RemediationPlanner(self.root, store=self.store)
+        self.record_builder = ExecutionRecordBuilder(self.root)
 
-    def packet_for(self, *, finding_id: str, remediation_id: str | None = None) -> dict[str, Any] | None:
+    def packet_for(
+        self, *, finding_id: str, remediation_id: str | None = None
+    ) -> dict[str, Any] | None:
         packets = [
             packet
             for packet in self.store.remediations.latest_by("remediation_id")
             if packet.get("finding_id") == finding_id
-            and (remediation_id is None or packet.get("remediation_id") == remediation_id)
+            and (
+                remediation_id is None
+                or packet.get("remediation_id") == remediation_id
+            )
         ]
         if not packets:
             return None
         if remediation_id is None and len(packets) != 1:
-            raise ValueError("finding has multiple remediation packets; remediation_id is required")
+            raise ValueError(
+                "finding has multiple remediation packets; remediation_id is required"
+            )
         packet = packets[-1]
-        self.schemas.validate("remediation", packet)
+        self._validate_canonical_packet(packet, finding_id=finding_id)
         return packet
 
     def progress(self, packet: Mapping[str, Any]) -> dict[str, Any]:
         self.schemas.validate("remediation", packet)
+        self._validate_canonical_packet(
+            packet, finding_id=str(packet["finding_id"])
+        )
         ledger = ExecutionLedger(self.root, str(packet["task_id"]))
-        events = [
-            event
-            for event in ledger.load(validate_record_files=True)
-            if int(event["sequence"]) > int(packet["ledger_sequence_floor"])
-        ]
+        all_events = ledger.load(validate_record_files=True)
+        floor = int(packet["ledger_sequence_floor"])
+        if floor > len(all_events):
+            raise ValueError(
+                "remediation ledger_sequence_floor exceeds the durable execution ledger"
+            )
+        events = [event for event in all_events if int(event["sequence"]) > floor]
         cursor_commit = str(packet["input_task_commit"])
-        minimum_sequence = int(packet["ledger_sequence_floor"])
+        minimum_sequence = floor
         completed: list[int] = []
         for step in packet["steps"]:
             match = None
@@ -66,6 +83,10 @@ class RemediationProgressValidator:
                 if lineage.get("input_task_commit") != cursor_commit:
                     continue
                 if lineage.get("output_task_commit") != event["output_task_commit"]:
+                    continue
+                if lineage.get("task_changed") is not True:
+                    continue
+                if not self._record_binds_remediation(record, packet, step):
                     continue
                 match = (event, record)
                 break
@@ -92,18 +113,68 @@ class RemediationProgressValidator:
         remediation_id: str,
         repaired_task_commit: str,
     ) -> dict[str, Any]:
-        packet = self.packet_for(finding_id=finding_id, remediation_id=remediation_id)
+        packet = self.packet_for(
+            finding_id=finding_id, remediation_id=remediation_id
+        )
         if packet is None:
-            raise ValueError("REPAIRED transition requires an existing remediation packet")
+            raise ValueError(
+                "REPAIRED transition requires an existing remediation packet"
+            )
         progress = self.progress(packet)
         if progress["next_step"] is not None:
-            raise ValueError("REPAIRED transition requires every planned remediation step to ADVANCE")
+            raise ValueError(
+                "REPAIRED transition requires every planned remediation step to ADVANCE"
+            )
         terminal = str(progress["output_task_commit"])
         if terminal != repaired_task_commit:
-            raise ValueError("repaired_task_commit must equal the terminal remediation output commit")
+            raise ValueError(
+                "repaired_task_commit must equal the terminal remediation output commit"
+            )
         if terminal == str(packet["input_task_commit"]):
             raise ValueError("REPAIRED transition requires a post-plan task commit")
         return packet
+
+    def _validate_canonical_packet(
+        self, packet: Mapping[str, Any], *, finding_id: str
+    ) -> None:
+        self.schemas.validate("remediation", packet)
+        finding = self.store.findings.get_latest("finding_id", finding_id)
+        if finding is None:
+            raise ValueError("remediation packet references an unavailable finding")
+        self.schemas.validate("finding", finding)
+        expected = self.planner.expected_packet(
+            finding,
+            ledger_sequence_floor=int(packet["ledger_sequence_floor"]),
+        )
+        if dict(packet) != expected:
+            raise ValueError(
+                "remediation packet does not match canonical planner derivation"
+            )
+
+    def _record_binds_remediation(
+        self,
+        record: Mapping[str, Any],
+        packet: Mapping[str, Any],
+        step: Mapping[str, Any],
+    ) -> bool:
+        invocation = record.get("invocation_snapshot")
+        if not isinstance(invocation, Mapping):
+            return False
+        learning = invocation.get("learning")
+        if not isinstance(learning, Mapping):
+            return False
+        remediations = learning.get("remediations")
+        if not isinstance(remediations, list):
+            return False
+        expected = RemediationPlanner.context_for_stage(
+            packet, str(step["stage_id"])
+        )
+        if expected is None:
+            return False
+        return any(
+            isinstance(item, Mapping) and dict(item) == expected
+            for item in remediations
+        )
 
     def _record(self, event: Mapping[str, Any]) -> dict[str, Any]:
         path = (self.root / str(event["record_path"])).resolve()
@@ -112,4 +183,4 @@ class RemediationProgressValidator:
         value = json.loads(path.read_text(encoding="utf-8"))
         if not isinstance(value, dict):
             raise ValueError("remediation execution record must be an object")
-        return value
+        return self.record_builder.validate_persisted_record(value)
