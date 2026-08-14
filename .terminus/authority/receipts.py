@@ -5,17 +5,20 @@ from __future__ import annotations
 import hashlib
 import json
 import os
+import stat
 import subprocess
 import tempfile
 from pathlib import Path
 from typing import Any, Mapping
 
 _NAMESPACE = "terminus-authority"
+_SYSTEM_ALLOWED_SIGNERS = Path("/etc/terminus/authority/allowed_signers")
 _ACTION_ISSUERS = {
     "HUMAN_FEEDBACK": "terminus-human-authority",
     "AUTOMATED_SOURCE": "terminus-automation-authority",
     "REVIEW_RESULT": "terminus-review-authority",
     "EXECUTION_RESULT": "terminus-execution-authority",
+    "FINDING_NORMALIZATION": "terminus-finding-authority",
     "LESSON_ACTIVATION": "terminus-learning-authority",
 }
 _RECEIPT_FIELDS = {
@@ -58,11 +61,10 @@ def signed_payload(
 class AuthorityReceiptValidator:
     """Validate an OpenSSH-signed semantic authority receipt.
 
-    The verifier only consumes public keys from an operator-controlled OpenSSH
-    allowed-signers file supplied through TERMINUS_AUTHORITY_ALLOWED_SIGNERS.
-    The file must resolve outside the repository tree. Private signing keys are
-    therefore never repository data and repository writers cannot mint authority
-    merely by creating internally consistent JSON or Git objects.
+    Production verification is anchored to an OS-owned allowed-signers file at
+    /etc/terminus/authority/allowed_signers. Repository code and caller-selected
+    environment variables cannot replace that root. Pytest may use an explicit
+    temporary override only while PYTEST_CURRENT_TEST is present.
     """
 
     def __init__(self, root: Path):
@@ -117,18 +119,38 @@ class AuthorityReceiptValidator:
         return value
 
     def _allowed_signers(self) -> Path:
-        configured = os.environ.get("TERMINUS_AUTHORITY_ALLOWED_SIGNERS", "").strip()
-        if not configured:
+        test_mode = os.environ.get("TERMINUS_AUTHORITY_TEST_MODE") == "1"
+        pytest_active = bool(os.environ.get("PYTEST_CURRENT_TEST"))
+        if test_mode and pytest_active:
+            configured = os.environ.get("TERMINUS_TEST_AUTHORITY_ALLOWED_SIGNERS", "").strip()
+            if not configured:
+                raise ValueError("test authority allowed-signers file is not configured")
+            path = Path(configured).expanduser().resolve()
+            if path == self.root or self.root in path.parents:
+                raise ValueError("test authority trust store must live outside the repository")
+            if not path.is_file():
+                raise ValueError("test authority allowed-signers file is unavailable")
+            return path
+
+        if os.environ.get("TERMINUS_AUTHORITY_ALLOWED_SIGNERS"):
             raise ValueError(
-                "trusted semantic authority requires TERMINUS_AUTHORITY_ALLOWED_SIGNERS"
+                "production authority trust root is fixed; caller-selected signer overrides are forbidden"
             )
-        path = Path(configured).expanduser().resolve()
-        if path == self.root or self.root in path.parents:
-            raise ValueError(
-                "authority allowed-signers configuration must live outside the repository"
-            )
+        path = _SYSTEM_ALLOWED_SIGNERS
+        if path.is_symlink():
+            raise ValueError("authority allowed-signers file must not be a symlink")
         if not path.is_file():
-            raise ValueError("authority allowed-signers file is unavailable")
+            raise ValueError(
+                "system authority allowed-signers file is unavailable at "
+                f"{path}"
+            )
+        metadata = path.stat()
+        if metadata.st_uid != 0:
+            raise ValueError("authority allowed-signers file must be owned by root")
+        if metadata.st_mode & (stat.S_IWGRP | stat.S_IWOTH):
+            raise ValueError(
+                "authority allowed-signers file must not be group/world writable"
+            )
         return path
 
     def _verify_signature(self, *, issuer: str, message: bytes, signature: str) -> None:
