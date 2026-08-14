@@ -55,14 +55,7 @@ class ExecutionRecordBuilder(_core.ExecutionRecordBuilder):
         return self._ordered_record(mutable)
 
     def validate_persisted_record(self, record: Mapping[str, Any]) -> dict[str, Any]:
-        """Replay a durable record through the canonical invocation/result builder.
-
-        The execution ledger treats this replay as its mutation/read authority. A
-        caller cannot manufacture a ledger-proof record by assembling record
-        fields directly: the embedded READY invocation must still validate under
-        the loaded control-plane snapshot, and the derived StageResult must
-        reproduce the exact record byte-for-byte at the semantic-object level.
-        """
+        """Replay a durable record through the canonical invocation/result builder."""
         value = self._json_copy(record)
         invocation = value.get("invocation_snapshot")
         if not isinstance(invocation, Mapping):
@@ -163,7 +156,6 @@ class ExecutionRecordBuilder(_core.ExecutionRecordBuilder):
 
     @staticmethod
     def _task_mutation_path_allowed(task_id: str, path: str) -> bool:
-        """Limit task-mutating agents to task files and explicitly task-scoped contracts/designs."""
         if path.startswith(f"{task_id}/"):
             return True
         if path == f".terminus/designs/{task_id}.json":
@@ -234,7 +226,11 @@ class ExecutionRecordBuilder(_core.ExecutionRecordBuilder):
             "stage_id",
             "role_id",
             "authority",
-            "invocation_snapshot",
+        ):
+            ordered[field] = record[field]
+        if "invocation_snapshot" in record:
+            ordered["invocation_snapshot"] = record["invocation_snapshot"]
+        for field in (
             "task_lineage",
             "status",
             "disposition",
