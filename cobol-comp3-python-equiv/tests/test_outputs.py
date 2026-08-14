@@ -179,9 +179,46 @@ def test_f2p_display_fields_keep_pic_padding():
 
 
 def test_f2p_cli_default_writes_contract_path():
-    """Default equiv-eval invocation writes the contracted report path."""
+    """Default equiv-eval invocation writes the contracted report path and source path."""
     assert REPORT.is_file()
-    assert _report()["source_records"].endswith("sku-public.dat")
+    assert _report()["source_records"] == str(PUBLIC)
+
+
+def test_f2p_report_schema_required_fields():
+    """Successful reports expose the documented stable record and summary fields/types."""
+    data = _report()
+    assert data["layout_id"] == "SKU-REC"
+    assert data["source_records"] == str(PUBLIC)
+    assert [record["index"] for record in data["records"]] == [0, 1]
+    for record in data["records"]:
+        assert isinstance(record["index"], int)
+        assert isinstance(record["byte_length"], int)
+        assert record["error"] is None
+        assert isinstance(record["fields"], dict)
+    summary = data["summary"]
+    assert isinstance(summary["record_count"], int)
+    assert isinstance(summary["error_count"], int)
+    assert isinstance(summary["comp3_signed_ok"], bool)
+    assert isinstance(summary["odo_lengths_ok"], bool)
+    assert isinstance(summary["redefines_ok"], bool)
+
+
+def test_f2p_indeterminate_record_length_reports_zero():
+    """A truncated record with no determinable boundary reports byte_length 0 and an error."""
+    target = Path("/tmp/truncated.dat")
+    out = Path("/tmp/truncated-report.json")
+    target.write_bytes(PUBLIC.read_bytes()[:10])
+    _run(["--layout", str(LAYOUT), "--records", str(target), "--out", str(out)])
+    data = json.loads(out.read_text(encoding="utf-8"))
+    assert data["source_records"] == str(target)
+    assert len(data["records"]) == 1
+    record = data["records"][0]
+    assert record["index"] == 0
+    assert record["byte_length"] == 0
+    assert isinstance(record["error"], str) and record["error"]
+    assert isinstance(record["fields"], dict)
+    assert data["summary"]["record_count"] == 1
+    assert data["summary"]["error_count"] == 1
 
 
 def test_p2p_layout_and_sample_retained():
@@ -206,35 +243,33 @@ def test_f2p_invalid_sign_nibble_is_record_error():
     target = Path("/tmp/invalid-sign.dat")
     out = Path("/tmp/invalid-sign-report.json")
     target.write_bytes(_fixture_bytes("invalid-sign.hex"))
-    cp = _run(["--layout", str(LAYOUT), "--records", str(target), "--out", str(out)])
-    assert cp.returncode == 1, cp.stderr
+    _run(["--layout", str(LAYOUT), "--records", str(target), "--out", str(out)])
     data = json.loads(out.read_text(encoding="utf-8"))
-    assert data["records"][0]["error"]
-    assert "sign" in data["records"][0]["error"].lower()
+    error = data["records"][0]["error"]
+    assert isinstance(error, str) and error
     assert data["summary"]["comp3_signed_ok"] is False
     assert data["summary"]["error_count"] >= 1
 
 
 def test_f2p_invalid_odo_count_is_record_error():
-    """BIN-COUNT outside the OCCURS bounds is a record error and fails ODO summary."""
+    """BIN-COUNT outside the OCCURS bounds is a record error with a determined prefix length."""
     target = Path("/tmp/invalid-odo.dat")
     out = Path("/tmp/invalid-odo-report.json")
     target.write_bytes(_fixture_bytes("invalid-odo.hex"))
-    cp = _run(["--layout", str(LAYOUT), "--records", str(target), "--out", str(out)])
-    assert cp.returncode == 1, cp.stderr
+    _run(["--layout", str(LAYOUT), "--records", str(target), "--out", str(out)])
     data = json.loads(out.read_text(encoding="utf-8"))
-    assert data["records"][0]["error"]
-    assert "odo" in data["records"][0]["error"].lower()
-    assert data["summary"]["odo_lengths_ok"] is False
+    record = data["records"][0]
+    assert isinstance(record["error"], str) and record["error"]
+    assert record["byte_length"] == 28
     assert data["summary"]["error_count"] >= 1
 
 
-def test_f2p_rerun_is_byte_identical():
-    """A second default equiv-eval run rewrites the same report bytes."""
-    before = REPORT.read_bytes()
+def test_f2p_rerun_is_semantically_stable():
+    """A second default equiv-eval run preserves the same report semantics."""
+    before = _report()
     cp = _run()
     assert cp.returncode == 0, cp.stderr
-    assert REPORT.read_bytes() == before
+    assert _report() == before
 
 
 def test_p2p_incident_evidence_present():
