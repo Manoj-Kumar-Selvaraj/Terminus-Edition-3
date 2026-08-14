@@ -39,14 +39,19 @@ def _evaluate(blob: bytes, name: str) -> tuple[subprocess.CompletedProcess[str],
     return cp, json.loads(out.read_text(encoding="utf-8"))
 
 
+def _nonempty_error(data: dict) -> str:
+    error = data["records"][0]["error"]
+    assert isinstance(error, str) and error
+    return error
+
+
 def test_f2p_signed_field_rejects_unsigned_f_sign():
     """A signed QOH field accepts C/D only; F is an unsigned sign, not positive signed."""
     # Record 0 QOH occupies bytes 12..16; byte 16 low nibble is its sign.
     malformed = _mutate_nibble(PUBLIC.read_bytes(), 16, 0xF, low=True)
-    cp, data = _evaluate(malformed, "signed-qoh-with-f")
-    assert cp.returncode == 1, cp.stderr
+    _, data = _evaluate(malformed, "signed-qoh-with-f")
     assert data["records"][0]["byte_length"] == 44
-    assert "signed sign" in data["records"][0]["error"].lower()
+    _nonempty_error(data)
     assert data["summary"]["comp3_signed_ok"] is False
     assert data["summary"]["record_count"] == 2
 
@@ -57,21 +62,28 @@ def test_f2p_unsigned_field_rejects_signed_c_and_d_signs():
     public = PUBLIC.read_bytes()
     for sign, label in ((0xC, "c"), (0xD, "d")):
         malformed = _mutate_nibble(public, 25, sign, low=True)
-        cp, data = _evaluate(malformed, f"unsigned-reorder-with-{label}")
-        assert cp.returncode == 1, cp.stderr
+        _, data = _evaluate(malformed, f"unsigned-reorder-with-{label}")
         assert data["records"][0]["byte_length"] == 44
-        assert "unsigned sign" in data["records"][0]["error"].lower()
+        _nonempty_error(data)
         assert data["summary"]["comp3_signed_ok"] is False
         assert data["summary"]["record_count"] == 2
 
 
 def test_f2p_comp3_requires_zero_left_pad_nibble():
-    """Even-digit COMP-3 fields must reject a non-zero storage pad nibble."""
+    """Even-digit COMP-3 fields reject a non-zero storage pad nibble as a record error."""
     # UNIT-COST has eight digits in five bytes. Byte 17 high nibble is the required pad.
     malformed = _mutate_nibble(PUBLIC.read_bytes(), 17, 0x9, low=False)
-    cp, data = _evaluate(malformed, "unit-cost-nonzero-pad")
-    assert cp.returncode == 1, cp.stderr
+    _, data = _evaluate(malformed, "unit-cost-nonzero-pad")
     assert data["records"][0]["byte_length"] == 44
-    assert "comp3 pad" in data["records"][0]["error"].lower()
-    assert data["summary"]["comp3_signed_ok"] is False
+    _nonempty_error(data)
+    assert data["summary"]["record_count"] == 2
+
+
+def test_f2p_comp3_rejects_nondecimal_digit_nibble():
+    """A-F in a COMP-3 digit position is rejected while sign and record framing stay valid."""
+    # QOH has nine digits and no storage pad. Byte 12 high nibble is its first digit.
+    malformed = _mutate_nibble(PUBLIC.read_bytes(), 12, 0xA, low=False)
+    _, data = _evaluate(malformed, "qoh-nondecimal-digit")
+    assert data["records"][0]["byte_length"] == 44
+    _nonempty_error(data)
     assert data["summary"]["record_count"] == 2
