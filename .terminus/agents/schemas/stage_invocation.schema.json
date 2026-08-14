@@ -6,7 +6,7 @@
   "additionalProperties": false,
   "required": [
     "schema_version", "invocation_id", "readiness", "stage", "authority", "inputs",
-    "missing_required_inputs", "ignored_input_count", "evidence", "retrieval",
+    "missing_required_inputs", "ignored_input_count", "evidence", "retrieval", "learning",
     "output_contract", "acceptance_predicates", "routing"
   ],
   "properties": {
@@ -88,6 +88,59 @@
           }
         },
         "retrieved_chars": {"type": "integer", "minimum": 0}
+      }
+    },
+    "learning": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["mode", "registry_heads", "lessons", "remediations", "raw_feedback_exposed", "raw_historical_findings_exposed", "context_hash"],
+      "properties": {
+        "mode": {"const": "GENERALIZED_LESSONS_PLUS_OWNED_REMEDIATIONS"},
+        "registry_heads": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["feedback", "findings", "lessons", "patterns", "remediations"],
+          "properties": {
+            "feedback": {"type": "string", "pattern": "^(GENESIS|sha256:[0-9a-f]{64})$"},
+            "findings": {"type": "string", "pattern": "^(GENESIS|sha256:[0-9a-f]{64})$"},
+            "lessons": {"type": "string", "pattern": "^(GENESIS|sha256:[0-9a-f]{64})$"},
+            "patterns": {"type": "string", "pattern": "^(GENESIS|sha256:[0-9a-f]{64})$"},
+            "remediations": {"type": "string", "pattern": "^(GENESIS|sha256:[0-9a-f]{64})$"}
+          }
+        },
+        "lessons": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["lesson_id", "category", "failure_pattern", "future_rule"],
+            "properties": {
+              "lesson_id": {"type": "string", "pattern": "^lesson_[0-9a-f]{64}$"},
+              "category": {"type": "string", "minLength": 1},
+              "failure_pattern": {"type": "string", "minLength": 1},
+              "future_rule": {"type": "string", "minLength": 1}
+            }
+          }
+        },
+        "remediations": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["remediation_id", "finding_id", "responsibility", "required_behavior", "closure_conditions", "prohibited_shortcuts"],
+            "properties": {
+              "remediation_id": {"type": "string", "pattern": "^remediation_[0-9a-f]{64}$"},
+              "finding_id": {"type": "string", "pattern": "^finding_[0-9a-f]{64}$"},
+              "responsibility": {"type": "string", "minLength": 1},
+              "required_behavior": {"type": "string", "minLength": 1},
+              "closure_conditions": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}},
+              "prohibited_shortcuts": {"type": "array", "items": {"type": "string", "minLength": 1}}
+            }
+          }
+        },
+        "raw_feedback_exposed": {"const": false},
+        "raw_historical_findings_exposed": {"const": false},
+        "context_hash": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"}
       }
     },
     "output_contract": {
