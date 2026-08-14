@@ -1,10 +1,12 @@
 from __future__ import annotations
 
 import copy
+import hashlib
 import json
 import subprocess
 import sys
 from pathlib import Path
+from urllib.parse import quote
 
 import pytest
 
@@ -12,15 +14,14 @@ ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / ".terminus"))
 
 from execution.authority import ExecutionAuthority  # noqa: E402
-from execution.invocation import StageInvocationBuilder  # noqa: E402
+from execution.invocation import (  # noqa: E402
+    _CONTRACT_SNAPSHOT_PATHS,
+    StageInvocationBuilder,
+)
 from execution.invocation_guard import CanonicalInvocationGuard  # noqa: E402
 from feedback.closure import FindingClosure  # noqa: E402
 from feedback.ingestion import FeedbackIngestor  # noqa: E402
-from feedback.model import (  # noqa: E402
-    FeedbackSource,
-    content_hash,
-    finding_identity,
-)
+from feedback.model import FeedbackSource, content_hash  # noqa: E402
 from feedback.normalizer import FindingNormalizer  # noqa: E402
 from feedback.registry import AppendOnlyRegistry, LearningStore  # noqa: E402
 from feedback.schema_validation import LearningSchemaValidator  # noqa: E402
@@ -48,6 +49,7 @@ EXPECTED_SOURCES = {
     "SUBMISSION_RESULT",
     "RUNTIME",
 }
+_SOURCE_FIXTURE = ".terminus/tests/fixtures/feedback_source_identities.json"
 
 
 def _head() -> str:
@@ -67,6 +69,24 @@ def _store(tmp_path: Path) -> LearningStore:
     )
 
 
+def _source_binding(identity: str) -> dict[str, str]:
+    raw = (ROOT / _SOURCE_FIXTURE).read_bytes()
+    return {
+        "kind": "RESULT",
+        "ref": f"git:{_head()}:{_SOURCE_FIXTURE}#{quote(identity, safe='')}",
+        "content_hash": "sha256:" + hashlib.sha256(raw).hexdigest(),
+    }
+
+
+def _external_binding(identity: str) -> dict[str, str]:
+    digest = "sha256:" + "a" * 64
+    return {
+        "kind": "RUN",
+        "ref": f"run:test:{identity}#{digest}",
+        "content_hash": digest,
+    }
+
+
 def _event(
     store: LearningStore,
     *,
@@ -78,6 +98,7 @@ def _event(
     severity: str = "HIGH",
     producer: str = "test-producer",
 ) -> dict[str, object]:
+    binding = None if source == "HUMAN_REVIEW" else _source_binding(producer)
     return FeedbackIngestor(ROOT, store=store).capture(
         source_type=source,
         producer=producer,
@@ -87,6 +108,7 @@ def _event(
         message=message,
         category=category,
         stage_hint=stage,
+        source_binding=binding,
         captured_at="2026-08-14T00:00:00Z",
     )
 
@@ -167,19 +189,46 @@ def test_all_feedback_sources_are_first_class() -> None:
     assert source_enum == EXPECTED_SOURCES
 
 
-def test_feedback_provenance_hash_binds_capture_time(tmp_path: Path) -> None:
+def test_feedback_provenance_hash_binds_full_event_context(tmp_path: Path) -> None:
     store = _store(tmp_path)
     event = _event(store)
-    expected = content_hash(
-        {
-            "schema_version": event["schema_version"],
-            "source": event["source"],
-            "task": event["task"],
-            "observation": event["observation"],
-            "captured_at": event["provenance"]["captured_at"],
-        }
-    )
-    assert event["provenance"]["content_hash"] == expected
+    payload = copy.deepcopy(event)
+    payload.pop("feedback_id")
+    payload["provenance"].pop("content_hash")
+    assert event["provenance"]["content_hash"] == content_hash(payload)
+    assert event["provenance"]["trust_status"] == "HUMAN_ASSERTED"
+
+
+def test_automated_feedback_requires_immutable_source_binding(tmp_path: Path) -> None:
+    store = _store(tmp_path)
+    with pytest.raises(ValueError, match="requires immutable source_binding"):
+        FeedbackIngestor(ROOT, store=store).capture(
+            source_type="PORTAL_CI",
+            producer="portal-ci",
+            task_id="feedback-source-binding",
+            task_commit=_head(),
+            severity="HIGH",
+            message="Portal reported a task failure.",
+            captured_at="2026-08-14T00:00:00Z",
+        )
+
+
+def test_repository_resolved_automated_feedback_binds_producer(tmp_path: Path) -> None:
+    store = _store(tmp_path)
+    event = _event(store, source="PORTAL_CI", producer="portal-ci")
+    assert event["provenance"]["trust_status"] == "REPOSITORY_RESOLVED"
+    assert event["provenance"]["source_binding"] == _source_binding("portal-ci")
+    with pytest.raises(ValueError, match="identity must match producer or run_id"):
+        FeedbackIngestor(ROOT, store=store).capture(
+            source_type="PORTAL_CI",
+            producer="portal-ci",
+            task_id="feedback-source-spoof",
+            task_commit=_head(),
+            severity="HIGH",
+            message="Spoofed portal result.",
+            source_binding=_source_binding("repository-ci"),
+            captured_at="2026-08-14T00:00:00Z",
+        )
 
 
 def test_append_only_registry_detects_tampering(tmp_path: Path) -> None:
@@ -218,6 +267,45 @@ def test_conflicting_feedback_is_fail_closed_and_not_majority_voted(tmp_path: Pa
     assert finding["category"] == "FEEDBACK_CONFLICT"
     with pytest.raises(ValueError, match="conflicted findings"):
         RemediationPlanner(ROOT, store=store).plan(finding)
+    with pytest.raises(ValueError, match="cannot move to REPAIRED"):
+        FindingClosure(ROOT, store=store).mark_repaired(
+            str(finding["finding_id"]), _head()
+        )
+
+
+def test_conflict_requires_controlled_resolution_before_unblocking(tmp_path: Path) -> None:
+    store = _store(tmp_path)
+    finding = _finding(
+        store,
+        [
+            _event(store, task_id="feedback-conflict-resolution", category="A"),
+            _event(
+                store,
+                task_id="feedback-conflict-resolution",
+                category="B",
+                source="DIFFICULTY",
+            ),
+        ],
+    )
+    resolution = _event(
+        store,
+        source="HUMAN_REVIEW",
+        producer="Manoj",
+        task_id="feedback-conflict-resolution",
+        category="CONFLICT_RESOLUTION",
+        message="Human adjudication separates the competing signals; replacement findings may be normalized.",
+    )
+    resolved = FindingClosure(ROOT, store=store).resolve_conflict(
+        str(finding["finding_id"]), resolution_feedback=[resolution]
+    )
+    assert resolved["state"] == "WONT_FIX"
+    assert resolved["closure"]["verified_by_feedback"] == [resolution["feedback_id"]]
+    assert (
+        RemediationInterlock(ROOT, store=store).next_override(
+            task_id="feedback-conflict-resolution", task_commit=_head()
+        )
+        is None
+    )
 
 
 def test_remediation_packet_is_ledger_anchored_and_owned(tmp_path: Path) -> None:
@@ -250,6 +338,54 @@ def test_repair_owner_cannot_verify_own_finding(tmp_path: Path) -> None:
         )
 
 
+def test_external_pointer_feedback_cannot_close_finding(tmp_path: Path) -> None:
+    store = _store(tmp_path)
+    finding = _finding(store, [_event(store, task_id="feedback-external-close")])
+    repaired = FindingClosure(ROOT, store=store).mark_repaired(
+        str(finding["finding_id"]), _head()
+    )
+    verification = FeedbackIngestor(ROOT, store=store).capture(
+        source_type="INDEPENDENT_REVIEW",
+        producer="Q4_SPEC_TEST_CONTRACT_REVIEWER",
+        task_id="feedback-external-close",
+        task_commit=_head(),
+        severity="HIGH",
+        message="External pointer claims the finding is closed.",
+        category="EXTERNAL_BOUNDARY",
+        stage_hint="VERIFIER_BUILD",
+        source_binding=_external_binding("Q4_SPEC_TEST_CONTRACT_REVIEWER"),
+        captured_at="2026-08-14T00:00:00Z",
+    )
+    assert verification["provenance"]["trust_status"] == "EXTERNAL_POINTER_ONLY"
+    with pytest.raises(ValueError, match="must resolve to immutable repository evidence"):
+        FindingClosure(ROOT, store=store).verify(
+            str(repaired["finding_id"]),
+            verifier_role="Q4_SPEC_TEST_CONTRACT_REVIEWER",
+            verification_feedback=[verification],
+        )
+
+
+def test_spoofed_verifier_producer_cannot_close_finding(tmp_path: Path) -> None:
+    store = _store(tmp_path)
+    finding = _finding(store, [_event(store, task_id="feedback-spoof-close")])
+    repaired = FindingClosure(ROOT, store=store).mark_repaired(
+        str(finding["finding_id"]), _head()
+    )
+    verification = _event(
+        store,
+        source="INDEPENDENT_REVIEW",
+        producer="CI_ORCHESTRATOR",
+        task_id="feedback-spoof-close",
+        message="A different trusted producer attempts to close Q4's finding.",
+    )
+    with pytest.raises(ValueError, match="producer does not match verification owner"):
+        FindingClosure(ROOT, store=store).verify(
+            str(repaired["finding_id"]),
+            verifier_role="Q4_SPEC_TEST_CONTRACT_REVIEWER",
+            verification_feedback=[verification],
+        )
+
+
 def test_repair_commit_must_descend_from_finding_snapshot(tmp_path: Path) -> None:
     store = _store(tmp_path)
     finding = _finding(store, [_event(store)])
@@ -259,11 +395,11 @@ def test_repair_commit_must_descend_from_finding_snapshot(tmp_path: Path) -> Non
         )
 
 
-def test_only_verified_or_closed_findings_become_lessons(tmp_path: Path) -> None:
+def test_only_trusted_verified_or_closed_findings_become_lessons(tmp_path: Path) -> None:
     store = _store(tmp_path)
     open_finding = _finding(store, [_event(store)])
     registry = LessonRegistry(ROOT, store=store)
-    with pytest.raises(ValueError, match="verified/closed"):
+    with pytest.raises(ValueError, match="not independently verified"):
         registry.from_finding(open_finding, future_rule="Do the better thing.")
     closed = _closed_finding(store, task_id="feedback-lesson-test")
     lesson = registry.from_finding(
@@ -272,6 +408,20 @@ def test_only_verified_or_closed_findings_become_lessons(tmp_path: Path) -> None
     )
     assert lesson["state"] == "ACTIVE"
     assert lesson["promotion"]["distinct_tasks"] == 1
+
+
+def test_synthetic_closed_finding_without_trusted_feedback_cannot_train(tmp_path: Path) -> None:
+    store = _store(tmp_path)
+    open_finding = _finding(store, [_event(store, task_id="feedback-fake-closed")])
+    fake = copy.deepcopy(open_finding)
+    fake["state"] = "CLOSED"
+    fake["closure"]["repaired_task_commit"] = _head()
+    store.findings.append(fake)
+    with pytest.raises(ValueError, match="missing verification feedback"):
+        LessonRegistry(ROOT, store=store).from_finding(
+            fake,
+            future_rule="A fabricated closed finding must never train agents.",
+        )
 
 
 def test_learning_projection_strips_raw_task_answer_and_historical_ids(tmp_path: Path) -> None:
@@ -318,10 +468,7 @@ def test_registry_chain_head_replays_prior_learning_snapshot(tmp_path: Path) -> 
         future_rule="Verify external effects at the observable boundary.",
     )
     first_head = store.lessons.head()
-    second = copy.deepcopy(closed)
-    second["task_id"] = "feedback-head-two"
-    second["finding_id"] = finding_identity(second)
-    store.findings.append(second)
+    second = _closed_finding(store, task_id="feedback-head-two")
     LessonRegistry(ROOT, store=store).from_finding(
         second,
         future_rule="A different generalized rule for another lesson.",
@@ -345,6 +492,8 @@ def test_stage_invocation_binds_learning_context() -> None:
     body = dict(learning)
     observed_hash = body.pop("context_hash")
     assert observed_hash == content_hash(body)
+    assert ".terminus/learning/knowledge/lessons.jsonl" in _CONTRACT_SNAPSHOT_PATHS
+    assert ".terminus/learning/knowledge/patterns.jsonl" in _CONTRACT_SNAPSHOT_PATHS
     LearningSchemaValidator(ROOT)
 
 
@@ -418,18 +567,34 @@ def test_feedback_conflict_blocks_before_any_repair_route(tmp_path: Path) -> Non
     assert action["finding_id"] == finding["finding_id"]
 
 
+def test_remediation_lineage_conflict_is_fail_closed(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    store = _store(tmp_path)
+    finding = _finding(store, [_event(store, task_id="feedback-lineage-test")])
+    interlock = RemediationInterlock(ROOT, store=store)
+    monkeypatch.setattr(interlock, "_is_ancestor", lambda _ancestor, _descendant: False)
+    action = interlock.next_override(
+        task_id="feedback-lineage-test",
+        task_commit=_head(),
+    )
+    assert action == {
+        "action": "REMEDIATION_LINEAGE_CONFLICT",
+        "finding_id": finding["finding_id"],
+        "finding_task_commit": finding["task_commit"],
+        "current_task_commit": _head(),
+    }
+
+
 def test_recurrence_marks_policy_candidate_only_after_three_distinct_tasks(tmp_path: Path) -> None:
     store = _store(tmp_path)
-    first = _closed_finding(store, task_id="feedback-pattern-1")
+    findings = [
+        _closed_finding(store, task_id="feedback-pattern-1"),
+        _closed_finding(store, task_id="feedback-pattern-2"),
+        _closed_finding(store, task_id="feedback-pattern-3"),
+    ]
     registry = LessonRegistry(ROOT, store=store)
-    for index, finding in enumerate(
-        [
-            first,
-            _clone_closed_finding(store, first, "feedback-pattern-2"),
-            _clone_closed_finding(store, first, "feedback-pattern-3"),
-        ],
-        start=1,
-    ):
+    for index, finding in enumerate(findings, start=1):
         lesson = registry.from_finding(
             finding,
             future_rule="Verify external effects at the observable boundary.",
@@ -442,19 +607,6 @@ def test_recurrence_marks_policy_candidate_only_after_three_distinct_tasks(tmp_p
     assert patterns[0]["policy_candidate"] is True
     assert patterns[0]["status"] == "POLICY_CANDIDATE"
     assert patterns[0]["occurrences"] == 3
-
-
-def _clone_closed_finding(
-    store: LearningStore,
-    template: dict[str, object],
-    task_id: str,
-) -> dict[str, object]:
-    value = copy.deepcopy(template)
-    value["task_id"] = task_id
-    value["finding_id"] = finding_identity(value)
-    LearningSchemaValidator(ROOT).validate("finding", value)
-    store.findings.append(value)
-    return value
 
 
 def test_private_state_is_gitignored_but_generalized_knowledge_is_portable() -> None:
@@ -490,6 +642,7 @@ def test_learning_context_replays_exact_bound_heads(tmp_path: Path) -> None:
     _event(
         store,
         source="PORTAL_CI",
+        producer="portal-ci",
         task_id="feedback-context-head",
         message="Later feedback appended after the invocation was issued.",
     )
