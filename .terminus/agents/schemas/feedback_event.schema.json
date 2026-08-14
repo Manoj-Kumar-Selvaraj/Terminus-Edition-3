@@ -1,0 +1,58 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "terminus-feedback-event-v1",
+  "title": "Terminus Unified Feedback Event",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "feedback_id", "source", "task", "observation", "provenance"],
+  "properties": {
+    "schema_version": {"const": "1.0"},
+    "feedback_id": {"type": "string", "pattern": "^feedback_[0-9a-f]{64}$"},
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "producer"],
+      "properties": {
+        "type": {"enum": ["HUMAN_REVIEW", "INDEPENDENT_REVIEW", "REVIEWER_REVIEW", "PORTAL_CI", "REPOSITORY_CI", "LLMAJ", "MODEL_DIAGNOSTIC", "MODEL_TRIAL", "DIFFICULTY", "FINAL_REVIEW", "SUBMISSION_RESULT", "RUNTIME"]},
+        "producer": {"type": "string", "minLength": 1},
+        "run_id": {"type": ["string", "integer"]},
+        "external_ref": {"type": "string", "minLength": 1}
+      }
+    },
+    "task": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["task_id", "task_commit"],
+      "properties": {
+        "task_id": {"type": "string", "minLength": 1},
+        "task_commit": {"type": "string", "pattern": "^[0-9a-f]{40,64}$"}
+      }
+    },
+    "observation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["severity", "message"],
+      "properties": {
+        "severity": {"enum": ["INFO", "LOW", "MEDIUM", "HIGH", "CRITICAL"]},
+        "message": {"type": "string", "minLength": 1},
+        "category": {"type": "string", "minLength": 1},
+        "stage_hint": {"type": "string", "minLength": 1},
+        "role_hint": {"type": "string", "minLength": 1},
+        "test_id": {"type": "string", "minLength": 1},
+        "metric": {"type": "string", "minLength": 1},
+        "value": {},
+        "expected": {},
+        "evidence": {"type": "array", "items": {"type": "object"}}
+      }
+    },
+    "provenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["captured_at", "content_hash"],
+      "properties": {
+        "captured_at": {"type": "string", "format": "date-time"},
+        "content_hash": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"}
+      }
+    }
+  }
+}
