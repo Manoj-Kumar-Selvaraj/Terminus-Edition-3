@@ -28,6 +28,13 @@ def _json_arg(value: str | None) -> Any:
     return None if value is None else json.loads(value)
 
 
+def _json_object_arg(value: str | None, label: str) -> dict[str, Any] | None:
+    parsed = _json_arg(value)
+    if parsed is not None and not isinstance(parsed, dict):
+        raise ValueError(f"{label} must decode to an object")
+    return parsed
+
+
 def _emit(value: Any) -> int:
     print(json.dumps(value, indent=2, sort_keys=True, ensure_ascii=False))
     return 0
@@ -72,7 +79,7 @@ def build_parser() -> argparse.ArgumentParser:
     add.add_argument("--evidence-json")
     add.add_argument("--captured-at")
 
-    normalize = sub.add_parser("normalize", help="normalize authenticated feedback into one canonical finding")
+    normalize = sub.add_parser("normalize", help="normalize authenticated feedback into one signed canonical finding")
     normalize.add_argument("--feedback-id", action="append", required=True)
     normalize.add_argument("--generalized", required=True)
     normalize.add_argument("--root-cause", required=True)
@@ -80,6 +87,7 @@ def build_parser() -> argparse.ArgumentParser:
     normalize.add_argument("--caught-by", action="append", default=[])
     normalize.add_argument("--closure", action="append", default=[])
     normalize.add_argument("--verification-owner", default="CI_ORCHESTRATOR")
+    normalize.add_argument("--authority-receipt-json", required=True)
 
     plan = sub.add_parser("plan", help="create a controlled remediation packet")
     plan.add_argument("--finding-id", required=True)
@@ -116,7 +124,6 @@ def build_parser() -> argparse.ArgumentParser:
     project.add_argument("--role-id", required=True)
     project.add_argument("--task-id")
     project.add_argument("--task-commit")
-
     sub.add_parser("status")
     return parser
 
@@ -128,11 +135,6 @@ def main(argv: list[str] | None = None) -> int:
         evidence = _json_arg(args.evidence_json)
         if evidence is not None and not isinstance(evidence, list):
             raise ValueError("--evidence-json must decode to an array")
-        source_binding = _json_arg(args.source_binding_json)
-        receipt = _json_arg(args.authority_receipt_json)
-        for label, value in (("--source-binding-json", source_binding), ("--authority-receipt-json", receipt)):
-            if value is not None and not isinstance(value, dict):
-                raise ValueError(f"{label} must decode to an object")
         return _emit(
             FeedbackIngestor(ROOT, store=store).capture(
                 source_type=args.source,
@@ -146,8 +148,8 @@ def main(argv: list[str] | None = None) -> int:
                 role_hint=args.role_hint,
                 run_id=args.run_id,
                 external_ref=args.external_ref,
-                source_binding=source_binding,
-                authority_receipt=receipt,
+                source_binding=_json_object_arg(args.source_binding_json, "--source-binding-json"),
+                authority_receipt=_json_object_arg(args.authority_receipt_json, "--authority-receipt-json"),
                 test_id=args.test_id,
                 metric=args.metric,
                 value=_json_arg(args.value_json),
@@ -166,6 +168,7 @@ def main(argv: list[str] | None = None) -> int:
                 should_have_been_caught_by=args.caught_by,
                 closure_conditions=args.closure or None,
                 verification_owner=args.verification_owner,
+                authority_receipt=_json_object_arg(args.authority_receipt_json, "--authority-receipt-json"),
             )
         )
     if args.command == "plan":
@@ -177,10 +180,7 @@ def main(argv: list[str] | None = None) -> int:
     if args.command == "verify":
         return _emit(FindingClosure(ROOT, store=store).verify(args.finding_id, verifier_role=args.verifier_role, verification_feedback=[_event(store, value) for value in args.feedback_id], close=not args.verified_only))
     if args.command == "learn":
-        receipt = _json_arg(args.authority_receipt_json)
-        if receipt is not None and not isinstance(receipt, dict):
-            raise ValueError("--authority-receipt-json must decode to an object")
-        return _emit(LessonRegistry(ROOT, store=store).from_finding(_finding(store, args.finding_id), future_rule=args.future_rule, extra_stages=args.extra_stage, extra_roles=args.extra_role, domains=args.domain, activate=args.activate, authority_receipt=receipt))
+        return _emit(LessonRegistry(ROOT, store=store).from_finding(_finding(store, args.finding_id), future_rule=args.future_rule, extra_stages=args.extra_stage, extra_roles=args.extra_role, domains=args.domain, activate=args.activate, authority_receipt=_json_object_arg(args.authority_receipt_json, "--authority-receipt-json")))
     if args.command == "analyze":
         return _emit(RecurrenceAnalyzer(ROOT, store=store).analyze(policy_candidate_distinct_tasks=args.policy_threshold))
     if args.command == "project":
