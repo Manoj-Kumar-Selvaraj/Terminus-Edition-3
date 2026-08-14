@@ -17,7 +17,7 @@ RUN pip install --no-cache-dir --no-deps -r /tmp/requirements.lock \
     && rm -f /tmp/requirements.lock
 
 RUN mkdir -p /app/equiv /tests/fixtures
-COPY test.sh test_outputs.py /tests/
+COPY test.sh test_*.py /tests/
 COPY fixtures/ /tests/fixtures/
 RUN chmod 0755 /tests/test.sh
 
