@@ -14,7 +14,6 @@ from pathlib import Path, PurePosixPath
 from typing import Any, Mapping, Sequence
 
 from retrieval.indexer import RepositoryIndexer
-from retrieval.models import InvocationContext
 from retrieval.policy import ALL_ROLES, ALL_STAGES, RetrievalPolicy
 
 _MUTATING_ROLE_CLASSES = frozenset({"PRODUCER", "FIXER"})
@@ -181,16 +180,7 @@ class LocalExecutorSandbox:
             "/",
             "/",
         ]
-        home = Path.home().resolve()
-        masks: list[Path] = []
-        try:
-            if self.root.is_relative_to(home):
-                masks.append(home)
-            else:
-                masks.extend([home, self.root])
-        except ValueError:
-            masks.extend([home, self.root])
-        for mask in masks:
+        for mask in self._sensitive_masks():
             if mask.exists():
                 command += ["--tmpfs", str(mask)]
         command += [
@@ -211,6 +201,26 @@ class LocalExecutorSandbox:
             *argv,
         ]
         return command
+
+    def _sensitive_masks(self) -> list[Path]:
+        home = Path.home().resolve()
+        common_raw = subprocess.run(
+            ["git", "-C", str(self.root), "rev-parse", "--git-common-dir"],
+            check=True,
+            capture_output=True,
+            text=True,
+        ).stdout.strip()
+        common = Path(common_raw)
+        if not common.is_absolute():
+            common = (self.root / common).resolve()
+        candidates = [home, self.root, common]
+        masks: list[Path] = []
+        for candidate in candidates:
+            if any(candidate == existing or candidate.is_relative_to(existing) for existing in masks):
+                continue
+            masks = [existing for existing in masks if not existing.is_relative_to(candidate)]
+            masks.append(candidate)
+        return masks
 
     def _tracked_paths(self, commit: str) -> list[str]:
         return subprocess.run(
