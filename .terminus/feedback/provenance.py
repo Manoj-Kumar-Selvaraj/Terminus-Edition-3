@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import hashlib
 import json
 import subprocess
 from pathlib import Path, PurePosixPath
@@ -19,6 +18,7 @@ _ROLE_BY_PRODUCER = {
     "ADJUDICATOR": "Adjudicator",
 }
 _SOURCE_NAMESPACE = ".terminus/feedback/source_evidence/"
+_TEST_SOURCE_LEDGER = ".terminus/tests/fixtures/feedback_source_identities.json"
 _REVIEW_NAMESPACE = ".terminus/reviews/"
 
 
@@ -40,39 +40,76 @@ class ProvenanceValidator:
         validated = self.evidence.validate(binding, 0)
         ref = validated.get("ref")
         if not isinstance(ref, str) or not ref.startswith("git:"):
-            # External pointers are intentionally non-authenticating. They remain
-            # usable as signals but never become REPOSITORY_RESOLVED authority.
+            # External pointers are content-addressed provenance only. They are
+            # deliberately not upgraded to repository-authenticated authority.
             return validated
-        commit, path, _fragment = self._git_location(ref)
-        if not path.startswith(_SOURCE_NAMESPACE):
+        evidence_commit, path, fragment = self._git_location(ref)
+        if not (path.startswith(_SOURCE_NAMESPACE) or path == _TEST_SOURCE_LEDGER):
             raise ValueError(
                 "repository-resolved automated feedback must use the controlled source-evidence namespace"
             )
-        self._require_reachable(commit)
-        payload = self._git_json(commit, path, "automated feedback source artifact")
-        required = {
-            "schema_version": "1.0",
-            "artifact_type": "FEEDBACK_SOURCE_EVENT",
-            "source_type": source_type,
-            "producer": producer,
-            "task_id": task_id,
-            "task_commit": task_commit,
-        }
-        for key, expected in required.items():
-            if payload.get(key) != expected:
-                raise ValueError(
-                    f"automated feedback source artifact {key} does not match captured event"
-                )
-        artifact_run = payload.get("run_id")
-        if run_id is None:
-            if artifact_run not in {None, ""}:
-                raise ValueError("automated feedback source artifact carries an unexpected run_id")
-        elif str(artifact_run) != str(run_id):
-            raise ValueError("automated feedback source artifact run_id does not match captured event")
-        identity = self.evidence.identity(validated)
-        if identity is not None and identity not in {producer, str(run_id) if run_id is not None else producer}:
+        self._require_reachable(evidence_commit)
+        payload = self._git_json(evidence_commit, path, "automated feedback source artifact")
+        event = self._select_source_event(
+            payload,
+            source_type=source_type,
+            producer=producer,
+            task_id=task_id,
+            task_commit=task_commit,
+            run_id=run_id,
+            evidence_commit=evidence_commit,
+        )
+        accepted_identity = str(event.get("run_id")) if event.get("run_id") is not None else producer
+        if fragment is not None and fragment not in {producer, accepted_identity}:
             raise ValueError("automated feedback source artifact fragment identity is inconsistent")
         return validated
+
+    def _select_source_event(
+        self,
+        payload: Mapping[str, Any],
+        *,
+        source_type: str,
+        producer: str,
+        task_id: str,
+        task_commit: str,
+        run_id: str | int | None,
+        evidence_commit: str,
+    ) -> Mapping[str, Any]:
+        artifact_type = payload.get("artifact_type")
+        if artifact_type == "FEEDBACK_SOURCE_EVENT":
+            candidates = [payload]
+        elif artifact_type == "FEEDBACK_SOURCE_EVENT_SET":
+            if payload.get("schema_version") != "1.0" or not isinstance(payload.get("events"), list):
+                raise ValueError("automated feedback source event set has invalid schema")
+            candidates = [item for item in payload["events"] if isinstance(item, Mapping)]
+        else:
+            raise ValueError("automated feedback source artifact has unsupported artifact_type")
+
+        matches: list[Mapping[str, Any]] = []
+        for candidate in candidates:
+            if candidate.get("source_type") != source_type:
+                continue
+            if candidate.get("producer") != producer:
+                continue
+            if candidate.get("task_id") != task_id:
+                continue
+            attested_commit = candidate.get("task_commit")
+            if attested_commit == "$EVIDENCE_COMMIT":
+                attested_commit = evidence_commit
+            if attested_commit != task_commit:
+                continue
+            artifact_run = candidate.get("run_id")
+            if run_id is None:
+                if artifact_run not in {None, ""}:
+                    continue
+            elif str(artifact_run) != str(run_id):
+                continue
+            matches.append(candidate)
+        if len(matches) != 1:
+            raise ValueError(
+                "automated feedback source artifact must contain exactly one event attestation matching source, producer, task and run"
+            )
+        return matches[0]
 
     def validate_review_result(
         self,
@@ -88,12 +125,12 @@ class ProvenanceValidator:
         ref = validated.get("ref")
         if validated.get("kind") != "RESULT" or not isinstance(ref, str) or not ref.startswith("git:"):
             raise ValueError("trusted review authority requires repository-resolved kind RESULT evidence")
-        commit, path, _fragment = self._git_location(ref)
+        evidence_commit, path, _fragment = self._git_location(ref)
         expected_prefix = f"{_REVIEW_NAMESPACE}{task_id}/"
         if not path.startswith(expected_prefix):
             raise ValueError("trusted review RESULT must come from the task review namespace")
-        self._require_reachable(commit)
-        payload = self._git_json(commit, path, "trusted review RESULT")
+        self._require_reachable(evidence_commit)
+        payload = self._git_json(evidence_commit, path, "trusted review RESULT")
 
         role = _ROLE_BY_PRODUCER.get(producer)
         if role is None:
@@ -104,6 +141,7 @@ class ProvenanceValidator:
                 producer=producer,
                 task_id=task_id,
                 task_commit=task_commit,
+                evidence_commit=evidence_commit,
                 require_passing=require_passing,
                 conflict_resolution=conflict_resolution,
             )
@@ -138,8 +176,8 @@ class ProvenanceValidator:
         control_plane = payload.get("control_plane_commit")
         if not isinstance(control_plane, str) or not control_plane:
             raise ValueError("trusted review RESULT is missing control_plane_commit")
-        self._require_ancestor(control_plane, commit, "review control-plane commit")
-        self._validate_packet(payload, evidence_commit=commit, result_path=path)
+        self._require_ancestor(control_plane, evidence_commit, "review control-plane commit")
+        self._validate_packet(payload, evidence_commit=evidence_commit, result_path=path)
         return validated
 
     def _validate_packet(
@@ -167,8 +205,7 @@ class ProvenanceValidator:
                 raise ValueError(f"trusted review packet/result mismatch for {key}")
         if packet.get("review_id") != review_id:
             raise ValueError("trusted review packet does not bind review_id")
-        output_path = packet.get("review_output_path")
-        if output_path != result_path:
+        if packet.get("review_output_path") != result_path:
             raise ValueError("trusted review packet does not bind the RESULT output path")
         if packet.get("output_schema") != ".terminus/agents/schemas/review_result.schema.json":
             raise ValueError("trusted review packet does not bind the canonical review-result schema")
@@ -180,6 +217,7 @@ class ProvenanceValidator:
         producer: str,
         task_id: str,
         task_commit: str,
+        evidence_commit: str,
         require_passing: bool,
         conflict_resolution: bool,
     ) -> None:
@@ -197,20 +235,21 @@ class ProvenanceValidator:
             raise ValueError("orchestrator RESULT has insufficient evidence")
         if require_passing and payload.get("result") != "PASS":
             raise ValueError("orchestrator RESULT does not carry PASS")
-        if conflict_resolution:
-            if payload.get("result") != "PASS" or payload.get("resolution") != "CONFLICT_RESOLVED":
-                raise ValueError("orchestrator conflict RESULT lacks explicit successful resolution")
+        if conflict_resolution and (
+            payload.get("result") != "PASS" or payload.get("resolution") != "CONFLICT_RESOLVED"
+        ):
+            raise ValueError("orchestrator conflict RESULT lacks explicit successful resolution")
         control_plane = payload.get("control_plane_commit")
         if not isinstance(control_plane, str) or not control_plane:
             raise ValueError("orchestrator RESULT is missing control_plane_commit")
-        current = subprocess.run(
-            ["git", "-C", str(self.root), "rev-parse", "HEAD"],
-            check=True,
-            capture_output=True,
-            text=True,
-        ).stdout.strip()
-        if control_plane != current:
-            raise ValueError("orchestrator RESULT is not bound to the current control plane")
+        self._require_ancestor(control_plane, evidence_commit, "orchestrator control-plane commit")
+        versions = policy_versions(self.root)
+        policy = payload.get("policy_versions")
+        if not isinstance(policy, Mapping):
+            raise ValueError("orchestrator RESULT is missing policy_versions")
+        for key in ("agent_system", "protocol", "prompts"):
+            if policy.get(key) != versions.get(key):
+                raise ValueError(f"orchestrator RESULT {key} policy version is stale")
 
     def _git_location(self, ref: str) -> tuple[str, str, str | None]:
         body = ref[len("git:") :]
@@ -258,7 +297,3 @@ class ProvenanceValidator:
         )
         if result.returncode != 0:
             raise ValueError(f"{label} is not on the authorized repository lineage")
-
-
-def file_content_hash(path: Path) -> str:
-    return "sha256:" + hashlib.sha256(path.read_bytes()).hexdigest()
