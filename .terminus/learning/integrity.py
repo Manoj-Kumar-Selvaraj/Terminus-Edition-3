@@ -8,32 +8,35 @@ from typing import Any, Mapping
 from execution.authority import ExecutionAuthority
 from retrieval.policy import RetrievalPolicy
 
-from feedback.closure import FindingClosure
 from feedback.model import lesson_identity, pattern_identity
 from feedback.registry import LearningStore
 from feedback.schema_validation import LearningSchemaValidator
 
 
 class LearningIntegrityValidator:
-    """Treat registries as persistence, never as semantic authority."""
+    """Treat registries as persistence, never as semantic authority.
+
+    FindingClosure is resolved lazily so StageInvocation -> LearningProjector ->
+    integrity construction does not recursively construct an ExecutionRecordBuilder.
+    """
 
     def __init__(self, root: Path, *, store: LearningStore | None = None):
         self.root = root.resolve()
         self.store = store or LearningStore(self.root)
         self.schemas = LearningSchemaValidator(self.root)
-        self.closure = FindingClosure(self.root, store=self.store)
         self.policy = RetrievalPolicy(self.root)
         self.authority = ExecutionAuthority(self.policy)
 
     def validate_terminal_finding(self, finding: Mapping[str, Any]) -> None:
         self.schemas.validate("finding", finding)
+        closure = self._closure()
         state = str(finding.get("state"))
         if state == "REPAIRED":
-            self.closure.assert_repaired_authorized(finding)
+            closure.assert_repaired_authorized(finding)
         elif state in {"VERIFIED", "CLOSED"}:
-            self.closure.assert_learning_eligible(finding)
+            closure.assert_learning_eligible(finding)
         elif state == "WONT_FIX":
-            self.closure.assert_conflict_resolved(finding)
+            closure.assert_conflict_resolved(finding)
 
     def validate_lesson(self, lesson: Mapping[str, Any]) -> None:
         self.schemas.validate("lesson", lesson)
@@ -63,11 +66,12 @@ class LearningIntegrityValidator:
         if not sources:
             raise ValueError("lesson requires source findings")
         findings: list[dict[str, Any]] = []
+        closure = self._closure()
         for source in sources:
             finding = self.store.findings.get_latest("finding_id", source)
             if finding is None:
                 raise ValueError(f"lesson source finding is unavailable: {source}")
-            self.closure.assert_learning_eligible(finding)
+            closure.assert_learning_eligible(finding)
             findings.append(finding)
         distinct_tasks = len({str(item["task_id"]) for item in findings})
         expected_promotion = {
@@ -88,13 +92,14 @@ class LearningIntegrityValidator:
         if len(finding_ids) < 2:
             raise ValueError("recurrence pattern requires at least two findings")
         findings: list[dict[str, Any]] = []
+        closure = self._closure()
         for finding_id in finding_ids:
             finding = self.store.findings.get_latest("finding_id", finding_id)
             if finding is None:
                 raise ValueError(
                     f"pattern source finding is unavailable: {finding_id}"
                 )
-            self.closure.assert_learning_eligible(finding)
+            closure.assert_learning_eligible(finding)
             findings.append(finding)
         task_ids = sorted({str(item["task_id"]) for item in findings})
         if list(pattern.get("task_ids", [])) != task_ids:
@@ -126,3 +131,8 @@ class LearningIntegrityValidator:
             raise ValueError(
                 "pattern lesson_ids do not match validated lessons for its findings"
             )
+
+    def _closure(self):
+        from feedback.closure import FindingClosure
+
+        return FindingClosure(self.root, store=self.store)
