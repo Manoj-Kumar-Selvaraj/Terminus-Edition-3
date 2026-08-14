@@ -35,8 +35,8 @@ The abandoned branch `task/cobol-comp3-python-equiv@51723cbca1013fea7b1f7ca3cf05
 | Ruff verifier | PASS | Edition-3 run `31808250840` job `94792334675` |
 | Oracle = 1 | PASS | Edition-3 run `31808250840` job `94792334675`, artifact `9222093520`: 24/24 tests pass, reward 1 |
 | NOP = 0 | PASS | Edition-3 run `31808250840` job `94792334675`, artifact `9222093520`: 22 F2P fail / 2 P2P retention checks pass, reward 0 |
-| Q4 Spec-Test Contract Reviewer | PENDING | one fresh packet/result required for exact task commit `bf242838a5a985583d43e9ca919c03e4c3f9459d` |
-| Q6 Production Logic Auditor | PENDING | one fresh packet/result required for exact task commit `bf242838a5a985583d43e9ca919c03e4c3f9459d` |
+| Q4 Spec-Test Contract Reviewer | PENDING | packet `.terminus/reviews/cobol-comp3-python-equiv/bf242838/cobol-comp3-python-equiv-bf242838-spec-test-contract-c1744a7ef9.packet.json`; independent result not yet recorded |
+| Q6 Production Logic Auditor | PENDING | packet `.terminus/reviews/cobol-comp3-python-equiv/bf242838/cobol-comp3-python-equiv-bf242838-production-logic-b950c2f7a4.packet.json`; independent result not yet recorded |
 | Quality Interlock | PENDING | one bounded Q4/Q6 interlock only; no recursive cold-review loop |
 
 ## Current deterministic evidence
@@ -45,19 +45,29 @@ The abandoned branch `task/cobol-comp3-python-equiv@51723cbca1013fea7b1f7ca3cf05
 - Reference sealed holdout: PASS — two records, byte lengths `60` and `28`, negative/scaled COMP-3 and ODO behavior correct.
 - Strict malformed COMP-3 probes: PASS — signed field rejects `F`; unsigned field rejects `C` and `D`; non-zero left storage pad is rejected while the parser preserves the 44-byte record boundary.
 - Existing malformed fixtures: PASS — illegal sign and out-of-range ODO become record errors.
-- Edition-3 run `31808250840` is exact current-head deterministic evidence: preflight PASS, Ruff PASS, Oracle PASS, NOP PASS. It turns red only at Harbor credential preparation because no Harbor API key/provider credential is configured.
+- Edition-3 run `31808250840` is exact task-commit deterministic evidence: preflight PASS, Ruff PASS, Oracle PASS, NOP PASS. It turns red only at Harbor credential preparation because no Harbor API key/provider credential is configured.
 - Creator Complexity run `31808250839` explicitly evaluates `cobol-comp3-python-equiv` as PASS: 10 defects, 4 root-cause clusters, 9 causal edges, 24 mapped tests (22 F2P / 2 P2P). Its overall workflow fails later on unrelated `wiki-creation-counter-flap` baseline debt.
-- Agent System run `31808250834` has no freshness error for this task after the schema repair. Its regression failure is the existing `platform-sonar-ingress-token-bind` Q1/Q2/Q3/Q7 state; its review-freshness errors are other stale sessions/tasks.
+- Agent System run `31809310527` after packet generation has no `cobol-comp3-python-equiv` freshness/packet error. Its regression failure remains the existing `platform-sonar-ingress-token-bind` Q1/Q2/Q3/Q7 state; its review-freshness errors are other stale sessions/tasks.
 - Production Authenticity remains repository baseline debt: the workflow fails before task inspection because current control-plane policy documents lack markers required by `validate_production_policy.py`.
 - Historical Harbor evidence at `32de80a57ddbc38acd33d36cac598c69abe99da8` remains stale and is not used for this freeze.
 
+## Current review packets
+
+- Q4 role contract: `0c40044ec13f0109a5526301cac6e5d2f52f5596d006bee2cdcaa90c0771d7f6`
+- Q4 packet: `.terminus/reviews/cobol-comp3-python-equiv/bf242838/cobol-comp3-python-equiv-bf242838-spec-test-contract-c1744a7ef9.packet.json`
+- Q4 output: `.terminus/reviews/cobol-comp3-python-equiv/bf242838/cobol-comp3-python-equiv-bf242838-spec-test-contract-c1744a7ef9.json`
+- Q6 role contract: `8eb84a3715c4805f762325ceaa890339fc966a2a475cb58986578a15418c5378`
+- Q6 production scope: `d0bacfdf0b53efe2d019e9dbb43a2063ff204f35acc2b27053876c841b76b5bc`
+- Q6 packet: `.terminus/reviews/cobol-comp3-python-equiv/bf242838/cobol-comp3-python-equiv-bf242838-production-logic-b950c2f7a4.packet.json`
+- Q6 output: `.terminus/reviews/cobol-comp3-python-equiv/bf242838/cobol-comp3-python-equiv-bf242838-production-logic-b950c2f7a4.json`
+
 ## Current blocker
 
-The frozen candidate needs exactly one current, packet-bound Q4 Spec-Test Contract review and one current, packet-bound Q6 Production Logic audit. Model-based Harbor validation is separately blocked by missing CI credentials and is not being misrepresented as complete.
+Exactly one independent, packet-bound Q4 result and one independent, packet-bound Q6 result are still required. Model-based Harbor validation is separately blocked by missing CI credentials and is not being misrepresented as complete.
 
 ## Next action
 
-Generate fresh Q4 and Q6 packets for exact task commit `bf242838a5a985583d43e9ca919c03e4c3f9459d`, then obtain the single independent results required by the bounded quality interlock. Do not modify the task tree after freeze unless a concrete blocking defect is proven; any such change invalidates this freeze and its review binding.
+Run Q4 and Q6 once each in fresh independent reviewer chats using the exact packets above. If both return current PASS/SUFFICIENT results, record them and advance the bounded quality interlock. If either proves a concrete blocker, repair only that blocker and invalidate/re-freeze once as required; do not start a recursive general cold-review loop.
 
 ## Decisions that must survive chat changes
 
