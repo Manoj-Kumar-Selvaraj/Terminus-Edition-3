@@ -1,6 +1,9 @@
 from __future__ import annotations
 
+import copy
 import json
+import platform
+import shutil
 import subprocess
 import sys
 from pathlib import Path
@@ -11,11 +14,16 @@ import pytest
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / ".terminus"))
 
+from execution.authority import ExecutionAuthority  # noqa: E402
 from execution.controller_cli import _continue_payload  # noqa: E402
 from execution.executor import ExecutorMode  # noqa: E402
 from execution.handoff import ExecutorHandoffBuilder  # noqa: E402
 from execution.invocation import StageInvocationBuilder  # noqa: E402
+from execution.record import ExecutionRecordBuilder  # noqa: E402
 from execution.runner import ExecutorRunner  # noqa: E402
+from execution.schema_validation import ExecutorSchemaValidator  # noqa: E402
+from retrieval.models import InvocationContext  # noqa: E402
+from retrieval.policy import RetrievalPolicy  # noqa: E402
 
 
 def _head() -> str:
@@ -27,82 +35,33 @@ def _head() -> str:
     ).stdout.strip()
 
 
-def _invocation() -> dict[str, object]:
-    packet: dict[str, object] = {
-        "schema_version": "1.0",
-        "readiness": "READY",
-        "stage": {
-            "stage_id": "RULE_RESOLUTION",
-            "role_id": "CREATION_CONTROLLER",
-            "owner": "Creation Controller",
-            "role_class": "CONTROLLER",
-            "lifecycle": "creation",
-        },
-        "authority": {
-            "control_plane_commit": "a" * 40,
-            "task_id": "executor-test",
-            "task_commit": "b" * 40,
-            "policy_versions": {},
-        },
-        "inputs": {"required": {"CREATION_REQUEST": "test"}, "optional": {}},
-        "missing_required_inputs": [],
-        "ignored_input_count": 0,
-        "evidence": {
-            "retrieval_mode": "EXACT_ONLY",
-            "mandatory_exact_reads": [".terminus/AGENT_SYSTEM.md"],
-            "authorized_evidence_classes": ["CONTROL_PLANE_POLICY"],
-            "excluded_evidence_classes": [],
-            "evidence_required": ["rules"],
-        },
-        "retrieval": {
-            "status": "NOT_REQUESTED",
-            "query": None,
-            "retrieved_context": [],
-            "retrieved_chars": 0,
-        },
-        "output_contract": {
-            "allowed_status_values": ["RULES_RESOLVED", "BLOCKED"],
-            "required_fields": ["CONTROL_PLANE_COMMIT"],
-            "optional_fields": [],
-            "persisted_artifacts": [],
-            "deterministic_validators": [],
-            "semantic_reviewers": [],
-        },
-        "acceptance_predicates": {},
-        "routing": {
-            "failure_routes": {},
-            "success_transition": "WORK_PACKAGE_RESEARCH",
-            "stale_on": [],
-        },
-    }
-    packet["invocation_id"] = StageInvocationBuilder._invocation_id(packet)
-    return packet
-
-
-def _write_executor(path: Path, *, bad_json: bool = False) -> None:
-    if bad_json:
-        path.write_text("print('not-json')\n", encoding="utf-8")
-        return
-    path.write_text(
-        """import json, sys
-handoff = json.load(sys.stdin)
-result = {
-    'schema_version': '1.0',
-    'invocation_id': handoff['invocation_id'],
-    'output_task_commit': 'b' * 40,
-    'status': 'RULES_RESOLVED',
-    'outputs': {'CONTROL_PLANE_COMMIT': 'a' * 40},
-    'evidence_refs': [],
-}
-json.dump(result, sys.stdout)
-""",
-        encoding="utf-8",
+def _invocation(stage_id: str = "RULE_RESOLUTION") -> dict[str, object]:
+    commit = _head()
+    policy = RetrievalPolicy(ROOT)
+    role_id = ExecutionAuthority(policy).primary_role_for_stage(stage_id)
+    required = policy.stages[stage_id]["input_contract"]["required_fields"]
+    inputs = {str(field): {"test": str(field)} for field in required}
+    return StageInvocationBuilder(ROOT, policy).build(
+        InvocationContext(
+            stage_id=stage_id,
+            role_id=role_id,
+            task_id="executor-test",
+            task_commit=commit,
+            control_plane_commit=commit,
+        ),
+        inputs,
     )
+
+
+def _rehash(packet: dict[str, object]) -> None:
+    identity = dict(packet)
+    identity.pop("invocation_id", None)
+    packet["invocation_id"] = StageInvocationBuilder._invocation_id(identity)
 
 
 def test_manual_chat_handoff_is_deterministic_and_explicit() -> None:
     invocation = _invocation()
-    builder = ExecutorHandoffBuilder()
+    builder = ExecutorHandoffBuilder(ROOT)
     first = builder.build(invocation, executor_mode=ExecutorMode.MANUAL_CHAT)
     second = builder.build(invocation, executor_mode=ExecutorMode.MANUAL_CHAT)
     assert first["handoff_id"] == second["handoff_id"]
@@ -110,71 +69,171 @@ def test_manual_chat_handoff_is_deterministic_and_explicit() -> None:
     assert first["invocation_id"] == invocation["invocation_id"]
     assert "DO:" in first["handoff_text"]
     assert "DO NOT:" in first["handoff_text"]
-    assert "Return exactly one JSON object" in first["handoff_text"]
+    assert "handoff_id" in first["result_contract"]["required_top_level_fields"]
     assert any("next workflow stage" in item for item in first["do_not"])
-    assert any("execution records" in item for item in first["do_not"])
 
 
-def test_tampered_invocation_is_rejected_before_handoff() -> None:
-    invocation = _invocation()
+def test_rehashed_evidence_widening_is_rejected_before_handoff() -> None:
+    invocation = copy.deepcopy(_invocation())
+    invocation["evidence"]["authorized_evidence_classes"].append("SOLVER_VISIBLE_TASK")
+    _rehash(invocation)
+    with pytest.raises(ValueError, match="authorized evidence classes"):
+        ExecutorHandoffBuilder(ROOT).build(invocation, executor_mode="MANUAL_CHAT")
+
+
+def test_rehashed_role_change_is_rejected_before_handoff() -> None:
+    invocation = copy.deepcopy(_invocation())
     invocation["stage"]["role_id"] = "CI_ORCHESTRATOR"
-    with pytest.raises(ValueError, match="invocation_id does not match"):
-        ExecutorHandoffBuilder().build(invocation, executor_mode="MANUAL_CHAT")
+    _rehash(invocation)
+    with pytest.raises(ValueError, match="not authorized to execute"):
+        ExecutorHandoffBuilder(ROOT).build(invocation, executor_mode="MANUAL_CHAT")
 
 
-def test_non_ready_invocation_is_not_executable() -> None:
+def test_rehashed_routing_change_is_rejected_before_handoff() -> None:
+    invocation = copy.deepcopy(_invocation())
+    invocation["routing"]["success_transition"] = "END"
+    _rehash(invocation)
+    with pytest.raises(ValueError, match="routing does not match canonical"):
+        ExecutorHandoffBuilder(ROOT).build(invocation, executor_mode="MANUAL_CHAT")
+
+
+def test_rehashed_unauthorized_retrieval_is_rejected_before_handoff() -> None:
+    invocation = copy.deepcopy(_invocation())
+    content = "private oracle content"
+    invocation["retrieval"] = {
+        "status": "INDEXED_CONTEXT",
+        "query": "oracle",
+        "retrieved_context": [
+            {
+                "source_kind": "SOLUTION_ORACLE",
+                "evidence_class": "SOLUTION_ORACLE",
+                "source_path": "executor-test/solution/solve.py",
+                "content": content,
+                "content_hash": "sha256:"
+                + __import__("hashlib").sha256(content.encode()).hexdigest(),
+                "truncated": False,
+            }
+        ],
+        "retrieved_chars": len(content),
+    }
+    _rehash(invocation)
+    with pytest.raises(ValueError, match="evidence class is not authorized"):
+        ExecutorHandoffBuilder(ROOT).build(invocation, executor_mode="MANUAL_CHAT")
+
+
+def test_local_command_rejects_mutating_role_class() -> None:
+    with pytest.raises(ValueError, match="read-only.*PRODUCER/FIXER"):
+        ExecutorHandoffBuilder(ROOT).build(
+            _invocation("WORK_PACKAGE_RESEARCH"),
+            executor_mode=ExecutorMode.LOCAL_COMMAND,
+        )
+
+
+@pytest.mark.skipif(
+    platform.system() != "Linux" or shutil.which("bwrap") is None,
+    reason="bubblewrap sandbox is required",
+)
+def test_local_command_is_sandboxed_read_only_and_repo_hidden() -> None:
     invocation = _invocation()
-    invocation["readiness"] = "BLOCKED_MISSING_INPUTS"
-    identity = dict(invocation)
-    identity.pop("invocation_id")
-    invocation["invocation_id"] = StageInvocationBuilder._invocation_id(identity)
-    with pytest.raises(ValueError, match="requires a READY"):
-        ExecutorHandoffBuilder().build(invocation, executor_mode="MANUAL_CHAT")
-
-
-def test_local_command_round_trip_is_shell_free_and_non_mutating(tmp_path: Path) -> None:
-    script = tmp_path / "executor.py"
-    _write_executor(script)
+    protected = str(ROOT / ".terminus" / "AGENT_SYSTEM.md")
+    code = f"""import json, os, sys
+handoff = json.load(sys.stdin)
+write_ok = True
+try:
+    open('/workspace/probe.txt', 'w').write('x')
+except OSError:
+    write_ok = False
+json.dump({{
+    'schema_version':'1.0',
+    'handoff_id':handoff['handoff_id'],
+    'invocation_id':handoff['invocation_id'],
+    'output_task_commit':handoff['authority']['task_commit'],
+    'status':'BLOCKED',
+    'outputs':{{'repo_visible':os.path.exists({protected!r}),'write_ok':write_ok}},
+    'evidence_refs':[],
+    'blocking_reason':'transport test'
+}}, sys.stdout)
+"""
     response = ExecutorRunner(ROOT).run_local(
-        _invocation(),
-        [sys.executable, str(script)],
-        timeout_seconds=10,
+        invocation,
+        [sys.executable, "-c", code],
+        timeout_seconds=20,
     )
     assert response["status"] == "EXECUTED"
     assert response["command"]["shell"] is False
-    assert response["stage_result"]["status"] == "RULES_RESOLVED"
-    assert response["recorded"] is False
-    assert response["workflow_state_mutated"] is False
+    assert response["sandbox"]["backend"] == "BWRAP"
+    assert response["sandbox"]["read_only"] is True
+    assert response["sandbox"]["authoritative_repository_mounted"] is False
+    assert response["stage_result"]["outputs"]["repo_visible"] is False
+    assert response["stage_result"]["outputs"]["write_ok"] is False
 
 
-def test_local_command_rejects_non_json_result(tmp_path: Path) -> None:
-    script = tmp_path / "bad.py"
-    _write_executor(script, bad_json=True)
+@pytest.mark.skipif(
+    platform.system() != "Linux" or shutil.which("bwrap") is None,
+    reason="bubblewrap sandbox is required",
+)
+def test_local_command_enforces_live_output_limit() -> None:
     response = ExecutorRunner(ROOT).run_local(
         _invocation(),
-        [sys.executable, str(script)],
-        timeout_seconds=10,
+        [sys.executable, "-c", "import sys; sys.stdout.write('x' * 2000000)"],
+        timeout_seconds=20,
     )
-    assert response["status"] == "INVALID_RESULT"
+    assert response["status"] == "OUTPUT_LIMIT_EXCEEDED"
     assert response["stage_result"] is None
 
 
-def test_local_command_rejects_wrong_result_invocation_id(tmp_path: Path) -> None:
-    script = tmp_path / "wrong.py"
-    script.write_text(
-        """import json, sys
-json.load(sys.stdin)
-json.dump({'schema_version':'1.0','invocation_id':'inv_' + '0'*64,'output_task_commit':'b'*40,'status':'BLOCKED','outputs':{},'evidence_refs':[]}, sys.stdout)
-""",
-        encoding="utf-8",
+def test_executor_stage_result_requires_exact_handoff_id() -> None:
+    handoff = ExecutorHandoffBuilder(ROOT).build(
+        _invocation(), executor_mode=ExecutorMode.MANUAL_CHAT
     )
-    response = ExecutorRunner(ROOT).run_local(
-        _invocation(),
-        [sys.executable, str(script)],
-        timeout_seconds=10,
+    result = {
+        "schema_version": "1.0",
+        "handoff_id": "handoff_" + "0" * 64,
+        "invocation_id": handoff["invocation_id"],
+        "output_task_commit": handoff["authority"]["task_commit"],
+        "status": "BLOCKED",
+        "outputs": {},
+        "evidence_refs": [],
+        "blocking_reason": "test",
+    }
+    from execution.executor import validate_stage_result_shape
+
+    with pytest.raises(ValueError, match="handoff_id does not match"):
+        validate_stage_result_shape(
+            result,
+            invocation_id=str(handoff["invocation_id"]),
+            handoff_id=str(handoff["handoff_id"]),
+        )
+
+
+def test_handoff_id_is_persisted_in_execution_record() -> None:
+    invocation = _invocation()
+    handoff = ExecutorHandoffBuilder(ROOT).build(
+        invocation, executor_mode=ExecutorMode.MANUAL_CHAT
     )
-    assert response["status"] == "INVALID_RESULT"
-    assert "does not match handoff" in response["stderr_summary"]
+    result = {
+        "schema_version": "1.0",
+        "handoff_id": handoff["handoff_id"],
+        "invocation_id": invocation["invocation_id"],
+        "output_task_commit": invocation["authority"]["task_commit"],
+        "status": "BLOCKED",
+        "outputs": {},
+        "evidence_refs": [],
+        "blocking_reason": "test block",
+    }
+    record = ExecutionRecordBuilder(ROOT).build(invocation, result)
+    assert record["handoff_id"] == handoff["handoff_id"]
+
+
+def test_runtime_schema_validation_rejects_invalid_handoff() -> None:
+    validator = ExecutorSchemaValidator(ROOT)
+    handoff = ExecutorHandoffBuilder(ROOT).build(
+        _invocation(), executor_mode=ExecutorMode.MANUAL_CHAT
+    )
+    bad = dict(handoff)
+    bad["unexpected"] = True
+    with pytest.raises(ValueError, match="schema validation failed"):
+        validator.validate_handoff(bad)
 
 
 def test_prepare_is_non_mutating() -> None:
@@ -188,7 +247,9 @@ def test_prepare_is_non_mutating() -> None:
 def test_controller_continue_can_prepare_manual_handoff(tmp_path: Path) -> None:
     commit = _head()
     inputs = tmp_path / "inputs.json"
-    inputs.write_text(json.dumps({"CREATION_REQUEST": "executor bridge test"}), encoding="utf-8")
+    inputs.write_text(
+        json.dumps({"CREATION_REQUEST": "executor bridge test"}), encoding="utf-8"
+    )
     args = SimpleNamespace(
         task_id="executor-controller-test",
         task_commit=commit,
@@ -211,10 +272,7 @@ def test_controller_continue_can_prepare_manual_handoff(tmp_path: Path) -> None:
     payload = _continue_payload(ROOT, args, snapshot)
     assert payload["invocation"]["readiness"] == "READY"
     assert payload["executor_handoff"]["executor_mode"] == "MANUAL_CHAT"
-    assert (
-        payload["executor_handoff"]["invocation_id"]
-        == payload["invocation"]["invocation_id"]
-    )
+    assert payload["executor_handoff"]["invocation_id"] == payload["invocation"]["invocation_id"]
 
 
 def test_external_await_never_prepares_executor_handoff() -> None:
