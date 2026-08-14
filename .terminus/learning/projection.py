@@ -41,10 +41,9 @@ class LearningProjector:
             targets = lesson["targets"]
             stage_match = not targets["stages"] or stage_id in targets["stages"]
             role_match = not targets["roles"] or role_id in targets["roles"]
-            domain_match = (
-                not targets.get("domains")
-                or domain is None
-                or domain in targets.get("domains", [])
+            target_domains = targets.get("domains", [])
+            domain_match = not target_domains or (
+                domain is not None and domain in target_domains
             )
             if not (stage_match and role_match and domain_match):
                 continue
