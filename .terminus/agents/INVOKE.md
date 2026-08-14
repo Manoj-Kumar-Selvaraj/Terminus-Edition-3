@@ -1,6 +1,6 @@
 # Invoking a Terminus Specialist
 
-Invocation policy version: `1.1`
+Invocation policy version: `1.2`
 
 `PROTOCOL.md` defines the evidence contract. This file defines the operating sequence for one specialist review.
 
@@ -33,9 +33,30 @@ Q1/Q2/Q3/Q5/Q7 are producer/fixer agents and are routed directly by the Orchestr
 
 The generator refuses a dirty task or dirty governing reviewer policy, derives the task/control-plane commits, computes the role-contract hash, assigns a unique review ID, records `evidence_excluded`, validates schema v3, and writes an immutable `*.packet.json` beside the future result path.
 
+## Pre-dispatch freshness guard
+
+A generated packet is not permission to start a semantic review indefinitely. Immediately before giving the packet to a reviewer, run:
+
+```bash
+python3 .terminus/validate_review_invocation.py <path-to-packet.packet.json>
+```
+
+The command must return `REVIEW_INVOCATION_READY`. It fails closed when any of these are true:
+
+- the packet `task_commit` is no longer the current Git-derived task commit;
+- the task tree is dirty;
+- protocol, prompt, role-policy or role-contract provenance is stale;
+- a role-scoped evidence hash such as Q6 `review_scope_hash` changed;
+- packet path/result path binding is invalid; or
+- the immutable `review_output_path` already exists.
+
+`REVIEW_INVOCATION_BLOCKED` means **do not start semantic inspection**. Reconcile the task/controller state and, when a rerun is legitimately required, generate a new packet/review ID. Never work around the guard by opening an old packet manually or overwriting an existing result.
+
+For a remote/manual chat that cannot execute repository commands, the handoff must still state the packet path and exact expected `task_commit`. The reviewer must verify those against the live repository before semantic inspection and stop as stale/blocked on mismatch. The Orchestrator remains responsible for running or obtaining the deterministic guard before issuing the handoff.
+
 ## One role per chat
 
-Open a new chat for the role. Use the packet as the first review context. Do not reuse a producer/fixer chat or a chat that already performed another reviewer role when cold independence matters.
+Open a new chat for the role only after the pre-dispatch guard passes. Use the packet as the first review context. Do not reuse a producer/fixer chat or a chat that already performed another reviewer role when cold independence matters.
 
 For Q8, `difficulty-sim-gpt` and `difficulty-sim-claude` are separate cold executions. Do not show either perspective the other result before both freeze.
 
@@ -43,6 +64,11 @@ Invocation text:
 
 ```text
 You are the ROLE named in this Terminus context packet.
+
+Before semantic inspection, verify that this packet's exact task_commit is still the
+current Git-derived task commit and that its review_output_path does not already exist.
+If either check fails, stop and report the invocation as stale/blocked; do not perform
+the semantic review and do not overwrite historical evidence.
 
 Read the packet's authoritative_rules. For ordinary roles, read the matching role section
 in .terminus/agents/PROMPTS.md. For Q4/Q6/Q8 quality roles, read the matching section in
