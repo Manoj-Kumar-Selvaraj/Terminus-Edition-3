@@ -130,14 +130,20 @@ class ExecutorRunner:
                 projection=projection,
             )
         if process["return_code"] != 0:
+            stderr = str(process["stderr"])
+            status = (
+                "SANDBOX_UNAVAILABLE"
+                if stderr.lstrip().startswith("bwrap:")
+                else "COMMAND_FAILED"
+            )
             return self._runtime_response(
                 handoff=handoff,
                 attempt_id=attempt_id,
-                status="COMMAND_FAILED",
+                status=status,
                 command_hash=command_hash,
                 argv_count=len(argv_list),
                 return_code=process["return_code"],
-                stderr=str(process["stderr"]),
+                stderr=stderr,
                 stage_result=None,
                 projection=projection,
             )
