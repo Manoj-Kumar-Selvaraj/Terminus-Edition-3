@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import copy
+import json
 import subprocess
 from pathlib import Path
 from typing import Any, Mapping
@@ -10,6 +11,7 @@ from typing import Any, Mapping
 from remediation.progress import RemediationProgressValidator
 
 from .model import FindingState, content_hash, finding_identity
+from .normalizer import FindingNormalizer
 from .provenance import ProvenanceValidator
 from .registry import LearningStore
 from .schema_validation import LearningSchemaValidator
@@ -23,9 +25,8 @@ class FindingClosure:
         self.store = store or LearningStore(self.root)
         self.schemas = LearningSchemaValidator(self.root)
         self.provenance = ProvenanceValidator(self.root)
-        self.remediation = RemediationProgressValidator(
-            self.root, store=self.store
-        )
+        self.normalizer = FindingNormalizer(self.root, store=self.store)
+        self.remediation = RemediationProgressValidator(self.root, store=self.store)
 
     def mark_repaired(
         self,
@@ -34,7 +35,6 @@ class FindingClosure:
         *,
         remediation_id: str,
     ) -> dict[str, Any]:
-        """Move to REPAIRED only after the bound remediation ledger is complete."""
         finding = self._latest(finding_id)
         if finding["state"] not in {"OPEN", "ASSIGNED"}:
             raise ValueError(
@@ -63,12 +63,9 @@ class FindingClosure:
         *,
         resolution_feedback: list[Mapping[str, Any]],
     ) -> dict[str, Any]:
-        """Retire a conflict only after evidence resolves this exact finding."""
         finding = self._latest(finding_id)
         if finding["state"] not in {"FEEDBACK_CONFLICT", "POLICY_CONFLICT"}:
-            raise ValueError(
-                "only feedback/policy conflicts can use conflict resolution"
-            )
+            raise ValueError("only feedback/policy conflicts can use conflict resolution")
         binding = self._conflict_binding(finding)
         feedback_ids: list[str] = []
         for event in resolution_feedback:
@@ -84,9 +81,7 @@ class FindingClosure:
             )
         updated = copy.deepcopy(finding)
         updated["state"] = FindingState.WONT_FIX.value
-        updated["closure"]["verified_by_feedback"] = list(
-            dict.fromkeys(feedback_ids)
-        )
+        updated["closure"]["verified_by_feedback"] = list(dict.fromkeys(feedback_ids))
         self._append_same_identity(updated, finding_id)
         self.assert_conflict_resolved(updated)
         return updated
@@ -101,9 +96,7 @@ class FindingClosure:
     ) -> dict[str, Any]:
         finding = self._latest(finding_id)
         if finding["state"] != "REPAIRED":
-            raise ValueError(
-                "only REPAIRED findings can be independently verified"
-            )
+            raise ValueError("only REPAIRED findings can be independently verified")
         if verifier_role in set(finding["ownership"]["repair_roles"]):
             raise ValueError("a repair owner cannot verify its own finding")
         if verifier_role != finding["closure"]["verification_owner"]:
@@ -133,19 +126,14 @@ class FindingClosure:
         if not feedback_ids:
             raise ValueError("verification requires at least one feedback event")
         updated = copy.deepcopy(finding)
-        updated["state"] = (
-            FindingState.CLOSED.value if close else FindingState.VERIFIED.value
-        )
-        updated["closure"]["verified_by_feedback"] = list(
-            dict.fromkeys(feedback_ids)
-        )
+        updated["state"] = FindingState.CLOSED.value if close else FindingState.VERIFIED.value
+        updated["closure"]["verified_by_feedback"] = list(dict.fromkeys(feedback_ids))
         self._append_same_identity(updated, finding_id)
         self.assert_learning_eligible(updated)
         return updated
 
     def assert_repaired_authorized(self, finding: Mapping[str, Any]) -> None:
-        """Replay the exact remediation proof for a persisted REPAIRED row."""
-        self.schemas.validate("finding", finding)
+        finding = self.normalizer.validate_persisted_finding(finding)
         if finding.get("state") != "REPAIRED":
             raise ValueError("finding is not in REPAIRED state")
         repaired_commit = finding["closure"].get("repaired_task_commit")
@@ -161,8 +149,7 @@ class FindingClosure:
         )
 
     def assert_learning_eligible(self, finding: Mapping[str, Any]) -> None:
-        """Replay both remediation and closure evidence before learning."""
-        self.schemas.validate("finding", finding)
+        finding = self.normalizer.validate_persisted_finding(finding)
         if finding.get("state") not in {"VERIFIED", "CLOSED"}:
             raise ValueError("finding is not independently verified/closed")
         repaired_commit = finding["closure"].get("repaired_task_commit")
@@ -181,9 +168,7 @@ class FindingClosure:
         if not isinstance(feedback_ids, list) or not feedback_ids:
             raise ValueError("verified finding is missing verification feedback")
         for feedback_id in feedback_ids:
-            event = self.store.feedback.get_latest(
-                "feedback_id", str(feedback_id)
-            )
+            event = self.store.feedback.get_latest("feedback_id", str(feedback_id))
             if event is None:
                 raise ValueError(
                     f"verified finding references unavailable feedback: {feedback_id}"
@@ -196,8 +181,7 @@ class FindingClosure:
             )
 
     def assert_conflict_resolved(self, finding: Mapping[str, Any]) -> None:
-        """Replay exact conflict-resolution authority for a WONT_FIX row."""
-        self.schemas.validate("finding", finding)
+        finding = self.normalizer.validate_persisted_finding(finding)
         if finding.get("state") != "WONT_FIX":
             raise ValueError("finding is not a resolved conflict")
         feedback_ids = finding["closure"].get("verified_by_feedback", [])
@@ -205,9 +189,7 @@ class FindingClosure:
             raise ValueError("resolved conflict is missing resolution feedback")
         binding = self._conflict_binding(finding)
         for feedback_id in feedback_ids:
-            event = self.store.feedback.get_latest(
-                "feedback_id", str(feedback_id)
-            )
+            event = self.store.feedback.get_latest("feedback_id", str(feedback_id))
             if event is None:
                 raise ValueError(
                     f"resolved conflict references unavailable feedback: {feedback_id}"
@@ -218,6 +200,19 @@ class FindingClosure:
                 conflict_binding=binding,
             )
 
+    def verification_binding(self, finding: Mapping[str, Any]) -> dict[str, Any]:
+        remediation_id = finding["closure"].get("remediation_id")
+        repaired_commit = finding["closure"].get("repaired_task_commit")
+        if not isinstance(remediation_id, str) or not isinstance(repaired_commit, str):
+            raise ValueError("finding verification binding requires repaired remediation state")
+        return {
+            "finding_id": str(finding["finding_id"]),
+            "remediation_id": remediation_id,
+            "repaired_task_commit": repaired_commit,
+            "signal_ids": sorted(str(item) for item in finding["signals"]),
+            "closure_conditions_hash": content_hash(finding["closure"]["conditions"]),
+        }
+
     def _validate_verification_event(
         self,
         finding: Mapping[str, Any],
@@ -227,27 +222,39 @@ class FindingClosure:
         repaired_commit: str,
     ) -> None:
         self.schemas.validate("feedback", event)
+        authoritative = self.provenance.validate_feedback_event(event)
+        if not authoritative:
+            raise ValueError("verification feedback is not authenticated semantic authority")
         if event["task"]["task_id"] != finding["task_id"]:
             raise ValueError("verification feedback belongs to another task")
-        verification_task_commit = str(event["task"]["task_commit"])
-        if verification_task_commit != repaired_commit:
+        if str(event["task"]["task_commit"]) != repaired_commit:
             raise ValueError(
                 "verification feedback must bind the exact repaired_task_commit"
             )
+        expected_binding = self.verification_binding(finding)
         source = event["source"]
         provenance = event["provenance"]
         if verifier_role == "HUMAN_REVIEWER":
             if (
                 source["type"] != "HUMAN_REVIEW"
-                or provenance["trust_status"] != "HUMAN_ASSERTED"
+                or provenance["trust_status"] != "HUMAN_AUTHENTICATED"
             ):
                 raise ValueError(
-                    "human closure requires HUMAN_REVIEW asserted feedback"
+                    "human closure requires authenticated HUMAN_REVIEW feedback"
+                )
+            if event["observation"].get("category") != "FINDING_VERIFICATION":
+                raise ValueError(
+                    "human closure feedback must be classified FINDING_VERIFICATION"
+                )
+            detail = event["observation"].get("value")
+            if detail != {**expected_binding, "verification": "PASS"}:
+                raise ValueError(
+                    "human closure feedback is not bound to this exact remediation verification"
                 )
             return
         if provenance["trust_status"] != "REPOSITORY_RESOLVED":
             raise ValueError(
-                "verification feedback must resolve to canonical repository review evidence"
+                "verification feedback must resolve to authenticated repository review evidence"
             )
         if source["producer"] != verifier_role:
             raise ValueError(
@@ -255,15 +262,15 @@ class FindingClosure:
             )
         binding = provenance.get("source_binding")
         if not isinstance(binding, Mapping):
-            raise ValueError(
-                "verification feedback is missing canonical RESULT evidence"
-            )
+            raise ValueError("verification feedback is missing canonical RESULT evidence")
         self.provenance.validate_review_result(
             binding=binding,
             producer=verifier_role,
             task_id=str(finding["task_id"]),
             task_commit=repaired_commit,
             require_passing=True,
+            verification_binding=expected_binding,
+            require_authority=True,
         )
 
     def _validate_conflict_resolution_event(
@@ -274,6 +281,9 @@ class FindingClosure:
         conflict_binding: Mapping[str, Any],
     ) -> None:
         self.schemas.validate("feedback", event)
+        authoritative = self.provenance.validate_feedback_event(event)
+        if not authoritative:
+            raise ValueError("conflict resolution feedback is not authenticated authority")
         if event["task"]["task_id"] != finding["task_id"]:
             raise ValueError("conflict resolution feedback belongs to another task")
         if str(event["task"]["task_commit"]) != str(finding["task_commit"]):
@@ -281,9 +291,7 @@ class FindingClosure:
                 "conflict resolution must bind the exact conflicted task snapshot"
             )
         if event["observation"].get("category") != "CONFLICT_RESOLUTION":
-            raise ValueError(
-                "conflict resolution feedback must be explicitly classified"
-            )
+            raise ValueError("conflict resolution feedback must be explicitly classified")
         detail = event["observation"].get("value")
         if not isinstance(detail, Mapping):
             raise ValueError(
@@ -298,7 +306,7 @@ class FindingClosure:
         provenance = event["provenance"]
         if (
             source["type"] == "HUMAN_REVIEW"
-            and provenance["trust_status"] == "HUMAN_ASSERTED"
+            and provenance["trust_status"] == "HUMAN_AUTHENTICATED"
         ):
             return
         producer = str(source["producer"])
@@ -312,9 +320,7 @@ class FindingClosure:
             )
         source_binding = provenance.get("source_binding")
         if not isinstance(source_binding, Mapping):
-            raise ValueError(
-                "conflict resolution is missing canonical RESULT evidence"
-            )
+            raise ValueError("conflict resolution is missing canonical RESULT evidence")
         self.provenance.validate_review_result(
             binding=source_binding,
             producer=producer,
@@ -323,6 +329,7 @@ class FindingClosure:
             require_passing=True,
             conflict_resolution=True,
             conflict_binding=conflict_binding,
+            require_authority=True,
         )
 
     def _conflict_binding(self, finding: Mapping[str, Any]) -> dict[str, Any]:
@@ -333,8 +340,6 @@ class FindingClosure:
             elif finding.get("category") == "FEEDBACK_CONFLICT":
                 conflict_type = "FEEDBACK_CONFLICT"
             else:
-                # Historic WONT_FIX rows are not allowed to manufacture a new
-                # conflict type; the finding identity retains category/signals.
                 conflict_type = str(finding.get("category"))
         else:
             conflict_type = original_state
@@ -347,6 +352,8 @@ class FindingClosure:
         claims: list[dict[str, Any]] = []
         affected_gates: set[str] = set()
         policy_rule_hashes: set[str] = set()
+        decision_keys: set[str] = set()
+        required_values: set[str] = set()
         for feedback_id in signals:
             event = self.store.feedback.get_latest("feedback_id", feedback_id)
             if event is None:
@@ -354,6 +361,7 @@ class FindingClosure:
                     f"conflict finding references unavailable signal: {feedback_id}"
                 )
             self.schemas.validate("feedback", event)
+            self.provenance.validate_feedback_event(event)
             if event["task"]["task_id"] != finding["task_id"] or str(
                 event["task"]["task_commit"]
             ) != str(finding["task_commit"]):
@@ -374,13 +382,24 @@ class FindingClosure:
                 gate = value.get("affected_gate")
                 if isinstance(gate, str):
                     affected_gates.add(gate)
+                decision_key = value.get("decision_key")
+                if isinstance(decision_key, str):
+                    decision_keys.add(decision_key)
                 rules = value.get("rules")
                 if isinstance(rules, list):
                     for rule in rules:
-                        if isinstance(rule, Mapping) and isinstance(
-                            rule.get("rule_hash"), str
-                        ):
+                        if not isinstance(rule, Mapping):
+                            continue
+                        if isinstance(rule.get("rule_hash"), str):
                             policy_rule_hashes.add(str(rule["rule_hash"]))
+                        if "required_value" in rule:
+                            required_values.add(
+                                json.dumps(
+                                    rule.get("required_value"),
+                                    sort_keys=True,
+                                    separators=(",", ":"),
+                                )
+                            )
         binding: dict[str, Any] = {
             "finding_id": str(finding["finding_id"]),
             "conflict_type": conflict_type,
@@ -391,28 +410,30 @@ class FindingClosure:
             "conflicting_categories": sorted(categories),
         }
         if conflict_type == "POLICY_CONFLICT":
-            if len(affected_gates) != 1 or len(policy_rule_hashes) < 2:
+            if (
+                len(affected_gates) != 1
+                or len(policy_rule_hashes) < 2
+                or len(decision_keys) != 1
+                or len(required_values) < 2
+            ):
                 raise ValueError(
-                    "policy conflict lacks one affected gate and two exact rule hashes"
+                    "policy conflict lacks one decision, mutually exclusive values, affected gate, and exact rule hashes"
                 )
             binding["affected_gate"] = next(iter(affected_gates))
             binding["policy_rule_hashes"] = sorted(policy_rule_hashes)
+            binding["policy_decision_key"] = next(iter(decision_keys))
+            binding["policy_required_values"] = sorted(required_values)
         return binding
 
     def _latest(self, finding_id: str) -> dict[str, Any]:
         finding = self.store.findings.get_latest("finding_id", finding_id)
         if finding is None:
             raise ValueError(f"unknown finding_id: {finding_id}")
-        self.schemas.validate("finding", finding)
-        return finding
+        return self.normalizer.validate_persisted_finding(finding)
 
-    def _append_same_identity(
-        self, finding: dict[str, Any], expected_id: str
-    ) -> None:
+    def _append_same_identity(self, finding: dict[str, Any], expected_id: str) -> None:
         if finding_identity(finding) != expected_id:
-            raise ValueError(
-                "finding semantic identity changed during state transition"
-            )
+            raise ValueError("finding semantic identity changed during state transition")
         self.schemas.validate("finding", finding)
         self.store.record_finding(finding)
 

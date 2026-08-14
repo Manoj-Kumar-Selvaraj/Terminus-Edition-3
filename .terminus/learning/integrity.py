@@ -2,9 +2,11 @@
 
 from __future__ import annotations
 
+import copy
 from pathlib import Path
 from typing import Any, Mapping
 
+from authority.receipts import AuthorityReceiptValidator
 from execution.authority import ExecutionAuthority
 from retrieval.policy import RetrievalPolicy
 
@@ -14,11 +16,7 @@ from feedback.schema_validation import LearningSchemaValidator
 
 
 class LearningIntegrityValidator:
-    """Treat registries as persistence, never as semantic authority.
-
-    FindingClosure is resolved lazily so StageInvocation -> LearningProjector ->
-    integrity construction does not recursively construct an ExecutionRecordBuilder.
-    """
+    """Treat registries as persistence, never as semantic authority."""
 
     def __init__(self, root: Path, *, store: LearningStore | None = None):
         self.root = root.resolve()
@@ -26,6 +24,7 @@ class LearningIntegrityValidator:
         self.schemas = LearningSchemaValidator(self.root)
         self.policy = RetrievalPolicy(self.root)
         self.authority = ExecutionAuthority(self.policy)
+        self.semantic_authority = AuthorityReceiptValidator(self.root)
 
     def validate_terminal_finding(self, finding: Mapping[str, Any]) -> None:
         self.schemas.validate("finding", finding)
@@ -37,6 +36,20 @@ class LearningIntegrityValidator:
             closure.assert_learning_eligible(finding)
         elif state == "WONT_FIX":
             closure.assert_conflict_resolved(finding)
+
+    @staticmethod
+    def lesson_activation_claim(lesson: Mapping[str, Any]) -> dict[str, Any]:
+        return {
+            "lesson_id": lesson.get("lesson_id"),
+            "state": "ACTIVE",
+            "category": lesson.get("category"),
+            "failure_pattern": lesson.get("failure_pattern"),
+            "root_cause_class": lesson.get("root_cause_class"),
+            "future_rule": lesson.get("future_rule"),
+            "targets": copy.deepcopy(lesson.get("targets")),
+            "sources": sorted(str(item) for item in lesson.get("sources", [])),
+            "promotion": copy.deepcopy(lesson.get("promotion")),
+        }
 
     def validate_lesson(self, lesson: Mapping[str, Any]) -> None:
         self.schemas.validate("lesson", lesson)
@@ -72,6 +85,19 @@ class LearningIntegrityValidator:
             if finding is None:
                 raise ValueError(f"lesson source finding is unavailable: {source}")
             closure.assert_learning_eligible(finding)
+            if finding.get("category") != lesson.get("category"):
+                raise ValueError("lesson category does not match every source finding")
+            problem = finding.get("problem")
+            if not isinstance(problem, Mapping):
+                raise ValueError("lesson source finding problem is invalid")
+            if problem.get("generalized") != lesson.get("failure_pattern"):
+                raise ValueError(
+                    "lesson failure_pattern is not derived from every source finding"
+                )
+            if problem.get("root_cause_class") != lesson.get("root_cause_class"):
+                raise ValueError(
+                    "lesson root_cause_class does not match every source finding"
+                )
             findings.append(finding)
         distinct_tasks = len({str(item["task_id"]) for item in findings})
         expected_promotion = {
@@ -82,6 +108,14 @@ class LearningIntegrityValidator:
         if lesson.get("promotion") != expected_promotion:
             raise ValueError(
                 "lesson promotion does not match independently verified source findings"
+            )
+        if lesson.get("state") == "ACTIVE":
+            receipt = lesson.get("authority_receipt")
+            self.semantic_authority.verify(
+                receipt if isinstance(receipt, Mapping) else None,
+                action="LESSON_ACTIVATION",
+                principal="learning-curator",
+                claim=self.lesson_activation_claim(lesson),
             )
 
     def validate_pattern(self, pattern: Mapping[str, Any]) -> None:
@@ -100,6 +134,13 @@ class LearningIntegrityValidator:
                     f"pattern source finding is unavailable: {finding_id}"
                 )
             closure.assert_learning_eligible(finding)
+            if finding.get("category") != pattern.get("category"):
+                raise ValueError("pattern category does not match source finding")
+            problem = finding.get("problem")
+            if not isinstance(problem, Mapping) or problem.get(
+                "root_cause_class"
+            ) != pattern.get("root_cause_class"):
+                raise ValueError("pattern root_cause_class does not match source finding")
             findings.append(finding)
         task_ids = sorted({str(item["task_id"]) for item in findings})
         if list(pattern.get("task_ids", [])) != task_ids:

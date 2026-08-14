@@ -11,6 +11,7 @@ from execution.ledger import ExecutionLedger
 from retrieval.policy import RetrievalPolicy
 
 from feedback.model import stable_id
+from feedback.normalizer import FindingNormalizer
 from feedback.registry import LearningStore
 from feedback.schema_validation import LearningSchemaValidator
 
@@ -29,6 +30,7 @@ class RemediationPlanner:
         self.schemas = LearningSchemaValidator(self.root)
         self.policy = RetrievalPolicy(self.root)
         self.authority = ExecutionAuthority(self.policy)
+        self.normalizer = FindingNormalizer(self.root, store=self.store)
         contract = json.loads(
             (self.root / ".terminus" / "agents" / "stage_contracts.json").read_text(
                 encoding="utf-8"
@@ -40,7 +42,7 @@ class RemediationPlanner:
 
     def plan(self, finding: Mapping[str, Any]) -> dict[str, Any]:
         """Create the one canonical packet for the current finding/ledger point."""
-        self.schemas.validate("finding", finding)
+        finding = self.normalizer.validate_persisted_finding(finding)
         if finding["state"] in {"CLOSED", "VERIFIED", "WONT_FIX"}:
             raise ValueError("closed/verified findings do not require a remediation plan")
         if finding["state"] in {"FEEDBACK_CONFLICT", "POLICY_CONFLICT"}:
@@ -61,13 +63,8 @@ class RemediationPlanner:
         *,
         ledger_sequence_floor: int,
     ) -> dict[str, Any]:
-        """Deterministically derive every planner-owned packet field.
-
-        Consumers call this again before trusting a persisted remediation packet;
-        stage/role ownership, closure owner and semantic repair instructions are
-        therefore not accepted merely because a stored JSON object is schema-valid.
-        """
-        self.schemas.validate("finding", finding)
+        """Deterministically derive every planner-owned packet field."""
+        finding = self.normalizer.validate_persisted_finding(finding)
         if not isinstance(ledger_sequence_floor, int) or isinstance(
             ledger_sequence_floor, bool
         ) or ledger_sequence_floor < 0:

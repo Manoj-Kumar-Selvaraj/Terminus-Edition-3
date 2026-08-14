@@ -8,12 +8,15 @@ import subprocess
 from pathlib import Path
 from typing import Any, Mapping
 
+from authority.receipts import AuthorityReceiptValidator
 from execution.evidence_refs import EvidenceReferenceVerifier
 
 from .model import FeedbackSource, Severity, content_hash, feedback_identity
 from .provenance import ProvenanceValidator
 from .registry import LearningStore
 from .schema_validation import LearningSchemaValidator
+
+_REVIEW_SOURCES = frozenset({"INDEPENDENT_REVIEW", "REVIEWER_REVIEW", "FINAL_REVIEW"})
 
 
 class FeedbackIngestor:
@@ -23,6 +26,7 @@ class FeedbackIngestor:
         self.schemas = LearningSchemaValidator(self.root)
         self.evidence = EvidenceReferenceVerifier(self.root)
         self.provenance = ProvenanceValidator(self.root)
+        self.semantic_authority = AuthorityReceiptValidator(self.root)
 
     def capture(
         self,
@@ -39,6 +43,7 @@ class FeedbackIngestor:
         run_id: str | int | None = None,
         external_ref: str | None = None,
         source_binding: Mapping[str, Any] | None = None,
+        authority_receipt: Mapping[str, Any] | None = None,
         evidence: list[dict[str, Any]] | None = None,
         test_id: str | None = None,
         metric: str | None = None,
@@ -55,22 +60,6 @@ class FeedbackIngestor:
             source["run_id"] = run_id
         if external_ref:
             source["external_ref"] = external_ref
-
-        validated_binding = self._source_binding(
-            source_kind=source_kind,
-            producer=producer.strip(),
-            task_id=task_id,
-            task_commit=task_commit,
-            run_id=run_id,
-            source_binding=source_binding,
-        )
-        if source_kind is FeedbackSource.HUMAN_REVIEW:
-            trust_status = "HUMAN_ASSERTED"
-        elif self.evidence.is_resolved(validated_binding):
-            trust_status = "REPOSITORY_RESOLVED"
-        else:
-            trust_status = "EXTERNAL_POINTER_ONLY"
-
         observation: dict[str, Any] = {
             "severity": Severity(severity).value,
             "message": message.strip(),
@@ -93,9 +82,34 @@ class FeedbackIngestor:
                 self.evidence.validate(item, index)
                 for index, item in enumerate(evidence)
             ]
-
         captured = captured_at or dt.datetime.now(dt.timezone.utc).isoformat().replace(
             "+00:00", "Z"
+        )
+        validated_binding = self._source_binding(
+            source_kind=source_kind,
+            producer=producer.strip(),
+            task_id=task_id,
+            task_commit=task_commit,
+            run_id=run_id,
+            source_binding=source_binding,
+            authority_receipt=authority_receipt,
+            source=source,
+            observation=observation,
+            captured_at=captured,
+        )
+        claim = self.authority_claim(
+            source=source,
+            task={"task_id": task_id, "task_commit": task_commit},
+            observation=observation,
+            captured_at=captured,
+            source_binding=validated_binding,
+        )
+        trust_status = self._trust_status(
+            source_kind=source_kind,
+            producer=producer.strip(),
+            binding=validated_binding,
+            authority_receipt=authority_receipt,
+            claim=claim,
         )
         event: dict[str, Any] = {
             "schema_version": "1.0",
@@ -107,6 +121,9 @@ class FeedbackIngestor:
                 "content_hash": "",
                 "trust_status": trust_status,
                 "source_binding": validated_binding,
+                "authority_receipt": copy.deepcopy(authority_receipt)
+                if authority_receipt is not None
+                else None,
             },
         }
         hash_payload = copy.deepcopy(event)
@@ -117,6 +134,25 @@ class FeedbackIngestor:
         self.store.record_feedback(event)
         return event
 
+    @staticmethod
+    def authority_claim(
+        *,
+        source: Mapping[str, Any],
+        task: Mapping[str, Any],
+        observation: Mapping[str, Any],
+        captured_at: str,
+        source_binding: Mapping[str, Any] | None,
+    ) -> dict[str, Any]:
+        return {
+            "source": copy.deepcopy(dict(source)),
+            "task": copy.deepcopy(dict(task)),
+            "observation": copy.deepcopy(dict(observation)),
+            "captured_at": captured_at,
+            "source_binding": copy.deepcopy(dict(source_binding))
+            if isinstance(source_binding, Mapping)
+            else None,
+        }
+
     def _source_binding(
         self,
         *,
@@ -126,6 +162,10 @@ class FeedbackIngestor:
         task_commit: str,
         run_id: str | int | None,
         source_binding: Mapping[str, Any] | None,
+        authority_receipt: Mapping[str, Any] | None,
+        source: Mapping[str, Any],
+        observation: Mapping[str, Any],
+        captured_at: str,
     ) -> dict[str, Any] | None:
         if source_kind is FeedbackSource.HUMAN_REVIEW:
             if source_binding is None:
@@ -135,6 +175,22 @@ class FeedbackIngestor:
             raise ValueError(
                 f"{source_kind.value} feedback requires immutable source_binding evidence"
             )
+        if source_kind.value in _REVIEW_SOURCES:
+            return self.provenance.validate_source_binding(
+                source_type=source_kind.value,
+                producer=producer,
+                task_id=task_id,
+                task_commit=task_commit,
+                run_id=run_id,
+                binding=source_binding,
+            )
+        claim = self.authority_claim(
+            source=source,
+            task={"task_id": task_id, "task_commit": task_commit},
+            observation=observation,
+            captured_at=captured_at,
+            source_binding=source_binding,
+        )
         return self.provenance.validate_source_binding(
             source_type=source_kind.value,
             producer=producer,
@@ -142,7 +198,38 @@ class FeedbackIngestor:
             task_commit=task_commit,
             run_id=run_id,
             binding=source_binding,
+            authority_receipt=authority_receipt,
+            authority_claim=claim,
         )
+
+    def _trust_status(
+        self,
+        *,
+        source_kind: FeedbackSource,
+        producer: str,
+        binding: Mapping[str, Any] | None,
+        authority_receipt: Mapping[str, Any] | None,
+        claim: Mapping[str, Any],
+    ) -> str:
+        if source_kind is FeedbackSource.HUMAN_REVIEW:
+            if authority_receipt is None:
+                return "HUMAN_ASSERTED"
+            self.semantic_authority.verify(
+                authority_receipt,
+                action="HUMAN_FEEDBACK",
+                principal=f"human:{producer}",
+                claim=claim,
+            )
+            return "HUMAN_AUTHENTICATED"
+        if source_kind.value in _REVIEW_SOURCES:
+            return (
+                "REPOSITORY_RESOLVED"
+                if isinstance(binding, Mapping) and self.evidence.is_resolved(binding)
+                else "EXTERNAL_POINTER_ONLY"
+            )
+        if isinstance(binding, Mapping) and self.evidence.is_resolved(binding):
+            return "REPOSITORY_RESOLVED"
+        return "EXTERNAL_POINTER_ONLY"
 
     def _require_commit(self, commit: str) -> None:
         result = subprocess.run(

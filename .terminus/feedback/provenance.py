@@ -2,12 +2,14 @@
 
 from __future__ import annotations
 
+import copy
 import json
 import subprocess
 from pathlib import Path, PurePosixPath
 from typing import Any, Mapping
 from urllib.parse import unquote
 
+from authority.receipts import AuthorityReceiptValidator
 from execution.evidence_refs import EvidenceReferenceVerifier
 from execution.ledger import ExecutionLedger
 from retrieval.policy import RetrievalPolicy
@@ -17,6 +19,8 @@ from review_contract import (
     role_contract_hash,
     validate_schema,
 )
+
+from .model import content_hash, feedback_identity
 
 _PASSING = frozenset({"PASS", "APPROVE", "APPROVE_WITH_NOTE"})
 _ROLE_BY_PRODUCER = {
@@ -58,6 +62,79 @@ class ProvenanceValidator:
         self.root = root.resolve()
         self.evidence = EvidenceReferenceVerifier(self.root)
         self.policy = RetrievalPolicy(self.root)
+        self.semantic_authority = AuthorityReceiptValidator(self.root)
+
+    def validate_feedback_event(self, event: Mapping[str, Any]) -> bool:
+        """Replay event identity/provenance and return whether it is authoritative."""
+        value = self._json_copy(event, "feedback event")
+        feedback_id = value.get("feedback_id")
+        provenance = value.get("provenance")
+        source = value.get("source")
+        task = value.get("task")
+        observation = value.get("observation")
+        if not isinstance(provenance, Mapping):
+            raise ValueError("feedback event provenance is invalid")
+        if not isinstance(source, Mapping) or not isinstance(task, Mapping):
+            raise ValueError("feedback event source/task is invalid")
+        if not isinstance(observation, Mapping):
+            raise ValueError("feedback event observation is invalid")
+        hash_payload = copy.deepcopy(value)
+        hash_payload.pop("feedback_id", None)
+        hash_payload["provenance"].pop("content_hash", None)
+        if provenance.get("content_hash") != content_hash(hash_payload):
+            raise ValueError("feedback event content_hash does not match event content")
+        if feedback_identity(value) != feedback_id:
+            raise ValueError("feedback_id does not match canonical feedback identity")
+
+        source_type = str(source.get("type"))
+        producer = str(source.get("producer"))
+        task_id = str(task.get("task_id"))
+        task_commit = str(task.get("task_commit"))
+        binding = provenance.get("source_binding")
+        receipt = provenance.get("authority_receipt")
+        claim = self._feedback_authority_claim(value)
+        trust = str(provenance.get("trust_status"))
+
+        if trust == "HUMAN_AUTHENTICATED":
+            if source_type != "HUMAN_REVIEW":
+                raise ValueError("HUMAN_AUTHENTICATED trust requires HUMAN_REVIEW")
+            self.semantic_authority.verify(
+                receipt if isinstance(receipt, Mapping) else None,
+                action="HUMAN_FEEDBACK",
+                principal=f"human:{producer}",
+                claim=claim,
+            )
+            return True
+        if trust in {"UNAUTHENTICATED", "HUMAN_ASSERTED", "EXTERNAL_POINTER_ONLY"}:
+            return False
+        if trust != "REPOSITORY_RESOLVED":
+            raise ValueError("feedback event has unknown trust status")
+        if not isinstance(binding, Mapping):
+            raise ValueError("repository-resolved feedback requires source_binding")
+        if source_type in _REVIEW_FEEDBACK_SOURCES:
+            self.validate_review_result(
+                binding=binding,
+                producer=producer,
+                task_id=task_id,
+                task_commit=task_commit,
+                require_passing=False,
+                require_sufficient=False,
+                require_confidence=False,
+                require_current_contract=False,
+                require_authority=True,
+            )
+            return True
+        self.validate_source_binding(
+            source_type=source_type,
+            producer=producer,
+            task_id=task_id,
+            task_commit=task_commit,
+            run_id=source.get("run_id"),
+            binding=binding,
+            authority_receipt=receipt if isinstance(receipt, Mapping) else None,
+            authority_claim=claim,
+        )
+        return True
 
     def validate_source_binding(
         self,
@@ -68,20 +145,18 @@ class ProvenanceValidator:
         task_commit: str,
         run_id: str | int | None,
         binding: Mapping[str, Any],
+        authority_receipt: Mapping[str, Any] | None = None,
+        authority_claim: Mapping[str, Any] | None = None,
     ) -> dict[str, Any]:
         validated = self.evidence.validate(binding, 0)
         ref = validated.get("ref")
         if not isinstance(ref, str) or not ref.startswith("git:"):
-            # External pointers are content-addressed provenance only. They are
-            # deliberately not upgraded to repository-authenticated authority.
             return validated
         evidence_commit, path, fragment = self._git_location(ref)
 
         if source_type in _REVIEW_FEEDBACK_SOURCES and path.startswith(
             f"{_REVIEW_NAMESPACE}{task_id}/"
         ):
-            # Historical canonical reviewer results remain useful feedback, but
-            # are deliberately not granted current closure authority here.
             return self.validate_review_result(
                 binding=validated,
                 producer=producer,
@@ -91,6 +166,7 @@ class ProvenanceValidator:
                 require_sufficient=False,
                 require_confidence=False,
                 require_current_contract=False,
+                require_authority=False,
             )
 
         if not path.startswith(_SOURCE_NAMESPACE):
@@ -101,6 +177,16 @@ class ProvenanceValidator:
             raise ValueError(
                 "repository-resolved automated feedback requires an immutable run_id"
             )
+        if authority_claim is None:
+            raise ValueError(
+                "repository-resolved automated feedback requires an exact signed authority claim"
+            )
+        self.semantic_authority.verify(
+            authority_receipt,
+            action="AUTOMATED_SOURCE",
+            principal=f"automation:{source_type}:{producer}",
+            claim=authority_claim,
+        )
         self._require_reachable(evidence_commit)
         payload = self._git_json(
             evidence_commit, path, "automated feedback source artifact"
@@ -123,7 +209,6 @@ class ProvenanceValidator:
             source_type=source_type,
             task_id=task_id,
             task_commit=task_commit,
-            run_id=accepted_identity,
             binding=validated,
         )
         return validated
@@ -190,9 +275,11 @@ class ProvenanceValidator:
         require_passing: bool,
         conflict_resolution: bool = False,
         conflict_binding: Mapping[str, Any] | None = None,
+        verification_binding: Mapping[str, Any] | None = None,
         require_sufficient: bool = True,
         require_confidence: bool = True,
         require_current_contract: bool = True,
+        require_authority: bool = True,
     ) -> dict[str, Any]:
         validated = self.evidence.validate(binding, 0)
         ref = validated.get("ref")
@@ -216,7 +303,6 @@ class ProvenanceValidator:
         role = self._canonical_role(producer)
         if role is None:
             raise ValueError(f"no canonical review role is registered for {producer}")
-
         schema = self._working_json(
             ".terminus/agents/schemas/review_result.schema.json"
         )
@@ -244,6 +330,22 @@ class ProvenanceValidator:
             raise ValueError(
                 "trusted review RESULT does not carry a passing outcome"
             )
+        role_output = payload.get("role_output")
+        if not isinstance(role_output, Mapping):
+            raise ValueError("trusted review RESULT role_output is invalid")
+        if require_authority:
+            receipt = role_output.get("AUTHORITY_RECEIPT")
+            self.semantic_authority.verify(
+                receipt if isinstance(receipt, Mapping) else None,
+                action="REVIEW_RESULT",
+                principal=f"reviewer:{role}",
+                claim=self.review_authority_claim(payload),
+            )
+        if verification_binding is not None:
+            if role_output.get("FINDING_VERIFICATION") != dict(verification_binding):
+                raise ValueError(
+                    "trusted review RESULT is not bound to the exact finding remediation verification"
+                )
         if conflict_resolution:
             self._validate_conflict_result(
                 payload,
@@ -292,6 +394,47 @@ class ProvenanceValidator:
             )
         return validated
 
+    def validate_policy_conflict_authority(
+        self,
+        *,
+        binding: Mapping[str, Any],
+        task_id: str,
+        task_commit: str,
+    ) -> dict[str, Any]:
+        validated = self.validate_review_result(
+            binding=binding,
+            producer="ADJUDICATOR",
+            task_id=task_id,
+            task_commit=task_commit,
+            require_passing=False,
+            require_sufficient=True,
+            require_confidence=True,
+            require_current_contract=False,
+            require_authority=True,
+        )
+        ref = str(validated["ref"])
+        evidence_commit, path, _fragment = self._git_location(ref)
+        payload = self._git_json(evidence_commit, path, "policy-conflict Adjudicator RESULT")
+        if payload.get("verdict") != "POLICY_CONFLICT":
+            raise ValueError("POLICY_CONFLICT authority requires Adjudicator POLICY_CONFLICT verdict")
+        self._validate_review_execution_authority(
+            role="Adjudicator",
+            payload=payload,
+            task_id=task_id,
+            task_commit=task_commit,
+            binding=validated,
+            conflict_resolution=True,
+        )
+        return payload
+
+    @staticmethod
+    def review_authority_claim(payload: Mapping[str, Any]) -> dict[str, Any]:
+        value = json.loads(json.dumps(payload, sort_keys=True, separators=(",", ":"), ensure_ascii=False))
+        role_output = value.get("role_output")
+        if isinstance(role_output, dict):
+            role_output.pop("AUTHORITY_RECEIPT", None)
+        return value
+
     def _validate_conflict_result(
         self,
         payload: Mapping[str, Any],
@@ -316,24 +459,21 @@ class ProvenanceValidator:
             "CONFLICT_TYPE": conflict_binding.get("conflict_type"),
             "CONFLICT_SIGNAL_IDS": conflict_binding.get("signal_ids"),
             "CONFLICT_SIGNAL_CLAIMS": conflict_binding.get("signal_claims"),
-            "CONFLICTING_CATEGORIES": conflict_binding.get(
-                "conflicting_categories"
-            ),
+            "CONFLICTING_CATEGORIES": conflict_binding.get("conflicting_categories"),
         }
         if conflict_binding.get("affected_gate") is not None:
             expected["AFFECTED_GATE"] = conflict_binding.get("affected_gate")
-            expected["POLICY_RULE_HASHES"] = conflict_binding.get(
-                "policy_rule_hashes"
-            )
+            expected["POLICY_RULE_HASHES"] = conflict_binding.get("policy_rule_hashes")
+        if conflict_binding.get("policy_decision_key") is not None:
+            expected["POLICY_DECISION_KEY"] = conflict_binding.get("policy_decision_key")
+            expected["POLICY_REQUIRED_VALUES"] = conflict_binding.get("policy_required_values")
         for key, value in expected.items():
             if role_output.get(key) != value:
                 raise ValueError(
                     f"Adjudicator conflict RESULT is not bound to exact conflict field {key}"
                 )
         if payload.get("verdict") not in _PASSING:
-            raise ValueError(
-                "Adjudicator conflict RESULT lacks a successful verdict"
-            )
+            raise ValueError("Adjudicator conflict RESULT lacks a successful verdict")
 
     def _canonical_role(self, producer: str) -> str | None:
         mapped = _ROLE_BY_PRODUCER.get(producer)
@@ -358,9 +498,7 @@ class ProvenanceValidator:
             raise ValueError(
                 "trusted review RESULT and packet must share the controlled review directory"
             )
-        packet = self._git_json(
-            evidence_commit, packet_path, "trusted review packet"
-        )
+        packet = self._git_json(evidence_commit, packet_path, "trusted review packet")
         packet_schema = self._working_json(
             ".terminus/agents/schemas/context_packet.schema.json"
         )
@@ -368,8 +506,7 @@ class ProvenanceValidator:
         validate_schema(packet, packet_schema, "context_packet", packet_errors)
         if packet_errors:
             raise ValueError(
-                "trusted review packet is not canonical: "
-                + "; ".join(packet_errors[:5])
+                "trusted review packet is not canonical: " + "; ".join(packet_errors[:5])
             )
         for key in (
             "review_id",
@@ -383,19 +520,12 @@ class ProvenanceValidator:
             "role",
         ):
             if packet.get(key) != payload.get(key):
-                raise ValueError(
-                    f"trusted review packet/result mismatch for {key}"
-                )
+                raise ValueError(f"trusted review packet/result mismatch for {key}")
         if packet.get("review_id") != review_id:
             raise ValueError("trusted review packet does not bind review_id")
         if packet.get("review_output_path") != result_path:
-            raise ValueError(
-                "trusted review packet does not bind the RESULT output path"
-            )
-        if (
-            packet.get("output_schema")
-            != ".terminus/agents/schemas/review_result.schema.json"
-        ):
+            raise ValueError("trusted review packet does not bind the RESULT output path")
+        if packet.get("output_schema") != ".terminus/agents/schemas/review_result.schema.json":
             raise ValueError(
                 "trusted review packet does not bind the canonical review-result schema"
             )
@@ -410,13 +540,6 @@ class ProvenanceValidator:
         binding: Mapping[str, Any],
         conflict_resolution: bool,
     ) -> None:
-        """Require a canonical controller execution to consume the review RESULT.
-
-        Git reachability and a mutually consistent packet/result are not enough:
-        current closure authority exists only when the immutable RESULT was also
-        consumed by a canonical StageInvocation/ExecutionRecord under the exact
-        task/control-plane snapshot.
-        """
         ledger = ExecutionLedger(self.root, task_id)
         events = ledger.load(validate_record_files=True)
         expected_control = str(payload["control_plane_commit"])
@@ -426,16 +549,15 @@ class ProvenanceValidator:
                 stage = self.policy.stages.get(str(record.get("stage_id")), {})
                 if stage.get("role_class") != "CONTROLLER":
                     continue
-                if not self._record_matches_review(
+                if self._record_matches_review(
                     record,
                     task_commit=task_commit,
                     control_plane_commit=expected_control,
                     binding=binding,
                 ):
-                    continue
-                return
+                    return
             raise ValueError(
-                "Adjudicator conflict RESULT is not consumed by a canonical controller execution"
+                "Adjudicator RESULT is not consumed by an authenticated canonical controller execution"
             )
 
         expected = _REVIEW_EXECUTION_BINDINGS.get(role)
@@ -456,13 +578,10 @@ class ProvenanceValidator:
             ):
                 continue
             outputs = record.get("outputs")
-            if not isinstance(outputs, Mapping):
-                continue
-            if outputs.get(output_field) != payload:
-                continue
-            return
+            if isinstance(outputs, Mapping) and outputs.get(output_field) == payload:
+                return
         raise ValueError(
-            "trusted review RESULT is not consumed by its canonical controller execution"
+            "trusted review RESULT is not consumed by its authenticated canonical controller execution"
         )
 
     def _validate_automated_execution_authority(
@@ -471,7 +590,6 @@ class ProvenanceValidator:
         source_type: str,
         task_id: str,
         task_commit: str,
-        run_id: str,
         binding: Mapping[str, Any],
     ) -> None:
         allowed_stages = _AUTOMATED_SOURCE_STAGES.get(source_type)
@@ -494,16 +612,13 @@ class ProvenanceValidator:
             }:
                 continue
             refs = record.get("evidence_refs")
-            if not isinstance(refs, list) or not any(
+            if isinstance(refs, list) and any(
                 isinstance(item, Mapping) and dict(item) == dict(binding)
                 for item in refs
             ):
-                continue
-            if not self._contains_scalar(record.get("outputs"), run_id):
-                continue
-            return
+                return
         raise ValueError(
-            "automated feedback attestation is not rooted in a canonical source-specific execution/run"
+            "automated feedback attestation is not rooted in an authenticated source-specific execution"
         )
 
     def _record_matches_review(
@@ -532,27 +647,38 @@ class ProvenanceValidator:
         )
 
     def _record_for_event(self, event: Mapping[str, Any]) -> dict[str, Any]:
+        from execution.record import ExecutionRecordBuilder
+
         path = (self.root / str(event["record_path"])).resolve()
         if self.root not in path.parents:
             raise ValueError("execution record path escapes repository root")
         value = json.loads(path.read_text(encoding="utf-8"))
         if not isinstance(value, dict):
             raise ValueError("execution record must be a JSON object")
-        return value
+        return ExecutionRecordBuilder(self.root).validate_execution_authority(value)
 
     @staticmethod
-    def _contains_scalar(value: Any, expected: str) -> bool:
-        if isinstance(value, Mapping):
-            return any(
-                ProvenanceValidator._contains_scalar(item, expected)
-                for item in value.values()
-            )
-        if isinstance(value, list):
-            return any(
-                ProvenanceValidator._contains_scalar(item, expected)
-                for item in value
-            )
-        return str(value) == expected
+    def _feedback_authority_claim(event: Mapping[str, Any]) -> dict[str, Any]:
+        provenance = event["provenance"]
+        return {
+            "source": copy.deepcopy(dict(event["source"])),
+            "task": copy.deepcopy(dict(event["task"])),
+            "observation": copy.deepcopy(dict(event["observation"])),
+            "captured_at": provenance["captured_at"],
+            "source_binding": copy.deepcopy(dict(provenance["source_binding"]))
+            if isinstance(provenance.get("source_binding"), Mapping)
+            else None,
+        }
+
+    @staticmethod
+    def _json_copy(value: Mapping[str, Any], label: str) -> dict[str, Any]:
+        try:
+            copied = json.loads(json.dumps(value, sort_keys=True, separators=(",", ":"), ensure_ascii=False))
+        except (TypeError, ValueError) as exc:
+            raise ValueError(f"{label} must be JSON-compatible") from exc
+        if not isinstance(copied, dict):
+            raise ValueError(f"{label} must be one JSON object")
+        return copied
 
     def _git_location(self, ref: str) -> tuple[str, str, str | None]:
         body = ref[len("git:") :]
@@ -611,6 +737,4 @@ class ProvenanceValidator:
             capture_output=True,
         )
         if result.returncode != 0:
-            raise ValueError(
-                f"{label} is not on the authorized repository lineage"
-            )
+            raise ValueError(f"{label} is not on the authorized repository lineage")

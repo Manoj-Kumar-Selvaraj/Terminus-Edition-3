@@ -35,7 +35,8 @@ class LessonRegistry:
         extra_stages: Iterable[str] = (),
         extra_roles: Iterable[str] = (),
         domains: Iterable[str] = (),
-        activate: bool = True,
+        activate: bool = False,
+        authority_receipt: Mapping[str, Any] | None = None,
     ) -> dict[str, Any]:
         self.schemas.validate("finding", finding)
         self.closure.assert_learning_eligible(finding)
@@ -56,9 +57,7 @@ class LessonRegistry:
         )
         lesson: dict[str, Any] = {
             "schema_version": "1.0",
-            "state": LessonState.ACTIVE.value
-            if activate
-            else LessonState.CANDIDATE.value,
+            "state": LessonState.ACTIVE.value if activate else LessonState.CANDIDATE.value,
             "category": finding["category"],
             "failure_pattern": finding["problem"]["generalized"],
             "root_cause_class": finding["problem"]["root_cause_class"],
@@ -87,6 +86,10 @@ class LessonRegistry:
             if activate:
                 merged["state"] = LessonState.ACTIVE.value
             lesson = merged
+        if authority_receipt is not None:
+            lesson["authority_receipt"] = copy.deepcopy(dict(authority_receipt))
+        elif lesson.get("state") != "ACTIVE":
+            lesson.pop("authority_receipt", None)
         self.schemas.validate("lesson", lesson)
         if lesson["state"] == LessonState.ACTIVE.value:
             self.integrity.validate_lesson(lesson)
@@ -94,12 +97,22 @@ class LessonRegistry:
             self.store.record_lesson(lesson)
         return lesson
 
-    def set_state(self, lesson_id: str, state: LessonState | str) -> dict[str, Any]:
+    def set_state(
+        self,
+        lesson_id: str,
+        state: LessonState | str,
+        *,
+        authority_receipt: Mapping[str, Any] | None = None,
+    ) -> dict[str, Any]:
         lesson = self.store.lessons.get_latest("lesson_id", lesson_id)
         if lesson is None:
             raise ValueError(f"unknown lesson_id: {lesson_id}")
         updated = copy.deepcopy(lesson)
         updated["state"] = LessonState(state).value
+        if authority_receipt is not None:
+            updated["authority_receipt"] = copy.deepcopy(dict(authority_receipt))
+        elif updated["state"] != LessonState.ACTIVE.value:
+            updated.pop("authority_receipt", None)
         if lesson_identity(updated) != lesson_id:
             raise ValueError("lesson semantic identity changed during state transition")
         self.schemas.validate("lesson", updated)

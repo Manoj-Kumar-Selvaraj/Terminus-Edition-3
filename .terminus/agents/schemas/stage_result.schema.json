@@ -25,6 +25,20 @@
         }
       }
     },
+    "authority_receipt": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["schema_version", "issuer", "principal", "action", "claim", "claim_hash", "signature"],
+      "properties": {
+        "schema_version": {"const": "1.0"},
+        "issuer": {"type": "string", "minLength": 1},
+        "principal": {"type": "string", "minLength": 1},
+        "action": {"const": "EXECUTION_RESULT"},
+        "claim": {"type": "object"},
+        "claim_hash": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"},
+        "signature": {"type": "string", "minLength": 1}
+      }
+    },
     "route_key": {"type": "string", "minLength": 1},
     "blocking_reason": {"type": "string", "minLength": 1}
   }

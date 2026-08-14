@@ -18,6 +18,7 @@ from feedback.model import FeedbackSource, Severity  # noqa: E402
 from feedback.normalizer import FindingNormalizer  # noqa: E402
 from feedback.registry import LearningStore  # noqa: E402
 from learning.context import LearningContextBuilder  # noqa: E402
+from learning.integrity import LearningIntegrityValidator  # noqa: E402
 from learning.recurrence import RecurrenceAnalyzer  # noqa: E402
 from learning.registry import LessonRegistry  # noqa: E402
 from remediation.planner import RemediationPlanner  # noqa: E402
@@ -62,10 +63,8 @@ def build_parser() -> argparse.ArgumentParser:
     add.add_argument("--role-hint")
     add.add_argument("--run-id")
     add.add_argument("--external-ref")
-    add.add_argument(
-        "--source-binding-json",
-        help="immutable evidence ref binding the claimed automated source event",
-    )
+    add.add_argument("--source-binding-json")
+    add.add_argument("--authority-receipt-json")
     add.add_argument("--test-id")
     add.add_argument("--metric")
     add.add_argument("--value-json")
@@ -73,7 +72,7 @@ def build_parser() -> argparse.ArgumentParser:
     add.add_argument("--evidence-json")
     add.add_argument("--captured-at")
 
-    normalize = sub.add_parser("normalize", help="normalize feedback into one canonical finding")
+    normalize = sub.add_parser("normalize", help="normalize authenticated feedback into one canonical finding")
     normalize.add_argument("--feedback-id", action="append", required=True)
     normalize.add_argument("--generalized", required=True)
     normalize.add_argument("--root-cause", required=True)
@@ -85,45 +84,40 @@ def build_parser() -> argparse.ArgumentParser:
     plan = sub.add_parser("plan", help="create a controlled remediation packet")
     plan.add_argument("--finding-id", required=True)
 
-    repaired = sub.add_parser(
-        "mark-repaired",
-        help="mark repaired only after the specified remediation packet is complete",
-    )
+    repaired = sub.add_parser("mark-repaired")
     repaired.add_argument("--finding-id", required=True)
     repaired.add_argument("--remediation-id", required=True)
     repaired.add_argument("--task-commit", required=True)
 
-    resolve_conflict = sub.add_parser(
-        "resolve-conflict",
-        help="adjudicate a feedback/policy conflict using trusted resolution feedback",
-    )
+    resolve_conflict = sub.add_parser("resolve-conflict")
     resolve_conflict.add_argument("--finding-id", required=True)
     resolve_conflict.add_argument("--feedback-id", action="append", required=True)
 
-    verify = sub.add_parser("verify", help="independently verify/close a repaired finding")
+    verify = sub.add_parser("verify")
     verify.add_argument("--finding-id", required=True)
     verify.add_argument("--verifier-role", required=True)
     verify.add_argument("--feedback-id", action="append", required=True)
     verify.add_argument("--verified-only", action="store_true")
 
-    learn = sub.add_parser("learn", help="extract or reinforce a generalized reusable lesson")
+    learn = sub.add_parser("learn", help="create a lesson candidate; activation requires signed curator authority")
     learn.add_argument("--finding-id", required=True)
     learn.add_argument("--future-rule", required=True)
     learn.add_argument("--extra-stage", action="append", default=[])
     learn.add_argument("--extra-role", action="append", default=[])
     learn.add_argument("--domain", action="append", default=[])
-    learn.add_argument("--candidate", action="store_true")
+    learn.add_argument("--activate", action="store_true")
+    learn.add_argument("--authority-receipt-json")
 
-    analyze = sub.add_parser("analyze", help="detect recurring patterns and policy candidates")
+    analyze = sub.add_parser("analyze")
     analyze.add_argument("--policy-threshold", type=int, default=3)
 
-    project = sub.add_parser("project", help="show the exact learning context for one agent invocation")
+    project = sub.add_parser("project")
     project.add_argument("--stage-id", required=True)
     project.add_argument("--role-id", required=True)
     project.add_argument("--task-id")
     project.add_argument("--task-commit")
 
-    sub.add_parser("status", help="summarize registry heads and latest states")
+    sub.add_parser("status")
     return parser
 
 
@@ -135,8 +129,10 @@ def main(argv: list[str] | None = None) -> int:
         if evidence is not None and not isinstance(evidence, list):
             raise ValueError("--evidence-json must decode to an array")
         source_binding = _json_arg(args.source_binding_json)
-        if source_binding is not None and not isinstance(source_binding, dict):
-            raise ValueError("--source-binding-json must decode to an object")
+        receipt = _json_arg(args.authority_receipt_json)
+        for label, value in (("--source-binding-json", source_binding), ("--authority-receipt-json", receipt)):
+            if value is not None and not isinstance(value, dict):
+                raise ValueError(f"{label} must decode to an object")
         return _emit(
             FeedbackIngestor(ROOT, store=store).capture(
                 source_type=args.source,
@@ -151,6 +147,7 @@ def main(argv: list[str] | None = None) -> int:
                 run_id=args.run_id,
                 external_ref=args.external_ref,
                 source_binding=source_binding,
+                authority_receipt=receipt,
                 test_id=args.test_id,
                 metric=args.metric,
                 value=_json_arg(args.value_json),
@@ -160,10 +157,9 @@ def main(argv: list[str] | None = None) -> int:
             )
         )
     if args.command == "normalize":
-        events = [_event(store, feedback_id) for feedback_id in args.feedback_id]
         return _emit(
             FindingNormalizer(ROOT, store=store).normalize(
-                events,
+                [_event(store, feedback_id) for feedback_id in args.feedback_id],
                 generalized_problem=args.generalized,
                 root_cause_class=args.root_cause,
                 repair_stages=args.repair_stage or None,
@@ -175,75 +171,35 @@ def main(argv: list[str] | None = None) -> int:
     if args.command == "plan":
         return _emit(RemediationPlanner(ROOT, store=store).plan(_finding(store, args.finding_id)))
     if args.command == "mark-repaired":
-        return _emit(
-            FindingClosure(ROOT, store=store).mark_repaired(
-                args.finding_id,
-                args.task_commit,
-                remediation_id=args.remediation_id,
-            )
-        )
+        return _emit(FindingClosure(ROOT, store=store).mark_repaired(args.finding_id, args.task_commit, remediation_id=args.remediation_id))
     if args.command == "resolve-conflict":
-        events = [_event(store, feedback_id) for feedback_id in args.feedback_id]
-        return _emit(
-            FindingClosure(ROOT, store=store).resolve_conflict(
-                args.finding_id,
-                resolution_feedback=events,
-            )
-        )
+        return _emit(FindingClosure(ROOT, store=store).resolve_conflict(args.finding_id, resolution_feedback=[_event(store, value) for value in args.feedback_id]))
     if args.command == "verify":
-        events = [_event(store, feedback_id) for feedback_id in args.feedback_id]
-        return _emit(
-            FindingClosure(ROOT, store=store).verify(
-                args.finding_id,
-                verifier_role=args.verifier_role,
-                verification_feedback=events,
-                close=not args.verified_only,
-            )
-        )
+        return _emit(FindingClosure(ROOT, store=store).verify(args.finding_id, verifier_role=args.verifier_role, verification_feedback=[_event(store, value) for value in args.feedback_id], close=not args.verified_only))
     if args.command == "learn":
-        return _emit(
-            LessonRegistry(ROOT, store=store).from_finding(
-                _finding(store, args.finding_id),
-                future_rule=args.future_rule,
-                extra_stages=args.extra_stage,
-                extra_roles=args.extra_role,
-                domains=args.domain,
-                activate=not args.candidate,
-            )
-        )
+        receipt = _json_arg(args.authority_receipt_json)
+        if receipt is not None and not isinstance(receipt, dict):
+            raise ValueError("--authority-receipt-json must decode to an object")
+        return _emit(LessonRegistry(ROOT, store=store).from_finding(_finding(store, args.finding_id), future_rule=args.future_rule, extra_stages=args.extra_stage, extra_roles=args.extra_role, domains=args.domain, activate=args.activate, authority_receipt=receipt))
     if args.command == "analyze":
-        return _emit(
-            RecurrenceAnalyzer(ROOT, store=store).analyze(
-                policy_candidate_distinct_tasks=args.policy_threshold
-            )
-        )
+        return _emit(RecurrenceAnalyzer(ROOT, store=store).analyze(policy_candidate_distinct_tasks=args.policy_threshold))
     if args.command == "project":
-        return _emit(
-            LearningContextBuilder(ROOT, store=store).build(
-                stage_id=args.stage_id,
-                role_id=args.role_id,
-                task_id=args.task_id,
-                task_commit=args.task_commit,
-            )
-        )
+        return _emit(LearningContextBuilder(ROOT, store=store).build(stage_id=args.stage_id, role_id=args.role_id, task_id=args.task_id, task_commit=args.task_commit))
     if args.command == "status":
         findings = store.findings.latest_by("finding_id")
         lessons = store.lessons.latest_by("lesson_id")
         patterns = store.patterns.latest_by("pattern_id")
-        return _emit(
-            {
-                "registry_heads": store.heads(),
-                "feedback_events": len(store.feedback.read()),
-                "findings": len(findings),
-                "finding_states": _counts(findings, "state"),
-                "lessons": len(lessons),
-                "lesson_states": _counts(lessons, "state"),
-                "patterns": len(patterns),
-                "policy_candidates": sum(
-                    1 for pattern in patterns if pattern.get("policy_candidate") is True
-                ),
-            }
-        )
+        integrity = LearningIntegrityValidator(ROOT, store=store)
+        active_lessons = []
+        for lesson in lessons:
+            if lesson.get("state") == "ACTIVE":
+                integrity.validate_lesson(lesson)
+                active_lessons.append(lesson)
+        trusted_patterns = []
+        for pattern in patterns:
+            integrity.validate_pattern(pattern)
+            trusted_patterns.append(pattern)
+        return _emit({"registry_heads": store.heads(), "feedback_events": len(store.feedback.read()), "findings": len(findings), "finding_states": _counts(findings, "state"), "lessons": len(lessons), "active_lessons": len(active_lessons), "lesson_states": _counts(lessons, "state"), "patterns": len(trusted_patterns), "policy_candidates": sum(1 for pattern in trusted_patterns if pattern.get("policy_candidate") is True)})
     raise AssertionError(args.command)
 
 

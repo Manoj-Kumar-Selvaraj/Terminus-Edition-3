@@ -139,7 +139,6 @@ class RemediationProgressValidator:
         finding = self.store.findings.get_latest("finding_id", finding_id)
         if finding is None:
             raise ValueError("remediation packet references an unavailable finding")
-        self.schemas.validate("finding", finding)
         expected = self.planner.expected_packet(
             finding,
             ledger_sequence_floor=int(packet["ledger_sequence_floor"]),
@@ -175,8 +174,6 @@ class RemediationProgressValidator:
         )
 
     def _record(self, event: Mapping[str, Any]) -> dict[str, Any]:
-        # Lazy import avoids the learning-context -> closure -> remediation cycle
-        # while retaining full canonical replay at the consumption boundary.
         from execution.record import ExecutionRecordBuilder
 
         path = (self.root / str(event["record_path"])).resolve()
@@ -185,4 +182,4 @@ class RemediationProgressValidator:
         value = json.loads(path.read_text(encoding="utf-8"))
         if not isinstance(value, dict):
             raise ValueError("remediation execution record must be an object")
-        return ExecutionRecordBuilder(self.root).validate_persisted_record(value)
+        return ExecutionRecordBuilder(self.root).validate_execution_authority(value)

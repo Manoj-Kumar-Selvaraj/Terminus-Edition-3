@@ -38,6 +38,20 @@
         "distinct_tasks": {"type": "integer", "minimum": 1},
         "policy_candidate": {"type": "boolean"}
       }
+    },
+    "authority_receipt": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["schema_version", "issuer", "principal", "action", "claim", "claim_hash", "signature"],
+      "properties": {
+        "schema_version": {"const": "1.0"},
+        "issuer": {"type": "string", "minLength": 1},
+        "principal": {"type": "string", "minLength": 1},
+        "action": {"const": "LESSON_ACTIVATION"},
+        "claim": {"type": "object"},
+        "claim_hash": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"},
+        "signature": {"type": "string", "minLength": 1}
+      }
     }
   }
 }
