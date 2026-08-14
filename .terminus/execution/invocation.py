@@ -35,6 +35,8 @@ _CONTRACT_SNAPSHOT_PATHS = (
     ".terminus/agents/schemas/pattern.schema.json",
     ".terminus/feedback/model.py",
     ".terminus/feedback/registry.py",
+    ".terminus/feedback/schema_validation.py",
+    ".terminus/remediation/planner.py",
     ".terminus/learning/context.py",
     ".terminus/learning/projection.py",
     ".terminus/agents/STAGE_INVOCATION.md",
