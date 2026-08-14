@@ -55,14 +55,17 @@ FILES = [
     T / "feedback" / "closure.py",
     T / "feedback" / "registry.py",
     T / "feedback" / "schema_validation.py",
+    T / "feedback" / "provenance.py",
     T / "feedback" / "source_adapters.py",
     T / "feedback" / "feedback_cli.py",
     T / "remediation" / "planner.py",
+    T / "remediation" / "progress.py",
     T / "remediation" / "router.py",
     T / "learning" / "registry.py",
     T / "learning" / "recurrence.py",
     T / "learning" / "projection.py",
     T / "learning" / "context.py",
+    T / "learning" / "integrity.py",
     T / "agents" / "FEEDBACK_LEARNING.md",
     T / "learning" / "knowledge" / "lessons.jsonl",
     T / "learning" / "knowledge" / "patterns.jsonl",
@@ -70,7 +73,10 @@ FILES = [
 SCHEMAS = {
     "feedback": ("feedback_event.schema.json", "terminus-feedback-event-v1"),
     "finding": ("finding.schema.json", "terminus-finding-v1"),
-    "remediation": ("remediation_packet.schema.json", "terminus-remediation-packet-v1"),
+    "remediation": (
+        "remediation_packet.schema.json",
+        "terminus-remediation-packet-v1",
+    ),
     "lesson": ("lesson.schema.json", "terminus-lesson-v1"),
     "pattern": ("pattern.schema.json", "terminus-pattern-v1"),
 }
@@ -116,7 +122,9 @@ def main() -> int:
     errors: list[str] = []
     for path in FILES:
         if not path.is_file():
-            errors.append(f"missing feedback-learning file: {path.relative_to(ROOT)}")
+            errors.append(
+                f"missing feedback-learning file: {path.relative_to(ROOT)}"
+            )
 
     schemas = LearningSchemaValidator(ROOT)
     schema_root = T / "agents" / "schemas"
@@ -134,8 +142,17 @@ def main() -> int:
     )
     if not {"trust_status", "source_binding"} <= provenance_required:
         errors.append("feedback schema does not require source trust provenance")
+    lesson_targets = feedback_schema = json.loads(
+        (schema_root / "lesson.schema.json").read_text(encoding="utf-8")
+    )["properties"]["targets"]["properties"]
+    if lesson_targets["stages"].get("minItems") != 1:
+        errors.append("lesson schema must require an explicit stage target")
+    if lesson_targets["roles"].get("minItems") != 1:
+        errors.append("lesson schema must require an explicit role target")
     if {item.value for item in FeedbackSource} != EXPECTED_SOURCES:
-        errors.append("feedback source registry does not match the canonical source set")
+        errors.append(
+            "feedback source registry does not match the canonical source set"
+        )
 
     try:
         packet = _invocation()
@@ -150,45 +167,77 @@ def main() -> int:
 
     required_snapshot_markers = (
         ".terminus/feedback/schema_validation.py",
+        ".terminus/feedback/provenance.py",
+        ".terminus/feedback/closure.py",
         ".terminus/remediation/planner.py",
+        ".terminus/remediation/progress.py",
         ".terminus/learning/context.py",
+        ".terminus/learning/integrity.py",
         ".terminus/learning/projection.py",
         ".terminus/learning/knowledge/lessons.jsonl",
         ".terminus/learning/knowledge/patterns.jsonl",
     )
     for marker in required_snapshot_markers:
         if marker not in _CONTRACT_SNAPSHOT_PATHS:
-            errors.append(f"invocation snapshot binding missing learning dependency: {marker}")
+            errors.append(
+                f"invocation snapshot binding missing learning dependency: {marker}"
+            )
 
-    controller_text = (T / "execution" / "controller_cli.py").read_text(encoding="utf-8")
-    for marker in ("RemediationInterlock", "REMEDIATE_STAGE", "remediation_updates"):
+    controller_text = (T / "execution" / "controller_cli.py").read_text(
+        encoding="utf-8"
+    )
+    for marker in (
+        "RemediationInterlock",
+        "REMEDIATE_STAGE",
+        "remediation_updates",
+    ):
         if marker not in controller_text:
-            errors.append(f"controller remediation interlock missing marker: {marker}")
+            errors.append(
+                f"controller remediation interlock missing marker: {marker}"
+            )
     closure_text = (T / "feedback" / "closure.py").read_text(encoding="utf-8")
     for marker in (
         "REPOSITORY_RESOLVED",
         "assert_learning_eligible",
+        "assert_conflict_resolved",
         "resolve_conflict",
         "repair owner cannot verify",
+        "exact repaired_task_commit",
     ):
         if marker not in closure_text:
             errors.append(f"trusted closure boundary missing marker: {marker}")
     router_text = (T / "remediation" / "router.py").read_text(encoding="utf-8")
     if "REMEDIATION_LINEAGE_CONFLICT" not in router_text:
         errors.append("remediation interlock lacks lineage-conflict handling")
+    if "validate_terminal_finding" not in router_text:
+        errors.append("remediation interlock does not replay terminal finding proof")
 
     private = subprocess.run(
-        ["git", "-C", str(ROOT), "check-ignore", ".terminus/learning/state/probe.jsonl"],
+        [
+            "git",
+            "-C",
+            str(ROOT),
+            "check-ignore",
+            ".terminus/learning/state/probe.jsonl",
+        ],
         capture_output=True,
     )
     portable = subprocess.run(
-        ["git", "-C", str(ROOT), "check-ignore", ".terminus/learning/knowledge/lessons.jsonl"],
+        [
+            "git",
+            "-C",
+            str(ROOT),
+            "check-ignore",
+            ".terminus/learning/knowledge/lessons.jsonl",
+        ],
         capture_output=True,
     )
     if private.returncode != 0:
         errors.append("raw learning state must be gitignored")
     if portable.returncode == 0:
-        errors.append("generalized learning knowledge must remain portable/trackable")
+        errors.append(
+            "generalized learning knowledge must remain portable/trackable"
+        )
 
     with tempfile.TemporaryDirectory() as directory:
         temp = Path(directory)
@@ -218,33 +267,45 @@ def main() -> int:
                     task_commit=_head(),
                     severity="HIGH",
                     message="Unbound portal claim.",
+                    run_id="portal-ci-unbound",
                     category="BOUNDARY",
                     stage_hint="VERIFIER_BUILD",
                     captured_at="2026-08-14T00:00:01Z",
                 )
-                errors.append("automated feedback was accepted without source_binding")
+                errors.append(
+                    "automated feedback was accepted without source_binding"
+                )
             except ValueError:
                 pass
-            portal = ingestor.capture(
-                source_type="PORTAL_CI",
-                producer="portal-ci",
-                task_id="feedback-validator-temp",
-                task_commit=_head(),
-                severity="HIGH",
-                message="Portal confirms the same boundary weakness.",
-                category="BOUNDARY",
-                stage_hint="VERIFIER_BUILD",
-                source_binding=_source_binding("portal-ci"),
-                captured_at="2026-08-14T00:00:02Z",
-            )
-            if portal["provenance"]["trust_status"] != "REPOSITORY_RESOLVED":
-                errors.append("repository-resolved portal feedback did not receive trusted status")
+            try:
+                ingestor.capture(
+                    source_type="PORTAL_CI",
+                    producer="portal-ci",
+                    task_id="feedback-validator-temp",
+                    task_commit=_head(),
+                    severity="HIGH",
+                    message="Self-authored source JSON must not become authority.",
+                    run_id="portal-ci-self-asserted",
+                    category="BOUNDARY",
+                    stage_hint="VERIFIER_BUILD",
+                    source_binding=_source_binding("portal-ci"),
+                    captured_at="2026-08-14T00:00:02Z",
+                )
+                errors.append(
+                    "self-authored structured automated evidence became trusted"
+                )
+            except ValueError:
+                pass
             finding = FindingNormalizer(ROOT, store=store).normalize(
-                [human, portal],
-                generalized_problem="External effects require observable-boundary verification.",
+                [human],
+                generalized_problem=(
+                    "External effects require observable-boundary verification."
+                ),
                 root_cause_class="INTERNAL_PROXY",
                 repair_stages=["VERIFIER_BUILD"],
-                closure_conditions=["Boundary behavior is independently verified."],
+                closure_conditions=[
+                    "Boundary behavior is independently verified."
+                ],
             )
             schemas.validate("finding", finding)
             remediation = RemediationPlanner(ROOT, store=store).plan(finding)
@@ -254,7 +315,9 @@ def main() -> int:
                 task_commit=_head(),
             )
             if not action or action.get("action") != "REMEDIATE_STAGE":
-                errors.append("open planned finding does not route to REMEDIATE_STAGE")
+                errors.append(
+                    "open planned finding does not route to REMEDIATE_STAGE"
+                )
             projection = LearningContextBuilder(ROOT, store=store).build(
                 stage_id="VERIFIER_BUILD",
                 role_id=str(remediation["steps"][0]["role_id"]),
@@ -263,11 +326,17 @@ def main() -> int:
             )
             rendered = json.dumps(projection, sort_keys=True)
             if human["observation"]["message"] in rendered:
-                errors.append("raw human review text leaked into agent learning projection")
+                errors.append(
+                    "raw human review text leaked into agent learning projection"
+                )
             if finding["problem"]["task_specific"] in rendered:
-                errors.append("task-specific finding text leaked into generalized projection")
+                errors.append(
+                    "task-specific finding text leaked into generalized projection"
+                )
         except Exception as exc:
-            errors.append(f"feedback/remediation smoke validation failed: {exc}")
+            errors.append(
+                f"feedback/remediation smoke validation failed: {exc}"
+            )
 
     if errors:
         print("Terminus feedback-learning validation FAILED:")
@@ -278,11 +347,11 @@ def main() -> int:
     print("Terminus feedback-learning validation PASS")
     print(
         "feedback_learning=1.0 sources=human,review,ci,portal,llmaj,trials,difficulty,runtime "
-        "source_provenance=bound closure=repository_resolved_or_human "
-        "raw_state=private_hash_chained generalized_knowledge=portable_commit_bound "
-        "remediation=controller_interlocked_lineage_bound "
+        "source_provenance=execution_anchored closure=canonical_execution_bound "
+        "raw_state=private_hash_chained generalized_knowledge=portable_semantically_replayed "
+        "remediation=controller_interlocked_lineage_invocation_bound "
         "learning_projection=generalized_role_scoped cold_review=raw_history_hidden "
-        "recurrence=trusted_distinct_task_policy_candidates policy_mutation=manual"
+        "recurrence=verified_distinct_task_policy_candidates policy_mutation=manual"
     )
     return 0
 
