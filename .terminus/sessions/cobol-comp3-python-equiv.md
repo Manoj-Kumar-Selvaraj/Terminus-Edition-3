@@ -80,7 +80,7 @@ Exactly one replacement packet-bound Q4 review and one replacement packet-bound 
 
 ## Next action
 
-Run replacement Q4 and Q6 once each in fresh independent reviewer chats using the exact packets above. If both are current PASS/HIGH-or-MEDIUM/SUFFICIENT, record them and advance the quality interlock. If replacement Q4 raises a material finding on evidence unchanged and fully reviewable in the previous exhaustive Q4 scope, classify it `LATENT_REVIEWER_OMISSION` and route to Adjudicator rather than beginning another ordinary repair loop.
+Run replacement Q4 and Q6 once each in fresh independent reviewer chats using the exact packets above. If both are current PASS with non-LOW confidence and SUFFICIENT evidence, record them and advance the quality interlock. If replacement Q4 raises a material finding on evidence unchanged and fully reviewable in the previous exhaustive Q4 scope, classify it `LATENT_REVIEWER_OMISSION` and route to Adjudicator rather than beginning another ordinary repair loop.
 
 ## Decisions that must survive chat changes
 
