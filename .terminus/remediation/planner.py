@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import Any, Mapping
 
 from execution.authority import ExecutionAuthority
+from execution.ledger import ExecutionLedger
 from retrieval.policy import RetrievalPolicy
 
 from feedback.model import stable_id
@@ -41,6 +42,8 @@ class RemediationPlanner:
         self.schemas.validate("finding", finding)
         if finding["state"] in {"CLOSED", "VERIFIED", "WONT_FIX"}:
             raise ValueError("closed/verified findings do not require a remediation plan")
+        if finding["state"] in {"FEEDBACK_CONFLICT", "POLICY_CONFLICT"}:
+            raise ValueError("conflicted findings must be resolved before remediation planning")
         stages = sorted(
             finding["ownership"]["repair_stages"],
             key=lambda stage_id: self.stage_order.get(stage_id, 10_000),
@@ -60,11 +63,14 @@ class RemediationPlanner:
                     "closure_conditions": list(finding["closure"]["conditions"]),
                 }
             )
+        ledger = ExecutionLedger(self.root, finding["task_id"])
+        sequence_floor = len(ledger.load(validate_record_files=True))
         packet: dict[str, Any] = {
             "schema_version": "1.0",
             "finding_id": finding["finding_id"],
             "task_id": finding["task_id"],
             "input_task_commit": finding["task_commit"],
+            "ledger_sequence_floor": sequence_floor,
             "steps": steps,
             "closure_owner": finding["closure"]["verification_owner"],
             "prohibited_shortcuts": list(_DEFAULT_PROHIBITED),
