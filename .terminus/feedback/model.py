@@ -83,7 +83,7 @@ def lesson_identity(payload: Mapping[str, Any]) -> str:
     identity = {
         key: value
         for key, value in payload.items()
-        if key not in {"lesson_id", "state", "promotion"}
+        if key not in {"lesson_id", "state", "promotion", "sources"}
     }
     return stable_id("lesson", identity)
 
