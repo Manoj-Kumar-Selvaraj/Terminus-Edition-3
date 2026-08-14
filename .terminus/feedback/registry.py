@@ -18,6 +18,65 @@ class AppendOnlyRegistry:
         self.path = path
 
     def read(self) -> list[dict[str, Any]]:
+        return [row["payload"] for row in self._verified_rows()]
+
+    def read_through(self, chain_head: str) -> list[dict[str, Any]]:
+        if chain_head == "GENESIS":
+            return []
+        selected: list[dict[str, Any]] = []
+        for row in self._verified_rows():
+            selected.append(row["payload"])
+            if row["chain_hash"] == chain_head:
+                return selected
+        raise ValueError(f"registry chain head is unavailable: {chain_head}")
+
+    def head(self) -> str:
+        rows = self._verified_rows()
+        return str(rows[-1]["chain_hash"]) if rows else "GENESIS"
+
+    def latest_by(
+        self, identity_field: str, *, chain_head: str | None = None
+    ) -> list[dict[str, Any]]:
+        latest: dict[str, dict[str, Any]] = {}
+        order: list[str] = []
+        payloads = self.read() if chain_head is None else self.read_through(chain_head)
+        for payload in payloads:
+            identity = payload.get(identity_field)
+            if not isinstance(identity, str) or not identity:
+                raise ValueError(
+                    f"registry payload missing identity field {identity_field}"
+                )
+            if identity not in latest:
+                order.append(identity)
+            latest[identity] = payload
+        return [latest[identity] for identity in order]
+
+    def get_latest(
+        self, identity_field: str, identity: str, *, chain_head: str | None = None
+    ) -> dict[str, Any] | None:
+        payloads = self.read() if chain_head is None else self.read_through(chain_head)
+        for payload in reversed(payloads):
+            if payload.get(identity_field) == identity:
+                return payload
+        return None
+
+    def append(self, payload: Mapping[str, Any]) -> str:
+        rows = self._verified_rows()
+        previous = rows[-1]["chain_hash"] if rows else "GENESIS"
+        row = {
+            "previous_chain_hash": previous,
+            "payload": dict(payload),
+        }
+        row["chain_hash"] = content_hash(row)
+        rows.append(row)
+        self._replace(rows)
+        return str(row["chain_hash"])
+
+    def extend(self, values: Iterable[Mapping[str, Any]]) -> None:
+        for value in values:
+            self.append(value)
+
+    def _verified_rows(self) -> list[dict[str, Any]]:
         if not self.path.exists():
             return []
         rows: list[dict[str, Any]] = []
@@ -38,55 +97,9 @@ class AppendOnlyRegistry:
                 raise ValueError(f"registry content hash mismatch at line {lineno}")
             if not isinstance(payload, dict):
                 raise ValueError(f"registry payload {lineno} is not an object")
-            rows.append(payload)
+            rows.append(row)
             previous = expected
         return rows
-
-    def latest_by(self, identity_field: str) -> list[dict[str, Any]]:
-        latest: dict[str, dict[str, Any]] = {}
-        order: list[str] = []
-        for payload in self.read():
-            identity = payload.get(identity_field)
-            if not isinstance(identity, str) or not identity:
-                raise ValueError(
-                    f"registry payload missing identity field {identity_field}"
-                )
-            if identity not in latest:
-                order.append(identity)
-            latest[identity] = payload
-        return [latest[identity] for identity in order]
-
-    def get_latest(self, identity_field: str, identity: str) -> dict[str, Any] | None:
-        for payload in reversed(self.read()):
-            if payload.get(identity_field) == identity:
-                return payload
-        return None
-
-    def append(self, payload: Mapping[str, Any]) -> str:
-        rows = self._raw_rows()
-        previous = rows[-1]["chain_hash"] if rows else "GENESIS"
-        row = {
-            "previous_chain_hash": previous,
-            "payload": dict(payload),
-        }
-        row["chain_hash"] = content_hash(row)
-        rows.append(row)
-        self._replace(rows)
-        return str(row["chain_hash"])
-
-    def extend(self, values: Iterable[Mapping[str, Any]]) -> None:
-        for value in values:
-            self.append(value)
-
-    def _raw_rows(self) -> list[dict[str, Any]]:
-        self.read()
-        if not self.path.exists():
-            return []
-        return [
-            json.loads(line)
-            for line in self.path.read_text(encoding="utf-8").splitlines()
-            if line.strip()
-        ]
 
     def _replace(self, rows: list[Mapping[str, Any]]) -> None:
         self.path.parent.mkdir(parents=True, exist_ok=True)
@@ -115,3 +128,12 @@ class LearningStore:
         self.lessons = AppendOnlyRegistry(base / "lessons.jsonl")
         self.patterns = AppendOnlyRegistry(base / "patterns.jsonl")
         self.remediations = AppendOnlyRegistry(base / "remediations.jsonl")
+
+    def heads(self) -> dict[str, str]:
+        return {
+            "feedback": self.feedback.head(),
+            "findings": self.findings.head(),
+            "lessons": self.lessons.head(),
+            "patterns": self.patterns.head(),
+            "remediations": self.remediations.head(),
+        }
