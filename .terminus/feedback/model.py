@@ -67,15 +67,29 @@ def feedback_identity(payload: Mapping[str, Any]) -> str:
 
 
 def finding_identity(payload: Mapping[str, Any]) -> str:
-    identity = {key: value for key, value in payload.items() if key != "finding_id"}
+    identity = {
+        key: value
+        for key, value in payload.items()
+        if key not in {"finding_id", "state"}
+    }
+    closure = dict(identity.get("closure", {}))
+    closure.pop("verified_by_feedback", None)
+    identity["closure"] = closure
     return stable_id("finding", identity)
 
 
 def lesson_identity(payload: Mapping[str, Any]) -> str:
-    identity = {key: value for key, value in payload.items() if key != "lesson_id"}
+    identity = {
+        key: value
+        for key, value in payload.items()
+        if key not in {"lesson_id", "state", "promotion"}
+    }
     return stable_id("lesson", identity)
 
 
 def pattern_identity(payload: Mapping[str, Any]) -> str:
-    identity = {key: value for key, value in payload.items() if key != "pattern_id"}
+    identity = {
+        "category": payload.get("category"),
+        "root_cause_class": payload.get("root_cause_class"),
+    }
     return stable_id("pattern", identity)
