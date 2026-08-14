@@ -8,18 +8,23 @@ from typing import Any
 from feedback.registry import LearningStore
 from feedback.schema_validation import LearningSchemaValidator
 
+from .integrity import LearningIntegrityValidator
+
 
 class LearningProjector:
-    """Return only generalized lesson content relevant to a stage/role.
+    """Return only independently derived generalized lesson content.
 
     Raw feedback, task-specific text, source finding IDs, task IDs and prior
     reviewer conclusions are intentionally omitted from executor-facing output.
+    An ACTIVE registry row is persistence, not authority: every projected lesson
+    replays its source finding closure and promotion proof first.
     """
 
     def __init__(self, root: Path, *, store: LearningStore | None = None):
         self.root = root.resolve()
         self.store = store or LearningStore(self.root)
         self.schemas = LearningSchemaValidator(self.root)
+        self.integrity = LearningIntegrityValidator(self.root, store=self.store)
 
     def project(
         self,
@@ -38,9 +43,10 @@ class LearningProjector:
             self.schemas.validate("lesson", lesson)
             if lesson.get("state") != "ACTIVE":
                 continue
+            self.integrity.validate_lesson(lesson)
             targets = lesson["targets"]
-            stage_match = not targets["stages"] or stage_id in targets["stages"]
-            role_match = not targets["roles"] or role_id in targets["roles"]
+            stage_match = stage_id in targets["stages"]
+            role_match = role_id in targets["roles"]
             target_domains = targets.get("domains", [])
             domain_match = not target_domains or (
                 domain is not None and domain in target_domains
