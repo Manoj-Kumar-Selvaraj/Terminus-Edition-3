@@ -61,10 +61,9 @@ def signed_payload(
 class AuthorityReceiptValidator:
     """Validate an OpenSSH-signed semantic authority receipt.
 
-    Production verification is anchored to an OS-owned allowed-signers file at
-    /etc/terminus/authority/allowed_signers. Repository code and caller-selected
-    environment variables cannot replace that root. Pytest may use an explicit
-    temporary override only while PYTEST_CURRENT_TEST is present.
+    Production verification has exactly one trust root:
+    /etc/terminus/authority/allowed_signers. There is deliberately no runtime,
+    environment-selected or repository-selected alternate signer path.
     """
 
     def __init__(self, root: Path):
@@ -119,22 +118,11 @@ class AuthorityReceiptValidator:
         return value
 
     def _allowed_signers(self) -> Path:
-        test_mode = os.environ.get("TERMINUS_AUTHORITY_TEST_MODE") == "1"
-        pytest_active = bool(os.environ.get("PYTEST_CURRENT_TEST"))
-        if test_mode and pytest_active:
-            configured = os.environ.get("TERMINUS_TEST_AUTHORITY_ALLOWED_SIGNERS", "").strip()
-            if not configured:
-                raise ValueError("test authority allowed-signers file is not configured")
-            path = Path(configured).expanduser().resolve()
-            if path == self.root or self.root in path.parents:
-                raise ValueError("test authority trust store must live outside the repository")
-            if not path.is_file():
-                raise ValueError("test authority allowed-signers file is unavailable")
-            return path
-
-        if os.environ.get("TERMINUS_AUTHORITY_ALLOWED_SIGNERS"):
+        if os.environ.get("TERMINUS_AUTHORITY_ALLOWED_SIGNERS") or os.environ.get(
+            "TERMINUS_TEST_AUTHORITY_ALLOWED_SIGNERS"
+        ):
             raise ValueError(
-                "production authority trust root is fixed; caller-selected signer overrides are forbidden"
+                "authority trust root is fixed; caller-selected signer overrides are forbidden"
             )
         path = _SYSTEM_ALLOWED_SIGNERS
         if path.is_symlink():
