@@ -17,6 +17,9 @@ on:
       - '.terminus/agents/schemas/pattern.schema.json'
       - '.terminus/agents/schemas/stage_invocation.schema.json'
       - '.terminus/tests/test_feedback_learning.py'
+      - '.terminus/tests/test_feedback_cold_review_regressions.py'
+      - '.terminus/tests/test_feedback_closure_result_semantics.py'
+      - '.terminus/tests/test_learning_domain_scope.py'
       - '.terminus/validate_feedback_learning.py'
       - '.github/workflows/terminus-feedback-learning-ci.yml'
       - '.gitignore'
@@ -37,6 +40,9 @@ on:
       - '.terminus/agents/schemas/pattern.schema.json'
       - '.terminus/agents/schemas/stage_invocation.schema.json'
       - '.terminus/tests/test_feedback_learning.py'
+      - '.terminus/tests/test_feedback_cold_review_regressions.py'
+      - '.terminus/tests/test_feedback_closure_result_semantics.py'
+      - '.terminus/tests/test_learning_domain_scope.py'
       - '.terminus/validate_feedback_learning.py'
       - '.github/workflows/terminus-feedback-learning-ci.yml'
       - '.gitignore'
@@ -83,10 +89,19 @@ jobs:
             .terminus/execution/record.py \
             .terminus/execution/controller_cli.py \
             .terminus/tests/test_feedback_learning.py \
+            .terminus/tests/test_feedback_cold_review_regressions.py \
+            .terminus/tests/test_feedback_closure_result_semantics.py \
+            .terminus/tests/test_learning_domain_scope.py \
             .terminus/validate_feedback_learning.py
 
       - name: Run feedback learning tests
-        run: python3 -m pytest .terminus/tests/test_feedback_learning.py -q
+        run: |
+          python3 -m pytest \
+            .terminus/tests/test_feedback_learning.py \
+            .terminus/tests/test_feedback_cold_review_regressions.py \
+            .terminus/tests/test_feedback_closure_result_semantics.py \
+            .terminus/tests/test_learning_domain_scope.py \
+            -q
 
       - name: Validate feedback learning boundary
         run: python3 .terminus/validate_feedback_learning.py
