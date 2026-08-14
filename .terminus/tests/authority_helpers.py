@@ -16,6 +16,7 @@ _ISSUERS = {
     "AUTOMATED_SOURCE": "terminus-automation-authority",
     "REVIEW_RESULT": "terminus-review-authority",
     "EXECUTION_RESULT": "terminus-execution-authority",
+    "FINDING_NORMALIZATION": "terminus-finding-authority",
     "LESSON_ACTIVATION": "terminus-learning-authority",
 }
 _CACHE: dict[str, dict[str, Any]] = {}
