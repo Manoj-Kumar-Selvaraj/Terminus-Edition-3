@@ -70,7 +70,7 @@ def finding_identity(payload: Mapping[str, Any]) -> str:
     identity = {
         key: value
         for key, value in payload.items()
-        if key not in {"finding_id", "state"}
+        if key not in {"finding_id", "state", "authority_receipt"}
     }
     closure = dict(identity.get("closure", {}))
     closure.pop("verified_by_feedback", None)
