@@ -62,6 +62,10 @@ def build_parser() -> argparse.ArgumentParser:
     add.add_argument("--role-hint")
     add.add_argument("--run-id")
     add.add_argument("--external-ref")
+    add.add_argument(
+        "--source-binding-json",
+        help="immutable evidence ref binding the claimed automated source identity",
+    )
     add.add_argument("--test-id")
     add.add_argument("--metric")
     add.add_argument("--value-json")
@@ -119,6 +123,9 @@ def main(argv: list[str] | None = None) -> int:
         evidence = _json_arg(args.evidence_json)
         if evidence is not None and not isinstance(evidence, list):
             raise ValueError("--evidence-json must decode to an array")
+        source_binding = _json_arg(args.source_binding_json)
+        if source_binding is not None and not isinstance(source_binding, dict):
+            raise ValueError("--source-binding-json must decode to an object")
         return _emit(
             FeedbackIngestor(ROOT, store=store).capture(
                 source_type=args.source,
@@ -132,6 +139,7 @@ def main(argv: list[str] | None = None) -> int:
                 role_hint=args.role_hint,
                 run_id=args.run_id,
                 external_ref=args.external_ref,
+                source_binding=source_binding,
                 test_id=args.test_id,
                 metric=args.metric,
                 value=_json_arg(args.value_json),
