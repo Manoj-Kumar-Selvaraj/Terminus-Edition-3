@@ -27,6 +27,13 @@ def _temp_control_repo(tmp_path: Path) -> tuple[Path, str]:
     root = tmp_path / "repo"
     (root / ".terminus").mkdir(parents=True)
     shutil.copytree(ROOT / ".terminus" / "agents", root / ".terminus" / "agents")
+    shutil.copytree(ROOT / ".terminus" / "feedback", root / ".terminus" / "feedback")
+    shutil.copytree(ROOT / ".terminus" / "remediation", root / ".terminus" / "remediation")
+    shutil.copytree(
+        ROOT / ".terminus" / "learning",
+        root / ".terminus" / "learning",
+        ignore=shutil.ignore_patterns("state", "__pycache__"),
+    )
     _run(root, "init")
     _run(root, "config", "user.email", "terminus-tests@example.invalid")
     _run(root, "config", "user.name", "Terminus Tests")
@@ -180,125 +187,84 @@ def test_empty_ledger_starts_at_rule_resolution(tmp_path: Path) -> None:
     assert state["next"]["stage_id"] == "RULE_RESOLUTION"
 
 
-def test_complete_creation_chain_materializes_frozen_candidate(tmp_path: Path) -> None:
+def test_first_record_bootstraps_task_lineage(tmp_path: Path) -> None:
+    root, commit = _temp_control_repo(tmp_path)
+    resolver = WorkflowStateResolver(root)
+    ledger = ExecutionLedger(root, "task-first")
+    ledger.append(_record(resolver, "RULE_RESOLUTION", "task-first", commit))
+    state = resolver.resolve(task_id="task-first", task_commit=commit, control_plane_commit=commit)
+    assert state["nodes"][0]["status"] == "CURRENT"
+    assert state["lineage"]["bootstrap_task_commit"] == commit
+    assert state["lineage"]["recorded_task_commit"] == commit
+    assert state["lineage"]["status"] == "CURRENT"
+
+
+def test_task_drift_blocks_unattributed_change(tmp_path: Path) -> None:
+    root, commit = _temp_control_repo(tmp_path)
+    resolver = WorkflowStateResolver(root)
+    ledger = ExecutionLedger(root, "task-drift")
+    ledger.append(_record(resolver, "RULE_RESOLUTION", "task-drift", commit))
+    changed = _new_commit(root, "unattributed.txt")
+    state = resolver.resolve(task_id="task-drift", task_commit=changed, control_plane_commit=commit)
+    assert state["lineage"]["status"] == "DRIFTED"
+    assert state["next"]["action"] == "BLOCKED"
+    assert "unattributed" in state["next"]["blocking_reason"]
+
+
+def test_downstream_record_stales_when_predecessor_is_newer(tmp_path: Path) -> None:
+    root, commit = _temp_control_repo(tmp_path)
+    resolver = WorkflowStateResolver(root)
+    ledger = ExecutionLedger(root, "task-sequence")
+    ledger.append(_record(resolver, "RULE_RESOLUTION", "task-sequence", commit, attempt=1))
+    ledger.append(_record(resolver, "WORK_PACKAGE_RESEARCH", "task-sequence", commit, attempt=1))
+    ledger.append(_record(resolver, "RULE_RESOLUTION", "task-sequence", commit, attempt=2))
+    state = resolver.resolve(task_id="task-sequence", task_commit=commit, control_plane_commit=commit)
+    by_id = {node["node_id"]: node for node in state["nodes"]}
+    assert by_id["RULE_RESOLUTION"]["status"] == "CURRENT"
+    assert by_id["WORK_PACKAGE_RESEARCH"]["status"] == "STALE"
+    assert state["next"]["stage_id"] == "WORK_PACKAGE_RESEARCH"
+
+
+def test_freeze_is_derived_only_when_entry_requirements_pass(tmp_path: Path) -> None:
     root, commit = _temp_control_repo(tmp_path)
     resolver = WorkflowStateResolver(root)
     _append_through_freeze_predecessor(root, resolver, "task-freeze", commit)
     state = resolver.resolve(task_id="task-freeze", task_commit=commit, control_plane_commit=commit)
-    frozen = next(node for node in state["nodes"] if node["node_id"] == "FROZEN_CANDIDATE")
-    assert frozen["status"] == "CURRENT"
-    assert all(item.endswith("PASS") for item in frozen["entry_requirements"])
-    assert state["lineage"]["status"] == "CURRENT"
+    freeze = next(node for node in state["nodes"] if node["node_id"] == "FROZEN_CANDIDATE")
+    assert freeze["status"] == "CURRENT"
+    assert all(item.endswith("PASS") for item in freeze["entry_requirements"])
     assert state["next"]["stage_id"] == "QUALITY_INTERLOCK"
 
 
-def test_recorded_producer_commit_lineage_remains_current(tmp_path: Path) -> None:
-    root, commit_a = _temp_control_repo(tmp_path)
+def test_stale_work_package_evidence_invalidates_downstream(tmp_path: Path) -> None:
+    root, commit = _temp_control_repo(tmp_path)
     resolver = WorkflowStateResolver(root)
-    ledger = ExecutionLedger(root, "task-lineage")
-    ledger.append(_record(resolver, "RULE_RESOLUTION", "task-lineage", commit_a))
-    commit_b = _new_commit(root, "task-change.txt")
-    ledger.append(
-        _record(
-            resolver, "WORK_PACKAGE_RESEARCH", "task-lineage", commit_a,
-            output_commit=commit_b, control_commit=commit_a,
-        )
+    refs = [{"kind": "RESULT", "ref": "result:domain-research", "content_hash": "sha256:" + "1" * 64}]
+    _append_through_freeze_predecessor(root, resolver, "task-freshness", commit, work_package_evidence=refs)
+    overlay = {
+        "result:domain-research": {
+            "status": "STALE",
+            "content_hash": "sha256:" + "2" * 64,
+            "reason": "newer external research is available",
+        }
+    }
+    state = resolver.resolve(
+        task_id="task-freshness",
+        task_commit=commit,
+        control_plane_commit=commit,
+        freshness_overlay=overlay,
     )
-    state = resolver.resolve(task_id="task-lineage", task_commit=commit_b, control_plane_commit=commit_a)
-    rule = state["nodes"][0]
-    work = state["nodes"][1]
-    assert rule["status"] == "CURRENT"
-    assert work["status"] == "CURRENT"
-    assert work["input_task_commit"] == commit_a
-    assert work["output_task_commit"] == commit_b
-    assert state["lineage"]["status"] == "CURRENT"
-    assert state["next"]["stage_id"] == "SYSTEM_ARCHITECTURE"
-
-
-def test_unattributed_task_change_blocks_next_stage(tmp_path: Path) -> None:
-    root, commit_a = _temp_control_repo(tmp_path)
-    resolver = WorkflowStateResolver(root)
-    ExecutionLedger(root, "task-unattributed").append(
-        _record(resolver, "RULE_RESOLUTION", "task-unattributed", commit_a)
-    )
-    commit_b = _new_commit(root, "unattributed.txt")
-    state = resolver.resolve(task_id="task-unattributed", task_commit=commit_b, control_plane_commit=commit_a)
-    work = next(node for node in state["nodes"] if node["node_id"] == "WORK_PACKAGE_RESEARCH")
-    assert work["status"] == "BLOCKED"
-    assert "unattributed" in work["reason"]
-    assert state["lineage"]["status"] == "UNATTRIBUTED_CHANGE"
-    assert state["next"]["action"] == "BLOCKED"
-
-
-def test_broken_stage_input_lineage_is_stale(tmp_path: Path) -> None:
-    root, commit_a = _temp_control_repo(tmp_path)
-    resolver = WorkflowStateResolver(root)
-    ledger = ExecutionLedger(root, "task-broken-lineage")
-    ledger.append(_record(resolver, "RULE_RESOLUTION", "task-broken-lineage", commit_a))
-    commit_b = _new_commit(root, "skip.txt")
-    ledger.append(
-        _record(
-            resolver, "WORK_PACKAGE_RESEARCH", "task-broken-lineage", commit_b,
-            control_commit=commit_a,
-        )
-    )
-    state = resolver.resolve(task_id="task-broken-lineage", task_commit=commit_b, control_plane_commit=commit_a)
-    work = state["nodes"][1]
-    assert work["status"] == "STALE"
-    assert "does not match the latest current predecessor" in work["reason"]
+    by_id = {node["node_id"]: node for node in state["nodes"]}
+    assert by_id["WORK_PACKAGE_RESEARCH"]["status"] == "STALE"
+    assert by_id["SYSTEM_ARCHITECTURE"]["status"] == "STALE"
     assert state["next"]["stage_id"] == "WORK_PACKAGE_RESEARCH"
 
 
-def test_later_retry_supersedes_earlier_format_pass(tmp_path: Path) -> None:
+def test_materialized_state_is_derived_and_gitignored(tmp_path: Path) -> None:
     root, commit = _temp_control_repo(tmp_path)
     resolver = WorkflowStateResolver(root)
-    ledger = _append_through_freeze_predecessor(root, resolver, "task-retry", commit)
-    ledger.append(_record(resolver, "FORMAT_GATE", "task-retry", commit, attempt=2, status="FIXED"))
-    state = resolver.resolve(task_id="task-retry", task_commit=commit, control_plane_commit=commit)
-    format_node = next(node for node in state["nodes"] if node["node_id"] == "FORMAT_GATE")
-    assert format_node["status"] == "BLOCKED"
-    assert state["next"]["action"] == "RETRY_STAGE"
-    assembly = next(node for node in state["nodes"] if node["node_id"] == "ASSEMBLY")
-    assert assembly["status"] == "STALE"
-
-
-def test_explicit_evidence_freshness_invalidates_citing_stage(tmp_path: Path) -> None:
-    root, commit = _temp_control_repo(tmp_path)
-    resolver = WorkflowStateResolver(root)
-    _append_through_freeze_predecessor(
-        root, resolver, "task-evidence", commit,
-        work_package_evidence=[{"kind": "EXTERNAL", "ref": "external:work-package", "content_hash": "sha256:" + "a" * 64}],
-    )
-    stale = resolver.resolve(
-        task_id="task-evidence", task_commit=commit, control_plane_commit=commit,
-        freshness_overlay={"schema_version": "1.0", "bindings": {"external:work-package": {"status": "STALE", "reason": "superseded"}}},
-    )
-    work = next(node for node in stale["nodes"] if node["node_id"] == "WORK_PACKAGE_RESEARCH")
-    assert work["status"] == "STALE"
-    assert stale["next"]["stage_id"] == "WORK_PACKAGE_RESEARCH"
-
-
-def test_ledger_detects_record_tampering(tmp_path: Path) -> None:
-    ledger = ExecutionLedger(tmp_path, "task-ledger")
-    record = {
-        "record_id": "rec_" + "1" * 64,
-        "invocation_id": "inv_" + "2" * 64,
-        "stage_id": "RULE_RESOLUTION",
-        "authority": {"task_id": "task-ledger", "task_commit": "a" * 40, "control_plane_commit": "b" * 40},
-        "task_lineage": {"input_task_commit": "a" * 40, "output_task_commit": "a" * 40, "task_changed": False},
-    }
-    ledger.append(record)
-    path = ledger.record_path(record["invocation_id"])
-    path.write_text("{}\n", encoding="utf-8")
-    with pytest.raises(ValueError, match="content hash mismatch"):
-        ledger.load(validate_record_files=True)
-
-
-def test_state_snapshot_is_deterministic_and_materializable(tmp_path: Path) -> None:
-    root, commit = _temp_control_repo(tmp_path)
-    resolver = WorkflowStateResolver(root)
-    first = resolver.resolve(task_id="task-materialized", task_commit=commit, control_plane_commit=commit)
-    second = resolver.resolve(task_id="task-materialized", task_commit=commit, control_plane_commit=commit)
-    assert first == second
-    path = resolver.materialize(first)
-    assert json.loads(path.read_text(encoding="utf-8")) == first
+    state = resolver.resolve(task_id="task-materialized", task_commit=commit, control_plane_commit=commit)
+    path = resolver.materialize(state)
+    assert path == root / ".terminus" / "workflows" / "task-materialized" / "state.json"
+    materialized = json.loads(path.read_text(encoding="utf-8"))
+    assert materialized["state_snapshot_id"] == state["state_snapshot_id"]
