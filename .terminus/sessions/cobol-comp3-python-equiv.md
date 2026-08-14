@@ -20,7 +20,7 @@ Session schema version: `2.4`
 
 Software/Languages warehouse SKU tape unpacker for signed/unsigned COMP-3, REDEFINES, and OCCURS DEPENDING ON. Solver-visible runtime remains intentionally compact and uses the non-strict `large_system` authoring profile; do not pad LOC to satisfy scale diagnostics. Holdouts and malformed-record cases are verifier-only.
 
-The prior frozen candidate `d2bf8685...` received a correctly packet-bound Q4 REVISE with four blockers and Q6 PASS. Independent Adjudication upheld Q4-STC-003 and Q4-STC-004 and authorized controlled remediation under Protocol 2.2's no-drip rule. That remediation is now complete and refrozen at `73d67e25347ee8f5802a7194518dc197a43a9f65`.
+The prior frozen candidate `d2bf8685...` received a correctly packet-bound Q4 REVISE with four blockers and Q6 PASS. Independent Adjudication upheld Q4-STC-003 and Q4-STC-004 and authorized controlled remediation under Protocol 2.2's no-drip rule. That remediation is complete and refrozen at `73d67e25347ee8f5802a7194518dc197a43a9f65`.
 
 ## Current gates
 
@@ -35,8 +35,8 @@ The prior frozen candidate `d2bf8685...` received a correctly packet-bound Q4 RE
 | Ruff verifier | PASS | Edition-3 run `31823590134`, job `94842430458` |
 | Oracle = 1 | PASS | Edition-3 run `31823590134`, job `94842430458`, artifact `9227958973` |
 | NOP = 0 | PASS | Edition-3 run `31823590134`, job `94842430458`, artifact `9227958973` |
-| Q4 Spec-Test Contract Reviewer | PENDING | prior `d2bf8685...` REVISE is stale after controlled remediation; generate one fresh packet for `73d67e25...` |
-| Q6 Production Logic Auditor | PENDING | prior `d2bf8685...` PASS is stale because `task.toml` and solver-visible `environment/` changed; generate one fresh Q6 packet for current production scope |
+| Q4 Spec-Test Contract Reviewer | PENDING | packet `.terminus/reviews/cobol-comp3-python-equiv/73d67e25/cobol-comp3-python-equiv-73d67e25-spec-test-contract-d809ade313.packet.json`; pre-dispatch guard `REVIEW_INVOCATION_READY` in run `31823947548`, job `94843524016` |
+| Q6 Production Logic Auditor | PENDING | packet `.terminus/reviews/cobol-comp3-python-equiv/73d67e25/cobol-comp3-python-equiv-73d67e25-production-logic-256d230311.packet.json`; scope `5272db80b02b8cf40fb5435617d12a831755e11847597fbcc28f18986d069dff`; pre-dispatch guard `REVIEW_INVOCATION_READY` in run `31823947548`, job `94843524016` |
 | Quality Interlock | PENDING | fresh current Q4 PASS + fresh current Q6 PASS required |
 
 ## Controlled Q4 remediation completed
@@ -54,20 +54,31 @@ The prior frozen candidate `d2bf8685...` received a correctly packet-bound Q4 RE
 - Edition-3 fails only at reusable AI credential preparation; Harbor LLMaJ is skipped and no Harbor PASS is claimed.
 - Creator Complexity run `31823590149`, job `94842385495`: `cobol-comp3-python-equiv` PASS; `tests_total=27`, `f2p=26`, `p2p=1`, `unclassified=0`, `requirements=6`. Global workflow failure remains unrelated `wiki-creation-counter-flap` debt.
 
+## Review packet provenance
+
+- Q4 review ID: `cobol-comp3-python-equiv-73d67e25-spec-test-contract-d809ade313`.
+- Q4 role contract: `0c40044ec13f0109a5526301cac6e5d2f52f5596d006bee2cdcaa90c0771d7f6`.
+- Q4 output path is currently absent.
+- Q6 review ID: `cobol-comp3-python-equiv-73d67e25-production-logic-256d230311`.
+- Q6 role contract: `8eb84a3715c4805f762325ceaa890339fc966a2a475cb58986578a15418c5378`.
+- Q6 production scope: `5272db80b02b8cf40fb5435617d12a831755e11847597fbcc28f18986d069dff`.
+- Q6 output path is currently absent.
+- Both packets record control-plane commit `83f38b8f0be9abfc1f86803789de8b2dbc4c28bd` and passed `.terminus/validate_review_invocation.py` before handoff.
+
 ## Historical semantic evidence
 
 - Exhaustive Q4 at `bf242838...`: historical REVISE only.
-- Replacement Q4 at `d2bf8685...`: `.terminus/reviews/cobol-comp3-python-equiv/d2bf8685/cobol-comp3-python-equiv-d2bf8685-spec-test-contract-73aef64c20.json` — `REVISE/HIGH/SUFFICIENT` with Q4-STC-001..004; now stale after remediation.
-- Replacement Q6 at `d2bf8685...`: `.terminus/reviews/cobol-comp3-python-equiv/d2bf8685/cobol-comp3-python-equiv-d2bf8685-production-logic-f50b73e14c.json` — `PASS/HIGH/SUFFICIENT`; now stale because production scope changed.
-- Adjudication at `d2bf8685...`: `.terminus/reviews/cobol-comp3-python-equiv/d2bf8685/cobol-comp3-python-equiv-d2bf8685-adjudication-93878871ea.json` — `REQUEST_CHANGES/HIGH/SUFFICIENT`; controlled remediation completed.
+- Replacement Q4 at `d2bf8685...`: `REVISE/HIGH/SUFFICIENT`; stale after controlled remediation.
+- Replacement Q6 at `d2bf8685...`: `PASS/HIGH/SUFFICIENT`; stale because production scope changed.
+- Adjudication at `d2bf8685...`: `REQUEST_CHANGES/HIGH/SUFFICIENT`; controlled remediation completed.
 
 ## Current blocker
 
-Generate exactly one fresh Q4 packet and one fresh Q6 packet for task commit `73d67e25347ee8f5802a7194518dc197a43a9f65`. Apply the pre-dispatch invocation guard before either independent review. Do not reuse the stale `d2bf8685...` Q4/Q6 results as acceptance evidence.
+Run exactly one fresh independent Q4 and one fresh independent Q6 against the prepared `73d67e25...` packets. Do not reuse the stale `d2bf8685...` results as acceptance evidence.
 
 ## Next action
 
-Generate current packet-bound Q4 and Q6 reviews. If both return PASS with non-LOW confidence and SUFFICIENT evidence, validate provenance and advance Quality Interlock. Do not start another ordinary Q4 remediation loop without Protocol circuit-breaker disposition.
+Dispatch the two prepared packets in separate fresh chats. If both return PASS with non-LOW confidence and SUFFICIENT evidence, validate result provenance and advance Quality Interlock. Do not start another ordinary Q4 remediation loop without Protocol circuit-breaker disposition.
 
 ## Decisions that must survive chat changes
 
