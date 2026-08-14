@@ -12,7 +12,13 @@ from .model import canonical_json, content_hash
 
 
 class AppendOnlyRegistry:
-    """Small JSONL registry with a tamper-evident hash chain."""
+    """Small JSONL registry with a tamper-evident hash chain.
+
+    This primitive is persistence only. Semantic authority is intentionally
+    supplied by typed control-plane components and revalidated by consumers.
+    LearningStore therefore exposes read-only views rather than these writable
+    registry objects.
+    """
 
     def __init__(self, path: Path):
         self.path = path
@@ -81,7 +87,9 @@ class AppendOnlyRegistry:
             return []
         rows: list[dict[str, Any]] = []
         previous = "GENESIS"
-        for lineno, line in enumerate(self.path.read_text(encoding="utf-8").splitlines(), start=1):
+        for lineno, line in enumerate(
+            self.path.read_text(encoding="utf-8").splitlines(), start=1
+        ):
             if not line.strip():
                 continue
             row = json.loads(line)
@@ -118,8 +126,49 @@ class AppendOnlyRegistry:
                 os.unlink(temp_name)
 
 
+class ReadOnlyRegistry:
+    """Read-only facade used by control-plane consumers.
+
+    Deliberately omits append/extend so a caller holding LearningStore cannot
+    turn hash-chain persistence into semantic transition authority.
+    """
+
+    def __init__(self, registry: AppendOnlyRegistry):
+        self._registry = registry
+
+    @property
+    def path(self) -> Path:
+        return self._registry.path
+
+    def read(self) -> list[dict[str, Any]]:
+        return self._registry.read()
+
+    def read_through(self, chain_head: str) -> list[dict[str, Any]]:
+        return self._registry.read_through(chain_head)
+
+    def head(self) -> str:
+        return self._registry.head()
+
+    def latest_by(
+        self, identity_field: str, *, chain_head: str | None = None
+    ) -> list[dict[str, Any]]:
+        return self._registry.latest_by(identity_field, chain_head=chain_head)
+
+    def get_latest(
+        self, identity_field: str, identity: str, *, chain_head: str | None = None
+    ) -> dict[str, Any] | None:
+        return self._registry.get_latest(
+            identity_field, identity, chain_head=chain_head
+        )
+
+
 class LearningStore:
-    """Private task feedback state plus portable generalized knowledge."""
+    """Private task feedback state plus portable generalized knowledge.
+
+    Writable registries remain encapsulated. Typed control-plane components use
+    the record_* methods below, while all ordinary consumers receive read-only
+    registry views and must independently validate semantic authority.
+    """
 
     def __init__(
         self,
@@ -129,17 +178,37 @@ class LearningStore:
     ):
         private = state_root or root / ".terminus" / "learning" / "state"
         knowledge = knowledge_root or root / ".terminus" / "learning" / "knowledge"
-        self.feedback = AppendOnlyRegistry(private / "feedback.jsonl")
-        self.findings = AppendOnlyRegistry(private / "findings.jsonl")
-        self.remediations = AppendOnlyRegistry(private / "remediations.jsonl")
-        self.lessons = AppendOnlyRegistry(knowledge / "lessons.jsonl")
-        self.patterns = AppendOnlyRegistry(knowledge / "patterns.jsonl")
+        self._feedback = AppendOnlyRegistry(private / "feedback.jsonl")
+        self._findings = AppendOnlyRegistry(private / "findings.jsonl")
+        self._remediations = AppendOnlyRegistry(private / "remediations.jsonl")
+        self._lessons = AppendOnlyRegistry(knowledge / "lessons.jsonl")
+        self._patterns = AppendOnlyRegistry(knowledge / "patterns.jsonl")
+        self.feedback = ReadOnlyRegistry(self._feedback)
+        self.findings = ReadOnlyRegistry(self._findings)
+        self.remediations = ReadOnlyRegistry(self._remediations)
+        self.lessons = ReadOnlyRegistry(self._lessons)
+        self.patterns = ReadOnlyRegistry(self._patterns)
+
+    def record_feedback(self, payload: Mapping[str, Any]) -> str:
+        return self._feedback.append(payload)
+
+    def record_finding(self, payload: Mapping[str, Any]) -> str:
+        return self._findings.append(payload)
+
+    def record_remediation(self, payload: Mapping[str, Any]) -> str:
+        return self._remediations.append(payload)
+
+    def record_lesson(self, payload: Mapping[str, Any]) -> str:
+        return self._lessons.append(payload)
+
+    def record_pattern(self, payload: Mapping[str, Any]) -> str:
+        return self._patterns.append(payload)
 
     def heads(self) -> dict[str, str]:
         return {
-            "feedback": self.feedback.head(),
-            "findings": self.findings.head(),
-            "lessons": self.lessons.head(),
-            "patterns": self.patterns.head(),
-            "remediations": self.remediations.head(),
+            "feedback": self._feedback.head(),
+            "findings": self._findings.head(),
+            "lessons": self._lessons.head(),
+            "patterns": self._patterns.head(),
+            "remediations": self._remediations.head(),
         }
