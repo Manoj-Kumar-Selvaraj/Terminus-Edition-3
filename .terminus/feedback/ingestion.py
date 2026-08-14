@@ -114,7 +114,7 @@ class FeedbackIngestor:
         event["provenance"]["content_hash"] = content_hash(hash_payload)
         event["feedback_id"] = feedback_identity(event)
         self.schemas.validate("feedback", event)
-        self.store.feedback.append(event)
+        self.store.record_feedback(event)
         return event
 
     def _source_binding(
