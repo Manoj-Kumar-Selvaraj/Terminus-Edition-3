@@ -184,13 +184,13 @@ class LocalExecutorSandbox:
             if mask.exists():
                 command += ["--tmpfs", str(mask)]
         command += [
-            "--tmpfs",
-            "/tmp",
             "--dir",
             "/workspace",
             "--ro-bind",
             str(workspace),
             "/workspace",
+            "--tmpfs",
+            "/tmp",
             "--chdir",
             "/workspace",
             "--proc",
