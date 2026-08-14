@@ -1,0 +1,97 @@
+"""Append-only durable registries for feedback and learned artifacts."""
+
+from __future__ import annotations
+
+import json
+import os
+import tempfile
+from pathlib import Path
+from typing import Any, Iterable, Mapping
+
+from .model import canonical_json, content_hash
+
+
+class AppendOnlyRegistry:
+    """Small JSONL registry with a tamper-evident hash chain."""
+
+    def __init__(self, path: Path):
+        self.path = path
+
+    def read(self) -> list[dict[str, Any]]:
+        if not self.path.exists():
+            return []
+        rows: list[dict[str, Any]] = []
+        previous = "GENESIS"
+        for lineno, line in enumerate(self.path.read_text(encoding="utf-8").splitlines(), start=1):
+            if not line.strip():
+                continue
+            row = json.loads(line)
+            if not isinstance(row, dict):
+                raise ValueError(f"registry row {lineno} is not an object")
+            if row.get("previous_chain_hash") != previous:
+                raise ValueError(f"registry hash chain mismatch at line {lineno}")
+            payload = row.get("payload")
+            expected = content_hash(
+                {"previous_chain_hash": previous, "payload": payload}
+            )
+            if row.get("chain_hash") != expected:
+                raise ValueError(f"registry content hash mismatch at line {lineno}")
+            if not isinstance(payload, dict):
+                raise ValueError(f"registry payload {lineno} is not an object")
+            rows.append(payload)
+            previous = expected
+        return rows
+
+    def append(self, payload: Mapping[str, Any]) -> str:
+        rows = self._raw_rows()
+        previous = rows[-1]["chain_hash"] if rows else "GENESIS"
+        row = {
+            "previous_chain_hash": previous,
+            "payload": dict(payload),
+        }
+        row["chain_hash"] = content_hash(row)
+        rows.append(row)
+        self._replace(rows)
+        return str(row["chain_hash"])
+
+    def extend(self, values: Iterable[Mapping[str, Any]]) -> None:
+        for value in values:
+            self.append(value)
+
+    def _raw_rows(self) -> list[dict[str, Any]]:
+        self.read()
+        if not self.path.exists():
+            return []
+        return [
+            json.loads(line)
+            for line in self.path.read_text(encoding="utf-8").splitlines()
+            if line.strip()
+        ]
+
+    def _replace(self, rows: list[Mapping[str, Any]]) -> None:
+        self.path.parent.mkdir(parents=True, exist_ok=True)
+        serialized = "".join(canonical_json(row) + "\n" for row in rows)
+        fd, temp_name = tempfile.mkstemp(
+            prefix=self.path.name + ".", dir=str(self.path.parent)
+        )
+        try:
+            with os.fdopen(fd, "w", encoding="utf-8") as handle:
+                handle.write(serialized)
+                handle.flush()
+                os.fsync(handle.fileno())
+            os.replace(temp_name, self.path)
+        finally:
+            if os.path.exists(temp_name):
+                os.unlink(temp_name)
+
+
+class LearningStore:
+    """Named registries used by the unified feedback plane."""
+
+    def __init__(self, root: Path, state_root: Path | None = None):
+        base = state_root or root / ".terminus" / "learning" / "state"
+        self.feedback = AppendOnlyRegistry(base / "feedback.jsonl")
+        self.findings = AppendOnlyRegistry(base / "findings.jsonl")
+        self.lessons = AppendOnlyRegistry(base / "lessons.jsonl")
+        self.patterns = AppendOnlyRegistry(base / "patterns.jsonl")
+        self.remediations = AppendOnlyRegistry(base / "remediations.jsonl")
