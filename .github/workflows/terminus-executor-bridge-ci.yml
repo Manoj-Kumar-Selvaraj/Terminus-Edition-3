@@ -8,6 +8,7 @@ on:
       - '.terminus/agents/schemas/stage_result.schema.json'
       - '.terminus/agents/schemas/execution_record.schema.json'
       - '.terminus/tests/test_executor_bridge.py'
+      - '.terminus/tests/test_executor_handoff_provenance.py'
       - '.terminus/validate_executor_bridge.py'
       - '.github/workflows/terminus-executor-bridge-ci.yml'
   push:
@@ -18,6 +19,7 @@ on:
       - '.terminus/agents/schemas/stage_result.schema.json'
       - '.terminus/agents/schemas/execution_record.schema.json'
       - '.terminus/tests/test_executor_bridge.py'
+      - '.terminus/tests/test_executor_handoff_provenance.py'
       - '.terminus/validate_executor_bridge.py'
       - '.github/workflows/terminus-executor-bridge-ci.yml'
   workflow_dispatch:
@@ -50,6 +52,7 @@ jobs:
         run: |
           python3 -m py_compile \
             .terminus/execution/executor.py \
+            .terminus/execution/handoff_contract.py \
             .terminus/execution/handoff.py \
             .terminus/execution/invocation_guard.py \
             .terminus/execution/sandbox.py \
@@ -62,6 +65,7 @@ jobs:
         run: |
           ruff check \
             .terminus/execution/executor.py \
+            .terminus/execution/handoff_contract.py \
             .terminus/execution/handoff.py \
             .terminus/execution/invocation_guard.py \
             .terminus/execution/sandbox.py \
@@ -69,10 +73,15 @@ jobs:
             .terminus/execution/runner.py \
             .terminus/execution/runner_cli.py \
             .terminus/tests/test_executor_bridge.py \
+            .terminus/tests/test_executor_handoff_provenance.py \
             .terminus/validate_executor_bridge.py
 
       - name: Run executor bridge tests
-        run: python3 -m pytest .terminus/tests/test_executor_bridge.py -q
+        run: |
+          python3 -m pytest \
+            .terminus/tests/test_executor_bridge.py \
+            .terminus/tests/test_executor_handoff_provenance.py \
+            -q
 
       - name: Validate executor boundary
         run: python3 .terminus/validate_executor_bridge.py
