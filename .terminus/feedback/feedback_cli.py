@@ -64,7 +64,7 @@ def build_parser() -> argparse.ArgumentParser:
     add.add_argument("--external-ref")
     add.add_argument(
         "--source-binding-json",
-        help="immutable evidence ref binding the claimed automated source identity",
+        help="immutable evidence ref binding the claimed automated source event",
     )
     add.add_argument("--test-id")
     add.add_argument("--metric")
@@ -85,8 +85,12 @@ def build_parser() -> argparse.ArgumentParser:
     plan = sub.add_parser("plan", help="create a controlled remediation packet")
     plan.add_argument("--finding-id", required=True)
 
-    repaired = sub.add_parser("mark-repaired", help="bind a finding to a repaired descendant task commit")
+    repaired = sub.add_parser(
+        "mark-repaired",
+        help="mark repaired only after the specified remediation packet is complete",
+    )
     repaired.add_argument("--finding-id", required=True)
+    repaired.add_argument("--remediation-id", required=True)
     repaired.add_argument("--task-commit", required=True)
 
     resolve_conflict = sub.add_parser(
@@ -171,7 +175,13 @@ def main(argv: list[str] | None = None) -> int:
     if args.command == "plan":
         return _emit(RemediationPlanner(ROOT, store=store).plan(_finding(store, args.finding_id)))
     if args.command == "mark-repaired":
-        return _emit(FindingClosure(ROOT, store=store).mark_repaired(args.finding_id, args.task_commit))
+        return _emit(
+            FindingClosure(ROOT, store=store).mark_repaired(
+                args.finding_id,
+                args.task_commit,
+                remediation_id=args.remediation_id,
+            )
+        )
     if args.command == "resolve-conflict":
         events = [_event(store, feedback_id) for feedback_id in args.feedback_id]
         return _emit(
