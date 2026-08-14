@@ -21,6 +21,7 @@ from execution.handoff import ExecutorHandoffBuilder  # noqa: E402
 from execution.invocation import StageInvocationBuilder  # noqa: E402
 from execution.record import ExecutionRecordBuilder  # noqa: E402
 from execution.runner import ExecutorRunner  # noqa: E402
+from execution.sandbox import LocalExecutorSandbox  # noqa: E402
 from execution.schema_validation import ExecutorSchemaValidator  # noqa: E402
 from retrieval.models import InvocationContext  # noqa: E402
 from retrieval.policy import RetrievalPolicy  # noqa: E402
@@ -33,6 +34,13 @@ def _head() -> str:
         capture_output=True,
         text=True,
     ).stdout.strip()
+
+
+def _system_python() -> str:
+    candidate = Path("/usr/bin/python3")
+    if candidate.is_file():
+        return str(candidate)
+    return sys.executable
 
 
 def _invocation(stage_id: str = "RULE_RESOLUTION") -> dict[str, object]:
@@ -133,7 +141,26 @@ def test_local_command_rejects_mutating_role_class() -> None:
     platform.system() != "Linux" or shutil.which("bwrap") is None,
     reason="bubblewrap sandbox is required",
 )
-def test_local_command_is_sandboxed_read_only_and_repo_hidden() -> None:
+def test_local_sandbox_spec_never_binds_host_root() -> None:
+    sandbox = LocalExecutorSandbox(ROOT)
+    projection = sandbox.prepare(_invocation(), [_system_python(), "-c", "pass"])
+    try:
+        argv = projection.wrapped_argv
+        assert "--unshare-all" in argv
+        pairs = list(zip(argv, argv[1:]))
+        assert ("--ro-bind", "/") not in pairs
+        assert str(ROOT) not in argv
+        assert "/workspace" in argv
+        assert projection.authorized_file_count >= 1
+    finally:
+        sandbox.close()
+
+
+@pytest.mark.skipif(
+    platform.system() != "Linux" or shutil.which("bwrap") is None,
+    reason="bubblewrap sandbox is required",
+)
+def test_local_command_is_isolated_or_fails_closed_when_kernel_blocks_namespace() -> None:
     invocation = _invocation()
     protected = str(ROOT / ".terminus" / "AGENT_SYSTEM.md")
     code = f"""import json, os, sys
@@ -156,9 +183,13 @@ json.dump({{
 """
     response = ExecutorRunner(ROOT).run_local(
         invocation,
-        [sys.executable, "-c", code],
+        [_system_python(), "-c", code],
         timeout_seconds=20,
     )
+    if response["status"] == "SANDBOX_UNAVAILABLE":
+        assert response["stage_result"] is None
+        assert "bwrap:" in response["stderr_summary"]
+        return
     assert response["status"] == "EXECUTED", response["stderr_summary"]
     assert response["command"]["shell"] is False
     assert response["sandbox"]["backend"] == "BWRAP"
@@ -168,18 +199,16 @@ json.dump({{
     assert response["stage_result"]["outputs"]["write_ok"] is False
 
 
-@pytest.mark.skipif(
-    platform.system() != "Linux" or shutil.which("bwrap") is None,
-    reason="bubblewrap sandbox is required",
-)
-def test_local_command_enforces_live_output_limit() -> None:
-    response = ExecutorRunner(ROOT).run_local(
-        _invocation(),
+def test_bounded_collector_enforces_live_output_limit(tmp_path: Path) -> None:
+    response = ExecutorRunner(ROOT)._run_bounded(
         [sys.executable, "-c", "import sys; sys.stdout.write('x' * 2000000)"],
+        "",
         timeout_seconds=20,
+        cwd=tmp_path,
+        env={},
     )
-    assert response["status"] == "OUTPUT_LIMIT_EXCEEDED", response["stderr_summary"]
-    assert response["stage_result"] is None
+    assert response["status"] == "OUTPUT_LIMIT_EXCEEDED"
+    assert "1 MiB" in response["stderr"]
 
 
 def test_executor_stage_result_requires_exact_handoff_id() -> None:
