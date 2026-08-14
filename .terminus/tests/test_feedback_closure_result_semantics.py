@@ -1,20 +1,17 @@
 from __future__ import annotations
 
 import hashlib
+import json
 import subprocess
 import sys
 from pathlib import Path
-from urllib.parse import quote
 
 import pytest
 
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / ".terminus"))
 
-from feedback.closure import FindingClosure  # noqa: E402
-from feedback.ingestion import FeedbackIngestor  # noqa: E402
-from feedback.normalizer import FindingNormalizer  # noqa: E402
-from feedback.registry import LearningStore  # noqa: E402
+from feedback.provenance import ProvenanceValidator  # noqa: E402
 
 _TASK_ID = "jetstream-regional-stream-continuity"
 _Q4_REVISE_RESULT = (
@@ -36,105 +33,92 @@ def _head() -> str:
     ).stdout.strip()
 
 
-def _store(tmp_path: Path) -> LearningStore:
-    return LearningStore(
-        ROOT,
-        state_root=tmp_path / "state",
-        knowledge_root=tmp_path / "knowledge",
-    )
-
-
-def _result_binding(path: str, identity: str) -> dict[str, str]:
+def _binding(path: str, *, commit: str | None = None) -> dict[str, str]:
+    commit = commit or _head()
     raw = (ROOT / path).read_bytes()
     return {
         "kind": "RESULT",
-        "ref": f"git:{_head()}:{path}#{quote(identity, safe='')}",
+        "ref": f"git:{commit}:{path}",
         "content_hash": "sha256:" + hashlib.sha256(raw).hexdigest(),
     }
 
 
-def _repaired_finding(
-    store: LearningStore,
-    *,
-    verification_owner: str,
-) -> dict[str, object]:
-    commit = _head()
-    initial_feedback = FeedbackIngestor(ROOT, store=store).capture(
-        source_type="HUMAN_REVIEW",
-        producer="closure-semantics-test",
-        task_id=_TASK_ID,
-        task_commit=commit,
-        severity="HIGH",
-        message="A repair requires independent verification before closure.",
-        category="VERIFICATION_RESULT_SEMANTICS",
-        stage_hint="VERIFIER_BUILD",
-        captured_at="2026-08-14T00:00:00Z",
+def test_noncanonical_pseudo_pass_result_is_rejected(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    validator = ProvenanceValidator(ROOT)
+    path = ".terminus/reviews/feedback-test/pseudo-pass.json"
+    binding = {
+        "kind": "RESULT",
+        "ref": f"git:{_head()}:{path}",
+        "content_hash": "sha256:" + "0" * 64,
+    }
+    monkeypatch.setattr(validator.evidence, "validate", lambda value, _index: dict(value))
+    monkeypatch.setattr(validator, "_require_reachable", lambda _commit: None)
+    monkeypatch.setattr(
+        validator,
+        "_git_json",
+        lambda _commit, _path, _label: {
+            "schema_version": "1.0",
+            "task_id": "feedback-test",
+            "producer": "Q4_SPEC_TEST_CONTRACT_REVIEWER",
+            "result": "PASS",
+        },
     )
-    finding = FindingNormalizer(ROOT, store=store).normalize(
-        [initial_feedback],
-        generalized_problem="Closure must be authorized by the semantics of the bound reviewer result.",
-        root_cause_class="UNBOUND_VERIFICATION_RESULT",
-        repair_stages=["VERIFIER_BUILD"],
-        should_have_been_caught_by=["SPEC_ALIGNMENT"],
-        closure_conditions=["A current passing independent result verifies the repaired task commit."],
-        verification_owner=verification_owner,
-    )
-    return FindingClosure(ROOT, store=store).mark_repaired(
-        str(finding["finding_id"]), commit
-    )
-
-
-def _verification_feedback(
-    store: LearningStore,
-    *,
-    producer: str,
-    result_path: str,
-) -> dict[str, object]:
-    return FeedbackIngestor(ROOT, store=store).capture(
-        source_type="INDEPENDENT_REVIEW",
-        producer=producer,
-        task_id=_TASK_ID,
-        task_commit=_head(),
-        severity="HIGH",
-        message="This feedback claims the repaired finding is independently verified.",
-        category="VERIFICATION_RESULT_SEMANTICS",
-        stage_hint="VERIFIER_BUILD",
-        source_binding=_result_binding(result_path, producer),
-        captured_at="2026-08-14T00:00:00Z",
-    )
-
-
-def test_controlled_revise_result_cannot_close_finding(tmp_path: Path) -> None:
-    store = _store(tmp_path)
-    verifier = "Spec-Test Contract Reviewer"
-    repaired = _repaired_finding(store, verification_owner=verifier)
-    verification = _verification_feedback(
-        store,
-        producer=verifier,
-        result_path=_Q4_REVISE_RESULT,
-    )
-
-    with pytest.raises(ValueError, match="passing outcome"):
-        FindingClosure(ROOT, store=store).verify(
-            str(repaired["finding_id"]),
-            verifier_role=verifier,
-            verification_feedback=[verification],
+    with pytest.raises(ValueError, match="not canonical"):
+        validator.validate_review_result(
+            binding=binding,
+            producer="Q4_SPEC_TEST_CONTRACT_REVIEWER",
+            task_id="feedback-test",
+            task_commit=_head(),
+            require_passing=True,
         )
 
 
-def test_pre_repair_pass_result_cannot_verify_newer_task_commit(tmp_path: Path) -> None:
-    store = _store(tmp_path)
-    verifier = "Production Logic Auditor"
-    repaired = _repaired_finding(store, verification_owner=verifier)
-    verification = _verification_feedback(
-        store,
-        producer=verifier,
-        result_path=_Q6_PASS_RESULT,
-    )
+def test_real_q4_revise_result_cannot_authorize_closure(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    payload = json.loads((ROOT / _Q4_REVISE_RESULT).read_text(encoding="utf-8"))
+    validator = ProvenanceValidator(ROOT)
+    monkeypatch.setattr(validator, "_validate_packet", lambda *_args, **_kwargs: None)
+    with pytest.raises(ValueError, match="passing outcome"):
+        validator.validate_review_result(
+            binding=_binding(_Q4_REVISE_RESULT),
+            producer="Q4_SPEC_TEST_CONTRACT_REVIEWER",
+            task_id=_TASK_ID,
+            task_commit=str(payload["task_commit"]),
+            require_passing=True,
+        )
 
-    with pytest.raises(ValueError, match="verification task commit"):
-        FindingClosure(ROOT, store=store).verify(
-            str(repaired["finding_id"]),
-            verifier_role=verifier,
-            verification_feedback=[verification],
+
+def test_real_historical_q6_pass_cannot_verify_newer_task_commit() -> None:
+    validator = ProvenanceValidator(ROOT)
+    with pytest.raises(ValueError, match="exact verification task commit"):
+        validator.validate_review_result(
+            binding=_binding(_Q6_PASS_RESULT),
+            producer="Q6_PRODUCTION_LOGIC_AUDITOR",
+            task_id=_TASK_ID,
+            task_commit=_head(),
+            require_passing=True,
+        )
+
+
+def test_unreachable_side_commit_cannot_be_review_authority(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    validator = ProvenanceValidator(ROOT)
+    path = ".terminus/reviews/feedback-test/fake-result.json"
+    binding = {
+        "kind": "RESULT",
+        "ref": f"git:{'0' * 40}:{path}",
+        "content_hash": "sha256:" + "0" * 64,
+    }
+    monkeypatch.setattr(validator.evidence, "validate", lambda value, _index: dict(value))
+    with pytest.raises(ValueError, match="authorized repository lineage"):
+        validator.validate_review_result(
+            binding=binding,
+            producer="Q4_SPEC_TEST_CONTRACT_REVIEWER",
+            task_id="feedback-test",
+            task_commit=_head(),
+            require_passing=True,
         )
