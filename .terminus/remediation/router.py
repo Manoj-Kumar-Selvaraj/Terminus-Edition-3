@@ -9,6 +9,7 @@ from typing import Any
 from feedback.closure import FindingClosure
 from feedback.registry import LearningStore
 from feedback.schema_validation import LearningSchemaValidator
+from learning.integrity import LearningIntegrityValidator
 
 from .progress import RemediationProgressValidator
 
@@ -16,21 +17,36 @@ _SEVERITY = {"CRITICAL": 5, "HIGH": 4, "MEDIUM": 3, "LOW": 2, "INFO": 1}
 
 
 class RemediationInterlock:
-    """Derive remediation actions without mutating normal workflow state."""
+    """Derive remediation actions without trusting registry state labels alone."""
 
     def __init__(self, root: Path, *, store: LearningStore | None = None):
         self.root = root.resolve()
         self.store = store or LearningStore(self.root)
         self.schemas = LearningSchemaValidator(self.root)
         self.progress = RemediationProgressValidator(self.root, store=self.store)
+        self.integrity = LearningIntegrityValidator(self.root, store=self.store)
 
-    def next_override(self, *, task_id: str, task_commit: str) -> dict[str, Any] | None:
-        candidates = [
+    def next_override(
+        self, *, task_id: str, task_commit: str
+    ) -> dict[str, Any] | None:
+        all_findings = [
             finding
             for finding in self.store.findings.latest_by("finding_id")
             if finding.get("task_id") == task_id
-            and finding.get("state") not in {"CLOSED", "WONT_FIX"}
         ]
+        candidates: list[dict[str, Any]] = []
+        for finding in all_findings:
+            self.schemas.validate("finding", finding)
+            state = str(finding.get("state"))
+            if state in {"CLOSED", "WONT_FIX"}:
+                # Terminal rows are excluded only after their semantic proof is
+                # replayed. A raw hash-chain append cannot make a blocker vanish.
+                self.integrity.validate_terminal_finding(finding)
+                continue
+            if state in {"REPAIRED", "VERIFIED"}:
+                self.integrity.validate_terminal_finding(finding)
+            candidates.append(finding)
+
         candidates.sort(
             key=lambda finding: (
                 -_SEVERITY.get(str(finding.get("severity")), 0),
@@ -66,10 +82,14 @@ class RemediationInterlock:
             }
 
         repairable = [
-            finding for finding in findings if finding["state"] in {"OPEN", "ASSIGNED"}
+            finding
+            for finding in findings
+            if finding["state"] in {"OPEN", "ASSIGNED"}
         ]
         for finding in repairable:
-            packet = self.progress.packet_for(finding_id=str(finding["finding_id"]))
+            packet = self.progress.packet_for(
+                finding_id=str(finding["finding_id"])
+            )
             if packet is None:
                 return {
                     "action": "PLAN_REMEDIATION",
@@ -97,7 +117,9 @@ class RemediationInterlock:
                 "repaired_task_commit": progress["output_task_commit"],
             }
 
-        repaired = [finding for finding in findings if finding["state"] == "REPAIRED"]
+        repaired = [
+            finding for finding in findings if finding["state"] == "REPAIRED"
+        ]
         if repaired:
             finding = repaired[0]
             return {
@@ -105,10 +127,14 @@ class RemediationInterlock:
                 "finding_id": finding["finding_id"],
                 "verification_owner": finding["closure"]["verification_owner"],
                 "remediation_id": finding["closure"].get("remediation_id"),
-                "repaired_task_commit": finding["closure"].get("repaired_task_commit"),
+                "repaired_task_commit": finding["closure"].get(
+                    "repaired_task_commit"
+                ),
             }
 
-        verified = [finding for finding in findings if finding["state"] == "VERIFIED"]
+        verified = [
+            finding for finding in findings if finding["state"] == "VERIFIED"
+        ]
         if verified:
             finding = verified[0]
             return {
@@ -129,11 +155,16 @@ class RemediationInterlock:
         ]
         closure = FindingClosure(self.root, store=self.store)
         for finding in findings:
-            packet = self.progress.packet_for(finding_id=str(finding["finding_id"]))
+            packet = self.progress.packet_for(
+                finding_id=str(finding["finding_id"])
+            )
             if packet is None:
                 continue
             progress = self.progress.progress(packet)
-            if progress["next_step"] is None and progress["output_task_commit"]:
+            if (
+                progress["next_step"] is None
+                and progress["output_task_commit"]
+            ):
                 updates.append(
                     closure.mark_repaired(
                         str(finding["finding_id"]),
@@ -146,7 +177,15 @@ class RemediationInterlock:
     def _is_ancestor(self, ancestor: str, descendant: str) -> bool:
         return (
             subprocess.run(
-                ["git", "-C", str(self.root), "merge-base", "--is-ancestor", ancestor, descendant],
+                [
+                    "git",
+                    "-C",
+                    str(self.root),
+                    "merge-base",
+                    "--is-ancestor",
+                    ancestor,
+                    descendant,
+                ],
                 capture_output=True,
             ).returncode
             == 0
