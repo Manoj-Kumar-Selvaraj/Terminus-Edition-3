@@ -183,18 +183,36 @@ def test_f2p_cli_default_writes_contract_path():
 
 
 def test_f2p_layout_override_is_honored():
-    """--layout reads the supplied layout rather than silently using the default file."""
-    custom_layout = Path("/tmp/sku-override.layout")
-    out = Path("/tmp/layout-override-report.json")
-    text = LAYOUT.read_text(encoding="utf-8").replace("LAYOUT SKU-REC", "LAYOUT SKU-OVERRIDE", 1)
-    custom_layout.write_text(text, encoding="utf-8")
+    """--layout controls actual field binding, widths, types, and record length."""
+    custom_layout = Path("/tmp/semantic-override.layout")
+    target = Path("/tmp/semantic-override.dat")
+    out = Path("/tmp/semantic-override-report.json")
+    custom_layout.write_text(
+        "\n".join(
+            [
+                "LAYOUT ALT-SEMANTIC",
+                "FIELD CODE PIC X(4)",
+                "FIELD COUNT PIC 9(2)",
+                "FIELD VALUE PIC S9(3)V9 COMP-3",
+                "END",
+                "",
+            ]
+        ),
+        encoding="utf-8",
+    )
+    target.write_bytes(b"ABCD07" + bytes((0x01, 0x23, 0x4C)))
     cp = _run(
-        ["--layout", str(custom_layout), "--records", str(PUBLIC), "--out", str(out)]
+        ["--layout", str(custom_layout), "--records", str(target), "--out", str(out)]
     )
     assert cp.returncode == 0, cp.stderr
     data = json.loads(out.read_text(encoding="utf-8"))
-    assert data["layout_id"] == "SKU-OVERRIDE"
-    assert data["source_records"] == str(PUBLIC)
+    assert data["layout_id"] == "ALT-SEMANTIC"
+    assert data["source_records"] == str(target)
+    assert len(data["records"]) == 1
+    record = data["records"][0]
+    assert record["byte_length"] == 9
+    assert record["error"] is None
+    assert record["fields"] == {"CODE": "ABCD", "COUNT": 7, "VALUE": "123.4"}
 
 
 def test_f2p_report_schema_required_fields():
