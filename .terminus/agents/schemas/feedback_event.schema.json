@@ -1,0 +1,97 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "terminus-feedback-event-v1",
+  "title": "Terminus Unified Feedback Event",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "feedback_id", "source", "task", "observation", "provenance"],
+  "properties": {
+    "schema_version": {"const": "1.0"},
+    "feedback_id": {"type": "string", "pattern": "^feedback_[0-9a-f]{64}$"},
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "producer"],
+      "properties": {
+        "type": {"enum": ["HUMAN_REVIEW", "INDEPENDENT_REVIEW", "REVIEWER_REVIEW", "PORTAL_CI", "REPOSITORY_CI", "LLMAJ", "MODEL_DIAGNOSTIC", "MODEL_TRIAL", "DIFFICULTY", "FINAL_REVIEW", "SUBMISSION_RESULT", "RUNTIME"]},
+        "producer": {"type": "string", "minLength": 1},
+        "run_id": {"type": ["string", "integer"]},
+        "external_ref": {"type": "string", "minLength": 1}
+      }
+    },
+    "task": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["task_id", "task_commit"],
+      "properties": {
+        "task_id": {"type": "string", "minLength": 1},
+        "task_commit": {"type": "string", "pattern": "^[0-9a-f]{40,64}$"}
+      }
+    },
+    "observation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["severity", "message"],
+      "properties": {
+        "severity": {"enum": ["INFO", "LOW", "MEDIUM", "HIGH", "CRITICAL"]},
+        "message": {"type": "string", "minLength": 1},
+        "category": {"type": "string", "minLength": 1},
+        "stage_hint": {"type": "string", "minLength": 1},
+        "role_hint": {"type": "string", "minLength": 1},
+        "test_id": {"type": "string", "minLength": 1},
+        "metric": {"type": "string", "minLength": 1},
+        "value": {},
+        "expected": {},
+        "evidence": {"type": "array", "items": {"$ref": "#/$defs/evidenceRef"}}
+      }
+    },
+    "provenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["captured_at", "content_hash", "trust_status", "source_binding"],
+      "properties": {
+        "captured_at": {"type": "string", "format": "date-time"},
+        "content_hash": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"},
+        "trust_status": {"enum": ["UNAUTHENTICATED", "HUMAN_ASSERTED", "HUMAN_AUTHENTICATED", "REPOSITORY_RESOLVED", "EXTERNAL_POINTER_ONLY"]},
+        "source_binding": {
+          "oneOf": [
+            {"type": "null"},
+            {"$ref": "#/$defs/evidenceRef"}
+          ]
+        },
+        "authority_receipt": {
+          "oneOf": [
+            {"type": "null"},
+            {"$ref": "#/$defs/authorityReceipt"}
+          ]
+        }
+      }
+    }
+  },
+  "$defs": {
+    "evidenceRef": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "ref", "content_hash"],
+      "properties": {
+        "kind": {"enum": ["ARTIFACT", "RUN", "PACKET", "RESULT", "COMMIT", "FILE", "EXTERNAL", "OTHER"]},
+        "ref": {"type": "string", "pattern": "^(?:git:|commit:|run:|external:).+"},
+        "content_hash": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"}
+      }
+    },
+    "authorityReceipt": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["schema_version", "issuer", "principal", "action", "claim", "claim_hash", "signature"],
+      "properties": {
+        "schema_version": {"const": "1.0"},
+        "issuer": {"type": "string", "minLength": 1},
+        "principal": {"type": "string", "minLength": 1},
+        "action": {"enum": ["HUMAN_FEEDBACK", "AUTOMATED_SOURCE", "REVIEW_RESULT", "EXECUTION_RESULT", "LESSON_ACTIVATION"]},
+        "claim": {"type": "object"},
+        "claim_hash": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"},
+        "signature": {"type": "string", "minLength": 1}
+      }
+    }
+  }
+}

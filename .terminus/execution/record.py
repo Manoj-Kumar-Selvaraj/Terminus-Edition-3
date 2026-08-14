@@ -2,10 +2,13 @@
 
 from __future__ import annotations
 
+import json
 import subprocess
 from pathlib import Path
 from typing import Any, Mapping
 
+from authority.receipts import AuthorityReceiptValidator
+from learning.context import LearningContextBuilder
 from retrieval.policy import RetrievalPolicy
 
 from . import record_core as _core
@@ -20,11 +23,13 @@ _EVIDENCE_SENSITIVE_STAGES = _core._EVIDENCE_SENSITIVE_STAGES
 
 
 class ExecutionRecordBuilder(_core.ExecutionRecordBuilder):
-    """Extend the core recorder with resolvable evidence and handoff provenance."""
+    """Extend the core recorder with evidence, handoff and learning provenance."""
 
     def __init__(self, root: Path, policy: RetrievalPolicy | None = None):
         super().__init__(root, policy)
         self.evidence_ref_verifier = EvidenceReferenceVerifier(self.root)
+        self.learning_context = LearningContextBuilder(self.root)
+        self.semantic_authority = AuthorityReceiptValidator(self.root)
 
     def build(
         self,
@@ -36,20 +41,179 @@ class ExecutionRecordBuilder(_core.ExecutionRecordBuilder):
             not isinstance(handoff_id, str) or not handoff_id.startswith("handoff_")
         ):
             raise ValueError("stage result handoff_id is invalid")
+        authority_receipt = result.get("authority_receipt")
+        if authority_receipt is not None and not isinstance(authority_receipt, Mapping):
+            raise ValueError("stage result authority_receipt must be an object")
         core_result = dict(result)
         core_result.pop("handoff_id", None)
+        core_result.pop("authority_receipt", None)
         record = super().build(invocation, core_result)
-        if handoff_id is None:
-            return record
-        if handoff_id not in accepted_handoff_ids(invocation):
-            raise ValueError(
-                "stage result handoff_id does not match a canonical executor handoff for this invocation"
-            )
         mutable = dict(record)
         mutable.pop("record_id", None)
-        mutable["handoff_id"] = handoff_id
+        mutable["invocation_snapshot"] = self._json_copy(invocation)
+        if handoff_id is not None:
+            if handoff_id not in accepted_handoff_ids(invocation):
+                raise ValueError(
+                    "stage result handoff_id does not match a canonical executor handoff for this invocation"
+                )
+            mutable["handoff_id"] = handoff_id
+        if authority_receipt is not None:
+            mutable["authority_receipt"] = self._json_copy(authority_receipt)
         mutable["record_id"] = self._record_id(mutable)
         return self._ordered_record(mutable)
+
+    def validate_persisted_record(self, record: Mapping[str, Any]) -> dict[str, Any]:
+        """Replay a durable record through the canonical invocation/result builder."""
+        value = self._json_copy(record)
+        invocation = value.get("invocation_snapshot")
+        if not isinstance(invocation, Mapping):
+            raise ValueError(
+                "durable execution record is missing canonical invocation_snapshot"
+            )
+        lineage = value.get("task_lineage")
+        if not isinstance(lineage, Mapping):
+            raise ValueError("durable execution record has invalid task_lineage")
+        result: dict[str, Any] = {
+            "schema_version": "1.0",
+            "invocation_id": value.get("invocation_id"),
+            "output_task_commit": lineage.get("output_task_commit"),
+            "status": value.get("status"),
+            "outputs": value.get("outputs"),
+            "evidence_refs": value.get("evidence_refs"),
+        }
+        if "handoff_id" in value:
+            result["handoff_id"] = value["handoff_id"]
+        if "authority_receipt" in value:
+            result["authority_receipt"] = value["authority_receipt"]
+        if "route_key" in value:
+            result["route_key"] = value["route_key"]
+        if "blocking_reason" in value:
+            result["blocking_reason"] = value["blocking_reason"]
+        rebuilt = self.build(invocation, result)
+        if rebuilt != value:
+            raise ValueError(
+                "durable execution record does not reproduce from its canonical invocation/result"
+            )
+        return rebuilt
+
+    def validate_execution_authority(self, record: Mapping[str, Any]) -> dict[str, Any]:
+        """Authenticate the executor that emitted one semantic stage result."""
+        value = self.validate_persisted_record(record)
+        role_id = str(value["role_id"])
+        receipt = value.get("authority_receipt")
+        self.semantic_authority.verify(
+            receipt if isinstance(receipt, Mapping) else None,
+            action="EXECUTION_RESULT",
+            principal=f"executor:{role_id}",
+            claim=self.execution_authority_claim(value),
+        )
+        return value
+
+    @staticmethod
+    def execution_authority_claim(record: Mapping[str, Any]) -> dict[str, Any]:
+        lineage = record.get("task_lineage")
+        authority = record.get("authority")
+        if not isinstance(lineage, Mapping) or not isinstance(authority, Mapping):
+            raise ValueError("execution authority claim requires canonical lineage/authority")
+        claim: dict[str, Any] = {
+            "invocation_id": record.get("invocation_id"),
+            "stage_id": record.get("stage_id"),
+            "role_id": record.get("role_id"),
+            "authority": dict(authority),
+            "task_lineage": dict(lineage),
+            "status": record.get("status"),
+            "disposition": record.get("disposition"),
+            "outputs": record.get("outputs"),
+            "evidence_refs": record.get("evidence_refs"),
+            "transition": record.get("transition"),
+        }
+        if "route_key" in record:
+            claim["route_key"] = record["route_key"]
+        if "blocking_reason" in record:
+            claim["blocking_reason"] = record["blocking_reason"]
+        return json.loads(
+            json.dumps(claim, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
+        )
+
+    @staticmethod
+    def _json_copy(value: Mapping[str, Any]) -> dict[str, Any]:
+        try:
+            copied = json.loads(
+                json.dumps(value, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
+            )
+        except (TypeError, ValueError) as exc:
+            raise ValueError("execution object must be JSON-compatible") from exc
+        if not isinstance(copied, dict):
+            raise ValueError("execution object must be one JSON object")
+        return copied
+
+    def _validate_invocation(self, invocation: Mapping[str, Any]) -> dict[str, Any]:
+        packet = super()._validate_invocation(invocation)
+        learning = packet.get("learning")
+        if not isinstance(learning, Mapping):
+            raise ValueError("invocation is missing canonical learning context")
+        authority = packet["authority"]
+        stage = packet["stage"]
+        self.learning_context.validate_projection(
+            learning,
+            stage_id=str(stage["stage_id"]),
+            role_id=str(stage["role_id"]),
+            task_id=authority.get("task_id"),
+            task_commit=authority.get("task_commit"),
+        )
+        return packet
+
+    def _validate_task_lineage(
+        self, invocation: Mapping[str, Any], output_task_commit: str
+    ) -> dict[str, Any]:
+        lineage = super()._validate_task_lineage(invocation, output_task_commit)
+        if not lineage["task_changed"]:
+            return lineage
+        task_id = str(invocation["authority"]["task_id"])
+        input_task_commit = str(lineage["input_task_commit"])
+        changed = subprocess.run(
+            [
+                "git",
+                "-C",
+                str(self.root),
+                "diff",
+                "--name-only",
+                "--no-renames",
+                input_task_commit,
+                output_task_commit,
+                "--",
+            ],
+            check=True,
+            capture_output=True,
+            text=True,
+        ).stdout.splitlines()
+        forbidden = [
+            path
+            for path in changed
+            if path and not self._task_mutation_path_allowed(task_id, path)
+        ]
+        if forbidden:
+            raise ValueError(
+                "task producer/fixer output modifies protected repository paths: "
+                + ", ".join(sorted(forbidden))
+            )
+        if not changed:
+            raise ValueError(
+                "task producer/fixer output commit must contain an authorized task-scope change"
+            )
+        return lineage
+
+    @staticmethod
+    def _task_mutation_path_allowed(task_id: str, path: str) -> bool:
+        if path.startswith(f"{task_id}/"):
+            return True
+        if path == f".terminus/designs/{task_id}.json":
+            return True
+        if path.startswith(f".terminus/designs/{task_id}-"):
+            return True
+        if path.startswith(f".terminus/designs/{task_id}/"):
+            return True
+        return path.startswith(f".terminus/contracts/{task_id}/")
 
     def _validate_evidence_refs(self, values: list[Any]) -> list[dict[str, Any]]:
         refs: list[dict[str, Any]] = []
@@ -111,6 +275,13 @@ class ExecutionRecordBuilder(_core.ExecutionRecordBuilder):
             "stage_id",
             "role_id",
             "authority",
+        ):
+            ordered[field] = record[field]
+        if "invocation_snapshot" in record:
+            ordered["invocation_snapshot"] = record["invocation_snapshot"]
+        if "authority_receipt" in record:
+            ordered["authority_receipt"] = record["authority_receipt"]
+        for field in (
             "task_lineage",
             "status",
             "disposition",
@@ -129,6 +300,7 @@ class ExecutionRecordBuilder(_core.ExecutionRecordBuilder):
     def _require_outcome_snapshot(self, commit: str) -> None:
         super()._require_outcome_snapshot(commit)
         for relative in (
+            ".terminus/authority/receipts.py",
             ".terminus/execution/evidence_refs.py",
             ".terminus/execution/executor.py",
             ".terminus/execution/handoff_contract.py",

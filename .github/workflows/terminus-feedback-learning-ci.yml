@@ -1,0 +1,137 @@
+name: Terminus Feedback Learning CI
+
+on:
+  pull_request:
+    paths:
+      - '.terminus/authority/**'
+      - '.terminus/feedback/**'
+      - '.terminus/remediation/**'
+      - '.terminus/learning/**'
+      - '.terminus/execution/invocation.py'
+      - '.terminus/execution/record.py'
+      - '.terminus/execution/record_core.py'
+      - '.terminus/execution/ledger.py'
+      - '.terminus/execution/controller_cli.py'
+      - '.terminus/agents/FEEDBACK_LEARNING.md'
+      - '.terminus/agents/schemas/feedback_event.schema.json'
+      - '.terminus/agents/schemas/finding.schema.json'
+      - '.terminus/agents/schemas/remediation_packet.schema.json'
+      - '.terminus/agents/schemas/lesson.schema.json'
+      - '.terminus/agents/schemas/pattern.schema.json'
+      - '.terminus/agents/schemas/stage_invocation.schema.json'
+      - '.terminus/agents/schemas/stage_result.schema.json'
+      - '.terminus/conftest.py'
+      - '.terminus/tests/authority_helpers.py'
+      - '.terminus/tests/test_feedback_learning.py'
+      - '.terminus/tests/test_feedback_cold_review_regressions.py'
+      - '.terminus/tests/test_feedback_closure_result_semantics.py'
+      - '.terminus/tests/test_feedback_authority_final.py'
+      - '.terminus/tests/test_learning_domain_scope.py'
+      - '.terminus/validate_feedback_learning.py'
+      - '.github/workflows/terminus-feedback-learning-ci.yml'
+      - '.gitignore'
+  push:
+    branches: [main]
+    paths:
+      - '.terminus/authority/**'
+      - '.terminus/feedback/**'
+      - '.terminus/remediation/**'
+      - '.terminus/learning/**'
+      - '.terminus/execution/invocation.py'
+      - '.terminus/execution/record.py'
+      - '.terminus/execution/record_core.py'
+      - '.terminus/execution/ledger.py'
+      - '.terminus/execution/controller_cli.py'
+      - '.terminus/agents/FEEDBACK_LEARNING.md'
+      - '.terminus/agents/schemas/feedback_event.schema.json'
+      - '.terminus/agents/schemas/finding.schema.json'
+      - '.terminus/agents/schemas/remediation_packet.schema.json'
+      - '.terminus/agents/schemas/lesson.schema.json'
+      - '.terminus/agents/schemas/pattern.schema.json'
+      - '.terminus/agents/schemas/stage_invocation.schema.json'
+      - '.terminus/agents/schemas/stage_result.schema.json'
+      - '.terminus/conftest.py'
+      - '.terminus/tests/authority_helpers.py'
+      - '.terminus/tests/test_feedback_learning.py'
+      - '.terminus/tests/test_feedback_cold_review_regressions.py'
+      - '.terminus/tests/test_feedback_closure_result_semantics.py'
+      - '.terminus/tests/test_feedback_authority_final.py'
+      - '.terminus/tests/test_learning_domain_scope.py'
+      - '.terminus/validate_feedback_learning.py'
+      - '.github/workflows/terminus-feedback-learning-ci.yml'
+      - '.gitignore'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: terminus-feedback-learning-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate-feedback-learning:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install pinned test tools
+        run: python3 -m pip install --quiet ruff==0.14.10 pytest==8.4.1 jsonschema==4.23.0
+
+      - name: Compile feedback learning plane
+        run: |
+          python3 -m compileall -q \
+            .terminus/authority \
+            .terminus/feedback \
+            .terminus/remediation \
+            .terminus/learning
+          python3 -m py_compile \
+            .terminus/execution/invocation.py \
+            .terminus/execution/record.py \
+            .terminus/execution/record_core.py \
+            .terminus/execution/ledger.py \
+            .terminus/execution/controller_cli.py \
+            .terminus/validate_feedback_learning.py
+
+      - name: Lint feedback learning plane
+        run: |
+          ruff check \
+            .terminus/authority \
+            .terminus/feedback \
+            .terminus/remediation \
+            .terminus/learning \
+            .terminus/execution/invocation.py \
+            .terminus/execution/record.py \
+            .terminus/execution/record_core.py \
+            .terminus/execution/ledger.py \
+            .terminus/execution/controller_cli.py \
+            .terminus/conftest.py \
+            .terminus/tests/authority_helpers.py \
+            .terminus/tests/test_feedback_learning.py \
+            .terminus/tests/test_feedback_cold_review_regressions.py \
+            .terminus/tests/test_feedback_closure_result_semantics.py \
+            .terminus/tests/test_feedback_authority_final.py \
+            .terminus/tests/test_learning_domain_scope.py \
+            .terminus/validate_feedback_learning.py
+
+      - name: Run feedback learning tests
+        run: |
+          python3 -m pytest \
+            .terminus/tests/test_feedback_learning.py \
+            .terminus/tests/test_feedback_cold_review_regressions.py \
+            .terminus/tests/test_feedback_closure_result_semantics.py \
+            .terminus/tests/test_feedback_authority_final.py \
+            .terminus/tests/test_learning_domain_scope.py \
+            -q
+
+      - name: Validate feedback learning boundary
+        run: python3 .terminus/validate_feedback_learning.py
+
+      - name: Recheck invocation record and workflow compatibility
+        run: |
+          python3 .terminus/validate_stage_invocation.py
+          python3 .terminus/validate_execution_record.py
+          python3 .terminus/validate_workflow_state.py

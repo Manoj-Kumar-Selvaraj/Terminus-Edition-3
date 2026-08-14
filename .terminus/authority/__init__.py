@@ -1,0 +1,1 @@
+"""Semantic authority verification primitives."""

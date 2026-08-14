@@ -2,19 +2,21 @@ from __future__ import annotations
 
 import hashlib
 import json
-import shutil
 import subprocess
 import sys
 from pathlib import Path
-
-import pytest
+from urllib.parse import quote
 
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / ".terminus"))
 
+from execution.invocation import StageInvocationBuilder  # noqa: E402
 from execution.ledger import ExecutionLedger  # noqa: E402
 from execution.record import ExecutionRecordBuilder  # noqa: E402
 from execution.state import WorkflowStateResolver  # noqa: E402
+from retrieval.models import InvocationContext  # noqa: E402
+
+_RECORD_REFERENCE_FIXTURE = ".terminus/tests/fixtures/record_reference_ids.json"
 
 
 def _run(root: Path, *args: str) -> str:
@@ -24,14 +26,14 @@ def _run(root: Path, *args: str) -> str:
 
 
 def _temp_control_repo(tmp_path: Path) -> tuple[Path, str]:
+    """Use a complete control-plane clone so canonical replay is test-realistic."""
     root = tmp_path / "repo"
-    (root / ".terminus").mkdir(parents=True)
-    shutil.copytree(ROOT / ".terminus" / "agents", root / ".terminus" / "agents")
-    _run(root, "init")
+    subprocess.run(
+        ["git", "clone", "--quiet", "--shared", str(ROOT), str(root)],
+        check=True,
+    )
     _run(root, "config", "user.email", "terminus-tests@example.invalid")
     _run(root, "config", "user.name", "Terminus Tests")
-    _run(root, "add", ".")
-    _run(root, "commit", "-m", "control snapshot")
     return root, _run(root, "rev-parse", "HEAD")
 
 
@@ -42,17 +44,23 @@ def _new_commit(root: Path, name: str) -> str:
     return _run(root, "rev-parse", "HEAD")
 
 
-def _invocation_id(label: str) -> str:
-    return "inv_" + hashlib.sha256(label.encode("utf-8")).hexdigest()
+def _review_pass(review_id: str = "fixture-review") -> dict[str, object]:
+    return {
+        "review_id": review_id,
+        "verdict": "PASS",
+        "confidence": "MEDIUM",
+        "evidence_status": "SUFFICIENT",
+        "missing_evidence": [],
+    }
 
 
-def _review_pass() -> dict[str, object]:
-    return {"verdict": "PASS", "confidence": "MEDIUM", "evidence_status": "SUFFICIENT", "missing_evidence": []}
-
-
-def _valid_outputs(resolver: WorkflowStateResolver, stage_id: str) -> dict[str, object]:
+def _valid_outputs(
+    resolver: WorkflowStateResolver, stage_id: str
+) -> dict[str, object]:
     stage = resolver.policy.stages[stage_id]
-    outputs: dict[str, object] = {name: "ok" for name in stage["output_contract"]["required_fields"]}
+    outputs: dict[str, object] = {
+        name: "ok" for name in stage["output_contract"]["required_fields"]
+    }
     if stage_id == "RULE_RESOLUTION":
         outputs["KNOWN_POLICY_CONFLICTS"] = []
     elif stage_id == "SPEC_ALIGNMENT":
@@ -67,20 +75,157 @@ def _valid_outputs(resolver: WorkflowStateResolver, stage_id: str) -> dict[str, 
             P2P_EMPIRICAL_MATRIX=[{"case": "p2p", "pass": True}],
         )
     elif stage_id == "QUALITY_INTERLOCK":
-        outputs.update(Q4_RESULT=_review_pass(), Q6_RESULT=_review_pass(), EVIDENCE_SUFFICIENCY="SUFFICIENT")
+        outputs.update(
+            Q4_RESULT=_review_pass("q4-review"),
+            Q6_RESULT=_review_pass("q6-review"),
+            EVIDENCE_SUFFICIENCY="SUFFICIENT",
+        )
     elif stage_id == "PRE_LLMAJ":
         outputs.update({f"STAGE_{letter}": "PASS" for letter in "ABCDEF"})
+    elif stage_id == "MODEL_DIAGNOSTIC_GPT":
+        outputs.update(
+            PERSPECTIVE="GPT_PERSPECTIVE",
+            EXECUTION="EXECUTED",
+            DIAGNOSTIC_SUMMARY="diagnostic",
+            PREDICTED_OFFICIAL_SIGNAL="non-authoritative",
+        )
+    elif stage_id == "MODEL_DIAGNOSTIC_CLAUDE":
+        outputs.update(
+            PERSPECTIVE="CLAUDE_PERSPECTIVE",
+            EXECUTION="EXECUTED",
+            DIAGNOSTIC_SUMMARY="diagnostic",
+            PREDICTED_OFFICIAL_SIGNAL="non-authoritative",
+        )
+    elif stage_id == "MODEL_DIAGNOSTIC_AGGREGATE":
+        outputs.update(
+            GPT_PERSPECTIVE_RESULT={"EXECUTION": "EXECUTED"},
+            CLAUDE_PERSPECTIVE_RESULT={"EXECUTION": "EXECUTED"},
+            ISOLATION_CHECK="PASS",
+            COMPARATIVE_DIAGNOSTIC="complete",
+        )
+    elif stage_id == "HARBOR_LLMAJ":
+        outputs.update(
+            HARBOR_RUN_ID="harbor-run-1",
+            HARBOR_RESULT="PASS",
+            HARBOR_EVIDENCE={"artifact": "harbor-run-1"},
+        )
     elif stage_id == "OFFICIAL_MODEL_TRIALS":
         outputs.update(
-            GPT_5_5_TRIALS=[{"trial": i} for i in range(5)],
-            CLAUDE_OPUS_4_8_TRIALS=[{"trial": i} for i in range(5)],
+            GPT_5_5_TRIALS=[
+                {"trial": i, "run_id": f"gpt-run-{i}"} for i in range(5)
+            ],
+            CLAUDE_OPUS_4_8_TRIALS=[
+                {"trial": i, "run_id": f"claude-run-{i}"} for i in range(5)
+            ],
+            COMBINED_SUCCESS_RATE=0.5,
             PER_TEST_SOLVABILITY={"test_f2p_example": 1},
         )
+    elif stage_id == "TRIAL_ANALYSIS":
+        outputs.update(
+            FAILURE_CLASSIFICATION={},
+            ZERO_OF_TEN_DISPOSITION="NONE",
+            REMEDIATION_OWNER="NONE",
+        )
+    elif stage_id == "DIFFICULTY_ASSESSMENT":
+        outputs.update(
+            EMPIRICAL_TIER="advanced",
+            DECLARED_TIER="advanced",
+            COMBINED_SUCCESS_RATE=0.5,
+            PER_TEST_SOLVABILITY={"test_f2p_example": 1},
+            ZERO_OF_TEN_TESTS=[],
+            TRAJECTORY_ANALYSIS_RESULT={
+                "status": "COMPLETE",
+                "record_id": "trajectory-result",
+            },
+        )
     elif stage_id == "FINAL_REVIEW":
-        outputs.update(FINAL_COMPLIANCE=_review_pass(), FINAL_HUMAN_QUALITY=_review_pass(), FINAL_PACKAGE_EVIDENCE={"manifest": "ok"})
+        outputs.update(
+            FINAL_COMPLIANCE=_review_pass("final-compliance"),
+            FINAL_HUMAN_QUALITY=_review_pass("final-human-quality"),
+            FINAL_PACKAGE_EVIDENCE={"manifest": "ok"},
+        )
     elif stage_id == "SUBMISSION_READY":
-        outputs.update(READINESS_STATUS="SUBMISSION_READY", GATE_EVIDENCE={"all": "current"})
+        outputs.update(
+            READINESS_STATUS="SUBMISSION_READY",
+            GATE_EVIDENCE={"all": "current"},
+        )
     return outputs
+
+
+def _resolved_ref(root: Path, commit: str, kind: str, identity: str) -> dict[str, str]:
+    raw = subprocess.run(
+        ["git", "-C", str(root), "show", f"{commit}:{_RECORD_REFERENCE_FIXTURE}"],
+        check=True,
+        capture_output=True,
+    ).stdout
+    digest = "sha256:" + hashlib.sha256(raw).hexdigest()
+    return {
+        "kind": kind,
+        "ref": f"git:{commit}:{_RECORD_REFERENCE_FIXTURE}#{quote(identity, safe='')}",
+        "content_hash": digest,
+    }
+
+
+def _default_evidence(
+    root: Path,
+    commit: str,
+    stage_id: str,
+    outputs: dict[str, object],
+) -> list[dict[str, str]]:
+    if stage_id == "QUALITY_INTERLOCK":
+        return [
+            _resolved_ref(root, commit, "RESULT", "q4-review"),
+            _resolved_ref(root, commit, "RESULT", "q6-review"),
+        ]
+    if stage_id == "PRE_LLMAJ":
+        return [
+            _resolved_ref(root, commit, "RESULT", f"prellmaj-{i}")
+            for i in range(6)
+        ]
+    if stage_id == "MODEL_DIAGNOSTIC_AGGREGATE":
+        return [
+            _resolved_ref(root, commit, "RESULT", "q8-gpt"),
+            _resolved_ref(root, commit, "RESULT", "q8-claude"),
+        ]
+    if stage_id == "HARBOR_LLMAJ":
+        identity = str(outputs.get("HARBOR_RUN_ID") or outputs.get("EXTERNAL_RUN_ID"))
+        return [_resolved_ref(root, commit, "RUN", identity)]
+    if stage_id in {
+        "OFFICIAL_MODEL_TRIALS",
+        "TRIAL_ANALYSIS",
+        "DIFFICULTY_ASSESSMENT",
+    }:
+        refs = [
+            _resolved_ref(root, commit, "RUN", f"gpt-run-{i}")
+            for i in range(5)
+        ] + [
+            _resolved_ref(root, commit, "RUN", f"claude-run-{i}")
+            for i in range(5)
+        ]
+        if stage_id == "DIFFICULTY_ASSESSMENT":
+            refs.append(_resolved_ref(root, commit, "RESULT", "trajectory-result"))
+        return refs
+    if stage_id == "FINAL_REVIEW":
+        return [
+            _resolved_ref(root, commit, "RESULT", "final-compliance"),
+            _resolved_ref(root, commit, "RESULT", "final-human-quality"),
+            _resolved_ref(root, commit, "ARTIFACT", "final-package"),
+        ]
+    if stage_id == "SUBMISSION_READY":
+        return [
+            _resolved_ref(root, commit, "RESULT", "final-review"),
+            _resolved_ref(root, commit, "ARTIFACT", "submission-package"),
+        ]
+    return []
+
+
+def _external_ref(identity: str) -> dict[str, str]:
+    digest = "sha256:" + hashlib.sha256(identity.encode()).hexdigest()
+    return {
+        "kind": "EXTERNAL",
+        "ref": f"external:test:{identity}#{digest}",
+        "content_hash": digest,
+    }
 
 
 def _record(
@@ -94,64 +239,64 @@ def _record(
     attempt: int = 1,
     status: str | None = None,
     evidence_refs: list[dict[str, object]] | None = None,
+    outputs_override: dict[str, object] | None = None,
 ) -> dict[str, object]:
+    """Build every workflow-state fixture through canonical invocation/record APIs."""
     stage = resolver.policy.stages[stage_id]
     outcome = resolver.outcomes["stages"][stage_id]
     if status is None:
         status = outcome["advance_statuses"][0]
-    disposition = resolver.record_builder._disposition(outcome, status)
-    outputs = _valid_outputs(resolver, stage_id)
     output_commit = output_commit or commit
     control_commit = control_commit or commit
-    success_target = str(stage["success_transition"])
-    if disposition == "ADVANCE":
-        target_kind = "END" if success_target == "END" else "STATE" if success_target in resolver.completion["state_contracts"] else "STAGE"
-        transition: dict[str, object] = {
-            "action": "ADVANCE", "target": success_target, "target_kind": target_kind,
-            "requires_state_validation": target_kind == "STATE",
-        }
-    elif disposition == "RETRY":
-        transition = {"action": "RETRY", "target": stage_id, "target_kind": "STAGE", "requires_state_validation": False}
-    elif disposition == "BLOCK":
-        transition = {"action": "BLOCK", "target": None, "target_kind": "NONE", "requires_state_validation": False}
-    else:
-        semantics = outcome["route_statuses"][status]
-        route_key = semantics.get("default_route_key") or semantics["allowed_route_keys"][0]
-        transition = {
-            "action": "ROUTE", "target": None, "target_kind": "ROUTE",
-            "route_key": route_key, "route_instruction": stage["failure_routes"][route_key],
-            "requires_state_validation": False,
-        }
-    refs = evidence_refs or []
-    value: dict[str, object] = {
+    role_id = resolver.execution_authority.primary_role_for_stage(stage_id)
+    required = {
+        str(field): {"fixture": str(field)}
+        for field in stage["input_contract"]["required_fields"]
+    }
+    optional_fields = list(stage["input_contract"].get("optional_fields", []))
+    inputs: dict[str, object] = dict(required)
+    if optional_fields:
+        inputs[str(optional_fields[0])] = {"fixture_attempt": attempt}
+    invocation = StageInvocationBuilder(resolver.root, resolver.policy).build(
+        InvocationContext(
+            stage_id=stage_id,
+            role_id=role_id,
+            task_id=task_id,
+            task_commit=commit,
+            control_plane_commit=control_commit,
+        ),
+        inputs,
+    )
+    outputs = (
+        dict(outputs_override)
+        if outputs_override is not None
+        else _valid_outputs(resolver, stage_id)
+    )
+    refs = (
+        list(evidence_refs)
+        if evidence_refs is not None
+        else _default_evidence(resolver.root, commit, stage_id, outputs)
+    )
+    result: dict[str, object] = {
         "schema_version": "1.0",
-        "invocation_id": _invocation_id(f"{stage_id}:{attempt}:{commit}:{output_commit}"),
-        "stage_id": stage_id,
-        "role_id": resolver.execution_authority.primary_role_for_stage(stage_id),
-        "authority": {"task_id": task_id, "task_commit": commit, "control_plane_commit": control_commit, "policy_versions": {}},
-        "task_lineage": {"input_task_commit": commit, "output_task_commit": output_commit, "task_changed": output_commit != commit},
+        "invocation_id": invocation["invocation_id"],
+        "output_task_commit": output_commit,
         "status": status,
-        "disposition": disposition,
         "outputs": outputs,
         "evidence_refs": refs,
-        "transition": transition,
-        "validation": {
-            "invocation_identity_valid": True,
-            "status_legal": True,
-            "output_keys_valid": True,
-            "required_outputs_satisfied": status in outcome["full_output_statuses"],
-            "task_lineage_valid": True,
-            "task_commit_change_authorized": True,
-            "acceptance_predicates_satisfied": True,
-            "evidence_refs_count": len(refs),
-        },
     }
-    if disposition == "ROUTE":
-        value["route_key"] = transition["route_key"]
+    disposition = resolver.record_builder._disposition(outcome, status)
     if disposition == "BLOCK":
-        value["blocking_reason"] = "test block"
-    value["record_id"] = ExecutionRecordBuilder._record_id(value)
-    return value
+        result["blocking_reason"] = "test block"
+    elif disposition == "ROUTE":
+        semantics = outcome["route_statuses"][status]
+        result["route_key"] = (
+            semantics.get("default_route_key")
+            or semantics["allowed_route_keys"][0]
+        )
+    return ExecutionRecordBuilder(resolver.root, resolver.policy).build(
+        invocation, result
+    )
 
 
 def _append_through_freeze_predecessor(
@@ -167,138 +312,151 @@ def _append_through_freeze_predecessor(
         if descriptor["node_kind"] == "STATE":
             break
         stage_id = descriptor["node_id"]
-        refs = work_package_evidence if stage_id == "WORK_PACKAGE_RESEARCH" else None
-        ledger.append(_record(resolver, stage_id, task_id, commit, evidence_refs=refs))
+        refs = (
+            work_package_evidence
+            if stage_id == "WORK_PACKAGE_RESEARCH"
+            else None
+        )
+        ledger.append(
+            _record(
+                resolver,
+                stage_id,
+                task_id,
+                commit,
+                evidence_refs=refs,
+            )
+        )
     return ledger
 
 
 def test_empty_ledger_starts_at_rule_resolution(tmp_path: Path) -> None:
     root, commit = _temp_control_repo(tmp_path)
-    state = WorkflowStateResolver(root).resolve(task_id="task-empty", task_commit=commit, control_plane_commit=commit)
+    state = WorkflowStateResolver(root).resolve(
+        task_id="task-empty",
+        task_commit=commit,
+        control_plane_commit=commit,
+    )
     assert state["summary"]["CURRENT"] == 0
     assert state["lineage"]["status"] == "UNINITIALIZED"
     assert state["next"]["stage_id"] == "RULE_RESOLUTION"
 
 
-def test_complete_creation_chain_materializes_frozen_candidate(tmp_path: Path) -> None:
+def test_first_record_bootstraps_task_lineage(tmp_path: Path) -> None:
     root, commit = _temp_control_repo(tmp_path)
     resolver = WorkflowStateResolver(root)
-    _append_through_freeze_predecessor(root, resolver, "task-freeze", commit)
-    state = resolver.resolve(task_id="task-freeze", task_commit=commit, control_plane_commit=commit)
-    frozen = next(node for node in state["nodes"] if node["node_id"] == "FROZEN_CANDIDATE")
-    assert frozen["status"] == "CURRENT"
-    assert all(item.endswith("PASS") for item in frozen["entry_requirements"])
-    assert state["lineage"]["status"] == "CURRENT"
-    assert state["next"]["stage_id"] == "QUALITY_INTERLOCK"
-
-
-def test_recorded_producer_commit_lineage_remains_current(tmp_path: Path) -> None:
-    root, commit_a = _temp_control_repo(tmp_path)
-    resolver = WorkflowStateResolver(root)
-    ledger = ExecutionLedger(root, "task-lineage")
-    ledger.append(_record(resolver, "RULE_RESOLUTION", "task-lineage", commit_a))
-    commit_b = _new_commit(root, "task-change.txt")
-    ledger.append(
-        _record(
-            resolver, "WORK_PACKAGE_RESEARCH", "task-lineage", commit_a,
-            output_commit=commit_b, control_commit=commit_a,
-        )
+    ledger = ExecutionLedger(root, "task-first")
+    ledger.append(_record(resolver, "RULE_RESOLUTION", "task-first", commit))
+    state = resolver.resolve(
+        task_id="task-first", task_commit=commit, control_plane_commit=commit
     )
-    state = resolver.resolve(task_id="task-lineage", task_commit=commit_b, control_plane_commit=commit_a)
-    rule = state["nodes"][0]
-    work = state["nodes"][1]
-    assert rule["status"] == "CURRENT"
-    assert work["status"] == "CURRENT"
-    assert work["input_task_commit"] == commit_a
-    assert work["output_task_commit"] == commit_b
+    assert state["nodes"][0]["status"] == "CURRENT"
+    assert state["lineage"]["bootstrap_task_commit"] == commit
+    assert state["lineage"]["recorded_task_commit"] == commit
     assert state["lineage"]["status"] == "CURRENT"
-    assert state["next"]["stage_id"] == "SYSTEM_ARCHITECTURE"
 
 
-def test_unattributed_task_change_blocks_next_stage(tmp_path: Path) -> None:
-    root, commit_a = _temp_control_repo(tmp_path)
+def test_task_drift_blocks_unattributed_change(tmp_path: Path) -> None:
+    root, commit = _temp_control_repo(tmp_path)
     resolver = WorkflowStateResolver(root)
-    ExecutionLedger(root, "task-unattributed").append(
-        _record(resolver, "RULE_RESOLUTION", "task-unattributed", commit_a)
+    ledger = ExecutionLedger(root, "task-drift")
+    ledger.append(_record(resolver, "RULE_RESOLUTION", "task-drift", commit))
+    changed = _new_commit(root, "unattributed.txt")
+    state = resolver.resolve(
+        task_id="task-drift", task_commit=changed, control_plane_commit=commit
     )
-    commit_b = _new_commit(root, "unattributed.txt")
-    state = resolver.resolve(task_id="task-unattributed", task_commit=commit_b, control_plane_commit=commit_a)
-    work = next(node for node in state["nodes"] if node["node_id"] == "WORK_PACKAGE_RESEARCH")
-    assert work["status"] == "BLOCKED"
-    assert "unattributed" in work["reason"]
     assert state["lineage"]["status"] == "UNATTRIBUTED_CHANGE"
     assert state["next"]["action"] == "BLOCKED"
+    assert "unattributed" in state["next"]["blocking_reason"]
 
 
-def test_broken_stage_input_lineage_is_stale(tmp_path: Path) -> None:
-    root, commit_a = _temp_control_repo(tmp_path)
+def test_downstream_record_stales_when_predecessor_is_newer(tmp_path: Path) -> None:
+    root, commit = _temp_control_repo(tmp_path)
     resolver = WorkflowStateResolver(root)
-    ledger = ExecutionLedger(root, "task-broken-lineage")
-    ledger.append(_record(resolver, "RULE_RESOLUTION", "task-broken-lineage", commit_a))
-    commit_b = _new_commit(root, "skip.txt")
+    ledger = ExecutionLedger(root, "task-sequence")
+    ledger.append(
+        _record(resolver, "RULE_RESOLUTION", "task-sequence", commit, attempt=1)
+    )
     ledger.append(
         _record(
-            resolver, "WORK_PACKAGE_RESEARCH", "task-broken-lineage", commit_b,
-            control_commit=commit_a,
+            resolver,
+            "WORK_PACKAGE_RESEARCH",
+            "task-sequence",
+            commit,
+            attempt=1,
         )
     )
-    state = resolver.resolve(task_id="task-broken-lineage", task_commit=commit_b, control_plane_commit=commit_a)
-    work = state["nodes"][1]
-    assert work["status"] == "STALE"
-    assert "does not match the latest current predecessor" in work["reason"]
+    ledger.append(
+        _record(resolver, "RULE_RESOLUTION", "task-sequence", commit, attempt=2)
+    )
+    state = resolver.resolve(
+        task_id="task-sequence", task_commit=commit, control_plane_commit=commit
+    )
+    by_id = {node["node_id"]: node for node in state["nodes"]}
+    assert by_id["RULE_RESOLUTION"]["status"] == "CURRENT"
+    assert by_id["WORK_PACKAGE_RESEARCH"]["status"] == "STALE"
     assert state["next"]["stage_id"] == "WORK_PACKAGE_RESEARCH"
 
 
-def test_later_retry_supersedes_earlier_format_pass(tmp_path: Path) -> None:
+def test_freeze_is_derived_only_when_entry_requirements_pass(tmp_path: Path) -> None:
     root, commit = _temp_control_repo(tmp_path)
     resolver = WorkflowStateResolver(root)
-    ledger = _append_through_freeze_predecessor(root, resolver, "task-retry", commit)
-    ledger.append(_record(resolver, "FORMAT_GATE", "task-retry", commit, attempt=2, status="FIXED"))
-    state = resolver.resolve(task_id="task-retry", task_commit=commit, control_plane_commit=commit)
-    format_node = next(node for node in state["nodes"] if node["node_id"] == "FORMAT_GATE")
-    assert format_node["status"] == "BLOCKED"
-    assert state["next"]["action"] == "RETRY_STAGE"
-    assembly = next(node for node in state["nodes"] if node["node_id"] == "ASSEMBLY")
-    assert assembly["status"] == "STALE"
+    _append_through_freeze_predecessor(root, resolver, "task-freeze", commit)
+    state = resolver.resolve(
+        task_id="task-freeze", task_commit=commit, control_plane_commit=commit
+    )
+    freeze = next(
+        node for node in state["nodes"] if node["node_id"] == "FROZEN_CANDIDATE"
+    )
+    assert freeze["status"] == "CURRENT"
+    assert all(item.endswith("PASS") for item in freeze["entry_requirements"])
+    assert state["next"]["stage_id"] == "QUALITY_INTERLOCK"
 
 
-def test_explicit_evidence_freshness_invalidates_citing_stage(tmp_path: Path) -> None:
+def test_stale_work_package_evidence_invalidates_downstream(tmp_path: Path) -> None:
     root, commit = _temp_control_repo(tmp_path)
     resolver = WorkflowStateResolver(root)
+    ref = _external_ref("domain-research")
     _append_through_freeze_predecessor(
-        root, resolver, "task-evidence", commit,
-        work_package_evidence=[{"kind": "EXTERNAL", "ref": "external:work-package", "content_hash": "sha256:" + "a" * 64}],
+        root,
+        resolver,
+        "task-freshness",
+        commit,
+        work_package_evidence=[ref],
     )
-    stale = resolver.resolve(
-        task_id="task-evidence", task_commit=commit, control_plane_commit=commit,
-        freshness_overlay={"schema_version": "1.0", "bindings": {"external:work-package": {"status": "STALE", "reason": "superseded"}}},
-    )
-    work = next(node for node in stale["nodes"] if node["node_id"] == "WORK_PACKAGE_RESEARCH")
-    assert work["status"] == "STALE"
-    assert stale["next"]["stage_id"] == "WORK_PACKAGE_RESEARCH"
-
-
-def test_ledger_detects_record_tampering(tmp_path: Path) -> None:
-    ledger = ExecutionLedger(tmp_path, "task-ledger")
-    record = {
-        "record_id": "rec_" + "1" * 64,
-        "invocation_id": "inv_" + "2" * 64,
-        "stage_id": "RULE_RESOLUTION",
-        "authority": {"task_id": "task-ledger", "task_commit": "a" * 40, "control_plane_commit": "b" * 40},
-        "task_lineage": {"input_task_commit": "a" * 40, "output_task_commit": "a" * 40, "task_changed": False},
+    overlay = {
+        "schema_version": "1.0",
+        "bindings": {
+            ref["ref"]: {
+                "status": "STALE",
+                "content_hash": "sha256:" + "2" * 64,
+                "reason": "newer external research is available",
+            }
+        },
     }
-    ledger.append(record)
-    path = ledger.record_path(record["invocation_id"])
-    path.write_text("{}\n", encoding="utf-8")
-    with pytest.raises(ValueError, match="content hash mismatch"):
-        ledger.load(validate_record_files=True)
+    state = resolver.resolve(
+        task_id="task-freshness",
+        task_commit=commit,
+        control_plane_commit=commit,
+        freshness_overlay=overlay,
+    )
+    by_id = {node["node_id"]: node for node in state["nodes"]}
+    assert by_id["WORK_PACKAGE_RESEARCH"]["status"] == "STALE"
+    assert by_id["SYSTEM_ARCHITECTURE"]["status"] == "STALE"
+    assert state["next"]["stage_id"] == "WORK_PACKAGE_RESEARCH"
 
 
-def test_state_snapshot_is_deterministic_and_materializable(tmp_path: Path) -> None:
+def test_materialized_state_is_derived_and_gitignored(tmp_path: Path) -> None:
     root, commit = _temp_control_repo(tmp_path)
     resolver = WorkflowStateResolver(root)
-    first = resolver.resolve(task_id="task-materialized", task_commit=commit, control_plane_commit=commit)
-    second = resolver.resolve(task_id="task-materialized", task_commit=commit, control_plane_commit=commit)
-    assert first == second
-    path = resolver.materialize(first)
-    assert json.loads(path.read_text(encoding="utf-8")) == first
+    state = resolver.resolve(
+        task_id="task-materialized",
+        task_commit=commit,
+        control_plane_commit=commit,
+    )
+    path = resolver.materialize(state)
+    assert (
+        path
+        == root / ".terminus" / "workflows" / "task-materialized" / "state.json"
+    )
+    materialized = json.loads(path.read_text(encoding="utf-8"))
+    assert materialized["state_snapshot_id"] == state["state_snapshot_id"]

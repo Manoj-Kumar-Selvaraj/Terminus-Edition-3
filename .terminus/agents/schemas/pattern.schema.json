@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "terminus-pattern-v1",
+  "title": "Terminus Recurring Failure Pattern",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "pattern_id", "category", "root_cause_class", "lesson_ids", "finding_ids", "task_ids", "occurrences", "policy_candidate", "status"],
+  "properties": {
+    "schema_version": {"const": "1.0"},
+    "pattern_id": {"type": "string", "pattern": "^pattern_[0-9a-f]{64}$"},
+    "category": {"type": "string", "minLength": 1},
+    "root_cause_class": {"type": "string", "minLength": 1},
+    "lesson_ids": {"type": "array", "uniqueItems": true, "items": {"type": "string", "pattern": "^lesson_[0-9a-f]{64}$"}},
+    "finding_ids": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string", "pattern": "^finding_[0-9a-f]{64}$"}},
+    "task_ids": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+    "occurrences": {"type": "integer", "minimum": 1},
+    "policy_candidate": {"type": "boolean"},
+    "status": {"enum": ["OBSERVED", "ACTIVE", "POLICY_CANDIDATE", "RETIRED"]}
+  }
+}

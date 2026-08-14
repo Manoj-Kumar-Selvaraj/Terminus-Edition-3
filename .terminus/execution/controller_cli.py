@@ -18,6 +18,7 @@ if __package__ in {None, ""}:
     from execution.record import ExecutionRecordBuilder
     from execution.runner import ExecutorRunner
     from execution.state import WorkflowStateResolver
+    from remediation.router import RemediationInterlock
     from retrieval.models import InvocationContext
 else:
     from .executor import ExecutorMode
@@ -27,6 +28,7 @@ else:
     from .record import ExecutionRecordBuilder
     from .runner import ExecutorRunner
     from .state import WorkflowStateResolver
+    from remediation.router import RemediationInterlock
     from retrieval.models import InvocationContext
 
 
@@ -96,28 +98,53 @@ def build_parser() -> argparse.ArgumentParser:
     continue_parser.add_argument(
         "--prepare-executor",
         choices=[mode.value for mode in ExecutorMode],
-        help="also prepare a non-mutating executor handoff for ordinary invoke/retry actions",
+        help="also prepare a non-mutating executor handoff for ordinary invoke/retry/remediation actions",
     )
     continue_parser.add_argument("--output")
     return parser
 
 
+def _remediation_view(
+    root: Path,
+    snapshot: dict[str, Any],
+    *,
+    task_id: str,
+    task_commit: str,
+) -> dict[str, Any]:
+    override = RemediationInterlock(root).next_override(
+        task_id=task_id,
+        task_commit=task_commit,
+    )
+    if override is None:
+        return snapshot
+    projected = dict(snapshot)
+    projected["next"] = override
+    return projected
+
+
 def _resolve_state(
     root: Path, args: argparse.Namespace
-) -> tuple[WorkflowStateResolver, dict[str, Any]]:
+) -> tuple[WorkflowStateResolver, dict[str, Any], dict[str, Any]]:
     resolver = WorkflowStateResolver(root)
     freshness = (
         _json_object(args.freshness_json, "--freshness-json")
         if args.freshness_json
         else None
     )
-    snapshot = resolver.resolve(
+    durable_snapshot = resolver.resolve(
         task_id=args.task_id,
         task_commit=args.task_commit,
         control_plane_commit=args.control_plane_commit,
         freshness_overlay=freshness,
     )
-    return resolver, project_external_state(root, resolver, snapshot)
+    durable_snapshot = project_external_state(root, resolver, durable_snapshot)
+    controller_view = _remediation_view(
+        root,
+        durable_snapshot,
+        task_id=args.task_id,
+        task_commit=args.task_commit,
+    )
+    return resolver, durable_snapshot, controller_view
 
 
 def _continue_payload(
@@ -142,6 +169,7 @@ def _continue_payload(
     if next_action["action"] not in {
         "INVOKE_STAGE",
         "RETRY_STAGE",
+        "REMEDIATE_STAGE",
         "DISPATCH_EXTERNAL_GATE",
     }:
         payload["invocation"] = None
@@ -191,24 +219,24 @@ def main(argv: list[str] | None = None) -> int:
     root = Path(args.root).resolve()
 
     if args.command in {"status", "next", "materialize", "continue"}:
-        resolver, snapshot = _resolve_state(root, args)
+        resolver, durable_snapshot, controller_view = _resolve_state(root, args)
         if args.command == "status":
-            _write_or_print(snapshot, args.output)
+            _write_or_print(controller_view, args.output)
             return 0
         if args.command == "next":
-            _write_or_print(snapshot["next"], args.output)
-            return 0 if snapshot["next"]["action"] == "END" else 2
+            _write_or_print(controller_view["next"], args.output)
+            return 0 if controller_view["next"]["action"] == "END" else 2
         if args.command == "materialize":
-            path = resolver.materialize(snapshot)
-            result = {"path": str(path.relative_to(root)), "state": snapshot}
+            path = resolver.materialize(durable_snapshot)
+            result = {"path": str(path.relative_to(root)), "state": controller_view}
             _write_or_print(result, args.output)
             return 0
-        payload = _continue_payload(root, args, snapshot)
+        payload = _continue_payload(root, args, controller_view)
         _write_or_print(payload, args.output)
         invocation = payload.get("invocation")
         if isinstance(invocation, dict):
             return 0 if invocation.get("readiness") == "READY" else 2
-        return 0 if snapshot["next"]["action"] == "END" else 2
+        return 0 if controller_view["next"]["action"] == "END" else 2
 
     invocation = _json_object(args.invocation, "--invocation")
     result = _json_object(args.result, "--result")
@@ -234,7 +262,12 @@ def main(argv: list[str] | None = None) -> int:
 
     ledger = ExecutionLedger(root, task_id)
     event = ledger.append(record)
-    response: dict[str, Any] = {"record": record, "ledger_event": event}
+    remediation_updates = RemediationInterlock(root).on_record(task_id=task_id)
+    response: dict[str, Any] = {
+        "record": record,
+        "ledger_event": event,
+        "remediation_updates": remediation_updates,
+    }
     if not args.no_materialize:
         freshness = (
             _json_object(args.freshness_json, "--freshness-json")
@@ -242,15 +275,20 @@ def main(argv: list[str] | None = None) -> int:
             else None
         )
         resolver = WorkflowStateResolver(root)
-        snapshot = resolver.resolve(
+        durable_snapshot = resolver.resolve(
             task_id=task_id,
             task_commit=output_task_commit,
             control_plane_commit=control_commit,
             freshness_overlay=freshness,
         )
-        snapshot = project_external_state(root, resolver, snapshot)
-        resolver.materialize(snapshot)
-        response["state"] = snapshot
+        durable_snapshot = project_external_state(root, resolver, durable_snapshot)
+        resolver.materialize(durable_snapshot)
+        response["state"] = _remediation_view(
+            root,
+            durable_snapshot,
+            task_id=task_id,
+            task_commit=output_task_commit,
+        )
     _write_or_print(response, args.output)
     return 0
 
