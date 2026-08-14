@@ -11,7 +11,9 @@ import pytest
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / ".terminus"))
 
+from feedback.ingestion import FeedbackIngestor  # noqa: E402
 from feedback.provenance import ProvenanceValidator  # noqa: E402
+from feedback.registry import LearningStore  # noqa: E402
 
 _TASK_ID = "jetstream-regional-stream-continuity"
 _Q4_REVISE_RESULT = (
@@ -75,6 +77,28 @@ def test_noncanonical_pseudo_pass_result_is_rejected(
         )
 
 
+def test_historical_canonical_q4_revise_is_ingestible_feedback(tmp_path: Path) -> None:
+    payload = json.loads((ROOT / _Q4_REVISE_RESULT).read_text(encoding="utf-8"))
+    store = LearningStore(
+        ROOT,
+        state_root=tmp_path / "state",
+        knowledge_root=tmp_path / "knowledge",
+    )
+    event = FeedbackIngestor(ROOT, store=store).capture(
+        source_type="INDEPENDENT_REVIEW",
+        producer="Q4_SPEC_TEST_CONTRACT_REVIEWER",
+        task_id=_TASK_ID,
+        task_commit=str(payload["task_commit"]),
+        severity="HIGH",
+        message="Historical Q4 REVISE remains a valid feedback signal, not closure authority.",
+        category="HISTORICAL_REVIEW_SIGNAL",
+        stage_hint="QUALITY_INTERLOCK",
+        source_binding=_binding(_Q4_REVISE_RESULT),
+        captured_at="2026-08-14T00:00:00Z",
+    )
+    assert event["provenance"]["trust_status"] == "REPOSITORY_RESOLVED"
+
+
 def test_real_q4_revise_result_cannot_authorize_closure(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -100,6 +124,41 @@ def test_real_historical_q6_pass_cannot_verify_newer_task_commit() -> None:
             task_id=_TASK_ID,
             task_commit=_head(),
             require_passing=True,
+        )
+
+
+def test_adjudicator_conflict_result_requires_explicit_resolution(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    validator = ProvenanceValidator(ROOT)
+    path = ".terminus/reviews/feedback-test/adjudication.json"
+    binding = {
+        "kind": "RESULT",
+        "ref": f"git:{_head()}:{path}",
+        "content_hash": "sha256:" + "0" * 64,
+    }
+    payload = {
+        "role": "Adjudicator",
+        "task": "feedback-test",
+        "task_commit": _head(),
+        "verdict": "APPROVE",
+        "confidence": "HIGH",
+        "evidence_status": "SUFFICIENT",
+        "role_output": {},
+    }
+    monkeypatch.setattr(validator.evidence, "validate", lambda value, _index: dict(value))
+    monkeypatch.setattr(validator, "_require_reachable", lambda _commit: None)
+    monkeypatch.setattr(validator, "_git_json", lambda *_args: payload)
+    monkeypatch.setattr("feedback.provenance.validate_schema", lambda *_args: None)
+    with pytest.raises(ValueError, match="CONFLICT_RESOLUTION"):
+        validator.validate_review_result(
+            binding=binding,
+            producer="ADJUDICATOR",
+            task_id="feedback-test",
+            task_commit=_head(),
+            require_passing=True,
+            conflict_resolution=True,
+            require_current_contract=False,
         )
 
 
