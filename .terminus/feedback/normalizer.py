@@ -225,7 +225,7 @@ class FindingNormalizer:
             raise ValueError("finding verification_owner must use its canonical role ID")
 
     def _validate_policy_conflict(self, events: list[Mapping[str, Any]]) -> None:
-        """Require exact rules plus authenticated semantic authority over one decision."""
+        """Require a signed Adjudicator proof over one mutually exclusive decision."""
         normalized_claim: tuple[
             str,
             str,
@@ -261,35 +261,29 @@ class FindingNormalizer:
 
             source = event["source"]
             provenance = event["provenance"]
-            authenticated_human = (
-                source["type"] == "HUMAN_REVIEW"
-                and provenance["trust_status"] == "HUMAN_AUTHENTICATED"
-            )
-            authenticated_adjudicator = (
-                source["producer"] == "ADJUDICATOR"
-                and source["type"] in {"INDEPENDENT_REVIEW", "REVIEWER_REVIEW"}
-                and provenance["trust_status"] == "REPOSITORY_RESOLVED"
-            )
-            if not (authenticated_human or authenticated_adjudicator):
+            if (
+                source["producer"] != "ADJUDICATOR"
+                or source["type"] not in {"INDEPENDENT_REVIEW", "REVIEWER_REVIEW"}
+                or provenance["trust_status"] != "REPOSITORY_RESOLVED"
+            ):
                 raise ValueError(
-                    "POLICY_CONFLICT requires authenticated human or canonical Adjudicator semantic authority"
+                    "POLICY_CONFLICT requires an authenticated canonical Adjudicator review"
                 )
-            if authenticated_adjudicator:
-                binding = provenance.get("source_binding")
-                if not isinstance(binding, Mapping):
-                    raise ValueError("POLICY_CONFLICT is missing Adjudicator RESULT evidence")
-                payload = self.provenance.validate_policy_conflict_authority(
-                    binding=binding,
-                    task_id=str(event["task"]["task_id"]),
-                    task_commit=str(event["task"]["task_commit"]),
+            binding = provenance.get("source_binding")
+            if not isinstance(binding, Mapping):
+                raise ValueError("POLICY_CONFLICT is missing Adjudicator RESULT evidence")
+            payload = self.provenance.validate_policy_conflict_authority(
+                binding=binding,
+                task_id=str(event["task"]["task_id"]),
+                task_commit=str(event["task"]["task_commit"]),
+            )
+            role_output = payload.get("role_output")
+            if not isinstance(role_output, Mapping) or role_output.get(
+                "POLICY_CONFLICT_PROOF"
+            ) != dict(detail):
+                raise ValueError(
+                    "Adjudicator RESULT does not bind the exact POLICY_CONFLICT proof"
                 )
-                role_output = payload.get("role_output")
-                if not isinstance(role_output, Mapping) or role_output.get(
-                    "POLICY_CONFLICT_PROOF"
-                ) != dict(detail):
-                    raise ValueError(
-                        "Adjudicator RESULT does not bind the exact POLICY_CONFLICT proof"
-                    )
 
             normalized_rules: list[tuple[str, str, str, str, str, str]] = []
             required_values: set[str] = set()
