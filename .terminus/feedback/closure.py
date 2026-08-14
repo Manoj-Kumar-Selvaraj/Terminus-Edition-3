@@ -6,6 +6,7 @@ import copy
 import subprocess
 from pathlib import Path
 from typing import Any, Mapping
+from urllib.parse import unquote
 
 from execution.evidence_refs import EvidenceReferenceVerifier
 
@@ -64,6 +65,7 @@ class FindingClosure:
                 raise ValueError("conflict resolution source_binding is not repository-resolved")
             if self.evidence.identity(binding) != source["producer"]:
                 raise ValueError("conflict resolution evidence does not bind resolver identity")
+            self._validate_controlled_review_binding(finding, binding)
             feedback_ids.append(str(event["feedback_id"]))
         if not feedback_ids:
             raise ValueError("conflict resolution requires at least one trusted feedback event")
@@ -163,6 +165,27 @@ class FindingClosure:
             raise ValueError("verification feedback source_binding is not repository-resolved")
         if self.evidence.identity(binding) != verifier_role:
             raise ValueError("verification evidence does not bind the verification owner identity")
+        self._validate_controlled_review_binding(finding, binding)
+
+    @staticmethod
+    def _validate_controlled_review_binding(
+        finding: Mapping[str, Any], binding: Mapping[str, Any]
+    ) -> None:
+        if binding.get("kind") != "RESULT":
+            raise ValueError("trusted closure evidence must use kind RESULT")
+        ref = binding.get("ref")
+        if not isinstance(ref, str) or not ref.startswith("git:"):
+            raise ValueError("trusted closure evidence must be a git artifact")
+        location = ref[len("git:") :].partition("#")[0]
+        _commit, separator, encoded_path = location.partition(":")
+        if not separator:
+            raise ValueError("trusted closure evidence has invalid git location")
+        path = unquote(encoded_path)
+        expected = f".terminus/reviews/{finding['task_id']}/"
+        if not path.startswith(expected):
+            raise ValueError(
+                "trusted closure evidence must come from the task's controlled review namespace"
+            )
 
     def _latest(self, finding_id: str) -> dict[str, Any]:
         finding = self.store.findings.get_latest("finding_id", finding_id)
