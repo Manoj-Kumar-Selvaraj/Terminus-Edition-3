@@ -3,18 +3,23 @@
 
 from __future__ import annotations
 
+import hashlib
 import json
 import subprocess
 import sys
 import tempfile
 from pathlib import Path
+from urllib.parse import quote
 
 ROOT = Path(__file__).resolve().parents[1]
 T = ROOT / ".terminus"
 sys.path.insert(0, str(T))
 
 from execution.authority import ExecutionAuthority  # noqa: E402
-from execution.invocation import StageInvocationBuilder  # noqa: E402
+from execution.invocation import (  # noqa: E402
+    _CONTRACT_SNAPSHOT_PATHS,
+    StageInvocationBuilder,
+)
 from execution.invocation_guard import CanonicalInvocationGuard  # noqa: E402
 from feedback.ingestion import FeedbackIngestor  # noqa: E402
 from feedback.model import FeedbackSource  # noqa: E402
@@ -41,6 +46,7 @@ EXPECTED_SOURCES = {
     "SUBMISSION_RESULT",
     "RUNTIME",
 }
+_SOURCE_FIXTURE = ".terminus/tests/fixtures/feedback_source_identities.json"
 
 FILES = [
     T / "feedback" / "model.py",
@@ -79,6 +85,15 @@ def _head() -> str:
     ).stdout.strip()
 
 
+def _source_binding(identity: str) -> dict[str, str]:
+    raw = (ROOT / _SOURCE_FIXTURE).read_bytes()
+    return {
+        "kind": "RESULT",
+        "ref": f"git:{_head()}:{_SOURCE_FIXTURE}#{quote(identity, safe='')}",
+        "content_hash": "sha256:" + hashlib.sha256(raw).hexdigest(),
+    }
+
+
 def _invocation() -> dict[str, object]:
     commit = _head()
     policy = RetrievalPolicy(ROOT)
@@ -111,6 +126,14 @@ def main() -> int:
             errors.append(f"{filename} schema ID drift")
         if schema.get("additionalProperties") is not False:
             errors.append(f"{filename} must fail closed at top level")
+    feedback_schema = json.loads(
+        (schema_root / "feedback_event.schema.json").read_text(encoding="utf-8")
+    )
+    provenance_required = set(
+        feedback_schema["properties"]["provenance"].get("required", [])
+    )
+    if not {"trust_status", "source_binding"} <= provenance_required:
+        errors.append("feedback schema does not require source trust provenance")
     if {item.value for item in FeedbackSource} != EXPECTED_SOURCES:
         errors.append("feedback source registry does not match the canonical source set")
 
@@ -130,16 +153,29 @@ def main() -> int:
         ".terminus/remediation/planner.py",
         ".terminus/learning/context.py",
         ".terminus/learning/projection.py",
+        ".terminus/learning/knowledge/lessons.jsonl",
+        ".terminus/learning/knowledge/patterns.jsonl",
     )
-    invocation_text = (T / "execution" / "invocation.py").read_text(encoding="utf-8")
     for marker in required_snapshot_markers:
-        if marker not in invocation_text:
+        if marker not in _CONTRACT_SNAPSHOT_PATHS:
             errors.append(f"invocation snapshot binding missing learning dependency: {marker}")
 
     controller_text = (T / "execution" / "controller_cli.py").read_text(encoding="utf-8")
     for marker in ("RemediationInterlock", "REMEDIATE_STAGE", "remediation_updates"):
         if marker not in controller_text:
             errors.append(f"controller remediation interlock missing marker: {marker}")
+    closure_text = (T / "feedback" / "closure.py").read_text(encoding="utf-8")
+    for marker in (
+        "REPOSITORY_RESOLVED",
+        "assert_learning_eligible",
+        "resolve_conflict",
+        "repair owner cannot verify",
+    ):
+        if marker not in closure_text:
+            errors.append(f"trusted closure boundary missing marker: {marker}")
+    router_text = (T / "remediation" / "router.py").read_text(encoding="utf-8")
+    if "REMEDIATION_LINEAGE_CONFLICT" not in router_text:
+        errors.append("remediation interlock lacks lineage-conflict handling")
 
     private = subprocess.run(
         ["git", "-C", str(ROOT), "check-ignore", ".terminus/learning/state/probe.jsonl"],
@@ -161,8 +197,9 @@ def main() -> int:
             state_root=temp / "state",
             knowledge_root=temp / "knowledge",
         )
+        ingestor = FeedbackIngestor(ROOT, store=store)
         try:
-            human = FeedbackIngestor(ROOT, store=store).capture(
+            human = ingestor.capture(
                 source_type="HUMAN_REVIEW",
                 producer="Manoj",
                 task_id="feedback-validator-temp",
@@ -173,7 +210,22 @@ def main() -> int:
                 stage_hint="VERIFIER_BUILD",
                 captured_at="2026-08-14T00:00:00Z",
             )
-            portal = FeedbackIngestor(ROOT, store=store).capture(
+            try:
+                ingestor.capture(
+                    source_type="PORTAL_CI",
+                    producer="portal-ci",
+                    task_id="feedback-validator-temp",
+                    task_commit=_head(),
+                    severity="HIGH",
+                    message="Unbound portal claim.",
+                    category="BOUNDARY",
+                    stage_hint="VERIFIER_BUILD",
+                    captured_at="2026-08-14T00:00:01Z",
+                )
+                errors.append("automated feedback was accepted without source_binding")
+            except ValueError:
+                pass
+            portal = ingestor.capture(
                 source_type="PORTAL_CI",
                 producer="portal-ci",
                 task_id="feedback-validator-temp",
@@ -182,8 +234,11 @@ def main() -> int:
                 message="Portal confirms the same boundary weakness.",
                 category="BOUNDARY",
                 stage_hint="VERIFIER_BUILD",
-                captured_at="2026-08-14T00:00:01Z",
+                source_binding=_source_binding("portal-ci"),
+                captured_at="2026-08-14T00:00:02Z",
             )
+            if portal["provenance"]["trust_status"] != "REPOSITORY_RESOLVED":
+                errors.append("repository-resolved portal feedback did not receive trusted status")
             finding = FindingNormalizer(ROOT, store=store).normalize(
                 [human, portal],
                 generalized_problem="External effects require observable-boundary verification.",
@@ -223,10 +278,11 @@ def main() -> int:
     print("Terminus feedback-learning validation PASS")
     print(
         "feedback_learning=1.0 sources=human,review,ci,portal,llmaj,trials,difficulty,runtime "
-        "raw_state=private_hash_chained generalized_knowledge=portable "
-        "remediation=controller_interlocked closure=independent "
+        "source_provenance=bound closure=repository_resolved_or_human "
+        "raw_state=private_hash_chained generalized_knowledge=portable_commit_bound "
+        "remediation=controller_interlocked_lineage_bound "
         "learning_projection=generalized_role_scoped cold_review=raw_history_hidden "
-        "recurrence=distinct_task_policy_candidates policy_mutation=manual"
+        "recurrence=trusted_distinct_task_policy_candidates policy_mutation=manual"
     )
     return 0
 
