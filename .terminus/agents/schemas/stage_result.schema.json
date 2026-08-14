@@ -7,6 +7,7 @@
   "required": ["schema_version", "invocation_id", "output_task_commit", "status", "outputs", "evidence_refs"],
   "properties": {
     "schema_version": {"const": "1.0"},
+    "handoff_id": {"type": "string", "pattern": "^handoff_[0-9a-f]{64}$"},
     "invocation_id": {"type": "string", "pattern": "^inv_[0-9a-f]{64}$"},
     "output_task_commit": {"type": "string", "pattern": "^[0-9a-f]{40,64}$"},
     "status": {"type": "string", "minLength": 1},

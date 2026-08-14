@@ -11,17 +11,21 @@ from typing import Any
 
 if __package__ in {None, ""}:
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+    from execution.executor import ExecutorMode
     from execution.external_gate import project_external_state, validate_external_result
     from execution.invocation import StageInvocationBuilder
     from execution.ledger import ExecutionLedger
     from execution.record import ExecutionRecordBuilder
+    from execution.runner import ExecutorRunner
     from execution.state import WorkflowStateResolver
     from retrieval.models import InvocationContext
 else:
+    from .executor import ExecutorMode
     from .external_gate import project_external_state, validate_external_result
     from .invocation import StageInvocationBuilder
     from .ledger import ExecutionLedger
     from .record import ExecutionRecordBuilder
+    from .runner import ExecutorRunner
     from .state import WorkflowStateResolver
     from retrieval.models import InvocationContext
 
@@ -89,6 +93,11 @@ def build_parser() -> argparse.ArgumentParser:
     continue_parser.add_argument("--db")
     continue_parser.add_argument("--retrieval-limit", type=int, default=10)
     continue_parser.add_argument("--max-chars", type=int, default=30000)
+    continue_parser.add_argument(
+        "--prepare-executor",
+        choices=[mode.value for mode in ExecutorMode],
+        help="also prepare a non-mutating executor handoff for ordinary invoke/retry actions",
+    )
     continue_parser.add_argument("--output")
     return parser
 
@@ -123,6 +132,7 @@ def _continue_payload(
     }
     if next_action["action"] == "AWAIT_EXTERNAL_GATE":
         payload["invocation"] = None
+        payload["executor_handoff"] = None
         payload["dispatch"] = {
             "status": "AWAITING_EXTERNAL_RESULT",
             "stage_id": next_action["stage_id"],
@@ -135,6 +145,7 @@ def _continue_payload(
         "DISPATCH_EXTERNAL_GATE",
     }:
         payload["invocation"] = None
+        payload["executor_handoff"] = None
         return payload
 
     stage_id = str(next_action["stage_id"])
@@ -156,12 +167,22 @@ def _continue_payload(
         max_chars=args.max_chars,
     )
     payload["invocation"] = packet
+    payload["executor_handoff"] = None
     if next_action["action"] == "DISPATCH_EXTERNAL_GATE":
         payload["dispatch"] = {
             "status": "READY_TO_DISPATCH" if packet.get("readiness") == "READY" else "BLOCKED",
             "stage_id": stage_id,
             "external_gate": True,
         }
+        return payload
+
+    executor_mode = getattr(args, "prepare_executor", None)
+    if executor_mode and packet.get("readiness") == "READY":
+        prepared = ExecutorRunner(root).prepare(
+            packet,
+            executor_mode=executor_mode,
+        )
+        payload["executor_handoff"] = prepared["handoff"]
     return payload
 
 

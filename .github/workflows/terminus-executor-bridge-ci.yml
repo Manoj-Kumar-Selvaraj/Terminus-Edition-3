@@ -1,0 +1,92 @@
+name: Terminus Executor Bridge CI
+
+on:
+  pull_request:
+    paths:
+      - '.terminus/execution/**'
+      - '.terminus/agents/schemas/executor_handoff.schema.json'
+      - '.terminus/agents/schemas/stage_result.schema.json'
+      - '.terminus/agents/schemas/execution_record.schema.json'
+      - '.terminus/tests/test_executor_bridge.py'
+      - '.terminus/tests/test_executor_handoff_provenance.py'
+      - '.terminus/validate_executor_bridge.py'
+      - '.github/workflows/terminus-executor-bridge-ci.yml'
+  push:
+    branches: [main]
+    paths:
+      - '.terminus/execution/**'
+      - '.terminus/agents/schemas/executor_handoff.schema.json'
+      - '.terminus/agents/schemas/stage_result.schema.json'
+      - '.terminus/agents/schemas/execution_record.schema.json'
+      - '.terminus/tests/test_executor_bridge.py'
+      - '.terminus/tests/test_executor_handoff_provenance.py'
+      - '.terminus/validate_executor_bridge.py'
+      - '.github/workflows/terminus-executor-bridge-ci.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: terminus-executor-bridge-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate-executor-bridge:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install bubblewrap sandbox
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y bubblewrap
+
+      - name: Install pinned test tools
+        run: python3 -m pip install --quiet ruff==0.14.10 pytest==8.4.1 jsonschema==4.23.0
+
+      - name: Compile executor bridge
+        run: |
+          python3 -m py_compile \
+            .terminus/execution/executor.py \
+            .terminus/execution/handoff_contract.py \
+            .terminus/execution/handoff.py \
+            .terminus/execution/invocation_guard.py \
+            .terminus/execution/sandbox.py \
+            .terminus/execution/schema_validation.py \
+            .terminus/execution/runner.py \
+            .terminus/execution/runner_cli.py \
+            .terminus/validate_executor_bridge.py
+
+      - name: Lint executor bridge
+        run: |
+          ruff check \
+            .terminus/execution/executor.py \
+            .terminus/execution/handoff_contract.py \
+            .terminus/execution/handoff.py \
+            .terminus/execution/invocation_guard.py \
+            .terminus/execution/sandbox.py \
+            .terminus/execution/schema_validation.py \
+            .terminus/execution/runner.py \
+            .terminus/execution/runner_cli.py \
+            .terminus/tests/test_executor_bridge.py \
+            .terminus/tests/test_executor_handoff_provenance.py \
+            .terminus/validate_executor_bridge.py
+
+      - name: Run executor bridge tests
+        run: |
+          python3 -m pytest \
+            .terminus/tests/test_executor_bridge.py \
+            .terminus/tests/test_executor_handoff_provenance.py \
+            -q
+
+      - name: Validate executor boundary
+        run: python3 .terminus/validate_executor_bridge.py
+
+      - name: Recheck invocation and recorder compatibility
+        run: |
+          python3 .terminus/validate_stage_invocation.py
+          python3 .terminus/validate_execution_record.py
