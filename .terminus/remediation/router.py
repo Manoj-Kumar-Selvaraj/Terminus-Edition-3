@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import subprocess
 from pathlib import Path
 from typing import Any, Mapping
 
@@ -24,18 +25,27 @@ class RemediationInterlock:
         self.schemas = LearningSchemaValidator(self.root)
 
     def next_override(self, *, task_id: str, task_commit: str) -> dict[str, Any] | None:
-        findings = [
+        candidates = [
             finding
             for finding in self.store.findings.latest_by("finding_id")
             if finding.get("task_id") == task_id
             and finding.get("state") not in {"CLOSED", "WONT_FIX"}
         ]
-        findings.sort(
+        candidates.sort(
             key=lambda finding: (
                 -_SEVERITY.get(str(finding.get("severity")), 0),
                 str(finding.get("finding_id")),
             )
         )
+        for finding in candidates:
+            if not self._is_ancestor(str(finding["task_commit"]), task_commit):
+                return {
+                    "action": "REMEDIATION_LINEAGE_CONFLICT",
+                    "finding_id": finding["finding_id"],
+                    "finding_task_commit": finding["task_commit"],
+                    "current_task_commit": task_commit,
+                }
+        findings = candidates
         if not findings:
             return None
 
@@ -190,3 +200,12 @@ class RemediationInterlock:
         if not isinstance(value, dict):
             raise ValueError("remediation execution record must be an object")
         return value
+
+    def _is_ancestor(self, ancestor: str, descendant: str) -> bool:
+        return (
+            subprocess.run(
+                ["git", "-C", str(self.root), "merge-base", "--is-ancestor", ancestor, descendant],
+                capture_output=True,
+            ).returncode
+            == 0
+        )
