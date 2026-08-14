@@ -30,7 +30,7 @@ Automated source trust has two levels:
 - `REPOSITORY_RESOLVED`: `git:` or `commit:` evidence resolves to immutable repository bytes/identity.
 - `EXTERNAL_POINTER_ONLY`: a content-addressed `run:` or `external:` pointer records provenance but is not independently repository-resolved.
 
-External pointers may contribute feedback signals, but they cannot alone close a finding or promote knowledge. Non-human closure requires `REPOSITORY_RESOLVED` evidence bound to the configured verification owner. Human closure is allowed only when the finding explicitly names `HUMAN_REVIEWER` as its verification owner and the closing feedback is `HUMAN_REVIEW`/`HUMAN_ASSERTED`.
+External pointers may contribute feedback signals, but they cannot alone close a finding or promote knowledge. Non-human closure requires `REPOSITORY_RESOLVED` result evidence bound to the configured verification owner **and stored under the controlled `.terminus/reviews/<task>/` namespace**. An arbitrary Git file containing a reviewer name is not trusted closure evidence. Human closure is allowed only when the finding explicitly names `HUMAN_REVIEWER` as its verification owner and the closing feedback is `HUMAN_REVIEW`/`HUMAN_ASSERTED`.
 
 ## Current-task remediation loop
 
@@ -40,6 +40,8 @@ feedback -> canonical finding -> remediation packet -> owning repair stage(s)
 ```
 
 An unresolved finding interlocks the controller before normal lifecycle progression. Repair packets are ordered by canonical stage order and bind to the execution-ledger sequence that existed when repair was planned, so historical executions cannot satisfy a new remediation. The current task commit must remain on the finding's Git lineage; otherwise the controller returns `REMEDIATION_LINEAGE_CONFLICT`. A repair owner cannot verify its own finding.
+
+Task-producing/fixing execution records are also path-scoped. They may change the task directory and explicitly task-scoped `.terminus/designs/<task>...` / `.terminus/contracts/<task>/...` artifacts, but they cannot mutate reviewer evidence, learning knowledge, agent policy, CI workflow, another task, or other protected repository paths. This prevents a repair agent from manufacturing the evidence later used to verify its own work.
 
 When multiple sources disagree on classification, the normalizer emits `FEEDBACK_CONFLICT`. Conflicts are not majority-voted and cannot enter ordinary remediation. They must be explicitly adjudicated through trusted human feedback or repository-resolved `ADJUDICATOR`/`CI_ORCHESTRATOR` feedback. The conflict finding is then retired as `WONT_FIX`; any substantive resolved problem is normalized as a replacement finding with its own identity and repair path. Existing `POLICY_CONFLICT` behavior remains fail-closed.
 
