@@ -28,11 +28,13 @@ class LearningProjector:
         role_id: str,
         domain: str | None = None,
         limit: int = 12,
+        chain_head: str | None = None,
     ) -> dict[str, Any]:
         if limit < 0:
             raise ValueError("learning projection limit cannot be negative")
         projected: list[dict[str, Any]] = []
-        for lesson in self.store.lessons.read():
+        lessons = self.store.lessons.latest_by("lesson_id", chain_head=chain_head)
+        for lesson in lessons:
             self.schemas.validate("lesson", lesson)
             if lesson.get("state") != "ACTIVE":
                 continue
