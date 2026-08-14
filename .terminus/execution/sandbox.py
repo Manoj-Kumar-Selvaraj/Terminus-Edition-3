@@ -17,6 +17,7 @@ from retrieval.indexer import RepositoryIndexer
 from retrieval.policy import ALL_ROLES, ALL_STAGES, RetrievalPolicy
 
 _MUTATING_ROLE_CLASSES = frozenset({"PRODUCER", "FIXER"})
+_RUNTIME_ROOTS = (Path("/usr"), Path("/bin"), Path("/lib"), Path("/lib64"), Path("/usr/local"))
 
 
 class SandboxUnavailable(RuntimeError):
@@ -159,30 +160,32 @@ class LocalExecutorSandbox:
     ) -> list[str]:
         if not argv:
             raise ValueError("LOCAL_COMMAND requires non-empty argv")
-        for item in argv:
+        executable = self._resolve_executable(argv[0])
+        normalized = [str(executable), *argv[1:]]
+        for item in normalized[1:]:
             if not isinstance(item, str) or not item:
                 raise ValueError("LOCAL_COMMAND argv entries must be non-empty strings")
-            try:
-                candidate = Path(item)
-                if candidate.is_absolute() and candidate.resolve().is_relative_to(self.root):
+            candidate = Path(item)
+            if candidate.is_absolute():
+                resolved = candidate.resolve()
+                if resolved.is_relative_to(self.root):
                     raise ValueError(
-                        "LOCAL_COMMAND command paths may not reference the authoritative repository"
+                        "LOCAL_COMMAND arguments may not reference the authoritative repository"
                     )
-            except OSError:
-                pass
+                if not self._under_runtime_root(resolved):
+                    raise ValueError(
+                        "LOCAL_COMMAND absolute argument paths must be inside the projected workspace or system runtime roots"
+                    )
 
         command = [
             bwrap,
             "--die-with-parent",
             "--new-session",
             "--unshare-all",
-            "--ro-bind",
-            "/",
-            "/",
         ]
-        for mask in self._sensitive_masks():
-            if mask.exists():
-                command += ["--tmpfs", str(mask)]
+        for runtime_root in _RUNTIME_ROOTS:
+            if runtime_root.exists():
+                command += ["--ro-bind", str(runtime_root), str(runtime_root)]
         command += [
             "--dir",
             "/workspace",
@@ -198,29 +201,27 @@ class LocalExecutorSandbox:
             "--dev",
             "/dev",
             "--",
-            *argv,
+            *normalized,
         ]
         return command
 
-    def _sensitive_masks(self) -> list[Path]:
-        home = Path.home().resolve()
-        common_raw = subprocess.run(
-            ["git", "-C", str(self.root), "rev-parse", "--git-common-dir"],
-            check=True,
-            capture_output=True,
-            text=True,
-        ).stdout.strip()
-        common = Path(common_raw)
-        if not common.is_absolute():
-            common = (self.root / common).resolve()
-        candidates = [home, self.root, common]
-        masks: list[Path] = []
-        for candidate in candidates:
-            if any(candidate == existing or candidate.is_relative_to(existing) for existing in masks):
-                continue
-            masks = [existing for existing in masks if not existing.is_relative_to(candidate)]
-            masks.append(candidate)
-        return masks
+    def _resolve_executable(self, value: str) -> Path:
+        if not isinstance(value, str) or not value:
+            raise ValueError("LOCAL_COMMAND executable must be a non-empty string")
+        raw = Path(value)
+        resolved_value = shutil.which(value) if not raw.is_absolute() else value
+        if not resolved_value:
+            raise ValueError(f"LOCAL_COMMAND executable not found: {value}")
+        resolved = Path(resolved_value).resolve()
+        if not self._under_runtime_root(resolved):
+            raise ValueError(
+                "LOCAL_COMMAND executable must resolve under /usr, /bin, /lib, /lib64, or /usr/local"
+            )
+        return resolved
+
+    @staticmethod
+    def _under_runtime_root(path: Path) -> bool:
+        return any(path == root or path.is_relative_to(root) for root in _RUNTIME_ROOTS if root.exists())
 
     def _tracked_paths(self, commit: str) -> list[str]:
         return subprocess.run(
