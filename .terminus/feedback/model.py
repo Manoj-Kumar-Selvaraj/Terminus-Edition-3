@@ -74,6 +74,7 @@ def finding_identity(payload: Mapping[str, Any]) -> str:
     }
     closure = dict(identity.get("closure", {}))
     closure.pop("verified_by_feedback", None)
+    closure.pop("repaired_task_commit", None)
     identity["closure"] = closure
     return stable_id("finding", identity)
 
