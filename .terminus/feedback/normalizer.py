@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 from typing import Any, Iterable, Mapping
 
 from execution.authority import ExecutionAuthority
@@ -19,6 +19,13 @@ _SEVERITY_ORDER = {
     Severity.HIGH.value: 3,
     Severity.CRITICAL.value: 4,
 }
+_TRUSTED_POLICY_RESOLVERS = frozenset({"ADJUDICATOR", "CI_ORCHESTRATOR"})
+_AUTHORITATIVE_PREFIXES = (
+    "TERMINUS_3_AI_INSTRUCTIONS.md",
+    ".terminus/AGENT_SYSTEM.md",
+    ".terminus/agents/",
+    ".terminus/reviewers/",
+)
 
 
 class FindingNormalizer:
@@ -56,7 +63,13 @@ class FindingNormalizer:
             if event["observation"].get("category")
         }
         state = FindingState.OPEN.value
-        if len(categories) > 1:
+        if "POLICY_CONFLICT" in categories:
+            if categories != {"POLICY_CONFLICT"}:
+                raise ValueError("policy-conflict feedback cannot be mixed with ordinary categories")
+            self._validate_policy_conflict(values)
+            state = FindingState.POLICY_CONFLICT.value
+            category = "POLICY_CONFLICT"
+        elif len(categories) > 1:
             state = FindingState.FEEDBACK_CONFLICT.value
             category = "FEEDBACK_CONFLICT"
         else:
@@ -118,6 +131,46 @@ class FindingNormalizer:
         self.schemas.validate("finding", finding)
         self.store.findings.append(finding)
         return finding
+
+    def _validate_policy_conflict(self, events: list[Mapping[str, Any]]) -> None:
+        """Require trusted, structured authoritative-source conflict semantics."""
+        for event in events:
+            provenance = event["provenance"]
+            source = event["source"]
+            trusted = (
+                source["type"] == "HUMAN_REVIEW"
+                and provenance["trust_status"] == "HUMAN_ASSERTED"
+            ) or (
+                source["producer"] in _TRUSTED_POLICY_RESOLVERS
+                and provenance["trust_status"] == "REPOSITORY_RESOLVED"
+            )
+            if not trusted:
+                raise ValueError(
+                    "POLICY_CONFLICT requires trusted human or adjudicator/orchestrator provenance"
+                )
+            detail = event["observation"].get("value")
+            if not isinstance(detail, Mapping):
+                raise ValueError("POLICY_CONFLICT requires structured observation.value")
+            sources = detail.get("conflicting_sources")
+            gate = detail.get("affected_gate")
+            if not isinstance(sources, list) or len(set(map(str, sources))) < 2:
+                raise ValueError("POLICY_CONFLICT requires at least two conflicting authoritative sources")
+            for source_path in sources:
+                if not isinstance(source_path, str) or not self._authoritative_source(source_path):
+                    raise ValueError(
+                        f"POLICY_CONFLICT source is not an authoritative repository rule: {source_path}"
+                    )
+            if not isinstance(gate, str) or gate not in self.policy.stages:
+                raise ValueError("POLICY_CONFLICT affected_gate must be a registered lifecycle stage")
+
+    def _authoritative_source(self, value: str) -> bool:
+        path = PurePosixPath(value)
+        if value.startswith("/") or "\\" in value or ".." in path.parts:
+            return False
+        allowed = value == _AUTHORITATIVE_PREFIXES[0] or any(
+            value.startswith(prefix) for prefix in _AUTHORITATIVE_PREFIXES[1:]
+        )
+        return allowed and (self.root / value).is_file()
 
     @staticmethod
     def _unique(values: Iterable[str]) -> list[str]:
