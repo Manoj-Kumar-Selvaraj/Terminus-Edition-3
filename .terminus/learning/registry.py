@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import copy
 from pathlib import Path
 from typing import Any, Iterable, Mapping
 
@@ -69,12 +70,60 @@ class LessonRegistry:
             },
         }
         lesson["lesson_id"] = lesson_identity(lesson)
+        existing = self.store.lessons.get_latest("lesson_id", lesson["lesson_id"])
+        if existing is not None:
+            self.schemas.validate("lesson", existing)
+            merged = copy.deepcopy(existing)
+            merged["sources"] = self._unique(
+                list(existing["sources"]) + [finding["finding_id"]]
+            )
+            merged["promotion"] = self._promotion(merged["sources"], existing)
+            if activate:
+                merged["state"] = LessonState.ACTIVE.value
+            lesson = merged
         self.schemas.validate("lesson", lesson)
-        self.store.lessons.append(lesson)
+        if existing != lesson:
+            self.store.lessons.append(lesson)
         return lesson
 
-    def active(self) -> list[dict[str, Any]]:
-        return [row for row in self.store.lessons.read() if row.get("state") == "ACTIVE"]
+    def set_state(self, lesson_id: str, state: LessonState | str) -> dict[str, Any]:
+        lesson = self.store.lessons.get_latest("lesson_id", lesson_id)
+        if lesson is None:
+            raise ValueError(f"unknown lesson_id: {lesson_id}")
+        updated = copy.deepcopy(lesson)
+        updated["state"] = LessonState(state).value
+        if lesson_identity(updated) != lesson_id:
+            raise ValueError("lesson semantic identity changed during state transition")
+        self.schemas.validate("lesson", updated)
+        if updated != lesson:
+            self.store.lessons.append(updated)
+        return updated
+
+    def active(self, *, chain_head: str | None = None) -> list[dict[str, Any]]:
+        return [
+            row
+            for row in self.store.lessons.latest_by("lesson_id", chain_head=chain_head)
+            if row.get("state") == "ACTIVE"
+        ]
+
+    def _promotion(
+        self, sources: list[str], existing: Mapping[str, Any]
+    ) -> dict[str, Any]:
+        findings = {
+            item["finding_id"]: item
+            for item in self.store.findings.latest_by("finding_id")
+        }
+        task_ids = {
+            findings[source]["task_id"] for source in sources if source in findings
+        }
+        previous = existing.get("promotion", {})
+        occurrences = max(len(sources), int(previous.get("occurrences", 1)))
+        distinct_tasks = max(len(task_ids), int(previous.get("distinct_tasks", 1)))
+        return {
+            "occurrences": occurrences,
+            "distinct_tasks": distinct_tasks,
+            "policy_candidate": distinct_tasks >= 3,
+        }
 
     @staticmethod
     def _unique(values: Iterable[str]) -> list[str]:
