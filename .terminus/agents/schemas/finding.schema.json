@@ -1,0 +1,56 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "terminus-finding-v1",
+  "title": "Terminus Canonical Finding",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "finding_id", "task_id", "task_commit", "category", "severity", "state", "signals", "ownership", "problem", "closure"],
+  "properties": {
+    "schema_version": {"const": "1.0"},
+    "finding_id": {"type": "string", "pattern": "^finding_[0-9a-f]{64}$"},
+    "task_id": {"type": "string", "minLength": 1},
+    "task_commit": {"type": "string", "pattern": "^[0-9a-f]{40,64}$"},
+    "category": {"type": "string", "minLength": 1},
+    "severity": {"enum": ["INFO", "LOW", "MEDIUM", "HIGH", "CRITICAL"]},
+    "state": {"enum": ["OPEN", "ASSIGNED", "REPAIRED", "VERIFIED", "CLOSED", "WONT_FIX", "FEEDBACK_CONFLICT", "POLICY_CONFLICT"]},
+    "signals": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {"type": "string", "pattern": "^feedback_[0-9a-f]{64}$"}
+    },
+    "ownership": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["introduced_stage", "repair_stages", "repair_roles", "detected_by"],
+      "properties": {
+        "introduced_stage": {"type": ["string", "null"]},
+        "should_have_been_caught_by": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+        "repair_stages": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+        "repair_roles": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+        "detected_by": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string", "minLength": 1}}
+      }
+    },
+    "problem": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["task_specific", "generalized", "root_cause_class"],
+      "properties": {
+        "task_specific": {"type": "string", "minLength": 1},
+        "generalized": {"type": "string", "minLength": 1},
+        "root_cause_class": {"type": "string", "minLength": 1},
+        "escape_depth": {"type": "integer", "minimum": 0}
+      }
+    },
+    "closure": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["conditions", "verification_owner"],
+      "properties": {
+        "conditions": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}},
+        "verification_owner": {"type": "string", "minLength": 1},
+        "verified_by_feedback": {"type": "array", "uniqueItems": true, "items": {"type": "string", "pattern": "^feedback_[0-9a-f]{64}$"}}
+      }
+    }
+  }
+}
