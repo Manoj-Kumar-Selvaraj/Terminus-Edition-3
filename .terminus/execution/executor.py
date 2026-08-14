@@ -15,12 +15,7 @@ from .invocation import StageInvocationBuilder
 
 
 class ExecutorMode(str, Enum):
-    """Supported executor surfaces.
-
-    MANUAL_CHAT is deliberately first-class so the control plane remains usable
-    without any hosted model API. LOCAL_COMMAND is an opt-in local process
-    adapter and always uses shell=False.
-    """
+    """Supported executor surfaces."""
 
     MANUAL_CHAT = "MANUAL_CHAT"
     LOCAL_COMMAND = "LOCAL_COMMAND"
@@ -69,7 +64,7 @@ def nested_keys(value: Any) -> set[str]:
 
 
 def validate_executable_invocation(invocation: Mapping[str, Any]) -> None:
-    """Fail closed before an invocation crosses an executor boundary."""
+    """Perform transport checks after canonical authorization has succeeded."""
 
     if invocation.get("schema_version") != "1.0":
         raise ValueError("executor requires stage invocation schema_version 1.0")
@@ -104,11 +99,13 @@ def validate_stage_result_shape(
     result: Mapping[str, Any],
     *,
     invocation_id: str,
+    handoff_id: str,
 ) -> None:
-    """Perform transport-level checks only; semantic acceptance is recorder-owned."""
+    """Perform transport checks only; semantic acceptance is recorder-owned."""
 
     required = {
         "schema_version",
+        "handoff_id",
         "invocation_id",
         "output_task_commit",
         "status",
@@ -124,6 +121,8 @@ def validate_stage_result_shape(
         raise ValueError(f"executor result contains undeclared fields: {sorted(extra)}")
     if result.get("schema_version") != "1.0":
         raise ValueError("executor result schema_version must be 1.0")
+    if result.get("handoff_id") != handoff_id:
+        raise ValueError("executor result handoff_id does not match exact handoff")
     if result.get("invocation_id") != invocation_id:
         raise ValueError("executor result invocation_id does not match handoff")
     if not isinstance(result.get("output_task_commit"), str) or not result.get(
