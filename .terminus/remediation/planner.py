@@ -39,11 +39,39 @@ class RemediationPlanner:
         }
 
     def plan(self, finding: Mapping[str, Any]) -> dict[str, Any]:
+        """Create the one canonical packet for the current finding/ledger point."""
         self.schemas.validate("finding", finding)
         if finding["state"] in {"CLOSED", "VERIFIED", "WONT_FIX"}:
             raise ValueError("closed/verified findings do not require a remediation plan")
         if finding["state"] in {"FEEDBACK_CONFLICT", "POLICY_CONFLICT"}:
             raise ValueError("conflicted findings must be resolved before remediation planning")
+        ledger = ExecutionLedger(self.root, str(finding["task_id"]))
+        sequence_floor = len(ledger.load(validate_record_files=True))
+        packet = self.expected_packet(
+            finding,
+            ledger_sequence_floor=sequence_floor,
+        )
+        self.schemas.validate("remediation", packet)
+        self.store.record_remediation(packet)
+        return packet
+
+    def expected_packet(
+        self,
+        finding: Mapping[str, Any],
+        *,
+        ledger_sequence_floor: int,
+    ) -> dict[str, Any]:
+        """Deterministically derive every planner-owned packet field.
+
+        Consumers call this again before trusting a persisted remediation packet;
+        stage/role ownership, closure owner and semantic repair instructions are
+        therefore not accepted merely because a stored JSON object is schema-valid.
+        """
+        self.schemas.validate("finding", finding)
+        if not isinstance(ledger_sequence_floor, int) or isinstance(
+            ledger_sequence_floor, bool
+        ) or ledger_sequence_floor < 0:
+            raise ValueError("ledger_sequence_floor must be a non-negative integer")
         stages = sorted(
             finding["ownership"]["repair_stages"],
             key=lambda stage_id: self.stage_order.get(stage_id, 10_000),
@@ -63,25 +91,23 @@ class RemediationPlanner:
                     "closure_conditions": list(finding["closure"]["conditions"]),
                 }
             )
-        ledger = ExecutionLedger(self.root, finding["task_id"])
-        sequence_floor = len(ledger.load(validate_record_files=True))
         packet: dict[str, Any] = {
             "schema_version": "1.0",
             "finding_id": finding["finding_id"],
             "task_id": finding["task_id"],
             "input_task_commit": finding["task_commit"],
-            "ledger_sequence_floor": sequence_floor,
+            "ledger_sequence_floor": ledger_sequence_floor,
             "steps": steps,
             "closure_owner": finding["closure"]["verification_owner"],
             "prohibited_shortcuts": list(_DEFAULT_PROHIBITED),
         }
         packet["remediation_id"] = stable_id("remediation", packet)
-        self.schemas.validate("remediation", packet)
-        self.store.remediations.append(packet)
         return packet
 
     @staticmethod
-    def context_for_stage(packet: Mapping[str, Any], stage_id: str) -> dict[str, Any] | None:
+    def context_for_stage(
+        packet: Mapping[str, Any], stage_id: str
+    ) -> dict[str, Any] | None:
         for step in packet["steps"]:
             if step["stage_id"] == stage_id:
                 return {
