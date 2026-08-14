@@ -119,15 +119,21 @@ class AppendOnlyRegistry:
 
 
 class LearningStore:
-    """Named registries used by the unified feedback plane."""
+    """Private task feedback state plus portable generalized knowledge."""
 
-    def __init__(self, root: Path, state_root: Path | None = None):
-        base = state_root or root / ".terminus" / "learning" / "state"
-        self.feedback = AppendOnlyRegistry(base / "feedback.jsonl")
-        self.findings = AppendOnlyRegistry(base / "findings.jsonl")
-        self.lessons = AppendOnlyRegistry(base / "lessons.jsonl")
-        self.patterns = AppendOnlyRegistry(base / "patterns.jsonl")
-        self.remediations = AppendOnlyRegistry(base / "remediations.jsonl")
+    def __init__(
+        self,
+        root: Path,
+        state_root: Path | None = None,
+        knowledge_root: Path | None = None,
+    ):
+        private = state_root or root / ".terminus" / "learning" / "state"
+        knowledge = knowledge_root or root / ".terminus" / "learning" / "knowledge"
+        self.feedback = AppendOnlyRegistry(private / "feedback.jsonl")
+        self.findings = AppendOnlyRegistry(private / "findings.jsonl")
+        self.remediations = AppendOnlyRegistry(private / "remediations.jsonl")
+        self.lessons = AppendOnlyRegistry(knowledge / "lessons.jsonl")
+        self.patterns = AppendOnlyRegistry(knowledge / "patterns.jsonl")
 
     def heads(self) -> dict[str, str]:
         return {
