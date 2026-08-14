@@ -1,0 +1,43 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "terminus-lesson-v1",
+  "title": "Terminus Reusable Lesson",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "lesson_id", "state", "category", "failure_pattern", "future_rule", "targets", "sources", "promotion"],
+  "properties": {
+    "schema_version": {"const": "1.0"},
+    "lesson_id": {"type": "string", "pattern": "^lesson_[0-9a-f]{64}$"},
+    "state": {"enum": ["CANDIDATE", "ACTIVE", "RETIRED"]},
+    "category": {"type": "string", "minLength": 1},
+    "failure_pattern": {"type": "string", "minLength": 1},
+    "root_cause_class": {"type": "string", "minLength": 1},
+    "future_rule": {"type": "string", "minLength": 1},
+    "targets": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["stages", "roles"],
+      "properties": {
+        "stages": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+        "roles": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+        "domains": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1}}
+      }
+    },
+    "sources": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {"type": "string", "pattern": "^finding_[0-9a-f]{64}$"}
+    },
+    "promotion": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["occurrences", "distinct_tasks", "policy_candidate"],
+      "properties": {
+        "occurrences": {"type": "integer", "minimum": 1},
+        "distinct_tasks": {"type": "integer", "minimum": 1},
+        "policy_candidate": {"type": "boolean"}
+      }
+    }
+  }
+}
