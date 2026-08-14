@@ -1,0 +1,284 @@
+{
+  "schema_version": "3.0",
+  "role": "Spec-Test Contract Reviewer",
+  "review_id": "cobol-comp3-python-equiv-d2bf8685-spec-test-contract-73aef64c20",
+  "task": "cobol-comp3-python-equiv",
+  "task_commit": "d2bf8685258c89fbe9db77531788c56c2bef15a8",
+  "control_plane_commit": "ebabd4933873e4c44306eff80140fae35a088476",
+  "protocol_policy_version": "2.2",
+  "prompt_policy_version": "2.2",
+  "role_policy_version": "1.1",
+  "role_contract_hash": "0c40044ec13f0109a5526301cac6e5d2f52f5596d006bee2cdcaa90c0771d7f6",
+  "context_packet": ".terminus/reviews/cobol-comp3-python-equiv/d2bf8685/cobol-comp3-python-equiv-d2bf8685-spec-test-contract-73aef64c20.packet.json",
+  "verdict": "REVISE",
+  "confidence": "HIGH",
+  "evidence_status": "SUFFICIENT",
+  "summary": "The exhaustive Q4 walk found four blocking bidirectional-contract defects. The packed-decimal, REDEFINES, ODO, CLI, public/holdout parsing, and core report-schema behaviors are substantially aligned, but a delegated offline/tooling restriction is both displaced from the work request and untested; malformed-record tests enforce recovery and byte-length conventions not uniquely specified by the public failure interface; a P2P test grades retention of incident-note files without a stated preservation obligation; and two documented summary diagnostics have only the successful/true branch graded, leaving their false semantics circular and untested.",
+  "evidence": [
+    {
+      "type": "rule",
+      "ref": ".terminus/agents/QUALITY_AGENT_REGISTRY.md#Q4-Spec-Test-Contract-Reviewer",
+      "observation": "Q4 must exhaustively enumerate requirements and verifier behaviors, complete both mapping directions, inspect delegated contracts, F2P/P2P boundaries, stable output interfaces, ambiguity, and a second omission sweep; any material phantom test, untested requirement, or grading-relevant ambiguity blocks PASS."
+    },
+    {
+      "type": "rule",
+      "ref": ".terminus/agents/INSTRUCTION_POLICY.md",
+      "observation": "Material functional/operational/preservation/safety requirements belong in the engineering work request; referenced docs may carry technical layout/schema/protocol/API/CLI/runbook detail but must not hide material task goals or obligations."
+    },
+    {
+      "type": "file",
+      "ref": "cobol-comp3-python-equiv/instruction.md",
+      "observation": "The instruction is two short paragraphs, names the evaluator, program/sample inputs, output path, shift-note files, binding record-layout contract, and the high-level COMP-3/REDEFINES/ODO objective."
+    },
+    {
+      "type": "file",
+      "ref": "cobol-comp3-python-equiv/environment/equiv/docs/record-layout.md",
+      "observation": "The public contract specifies CLI defaults/flags, packed-decimal storage/sign/scale rules, DISPLAY, REDEFINES, ODO, record framing, the JSON report shape, failed-record byte_length as determined-or-zero, and summary-field semantics."
+    },
+    {
+      "type": "file",
+      "ref": "cobol-comp3-python-equiv/environment/equiv/ops/handoff.md",
+      "observation": "The instruction-referenced handoff contains an operational restriction: 'Offline only — no model API, no GnuCOBOL install.'"
+    },
+    {
+      "type": "file",
+      "ref": "cobol-comp3-python-equiv/environment/equiv/log/unpack-incident.log",
+      "observation": "The incident log supplies solver-visible evidence for the stated current symptoms involving hex COMP-3 output, ODO max-span consumption, REDEFINES offset handling, negative sign loss, and unsigned F-sign decimal output."
+    },
+    {
+      "type": "test",
+      "ref": "cobol-comp3-python-equiv/tests/test_outputs.py",
+      "observation": "The verifier grades public and sealed values, ODO lengths, REDEFINES, default/custom CLI/report paths, report fields/types/order, malformed/truncated records, rerun stability, invalid sign/ODO handling, and P2P file retention."
+    },
+    {
+      "type": "test",
+      "ref": "cobol-comp3-python-equiv/tests/test_comp3_contract.py",
+      "observation": "The verifier additionally grades strict signed-vs-unsigned sign classes, required zero pad nibble, non-decimal digit rejection, nonempty error strings, malformed-record byte lengths, and continuation/count behavior."
+    },
+    {
+      "type": "test",
+      "ref": "cobol-comp3-python-equiv/tests/test.sh",
+      "observation": "The complete Python verifier surface consists of test_outputs.py and test_comp3_contract.py; no test in the invoked suite enforces the handoff's offline/model-API/GnuCOBOL restriction."
+    }
+  ],
+  "findings": [
+    {
+      "id": "Q4-STC-001",
+      "severity": "HIGH",
+      "status": "OBSERVED",
+      "criterion": "Material operational requirements must be present in the work request or a legitimate discoverable contract and must be meaningfully graded; delegated docs must not hide task-level obligations.",
+      "evidence_refs": [
+        "cobol-comp3-python-equiv/instruction.md",
+        "cobol-comp3-python-equiv/environment/equiv/ops/handoff.md",
+        "cobol-comp3-python-equiv/tests/test.sh",
+        "cobol-comp3-python-equiv/tests/test_outputs.py",
+        "cobol-comp3-python-equiv/tests/test_comp3_contract.py",
+        ".terminus/agents/INSTRUCTION_POLICY.md"
+      ],
+      "why_it_matters": "The instruction explicitly sends the solver to the handoff, where 'Offline only — no model API, no GnuCOBOL install' is phrased as a required operating constraint. It is not stated in the work request and no invoked verifier behavior checks it. A solver can violate that delegated restriction and still receive full credit, while a solver treating it as binding faces an extra solution constraint. This is both a spec->test coverage gap and a leaky instruction/docs boundary.",
+      "minimal_remediation": "Decide whether the restriction is truly part of the task. If it is material, state it at the work-request level and enforce it through a legitimate observable/environment boundary. If it is not material, remove the normative restriction from the referenced handoff so the solver-visible contract no longer carries an ungraded obligation.",
+      "regression_risk": "Changing only the verifier without clarifying the solver-visible obligation can create a hidden-test restriction; changing only the instruction while leaving contradictory handoff prose can preserve ambiguity."
+    },
+    {
+      "id": "Q4-STC-002",
+      "severity": "HIGH",
+      "status": "OBSERVED",
+      "criterion": "Every graded stable failure-interface behavior must be discoverable and unambiguous; verifier recovery conventions may not exceed the public contract.",
+      "evidence_refs": [
+        "cobol-comp3-python-equiv/environment/equiv/docs/record-layout.md",
+        "cobol-comp3-python-equiv/tests/test_outputs.py",
+        "cobol-comp3-python-equiv/tests/test_comp3_contract.py"
+      ],
+      "why_it_matters": "The public contract says a failed record has an error string or null and reports byte_length when it can be determined, otherwise 0. The verifier is stricter in multiple failure cases: it requires a nonempty error string; for malformed packed fields in the first public record it requires byte_length 44 and record_count 2, which forces recovery far enough to determine the ODO boundary and continue to the next record; and for an out-of-range ODO count it requires byte_length 28 rather than 0 or another defensible boundary convention. Those choices are grading-relevant but are not uniquely specified by 'when it can be determined.'",
+      "minimal_remediation": "Make the failed-record contract explicit at the behavioral level: define whether error strings must be nonempty, whether parsing continues after a field error to recover a record boundary and subsequent records, how record_count treats failed records, and the exact byte_length convention for an invalid ODO count. Alternatively relax the tests to accept every behavior permitted by the current public contract.",
+      "regression_risk": "Over-specifying internal recovery mechanics can reduce implementation freedom; the repair should define externally observable failure semantics only."
+    },
+    {
+      "id": "Q4-STC-003",
+      "severity": "MEDIUM",
+      "status": "OBSERVED",
+      "criterion": "P2P preservation tests require discoverable preservation intent and must not impose an otherwise unstated pass/fail condition.",
+      "evidence_refs": [
+        "cobol-comp3-python-equiv/instruction.md",
+        "cobol-comp3-python-equiv/tests/test_outputs.py",
+        ".terminus/agents/QUALITY_AGENT_REGISTRY.md#Q4-Spec-Test-Contract-Reviewer"
+      ],
+      "why_it_matters": "test_p2p_incident_evidence_present requires the handoff, incident log, and record-layout document to still exist after the solve. The instruction references those files as inputs/evidence but does not state that preserving the incident-note artifacts is a required final-state invariant. The runtime layout/sample retention is discoverable from the documented default evaluator inputs, but the incident-note retention is not a stable runtime dependency. Deleting or replacing those notes can therefore change pass/fail without violating an explicit final-state preservation contract.",
+      "minimal_remediation": "If preserving the incident evidence is a material regression requirement, state that preservation intent in the engineering work request and test the intended preservation property. Otherwise remove the incident-note existence check from grading.",
+      "regression_risk": "A broad 'preserve everything' instruction would be over-constraining; scope any preservation contract to artifacts that genuinely must remain stable."
+    },
+    {
+      "id": "Q4-STC-004",
+      "severity": "MEDIUM",
+      "status": "OBSERVED",
+      "criterion": "Every material documented stable output-interface semantic must have meaningful non-vacuous coverage; circular self-certification fields are not complete behavioral coverage.",
+      "evidence_refs": [
+        "cobol-comp3-python-equiv/environment/equiv/docs/record-layout.md",
+        "cobol-comp3-python-equiv/tests/test_outputs.py"
+      ],
+      "why_it_matters": "The report contract states that summary.odo_lengths_ok becomes false when a record consumed the maximum OCCURS span instead of the depending-on count, and summary.redefines_ok becomes false when a REDEFINES field was unpacked from a later offset. The verifier only asserts both fields are true on correctly parsed tapes. No input can independently induce those false states; they describe whether the implementation itself made an error, so a solver can hardcode both booleans true. Direct parsing tests catch several concrete ODO/REDEFINES mistakes, but the documented false-branch semantics of these stable public fields are not themselves graded.",
+      "minimal_remediation": "Either redefine these summary fields around input-observable conditions that can be exercised independently, add a legitimate non-circular way to verify their false semantics, or remove the untestable false-branch guarantee from the stable public contract while retaining direct behavioral parsing checks.",
+      "regression_risk": "Do not replace direct ODO/REDEFINES behavioral assertions with self-reported booleans; those direct assertions are the stronger evidence and should remain."
+    }
+  ],
+  "missing_evidence": [],
+  "change_scope": [
+    "cobol-comp3-python-equiv/instruction.md",
+    "cobol-comp3-python-equiv/environment/equiv/ops/handoff.md",
+    "cobol-comp3-python-equiv/environment/equiv/docs/record-layout.md",
+    "cobol-comp3-python-equiv/tests/test_outputs.py",
+    "cobol-comp3-python-equiv/tests/test_comp3_contract.py"
+  ],
+  "do_not_change": [
+    "Q4 made no task implementation changes.",
+    "Do not use this review as authority to weaken legitimate COMP-3, REDEFINES, ODO, CLI, or report-schema behavior.",
+    "Do not overwrite historical review evidence."
+  ],
+  "next_gate": "REVISE: route each finding to the smallest responsible specification/instruction/verifier owner, refreeze the resulting task commit, and generate a new packet-bound Q4 review before Quality Interlock can pass.",
+  "role_output": {
+    "REQUIREMENT_TEST_MATRIX": [
+      {
+        "req_id": "REQ-01",
+        "requirement": "The evaluator must process the documented layout/record inputs and write the contracted JSON report at the default path, with documented --layout/--records/--out overrides.",
+        "coverage": "COMPLETE",
+        "tests": ["test_f2p_cli_default_writes_contract_path", "custom-path holdout and malformed-record invocations"]
+      },
+      {
+        "req_id": "REQ-02",
+        "requirement": "Unknown CLI flags exit 2 without writing/clobbering output.",
+        "coverage": "COMPLETE",
+        "tests": ["test_f2p_unknown_flag_exits_without_clobber"]
+      },
+      {
+        "req_id": "REQ-03",
+        "requirement": "COMP-3 uses the documented digit count, byte length, high-nibble order, left zero padding, strict C/D signed versus F unsigned sign class, decimal digit range, implied scale, and scale-0 decimal-string representation.",
+        "coverage": "COMPLETE",
+        "tests": ["public/holdout packed-value tests", "strict sign-class tests", "zero-pad test", "nondecimal-digit test", "scale/padding output tests"]
+      },
+      {
+        "req_id": "REQ-04",
+        "requirement": "PIC X and PIC 9 display fields use the documented byte widths/padding and JSON integer behavior.",
+        "coverage": "COMPLETE",
+        "tests": ["test_f2p_display_fields_keep_pic_padding", "public/holdout AISLE/BIN-COUNT/SKU/WHSE assertions"]
+      },
+      {
+        "req_id": "REQ-05",
+        "requirement": "REDEFINES shares the target bytes and does not advance the record offset.",
+        "coverage": "COMPLETE",
+        "tests": ["test_f2p_redefines_shares_status_byte", "test_f2p_holdout_redefines_status", "public summary redefines_ok true"]
+      },
+      {
+        "req_id": "REQ-06",
+        "requirement": "OCCURS DEPENDING ON uses the depending-on count within min/max, emits exactly that many entries, computes prefix+count*occurrence_size, and does not consume the max span for smaller counts.",
+        "coverage": "COMPLETE",
+        "tests": ["public count 1 and 0 length tests", "holdout count 2 and subsequent zero-count record tests", "invalid ODO test"]
+      },
+      {
+        "req_id": "REQ-07",
+        "requirement": "Concatenated records have no RDW, remain in tape order, and each next record starts at the computed record length.",
+        "coverage": "COMPLETE",
+        "tests": ["public total-length assertion", "holdout second-record framing and total-length assertion", "report index ordering"]
+      },
+      {
+        "req_id": "REQ-08",
+        "requirement": "The public sample values and documented signed/unsigned examples decode according to the layout contract.",
+        "coverage": "COMPLETE",
+        "tests": ["public QOH/UNIT-COST/REORDER/REDEFINES/bin tests", "negative second record tests"]
+      },
+      {
+        "req_id": "REQ-09",
+        "requirement": "The report exposes the documented layout_id, source_records, ordered records with index/byte_length/error/fields, and summary fields/types.",
+        "coverage": "COMPLETE",
+        "tests": ["test_f2p_report_schema_required_fields", "test_f2p_cli_default_writes_contract_path", "summary tests"]
+      },
+      {
+        "req_id": "REQ-10",
+        "requirement": "Failed-record error and byte_length behavior follows the documented stable failure interface.",
+        "coverage": "PARTIAL",
+        "tests": ["truncated record", "invalid sign", "invalid ODO", "strict malformed packed-field cases"],
+        "gap": "Verifier requires nonempty errors and specific recovery/boundary conventions not uniquely defined by the public contract; see Q4-STC-002."
+      },
+      {
+        "req_id": "REQ-11",
+        "requirement": "summary.comp3_signed_ok reflects wrong packed signs/dropped minus.",
+        "coverage": "COMPLETE",
+        "tests": ["public true case", "invalid sign case", "signed-F and unsigned-C/D cases"]
+      },
+      {
+        "req_id": "REQ-12",
+        "requirement": "summary.odo_lengths_ok and summary.redefines_ok follow the documented false-branch diagnostic semantics.",
+        "coverage": "VACUOUS/PARTIAL",
+        "tests": ["public true assertions only"],
+        "gap": "False semantics are circular implementation-self-assessment and are not independently exercised; see Q4-STC-004."
+      },
+      {
+        "req_id": "REQ-13",
+        "requirement": "The evaluator generalizes beyond the public fixture to holdout signed values, ODO counts, REDEFINES values, and record framing.",
+        "coverage": "COMPLETE",
+        "tests": ["sealed holdout tests"]
+      },
+      {
+        "req_id": "REQ-14",
+        "requirement": "The delegated handoff requires offline operation with no model API and no GnuCOBOL install.",
+        "coverage": "NONE",
+        "tests": [],
+        "gap": "No invoked verifier behavior enforces this restriction; see Q4-STC-001."
+      }
+    ],
+    "PHANTOM_TEST_CONTRACTS": [
+      {
+        "finding_id": "Q4-STC-002",
+        "behavior": "Malformed-record tests require nonempty error strings, packed-error recovery sufficient to retain byte_length 44 and continue to record 2, and invalid-ODO byte_length 28 despite the public contract only defining determined-or-zero generally."
+      },
+      {
+        "finding_id": "Q4-STC-003",
+        "behavior": "P2P grading requires incident handoff/log/docs paths to remain present although no explicit final-state preservation obligation is stated for the incident-note artifacts."
+      }
+    ],
+    "UNTESTED_REQUIREMENTS": [
+      {
+        "finding_id": "Q4-STC-001",
+        "requirement": "Offline only; no model API; no GnuCOBOL install."
+      },
+      {
+        "finding_id": "Q4-STC-004",
+        "requirement": "False-state semantics for summary.odo_lengths_ok and summary.redefines_ok."
+      }
+    ],
+    "AMBIGUITIES": [
+      {
+        "finding_id": "Q4-STC-002",
+        "contract": "Failed records still include byte_length when it can be determined, otherwise 0; error is a string or null.",
+        "grading_consequence": "The verifier selects specific nonempty-error, continuation, record_count, and invalid-ODO prefix-length conventions that another competent implementation could reasonably choose differently."
+      }
+    ],
+    "INSTRUCTION_SHAPE": "PASS",
+    "INSTRUCTION_REQUIREMENT_COMPLETENESS": "INSUFFICIENT",
+    "DELEGATED_CONTRACT_CHECK": {
+      "record-layout.md": "LEGITIMATE_TECHNICAL_CONTRACT_WITH_FAILURE_INTERFACE_GAP",
+      "ops/handoff.md": "LEAKY_MATERIAL_OPERATIONAL_RESTRICTION",
+      "log/unpack-incident.log": "LEGITIMATE_CURRENT_STATE_EVIDENCE"
+    },
+    "INSTRUCTION_DOC_BOUNDARY": "LEAKY",
+    "IMPLEMENTATION_DIAGNOSIS_LEAKAGE": "LOW",
+    "CURRENT_STATE_EVIDENCE": "PASS",
+    "SPEC_DUMP_RISK": "LOW",
+    "BIDIRECTIONAL_ALIGNMENT": "FAIL",
+    "BLOCKING_FINDING_IDS": ["Q4-STC-001", "Q4-STC-002", "Q4-STC-003", "Q4-STC-004"],
+    "ADVISORY_FINDING_IDS": [],
+    "EXHAUSTIVENESS": {
+      "REQUIREMENTS_ENUMERATED": "COMPLETE",
+      "VERIFIER_BEHAVIORS_ENUMERATED": "COMPLETE",
+      "FORWARD_MATRIX_COMPLETE": "YES",
+      "REVERSE_MATRIX_COMPLETE": "YES",
+      "INSTRUCTION_COMPLETENESS_COMPLETE": "YES",
+      "DELEGATED_CONTRACTS_COMPLETE": "YES",
+      "PROMPT_EXTENSION_WALK_COMPLETE": "YES",
+      "P2P_BOUNDARIES_COMPLETE": "YES",
+      "F2P_BOUNDARIES_COMPLETE": "YES",
+      "OUTPUT_INTERFACES_COMPLETE": "YES",
+      "SECOND_PASS_OMISSION_SWEEP": "PASS",
+      "UNINSPECTED_SCOPE": []
+    }
+  }
+}
