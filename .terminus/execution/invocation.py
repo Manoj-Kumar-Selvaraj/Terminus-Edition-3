@@ -39,6 +39,8 @@ _CONTRACT_SNAPSHOT_PATHS = (
     ".terminus/remediation/planner.py",
     ".terminus/learning/context.py",
     ".terminus/learning/projection.py",
+    ".terminus/learning/knowledge/lessons.jsonl",
+    ".terminus/learning/knowledge/patterns.jsonl",
     ".terminus/agents/STAGE_INVOCATION.md",
 )
 _POLICY_VERSION_SOURCES = {
