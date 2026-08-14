@@ -22,10 +22,10 @@ class RecurrenceAnalyzer:
             raise ValueError("policy candidate threshold must be at least two distinct tasks")
         findings = [
             finding
-            for finding in self.store.findings.read()
+            for finding in self.store.findings.latest_by("finding_id")
             if finding.get("state") in {"VERIFIED", "CLOSED"}
         ]
-        lessons = self.store.lessons.read()
+        lessons = self.store.lessons.latest_by("lesson_id")
         lesson_by_source: dict[str, list[str]] = defaultdict(list)
         for lesson in lessons:
             for source in lesson.get("sources", []):
@@ -36,6 +36,10 @@ class RecurrenceAnalyzer:
                 (str(finding["category"]), str(finding["problem"]["root_cause_class"]))
             ].append(finding)
 
+        existing = {
+            pattern["pattern_id"]: pattern
+            for pattern in self.store.patterns.latest_by("pattern_id")
+        }
         patterns: list[dict[str, Any]] = []
         for (category, root_cause), values in sorted(grouped.items()):
             if len(values) < 2:
@@ -63,6 +67,7 @@ class RecurrenceAnalyzer:
             }
             pattern["pattern_id"] = pattern_identity(pattern)
             self.schemas.validate("pattern", pattern)
-            self.store.patterns.append(pattern)
+            if existing.get(pattern["pattern_id"]) != pattern:
+                self.store.patterns.append(pattern)
             patterns.append(pattern)
         return patterns
