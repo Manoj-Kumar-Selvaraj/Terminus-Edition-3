@@ -89,6 +89,13 @@ def build_parser() -> argparse.ArgumentParser:
     repaired.add_argument("--finding-id", required=True)
     repaired.add_argument("--task-commit", required=True)
 
+    resolve_conflict = sub.add_parser(
+        "resolve-conflict",
+        help="adjudicate a feedback/policy conflict using trusted resolution feedback",
+    )
+    resolve_conflict.add_argument("--finding-id", required=True)
+    resolve_conflict.add_argument("--feedback-id", action="append", required=True)
+
     verify = sub.add_parser("verify", help="independently verify/close a repaired finding")
     verify.add_argument("--finding-id", required=True)
     verify.add_argument("--verifier-role", required=True)
@@ -165,6 +172,14 @@ def main(argv: list[str] | None = None) -> int:
         return _emit(RemediationPlanner(ROOT, store=store).plan(_finding(store, args.finding_id)))
     if args.command == "mark-repaired":
         return _emit(FindingClosure(ROOT, store=store).mark_repaired(args.finding_id, args.task_commit))
+    if args.command == "resolve-conflict":
+        events = [_event(store, feedback_id) for feedback_id in args.feedback_id]
+        return _emit(
+            FindingClosure(ROOT, store=store).resolve_conflict(
+                args.finding_id,
+                resolution_feedback=events,
+            )
+        )
     if args.command == "verify":
         events = [_event(store, feedback_id) for feedback_id in args.feedback_id]
         return _emit(
