@@ -9,6 +9,7 @@ import subprocess
 from pathlib import Path
 from typing import Any, Mapping
 
+from learning.context import LearningContextBuilder
 from retrieval.engine import RetrievalEngine
 from retrieval.models import InvocationContext, RetrievalQuery
 from retrieval.policy import RetrievalPolicy
@@ -27,6 +28,15 @@ _CONTRACT_SNAPSHOT_PATHS = (
     ".terminus/agents/retrieval_metadata.json",
     ".terminus/agents/stage_acceptance_predicates.json",
     ".terminus/agents/schemas/stage_acceptance_predicates.schema.json",
+    ".terminus/agents/schemas/feedback_event.schema.json",
+    ".terminus/agents/schemas/finding.schema.json",
+    ".terminus/agents/schemas/remediation_packet.schema.json",
+    ".terminus/agents/schemas/lesson.schema.json",
+    ".terminus/agents/schemas/pattern.schema.json",
+    ".terminus/feedback/model.py",
+    ".terminus/feedback/registry.py",
+    ".terminus/learning/context.py",
+    ".terminus/learning/projection.py",
     ".terminus/agents/STAGE_INVOCATION.md",
 )
 _POLICY_VERSION_SOURCES = {
@@ -42,7 +52,7 @@ _POLICY_VERSION_SOURCES = {
 
 
 class StageInvocationBuilder:
-    """Project stage/role authority and declared inputs into one bounded packet."""
+    """Project stage/role authority, learning and declared inputs into one bounded packet."""
 
     schema_version = "1.0"
 
@@ -51,6 +61,7 @@ class StageInvocationBuilder:
         self.policy = policy or RetrievalPolicy(self.root)
         self.execution_authority = ExecutionAuthority(self.policy)
         self.acceptance = StageAcceptancePredicates(self.root)
+        self.learning = LearningContextBuilder(self.root)
 
     def build(
         self,
@@ -97,6 +108,12 @@ class StageInvocationBuilder:
             max_chars=max_chars,
             executable=readiness == "READY",
         )
+        learning = self.learning.build(
+            stage_id=context.stage_id,
+            role_id=context.role_id,
+            task_id=context.task_id,
+            task_commit=context.task_commit,
+        )
 
         authority: dict[str, Any] = {
             "control_plane_commit": context.control_plane_commit,
@@ -141,6 +158,7 @@ class StageInvocationBuilder:
                 "evidence_required": [str(value) for value in stage.get("evidence_required", [])],
             },
             "retrieval": retrieval,
+            "learning": learning,
             "output_contract": {
                 "allowed_status_values": status_values,
                 "required_fields": [str(value) for value in output_contract.get("required_fields", [])],
@@ -318,6 +336,7 @@ class StageInvocationBuilder:
             "ignored_input_count": packet["ignored_input_count"],
             "evidence": packet["evidence"],
             "retrieval": packet["retrieval"],
+            "learning": packet["learning"],
             "output_contract": packet["output_contract"],
             "acceptance_predicates": packet["acceptance_predicates"],
             "routing": packet["routing"],
