@@ -1,17 +1,27 @@
-"""Build deterministic executor handoffs from READY stage invocations."""
+"""Build deterministic executor handoffs from canonically authorized invocations."""
 
 from __future__ import annotations
 
 import json
+from pathlib import Path
 from typing import Any, Mapping
 
 from .executor import ExecutorMode, canonical_json, stable_id, validate_executable_invocation
+from .invocation_guard import CanonicalInvocationGuard
+from .schema_validation import ExecutorSchemaValidator
+
+_MUTATING_ROLE_CLASSES = frozenset({"PRODUCER", "FIXER"})
 
 
 class ExecutorHandoffBuilder:
-    """Project an invocation into a bounded executor-neutral handoff packet."""
+    """Project one canonical invocation into a bounded executor-neutral handoff."""
 
     schema_version = "1.0"
+
+    def __init__(self, root: Path | None = None):
+        self.root = (root or Path(__file__).resolve().parents[2]).resolve()
+        self.guard = CanonicalInvocationGuard(self.root)
+        self.schemas = ExecutorSchemaValidator(self.root)
 
     def build(
         self,
@@ -19,17 +29,23 @@ class ExecutorHandoffBuilder:
         *,
         executor_mode: ExecutorMode | str,
     ) -> dict[str, Any]:
-        validate_executable_invocation(invocation)
+        canonical = self.guard.validate(invocation)
+        validate_executable_invocation(canonical)
         mode = ExecutorMode(executor_mode)
-        stage = invocation["stage"]
-        authority = invocation["authority"]
-        output_contract = invocation["output_contract"]
+        stage = canonical["stage"]
+        if mode is ExecutorMode.LOCAL_COMMAND and stage["role_class"] in _MUTATING_ROLE_CLASSES:
+            raise ValueError(
+                "LOCAL_COMMAND is read-only and unavailable for PRODUCER/FIXER stages; use MANUAL_CHAT"
+            )
+        authority = canonical["authority"]
+        output_contract = canonical["output_contract"]
 
         result_contract = {
             "schema_version": "1.0",
-            "invocation_id": invocation["invocation_id"],
+            "invocation_id": canonical["invocation_id"],
             "required_top_level_fields": [
                 "schema_version",
+                "handoff_id",
                 "invocation_id",
                 "output_task_commit",
                 "status",
@@ -46,10 +62,10 @@ class ExecutorHandoffBuilder:
             "Act only as the role and stage named in this invocation.",
             "Read every mandatory_exact_reads path exactly at the bound control-plane commit before deciding the result.",
             "Use only the invocation inputs and evidence authorized by the invocation; do not broaden scope from chat memory.",
-            "Return one StageResult JSON object whose invocation_id exactly matches this handoff.",
+            "Return one StageResult JSON object whose handoff_id and invocation_id exactly match this handoff.",
             "Use only legal status values and declared output fields.",
             "Preserve immutable evidence references for every acceptance-sensitive claim.",
-            "If authorized work changes task files, commit them and return the descendant output_task_commit; otherwise return the bound task commit.",
+            "If authorized MANUAL_CHAT work changes task files, commit them and return the descendant output_task_commit; otherwise return the bound task commit.",
         ]
         do_not = [
             "Do not decide or write the next workflow stage; the controller derives transitions.",
@@ -59,11 +75,14 @@ class ExecutorHandoffBuilder:
             "Do not expose chain-of-thought, private reasoning, scratchpad content, hidden tests, or unauthorized evidence.",
             "Do not fabricate evidence references, reviewer verdicts, external run results, task commits, or policy versions.",
         ]
+        if mode is ExecutorMode.LOCAL_COMMAND:
+            do.append("Treat the projected workspace as read-only and return the bound input task commit unchanged.")
+            do_not.append("Do not mutate task files; LOCAL_COMMAND is a read-only sandbox in this version.")
 
         packet: dict[str, Any] = {
             "schema_version": self.schema_version,
             "executor_mode": mode.value,
-            "invocation_id": invocation["invocation_id"],
+            "invocation_id": canonical["invocation_id"],
             "stage": {
                 "stage_id": stage["stage_id"],
                 "role_id": stage["role_id"],
@@ -74,11 +93,12 @@ class ExecutorHandoffBuilder:
             "do": do,
             "do_not": do_not,
             "result_contract": result_contract,
-            "invocation": dict(invocation),
+            "invocation": canonical,
         }
         if mode is ExecutorMode.MANUAL_CHAT:
             packet["handoff_text"] = self._manual_chat_text(packet)
         packet["handoff_id"] = stable_id("handoff", packet)
+        self.schemas.validate_handoff(packet)
         return packet
 
     @staticmethod
@@ -91,6 +111,7 @@ class ExecutorHandoffBuilder:
             f"Stage: {packet['stage']['stage_id']}",
             f"Role: {packet['stage']['role_id']}",
             f"Invocation ID: {packet['invocation_id']}",
+            "The transport wrapper will provide the exact Handoff ID; echo it in the StageResult.",
             "",
             "DO:",
         ]
@@ -115,8 +136,6 @@ class ExecutorHandoffBuilder:
 
     @staticmethod
     def identity_payload(packet: Mapping[str, Any]) -> str:
-        """Expose deterministic transport identity for validators/tests."""
-
         copy = dict(packet)
         copy.pop("handoff_id", None)
         return canonical_json(copy)
