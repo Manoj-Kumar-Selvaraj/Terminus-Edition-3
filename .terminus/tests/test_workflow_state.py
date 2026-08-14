@@ -204,7 +204,7 @@ def test_task_drift_blocks_unattributed_change(tmp_path: Path) -> None:
     ledger.append(_record(resolver, "RULE_RESOLUTION", "task-drift", commit))
     changed = _new_commit(root, "unattributed.txt")
     state = resolver.resolve(task_id="task-drift", task_commit=changed, control_plane_commit=commit)
-    assert state["lineage"]["status"] == "DRIFTED"
+    assert state["lineage"]["status"] == "UNATTRIBUTED_CHANGE"
     assert state["next"]["action"] == "BLOCKED"
     assert "unattributed" in state["next"]["blocking_reason"]
 
@@ -240,11 +240,14 @@ def test_stale_work_package_evidence_invalidates_downstream(tmp_path: Path) -> N
     refs = [{"kind": "RESULT", "ref": "result:domain-research", "content_hash": "sha256:" + "1" * 64}]
     _append_through_freeze_predecessor(root, resolver, "task-freshness", commit, work_package_evidence=refs)
     overlay = {
-        "result:domain-research": {
-            "status": "STALE",
-            "content_hash": "sha256:" + "2" * 64,
-            "reason": "newer external research is available",
-        }
+        "schema_version": "1.0",
+        "bindings": {
+            "result:domain-research": {
+                "status": "STALE",
+                "content_hash": "sha256:" + "2" * 64,
+                "reason": "newer external research is available",
+            }
+        },
     }
     state = resolver.resolve(
         task_id="task-freshness",
