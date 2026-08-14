@@ -1,11 +1,14 @@
-"""Executor bridge runtime for manual-chat and shell-free local-command surfaces."""
+"""Executor bridge runtime for manual-chat and isolated local-command surfaces."""
 
 from __future__ import annotations
 
 import hashlib
 import json
 import os
+import signal
 import subprocess
+import tempfile
+import time
 from pathlib import Path
 from typing import Any, Mapping, Sequence
 
@@ -16,31 +19,29 @@ from .executor import (
     validate_stage_result_shape,
 )
 from .handoff import ExecutorHandoffBuilder
+from .sandbox import LocalExecutorSandbox, SandboxProjection, SandboxUnavailable
+from .schema_validation import ExecutorSchemaValidator
 
 _MAX_STDOUT_BYTES = 1_048_576
+_MAX_STDERR_BYTES = 262_144
 _MAX_STDERR_CHARS = 4000
 _ENV_ALLOWLIST = (
     "PATH",
-    "PATHEXT",
-    "SYSTEMROOT",
-    "WINDIR",
-    "HOME",
-    "USERPROFILE",
-    "TEMP",
-    "TMP",
     "LANG",
     "LC_ALL",
+    "LC_CTYPE",
 )
 
 
 class ExecutorRunner:
-    """Prepare or run executors without mutating Terminus workflow state."""
+    """Prepare or run executors without granting workflow-state authority."""
 
     schema_version = "1.0"
 
     def __init__(self, root: Path):
         self.root = root.resolve()
-        self.handoffs = ExecutorHandoffBuilder()
+        self.handoffs = ExecutorHandoffBuilder(self.root)
+        self.schemas = ExecutorSchemaValidator(self.root)
 
     def prepare(
         self,
@@ -87,57 +88,61 @@ class ExecutorRunner:
             "inherit_environment": inherit_environment,
         }
         attempt_id = stable_id("attempt", attempt_payload)
-        env = None if inherit_environment else self._minimal_environment()
+        env = dict(os.environ) if inherit_environment else self._minimal_environment()
         transport = json.dumps(handoff, ensure_ascii=False, sort_keys=True) + "\n"
+        sandbox = LocalExecutorSandbox(self.root)
+        projection: SandboxProjection | None = None
 
         try:
-            completed = subprocess.run(
-                argv_list,
-                input=transport,
-                text=True,
-                capture_output=True,
-                timeout=timeout_seconds,
-                shell=False,
-                cwd=self.root,
+            projection = sandbox.prepare(invocation, argv_list)
+            process = self._run_bounded(
+                projection.wrapped_argv,
+                transport,
+                timeout_seconds=timeout_seconds,
+                cwd=projection.workspace,
                 env=env,
-                check=False,
             )
-        except subprocess.TimeoutExpired as exc:
+        except SandboxUnavailable as exc:
             return self._runtime_response(
                 handoff=handoff,
                 attempt_id=attempt_id,
-                status="TIMED_OUT",
+                status="SANDBOX_UNAVAILABLE",
                 command_hash=command_hash,
                 argv_count=len(argv_list),
                 return_code=None,
-                stderr=self._clip(exc.stderr),
+                stderr=str(exc),
                 stage_result=None,
+                projection=None,
             )
+        finally:
+            sandbox.close()
 
-        stdout = completed.stdout or ""
-        if len(stdout.encode("utf-8")) > _MAX_STDOUT_BYTES:
+        if process["status"] != "COMPLETED":
             return self._runtime_response(
                 handoff=handoff,
                 attempt_id=attempt_id,
-                status="INVALID_RESULT",
+                status=str(process["status"]),
                 command_hash=command_hash,
                 argv_count=len(argv_list),
-                return_code=completed.returncode,
-                stderr="executor stdout exceeded 1 MiB transport limit",
+                return_code=process["return_code"],
+                stderr=str(process["stderr"]),
                 stage_result=None,
+                projection=projection,
             )
-        if completed.returncode != 0:
+        if process["return_code"] != 0:
             return self._runtime_response(
                 handoff=handoff,
                 attempt_id=attempt_id,
                 status="COMMAND_FAILED",
                 command_hash=command_hash,
                 argv_count=len(argv_list),
-                return_code=completed.returncode,
-                stderr=self._clip(completed.stderr),
+                return_code=process["return_code"],
+                stderr=str(process["stderr"]),
                 stage_result=None,
+                projection=projection,
             )
 
+        stdout = str(process["stdout"])
         try:
             parsed = json.loads(stdout)
         except json.JSONDecodeError as exc:
@@ -147,9 +152,10 @@ class ExecutorRunner:
                 status="INVALID_RESULT",
                 command_hash=command_hash,
                 argv_count=len(argv_list),
-                return_code=completed.returncode,
+                return_code=process["return_code"],
                 stderr=f"executor stdout is not one JSON value: {exc}",
                 stage_result=None,
+                projection=projection,
             )
         if not isinstance(parsed, dict):
             return self._runtime_response(
@@ -158,15 +164,22 @@ class ExecutorRunner:
                 status="INVALID_RESULT",
                 command_hash=command_hash,
                 argv_count=len(argv_list),
-                return_code=completed.returncode,
+                return_code=process["return_code"],
                 stderr="executor stdout must be one StageResult JSON object",
                 stage_result=None,
+                projection=projection,
             )
         try:
+            self.schemas.validate_stage_result(parsed)
             validate_stage_result_shape(
                 parsed,
                 invocation_id=str(invocation["invocation_id"]),
+                handoff_id=str(handoff["handoff_id"]),
             )
+            if parsed["output_task_commit"] != invocation["authority"]["task_commit"]:
+                raise ValueError(
+                    "LOCAL_COMMAND is read-only and must return the bound input task commit"
+                )
         except ValueError as exc:
             return self._runtime_response(
                 handoff=handoff,
@@ -174,9 +187,10 @@ class ExecutorRunner:
                 status="INVALID_RESULT",
                 command_hash=command_hash,
                 argv_count=len(argv_list),
-                return_code=completed.returncode,
+                return_code=process["return_code"],
                 stderr=str(exc),
                 stage_result=None,
+                projection=projection,
             )
 
         return self._runtime_response(
@@ -185,10 +199,78 @@ class ExecutorRunner:
             status="EXECUTED",
             command_hash=command_hash,
             argv_count=len(argv_list),
-            return_code=completed.returncode,
-            stderr=self._clip(completed.stderr),
+            return_code=process["return_code"],
+            stderr=str(process["stderr"]),
             stage_result=parsed,
+            projection=projection,
         )
+
+    def _run_bounded(
+        self,
+        argv: Sequence[str],
+        input_text: str,
+        *,
+        timeout_seconds: int,
+        cwd: Path,
+        env: Mapping[str, str],
+    ) -> dict[str, Any]:
+        with tempfile.TemporaryFile() as stdin_file, tempfile.TemporaryFile() as stdout_file, tempfile.TemporaryFile() as stderr_file:
+            stdin_file.write(input_text.encode("utf-8"))
+            stdin_file.seek(0)
+            process = subprocess.Popen(
+                list(argv),
+                stdin=stdin_file,
+                stdout=stdout_file,
+                stderr=stderr_file,
+                cwd=cwd,
+                env=dict(env),
+                shell=False,
+                start_new_session=True,
+            )
+            deadline = time.monotonic() + timeout_seconds
+            status = "COMPLETED"
+            reason = ""
+            while process.poll() is None:
+                stdout_size = os.fstat(stdout_file.fileno()).st_size
+                stderr_size = os.fstat(stderr_file.fileno()).st_size
+                if stdout_size > _MAX_STDOUT_BYTES:
+                    status = "OUTPUT_LIMIT_EXCEEDED"
+                    reason = "executor stdout exceeded 1 MiB transport limit"
+                    self._kill_process_group(process)
+                    break
+                if stderr_size > _MAX_STDERR_BYTES:
+                    status = "OUTPUT_LIMIT_EXCEEDED"
+                    reason = "executor stderr exceeded 256 KiB diagnostic limit"
+                    self._kill_process_group(process)
+                    break
+                if time.monotonic() >= deadline:
+                    status = "TIMED_OUT"
+                    reason = "executor exceeded timeout"
+                    self._kill_process_group(process)
+                    break
+                time.sleep(0.02)
+            process.wait()
+            stdout_file.seek(0)
+            stderr_file.seek(0)
+            stdout = stdout_file.read(_MAX_STDOUT_BYTES + 1).decode("utf-8", errors="replace")
+            stderr = stderr_file.read(_MAX_STDERR_BYTES + 1).decode("utf-8", errors="replace")
+            if reason:
+                stderr = reason + ("; " + stderr if stderr else "")
+            return {
+                "status": status,
+                "return_code": process.returncode,
+                "stdout": stdout,
+                "stderr": self._clip(stderr),
+            }
+
+    @staticmethod
+    def _kill_process_group(process: subprocess.Popen[bytes]) -> None:
+        if process.poll() is not None:
+            return
+        try:
+            os.killpg(process.pid, signal.SIGKILL)
+        except (ProcessLookupError, PermissionError):
+            process.kill()
 
     @staticmethod
     def _minimal_environment() -> dict[str, str]:
@@ -200,12 +282,7 @@ class ExecutorRunner:
 
     @staticmethod
     def _clip(value: Any) -> str:
-        if value is None:
-            return ""
-        if isinstance(value, bytes):
-            text = value.decode("utf-8", errors="replace")
-        else:
-            text = str(value)
+        text = "" if value is None else str(value)
         if len(text) <= _MAX_STDERR_CHARS:
             return text
         return text[:_MAX_STDERR_CHARS] + "...[truncated]"
@@ -221,6 +298,7 @@ class ExecutorRunner:
         return_code: int | None,
         stderr: str,
         stage_result: Mapping[str, Any] | None,
+        projection: SandboxProjection | None,
     ) -> dict[str, Any]:
         return {
             "schema_version": self.schema_version,
@@ -234,8 +312,17 @@ class ExecutorRunner:
                 "argv_count": argv_count,
                 "shell": False,
             },
+            "sandbox": None
+            if projection is None
+            else {
+                "backend": projection.backend,
+                "read_only": True,
+                "authoritative_repository_mounted": False,
+                "projection_sha256": projection.projection_hash,
+                "authorized_file_count": projection.authorized_file_count,
+            },
             "return_code": return_code,
-            "stderr_summary": stderr,
+            "stderr_summary": self._clip(stderr),
             "stage_result": dict(stage_result) if stage_result is not None else None,
             "recorded": False,
             "workflow_state_mutated": False,
