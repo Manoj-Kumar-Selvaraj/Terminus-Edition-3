@@ -22,6 +22,7 @@ class LearningContextBuilder:
         self.store = store or LearningStore(self.root)
         self.schemas = LearningSchemaValidator(self.root)
         self.projector = LearningProjector(self.root, store=self.store)
+        self.planner = RemediationPlanner(self.root, store=self.store)
 
     def build(
         self,
@@ -35,7 +36,13 @@ class LearningContextBuilder:
         lesson_limit: int = 12,
     ) -> dict[str, Any]:
         heads = dict(registry_heads or self.store.heads())
-        expected_keys = {"feedback", "findings", "lessons", "patterns", "remediations"}
+        expected_keys = {
+            "feedback",
+            "findings",
+            "lessons",
+            "patterns",
+            "remediations",
+        }
         if set(heads) != expected_keys:
             raise ValueError("learning registry_heads are incomplete")
         lessons = self.projector.project(
@@ -85,7 +92,9 @@ class LearningContextBuilder:
             registry_heads={str(k): str(v) for k, v in heads.items()},
         )
         if dict(packet_learning) != expected:
-            raise ValueError("invocation learning context does not match bound registries")
+            raise ValueError(
+                "invocation learning context does not match bound registries"
+            )
 
     def _remediations(
         self,
@@ -114,18 +123,36 @@ class LearningContextBuilder:
                 continue
             if finding["task_id"] != task_id or packet["task_id"] != task_id:
                 continue
+            expected = self.planner.expected_packet(
+                finding,
+                ledger_sequence_floor=int(packet["ledger_sequence_floor"]),
+            )
+            if dict(packet) != expected:
+                raise ValueError(
+                    "learning context encountered a noncanonical remediation packet"
+                )
             if not self._is_ancestor(packet["input_task_commit"], task_commit):
                 continue
             context = RemediationPlanner.context_for_stage(packet, stage_id)
             if context is not None:
                 selected.append(context)
-        selected.sort(key=lambda item: (item["finding_id"], item["remediation_id"]))
+        selected.sort(
+            key=lambda item: (item["finding_id"], item["remediation_id"])
+        )
         return selected
 
     def _is_ancestor(self, ancestor: str, descendant: str) -> bool:
         return (
             subprocess.run(
-                ["git", "-C", str(self.root), "merge-base", "--is-ancestor", ancestor, descendant],
+                [
+                    "git",
+                    "-C",
+                    str(self.root),
+                    "merge-base",
+                    "--is-ancestor",
+                    ancestor,
+                    descendant,
+                ],
                 capture_output=True,
             ).returncode
             == 0
