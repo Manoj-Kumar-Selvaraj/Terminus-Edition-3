@@ -69,6 +69,55 @@ class ExecutionRecordBuilder(_core.ExecutionRecordBuilder):
         )
         return packet
 
+    def _validate_task_lineage(
+        self, invocation: Mapping[str, Any], output_task_commit: str
+    ) -> dict[str, Any]:
+        lineage = super()._validate_task_lineage(invocation, output_task_commit)
+        if not lineage["task_changed"]:
+            return lineage
+        task_id = str(invocation["authority"]["task_id"])
+        input_task_commit = str(lineage["input_task_commit"])
+        changed = subprocess.run(
+            [
+                "git",
+                "-C",
+                str(self.root),
+                "diff",
+                "--name-only",
+                "--no-renames",
+                input_task_commit,
+                output_task_commit,
+                "--",
+            ],
+            check=True,
+            capture_output=True,
+            text=True,
+        ).stdout.splitlines()
+        forbidden = [
+            path
+            for path in changed
+            if path and not self._task_mutation_path_allowed(task_id, path)
+        ]
+        if forbidden:
+            raise ValueError(
+                "task producer/fixer output modifies protected repository paths: "
+                + ", ".join(sorted(forbidden))
+            )
+        return lineage
+
+    @staticmethod
+    def _task_mutation_path_allowed(task_id: str, path: str) -> bool:
+        """Limit task-mutating agents to task files and explicitly task-scoped contracts/designs."""
+        if path.startswith(f"{task_id}/"):
+            return True
+        if path == f".terminus/designs/{task_id}.json":
+            return True
+        if path.startswith(f".terminus/designs/{task_id}-"):
+            return True
+        if path.startswith(f".terminus/designs/{task_id}/"):
+            return True
+        return path.startswith(f".terminus/contracts/{task_id}/")
+
     def _validate_evidence_refs(self, values: list[Any]) -> list[dict[str, Any]]:
         refs: list[dict[str, Any]] = []
         for index, value in enumerate(values):
