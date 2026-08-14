@@ -39,19 +39,20 @@ def _evaluate(blob: bytes, name: str) -> tuple[subprocess.CompletedProcess[str],
     return cp, json.loads(out.read_text(encoding="utf-8"))
 
 
-def _assert_record_error(data: dict) -> None:
+def _assert_record_error(data: dict, *, expected_length: int) -> None:
     record = data["records"][0]
     assert isinstance(record["error"], str) and record["error"]
-    assert isinstance(record["byte_length"], int) and record["byte_length"] >= 0
+    assert record["byte_length"] == expected_length
     assert data["summary"]["error_count"] >= 1
 
 
 def test_f2p_signed_field_rejects_unsigned_f_sign():
     """A signed QOH field accepts C/D only; F is an unsigned sign, not positive signed."""
     # Record 0 QOH occupies bytes 12..16; byte 16 low nibble is its sign.
+    # BIN-COUNT and all framing bytes remain intact, so this failed record is still 44 bytes.
     malformed = _mutate_nibble(PUBLIC.read_bytes(), 16, 0xF, low=True)
     _, data = _evaluate(malformed, "signed-qoh-with-f")
-    _assert_record_error(data)
+    _assert_record_error(data, expected_length=44)
     assert data["summary"]["comp3_signed_ok"] is False
 
 
@@ -62,7 +63,7 @@ def test_f2p_unsigned_field_rejects_signed_c_and_d_signs():
     for sign, label in ((0xC, "c"), (0xD, "d")):
         malformed = _mutate_nibble(public, 25, sign, low=True)
         _, data = _evaluate(malformed, f"unsigned-reorder-with-{label}")
-        _assert_record_error(data)
+        _assert_record_error(data, expected_length=44)
         assert data["summary"]["comp3_signed_ok"] is False
 
 
@@ -71,7 +72,7 @@ def test_f2p_comp3_requires_zero_left_pad_nibble():
     # UNIT-COST has eight digits in five bytes. Byte 17 high nibble is the required pad.
     malformed = _mutate_nibble(PUBLIC.read_bytes(), 17, 0x9, low=False)
     _, data = _evaluate(malformed, "unit-cost-nonzero-pad")
-    _assert_record_error(data)
+    _assert_record_error(data, expected_length=44)
 
 
 def test_f2p_comp3_rejects_nondecimal_digit_nibble():
@@ -79,4 +80,4 @@ def test_f2p_comp3_rejects_nondecimal_digit_nibble():
     # QOH has nine digits and no storage pad. Byte 12 high nibble is its first digit.
     malformed = _mutate_nibble(PUBLIC.read_bytes(), 12, 0xA, low=False)
     _, data = _evaluate(malformed, "qoh-nondecimal-digit")
-    _assert_record_error(data)
+    _assert_record_error(data, expected_length=44)
