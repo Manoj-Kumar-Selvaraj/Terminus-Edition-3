@@ -5,6 +5,7 @@ from __future__ import annotations
 import hashlib
 import json
 import os
+import selectors
 import signal
 import subprocess
 import tempfile
@@ -220,53 +221,78 @@ class ExecutorRunner:
         cwd: Path,
         env: Mapping[str, str],
     ) -> dict[str, Any]:
-        with tempfile.TemporaryFile() as stdin_file, tempfile.TemporaryFile() as stdout_file, tempfile.TemporaryFile() as stderr_file:
+        with tempfile.TemporaryFile() as stdin_file:
             stdin_file.write(input_text.encode("utf-8"))
             stdin_file.seek(0)
             process = subprocess.Popen(
                 list(argv),
                 stdin=stdin_file,
-                stdout=stdout_file,
-                stderr=stderr_file,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
                 cwd=cwd,
                 env=dict(env),
                 shell=False,
                 start_new_session=True,
             )
+            if process.stdout is None or process.stderr is None:
+                self._kill_process_group(process)
+                raise RuntimeError("executor output pipes were not created")
+
+            selector = selectors.DefaultSelector()
+            selector.register(process.stdout, selectors.EVENT_READ, "stdout")
+            selector.register(process.stderr, selectors.EVENT_READ, "stderr")
+            stdout = bytearray()
+            stderr = bytearray()
             deadline = time.monotonic() + timeout_seconds
             status = "COMPLETED"
             reason = ""
-            while process.poll() is None:
-                stdout_size = os.fstat(stdout_file.fileno()).st_size
-                stderr_size = os.fstat(stderr_file.fileno()).st_size
-                if stdout_size > _MAX_STDOUT_BYTES:
-                    status = "OUTPUT_LIMIT_EXCEEDED"
-                    reason = "executor stdout exceeded 1 MiB transport limit"
-                    self._kill_process_group(process)
-                    break
-                if stderr_size > _MAX_STDERR_BYTES:
-                    status = "OUTPUT_LIMIT_EXCEEDED"
-                    reason = "executor stderr exceeded 256 KiB diagnostic limit"
-                    self._kill_process_group(process)
-                    break
-                if time.monotonic() >= deadline:
-                    status = "TIMED_OUT"
-                    reason = "executor exceeded timeout"
-                    self._kill_process_group(process)
-                    break
-                time.sleep(0.02)
-            process.wait()
-            stdout_file.seek(0)
-            stderr_file.seek(0)
-            stdout = stdout_file.read(_MAX_STDOUT_BYTES + 1).decode("utf-8", errors="replace")
-            stderr = stderr_file.read(_MAX_STDERR_BYTES + 1).decode("utf-8", errors="replace")
+
+            try:
+                while selector.get_map():
+                    remaining = deadline - time.monotonic()
+                    if remaining <= 0:
+                        status = "TIMED_OUT"
+                        reason = "executor exceeded timeout"
+                        self._kill_process_group(process)
+                        break
+                    events = selector.select(timeout=min(0.05, remaining))
+                    for key, _ in events:
+                        chunk = os.read(key.fileobj.fileno(), 65_536)
+                        if not chunk:
+                            selector.unregister(key.fileobj)
+                            continue
+                        if key.data == "stdout":
+                            stdout.extend(chunk)
+                            if len(stdout) > _MAX_STDOUT_BYTES:
+                                status = "OUTPUT_LIMIT_EXCEEDED"
+                                reason = "executor stdout exceeded 1 MiB transport limit"
+                                self._kill_process_group(process)
+                                break
+                        else:
+                            stderr.extend(chunk)
+                            if len(stderr) > _MAX_STDERR_BYTES:
+                                status = "OUTPUT_LIMIT_EXCEEDED"
+                                reason = "executor stderr exceeded 256 KiB diagnostic limit"
+                                self._kill_process_group(process)
+                                break
+                    if status != "COMPLETED":
+                        break
+            finally:
+                selector.close()
+                process.wait()
+
+            stderr_text = bytes(stderr[: _MAX_STDERR_BYTES]).decode(
+                "utf-8", errors="replace"
+            )
             if reason:
-                stderr = reason + ("; " + stderr if stderr else "")
+                stderr_text = reason + ("; " + stderr_text if stderr_text else "")
             return {
                 "status": status,
                 "return_code": process.returncode,
-                "stdout": stdout,
-                "stderr": self._clip(stderr),
+                "stdout": bytes(stdout[: _MAX_STDOUT_BYTES]).decode(
+                    "utf-8", errors="replace"
+                ),
+                "stderr": self._clip(stderr_text),
             }
 
     @staticmethod
