@@ -5,7 +5,7 @@ from __future__ import annotations
 import datetime as dt
 import subprocess
 from pathlib import Path
-from typing import Any, Mapping
+from typing import Any
 
 from .model import FeedbackSource, Severity, content_hash, feedback_identity
 from .registry import LearningStore
@@ -66,19 +66,27 @@ class FeedbackIngestor:
             observation["expected"] = expected
         if evidence:
             observation["evidence"] = evidence
+        captured = captured_at or dt.datetime.now(dt.timezone.utc).isoformat().replace(
+            "+00:00", "Z"
+        )
         event: dict[str, Any] = {
             "schema_version": "1.0",
             "source": source,
             "task": {"task_id": task_id, "task_commit": task_commit},
             "observation": observation,
             "provenance": {
-                "captured_at": captured_at
-                or dt.datetime.now(dt.timezone.utc).isoformat().replace("+00:00", "Z"),
+                "captured_at": captured,
                 "content_hash": "",
             },
         }
         event["provenance"]["content_hash"] = content_hash(
-            {key: value for key, value in event.items() if key != "provenance"}
+            {
+                "schema_version": event["schema_version"],
+                "source": source,
+                "task": event["task"],
+                "observation": observation,
+                "captured_at": captured,
+            }
         )
         event["feedback_id"] = feedback_identity(event)
         self.schemas.validate("feedback", event)
