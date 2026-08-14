@@ -10,6 +10,7 @@ from retrieval.policy import RetrievalPolicy
 
 from . import record_core as _core
 from .evidence_refs import EvidenceReferenceVerifier
+from .handoff_contract import accepted_handoff_ids
 
 _SHA = _core._SHA
 _SHA256 = _core._SHA256
@@ -40,6 +41,10 @@ class ExecutionRecordBuilder(_core.ExecutionRecordBuilder):
         record = super().build(invocation, core_result)
         if handoff_id is None:
             return record
+        if handoff_id not in accepted_handoff_ids(invocation):
+            raise ValueError(
+                "stage result handoff_id does not match a canonical executor handoff for this invocation"
+            )
         mutable = dict(record)
         mutable.pop("record_id", None)
         mutable["handoff_id"] = handoff_id
@@ -125,6 +130,8 @@ class ExecutionRecordBuilder(_core.ExecutionRecordBuilder):
         super()._require_outcome_snapshot(commit)
         for relative in (
             ".terminus/execution/evidence_refs.py",
+            ".terminus/execution/executor.py",
+            ".terminus/execution/handoff_contract.py",
             ".terminus/execution/record_core.py",
             ".terminus/execution/record.py",
         ):
