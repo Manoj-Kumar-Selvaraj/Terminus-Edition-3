@@ -68,14 +68,13 @@ class FindingClosure:
             self.schemas.validate("feedback", event)
             if event["task"]["task_id"] != finding["task_id"]:
                 raise ValueError("conflict resolution feedback belongs to another task")
+            if event["observation"].get("category") != "CONFLICT_RESOLUTION":
+                raise ValueError("conflict resolution feedback must be explicitly classified")
             resolution_commit = str(event["task"]["task_commit"])
             self._require_descendant(finding["task_commit"], resolution_commit)
             source = event["source"]
             provenance = event["provenance"]
             if source["type"] == "HUMAN_REVIEW" and provenance["trust_status"] == "HUMAN_ASSERTED":
-                category = event["observation"].get("category")
-                if category != "CONFLICT_RESOLUTION":
-                    raise ValueError("human conflict resolution must be explicitly classified")
                 feedback_ids.append(str(event["feedback_id"]))
                 continue
             producer = str(source["producer"])
