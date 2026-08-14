@@ -5,6 +5,7 @@ import json
 import subprocess
 import sys
 from pathlib import Path
+from urllib.parse import quote
 
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / ".terminus"))
@@ -14,6 +15,8 @@ from execution.ledger import ExecutionLedger  # noqa: E402
 from execution.record import ExecutionRecordBuilder  # noqa: E402
 from execution.state import WorkflowStateResolver  # noqa: E402
 from retrieval.models import InvocationContext  # noqa: E402
+
+_RECORD_REFERENCE_FIXTURE = ".terminus/tests/fixtures/record_reference_ids.json"
 
 
 def _run(root: Path, *args: str) -> str:
@@ -41,9 +44,9 @@ def _new_commit(root: Path, name: str) -> str:
     return _run(root, "rev-parse", "HEAD")
 
 
-def _review_pass() -> dict[str, object]:
+def _review_pass(review_id: str = "fixture-review") -> dict[str, object]:
     return {
-        "review_id": "fixture-review",
+        "review_id": review_id,
         "verdict": "PASS",
         "confidence": "MEDIUM",
         "evidence_status": "SUFFICIENT",
@@ -73,8 +76,8 @@ def _valid_outputs(
         )
     elif stage_id == "QUALITY_INTERLOCK":
         outputs.update(
-            Q4_RESULT=_review_pass(),
-            Q6_RESULT=_review_pass(),
+            Q4_RESULT=_review_pass("q4-review"),
+            Q6_RESULT=_review_pass("q6-review"),
             EVIDENCE_SUFFICIENCY="SUFFICIENT",
         )
     elif stage_id == "PRE_LLMAJ":
@@ -137,8 +140,8 @@ def _valid_outputs(
         )
     elif stage_id == "FINAL_REVIEW":
         outputs.update(
-            FINAL_COMPLIANCE=_review_pass(),
-            FINAL_HUMAN_QUALITY=_review_pass(),
+            FINAL_COMPLIANCE=_review_pass("final-compliance"),
+            FINAL_HUMAN_QUALITY=_review_pass("final-human-quality"),
             FINAL_PACKAGE_EVIDENCE={"manifest": "ok"},
         )
     elif stage_id == "SUBMISSION_READY":
@@ -147,6 +150,73 @@ def _valid_outputs(
             GATE_EVIDENCE={"all": "current"},
         )
     return outputs
+
+
+def _resolved_ref(root: Path, commit: str, kind: str, identity: str) -> dict[str, str]:
+    raw = subprocess.run(
+        ["git", "-C", str(root), "show", f"{commit}:{_RECORD_REFERENCE_FIXTURE}"],
+        check=True,
+        capture_output=True,
+    ).stdout
+    digest = "sha256:" + hashlib.sha256(raw).hexdigest()
+    return {
+        "kind": kind,
+        "ref": f"git:{commit}:{_RECORD_REFERENCE_FIXTURE}#{quote(identity, safe='')}",
+        "content_hash": digest,
+    }
+
+
+def _default_evidence(
+    root: Path,
+    commit: str,
+    stage_id: str,
+    outputs: dict[str, object],
+) -> list[dict[str, str]]:
+    if stage_id == "QUALITY_INTERLOCK":
+        return [
+            _resolved_ref(root, commit, "RESULT", "q4-review"),
+            _resolved_ref(root, commit, "RESULT", "q6-review"),
+        ]
+    if stage_id == "PRE_LLMAJ":
+        return [
+            _resolved_ref(root, commit, "RESULT", f"prellmaj-{i}")
+            for i in range(6)
+        ]
+    if stage_id == "MODEL_DIAGNOSTIC_AGGREGATE":
+        return [
+            _resolved_ref(root, commit, "RESULT", "q8-gpt"),
+            _resolved_ref(root, commit, "RESULT", "q8-claude"),
+        ]
+    if stage_id == "HARBOR_LLMAJ":
+        identity = str(outputs.get("HARBOR_RUN_ID") or outputs.get("EXTERNAL_RUN_ID"))
+        return [_resolved_ref(root, commit, "RUN", identity)]
+    if stage_id in {
+        "OFFICIAL_MODEL_TRIALS",
+        "TRIAL_ANALYSIS",
+        "DIFFICULTY_ASSESSMENT",
+    }:
+        refs = [
+            _resolved_ref(root, commit, "RUN", f"gpt-run-{i}")
+            for i in range(5)
+        ] + [
+            _resolved_ref(root, commit, "RUN", f"claude-run-{i}")
+            for i in range(5)
+        ]
+        if stage_id == "DIFFICULTY_ASSESSMENT":
+            refs.append(_resolved_ref(root, commit, "RESULT", "trajectory-result"))
+        return refs
+    if stage_id == "FINAL_REVIEW":
+        return [
+            _resolved_ref(root, commit, "RESULT", "final-compliance"),
+            _resolved_ref(root, commit, "RESULT", "final-human-quality"),
+            _resolved_ref(root, commit, "ARTIFACT", "final-package"),
+        ]
+    if stage_id == "SUBMISSION_READY":
+        return [
+            _resolved_ref(root, commit, "RESULT", "final-review"),
+            _resolved_ref(root, commit, "ARTIFACT", "submission-package"),
+        ]
+    return []
 
 
 def _external_ref(identity: str) -> dict[str, str]:
@@ -169,6 +239,7 @@ def _record(
     attempt: int = 1,
     status: str | None = None,
     evidence_refs: list[dict[str, object]] | None = None,
+    outputs_override: dict[str, object] | None = None,
 ) -> dict[str, object]:
     """Build every workflow-state fixture through canonical invocation/record APIs."""
     stage = resolver.policy.stages[stage_id]
@@ -196,13 +267,23 @@ def _record(
         ),
         inputs,
     )
+    outputs = (
+        dict(outputs_override)
+        if outputs_override is not None
+        else _valid_outputs(resolver, stage_id)
+    )
+    refs = (
+        list(evidence_refs)
+        if evidence_refs is not None
+        else _default_evidence(resolver.root, commit, stage_id, outputs)
+    )
     result: dict[str, object] = {
         "schema_version": "1.0",
         "invocation_id": invocation["invocation_id"],
         "output_task_commit": output_commit,
         "status": status,
-        "outputs": _valid_outputs(resolver, stage_id),
-        "evidence_refs": evidence_refs or [],
+        "outputs": outputs,
+        "evidence_refs": refs,
     }
     disposition = resolver.record_builder._disposition(outcome, status)
     if disposition == "BLOCK":
