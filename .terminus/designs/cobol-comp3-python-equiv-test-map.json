@@ -6,8 +6,8 @@
     "R2_COMP3_VALIDITY": "Packed sign class, digit nibbles, and storage padding are validated rather than normalized away.",
     "R3_REDEFINES": "REDEFINES fields read the target bytes without advancing the record cursor.",
     "R4_ODO": "OCCURS DEPENDING ON uses the actual bounded count for entries and record byte length.",
-    "R5_REPORT_CLI": "The evaluator writes the contracted report and stable failure interface, derives honest summary flags, preserves report semantics on rerun, and does not clobber output on argument errors.",
-    "R6_PUBLIC_CONTEXT": "Display padding, public task inputs, and incident/handoff context remain available to the solver."
+    "R5_REPORT_CLI": "The evaluator honors layout/records/output path overrides, writes the contracted report and stable failure interface, preserves report semantics on rerun, and does not clobber output on argument errors.",
+    "R6_PUBLIC_CONTEXT": "Display padding and the public runtime layout/sample inputs remain available to the solver."
   },
   "tests": [
     ["test_f2p_public_positive_comp3_qoh", "F2P", "R1_COMP3_VALUES"],
@@ -32,15 +32,15 @@
     ["test_f2p_holdout_second_record_zero_odo", "F2P", "R4_ODO"],
     ["test_f2p_invalid_odo_count_is_record_error", "F2P", "R4_ODO"],
 
-    ["test_f2p_summary_flags_true_on_public_tape", "F2P", "R5_REPORT_CLI"],
+    ["test_f2p_summary_fields_on_public_tape", "F2P", "R5_REPORT_CLI"],
     ["test_f2p_unknown_flag_exits_without_clobber", "F2P", "R5_REPORT_CLI"],
     ["test_f2p_cli_default_writes_contract_path", "F2P", "R5_REPORT_CLI"],
+    ["test_f2p_layout_override_is_honored", "F2P", "R5_REPORT_CLI"],
     ["test_f2p_report_schema_required_fields", "F2P", "R5_REPORT_CLI"],
     ["test_f2p_indeterminate_record_length_reports_zero", "F2P", "R5_REPORT_CLI"],
     ["test_f2p_rerun_is_semantically_stable", "F2P", "R5_REPORT_CLI"],
 
     ["test_f2p_display_fields_keep_pic_padding", "F2P", "R6_PUBLIC_CONTEXT"],
-    ["test_p2p_layout_and_sample_retained", "P2P", "R6_PUBLIC_CONTEXT"],
-    ["test_p2p_incident_evidence_present", "P2P", "R6_PUBLIC_CONTEXT"]
+    ["test_p2p_layout_and_sample_retained", "P2P", "R6_PUBLIC_CONTEXT"]
   ]
 }
