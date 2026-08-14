@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import subprocess
 from pathlib import Path
 from typing import Any, Mapping
@@ -41,17 +42,68 @@ class ExecutionRecordBuilder(_core.ExecutionRecordBuilder):
         core_result = dict(result)
         core_result.pop("handoff_id", None)
         record = super().build(invocation, core_result)
-        if handoff_id is None:
-            return record
-        if handoff_id not in accepted_handoff_ids(invocation):
-            raise ValueError(
-                "stage result handoff_id does not match a canonical executor handoff for this invocation"
-            )
         mutable = dict(record)
         mutable.pop("record_id", None)
-        mutable["handoff_id"] = handoff_id
+        mutable["invocation_snapshot"] = self._json_copy(invocation)
+        if handoff_id is not None:
+            if handoff_id not in accepted_handoff_ids(invocation):
+                raise ValueError(
+                    "stage result handoff_id does not match a canonical executor handoff for this invocation"
+                )
+            mutable["handoff_id"] = handoff_id
         mutable["record_id"] = self._record_id(mutable)
         return self._ordered_record(mutable)
+
+    def validate_persisted_record(self, record: Mapping[str, Any]) -> dict[str, Any]:
+        """Replay a durable record through the canonical invocation/result builder.
+
+        The execution ledger treats this replay as its mutation/read authority. A
+        caller cannot manufacture a ledger-proof record by assembling record
+        fields directly: the embedded READY invocation must still validate under
+        the loaded control-plane snapshot, and the derived StageResult must
+        reproduce the exact record byte-for-byte at the semantic-object level.
+        """
+        value = self._json_copy(record)
+        invocation = value.get("invocation_snapshot")
+        if not isinstance(invocation, Mapping):
+            raise ValueError(
+                "durable execution record is missing canonical invocation_snapshot"
+            )
+        lineage = value.get("task_lineage")
+        if not isinstance(lineage, Mapping):
+            raise ValueError("durable execution record has invalid task_lineage")
+        result: dict[str, Any] = {
+            "schema_version": "1.0",
+            "invocation_id": value.get("invocation_id"),
+            "output_task_commit": lineage.get("output_task_commit"),
+            "status": value.get("status"),
+            "outputs": value.get("outputs"),
+            "evidence_refs": value.get("evidence_refs"),
+        }
+        if "handoff_id" in value:
+            result["handoff_id"] = value["handoff_id"]
+        if "route_key" in value:
+            result["route_key"] = value["route_key"]
+        if "blocking_reason" in value:
+            result["blocking_reason"] = value["blocking_reason"]
+        rebuilt = self.build(invocation, result)
+        if rebuilt != value:
+            raise ValueError(
+                "durable execution record does not reproduce from its canonical invocation/result"
+            )
+        return rebuilt
+
+    @staticmethod
+    def _json_copy(value: Mapping[str, Any]) -> dict[str, Any]:
+        try:
+            copied = json.loads(
+                json.dumps(value, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
+            )
+        except (TypeError, ValueError) as exc:
+            raise ValueError("execution object must be JSON-compatible") from exc
+        if not isinstance(copied, dict):
+            raise ValueError("execution object must be one JSON object")
+        return copied
 
     def _validate_invocation(self, invocation: Mapping[str, Any]) -> dict[str, Any]:
         packet = super()._validate_invocation(invocation)
@@ -102,6 +154,10 @@ class ExecutionRecordBuilder(_core.ExecutionRecordBuilder):
             raise ValueError(
                 "task producer/fixer output modifies protected repository paths: "
                 + ", ".join(sorted(forbidden))
+            )
+        if not changed:
+            raise ValueError(
+                "task producer/fixer output commit must contain an authorized task-scope change"
             )
         return lineage
 
@@ -178,6 +234,7 @@ class ExecutionRecordBuilder(_core.ExecutionRecordBuilder):
             "stage_id",
             "role_id",
             "authority",
+            "invocation_snapshot",
             "task_lineage",
             "status",
             "disposition",
