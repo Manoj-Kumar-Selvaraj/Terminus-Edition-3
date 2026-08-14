@@ -55,7 +55,9 @@ def test_noncanonical_pseudo_pass_result_is_rejected(
         "ref": f"git:{_head()}:{path}",
         "content_hash": "sha256:" + "0" * 64,
     }
-    monkeypatch.setattr(validator.evidence, "validate", lambda value, _index: dict(value))
+    monkeypatch.setattr(
+        validator.evidence, "validate", lambda value, _index: dict(value)
+    )
     monkeypatch.setattr(validator, "_require_reachable", lambda _commit: None)
     monkeypatch.setattr(
         validator,
@@ -77,7 +79,9 @@ def test_noncanonical_pseudo_pass_result_is_rejected(
         )
 
 
-def test_historical_canonical_q4_revise_is_ingestible_feedback(tmp_path: Path) -> None:
+def test_historical_canonical_q4_revise_is_ingestible_feedback(
+    tmp_path: Path,
+) -> None:
     payload = json.loads((ROOT / _Q4_REVISE_RESULT).read_text(encoding="utf-8"))
     store = LearningStore(
         ROOT,
@@ -104,7 +108,9 @@ def test_real_q4_revise_result_cannot_authorize_closure(
 ) -> None:
     payload = json.loads((ROOT / _Q4_REVISE_RESULT).read_text(encoding="utf-8"))
     validator = ProvenanceValidator(ROOT)
-    monkeypatch.setattr(validator, "_validate_packet", lambda *_args, **_kwargs: None)
+    monkeypatch.setattr(
+        validator, "_validate_packet", lambda *_args, **_kwargs: None
+    )
     with pytest.raises(ValueError, match="passing outcome"):
         validator.validate_review_result(
             binding=_binding(_Q4_REVISE_RESULT),
@@ -127,7 +133,7 @@ def test_real_historical_q6_pass_cannot_verify_newer_task_commit() -> None:
         )
 
 
-def test_adjudicator_conflict_result_requires_explicit_resolution(
+def test_adjudicator_conflict_result_requires_exact_resolution_fields(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     validator = ProvenanceValidator(ROOT)
@@ -146,10 +152,27 @@ def test_adjudicator_conflict_result_requires_explicit_resolution(
         "evidence_status": "SUFFICIENT",
         "role_output": {},
     }
-    monkeypatch.setattr(validator.evidence, "validate", lambda value, _index: dict(value))
+    conflict_binding = {
+        "finding_id": "finding_" + "0" * 64,
+        "conflict_type": "FEEDBACK_CONFLICT",
+        "signal_ids": ["feedback_" + "0" * 64],
+        "signal_claims": [
+            {
+                "feedback_id": "feedback_" + "0" * 64,
+                "category": "A",
+                "claim_hash": "sha256:" + "0" * 64,
+            }
+        ],
+        "conflicting_categories": ["A", "B"],
+    }
+    monkeypatch.setattr(
+        validator.evidence, "validate", lambda value, _index: dict(value)
+    )
     monkeypatch.setattr(validator, "_require_reachable", lambda _commit: None)
     monkeypatch.setattr(validator, "_git_json", lambda *_args: payload)
-    monkeypatch.setattr("feedback.provenance.validate_schema", lambda *_args: None)
+    monkeypatch.setattr(
+        "feedback.provenance.validate_schema", lambda *_args: None
+    )
     with pytest.raises(ValueError, match="CONFLICT_RESOLUTION"):
         validator.validate_review_result(
             binding=binding,
@@ -158,6 +181,7 @@ def test_adjudicator_conflict_result_requires_explicit_resolution(
             task_commit=_head(),
             require_passing=True,
             conflict_resolution=True,
+            conflict_binding=conflict_binding,
             require_current_contract=False,
         )
 
@@ -172,7 +196,9 @@ def test_unreachable_side_commit_cannot_be_review_authority(
         "ref": f"git:{'0' * 40}:{path}",
         "content_hash": "sha256:" + "0" * 64,
     }
-    monkeypatch.setattr(validator.evidence, "validate", lambda value, _index: dict(value))
+    monkeypatch.setattr(
+        validator.evidence, "validate", lambda value, _index: dict(value)
+    )
     with pytest.raises(ValueError, match="authorized repository lineage"):
         validator.validate_review_result(
             binding=binding,
