@@ -3,15 +3,19 @@ from __future__ import annotations
 import sys
 from pathlib import Path
 
+import pytest
+
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / ".terminus"))
 
 from feedback.model import lesson_identity  # noqa: E402
-from feedback.registry import LearningStore  # noqa: E402
+from feedback.registry import AppendOnlyRegistry, LearningStore  # noqa: E402
 from learning.projection import LearningProjector  # noqa: E402
 
 
-def test_domain_scoped_lesson_requires_explicit_matching_domain(tmp_path: Path) -> None:
+def test_domain_scoped_lesson_requires_explicit_matching_domain(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     store = LearningStore(
         ROOT,
         state_root=tmp_path / "state",
@@ -37,9 +41,12 @@ def test_domain_scoped_lesson_requires_explicit_matching_domain(tmp_path: Path) 
         },
     }
     lesson["lesson_id"] = lesson_identity(lesson)
-    store.lessons.append(lesson)
+    # This test isolates domain selection. Semantic-integrity rejection of this
+    # deliberately synthetic lesson is covered by test_feedback_learning.
+    AppendOnlyRegistry(store.lessons.path).append(lesson)
 
     projector = LearningProjector(ROOT, store=store)
+    monkeypatch.setattr(projector.integrity, "validate_lesson", lambda _lesson: None)
     assert projector.project(
         stage_id="VERIFIER_BUILD",
         role_id="A5_VERIFIER_AUTHOR",
