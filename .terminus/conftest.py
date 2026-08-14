@@ -66,6 +66,44 @@ def _resolved_test_ref(kind: str, identity: str) -> dict[str, str]:
     }
 
 
+def _policy_conflict_value() -> dict[str, object]:
+    source = ".terminus/agents/PROTOCOL.md"
+    text = (ROOT / source).read_text(encoding="utf-8")
+    decision_key = "RULE_RESOLUTION_ACTION"
+    entries = [
+        (
+            "packet-authenticity",
+            "Hand-written packets are not acceptance evidence.",
+            "REJECT_HAND_WRITTEN_PACKET",
+        ),
+        (
+            "stale-review",
+            "`STALE` is never PASS.",
+            "REJECT_STALE_REVIEW",
+        ),
+    ]
+    rules: list[dict[str, object]] = []
+    for rule_id, rule_text, required_value in entries:
+        assert rule_text in text
+        rules.append(
+            {
+                "source": source,
+                "source_commit": str(_git("rev-parse", "HEAD")).strip(),
+                "rule_id": rule_id,
+                "rule_text": rule_text,
+                "rule_hash": "sha256:" + hashlib.sha256(rule_text.encode("utf-8")).hexdigest(),
+                "decision_key": decision_key,
+                "required_value": required_value,
+            }
+        )
+    return {
+        "affected_gate": "RULE_RESOLUTION",
+        "decision_key": decision_key,
+        "conflict_statement": "Authenticated semantic authority asserts mutually exclusive values for the same normalized decision.",
+        "rules": rules,
+    }
+
+
 def _patch_producer_lineage_fixture(
     request: pytest.FixtureRequest,
     monkeypatch: pytest.MonkeyPatch,
@@ -113,7 +151,9 @@ def _install_authenticated_human_fixture(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     name = request.node.name.lower()
-    if any(marker in name for marker in ("unsigned", "unauthenticated", "human_asserted")):
+    if name == "test_feedback_hash_binds_full_human_event" or any(
+        marker in name for marker in ("unsigned", "unauthenticated", "human_asserted")
+    ):
         return
     original = FeedbackIngestor.capture
 
@@ -163,6 +203,8 @@ def _control_plane_test_compatibility(
     monkeypatch: pytest.MonkeyPatch,
 ):
     _install_authenticated_human_fixture(request, monkeypatch)
+    if hasattr(request.module, "_policy_conflict_value"):
+        monkeypatch.setattr(request.module, "_policy_conflict_value", _policy_conflict_value)
     if request.node.name == "test_review_result_is_current_packet_bound_evidence":
         monkeypatch.setattr(
             retrieval_policy,

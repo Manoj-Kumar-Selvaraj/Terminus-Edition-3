@@ -225,7 +225,7 @@ class FindingNormalizer:
             raise ValueError("finding verification_owner must use its canonical role ID")
 
     def _validate_policy_conflict(self, events: list[Mapping[str, Any]]) -> None:
-        """Require a signed Adjudicator proof over one mutually exclusive decision."""
+        """Require exact rules plus authenticated semantic authority over one decision."""
         normalized_claim: tuple[
             str,
             str,
@@ -233,56 +233,64 @@ class FindingNormalizer:
             str,
         ] | None = None
         for event in events:
-            source = event["source"]
-            provenance = event["provenance"]
-            if (
-                source["producer"] != "ADJUDICATOR"
-                or source["type"] not in {"INDEPENDENT_REVIEW", "REVIEWER_REVIEW"}
-                or provenance["trust_status"] != "REPOSITORY_RESOLVED"
-            ):
-                raise ValueError(
-                    "POLICY_CONFLICT requires an authenticated canonical Adjudicator review"
-                )
-            binding = provenance.get("source_binding")
-            if not isinstance(binding, Mapping):
-                raise ValueError("POLICY_CONFLICT is missing Adjudicator RESULT evidence")
-            payload = self.provenance.validate_policy_conflict_authority(
-                binding=binding,
-                task_id=str(event["task"]["task_id"]),
-                task_commit=str(event["task"]["task_commit"]),
-            )
             detail = event["observation"].get("value")
             if not isinstance(detail, Mapping):
                 raise ValueError(
                     "POLICY_CONFLICT requires structured observation.value"
-                )
-            role_output = payload.get("role_output")
-            if not isinstance(role_output, Mapping) or role_output.get(
-                "POLICY_CONFLICT_PROOF"
-            ) != dict(detail):
-                raise ValueError(
-                    "Adjudicator RESULT does not bind the exact POLICY_CONFLICT proof"
                 )
             gate = detail.get("affected_gate")
             if not isinstance(gate, str) or gate not in self.policy.stages:
                 raise ValueError(
                     "POLICY_CONFLICT affected_gate must be a registered lifecycle stage"
                 )
-            decision_key = detail.get("decision_key")
-            if not isinstance(decision_key, str) or not decision_key.strip():
-                raise ValueError(
-                    "POLICY_CONFLICT requires one normalized decision_key"
-                )
             statement = detail.get("conflict_statement")
             if not isinstance(statement, str) or not statement.strip():
                 raise ValueError(
                     "POLICY_CONFLICT requires an explicit semantic conflict_statement"
+                )
+            decision_key = detail.get("decision_key")
+            if not isinstance(decision_key, str) or not decision_key.strip():
+                raise ValueError(
+                    "POLICY_CONFLICT requires one normalized decision_key"
                 )
             rules = detail.get("rules")
             if not isinstance(rules, list) or len(rules) < 2:
                 raise ValueError(
                     "POLICY_CONFLICT requires at least two exact authoritative rules"
                 )
+
+            source = event["source"]
+            provenance = event["provenance"]
+            authenticated_human = (
+                source["type"] == "HUMAN_REVIEW"
+                and provenance["trust_status"] == "HUMAN_AUTHENTICATED"
+            )
+            authenticated_adjudicator = (
+                source["producer"] == "ADJUDICATOR"
+                and source["type"] in {"INDEPENDENT_REVIEW", "REVIEWER_REVIEW"}
+                and provenance["trust_status"] == "REPOSITORY_RESOLVED"
+            )
+            if not (authenticated_human or authenticated_adjudicator):
+                raise ValueError(
+                    "POLICY_CONFLICT requires authenticated human or canonical Adjudicator semantic authority"
+                )
+            if authenticated_adjudicator:
+                binding = provenance.get("source_binding")
+                if not isinstance(binding, Mapping):
+                    raise ValueError("POLICY_CONFLICT is missing Adjudicator RESULT evidence")
+                payload = self.provenance.validate_policy_conflict_authority(
+                    binding=binding,
+                    task_id=str(event["task"]["task_id"]),
+                    task_commit=str(event["task"]["task_commit"]),
+                )
+                role_output = payload.get("role_output")
+                if not isinstance(role_output, Mapping) or role_output.get(
+                    "POLICY_CONFLICT_PROOF"
+                ) != dict(detail):
+                    raise ValueError(
+                        "Adjudicator RESULT does not bind the exact POLICY_CONFLICT proof"
+                    )
+
             normalized_rules: list[tuple[str, str, str, str, str, str]] = []
             required_values: set[str] = set()
             for rule in rules:

@@ -57,6 +57,7 @@ def _human_event(
     *,
     producer: str = "cold-review-human",
     task_id: str = "feedback-cold-review",
+    task_commit: str | None = None,
     category: str = "BOUNDARY",
     stage: str = "VERIFIER_BUILD",
     value: object | None = None,
@@ -65,7 +66,7 @@ def _human_event(
         source_type="HUMAN_REVIEW",
         producer=producer,
         task_id=task_id,
-        task_commit=_head(),
+        task_commit=task_commit or _head(),
         severity="HIGH",
         message="Cold-review adversarial signal.",
         category=category,
@@ -104,16 +105,17 @@ def _old_source_binding(identity: str = "portal-ci") -> dict[str, str]:
 def _policy_conflict_value() -> dict[str, object]:
     source = ".terminus/agents/PROTOCOL.md"
     text = (ROOT / source).read_text(encoding="utf-8")
+    decision_key = "RULE_RESOLUTION_ACTION"
     entries = [
         (
             "packet-authenticity",
             "Hand-written packets are not acceptance evidence.",
-            "HAND_WRITTEN_PACKET_REJECTED",
+            "REJECT_HAND_WRITTEN_PACKET",
         ),
-        ("stale-review", "`STALE` is never PASS.", "STALE_REVIEW_REJECTED"),
+        ("stale-review", "`STALE` is never PASS.", "REJECT_STALE_REVIEW"),
     ]
     rules = []
-    for rule_id, rule_text, outcome in entries:
+    for rule_id, rule_text, required_value in entries:
         assert rule_text in text
         rules.append(
             {
@@ -123,12 +125,14 @@ def _policy_conflict_value() -> dict[str, object]:
                 "rule_text": rule_text,
                 "rule_hash": "sha256:"
                 + hashlib.sha256(rule_text.encode("utf-8")).hexdigest(),
-                "required_outcome": outcome,
+                "decision_key": decision_key,
+                "required_value": required_value,
             }
         )
     return {
         "affected_gate": "RULE_RESOLUTION",
-        "conflict_statement": "The authorized semantic assertion identifies incompatible required outcomes for this test gate.",
+        "decision_key": decision_key,
+        "conflict_statement": "Authenticated semantic authority identifies mutually exclusive values for the same decision.",
         "rules": rules,
     }
 
@@ -205,7 +209,7 @@ def test_fbl_cold_004_review_result_requires_canonical_execution_consumption() -
     }
     payload = {"control_plane_commit": _head()}
     with pytest.raises(
-        ValueError, match="not consumed by its canonical controller execution"
+        ValueError, match="not consumed by .*canonical controller execution"
     ):
         validator._validate_review_execution_authority(
             role="Spec-Test Contract Reviewer",
@@ -363,9 +367,7 @@ def test_fbl_cold_009_verification_requires_exact_repaired_commit(
 ) -> None:
     store = _store(tmp_path)
     finding = _finding(store, [_human_event(store)])
-    event = _human_event(store, producer="verifier")
-    event = copy.deepcopy(event)
-    event["task"]["task_commit"] = _parent()
+    event = _human_event(store, producer="verifier", task_commit=_parent())
     with pytest.raises(ValueError, match="exact repaired_task_commit"):
         FindingClosure(ROOT, store=store)._validate_verification_event(
             finding,
@@ -393,3 +395,21 @@ def test_fbl_cold_010_policy_file_names_alone_are_not_a_conflict(
     )
     with pytest.raises(ValueError, match="conflict_statement"):
         _finding(store, [event], repair_stages=["RULE_RESOLUTION"])
+
+
+def test_unsigned_human_cannot_create_canonical_finding(tmp_path: Path) -> None:
+    store = _store(tmp_path)
+    event = FeedbackIngestor(ROOT, store=store).capture(
+        source_type="HUMAN_REVIEW",
+        producer="unsigned-human",
+        task_id="feedback-cold-review",
+        task_commit=_head(),
+        severity="HIGH",
+        message="Unsigned human assertion must remain informational.",
+        category="BOUNDARY",
+        stage_hint="VERIFIER_BUILD",
+        captured_at="2026-08-14T01:00:00Z",
+    )
+    assert event["provenance"]["trust_status"] == "HUMAN_ASSERTED"
+    with pytest.raises(ValueError, match="authenticated feedback authority"):
+        _finding(store, [event])

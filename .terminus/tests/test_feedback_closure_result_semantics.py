@@ -173,6 +173,11 @@ def test_adjudicator_conflict_result_requires_exact_resolution_fields(
     monkeypatch.setattr(
         "feedback.provenance.validate_schema", lambda *_args: None
     )
+    monkeypatch.setattr(
+        validator.semantic_authority,
+        "verify",
+        lambda *_args, **_kwargs: {},
+    )
     with pytest.raises(ValueError, match="CONFLICT_RESOLUTION"):
         validator.validate_review_result(
             binding=binding,
