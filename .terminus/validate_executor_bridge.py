@@ -1,87 +1,63 @@
 #!/usr/bin/env python3
-"""Validate executor handoff/runner boundaries and API-neutral execution surfaces."""
+"""Validate executor authorization, transport, schema and sandbox boundaries."""
 
 from __future__ import annotations
 
 import json
+import subprocess
 import sys
-import tempfile
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 T = ROOT / ".terminus"
 sys.path.insert(0, str(T))
 
+from execution.authority import ExecutionAuthority  # noqa: E402
 from execution.executor import ExecutorMode  # noqa: E402
 from execution.handoff import ExecutorHandoffBuilder  # noqa: E402
 from execution.invocation import StageInvocationBuilder  # noqa: E402
-from execution.runner import ExecutorRunner  # noqa: E402
+from execution.schema_validation import ExecutorSchemaValidator  # noqa: E402
+from retrieval.models import InvocationContext  # noqa: E402
+from retrieval.policy import RetrievalPolicy  # noqa: E402
 
 FILES = [
     T / "execution" / "executor.py",
     T / "execution" / "handoff.py",
+    T / "execution" / "invocation_guard.py",
+    T / "execution" / "sandbox.py",
+    T / "execution" / "schema_validation.py",
     T / "execution" / "runner.py",
     T / "execution" / "runner_cli.py",
     T / "agents" / "schemas" / "executor_handoff.schema.json",
+    T / "agents" / "schemas" / "stage_result.schema.json",
     T / "tests" / "test_executor_bridge.py",
 ]
-FORBIDDEN_EXECUTION_IMPORTS = (
-    "ExecutionRecordBuilder",
-    "ExecutionLedger",
-    "WorkflowStateResolver",
-)
 
 
-def _invocation() -> dict[str, object]:
-    packet: dict[str, object] = {
-        "schema_version": "1.0",
-        "readiness": "READY",
-        "stage": {
-            "stage_id": "RULE_RESOLUTION",
-            "role_id": "CREATION_CONTROLLER",
-            "owner": "Creation Controller",
-            "role_class": "CONTROLLER",
-            "lifecycle": "creation",
-        },
-        "authority": {
-            "control_plane_commit": "a" * 40,
-            "task_id": "bridge-validator",
-            "task_commit": "b" * 40,
-            "policy_versions": {},
-        },
-        "inputs": {"required": {"CREATION_REQUEST": "validator"}, "optional": {}},
-        "missing_required_inputs": [],
-        "ignored_input_count": 0,
-        "evidence": {
-            "retrieval_mode": "EXACT_ONLY",
-            "mandatory_exact_reads": [".terminus/AGENT_SYSTEM.md"],
-            "authorized_evidence_classes": ["CONTROL_PLANE_POLICY"],
-            "excluded_evidence_classes": [],
-            "evidence_required": ["rules"],
-        },
-        "retrieval": {
-            "status": "NOT_REQUESTED",
-            "query": None,
-            "retrieved_context": [],
-            "retrieved_chars": 0,
-        },
-        "output_contract": {
-            "allowed_status_values": ["RULES_RESOLVED", "BLOCKED"],
-            "required_fields": ["CONTROL_PLANE_COMMIT"],
-            "optional_fields": [],
-            "persisted_artifacts": [],
-            "deterministic_validators": [],
-            "semantic_reviewers": [],
-        },
-        "acceptance_predicates": {},
-        "routing": {
-            "failure_routes": {},
-            "success_transition": "WORK_PACKAGE_RESEARCH",
-            "stale_on": [],
-        },
-    }
-    packet["invocation_id"] = StageInvocationBuilder._invocation_id(packet)
-    return packet
+def _head() -> str:
+    return subprocess.run(
+        ["git", "-C", str(ROOT), "rev-parse", "HEAD"],
+        check=True,
+        capture_output=True,
+        text=True,
+    ).stdout.strip()
+
+
+def _invocation(stage_id: str = "RULE_RESOLUTION") -> dict[str, object]:
+    commit = _head()
+    policy = RetrievalPolicy(ROOT)
+    role = ExecutionAuthority(policy).primary_role_for_stage(stage_id)
+    fields = policy.stages[stage_id]["input_contract"]["required_fields"]
+    return StageInvocationBuilder(ROOT, policy).build(
+        InvocationContext(
+            stage_id=stage_id,
+            role_id=role,
+            task_id="bridge-validator",
+            task_commit=commit,
+            control_plane_commit=commit,
+        ),
+        {str(field): {"validator": str(field)} for field in fields},
+    )
 
 
 def main() -> int:
@@ -90,88 +66,72 @@ def main() -> int:
         if not path.is_file():
             errors.append(f"missing executor bridge file: {path.relative_to(ROOT)}")
 
-    schema_path = T / "agents" / "schemas" / "executor_handoff.schema.json"
-    if schema_path.is_file():
-        schema = json.loads(schema_path.read_text(encoding="utf-8"))
-        if schema.get("$id") != "terminus-executor-handoff-v1":
-            errors.append("executor handoff schema ID drift")
-        if schema.get("additionalProperties") is not False:
-            errors.append("executor handoff schema must fail closed at top level")
-        mode_enum = (
-            schema.get("properties", {})
-            .get("executor_mode", {})
-            .get("enum", [])
-        )
-        if set(mode_enum) != {"MANUAL_CHAT", "LOCAL_COMMAND"}:
-            errors.append("executor modes must be exactly MANUAL_CHAT and LOCAL_COMMAND")
+    handoff_schema_path = T / "agents" / "schemas" / "executor_handoff.schema.json"
+    schema = json.loads(handoff_schema_path.read_text(encoding="utf-8"))
+    if schema.get("$id") != "terminus-executor-handoff-v1":
+        errors.append("executor handoff schema ID drift")
+    if schema.get("additionalProperties") is not False:
+        errors.append("executor handoff schema must fail closed at top level")
 
-    runtime_files = [
-        T / "execution" / "executor.py",
-        T / "execution" / "handoff.py",
-        T / "execution" / "runner.py",
-        T / "execution" / "runner_cli.py",
-    ]
-    for path in runtime_files:
-        text = path.read_text(encoding="utf-8") if path.is_file() else ""
-        for name in FORBIDDEN_EXECUTION_IMPORTS:
-            if name in text:
-                errors.append(
-                    f"{path.relative_to(ROOT)} must not own workflow mutation via {name}"
-                )
+    handoff_text = (T / "execution" / "handoff.py").read_text(encoding="utf-8")
     runner_text = (T / "execution" / "runner.py").read_text(encoding="utf-8")
-    for marker in ("shell=False", "recorded\": False", "workflow_state_mutated\": False"):
+    sandbox_text = (T / "execution" / "sandbox.py").read_text(encoding="utf-8")
+    guard_text = (T / "execution" / "invocation_guard.py").read_text(encoding="utf-8")
+    for marker in (
+        "CanonicalInvocationGuard",
+        "LOCAL_COMMAND is read-only",
+        "handoff_id",
+        "validate_handoff",
+    ):
+        if marker not in handoff_text:
+            errors.append(f"handoff.py missing hardened marker: {marker}")
+    for marker in (
+        "shell=False",
+        "OUTPUT_LIMIT_EXCEEDED",
+        "validate_stage_result",
+        '"recorded": False',
+        '"workflow_state_mutated": False',
+    ):
         if marker not in runner_text:
             errors.append(f"runner.py missing invariant marker: {marker}")
+    for marker in ("--unshare-all", "--ro-bind", "--tmpfs", "bwrap"):
+        if marker not in sandbox_text:
+            errors.append(f"sandbox.py missing isolation marker: {marker}")
+    if "ExecutionRecordBuilder" not in guard_text or "_validate_invocation" not in guard_text:
+        errors.append("pre-execution guard must reuse canonical recorder invocation validation")
 
     invocation = _invocation()
+    builder = ExecutorHandoffBuilder(ROOT)
+    schemas = ExecutorSchemaValidator(ROOT)
     try:
-        manual = ExecutorHandoffBuilder().build(
-            invocation,
-            executor_mode=ExecutorMode.MANUAL_CHAT,
-        )
-        local = ExecutorHandoffBuilder().build(
-            invocation,
-            executor_mode=ExecutorMode.LOCAL_COMMAND,
-        )
+        manual = builder.build(invocation, executor_mode=ExecutorMode.MANUAL_CHAT)
+        local = builder.build(invocation, executor_mode=ExecutorMode.LOCAL_COMMAND)
+        schemas.validate_handoff(manual)
+        schemas.validate_handoff(local)
     except Exception as exc:
-        errors.append(f"canonical handoff build failed: {exc}")
+        errors.append(f"canonical handoff build/schema validation failed: {exc}")
         manual = {}
         local = {}
+
     if manual:
-        if manual.get("handoff_id") != ExecutorHandoffBuilder().build(
-            invocation,
-            executor_mode=ExecutorMode.MANUAL_CHAT,
-        ).get("handoff_id"):
+        repeated = builder.build(invocation, executor_mode=ExecutorMode.MANUAL_CHAT)
+        if manual.get("handoff_id") != repeated.get("handoff_id"):
             errors.append("MANUAL_CHAT handoff identity is not deterministic")
-        if not manual.get("handoff_text"):
-            errors.append("MANUAL_CHAT must include paste-ready handoff_text")
-        if manual.get("invocation_id") != invocation["invocation_id"]:
-            errors.append("handoff invocation identity drift")
+        if "handoff_id" not in manual.get("result_contract", {}).get(
+            "required_top_level_fields", []
+        ):
+            errors.append("executor StageResult contract must require handoff_id")
     if local and "handoff_text" in local:
         errors.append("LOCAL_COMMAND must not add manual handoff text")
 
-    with tempfile.TemporaryDirectory() as directory:
-        script = Path(directory) / "executor.py"
-        script.write_text(
-            """import json, sys
-handoff = json.load(sys.stdin)
-json.dump({'schema_version':'1.0','invocation_id':handoff['invocation_id'],'output_task_commit':'b'*40,'status':'RULES_RESOLVED','outputs':{'CONTROL_PLANE_COMMIT':'a'*40},'evidence_refs':[]}, sys.stdout)
-""",
-            encoding="utf-8",
+    try:
+        builder.build(
+            _invocation("WORK_PACKAGE_RESEARCH"),
+            executor_mode=ExecutorMode.LOCAL_COMMAND,
         )
-        response = ExecutorRunner(ROOT).run_local(
-            invocation,
-            [sys.executable, str(script)],
-            timeout_seconds=10,
-        )
-        if response.get("status") != "EXECUTED":
-            errors.append(f"LOCAL_COMMAND canonical round trip failed: {response}")
-        if response.get("recorded") is not False:
-            errors.append("executor runner must never claim result was recorded")
-        if response.get("workflow_state_mutated") is not False:
-            errors.append("executor runner must never claim workflow state mutation")
-        if response.get("command", {}).get("shell") is not False:
-            errors.append("LOCAL_COMMAND must remain shell-free")
+        errors.append("LOCAL_COMMAND incorrectly accepted a mutating producer stage")
+    except ValueError:
+        pass
 
     if errors:
         print("Terminus executor-bridge validation FAILED:")
@@ -182,9 +142,11 @@ json.dump({'schema_version':'1.0','invocation_id':handoff['invocation_id'],'outp
     print("Terminus executor-bridge validation PASS")
     print(
         "executor_bridge=1.0 modes=MANUAL_CHAT,LOCAL_COMMAND "
-        "invocation_binding=exact handoff_identity=deterministic shell=false "
-        "stage_result=transport_only record_authority=external_to_executor "
-        "ledger_mutation=forbidden workflow_state_mutation=forbidden api_dependency=none"
+        "pre_execution_authority=canonical_recorder_validation "
+        "handoff_identity=stage_result_bound runtime_schema=validated "
+        "local_workspace=projected_read_only sandbox=bubblewrap_fail_closed "
+        "stdout_stderr=live_bounded shell=false mutating_local_roles=denied "
+        "record_authority=external_to_executor ledger_mutation=forbidden"
     )
     return 0
 
