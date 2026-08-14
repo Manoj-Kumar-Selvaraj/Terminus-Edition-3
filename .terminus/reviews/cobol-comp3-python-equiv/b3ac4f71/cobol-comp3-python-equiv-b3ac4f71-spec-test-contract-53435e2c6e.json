@@ -1,0 +1,355 @@
+{
+  "schema_version": "3.0",
+  "role": "Spec-Test Contract Reviewer",
+  "review_id": "cobol-comp3-python-equiv-b3ac4f71-spec-test-contract-53435e2c6e",
+  "task": "cobol-comp3-python-equiv",
+  "task_commit": "b3ac4f71d16f0e3528dea1f8a07fc164b78e38a4",
+  "control_plane_commit": "97442cf274ca1a7e1efa1964d85538e80db8824e",
+  "protocol_policy_version": "2.2",
+  "prompt_policy_version": "2.2",
+  "role_policy_version": "1.1",
+  "role_contract_hash": "0c40044ec13f0109a5526301cac6e5d2f52f5596d006bee2cdcaa90c0771d7f6",
+  "context_packet": ".terminus/reviews/cobol-comp3-python-equiv/b3ac4f71/cobol-comp3-python-equiv-b3ac4f71-spec-test-contract-53435e2c6e.packet.json",
+  "verdict": "REVISE",
+  "confidence": "HIGH",
+  "evidence_status": "SUFFICIENT",
+  "summary": "The targeted verifier-only remediation is semantically correct: --layout now changes actual field binding/width/type/record length, complete malformed packed records with intact framing are required to report the determinable 44-byte boundary, genuinely indeterminate truncation is required to report byte_length 0, and malformed tests do not impose a private continuation/recovery policy. The exhaustive independent Q4 sweep nevertheless found two remaining material verifier-coverage gaps outside those targeted changes. First, the documented ODO valid range is 0..12, but valid behavior is exercised only for counts 0, 1, and 2; an implementation that rejects every valid count 3..12 can pass. Second, the public CLI contract says an unknown flag exits 2 without writing output, but the test only proves that an existing report's bytes are unchanged; an implementation can rewrite identical bytes (or otherwise perform an output write with unchanged content) and pass. No material phantom test, grading ambiguity, prompt-extension defect, private recovery requirement, or illegitimate P2P ownership was found.",
+  "evidence": [
+    {
+      "type": "rule",
+      "ref": ".terminus/agents/QUALITY_AGENT_PROMPTS.md#Q4-Spec-Test-Contract-Reviewer",
+      "observation": "Q4 requires complete requirement and verifier inventories, forward and reverse matrices, delegated-contract, F2P/P2P, output-interface and ambiguity walks, followed by a second adversarial omission sweep; any material untested requirement requires REVISE."
+    },
+    {
+      "type": "rule",
+      "ref": ".terminus/agents/INSTRUCTION_POLICY.md",
+      "observation": "The instruction must preserve the complete engineering request while referenced documents may legitimately own detailed layout, schema, protocol and CLI contracts; stable output/failure interfaces remain solver-visible obligations when documented."
+    },
+    {
+      "type": "rule",
+      "ref": ".terminus/agents/PROTOCOL.md",
+      "observation": "Q4 is exact-task-commit bound, packet/results are immutable, material findings must be evidence-bound, and later unchanged-scope findings after a consolidated repair cycle are subject to no-drip delta classification and Adjudicator routing when latent."
+    },
+    {
+      "type": "file",
+      "ref": "cobol-comp3-python-equiv/instruction.md",
+      "observation": "The two-paragraph work request names the evaluator, default layout/sample/output, path overrides, COMP-3 sign classes, REDEFINES, ODO and record byte lengths, and explicitly delegates binding/report details to solver-visible documents."
+    },
+    {
+      "type": "file",
+      "ref": "cobol-comp3-python-equiv/environment/equiv/docs/record-layout.md",
+      "observation": "The public contract defines --layout/--records/--out, unknown-flag exit 2 with no output write, COMP-3 geometry/sign/digit/padding/scale semantics, display fields, REDEFINES, ODO range 0..12 and length formula, concatenated records, report schema, malformed byte_length semantics, summary semantics and implementation freedom after failed records."
+    },
+    {
+      "type": "file",
+      "ref": "cobol-comp3-python-equiv/environment/equiv/ops/handoff.md",
+      "observation": "The shift handoff supplies natural solver-visible current-state evidence for the hex-rendering, max-OCCURS and REDEFINES symptoms without naming a private module/function repair recipe."
+    },
+    {
+      "type": "file",
+      "ref": "cobol-comp3-python-equiv/environment/equiv/log/unpack-incident.log",
+      "observation": "The incident log corroborates the current-state packed-sign, ODO, REDEFINES and scale-0 packed-decimal symptoms asserted by the handoff/instruction context."
+    },
+    {
+      "type": "test",
+      "ref": "cobol-comp3-python-equiv/tests/test_outputs.py",
+      "observation": "The verifier covers public and holdout COMP-3 values, ODO counts 0/1/2, direct byte lengths, concatenation, REDEFINES, display padding, default/override paths, a semantically different alternate layout, report fields/types, truncated byte_length 0, invalid sign/ODO errors, rerun semantics, unknown-flag exit 2/content preservation and one P2P input-preservation boundary. It contains no valid ODO count above 2, and its unknown-flag check compares output bytes rather than proving no write occurred."
+    },
+    {
+      "type": "test",
+      "ref": "cobol-comp3-python-equiv/tests/test_comp3_contract.py",
+      "observation": "The four malformed packed-decimal cases mutate otherwise complete first records while retaining framing and require error plus exact byte_length 44; they test signed/unsigned sign-class separation, zero pad and digit-nibble validity without asserting continuation or second-record recovery."
+    },
+    {
+      "type": "test",
+      "ref": "cobol-comp3-python-equiv/tests/test.sh",
+      "observation": "The verifier executes exactly test_outputs.py and test_comp3_contract.py, so no other hidden test file closes the identified current coverage gaps."
+    },
+    {
+      "type": "test",
+      "ref": ".terminus/designs/cobol-comp3-python-equiv-test-map.json",
+      "observation": "Used only for F2P/P2P classification as packet-authorized: all substantive tests are F2P except test_p2p_layout_and_sample_retained, which is the sole P2P case. Its requirement prose was not used to expand the solver-visible contract."
+    }
+  ],
+  "findings": [
+    {
+      "id": "Q4-B3AC-001",
+      "severity": "MEDIUM",
+      "status": "OBSERVED",
+      "criterion": "Every material solver-visible requirement must have meaningful behavioral verifier coverage; ODO bounded-count semantics must distinguish the full documented valid domain from invalid counts.",
+      "evidence_refs": [
+        "cobol-comp3-python-equiv/environment/equiv/docs/record-layout.md",
+        "cobol-comp3-python-equiv/tests/test_outputs.py"
+      ],
+      "why_it_matters": "The public layout contract permits BIN-COUNT from 0 through 12 and requires exactly count occurrences with fixed_prefix + count * occurrence_size byte length. Current valid scenarios cover only 0, 1 and 2, while the invalid scenario uses 99. A plausible implementation that treats 2 as the maximum legal count (or otherwise rejects 3..12) satisfies every current ODO assertion yet rejects documented valid records, changing solver pass/fail and externally observable decoding correctness.",
+      "minimal_remediation": "If routed after Protocol no-drip/delta classification, add a verifier-only valid ODO scenario above 2, preferably the documented upper boundary 12, with matching record bytes and direct assertions on accepted record status, exact emitted occurrence count and exact layout-derived byte_length. Do not add a solver-facing requirement or implementation recipe; the requirement is already public.",
+      "regression_risk": "Low verifier-scope risk; the new case may expose hard-coded small-count assumptions in otherwise plausible implementations, which is precisely the uncovered contract boundary."
+    },
+    {
+      "id": "Q4-B3AC-002",
+      "severity": "MEDIUM",
+      "status": "OBSERVED",
+      "criterion": "Stable documented CLI failure semantics must be behaviorally verified rather than approximated by content equality.",
+      "evidence_refs": [
+        "cobol-comp3-python-equiv/environment/equiv/docs/record-layout.md",
+        "cobol-comp3-python-equiv/tests/test_outputs.py"
+      ],
+      "why_it_matters": "The solver-visible CLI contract says unknown flags exit 2 without writing output. The current test snapshots the existing default report, invokes --nope, and verifies return code 2 plus identical bytes. An implementation can still open/truncate/rewrite the output to identical content (or perform another observable output write) and pass, violating the documented no-write failure interface. This can be externally observable through file metadata, watchers or write permissions even when final bytes match.",
+      "minimal_remediation": "If routed after Protocol no-drip/delta classification, exercise the unknown-flag path against a fresh explicit --out target and assert exit 2 and that the target was never created, or otherwise assert a write-independent no-output side effect without constraining stderr wording or parser internals.",
+      "regression_risk": "Low verifier-scope risk; keep the assertion limited to the public exit/no-write contract and avoid prescribing argument-parser implementation or error text."
+    }
+  ],
+  "missing_evidence": [],
+  "change_scope": [
+    "Q4 itself writes only this packet-bound review result; no task artifact was modified.",
+    "If remediation is authorized after delta/no-drip classification, both findings are verifier-coverage issues confined to cobol-comp3-python-equiv/tests/."
+  ],
+  "do_not_change": [
+    "Do not modify cobol-comp3-python-equiv/instruction.md or its solver-visible record-layout contract merely to match the current verifier; both identified requirements are already discoverable.",
+    "Do not modify solver implementation/environment files as a Q4 action.",
+    "Do not add malformed-record continuation/recovery assertions beyond the public failed-record fields.",
+    "Do not overwrite historical review packets/results and do not merge PR #22 from this reviewer role."
+  ],
+  "next_gate": "QUALITY_INTERLOCK cannot pass on this Q4 result. Return to the CI Orchestrator for Protocol no-drip delta classification of Q4-B3AC-001 and Q4-B3AC-002 against the authorized remediation diff; any finding that is entirely unchanged previously reviewable scope must route as LATENT_REVIEWER_OMISSION to Adjudicator, otherwise route the verifier-coverage gap to the responsible Q2/Verifier producer. Q4 does not perform the fix.",
+  "role_output": {
+    "REQUIREMENT_TEST_MATRIX": [
+      {
+        "REQ_ID": "Q4-REQ-01",
+        "REQUIREMENT": "Evaluate packed catalog records through /app/equiv/bin/equiv-eval and produce /app/equiv/out/equivalence-report.json from the documented default layout/sample rather than hex pretty-printing.",
+        "TESTS": [
+          "test_f2p_public_positive_comp3_qoh",
+          "test_f2p_cli_default_writes_contract_path",
+          "test_f2p_report_schema_required_fields",
+          "test_f2p_rerun_is_semantically_stable"
+        ],
+        "COVERAGE": "COMPLETE"
+      },
+      {
+        "REQ_ID": "Q4-REQ-02",
+        "REQUIREMENT": "Honor --layout PATH, --records PATH and --out PATH; unknown flags exit 2 without writing output.",
+        "TESTS": [
+          "test_f2p_layout_override_is_honored",
+          "test_f2p_holdout_negative_packed_fields",
+          "test_f2p_cli_default_writes_contract_path",
+          "test_f2p_unknown_flag_exits_without_clobber"
+        ],
+        "COVERAGE": "PARTIAL",
+        "GAP": "Path overrides are behaviorally covered, including a semantically different layout. Unknown-flag exit 2 is covered, but the no-output-write side effect is approximated only by unchanged content."
+      },
+      {
+        "REQ_ID": "Q4-REQ-03",
+        "REQUIREMENT": "Implement COMP-3 digit geometry, ceil((digits+1)/2) byte width, left zero padding, decimal digit nibbles, signed C/D versus unsigned F sign classes, and implied-decimal scale-preserving strings.",
+        "TESTS": [
+          "test_f2p_public_positive_comp3_qoh",
+          "test_f2p_public_unit_cost_scale_three",
+          "test_f2p_public_negative_qoh_sign_d",
+          "test_f2p_unsigned_reorder_sign_f",
+          "test_f2p_holdout_negative_packed_fields",
+          "test_f2p_holdout_unsigned_reorder_max",
+          "test_f2p_invalid_sign_nibble_is_record_error",
+          "test_f2p_signed_field_rejects_unsigned_f_sign",
+          "test_f2p_unsigned_field_rejects_signed_c_and_d_signs",
+          "test_f2p_comp3_requires_zero_left_pad_nibble",
+          "test_f2p_comp3_rejects_nondecimal_digit_nibble",
+          "test_f2p_layout_override_is_honored"
+        ],
+        "COVERAGE": "COMPLETE"
+      },
+      {
+        "REQ_ID": "Q4-REQ-04",
+        "REQUIREMENT": "Decode PIC X(n) as fixed-width text preserving padding and PIC 9(n) display bytes as ASCII decimal digits reported as JSON integers.",
+        "TESTS": [
+          "test_f2p_public_first_record_byte_length",
+          "test_f2p_display_fields_keep_pic_padding",
+          "test_f2p_layout_override_is_honored"
+        ],
+        "COVERAGE": "COMPLETE"
+      },
+      {
+        "REQ_ID": "Q4-REQ-05",
+        "REQUIREMENT": "REDEFINES reads the target bytes and does not advance record offset.",
+        "TESTS": [
+          "test_f2p_redefines_shares_status_byte",
+          "test_f2p_holdout_redefines_status",
+          "test_f2p_public_first_record_byte_length",
+          "test_f2p_holdout_second_record_zero_odo"
+        ],
+        "COVERAGE": "COMPLETE"
+      },
+      {
+        "REQ_ID": "Q4-REQ-06",
+        "REQUIREMENT": "OCCURS DEPENDING ON uses the actual BIN-COUNT in the documented valid range 0..12, emits exactly that many entries, computes fixed_prefix + count * occurrence_size, does not consume the max span for smaller counts, and reports out-of-range count as a record error.",
+        "TESTS": [
+          "test_f2p_public_first_record_byte_length",
+          "test_f2p_public_zero_odo_byte_length",
+          "test_f2p_holdout_odo_two_bins_mixed_signs",
+          "test_f2p_holdout_second_record_zero_odo",
+          "test_f2p_invalid_odo_count_is_record_error"
+        ],
+        "COVERAGE": "PARTIAL",
+        "GAP": "Valid behavior is demonstrated only at counts 0, 1 and 2; no accepted count in 3..12, including the public max 12, is graded."
+      },
+      {
+        "REQ_ID": "Q4-REQ-07",
+        "REQUIREMENT": "Concatenated records have no RDW and, after each successful record, the next record starts exactly at the computed byte length.",
+        "TESTS": [
+          "test_f2p_public_zero_odo_byte_length",
+          "test_f2p_holdout_second_record_zero_odo"
+        ],
+        "COVERAGE": "COMPLETE"
+      },
+      {
+        "REQ_ID": "Q4-REQ-08",
+        "REQUIREMENT": "The documented public sample fields decode to the published values, including positive and negative packed values, status alias, ODO content and display padding.",
+        "TESTS": [
+          "test_f2p_public_positive_comp3_qoh",
+          "test_f2p_public_unit_cost_scale_three",
+          "test_f2p_public_first_record_byte_length",
+          "test_f2p_public_negative_qoh_sign_d",
+          "test_f2p_redefines_shares_status_byte",
+          "test_f2p_unsigned_reorder_sign_f",
+          "test_f2p_display_fields_keep_pic_padding"
+        ],
+        "COVERAGE": "COMPLETE"
+      },
+      {
+        "REQ_ID": "Q4-REQ-09",
+        "REQUIREMENT": "Emit the documented report interface: layout_id, source_records, tape-ordered records with index/byte_length/error/fields, and summary record_count/error_count/comp3_signed_ok with documented types and meanings.",
+        "TESTS": [
+          "test_f2p_summary_fields_on_public_tape",
+          "test_f2p_report_schema_required_fields",
+          "test_f2p_cli_default_writes_contract_path",
+          "test_f2p_indeterminate_record_length_reports_zero",
+          "test_f2p_invalid_sign_nibble_is_record_error",
+          "test_f2p_rerun_is_semantically_stable"
+        ],
+        "COVERAGE": "COMPLETE"
+      },
+      {
+        "REQ_ID": "Q4-REQ-10",
+        "REQUIREMENT": "Malformed records carry a non-empty error; determinable failed-record length reports the actual layout-derived byte_length, otherwise byte_length is 0; no private continuation/recovery strategy is required.",
+        "TESTS": [
+          "test_f2p_invalid_sign_nibble_is_record_error",
+          "test_f2p_invalid_odo_count_is_record_error",
+          "test_f2p_indeterminate_record_length_reports_zero",
+          "test_f2p_signed_field_rejects_unsigned_f_sign",
+          "test_f2p_unsigned_field_rejects_signed_c_and_d_signs",
+          "test_f2p_comp3_requires_zero_left_pad_nibble",
+          "test_f2p_comp3_rejects_nondecimal_digit_nibble"
+        ],
+        "COVERAGE": "COMPLETE",
+        "NOTE": "The complete first-record packed corruptions preserve framing and require 44 exactly; the truncated record requires 0. Malformed tests do not assert second-record continuation, record-count recovery, error text or a private resynchronization algorithm."
+      },
+      {
+        "REQ_ID": "Q4-REQ-11",
+        "REQUIREMENT": "Scale-0 integer COMP-3 values are decimal strings without a synthetic .0 suffix.",
+        "TESTS": [
+          "test_f2p_public_first_record_byte_length",
+          "test_f2p_holdout_odo_two_bins_mixed_signs",
+          "test_f2p_display_fields_keep_pic_padding"
+        ],
+        "COVERAGE": "COMPLETE"
+      },
+      {
+        "REQ_ID": "Q4-REQ-12",
+        "REQUIREMENT": "The inherited default layout and public sample remain available as the documented evaluator inputs while the evaluator is repaired.",
+        "TESTS": [
+          "test_p2p_layout_and_sample_retained",
+          "test_f2p_public_positive_comp3_qoh",
+          "test_f2p_public_first_record_byte_length"
+        ],
+        "COVERAGE": "COMPLETE"
+      }
+    ],
+    "REVERSE_VERIFIER_MATRIX": [
+      {"TEST": "test_f2p_public_positive_comp3_qoh", "CONTRACT": ["Q4-REQ-01", "Q4-REQ-03", "Q4-REQ-08"], "STATUS": "DISCOVERABLE"},
+      {"TEST": "test_f2p_public_unit_cost_scale_three", "CONTRACT": ["Q4-REQ-03", "Q4-REQ-08"], "STATUS": "DISCOVERABLE"},
+      {"TEST": "test_f2p_public_first_record_byte_length", "CONTRACT": ["Q4-REQ-04", "Q4-REQ-05", "Q4-REQ-06", "Q4-REQ-08", "Q4-REQ-11"], "STATUS": "DISCOVERABLE"},
+      {"TEST": "test_f2p_public_negative_qoh_sign_d", "CONTRACT": ["Q4-REQ-03", "Q4-REQ-08"], "STATUS": "DISCOVERABLE"},
+      {"TEST": "test_f2p_public_zero_odo_byte_length", "CONTRACT": ["Q4-REQ-06", "Q4-REQ-07"], "STATUS": "DISCOVERABLE"},
+      {"TEST": "test_f2p_redefines_shares_status_byte", "CONTRACT": ["Q4-REQ-05", "Q4-REQ-08"], "STATUS": "DISCOVERABLE"},
+      {"TEST": "test_f2p_unsigned_reorder_sign_f", "CONTRACT": ["Q4-REQ-03", "Q4-REQ-08"], "STATUS": "DISCOVERABLE"},
+      {"TEST": "test_f2p_summary_fields_on_public_tape", "CONTRACT": ["Q4-REQ-09"], "STATUS": "DISCOVERABLE"},
+      {"TEST": "test_f2p_unknown_flag_exits_without_clobber", "CONTRACT": ["Q4-REQ-02"], "STATUS": "DISCOVERABLE_BUT_PARTIAL_ASSERTION"},
+      {"TEST": "test_f2p_holdout_negative_packed_fields", "CONTRACT": ["Q4-REQ-02", "Q4-REQ-03"], "STATUS": "DISCOVERABLE"},
+      {"TEST": "test_f2p_holdout_unsigned_reorder_max", "CONTRACT": ["Q4-REQ-03"], "STATUS": "DISCOVERABLE"},
+      {"TEST": "test_f2p_holdout_odo_two_bins_mixed_signs", "CONTRACT": ["Q4-REQ-03", "Q4-REQ-06", "Q4-REQ-11"], "STATUS": "DISCOVERABLE"},
+      {"TEST": "test_f2p_holdout_second_record_zero_odo", "CONTRACT": ["Q4-REQ-05", "Q4-REQ-06", "Q4-REQ-07"], "STATUS": "DISCOVERABLE"},
+      {"TEST": "test_f2p_holdout_redefines_status", "CONTRACT": ["Q4-REQ-05"], "STATUS": "DISCOVERABLE"},
+      {"TEST": "test_f2p_display_fields_keep_pic_padding", "CONTRACT": ["Q4-REQ-04", "Q4-REQ-08", "Q4-REQ-11"], "STATUS": "DISCOVERABLE"},
+      {"TEST": "test_f2p_cli_default_writes_contract_path", "CONTRACT": ["Q4-REQ-01", "Q4-REQ-02", "Q4-REQ-09"], "STATUS": "DISCOVERABLE"},
+      {"TEST": "test_f2p_layout_override_is_honored", "CONTRACT": ["Q4-REQ-02", "Q4-REQ-03", "Q4-REQ-04"], "STATUS": "DISCOVERABLE"},
+      {"TEST": "test_f2p_report_schema_required_fields", "CONTRACT": ["Q4-REQ-01", "Q4-REQ-09"], "STATUS": "DISCOVERABLE"},
+      {"TEST": "test_f2p_indeterminate_record_length_reports_zero", "CONTRACT": ["Q4-REQ-09", "Q4-REQ-10"], "STATUS": "DISCOVERABLE"},
+      {"TEST": "test_p2p_layout_and_sample_retained", "CONTRACT": ["Q4-REQ-12"], "STATUS": "DISCOVERABLE_P2P"},
+      {"TEST": "test_f2p_invalid_sign_nibble_is_record_error", "CONTRACT": ["Q4-REQ-03", "Q4-REQ-09", "Q4-REQ-10"], "STATUS": "DISCOVERABLE"},
+      {"TEST": "test_f2p_invalid_odo_count_is_record_error", "CONTRACT": ["Q4-REQ-06", "Q4-REQ-10"], "STATUS": "DISCOVERABLE"},
+      {"TEST": "test_f2p_rerun_is_semantically_stable", "CONTRACT": ["Q4-REQ-01", "Q4-REQ-09"], "STATUS": "DISCOVERABLE"},
+      {"TEST": "test_f2p_signed_field_rejects_unsigned_f_sign", "CONTRACT": ["Q4-REQ-03", "Q4-REQ-10"], "STATUS": "DISCOVERABLE"},
+      {"TEST": "test_f2p_unsigned_field_rejects_signed_c_and_d_signs", "CONTRACT": ["Q4-REQ-03", "Q4-REQ-10"], "STATUS": "DISCOVERABLE"},
+      {"TEST": "test_f2p_comp3_requires_zero_left_pad_nibble", "CONTRACT": ["Q4-REQ-03", "Q4-REQ-10"], "STATUS": "DISCOVERABLE"},
+      {"TEST": "test_f2p_comp3_rejects_nondecimal_digit_nibble", "CONTRACT": ["Q4-REQ-03", "Q4-REQ-10"], "STATUS": "DISCOVERABLE"}
+    ],
+    "PHANTOM_TEST_CONTRACTS": [],
+    "UNTESTED_REQUIREMENTS": [
+      {
+        "REQ_ID": "Q4-REQ-06",
+        "STATUS": "PARTIAL",
+        "DETAIL": "No verifier case proves that any documented valid ODO count above 2, including max 12, is accepted with correct occurrence count and byte_length."
+      },
+      {
+        "REQ_ID": "Q4-REQ-02",
+        "STATUS": "PARTIAL",
+        "DETAIL": "Unknown-flag exit 2 is asserted, but the documented no-output-write side effect is not distinguished from rewriting identical bytes."
+      }
+    ],
+    "AMBIGUITIES": [],
+    "INSTRUCTION_SHAPE": "PASS",
+    "INSTRUCTION_REQUIREMENT_COMPLETENESS": "SUFFICIENT",
+    "DELEGATED_CONTRACT_CHECK": {
+      "/app/equiv/docs/record-layout.md": "LEGITIMATE_TECHNICAL_CONTRACT: layout/storage/record/report/CLI semantics are appropriate delegated documentation and remain discoverable from instruction.md.",
+      "/app/equiv/ops/handoff.md": "LEGITIMATE_HANDOFF: concise current-state/operator context; it does not displace the engineering objective or prescribe private implementation repairs.",
+      "/app/equiv/log/unpack-incident.log": "LEGITIMATE_INCIDENT_EVIDENCE: supports the claimed current symptoms and does not expand the graded contract beyond referenced public behavior."
+    },
+    "INSTRUCTION_DOC_BOUNDARY": "CLEAN",
+    "IMPLEMENTATION_DIAGNOSIS_LEAKAGE": "NONE",
+    "CURRENT_STATE_EVIDENCE": "PASS",
+    "SPEC_DUMP_RISK": "LOW",
+    "F2P_P2P_BOUNDARY_ASSESSMENT": {
+      "F2P": "All F2P cases grade public external behavior rather than implementation choices. ODO and REDEFINES are asserted directly, not through circular self-reported booleans. Malformed cases avoid private continuation/recovery assertions.",
+      "P2P": "The sole P2P case preserves the inherited default layout/sample input surface. This ownership is legitimate for a repair task and is reinforced by multiple F2P tests that consume those public inputs; it is not a disguised new functional requirement."
+    },
+    "CLI_OUTPUT_FAILURE_INTERFACE": {
+      "DEFAULT_PATHS": "COVERED",
+      "RECORDS_OVERRIDE": "COVERED",
+      "OUT_OVERRIDE": "COVERED",
+      "LAYOUT_OVERRIDE": "COVERED_SEMANTICALLY",
+      "UNKNOWN_FLAG_EXIT_2": "COVERED",
+      "UNKNOWN_FLAG_NO_OUTPUT_WRITE": "PARTIAL",
+      "REPORT_SCHEMA_AND_TYPES": "COVERED",
+      "DETERMINABLE_MALFORMED_BYTE_LENGTH": "COVERED_AT_44",
+      "INDETERMINATE_MALFORMED_BYTE_LENGTH": "COVERED_AT_0",
+      "PRIVATE_FAILURE_RECOVERY_CONSTRAINT": "NONE"
+    },
+    "BIDIRECTIONAL_ALIGNMENT": "FAIL",
+    "BLOCKING_FINDING_IDS": [
+      "Q4-B3AC-001",
+      "Q4-B3AC-002"
+    ],
+    "ADVISORY_FINDING_IDS": [],
+    "EXHAUSTIVENESS": {
+      "REQUIREMENTS_ENUMERATED": "COMPLETE",
+      "VERIFIER_BEHAVIORS_ENUMERATED": "COMPLETE",
+      "FORWARD_MATRIX_COMPLETE": "YES",
+      "REVERSE_MATRIX_COMPLETE": "YES",
+      "INSTRUCTION_COMPLETENESS_COMPLETE": "YES",
+      "DELEGATED_CONTRACTS_COMPLETE": "YES",
+      "PROMPT_EXTENSION_WALK_COMPLETE": "YES",
+      "P2P_BOUNDARIES_COMPLETE": "YES",
+      "F2P_BOUNDARIES_COMPLETE": "YES",
+      "OUTPUT_INTERFACES_COMPLETE": "YES",
+      "SECOND_PASS_OMISSION_SWEEP": "PASS",
+      "UNINSPECTED_SCOPE": []
+    }
+  }
+}
