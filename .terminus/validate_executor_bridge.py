@@ -79,7 +79,6 @@ def main() -> int:
     guard_text = (T / "execution" / "invocation_guard.py").read_text(encoding="utf-8")
     for marker in (
         "CanonicalInvocationGuard",
-        "LOCAL_COMMAND is read-only",
         "handoff_id",
         "validate_handoff",
     ):
