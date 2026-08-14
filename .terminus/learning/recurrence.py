@@ -11,6 +11,8 @@ from feedback.model import pattern_identity
 from feedback.registry import LearningStore
 from feedback.schema_validation import LearningSchemaValidator
 
+from .integrity import LearningIntegrityValidator
+
 
 class RecurrenceAnalyzer:
     def __init__(self, root: Path, *, store: LearningStore | None = None):
@@ -18,10 +20,15 @@ class RecurrenceAnalyzer:
         self.store = store or LearningStore(self.root)
         self.schemas = LearningSchemaValidator(self.root)
         self.closure = FindingClosure(self.root, store=self.store)
+        self.integrity = LearningIntegrityValidator(self.root, store=self.store)
 
-    def analyze(self, *, policy_candidate_distinct_tasks: int = 3) -> list[dict[str, Any]]:
-        if policy_candidate_distinct_tasks < 2:
-            raise ValueError("policy candidate threshold must be at least two distinct tasks")
+    def analyze(
+        self, *, policy_candidate_distinct_tasks: int = 3
+    ) -> list[dict[str, Any]]:
+        if policy_candidate_distinct_tasks != 3:
+            raise ValueError(
+                "policy candidate threshold is policy-owned and fixed at three distinct tasks"
+            )
         findings = [
             finding
             for finding in self.store.findings.latest_by("finding_id")
@@ -32,12 +39,18 @@ class RecurrenceAnalyzer:
         lessons = self.store.lessons.latest_by("lesson_id")
         lesson_by_source: dict[str, list[str]] = defaultdict(list)
         for lesson in lessons:
+            if lesson.get("state") != "ACTIVE":
+                continue
+            self.integrity.validate_lesson(lesson)
             for source in lesson.get("sources", []):
                 lesson_by_source[str(source)].append(str(lesson["lesson_id"]))
         grouped: dict[tuple[str, str], list[dict[str, Any]]] = defaultdict(list)
         for finding in findings:
             grouped[
-                (str(finding["category"]), str(finding["problem"]["root_cause_class"]))
+                (
+                    str(finding["category"]),
+                    str(finding["problem"]["root_cause_class"]),
+                )
             ].append(finding)
 
         existing = {
@@ -57,7 +70,7 @@ class RecurrenceAnalyzer:
                     for lesson_id in lesson_by_source.get(finding_id, [])
                 }
             )
-            policy_candidate = len(task_ids) >= policy_candidate_distinct_tasks
+            policy_candidate = len(task_ids) >= 3
             pattern: dict[str, Any] = {
                 "schema_version": "1.0",
                 "category": category,
@@ -71,7 +84,8 @@ class RecurrenceAnalyzer:
             }
             pattern["pattern_id"] = pattern_identity(pattern)
             self.schemas.validate("pattern", pattern)
+            self.integrity.validate_pattern(pattern)
             if existing.get(pattern["pattern_id"]) != pattern:
-                self.store.patterns.append(pattern)
+                self.store.record_pattern(pattern)
             patterns.append(pattern)
         return patterns
