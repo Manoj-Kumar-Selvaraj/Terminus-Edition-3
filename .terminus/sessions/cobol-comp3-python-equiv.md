@@ -5,10 +5,10 @@ Session schema version: `2.4`
 ## Identity
 
 - Task: `cobol-comp3-python-equiv`
-- Controller state: `FROZEN_CANDIDATE`
+- Controller state: `VALIDATING`
 - Working branch: `task/cobol-comp3-python-equiv-completion`
 - Pull request: `#22`
-- Current task commit: `bf242838a5a985583d43e9ca919c03e4c3f9459d`
+- Current task commit: `d2bf8685258c89fbe9db77531788c56c2bef15a8`
 - Agent-system policy: `2.4`
 - Specialist prompt policy: `2.2`
 - Specialist protocol policy: `2.2`
@@ -18,64 +18,61 @@ Session schema version: `2.4`
 
 ## Current task profile
 
-Software/Languages warehouse SKU tape unpacker for signed/unsigned COMP-3, REDEFINES, and OCCURS DEPENDING ON. Solver-visible runtime remains intentionally compact and uses the non-strict `large_system` authoring profile; do not pad LOC to satisfy scale diagnostics. Holdouts and malformed-record cases are verifier-only. No model API or GnuCOBOL runtime is required.
+Software/Languages warehouse SKU tape unpacker for signed/unsigned COMP-3, REDEFINES, and OCCURS DEPENDING ON. Solver-visible runtime remains intentionally compact and uses the non-strict `large_system` authoring profile; do not pad LOC to satisfy scale diagnostics. Holdouts and malformed-record cases are verifier-only. No GnuCOBOL runtime is required.
 
-The abandoned branch `task/cobol-comp3-python-equiv@51723cbca1013fea7b1f7ca3cf0583af7182c785` was 483 commits behind current main. Useful task-only hardening was recovered onto the current branch; its old Q4/Q6 packets were not carried forward because they are commit-bound and stale.
+The abandoned branch `task/cobol-comp3-python-equiv@51723cbca1013fea7b1f7ca3cf0583af7182c785` was 483 commits behind current main. Useful task-only hardening was recovered onto the current branch; its old reviews and Harbor runs remain historical only.
 
 ## Current gates
 
 | Gate | Status | Evidence / version |
 | --- | --- | --- |
-| Q1 Spec Gap Repair | PASS | task commit `bf242838a5a985583d43e9ca919c03e4c3f9459d`: contract reconciled for signed/unsigned sign class, zero storage pad, deterministic malformed-record byte boundaries, REDEFINES, and ODO |
-| Q2 Verifier Coverage Repair | PASS | task commit `bf242838a5a985583d43e9ca919c03e4c3f9459d`: 24 mapped tests, 22 F2P / 2 P2P across six requirements; Oracle run `31808250840` job `94792334675` |
-| Q3 Spec Ambiguity Repair | PASS | task commit `bf242838a5a985583d43e9ca919c03e4c3f9459d`: malformed sign class, storage pad, illegal sign nibble, ODO range, and record-boundary behavior made explicit and tested |
-| Q7 Task Format Enforcer | PASS | Edition-3 run `31808250840` job `94792334675`: task format/preflight path accepted current task package |
-| Creator Complexity Gate | PASS | run `31808250839` job `94792306458`: this task PASS with 10 defects, 4 root causes, 9 causal edges, 24 mapped tests; overall workflow later fails unrelated `wiki-creation-counter-flap` |
-| Preflight/static | PASS | Edition-3 run `31808250840` job `94792334675` |
-| Ruff verifier | PASS | Edition-3 run `31808250840` job `94792334675` |
-| Oracle = 1 | PASS | Edition-3 run `31808250840` job `94792334675`, artifact `9222093520`: 24/24 tests pass, reward 1 |
-| NOP = 0 | PASS | Edition-3 run `31808250840` job `94792334675`, artifact `9222093520`: 22 F2P fail / 2 P2P retention checks pass, reward 0 |
-| Q4 Spec-Test Contract Reviewer | PENDING | packet `.terminus/reviews/cobol-comp3-python-equiv/bf242838/cobol-comp3-python-equiv-bf242838-spec-test-contract-c1744a7ef9.packet.json`; independent result not yet recorded |
-| Q6 Production Logic Auditor | PENDING | packet `.terminus/reviews/cobol-comp3-python-equiv/bf242838/cobol-comp3-python-equiv-bf242838-production-logic-b950c2f7a4.packet.json`; independent result not yet recorded |
-| Quality Interlock | PENDING | one bounded Q4/Q6 interlock only; no recursive cold-review loop |
+| Q1 Spec Gap Repair | PASS | task commit `d2bf8685258c89fbe9db77531788c56c2bef15a8`: Q4-STC-001/002/005 aligned by removing undocumented malformed-record exit assumptions, matching summary domains to the public contract, and removing the unnecessary offline/model-API MUST |
+| Q2 Verifier Coverage Repair | PASS | task commit `d2bf8685258c89fbe9db77531788c56c2bef15a8`: Q4-STC-003/004 plus A01/A02 repaired; test map now has 27 cases (25 F2P / 2 P2P) including non-decimal digit nibble, required report schema, indeterminate byte_length=0, semantic rerun, and wording-independent error checks |
+| Q3 Spec Ambiguity Repair | PASS | task commit `d2bf8685258c89fbe9db77531788c56c2bef15a8`: verifier no longer grades undocumented exit-1, JSON byte formatting, error prose, widened padding summary, or invalid-count ODO summary semantics |
+| Q7 Task Format Enforcer | PENDING | fresh current-task CI required after Q4 remediation |
+| Creator Complexity Gate | PENDING | fresh current-task CI required; non-strict profile retained |
+| Preflight/static | PENDING | old run is stale after task change |
+| Ruff verifier | PENDING | old run is stale after task change |
+| Oracle = 1 | PENDING | old 24-test run is stale; current verifier has 27 mapped tests |
+| NOP = 0 | PENDING | old 24-test run is stale; current verifier has 27 mapped tests |
+| Q4 Spec-Test Contract Reviewer | STALE | prior result `.terminus/reviews/cobol-comp3-python-equiv/bf242838/cobol-comp3-python-equiv-bf242838-spec-test-contract-c1744a7ef9.json` was `REVISE/HIGH/SUFFICIENT`; all 5 blockers and 2 advisories received one consolidated remediation cycle |
+| Q6 Production Logic Auditor | STALE | prior result `.terminus/reviews/cobol-comp3-python-equiv/bf242838/cobol-comp3-python-equiv-bf242838-production-logic-b950c2f7a4.json` was `PASS/HIGH/SUFFICIENT`; task.toml and solver-visible environment contract changed, so production scope must be re-audited rather than reused |
+| Quality Interlock | PENDING | re-freeze only after fresh deterministic evidence, then one replacement Q4 and Q6 review |
 
-## Current deterministic evidence
+## Q4 remediation disposition
 
-- Reference public tape: PASS — two records, byte lengths `44` and `28`, summary flags true.
-- Reference sealed holdout: PASS — two records, byte lengths `60` and `28`, negative/scaled COMP-3 and ODO behavior correct.
-- Strict malformed COMP-3 probes: PASS — signed field rejects `F`; unsigned field rejects `C` and `D`; non-zero left storage pad is rejected while the parser preserves the 44-byte record boundary.
-- Existing malformed fixtures: PASS — illegal sign and out-of-range ODO become record errors.
-- Edition-3 run `31808250840` is exact task-commit deterministic evidence: preflight PASS, Ruff PASS, Oracle PASS, NOP PASS. It turns red only at Harbor credential preparation because no Harbor API key/provider credential is configured.
-- Creator Complexity run `31808250839` explicitly evaluates `cobol-comp3-python-equiv` as PASS: 10 defects, 4 root-cause clusters, 9 causal edges, 24 mapped tests (22 F2P / 2 P2P). Its overall workflow fails later on unrelated `wiki-creation-counter-flap` baseline debt.
-- Agent System run `31809310527` after packet generation has no `cobol-comp3-python-equiv` freshness/packet error. Its regression failure remains the existing `platform-sonar-ingress-token-bind` Q1/Q2/Q3/Q7 state; its review-freshness errors are other stale sessions/tasks.
-- Production Authenticity remains repository baseline debt: the workflow fails before task inspection because current control-plane policy documents lack markers required by `validate_production_policy.py`.
-- Historical Harbor evidence at `32de80a57ddbc38acd33d36cac598c69abe99da8` remains stale and is not used for this freeze.
+- `Q4-STC-001` — fixed by removing verifier assertions on process exit 1 for malformed records; the documented unknown-flag exit 2 contract remains tested.
+- `Q4-STC-002` — fixed by keeping summary assertions within the documented domains: wrong sign affects `comp3_signed_ok`; invalid padding/digit and invalid ODO count are asserted as record errors without inventing broader summary meanings.
+- `Q4-STC-003` — fixed with `test_f2p_comp3_rejects_nondecimal_digit_nibble`, mutating a QOH digit nibble to `A` while keeping sign/pad/framing otherwise valid.
+- `Q4-STC-004` — fixed with exact default `source_records`, record `index`, success `error: null`, required field/type coverage, and a truncated record proving indeterminate `byte_length: 0`.
+- `Q4-STC-005` — fixed by removing the unnecessary offline/no-model-API requirement from both the work request and delegated layout contract; live Terminus policy keeps `network_mode = "public"` by default for this task.
+- `Q4-STC-A01` — fixed by semantic JSON equality on rerun instead of byte-identical serialization.
+- `Q4-STC-A02` — fixed by requiring a non-empty documented error string without prescribing internal message vocabulary.
 
-## Current review packets
+## Historical evidence
 
-- Q4 role contract: `0c40044ec13f0109a5526301cac6e5d2f52f5596d006bee2cdcaa90c0771d7f6`
-- Q4 packet: `.terminus/reviews/cobol-comp3-python-equiv/bf242838/cobol-comp3-python-equiv-bf242838-spec-test-contract-c1744a7ef9.packet.json`
-- Q4 output: `.terminus/reviews/cobol-comp3-python-equiv/bf242838/cobol-comp3-python-equiv-bf242838-spec-test-contract-c1744a7ef9.json`
-- Q6 role contract: `8eb84a3715c4805f762325ceaa890339fc966a2a475cb58986578a15418c5378`
-- Q6 production scope: `d0bacfdf0b53efe2d019e9dbb43a2063ff204f35acc2b27053876c841b76b5bc`
-- Q6 packet: `.terminus/reviews/cobol-comp3-python-equiv/bf242838/cobol-comp3-python-equiv-bf242838-production-logic-b950c2f7a4.packet.json`
-- Q6 output: `.terminus/reviews/cobol-comp3-python-equiv/bf242838/cobol-comp3-python-equiv-bf242838-production-logic-b950c2f7a4.json`
+- Frozen task `bf242838a5a985583d43e9ca919c03e4c3f9459d`: Edition-3 run `31808250840`, job `94792334675`, artifact `9222093520` had preflight/Ruff PASS, Oracle 24/24 reward 1, NOP reward 0. This evidence is now stale after remediation.
+- Historical Q4 result commit `29c09f765e69a88f30dc5daf5ada2c6740e4baa3`: `REVISE/HIGH/SUFFICIENT`, 5 blocking + 2 advisory findings.
+- Historical Q6 result commit `81e5de78e5ae224b033415283bd2a665acc267ae`: `PASS/HIGH/SUFFICIENT`, no findings. It is not reused because the production scope changed.
+- Repository-wide `platform-sonar`, stale-session, `wiki-creation-counter-flap`, Production Authenticity policy-marker, and Harbor credential issues remain unrelated baseline/infrastructure debt and are not task remediation targets.
 
 ## Current blocker
 
-Exactly one independent, packet-bound Q4 result and one independent, packet-bound Q6 result are still required. Model-based Harbor validation is separately blocked by missing CI credentials and is not being misrepresented as complete.
+Fresh deterministic validation of task commit `d2bf8685258c89fbe9db77531788c56c2bef15a8` is required before re-freeze. Oracle must pass all 27 current tests and NOP must remain reward 0.
 
 ## Next action
 
-Run Q4 and Q6 once each in fresh independent reviewer chats using the exact packets above. If both return current PASS/SUFFICIENT results, record them and advance the bounded quality interlock. If either proves a concrete blocker, repair only that blocker and invalidate/re-freeze once as required; do not start a recursive general cold-review loop.
+Consume the latest Edition-3 and Creator Complexity runs for current task commit `d2bf8685258c89fbe9db77531788c56c2bef15a8`. If task-owned gates pass, freeze once, generate replacement packet-bound Q4 and Q6 reviews, and do not start another ordinary remediation cycle unless Protocol 2.2 explicitly permits it.
 
 ## Decisions that must survive chat changes
 
 - Domain is warehouse catalog / SKU tape, not EOD payments.
-- Verifier checks behavior and byte boundaries against sealed expected data; the reference implementation performs genuine COMP-3 decoding.
-- Signed COMP-3 accepts `C/D`; unsigned COMP-3 accepts `F`; storage pad nibbles must be zero.
+- Signed COMP-3 accepts `C/D`; unsigned COMP-3 accepts `F`; every digit nibble is 0-9 and required storage pad nibbles are zero.
 - REDEFINES aliases target storage and ODO consumes only the actual bounded count.
-- Never reuse the old branch's Q4/Q6 packets or Harbor runs as fresh acceptance evidence.
+- Malformed-record process exit 1 is implementation behavior, not a public graded contract; only unknown-flag exit 2 is stable.
+- Report tests grade documented semantics, not JSON whitespace/key ordering or internal error-message wording.
+- The task does not require offline/no-model-API operation; live network policy remains `public`.
+- Never reuse stale Q4/Q6/Harbor evidence as current acceptance.
 - Do not self-certify independent Q4/Q6 results.
-- Do not broaden this task to repair unrelated control-plane, `platform-sonar`, `wiki-creation-counter-flap`, Production Authenticity policy-marker, or global review-freshness baseline debt.
-- This task gets one bounded Q4/Q6 interlock, not an open-ended cold-review/remediation loop.
+- Do not broaden this task to unrelated repository baseline debt.
+- This is the single consolidated repair/refreeze cycle allowed after the exhaustive Q4 REVISE.
