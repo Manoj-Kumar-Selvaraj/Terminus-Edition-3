@@ -42,6 +42,26 @@ class AppendOnlyRegistry:
             previous = expected
         return rows
 
+    def latest_by(self, identity_field: str) -> list[dict[str, Any]]:
+        latest: dict[str, dict[str, Any]] = {}
+        order: list[str] = []
+        for payload in self.read():
+            identity = payload.get(identity_field)
+            if not isinstance(identity, str) or not identity:
+                raise ValueError(
+                    f"registry payload missing identity field {identity_field}"
+                )
+            if identity not in latest:
+                order.append(identity)
+            latest[identity] = payload
+        return [latest[identity] for identity in order]
+
+    def get_latest(self, identity_field: str, identity: str) -> dict[str, Any] | None:
+        for payload in reversed(self.read()):
+            if payload.get(identity_field) == identity:
+                return payload
+        return None
+
     def append(self, payload: Mapping[str, Any]) -> str:
         rows = self._raw_rows()
         previous = rows[-1]["chain_hash"] if rows else "GENESIS"
