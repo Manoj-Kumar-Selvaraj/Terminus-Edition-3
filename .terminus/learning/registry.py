@@ -9,6 +9,7 @@ from typing import Any, Iterable, Mapping
 from execution.authority import ExecutionAuthority
 from retrieval.policy import RetrievalPolicy
 
+from feedback.closure import FindingClosure
 from feedback.model import LessonState, lesson_identity
 from feedback.registry import LearningStore
 from feedback.schema_validation import LearningSchemaValidator
@@ -21,6 +22,7 @@ class LessonRegistry:
         self.schemas = LearningSchemaValidator(self.root)
         self.policy = RetrievalPolicy(self.root)
         self.authority = ExecutionAuthority(self.policy)
+        self.closure = FindingClosure(self.root, store=self.store)
 
     def from_finding(
         self,
@@ -33,8 +35,7 @@ class LessonRegistry:
         activate: bool = True,
     ) -> dict[str, Any]:
         self.schemas.validate("finding", finding)
-        if finding["state"] not in {"VERIFIED", "CLOSED"}:
-            raise ValueError("only independently verified/closed findings can become lessons")
+        self.closure.assert_learning_eligible(finding)
         if not future_rule.strip():
             raise ValueError("future_rule is required")
         stages = self._unique(
@@ -113,9 +114,12 @@ class LessonRegistry:
             item["finding_id"]: item
             for item in self.store.findings.latest_by("finding_id")
         }
-        task_ids = {
-            findings[source]["task_id"] for source in sources if source in findings
-        }
+        for source in sources:
+            finding = findings.get(source)
+            if finding is None:
+                raise ValueError(f"lesson source finding is unavailable: {source}")
+            self.closure.assert_learning_eligible(finding)
+        task_ids = {findings[source]["task_id"] for source in sources}
         previous = existing.get("promotion", {})
         occurrences = max(len(sources), int(previous.get("occurrences", 1)))
         distinct_tasks = max(len(task_ids), int(previous.get("distinct_tasks", 1)))
