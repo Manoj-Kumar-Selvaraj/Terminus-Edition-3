@@ -1,0 +1,127 @@
+{
+  "schema_version": "3.0",
+  "role": "Production Logic Auditor",
+  "review_id": "cobol-comp3-python-equiv-bf242838-production-logic-b950c2f7a4",
+  "task": "cobol-comp3-python-equiv",
+  "task_commit": "bf242838a5a985583d43e9ca919c03e4c3f9459d",
+  "control_plane_commit": "7916faf6b580302159e46c945dafcd8b110cfb51",
+  "protocol_policy_version": "2.2",
+  "prompt_policy_version": "2.2",
+  "role_policy_version": "1.1",
+  "role_contract_hash": "8eb84a3715c4805f762325ceaa890339fc966a2a475cb58986578a15418c5378",
+  "review_scope_hash": "d0bacfdf0b53efe2d019e9dbb43a2063ff204f35acc2b27053876c841b76b5bc",
+  "context_packet": ".terminus/reviews/cobol-comp3-python-equiv/bf242838/cobol-comp3-python-equiv-bf242838-production-logic-b950c2f7a4.packet.json",
+  "verdict": "PASS",
+  "confidence": "HIGH",
+  "evidence_status": "SUFFICIENT",
+  "summary": "PASS. The frozen candidate is a compact but substantive binary-record parsing/evaluation utility. All major runtime modules are reachable from /app/equiv/bin/equiv-eval, and layout metadata drives byte sizing, COMP-3 representation, REDEFINES aliasing, ODO traversal, record-boundary progression, report invariants, and process exit behavior. The implementation is far below strict large-system scale, but this review is explicitly non-strict; within that profile the difficulty is concentrated in real domain invariants and state transitions rather than LOC, duplicated modules, generated filler, or verifier-only behavior. No material unreachable padding, cloned subsystem, giant lookup-table shortcut, or constant-output production shell was found.",
+  "evidence": [
+    {
+      "type": "rule",
+      "ref": ".terminus/agents/QUALITY_AGENT_REGISTRY.md",
+      "observation": "Q6 requires reachability, material branching/state/error behavior, differentiated responsibilities, meaningful data/state, cross-module partial-fix traps, a removal test, and domain-derived rather than padded complexity; the >=3,000 substantive LOC condition is stated only for large_system_strict."
+    },
+    {
+      "type": "rule",
+      "ref": ".terminus/agents/QUALITY_AGENT_PROMPTS.md",
+      "observation": "The Q6 method requires tracing entrypoints, module reachability/responsibility, clone/wrapper/filler risk, cross-module invariants, ~25% removal impact, data-to-branch relevance, and separation of substantive runtime logic from noise."
+    },
+    {
+      "type": "file",
+      "ref": "cobol-comp3-python-equiv/environment/equiv/bin/equiv-eval",
+      "observation": "The operator entrypoint resolves the installed /app/equiv tree, sets PYTHONPATH, and directly executes python3 -m src.cli; it is a thin legitimate launcher rather than a substitute for runtime logic."
+    },
+    {
+      "type": "file",
+      "ref": "cobol-comp3-python-equiv/environment/equiv/src/cli.py",
+      "observation": "The CLI exposes layout/records/output operator inputs, loads the layout, reads binary records, invokes evaluation, persists the JSON report, and maps aggregate error state to process exit status."
+    },
+    {
+      "type": "file",
+      "ref": "cobol-comp3-python-equiv/environment/equiv/src/layout.py",
+      "observation": "The layout module performs stateful interpretation of PIC forms, signedness, scale, COMP-3 metadata, REDEFINES targeting, and ODO group boundaries into typed Pic/Odo/Layout structures consumed by the runtime."
+    },
+    {
+      "type": "file",
+      "ref": "cobol-comp3-python-equiv/environment/equiv/src/unpack.py",
+      "observation": "Record parsing maintains a byte cursor, derives field widths from layout metadata, branches between display and packed fields, iterates nested ODO fields, and returns partial state plus record-length/error information. The starter defects are on this live path, not isolated benchmark-only functions."
+    },
+    {
+      "type": "file",
+      "ref": "cobol-comp3-python-equiv/environment/equiv/src/report.py",
+      "observation": "Evaluation repeatedly consumes unpacked record length to locate the next concatenated record and derives packed-value, ODO-length, and REDEFINES invariants from parsed state; these results feed the externally written report and CLI success/failure behavior."
+    },
+    {
+      "type": "file",
+      "ref": "cobol-comp3-python-equiv/environment/equiv/programs/skumast.layout",
+      "observation": "The shipped layout combines fixed text/display fields, signed scaled COMP-3, unsigned COMP-3, REDEFINES aliasing, and a bounded OCCURS DEPENDING ON group, so one record boundary depends on multiple interacting layout semantics."
+    },
+    {
+      "type": "file",
+      "ref": "cobol-comp3-python-equiv/environment/equiv/samples/sku-public.dat",
+      "observation": "The representative binary state is 72 bytes and materially exercises the layout rather than padding it: it contains two concatenated SKU records whose expected lengths differ because the first has an ODO occurrence and the second has zero, while packed fields include positive and negative sign cases."
+    },
+    {
+      "type": "file",
+      "ref": "cobol-comp3-python-equiv/environment/equiv/docs/record-layout.md",
+      "observation": "The solver-visible operational contract ties COMP-3 nibble/sign/scale rules, REDEFINES non-advancing offsets, ODO-dependent lengths, concatenated record boundaries, and the emitted report schema to the same evaluator workflow."
+    },
+    {
+      "type": "file",
+      "ref": "cobol-comp3-python-equiv/environment/equiv/log/unpack-incident.log",
+      "observation": "The incident evidence describes hex-rendered packed values, max-span ODO consumption, REDEFINES offset drift, and lost negative sign; each symptom corresponds to an actually reachable path in the starter rather than an unrelated narrative subsystem."
+    }
+  ],
+  "findings": [],
+  "missing_evidence": [],
+  "change_scope": [
+    ".terminus/reviews/cobol-comp3-python-equiv/bf242838/cobol-comp3-python-equiv-bf242838-production-logic-b950c2f7a4.json"
+  ],
+  "do_not_change": [
+    "cobol-comp3-python-equiv/task.toml",
+    "cobol-comp3-python-equiv/environment/**",
+    "cobol-comp3-python-equiv/instruction.md",
+    "cobol-comp3-python-equiv/solution/**",
+    "cobol-comp3-python-equiv/tests/**"
+  ],
+  "next_gate": "QUALITY_INTERLOCK controller validation",
+  "role_output": {
+    "CORE_LOGIC_DEPTH": "MEDIUM",
+    "RUNTIME_REACHABILITY": "HIGH",
+    "MODULE_DIVERSITY": "MEDIUM",
+    "CROSS_COMPONENT_COUPLING": "HIGH",
+    "TOY_LOGIC_RISK": "LOW",
+    "PADDING_RISK": "LOW",
+    "SUBSTANTIVE_LOC_ASSESSMENT": "Compact and well below the large_system_strict 3,000-LOC threshold, but this task is explicitly non-strict. The substantive runtime is concentrated in four small Python modules plus a thin shell entrypoint; almost every runtime branch participates in layout interpretation, record decoding, state/error propagation, or report generation. No generated, vendored, comment-heavy, duplicate-resource, or unreachable module volume is being used to manufacture scale.",
+    "MAJOR_MODULES": [
+      {
+        "module": "src.cli",
+        "responsibility": "Operator-facing orchestration, input/output paths, report persistence, and exit semantics.",
+        "state_error_behavior": "Consumes evaluator summary error_count to determine process success; file/layout failures propagate as runtime failures."
+      },
+      {
+        "module": "src.layout",
+        "responsibility": "Parse the compact COBOL-layout DSL into typed field, scale, sign, REDEFINES, and ODO metadata.",
+        "state_error_behavior": "Maintains pending REDEFINES and current ODO parse state; rejects unknown field syntax."
+      },
+      {
+        "module": "src.unpack",
+        "responsibility": "Decode one variable-length binary record using layout metadata and return parsed fields, consumed byte length, and error.",
+        "state_error_behavior": "Maintains the byte cursor across fixed and repeated fields; parsing exceptions return partial fields plus an error/length boundary."
+      },
+      {
+        "module": "src.report",
+        "responsibility": "Walk concatenated records, validate domain invariants, aggregate per-record state, and construct the public equivalence report.",
+        "state_error_behavior": "Uses each consumed record length to advance global offset and tracks signed/ODO/REDEFINES health across all records."
+      }
+    ],
+    "PARTIAL_FIX_TRAPS": [
+      "Correct COMP-3 conversion alone still leaves REDEFINES cursor drift and ODO max-span consumption capable of corrupting record boundaries.",
+      "Correct REDEFINES aliasing alone still leaves ODO count handling able to consume bytes belonging to the next concatenated record.",
+      "Correct ODO traversal alone still leaves packed sign/scale semantics and unsigned-F versus signed-C/D validation incorrect.",
+      "Layout parsing, byte-width calculation, unpack cursor state, report invariants, and CLI exit behavior are linked, so a locally plausible parser patch can remain globally wrong."
+    ],
+    "REMOVAL_TEST": "Removing roughly one major runtime module (about a quarter of the compact core) materially destroys behavior: without layout parsing the evaluator cannot interpret field semantics; without unpacking it cannot derive fields/record lengths; without report evaluation it loses multi-record progression, domain invariant aggregation, report construction, and the CLI success/failure signal. The removable pieces are support documentation/data, not fake core code.",
+    "REQUIRED_CHANGES": []
+  }
+}
