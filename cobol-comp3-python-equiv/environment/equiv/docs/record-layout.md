@@ -30,7 +30,7 @@ REDEFINES: the redefining field occupies the same bytes as the named target. It 
 
 OCCURS DEPENDING ON `NAME` from `min` to `max`: read `NAME` first as the actual count. Emit exactly that many occurrences. Record byte length is the fixed prefix plus `count * occurrence_size`. `count` outside `min..max` is a record error. Do not consume the max occurrence span when `count` is smaller.
 
-Records are concatenated with no RDW. After each record, the next record starts at the computed byte length.
+Records are concatenated with no RDW. After each successful record, the next record starts at the computed byte length.
 
 ## Public sample (first record)
 
@@ -68,11 +68,9 @@ Second public record is negative `QOH` `-42.10` with `BIN-COUNT` `0`.
   "summary": {
     "record_count": 2,
     "error_count": 0,
-    "comp3_signed_ok": true,
-    "odo_lengths_ok": true,
-    "redefines_ok": true
+    "comp3_signed_ok": true
   }
 }
 ```
 
-`records` stay in tape order. `error` is a string or null. Failed records still include `byte_length` when it can be determined, otherwise `byte_length` is 0. `summary.comp3_signed_ok` is false if any packed field used a wrong sign or dropped the minus. `odo_lengths_ok` is false if any record consumed the max OCCURS span instead of the depending-on count. `redefines_ok` is false if REDEFINES fields were unpacked from a later offset than their target. `QTY-IN-BIN` and other integer COMP-3 values are decimal strings without a trailing `.0` when scale is 0 (`"5"`, `"-3"`).
+`records` stay in tape order. `error` is null for a successful record and a non-empty string for a failed record. Failed records include `byte_length` when the record length can be determined from the available bytes and layout; otherwise `byte_length` is 0. No specific recovery or continuation strategy is required after a failed record beyond reporting behavior that satisfies those fields. `summary.record_count` is the number of report entries produced and `summary.error_count` is the number whose `error` is non-null. `summary.comp3_signed_ok` is false if any packed field used a wrong sign or dropped the minus. ODO byte lengths and REDEFINES aliasing are graded directly from record behavior rather than through self-reported summary booleans. `QTY-IN-BIN` and other integer COMP-3 values are decimal strings without a trailing `.0` when scale is 0 (`"5"`, `"-3"`).
