@@ -1,0 +1,50 @@
+name: Analyze recovered strict COBOL tree
+
+on:
+  push:
+    branches:
+      - task/cobol-comp3-python-equiv-strict-rebuild
+    paths:
+      - '.github/workflows/analyze-strict-recovered.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  analyze:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Inventory recovered surface
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo '=== task root ==='
+          find cobol-comp3-python-equiv -maxdepth 3 -type f | sort
+          echo '=== substantive environment LOC ==='
+          python3 - <<'PY'
+          from pathlib import Path
+          root=Path('cobol-comp3-python-equiv/environment')
+          total=0
+          for p in sorted(root.rglob('*')):
+              if not p.is_file() or p.suffix not in {'.py','.sql','.json','.sh'} and p.name!='Dockerfile': continue
+              n=sum(1 for line in p.read_text(errors='ignore').splitlines() if line.strip() and not line.lstrip().startswith(('#','--')))
+              print(n,p)
+              total+=n
+          print('APPROX_LOC',total)
+          PY
+      - name: Starter versus Oracle source diff
+        shell: bash
+        run: |
+          set +e
+          for f in cobol-comp3-python-equiv/environment/equiv/src/*.py; do
+            b=$(basename "$f")
+            if [ -f "cobol-comp3-python-equiv/solution/fixed/$b" ]; then
+              echo "===== $b ====="
+              diff -u "$f" "cobol-comp3-python-equiv/solution/fixed/$b"
+            fi
+          done
+          echo '===== schema ====='
+          diff -u cobol-comp3-python-equiv/environment/equiv/sql/schema.sql cobol-comp3-python-equiv/solution/fixed/schema.sql
+          exit 0
