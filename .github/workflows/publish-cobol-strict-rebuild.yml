@@ -1,0 +1,98 @@
+name: Publish COBOL strict rebuild
+
+on:
+  push:
+    branches:
+      - task/cobol-comp3-python-equiv-strict-rebuild
+    paths:
+      - '.github/workflows/publish-cobol-strict-rebuild.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  validate-and-publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Materialize strict candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          base64 -d .terminus/tmp/strict-rebuild.bundle.b64 > /tmp/strict-rebuild.tar.gz
+          echo '1e2222b27d486903955ce2272b2a24e17583a4f389292c91aefb4ff07f652a85  /tmp/strict-rebuild.tar.gz' | sha256sum -c -
+          rm -rf cobol-comp3-python-equiv
+          rm -f .terminus/designs/cobol-comp3-python-equiv.json \
+                .terminus/designs/cobol-comp3-python-equiv-production.json \
+                .terminus/designs/cobol-comp3-python-equiv-test-map.json \
+                .terminus/research/cobol-comp3-python-equiv-strict-rebuild.md
+          tar -xzf /tmp/strict-rebuild.tar.gz
+          test -f cobol-comp3-python-equiv/task.toml
+          test -f .terminus/designs/cobol-comp3-python-equiv.json
+
+      - name: Compile and lint syntax surface
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m compileall -q cobol-comp3-python-equiv/environment/equiv/equiv
+          python3 -m compileall -q cobol-comp3-python-equiv/solution/fixed/equiv
+          python3 -m py_compile cobol-comp3-python-equiv/tests/test_outputs.py
+
+      - name: Strict complexity gate
+        run: python3 .terminus/validate_task_complexity.py cobol-comp3-python-equiv
+
+      - name: Runtime authenticity gate
+        run: python3 .terminus/validate_runtime_authenticity.py cobol-comp3-python-equiv
+
+      - name: Install verifier dependency
+        run: python3 -m pip install --quiet pytest==8.4.1
+
+      - name: Oracle matrix
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf /tmp/oracle-runtime
+          cp -a cobol-comp3-python-equiv/environment/equiv /tmp/oracle-runtime
+          base64 -d /tmp/oracle-runtime/feeds/public-cycle.dat.b64 > /tmp/oracle-runtime/feeds/public-cycle.dat
+          rm -rf /tmp/oracle-runtime/equiv
+          cp -a cobol-comp3-python-equiv/solution/fixed/equiv /tmp/oracle-runtime/equiv
+          EQUIV_ROOT=/tmp/oracle-runtime PYTHONPATH=/tmp/oracle-runtime \
+            python3 -m pytest cobol-comp3-python-equiv/tests/test_outputs.py -q
+
+      - name: Starter F2P/P2P matrix
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf /tmp/starter-runtime
+          cp -a cobol-comp3-python-equiv/environment/equiv /tmp/starter-runtime
+          base64 -d /tmp/starter-runtime/feeds/public-cycle.dat.b64 > /tmp/starter-runtime/feeds/public-cycle.dat
+          set +e
+          EQUIV_ROOT=/tmp/starter-runtime PYTHONPATH=/tmp/starter-runtime \
+            python3 -m pytest cobol-comp3-python-equiv/tests/test_outputs.py -q -rA > /tmp/starter.txt 2>&1
+          rc=$?
+          set -e
+          cat /tmp/starter.txt
+          test "$rc" -ne 0
+          failed=$(grep -c '^FAILED ' /tmp/starter.txt || true)
+          passed=$(grep -c '^PASSED ' /tmp/starter.txt || true)
+          echo "starter_failed=$failed starter_passed=$passed"
+          test "$failed" -eq 30
+          test "$passed" -eq 4
+
+      - name: Commit validated candidate and remove transfer machinery
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -f .terminus/tmp/strict-rebuild.bundle.b64
+          rm -f .github/workflows/publish-cobol-strict-rebuild.yml
+          find cobol-comp3-python-equiv -type d \( -name __pycache__ -o -name .pytest_cache \) -prune -exec rm -rf {} +
+          git config user.name 'Terminus Creation Controller'
+          git config user.email 'actions@users.noreply.github.com'
+          git add -A
+          git commit -m 'Rebuild COBOL inventory cutover as strict large-system task'
+          git push origin HEAD:task/cobol-comp3-python-equiv-strict-rebuild
