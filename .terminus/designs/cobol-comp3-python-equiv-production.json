@@ -1,0 +1,32 @@
+{
+  "schema_version": "1.0",
+  "profile": "large_system_strict",
+  "task_kind": "software",
+  "task": "cobol-comp3-python-equiv",
+  "production_authenticity": {
+    "incident_evidence": [
+      "environment/equiv/log/archive/cutover_20260815.log",
+      "environment/equiv/ops/handoff.txt"
+    ],
+    "instruction_evidence_paths": [
+      "/app/equiv/log/archive",
+      "/app/equiv/ops"
+    ],
+    "stateful_dataset": {
+      "schema": "environment/equiv/sql/schema.sql",
+      "seed": "environment/equiv/sql/seed.sql",
+      "primary_table": "historical_movements",
+      "min_records": 15000,
+      "max_records": 15000,
+      "variance_queries": {
+        "cycle_days": {"sql": "SELECT COUNT(DISTINCT cycle_day) FROM historical_movements", "min": 180},
+        "warehouses": {"sql": "SELECT COUNT(DISTINCT warehouse_id) FROM historical_movements", "min": 8},
+        "items": {"sql": "SELECT COUNT(DISTINCT item_id) FROM historical_movements", "min": 1000},
+        "movement_types": {"sql": "SELECT COUNT(DISTINCT movement_type) FROM historical_movements", "min": 4},
+        "statuses": {"sql": "SELECT COUNT(DISTINCT status) FROM historical_movements", "min": 3},
+        "quantity_variants": {"sql": "SELECT COUNT(DISTINCT quantity_variant) FROM historical_movements", "min": 15000},
+        "value_variants": {"sql": "SELECT COUNT(DISTINCT value_variant) FROM historical_movements", "min": 15000}
+      }
+    }
+  }
+}
