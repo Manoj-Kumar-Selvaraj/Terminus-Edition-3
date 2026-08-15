@@ -1,0 +1,101 @@
+{
+  "schema_version": 3,
+  "task_name": "cobol-comp3-python-equiv",
+  "task_commit": "de9b508bda9d2d9db75343f83efa15e3c7ec2750",
+  "review_role": "production_logic",
+  "review_policy_version": "q6-production-v1",
+  "review_packet_version": "role-review-packet-v1",
+  "review_scope_hash": "821e655e143a0238839708dcbee11772e40d8c950d7702ff231846b7da078d1b",
+  "review_scope": {
+    "authoritative_work_for_review": [
+      "cobol-comp3-python-equiv/solution"
+    ],
+    "solver_visible_runtime_config": [
+      "cobol-comp3-python-equiv/environment/Dockerfile",
+      "cobol-comp3-python-equiv/environment/equiv/bin/equiv-eval",
+      "cobol-comp3-python-equiv/environment/equiv/config",
+      "cobol-comp3-python-equiv/environment/equiv/sql",
+      "cobol-comp3-python-equiv/solution/solve.sh",
+      "cobol-comp3-python-equiv/solution/fixed"
+    ],
+    "excluded_work_for_review": [
+      "cobol-comp3-python-equiv/tests",
+      "cobol-comp3-python-equiv/gold.patch"
+    ],
+    "runtime_entrypoints": [
+      "/app/equiv/bin/equiv-eval init-db",
+      "/app/equiv/bin/equiv-eval describe-layout",
+      "/app/equiv/bin/equiv-eval identity",
+      "/app/equiv/bin/equiv-eval run"
+    ],
+    "assessment_basis": "Direct packet-authorized inspection of the documented CLI/runtime call graph, solver-visible fixed implementation, runtime configuration, SQL schema/seed, and operator evidence. Historical Q6 results, tests, gold.patch, raw LOC claims, creator conclusions, and expected outcomes were not used as semantic acceptance evidence."
+  },
+  "provenance_manifest_path": ".terminus/reviews/cobol-comp3-python-equiv/de9b508b/provenance_manifest.json",
+  "review_packet_path": ".terminus/reviews/cobol-comp3-python-equiv/de9b508b/cobol-comp3-python-equiv-de9b508b-production-logic-62acf09094.packet.json",
+  "reviewed_at": "2026-08-15T11:44:10Z",
+  "summary": "FAIL. The documented equiv-eval workflow contains genuine non-toy logic for COBOL layout/COMP-3 decoding, framing, generation identity, durable checkpoints, inventory accounting, reconciliation, reporting, and gated publication. However, the complete transitive runtime closure from the public CLI is compact and far below the >=3,000 substantive reachable runtime/config LOC required by large_system_strict. Most of the solver-visible fixed tree is outside that closure; a dead services aggregation facade, numerous disconnected operational subsystems, a large static rules table, and a 15,000-row historical seed surface materially inflate apparent scale without affecting the documented run path. The required ~25% removal experiment can be satisfied entirely by deleting unreachable material with no loss of public runtime behavior, so padding/toy risk is HIGH and Q6 cannot PASS.",
+  "issues": [
+    {
+      "severity": "high",
+      "code": "Q6_REACHABLE_LOC_BELOW_LARGE_SYSTEM_STRICT",
+      "message": "The substantive runtime/config code reachable from the documented public CLI is far below the >=3,000 LOC strict threshold.",
+      "evidence": [
+        "environment/equiv/bin/equiv-eval has one runtime entrypoint and imports src.cli.main; instruction.md documents only init-db, describe-layout, identity, and run.",
+        "solution/fixed/__init__.py exports only PipelineConfig/process and main; solution/fixed/cli.py invokes solution/fixed/pipeline.py directly for run.",
+        "The transitive run closure is the compact set cli, pipeline, accounting, checkpoint, database, framing, generation, layout, comp3, models, policy, publication, reconciliation, reporting, and transform, plus package init and installed schema/config surfaces. Direct inspection of these complete source bodies is well below 1,000 physical source/config lines, not >=3,000.",
+        "The fixed tree contains 63 files totaling about 181 KB by Git blob size, but only about 54 KB of Python module payload lies in the documented CLI transitive closure; install/copy presence does not make the remaining modules runtime-reachable."
+      ]
+    },
+    {
+      "severity": "high",
+      "code": "Q6_HIGH_PADDING_AND_UNREACHABLE_RUNTIME_SURFACE",
+      "message": "A majority of the solver-visible fixed implementation is disconnected from the documented operator workflow, and additional static/data scale is not consumed by production execution.",
+      "evidence": [
+        "solution/fixed/services.py is a large aggregation facade that imports many subsystems (recovery, replay guard, quarantine, lineage, valuation, publication registry, schema guard, settlement, allocation, retention, maintenance, safety, and others), but neither cli.py, pipeline.py nor any module in their transitive closure imports services.py.",
+        "Large operational modules such as config.py, inventory_service.py, batch_orchestrator.py, recovery.py, state_machine.py, settlement.py, cycle_close.py and metrics.py are therefore substantive but unreachable from equiv-eval; they cannot count toward substantive reachable LOC.",
+        "solution/fixed/rules.py is an approximately 8 KB static warehouse/item-band lookup volume and is outside the CLI closure; it is lookup/data bulk rather than production execution depth.",
+        "environment/equiv/sql/seed.sql generates 15,000 historical_movements rows, while the documented run closure never queries historical_movements; the largest seeded state surface is not genuinely consumed by runtime logic.",
+        "By Git blob size, roughly 70% of solution/fixed module payload is outside the documented CLI transitive closure, leaving more than enough unreachable material to remove roughly one quarter of the solver-visible core with no change to public runtime behavior."
+      ]
+    }
+  ],
+  "production_depth_assessment": "The reachable core is real and internally coupled, but it is a compact batch processor rather than a >=3,000-LOC reachable large system. The production path performs caller-selected layout/source identity construction, dynamic ODO/REDEFINES record framing, signed COMP-3 decoding, transformation and policy validation, weighted inventory effects, SQLite transactionality, checkpoint persistence, reconciliation, report creation, and reconciliation-gated atomic publication. Those responsibilities are substantive and non-constant. The strict failure is structural: the majority of solver-visible modules are not reachable from the only documented runtime entrypoint, and static/data volume contributes apparent scale without being exercised. Direct code inspection therefore does not support >=3,000 substantive reachable runtime/config LOC.",
+  "major_production_behaviors": [
+    "Public CLI dispatch for init-db, describe-layout, identity, and run with caller-supplied database/source/layout/control/report/publication paths.",
+    "COBOL layout parsing with COMP-3 numeric geometry, dynamic OCCURS DEPENDING ON counts, REDEFINES overlays, layout fingerprinting, and dynamic record-length calculation.",
+    "Record framing and malformed-record handling that distinguishes determinable complete boundaries from indeterminate boundaries and converts decoded records to normalized warehouse movements.",
+    "Generation identity derived from source hash, layout hash, and business date, with checkpoint fingerprint validation and generation-keyed resume state.",
+    "Movement policy validation against item and warehouse state, replay/dedup lookup, weighted-value inventory effects, and atomic SQLite updates for processed movement, effects, positions, rejects, and checkpoints.",
+    "Independent reconciliation of processed/accepted/rejected/effect counts, net quantity/value, duplicate movements, orphan effects, and transfer balance against legacy controls.",
+    "Per-generation report generation followed by reconciliation-gated atomic publication with a generation/file manifest."
+  ],
+  "major_state_transitions": [
+    "run starts by loading layout/identity/checkpoint, writes PROCESSING, and resumes from checkpoint.last_sequence + 1 when a valid checkpoint exists.",
+    "Each accepted movement atomically persists processed status, all inventory effects, updated positions, and the checkpoint; policy/accounting/decode rejects atomically persist reject state and checkpoint progress where a boundary is known.",
+    "A stop-after interruption returns while the run remains PROCESSING after only durable per-record work, allowing a later invocation to resume from persisted progress.",
+    "After input exhaustion the run moves PROCESSING -> RECONCILING -> READY on passing controls or HELD on failed controls.",
+    "Only a passing reconciliation calls atomic_publish; successful publication then moves READY -> PUBLISHED.",
+    "Source/layout/business-date changes alter the generation identity. The live pipeline therefore selects a different generation/checkpoint key; same-generation checkpoints are additionally fingerprint-validated."
+  ],
+  "cross_module_invariants": [
+    "Checkpoint advancement is coupled to the same SQLite transaction as the durable movement/reject/effect/position mutations it acknowledges.",
+    "Generation identity and checkpoint fingerprints bind durable progress to source SHA-256, layout SHA-256, and business date.",
+    "Transfer accounting emits paired source/destination effects whose quantity and value deltas should net to zero, and reconciliation independently checks unbalanced transfers.",
+    "Processed movement identity and schema uniqueness constrain replay/dedup; inventory effects reference processed movements and fixed schema uniqueness constrains repeated sequence/effect insertion.",
+    "Publication is reachable only after reconciliation passes; a failed reconciliation leaves the generation HELD and does not call atomic publication.",
+    "Record framing depends on layout ODO controller values and REDEFINES storage geometry, so decode, transform, accounting, and checkpoint byte offsets share the same record-boundary interpretation."
+  ],
+  "partial_fix_traps": [
+    "Fixing COMP-3 nibble/sign decoding without matching dynamic layout/framing geometry can still corrupt record boundaries, subsequent offsets, and checkpoint progress.",
+    "Fixing record decoding without policy/accounting semantics can produce syntactically valid movements that violate inventory quantity/value invariants or transfer balance.",
+    "Fixing accounting without preserving transaction/checkpoint coupling can acknowledge progress that is not durable or replay already-applied effects after interruption.",
+    "Fixing checkpoint validation without generation identity binding can resume source/layout/date-incompatible work; changing identity semantics without checkpoint lookup semantics can instead silently start a different generation.",
+    "Fixing legacy count/value controls without duplicate/orphan/transfer reconciliation can allow internally inconsistent state to become READY.",
+    "Fixing report generation without the reconciliation gate and atomic staging/rename discipline can expose partially published or failed-cutover outputs."
+  ],
+  "edge_condition_assessment": "The reachable core has meaningful failure behavior: malformed packed/display fields raise decode errors; determinable malformed records are rejected and checkpointed at their known boundary, while an indeterminate boundary stops iteration rather than guessing continuation. Policy and accounting failures become durable rejects without inventory effects. SQLite transaction failures roll back the associated unit of work and propagate. stop-after preserves only committed progress. Same-generation checkpoints reject fingerprint/value corruption; changed source/layout/date produce a different generation identity rather than reusing the old checkpoint. Reconciliation failures hold the run and suppress publication. These are substantive edge paths, but they are implemented in a compact closure; many richer recovery/state-machine/safety/operations modules visible in the solution are not connected to these live paths.",
+  "reachability_assessment": "The real operator entrypoint is environment/equiv/bin/equiv-eval -> src.cli.main. For run, cli.main directly calls pipeline.process. The transitive production closure is limited to pipeline plus accounting, checkpoint, database, framing, generation, layout/comp3, models, policy, publication, reconciliation, reporting and transform. solve.sh copies every fixed module into /app/equiv/src, but copy/install reachability is not execution reachability. No module in the live closure imports services.py, config.py, recovery.py, state_machine.py, inventory_service.py, settlement.py, cycle_close.py, metrics.py, rules.py or the many other auxiliary modules. The fixed tree's byte distribution is approximately 30% live-closure versus 70% outside it. There are no constant-output shells in the live core and the examined live modules have distinct responsibilities, but the disconnected majority is disqualifying for a strict reachable-LOC claim.",
+  "removal_thought_experiment": "Removing roughly 25% of the solver-visible fixed core need not remove any meaningful equiv-eval behavior: one can delete a quarter-sized subset entirely from the unreachable module island (for example services/config/recovery/state-machine/metrics/inventory-service/settlement/cycle-close plus other disconnected operational helpers and static rules/data) and the documented init-db/describe-layout/identity/run call graph remains unchanged. That is a direct failure of the large-system removal test. By contrast, removing 25% of the actual live closure would materially break decoding/framing, durable persistence/restart, accounting, reconciliation or publication; this confirms that the live core is substantive but much smaller than the repository-wide apparent size.",
+  "padding_risk": "HIGH",
+  "production_depth_result": "FAIL"
+}
