@@ -1,0 +1,71 @@
+name: Recover strict rebuild xz prefix
+
+on:
+  push:
+    branches:
+      - task/cobol-comp3-python-equiv-strict-rebuild
+    paths:
+      - '.github/workflows/recover-strict-xz-prefix.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  recover:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Recover complete tar members from verified xz prefix
+        shell: bash
+        run: |
+          set -u
+          cat .terminus/tmp/xz/x{00..44} | base64 -d > /tmp/prefix.xz
+          set +e
+          xz -dc /tmp/prefix.xz > /tmp/prefix.tar 2>/tmp/xz.err
+          xz_rc=$?
+          set -e
+          echo "xz_rc=$xz_rc"
+          cat /tmp/xz.err || true
+          mkdir -p /tmp/recovered
+          python3 - <<'PY'
+          from pathlib import Path
+          import os
+          raw=Path('/tmp/prefix.tar').read_bytes()
+          out=Path('/tmp/recovered')
+          pos=0; recovered=[]
+          while pos+512 <= len(raw):
+              hdr=raw[pos:pos+512]
+              if hdr == b'\0'*512:
+                  break
+              stored=hdr[148:156].rstrip(b'\0 ').strip()
+              try: want=int(stored or b'0',8)
+              except ValueError: break
+              chk=bytearray(hdr); chk[148:156]=b'        '
+              if sum(chk) != want: break
+              name=(hdr[345:500].rstrip(b'\0')+b'/' if hdr[345:500].rstrip(b'\0') else b'')+hdr[0:100].rstrip(b'\0')
+              try: name=name.decode()
+              except UnicodeDecodeError: break
+              try: size=int(hdr[124:136].rstrip(b'\0 ').strip() or b'0',8)
+              except ValueError: break
+              data_start=pos+512; data_end=data_start+size
+              if data_end > len(raw): break
+              if hdr[156:157] in (b'0',b'\0'):
+                  p=out/name; p.parent.mkdir(parents=True,exist_ok=True); p.write_bytes(raw[data_start:data_end]); recovered.append(name)
+              pos=data_start+((size+511)//512)*512
+          print('RECOVERED_COUNT',len(recovered))
+          for p in recovered: print(p)
+          Path('/tmp/recovered-list.txt').write_text('\n'.join(recovered)+'\n')
+          PY
+          echo '--- expected candidate members on main/current task ---'
+          cat /tmp/recovered-list.txt
+      - name: Upload recovery listing
+        uses: actions/upload-artifact@v4
+        with:
+          name: strict-prefix-recovery
+          path: |
+            /tmp/recovered-list.txt
+            /tmp/xz.err
