@@ -23,6 +23,7 @@ jobs:
         shell: bash
         run: |
           set -u
+          echo "recovery_trigger=2"
           cat .terminus/tmp/xz/x{00..44} | base64 -d > /tmp/prefix.xz
           set +e
           xz -dc /tmp/prefix.xz > /tmp/prefix.tar 2>/tmp/xz.err
@@ -33,7 +34,6 @@ jobs:
           mkdir -p /tmp/recovered
           python3 - <<'PY'
           from pathlib import Path
-          import os
           raw=Path('/tmp/prefix.tar').read_bytes()
           out=Path('/tmp/recovered')
           pos=0; recovered=[]
@@ -46,7 +46,8 @@ jobs:
               except ValueError: break
               chk=bytearray(hdr); chk[148:156]=b'        '
               if sum(chk) != want: break
-              name=(hdr[345:500].rstrip(b'\0')+b'/' if hdr[345:500].rstrip(b'\0') else b'')+hdr[0:100].rstrip(b'\0')
+              prefix=hdr[345:500].rstrip(b'\0')
+              name=(prefix+b'/' if prefix else b'')+hdr[0:100].rstrip(b'\0')
               try: name=name.decode()
               except UnicodeDecodeError: break
               try: size=int(hdr[124:136].rstrip(b'\0 ').strip() or b'0',8)
@@ -60,7 +61,6 @@ jobs:
           for p in recovered: print(p)
           Path('/tmp/recovered-list.txt').write_text('\n'.join(recovered)+'\n')
           PY
-          echo '--- expected candidate members on main/current task ---'
           cat /tmp/recovered-list.txt
       - name: Upload recovery listing
         uses: actions/upload-artifact@v4
