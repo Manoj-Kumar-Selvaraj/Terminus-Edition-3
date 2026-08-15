@@ -24,84 +24,28 @@ jobs:
           set -euo pipefail
           python3 - <<'PY'
           from __future__ import annotations
-          import base64, os, stat, zlib
+          import base64, os, zlib
           from pathlib import Path
 
           root = Path('.')
           parts = [root / f'.terminus/tmp/cobol-rebuild.part{i:02d}' for i in range(1, 6)]
-          raw64 = b''.join(p.read_bytes() for p in parts)
+          staged = b''.join(p.read_bytes() for p in parts)
+          raw64 = b''.join(staged.split())
           raw64 = raw64[: len(raw64) // 4 * 4]
           compressed = base64.b64decode(raw64)
           if compressed[:2] != b'\x1f\x8b':
               raise SystemExit('staged payload is not gzip')
           inflater = zlib.decompressobj(-zlib.MAX_WBITS)
           tar_bytes = inflater.decompress(compressed[10:]) + inflater.flush()
-          print(f'partial_base64={len(raw64)} compressed={len(compressed)} tar_bytes={len(tar_bytes)} eof={inflater.eof}')
+          print(f'staged={len(staged)} normalized_base64={len(raw64)} compressed={len(compressed)} tar_bytes={len(tar_bytes)} eof={inflater.eof}')
 
-          expected = '''
-          cobol-comp3-python-equiv/task.toml
-          cobol-comp3-python-equiv/instruction.md
-          cobol-comp3-python-equiv/README.md
-          cobol-comp3-python-equiv/environment/Dockerfile
-          cobol-comp3-python-equiv/environment/.dockerignore
-          cobol-comp3-python-equiv/environment/equiv/bin/equiv-cutover
-          cobol-comp3-python-equiv/environment/equiv/config/inventory-policy.json
-          cobol-comp3-python-equiv/environment/equiv/docs/cutover-contract.md
-          cobol-comp3-python-equiv/environment/equiv/docs/operator-runbook.md
-          cobol-comp3-python-equiv/environment/equiv/docs/record-contract.md
-          cobol-comp3-python-equiv/environment/equiv/feeds/public-cycle-control.json
-          cobol-comp3-python-equiv/environment/equiv/feeds/public-cycle.dat.b64
-          cobol-comp3-python-equiv/environment/equiv/legacy/invmove.cpy
-          cobol-comp3-python-equiv/environment/equiv/log/shadow-run.log
-          cobol-comp3-python-equiv/environment/equiv/ops/cutover-handoff.txt
-          cobol-comp3-python-equiv/environment/equiv/sql/schema.sql
-          cobol-comp3-python-equiv/environment/equiv/sql/seed.sql
-          cobol-comp3-python-equiv/environment/equiv/src/__init__.py
-          cobol-comp3-python-equiv/environment/equiv/src/checkpoint.py
-          cobol-comp3-python-equiv/environment/equiv/src/cli.py
-          cobol-comp3-python-equiv/environment/equiv/src/copybook.py
-          cobol-comp3-python-equiv/environment/equiv/src/db.py
-          cobol-comp3-python-equiv/environment/equiv/src/inventory.py
-          cobol-comp3-python-equiv/environment/equiv/src/model.py
-          cobol-comp3-python-equiv/environment/equiv/src/packed.py
-          cobol-comp3-python-equiv/environment/equiv/src/pipeline.py
-          cobol-comp3-python-equiv/environment/equiv/src/policy.py
-          cobol-comp3-python-equiv/environment/equiv/src/publish.py
-          cobol-comp3-python-equiv/environment/equiv/src/reconcile.py
-          cobol-comp3-python-equiv/environment/equiv/src/recordio.py
-          cobol-comp3-python-equiv/environment/equiv/src/reporting.py
-          cobol-comp3-python-equiv/solution/fixed/__init__.py
-          cobol-comp3-python-equiv/solution/fixed/checkpoint.py
-          cobol-comp3-python-equiv/solution/fixed/cli.py
-          cobol-comp3-python-equiv/solution/fixed/copybook.py
-          cobol-comp3-python-equiv/solution/fixed/db.py
-          cobol-comp3-python-equiv/solution/fixed/inventory.py
-          cobol-comp3-python-equiv/solution/fixed/model.py
-          cobol-comp3-python-equiv/solution/fixed/packed.py
-          cobol-comp3-python-equiv/solution/fixed/pipeline.py
-          cobol-comp3-python-equiv/solution/fixed/policy.py
-          cobol-comp3-python-equiv/solution/fixed/publish.py
-          cobol-comp3-python-equiv/solution/fixed/reconcile.py
-          cobol-comp3-python-equiv/solution/fixed/recordio.py
-          cobol-comp3-python-equiv/solution/fixed/reporting.py
-          cobol-comp3-python-equiv/tests/Dockerfile
-          cobol-comp3-python-equiv/tests/test.sh
-          cobol-comp3-python-equiv/tests/test_outputs.py
-          cobol-comp3-python-equiv/solution/solve.sh
-          .terminus/designs/cobol-comp3-python-equiv.json
-          .terminus/designs/cobol-comp3-python-equiv-production.json
-          .terminus/designs/cobol-comp3-python-equiv-test-map.json
-          .terminus/research/cobol-comp3-python-equiv-strict-rebuild.md
-          '''
-          expected_paths = [x.strip() for x in expected.splitlines() if x.strip()]
-
-          def parse_octal(field: bytes) -> int:
+          def octal(field: bytes) -> int:
               text = field.rstrip(b'\0 ').lstrip(b' ')
               return int(text or b'0', 8)
 
           pos = 0
-          recovered: list[str] = []
-          incomplete: str | None = None
+          recovered = []
+          incomplete = None
           while pos + 512 <= len(tar_bytes):
               header = tar_bytes[pos:pos+512]
               if header == b'\0' * 512:
@@ -110,36 +54,34 @@ jobs:
               prefix = header[345:500].split(b'\0', 1)[0].decode('utf-8')
               if prefix:
                   name = prefix + '/' + name
-              size = parse_octal(header[124:136])
-              mode = parse_octal(header[100:108])
+              size = octal(header[124:136])
+              mode = octal(header[100:108])
               kind = header[156:157] or b'0'
-              data_start = pos + 512
-              data_end = data_start + size
-              next_pos = data_start + ((size + 511) // 512) * 512
-              if data_end > len(tar_bytes):
+              start = pos + 512
+              end = start + size
+              next_pos = start + ((size + 511) // 512) * 512
+              if end > len(tar_bytes):
                   incomplete = name
                   break
               if kind in (b'0', b'\0'):
                   target = root / name
                   target.parent.mkdir(parents=True, exist_ok=True)
-                  target.write_bytes(tar_bytes[data_start:data_end])
+                  target.write_bytes(tar_bytes[start:end])
                   os.chmod(target, mode & 0o777)
                   recovered.append(name)
               elif kind == b'5':
                   (root / name).mkdir(parents=True, exist_ok=True)
               pos = next_pos
 
-          recovered_set = set(recovered)
-          missing = [p for p in expected_paths if p not in recovered_set]
-          print(f'recovered={len(recovered)} expected={len(expected_paths)} incomplete={incomplete!r}')
-          print('MISSING_BEGIN')
-          for path in missing:
-              print(path)
-          print('MISSING_END')
-          Path('.terminus/tmp/recovery-report.txt').write_text(
-              f'partial_base64={len(raw64)}\ncompressed={len(compressed)}\ntar_bytes={len(tar_bytes)}\n'
-              f'eof={inflater.eof}\nrecovered={len(recovered)}\nexpected={len(expected_paths)}\n'
-              f'incomplete={incomplete}\nmissing=' + ','.join(missing) + '\n', encoding='utf-8'
+          print(f'recovered={len(recovered)} incomplete={incomplete!r}')
+          for name in recovered:
+              print('RECOVERED', name)
+          report = root / '.terminus/tmp/recovery-report.txt'
+          report.write_text(
+              f'staged={len(staged)}\nnormalized_base64={len(raw64)}\ncompressed={len(compressed)}\n'
+              f'tar_bytes={len(tar_bytes)}\neof={inflater.eof}\nrecovered={len(recovered)}\nincomplete={incomplete}\n'
+              + ''.join(f'recovered_path={name}\n' for name in recovered),
+              encoding='utf-8',
           )
           PY
       - name: Commit recovered files
