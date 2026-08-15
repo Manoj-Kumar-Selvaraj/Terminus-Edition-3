@@ -14,34 +14,31 @@ permissions:
 jobs:
   validate-and-publish:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - name: Materialize strict candidate
+      - name: Materialize exact strict candidate
         shell: bash
         run: |
           set -euo pipefail
-          base64 -d .terminus/tmp/strict-rebuild.bundle.b64 > /tmp/strict-rebuild.tar.gz
-          echo '1e2222b27d486903955ce2272b2a24e17583a4f389292c91aefb4ff07f652a85  /tmp/strict-rebuild.tar.gz' | sha256sum -c -
+          echo '67843e4e9cfaf4df3d8824a9ea8c63992f800a263bf8ccdf5e2b8bc6909f2d5e  .terminus/tmp/strict-current.tar.gz' | sha256sum -c -
           rm -rf cobol-comp3-python-equiv
           rm -f .terminus/designs/cobol-comp3-python-equiv.json \
                 .terminus/designs/cobol-comp3-python-equiv-production.json \
                 .terminus/designs/cobol-comp3-python-equiv-test-map.json \
                 .terminus/research/cobol-comp3-python-equiv-strict-rebuild.md
-          tar -xzf /tmp/strict-rebuild.tar.gz
+          tar -xzf .terminus/tmp/strict-current.tar.gz
           test -f cobol-comp3-python-equiv/task.toml
           test -f .terminus/designs/cobol-comp3-python-equiv.json
 
-      - name: Compile and lint syntax surface
-        shell: bash
+      - name: Compile runtime and verifier
         run: |
-          set -euo pipefail
-          python3 -m compileall -q cobol-comp3-python-equiv/environment/equiv/equiv
-          python3 -m compileall -q cobol-comp3-python-equiv/solution/fixed/equiv
-          python3 -m py_compile cobol-comp3-python-equiv/tests/test_outputs.py
+          python3 -m compileall -q cobol-comp3-python-equiv/environment/equiv/src
+          python3 -m compileall -q cobol-comp3-python-equiv/solution/fixed
+          python3 -m py_compile cobol-comp3-python-equiv/tests/test_contract.py
 
       - name: Strict complexity gate
         run: python3 .terminus/validate_task_complexity.py cobol-comp3-python-equiv
@@ -56,39 +53,46 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          rm -rf /tmp/oracle-runtime
-          cp -a cobol-comp3-python-equiv/environment/equiv /tmp/oracle-runtime
-          base64 -d /tmp/oracle-runtime/feeds/public-cycle.dat.b64 > /tmp/oracle-runtime/feeds/public-cycle.dat
-          rm -rf /tmp/oracle-runtime/equiv
-          cp -a cobol-comp3-python-equiv/solution/fixed/equiv /tmp/oracle-runtime/equiv
-          EQUIV_ROOT=/tmp/oracle-runtime PYTHONPATH=/tmp/oracle-runtime \
-            python3 -m pytest cobol-comp3-python-equiv/tests/test_outputs.py -q
+          sudo mkdir -p /app
+          sudo rm -rf /app/equiv
+          sudo cp -a cobol-comp3-python-equiv/environment/equiv /app/equiv
+          sudo cp cobol-comp3-python-equiv/solution/fixed/*.py /app/equiv/src/
+          sudo cp cobol-comp3-python-equiv/solution/fixed/schema.sql /app/equiv/sql/schema.sql
+          sudo chown -R "$USER":"$USER" /app/equiv
+          PYTHONPATH=/app/equiv python3 -m pytest cobol-comp3-python-equiv/tests/test_contract.py -q
 
       - name: Starter F2P/P2P matrix
         shell: bash
         run: |
           set -euo pipefail
-          rm -rf /tmp/starter-runtime
-          cp -a cobol-comp3-python-equiv/environment/equiv /tmp/starter-runtime
-          base64 -d /tmp/starter-runtime/feeds/public-cycle.dat.b64 > /tmp/starter-runtime/feeds/public-cycle.dat
+          sudo rm -rf /app/equiv
+          sudo cp -a cobol-comp3-python-equiv/environment/equiv /app/equiv
+          sudo chown -R "$USER":"$USER" /app/equiv
           set +e
-          EQUIV_ROOT=/tmp/starter-runtime PYTHONPATH=/tmp/starter-runtime \
-            python3 -m pytest cobol-comp3-python-equiv/tests/test_outputs.py -q -rA > /tmp/starter.txt 2>&1
+          PYTHONPATH=/app/equiv python3 -m pytest cobol-comp3-python-equiv/tests/test_contract.py -q -rA > /tmp/starter.txt 2>&1
           rc=$?
           set -e
           cat /tmp/starter.txt
           test "$rc" -ne 0
-          failed=$(grep -c '^FAILED ' /tmp/starter.txt || true)
-          passed=$(grep -c '^PASSED ' /tmp/starter.txt || true)
-          echo "starter_failed=$failed starter_passed=$passed"
-          test "$failed" -eq 30
-          test "$passed" -eq 4
+          python3 - <<'PY'
+          import re
+          text=open('/tmp/starter.txt', encoding='utf-8').read()
+          m=re.search(r'(\d+) failed, (\d+) passed', text)
+          if not m:
+              raise SystemExit('starter summary not found')
+          failed, passed=map(int,m.groups())
+          if (failed, passed)!=(30,4):
+              raise SystemExit(f'expected starter 30 failed/4 passed, got {failed}/{passed}')
+          print('STARTER_MATRIX_OK failed=30 passed=4')
+          PY
 
       - name: Commit validated candidate and remove transfer machinery
         shell: bash
         run: |
           set -euo pipefail
           rm -f .terminus/tmp/strict-rebuild.bundle.b64
+          rm -f .terminus/tmp/strict-rebuild-v2.part*
+          rm -f .terminus/tmp/strict-current.tar.gz
           rm -f .github/workflows/publish-cobol-strict-rebuild.yml
           find cobol-comp3-python-equiv -type d \( -name __pycache__ -o -name .pytest_cache \) -prune -exec rm -rf {} +
           git config user.name 'Terminus Creation Controller'
