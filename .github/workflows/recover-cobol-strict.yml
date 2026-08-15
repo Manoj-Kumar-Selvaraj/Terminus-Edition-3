@@ -18,7 +18,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - name: Recover complete tar members
+      - name: Recover checksum-valid tar prefix
         shell: bash
         run: |
           set -euo pipefail
@@ -43,25 +43,47 @@ jobs:
               text = field.rstrip(b'\0 ').lstrip(b' ')
               return int(text or b'0', 8)
 
+          def checksum_ok(header: bytes) -> tuple[bool, int, int]:
+              try:
+                  stored = octal(header[148:156])
+              except ValueError:
+                  return False, -1, -1
+              mutable = bytearray(header)
+              mutable[148:156] = b'        '
+              unsigned = sum(mutable)
+              signed = sum(x if x < 128 else x - 256 for x in mutable)
+              return stored in {unsigned, signed}, stored, unsigned
+
           pos = 0
-          recovered = []
-          incomplete = None
+          recovered: list[str] = []
+          stop_reason = 'end-of-buffer'
           while pos + 512 <= len(tar_bytes):
               header = tar_bytes[pos:pos+512]
               if header == b'\0' * 512:
+                  stop_reason = 'zero-block'
                   break
-              name = header[0:100].split(b'\0', 1)[0].decode('utf-8')
-              prefix = header[345:500].split(b'\0', 1)[0].decode('utf-8')
-              if prefix:
-                  name = prefix + '/' + name
-              size = octal(header[124:136])
-              mode = octal(header[100:108])
+              valid, stored, computed = checksum_ok(header)
+              if not valid:
+                  preview = header[:64].replace(b'\0', b'.')
+                  stop_reason = f'invalid-header offset={pos} stored={stored} computed={computed} preview={preview!r}'
+                  break
+              try:
+                  name = header[0:100].split(b'\0', 1)[0].decode('utf-8')
+                  prefix = header[345:500].split(b'\0', 1)[0].decode('utf-8')
+                  if prefix:
+                      name = prefix + '/' + name
+                  size = octal(header[124:136])
+                  mode = octal(header[100:108])
+              except (UnicodeDecodeError, ValueError) as exc:
+                  stop_reason = f'header-parse-error offset={pos}: {exc}'
+                  break
               kind = header[156:157] or b'0'
               start = pos + 512
               end = start + size
               next_pos = start + ((size + 511) // 512) * 512
+              print(f'HEADER offset={pos} type={kind!r} size={size} name={name}')
               if end > len(tar_bytes):
-                  incomplete = name
+                  stop_reason = f'incomplete-member offset={pos} name={name} need={end} have={len(tar_bytes)}'
                   break
               if kind in (b'0', b'\0'):
                   target = root / name
@@ -73,13 +95,13 @@ jobs:
                   (root / name).mkdir(parents=True, exist_ok=True)
               pos = next_pos
 
-          print(f'recovered={len(recovered)} incomplete={incomplete!r}')
+          print(f'recovered={len(recovered)} stop_reason={stop_reason}')
           for name in recovered:
               print('RECOVERED', name)
           report = root / '.terminus/tmp/recovery-report.txt'
           report.write_text(
               f'staged={len(staged)}\nnormalized_base64={len(raw64)}\ncompressed={len(compressed)}\n'
-              f'tar_bytes={len(tar_bytes)}\neof={inflater.eof}\nrecovered={len(recovered)}\nincomplete={incomplete}\n'
+              f'tar_bytes={len(tar_bytes)}\neof={inflater.eof}\nrecovered={len(recovered)}\nstop_reason={stop_reason}\n'
               + ''.join(f'recovered_path={name}\n' for name in recovered),
               encoding='utf-8',
           )
@@ -94,6 +116,6 @@ jobs:
           if git diff --cached --quiet; then
             echo 'No recovered files to commit'
           else
-            git commit -m 'Recover strict COBOL rebuild staged files'
+            git commit -m 'Recover checksum-valid strict COBOL rebuild prefix'
             git push origin HEAD:task/cobol-comp3-python-equiv-strict-rebuild-recovery
           fi
