@@ -24,31 +24,36 @@ Large-system-strict warehouse inventory cutover task: legacy COBOL packed-decima
 
 | Gate | Status | Evidence / version |
 | --- | --- | --- |
+| Q1 Spec Gap Repair | PENDING | no current durable PASS row/evidence recorded for the strict-rebuild candidate |
+| Q2 Verifier Coverage Repair | PENDING | no current durable PASS row/evidence recorded for the strict-rebuild candidate |
+| Q3 Spec Ambiguity Repair | PENDING | no current durable PASS row/evidence recorded for the strict-rebuild candidate |
+| Q7 Task Format Enforcer | PENDING | no current durable PASS row/evidence recorded for the strict-rebuild candidate |
 | Deterministic closure Oracle | PASS | run `31943332388`, job `95155548440`: `40 passed in 6.09s` |
 | Deterministic closure NOP | PASS | run `31943332388`, job `95155548440`: `30 failed, 10 passed in 3.05s` |
-| Q4 Spec-Test Contract Reviewer | REVISE | `.terminus/reviews/cobol-comp3-python-equiv/bb2e042c/cobol-comp3-python-equiv-bb2e042c-spec-test-contract-852fc1b28a.json` |
-| Q4 Adjudicated Closure | PENDING | generate a current `Q4 Closure Adjudicator` packet under Q4_CLOSURE_POLICY.md |
-| Q6 Production Logic Auditor | PASS / scope-reusable | existing Q6 production scope unchanged because `task.toml` and `environment/**` did not change |
-| Quality Interlock | BLOCKED | decisive post-circuit-breaker Q4 remains `REVISE` |
+| Q4 Spec-Test Contract Reviewer | REVISE | frozen final Q4: `.terminus/reviews/cobol-comp3-python-equiv/bb2e042c/cobol-comp3-python-equiv-bb2e042c-spec-test-contract-852fc1b28a.json` |
+| Q4 Adjudicated Closure | PASS | `.terminus/reviews/cobol-comp3-python-equiv/bb2e042c/cobol-comp3-python-equiv-bb2e042c-q4-closure-adjudication-c00658ae75.json`; deterministic closure-chain validation PASS in run `31953426334`, job `95180306897` |
+| Q6 Production Logic Auditor | PASS | `.terminus/reviews/cobol-comp3-python-equiv/02a558ab/cobol-comp3-python-equiv-02a558ab-production-logic-80ad7c5258.json`; Protocol-2.2 scope reuse accepted by the repository validator from task commit `02a558ab...` to `bb2e042c...` because the validated production `review_scope_hash` is unchanged |
+| Quality Interlock | BLOCKED | Q4 is satisfied through `ADJUDICATED_CLOSURE_PASS` and Q6 is current by scope reuse, but prospective interlock validation reports missing mandatory PASS gates Q1, Q2, Q3 and Q7 |
 
 ## Current blocker
 
-Protocol-2.2 circuit breaker is active. The frozen Adjudicator result `.terminus/reviews/cobol-comp3-python-equiv/59dcf214/cobol-comp3-python-equiv-59dcf214-adjudication-516e0ca6b1.json` authorized one final non-blind closure repair followed by one fresh exhaustive Q4 and states that survival of any same adjudicated semantic blocker triggers `BLOCKED/strategy redesign` rather than another normal repair cycle.
+The Protocol-2.2 Q4 circuit-breaker closure is resolved. The frozen final Q4 remains `REVISE`, but the independent Q4 Closure Adjudicator result is `PASS/HIGH/SUFFICIENT`, reconciles all five final-Q4 findings exactly once, and passes `.terminus/q4_closure.py`. No further task repair or ordinary Q4 rerun is authorized by that closure path.
 
-The decisive Q4 at task commit `bb2e042c45873da3f3d78836d915ddb6446debf2` returned `REVISE/HIGH/SUFFICIENT` with Q4-001..Q4-005. Several demands materially overlap scopes previously rejected or narrowed by the frozen Adjudicator, including blanket private `src.*` API prohibition, per-safety-subclass publication expansion, and corrupt archive-input testing. No further task repair or ordinary Q4 rerun is authorized under the current strategy.
+Quality Interlock still cannot advance to `PRE_LLMAJ` because the current durable strict-rebuild session does not contain PASS rows for four mandatory pre-freeze quality gates: Q1 Spec Gap Repair, Q2 Verifier Coverage Repair, Q3 Spec Ambiguity Repair and Q7 Task Format Enforcer. A prospective `validate_quality_interlock.py --task cobol-comp3-python-equiv` run reported exactly these four errors and no Q4/Q6 staleness error. The same validation accepted historical Q6 reuse under the unchanged production scope.
 
 ## Required strategy change
 
-Use the committed Q4 adjudicated-closure strategy. Ordinary Q4 remains frozen at `REVISE`; re-entry is through a dedicated `Q4 Closure Adjudicator` packet that binds the frozen boundary adjudication, final Q4, exact final repair diff and deterministic finding fingerprints. Rejected-scope reopen and latent-after-boundary findings cannot silently restart task repair, while surviving bound blockers, repair regressions, genuinely new evidence and authoritative-rule conflicts remain blocking.
+Do not reopen Q4. Backfill the mandatory current-candidate producer-quality gates under the active Edition 3 contracts. Reuse prior evidence only when its exact currentness/provenance is demonstrable; otherwise perform fresh bounded Q1/Q2/Q3/Q7 executions. After all four rows are legitimately PASS, rerun the repository Quality Interlock validator. Only then may the controller transition to `PRE_LLMAJ`.
 
 ## Next action
 
-Do not modify `cobol-comp3-python-equiv/**`. After deterministic control-plane validation, generate the exact current Q4 closure packet and route it to a fresh independent `Q4 Closure Adjudicator`. Do not rerun Q4 or repair the five decisive Q4 findings before that closure decision.
+Do not modify `cobol-comp3-python-equiv/**` merely because of the Q4 closure result. Establish current PASS evidence for Q1 Spec Gap Repair, Q2 Verifier Coverage Repair, Q3 Spec Ambiguity Repair and Q7 Task Format Enforcer. Then rerun `.terminus/validate_quality_interlock.py --task cobol-comp3-python-equiv`. If it passes, record Quality Interlock PASS with Q4 satisfaction `ADJUDICATED_CLOSURE_PASS` and transition to `PRE_LLMAJ`.
 
 ## Decisions that must survive chat changes
 
-- Do not start another blind Q4 patch loop.
-- Do not repair the decisive Q4 findings directly under the current Protocol-2.2 strategy.
+- Q4 circuit-breaker closure is complete and deterministically valid; do not start another Q4 patch loop.
+- Preserve the frozen final Q4 as `REVISE`; Q4 satisfaction is the separate `ADJUDICATED_CLOSURE_PASS` route.
 - Preserve the frozen Adjudicator's rejected/narrowed scopes.
-- Q6 remains reusable only while its exact production-scope hash remains unchanged.
-- Learning-system improvements remain desirable, but the immediate blocker is Q4 closure/termination semantics.
+- Q6 remains reusable only while its exact production-scope hash and Q6 role contract remain current; the repository validator accepted reuse for the current candidate.
+- Do not fabricate Q1/Q2/Q3/Q7 PASS rows. They must be backed by legitimate current evidence.
+- Quality Interlock remains BLOCKED until those four mandatory gates are PASS.
