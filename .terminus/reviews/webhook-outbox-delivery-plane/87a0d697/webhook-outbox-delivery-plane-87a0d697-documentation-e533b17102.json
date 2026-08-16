@@ -1,0 +1,53 @@
+{
+  "schema_version": "3.0",
+  "role": "Engineering Documentation Reviewer",
+  "review_id": "webhook-outbox-delivery-plane-87a0d697-documentation-e533b17102",
+  "task": "webhook-outbox-delivery-plane",
+  "task_commit": "87a0d6970e8a5081aa3f3eb6d91ed706989db916",
+  "control_plane_commit": "2e2b695aa9948e7f2f41e2fd910bc9baa203eb3f",
+  "protocol_policy_version": "2.2",
+  "prompt_policy_version": "2.2",
+  "role_policy_version": "1.0",
+  "role_contract_hash": "539d611c77539c79339265989833b58ff32b9168606fe621b3e4077bd4ccbaf0",
+  "context_packet": ".terminus/reviews/webhook-outbox-delivery-plane/87a0d697/webhook-outbox-delivery-plane-87a0d697-documentation-e533b17102.packet.json",
+  "verdict": "PASS",
+  "confidence": "HIGH",
+  "evidence_status": "SUFFICIENT",
+  "summary": "README and operator docs support the handoff; delivery-contract is legitimate protocol documentation. Mild Edition 3 wording in README is advisory only.",
+  "evidence": [
+    {
+      "type": "file",
+      "ref": "webhook-outbox-delivery-plane/README.md",
+      "observation": "Explains coupled invariants and verification without oracle dump."
+    },
+    {
+      "type": "file",
+      "ref": "webhook-outbox-delivery-plane/environment/outbox/docs/delivery-contract.md",
+      "observation": "Binding technical contract."
+    }
+  ],
+  "findings": [
+    {
+      "id": "DOC-1",
+      "severity": "LOW",
+      "status": "OBSERVED",
+      "criterion": "readme_edition3_boilerplate",
+      "evidence_refs": [
+        "webhook-outbox-delivery-plane/README.md"
+      ],
+      "why_it_matters": "Packaging lead-in is mildly benchmarky.",
+      "minimal_remediation": "Optional plain-product README opener.",
+      "regression_risk": "None"
+    }
+  ],
+  "missing_evidence": [],
+  "change_scope": [],
+  "do_not_change": [
+    "Do not move material instruction goals into docs."
+  ],
+  "next_gate": "Pre-LLMaJ aggregate",
+  "role_output": {
+    "README_QUALITY": "PASS",
+    "CONTRACT_DOCS": "PASS"
+  }
+}

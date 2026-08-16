@@ -1,0 +1,59 @@
+{
+  "schema_version": "3.0",
+  "role": "Model Perspective Difficulty Simulator",
+  "review_id": "webhook-outbox-delivery-plane-87a0d697-difficulty-sim-gpt-0b9f048c81",
+  "task": "webhook-outbox-delivery-plane",
+  "task_commit": "87a0d6970e8a5081aa3f3eb6d91ed706989db916",
+  "control_plane_commit": "2e2b695aa9948e7f2f41e2fd910bc9baa203eb3f",
+  "protocol_policy_version": "2.2",
+  "prompt_policy_version": "2.2",
+  "role_policy_version": "1.0",
+  "role_contract_hash": "988f3f143cf2c5659dabb6e0031d6404295cc3f63e39bb49af3595902d09cae8",
+  "context_packet": ".terminus/reviews/webhook-outbox-delivery-plane/87a0d697/webhook-outbox-delivery-plane-87a0d697-difficulty-sim-gpt-0b9f048c81.packet.json",
+  "verdict": "PASS",
+  "confidence": "MEDIUM",
+  "evidence_status": "SUFFICIENT",
+  "summary": "DIAGNOSTIC ONLY (not official GPT\u00d75). SIMULATION_NOT_EXECUTED: no disposable isolated solve+verifier run in this Auto session. GPT-style prior predicts fast local patching with risk of missing quota/audit/pause coupling \u2192 USEFUL signal.",
+  "evidence": [
+    {
+      "type": "file",
+      "ref": "webhook-outbox-delivery-plane/instruction.md",
+      "observation": "Solver-visible ask points at delivery-contract and rebuild binaries."
+    },
+    {
+      "type": "rule",
+      "ref": ".terminus/agents/QUALITY_AGENT_PROMPTS.md#Q8",
+      "observation": "Requires SIMULATION_NOT_EXECUTED when full solve+verifier cannot be run honestly."
+    }
+  ],
+  "findings": [],
+  "missing_evidence": [],
+  "change_scope": [],
+  "do_not_change": [
+    "Do not treat this as official GPT trial evidence."
+  ],
+  "next_gate": "Q8 Claude perspective then aggregate",
+  "role_output": {
+    "PERSPECTIVE": "GPT_PERSPECTIVE",
+    "EXECUTION": "SIMULATION_NOT_EXECUTED",
+    "DIAGNOSTIC_SUMMARY": "Likely search claim/sign/UI first; under-test quota/audit/pause.",
+    "FIRST_DIAGNOSIS": "Broken claim fencing and/or wrong HMAC canonicalization.",
+    "FILES_TOUCHED": [
+      "internal/claim",
+      "internal/sign",
+      "ui/js/app.js",
+      "internal/quota"
+    ],
+    "SHORTCUTS_ATTEMPTED": [
+      "Fix only local repro; alias UI fields in API"
+    ],
+    "FIRST_MEANINGFUL_DIVERGENCE": "Stop after signature+claim green while audit/dlq/pause wrong.",
+    "FINAL_VERIFIER_RESULT": "NOT_RUN",
+    "LIKELY_REASONING_WALLS": [
+      "Cross-module partial-fix traps"
+    ],
+    "ENVIRONMENT_TOOL_FRICTION": "Go rebuild; need live HTTP sink for HMAC.",
+    "PREDICTED_OFFICIAL_SIGNAL": "USEFUL",
+    "SIMULATION_NOTE": "Diagnostic strategy prior only; not Harbor GPT\u00d75 evidence."
+  }
+}

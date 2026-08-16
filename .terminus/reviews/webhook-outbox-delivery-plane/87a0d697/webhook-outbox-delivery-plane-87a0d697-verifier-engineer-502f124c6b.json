@@ -1,0 +1,48 @@
+{
+  "schema_version": "3.0",
+  "role": "Verifier Engineer",
+  "review_id": "webhook-outbox-delivery-plane-87a0d697-verifier-engineer-502f124c6b",
+  "task": "webhook-outbox-delivery-plane",
+  "task_commit": "87a0d6970e8a5081aa3f3eb6d91ed706989db916",
+  "control_plane_commit": "2e2b695aa9948e7f2f41e2fd910bc9baa203eb3f",
+  "protocol_policy_version": "2.2",
+  "prompt_policy_version": "2.2",
+  "role_policy_version": "1.0",
+  "role_contract_hash": "16caaf27eb6f8f682e0da0f9e3f79183d2f07a84e33a6e421d8c10642a8117e4",
+  "context_packet": ".terminus/reviews/webhook-outbox-delivery-plane/87a0d697/webhook-outbox-delivery-plane-87a0d697-verifier-engineer-502f124c6b.packet.json",
+  "verdict": "PASS",
+  "confidence": "HIGH",
+  "evidence_status": "SUFFICIENT",
+  "summary": "Behavioral pytest against live outboxd with F2P/P2P split, Harbor oracle=1/NOP=0, and contract-discoverable asserts after Q2 repair; anti-cheat via separate verifier rebuild.",
+  "evidence": [
+    {
+      "type": "test",
+      "ref": "webhook-outbox-delivery-plane/tests/",
+      "observation": "28 F2P covering claim/sign/quota/pause/replay/UI/CLI plus P2P preserve; live sink HMAC checks."
+    },
+    {
+      "type": "run",
+      "ref": "jobs/outbox-q4-repair/oracle/2026-08-16__17-14-36",
+      "observation": "Oracle reward 1.0."
+    },
+    {
+      "type": "run",
+      "ref": "jobs/outbox-q4-repair/nop/2026-08-16__17-16-54",
+      "observation": "NOP reward 0.0."
+    }
+  ],
+  "findings": [],
+  "missing_evidence": [],
+  "change_scope": [],
+  "do_not_change": [
+    "Do not replace live behavioral checks with source greps."
+  ],
+  "next_gate": "Pre-LLMaJ aggregate",
+  "role_output": {
+    "COVERAGE": "SUFFICIENT",
+    "DETERMINISM": "HIGH",
+    "ANTI_CHEAT": "PASS",
+    "SEMANTIC_DEPTH": "HIGH",
+    "F2P_COUNT": 28
+  }
+}

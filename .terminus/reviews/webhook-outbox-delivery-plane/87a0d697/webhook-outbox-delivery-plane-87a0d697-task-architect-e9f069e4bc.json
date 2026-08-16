@@ -1,0 +1,47 @@
+{
+  "schema_version": "3.0",
+  "role": "Task Architect",
+  "review_id": "webhook-outbox-delivery-plane-87a0d697-task-architect-e9f069e4bc",
+  "task": "webhook-outbox-delivery-plane",
+  "task_commit": "87a0d6970e8a5081aa3f3eb6d91ed706989db916",
+  "control_plane_commit": "2e2b695aa9948e7f2f41e2fd910bc9baa203eb3f",
+  "protocol_policy_version": "2.2",
+  "prompt_policy_version": "2.2",
+  "role_policy_version": "1.0",
+  "role_contract_hash": "bf62a53fc4373bd2bde48f07b37004bc001e81c14239c1e0bf907adf761d2536",
+  "context_packet": ".terminus/reviews/webhook-outbox-delivery-plane/87a0d697/webhook-outbox-delivery-plane-87a0d697-task-architect-e9f069e4bc.packet.json",
+  "verdict": "PASS",
+  "confidence": "HIGH",
+  "evidence_status": "SUFFICIENT",
+  "summary": "Coupled multi-tenant webhook outbox repair is a fair large_system work package: lease fencing, HMAC delivery, quota, pause, DLQ replay, audit, CLI/UI interact so partial fixes fail.",
+  "evidence": [
+    {
+      "type": "file",
+      "ref": "webhook-outbox-delivery-plane/instruction.md",
+      "observation": "Contract-alignment objective across API/CLI/UI with absolute paths and OUTBOX_SYNC graded path."
+    },
+    {
+      "type": "file",
+      "ref": "webhook-outbox-delivery-plane/environment/outbox/docs/delivery-contract.md",
+      "observation": "Binding multi-surface protocol with interacting claim/sign/quota/pause/replay rules."
+    },
+    {
+      "type": "file",
+      "ref": "webhook-outbox-delivery-plane/task.toml",
+      "observation": "Software/Systems profile with /app/outbox artifact and separate verifier."
+    }
+  ],
+  "findings": [],
+  "missing_evidence": [],
+  "change_scope": [],
+  "do_not_change": [
+    "Do not collapse coupled fencing/sign/quota axes into a single trivial fix."
+  ],
+  "next_gate": "Verifier Engineer / Pre-LLMaJ",
+  "role_output": {
+    "SCENARIO_REALISM": "HIGH",
+    "COUPLED_REASONING": "HIGH",
+    "SOLVABILITY": "PLAUSIBLE",
+    "FAILURE_TOPOLOGY": "INTERRELATED"
+  }
+}
