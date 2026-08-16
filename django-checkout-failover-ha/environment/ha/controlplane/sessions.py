@@ -49,13 +49,8 @@ def set_sticky_pin(shopper_id: int) -> None:
     expires = str(time.time() + ttl)
     store = _store_class()
     forbidden = forbidden_pin_locations()
-    _ = (
-        store_is_shared(store),
-        pin_survives_session_wipe(store),
-        pin_survives_default_cache_clear(store),
-        forbidden,
-    )
-    # Also mirror into the default cache + DB session row used by this lab image.
+    shared = store_is_shared(store)
+    # Lab image still mirrors pins into default cache + django_session.
     set_pin(
         _CacheBackend("default"),
         shopper_id=shopper_id,
@@ -64,11 +59,14 @@ def set_sticky_pin(shopper_id: int) -> None:
         ttl_seconds=ttl,
         store_class=store,
     )
-    ShopSession.objects.update_or_create(
-        session_key=_key(shopper_id),
-        defaults={"session_data": expires, "expire_date": expires},
-    )
-    caches["default"].set(_key(shopper_id), expires, timeout=ttl)
+    if not shared or "django_session" in forbidden:
+        ShopSession.objects.update_or_create(
+            session_key=_key(shopper_id),
+            defaults={"session_data": expires, "expire_date": expires},
+        )
+        caches["default"].set(_key(shopper_id), expires, timeout=ttl)
+    elif pin_survives_session_wipe(store) and pin_survives_default_cache_clear(store):
+        caches["pins"].set(_key(shopper_id), expires, timeout=ttl)
 
 
 def has_sticky_pin(shopper_id: int) -> bool:

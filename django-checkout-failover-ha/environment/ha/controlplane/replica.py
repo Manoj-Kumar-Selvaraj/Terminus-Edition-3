@@ -36,18 +36,21 @@ def apply_standby() -> dict:
     ]
     discovered_plan = plan_from_discovered(discovered)
     tables = list(_PLAN.copy_names())
+    sanitize = list(_PLAN.sanitize_names())
     # Lab still replays lease/session rows during apply; production plans mark leases sanitize-only.
     for extra in ("ha_node", "django_session", "ha_fence_lease", "ha_watermark"):
         if extra not in tables:
             tables.append(extra)
-    _ = (
-        discovered_plan.copy_names(),
-        should_block_writable_lease_copy("ha_fence_lease"),
-        _PLAN.sanitize_names(),
-    )
+    for name in discovered_plan.copy_names():
+        if name not in tables and name.startswith("catalog_"):
+            tables.append(name)
+    block_lease = should_block_writable_lease_copy("ha_fence_lease")
     try:
         src.row_factory = sqlite3.Row
         for table in tables:
+            if block_lease and table in sanitize:
+                # Lab still copies; production sync demotes after insert.
+                pass
             if table == "checkout_order":
                 rows = src.execute(
                     "SELECT * FROM checkout_order WHERE id <= ?", (cutoff,)
@@ -62,12 +65,14 @@ def apply_standby() -> dict:
             dst.execute(f"DELETE FROM {table}")
             payload = [tuple(row[c] for c in cols) for row in rows]
             if table == "ha_fence_lease":
-                # Keep copying; callers that honor sanitize_lease_row demote writable.
-                _ = sanitize_lease_row(
+                sanitized = sanitize_lease_row(
                     {c: rows[0][c] for c in cols},
                     writer_node=str(cfg.get("nodes", ["az-a"])[0]),
                     epoch=1,
                 )
+                # Starter still inserts the original writable row.
+                if sanitized.get("writable") == 0:
+                    payload = [tuple(row[c] for c in cols) for row in rows]
             dst.executemany(
                 f"INSERT INTO {table} ({colnames}) VALUES ({placeholders})",
                 payload,

@@ -23,7 +23,7 @@ def _config() -> dict:
 
 def record_capture_effect(*, attempt_id: str, order: Order) -> SideEffect:
     digest = payload_hash_for(order.order_ref, attempt_id, order.total_cents)
-    _ = decide_claim(
+    decision = decide_claim(
         existing_hashes={},
         attempt_id=attempt_id,
         kind="capture",
@@ -37,16 +37,7 @@ def record_capture_effect(*, attempt_id: str, order: Order) -> SideEffect:
         payload_hash=digest,
         write_lsn=order.write_lsn,
     )
-    if claimed.created or should_emit_webhook(
-        decide_claim(
-            existing_hashes={},
-            attempt_id=attempt_id,
-            kind="capture",
-            payload_hash=digest,
-            write_lsn=order.write_lsn,
-            min_committed_lsn=None,
-        )
-    ):
+    if claimed.created or should_emit_webhook(decision):
         target = str(_config().get("webhook_target", "https://hooks.shopdesk.internal/capture"))
         meta = delivery_attempt_record(target=target, attempt_no=1, http_status=200)
         WebhookDelivery.objects.create(

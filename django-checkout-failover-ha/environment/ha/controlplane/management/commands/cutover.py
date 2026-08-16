@@ -36,7 +36,7 @@ class Command(BaseCommand):
         complete_promote(state, target=node, new_epoch=max(int(row.epoch), int(state.epoch) + 1))
         begin_verify(state)
         return_to_steady(state)
-        _ = (plan, demoted_nodes(node, known))
+        demoted = demoted_nodes(node, known)
         record_action(
             getattr(settings, "BASE_DIR", "/app/ha"),
             action="cutover",
@@ -44,7 +44,8 @@ class Command(BaseCommand):
             node_id=node,
             epoch=row.epoch,
             writable=row.writable,
-            demoted=demoted_nodes(node, known),
+            demoted=demoted,
             phase=state.phase.value,
+            plan_steps=list(plan.get("steps") or []),
         )
         self.stdout.write(f"{row.owner_node} epoch={row.epoch} writable={row.writable}")

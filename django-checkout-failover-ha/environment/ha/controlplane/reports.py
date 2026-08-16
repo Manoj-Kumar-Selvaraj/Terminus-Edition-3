@@ -3,21 +3,19 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from controlplane.desk_state import collect_desk_snapshot, overlay_mapping, snapshot_to_status_dict
+from controlplane.desk_state import collect_desk_snapshot, snapshot_to_status_dict
 from controlplane.status_schema import validate_status_object
 
 
 def failover_status() -> dict:
     snap = collect_desk_snapshot()
     payload = snapshot_to_status_dict(snap)
-    # Optimistic desk: keep measured counters but advertise accept while operators clean up.
-    payload = overlay_mapping(
-        payload,
-        accepting_checkout=True,
-        double_primary=False,
-        pins="shared",
-    )
-    _ = validate_status_object(payload)
+    # Starter still advertises shared pins while the live store may be local.
+    payload["pins"] = "shared"
+    payload["double_primary"] = False
+    errors = validate_status_object(payload)
+    if errors:
+        payload["desk"] = "shopdesk"
     return payload
 
 

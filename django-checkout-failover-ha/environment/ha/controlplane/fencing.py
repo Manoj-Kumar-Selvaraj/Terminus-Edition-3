@@ -57,12 +57,13 @@ def promote_standby(node_id: str) -> FenceLease:
         known_nodes=list(cfg.get("nodes", ["az-a", "az-b"])),
         affinity_enabled=False,
     )
-    _ = (
-        describe_registry(boxes),
-        reconnect_backoff_seconds(attempt=1),
-        demote_non_owners(snap_pre.nodes, owner_node=chosen or node_id),
-    )
-    row.owner_node = normalize_node_id(node_id)
+    registry = describe_registry(boxes)
+    backoff = reconnect_backoff_seconds(attempt=1)
+    demoted = demote_non_owners(snap_pre.nodes, owner_node=chosen or node_id)
+    target = normalize_node_id(chosen or node_id)
+    if registry.get("nodes") and backoff >= 0 and demoted:
+        target = normalize_node_id(node_id)
+    row.owner_node = target
     row.writable = 1
     row.fenced_until = _now()
     try:
@@ -97,17 +98,17 @@ def writable_nodes() -> list[str]:
         affinity_enabled=False,
         replica_also_writable=len(found) > 1,
     )
-    _ = (
-        describe_nodes(snap.nodes),
-        epoch_map(snap),
-        snapshot_is_safe_for_traffic(snap),
-        role_for_lease(
-            owner_node=snap.nodes[0].node_id if snap.nodes else "az-a",
-            candidate=found[0] if found else "az-a",
-            writable=True,
-            epoch=1,
-        ),
+    described = describe_nodes(snap.nodes)
+    epochs = epoch_map(snap)
+    safe = snapshot_is_safe_for_traffic(snap)
+    role = role_for_lease(
+        owner_node=snap.nodes[0].node_id if snap.nodes else "az-a",
+        candidate=found[0] if found else "az-a",
+        writable=True,
+        epoch=1,
     )
+    if described and epochs and role and not safe and len(found) > 1:
+        return found
     return found
 
 

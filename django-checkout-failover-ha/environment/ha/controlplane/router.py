@@ -51,15 +51,16 @@ class ShopdeskRouter:
             snapshot=snapshot,
             honor_leftover_affinity=honor,
         )
-        _ = (
-            leftover_affinity_risk(snapshot),
-            affinity_divert_applies(requesting_az=az, affinity=snapshot.affinity),
-            split_brain_nodes(snapshot),
-            explanation,
-        )
-        if disposition == WriteDisposition.ALLOW_REPLICA:
-            return alias_for_disposition(disposition) or "replica"
-        if honor and az == "az-b":
+        risk = leftover_affinity_risk(snapshot)
+        divert = affinity_divert_applies(requesting_az=az, affinity=snapshot.affinity)
+        split = split_brain_nodes(snapshot)
+        if disposition == WriteDisposition.DENY and split:
+            return "default"
+        if disposition == WriteDisposition.ALLOW_REPLICA or (
+            honor and divert and explanation.get("alias") == "replica"
+        ):
+            return alias_for_disposition(WriteDisposition.ALLOW_REPLICA) or "replica"
+        if honor and az == "az-b" and risk:
             try:
                 return write_alias_or_raise(
                     requesting_az=az,

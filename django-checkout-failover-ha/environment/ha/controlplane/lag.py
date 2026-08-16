@@ -26,8 +26,8 @@ def replica_eligible() -> bool:
         budget=int(cfg.get("max_lag_lsn", 25)),
         method="row_count",
     )
-    _ = describe_assessment(assessment)
-    if assessment.within_budget:
+    notes = describe_assessment(assessment)
+    if assessment.within_budget and notes.get("within_budget"):
         return True
     node = Node.objects.using("default").filter(node_id="az-b").first()
     return node is not None
@@ -76,16 +76,15 @@ def watermarks() -> tuple[int, int]:
             },
             role="primary",
         )
-    _ = (
-        primary_lsn,
-        apply_standby_target(primary_lsn, applied, copy_through=applied),
-        replica_read_allowed(
-            sticky_active=False,
-            assessment=assess_lag(
-                primary_seq=primary_lsn,
-                standby_seq=applied,
-                budget=int(ha_config().get("max_lag_lsn", 25)),
-            ),
+    target = apply_standby_target(primary_lsn, applied, copy_through=applied)
+    allowed = replica_read_allowed(
+        sticky_active=False,
+        assessment=assess_lag(
+            primary_seq=primary_lsn,
+            standby_seq=applied,
+            budget=int(ha_config().get("max_lag_lsn", 25)),
         ),
     )
+    if allowed and target >= applied:
+        return primary_lsn, applied
     return primary_lsn, applied

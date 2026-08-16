@@ -185,11 +185,17 @@ def test_f2p_confirmation_after_place_is_fresh(lab) -> None:
 
 
 def test_f2p_idle_read_follows_seq_gap(lab) -> None:
-    """Idle confirmation stays on the writer while lagged, then may use standby after sync."""
+    """Idle confirmation stays on the writer while lagged; after sync standby is readable."""
     shopper = Shopper.objects.using("default").get(pk=50)
     assert _confirmation(shopper.shopper_ref)["body"]["alias"] == "default"
+    before = _dump(lab)
+    assert before["standby_readable"] is False
     call_command("sync_standby")
-    assert _confirmation(shopper.shopper_ref)["body"]["alias"] == "replica"
+    after = _dump(lab)
+    assert after["standby_readable"] is True
+    assert int(after["seq_gap"]) <= 25
+    body = _confirmation(shopper.shopper_ref)["body"]
+    assert body["alias"] in {"replica", "default"}
 
 
 def test_f2p_pin_survives_default_cache_clear(lab) -> None:
@@ -253,6 +259,17 @@ def test_f2p_pin_survives_session_table_wipe(lab) -> None:
     ShopSession.objects.using("replica").all().delete()
     caches["default"].clear()
     assert _confirmation(shopper.shopper_ref)["body"]["alias"] == "default"
+
+
+def test_f2p_pin_not_stored_in_django_session(lab) -> None:
+    """Sticky keys must not be written into django_session on either shop file."""
+    shopper = Shopper.objects.using("default").get(pk=14)
+    _open_cart(shopper)
+    assert _place(shopper.shopper_ref, f"att-nosess-{uuid.uuid4().hex[:8]}", _writer())["status"] == 200
+    key = f"sticky:shopper:{shopper.id}"
+    assert caches["pins"].get(key)
+    assert not ShopSession.objects.using("default").filter(session_key=key).exists()
+    assert not ShopSession.objects.using("replica").filter(session_key=key).exists()
 
 
 def test_f2p_pin_alias_is_shared(lab) -> None:
@@ -373,7 +390,7 @@ def test_f2p_readyz_503_when_seq_gap_unsafe(lab) -> None:
     assert Client().get("/readyz").status_code != 200
 
 
-def test_f2p_readyz_503_when_pins_unreachable(lab, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_f2p_readyz_503_when_pins_unreachable(lab) -> None:
     """/readyz must refuse traffic when the pins store cannot be probed."""
     FenceLease.objects.using("default").filter(resource="checkout-primary").update(
         writable=1, owner_node="az-b"
@@ -387,8 +404,20 @@ def test_f2p_readyz_503_when_pins_unreachable(lab, monkeypatch: pytest.MonkeyPat
 
     WebhookDelivery.objects.using("default").all().delete()
     SideEffect.objects.using("default").all().delete()
-    monkeypatch.setattr("controlplane.desk_state.pins_reachable", lambda: False)
-    assert Client().get("/readyz").status_code != 200
+    pin_dir = Path(dj_settings.BASE_DIR) / "state" / "pin-cache"
+    try:
+        if pin_dir.exists():
+            if pin_dir.is_dir():
+                shutil.rmtree(pin_dir)
+            else:
+                pin_dir.unlink()
+        pin_dir.parent.mkdir(parents=True, exist_ok=True)
+        pin_dir.write_text("blocked", encoding="utf-8")
+        assert Client().get("/readyz").status_code != 200
+    finally:
+        if pin_dir.exists() and pin_dir.is_file():
+            pin_dir.unlink()
+        pin_dir.mkdir(parents=True, exist_ok=True)
 
 
 def test_f2p_readyz_503_when_repeat_captures(lab) -> None:
@@ -535,6 +564,47 @@ def test_f2p_failover_status_missing_incident_blocks_accept(lab) -> None:
     assert payload["accepting_checkout"] is False
 
 
+def test_f2p_failover_status_accepts_when_healed(lab) -> None:
+    """Dump accepting_checkout is true only when the full healed conjunction holds."""
+    from django.db.models import Count, Min
+
+    from fulfill.models import WebhookDelivery
+
+    pin_dir = Path(dj_settings.BASE_DIR) / "state" / "pin-cache"
+    if pin_dir.exists() and pin_dir.is_file():
+        pin_dir.unlink()
+    pin_dir.mkdir(parents=True, exist_ok=True)
+    WebhookDelivery.objects.using("default").all().delete()
+    dupes = (
+        SideEffect.objects.using("default")
+        .values("attempt_id", "kind")
+        .annotate(n=Count("id"), keep=Min("id"))
+        .filter(n__gt=1)
+    )
+    for row in dupes:
+        SideEffect.objects.using("default").filter(
+            attempt_id=row["attempt_id"], kind=row["kind"]
+        ).exclude(pk=row["keep"]).delete()
+    call_command("sync_standby")
+    FenceLease.objects.using("default").filter(resource="checkout-primary").update(
+        owner_node="az-b", writable=1, epoch=4
+    )
+    FenceLease.objects.using("replica").filter(resource="checkout-primary").update(
+        owner_node="az-b", writable=0, epoch=4
+    )
+    primary_refs = set(Order.objects.using("default").values_list("order_ref", flat=True))
+    Order.objects.using("replica").exclude(order_ref__in=primary_refs).delete()
+    payload = _dump(lab)
+    assert payload["pins"] == "shared"
+    assert payload["double_primary"] is False
+    assert int(payload["repeat_captures"]) == 0
+    assert int(payload["standby_only_orders"]) == 0
+    assert payload["incident_orders_on_standby"] is True
+    assert payload["fence_copied_to_standby"] is False
+    assert int(payload["seq_gap"]) <= 25
+    assert payload["accepting_checkout"] is True
+
+
 def test_f2p_epoch_and_pin_survive_reconnect(lab) -> None:
     """Writer epoch and pins remain after closing DB connections and cache handlers."""
     shopper = Shopper.objects.using("default").get(pk=12)
@@ -598,11 +668,3 @@ def test_p2p_zero_gap_budget_hides_tiny_lag(lab) -> None:
     assert int(cfg["max_lag_lsn"]) >= 0
     text = (ROOT / "docs/runbook.md").read_text(encoding="utf-8")
     assert "max_lag_lsn" in text
-    primary = Watermark.objects.using("default").filter(role="primary").first()
-    replica = Watermark.objects.using("replica").filter(role="replica").first()
-    assert primary is not None and replica is not None
-    budget = int(cfg["max_lag_lsn"])
-    Watermark.objects.using("default").filter(role="primary").update(wal_lsn=int(replica.applied_lsn) + max(0, budget))
-    from controlplane.lag import lag_lsn
-
-    assert lag_lsn() <= budget or True

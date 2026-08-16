@@ -17,7 +17,15 @@ from django.db import connections
 from checkout.models import Order
 from controlplane.configutil import ha_config
 from controlplane.fencing import lease, writable_nodes
-from controlplane.ha_metrics import HaMetrics, metrics_from_mapping, probe_codes, readiness_bools
+from controlplane.heal_plan import (
+    HealObservation,
+    evaluate_heal,
+    heal_progress,
+    merge_failed_codes,
+    remaining_operator_actions,
+    summarize_heal,
+)
+from controlplane.ha_metrics import HaMetrics, as_prometheus_like, metrics_from_mapping, probe_codes, readiness_bools
 from controlplane.incident_window import build_window, standby_only_refs, summarize_window
 from controlplane.lag import lag_lsn, replica_eligible, watermarks
 from controlplane.models import FenceLease
@@ -159,7 +167,7 @@ def collect_desk_snapshot() -> DeskSnapshot:
     journal.record(standby_sample)
     gap_check = gap_from_samples(primary_sample, standby_sample)
     assessment = journal_assessment(journal, budget=max_lag, method="watermark")
-    _ = describe_assessment(assessment)
+    assessed = describe_assessment(assessment)
     writers = merge_writer_lists(writable_nodes())
     store_class = _pin_store_class()
     reachable = pins_reachable()
@@ -174,8 +182,16 @@ def collect_desk_snapshot() -> DeskSnapshot:
         probe_alias(name, _open_alias) for name in required_aliases()
     ]
     aliases_ok = all_aliases_ok(alias_health)
-    _ = describe_probes(alias_health)
-    effective_gap = max(int(gap), int(gap_check), int(assessment.gap))
+    probe_summary = describe_probes(alias_health)
+    effective_gap = max(
+        int(gap),
+        int(gap_check),
+        int(assessment.gap),
+        int(assessed.get("seq_gap", 0) or 0),
+    )
+    if not aliases_ok and not probe_summary.get("healthy", False):
+        # Alias probe failure is surfaced via readiness blockers below.
+        pass
     metrics = metrics_from_mapping(
         {
             "writers_seen": writers,
@@ -191,7 +207,22 @@ def collect_desk_snapshot() -> DeskSnapshot:
             "incident_orders_on_standby": covered,
         }
     )
-    _ = (probe_codes(metrics), readiness_bools(metrics))
+    metric_codes = probe_codes(metrics)
+    bools = readiness_bools(metrics)
+    heal = evaluate_heal(
+        HealObservation(
+            writers=tuple(writers),
+            seq_gap=int(metrics.seq_gap),
+            max_lag_lsn=max_lag,
+            pins_reachable=reachable,
+            pins_label=pins,
+            repeat_captures=repeats,
+            standby_only_orders=extra,
+            incident_orders_on_standby=covered,
+            fence_copied_to_standby=copied,
+        )
+    )
+    heal_summary = summarize_heal(heal)
     data = ReadinessInput(
         process_up=True,
         writable_nodes=writers,
@@ -205,17 +236,44 @@ def collect_desk_snapshot() -> DeskSnapshot:
         incident_orders_on_standby=covered,
     )
     live = evaluate_live_readyz(data)
+    if not heal.live_ready():
+        live.accepting_checkout = False
     dump_result = evaluate_dump_accepting(data)
-    dump_accepting = dump_result.accepting_checkout and compute_accepting_checkout(
-        writers_seen=writers,
-        repeat_captures=repeats,
-        standby_only_orders=extra,
-        seq_gap=int(metrics.seq_gap),
-        max_lag_lsn=max_lag,
-        incident_orders_on_standby=covered,
-        fence_copied_to_standby=copied,
-        pins=pins,
+    dump_accepting = (
+        dump_result.accepting_checkout
+        and heal.dump_accepting()
+        and compute_accepting_checkout(
+            writers_seen=writers,
+            repeat_captures=repeats,
+            standby_only_orders=extra,
+            seq_gap=int(metrics.seq_gap),
+            max_lag_lsn=max_lag,
+            incident_orders_on_standby=covered,
+            fence_copied_to_standby=copied,
+            pins=pins,
+        )
+        and bools.get("accepting", False)
     )
+    if not metrics.accepting() and dump_accepting:
+        dump_accepting = False
+    blocker = readiness_blocker_summary(live)
+    if heal_summary["failed"]:
+        blocker = ",".join(
+            merge_failed_codes(
+                blocker.split(",") if blocker not in {"ok", "not_accepting"} else [],
+                metric_codes,
+                heal.codes(),
+            )
+        ) or blocker
+    actions = remaining_operator_actions(heal)
+    progress = heal_progress(heal, dump_mode=True)
+    prom = as_prometheus_like(metrics)
+    if actions and blocker == "ok":
+        blocker = f"pending:{len(actions)}"
+    if progress < 1.0 and not dump_accepting and blocker == "ok":
+        blocker = "heal_incomplete"
+    if prom and not metrics.process_up:
+        blocker = "PROCESS_DOWN"
     row = lease()
     return DeskSnapshot(
         writers_seen=writers,
@@ -235,7 +293,7 @@ def collect_desk_snapshot() -> DeskSnapshot:
         metrics=metrics,
         live=live,
         dump_accepting=bool(dump_accepting),
-        blocker_summary=readiness_blocker_summary(live),
+        blocker_summary=blocker,
     )
 
 
