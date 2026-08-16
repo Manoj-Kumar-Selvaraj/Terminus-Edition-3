@@ -32,9 +32,9 @@ This is the durable operational checkpoint for one task. Keep it evidence-orient
 | STB auth/AI credentials | PENDING | |
 | Oracle = 1 | PASS | Harbor job `jobs/2026-08-16__16-37-20` trial `django-checkout-failover-ha__qv54dSF` reward.txt=`1`; 42/42 pytest |
 | NOP = 0 | PASS | Harbor job `jobs/2026-08-16__16-38-42` trial `django-checkout-failover-ha__sMzT3Gg` reward.txt=`0` |
-| Q4 Spec-Test Contract Reviewer | PENDING | packet `.terminus/reviews/django-checkout-failover-ha/8dc0203f/django-checkout-failover-ha-8dc0203f-spec-test-contract-8ff470e1b2.packet.json` |
+| Q4 Spec-Test Contract Reviewer | REVISE | review `.terminus/reviews/django-checkout-failover-ha/8dc0203f/django-checkout-failover-ha-8dc0203f-spec-test-contract-8ff470e1b2.json` (HIGH); blocking Q4-F1..F4 |
 | Q6 Production Logic Auditor | REVISE | review `.terminus/reviews/django-checkout-failover-ha/8dc0203f/django-checkout-failover-ha-8dc0203f-production-logic-03ac8bd7ce.json` (HIGH); PADDING_RISK HIGH; honest LOC ~2860 |
-| Quality Interlock | REVISE | Q6 REVISE on `8dc0203f`; Q4 still pending |
+| Quality Interlock | REVISE | Q4 REVISE + Q6 REVISE on freeze `8dc0203f` |
 | Pre-LLMaJ specialist panel | PENDING | |
 | Task Architect | PENDING | |
 | Verifier Engineer | PENDING | |
@@ -69,23 +69,23 @@ This is the durable operational checkpoint for one task. Keep it evidence-orient
 
 ## Current blocker
 
-Q6 REVISE on freeze `8dc0203f` (HIGH padding; honest substantive LOC ~2860 &lt; 3000). Q4 cold review still pending.
+Quality Interlock blocked on freeze `8dc0203f`: **Q4 REVISE** (F1 idle-replica may/must; F2 django_session pin ban untested; F3 pins-unreachable monkeypatch; F4 accepting_checkout never true) and **Q6 REVISE** (HIGH padding; ~2860 substantive LOC).
 
 ## Root-cause classification
 
-- Owner: cleared for prior Q4/Q6 findings after producer repair
-- Classification: `none` (awaiting fresh cold reviews)
-- Evidence: Harbor oracle `jobs/2026-08-16__16-37-20` (1) / nop `jobs/2026-08-16__16-38-42` (0)
+- Owner: Q2 Verifier + Environment Builder (consolidated with Q6 padding repair)
+- Classification: `verifier_gap` / `spec_ambiguity` + `production_logic`
+- Evidence: Q4 `...-spec-test-contract-8ff470e1b2.json`; Q6 `...-production-logic-03ac8bd7ce.json`
 
 ## Next action
 
-Await [Q4 Spec-Test Review](28c39e2a-fe36-4d30-be10-0581a7390e13). After Q4 returns, plan one consolidated repair for Q6 padding (and any Q4 findings), then re-oracle/NOP and re-freeze. Do not self-certify Quality Interlock.
+One consolidated repair on `8dc0203f`: (1) Q4-F1..F4 — soften or document idle-replica must, assert no django_session pins, break pins via public CACHES (no monkeypatch), add healed accepting_checkout=true dump case; (2) Q6 — remove discard-touch/dead-helper padding and add honest ≥3000 participating LOC; (3) re-oracle/NOP; (4) re-freeze and cold Q4+Q6.
 
 ## Review evidence ledger
 
 | Review | Review ID | Task commit | Protocol | Prompt | Role policy | Role contract hash | Scope hash | Result path | Verdict | Confidence | Evidence |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| Q4 Spec-Test Contract Reviewer | django-checkout-failover-ha-8dc0203f-spec-test-contract-8ff470e1b2 | 8dc0203f55e6112a093bfc680c831f6f5b357f9b | 2.2 | 2.2 | 1.1 | c860dfe8b8ed0a04c729e4d6a828741b206b7067a780863ec7b22ee09d02c5a0 | n/a | `.terminus/reviews/django-checkout-failover-ha/8dc0203f/django-checkout-failover-ha-8dc0203f-spec-test-contract-8ff470e1b2.json` | PENDING | | packet ready |
+| Q4 Spec-Test Contract Reviewer | django-checkout-failover-ha-8dc0203f-spec-test-contract-8ff470e1b2 | 8dc0203f55e6112a093bfc680c831f6f5b357f9b | 2.2 | 2.2 | 1.1 | c860dfe8b8ed0a04c729e4d6a828741b206b7067a780863ec7b22ee09d02c5a0 | n/a | `.terminus/reviews/django-checkout-failover-ha/8dc0203f/django-checkout-failover-ha-8dc0203f-spec-test-contract-8ff470e1b2.json` | REVISE | HIGH | blocking Q4-F1..F4; exhaustiveness COMPLETE |
 | Q6 Production Logic Auditor | django-checkout-failover-ha-8dc0203f-production-logic-03ac8bd7ce | 8dc0203f55e6112a093bfc680c831f6f5b357f9b | 2.2 | 2.2 | 1.1 | ee7d1cfd6e19fcc0e831cc75829457593d7410613c3b3fb811aef925e85a1607 | 5a9db7fc2c248c3aa962bad9e1734b83dca9eca5bade04e9c462874bfe04f412 | `.terminus/reviews/django-checkout-failover-ha/8dc0203f/django-checkout-failover-ha-8dc0203f-production-logic-03ac8bd7ce.json` | REVISE | HIGH | PADDING_RISK HIGH; ~2860 substantive LOC |
 | Task Architect | | | | | | | | | PENDING | | |
 | Verifier Engineer | | | | | | | | | PENDING | | |
@@ -108,9 +108,9 @@ Await [Q4 Spec-Test Review](28c39e2a-fe36-4d30-be10-0581a7390e13). After Q4 retu
 - Q3 ambiguity status/evidence: `DONE` (live /readyz vs dump accepting_checkout)
 - Q7 format status/evidence: `PENDING`
 - Q5 Oracle/runtime repair evidence: `none`
-- Q4 review ID/result: `pending` / `.terminus/reviews/django-checkout-failover-ha/8dc0203f/django-checkout-failover-ha-8dc0203f-spec-test-contract-8ff470e1b2.json`
-- Q4 verdict/confidence/evidence: `PENDING`
-- Q4 exhaustiveness: `PENDING`
+- Q4 review ID/result: `django-checkout-failover-ha-8dc0203f-spec-test-contract-8ff470e1b2` / `.terminus/reviews/django-checkout-failover-ha/8dc0203f/django-checkout-failover-ha-8dc0203f-spec-test-contract-8ff470e1b2.json`
+- Q4 verdict/confidence/evidence: `REVISE` / `HIGH` / `SUFFICIENT`
+- Q4 exhaustiveness: `COMPLETE` (BLOCKING_FINDING_IDS Q4-F1..F4)
 - Q6 review ID/result: `django-checkout-failover-ha-8dc0203f-production-logic-03ac8bd7ce` / `.terminus/reviews/django-checkout-failover-ha/8dc0203f/django-checkout-failover-ha-8dc0203f-production-logic-03ac8bd7ce.json`
 - Q6 verdict/confidence/evidence: `REVISE` / `HIGH` / `SUFFICIENT`
 - Q6 production scope hash: `5a9db7fc2c248c3aa962bad9e1734b83dca9eca5bade04e9c462874bfe04f412`
@@ -213,6 +213,7 @@ Await [Q4 Spec-Test Review](28c39e2a-fe36-4d30-be10-0581a7390e13). After Q4 retu
 
 Newest first; keep only meaningful state-changing attempts.
 
+- Q4 cold review REVISE via [Q4 Spec-Test Review](28c39e2a-fe36-4d30-be10-0581a7390e13) on freeze `8dc0203f` → `...-spec-test-contract-8ff470e1b2.json` (blocking F1–F4).
 - Q6 cold review REVISE via [Q6 Production Logic Audit](7e44db88-f504-42b0-9e91-fdd37444a9ca) on freeze `8dc0203f` → `...-production-logic-03ac8bd7ce.json` (HIGH padding; ~2860 substantive LOC).
 - Freeze `8dc0203f55e6112a093bfc680c831f6f5b357f9b` for post-repair Q4/Q6; packets under `.terminus/reviews/django-checkout-failover-ha/8dc0203f/`.
 - Consolidated Q4/Q6 repair: stripped Defect/Starter diagnosis; split live `/readyz` vs dump `accepting_checkout`; wired `desk_state` + helpers into live paths (~3396 Python LOC); fixed phantoms and added readiness/dump coverage; solution reports/views/sessions/replica updated. Harbor oracle `jobs/2026-08-16__16-37-20` → **1** (42/42); nop `jobs/2026-08-16__16-38-42` → **0**.
