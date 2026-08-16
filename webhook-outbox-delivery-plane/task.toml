@@ -1,0 +1,30 @@
+version = "2.0"
+name = "webhook-outbox-delivery-plane"
+category = "Software"
+subcategory = "Systems"
+tags = ["webhook", "outbox", "sqlite", "golang", "concurrency"]
+languages = ["go", "javascript", "sql", "bash"]
+difficulty = "advanced"
+expert_time_estimate_hours = 12
+artifacts = [
+  "/app/outbox",
+]
+
+[metadata]
+author_name = "anonymous"
+author_email = "anonymous@example.com"
+
+[verifier]
+timeout_sec = 2400
+environment_mode = "separate"
+
+[agent]
+timeout_sec = 7200
+
+[environment]
+network_mode = "public"
+build_timeout_sec = 1200
+cpus = 2
+memory_mb = 8192
+storage_mb = 10240
+workdir = "/app/outbox"
