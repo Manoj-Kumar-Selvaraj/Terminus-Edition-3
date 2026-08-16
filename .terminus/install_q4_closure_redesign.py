@@ -1,0 +1,1375 @@
+#!/usr/bin/env python3
+"""One-shot installer for the adjudicated Q4 closure-boundary control-plane redesign."""
+
+from __future__ import annotations
+
+import json
+import textwrap
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[1]
+T = ROOT / ".terminus"
+
+
+def write(rel: str, content: str) -> None:
+    path = ROOT / rel
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(textwrap.dedent(content).lstrip("\n"), encoding="utf-8")
+
+
+def replace_once(rel: str, old: str, new: str, label: str) -> None:
+    path = ROOT / rel
+    text = path.read_text(encoding="utf-8")
+    count = text.count(old)
+    if count != 1:
+        raise SystemExit(f"{label}: expected one match, found {count}")
+    path.write_text(text.replace(old, new, 1), encoding="utf-8")
+
+
+write(
+    ".terminus/agents/Q4_CLOSURE_POLICY.md",
+    r'''
+    # Q4 Adjudicated Closure Policy
+
+    Policy version: `1.0`
+
+    This policy is the required strategy change after the Protocol circuit breaker has stopped ordinary Q4 repair iteration. It specializes only the post-circuit-breaker closure path. It does not weaken ordinary cold Q4, rewrite a frozen Q4 verdict, or permit the Orchestrator to waive a semantic finding.
+
+    ## Activation prerequisites
+
+    The adjudicated-closure path is available only when all of the following are true:
+
+    1. an exhaustive Q4/review-repair sequence has tripped the Protocol circuit breaker and the durable controller state is `BLOCKED`;
+    2. a frozen Adjudicator result established the controlling semantic repair boundary, including upheld/narrowed and rejected scope;
+    3. the Adjudicator authorized one final bounded closure repair or otherwise fixed the closure boundary;
+    4. that final repair, if any, is committed and its exact task diff is available;
+    5. one final exact-commit exhaustive cold Q4 has completed after the boundary/repair;
+    6. the final Q4 is not patched again before closure reconciliation.
+
+    If these prerequisites are absent, use the normal Protocol Q4 path. A closure result can never legitimize an ordinary first-pass `REVISE`.
+
+    ## Independent closure decision
+
+    The `Q4 Closure Adjudicator` is a read-only semantic reviewer. It receives the frozen boundary Adjudicator result, the final frozen Q4 result, the exact boundary-to-final task diff, current authoritative rules and no desired outcome. It must reconcile every final-Q4 finding exactly once.
+
+    Allowed dispositions are:
+
+    - `CLOSED_BOUND_FINDING` — a previously upheld/narrowed semantic blocker is closed by the final repair;
+    - `SURVIVING_BOUND_BLOCKER` — a previously upheld/narrowed blocker still survives; blocking;
+    - `REPAIR_REGRESSION` — the final bounded repair introduced the finding; blocking;
+    - `NEW_EVIDENCE` — evidence not reviewable at the frozen boundary materially creates a new finding; blocking;
+    - `AUTHORITATIVE_RULE_CONFLICT` — a direct current higher-precedence rule conflict remains unresolved; blocking and requires strategy/policy resolution rather than blind patching;
+    - `REJECTED_SCOPE_REOPEN` — the final Q4 reopens scope the frozen boundary explicitly rejected/narrowed away without genuinely new evidence; non-blocking for this closure;
+    - `LATENT_AFTER_BOUNDARY` — the evidence was already fully reviewable before the frozen closure boundary but the completeness reviewer did not raise it until after the final boundary; non-blocking for this task closure and retained as learning/policy debt.
+
+    `LATENT_AFTER_BOUNDARY` is not a declaration that the observation is unimportant. It means the no-drip/circuit-breaker authority has moved responsibility from another task patch loop to institutional learning or a future policy/task-generation improvement. A direct authoritative-rule conflict must use `AUTHORITATIVE_RULE_CONFLICT`, not be hidden as latent.
+
+    ## Finding identity
+
+    The closure packet records a deterministic `q4-finding-v1` SHA-256 fingerprint for every final-Q4 finding from its criterion, evidence-reference family and why-it-matters text. Finding IDs remain visible, but changing an ID alone cannot evade exact reconciliation.
+
+    ## Closure PASS
+
+    `CLOSURE_OUTCOME: PASS` requires:
+
+    - a current packet-bound `Q4 Closure Adjudicator` result with `PASS`, confidence `HIGH` or `MEDIUM`, and `SUFFICIENT` evidence;
+    - exact current task-commit binding;
+    - exact frozen boundary-Adjudicator and final-Q4 packet/result binding;
+    - exact repair-base/final task commits and final task diff binding;
+    - every final-Q4 finding reconciled exactly once with the packet-recorded fingerprint;
+    - no `SURVIVING_BOUND_BLOCKER`, `REPAIR_REGRESSION`, `NEW_EVIDENCE`, or `AUTHORITATIVE_RULE_CONFLICT` disposition.
+
+    A closure PASS does **not** change the final Q4 result from `REVISE` to `PASS`. The durable session retains the frozen Q4 verdict and adds a distinct `Q4 Adjudicated Closure` PASS row.
+
+    ## Quality Interlock semantics
+
+    The Q4 side of Quality Interlock is satisfied by exactly one of two routes:
+
+    1. `DIRECT_PASS` — a current ordinary Q4 `PASS` under normal Protocol rules; or
+    2. `ADJUDICATED_CLOSURE_PASS` — a final cold Q4 `REVISE` plus a current closure result that passes `.terminus/q4_closure.py` and `.terminus/validate_quality_interlock.py`.
+
+    This exceptional route supersedes lower-level prose that describes only the normal direct-Q4-PASS path, but only after the activation prerequisites above. Q6 and every other mandatory gate remain independently required and unchanged.
+
+    ## Termination
+
+    A closure result containing any blocking disposition leaves the task `BLOCKED`. It does not authorize another normal Q4 patch cycle. Re-entry then requires a genuinely different strategy, new authority, or higher-precedence policy change.
+    ''',
+)
+
+write(
+    ".terminus/q4_closure.py",
+    r'''
+    #!/usr/bin/env python3
+    """Deterministic chain validation for post-circuit-breaker Q4 closure evidence."""
+
+    from __future__ import annotations
+
+    import argparse
+    import hashlib
+    import json
+    import re
+    import sys
+    from pathlib import Path
+    from typing import Any
+
+    NONBLOCKING_DISPOSITIONS = frozenset(
+        {"CLOSED_BOUND_FINDING", "REJECTED_SCOPE_REOPEN", "LATENT_AFTER_BOUNDARY"}
+    )
+    BLOCKING_DISPOSITIONS = frozenset(
+        {
+            "SURVIVING_BOUND_BLOCKER",
+            "REPAIR_REGRESSION",
+            "NEW_EVIDENCE",
+            "AUTHORITATIVE_RULE_CONFLICT",
+        }
+    )
+    ALL_DISPOSITIONS = NONBLOCKING_DISPOSITIONS | BLOCKING_DISPOSITIONS
+    _FP = re.compile(r"^[0-9a-f]{64}$")
+
+
+    def finding_fingerprint(finding: dict[str, Any]) -> str:
+        payload = {
+            "version": "q4-finding-v1",
+            "criterion": str(finding.get("criterion", "")).strip(),
+            "evidence_refs": sorted(str(ref).strip() for ref in finding.get("evidence_refs", [])),
+            "why_it_matters": str(finding.get("why_it_matters", "")).strip(),
+        }
+        encoded = json.dumps(payload, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
+        return hashlib.sha256(encoded.encode("utf-8")).hexdigest()
+
+
+    def _safe(root: Path, rel: str, errors: list[str], label: str) -> Path | None:
+        candidate = (root / rel).resolve()
+        try:
+            candidate.relative_to(root.resolve())
+        except ValueError:
+            errors.append(f"{label}: path escapes repository: {rel}")
+            return None
+        return candidate
+
+
+    def _load(path: Path, errors: list[str], label: str) -> dict[str, Any] | None:
+        if not path.is_file():
+            errors.append(f"{label}: missing file {path}")
+            return None
+        try:
+            value = json.loads(path.read_text(encoding="utf-8"))
+        except json.JSONDecodeError as exc:
+            errors.append(f"{label}: invalid JSON ({exc})")
+            return None
+        if not isinstance(value, dict):
+            errors.append(f"{label}: expected JSON object")
+            return None
+        return value
+
+
+    def validate_frozen_pair(
+        root: Path,
+        result_rel: str,
+        expected_role: str,
+        expected_task: str,
+        expected_commit: str | None = None,
+    ) -> tuple[dict[str, Any] | None, dict[str, Any] | None, list[str]]:
+        errors: list[str] = []
+        result_path = _safe(root, result_rel, errors, "frozen result")
+        if result_path is None:
+            return None, None, errors
+        result = _load(result_path, errors, result_rel)
+        if result is None:
+            return None, None, errors
+        if result.get("schema_version") != "3.0":
+            errors.append(f"{result_rel}: closure requires frozen schema-v3 review evidence")
+        if result.get("role") != expected_role:
+            errors.append(f"{result_rel}: role must be {expected_role!r}")
+        if result.get("task") != expected_task:
+            errors.append(f"{result_rel}: task mismatch")
+        if expected_commit and result.get("task_commit") != expected_commit:
+            errors.append(f"{result_rel}: task_commit mismatch")
+        packet_rel = str(result.get("context_packet", ""))
+        packet_path = _safe(root, packet_rel, errors, result_rel)
+        packet = _load(packet_path, errors, packet_rel) if packet_path else None
+        if packet is None:
+            return result, None, errors
+        for key in (
+            "review_id",
+            "task",
+            "task_commit",
+            "role",
+            "protocol_policy_version",
+            "prompt_policy_version",
+            "role_policy_version",
+            "control_plane_commit",
+            "role_contract_hash",
+        ):
+            if result.get(key) != packet.get(key):
+                errors.append(f"{result_rel}: {key} does not match frozen packet")
+        if packet.get("review_output_path") != result_rel:
+            errors.append(f"{packet_rel}: review_output_path does not bind {result_rel}")
+        return result, packet, errors
+
+
+    def _single_token(packet: dict[str, Any], prefix: str, errors: list[str]) -> str:
+        matches = [
+            str(item)[len(prefix) :]
+            for item in packet.get("evidence_allowed", [])
+            if str(item).startswith(prefix)
+        ]
+        if len(matches) != 1:
+            errors.append(f"closure packet requires exactly one {prefix.rstrip(':')} binding")
+            return ""
+        return matches[0]
+
+
+    def _q4_exhaustive(q4: dict[str, Any]) -> bool:
+        ex = q4.get("role_output", {}).get("EXHAUSTIVENESS", {})
+        expected = {
+            "REQUIREMENTS_ENUMERATED": "COMPLETE",
+            "VERIFIER_BEHAVIORS_ENUMERATED": "COMPLETE",
+            "FORWARD_MATRIX_COMPLETE": "YES",
+            "REVERSE_MATRIX_COMPLETE": "YES",
+            "DELEGATED_CONTRACTS_COMPLETE": "YES",
+            "P2P_BOUNDARIES_COMPLETE": "YES",
+            "F2P_BOUNDARIES_COMPLETE": "YES",
+            "OUTPUT_INTERFACES_COMPLETE": "YES",
+            "SECOND_PASS_OMISSION_SWEEP": "PASS",
+        }
+        return all(ex.get(key) == value for key, value in expected.items()) and not ex.get(
+            "UNINSPECTED_SCOPE"
+        )
+
+
+    def validate_ready_closure(
+        root: Path, closure_result_rel: str
+    ) -> tuple[list[str], dict[str, str]]:
+        root = root.resolve()
+        errors: list[str] = []
+        metadata: dict[str, str] = {}
+        closure_path = _safe(root, closure_result_rel, errors, "closure result")
+        if closure_path is None:
+            return errors, metadata
+        closure = _load(closure_path, errors, closure_result_rel)
+        if closure is None:
+            return errors, metadata
+        if closure.get("role") != "Q4 Closure Adjudicator":
+            errors.append("closure result role must be 'Q4 Closure Adjudicator'")
+        if closure.get("verdict") != "PASS":
+            errors.append("ready Q4 closure requires verdict PASS")
+        if closure.get("confidence") not in {"HIGH", "MEDIUM"}:
+            errors.append("ready Q4 closure requires HIGH or MEDIUM confidence")
+        if closure.get("evidence_status") != "SUFFICIENT":
+            errors.append("ready Q4 closure requires SUFFICIENT evidence")
+        if closure.get("missing_evidence"):
+            errors.append("ready Q4 closure cannot have missing_evidence")
+
+        packet_rel = str(closure.get("context_packet", ""))
+        packet_path = _safe(root, packet_rel, errors, "closure packet")
+        packet = _load(packet_path, errors, packet_rel) if packet_path else None
+        if packet is None:
+            return errors, metadata
+        if packet.get("state") != "Q4_CLOSURE_ADJUDICATION":
+            errors.append("closure packet state must be Q4_CLOSURE_ADJUDICATION")
+        if packet.get("role") != "Q4 Closure Adjudicator":
+            errors.append("closure packet role mismatch")
+        if packet.get("prior_verdicts_visible") is not True:
+            errors.append("closure packet must explicitly expose its frozen prior verdicts")
+        if packet.get("review_output_path") != closure_result_rel:
+            errors.append("closure packet review_output_path mismatch")
+        for key in (
+            "review_id",
+            "task",
+            "task_commit",
+            "role",
+            "protocol_policy_version",
+            "prompt_policy_version",
+            "role_policy_version",
+            "control_plane_commit",
+            "role_contract_hash",
+        ):
+            if closure.get(key) != packet.get(key):
+                errors.append(f"closure result {key} does not match packet")
+
+        task = str(closure.get("task", ""))
+        final_commit = str(closure.get("task_commit", ""))
+        boundary_rel = _single_token(packet, "boundary_adjudication:", errors)
+        final_q4_rel = _single_token(packet, "final_q4_result:", errors)
+        diff_token = _single_token(packet, "repair_diff:", errors)
+        repair_base = ""
+        if diff_token:
+            match = re.fullmatch(r"([0-9a-f]{40})\.\.([0-9a-f]{40}):(.+)", diff_token)
+            if not match:
+                errors.append("closure repair_diff binding is malformed")
+            else:
+                repair_base, diff_final, diff_task = match.groups()
+                if diff_final != final_commit:
+                    errors.append("repair_diff final commit does not match closure task_commit")
+                if diff_task != task:
+                    errors.append("repair_diff task does not match closure task")
+
+        boundary = None
+        q4 = None
+        if boundary_rel:
+            boundary, _, pair_errors = validate_frozen_pair(
+                root, boundary_rel, "Adjudicator", task, repair_base or None
+            )
+            errors.extend(pair_errors)
+        if final_q4_rel:
+            q4, _, pair_errors = validate_frozen_pair(
+                root, final_q4_rel, "Spec-Test Contract Reviewer", task, final_commit
+            )
+            errors.extend(pair_errors)
+        if q4 is None or boundary is None:
+            return errors, metadata
+
+        metadata.update(
+            final_q4_result=final_q4_rel,
+            boundary_adjudication=boundary_rel,
+            repair_base_task_commit=repair_base,
+            final_task_commit=final_commit,
+        )
+        if q4.get("verdict") != "REVISE":
+            errors.append("adjudicated closure path requires a final frozen Q4 REVISE")
+        if q4.get("confidence") == "LOW" or q4.get("evidence_status") != "SUFFICIENT":
+            errors.append("final Q4 must have non-LOW confidence and SUFFICIENT evidence")
+        if not _q4_exhaustive(q4):
+            errors.append("final Q4 must be exhaustive before closure adjudication")
+        if boundary.get("confidence") == "LOW" or boundary.get("evidence_status") != "SUFFICIENT":
+            errors.append("boundary Adjudicator evidence is not sufficient for closure")
+
+        expected_fps = {
+            str(finding.get("id", "")): finding_fingerprint(finding)
+            for finding in q4.get("findings", [])
+            if str(finding.get("id", ""))
+        }
+        packet_fps: dict[str, str] = {}
+        for item in packet.get("evidence_allowed", []):
+            text = str(item)
+            if not text.startswith("q4_finding:"):
+                continue
+            parts = text.split(":", 2)
+            if len(parts) != 3 or not parts[1] or not _FP.fullmatch(parts[2]):
+                errors.append(f"malformed q4_finding packet binding: {text}")
+                continue
+            if parts[1] in packet_fps:
+                errors.append(f"duplicate q4_finding packet binding: {parts[1]}")
+            packet_fps[parts[1]] = parts[2]
+        if packet_fps != expected_fps:
+            errors.append("closure packet finding fingerprints do not exactly bind final Q4")
+
+        role_output = closure.get("role_output", {})
+        required = {
+            "DECISION",
+            "CONTROLLING_RULE_OR_EVIDENCE",
+            "SCOPE_RECONCILIATION",
+            "REASON",
+            "REQUIRED_ACTION",
+            "RECHECK",
+            "CLOSURE_OUTCOME",
+            "BOUNDARY_ADJUDICATION",
+            "FINAL_Q4_RESULT",
+            "REPAIR_BASE_TASK_COMMIT",
+            "FINAL_TASK_COMMIT",
+            "FINDING_DISPOSITIONS",
+        }
+        missing = sorted(required - set(role_output)) if isinstance(role_output, dict) else sorted(required)
+        if missing:
+            errors.append("closure role_output missing: " + ", ".join(missing))
+            return errors, metadata
+        if role_output.get("CLOSURE_OUTCOME") != "PASS":
+            errors.append("ready closure requires role_output.CLOSURE_OUTCOME=PASS")
+        if role_output.get("BOUNDARY_ADJUDICATION") != boundary_rel:
+            errors.append("closure role_output boundary path mismatch")
+        if role_output.get("FINAL_Q4_RESULT") != final_q4_rel:
+            errors.append("closure role_output final Q4 path mismatch")
+        if role_output.get("REPAIR_BASE_TASK_COMMIT") != repair_base:
+            errors.append("closure role_output repair-base commit mismatch")
+        if role_output.get("FINAL_TASK_COMMIT") != final_commit:
+            errors.append("closure role_output final task commit mismatch")
+
+        dispositions = role_output.get("FINDING_DISPOSITIONS")
+        if not isinstance(dispositions, list):
+            errors.append("closure FINDING_DISPOSITIONS must be an array")
+            return errors, metadata
+        seen: dict[str, str] = {}
+        required_item = {
+            "finding_id",
+            "semantic_fingerprint",
+            "disposition",
+            "controlling_boundary_ref",
+            "reason",
+        }
+        for index, item in enumerate(dispositions):
+            if not isinstance(item, dict):
+                errors.append(f"closure disposition[{index}] must be an object")
+                continue
+            if set(item) != required_item:
+                errors.append(
+                    f"closure disposition[{index}] must contain exactly {sorted(required_item)}"
+                )
+                continue
+            finding_id = str(item["finding_id"])
+            fingerprint = str(item["semantic_fingerprint"])
+            disposition = str(item["disposition"])
+            if finding_id in seen:
+                errors.append(f"duplicate closure disposition for {finding_id}")
+            seen[finding_id] = disposition
+            if expected_fps.get(finding_id) != fingerprint:
+                errors.append(f"closure fingerprint mismatch for {finding_id}")
+            if disposition not in ALL_DISPOSITIONS:
+                errors.append(f"invalid closure disposition for {finding_id}: {disposition}")
+            if not str(item["controlling_boundary_ref"]).strip():
+                errors.append(f"closure disposition {finding_id} lacks controlling_boundary_ref")
+            if not str(item["reason"]).strip():
+                errors.append(f"closure disposition {finding_id} lacks reason")
+        if set(seen) != set(expected_fps):
+            errors.append("closure must reconcile every final-Q4 finding exactly once")
+        blocking = sorted(fid for fid, disposition in seen.items() if disposition in BLOCKING_DISPOSITIONS)
+        if blocking:
+            errors.append("closure PASS contains blocking dispositions: " + ", ".join(blocking))
+        return errors, metadata
+
+
+    def main(argv: list[str] | None = None) -> int:
+        parser = argparse.ArgumentParser(description=__doc__)
+        parser.add_argument("result", nargs="?", help="repository-relative Q4 Closure Adjudicator result")
+        parser.add_argument("--root", type=Path, default=Path(__file__).resolve().parents[1])
+        parser.add_argument("--fingerprints", help="print finding fingerprints for one final Q4 result")
+        args = parser.parse_args(argv)
+        if args.fingerprints:
+            errors: list[str] = []
+            path = _safe(args.root.resolve(), args.fingerprints, errors, "Q4 result")
+            data = _load(path, errors, args.fingerprints) if path else None
+            if errors or data is None:
+                for error in errors:
+                    print(f"error: {error}")
+                return 1
+            for finding in data.get("findings", []):
+                print(f"{finding.get('id')} {finding_fingerprint(finding)}")
+            return 0
+        if not args.result:
+            parser.error("result is required unless --fingerprints is used")
+        errors, metadata = validate_ready_closure(args.root, args.result)
+        if errors:
+            for error in errors:
+                print(f"error: {error}")
+            print(f"Q4 adjudicated closure validation FAILED ({len(errors)} error(s))")
+            return 1
+        print("Q4 adjudicated closure validation PASS")
+        for key, value in metadata.items():
+            print(f"{key}={value}")
+        return 0
+
+
+    if __name__ == "__main__":
+        sys.exit(main())
+    ''',
+)
+
+write(
+    ".terminus/new_q4_closure_packet.py",
+    r'''
+    #!/usr/bin/env python3
+    """Generate an immutable packet for post-circuit-breaker Q4 closure adjudication."""
+
+    from __future__ import annotations
+
+    import argparse
+    import json
+    import subprocess
+    import sys
+    from pathlib import Path
+
+    import new_review_packet
+    from q4_closure import finding_fingerprint, validate_frozen_pair
+    from review_contract import current_task_commit, governing_policy_dirty, task_tree_dirty, validate_schema
+
+    ROOT = Path(__file__).resolve().parents[1]
+    T = ROOT / ".terminus"
+
+
+    def _rel(path_text: str) -> str:
+        path = Path(path_text)
+        path = path if path.is_absolute() else ROOT / path
+        resolved = path.resolve()
+        resolved.relative_to(ROOT.resolve())
+        return resolved.relative_to(ROOT.resolve()).as_posix()
+
+
+    def main(argv: list[str] | None = None) -> int:
+        parser = argparse.ArgumentParser(description=__doc__)
+        parser.add_argument("task")
+        parser.add_argument("--boundary-adjudication", required=True)
+        parser.add_argument("--final-q4", required=True)
+        parser.add_argument("--repair-base", required=True)
+        args = parser.parse_args(argv)
+
+        if not (ROOT / args.task / "task.toml").is_file():
+            print(f"error: no task at {args.task}/task.toml")
+            return 2
+        final_commit = current_task_commit(ROOT, args.task)
+        if not final_commit:
+            print(f"error: cannot resolve task commit for {args.task}")
+            return 2
+        if task_tree_dirty(ROOT, args.task):
+            print("refused: task tree is dirty")
+            return 1
+        if governing_policy_dirty(ROOT, "Q4 Closure Adjudicator"):
+            print("refused: Q4 Closure Adjudicator governing policy is dirty")
+            return 1
+
+        boundary_rel = _rel(args.boundary_adjudication)
+        q4_rel = _rel(args.final_q4)
+        boundary, _, errors = validate_frozen_pair(
+            ROOT, boundary_rel, "Adjudicator", args.task, args.repair_base
+        )
+        q4, _, q4_errors = validate_frozen_pair(
+            ROOT, q4_rel, "Spec-Test Contract Reviewer", args.task, final_commit
+        )
+        errors.extend(q4_errors)
+        if errors:
+            for error in errors:
+                print(f"error: {error}")
+            return 1
+        assert boundary is not None and q4 is not None
+        if q4.get("verdict") != "REVISE":
+            print("error: closure adjudication requires final frozen Q4 REVISE")
+            return 1
+        if boundary.get("evidence_status") != "SUFFICIENT" or boundary.get("confidence") == "LOW":
+            print("error: boundary adjudication is not sufficient")
+            return 1
+        ancestor = subprocess.run(
+            ["git", "merge-base", "--is-ancestor", args.repair_base, final_commit],
+            cwd=ROOT,
+            check=False,
+        )
+        if ancestor.returncode != 0:
+            print("error: repair-base commit is not an ancestor of final task commit")
+            return 1
+
+        packet = new_review_packet.build(
+            args.task,
+            "q4-closure-adjudication",
+            "Q4_CLOSURE_ADJUDICATION",
+            (
+                "Post-circuit-breaker Q4 closure reconciliation. This packet does not authorize task edits "
+                "or another exhaustive Q4. Reconcile every final-Q4 finding against the frozen boundary "
+                "and exact boundary-to-final task diff under Q4_CLOSURE_POLICY.md."
+            ),
+            final_commit,
+        )
+        packet["question"] = (
+            "Does the final frozen Q4 leave any legitimately controlling blocker after applying the "
+            "frozen adjudicated closure boundary and exact final-repair provenance?"
+        )
+        packet["authoritative_rules"] = [
+            "TERMINUS_3_AI_INSTRUCTIONS.md",
+            ".terminus/AGENT_SYSTEM.md",
+            ".terminus/agents/PROTOCOL.md",
+            ".terminus/agents/Q4_CLOSURE_POLICY.md",
+            ".terminus/agents/PROMPTS.md",
+        ]
+        packet["evidence_allowed"] = [
+            f"boundary_adjudication:{boundary_rel}",
+            f"final_q4_result:{q4_rel}",
+            f"repair_diff:{args.repair_base}..{final_commit}:{args.task}",
+            "current authoritative rules",
+        ]
+        for finding in q4.get("findings", []):
+            finding_id = str(finding.get("id", ""))
+            if not finding_id:
+                print("error: final Q4 contains finding with empty ID")
+                return 1
+            packet["evidence_allowed"].append(
+                f"q4_finding:{finding_id}:{finding_fingerprint(finding)}"
+            )
+        packet["evidence_excluded"] = [
+            "desired closure outcome",
+            "task edits or proposed fixes",
+            "unfrozen reviewer opinions",
+            "unrelated historical reviews outside the frozen boundary chain",
+        ]
+        packet["prior_verdicts_visible"] = True
+
+        schema = json.loads((T / "agents/schemas/context_packet.schema.json").read_text(encoding="utf-8"))
+        problems: list[str] = []
+        validate_schema(packet, schema, "packet", problems)
+        if problems:
+            print("refused: generated closure packet fails context schema")
+            for problem in problems:
+                print(f"- {problem}")
+            return 1
+        review_path = ROOT / packet["review_output_path"]
+        packet_path = review_path.with_suffix(".packet.json")
+        packet_path.parent.mkdir(parents=True, exist_ok=True)
+        if packet_path.exists() or review_path.exists():
+            print(f"refused: immutable review ID already exists: {packet['review_id']}")
+            return 1
+        packet_path.write_text(json.dumps(packet, indent=2) + "\n", encoding="utf-8")
+        print(f"wrote {packet_path.relative_to(ROOT)}")
+        print(f"review_output={review_path.relative_to(ROOT)}")
+        print(f"review_id={packet['review_id']}")
+        print(f"task_commit={final_commit}")
+        print(f"role_contract={packet['role_contract_hash']}")
+        return 0
+
+
+    if __name__ == "__main__":
+        sys.exit(main())
+    ''',
+)
+
+# AGENT_SYSTEM owns the additive strategy without changing Protocol/Q4/Q6 reviewer contracts.
+replace_once(
+    ".terminus/AGENT_SYSTEM.md",
+    "Agent-system policy version: `2.4`",
+    "Agent-system policy version: `2.5`",
+    "agent-system version",
+)
+replace_once(
+    ".terminus/AGENT_SYSTEM.md",
+    "Detailed instruction semantics are owned by `.terminus/agents/INSTRUCTION_POLICY.md`. Evidence/retrieval authorization is owned by `.terminus/agents/EVIDENCE_VISIBILITY.md`; retrieval/index metadata and canonical retrieval role IDs are owned by `.terminus/agents/RETRIEVAL_METADATA.md` and `.terminus/agents/retrieval_metadata.json`.",
+    "Detailed instruction semantics are owned by `.terminus/agents/INSTRUCTION_POLICY.md`. Post-circuit-breaker Q4 closure semantics are owned by `.terminus/agents/Q4_CLOSURE_POLICY.md`; that policy may specialize only the strategy-reentry path after Protocol has already tripped a Q4 circuit breaker and may not weaken ordinary cold Q4. Evidence/retrieval authorization is owned by `.terminus/agents/EVIDENCE_VISIBILITY.md`; retrieval/index metadata and canonical retrieval role IDs are owned by `.terminus/agents/RETRIEVAL_METADATA.md` and `.terminus/agents/retrieval_metadata.json`.",
+    "agent-system closure ownership",
+)
+
+# Add a distinct role contract; leave ordinary Adjudicator, Q4 and Q6 versions unchanged.
+replace_once(
+    ".terminus/review_contract.py",
+    '    "Adjudicator": "1.0",\n    "Spec-Test Contract Reviewer": "1.1",',
+    '    "Adjudicator": "1.0",\n    "Q4 Closure Adjudicator": "1.0",\n    "Spec-Test Contract Reviewer": "1.1",',
+    "closure role policy version",
+)
+replace_once(
+    ".terminus/review_contract.py",
+    '    "Adjudicator": "Adjudicator",\n    "Spec-Test Contract Reviewer": "Q4 — Spec-Test Contract Reviewer",',
+    '    "Adjudicator": "Adjudicator",\n    "Q4 Closure Adjudicator": "Q4 Closure Adjudicator",\n    "Spec-Test Contract Reviewer": "Q4 — Spec-Test Contract Reviewer",',
+    "closure role prompt heading",
+)
+replace_once(
+    ".terminus/review_contract.py",
+    '    if role == "Comprehensive Reviewer":\n',
+    '    if role == "Q4 Closure Adjudicator":\n        inputs.append(t / "agents" / "Q4_CLOSURE_POLICY.md")\n    if role == "Comprehensive Reviewer":\n',
+    "closure role contract input",
+)
+
+# Generic packet registry exposes the dedicated role; exact frozen refs come from the dedicated generator.
+packet_path = ROOT / ".terminus/new_review_packet.py"
+packet_text = packet_path.read_text(encoding="utf-8")
+anchor = '''    "adjudication": {
+        "role": "Adjudicator",
+        "question": "Which frozen review is controlling for the disputed finding, and on what rule or evidence?",
+        "allowed": [
+            "authoritative rules",
+            "disputed artifact",
+            "frozen reviewer reports",
+            "run evidence",
+        ],
+        "excluded": ["a desired verdict", "reviews that are not yet frozen"],
+    },
+'''
+addition = anchor + '''    "q4-closure-adjudication": {
+        "role": "Q4 Closure Adjudicator",
+        "question": "Does the final frozen Q4 leave any legitimately controlling blocker after the frozen adjudicated closure boundary?",
+        "allowed": [
+            "current authoritative rules",
+            "frozen boundary adjudication",
+            "final frozen Q4",
+            "exact final-repair task diff",
+        ],
+        "excluded": [
+            "desired closure outcome",
+            "task edits or proposed fixes",
+            "unfrozen reviewer opinions",
+        ],
+    },
+'''
+if packet_text.count(anchor) != 1:
+    raise SystemExit("packet registry closure role anchor mismatch")
+packet_path.write_text(packet_text.replace(anchor, addition, 1), encoding="utf-8")
+
+# Add specialized role instructions without changing global Prompt policy version 2.2.
+prompts = ROOT / ".terminus/agents/PROMPTS.md"
+prompt_text = prompts.read_text(encoding="utf-8")
+if "## Q4 Closure Adjudicator" in prompt_text:
+    raise SystemExit("closure prompt already exists")
+prompt_text = prompt_text.rstrip() + textwrap.dedent(r'''
+
+## Q4 Closure Adjudicator
+
+### Mission
+Resolve the post-circuit-breaker closure question after a frozen Adjudicator boundary, one final bounded repair, and one final exhaustive cold Q4. This role does not rerun Q4, repair the task, or choose the desired outcome.
+
+### Required method
+1. Verify the packet is in `Q4_CLOSURE_ADJUDICATION` state and read `.terminus/agents/Q4_CLOSURE_POLICY.md`.
+2. Independently verify the exact frozen boundary-Adjudicator result, final-Q4 result, repair-base/final task commits, and exact final task diff named by the packet.
+3. Reconcile **every** final-Q4 finding exactly once using its packet-recorded semantic fingerprint.
+4. Use only these dispositions: `CLOSED_BOUND_FINDING`, `SURVIVING_BOUND_BLOCKER`, `REPAIR_REGRESSION`, `NEW_EVIDENCE`, `AUTHORITATIVE_RULE_CONFLICT`, `REJECTED_SCOPE_REOPEN`, `LATENT_AFTER_BOUNDARY`.
+5. A finding is `LATENT_AFTER_BOUNDARY` only when its evidence was fully reviewable before the frozen closure boundary and the final repair did not materially create the evidence. A direct current higher-precedence rule conflict is `AUTHORITATIVE_RULE_CONFLICT`, never latent.
+6. A previously rejected/narrowed scope can reopen only with genuinely new evidence; otherwise use `REJECTED_SCOPE_REOPEN`.
+7. Return `PASS` only when every final-Q4 finding is reconciled and none has a blocking disposition under Q4_CLOSURE_POLICY.md. Otherwise return `REQUEST_CHANGES` or `INSUFFICIENT_EVIDENCE` and keep the task `BLOCKED`; do not authorize another normal Q4 patch loop.
+
+### Closure role output
+Include the normal Adjudicator fields plus:
+```text
+CLOSURE_OUTCOME: PASS | BLOCKED | NEED_MORE_EVIDENCE
+BOUNDARY_ADJUDICATION: <exact repository-relative result path>
+FINAL_Q4_RESULT: <exact repository-relative result path>
+REPAIR_BASE_TASK_COMMIT: <40-hex sha>
+FINAL_TASK_COMMIT: <40-hex sha>
+FINDING_DISPOSITIONS:
+- finding_id: <final-Q4 ID>
+  semantic_fingerprint: <packet-recorded 64-hex fingerprint>
+  disposition: CLOSED_BOUND_FINDING | SURVIVING_BOUND_BLOCKER | REPAIR_REGRESSION | NEW_EVIDENCE | AUTHORITATIVE_RULE_CONFLICT | REJECTED_SCOPE_REOPEN | LATENT_AFTER_BOUNDARY
+  controlling_boundary_ref: <specific boundary finding/rule/evidence>
+  reason: <why this disposition controls>
+```
+''') + "\n"
+prompts.write_text(prompt_text, encoding="utf-8")
+
+# CI Orchestrator routes the specialized strategy.
+replace_once(
+    ".terminus/agents/CI_ORCHESTRATOR.md",
+    "Orchestrator policy version: `1.2`",
+    "Orchestrator policy version: `1.3`",
+    "orchestrator version",
+)
+replace_once(
+    ".terminus/agents/CI_ORCHESTRATOR.md",
+    "   - `.terminus/agents/PROTOCOL.md`;\n   - `.terminus/agents/INVOKE.md`;",
+    "   - `.terminus/agents/PROTOCOL.md`;\n   - `.terminus/agents/Q4_CLOSURE_POLICY.md`;\n   - `.terminus/agents/INVOKE.md`;",
+    "orchestrator bootstrap closure policy",
+)
+replace_once(
+    ".terminus/agents/CI_ORCHESTRATOR.md",
+    "| material reviewer conflict or latent unchanged-scope Q4 finding | Adjudicator |",
+    "| material reviewer conflict or latent unchanged-scope Q4 finding | Adjudicator |\n| post-circuit-breaker final Q4 after a frozen closure boundary | Q4 Closure Adjudicator under Q4_CLOSURE_POLICY.md |",
+    "orchestrator closure route",
+)
+replace_once(
+    ".terminus/agents/CI_ORCHESTRATOR.md",
+    "A stage `failure_route` never overrides a tripped circuit breaker. Do not continue the same strategy after the breaker trips.",
+    "A stage `failure_route` never overrides a tripped circuit breaker. Do not continue the same strategy after the breaker trips. For Q4, a strategy re-entry may use `.terminus/agents/Q4_CLOSURE_POLICY.md` only after its activation prerequisites hold; this creates a distinct closure adjudication and never authorizes another blind task patch loop.",
+    "orchestrator circuit-breaker reentry",
+)
+
+# Session template and current task track the additive closure gate.
+replace_once(
+    ".terminus/sessions/TEMPLATE.md",
+    "- Agent-system policy: `2.4`",
+    "- Agent-system policy: `2.5`",
+    "session template agent-system version",
+)
+replace_once(
+    ".terminus/sessions/TEMPLATE.md",
+    "| Q4 Spec-Test Contract Reviewer | PENDING | packet-bound independent exhaustive quality-interlock review; exact current task commit |",
+    "| Q4 Spec-Test Contract Reviewer | PENDING | packet-bound independent exhaustive quality-interlock review; exact current task commit |\n| Q4 Adjudicated Closure | NOT_APPLICABLE | only after Protocol circuit-breaker + Q4_CLOSURE_POLICY activation |",
+    "session template closure gate",
+)
+
+session = ROOT / ".terminus/sessions/cobol-comp3-python-equiv.md"
+s = session.read_text(encoding="utf-8")
+old_identity = "- Agent-system policy: `2.4`\n- Protocol policy: `2.2`"
+new_identity = (
+    "- Agent-system policy: `2.5`\n"
+    "- Specialist prompt policy: `2.2`\n"
+    "- Specialist protocol policy: `2.2`\n"
+    "- Pre-LLMaJ panel policy: `2.2`\n"
+    "- Comprehensive reviewer policy: `1.0`\n"
+    "- Reviewer checklist snapshot: `2026-08-08-user-supplied`"
+)
+if s.count(old_identity) != 1:
+    raise SystemExit("current session policy identity anchor mismatch")
+s = s.replace(old_identity, new_identity, 1)
+q4row = "| Q4 Spec-Test Contract Reviewer | REVISE | `.terminus/reviews/cobol-comp3-python-equiv/bb2e042c/cobol-comp3-python-equiv-bb2e042c-spec-test-contract-852fc1b28a.json` |"
+if s.count(q4row) != 1:
+    raise SystemExit("current session Q4 row anchor mismatch")
+s = s.replace(
+    q4row,
+    q4row + "\n| Q4 Adjudicated Closure | PENDING | generate a current `Q4 Closure Adjudicator` packet under Q4_CLOSURE_POLICY.md |",
+    1,
+)
+s = s.replace(
+    "Redesign the Q4/control-plane closure semantics before retrying this task. The redesign must prevent a post-adjudication closure review from reopening explicitly rejected scope or continuously adding latent completeness demands while preserving independent detection of true repair regressions. Candidate directions include an adjudication-bound closure-review mode, frozen semantic finding fingerprints/scope boundaries, and explicit new-finding provenance/materiality rules.",
+    "Use the committed Q4 adjudicated-closure strategy. Ordinary Q4 remains frozen at `REVISE`; re-entry is through a dedicated `Q4 Closure Adjudicator` packet that binds the frozen boundary adjudication, final Q4, exact final repair diff and deterministic finding fingerprints. Rejected-scope reopen and latent-after-boundary findings cannot silently restart task repair, while surviving bound blockers, repair regressions, genuinely new evidence and authoritative-rule conflicts remain blocking.",
+)
+s = s.replace(
+    "Do not modify `cobol-comp3-python-equiv/**`. Design and independently validate the control-plane strategy change first. Only after that policy change is committed and the resulting Q4 role contract/provenance rules are clear may the controller decide whether a new review execution is protocol-valid.",
+    "Do not modify `cobol-comp3-python-equiv/**`. After deterministic control-plane validation, generate the exact current Q4 closure packet and route it to a fresh independent `Q4 Closure Adjudicator`. Do not rerun Q4 or repair the five decisive Q4 findings before that closure decision.",
+)
+session.write_text(s, encoding="utf-8")
+
+# Freshness validator knows the closure role and the submission-ready alternative.
+f = ROOT / ".terminus/validate_review_freshness.py"
+text = f.read_text(encoding="utf-8")
+if "from q4_closure import validate_ready_closure" not in text:
+    text = text.replace("from review_contract import (", "from q4_closure import validate_ready_closure\n\nfrom review_contract import (", 1)
+marker = '''    "q4 spec-test contract reviewer": GateSpec(
+        "Spec-Test Contract Reviewer", frozenset(SPECIALIST_READY)
+    ),
+'''
+if text.count(marker) != 1:
+    raise SystemExit("freshness semantic gate anchor mismatch")
+text = text.replace(
+    marker,
+    marker + '''    "q4 adjudicated closure": GateSpec(
+        "Q4 Closure Adjudicator", frozenset(SPECIALIST_READY)
+    ),
+''',
+    1,
+)
+marker = '    ("q4 spec-test contract reviewer", "Q4 Spec-Test Contract Reviewer"),\n'
+if text.count(marker) != 1:
+    raise SystemExit("freshness alias anchor mismatch")
+text = text.replace(marker, marker + '    ("q4 adjudicated closure", "Q4 Adjudicated Closure"),\n', 1)
+marker = '        "q4 spec-test contract reviewer",\n        "q6 production logic auditor",\n'
+if text.count(marker) != 1:
+    raise SystemExit("freshness semantic order anchor mismatch")
+text = text.replace(marker, '        "q4 adjudicated closure",\n' + marker, 1)
+old_call = '''        validate_packet_and_review(
+            review_path, data, spec.role, spec.verdicts, task, truth_commit, report
+        )
+'''
+new_call = old_call + '''        if spec.role == "Q4 Closure Adjudicator":
+            closure_errors, _ = validate_ready_closure(ROOT, str(review_path.relative_to(ROOT)))
+            for error in closure_errors:
+                report.error(f"{review_path.relative_to(ROOT)}: {error}")
+'''
+if text.count(old_call) != 1:
+    raise SystemExit("freshness validate call anchor mismatch")
+text = text.replace(old_call, new_call, 1)
+old_ready = '''        required = set(BASE_SUBMISSION_READY_GATES)
+        if strict_profile(task):
+            required.add("Creator Complexity Gate")
+        missing = sorted(required - set(canonical_status))
+'''
+new_ready = '''        required = set(BASE_SUBMISSION_READY_GATES)
+        required.discard("Q4 Spec-Test Contract Reviewer")
+        if strict_profile(task):
+            required.add("Creator Complexity Gate")
+        q4_direct = canonical_status.get("Q4 Spec-Test Contract Reviewer") in SESSION_READY
+        q4_closure = canonical_status.get("Q4 Adjudicated Closure") in SESSION_READY
+        if not (q4_direct or q4_closure):
+            report.error(
+                f"{rel}: SUBMISSION_READY requires either direct Q4 PASS or validated Q4 Adjudicated Closure PASS"
+            )
+        missing = sorted(required - set(canonical_status))
+'''
+if text.count(old_ready) != 1:
+    raise SystemExit("freshness submission-ready anchor mismatch")
+text = text.replace(old_ready, new_ready, 1)
+f.write_text(text, encoding="utf-8")
+
+# Quality interlock validates either direct Q4 or the full frozen closure chain.
+q = ROOT / ".terminus/validate_quality_interlock.py"
+text = q.read_text(encoding="utf-8")
+if "import q4_closure" not in text:
+    text = text.replace("import validate_review_freshness as freshness\n", "import validate_review_freshness as freshness\nimport q4_closure\n", 1)
+old_block = '''    if state in PRE_LLMAJ_OR_LATER:
+        interlock_paths: list[Path] = []
+        for needle, (display, role) in INTERLOCK_GATES.items():
+            gate = _require_ready_gate(gates, needle, display, report, context)
+            if gate is None:
+                continue
+            path_result = _validate_packet_review_gate(
+                task, truth_commit, gate, display, role, report
+            )
+            if path_result is not None:
+                interlock_paths.append(path_result)
+
+        summary = _require_ready_gate(
+            gates,
+            "quality interlock",
+            "Quality Interlock",
+            report,
+            context,
+        )
+        if summary is not None and len(interlock_paths) != 2:
+            report.error(
+                f"{context}: Quality Interlock PASS requires current packet-bound Q4 and Q6 results"
+            )
+'''
+new_block = '''    if state in PRE_LLMAJ_OR_LATER:
+        q4_satisfied = False
+        q4_gate = _find_gate(gates, "q4 spec-test contract reviewer")
+        if q4_gate is None:
+            report.error(f"{context}: missing mandatory quality gate 'Q4 Spec-Test Contract Reviewer'")
+        else:
+            q4_status = str(q4_gate["status"]).upper()
+            if q4_status == "PASS":
+                q4_path = _validate_packet_review_gate(
+                    task, truth_commit, q4_gate, "Q4 Spec-Test Contract Reviewer", "Spec-Test Contract Reviewer", report
+                )
+                q4_satisfied = q4_path is not None
+            elif q4_status == "REVISE":
+                q4_rel = freshness.review_path_from_evidence(q4_gate["evidence"])
+                closure_gate = _find_gate(gates, "q4 adjudicated closure")
+                if not q4_rel:
+                    report.error(f"{context}: Q4 REVISE row must cite its exact frozen review result")
+                if closure_gate is None or str(closure_gate["status"]).upper() != "PASS":
+                    report.error(f"{context}: Q4 REVISE requires Q4 Adjudicated Closure PASS before advancing")
+                elif q4_rel:
+                    closure_path = _validate_packet_review_gate(
+                        task, truth_commit, closure_gate, "Q4 Adjudicated Closure", "Q4 Closure Adjudicator", report
+                    )
+                    if closure_path is not None:
+                        closure_errors, metadata = q4_closure.validate_ready_closure(
+                            ROOT, str(closure_path.relative_to(ROOT))
+                        )
+                        for error in closure_errors:
+                            report.error(f"Q4 Adjudicated Closure: {error}")
+                        if not closure_errors and metadata.get("final_q4_result") != q4_rel:
+                            report.error(f"{context}: closure result does not bind the Q4 REVISE evidence row")
+                        q4_satisfied = not closure_errors and metadata.get("final_q4_result") == q4_rel
+            else:
+                report.error(
+                    f"{context}: Q4 gate must be PASS or a frozen REVISE paired with adjudicated closure; found {q4_status}"
+                )
+
+        q6_gate = _require_ready_gate(
+            gates, "q6 production logic auditor", "Q6 Production Logic Auditor", report, context
+        )
+        q6_path = None
+        if q6_gate is not None:
+            q6_path = _validate_packet_review_gate(
+                task, truth_commit, q6_gate, "Q6 Production Logic Auditor", "Production Logic Auditor", report
+            )
+
+        summary = _require_ready_gate(gates, "quality interlock", "Quality Interlock", report, context)
+        if summary is not None and (not q4_satisfied or q6_path is None):
+            report.error(
+                f"{context}: Quality Interlock PASS requires Q4 direct PASS or validated adjudicated closure, plus current Q6 PASS"
+            )
+'''
+if text.count(old_block) != 1:
+    raise SystemExit("quality interlock PRE_LLMAJ block anchor mismatch")
+text = text.replace(old_block, new_block, 1)
+q.write_text(text, encoding="utf-8")
+
+# Execution-record acceptance gets a coherent Q4 direct/closure value predicate.
+a = ROOT / ".terminus/execution/acceptance.py"
+text = a.read_text(encoding="utf-8")
+text = text.replace('            "eq_path",\n', '            "eq_path",\n            "q4_satisfied",\n', 1)
+old_validate = '''            observed = self._resolve(outputs, path)
+            expected = predicate.get("value")
+            if op == "eq_path":
+'''
+new_validate = '''            observed = outputs if op == "q4_satisfied" else self._resolve(outputs, path)
+            expected = predicate.get("value")
+            if op == "q4_satisfied":
+                passed = self._q4_satisfied(outputs)
+                expected_display = "DIRECT_PASS or ADJUDICATED_CLOSURE_PASS with coherent evidence values"
+            elif op == "eq_path":
+'''
+if text.count(old_validate) != 1:
+    raise SystemExit("acceptance validate anchor mismatch")
+text = text.replace(old_validate, new_validate, 1)
+old_eval_anchor = '''    @classmethod
+    def _evaluate(cls, op: str, observed: Any, expected: Any) -> bool:
+'''
+helper = '''    @staticmethod
+    def _review_ready(value: Any, *, verdict: str, role: str | None = None) -> bool:
+        if not isinstance(value, ABCMapping):
+            return False
+        if role is not None and value.get("role") != role:
+            return False
+        return (
+            value.get("verdict") == verdict
+            and value.get("confidence") in {"HIGH", "MEDIUM"}
+            and value.get("evidence_status") == "SUFFICIENT"
+            and value.get("missing_evidence") in (None, [])
+        )
+
+    @classmethod
+    def _q4_satisfied(cls, outputs: Mapping[str, Any]) -> bool:
+        mode = outputs.get("Q4_SATISFACTION")
+        q4 = outputs.get("Q4_RESULT")
+        if mode == "DIRECT_PASS":
+            return cls._review_ready(q4, verdict="PASS") and outputs.get("Q4_CLOSURE_RESULT") in (None, {}, "")
+        if mode == "ADJUDICATED_CLOSURE_PASS":
+            closure = outputs.get("Q4_CLOSURE_RESULT")
+            return (
+                cls._review_ready(q4, verdict="REVISE")
+                and cls._review_ready(closure, verdict="PASS", role="Q4 Closure Adjudicator")
+                and isinstance(closure, ABCMapping)
+                and isinstance(closure.get("role_output"), ABCMapping)
+                and closure["role_output"].get("CLOSURE_OUTCOME") == "PASS"
+            )
+        return False
+
+'''
+if text.count(old_eval_anchor) != 1:
+    raise SystemExit("acceptance helper anchor mismatch")
+text = text.replace(old_eval_anchor, helper + old_eval_anchor, 1)
+a.write_text(text, encoding="utf-8")
+
+schema_path = ROOT / ".terminus/agents/schemas/stage_acceptance_predicates.schema.json"
+schema = json.loads(schema_path.read_text(encoding="utf-8"))
+ops = schema["$defs"]["predicate"]["properties"]["op"]["enum"]
+if "q4_satisfied" not in ops:
+    ops.append("q4_satisfied")
+schema_path.write_text(json.dumps(schema, indent=2) + "\n", encoding="utf-8")
+
+predicates_path = ROOT / ".terminus/agents/stage_acceptance_predicates.json"
+predicates = json.loads(predicates_path.read_text(encoding="utf-8"))
+predicates["stages"]["QUALITY_INTERLOCK"]["QUALITY_INTERLOCK_PASS"] = [
+    {"path": "Q4_RESULT", "op": "q4_satisfied"},
+    {"path": "Q6_RESULT.verdict", "op": "eq", "value": "PASS"},
+    {"path": "Q6_RESULT.confidence", "op": "in", "value": ["HIGH", "MEDIUM"]},
+    {"path": "Q6_RESULT.evidence_status", "op": "eq", "value": "SUFFICIENT"},
+    {"path": "Q6_RESULT.missing_evidence", "op": "empty"},
+    {"path": "EVIDENCE_SUFFICIENCY", "op": "in", "value": ["SUFFICIENT", True]},
+]
+predicates_path.write_text(json.dumps(predicates, indent=2) + "\n", encoding="utf-8")
+
+contracts_path = ROOT / ".terminus/agents/stage_contracts.json"
+contracts = json.loads(contracts_path.read_text(encoding="utf-8"))
+qi = next(stage for stage in contracts["stages"] if stage["id"] == "QUALITY_INTERLOCK")
+required = qi["output_contract"]["required_fields"]
+if "Q4_SATISFACTION" not in required:
+    required.insert(required.index("Q4_RESULT") + 1, "Q4_SATISFACTION")
+optional = qi["output_contract"]["optional_fields"]
+if "Q4_CLOSURE_RESULT" not in optional:
+    optional.append("Q4_CLOSURE_RESULT")
+if "Q4 direct PASS or validated adjudicated closure PASS" not in qi["evidence_required"]:
+    qi["evidence_required"].append("Q4 direct PASS or validated adjudicated closure PASS")
+if "Q4 Closure Adjudicator" not in qi["semantic_reviewers"]:
+    qi["semantic_reviewers"].append("Q4 Closure Adjudicator")
+qi["failure_routes"]["Q4_CIRCUIT_BREAKER"] = "CI Orchestrator -> Q4_CLOSURE_POLICY -> Q4 Closure Adjudicator"
+contracts_path.write_text(json.dumps(contracts, separators=(",", ":")) + "\n", encoding="utf-8")
+
+v = ROOT / ".terminus/validate_execution_record_pass_b.py"
+text = v.read_text(encoding="utf-8")
+old = '''    elif stage == "QUALITY_INTERLOCK":
+        outputs.update(
+            Q4_RESULT=_review_pass(),
+            Q6_RESULT=_review_pass(),
+            EVIDENCE_SUFFICIENCY="SUFFICIENT",
+        )
+'''
+new = '''    elif stage == "QUALITY_INTERLOCK":
+        outputs.update(
+            Q4_RESULT=_review_pass(),
+            Q4_SATISFACTION="DIRECT_PASS",
+            Q6_RESULT=_review_pass(),
+            EVIDENCE_SUFFICIENCY="SUFFICIENT",
+        )
+'''
+if text.count(old) != 1:
+    raise SystemExit("Pass-B direct Q4 anchor mismatch")
+text = text.replace(old, new, 1)
+closure_anchor = '''    except ValueError as exc:
+        if "acceptance predicate failed" not in str(exc):
+            errors.append(f"unexpected aggregate rejection: {exc}")
+
+    diff_stage = policy.stages["DIFFICULTY_ASSESSMENT"]
+'''
+closure_insert = '''    except ValueError as exc:
+        if "acceptance predicate failed" not in str(exc):
+            errors.append(f"unexpected aggregate rejection: {exc}")
+
+    closure_qi = _accepted_outputs(qi_invocation)
+    assert isinstance(closure_qi["Q4_RESULT"], dict)
+    closure_qi["Q4_RESULT"]["verdict"] = "REVISE"
+    closure_qi["Q4_SATISFACTION"] = "ADJUDICATED_CLOSURE_PASS"
+    closure_qi["Q4_CLOSURE_RESULT"] = {
+        "role": "Q4 Closure Adjudicator",
+        "verdict": "PASS",
+        "confidence": "HIGH",
+        "evidence_status": "SUFFICIENT",
+        "missing_evidence": [],
+        "role_output": {"CLOSURE_OUTCOME": "PASS"},
+    }
+    try:
+        closure_record = record_builder.build(
+            qi_invocation,
+            {
+                "schema_version": "1.0",
+                "invocation_id": qi_invocation["invocation_id"],
+                "output_task_commit": commit,
+                "status": "QUALITY_INTERLOCK_PASS",
+                "outputs": closure_qi,
+                "evidence_refs": [],
+            },
+        )
+        if closure_record.get("disposition") != "ADVANCE":
+            errors.append("coherent adjudicated Q4 closure did not advance")
+    except ValueError as exc:
+        errors.append(f"coherent adjudicated Q4 closure was rejected: {exc}")
+
+    diff_stage = policy.stages["DIFFICULTY_ASSESSMENT"]
+'''
+if text.count(closure_anchor) != 1:
+    raise SystemExit("Pass-B closure insertion anchor mismatch")
+text = text.replace(closure_anchor, closure_insert, 1)
+v.write_text(text, encoding="utf-8")
+
+write(
+    ".terminus/tests/test_q4_closure.py",
+    r'''
+    """Regression tests for adjudicated post-circuit-breaker Q4 closure."""
+
+    from __future__ import annotations
+
+    import json
+    import sys
+    from pathlib import Path
+
+    ROOT = Path(__file__).resolve().parents[2]
+    T = ROOT / ".terminus"
+    sys.path.insert(0, str(T))
+    import q4_closure
+
+
+    def _write(root: Path, rel: str, value: dict) -> None:
+        path = root / rel
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(json.dumps(value, indent=2) + "\n", encoding="utf-8")
+
+
+    def _pair(root: Path, rel: str, *, role: str, task: str, commit: str, verdict: str, findings=None, role_output=None):
+        packet_rel = rel.replace(".json", ".packet.json")
+        review_id = Path(rel).stem
+        packet = {
+            "schema_version": "3.0",
+            "review_id": review_id,
+            "protocol_policy_version": "2.2",
+            "prompt_policy_version": "2.2",
+            "role_policy_version": "1.0",
+            "control_plane_commit": "c" * 40,
+            "role_contract_hash": "d" * 64,
+            "task": task,
+            "task_commit": commit,
+            "state": "FROZEN_CANDIDATE",
+            "role": role,
+            "question": "q",
+            "authoritative_rules": ["rule"],
+            "evidence_allowed": [],
+            "evidence_excluded": [],
+            "prior_verdicts_visible": False,
+            "isolation_mode": "PROCEDURAL",
+            "change_since_last_review": "",
+            "output_schema": ".terminus/agents/schemas/review_result.schema.json",
+            "review_output_path": rel,
+        }
+        result = {
+            "schema_version": "3.0",
+            "role": role,
+            "review_id": review_id,
+            "task": task,
+            "task_commit": commit,
+            "control_plane_commit": packet["control_plane_commit"],
+            "protocol_policy_version": packet["protocol_policy_version"],
+            "prompt_policy_version": packet["prompt_policy_version"],
+            "role_policy_version": packet["role_policy_version"],
+            "role_contract_hash": packet["role_contract_hash"],
+            "context_packet": packet_rel,
+            "verdict": verdict,
+            "confidence": "HIGH",
+            "evidence_status": "SUFFICIENT",
+            "summary": "s",
+            "evidence": [],
+            "findings": findings or [],
+            "missing_evidence": [],
+            "change_scope": [],
+            "do_not_change": [],
+            "next_gate": "n",
+            "role_output": role_output or {},
+        }
+        _write(root, packet_rel, packet)
+        _write(root, rel, result)
+        return packet, result
+
+
+    def _fixture(tmp_path: Path):
+        root = tmp_path
+        task = "t"
+        base = "a" * 40
+        final = "b" * 40
+        boundary_rel = ".terminus/reviews/t/aaaaaaaa/t-aaaaaaaa-adjudication-boundary.json"
+        q4_rel = ".terminus/reviews/t/bbbbbbbb/t-bbbbbbbb-spec-test-contract-final.json"
+        closure_rel = ".terminus/reviews/t/bbbbbbbb/t-bbbbbbbb-q4-closure.json"
+        _pair(
+            root,
+            boundary_rel,
+            role="Adjudicator",
+            task=task,
+            commit=base,
+            verdict="REQUEST_CHANGES",
+            role_output={
+                "DECISION": "BOTH_PARTLY",
+                "CONTROLLING_RULE_OR_EVIDENCE": "r",
+                "SCOPE_RECONCILIATION": "s",
+                "REASON": "r",
+                "REQUIRED_ACTION": "a",
+                "RECHECK": "r",
+            },
+        )
+        finding = {
+            "id": "Q4-001",
+            "severity": "HIGH",
+            "status": "OBSERVED",
+            "criterion": "contract",
+            "evidence_refs": ["t/tests/x.py"],
+            "why_it_matters": "material",
+            "minimal_remediation": "m",
+            "regression_risk": "r",
+        }
+        q4_output = {
+            "BLOCKING_FINDING_IDS": ["Q4-001"],
+            "ADVISORY_FINDING_IDS": [],
+            "EXHAUSTIVENESS": {
+                "REQUIREMENTS_ENUMERATED": "COMPLETE",
+                "VERIFIER_BEHAVIORS_ENUMERATED": "COMPLETE",
+                "FORWARD_MATRIX_COMPLETE": "YES",
+                "REVERSE_MATRIX_COMPLETE": "YES",
+                "DELEGATED_CONTRACTS_COMPLETE": "YES",
+                "P2P_BOUNDARIES_COMPLETE": "YES",
+                "F2P_BOUNDARIES_COMPLETE": "YES",
+                "OUTPUT_INTERFACES_COMPLETE": "YES",
+                "SECOND_PASS_OMISSION_SWEEP": "PASS",
+                "UNINSPECTED_SCOPE": [],
+            },
+        }
+        _pair(
+            root,
+            q4_rel,
+            role="Spec-Test Contract Reviewer",
+            task=task,
+            commit=final,
+            verdict="REVISE",
+            findings=[finding],
+            role_output=q4_output,
+        )
+        fp = q4_closure.finding_fingerprint(finding)
+        closure_packet, closure = _pair(
+            root,
+            closure_rel,
+            role="Q4 Closure Adjudicator",
+            task=task,
+            commit=final,
+            verdict="PASS",
+            role_output={
+                "DECISION": "BOTH_PARTLY",
+                "CONTROLLING_RULE_OR_EVIDENCE": "r",
+                "SCOPE_RECONCILIATION": "s",
+                "REASON": "r",
+                "REQUIRED_ACTION": "advance",
+                "RECHECK": "none",
+                "CLOSURE_OUTCOME": "PASS",
+                "BOUNDARY_ADJUDICATION": boundary_rel,
+                "FINAL_Q4_RESULT": q4_rel,
+                "REPAIR_BASE_TASK_COMMIT": base,
+                "FINAL_TASK_COMMIT": final,
+                "FINDING_DISPOSITIONS": [
+                    {
+                        "finding_id": "Q4-001",
+                        "semantic_fingerprint": fp,
+                        "disposition": "REJECTED_SCOPE_REOPEN",
+                        "controlling_boundary_ref": "ADJ-Q4-001",
+                        "reason": "boundary rejected scope",
+                    }
+                ],
+            },
+        )
+        closure_packet["state"] = "Q4_CLOSURE_ADJUDICATION"
+        closure_packet["prior_verdicts_visible"] = True
+        closure_packet["evidence_allowed"] = [
+            f"boundary_adjudication:{boundary_rel}",
+            f"final_q4_result:{q4_rel}",
+            f"repair_diff:{base}..{final}:{task}",
+            f"q4_finding:Q4-001:{fp}",
+        ]
+        _write(root, closure["context_packet"], closure_packet)
+        return root, closure_rel
+
+
+    def test_ready_closure_requires_exact_finding_reconciliation(tmp_path: Path) -> None:
+        root, rel = _fixture(tmp_path)
+        errors, metadata = q4_closure.validate_ready_closure(root, rel)
+        assert errors == []
+        assert metadata["final_q4_result"].endswith("spec-test-contract-final.json")
+
+
+    def test_ready_closure_rejects_blocking_disposition(tmp_path: Path) -> None:
+        root, rel = _fixture(tmp_path)
+        path = root / rel
+        data = json.loads(path.read_text())
+        data["role_output"]["FINDING_DISPOSITIONS"][0]["disposition"] = "SURVIVING_BOUND_BLOCKER"
+        path.write_text(json.dumps(data))
+        errors, _ = q4_closure.validate_ready_closure(root, rel)
+        assert any("blocking dispositions" in error for error in errors)
+
+
+    def test_ready_closure_rejects_fingerprint_drift(tmp_path: Path) -> None:
+        root, rel = _fixture(tmp_path)
+        path = root / rel
+        data = json.loads(path.read_text())
+        data["role_output"]["FINDING_DISPOSITIONS"][0]["semantic_fingerprint"] = "0" * 64
+        path.write_text(json.dumps(data))
+        errors, _ = q4_closure.validate_ready_closure(root, rel)
+        assert any("fingerprint mismatch" in error for error in errors)
+
+
+    def test_stage_acceptance_distinguishes_direct_and_closure_modes() -> None:
+        from execution.acceptance import StageAcceptancePredicates
+
+        direct = {
+            "Q4_SATISFACTION": "DIRECT_PASS",
+            "Q4_RESULT": {"verdict": "PASS", "confidence": "HIGH", "evidence_status": "SUFFICIENT", "missing_evidence": []},
+        }
+        assert StageAcceptancePredicates._q4_satisfied(direct)
+        direct["Q4_RESULT"]["verdict"] = "REVISE"
+        assert not StageAcceptancePredicates._q4_satisfied(direct)
+        closure = {
+            "Q4_SATISFACTION": "ADJUDICATED_CLOSURE_PASS",
+            "Q4_RESULT": {"verdict": "REVISE", "confidence": "HIGH", "evidence_status": "SUFFICIENT", "missing_evidence": []},
+            "Q4_CLOSURE_RESULT": {
+                "role": "Q4 Closure Adjudicator",
+                "verdict": "PASS",
+                "confidence": "MEDIUM",
+                "evidence_status": "SUFFICIENT",
+                "missing_evidence": [],
+                "role_output": {"CLOSURE_OUTCOME": "PASS"},
+            },
+        }
+        assert StageAcceptancePredicates._q4_satisfied(closure)
+        closure["Q4_CLOSURE_RESULT"]["role_output"]["CLOSURE_OUTCOME"] = "BLOCKED"
+        assert not StageAcceptancePredicates._q4_satisfied(closure)
+    ''',
+)
+
+# Extend existing quality-system regression coverage.
+p = ROOT / ".terminus/tests/test_quality_agent_system.py"
+text = p.read_text(encoding="utf-8")
+text = text.replace(
+    '    assert packet.ROLES["production-logic"]["role"] == "Production Logic Auditor"\n',
+    '    assert packet.ROLES["production-logic"]["role"] == "Production Logic Auditor"\n    assert packet.ROLES["q4-closure-adjudication"]["role"] == "Q4 Closure Adjudicator"\n',
+    1,
+)
+text = text.replace(
+    '        "Spec-Test Contract Reviewer": "1.1",\n',
+    '        "Spec-Test Contract Reviewer": "1.1",\n        "Q4 Closure Adjudicator": "1.0",\n',
+    1,
+)
+text = text.replace(
+    '        assert role in contract.QUALITY_REVIEW_ROLES\n        assert contract.ROLE_PROMPT_HEADINGS[role]\n',
+    '        if role != "Q4 Closure Adjudicator":\n            assert role in contract.QUALITY_REVIEW_ROLES\n        assert contract.ROLE_PROMPT_HEADINGS[role]\n',
+    1,
+)
+text = text.replace(
+    '    assert "- Agent-system policy: `2.4`" in template\n',
+    '    assert "- Agent-system policy: `2.5`" in template\n',
+    1,
+)
+text = text.replace(
+    '    assert "| Q6 Production Logic Auditor |" in template\n',
+    '    assert "| Q6 Production Logic Auditor |" in template\n    assert "| Q4 Adjudicated Closure |" in template\n',
+    1,
+)
+marker = "def test_protocol_has_no_drip_adjudication_rule() -> None:\n"
+new_test = '''def test_q4_closure_policy_is_additive_and_machine_enforced() -> None:\n    policy = (T / "agents/Q4_CLOSURE_POLICY.md").read_text(encoding="utf-8")\n    assert "ADJUDICATED_CLOSURE_PASS" in policy\n    assert "REJECTED_SCOPE_REOPEN" in policy\n    assert "LATENT_AFTER_BOUNDARY" in policy\n    assert "SURVIVING_BOUND_BLOCKER" in policy\n    assert (T / "q4_closure.py").is_file()\n    assert (T / "new_q4_closure_packet.py").is_file()\n\n\n'''
+if text.count(marker) != 1:
+    raise SystemExit("quality test closure anchor mismatch")
+text = text.replace(marker, new_test + marker, 1)
+p.write_text(text, encoding="utf-8")
+
+print("Q4 closure redesign installed in working tree")
