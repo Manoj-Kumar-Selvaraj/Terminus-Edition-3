@@ -1,0 +1,139 @@
+{
+  "schema_version": "3.0",
+  "role": "Difficulty Reviewer",
+  "review_id": "django-checkout-failover-ha-b9ee4816-difficulty-design-490134a9ce",
+  "task": "django-checkout-failover-ha",
+  "task_commit": "b9ee4816204f1a51857407e4a6f9bf9e38dd937a",
+  "control_plane_commit": "b9ee4816204f1a51857407e4a6f9bf9e38dd937a",
+  "protocol_policy_version": "2.2",
+  "prompt_policy_version": "2.2",
+  "role_policy_version": "1.0",
+  "role_contract_hash": "d80763afaced63972ac6b4eaa06bfc9779fd06dc42674f5d27122ddc2928c290",
+  "context_packet": ".terminus/reviews/django-checkout-failover-ha/b9ee4816/django-checkout-failover-ha-b9ee4816-difficulty-design-490134a9ce.packet.json",
+  "verdict": "PASS",
+  "confidence": "MEDIUM",
+  "evidence_status": "SUFFICIENT",
+  "summary": "Pre-trial difficulty design is genuine coupled failover reasoning: fence/epoch ownership, write routing, sticky pins, watermark lag, standby sync sanitation, capture idempotency, and /readyz versus dump accepting_checkout interact so local fixes stay globally wrong. Hardness is not Django LOC volume or obscure trivia. Official Harbor GPT×5+Claude×5 trials are deferred, so the empirical tier is UNMEASURED / NOT_MEASURABLE.",
+  "evidence": [
+    {
+      "type": "file",
+      "ref": "django-checkout-failover-ha/instruction.md",
+      "observation": "Incident requires one fenced writer, sticky non-lagged reads, pins outside django_session, single capture per attempt_id, LSN-gated pay/capture, and multi-condition /readyz plus failover-status.json—several interacting correctness dimensions, not a single missing if."
+    },
+    {
+      "type": "file",
+      "ref": "django-checkout-failover-ha/environment/ha/docs/runbook.md",
+      "observation": "Runbook separates live /readyz gates from stricter dump accepting_checkout (pins shared, incident orders on standby, fence not writable on standby), creating partial-heal traps."
+    },
+    {
+      "type": "file",
+      "ref": "django-checkout-failover-ha/environment/ha/notes/oncall.md",
+      "observation": "On-call evidence names dual symptoms (AZ-B POSTs to replica, confirmation OPEN, duplicate captures, half-copied writable lease) that must be reconciled together."
+    },
+    {
+      "type": "file",
+      "ref": "django-checkout-failover-ha/environment/ha/controlplane/router.py",
+      "observation": "Starter write path can divert AZ-B mutations to replica under leftover affinity/split dispositions; fixing DATABASES alone does not heal placement."
+    },
+    {
+      "type": "file",
+      "ref": "django-checkout-failover-ha/environment/ha/controlplane/lag.py",
+      "observation": "replica_eligible uses order row counts and can return True when az-b Node exists, conflicting with watermark max_lag_lsn gating required elsewhere."
+    },
+    {
+      "type": "file",
+      "ref": "django-checkout-failover-ha/environment/ha/controlplane/sessions.py",
+      "observation": "Sticky pins are mirrored into default cache and ShopSession/django_session, so pins vanish across box remap even if a pins alias exists."
+    },
+    {
+      "type": "file",
+      "ref": "django-checkout-failover-ha/environment/ha/controlplane/replica.py",
+      "observation": "sync_standby still copies ha_fence_lease as writable and truncates apply LSN via cutoff, so standby can remain a second writer after copy."
+    },
+    {
+      "type": "file",
+      "ref": "django-checkout-failover-ha/environment/ha/controlplane/idempotency.py",
+      "observation": "claim_side_effect always creates a new SideEffect row, so retry/cross-box capture duplicates are structural rather than a one-line guard."
+    },
+    {
+      "type": "file",
+      "ref": "django-checkout-failover-ha/environment/ha/controlplane/views.py",
+      "observation": "/readyz always returns 200 with accepting_checkout true while /healthz is process-up, encoding the classic false-ready partial fix."
+    },
+    {
+      "type": "file",
+      "ref": "django-checkout-failover-ha/solution/solve.sh",
+      "observation": "Oracle must replace ten interacting modules (router, fencing, lag, sessions, idempotency, replica, reports, views, settings, fulfill services) then sync/cutover/heal state—not a fixture dump."
+    },
+    {
+      "type": "test",
+      "ref": "django-checkout-failover-ha/tests/test_ha.py",
+      "observation": "Twenty-eight F2P cases span writer placement, seq-gated reads, shared pins, cutover epoch, capture uniqueness/LSN block, /readyz blockers, failover-status accept/refuse combinations, and reconnect survival—coupled families rather than clerical one-assert-per-file volume."
+    }
+  ],
+  "findings": [
+    {
+      "id": "DD-1",
+      "severity": "LOW",
+      "status": "OBSERVED",
+      "criterion": "official_tier_unmeasured",
+      "evidence_refs": [
+        "django-checkout-failover-ha/task.toml",
+        ".terminus/reviews/django-checkout-failover-ha/b9ee4816/django-checkout-failover-ha-b9ee4816-difficulty-design-490134a9ce.packet.json"
+      ],
+      "why_it_matters": "Packet defers official Harbor model trials; any declared metadata difficulty remains an author estimate until combined GPT×5+Claude×5 mean pass@1 is measured.",
+      "minimal_remediation": "After Pre-LLMaJ/Harbor maturity, run the official 10 trials and set DIFFICULTY_VERDICT / task.toml difficulty from the combined complete-run mean.",
+      "regression_risk": "None for design PASS; empirical tier may differ from design intuition."
+    },
+    {
+      "id": "DD-2",
+      "severity": "LOW",
+      "status": "INFERRED",
+      "criterion": "shortcut_risk_instruction_explicitness",
+      "evidence_refs": [
+        "django-checkout-failover-ha/instruction.md",
+        "django-checkout-failover-ha/environment/ha/docs/runbook.md"
+      ],
+      "why_it_matters": "Instruction and runbook enumerate many gates and the dump schema, so a strong agent may checklist-patch modules without deep diagnosis; that raises shortcut risk but does not convert the task into clerical volume—partial patches still fail interacting F2P families.",
+      "minimal_remediation": "Keep coupled counterexamples; do not further flatten requirements into a repair recipe. Recalibrate after official trials if pass rate is unexpectedly high.",
+      "regression_risk": "Low if verifier families stay independent and counterexample-backed."
+    }
+  ],
+  "missing_evidence": [
+    "Official GPT-5.5 ×5 complete-run results",
+    "Official Claude Opus 4.8 ×5 complete-run results",
+    "Combined 10-trial per-test solvability matrix and trajectories"
+  ],
+  "change_scope": [],
+  "do_not_change": [
+    "Do not collapse fence, routing, pins, lag, capture, and readiness into a single-module bug to chase early pass rate.",
+    "Do not treat surrounding catalog/inventory/identity LOC as the difficulty signal.",
+    "Do not assign a final Edition 3 tier before combined official 10 trials."
+  ],
+  "next_gate": "Continue Pre-LLMaJ / Harbor path; defer official model trials for empirical tier",
+  "role_output": {
+    "MODE": "PRE_TRIAL",
+    "TRIAL_SET": "PRE_TRIAL",
+    "REASONING_CHAIN_ESTIMATE": [
+      "Diagnose dual-writer / replica POST / sticky OPEN / duplicate capture symptoms from oncall, logs, and both shop files",
+      "Restore single fenced writer with forward-only epoch and demote standby writable lease",
+      "Route mutations only to the fenced writer; disable leftover AZ affinity divert to replica",
+      "Store sticky keys on shared pins alias (not django_session/default) and gate post-write reads on pins plus watermark lag",
+      "Make sync_standby copy business rows without cloning a writable fence lease; advance applied_lsn correctly",
+      "Claim capture side effects idempotently and refuse pay/capture when order write_lsn is ahead of writer wal_lsn",
+      "Separate /healthz process-up from /readyz multi-gate 503 and dump accepting_checkout stricter than live ready",
+      "Preserve epoch and pin survival across reconnect/remap and emit coherent failover-status.json"
+    ],
+    "SHORTCUT_RISK": "MEDIUM",
+    "CLERICAL_DIFFICULTY_RISK": "LOW",
+    "COMPLETE_PASSES": "NOT_MEASURED_PRETRIAL",
+    "COMPLETE_PASS_RATE": "NOT_MEASURED_PRETRIAL",
+    "PER_TEST_COVERAGE": "Oracle/NOP only; official 10-trial solvability not yet measured",
+    "ZERO_OF_TEN_TESTS": "NOT_MEASURED_PRETRIAL",
+    "TRAJECTORY_FINDINGS": [],
+    "DIFFICULTY_VERDICT": "NOT_MEASURABLE",
+    "OFFICIAL_TIER": "UNMEASURED",
+    "BLOCKING_FINDING_IDS": [],
+    "ADVISORY_FINDING_IDS": ["DD-1", "DD-2"]
+  }
+}

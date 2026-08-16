@@ -1,0 +1,59 @@
+{
+  "schema_version": "3.0",
+  "role": "Engineering Documentation Reviewer",
+  "review_id": "django-checkout-failover-ha-b9ee4816-documentation-2e3067d67a",
+  "task": "django-checkout-failover-ha",
+  "task_commit": "b9ee4816204f1a51857407e4a6f9bf9e38dd937a",
+  "control_plane_commit": "b9ee4816204f1a51857407e4a6f9bf9e38dd937a",
+  "protocol_policy_version": "2.2",
+  "prompt_policy_version": "2.2",
+  "role_policy_version": "1.0",
+  "role_contract_hash": "539d611c77539c79339265989833b58ff32b9168606fe621b3e4077bd4ccbaf0",
+  "context_packet": ".terminus/reviews/django-checkout-failover-ha/b9ee4816/django-checkout-failover-ha-b9ee4816-documentation-2e3067d67a.packet.json",
+  "verdict": "PASS",
+  "confidence": "HIGH",
+  "evidence_status": "SUFFICIENT",
+  "summary": "README orients the lab; difficulty, solution, and verification explanations name concrete cutover traps, fencing/pin/capture invariants, and the WSGI/manage.py shop-file checks without oracle dump or filler claims.",
+  "evidence": [
+    {
+      "type": "file",
+      "ref": "django-checkout-failover-ha/README.md",
+      "observation": "Short handoff: Shopdesk cutover lab, two SQLite shops plus pins cache, place/pay/reload and /readyz under /app/ha. No benchmark marketing tone."
+    },
+    {
+      "type": "file",
+      "ref": "django-checkout-failover-ha/task.toml",
+      "observation": "difficulty_explanation lists partial fixes that still fail (DATABASES-only, /healthz, session pins, capture retries). solution_explanation states epoch fence, seq gates, shared pins, lease-safe sync, one capture per attempt_id. verification_explanation names rebuild-and-drive checks matching the suite."
+    },
+    {
+      "type": "test",
+      "ref": "django-checkout-failover-ha/tests/test_ha.py",
+      "observation": "Suite seeds primary/standby shop files, drives checkout via Django test Client and manage.py dump_failover/cutover, and asserts writer placement, seq-gated reads, pin survival, capture uniqueness, /readyz vs /healthz, and failover-status.json."
+    },
+    {
+      "type": "rule",
+      "ref": ".terminus/reviewers/HUMAN_WRITING_CALIBRATION.md",
+      "observation": "Explanations match human difficulty/solution/verification patterns: concrete missed traps and scenario purpose, not comprehensive/robust filler."
+    }
+  ],
+  "findings": [],
+  "missing_evidence": [],
+  "change_scope": [
+    "Cold documentation review at task_commit b9ee4816; task tree unchanged vs HEAD for django-checkout-failover-ha/."
+  ],
+  "do_not_change": [
+    "Do not expand README into an oracle walkthrough or move material instruction goals into human docs."
+  ],
+  "next_gate": "Pre-LLMaJ panel",
+  "role_output": {
+    "DIFFICULTY_QUALITY": "HIGH",
+    "SOLUTION_QUALITY": "HIGH",
+    "VERIFICATION_QUALITY": "HIGH",
+    "AI_TEMPLATE_SIGNAL": "LOW",
+    "UNSUPPORTED_CLAIMS": [],
+    "BOILERPLATE": [],
+    "CONTRADICTIONS": [],
+    "REQUIRED_CHANGES": [],
+    "REPLACEMENT_TEXT": ""
+  }
+}

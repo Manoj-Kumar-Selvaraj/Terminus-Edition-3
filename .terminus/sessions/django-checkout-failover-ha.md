@@ -38,12 +38,12 @@ This is the durable operational checkpoint for one task. Keep it evidence-orient
 | Pre-LLMaJ specialist panel | PENDING | packets under `b9ee4816/` for TA/VE/Orig/Diff/Comp/Instr/Doc/HQ |
 | Task Architect | PENDING | packet `...-task-architect-9d3c66428b.packet.json` |
 | Verifier Engineer | PENDING | packet `...-verifier-engineer-ed25c4beec.packet.json` |
-| Originality & Authenticity | PENDING | packet `...-originality-9c88957c99.packet.json` |
-| Difficulty design | PENDING | packet `...-difficulty-design-490134a9ce.packet.json` (pre-trial; official trials deferred) |
+| Originality & Authenticity | PASS | review `.../b9ee4816/...-originality-9c88957c99.json` (HIGH) |
+| Difficulty design | PASS | review `.../b9ee4816/...-difficulty-design-490134a9ce.json` (MEDIUM); tier UNMEASURED (trials deferred) |
 | Compliance pre-review | PENDING | packet `...-compliance-55d7325ce9.packet.json` |
 | Instruction Reviewer | PENDING | packet `...-instruction-50ee95a34e.packet.json` |
-| Documentation Reviewer | PENDING | packet `...-documentation-2e3067d67a.packet.json` |
-| Comprehensive Reviewer | PENDING | after specialists freeze |
+| Documentation Reviewer | PASS | review `.../b9ee4816/...-documentation-2e3067d67a.json` (HIGH) |
+| Comprehensive Reviewer | PENDING | after remaining specialists freeze |
 | Pre-LLMaJ aggregate | PENDING | |
 | Q8 GPT Perspective Simulation | PENDING | diagnostic only |
 | Q8 Claude Perspective Simulation | PENDING | diagnostic only |
@@ -55,7 +55,7 @@ This is the durable operational checkpoint for one task. Keep it evidence-orient
 | Per-test solvability 1/10 | DEFERRED | user-deferred |
 | Trial Analysis | DEFERRED | depends on deferred trials |
 | Final Compliance | PENDING | after Pre-LLMaJ/Q8 |
-| Final Human Quality | PENDING | packet `...-human-quality-c942763c8f.packet.json` (panel) |
+| Final Human Quality | PASS | review `.../b9ee4816/...-human-quality-c942763c8f.json` (HIGH); advisory HQ-1/HQ-2 |
 | Final package | PENDING | |
 
 ## Latest CI
@@ -89,17 +89,17 @@ Run cold Q4 + Pre-LLMaJ specialists (`model: inherit`); then Comprehensive → a
 | Q6 Production Logic Auditor | django-checkout-failover-ha-f9022bd1-production-logic-b02c7d085b | f9022bd10e98152efcc245a1a0a738bf29f77a80 | 2.2 | 2.2 | 1.1 | ee7d1cfd6e19fcc0e831cc75829457593d7410613c3b3fb811aef925e85a1607 | 5031e765140c0035a98df555161234e16eefdf18772a836f8c9dc31787be9d63 | `.terminus/reviews/django-checkout-failover-ha/f9022bd1/django-checkout-failover-ha-f9022bd1-production-logic-b02c7d085b.json` | PASS | HIGH | scope-reuse on `7cdda65` |
 | Task Architect | | | | | | | | | PENDING | | |
 | Verifier Engineer | | | | | | | | | PENDING | | |
-| Originality | | | | | | | | | REVISE | | prior destemplate |
-| Difficulty design | | | | | | | | | PENDING | | |
+| Originality | django-checkout-failover-ha-b9ee4816-originality-9c88957c99 | b9ee4816204f1a51857407e4a6f9bf9e38dd937a | 2.2 | 2.2 | | | | `.terminus/reviews/django-checkout-failover-ha/b9ee4816/django-checkout-failover-ha-b9ee4816-originality-9c88957c99.json` | PASS | HIGH | |
+| Difficulty design | django-checkout-failover-ha-b9ee4816-difficulty-design-490134a9ce | b9ee4816204f1a51857407e4a6f9bf9e38dd937a | 2.2 | 2.2 | | | | `.terminus/reviews/django-checkout-failover-ha/b9ee4816/django-checkout-failover-ha-b9ee4816-difficulty-design-490134a9ce.json` | PASS | MEDIUM | tier UNMEASURED |
 | Compliance pre-review | | | | | | | | | PENDING | | |
 | Instruction | | | | | | | | | PENDING | | |
-| Documentation | | | | | | | | | PENDING | | |
+| Documentation | django-checkout-failover-ha-b9ee4816-documentation-2e3067d67a | b9ee4816204f1a51857407e4a6f9bf9e38dd937a | 2.2 | 2.2 | | | | `.terminus/reviews/django-checkout-failover-ha/b9ee4816/django-checkout-failover-ha-b9ee4816-documentation-2e3067d67a.json` | PASS | HIGH | |
 | Comprehensive Reviewer | | | | | 1.0 | | | | PENDING | | |
 | Q8 GPT Perspective Simulation | | | | | 1.0 | | | | PENDING | | diagnostic only |
 | Q8 Claude Perspective Simulation | | | | | 1.0 | | | | PENDING | | diagnostic only |
-| Trial Analysis | | | | | | | | | PENDING | | |
+| Trial Analysis | | | | | | | | | DEFERRED | | |
 | Final Compliance | | | | | | | | | PENDING | | |
-| Final Human Quality | | | | | | | | | PENDING | | |
+| Final Human Quality | django-checkout-failover-ha-b9ee4816-human-quality-c942763c8f | b9ee4816204f1a51857407e4a6f9bf9e38dd937a | 2.2 | 2.2 | | | | `.terminus/reviews/django-checkout-failover-ha/b9ee4816/django-checkout-failover-ha-b9ee4816-human-quality-c942763c8f.json` | PASS | HIGH | advisory HQ-1/HQ-2 |
 
 ## Quality interlock checkpoint
 

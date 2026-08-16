@@ -1,0 +1,104 @@
+{
+  "schema_version": "3.0",
+  "role": "Human Quality Reviewer",
+  "review_id": "django-checkout-failover-ha-b9ee4816-human-quality-c942763c8f",
+  "task": "django-checkout-failover-ha",
+  "task_commit": "b9ee4816204f1a51857407e4a6f9bf9e38dd937a",
+  "control_plane_commit": "b9ee4816204f1a51857407e4a6f9bf9e38dd937a",
+  "protocol_policy_version": "2.2",
+  "prompt_policy_version": "2.2",
+  "role_policy_version": "1.0",
+  "role_contract_hash": "dd9c66871e04cb9864f1df4e78895c8c4aab3662dee84929c8e9ec5e7d285d9a",
+  "context_packet": ".terminus/reviews/django-checkout-failover-ha/b9ee4816/django-checkout-failover-ha-b9ee4816-human-quality-c942763c8f.packet.json",
+  "verdict": "PASS",
+  "confidence": "HIGH",
+  "evidence_status": "SUFFICIENT",
+  "summary": "Solver-facing instruction, oncall notes, and cutover runbook read as a coherent pager handoff: incident symptoms, paths, and HA invariants without verifier talk or inflated claims. Reverse-outline risk stays low; runbook is ordinary ops docs, not a second prompt. README is thin but not synthetic.",
+  "evidence": [
+    {
+      "type": "file",
+      "ref": "django-checkout-failover-ha/instruction.md",
+      "observation": "Two short paragraphs (~191 words). Incident-led opening with concrete symptoms and absolute paths; second paragraph states coupled writer/sticky/capture/readyz/dump invariants and points schema to the runbook. No benchmark preamble, essay transitions, or verifier leakage."
+    },
+    {
+      "type": "file",
+      "ref": "django-checkout-failover-ha/environment/ha/notes/oncall.md",
+      "observation": "Uneven oncall note with observed symptoms (replica POSTs, OPEN cart, duplicate captures, writable lease on standby). Matches instruction attempt IDs and log evidence; strong human signal."
+    },
+    {
+      "type": "file",
+      "ref": "django-checkout-failover-ha/environment/ha/docs/runbook.md",
+      "observation": "Operator runbook: management commands, DB aliases, fence lease, sticky/lag rules, /readyz vs dump accepting_checkout, and failover-status.json schema. Technical density appropriate; not a repair checklist or rubric-shaped second prompt."
+    },
+    {
+      "type": "file",
+      "ref": "django-checkout-failover-ha/environment/ha/logs/captured/shopdesk-error.log",
+      "observation": "Captured lines corroborate instruction/oncall current-state claims (az-a still writable, replica place, duplicate att-inc captures, sync_standby lease copy)."
+    },
+    {
+      "type": "file",
+      "ref": "django-checkout-failover-ha/README.md",
+      "observation": "Four-line orientation (~39 words). No inflated difficulty/solution claims, no Edition 3 marketing boilerplate, no leakage. Sparse for reviewer packaging but not AI cadence."
+    },
+    {
+      "type": "rule",
+      "ref": ".terminus/reviewers/HUMAN_WRITING_CALIBRATION.md",
+      "observation": "Matches human patterns: selective incident + outcome invariants, contract pointer for JSON schema, evidence-backed current state, no one-bullet-per-test inventory or stock AI connectors."
+    }
+  ],
+  "findings": [
+    {
+      "id": "HQ-1",
+      "severity": "LOW",
+      "status": "OBSERVED",
+      "criterion": "minor_formatting_oddity",
+      "evidence_refs": [
+        "django-checkout-failover-ha/instruction.md"
+      ],
+      "why_it_matters": "Instruction opens with a lone '1)' prefix; looks like leftover list numbering, not material synthetic cadence or leakage.",
+      "minimal_remediation": "Optional: drop the leading '1)' so the ticket starts on the AZ-B sentence.",
+      "regression_risk": "None if left as-is; cosmetic only."
+    },
+    {
+      "id": "HQ-2",
+      "severity": "LOW",
+      "status": "OBSERVED",
+      "criterion": "thin_readme",
+      "evidence_refs": [
+        "django-checkout-failover-ha/README.md"
+      ],
+      "why_it_matters": "README orients scope only; no difficulty/solution/verification notes. Sparse is not inflated AI prose and does not block handoff quality.",
+      "minimal_remediation": "Optional for Documentation Writer: add short difficulty trap, invariant summary, and how verification distinguishes wrong HA fixes.",
+      "regression_risk": "None for Human Quality PASS; Documentation Reviewer may still want more."
+    }
+  ],
+  "missing_evidence": [],
+  "change_scope": [],
+  "do_not_change": [
+    "Do not flatten instruction.md by moving material /readyz, sticky, or capture invariants solely into the runbook for stylistic minimalism.",
+    "Do not rewrite oncall.md or runbook.md into polished essay/benchmark voice.",
+    "Do not remove incident attempt_id references that are backed by oncall notes and captured logs."
+  ],
+  "next_gate": "Comprehensive Reviewer",
+  "role_output": {
+    "AI_TEMPLATE_SIGNAL": "LOW",
+    "HUMAN_SIGNAL": "HIGH",
+    "JIRA_SLACK_HANDOFF": "PASS",
+    "REVERSE_OUTLINE_RISK": "LOW",
+    "SPEC_FILE_LOOPHOLE": "NONE",
+    "SYNTHETIC_CADENCE": "LOW",
+    "BENCHMARK_BOILERPLATE": [],
+    "INFLATED_CLAIMS": [],
+    "LEAKAGE": [],
+    "SUSPICIOUS_PHRASES": [],
+    "CONTRADICTIONS": [],
+    "MATERIAL_ISSUES": false,
+    "REQUIRED_CHANGES": [],
+    "REPLACEMENT_TEXT": "",
+    "ADVISORY_FINDING_IDS": [
+      "HQ-1",
+      "HQ-2"
+    ],
+    "BLOCKING_FINDING_IDS": []
+  }
+}

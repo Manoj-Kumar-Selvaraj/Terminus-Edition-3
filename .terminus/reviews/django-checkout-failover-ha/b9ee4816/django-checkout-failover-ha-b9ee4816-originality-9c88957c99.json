@@ -1,0 +1,113 @@
+{
+  "schema_version": "3.0",
+  "role": "Originality & Authenticity Reviewer",
+  "review_id": "django-checkout-failover-ha-b9ee4816-originality-9c88957c99",
+  "task": "django-checkout-failover-ha",
+  "task_commit": "b9ee4816204f1a51857407e4a6f9bf9e38dd937a",
+  "control_plane_commit": "b9ee4816204f1a51857407e4a6f9bf9e38dd937a",
+  "protocol_policy_version": "2.2",
+  "prompt_policy_version": "2.2",
+  "role_policy_version": "1.0",
+  "role_contract_hash": "a85b7ae8248cbaba5b038db97e6207b51d4514816d092ef3038f4db82a3726b5",
+  "context_packet": ".terminus/reviews/django-checkout-failover-ha/b9ee4816/django-checkout-failover-ha-b9ee4816-originality-9c88957c99.packet.json",
+  "verdict": "PASS",
+  "confidence": "HIGH",
+  "evidence_status": "SUFFICIENT",
+  "summary": "Organic large_system_strict Shopdesk Django dual-SQLite HA cutover repair. Incident claims are evidence-backed; work package couples fencing, sticky pins, lag gates, capture idempotency, and /readyz dump semantics. No local or public structural twin; domain overlap with pinning/lag docs is normal.",
+  "evidence": [
+    {
+      "type": "file",
+      "ref": "django-checkout-failover-ha/instruction.md",
+      "observation": "Incident handoff for AZ-B writer cutover with place/pay/reload/capture and /readyz gates under /app/ha — engineering repair framing, not benchmark construction prose."
+    },
+    {
+      "type": "file",
+      "ref": "django-checkout-failover-ha/environment/ha/notes/oncall.md",
+      "observation": "Solver-visible pager notes support asserted current-state facts (AZ-B writer, replica place posts, OPEN confirmation, duplicate att-inc captures, writable standby lease)."
+    },
+    {
+      "type": "file",
+      "ref": "django-checkout-failover-ha/environment/ha/logs/captured/shopdesk-error.log",
+      "observation": "Captured gunicorn/router lines corroborate att-inc-20001/20007/20012 double capture, sticky miss on django_session, and fence copy onto standby."
+    },
+    {
+      "type": "file",
+      "ref": "django-checkout-failover-ha/environment/ha",
+      "observation": "Distinct product tree: shopdesk WSGI, dual SQLite shops, pins cache alias, controlplane/checkout/fulfill apps, manage.py cutover/sync_standby/dump_failover, ~20k varied order seed."
+    },
+    {
+      "type": "test",
+      "ref": "django-checkout-failover-ha/tests/test_ha.py",
+      "observation": "Verifier topology spans writer placement, AZ affinity, seq-gap reads, pin survival, cutover epoch, capture uniqueness/seq gate, /readyz vs /healthz, and failover-status conjunctions — operationally distinct, not renamed clones."
+    },
+    {
+      "type": "file",
+      "ref": ".terminus/GOLDEN_TASKS.md",
+      "observation": "No Django checkout HA twin; nearest abstract calibrations are recovery/live-systems motifs (wal-recovery-ordering, kv-live-surgery), not copyable topologies."
+    },
+    {
+      "type": "file",
+      "ref": "jetstream-regional-stream-continuity/instruction.md",
+      "observation": "Nearest local recovery/continuity neighbor uses JetStream archive/replay health reports — different stack, state model, and verifier surface."
+    },
+    {
+      "type": "file",
+      "ref": "payment-eod-control-chain/instruction.md",
+      "observation": "Payment-adjacent incident handoff idiom only; CORP-ACH EOD COBOL restart/reconciliation, not dual-shop Django failover HA."
+    },
+    {
+      "type": "file",
+      "ref": "webhook-outbox-delivery-plane/instruction.md",
+      "observation": "Shares lease/fencing vocabulary at industry level; Go/SQLite outbox delivery plane with claim/quota/HMAC — different work package."
+    },
+    {
+      "type": "public_reference",
+      "ref": "https://github.com/nibuno/django-multidb-router",
+      "observation": "Public PinningReplicaRouter neighbor for sticky primary reads after write; lacks dual-SQLite fence epochs, capture idempotency, /readyz traffic gate, and failover-status dump of this task."
+    },
+    {
+      "type": "rule",
+      "ref": ".terminus/agents/PRODUCTION_AUTHENTICITY.md",
+      "observation": "large_system_strict authenticity: substantial multi-invariant HA package, evidence-backed incident claims, instruction/docs split (runbook ops/schema, not module repair map), 20k-order varied seed, no benchmark-framing prose."
+    }
+  ],
+  "findings": [],
+  "missing_evidence": [],
+  "change_scope": [],
+  "do_not_change": [
+    "Do not flatten fence epoch, leftover AZ affinity, pins-vs-session, write_lsn/wal_lsn capture gate, or /readyz vs dump accepting_checkout into a single DATABASES remapping exercise.",
+    "Do not replace dual-shop SQLite + pins alias topology with a generic single-DB checkout fix merely to look more conventional."
+  ],
+  "next_gate": "Remaining Pre-LLMaJ specialist reviews",
+  "role_output": {
+    "DUPLICATE_RISK": "LOW",
+    "TEMPLATE_RISK": "LOW",
+    "REALISM": "HIGH",
+    "PROVENANCE": "Original Edition 3 Shopdesk Django dual-SQLite HA cutover repair; public multidb pinning/lag material used only as domain-neighbor calibration.",
+    "NEAREST_REFERENCES": [
+      "jetstream-regional-stream-continuity (local recovery/continuity neighbor; different domain)",
+      "payment-eod-control-chain (local payment incident idiom; different stack)",
+      "webhook-outbox-delivery-plane (local fencing vocabulary neighbor; outbox plane)",
+      "nibuno/django-multidb-router (public sticky-pin neighbor; incomplete twin)"
+    ],
+    "SIMILARITY_AXES": [
+      "phrase/wording: shared industry terms (cutover, fence, sticky, readyz) without matched instruction prose",
+      "requirement ordering: incident then operational gates — common Edition 3 handoff idiom",
+      "work-package topology: unique Django dual-shop HA + pins + capture + dump conjunction",
+      "verifier scenario topology: AZ affinity, seq watermarks, pin survival, capture uniqueness, readyz/dump",
+      "solution architecture: drifted router/fence/session/replica/capture realignment to runbook"
+    ],
+    "SUSPICIOUS_SIMILARITIES": [],
+    "ARTIFICIAL_CONSTRUCTION_SIGNALS": [],
+    "DISTINCTIVE_FEATURES": [
+      "ha_fence_lease (owner_node, epoch) with demoted writable=0 and cutover epoch bump",
+      "leftover AZ_WRITE_AFFINITY diverting AZ-B place/pay onto replica",
+      "sticky:shopper pins on shared cache alias, forbidden in django_session",
+      "pay/capture blocked when order write_lsn ahead of writer wal_lsn",
+      "one capture effect per attempt_id across writer and second AZ retries",
+      "/readyz 503 vs /healthz 200 under split/lag/pins/repeat-capture gates",
+      "failover-status.json accepting_checkout stricter than live /readyz (incident standby + fence_copied)"
+    ],
+    "REQUIRED_CHANGES": []
+  }
+}
