@@ -1,0 +1,27 @@
+name: COBOL Current Candidate Gates
+
+on:
+  push:
+    branches:
+      - task/cobol-comp3-python-equiv-strict-rebuild
+    paths:
+      - '.github/workflows/cobol-current-gates.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  current-candidate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Strict complexity for current task
+        run: python3 .terminus/validate_task_complexity.py cobol-comp3-python-equiv
+      - name: Runtime authenticity for current task
+        run: python3 .terminus/validate_runtime_authenticity.py cobol-comp3-python-equiv
+      - name: Business module diversity when applicable
+        run: python3 .terminus/validate_business_module_diversity.py cobol-comp3-python-equiv
