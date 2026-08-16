@@ -78,8 +78,8 @@ def test_f2p_paused_endpoint_rejects_claim(outbox):
     assert r.json()["error"] == "endpoint_unavailable"
 
 
-def test_f2p_complete_requires_lease_holder(outbox):
-    """Complete from a non-holder returns lease_mismatch."""
+def test_f2p_complete_and_deliver_require_lease_holder(outbox):
+    """Complete and deliver from a non-holder return lease_mismatch."""
     t = create_tenant(outbox["api"], "lease1")
     ep = create_endpoint(outbox["api"], t["id"], outbox["sink"]["url"])
     ev, _ = enqueue(outbox["api"], ep["id"], {"v": 1})
@@ -95,6 +95,14 @@ def test_f2p_complete_requires_lease_holder(outbox):
     )
     assert r.status_code == 409
     assert r.json()["error"] == "lease_mismatch"
+    d = outbox["api"](
+        "POST",
+        f"/api/v1/events/{ev['id']}/deliver",
+        json={"lease_owner": "other"},
+    )
+    assert d.status_code == 409
+    assert d.json()["error"] == "lease_mismatch"
+    assert outbox["api"]("GET", f"/api/v1/events/{ev['id']}").json()["status"] == "claimed"
 
 
 def test_f2p_deliver_posts_signed_headers(outbox):
@@ -128,16 +136,22 @@ def test_f2p_deliver_posts_signed_headers(outbox):
 
 
 def test_f2p_failed_delivery_retries_then_dlq(outbox):
-    """First failure stays pending with backoff; exhausted max_attempts lands in dlq."""
+    """Backoff follows 5s then 15s; exhausted max_attempts lands in dlq."""
     from datetime import datetime, timezone
     import time as time_mod
 
+    def parse_ts(raw: str) -> float:
+        if raw.endswith("Z"):
+            raw = raw[:-1] + "+00:00"
+        return datetime.fromisoformat(raw).astimezone(timezone.utc).timestamp()
+
     t = create_tenant(outbox["api"], "dlq1")
     ep = create_endpoint(
-        outbox["api"], t["id"], "http://127.0.0.1:1/nope", max_attempts=2
+        outbox["api"], t["id"], "http://127.0.0.1:1/nope", max_attempts=3
     )
     ev, _ = enqueue(outbox["api"], ep["id"], {"x": 1})
-    before = time_mod.time()
+
+    before1 = time_mod.time()
     outbox["api"](
         "POST",
         f"/api/v1/events/{ev['id']}/claim",
@@ -148,17 +162,15 @@ def test_f2p_failed_delivery_retries_then_dlq(outbox):
         f"/api/v1/events/{ev['id']}/deliver",
         json={"lease_owner": "w0"},
     )
-    after = time_mod.time()
-    mid = outbox["api"]("GET", f"/api/v1/events/{ev['id']}").json()
-    assert mid["status"] == "pending"
-    assert mid["attempt_count"] == 1
-    assert mid["lease_owner"] is None
-    nxt_raw = mid["next_attempt_at"]
-    if nxt_raw.endswith("Z"):
-        nxt_raw = nxt_raw[:-1] + "+00:00"
-    nxt = datetime.fromisoformat(nxt_raw).astimezone(timezone.utc).timestamp()
-    assert before + 4.0 <= nxt <= after + 7.0
+    after1 = time_mod.time()
+    mid1 = outbox["api"]("GET", f"/api/v1/events/{ev['id']}").json()
+    assert mid1["status"] == "pending"
+    assert mid1["attempt_count"] == 1
+    assert mid1["lease_owner"] is None
+    nxt1 = parse_ts(mid1["next_attempt_at"])
+    assert before1 + 4.0 <= nxt1 <= after1 + 7.0
 
+    before2 = time_mod.time()
     outbox["api"](
         "POST",
         f"/api/v1/events/{ev['id']}/claim",
@@ -169,10 +181,27 @@ def test_f2p_failed_delivery_retries_then_dlq(outbox):
         f"/api/v1/events/{ev['id']}/deliver",
         json={"lease_owner": "w1"},
     )
+    after2 = time_mod.time()
+    mid2 = outbox["api"]("GET", f"/api/v1/events/{ev['id']}").json()
+    assert mid2["status"] == "pending"
+    assert mid2["attempt_count"] == 2
+    nxt2 = parse_ts(mid2["next_attempt_at"])
+    assert before2 + 13.0 <= nxt2 <= after2 + 18.0
+
+    outbox["api"](
+        "POST",
+        f"/api/v1/events/{ev['id']}/claim",
+        json={"lease_owner": "w2", "lease_seconds": 30},
+    )
+    outbox["api"](
+        "POST",
+        f"/api/v1/events/{ev['id']}/deliver",
+        json={"lease_owner": "w2"},
+    )
     got = outbox["api"]("GET", f"/api/v1/events/{ev['id']}")
     assert got.status_code == 200
     assert got.json()["status"] == "dlq"
-    assert got.json()["attempt_count"] == 2
+    assert got.json()["attempt_count"] == 3
 
     actions = [
         e["action"]

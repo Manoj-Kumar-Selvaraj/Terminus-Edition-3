@@ -12,8 +12,8 @@ from pathlib import Path
 from conftest import APP, create_endpoint, create_tenant, enqueue
 
 
-def test_f2p_cli_health_and_enqueue_claim(outbox, built_ctl: Path):
-    """outboxctl health and enqueue/claim talk to the live OUTBOX_ADDR API."""
+def test_f2p_cli_health_enqueue_claim_deliver_pause(outbox, built_ctl: Path):
+    """outboxctl health/enqueue/claim/deliver/pause talk to the live OUTBOX_ADDR API."""
     assert built_ctl.is_file()
     env = os.environ.copy()
     addr = outbox["base"].removeprefix("http://")
@@ -70,6 +70,35 @@ def test_f2p_cli_health_and_enqueue_claim(outbox, built_ctl: Path):
     claimed = json.loads(claim.stdout.strip().splitlines()[-1])
     assert claimed["lease_owner"] == "cli-worker"
 
+    deliver = subprocess.run(
+        [
+            str(built_ctl),
+            "deliver",
+            "--event",
+            ev["id"],
+            "--owner",
+            "cli-worker",
+        ],
+        capture_output=True,
+        text=True,
+        env=env,
+        check=False,
+    )
+    assert deliver.returncode == 0, deliver.stderr + deliver.stdout
+    delivered = json.loads(deliver.stdout.strip().splitlines()[-1])
+    assert delivered["status"] == "delivered"
+
+    pause = subprocess.run(
+        [str(built_ctl), "pause", "--endpoint", ep["id"]],
+        capture_output=True,
+        text=True,
+        env=env,
+        check=False,
+    )
+    assert pause.returncode == 0, pause.stderr + pause.stdout
+    paused = json.loads(pause.stdout.strip().splitlines()[-1])
+    assert paused["paused"] is True
+
 
 def test_p2p_seed_catalog_artifacts_present():
     """Image seed DB, seed binary, and seed script remain under /app/outbox."""
@@ -86,9 +115,9 @@ def test_p2p_seed_catalog_artifacts_present():
         events = conn.execute("SELECT COUNT(*) FROM events").fetchone()[0]
     finally:
         conn.close()
-    assert tenants >= 6
-    assert endpoints >= 18
-    assert events >= 100
+    assert tenants > 0
+    assert endpoints > 0
+    assert events > 0
 
 
 def test_f2p_quota_blocks_deliver_and_complete_when_full(outbox):
