@@ -1,0 +1,253 @@
+{
+  "schema_version": "3.0",
+  "role": "Spec-Test Contract Reviewer",
+  "review_id": "django-checkout-failover-ha-d812d3f7-spec-test-contract-3db980b472",
+  "task": "django-checkout-failover-ha",
+  "task_commit": "d812d3f739d4b987e3db6f2b6cf52298511ece3f",
+  "control_plane_commit": "d812d3f739d4b987e3db6f2b6cf52298511ece3f",
+  "protocol_policy_version": "2.2",
+  "prompt_policy_version": "2.2",
+  "role_policy_version": "1.1",
+  "role_contract_hash": "c860dfe8b8ed0a04c729e4d6a828741b206b7067a780863ec7b22ee09d02c5a0",
+  "context_packet": ".terminus/reviews/django-checkout-failover-ha/d812d3f7/django-checkout-failover-ha-d812d3f7-spec-test-contract-3db980b472.packet.json",
+  "verdict": "PASS",
+  "confidence": "HIGH",
+  "evidence_status": "SUFFICIENT",
+  "summary": "Bidirectional alignment holds for django-checkout-failover-ha at d812d3f7. Material goals in instruction.md (single fenced writer, safe /readyz, confirmation matching recent writes, one capture per attempt_id, preserve routes/history, failover-status.json) plus delegated runbook sticky/lag/refuse/dump gates are discoverable and meaningfully asserted across the F2P/P2P suite. No material phantoms, untested requirements, or grading-relevant ambiguities. Instruction shape and docs boundary are clean; remaining notes are advisory only.",
+  "evidence": [
+    {
+      "type": "file",
+      "ref": "django-checkout-failover-ha/instruction.md",
+      "observation": "Two short paragraphs: incident symptoms + evidence paths; preserve manage.py and checkout/health/ready routes and history; require one fenced writer, safe /readyz, confirmation matching recent writes, one capture per attempt_id; delegate sticky/lag/refuse and failover-status.json schema to /app/ha/docs/runbook.md."
+    },
+    {
+      "type": "file",
+      "ref": "django-checkout-failover-ha/environment/ha/docs/runbook.md",
+      "observation": "Legitimate operator runbook: manage.py sync_standby/cutover/dump_failover; default vs replica files; pins key sticky:shopper:<id> not django_session; fence lease/epoch; lag formula vs max_lag_lsn; blank attempt refuse; capture blocked when write_lsn ahead of wal_lsn; /healthz vs live /readyz gates; dump accepting_checkout stricter conjunction; full failover-status.json object."
+    },
+    {
+      "type": "file",
+      "ref": "django-checkout-failover-ha/environment/ha/notes/oncall.md",
+      "observation": "Supports current-state claims (AZ-B writer, confirmation OPEN, duplicate captures, half-copied writable standby lease) and /readyz vs /healthz distinction without becoming a second acceptance checklist."
+    },
+    {
+      "type": "file",
+      "ref": "django-checkout-failover-ha/environment/ha/logs/captured/shopdesk-error.log",
+      "observation": "Solver-visible evidence for replica place inserts, sticky miss into django_session, duplicate captures for att-inc-20001/20007/20012, and readyz conflated with healthz."
+    },
+    {
+      "type": "file",
+      "ref": "django-checkout-failover-ha/environment/ha/config/ha.json",
+      "observation": "Public desk config referenced by runbook for sticky_seconds/max_lag_lsn; also carries incident_min_order_id used for incident-window coverage."
+    },
+    {
+      "type": "test",
+      "ref": "django-checkout-failover-ha/tests/test_outputs.py",
+      "observation": "28 F2P + 6 P2P behaviors: writer-only place/pay/reservation; AZ-B standby growth blocked; sticky confirmation alias=default; seq_gap from watermarks; sync_standby without writable standby lease; pins on shared alias surviving remap; cutover epoch/single writer; capture idempotency and uncommitted-seq block; /readyz 503/200 vs /healthz; dump schema and accepting conjunction including healed true path; P2P preserve manage/routes/schema/blank-attempt/runbook/config."
+    },
+    {
+      "type": "rule",
+      "ref": ".terminus/agents/QUALITY_AGENT_PROMPTS.md#Q4",
+      "observation": "PASS requires complete forward/reverse matrices, instruction completeness and delegated-contract walks, empty BLOCKING_FINDING_IDS; advisory LOWs may accompany PASS."
+    },
+    {
+      "type": "rule",
+      "ref": ".terminus/agents/INSTRUCTION_POLICY.md",
+      "observation": "Instruction owns the engineering ask; runbook may hold protocol/lag/ready/schema detail when explicitly referenced; current-state claims need supporting evidence."
+    }
+  ],
+  "findings": [
+    {
+      "id": "Q4-A01",
+      "severity": "LOW",
+      "status": "OBSERVED",
+      "criterion": "Dump pins value \"shared\" is required by the runbook example/conjunction, but the shared/local/missing taxonomy is not spelled out in docs (classification lives in pin_contract/desk_state).",
+      "evidence_refs": [
+        "django-checkout-failover-ha/environment/ha/docs/runbook.md",
+        "django-checkout-failover-ha/environment/ha/controlplane/pin_contract.py",
+        "django-checkout-failover-ha/tests/test_outputs.py::test_f2p_failover_status_accepts_when_healed"
+      ],
+      "why_it_matters": "An atypical shared backend that does not match filebased/pin-cache heuristics could report local while still satisfying sticky cross-AZ intent. Natural FileBasedCache+pin-cache path still aligns with inherited code; advisory only.",
+      "minimal_remediation": "Optional one-line runbook note that pins is shared|local|missing and shared means a cross-AZ file-backed pins store.",
+      "regression_risk": "Low."
+    },
+    {
+      "id": "Q4-A02",
+      "severity": "LOW",
+      "status": "OBSERVED",
+      "criterion": "sticky_seconds TTL is named in runbook/config but not behaviorally expired in tests; coverage is pin presence and writer-sticky reads.",
+      "evidence_refs": [
+        "django-checkout-failover-ha/environment/ha/docs/runbook.md",
+        "django-checkout-failover-ha/environment/ha/config/ha.json",
+        "django-checkout-failover-ha/tests/test_outputs.py::test_f2p_pins_on_shared_alias_not_session"
+      ],
+      "why_it_matters": "Wrong TTL would not fail grading if pins remain present during the lab window. Material sticky-to-writer behavior is still asserted.",
+      "minimal_remediation": "Optional short wait past sticky_seconds asserting idle confirmation may leave default when gap allows.",
+      "regression_risk": "Low."
+    },
+    {
+      "id": "Q4-A03",
+      "severity": "LOW",
+      "status": "OBSERVED",
+      "criterion": "On-disk /app/ha/out/failover-status.json is checked for required keys; accepting_checkout true is asserted via dump_failover into the lab tmp path, not the committed artifact contents.",
+      "evidence_refs": [
+        "django-checkout-failover-ha/instruction.md",
+        "django-checkout-failover-ha/tests/test_outputs.py::test_f2p_failover_status_refuses_accept_on_split",
+        "django-checkout-failover-ha/tests/test_outputs.py::test_f2p_failover_status_accepts_when_healed"
+      ],
+      "why_it_matters": "A static key-complete artifact could satisfy the disk presence check while dump logic is still graded elsewhere. Dump accepting semantics remain covered.",
+      "minimal_remediation": "Optional assert accepting_checkout true on the transferred artifact after oracle heal, or drop the timing phrase from instruction.",
+      "regression_risk": "Low."
+    },
+    {
+      "id": "Q4-A04",
+      "severity": "LOW",
+      "status": "OBSERVED",
+      "criterion": "controlplane/heal_plan.remaining_operator_actions lists concrete repair steps (pins file backend, dedupe captures, force writable=0).",
+      "evidence_refs": [
+        "django-checkout-failover-ha/environment/ha/controlplane/heal_plan.py"
+      ],
+      "why_it_matters": "Not a referenced doc or instruction dump, but a recipe-shaped helper in the inherited tree. Does not create a verifier/spec mismatch; advisory leakage note only.",
+      "minimal_remediation": "Optional soften action strings to status codes without backend path recipes.",
+      "regression_risk": "Negligible."
+    }
+  ],
+  "missing_evidence": [],
+  "change_scope": [],
+  "do_not_change": [
+    "instruction.md two-paragraph handoff and runbook delegation",
+    "Live /readyz vs dump accepting_checkout gate split in runbook",
+    "F2P writer fencing, sticky pins, capture idempotency, and dump schema/accepting suite",
+    "P2P preserve manage.py, routes, checkout_order history, blank attempt_id, and runbook/config max_lag_lsn surface",
+    "Artifact path /app/ha/out/failover-status.json and STATUS_KEYS object"
+  ],
+  "next_gate": "QUALITY_INTERLOCK with current Q6 PASS (or Protocol-valid scope-preserved Q6), then Pre-LLMaJ as scheduled",
+  "role_output": {
+    "REQUIREMENT_TEST_MATRIX": [
+      {
+        "id": "R_PRESERVE_SURFACE",
+        "requirement": "Leave manage.py and existing /api/checkout/*, /healthz, /readyz; do not wipe checkout history",
+        "coverage": "complete",
+        "tests": [
+          "test_p2p_manage_and_routes_present",
+          "test_p2p_order_schema_preserved",
+          "test_p2p_healthz_ok_when_desk_closed"
+        ]
+      },
+      {
+        "id": "R_SINGLE_WRITER",
+        "requirement": "One fenced writer; non-writer AZ must not persist place/pay/reservation onto standby-only state",
+        "coverage": "complete",
+        "tests": [
+          "test_f2p_place_lands_on_writer",
+          "test_f2p_pay_skips_other_az",
+          "test_f2p_pay_marks_writer_and_confirmation",
+          "test_f2p_az_b_does_not_insert_standby_order",
+          "test_f2p_checkout_api_does_not_grow_standby",
+          "test_f2p_reservation_stays_on_writer",
+          "test_f2p_old_az_cannot_write_after_cutover",
+          "test_f2p_cutover_single_writer_epoch"
+        ]
+      },
+      {
+        "id": "R_CONFIRMATION_STICKY",
+        "requirement": "Confirmation matches what the shopper just wrote; sticky reads use pins, not django_session; lag gates replica eligibility",
+        "coverage": "complete",
+        "tests": [
+          "test_f2p_confirmation_after_place_is_fresh",
+          "test_f2p_pay_marks_writer_and_confirmation",
+          "test_f2p_idle_read_follows_seq_gap",
+          "test_f2p_standby_unreadable_while_seq_gap_high",
+          "test_f2p_seq_gap_tracks_watermark_not_counts",
+          "test_f2p_pins_on_shared_alias_not_session",
+          "test_f2p_pins_survive_cache_session_and_db_remap",
+          "test_f2p_epoch_and_pin_survive_reconnect"
+        ]
+      },
+      {
+        "id": "R_CAPTURE_ONCE",
+        "requirement": "One capture effect per attempt_id; pay/capture refuse when write_lsn ahead of writer wal_lsn",
+        "coverage": "complete",
+        "tests": [
+          "test_f2p_capture_idempotent_across_retries",
+          "test_f2p_pay_twice_one_capture",
+          "test_f2p_capture_blocked_if_seq_not_committed"
+        ]
+      },
+      {
+        "id": "R_SYNC_CUTOVER",
+        "requirement": "sync_standby advances seq/copies incident window without writable standby lease; cutover advances epoch to one writer",
+        "coverage": "complete",
+        "tests": [
+          "test_f2p_sync_standby_advances_without_writable_lease",
+          "test_f2p_cutover_single_writer_epoch",
+          "test_f2p_old_az_cannot_write_after_cutover"
+        ]
+      },
+      {
+        "id": "R_READYZ_HEALTHZ",
+        "requirement": "/healthz is liveness; /readyz opens only under live traffic gates (one writer, lag budget, pins reachable, no repeat captures)",
+        "coverage": "complete",
+        "tests": [
+          "test_f2p_readyz_503_on_split_or_lag",
+          "test_f2p_readyz_503_on_pins_or_repeat_captures",
+          "test_f2p_healthz_200_while_readyz_fails",
+          "test_f2p_readyz_200_when_live_gates_hold",
+          "test_p2p_healthz_ok_when_desk_closed"
+        ]
+      },
+      {
+        "id": "R_DUMP_STATUS",
+        "requirement": "Write failover-status.json with runbook object; dump accepting_checkout is the stricter healed conjunction",
+        "coverage": "complete",
+        "tests": [
+          "test_f2p_failover_status_refuses_accept_on_split",
+          "test_f2p_failover_status_counts_repeat_captures",
+          "test_f2p_failover_status_blocks_standby_or_fence",
+          "test_f2p_failover_status_blocks_gap_or_missing_incident",
+          "test_f2p_failover_status_accepts_when_healed",
+          "test_p2p_runbook_names_dump_path"
+        ]
+      },
+      {
+        "id": "R_REFUSE_BLANK_ATTEMPT",
+        "requirement": "Place rejects blank attempt_id",
+        "coverage": "complete",
+        "tests": ["test_p2p_blank_attempt_rejected"]
+      },
+      {
+        "id": "R_LAG_BUDGET_CONFIG",
+        "requirement": "max_lag_lsn budget is named in config and runbook",
+        "coverage": "complete",
+        "tests": ["test_p2p_zero_gap_budget_hides_tiny_lag", "test_f2p_idle_read_follows_seq_gap", "test_f2p_standby_unreadable_while_seq_gap_high"]
+      }
+    ],
+    "PHANTOM_TEST_CONTRACTS": [],
+    "UNTESTED_REQUIREMENTS": [],
+    "AMBIGUITIES": [],
+    "INSTRUCTION_SHAPE": "PASS",
+    "INSTRUCTION_REQUIREMENT_COMPLETENESS": "SUFFICIENT",
+    "DELEGATED_CONTRACT_CHECK": "runbook.md is legitimate operator/HA documentation explicitly referenced by instruction.md; oncall.md and captured log are evidence; config/ha.json supplies sticky_seconds/max_lag_lsn/incident_min_order_id used by the runbook contract",
+    "INSTRUCTION_DOC_BOUNDARY": "CLEAN",
+    "IMPLEMENTATION_DIAGNOSIS_LEAKAGE": "LOW",
+    "CURRENT_STATE_EVIDENCE": "PASS",
+    "SPEC_DUMP_RISK": "LOW",
+    "BIDIRECTIONAL_ALIGNMENT": "PASS",
+    "BLOCKING_FINDING_IDS": [],
+    "ADVISORY_FINDING_IDS": ["Q4-A01", "Q4-A02", "Q4-A03", "Q4-A04"],
+    "EXHAUSTIVENESS": {
+      "REQUIREMENTS_ENUMERATED": "COMPLETE",
+      "VERIFIER_BEHAVIORS_ENUMERATED": "COMPLETE",
+      "FORWARD_MATRIX_COMPLETE": "YES",
+      "REVERSE_MATRIX_COMPLETE": "YES",
+      "INSTRUCTION_COMPLETENESS_COMPLETE": "YES",
+      "DELEGATED_CONTRACTS_COMPLETE": "YES",
+      "PROMPT_EXTENSION_WALK_COMPLETE": "YES",
+      "P2P_BOUNDARIES_COMPLETE": "YES",
+      "F2P_BOUNDARIES_COMPLETE": "YES",
+      "OUTPUT_INTERFACES_COMPLETE": "YES",
+      "SECOND_PASS_OMISSION_SWEEP": "PASS",
+      "UNINSPECTED_SCOPE": []
+    }
+  }
+}

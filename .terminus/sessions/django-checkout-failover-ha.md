@@ -7,7 +7,7 @@ This is the durable operational checkpoint for one task. Keep it evidence-orient
 ## Identity
 
 - Task: `django-checkout-failover-ha`
-- Controller state: `FROZEN_CANDIDATE`
+- Controller state: `PRE_LLMAJ`
 - Working branch: `main`
 - Pull request: `none`
 - Current task commit: `d812d3f739d4b987e3db6f2b6cf52298511ece3f`
@@ -32,10 +32,10 @@ This is the durable operational checkpoint for one task. Keep it evidence-orient
 | STB auth/AI credentials | SKIP | local Harbor oracle/nop without STB |
 | Oracle = 1 | PASS | Harbor job `jobs/2026-08-16__18-04-39` reward.txt=`1` |
 | NOP = 0 | PASS | Harbor job `jobs/2026-08-16__18-06-28` reward.txt=`0` |
-| Q4 Spec-Test Contract Reviewer | PENDING | packet under `d812d3f7/` (prior PASS STALE after packaging fix) |
+| Q4 Spec-Test Contract Reviewer | PASS | review `.../d812d3f7/...-spec-test-contract-3db980b472.json` (HIGH); advisory Q4-A01–A04 |
 | Q6 Production Logic Auditor | PASS | review `.../d812d3f7/...-production-logic-e58327c292.json` (HIGH); PADDING_RISK MEDIUM; scope `888ea3ba…` |
-| Quality Interlock | PENDING | awaiting cold Q4 on `d812d3f7` (Q6 PASS) |
-| Pre-LLMaJ specialist panel | PENDING | awaiting Q4/Q6/Comprehensive on `d812d3f7` |
+| Quality Interlock | PASS | cold Q4 + Q6 on exact `d812d3f7` |
+| Pre-LLMaJ specialist panel | PASS | Stage-B retained; Comprehensive APPROVE on `d812d3f7` |
 | Task Architect | PASS | retained from `b9ee4816` |
 | Verifier Engineer | PASS | retained from `b9ee4816` |
 | Originality & Authenticity | PASS | retained from `b9ee4816` |
@@ -44,9 +44,9 @@ This is the durable operational checkpoint for one task. Keep it evidence-orient
 | Instruction Reviewer | PASS | retained from `03749a0e` |
 | Documentation Reviewer | PASS | retained from `b9ee4816` |
 | Comprehensive Reviewer | APPROVE | review `.../d812d3f7/...-comprehensive-checklist-41d3c4e34b.json` (HIGH); coverage 100% |
-| Pre-LLMaJ aggregate | PENDING | |
-| Q8 GPT Perspective Simulation | PENDING | diagnostic only |
-| Q8 Claude Perspective Simulation | PENDING | diagnostic only |
+| Pre-LLMaJ aggregate | PASS | `.terminus/reviews/django-checkout-failover-ha/d812d3f7/pre-llmaj-aggregate.md` |
+| Q8 GPT Perspective Simulation | PENDING | diagnostic only; packets next |
+| Q8 Claude Perspective Simulation | PENDING | diagnostic only; packets next |
 | Harbor LLMaJ | DEFERRED | user-deferred |
 | Difficulty trials | DEFERRED | user-deferred (GPT×5 + Claude×5) |
 | GPT-5.5 difficulty ×5 | DEFERRED | user-deferred |
@@ -69,17 +69,17 @@ This is the durable operational checkpoint for one task. Keep it evidence-orient
 
 ## Current blocker
 
-Awaiting cold Q4 on `d812d3f7`. Q6 PASS and Comprehensive APPROVE recorded.
+None for Pre-LLMaJ. Q8 diagnostics pending. Harbor LLMaJ and official trials remain deferred.
 
 ## Next action
 
-Reconcile Q4 when it lands → Quality Interlock → Pre-LLMaJ aggregate → Q8 → package. Harbor LLMaJ and official trials remain deferred.
+Generate and run Q8 GPT/Claude perspectives → Q8 aggregate → Final Compliance / package (Harbor/trials deferred).
 
 ## Review evidence ledger
 
 | Review | Review ID | Task commit | Protocol | Prompt | Role policy | Role contract hash | Scope hash | Result path | Verdict | Confidence | Evidence |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| Q4 Spec-Test Contract Reviewer | django-checkout-failover-ha-03749a0e-spec-test-contract-3fc3ff16d8 | 03749a0ed4dcf6f691bb6d1c9bd573d923d92403 | 2.2 | 2.2 | 1.1 | c860dfe8b8ed0a04c729e4d6a828741b206b7067a780863ec7b22ee09d02c5a0 | n/a | `.terminus/reviews/django-checkout-failover-ha/03749a0e/django-checkout-failover-ha-03749a0e-spec-test-contract-3fc3ff16d8.json` | PASS | HIGH | advisory Q4-A01–A03 |
+| Q4 Spec-Test Contract Reviewer | django-checkout-failover-ha-d812d3f7-spec-test-contract-3db980b472 | d812d3f739d4b987e3db6f2b6cf52298511ece3f | 2.2 | 2.2 | 1.1 | c860dfe8b8ed0a04c729e4d6a828741b206b7067a780863ec7b22ee09d02c5a0 | n/a | `.terminus/reviews/django-checkout-failover-ha/d812d3f7/django-checkout-failover-ha-d812d3f7-spec-test-contract-3db980b472.json` | PASS | HIGH | advisory Q4-A01–A04 |
 | Q6 Production Logic Auditor | django-checkout-failover-ha-d812d3f7-production-logic-e58327c292 | d812d3f739d4b987e3db6f2b6cf52298511ece3f | 2.2 | 2.2 | 1.1 | ee7d1cfd6e19fcc0e831cc75829457593d7410613c3b3fb811aef925e85a1607 | 888ea3bacea1c12a24c17ba5488b64bf7bfefa41e6e2402bbf13118e86bc1532 | `.terminus/reviews/django-checkout-failover-ha/d812d3f7/django-checkout-failover-ha-d812d3f7-production-logic-e58327c292.json` | PASS | HIGH | PADDING_RISK MEDIUM |
 | Task Architect | django-checkout-failover-ha-b9ee4816-task-architect-9d3c66428b | b9ee4816204f1a51857407e4a6f9bf9e38dd937a | 2.2 | 2.2 | | | | `.terminus/reviews/django-checkout-failover-ha/b9ee4816/django-checkout-failover-ha-b9ee4816-task-architect-9d3c66428b.json` | PASS | HIGH | |
 | Verifier Engineer | django-checkout-failover-ha-b9ee4816-verifier-engineer-ed25c4beec | b9ee4816204f1a51857407e4a6f9bf9e38dd937a | 2.2 | 2.2 | | | | `.terminus/reviews/django-checkout-failover-ha/b9ee4816/django-checkout-failover-ha-b9ee4816-verifier-engineer-ed25c4beec.json` | PASS | HIGH | advisory VE-A01/A02 |
@@ -102,59 +102,59 @@ Reconcile Q4 when it lands → Quality Interlock → Pre-LLMaJ aggregate → Q8 
 - Q3 ambiguity status/evidence: `DONE` (live /readyz vs dump accepting_checkout)
 - Q7 format status/evidence: `PASS` (`b9ee4816/q7-format-check.md`)
 - Q5 Oracle/runtime repair evidence: `none`
-- Q4 review ID/result: `django-checkout-failover-ha-03749a0e-spec-test-contract-3fc3ff16d8` / `.terminus/reviews/django-checkout-failover-ha/03749a0e/django-checkout-failover-ha-03749a0e-spec-test-contract-3fc3ff16d8.json`
+- Q4 review ID/result: `django-checkout-failover-ha-d812d3f7-spec-test-contract-3db980b472` / `.terminus/reviews/django-checkout-failover-ha/d812d3f7/django-checkout-failover-ha-d812d3f7-spec-test-contract-3db980b472.json`
 - Q4 verdict/confidence/evidence: `PASS` / `HIGH` / `SUFFICIENT`
 - Q4 exhaustiveness: `COMPLETE`
-- Q6 review ID/result: `django-checkout-failover-ha-f9022bd1-production-logic-b02c7d085b` / `.terminus/reviews/django-checkout-failover-ha/f9022bd1/django-checkout-failover-ha-f9022bd1-production-logic-b02c7d085b.json`
+- Q6 review ID/result: `django-checkout-failover-ha-d812d3f7-production-logic-e58327c292` / `.terminus/reviews/django-checkout-failover-ha/d812d3f7/django-checkout-failover-ha-d812d3f7-production-logic-e58327c292.json`
 - Q6 verdict/confidence/evidence: `PASS` / `HIGH` / `SUFFICIENT`
-- Q6 production scope hash: `5031e765140c0035a98df555161234e16eefdf18772a836f8c9dc31787be9d63`
-- Q6 scope reuse: `reused on task commit 03749a0ed4dcf6f691bb6d1c9bd573d923d92403 (instruction-only; hash unchanged)`
+- Q6 production scope hash: `888ea3bacea1c12a24c17ba5488b64bf7bfefa41e6e2402bbf13118e86bc1532`
+- Q6 scope reuse: `n/a (exact task commit d812d3f7)`
 - Quality interlock: `PASS`
 
 ## Comprehensive reviewer checkpoint
 
-- Review ID: `none`
-- Result path: `none`
-- Task commit: `7d88c647d3967e9988d2cd4fa13723a8f1989097`
-- Role contract hash: `none`
+- Review ID: `django-checkout-failover-ha-d812d3f7-comprehensive-checklist-41d3c4e34b`
+- Result path: `.terminus/reviews/django-checkout-failover-ha/d812d3f7/django-checkout-failover-ha-d812d3f7-comprehensive-checklist-41d3c4e34b.json`
+- Task commit: `d812d3f739d4b987e3db6f2b6cf52298511ece3f`
+- Role contract hash: `7b4f0432fc31`
 - Checklist snapshot: `2026-08-08-user-supplied`
 - Policy freshness: `UNVERIFIED`
-- Checklist total: `unknown`
-- Checklist coverage: `0`
-- Recommendation: `INSUFFICIENT_EVIDENCE`
+- Checklist total: `61`
+- Checklist coverage: `100%`
+- Recommendation: `APPROVE`
 - High failures: `0`
 - Medium failures: `0`
 - Low failures: `0`
-- Special trial revision flags: `none`
-- Test-quality eval dispositions: `none`
-- Trial-analysis dispositions: `none`
+- Special trial revision flags: `none` (trial rows N/A deferred)
+- Test-quality eval dispositions: `none blocking`
+- Trial-analysis dispositions: `deferred / N/A`
 - Policy conflicts: `none`
 
 ## Pre-LLMaJ checkpoint
 
-- Aggregate: `PENDING`
-- Aggregate path: `none`
-- Task commit: `7d88c647d3967e9988d2cd4fa13723a8f1989097`
+- Aggregate: `PASS`
+- Aggregate path: `.terminus/reviews/django-checkout-failover-ha/d812d3f7/pre-llmaj-aggregate.md`
+- Task commit: `d812d3f739d4b987e3db6f2b6cf52298511ece3f`
 - Panel policy: `2.2`
-- Static check: `PENDING`
-- Quality interlock: `PENDING`
-- Comprehensive Reviewer: `INSUFFICIENT_EVIDENCE`
-- Checklist coverage: `0`
+- Static check: `PASS`
+- Quality interlock: `PASS`
+- Comprehensive Reviewer: `APPROVE`
+- Checklist coverage: `100%`
 - Adjudications: `none`
-- Open findings: `production_logic scale`
+- Open findings: `Q4-A01–A04 LOW; Q6 residual padding MEDIUM risk; DD/HQ LOW (tier unmeasured)`
 - Policy conflicts: `none`
 
 ## Q8 model-perspective simulation checkpoint
 
-- Task commit: `7d88c647d3967e9988d2cd4fa13723a8f1989097`
+- Task commit: `d812d3f739d4b987e3db6f2b6cf52298511ece3f`
 - GPT perspective review ID/result: `none`
 - GPT execution: `PENDING`
 - GPT final verifier result: `none`
-- GPT predicted signal: `NOT_MEASURABLE`
+- GPT predicted signal: `PENDING`
 - Claude perspective review ID/result: `none`
 - Claude execution: `PENDING`
 - Claude final verifier result: `none`
-- Claude predicted signal: `NOT_MEASURABLE`
+- Claude predicted signal: `PENDING`
 - Cross-perspective comparison: `n/a`
 
 ## Difficulty / solvability checkpoint
@@ -207,6 +207,8 @@ Reconcile Q4 when it lands → Quality Interlock → Pre-LLMaJ aggregate → Q8 
 
 Newest first; keep only meaningful state-changing attempts.
 
+- Q4 cold review PASS via [Q4 Spec-Test Review](788e2051-b353-4915-ae08-1f8cad0d6e7f) on freeze `d812d3f7` → `...-spec-test-contract-3db980b472.json` (advisory Q4-A01–A04). Quality Interlock PASS with Q6 exact-commit PASS; Pre-LLMaJ aggregate PASS.
+- Comprehensive APPROVE via [Comprehensive Reviewer](99ca5acb-b42e-46c7-8687-b5fdb6652d4d) on `d812d3f7` (61/61).
 - Q4 cold review PASS via [Q4 Spec-Test Review](83adc1b4-9b5c-4543-bfab-bfde45596d9a) on freeze `7cdda65` → `...-spec-test-contract-7c38e34c80.json` (advisory Q4-A01–A05 only). Quality Interlock PASS with Q6 scope-hash reuse.
 - Q2 closed Q4-001..004 on freeze `7cdda65f0097221e44da943dfaca24ea6c440f8f`; Harbor oracle `jobs/2026-08-16__17-22-11` → **1** (46/46); nop `jobs/2026-08-16__17-23-52` → **0**. Q6 scope hash unchanged (`5031e765…`).
 - Q4 cold review REVISE via [Q4 Spec-Test Review](f7ffac96-1d87-4554-8e95-af9c8c0441c6) on freeze `f9022bd1` → `...-spec-test-contract-c6e2481129.json` (blocking Q4-001..004).
