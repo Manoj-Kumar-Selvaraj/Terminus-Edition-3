@@ -137,6 +137,30 @@ def test_f2p_pay_skips_other_az(lab) -> None:
     assert not replica_only
 
 
+def test_f2p_pay_marks_writer_and_confirmation(lab) -> None:
+    """Writer pay must mark PAID on default and confirmation must show that paid order."""
+    shopper = Shopper.objects.using("default").get(pk=13)
+    _open_cart(shopper)
+    attempt = f"att-pay-{uuid.uuid4().hex[:8]}"
+    placed = _place(shopper.shopper_ref, attempt, _writer())
+    assert placed["status"] == 200
+    order_ref = placed["body"]["order_ref"]
+    with override_settings(AZ_ID=_writer()):
+        client = Client()
+        paid = client.post(f"/api/orders/{order_ref}/pay", content_type="application/json")
+    assert paid.status_code == 200
+    assert Order.objects.using("default").filter(order_ref=order_ref, status="PAID").exists()
+    replica_only = (
+        Order.objects.using("replica").filter(order_ref=order_ref, status="PAID").exists()
+        and not Order.objects.using("default").filter(order_ref=order_ref, status="PAID").exists()
+    )
+    assert not replica_only
+    seen = _confirmation(shopper.shopper_ref)
+    assert seen["body"]["order_ref"] == order_ref
+    assert seen["body"]["status"] == "PAID"
+    assert seen["body"]["alias"] == "default"
+
+
 def test_f2p_az_b_does_not_insert_standby_order(lab) -> None:
     """AZ-B leftover affinity must not insert a new attempt on standby."""
     shopper = Shopper.objects.using("default").get(pk=2)
@@ -368,30 +392,39 @@ def test_f2p_capture_blocked_if_seq_not_committed(lab) -> None:
     """Pay must not deliver a capture when the order seq is ahead of writer wal_lsn."""
     order = Order.objects.using("default").filter(pk=100).first()
     assert order is not None
+    before = SideEffect.objects.using("default").filter(
+        attempt_id=order.attempt_id, kind="capture"
+    ).count()
     Watermark.objects.using("default").filter(role="primary").update(wal_lsn=int(order.write_lsn) - 10)
     with override_settings(AZ_ID=_writer()):
         client = Client()
         response = client.post(f"/api/orders/{order.order_ref}/pay", content_type="application/json")
     assert response.status_code >= 400
+    assert (
+        SideEffect.objects.using("default")
+        .filter(attempt_id=order.attempt_id, kind="capture")
+        .count()
+        == before
+    )
 
 
 def test_f2p_readyz_503_when_two_writers(lab) -> None:
-    """/readyz must not be 200 while both shop files advertise a writable owner."""
+    """/readyz must return 503 while both shop files advertise a writable owner."""
     FenceLease.objects.using("default").filter(resource="checkout-primary").update(writable=1, owner_node="az-a")
     FenceLease.objects.using("replica").filter(resource="checkout-primary").update(writable=1, owner_node="az-b")
-    assert Client().get("/readyz").status_code != 200
+    assert Client().get("/readyz").status_code == 503
 
 
 def test_f2p_readyz_503_when_seq_gap_unsafe(lab) -> None:
-    """/readyz must fail while replica seq is outside the configured budget."""
+    """/readyz must return 503 while replica seq is outside the configured budget."""
     FenceLease.objects.using("replica").filter(resource="checkout-primary").update(writable=0)
     Watermark.objects.using("default").filter(role="primary").update(wal_lsn=10_000)
     Watermark.objects.using("replica").filter(role="replica").update(applied_lsn=0)
-    assert Client().get("/readyz").status_code != 200
+    assert Client().get("/readyz").status_code == 503
 
 
 def test_f2p_readyz_503_when_pins_unreachable(lab) -> None:
-    """/readyz must refuse traffic when the pins store cannot be probed."""
+    """/readyz must return 503 when the pins store cannot be probed."""
     FenceLease.objects.using("default").filter(resource="checkout-primary").update(
         writable=1, owner_node="az-b"
     )
@@ -413,7 +446,7 @@ def test_f2p_readyz_503_when_pins_unreachable(lab) -> None:
                 pin_dir.unlink()
         pin_dir.parent.mkdir(parents=True, exist_ok=True)
         pin_dir.write_text("blocked", encoding="utf-8")
-        assert Client().get("/readyz").status_code != 200
+        assert Client().get("/readyz").status_code == 503
     finally:
         if pin_dir.exists() and pin_dir.is_file():
             pin_dir.unlink()
@@ -421,7 +454,7 @@ def test_f2p_readyz_503_when_pins_unreachable(lab) -> None:
 
 
 def test_f2p_readyz_503_when_repeat_captures(lab) -> None:
-    """/readyz must refuse traffic while duplicate capture rows remain."""
+    """/readyz must return 503 while duplicate capture rows remain."""
     FenceLease.objects.using("replica").filter(resource="checkout-primary").update(writable=0)
     Watermark.objects.using("default").filter(role="primary").update(wal_lsn=10)
     Watermark.objects.using("replica").filter(role="replica").update(applied_lsn=10)
@@ -443,15 +476,22 @@ def test_f2p_readyz_503_when_repeat_captures(lab) -> None:
         delivered_at="2026-08-08T21:00:01Z",
         write_lsn=int(order.write_lsn),
     )
-    assert Client().get("/readyz").status_code != 200
+    assert Client().get("/readyz").status_code == 503
 
 
 def test_f2p_healthz_200_while_readyz_fails(lab) -> None:
-    """/healthz can be 200 while /readyz refuses checkout."""
+    """/healthz stays 200 while /readyz returns 503 under a forced unsafe writer split."""
+    FenceLease.objects.using("default").filter(resource="checkout-primary").update(
+        writable=1, owner_node="az-a"
+    )
+    FenceLease.objects.using("replica").filter(resource="checkout-primary").update(
+        writable=1, owner_node="az-b"
+    )
     live = Client().get("/healthz")
     ready = Client().get("/readyz")
     assert live.status_code == 200
-    assert ready.status_code != 200 or json.loads(ready.content)["accepting_checkout"] is False
+    assert ready.status_code == 503
+    assert json.loads(ready.content)["accepting_checkout"] is False
 
 
 def test_f2p_failover_status_refuses_accept_on_split(lab) -> None:
@@ -603,6 +643,43 @@ def test_f2p_failover_status_accepts_when_healed(lab) -> None:
     assert payload["fence_copied_to_standby"] is False
     assert int(payload["seq_gap"]) <= 25
     assert payload["accepting_checkout"] is True
+    ready = Client().get("/readyz")
+    assert ready.status_code == 200
+    assert json.loads(ready.content)["accepting_checkout"] is True
+
+
+def test_f2p_readyz_200_when_live_gates_hold(lab) -> None:
+    """Live /readyz must return 200 with accepting_checkout true when traffic gates hold."""
+    from django.db.models import Count, Min
+
+    from fulfill.models import WebhookDelivery
+
+    pin_dir = Path(dj_settings.BASE_DIR) / "state" / "pin-cache"
+    if pin_dir.exists() and pin_dir.is_file():
+        pin_dir.unlink()
+    pin_dir.mkdir(parents=True, exist_ok=True)
+    WebhookDelivery.objects.using("default").all().delete()
+    dupes = (
+        SideEffect.objects.using("default")
+        .values("attempt_id", "kind")
+        .annotate(n=Count("id"), keep=Min("id"))
+        .filter(n__gt=1)
+    )
+    for row in dupes:
+        SideEffect.objects.using("default").filter(
+            attempt_id=row["attempt_id"], kind=row["kind"]
+        ).exclude(pk=row["keep"]).delete()
+    call_command("sync_standby")
+    FenceLease.objects.using("default").filter(resource="checkout-primary").update(
+        owner_node="az-b", writable=1, epoch=4
+    )
+    FenceLease.objects.using("replica").filter(resource="checkout-primary").update(
+        owner_node="az-b", writable=0, epoch=4
+    )
+    ready = Client().get("/readyz")
+    assert ready.status_code == 200
+    body = json.loads(ready.content)
+    assert body["accepting_checkout"] is True
 
 
 def test_f2p_epoch_and_pin_survive_reconnect(lab) -> None:
