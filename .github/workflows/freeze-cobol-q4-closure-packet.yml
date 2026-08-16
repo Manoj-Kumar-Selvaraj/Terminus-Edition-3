@@ -25,7 +25,8 @@ jobs:
           set -euo pipefail
           REDESIGN=ddf8fd8f1219e807464897a93538e75fbe316fbd
           TASK_COMMIT=bb2e042c45873da3f3d78836d915ddb6446debf2
-          test "$(git rev-parse HEAD^)" = "$REDESIGN"
+          git merge-base --is-ancestor "$REDESIGN" HEAD
+          test -z "$(git diff --name-only "$REDESIGN"..HEAD -- cobol-comp3-python-equiv)"
           test "$(git log -1 --format=%H -- cobol-comp3-python-equiv)" = "$TASK_COMMIT"
           test -f .terminus/agents/Q4_CLOSURE_POLICY.md
           grep -F 'Policy version: `1.0`' .terminus/agents/Q4_CLOSURE_POLICY.md
@@ -46,7 +47,7 @@ jobs:
             --final-q4 .terminus/reviews/cobol-comp3-python-equiv/bb2e042c/cobol-comp3-python-equiv-bb2e042c-spec-test-contract-852fc1b28a.json \
             --repair-base 59dcf2146e1bac84cbc98d7d641e79b5a0138c4a \
             | tee /tmp/closure-packet-generation.log
-          packet=$(find .terminus/reviews/cobol-comp3-python-equiv/bb2e042c -maxdepth 1 -type f -name '*q4-closure-adjudication*.packet.json)
+          packet=$(find .terminus/reviews/cobol-comp3-python-equiv/bb2e042c -maxdepth 1 -type f -name '*q4-closure-adjudication*.packet.json')
           test -n "$packet"
           test "$(printf '%s\n' "$packet" | wc -l)" -eq 1
           printf '%s\n' "$packet" > /tmp/closure-packet-path
