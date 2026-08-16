@@ -32,9 +32,9 @@ This is the durable operational checkpoint for one task. Keep it evidence-orient
 | STB auth/AI credentials | PENDING | |
 | Oracle = 1 | PASS | Harbor job `jobs/2026-08-16__15-47-37` trial `django-checkout-failover-ha__D7WQKxP` reward.txt=`1`; 36/36 pytest |
 | NOP = 0 | PASS | Harbor job `jobs/2026-08-16__15-49-48` trial `django-checkout-failover-ha__JcrgyQf` reward.txt=`0`; many F2P fail on starter |
-| Q4 Spec-Test Contract Reviewer | PENDING | blocked until task commit is recorded and packets generated |
-| Q6 Production Logic Auditor | PENDING | blocked until task commit is recorded and packets generated |
-| Quality Interlock | PENDING | |
+| Q4 Spec-Test Contract Reviewer | PENDING | packet `.terminus/reviews/django-checkout-failover-ha/582e0209/django-checkout-failover-ha-582e0209-spec-test-contract-3d991dfb3b.packet.json` |
+| Q6 Production Logic Auditor | PENDING | packet `.terminus/reviews/django-checkout-failover-ha/582e0209/django-checkout-failover-ha-582e0209-production-logic-4f058fe6e4.packet.json` |
+| Quality Interlock | PENDING | awaiting cold Q4+Q6 results |
 | Pre-LLMaJ specialist panel | PENDING | |
 | Task Architect | PENDING | |
 | Verifier Engineer | PENDING | |
