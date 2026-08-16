@@ -17,7 +17,9 @@ class ControlSet:
     def value(self,name:str)->Decimal:return self.by_name()[name].value
 
 def collect(db:sqlite3.Connection,generation_id:str)->ControlSet:
-    def one(sql,*args):return Decimal(str(db.execute(sql,args).fetchone()[0] or 0))
+    def one(sql,*args):
+        row=db.execute(sql,args).fetchone()
+        return Decimal(str((row[0] if row is not None else 0) or 0))
     metrics=[
       ControlMetric('processed_count',one("SELECT COUNT(*) FROM processed_movements WHERE generation_id=?",generation_id),'rows','critical'),
       ControlMetric('accepted_count',one("SELECT COUNT(*) FROM processed_movements WHERE generation_id=? AND status='ACCEPTED'",generation_id),'rows','critical'),
