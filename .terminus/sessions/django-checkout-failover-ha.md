@@ -32,9 +32,9 @@ This is the durable operational checkpoint for one task. Keep it evidence-orient
 | STB auth/AI credentials | PENDING | |
 | Oracle = 1 | PASS | Harbor job `jobs/2026-08-16__15-47-37` trial `django-checkout-failover-ha__D7WQKxP` reward.txt=`1`; 36/36 pytest |
 | NOP = 0 | PASS | Harbor job `jobs/2026-08-16__15-49-48` trial `django-checkout-failover-ha__JcrgyQf` reward.txt=`0`; many F2P fail on starter |
-| Q4 Spec-Test Contract Reviewer | PENDING | packet `.terminus/reviews/django-checkout-failover-ha/582e0209/django-checkout-failover-ha-582e0209-spec-test-contract-3d991dfb3b.packet.json` |
-| Q6 Production Logic Auditor | PENDING | packet `.terminus/reviews/django-checkout-failover-ha/582e0209/django-checkout-failover-ha-582e0209-production-logic-4f058fe6e4.packet.json` |
-| Quality Interlock | PENDING | awaiting cold Q4+Q6 results |
+| Q4 Spec-Test Contract Reviewer | REVISE | review `.terminus/reviews/django-checkout-failover-ha/582e0209/django-checkout-failover-ha-582e0209-spec-test-contract-3d991dfb3b.json` (HIGH, SUFFICIENT); 8 blocking findings Q4-001..008 |
+| Q6 Production Logic Auditor | PENDING | packet ready; cold subagent still running |
+| Quality Interlock | REVISE | blocked on Q4 REVISE (and pending Q6) |
 | Pre-LLMaJ specialist panel | PENDING | |
 | Task Architect | PENDING | |
 | Verifier Engineer | PENDING | |
@@ -69,13 +69,13 @@ This is the durable operational checkpoint for one task. Keep it evidence-orient
 
 ## Current blocker
 
-Generate and execute independent Q4 (`spec-test-contract`) and Q6 (`production-logic`) packets in separate cold chats bound to task commit `582e0209de4595e14aecff692376800f209a610b`. This producer/orchestrator chat must not issue Q4/Q6 PASS.
+Q4 Spec-Test Contract Reviewer returned **REVISE** (HIGH) on freeze SHA `582e0209`. Blocking: Q4-001 Defect/Starter diagnosis leakage in solver-visible code; phantoms Q4-002..005; under-tested runbook readiness/accepting_checkout Q4-006..007; /readyz gate ambiguity Q4-008. Q6 result still pending. Do not claim QUALITY_INTERLOCK_PASS.
 
 ## Root-cause classification
 
-- Owner: CI Orchestrator / Submission Controller
-- Classification: `none`
-- Evidence: oracle job `2026-08-16__15-47-37` reward 1; nop job `2026-08-16__15-49-48` reward 0; python_loc=3011
+- Owner: Environment/Instruction Writer + Q2/Q3 (per Q4 next_gate)
+- Classification: `spec_ambiguity` / `verifier_gap` / `instruction_gap` (combined Q4 contract defects)
+- Evidence: `.terminus/reviews/django-checkout-failover-ha/582e0209/django-checkout-failover-ha-582e0209-spec-test-contract-3d991dfb3b.json`
 
 ## Next action
 
@@ -85,7 +85,7 @@ Open two fresh cold chats with the generated Q4 and Q6 packets under `.terminus/
 
 | Review | Review ID | Task commit | Protocol | Prompt | Role policy | Role contract hash | Scope hash | Result path | Verdict | Confidence | Evidence |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| Q4 Spec-Test Contract Reviewer | | | 2.2 | 2.2 | 1.1 | | n/a | | PENDING | | blocked on honest freeze |
+| Q4 Spec-Test Contract Reviewer | django-checkout-failover-ha-582e0209-spec-test-contract-3d991dfb3b | 582e0209de4595e14aecff692376800f209a610b | 2.2 | 2.2 | 1.1 | c860dfe8b8ed0a04c729e4d6a828741b206b7067a780863ec7b22ee09d02c5a0 | n/a | `.terminus/reviews/django-checkout-failover-ha/582e0209/django-checkout-failover-ha-582e0209-spec-test-contract-3d991dfb3b.json` | REVISE | HIGH | SUFFICIENT; 8 blocking |
 | Q6 Production Logic Auditor | | | 2.2 | 2.2 | 1.1 | | | | PENDING | | |
 | Task Architect | | | | | | | | | PENDING | | |
 | Verifier Engineer | | | | | | | | | PENDING | | |
@@ -108,14 +108,14 @@ Open two fresh cold chats with the generated Q4 and Q6 packets under `.terminus/
 - Q3 ambiguity status/evidence: `PENDING`
 - Q7 format status/evidence: `PENDING`
 - Q5 Oracle/runtime repair evidence: `none`
-- Q4 review ID/result: `none`
-- Q4 verdict/confidence/evidence: `PENDING`
-- Q4 exhaustiveness: `INCOMPLETE`
-- Q6 review ID/result: `none`
+- Q4 review ID/result: `django-checkout-failover-ha-582e0209-spec-test-contract-3d991dfb3b` / `.terminus/reviews/django-checkout-failover-ha/582e0209/django-checkout-failover-ha-582e0209-spec-test-contract-3d991dfb3b.json`
+- Q4 verdict/confidence/evidence: `REVISE` / `HIGH` / `SUFFICIENT`
+- Q4 exhaustiveness: `COMPLETE` (all EXHAUSTIVENESS flags YES/PASS; BLOCKING_FINDING_IDS Q4-001..008)
+- Q6 review ID/result: `pending`
 - Q6 verdict/confidence/evidence: `PENDING`
-- Q6 production scope hash: `pending`
+- Q6 production scope hash: `093f23336336d54c37e5a4fd4f91756681f1857e827d97d503bd7b2cd8b86a7b` (from packet)
 - Q6 scope reuse: `none`
-- Quality interlock: `PENDING`
+- Quality interlock: `REVISE`
 
 ## Comprehensive reviewer checkpoint
 
@@ -213,6 +213,7 @@ Open two fresh cold chats with the generated Q4 and Q6 packets under `.terminus/
 
 Newest first; keep only meaningful state-changing attempts.
 
+- Q4 cold review REVISE via [Q4 Spec-Test Review](dbc8029f-ac02-403d-ad04-9323313db645) → `.terminus/reviews/django-checkout-failover-ha/582e0209/django-checkout-failover-ha-582e0209-spec-test-contract-3d991dfb3b.json`.
 - `582e0209de4595e14aecff692376800f209a610b` — ENVIRONMENT_BUILD modules + `.gitattributes` LF pins; freeze SHA for Q4/Q6.
 - `2026-08-16` Harbor oracle `jobs/2026-08-16__15-47-37` → reward **1** (36/36). Harbor nop `jobs/2026-08-16__15-49-48` → reward **0**. Fixed CRLF on shebang scripts after first oracle `RewardFileNotFoundError`.
 - `2026-08-16` ENVIRONMENT_BUILD slice — reachable HA modules; python_loc ~3011.
