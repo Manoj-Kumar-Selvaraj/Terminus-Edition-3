@@ -175,6 +175,7 @@ def audit(
     generation_id = identity.generation_id
     replay = ReplayGuard(db).replay_health(generation_id)
     recovery = database_plan(db, identity)
+    recovery_healthy = recovery.action.value != "BLOCK"
     checkpoint_error: str | None = None
     try:
         assert_no_checkpoint_gap(db, generation_id)
@@ -206,6 +207,7 @@ def audit(
     passed = all(
         [
             bool(replay["healthy"]),
+            recovery_healthy,
             checkpoint_error is None,
             not incomplete_sequences(db, generation_id),
             critical_clean(controls),

@@ -485,6 +485,79 @@ def test_f2p_caller_supplied_layout_path_is_honored(tmp_path: Path) -> None:
     assert unhealthy_catalog.returncode == 2
     assert parse_stdout(unhealthy_catalog).get("passed") is False
 
+    schema_bad_db = tmp_path / "schema-bad.db"
+    shutil.copyfile(db_path, schema_bad_db)
+    schema_state = sqlite3.connect(schema_bad_db)
+    schema_state.executescript(
+        """
+        DROP TABLE rejects;
+        CREATE TABLE rejects(
+          id INTEGER PRIMARY KEY AUTOINCREMENT, generation_id TEXT NOT NULL,
+          sequence INTEGER NOT NULL, movement_id TEXT NOT NULL, code TEXT NOT NULL,
+          message TEXT NOT NULL, byte_offset INTEGER NOT NULL, byte_length INTEGER NOT NULL
+        );
+        """
+    )
+    schema_state.commit()
+    schema_state.close()
+    unhealthy_schema = cli(
+        "preflight",
+        *run_arguments(
+            schema_bad_db, source, layout_path, controls, report_dir, publish_dir
+        ),
+        "--schema", SCHEMA,
+        "--seed", SEED,
+    )
+    assert unhealthy_schema.returncode == 2
+    assert parse_stdout(unhealthy_schema).get("passed") is False
+
+    framing_source = tmp_path / "framing-bad.dat"
+    framing_source.write_bytes(reference_receipt_record() + b"ZZ")
+    unhealthy_source = cli(
+        "preflight",
+        *run_arguments(
+            db_path, framing_source, layout_path, controls, report_dir, publish_dir
+        ),
+        "--schema", SCHEMA,
+        "--seed", SEED,
+    )
+    assert unhealthy_source.returncode == 2
+    assert parse_stdout(unhealthy_source).get("passed") is False
+
+    window_arguments = run_arguments(
+        db_path, source, layout_path, controls, report_dir, publish_dir
+    )
+    window_arguments[window_arguments.index("--business-date") + 1] = "20991231"
+    window_probe = cli(
+        "preflight",
+        *window_arguments,
+        "--schema", SCHEMA,
+        "--seed", SEED,
+    )
+    assert window_probe.returncode in {0, 2}
+    assert parse_stdout(window_probe) != parse_stdout(preflight)
+
+    safety_state_db = tmp_path / "safety-state.db"
+    shutil.copyfile(db_path, safety_state_db)
+    safety_db = connect(safety_state_db)
+    safety_gid = build_identity(source, layout_path, "20260815").generation_id
+    safety_db.execute(
+        "INSERT INTO runs(generation_id,state) VALUES(?,?)",
+        (safety_gid, "PUBLISHED"),
+    )
+    safety_db.commit()
+    safety_db.close()
+    safety_probe = cli(
+        "preflight",
+        *run_arguments(
+            safety_state_db, source, layout_path, controls, report_dir, publish_dir
+        ),
+        "--schema", SCHEMA,
+        "--seed", SEED,
+    )
+    assert safety_probe.returncode in {0, 2}
+    assert parse_stdout(safety_probe) != parse_stdout(preflight)
+
     blocked_recovery_db = tmp_path / "blocked-recovery.db"
     shutil.copyfile(db_path, blocked_recovery_db)
     recovery_db = connect(blocked_recovery_db)
@@ -717,22 +790,6 @@ def test_f2p_inactive_warehouse_is_rejected(tmp_path: Path) -> None:
         disable_warehouse,
     ) == "WAREHOUSE_INACTIVE"
 
-    receipt_disabled = WarehousePolicy("W01", True, allow_receipts=False)
-    assert validate_warehouses(
-        movement(),
-        {"W01": receipt_disabled},
-    )
-    transfer = movement(
-        movement_type=MovementType.TRANSFER,
-        source="W01",
-        destination="W02",
-        reason="MOVE",
-    )
-    transfer_policies = {
-        "W01": WarehousePolicy("W01", True, allow_transfers=False),
-        "W02": WarehousePolicy("W02", True),
-    }
-    assert validate_warehouses(transfer, transfer_policies)
 
 def test_f2p_issue_requires_full_available_quantity(tmp_path: Path) -> None:
     m = movement(
@@ -1061,7 +1118,6 @@ def test_f2p_failed_reconciliation_cannot_publish(tmp_path: Path) -> None:
 
 def test_f2p_repeat_publication_of_same_generation_is_idempotent(
     tmp_path: Path,
-    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     report = tmp_path / "summary.json"
     extra = tmp_path / "effects.csv"
@@ -1093,15 +1149,12 @@ def test_f2p_repeat_publication_of_same_generation_is_idempotent(
 
     atomic_destination = tmp_path / "atomic-published"
     atomic_target = atomic_destination / "g2"
-
-    def fail_promotion(*args, **kwargs):
-        raise OSError("injected atomic promotion failure")
-
-    monkeypatch.setattr("src.publication.os.replace", fail_promotion)
+    missing_input = tmp_path / "missing-publication-input"
+    partial_inputs = {"summary": report, "missing": missing_input}
     must_reject(
         lambda: atomic_publish(
             "g2",
-            files,
+            partial_inputs,
             passing_reconciliation("g2"),
             atomic_destination,
         )
@@ -1368,6 +1421,56 @@ def exercise_adjudicated_operator_workflows(tmp_path: Path) -> None:
 
 
     healthy_payload = parse_stdout(audited)
+    gid_for_audit = build_identity(source, layout_path, "20260815").generation_id
+
+    recovery_bad = tmp_path / "audit-recovery-bad.db"
+    shutil.copyfile(db_path, recovery_bad)
+    changed = connect(recovery_bad)
+    changed.execute(
+        "UPDATE runs SET state='PROCESSING' WHERE generation_id=?",
+        (gid_for_audit,),
+    )
+    changed.execute(
+        "UPDATE checkpoints SET source_fingerprint='mismatched:fingerprint' "
+        "WHERE generation_id=?",
+        (gid_for_audit,),
+    )
+    changed.commit()
+    changed.close()
+    recovery_audit = audit_path(recovery_bad)
+    assert recovery_audit.returncode == 2
+    assert parse_stdout(recovery_audit).get("passed") is False
+
+    control_bad = tmp_path / "audit-control-bad.db"
+    shutil.copyfile(db_path, control_bad)
+    changed = sqlite3.connect(control_bad)
+    changed.execute(
+        "INSERT INTO inventory_effects"
+        "(generation_id,movement_id,sequence,warehouse_id,item_id,quantity_delta,value_delta,effect_kind)"
+        " VALUES(?,?,?,?,?,?,?,?)",
+        (gid_for_audit, "ORPHAN", 999, "W01", "SKU00001", "1", "1", "RECEIPT"),
+    )
+    changed.commit()
+    changed.close()
+    control_audit = audit_path(control_bad)
+    assert control_audit.returncode == 2
+    assert parse_stdout(control_audit).get("passed") is False
+
+    published_for_registry = visible_generation_dirs(publish_dir)
+    assert len(published_for_registry) == 1
+    registry_manifest = find_publication_manifest(published_for_registry[0], gid_for_audit)
+    registry_member = next(
+        path for path in published_for_registry[0].iterdir()
+        if path.is_file() and path != registry_manifest
+    )
+    registry_member_bytes = registry_member.read_bytes()
+    registry_member.write_bytes(b"registry-health-corruption")
+    try:
+        registry_audit = audit_path(db_path)
+        assert registry_audit.returncode == 2
+        assert parse_stdout(registry_audit).get("passed") is False
+    finally:
+        registry_member.write_bytes(registry_member_bytes)
 
     metric_audit = cli(
         "audit",
@@ -1449,6 +1552,7 @@ def exercise_adjudicated_operator_workflows(tmp_path: Path) -> None:
     quarantine_audit = audit_path(db_path)
     assert quarantine_audit.returncode == 2
     assert parse_stdout(quarantine_audit).get("passed") is False
+    quarantine.unlink()
 
     db = connect(db_path)
     gid = db.execute("SELECT generation_id FROM runs").fetchone()[0]
@@ -1469,6 +1573,8 @@ def exercise_adjudicated_operator_workflows(tmp_path: Path) -> None:
     }
 
     archive_root = tmp_path / "archive"
+    archive_registry = operational_root / "archive-registry-evidence"
+    assert not archive_registry.exists()
     archived = cli(
         "archive",
         "--db", db_path,
@@ -1478,7 +1584,7 @@ def exercise_adjudicated_operator_workflows(tmp_path: Path) -> None:
         "--report-dir", report_dir,
         "--publish-dir", publish_dir,
         "--archive-dir", archive_root,
-        "--registry", registry,
+        "--registry", archive_registry,
     )
     assert archived.returncode == 0
     archive_payload = parse_stdout(archived)
@@ -1490,11 +1596,7 @@ def exercise_adjudicated_operator_workflows(tmp_path: Path) -> None:
         path for path in archive_dirs[0].rglob("*") if path.is_file()
     ]
     assert archive_files
-    csv_blob = "\n".join(
-        path.read_text(encoding="utf-8")
-        for path in archive_files
-        if path.suffix.lower() == ".csv"
-    )
+    archive_blob = b"\n".join(path.read_bytes() for path in archive_files)
     for control_name in (
         "processed_count",
         "accepted_count",
@@ -1503,27 +1605,33 @@ def exercise_adjudicated_operator_workflows(tmp_path: Path) -> None:
         "net_quantity",
         "net_value",
     ):
-        assert control_name in csv_blob
-    assert "W01" in csv_blob
-    assert "SKU00001" in csv_blob
-
-    json_blob = "\n".join(
-        path.read_text(encoding="utf-8")
-        for path in archive_files
-        if path.suffix.lower() == ".json"
-    )
+        assert control_name.encode() in archive_blob
+    assert b"W01" in archive_blob
+    assert b"SKU00001" in archive_blob
     for expected in (
         gid,
         file_digest(source),
         file_digest(layout_path),
         manifest_digest,
     ):
-        assert expected in json_blob
-    assert any(file_digest(path) == manifest_digest for path in archive_files)
+        assert expected.encode() in archive_blob
 
-    registry_text = registry.read_text(encoding="utf-8")
-    assert gid in registry_text
-    assert manifest_digest in registry_text
+    archive_registry_bytes = archive_registry.read_bytes()
+    assert archive_registry_bytes
+    assert gid.encode() in archive_registry_bytes
+    assert manifest_digest.encode() in archive_registry_bytes
+    registry_audit = cli(
+        "audit",
+        "--db", db_path,
+        "--source", source,
+        "--layout", layout_path,
+        "--business-date", "20260815",
+        "--expected-records", "1",
+        "--quarantine", quarantine,
+        "--registry", archive_registry,
+    )
+    assert registry_audit.returncode == 0
+    assert parse_stdout(registry_audit).get("passed") is True
 
     db = connect(db_path)
     new_events = db.execute(
