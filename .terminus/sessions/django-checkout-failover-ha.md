@@ -10,7 +10,7 @@ This is the durable operational checkpoint for one task. Keep it evidence-orient
 - Controller state: `FROZEN_CANDIDATE`
 - Working branch: `main`
 - Pull request: `none`
-- Current task commit: `03749a0ed4dcf6f691bb6d1c9bd573d923d92403`
+- Current task commit: `d812d3f739d4b987e3db6f2b6cf52298511ece3f`
 - Agent-system policy: `2.4`
 - Specialist prompt policy: `2.2`
 - Specialist protocol policy: `2.2`
@@ -30,20 +30,20 @@ This is the durable operational checkpoint for one task. Keep it evidence-orient
 | Preflight/static | PASS | ruff clean; complexity+authenticity validators PASS |
 | Ruff verifier | PASS | `ruff check django-checkout-failover-ha/tests` clean |
 | STB auth/AI credentials | SKIP | local Harbor oracle/nop without STB |
-| Oracle = 1 | PASS | Harbor job `jobs/2026-08-16__17-38-02` reward.txt=`1`; 28 F2P suite |
-| NOP = 0 | PASS | Harbor job `jobs/2026-08-16__17-39-27` reward.txt=`0` |
-| Q4 Spec-Test Contract Reviewer | PASS | review `.../03749a0e/...-spec-test-contract-3fc3ff16d8.json` (HIGH); advisory Q4-A01–A03 |
-| Q6 Production Logic Auditor | PASS | scope-preserved (`review_scope_hash=5031e765…`); instruction-only change |
-| Quality Interlock | PASS | Q4 PASS on `03749a0e` + Q6 scope-hash reuse |
-| Pre-LLMaJ specialist panel | PENDING | Instruction PASS; Comprehensive next |
-| Task Architect | PASS | retained from `b9ee4816` (scenario unchanged) |
-| Verifier Engineer | PASS | retained from `b9ee4816` (tests/env unchanged) |
+| Oracle = 1 | PASS | Harbor job `jobs/2026-08-16__18-04-39` reward.txt=`1` |
+| NOP = 0 | PASS | Harbor job `jobs/2026-08-16__18-06-28` reward.txt=`0` |
+| Q4 Spec-Test Contract Reviewer | PENDING | packet under `d812d3f7/` (prior PASS STALE after packaging fix) |
+| Q6 Production Logic Auditor | PENDING | packet under `d812d3f7/` (scope hash changed after Dockerfile swap) |
+| Quality Interlock | PENDING | awaiting cold Q4+Q6 on `d812d3f7` |
+| Pre-LLMaJ specialist panel | PENDING | awaiting Q4/Q6/Comprehensive on `d812d3f7` |
+| Task Architect | PASS | retained from `b9ee4816` |
+| Verifier Engineer | PASS | retained from `b9ee4816` |
 | Originality & Authenticity | PASS | retained from `b9ee4816` |
 | Difficulty design | PASS | retained from `b9ee4816`; tier UNMEASURED |
 | Compliance pre-review | PASS | retained from `b9ee4816` |
-| Instruction Reviewer | PASS | review `.../03749a0e/...-instruction-5b7fcb0fa3.json` (HIGH) |
+| Instruction Reviewer | PASS | retained from `03749a0e` |
 | Documentation Reviewer | PASS | retained from `b9ee4816` |
-| Comprehensive Reviewer | REQUEST_CHANGES | review `.../03749a0e/...-comprehensive-checklist-6c6c75f6fc.json` (HIGH); RC-STRUCT-001, RC-ENV-010 |
+| Comprehensive Reviewer | PENDING | packet `.../d812d3f7/...-comprehensive-checklist-41d3c4e34b.packet.json` |
 | Pre-LLMaJ aggregate | PENDING | |
 | Q8 GPT Perspective Simulation | PENDING | diagnostic only |
 | Q8 Claude Perspective Simulation | PENDING | diagnostic only |
@@ -69,17 +69,17 @@ This is the durable operational checkpoint for one task. Keep it evidence-orient
 
 ## Current blocker
 
-Comprehensive REQUEST_CHANGES: RC-STRUCT-001 (`tests/test_outputs.py`) and RC-ENV-010 (canonical Python base). Remediation in progress.
+Cold Q4 + Q6 + Comprehensive on freeze `d812d3f7` after RC-STRUCT-001/RC-ENV-010 packaging fix. Prior Comprehensive REQUEST_CHANGES remediated.
 
 ## Root-cause classification
 
-- Owner: Q7 / environment packaging
+- Owner: packaging (closed on `d812d3f7`)
 - Classification: `format` / `environment_base`
-- Evidence: `...-comprehensive-checklist-6c6c75f6fc.json`
+- Evidence: oracle `jobs/2026-08-16__18-04-39`; nop `jobs/2026-08-16__18-06-28`
 
 ## Next action
 
-Ship `test_outputs.py` + canonical `python:3.13-slim-bookworm` agent/verifier bases; re-oracle/NOP; re-Comprehensive. Harbor LLMaJ and official trials remain deferred.
+Cold Q4, Q6, and Comprehensive (`model: inherit`) on `d812d3f7`. Then Pre-LLMaJ aggregate → Q8 → package. Harbor LLMaJ and official trials remain deferred.
 
 ## Review evidence ledger
 
