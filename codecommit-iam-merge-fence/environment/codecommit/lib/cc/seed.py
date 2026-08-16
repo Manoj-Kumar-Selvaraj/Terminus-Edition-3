@@ -132,8 +132,8 @@ def write_policies() -> None:
             ]
         ),
     }
-    # Expand with additional named policy fragments for multi-repo catalog realism
-    for i in range(1, 25):
+    # Expand with a few differentiated multi-repo policy fragments
+    for i, team in enumerate(("payments", "ledger-aux", "risk-ops", "treasury"), start=1):
         policies[f"team-fragment-{i:02d}"] = _policy(
             [
                 {
@@ -148,7 +148,9 @@ def write_policies() -> None:
                     "Action": "codecommit:GitPush",
                     "Resource": f"arn:local:codecommit:local:000000000000:team{i:02d}",
                     "Condition": {
-                        "StringEquals": {"codecommit:References": f"refs/heads/dev/team{i:02d}"},
+                        "StringEquals": {
+                            "codecommit:References": f"refs/heads/dev/{team}"
+                        },
                     },
                 },
             ]
@@ -194,10 +196,14 @@ def write_ops() -> None:
                     "id": "wh-settle",
                     "url": "http://127.0.0.1:9/hooks/settle",
                     "pipeline": "settle-prod",
+                    "secret": "settle",
                 }
             ]
         },
     )
+    from cc.branch_protection import DEFAULT_RULES, save_rules
+
+    save_rules(DEFAULT_RULES)
     (home.ops_dir() / "handoff.md").write_text(
         "Platform security, Monday.\n\n"
         "CodeCommit IAM in the lab stand-in is not the same evaluator we run in prod. "

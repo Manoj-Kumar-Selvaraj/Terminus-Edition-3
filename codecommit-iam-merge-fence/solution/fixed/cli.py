@@ -117,8 +117,7 @@ def cmd_metrics(ns: argparse.Namespace) -> int:
 
 
 def cmd_dispatch(ns: argparse.Namespace) -> int:
-    sink: list = []
-    _out({"ok": True, "results": dispatch_pending(fixed=ns.fixed, sink=sink), "sink": sink})
+    _out({"ok": True, "results": dispatch_pending(fixed=True, sink=[])})
     return 0
 
 

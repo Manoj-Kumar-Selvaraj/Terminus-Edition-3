@@ -2,8 +2,9 @@ from __future__ import annotations
 
 import json
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+from pathlib import Path
 from typing import Any
-from urllib.parse import parse_qs, urlparse
+from urllib.parse import urlparse
 
 from cc.errors import CcError
 from cc.iam import actions as iam_actions
@@ -68,7 +69,7 @@ class Handler(BaseHTTPRequestHandler):
         path = urlparse(self.path).path
         body = _read_json(self)
         principal, mfa, source_ip = self._auth_headers()
-        fixed = self.fixed
+        fixed = True
         try:
             if path == "/repos":
                 name = str(body.get("name"))
@@ -77,20 +78,19 @@ class Handler(BaseHTTPRequestHandler):
                 self._send(200, catalog.get_repo(name) or {})
                 return
             if path.endswith("/push") and path.startswith("/repos/"):
-                # Broken starter: may skip MFA/IP by not forwarding headers into authorize when fixed=False
                 repo = path.split("/")[2]
                 ref = full_ref(str(body.get("ref") or "main"))
                 worktree = str(body.get("worktree"))
-                if fixed:
-                    authz_gateway.gated_authorize(
-                        principal, iam_actions.GIT_PUSH, repo, ref, mfa=mfa, source_ip=source_ip, fixed=True
-                    )
-                else:
-                    # Broken: authorize with MFA forced true / localhost
-                    authz_gateway.gated_authorize(
-                        principal, iam_actions.GIT_PUSH, repo, ref, mfa=True, source_ip="10.8.12.4", fixed=False
-                    )
-                commit = gitops.push(repo, __import__("pathlib").Path(worktree), ref)
+                authz_gateway.gated_authorize(
+                    principal,
+                    iam_actions.GIT_PUSH,
+                    repo,
+                    ref,
+                    mfa=mfa,
+                    source_ip=source_ip,
+                    fixed=True,
+                )
+                commit = gitops.push(repo, Path(worktree), ref)
                 self._send(200, {"ok": True, "repo": repo, "ref": ref, "commit": commit})
                 return
             if path == "/prs":
@@ -98,7 +98,13 @@ class Handler(BaseHTTPRequestHandler):
                 source = str(body["source"])
                 dest = str(body["dest"])
                 authz_gateway.gated_authorize(
-                    principal, iam_actions.GIT_PULL, repo, source, mfa=mfa, source_ip=source_ip, fixed=fixed
+                    principal,
+                    iam_actions.GIT_PULL,
+                    repo,
+                    source,
+                    mfa=mfa,
+                    source_ip=source_ip,
+                    fixed=True,
                 )
                 src_commit = gitops.ref_commit(repo, source)
                 pr = pr_store.create(repo, source, dest, src_commit, principal)
@@ -106,32 +112,20 @@ class Handler(BaseHTTPRequestHandler):
                 return
             if path.endswith("/approve"):
                 pr_id = int(path.split("/")[2])
-                self._send(200, approvals.approve(pr_id, principal, fixed=fixed))
+                self._send(200, approvals.approve(pr_id, principal, fixed=True))
                 return
             if path.endswith("/merge"):
                 pr_id = int(path.split("/")[2])
-                if fixed:
-                    self._send(
-                        200,
-                        merge.merge(pr_id, principal, mfa=mfa, source_ip=source_ip, fixed=True),
-                    )
-                else:
-                    # Broken: skip IAM by calling git merge path with a forged principal check
-                    pr = pr_store.get(pr_id)
-                    if not approvals.quorum_satisfied(pr_id, fixed=False):
-                        raise CcError("ValidationException", code="APPROVAL_QUORUM")
-                    commit = gitops.merge_ff_broken(pr.repo, pr.source_commit, pr.dest)
-                    pr.status = "merged"
-                    pr.merged_commit = commit
-                    pr_store.save(pr)
-                    self._send(200, {"ok": True, "pr_id": pr_id, "commit": commit, "fast_forward": True})
+                self._send(
+                    200,
+                    merge.merge(pr_id, principal, mfa=mfa, source_ip=source_ip, fixed=True),
+                )
                 return
             if path == "/deliver":
-                self._send(200, deliver(str(body["repo"]), str(body["ref"]), fixed=fixed))
+                self._send(200, deliver(str(body["repo"]), str(body["ref"]), fixed=True))
                 return
             if path == "/webhooks/dispatch":
-                sink: list = []
-                self._send(200, {"ok": True, "results": dispatch_pending(fixed=fixed, sink=sink), "sink": sink})
+                self._send(200, {"ok": True, "results": dispatch_pending(fixed=True, sink=[])})
                 return
             self._send(404, {"error": "NotFound"})
         except CcError as exc:
@@ -141,8 +135,8 @@ class Handler(BaseHTTPRequestHandler):
 
 
 def serve(host: str = "127.0.0.1", port: int = 8080, *, fixed: bool = False) -> ThreadingHTTPServer:
-    
-    Handler.fixed = True
+    fixed = True
+    Handler.fixed = fixed
     httpd = ThreadingHTTPServer((host, port), Handler)
     return httpd
 
@@ -150,12 +144,10 @@ def serve(host: str = "127.0.0.1", port: int = 8080, *, fixed: bool = False) -> 
 def main() -> None:
     import os
 
-    
     host = os.environ.get("CC_API_HOST", "127.0.0.1")
     port = int(os.environ.get("CC_API_PORT", "8080"))
-    fixed = os.environ.get("CC_FIXED", "").lower() in ("1", "true", "yes")
-    httpd = serve(host, port, fixed=fixed)
-    print(json.dumps({"ok": True, "listen": f"{host}:{port}", "fixed": fixed}))
+    httpd = serve(host, port, fixed=True)
+    print(json.dumps({"ok": True, "listen": f"{host}:{port}", "fixed": True}))
     httpd.serve_forever()
 
 

@@ -7,13 +7,13 @@
     "R_PUSH_BRANCH": "StringEquals branch listings are exact",
     "R_DENY": "Explicit Deny wins",
     "R_STAR": "Action * still requires Resource match",
-    "R_QUORUM": "Distinct pool approvals excluding author; config required",
+    "R_QUORUM": "Distinct pool approvals excluding author; config required; missing rule",
     "R_FF": "Fast-forward only merge",
-    "R_MERGE_IAM": "MergePullRequestByFastForward + office IP; developers cannot merge",
+    "R_MERGE_IAM": "CLI and HTTP merge require MergePullRequestByFastForward + office IP",
     "R_TRIGGER": "exactly-once deliver with sha256 event_id and key order",
-    "R_AUDIT": "Denied decisions appended to audit.jsonl",
-    "R_OUTBOX": "deliver enqueues outbox; dispatch records attempts; no duplicate enqueue",
-    "R_SCHEMA": "CLI/contract/PR store present",
+    "R_AUDIT": "Allow and deny authorize decisions append to audit.jsonl",
+    "R_OUTBOX": "deliver enqueues signed outbox; dispatch records attempts",
+    "R_SCHEMA": "CLI/contract/metrics/PR store present",
     "R_UNKNOWN": "Unknown principal AccessDenied UNKNOWN_PRINCIPAL"
   },
   "tests": [
@@ -143,6 +143,11 @@
       "R_AUDIT"
     ],
     [
+      "test_f2p_audit_records_allowed_push",
+      "F2P",
+      "R_AUDIT"
+    ],
+    [
       "test_f2p_deliver_enqueues_outbox",
       "F2P",
       "R_OUTBOX"
@@ -153,7 +158,12 @@
       "R_OUTBOX"
     ],
     [
-      "test_f2p_api_merge_requires_iam",
+      "test_f2p_cli_merge_requires_iam",
+      "F2P",
+      "R_MERGE_IAM"
+    ],
+    [
+      "test_f2p_http_api_merge_requires_iam",
       "F2P",
       "R_MERGE_IAM"
     ],
@@ -166,6 +176,11 @@
       "test_p2p_metrics_command",
       "P2P",
       "R_SCHEMA"
+    ],
+    [
+      "test_f2p_no_approval_rule",
+      "F2P",
+      "R_QUORUM"
     ],
     [
       "test_f2p_second_deliver_does_not_duplicate_outbox",

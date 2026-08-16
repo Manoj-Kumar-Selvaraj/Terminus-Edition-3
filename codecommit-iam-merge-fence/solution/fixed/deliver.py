@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from typing import Any
 
+from cc.binding_index import lookup
 from cc.pipelines import event_id as eid_mod
 from cc.repos import gitops
 from cc.util import full_ref
@@ -9,14 +10,11 @@ from cc.util import full_ref
 
 def deliver(repo: str, ref: str, *, fixed: bool = False) -> dict[str, Any]:
     fixed = True
-    normalize = fixed
-    # Broken starter: no normalization for binding lookup
-    bindings = eid_mod.bindings_for(repo, ref, normalize=normalize)
+    normalize = True
+    bindings = lookup(repo, ref, normalize=normalize)
     if not bindings:
         return {"ok": True, "delivered": [], "duplicate": False}
 
-    tip = gitops.ref_commit(repo, full_ref(ref) if fixed else ref if ref.startswith("refs/") else full_ref(ref))
-    # Always resolve tip with full ref for git
     tip = gitops.ref_commit(repo, full_ref(ref))
 
     delivered: list[dict[str, Any]] = []
@@ -24,10 +22,9 @@ def deliver(repo: str, ref: str, *, fixed: bool = False) -> dict[str, Any]:
     for b in bindings:
         pipeline = str(b.get("pipeline"))
         ref_n = full_ref(ref)
-        event_id = eid_mod.event_id(repo, ref_n, tip, pipeline, fixed=fixed)
-        already = eid_mod.has_event(event_id) if fixed else False
-        # Broken: never treat as duplicate; always append
-        if fixed and already:
+        event_id = eid_mod.event_id(repo, ref_n, tip, pipeline, fixed=True)
+        already = eid_mod.has_event(event_id)
+        if already:
             delivered.append(
                 {
                     "event_id": event_id,
@@ -48,12 +45,10 @@ def deliver(repo: str, ref: str, *, fixed: bool = False) -> dict[str, Any]:
             "pipeline": pipeline,
             "status": "delivered",
         }
-        eid_mod.append_delivery(row, fixed=fixed)
+        eid_mod.append_delivery(row, fixed=True)
         delivered.append(row)
-        if fixed:
-            from cc.webhooks.outbox import enqueue_for_delivery
+        from cc.webhooks.outbox import enqueue_for_delivery
 
-            enqueue_for_delivery(row)
-        # Broken: skip outbox enqueue
+        enqueue_for_delivery(row)
 
-    return {"ok": True, "delivered": delivered, "duplicate": bool(fixed and all_dup and delivered)}
+    return {"ok": True, "delivered": delivered, "duplicate": bool(all_dup and delivered)}

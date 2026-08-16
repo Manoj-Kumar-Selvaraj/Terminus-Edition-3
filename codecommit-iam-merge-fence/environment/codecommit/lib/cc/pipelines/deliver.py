@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from typing import Any
 
+from cc.binding_index import lookup
 from cc.pipelines import event_id as eid_mod
 from cc.repos import gitops
 from cc.util import full_ref
@@ -10,7 +11,7 @@ from cc.util import full_ref
 def deliver(repo: str, ref: str, *, fixed: bool = False) -> dict[str, Any]:
     normalize = fixed
     # Broken starter: no normalization for binding lookup
-    bindings = eid_mod.bindings_for(repo, ref, normalize=normalize)
+    bindings = lookup(repo, ref, normalize=normalize)
     if not bindings:
         return {"ok": True, "delivered": [], "duplicate": False}
 
@@ -23,7 +24,6 @@ def deliver(repo: str, ref: str, *, fixed: bool = False) -> dict[str, Any]:
         ref_n = full_ref(ref)
         event_id = eid_mod.event_id(repo, ref_n, tip, pipeline, fixed=fixed)
         already = eid_mod.has_event(event_id) if fixed else False
-        # Broken: never treat as duplicate; always append
         if fixed and already:
             delivered.append(
                 {
@@ -51,6 +51,5 @@ def deliver(repo: str, ref: str, *, fixed: bool = False) -> dict[str, Any]:
             from cc.webhooks.outbox import enqueue_for_delivery
 
             enqueue_for_delivery(row)
-        # Broken: skip outbox enqueue
 
     return {"ok": True, "delivered": delivered, "duplicate": bool(fixed and all_dup and delivered)}

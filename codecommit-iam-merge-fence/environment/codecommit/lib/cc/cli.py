@@ -117,8 +117,7 @@ def cmd_metrics(ns: argparse.Namespace) -> int:
 
 
 def cmd_dispatch(ns: argparse.Namespace) -> int:
-    sink: list = []
-    _out({"ok": True, "results": dispatch_pending(fixed=ns.fixed, sink=sink), "sink": sink})
+    _out({"ok": True, "results": dispatch_pending(fixed=ns.fixed, sink=[])})
     return 0
 
 
@@ -173,17 +172,7 @@ def build_parser() -> argparse.ArgumentParser:
 
     c = sp.add_parser("dispatch-webhooks")
     c.set_defaults(func=cmd_dispatch)
-
-    c = sp.add_parser("platform-job")
-    c.set_defaults(func=cmd_platform_job)
     return p
-
-
-def cmd_platform_job(ns: argparse.Namespace) -> int:
-    from cc.platform_jobs import nightly
-
-    _out(nightly())
-    return 0
 
 
 def main(argv: list[str] | None = None) -> int:

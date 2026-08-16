@@ -5,6 +5,7 @@ from typing import Any
 from cc.errors import ValidationException
 from cc.iam import actions as iam_actions
 from cc.iam.eval import authorize
+from cc.merge_guard import finish_protected_merge, prepare_protected_merge
 from cc.prs import approvals, store as pr_store
 from cc.repos import gitops
 
@@ -35,8 +36,6 @@ def merge(
             fixed=True,
         )
     else:
-        # Broken API/CLI path sometimes skips or uses GitPush instead — still call authorize
-        # but broken IAM lets developers through via *
         authorize(
             principal,
             iam_actions.MERGE_FF,
@@ -47,9 +46,15 @@ def merge(
             fixed=False,
         )
 
+    lease = None
     if fixed:
+        prepared = prepare_protected_merge(
+            pr.repo, pr.dest, principal, pr.source_commit, fixed=True
+        )
+        lease = prepared.get("lease")
         commit = gitops.update_ff(pr.repo, pr.source_commit, pr.dest)
         fast_forward = True
+        finish_protected_merge(lease if isinstance(lease, dict) else None)
     else:
         commit = gitops.merge_ff_broken(pr.repo, pr.source_commit, pr.dest)
         fast_forward = True  # Broken: lie about FF

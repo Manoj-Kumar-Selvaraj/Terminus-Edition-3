@@ -5,6 +5,7 @@ from typing import Any
 from cc import home
 from cc.models import OutboxItem
 from cc.util import append_jsonl, load_json, read_jsonl
+from cc.webhook_crypto import attach_signature
 
 
 def load_webhook_config() -> list[dict[str, Any]]:
@@ -27,7 +28,9 @@ def enqueue_for_delivery(delivery_row: dict[str, Any]) -> list[OutboxItem]:
             status="pending",
             attempts=0,
         )
-        append_jsonl(home.outbox_path(), item.to_row())
+        row = attach_signature(item.to_row())
+        item.signature = str(row.get("signature") or "")
+        append_jsonl(home.outbox_path(), row)
         items.append(item)
     return items
 

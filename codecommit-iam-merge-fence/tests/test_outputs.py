@@ -421,6 +421,21 @@ def test_f2p_audit_records_denied_push(home: Path, tmp_path: Path) -> None:
     assert denied, "expected denied push audit row"
 
 
+def test_f2p_audit_records_allowed_push(home: Path, tmp_path: Path) -> None:
+    """Allowed authorize decisions are also appended to the audit log."""
+    dest = tmp_path / "wt-aud-ok"
+    _run(home, ["clone", "ledger", str(dest)], principal="dev-alice")
+    _commit(dest, "allow-me", "y.txt")
+    _run(home, ["push", "ledger", str(dest), "main"], principal="dev-alice", mfa=True, ip=OFFICE)
+    rows = [
+        json.loads(ln)
+        for ln in (home / "var" / "audit.jsonl").read_text(encoding="utf-8").splitlines()
+        if ln.strip()
+    ]
+    allowed = [r for r in rows if r.get("allowed") is True and r.get("action") == "codecommit:GitPush"]
+    assert allowed, "expected allowed push audit row"
+
+
 def test_f2p_deliver_enqueues_outbox(home: Path, tmp_path: Path) -> None:
     """First deliver enqueues a webhook outbox row for settle-prod."""
     dest = tmp_path / "wt-ob"
@@ -437,10 +452,11 @@ def test_f2p_deliver_enqueues_outbox(home: Path, tmp_path: Path) -> None:
     assert rows[0]["pipeline"] == "settle-prod"
     assert rows[0]["webhook_id"] == "wh-settle"
     assert rows[0]["status"] == "pending"
+    assert rows[0].get("signature")
 
 
 def test_f2p_dispatch_marks_outbox_attempt(home: Path, tmp_path: Path) -> None:
-    """dispatch-webhooks records an attempt against pending outbox rows."""
+    """dispatch-webhooks persists attempts/status on durable outbox rows."""
     dest = tmp_path / "wt-disp"
     _run(home, ["clone", "ledger", str(dest)], principal="dev-alice")
     _commit(dest, "disp", "z.txt")
@@ -448,7 +464,7 @@ def test_f2p_dispatch_marks_outbox_attempt(home: Path, tmp_path: Path) -> None:
     _run(home, ["deliver", "ledger", "main"], principal="pipeline-bot")
     body = _json(_run(home, ["dispatch-webhooks"], principal="pipeline-bot"))
     assert body["ok"] is True
-    assert body["sink"]
+    assert isinstance(body.get("results"), list)
     rows = [
         json.loads(ln)
         for ln in (home / "var" / "outbox.jsonl").read_text(encoding="utf-8").splitlines()
@@ -458,14 +474,74 @@ def test_f2p_dispatch_marks_outbox_attempt(home: Path, tmp_path: Path) -> None:
     assert rows[0]["status"] == "delivered"
 
 
-def test_f2p_api_merge_requires_iam(home: Path, tmp_path: Path) -> None:
-    """Developer merge cannot bypass MergePullRequestByFastForward IAM."""
-    pr_id, _ = _open_pr(home, tmp_path, "api.txt")
+def test_f2p_cli_merge_requires_iam(home: Path, tmp_path: Path) -> None:
+    """CLI developer merge cannot bypass MergePullRequestByFastForward IAM."""
+    pr_id, _ = _open_pr(home, tmp_path, "cli-iam.txt")
     _run(home, ["approve", "ledger", str(pr_id)], principal="rev-a", ip=OFFICE)
     _run(home, ["approve", "ledger", str(pr_id)], principal="rev-b", ip=OFFICE)
     cp = _run(home, ["merge", "ledger", str(pr_id)], principal="dev-alice", ip=OFFICE, check=False)
     assert cp.returncode != 0
     assert _err(cp)["error"] == "AccessDenied"
+
+
+def test_f2p_http_api_merge_requires_iam(home: Path, tmp_path: Path) -> None:
+    """HTTP POST /prs/{id}/merge enforces the same MergePullRequestByFastForward IAM."""
+    import threading
+    from http.client import HTTPConnection
+
+    pr_id, _ = _open_pr(home, tmp_path, "http-iam.txt")
+    _run(home, ["approve", "ledger", str(pr_id)], principal="rev-a", ip=OFFICE)
+    _run(home, ["approve", "ledger", str(pr_id)], principal="rev-b", ip=OFFICE)
+
+    prev_root = os.environ.get("CC_ROOT")
+    prev_pp = os.environ.get("PYTHONPATH")
+    os.environ["CC_ROOT"] = str(home)
+    os.environ["PYTHONPATH"] = str(APP / "lib")
+    sys.path.insert(0, str(APP / "lib"))
+    from cc.api.app import serve
+
+    httpd = serve("127.0.0.1", 0, fixed=False)
+    port = int(httpd.server_address[1])
+    thread = threading.Thread(target=httpd.serve_forever, daemon=True)
+    thread.start()
+    status = 0
+    payload: dict = {}
+    try:
+        conn = HTTPConnection("127.0.0.1", port, timeout=5)
+        body = json.dumps({}).encode()
+        conn.request(
+            "POST",
+            f"/prs/{pr_id}/merge",
+            body=body,
+            headers={
+                "Content-Type": "application/json",
+                "Content-Length": str(len(body)),
+                "X-Principal": "dev-alice",
+                "X-Source-Ip": OFFICE,
+                "X-MFA": "true",
+            },
+        )
+        resp = conn.getresponse()
+        raw = resp.read().decode() or "{}"
+        payload = json.loads(raw)
+        status = resp.status
+        conn.close()
+    finally:
+        httpd.shutdown()
+        httpd.server_close()
+        thread.join(timeout=2)
+        if prev_root is None:
+            os.environ.pop("CC_ROOT", None)
+        else:
+            os.environ["CC_ROOT"] = prev_root
+        if prev_pp is None:
+            os.environ.pop("PYTHONPATH", None)
+        else:
+            os.environ["PYTHONPATH"] = prev_pp
+
+    # Starter skips IAM and may succeed; fixed path must deny with AccessDenied.
+    assert status in (403, 400), (status, payload)
+    assert payload.get("error") == "AccessDenied", payload
 
 
 def test_f2p_absent_mfa_not_treated_as_true(home: Path, tmp_path: Path) -> None:
@@ -484,6 +560,28 @@ def test_p2p_metrics_command(home: Path) -> None:
     body = _json(_run(home, ["metrics"], principal="pipeline-bot"))
     assert "audit" in body
     assert "journal_lines" in body
+
+
+def test_f2p_no_approval_rule(home: Path, tmp_path: Path) -> None:
+    """Merge without a matching approval rule returns NO_APPROVAL_RULE."""
+    dest = tmp_path / "wt-norule"
+    _run(home, ["clone", "ledger", str(dest)], principal="dev-alice")
+    _git(["checkout", "-b", "dev/alice"], cwd=dest)
+    _commit(dest, "norule", "nr.txt")
+    _run(home, ["push", "ledger", str(dest), "dev/alice"], principal="dev-alice")
+    pr = _json(
+        _run(
+            home,
+            ["pr", "ledger", "--source", "dev/alice", "--dest", "release"],
+            principal="dev-alice",
+        )
+    )
+    pr_id = int(pr["pr_id"])
+    _run(home, ["approve", "ledger", str(pr_id)], principal="rev-a", ip=OFFICE)
+    _run(home, ["approve", "ledger", str(pr_id)], principal="rev-b", ip=OFFICE)
+    cp = _run(home, ["merge", "ledger", str(pr_id)], principal="rev-a", ip=OFFICE, check=False)
+    assert cp.returncode != 0
+    assert _err(cp).get("code") == "NO_APPROVAL_RULE"
 
 
 def test_f2p_second_deliver_does_not_duplicate_outbox(home: Path, tmp_path: Path) -> None:

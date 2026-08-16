@@ -78,6 +78,7 @@ class OutboxItem:
     status: str
     attempts: int = 0
     last_error: str | None = None
+    signature: str | None = None
 
     def to_row(self) -> dict[str, Any]:
         return asdict(self)
