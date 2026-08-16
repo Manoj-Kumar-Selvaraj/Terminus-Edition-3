@@ -10,7 +10,7 @@ This is the durable operational checkpoint for one task. Keep it evidence-orient
 - Controller state: `FROZEN_CANDIDATE`
 - Working branch: `main`
 - Pull request: `none`
-- Current task commit: `7cdda65f0097221e44da943dfaca24ea6c440f8f`
+- Current task commit: `b9ee4816204f1a51857407e4a6f9bf9e38dd937a`
 - Agent-system policy: `2.4`
 - Specialist prompt policy: `2.2`
 - Specialist protocol policy: `2.2`
@@ -25,37 +25,37 @@ This is the durable operational checkpoint for one task. Keep it evidence-orient
 | Q1 Spec Gap Repair | DONE | pay commit-fence + blank attempt documented in instruction/runbook |
 | Q2 Verifier Coverage Repair | DONE | Q4-001..004 closed on `7cdda65` (46 tests: positive /readyz, pay writer+confirm, capture non-effect, exact 503) |
 | Q3 Spec Ambiguity Repair | DONE | live `/readyz` vs dump `accepting_checkout` authority split in runbook + readiness_policy |
-| Q7 Task Format Enforcer | PENDING | layout present; `tests/test_ha.py` not `test_outputs.py`; no CTRF flag |
-| Creator Complexity Gate | PASS | reachable Python non-blank LOC excl. `generate_seed.py` ≈ 3646 after heal_plan |
-| Preflight/static | PENDING | |
-| Ruff verifier | PENDING | |
-| STB auth/AI credentials | PENDING | |
-| Oracle = 1 | PASS | Harbor job `jobs/2026-08-16__17-22-11` trial `django-checkout-failover-ha__avkChD3` reward.txt=`1`; 46/46 pytest |
-| NOP = 0 | PASS | Harbor job `jobs/2026-08-16__17-23-52` reward.txt=`0` |
-| Q4 Spec-Test Contract Reviewer | PASS | review `.terminus/reviews/django-checkout-failover-ha/7cdda65f/django-checkout-failover-ha-7cdda65f-spec-test-contract-7c38e34c80.json` (HIGH); advisory Q4-A01–A05 only |
-| Q6 Production Logic Auditor | PASS | scope-preserved from `f9022bd1` (`review_scope_hash=5031e765…`); tests-only change on `7cdda65` |
-| Quality Interlock | PASS | Q4 PASS on `7cdda65` + Q6 PASS (scope-hash reuse) |
-| Pre-LLMaJ specialist panel | PENDING | |
-| Task Architect | PENDING | |
-| Verifier Engineer | PENDING | |
-| Originality & Authenticity | REVISE | prior house-shell finding; destemplate applied; scale authenticity still open |
-| Difficulty design | PENDING | |
-| Compliance pre-review | PENDING | |
-| Instruction Reviewer | PENDING | |
-| Documentation Reviewer | PENDING | |
-| Comprehensive Reviewer | PENDING | |
+| Q7 Task Format Enforcer | PASS | `.terminus/reviews/django-checkout-failover-ha/b9ee4816/q7-format-check.md` FORMAT_PASS |
+| Creator Complexity Gate | PASS | `validate_task_complexity` PASS; F2P=28 P2P=6 on `b9ee4816` |
+| Preflight/static | PASS | ruff clean; complexity+authenticity validators PASS |
+| Ruff verifier | PASS | `ruff check django-checkout-failover-ha/tests` clean |
+| STB auth/AI credentials | SKIP | local Harbor oracle/nop without STB |
+| Oracle = 1 | PASS | Harbor job `jobs/2026-08-16__17-38-02` reward.txt=`1`; 28 F2P suite |
+| NOP = 0 | PASS | Harbor job `jobs/2026-08-16__17-39-27` reward.txt=`0` |
+| Q4 Spec-Test Contract Reviewer | PENDING | packet `.../b9ee4816/...-spec-test-contract-2baa2168bf.packet.json` (prior PASS STALE after F2P consolidate) |
+| Q6 Production Logic Auditor | PASS | scope-preserved (`review_scope_hash=5031e765…`); tests-only change |
+| Quality Interlock | PENDING | awaiting cold Q4 on `b9ee4816` |
+| Pre-LLMaJ specialist panel | PENDING | packets under `b9ee4816/` for TA/VE/Orig/Diff/Comp/Instr/Doc/HQ |
+| Task Architect | PENDING | packet `...-task-architect-9d3c66428b.packet.json` |
+| Verifier Engineer | PENDING | packet `...-verifier-engineer-ed25c4beec.packet.json` |
+| Originality & Authenticity | PENDING | packet `...-originality-9c88957c99.packet.json` |
+| Difficulty design | PENDING | packet `...-difficulty-design-490134a9ce.packet.json` (pre-trial; official trials deferred) |
+| Compliance pre-review | PENDING | packet `...-compliance-55d7325ce9.packet.json` |
+| Instruction Reviewer | PENDING | packet `...-instruction-50ee95a34e.packet.json` |
+| Documentation Reviewer | PENDING | packet `...-documentation-2e3067d67a.packet.json` |
+| Comprehensive Reviewer | PENDING | after specialists freeze |
 | Pre-LLMaJ aggregate | PENDING | |
 | Q8 GPT Perspective Simulation | PENDING | diagnostic only |
 | Q8 Claude Perspective Simulation | PENDING | diagnostic only |
-| Harbor LLMaJ | PENDING | |
-| Difficulty trials | PENDING | |
-| GPT-5.5 difficulty ×5 | PENDING | |
-| Claude Opus 4.8 difficulty ×5 | PENDING | |
-| Combined difficulty ×10 | PENDING | |
-| Per-test solvability 1/10 | PENDING | |
-| Trial Analysis | PENDING | |
-| Final Compliance | PENDING | |
-| Final Human Quality | PENDING | |
+| Harbor LLMaJ | DEFERRED | user-deferred |
+| Difficulty trials | DEFERRED | user-deferred (GPT×5 + Claude×5) |
+| GPT-5.5 difficulty ×5 | DEFERRED | user-deferred |
+| Claude Opus 4.8 difficulty ×5 | DEFERRED | user-deferred |
+| Combined difficulty ×10 | DEFERRED | user-deferred |
+| Per-test solvability 1/10 | DEFERRED | user-deferred |
+| Trial Analysis | DEFERRED | depends on deferred trials |
+| Final Compliance | PENDING | after Pre-LLMaJ/Q8 |
+| Final Human Quality | PENDING | packet `...-human-quality-c942763c8f.packet.json` (panel) |
 | Final package | PENDING | |
 
 ## Latest CI
@@ -69,17 +69,17 @@ This is the durable operational checkpoint for one task. Keep it evidence-orient
 
 ## Current blocker
 
-None for Quality Interlock. Next mandatory gates remain Pre-LLMaJ / Q7 / originality / Harbor LLMaJ / difficulty trials (not yet run).
+Cold Q4 re-review + Pre-LLMaJ specialist panel on freeze `b9ee4816` after F2P consolidation. Harbor LLMaJ and official difficulty trials are user-deferred.
 
 ## Root-cause classification
 
-- Owner: closed (Q2 verifier repair on `7cdda65`)
-- Classification: `verifier_gap` (resolved)
-- Evidence: Q4 PASS `...-spec-test-contract-7c38e34c80.json`; Q6 PASS scope-reuse `5031e765…`
+- Owner: complexity gate (F2P band) — closed by consolidation on `b9ee4816`
+- Classification: `verifier_scale`
+- Evidence: `validate_task_complexity` PASS; oracle `jobs/2026-08-16__17-38-02`; nop `jobs/2026-08-16__17-39-27`
 
 ## Next action
 
-Advance past Quality Interlock: Q7 format / Pre-LLMaJ panel / remaining semantic gates per session table. Do not claim `SUBMISSION_READY` until those pass.
+Run cold Q4 + Pre-LLMaJ specialists (`model: inherit`); then Comprehensive → aggregate → Q8 diagnostics → Final Compliance/HQ/package. Skip Harbor LLMaJ and GPT×5/Claude×5 trials.
 
 ## Review evidence ledger
 
