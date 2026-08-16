@@ -77,8 +77,19 @@ jobs:
           if text.count(old) != 1:
               raise SystemExit('acceptance projection test anchor mismatch')
           test_path.write_text(text.replace(old, new, 1), encoding='utf-8')
+
+          validator = Path('.terminus/validate_agent_system.py')
+          vtext = validator.read_text(encoding='utf-8')
+          old_agent = 'require_declared(errors, agent_system, agent_system_path, "Agent-system policy version", "2.4")'
+          new_agent = 'require_declared(errors, agent_system, agent_system_path, "Agent-system policy version", "2.5")'
+          old_orch = 'errors, orchestrator, orchestrator_path, "Orchestrator policy version", "1.2"'
+          new_orch = 'errors, orchestrator, orchestrator_path, "Orchestrator policy version", "1.3"'
+          if vtext.count(old_agent) != 1 or vtext.count(old_orch) != 1:
+              raise SystemExit('agent-system validator version anchor mismatch')
+          vtext = vtext.replace(old_agent, new_agent, 1).replace(old_orch, new_orch, 1)
+          validator.write_text(vtext, encoding='utf-8')
           PY
-          python -m py_compile .terminus/q4_closure.py .terminus/new_q4_closure_packet.py
+          python -m py_compile .terminus/q4_closure.py .terminus/new_q4_closure_packet.py .terminus/validate_agent_system.py
           git diff --check
           if git diff --name-only | grep -q '^cobol-comp3-python-equiv/'; then
             echo 'ERROR: task scope changed during control-plane redesign' >&2
