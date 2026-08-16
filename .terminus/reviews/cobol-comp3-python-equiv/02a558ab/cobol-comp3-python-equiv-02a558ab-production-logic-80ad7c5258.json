@@ -1,0 +1,167 @@
+{
+  "schema_version": "3.0",
+  "role": "Production Logic Auditor",
+  "review_id": "cobol-comp3-python-equiv-02a558ab-production-logic-80ad7c5258",
+  "task": "cobol-comp3-python-equiv",
+  "task_commit": "02a558aba2ada944ce3a3131baa0d6847c39f909",
+  "control_plane_commit": "308b258720b5e9ea80d73a2cac6c673d92e79b16",
+  "protocol_policy_version": "2.2",
+  "prompt_policy_version": "2.2",
+  "role_policy_version": "1.1",
+  "role_contract_hash": "8eb84a3715c4805f762325ceaa890339fc966a2a475cb58986578a15418c5378",
+  "review_scope_hash": "e00d2d343c916fb9ea2b8d027400fee0bce59834558e1be1a984284fe1e77baf",
+  "context_packet": ".terminus/reviews/cobol-comp3-python-equiv/02a558ab/cobol-comp3-python-equiv-02a558ab-production-logic-80ad7c5258.packet.json",
+  "verdict": "PASS",
+  "confidence": "HIGH",
+  "evidence_status": "SUFFICIENT",
+  "summary": "The solver-visible core is a genuinely coupled production-style inventory cutover system rather than a LOC shell. The real /app/equiv/bin/equiv-eval entrypoint reaches src.cli, whose run workflow enters recovery/orchestration and the transactional processing pipeline, while preflight, audit, and archive enter the operations layer and fan into source scanning/profiling, schema and runbook checks, controls, reconciliation diagnostics, publication integrity, lineage, archival, retention, and durable database state. The processing path couples COBOL-style COMP-3/layout/framing semantics to policy validation, accounting, inventory persistence, checkpoint/replay handling, journaling, reconciliation, settlement, authorization, reporting, and publication. The strict candidate's 3,907-LOC production scope is therefore materially behavior-bearing; the judgment does not rely on LOC or prior validator/reviewer conclusions. No HIGH toy or padding risk was found.",
+  "evidence": [
+    {
+      "type": "rule",
+      "ref": ".terminus/agents/QUALITY_AGENT_PROMPTS.md#Q6---Production-Logic-Auditor",
+      "observation": "Q6 requires an independent code/entrypoint/state/interactions judgment, including runtime reachability, module diversity, partial-fix traps, removal analysis, and explicit toy/padding risk; large_system_strict requires at least 3,000 substantive reachable runtime/config LOC and no HIGH toy/padding risk."
+    },
+    {
+      "type": "rule",
+      "ref": ".terminus/agents/QUALITY_AGENT_REGISTRY.md#Q6---Production-Logic-Auditor",
+      "observation": "The controlling role contract requires major modules to be reachable from real operator workflows, to contain material state/error/persistence behavior, and to derive complexity from domain invariants rather than file count or filler."
+    },
+    {
+      "type": "file",
+      "ref": "cobol-comp3-python-equiv/environment/equiv/bin/equiv-eval",
+      "observation": "The installed executable directly imports src.cli.main and exits with its status, establishing a real operator entrypoint into the Python system."
+    },
+    {
+      "type": "file",
+      "ref": "cobol-comp3-python-equiv/environment/equiv/src/cli.py",
+      "observation": "The CLI exposes init-db, describe-layout, identity, run, preflight, audit, and archive workflows. run dispatches through batch_orchestrator.execute; preflight/audit/archive dispatch through operations, and operational failures are surfaced through structured JSON and nonzero status."
+    },
+    {
+      "type": "file",
+      "ref": "cobol-comp3-python-equiv/environment/equiv/src/batch_orchestrator.py",
+      "observation": "The run path constructs generation identity, asks recovery.database_plan for START/RESUME/RECONCILE/NOOP/BLOCK disposition, blocks inconsistent recovery, and otherwise enters pipeline.process."
+    },
+    {
+      "type": "file",
+      "ref": "cobol-comp3-python-equiv/environment/equiv/src/pipeline.py",
+      "observation": "The central runtime is a transactional stateful pipeline: layout/framing/transform errors are durably rejected, accepted movements pass replay/policy/accounting checks, effects and inventory changes commit with checkpoints and journal events, then reconciliation controls READY versus HELD and successful runs proceed through settlement, authorization, close, atomic publication, registry, and PUBLISHED state."
+    },
+    {
+      "type": "file",
+      "ref": "cobol-comp3-python-equiv/environment/equiv/src/operations.py",
+      "observation": "The operator-facing preflight, audit, and archive workflows materially execute a broad subsystem graph rather than importing unused padding: config validation, source scan/profile/manifest, schema/runbook/history/database checks, recovery, integrity, controls, diagnostics, inventory invariants, publication registry, journal verification, settlement, report/migration validation, exports, lineage, archive verification, and retention are all consumed in returned decisions."
+    },
+    {
+      "type": "file",
+      "ref": "cobol-comp3-python-equiv/environment/equiv/src/framing.py",
+      "observation": "Record processing contains domain-specific variable-record logic: COMP-3/display decoding, OCCURS DEPENDING ON handling, REDEFINES offsets, boundary determination, decode-error state, and byte offsets used by downstream restart/quarantine behavior."
+    },
+    {
+      "type": "file",
+      "ref": "cobol-comp3-python-equiv/environment/equiv/src/accounting.py",
+      "observation": "Receipt, issue, transfer, and adjustment paths produce materially different quantity/value effects with Decimal quantization, source-position valuation, negative-inventory checks, and transfer balancing semantics."
+    },
+    {
+      "type": "file",
+      "ref": "cobol-comp3-python-equiv/environment/equiv/src/database.py",
+      "observation": "The runtime has durable SQLite/WAL state and explicit BEGIN IMMEDIATE transactional boundaries across positions, processed movements, inventory effects, rejects, checkpoints, and run state; this persistence is actively consumed by pipeline, recovery, audit, and publication decisions."
+    },
+    {
+      "type": "file",
+      "ref": "cobol-comp3-python-equiv/environment/equiv/src/recovery.py",
+      "observation": "Recovery is a real state machine over persisted run/checkpoint/publication state with START, RESUME, RECONCILE, NOOP, and BLOCK outcomes plus checkpoint-gap validation."
+    },
+    {
+      "type": "file",
+      "ref": "cobol-comp3-python-equiv/environment/equiv/src/reconciliation.py",
+      "observation": "Reconciliation independently derives processed/accepted/rejected/effect counts, net quantity/value, duplicate/orphan/transfer controls from durable state and compares them against legacy controls before downstream close/publication."
+    },
+    {
+      "type": "file",
+      "ref": "cobol-comp3-python-equiv/environment/equiv/src/services.py",
+      "observation": "Operational audit queries enforce cross-table invariants such as accepted movements without effects, duplicate effect kinds, malformed transfer effect shapes, sequence gaps, checkpoint-ahead-of-data, status/type totals, and inventory aggregation; these are invoked from operations.audit."
+    },
+    {
+      "type": "file",
+      "ref": "cobol-comp3-python-equiv/environment/equiv/src/publication.py",
+      "observation": "Publication builds content hashes/manifests, uses a staging area, checks collision state, and supplies integrity verification consumed by archive/operator workflows; it is downstream of reconciliation and settlement rather than an isolated file-copy shell."
+    },
+    {
+      "type": "file",
+      "ref": "cobol-comp3-python-equiv/environment/equiv/src/policy.py",
+      "observation": "Movement validation branches across shape, item lifecycle/cost/precision policy, warehouse activity/capabilities, movement type, warehouse directionality, and reason rules; pipeline consumes these decisions before accounting/persistence."
+    }
+  ],
+  "findings": [],
+  "missing_evidence": [],
+  "change_scope": [],
+  "do_not_change": [
+    "Task production files are outside Q6 reviewer write authority.",
+    "Do not weaken or fix known starter defects as part of this review.",
+    "Do not use historical de9b508b Q6 conclusions as current semantic acceptance evidence."
+  ],
+  "next_gate": "Return to the CI Orchestrator / Submission Controller for Q6 freshness validation and QUALITY_INTERLOCK reconciliation with the independent Q4 result.",
+  "role_output": {
+    "CORE_LOGIC_DEPTH": "HIGH",
+    "RUNTIME_REACHABILITY": "HIGH",
+    "MODULE_DIVERSITY": "HIGH",
+    "CROSS_COMPONENT_COUPLING": "HIGH",
+    "TOY_LOGIC_RISK": "LOW",
+    "PADDING_RISK": "LOW",
+    "SUBSTANTIVE_LOC_ASSESSMENT": "The strict candidate is identified as a 3,907-LOC production scope, above the >=3,000 large_system_strict floor. More importantly, independent source inspection shows the dominant runtime/config code is behavior-bearing and operator-reachable: the CLI run path traverses orchestration/recovery/pipeline and the preflight/audit/archive paths traverse the operational subsystem graph. Large modules such as pipeline.py and operations.py are integration code with persistent state, branching, error paths, and cross-module invariants, while the smaller modules provide distinct domain services consumed by those workflows. Generated/vendor/comment/config noise is not carrying the judgment.",
+    "MAJOR_MODULES": [
+      {
+        "group": "Operator entrypoints",
+        "paths": ["equiv/bin/equiv-eval", "src/cli.py"],
+        "responsibility": "Expose executable run, preflight, audit, archive, identity/layout, and database workflows with stable process status/error behavior.",
+        "reachability": "Direct operator entrypoint."
+      },
+      {
+        "group": "Generation orchestration and recovery",
+        "paths": ["src/batch_orchestrator.py", "src/recovery.py", "src/checkpoint.py", "src/replay_guard.py", "src/generation.py", "src/state_machine.py"],
+        "responsibility": "Fence work by generation identity and durable checkpoint/run state, select start/resume/reconcile/noop/block behavior, and prevent unsafe replay.",
+        "reachability": "Directly reached from CLI run and operational audit/preflight."
+      },
+      {
+        "group": "COBOL record semantics",
+        "paths": ["src/comp3.py", "src/layout.py", "src/framing.py", "src/transform.py"],
+        "responsibility": "Decode packed/display numeric fields, dynamic layout geometry, ODO/REDEFINES records and record boundaries, then construct normalized movement state.",
+        "reachability": "Reached by run processing and source preflight/identity workflows."
+      },
+      {
+        "group": "Business policy and accounting",
+        "paths": ["src/policy.py", "src/rules.py", "src/catalog.py", "src/accounting.py", "src/inventory_service.py"],
+        "responsibility": "Validate movement/item/warehouse policy, derive movement-type-specific quantity/value effects, and apply inventory state transitions.",
+        "reachability": "Reached for each decoded movement in pipeline; inventory services are also consumed by audit."
+      },
+      {
+        "group": "Durability and observability",
+        "paths": ["src/database.py", "src/event_journal.py", "src/services.py", "src/diagnostics.py"],
+        "responsibility": "Persist transactional movement/effect/reject/checkpoint/run state and independently query cross-table health/invariants for operator diagnostics.",
+        "reachability": "Reached throughout run and audit/preflight/archive workflows."
+      },
+      {
+        "group": "Reconciliation, close and publication",
+        "paths": ["src/reconciliation.py", "src/reconciliation_detail.py", "src/controls.py", "src/settlement.py", "src/cycle_close.py", "src/reporting.py", "src/publication.py", "src/publication_registry.py"],
+        "responsibility": "Compare durable processing against legacy controls, gate READY/HELD state, settle/authorize close, emit reports, publish content-addressed output, and track publication identity.",
+        "reachability": "Reached at the end of run and rechecked by audit/archive."
+      },
+      {
+        "group": "Operational assurance and archival",
+        "paths": ["src/operations.py", "src/source_scan.py", "src/source_profile.py", "src/source_manifest.py", "src/schema_guard.py", "src/runbook.py", "src/integrity.py", "src/lineage.py", "src/archive.py", "src/retention.py", "src/migration.py", "src/quarantine.py"],
+        "responsibility": "Give operators independent preflight, post-run audit, integrity/lineage, archival and retention evidence around the cutover lifecycle.",
+        "reachability": "Directly reached by CLI preflight, audit and archive."
+      }
+    ],
+    "PARTIAL_FIX_TRAPS": [
+      "Layout/framing correctness affects decoded values, byte boundaries and checkpoint offsets; a locally plausible codec/layout fix can still make restart identity or resume state unsafe.",
+      "Replay/checkpoint/run-state logic is coupled to processed_movements and inventory_effects durability; suppressing duplicates in only one layer can leave inventory or checkpoint state inconsistent.",
+      "Movement policy, accounting effect shape and inventory persistence are separate gates; correcting record parsing without matching accounting/policy semantics can create durable but financially wrong state.",
+      "Reconciliation derives independent controls from durable tables and gates READY/HELD; locally correct movement effects still cannot safely publish if counts, totals, duplicate/orphan, or transfer invariants diverge.",
+      "Publication, registry, journal, integrity, lineage and archive workflows cross-check one another; a file-only publication fix can remain operationally unsafe or unverifiable.",
+      "Operator preflight/audit paths independently inspect schema, source framing, history/scale, recovery, inventory invariants and publication evidence, so bypassing the central run summary does not satisfy the operational system."
+    ],
+    "REMOVAL_TEST": "Removing roughly 25% of the substantive core cannot be done as an obviously disposable slice. Removing the record/layout family destroys dynamic COBOL decoding; removing recovery/checkpoint/replay destroys restart/idempotency; removing policy/accounting/inventory destroys business state transitions; removing reconciliation/close/publication destroys controlled completion; removing the operations assurance family removes real preflight, audit, integrity/lineage and archive operator workflows. The remaining code would lose material externally usable behavior rather than merely lose decorative scaffolding.",
+    "REQUIRED_CHANGES": []
+  }
+}
