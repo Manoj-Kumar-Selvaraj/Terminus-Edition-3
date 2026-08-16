@@ -1,0 +1,101 @@
+{
+  "schema_version": "3.0",
+  "role": "Model Perspective Difficulty Simulator",
+  "review_id": "django-checkout-failover-ha-d812d3f7-difficulty-sim-gpt-8788a1f29a",
+  "task": "django-checkout-failover-ha",
+  "task_commit": "d812d3f739d4b987e3db6f2b6cf52298511ece3f",
+  "control_plane_commit": "1a2ca37fcd585249e9096a0c1ab886084fcdcafb",
+  "protocol_policy_version": "2.2",
+  "prompt_policy_version": "2.2",
+  "role_policy_version": "1.0",
+  "role_contract_hash": "988f3f143cf2c5659dabb6e0031d6404295cc3f63e39bb49af3595902d09cae8",
+  "context_packet": ".terminus/reviews/django-checkout-failover-ha/d812d3f7/django-checkout-failover-ha-d812d3f7-difficulty-sim-gpt-8788a1f29a.packet.json",
+  "verdict": "PASS",
+  "confidence": "MEDIUM",
+  "evidence_status": "SUFFICIENT",
+  "summary": "DIAGNOSTIC ONLY (not official GPT×5). SIMULATION_NOT_EXECUTED: no disposable isolated solve+verifier in this Auto session. GPT-style prior: symptom-driven patches to router/sessions/readyz/replica with under-fix risk on dump gates and capture idempotency → USEFUL.",
+  "evidence": [
+    {
+      "type": "file",
+      "ref": "django-checkout-failover-ha/instruction.md",
+      "observation": "Solver ask: fence one writer, /readyz as card-safe gate, sticky confirmation, one capture per attempt_id, dump failover-status.json per runbook."
+    },
+    {
+      "type": "file",
+      "ref": "django-checkout-failover-ha/environment/ha/docs/runbook.md",
+      "observation": "Public sticky/lag/readyz/dump contract and failover-status.json schema are solver-visible."
+    },
+    {
+      "type": "file",
+      "ref": "django-checkout-failover-ha/environment/ha/logs/captured/shopdesk-error.log",
+      "observation": "Log points GPT search at replica writes, sticky miss on django_session, dual capture, sync lease copy, readyz==healthz."
+    },
+    {
+      "type": "file",
+      "ref": "django-checkout-failover-ha/environment/ha/controlplane/router.py",
+      "observation": "db_for_write hardcodes az-a snapshot and can return replica under affinity/split paths."
+    },
+    {
+      "type": "file",
+      "ref": "django-checkout-failover-ha/environment/ha/controlplane/sessions.py",
+      "observation": "Sticky helpers still use default cache / ShopSession instead of pins alias."
+    },
+    {
+      "type": "file",
+      "ref": "django-checkout-failover-ha/environment/ha/controlplane/views.py",
+      "observation": "readyz always returns 200 accepting_checkout true while healthz stays liveness-only."
+    },
+    {
+      "type": "file",
+      "ref": "django-checkout-failover-ha/environment/ha/controlplane/replica.py",
+      "observation": "sync applies order id cutoff and still inserts writable ha_fence_lease onto standby."
+    },
+    {
+      "type": "rule",
+      "ref": ".terminus/agents/QUALITY_AGENT_PROMPTS.md#Q8",
+      "observation": "Requires SIMULATION_NOT_EXECUTED when full solve+verifier cannot be run honestly; GPT prior favors fast local green then under-fix."
+    }
+  ],
+  "findings": [],
+  "missing_evidence": [
+    "Disposable isolated cold solve trajectory and Harbor verifier reward were not executed in this session."
+  ],
+  "change_scope": [],
+  "do_not_change": [
+    "Do not treat this as official GPT-5.5×5 difficulty evidence.",
+    "Do not open Claude-perspective packet/result before that run freezes.",
+    "Do not set official task.toml difficulty from this simulation."
+  ],
+  "next_gate": "Q8 Claude perspective then aggregate",
+  "role_output": {
+    "PERSPECTIVE": "GPT_PERSPECTIVE",
+    "EXECUTION": "SIMULATION_NOT_EXECUTED",
+    "DIAGNOSTIC_SUMMARY": "Cold GPT/Codex style: grep log/oncall symptoms → patch router write alias, sticky pin store, readyz gates, sync_standby lease/cutoff, and capture claim path; stop once place/pay/readyz look locally green.",
+    "FIRST_DIAGNOSIS": "AZ-B still writing via replica alias plus split-brain writable leases; sticky pins in django_session; /readyz equal to liveness.",
+    "FILES_TOUCHED": [
+      "environment/ha/controlplane/router.py",
+      "environment/ha/controlplane/sessions.py",
+      "environment/ha/controlplane/fencing.py",
+      "environment/ha/controlplane/replica.py",
+      "environment/ha/controlplane/views.py",
+      "environment/ha/controlplane/reports.py",
+      "environment/ha/fulfill/services.py"
+    ],
+    "SHORTCUTS_ATTEMPTED": [
+      "Force db_for_write to always return default",
+      "Flip /readyz status without wiring readiness_policy inputs",
+      "SQL-demote standby lease once without fixing sync_standby copy policy",
+      "Hardcode dump pins=shared / double_primary=false in reports.py"
+    ],
+    "FIRST_MEANINGFUL_DIVERGENCE": "After place/pay confirmation and /readyz 200 look fixed locally, under-test dump accepting_checkout (incident replay, fence_copied_to_standby, pins shared) and cross-box capture idempotency.",
+    "FINAL_VERIFIER_RESULT": "NOT_RUN",
+    "LIKELY_REASONING_WALLS": [
+      "Coupled fence epoch + dual-DB writable scan + lag watermark + sticky TTL store semantics",
+      "Live /readyz vs stricter dump accepting_checkout conjunction",
+      "Capture claim must be one effect per attempt_id across boxes, not empty existing_hashes"
+    ],
+    "ENVIRONMENT_TOOL_FRICTION": "Need start-lab dual sqlite + pins cache + AZ_ID/Django manage.py cutover/sync/dump; no Harbor disposable isolate run here.",
+    "PREDICTED_OFFICIAL_SIGNAL": "USEFUL",
+    "SIMULATION_NOTE": "Diagnostic strategy prior only; NOT official GPT-5.5×5 Harbor evidence."
+  }
+}
