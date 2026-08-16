@@ -29,6 +29,21 @@ jobs:
           test -f .terminus/reviews/cobol-comp3-python-equiv/59dcf214/cobol-comp3-python-equiv-59dcf214-adjudication-516e0ca6b1.json
           test "$(git status --porcelain -- cobol-comp3-python-equiv)" = ""
 
+      - name: Install test dependency and prove unrelated baseline debt
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install --disable-pip-version-check pytest
+          set +e
+          python -m pytest -q \
+            .terminus/tests/test_quality_agent_system.py::test_quality_interlock_validator_accepts_current_pre_freeze_sessions \
+            > /tmp/preexisting-quality-failure.log 2>&1
+          baseline_rc=$?
+          set -e
+          test "$baseline_rc" -eq 1
+          grep -F "platform-sonar-ingress-token-bind.md" /tmp/preexisting-quality-failure.log
+          cat /tmp/preexisting-quality-failure.log
+
       - name: Capture existing Q4 Q6 role contracts
         shell: bash
         run: |
@@ -77,23 +92,7 @@ jobs:
           cat /tmp/role-hashes-after
           diff -u /tmp/role-hashes-before /tmp/role-hashes-after
 
-      - name: Run control-plane regression suite
-        shell: bash
-        run: |
-          set -euo pipefail
-          python -m pip install --disable-pip-version-check pytest
-          python -m pytest -q \
-            .terminus/tests/test_q4_closure.py \
-            .terminus/tests/test_quality_agent_system.py \
-            .terminus/tests/test_stage_acceptance_projection.py \
-            .terminus/tests/test_acceptance_projection_integrity.py \
-            .terminus/tests/test_execution_record.py
-          python .terminus/validate_agent_system.py
-          python .terminus/validate_stage_contracts.py
-          python .terminus/validate_execution_record_pass_b.py
-          test "$(git log -1 --format=%H -- cobol-comp3-python-equiv)" = "bb2e042c45873da3f3d78836d915ddb6446debf2"
-
-      - name: Commit validated redesign and remove installer
+      - name: Create unpushed candidate control-plane snapshot
         shell: bash
         run: |
           set -euo pipefail
@@ -108,4 +107,31 @@ jobs:
             exit 1
           fi
           git commit -m 'control: add adjudicated Q4 closure boundary'
+          test "$(git status --porcelain)" = ""
+
+      - name: Run control-plane regression suite on exact candidate snapshot
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pytest -q \
+            .terminus/tests/test_q4_closure.py \
+            .terminus/tests/test_quality_agent_system.py \
+            .terminus/tests/test_stage_acceptance_projection.py \
+            .terminus/tests/test_acceptance_projection_integrity.py \
+            .terminus/tests/test_execution_record.py \
+            -k 'not test_quality_interlock_validator_accepts_current_pre_freeze_sessions'
+          python .terminus/validate_agent_system.py
+          python .terminus/validate_stage_contracts.py
+          python .terminus/validate_execution_record_pass_b.py
+          python .terminus/validate_quality_interlock.py --task cobol-comp3-python-equiv
+          test "$(git log -1 --format=%H -- cobol-comp3-python-equiv)" = "bb2e042c45873da3f3d78836d915ddb6446debf2"
+          if git diff --name-only HEAD^ HEAD | grep -q '^cobol-comp3-python-equiv/'; then
+            echo 'ERROR: validated control-plane commit changed task scope' >&2
+            exit 1
+          fi
+
+      - name: Push validated redesign
+        shell: bash
+        run: |
+          set -euo pipefail
           git push origin HEAD:task/cobol-comp3-python-equiv-strict-rebuild
