@@ -1,0 +1,80 @@
+name: Freeze COBOL final Q4 packet
+
+on:
+  push:
+    branches:
+      - task/cobol-comp3-python-equiv-strict-rebuild
+    paths:
+      - .github/workflows/freeze-cobol-final-q4-packet.yml
+
+permissions:
+  contents: write
+
+jobs:
+  freeze:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: task/cobol-comp3-python-equiv-strict-rebuild
+          fetch-depth: 0
+
+      - name: Verify exact final closure candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          expected=bb2e042c45873da3f3d78836d915ddb6446debf2
+          actual="$(git log -1 --format=%H -- cobol-comp3-python-equiv)"
+          test "$actual" = "$expected"
+          test "$(git log -1 --format=%s -- cobol-comp3-python-equiv)" = "Close final adjudicated COBOL Q4 blockers"
+          git diff --quiet 59dcf2146e1bac84cbc98d7d641e79b5a0138c4a "$expected" -- \
+            cobol-comp3-python-equiv/task.toml \
+            cobol-comp3-python-equiv/environment
+          changed="$(git diff --name-only 59dcf2146e1bac84cbc98d7d641e79b5a0138c4a "$expected" -- cobol-comp3-python-equiv)"
+          printf '%s\n' "$changed"
+          test "$changed" = $'cobol-comp3-python-equiv/instruction.md\ncobol-comp3-python-equiv/solution/fixed/operations.py\ncobol-comp3-python-equiv/tests/test_outputs.py'
+          test ! -e .terminus/reviews/cobol-comp3-python-equiv/bb2e042
+
+      - name: Generate repository-native Q4 packet
+        shell: bash
+        run: |
+          set -euo pipefail
+          change='Final circuit-breaker closure authorized by the frozen Adjudicator at task commit 59dcf2146e1bac84cbc98d7d641e79b5a0138c4a. The final task commit bb2e042c45873da3f3d78836d915ddb6446debf2 changes only instruction.md, tests/test_outputs.py, and solution/fixed/operations.py. The verifier removes dependence on the src.publication.os.replace promotion primitive, replaces archive extension/serialization and byte-identical-manifest assumptions with representation-neutral semantic evidence checks, adds grouped public preflight perturbations for remaining documented health families, adds audit perturbations for recovery identity, control/reconciliation and publication-registry health, and isolates archive-owned registry attribution without adding corrupt/missing archive-input requirements or expanding publication gating across every safety subclass. instruction.md now clarifies only the grading-relevant movement-shape, item-policy and warehouse-active authority; operations.py adds recovery BLOCK state to the already-documented audit health gate. No task.toml or environment/** path changed, so the existing Q6 production-scope PASS remains scope-reusable. Deterministic closure run 31943332388/job 95155548440 tested this exact resulting task tree before committing it: test inventory stayed 40 total / 30 F2P / 10 P2P, Oracle was 40 passed in 6.09s, and untouched starter NOP was 30 failed / 10 passed in 3.05s.'
+          python .terminus/new_review_packet.py \
+            cobol-comp3-python-equiv spec-test-contract \
+            --state FROZEN_CANDIDATE \
+            --change "$change" | tee /tmp/q4-packet.log
+          packet="$(find .terminus/reviews/cobol-comp3-python-equiv/bb2e042 -maxdepth 1 -type f -name '*.packet.json' -print -quit)"
+          test -n "$packet"
+          python - "$packet" <<'PY'
+          import json, sys
+          from pathlib import Path
+          packet_path = Path(sys.argv[1])
+          data = json.loads(packet_path.read_text())
+          assert data['schema_version'] == '3.0'
+          assert data['role'] == 'Spec-Test Contract Reviewer'
+          assert data['task'] == 'cobol-comp3-python-equiv'
+          assert data['task_commit'] == 'bb2e042c45873da3f3d78836d915ddb6446debf2'
+          assert data['state'] == 'FROZEN_CANDIDATE'
+          assert data['prior_verdicts_visible'] is False
+          output = Path(data['review_output_path'])
+          assert not output.exists()
+          print('PACKET=' + packet_path.as_posix())
+          print('REVIEW_ID=' + data['review_id'])
+          print('OUTPUT=' + data['review_output_path'])
+          print('CONTROL_PLANE=' + data['control_plane_commit'])
+          print('ROLE_HASH=' + data['role_contract_hash'])
+          PY
+
+      - name: Commit packet and remove freezer
+        shell: bash
+        run: |
+          set -euo pipefail
+          packet="$(find .terminus/reviews/cobol-comp3-python-equiv/bb2e042 -maxdepth 1 -type f -name '*.packet.json' -print -quit)"
+          rm .github/workflows/freeze-cobol-final-q4-packet.yml
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add "$packet" .github/workflows/freeze-cobol-final-q4-packet.yml
+          git diff --cached --check
+          git commit -m 'review: freeze final COBOL Q4 packet'
+          git push origin HEAD:task/cobol-comp3-python-equiv-strict-rebuild
