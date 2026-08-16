@@ -118,6 +118,20 @@ Instructions are for the engineer solving the incident, not the benchmark evalua
 
 A generated support document often has exactly five headings, each covering one hidden test family with perfect scope. Real documentation may have structure, but it usually reflects operational ownership or existing system boundaries rather than the grading rubric.
 
+### 11. Markdown path catalog / over-fencing
+
+AI-like:
+
+> The project is `/app/ha`. Pager notes are `/app/ha/notes/oncall.md`; scraped gunicorn lines are `/app/ha/logs/captured/shopdesk-error.log`. Shop files are `/app/ha/state/primary.sqlite` and `/app/ha/state/standby.sqlite`. Cache alias for sticky reads is `pins`. How we run cutover is in `/app/ha/docs/runbook.md`.
+
+Why it looks generated: every noun is backtick-fenced; paths are listed in a symmetrical inventory cadence rather than how an on-call engineer would point someone at evidence. Absolute paths remain required when the verifier consumes them, but they should sit in ordinary prose.
+
+More human:
+
+> Desk is /app/ha — start from /app/ha/notes/oncall.md and /app/ha/logs/captured/shopdesk-error.log; shop files are /app/ha/state/primary.sqlite and /app/ha/state/standby.sqlite; sticky cache alias is pins; cutover procedure is /app/ha/docs/runbook.md.
+
+Why: same absolute paths and aliases, written like a Slack/Jira handoff instead of a markdown spec sheet.
+
 ## Human task instruction patterns
 
 Good instructions often fit one of these natural shapes. Do not turn these into templates.

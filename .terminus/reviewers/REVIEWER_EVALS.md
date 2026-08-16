@@ -81,6 +81,17 @@ Scenario: instruction says “preserve the output schema defined in the contract
 
 Expected: request the contract; do not PASS or claim ambiguity without seeing it.
 
+### IR-05 — markdown path catalog
+
+OWNER: Instruction Reviewer
+LABEL: REVISE
+
+```text
+The project is `/app/ha`. Pager notes are `/app/ha/notes/oncall.md`; scraped gunicorn lines are `/app/ha/logs/captured/shopdesk-error.log`. Shop files are `/app/ha/state/primary.sqlite` and `/app/ha/state/standby.sqlite`. Cache alias for sticky reads is `pins`. How we run cutover is in `/app/ha/docs/runbook.md`.
+```
+
+Expected: high AI-template signal from backtick fencing + symmetrical path inventory; rewrite as ordinary engineer prose while keeping absolute paths.
+
 ### VR-01 — source-grep verifier
 
 OWNER: Verifier Engineer
@@ -241,6 +252,20 @@ INPUT_FIXTURE:
 EXPECTED_LABEL:
 WHY:
 GENERALIZED_LESSON:
+```
+
+### HR-IR-01 — django-checkout-failover-ha markdown path catalog
+
+```text
+CASE_ID: HR-IR-01
+DATE: 2026-08-16
+TASK: django-checkout-failover-ha
+SOURCE: human
+POLICY_VERSION_THAT_MISSED: Instruction Reviewer PASS on 03749a0e accepted polished two-paragraph handoff that still used backtick path catalogs
+INPUT_FIXTURE: instruction.md path-inventory paragraph (every path/alias fenced; symmetrical “X is /path” cadence)
+EXPECTED_LABEL: REVISE (style / AI-template), then rewrite as Slack/Jira prose with absolute paths retained
+WHY: Human feedback: “There are lot of markdowns, Please write it like how a real engineer prompt”
+GENERALIZED_LESSON: Absolute paths are required when graded, but fencing every path and listing them as a markdown catalog is an AI template signal. Prefer ordinary on-call prose that still names the verifier-consumed paths. Instruction Writer and Instruction Reviewer must treat markdown-path-catalog cadence as REVISE even when length/paragraph shape already passes.
 ```
 
 ## Evaluation run record

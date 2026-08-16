@@ -109,6 +109,8 @@ Would the text look normal as a substantial engineering ticket/change request wi
 
 A large Jira-style task may legitimately list many coupled functional requirements. It should still read as a coherent work package rather than a grading rubric.
 
+Absolute paths must be named when graded, but do not present them as a backtick-fenced markdown catalog with symmetrical “X is /path” sentences. Ordinary on-call prose that still names those paths passes this test; a polished path inventory usually fails it.
+
 ### Requirement-completeness test
 
 Are all material functional/operational requirements needed for a fair solve present in `instruction.md` or legitimately discoverable from referenced technical contracts without hiding the actual task goal in docs?

@@ -64,90 +64,95 @@ These examples are synthetic calibration data for Terminus reviewers. They are n
 
 **Human:** Keep parsing in the existing C component.
 
+### 13. Markdown path catalog
+**AI-like:** The project is `/app/ha`. Pager notes are `/app/ha/notes/oncall.md`; scraped gunicorn lines are `/app/ha/logs/captured/shopdesk-error.log`. Shop files are `/app/ha/state/primary.sqlite` and `/app/ha/state/standby.sqlite`. Cache alias for sticky reads is `pins`.
+
+**Human:** Desk is /app/ha — start from /app/ha/notes/oncall.md and the scraped gunicorn log; shop files are primary/standby sqlite under /app/ha/state; sticky alias is pins; cutover is in /app/ha/docs/runbook.md.
+
 ## Difficulty explanation pairs
 
-### 13. Generic complexity claim
+### 14. Generic complexity claim
 **AI-like:** This task is challenging because it involves multiple interconnected components and requires careful reasoning across several edge cases.
 
 **Human:** A fix can be correct at the reservation layer and still duplicate clearing on restart. The hard part is preserving one authoritative effect across components that recover independently.
 
-### 14. Feature list posing as difficulty
+### 15. Feature list posing as difficulty
 **AI-like:** The task includes COBOL, SQL, shell scripting, reconciliation, accounting, and idempotency, making it complex.
 
 **Human:** Language count is not the difficulty. Explain which state interaction makes a plausible partial fix fail.
 
-### 15. Inflated praise
+### 16. Inflated praise
 **AI-like:** Solving this requires deep expertise and sophisticated reasoning.
 
 **Human:** Omit self-assessment; describe the actual trap.
 
-### 16. Test narration
+### 17. Test narration
 **AI-like:** The task is difficult because there are many tests that cover many different scenarios.
 
 **Human:** The happy path hides the bug; it only appears when state from an earlier attempt is already durable.
 
 ## Solution explanation pairs
 
-### 17. Diff walkthrough
+### 18. Diff walkthrough
 **AI-like:** First I changed the schema, then I updated the shell script, then I modified the duplicate program, and finally I fixed the output generation.
 
 **Human:** The repair makes prior financial effects authoritative. Resume decisions no longer execute them again, and publication derives from reconciliation/completion state rather than control-flow success.
 
-### 18. Empty abstraction
+### 19. Empty abstraction
 **AI-like:** I implemented a robust idempotent architecture that ensures consistency across all components.
 
 **Human:** Say what becomes idempotent and which state is authoritative.
 
-### 19. Implementation trivia
+### 20. Implementation trivia
 **AI-like:** I used `INSERT OR IGNORE` in three places and `BEGIN IMMEDIATE` in another place.
 
 **Human:** Database constraints make duplicate effects impossible, while the controller distinguishes new execution from resume.
 
-### 20. Claim without rationale
+### 21. Claim without rationale
 **AI-like:** The solution is efficient and reliable.
 
 **Human:** Omit unless efficiency/reliability is actually measured and explain the evidence.
 
 ## Verification explanation pairs
 
-### 21. Generic coverage
+### 22. Generic coverage
 **AI-like:** The tests provide comprehensive coverage of normal behavior and edge cases to ensure robust correctness.
 
 **Human:** Each case rebuilds state, runs the submitted workflow, and checks resulting database/artifacts. The resume case starts with an existing reservation so reinserting it fails semantically rather than merely syntactically.
 
-### 22. Restating assertions
+### 23. Restating assertions
 **AI-like:** One test checks that the count is four, another checks that the status is balanced, and another checks that the file exists.
 
 **Human:** Explain what class of wrong solution those assertions rule out.
 
-### 23. Overclaim
+### 24. Overclaim
 **AI-like:** The verifier proves the implementation is fully correct.
 
 **Human:** The verifier checks the stated contract under the modeled scenarios; do not claim more.
 
-### 24. Test-file implementation detail
+### 25. Test-file implementation detail
 **AI-like:** `test_outputs.py` calls `reset_db()`, then `run_batch()`, then `rows()`.
 
 **Human:** The verifier recreates independent database states and exercises the submitted batch end to end.
 
 ## Review-feedback pairs
 
-### 25. AI reviewer voice
+### 26. AI reviewer voice
 **AI-like:** Overall, the instruction is well-structured and comprehensive, but there are several opportunities to improve clarity and concision.
 
 **Human reviewer:** Too much of the second paragraph is a schema dump. The contract already defines those fields; keep the incident and publication rules here and point to the contract for the schema.
 
-### 26. Vague criticism
+### 27. Vague criticism
 **AI-like:** The task could be made more realistic and less templated.
 
 **Human reviewer:** The starter has one planted defect for nearly every verifier requirement. Collapse that into two coupled restart faults so the solver has to trace state rather than tick off a checklist.
 
-### 27. Vague approval
+### 28. Vague approval
 **AI-like:** The task appears sufficiently difficult and realistic.
 
 **Human reviewer:** The restart path crosses duplicate classification, durable reservation state and clearing publication, so a local fix can still fail end-to-end. I do not see a single-command shortcut.
 
-### 28. Style-only humanization
+### 29. Style-only humanization
 **AI-like approach:** Replace formal words with casual words and add contractions.
 
 **Correct approach:** Change information selection, remove synthetic completeness, combine related invariants, and preserve the engineer's actual operational concern. Human writing is not slang.
@@ -159,5 +164,6 @@ These examples are synthetic calibration data for Terminus reviewers. They are n
 - Human explanations focus on one or two real insights; AI explanations summarize the entire artifact.
 - Humans may use exact schemas when necessary, but do not repeat them when an authoritative interface already exists.
 - Short is not automatically human. A compressed rubric checklist is still synthetic.
+- Absolute paths are required when graded; fencing every path/alias in backticks and listing them as a markdown catalog is an AI template signal.
 - Imperfect grammar is not a target. Deliberately adding mistakes is not humanization.
 - Domain jargon helps only when it is the natural vocabulary of the system, not when inserted to sound expert.

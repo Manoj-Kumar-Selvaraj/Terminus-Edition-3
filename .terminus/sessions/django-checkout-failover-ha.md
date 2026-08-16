@@ -7,7 +7,7 @@ This is the durable operational checkpoint for one task. Keep it evidence-orient
 ## Identity
 
 - Task: `django-checkout-failover-ha`
-- Controller state: `MODEL_DIAGNOSTIC_AGGREGATE`
+- Controller state: `FIXING`
 - Working branch: `main`
 - Pull request: `none`
 - Current task commit: `d812d3f739d4b987e3db6f2b6cf52298511ece3f`
@@ -32,22 +32,22 @@ This is the durable operational checkpoint for one task. Keep it evidence-orient
 | STB auth/AI credentials | SKIP | local Harbor oracle/nop without STB |
 | Oracle = 1 | PASS | Harbor job `jobs/2026-08-16__18-04-39` reward.txt=`1` |
 | NOP = 0 | PASS | Harbor job `jobs/2026-08-16__18-06-28` reward.txt=`0` |
-| Q4 Spec-Test Contract Reviewer | PASS | review `.../d812d3f7/...-spec-test-contract-3db980b472.json` (HIGH); advisory Q4-A01–A04 |
+| Q4 Spec-Test Contract Reviewer | STALE | instruction prose changed on working tree; prior `d812d3f7` PASS no longer bound |
 | Q6 Production Logic Auditor | PASS | review `.../d812d3f7/...-production-logic-e58327c292.json` (HIGH); PADDING_RISK MEDIUM; scope `888ea3ba…` |
-| Quality Interlock | PASS | cold Q4 + Q6 on exact `d812d3f7` |
-| Pre-LLMaJ specialist panel | PASS | Stage-B retained; Comprehensive APPROVE on `d812d3f7` |
+| Quality Interlock | STALE | awaiting instruction freeze + cold Q4 |
+| Pre-LLMaJ specialist panel | STALE | instruction surface changed |
+| Pre-LLMaJ aggregate | STALE | depends on re-PASS Instruction/Q4 |
 | Task Architect | PASS | retained from `b9ee4816` |
 | Verifier Engineer | PASS | retained from `b9ee4816` |
 | Originality & Authenticity | PASS | retained from `b9ee4816` |
 | Difficulty design | PASS | retained from `b9ee4816`; tier UNMEASURED |
 | Compliance pre-review | PASS | retained from `b9ee4816` |
-| Instruction Reviewer | PASS | retained from `03749a0e` |
+| Instruction Reviewer | STALE | instruction handoff rewrite after `03749a0e` PASS; needs cold re-review |
 | Documentation Reviewer | PASS | retained from `b9ee4816` |
-| Comprehensive Reviewer | APPROVE | review `.../d812d3f7/...-comprehensive-checklist-41d3c4e34b.json` (HIGH); coverage 100% |
-| Pre-LLMaJ aggregate | PASS | `.terminus/reviews/django-checkout-failover-ha/d812d3f7/pre-llmaj-aggregate.md` |
-| Q8 GPT Perspective Simulation | PASS (diagnostic) | `...-difficulty-sim-gpt-8788a1f29a.json` (SIMULATION_NOT_EXECUTED; USEFUL) |
-| Q8 Claude Perspective Simulation | PASS (diagnostic) | `...-difficulty-sim-claude-87b3953b40.json` (SIMULATION_NOT_EXECUTED; USEFUL) |
-| Q8 aggregate | COMPLETE | `.terminus/reviews/django-checkout-failover-ha/d812d3f7/q8-aggregate.md` |
+| Comprehensive Reviewer | STALE | instruction surface changed after APPROVE |
+| Q8 GPT Perspective Simulation | STALE | instruction rewrite; prior diagnostic unbound |
+| Q8 Claude Perspective Simulation | STALE | instruction rewrite; prior diagnostic unbound |
+| Q8 aggregate | STALE | depends on re-Q8 after instruction freeze |
 | Harbor LLMaJ | DEFERRED | user-deferred |
 | Difficulty trials | DEFERRED | user-deferred (GPT×5 + Claude×5) |
 | GPT-5.5 difficulty ×5 | DEFERRED | user-deferred |
@@ -70,11 +70,13 @@ This is the durable operational checkpoint for one task. Keep it evidence-orient
 
 ## Current blocker
 
-Harbor LLMaJ and official difficulty trials are user-deferred. Final Compliance / package cannot honestly close to `SUBMISSION_READY` without them.
+Working-tree instruction rewrite (human handoff voice). Instruction / Q4 / Pre-LLMaJ / Comprehensive / Q8 are STALE until freeze + cold re-review. Q6 likely reusable if production scope unchanged.
+
+Agent learning updated from this human feedback: HUMAN_WRITING_CALIBRATION §11, WRITING_EXAMPLE_BANK pair 13, REVIEWER_EVALS IR-05 + HR-IR-01, INSTRUCTION_POLICY Jira/Slack note.
 
 ## Next action
 
-Await user authorization for Harbor LLMaJ + GPT×5/Claude×5, or an explicit package-only request. Control plane is at `MODEL_DIAGNOSTIC_AGGREGATE`.
+Commit instruction freeze → cold Instruction Reviewer → cold Q4 → restore Quality Interlock / Pre-LLMaJ / Q8 as needed. Harbor/trials remain deferred.
 
 ## Review evidence ledger
 
