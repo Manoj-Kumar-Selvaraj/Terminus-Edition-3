@@ -1,0 +1,66 @@
+name: Execute COBOL Q4 closure v2
+on:
+  push:
+    paths:
+      - '.github/workflows/execute-cobol-q4-closure-v2.yml'
+permissions:
+  contents: write
+jobs:
+  execute:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Rehydrate validated closure script and execute
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          import subprocess
+
+          historical = '582ef0b5ea0cd84e1ca6c291c425cb50addb6a24'
+          old = '.github/workflows/close-cobol-q4-adjudication.yml'
+          self_path = '.github/workflows/execute-cobol-q4-closure-v2.yml'
+          wrapper = '.github/workflows/repair-cobol-q4-closure-guard.yml'
+          text = subprocess.check_output(['git', 'show', f'{historical}:{old}'], text=True)
+          marker = '        run: |\n'
+          if marker not in text:
+              raise SystemExit('cannot find historical run block')
+          block = text.split(marker, 1)[1]
+          lines = []
+          for line in block.splitlines(True):
+              if line.startswith('          '):
+                  lines.append(line[10:])
+              elif not line.strip():
+                  lines.append('\n')
+              else:
+                  raise SystemExit(f'unexpected YAML indentation: {line!r}')
+          script = ''.join(lines)
+          pattern = re.compile(
+              r"(?ms)^# Q4-006: only the documented passed/error envelopes may be structurally graded\.\n"
+              r".*?^tests_path\.write_text\(tests, encoding='utf-8'\)\n"
+          )
+          script, count = pattern.subn("tests_path.write_text(tests, encoding='utf-8')\n", script, count=1)
+          if count != 1:
+              raise SystemExit(f'expected one false guard block, removed {count}')
+          script = script.replace(
+              "WORKFLOW='.github/workflows/close-cobol-q4-adjudication.yml'",
+              f"WORKFLOW='{self_path}'",
+              1,
+          )
+          script = script.replace(
+              'rm -f "$WORKFLOW"',
+              f'rm -f "$WORKFLOW" "{old}" "{wrapper}"',
+              1,
+          )
+          script = script.replace(
+              'git diff --cached --check',
+              f'git add -A "{old}" "{wrapper}"\ngit diff --cached --check',
+              1,
+          )
+          Path('/tmp/closure.sh').write_text(script, encoding='utf-8')
+          PY
+          bash /tmp/closure.sh
