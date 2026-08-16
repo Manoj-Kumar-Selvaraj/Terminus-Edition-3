@@ -1,0 +1,85 @@
+{
+  "schema_version": "3.0",
+  "role": "Compliance Auditor",
+  "review_id": "django-checkout-failover-ha-b9ee4816-compliance-55d7325ce9",
+  "task": "django-checkout-failover-ha",
+  "task_commit": "b9ee4816204f1a51857407e4a6f9bf9e38dd937a",
+  "control_plane_commit": "b9ee4816204f1a51857407e4a6f9bf9e38dd937a",
+  "protocol_policy_version": "2.2",
+  "prompt_policy_version": "2.2",
+  "role_policy_version": "1.0",
+  "role_contract_hash": "a4ce6195d206dc10def9ae5c14ac2d8cc89455a681478356c53bfca18a125470",
+  "context_packet": ".terminus/reviews/django-checkout-failover-ha/b9ee4816/django-checkout-failover-ha-b9ee4816-compliance-55d7325ce9.packet.json",
+  "verdict": "PASS",
+  "confidence": "HIGH",
+  "evidence_status": "SUFFICIENT",
+  "summary": "No current Edition 3 structural, environment, security, metadata, or packaging rejection criteria found. Flat layout, digest-pinned Debian base with tmux/asciinema, separate verifier, absolute artifacts, and isolation hold; oracle reward 1 and NOP reward 0 confirmed.",
+  "evidence": [
+    {
+      "type": "rule",
+      "ref": "TERMINUS_3_AI_INSTRUCTIONS.md §2/§7/§9",
+      "observation": "Authoritative Edition 3 rules require flat layout, digest-pinned canonical bases, separate verifier, baked deps, binary reward after pytest, and no solution/tests in the agent image."
+    },
+    {
+      "type": "file",
+      "ref": "django-checkout-failover-ha/task.toml",
+      "observation": "version 2.0; name matches directory; Software/Systems taxonomy; top-level artifacts=[\"/app/ha\"]; environment_mode=separate; network_mode=public; agent timeout_sec=10800 within 1800–18000."
+    },
+    {
+      "type": "file",
+      "ref": "django-checkout-failover-ha/environment/Dockerfile",
+      "observation": "FROM debian:bookworm-slim@sha256:4724b8cc… (canonical digest); tmux and asciinema installed; Django==4.2.23 pinned; COPY ha/ only; no privileged/platform/socket patterns."
+    },
+    {
+      "type": "file",
+      "ref": "django-checkout-failover-ha/environment/.dockerignore",
+      "observation": "Excludes .git, __pycache__, solution/, and tests/ from build context."
+    },
+    {
+      "type": "file",
+      "ref": "django-checkout-failover-ha/tests/Dockerfile",
+      "observation": "Separate digest-pinned verifier image; pytest==8.4.1 and Django==4.2.23 baked; creates /app/ha artifact parent; copies only test_ha.py and test.sh."
+    },
+    {
+      "type": "file",
+      "ref": "django-checkout-failover-ha/tests/test.sh",
+      "observation": "Creates /logs/verifier at runtime; writes reward 0 then 1/0 after pytest; installs nothing; no trailing exit $?."
+    },
+    {
+      "type": "artifact",
+      "ref": ".terminus/reviews/django-checkout-failover-ha/b9ee4816/q7-format-check.md",
+      "observation": "Q7 FORMAT_PASS on the same task_commit for layout, task.toml, digests, verifier, reward contract, and ruff."
+    },
+    {
+      "type": "job",
+      "ref": "jobs/2026-08-16__17-38-02",
+      "observation": "Oracle verifier reward.txt = 1."
+    },
+    {
+      "type": "job",
+      "ref": "jobs/2026-08-16__17-39-27",
+      "observation": "NOP verifier reward.txt = 0."
+    }
+  ],
+  "findings": [],
+  "missing_evidence": [],
+  "change_scope": [],
+  "do_not_change": [
+    "Do not copy solution/ or tests/ into the agent image.",
+    "Do not add privileged containers, host Docker socket mounts, or unpinned base images."
+  ],
+  "next_gate": "Pre-LLMaJ aggregate",
+  "role_output": {
+    "BLOCKERS": [],
+    "HIGH": [],
+    "MEDIUM": [],
+    "LOW": [],
+    "CURRENT_RULE_REFERENCES": [
+      "TERMINUS_3_AI_INSTRUCTIONS.md sections 2, 4, 7, 9 (layout, metadata, environment, verifier)",
+      ".terminus/reviewers/REVIEWER_CHECKLIST.md RC-ENV-005..013, RC-META-001",
+      ".terminus/agents/PROMPTS.md Compliance Auditor"
+    ],
+    "PACKAGE_RISK": "LOW",
+    "SECURITY_RISK": "LOW"
+  }
+}

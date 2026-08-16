@@ -32,15 +32,15 @@ This is the durable operational checkpoint for one task. Keep it evidence-orient
 | STB auth/AI credentials | SKIP | local Harbor oracle/nop without STB |
 | Oracle = 1 | PASS | Harbor job `jobs/2026-08-16__17-38-02` reward.txt=`1`; 28 F2P suite |
 | NOP = 0 | PASS | Harbor job `jobs/2026-08-16__17-39-27` reward.txt=`0` |
-| Q4 Spec-Test Contract Reviewer | PENDING | packet `.../b9ee4816/...-spec-test-contract-2baa2168bf.packet.json` (prior PASS STALE after F2P consolidate) |
+| Q4 Spec-Test Contract Reviewer | PASS | review `.../b9ee4816/...-spec-test-contract-2baa2168bf.json` (HIGH) |
 | Q6 Production Logic Auditor | PASS | scope-preserved (`review_scope_hash=5031e765…`); tests-only change |
-| Quality Interlock | PENDING | awaiting cold Q4 on `b9ee4816` |
-| Pre-LLMaJ specialist panel | REVISE | Instruction REVISE (INST-01/02); other specialists PASS or still running |
+| Quality Interlock | PASS | Q4 PASS on `b9ee4816` + Q6 scope-hash reuse |
+| Pre-LLMaJ specialist panel | REVISE | Instruction REVISE (INST-01/02); remaining specialists PASS |
 | Task Architect | PASS | review `.../b9ee4816/...-task-architect-9d3c66428b.json` (HIGH) |
 | Verifier Engineer | PASS | review `.../b9ee4816/...-verifier-engineer-ed25c4beec.json` (HIGH) |
 | Originality & Authenticity | PASS | review `.../b9ee4816/...-originality-9c88957c99.json` (HIGH) |
 | Difficulty design | PASS | review `.../b9ee4816/...-difficulty-design-490134a9ce.json` (MEDIUM); tier UNMEASURED (trials deferred) |
-| Compliance pre-review | PENDING | packet `...-compliance-55d7325ce9.packet.json` |
+| Compliance pre-review | PASS | review `.../b9ee4816/...-compliance-55d7325ce9.json` (HIGH) |
 | Instruction Reviewer | REVISE | review `.../b9ee4816/...-instruction-50ee95a34e.json` (HIGH); blocking INST-01, INST-02 |
 | Documentation Reviewer | PASS | review `.../b9ee4816/...-documentation-2e3067d67a.json` (HIGH) |
 | Comprehensive Reviewer | PENDING | after remaining specialists freeze |
@@ -69,29 +69,29 @@ This is the durable operational checkpoint for one task. Keep it evidence-orient
 
 ## Current blocker
 
-Instruction Reviewer REVISE on `b9ee4816` (INST-01/INST-02: compressed rubric / reverse-outline in instruction.md paragraph 2). Also awaiting cold Q4 and Compliance.
+Instruction Reviewer REVISE on `b9ee4816` (INST-01/INST-02). Quality Interlock is PASS again (Q4 PASS + Q6 reuse).
 
 ## Root-cause classification
 
-- Owner: Instruction Reviewer / Q3 writing repair
+- Owner: Instruction Reviewer / writing repair
 - Classification: `instruction_shape` (compressed rubric)
 - Evidence: `...-instruction-50ee95a34e.json`
 
 ## Next action
 
-Rewrite `instruction.md` paragraph 2 as operational invariants (not a semicolon checklist); drop orphaned `1)`. Re-freeze, cold re-Instruction (+ Q4/Compliance if still pending). Harbor LLMaJ and official trials remain deferred.
+Rewrite `instruction.md` paragraph 2 as operational invariants; drop orphaned `1)`. Re-freeze; cold re-Instruction (and Comprehensive only after Instruction PASS). Harbor LLMaJ and official trials remain deferred.
 
 ## Review evidence ledger
 
 | Review | Review ID | Task commit | Protocol | Prompt | Role policy | Role contract hash | Scope hash | Result path | Verdict | Confidence | Evidence |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| Q4 Spec-Test Contract Reviewer | django-checkout-failover-ha-7cdda65f-spec-test-contract-7c38e34c80 | 7cdda65f0097221e44da943dfaca24ea6c440f8f | 2.2 | 2.2 | 1.1 | c860dfe8b8ed0a04c729e4d6a828741b206b7067a780863ec7b22ee09d02c5a0 | n/a | `.terminus/reviews/django-checkout-failover-ha/7cdda65f/django-checkout-failover-ha-7cdda65f-spec-test-contract-7c38e34c80.json` | STALE | HIGH | superseded by `b9ee4816` |
+| Q4 Spec-Test Contract Reviewer | django-checkout-failover-ha-b9ee4816-spec-test-contract-2baa2168bf | b9ee4816204f1a51857407e4a6f9bf9e38dd937a | 2.2 | 2.2 | 1.1 | c860dfe8b8ed0a04c729e4d6a828741b206b7067a780863ec7b22ee09d02c5a0 | n/a | `.terminus/reviews/django-checkout-failover-ha/b9ee4816/django-checkout-failover-ha-b9ee4816-spec-test-contract-2baa2168bf.json` | PASS | HIGH | |
 | Q6 Production Logic Auditor | django-checkout-failover-ha-f9022bd1-production-logic-b02c7d085b | f9022bd10e98152efcc245a1a0a738bf29f77a80 | 2.2 | 2.2 | 1.1 | ee7d1cfd6e19fcc0e831cc75829457593d7410613c3b3fb811aef925e85a1607 | 5031e765140c0035a98df555161234e16eefdf18772a836f8c9dc31787be9d63 | `.terminus/reviews/django-checkout-failover-ha/f9022bd1/django-checkout-failover-ha-f9022bd1-production-logic-b02c7d085b.json` | PASS | HIGH | scope-reuse on `b9ee4816` |
 | Task Architect | django-checkout-failover-ha-b9ee4816-task-architect-9d3c66428b | b9ee4816204f1a51857407e4a6f9bf9e38dd937a | 2.2 | 2.2 | | | | `.terminus/reviews/django-checkout-failover-ha/b9ee4816/django-checkout-failover-ha-b9ee4816-task-architect-9d3c66428b.json` | PASS | HIGH | |
 | Verifier Engineer | django-checkout-failover-ha-b9ee4816-verifier-engineer-ed25c4beec | b9ee4816204f1a51857407e4a6f9bf9e38dd937a | 2.2 | 2.2 | | | | `.terminus/reviews/django-checkout-failover-ha/b9ee4816/django-checkout-failover-ha-b9ee4816-verifier-engineer-ed25c4beec.json` | PASS | HIGH | advisory VE-A01/A02 |
 | Originality | django-checkout-failover-ha-b9ee4816-originality-9c88957c99 | b9ee4816204f1a51857407e4a6f9bf9e38dd937a | 2.2 | 2.2 | | | | `.terminus/reviews/django-checkout-failover-ha/b9ee4816/django-checkout-failover-ha-b9ee4816-originality-9c88957c99.json` | PASS | HIGH | |
 | Difficulty design | django-checkout-failover-ha-b9ee4816-difficulty-design-490134a9ce | b9ee4816204f1a51857407e4a6f9bf9e38dd937a | 2.2 | 2.2 | | | | `.terminus/reviews/django-checkout-failover-ha/b9ee4816/django-checkout-failover-ha-b9ee4816-difficulty-design-490134a9ce.json` | PASS | MEDIUM | tier UNMEASURED |
-| Compliance pre-review | | | | | | | | | PENDING | | |
+| Compliance pre-review | django-checkout-failover-ha-b9ee4816-compliance-55d7325ce9 | b9ee4816204f1a51857407e4a6f9bf9e38dd937a | 2.2 | 2.2 | | | | `.terminus/reviews/django-checkout-failover-ha/b9ee4816/django-checkout-failover-ha-b9ee4816-compliance-55d7325ce9.json` | PASS | HIGH | |
 | Instruction | django-checkout-failover-ha-b9ee4816-instruction-50ee95a34e | b9ee4816204f1a51857407e4a6f9bf9e38dd937a | 2.2 | 2.2 | | | | `.terminus/reviews/django-checkout-failover-ha/b9ee4816/django-checkout-failover-ha-b9ee4816-instruction-50ee95a34e.json` | REVISE | HIGH | INST-01, INST-02 |
 | Documentation | django-checkout-failover-ha-b9ee4816-documentation-2e3067d67a | b9ee4816204f1a51857407e4a6f9bf9e38dd937a | 2.2 | 2.2 | | | | `.terminus/reviews/django-checkout-failover-ha/b9ee4816/django-checkout-failover-ha-b9ee4816-documentation-2e3067d67a.json` | PASS | HIGH | |
 | Comprehensive Reviewer | | | | | 1.0 | | | | PENDING | | |
@@ -104,17 +104,17 @@ Rewrite `instruction.md` paragraph 2 as operational invariants (not a semicolon 
 ## Quality interlock checkpoint
 
 - Q1 spec-gap status/evidence: `DONE` (documented in instruction/runbook during repair)
-- Q2 verifier-coverage status/evidence: `DONE` (46 tests on `7cdda65`; Q4-001..004 closed)
+- Q2 verifier-coverage status/evidence: `DONE` (28 F2P on `b9ee4816`)
 - Q3 ambiguity status/evidence: `DONE` (live /readyz vs dump accepting_checkout)
-- Q7 format status/evidence: `PENDING`
+- Q7 format status/evidence: `PASS` (`b9ee4816/q7-format-check.md`)
 - Q5 Oracle/runtime repair evidence: `none`
-- Q4 review ID/result: `django-checkout-failover-ha-7cdda65f-spec-test-contract-7c38e34c80` / `.terminus/reviews/django-checkout-failover-ha/7cdda65f/django-checkout-failover-ha-7cdda65f-spec-test-contract-7c38e34c80.json`
+- Q4 review ID/result: `django-checkout-failover-ha-b9ee4816-spec-test-contract-2baa2168bf` / `.terminus/reviews/django-checkout-failover-ha/b9ee4816/django-checkout-failover-ha-b9ee4816-spec-test-contract-2baa2168bf.json`
 - Q4 verdict/confidence/evidence: `PASS` / `HIGH` / `SUFFICIENT`
-- Q4 exhaustiveness: `COMPLETE` (BLOCKING_FINDING_IDS empty; advisory Q4-A01–A05)
+- Q4 exhaustiveness: `COMPLETE`
 - Q6 review ID/result: `django-checkout-failover-ha-f9022bd1-production-logic-b02c7d085b` / `.terminus/reviews/django-checkout-failover-ha/f9022bd1/django-checkout-failover-ha-f9022bd1-production-logic-b02c7d085b.json`
 - Q6 verdict/confidence/evidence: `PASS` / `HIGH` / `SUFFICIENT`
 - Q6 production scope hash: `5031e765140c0035a98df555161234e16eefdf18772a836f8c9dc31787be9d63`
-- Q6 scope reuse: `reused on task commit 7cdda65f0097221e44da943dfaca24ea6c440f8f (tests-only; hash unchanged)`
+- Q6 scope reuse: `reused on task commit b9ee4816204f1a51857407e4a6f9bf9e38dd937a (tests-only; hash unchanged)`
 - Quality interlock: `PASS`
 
 ## Comprehensive reviewer checkpoint
