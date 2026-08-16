@@ -7,10 +7,10 @@ This is the durable operational checkpoint for one task. Keep it evidence-orient
 ## Identity
 
 - Task: `django-checkout-failover-ha`
-- Controller state: `FIXING`
+- Controller state: `FROZEN_CANDIDATE`
 - Working branch: `main`
 - Pull request: `none`
-- Current task commit: `d812d3f739d4b987e3db6f2b6cf52298511ece3f`
+- Current task commit: `d3a64a1bcab9579787745e952a6bf8132fc6ad67`
 - Agent-system policy: `2.4`
 - Specialist prompt policy: `2.2`
 - Specialist protocol policy: `2.2`
@@ -32,9 +32,10 @@ This is the durable operational checkpoint for one task. Keep it evidence-orient
 | STB auth/AI credentials | SKIP | local Harbor oracle/nop without STB |
 | Oracle = 1 | PASS | Harbor job `jobs/2026-08-16__18-04-39` reward.txt=`1` |
 | NOP = 0 | PASS | Harbor job `jobs/2026-08-16__18-06-28` reward.txt=`0` |
-| Q4 Spec-Test Contract Reviewer | STALE | instruction prose changed on working tree; prior `d812d3f7` PASS no longer bound |
-| Q6 Production Logic Auditor | PASS | review `.../d812d3f7/...-production-logic-e58327c292.json` (HIGH); PADDING_RISK MEDIUM; scope `888ea3ba…` |
-| Quality Interlock | STALE | awaiting instruction freeze + cold Q4 |
+| Q4 Spec-Test Contract Reviewer | PENDING | packet `.../d3a64a1b/...-spec-test-contract-317c810878.packet.json` |
+| Q6 Production Logic Auditor | PASS | retained scope `888ea3ba…` from `d812d3f7` (instruction-only delta) |
+| Quality Interlock | PENDING | awaiting cold Q4 on `d3a64a1b` |
+| Instruction Reviewer | PENDING | packet `.../d3a64a1b/...-instruction-d681620c9c.packet.json` |
 | Pre-LLMaJ specialist panel | STALE | instruction surface changed |
 | Pre-LLMaJ aggregate | STALE | depends on re-PASS Instruction/Q4 |
 | Task Architect | PASS | retained from `b9ee4816` |
@@ -42,7 +43,7 @@ This is the durable operational checkpoint for one task. Keep it evidence-orient
 | Originality & Authenticity | PASS | retained from `b9ee4816` |
 | Difficulty design | PASS | retained from `b9ee4816`; tier UNMEASURED |
 | Compliance pre-review | PASS | retained from `b9ee4816` |
-| Instruction Reviewer | STALE | instruction handoff rewrite after `03749a0e` PASS; needs cold re-review |
+| Instruction Reviewer | PENDING | packet `.../d3a64a1b/...-instruction-d681620c9c.packet.json` |
 | Documentation Reviewer | PASS | retained from `b9ee4816` |
 | Comprehensive Reviewer | STALE | instruction surface changed after APPROVE |
 | Q8 GPT Perspective Simulation | STALE | instruction rewrite; prior diagnostic unbound |
@@ -70,13 +71,11 @@ This is the durable operational checkpoint for one task. Keep it evidence-orient
 
 ## Current blocker
 
-Working-tree instruction rewrite (human handoff voice). Instruction / Q4 / Pre-LLMaJ / Comprehensive / Q8 are STALE until freeze + cold re-review. Q6 likely reusable if production scope unchanged.
-
-Agent learning updated from this human feedback: HUMAN_WRITING_CALIBRATION §11, WRITING_EXAMPLE_BANK pair 13, REVIEWER_EVALS IR-05 + HR-IR-01, INSTRUCTION_POLICY Jira/Slack note.
+Cold Instruction + Q4 on freeze `d3a64a1b` in flight. Q6 retained by production-scope hash (instruction-only).
 
 ## Next action
 
-Commit instruction freeze → cold Instruction Reviewer → cold Q4 → restore Quality Interlock / Pre-LLMaJ / Q8 as needed. Harbor/trials remain deferred.
+Reconcile Instruction/Q4 → Quality Interlock → refresh Pre-LLMaJ/Comprehensive/Q8 as required. Harbor/trials remain deferred.
 
 ## Review evidence ledger
 

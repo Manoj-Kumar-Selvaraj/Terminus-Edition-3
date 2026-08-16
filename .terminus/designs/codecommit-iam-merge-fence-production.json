@@ -3,24 +3,59 @@
   "task": "codecommit-iam-merge-fence",
   "production_authenticity": {
     "incident_evidence": [
-      "environment/codecommit/log/authz.jsonl",
+      "environment/codecommit/log/platform-incident.log",
       "environment/codecommit/ops/handoff.md",
       "environment/codecommit/ops/principals.json",
       "environment/codecommit/policies/developer.json"
     ],
     "instruction_evidence_paths": [
-      "/app/codecommit/log/authz.jsonl",
+      "/app/codecommit/log/platform-incident.log",
+      "/app/codecommit/ops/handoff.md",
       "/app/codecommit/ops",
       "/app/codecommit/policies",
-      "/app/codecommit/docs/iam-git-contract.md"
+      "/app/codecommit/docs/control-plane-contract.md"
     ],
     "stateful_dataset": {
-      "schema": "bare git repos under var/repos plus prs.json and triggers.jsonl",
-      "seed": "environment/codecommit/lib/cc/seed.py",
-      "primary_table": "refs/heads/main",
-      "min_records": 1,
-      "max_records": 20,
-      "notes": "Image build seeds ledger.git with an initial commit. Verifier tests recreate an isolated CC_ROOT and do not depend on that seed beyond code presence."
+      "schema": "environment/codecommit/sql/schema.sql",
+      "seed": "environment/codecommit/sql/seed.sql",
+      "primary_table": "authz_events",
+      "min_records": 12000,
+      "max_records": 12000,
+      "variance_queries": {
+        "principals": {
+          "sql": "SELECT COUNT(DISTINCT principal) FROM authz_events",
+          "min": 6
+        },
+        "actions": {
+          "sql": "SELECT COUNT(DISTINCT action) FROM authz_events",
+          "min": 4
+        },
+        "repos": {
+          "sql": "SELECT COUNT(DISTINCT repo) FROM authz_events",
+          "min": 5
+        },
+        "references": {
+          "sql": "SELECT COUNT(DISTINCT reference) FROM authz_events",
+          "min": 7
+        },
+        "outcomes": {
+          "sql": "SELECT COUNT(DISTINCT allowed) FROM authz_events",
+          "min": 2
+        },
+        "source_ips": {
+          "sql": "SELECT COUNT(DISTINCT source_ip) FROM authz_events",
+          "min": 3
+        },
+        "days": {
+          "sql": "SELECT COUNT(DISTINCT substr(decided_at, 1, 10)) FROM authz_events",
+          "min": 28
+        },
+        "mfa_states": {
+          "sql": "SELECT COUNT(DISTINCT mfa) FROM authz_events",
+          "min": 2
+        }
+      },
+      "notes": "Warehouse mirrors recent authz traffic for reporting; live evaluation still uses policies/ops and var/ state. Verifier uses an isolated CC_ROOT and does not query this SQLite seed."
     }
   }
 }

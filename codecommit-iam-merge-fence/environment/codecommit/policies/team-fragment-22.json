@@ -1,0 +1,22 @@
+{
+  "Statement": [
+    {
+      "Action": "codecommit:GitPull",
+      "Effect": "Allow",
+      "Resource": "arn:local:codecommit:local:000000000000:team22",
+      "Sid": "FragPull22"
+    },
+    {
+      "Action": "codecommit:GitPush",
+      "Condition": {
+        "StringEquals": {
+          "codecommit:References": "refs/heads/dev/team22"
+        }
+      },
+      "Effect": "Allow",
+      "Resource": "arn:local:codecommit:local:000000000000:team22",
+      "Sid": "FragPush22"
+    }
+  ],
+  "Version": "2012-10-17"
+}

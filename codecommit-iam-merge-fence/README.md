@@ -1,15 +1,15 @@
 # codecommit-iam-merge-fence
 
-Local CodeCommit stand-in: IAM-like policy evaluation over git file remotes, PR approval quorum, fast-forward-only merge, and an exactly-once CodePipeline trigger journal.
+Local CodeCommit platform control plane: IAM evaluation, PR quorum, fast-forward merge fence, exactly-once pipeline journal, authz audit log, and webhook outbox — exposed through CLI and HTTP API.
 
 ## Why it is hard
 
-Clone, push, merge, and deliver share one evaluator. A `*` action, ignored MFA/CIDR, prefix-matched Git verbs, and skipped explicit Deny interact with quorum math and merge topology. Fixing only the journal still lets a non-FF merge or an MFA-less main push through.
+Clone/push/merge/deliver/API share one evaluator. Prefix action matching, skipped MFA/CIDR/Deny, broken quorum math, non-FF merges, random event ids, missing audit denies, and API IAM bypass interact. Fixing one plane still fails the contract.
 
 ## Solution approach
 
-Repair the Python evaluator, merge path, approval accounting, and trigger journal under `/app/codecommit`. The oracle copies the corrected modules and leaves repos reachable through `ccctl`.
+Repair the Python control plane under `/app/codecommit` so CLI and API honor the contract. The oracle replaces the broken modules under `lib/cc`.
 
 ## Verification
 
-Separate verifier image with git + pytest. Tests build a private `CC_ROOT`, drive `ccctl`, and check authz decisions, ref ancestry, and journal identity. Difficulty in `task.toml` is provisional until both model families are measured.
+Separate verifier drives `ccctl` against a private `CC_ROOT`, checking authz, FF merge, journal identity, audit, and outbox behavior.

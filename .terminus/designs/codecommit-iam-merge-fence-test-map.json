@@ -2,42 +2,195 @@
   "schema_version": "1.0",
   "task": "codecommit-iam-merge-fence",
   "requirements": {
-    "R_PULL": "GitPull clone is allowed for attached pull statements.",
-    "R_PUSH_MFA": "GitPush to main requires MFA Bool true and office IpAddress.",
-    "R_PUSH_BRANCH": "StringEquals on refs/heads/dev/* listings is exact.",
-    "R_DENY": "Explicit Deny wins over Allow.",
-    "R_STAR": "Action * still requires Resource match.",
-    "R_QUORUM": "Merge needs distinct pool approvals excluding author; duplicates stored once.",
-    "R_FF": "Merge is fast-forward only; dest HEAD equals source commit with one parent.",
-    "R_MERGE_IAM": "MergePullRequestByFastForward + office IP required; developers cannot merge.",
-    "R_TRIGGER": "deliver is exactly once per repo/ref/commit/pipeline with sha256 event_id.",
-    "R_SCHEMA": "Journal key order and PR store paths match the contract.",
-    "R_UNKNOWN": "Unknown principal is AccessDenied UNKNOWN_PRINCIPAL."
+    "R_PULL": "GitPull clone allowed for pull statements",
+    "R_PUSH_MFA": "main GitPush requires MFA + office IP",
+    "R_PUSH_BRANCH": "StringEquals branch listings are exact",
+    "R_DENY": "Explicit Deny wins",
+    "R_STAR": "Action * still requires Resource match",
+    "R_QUORUM": "Distinct pool approvals excluding author; config required",
+    "R_FF": "Fast-forward only merge",
+    "R_MERGE_IAM": "MergePullRequestByFastForward + office IP; developers cannot merge",
+    "R_TRIGGER": "exactly-once deliver with sha256 event_id and key order",
+    "R_AUDIT": "Denied decisions appended to audit.jsonl",
+    "R_OUTBOX": "deliver enqueues outbox; dispatch records attempts; no duplicate enqueue",
+    "R_SCHEMA": "CLI/contract/PR store present",
+    "R_UNKNOWN": "Unknown principal AccessDenied UNKNOWN_PRINCIPAL"
   },
   "tests": [
-    ["test_f2p_push_main_requires_mfa", "F2P", "R_PUSH_MFA"],
-    ["test_f2p_same_commit_clone_ok_after_denied_push", "F2P", "R_PULL"],
-    ["test_f2p_push_main_mfa_wrong_ip_denied", "F2P", "R_PUSH_MFA"],
-    ["test_p2p_push_main_mfa_office_allowed", "P2P", "R_PUSH_MFA"],
-    ["test_p2p_push_dev_branch_without_mfa", "P2P", "R_PUSH_BRANCH"],
-    ["test_f2p_branch_condition_is_exact", "F2P", "R_PUSH_BRANCH"],
-    ["test_f2p_explicit_deny_beats_allow", "F2P", "R_DENY"],
-    ["test_f2p_intern_cannot_push", "F2P", "R_PUSH_MFA"],
-    ["test_f2p_star_action_stays_on_sandbox_resource", "F2P", "R_STAR"],
-    ["test_p2p_merge_requires_quorum", "P2P", "R_QUORUM"],
-    ["test_f2p_author_approval_does_not_count", "F2P", "R_QUORUM"],
-    ["test_f2p_duplicate_approval_does_not_count", "F2P", "R_QUORUM"],
-    ["test_f2p_outside_pool_approval_ignored", "F2P", "R_QUORUM"],
-    ["test_f2p_duplicate_approve_stored_once", "F2P", "R_QUORUM"],
-    ["test_f2p_merge_is_fast_forward_only", "F2P", "R_FF"],
-    ["test_f2p_merge_fast_forward_updates_dest", "F2P", "R_FF"],
-    ["test_f2p_merge_requires_office_ip", "F2P", "R_MERGE_IAM"],
-    ["test_f2p_deliver_exactly_once", "F2P", "R_TRIGGER"],
-    ["test_f2p_event_id_is_sha256_preimage", "F2P", "R_TRIGGER"],
-    ["test_p2p_deliver_unbound_ref_writes_nothing", "P2P", "R_TRIGGER"],
-    ["test_p2p_unknown_principal_denied", "P2P", "R_UNKNOWN"],
-    ["test_p2p_ccctl_and_contract_present", "P2P", "R_SCHEMA"],
-    ["test_p2p_clone_roundtrip", "P2P", "R_PULL"],
-    ["test_p2p_pr_store_written", "P2P", "R_SCHEMA"]
+    [
+      "test_p2p_ccctl_and_contract_present",
+      "P2P",
+      "R_SCHEMA"
+    ],
+    [
+      "test_p2p_clone_roundtrip",
+      "P2P",
+      "R_PULL"
+    ],
+    [
+      "test_f2p_push_main_requires_mfa",
+      "F2P",
+      "R_PUSH_MFA"
+    ],
+    [
+      "test_f2p_same_commit_clone_ok_after_denied_push",
+      "F2P",
+      "R_PULL"
+    ],
+    [
+      "test_f2p_push_main_mfa_wrong_ip_denied",
+      "F2P",
+      "R_PUSH_MFA"
+    ],
+    [
+      "test_p2p_push_main_mfa_office_allowed",
+      "P2P",
+      "R_PUSH_MFA"
+    ],
+    [
+      "test_p2p_push_dev_branch_without_mfa",
+      "P2P",
+      "R_PUSH_BRANCH"
+    ],
+    [
+      "test_f2p_branch_condition_is_exact",
+      "F2P",
+      "R_PUSH_BRANCH"
+    ],
+    [
+      "test_f2p_explicit_deny_beats_allow",
+      "F2P",
+      "R_DENY"
+    ],
+    [
+      "test_f2p_intern_cannot_push",
+      "F2P",
+      "R_PUSH_MFA"
+    ],
+    [
+      "test_f2p_star_action_stays_on_sandbox_resource",
+      "F2P",
+      "R_STAR"
+    ],
+    [
+      "test_f2p_merge_requires_quorum",
+      "F2P",
+      "R_QUORUM"
+    ],
+    [
+      "test_f2p_author_approval_does_not_count",
+      "F2P",
+      "R_QUORUM"
+    ],
+    [
+      "test_f2p_duplicate_approval_does_not_count",
+      "F2P",
+      "R_QUORUM"
+    ],
+    [
+      "test_f2p_outside_pool_approval_ignored",
+      "F2P",
+      "R_QUORUM"
+    ],
+    [
+      "test_f2p_duplicate_approve_stored_once",
+      "F2P",
+      "R_QUORUM"
+    ],
+    [
+      "test_f2p_merge_is_fast_forward_only",
+      "F2P",
+      "R_FF"
+    ],
+    [
+      "test_f2p_merge_fast_forward_updates_dest",
+      "F2P",
+      "R_FF"
+    ],
+    [
+      "test_f2p_merge_requires_office_ip",
+      "F2P",
+      "R_MERGE_IAM"
+    ],
+    [
+      "test_f2p_deliver_exactly_once",
+      "F2P",
+      "R_TRIGGER"
+    ],
+    [
+      "test_f2p_event_id_is_sha256_preimage",
+      "F2P",
+      "R_TRIGGER"
+    ],
+    [
+      "test_p2p_deliver_unbound_ref_writes_nothing",
+      "P2P",
+      "R_TRIGGER"
+    ],
+    [
+      "test_p2p_unknown_principal_denied",
+      "P2P",
+      "R_UNKNOWN"
+    ],
+    [
+      "test_p2p_pr_store_written",
+      "P2P",
+      "R_SCHEMA"
+    ],
+    [
+      "test_f2p_audit_records_denied_push",
+      "F2P",
+      "R_AUDIT"
+    ],
+    [
+      "test_f2p_deliver_enqueues_outbox",
+      "F2P",
+      "R_OUTBOX"
+    ],
+    [
+      "test_f2p_dispatch_marks_outbox_attempt",
+      "F2P",
+      "R_OUTBOX"
+    ],
+    [
+      "test_f2p_api_merge_requires_iam",
+      "F2P",
+      "R_MERGE_IAM"
+    ],
+    [
+      "test_f2p_absent_mfa_not_treated_as_true",
+      "F2P",
+      "R_PUSH_MFA"
+    ],
+    [
+      "test_p2p_metrics_command",
+      "P2P",
+      "R_SCHEMA"
+    ],
+    [
+      "test_f2p_second_deliver_does_not_duplicate_outbox",
+      "F2P",
+      "R_OUTBOX"
+    ],
+    [
+      "test_f2p_journal_key_order",
+      "F2P",
+      "R_TRIGGER"
+    ],
+    [
+      "test_f2p_merge_commit_not_created_on_success",
+      "F2P",
+      "R_FF"
+    ],
+    [
+      "test_f2p_release_deny_audited",
+      "F2P",
+      "R_AUDIT"
+    ],
+    [
+      "test_f2p_required_quorum_from_config",
+      "F2P",
+      "R_QUORUM"
+    ]
   ]
 }

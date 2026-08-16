@@ -1,52 +1,81 @@
 from __future__ import annotations
 
-import json
 import os
 from pathlib import Path
-from typing import Any
 
 
-def cc_root() -> Path:
-    return Path(os.environ.get("CC_ROOT", "/app/codecommit"))
+def root() -> Path:
+    return Path(os.environ.get("CC_ROOT", "/app/codecommit")).resolve()
 
 
-def load_json(path: Path) -> Any:
-    return json.loads(path.read_text(encoding="utf-8"))
+def lib_dir() -> Path:
+    return root() / "lib"
 
 
-def principals() -> dict[str, Any]:
-    return load_json(cc_root() / "ops" / "principals.json")
+def ops_dir() -> Path:
+    return root() / "ops"
 
 
-def approval_rules() -> list[dict[str, Any]]:
-    return load_json(cc_root() / "ops" / "approval-rules.json")["rules"]
+def policies_dir() -> Path:
+    return root() / "policies"
 
 
-def pipeline_bindings() -> list[dict[str, Any]]:
-    return load_json(cc_root() / "ops" / "pipelines.json")["bindings"]
+def var_dir() -> Path:
+    return root() / "var"
 
 
-def policy_doc(policy_id: str) -> dict[str, Any]:
-    return load_json(cc_root() / "policies" / f"{policy_id}.json")
+def repos_dir() -> Path:
+    return var_dir() / "repos"
 
 
-def repo_arn(repo: str) -> str:
-    return f"arn:local:codecommit:local:000000000000:{repo}"
+def docs_dir() -> Path:
+    return root() / "docs"
 
 
-def bare_path(repo: str) -> Path:
-    return cc_root() / "var" / "repos" / f"{repo}.git"
+def log_dir() -> Path:
+    return root() / "log"
 
 
-def pr_store_path() -> Path:
-    return cc_root() / "var" / "prs.json"
+def principals_path() -> Path:
+    return ops_dir() / "principals.json"
 
 
-def trigger_path() -> Path:
-    return cc_root() / "var" / "triggers.jsonl"
+def approval_rules_path() -> Path:
+    return ops_dir() / "approval-rules.json"
 
 
-def full_ref(ref: str) -> str:
-    if ref.startswith("refs/"):
-        return ref
-    return f"refs/heads/{ref}"
+def pipelines_path() -> Path:
+    return ops_dir() / "pipelines.json"
+
+
+def webhooks_path() -> Path:
+    return ops_dir() / "webhooks.json"
+
+
+def catalog_path() -> Path:
+    return var_dir() / "catalog.json"
+
+
+def prs_path() -> Path:
+    return var_dir() / "prs.json"
+
+
+def triggers_path() -> Path:
+    return var_dir() / "triggers.jsonl"
+
+
+def audit_path() -> Path:
+    return var_dir() / "audit.jsonl"
+
+
+def outbox_path() -> Path:
+    return var_dir() / "outbox.jsonl"
+
+
+def bare_repo(name: str) -> Path:
+    return repos_dir() / f"{name}.git"
+
+
+def ensure_layout() -> None:
+    for p in (ops_dir(), policies_dir(), var_dir(), repos_dir(), docs_dir(), log_dir()):
+        p.mkdir(parents=True, exist_ok=True)

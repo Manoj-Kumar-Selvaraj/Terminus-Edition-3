@@ -1,14 +1,11 @@
 {
-  "Version": "2012-10-17",
   "Statement": [
     {
-      "Sid": "InternPull",
+      "Action": "codecommit:GitPull",
       "Effect": "Allow",
-      "Action": ["codecommit:GitPull"],
       "Resource": "arn:local:codecommit:local:000000000000:ledger",
-      "Condition": {
-        "StringEquals": {"codecommit:References": "refs/heads/main"}
-      }
+      "Sid": "InternPull"
     }
-  ]
+  ],
+  "Version": "2012-10-17"
 }

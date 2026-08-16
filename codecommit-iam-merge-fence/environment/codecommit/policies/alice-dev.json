@@ -1,14 +1,18 @@
 {
-  "Version": "2012-10-17",
   "Statement": [
     {
-      "Sid": "AliceFeature",
-      "Effect": "Allow",
-      "Action": ["codecommit:GitPush"],
-      "Resource": "arn:local:codecommit:local:000000000000:ledger",
+      "Action": "codecommit:GitPush",
       "Condition": {
-        "StringEquals": {"codecommit:References": "refs/heads/dev/alice"}
-      }
+        "StringEquals": {
+          "codecommit:References": [
+            "refs/heads/dev/alice"
+          ]
+        }
+      },
+      "Effect": "Allow",
+      "Resource": "arn:local:codecommit:local:000000000000:ledger",
+      "Sid": "AliceFeature"
     }
-  ]
+  ],
+  "Version": "2012-10-17"
 }

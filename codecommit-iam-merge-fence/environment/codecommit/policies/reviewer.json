@@ -1,21 +1,22 @@
 {
-  "Version": "2012-10-17",
   "Statement": [
     {
-      "Sid": "PullAnyLedger",
+      "Action": "codecommit:GitPull",
       "Effect": "Allow",
-      "Action": ["codecommit:GitPull"],
-      "Resource": "arn:local:codecommit:local:000000000000:ledger"
+      "Resource": "arn:local:codecommit:local:000000000000:ledger",
+      "Sid": "RevPull"
     },
     {
-      "Sid": "MergeMainOffice",
-      "Effect": "Allow",
-      "Action": ["codecommit:MergePullRequestByFastForward"],
-      "Resource": "arn:local:codecommit:local:000000000000:ledger",
+      "Action": "codecommit:MergePullRequestByFastForward",
       "Condition": {
-        "StringEquals": {"codecommit:References": "refs/heads/main"},
-        "IpAddress": {"aws:SourceIp": "10.8.0.0/16"}
-      }
+        "IpAddress": {
+          "aws:SourceIp": "10.8.0.0/16"
+        }
+      },
+      "Effect": "Allow",
+      "Resource": "arn:local:codecommit:local:000000000000:ledger",
+      "Sid": "RevMerge"
     }
-  ]
+  ],
+  "Version": "2012-10-17"
 }

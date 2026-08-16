@@ -1,40 +1,50 @@
 {
-  "Version": "2012-10-17",
   "Statement": [
     {
-      "Sid": "PullLedger",
+      "Action": "codecommit:GitPull",
       "Effect": "Allow",
-      "Action": ["codecommit:GitPull"],
-      "Resource": "arn:local:codecommit:local:000000000000:ledger"
-    },
-    {
-      "Sid": "PushMainMfaOffice",
-      "Effect": "Allow",
-      "Action": ["codecommit:GitPush"],
       "Resource": "arn:local:codecommit:local:000000000000:ledger",
-      "Condition": {
-        "StringEquals": {"codecommit:References": "refs/heads/main"},
-        "Bool": {"aws:MultiFactorAuthPresent": "true"},
-        "IpAddress": {"aws:SourceIp": "10.8.0.0/16"}
-      }
+      "Sid": "DevPull"
     },
     {
-      "Sid": "PushReleaseListed",
+      "Action": "codecommit:GitPush",
+      "Condition": {
+        "Bool": {
+          "aws:MultiFactorAuthPresent": "true"
+        },
+        "IpAddress": {
+          "aws:SourceIp": "10.8.0.0/16"
+        },
+        "StringEquals": {
+          "codecommit:References": "refs/heads/main"
+        }
+      },
       "Effect": "Allow",
-      "Action": ["codecommit:GitPush"],
       "Resource": "arn:local:codecommit:local:000000000000:ledger",
-      "Condition": {
-        "StringEquals": {"codecommit:References": "refs/heads/release"}
-      }
+      "Sid": "DevPushMain"
     },
     {
-      "Sid": "DenyReleasePush",
+      "Action": "codecommit:GitPush",
+      "Condition": {
+        "StringEquals": {
+          "codecommit:References": "refs/heads/release"
+        }
+      },
+      "Effect": "Allow",
+      "Resource": "arn:local:codecommit:local:000000000000:ledger",
+      "Sid": "ReleaseAllow"
+    },
+    {
+      "Action": "codecommit:GitPush",
+      "Condition": {
+        "StringEquals": {
+          "codecommit:References": "refs/heads/release"
+        }
+      },
       "Effect": "Deny",
-      "Action": ["codecommit:GitPush"],
       "Resource": "arn:local:codecommit:local:000000000000:ledger",
-      "Condition": {
-        "StringEquals": {"codecommit:References": "refs/heads/release"}
-      }
+      "Sid": "ReleaseDeny"
     }
-  ]
+  ],
+  "Version": "2012-10-17"
 }

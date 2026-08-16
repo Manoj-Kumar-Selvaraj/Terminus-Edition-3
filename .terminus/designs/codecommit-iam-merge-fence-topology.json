@@ -1,0 +1,51 @@
+{
+  "schema_version": "1.0",
+  "profile": "large_system_strict",
+  "task": "codecommit-iam-merge-fence",
+  "root_cause_clusters": {
+    "RC1_ACTION_MATCH": "Action matching uses prefix/substring; Action * skips Resource ARN checks.",
+    "RC2_CONDITIONS": "Bool MFA and IpAddress CIDR skipped; explicit Deny statements ignored; missing MFA treated as true.",
+    "RC3_QUORUM": "Author, duplicate, and off-pool approvals count toward required; required hardcoded.",
+    "RC4_MERGE": "merge always creates merge commits; reports fast_forward true falsely.",
+    "RC5_TRIGGER": "deliver mints random event_id, always appends journal, no ref normalization.",
+    "RC6_AUDIT_OUTBOX": "audit drops Deny decisions; outbox skips enqueue on deliver; retry ignores backoff.",
+    "RC7_API_BYPASS": "HTTP API merge/push paths skip authorize or use weaker checks than CLI."
+  },
+  "defects": [
+    {"id":"D01","root_cause":"RC1_ACTION_MATCH","component":"iam.eval","observable":"GitPull allow matches GitPush"},
+    {"id":"D02","root_cause":"RC1_ACTION_MATCH","component":"iam.eval","observable":"Action * authorizes ledger merge via sandbox"},
+    {"id":"D03","root_cause":"RC2_CONDITIONS","component":"iam.conditions","observable":"main push without MFA allowed from office"},
+    {"id":"D04","root_cause":"RC2_CONDITIONS","component":"iam.conditions","observable":"MFA push from public IP allowed"},
+    {"id":"D05","root_cause":"RC2_CONDITIONS","component":"iam.eval","observable":"Allow+Deny on release lets push through"},
+    {"id":"D06","root_cause":"RC2_CONDITIONS","component":"iam.context","observable":"absent MFA treated as true"},
+    {"id":"D07","root_cause":"RC3_QUORUM","component":"prs.approvals","observable":"author stamp counts"},
+    {"id":"D08","root_cause":"RC3_QUORUM","component":"prs.approvals","observable":"duplicate stamps count twice"},
+    {"id":"D09","root_cause":"RC3_QUORUM","component":"prs.approvals","observable":"pipeline-bot fills pool seat"},
+    {"id":"D10","root_cause":"RC3_QUORUM","component":"prs.store","observable":"prs.json stores duplicate approvals"},
+    {"id":"D11","root_cause":"RC4_MERGE","component":"prs.merge","observable":"divergent dest merges with merge commit"},
+    {"id":"D12","root_cause":"RC4_MERGE","component":"prs.merge","observable":"merged commit has two parents"},
+    {"id":"D13","root_cause":"RC1_ACTION_MATCH","component":"prs.merge","observable":"developer can merge after quorum"},
+    {"id":"D14","root_cause":"RC2_CONDITIONS","component":"prs.merge","observable":"reviewer merge from public IP succeeds"},
+    {"id":"D15","root_cause":"RC5_TRIGGER","component":"pipelines.deliver","observable":"second deliver appends second line"},
+    {"id":"D16","root_cause":"RC5_TRIGGER","component":"pipelines.event_id","observable":"event_id is random uuid"},
+    {"id":"D17","root_cause":"RC5_TRIGGER","component":"pipelines.deliver","observable":"short main vs refs/heads/main not normalized"},
+    {"id":"D18","root_cause":"RC1_ACTION_MATCH","component":"iam.eval","observable":"ben pushes alice branch via GitPull statement"},
+    {"id":"D19","root_cause":"RC1_ACTION_MATCH","component":"iam.eval","observable":"intern pull-only can push"},
+    {"id":"D20","root_cause":"RC3_QUORUM","component":"prs.approvals","observable":"required hardcoded to 1"},
+    {"id":"D21","root_cause":"RC4_MERGE","component":"prs.merge","observable":"JSON reports fast_forward true after merge commit"},
+    {"id":"D22","root_cause":"RC5_TRIGGER","component":"pipelines.deliver","observable":"journal key order wrong/missing pipeline"},
+    {"id":"D23","root_cause":"RC6_AUDIT_OUTBOX","component":"audit.log","observable":"denied decisions not appended"},
+    {"id":"D24","root_cause":"RC6_AUDIT_OUTBOX","component":"webhooks.outbox","observable":"deliver does not enqueue outbox row"},
+    {"id":"D25","root_cause":"RC6_AUDIT_OUTBOX","component":"webhooks.retry","observable":"failed dispatch never requeues"},
+    {"id":"D26","root_cause":"RC7_API_BYPASS","component":"api.routes_prs","observable":"API merge skips IAM"},
+    {"id":"D27","root_cause":"RC7_API_BYPASS","component":"api.routes_repos","observable":"API push skips MFA/IP context"},
+    {"id":"D28","root_cause":"RC2_CONDITIONS","component":"iam.conditions","observable":"StringEquals list membership broken for refs"}
+  ],
+  "causal_edges": [
+    ["D01","D03"],["D01","D19"],["D01","D18"],["D02","D13"],["D03","D06"],["D04","D14"],
+    ["D06","D03"],["D05","D01"],["D07","D08"],["D08","D10"],["D09","D07"],["D10","D08"],
+    ["D11","D12"],["D12","D21"],["D13","D11"],["D14","D04"],["D15","D16"],["D16","D17"],
+    ["D17","D15"],["D18","D01"],["D19","D03"],["D20","D09"],["D21","D15"],["D22","D16"],
+    ["D23","D05"],["D24","D15"],["D25","D24"],["D26","D13"],["D27","D03"],["D28","D18"]
+  ]
+}

@@ -1,49 +1,403 @@
 {
   "schema_version": "1.0",
-  "profile": "large_system",
-  "strict_scale_note": "Natural IAM+git lab is below large_system_strict padding. Profile is large_system, not strict.",
-  "task_kind": "security",
-  "task": "codecommit-iam-merge-fence",
-  "resource_count": 22,
+  "profile": "large_system_strict",
+  "strict_scale_note": "Rebuilt as CodeCommit platform control plane under large_system_strict.",
+  "architecture": {
+    "root": "/app/codecommit",
+    "entrypoints": [
+      "bin/ccctl",
+      "bin/cc-api"
+    ],
+    "packages": [
+      "cc.home",
+      "cc.errors",
+      "cc.models",
+      "cc.util",
+      "cc.store.jsonstore",
+      "cc.store.lock",
+      "cc.iam.actions",
+      "cc.iam.conditions",
+      "cc.iam.policy",
+      "cc.iam.eval",
+      "cc.iam.context",
+      "cc.repos.catalog",
+      "cc.repos.gitops",
+      "cc.repos.refs",
+      "cc.prs.store",
+      "cc.prs.approvals",
+      "cc.prs.merge",
+      "cc.pipelines.bindings",
+      "cc.pipelines.event_id",
+      "cc.pipelines.deliver",
+      "cc.audit.log",
+      "cc.audit.query",
+      "cc.webhooks.outbox",
+      "cc.webhooks.retry",
+      "cc.webhooks.dispatch",
+      "cc.api.app",
+      "cc.api.auth",
+      "cc.api.routes_repos",
+      "cc.api.routes_prs",
+      "cc.api.routes_pipelines",
+      "cc.api.routes_audit",
+      "cc.api.routes_webhooks",
+      "cc.cli",
+      "cc.seed",
+      "cc.server"
+    ],
+    "state": [
+      "var/repos/<name>.git",
+      "var/prs.json",
+      "var/triggers.jsonl",
+      "var/audit.jsonl",
+      "var/outbox.jsonl",
+      "var/catalog.json",
+      "ops/principals.json",
+      "ops/approval-rules.json",
+      "ops/pipelines.json",
+      "ops/webhooks.json",
+      "policies/*.json"
+    ],
+    "docs_plan": [
+      "docs/control-plane-contract.md",
+      "ops/handoff.md",
+      "log/authz.jsonl"
+    ]
+  },
+  "production_characteristics": [
+    "differentiated IAM/repos/PRs/pipelines/audit/webhooks modules",
+    "CLI and HTTP API share authorize path",
+    "persistent JSONL audit and outbox with retry",
+    "bare-git FF merge fence",
+    "restart-safe var/ state"
+  ],
   "root_cause_clusters": {
-    "RC1_ACTION_MATCH": "Git verbs match by prefix; Action * ignores resource ARN.",
-    "RC2_CONDITIONS": "Bool MFA and IpAddress CIDR are skipped; Deny statements are dropped.",
-    "RC3_QUORUM": "Author, duplicates, and off-pool stamps count toward required approvals.",
-    "RC4_MERGE": "merge creates a merge commit instead of fast-forwarding the dest ref.",
-    "RC5_TRIGGER": "deliver mints a new event_id and always appends the journal."
+    "RC1_ACTION_MATCH": "Action matching uses prefix/substring; Action * skips Resource ARN checks.",
+    "RC2_CONDITIONS": "Bool MFA and IpAddress CIDR skipped; explicit Deny statements ignored; missing MFA treated as true.",
+    "RC3_QUORUM": "Author, duplicate, and off-pool approvals count toward required; required hardcoded.",
+    "RC4_MERGE": "merge always creates merge commits; reports fast_forward true falsely.",
+    "RC5_TRIGGER": "deliver mints random event_id, always appends journal, no ref normalization.",
+    "RC6_AUDIT_OUTBOX": "audit drops Deny decisions; outbox skips enqueue on deliver; retry ignores backoff.",
+    "RC7_API_BYPASS": "HTTP API merge/push paths skip authorize or use weaker checks than CLI."
   },
   "defects": [
-    {"id":"D01","component":"iam-action","observable_failure":"codecommit:GitPull allow matches GitPush.","root_cause":"RC1_ACTION_MATCH","partial_fix_trap":"Splitting clone/push binaries still shares the matcher."},
-    {"id":"D02","component":"iam-action","observable_failure":"Action * on sandbox authorizes ledger merge.","root_cause":"RC1_ACTION_MATCH","partial_fix_trap":"Removing sandbox policy hides the resource check."},
-    {"id":"D03","component":"iam-bool","observable_failure":"Main push without MFA is allowed from the office CIDR.","root_cause":"RC2_CONDITIONS","partial_fix_trap":"Hard-denying all main pushes breaks MFA office use."},
-    {"id":"D04","component":"iam-ip","observable_failure":"MFA push from 203.0.113.0/24 is allowed.","root_cause":"RC2_CONDITIONS","partial_fix_trap":"String-equals on the CIDR text denies legitimate 10.8.12.4."},
-    {"id":"D05","component":"iam-deny","observable_failure":"Allow+Deny on release lets the push through.","root_cause":"RC2_CONDITIONS","partial_fix_trap":"Deleting the Allow instead of honoring Deny."},
-    {"id":"D06","component":"iam-missing-bool","observable_failure":"Absent MFA context is treated as true.","root_cause":"RC2_CONDITIONS","partial_fix_trap":"Defaulting MFA true for reviewers breaks GitPush."},
-    {"id":"D07","component":"approve","observable_failure":"Author stamp counts toward quorum.","root_cause":"RC3_QUORUM","partial_fix_trap":"Banning author from approve API still needs pool math."},
-    {"id":"D08","component":"approve","observable_failure":"Two stamps from rev-a satisfy required=2.","root_cause":"RC3_QUORUM","partial_fix_trap":"Rejecting the second approve call breaks idempotent UI retries."},
-    {"id":"D09","component":"approve","observable_failure":"pipeline-bot stamp fills the second seat.","root_cause":"RC3_QUORUM","partial_fix_trap":"Allow-listing only rev-a/rev-b in CLI ignores the JSON rule."},
-    {"id":"D10","component":"approve-store","observable_failure":"prs.json approvals list contains duplicates.","root_cause":"RC3_QUORUM","partial_fix_trap":"Deduping only at merge time leaves a lying store."},
-    {"id":"D11","component":"merge","observable_failure":"Divergent dest still merges with a merge commit.","root_cause":"RC4_MERGE","partial_fix_trap":"git merge without --ff-only looks green in the happy path."},
-    {"id":"D12","component":"merge","observable_failure":"Successful merge dest has two parents.","root_cause":"RC4_MERGE","partial_fix_trap":"Squash merge changes the commit id contracted by deliver."},
-    {"id":"D13","component":"merge-iam","observable_failure":"Developer merge succeeds after reviewer quorum.","root_cause":"RC1_ACTION_MATCH","partial_fix_trap":"Checking principal==rev-* ignores attached policies."},
-    {"id":"D14","component":"merge-ip","observable_failure":"Reviewer merge from a public IP succeeds.","root_cause":"RC2_CONDITIONS","partial_fix_trap":"Reusing push MFA rules on merge is extra-contract."},
-    {"id":"D15","component":"trigger","observable_failure":"Second deliver appends a second jsonl line.","root_cause":"RC5_TRIGGER","partial_fix_trap":"Truncating the file loses a later different commit."},
-    {"id":"D16","component":"trigger-id","observable_failure":"event_id is a random uuid.","root_cause":"RC5_TRIGGER","partial_fix_trap":"Hashing timestamp still changes across calls."},
-    {"id":"D17","component":"trigger-ref","observable_failure":"deliver does not normalize main vs refs/heads/main.","root_cause":"RC5_TRIGGER","partial_fix_trap":"Accepting only one spelling breaks the CLI contract."},
-    {"id":"D18","component":"iam-branch","observable_failure":"ben can push refs/heads/dev/alice via the unconditioned GitPull statement.","root_cause":"RC1_ACTION_MATCH","partial_fix_trap":"Blocking all cross-user branches in git hooks skips IAM."},
-    {"id":"D19","component":"iam-intern","observable_failure":"pull-only intern can push main.","root_cause":"RC1_ACTION_MATCH","partial_fix_trap":"Disabling intern clone to stop the push."},
-    {"id":"D20","component":"quorum-config","observable_failure":"required is hardcoded to len>=1.","root_cause":"RC3_QUORUM","partial_fix_trap":"Embedding pool names in Python drifts from approval-rules.json."},
-    {"id":"D21","component":"merge-fast-forward-flag","observable_failure":"JSON reports fast_forward true after a merge commit.","root_cause":"RC4_MERGE","partial_fix_trap":"Lying about the flag without updating the dest ref."},
-    {"id":"D22","component":"trigger-keys","observable_failure":"Journal objects omit pipeline or reorder contracted keys.","root_cause":"RC5_TRIGGER","partial_fix_trap":"Pretty-printed JSON breaks jsonl consumers."}
+    {
+      "id": "D01",
+      "root_cause": "RC1_ACTION_MATCH",
+      "component": "iam.eval",
+      "observable_failure": "GitPull allow matches GitPush",
+      "partial_fix_trap": "Fixing only D01 leaves sibling defects in cluster RC1_ACTION_MATCH still observable."
+    },
+    {
+      "id": "D02",
+      "root_cause": "RC1_ACTION_MATCH",
+      "component": "iam.eval",
+      "observable_failure": "Action * authorizes ledger merge via sandbox",
+      "partial_fix_trap": "Fixing only D02 leaves sibling defects in cluster RC1_ACTION_MATCH still observable."
+    },
+    {
+      "id": "D03",
+      "root_cause": "RC2_CONDITIONS",
+      "component": "iam.conditions",
+      "observable_failure": "main push without MFA allowed from office",
+      "partial_fix_trap": "Fixing only D03 leaves sibling defects in cluster RC2_CONDITIONS still observable."
+    },
+    {
+      "id": "D04",
+      "root_cause": "RC2_CONDITIONS",
+      "component": "iam.conditions",
+      "observable_failure": "MFA push from public IP allowed",
+      "partial_fix_trap": "Fixing only D04 leaves sibling defects in cluster RC2_CONDITIONS still observable."
+    },
+    {
+      "id": "D05",
+      "root_cause": "RC2_CONDITIONS",
+      "component": "iam.eval",
+      "observable_failure": "Allow+Deny on release lets push through",
+      "partial_fix_trap": "Fixing only D05 leaves sibling defects in cluster RC2_CONDITIONS still observable."
+    },
+    {
+      "id": "D06",
+      "root_cause": "RC2_CONDITIONS",
+      "component": "iam.context",
+      "observable_failure": "absent MFA treated as true",
+      "partial_fix_trap": "Fixing only D06 leaves sibling defects in cluster RC2_CONDITIONS still observable."
+    },
+    {
+      "id": "D07",
+      "root_cause": "RC3_QUORUM",
+      "component": "prs.approvals",
+      "observable_failure": "author stamp counts",
+      "partial_fix_trap": "Fixing only D07 leaves sibling defects in cluster RC3_QUORUM still observable."
+    },
+    {
+      "id": "D08",
+      "root_cause": "RC3_QUORUM",
+      "component": "prs.approvals",
+      "observable_failure": "duplicate stamps count twice",
+      "partial_fix_trap": "Fixing only D08 leaves sibling defects in cluster RC3_QUORUM still observable."
+    },
+    {
+      "id": "D09",
+      "root_cause": "RC3_QUORUM",
+      "component": "prs.approvals",
+      "observable_failure": "pipeline-bot fills pool seat",
+      "partial_fix_trap": "Fixing only D09 leaves sibling defects in cluster RC3_QUORUM still observable."
+    },
+    {
+      "id": "D10",
+      "root_cause": "RC3_QUORUM",
+      "component": "prs.store",
+      "observable_failure": "prs.json stores duplicate approvals",
+      "partial_fix_trap": "Fixing only D10 leaves sibling defects in cluster RC3_QUORUM still observable."
+    },
+    {
+      "id": "D11",
+      "root_cause": "RC4_MERGE",
+      "component": "prs.merge",
+      "observable_failure": "divergent dest merges with merge commit",
+      "partial_fix_trap": "Fixing only D11 leaves sibling defects in cluster RC4_MERGE still observable."
+    },
+    {
+      "id": "D12",
+      "root_cause": "RC4_MERGE",
+      "component": "prs.merge",
+      "observable_failure": "merged commit has two parents",
+      "partial_fix_trap": "Fixing only D12 leaves sibling defects in cluster RC4_MERGE still observable."
+    },
+    {
+      "id": "D13",
+      "root_cause": "RC1_ACTION_MATCH",
+      "component": "prs.merge",
+      "observable_failure": "developer can merge after quorum",
+      "partial_fix_trap": "Fixing only D13 leaves sibling defects in cluster RC1_ACTION_MATCH still observable."
+    },
+    {
+      "id": "D14",
+      "root_cause": "RC2_CONDITIONS",
+      "component": "prs.merge",
+      "observable_failure": "reviewer merge from public IP succeeds",
+      "partial_fix_trap": "Fixing only D14 leaves sibling defects in cluster RC2_CONDITIONS still observable."
+    },
+    {
+      "id": "D15",
+      "root_cause": "RC5_TRIGGER",
+      "component": "pipelines.deliver",
+      "observable_failure": "second deliver appends second line",
+      "partial_fix_trap": "Fixing only D15 leaves sibling defects in cluster RC5_TRIGGER still observable."
+    },
+    {
+      "id": "D16",
+      "root_cause": "RC5_TRIGGER",
+      "component": "pipelines.event_id",
+      "observable_failure": "event_id is random uuid",
+      "partial_fix_trap": "Fixing only D16 leaves sibling defects in cluster RC5_TRIGGER still observable."
+    },
+    {
+      "id": "D17",
+      "root_cause": "RC5_TRIGGER",
+      "component": "pipelines.deliver",
+      "observable_failure": "short main vs refs/heads/main not normalized",
+      "partial_fix_trap": "Fixing only D17 leaves sibling defects in cluster RC5_TRIGGER still observable."
+    },
+    {
+      "id": "D18",
+      "root_cause": "RC1_ACTION_MATCH",
+      "component": "iam.eval",
+      "observable_failure": "ben pushes alice branch via GitPull statement",
+      "partial_fix_trap": "Fixing only D18 leaves sibling defects in cluster RC1_ACTION_MATCH still observable."
+    },
+    {
+      "id": "D19",
+      "root_cause": "RC1_ACTION_MATCH",
+      "component": "iam.eval",
+      "observable_failure": "intern pull-only can push",
+      "partial_fix_trap": "Fixing only D19 leaves sibling defects in cluster RC1_ACTION_MATCH still observable."
+    },
+    {
+      "id": "D20",
+      "root_cause": "RC3_QUORUM",
+      "component": "prs.approvals",
+      "observable_failure": "required hardcoded to 1",
+      "partial_fix_trap": "Fixing only D20 leaves sibling defects in cluster RC3_QUORUM still observable."
+    },
+    {
+      "id": "D21",
+      "root_cause": "RC4_MERGE",
+      "component": "prs.merge",
+      "observable_failure": "JSON reports fast_forward true after merge commit",
+      "partial_fix_trap": "Fixing only D21 leaves sibling defects in cluster RC4_MERGE still observable."
+    },
+    {
+      "id": "D22",
+      "root_cause": "RC5_TRIGGER",
+      "component": "pipelines.deliver",
+      "observable_failure": "journal key order wrong/missing pipeline",
+      "partial_fix_trap": "Fixing only D22 leaves sibling defects in cluster RC5_TRIGGER still observable."
+    },
+    {
+      "id": "D23",
+      "root_cause": "RC6_AUDIT_OUTBOX",
+      "component": "audit.log",
+      "observable_failure": "denied decisions not appended",
+      "partial_fix_trap": "Fixing only D23 leaves sibling defects in cluster RC6_AUDIT_OUTBOX still observable."
+    },
+    {
+      "id": "D24",
+      "root_cause": "RC6_AUDIT_OUTBOX",
+      "component": "webhooks.outbox",
+      "observable_failure": "deliver does not enqueue outbox row",
+      "partial_fix_trap": "Fixing only D24 leaves sibling defects in cluster RC6_AUDIT_OUTBOX still observable."
+    },
+    {
+      "id": "D25",
+      "root_cause": "RC6_AUDIT_OUTBOX",
+      "component": "webhooks.retry",
+      "observable_failure": "failed dispatch never requeues",
+      "partial_fix_trap": "Fixing only D25 leaves sibling defects in cluster RC6_AUDIT_OUTBOX still observable."
+    },
+    {
+      "id": "D26",
+      "root_cause": "RC7_API_BYPASS",
+      "component": "api.routes_prs",
+      "observable_failure": "API merge skips IAM",
+      "partial_fix_trap": "Fixing only D26 leaves sibling defects in cluster RC7_API_BYPASS still observable."
+    },
+    {
+      "id": "D27",
+      "root_cause": "RC7_API_BYPASS",
+      "component": "api.routes_repos",
+      "observable_failure": "API push skips MFA/IP context",
+      "partial_fix_trap": "Fixing only D27 leaves sibling defects in cluster RC7_API_BYPASS still observable."
+    },
+    {
+      "id": "D28",
+      "root_cause": "RC2_CONDITIONS",
+      "component": "iam.conditions",
+      "observable_failure": "StringEquals list membership broken for refs",
+      "partial_fix_trap": "Fixing only D28 leaves sibling defects in cluster RC2_CONDITIONS still observable."
+    }
   ],
   "causal_edges": [
-    {"from":"D01","to":"D03"},{"from":"D01","to":"D19"},{"from":"D01","to":"D18"},
-    {"from":"D02","to":"D13"},{"from":"D03","to":"D06"},{"from":"D04","to":"D14"},
-    {"from":"D06","to":"D03"},{"from":"D05","to":"D01"},{"from":"D07","to":"D08"},
-    {"from":"D08","to":"D10"},{"from":"D09","to":"D07"},{"from":"D10","to":"D08"},
-    {"from":"D11","to":"D12"},{"from":"D12","to":"D21"},{"from":"D13","to":"D11"},
-    {"from":"D14","to":"D04"},{"from":"D15","to":"D16"},{"from":"D16","to":"D17"},
-    {"from":"D17","to":"D15"},{"from":"D18","to":"D01"},{"from":"D19","to":"D03"},
-    {"from":"D20","to":"D09"},{"from":"D21","to":"D15"},{"from":"D22","to":"D16"}
+    {
+      "from": "D01",
+      "to": "D03"
+    },
+    {
+      "from": "D01",
+      "to": "D19"
+    },
+    {
+      "from": "D01",
+      "to": "D18"
+    },
+    {
+      "from": "D02",
+      "to": "D13"
+    },
+    {
+      "from": "D03",
+      "to": "D06"
+    },
+    {
+      "from": "D04",
+      "to": "D14"
+    },
+    {
+      "from": "D06",
+      "to": "D03"
+    },
+    {
+      "from": "D05",
+      "to": "D01"
+    },
+    {
+      "from": "D07",
+      "to": "D08"
+    },
+    {
+      "from": "D08",
+      "to": "D10"
+    },
+    {
+      "from": "D09",
+      "to": "D07"
+    },
+    {
+      "from": "D10",
+      "to": "D08"
+    },
+    {
+      "from": "D11",
+      "to": "D12"
+    },
+    {
+      "from": "D12",
+      "to": "D21"
+    },
+    {
+      "from": "D13",
+      "to": "D11"
+    },
+    {
+      "from": "D14",
+      "to": "D04"
+    },
+    {
+      "from": "D15",
+      "to": "D16"
+    },
+    {
+      "from": "D16",
+      "to": "D17"
+    },
+    {
+      "from": "D17",
+      "to": "D15"
+    },
+    {
+      "from": "D18",
+      "to": "D01"
+    },
+    {
+      "from": "D19",
+      "to": "D03"
+    },
+    {
+      "from": "D20",
+      "to": "D09"
+    },
+    {
+      "from": "D21",
+      "to": "D15"
+    },
+    {
+      "from": "D22",
+      "to": "D16"
+    },
+    {
+      "from": "D23",
+      "to": "D05"
+    },
+    {
+      "from": "D24",
+      "to": "D15"
+    },
+    {
+      "from": "D25",
+      "to": "D24"
+    },
+    {
+      "from": "D26",
+      "to": "D13"
+    },
+    {
+      "from": "D27",
+      "to": "D03"
+    },
+    {
+      "from": "D28",
+      "to": "D18"
+    }
   ]
 }
