@@ -1,0 +1,62 @@
+name: Generate COBOL Q4 adjudication packet
+
+on:
+  push:
+    paths:
+      - '.github/workflows/generate-cobol-q4-adjudication-packet.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  generate:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Generate immutable adjudication packet and self-clean
+        shell: bash
+        run: |
+          set -euo pipefail
+          TASK='cobol-comp3-python-equiv'
+          EXPECTED='9ce15848421135eaa83c356c26a0661ec795532f'
+          PREFIX="${EXPECTED:0:8}"
+          WORKFLOW='.github/workflows/generate-cobol-q4-adjudication-packet.yml'
+
+          actual="$(git log -1 --format=%H -- "$TASK")"
+          echo "Git-derived task commit: $actual"
+          [[ "$actual" == "$EXPECTED" ]] || { echo "::error::STALE task commit: expected $EXPECTED got $actual"; exit 1; }
+          [[ -z "$(git status --porcelain -- "$TASK")" ]] || { echo "::error::Task tree is dirty"; exit 1; }
+
+          python3 .terminus/new_review_packet.py \
+            "$TASK" adjudication \
+            --state BLOCKED \
+            --change 'Protocol-2.2 Q4 no-drip circuit breaker. Prior exhaustive Q4 at 02a558aba2ada944ce3a3131baa0d6847c39f909 returned 7 blockers; one Orchestrator-authorized consolidated remediation/refreeze produced 9ce15848421135eaa83c356c26a0661ec795532f with Ruff PASS, Oracle 40/40 PASS, NOP 30 F2P fail / 10 P2P pass, and unchanged Q6 production scope. The next exhaustive Q4 at 9ce15848 again returned REVISE/HIGH/SUFFICIENT with Q4-001..Q4-007. Repository-native classify_review_delta.py run 31938920615 classified all seven current findings LATENT_REVIEWER_OMISSION and requires_adjudication=true; exact changed task paths from prior Q4 commit are solution/fixed/publication.py and tests/test_outputs.py. Adjudicate each current finding semantically against the prior exhaustive Q4, the consolidated repair diff, both frozen Q4 reports, controlling Protocol 2.2 materiality/no-drip rules, and current task evidence. The deterministic classifier is first-pass evidence, not a substitute for semantic adjudication. Do not assume either Q4 verdict is controlling merely because it is earlier or later.'
+
+          mapfile -t packets < <(find ".terminus/reviews/$TASK/$PREFIX" -maxdepth 1 -type f -name "${TASK}-${PREFIX}-adjudication-*.packet.json" -print)
+          [[ ${#packets[@]} -eq 1 ]] || { printf '::error::Expected exactly one adjudication packet, found %s\n' "${#packets[@]}"; printf '%s\n' "${packets[@]:-}"; exit 1; }
+          PACKET="${packets[0]}"
+
+          python3 - "$PACKET" "$EXPECTED" <<'PY'
+          import json, pathlib, sys
+          packet_path = pathlib.Path(sys.argv[1])
+          expected = sys.argv[2]
+          packet = json.loads(packet_path.read_text())
+          assert packet['task'] == 'cobol-comp3-python-equiv'
+          assert packet['task_commit'] == expected
+          assert packet['state'] == 'BLOCKED'
+          assert packet['role'] == 'Adjudicator'
+          output = pathlib.Path(packet['review_output_path'])
+          assert not output.exists(), f'adjudication output already exists: {output}'
+          print('packet:', packet_path)
+          print('review_id:', packet['review_id'])
+          print('review_output:', output)
+          PY
+
+          rm -f "$WORKFLOW"
+          git config user.name 'terminus-adjudication-packet-bot'
+          git config user.email 'terminus-adjudication-packet-bot@users.noreply.github.com'
+          git add ".terminus/reviews/$TASK/$PREFIX" "$WORKFLOW"
+          git commit -m 'Add COBOL Q4 adjudication packet'
+          git push origin HEAD:task/cobol-comp3-python-equiv-strict-rebuild
