@@ -361,7 +361,15 @@ def test_f2p_caller_supplied_layout_path_is_honored(tmp_path: Path) -> None:
         SEED,
     )
     assert preflight.returncode == 0
-    assert parse_stdout(preflight)["passed"] is True
+    preflight_payload = parse_stdout(preflight)
+    assert preflight_payload["passed"] is True
+    assert preflight_payload["historical_baseline"]["records"] == 15000
+    assert preflight_payload["historical_scale_issues"] == []
+
+    missing_layout = cli("describe-layout", "--layout", tmp_path / "missing-layout.json")
+    assert missing_layout.returncode == 2
+    assert missing_layout.stdout == ""
+    assert isinstance(parse_stderr(missing_layout).get("error"), dict)
 
     run = cli(
         "run",
@@ -991,11 +999,6 @@ def test_p2p_cli_success_and_failure_json_contract(tmp_path: Path) -> None:
     assert initialized.returncode == 0
     assert parse_stdout(initialized)["status"] == "READY"
 
-    failed = cli("describe-layout", "--layout", tmp_path / "missing-layout.json")
-    assert failed.returncode == 2
-    assert failed.stdout == ""
-    error_payload = parse_stderr(failed)
-    assert isinstance(error_payload.get("error"), dict)
 
 
 def test_p2p_preflight_uses_historical_baseline(tmp_path: Path) -> None:
@@ -1026,9 +1029,7 @@ def test_p2p_preflight_uses_historical_baseline(tmp_path: Path) -> None:
         "--seed",
         SEED,
     )
-    assert first.returncode == 0
     first_payload = parse_stdout(first)
-    assert first_payload["passed"] is True
     assert first_payload["historical_baseline"]["records"] == 15000
     assert first_payload["historical_scale_issues"] == []
 
