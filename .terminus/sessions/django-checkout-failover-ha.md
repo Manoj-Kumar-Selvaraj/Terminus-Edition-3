@@ -35,13 +35,13 @@ This is the durable operational checkpoint for one task. Keep it evidence-orient
 | Q4 Spec-Test Contract Reviewer | PENDING | packet under `03749a0e/` (prior `b9ee4816` PASS STALE after instruction rewrite) |
 | Q6 Production Logic Auditor | PASS | scope-preserved (`review_scope_hash=5031e765…`); instruction-only change |
 | Quality Interlock | PENDING | awaiting cold Q4 on `03749a0e` |
-| Pre-LLMaJ specialist panel | PENDING | Instruction rewrite done; cold re-Instruction on `03749a0e` |
+| Pre-LLMaJ specialist panel | PENDING | Instruction PASS on `03749a0e`; awaiting Q4 then Comprehensive |
 | Task Architect | PASS | retained from `b9ee4816` (scenario unchanged) |
 | Verifier Engineer | PASS | retained from `b9ee4816` (tests/env unchanged) |
 | Originality & Authenticity | PASS | retained from `b9ee4816` |
 | Difficulty design | PASS | retained from `b9ee4816`; tier UNMEASURED |
 | Compliance pre-review | PASS | retained from `b9ee4816` |
-| Instruction Reviewer | PENDING | packet under `03749a0e/` after INST-01/02 repair |
+| Instruction Reviewer | PASS | review `.../03749a0e/...-instruction-5b7fcb0fa3.json` (HIGH) |
 | Documentation Reviewer | PASS | retained from `b9ee4816` |
 | Comprehensive Reviewer | PENDING | after Instruction PASS |
 | Pre-LLMaJ aggregate | PENDING | |
@@ -69,17 +69,17 @@ This is the durable operational checkpoint for one task. Keep it evidence-orient
 
 ## Current blocker
 
-Cold Instruction re-review (+ Q4 rebind) on freeze `03749a0e` after INST-01/02 handoff rewrite.
+Awaiting cold Q4 on `03749a0e` (Instruction PASS recorded). Then Comprehensive → Pre-LLMaJ aggregate → Q8 → package.
 
 ## Root-cause classification
 
-- Owner: Instruction writer (closed on `03749a0e`)
-- Classification: `instruction_shape`
-- Evidence: prior `...-instruction-50ee95a34e.json`; repair commit `03749a0e`
+- Owner: closed (INST-01/02 on `03749a0e`)
+- Classification: `instruction_shape` (resolved)
+- Evidence: `...-instruction-5b7fcb0fa3.json` PASS
 
 ## Next action
 
-Cold Instruction + Q4 with `model: inherit` on `03749a0e`. Cite Q6 scope-hash reuse. Then Comprehensive → aggregate → Q8 → package. Harbor LLMaJ and official trials remain deferred.
+Reconcile Q4 when it lands; if PASS, launch Comprehensive Reviewer then Pre-LLMaJ aggregate and Q8 diagnostics. Harbor LLMaJ and official trials remain deferred.
 
 ## Review evidence ledger
 
@@ -92,7 +92,7 @@ Cold Instruction + Q4 with `model: inherit` on `03749a0e`. Cite Q6 scope-hash re
 | Originality | django-checkout-failover-ha-b9ee4816-originality-9c88957c99 | b9ee4816204f1a51857407e4a6f9bf9e38dd937a | 2.2 | 2.2 | | | | `.terminus/reviews/django-checkout-failover-ha/b9ee4816/django-checkout-failover-ha-b9ee4816-originality-9c88957c99.json` | PASS | HIGH | |
 | Difficulty design | django-checkout-failover-ha-b9ee4816-difficulty-design-490134a9ce | b9ee4816204f1a51857407e4a6f9bf9e38dd937a | 2.2 | 2.2 | | | | `.terminus/reviews/django-checkout-failover-ha/b9ee4816/django-checkout-failover-ha-b9ee4816-difficulty-design-490134a9ce.json` | PASS | MEDIUM | tier UNMEASURED |
 | Compliance pre-review | django-checkout-failover-ha-b9ee4816-compliance-55d7325ce9 | b9ee4816204f1a51857407e4a6f9bf9e38dd937a | 2.2 | 2.2 | | | | `.terminus/reviews/django-checkout-failover-ha/b9ee4816/django-checkout-failover-ha-b9ee4816-compliance-55d7325ce9.json` | PASS | HIGH | |
-| Instruction | django-checkout-failover-ha-b9ee4816-instruction-50ee95a34e | b9ee4816204f1a51857407e4a6f9bf9e38dd937a | 2.2 | 2.2 | | | | `.terminus/reviews/django-checkout-failover-ha/b9ee4816/django-checkout-failover-ha-b9ee4816-instruction-50ee95a34e.json` | REVISE | HIGH | INST-01, INST-02 |
+| Instruction | django-checkout-failover-ha-03749a0e-instruction-5b7fcb0fa3 | 03749a0ed4dcf6f691bb6d1c9bd573d923d92403 | 2.2 | 2.2 | | | | `.terminus/reviews/django-checkout-failover-ha/03749a0e/django-checkout-failover-ha-03749a0e-instruction-5b7fcb0fa3.json` | PASS | HIGH | INST-01/02 closed |
 | Documentation | django-checkout-failover-ha-b9ee4816-documentation-2e3067d67a | b9ee4816204f1a51857407e4a6f9bf9e38dd937a | 2.2 | 2.2 | | | | `.terminus/reviews/django-checkout-failover-ha/b9ee4816/django-checkout-failover-ha-b9ee4816-documentation-2e3067d67a.json` | PASS | HIGH | |
 | Comprehensive Reviewer | | | | | 1.0 | | | | PENDING | | |
 | Q8 GPT Perspective Simulation | | | | | 1.0 | | | | PENDING | | diagnostic only |

@@ -1,0 +1,100 @@
+{
+  "schema_version": "3.0",
+  "role": "Instruction Reviewer",
+  "review_id": "django-checkout-failover-ha-03749a0e-instruction-5b7fcb0fa3",
+  "task": "django-checkout-failover-ha",
+  "task_commit": "03749a0ed4dcf6f691bb6d1c9bd573d923d92403",
+  "control_plane_commit": "03749a0ed4dcf6f691bb6d1c9bd573d923d92403",
+  "protocol_policy_version": "2.2",
+  "prompt_policy_version": "2.2",
+  "role_policy_version": "1.0",
+  "role_contract_hash": "b3fafcd337332dca594d29a578adba39aba28e76f794d5851c4a0d5140566484",
+  "context_packet": ".terminus/reviews/django-checkout-failover-ha/03749a0e/django-checkout-failover-ha-03749a0e-instruction-5b7fcb0fa3.packet.json",
+  "verdict": "PASS",
+  "confidence": "HIGH",
+  "evidence_status": "SUFFICIENT",
+  "summary": "After the INST-01/02 rewrite, instruction.md is a ~156-word two-paragraph on-call handoff: incident symptoms plus end-state invariants, with sticky/lag/refuse/dump schema delegated to /app/ha/docs/runbook.md. Compressed-rubric and reverse-outline risk are low; material HA requirements remain discoverable from instruction + runbook.",
+  "evidence": [
+    {
+      "type": "file",
+      "ref": "django-checkout-failover-ha/instruction.md",
+      "observation": "Two short paragraphs (~156 words, 0 bullets). Opens with AZ-B cutover incident and customer-visible symptoms; ends with preserve routes/history, one fenced writer, safe /readyz, confirmation freshness, one capture per attempt_id, runbook follow-through, and /app/ha/out/failover-status.json. No benchmark preamble, no one-sentence-per-test inventory, no module repair recipe."
+    },
+    {
+      "type": "file",
+      "ref": "django-checkout-failover-ha/environment/ha/docs/runbook.md",
+      "observation": "Ordinary operator runbook: manage.py sync/cutover/dump, fence lease semantics, sticky pins (not django_session), lag gate, blank attempt refuse, capture seq gate, /healthz vs /readyz, and exact failover-status.json object. Technical contract detail, not a relocated acceptance checklist hiding the engineering ask."
+    },
+    {
+      "type": "file",
+      "ref": "django-checkout-failover-ha/environment/ha/notes/oncall.md",
+      "observation": "Supports asserted current-state claims: AZ-B advertised writer, place on replica, OPEN confirmation, dual-box captures for att-inc-20001/20007/20012, writable lease on standby, preserve checkout URLs, /readyz must mean safe to take a card."
+    },
+    {
+      "type": "file",
+      "ref": "django-checkout-failover-ha/environment/ha/logs/captured/shopdesk-error.log",
+      "observation": "Scraped gunicorn evidence matches instruction incident details (replica place INSERT, sticky miss on django_session, duplicate captures, half-finished sync copying writable fence)."
+    },
+    {
+      "type": "file",
+      "ref": ".terminus/designs/django-checkout-failover-ha-test-map.json",
+      "observation": "Requirement families R_WRITE_PRIMARY through R_RESTART are discoverable from instruction end-state language plus runbook sticky/lag/fence/readyz/dump/capture rules without reading test bodies as a writing outline."
+    },
+    {
+      "type": "rule",
+      "ref": ".terminus/agents/INSTRUCTION_POLICY.md",
+      "observation": "Passes Jira/Slack handoff, requirement-completeness via referenced runbook, reverse-outline, and spec-file-loophole tests for Instruction Reviewer PASS criteria."
+    },
+    {
+      "type": "file",
+      "ref": ".terminus/reviewers/HUMAN_WRITING_CALIBRATION.md",
+      "observation": "Matches incident-report pattern: selective symptoms, operational end state, path pointers; avoids synthetic completeness and schema dumping in the ticket itself."
+    },
+    {
+      "type": "review",
+      "ref": ".terminus/reviews/django-checkout-failover-ha/03749a0e/django-checkout-failover-ha-03749a0e-instruction-5b7fcb0fa3.packet.json",
+      "observation": "change_since_last_review notes INST-01/02 rewrite to handoff voice with details in runbook; prior Instruction Reviewer JSON under b9ee4816/ was not opened for this verdict."
+    }
+  ],
+  "findings": [],
+  "missing_evidence": [],
+  "change_scope": [],
+  "do_not_change": [
+    "Do not re-expand instruction.md into a one-bullet-per-HA-invariant rubric inventory.",
+    "Do not relocate the engineering objective or material end-state ask out of instruction.md into the runbook.",
+    "Do not add module-level bug ownership, oracle steps, or verifier/test names to the ticket."
+  ],
+  "next_gate": "Remaining Stage-B / Pre-LLMaJ specialists on 03749a0e",
+  "role_output": {
+    "WORD_COUNT": 156,
+    "BULLET_COUNT": 0,
+    "HUMAN_SIGNAL": "HIGH",
+    "AI_TEMPLATE_SIGNAL": "LOW",
+    "JIRA_SLACK_HANDOFF": "PASS",
+    "REQUIREMENT_COMPLETENESS": "SUFFICIENT",
+    "INSTRUCTION_SHAPE": "PASS",
+    "REVERSE_OUTLINE_RISK": "LOW",
+    "SPEC_FILE_LOOPHOLE": "NONE",
+    "IMPLEMENTATION_DIAGNOSIS_LEAKAGE": "NONE",
+    "CURRENT_STATE_EVIDENCE": "PASS",
+    "HUMAN_GROUPING": "HIGH",
+    "COMPRESSED_RUBRIC": "LOW",
+    "OVER_PRESCRIPTION": "NONE",
+    "MATERIAL_REQUIREMENTS_PRESERVED": [
+      "heal split-brain checkout desk after AZ-B writer cutover",
+      "preserve manage.py and existing /api/checkout/*, /healthz, /readyz routes",
+      "do not wipe checkout history",
+      "exactly one fenced writer",
+      "/readyz opens only when safe to take a card (gates in runbook)",
+      "confirmation matches the shopper's just-written order (sticky/lag in runbook)",
+      "one capture effect per attempt_id (incl. refuse paths in runbook)",
+      "pins sticky alias and lag/refuse/cutover/sync semantics via /app/ha/docs/runbook.md",
+      "write /app/ha/out/failover-status.json with runbook object when desk is ready"
+    ],
+    "UNNECESSARY_TEXT": [],
+    "MISSING_CONTEXT": [],
+    "SUSPICIOUS_PHRASES": [],
+    "FAIRNESS_RISK": "LOW",
+    "REPLACEMENT_TEXT": ""
+  }
+}
