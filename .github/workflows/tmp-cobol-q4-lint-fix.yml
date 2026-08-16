@@ -1,0 +1,40 @@
+name: Temporary COBOL Q4 lint fix
+
+on:
+  push:
+    branches:
+      - task/cobol-comp3-python-equiv-strict-rebuild
+    paths:
+      - '.github/workflows/tmp-cobol-q4-lint-fix.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: task/cobol-comp3-python-equiv-strict-rebuild
+          fetch-depth: 0
+      - name: Remove unused verifier import and self-clean
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          path = Path('cobol-comp3-python-equiv/tests/test_outputs.py')
+          text = path.read_text(encoding='utf-8')
+          old = 'from src.layout import Field, Layout, active_occurs, load_layout, resolve_offsets\n'
+          new = 'from src.layout import Field, Layout, active_occurs, resolve_offsets\n'
+          if old not in text:
+              raise SystemExit('expected import line not found')
+          path.write_text(text.replace(old, new, 1), encoding='utf-8')
+          PY
+          git rm .github/workflows/tmp-cobol-q4-lint-fix.yml
+          git config user.name 'Terminus remediation bot'
+          git config user.email 'actions@users.noreply.github.com'
+          git add cobol-comp3-python-equiv/tests/test_outputs.py
+          git commit -m 'Fix Q4 verifier lint'
+          git push origin HEAD:task/cobol-comp3-python-equiv-strict-rebuild
