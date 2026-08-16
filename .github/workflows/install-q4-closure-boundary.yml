@@ -81,6 +81,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          python -m pip install --disable-pip-version-check pytest
           python -m pytest -q \
             .terminus/tests/test_q4_closure.py \
             .terminus/tests/test_quality_agent_system.py \
