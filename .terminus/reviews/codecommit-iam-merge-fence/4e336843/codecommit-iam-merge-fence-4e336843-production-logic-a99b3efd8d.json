@@ -1,0 +1,220 @@
+{
+  "schema_version": "3.0",
+  "role": "Production Logic Auditor",
+  "review_id": "codecommit-iam-merge-fence-4e336843-production-logic-a99b3efd8d",
+  "task": "codecommit-iam-merge-fence",
+  "task_commit": "4e3368435ba2c56ee69dd4024ff2cb47c3f77805",
+  "control_plane_commit": "4e3368435ba2c56ee69dd4024ff2cb47c3f77805",
+  "protocol_policy_version": "2.2",
+  "prompt_policy_version": "2.2",
+  "role_policy_version": "1.1",
+  "role_contract_hash": "ee7d1cfd6e19fcc0e831cc75829457593d7410613c3b3fb811aef925e85a1607",
+  "review_scope_hash": "a89e8a81c86cfc4c9e4eabd3e33b333a9ace67fcdeabc214f41538e23983c1c5",
+  "context_packet": ".terminus/reviews/codecommit-iam-merge-fence/4e336843/codecommit-iam-merge-fence-4e336843-production-logic-a99b3efd8d.packet.json",
+  "verdict": "PASS",
+  "confidence": "HIGH",
+  "evidence_status": "SUFFICIENT",
+  "summary": "Independent Q6 audit of codecommit-iam-merge-fence@4e336843 finds a genuine CodeCommit control plane: ccctl/cc-api reach IAM evaluation, quorum/FF merge with leases, deliver/event_id, audit, and webhook outbox through a shared ControlPlane facade, plus a live admin cluster (report/ops-health/access-preview/recover-catalog/webhooks/pipelines). Honest entrypoint-reachable substantive runtime/config LOC is ~3,250–3,510 after discounting mild seeder/JSON and near-dup policy overlap, clearing the large_system_strict >=3,000 floor. PADDING_RISK is MEDIUM (not HIGH): team-fragment near-dupes and seed↔policies overlap inflate counts slightly, but major modules are not clones, wrappers, or unreachable filler.",
+  "evidence": [
+    {
+      "type": "rule",
+      "ref": ".terminus/agents/QUALITY_AGENT_PROMPTS.md#Q6",
+      "observation": "Q6 requires independent entrypoint tracing, reachability, module diversity, padding/clone checks, coupling/partial-fix traps, and a ~25% removal test. For large_system_strict, PASS needs >=3,000 substantive reachable LOC and no HIGH toy/padding risk. review_scope_hash must be copied unchanged."
+    },
+    {
+      "type": "rule",
+      "ref": ".terminus/agents/QUALITY_AGENT_REGISTRY.md#Q6",
+      "observation": "Decision right is whether the solver-visible core is complex, reachable, coupled, non-toy, and non-padded. Complexity Governor / authenticity-validator PASS is not sufficient."
+    },
+    {
+      "type": "rule",
+      "ref": ".terminus/agents/PRODUCTION_AUTHENTICITY.md",
+      "observation": "large_system_strict treats 3,000 substantive reachable LOC as a floor; dead/unreachable/filler construction toward that floor is an authenticity defect."
+    },
+    {
+      "type": "file",
+      "ref": "codecommit-iam-merge-fence/task.toml@4e3368435ba2c56ee69dd4024ff2cb47c3f77805",
+      "observation": "Security/AppSec Python task; artifacts [/app/codecommit]; separate verifier; workdir /app/codecommit. Session CREATION_PROFILE is large_system_strict."
+    },
+    {
+      "type": "file",
+      "ref": "codecommit-iam-merge-fence/environment/codecommit/bin/ccctl@4e3368435ba2c56ee69dd4024ff2cb47c3f77805",
+      "observation": "Primary operator entrypoint delegates to cc.cli.main."
+    },
+    {
+      "type": "file",
+      "ref": "codecommit-iam-merge-fence/environment/codecommit/bin/cc-api@4e3368435ba2c56ee69dd4024ff2cb47c3f77805",
+      "observation": "HTTP API entrypoint; companion surface for merge/push/deliver/dispatch and /ops/* admin routes."
+    },
+    {
+      "type": "file",
+      "ref": "codecommit-iam-merge-fence/environment/codecommit/lib/cc/cli.py@4e3368435ba2c56ee69dd4024ff2cb47c3f77805",
+      "observation": "Registers clone/push/pr/approve/merge/deliver/simulate/metrics/dispatch-webhooks plus admin cluster: report, ops-health, access-preview, recover-catalog, webhooks, pipelines. Mutating cmds route through ControlPlane; admin cmds call ops_console/state_recovery/webhook_admin/pipeline_admin with real fan-out."
+    },
+    {
+      "type": "file",
+      "ref": "codecommit-iam-merge-fence/environment/codecommit/lib/cc/integration_facade.py@4e3368435ba2c56ee69dd4024ff2cb47c3f77805",
+      "observation": "ControlPlane facade couples authz_gateway, gitops, PR store/approvals/merge, deliver, and webhook dispatch—shared CLI/API orchestration, not a no-op shell."
+    },
+    {
+      "type": "file",
+      "ref": "codecommit-iam-merge-fence/environment/codecommit/lib/cc/ops_console.py@4e3368435ba2c56ee69dd4024ff2cb47c3f77805",
+      "observation": "QI2 admin productization verified: platform_report/access_preview/write_report aggregate health, policy inventory, open-PR evaluation, merge readiness, config validation, audit summary, IAM report grids, webhook/pipeline bindings, and active leases—reachable from ccctl report/access-preview and GET /ops/report."
+    },
+    {
+      "type": "file",
+      "ref": "codecommit-iam-merge-fence/environment/codecommit/lib/cc/state_recovery.py@4e3368435ba2c56ee69dd4024ff2cb47c3f77805",
+      "observation": "ops-health/recover-catalog path: path existence map, catalog rebuild from bare repos, jsonl compaction—reachable via CLI, not dead scaffolding."
+    },
+    {
+      "type": "file",
+      "ref": "codecommit-iam-merge-fence/environment/codecommit/lib/cc/webhook_admin.py@4e3368435ba2c56ee69dd4024ff2cb47c3f77805",
+      "observation": "ccctl webhooks loads webhook config, delivery_stats over outbox rows, upsert/remove/requeue helpers with validator coupling."
+    },
+    {
+      "type": "file",
+      "ref": "codecommit-iam-merge-fence/environment/codecommit/lib/cc/pipeline_admin.py@4e3368435ba2c56ee69dd4024ff2cb47c3f77805",
+      "observation": "ccctl pipelines exposes bindings, pipeline names, journal_for(repo), duplicate event_id detection, binding_conflicts—reads live trigger journal state."
+    },
+    {
+      "type": "file",
+      "ref": "codecommit-iam-merge-fence/environment/codecommit/lib/cc/iam/eval.py@4e3368435ba2c56ee69dd4024ff2cb47c3f77805",
+      "observation": "Core authorize path with fixed vs broken Deny-skip / star-resource waiver behavior; explain() used by simulate and access-preview matrices."
+    },
+    {
+      "type": "file",
+      "ref": "codecommit-iam-merge-fence/environment/codecommit/lib/cc/iam/conditions.py@4e3368435ba2c56ee69dd4024ff2cb47c3f77805",
+      "observation": "Distinct StringEquals/Bool/IpAddress evaluators with deliberate broken vs fixed tables—domain MFA/CIDR/ref matching, not constant True shells on the fixed path."
+    },
+    {
+      "type": "file",
+      "ref": "codecommit-iam-merge-fence/environment/codecommit/lib/cc/prs/merge.py@4e3368435ba2c56ee69dd4024ff2cb47c3f77805",
+      "observation": "Merge couples quorum, MergePullRequestByFastForward authorize, prepare_protected_merge (branch protection + ref lease), and gitops FF update; broken path lies about FF."
+    },
+    {
+      "type": "file",
+      "ref": "codecommit-iam-merge-fence/environment/codecommit/lib/cc/api/app.py@4e3368435ba2c56ee69dd4024ff2cb47c3f77805",
+      "observation": "HTTP surface mirrors CLI for push/PR/approve/merge/deliver/dispatch and exposes /ops/report|/ops/health; broken HTTP merge skips IAM while CLI merge does not—cross-entrypoint partial-fix trap."
+    },
+    {
+      "type": "file",
+      "ref": "codecommit-iam-merge-fence/environment/codecommit/lib/cc/pipelines/deliver.py@4e3368435ba2c56ee69dd4024ff2cb47c3f77805",
+      "observation": "Deliver couples binding lookup, tip commit, event_id idempotency journal, and outbox enqueue—multi-component exactly-once path."
+    },
+    {
+      "type": "file",
+      "ref": "codecommit-iam-merge-fence/environment/codecommit/lib/cc/services/authz_gateway.py@4e3368435ba2c56ee69dd4024ff2cb47c3f77805",
+      "observation": "gated_authorize wraps IAM eval with audit append on allow and deny (deny dropped when not fixed)—audit coupling is live."
+    },
+    {
+      "type": "file",
+      "ref": "codecommit-iam-merge-fence/environment/codecommit/lib/cc/merge_guard.py@4e3368435ba2c56ee69dd4024ff2cb47c3f77805",
+      "observation": "FF/ancestor/linear-history checks plus lease acquire/release via branch_protection and ref_lease—stateful merge fencing."
+    },
+    {
+      "type": "file",
+      "ref": "codecommit-iam-merge-fence/environment/codecommit/docs/control-plane-contract.md@4e3368435ba2c56ee69dd4024ff2cb47c3f77805",
+      "observation": "Public contract lists the same admin CLI verbs and /ops HTTP routes as implemented—operator workflow is specified, not decorative."
+    },
+    {
+      "type": "run",
+      "ref": "independent AST import reachability + substantive_loc probe @4e336843",
+      "observation": "Of 61 cc.* modules, 59 are import-reachable from cc.cli/cc.api.app/cc.server/cc.seed (only empty package markers cc.api/cc.store missed). Combined reachable Python (~2,966 non-comment) plus non-py runtime/config counted by the complexity walker (~539) ≈ 3,505; raw validator substantive_loc=3510. After discounting ~120–140 seed↔policies/*.json overlap and ~66 near-dup team-fragment lines, honest floor still ≈3,250+."
+    },
+    {
+      "type": "file",
+      "ref": "codecommit-iam-merge-fence/environment/codecommit/policies/team-fragment-0{1,2,3,4}.json@4e3368435ba2c56ee69dd4024ff2cb47c3f77805",
+      "observation": "Four team-fragment policies are near-duplicates (~0.70–0.98 normalized similarity)—mild config padding, not a large unreachable code mass."
+    },
+    {
+      "type": "file",
+      "ref": "codecommit-iam-merge-fence/environment/codecommit/lib/cc/seed.py@4e3368435ba2c56ee69dd4024ff2cb47c3f77805",
+      "observation": "write_policies embeds statement bodies also present under policies/*.json—double-counts toward raw LOC if both are summed, contributing to MEDIUM padding risk without collapsing the floor."
+    }
+  ],
+  "findings": [
+    {
+      "id": "Q6-REACHABLE-ADMIN-CLUSTER",
+      "severity": "LOW",
+      "status": "OBSERVED",
+      "criterion": "QI2 admin cluster and ControlPlane facade are entrypoint-reachable with non-trivial fan-out",
+      "evidence_refs": [
+        "codecommit-iam-merge-fence/environment/codecommit/lib/cc/cli.py@4e3368435ba2c56ee69dd4024ff2cb47c3f77805",
+        "codecommit-iam-merge-fence/environment/codecommit/lib/cc/integration_facade.py@4e3368435ba2c56ee69dd4024ff2cb47c3f77805",
+        "codecommit-iam-merge-fence/environment/codecommit/lib/cc/ops_console.py@4e3368435ba2c56ee69dd4024ff2cb47c3f77805",
+        "codecommit-iam-merge-fence/environment/codecommit/lib/cc/api/app.py@4e3368435ba2c56ee69dd4024ff2cb47c3f77805"
+      ],
+      "why_it_matters": "Confirms the claimed productizing of report/ops-health/access-preview/recover-catalog/webhooks/pipelines is real operator surface, not unreachable LOC padding.",
+      "minimal_remediation": "None required for PASS.",
+      "regression_risk": "Removing admin wiring without replacing equivalent entrypoints would shrink reachable depth and could re-open a padding/reachability challenge."
+    },
+    {
+      "id": "Q6-MILD-CONFIG-SEED-OVERLAP",
+      "severity": "LOW",
+      "status": "OBSERVED",
+      "criterion": "Mild padding via near-dup policy fragments and seed↔JSON policy body overlap",
+      "evidence_refs": [
+        "codecommit-iam-merge-fence/environment/codecommit/policies/team-fragment-0{1,2,3,4}.json@4e3368435ba2c56ee69dd4024ff2cb47c3f77805",
+        "codecommit-iam-merge-fence/environment/codecommit/lib/cc/seed.py@4e3368435ba2c56ee69dd4024ff2cb47c3f77805"
+      ],
+      "why_it_matters": "Keeps PADDING_RISK at MEDIUM rather than LOW; does not by itself drop honest reachable LOC under 3,000 or raise risk to HIGH.",
+      "minimal_remediation": "Optional later cleanup: dedupe team-fragment templates or generate policies only from seed without dual-counting bodies—not required to pass Q6 now.",
+      "regression_risk": "Aggressive deletion of seeded policy variety could weaken IAM coverage scenarios if attachments still reference fragment IDs."
+    },
+    {
+      "id": "Q6-CROSS-COMPONENT-PARTIAL-FIX",
+      "severity": "LOW",
+      "status": "OBSERVED",
+      "criterion": "Cross-module invariants create real partial-fix traps",
+      "evidence_refs": [
+        "codecommit-iam-merge-fence/environment/codecommit/lib/cc/prs/merge.py@4e3368435ba2c56ee69dd4024ff2cb47c3f77805",
+        "codecommit-iam-merge-fence/environment/codecommit/lib/cc/api/app.py@4e3368435ba2c56ee69dd4024ff2cb47c3f77805",
+        "codecommit-iam-merge-fence/environment/codecommit/lib/cc/pipelines/deliver.py@4e3368435ba2c56ee69dd4024ff2cb47c3f77805",
+        "codecommit-iam-merge-fence/environment/codecommit/lib/cc/services/authz_gateway.py@4e3368435ba2c56ee69dd4024ff2cb47c3f77805"
+      ],
+      "why_it_matters": "Supports non-toy production depth: fixing CLI merge IAM alone fails HTTP merge; fixing deliver idempotency alone can miss outbox enqueue; fixing conditions alone can miss deny-audit.",
+      "minimal_remediation": "None required for PASS.",
+      "regression_risk": "Collapsing API merge onto CLI ControlPlane without care could accidentally weaken the dual-path defect surface the task intends."
+    }
+  ],
+  "missing_evidence": [],
+  "change_scope": [
+    "inherit",
+    "auto"
+  ],
+  "do_not_change": [
+    "task instruction/tests/solution (Q6 is read-only)",
+    "review_scope_hash provenance fields",
+    "unrelated tasks under Terminus-Edition-3"
+  ],
+  "next_gate": "QUALITY_INTERLOCK",
+  "role_output": {
+    "CORE_LOGIC_DEPTH": "HIGH",
+    "RUNTIME_REACHABILITY": "HIGH",
+    "MODULE_DIVERSITY": "HIGH",
+    "CROSS_COMPONENT_COUPLING": "HIGH",
+    "TOY_LOGIC_RISK": "LOW",
+    "PADDING_RISK": "MEDIUM",
+    "SUBSTANTIVE_LOC_ASSESSMENT": "large_system_strict floor met. Independent count: validator substantive_loc=3510 over task.toml+environment; AST reachability from ccctl/cc-api/seed covers essentially all cc runtime modules (~2,966 non-comment Python) plus ~539 non-py runtime/config lines (~3,505 combined). After discounting ~120–140 LOC of seed.write_policies bodies that duplicate policies/*.json and ~66 LOC of near-duplicate team-fragment-* policies, honest entrypoint-reachable substantive runtime/config remains approximately 3,250–3,350 (>=3,000). Seed bootstrap and admin reporting are counted only where they participate in operator/runtime workflows; catalog/ops JSON is domain config, not opaque filler.",
+    "MAJOR_MODULES": [
+      "cc.cli / cc.api.app / cc.integration_facade.ControlPlane — dual entrypoints + shared facade",
+      "cc.iam.{eval,conditions,actions,policy,context} + cc.iam_decision_trace / cc.iam_report — authorize/explain/report",
+      "cc.services.authz_gateway + cc.audit.log — gated authz with audit append",
+      "cc.prs.{approvals,merge,store} + cc.approval_engine + cc.merge_guard + cc.branch_protection + cc.ref_lease — quorum/FF/lease merge fence",
+      "cc.repos.gitops + catalog — bare-repo clone/push/FF/merge operations",
+      "cc.pipelines.deliver + event_id + cc.binding_index — exactly-once deliver journal",
+      "cc.webhooks.{outbox,dispatch,retry} + webhook_crypto/admin — outbox enqueue/dispatch",
+      "cc.ops_console + state_recovery + pipeline_admin + policy_admin + batch_ops — admin/report/recover cluster",
+      "ops/*.json + policies/*.json + sql/* — live configuration and schema"
+    ],
+    "PARTIAL_FIX_TRAPS": [
+      "Fix CLI merge IAM/FF/lease without fixing HTTP /prs/{id}/merge broken path that skips MergePullRequestByFastForward",
+      "Fix IAM conditions (MFA/CIDR/ref) without restoring deny-statement evaluation and deny audit append",
+      "Fix deliver event_id idempotency without enqueue_for_delivery into webhook outbox",
+      "Fix branch protection / linear history without acquiring/releasing ref leases on protected main",
+      "Harden approve quorum without aligning merge authorization and fast-forward semantics"
+    ],
+    "REMOVAL_TEST": "Removing ~25% of solver-visible core (e.g. lease+branch_protection+merge_guard, webhook outbox/dispatch, or IAM condition tables + authz_gateway audit) would eliminate protected-merge fencing, exactly-once deliver→outbox coupling, or MFA/CIDR/deny audit behavior respectively. Removing only admin inventory helpers would shrink ops UX but leave the incident core; removing IAM/merge/deliver/outbox would collapse the scored control-plane behavior. Therefore behavior is not preserved under large deletion—code is not inert padding.",
+    "REQUIRED_CHANGES": []
+  }
+}

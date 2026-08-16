@@ -1,0 +1,24 @@
+#!/usr/bin/env python3
+"""HTTP entrypoint for the local CodeCommit control plane."""
+
+import argparse
+import sys
+from pathlib import Path
+
+LIB = Path(__file__).resolve().parent.parent / "lib"
+if str(LIB) not in sys.path:
+    sys.path.insert(0, str(LIB))
+
+from cc.server import serve  # noqa: E402 - lib path must be set before import
+
+
+def parse_args():
+    parser = argparse.ArgumentParser(prog="cc-api", description="control-plane HTTP API")
+    parser.add_argument("--host", default="127.0.0.1")
+    parser.add_argument("--port", type=int, default=8080, help="0 selects a free port")
+    return parser.parse_args()
+
+
+if __name__ == "__main__":
+    options = parse_args()
+    serve(options.host, options.port)

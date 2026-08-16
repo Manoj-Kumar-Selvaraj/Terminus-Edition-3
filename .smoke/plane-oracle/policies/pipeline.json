@@ -1,0 +1,54 @@
+{
+  "PolicyId": "pipeline",
+  "Version": "2012-10-17",
+  "Description": "CodePipeline runner: read repositories, start bound pipelines, drain the webhook outbox.",
+  "Statement": [
+    {
+      "Sid": "RunnerReadsRepositories",
+      "Effect": "Allow",
+      "Action": [
+        "codecommit:GitPull",
+        "codecommit:GetRepository"
+      ],
+      "Resource": [
+        "arn:aws:codecommit:eu-west-1:000000000000:ledger",
+        "arn:aws:codecommit:eu-west-1:000000000000:sandbox"
+      ]
+    },
+    {
+      "Sid": "RunnerReportsBuildState",
+      "Effect": "Allow",
+      "Action": "codecommit:UpdatePullRequestApprovalState",
+      "Resource": "arn:aws:codecommit:eu-west-1:000000000000:ledger"
+    },
+    {
+      "Sid": "RunnerStartsBoundPipelines",
+      "Effect": "Allow",
+      "Action": "pipeline:StartPipelineExecution",
+      "Resource": [
+        "arn:aws:codecommit:eu-west-1:000000000000:ledger",
+        "arn:aws:codecommit:eu-west-1:000000000000:sandbox"
+      ]
+    },
+    {
+      "Sid": "RunnerDrainsOutbox",
+      "Effect": "Allow",
+      "Action": [
+        "webhook:DispatchOutbox",
+        "webhook:ListOutbox"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Sid": "RunnerOnlyStartsMainline",
+      "Effect": "Deny",
+      "Action": "pipeline:StartPipelineExecution",
+      "Resource": "*",
+      "Condition": {
+        "StringNotEquals": {
+          "codecommit:References": "refs/heads/main"
+        }
+      }
+    }
+  ]
+}

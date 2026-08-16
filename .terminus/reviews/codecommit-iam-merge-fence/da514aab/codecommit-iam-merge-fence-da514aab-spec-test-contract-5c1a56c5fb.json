@@ -1,0 +1,508 @@
+{
+  "schema_version": "3.0",
+  "role": "Spec-Test Contract Reviewer",
+  "review_id": "codecommit-iam-merge-fence-da514aab-spec-test-contract-5c1a56c5fb",
+  "task": "codecommit-iam-merge-fence",
+  "task_commit": "da514aabdf99613812c5693e8bf6991344162e41",
+  "control_plane_commit": "da514aabdf99613812c5693e8bf6991344162e41",
+  "protocol_policy_version": "2.2",
+  "prompt_policy_version": "2.2",
+  "role_policy_version": "1.1",
+  "role_contract_hash": "c860dfe8b8ed0a04c729e4d6a828741b206b7067a780863ec7b22ee09d02c5a0",
+  "context_packet": ".terminus/reviews/codecommit-iam-merge-fence/da514aab/codecommit-iam-merge-fence-da514aab-spec-test-contract-5c1a56c5fb.packet.json",
+  "verdict": "REVISE",
+  "confidence": "HIGH",
+  "evidence_status": "SUFFICIENT",
+  "summary": "Cold Q4 bidirectional walk fails Quality Interlock. IAM (MFA/CIDR/Deny/star-resource), quorum/author/duplicate/pool, fast-forward-only merge, CLI+HTTP merge IAM deny, exactly-once deliver/event_id/key order, allow+deny audit appends, and outbox enqueue/dispatch attempts are discoverable from instruction.md plus the binding control-plane contract and are meaningfully tested. Material gaps remain: exclusive protected-destination ref leases are stated and untested; outbox signature is only truthy rather than HMAC-SHA256 of the contracted preimage; and tests require undocumented webhook_id plus prs.json items/status/author layout.",
+  "evidence": [
+    {
+      "type": "file",
+      "ref": "codecommit-iam-merge-fence/instruction.md",
+      "observation": "Two short paragraphs: incident symptoms (Alice no-MFA main, single stamp + merge commit on moved main, duplicate deliver, missing deny audit, missing outbox, weaker HTTP merge); drive ccctl/cc-api; bind control-plane-contract.md for IAM, quorum/FF merge, exactly-once deliver/event_id, audit, outbox enqueue/retry; evidence under log/ops/policies; leave /app/codecommit in place."
+    },
+    {
+      "type": "file",
+      "ref": "codecommit-iam-merge-fence/environment/codecommit/docs/control-plane-contract.md",
+      "observation": "Binding protocol: identity flags/headers; CLI/HTTP surfaces and success shapes; IAM default-deny/Deny-wins/conditions; approvals quorum + FF merge; protected destinations require exclusive ref lease under var/ref-leases.json; deliver event_id sha256 preimage, journal key order, exactly-once; outbox signature hex HMAC-SHA256 of event_id|pipeline|commit; dispatch attempts/status; every authorize allow/deny appends audit.jsonl."
+    },
+    {
+      "type": "file",
+      "ref": "codecommit-iam-merge-fence/environment/codecommit/ops/handoff.md",
+      "observation": "Operator handoff restating MFA/main, quorum/FF, duplicate deliver, empty outbox; points to policies/ and ops/principals.json as evaluated truth."
+    },
+    {
+      "type": "file",
+      "ref": "codecommit-iam-merge-fence/environment/codecommit/log/platform-incident.log",
+      "observation": "Solver-visible current-state evidence for deny-audit gap, duplicate journal, empty outbox, HTTP merge weaker than CLI, single-stamp merge, two-parent merge tip."
+    },
+    {
+      "type": "file",
+      "ref": "codecommit-iam-merge-fence/environment/codecommit/log/authz.jsonl",
+      "observation": "Sample authz rows use principal/action/allowed fields, supporting audit field vocabulary asserted by tests without a full audit schema in the contract."
+    },
+    {
+      "type": "file",
+      "ref": "codecommit-iam-merge-fence/environment/codecommit/ops/branch-protection.json",
+      "observation": "Protected main/release rules set require_lease=true and allowed_merge_principals; contract explicitly grades leases, not the allowed_merge_principals list."
+    },
+    {
+      "type": "file",
+      "ref": "codecommit-iam-merge-fence/environment/codecommit/ops/approval-rules.json",
+      "observation": "ledger main rule required=2 pool rev-a/rev-b; matches quorum F2P fixtures."
+    },
+    {
+      "type": "file",
+      "ref": "codecommit-iam-merge-fence/environment/codecommit/policies/developer.json",
+      "observation": "GitPull; main GitPush needs Bool MFA + IpAddress 10.8.0.0/16; release Allow+Deny pair explains Deny-wins F2P."
+    },
+    {
+      "type": "test",
+      "ref": "codecommit-iam-merge-fence/tests/test_outputs.py",
+      "observation": "Large F2P/P2P suite covers IAM push/merge, quorum variants, FF, deliver idempotency/event_id/keys, audit allow+deny, outbox enqueue/dispatch, CLI+HTTP merge IAM deny; no ref-lease assertions; signature only assert rows[0].get('signature'); requires webhook_id and prs.json items/status/author."
+    },
+    {
+      "type": "file",
+      "ref": ".terminus/designs/codecommit-iam-merge-fence-test-map.json",
+      "observation": "Classification-only F2P/P2P ownership labels; not used as coverage authority."
+    },
+    {
+      "type": "rule",
+      "ref": ".terminus/agents/QUALITY_AGENT_PROMPTS.md#Q4",
+      "observation": "Any material untested requirement or phantom test → REVISE; PASS needs empty BLOCKING_FINDING_IDS after exhaustive forward/reverse/docs/F2P/P2P/output walks."
+    },
+    {
+      "type": "rule",
+      "ref": ".terminus/agents/INSTRUCTION_POLICY.md",
+      "observation": "Instruction owns the ask; detailed protocol may live in referenced technical docs; every material requirement must be tested; private store/field contracts are phantoms."
+    }
+  ],
+  "findings": [
+    {
+      "id": "Q4-B01",
+      "severity": "HIGH",
+      "status": "OBSERVED",
+      "criterion": "Control-plane contract requires an exclusive ref lease under /app/codecommit/var/ref-leases.json for protected merge destinations; no verifier assertion reads leases, fails missing leases, or checks lease release.",
+      "evidence_refs": [
+        "codecommit-iam-merge-fence/environment/codecommit/docs/control-plane-contract.md",
+        "codecommit-iam-merge-fence/environment/codecommit/ops/branch-protection.json",
+        "codecommit-iam-merge-fence/instruction.md",
+        "codecommit-iam-merge-fence/tests/test_outputs.py::test_f2p_merge_fast_forward_updates_dest",
+        "codecommit-iam-merge-fence/tests/test_outputs.py::test_f2p_merge_commit_not_created_on_success"
+      ],
+      "why_it_matters": "A solution can ignore protected-destination leases and still pass all merges. Material merge-section obligation left untested.",
+      "minimal_remediation": "Add F2P that successful protected merge acquires/releases a lease (or denies with a documented lease error when held/missing), and/or drop the lease SHALL from the binding merge contract if intentionally out of grade scope.",
+      "regression_risk": "Medium: lease timing/exclusivity asserts must stay deterministic and not encode private acquire APIs."
+    },
+    {
+      "id": "Q4-B02",
+      "severity": "HIGH",
+      "status": "OBSERVED",
+      "criterion": "Contract defines outbox signature as hex HMAC-SHA256 of event_id|pipeline|commit with webhook secret (default settle); test_f2p_deliver_enqueues_outbox only asserts signature is truthy.",
+      "evidence_refs": [
+        "codecommit-iam-merge-fence/environment/codecommit/docs/control-plane-contract.md",
+        "codecommit-iam-merge-fence/environment/codecommit/ops/webhooks.json",
+        "codecommit-iam-merge-fence/tests/test_outputs.py::test_f2p_deliver_enqueues_outbox"
+      ],
+      "why_it_matters": "Wrong algorithm, preimage, or secret still passes grading. Material outbox signing requirement is only vacuously covered.",
+      "minimal_remediation": "Assert signature equals hmac_sha256_hex(secret, f\"{event_id}|{pipeline}|{commit}\") using webhook secret from ops/webhooks.json.",
+      "regression_risk": "Low if computed from public contract fields and visible webhook config."
+    },
+    {
+      "id": "Q4-B03",
+      "severity": "MEDIUM",
+      "status": "OBSERVED",
+      "criterion": "test_f2p_deliver_enqueues_outbox requires outbox row field webhook_id == wh-settle; control-plane contract documents signature/attempts/status but not webhook_id.",
+      "evidence_refs": [
+        "codecommit-iam-merge-fence/environment/codecommit/docs/control-plane-contract.md",
+        "codecommit-iam-merge-fence/environment/codecommit/ops/webhooks.json",
+        "codecommit-iam-merge-fence/tests/test_outputs.py::test_f2p_deliver_enqueues_outbox"
+      ],
+      "why_it_matters": "Alternate conforming row keys (e.g. id) fail despite matching webhook configs and valid signatures. Private field contract changes pass/fail.",
+      "minimal_remediation": "Document durable outbox row fields including webhook_id in the binding contract, or assert matching via signature/pipeline/event_id only.",
+      "regression_risk": "Low."
+    },
+    {
+      "id": "Q4-B04",
+      "severity": "MEDIUM",
+      "status": "OBSERVED",
+      "criterion": "test_p2p_pr_store_written asserts prs.json shape store['items'][str(pr_id)] with status/author; contract only names the PR store path, with no seeded schema and no documented object layout.",
+      "evidence_refs": [
+        "codecommit-iam-merge-fence/environment/codecommit/docs/control-plane-contract.md",
+        "codecommit-iam-merge-fence/tests/test_outputs.py::test_p2p_pr_store_written"
+      ],
+      "why_it_matters": "A behaviorally correct PR persistence layout (array store, different key names) fails. Phantom private serialization contract.",
+      "minimal_remediation": "Publish the graded prs.json schema in the binding contract, or replace with behavioral checks (GET /prs/{id} / approve/merge visibility) without dict key spelunking.",
+      "regression_risk": "Low to medium if schema publication over-constrains equivalent stores."
+    },
+    {
+      "id": "Q4-A01",
+      "severity": "LOW",
+      "status": "OBSERVED",
+      "criterion": "instruction.md binds the contract for 'quorum/fast-forward merge' while the Approvals and merge section also states the lease rule; binding scope for leases is slightly underspecified in the instruction phrase list.",
+      "evidence_refs": [
+        "codecommit-iam-merge-fence/instruction.md",
+        "codecommit-iam-merge-fence/environment/codecommit/docs/control-plane-contract.md"
+      ],
+      "why_it_matters": "Cold solvers might treat leases as optional commentary. Advisory relative to Q4-B01; clarifying the bind list removes doubt.",
+      "minimal_remediation": "Name protected-destination leases in the instruction bind list, or move lease text out of the binding merge section if not graded.",
+      "regression_risk": "Negligible."
+    },
+    {
+      "id": "Q4-A02",
+      "severity": "LOW",
+      "status": "OBSERVED",
+      "criterion": "Contract says failed outbox rows may be retried until max attempts, but max attempts is undefined and no failure/retry path is graded.",
+      "evidence_refs": [
+        "codecommit-iam-merge-fence/environment/codecommit/docs/control-plane-contract.md",
+        "codecommit-iam-merge-fence/tests/test_outputs.py::test_f2p_dispatch_marks_outbox_attempt"
+      ],
+      "why_it_matters": "Retry ceiling is not grading-relevant today; dispatch success path is covered. Advisory ambiguity.",
+      "minimal_remediation": "Define max attempts and add one failed-then-retry case, or drop the max-attempts clause.",
+      "regression_risk": "Low."
+    },
+    {
+      "id": "Q4-A03",
+      "severity": "LOW",
+      "status": "OBSERVED",
+      "criterion": "HTTP merge IAM test accepts status in (403, 400) while contract maps AccessDenied→403 and ValidationException→400.",
+      "evidence_refs": [
+        "codecommit-iam-merge-fence/environment/codecommit/docs/control-plane-contract.md",
+        "codecommit-iam-merge-fence/tests/test_outputs.py::test_f2p_http_api_merge_requires_iam"
+      ],
+      "why_it_matters": "Wrong status class can still pass. Primary AccessDenied body check remains; advisory weak assertion.",
+      "minimal_remediation": "Require HTTP 403 when error is AccessDenied.",
+      "regression_risk": "Negligible."
+    },
+    {
+      "id": "Q4-A04",
+      "severity": "LOW",
+      "status": "OBSERVED",
+      "criterion": "Contract documents simulate and many HTTP routes beyond merge/deliver/dispatch; verifier covers operator-critical merge/deliver/metrics and merge IAM HTTP only.",
+      "evidence_refs": [
+        "codecommit-iam-merge-fence/environment/codecommit/docs/control-plane-contract.md",
+        "codecommit-iam-merge-fence/tests/test_outputs.py"
+      ],
+      "why_it_matters": "Leftover surface is documentation breadth, not a hidden graded recipe. Advisory vs material F2P set.",
+      "minimal_remediation": "Optional smoke for simulate/health, or narrow the documented CLI/HTTP inventory to graded commands.",
+      "regression_risk": "Negligible."
+    }
+  ],
+  "missing_evidence": [],
+  "change_scope": [
+    "tests/test_outputs.py (lease F2P; HMAC signature equality; webhook_id/prs.json assert vs schema)",
+    "environment/codecommit/docs/control-plane-contract.md (document outbox/PR store fields and/or clarify lease grade scope)",
+    "instruction.md only if lease bind wording must be explicit"
+  ],
+  "do_not_change": [
+    "IAM MFA/CIDR/Deny/star-resource behavioral asserts",
+    "Quorum author/duplicate/outside-pool/NO_APPROVAL_RULE asserts",
+    "Fast-forward-only and single-parent merge asserts",
+    "CLI and HTTP MergePullRequestByFastForward AccessDenied parity",
+    "Exactly-once deliver, event_id sha256 preimage, journal key order",
+    "Allow and deny audit append coverage",
+    "Outbox enqueue + dispatch attempts/status persistence",
+    "Instruction→control-plane-contract binding for IAM/quorum/FF/deliver/audit/outbox without relocating the engineering objective"
+  ],
+  "next_gate": "Q2 Verifier Coverage Repairer (primary: lease + HMAC; document or relax webhook_id/prs.json phantoms); Q3 only if lease bind wording needs clarification; then re-run Q4",
+  "role_output": {
+    "REQUIREMENT_TEST_MATRIX": [
+      {
+        "id": "R_OPERATOR_SURFACE",
+        "source": "instruction.md (ccctl/cc-api; leave /app/codecommit) + contract Identity/CLI presence",
+        "coverage": "complete",
+        "tests": [
+          "test_p2p_ccctl_and_contract_present",
+          "test_p2p_metrics_command",
+          "test_p2p_unknown_principal_denied"
+        ]
+      },
+      {
+        "id": "R_IAM_PULL_PUSH",
+        "source": "instruction Alice/MFA symptom + contract IAM + policies/developer.json|alice-dev|ben-dev|pull-only|sandbox-star",
+        "coverage": "complete",
+        "tests": [
+          "test_p2p_clone_roundtrip",
+          "test_f2p_same_commit_clone_ok_after_denied_push",
+          "test_f2p_push_main_requires_mfa",
+          "test_f2p_absent_mfa_not_treated_as_true",
+          "test_f2p_push_main_mfa_wrong_ip_denied",
+          "test_p2p_push_main_mfa_office_allowed",
+          "test_p2p_push_dev_branch_without_mfa",
+          "test_f2p_branch_condition_is_exact",
+          "test_f2p_explicit_deny_beats_allow",
+          "test_f2p_intern_cannot_push",
+          "test_f2p_star_action_stays_on_sandbox_resource"
+        ]
+      },
+      {
+        "id": "R_QUORUM_APPROVALS",
+        "source": "instruction single-stamp symptom + contract Approvals + ops/approval-rules.json",
+        "coverage": "complete",
+        "tests": [
+          "test_f2p_merge_requires_quorum",
+          "test_f2p_author_approval_does_not_count",
+          "test_f2p_duplicate_approval_does_not_count",
+          "test_f2p_outside_pool_approval_ignored",
+          "test_f2p_duplicate_approve_stored_once",
+          "test_f2p_no_approval_rule",
+          "test_f2p_required_quorum_from_config",
+          "test_p2p_pr_store_written"
+        ],
+        "note": "PR store layout coverage tainted by Q4-B04 phantom keys"
+      },
+      {
+        "id": "R_FF_MERGE",
+        "source": "instruction merge-commit/moved-main symptom + contract fast-forward-only",
+        "coverage": "complete",
+        "tests": [
+          "test_f2p_merge_is_fast_forward_only",
+          "test_f2p_merge_fast_forward_updates_dest",
+          "test_f2p_merge_commit_not_created_on_success"
+        ]
+      },
+      {
+        "id": "R_MERGE_IAM_CLI_HTTP",
+        "source": "instruction HTTP weaker than CLI + contract MergePullRequestByFastForward / HTTP merge same IAM + reviewer.json IpAddress",
+        "coverage": "complete",
+        "tests": [
+          "test_f2p_merge_requires_office_ip",
+          "test_f2p_cli_merge_requires_iam",
+          "test_f2p_http_api_merge_requires_iam",
+          "test_f2p_star_action_stays_on_sandbox_resource"
+        ],
+        "note": "HTTP status class weakly asserted (Q4-A03)"
+      },
+      {
+        "id": "R_PROTECTED_REF_LEASE",
+        "source": "contract Approvals and merge lease sentence + ops/branch-protection.json require_lease",
+        "coverage": "absent",
+        "tests": [],
+        "note": "Q4-B01"
+      },
+      {
+        "id": "R_DELIVER_EXACTLY_ONCE",
+        "source": "instruction duplicate deliver + contract deliver/event_id/journal keys + ops/pipelines.json",
+        "coverage": "complete",
+        "tests": [
+          "test_f2p_deliver_exactly_once",
+          "test_f2p_event_id_is_sha256_preimage",
+          "test_f2p_journal_key_order",
+          "test_p2p_deliver_unbound_ref_writes_nothing",
+          "test_f2p_second_deliver_does_not_duplicate_outbox"
+        ]
+      },
+      {
+        "id": "R_AUDIT_ALLOW_DENY",
+        "source": "instruction denied authz missing + contract Audit + log/platform-incident.log",
+        "coverage": "complete",
+        "tests": [
+          "test_f2p_audit_records_denied_push",
+          "test_f2p_audit_records_allowed_push",
+          "test_f2p_release_deny_audited"
+        ]
+      },
+      {
+        "id": "R_OUTBOX_SIGN_DISPATCH",
+        "source": "instruction outbox not enqueued + contract outbox signature/dispatch attempts + ops/webhooks.json",
+        "coverage": "partial",
+        "tests": [
+          "test_f2p_deliver_enqueues_outbox",
+          "test_f2p_dispatch_marks_outbox_attempt",
+          "test_f2p_second_deliver_does_not_duplicate_outbox"
+        ],
+        "note": "HMAC formula untested (Q4-B02); webhook_id phantom (Q4-B03); retry-max advisory (Q4-A02)"
+      }
+    ],
+    "PHANTOM_TEST_CONTRACTS": [
+      {
+        "id": "P_WEBHOOK_ID",
+        "tests": ["test_f2p_deliver_enqueues_outbox"],
+        "detail": "Requires outbox.webhook_id without a solver-visible outbox field schema naming webhook_id."
+      },
+      {
+        "id": "P_PRS_ITEMS_LAYOUT",
+        "tests": ["test_p2p_pr_store_written"],
+        "detail": "Requires prs.json items[str]/status/author layout without a documented PR store schema."
+      }
+    ],
+    "UNTESTED_REQUIREMENTS": [
+      {
+        "id": "U_REF_LEASE",
+        "requirement": "Protected destinations require exclusive ref lease under var/ref-leases.json for the merge window",
+        "finding": "Q4-B01"
+      },
+      {
+        "id": "U_OUTBOX_HMAC",
+        "requirement": "signature = hex HMAC-SHA256(event_id|pipeline|commit, webhook secret)",
+        "finding": "Q4-B02"
+      }
+    ],
+    "AMBIGUITIES": [
+      {
+        "id": "A_LEASE_BIND_SCOPE",
+        "detail": "Instruction bind phrase 'quorum/fast-forward merge' vs full Approvals and merge section including leases (Q4-A01)."
+      },
+      {
+        "id": "A_DISPATCH_MAX_ATTEMPTS",
+        "detail": "max attempts mentioned without value or graded failure path (Q4-A02)."
+      }
+    ],
+    "INSTRUCTION_SHAPE": "PASS",
+    "INSTRUCTION_REQUIREMENT_COMPLETENESS": "SUFFICIENT",
+    "DELEGATED_CONTRACT_CHECK": [
+      {
+        "doc": "environment/codecommit/docs/control-plane-contract.md",
+        "classification": "legitimate_technical_documentation",
+        "notes": "Explicitly bound protocol/schema for IAM, merge, deliver, audit, outbox. Not a repair map; does not relocate the engineering objective out of instruction.md."
+      },
+      {
+        "doc": "environment/codecommit/ops/handoff.md",
+        "classification": "legitimate_technical_documentation",
+        "notes": "Operator handoff/evidence supporting symptoms; not an acceptance checklist dump."
+      },
+      {
+        "doc": "environment/codecommit/log/platform-incident.log",
+        "classification": "legitimate_technical_documentation",
+        "notes": "Captured incident evidence for asserted current-state claims."
+      },
+      {
+        "doc": "environment/codecommit/log/authz.jsonl",
+        "classification": "legitimate_technical_documentation",
+        "notes": "Sample authorize rows supporting audit vocabulary."
+      },
+      {
+        "doc": "environment/codecommit/ops/*.json + policies/*.json",
+        "classification": "legitimate_technical_documentation",
+        "notes": "Evaluated policy/attachment/approval/pipeline/webhook/branch-protection configuration; ordinary inherited-system state."
+      }
+    ],
+    "INSTRUCTION_DOC_BOUNDARY": "CLEAN",
+    "IMPLEMENTATION_DIAGNOSIS_LEAKAGE": "NONE",
+    "CURRENT_STATE_EVIDENCE": "PASS",
+    "SPEC_DUMP_RISK": "LOW",
+    "BIDIRECTIONAL_ALIGNMENT": "FAIL",
+    "BLOCKING_FINDING_IDS": ["Q4-B01", "Q4-B02", "Q4-B03", "Q4-B04"],
+    "ADVISORY_FINDING_IDS": ["Q4-A01", "Q4-A02", "Q4-A03", "Q4-A04"],
+    "REVERSE_MATRIX": [
+      {
+        "behavior": "Clone/GitPull allowed; unknown principal UNKNOWN_PRINCIPAL",
+        "discoverable_from": "contract Identity + IAM + policies",
+        "tests": [
+          "test_p2p_clone_roundtrip",
+          "test_f2p_same_commit_clone_ok_after_denied_push",
+          "test_p2p_unknown_principal_denied"
+        ],
+        "status": "aligned"
+      },
+      {
+        "behavior": "Main GitPush MFA+office; feature StringEquals exact; Deny wins; * stays on sandbox resource",
+        "discoverable_from": "instruction symptoms + contract IAM + policy JSON",
+        "tests": [
+          "test_f2p_push_main_requires_mfa",
+          "test_f2p_push_main_mfa_wrong_ip_denied",
+          "test_p2p_push_main_mfa_office_allowed",
+          "test_p2p_push_dev_branch_without_mfa",
+          "test_f2p_branch_condition_is_exact",
+          "test_f2p_explicit_deny_beats_allow",
+          "test_f2p_star_action_stays_on_sandbox_resource",
+          "test_f2p_intern_cannot_push",
+          "test_f2p_absent_mfa_not_treated_as_true"
+        ],
+        "status": "aligned"
+      },
+      {
+        "behavior": "Quorum/pool/author/duplicate/missing-rule merge gates; approve once",
+        "discoverable_from": "instruction + contract Approvals + approval-rules.json",
+        "tests": [
+          "test_f2p_merge_requires_quorum",
+          "test_f2p_author_approval_does_not_count",
+          "test_f2p_duplicate_approval_does_not_count",
+          "test_f2p_outside_pool_approval_ignored",
+          "test_f2p_duplicate_approve_stored_once",
+          "test_f2p_no_approval_rule",
+          "test_f2p_required_quorum_from_config"
+        ],
+        "status": "aligned"
+      },
+      {
+        "behavior": "Fast-forward-only merge; dest tip equals source; not two-parent merge commit",
+        "discoverable_from": "instruction + contract FF rules",
+        "tests": [
+          "test_f2p_merge_is_fast_forward_only",
+          "test_f2p_merge_fast_forward_updates_dest",
+          "test_f2p_merge_commit_not_created_on_success"
+        ],
+        "status": "aligned"
+      },
+      {
+        "behavior": "CLI and HTTP merge enforce MergePullRequestByFastForward IAM (office IP / developer deny)",
+        "discoverable_from": "instruction HTTP weaker + contract HTTP merge same IAM",
+        "tests": [
+          "test_f2p_merge_requires_office_ip",
+          "test_f2p_cli_merge_requires_iam",
+          "test_f2p_http_api_merge_requires_iam"
+        ],
+        "status": "aligned"
+      },
+      {
+        "behavior": "Exactly-once deliver; event_id sha256; journal key order; unbound ref empty",
+        "discoverable_from": "instruction + contract Deliver and outbox",
+        "tests": [
+          "test_f2p_deliver_exactly_once",
+          "test_f2p_event_id_is_sha256_preimage",
+          "test_f2p_journal_key_order",
+          "test_p2p_deliver_unbound_ref_writes_nothing",
+          "test_f2p_second_deliver_does_not_duplicate_outbox"
+        ],
+        "status": "aligned"
+      },
+      {
+        "behavior": "Allow and deny authorize decisions append audit.jsonl",
+        "discoverable_from": "instruction + contract Audit + incident log",
+        "tests": [
+          "test_f2p_audit_records_denied_push",
+          "test_f2p_audit_records_allowed_push",
+          "test_f2p_release_deny_audited"
+        ],
+        "status": "aligned"
+      },
+      {
+        "behavior": "First deliver enqueues signed outbox; dispatch persists attempts/status; no duplicate outbox on redeiver",
+        "discoverable_from": "instruction + contract outbox/dispatch",
+        "tests": [
+          "test_f2p_deliver_enqueues_outbox",
+          "test_f2p_dispatch_marks_outbox_attempt",
+          "test_f2p_second_deliver_does_not_duplicate_outbox"
+        ],
+        "status": "partial_phantom",
+        "note": "signature formula untested; webhook_id phantom"
+      },
+      {
+        "behavior": "prs.json items/status/author after open PR",
+        "discoverable_from": "path only in contract; schema not published",
+        "tests": ["test_p2p_pr_store_written"],
+        "status": "phantom"
+      },
+      {
+        "behavior": "Protected destination exclusive ref lease for merge window",
+        "discoverable_from": "contract Approvals and merge + branch-protection.json",
+        "tests": [],
+        "status": "untested"
+      }
+    ],
+    "EXHAUSTIVENESS": {
+      "REQUIREMENTS_ENUMERATED": "COMPLETE",
+      "VERIFIER_BEHAVIORS_ENUMERATED": "COMPLETE",
+      "FORWARD_MATRIX_COMPLETE": "YES",
+      "REVERSE_MATRIX_COMPLETE": "YES",
+      "INSTRUCTION_COMPLETENESS_COMPLETE": "YES",
+      "DELEGATED_CONTRACTS_COMPLETE": "YES",
+      "PROMPT_EXTENSION_WALK_COMPLETE": "YES",
+      "P2P_BOUNDARIES_COMPLETE": "YES",
+      "F2P_BOUNDARIES_COMPLETE": "YES",
+      "OUTPUT_INTERFACES_COMPLETE": "YES",
+      "SECOND_PASS_OMISSION_SWEEP": "PASS",
+      "UNINSPECTED_SCOPE": []
+    }
+  }
+}

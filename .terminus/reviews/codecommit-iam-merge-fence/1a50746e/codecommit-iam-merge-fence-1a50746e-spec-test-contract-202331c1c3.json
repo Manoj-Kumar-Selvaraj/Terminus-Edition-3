@@ -1,0 +1,396 @@
+{
+  "schema_version": "3.0",
+  "role": "Spec-Test Contract Reviewer",
+  "review_id": "codecommit-iam-merge-fence-1a50746e-spec-test-contract-202331c1c3",
+  "task": "codecommit-iam-merge-fence",
+  "task_commit": "1a50746e78b686136af892892df89d26f4e01ab9",
+  "control_plane_commit": "88e17620d0a13530127d61849557ec01ecdb1687",
+  "protocol_policy_version": "2.2",
+  "prompt_policy_version": "2.2",
+  "role_policy_version": "1.1",
+  "role_contract_hash": "c860dfe8b8ed0a04c729e4d6a828741b206b7067a780863ec7b22ee09d02c5a0",
+  "context_packet": ".terminus/reviews/codecommit-iam-merge-fence/1a50746e/codecommit-iam-merge-fence-1a50746e-spec-test-contract-202331c1c3.packet.json",
+  "verdict": "REVISE",
+  "confidence": "HIGH",
+  "evidence_status": "SUFFICIENT",
+  "summary": "Bidirectional alignment fails. Core IAM, quorum, fast-forward, and exactly-once deliver behaviors are largely covered by the verifier and mostly grounded in instruction.md plus iam-git-contract.md, but three grading-relevant phantoms/ambiguities remain (deliver short-ref vs exact binding match; undocumented APPROVAL_QUORUM/NOT_FAST_FORWARD codes; undocumented push success JSON). Solver-visible lib sources also contain material `# Broken:` repair-map comments. Instruction shape is within limits and the delegated contract is mostly legitimate technical documentation; these defects still require REVISE before Quality Interlock can pass.",
+  "evidence": [
+    {
+      "type": "file",
+      "ref": "codecommit-iam-merge-fence/instruction.md@1a50746e78b686136af892892df89d26f4e01ab9",
+      "observation": "Two short paragraphs name paths, ccctl commands, IAM evaluation dimensions, Deny-wins, FF merge after pool quorum (author/repeat stamps excluded), bare repos/PR store/trigger journal exactly-once with contracted event_id, and preserve /app/codecommit."
+    },
+    {
+      "type": "file",
+      "ref": "codecommit-iam-merge-fence/environment/codecommit/docs/iam-git-contract.md@1a50746e78b686136af892892df89d26f4e01ab9",
+      "observation": "Delegated CLI/IAM/approval/pipeline/journal contract. Push documents refs/heads prefix normalization; deliver says exact (repo, ref) binding match and does not state the same normalization. Merge documents NO_APPROVAL_RULE but not APPROVAL_QUORUM/NOT_FAST_FORWARD. Push success JSON fields are not schematized; pr/approve/merge/deliver success shapes are."
+    },
+    {
+      "type": "file",
+      "ref": "codecommit-iam-merge-fence/environment/codecommit/ops/handoff.md@1a50746e78b686136af892892df89d26f4e01ab9",
+      "observation": "Shift note restates MFA-less push, merge-commit, and duplicate deliver symptoms and tells the solver not to invent a second allow list in the CLI."
+    },
+    {
+      "type": "test",
+      "ref": "codecommit-iam-merge-fence/tests/test_outputs.py@1a50746e78b686136af892892df89d26f4e01ab9",
+      "observation": "24 pytest behaviors: presence/clone P2P; MFA/IP/Deny/star-resource/intern/branch-exact F2P; quorum/author/duplicate/pool/FF/office-IP merge cases; deliver exactly-once (second call uses short main), event_id sha256, unbound ref; unknown principal; approve dedupe; PR store."
+    },
+    {
+      "type": "file",
+      "ref": "codecommit-iam-merge-fence/environment/codecommit/lib/cc/iam.py@1a50746e78b686136af892892df89d26f4e01ab9",
+      "observation": "Multiple `# Broken:` comments name skipped MFA/IP, ignored Deny, and Action * skipping resource matching."
+    },
+    {
+      "type": "file",
+      "ref": "codecommit-iam-merge-fence/environment/codecommit/lib/cc/prs.py@1a50746e78b686136af892892df89d26f4e01ab9",
+      "observation": "`# Broken:` comments diagnose duplicate/author vote counting; merge raises ValidationException/APPROVAL_QUORUM."
+    },
+    {
+      "type": "file",
+      "ref": "codecommit-iam-merge-fence/environment/codecommit/lib/cc/gitops.py@1a50746e78b686136af892892df89d26f4e01ab9",
+      "observation": "`# Broken:` comment on always creating merge commits; unused/correct path raises NOT_FAST_FORWARD."
+    },
+    {
+      "type": "file",
+      "ref": "codecommit-iam-merge-fence/environment/codecommit/lib/cc/trigger.py@1a50746e78b686136af892892df89d26f4e01ab9",
+      "observation": "`# Broken:` comment on random event_id and always-append; deliver calls full_ref before exact binding match."
+    },
+    {
+      "type": "file",
+      "ref": "codecommit-iam-merge-fence/environment/codecommit/lib/cc/cli.py@1a50746e78b686136af892892df89d26f4e01ab9",
+      "observation": "Push success JSON emits ok/repo/ref/commit; contract docs do not declare that schema."
+    },
+    {
+      "type": "rule",
+      "ref": ".terminus/agents/QUALITY_AGENT_PROMPTS.md#Q4",
+      "observation": "Any material phantom test, untested material requirement, grading-relevant ambiguity, or material implementation-diagnosis leakage requires REVISE; PASS needs an exhaustive walk with empty BLOCKING_FINDING_IDS."
+    }
+  ],
+  "findings": [
+    {
+      "id": "Q4-001",
+      "severity": "BLOCKER",
+      "status": "OBSERVED",
+      "criterion": "Solver-visible material must not reveal the repair plan or diagnose which modules/behaviors are incomplete or buggy.",
+      "evidence_refs": [
+        "codecommit-iam-merge-fence/environment/codecommit/lib/cc/iam.py",
+        "codecommit-iam-merge-fence/environment/codecommit/lib/cc/prs.py",
+        "codecommit-iam-merge-fence/environment/codecommit/lib/cc/gitops.py",
+        "codecommit-iam-merge-fence/environment/codecommit/lib/cc/trigger.py",
+        ".terminus/agents/INSTRUCTION_POLICY.md: Implementation-diagnosis boundary"
+      ],
+      "why_it_matters": "Comments such as `# Broken: MFA / bool conditions are skipped`, `# Broken: explicit Deny statements are ignored`, `# Broken: always create a merge commit`, and `# Broken: new event_id every call; always append` are a module-level defect map aligned with the F2P suite. That collapses specialized inference into following author annotations and violates the implementation-diagnosis boundary.",
+      "minimal_remediation": "Instruction Writer / environment owner: remove all `# Broken:` (and equivalent) diagnosis comments from solver-visible sources. Keep realistic partial/incorrect behavior without narrating which branch is wrong. Re-freeze and re-run Q4.",
+      "regression_risk": "Low if only comments are removed; do not weaken verifier assertions that currently catch those defects."
+    },
+    {
+      "id": "Q4-002",
+      "severity": "HIGH",
+      "status": "OBSERVED",
+      "criterion": "Every substantive verifier behavior must be discoverable from the solver-visible contract without hidden ref-normalization rules.",
+      "evidence_refs": [
+        "codecommit-iam-merge-fence/environment/codecommit/docs/iam-git-contract.md: deliver exact (repo, ref)",
+        "codecommit-iam-merge-fence/environment/codecommit/docs/iam-git-contract.md: push BRANCH prefix normalization",
+        "codecommit-iam-merge-fence/tests/test_outputs.py: test_f2p_deliver_exactly_once"
+      ],
+      "why_it_matters": "Push explicitly normalizes optional `refs/heads/` prefixes. Deliver is specified as exact `(repo, ref)` binding match with no normalization clause. The exactly-once test issues a first deliver with `refs/heads/main` and a second with short `main`, requiring duplicate=true, one journal line, and identical event_id. A contract-faithful exact matcher would treat `main` as unbound and fail the grader.",
+      "minimal_remediation": "Q3: state that deliver normalizes REF like push before binding lookup and event_id preimage. Or Q2: use only full refs in the duplicate deliver case. Do not leave the asymmetry.",
+      "regression_risk": "Low if the public contract and test agree on one normalization rule."
+    },
+    {
+      "id": "Q4-003",
+      "severity": "HIGH",
+      "status": "OBSERVED",
+      "criterion": "Graded failure codes must be part of the solver-visible contract when tests assert exact `code` values.",
+      "evidence_refs": [
+        "codecommit-iam-merge-fence/environment/codecommit/docs/iam-git-contract.md: NO_APPROVAL_RULE / AccessDenied / UNKNOWN_PRINCIPAL",
+        "codecommit-iam-merge-fence/tests/test_outputs.py: test_p2p_merge_requires_quorum",
+        "codecommit-iam-merge-fence/tests/test_outputs.py: test_f2p_merge_is_fast_forward_only"
+      ],
+      "why_it_matters": "Multiple merge F2P/P2P cases require `code == APPROVAL_QUORUM` or `NOT_FAST_FORWARD`. The contract documents `NO_APPROVAL_RULE` and generic AccessDenied for IAM deny, but never names those two codes. A correct behavioral fix that returns a different ValidationException code fails grading.",
+      "minimal_remediation": "Q3: add the graded merge failure envelopes to iam-git-contract.md (and keep instruction pointing at that contract). Alternatively Q2: assert only non-zero exit / ValidationException without exact private codes if codes are not meant to be public.",
+      "regression_risk": "Low when documenting codes the starter already emits; medium if tests are loosened and lose precise failure-class discrimination."
+    },
+    {
+      "id": "Q4-004",
+      "severity": "HIGH",
+      "status": "OBSERVED",
+      "criterion": "Stable graded output schemas for public commands must be stated in solver-visible material.",
+      "evidence_refs": [
+        "codecommit-iam-merge-fence/environment/codecommit/docs/iam-git-contract.md: Commands success JSON",
+        "codecommit-iam-merge-fence/tests/test_outputs.py: test_p2p_push_main_mfa_office_allowed",
+        "codecommit-iam-merge-fence/environment/codecommit/lib/cc/cli.py: push _out payload"
+      ],
+      "why_it_matters": "The contract schematizes pr/approve/merge/deliver success objects but only says push prints one JSON object. Tests require `ok`, `ref == refs/heads/main`, and a commit string length >= 7. That is a phantom structured-output contract relative to the written spec.",
+      "minimal_remediation": "Q3/Q1: document push success JSON (`ok`, `repo`, `ref`, `commit`) in the contract (or instruction). Or Q2: stop asserting unspecified push fields beyond exit status / git observable state.",
+      "regression_risk": "Low if schema matches the existing CLI; avoid over-specifying incidental formatting."
+    },
+    {
+      "id": "Q4-005",
+      "severity": "MEDIUM",
+      "status": "OBSERVED",
+      "criterion": "Handoff/docs should not steer the repair mechanism beyond normal operational guidance.",
+      "evidence_refs": [
+        "codecommit-iam-merge-fence/environment/codecommit/ops/handoff.md",
+        ".terminus/agents/INSTRUCTION_POLICY.md: Implementation-diagnosis boundary"
+      ],
+      "why_it_matters": "The shift note's 'do not invent a second allow list inside the CLI' tells the solver where not to put the fix and reinforces a specific architecture. Combined with the `# Broken:` map this is additional repair steering; alone it is milder than Q4-001 but still grading-relevant guidance.",
+      "minimal_remediation": "Instruction Writer: rephrase handoff to incident symptoms and point at policies/attachments as the evaluated source of truth without CLI-implementation prohibitions.",
+      "regression_risk": "Low."
+    },
+    {
+      "id": "Q4-006",
+      "severity": "LOW",
+      "status": "OBSERVED",
+      "criterion": "Documented contract details should be tested when claimed as part of the public interface, or marked non-graded.",
+      "evidence_refs": [
+        "codecommit-iam-merge-fence/environment/codecommit/docs/iam-git-contract.md: approve approvals sorted",
+        "codecommit-iam-merge-fence/environment/codecommit/docs/iam-git-contract.md: NO_APPROVAL_RULE",
+        "codecommit-iam-merge-fence/tests/test_outputs.py"
+      ],
+      "why_it_matters": "Approve response ordering and merge with no matching approval rule are stated in the contract but have no verifier assertions. Not currently pass/fail decisive for the shipped configs, so advisory only.",
+      "minimal_remediation": "Q2: add thin behavioral cases, or Q3: demote those clauses to non-normative notes if they are not graded.",
+      "regression_risk": "Low."
+    },
+    {
+      "id": "Q4-007",
+      "severity": "LOW",
+      "status": "OBSERVED",
+      "criterion": "P2P/F2P assertions should match the behavior they claim to prove.",
+      "evidence_refs": [
+        "codecommit-iam-merge-fence/tests/test_outputs.py: test_f2p_same_commit_clone_ok_after_denied_push",
+        "codecommit-iam-merge-fence/instruction.md: Same object clones symptom"
+      ],
+      "why_it_matters": "The docstring claims GitPull remains allowed for a commit whose main push was denied, but the denied commit never lands on the remote; the test only shows another principal can still clone the prior main tip. Coverage of GitPull allow is real but the 'same object' framing is overstated and weakly tied to the incident wording.",
+      "minimal_remediation": "Q2: either pull/fetch the specific denied object OID through a public path that exercises object-level availability, or rewrite the test docstring/scenario to the actual property (clone/pull still allowed after a denied push attempt).",
+      "regression_risk": "Low."
+    }
+  ],
+  "missing_evidence": [],
+  "change_scope": [
+    "environment/codecommit/lib/cc/*.py diagnosis comments",
+    "environment/codecommit/docs/iam-git-contract.md (deliver normalization; merge failure codes; push JSON schema)",
+    "environment/codecommit/ops/handoff.md repair-steering sentence",
+    "tests/test_outputs.py only if choosing verifier-side phantom removal instead of contract clarification"
+  ],
+  "do_not_change": [
+    "Legitimate IAM condition composition, Deny-wins, quorum/pool/author/dedupe, fast-forward-only merge, and exactly-once journal/event_id behavioral assertions",
+    "Policy JSON / principals / approval-rules / pipelines as the evaluated configuration surface",
+    "solution/ oracle logic except as needed after contract clarification",
+    "Do not widen instruction into a one-bullet-per-test rubric while closing gaps"
+  ],
+  "next_gate": "Instruction Writer removes `# Broken:` diagnosis comments and softens handoff repair steering; Q3 documents deliver ref normalization, graded merge error codes, and push success JSON (or Q2 drops those phantom assertions); then re-freeze and re-run Q4.",
+  "role_output": {
+    "REQUIREMENT_TEST_MATRIX": [
+      {
+        "requirement": "REQ-01 Drive public ccctl for clone/push/pr/approve/merge/deliver; preserve /app/codecommit tree",
+        "tests": [
+          "test_p2p_ccctl_and_contract_present",
+          "test_p2p_clone_roundtrip",
+          "test_p2p_pr_store_written",
+          "operator flows in remaining tests"
+        ],
+        "coverage": "COMPLETE"
+      },
+      {
+        "requirement": "REQ-02 IAM evaluates principal, action, resource ARN, StringEquals References, MFA Bool, and IpAddress together; default deny",
+        "tests": [
+          "test_f2p_push_main_requires_mfa",
+          "test_f2p_push_main_mfa_wrong_ip_denied",
+          "test_p2p_push_main_mfa_office_allowed",
+          "test_p2p_push_dev_branch_without_mfa",
+          "test_f2p_branch_condition_is_exact",
+          "test_f2p_merge_requires_office_ip"
+        ],
+        "coverage": "COMPLETE"
+      },
+      {
+        "requirement": "REQ-03 Explicit Deny wins over Allow",
+        "tests": [
+          "test_f2p_explicit_deny_beats_allow"
+        ],
+        "coverage": "COMPLETE"
+      },
+      {
+        "requirement": "REQ-04 Action * / sandbox resource does not grant ledger MergePullRequestByFastForward",
+        "tests": [
+          "test_f2p_star_action_stays_on_sandbox_resource"
+        ],
+        "coverage": "COMPLETE"
+      },
+      {
+        "requirement": "REQ-05 pull-only principals cannot GitPush; unknown principal fails closed",
+        "tests": [
+          "test_f2p_intern_cannot_push",
+          "test_p2p_unknown_principal_denied"
+        ],
+        "coverage": "COMPLETE"
+      },
+      {
+        "requirement": "REQ-06 Merge only after distinct pool quorum excluding author and repeat stamps; outside-pool ignored",
+        "tests": [
+          "test_p2p_merge_requires_quorum",
+          "test_f2p_author_approval_does_not_count",
+          "test_f2p_duplicate_approval_does_not_count",
+          "test_f2p_outside_pool_approval_ignored",
+          "test_f2p_duplicate_approve_stored_once"
+        ],
+        "coverage": "COMPLETE"
+      },
+      {
+        "requirement": "REQ-07 Fast-forward-only merge: dest ancestor of source; dest updated to source commit; no merge commit",
+        "tests": [
+          "test_f2p_merge_is_fast_forward_only",
+          "test_f2p_merge_fast_forward_updates_dest"
+        ],
+        "coverage": "COMPLETE"
+      },
+      {
+        "requirement": "REQ-08 Trigger journal exactly once per repo/ref/commit/pipeline; event_id sha256(repo|ref|commit|pipeline); key order; unbound writes nothing",
+        "tests": [
+          "test_f2p_deliver_exactly_once",
+          "test_f2p_event_id_is_sha256_preimage",
+          "test_p2p_deliver_unbound_ref_writes_nothing"
+        ],
+        "coverage": "COMPLETE"
+      },
+      {
+        "requirement": "REQ-09 Bare repos under var/repos; PR state under var/prs.json",
+        "tests": [
+          "test_p2p_pr_store_written",
+          "home fixture bare ledger.git paths used throughout"
+        ],
+        "coverage": "COMPLETE"
+      },
+      {
+        "requirement": "REQ-10 Push success JSON fields ok/ref/commit",
+        "tests": [
+          "test_p2p_push_main_mfa_office_allowed"
+        ],
+        "coverage": "PHANTOM_RELATIVE_TO_WRITTEN_CONTRACT"
+      },
+      {
+        "requirement": "REQ-11 Deliver short-ref alias equals full ref for bindings/dedupe/event_id",
+        "tests": [
+          "test_f2p_deliver_exactly_once"
+        ],
+        "coverage": "PHANTOM_OR_AMBIGUOUS_VS_EXACT_MATCH_TEXT"
+      },
+      {
+        "requirement": "REQ-12 Exact merge failure codes APPROVAL_QUORUM and NOT_FAST_FORWARD",
+        "tests": [
+          "test_p2p_merge_requires_quorum",
+          "test_f2p_author_approval_does_not_count",
+          "test_f2p_duplicate_approval_does_not_count",
+          "test_f2p_outside_pool_approval_ignored",
+          "test_f2p_merge_is_fast_forward_only"
+        ],
+        "coverage": "PHANTOM_RELATIVE_TO_WRITTEN_CONTRACT"
+      },
+      {
+        "requirement": "REQ-13 Approve approvals list sorted; NO_APPROVAL_RULE when no rule matches",
+        "tests": [],
+        "coverage": "ABSENT"
+      }
+    ],
+    "PHANTOM_TEST_CONTRACTS": [
+      {
+        "test_behavior": "Second deliver with short `main` treated as duplicate of `refs/heads/main` with same event_id and single journal line.",
+        "reason": "Contract specifies exact (repo, ref) binding match for deliver and only documents optional prefix normalization for push.",
+        "finding": "Q4-002"
+      },
+      {
+        "test_behavior": "Merge failures must emit code APPROVAL_QUORUM or NOT_FAST_FORWARD.",
+        "reason": "Those codes are asserted by pytest but not named in iam-git-contract.md (unlike NO_APPROVAL_RULE / UNKNOWN_PRINCIPAL).",
+        "finding": "Q4-003"
+      },
+      {
+        "test_behavior": "Successful push JSON must include ok/ref/commit with full ref and commit length >= 7.",
+        "reason": "Push success schema is not stated in the solver-visible contract though other commands' schemas are.",
+        "finding": "Q4-004"
+      }
+    ],
+    "UNTESTED_REQUIREMENTS": [
+      {
+        "requirement": "Approve prints approvals sorted.",
+        "coverage": "NONE",
+        "finding": "Q4-006"
+      },
+      {
+        "requirement": "Merge fails with NO_APPROVAL_RULE when no destination rule matches.",
+        "coverage": "NONE (starter implements; shipped rules always match ledger/main)",
+        "finding": "Q4-006"
+      },
+      {
+        "requirement": "Clone refuses an existing DEST path.",
+        "coverage": "NONE",
+        "finding": "Q4-006"
+      }
+    ],
+    "AMBIGUITIES": [
+      {
+        "topic": "deliver REF normalization vs exact binding match",
+        "why_grading_relevant": "Changes whether short `main` is unbound or a duplicate of refs/heads/main.",
+        "finding": "Q4-002"
+      },
+      {
+        "topic": "Required merge ValidationException codes",
+        "why_grading_relevant": "Exact code strings are pass/fail without being published in the contract.",
+        "finding": "Q4-003"
+      }
+    ],
+    "INSTRUCTION_SHAPE": "PASS",
+    "INSTRUCTION_REQUIREMENT_COMPLETENESS": "SUFFICIENT",
+    "DELEGATED_CONTRACT_CHECK": {
+      "status": "PASS_WITH_GAPS",
+      "details": "instruction.md correctly delegates detailed CLI/IAM/approval/pipeline/journal semantics to /app/codecommit/docs/iam-git-contract.md, which is largely legitimate protocol/API documentation. Gaps: missing deliver normalization parity with push, missing graded merge error codes, missing push success schema. handoff.md is a normal shift note but includes mild CLI repair steering."
+    },
+    "INSTRUCTION_DOC_BOUNDARY": "LEAKY",
+    "IMPLEMENTATION_DIAGNOSIS_LEAKAGE": "MATERIAL",
+    "CURRENT_STATE_EVIDENCE": "PASS",
+    "SPEC_DUMP_RISK": "LOW",
+    "BIDIRECTIONAL_ALIGNMENT": "FAIL",
+    "F2P_BOUNDARY_ASSESSMENT": {
+      "status": "GENERALLY_APPROPRIATE",
+      "notes": "Named F2P cases target MFA/IP/Deny/star-resource/quorum/author/dedupe/pool/FF/office-IP/exactly-once/event_id defects matching the incident. Ownership is behavioral via ccctl, not source greps. One F2P docstring overclaims same-object pull (Q4-007)."
+    },
+    "P2P_BOUNDARY_ASSESSMENT": {
+      "status": "GENERALLY_APPROPRIATE",
+      "notes": "Presence, happy-path MFA+office push, feature-branch push, clone, unbound deliver, unknown principal, and PR store preservation are coherent. test_p2p_merge_requires_quorum is named P2P but asserts the quorum fence failure mode (still legitimate behavioral coverage)."
+    },
+    "OUTPUT_INTERFACE_ASSESSMENT": {
+      "status": "GAPS",
+      "notes": "Journal key order, deliver duplicate flags, merge/pr/approve success shapes, and UNKNOWN_PRINCIPAL are contracted. Push success JSON and two merge failure codes are graded without matching written schema."
+    },
+    "BLOCKING_FINDING_IDS": [
+      "Q4-001",
+      "Q4-002",
+      "Q4-003",
+      "Q4-004",
+      "Q4-005"
+    ],
+    "ADVISORY_FINDING_IDS": [
+      "Q4-006",
+      "Q4-007"
+    ],
+    "EXHAUSTIVENESS": {
+      "REQUIREMENTS_ENUMERATED": "COMPLETE",
+      "VERIFIER_BEHAVIORS_ENUMERATED": "COMPLETE",
+      "FORWARD_MATRIX_COMPLETE": "YES",
+      "REVERSE_MATRIX_COMPLETE": "YES",
+      "INSTRUCTION_COMPLETENESS_COMPLETE": "YES",
+      "DELEGATED_CONTRACTS_COMPLETE": "YES",
+      "PROMPT_EXTENSION_WALK_COMPLETE": "YES",
+      "P2P_BOUNDARIES_COMPLETE": "YES",
+      "F2P_BOUNDARIES_COMPLETE": "YES",
+      "OUTPUT_INTERFACES_COMPLETE": "YES",
+      "SECOND_PASS_OMISSION_SWEEP": "PASS",
+      "UNINSPECTED_SCOPE": []
+    },
+    "SECOND_PASS_OMISSION_NOTES": [
+      "Re-checked all 24 test functions against instruction + iam-git-contract + ops configs.",
+      "Re-checked contract SHALL-like clauses for sorted approvals, NO_APPROVAL_RULE, DEST-must-not-exist, Resource suffix wildcards, and codecommit:* synonym — only sorted/NO_APPROVAL_RULE/DEST called out as advisory untested.",
+      "Confirmed no reliance on excluded Q1/Q2/Q3 conclusions or prior Q4."
+    ]
+  }
+}

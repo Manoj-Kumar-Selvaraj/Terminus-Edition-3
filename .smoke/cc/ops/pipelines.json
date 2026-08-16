@@ -1,0 +1,32 @@
+{
+  "bindings": [
+    {
+      "pipeline": "settle-prod",
+      "repo": "ledger",
+      "ref": "refs/heads/main",
+      "enabled": true,
+      "description": "Settlement production release train."
+    },
+    {
+      "pipeline": "settle-canary",
+      "repo": "ledger",
+      "ref": "refs/heads/release",
+      "enabled": true,
+      "description": "Canary rehearsal for the release branch."
+    },
+    {
+      "pipeline": "ledger-docs",
+      "repo": "ledger",
+      "ref": "refs/heads/main",
+      "enabled": false,
+      "description": "Doc site publisher, parked since the ledger split."
+    },
+    {
+      "pipeline": "sandbox-smoke",
+      "repo": "sandbox",
+      "ref": "refs/heads/main",
+      "enabled": true,
+      "description": "Bench smoke suite."
+    }
+  ]
+}

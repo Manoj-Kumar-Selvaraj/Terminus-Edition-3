@@ -1,0 +1,44 @@
+{
+  "endpoints": [
+    {
+      "endpoint": "settle-notify",
+      "url": "https://hooks.settle.internal/codecommit",
+      "pipelines": ["settle-prod", "settle-canary"],
+      "max_attempts": 3,
+      "backoff_base_ticks": 2,
+      "reject_until_attempt": 0,
+      "enabled": true,
+      "sink": "var/sinks/settle-notify.jsonl"
+    },
+    {
+      "endpoint": "audit-mirror",
+      "url": "https://hooks.security.internal/mirror",
+      "pipelines": ["settle-prod"],
+      "max_attempts": 2,
+      "backoff_base_ticks": 1,
+      "reject_until_attempt": 5,
+      "enabled": true,
+      "sink": "var/sinks/audit-mirror.jsonl"
+    },
+    {
+      "endpoint": "legacy-bridge",
+      "url": "https://hooks.legacy.internal/bridge",
+      "pipelines": ["settle-prod", "sandbox-smoke"],
+      "max_attempts": 4,
+      "backoff_base_ticks": 3,
+      "reject_until_attempt": 1,
+      "enabled": false,
+      "sink": "var/sinks/legacy-bridge.jsonl"
+    },
+    {
+      "endpoint": "bench-log",
+      "url": "https://hooks.bench.internal/log",
+      "pipelines": ["sandbox-smoke"],
+      "max_attempts": 2,
+      "backoff_base_ticks": 4,
+      "reject_until_attempt": 1,
+      "enabled": true,
+      "sink": "var/sinks/bench-log.jsonl"
+    }
+  ]
+}

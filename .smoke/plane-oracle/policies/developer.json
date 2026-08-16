@@ -1,0 +1,54 @@
+{
+  "PolicyId": "developer",
+  "Version": "2012-10-17",
+  "Description": "Baseline settlement developer access to the ledger and sandbox repositories.",
+  "Statement": [
+    {
+      "Sid": "ReadProjectRepositories",
+      "Effect": "Allow",
+      "Action": [
+        "codecommit:GitPull",
+        "codecommit:GetRepository",
+        "codecommit:CreatePullRequest"
+      ],
+      "Resource": [
+        "arn:aws:codecommit:eu-west-1:000000000000:ledger",
+        "arn:aws:codecommit:eu-west-1:000000000000:sandbox"
+      ]
+    },
+    {
+      "Sid": "MainlinePushNeedsMfaFromOffice",
+      "Effect": "Allow",
+      "Action": "codecommit:GitPush",
+      "Resource": "arn:aws:codecommit:eu-west-1:000000000000:ledger",
+      "Condition": {
+        "StringEquals": {
+          "codecommit:References": [
+            "refs/heads/main",
+            "refs/heads/release"
+          ]
+        },
+        "Bool": {
+          "aws:MultiFactorAuthPresent": "true"
+        },
+        "IpAddress": {
+          "aws:SourceIp": ["10.8.0.0/16"]
+        }
+      }
+    },
+    {
+      "Sid": "ReleaseBranchIsOffLimitsForDevelopers",
+      "Effect": "Deny",
+      "Action": [
+        "codecommit:GitPush",
+        "codecommit:MergePullRequestByFastForward"
+      ],
+      "Resource": "*",
+      "Condition": {
+        "StringEquals": {
+          "codecommit:References": "refs/heads/release"
+        }
+      }
+    }
+  ]
+}

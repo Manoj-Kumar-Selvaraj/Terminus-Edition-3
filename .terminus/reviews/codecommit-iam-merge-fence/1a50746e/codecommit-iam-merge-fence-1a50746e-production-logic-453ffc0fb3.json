@@ -1,0 +1,201 @@
+{
+  "schema_version": "3.0",
+  "role": "Production Logic Auditor",
+  "review_id": "codecommit-iam-merge-fence-1a50746e-production-logic-453ffc0fb3",
+  "task": "codecommit-iam-merge-fence",
+  "task_commit": "1a50746e78b686136af892892df89d26f4e01ab9",
+  "control_plane_commit": "88e17620d0a13530127d61849557ec01ecdb1687",
+  "protocol_policy_version": "2.2",
+  "prompt_policy_version": "2.2",
+  "role_policy_version": "1.1",
+  "role_contract_hash": "ee7d1cfd6e19fcc0e831cc75829457593d7410613c3b3fb811aef925e85a1607",
+  "review_scope_hash": "681dd440da7cb4def11115003f01a85fe08e9d2e86a7975ce39d2bdedd7c8702",
+  "context_packet": ".terminus/reviews/codecommit-iam-merge-fence/1a50746e/codecommit-iam-merge-fence-1a50746e-production-logic-453ffc0fb3.packet.json",
+  "verdict": "PASS",
+  "confidence": "HIGH",
+  "evidence_status": "SUFFICIENT",
+  "summary": "Independent Q6 inspection of the solver-visible CodeCommit lab finds a compact but non-toy, reachable, and coupled control plane rather than LOC/module padding. Operator entrypoint bin/ccctl reaches IAM authorization, bare-git operations, PR approval quorum, and pipeline trigger journaling through distinct modules that share principal/policy, PR, and ref state. Cross-plane invariants create real partial-fix traps. Substantive reachable Python/runtime/config volume is far below the large_system_strict 3,000-LOC floor, which is expected for the recorded non-strict large_system profile; depth is medium but credible for an IAM+merge-fence AppSec work package, with low padding risk.",
+  "evidence": [
+    {
+      "type": "rule",
+      "ref": ".terminus/agents/QUALITY_AGENT_REGISTRY.md",
+      "observation": "Q6 requires independent judgment of reachability, material branching/state/error handling, subsystem diversity, cross-component interactions, removal impact, and padding risk; raw LOC or Complexity Governor PASS is not sufficient. The 3,000-LOC floor applies to large_system_strict, not as an automatic non-strict PASS waiver."
+    },
+    {
+      "type": "rule",
+      "ref": ".terminus/agents/QUALITY_AGENT_PROMPTS.md",
+      "observation": "Q6 method requires tracing entrypoints, module reachability, distinct responsibilities, clone/wrapper/padding checks, cross-module invariants, a ~25% removal test, and data/state consumption versus logic."
+    },
+    {
+      "type": "rule",
+      "ref": ".terminus/agents/PRODUCTION_AUTHENTICITY.md",
+      "observation": "Production authenticity is structural/operational: differentiated reachable modules, real entrypoints, state/error handling, configuration workflows, and coupling. Raw LOC does not substitute; removing most code while preserving behavior indicates non-substantive scale."
+    },
+    {
+      "type": "file",
+      "ref": "codecommit-iam-merge-fence/task.toml@1a50746e78b686136af892892df89d26f4e01ab9",
+      "observation": "Task declares Security/AppSec, python+bash, artifacts [/app/codecommit], separate verifier, public network, workdir /app/codecommit. No claim inside task.toml that the environment meets large_system_strict LOC floors."
+    },
+    {
+      "type": "file",
+      "ref": "codecommit-iam-merge-fence/environment/codecommit/bin/ccctl@1a50746e78b686136af892892df89d26f4e01ab9",
+      "observation": "Normal operator entrypoint inserts lib on sys.path and invokes cc.cli.main; this is a real solver-visible command path, not a test-only stub."
+    },
+    {
+      "type": "file",
+      "ref": "codecommit-iam-merge-fence/environment/codecommit/lib/cc/cli.py@1a50746e78b686136af892892df89d26f4e01ab9",
+      "observation": "CLI exposes clone, push, pr, approve, merge, and deliver under --principal/--mfa/--source-ip. Git-affecting commands call authorize before gitops/prs; merge loads PR dest then authorizes MergePullRequestByFastForward; deliver delegates to trigger.deliver. Errors surface as structured CcError JSON on stderr."
+    },
+    {
+      "type": "file",
+      "ref": "codecommit-iam-merge-fence/environment/codecommit/lib/cc/iam.py@1a50746e78b686136af892892df89d26f4e01ab9",
+      "observation": "IAM evaluator loads principal attachments and policy Statement arrays, matching Action/Resource/Condition with StringEquals/Bool/IpAddress operators and an Allow-only loop that skips Deny. Branching is multi-path policy evaluation rather than a constant allow shell; several broken behaviors (prefix action match, skipped Bool/IpAddress, * skipping Resource, ignored Deny) are reachable through authorize()."
+    },
+    {
+      "type": "file",
+      "ref": "codecommit-iam-merge-fence/environment/codecommit/lib/cc/gitops.py@1a50746e78b686136af892892df89d26f4e01ab9",
+      "observation": "Bare-repo git integration for ensure/clone/push/ref_commit/is_ancestor plus merge_ff (currently always --no-ff merge commit) and update_ff (ancestor-gated update-ref). Live git subprocesses and ref state are part of the operator workflow, not mock constants."
+    },
+    {
+      "type": "file",
+      "ref": "codecommit-iam-merge-fence/environment/codecommit/lib/cc/prs.py@1a50746e78b686136af892892df89d26f4e01ab9",
+      "observation": "Persistent PR store (create/get/approve/merge) couples approval-rules.json quorum checks to gitops.merge_ff. Broken quorum counts author/duplicates; merge persists status and merged_commit. Distinct from IAM and trigger modules."
+    },
+    {
+      "type": "file",
+      "ref": "codecommit-iam-merge-fence/environment/codecommit/lib/cc/trigger.py@1a50746e78b686136af892892df89d26f4e01ab9",
+      "observation": "Pipeline deliver path reads ops/pipelines.json bindings, resolves current ref tip via gitops.ref_commit, and appends triggers.jsonl rows. Current implementation always minting new event_id and always appending is thin but reachable and stateful, not dead code."
+    },
+    {
+      "type": "file",
+      "ref": "codecommit-iam-merge-fence/environment/codecommit/lib/cc/home.py@1a50746e78b686136af892892df89d26f4e01ab9",
+      "observation": "Shared path/config boundary for CC_ROOT, principals, approval rules, pipeline bindings, policy documents, bare repos, PR store, and trigger journal; all major modules depend on this layout."
+    },
+    {
+      "type": "file",
+      "ref": "codecommit-iam-merge-fence/environment/codecommit/policies/developer.json@1a50746e78b686136af892892df89d26f4e01ab9",
+      "observation": "Policy documents encode interacting Allow/Deny statements with MFA, SourceIp, and References conditions (including conflicting release push Allow+Deny). These are consumed by iam.authorize rather than decorative unused JSON."
+    },
+    {
+      "type": "file",
+      "ref": "codecommit-iam-merge-fence/environment/codecommit/ops/principals.json@1a50746e78b686136af892892df89d26f4e01ab9",
+      "observation": "Seven principals with differentiated policy attachments (developer/sandbox/alice-dev/ben-dev/reviewer/pipeline/pull-only) drive catalog lookups used by authorize and approval pool membership."
+    },
+    {
+      "type": "file",
+      "ref": "codecommit-iam-merge-fence/environment/codecommit/ops/approval-rules.json@1a50746e78b686136af892892df89d26f4e01ab9",
+      "observation": "Ledger main destination requires two approvals from rev-a/b/c pool; consumed by prs._quorum_ok during merge."
+    },
+    {
+      "type": "file",
+      "ref": "codecommit-iam-merge-fence/environment/codecommit/ops/pipelines.json@1a50746e78b686136af892892df89d26f4e01ab9",
+      "observation": "settle-prod binding for ledger refs/heads/main is the sole deliver target; trigger behavior is configuration-driven."
+    },
+    {
+      "type": "file",
+      "ref": "codecommit-iam-merge-fence/environment/codecommit/ops/handoff.md@1a50746e78b686136af892892df89d26f4e01ab9",
+      "observation": "Incident handoff describes MFA-less main push, merge-commit on moved main, and duplicate deliver on the same head, aligning with broken paths in iam/gitops/prs/trigger and with authz.jsonl notes."
+    },
+    {
+      "type": "file",
+      "ref": "codecommit-iam-merge-fence/environment/codecommit/log/authz.jsonl@1a50746e78b686136af892892df89d26f4e01ab9",
+      "observation": "Representative authz/incident lines record unexpected Alice push allow, merge-commit note, and duplicate settle-prod deliver appends; evidence is small but domain-relevant rather than opaque filler volume."
+    },
+    {
+      "type": "file",
+      "ref": "codecommit-iam-merge-fence/environment/Dockerfile@1a50746e78b686136af892892df89d26f4e01ab9",
+      "observation": "Image installs git/tmux/asciinema, copies the codecommit tree, seeds ledger via lib/cc/seed.py at build time, and exposes /app/codecommit as the runtime workdir."
+    },
+    {
+      "type": "file",
+      "ref": ".terminus/designs/codecommit-iam-merge-fence-production.json",
+      "observation": "Runtime-authenticity design notes stateful dataset as bare repos plus prs.json/triggers.jsonl with small record bounds (1–20), matching the inspected seeded git/control-plane state rather than a padded business-record corpus. Used as factual architecture evidence only, not as a copied authenticity verdict."
+    },
+    {
+      "type": "run",
+      "ref": "local LOC inventory of environment/ at task_commit 1a50746e",
+      "observation": "Independent count: roughly 444 non-blank-ish Python lines under lib/cc plus policies/ops/docs/Dockerfile totaling about 721 environment lines. No generated/vendor trees, duplicated module templates, or large unreachable packages were present."
+    }
+  ],
+  "findings": [
+    {
+      "id": "Q6-1",
+      "severity": "LOW",
+      "status": "OBSERVED",
+      "criterion": "reachable substantive runtime without dead/unreferenced helpers",
+      "evidence_refs": [
+        "codecommit-iam-merge-fence/environment/codecommit/lib/cc/gitops.py@1a50746e78b686136af892892df89d26f4e01ab9",
+        "codecommit-iam-merge-fence/environment/codecommit/lib/cc/prs.py@1a50746e78b686136af892892df89d26f4e01ab9"
+      ],
+      "why_it_matters": "update_ff implements the ancestor-gated fast-forward ref update but starter merge currently only calls merge_ff, so a correct helper sits unused beside the broken path. This is a small unused surface, not scale padding.",
+      "minimal_remediation": "Optional: wire merge through update_ff once repaired, or leave as the obvious repair target; not required for Q6 PASS under non-strict profile.",
+      "regression_risk": "Low; changing call wiring must preserve FF semantics and IAM gating."
+    }
+  ],
+  "missing_evidence": [],
+  "change_scope": [],
+  "do_not_change": [
+    "Do not alter solver-visible production/runtime/configuration surfaces on the strength of this Q6 PASS; such a change would stale review_scope_hash.",
+    "Do not use this Q6 result as evidence for Q4 spec-test alignment or any later acceptance role.",
+    "Do not treat Complexity Governor or production-authenticity validator PASS as the basis for this Q6 verdict.",
+    "Do not inflate LOC or add unused modules solely to approach large_system_strict floors; this task is assessed under non-strict large_system expectations."
+  ],
+  "next_gate": "Q6 is satisfied for task commit 1a50746e78b686136af892892df89d26f4e01ab9 with review_scope_hash 681dd440da7cb4def11115003f01a85fe08e9d2e86a7975ce39d2bdedd7c8702. Quality Interlock aggregation may proceed only if the independently executed Q4 review also returns a current PASS with sufficient evidence and other interlock prerequisites remain current.",
+  "role_output": {
+    "CORE_LOGIC_DEPTH": "MEDIUM",
+    "RUNTIME_REACHABILITY": "HIGH",
+    "MODULE_DIVERSITY": "MEDIUM",
+    "CROSS_COMPONENT_COUPLING": "HIGH",
+    "TOY_LOGIC_RISK": "LOW",
+    "PADDING_RISK": "LOW",
+    "SUBSTANTIVE_LOC_ASSESSMENT": "Independent inventory finds roughly ~450 substantive reachable Python LOC in lib/cc plus small but consumed IAM policy/ops configuration, totaling well under the large_system_strict >=3,000 floor. Under the non-strict large_system profile that floor is diagnostic rather than a hard Q6 FAIL. The code that exists is almost entirely reachable from ccctl or image seed; there is no duplicated thick template, vendor tree, comment-only bulk, or micro-module inflation. Depth is medium and concentrated in IAM evaluation, git ref mutation, PR quorum, and trigger journaling rather than thin constant-output shells.",
+    "MAJOR_MODULES": [
+      {
+        "module": "bin/ccctl + cc.cli",
+        "responsibility": "Operator workflow surface and principal/MFA/IP context binding.",
+        "reachability": "Direct normal entrypoint for all scored operations.",
+        "state_error_behavior": "Dispatches to authorize/gitops/prs/trigger; maps CcError and unexpected exceptions to JSON stderr exit 1."
+      },
+      {
+        "module": "cc.iam + policies/*.json + ops/principals.json",
+        "responsibility": "Identity-and-access evaluation over attached policy documents.",
+        "reachability": "Called before clone/push/pr/merge git actions.",
+        "state_error_behavior": "Unknown principal and default-deny AccessDenied; statement matching across Action/Resource/Condition with broken Deny/Bool/IpAddress/wildcard resource paths."
+      },
+      {
+        "module": "cc.gitops + seeded bare repos",
+        "responsibility": "Bare git repository lifecycle and ref updates.",
+        "reachability": "clone/push via CLI; merge via prs; deliver tip via ref_commit; seed at image build.",
+        "state_error_behavior": "GitError/ValidationException on failed subprocesses, existing dest, and non-FF update_ff; merge_ff currently forces merge commits."
+      },
+      {
+        "module": "cc.prs + ops/approval-rules.json",
+        "responsibility": "Pull-request persistence, approvals, and merge fence.",
+        "reachability": "pr/approve/merge CLI commands.",
+        "state_error_behavior": "PR_NOT_FOUND/PR_NOT_OPEN/NO_APPROVAL_RULE/APPROVAL_QUORUM; persists open/merged state and coupled git merge."
+      },
+      {
+        "module": "cc.trigger + ops/pipelines.json",
+        "responsibility": "Pipeline delivery journal for bound refs.",
+        "reachability": "deliver CLI command.",
+        "state_error_behavior": "Appends journal rows per binding using current tip; currently non-idempotent UUID event_ids."
+      },
+      {
+        "module": "cc.home + cc.errors + cc.seed",
+        "responsibility": "Layout/config loading, structured errors, ledger bootstrap.",
+        "reachability": "Imported by all modules; seed executed from Dockerfile.",
+        "state_error_behavior": "JSON load failures propagate; seed creates initial ledger main commit under var/repos."
+      }
+    ],
+    "PARTIAL_FIX_TRAPS": [
+      "Repairing only MFA/Bool evaluation still leaves IpAddress skipped and Deny ignored, so release/main authorization can remain wrong.",
+      "Fixing action matching without restoring Resource checks for Action '*' still lets sandbox-star style statements over-allow across repos.",
+      "Correcting approval quorum (author/pool/dedup) without replacing merge_ff with true fast-forward still creates merge commits when main moved.",
+      "Making merge fast-forward-only without IAM MergePullRequestByFastForward + office CIDR still allows unauthorized merges.",
+      "Fixing deliver idempotency/event_id hashing without binding exact (repo,ref,commit,pipeline) still diverges from pipeline contract.",
+      "Policy-only edits without evaluator repairs cannot enforce Deny-over-Allow or condition operators the engine skips."
+    ],
+    "REMOVAL_TEST": "Removing ~25% of the substantive core would materially shrink claimed behavior: deleting iam condition/Deny/action matching collapses authorization fidelity; deleting gitops merge/ancestor/ref helpers removes the merge fence; deleting prs quorum/persistence removes approval-gated merge; deleting trigger journaling removes pipeline deliver semantics; deleting policy/principal attachments leaves authorize without differentiated attachments. There is no large removable block of duplicated or unreachable code whose deletion would leave the operator-visible IAM+merge+trigger system intact.",
+    "REQUIRED_CHANGES": []
+  }
+}

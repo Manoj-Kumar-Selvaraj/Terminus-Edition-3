@@ -1,0 +1,27 @@
+{
+  "PolicyId": "audit-read",
+  "Version": "2012-10-17",
+  "Description": "Security read access to recorded authorization decisions, on-site only.",
+  "Statement": [
+    {
+      "Sid": "ReadAuthzDecisions",
+      "Effect": "Allow",
+      "Action": [
+        "audit:QueryAuthzLog",
+        "webhook:ListOutbox"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Sid": "NoOffsiteAuditReads",
+      "Effect": "Deny",
+      "Action": "audit:QueryAuthzLog",
+      "Resource": "*",
+      "Condition": {
+        "NotIpAddress": {
+          "aws:SourceIp": ["10.8.0.0/16"]
+        }
+      }
+    }
+  ]
+}

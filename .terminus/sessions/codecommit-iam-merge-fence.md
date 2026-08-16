@@ -5,10 +5,10 @@ Session schema version: `2.4`
 ## Identity
 
 - Task: `codecommit-iam-merge-fence`
-- Controller state: `FROZEN_CANDIDATE`
-- Working branch: local rebuild under large_system_strict
+- Controller state: `QUALITY_INTERLOCK`
+- Working branch: local
 - Pull request: none
-- Current task commit: pending-after-this-commit
+- Current task commit: `4e3368435ba2c56ee69dd4024ff2cb47c3f77805`
 - Agent-system policy: `2.4`
 - Specialist prompt policy: `2.2`
 - Specialist protocol policy: `2.2`
@@ -20,31 +20,7 @@ Session schema version: `2.4`
 
 ```text
 CONTROL_PLANE_COMMIT: 88e17620d0a13530127d61849557ec01ecdb1687
-RULE_SOURCES:
-  - TERMINUS_3_AI_INSTRUCTIONS.md
-  - .terminus/AGENT_SYSTEM.md
-  - .terminus/agents/CREATION_PIPELINE.md
-  - .terminus/agents/CREATION_CONTROLLER.md
-  - .terminus/agents/PRODUCTION_AUTHENTICITY.md
-  - .terminus/agents/QUALITY_AGENT_REGISTRY.md
-  - .terminus/agents/INSTRUCTION_POLICY.md
-  - .terminus/reviewers/REVIEWER_CHECKLIST.md
-ACTIVE_VALIDATORS:
-  - .terminus/validate_task_complexity.py
-  - .terminus/validate_runtime_authenticity.py
-  - .terminus/validate_review_freshness.py
-  - .terminus/validate_quality_interlock.py
-  - ruff on tests/
 CREATION_PROFILE: large_system_strict
-NETWORK/ENVIRONMENT_CONSTRAINTS:
-  network_mode: public
-  environment_mode: separate
-  artifacts: ["/app/codecommit"]
-  workdir: /app/codecommit
-  digest-pin canonical python:3.13-slim-bookworm
-  tmux+asciinema required in agent image
-KNOWN_POLICY_CONFLICTS: none
-REBUILD_NOTE: prior non-strict ~633 LOC lab superseded; in-place large_system_strict rebuild
 SUBAGENT_MODEL_POLICY: inherit/auto only — no premium model slugs
 ```
 
@@ -52,25 +28,27 @@ SUBAGENT_MODEL_POLICY: inherit/auto only — no premium model slugs
 
 | Gate | Status | Evidence |
 | --- | --- | --- |
-| Rule Resolution | PASS | CREATION_RULE_CONTEXT pinned above |
-| Work-Package Research | PASS | WP-C full control plane |
-| System Architecture | PASS | `.terminus/designs/codecommit-iam-merge-fence.json` |
-| Defect Topology | PASS | 28 defects / 7 RC / 30 edges |
-| Environment Build | PASS | multi-package `environment/codecommit` |
-| Oracle / Verifier / Instruction | PASS | local oracle 35/35; NOP 27 fail / 8 pass |
-| Complexity Gate | PASS | `validate_task_complexity.py` PASS |
-| Runtime Authenticity | PASS | 12k authz_events + incident `.log` |
-| Harbor Oracle | PASS | `jobs/2026-08-16__19-59-07` reward 1 |
-| Harbor NOP | PASS | `jobs/2026-08-16__20-01-47` reward 0 |
-| Quality Interlock | IN_PROGRESS | cold Q4/Q6 after freeze commit |
+| Q1 Spec Gap Repair | PASS | graded IAM/merge/deliver/audit/outbox/lease behaviors discoverable from instruction + control-plane-contract |
+| Q2 Verifier Coverage Repair | PASS | design test-map aligned; 30 F2P / 10 P2P covering material requirements including R_LEASE |
+| Q3 Spec Ambiguity Repair | PASS | no grading-relevant ambiguity after QI2 contract publish of PR store / webhook_id / HMAC / leases |
+| Q7 Task Format Enforcer | PASS | flat Edition 3 layout, separate verifier, artifacts `/app/codecommit`, digest-pinned images |
+| Complexity | PASS | large_system_strict; F2P in 25–30 band |
+| Runtime authenticity | PASS | 12k authz rows + incident evidence |
+| Ruff | PASS | `tests/test_outputs.py` clean |
+| Local oracle | PASS | 40/40 |
+| Harbor Oracle | PASS | `jobs/2026-08-16__21-24-38` reward **1.0** |
+| Harbor NOP | PASS | `jobs/2026-08-16__21-27-57` reward **0.0** |
+| Freeze | PASS | task commit `4e33684` dirty=false |
+| Q4 Spec-Test | PASS | `.terminus/reviews/codecommit-iam-merge-fence/4e336843/codecommit-iam-merge-fence-4e336843-spec-test-contract-4fa18fbe63.json` (advisory Q4-A01..A04 only) |
+| Q6 Production Logic | PASS | `.terminus/reviews/codecommit-iam-merge-fence/4e336843/codecommit-iam-merge-fence-4e336843-production-logic-a99b3efd8d.json` (PADDING MEDIUM, TOY LOW; reachable LOC clears 3k) |
+| Quality Interlock | PASS | Q4+Q6 PASS on `4e33684` after QI2 repair |
 
 ## Current blocker
 
-None for freeze. Next: commit-bound Q4 then Q6 (auto/inherit only).
+None. Quality Interlock cleared. Next: Pre-LLMaJ panel / remaining submission gates (not started in this chat).
 
 ## Decisions that must survive chat changes
 
-- Security / AppSec taxonomy.
-- Profile is `large_system_strict` (no non-strict waiver).
-- Rebuild in place; outbox subordinate to CodeCommit deliver.
-- Auto/inherit only for all subagents — no premium credits.
+- Security / AppSec; `large_system_strict`.
+- Auto/inherit only for subagents.
+- Do not count seed/catalog as Q6 LOC clearance.

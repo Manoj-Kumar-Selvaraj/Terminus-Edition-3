@@ -1,0 +1,395 @@
+{
+  "schema_version": "3.0",
+  "role": "Spec-Test Contract Reviewer",
+  "review_id": "codecommit-iam-merge-fence-143d379a-spec-test-contract-ee5a28463f",
+  "task": "codecommit-iam-merge-fence",
+  "task_commit": "143d379ad11c9eb3efd8c5b9294c879622ef1961",
+  "control_plane_commit": "41b0d801b20db282cff04c54be64a2b373e7962e",
+  "protocol_policy_version": "2.2",
+  "prompt_policy_version": "2.2",
+  "role_policy_version": "1.1",
+  "role_contract_hash": "c860dfe8b8ed0a04c729e4d6a828741b206b7067a780863ec7b22ee09d02c5a0",
+  "context_packet": ".terminus/reviews/codecommit-iam-merge-fence/143d379a/codecommit-iam-merge-fence-143d379a-spec-test-contract-ee5a28463f.packet.json",
+  "verdict": "REVISE",
+  "confidence": "HIGH",
+  "evidence_status": "SUFFICIENT",
+  "summary": "Bidirectional alignment fails after full forward/reverse walks. Instruction-stated HTTP API merge parity is never exercised (no cc-api usage; test_f2p_api_merge_requires_iam is CLI-only). Verifier also grades undocumented metrics and dispatch-webhooks sink/status shapes, while binding audit allow-path and several published merge/outbox obligations remain only partially covered.",
+  "evidence": [
+    {
+      "type": "file",
+      "ref": "codecommit-iam-merge-fence/instruction.md",
+      "observation": "Two paragraphs: incident symptoms (Alice MFA/main, quorum/FF, exactly-once deliver, denied audit, outbox enqueue, weaker HTTP API merge) plus binding pointer to control-plane-contract.md for IAM/quorum/FF/deliver/event_id/audit/outbox; drive ccctl and cc-api."
+    },
+    {
+      "type": "file",
+      "ref": "codecommit-iam-merge-fence/environment/codecommit/docs/control-plane-contract.md",
+      "observation": "Published CLI command list is clone/push/pr/approve/merge/deliver only; IAM/conditions; quorum/FF/no merge commit; event_id preimage and journal key order; outbox enqueue and failed-row retry; audit every allow and deny. HTTP headers named but no HTTP routes/schemas. metrics and dispatch-webhooks absent from CLI list."
+    },
+    {
+      "type": "test",
+      "ref": "codecommit-iam-merge-fence/tests/test_outputs.py",
+      "observation": "35 pytest behaviors via ccctl only; zero cc-api/HTTP calls. Includes test_p2p_metrics_command and test_f2p_dispatch_marks_outbox_attempt asserting sink/delivered; test_f2p_api_merge_requires_iam uses CLI merge."
+    },
+    {
+      "type": "file",
+      "ref": "codecommit-iam-merge-fence/environment/codecommit/lib/cc/api/app.py",
+      "observation": "Solver-visible HTTP surface includes POST .../merge with broken starter skipping MergePullRequestByFastForward; not referenced by any verifier case."
+    },
+    {
+      "type": "file",
+      "ref": "codecommit-iam-merge-fence/environment/codecommit/lib/cc/cli.py",
+      "observation": "Binary exposes metrics and dispatch-webhooks beyond the contract CLI list; dispatch always injects an in-memory sink in the response body."
+    },
+    {
+      "type": "file",
+      "ref": ".terminus/designs/codecommit-iam-merge-fence-test-map.json",
+      "observation": "Classification-only map; used to label F2P/P2P ownership, not as a requirement source."
+    },
+    {
+      "type": "file",
+      "ref": "codecommit-iam-merge-fence/environment/codecommit/ops/handoff.md",
+      "observation": "Ops evidence restating symptoms; not a second acceptance checklist."
+    },
+    {
+      "type": "file",
+      "ref": "codecommit-iam-merge-fence/environment/codecommit/log/platform-incident.log",
+      "observation": "Overnight log names decision-drop, duplicate deliver, outbox skip, API merge without IAM, quorum required=1, two-parent merge — supports current-state claims; mild diagnosis detail."
+    },
+    {
+      "type": "rule",
+      "ref": ".terminus/agents/QUALITY_AGENT_PROMPTS.md#Q4",
+      "observation": "Material phantom or untested requirement, grading ambiguity, or API/docs boundary defect forces REVISE; exhaustive walks required before verdict."
+    },
+    {
+      "type": "rule",
+      "ref": ".terminus/agents/INSTRUCTION_POLICY.md",
+      "observation": "Instruction owns material ask; delegated contracts may hold protocol detail but must not leave graded requirements undiscoverable or hide goals as prompt extension."
+    }
+  ],
+  "findings": [
+    {
+      "id": "Q4-B01",
+      "severity": "HIGH",
+      "status": "OBSERVED",
+      "criterion": "Instruction requires HTTP API merge path parity with CLI IAM; verifier never drives cc-api and test_f2p_api_merge_requires_iam only exercises CLI merge.",
+      "evidence_refs": [
+        "codecommit-iam-merge-fence/instruction.md",
+        "codecommit-iam-merge-fence/tests/test_outputs.py::test_f2p_api_merge_requires_iam",
+        "codecommit-iam-merge-fence/environment/codecommit/lib/cc/api/app.py"
+      ],
+      "why_it_matters": "A CLI-only repair can score 1 while leaving the stated weaker HTTP merge path broken; material req-gap against an explicit instruction objective.",
+      "minimal_remediation": "Add a behavioral HTTP merge denial/allow case via cc-api (or drop the HTTP API merge requirement from the solver-visible ask).",
+      "regression_risk": "Medium — new API fixture may need stable listen/port handling in verifier image."
+    },
+    {
+      "id": "Q4-B02",
+      "severity": "HIGH",
+      "status": "OBSERVED",
+      "criterion": "test_p2p_metrics_command grades metrics JSON keys (audit, journal_lines) that are absent from instruction.md and the binding contract CLI/output surface.",
+      "evidence_refs": [
+        "codecommit-iam-merge-fence/environment/codecommit/docs/control-plane-contract.md",
+        "codecommit-iam-merge-fence/tests/test_outputs.py::test_p2p_metrics_command",
+        "codecommit-iam-merge-fence/instruction.md"
+      ],
+      "why_it_matters": "Phantom-spec: solvers can fail grading for an undeclared operator surface, or pass without knowing metrics is required.",
+      "minimal_remediation": "Remove the metrics assertion, or publish metrics as a binding CLI/API obligation with schema.",
+      "regression_risk": "Low."
+    },
+    {
+      "id": "Q4-B03",
+      "severity": "HIGH",
+      "status": "OBSERVED",
+      "criterion": "test_f2p_dispatch_marks_outbox_attempt grades dispatch-webhooks plus private response fields (sink truthy, status delivered) not present in the published CLI contract; contract only states enqueue and failed-row retry.",
+      "evidence_refs": [
+        "codecommit-iam-merge-fence/environment/codecommit/docs/control-plane-contract.md",
+        "codecommit-iam-merge-fence/tests/test_outputs.py::test_f2p_dispatch_marks_outbox_attempt",
+        "codecommit-iam-merge-fence/environment/codecommit/lib/cc/cli.py"
+      ],
+      "why_it_matters": "Private return-value/command contract; CLI always injects an in-memory sink, so sink asserts are not an independently discoverable public interface.",
+      "minimal_remediation": "Document dispatch-webhooks and outbox attempt/status schema in the binding contract, and assert durable outbox state without requiring sink; or narrow the test to enqueue-only behaviors already published.",
+      "regression_risk": "Medium — tightening schema may fail alternate correct dispatch UIs."
+    },
+    {
+      "id": "Q4-B04",
+      "severity": "HIGH",
+      "status": "OBSERVED",
+      "criterion": "Binding contract requires every authorize decision (allow and deny) to append audit.jsonl; tests only assert denied rows.",
+      "evidence_refs": [
+        "codecommit-iam-merge-fence/environment/codecommit/docs/control-plane-contract.md",
+        "codecommit-iam-merge-fence/tests/test_outputs.py::test_f2p_audit_records_denied_push",
+        "codecommit-iam-merge-fence/tests/test_outputs.py::test_f2p_release_deny_audited"
+      ],
+      "why_it_matters": "Allow-path audit omission can still pass while violating the binding audit append contract referenced by instruction.",
+      "minimal_remediation": "Add an allow-path audit assertion after a successful authorize, or narrow the binding sentence to denied decisions if that is the true contract.",
+      "regression_risk": "Low."
+    },
+    {
+      "id": "Q4-B05",
+      "severity": "HIGH",
+      "status": "OBSERVED",
+      "criterion": "Instruction tells solvers to use cc-api for the weaker HTTP merge path, but the binding contract publishes only HTTP identity headers—no routes, methods, or merge request/response schema.",
+      "evidence_refs": [
+        "codecommit-iam-merge-fence/instruction.md",
+        "codecommit-iam-merge-fence/environment/codecommit/docs/control-plane-contract.md",
+        "codecommit-iam-merge-fence/environment/codecommit/lib/cc/api/app.py"
+      ],
+      "why_it_matters": "Grading-relevant ambiguity: fair discovery of the HTTP merge obligation depends on source spelunking rather than the named binding contract.",
+      "minimal_remediation": "Extend control-plane-contract.md with the graded HTTP merge (and related) routes/headers/schemas, or stop requiring cc-api in instruction.",
+      "regression_risk": "Low if documentation-only; higher if new graded fields are over-specified."
+    },
+    {
+      "id": "Q4-A01",
+      "severity": "MEDIUM",
+      "status": "OBSERVED",
+      "criterion": "Missing approval rule => NO_APPROVAL_RULE is published under Approvals and merge but never asserted.",
+      "evidence_refs": [
+        "codecommit-iam-merge-fence/environment/codecommit/docs/control-plane-contract.md",
+        "codecommit-iam-merge-fence/tests/test_outputs.py"
+      ],
+      "why_it_matters": "Wrong missing-rule handling can ship without failing grading; less central than quorum/FF but still a published merge-path failure mode.",
+      "minimal_remediation": "Add a missing-rule merge denial case, or remove NO_APPROVAL_RULE from the binding contract if out of scope.",
+      "regression_risk": "Low."
+    },
+    {
+      "id": "Q4-A02",
+      "severity": "LOW",
+      "status": "OBSERVED",
+      "criterion": "Outbox 'failed rows may be retried until max attempts' is not covered; dispatch test only marks a pending row delivered on first attempt.",
+      "evidence_refs": [
+        "codecommit-iam-merge-fence/environment/codecommit/docs/control-plane-contract.md",
+        "codecommit-iam-merge-fence/tests/test_outputs.py::test_f2p_dispatch_marks_outbox_attempt"
+      ],
+      "why_it_matters": "Max-attempt/retry ladder bugs would not fail current tests; softened by 'may' wording.",
+      "minimal_remediation": "Optional failed-then-retry / max-attempt fixture once dispatch is properly contracted.",
+      "regression_risk": "Low."
+    },
+    {
+      "id": "Q4-A03",
+      "severity": "LOW",
+      "status": "OBSERVED",
+      "criterion": "platform-incident.log names concrete defect mechanisms (decision-drop path, API merge without IAM check) that map closely to repair targets.",
+      "evidence_refs": [
+        "codecommit-iam-merge-fence/environment/codecommit/log/platform-incident.log",
+        "codecommit-iam-merge-fence/instruction.md"
+      ],
+      "why_it_matters": "Mild implementation-diagnosis leakage in evidence; still plausible as overnight ops log and not a prompt-extension checklist.",
+      "minimal_remediation": "Softened symptom-only wording in the incident log if leakage must be reduced.",
+      "regression_risk": "Negligible."
+    },
+    {
+      "id": "Q4-A04",
+      "severity": "LOW",
+      "status": "OBSERVED",
+      "criterion": "Deliver success body fields such as delivered[] are graded but not fully schema-specified in the binding contract (event_id/duplicate/journal keys are).",
+      "evidence_refs": [
+        "codecommit-iam-merge-fence/environment/codecommit/docs/control-plane-contract.md",
+        "codecommit-iam-merge-fence/tests/test_outputs.py::test_f2p_event_id_is_sha256_preimage"
+      ],
+      "why_it_matters": "Alternate but correct stdout shapes could fail; primary event_id/journal obligations are still discoverable.",
+      "minimal_remediation": "Publish deliver success JSON schema beside the existing push/approve/merge schemas.",
+      "regression_risk": "Low."
+    }
+  ],
+  "missing_evidence": [],
+  "change_scope": [
+    "instruction.md and/or environment/codecommit/docs/control-plane-contract.md (HTTP API surface; CLI completeness; audit scope)",
+    "tests/test_outputs.py (API merge behavioral case; remove or contract metrics/dispatch phantoms; allow-path audit)",
+    "Optionally ops/incident evidence wording if diagnosis leakage is tightened"
+  ],
+  "do_not_change": [
+    "Core IAM MFA/IP/Deny/StringEquals/star-resource F2P family",
+    "Quorum distinct-pool/author/duplicate/outside-pool/config-required=2 coverage",
+    "Fast-forward-only merge and no two-parent success checks",
+    "Exactly-once deliver, event_id sha256 preimage, journal key order",
+    "Outbox enqueue and no-duplicate-enqueue on second deliver",
+    "Unknown principal UNKNOWN_PRINCIPAL and PR store persistence P2P",
+    "Artifact layout under /app/codecommit and separate verifier mode"
+  ],
+  "next_gate": "Route to Q1/Q2/Q3 (and Instruction Writer as needed) for HTTP API contract+coverage, phantom metrics/dispatch, and audit allow-path alignment; then Q4 re-review on the repaired task commit.",
+  "role_output": {
+    "REQUIREMENT_TEST_MATRIX": [
+      {
+        "id": "R_PULL",
+        "requirement": "GitPull/clone allowed for pull statements; pull survives denied push",
+        "coverage": "complete",
+        "tests": ["test_p2p_clone_roundtrip", "test_f2p_same_commit_clone_ok_after_denied_push"]
+      },
+      {
+        "id": "R_PUSH_MFA",
+        "requirement": "main GitPush requires MFA + office IP; absent MFA fails Bool; pull-only cannot push",
+        "coverage": "complete",
+        "tests": [
+          "test_f2p_push_main_requires_mfa",
+          "test_f2p_push_main_mfa_wrong_ip_denied",
+          "test_p2p_push_main_mfa_office_allowed",
+          "test_f2p_intern_cannot_push",
+          "test_f2p_absent_mfa_not_treated_as_true"
+        ]
+      },
+      {
+        "id": "R_PUSH_BRANCH",
+        "requirement": "StringEquals branch listings are exact",
+        "coverage": "complete",
+        "tests": ["test_p2p_push_dev_branch_without_mfa", "test_f2p_branch_condition_is_exact"]
+      },
+      {
+        "id": "R_DENY",
+        "requirement": "Explicit Deny wins over Allow",
+        "coverage": "complete",
+        "tests": ["test_f2p_explicit_deny_beats_allow", "test_f2p_release_deny_audited"]
+      },
+      {
+        "id": "R_STAR",
+        "requirement": "Action * still requires Resource match",
+        "coverage": "complete",
+        "tests": ["test_f2p_star_action_stays_on_sandbox_resource"]
+      },
+      {
+        "id": "R_QUORUM",
+        "requirement": "Distinct in-pool approvals excluding author; required from config; duplicates once",
+        "coverage": "complete",
+        "tests": [
+          "test_f2p_merge_requires_quorum",
+          "test_f2p_author_approval_does_not_count",
+          "test_f2p_duplicate_approval_does_not_count",
+          "test_f2p_outside_pool_approval_ignored",
+          "test_f2p_duplicate_approve_stored_once",
+          "test_f2p_required_quorum_from_config"
+        ]
+      },
+      {
+        "id": "R_FF",
+        "requirement": "Fast-forward only; dest updates to source; no merge commit",
+        "coverage": "complete",
+        "tests": [
+          "test_f2p_merge_is_fast_forward_only",
+          "test_f2p_merge_fast_forward_updates_dest",
+          "test_f2p_merge_commit_not_created_on_success"
+        ]
+      },
+      {
+        "id": "R_MERGE_IAM_CLI",
+        "requirement": "CLI merge requires MergePullRequestByFastForward + office IP; developers cannot merge",
+        "coverage": "complete",
+        "tests": [
+          "test_f2p_merge_requires_office_ip",
+          "test_f2p_api_merge_requires_iam",
+          "test_f2p_star_action_stays_on_sandbox_resource"
+        ]
+      },
+      {
+        "id": "R_MERGE_IAM_HTTP",
+        "requirement": "HTTP API merge path must enforce same MergePullRequestByFastForward IAM as CLI",
+        "coverage": "absent",
+        "tests": []
+      },
+      {
+        "id": "R_TRIGGER",
+        "requirement": "Exactly-once deliver with sha256 event_id, key order, REF normalize; unbound writes nothing",
+        "coverage": "complete",
+        "tests": [
+          "test_f2p_deliver_exactly_once",
+          "test_f2p_event_id_is_sha256_preimage",
+          "test_p2p_deliver_unbound_ref_writes_nothing",
+          "test_f2p_journal_key_order"
+        ]
+      },
+      {
+        "id": "R_AUDIT_DENY",
+        "requirement": "Denied authorize decisions append to audit.jsonl",
+        "coverage": "complete",
+        "tests": ["test_f2p_audit_records_denied_push", "test_f2p_release_deny_audited"]
+      },
+      {
+        "id": "R_AUDIT_ALLOW",
+        "requirement": "Allowed authorize decisions also append to audit.jsonl",
+        "coverage": "absent",
+        "tests": []
+      },
+      {
+        "id": "R_OUTBOX_ENQUEUE",
+        "requirement": "First deliver enqueues matching webhook outbox; duplicate deliver does not re-enqueue",
+        "coverage": "complete",
+        "tests": [
+          "test_f2p_deliver_enqueues_outbox",
+          "test_f2p_second_deliver_does_not_duplicate_outbox"
+        ]
+      },
+      {
+        "id": "R_OUTBOX_DISPATCH",
+        "requirement": "Outbox dispatch/retry records attempts under a discoverable public interface",
+        "coverage": "partial",
+        "tests": ["test_f2p_dispatch_marks_outbox_attempt"]
+      },
+      {
+        "id": "R_UNKNOWN",
+        "requirement": "Unknown principal AccessDenied UNKNOWN_PRINCIPAL",
+        "coverage": "complete",
+        "tests": ["test_p2p_unknown_principal_denied"]
+      },
+      {
+        "id": "R_SCHEMA",
+        "requirement": "CLI/contract/PR store present; platform remains under /app/codecommit",
+        "coverage": "complete",
+        "tests": ["test_p2p_ccctl_and_contract_present", "test_p2p_pr_store_written"]
+      },
+      {
+        "id": "R_NO_APPROVAL_RULE",
+        "requirement": "Missing approval rule => NO_APPROVAL_RULE",
+        "coverage": "absent",
+        "tests": []
+      }
+    ],
+    "PHANTOM_TEST_CONTRACTS": [
+      "test_p2p_metrics_command grades undeclared metrics command/schema",
+      "test_f2p_dispatch_marks_outbox_attempt grades undeclared dispatch-webhooks sink/status response shape",
+      "test_f2p_api_merge_requires_iam name implies HTTP API coverage it does not provide (CLI-only)"
+    ],
+    "UNTESTED_REQUIREMENTS": [
+      "HTTP API merge IAM parity (instruction + incident)",
+      "Audit append on allow decisions (binding contract)",
+      "NO_APPROVAL_RULE on missing approval config (binding contract)",
+      "Failed outbox retry until max attempts (binding contract; soft 'may')"
+    ],
+    "AMBIGUITIES": [
+      "cc-api required by instruction but HTTP routes/schemas omitted from binding contract",
+      "Published CLI command list omits metrics/dispatch-webhooks while verifier grades them",
+      "Audit scope: instruction emphasizes denied rows; binding text says every allow and deny"
+    ],
+    "INSTRUCTION_SHAPE": "PASS",
+    "INSTRUCTION_REQUIREMENT_COMPLETENESS": "SUFFICIENT",
+    "DELEGATED_CONTRACT_CHECK": "control-plane-contract.md is a legitimate IAM/merge/deliver/audit/outbox protocol doc, but incomplete for graded HTTP API and for metrics/dispatch surfaces the verifier asserts",
+    "INSTRUCTION_DOC_BOUNDARY": "CLEAN",
+    "IMPLEMENTATION_DIAGNOSIS_LEAKAGE": "LOW",
+    "CURRENT_STATE_EVIDENCE": "PASS",
+    "SPEC_DUMP_RISK": "LOW",
+    "BIDIRECTIONAL_ALIGNMENT": "FAIL",
+    "BLOCKING_FINDING_IDS": ["Q4-B01", "Q4-B02", "Q4-B03", "Q4-B04", "Q4-B05"],
+    "ADVISORY_FINDING_IDS": ["Q4-A01", "Q4-A02", "Q4-A03", "Q4-A04"],
+    "EXHAUSTIVENESS": {
+      "REQUIREMENTS_ENUMERATED": "COMPLETE",
+      "VERIFIER_BEHAVIORS_ENUMERATED": "COMPLETE",
+      "FORWARD_MATRIX_COMPLETE": "YES",
+      "REVERSE_MATRIX_COMPLETE": "YES",
+      "INSTRUCTION_COMPLETENESS_COMPLETE": "YES",
+      "DELEGATED_CONTRACTS_COMPLETE": "YES",
+      "PROMPT_EXTENSION_WALK_COMPLETE": "YES",
+      "P2P_BOUNDARIES_COMPLETE": "YES",
+      "F2P_BOUNDARIES_COMPLETE": "YES",
+      "OUTPUT_INTERFACES_COMPLETE": "YES",
+      "SECOND_PASS_OMISSION_SWEEP": "PASS",
+      "UNINSPECTED_SCOPE": []
+    },
+    "F2P_P2P_BOUNDARY_NOTES": {
+      "F2P": "IAM MFA/IP/deny/branch/star, quorum variants, FF divergence, deliver exactly-once/event_id/keys, deny audit, outbox enqueue/dedup, CLI merge IAM — behavioral ownership clear",
+      "P2P": "ccctl/contract presence, clone, MFA office push, feature push, unbound deliver, unknown principal, PR store preserved; metrics P2P is phantom",
+      "BYPASS_RISK": "HTTP merge path untested allows CLI-only fixes to satisfy grader while violating instruction",
+      "CIRCULAR_ORACLE_RISK": "dispatch-webhooks sink field mirrors CLI harness injection rather than external webhook success"
+    },
+    "SECOND_OMISSION_SWEEP_NOTES": [
+      "Re-checked SHALL/MUST-style binding lines: allow audit, NO_APPROVAL_RULE, HTTP headers-without-routes, outbox max attempts",
+      "Re-checked every test for reverse discoverability: metrics and dispatch sink failed; remaining IAM/merge/deliver/audit-deny map cleanly",
+      "No further material work-package goals found outside instruction+binding contract beyond the HTTP gap already filed"
+    ]
+  }
+}

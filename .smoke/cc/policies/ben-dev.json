@@ -1,0 +1,30 @@
+{
+  "PolicyId": "ben-dev",
+  "Version": "2012-10-17",
+  "Description": "Personal branch namespace grant for dev-ben on the ledger repository.",
+  "Statement": [
+    {
+      "Sid": "BenOwnedBranches",
+      "Effect": "Allow",
+      "Action": [
+        "codecommit:GitPush",
+        "codecommit:GitPull"
+      ],
+      "Resource": "arn:aws:codecommit:eu-west-1:000000000000:ledger",
+      "Condition": {
+        "StringLike": {
+          "codecommit:References": "refs/heads/dev/ben*"
+        },
+        "IpAddress": {
+          "aws:SourceIp": ["10.8.0.0/16", "10.9.4.0/24"]
+        }
+      }
+    },
+    {
+      "Sid": "BenOpensRequests",
+      "Effect": "Allow",
+      "Action": "codecommit:CreatePullRequest",
+      "Resource": "arn:aws:codecommit:eu-west-1:000000000000:ledger"
+    }
+  ]
+}

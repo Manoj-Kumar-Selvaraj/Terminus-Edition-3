@@ -1,0 +1,276 @@
+{
+  "schema_version": "3.0",
+  "role": "Production Logic Auditor",
+  "review_id": "codecommit-iam-merge-fence-143d379a-production-logic-8c4b09115b",
+  "task": "codecommit-iam-merge-fence",
+  "task_commit": "143d379ad11c9eb3efd8c5b9294c879622ef1961",
+  "control_plane_commit": "41b0d801b20db282cff04c54be64a2b373e7962e",
+  "protocol_policy_version": "2.2",
+  "prompt_policy_version": "2.2",
+  "role_policy_version": "1.1",
+  "role_contract_hash": "ee7d1cfd6e19fcc0e831cc75829457593d7410613c3b3fb811aef925e85a1607",
+  "review_scope_hash": "5534f905a0a6629110b084828f6cdc4fd8595582f272ecde2f8055fd4bf9df43",
+  "context_packet": ".terminus/reviews/codecommit-iam-merge-fence/143d379a/codecommit-iam-merge-fence-143d379a-production-logic-8c4b09115b.packet.json",
+  "verdict": "REVISE",
+  "confidence": "HIGH",
+  "evidence_status": "SUFFICIENT",
+  "summary": "Core IAM→PR/merge→deliver→webhook path is real, coupled, and non-toy via ccctl, but the package fails large_system_strict Q6: honest non-seed runtime/config LOC is ~2,859 (~2,875 with schema.sql), below the >=3,000 floor; ~1,350 LOC of admin/report fan-out is explicitly framed as LOC-floor padding; 24 team-fragment policies are clones; and bin/cc-api serve() returns an unbound httpd so one primary entrypoint is not runtime-reachable.",
+  "evidence": [
+    {
+      "type": "rule",
+      "ref": ".terminus/agents/QUALITY_AGENT_REGISTRY.md",
+      "observation": "Q6 independently judges whether the solver-visible core is complex, reachable, coupled, non-toy, and non-padded. For large_system_strict, >=3,000 substantive reachable runtime/config LOC is necessary but not sufficient; Complexity Governor or authenticity-validator PASS is not enough."
+    },
+    {
+      "type": "rule",
+      "ref": ".terminus/agents/QUALITY_AGENT_PROMPTS.md",
+      "observation": "Q6 method requires entrypoint tracing, reachability, distinct module responsibilities, clone/wrapper/padding checks, cross-module invariants, a ~25% removal test, and separating production logic from generated/config/data noise. PASS needs >=3,000 substantive reachable LOC and no HIGH toy/padding risk."
+    },
+    {
+      "type": "rule",
+      "ref": ".terminus/agents/PRODUCTION_AUTHENTICITY.md",
+      "observation": "Count only implementation that materially participates in the claimed operational system. Dead/unreachable/unnecessary code and construction toward the 3,000-LOC floor via filler are authenticity defects. Seed volume is not authored runtime complexity."
+    },
+    {
+      "type": "file",
+      "ref": "codecommit-iam-merge-fence/task.toml@143d379ad11c9eb3efd8c5b9294c879622ef1961",
+      "observation": "Security/AppSec Python/bash CodeCommit IAM merge-fence task; artifacts [/app/codecommit]; separate verifier; workdir /app/codecommit; public network."
+    },
+    {
+      "type": "file",
+      "ref": ".terminus/designs/codecommit-iam-merge-fence.json",
+      "observation": "Design authenticity report records profile=large_system_strict. Used only to bind the strict LOC/padding gate; not treated as a copied complexity verdict."
+    },
+    {
+      "type": "run",
+      "ref": "validate_runtime_authenticity.py codecommit-iam-merge-fence",
+      "observation": "Gate exits PASS with seed=database_rows=12000 and incident_evidence=4. Treated as seed/incident scale evidence only; not copied as a Q6 conclusion."
+    },
+    {
+      "type": "file",
+      "ref": "codecommit-iam-merge-fence/environment/Dockerfile@143d379ad11c9eb3efd8c5b9294c879622ef1961",
+      "observation": "Pinned python:3.13 image installs tmux/asciinema/git, copies /app/codecommit, chmods bin/ccctl and bin/cc-api, and runs seed.py at build—operator/runtime packaging."
+    },
+    {
+      "type": "file",
+      "ref": "codecommit-iam-merge-fence/environment/codecommit/bin/ccctl@143d379ad11c9eb3efd8c5b9294c879622ef1961",
+      "observation": "Primary CLI entrypoint delegates to cc.cli.main."
+    },
+    {
+      "type": "file",
+      "ref": "codecommit-iam-merge-fence/environment/codecommit/bin/cc-api@143d379ad11c9eb3efd8c5b9294c879622ef1961",
+      "observation": "HTTP entrypoint delegates to cc.server.main → cc.api.app.main/serve."
+    },
+    {
+      "type": "file",
+      "ref": "codecommit-iam-merge-fence/environment/codecommit/docs/control-plane-contract.md@143d379ad11c9eb3efd8c5b9294c879622ef1961",
+      "observation": "Documents ccctl/cc-api operator workflows for clone/push/pr/approve/merge/deliver with principal/MFA/source-ip—aligns with CLI command surface."
+    },
+    {
+      "type": "file",
+      "ref": "codecommit-iam-merge-fence/environment/codecommit/lib/cc/cli.py@143d379ad11c9eb3efd8c5b9294c879622ef1961",
+      "observation": "Reachable operator surface: clone/push/pr/approve/merge/deliver/simulate/metrics/dispatch-webhooks/platform-job; authorize path goes through authz_gateway into IAM/repos/PRs/pipelines/webhooks."
+    },
+    {
+      "type": "file",
+      "ref": "codecommit-iam-merge-fence/environment/codecommit/lib/cc/iam/eval.py@143d379ad11c9eb3efd8c5b9294c879622ef1961",
+      "observation": "Multi-branch authorize couples action match, resource ARN, condition eval, and Deny/Allow effects—material IAM decision logic, not a constant shell."
+    },
+    {
+      "type": "file",
+      "ref": "codecommit-iam-merge-fence/environment/codecommit/lib/cc/iam/conditions.py@143d379ad11c9eb3efd8c5b9294c879622ef1961",
+      "observation": "StringEquals/Bool/IpAddress evaluators with distinct broken vs fixed paths—domain condition branching consumed by eval.authorize."
+    },
+    {
+      "type": "file",
+      "ref": "codecommit-iam-merge-fence/environment/codecommit/lib/cc/prs/approvals.py@143d379ad11c9eb3efd8c5b9294c879622ef1961",
+      "observation": "Quorum rules load from ops/approval-rules.json with author/pool/duplicate/required branching that couples into merge."
+    },
+    {
+      "type": "file",
+      "ref": "codecommit-iam-merge-fence/environment/codecommit/lib/cc/prs/merge.py@143d379ad11c9eb3efd8c5b9294c879622ef1961",
+      "observation": "Merge couples open-PR state, quorum, MergePullRequestByFastForward authorize, and gitops FF vs broken merge-commit path—cross-module partial-fix trap."
+    },
+    {
+      "type": "file",
+      "ref": "codecommit-iam-merge-fence/environment/codecommit/lib/cc/pipelines/deliver.py@143d379ad11c9eb3efd8c5b9294c879622ef1961",
+      "observation": "Deliver couples bindings, tip lookup, event_id/dedupe, and journal append—pipeline side of the control plane."
+    },
+    {
+      "type": "file",
+      "ref": "codecommit-iam-merge-fence/environment/codecommit/lib/cc/webhooks/dispatch.py@143d379ad11c9eb3efd8c5b9294c879622ef1961",
+      "observation": "Outbox dispatch with retry/backoff and HTTP or sink delivery—stateful integration boundary reached from CLI/API."
+    },
+    {
+      "type": "file",
+      "ref": "codecommit-iam-merge-fence/environment/codecommit/lib/cc/services/authz_gateway.py@143d379ad11c9eb3efd8c5b9294c879622ef1961",
+      "observation": "Shared authorize+audit gateway used by CLI/API—central coupling seam for IAM and audit persistence."
+    },
+    {
+      "type": "file",
+      "ref": "codecommit-iam-merge-fence/environment/codecommit/lib/cc/api/app.py@143d379ad11c9eb3efd8c5b9294c879622ef1961",
+      "observation": "HTTP routes mirror CLI for repos/push/prs/approve/merge/deliver/webhooks, but serve() assigns Handler.httpd and returns unbound local httpd (NameError); Handler.fixed is never set—cc-api entrypoint is not honestly runtime-reachable."
+    },
+    {
+      "type": "file",
+      "ref": "codecommit-iam-merge-fence/environment/codecommit/lib/cc/operator_workflows.py@143d379ad11c9eb3efd8c5b9294c879622ef1961",
+      "observation": "Module docstring states 'Additional reachable operator workflows to clear strict LOC floor.' Fan-out wrappers over ops_console/iam_report/pipeline_admin/etc.—explicit padding admission."
+    },
+    {
+      "type": "file",
+      "ref": "codecommit-iam-merge-fence/environment/codecommit/lib/cc/platform_jobs.py@143d379ad11c9eb3efd8c5b9294c879622ef1961",
+      "observation": "nightly() aggregates compliance/drift/graph/routing/ops/windows primarily to exercise admin modules from ccctl platform-job—padding reachability harness rather than core merge-fence behavior."
+    },
+    {
+      "type": "file",
+      "ref": "codecommit-iam-merge-fence/environment/codecommit/lib/cc/compliance_scanner.py@143d379ad11c9eb3efd8c5b9294c879622ef1961",
+      "observation": "Large reporting scanner (~122 substantive LOC) over policies/approvals/bindings; reached via platform_jobs, not the primary IAM/merge/deliver operator path."
+    },
+    {
+      "type": "file",
+      "ref": "codecommit-iam-merge-fence/environment/codecommit/lib/cc/drift_detector.py@143d379ad11c9eb3efd8c5b9294c879622ef1961",
+      "observation": "Catalog/disk/binding drift reports (~108 LOC) similarly bolted through nightly—adjacent ops reporting, not core authorization/merge semantics."
+    },
+    {
+      "type": "file",
+      "ref": "codecommit-iam-merge-fence/environment/codecommit/policies/team-fragment-01.json@143d379ad11c9eb3efd8c5b9294c879622ef1961",
+      "observation": "Twenty-four team-fragment-*.json policies normalize to one template after digit substitution—config clone inflation, not differentiated policy logic."
+    },
+    {
+      "type": "file",
+      "ref": "codecommit-iam-merge-fence/environment/codecommit/sql/seed.sql@143d379ad11c9eb3efd8c5b9294c879622ef1961",
+      "observation": "Deterministic 12,000-row authz_events warehouse seed with principal/action/repo/ref/MFA/IP variation—stateful data scale evidence only; excluded from substantive runtime/config LOC."
+    },
+    {
+      "type": "file",
+      "ref": "codecommit-iam-merge-fence/environment/codecommit/sql/schema.sql@143d379ad11c9eb3efd8c5b9294c879622ef1961",
+      "observation": "Small authz_events warehouse schema (~16 substantive lines). Counts as runtime/config structure but does not close the LOC gap."
+    },
+    {
+      "type": "file",
+      "ref": "codecommit-iam-merge-fence/environment/codecommit/ops/handoff.md@143d379ad11c9eb3efd8c5b9294c879622ef1961",
+      "observation": "Incident handoff cites MFA bypass, weak quorum, false FF, duplicate deliver, missing outbox—matches coupled defects in IAM/approvals/merge/deliver/webhooks."
+    },
+    {
+      "type": "file",
+      "ref": "codecommit-iam-merge-fence/environment/codecommit/log/platform-incident.log@143d379ad11c9eb3efd8c5b9294c879622ef1961",
+      "observation": "Representative incident log lines for deny-drop, duplicate deliver, skipped outbox, skipped MergeFF check, quorum required=1, false fast_forward—supports claimed operational failure modes."
+    },
+    {
+      "type": "run",
+      "ref": "static LOC inventory over environment/codecommit/lib/**/*.py excl. seed.py",
+      "observation": "Independent count: non-seed substantive Python LOC ≈2859; plus schema.sql ≈2875. Padding/admin cluster (operator_workflows/ops_console/compliance/drift/iam_report/notification/principal_graph/change_window and related admins) ≈1353. Non-padding core ≈1506. Seed.py (225) and seed.sql warehouse rows excluded from runtime/config LOC."
+    }
+  ],
+  "findings": [
+    {
+      "id": "Q6-LOC-FLOOR",
+      "severity": "BLOCKER",
+      "status": "OBSERVED",
+      "criterion": "large_system_strict requires >=3000 substantive reachable solver-visible runtime/config LOC",
+      "evidence_refs": [
+        "static LOC inventory over environment/codecommit/lib/**/*.py excl. seed.py",
+        "codecommit-iam-merge-fence/environment/codecommit/sql/schema.sql@143d379ad11c9eb3efd8c5b9294c879622ef1961",
+        ".terminus/designs/codecommit-iam-merge-fence.json",
+        ".terminus/agents/QUALITY_AGENT_PROMPTS.md"
+      ],
+      "why_it_matters": "Even counting nearly all non-seed Python plus schema.sql, the package sits ~2,859–2,875 LOC—below the strict floor. Seed warehouse rows and seed.py are not runtime/config logic.",
+      "minimal_remediation": "Deepen material control-plane behavior (IAM/git/PR/pipeline/webhook/state) until honest substantive reachable runtime/config LOC clears 3000 without filler modules or cloned config.",
+      "regression_risk": "Adding more reporting wrappers or duplicate policies to chase the number will worsen padding findings without fixing authenticity."
+    },
+    {
+      "id": "Q6-LOC-FLOOR-PADDING",
+      "severity": "BLOCKER",
+      "status": "OBSERVED",
+      "criterion": "complexity must come from domain invariants/state transitions, not chores or padding toward the LOC floor; no HIGH padding risk for PASS",
+      "evidence_refs": [
+        "codecommit-iam-merge-fence/environment/codecommit/lib/cc/operator_workflows.py@143d379ad11c9eb3efd8c5b9294c879622ef1961",
+        "codecommit-iam-merge-fence/environment/codecommit/lib/cc/platform_jobs.py@143d379ad11c9eb3efd8c5b9294c879622ef1961",
+        "codecommit-iam-merge-fence/environment/codecommit/lib/cc/compliance_scanner.py@143d379ad11c9eb3efd8c5b9294c879622ef1961",
+        "codecommit-iam-merge-fence/environment/codecommit/lib/cc/drift_detector.py@143d379ad11c9eb3efd8c5b9294c879622ef1961",
+        "codecommit-iam-merge-fence/environment/codecommit/policies/team-fragment-01.json@143d379ad11c9eb3efd8c5b9294c879622ef1961",
+        ".terminus/agents/PRODUCTION_AUTHENTICITY.md"
+      ],
+      "why_it_matters": "operator_workflows explicitly admits LOC-floor padding; platform-job fans into large admin/report modules (~1.3k LOC) whose removal would not erase the IAM/merge/deliver contract; 24 team-fragment policies are one cloned template. That is HIGH padding risk and blocks PASS even if raw LOC later crosses 3000.",
+      "minimal_remediation": "Remove or replace floor-padding modules/cloned fragments with differentiated, load-bearing control-plane behavior reached from normal operator workflows—not a nightly LOC aggregator.",
+      "regression_risk": "Deleting padding without deepening the core will leave the LOC floor unmet; keep the coupled IAM/merge/deliver path intact."
+    },
+    {
+      "id": "Q6-API-ENTRYPOINT-BROKEN",
+      "severity": "HIGH",
+      "status": "OBSERVED",
+      "criterion": "major modules/entrypoints must be reachable from real operator workflows",
+      "evidence_refs": [
+        "codecommit-iam-merge-fence/environment/codecommit/bin/cc-api@143d379ad11c9eb3efd8c5b9294c879622ef1961",
+        "codecommit-iam-merge-fence/environment/codecommit/lib/cc/api/app.py@143d379ad11c9eb3efd8c5b9294c879622ef1961",
+        "codecommit-iam-merge-fence/environment/codecommit/docs/control-plane-contract.md@143d379ad11c9eb3efd8c5b9294c879622ef1961"
+      ],
+      "why_it_matters": "Documented primary HTTP entrypoint cannot start: serve() returns unbound httpd after assigning only Handler.httpd, and never applies the fixed flag. That is a reachability defect for half of the claimed operator surface.",
+      "minimal_remediation": "Fix serve() to construct/bind httpd, set Handler.fixed, and return the live server so cc-api matches the contract.",
+      "regression_risk": "Low if limited to serve() wiring; do not weaken IAM/merge defects while repairing reachability."
+    },
+    {
+      "id": "Q6-CORE-COUPLING-OK",
+      "severity": "LOW",
+      "status": "OBSERVED",
+      "criterion": "business/runtime modules should contain material branching and cross-component interactions",
+      "evidence_refs": [
+        "codecommit-iam-merge-fence/environment/codecommit/lib/cc/iam/eval.py@143d379ad11c9eb3efd8c5b9294c879622ef1961",
+        "codecommit-iam-merge-fence/environment/codecommit/lib/cc/prs/merge.py@143d379ad11c9eb3efd8c5b9294c879622ef1961",
+        "codecommit-iam-merge-fence/environment/codecommit/lib/cc/pipelines/deliver.py@143d379ad11c9eb3efd8c5b9294c879622ef1961",
+        "codecommit-iam-merge-fence/environment/codecommit/lib/cc/webhooks/dispatch.py@143d379ad11c9eb3efd8c5b9294c879622ef1961",
+        "codecommit-iam-merge-fence/environment/codecommit/ops/handoff.md@143d379ad11c9eb3efd8c5b9294c879622ef1961"
+      ],
+      "why_it_matters": "The non-padded core is credible production logic with partial-fix traps across IAM, quorum, FF merge, deliver dedupe, and outbox. This is advisory context: the task is not purely toy; scale/padding/API reachability still block PASS.",
+      "minimal_remediation": "Preserve and deepen this coupled core while removing padding; do not replace it with more report wrappers.",
+      "regression_risk": "N/A advisory."
+    }
+  ],
+  "missing_evidence": [],
+  "change_scope": [
+    "environment/codecommit/lib/cc (deepen core control-plane logic; remove or replace LOC-floor padding modules)",
+    "environment/codecommit/lib/cc/api/app.py serve() reachability",
+    "environment/codecommit/policies (dedupe cloned team-fragment inflation)",
+    "optional: consolidate platform-job reporting so it is not a padding harness"
+  ],
+  "do_not_change": [
+    "tests/ and solution/ as a substitute for deepening solver-visible runtime",
+    "instruction-only edits to paper over missing production depth",
+    "seed.sql row-count inflation counted as runtime LOC",
+    "Complexity Governor or authenticity-validator labels as a substitute for Q6 repair"
+  ],
+  "next_gate": "Route to Environment Builder / System Architect (and Q5 if API/runtime breakage needs repair) to deepen substantive reachable control-plane LOC, remove HIGH padding, and restore cc-api serve(); then re-run Q6 on the new production-scope hash.",
+  "role_output": {
+    "CORE_LOGIC_DEPTH": "MEDIUM",
+    "RUNTIME_REACHABILITY": "MEDIUM",
+    "MODULE_DIVERSITY": "MEDIUM",
+    "CROSS_COMPONENT_COUPLING": "HIGH",
+    "TOY_LOGIC_RISK": "LOW",
+    "PADDING_RISK": "HIGH",
+    "SUBSTANTIVE_LOC_ASSESSMENT": "Independent inventory: ~2,859 non-seed substantive Python LOC (~2,875 with schema.sql). Seed.py (~225) and 12k authz_events warehouse rows excluded. Padding/admin cluster ~1,353 LOC; non-padding core ~1,506. Below large_system_strict >=3,000 floor even before discounting HIGH padding.",
+    "MAJOR_MODULES": [
+      "cc.cli / bin/ccctl — primary reachable operator entrypoint",
+      "cc.api.app / bin/cc-api — documented HTTP surface; serve() currently NameError-broken",
+      "cc.iam.eval+conditions+policy+actions — material authorize branching",
+      "cc.services.authz_gateway + cc.audit — shared authorize/audit seam",
+      "cc.prs.approvals+merge + cc.repos.gitops — quorum and FF merge fence",
+      "cc.pipelines.deliver+event_id — pipeline journal/dedupe",
+      "cc.webhooks.outbox+retry+dispatch — delivery plane",
+      "cc.platform_jobs + operator_workflows/ops_console/compliance/drift/iam_report — padding/admin fan-out"
+    ],
+    "PARTIAL_FIX_TRAPS": [
+      "Fix IAM conditions without Deny/resource matching still leaves AccessDenied gaps",
+      "Fix quorum without MergePullRequestByFastForward authorize still ships unsafe merges",
+      "Fix FF merge without deliver event_id/dedupe still double-journals",
+      "Fix deliver without outbox enqueue/retry still drops webhook durability",
+      "CLI-only repair leaves broken cc-api entrypoint and inconsistent HTTP path"
+    ],
+    "REMOVAL_TEST": "Removing ~25% of solver-visible code concentrated in operator_workflows/ops_console/compliance_scanner/drift_detector/iam_report/notification_routing/principal_graph/change_window and cloned team-fragment policies would mainly drop nightly reporting/bootstrap theater while leaving IAM/merge/deliver behavior largely intact—evidence the bulk is not load-bearing. Removing a comparable slice from iam/prs/pipelines/webhooks/gitops would collapse the claimed control plane.",
+    "REQUIRED_CHANGES": [
+      "Grow honest substantive reachable runtime/config LOC above 3000 via load-bearing control-plane depth",
+      "Eliminate explicit LOC-floor padding and cloned policy fragments (PADDING_RISK must not remain HIGH)",
+      "Repair cc-api serve() so the HTTP entrypoint is runtime-reachable",
+      "Re-run Q6 after production-scope changes"
+    ]
+  }
+}

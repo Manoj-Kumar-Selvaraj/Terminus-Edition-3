@@ -1,0 +1,48 @@
+{
+  "PolicyId": "reviewer",
+  "Version": "2012-10-17",
+  "Description": "Settlement review pool: approve requests and land mainline by fast-forward from the office range.",
+  "Statement": [
+    {
+      "Sid": "ReviewersReadEverything",
+      "Effect": "Allow",
+      "Action": [
+        "codecommit:GitPull",
+        "codecommit:GetRepository",
+        "codecommit:CreatePullRequest"
+      ],
+      "Resource": [
+        "arn:aws:codecommit:eu-west-1:000000000000:ledger",
+        "arn:aws:codecommit:eu-west-1:000000000000:sandbox"
+      ]
+    },
+    {
+      "Sid": "ReviewersStampFromOffice",
+      "Effect": "Allow",
+      "Action": "codecommit:UpdatePullRequestApprovalState",
+      "Resource": [
+        "arn:aws:codecommit:eu-west-1:000000000000:ledger",
+        "arn:aws:codecommit:eu-west-1:000000000000:sandbox"
+      ],
+      "Condition": {
+        "IpAddress": {
+          "aws:SourceIp": ["10.8.0.0/16"]
+        }
+      }
+    },
+    {
+      "Sid": "ReviewersLandMainlineFromOffice",
+      "Effect": "Allow",
+      "Action": "codecommit:MergePullRequestByFastForward",
+      "Resource": "arn:aws:codecommit:eu-west-1:000000000000:ledger",
+      "Condition": {
+        "StringEquals": {
+          "codecommit:References": "refs/heads/main"
+        },
+        "IpAddress": {
+          "aws:SourceIp": ["10.8.0.0/16"]
+        }
+      }
+    }
+  ]
+}

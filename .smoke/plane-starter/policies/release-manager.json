@@ -1,0 +1,47 @@
+{
+  "PolicyId": "release-manager",
+  "Version": "2012-10-17",
+  "Description": "Release engineering owns refs/heads/release on the ledger repository.",
+  "Statement": [
+    {
+      "Sid": "ReleaseReadAccess",
+      "Effect": "Allow",
+      "Action": [
+        "codecommit:GitPull",
+        "codecommit:GetRepository"
+      ],
+      "Resource": "arn:aws:codecommit:eu-west-1:000000000000:ledger"
+    },
+    {
+      "Sid": "ReleaseBranchOwner",
+      "Effect": "Allow",
+      "Action": [
+        "codecommit:GitPush",
+        "codecommit:UpdatePullRequestApprovalState"
+      ],
+      "Resource": "arn:aws:codecommit:eu-west-1:000000000000:ledger",
+      "Condition": {
+        "StringEquals": {
+          "codecommit:References": "refs/heads/release"
+        },
+        "Bool": {
+          "aws:MultiFactorAuthPresent": "true"
+        },
+        "IpAddress": {
+          "aws:SourceIp": ["10.8.0.0/16"]
+        }
+      }
+    },
+    {
+      "Sid": "ReleaseStartsCanary",
+      "Effect": "Allow",
+      "Action": "pipeline:StartPipelineExecution",
+      "Resource": "arn:aws:codecommit:eu-west-1:000000000000:ledger",
+      "Condition": {
+        "StringEquals": {
+          "codecommit:References": "refs/heads/release"
+        }
+      }
+    }
+  ]
+}

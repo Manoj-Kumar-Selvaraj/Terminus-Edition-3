@@ -1,0 +1,19 @@
+{
+  "PolicyId": "pull-only",
+  "Version": "2012-10-17",
+  "Description": "Read-only clone access for onboarding accounts.",
+  "Statement": [
+    {
+      "Sid": "CloneOnly",
+      "Effect": "Allow",
+      "Action": [
+        "codecommit:GitPull",
+        "codecommit:GetRepository"
+      ],
+      "Resource": [
+        "arn:aws:codecommit:eu-west-1:000000000000:ledger",
+        "arn:aws:codecommit:eu-west-1:000000000000:sandbox"
+      ]
+    }
+  ]
+}

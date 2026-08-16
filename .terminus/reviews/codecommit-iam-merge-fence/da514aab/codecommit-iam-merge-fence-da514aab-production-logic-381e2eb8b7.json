@@ -1,0 +1,234 @@
+{
+  "schema_version": "3.0",
+  "role": "Production Logic Auditor",
+  "review_id": "codecommit-iam-merge-fence-da514aab-production-logic-381e2eb8b7",
+  "task": "codecommit-iam-merge-fence",
+  "task_commit": "da514aabdf99613812c5693e8bf6991344162e41",
+  "control_plane_commit": "da514aabdf99613812c5693e8bf6991344162e41",
+  "protocol_policy_version": "2.2",
+  "prompt_policy_version": "2.2",
+  "role_policy_version": "1.1",
+  "role_contract_hash": "ee7d1cfd6e19fcc0e831cc75829457593d7410613c3b3fb811aef925e85a1607",
+  "review_scope_hash": "88e01a9263d88805b5094b8857e0a8060e0a3408e0c4220c848a28533e81c651",
+  "context_packet": ".terminus/reviews/codecommit-iam-merge-fence/da514aab/codecommit-iam-merge-fence-da514aab-production-logic-381e2eb8b7.packet.json",
+  "verdict": "REVISE",
+  "confidence": "HIGH",
+  "evidence_status": "SUFFICIENT",
+  "summary": "Core IAM→PR/merge→deliver→webhook path via ccctl/cc-api is real and coupled (branch_protection, ref_lease, webhook_crypto are load-bearing on the fixed merge/outbox path; policy files are no longer byte-clones). It still fails large_system_strict Q6: honest substantive reachable runtime/config LOC is ~2,290 (~1,937 Python from entrypoint import-closure + ~354 ops/policies/schema), below the >=3,000 floor. Complexity substantive_loc=3440 is not sufficient—it counts seed.py/seed.sql/catalog.json plus ~734 LOC of entrypoint-unreachable admin/report/facade modules. PADDING_RISK is HIGH.",
+  "evidence": [
+    {
+      "type": "rule",
+      "ref": ".terminus/agents/QUALITY_AGENT_REGISTRY.md",
+      "observation": "Q6 independently judges whether the solver-visible core is complex, reachable, coupled, non-toy, and non-padded. For large_system_strict, >=3,000 substantive reachable runtime/config LOC is necessary but not sufficient; Complexity Governor or authenticity-validator PASS is not enough."
+    },
+    {
+      "type": "rule",
+      "ref": ".terminus/agents/QUALITY_AGENT_PROMPTS.md",
+      "observation": "Q6 method requires entrypoint tracing, reachability, distinct module responsibilities, clone/wrapper/padding checks, cross-module invariants, a ~25% removal test, and separating production logic from generated/config/data noise. PASS needs >=3,000 substantive reachable LOC and no HIGH toy/padding risk."
+    },
+    {
+      "type": "rule",
+      "ref": ".terminus/agents/PRODUCTION_AUTHENTICITY.md",
+      "observation": "Count only implementation that materially participates in the claimed operational system. Dead/unreachable/unnecessary code and construction toward the 3,000-LOC floor via filler are authenticity defects. Seed volume is not authored runtime complexity."
+    },
+    {
+      "type": "file",
+      "ref": "codecommit-iam-merge-fence/task.toml@da514aabdf99613812c5693e8bf6991344162e41",
+      "observation": "Security/AppSec Python/bash CodeCommit control-plane task; artifacts [/app/codecommit]; separate verifier; workdir /app/codecommit; public network; agent timeout 7200."
+    },
+    {
+      "type": "file",
+      "ref": ".terminus/designs/codecommit-iam-merge-fence.json",
+      "observation": "Design authenticity report records profile=large_system_strict. Used only to bind the strict LOC/padding gate; not treated as a copied complexity verdict."
+    },
+    {
+      "type": "file",
+      "ref": "codecommit-iam-merge-fence/environment/codecommit/bin/ccctl@da514aabdf99613812c5693e8bf6991344162e41",
+      "observation": "Primary operator entrypoint delegates to cc.cli.main with clone/push/pr/approve/merge/deliver/simulate/metrics/dispatch-webhooks."
+    },
+    {
+      "type": "file",
+      "ref": "codecommit-iam-merge-fence/environment/codecommit/bin/cc-api@da514aabdf99613812c5693e8bf6991344162e41",
+      "observation": "API entrypoint imports cc.server.main; server re-exports cc.api.app.main which calls serve() then serve_forever—entrypoint is runtime-reachable (prior unbound-httpd defect remediated)."
+    },
+    {
+      "type": "file",
+      "ref": "codecommit-iam-merge-fence/environment/codecommit/lib/cc/cli.py@da514aabdf99613812c5693e8bf6991344162e41",
+      "observation": "CLI wires authz_gateway, gitops, PR store/approvals/merge, deliver, policy_sim, metrics, webhook dispatch—no imports of ops_console/iam_report/admin facades."
+    },
+    {
+      "type": "file",
+      "ref": "codecommit-iam-merge-fence/environment/codecommit/lib/cc/api/app.py@da514aabdf99613812c5693e8bf6991344162e41",
+      "observation": "HTTP Handler exposes health/repos/metrics/prs/push/approve/merge/deliver/webhooks/dispatch with deliberate broken non-fixed merge/push paths; serve() returns ThreadingHTTPServer and main() serves forever."
+    },
+    {
+      "type": "file",
+      "ref": "codecommit-iam-merge-fence/environment/codecommit/lib/cc/prs/merge.py@da514aabdf99613812c5693e8bf6991344162e41",
+      "observation": "Fixed merge path couples IAM MERGE_FF authorize, approval quorum, prepare_protected_merge/finish_protected_merge (branch_protection+ref_lease), and gitops.update_ff—load-bearing cross-component coupling."
+    },
+    {
+      "type": "file",
+      "ref": "codecommit-iam-merge-fence/environment/codecommit/lib/cc/merge_guard.py@da514aabdf99613812c5693e8bf6991344162e41",
+      "observation": "prepare_protected_merge consults branch_protection rules and acquires/releases ref leases; reachable from merge.merge on the fixed path."
+    },
+    {
+      "type": "file",
+      "ref": "codecommit-iam-merge-fence/environment/codecommit/lib/cc/branch_protection.py@da514aabdf99613812c5693e8bf6991344162e41",
+      "observation": "Real rule matching and merge/push gate semantics against ops/branch-protection.json—not a constant shell."
+    },
+    {
+      "type": "file",
+      "ref": "codecommit-iam-merge-fence/environment/codecommit/lib/cc/ref_lease.py@da514aabdf99613812c5693e8bf6991344162e41",
+      "observation": "Exclusive TTL leases with acquire/release/require_held/purge_expired persisted under var/ref-leases.json; coupled into merge_guard."
+    },
+    {
+      "type": "file",
+      "ref": "codecommit-iam-merge-fence/environment/codecommit/lib/cc/webhook_crypto.py@da514aabdf99613812c5693e8bf6991344162e41",
+      "observation": "HMAC-SHA256 sign/verify/attach used from webhooks.outbox.attach_signature on the deliver→outbox path."
+    },
+    {
+      "type": "file",
+      "ref": "codecommit-iam-merge-fence/environment/codecommit/lib/cc/ops_console.py@da514aabdf99613812c5693e8bf6991344162e41",
+      "observation": "Docstring claims 'reachable control-plane helpers' and pulls approval_engine/batch_ops/config_schema/policy_admin/ref_guard/state_recovery, but neither ccctl nor cc-api imports this module—dead fan-in hub (~134 LOC)."
+    },
+    {
+      "type": "file",
+      "ref": "codecommit-iam-merge-fence/environment/codecommit/lib/cc/integration_facade.py@da514aabdf99613812c5693e8bf6991344162e41",
+      "observation": "ControlPlane facade duplicates CLI/API workflows but is never imported from entrypoints—wrapper padding (~55 LOC)."
+    },
+    {
+      "type": "file",
+      "ref": "codecommit-iam-merge-fence/environment/codecommit/lib/cc/api/auth.py@da514aabdf99613812c5693e8bf6991344162e41",
+      "observation": "Compatibility shim aliases cc.api.app as routes_* for an architecture plan; unreached toy module."
+    },
+    {
+      "type": "file",
+      "ref": "codecommit-iam-merge-fence/environment/codecommit/policies/@da514aabdf99613812c5693e8bf6991344162e41",
+      "observation": "Eleven policy JSON files have distinct content hashes (including four team-fragment-* files)—prior clone-policy inflation is remediated; policies are runtime config consumed by IAM eval when bound."
+    },
+    {
+      "type": "artifact",
+      "ref": "independent_loc_inventory@da514aab",
+      "observation": "Independent inventory: complexity-style substantive_loc over environment=3440 (includes seed.py 230, seed.sql 55, catalog.json 106, and unreachable admin cluster). Non-blank non-# Python excl. seed.py=2671. Entrypoint import-closure from cc.cli/cc.server/cc.api.app reaches 48 modules / ~1937 Python LOC (incl. iam/eval, merge_guard, branch_protection, ref_lease, webhook_crypto, deliver/outbox). Unreached excl. seed: 13 modules / ~734 LOC (ops_console, iam_report, pipeline_admin, policy_admin, webhook_admin, batch_ops, integration_facade, state_recovery, repo_lifecycle, config_schema, approval_engine, ref_guard, api.auth). Runtime ops+policies+schema.sql non-blank LOC≈354. Honest substantive reachable runtime/config ≈1937+354≈2291—below large_system_strict >=3000 by ~700+."
+    },
+    {
+      "type": "run",
+      "ref": "validate_task_complexity.py codecommit-iam-merge-fence (diagnostic only)",
+      "observation": "Authoring counter reports substantive_loc=3440 with no duplicated_environment_files groups. Used only as a contrasting raw tally; Q6 does not copy that PASS or treat 3440 as reachable production depth."
+    }
+  ],
+  "findings": [
+    {
+      "id": "Q6-1",
+      "severity": "BLOCKER",
+      "status": "OBSERVED",
+      "criterion": "large_system_strict requires >=3000 substantive reachable solver-visible runtime/config LOC",
+      "evidence_refs": [
+        "artifact:independent_loc_inventory@da514aab",
+        "codecommit-iam-merge-fence/environment/codecommit/bin/ccctl@da514aabdf99613812c5693e8bf6991344162e41",
+        "codecommit-iam-merge-fence/environment/codecommit/bin/cc-api@da514aabdf99613812c5693e8bf6991344162e41",
+        ".terminus/agents/QUALITY_AGENT_PROMPTS.md",
+        ".terminus/agents/PRODUCTION_AUTHENTICITY.md"
+      ],
+      "why_it_matters": "The strict profile's scale floor is about reachable production logic, not raw environment line count. At ~2,290 honest reachable LOC the package remains under the gate even after counting consumed ops/policies/schema.",
+      "minimal_remediation": "Grow or deepen entrypoint-reachable runtime/config (wire load-bearing modules into ccctl/cc-api workflows, or add real coupled subsystems) until honest reachable substantive LOC clears 3000 without seed/catalog/unreachable filler.",
+      "regression_risk": "Naively importing ops_console from CLI without productizing those paths can create discard-touch theater and still fail Q6; adding only more seed/data JSON will not help."
+    },
+    {
+      "id": "Q6-2",
+      "severity": "BLOCKER",
+      "status": "OBSERVED",
+      "criterion": "no HIGH padding risk from unreachable/admin/report/facade inflation toward the LOC floor",
+      "evidence_refs": [
+        "codecommit-iam-merge-fence/environment/codecommit/lib/cc/ops_console.py@da514aabdf99613812c5693e8bf6991344162e41",
+        "codecommit-iam-merge-fence/environment/codecommit/lib/cc/integration_facade.py@da514aabdf99613812c5693e8bf6991344162e41",
+        "codecommit-iam-merge-fence/environment/codecommit/lib/cc/api/auth.py@da514aabdf99613812c5693e8bf6991344162e41",
+        "codecommit-iam-merge-fence/environment/codecommit/lib/cc/iam_report.py@da514aabdf99613812c5693e8bf6991344162e41",
+        "artifact:independent_loc_inventory@da514aab"
+      ],
+      "why_it_matters": "About 734 Python LOC (~25% of non-seed library code) is only reachable through an ops_console/admin cluster that entrypoints never call. Complexity's 3440 also folds seed and catalog into the tally. That is systemic padding relative to the claimed control plane, so PADDING_RISK is HIGH and blocks PASS.",
+      "minimal_remediation": "Either delete/shrink the dead admin/report/facade/auth-shim cluster, or make those modules load-bearing from ccctl/cc-api with distinct operator-visible behavior and state/error paths—not import-only touch wiring.",
+      "regression_risk": "Removing dead modules without adding real reachable depth will make the LOC miss more obvious; wiring with `_ = platform_report()` style discards would worsen authenticity."
+    }
+  ],
+  "missing_evidence": [],
+  "change_scope": [
+    "Entrypoint-reachable runtime modules under environment/codecommit/lib/cc (and any new subsystems they must own)",
+    "Optional deletion or productization of unreached admin/report/facade/shim modules",
+    "Runtime ops/policies/schema only if they accompany real coupled logic—not as LOC filler"
+  ],
+  "do_not_change": [
+    "Do not treat validate_task_complexity substantive_loc=3440 or any Complexity Governor PASS as Q6 clearance",
+    "Do not count seed.py, seed.sql, catalog.json, or authz warehouse row volume as substantive runtime/config LOC",
+    "Do not edit tests/ or solution/ to manufacture production depth evidence",
+    "Do not weaken branch_protection/ref_lease/webhook_crypto coupling on the fixed merge/outbox path while chasing LOC"
+  ],
+  "next_gate": "Producer must repair reachable depth/padding, then Orchestrator regenerates a fresh Q6 packet after the environment/task.toml scope changes (review_scope_hash will invalidate).",
+  "role_output": {
+    "CORE_LOGIC_DEPTH": "MEDIUM",
+    "RUNTIME_REACHABILITY": "MEDIUM",
+    "MODULE_DIVERSITY": "MEDIUM",
+    "CROSS_COMPONENT_COUPLING": "HIGH",
+    "TOY_LOGIC_RISK": "LOW",
+    "PADDING_RISK": "HIGH",
+    "SUBSTANTIVE_LOC_ASSESSMENT": "Independent inventory at da514aab: entrypoint import-closure Python ≈1,937 LOC; consumed ops/policies/schema.sql ≈354; honest substantive reachable runtime/config ≈2,291. Complexity substantive_loc=3440 includes seed.py (230), seed.sql (55), catalog.json (106), and ~734 LOC of entrypoint-unreachable admin/report/facade modules—those do not count toward Q6. Below large_system_strict >=3,000 by ~700+. Non-seed Python total 2,671 is still under 3,000 even before subtracting unreached padding.",
+    "MAJOR_MODULES": [
+      {
+        "module": "bin/ccctl + cc.cli",
+        "responsibility": "Operator CLI for clone/push/pr/approve/merge/deliver/simulate/metrics/dispatch-webhooks with principal/MFA/IP context.",
+        "reachability": "Primary solver-visible entrypoint; imports authz, gitops, PR, deliver, policy_sim, metrics, dispatch.",
+        "state_error_behavior": "Maps CcError to stderr JSON and non-zero exit; InternalError catch-all."
+      },
+      {
+        "module": "bin/cc-api + cc.server + cc.api.app",
+        "responsibility": "HTTP control plane mirroring CLI workflows with deliberate broken non-fixed authorize/merge behaviors.",
+        "reachability": "cc-api → server.main → api.app.main/serve/serve_forever; Handler routes are live.",
+        "state_error_behavior": "403/400 from CcError; 500 InternalError; broken path skips MERGE_FF IAM and lies about FF."
+      },
+      {
+        "module": "cc.iam.* + authz_gateway + iam_decision_trace + audit",
+        "responsibility": "Policy load/eval/conditions, gated authorize with audit recording, simulate/explain traces.",
+        "reachability": "Called from CLI/API and policy_sim; decision_trace via policy_sim.",
+        "state_error_behavior": "AccessDenied with codes; MFA/IP/resource condition failures; audit allow/deny rows."
+      },
+      {
+        "module": "cc.prs.* + merge_guard + branch_protection + ref_lease",
+        "responsibility": "PR store/approvals/quorum, protected merge preparation with linear-history and exclusive ref leases.",
+        "reachability": "merge.merge → merge_guard → branch_protection/ref_lease on fixed path; gitops.update_ff/merge_ff_broken.",
+        "state_error_behavior": "PR_NOT_OPEN, APPROVAL_QUORUM, NOT_FAST_FORWARD, PROTECTED_REF_*, REF_LEASE_*."
+      },
+      {
+        "module": "cc.pipelines.deliver + binding_index + event_id + webhooks.* + webhook_crypto",
+        "responsibility": "Pipeline binding lookup, event journal IDs, durable outbox enqueue, HMAC signing, retry/dispatch.",
+        "reachability": "CLI/API deliver and dispatch-webhooks; outbox.attach_signature uses webhook_crypto.",
+        "state_error_behavior": "Missing bindings/webhooks; dispatch retry outcomes into sink/results."
+      },
+      {
+        "module": "cc.repos.* + store.* + models/util/home/errors",
+        "responsibility": "Bare git ops, catalog, JSON locked stores, shared models and path helpers.",
+        "reachability": "Imported throughout CLI/API/IAM/PR/pipeline paths.",
+        "state_error_behavior": "Missing repo/ref; lock-backed JSON read/write."
+      },
+      {
+        "module": "UNREACHED admin/report/facade cluster",
+        "responsibility": "ops_console platform_report, iam_report, *_admin, batch_ops, approval_engine, config_schema, state_recovery, repo_lifecycle, integration_facade, api.auth shim.",
+        "reachability": "Not imported from ccctl/cc-api; internal fan-in only (ops_console hub). repo_lifecycle only from seed.py.",
+        "state_error_behavior": "Reporting helpers exist but never execute on the public operator workflow—padding relative to entrypoints."
+      }
+    ],
+    "PARTIAL_FIX_TRAPS": [
+      "Fixing only IAM MFA/IP on API push while leaving merge_ff_broken and skipped MERGE_FF still fails the merge fence.",
+      "Enabling branch_protection rules without wiring prepare_protected_merge/lease acquire still allows unprotected merges.",
+      "Signing webhooks without attaching signatures on outbox enqueue still breaks verify on dispatch.",
+      "Importing ops_console from CLI without exposing real commands creates reachability theater.",
+      "Deleting unreachable modules alone without adding ~700+ LOC of load-bearing reachable depth still fails the floor.",
+      "Counting seed/catalog/complexity 3440 as clearance while leaving the dead admin cluster intact will fail the next independent Q6."
+    ],
+    "REMOVAL_TEST": "Removing ~25% of the load-bearing reachable core (iam/eval+conditions, authz_gateway, prs/merge+approvals, merge_guard/branch_protection/ref_lease, deliver/outbox/webhook_crypto, cli/api handlers) would collapse authorize→merge→deliver→dispatch behavior. Separately, removing the ~734 LOC unreached admin/report/facade/shim cluster would not change any ccctl/cc-api outcome today—strong evidence those lines are padding relative to the operator surface. Seed/catalog removal does not change runtime logic of an already-populated lab.",
+    "REQUIRED_CHANGES": [
+      "Raise honest entrypoint-reachable substantive runtime/config LOC to >=3000 without seed/catalog/unreachable filler.",
+      "Eliminate HIGH padding: delete or productize the ops_console/iam_report/*_admin/batch_ops/integration_facade/state_recovery/config_schema/approval_engine/ref_guard/api.auth dead cluster with real ccctl/cc-api surface area.",
+      "Preserve (or deepen) existing cross-component coupling on IAM, protected merge/leases, and webhook crypto rather than replacing it with import-touch padding."
+    ]
+  }
+}
