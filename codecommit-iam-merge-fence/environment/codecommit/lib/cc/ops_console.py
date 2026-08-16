@@ -8,17 +8,22 @@ from pathlib import Path
 from typing import Any, Iterable
 
 from cc import home
+from cc import iam_report
 from cc.approval_engine import evaluate_pr, load_all_rules, missing_approvers
 from cc.audit import query as audit_query
 from cc.batch_ops import DEFAULT_ACTIONS, explain_matrix
 from cc.config_schema import validate_all
+from cc.merge_guard import describe_merge_readiness
+from cc.pipeline_admin import binding_conflicts, load_bindings, pipeline_names
 from cc.pipelines import event_id as eid_mod
 from cc.policy_admin import list_policies, principals, read_policy
 from cc.prs import store as pr_store
 from cc.ref_guard import batch_classify
+from cc.ref_lease import active_leases, purge_expired
 from cc.repos import catalog
 from cc.state_recovery import health
 from cc.util import load_json
+from cc.webhook_admin import delivery_stats, load_webhooks
 from cc.webhooks import outbox
 
 
@@ -109,17 +114,32 @@ def access_preview(principal: str, repo: str, refs: Iterable[str], *, mfa: bool,
 
 
 def platform_report() -> dict[str, Any]:
+    purge_expired()
+    open_prs = open_pr_report()
+    readiness = []
+    for pr in pr_store.list_open():
+        readiness.append(
+            describe_merge_readiness(pr.repo, pr.dest, pr.source_commit, pr.author)
+        )
     return {
         "health": health(),
         "policies": inventory_policies(),
         "principals": inventory_principals(),
         "repos": inventory_repos(),
         "rules": load_all_rules(),
-        "open_prs": open_pr_report(),
+        "open_prs": open_prs,
+        "merge_readiness": readiness,
         "config_errors": config_validation_report(),
         "audit": audit_query.summary(),
         "journal_by_pipeline": journal_by_pipeline(),
         "outbox_by_webhook": outbox_by_webhook(),
+        "iam": iam_report.full_iam_report("dev-alice", "ledger"),
+        "webhooks": load_webhooks(),
+        "webhook_stats": delivery_stats(),
+        "pipelines": pipeline_names(),
+        "bindings": load_bindings(),
+        "binding_conflicts": binding_conflicts(),
+        "active_leases": active_leases(),
     }
 
 

@@ -56,6 +56,16 @@ class Handler(BaseHTTPRequestHandler):
             if path == "/metrics":
                 self._send(200, metrics.snapshot())
                 return
+            if path == "/ops/report":
+                from cc.ops_console import platform_report
+
+                self._send(200, platform_report())
+                return
+            if path == "/ops/health":
+                from cc.state_recovery import health
+
+                self._send(200, health())
+                return
             if path.startswith("/prs/"):
                 pr_id = int(path.rsplit("/", 1)[-1])
                 pr = pr_store.get(pr_id)

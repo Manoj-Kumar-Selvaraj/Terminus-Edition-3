@@ -19,6 +19,8 @@ def check_paths() -> dict[str, Any]:
         "triggers": home.triggers_path(),
         "audit": home.audit_path(),
         "outbox": home.outbox_path(),
+        "branch_protection": home.root() / "ops" / "branch-protection.json",
+        "ref_leases": home.var_dir() / "ref-leases.json",
     }
     return {k: {"path": str(v), "exists": v.exists()} for k, v in paths.items()}
 

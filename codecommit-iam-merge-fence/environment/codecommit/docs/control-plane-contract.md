@@ -28,6 +28,12 @@ ccctl --principal NAME [--mfa] [--source-ip ADDR] deliver REPO REF
 ccctl --principal NAME [--mfa] [--source-ip ADDR] metrics
 ccctl --principal NAME [--mfa] [--source-ip ADDR] dispatch-webhooks
 ccctl --principal NAME [--mfa] [--source-ip ADDR] simulate REPO ACTION REF
+ccctl --principal NAME [--mfa] [--source-ip ADDR] report [--output PATH]
+ccctl --principal NAME ops-health
+ccctl --principal NAME [--mfa] [--source-ip ADDR] access-preview REPO [--ref REF]
+ccctl --principal NAME recover-catalog
+ccctl --principal NAME webhooks
+ccctl --principal NAME pipelines
 ```
 
 Success prints one JSON object on stdout (clone is silent except errors). Failures print one JSON object on stderr and exit 1.
@@ -38,6 +44,12 @@ Merge success: `{"ok":true,"pr_id":int,"commit":str,"fast_forward":true}`.
 Deliver success: `{"ok":true,"delivered":[{"event_id":str,"repo":str,"ref":str,"commit":str,"pipeline":str,"status":"delivered"}],"duplicate":bool}`.
 Metrics success: `{"audit":int,"journal_lines":int,"outbox_pending":int,...}` with at least `audit` and `journal_lines`.
 Dispatch-webhooks success: `{"ok":true,"results":[...]}`. Durable outbox row fields after an attempt: `attempts` (int >= 1) and `status` in `pending|delivered|failed`.
+Report success: platform inventory JSON including health, policies, open PRs, IAM coverage, webhooks, pipelines, and active leases.
+Ops-health success: layout/path existence map under `paths`.
+Access-preview success: `{"principal","repo","refs","matrix"}` authorization explain grid.
+Recover-catalog success: `{"ok":true,"rebuild":{"repos":[...]},"repos":[...]}`.
+Webhooks success: `{"webhooks":[...],"stats":{...}}`.
+Pipelines success: `{"bindings":[...],"pipelines":[...],"ledger_journal":[...]}`.
 
 ## HTTP API
 
@@ -48,6 +60,8 @@ Identity headers required on mutating routes. JSON request/response bodies.
 GET  /health -> {"ok":true}
 GET  /repos
 GET  /metrics
+GET  /ops/report
+GET  /ops/health
 GET  /prs/{pr_id}
 POST /repos  body {"name":str,"default_branch"?:str}
 POST /repos/{repo}/push  body {"ref":str,"worktree":str} -> push success shape
@@ -59,6 +73,12 @@ POST /webhooks/dispatch -> {"ok":true,"results":[...]}
 ```
 
 HTTP merge must call the same `MergePullRequestByFastForward` authorize path as CLI merge (principal/MFA/source-ip from headers). Errors use the same JSON error object as CLI (`error`, optional `code`) with HTTP 403 for AccessDenied and 400 for ValidationException.
+
+## PR store
+
+`/app/codecommit/var/prs.json` shape:
+`{"next_id":int,"items":{"<pr_id>":{"pr_id":int,"repo":str,"source":str,"dest":str,"source_commit":str,"author":str,"status":"open|merged|closed","approvals":[str,...],"merged_commit"?:str}}}`.
+Opening a PR creates `items[str(pr_id)]` with `status` `"open"` and `author` set to the requesting principal.
 
 ## IAM evaluation
 
@@ -77,6 +97,7 @@ Rule match on repo + destination. Missing rule => `NO_APPROVAL_RULE`.
 Insufficient distinct in-pool approvals (author excluded, duplicates once) => `APPROVAL_QUORUM`.
 Merge requires `MergePullRequestByFastForward` on dest. Fast-forward only; else `NOT_FAST_FORWARD`. Dest updated to source commit; no merge commit.
 Protected destinations also require an exclusive ref lease under `/app/codecommit/var/ref-leases.json` for the merge window.
+Held lease by another principal => `REF_LEASE_HELD`. After a successful protected merge the lease token is released.
 
 ## Deliver and outbox
 
@@ -85,7 +106,10 @@ Protected destinations also require an exclusive ref lease under `/app/codecommi
 Journal line keys in order: `event_id`, `repo`, `ref`, `commit`, `pipeline`, `status`.
 Exactly once per repo/ref/commit/pipeline. Repeat returns `duplicate:true` without appending.
 Successful first deliver also enqueues webhook outbox rows for matching webhook configs.
-Each outbox row includes `signature` = hex HMAC-SHA256 of `event_id|pipeline|commit` using webhook `secret` (default `settle`).
+Each outbox row includes:
+- `webhook_id` — id from `/app/codecommit/ops/webhooks.json`
+- `signature` — hex HMAC-SHA256 of `event_id|pipeline|commit` using webhook `secret` (default `settle`)
+- `status` — initially `pending`
 `dispatch-webhooks` attempts pending/failed rows and persists `attempts`/`status` on the outbox path. Failed rows may be retried until max attempts.
 
 ## Audit

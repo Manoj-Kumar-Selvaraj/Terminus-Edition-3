@@ -6,13 +6,13 @@ import sys
 from pathlib import Path
 
 from cc.errors import CcError
-from cc.iam import actions as iam_actions
-from cc.pipelines.deliver import deliver
-from cc.prs import approvals, merge, store as pr_store
-from cc.repos import catalog, gitops
-from cc.services import authz_gateway, metrics, policy_sim, serializers
-from cc.util import full_ref
-from cc.webhooks.dispatch import dispatch_pending
+from cc.integration_facade import ControlPlane
+from cc.ops_console import access_preview, platform_report, write_report
+from cc.pipeline_admin import journal_for, load_bindings, pipeline_names
+from cc.repo_lifecycle import list_detailed
+from cc.services import metrics, policy_sim
+from cc.state_recovery import health, rebuild_catalog_from_repos
+from cc.webhook_admin import delivery_stats, load_webhooks
 
 
 def _out(obj: object) -> None:
@@ -23,76 +23,62 @@ def _err(exc: CcError) -> None:
     print(exc.to_json(), file=sys.stderr)
 
 
+def _plane(ns: argparse.Namespace) -> ControlPlane:
+    return ControlPlane(fixed=True)
+
+
 def cmd_clone(ns: argparse.Namespace) -> int:
-    catalog.require_repo(ns.repo)
-    authz_gateway.gated_authorize(
-        ns.principal,
-        iam_actions.GIT_PULL,
-        ns.repo,
-        "main",
-        mfa=ns.mfa,
-        source_ip=ns.source_ip,
-        fixed=ns.fixed,
-    )
-    gitops.clone(ns.repo, Path(ns.dest))
+    _plane(ns).clone(ns.principal, ns.repo, Path(ns.dest), mfa=ns.mfa, source_ip=ns.source_ip)
     return 0
 
 
 def cmd_push(ns: argparse.Namespace) -> int:
-    catalog.require_repo(ns.repo)
-    ref = full_ref(ns.branch)
-    authz_gateway.gated_authorize(
-        ns.principal,
-        iam_actions.GIT_PUSH,
-        ns.repo,
-        ref,
-        mfa=ns.mfa,
-        source_ip=ns.source_ip,
-        fixed=ns.fixed,
+    _out(
+        _plane(ns).push(
+            ns.principal,
+            ns.repo,
+            Path(ns.worktree),
+            ns.branch,
+            mfa=ns.mfa,
+            source_ip=ns.source_ip,
+        )
     )
-    commit = gitops.push(ns.repo, Path(ns.worktree), ns.branch)
-    _out(serializers.push_success(ns.repo, ref, commit))
     return 0
 
 
 def cmd_pr(ns: argparse.Namespace) -> int:
-    catalog.require_repo(ns.repo)
-    authz_gateway.gated_authorize(
-        ns.principal,
-        iam_actions.GIT_PULL,
-        ns.repo,
-        ns.source,
-        mfa=ns.mfa,
-        source_ip=ns.source_ip,
-        fixed=ns.fixed,
+    _out(
+        _plane(ns).open_pr(
+            ns.principal,
+            ns.repo,
+            ns.source,
+            ns.dest,
+            mfa=ns.mfa,
+            source_ip=ns.source_ip,
+        )
     )
-    src_commit = gitops.ref_commit(ns.repo, ns.source)
-    pr = pr_store.create(ns.repo, ns.source, ns.dest, src_commit, ns.principal)
-    _out(serializers.pr_success(pr.pr_id, pr.source, pr.dest, pr.source_commit))
     return 0
 
 
 def cmd_approve(ns: argparse.Namespace) -> int:
-    body = approvals.approve(int(ns.pr_id), ns.principal, fixed=ns.fixed)
-    _out(body)
+    _out(_plane(ns).approve(ns.principal, int(ns.pr_id)))
     return 0
 
 
 def cmd_merge(ns: argparse.Namespace) -> int:
-    body = merge.merge(
-        int(ns.pr_id),
-        ns.principal,
-        mfa=ns.mfa,
-        source_ip=ns.source_ip,
-        fixed=ns.fixed,
+    _out(
+        _plane(ns).merge(
+            ns.principal,
+            int(ns.pr_id),
+            mfa=ns.mfa,
+            source_ip=ns.source_ip,
+        )
     )
-    _out(body)
     return 0
 
 
 def cmd_deliver(ns: argparse.Namespace) -> int:
-    body = deliver(ns.repo, ns.ref, fixed=ns.fixed)
-    _out(body)
+    _out(_plane(ns).deliver(ns.repo, ns.ref))
     return 0
 
 
@@ -117,7 +103,62 @@ def cmd_metrics(ns: argparse.Namespace) -> int:
 
 
 def cmd_dispatch(ns: argparse.Namespace) -> int:
-    _out({"ok": True, "results": dispatch_pending(fixed=True, sink=[])})
+    _out({"ok": True, "results": _plane(ns).dispatch()})
+    return 0
+
+
+def cmd_report(ns: argparse.Namespace) -> int:
+    if ns.output:
+        path = write_report(Path(ns.output))
+        _out({"ok": True, "path": str(path)})
+    else:
+        _out(platform_report())
+    return 0
+
+
+def cmd_ops_health(ns: argparse.Namespace) -> int:
+    _out(health())
+    return 0
+
+
+def cmd_access_preview(ns: argparse.Namespace) -> int:
+    refs = [ns.ref] if ns.ref else ["refs/heads/main", "refs/heads/dev/alice"]
+    _out(
+        access_preview(
+            ns.principal,
+            ns.repo,
+            refs,
+            mfa=ns.mfa,
+            source_ip=ns.source_ip,
+        )
+    )
+    return 0
+
+
+def cmd_recover_catalog(ns: argparse.Namespace) -> int:
+    _out(
+        {
+            "ok": True,
+            "rebuild": rebuild_catalog_from_repos(),
+            "repos": list_detailed(),
+        }
+    )
+    return 0
+
+
+def cmd_webhooks(ns: argparse.Namespace) -> int:
+    _out({"webhooks": load_webhooks(), "stats": delivery_stats()})
+    return 0
+
+
+def cmd_pipelines(ns: argparse.Namespace) -> int:
+    _out(
+        {
+            "bindings": load_bindings(),
+            "pipelines": pipeline_names(),
+            "ledger_journal": journal_for("ledger"),
+        }
+    )
     return 0
 
 
@@ -172,14 +213,33 @@ def build_parser() -> argparse.ArgumentParser:
 
     c = sp.add_parser("dispatch-webhooks")
     c.set_defaults(func=cmd_dispatch)
+
+    c = sp.add_parser("report")
+    c.add_argument("--output", default="")
+    c.set_defaults(func=cmd_report)
+
+    c = sp.add_parser("ops-health")
+    c.set_defaults(func=cmd_ops_health)
+
+    c = sp.add_parser("access-preview")
+    c.add_argument("repo")
+    c.add_argument("--ref", default="")
+    c.set_defaults(func=cmd_access_preview)
+
+    c = sp.add_parser("recover-catalog")
+    c.set_defaults(func=cmd_recover_catalog)
+
+    c = sp.add_parser("webhooks")
+    c.set_defaults(func=cmd_webhooks)
+
+    c = sp.add_parser("pipelines")
+    c.set_defaults(func=cmd_pipelines)
     return p
 
 
 def main(argv: list[str] | None = None) -> int:
-    
     parser = build_parser()
     ns = parser.parse_args(argv)
-    ns.fixed = bool(getattr(ns, "fixed", False))
     try:
         return int(ns.func(ns))
     except CcError as exc:

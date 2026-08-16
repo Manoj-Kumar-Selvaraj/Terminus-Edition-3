@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import hashlib
+import hmac
 import json
 import os
 import shutil
@@ -452,7 +453,40 @@ def test_f2p_deliver_enqueues_outbox(home: Path, tmp_path: Path) -> None:
     assert rows[0]["pipeline"] == "settle-prod"
     assert rows[0]["webhook_id"] == "wh-settle"
     assert rows[0]["status"] == "pending"
-    assert rows[0].get("signature")
+    expect_sig = hmac.new(
+        b"settle",
+        f"{rows[0]['event_id']}|{rows[0]['pipeline']}|{rows[0]['commit']}".encode(),
+        hashlib.sha256,
+    ).hexdigest()
+    assert rows[0].get("signature") == expect_sig
+
+
+def test_f2p_protected_merge_ref_lease_fence(home: Path, tmp_path: Path) -> None:
+    """Held exclusive dest lease blocks merge; successful merge leaves no held main lease."""
+    pr_id, _ = _open_pr(home, tmp_path, "lease.txt")
+    _run(home, ["approve", "ledger", str(pr_id)], principal="rev-a", ip=OFFICE)
+    _run(home, ["approve", "ledger", str(pr_id)], principal="rev-b", ip=OFFICE)
+    os.environ["CC_ROOT"] = str(home)
+    os.environ["PYTHONPATH"] = str(APP / "lib")
+    sys.path.insert(0, str(APP / "lib"))
+    from cc.ref_lease import acquire, release
+
+    held = acquire("ledger", "main", "rev-b")
+    cp = _run(home, ["merge", "ledger", str(pr_id)], principal="rev-a", ip=OFFICE, check=False)
+    assert cp.returncode != 0
+    assert _err(cp).get("code") == "REF_LEASE_HELD"
+    release("ledger", "main", str(held["token"]))
+    _run(home, ["merge", "ledger", str(pr_id)], principal="rev-a", ip=OFFICE)
+    doc = json.loads((home / "var" / "ref-leases.json").read_text(encoding="utf-8"))
+    assert "ledger|refs/heads/main" not in (doc.get("leases") or {})
+
+
+def test_p2p_ops_report_command(home: Path) -> None:
+    """report command returns platform inventory including health and policies."""
+    body = _json(_run(home, ["report"], principal="pipeline-bot"))
+    assert "health" in body
+    assert "policies" in body
+    assert "active_leases" in body
 
 
 def test_f2p_dispatch_marks_outbox_attempt(home: Path, tmp_path: Path) -> None:
@@ -600,7 +634,7 @@ def test_f2p_second_deliver_does_not_duplicate_outbox(home: Path, tmp_path: Path
     assert len(rows) == 1
 
 
-def test_f2p_journal_key_order(home: Path, tmp_path: Path) -> None:
+def test_p2p_journal_key_order(home: Path, tmp_path: Path) -> None:
     """Trigger journal objects use the contracted key order."""
     dest = tmp_path / "wt-keys"
     _run(home, ["clone", "ledger", str(dest)], principal="dev-alice")
