@@ -1,0 +1,94 @@
+{
+  "schema_version": "3.0",
+  "role": "Instruction Reviewer",
+  "review_id": "django-checkout-failover-ha-d3a64a1b-instruction-d681620c9c",
+  "task": "django-checkout-failover-ha",
+  "task_commit": "d3a64a1bcab9579787745e952a6bf8132fc6ad67",
+  "control_plane_commit": "d3a64a1bcab9579787745e952a6bf8132fc6ad67",
+  "protocol_policy_version": "2.2",
+  "prompt_policy_version": "2.2",
+  "role_policy_version": "1.0",
+  "role_contract_hash": "ce36982fb77ce80b4c8f53015d566f5bcfb3288c7408243b9a807b8856930703",
+  "context_packet": ".terminus/reviews/django-checkout-failover-ha/d3a64a1b/django-checkout-failover-ha-d3a64a1b-instruction-d681620c9c.packet.json",
+  "verdict": "PASS",
+  "confidence": "HIGH",
+  "evidence_status": "SUFFICIENT",
+  "summary": "instruction.md is a fair ~134-word on-call handoff: two short paragraphs, zero backtick path fencing, absolute paths retained in ordinary prose, and material HA end-state plus dump schema discoverable via runbook/oncall/log evidence without repair-recipe or rubric leakage.",
+  "evidence": [
+    {
+      "type": "file",
+      "ref": "django-checkout-failover-ha/instruction.md",
+      "observation": "134 words, 2 paragraphs, 0 bullets, 0 backticks; incident symptoms then preserve-routes / one fenced writer / safe /readyz / fresh confirmation / one capture per attempt_id / dump path; paths named in Slack-style prose."
+    },
+    {
+      "type": "file",
+      "ref": "django-checkout-failover-ha/environment/ha/notes/oncall.md",
+      "observation": "Supports current-state claims (AZ-B writer advertise, second cart/OPEN confirmation, dual-box captures, half-finished sync) without turning the ticket into a module repair map."
+    },
+    {
+      "type": "file",
+      "ref": "django-checkout-failover-ha/environment/ha/logs/captured/shopdesk-error.log",
+      "observation": "Concrete log lines corroborate att-inc-20001/20007/20012 double capture, replica place, sticky miss, and writable fence on standby."
+    },
+    {
+      "type": "file",
+      "ref": "django-checkout-failover-ha/environment/ha/docs/runbook.md",
+      "observation": "Ordinary cutover/runbook contract: pins vs django_session, lag/refuse gates, live /readyz vs dump accepting_checkout, failover-status.json schema; not a second acceptance checklist relocating the task goal."
+    },
+    {
+      "type": "file",
+      "ref": ".terminus/designs/django-checkout-failover-ha-test-map.json",
+      "observation": "Requirement families (fenced writer, sticky/pins, lag, capture uniqueness, readyz, status dump, sync_standby) map to instruction+runbook outcomes for discoverability without relying on test-body grading authority."
+    },
+    {
+      "type": "rule",
+      "ref": ".terminus/agents/INSTRUCTION_POLICY.md",
+      "observation": "Jira/Slack handoff path-catalog note and HUMAN_WRITING_CALIBRATION §11: absolute paths required but must not be a fenced markdown inventory; this revision matches the approved ordinary-prose pattern."
+    },
+    {
+      "type": "rule",
+      "ref": ".terminus/reviewers/HUMAN_WRITING_CALIBRATION.md",
+      "observation": "Uneven incident denseness, outcome-first end state, delegated sticky/lag/refuse detail, and unfenced path pointing match human on-call tickets; no benchmark preamble or essay transitions."
+    }
+  ],
+  "findings": [],
+  "missing_evidence": [],
+  "change_scope": [],
+  "do_not_change": [
+    "Do not reintroduce backtick-fenced path catalogs or symmetrical 'X is /path' inventory cadence.",
+    "Do not relocate material end-state requirements solely into docs to shorten the ticket.",
+    "Do not add module-level bug ownership, oracle steps, or one-sentence-per-test inventories."
+  ],
+  "next_gate": "Instruction Reviewer PASS; continue Stage-B / remaining FIXING gates at task_commit d3a64a1b",
+  "role_output": {
+    "WORD_COUNT": 134,
+    "BULLET_COUNT": 0,
+    "HUMAN_SIGNAL": "HIGH",
+    "AI_TEMPLATE_SIGNAL": "LOW",
+    "JIRA_SLACK_HANDOFF": "PASS",
+    "REQUIREMENT_COMPLETENESS": "SUFFICIENT",
+    "INSTRUCTION_SHAPE": "PASS",
+    "REVERSE_OUTLINE_RISK": "LOW",
+    "SPEC_FILE_LOOPHOLE": "NONE",
+    "IMPLEMENTATION_DIAGNOSIS_LEAKAGE": "NONE",
+    "CURRENT_STATE_EVIDENCE": "PASS",
+    "HUMAN_GROUPING": "HIGH",
+    "COMPRESSED_RUBRIC": "LOW",
+    "OVER_PRESCRIPTION": "NONE",
+    "MATERIAL_REQUIREMENTS_PRESERVED": [
+      "preserve manage.py and existing /api/checkout/*, /healthz, /readyz",
+      "do not wipe checkout history",
+      "one fenced writer",
+      "/readyz only when safe to take a card (detailed gates in runbook)",
+      "confirmation matches recent shopper write (sticky/lag via runbook)",
+      "one capture effect per attempt_id",
+      "sticky/lag/refuse rules delegated to runbook",
+      "write /app/ha/out/failover-status.json with runbook object"
+    ],
+    "UNNECESSARY_TEXT": [],
+    "MISSING_CONTEXT": [],
+    "SUSPICIOUS_PHRASES": [],
+    "FAIRNESS_RISK": "LOW",
+    "REPLACEMENT_TEXT": ""
+  }
+}
