@@ -23,7 +23,7 @@ from src.database import apply_sql, connect, seed_inventory
 from src.event_journal import ensure_table as ensure_journal_table
 from src.framing import RecordDecodeError, decode_record, iter_records
 from src.generation import assert_resume_compatible, build_identity, generation_id
-from src.layout import Field, Layout, active_occurs, load_layout, resolve_offsets
+from src.layout import Field, Layout, active_occurs, resolve_offsets
 from src.models import (
     Checkpoint,
     GenerationIdentity,
