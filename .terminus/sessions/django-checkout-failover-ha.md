@@ -43,7 +43,7 @@ This is the durable operational checkpoint for one task. Keep it evidence-orient
 | Compliance pre-review | PASS | retained from `b9ee4816` |
 | Instruction Reviewer | PASS | review `.../03749a0e/...-instruction-5b7fcb0fa3.json` (HIGH) |
 | Documentation Reviewer | PASS | retained from `b9ee4816` |
-| Comprehensive Reviewer | PENDING | packet under `03749a0e/` |
+| Comprehensive Reviewer | REQUEST_CHANGES | review `.../03749a0e/...-comprehensive-checklist-6c6c75f6fc.json` (HIGH); RC-STRUCT-001, RC-ENV-010 |
 | Pre-LLMaJ aggregate | PENDING | |
 | Q8 GPT Perspective Simulation | PENDING | diagnostic only |
 | Q8 Claude Perspective Simulation | PENDING | diagnostic only |
@@ -69,17 +69,17 @@ This is the durable operational checkpoint for one task. Keep it evidence-orient
 
 ## Current blocker
 
-Comprehensive Reviewer on freeze `03749a0e` (Instruction + Q4 PASS; Quality Interlock PASS). Harbor LLMaJ and official trials deferred.
+Comprehensive REQUEST_CHANGES: RC-STRUCT-001 (`tests/test_outputs.py`) and RC-ENV-010 (canonical Python base). Remediation in progress.
 
 ## Root-cause classification
 
-- Owner: closed
-- Classification: none open for Quality Interlock / Instruction
-- Evidence: Q4 `...-spec-test-contract-3fc3ff16d8.json`; Instruction `...-instruction-5b7fcb0fa3.json`
+- Owner: Q7 / environment packaging
+- Classification: `format` / `environment_base`
+- Evidence: `...-comprehensive-checklist-6c6c75f6fc.json`
 
 ## Next action
 
-Cold Comprehensive Reviewer (`model: inherit`); then Pre-LLMaJ aggregate → Q8 diagnostics → Final Compliance/package. Skip Harbor LLMaJ and GPT×5/Claude×5.
+Ship `test_outputs.py` + canonical `python:3.13-slim-bookworm` agent/verifier bases; re-oracle/NOP; re-Comprehensive. Harbor LLMaJ and official trials remain deferred.
 
 ## Review evidence ledger
 

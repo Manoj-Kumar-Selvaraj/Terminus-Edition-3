@@ -8,7 +8,7 @@ if [ -x /opt/ha-venv/bin/python3 ] && /opt/ha-venv/bin/python3 -c "import pytest
 else
   PY=python3
 fi
-"$PY" -m pytest "$TEST_DIR" -rA
+"$PY" -m pytest --ctrf /logs/verifier/ctrf.json "$TEST_DIR/test_outputs.py" -rA
 if [ $? -eq 0 ]; then
   echo 1 > /logs/verifier/reward.txt
 else

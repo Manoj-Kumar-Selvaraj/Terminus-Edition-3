@@ -1,13 +1,10 @@
-FROM public.ecr.aws/docker/library/debian:bookworm-slim@sha256:4724b8cc51e33e398f0e2e15e18d5ec2851ff0c2280647e1310bc1642182655d
+FROM public.ecr.aws/docker/library/python:3.13-slim-bookworm@sha256:01f42367a0a94ad4bc17111776fd66e3500c1d87c15bbd6055b7371d39c124fb
 
 LABEL org.opencontainers.image.title="Django checkout HA lab"
 LABEL org.opencontainers.image.version="1.0"
 
 RUN apt-get update \
  && apt-get install -y --no-install-recommends \
-      python3 \
-      python3-venv \
-      python3-pip \
       sqlite3 \
       curl \
       ca-certificates \
@@ -22,7 +19,7 @@ COPY ha/ /app/ha/
 
 RUN python3 -m venv /opt/ha-venv \
  && /opt/ha-venv/bin/pip install --no-cache-dir --upgrade "pip==25.2" \
- && /opt/ha-venv/bin/pip install --no-cache-dir "Django==4.2.23" "pytest==8.4.1" \
+ && /opt/ha-venv/bin/pip install --no-cache-dir "Django==4.2.23" "pytest==8.4.1" "pytest-json-ctrf==0.3.5" \
  && mkdir -p /app/ha/state /app/ha/out /app/ha/notes /app/ha/logs/captured \
  && chmod +x /app/ha/bin/* /app/ha/sql/generate_seed.py \
  && sqlite3 /app/ha/state/primary.sqlite < /app/ha/sql/schema.sql \
