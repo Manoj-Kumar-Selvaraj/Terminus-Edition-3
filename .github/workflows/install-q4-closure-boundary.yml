@@ -39,10 +39,16 @@ jobs:
             .terminus/tests/test_quality_agent_system.py::test_quality_interlock_validator_accepts_current_pre_freeze_sessions \
             > /tmp/preexisting-quality-failure.log 2>&1
           baseline_rc=$?
+          python .terminus/validate_execution_record_pass_b.py > /tmp/preexisting-passb-failure.log 2>&1
+          passb_rc=$?
           set -e
           test "$baseline_rc" -eq 1
           grep -F "platform-sonar-ingress-token-bind.md" /tmp/preexisting-quality-failure.log
+          test "$passb_rc" -eq 1
+          grep -F "requires immutable hashed evidence_refs" /tmp/preexisting-passb-failure.log
+          grep -F "OFFICIAL_MODEL_TRIALS requires a non-empty immutable run ID" /tmp/preexisting-passb-failure.log
           cat /tmp/preexisting-quality-failure.log
+          cat /tmp/preexisting-passb-failure.log
 
       - name: Capture existing Q4 Q6 role contracts
         shell: bash
@@ -65,6 +71,7 @@ jobs:
           set -euo pipefail
           python .terminus/install_q4_closure_redesign.py
           python - <<'PY'
+          import json
           from pathlib import Path
 
           prompts = Path('.terminus/agents/PROMPTS.md')
@@ -86,10 +93,75 @@ jobs:
           new_orch = 'errors, orchestrator, orchestrator_path, "Orchestrator policy version", "1.3"'
           if vtext.count(old_agent) != 1 or vtext.count(old_orch) != 1:
               raise SystemExit('agent-system validator version anchor mismatch')
-          vtext = vtext.replace(old_agent, new_agent, 1).replace(old_orch, new_orch, 1)
-          validator.write_text(vtext, encoding='utf-8')
+          validator.write_text(vtext.replace(old_agent, new_agent, 1).replace(old_orch, new_orch, 1), encoding='utf-8')
+
+          fixture = Path('.terminus/tests/fixtures/record_reference_ids.json')
+          fdata = json.loads(fixture.read_text(encoding='utf-8'))
+          if 'q4-closure-review' not in fdata['ids']:
+              insert_at = fdata['ids'].index('q6-review') + 1
+              fdata['ids'].insert(insert_at, 'q4-closure-review')
+          fixture.write_text(json.dumps(fdata, indent=2) + '\n', encoding='utf-8')
+
+          core = Path('.terminus/execution/record_core.py')
+          ctext = core.read_text(encoding='utf-8')
+          old_core = '''        if stage_id == "QUALITY_INTERLOCK":\n            for field in ("Q4_RESULT", "Q6_RESULT"):\n                value = outputs.get(field)\n                if not isinstance(value, Mapping):\n                    raise ValueError(f"{field} must be an object")\n                review_id = value.get("review_id")\n                if not isinstance(review_id, str) or not review_id:\n                    raise ValueError(f"{field} must include review_id for evidence binding")\n                self._require_ref_identity(hashed, review_id, {"RESULT"}, field)\n            return\n'''
+          new_core = '''        if stage_id == "QUALITY_INTERLOCK":\n            for field in ("Q4_RESULT", "Q6_RESULT"):\n                value = outputs.get(field)\n                if not isinstance(value, Mapping):\n                    raise ValueError(f"{field} must be an object")\n                review_id = value.get("review_id")\n                if not isinstance(review_id, str) or not review_id:\n                    raise ValueError(f"{field} must include review_id for evidence binding")\n                self._require_ref_identity(hashed, review_id, {"RESULT"}, field)\n            if outputs.get("Q4_SATISFACTION") == "ADJUDICATED_CLOSURE_PASS":\n                closure = outputs.get("Q4_CLOSURE_RESULT")\n                if not isinstance(closure, Mapping):\n                    raise ValueError("Q4_CLOSURE_RESULT must be an object")\n                closure_id = closure.get("review_id")\n                if not isinstance(closure_id, str) or not closure_id:\n                    raise ValueError("Q4_CLOSURE_RESULT must include review_id for evidence binding")\n                self._require_ref_identity(\n                    hashed, closure_id, {"RESULT"}, "Q4_CLOSURE_RESULT"\n                )\n            return\n'''
+          if ctext.count(old_core) != 1:
+              raise SystemExit('execution-record Q4 evidence anchor mismatch')
+          core.write_text(ctext.replace(old_core, new_core, 1), encoding='utf-8')
+
+          pb = Path('.terminus/validate_execution_record_pass_b.py')
+          ptext = pb.read_text(encoding='utf-8')
+          ptext = ptext.replace(
+              'import json\nimport subprocess\nimport sys\n',
+              'import hashlib\nimport json\nimport subprocess\nimport sys\nfrom urllib.parse import quote\n',
+              1,
+          )
+          anchor = 'T = ROOT / ".terminus"\nsys.path.insert(0, str(T))\n'
+          addition = anchor + '\n_RECORD_REFERENCE_FIXTURE = ".terminus/tests/fixtures/record_reference_ids.json"\n'
+          if ptext.count(anchor) != 1:
+              raise SystemExit('Pass-B fixture anchor mismatch')
+          ptext = ptext.replace(anchor, addition, 1)
+          old_review = '''def _review_pass() -> dict[str, object]:\n    return {\n        "verdict": "PASS",\n        "confidence": "MEDIUM",\n        "evidence_status": "SUFFICIENT",\n        "missing_evidence": [],\n    }\n'''
+          new_review = '''def _review_pass(review_id: str = "review-result") -> dict[str, object]:\n    return {\n        "review_id": review_id,\n        "verdict": "PASS",\n        "confidence": "MEDIUM",\n        "evidence_status": "SUFFICIENT",\n        "missing_evidence": [],\n    }\n\n\ndef _resolved_ref(kind: str, identity: str) -> dict[str, str]:\n    commit = _head()\n    raw = subprocess.run(\n        ["git", "-C", str(ROOT), "show", f"{commit}:{_RECORD_REFERENCE_FIXTURE}"],\n        check=True,\n        capture_output=True,\n    ).stdout\n    digest = "sha256:" + hashlib.sha256(raw).hexdigest()\n    return {\n        "kind": kind,\n        "ref": f"git:{commit}:{_RECORD_REFERENCE_FIXTURE}#{quote(identity, safe='')}",\n        "content_hash": digest,\n    }\n'''
+          if ptext.count(old_review) != 1:
+              raise SystemExit('Pass-B review helper anchor mismatch')
+          ptext = ptext.replace(old_review, new_review, 1)
+          ptext = ptext.replace('Q4_RESULT=_review_pass(),\n            Q4_SATISFACTION="DIRECT_PASS",\n            Q6_RESULT=_review_pass(),', 'Q4_RESULT=_review_pass("q4-review"),\n            Q4_SATISFACTION="DIRECT_PASS",\n            Q6_RESULT=_review_pass("q6-review"),', 1)
+          old_trials = '''        outputs.update(\n            GPT_5_5_TRIALS=[{"trial": i} for i in range(5)],\n            CLAUDE_OPUS_4_8_TRIALS=[{"trial": i} for i in range(5)],\n            COMBINED_SUCCESS_RATE=0.5,\n            PER_TEST_SOLVABILITY={"case-a": 1, "case-b": 3},\n        )\n'''
+          new_trials = '''        outputs.update(\n            EXTERNAL_RUN_ID="official-batch-validator",\n            GPT_5_5_TRIALS=[{"trial": i, "run_id": f"gpt-run-{i}"} for i in range(5)],\n            CLAUDE_OPUS_4_8_TRIALS=[{"trial": i, "run_id": f"claude-run-{i}"} for i in range(5)],\n            COMBINED_SUCCESS_RATE=0.5,\n            PER_TEST_SOLVABILITY={"case-a": 1, "case-b": 3},\n        )\n'''
+          if ptext.count(old_trials) != 1:
+              raise SystemExit('Pass-B trial output anchor mismatch')
+          ptext = ptext.replace(old_trials, new_trials, 1)
+          ptext = ptext.replace('TRAJECTORY_ANALYSIS_RESULT={"status": "COMPLETE"},', 'TRAJECTORY_ANALYSIS_RESULT={"status": "COMPLETE", "record_id": "trajectory-result"},', 1)
+          ptext = ptext.replace('FINAL_COMPLIANCE=_review_pass(),\n            FINAL_HUMAN_QUALITY=_review_pass(),', 'FINAL_COMPLIANCE=_review_pass("final-compliance"),\n            FINAL_HUMAN_QUALITY=_review_pass("final-human-quality"),', 1)
+          main_anchor = '\n\ndef main() -> int:\n'
+          evidence_helper = '''\n\ndef _evidence(stage: str, outputs: dict[str, Any]) -> list[dict[str, str]]:\n    if stage == "QUALITY_INTERLOCK":\n        refs = [_resolved_ref("RESULT", "q4-review"), _resolved_ref("RESULT", "q6-review")]\n        if outputs.get("Q4_SATISFACTION") == "ADJUDICATED_CLOSURE_PASS":\n            refs.append(_resolved_ref("RESULT", "q4-closure-review"))\n        return refs\n    if stage == "PRE_LLMAJ":\n        return [_resolved_ref("RESULT", f"prellmaj-{i}") for i in range(6)]\n    if stage == "MODEL_DIAGNOSTIC_AGGREGATE":\n        return [_resolved_ref("RESULT", "q8-gpt"), _resolved_ref("RESULT", "q8-claude")]\n    if stage == "HARBOR_LLMAJ":\n        return [_resolved_ref("RUN", str(outputs["HARBOR_RUN_ID"]))]\n    if stage in {"OFFICIAL_MODEL_TRIALS", "TRIAL_ANALYSIS", "DIFFICULTY_ASSESSMENT"}:\n        refs = (\n            [_resolved_ref("RUN", f"gpt-run-{i}") for i in range(5)]\n            + [_resolved_ref("RUN", f"claude-run-{i}") for i in range(5)]\n        )\n        if stage == "DIFFICULTY_ASSESSMENT":\n            refs.append(_resolved_ref("RESULT", "trajectory-result"))\n        return refs\n    if stage == "FINAL_REVIEW":\n        return [\n            _resolved_ref("RESULT", "final-compliance"),\n            _resolved_ref("RESULT", "final-human-quality"),\n            _resolved_ref("ARTIFACT", "final-package"),\n        ]\n    if stage == "SUBMISSION_READY":\n        return [\n            _resolved_ref("RESULT", "final-review"),\n            _resolved_ref("ARTIFACT", "submission-package"),\n        ]\n    return []\n'''
+          if ptext.count(main_anchor) != 1:
+              raise SystemExit('Pass-B evidence helper anchor mismatch')
+          ptext = ptext.replace(main_anchor, evidence_helper + main_anchor, 1)
+          old_record = '''            record = record_builder.build(\n                invocation,\n                {\n                    "schema_version": "1.0",\n                    "invocation_id": invocation["invocation_id"],\n                    "output_task_commit": commit,\n                    "status": advance[0],\n                    "outputs": _accepted_outputs(invocation),\n                    "evidence_refs": [],\n                },\n            )\n'''
+          new_record = '''            outputs = _accepted_outputs(invocation)\n            record = record_builder.build(\n                invocation,\n                {\n                    "schema_version": "1.0",\n                    "invocation_id": invocation["invocation_id"],\n                    "output_task_commit": commit,\n                    "status": advance[0],\n                    "outputs": outputs,\n                    "evidence_refs": _evidence(stage_id, outputs),\n                },\n            )\n'''
+          if ptext.count(old_record) != 1:
+              raise SystemExit('Pass-B canonical record anchor mismatch')
+          ptext = ptext.replace(old_record, new_record, 1)
+          ptext = ptext.replace('"outputs": bad_qi,\n                "evidence_refs": [],', '"outputs": bad_qi,\n                "evidence_refs": _evidence("QUALITY_INTERLOCK", bad_qi),', 1)
+          ptext = ptext.replace('"role": "Q4 Closure Adjudicator",\n        "verdict": "PASS",', '"review_id": "q4-closure-review",\n        "role": "Q4 Closure Adjudicator",\n        "verdict": "PASS",', 1)
+          ptext = ptext.replace('"outputs": closure_qi,\n                "evidence_refs": [],', '"outputs": closure_qi,\n                "evidence_refs": _evidence("QUALITY_INTERLOCK", closure_qi),', 1)
+          closure_probe_anchor = '''    except ValueError as exc:\n        errors.append(f"coherent adjudicated Q4 closure was rejected: {exc}")\n\n    diff_stage = policy.stages["DIFFICULTY_ASSESSMENT"]\n'''
+          closure_probe = '''    except ValueError as exc:\n        errors.append(f"coherent adjudicated Q4 closure was rejected: {exc}")\n\n    try:\n        record_builder.build(\n            qi_invocation,\n            {\n                "schema_version": "1.0",\n                "invocation_id": qi_invocation["invocation_id"],\n                "output_task_commit": commit,\n                "status": "QUALITY_INTERLOCK_PASS",\n                "outputs": closure_qi,\n                "evidence_refs": [\n                    _resolved_ref("RESULT", "q4-review"),\n                    _resolved_ref("RESULT", "q6-review"),\n                ],\n            },\n        )\n        errors.append("adjudicated Q4 closure advanced without bound closure-result evidence")\n    except ValueError as exc:\n        if "Q4_CLOSURE_RESULT evidence ref" not in str(exc):\n            errors.append(f"unexpected unbound closure rejection: {exc}")\n\n    diff_stage = policy.stages["DIFFICULTY_ASSESSMENT"]\n'''
+          if ptext.count(closure_probe_anchor) != 1:
+              raise SystemExit('Pass-B closure evidence probe anchor mismatch')
+          ptext = ptext.replace(closure_probe_anchor, closure_probe, 1)
+          ptext = ptext.replace('"outputs": outputs,\n                    "evidence_refs": [],', '"outputs": outputs,\n                    "evidence_refs": _evidence("DIFFICULTY_ASSESSMENT", outputs),', 1)
+          pb.write_text(ptext, encoding='utf-8')
           PY
-          python -m py_compile .terminus/q4_closure.py .terminus/new_q4_closure_packet.py .terminus/validate_agent_system.py
+          python -m py_compile \
+            .terminus/q4_closure.py \
+            .terminus/new_q4_closure_packet.py \
+            .terminus/validate_agent_system.py \
+            .terminus/validate_execution_record_pass_b.py \
+            .terminus/execution/record_core.py
           git diff --check
           if git diff --name-only | grep -q '^cobol-comp3-python-equiv/'; then
             echo 'ERROR: task scope changed during control-plane redesign' >&2
