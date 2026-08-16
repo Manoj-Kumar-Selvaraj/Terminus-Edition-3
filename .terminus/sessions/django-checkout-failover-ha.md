@@ -43,7 +43,7 @@ This is the durable operational checkpoint for one task. Keep it evidence-orient
 | Compliance pre-review | PASS | retained from `b9ee4816` |
 | Instruction Reviewer | PASS | retained from `03749a0e` |
 | Documentation Reviewer | PASS | retained from `b9ee4816` |
-| Comprehensive Reviewer | PENDING | packet `.../d812d3f7/...-comprehensive-checklist-41d3c4e34b.packet.json` |
+| Comprehensive Reviewer | APPROVE | review `.../d812d3f7/...-comprehensive-checklist-41d3c4e34b.json` (HIGH); coverage 100% |
 | Pre-LLMaJ aggregate | PENDING | |
 | Q8 GPT Perspective Simulation | PENDING | diagnostic only |
 | Q8 Claude Perspective Simulation | PENDING | diagnostic only |
@@ -69,11 +69,11 @@ This is the durable operational checkpoint for one task. Keep it evidence-orient
 
 ## Current blocker
 
-Awaiting cold Q4 (+ Comprehensive) on `d812d3f7`. Q6 PASS recorded.
+Awaiting cold Q4 on `d812d3f7`. Q6 PASS and Comprehensive APPROVE recorded.
 
 ## Next action
 
-Reconcile Q4 and Comprehensive when they land; then Pre-LLMaJ aggregate → Q8 → package. Harbor LLMaJ and official trials remain deferred.
+Reconcile Q4 when it lands → Quality Interlock → Pre-LLMaJ aggregate → Q8 → package. Harbor LLMaJ and official trials remain deferred.
 
 ## Review evidence ledger
 
@@ -88,7 +88,7 @@ Reconcile Q4 and Comprehensive when they land; then Pre-LLMaJ aggregate → Q8 �
 | Compliance pre-review | django-checkout-failover-ha-b9ee4816-compliance-55d7325ce9 | b9ee4816204f1a51857407e4a6f9bf9e38dd937a | 2.2 | 2.2 | | | | `.terminus/reviews/django-checkout-failover-ha/b9ee4816/django-checkout-failover-ha-b9ee4816-compliance-55d7325ce9.json` | PASS | HIGH | |
 | Instruction | django-checkout-failover-ha-03749a0e-instruction-5b7fcb0fa3 | 03749a0ed4dcf6f691bb6d1c9bd573d923d92403 | 2.2 | 2.2 | | | | `.terminus/reviews/django-checkout-failover-ha/03749a0e/django-checkout-failover-ha-03749a0e-instruction-5b7fcb0fa3.json` | PASS | HIGH | INST-01/02 closed |
 | Documentation | django-checkout-failover-ha-b9ee4816-documentation-2e3067d67a | b9ee4816204f1a51857407e4a6f9bf9e38dd937a | 2.2 | 2.2 | | | | `.terminus/reviews/django-checkout-failover-ha/b9ee4816/django-checkout-failover-ha-b9ee4816-documentation-2e3067d67a.json` | PASS | HIGH | |
-| Comprehensive Reviewer | | | | | 1.0 | | | | PENDING | | |
+| Comprehensive Reviewer | django-checkout-failover-ha-d812d3f7-comprehensive-checklist-41d3c4e34b | d812d3f739d4b987e3db6f2b6cf52298511ece3f | 2.2 | 2.2 | 1.0 | 7b4f0432fc31 | | `.terminus/reviews/django-checkout-failover-ha/d812d3f7/django-checkout-failover-ha-d812d3f7-comprehensive-checklist-41d3c4e34b.json` | APPROVE | HIGH | coverage 100% |
 | Q8 GPT Perspective Simulation | | | | | 1.0 | | | | PENDING | | diagnostic only |
 | Q8 Claude Perspective Simulation | | | | | 1.0 | | | | PENDING | | diagnostic only |
 | Trial Analysis | | | | | | | | | DEFERRED | | |
