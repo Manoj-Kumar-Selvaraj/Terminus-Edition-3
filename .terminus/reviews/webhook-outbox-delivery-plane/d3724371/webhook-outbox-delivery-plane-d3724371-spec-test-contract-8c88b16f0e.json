@@ -1,0 +1,496 @@
+{
+  "schema_version": "3.0",
+  "role": "Spec-Test Contract Reviewer",
+  "review_id": "webhook-outbox-delivery-plane-d3724371-spec-test-contract-8c88b16f0e",
+  "task": "webhook-outbox-delivery-plane",
+  "task_commit": "d3724371f363b1e4a416c95ff1c104bc3d23277f",
+  "control_plane_commit": "d3724371f363b1e4a416c95ff1c104bc3d23277f",
+  "protocol_policy_version": "2.2",
+  "prompt_policy_version": "2.2",
+  "role_policy_version": "1.1",
+  "role_contract_hash": "c860dfe8b8ed0a04c729e4d6a828741b206b7067a780863ec7b22ee09d02c5a0",
+  "context_packet": ".terminus/reviews/webhook-outbox-delivery-plane/d3724371/webhook-outbox-delivery-plane-d3724371-spec-test-contract-8c88b16f0e.packet.json",
+  "verdict": "REVISE",
+  "confidence": "HIGH",
+  "evidence_status": "SUFFICIENT",
+  "summary": "Bidirectional alignment fails: several P2P/UI assertions grade undocumented private contracts, while material CLI, seed preservation, quota-on-deliver, backoff, disabled-claim, lease-expiry, Content-Type, and required audit actions remain untested or only partially covered.",
+  "evidence": [
+    {
+      "type": "file",
+      "ref": "webhook-outbox-delivery-plane/instruction.md",
+      "observation": "Work request binds delivery-contract.md; requires env wiring, schema boot, seed/catalog preservation, claim/delivery/quota/signature/replay/audit/UI alignment, rebuild of outboxd/outboxctl, and fresh-DB API/CLI/UI contract satisfaction without reshaping the public tree."
+    },
+    {
+      "type": "file",
+      "ref": "webhook-outbox-delivery-plane/environment/outbox/docs/delivery-contract.md",
+      "observation": "Binding protocol covers env vars, routes/schemas, claim fencing, pause/disable, HMAC headers/canonical bytes, backoff schedule, quota on enqueue and deliver/complete, required audit actions, CLI subcommands, and UI field/error-box rules."
+    },
+    {
+      "type": "file",
+      "ref": "webhook-outbox-delivery-plane/environment/outbox/docs/operator-notes.md",
+      "observation": "Optional operator notes (seed tenants, OUTBOX_SYNC tip); not referenced by instruction and not used as a second prompt."
+    },
+    {
+      "type": "test",
+      "ref": "webhook-outbox-delivery-plane/tests/test_f2p_core.py",
+      "observation": "F2P covers health, tenant/endpoint create, enqueue, idempotency, disabled enqueue, list/get events, and stats shape including undocumented by_status key."
+    },
+    {
+      "type": "test",
+      "ref": "webhook-outbox-delivery-plane/tests/test_f2p_claim_delivery.py",
+      "observation": "F2P covers claim lease, lease_held, renew, pause reject, lease_mismatch, HMAC signature headers, DLQ after max_attempts, and attempts list; does not assert backoff seconds, Content-Type, or lease-expiry reclaim."
+    },
+    {
+      "type": "test",
+      "ref": "webhook-outbox-delivery-plane/tests/test_f2p_quota_audit.py",
+      "observation": "Quota tested for failed-attempt ignore and enqueue 429 after success; no deliver/complete 429 path. Audit covers enqueue/claim/dlq/pause/deliver.ok only."
+    },
+    {
+      "type": "test",
+      "ref": "webhook-outbox-delivery-plane/tests/test_f2p_replay_ui.py",
+      "observation": "Replay auth (missing bearer), successful replay+audit, resume claim, UI index title/error-box, JS field-name/error surfacing checks, and schema.sql presence."
+    },
+    {
+      "type": "test",
+      "ref": "webhook-outbox-delivery-plane/tests/test_p2p_preserve.py",
+      "observation": "P2P asserts health, undocumented not_found 404 string, undocumented non-object payload 400, tenant list, and undocumented enqueue audit detail.endpoint_id."
+    },
+    {
+      "type": "test",
+      "ref": "webhook-outbox-delivery-plane/tests/conftest.py",
+      "observation": "Live outboxd fixture always sets OUTBOX_* env vars, OUTBOX_SYNC=1, and temp DB; never exercises seeded catalog DB or outboxctl CLI binary."
+    },
+    {
+      "type": "test",
+      "ref": "webhook-outbox-delivery-plane/tests/test.sh",
+      "observation": "Builds outboxd and outboxctl then runs pytest modules; no CLI invocation assertions."
+    },
+    {
+      "type": "file",
+      "ref": "webhook-outbox-delivery-plane/environment/outbox/ui/js/app.js",
+      "observation": "UI interface used to interpret UI tests; claim posts owner/seconds today (solver-visible drift vs contract lease_owner/lease_seconds)."
+    },
+    {
+      "type": "rule",
+      "ref": ".terminus/agents/INSTRUCTION_POLICY.md",
+      "observation": "Instruction/docs boundary, completeness, reverse-outline, and hidden-test leakage rules applied to instruction.md and delivery-contract.md."
+    }
+  ],
+  "findings": [
+    {
+      "id": "Q4-001",
+      "severity": "HIGH",
+      "status": "OBSERVED",
+      "criterion": "phantom_test_contract",
+      "evidence_refs": [
+        "webhook-outbox-delivery-plane/tests/test_p2p_preserve.py",
+        "webhook-outbox-delivery-plane/environment/outbox/docs/delivery-contract.md"
+      ],
+      "why_it_matters": "test_p2p_get_missing_event_404 grades HTTP 404 plus error=not_found, but the solver-visible contract never defines missing-resource status or error token.",
+      "minimal_remediation": "Document GET missing-event 404/{\"error\":\"not_found\"} in delivery-contract.md (or instruction), or drop/soften the P2P assertion to discoverable behavior only.",
+      "regression_risk": "Solvers can change error vocabulary while repairing APIs and fail despite contract-compliant routes."
+    },
+    {
+      "id": "Q4-002",
+      "severity": "HIGH",
+      "status": "OBSERVED",
+      "criterion": "phantom_test_contract",
+      "evidence_refs": [
+        "webhook-outbox-delivery-plane/tests/test_p2p_preserve.py",
+        "webhook-outbox-delivery-plane/environment/outbox/docs/delivery-contract.md"
+      ],
+      "why_it_matters": "test_p2p_invalid_payload_rejected requires rejecting array payloads with 400, but payload-type validation/status is not stated in the binding contract.",
+      "minimal_remediation": "Add payload-must-be-object + 400 semantics to the contract, or remove the P2P case.",
+      "regression_risk": "Pass/fail depends on an undocumented validation preference."
+    },
+    {
+      "id": "Q4-003",
+      "severity": "HIGH",
+      "status": "OBSERVED",
+      "criterion": "phantom_test_contract",
+      "evidence_refs": [
+        "webhook-outbox-delivery-plane/tests/test_p2p_preserve.py",
+        "webhook-outbox-delivery-plane/environment/outbox/docs/delivery-contract.md"
+      ],
+      "why_it_matters": "test_p2p_enqueue_audit_detail_has_endpoint requires detail.endpoint_id; the contract only shows detail as an object and does not require that field.",
+      "minimal_remediation": "Specify required audit detail keys for enqueue, or delete the field-specific P2P assertion.",
+      "regression_risk": "Hidden audit-detail schema becomes a private grading contract."
+    },
+    {
+      "id": "Q4-004",
+      "severity": "HIGH",
+      "status": "OBSERVED",
+      "criterion": "phantom_test_contract",
+      "evidence_refs": [
+        "webhook-outbox-delivery-plane/tests/test_f2p_core.py",
+        "webhook-outbox-delivery-plane/environment/outbox/docs/delivery-contract.md"
+      ],
+      "why_it_matters": "test_f2p_stats_endpoint_shape requires a by_status key; the contract only says stats returns counts by status plus tenants/endpoints, without naming by_status.",
+      "minimal_remediation": "Publish the exact stats JSON schema including by_status, or assert only discoverable fields/semantics.",
+      "regression_risk": "Alternate compliant stats shapes fail the verifier."
+    },
+    {
+      "id": "Q4-005",
+      "severity": "MEDIUM",
+      "status": "OBSERVED",
+      "criterion": "phantom_test_contract",
+      "evidence_refs": [
+        "webhook-outbox-delivery-plane/tests/test_f2p_replay_ui.py",
+        "webhook-outbox-delivery-plane/environment/outbox/docs/delivery-contract.md",
+        "webhook-outbox-delivery-plane/instruction.md"
+      ],
+      "why_it_matters": "test_f2p_ui_index_served requires the literal title Outbox Delivery Plane; UI contract only requires serving /app/outbox/ui at / and an error-box element.",
+      "minimal_remediation": "Assert status 200 + error-box (and optional contract field names) without branding copy, or document the required page title.",
+      "regression_risk": "Cosmetic HTML copy changes fail an otherwise contract-compliant UI."
+    },
+    {
+      "id": "Q4-006",
+      "severity": "HIGH",
+      "status": "OBSERVED",
+      "criterion": "untested_requirement",
+      "evidence_refs": [
+        "webhook-outbox-delivery-plane/instruction.md",
+        "webhook-outbox-delivery-plane/environment/outbox/docs/delivery-contract.md",
+        "webhook-outbox-delivery-plane/tests/test.sh",
+        "webhook-outbox-delivery-plane/tests/conftest.py"
+      ],
+      "why_it_matters": "Instruction and contract require outboxctl CLI flows; test.sh builds the binary but no test invokes health/tenants/enqueue/claim/deliver/replay/pause/resume/audit via outboxctl.",
+      "minimal_remediation": "Add behavioral CLI tests against the contract subcommands, or narrow instruction/contract so CLI is not a graded deliverable.",
+      "regression_risk": "Broken CLI can score 1 while the stated work request fails."
+    },
+    {
+      "id": "Q4-007",
+      "severity": "HIGH",
+      "status": "OBSERVED",
+      "criterion": "untested_requirement",
+      "evidence_refs": [
+        "webhook-outbox-delivery-plane/instruction.md",
+        "webhook-outbox-delivery-plane/tests/conftest.py",
+        "webhook-outbox-delivery-plane/environment/outbox/docs/operator-notes.md"
+      ],
+      "why_it_matters": "Instruction requires keeping the seeded catalog/events intact for operators, but the verifier always boots a fresh temp DB and never checks seed preservation.",
+      "minimal_remediation": "Add a P2P/boot check against the seeded DB/catalog, or remove the seed-preservation ask from instruction.",
+      "regression_risk": "Agents can wipe or ignore seed data and still pass."
+    },
+    {
+      "id": "Q4-008",
+      "severity": "HIGH",
+      "status": "OBSERVED",
+      "criterion": "untested_requirement",
+      "evidence_refs": [
+        "webhook-outbox-delivery-plane/environment/outbox/docs/delivery-contract.md",
+        "webhook-outbox-delivery-plane/tests/test_f2p_quota_audit.py"
+      ],
+      "why_it_matters": "Contract requires deliver/complete-as-delivered to return 429 quota_exceeded and not mark delivered when the rolling window is full; tests only cover enqueue 429 after a prior success.",
+      "minimal_remediation": "Add a case that fills quota then attempts deliver/complete delivered and asserts 429 + non-delivered state.",
+      "regression_risk": "Enqueue-only quota fixes pass while delivery-path quota is wrong."
+    },
+    {
+      "id": "Q4-009",
+      "severity": "HIGH",
+      "status": "OBSERVED",
+      "criterion": "untested_requirement",
+      "evidence_refs": [
+        "webhook-outbox-delivery-plane/environment/outbox/docs/delivery-contract.md",
+        "webhook-outbox-delivery-plane/tests/test_f2p_claim_delivery.py"
+      ],
+      "why_it_matters": "Backoff schedule [5,15,45,120,300] and intermediate failure staying pending with updated next_attempt_at/cleared lease are stated in the contract; tests only assert final dlq after max_attempts.",
+      "minimal_remediation": "Assert first-failure pending + next_attempt_at delta matching backoff(n), then dlq at max_attempts.",
+      "regression_risk": "Incorrect retry timing still passes DLQ-only checks."
+    },
+    {
+      "id": "Q4-010",
+      "severity": "HIGH",
+      "status": "OBSERVED",
+      "criterion": "untested_requirement",
+      "evidence_refs": [
+        "webhook-outbox-delivery-plane/environment/outbox/docs/delivery-contract.md",
+        "webhook-outbox-delivery-plane/tests/test_f2p_quota_audit.py",
+        "webhook-outbox-delivery-plane/tests/test_f2p_replay_ui.py"
+      ],
+      "why_it_matters": "Required audit actions include deliver.fail and resume; verifier never asserts either, while resume behavior is only checked via subsequent claim success.",
+      "minimal_remediation": "Assert deliver.fail on failed delivery and resume audit after resume endpoint calls.",
+      "regression_risk": "Missing required audit actions remain invisible to grading."
+    },
+    {
+      "id": "Q4-011",
+      "severity": "HIGH",
+      "status": "OBSERVED",
+      "criterion": "untested_requirement",
+      "evidence_refs": [
+        "webhook-outbox-delivery-plane/environment/outbox/docs/delivery-contract.md",
+        "webhook-outbox-delivery-plane/tests/test_f2p_core.py",
+        "webhook-outbox-delivery-plane/tests/test_f2p_claim_delivery.py"
+      ],
+      "why_it_matters": "Contract says enabled=false rejects claim with endpoint_unavailable; tests cover disabled enqueue and paused claim, but not disabled claim.",
+      "minimal_remediation": "Add claim-against-disabled-endpoint → 409 endpoint_unavailable.",
+      "regression_risk": "Pause-only claim fencing can pass while disabled claim is wrong."
+    },
+    {
+      "id": "Q4-012",
+      "severity": "HIGH",
+      "status": "OBSERVED",
+      "criterion": "untested_requirement",
+      "evidence_refs": [
+        "webhook-outbox-delivery-plane/environment/outbox/docs/delivery-contract.md",
+        "webhook-outbox-delivery-plane/tests/test_f2p_claim_delivery.py"
+      ],
+      "why_it_matters": "Claim fencing allows reclaim when lease_until expired; no test expires a lease and successfully claims with another owner.",
+      "minimal_remediation": "Add short-lease expiry then second-owner claim success.",
+      "regression_risk": "Permanent lease lockbugs can still pass concurrent-holder tests."
+    },
+    {
+      "id": "Q4-013",
+      "severity": "MEDIUM",
+      "status": "OBSERVED",
+      "criterion": "untested_requirement",
+      "evidence_refs": [
+        "webhook-outbox-delivery-plane/environment/outbox/docs/delivery-contract.md",
+        "webhook-outbox-delivery-plane/tests/test_f2p_claim_delivery.py"
+      ],
+      "why_it_matters": "Delivery HTTP requires Content-Type application/json; signature tests check X-Outbox-* headers and body HMAC but never Content-Type.",
+      "minimal_remediation": "Assert captured Content-Type is application/json on deliver.",
+      "regression_risk": "Header contract can be violated without failing the suite."
+    },
+    {
+      "id": "Q4-014",
+      "severity": "MEDIUM",
+      "status": "OBSERVED",
+      "criterion": "grading_ambiguity",
+      "evidence_refs": [
+        "webhook-outbox-delivery-plane/environment/outbox/docs/delivery-contract.md",
+        "webhook-outbox-delivery-plane/tests/test_f2p_claim_delivery.py"
+      ],
+      "why_it_matters": "Contract requires compact JSON of payload without defining key ordering/whitespace rules; signature verification uses the captured body, so competing compact encodings can be ambiguously accepted or rejected relative to intent.",
+      "minimal_remediation": "Define compact encoding rules (e.g., sorted keys, no insignificant whitespace) in the contract and/or assert body bytes against that encoder.",
+      "regression_risk": "Signature/body grading depends on an underspecified serialization."
+    },
+    {
+      "id": "Q4-015",
+      "severity": "MEDIUM",
+      "status": "OBSERVED",
+      "criterion": "grading_ambiguity",
+      "evidence_refs": [
+        "webhook-outbox-delivery-plane/instruction.md",
+        "webhook-outbox-delivery-plane/environment/outbox/docs/delivery-contract.md",
+        "webhook-outbox-delivery-plane/tests/conftest.py"
+      ],
+      "why_it_matters": "Instruction requires bringing worker paths back in line, but the verifier only exercises OUTBOX_SYNC=1 claim/deliver helpers; whether the async worker loop is graded remains unclear.",
+      "minimal_remediation": "Either test worker-driven delivery without relying solely on SYNC helpers, or clarify instruction that SYNC deliver path is the graded worker contract.",
+      "regression_risk": "Solvers may skip real worker repair and still pass, or waste effort on ungraded paths."
+    },
+    {
+      "id": "Q4-016",
+      "severity": "LOW",
+      "status": "OBSERVED",
+      "criterion": "untested_requirement",
+      "evidence_refs": [
+        "webhook-outbox-delivery-plane/environment/outbox/docs/delivery-contract.md",
+        "webhook-outbox-delivery-plane/tests/test_f2p_replay_ui.py"
+      ],
+      "why_it_matters": "Contract says invalid bearer tokens also yield 401 unauthorized; only missing Authorization is tested.",
+      "minimal_remediation": "Add replay with Authorization: Bearer wrong-token → 401.",
+      "regression_risk": "Token comparison bugs may go uncaught if only empty-header path works."
+    },
+    {
+      "id": "Q4-017",
+      "severity": "LOW",
+      "status": "OBSERVED",
+      "criterion": "instruction_ambiguity",
+      "evidence_refs": [
+        "webhook-outbox-delivery-plane/instruction.md"
+      ],
+      "why_it_matters": "without reshaping the public tree is preservation intent without a stated tree boundary or verifier check.",
+      "minimal_remediation": "Name preserved top-level paths or add a light P2P layout check; keep advisory unless made graded.",
+      "regression_risk": "Unclear preservation scope for solvers; currently non-blocking because ungraded."
+    }
+  ],
+  "missing_evidence": [],
+  "change_scope": [
+    "Align P2P/UI assertions with documented contracts or extend delivery-contract.md for graded private fields/errors/title/stats shape.",
+    "Add verifier coverage for CLI, seed preservation, quota-on-deliver/complete, backoff/next_attempt_at, disabled claim, lease expiry reclaim, Content-Type, deliver.fail/resume audits.",
+    "Clarify compact JSON encoding and whether async worker loops are in graded scope."
+  ],
+  "do_not_change": [
+    "Do not weaken legitimate F2P claim/HMAC/idempotency/pause/replay/UI field-name/error-box contracts that already map to delivery-contract.md.",
+    "Do not convert delivery-contract.md into a hidden-test checklist or add implementation-diagnosis bullets to instruction.md.",
+    "Do not expose test module names or oracle repair maps in solver-visible docs."
+  ],
+  "next_gate": "Q2 Verifier Coverage Repairer and/or Q1 Spec Gap Repairer for phantoms; Q3 for compact-JSON/worker-scope ambiguities; then re-run Q4.",
+  "role_output": {
+    "REQUIREMENT_TEST_MATRIX": [
+      {
+        "REQ_ID": "REQ-01",
+        "REQUIREMENT": "Restore /app/outbox API/worker/CLI/UI behavior to delivery-contract without reshaping the public tree.",
+        "TESTS": ["test_f2p_* (partial API/UI)", "no CLI; no public-tree check"],
+        "COVERAGE": "PARTIAL"
+      },
+      {
+        "REQ_ID": "REQ-02",
+        "REQUIREMENT": "Wire startup via OUTBOX_DB/ADDR/DATA/TOKEN/SYNC (and contract OUTBOX_ROOT); create parent dirs; listen on OUTBOX_ADDR.",
+        "TESTS": ["conftest outbox fixture env wiring (indirect)"],
+        "COVERAGE": "PARTIAL"
+      },
+      {
+        "REQ_ID": "REQ-03",
+        "REQUIREMENT": "Apply /app/outbox/db/schema.sql on boot; serve UI from /app/outbox/ui at /; rebuild outboxd/outboxctl.",
+        "TESTS": ["test_f2p_schema_file_present", "test_f2p_ui_index_served", "test.sh/conftest build"],
+        "COVERAGE": "PARTIAL"
+      },
+      {
+        "REQ_ID": "REQ-04",
+        "REQUIREMENT": "Preserve seeded catalog/events for operators.",
+        "TESTS": [],
+        "COVERAGE": "NONE"
+      },
+      {
+        "REQ_ID": "REQ-05",
+        "REQUIREMENT": "Tenant/endpoint CRUD-ish routes and identifier prefixes.",
+        "TESTS": ["test_f2p_create_tenant_and_endpoint", "test_p2p_list_tenants_includes_created"],
+        "COVERAGE": "PARTIAL"
+      },
+      {
+        "REQ_ID": "REQ-06",
+        "REQUIREMENT": "Enqueue pending events; idempotent enqueue returns existing with 200.",
+        "TESTS": ["test_f2p_enqueue_pending_event", "test_f2p_idempotent_enqueue_returns_existing", "test_f2p_list_events_and_get_event"],
+        "COVERAGE": "COMPLETE"
+      },
+      {
+        "REQ_ID": "REQ-07",
+        "REQUIREMENT": "Disabled endpoints reject enqueue with 409 endpoint_disabled; paused endpoints still allow enqueue; disabled/paused reject claim with endpoint_unavailable.",
+        "TESTS": ["test_f2p_disabled_endpoint_rejects_enqueue", "test_f2p_paused_endpoint_rejects_claim", "test_f2p_resume_allows_claim_again"],
+        "COVERAGE": "PARTIAL"
+      },
+      {
+        "REQ_ID": "REQ-08",
+        "REQUIREMENT": "Claim fencing: claimed+lease_owner/lease_until; second owner 409 lease_held; same-owner renew; lease_mismatch on complete/deliver; expired lease reclaimable.",
+        "TESTS": ["test_f2p_claim_sets_lease_owner", "test_f2p_second_claim_different_owner_conflict", "test_f2p_same_owner_can_renew_lease", "test_f2p_complete_requires_lease_holder"],
+        "COVERAGE": "PARTIAL"
+      },
+      {
+        "REQ_ID": "REQ-09",
+        "REQUIREMENT": "Deliver POSTs compact JSON with Content-Type and X-Outbox-Id/Timestamp/Signature HMAC canonical bytes; 2xx→delivered else failed.",
+        "TESTS": ["test_f2p_deliver_posts_signed_headers"],
+        "COVERAGE": "PARTIAL"
+      },
+      {
+        "REQ_ID": "REQ-10",
+        "REQUIREMENT": "Backoff schedule and intermediate pending+next_attempt_at; dlq when attempt_count>=max_attempts.",
+        "TESTS": ["test_f2p_failed_delivery_retries_then_dlq"],
+        "COVERAGE": "PARTIAL"
+      },
+      {
+        "REQ_ID": "REQ-11",
+        "REQUIREMENT": "Quota counts successful deliveries in 3600s; failed ignored; enqueue and deliver/complete-delivered return 429 quota_exceeded.",
+        "TESTS": ["test_f2p_quota_ignores_failed_attempts", "test_f2p_quota_blocks_enqueue_after_success"],
+        "COVERAGE": "PARTIAL"
+      },
+      {
+        "REQ_ID": "REQ-12",
+        "REQUIREMENT": "Replay from dlq with bearer when OUTBOX_TOKEN set; missing/invalid→401 unauthorized; success→pending + replay audit.",
+        "TESTS": ["test_f2p_replay_requires_token_when_configured", "test_f2p_replay_with_token_returns_pending"],
+        "COVERAGE": "PARTIAL"
+      },
+      {
+        "REQ_ID": "REQ-13",
+        "REQUIREMENT": "Required audit actions: enqueue, claim, deliver.ok, deliver.fail, dlq, replay, pause, resume.",
+        "TESTS": ["test_f2p_audit_records_enqueue", "test_f2p_audit_records_claim", "test_f2p_audit_records_dlq_transition", "test_f2p_audit_records_pause", "test_f2p_deliver_ok_audit", "test_f2p_replay_with_token_returns_pending"],
+        "COVERAGE": "PARTIAL"
+      },
+      {
+        "REQ_ID": "REQ-14",
+        "REQUIREMENT": "Attempts listing and health/stats endpoints.",
+        "TESTS": ["test_f2p_attempts_list_records_outcomes", "test_f2p_health_ok", "test_f2p_stats_endpoint_shape", "test_p2p_health_remains_ok"],
+        "COVERAGE": "PARTIAL"
+      },
+      {
+        "REQ_ID": "REQ-15",
+        "REQUIREMENT": "CLI outboxctl subcommands talk to OUTBOX_ADDR per contract.",
+        "TESTS": [],
+        "COVERAGE": "NONE"
+      },
+      {
+        "REQ_ID": "REQ-16",
+        "REQUIREMENT": "UI forms use lease_owner/lease_seconds/idempotency_key/payload; show API errors in #error-box textContent.",
+        "TESTS": ["test_f2p_ui_js_uses_lease_owner_fields", "test_f2p_ui_js_surfaces_api_errors", "test_f2p_ui_index_served"],
+        "COVERAGE": "PARTIAL"
+      },
+      {
+        "REQ_ID": "REQ-17",
+        "REQUIREMENT": "Fresh DB boot of repaired binaries satisfies API/CLI/UI contract flows.",
+        "TESTS": ["outbox fixture fresh DB + API/UI F2P suite"],
+        "COVERAGE": "PARTIAL"
+      }
+    ],
+    "PHANTOM_TEST_CONTRACTS": [
+      "test_p2p_get_missing_event_404 → not_found/404 undocumented",
+      "test_p2p_invalid_payload_rejected → array payload 400 undocumented",
+      "test_p2p_enqueue_audit_detail_has_endpoint → detail.endpoint_id undocumented",
+      "test_f2p_stats_endpoint_shape → by_status key name undocumented",
+      "test_f2p_ui_index_served → literal title Outbox Delivery Plane undocumented"
+    ],
+    "UNTESTED_REQUIREMENTS": [
+      "CLI outboxctl behavioral contract (REQ-15)",
+      "Seeded catalog/events preservation (REQ-04)",
+      "Quota 429 on deliver/complete-as-delivered (REQ-11)",
+      "Backoff schedule and intermediate pending/next_attempt_at (REQ-10)",
+      "Audit actions deliver.fail and resume (REQ-13)",
+      "Disabled endpoint claim → endpoint_unavailable (REQ-07)",
+      "Expired-lease reclaim (REQ-08)",
+      "Outbound Content-Type application/json (REQ-09)",
+      "Invalid bearer token 401 (REQ-12 partial)"
+    ],
+    "AMBIGUITIES": [
+      "Compact JSON serialization rules for signed bodies (Q4-014)",
+      "Whether async worker loop is graded versus OUTBOX_SYNC deliver helpers (Q4-015)",
+      "Stats counts-by-status response shape / by_status naming (ties to Q4-004)",
+      "Public tree reshape boundary without path inventory (Q4-017 advisory)"
+    ],
+    "INSTRUCTION_SHAPE": "PASS",
+    "INSTRUCTION_REQUIREMENT_COMPLETENESS": "SUFFICIENT",
+    "DELEGATED_CONTRACT_CHECK": {
+      "delivery-contract.md": "LEGITIMATE_TECHNICAL_CONTRACT",
+      "operator-notes.md": "LEGITIMATE_OPERATOR_NOTES_UNREFERENCED"
+    },
+    "INSTRUCTION_DOC_BOUNDARY": "CLEAN",
+    "IMPLEMENTATION_DIAGNOSIS_LEAKAGE": "NONE",
+    "CURRENT_STATE_EVIDENCE": "PASS",
+    "SPEC_DUMP_RISK": "LOW",
+    "BIDIRECTIONAL_ALIGNMENT": "FAIL",
+    "BLOCKING_FINDING_IDS": [
+      "Q4-001",
+      "Q4-002",
+      "Q4-003",
+      "Q4-004",
+      "Q4-005",
+      "Q4-006",
+      "Q4-007",
+      "Q4-008",
+      "Q4-009",
+      "Q4-010",
+      "Q4-011",
+      "Q4-012",
+      "Q4-013",
+      "Q4-014",
+      "Q4-015"
+    ],
+    "ADVISORY_FINDING_IDS": [
+      "Q4-016",
+      "Q4-017"
+    ],
+    "EXHAUSTIVENESS": {
+      "REQUIREMENTS_ENUMERATED": "COMPLETE",
+      "VERIFIER_BEHAVIORS_ENUMERATED": "COMPLETE",
+      "FORWARD_MATRIX_COMPLETE": "YES",
+      "REVERSE_MATRIX_COMPLETE": "YES",
+      "INSTRUCTION_COMPLETENESS_COMPLETE": "YES",
+      "DELEGATED_CONTRACTS_COMPLETE": "YES",
+      "PROMPT_EXTENSION_WALK_COMPLETE": "YES",
+      "P2P_BOUNDARIES_COMPLETE": "YES",
+      "F2P_BOUNDARIES_COMPLETE": "YES",
+      "OUTPUT_INTERFACES_COMPLETE": "YES",
+      "SECOND_PASS_OMISSION_SWEEP": "PASS",
+      "UNINSPECTED_SCOPE": []
+    }
+  }
+}

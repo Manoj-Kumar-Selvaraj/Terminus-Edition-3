@@ -1,0 +1,275 @@
+{
+  "schema_version": "3.0",
+  "role": "Production Logic Auditor",
+  "review_id": "webhook-outbox-delivery-plane-d3724371-production-logic-b53acfe286",
+  "task": "webhook-outbox-delivery-plane",
+  "task_commit": "d3724371f363b1e4a416c95ff1c104bc3d23277f",
+  "control_plane_commit": "d3724371f363b1e4a416c95ff1c104bc3d23277f",
+  "protocol_policy_version": "2.2",
+  "prompt_policy_version": "2.2",
+  "role_policy_version": "1.1",
+  "role_contract_hash": "ee7d1cfd6e19fcc0e831cc75829457593d7410613c3b3fb811aef925e85a1607",
+  "review_scope_hash": "70f7d7a95f76b25076c4eb3d5dec774bc226477652295b1a2d297b1e40a63b40",
+  "context_packet": ".terminus/reviews/webhook-outbox-delivery-plane/d3724371/webhook-outbox-delivery-plane-d3724371-production-logic-b53acfe286.packet.json",
+  "verdict": "REVISE",
+  "confidence": "HIGH",
+  "evidence_status": "SUFFICIENT",
+  "summary": "Solver-visible outbox core (API/service/store/worker/reconcile/quota/claim/delivery/sign) is reachable, coupled, and non-toy, with deterministic multi-tenant seed state and real operator entrypoints. However, eight internal packages are completely unimported dead weight, and after excluding them substantive reachable runtime/config LOC falls below the large_system_strict >=3,000 floor (~2,840 Go; ~2,958 with schema/UI/script). That is a blocking authenticity/padding defect for Q6 PASS.",
+  "evidence": [
+    {
+      "type": "rule",
+      "ref": ".terminus/agents/QUALITY_AGENT_REGISTRY.md",
+      "observation": "Q6 requires independent judgment of reachability, material branching/state/error handling, subsystem diversity, cross-component interactions, removal impact, and padding risk. For large_system_strict, >=3,000 substantive reachable solver-visible runtime/config LOC is necessary but not sufficient; raw LOC or Complexity Governor PASS is not enough."
+    },
+    {
+      "type": "rule",
+      "ref": ".terminus/agents/QUALITY_AGENT_PROMPTS.md",
+      "observation": "Q6 method requires tracing entrypoints, module reachability, distinct responsibilities, clone/wrapper/padding checks, cross-module invariants, a ~25% removal test, and data/state consumption versus logic. PASS for large_system_strict requires >=3,000 substantive reachable LOC and no HIGH toy/padding risk."
+    },
+    {
+      "type": "rule",
+      "ref": ".terminus/agents/PRODUCTION_AUTHENTICITY.md",
+      "observation": "Production authenticity rejects dead/unreachable/unnecessary code that materially inflates measured system scale, and treats a strict codebase constructed to sit near the 3,000-LOC floor via filler as a defect. Count only implementation that materially participates in claimed operational behavior."
+    },
+    {
+      "type": "file",
+      "ref": "webhook-outbox-delivery-plane/task.toml@d3724371f363b1e4a416c95ff1c104bc3d23277f",
+      "observation": "Declares Software/Systems webhook-outbox task with Go/JS/SQL/bash, artifacts [/app/outbox], separate verifier, public network, workdir /app/outbox. Does not itself encode the strict LOC floor; profile comes from the authenticity/design report."
+    },
+    {
+      "type": "file",
+      "ref": ".terminus/designs/webhook-outbox-delivery-plane.json",
+      "observation": "Runtime/design authenticity report records profile=large_system_strict for this task. Used only as profile/context evidence, not as a copied complexity verdict."
+    },
+    {
+      "type": "file",
+      "ref": "webhook-outbox-delivery-plane/environment/Dockerfile@d3724371f363b1e4a416c95ff1c104bc3d23277f",
+      "observation": "Builds and exposes real operator binaries outboxd/outboxctl/seed under /app/outbox/bin and runs seed at image build into SQLite; this is a live runtime workflow, not a test-only stub."
+    },
+    {
+      "type": "file",
+      "ref": "webhook-outbox-delivery-plane/environment/outbox/cmd/outboxd/main.go@d3724371f363b1e4a416c95ff1c104bc3d23277f",
+      "observation": "Daemon entrypoint opens store, constructs service+API, starts worker.Loop and reconcile.Sweeper (unless OUTBOX_SYNC), and serves HTTP. Reachability root for core delivery plane."
+    },
+    {
+      "type": "file",
+      "ref": "webhook-outbox-delivery-plane/environment/outbox/cmd/outboxctl/main.go@d3724371f363b1e4a416c95ff1c104bc3d23277f",
+      "observation": "Operator CLI covers health/tenants/enqueue/claim/deliver/replay/pause/resume/audit against the HTTP API—normal operator workflow surface."
+    },
+    {
+      "type": "file",
+      "ref": "webhook-outbox-delivery-plane/environment/outbox/internal/service/outbox.go@d3724371f363b1e4a416c95ff1c104bc3d23277f",
+      "observation": "Central orchestration couples validate/policy/quota/claim/store/delivery/audit/backoff across enqueue, claim, complete, deliver, replay, pause/resume with multi-branch status/error paths. Material domain logic, not a constant-output shell."
+    },
+    {
+      "type": "file",
+      "ref": "webhook-outbox-delivery-plane/environment/outbox/internal/api/server.go@d3724371f363b1e4a416c95ff1c104bc3d23277f",
+      "observation": "Large HTTP surface for tenants/endpoints/events/claim/complete/deliver/replay/audit/reports/reconcile plus static UI. Routes into service/store/report/reconcile."
+    },
+    {
+      "type": "file",
+      "ref": "webhook-outbox-delivery-plane/environment/outbox/internal/store/events.go@d3724371f363b1e4a416c95ff1c104bc3d23277f",
+      "observation": "SQLite persistence for events with idempotency conflict handling, lease update/clear, delivered marking, and status aggregation—stateful boundary consumed by service/worker."
+    },
+    {
+      "type": "file",
+      "ref": "webhook-outbox-delivery-plane/environment/outbox/internal/claim/claimer.go@d3724371f363b1e4a416c95ff1c104bc3d23277f",
+      "observation": "Lease acquire/assert helpers exist and are reachable, but Acquire updates lease without fencing an active foreign owner (ErrLeaseHeld defined but unused). Domain-relevant incomplete fencing, not dead code."
+    },
+    {
+      "type": "file",
+      "ref": "webhook-outbox-delivery-plane/environment/outbox/internal/worker/loop.go@d3724371f363b1e4a416c95ff1c104bc3d23277f",
+      "observation": "Background claim→deliver loop queries pending due events and drives service paths—cross-component operational coupling."
+    },
+    {
+      "type": "file",
+      "ref": "webhook-outbox-delivery-plane/environment/outbox/internal/reconcile/sweeper.go@d3724371f363b1e4a416c95ff1c104bc3d23277f",
+      "observation": "Stale-lease expiry returns claimed events to pending; started from outboxd and API reconcile endpoint—restart/recovery-style behavior."
+    },
+    {
+      "type": "file",
+      "ref": "webhook-outbox-delivery-plane/environment/outbox/cmd/seed/main.go@d3724371f363b1e4a416c95ff1c104bc3d23277f",
+      "observation": "Deterministic seed targets 10,000 events across six tenants/18 endpoints with status/region/channel/SKU variation plus attempt history and extra companion events to push primary records past 12k. Volume is domain-shaped rather than identical-row duplication only."
+    },
+    {
+      "type": "file",
+      "ref": "webhook-outbox-delivery-plane/environment/outbox/db/schema.sql@d3724371f363b1e4a416c95ff1c104bc3d23277f",
+      "observation": "Tenants/endpoints/events/attempts/audit with idempotency partial unique index and status/time indexes—credible persistence model for the claimed outbox plane."
+    },
+    {
+      "type": "file",
+      "ref": "webhook-outbox-delivery-plane/environment/outbox/internal/statusmachine/transitions.go@d3724371f363b1e4a416c95ff1c104bc3d23277f",
+      "observation": "Package statusmachine is present but never imported by any cmd or other internal package; transition helpers are unused beside inline status logic elsewhere."
+    },
+    {
+      "type": "file",
+      "ref": "webhook-outbox-delivery-plane/environment/outbox/internal/idempotency/keys.go@d3724371f363b1e4a416c95ff1c104bc3d23277f",
+      "observation": "Normalize/Fingerprint/Valid helpers are unimported; enqueue idempotency is handled only via store unique constraint paths, so this package is unreachable filler."
+    },
+    {
+      "type": "file",
+      "ref": "webhook-outbox-delivery-plane/environment/outbox/internal/lease/expiry.go@d3724371f363b1e4a416c95ff1c104bc3d23277f",
+      "observation": "lease.Active/Expired/Remaining/DefaultSeconds are unimported; claim and sweeper reimplement lease timing inline."
+    },
+    {
+      "type": "file",
+      "ref": "webhook-outbox-delivery-plane/environment/outbox/internal/filter/events.go@d3724371f363b1e4a416c95ff1c104bc3d23277f",
+      "observation": "In-memory EventQuery Match/Apply package has zero importers; list filtering is done in SQL store methods instead."
+    },
+    {
+      "type": "file",
+      "ref": "webhook-outbox-delivery-plane/environment/outbox/internal/canonicaljson/encode.go@d3724371f363b1e4a416c95ff1c104bc3d23277f",
+      "observation": "canonicaljson package is unimported; signing uses sign.Canonical with a different formula."
+    },
+    {
+      "type": "file",
+      "ref": "webhook-outbox-delivery-plane/environment/outbox/internal/payload/compact.go@d3724371f363b1e4a416c95ff1c104bc3d23277f",
+      "observation": "payload.Compact/IsObject unimported; payload validation lives in validate.PayloadObject."
+    },
+    {
+      "type": "file",
+      "ref": "webhook-outbox-delivery-plane/environment/outbox/internal/httpx/ready.go@d3724371f363b1e4a416c95ff1c104bc3d23277f",
+      "observation": "httpx.WaitHTTP/FreePort unimported by daemon/CLI/API; helper-only dead surface."
+    },
+    {
+      "type": "file",
+      "ref": "webhook-outbox-delivery-plane/environment/outbox/internal/metrics/snapshot.go@d3724371f363b1e4a416c95ff1c104bc3d23277f",
+      "observation": "In-process metrics Snapshot is never constructed or incremented from reachable paths."
+    },
+    {
+      "type": "run",
+      "ref": "local import-graph + LOC inventory of environment/ at task_commit d3724371",
+      "observation": "Imported internal packages from cmds/reachability: api,audit,backoff,claim,clock,config,delivery,model,policy,quota,reconcile,report,service,sign,store,validate,worker. Unimported internal packages: canonicaljson,filter,httpx,idempotency,lease,metrics,payload,statusmachine (~293 substantive Go lines). Reachable Go ~2,840; plus schema.sql/app.js/seed.sh ~118 → ~2,958 still under the strict 3,000 substantive reachable floor. Total Go tree ~3,133 sits near the floor only when dead packages are counted."
+    }
+  ],
+  "findings": [
+    {
+      "id": "Q6-1",
+      "severity": "BLOCKER",
+      "status": "OBSERVED",
+      "criterion": "no dead/unreachable module padding inflating large_system_strict scale",
+      "evidence_refs": [
+        "webhook-outbox-delivery-plane/environment/outbox/internal/statusmachine/transitions.go@d3724371f363b1e4a416c95ff1c104bc3d23277f",
+        "webhook-outbox-delivery-plane/environment/outbox/internal/idempotency/keys.go@d3724371f363b1e4a416c95ff1c104bc3d23277f",
+        "webhook-outbox-delivery-plane/environment/outbox/internal/lease/expiry.go@d3724371f363b1e4a416c95ff1c104bc3d23277f",
+        "webhook-outbox-delivery-plane/environment/outbox/internal/filter/events.go@d3724371f363b1e4a416c95ff1c104bc3d23277f",
+        "webhook-outbox-delivery-plane/environment/outbox/internal/canonicaljson/encode.go@d3724371f363b1e4a416c95ff1c104bc3d23277f",
+        "webhook-outbox-delivery-plane/environment/outbox/internal/payload/compact.go@d3724371f363b1e4a416c95ff1c104bc3d23277f",
+        "webhook-outbox-delivery-plane/environment/outbox/internal/httpx/ready.go@d3724371f363b1e4a416c95ff1c104bc3d23277f",
+        "webhook-outbox-delivery-plane/environment/outbox/internal/metrics/snapshot.go@d3724371f363b1e4a416c95ff1c104bc3d23277f",
+        "local import-graph + LOC inventory of environment/ at task_commit d3724371"
+      ],
+      "why_it_matters": "Eight packages have zero importers from outboxd/outboxctl/seed or any reachable internal package. They do not participate in operator workflows and exist as LOC/module inflation beside a core that already implements overlapping concerns inline. This is a HIGH padding risk and a material authenticity defect under PRODUCTION_AUTHENTICITY for large_system_strict.",
+      "minimal_remediation": "Either wire each package into real runtime paths with distinct responsibilities (and delete duplicated inline stubs), or delete the unimported packages entirely and grow substantive reachable domain logic if needed to meet the strict floor honestly.",
+      "regression_risk": "Medium: wiring unused helpers may change claim/idempotency/signing behavior; prefer explicit call-sites and keep oracle/verifier contracts stable."
+    },
+    {
+      "id": "Q6-2",
+      "severity": "BLOCKER",
+      "status": "OBSERVED",
+      "criterion": "large_system_strict substantive reachable runtime/config LOC >= 3000",
+      "evidence_refs": [
+        ".terminus/designs/webhook-outbox-delivery-plane.json",
+        "local import-graph + LOC inventory of environment/ at task_commit d3724371",
+        "webhook-outbox-delivery-plane/environment/outbox/cmd/outboxd/main.go@d3724371f363b1e4a416c95ff1c104bc3d23277f",
+        "webhook-outbox-delivery-plane/environment/outbox/internal/service/outbox.go@d3724371f363b1e4a416c95ff1c104bc3d23277f"
+      ],
+      "why_it_matters": "Design profile is large_system_strict. Independent inventory shows reachable substantive Go ~2,840 lines; even adding schema/UI/seed shell (~118) remains ~2,958. The headline ~3.1k Go total only clears the floor if dead unimported packages are counted, which Q6 and PRODUCTION_AUTHENTICITY forbid.",
+      "minimal_remediation": "Increase substantive reachable domain logic (fencing, status machine enforcement, metrics emission, filter/report coupling, etc.) that entrypoints actually call until honest reachable LOC is >=3,000 without unimported filler.",
+      "regression_risk": "Medium: added reachable logic must remain deterministic and align with the delivery contract; avoid comment/config-only bulk."
+    },
+    {
+      "id": "Q6-3",
+      "severity": "LOW",
+      "status": "OBSERVED",
+      "criterion": "claimed restart/idempotency/fencing surfaces are present in reachable code",
+      "evidence_refs": [
+        "webhook-outbox-delivery-plane/environment/outbox/internal/claim/claimer.go@d3724371f363b1e4a416c95ff1c104bc3d23277f",
+        "webhook-outbox-delivery-plane/environment/outbox/internal/store/events.go@d3724371f363b1e4a416c95ff1c104bc3d23277f",
+        "webhook-outbox-delivery-plane/environment/outbox/internal/reconcile/sweeper.go@d3724371f363b1e4a416c95ff1c104bc3d23277f"
+      ],
+      "why_it_matters": "Idempotent enqueue (unique index + conflict return), lease fields, sweeper expiry, and AssertHolder exist and are reachable. Incomplete foreign-lease fencing is a solvable defect topology, not absence of the operational concepts. Advisory only.",
+      "minimal_remediation": "No Q6-required change beyond Q6-1/Q6-2; solver work may later complete fencing.",
+      "regression_risk": "Low for Q6; fencing fixes are expected product work."
+    }
+  ],
+  "missing_evidence": [],
+  "change_scope": [
+    "Remove or runtime-wire unimported internal packages (statusmachine, idempotency, lease, filter, canonicaljson, payload, httpx, metrics).",
+    "Grow substantive reachable domain logic until honest large_system_strict LOC floor is met without dead modules.",
+    "Re-run Q6 after environment/task.toml scope changes (review_scope_hash will change)."
+  ],
+  "do_not_change": [
+    "Do not treat this REVISE as permission to alter tests/solution/instruction solely to dodge authenticity; fix the solver-visible production surface.",
+    "Do not copy Complexity Governor conclusions as a substitute for a fresh Q6 after remediation.",
+    "Do not use other specialist review verdicts to override this production-logic judgment."
+  ],
+  "next_gate": "Revise the environment production surface to eliminate unreachable padding and meet the large_system_strict substantive reachable LOC floor, then regenerate the Q6 packet/result for the new review_scope_hash. Quality Interlock cannot PASS on this Q6 REVISE.",
+  "role_output": {
+    "CORE_LOGIC_DEPTH": "MEDIUM",
+    "RUNTIME_REACHABILITY": "MEDIUM",
+    "MODULE_DIVERSITY": "MEDIUM",
+    "CROSS_COMPONENT_COUPLING": "HIGH",
+    "TOY_LOGIC_RISK": "LOW",
+    "PADDING_RISK": "HIGH",
+    "SUBSTANTIVE_LOC_ASSESSMENT": "Independent inventory of environment/: ~3,133 substantive Go lines overall, but ~293 lines in eight never-imported packages (statusmachine, idempotency, lease, filter, canonicaljson, payload, httpx, metrics). Reachable Go from outboxd/outboxctl/seed and their import closure is ~2,840. Adding schema.sql + ui/js + seed.sh (~118) yields ~2,958—still below the large_system_strict >=3,000 substantive reachable floor. The core that is reachable (api/service/store/worker/reconcile/quota/claim/delivery/sign/validate/policy/audit/report) is real outbox logic, not toy shells; the fail is padding + under-floor after excluding dead modules.",
+    "MAJOR_MODULES": [
+      {
+        "module": "cmd/outboxd + cmd/outboxctl + cmd/seed",
+        "responsibility": "Daemon HTTP+worker+sweeper, operator CLI, deterministic DB seed.",
+        "reachability": "Built and invoked from Dockerfile/operator paths.",
+        "state_error_behavior": "Fatal on store open; CLI exits non-zero on HTTP>=400; seed fails fast on insert errors."
+      },
+      {
+        "module": "internal/api + ui",
+        "responsibility": "REST surface, middleware, reports/reconcile hooks, static operator UI.",
+        "reachability": "Served by outboxd; UI posts to API.",
+        "state_error_behavior": "Maps domain errors to HTTP statuses; method/not-found handling."
+      },
+      {
+        "module": "internal/service",
+        "responsibility": "Enqueue/claim/complete/deliver/replay/pause orchestration.",
+        "reachability": "Called from API and worker.",
+        "state_error_behavior": "Validation, quota, lease assert, DLQ transition, audit side effects."
+      },
+      {
+        "module": "internal/store + db/schema.sql",
+        "responsibility": "SQLite persistence for tenants/endpoints/events/attempts/audit.",
+        "reachability": "Opened by daemon/seed; used by all stateful paths.",
+        "state_error_behavior": "NotFound/Conflict, lease updates, idempotency unique index."
+      },
+      {
+        "module": "internal/claim + worker + reconcile",
+        "responsibility": "Lease acquire/assert, pending batch delivery loop, stale-lease sweep.",
+        "reachability": "service.Claim/Deliver; outboxd goroutines; API reconcile.",
+        "state_error_behavior": "Lease mismatch/unavailable errors; expiry restores pending."
+      },
+      {
+        "module": "internal/quota + policy + delivery/sign + audit + validate + backoff/report",
+        "responsibility": "Rolling quota, endpoint/replay policy, signed HTTP delivery, audit trail, input validation, retry schedule, usage/health reports.",
+        "reachability": "Imported into service/API paths.",
+        "state_error_behavior": "quota_exceeded, paused/disabled, HTTP delivery outcomes, selective audit drop for claim/dlq in starter."
+      },
+      {
+        "module": "unimported internal packages (statusmachine/idempotency/lease/filter/canonicaljson/payload/httpx/metrics)",
+        "responsibility": "Apparent helpers overlapping already-implemented concerns.",
+        "reachability": "NONE from entrypoints or reachable packages.",
+        "state_error_behavior": "Never executed; inflate module/LOC counts only."
+      }
+    ],
+    "PARTIAL_FIX_TRAPS": [
+      "Fixing HMAC canonicalization without pause+lease fencing still leaves concurrent claim and paused-endpoint claim races open.",
+      "Correcting quota to successful deliveries without replay auth still allows unauthorized DLQ replay.",
+      "Enabling audit for claim without dlq (or vice versa) leaves audit contract incomplete.",
+      "Worker-only pause checks leave direct API claim open on paused endpoints.",
+      "Rejecting all second claims without same-owner renew semantics breaks legitimate lease renewals.",
+      "Deleting dead packages without adding reachable domain depth can leave the strict LOC floor unmet."
+    ],
+    "REMOVAL_TEST": "Removing ~25% of the reachable core would collapse claimed behavior: delete service Complete/Deliver/Replay or store lease/idempotency paths and the outbox plane stops; delete worker+sweeper and async recovery disappears; delete quota/sign/policy and coupled invariants vanish. Separately, removing the eight unimported packages changes no runtime behavior—evidence they are padding rather than load-bearing production logic.",
+    "REQUIRED_CHANGES": [
+      "Eliminate HIGH padding risk by wiring or deleting the eight unimported internal packages.",
+      "Ensure substantive reachable runtime/config LOC is honestly >=3,000 under large_system_strict without counting dead modules.",
+      "Re-issue Q6 on the updated review_scope_hash after environment changes."
+    ]
+  }
+}

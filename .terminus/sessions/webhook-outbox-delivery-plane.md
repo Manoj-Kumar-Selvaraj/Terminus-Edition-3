@@ -1,20 +1,49 @@
-# Session: webhook-outbox-delivery-plane
+# Terminus Task Session
+
+Session schema version: `2.4`
+
+## Identity
+
+- Task: `webhook-outbox-delivery-plane`
+- Controller state: `QUALITY_INTERLOCK`
+- Working branch: `main`
+- Pull request: none
+- Current task commit: `85e89c75d4c657f16eb580c5862e89c6a701a687`
+- Agent-system policy: `2.4`
+- Specialist prompt policy: `2.2`
+- Specialist protocol policy: `2.2`
+- Pre-LLMaJ panel policy: `2.2`
+- Comprehensive reviewer policy: `1.0`
+- Reviewer checklist snapshot: `2026-08-08-user-supplied`
 
 ## CREATION_RULE_CONTEXT
-- CONTROL_PLANE_COMMIT: 88e17620d0a13530127d61849557ec01ecdb1687
-- CREATION_PROFILE: large_system_strict
-- RULE_SOURCES: TERMINUS_3_AI_INSTRUCTIONS.md, CREATION_PIPELINE.md, PRODUCTION_AUTHENTICITY.md, INSTRUCTION_POLICY.md
-- KNOWN_POLICY_CONFLICTS: none
 
-## State
-Local deterministic preflight: **oracle reward 1.0**, **NOP reward 0.0** (harbor 0.21).
-Complexity gate: **PASS** (`substantive_loc=3280`, 29 F2P / 5 P2P).
-Next: independent COMPLEXITY/RUNTIME_AUTHENTICITY semantic review, then freeze → Q4/Q6 (not self-certified).
+```text
+CONTROL_PLANE_COMMIT: 85e89c75d4c657f16eb580c5862e89c6a701a687
+CREATION_PROFILE: large_system_strict
+NETWORK_MODE: public
+KNOWN_POLICY_CONFLICTS: none
+```
+
+## Current gates
+
+| Gate | Status | Evidence / version |
+| --- | --- | --- |
+| Creator Complexity Gate | PASS | substantive_loc=3720; f2p=29 |
+| Oracle = 1 | PASS | jobs/outbox-f2p-trim/oracle/2026-08-16__16-58-13 (harbor 0.21) |
+| NOP = 0 | PASS | jobs/outbox-f2p-trim/nop/2026-08-16__17-00-27 (harbor 0.21) |
+| Instruction Reviewer | PASS | `.terminus/reviews/webhook-outbox-delivery-plane/d3724371/webhook-outbox-delivery-plane-d3724371-instruction-18428090d0.json` (pre-repair; still cited until Stage-B refresh) |
+| Originality & Authenticity | PASS | `.terminus/reviews/webhook-outbox-delivery-plane/d3724371/webhook-outbox-delivery-plane-d3724371-originality-2e4a982a1b.json` |
+| Human Quality Reviewer | PASS | `.terminus/reviews/webhook-outbox-delivery-plane/d3724371/webhook-outbox-delivery-plane-d3724371-human-quality-625cdd5a52.json` |
+| Q4 Spec-Test Contract Reviewer | PENDING | packet `.terminus/reviews/webhook-outbox-delivery-plane/85e89c75/webhook-outbox-delivery-plane-85e89c75-spec-test-contract-11e3d71648.packet.json` |
+| Q6 Production Logic Auditor | PENDING | packet `.terminus/reviews/webhook-outbox-delivery-plane/85e89c75/webhook-outbox-delivery-plane-85e89c75-production-logic-9cab2442bd.packet.json` |
+| Quality Interlock | BLOCKED | awaiting cold Q4+Q6 PASS on `85e89c75` |
 
 ## Notes
-- Novel vs ansible-ci webhooks: this is a signed HTTP outbox delivery plane (claim fencing, HMAC, DLQ, quotas), not CI pipeline orchestration.
-- Jobs: `jobs/outbox-local/2026-08-16__15-48-29` (oracle), `...__15-50-44` (nop).
-- Scaffolded via producer agent [webhook-outbox scaffold](5065c749-ca1b-4b0f-a1f7-10798a4f3a35); parent fixed one pytest typo (`d.status` → `status_code`).
+
+- Prior REVISE evidence under `d3724371/`; fresh cold Q4/Q6 packets under `85e89c75/`
+- Signed HTTP outbox delivery plane (claim fencing, HMAC, DLQ, quotas)
 
 ## Policy-conflict ledger
+
 (empty)

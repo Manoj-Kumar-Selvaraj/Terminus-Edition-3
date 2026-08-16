@@ -1,0 +1,87 @@
+{
+  "schema_version": "3.0",
+  "role": "Instruction Reviewer",
+  "review_id": "webhook-outbox-delivery-plane-d3724371-instruction-18428090d0",
+  "task": "webhook-outbox-delivery-plane",
+  "task_commit": "d3724371f363b1e4a416c95ff1c104bc3d23277f",
+  "control_plane_commit": "d3724371f363b1e4a416c95ff1c104bc3d23277f",
+  "protocol_policy_version": "2.2",
+  "prompt_policy_version": "2.2",
+  "role_policy_version": "1.0",
+  "role_contract_hash": "b3fafcd337332dca594d29a578adba39aba28e76f794d5851c4a0d5140566484",
+  "context_packet": ".terminus/reviews/webhook-outbox-delivery-plane/d3724371/webhook-outbox-delivery-plane-d3724371-instruction-18428090d0.packet.json",
+  "verdict": "PASS",
+  "confidence": "HIGH",
+  "evidence_status": "SUFFICIENT",
+  "summary": "instruction.md is a fair 190-word engineering ticket: two short paragraphs plus four bullets, absolute paths, material behaviors discoverable via the binding delivery contract, and no bug-catalog or repair-recipe leakage.",
+  "evidence": [
+    {
+      "type": "file",
+      "ref": "webhook-outbox-delivery-plane/instruction.md",
+      "observation": "190 words, 2 paragraphs + 4 bullets; states drift-from-contract objective, absolute paths for product root, binding doc, binaries, schema.sql, and UI; ends with env/boot, core contract behaviors, and UI error-surface requirements without naming broken modules or hidden tests."
+    },
+    {
+      "type": "file",
+      "ref": "webhook-outbox-delivery-plane/environment/outbox/docs/delivery-contract.md",
+      "observation": "Referenced solver-visible contract supplies routes, payloads, claim fencing, HMAC canonicalization, backoff/DLQ/replay, quotas, pause, audit, env vars, CLI, and UI field/error rules as ordinary technical documentation rather than a repair checklist."
+    },
+    {
+      "type": "artifact",
+      "ref": ".terminus/designs/webhook-outbox-delivery-plane-test-map.json",
+      "observation": "Requirement groups (health, tenant/endpoint, enqueue/idempotency, claim/pause, signing, DLQ, quota, audit, replay auth, UI fields/errors, schema boot, preservation) remain discoverable from the handoff plus delivery-contract without reading test bodies."
+    },
+    {
+      "type": "rule",
+      "ref": ".terminus/agents/INSTRUCTION_POLICY.md",
+      "observation": "Passes Jira handoff, shape (<=2 paragraphs / <=20 bullets), requirement completeness via referenced contract, docs-boundary, and non-MATERIAL diagnosis/leakage checks needed for Instruction Reviewer PASS."
+    },
+    {
+      "type": "review",
+      "ref": ".terminus/reviewers/HUMAN_WRITING_CALIBRATION.md",
+      "observation": "Incident-light drift framing plus contract delegation matches human ticket selection; dense contract topic list is grouped by operational concern rather than one-sentence-per-verifier-row."
+    }
+  ],
+  "findings": [],
+  "missing_evidence": [],
+  "change_scope": [
+    "Cold Instruction Reviewer pass under packet isolation; solver-visible instruction and referenced contract unchanged."
+  ],
+  "do_not_change": [
+    "Do not relocate material acceptance criteria into docs solely to shorten instruction.md.",
+    "Do not add module-level bug ownership, oracle steps, or one-bullet-per-test inventories."
+  ],
+  "next_gate": "Quality interlock continue",
+  "role_output": {
+    "WORD_COUNT": 190,
+    "BULLET_COUNT": 4,
+    "HUMAN_SIGNAL": "HIGH",
+    "AI_TEMPLATE_SIGNAL": "LOW",
+    "JIRA_SLACK_HANDOFF": "PASS",
+    "REQUIREMENT_COMPLETENESS": "SUFFICIENT",
+    "INSTRUCTION_SHAPE": "PASS",
+    "REVERSE_OUTLINE_RISK": "LOW",
+    "SPEC_FILE_LOOPHOLE": "NONE",
+    "IMPLEMENTATION_DIAGNOSIS_LEAKAGE": "LOW",
+    "CURRENT_STATE_EVIDENCE": "PASS",
+    "HUMAN_GROUPING": "HIGH",
+    "COMPRESSED_RUBRIC": "LOW",
+    "OVER_PRESCRIPTION": "LOW",
+    "MATERIAL_REQUIREMENTS_PRESERVED": [
+      "align API/worker/CLI/UI to shipped contract",
+      "preserve public tree and seeded catalog",
+      "env-driven startup and schema/UI boot",
+      "claim fencing including 409 conflicts",
+      "pause rejects claims",
+      "quota/signature/DLQ replay auth/audit per contract",
+      "UI contract field names and visible API errors",
+      "rebuild and run /app/outbox/bin/outboxd and outboxctl"
+    ],
+    "UNNECESSARY_TEXT": [],
+    "MISSING_CONTEXT": [],
+    "SUSPICIOUS_PHRASES": [
+      "instead of hard-coding paths or ports (mild current-state diagnosis; still LOW)"
+    ],
+    "FAIRNESS_RISK": "LOW",
+    "REPLACEMENT_TEXT": ""
+  }
+}
