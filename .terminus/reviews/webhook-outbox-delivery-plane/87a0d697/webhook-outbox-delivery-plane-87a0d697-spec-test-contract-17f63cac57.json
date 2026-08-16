@@ -1,0 +1,175 @@
+{
+  "schema_version": "3.0",
+  "role": "Spec-Test Contract Reviewer",
+  "review_id": "webhook-outbox-delivery-plane-87a0d697-spec-test-contract-17f63cac57",
+  "task": "webhook-outbox-delivery-plane",
+  "task_commit": "87a0d6970e8a5081aa3f3eb6d91ed706989db916",
+  "control_plane_commit": "87a0d6970e8a5081aa3f3eb6d91ed706989db916",
+  "protocol_policy_version": "2.2",
+  "prompt_policy_version": "2.2",
+  "role_policy_version": "1.1",
+  "role_contract_hash": "c860dfe8b8ed0a04c729e4d6a828741b206b7067a780863ec7b22ee09d02c5a0",
+  "context_packet": ".terminus/reviews/webhook-outbox-delivery-plane/87a0d697/webhook-outbox-delivery-plane-87a0d697-spec-test-contract-17f63cac57.packet.json",
+  "verdict": "PASS",
+  "confidence": "HIGH",
+  "evidence_status": "SUFFICIENT",
+  "summary": "After the consolidated Q2 repair, bidirectional alignment holds. Material claim fencing (including deliver lease_mismatch), HMAC/Content-Type/compact body, quota on enqueue/deliver/complete, pause/resume, DLQ with 5s then 15s backoff, replay state fields, CLI health/enqueue/claim/deliver/pause, and UI claim field construction plus api()-path error-box writes are discoverable from instruction.md + delivery-contract.md and meaningfully asserted. Seed P2P now checks presence/non-empty catalog rather than private cardinality floors. Remaining gaps are advisory only (invalid bearer, nested-key signing, leftover CLI list/replay/resume/audit smoke, default lease_seconds, list ordering).",
+  "evidence": [
+    {
+      "type": "file",
+      "ref": "webhook-outbox-delivery-plane/instruction.md",
+      "observation": "Two short paragraphs + four bullets bind repair of API/CLI/UI to delivery-contract.md, OUTBOX_* env, schema/seed/UI paths, claim→deliver OUTBOX_SYNC=1, and UI field/error obligations."
+    },
+    {
+      "type": "file",
+      "ref": "webhook-outbox-delivery-plane/environment/outbox/docs/delivery-contract.md",
+      "observation": "Binding protocol for routes, lease fencing (complete/deliver lease_mismatch), HMAC/canonical body, backoff table, replay semantics, quota, audit actions, CLI subcommands, UI lease_owner/lease_seconds and #error-box."
+    },
+    {
+      "type": "test",
+      "ref": "webhook-outbox-delivery-plane/tests/",
+      "observation": "28 F2P + P2P suite: behavioral UI claim-body parse + api error path; deliver+complete lease_mismatch; replay attempt_count/lease clear/next_attempt_at; backoff 5 then 15 then dlq; CLI deliver+pause; seed non-empty presence."
+    },
+    {
+      "type": "file",
+      "ref": "webhook-outbox-delivery-plane/tests/test_f2p_replay_ui.py",
+      "observation": "UI F2P extracts claim() object keys (rejects owner/seconds) and requires api() !res.ok + data.error + error-box/textContent path; replay asserts full pending state."
+    },
+    {
+      "type": "file",
+      "ref": "webhook-outbox-delivery-plane/tests/test_f2p_claim_delivery.py",
+      "observation": "complete+deliver lease_mismatch; signed deliver Content-Type/body; failed delivery asserts ~5s then ~15s next_attempt_at before dlq."
+    },
+    {
+      "type": "file",
+      "ref": "webhook-outbox-delivery-plane/tests/test_f2p_contract_edges.py",
+      "observation": "CLI covers health/enqueue/claim/deliver/pause; seed P2P asserts DB/script/binary and table counts > 0 only."
+    },
+    {
+      "type": "file",
+      "ref": ".terminus/designs/webhook-outbox-delivery-plane-test-map.json",
+      "observation": "Classification-only map; F2P=28 within 25–30; used for ownership labels only."
+    },
+    {
+      "type": "rule",
+      "ref": ".terminus/agents/QUALITY_AGENT_PROMPTS.md#Q4",
+      "observation": "PASS requires exhaustive matrices with empty BLOCKING_FINDING_IDS; advisory LOWs may accompany PASS."
+    },
+    {
+      "type": "rule",
+      "ref": ".terminus/agents/INSTRUCTION_POLICY.md",
+      "observation": "Instruction owns material ask; delegated delivery-contract.md is legitimate protocol documentation, not a repair map."
+    }
+  ],
+  "findings": [
+    {
+      "id": "Q4-A01",
+      "severity": "LOW",
+      "status": "OBSERVED",
+      "criterion": "Invalid bearer token path is stated but only missing-token 401 is asserted.",
+      "evidence_refs": [
+        "webhook-outbox-delivery-plane/environment/outbox/docs/delivery-contract.md",
+        "webhook-outbox-delivery-plane/tests/test_f2p_replay_ui.py::test_f2p_replay_requires_token_when_configured"
+      ],
+      "why_it_matters": "Wrong-token vs missing-token could diverge without failing grading. Advisory; primary auth gate is covered.",
+      "minimal_remediation": "Optional: one replay with Bearer wrong-token expecting 401.",
+      "regression_risk": "Negligible."
+    },
+    {
+      "id": "Q4-A02",
+      "severity": "LOW",
+      "status": "OBSERVED",
+      "criterion": "Nested sorted-key compact signing is stated; tests use a flat object.",
+      "evidence_refs": [
+        "webhook-outbox-delivery-plane/environment/outbox/docs/delivery-contract.md",
+        "webhook-outbox-delivery-plane/tests/test_f2p_claim_delivery.py::test_f2p_deliver_posts_signed_headers"
+      ],
+      "why_it_matters": "Nested key order bugs would not fail the flat-body assert. Advisory relative to strong flat HMAC coverage.",
+      "minimal_remediation": "Optional nested payload body+signature assert.",
+      "regression_risk": "Low."
+    },
+    {
+      "id": "Q4-A03",
+      "severity": "LOW",
+      "status": "OBSERVED",
+      "criterion": "Public CLI also lists tenants list, replay, resume, and audit; graded CLI covers health/enqueue/claim/deliver/pause.",
+      "evidence_refs": [
+        "webhook-outbox-delivery-plane/environment/outbox/docs/delivery-contract.md",
+        "webhook-outbox-delivery-plane/tests/test_f2p_contract_edges.py::test_f2p_cli_health_enqueue_claim_deliver_pause"
+      ],
+      "why_it_matters": "Remaining CLI subcommands are still mostly API-covered. Material operator mutations deliver/pause are now graded; leftover list/replay/resume/audit CLI smoke is advisory.",
+      "minimal_remediation": "Optional CLI replay/resume smoke, or narrow the published CLI list to graded commands.",
+      "regression_risk": "Low."
+    },
+    {
+      "id": "Q4-A04",
+      "severity": "LOW",
+      "status": "OBSERVED",
+      "criterion": "Default lease_seconds=30 when omitted or <1 is untested.",
+      "evidence_refs": [
+        "webhook-outbox-delivery-plane/environment/outbox/docs/delivery-contract.md",
+        "webhook-outbox-delivery-plane/tests/test_f2p_claim_delivery.py"
+      ],
+      "why_it_matters": "All claims supply positive lease_seconds. Advisory.",
+      "minimal_remediation": "Optional claim with omitted/0 seconds and ~30s lease_until bound.",
+      "regression_risk": "Low."
+    }
+  ],
+  "missing_evidence": [],
+  "change_scope": [],
+  "do_not_change": [
+    "Behavioral UI claim-key parsing and api() error-box path",
+    "Deliver+complete lease_mismatch coverage",
+    "Replay attempt_count / cleared lease / next_attempt_at asserts",
+    "Backoff 5s then 15s then dlq ladder",
+    "CLI deliver/pause alongside health/enqueue/claim",
+    "Seed presence/non-empty catalog (no private cardinality floors)",
+    "Q6 production scope (environment/task.toml) — unchanged; prior Q6 PASS remains scope-valid"
+  ],
+  "next_gate": "QUALITY_INTERLOCK with scope-preserved Q6 PASS, then Stage-B / Pre-LLMaJ specialists as scheduled",
+  "role_output": {
+    "REQUIREMENT_TEST_MATRIX": [
+      {"id": "R_ENV_BOOT", "coverage": "complete", "tests": ["conftest health", "test_p2p_schema_file_present", "test_p2p_ui_index_served"]},
+      {"id": "R_TENANT_EP", "coverage": "complete", "tests": ["test_f2p_create_tenant_and_endpoint"]},
+      {"id": "R_ENQUEUE", "coverage": "complete", "tests": ["test_f2p_enqueue_pending_event", "test_f2p_idempotent_enqueue_returns_existing", "test_f2p_disabled_endpoint_rejects_enqueue", "test_p2p_invalid_payload_rejected"]},
+      {"id": "R_LIST_GET", "coverage": "complete", "tests": ["test_f2p_list_events_and_get_event", "test_f2p_stats_endpoint_shape"]},
+      {"id": "R_CLAIM", "coverage": "complete", "tests": ["test_f2p_claim_sets_lease_owner", "test_f2p_second_claim_different_owner_conflict", "test_f2p_same_owner_can_renew_lease", "test_f2p_disabled_claim_and_expired_lease_reclaim"]},
+      {"id": "R_PAUSE", "coverage": "complete", "tests": ["test_f2p_paused_endpoint_rejects_claim", "test_f2p_resume_allows_claim_again", "test_f2p_audit_records_pause"]},
+      {"id": "R_COMPLETE", "coverage": "complete", "tests": ["test_f2p_complete_and_deliver_require_lease_holder"]},
+      {"id": "R_SIGN", "coverage": "complete", "tests": ["test_f2p_deliver_posts_signed_headers"]},
+      {"id": "R_DLQ", "coverage": "complete", "tests": ["test_f2p_failed_delivery_retries_then_dlq", "test_f2p_attempts_list_records_outcomes"]},
+      {"id": "R_QUOTA", "coverage": "complete", "tests": ["test_f2p_quota_ignores_failed_attempts", "test_f2p_quota_blocks_enqueue_after_success", "test_f2p_quota_blocks_deliver_and_complete_when_full"]},
+      {"id": "R_AUDIT", "coverage": "complete", "tests": ["test_f2p_audit_records_enqueue", "test_f2p_audit_records_claim", "test_f2p_audit_records_dlq_transition", "test_f2p_audit_records_pause", "test_f2p_deliver_ok_audit", "test_p2p_enqueue_audit_detail_has_endpoint"]},
+      {"id": "R_REPLAY", "coverage": "complete", "tests": ["test_f2p_replay_requires_token_when_configured", "test_f2p_replay_with_token_returns_pending"]},
+      {"id": "R_UI", "coverage": "complete", "tests": ["test_f2p_ui_claim_fields_and_error_box", "test_p2p_ui_index_served"]},
+      {"id": "R_CLI", "coverage": "complete", "tests": ["test_f2p_cli_health_enqueue_claim_deliver_pause"]},
+      {"id": "R_SEED", "coverage": "complete", "tests": ["test_p2p_seed_catalog_artifacts_present"]}
+    ],
+    "PHANTOM_TEST_CONTRACTS": [],
+    "UNTESTED_REQUIREMENTS": [],
+    "AMBIGUITIES": [],
+    "INSTRUCTION_SHAPE": "PASS",
+    "INSTRUCTION_REQUIREMENT_COMPLETENESS": "SUFFICIENT",
+    "DELEGATED_CONTRACT_CHECK": "delivery-contract.md is legitimate protocol/API/CLI/UI documentation referenced by instruction.md",
+    "INSTRUCTION_DOC_BOUNDARY": "CLEAN",
+    "IMPLEMENTATION_DIAGNOSIS_LEAKAGE": "NONE",
+    "CURRENT_STATE_EVIDENCE": "NOT_APPLICABLE",
+    "SPEC_DUMP_RISK": "LOW",
+    "BIDIRECTIONAL_ALIGNMENT": "PASS",
+    "BLOCKING_FINDING_IDS": [],
+    "ADVISORY_FINDING_IDS": ["Q4-A01", "Q4-A02", "Q4-A03", "Q4-A04"],
+    "EXHAUSTIVENESS": {
+      "REQUIREMENTS_ENUMERATED": "COMPLETE",
+      "VERIFIER_BEHAVIORS_ENUMERATED": "COMPLETE",
+      "FORWARD_MATRIX_COMPLETE": "YES",
+      "REVERSE_MATRIX_COMPLETE": "YES",
+      "INSTRUCTION_COMPLETENESS_COMPLETE": "YES",
+      "DELEGATED_CONTRACTS_COMPLETE": "YES",
+      "PROMPT_EXTENSION_WALK_COMPLETE": "YES",
+      "P2P_BOUNDARIES_COMPLETE": "YES",
+      "F2P_BOUNDARIES_COMPLETE": "YES",
+      "OUTPUT_INTERFACES_COMPLETE": "YES",
+      "SECOND_OMISSION_SWEEP_COMPLETE": "YES"
+    }
+  }
+}

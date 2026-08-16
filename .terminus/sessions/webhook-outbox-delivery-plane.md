@@ -8,7 +8,7 @@ Session schema version: `2.4`
 - Controller state: `QUALITY_INTERLOCK`
 - Working branch: `main`
 - Pull request: none
-- Current task commit: `85e89c75d4c657f16eb580c5862e89c6a701a687`
+- Current task commit: `87a0d6970e8a5081aa3f3eb6d91ed706989db916`
 - Agent-system policy: `2.4`
 - Specialist prompt policy: `2.2`
 - Specialist protocol policy: `2.2`
@@ -19,7 +19,7 @@ Session schema version: `2.4`
 ## CREATION_RULE_CONTEXT
 
 ```text
-CONTROL_PLANE_COMMIT: 85e89c75d4c657f16eb580c5862e89c6a701a687
+CONTROL_PLANE_COMMIT: 87a0d6970e8a5081aa3f3eb6d91ed706989db916
 CREATION_PROFILE: large_system_strict
 NETWORK_MODE: public
 KNOWN_POLICY_CONFLICTS: none
@@ -29,20 +29,20 @@ KNOWN_POLICY_CONFLICTS: none
 
 | Gate | Status | Evidence / version |
 | --- | --- | --- |
-| Creator Complexity Gate | PASS | substantive_loc=3720; f2p=29 |
-| Oracle = 1 | PASS | jobs/outbox-f2p-trim/oracle/2026-08-16__16-58-13 (harbor 0.21) |
-| NOP = 0 | PASS | jobs/outbox-f2p-trim/nop/2026-08-16__17-00-27 (harbor 0.21) |
-| Instruction Reviewer | PASS | `.terminus/reviews/webhook-outbox-delivery-plane/d3724371/webhook-outbox-delivery-plane-d3724371-instruction-18428090d0.json` (pre-repair; still cited until Stage-B refresh) |
-| Originality & Authenticity | PASS | `.terminus/reviews/webhook-outbox-delivery-plane/d3724371/webhook-outbox-delivery-plane-d3724371-originality-2e4a982a1b.json` |
-| Human Quality Reviewer | PASS | `.terminus/reviews/webhook-outbox-delivery-plane/d3724371/webhook-outbox-delivery-plane-d3724371-human-quality-625cdd5a52.json` |
-| Q4 Spec-Test Contract Reviewer | REVISE | `.terminus/reviews/webhook-outbox-delivery-plane/85e89c75/webhook-outbox-delivery-plane-85e89c75-spec-test-contract-11e3d71648.json` (6 blocking) |
-| Q6 Production Logic Auditor | PASS | `.terminus/reviews/webhook-outbox-delivery-plane/85e89c75/webhook-outbox-delivery-plane-85e89c75-production-logic-9cab2442bd.json` (~3400+ reachable LOC; padding MEDIUM) |
-| Quality Interlock | BLOCKED | Q4 REVISE on `85e89c75`; next = consolidated Q2 repair then refreeze + cold Q4 |
+| Creator Complexity Gate | PASS | substantive_loc=3720; f2p=28 |
+| Oracle = 1 | PASS | jobs/outbox-q4-repair/oracle/2026-08-16__17-14-36 (harbor 0.21) |
+| NOP = 0 | PASS | jobs/outbox-q4-repair/nop/2026-08-16__17-16-54 (harbor 0.21) |
+| Instruction Reviewer | PASS | `.terminus/reviews/webhook-outbox-delivery-plane/d3724371/...instruction...` (stale vs task commit; refresh later) |
+| Originality & Authenticity | PASS | `.terminus/reviews/webhook-outbox-delivery-plane/d3724371/...originality...` (stale vs task commit; refresh later) |
+| Human Quality Reviewer | PASS | `.terminus/reviews/webhook-outbox-delivery-plane/d3724371/...human-quality...` (stale vs task commit; refresh later) |
+| Q4 Spec-Test Contract Reviewer | PASS | `.terminus/reviews/webhook-outbox-delivery-plane/87a0d697/webhook-outbox-delivery-plane-87a0d697-spec-test-contract-17f63cac57.json` (auto-mode re-review after Q2 repair; advisory LOWs only) |
+| Q6 Production Logic Auditor | PASS (scope-preserved) | `.terminus/reviews/webhook-outbox-delivery-plane/85e89c75/webhook-outbox-delivery-plane-85e89c75-production-logic-9cab2442bd.json`; `review_scope_hash=57433d8905fe…` unchanged (tests-only repair) |
+| Quality Interlock | PASS* | Q4 exact-commit PASS + Q6 scope-preserved PASS; Stage-B reviews on d3724371 are stale and need refresh before Pre-LLMaJ |
 
 ## Notes
 
-- Prior REVISE evidence under `d3724371/`; fresh cold Q4/Q6 packets under `85e89c75/`
-- Signed HTTP outbox delivery plane (claim fencing, HMAC, DLQ, quotas)
+- User preference: no premium Task subagents; Q4 re-review performed in Auto mode in the controller chat after repair
+- Prior Q4 REVISE on `85e89c75` remediated in `87a0d697`
 
 ## Policy-conflict ledger
 
