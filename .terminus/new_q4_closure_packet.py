@@ -87,6 +87,13 @@ def main(argv: list[str] | None = None) -> int:
         ),
         final_commit,
     )
+    packet["closure_policy_version"] = "1.0"
+    packet["boundary_adjudication"] = boundary_rel
+    packet["final_q4_result"] = q4_rel
+    packet["repair_base_task_commit"] = args.repair_base
+    packet["final_task_commit"] = final_commit
+    packet["finding_fingerprints"] = {}
+
     packet["question"] = (
         "Does the final frozen Q4 leave any legitimately controlling blocker after applying the "
         "frozen adjudicated closure boundary and exact final-repair provenance?"
@@ -109,8 +116,10 @@ def main(argv: list[str] | None = None) -> int:
         if not finding_id:
             print("error: final Q4 contains finding with empty ID")
             return 1
+        fingerprint = finding_fingerprint(finding)
+        packet["finding_fingerprints"][finding_id] = fingerprint
         packet["evidence_allowed"].append(
-            f"q4_finding:{finding_id}:{finding_fingerprint(finding)}"
+            f"q4_finding:{finding_id}:{fingerprint}"
         )
     packet["evidence_excluded"] = [
         "desired closure outcome",

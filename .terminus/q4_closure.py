@@ -204,6 +204,17 @@ def validate_ready_closure(
             if diff_task != task:
                 errors.append("repair_diff task does not match closure task")
 
+    if packet.get("closure_policy_version") != "1.0":
+        errors.append("closure packet policy version must be 1.0")
+    if packet.get("boundary_adjudication") != boundary_rel:
+        errors.append("closure packet top-level boundary binding mismatch")
+    if packet.get("final_q4_result") != final_q4_rel:
+        errors.append("closure packet top-level final-Q4 binding mismatch")
+    if packet.get("repair_base_task_commit") != repair_base:
+        errors.append("closure packet top-level repair-base binding mismatch")
+    if packet.get("final_task_commit") != final_commit:
+        errors.append("closure packet top-level final-task binding mismatch")
+
     boundary = None
     q4 = None
     if boundary_rel:
@@ -239,6 +250,10 @@ def validate_ready_closure(
         for finding in q4.get("findings", [])
         if str(finding.get("id", ""))
     }
+    top_level_fps = packet.get("finding_fingerprints")
+    if not isinstance(top_level_fps, dict) or top_level_fps != expected_fps:
+        errors.append("closure packet top-level finding fingerprints do not exactly bind final Q4")
+
     packet_fps: dict[str, str] = {}
     for item in packet.get("evidence_allowed", []):
         text = str(item)
