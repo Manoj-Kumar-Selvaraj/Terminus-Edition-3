@@ -79,7 +79,7 @@ None for deterministic gates. Waiting on cold Q4 + Q6 for freeze `8dc0203f`.
 
 ## Next action
 
-Open two fresh cold chats with the generated Q4 and Q6 packets under `.terminus/reviews/django-checkout-failover-ha/8dc0203f/`. Return results to the orchestrator for freshness validation. Do not run Q4/Q6 in the producer chat.
+Await cold Q4 ([Q4 Spec-Test Review](28c39e2a-fe36-4d30-be10-0581a7390e13)) and Q6 ([Q6 Production Logic Audit](7e44db88-f504-42b0-9e91-fdd37444a9ca)) results for freeze `8dc0203f`. Validate freshness, then update Quality Interlock. Do not self-certify PASS from producer chat.
 
 ## Review evidence ledger
 
