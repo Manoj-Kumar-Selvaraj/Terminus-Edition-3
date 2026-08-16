@@ -49,6 +49,11 @@ jobs:
         run: |
           set -euo pipefail
           python .terminus/install_q4_closure_redesign.py
+          python - <<'PY'
+          from pathlib import Path
+          path = Path('.terminus/agents/PROMPTS.md')
+          path.write_text(path.read_text(encoding='utf-8').rstrip() + '\n', encoding='utf-8')
+          PY
           python -m py_compile .terminus/q4_closure.py .terminus/new_q4_closure_packet.py
           git diff --check
           if git diff --name-only | grep -q '^cobol-comp3-python-equiv/'; then
