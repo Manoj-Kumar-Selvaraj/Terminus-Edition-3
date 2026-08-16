@@ -593,6 +593,16 @@ class ExecutionRecordBuilder:
                 if not isinstance(review_id, str) or not review_id:
                     raise ValueError(f"{field} must include review_id for evidence binding")
                 self._require_ref_identity(hashed, review_id, {"RESULT"}, field)
+            if outputs.get("Q4_SATISFACTION") == "ADJUDICATED_CLOSURE_PASS":
+                closure = outputs.get("Q4_CLOSURE_RESULT")
+                if not isinstance(closure, Mapping):
+                    raise ValueError("Q4_CLOSURE_RESULT must be an object")
+                closure_id = closure.get("review_id")
+                if not isinstance(closure_id, str) or not closure_id:
+                    raise ValueError("Q4_CLOSURE_RESULT must include review_id for evidence binding")
+                self._require_ref_identity(
+                    hashed, closure_id, {"RESULT"}, "Q4_CLOSURE_RESULT"
+                )
             return
 
         if stage_id == "PRE_LLMAJ":

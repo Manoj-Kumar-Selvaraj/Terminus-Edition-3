@@ -186,6 +186,21 @@ ROLES: dict[str, dict[str, object]] = {
         ],
         "excluded": ["a desired verdict", "reviews that are not yet frozen"],
     },
+    "q4-closure-adjudication": {
+        "role": "Q4 Closure Adjudicator",
+        "question": "Does the final frozen Q4 leave any legitimately controlling blocker after the frozen adjudicated closure boundary?",
+        "allowed": [
+            "current authoritative rules",
+            "frozen boundary adjudication",
+            "final frozen Q4",
+            "exact final-repair task diff",
+        ],
+        "excluded": [
+            "desired closure outcome",
+            "task edits or proposed fixes",
+            "unfrozen reviewer opinions",
+        ],
+    },
     "spec-test-contract": {
         "role": "Spec-Test Contract Reviewer",
         "question": "Is every substantive verifier behavior discoverable from the solver-visible contract, every material requirement tested, and every grading-relevant statement unambiguous?",

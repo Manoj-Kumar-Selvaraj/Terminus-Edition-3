@@ -9,8 +9,12 @@ Session schema version: `2.4`
 - Working branch: `task/cobol-comp3-python-equiv-strict-rebuild`
 - Pull request: `#23`
 - Current task commit: `bb2e042c45873da3f3d78836d915ddb6446debf2`
-- Agent-system policy: `2.4`
-- Protocol policy: `2.2`
+- Agent-system policy: `2.5`
+- Specialist prompt policy: `2.2`
+- Specialist protocol policy: `2.2`
+- Pre-LLMaJ panel policy: `2.2`
+- Comprehensive reviewer policy: `1.0`
+- Reviewer checklist snapshot: `2026-08-08-user-supplied`
 
 ## Current task profile
 
@@ -23,6 +27,7 @@ Large-system-strict warehouse inventory cutover task: legacy COBOL packed-decima
 | Deterministic closure Oracle | PASS | run `31943332388`, job `95155548440`: `40 passed in 6.09s` |
 | Deterministic closure NOP | PASS | run `31943332388`, job `95155548440`: `30 failed, 10 passed in 3.05s` |
 | Q4 Spec-Test Contract Reviewer | REVISE | `.terminus/reviews/cobol-comp3-python-equiv/bb2e042c/cobol-comp3-python-equiv-bb2e042c-spec-test-contract-852fc1b28a.json` |
+| Q4 Adjudicated Closure | PENDING | generate a current `Q4 Closure Adjudicator` packet under Q4_CLOSURE_POLICY.md |
 | Q6 Production Logic Auditor | PASS / scope-reusable | existing Q6 production scope unchanged because `task.toml` and `environment/**` did not change |
 | Quality Interlock | BLOCKED | decisive post-circuit-breaker Q4 remains `REVISE` |
 
@@ -34,11 +39,11 @@ The decisive Q4 at task commit `bb2e042c45873da3f3d78836d915ddb6446debf2` return
 
 ## Required strategy change
 
-Redesign the Q4/control-plane closure semantics before retrying this task. The redesign must prevent a post-adjudication closure review from reopening explicitly rejected scope or continuously adding latent completeness demands while preserving independent detection of true repair regressions. Candidate directions include an adjudication-bound closure-review mode, frozen semantic finding fingerprints/scope boundaries, and explicit new-finding provenance/materiality rules.
+Use the committed Q4 adjudicated-closure strategy. Ordinary Q4 remains frozen at `REVISE`; re-entry is through a dedicated `Q4 Closure Adjudicator` packet that binds the frozen boundary adjudication, final Q4, exact final repair diff and deterministic finding fingerprints. Rejected-scope reopen and latent-after-boundary findings cannot silently restart task repair, while surviving bound blockers, repair regressions, genuinely new evidence and authoritative-rule conflicts remain blocking.
 
 ## Next action
 
-Do not modify `cobol-comp3-python-equiv/**`. Design and independently validate the control-plane strategy change first. Only after that policy change is committed and the resulting Q4 role contract/provenance rules are clear may the controller decide whether a new review execution is protocol-valid.
+Do not modify `cobol-comp3-python-equiv/**`. After deterministic control-plane validation, generate the exact current Q4 closure packet and route it to a fresh independent `Q4 Closure Adjudicator`. Do not rerun Q4 or repair the five decisive Q4 findings before that closure decision.
 
 ## Decisions that must survive chat changes
 

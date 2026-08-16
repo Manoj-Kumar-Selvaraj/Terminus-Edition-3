@@ -3,15 +3,19 @@
 
 from __future__ import annotations
 
+import hashlib
 import json
 import subprocess
 import sys
+from urllib.parse import quote
 from pathlib import Path
 from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]
 T = ROOT / ".terminus"
 sys.path.insert(0, str(T))
+
+_RECORD_REFERENCE_FIXTURE = ".terminus/tests/fixtures/record_reference_ids.json"
 
 from execution.authority import ExecutionAuthority  # noqa: E402
 from execution.invocation import StageInvocationBuilder  # noqa: E402
@@ -36,12 +40,28 @@ def _load(path: Path) -> dict[str, Any]:
     return value
 
 
-def _review_pass() -> dict[str, object]:
+def _review_pass(review_id: str = "review-result") -> dict[str, object]:
     return {
+        "review_id": review_id,
         "verdict": "PASS",
         "confidence": "MEDIUM",
         "evidence_status": "SUFFICIENT",
         "missing_evidence": [],
+    }
+
+
+def _resolved_ref(kind: str, identity: str) -> dict[str, str]:
+    commit = _head()
+    raw = subprocess.run(
+        ["git", "-C", str(ROOT), "show", f"{commit}:{_RECORD_REFERENCE_FIXTURE}"],
+        check=True,
+        capture_output=True,
+    ).stdout
+    digest = "sha256:" + hashlib.sha256(raw).hexdigest()
+    return {
+        "kind": kind,
+        "ref": f"git:{commit}:{_RECORD_REFERENCE_FIXTURE}#{quote(identity, safe='')}",
+        "content_hash": digest,
     }
 
 
@@ -65,8 +85,9 @@ def _accepted_outputs(invocation: dict[str, Any]) -> dict[str, Any]:
         )
     elif stage == "QUALITY_INTERLOCK":
         outputs.update(
-            Q4_RESULT=_review_pass(),
-            Q6_RESULT=_review_pass(),
+            Q4_RESULT=_review_pass("q4-review"),
+            Q4_SATISFACTION="DIRECT_PASS",
+            Q6_RESULT=_review_pass("q6-review"),
             EVIDENCE_SUFFICIENCY="SUFFICIENT",
         )
     elif stage == "PRE_LLMAJ":
@@ -100,8 +121,9 @@ def _accepted_outputs(invocation: dict[str, Any]) -> dict[str, Any]:
         )
     elif stage == "OFFICIAL_MODEL_TRIALS":
         outputs.update(
-            GPT_5_5_TRIALS=[{"trial": i} for i in range(5)],
-            CLAUDE_OPUS_4_8_TRIALS=[{"trial": i} for i in range(5)],
+            EXTERNAL_RUN_ID="official-batch-validator",
+            GPT_5_5_TRIALS=[{"trial": i, "run_id": f"gpt-run-{i}"} for i in range(5)],
+            CLAUDE_OPUS_4_8_TRIALS=[{"trial": i, "run_id": f"claude-run-{i}"} for i in range(5)],
             COMBINED_SUCCESS_RATE=0.5,
             PER_TEST_SOLVABILITY={"case-a": 1, "case-b": 3},
         )
@@ -118,12 +140,12 @@ def _accepted_outputs(invocation: dict[str, Any]) -> dict[str, Any]:
             COMBINED_SUCCESS_RATE=0.5,
             PER_TEST_SOLVABILITY={"case-a": 1, "case-b": 3},
             ZERO_OF_TEN_TESTS=[],
-            TRAJECTORY_ANALYSIS_RESULT={"status": "COMPLETE"},
+            TRAJECTORY_ANALYSIS_RESULT={"status": "COMPLETE", "record_id": "trajectory-result"},
         )
     elif stage == "FINAL_REVIEW":
         outputs.update(
-            FINAL_COMPLIANCE=_review_pass(),
-            FINAL_HUMAN_QUALITY=_review_pass(),
+            FINAL_COMPLIANCE=_review_pass("final-compliance"),
+            FINAL_HUMAN_QUALITY=_review_pass("final-human-quality"),
             FINAL_PACKAGE_EVIDENCE={"manifest": "ok"},
         )
     elif stage == "SUBMISSION_READY":
@@ -132,6 +154,40 @@ def _accepted_outputs(invocation: dict[str, Any]) -> dict[str, Any]:
             GATE_EVIDENCE={"all": "current"},
         )
     return outputs
+
+
+def _evidence(stage: str, outputs: dict[str, Any]) -> list[dict[str, str]]:
+    if stage == "QUALITY_INTERLOCK":
+        refs = [_resolved_ref("RESULT", "q4-review"), _resolved_ref("RESULT", "q6-review")]
+        if outputs.get("Q4_SATISFACTION") == "ADJUDICATED_CLOSURE_PASS":
+            refs.append(_resolved_ref("RESULT", "q4-closure-review"))
+        return refs
+    if stage == "PRE_LLMAJ":
+        return [_resolved_ref("RESULT", f"prellmaj-{i}") for i in range(6)]
+    if stage == "MODEL_DIAGNOSTIC_AGGREGATE":
+        return [_resolved_ref("RESULT", "q8-gpt"), _resolved_ref("RESULT", "q8-claude")]
+    if stage == "HARBOR_LLMAJ":
+        return [_resolved_ref("RUN", str(outputs["HARBOR_RUN_ID"]))]
+    if stage in {"OFFICIAL_MODEL_TRIALS", "TRIAL_ANALYSIS", "DIFFICULTY_ASSESSMENT"}:
+        refs = (
+            [_resolved_ref("RUN", f"gpt-run-{i}") for i in range(5)]
+            + [_resolved_ref("RUN", f"claude-run-{i}") for i in range(5)]
+        )
+        if stage == "DIFFICULTY_ASSESSMENT":
+            refs.append(_resolved_ref("RESULT", "trajectory-result"))
+        return refs
+    if stage == "FINAL_REVIEW":
+        return [
+            _resolved_ref("RESULT", "final-compliance"),
+            _resolved_ref("RESULT", "final-human-quality"),
+            _resolved_ref("ARTIFACT", "final-package"),
+        ]
+    if stage == "SUBMISSION_READY":
+        return [
+            _resolved_ref("RESULT", "final-review"),
+            _resolved_ref("ARTIFACT", "submission-package"),
+        ]
+    return []
 
 
 def main() -> int:
@@ -196,6 +252,7 @@ def main() -> int:
                 ),
                 inputs,
             )
+            outputs = _accepted_outputs(invocation)
             record = record_builder.build(
                 invocation,
                 {
@@ -203,8 +260,8 @@ def main() -> int:
                     "invocation_id": invocation["invocation_id"],
                     "output_task_commit": commit,
                     "status": advance[0],
-                    "outputs": _accepted_outputs(invocation),
-                    "evidence_refs": [],
+                    "outputs": outputs,
+                    "evidence_refs": _evidence(stage_id, outputs),
                 },
             )
         except Exception as exc:
@@ -241,13 +298,63 @@ def main() -> int:
                 "output_task_commit": commit,
                 "status": "QUALITY_INTERLOCK_PASS",
                 "outputs": bad_qi,
-                "evidence_refs": [],
+                "evidence_refs": _evidence("QUALITY_INTERLOCK", bad_qi),
             },
         )
         errors.append("invalid Q4 value incorrectly satisfied QUALITY_INTERLOCK_PASS")
     except ValueError as exc:
         if "acceptance predicate failed" not in str(exc):
             errors.append(f"unexpected aggregate rejection: {exc}")
+
+    closure_qi = _accepted_outputs(qi_invocation)
+    assert isinstance(closure_qi["Q4_RESULT"], dict)
+    closure_qi["Q4_RESULT"]["verdict"] = "REVISE"
+    closure_qi["Q4_SATISFACTION"] = "ADJUDICATED_CLOSURE_PASS"
+    closure_qi["Q4_CLOSURE_RESULT"] = {
+        "review_id": "q4-closure-review",
+        "role": "Q4 Closure Adjudicator",
+        "verdict": "PASS",
+        "confidence": "HIGH",
+        "evidence_status": "SUFFICIENT",
+        "missing_evidence": [],
+        "role_output": {"CLOSURE_OUTCOME": "PASS"},
+    }
+    try:
+        closure_record = record_builder.build(
+            qi_invocation,
+            {
+                "schema_version": "1.0",
+                "invocation_id": qi_invocation["invocation_id"],
+                "output_task_commit": commit,
+                "status": "QUALITY_INTERLOCK_PASS",
+                "outputs": closure_qi,
+                "evidence_refs": _evidence("QUALITY_INTERLOCK", closure_qi),
+            },
+        )
+        if closure_record.get("disposition") != "ADVANCE":
+            errors.append("coherent adjudicated Q4 closure did not advance")
+    except ValueError as exc:
+        errors.append(f"coherent adjudicated Q4 closure was rejected: {exc}")
+
+    try:
+        record_builder.build(
+            qi_invocation,
+            {
+                "schema_version": "1.0",
+                "invocation_id": qi_invocation["invocation_id"],
+                "output_task_commit": commit,
+                "status": "QUALITY_INTERLOCK_PASS",
+                "outputs": closure_qi,
+                "evidence_refs": [
+                    _resolved_ref("RESULT", "q4-review"),
+                    _resolved_ref("RESULT", "q6-review"),
+                ],
+            },
+        )
+        errors.append("adjudicated Q4 closure advanced without bound closure-result evidence")
+    except ValueError as exc:
+        if "Q4_CLOSURE_RESULT evidence ref" not in str(exc):
+            errors.append(f"unexpected unbound closure rejection: {exc}")
 
     diff_stage = policy.stages["DIFFICULTY_ASSESSMENT"]
     diff_invocation = invocation_builder.build(
@@ -278,7 +385,7 @@ def main() -> int:
                     "output_task_commit": commit,
                     "status": "PASS",
                     "outputs": outputs,
-                    "evidence_refs": [],
+                    "evidence_refs": _evidence("DIFFICULTY_ASSESSMENT", outputs),
                 },
             )
             errors.append(f"difficulty mutation {mutation} incorrectly advanced")
