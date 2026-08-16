@@ -66,8 +66,17 @@ jobs:
           python .terminus/install_q4_closure_redesign.py
           python - <<'PY'
           from pathlib import Path
-          path = Path('.terminus/agents/PROMPTS.md')
-          path.write_text(path.read_text(encoding='utf-8').rstrip() + '\n', encoding='utf-8')
+
+          prompts = Path('.terminus/agents/PROMPTS.md')
+          prompts.write_text(prompts.read_text(encoding='utf-8').rstrip() + '\n', encoding='utf-8')
+
+          test_path = Path('.terminus/tests/test_stage_acceptance_projection.py')
+          text = test_path.read_text(encoding='utf-8')
+          old = '''    paths = {check["path"] for check in checks}\n    assert "Q4_RESULT.verdict" in paths\n    assert "Q4_RESULT.evidence_status" in paths\n    assert "Q6_RESULT.verdict" in paths\n    assert "Q6_RESULT.evidence_status" in paths\n    assert "EVIDENCE_SUFFICIENCY" in paths\n'''
+          new = '''    paths = {check["path"] for check in checks}\n    assert "Q4_RESULT" in paths\n    q4_check = next(check for check in checks if check["path"] == "Q4_RESULT")\n    assert q4_check["op"] == "q4_satisfied"\n    assert "Q4_SATISFACTION" in packet["output_contract"]["required_fields"]\n    assert "Q4_CLOSURE_RESULT" in packet["output_contract"]["optional_fields"]\n    assert "Q6_RESULT.verdict" in paths\n    assert "Q6_RESULT.evidence_status" in paths\n    assert "EVIDENCE_SUFFICIENCY" in paths\n'''
+          if text.count(old) != 1:
+              raise SystemExit('acceptance projection test anchor mismatch')
+          test_path.write_text(text.replace(old, new, 1), encoding='utf-8')
           PY
           python -m py_compile .terminus/q4_closure.py .terminus/new_q4_closure_packet.py
           git diff --check
