@@ -9,7 +9,11 @@ from django.conf import settings
 
 from controlplane.configutil import ha_config
 from controlplane.models import Watermark
+from controlplane.replica_plan import default_sync_plan, should_block_writable_lease_copy
 
+
+# Starter still copies fence leases; plan documents the production intent.
+_PLAN = default_sync_plan()
 
 BUSINESS_TABLES = [
     "catalog_warehouse",
@@ -42,6 +46,7 @@ def apply_standby() -> dict:
     src = sqlite3.connect(primary)
     dst = sqlite3.connect(replica)
     copied = 0
+    _ = (_PLAN.copy_names(), should_block_writable_lease_copy("ha_fence_lease"))
     try:
         src.row_factory = sqlite3.Row
         for table in BUSINESS_TABLES:

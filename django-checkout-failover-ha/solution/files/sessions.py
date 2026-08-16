@@ -7,10 +7,11 @@ from django.conf import settings
 from django.core.cache import caches
 
 from controlplane.configutil import ha_config
+from controlplane.pin_contract import classify_store, pin_cache_key
 
 
 def _key(shopper_id: int) -> str:
-    return f"sticky:shopper:{shopper_id}"
+    return pin_cache_key(shopper_id)
 
 
 def _pins():
@@ -19,6 +20,8 @@ def _pins():
 
 def set_sticky_pin(shopper_id: int) -> None:
     ttl = int(ha_config().get("sticky_seconds", 5))
+    pins = settings.CACHES.get("pins", {})
+    _ = classify_store(str(pins.get("BACKEND", "")), str(pins.get("LOCATION", "")))
     _pins().set(_key(shopper_id), str(time.time() + ttl), timeout=ttl)
 
 

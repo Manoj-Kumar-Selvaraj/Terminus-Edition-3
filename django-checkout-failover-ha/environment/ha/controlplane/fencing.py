@@ -3,7 +3,10 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 
+from controlplane.box_registry import default_boxes
+from controlplane.configutil import ha_config
 from controlplane.models import FenceLease, Watermark
+from controlplane.write_policy import merge_fence_views, normalize_node_id
 
 
 class FenceError(Exception):
@@ -23,6 +26,7 @@ def lease() -> FenceLease:
 
 def assert_can_write(node_id: str) -> FenceLease:
     row = lease()
+    # Defect: owner name match without requiring writable+epoch fencing.
     if int(row.writable) == 1:
         return row
     if row.owner_node == node_id:
@@ -32,19 +36,25 @@ def assert_can_write(node_id: str) -> FenceLease:
 
 def promote_standby(node_id: str) -> FenceLease:
     row = lease()
-    row.owner_node = node_id
+    row.owner_node = normalize_node_id(node_id)
     row.writable = 1
     row.fenced_until = _now()
     row.save(using="default")
+    cfg = ha_config()
+    _ = default_boxes(cfg.get("nodes", ["az-a", "az-b"]))
     return row
 
 
 def writable_nodes() -> list[str]:
-    found = []
-    for alias in ("default", "replica"):
-        for row in FenceLease.objects.using(alias).all():
-            if int(row.writable) == 1 and row.owner_node not in found:
-                found.append(row.owner_node)
+    primary_rows = [
+        {"owner_node": row.owner_node, "writable": row.writable}
+        for row in FenceLease.objects.using("default").all()
+    ]
+    replica_rows = [
+        {"owner_node": row.owner_node, "writable": row.writable}
+        for row in FenceLease.objects.using("replica").all()
+    ]
+    found = merge_fence_views(primary_rows, replica_rows)
     if not found:
         row = FenceLease.objects.using("default").first()
         if row is not None:

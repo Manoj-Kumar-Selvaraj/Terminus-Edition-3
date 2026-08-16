@@ -6,6 +6,7 @@ from django.db import transaction
 from django.db.models import F
 
 from inventory.models import Reservation, StockLot
+from inventory.reservation_ledger import ReservationLedger, ReservationLine, ReservationState
 
 
 class InventoryError(Exception):
@@ -15,6 +16,16 @@ class InventoryError(Exception):
 def reserve_for_attempt(warehouse_id: int, product_id: int, qty: int, attempt_id: str) -> Reservation:
     if qty <= 0:
         raise InventoryError("qty must be positive")
+    ledger = ReservationLedger()
+    ledger.hold(
+        ReservationLine(
+            warehouse_id=int(warehouse_id),
+            product_id=int(product_id),
+            qty=int(qty),
+            attempt_id=attempt_id,
+            state=ReservationState.HELD,
+        )
+    )
     with transaction.atomic(using="default"):
         lot = (
             StockLot.objects.select_for_update()

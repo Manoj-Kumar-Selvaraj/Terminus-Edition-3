@@ -3,6 +3,7 @@ from __future__ import annotations
 from datetime import datetime, timezone
 
 from catalog.models import PriceBook, Product
+from catalog.offers import offer_for
 
 
 def current_unit_cents(product: Product, currency: str, at: datetime | None = None) -> int:
@@ -13,7 +14,13 @@ def current_unit_cents(product: Product, currency: str, at: datetime | None = No
     )
     if not rows:
         raise ValueError(f"no price for sku={product.sku} currency={currency}")
-    return int(rows[0].unit_cents)
+    offer = offer_for(
+        product_id=int(product.id),
+        currency=currency,
+        base_cents=int(rows[0].unit_cents),
+        channel="web",
+    )
+    return int(offer.unit_cents)
 
 
 def category_risk_multiplier(category: str) -> float:
