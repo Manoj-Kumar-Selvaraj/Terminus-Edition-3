@@ -36,8 +36,8 @@ KNOWN_POLICY_CONFLICTS: none
 | Originality & Authenticity | PASS | `.terminus/reviews/webhook-outbox-delivery-plane/d3724371/webhook-outbox-delivery-plane-d3724371-originality-2e4a982a1b.json` |
 | Human Quality Reviewer | PASS | `.terminus/reviews/webhook-outbox-delivery-plane/d3724371/webhook-outbox-delivery-plane-d3724371-human-quality-625cdd5a52.json` |
 | Q4 Spec-Test Contract Reviewer | REVISE | `.terminus/reviews/webhook-outbox-delivery-plane/85e89c75/webhook-outbox-delivery-plane-85e89c75-spec-test-contract-11e3d71648.json` (6 blocking) |
-| Q6 Production Logic Auditor | PENDING | packet `.terminus/reviews/webhook-outbox-delivery-plane/85e89c75/webhook-outbox-delivery-plane-85e89c75-production-logic-9cab2442bd.packet.json` (result draft may exist; await cold completion) |
-| Quality Interlock | BLOCKED | Q4 REVISE on `85e89c75`; Q2 repair after Q6 freezes |
+| Q6 Production Logic Auditor | PASS | `.terminus/reviews/webhook-outbox-delivery-plane/85e89c75/webhook-outbox-delivery-plane-85e89c75-production-logic-9cab2442bd.json` (~3400+ reachable LOC; padding MEDIUM) |
+| Quality Interlock | BLOCKED | Q4 REVISE on `85e89c75`; next = consolidated Q2 repair then refreeze + cold Q4 |
 
 ## Notes
 

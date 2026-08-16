@@ -1,0 +1,205 @@
+{
+  "schema_version": "3.0",
+  "role": "Production Logic Auditor",
+  "review_id": "webhook-outbox-delivery-plane-85e89c75-production-logic-9cab2442bd",
+  "task": "webhook-outbox-delivery-plane",
+  "task_commit": "85e89c75d4c657f16eb580c5862e89c6a701a687",
+  "control_plane_commit": "85e89c75d4c657f16eb580c5862e89c6a701a687",
+  "protocol_policy_version": "2.2",
+  "prompt_policy_version": "2.2",
+  "role_policy_version": "1.1",
+  "role_contract_hash": "ee7d1cfd6e19fcc0e831cc75829457593d7410613c3b3fb811aef925e85a1607",
+  "review_scope_hash": "57433d8905fe2869c08766719f3dec1de26c08238b557c8a0f95b9ff85bc90c4",
+  "context_packet": ".terminus/reviews/webhook-outbox-delivery-plane/85e89c75/webhook-outbox-delivery-plane-85e89c75-production-logic-9cab2442bd.packet.json",
+  "verdict": "PASS",
+  "confidence": "HIGH",
+  "evidence_status": "SUFFICIENT",
+  "summary": "Independent Q6 inspection finds a genuine webhook outbox delivery plane: outboxd/outboxctl reach API→service→store with coupled claim/lease, statusmachine, quota, HMAC delivery, audit, worker, and reconcile/report paths. Honest substantive reachable runtime/config LOC is ~3,400+ (Go excl. seed, plus schema.sql and served UI JS; unused helper bodies are small), clearing the large_system_strict >=3,000 floor without HIGH toy/padding risk. Seed targets 10k+ varied events/attempts for stateful operation; a few dead helpers and micro-packages keep PADDING_RISK at MEDIUM, not HIGH.",
+  "evidence": [
+    {
+      "type": "rule",
+      "ref": ".terminus/agents/QUALITY_AGENT_REGISTRY.md",
+      "observation": "Q6 independently judges whether the solver-visible core is complex, reachable, coupled, non-toy, and non-padded. For large_system_strict, >=3,000 substantive reachable runtime/config LOC is necessary but not sufficient; Complexity Governor or authenticity-validator PASS is not enough."
+    },
+    {
+      "type": "rule",
+      "ref": ".terminus/agents/QUALITY_AGENT_PROMPTS.md",
+      "observation": "Q6 method requires entrypoint tracing, reachability, distinct module responsibilities, clone/wrapper/padding checks, cross-module invariants, a ~25% removal test, and separating production logic from generated/config/data noise. PASS needs >=3,000 substantive reachable LOC and no HIGH toy/padding risk."
+    },
+    {
+      "type": "rule",
+      "ref": ".terminus/agents/PRODUCTION_AUTHENTICITY.md",
+      "observation": "Count only implementation that materially participates in the claimed operational system. Dead/unreachable/unnecessary code and construction toward the 3,000-LOC floor via filler are authenticity defects. Seed volume is not authored runtime complexity."
+    },
+    {
+      "type": "file",
+      "ref": "webhook-outbox-delivery-plane/task.toml@85e89c75d4c657f16eb580c5862e89c6a701a687",
+      "observation": "Software/Systems Go/SQLite webhook outbox task; artifacts [/app/outbox]; separate verifier; workdir /app/outbox; public network."
+    },
+    {
+      "type": "file",
+      "ref": ".terminus/designs/webhook-outbox-delivery-plane.json",
+      "observation": "Design authenticity report records profile=large_system_strict and task_kind=software. Used only to bind the strict LOC/padding gate; not treated as a copied complexity verdict."
+    },
+    {
+      "type": "run",
+      "ref": "validate_runtime_authenticity.py webhook-outbox-delivery-plane",
+      "observation": "Runnable authenticity gate exits ERROR because the strict design lacks a production_authenticity companion/profile object. Q6 therefore rebuilt LOC/coupling judgment from environment source rather than copying a validator PASS."
+    },
+    {
+      "type": "file",
+      "ref": "webhook-outbox-delivery-plane/environment/Dockerfile@85e89c75d4c657f16eb580c5862e89c6a701a687",
+      "observation": "Pinned golang:1.24 image builds outboxd, outboxctl, and seed binaries, installs tmux/asciinema/sqlite3, and runs seed into /app/outbox/data-real operator/runtime packaging, not a stub."
+    },
+    {
+      "type": "file",
+      "ref": "webhook-outbox-delivery-plane/environment/outbox/cmd/outboxd/main.go@85e89c75d4c657f16eb580c5862e89c6a701a687",
+      "observation": "Daemon entrypoint opens store, constructs service+API, optionally starts worker.Loop and reconcile.Sweeper, then serves HTTP-primary runtime reachability root."
+    },
+    {
+      "type": "file",
+      "ref": "webhook-outbox-delivery-plane/environment/outbox/cmd/outboxctl/main.go@85e89c75d4c657f16eb580c5862e89c6a701a687",
+      "observation": "Operator CLI drives health/wait/tenants/enqueue/claim/deliver/replay/pause/resume/audit against the live HTTP API."
+    },
+    {
+      "type": "file",
+      "ref": "webhook-outbox-delivery-plane/environment/outbox/internal/api/server.go@85e89c75d4c657f16eb580c5862e89c6a701a687",
+      "observation": "~423 substantive lines of HTTP surface: tenants/endpoints/events claim-complete-deliver-replay, audit, reports, reconcile sweep, static UI-non-toy API breadth."
+    },
+    {
+      "type": "file",
+      "ref": "webhook-outbox-delivery-plane/environment/outbox/internal/service/outbox.go@85e89c75d4c657f16eb580c5862e89c6a701a687",
+      "observation": "Central orchestration (~331 LOC) couples validate, policy, quota, idempotency, claim/lease, statusmachine, backoff, delivery+sign, audit, and metrics across enqueue/claim/complete/deliver/replay/pause."
+    },
+    {
+      "type": "file",
+      "ref": "webhook-outbox-delivery-plane/environment/outbox/internal/store/@85e89c75d4c657f16eb580c5862e89c6a701a687",
+      "observation": "SQLite persistence for tenants/endpoints/events/attempts/audit (~734 substantive LOC across open/events/endpoints/tenants/attempts/audit) with leases, idempotency unique index, and attempt window counters."
+    },
+    {
+      "type": "file",
+      "ref": "webhook-outbox-delivery-plane/environment/outbox/internal/claim/claimer.go@85e89c75d4c657f16eb580c5862e89c6a701a687",
+      "observation": "Claim Acquire/AssertHolder interact with endpoint enabled state and lease wall-clock; FenceBlocks/RenewAllowed exist as fencing helpers (starter Acquire does not productively call FenceBlocks-incomplete fence, not discard-touch theater)."
+    },
+    {
+      "type": "file",
+      "ref": "webhook-outbox-delivery-plane/environment/outbox/internal/statusmachine/transitions.go@85e89c75d4c657f16eb580c5862e89c6a701a687",
+      "observation": "Multi-status transition table with AfterFailure/AfterSuccess/MustAllow used by claim/complete/replay-real lifecycle branching."
+    },
+    {
+      "type": "file",
+      "ref": "webhook-outbox-delivery-plane/environment/outbox/internal/quota/window.go@85e89c75d4c657f16eb580c5862e89c6a701a687",
+      "observation": "Rolling-hour quota Check/Usage/SuccessfulUsage/Snapshot couples attempt history to enqueue/complete and tenant reports."
+    },
+    {
+      "type": "file",
+      "ref": "webhook-outbox-delivery-plane/environment/outbox/internal/reconcile/sweeper.go@85e89c75d4c657f16eb580c5862e89c6a701a687",
+      "observation": "Stale-lease expiry path uses lease.StaleClaimed/Expired and ClearEventLease; started from outboxd and POST /api/v1/reconcile/sweep."
+    },
+    {
+      "type": "file",
+      "ref": "webhook-outbox-delivery-plane/environment/outbox/internal/worker/loop.go@85e89c75d4c657f16eb580c5862e89c6a701a687",
+      "observation": "Background claim→deliver loop queries pending events by next_attempt_at; optional when OUTBOX_SYNC unset."
+    },
+    {
+      "type": "file",
+      "ref": "webhook-outbox-delivery-plane/environment/outbox/db/schema.sql@85e89c75d4c657f16eb580c5862e89c6a701a687",
+      "observation": "Native schema (~60 substantive lines) for tenants/endpoints/events/delivery_attempts/audit_events with FK and idempotency partial unique index-counts as runtime/config structure."
+    },
+    {
+      "type": "file",
+      "ref": "webhook-outbox-delivery-plane/environment/outbox/cmd/seed/main.go@85e89c75d4c657f16eb580c5862e89c6a701a687",
+      "observation": "Deterministic seed builds 10k events across 6 tenants×3 endpoints with status/region/channel/SKU variation plus attempt history (and an extra 2500 companion events). Evidence of stateful scale only; excluded from substantive runtime/config LOC."
+    },
+    {
+      "type": "file",
+      "ref": "webhook-outbox-delivery-plane/environment/outbox/docs/delivery-contract.md@85e89c75d4c657f16eb580c5862e89c6a701a687",
+      "observation": "Operator/runtime contract documents env vars, graded claim/deliver path, pause/replay/quota/HMAC semantics-workflows align with reachable API/service code."
+    },
+    {
+      "type": "file",
+      "ref": "webhook-outbox-delivery-plane/environment/outbox/ui/js/app.js@85e89c75d4c657f16eb580c5862e89c6a701a687",
+      "observation": "Served UI helpers call enqueue/claim/replay/pause/audit APIs (~54 substantive JS lines); thin but entrypoint-reachable configuration/UI runtime, not dead padding."
+    },
+    {
+      "type": "artifact",
+      "ref": "independent_loc_inventory@85e89c75",
+      "observation": "Independent inventory: substantive Go (non-blank, non-//) ~ 3,574 total; excluding cmd/seed ~ 3,386; plus schema.sql ~ 60 and ui/js ~ 54 → ~ 3,500 runtime/config. Import closure from outboxd/outboxctl reaches api/service/store/worker/reconcile/report/claim/lease/quota/statusmachine/delivery/sign/validate/policy/filter/idempotency/audit/metrics/canonicaljson/payload/backoff/config/model/clock/httpx. Unused/unwired helper bodies (e.g. CanClaim, CountStale/PreviewStale, ValidatePath/IsAbsorbing, AsObjectMap/EncodeAny/MustMarshalObject, WithLeaseOnly, Verify, backoff.Describe, FenceBlocks/RenewAllowed) are on the order of ~100 LOC-not discard-touch theater. Honest post-discount substantive reachable LOC remains ~ 3,400+, above the 3,000 floor."
+    }
+  ],
+  "findings": [],
+  "missing_evidence": [],
+  "change_scope": [],
+  "do_not_change": [
+    "Do not alter solver-visible production/runtime/configuration/data surfaces on the strength of this Q6 PASS; such a change would stale this review_scope_hash.",
+    "Do not use this Q6 result as evidence for Q4 spec-test alignment or any later acceptance role.",
+    "Do not treat the Complexity Governor or a production-authenticity validator outcome as the basis for this Q6 verdict.",
+    "Do not count cmd/seed or seeded row volume as substantive runtime/config LOC."
+  ],
+  "next_gate": "Quality Interlock may combine this Q6 PASS with a current Q4 PASS on the same task commit (or retain this Q6 via unchanged review_scope_hash). Optionally add a production_authenticity companion so validate_runtime_authenticity.py can run; that is not required to keep this Q6 PASS.",
+  "role_output": {
+    "CORE_LOGIC_DEPTH": "HIGH",
+    "RUNTIME_REACHABILITY": "HIGH",
+    "MODULE_DIVERSITY": "HIGH",
+    "CROSS_COMPONENT_COUPLING": "HIGH",
+    "TOY_LOGIC_RISK": "LOW",
+    "PADDING_RISK": "MEDIUM",
+    "SUBSTANTIVE_LOC_ASSESSMENT": "Independent inventory at 85e89c75: substantive Go excl. cmd/seed ~ 3,386; plus schema.sql (~60) and served ui/js (~54) ~ 3,500. After discounting never-productively-called helper bodies (~100 LOC class: unused CanClaim/PreviewStale/CountStale/ValidatePath/IsAbsorbing/AsObjectMap/EncodeAny/Verify/Describe/WithLeaseOnly and unused FenceBlocks/RenewAllowed), honest substantive reachable runtime/config ~ 3,400+ - clears large_system_strict >=3,000. No `_ = (...)` discard-touch theater observed. Seed generator and row volume excluded from LOC.",
+    "MAJOR_MODULES": [
+      {
+        "module": "cmd/outboxd + cmd/outboxctl + config/httpx",
+        "responsibility": "Daemon bootstrap (store/API/worker/sweeper) and operator HTTP CLI for health/enqueue/claim/deliver/replay/pause/audit.",
+        "reachability": "Built and invoked as primary binaries; Dockerfile seeds and exposes them under /app/outbox/bin.",
+        "state_error_behavior": "Fatal on DB open failures; CLI exits non-zero on HTTP >=400; wait/health readiness helpers."
+      },
+      {
+        "module": "internal/api (server/reports/middleware/errors)",
+        "responsibility": "JSON HTTP surface, CORS/logging/body limits, report and reconcile routes, static UI.",
+        "reachability": "outboxd Handler(); outboxctl and UI call these routes.",
+        "state_error_behavior": "Maps service/store errors to HTTP statuses; claim/deliver/replay/complete decode and validate request bodies."
+      },
+      {
+        "module": "internal/service/outbox",
+        "responsibility": "Enqueue/claim/complete/deliver/replay/pause orchestration across domain packages.",
+        "reachability": "Constructed by outboxd; called from API and worker.",
+        "state_error_behavior": "Quota 429 path, idempotency conflict reuse, lease mismatch, statusmachine MustAllow, audit/metrics side effects."
+      },
+      {
+        "module": "internal/store + db/schema.sql",
+        "responsibility": "SQLite persistence for tenants/endpoints/events/attempts/audit with lease and idempotency constraints.",
+        "reachability": "Opened by outboxd/seed; all mutating paths go through Store.",
+        "state_error_behavior": "NotFound/Conflict, unique idempotency, attempt and quota window queries."
+      },
+      {
+        "module": "claim/lease/statusmachine/quota/backoff/policy/idempotency/validate",
+        "responsibility": "Lease fencing helpers, lifecycle transitions, rolling quota, retry schedule, enqueue/replay policy, payload/idempotency rules.",
+        "reachability": "Imported and used from service (and sweeper for lease); CanClaim/FenceBlocks not fully wired in starter-domain incompleteness, not clone padding.",
+        "state_error_behavior": "lease_held/mismatch, quota_exceeded, invalid_status, endpoint_disabled/unavailable, invalid_payload."
+      },
+      {
+        "module": "delivery/sign + worker + reconcile/report + audit/metrics + filter/canonicaljson/payload",
+        "responsibility": "HMAC-signed HTTP delivery, background drain, stale-lease sweep, DLQ/aging/tenant/endpoint reports, audit/metrics, list filters and payload encoding.",
+        "reachability": "Deliver from service; worker/sweeper from outboxd; reports from API; filter on list events.",
+        "state_error_behavior": "HTTP delivery failures feed Complete; sweeper restores pending; reports aggregate attempt/event state."
+      },
+      {
+        "module": "ui + docs + cmd/seed",
+        "responsibility": "Operator UI JS, delivery-contract/operator notes, deterministic catalog seed.",
+        "reachability": "UI served at /; docs under /app/outbox/docs; seed at image build and via bin/seed.",
+        "state_error_behavior": "Seed varies statuses/regions/channels; docs describe sync vs worker paths. Seed LOC excluded from runtime floor."
+      }
+    ],
+    "PARTIAL_FIX_TRAPS": [
+      "Wiring FenceBlocks without same-owner renew semantics breaks legitimate lease renewals.",
+      "Fixing pause only on enqueue while Acquire ignores ep.Paused still allows claims on queued events.",
+      "Changing quota to count pending events instead of successful deliveries still diverges from attempt outcomes.",
+      "Authorizing replay with any non-empty Bearer still bypasses OUTBOX_TOKEN equality.",
+      "Enabling only claim or only dlq audit still leaves the other action silent.",
+      "Fixing HMAC body-only signing without newline+timestamp canonicalization still fails receivers.",
+      "UI aliasing owner/seconds to lease fields hides the contract break without fixing the form.",
+      "Removing unused helpers without keeping load-bearing store/service/API depth can threaten the LOC floor if done carelessly."
+    ],
+    "REMOVAL_TEST": "Removing ~25% of the load-bearing core (api server routes + service outbox + store events/attempts + claim/lease/statusmachine/quota/delivery) would collapse enqueue/claim/deliver/replay/pause and operator CLI behavior. Separately, removing ~100 LOC of never-productively-called helpers (PreviewStale/CountStale, ValidatePath/IsAbsorbing, AsObjectMap/EncodeAny, WithLeaseOnly, Verify, Describe, unused CanClaim, unused FenceBlocks/RenewAllowed) would not change current starter outcomes-evidence of modest padding, not systemic inflation. Seed/cmd/seed removal does not change runtime behavior of an already-built DB.",
+    "REQUIRED_CHANGES": []
+  }
+}
