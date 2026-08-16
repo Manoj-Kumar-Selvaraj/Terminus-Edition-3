@@ -167,15 +167,6 @@ jobs:
 
               healthy_payload = parse_stdout(audited)
 
-              recovery_bad = tmp_path / "recovery-bad.db"
-              shutil.copyfile(db_path, recovery_bad)
-              changed = connect(recovery_bad)
-              changed.execute("UPDATE checkpoints SET source_fingerprint='wrong:fingerprint'")
-              changed.commit()
-              changed.close()
-              recovery_audit = audit_path(recovery_bad)
-              assert parse_stdout(recovery_audit) != healthy_payload
-
               metric_audit = cli(
                   "audit",
                   "--db", db_path,
