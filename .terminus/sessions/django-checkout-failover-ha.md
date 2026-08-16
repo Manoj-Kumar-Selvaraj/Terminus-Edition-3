@@ -35,7 +35,6 @@ This is the durable operational checkpoint for one task. Keep it evidence-orient
 | Q4 Spec-Test Contract Reviewer | PENDING | packet `.../d3a64a1b/...-spec-test-contract-317c810878.packet.json` |
 | Q6 Production Logic Auditor | PASS | retained scope `888ea3ba…` from `d812d3f7` (instruction-only delta) |
 | Quality Interlock | PENDING | awaiting cold Q4 on `d3a64a1b` |
-| Instruction Reviewer | PENDING | packet `.../d3a64a1b/...-instruction-d681620c9c.packet.json` |
 | Pre-LLMaJ specialist panel | STALE | instruction surface changed |
 | Pre-LLMaJ aggregate | STALE | depends on re-PASS Instruction/Q4 |
 | Task Architect | PASS | retained from `b9ee4816` |
