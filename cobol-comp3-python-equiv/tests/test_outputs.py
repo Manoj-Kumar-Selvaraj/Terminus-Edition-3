@@ -375,33 +375,40 @@ def assert_publication_contract(
         assert file_digest(source) in manifest_text
 
 def test_f2p_nonzero_comp3_padding_is_rejected() -> None:
+    """Verify F2P nonzero COMP-3 padding is rejected."""
     must_reject(lambda: unpack(bytes.fromhex("11234c"), PackedSpec(4, 0, True)))
 
 
 def test_f2p_invalid_comp3_digit_nibble_a_is_rejected() -> None:
+    """Verify F2P invalid COMP-3 digit nibble A is rejected."""
     must_reject(lambda: unpack(bytes.fromhex("012a3c"), PackedSpec(4, 0, True)))
 
 
 def test_f2p_signed_comp3_rejects_unsigned_f_sign() -> None:
+    """Verify F2P signed COMP-3 rejects unsigned F sign."""
     must_reject(lambda: unpack(bytes.fromhex("01234f"), PackedSpec(4, 0, True)))
 
 
 def test_f2p_unsigned_comp3_rejects_signed_c_sign() -> None:
+    """Verify F2P unsigned COMP-3 rejects signed C sign."""
     must_reject(lambda: unpack(bytes.fromhex("01234c"), PackedSpec(4, 0, False)))
 
 
 def test_f2p_unsigned_pack_uses_f_and_rejects_negative() -> None:
+    """Verify F2P unsigned pack uses F and rejects negative."""
     spec = PackedSpec(4, 0, False)
     assert pack(Decimal("1234"), spec)[-1] & 0x0F == 0x0F
     must_reject(lambda: pack(Decimal("-1"), spec))
 
 
 def test_f2p_signed_negative_pack_uses_d_sign() -> None:
+    """Verify F2P signed negative pack uses D sign."""
     encoded = pack(Decimal("-1234"), PackedSpec(4, 0, True))
     assert encoded[-1] & 0x0F == 0x0D
 
 
 def test_f2p_redefines_does_not_increase_static_storage() -> None:
+    """Verify F2P redefines does not increase static storage."""
     layout = Layout(
         "R",
         [
@@ -415,6 +422,7 @@ def test_f2p_redefines_does_not_increase_static_storage() -> None:
 
 
 def test_f2p_caller_supplied_layout_path_is_honored(tmp_path: Path) -> None:
+    """Verify F2P caller supplied layout path is honored."""
     layout_path = write_alternate_layout(tmp_path)
     db = fresh_db(tmp_path)
     seed_inventory(db, warehouse_count=2, item_count=2)
@@ -606,6 +614,7 @@ def test_f2p_caller_supplied_layout_path_is_honored(tmp_path: Path) -> None:
 
 
 def test_f2p_odo_count_above_declared_maximum_is_rejected() -> None:
+    """Verify F2P ODO count above declared maximum is rejected."""
     layout = Layout(
         "ODO",
         [
@@ -633,6 +642,7 @@ def test_f2p_odo_count_above_declared_maximum_is_rejected() -> None:
 
 
 def test_f2p_redefines_offset_overlaps_target_without_cursor_advance() -> None:
+    """Verify F2P redefines offset overlaps target without cursor advance."""
     layout = Layout(
         "R",
         [
@@ -648,6 +658,7 @@ def test_f2p_redefines_offset_overlaps_target_without_cursor_advance() -> None:
 
 
 def test_f2p_complete_malformed_record_reports_full_boundary() -> None:
+    """Verify F2P complete malformed record reports full boundary."""
     layout = Layout("M", [Field("N", "9(2)", usage="COMP-3"), Field("TAIL", "X(4)")])
     raw = bytes.fromhex("0a1f") + b"TAIL"
     try:
@@ -674,6 +685,7 @@ def test_f2p_complete_malformed_record_reports_full_boundary() -> None:
 
 
 def test_f2p_generation_id_binds_layout_digest() -> None:
+    """Verify F2P generation id binds layout digest."""
     baseline = generation_id("source-a", "layout-a", "20260815")
     assert baseline != generation_id("source-a", "layout-b", "20260815")
     assert baseline != generation_id("source-b", "layout-a", "20260815")
@@ -681,6 +693,7 @@ def test_f2p_generation_id_binds_layout_digest() -> None:
 
 
 def test_f2p_resume_rejects_layout_change() -> None:
+    """Verify F2P resume rejects layout change."""
     must_reject(
         lambda: assert_resume_compatible(
             identity(gid="same", layout="layout-a"),
@@ -702,6 +715,7 @@ def test_f2p_resume_rejects_layout_change() -> None:
 
 
 def test_f2p_checkpoint_fingerprint_mismatch_is_rejected() -> None:
+    """Verify F2P checkpoint fingerprint mismatch is rejected."""
     ident = identity(gid="g1", source="s1", layout="l1")
     must_reject(
         lambda: validate_checkpoint(
@@ -712,6 +726,7 @@ def test_f2p_checkpoint_fingerprint_mismatch_is_rejected() -> None:
 
 
 def test_f2p_resume_starts_after_last_durable_sequence() -> None:
+    """Verify F2P resume starts after last durable sequence."""
     ident = identity(gid="g1")
     cp = Checkpoint("g1", 7, 100, ident.fingerprint(), "now")
     assert resume_sequence(ident, cp) == 8
@@ -719,6 +734,7 @@ def test_f2p_resume_starts_after_last_durable_sequence() -> None:
 
 
 def test_f2p_pipeline_restart_does_not_reapply_last_movement(tmp_path: Path) -> None:
+    """Verify F2P pipeline restart does not reapply last movement."""
     db = fresh_db(tmp_path)
     seed_inventory(db, warehouse_count=2, item_count=2)
     source = tmp_path / "source.dat"
@@ -750,6 +766,7 @@ def test_f2p_pipeline_restart_does_not_reapply_last_movement(tmp_path: Path) -> 
 
 
 def test_f2p_zero_quantity_is_rejected(tmp_path: Path) -> None:
+    """Verify F2P zero quantity is rejected."""
     assert persisted_reject_code(
         tmp_path,
         reference_record(quantity="0.000"),
@@ -758,6 +775,7 @@ def test_f2p_zero_quantity_is_rejected(tmp_path: Path) -> None:
 
 
 def test_f2p_same_warehouse_transfer_is_rejected(tmp_path: Path) -> None:
+    """Verify F2P same warehouse transfer is rejected."""
     assert persisted_reject_code(
         tmp_path,
         reference_record(
@@ -770,6 +788,7 @@ def test_f2p_same_warehouse_transfer_is_rejected(tmp_path: Path) -> None:
 
 
 def test_f2p_inactive_item_is_rejected(tmp_path: Path) -> None:
+    """Verify F2P inactive item is rejected."""
     def disable_item(db: sqlite3.Connection) -> None:
         db.execute("UPDATE items SET active=0 WHERE item_id='SKU00001'")
 
@@ -781,6 +800,7 @@ def test_f2p_inactive_item_is_rejected(tmp_path: Path) -> None:
 
 
 def test_f2p_inactive_warehouse_is_rejected(tmp_path: Path) -> None:
+    """Verify F2P inactive warehouse is rejected."""
     def disable_warehouse(db: sqlite3.Connection) -> None:
         db.execute("UPDATE warehouses SET active=0 WHERE warehouse_id='W01'")
 
@@ -792,6 +812,7 @@ def test_f2p_inactive_warehouse_is_rejected(tmp_path: Path) -> None:
 
 
 def test_f2p_issue_requires_full_available_quantity(tmp_path: Path) -> None:
+    """Verify F2P issue requires full available quantity."""
     m = movement(
         movement_type=MovementType.ISSUE,
         source="W01",
@@ -846,6 +867,7 @@ def test_f2p_issue_requires_full_available_quantity(tmp_path: Path) -> None:
 
 
 def test_f2p_issue_uses_weighted_source_unit_cost() -> None:
+    """Verify F2P issue uses weighted source unit cost."""
     m = movement(
         movement_type=MovementType.ISSUE,
         source="W01",
@@ -862,6 +884,7 @@ def test_f2p_issue_uses_weighted_source_unit_cost() -> None:
 
 
 def test_f2p_transfer_preserves_source_value_across_warehouses() -> None:
+    """Verify F2P transfer preserves source value across warehouses."""
     m = movement(
         movement_type=MovementType.TRANSFER,
         source="W01",
@@ -878,6 +901,7 @@ def test_f2p_transfer_preserves_source_value_across_warehouses() -> None:
 
 
 def test_f2p_effect_application_rejects_negative_inventory() -> None:
+    """Verify F2P effect application rejects negative inventory."""
     pos = InventoryPosition(
         "W01",
         "SKU00001",
@@ -897,6 +921,7 @@ def test_f2p_effect_application_rejects_negative_inventory() -> None:
 
 
 def test_f2p_reconciliation_checks_legacy_effect_count(tmp_path: Path) -> None:
+    """Verify F2P reconciliation checks legacy effect count."""
     db = fresh_db(tmp_path)
     db.execute(
         "INSERT INTO processed_movements"
@@ -944,6 +969,7 @@ def test_f2p_reconciliation_checks_legacy_effect_count(tmp_path: Path) -> None:
 
 
 def test_f2p_reconciliation_rejects_unbalanced_transfer(tmp_path: Path) -> None:
+    """Verify F2P reconciliation rejects unbalanced transfer."""
     db = fresh_db(tmp_path)
     db.execute(
         "INSERT INTO processed_movements"
@@ -1033,6 +1059,7 @@ def test_f2p_reconciliation_rejects_unbalanced_transfer(tmp_path: Path) -> None:
 
 
 def test_f2p_failed_reconciliation_cannot_publish(tmp_path: Path) -> None:
+    """Verify F2P failed reconciliation cannot publish."""
     mismatch_root = tmp_path / "legacy-mismatch"
     mismatch_root.mkdir()
     db = fresh_db(mismatch_root)
@@ -1119,6 +1146,7 @@ def test_f2p_failed_reconciliation_cannot_publish(tmp_path: Path) -> None:
 def test_f2p_repeat_publication_of_same_generation_is_idempotent(
     tmp_path: Path,
 ) -> None:
+    """Verify F2P repeat publication of same generation is idempotent."""
     report = tmp_path / "summary.json"
     extra = tmp_path / "effects.csv"
     report.write_text('{"ok":true}\n', encoding="utf-8")
@@ -1163,6 +1191,7 @@ def test_f2p_repeat_publication_of_same_generation_is_idempotent(
     assert visible_generation_dirs(atomic_destination) == []
 
 def test_f2p_database_rejects_duplicate_generation_sequence(tmp_path: Path) -> None:
+    """Verify F2P database rejects duplicate generation sequence."""
     db = fresh_db(tmp_path)
     db.execute(
         "INSERT INTO processed_movements VALUES(?,?,?,?,?,?,?,?)",
@@ -1190,6 +1219,7 @@ def test_f2p_database_rejects_duplicate_generation_sequence(tmp_path: Path) -> N
 
 
 def test_f2p_database_rejects_duplicate_reject_sequence(tmp_path: Path) -> None:
+    """Verify F2P database rejects duplicate reject sequence."""
     db = fresh_db(tmp_path)
     db.execute(
         "INSERT INTO rejects"
@@ -1206,12 +1236,14 @@ def test_f2p_database_rejects_duplicate_reject_sequence(tmp_path: Path) -> None:
 
 
 def test_p2p_valid_positive_signed_comp3_roundtrip_is_preserved() -> None:
+    """Verify P2P valid positive signed COMP-3 roundtrip is preserved."""
     spec = PackedSpec(5, 2, True)
     assert unpack(pack(Decimal("123.45"), spec), spec) == Decimal("123.45")
 
 
 
 def test_p2p_active_receipt_policy_remains_valid() -> None:
+    """Verify P2P active receipt policy remains valid."""
     valid = [
         movement(reason="PO"),
         movement(reason="RETURN"),
@@ -1276,6 +1308,7 @@ def test_p2p_active_receipt_policy_remains_valid() -> None:
     assert validate_warehouses(m, {"W01": WarehousePolicy("W01", True)}) == []
 
 def test_p2p_matching_reconciliation_controls_pass(tmp_path: Path) -> None:
+    """Verify P2P matching reconciliation controls pass."""
     legacy = {
         "processed_count": Decimal("0"),
         "accepted_count": Decimal("0"),
@@ -1288,6 +1321,7 @@ def test_p2p_matching_reconciliation_controls_pass(tmp_path: Path) -> None:
 
 
 def test_p2p_first_successful_publication_is_verifiable(tmp_path: Path) -> None:
+    """Verify P2P first successful publication is verifiable."""
     report = tmp_path / "summary.json"
     report.write_text('{"ok":true}\n', encoding="utf-8")
     files = {"summary": report}
@@ -1303,6 +1337,7 @@ def test_p2p_first_successful_publication_is_verifiable(tmp_path: Path) -> None:
 
 
 def test_p2p_cli_success_and_failure_json_contract(tmp_path: Path) -> None:
+    """Verify P2P CLI success and failure JSON contract."""
     described = cli("describe-layout", "--layout", DEFAULT_LAYOUT)
     assert described.returncode == 0
     assert described.stderr == ""
@@ -1340,6 +1375,7 @@ def test_p2p_cli_success_and_failure_json_contract(tmp_path: Path) -> None:
 
 
 def test_p2p_preflight_uses_historical_baseline(tmp_path: Path) -> None:
+    """Verify P2P preflight uses historical baseline."""
     db = fresh_db(tmp_path)
     seed_inventory(db, warehouse_count=2, item_count=2)
     apply_sql(db, SEED)
@@ -1660,6 +1696,7 @@ def exercise_adjudicated_operator_workflows(tmp_path: Path) -> None:
         assert file_digest(path) == digest
 
 def test_p2p_audit_and_archive_operator_workflows_are_reachable(tmp_path: Path) -> None:
+    """Verify P2P audit and archive operator workflows are reachable."""
     db = fresh_db(tmp_path)
     seed_inventory(db, warehouse_count=2, item_count=2)
     db.close()
@@ -1709,6 +1746,7 @@ def test_p2p_audit_and_archive_operator_workflows_are_reachable(tmp_path: Path) 
     assert parse_stdout(archived).get("passed") is True
 
 def test_p2p_accepted_movement_transaction_rolls_back_on_failure(tmp_path: Path) -> None:
+    """Verify P2P accepted movement transaction rolls back on failure."""
     db = fresh_db(tmp_path)
     seed_inventory(db, warehouse_count=2, item_count=2)
     ensure_journal_table(db)
@@ -1765,6 +1803,7 @@ def test_p2p_accepted_movement_transaction_rolls_back_on_failure(tmp_path: Path)
 
 
 def test_p2p_rejected_movement_transaction_rolls_back_on_failure(tmp_path: Path) -> None:
+    """Verify P2P rejected movement transaction rolls back on failure."""
     db = fresh_db(tmp_path)
     seed_inventory(db, warehouse_count=2, item_count=2)
     ensure_journal_table(db)
@@ -1812,6 +1851,7 @@ def test_p2p_rejected_movement_transaction_rolls_back_on_failure(tmp_path: Path)
 
 
 def test_p2p_decode_and_transform_reject_codes_are_stable(tmp_path: Path) -> None:
+    """Verify P2P decode and transform reject codes are stable."""
     cases = [
         ("decode", b"MOVE", "DECODE"),
         (
