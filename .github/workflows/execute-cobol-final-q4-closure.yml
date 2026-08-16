@@ -1,0 +1,188 @@
+name: Execute COBOL final Q4 closure
+
+on:
+  push:
+    branches:
+      - task/cobol-comp3-python-equiv-strict-rebuild
+    paths:
+      - .github/workflows/execute-cobol-final-q4-closure.yml
+
+permissions:
+  contents: write
+
+jobs:
+  closure:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: task/cobol-comp3-python-equiv-strict-rebuild
+          fetch-depth: 0
+
+      - name: Verify frozen adjudication and task provenance
+        shell: bash
+        run: |
+          set -euo pipefail
+          expected_task_sha=59dcf2146e1bac84cbc98d7d641e79b5a0138c4a
+          actual_task_sha="$(git log -1 --format=%H -- cobol-comp3-python-equiv)"
+          test "$actual_task_sha" = "$expected_task_sha"
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          p = Path('.terminus/reviews/cobol-comp3-python-equiv/59dcf214/cobol-comp3-python-equiv-59dcf214-adjudication-516e0ca6b1.json')
+          data = json.loads(p.read_text())
+          assert data['schema_version'] == '3.0'
+          assert data['role'] == 'Adjudicator'
+          assert data['review_id'] == 'cobol-comp3-python-equiv-59dcf214-adjudication-516e0ca6b1'
+          assert data['task_commit'] == '59dcf2146e1bac84cbc98d7d641e79b5a0138c4a'
+          assert data['verdict'] == 'REQUEST_CHANGES'
+          assert data['role_output']['DECISION'] == 'BOTH_PARTLY'
+          assert 'One final circuit-breaker closure repair is authorized' in '\n'.join(data['change_scope'])
+          assert any('No Q4-005 expansion' in s for s in data['change_scope'])
+          assert any('Do not modify cobol-comp3-python-equiv/environment/**' in s for s in data['do_not_change'])
+          PY
+
+      - name: Apply exact bounded closure
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+
+          def replace_once(text: str, old: str, new: str, label: str) -> str:
+              count = text.count(old)
+              if count != 1:
+                  raise SystemExit(f'{label}: expected one match, found {count}')
+              return text.replace(old, new, 1)
+
+          instruction_path = Path('cobol-comp3-python-equiv/instruction.md')
+          instruction = instruction_path.read_text()
+          old = "- Validate movement shape, reason/type compatibility, item status/policy, warehouse status/capability, available quantity, and weighted inventory valuation before accepting a movement. Reason/type compatibility is normative: `PO` and `RETURN` are valid for `RECEIPT`; `SALE` for `ISSUE`; `MOVE` for `TRANSFER`; `COUNT`, `DAMAGE`, and `RETURN` for `ADJUSTMENT`; other combinations are invalid."
+          new = "- Validate movement shape, reason/type compatibility, item status/policy, warehouse status/capability, available quantity, and weighted inventory valuation before accepting a movement. Movement-shape authority for grading is functional: quantity must be positive; a `RECEIPT` has no source and requires a destination; an `ISSUE` requires a source and has no destination; a `TRANSFER` requires both source and destination and they must differ; an `ADJUSTMENT` requires a source. The item must exist, and item-policy decisions use the solver-visible `items.active`, `items.max_unit_cost`, and `items.quantity_precision` fields. Every warehouse referenced by a movement must exist and have solver-visible `warehouses.active=1`; there is no separate solver-visible receipt/issue/transfer capability switch beyond that active status. Reason/type compatibility is normative: `PO` and `RETURN` are valid for `RECEIPT`; `SALE` for `ISSUE`; `MOVE` for `TRANSFER`; `COUNT`, `DAMAGE`, and `RETURN` for `ADJUSTMENT`; other combinations are invalid."
+          instruction = replace_once(instruction, old, new, 'instruction Q4-007')
+          instruction_path.write_text(instruction)
+
+          operations_path = Path('cobol-comp3-python-equiv/solution/fixed/operations.py')
+          operations = operations_path.read_text()
+          operations = replace_once(
+              operations,
+              '    replay = ReplayGuard(db).replay_health(generation_id)\n    recovery = database_plan(db, identity)\n    checkpoint_error: str | None = None\n',
+              '    replay = ReplayGuard(db).replay_health(generation_id)\n    recovery = database_plan(db, identity)\n    recovery_healthy = recovery.action.value != "BLOCK"\n    checkpoint_error: str | None = None\n',
+              'audit recovery health',
+          )
+          operations = replace_once(
+              operations,
+              '            bool(replay["healthy"]),\n            checkpoint_error is None,\n',
+              '            bool(replay["healthy"]),\n            recovery_healthy,\n            checkpoint_error is None,\n',
+              'audit recovery gate',
+          )
+          operations_path.write_text(operations)
+
+          tests_path = Path('cobol-comp3-python-equiv/tests/test_outputs.py')
+          tests = tests_path.read_text()
+
+          tests = replace_once(
+              tests,
+              'def test_f2p_repeat_publication_of_same_generation_is_idempotent(\n    tmp_path: Path,\n    monkeypatch: pytest.MonkeyPatch,\n) -> None:\n',
+              'def test_f2p_repeat_publication_of_same_generation_is_idempotent(\n    tmp_path: Path,\n) -> None:\n',
+              'remove mechanism fixture',
+          )
+
+          old_atomic = '''    atomic_destination = tmp_path / "atomic-published"\n    atomic_target = atomic_destination / "g2"\n\n    def fail_promotion(*args, **kwargs):\n        raise OSError("injected atomic promotion failure")\n\n    monkeypatch.setattr("src.publication.os.replace", fail_promotion)\n    must_reject(\n        lambda: atomic_publish(\n            "g2",\n            files,\n            passing_reconciliation("g2"),\n            atomic_destination,\n        )\n    )\n    assert not atomic_target.exists()\n    assert visible_generation_dirs(atomic_destination) == []\n'''
+          new_atomic = '''    atomic_destination = tmp_path / "atomic-published"\n    atomic_target = atomic_destination / "g2"\n    missing_input = tmp_path / "missing-publication-input"\n    partial_inputs = {"summary": report, "missing": missing_input}\n    must_reject(\n        lambda: atomic_publish(\n            "g2",\n            partial_inputs,\n            passing_reconciliation("g2"),\n            atomic_destination,\n        )\n    )\n    assert not atomic_target.exists()\n    assert visible_generation_dirs(atomic_destination) == []\n'''
+          tests = replace_once(tests, old_atomic, new_atomic, 'Q4-001 observable atomic failure')
+
+          old_caps = '''\n    receipt_disabled = WarehousePolicy("W01", True, allow_receipts=False)\n    assert validate_warehouses(\n        movement(),\n        {"W01": receipt_disabled},\n    )\n    transfer = movement(\n        movement_type=MovementType.TRANSFER,\n        source="W01",\n        destination="W02",\n        reason="MOVE",\n    )\n    transfer_policies = {\n        "W01": WarehousePolicy("W01", True, allow_transfers=False),\n        "W02": WarehousePolicy("W02", True),\n    }\n    assert validate_warehouses(transfer, transfer_policies)\n'''
+          tests = replace_once(tests, old_caps, '\n', 'Q4-007 private warehouse capability cases')
+
+          preflight_anchor = '''    assert unhealthy_catalog.returncode == 2\n    assert parse_stdout(unhealthy_catalog).get("passed") is False\n\n    blocked_recovery_db = tmp_path / "blocked-recovery.db"\n'''
+          preflight_insert = '''    assert unhealthy_catalog.returncode == 2\n    assert parse_stdout(unhealthy_catalog).get("passed") is False\n\n    schema_bad_db = tmp_path / "schema-bad.db"\n    shutil.copyfile(db_path, schema_bad_db)\n    schema_state = sqlite3.connect(schema_bad_db)\n    schema_state.executescript(\n        """\n        DROP TABLE rejects;\n        CREATE TABLE rejects(\n          id INTEGER PRIMARY KEY AUTOINCREMENT, generation_id TEXT NOT NULL,\n          sequence INTEGER NOT NULL, movement_id TEXT NOT NULL, code TEXT NOT NULL,\n          message TEXT NOT NULL, byte_offset INTEGER NOT NULL, byte_length INTEGER NOT NULL\n        );\n        """\n    )\n    schema_state.commit()\n    schema_state.close()\n    unhealthy_schema = cli(\n        "preflight",\n        *run_arguments(\n            schema_bad_db, source, layout_path, controls, report_dir, publish_dir\n        ),\n        "--schema", SCHEMA,\n        "--seed", SEED,\n    )\n    assert unhealthy_schema.returncode == 2\n    assert parse_stdout(unhealthy_schema).get("passed") is False\n\n    framing_source = tmp_path / "framing-bad.dat"\n    framing_source.write_bytes(reference_receipt_record() + b"ZZ")\n    unhealthy_source = cli(\n        "preflight",\n        *run_arguments(\n            db_path, framing_source, layout_path, controls, report_dir, publish_dir\n        ),\n        "--schema", SCHEMA,\n        "--seed", SEED,\n    )\n    assert unhealthy_source.returncode == 2\n    assert parse_stdout(unhealthy_source).get("passed") is False\n\n    window_arguments = run_arguments(\n        db_path, source, layout_path, controls, report_dir, publish_dir\n    )\n    window_arguments[window_arguments.index("--business-date") + 1] = "20991231"\n    window_probe = cli(\n        "preflight",\n        *window_arguments,\n        "--schema", SCHEMA,\n        "--seed", SEED,\n    )\n    assert window_probe.returncode in {0, 2}\n    assert parse_stdout(window_probe) != parse_stdout(preflight)\n\n    safety_state_db = tmp_path / "safety-state.db"\n    shutil.copyfile(db_path, safety_state_db)\n    safety_db = connect(safety_state_db)\n    safety_gid = build_identity(source, layout_path, "20260815").generation_id\n    safety_db.execute(\n        "INSERT INTO runs(generation_id,state) VALUES(?,?)",\n        (safety_gid, "PUBLISHED"),\n    )\n    safety_db.commit()\n    safety_db.close()\n    safety_probe = cli(\n        "preflight",\n        *run_arguments(\n            safety_state_db, source, layout_path, controls, report_dir, publish_dir\n        ),\n        "--schema", SCHEMA,\n        "--seed", SEED,\n    )\n    assert safety_probe.returncode in {0, 2}\n    assert parse_stdout(safety_probe) != parse_stdout(preflight)\n\n    blocked_recovery_db = tmp_path / "blocked-recovery.db"\n'''
+          tests = replace_once(tests, preflight_anchor, preflight_insert, 'Q4-003 grouped preflight perturbations')
+
+          audit_anchor = '''    healthy_payload = parse_stdout(audited)\n\n    metric_audit = cli(\n'''
+          audit_insert = '''    healthy_payload = parse_stdout(audited)\n    gid_for_audit = build_identity(source, layout_path, "20260815").generation_id\n\n    recovery_bad = tmp_path / "audit-recovery-bad.db"\n    shutil.copyfile(db_path, recovery_bad)\n    changed = connect(recovery_bad)\n    changed.execute(\n        "UPDATE runs SET state='PROCESSING' WHERE generation_id=?",\n        (gid_for_audit,),\n    )\n    changed.execute(\n        "UPDATE checkpoints SET source_fingerprint='mismatched:fingerprint' "\n        "WHERE generation_id=?",\n        (gid_for_audit,),\n    )\n    changed.commit()\n    changed.close()\n    recovery_audit = audit_path(recovery_bad)\n    assert recovery_audit.returncode == 2\n    assert parse_stdout(recovery_audit).get("passed") is False\n\n    control_bad = tmp_path / "audit-control-bad.db"\n    shutil.copyfile(db_path, control_bad)\n    changed = sqlite3.connect(control_bad)\n    changed.execute(\n        "INSERT INTO inventory_effects"\n        "(generation_id,movement_id,sequence,warehouse_id,item_id,quantity_delta,value_delta,effect_kind)"\n        " VALUES(?,?,?,?,?,?,?,?)",\n        (gid_for_audit, "ORPHAN", 999, "W01", "SKU00001", "1", "1", "RECEIPT"),\n    )\n    changed.commit()\n    changed.close()\n    control_audit = audit_path(control_bad)\n    assert control_audit.returncode == 2\n    assert parse_stdout(control_audit).get("passed") is False\n\n    published_for_registry = visible_generation_dirs(publish_dir)\n    assert len(published_for_registry) == 1\n    registry_manifest = find_publication_manifest(published_for_registry[0], gid_for_audit)\n    registry_member = next(\n        path for path in published_for_registry[0].iterdir()\n        if path.is_file() and path != registry_manifest\n    )\n    registry_member_bytes = registry_member.read_bytes()\n    registry_member.write_bytes(b"registry-health-corruption")\n    try:\n        registry_audit = audit_path(db_path)\n        assert registry_audit.returncode == 2\n        assert parse_stdout(registry_audit).get("passed") is False\n    finally:\n        registry_member.write_bytes(registry_member_bytes)\n\n    metric_audit = cli(\n'''
+          tests = replace_once(tests, audit_anchor, audit_insert, 'Q4-004 grouped audit perturbations')
+
+          quarantine_anchor = '''    quarantine_audit = audit_path(db_path)\n    assert quarantine_audit.returncode == 2\n    assert parse_stdout(quarantine_audit).get("passed") is False\n\n    db = connect(db_path)\n'''
+          quarantine_replace = '''    quarantine_audit = audit_path(db_path)\n    assert quarantine_audit.returncode == 2\n    assert parse_stdout(quarantine_audit).get("passed") is False\n    quarantine.unlink()\n\n    db = connect(db_path)\n'''
+          tests = replace_once(tests, quarantine_anchor, quarantine_replace, 'restore quarantine after audit perturbation')
+
+          archive_call_anchor = '''    archive_root = tmp_path / "archive"\n    archived = cli(\n        "archive",\n        "--db", db_path,\n        "--source", source,\n        "--layout", layout_path,\n        "--business-date", "20260815",\n        "--report-dir", report_dir,\n        "--publish-dir", publish_dir,\n        "--archive-dir", archive_root,\n        "--registry", registry,\n    )\n'''
+          archive_call_replace = '''    archive_root = tmp_path / "archive"\n    archive_registry = operational_root / "archive-registry-evidence"\n    assert not archive_registry.exists()\n    archived = cli(\n        "archive",\n        "--db", db_path,\n        "--source", source,\n        "--layout", layout_path,\n        "--business-date", "20260815",\n        "--report-dir", report_dir,\n        "--publish-dir", publish_dir,\n        "--archive-dir", archive_root,\n        "--registry", archive_registry,\n    )\n'''
+          tests = replace_once(tests, archive_call_anchor, archive_call_replace, 'Q4-006 isolate archive registry')
+
+          old_archive_representation = '''    csv_blob = "\\n".join(\n        path.read_text(encoding="utf-8")\n        for path in archive_files\n        if path.suffix.lower() == ".csv"\n    )\n    for control_name in (\n        "processed_count",\n        "accepted_count",\n        "rejected_count",\n        "effect_count",\n        "net_quantity",\n        "net_value",\n    ):\n        assert control_name in csv_blob\n    assert "W01" in csv_blob\n    assert "SKU00001" in csv_blob\n\n    json_blob = "\\n".join(\n        path.read_text(encoding="utf-8")\n        for path in archive_files\n        if path.suffix.lower() == ".json"\n    )\n    for expected in (\n        gid,\n        file_digest(source),\n        file_digest(layout_path),\n        manifest_digest,\n    ):\n        assert expected in json_blob\n    assert any(file_digest(path) == manifest_digest for path in archive_files)\n\n    registry_text = registry.read_text(encoding="utf-8")\n    assert gid in registry_text\n    assert manifest_digest in registry_text\n'''
+          new_archive_representation = '''    archive_blob = b"\\n".join(path.read_bytes() for path in archive_files)\n    for control_name in (\n        "processed_count",\n        "accepted_count",\n        "rejected_count",\n        "effect_count",\n        "net_quantity",\n        "net_value",\n    ):\n        assert control_name.encode() in archive_blob\n    assert b"W01" in archive_blob\n    assert b"SKU00001" in archive_blob\n    for expected in (\n        gid,\n        file_digest(source),\n        file_digest(layout_path),\n        manifest_digest,\n    ):\n        assert expected.encode() in archive_blob\n\n    archive_registry_bytes = archive_registry.read_bytes()\n    assert archive_registry_bytes\n    assert gid.encode() in archive_registry_bytes\n    assert manifest_digest.encode() in archive_registry_bytes\n    registry_audit = cli(\n        "audit",\n        "--db", db_path,\n        "--source", source,\n        "--layout", layout_path,\n        "--business-date", "20260815",\n        "--expected-records", "1",\n        "--quarantine", quarantine,\n        "--registry", archive_registry,\n    )\n    assert registry_audit.returncode == 0\n    assert parse_stdout(registry_audit).get("passed") is True\n'''
+          tests = replace_once(tests, old_archive_representation, new_archive_representation, 'Q4-002/Q4-006 archive semantics')
+
+          tests_path.write_text(tests)
+          PY
+
+          git diff --check
+          changed="$(git diff --name-only)"
+          printf '%s\n' "$changed"
+          test "$changed" = $'cobol-comp3-python-equiv/instruction.md\ncobol-comp3-python-equiv/solution/fixed/operations.py\ncobol-comp3-python-equiv/tests/test_outputs.py'
+          if git diff --name-only | grep -q '^cobol-comp3-python-equiv/environment/'; then
+            echo 'environment scope changed unexpectedly' >&2
+            exit 1
+          fi
+          grep -q 'src.publication.os.replace' cobol-comp3-python-equiv/tests/test_outputs.py && exit 1 || true
+          ! grep -q 'allow_receipts=False' cobol-comp3-python-equiv/tests/test_outputs.py
+          ! grep -q 'allow_transfers=False' cobol-comp3-python-equiv/tests/test_outputs.py
+
+      - name: Verify test inventory
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import ast
+          from pathlib import Path
+          tree = ast.parse(Path('cobol-comp3-python-equiv/tests/test_outputs.py').read_text())
+          names = [n.name for n in tree.body if isinstance(n, (ast.FunctionDef, ast.AsyncFunctionDef)) and n.name.startswith('test_')]
+          f2p = [n for n in names if n.startswith('test_f2p_')]
+          p2p = [n for n in names if n.startswith('test_p2p_')]
+          assert len(names) == 40, (len(names), names)
+          assert len(f2p) == 30, len(f2p)
+          assert len(p2p) == 10, len(p2p)
+          print(f'tests={len(names)} f2p={len(f2p)} p2p={len(p2p)}')
+          PY
+
+      - name: Run Oracle verifier
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install -q pytest
+          rm -rf /tmp/equiv-oracle
+          cp -a cobol-comp3-python-equiv/environment/equiv /tmp/equiv-oracle
+          cp -a cobol-comp3-python-equiv/solution/fixed/. /tmp/equiv-oracle/src/
+          cp cobol-comp3-python-equiv/solution/fixed/schema.sql /tmp/equiv-oracle/sql/schema.sql
+          EQUIV_ROOT=/tmp/equiv-oracle python -m pytest -q cobol-comp3-python-equiv/tests/test_outputs.py | tee /tmp/oracle.log
+          grep -Eq '^40 passed' /tmp/oracle.log
+
+      - name: Run NOP verifier
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf /tmp/equiv-nop
+          cp -a cobol-comp3-python-equiv/environment/equiv /tmp/equiv-nop
+          set +e
+          EQUIV_ROOT=/tmp/equiv-nop python -m pytest -q cobol-comp3-python-equiv/tests/test_outputs.py | tee /tmp/nop.log
+          status=${PIPESTATUS[0]}
+          set -e
+          test "$status" -ne 0
+          grep -Eq '^30 failed, 10 passed' /tmp/nop.log
+
+      - name: Commit bounded closure and remove executor
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm .github/workflows/execute-cobol-final-q4-closure.yml
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add cobol-comp3-python-equiv/instruction.md \
+                  cobol-comp3-python-equiv/solution/fixed/operations.py \
+                  cobol-comp3-python-equiv/tests/test_outputs.py \
+                  .github/workflows/execute-cobol-final-q4-closure.yml
+          git diff --cached --check
+          git commit -m 'Close final adjudicated COBOL Q4 blockers'
+          git push origin HEAD:task/cobol-comp3-python-equiv-strict-rebuild
