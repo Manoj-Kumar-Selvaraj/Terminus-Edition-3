@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Stackyard Control Plane</title>
+  <link rel="stylesheet" href="/css/app.css" />
+</head>
+<body>
+  <header>
+    <h1>Stackyard</h1>
+    <p class="tagline">Local Terraform control plane</p>
+  </header>
+  <main>
+    <section id="orgs-panel">
+      <h2>Organizations</h2>
+      <button id="refresh-orgs" type="button">Refresh orgs</button>
+      <ul id="org-list"></ul>
+      <p>Selected org: <code id="selected-org">none</code></p>
+    </section>
+
+    <section id="workspace-panel">
+      <h2>Workspaces</h2>
+      <form id="ws-form">
+        <label>Name <input name="name" required /></label>
+        <label>Working directory <input name="working_directory" value="infra" /></label>
+        <button type="submit">Create workspace</button>
+      </form>
+      <ul id="ws-list"></ul>
+      <p>Selected workspace: <code id="selected-ws">none</code></p>
+    </section>
+
+    <section id="vars-panel">
+      <h2>Variables</h2>
+      <form id="var-form">
+        <label>Key <input name="key" required /></label>
+        <label>Value <input name="value" /></label>
+        <label>Category
+          <select name="category">
+            <option value="terraform">terraform</option>
+            <option value="env">env</option>
+          </select>
+        </label>
+        <label><input type="checkbox" name="sensitive" /> Sensitive</label>
+        <button type="submit">Create variable</button>
+      </form>
+      <ul id="var-list"></ul>
+    </section>
+
+    <section id="lock-panel">
+      <h2>State lock</h2>
+      <form id="lock-form">
+        <label>Holder <input name="holder" required /></label>
+        <label>Reason <input name="reason" value="apply" /></label>
+        <button type="submit">Lock</button>
+      </form>
+      <form id="unlock-form">
+        <label>Holder <input name="holder" required /></label>
+        <button type="submit">Unlock</button>
+      </form>
+      <pre id="lock-view"></pre>
+    </section>
+
+    <section id="runs-panel">
+      <h2>Runs</h2>
+      <form id="run-form">
+        <label>Command
+          <select name="command">
+            <option value="init">init</option>
+            <option value="validate">validate</option>
+            <option value="fmt">fmt</option>
+            <option value="plan">plan</option>
+            <option value="apply">apply</option>
+            <option value="destroy">destroy</option>
+          </select>
+        </label>
+        <label>Message <input name="message" /></label>
+        <button type="submit">Queue run</button>
+      </form>
+      <div class="run-actions">
+        <button id="discard-run" type="button">Discard selected</button>
+        <button id="cancel-run" type="button">Cancel selected</button>
+      </div>
+      <ul id="run-list"></ul>
+    </section>
+
+    <section id="errors-panel">
+      <h2>Last API error</h2>
+      <pre id="error-box"></pre>
+    </section>
+  </main>
+  <script src="/js/app.js"></script>
+</body>
+</html>

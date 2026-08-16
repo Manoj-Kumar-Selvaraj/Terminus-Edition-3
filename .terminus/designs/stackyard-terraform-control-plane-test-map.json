@@ -1,0 +1,19 @@
+{
+  "task": "stackyard-terraform-control-plane",
+  "requirement_to_tests": [
+    {"requirement": "Health endpoint", "tests": ["test_health_ok"]},
+    {"requirement": "Seed org acme", "tests": ["test_default_org_acme_seeded"]},
+    {"requirement": "Workspace CRUD basics", "tests": ["test_create_and_get_workspace", "test_list_workspaces_under_org", "test_delete_workspace_when_idle", "test_create_org"]},
+    {"requirement": "Plan execution via shim", "tests": ["test_plan_run_reaches_planned", "test_init_validate_fmt_commands"]},
+    {"requirement": "One non-terminal run per workspace", "tests": ["test_reject_second_nonterminal_run"]},
+    {"requirement": "Apply/destroy require lock", "tests": ["test_apply_requires_lock", "test_destroy_requires_lock", "test_apply_with_lock_succeeds"]},
+    {"requirement": "Destroy maps to apply -destroy", "tests": ["test_destroy_maps_to_apply_destroy"]},
+    {"requirement": "Discard/cancel transition rules", "tests": ["test_discard_from_planned", "test_discard_from_applied_rejected", "test_cancel_from_planned_rejected"]},
+    {"requirement": "Run audit events", "tests": ["test_run_created_and_status_audit"]},
+    {"requirement": "Lock fencing and holder unlock", "tests": ["test_lock_and_get", "test_double_lock_rejected", "test_unlock_wrong_holder_forbidden", "test_unlock_by_holder", "test_lock_audit_events"]},
+    {"requirement": "Delete guards when locked/active", "tests": ["test_delete_blocked_when_locked", "test_delete_blocked_with_active_run"]},
+    {"requirement": "Sensitive redaction", "tests": ["test_sensitive_create_redacts_value", "test_sensitive_get_and_list_redact", "test_nonsensitive_value_returned"]},
+    {"requirement": "TF_VAR and env injection", "tests": ["test_tf_var_injection_into_runner", "test_delete_variable"]},
+    {"requirement": "UI serves forms and correct API field names", "tests": ["test_ui_index_served", "test_ui_assets_present", "test_ui_js_surfaces_errors", "test_ui_forms_cover_lock_and_vars", "test_runs_list_endpoint_shape"]}
+  ]
+}

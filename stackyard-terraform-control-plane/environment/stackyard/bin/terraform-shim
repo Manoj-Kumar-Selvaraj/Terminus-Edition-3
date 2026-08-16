@@ -1,0 +1,73 @@
+#!/usr/bin/env bash
+# Deterministic terraform stand-in for Stackyard tests and local demos.
+set -euo pipefail
+
+LOG_DIR="${STACKYARD_SHIM_LOG_DIR:-.}"
+mkdir -p "$LOG_DIR"
+LOG_FILE="${STACKYARD_SHIM_LOG:-$LOG_DIR/terraform-shim.log}"
+ENV_FILE="${STACKYARD_SHIM_ENV:-$LOG_DIR/terraform-shim.env}"
+
+{
+  printf 'argv:'
+  printf ' %q' "$@"
+  printf '\n'
+  printf 'cwd: %s\n' "$(pwd)"
+} >>"$LOG_FILE"
+
+# Capture TF_VAR_* and selected env for verifier assertions.
+{
+  env | grep -E '^(TF_VAR_|REGION=|ENVIRONMENT=)' | sort || true
+} >"$ENV_FILE"
+
+cmd="${1:-}"
+shift || true
+
+case "$cmd" in
+  init)
+    mkdir -p .terraform
+    echo '{"terraform_version":"1.9.0-shim"}' > .terraform/version.json
+    echo "Terraform initialized (shim)"
+    ;;
+  validate)
+    echo "Success! The configuration is valid. (shim)"
+    ;;
+  fmt)
+    echo "fmt ok (shim)"
+    ;;
+  plan)
+    out="tfplan"
+    while [ "$#" -gt 0 ]; do
+      case "$1" in
+        -out=*) out="${1#-out=}" ;;
+        -out) shift; out="${1:-tfplan}" ;;
+      esac
+      shift || true
+    done
+    printf 'shim-plan\n' >"$out"
+    echo "Plan: 1 to add, 0 to change, 0 to destroy. (shim)"
+    ;;
+  apply)
+    destroy=0
+    for a in "$@"; do
+      if [ "$a" = "-destroy" ]; then destroy=1; fi
+    done
+    if [ "$destroy" -eq 1 ]; then
+      echo "Destroy complete! Resources: 1 destroyed. (shim)" > apply-output.txt
+      cat apply-output.txt
+    else
+      echo "Apply complete! Resources: 1 added. (shim)" > apply-output.txt
+      cat apply-output.txt
+    fi
+    ;;
+  destroy)
+    # Real Stackyard must not invoke this subcommand; shim still logs it.
+    echo "bare destroy invoked (shim)" >&2
+    echo "Destroy complete! Resources: 1 destroyed. (shim)"
+    ;;
+  *)
+    echo "unknown shim command: $cmd" >&2
+    exit 2
+    ;;
+esac
+
+exit 0

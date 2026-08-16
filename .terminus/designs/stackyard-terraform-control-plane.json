@@ -1,0 +1,103 @@
+{
+  "task": "stackyard-terraform-control-plane",
+  "root_causes": [
+    {
+      "id": "RC1",
+      "title": "Missing single active-run gate",
+      "module": "internal/policy/policy.go CanCreateRun",
+      "summary": "Starter allows multiple non-terminal runs on one workspace.",
+      "manifestations": [
+        "POST second plan while first is planned returns 201",
+        "Two queued/running/planned rows coexist",
+        "UI can queue overlapping runs",
+        "Delete-while-active checks see wrong active count only if gate fixed first"
+      ]
+    },
+    {
+      "id": "RC2",
+      "title": "Apply/destroy skip lock requirement",
+      "module": "internal/policy/policy.go CanCreateRun",
+      "summary": "Mutating terraform commands proceed without exclusive lock.",
+      "manifestations": [
+        "POST apply unlocked returns 201",
+        "POST destroy unlocked returns 201",
+        "Shim executes apply without lock.acquire audit pairing",
+        "Operators can race applies across holders"
+      ]
+    },
+    {
+      "id": "RC3",
+      "title": "Lock unlock ignores holder",
+      "module": "internal/policy/policy.go CanUnlock",
+      "summary": "Any holder string unlocks the workspace.",
+      "manifestations": [
+        "Unlock as bob while alice holds returns 204",
+        "Workspace locked flips false for non-holder",
+        "Stolen unlock enables unauthorized apply",
+        "lock.release audit (once restored) attributes wrong actor path"
+      ]
+    },
+    {
+      "id": "RC4",
+      "title": "Workspace delete ignores busy state",
+      "module": "internal/policy/policy.go CanDeleteWorkspace",
+      "summary": "Delete succeeds while locked or while non-terminal runs exist.",
+      "manifestations": [
+        "DELETE locked workspace returns 204",
+        "DELETE with planned run returns 204",
+        "Orphaned shim workdirs remain after premature delete",
+        "Lock row cascade-deleted mid-apply"
+      ]
+    },
+    {
+      "id": "RC5",
+      "title": "Invalid discard/cancel transitions accepted",
+      "module": "internal/policy/policy.go CanDiscard/CanCancel",
+      "summary": "Lifecycle guards are no-ops.",
+      "manifestations": [
+        "Discard applied run returns 200 discarded",
+        "Cancel planned run returns 200 canceled",
+        "Terminal runs reopen into discarded/canceled incorrectly",
+        "Audit status chains show impossible edges once audit works"
+      ]
+    },
+    {
+      "id": "RC6",
+      "title": "Sensitive values leaked on read paths",
+      "module": "internal/policy/policy.go RedactVariableValue",
+      "summary": "API always returns plaintext variable values.",
+      "manifestations": [
+        "POST sensitive create includes value string",
+        "GET var returns secret",
+        "LIST vars includes secret",
+        "UI variable list paints secret text"
+      ]
+    },
+    {
+      "id": "RC7",
+      "title": "Destroy argv and TF_VAR injection broken",
+      "module": "internal/policy/policy.go BuildTerraformArgs/InjectVarEnv",
+      "summary": "Destroy uses bare destroy; runner env omits TF_VAR_* and env category exports.",
+      "manifestations": [
+        "Shim log shows destroy subcommand",
+        "Shim log lacks apply -destroy",
+        "terraform-shim.env missing TF_VAR_image_tag",
+        "Sensitive terraform vars not present in shim env",
+        "category=env vars absent from process env"
+      ]
+    },
+    {
+      "id": "RC8",
+      "title": "Audit writer no-op and UI contract drift",
+      "module": "internal/audit/writer.go + ui/js/app.js",
+      "summary": "Transitions are not persisted; UI posts cmd and hides errors.",
+      "manifestations": [
+        "GET audit returns empty after plan",
+        "No run.created events",
+        "No lock.acquire events",
+        "Run form JSON uses cmd field causing 400",
+        "error-box stays blank on API failures"
+      ]
+    }
+  ]
+}
