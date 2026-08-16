@@ -1,0 +1,132 @@
+{
+  "schema_version": "3.0",
+  "role": "Instruction Reviewer",
+  "review_id": "django-checkout-failover-ha-b9ee4816-instruction-50ee95a34e",
+  "task": "django-checkout-failover-ha",
+  "task_commit": "b9ee4816204f1a51857407e4a6f9bf9e38dd937a",
+  "control_plane_commit": "b9ee4816204f1a51857407e4a6f9bf9e38dd937a",
+  "protocol_policy_version": "2.2",
+  "prompt_policy_version": "2.2",
+  "role_policy_version": "1.0",
+  "role_contract_hash": "b3fafcd337332dca594d29a578adba39aba28e76f794d5851c4a0d5140566484",
+  "context_packet": ".terminus/reviews/django-checkout-failover-ha/b9ee4816/django-checkout-failover-ha-b9ee4816-instruction-50ee95a34e.packet.json",
+  "verdict": "REVISE",
+  "confidence": "HIGH",
+  "evidence_status": "SUFFICIENT",
+  "summary": "instruction.md is shape-legal and mostly complete via the runbook, but paragraph 2 is a semicolon-separated acceptance inventory that reverse-outlines the graded requirement families, so it fails the Instruction Reviewer compressed-rubric / reverse-outline PASS bar.",
+  "evidence": [
+    {
+      "type": "file",
+      "ref": "django-checkout-failover-ha/instruction.md",
+      "observation": "190 words, two paragraphs with an orphaned '1)' prefix. Incident paragraph cites symptoms and absolute paths. Second paragraph is a flat checklist: fenced writer, sticky post-write reads, pins vs django_session, one capture per attempt_id, blank attempt_id reject, write_lsn/wal_lsn refuse, five /readyz 503 OR-gates, then failover-status.json."
+    },
+    {
+      "type": "file",
+      "ref": "django-checkout-failover-ha/environment/ha/docs/runbook.md",
+      "observation": "Referenced operator runbook already defines sticky/lag gates, blank attempt_id, capture LSN refuse, /readyz traffic gates, dump_failover path, and the exact failover-status.json object. Ordinary runbook, not a repair map; detailed gates need not be restated as a grader inventory in instruction.md."
+    },
+    {
+      "type": "file",
+      "ref": "django-checkout-failover-ha/environment/ha/notes/oncall.md",
+      "observation": "Supports asserted current-state symptoms: AZ-B advertised writer, place on replica, OPEN confirmation, duplicate captures for att-inc-20001/20007/20012, writable fence on both shop files."
+    },
+    {
+      "type": "file",
+      "ref": "django-checkout-failover-ha/environment/ha/logs/captured/shopdesk-error.log",
+      "observation": "Solver-visible log lines corroborate the same incident claims referenced in instruction.md."
+    },
+    {
+      "type": "artifact",
+      "ref": ".terminus/designs/django-checkout-failover-ha-test-map.json",
+      "observation": "Requirement families (writer-only mutations, sticky/pin store, lag gate, fence epoch, capture idempotency, readyz, status dump/counts, sync_standby, restart) remain discoverable from instruction + runbook; paragraph 2 clauses map suspiciously one-to-one onto those families."
+    },
+    {
+      "type": "rule",
+      "ref": ".terminus/agents/INSTRUCTION_POLICY.md",
+      "observation": "PASS requires REVERSE_OUTLINE_RISK and COMPRESSED_RUBRIC no higher than LOW. Human tests flag one-clause-per-requirement inventories and reverse-outline of verifier rows."
+    },
+    {
+      "type": "review",
+      "ref": ".terminus/reviewers/HUMAN_WRITING_CALIBRATION.md",
+      "observation": "Synthetic-completeness and one-sentence-per-rubric-item patterns match paragraph 2; preferred human pattern is incident + operational invariants with protocol detail left in the existing runbook."
+    }
+  ],
+  "findings": [
+    {
+      "id": "INST-01",
+      "severity": "BLOCKER",
+      "status": "OBSERVED",
+      "criterion": "REVERSE_OUTLINE_RISK / COMPRESSED_RUBRIC",
+      "evidence_refs": [
+        "django-checkout-failover-ha/instruction.md",
+        ".terminus/designs/django-checkout-failover-ha-test-map.json",
+        ".terminus/agents/INSTRUCTION_POLICY.md",
+        ".terminus/reviewers/HUMAN_WRITING_CALIBRATION.md"
+      ],
+      "why_it_matters": "Paragraph 2 inventories distinct graded behaviors in verifier order (writer fence, sticky read, pin store, capture idempotency, blank attempt_id, LSN refuse, multi-clause /readyz, status dump). That is a compressed rubric, not a selective engineering handoff, and blocks Instruction Reviewer PASS.",
+      "minimal_remediation": "Keep the incident paragraph and absolute paths. Rewrite paragraph 2 as a few operational invariants (fenced writer + safe /readyz, sticky confirmation, once-per-attempt capture, dump path) and leave the detailed gate/schema list in the already-referenced runbook. Drop the orphaned '1)'.",
+      "regression_risk": "Regrouping must not omit material requirements or relocate the task goal solely into docs; runbook already carries the detailed gates."
+    },
+    {
+      "id": "INST-02",
+      "severity": "HIGH",
+      "status": "OBSERVED",
+      "criterion": "JIRA_SLACK_HANDOFF / HUMAN_GROUPING",
+      "evidence_refs": [
+        "django-checkout-failover-ha/instruction.md",
+        ".terminus/reviewers/HUMAN_WRITING_CALIBRATION.md",
+        ".terminus/reviewers/WRITING_EXAMPLE_BANK.md"
+      ],
+      "why_it_matters": "After a credible on-call opener, the ticket flips into a benchmark-shaped acceptance list with orphaned numbering. A real desk handoff would group related cutover/readiness/capture concerns rather than semicolon-enumerate every gate.",
+      "minimal_remediation": "Same rewrite as INST-01: group by operational concern; keep preservation of manage.py and public routes in one short clause.",
+      "regression_risk": "Low if runbook remains the schema/gate authority and instruction still names /app/ha/out/failover-status.json."
+    }
+  ],
+  "missing_evidence": [],
+  "change_scope": [
+    "django-checkout-failover-ha/instruction.md acceptance paragraph only"
+  ],
+  "do_not_change": [
+    "Do not strip material requirements from the solver-visible surface; keep them discoverable via instruction + runbook.",
+    "Do not edit runbook into a bug catalog or module repair map.",
+    "Do not touch solution/, tests/, or private design topology for this instruction repair."
+  ],
+  "next_gate": "Instruction Writer repair, then fresh Instruction Reviewer packet",
+  "role_output": {
+    "WORD_COUNT": 190,
+    "BULLET_COUNT": 0,
+    "HUMAN_SIGNAL": "MEDIUM",
+    "AI_TEMPLATE_SIGNAL": "HIGH",
+    "JIRA_SLACK_HANDOFF": "FAIL",
+    "REQUIREMENT_COMPLETENESS": "SUFFICIENT",
+    "INSTRUCTION_SHAPE": "PASS",
+    "REVERSE_OUTLINE_RISK": "HIGH",
+    "SPEC_FILE_LOOPHOLE": "LOW",
+    "IMPLEMENTATION_DIAGNOSIS_LEAKAGE": "LOW",
+    "CURRENT_STATE_EVIDENCE": "PASS",
+    "HUMAN_GROUPING": "LOW",
+    "COMPRESSED_RUBRIC": "HIGH",
+    "OVER_PRESCRIPTION": "MEDIUM",
+    "MATERIAL_REQUIREMENTS_PRESERVED": [
+      "incident symptoms with absolute evidence paths",
+      "preserve manage.py and checkout/health/ready routes",
+      "writes only on fenced writer",
+      "sticky post-write reads / pins alias",
+      "pins not in django_session",
+      "one capture per attempt_id; reject empty attempt_id",
+      "pay/capture refuse when write_lsn ahead of writer wal_lsn",
+      "/readyz unsafe when split writer, lag, pins down, or repeat captures",
+      "write /app/ha/out/failover-status.json per runbook object"
+    ],
+    "UNNECESSARY_TEXT": [
+      "orphaned leading '1)' with no sibling items"
+    ],
+    "MISSING_CONTEXT": [],
+    "SUSPICIOUS_PHRASES": [
+      "Checkout writes may hit only the fenced writer; a shopper who just wrote must not be served a lagged standby row; sticky keys must not live in django_session...",
+      "/readyz is 503 while both files look writable, the seq gap is past max_lag_lsn, the old writer is still allowed, the pins store is unreachable, or repeat capture rows remain"
+    ],
+    "FAIRNESS_RISK": "MEDIUM",
+    "REPLACEMENT_TEXT": "AZ-B took the writer during the disk scare around 21:00, but the desk is still lying to customers. Some `/api/checkout/place` calls persist a second cart copy, a pay then reload can still show OPEN, and capture hooks for `att-inc-20001`, `att-inc-20007`, and `att-inc-20012` fired from both app boxes. Work under `/app/ha`. Pager notes are `/app/ha/notes/oncall.md`; scraped gunicorn lines are `/app/ha/logs/captured/shopdesk-error.log`. Shop files are `/app/ha/state/primary.sqlite` and `/app/ha/state/standby.sqlite`. Sticky reads use cache alias `pins`. Cutover and the status dump object are in `/app/ha/docs/runbook.md`.\n\nLeave `manage.py` and the existing `/api/checkout/*`, `/healthz`, and `/readyz` routes in place. Heal the split so checkout writes only through the fenced writer, a shopper who just wrote is not served a lagged standby row, captures fire once per `attempt_id`, and `/readyz` means the desk is safe to take a card under the runbook gates. Write `/app/ha/out/failover-status.json` using the object in the runbook."
+  }
+}

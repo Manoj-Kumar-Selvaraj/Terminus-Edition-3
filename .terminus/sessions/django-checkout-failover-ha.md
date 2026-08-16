@@ -35,13 +35,13 @@ This is the durable operational checkpoint for one task. Keep it evidence-orient
 | Q4 Spec-Test Contract Reviewer | PENDING | packet `.../b9ee4816/...-spec-test-contract-2baa2168bf.packet.json` (prior PASS STALE after F2P consolidate) |
 | Q6 Production Logic Auditor | PASS | scope-preserved (`review_scope_hash=5031e765…`); tests-only change |
 | Quality Interlock | PENDING | awaiting cold Q4 on `b9ee4816` |
-| Pre-LLMaJ specialist panel | PENDING | packets under `b9ee4816/` for TA/VE/Orig/Diff/Comp/Instr/Doc/HQ |
-| Task Architect | PENDING | packet `...-task-architect-9d3c66428b.packet.json` |
-| Verifier Engineer | PENDING | packet `...-verifier-engineer-ed25c4beec.packet.json` |
+| Pre-LLMaJ specialist panel | REVISE | Instruction REVISE (INST-01/02); other specialists PASS or still running |
+| Task Architect | PASS | review `.../b9ee4816/...-task-architect-9d3c66428b.json` (HIGH) |
+| Verifier Engineer | PASS | review `.../b9ee4816/...-verifier-engineer-ed25c4beec.json` (HIGH) |
 | Originality & Authenticity | PASS | review `.../b9ee4816/...-originality-9c88957c99.json` (HIGH) |
 | Difficulty design | PASS | review `.../b9ee4816/...-difficulty-design-490134a9ce.json` (MEDIUM); tier UNMEASURED (trials deferred) |
 | Compliance pre-review | PENDING | packet `...-compliance-55d7325ce9.packet.json` |
-| Instruction Reviewer | PENDING | packet `...-instruction-50ee95a34e.packet.json` |
+| Instruction Reviewer | REVISE | review `.../b9ee4816/...-instruction-50ee95a34e.json` (HIGH); blocking INST-01, INST-02 |
 | Documentation Reviewer | PASS | review `.../b9ee4816/...-documentation-2e3067d67a.json` (HIGH) |
 | Comprehensive Reviewer | PENDING | after remaining specialists freeze |
 | Pre-LLMaJ aggregate | PENDING | |
@@ -69,30 +69,30 @@ This is the durable operational checkpoint for one task. Keep it evidence-orient
 
 ## Current blocker
 
-Cold Q4 re-review + Pre-LLMaJ specialist panel on freeze `b9ee4816` after F2P consolidation. Harbor LLMaJ and official difficulty trials are user-deferred.
+Instruction Reviewer REVISE on `b9ee4816` (INST-01/INST-02: compressed rubric / reverse-outline in instruction.md paragraph 2). Also awaiting cold Q4 and Compliance.
 
 ## Root-cause classification
 
-- Owner: complexity gate (F2P band) — closed by consolidation on `b9ee4816`
-- Classification: `verifier_scale`
-- Evidence: `validate_task_complexity` PASS; oracle `jobs/2026-08-16__17-38-02`; nop `jobs/2026-08-16__17-39-27`
+- Owner: Instruction Reviewer / Q3 writing repair
+- Classification: `instruction_shape` (compressed rubric)
+- Evidence: `...-instruction-50ee95a34e.json`
 
 ## Next action
 
-Run cold Q4 + Pre-LLMaJ specialists (`model: inherit`); then Comprehensive → aggregate → Q8 diagnostics → Final Compliance/HQ/package. Skip Harbor LLMaJ and GPT×5/Claude×5 trials.
+Rewrite `instruction.md` paragraph 2 as operational invariants (not a semicolon checklist); drop orphaned `1)`. Re-freeze, cold re-Instruction (+ Q4/Compliance if still pending). Harbor LLMaJ and official trials remain deferred.
 
 ## Review evidence ledger
 
 | Review | Review ID | Task commit | Protocol | Prompt | Role policy | Role contract hash | Scope hash | Result path | Verdict | Confidence | Evidence |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| Q4 Spec-Test Contract Reviewer | django-checkout-failover-ha-7cdda65f-spec-test-contract-7c38e34c80 | 7cdda65f0097221e44da943dfaca24ea6c440f8f | 2.2 | 2.2 | 1.1 | c860dfe8b8ed0a04c729e4d6a828741b206b7067a780863ec7b22ee09d02c5a0 | n/a | `.terminus/reviews/django-checkout-failover-ha/7cdda65f/django-checkout-failover-ha-7cdda65f-spec-test-contract-7c38e34c80.json` | PASS | HIGH | advisory Q4-A01–A05 |
-| Q6 Production Logic Auditor | django-checkout-failover-ha-f9022bd1-production-logic-b02c7d085b | f9022bd10e98152efcc245a1a0a738bf29f77a80 | 2.2 | 2.2 | 1.1 | ee7d1cfd6e19fcc0e831cc75829457593d7410613c3b3fb811aef925e85a1607 | 5031e765140c0035a98df555161234e16eefdf18772a836f8c9dc31787be9d63 | `.terminus/reviews/django-checkout-failover-ha/f9022bd1/django-checkout-failover-ha-f9022bd1-production-logic-b02c7d085b.json` | PASS | HIGH | scope-reuse on `7cdda65` |
-| Task Architect | | | | | | | | | PENDING | | |
-| Verifier Engineer | | | | | | | | | PENDING | | |
+| Q4 Spec-Test Contract Reviewer | django-checkout-failover-ha-7cdda65f-spec-test-contract-7c38e34c80 | 7cdda65f0097221e44da943dfaca24ea6c440f8f | 2.2 | 2.2 | 1.1 | c860dfe8b8ed0a04c729e4d6a828741b206b7067a780863ec7b22ee09d02c5a0 | n/a | `.terminus/reviews/django-checkout-failover-ha/7cdda65f/django-checkout-failover-ha-7cdda65f-spec-test-contract-7c38e34c80.json` | STALE | HIGH | superseded by `b9ee4816` |
+| Q6 Production Logic Auditor | django-checkout-failover-ha-f9022bd1-production-logic-b02c7d085b | f9022bd10e98152efcc245a1a0a738bf29f77a80 | 2.2 | 2.2 | 1.1 | ee7d1cfd6e19fcc0e831cc75829457593d7410613c3b3fb811aef925e85a1607 | 5031e765140c0035a98df555161234e16eefdf18772a836f8c9dc31787be9d63 | `.terminus/reviews/django-checkout-failover-ha/f9022bd1/django-checkout-failover-ha-f9022bd1-production-logic-b02c7d085b.json` | PASS | HIGH | scope-reuse on `b9ee4816` |
+| Task Architect | django-checkout-failover-ha-b9ee4816-task-architect-9d3c66428b | b9ee4816204f1a51857407e4a6f9bf9e38dd937a | 2.2 | 2.2 | | | | `.terminus/reviews/django-checkout-failover-ha/b9ee4816/django-checkout-failover-ha-b9ee4816-task-architect-9d3c66428b.json` | PASS | HIGH | |
+| Verifier Engineer | django-checkout-failover-ha-b9ee4816-verifier-engineer-ed25c4beec | b9ee4816204f1a51857407e4a6f9bf9e38dd937a | 2.2 | 2.2 | | | | `.terminus/reviews/django-checkout-failover-ha/b9ee4816/django-checkout-failover-ha-b9ee4816-verifier-engineer-ed25c4beec.json` | PASS | HIGH | advisory VE-A01/A02 |
 | Originality | django-checkout-failover-ha-b9ee4816-originality-9c88957c99 | b9ee4816204f1a51857407e4a6f9bf9e38dd937a | 2.2 | 2.2 | | | | `.terminus/reviews/django-checkout-failover-ha/b9ee4816/django-checkout-failover-ha-b9ee4816-originality-9c88957c99.json` | PASS | HIGH | |
 | Difficulty design | django-checkout-failover-ha-b9ee4816-difficulty-design-490134a9ce | b9ee4816204f1a51857407e4a6f9bf9e38dd937a | 2.2 | 2.2 | | | | `.terminus/reviews/django-checkout-failover-ha/b9ee4816/django-checkout-failover-ha-b9ee4816-difficulty-design-490134a9ce.json` | PASS | MEDIUM | tier UNMEASURED |
 | Compliance pre-review | | | | | | | | | PENDING | | |
-| Instruction | | | | | | | | | PENDING | | |
+| Instruction | django-checkout-failover-ha-b9ee4816-instruction-50ee95a34e | b9ee4816204f1a51857407e4a6f9bf9e38dd937a | 2.2 | 2.2 | | | | `.terminus/reviews/django-checkout-failover-ha/b9ee4816/django-checkout-failover-ha-b9ee4816-instruction-50ee95a34e.json` | REVISE | HIGH | INST-01, INST-02 |
 | Documentation | django-checkout-failover-ha-b9ee4816-documentation-2e3067d67a | b9ee4816204f1a51857407e4a6f9bf9e38dd937a | 2.2 | 2.2 | | | | `.terminus/reviews/django-checkout-failover-ha/b9ee4816/django-checkout-failover-ha-b9ee4816-documentation-2e3067d67a.json` | PASS | HIGH | |
 | Comprehensive Reviewer | | | | | 1.0 | | | | PENDING | | |
 | Q8 GPT Perspective Simulation | | | | | 1.0 | | | | PENDING | | diagnostic only |

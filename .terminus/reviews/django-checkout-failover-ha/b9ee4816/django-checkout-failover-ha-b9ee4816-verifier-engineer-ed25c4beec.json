@@ -1,0 +1,218 @@
+{
+  "schema_version": "3.0",
+  "role": "Verifier Engineer",
+  "review_id": "django-checkout-failover-ha-b9ee4816-verifier-engineer-ed25c4beec",
+  "task": "django-checkout-failover-ha",
+  "task_commit": "b9ee4816204f1a51857407e4a6f9bf9e38dd937a",
+  "control_plane_commit": "b9ee4816204f1a51857407e4a6f9bf9e38dd937a",
+  "protocol_policy_version": "2.2",
+  "prompt_policy_version": "2.2",
+  "role_policy_version": "1.0",
+  "role_contract_hash": "16caaf27eb6f8f682e0da0f9e3f79183d2f07a84e33a6e421d8c10642a8117e4",
+  "context_packet": ".terminus/reviews/django-checkout-failover-ha/b9ee4816/django-checkout-failover-ha-b9ee4816-verifier-engineer-ed25c4beec.packet.json",
+  "verdict": "PASS",
+  "confidence": "HIGH",
+  "evidence_status": "SUFFICIENT",
+  "summary": "Verifier grades live Django WSGI/manage.py/shop-file behavior for every material instruction+runbook requirement (28 F2P + 6 P2P). Harbor oracle reward 1 (34/34) and NOP reward 0 (19 F2P fail) confirm discrimination; remaining NOP F2P passes are non-blocking vacuous negatives paired with stronger positive path checks.",
+  "evidence": [
+    {
+      "type": "file",
+      "ref": "django-checkout-failover-ha/instruction.md",
+      "observation": "Solver-visible requirements cover fenced writer writes, sticky non-lagged reads, pins-not-session, single capture per attempt_id, blank attempt rejection, pay/capture seq gate, /readyz 503 conditions, and failover-status.json."
+    },
+    {
+      "type": "file",
+      "ref": "django-checkout-failover-ha/environment/ha/docs/runbook.md",
+      "observation": "Runbook defines dump schema, live /readyz vs dump accepting_checkout conjunction, max_lag_lsn reads, sync_standby non-writable lease, and operator commands exercised by tests."
+    },
+    {
+      "type": "test",
+      "ref": "django-checkout-failover-ha/tests/test_ha.py",
+      "observation": "34 independent pytest scenarios drive Client/WSGI, cutover/sync_standby/dump_failover, sqlite dual-file state, pins cache, SideEffect uniqueness, and readiness/dump gates without source greps or an in-verifier solver."
+    },
+    {
+      "type": "file",
+      "ref": "django-checkout-failover-ha/tests/test.sh",
+      "observation": "Reward initializes to 0, pytest runs the full /tests suite, then writes binary 1/0; no package installs."
+    },
+    {
+      "type": "file",
+      "ref": "django-checkout-failover-ha/task.toml",
+      "observation": "artifacts=[\"/app/ha\"] with environment_mode=separate; verifier Dockerfile pre-creates /app/ha parent for Harbor transfer."
+    },
+    {
+      "type": "job",
+      "ref": "jobs/2026-08-16__17-38-02",
+      "observation": "Oracle trial reward 1.0; verifier stdout reports 34 passed."
+    },
+    {
+      "type": "job",
+      "ref": "jobs/2026-08-16__17-39-27",
+      "observation": "NOP trial reward 0.0; 19 failed / 15 passed with substantive F2P failures on place routing, sticky reads, sync lease copy, capture seq gate, /readyz 503, and healed dump accept."
+    }
+  ],
+  "findings": [
+    {
+      "id": "VE-A01",
+      "severity": "LOW",
+      "status": "OBSERVED",
+      "criterion": "weak-assertion",
+      "evidence_refs": [
+        "django-checkout-failover-ha/tests/test_ha.py",
+        "jobs/2026-08-16__17-39-27"
+      ],
+      "why_it_matters": "test_f2p_az_b_does_not_insert_standby_order and test_f2p_checkout_api_does_not_grow_standby pass on NOP when place always returns 400, so they do not alone prove AZ-B fencing.",
+      "minimal_remediation": "Optional: assert an explicit non-success status from AZ-B place and/or contrast with a successful writer place in the same scenario.",
+      "regression_risk": "Low; positive writer-path F2P already fail NOP."
+    },
+    {
+      "id": "VE-A02",
+      "severity": "LOW",
+      "status": "OBSERVED",
+      "criterion": "implementation-coupling",
+      "evidence_refs": [
+        "django-checkout-failover-ha/tests/test_ha.py",
+        "django-checkout-failover-ha/environment/ha/config/ha.json"
+      ],
+      "why_it_matters": "Several seq-gap assertions hardcode literal 25 instead of reading config max_lag_lsn; test_p2p_zero_gap_budget_hides_tiny_lag only checks config/runbook presence.",
+      "minimal_remediation": "Optional: load max_lag_lsn dynamically and add a true budget-perturbation metamorphic check if desired.",
+      "regression_risk": "Low while shipped max_lag_lsn remains 25."
+    }
+  ],
+  "missing_evidence": [],
+  "change_scope": [],
+  "do_not_change": [
+    "Do not replace live WSGI/shop-file behavioral checks with source greps or an end-to-end solver inside tests/.",
+    "Do not drop paired /readyz 503 negatives or healed dump accepting_checkout conjunction coverage."
+  ],
+  "next_gate": "Pre-LLMaJ aggregate",
+  "role_output": {
+    "REQUIREMENT_TEST_MATRIX": [
+      {
+        "REQ_ID": "REQ-01",
+        "REQUIREMENT": "Preserve manage.py and existing /api/checkout/*, /healthz, /readyz routes",
+        "TESTS": [
+          "test_p2p_manage_and_routes_present",
+          "test_p2p_healthz_ok_when_desk_closed",
+          "test_f2p_healthz_200_while_readyz_fails"
+        ],
+        "COVERAGE": "COMPLETE"
+      },
+      {
+        "REQ_ID": "REQ-02",
+        "REQUIREMENT": "Checkout writes hit only the fenced writer (no standby insert / AZ-B affinity leak)",
+        "TESTS": [
+          "test_f2p_place_lands_on_writer",
+          "test_f2p_az_b_does_not_insert_standby_order",
+          "test_f2p_checkout_api_does_not_grow_standby",
+          "test_f2p_reservation_stays_on_writer",
+          "test_f2p_pay_skips_other_az",
+          "test_f2p_pay_marks_writer_and_confirmation",
+          "test_f2p_old_az_cannot_write_after_cutover",
+          "test_f2p_cutover_single_writer_epoch"
+        ],
+        "COVERAGE": "COMPLETE"
+      },
+      {
+        "REQ_ID": "REQ-03",
+        "REQUIREMENT": "Shopper who just wrote is not served a lagged standby row; idle reads respect seq gap / max_lag_lsn",
+        "TESTS": [
+          "test_f2p_confirmation_after_place_is_fresh",
+          "test_f2p_idle_read_follows_seq_gap",
+          "test_f2p_standby_unreadable_while_seq_gap_high",
+          "test_f2p_seq_gap_tracks_watermark_not_counts",
+          "test_f2p_pins_survive_cache_session_and_db_remap"
+        ],
+        "COVERAGE": "COMPLETE"
+      },
+      {
+        "REQ_ID": "REQ-04",
+        "REQUIREMENT": "Sticky keys use pins alias and must not live in django_session on either shop file",
+        "TESTS": [
+          "test_f2p_pins_on_shared_alias_not_session",
+          "test_f2p_pins_survive_cache_session_and_db_remap",
+          "test_f2p_epoch_and_pin_survive_reconnect"
+        ],
+        "COVERAGE": "COMPLETE"
+      },
+      {
+        "REQ_ID": "REQ-05",
+        "REQUIREMENT": "One attempt_id gets one capture effect",
+        "TESTS": [
+          "test_f2p_capture_idempotent_across_retries",
+          "test_f2p_pay_twice_one_capture"
+        ],
+        "COVERAGE": "COMPLETE"
+      },
+      {
+        "REQ_ID": "REQ-06",
+        "REQUIREMENT": "Empty attempt_id values are rejected on place",
+        "TESTS": ["test_p2p_blank_attempt_rejected"],
+        "COVERAGE": "COMPLETE"
+      },
+      {
+        "REQ_ID": "REQ-07",
+        "REQUIREMENT": "Pay/capture refuse when order write_lsn is ahead of writer wal_lsn",
+        "TESTS": ["test_f2p_capture_blocked_if_seq_not_committed"],
+        "COVERAGE": "COMPLETE"
+      },
+      {
+        "REQ_ID": "REQ-08",
+        "REQUIREMENT": "/readyz is 503 for double-writable, oversize seq gap, unreachable pins, or repeat captures; healthz stays process-up",
+        "TESTS": [
+          "test_f2p_readyz_503_on_split_or_lag",
+          "test_f2p_readyz_503_on_pins_or_repeat_captures",
+          "test_f2p_healthz_200_while_readyz_fails",
+          "test_f2p_readyz_200_when_live_gates_hold"
+        ],
+        "COVERAGE": "COMPLETE"
+      },
+      {
+        "REQ_ID": "REQ-09",
+        "REQUIREMENT": "sync_standby advances seq/copies incident orders without making standby lease writable; cutover single writer epoch",
+        "TESTS": [
+          "test_f2p_sync_standby_advances_without_writable_lease",
+          "test_f2p_cutover_single_writer_epoch",
+          "test_f2p_old_az_cannot_write_after_cutover"
+        ],
+        "COVERAGE": "COMPLETE"
+      },
+      {
+        "REQ_ID": "REQ-10",
+        "REQUIREMENT": "Write /app/ha/out/failover-status.json with runbook schema; dump accepting_checkout stricter healed conjunction",
+        "TESTS": [
+          "test_f2p_failover_status_refuses_accept_on_split",
+          "test_f2p_failover_status_counts_repeat_captures",
+          "test_f2p_failover_status_blocks_standby_or_fence",
+          "test_f2p_failover_status_blocks_gap_or_missing_incident",
+          "test_f2p_failover_status_accepts_when_healed",
+          "test_p2p_runbook_names_dump_path"
+        ],
+        "COVERAGE": "COMPLETE"
+      },
+      {
+        "REQ_ID": "REQ-11",
+        "REQUIREMENT": "Preserve checkout_order history/schema and max_lag_lsn contract discoverability",
+        "TESTS": [
+          "test_p2p_order_schema_preserved",
+          "test_p2p_zero_gap_budget_hides_tiny_lag"
+        ],
+        "COVERAGE": "COMPLETE"
+      }
+    ],
+    "PHANTOM_TESTS": [],
+    "WEAK_OR_VACUOUS_ASSERTIONS": [
+      "VE-A01: AZ-B non-growth F2P pass when place always 400 on NOP",
+      "VE-A02: hardcoded lag=25 and config-presence-only P2P for max_lag_lsn",
+      "test_f2p_readyz_200_when_live_gates_hold alone would pass always-200 /readyz; paired 503 negatives keep the suite discriminating"
+    ],
+    "IMPLEMENTATION_COUPLING": "LOW — grades HTTP/DB/cache/command outcomes and runbook JSON keys; blank-attempt check uses place_order service rather than HTTP but still behavioral.",
+    "FLAKINESS_RISK": "LOW — per-test sqlite copies from session baseline; no wall-clock sleeps; uuid attempt ids avoid collisions.",
+    "ANTI_CHEAT_RISK": "LOW — separate verifier rebuilds submitted /app/ha; reward requires multi-axis healed state plus unsafe negatives; no callable oracle in tests/.",
+    "ORACLE_NOP_ASSESSMENT": "STRONG — jobs/2026-08-16__17-38-02 reward 1 (34/34); jobs/2026-08-16__17-39-27 reward 0 with 19 substantive F2P failures.",
+    "F2P_COUNT": 28,
+    "P2P_COUNT": 6,
+    "BLOCKING_FINDING_IDS": [],
+    "ADVISORY_FINDING_IDS": ["VE-A01", "VE-A02"]
+  }
+}

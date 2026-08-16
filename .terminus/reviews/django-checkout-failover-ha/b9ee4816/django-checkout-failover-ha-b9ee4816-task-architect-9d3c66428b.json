@@ -1,0 +1,98 @@
+{
+  "schema_version": "3.0",
+  "role": "Task Architect",
+  "review_id": "django-checkout-failover-ha-b9ee4816-task-architect-9d3c66428b",
+  "task": "django-checkout-failover-ha",
+  "task_commit": "b9ee4816204f1a51857407e4a6f9bf9e38dd937a",
+  "control_plane_commit": "b9ee4816204f1a51857407e4a6f9bf9e38dd937a",
+  "protocol_policy_version": "2.2",
+  "prompt_policy_version": "2.2",
+  "role_policy_version": "1.0",
+  "role_contract_hash": "bf62a53fc4373bd2bde48f07b37004bc001e81c14239c1e0bf907adf761d2536",
+  "context_packet": ".terminus/reviews/django-checkout-failover-ha/b9ee4816/django-checkout-failover-ha-b9ee4816-task-architect-9d3c66428b.packet.json",
+  "verdict": "PASS",
+  "confidence": "HIGH",
+  "evidence_status": "SUFFICIENT",
+  "summary": "Shopdesk dual-AZ checkout after a messy writer cutover is one coherent HA work package: fenced writes, sticky pins, lag-gated reads, capture idempotency, standby sync, and /readyz/status dump interact so partial repairs fail for domain reasons. Solver-visible instruction plus runbook/oncall/log evidence make the required end state fair without turning the task into a single-bug pad.",
+  "evidence": [
+    {
+      "type": "file",
+      "ref": "django-checkout-failover-ha/instruction.md",
+      "observation": "Two-paragraph incident handoff names absolute paths, preserved routes, writer/pin/capture/readyz invariants, and the runbook-backed failover-status.json schema."
+    },
+    {
+      "type": "file",
+      "ref": "django-checkout-failover-ha/environment/ha/docs/runbook.md",
+      "observation": "Credible operator contract for sync/cutover/dump, fence lease rules, sticky/lag gates, live /readyz vs dump accepting_checkout, and the exact status object."
+    },
+    {
+      "type": "file",
+      "ref": "django-checkout-failover-ha/environment/ha/notes/oncall.md",
+      "observation": "On-call symptoms (replica POSTs, stale confirmation, dual-box capture doubles, writable lease on standby) match the instruction without listing repair steps."
+    },
+    {
+      "type": "file",
+      "ref": "django-checkout-failover-ha/environment/ha/logs/captured/shopdesk-error.log",
+      "observation": "Captured gunicorn/router/capture/sync lines corroborate the claimed incident state rather than inventing unsupported current-state prose."
+    },
+    {
+      "type": "file",
+      "ref": "django-checkout-failover-ha/environment/ha/controlplane/router.py",
+      "observation": "Write routing still honors leftover AZ affinity toward replica while reads ignore lag eligibility, coupling routing to fence and watermark repairs."
+    },
+    {
+      "type": "file",
+      "ref": "django-checkout-failover-ha/environment/ha/controlplane/sessions.py",
+      "observation": "Sticky pins still land in default cache and django_session instead of a shared pins store, so confirmation freshness and cross-AZ survival interact with settings CACHES."
+    },
+    {
+      "type": "file",
+      "ref": "django-checkout-failover-ha/environment/ha/controlplane/replica.py",
+      "observation": "sync_standby still copies a writable fence lease and truncates incident orders, so standby apply couples lease fencing and coverage gates."
+    },
+    {
+      "type": "file",
+      "ref": "django-checkout-failover-ha/environment/ha/controlplane/idempotency.py",
+      "observation": "Capture claims always create SideEffect rows; fulfill replay can double webhooks across boxes unless attempt_id uniqueness and LSN commit gates hold."
+    },
+    {
+      "type": "file",
+      "ref": "django-checkout-failover-ha/environment/ha/controlplane/views.py",
+      "observation": "/readyz always returns 200 while desk_state/readiness_policy already encode split-writer, lag, pins, and repeat-capture blockers, keeping liveness distinct from traffic safety only after composition is wired."
+    },
+    {
+      "type": "artifact",
+      "ref": ".terminus/designs/django-checkout-failover-ha-test-map.json",
+      "observation": "Twelve requirement groups (writer, replica, sticky, lag, pins, fence, capture, readyz, status, apply, restart) map across 28 F2P cases rather than one planted bug per test."
+    },
+    {
+      "type": "file",
+      "ref": "django-checkout-failover-ha/task.toml",
+      "observation": "Software/Systems profile with /app/ha artifact, separate verifier, and difficulty notes that match the coupled partial-fix failure story."
+    }
+  ],
+  "findings": [],
+  "missing_evidence": [],
+  "change_scope": [],
+  "do_not_change": [
+    "Do not collapse fenced writes, sticky pins, lag gates, capture uniqueness, and /readyz into a single DATABASES remapping chore.",
+    "Do not move dump-schema or accepting_checkout dump gates out of the referenced runbook into an instruction bug checklist."
+  ],
+  "next_gate": "Verifier Engineer / remaining Pre-LLMaJ specialists",
+  "role_output": {
+    "SCENARIO_COHERENCE": "HIGH",
+    "SOLVABILITY": "HIGH",
+    "COUPLED_REASONING": "HIGH",
+    "ARTIFICIAL_CONSTRUCTION_RISK": "LOW",
+    "PLAUSIBLE_PARTIAL_FIXES": [
+      "Point DATABASES['default'] at the advertised writer while AZ-B affinity and the router still INSERT on replica.",
+      "Wire /readyz to desk_state without demoting the double-writable fence or clearing repeat captures.",
+      "Store sticky keys in django_session or LocMem pins so confirmation looks fresh on one box but fails shared-store and remap survival.",
+      "Deduplicate capture rows on a single AZ while dual-box place/pay still creates a second effect and /readyz stays green.",
+      "Copy more standby rows without demoting the standby lease or advancing applied_lsn via watermarks instead of row counts.",
+      "Emit a failover-status.json that claims accepting_checkout while pins remain local or incident coverage is incomplete."
+    ],
+    "CONTRACT_GAPS": [],
+    "STRUCTURAL_REMEDIATION": []
+  }
+}
