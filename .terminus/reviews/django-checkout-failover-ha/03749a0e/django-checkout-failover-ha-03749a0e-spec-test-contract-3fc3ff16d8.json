@@ -1,0 +1,239 @@
+{
+  "schema_version": "3.0",
+  "role": "Spec-Test Contract Reviewer",
+  "review_id": "django-checkout-failover-ha-03749a0e-spec-test-contract-3fc3ff16d8",
+  "task": "django-checkout-failover-ha",
+  "task_commit": "03749a0ed4dcf6f691bb6d1c9bd573d923d92403",
+  "control_plane_commit": "03749a0ed4dcf6f691bb6d1c9bd573d923d92403",
+  "protocol_policy_version": "2.2",
+  "prompt_policy_version": "2.2",
+  "role_policy_version": "1.1",
+  "role_contract_hash": "c860dfe8b8ed0a04c729e4d6a828741b206b7067a780863ec7b22ee09d02c5a0",
+  "context_packet": ".terminus/reviews/django-checkout-failover-ha/03749a0e/django-checkout-failover-ha-03749a0e-spec-test-contract-3fc3ff16d8.packet.json",
+  "verdict": "PASS",
+  "confidence": "HIGH",
+  "evidence_status": "SUFFICIENT",
+  "summary": "After the handoff-voice instruction rewrite, bidirectional alignment still holds. Material goals stay in instruction.md; sticky/lag/refuse paths, live /readyz vs dump accepting_checkout, and the failover-status.json schema are discoverable from the referenced runbook and are meaningfully asserted across the F2P/P2P suite. No material phantoms, untested requirements, or grading-relevant ambiguities. Remaining gaps are advisory only (sticky TTL expiry, on-disk healed accepting flag, weak max_lag_lsn naming P2P).",
+  "evidence": [
+    {
+      "type": "file",
+      "ref": "django-checkout-failover-ha/instruction.md@03749a0ed4dcf6f691bb6d1c9bd573d923d92403",
+      "observation": "Two short paragraphs: incident symptoms with evidence paths, /app/ha scope, pins alias, runbook pointer; preserve manage.py and checkout/health/ready routes and history; one fenced writer, card-safe /readyz, confirmation matches writes, one capture per attempt_id; follow runbook sticky/lag/refuse and write /app/ha/out/failover-status.json per runbook object."
+    },
+    {
+      "type": "file",
+      "ref": "django-checkout-failover-ha/environment/ha/docs/runbook.md@03749a0ed4dcf6f691bb6d1c9bd573d923d92403",
+      "observation": "Operator cutover contract: sync_standby/cutover/dump_failover; fence lease (owner_node, epoch); pins key sticky:shopper:<id> not django_session; sticky_seconds and max_lag_lsn; blank attempt reject; capture blocked when order write_lsn ahead of primary wal_lsn; /healthz vs live /readyz gates; dump accepting_checkout stricter conjunction; exact failover-status.json field set."
+    },
+    {
+      "type": "file",
+      "ref": "django-checkout-failover-ha/environment/ha/notes/oncall.md@03749a0ed4dcf6f691bb6d1c9bd573d923d92403",
+      "observation": "Pager evidence for AZ-B writer, replica place, OPEN after pay, dual captures, half-finished sync with writable standby lease; supports instruction current-state claims without a repair map."
+    },
+    {
+      "type": "file",
+      "ref": "django-checkout-failover-ha/environment/ha/logs/captured/shopdesk-error.log@03749a0ed4dcf6f691bb6d1c9bd573d923d92403",
+      "observation": "Scraped lines corroborate replica POST place, confirmation OPEN on replica, capture twice for att-inc-20001/20007/20012, sync copying writable fence, /readyz equated to /healthz."
+    },
+    {
+      "type": "file",
+      "ref": "django-checkout-failover-ha/environment/ha/config/ha.json@03749a0ed4dcf6f691bb6d1c9bd573d923d92403",
+      "observation": "sticky_seconds=5, max_lag_lsn=25, incident_min_order_id=19980; runbook points at this file for sticky budget; tests use the same lag/incident bounds."
+    },
+    {
+      "type": "test",
+      "ref": "django-checkout-failover-ha/tests/test_ha.py@03749a0ed4dcf6f691bb6d1c9bd573d923d92403",
+      "observation": "28 F2P + 6 P2P behaviors: writer-only mutations, sticky pins vs session, seq-gap readability, sync without writable lease, cutover epoch/demotion, capture idempotency and seq gate, /readyz 503/200 vs /healthz, dump schema and accepting conjunctions, preserve manage/routes/schema/blank-attempt."
+    },
+    {
+      "type": "file",
+      "ref": ".terminus/designs/django-checkout-failover-ha-test-map.json",
+      "observation": "Classification-only map; used for F2P/P2P ownership labels, not as coverage authority."
+    },
+    {
+      "type": "rule",
+      "ref": ".terminus/agents/QUALITY_AGENT_PROMPTS.md#Q4",
+      "observation": "PASS requires complete forward/reverse matrices, instruction/docs boundary walk, and empty BLOCKING_FINDING_IDS; advisory LOWs may accompany PASS."
+    },
+    {
+      "type": "rule",
+      "ref": ".terminus/agents/INSTRUCTION_POLICY.md",
+      "observation": "Instruction may keep a short handoff and delegate protocol/schema detail to legitimate runbook docs; material goals must remain in the work request."
+    }
+  ],
+  "findings": [
+    {
+      "id": "Q4-A01",
+      "severity": "LOW",
+      "status": "OBSERVED",
+      "criterion": "Runbook sticky_seconds TTL is not behaviorally asserted after expiry; tests check immediate writer confirmation and pin presence.",
+      "evidence_refs": [
+        "django-checkout-failover-ha/environment/ha/docs/runbook.md",
+        "django-checkout-failover-ha/environment/ha/config/ha.json",
+        "django-checkout-failover-ha/tests/test_ha.py::test_f2p_confirmation_after_place_is_fresh",
+        "django-checkout-failover-ha/tests/test_ha.py::test_f2p_pins_on_shared_alias_not_session"
+      ],
+      "why_it_matters": "A sticky pin that never expires could still pass current asserts. Advisory; read-your-writes and pin-store location are covered.",
+      "minimal_remediation": "Optional: after sticky_seconds elapse with eligible lag, allow idle confirmation alias replica.",
+      "regression_risk": "Low."
+    },
+    {
+      "id": "Q4-A02",
+      "severity": "LOW",
+      "status": "OBSERVED",
+      "criterion": "Submitted /app/ha/out/failover-status.json is checked for runbook keys; healed accepting_checkout=true is asserted via dump_failover in-test, not on the transferred artifact.",
+      "evidence_refs": [
+        "django-checkout-failover-ha/instruction.md",
+        "django-checkout-failover-ha/tests/test_ha.py::test_f2p_failover_status_refuses_accept_on_split",
+        "django-checkout-failover-ha/tests/test_ha.py::test_f2p_failover_status_accepts_when_healed"
+      ],
+      "why_it_matters": "A schema-valid but still-refusing on-disk dump could coexist with a correct dump_failover implementation. Advisory; dump semantics are graded.",
+      "minimal_remediation": "Optional: assert ROOT out/failover-status.json accepting_checkout true after heal path.",
+      "regression_risk": "Low."
+    },
+    {
+      "id": "Q4-A03",
+      "severity": "LOW",
+      "status": "OBSERVED",
+      "criterion": "test_p2p_zero_gap_budget_hides_tiny_lag only asserts max_lag_lsn presence in config/runbook; lag gating behavior is covered by other F2P tests.",
+      "evidence_refs": [
+        "django-checkout-failover-ha/tests/test_ha.py::test_p2p_zero_gap_budget_hides_tiny_lag",
+        "django-checkout-failover-ha/tests/test_ha.py::test_f2p_standby_unreadable_while_seq_gap_high",
+        "django-checkout-failover-ha/tests/test_ha.py::test_f2p_idle_read_follows_seq_gap"
+      ],
+      "why_it_matters": "Name suggests a zero-budget metamorphic check that is not executed. Advisory; material lag contract remains tested elsewhere.",
+      "minimal_remediation": "Optional: mutate max_lag_lsn to 0 and assert standby_readable false for tiny gap, or rename the P2P.",
+      "regression_risk": "Negligible."
+    }
+  ],
+  "missing_evidence": [],
+  "change_scope": [],
+  "do_not_change": [
+    "Handoff-voice instruction with runbook delegation for sticky/lag/refuse and status schema",
+    "Live /readyz vs dump accepting_checkout split as documented in runbook",
+    "F2P coverage of writer fencing, pins store, capture uniqueness, and failover-status fields",
+    "P2P preservation of manage.py, checkout/health/ready routes, and checkout history"
+  ],
+  "next_gate": "QUALITY_INTERLOCK (pair with current or scope-preserved Q6 PASS)",
+  "role_output": {
+    "REQUIREMENT_TEST_MATRIX": [
+      {
+        "id": "R_PRESERVE_SURFACE",
+        "coverage": "complete",
+        "tests": [
+          "test_p2p_manage_and_routes_present",
+          "test_p2p_order_schema_preserved",
+          "test_p2p_runbook_names_dump_path"
+        ]
+      },
+      {
+        "id": "R_FENCED_WRITER",
+        "coverage": "complete",
+        "tests": [
+          "test_f2p_place_lands_on_writer",
+          "test_f2p_pay_skips_other_az",
+          "test_f2p_pay_marks_writer_and_confirmation",
+          "test_f2p_az_b_does_not_insert_standby_order",
+          "test_f2p_checkout_api_does_not_grow_standby",
+          "test_f2p_reservation_stays_on_writer",
+          "test_f2p_cutover_single_writer_epoch",
+          "test_f2p_old_az_cannot_write_after_cutover",
+          "test_f2p_epoch_and_pin_survive_reconnect"
+        ]
+      },
+      {
+        "id": "R_STICKY_PINS",
+        "coverage": "complete",
+        "tests": [
+          "test_f2p_confirmation_after_place_is_fresh",
+          "test_f2p_pins_on_shared_alias_not_session",
+          "test_f2p_pins_survive_cache_session_and_db_remap",
+          "test_f2p_idle_read_follows_seq_gap"
+        ]
+      },
+      {
+        "id": "R_LAG_GATE",
+        "coverage": "complete",
+        "tests": [
+          "test_f2p_standby_unreadable_while_seq_gap_high",
+          "test_f2p_seq_gap_tracks_watermark_not_counts",
+          "test_f2p_idle_read_follows_seq_gap",
+          "test_p2p_zero_gap_budget_hides_tiny_lag"
+        ]
+      },
+      {
+        "id": "R_SYNC_STANDBY",
+        "coverage": "complete",
+        "tests": [
+          "test_f2p_sync_standby_advances_without_writable_lease"
+        ]
+      },
+      {
+        "id": "R_REFUSE_PATHS",
+        "coverage": "complete",
+        "tests": [
+          "test_p2p_blank_attempt_rejected",
+          "test_f2p_capture_blocked_if_seq_not_committed",
+          "test_f2p_old_az_cannot_write_after_cutover"
+        ]
+      },
+      {
+        "id": "R_CAPTURE_ONCE",
+        "coverage": "complete",
+        "tests": [
+          "test_f2p_capture_idempotent_across_retries",
+          "test_f2p_pay_twice_one_capture"
+        ]
+      },
+      {
+        "id": "R_READYZ_HEALTHZ",
+        "coverage": "complete",
+        "tests": [
+          "test_f2p_readyz_503_on_split_or_lag",
+          "test_f2p_readyz_503_on_pins_or_repeat_captures",
+          "test_f2p_healthz_200_while_readyz_fails",
+          "test_f2p_readyz_200_when_live_gates_hold",
+          "test_p2p_healthz_ok_when_desk_closed"
+        ]
+      },
+      {
+        "id": "R_STATUS_DUMP",
+        "coverage": "complete",
+        "tests": [
+          "test_f2p_failover_status_refuses_accept_on_split",
+          "test_f2p_failover_status_counts_repeat_captures",
+          "test_f2p_failover_status_blocks_standby_or_fence",
+          "test_f2p_failover_status_blocks_gap_or_missing_incident",
+          "test_f2p_failover_status_accepts_when_healed"
+        ]
+      }
+    ],
+    "PHANTOM_TEST_CONTRACTS": [],
+    "UNTESTED_REQUIREMENTS": [],
+    "AMBIGUITIES": [],
+    "INSTRUCTION_SHAPE": "PASS",
+    "INSTRUCTION_REQUIREMENT_COMPLETENESS": "SUFFICIENT",
+    "DELEGATED_CONTRACT_CHECK": "runbook.md is legitimate operator/HA documentation for cutover, sticky/lag, refuse paths, /readyz vs dump accepting_checkout, and failover-status.json schema; oncall.md and shopdesk-error.log are incident evidence; ha.json supplies sticky_seconds/max_lag_lsn/incident_min_order_id referenced by the runbook.",
+    "INSTRUCTION_DOC_BOUNDARY": "CLEAN",
+    "IMPLEMENTATION_DIAGNOSIS_LEAKAGE": "NONE",
+    "CURRENT_STATE_EVIDENCE": "PASS",
+    "SPEC_DUMP_RISK": "LOW",
+    "BIDIRECTIONAL_ALIGNMENT": "PASS",
+    "BLOCKING_FINDING_IDS": [],
+    "ADVISORY_FINDING_IDS": ["Q4-A01", "Q4-A02", "Q4-A03"],
+    "EXHAUSTIVENESS": {
+      "REQUIREMENTS_ENUMERATED": "COMPLETE",
+      "VERIFIER_BEHAVIORS_ENUMERATED": "COMPLETE",
+      "FORWARD_MATRIX_COMPLETE": "YES",
+      "REVERSE_MATRIX_COMPLETE": "YES",
+      "INSTRUCTION_COMPLETENESS_COMPLETE": "YES",
+      "DELEGATED_CONTRACTS_COMPLETE": "YES",
+      "PROMPT_EXTENSION_WALK_COMPLETE": "YES",
+      "P2P_BOUNDARIES_COMPLETE": "YES",
+      "F2P_BOUNDARIES_COMPLETE": "YES",
+      "OUTPUT_INTERFACES_COMPLETE": "YES",
+      "SECOND_PASS_OMISSION_SWEEP": "PASS",
+      "UNINSPECTED_SCOPE": []
+    }
+  }
+}
