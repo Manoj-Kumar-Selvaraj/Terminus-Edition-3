@@ -1,0 +1,95 @@
+{
+  "schema_version": "3.0",
+  "role": "Model Perspective Difficulty Simulator",
+  "review_id": "django-checkout-failover-ha-d3a64a1b-difficulty-sim-claude-0213591303",
+  "task": "django-checkout-failover-ha",
+  "task_commit": "d3a64a1bcab9579787745e952a6bf8132fc6ad67",
+  "control_plane_commit": "019a4e8a186806b0b839200b29f1edb7b83ffdc8",
+  "protocol_policy_version": "2.2",
+  "prompt_policy_version": "2.2",
+  "role_policy_version": "1.0",
+  "role_contract_hash": "988f3f143cf2c5659dabb6e0031d6404295cc3f63e39bb49af3595902d09cae8",
+  "context_packet": ".terminus/reviews/django-checkout-failover-ha/d3a64a1b/django-checkout-failover-ha-d3a64a1b-difficulty-sim-claude-0213591303.packet.json",
+  "verdict": "PASS",
+  "confidence": "MEDIUM",
+  "evidence_status": "SUFFICIENT",
+  "summary": "DIAGNOSTIC ONLY (not official Claude Opus 4.8×5). SIMULATION_NOT_EXECUTED. Claude-style prior: reconstruct fence/sticky/lag/capture/readyz∪dump contract matrix before edits; over-scope risk across controlplane helpers → USEFUL.",
+  "evidence": [
+    {
+      "type": "file",
+      "ref": "django-checkout-failover-ha/instruction.md",
+      "observation": "Incident handoff names dual SQLite shops, pins alias, runbook sticky/lag/refuse, and failover-status.json without prescribing patch order."
+    },
+    {
+      "type": "file",
+      "ref": "django-checkout-failover-ha/environment/ha/docs/runbook.md",
+      "observation": "Dense multi-gate contract: single writable fence, sticky pins store, lag budget, live /readyz vs stricter dump accepting_checkout, dump schema."
+    },
+    {
+      "type": "file",
+      "ref": "django-checkout-failover-ha/environment/ha/notes/oncall.md",
+      "observation": "Symptoms map to split-brain writes, sticky miss on confirmation, duplicate captures, half-finished sync copying writable lease."
+    },
+    {
+      "type": "file",
+      "ref": "django-checkout-failover-ha/environment/ha/controlplane/views.py",
+      "observation": "Starter /readyz returns 200 accepting_checkout=True while desk cleanup incomplete—clear live-gate defect for systematic fix."
+    },
+    {
+      "type": "file",
+      "ref": "django-checkout-failover-ha/environment/ha/controlplane/sessions.py",
+      "observation": "Sticky pins still mirrored into default cache and django_session contrary to runbook pins-alias rule."
+    },
+    {
+      "type": "file",
+      "ref": "django-checkout-failover-ha/environment/ha/controlplane/router.py",
+      "observation": "Write routing can divert to replica under affinity/split-brain branches—cross-file HA reasoning required."
+    },
+    {
+      "type": "rule",
+      "ref": ".terminus/agents/QUALITY_AGENT_PROMPTS.md#Q8",
+      "observation": "No disposable isolated Harbor solve+verifier executed; SIMULATION_NOT_EXECUTED required; diagnostic strategy prior only."
+    }
+  ],
+  "findings": [],
+  "missing_evidence": [
+    "Disposable isolated cold solve trajectory and post-freeze verifier reward (not executed in this Q8 run)"
+  ],
+  "change_scope": [],
+  "do_not_change": [
+    "Do not treat this as official Claude Opus 4.8×5 evidence.",
+    "Do not set task.toml difficulty from this diagnostic simulation."
+  ],
+  "next_gate": "Q8 aggregate",
+  "role_output": {
+    "PERSPECTIVE": "CLAUDE_PERSPECTIVE",
+    "EXECUTION": "SIMULATION_NOT_EXECUTED",
+    "DIAGNOSTIC_SUMMARY": "Cold Claude/Claude-Code style would map the full runbook∪oncall∪log contract (fence ownership, sticky pins, lag eligibility, capture-once, live /readyz vs dump accepting_checkout) across controlplane/checkout/fulfill before patching, then heal via cutover/sync_standby/dump_failover operator path.",
+    "FIRST_DIAGNOSIS": "Double-writable fence (primary+standby); sticky pins in django_session/default instead of pins; /readyz conflated with liveness; sync_standby copies writable lease; place/pay can hit replica; capture effects not fenced to one attempt_id across boxes.",
+    "FILES_TOUCHED": [
+      "controlplane/fencing.py",
+      "controlplane/router.py",
+      "controlplane/sessions.py",
+      "controlplane/views.py",
+      "controlplane/replica.py",
+      "controlplane/desk_state.py",
+      "checkout/services.py",
+      "fulfill/services.py"
+    ],
+    "SHORTCUTS_ATTEMPTED": [
+      "Broad rewrite of write_policy/heal_plan/cutover_fsm instead of surgical wiring of existing readiness_policy and pin_contract helpers",
+      "Treating dump accepting_checkout as identical to live /readyz and over-engineering standby coverage probes"
+    ],
+    "FIRST_MEANINGFUL_DIVERGENCE": "Over-expand into ungraded catalog/inventory/identity or full FSM redesign after reading many controlplane helpers, delaying the minimal fence+sticky+readyz+idempotent-capture repair loop.",
+    "FINAL_VERIFIER_RESULT": "NOT_RUN",
+    "LIKELY_REASONING_WALLS": [
+      "Live /readyz gates vs stricter dump accepting_checkout conjunction",
+      "Sticky store shared vs reachable semantics and confirmation read-after-write",
+      "Capture idempotency across boxes plus uncommitted write_lsn refuse",
+      "sync_standby must replay incident orders without copying writable fence"
+    ],
+    "ENVIRONMENT_TOOL_FRICTION": "Large Django dual-DB tree with SQLite state mutation; need lab start + manage.py cutover/sync/dump loops; many helper modules invite over-reading.",
+    "PREDICTED_OFFICIAL_SIGNAL": "USEFUL",
+    "SIMULATION_NOTE": "Diagnostic Claude-perspective strategy prior only; NOT official Claude Opus 4.8×5 Harbor evidence."
+  }
+}

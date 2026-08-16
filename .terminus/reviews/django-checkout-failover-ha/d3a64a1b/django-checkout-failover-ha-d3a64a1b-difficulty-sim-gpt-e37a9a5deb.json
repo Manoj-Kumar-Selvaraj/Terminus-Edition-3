@@ -1,0 +1,107 @@
+{
+  "schema_version": "3.0",
+  "role": "Model Perspective Difficulty Simulator",
+  "review_id": "django-checkout-failover-ha-d3a64a1b-difficulty-sim-gpt-e37a9a5deb",
+  "task": "django-checkout-failover-ha",
+  "task_commit": "d3a64a1bcab9579787745e952a6bf8132fc6ad67",
+  "control_plane_commit": "019a4e8a186806b0b839200b29f1edb7b83ffdc8",
+  "protocol_policy_version": "2.2",
+  "prompt_policy_version": "2.2",
+  "role_policy_version": "1.0",
+  "role_contract_hash": "988f3f143cf2c5659dabb6e0031d6404295cc3f63e39bb49af3595902d09cae8",
+  "context_packet": ".terminus/reviews/django-checkout-failover-ha/d3a64a1b/django-checkout-failover-ha-d3a64a1b-difficulty-sim-gpt-e37a9a5deb.packet.json",
+  "verdict": "PASS",
+  "confidence": "MEDIUM",
+  "evidence_status": "SUFFICIENT",
+  "summary": "DIAGNOSTIC ONLY (not official GPT-5.5×5 evidence). SIMULATION_NOT_EXECUTED: no disposable isolated solve+verifier run in this Auto session. GPT-style prior: symptom-driven patches across router/fence/pins/readyz/capture with risk of stopping after locally green dump → USEFUL.",
+  "evidence": [
+    {
+      "type": "file",
+      "ref": "django-checkout-failover-ha/instruction.md",
+      "observation": "Incident handoff: double cart, OPEN after pay, double capture; fix fence, readyz, sticky confirmation, one capture; write failover-status.json per runbook."
+    },
+    {
+      "type": "file",
+      "ref": "django-checkout-failover-ha/environment/ha/docs/runbook.md",
+      "observation": "Public ops: sync_standby, cutover --node, dump_failover; sticky pins alias; live /readyz vs stricter accepting_checkout gates."
+    },
+    {
+      "type": "file",
+      "ref": "django-checkout-failover-ha/environment/ha/logs/captured/shopdesk-error.log",
+      "observation": "Logged defects: az-b place on replica, sticky miss in django_session, double capture, sync cutoff, writable lease copied, readyz==healthz."
+    },
+    {
+      "type": "file",
+      "ref": "django-checkout-failover-ha/environment/ha/controlplane/router.py",
+      "observation": "db_for_write builds a hardcoded snapshot (owner az-a) and can return replica under affinity/split paths."
+    },
+    {
+      "type": "file",
+      "ref": "django-checkout-failover-ha/environment/ha/controlplane/views.py",
+      "observation": "readyz always returns 200 with accepting_checkout True; ignores live readiness composition."
+    },
+    {
+      "type": "file",
+      "ref": "django-checkout-failover-ha/environment/ha/controlplane/replica.py",
+      "observation": "apply_standby uses order-id cutoff and still inserts original writable ha_fence_lease despite sanitize helpers."
+    },
+    {
+      "type": "file",
+      "ref": "django-checkout-failover-ha/environment/ha/controlplane/sessions.py",
+      "observation": "Sticky pins still mirrored into default cache and django_session instead of pins-only shared store."
+    },
+    {
+      "type": "file",
+      "ref": "django-checkout-failover-ha/environment/ha/controlplane/idempotency.py",
+      "observation": "claim_side_effect always creates a new SideEffect row; no get-or-create / unique attempt fence."
+    },
+    {
+      "type": "rule",
+      "ref": ".terminus/agents/QUALITY_AGENT_PROMPTS.md#Q8",
+      "observation": "Requires SIMULATION_NOT_EXECUTED when full solve+verifier cannot be run honestly; diagnostic priors only."
+    }
+  ],
+  "findings": [],
+  "missing_evidence": [
+    "Disposable isolated agent solve trajectory and post-solve verifier reward were not executed in this session."
+  ],
+  "change_scope": [],
+  "do_not_change": [
+    "Do not treat this as official GPT-5.5×5 trial evidence.",
+    "Do not set official difficulty tier from this diagnostic simulation."
+  ],
+  "next_gate": "Q8 Claude perspective then aggregate",
+  "role_output": {
+    "PERSPECTIVE": "GPT_PERSPECTIVE",
+    "EXECUTION": "SIMULATION_NOT_EXECUTED",
+    "DIAGNOSTIC_SUMMARY": "Cold GPT path greps oncall/error log, then patch-loops router write alias, fence demote, sync_standby lease sanitize, pins cache, readyz gates, and capture claim; stops when manage.py dump_failover and a few curl place/pay look healthy.",
+    "FIRST_DIAGNOSIS": "Split-brain writable leases plus router sending place to replica; sticky pins in django_session; /readyz aliased to healthz; capture not idempotent across boxes.",
+    "FILES_TOUCHED": [
+      "controlplane/router.py",
+      "controlplane/fencing.py",
+      "controlplane/replica.py",
+      "controlplane/sessions.py",
+      "controlplane/views.py",
+      "controlplane/idempotency.py",
+      "controlplane/management/commands/cutover.py"
+    ],
+    "SHORTCUTS_ATTEMPTED": [
+      "Force AZ_ID/settings writer without demoting standby lease",
+      "Make /readyz return 503 until dump fields look good without composing live gates",
+      "Point sticky reads at default cache only",
+      "Add unique on attempt_id without write_lsn / uncommitted capture guard",
+      "Hardcode failover-status.json accepting_checkout true after one sync"
+    ],
+    "FIRST_MEANINGFUL_DIVERGENCE": "Declare success after single-writer dump and place-on-default while pins still non-shared, accepting_checkout dump gates incomplete, or repeat_captures uncleared for incident attempts.",
+    "FINAL_VERIFIER_RESULT": "NOT_RUN",
+    "LIKELY_REASONING_WALLS": [
+      "Live /readyz vs dump accepting_checkout asymmetry",
+      "sync_standby must copy business rows without writable lease / full cutoff recovery",
+      "Sticky pin store classification (pins shared vs local/session)",
+      "Capture claim coupled to committed wal_lsn across both shop files"
+    ],
+    "ENVIRONMENT_TOOL_FRICTION": "Dual SQLite + Django management commands; need lab start, curl place/pay/reload, sync_standby/cutover/dump_failover iteration; no single unit-test feedback before verifier.",
+    "PREDICTED_OFFICIAL_SIGNAL": "USEFUL",
+    "SIMULATION_NOTE": "Diagnostic GPT/Codex strategy prior only; NOT official GPT-5.5×5 Harbor evidence."
+  }
+}

@@ -7,7 +7,7 @@ This is the durable operational checkpoint for one task. Keep it evidence-orient
 ## Identity
 
 - Task: `django-checkout-failover-ha`
-- Controller state: `PRE_LLMAJ`
+- Controller state: `MODEL_DIAGNOSTIC_AGGREGATE`
 - Working branch: `main`
 - Pull request: `none`
 - Current task commit: `d3a64a1bcab9579787745e952a6bf8132fc6ad67`
@@ -45,9 +45,9 @@ This is the durable operational checkpoint for one task. Keep it evidence-orient
 | Instruction Reviewer | PASS | review `.../d3a64a1b/...-instruction-d681620c9c.json` (HIGH; HUMAN_SIGNAL HIGH; AI_TEMPLATE LOW) |
 | Documentation Reviewer | PASS | retained from `b9ee4816` |
 | Comprehensive Reviewer | APPROVE | review `.../d3a64a1b/...-comprehensive-checklist-eac447e6a2.json` (HIGH); coverage 100% |
-| Q8 GPT Perspective Simulation | PENDING | diagnostic; packets next |
-| Q8 Claude Perspective Simulation | PENDING | diagnostic; packets next |
-| Q8 aggregate | PENDING | after both Q8 perspectives |
+| Q8 GPT Perspective Simulation | PASS (diagnostic) | `...-difficulty-sim-gpt-e37a9a5deb.json` (SIMULATION_NOT_EXECUTED; USEFUL) |
+| Q8 Claude Perspective Simulation | PASS (diagnostic) | `...-difficulty-sim-claude-0213591303.json` (SIMULATION_NOT_EXECUTED; USEFUL) |
+| Q8 aggregate | COMPLETE | `.terminus/reviews/django-checkout-failover-ha/d3a64a1b/q8-aggregate.md` |
 | Harbor LLMaJ | DEFERRED | user-deferred |
 | Difficulty trials | DEFERRED | user-deferred (GPT×5 + Claude×5) |
 | GPT-5.5 difficulty ×5 | DEFERRED | user-deferred |
@@ -70,11 +70,11 @@ This is the durable operational checkpoint for one task. Keep it evidence-orient
 
 ## Current blocker
 
-None for Pre-LLMaJ. Q8 diagnostics pending on `d3a64a1b`. Harbor/trials remain deferred.
+Harbor LLMaJ and official difficulty trials are user-deferred. Final Compliance / package cannot honestly close to `SUBMISSION_READY` without them.
 
 ## Next action
 
-Run Q8 GPT/Claude → Q8 aggregate. Final Compliance/package wait on Harbor/trials authorization.
+Await user authorization for Harbor LLMaJ + GPT×5/Claude×5, or an explicit package-only request. Control plane is at `MODEL_DIAGNOSTIC_AGGREGATE` on freeze `d3a64a1b`.
 
 ## Review evidence ledger
 
@@ -91,8 +91,8 @@ Run Q8 GPT/Claude → Q8 aggregate. Final Compliance/package wait on Harbor/tria
 | Instruction | django-checkout-failover-ha-03749a0e-instruction-5b7fcb0fa3 | 03749a0ed4dcf6f691bb6d1c9bd573d923d92403 | 2.2 | 2.2 | | | | `.terminus/reviews/django-checkout-failover-ha/03749a0e/django-checkout-failover-ha-03749a0e-instruction-5b7fcb0fa3.json` | PASS | HIGH | INST-01/02 closed (superseded by d3a64a1b) |
 | Documentation | django-checkout-failover-ha-b9ee4816-documentation-2e3067d67a | b9ee4816204f1a51857407e4a6f9bf9e38dd937a | 2.2 | 2.2 | | | | `.terminus/reviews/django-checkout-failover-ha/b9ee4816/django-checkout-failover-ha-b9ee4816-documentation-2e3067d67a.json` | PASS | HIGH | |
 | Comprehensive Reviewer | django-checkout-failover-ha-d3a64a1b-comprehensive-checklist-eac447e6a2 | d3a64a1bcab9579787745e952a6bf8132fc6ad67 | 2.2 | 2.2 | 1.0 | 7b4f0432fc31 | | `.terminus/reviews/django-checkout-failover-ha/d3a64a1b/django-checkout-failover-ha-d3a64a1b-comprehensive-checklist-eac447e6a2.json` | APPROVE | HIGH | coverage 100% |
-| Q8 GPT Perspective Simulation | django-checkout-failover-ha-d812d3f7-difficulty-sim-gpt-8788a1f29a | d812d3f739d4b987e3db6f2b6cf52298511ece3f | 2.2 | 2.2 | 1.0 | 988f3f143cf2c5659dabb6e0031d6404295cc3f63e39bb49af3595902d09cae8 | | `.terminus/reviews/django-checkout-failover-ha/d812d3f7/django-checkout-failover-ha-d812d3f7-difficulty-sim-gpt-8788a1f29a.json` | PASS | MEDIUM | SIMULATION_NOT_EXECUTED; USEFUL |
-| Q8 Claude Perspective Simulation | django-checkout-failover-ha-d812d3f7-difficulty-sim-claude-87b3953b40 | d812d3f739d4b987e3db6f2b6cf52298511ece3f | 2.2 | 2.2 | 1.0 | 988f3f143cf2c5659dabb6e0031d6404295cc3f63e39bb49af3595902d09cae8 | | `.terminus/reviews/django-checkout-failover-ha/d812d3f7/django-checkout-failover-ha-d812d3f7-difficulty-sim-claude-87b3953b40.json` | PASS | MEDIUM | SIMULATION_NOT_EXECUTED; USEFUL |
+| Q8 GPT Perspective Simulation | django-checkout-failover-ha-d3a64a1b-difficulty-sim-gpt-e37a9a5deb | d3a64a1bcab9579787745e952a6bf8132fc6ad67 | 2.2 | 2.2 | 1.0 | 988f3f143cf2c5659dabb6e0031d6404295cc3f63e39bb49af3595902d09cae8 | | `.terminus/reviews/django-checkout-failover-ha/d3a64a1b/django-checkout-failover-ha-d3a64a1b-difficulty-sim-gpt-e37a9a5deb.json` | PASS | MEDIUM | SIMULATION_NOT_EXECUTED; USEFUL |
+| Q8 Claude Perspective Simulation | django-checkout-failover-ha-d3a64a1b-difficulty-sim-claude-0213591303 | d3a64a1bcab9579787745e952a6bf8132fc6ad67 | 2.2 | 2.2 | 1.0 | 988f3f143cf2c5659dabb6e0031d6404295cc3f63e39bb49af3595902d09cae8 | | `.terminus/reviews/django-checkout-failover-ha/d3a64a1b/django-checkout-failover-ha-d3a64a1b-difficulty-sim-claude-0213591303.json` | PASS | MEDIUM | SIMULATION_NOT_EXECUTED; USEFUL |
 | Trial Analysis | | | | | | | | | DEFERRED | | |
 | Final Compliance | | | | | | | | | PENDING | | |
 | Final Human Quality | django-checkout-failover-ha-b9ee4816-human-quality-c942763c8f | b9ee4816204f1a51857407e4a6f9bf9e38dd937a | 2.2 | 2.2 | | | | `.terminus/reviews/django-checkout-failover-ha/b9ee4816/django-checkout-failover-ha-b9ee4816-human-quality-c942763c8f.json` | PASS | HIGH | advisory HQ-1/HQ-2 |
@@ -149,15 +149,15 @@ Run Q8 GPT/Claude → Q8 aggregate. Final Compliance/package wait on Harbor/tria
 ## Q8 model-perspective simulation checkpoint
 
 - Task commit: `d3a64a1bcab9579787745e952a6bf8132fc6ad67`
-- GPT perspective review ID/result: `none`
-- GPT execution: `PENDING`
-- GPT final verifier result: `none`
-- GPT predicted signal: `PENDING`
-- Claude perspective review ID/result: `none`
-- Claude execution: `PENDING`
-- Claude final verifier result: `none`
-- Claude predicted signal: `PENDING`
-- Cross-perspective comparison: `n/a`
+- GPT perspective review ID/result: `django-checkout-failover-ha-d3a64a1b-difficulty-sim-gpt-e37a9a5deb` / `.terminus/reviews/django-checkout-failover-ha/d3a64a1b/django-checkout-failover-ha-d3a64a1b-difficulty-sim-gpt-e37a9a5deb.json`
+- GPT execution: `SIMULATION_NOT_EXECUTED`
+- GPT final verifier result: `NOT_RUN`
+- GPT predicted signal: `USEFUL`
+- Claude perspective review ID/result: `django-checkout-failover-ha-d3a64a1b-difficulty-sim-claude-0213591303` / `.terminus/reviews/django-checkout-failover-ha/d3a64a1b/django-checkout-failover-ha-d3a64a1b-difficulty-sim-claude-0213591303.json`
+- Claude execution: `SIMULATION_NOT_EXECUTED`
+- Claude final verifier result: `NOT_RUN`
+- Claude predicted signal: `USEFUL`
+- Cross-perspective comparison: `both USEFUL; GPT under-fix after local green vs Claude over-scope; see d3a64a1b/q8-aggregate.md`
 
 ## Difficulty / solvability checkpoint
 
@@ -209,6 +209,7 @@ Run Q8 GPT/Claude → Q8 aggregate. Final Compliance/package wait on Harbor/tria
 
 Newest first; keep only meaningful state-changing attempts.
 
+- Q8 aggregate COMPLETE on `d3a64a1b` (both USEFUL, SIMULATION_NOT_EXECUTED): GPT [Q8 GPT Perspective Sim](4ab869e2-862b-488a-a961-b1b877cb1906), Claude [Q8 Claude Perspective Sim](c80d8bfd-125f-44b5-a98b-df77fcbb6438). Harbor/trials still deferred.
 - Comprehensive APPROVE via [Comprehensive Reviewer](f9361d0f-7c55-4d0c-955c-289171caa748) on `d3a64a1b` (100%); Pre-LLMaJ aggregate PASS. Q8 refresh next.
 - Q4 cold PASS via [Q4 Spec-Test Review](00f08941-af79-4e8f-b6c1-e9e5e74ea339) on `d3a64a1b` → Quality Interlock PASS (Q6 scope-preserved). Comprehensive packet generated.
 - Instruction PASS via [Instruction Reviewer](2b511b03-1d32-4ffe-8e73-76f95477898d) on freeze `d3a64a1b` → `...-instruction-d681620c9c.json` (HUMAN HIGH / AI_TEMPLATE LOW).
