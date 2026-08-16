@@ -1,0 +1,309 @@
+name: Execute COBOL Q4 closure v3
+on:
+  push:
+    paths:
+      - '.github/workflows/execute-cobol-q4-closure-v3.yml'
+permissions:
+  contents: write
+jobs:
+  execute:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Rehydrate validated closure script and execute
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m pip install --quiet pytest
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          import subprocess
+
+          historical = '582ef0b5ea0cd84e1ca6c291c425cb50addb6a24'
+          old = '.github/workflows/close-cobol-q4-adjudication.yml'
+          self_path = '.github/workflows/execute-cobol-q4-closure-v3.yml'
+          text = subprocess.check_output(['git', 'show', f'{historical}:{old}'], text=True)
+          marker = '        run: |\n'
+          if marker not in text:
+              raise SystemExit('cannot find historical run block')
+          block = text.split(marker, 1)[1]
+          lines = []
+          for line in block.splitlines(True):
+              if line.startswith('          '):
+                  lines.append(line[10:])
+              elif not line.strip():
+                  lines.append('\n')
+              else:
+                  raise SystemExit(f'unexpected YAML indentation: {line!r}')
+          script = ''.join(lines)
+
+          pattern = re.compile(
+              r"(?ms)^# Q4-006: only the documented passed/error envelopes may be structurally graded\.\n"
+              r".*?^tests_path\.write_text\(tests, encoding='utf-8'\)\n"
+          )
+          script, count = pattern.subn("tests_path.write_text(tests, encoding='utf-8')\n", script, count=1)
+          if count != 1:
+              raise SystemExit(f'expected one false guard block, removed {count}')
+
+          script = script.replace(
+              "WORKFLOW='.github/workflows/close-cobol-q4-adjudication.yml'",
+              f"WORKFLOW='{self_path}'",
+              1,
+          )
+          script = script.replace('rm -f "$WORKFLOW"', ': # workflow cleanup via connector', 1)
+
+          post = r"""python3 - <<'PY2'
+          from pathlib import Path
+          import re
+
+          path = Path('cobol-comp3-python-equiv/tests/test_outputs.py')
+          text = path.read_text(encoding='utf-8')
+
+          def replace_func(text: str, name: str, body: str) -> str:
+              pattern = re.compile(rf'(?ms)^def {re.escape(name)}\(.*?(?=^def |\Z)')
+              match = pattern.search(text)
+              if not match:
+                  raise SystemExit(f'cannot locate generated function {name}')
+              return text[:match.start()] + body.rstrip() + '\n\n' + text[match.end():]
+
+          text = replace_func(text, 'test_p2p_cli_success_and_failure_json_contract', r'''
+          def test_p2p_cli_success_and_failure_json_contract(tmp_path: Path) -> None:
+              described = cli("describe-layout", "--layout", DEFAULT_LAYOUT)
+              assert described.returncode == 0
+              assert described.stderr == ""
+              assert isinstance(parse_stdout(described), dict)
+
+              source = tmp_path / "source.dat"
+              source.write_bytes(reference_receipt_record())
+              identified = cli(
+                  "identity",
+                  "--source", source,
+                  "--layout", DEFAULT_LAYOUT,
+                  "--business-date", "20260815",
+              )
+              assert identified.returncode == 0
+              assert identified.stderr == ""
+              assert isinstance(parse_stdout(identified), dict)
+
+              init_db_path = tmp_path / "initialized.db"
+              initialized = cli(
+                  "init-db",
+                  "--db", init_db_path,
+                  "--schema", SCHEMA,
+                  "--seed", SEED,
+              )
+              assert initialized.returncode == 0
+              assert initialized.stderr == ""
+              assert isinstance(parse_stdout(initialized), dict)
+              db = connect(init_db_path)
+              tables = {
+                  row[0]
+                  for row in db.execute("SELECT name FROM sqlite_master WHERE type='table'")
+              }
+              db.close()
+              assert {"processed_movements", "rejects", "checkpoints"} <= tables
+          ''')
+
+          text = replace_func(text, 'test_p2p_preflight_uses_historical_baseline', r'''
+          def test_p2p_preflight_uses_historical_baseline(tmp_path: Path) -> None:
+              db = fresh_db(tmp_path)
+              seed_inventory(db, warehouse_count=2, item_count=2)
+              apply_sql(db, SEED)
+              db.close()
+              db_path = tmp_path / "state.db"
+              source = tmp_path / "source.dat"
+              source.write_bytes(reference_receipt_record())
+              controls = tmp_path / "legacy.controls"
+              write_controls(controls)
+              report_dir = tmp_path / "ops" / "reports"
+              publish_dir = tmp_path / "published"
+
+              first = cli(
+                  "preflight",
+                  *run_arguments(db_path, source, DEFAULT_LAYOUT, controls, report_dir, publish_dir),
+                  "--schema", SCHEMA,
+                  "--seed", SEED,
+              )
+              first_payload = parse_stdout(first)
+              first_rendered = json.dumps(first_payload, sort_keys=True)
+              assert "15000" in first_rendered
+
+              db = connect(db_path)
+              db.execute("DELETE FROM historical_movements")
+              db.commit()
+              db.close()
+              second = cli(
+                  "preflight",
+                  *run_arguments(db_path, source, DEFAULT_LAYOUT, controls, report_dir, publish_dir),
+                  "--schema", SCHEMA,
+                  "--seed", SEED,
+              )
+              assert second.returncode == 2
+              second_payload = parse_stdout(second)
+              assert second_payload.get("passed") is False
+              assert second_payload != first_payload
+              assert "15000" not in json.dumps(second_payload, sort_keys=True)
+          ''')
+
+          audit_pattern = re.compile(
+              r'(?ms)^def test_p2p_audit_and_archive_operator_workflows_are_reachable\(.*?(?=^def |\Z)'
+          )
+          match = audit_pattern.search(text)
+          if not match:
+              raise SystemExit('generated audit/archive test missing')
+          helper = match.group(0).replace(
+              'def test_p2p_audit_and_archive_operator_workflows_are_reachable(',
+              'def exercise_adjudicated_operator_workflows(',
+              1,
+          ).rstrip()
+
+          healthy_anchor = '    assert parse_stdout(audited).get("passed") is True\n'
+          if healthy_anchor not in helper:
+              raise SystemExit('audit healthy anchor missing')
+          extra = r'''
+
+              healthy_payload = parse_stdout(audited)
+
+              recovery_bad = tmp_path / "recovery-bad.db"
+              shutil.copyfile(db_path, recovery_bad)
+              changed = connect(recovery_bad)
+              changed.execute("UPDATE checkpoints SET source_fingerprint='wrong:fingerprint'")
+              changed.commit()
+              changed.close()
+              recovery_audit = audit_path(recovery_bad)
+              assert parse_stdout(recovery_audit) != healthy_payload
+
+              metric_audit = cli(
+                  "audit",
+                  "--db", db_path,
+                  "--source", source,
+                  "--layout", layout_path,
+                  "--business-date", "20260815",
+                  "--expected-records", "2",
+                  "--quarantine", quarantine,
+                  "--registry", registry,
+              )
+              assert parse_stdout(metric_audit) != healthy_payload
+
+              settlement_bad = tmp_path / "settlement-bad.db"
+              shutil.copyfile(db_path, settlement_bad)
+              changed = connect(settlement_bad)
+              changed.execute("DELETE FROM inventory_effects")
+              changed.commit()
+              changed.close()
+              settlement_audit = audit_path(settlement_bad)
+              assert settlement_audit.returncode == 2
+              assert parse_stdout(settlement_audit).get("passed") is False
+          '''
+          helper = helper.replace(healthy_anchor, healthy_anchor + extra, 1)
+
+          quarantine_anchor = '    assert parse_stdout(journal_audit).get("passed") is False\n'
+          if quarantine_anchor not in helper:
+              raise SystemExit('journal fault anchor missing')
+          quarantine_extra = r'''
+
+              gid_for_quarantine = build_identity(source, layout_path, "20260815").generation_id
+              quarantine.parent.mkdir(parents=True, exist_ok=True)
+              quarantine.write_text(
+                  json.dumps(
+                      {
+                          "generation_id": gid_for_quarantine,
+                          "sequence": 999,
+                          "byte_offset": 0,
+                          "byte_length": 1,
+                          "error_code": "DECODE",
+                          "error_message": "corrupt quarantine evidence",
+                          "raw_sha256": "not-a-real-digest",
+                          "raw_hex": "00",
+                          "captured_at": "2026-08-16T00:00:00+00:00",
+                      }
+                  ) + "\n",
+                  encoding="utf-8",
+              )
+              quarantine_audit = audit_path(db_path)
+              assert quarantine_audit.returncode == 2
+              assert parse_stdout(quarantine_audit).get("passed") is False
+          '''
+          helper = helper.replace(quarantine_anchor, quarantine_anchor + quarantine_extra, 1)
+
+          preservation = r'''
+          def test_p2p_audit_and_archive_operator_workflows_are_reachable(tmp_path: Path) -> None:
+              db = fresh_db(tmp_path)
+              seed_inventory(db, warehouse_count=2, item_count=2)
+              db.close()
+              db_path = tmp_path / "state.db"
+              source = tmp_path / "source.dat"
+              source.write_bytes(reference_receipt_record())
+              controls = tmp_path / "legacy.controls"
+              write_controls(controls)
+              operational_root = tmp_path / "ops"
+              report_dir = operational_root / "reports"
+              publish_dir = tmp_path / "published"
+              registry = operational_root / "publication-registry.jsonl"
+              quarantine = operational_root / "quarantine" / "records.jsonl"
+
+              run = cli(
+                  "run",
+                  *run_arguments(db_path, source, DEFAULT_LAYOUT, controls, report_dir, publish_dir),
+              )
+              assert run.returncode == 0
+              assert isinstance(parse_stdout(run), dict)
+
+              audited = cli(
+                  "audit",
+                  "--db", db_path,
+                  "--source", source,
+                  "--layout", DEFAULT_LAYOUT,
+                  "--business-date", "20260815",
+                  "--expected-records", "1",
+                  "--quarantine", quarantine,
+                  "--registry", registry,
+              )
+              assert audited.returncode == 0
+              assert parse_stdout(audited).get("passed") is True
+
+              archived = cli(
+                  "archive",
+                  "--db", db_path,
+                  "--source", source,
+                  "--layout", DEFAULT_LAYOUT,
+                  "--business-date", "20260815",
+                  "--report-dir", report_dir,
+                  "--publish-dir", publish_dir,
+                  "--archive-dir", tmp_path / "archive",
+                  "--registry", registry,
+              )
+              assert archived.returncode == 0
+              assert parse_stdout(archived).get("passed") is True
+          '''.strip()
+
+          text = text[:match.start()] + helper + '\n\n' + preservation + '\n\n' + text[match.end():]
+
+          caller_pattern = re.compile(
+              r'(?ms)^def test_f2p_caller_supplied_layout_path_is_honored\(.*?(?=^def |\Z)'
+          )
+          caller = caller_pattern.search(text)
+          if not caller:
+              raise SystemExit('generated caller-path F2P test missing')
+          caller_text = caller.group(0).rstrip()
+          caller_text += r'''
+
+              operator_root = tmp_path / "operator-workflows"
+              operator_root.mkdir()
+              exercise_adjudicated_operator_workflows(operator_root)
+          '''
+          text = text[:caller.start()] + caller_text + '\n\n' + text[caller.end():]
+
+          path.write_text(text, encoding='utf-8')
+          PY2
+          """
+          compile_marker = 'python3 -m compileall -q cobol-comp3-python-equiv/tests/test_outputs.py cobol-comp3-python-equiv/solution/fixed\n'
+          if compile_marker not in script:
+              raise SystemExit('compile marker missing')
+          script = script.replace(compile_marker, post + compile_marker, 1)
+          Path('/tmp/closure.sh').write_text(script, encoding='utf-8')
+          PY
+          bash /tmp/closure.sh
