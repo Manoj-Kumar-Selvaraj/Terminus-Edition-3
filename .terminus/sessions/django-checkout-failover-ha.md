@@ -10,7 +10,7 @@ This is the durable operational checkpoint for one task. Keep it evidence-orient
 - Controller state: `FROZEN_CANDIDATE`
 - Working branch: `main`
 - Pull request: `none`
-- Current task commit: `8dc0203f55e6112a093bfc680c831f6f5b357f9b`
+- Current task commit: `f9022bd10e98152efcc245a1a0a738bf29f77a80`
 - Agent-system policy: `2.4`
 - Specialist prompt policy: `2.2`
 - Specialist protocol policy: `2.2`
@@ -26,15 +26,15 @@ This is the durable operational checkpoint for one task. Keep it evidence-orient
 | Q2 Verifier Coverage Repair | DONE | phantoms dropped/rewritten; /readyz pins+repeats; accepting_checkout conjuncts added (42 tests) |
 | Q3 Spec Ambiguity Repair | DONE | live `/readyz` vs dump `accepting_checkout` authority split in runbook + readiness_policy |
 | Q7 Task Format Enforcer | PENDING | layout present; `tests/test_ha.py` not `test_outputs.py`; no CTRF flag |
-| Creator Complexity Gate | PASS | reachable Python non-blank LOC excl. `generate_seed.py` ≈ 3396 after desk_state wiring |
+| Creator Complexity Gate | PASS | reachable Python non-blank LOC excl. `generate_seed.py` ≈ 3646 after heal_plan |
 | Preflight/static | PENDING | |
 | Ruff verifier | PENDING | |
 | STB auth/AI credentials | PENDING | |
-| Oracle = 1 | PASS | Harbor job `jobs/2026-08-16__16-37-20` trial `django-checkout-failover-ha__qv54dSF` reward.txt=`1`; 42/42 pytest |
-| NOP = 0 | PASS | Harbor job `jobs/2026-08-16__16-38-42` trial `django-checkout-failover-ha__sMzT3Gg` reward.txt=`0` |
-| Q4 Spec-Test Contract Reviewer | REVISE | review `.terminus/reviews/django-checkout-failover-ha/8dc0203f/django-checkout-failover-ha-8dc0203f-spec-test-contract-8ff470e1b2.json` (HIGH); blocking Q4-F1..F4 |
-| Q6 Production Logic Auditor | REVISE | review `.terminus/reviews/django-checkout-failover-ha/8dc0203f/django-checkout-failover-ha-8dc0203f-production-logic-03ac8bd7ce.json` (HIGH); PADDING_RISK HIGH; honest LOC ~2860 |
-| Quality Interlock | REVISE | Q4 REVISE + Q6 REVISE on freeze `8dc0203f` |
+| Oracle = 1 | PASS | Harbor job `jobs/2026-08-16__17-09-55` trial `django-checkout-failover-ha__v78pfFk` reward.txt=`1`; 44/44 pytest |
+| NOP = 0 | PASS | Harbor job `jobs/2026-08-16__17-11-37` trial `django-checkout-failover-ha__DxQFQcm` reward.txt=`0` |
+| Q4 Spec-Test Contract Reviewer | PENDING | packet `.terminus/reviews/django-checkout-failover-ha/f9022bd1/django-checkout-failover-ha-f9022bd1-spec-test-contract-c6e2481129.packet.json` |
+| Q6 Production Logic Auditor | PENDING | packet `.terminus/reviews/django-checkout-failover-ha/f9022bd1/django-checkout-failover-ha-f9022bd1-production-logic-b02c7d085b.packet.json` |
+| Quality Interlock | PENDING | blocked until cold Q4+Q6 PASS on freeze `f9022bd1` |
 | Pre-LLMaJ specialist panel | PENDING | |
 | Task Architect | PENDING | |
 | Verifier Engineer | PENDING | |
@@ -69,7 +69,7 @@ This is the durable operational checkpoint for one task. Keep it evidence-orient
 
 ## Current blocker
 
-Quality Interlock blocked on freeze `8dc0203f`: **Q4 REVISE** (F1 idle-replica may/must; F2 django_session pin ban untested; F3 pins-unreachable monkeypatch; F4 accepting_checkout never true) and **Q6 REVISE** (HIGH padding; ~2860 substantive LOC).
+None for deterministic gates. Awaiting Auto/inherit cold Q4 + Q6 on freeze `f9022bd1`.
 
 ## Root-cause classification
 
@@ -79,7 +79,7 @@ Quality Interlock blocked on freeze `8dc0203f`: **Q4 REVISE** (F1 idle-replica m
 
 ## Next action
 
-One consolidated repair on `8dc0203f`: (1) Q4-F1..F4 — soften or document idle-replica must, assert no django_session pins, break pins via public CACHES (no monkeypatch), add healed accepting_checkout=true dump case; (2) Q6 — remove discard-touch/dead-helper padding and add honest ≥3000 participating LOC; (3) re-oracle/NOP; (4) re-freeze and cold Q4+Q6.
+Await Auto-mode cold Q4/Q6 for freeze `f9022bd1`. Subagents must use `model: inherit` only. Do not self-certify Quality Interlock.
 
 ## Review evidence ledger
 
