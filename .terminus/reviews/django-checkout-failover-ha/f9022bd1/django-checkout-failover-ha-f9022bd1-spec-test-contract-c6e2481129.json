@@ -1,0 +1,403 @@
+{
+  "schema_version": "3.0",
+  "role": "Spec-Test Contract Reviewer",
+  "review_id": "django-checkout-failover-ha-f9022bd1-spec-test-contract-c6e2481129",
+  "task": "django-checkout-failover-ha",
+  "task_commit": "f9022bd10e98152efcc245a1a0a738bf29f77a80",
+  "control_plane_commit": "f9022bd10e98152efcc245a1a0a738bf29f77a80",
+  "protocol_policy_version": "2.2",
+  "prompt_policy_version": "2.2",
+  "role_policy_version": "1.1",
+  "role_contract_hash": "c860dfe8b8ed0a04c729e4d6a828741b206b7067a780863ec7b22ee09d02c5a0",
+  "context_packet": ".terminus/reviews/django-checkout-failover-ha/f9022bd1/django-checkout-failover-ha-f9022bd1-spec-test-contract-c6e2481129.packet.json",
+  "verdict": "REVISE",
+  "confidence": "HIGH",
+  "evidence_status": "SUFFICIENT",
+  "summary": "Cold Q4 bidirectional walk fails Quality Interlock. Writer fencing, standby growth, pins-vs-session, capture uniqueness, sync_standby lease/incident copy, cutover epoch, dump accepting_checkout conjunction, and most live /readyz failure modes are discoverable from instruction.md plus runbook.md and are meaningfully tested. Material gaps remain: live /readyz has only negative asserts (always-503 can pass), pay-path write/sticky behavior is weakly covered relative to the stated write and read-your-writes contract, LSN refuse does not assert a non-effect, and /readyz status checks use !=200 instead of the documented 503.",
+  "evidence": [
+    {
+      "type": "file",
+      "ref": "django-checkout-failover-ha/instruction.md",
+      "observation": "Two paragraphs: incident symptoms plus absolute paths to oncall/log/shop files/pins/runbook; preserve manage.py and checkout/health/ready routes; writer-only checkout writes; sticky after write; pins not in django_session; one capture per attempt_id; reject empty attempt_id; refuse pay/capture when order write_lsn ahead of writer wal_lsn; /readyz 503 under double-writable, seq gap, old writer allowed, pins unreachable, or repeat captures; write /app/ha/out/failover-status.json per runbook object."
+    },
+    {
+      "type": "file",
+      "ref": "django-checkout-failover-ha/environment/ha/docs/runbook.md",
+      "observation": "Delegated operator contract: manage.py sync_standby/cutover/dump_failover; default/replica DATABASES; pins key sticky:shopper:<id>; fence checkout-primary epoch forward and demoted writable=0; sticky_seconds and max_lag_lsn; blank attempt_id; capture/pay LSN gate; /healthz vs live /readyz gates; dump accepting_checkout stricter than live /readyz; exact failover-status.json field set."
+    },
+    {
+      "type": "file",
+      "ref": "django-checkout-failover-ha/environment/ha/notes/oncall.md",
+      "observation": "Referenced pager evidence for AZ-B writer, replica POSTs, OPEN confirmation, dual captures, half-copied writable lease; asks not to rebuild schema or rename checkout URLs; /readyz must mean safe-to-take-card."
+    },
+    {
+      "type": "file",
+      "ref": "django-checkout-failover-ha/environment/ha/logs/captured/shopdesk-error.log",
+      "observation": "Supports current-state claims: az-a lease still writable, place on replica, confirmation OPEN on replica, sticky miss in django_session, att-inc-20001/20007/20012 dual captures, sync cutoff and writable fence copy, /readyz treated like /healthz."
+    },
+    {
+      "type": "test",
+      "ref": "django-checkout-failover-ha/tests/test_ha.py",
+      "observation": "44 pytest cases: F2P for writer placement, standby non-growth, reservation/writer, confirmation/pin/lag/sync/cutover/idempotency/LSN/readyz-negatives/dump gates/reconnect; P2P for healthz, runbook path text, manage/routes, schema presence, blank attempt via place_order(), max_lag_lsn naming. No case asserts Client.get('/readyz') == 200 when gates are healthy."
+    },
+    {
+      "type": "file",
+      "ref": "django-checkout-failover-ha/environment/ha/config/ha.json",
+      "observation": "Public config pins max_lag_lsn=25, sticky_seconds=5, incident_min_order_id=19980; verifier hardcodes 25 and id>=19980 consistently with this contract."
+    },
+    {
+      "type": "file",
+      "ref": "django-checkout-failover-ha/environment/ha/checkout/attempt_guard.py",
+      "observation": "Inherited confirmation_payload already exposes alias/order_ref/status; alias asserts observe the shipped confirmation interface rather than a hidden private field."
+    },
+    {
+      "type": "file",
+      "ref": ".terminus/designs/django-checkout-failover-ha-test-map.json",
+      "observation": "Classification-only map; stale relative to current test names (e.g. missing newer dump/readyz cases). Used only to label F2P/P2P ownership, not as a requirement source."
+    },
+    {
+      "type": "rule",
+      "ref": ".terminus/agents/QUALITY_AGENT_PROMPTS.md#Q4",
+      "observation": "Material phantom tests, untested requirements, grading-relevant ambiguity, or vacuous coverage require REVISE; PASS needs exhaustive matrices and empty BLOCKING_FINDING_IDS."
+    },
+    {
+      "type": "rule",
+      "ref": ".terminus/agents/INSTRUCTION_POLICY.md",
+      "observation": "Instruction owns the engineering ask; runbook may hold schema/operator protocol; every graded behavior must be discoverable; docs must not become a second prompt."
+    }
+  ],
+  "findings": [
+    {
+      "id": "Q4-001",
+      "severity": "HIGH",
+      "status": "OBSERVED",
+      "criterion": "Live /readyz success path must be meaningfully asserted when documented gates hold.",
+      "evidence_refs": [
+        "django-checkout-failover-ha/instruction.md",
+        "django-checkout-failover-ha/environment/ha/docs/runbook.md",
+        "django-checkout-failover-ha/tests/test_ha.py::test_f2p_readyz_503_when_two_writers",
+        "django-checkout-failover-ha/tests/test_ha.py::test_f2p_readyz_503_when_seq_gap_unsafe",
+        "django-checkout-failover-ha/tests/test_ha.py::test_f2p_readyz_503_when_pins_unreachable",
+        "django-checkout-failover-ha/tests/test_ha.py::test_f2p_readyz_503_when_repeat_captures",
+        "django-checkout-failover-ha/tests/test_ha.py::test_f2p_failover_status_accepts_when_healed"
+      ],
+      "why_it_matters": "Runbook defines live /readyz as the traffic gate that returns 503 unless one writable writer, seq gap in budget, pins reachable, and repeat_captures==0. Every live /readyz F2P only asserts status_code != 200. Dump accepting_checkout==true is tested separately and does not exercise the HTTP view. An implementation that always returns 503 for /readyz can satisfy the suite while never admitting traffic.",
+      "minimal_remediation": "Q2: after a healed lab state (same conjunction as dump accept, or the live subset), assert GET /readyz returns 503-cleared success (status 200 and accepting_checkout true). Keep existing negative cases.",
+      "regression_risk": "Low if the positive case reuses the existing healed setup without tightening dump-only gates into live /readyz."
+    },
+    {
+      "id": "Q4-002",
+      "severity": "HIGH",
+      "status": "OBSERVED",
+      "criterion": "Pay/capture writes and post-write sticky reads need behavioral coverage matching the writer-only and read-your-writes requirements.",
+      "evidence_refs": [
+        "django-checkout-failover-ha/instruction.md",
+        "django-checkout-failover-ha/tests/test_ha.py::test_f2p_pay_skips_other_az",
+        "django-checkout-failover-ha/tests/test_ha.py::test_f2p_confirmation_after_place_is_fresh",
+        "django-checkout-failover-ha/tests/test_ha.py::test_f2p_pay_twice_one_capture",
+        "django-checkout-failover-ha/environment/ha/checkout/services.py"
+      ],
+      "why_it_matters": "Instruction requires checkout writes only on the fenced writer and that a shopper who just wrote is not served a lagged standby row; the incident text specifically cites pay-then-reload still OPEN. test_f2p_pay_skips_other_az only forbids replica-only PAID, so a no-op pay passes. Sticky/confirmation freshness is asserted after place, not after pay. Capture uniqueness on pay is tested, but not that pay mutates the writer order or that confirmation afterward reflects PAID from the writer.",
+      "minimal_remediation": "Q2: assert successful writer pay marks PAID on default (not only-replica), and confirmation immediately after pay returns the paid order from the writer path (alias/default or equivalent observable freshness).",
+      "regression_risk": "Low; mirrors existing place confirmation and writer-placement patterns."
+    },
+    {
+      "id": "Q4-003",
+      "severity": "MEDIUM",
+      "status": "OBSERVED",
+      "criterion": "Pay/capture LSN refusal must assert non-effect, not only an error status.",
+      "evidence_refs": [
+        "django-checkout-failover-ha/instruction.md",
+        "django-checkout-failover-ha/environment/ha/docs/runbook.md",
+        "django-checkout-failover-ha/tests/test_ha.py::test_f2p_capture_blocked_if_seq_not_committed"
+      ],
+      "why_it_matters": "Contract says pay/capture must refuse and must not emit capture effects while order write_lsn is ahead of writer wal_lsn. The test only asserts HTTP status >= 400. A handler that returns 4xx yet still inserts a capture SideEffect would pass.",
+      "minimal_remediation": "Q2: after the blocked pay, assert SideEffect capture count for that attempt_id is unchanged (typically zero for the seeded order path used).",
+      "regression_risk": "Low."
+    },
+    {
+      "id": "Q4-004",
+      "severity": "MEDIUM",
+      "status": "OBSERVED",
+      "criterion": "Documented /readyz failure status is 503; verifier must not accept arbitrary non-200 substitutes where that matters.",
+      "evidence_refs": [
+        "django-checkout-failover-ha/instruction.md",
+        "django-checkout-failover-ha/environment/ha/docs/runbook.md",
+        "django-checkout-failover-ha/tests/test_ha.py::test_f2p_readyz_503_when_two_writers",
+        "django-checkout-failover-ha/tests/test_ha.py::test_f2p_healthz_200_while_readyz_fails",
+        "django-checkout-failover-ha/environment/ha/controlplane/readiness_policy.py"
+      ],
+      "why_it_matters": "Instruction and runbook require 503 while unsafe. Negative tests only check status_code != 200. test_f2p_healthz_200_while_readyz_fails also allows ready.status_code == 200 with accepting_checkout false, which contradicts the traffic-gate framing if live /readyz stays 200 while refusing. Incorrect 409/500 or 200-with-false can still satisfy current asserts.",
+      "minimal_remediation": "Q2: assert status_code == 503 on unsafe /readyz cases; require healthz 200 with /readyz != 200 (or 503) under a forced unsafe fixture, without accepting 200+false as readiness failure.",
+      "regression_risk": "Low if oracle already uses ready_http_status → 503."
+    },
+    {
+      "id": "Q4-005",
+      "severity": "LOW",
+      "status": "OBSERVED",
+      "criterion": "Empty attempt_id rejection is graded via place_order() service, not the public /api/checkout/place route named in the instruction.",
+      "evidence_refs": [
+        "django-checkout-failover-ha/instruction.md",
+        "django-checkout-failover-ha/tests/test_ha.py::test_p2p_blank_attempt_rejected",
+        "django-checkout-failover-ha/environment/ha/checkout/views.py"
+      ],
+      "why_it_matters": "View currently delegates to the service, so coverage is mostly transitive. A divergent HTTP path that bypasses validate_attempt_id would not be caught. Advisory unless the HTTP surface is treated as the sole graded place interface.",
+      "minimal_remediation": "Optional Q2: POST /api/checkout/place with blank attempt_id and expect 4xx.",
+      "regression_risk": "Low."
+    },
+    {
+      "id": "Q4-006",
+      "severity": "LOW",
+      "status": "OBSERVED",
+      "criterion": "Instruction lists 'old writer is still allowed' as a distinct /readyz failure mode beyond runbook live gates.",
+      "evidence_refs": [
+        "django-checkout-failover-ha/instruction.md",
+        "django-checkout-failover-ha/environment/ha/docs/runbook.md",
+        "django-checkout-failover-ha/tests/test_ha.py::test_f2p_old_az_cannot_write_after_cutover",
+        "django-checkout-failover-ha/tests/test_ha.py::test_f2p_readyz_503_when_two_writers"
+      ],
+      "why_it_matters": "Runbook live /readyz gates are writer-count, seq gap, pins reachability, and repeat_captures. 'Old writer still allowed' is tested as post-cutover write denial and as double-writable /readyz, not as a separate readiness probe. Wording can confuse solvers without changing current graded behavior.",
+      "minimal_remediation": "Q3: align instruction phrasing with runbook (fold into exactly-one writable writer) or add an explicit graded /readyz case if a distinct gate is intended.",
+      "regression_risk": "Low if clarified without adding hidden gates."
+    },
+    {
+      "id": "Q4-007",
+      "severity": "LOW",
+      "status": "OBSERVED",
+      "criterion": "test_p2p_zero_gap_budget_hides_tiny_lag does not exercise zero-budget lag hiding behavior.",
+      "evidence_refs": [
+        "django-checkout-failover-ha/tests/test_ha.py::test_p2p_zero_gap_budget_hides_tiny_lag",
+        "django-checkout-failover-ha/environment/ha/docs/runbook.md",
+        "django-checkout-failover-ha/environment/ha/config/ha.json"
+      ],
+      "why_it_matters": "Name/docstring suggest a metamorphic max_lag_lsn=0 check, but the body only asserts config/runbook mention max_lag_lsn. Lag gating itself is covered elsewhere; this case is vacuous as named.",
+      "minimal_remediation": "Q2: either rename to a config-presence P2P or mutate max_lag_lsn to 0 and assert standby stays unreadable for a tiny positive gap.",
+      "regression_risk": "Low."
+    },
+    {
+      "id": "Q4-008",
+      "severity": "LOW",
+      "status": "OBSERVED",
+      "criterion": "sticky_seconds TTL expiry after the configured window is untested.",
+      "evidence_refs": [
+        "django-checkout-failover-ha/environment/ha/docs/runbook.md",
+        "django-checkout-failover-ha/environment/ha/config/ha.json",
+        "django-checkout-failover-ha/tests/test_ha.py::test_f2p_confirmation_after_place_is_fresh"
+      ],
+      "why_it_matters": "Runbook ties post-write sticky reads to sticky_seconds. Tests prove sticky presence and session independence, not expiry. Advisory; immediate post-write freshness is the material instruction requirement and is tested for place.",
+      "minimal_remediation": "Optional Q2: advance time/TTL and assert idle/replica eligibility returns after expiry when seq gap allows.",
+      "regression_risk": "Medium if wall-clock based; prefer controlled TTL injection."
+    }
+  ],
+  "missing_evidence": [],
+  "change_scope": [
+    "django-checkout-failover-ha/tests/test_ha.py (positive live /readyz; pay writer+sticky confirmation; LSN non-effect; 503 asserts)",
+    "django-checkout-failover-ha/instruction.md (only if Q3 aligns 'old writer still allowed' with runbook live gates)"
+  ],
+  "do_not_change": [
+    "Runbook failover-status.json field set and dump accepting_checkout conjunction already covered by healed/negative dump tests",
+    "Writer-only place/standby non-growth, pins-vs-django_session, sync_standby lease/incident copy, cutover epoch, capture uniqueness families that already align",
+    "Inherited confirmation alias field in attempt_guard confirmation_payload (observable shipped interface, not a phantom invention)",
+    "P2P preservation of manage.py, checkout/health/ready routes, and checkout_order schema presence"
+  ],
+  "next_gate": "Q2 Verifier Coverage Repairer (primary); Q3 only if instruction/runbook 'old writer' /readyz wording is intentionally unified; then re-run Q4",
+  "role_output": {
+    "REQUIREMENT_TEST_MATRIX": [
+      {
+        "id": "R_PRESERVE_SURFACE",
+        "requirement": "Leave manage.py and existing /api/checkout/*, /healthz, /readyz routes; do not wipe checkout schema/history",
+        "tests": [
+          "test_p2p_manage_and_routes_present",
+          "test_p2p_order_schema_preserved",
+          "test_p2p_healthz_ok_when_desk_closed"
+        ],
+        "coverage": "complete"
+      },
+      {
+        "id": "R_WRITE_FENCE",
+        "requirement": "Checkout writes hit only the fenced writer; AZ leftover affinity must not insert/grow standby orders; reservations follow writer",
+        "tests": [
+          "test_f2p_place_lands_on_writer",
+          "test_f2p_az_b_does_not_insert_standby_order",
+          "test_f2p_checkout_api_does_not_grow_standby",
+          "test_f2p_reservation_stays_on_writer",
+          "test_f2p_pay_skips_other_az",
+          "test_f2p_old_az_cannot_write_after_cutover"
+        ],
+        "coverage": "partial"
+      },
+      {
+        "id": "R_STICKY_READ",
+        "requirement": "Shopper who just wrote must not be served a lagged standby row; sticky via pins for sticky_seconds; idle reads follow seq eligibility",
+        "tests": [
+          "test_f2p_confirmation_after_place_is_fresh",
+          "test_f2p_idle_read_follows_seq_gap",
+          "test_f2p_pin_survives_default_cache_clear",
+          "test_f2p_pin_survives_session_table_wipe",
+          "test_f2p_pin_alias_is_shared",
+          "test_f2p_pin_survives_default_db_remap"
+        ],
+        "coverage": "partial"
+      },
+      {
+        "id": "R_PIN_NOT_SESSION",
+        "requirement": "Sticky keys must not live in django_session on either shop file; use pins alias key sticky:shopper:<id>",
+        "tests": [
+          "test_f2p_pin_not_stored_in_django_session",
+          "test_f2p_pin_alias_is_shared",
+          "test_f2p_pin_survives_session_table_wipe"
+        ],
+        "coverage": "complete"
+      },
+      {
+        "id": "R_LAG_GATE",
+        "requirement": "Standby readable only when primary.wal_lsn - replica.applied_lsn <= max_lag_lsn; seq_gap follows watermarks",
+        "tests": [
+          "test_f2p_standby_unreadable_while_seq_gap_high",
+          "test_f2p_seq_gap_tracks_watermark_not_counts",
+          "test_f2p_idle_read_follows_seq_gap",
+          "test_p2p_zero_gap_budget_hides_tiny_lag"
+        ],
+        "coverage": "partial"
+      },
+      {
+        "id": "R_SYNC_STANDBY",
+        "requirement": "sync_standby advances standby seq/business rows including incident-window orders; must not leave writable fence on standby",
+        "tests": [
+          "test_f2p_sync_standby_moves_seq",
+          "test_f2p_sync_standby_does_not_copy_writer_lease",
+          "test_f2p_sync_standby_includes_late_orders"
+        ],
+        "coverage": "complete"
+      },
+      {
+        "id": "R_CUTOVER_EPOCH",
+        "requirement": "cutover promotes node, bumps epoch forward, single writable writer, demotes previous owner",
+        "tests": [
+          "test_f2p_only_one_writer_after_cutover",
+          "test_f2p_cutover_bumps_epoch",
+          "test_f2p_cutover_drops_previous_owner",
+          "test_f2p_old_az_cannot_write_after_cutover",
+          "test_f2p_epoch_and_pin_survive_reconnect"
+        ],
+        "coverage": "complete"
+      },
+      {
+        "id": "R_CAPTURE_IDEMPOTENCY",
+        "requirement": "One attempt_id → one capture effect across retry and dual-box replay; empty attempt_id rejected on place",
+        "tests": [
+          "test_f2p_same_attempt_one_capture_row",
+          "test_f2p_second_worker_does_not_add_capture",
+          "test_f2p_pay_twice_one_capture",
+          "test_p2p_blank_attempt_rejected"
+        ],
+        "coverage": "partial"
+      },
+      {
+        "id": "R_LSN_REFUSE",
+        "requirement": "Pay/capture refuse when order write_lsn ahead of writer wal_lsn (no capture effect)",
+        "tests": ["test_f2p_capture_blocked_if_seq_not_committed"],
+        "coverage": "partial"
+      },
+      {
+        "id": "R_READYZ_LIVE",
+        "requirement": "/readyz is traffic gate distinct from /healthz; 503 while double-writable, seq gap past max_lag_lsn, pins unreachable, or repeat captures remain; success when live gates hold",
+        "tests": [
+          "test_f2p_readyz_503_when_two_writers",
+          "test_f2p_readyz_503_when_seq_gap_unsafe",
+          "test_f2p_readyz_503_when_pins_unreachable",
+          "test_f2p_readyz_503_when_repeat_captures",
+          "test_f2p_healthz_200_while_readyz_fails",
+          "test_p2p_healthz_ok_when_desk_closed"
+        ],
+        "coverage": "partial"
+      },
+      {
+        "id": "R_STATUS_DUMP",
+        "requirement": "Write /app/ha/out/failover-status.json with runbook keys; accepting_checkout false on split/repeats/standby-only/fence-on-standby/seq-gap/missing incident; true only on full healed conjunction; pins shared required for dump accept",
+        "tests": [
+          "test_f2p_failover_status_refuses_accept_on_split",
+          "test_f2p_failover_status_counts_repeat_captures",
+          "test_f2p_failover_status_standby_only_blocks_accept",
+          "test_f2p_failover_status_fence_on_standby_blocks_accept",
+          "test_f2p_failover_status_seq_gap_blocks_accept",
+          "test_f2p_failover_status_missing_incident_blocks_accept",
+          "test_f2p_failover_status_accepts_when_healed",
+          "test_p2p_runbook_names_dump_path"
+        ],
+        "coverage": "complete"
+      }
+    ],
+    "PHANTOM_TEST_CONTRACTS": [],
+    "UNTESTED_REQUIREMENTS": [
+      "Live GET /readyz returns success (200 + accepting_checkout true) when live gates hold",
+      "Pay path marks PAID on the fenced writer (not merely 'not replica-only')",
+      "Confirmation freshness / sticky after pay (pay-then-reload must not show lagged OPEN)",
+      "LSN-gated pay/capture refusal leaves capture SideEffect count unchanged",
+      "Exact HTTP 503 on unsafe /readyz (currently !=200 only)",
+      "Empty attempt_id rejected on HTTP /api/checkout/place (service-only today)",
+      "sticky_seconds TTL expiry behavior",
+      "Optional metamorphic max_lag_lsn=0 tiny-lag hide (named by vacuous P2P test)"
+    ],
+    "AMBIGUITIES": [
+      "Instruction '/readyz ... old writer is still allowed' vs runbook live gates that only list exactly-one writable writer (plus gap/pins/repeats)",
+      "test_f2p_healthz_200_while_readyz_fails accepts ready 200 with accepting_checkout false, conflicting with 503 traffic-gate language",
+      "test_p2p_zero_gap_budget_hides_tiny_lag name implies behavior not asserted"
+    ],
+    "INSTRUCTION_SHAPE": "PASS",
+    "INSTRUCTION_REQUIREMENT_COMPLETENESS": "SUFFICIENT",
+    "DELEGATED_CONTRACT_CHECK": [
+      {
+        "doc": "/app/ha/docs/runbook.md",
+        "classification": "legitimate_technical_documentation",
+        "notes": "Operator commands, fence/pin/lag semantics, /readyz vs dump accepting_checkout, and status JSON schema appropriately delegated; not a hidden repair checklist."
+      },
+      {
+        "doc": "/app/ha/notes/oncall.md",
+        "classification": "legitimate_technical_documentation",
+        "notes": "Pager/incident evidence supporting current-state claims; preservation note about schema/URLs is normal ops handoff."
+      },
+      {
+        "doc": "/app/ha/logs/captured/shopdesk-error.log",
+        "classification": "legitimate_technical_documentation",
+        "notes": "Scraped runtime evidence referenced by instruction; not a second prompt."
+      },
+      {
+        "doc": "/app/ha/config/ha.json",
+        "classification": "legitimate_technical_documentation",
+        "notes": "Runtime knobs (max_lag_lsn, sticky_seconds, incident_min_order_id) referenced indirectly via runbook."
+      }
+    ],
+    "INSTRUCTION_DOC_BOUNDARY": "CLEAN",
+    "IMPLEMENTATION_DIAGNOSIS_LEAKAGE": "LOW",
+    "CURRENT_STATE_EVIDENCE": "PASS",
+    "SPEC_DUMP_RISK": "MEDIUM",
+    "BIDIRECTIONAL_ALIGNMENT": "FAIL",
+    "BLOCKING_FINDING_IDS": [
+      "Q4-001",
+      "Q4-002",
+      "Q4-003",
+      "Q4-004"
+    ],
+    "ADVISORY_FINDING_IDS": [
+      "Q4-005",
+      "Q4-006",
+      "Q4-007",
+      "Q4-008"
+    ],
+    "EXHAUSTIVENESS": {
+      "REQUIREMENTS_ENUMERATED": "COMPLETE",
+      "VERIFIER_BEHAVIORS_ENUMERATED": "COMPLETE",
+      "FORWARD_MATRIX_COMPLETE": "YES",
+      "REVERSE_MATRIX_COMPLETE": "YES",
+      "INSTRUCTION_COMPLETENESS_COMPLETE": "YES",
+      "DELEGATED_CONTRACTS_COMPLETE": "YES",
+      "PROMPT_EXTENSION_WALK_COMPLETE": "YES",
+      "P2P_BOUNDARIES_COMPLETE": "YES",
+      "F2P_BOUNDARIES_COMPLETE": "YES",
+      "OUTPUT_INTERFACES_COMPLETE": "YES",
+      "SECOND_PASS_OMISSION_SWEEP": "PASS",
+      "UNINSPECTED_SCOPE": []
+    }
+  }
+}

@@ -32,9 +32,9 @@ This is the durable operational checkpoint for one task. Keep it evidence-orient
 | STB auth/AI credentials | PENDING | |
 | Oracle = 1 | PASS | Harbor job `jobs/2026-08-16__17-09-55` trial `django-checkout-failover-ha__v78pfFk` reward.txt=`1`; 44/44 pytest |
 | NOP = 0 | PASS | Harbor job `jobs/2026-08-16__17-11-37` trial `django-checkout-failover-ha__DxQFQcm` reward.txt=`0` |
-| Q4 Spec-Test Contract Reviewer | PENDING | packet `.terminus/reviews/django-checkout-failover-ha/f9022bd1/django-checkout-failover-ha-f9022bd1-spec-test-contract-c6e2481129.packet.json` |
-| Q6 Production Logic Auditor | PENDING | packet `.terminus/reviews/django-checkout-failover-ha/f9022bd1/django-checkout-failover-ha-f9022bd1-production-logic-b02c7d085b.packet.json` |
-| Quality Interlock | PENDING | blocked until cold Q4+Q6 PASS on freeze `f9022bd1` |
+| Q4 Spec-Test Contract Reviewer | REVISE | review `.terminus/reviews/django-checkout-failover-ha/f9022bd1/django-checkout-failover-ha-f9022bd1-spec-test-contract-c6e2481129.json` (HIGH); blocking Q4-001..004 |
+| Q6 Production Logic Auditor | PASS | review `.terminus/reviews/django-checkout-failover-ha/f9022bd1/django-checkout-failover-ha-f9022bd1-production-logic-b02c7d085b.json` (HIGH); PADDING_RISK MEDIUM |
+| Quality Interlock | REVISE | Q4 REVISE on `f9022bd1` (Q6 PASS alone insufficient) |
 | Pre-LLMaJ specialist panel | PENDING | |
 | Task Architect | PENDING | |
 | Verifier Engineer | PENDING | |
@@ -69,7 +69,7 @@ This is the durable operational checkpoint for one task. Keep it evidence-orient
 
 ## Current blocker
 
-None for deterministic gates. Awaiting Auto/inherit cold Q4 + Q6 on freeze `f9022bd1`.
+Q4 REVISE on freeze `f9022bd1` (blocking Q4-001..004: positive /readyz, pay writer+sticky, capture non-effect, exact 503). Q6 PASS recorded; Quality Interlock still blocked.
 
 ## Root-cause classification
 
@@ -79,14 +79,14 @@ None for deterministic gates. Awaiting Auto/inherit cold Q4 + Q6 on freeze `f902
 
 ## Next action
 
-Await Auto-mode cold Q4/Q6 for freeze `f9022bd1`. Subagents must use `model: inherit` only. Do not self-certify Quality Interlock.
+Q2 verifier repair for Q4-001..004 on `f9022bd1`, re-oracle/NOP, re-freeze, cold Q4 (inherit only). Q6 PASS may reuse if production scope hash unchanged.
 
 ## Review evidence ledger
 
 | Review | Review ID | Task commit | Protocol | Prompt | Role policy | Role contract hash | Scope hash | Result path | Verdict | Confidence | Evidence |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| Q4 Spec-Test Contract Reviewer | django-checkout-failover-ha-8dc0203f-spec-test-contract-8ff470e1b2 | 8dc0203f55e6112a093bfc680c831f6f5b357f9b | 2.2 | 2.2 | 1.1 | c860dfe8b8ed0a04c729e4d6a828741b206b7067a780863ec7b22ee09d02c5a0 | n/a | `.terminus/reviews/django-checkout-failover-ha/8dc0203f/django-checkout-failover-ha-8dc0203f-spec-test-contract-8ff470e1b2.json` | REVISE | HIGH | blocking Q4-F1..F4; exhaustiveness COMPLETE |
-| Q6 Production Logic Auditor | django-checkout-failover-ha-8dc0203f-production-logic-03ac8bd7ce | 8dc0203f55e6112a093bfc680c831f6f5b357f9b | 2.2 | 2.2 | 1.1 | ee7d1cfd6e19fcc0e831cc75829457593d7410613c3b3fb811aef925e85a1607 | 5a9db7fc2c248c3aa962bad9e1734b83dca9eca5bade04e9c462874bfe04f412 | `.terminus/reviews/django-checkout-failover-ha/8dc0203f/django-checkout-failover-ha-8dc0203f-production-logic-03ac8bd7ce.json` | REVISE | HIGH | PADDING_RISK HIGH; ~2860 substantive LOC |
+| Q4 Spec-Test Contract Reviewer | django-checkout-failover-ha-f9022bd1-spec-test-contract-c6e2481129 | f9022bd10e98152efcc245a1a0a738bf29f77a80 | 2.2 | 2.2 | 1.1 | c860dfe8b8ed0a04c729e4d6a828741b206b7067a780863ec7b22ee09d02c5a0 | n/a | `.terminus/reviews/django-checkout-failover-ha/f9022bd1/django-checkout-failover-ha-f9022bd1-spec-test-contract-c6e2481129.json` | REVISE | HIGH | blocking Q4-001..004 |
+| Q6 Production Logic Auditor | django-checkout-failover-ha-f9022bd1-production-logic-b02c7d085b | f9022bd10e98152efcc245a1a0a738bf29f77a80 | 2.2 | 2.2 | 1.1 | ee7d1cfd6e19fcc0e831cc75829457593d7410613c3b3fb811aef925e85a1607 | 5031e765140c0035a98df555161234e16eefdf18772a836f8c9dc31787be9d63 | `.terminus/reviews/django-checkout-failover-ha/f9022bd1/django-checkout-failover-ha-f9022bd1-production-logic-b02c7d085b.json` | PASS | HIGH | PADDING_RISK MEDIUM |
 | Task Architect | | | | | | | | | PENDING | | |
 | Verifier Engineer | | | | | | | | | PENDING | | |
 | Originality | | | | | | | | | REVISE | | prior destemplate |
@@ -108,12 +108,12 @@ Await Auto-mode cold Q4/Q6 for freeze `f9022bd1`. Subagents must use `model: inh
 - Q3 ambiguity status/evidence: `DONE` (live /readyz vs dump accepting_checkout)
 - Q7 format status/evidence: `PENDING`
 - Q5 Oracle/runtime repair evidence: `none`
-- Q4 review ID/result: `django-checkout-failover-ha-8dc0203f-spec-test-contract-8ff470e1b2` / `.terminus/reviews/django-checkout-failover-ha/8dc0203f/django-checkout-failover-ha-8dc0203f-spec-test-contract-8ff470e1b2.json`
+- Q4 review ID/result: `django-checkout-failover-ha-f9022bd1-spec-test-contract-c6e2481129` / `.terminus/reviews/django-checkout-failover-ha/f9022bd1/django-checkout-failover-ha-f9022bd1-spec-test-contract-c6e2481129.json`
 - Q4 verdict/confidence/evidence: `REVISE` / `HIGH` / `SUFFICIENT`
-- Q4 exhaustiveness: `COMPLETE` (BLOCKING_FINDING_IDS Q4-F1..F4)
-- Q6 review ID/result: `django-checkout-failover-ha-8dc0203f-production-logic-03ac8bd7ce` / `.terminus/reviews/django-checkout-failover-ha/8dc0203f/django-checkout-failover-ha-8dc0203f-production-logic-03ac8bd7ce.json`
-- Q6 verdict/confidence/evidence: `REVISE` / `HIGH` / `SUFFICIENT`
-- Q6 production scope hash: `5a9db7fc2c248c3aa962bad9e1734b83dca9eca5bade04e9c462874bfe04f412`
+- Q4 exhaustiveness: `COMPLETE` (BLOCKING_FINDING_IDS Q4-001..004)
+- Q6 review ID/result: `django-checkout-failover-ha-f9022bd1-production-logic-b02c7d085b` / `.terminus/reviews/django-checkout-failover-ha/f9022bd1/django-checkout-failover-ha-f9022bd1-production-logic-b02c7d085b.json`
+- Q6 verdict/confidence/evidence: `PASS` / `HIGH` / `SUFFICIENT`
+- Q6 production scope hash: `5031e765140c0035a98df555161234e16eefdf18772a836f8c9dc31787be9d63`
 - Q6 scope reuse: `none`
 - Quality interlock: `REVISE`
 
@@ -213,8 +213,9 @@ Await Auto-mode cold Q4/Q6 for freeze `f9022bd1`. Subagents must use `model: inh
 
 Newest first; keep only meaningful state-changing attempts.
 
-- Q4 cold review REVISE via [Q4 Spec-Test Review](28c39e2a-fe36-4d30-be10-0581a7390e13) on freeze `8dc0203f` → `...-spec-test-contract-8ff470e1b2.json` (blocking F1–F4).
-- Q6 cold review REVISE via [Q6 Production Logic Audit](7e44db88-f504-42b0-9e91-fdd37444a9ca) on freeze `8dc0203f` → `...-production-logic-03ac8bd7ce.json` (HIGH padding; ~2860 substantive LOC).
+- Q4 cold review REVISE via [Q4 Spec-Test Review](f7ffac96-1d87-4554-8e95-af9c8c0441c6) on freeze `f9022bd1` → `...-spec-test-contract-c6e2481129.json` (blocking Q4-001..004).
+- Q6 cold review PASS via [Q6 Production Logic Audit](888be563-4fc7-47d3-8b31-0905d30ca567) on freeze `f9022bd1` → `...-production-logic-b02c7d085b.json` (PADDING_RISK MEDIUM).
+- Freeze `f9022bd1` / `f9022bd10e98152efcc245a1a0a738bf29f77a80` after Q4-F1..F4 + Q6 padding repair; Harbor oracle `jobs/2026-08-16__17-09-55` → **1** (44/44); nop `jobs/2026-08-16__17-11-37` → **0**.
 - Freeze `8dc0203f55e6112a093bfc680c831f6f5b357f9b` for post-repair Q4/Q6; packets under `.terminus/reviews/django-checkout-failover-ha/8dc0203f/`.
 - Consolidated Q4/Q6 repair: stripped Defect/Starter diagnosis; split live `/readyz` vs dump `accepting_checkout`; wired `desk_state` + helpers into live paths (~3396 Python LOC); fixed phantoms and added readiness/dump coverage; solution reports/views/sessions/replica updated. Harbor oracle `jobs/2026-08-16__16-37-20` → **1** (42/42); nop `jobs/2026-08-16__16-38-42` → **0**.
 - Q6 cold review REVISE via [Q6 Production Logic Audit](6db7aba3-2767-45ce-adf5-556dc06479e6) → `...-production-logic-4f058fe6e4.json` (HIGH padding; honest LOC below floor).
