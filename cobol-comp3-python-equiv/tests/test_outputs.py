@@ -56,7 +56,7 @@ def identity(
     gid: str = "g",
     source: str = "s",
     layout: str = "l",
-    date: str = "2026-08-15",
+    date: str = "20260815",
 ) -> GenerationIdentity:
     return GenerationIdentity(gid, "source.dat", 10, source, layout, date)
 
@@ -245,7 +245,7 @@ def run_arguments(
         "--layout",
         str(layout),
         "--business-date",
-        "2026-08-15",
+        "20260815",
         "--legacy-controls",
         str(controls),
         "--report-dir",
@@ -345,7 +345,7 @@ def test_f2p_caller_supplied_layout_path_is_honored(tmp_path: Path) -> None:
         "--layout",
         layout_path,
         "--business-date",
-        "2026-08-15",
+        "20260815",
     )
     assert identified.returncode == 0
     identity_payload = parse_stdout(identified)
@@ -442,10 +442,10 @@ def test_f2p_complete_malformed_record_reports_full_boundary() -> None:
 
 
 def test_f2p_generation_id_binds_layout_digest() -> None:
-    baseline = generation_id("source-a", "layout-a", "2026-08-15")
-    assert baseline != generation_id("source-a", "layout-b", "2026-08-15")
-    assert baseline != generation_id("source-b", "layout-a", "2026-08-15")
-    assert baseline != generation_id("source-a", "layout-a", "2026-08-16")
+    baseline = generation_id("source-a", "layout-a", "20260815")
+    assert baseline != generation_id("source-a", "layout-b", "20260815")
+    assert baseline != generation_id("source-b", "layout-a", "20260815")
+    assert baseline != generation_id("source-a", "layout-a", "20260816")
 
 
 def test_f2p_resume_rejects_layout_change() -> None:
@@ -463,8 +463,8 @@ def test_f2p_resume_rejects_layout_change() -> None:
     )
     must_reject(
         lambda: assert_resume_compatible(
-            identity(gid="same", date="2026-08-15"),
-            identity(gid="same", date="2026-08-16"),
+            identity(gid="same", date="20260815"),
+            identity(gid="same", date="20260816"),
         )
     )
 
@@ -495,7 +495,7 @@ def test_f2p_pipeline_restart_does_not_reapply_last_movement(tmp_path: Path) -> 
     cfg = PipelineConfig(
         source,
         DEFAULT_LAYOUT,
-        "2026-08-15",
+        "20260815",
         controls,
         tmp_path / "reports",
         tmp_path / "published",
@@ -613,7 +613,7 @@ def test_f2p_issue_requires_full_available_quantity(tmp_path: Path) -> None:
         PipelineConfig(
             source,
             DEFAULT_LAYOUT,
-            "2026-08-15",
+            "20260815",
             controls,
             tmp_path / "reports",
             tmp_path / "published",
@@ -973,7 +973,7 @@ def test_p2p_cli_success_and_failure_json_contract(tmp_path: Path) -> None:
         "--layout",
         DEFAULT_LAYOUT,
         "--business-date",
-        "2026-08-15",
+        "20260815",
     )
     assert identified.returncode == 0
     assert parse_stdout(identified)["source"]["sha256"] == file_digest(source)
@@ -1096,7 +1096,7 @@ def test_p2p_audit_and_archive_operator_workflows_are_reachable(tmp_path: Path) 
         "--layout",
         DEFAULT_LAYOUT,
         "--business-date",
-        "2026-08-15",
+        "20260815",
         "--expected-records",
         "1",
         "--quarantine",
@@ -1120,7 +1120,7 @@ def test_p2p_audit_and_archive_operator_workflows_are_reachable(tmp_path: Path) 
         "--layout",
         DEFAULT_LAYOUT,
         "--business-date",
-        "2026-08-15",
+        "20260815",
         "--report-dir",
         report_dir,
         "--publish-dir",
@@ -1164,12 +1164,12 @@ def test_p2p_accepted_movement_transaction_rolls_back_on_failure(tmp_path: Path)
     cfg = PipelineConfig(
         source,
         DEFAULT_LAYOUT,
-        "2026-08-15",
+        "20260815",
         controls,
         tmp_path / "reports",
         tmp_path / "published",
     )
-    gid = build_identity(source, DEFAULT_LAYOUT, "2026-08-15").generation_id
+    gid = build_identity(source, DEFAULT_LAYOUT, "20260815").generation_id
     must_reject(lambda: process(db, cfg))
     assert db.execute(
         "SELECT COUNT(*) FROM processed_movements WHERE generation_id=?",
@@ -1216,12 +1216,12 @@ def test_p2p_rejected_movement_transaction_rolls_back_on_failure(tmp_path: Path)
     cfg = PipelineConfig(
         source,
         DEFAULT_LAYOUT,
-        "2026-08-15",
+        "20260815",
         controls,
         tmp_path / "reports",
         tmp_path / "published",
     )
-    gid = build_identity(source, DEFAULT_LAYOUT, "2026-08-15").generation_id
+    gid = build_identity(source, DEFAULT_LAYOUT, "20260815").generation_id
     must_reject(lambda: process(db, cfg))
     assert db.execute(
         "SELECT COUNT(*) FROM rejects WHERE generation_id=?",
@@ -1272,7 +1272,7 @@ def test_p2p_decode_and_transform_reject_codes_are_stable(tmp_path: Path) -> Non
             PipelineConfig(
                 source,
                 DEFAULT_LAYOUT,
-                "2026-08-15",
+                "20260815",
                 controls,
                 root / "reports",
                 root / "published",
