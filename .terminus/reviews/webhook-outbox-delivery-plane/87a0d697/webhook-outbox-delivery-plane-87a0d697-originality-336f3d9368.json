@@ -1,0 +1,86 @@
+{
+  "schema_version": "3.0",
+  "role": "Originality & Authenticity Reviewer",
+  "review_id": "webhook-outbox-delivery-plane-87a0d697-originality-336f3d9368",
+  "task": "webhook-outbox-delivery-plane",
+  "task_commit": "87a0d6970e8a5081aa3f3eb6d91ed706989db916",
+  "control_plane_commit": "450bb2ddb0246370812f7fa9974c3b094d47f706",
+  "protocol_policy_version": "2.2",
+  "prompt_policy_version": "2.2",
+  "role_policy_version": "1.0",
+  "role_contract_hash": "a85b7ae8248cbaba5b038db97e6207b51d4514816d092ef3038f4db82a3726b5",
+  "context_packet": ".terminus/reviews/webhook-outbox-delivery-plane/87a0d697/webhook-outbox-delivery-plane-87a0d697-originality-336f3d9368.packet.json",
+  "verdict": "PASS",
+  "confidence": "HIGH",
+  "evidence_status": "SUFFICIENT",
+  "summary": "Organic Go/SQLite webhook-outbox repair work package. Domain vocabulary overlap with outbox/HMAC/DLQ is normal; API+lease fencing+quota/pause/audit/CLI/UI coupling and verifier topology are not a renamed local or public benchmark (including ansible-ci and stackyard neighbors).",
+  "evidence": [
+    {
+      "type": "file",
+      "ref": "webhook-outbox-delivery-plane/instruction.md",
+      "observation": "Contract realignment for enqueue/claim/deliver/quota/pause/audit across API, CLI, and UI under /app/outbox — engineering repair framing."
+    },
+    {
+      "type": "file",
+      "ref": "webhook-outbox-delivery-plane/environment",
+      "observation": "Distinct product tree: outboxd/outboxctl, SQLite schema, delivery-contract.md, static UI, Go packages for claim/sign/quota/audit/worker/delivery."
+    },
+    {
+      "type": "file",
+      "ref": ".terminus/GOLDEN_TASKS.md",
+      "observation": "No webhook/outbox delivery twin in the golden catalog; nearest abstract motifs are systems/recovery calibrations, not copyable topologies."
+    },
+    {
+      "type": "file",
+      "ref": "ansible-ci-control-plane/instruction.md",
+      "observation": "Nearest local motif neighbor shares claim/lease/pause/webhook vocabulary but is an Ansible CI control plane — different work package and env topology."
+    },
+    {
+      "type": "file",
+      "ref": "stackyard-terraform-control-plane/instruction.md",
+      "observation": "TFC-like Go+UI+SQLite control plane; overlapping language (Go/SQLite/UI) but Terraform workspace/run semantics, not webhook outbox delivery."
+    },
+    {
+      "type": "public_reference",
+      "ref": "https://github.com/Tajaddin/webhook-delivery",
+      "observation": "Public TS/Hono in-memory dispatcher with Stripe-style signatures; lacks multi-tenant SQLite lease fencing, X-Outbox newline HMAC, quotas, pause, CLI/UI contract of this task."
+    }
+  ],
+  "findings": [],
+  "missing_evidence": [],
+  "change_scope": [],
+  "do_not_change": [
+    "Do not weaken lease fencing, pause, quota, HMAC canonicalization, DLQ replay auth, or UI/API coupling merely to increase agent pass rate.",
+    "Do not reshape the public /app/outbox tree or replace delivery-contract.md to excuse starter drift."
+  ],
+  "next_gate": "Remaining Pre-LLMaJ specialist reviews",
+  "role_output": {
+    "DUPLICATE_RISK": "LOW",
+    "TEMPLATE_RISK": "LOW",
+    "REALISM": "HIGH",
+    "PROVENANCE": "Original Edition 3 webhook-outbox delivery-plane repair scenario; public outbox/webhook material used only as domain-neighbor calibration.",
+    "NEAREST_REFERENCES": [
+      "ansible-ci-control-plane (local claim/lease/pause/webhook motif neighbor)",
+      "stackyard-terraform-control-plane (Go/SQLite/UI neighbor; different domain)",
+      "Tajaddin/webhook-delivery (public HMAC/DLQ neighbor; different stack/API)"
+    ],
+    "SIMILARITY_AXES": [
+      "phrase/wording: shared industry terms without matched instruction prose",
+      "requirement ordering: contract-first repair idiom common in Edition 3",
+      "work-package topology: unique multi-tenant Go/SQLite outbox + CLI/UI",
+      "verifier scenario topology: fencing/pause/signature/quota/audit/replay/UI",
+      "solution architecture: drifted binary realignment to delivery-contract.md"
+    ],
+    "SUSPICIOUS_SIMILARITIES": [],
+    "ARTIFICIAL_CONSTRUCTION_SIGNALS": [],
+    "DISTINCTIVE_FEATURES": [
+      "lease_owner fencing with same-owner renew vs cross-owner 409",
+      "tenant rolling-window quota counting only successful deliveries",
+      "pause/disable gates with contract error codes",
+      "newline-canonical X-Outbox HMAC headers",
+      "bearer-gated DLQ replay plus UI field-name/error-box contract",
+      "OUTBOX_SYNC graded claim→deliver path vs optional background worker"
+    ],
+    "REQUIRED_CHANGES": []
+  }
+}

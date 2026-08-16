@@ -1,0 +1,83 @@
+{
+  "schema_version": "3.0",
+  "role": "Human Quality Reviewer",
+  "review_id": "webhook-outbox-delivery-plane-87a0d697-human-quality-9a248ac993",
+  "task": "webhook-outbox-delivery-plane",
+  "task_commit": "87a0d6970e8a5081aa3f3eb6d91ed706989db916",
+  "control_plane_commit": "450bb2ddb0246370812f7fa9974c3b094d47f706",
+  "protocol_policy_version": "2.2",
+  "prompt_policy_version": "2.2",
+  "role_policy_version": "1.0",
+  "role_contract_hash": "dd9c66871e04cb9864f1df4e78895c8c4aab3662dee84929c8e9ec5e7d285d9a",
+  "context_packet": ".terminus/reviews/webhook-outbox-delivery-plane/87a0d697/webhook-outbox-delivery-plane-87a0d697-human-quality-9a248ac993.packet.json",
+  "verdict": "PASS",
+  "confidence": "HIGH",
+  "evidence_status": "SUFFICIENT",
+  "summary": "Solver-facing instruction and delivery-contract read as a coherent engineering handoff. Jira/Slack handoff passes; reverse-outline risk low; no material AI cadence, inflated claims, or solver-facing leakage. README still has mild Edition 3 packaging lead-in (advisory only).",
+  "evidence": [
+    {
+      "type": "file",
+      "ref": "webhook-outbox-delivery-plane/instruction.md",
+      "observation": "Two paragraphs + four bullets; drift framing; binding contract pointer; env/boot/invariants/UI grouped naturally without verifier talk or one-bullet-per-test inventory."
+    },
+    {
+      "type": "file",
+      "ref": "webhook-outbox-delivery-plane/environment/outbox/docs/delivery-contract.md",
+      "observation": "Ordinary API/ops contract by product surface; technical density appropriate; not a repair map."
+    },
+    {
+      "type": "file",
+      "ref": "webhook-outbox-delivery-plane/environment/outbox/docs/operator-notes.md",
+      "observation": "Brief operator notes on binaries, sync mode, seeded catalog; selective and non-rubric."
+    },
+    {
+      "type": "file",
+      "ref": "webhook-outbox-delivery-plane/README.md",
+      "observation": "Difficulty/solution/verification notes explain coupled invariants. Mild 'Edition 3 large-system task' lead-in is packaging boilerplate, not material solver-facing synthetic cadence."
+    },
+    {
+      "type": "rule",
+      "ref": ".terminus/reviewers/HUMAN_WRITING_CALIBRATION.md",
+      "observation": "Matches human patterns: selective work request, contract reference instead of schema dump, no essay transitions or reviewer-facing leakage."
+    }
+  ],
+  "findings": [
+    {
+      "id": "HQ-1",
+      "severity": "LOW",
+      "status": "OBSERVED",
+      "criterion": "benchmark_boilerplate",
+      "evidence_refs": [
+        "webhook-outbox-delivery-plane/README.md"
+      ],
+      "why_it_matters": "README opens with Edition 3 packaging language; not solver-facing and not enough alone to fail handoff quality.",
+      "minimal_remediation": "Optional: rephrase README lead-in as a plain product description without Edition 3 framing.",
+      "regression_risk": "None if left as-is; cosmetic only."
+    }
+  ],
+  "missing_evidence": [],
+  "change_scope": [],
+  "do_not_change": [
+    "Do not thin instruction.md or move material goals into delivery-contract.md for stylistic minimalism.",
+    "Do not rewrite delivery-contract.md into informal prose."
+  ],
+  "next_gate": "Comprehensive Reviewer",
+  "role_output": {
+    "AI_TEMPLATE_SIGNAL": "LOW",
+    "HUMAN_SIGNAL": "HIGH",
+    "JIRA_SLACK_HANDOFF": "PASS",
+    "REVERSE_OUTLINE_RISK": "LOW",
+    "SPEC_FILE_LOOPHOLE": "NONE",
+    "SYNTHETIC_CADENCE": "LOW",
+    "BENCHMARK_BOILERPLATE": [
+      "README.md: 'Edition 3 large-system task' lead-in (non-blocking)"
+    ],
+    "INFLATED_CLAIMS": [],
+    "LEAKAGE": [],
+    "SUSPICIOUS_PHRASES": [],
+    "CONTRADICTIONS": [],
+    "MATERIAL_ISSUES": false,
+    "REQUIRED_CHANGES": [],
+    "REPLACEMENT_TEXT": ""
+  }
+}

@@ -1,0 +1,86 @@
+{
+  "schema_version": "3.0",
+  "role": "Instruction Reviewer",
+  "review_id": "webhook-outbox-delivery-plane-87a0d697-instruction-51aa9574a4",
+  "task": "webhook-outbox-delivery-plane",
+  "task_commit": "87a0d6970e8a5081aa3f3eb6d91ed706989db916",
+  "control_plane_commit": "450bb2ddb0246370812f7fa9974c3b094d47f706",
+  "protocol_policy_version": "2.2",
+  "prompt_policy_version": "2.2",
+  "role_policy_version": "1.0",
+  "role_contract_hash": "b3fafcd337332dca594d29a578adba39aba28e76f794d5851c4a0d5140566484",
+  "context_packet": ".terminus/reviews/webhook-outbox-delivery-plane/87a0d697/webhook-outbox-delivery-plane-87a0d697-instruction-51aa9574a4.packet.json",
+  "verdict": "PASS",
+  "confidence": "HIGH",
+  "evidence_status": "SUFFICIENT",
+  "summary": "instruction.md remains a fair ~220-word engineering ticket: two short paragraphs plus four bullets, absolute paths, OUTBOX_SYNC graded path, and material behaviors discoverable via delivery-contract.md without bug-catalog or repair-recipe leakage.",
+  "evidence": [
+    {
+      "type": "file",
+      "ref": "webhook-outbox-delivery-plane/instruction.md",
+      "observation": "220 words, 2 paragraphs + 4 bullets; drift-off-contract objective; binds /app/outbox/docs/delivery-contract.md; env vars, schema/seed/UI boot, claim fencing/pause/quota/signature/replay/audit, UI fields/errors, rebuild binaries."
+    },
+    {
+      "type": "file",
+      "ref": "webhook-outbox-delivery-plane/environment/outbox/docs/delivery-contract.md",
+      "observation": "Referenced solver-visible protocol/API/CLI/UI contract; ordinary technical documentation, not a second prompt or module repair map."
+    },
+    {
+      "type": "file",
+      "ref": ".terminus/designs/webhook-outbox-delivery-plane-test-map.json",
+      "observation": "Requirement families remain discoverable from instruction + delivery-contract without reading test bodies."
+    },
+    {
+      "type": "rule",
+      "ref": ".terminus/agents/INSTRUCTION_POLICY.md",
+      "observation": "Shape, completeness via delegated contract, docs boundary, and non-MATERIAL diagnosis checks pass for Instruction Reviewer."
+    },
+    {
+      "type": "file",
+      "ref": ".terminus/reviewers/HUMAN_WRITING_CALIBRATION.md",
+      "observation": "Incident-light drift framing and contract delegation match human ticket selection patterns."
+    }
+  ],
+  "findings": [],
+  "missing_evidence": [],
+  "change_scope": [],
+  "do_not_change": [
+    "Do not relocate material acceptance criteria into docs solely to shorten instruction.md.",
+    "Do not add module-level bug ownership, oracle steps, or one-bullet-per-test inventories."
+  ],
+  "next_gate": "Remaining Stage-B / Pre-LLMaJ specialists",
+  "role_output": {
+    "WORD_COUNT": 220,
+    "BULLET_COUNT": 4,
+    "HUMAN_SIGNAL": "HIGH",
+    "AI_TEMPLATE_SIGNAL": "LOW",
+    "JIRA_SLACK_HANDOFF": "PASS",
+    "REQUIREMENT_COMPLETENESS": "SUFFICIENT",
+    "INSTRUCTION_SHAPE": "PASS",
+    "REVERSE_OUTLINE_RISK": "LOW",
+    "SPEC_FILE_LOOPHOLE": "NONE",
+    "IMPLEMENTATION_DIAGNOSIS_LEAKAGE": "LOW",
+    "CURRENT_STATE_EVIDENCE": "PASS",
+    "HUMAN_GROUPING": "HIGH",
+    "COMPRESSED_RUBRIC": "LOW",
+    "OVER_PRESCRIPTION": "LOW",
+    "MATERIAL_REQUIREMENTS_PRESERVED": [
+      "align API/CLI/UI to shipped contract",
+      "OUTBOX_* env-driven startup",
+      "schema boot, seed tooling, image-seeded DB, UI serve",
+      "claim fencing including 409 conflicts",
+      "pause rejects claims",
+      "quota/signature/DLQ replay auth/audit per contract",
+      "UI contract field names and visible API errors",
+      "rebuild outboxd/outboxctl",
+      "graded claim→deliver with OUTBOX_SYNC=1"
+    ],
+    "UNNECESSARY_TEXT": [],
+    "MISSING_CONTEXT": [],
+    "SUSPICIOUS_PHRASES": [
+      "instead of hard-coding paths or ports (mild current-state diagnosis; LOW)"
+    ],
+    "FAIRNESS_RISK": "LOW",
+    "REPLACEMENT_TEXT": ""
+  }
+}

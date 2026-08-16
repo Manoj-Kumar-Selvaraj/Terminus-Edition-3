@@ -1,0 +1,142 @@
+{
+  "schema_version": "3.0",
+  "role": "Comprehensive Reviewer",
+  "review_id": "webhook-outbox-delivery-plane-87a0d697-comprehensive-checklist-90c5d68547",
+  "task": "webhook-outbox-delivery-plane",
+  "task_commit": "87a0d6970e8a5081aa3f3eb6d91ed706989db916",
+  "control_plane_commit": "450bb2ddb0246370812f7fa9974c3b094d47f706",
+  "protocol_policy_version": "2.2",
+  "prompt_policy_version": "2.2",
+  "role_policy_version": "1.0",
+  "role_contract_hash": "7b4f0432fc31dc69dcf55d9cd988930880cd7cb6c5f8ae95332d54ab128732ae",
+  "context_packet": ".terminus/reviews/webhook-outbox-delivery-plane/87a0d697/webhook-outbox-delivery-plane-87a0d697-comprehensive-checklist-90c5d68547.packet.json",
+  "verdict": "APPROVE",
+  "confidence": "HIGH",
+  "evidence_status": "SUFFICIENT",
+  "summary": "Independent checklist walk over the 61 stored criteria: no HIGH/MEDIUM failures. Instruction/env/oracle/verifier/structure/metadata rows that apply at this gate PASS; rubric and model-trial rows are N/A under current Edition 3 packaging and pre-trial stage. Oracle 1.0 / NOP 0.0 and large_system_strict complexity remain green on task commit 87a0d697.",
+  "evidence": [
+    {
+      "type": "file",
+      "ref": "webhook-outbox-delivery-plane/instruction.md",
+      "observation": "Concise absolute-path handoff; no task slug, canary, or solution walkthrough."
+    },
+    {
+      "type": "file",
+      "ref": "webhook-outbox-delivery-plane/task.toml",
+      "observation": "Canonical top-level taxonomy/artifacts; separate verifier; public network; bounded timeouts."
+    },
+    {
+      "type": "file",
+      "ref": "webhook-outbox-delivery-plane/environment/Dockerfile",
+      "observation": "Digest-pinned Go base; tmux/asciinema; no solution/tests copy into agent image."
+    },
+    {
+      "type": "run",
+      "ref": "jobs/outbox-q4-repair/oracle/2026-08-16__17-14-36",
+      "observation": "Harbor 0.21 oracle mean reward 1.0."
+    },
+    {
+      "type": "run",
+      "ref": "jobs/outbox-q4-repair/nop/2026-08-16__17-16-54",
+      "observation": "Harbor 0.21 NOP mean reward 0.0."
+    },
+    {
+      "type": "rule",
+      "ref": ".terminus/reviewers/reviewer_criteria.json",
+      "observation": "Checklist snapshot 2026-08-08-user-supplied; 61 criteria walked."
+    }
+  ],
+  "findings": [],
+  "missing_evidence": [],
+  "change_scope": [],
+  "do_not_change": [
+    "Do not drop behavioral F2P coverage added for UI/CLI/replay/backoff/lease fencing.",
+    "Do not weaken OUTBOX_SYNC graded-path framing."
+  ],
+  "next_gate": "Pre-LLMaJ aggregate / Q8 diagnostics when scheduled; then official model trials for RC-META-004",
+  "role_output": {
+    "recommendation": "APPROVE",
+    "checklist_snapshot": "2026-08-08-user-supplied",
+    "checklist_total": 61,
+    "checklist_coverage_percent": 100,
+    "counts": {
+      "pass": 40,
+      "fail": 0,
+      "not_applicable": 21,
+      "insufficient_evidence": 0,
+      "policy_conflict": 0,
+      "high_failures": 0,
+      "medium_failures": 0,
+      "low_failures": 0
+    },
+    "review_independence_note": "Criterion walk uses task files, authoritative rules, and Harbor oracle/NOP evidence. Isolation is procedural Auto-mode; specialist verdicts were not used as criterion evidence.",
+    "criteria": {
+      "RC-INS-001": "PASS",
+      "RC-INS-002": "PASS",
+      "RC-INS-003": "PASS",
+      "RC-INS-004": "PASS",
+      "RC-INS-005": "PASS",
+      "RC-INS-006": "PASS",
+      "RC-INS-007": "PASS",
+      "RC-INS-008": "PASS",
+      "RC-INS-009": "PASS",
+      "RC-INS-010": "PASS",
+      "RC-ENV-001": "PASS",
+      "RC-ENV-002": "PASS",
+      "RC-ENV-003": "PASS",
+      "RC-ENV-004": "PASS",
+      "RC-ENV-005": "PASS",
+      "RC-ENV-006": "PASS",
+      "RC-ENV-007": "PASS",
+      "RC-ENV-008": "PASS",
+      "RC-ENV-009": "PASS",
+      "RC-ENV-010": "PASS",
+      "RC-ENV-011": "PASS",
+      "RC-ENV-012": "PASS",
+      "RC-ENV-013": "PASS",
+      "RC-ENV-014": "PASS",
+      "RC-SOL-001": "PASS",
+      "RC-SOL-002": "PASS",
+      "RC-SOL-003": "PASS",
+      "RC-VER-001": "PASS",
+      "RC-VER-002": "PASS",
+      "RC-VER-003": "PASS",
+      "RC-VER-004": "PASS",
+      "RC-VER-005": "PASS",
+      "RC-VER-006": "PASS",
+      "RC-VER-007": "PASS",
+      "RC-VER-008": "NOT_APPLICABLE",
+      "RC-TRIAL-001": "NOT_APPLICABLE",
+      "RC-TRIAL-002": "NOT_APPLICABLE",
+      "RC-TRIAL-003": "NOT_APPLICABLE",
+      "RC-TRIAL-004": "NOT_APPLICABLE",
+      "RC-TRIAL-005": "NOT_APPLICABLE",
+      "RC-TRIAL-006": "NOT_APPLICABLE",
+      "RC-RUB-001": "NOT_APPLICABLE",
+      "RC-RUB-002": "NOT_APPLICABLE",
+      "RC-RUB-003": "NOT_APPLICABLE",
+      "RC-RUB-004": "NOT_APPLICABLE",
+      "RC-RUB-005": "NOT_APPLICABLE",
+      "RC-RUB-006": "NOT_APPLICABLE",
+      "RC-RUB-007": "NOT_APPLICABLE",
+      "RC-RUB-008": "NOT_APPLICABLE",
+      "RC-RUB-009": "NOT_APPLICABLE",
+      "RC-RUB-010": "NOT_APPLICABLE",
+      "RC-RUB-011": "NOT_APPLICABLE",
+      "RC-STRUCT-001": "PASS",
+      "RC-STRUCT-002": "PASS",
+      "RC-META-001": "PASS",
+      "RC-META-002": "NOT_APPLICABLE",
+      "RC-META-003": "PASS",
+      "RC-META-004": "NOT_APPLICABLE",
+      "RC-META-005": "PASS",
+      "RC-META-006": "PASS",
+      "RC-META-007": "NOT_APPLICABLE"
+    },
+    "acceptance_notes": [
+      "RC-META-004 and RC-TRIAL rows require authorized combined 10 model trials before final difficulty acceptance.",
+      "Edition 3 has no rubrics.txt package artifact; RC-RUB rows are structurally N/A.",
+      "Auto-mode comprehensive walk; prefer a cold separate chat for audit if independence must be strict."
+    ]
+  }
+}
