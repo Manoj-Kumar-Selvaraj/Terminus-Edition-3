@@ -1,0 +1,71 @@
+name: Generate post-remediation COBOL Q4 packet
+
+on:
+  push:
+    paths:
+      - '.github/workflows/generate-cobol-q4-replacement-packet.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Generate immutable Q4 packet and self-clean
+        shell: bash
+        run: |
+          set -euo pipefail
+          TASK='cobol-comp3-python-equiv'
+          EXPECTED='9ce15848421135eaa83c356c26a0661ec795532f'
+          PREFIX="${EXPECTED:0:8}"
+          WORKFLOW='.github/workflows/generate-cobol-q4-replacement-packet.yml'
+
+          actual="$(git log -1 --format=%H -- "$TASK")"
+          echo "Git-derived task commit: $actual"
+          [[ "$actual" == "$EXPECTED" ]] || {
+            echo "::error::STALE task commit: expected $EXPECTED got $actual"
+            exit 1
+          }
+          [[ -z "$(git status --porcelain -- "$TASK")" ]] || {
+            echo "::error::Task tree is dirty"
+            exit 1
+          }
+
+          python3 .terminus/new_review_packet.py \
+            "$TASK" spec-test-contract \
+            --state FROZEN_CANDIDATE \
+            --change 'Replacement Q4 after one consolidated post-Q4 remediation cycle. The verifier now covers real CLI/operator workflows, durable accepted/rejected transaction semantics and replay uniqueness, stable reject codes and policy branches, reconciliation controls/tolerances/safety invariants, publication integrity/idempotence, and record-boundary behavior; private exception-message and private-label grading contracts were removed. Final deterministic evidence: Ruff PASS, Oracle 40/40 PASS, NOP reward 0 with empirical 30/30 F2P FAIL and 10/10 P2P PASS, strict complexity PASS at 3907 LOC / 30 F2P / 10 P2P / 12 requirements. Production task.toml/environment scope is unchanged from the current Q6 PASS.'
+
+          mapfile -t packets < <(find ".terminus/reviews/$TASK/$PREFIX" -maxdepth 1 -type f -name "${TASK}-${PREFIX}-spec-test-contract-*.packet.json" -print)
+          [[ ${#packets[@]} -eq 1 ]] || {
+            printf '::error::Expected exactly one new Q4 packet, found %s\n' "${#packets[@]}"
+            printf '%s\n' "${packets[@]:-}"
+            exit 1
+          }
+          PACKET="${packets[0]}"
+          python3 - "$PACKET" "$EXPECTED" <<'PY'
+          import json, pathlib, sys
+          packet_path = pathlib.Path(sys.argv[1])
+          expected = sys.argv[2]
+          packet = json.loads(packet_path.read_text())
+          assert packet['task'] == 'cobol-comp3-python-equiv'
+          assert packet['task_commit'] == expected
+          assert packet['state'] == 'FROZEN_CANDIDATE'
+          assert packet['role'] == 'Spec-Test Contract Reviewer'
+          output = pathlib.Path(packet['review_output_path'])
+          assert not output.exists(), f'review output already exists: {output}'
+          print('packet:', packet_path)
+          print('review_id:', packet['review_id'])
+          print('review_output:', output)
+          PY
+
+          rm -f "$WORKFLOW"
+          git config user.name 'terminus-review-packet-bot'
+          git config user.email 'terminus-review-packet-bot@users.noreply.github.com'
+          git add ".terminus/reviews/$TASK/$PREFIX" "$WORKFLOW"
+          git commit -m 'Add post-remediation COBOL Q4 review packet'
+          git push origin HEAD:task/cobol-comp3-python-equiv-strict-rebuild
