@@ -1,0 +1,272 @@
+{
+  "schema_version": "3.0",
+  "role": "Adjudicator",
+  "review_id": "cobol-comp3-python-equiv-9ce15848-adjudication-400e19c155",
+  "task": "cobol-comp3-python-equiv",
+  "task_commit": "9ce15848421135eaa83c356c26a0661ec795532f",
+  "control_plane_commit": "a9cd12a73cf1d3bbddfe66f8992fba5aaac3bd71",
+  "protocol_policy_version": "2.2",
+  "prompt_policy_version": "2.2",
+  "role_policy_version": "1.0",
+  "role_contract_hash": "ae7523f7674adecdb0ca242024e8ee1cc0483105b249621469ec288184485cca",
+  "context_packet": ".terminus/reviews/cobol-comp3-python-equiv/9ce15848/cobol-comp3-python-equiv-9ce15848-adjudication-400e19c155.packet.json",
+  "verdict": "REQUEST_CHANGES",
+  "confidence": "HIGH",
+  "evidence_status": "SUFFICIENT",
+  "summary": "BOTH_PARTLY. Semantic adjudication rejects the classifier's all-latent result while upholding all seven current Q4 blockers as material. Q4-001, Q4-002 and Q4-006 are repair-touched/incomplete prior remediation; Q4-004 is a pure latent reviewer omission; Q4-003, Q4-005 and Q4-007 are mixed latent/repair-touched findings. Prior Q4 remediation boundaries control incomplete repair work; current Q4 controls independently supported latent defects or ambiguity missed by the prior exhaustive review. Oracle/NOP success is not semantic Q4 acceptance. No new findings are introduced.",
+  "evidence": [
+    {
+      "type": "artifact",
+      "ref": ".terminus/reviews/cobol-comp3-python-equiv/9ce15848/cobol-comp3-python-equiv-9ce15848-adjudication-400e19c155.packet.json",
+      "observation": "Packet fixes task commit 9ce15848421135eaa83c356c26a0661ec795532f, Protocol/Prompt 2.2, Adjudicator role, authoritative rules, allowed evidence, output schema and review_output_path."
+    },
+    {
+      "type": "rule",
+      "ref": ".terminus/agents/PROTOCOL.md",
+      "observation": "Protocol 2.2 no-drip/circuit-breaker requires semantic adjudication after one consolidated repair/refreeze; path-level classification is first-pass evidence, latent findings are not automatically waived, and deterministic green does not settle Q4 semantics."
+    },
+    {
+      "type": "rule",
+      "ref": ".terminus/agents/PROMPTS.md#Adjudicator",
+      "observation": "The Adjudicator resolves frozen-review conflict by controlling rule/evidence and scope reconciliation rather than selecting an earlier or later review wholesale."
+    },
+    {
+      "type": "review",
+      "ref": ".terminus/reviews/cobol-comp3-python-equiv/02a558ab/cobol-comp3-python-equiv-02a558ab-spec-test-contract-5feb4ce4ba.json",
+      "observation": "Prior exhaustive Q4 already required meaningful public CLI/preflight/audit/archive coverage, policy/reject-code coverage, reconciliation/publication safety, removal of private error/label contracts, and verifier-independent publication verification."
+    },
+    {
+      "type": "review",
+      "ref": ".terminus/reviews/cobol-comp3-python-equiv/9ce15848/cobol-comp3-python-equiv-9ce15848-spec-test-contract-425d520855.json",
+      "observation": "Current exhaustive Q4 reports Q4-001..Q4-007 covering operator-workflow depth, archive circularity, reconciliation/publication integration and settlement ambiguity, persisted reject codes, undocumented labels/states, undocumented CLI/manifest schemas, and underdefined reason/type compatibility."
+    },
+    {
+      "type": "artifact",
+      "ref": "git-diff:02a558aba2ada944ce3a3131baa0d6847c39f909..9ce15848421135eaa83c356c26a0661ec795532f",
+      "observation": "The consolidated repair changes only cobol-comp3-python-equiv/tests/test_outputs.py and cobol-comp3-python-equiv/solution/fixed/publication.py. Solver-visible instruction/runtime contract and inherited environment interfaces are unchanged."
+    },
+    {
+      "type": "file",
+      "ref": "cobol-comp3-python-equiv/environment/equiv/ops/runtime-contract.md@9ce15848421135eaa83c356c26a0661ec795532f",
+      "observation": "The solver-visible contract requires caller-aware CLI workflows, substantive preflight/audit/archive behavior, stable persisted operational reject codes, reason/type compatibility, reconciliation safety/detail checks and publication gating, but does not define the private labels, most exact CLI JSON fields, full manifest schema, detailed-settlement invariant or reason/type table asserted or needed by current tests."
+    },
+    {
+      "type": "test",
+      "ref": "cobol-comp3-python-equiv/tests/test_outputs.py@02a558aba2ada944ce3a3131baa0d6847c39f909",
+      "observation": "Before repair, QUANTITY, TRANSFER_LOOP, ITEM_INACTIVE and WAREHOUSE_INACTIVE were already exercised internally and some pipeline state strings were asserted, while public CLI/operator and independent publication checks were absent."
+    },
+    {
+      "type": "test",
+      "ref": "cobol-comp3-python-equiv/tests/test_outputs.py@9ce15848421135eaa83c356c26a0661ec795532f",
+      "observation": "Repair adds or strengthens CLI, preflight/audit/archive, reject persistence and publication checks, but audit/archive remain largely healthy/self-reported; failed publication uses an injected ReconciliationResult; four stable reject codes remain unverified at persistence; and tests assert undocumented labels/state/schema details."
+    },
+    {
+      "type": "run",
+      "ref": "github-actions:31938920615",
+      "observation": "classify_review_delta.py first pass classified Q4-001..Q4-007 as LATENT_REVIEWER_OMISSION and requires_adjudication=true; this result is treated only as provenance evidence and is not mechanically copied."
+    }
+  ],
+  "findings": [
+    {
+      "id": "ADJ-Q4-001",
+      "severity": "HIGH",
+      "status": "OBSERVED",
+      "criterion": "Q4-001: repair-touched incomplete operator/caller remediation under prior Q4-01.",
+      "evidence_refs": [
+        ".terminus/reviews/cobol-comp3-python-equiv/02a558ab/cobol-comp3-python-equiv-02a558ab-spec-test-contract-5feb4ce4ba.json#Q4-01",
+        ".terminus/reviews/cobol-comp3-python-equiv/9ce15848/cobol-comp3-python-equiv-9ce15848-spec-test-contract-425d520855.json#Q4-001",
+        "git-diff:02a558aba2ada944ce3a3131baa0d6847c39f909..9ce15848421135eaa83c356c26a0661ec795532f"
+      ],
+      "why_it_matters": "The operator/caller requirements existed before repair and prior Q4-01 required meaningful preflight/audit/archive and caller-path verification. The specific defect now challenged is in repair-added verifier behavior: historical-baseline preflight is substantively perturbed, while audit/archive remain mostly healthy/default and do not establish the full caller/health behavior.",
+      "minimal_remediation": "Within prior Q4-01, add grouped black-box perturbations for distinct documented preflight/audit health families and caller source/layout behavior for audit/archive, verifying public effects rather than private call paths.",
+      "regression_risk": "Do not add one test per output field or freeze private helper structure."
+    },
+    {
+      "id": "ADJ-Q4-002",
+      "severity": "HIGH",
+      "status": "OBSERVED",
+      "criterion": "Q4-002: repair-touched circular archive verification under prior Q4-01.",
+      "evidence_refs": [
+        ".terminus/reviews/cobol-comp3-python-equiv/02a558ab/cobol-comp3-python-equiv-02a558ab-spec-test-contract-5feb4ce4ba.json#Q4-01",
+        ".terminus/reviews/cobol-comp3-python-equiv/9ce15848/cobol-comp3-python-equiv-9ce15848-spec-test-contract-425d520855.json#Q4-002",
+        "cobol-comp3-python-equiv/tests/test_outputs.py@9ce15848421135eaa83c356c26a0661ec795532f"
+      ],
+      "why_it_matters": "Archive obligations were reviewable before repair, but the current self-certifying test defect arose when repair added archive coverage that trusts returned validity fields without independently proving archive/export/registry/lineage/journal/retention consequences.",
+      "minimal_remediation": "Independently inspect public archive/export state, registry/lineage/integrity evidence, journal recording and retention consequences; assert stable public invariants rather than self-reported booleans.",
+      "regression_risk": "Do not replace circular booleans with an undocumented exact-filename or serialization oracle."
+    },
+    {
+      "id": "ADJ-Q4-003",
+      "severity": "HIGH",
+      "status": "OBSERVED",
+      "criterion": "Q4-003: mixed incomplete reconciliation/publication repair and latent detailed-settlement ambiguity.",
+      "evidence_refs": [
+        ".terminus/reviews/cobol-comp3-python-equiv/02a558ab/cobol-comp3-python-equiv-02a558ab-spec-test-contract-5feb4ce4ba.json#Q4-04",
+        ".terminus/reviews/cobol-comp3-python-equiv/9ce15848/cobol-comp3-python-equiv-9ce15848-spec-test-contract-425d520855.json#Q4-003",
+        "cobol-comp3-python-equiv/tests/test_outputs.py::test_f2p_failed_reconciliation_cannot_publish",
+        "cobol-comp3-python-equiv/environment/equiv/ops/runtime-contract.md#Reconciliation-and-publication-contract"
+      ],
+      "why_it_matters": "The missing real reconcile-to-pipeline-to-publication negative path is repair-touched and inside prior Q4-04. Separately, the undefined detailed-settlement invariant existed and was fully reviewable during the prior exhaustive Q4 but was missed. Injecting a prefailed ReconciliationResult does not prove production propagation/gating, and an unstated settlement invariant is not fairly inferable.",
+      "minimal_remediation": "Define the material detailed-settlement invariant solver-visibly, then exercise a real mismatch/safety/detail-settlement failure through normal reconciliation and pipeline publication gating and independently prove no publication/registry/artifact side effect.",
+      "regression_risk": "Keep both specification and tests at minimal public invariants; do not prescribe private control labels."
+    },
+    {
+      "id": "ADJ-Q4-004",
+      "severity": "HIGH",
+      "status": "OBSERVED",
+      "criterion": "Q4-004: pure latent reviewer omission; current Q4 controls persisted stable reject-code coverage.",
+      "evidence_refs": [
+        ".terminus/reviews/cobol-comp3-python-equiv/9ce15848/cobol-comp3-python-equiv-9ce15848-spec-test-contract-425d520855.json#Q4-004",
+        "cobol-comp3-python-equiv/tests/test_outputs.py@02a558aba2ada944ce3a3131baa0d6847c39f909",
+        "cobol-comp3-python-equiv/environment/equiv/ops/runtime-contract.md#Durable-processing-contract"
+      ],
+      "why_it_matters": "The stable code list and persistence requirement were solver-visible and fully reviewable before repair, and the four code families were already exercised internally. Prior exhaustive Q4 missed that QUANTITY, TRANSFER_LOOP, ITEM_INACTIVE and WAREHOUSE_INACTIVE were not verified at the public reject CSV/database boundary. Repair did not create this gap, and Protocol 2.2 does not waive a valid latent blocker.",
+      "minimal_remediation": "Drive representative rejected movements for QUANTITY, TRANSFER_LOOP, ITEM_INACTIVE and WAREHOUSE_INACTIVE through the operational path and assert the stable code at the public persistence boundary, including CSV when publicly produced.",
+      "regression_risk": "Assert documented stable codes and persistence, not private validation object shape."
+    },
+    {
+      "id": "ADJ-Q4-005",
+      "severity": "HIGH",
+      "status": "OBSERVED",
+      "criterion": "Q4-005: mixed repair-touched and latent private-label/state coupling.",
+      "evidence_refs": [
+        ".terminus/reviews/cobol-comp3-python-equiv/02a558ab/cobol-comp3-python-equiv-02a558ab-spec-test-contract-5feb4ce4ba.json#Q4-06",
+        ".terminus/reviews/cobol-comp3-python-equiv/9ce15848/cobol-comp3-python-equiv-9ce15848-spec-test-contract-425d520855.json#Q4-005",
+        "cobol-comp3-python-equiv/tests/test_outputs.py@02a558aba2ada944ce3a3131baa0d6847c39f909",
+        "cobol-comp3-python-equiv/tests/test_outputs.py@9ce15848421135eaa83c356c26a0661ec795532f"
+      ],
+      "why_it_matters": "Prior Q4-06 already prohibited grading unstated private labels/messages. Repair introduced or strengthened REASON, RECEIPT_DISABLED and TRANSFER_DISABLED expectations, while some exact pipeline state strings such as PUBLISHED predated repair and were fully reviewable but not exhaustively surfaced. The public contract requires semantic invalid/held/published behavior, not those private vocabulary choices.",
+      "minimal_remediation": "Replace undocumented policy/capability/state string assertions with documented external behavioral outcomes and stable public codes; promote an exact label/state only if intentionally a stable public interface.",
+      "regression_risk": "Preserve strong negative and publication-state behavior while removing private vocabulary."
+    },
+    {
+      "id": "ADJ-Q4-006",
+      "severity": "HIGH",
+      "status": "OBSERVED",
+      "criterion": "Q4-006: repair-touched phantom structured-output contracts under prior Q4-01 and Q4-07.",
+      "evidence_refs": [
+        ".terminus/reviews/cobol-comp3-python-equiv/02a558ab/cobol-comp3-python-equiv-02a558ab-spec-test-contract-5feb4ce4ba.json#Q4-01",
+        ".terminus/reviews/cobol-comp3-python-equiv/02a558ab/cobol-comp3-python-equiv-02a558ab-spec-test-contract-5feb4ce4ba.json#Q4-07",
+        ".terminus/reviews/cobol-comp3-python-equiv/9ce15848/cobol-comp3-python-equiv-9ce15848-spec-test-contract-425d520855.json#Q4-006",
+        "git-diff:02a558aba2ada944ce3a3131baa0d6847c39f909..9ce15848421135eaa83c356c26a0661ec795532f"
+      ],
+      "why_it_matters": "Repair added or strengthened CLI and independent publication checks to satisfy prior Q4-01/Q4-07, but grades exact JSON field paths and manifest organization not declared by the solver-visible contract. Prior Q4-07 explicitly required independent stable-semantic verification without freezing incidental serialization.",
+      "minimal_remediation": "Relax assertions to documented semantic/public boundaries and verifier-independent integrity/generation/publication properties, or document only fields intentionally guaranteed as stable external interfaces.",
+      "regression_risk": "Do not over-document the current implementation merely to legitimize incidental schema assertions."
+    },
+    {
+      "id": "ADJ-Q4-007",
+      "severity": "MEDIUM",
+      "status": "OBSERVED",
+      "criterion": "Q4-007: mixed latent reason/type ambiguity and repair-touched hardcoded enforcement.",
+      "evidence_refs": [
+        ".terminus/reviews/cobol-comp3-python-equiv/02a558ab/cobol-comp3-python-equiv-02a558ab-spec-test-contract-5feb4ce4ba.json#Q4-03",
+        ".terminus/reviews/cobol-comp3-python-equiv/9ce15848/cobol-comp3-python-equiv-9ce15848-spec-test-contract-425d520855.json#Q4-007",
+        "cobol-comp3-python-equiv/tests/test_outputs.py::test_f2p_zero_quantity_is_rejected",
+        "cobol-comp3-python-equiv/environment/equiv/ops/runtime-contract.md"
+      ],
+      "why_it_matters": "Reason/type compatibility was explicit and fully reviewable before repair, but neither instruction nor delegated contract defined the valid mapping; prior Q4-03 asked for coverage without resolving that ambiguity. Repair then hardcoded RECEIPT with SALE as invalid plus exact REASON vocabulary. The missing normative rule is latent; the particular undocumented enforcement is repair-touched.",
+      "minimal_remediation": "Define the allowed reason/type combinations or a normative compatibility rule solver-visibly, then test the documented public invalid/accepted outcome without requiring REASON unless it is deliberately public.",
+      "regression_risk": "Keep the mapping domain-focused and minimal; do not encode a hidden fixture table or private representation."
+    }
+  ],
+  "missing_evidence": [],
+  "change_scope": [
+    "This adjudicator execution writes only the packet-specified review_output_path.",
+    "Any remediation after this frozen result must be explicitly routed by the CI Orchestrator and limited to the seven adjudicated closure items."
+  ],
+  "do_not_change": [
+    "Do not modify task, verifier, solution, environment, instruction or contract files during this adjudicator execution.",
+    "Do not rerun Q4 from this adjudicator execution.",
+    "Do not treat Ruff, Oracle or NOP success as semantic Q4 acceptance.",
+    "Do not waive Q4-004 because it is latent or classify Q4-001/Q4-002/Q4-006 as pure latent solely from path-level classifier output.",
+    "Do not introduce unrelated new findings beyond Q4-001..Q4-007."
+  ],
+  "next_gate": "Return control to the CI Orchestrator with this frozen canonical adjudication. The Orchestrator may route one consolidated adjudicated closure repair/refreeze under Protocol 2.2 before any later exact-commit Q4 recheck; this Adjudicator does not perform that repair or recheck.",
+  "role_output": {
+    "DECISION": "BOTH_PARTLY",
+    "CONTROLLING_RULE_OR_EVIDENCE": "Protocol 2.2 no-drip/circuit-breaker controls provenance and routing; semantic equivalence, not path overlap, controls each disposition. The unchanged solver-visible instruction/runtime contract plus exact 02a558ab..9ce15848 task diff control materiality. Prior Q4 remediation boundaries control incomplete repair work; current Q4 controls independently supported latent omissions or ambiguities the prior exhaustive review missed.",
+    "SCOPE_RECONCILIATION": "Do not select either frozen Q4 wholesale. Q4-001, Q4-002 and Q4-006 are REPAIR_TOUCHED; Q4-004 is PURE_LATENT_REVIEWER_OMISSION; Q4-003, Q4-005 and Q4-007 are MIXED; none is UNSUPPORTED. All seven are substantively correct after semantic narrowing and remain blocking under the solver-visible contract.",
+    "REASON": "The repair touched only tests/test_outputs.py and solution/fixed/publication.py. That can create new verifier defects even with an unchanged public contract, while unchanged fully reviewable gaps can remain valid latent omissions. The classifier's path result therefore does not settle semantic provenance.",
+    "REQUIRED_ACTION": "Freeze ADJ-Q4-001..ADJ-Q4-007 as the canonical closure set and return control to the CI Orchestrator. If remediation is authorized, make one consolidated closure repair implementing only the minimal remedies recorded here.",
+    "RECHECK": "No recheck is performed by this Adjudicator. Any future exact-commit Q4 recheck occurs only after Orchestrator-authorized remediation/refreeze and deterministic evidence refresh.",
+    "CLASSIFICATION_SUMMARY": {
+      "REPAIR_TOUCHED": ["Q4-001", "Q4-002", "Q4-006"],
+      "PURE_LATENT_REVIEWER_OMISSION": ["Q4-004"],
+      "MIXED": ["Q4-003", "Q4-005", "Q4-007"],
+      "UNSUPPORTED": []
+    },
+    "FINDING_DISPOSITIONS": [
+      {
+        "finding_id": "Q4-001",
+        "prior_reviewable": "Underlying operator/caller requirements were reviewable; the specific incomplete repaired verifier behavior did not exist until repair.",
+        "repair_effect": "Added operator/caller tests but incompletely exercised documented health families and audit/archive caller paths.",
+        "semantic_class": "REPAIR_TOUCHED",
+        "materiality": "UPHELD_HIGH",
+        "controlling_boundary": "Prior Q4-01 remediation boundary controls.",
+        "final_disposition": "UPHOLD",
+        "minimal_required_remediation": "Grouped black-box caller-path and preflight/audit/archive health perturbations at public effects."
+      },
+      {
+        "finding_id": "Q4-002",
+        "prior_reviewable": "Archive obligations were reviewable, but the self-certifying archive-test defect arose only with repair-added coverage.",
+        "repair_effect": "Archive test trusts returned validity booleans rather than independent external evidence.",
+        "semantic_class": "REPAIR_TOUCHED",
+        "materiality": "UPHELD_HIGH",
+        "controlling_boundary": "Prior Q4-01 remediation boundary controls.",
+        "final_disposition": "UPHOLD",
+        "minimal_required_remediation": "Independently verify archive/export/registry/lineage/journal/retention consequences."
+      },
+      {
+        "finding_id": "Q4-003",
+        "prior_reviewable": "Integration was already reviewable and prior Q4-04 found it incomplete; undefined detailed-settlement semantics were also fully reviewable but missed.",
+        "repair_effect": "Added direct atomic_publish negative check with injected failing reconciliation, not real pipeline propagation.",
+        "semantic_class": "MIXED",
+        "materiality": "UPHELD_HIGH",
+        "controlling_boundary": "Prior Q4-04 controls integration remediation; current Q4 controls latent detailed-settlement ambiguity.",
+        "final_disposition": "UPHOLD",
+        "minimal_required_remediation": "Define detailed settlement and prove a real reconciliation/safety/detail failure prevents publication and side effects."
+      },
+      {
+        "finding_id": "Q4-004",
+        "prior_reviewable": "Yes; stable reject-code persistence was explicit and the four code families were already exercised internally.",
+        "repair_effect": "Added persistence checks for other codes but did not create or materially change the missing four-code persistence boundary.",
+        "semantic_class": "PURE_LATENT_REVIEWER_OMISSION",
+        "materiality": "UPHELD_HIGH",
+        "controlling_boundary": "Current Q4-004 controls because prior exhaustive Q4 omitted this fully reviewable persistence boundary.",
+        "final_disposition": "UPHOLD",
+        "minimal_required_remediation": "Persisted public-boundary assertions for QUANTITY, TRANSFER_LOOP, ITEM_INACTIVE and WAREHOUSE_INACTIVE."
+      },
+      {
+        "finding_id": "Q4-005",
+        "prior_reviewable": "Private-contract risk was reviewable and prior Q4-06 found related coupling; some state-string coupling predated repair.",
+        "repair_effect": "Introduced or strengthened exact REASON, RECEIPT_DISABLED and TRANSFER_DISABLED assertions plus state checks.",
+        "semantic_class": "MIXED",
+        "materiality": "UPHELD_HIGH",
+        "controlling_boundary": "Prior Q4-06 controls repair-added labels; current Q4 controls latent pre-existing state-string coupling.",
+        "final_disposition": "UPHOLD",
+        "minimal_required_remediation": "Grade documented semantic outcomes or stable public codes instead of undocumented labels/states."
+      },
+      {
+        "finding_id": "Q4-006",
+        "prior_reviewable": "The exact phantom schemas became grading constraints through repaired CLI/publication checks.",
+        "repair_effect": "Added or strengthened exact CLI JSON and publication-manifest assertions while satisfying prior Q4-01/Q4-07.",
+        "semantic_class": "REPAIR_TOUCHED",
+        "materiality": "UPHELD_HIGH",
+        "controlling_boundary": "Prior Q4-01 and Q4-07 remediation boundaries control.",
+        "final_disposition": "UPHOLD",
+        "minimal_required_remediation": "Relax to documented semantic/integrity properties or document only truly stable public fields."
+      },
+      {
+        "finding_id": "Q4-007",
+        "prior_reviewable": "Yes; compatibility was required but its mapping/rule was not defined, and prior Q4-03 requested coverage without resolving it.",
+        "repair_effect": "Hardcoded RECEIPT+SALE invalid plus exact REASON vocabulary.",
+        "semantic_class": "MIXED",
+        "materiality": "UPHELD_MEDIUM_BLOCKING",
+        "controlling_boundary": "Prior Q4-03 controls the need to test compatibility; current Q4-007 controls the latent missing normative mapping.",
+        "final_disposition": "UPHOLD",
+        "minimal_required_remediation": "Define solver-visible compatibility mapping/rule, then test public outcomes without private label coupling."
+      }
+    ]
+  }
+}
