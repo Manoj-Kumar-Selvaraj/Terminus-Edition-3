@@ -1,0 +1,124 @@
+name: Freeze COBOL Q4 closure packet
+
+on:
+  push:
+    branches:
+      - task/cobol-comp3-python-equiv-strict-rebuild
+    paths:
+      - .github/workflows/freeze-cobol-q4-closure-packet.yml
+
+permissions:
+  contents: write
+
+jobs:
+  freeze:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: task/cobol-comp3-python-equiv-strict-rebuild
+          fetch-depth: 0
+
+      - name: Verify exact closure strategy and frozen task
+        shell: bash
+        run: |
+          set -euo pipefail
+          REDESIGN=ddf8fd8f1219e807464897a93538e75fbe316fbd
+          TASK_COMMIT=bb2e042c45873da3f3d78836d915ddb6446debf2
+          test "$(git rev-parse HEAD^)" = "$REDESIGN"
+          test "$(git log -1 --format=%H -- cobol-comp3-python-equiv)" = "$TASK_COMMIT"
+          test -f .terminus/agents/Q4_CLOSURE_POLICY.md
+          grep -F 'Policy version: `1.0`' .terminus/agents/Q4_CLOSURE_POLICY.md
+          test -f .terminus/new_q4_closure_packet.py
+          test -f .terminus/reviews/cobol-comp3-python-equiv/59dcf214/cobol-comp3-python-equiv-59dcf214-adjudication-516e0ca6b1.json
+          test -f .terminus/reviews/cobol-comp3-python-equiv/bb2e042c/cobol-comp3-python-equiv-bb2e042c-spec-test-contract-852fc1b28a.json
+          test "$(git status --porcelain -- cobol-comp3-python-equiv)" = ""
+          test "$(find .terminus/reviews/cobol-comp3-python-equiv/bb2e042c -maxdepth 1 -type f -name '*q4-closure-adjudication*.packet.json' | wc -l)" -eq 0
+          test "$(find .terminus/reviews/cobol-comp3-python-equiv/bb2e042c -maxdepth 1 -type f -name '*q4-closure-adjudication*.json' ! -name '*.packet.json' | wc -l)" -eq 0
+
+      - name: Generate repository-native Q4 closure packet
+        shell: bash
+        run: |
+          set -euo pipefail
+          python .terminus/new_q4_closure_packet.py \
+            cobol-comp3-python-equiv \
+            --boundary-adjudication .terminus/reviews/cobol-comp3-python-equiv/59dcf214/cobol-comp3-python-equiv-59dcf214-adjudication-516e0ca6b1.json \
+            --final-q4 .terminus/reviews/cobol-comp3-python-equiv/bb2e042c/cobol-comp3-python-equiv-bb2e042c-spec-test-contract-852fc1b28a.json \
+            --repair-base 59dcf2146e1bac84cbc98d7d641e79b5a0138c4a \
+            | tee /tmp/closure-packet-generation.log
+          packet=$(find .terminus/reviews/cobol-comp3-python-equiv/bb2e042c -maxdepth 1 -type f -name '*q4-closure-adjudication*.packet.json)
+          test -n "$packet"
+          test "$(printf '%s\n' "$packet" | wc -l)" -eq 1
+          printf '%s\n' "$packet" > /tmp/closure-packet-path
+
+      - name: Validate packet bindings and result absence
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          task_commit = 'bb2e042c45873da3f3d78836d915ddb6446debf2'
+          boundary = '.terminus/reviews/cobol-comp3-python-equiv/59dcf214/cobol-comp3-python-equiv-59dcf214-adjudication-516e0ca6b1.json'
+          final_q4 = '.terminus/reviews/cobol-comp3-python-equiv/bb2e042c/cobol-comp3-python-equiv-bb2e042c-spec-test-contract-852fc1b28a.json'
+          repair_base = '59dcf2146e1bac84cbc98d7d641e79b5a0138c4a'
+
+          packet_path = Path(Path('/tmp/closure-packet-path').read_text().strip())
+          packet = json.loads(packet_path.read_text(encoding='utf-8'))
+          q4 = json.loads(Path(final_q4).read_text(encoding='utf-8'))
+
+          assert packet['schema_version'] == '3.0'
+          assert packet['role'] == 'Q4 Closure Adjudicator'
+          assert packet['state'] == 'Q4_CLOSURE_ADJUDICATION'
+          assert packet['task'] == 'cobol-comp3-python-equiv'
+          assert packet['task_commit'] == task_commit
+          assert packet['final_task_commit'] == task_commit
+          assert packet['repair_base_task_commit'] == repair_base
+          assert packet['boundary_adjudication'] == boundary
+          assert packet['final_q4_result'] == final_q4
+          assert packet['closure_policy_version'] == '1.0'
+          assert packet['prior_verdicts_visible'] is True
+          assert len(packet['role_contract_hash']) == 64
+
+          fingerprints = packet['finding_fingerprints']
+          assert isinstance(fingerprints, dict)
+          q4_ids = {str(item['id']) for item in q4['findings']}
+          assert set(fingerprints) == q4_ids
+          assert all(len(value) == 64 for value in fingerprints.values())
+
+          expected_packet = Path(packet['review_output_path']).with_suffix('.packet.json')
+          assert packet_path == expected_packet
+          assert not Path(packet['review_output_path']).exists()
+          assert packet_path.parent.name == task_commit[:8]
+
+          print('packet=' + packet_path.as_posix())
+          print('review_id=' + packet['review_id'])
+          print('review_output=' + packet['review_output_path'])
+          print('role_contract_hash=' + packet['role_contract_hash'])
+          print('finding_count=' + str(len(fingerprints)))
+          for finding_id in sorted(fingerprints):
+              print(f'fingerprint[{finding_id}]={fingerprints[finding_id]}')
+          PY
+          test "$(git log -1 --format=%H -- cobol-comp3-python-equiv)" = "bb2e042c45873da3f3d78836d915ddb6446debf2"
+          if git diff --name-only | grep -q '^cobol-comp3-python-equiv/'; then
+            echo 'ERROR: packet generation changed task scope' >&2
+            exit 1
+          fi
+
+      - name: Commit immutable packet and remove freezer
+        shell: bash
+        run: |
+          set -euo pipefail
+          packet=$(cat /tmp/closure-packet-path)
+          rm .github/workflows/freeze-cobol-q4-closure-packet.yml
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add "$packet" .github/workflows/freeze-cobol-q4-closure-packet.yml
+          git diff --cached --check
+          if git diff --cached --name-only | grep -q '^cobol-comp3-python-equiv/'; then
+            echo 'ERROR: packet commit staged task scope' >&2
+            exit 1
+          fi
+          git commit -m 'review: freeze COBOL Q4 closure packet'
+          git push origin HEAD:task/cobol-comp3-python-equiv-strict-rebuild
