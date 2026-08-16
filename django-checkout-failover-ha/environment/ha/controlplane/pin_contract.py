@@ -1,8 +1,8 @@
 """Sticky-read pin keyspace and store contracts.
 
 Pins must survive AZ hops and must not live in ``django_session`` on either shop
-file. The starter settings still attach LocMem / DB sessions; this module is the
-shared key and TTL contract both AZs must honor once pins use a shared backend.
+file. This module is the shared key and TTL contract both AZs must honor for the
+``pins`` cache alias.
 """
 from __future__ import annotations
 
@@ -52,7 +52,6 @@ def parse_pin_payload(raw: object) -> PinRecord | None:
     if isinstance(raw, PinRecord):
         return raw
     if not isinstance(raw, Mapping):
-        # Starter may store a bare truthy marker.
         return None
     try:
         return PinRecord(
@@ -139,7 +138,7 @@ def get_pin(backend: PinBackend, shopper_id: int) -> PinRecord | None:
     raw = backend.get(pin_cache_key(shopper_id))
     record = parse_pin_payload(raw)
     if record is None and raw:
-        # Truthy bare pin used by thin starter paths.
+        # Bare truthy markers are treated as legacy pin presence.
         return PinRecord(
             shopper_id=int(shopper_id),
             node_id="",

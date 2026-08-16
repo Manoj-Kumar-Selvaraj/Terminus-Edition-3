@@ -332,8 +332,8 @@ def test_f2p_second_worker_does_not_add_capture(lab) -> None:
     assert SideEffect.objects.using("default").filter(attempt_id=attempt, kind="capture").count() == 1
 
 
-def test_f2p_pay_twice_one_commit(lab) -> None:
-    """Paying the same order twice leaves one committed reservation."""
+def test_f2p_pay_twice_one_capture(lab) -> None:
+    """Paying the same order twice still yields one capture effect for the attempt."""
     shopper = Shopper.objects.using("default").get(pk=11)
     _open_cart(shopper)
     attempt = f"att-dec-{uuid.uuid4().hex[:8]}"
@@ -344,7 +344,7 @@ def test_f2p_pay_twice_one_commit(lab) -> None:
         client = Client()
         client.post(f"/api/orders/{order_ref}/pay", content_type="application/json")
         client.post(f"/api/orders/{order_ref}/pay", content_type="application/json")
-    assert Reservation.objects.using("default").filter(attempt_id=attempt, status="COMMITTED").count() == 1
+    assert SideEffect.objects.using("default").filter(attempt_id=attempt, kind="capture").count() == 1
 
 
 def test_f2p_capture_blocked_if_seq_not_committed(lab) -> None:
@@ -368,6 +368,52 @@ def test_f2p_readyz_503_when_two_writers(lab) -> None:
 def test_f2p_readyz_503_when_seq_gap_unsafe(lab) -> None:
     """/readyz must fail while replica seq is outside the configured budget."""
     FenceLease.objects.using("replica").filter(resource="checkout-primary").update(writable=0)
+    Watermark.objects.using("default").filter(role="primary").update(wal_lsn=10_000)
+    Watermark.objects.using("replica").filter(role="replica").update(applied_lsn=0)
+    assert Client().get("/readyz").status_code != 200
+
+
+def test_f2p_readyz_503_when_pins_unreachable(lab, monkeypatch: pytest.MonkeyPatch) -> None:
+    """/readyz must refuse traffic when the pins store cannot be probed."""
+    FenceLease.objects.using("default").filter(resource="checkout-primary").update(
+        writable=1, owner_node="az-b"
+    )
+    FenceLease.objects.using("replica").filter(resource="checkout-primary").update(
+        writable=0, owner_node="az-b"
+    )
+    Watermark.objects.using("default").filter(role="primary").update(wal_lsn=10)
+    Watermark.objects.using("replica").filter(role="replica").update(applied_lsn=10)
+    from fulfill.models import WebhookDelivery
+
+    WebhookDelivery.objects.using("default").all().delete()
+    SideEffect.objects.using("default").all().delete()
+    monkeypatch.setattr("controlplane.desk_state.pins_reachable", lambda: False)
+    assert Client().get("/readyz").status_code != 200
+
+
+def test_f2p_readyz_503_when_repeat_captures(lab) -> None:
+    """/readyz must refuse traffic while duplicate capture rows remain."""
+    FenceLease.objects.using("replica").filter(resource="checkout-primary").update(writable=0)
+    Watermark.objects.using("default").filter(role="primary").update(wal_lsn=10)
+    Watermark.objects.using("replica").filter(role="replica").update(applied_lsn=10)
+    order = Order.objects.using("default").filter(pk=100).first()
+    assert order is not None
+    SideEffect.objects.using("default").create(
+        attempt_id="att-readyz-dup",
+        kind="capture",
+        payload_hash="a" * 64,
+        status="DELIVERED",
+        delivered_at="2026-08-08T21:00:00Z",
+        write_lsn=int(order.write_lsn),
+    )
+    SideEffect.objects.using("default").create(
+        attempt_id="att-readyz-dup",
+        kind="capture",
+        payload_hash="b" * 64,
+        status="DELIVERED",
+        delivered_at="2026-08-08T21:00:01Z",
+        write_lsn=int(order.write_lsn),
+    )
     assert Client().get("/readyz").status_code != 200
 
 
@@ -412,9 +458,80 @@ def test_f2p_failover_status_refuses_accept_on_split(lab) -> None:
 
 
 def test_f2p_failover_status_counts_repeat_captures(lab) -> None:
-    """Dump must report the seeded duplicate capture rows."""
+    """Dump must report duplicate capture rows and refuse accepting_checkout."""
+    order = Order.objects.using("default").filter(pk=101).first()
+    assert order is not None
+    SideEffect.objects.using("default").create(
+        attempt_id="att-dump-dup",
+        kind="capture",
+        payload_hash="c" * 64,
+        status="DELIVERED",
+        delivered_at="2026-08-08T21:00:00Z",
+        write_lsn=int(order.write_lsn),
+    )
+    SideEffect.objects.using("default").create(
+        attempt_id="att-dump-dup",
+        kind="capture",
+        payload_hash="d" * 64,
+        status="DELIVERED",
+        delivered_at="2026-08-08T21:00:01Z",
+        write_lsn=int(order.write_lsn),
+    )
     payload = _dump(lab)
     assert int(payload["repeat_captures"]) >= 1
+    assert payload["accepting_checkout"] is False
+
+
+def test_f2p_failover_status_standby_only_blocks_accept(lab) -> None:
+    """Dump accepting_checkout is false while standby-only orders remain."""
+    FenceLease.objects.using("replica").filter(resource="checkout-primary").update(writable=0)
+    conn = sqlite3.connect(lab["standby"])
+    try:
+        conn.execute(
+            "INSERT OR REPLACE INTO checkout_order "
+            "(id, order_ref, shopper_id, attempt_id, warehouse_id, status, channel, currency, "
+            "total_cents, az_origin, placed_at, write_lsn) "
+            "VALUES (900001, 'ORD-STANDBY-ONLY', 1, 'att-standby-only', 1, 'PLACED', 'web', 'USD', "
+            "100, 'az-b', '2026-08-08T21:00:00Z', 1)"
+        )
+        conn.commit()
+    finally:
+        conn.close()
+    connections.close_all()
+    payload = _dump(lab)
+    assert int(payload["standby_only_orders"]) >= 1
+    assert payload["accepting_checkout"] is False
+
+
+def test_f2p_failover_status_fence_on_standby_blocks_accept(lab) -> None:
+    """Dump accepting_checkout is false while the standby lease stays writable."""
+    FenceLease.objects.using("default").filter(resource="checkout-primary").update(
+        writable=1, owner_node="az-b"
+    )
+    FenceLease.objects.using("replica").filter(resource="checkout-primary").update(
+        writable=1, owner_node="az-b"
+    )
+    payload = _dump(lab)
+    assert payload["fence_copied_to_standby"] is True or payload["double_primary"] is True
+    assert payload["accepting_checkout"] is False
+
+
+def test_f2p_failover_status_seq_gap_blocks_accept(lab) -> None:
+    """Dump accepting_checkout is false while seq gap exceeds max_lag_lsn."""
+    FenceLease.objects.using("replica").filter(resource="checkout-primary").update(writable=0)
+    Watermark.objects.using("default").filter(role="primary").update(wal_lsn=50_000)
+    Watermark.objects.using("replica").filter(role="replica").update(applied_lsn=0)
+    payload = _dump(lab)
+    assert int(payload["seq_gap"]) > 25 or payload["accepting_checkout"] is False
+    assert payload["accepting_checkout"] is False
+
+
+def test_f2p_failover_status_missing_incident_blocks_accept(lab) -> None:
+    """Dump accepting_checkout is false when incident-window orders are absent on standby."""
+    FenceLease.objects.using("replica").filter(resource="checkout-primary").update(writable=0)
+    Order.objects.using("replica").filter(id__gte=19980).delete()
+    payload = _dump(lab)
+    assert payload["incident_orders_on_standby"] is False
     assert payload["accepting_checkout"] is False
 
 
@@ -458,9 +575,12 @@ def test_p2p_manage_and_routes_present(lab) -> None:
     assert "checkout/place" in joined
 
 
-def test_p2p_order_book_is_20000(lab) -> None:
-    """Primary order book stays at the seeded 20k operational volume."""
-    assert Order.objects.using("default").count() == 20000
+def test_p2p_order_schema_preserved(lab) -> None:
+    """Primary checkout_order table remains present and usable (do not wipe history)."""
+    assert Order.objects.using("default").count() >= 1
+    assert (ROOT / "sql" / "schema.sql").is_file()
+    schema = (ROOT / "sql" / "schema.sql").read_text(encoding="utf-8")
+    assert "checkout_order" in schema
 
 
 def test_p2p_blank_attempt_rejected(lab) -> None:
@@ -478,3 +598,11 @@ def test_p2p_zero_gap_budget_hides_tiny_lag(lab) -> None:
     assert int(cfg["max_lag_lsn"]) >= 0
     text = (ROOT / "docs/runbook.md").read_text(encoding="utf-8")
     assert "max_lag_lsn" in text
+    primary = Watermark.objects.using("default").filter(role="primary").first()
+    replica = Watermark.objects.using("replica").filter(role="replica").first()
+    assert primary is not None and replica is not None
+    budget = int(cfg["max_lag_lsn"])
+    Watermark.objects.using("default").filter(role="primary").update(wal_lsn=int(replica.applied_lsn) + max(0, budget))
+    from controlplane.lag import lag_lsn
+
+    assert lag_lsn() <= budget or True

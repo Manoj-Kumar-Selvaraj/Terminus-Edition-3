@@ -2,7 +2,8 @@ from __future__ import annotations
 
 from django.http import HttpRequest, HttpResponse, JsonResponse
 
-from controlplane.reports import failover_status
+from controlplane.desk_state import collect_desk_snapshot, live_http_accepting
+from controlplane.readiness_policy import ready_http_status
 
 
 def healthz(request: HttpRequest) -> HttpResponse:
@@ -10,6 +11,9 @@ def healthz(request: HttpRequest) -> HttpResponse:
 
 
 def readyz(request: HttpRequest) -> HttpResponse:
-    payload = failover_status()
-    accepting = bool(payload.get("accepting_checkout"))
-    return JsonResponse({"accepting_checkout": accepting}, status=200 if accepting else 503)
+    snap = collect_desk_snapshot()
+    accepting = live_http_accepting(snap)
+    return JsonResponse(
+        {"accepting_checkout": accepting, "blockers": snap.blocker_summary},
+        status=ready_http_status(snap.live),
+    )

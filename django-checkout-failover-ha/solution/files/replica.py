@@ -7,42 +7,28 @@ from pathlib import Path
 from django.conf import settings
 
 from controlplane.models import Watermark
-
-BUSINESS_TABLES = [
-    "catalog_warehouse",
-    "catalog_product",
-    "catalog_pricebook",
-    "identity_shopper",
-    "identity_address",
-    "inventory_stocklot",
-    "inventory_reservation",
-    "checkout_cart",
-    "checkout_cartline",
-    "checkout_attempt",
-    "checkout_order",
-    "checkout_orderline",
-    "checkout_payment",
-    "fulfill_side_effect",
-    "fulfill_webhook",
-]
+from controlplane.replica_plan import default_sync_plan, should_block_writable_lease_copy
 
 
 def apply_standby() -> dict:
+    plan = default_sync_plan()
     primary = Path(settings.DATABASES["default"]["NAME"])
     replica = Path(settings.DATABASES["replica"]["NAME"])
     src = sqlite3.connect(primary)
     dst = sqlite3.connect(replica)
     copied = 0
     applied_lsn = 0
+    tables = list(plan.copy_names())
     try:
         src.row_factory = sqlite3.Row
         primary_mark = src.execute(
             "SELECT wal_lsn FROM ha_watermark WHERE role='primary'"
         ).fetchone()
         applied_lsn = 0 if primary_mark is None else int(primary_mark["wal_lsn"])
-        for table in BUSINESS_TABLES:
+        for table in tables:
+            if should_block_writable_lease_copy(table):
+                continue
             rows = src.execute(f"SELECT * FROM {table}").fetchall()
-            cols = None
             dst.execute(f"DELETE FROM {table}")
             if not rows:
                 continue

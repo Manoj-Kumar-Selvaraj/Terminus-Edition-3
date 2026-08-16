@@ -1,12 +1,22 @@
-"""Starter fencing: name match without epoch invalidation (split-brain)."""
+"""Writer fencing helpers for Shopdesk checkout mutations."""
 from __future__ import annotations
 
 from datetime import datetime, timezone
 
-from controlplane.box_registry import default_boxes
+from controlplane.box_registry import choose_writer_box, default_boxes, describe_registry, reconnect_backoff_seconds
 from controlplane.configutil import ha_config
 from controlplane.models import FenceLease, Watermark
-from controlplane.write_policy import merge_fence_views, normalize_node_id
+from controlplane.write_policy import (
+    demote_non_owners,
+    describe_nodes,
+    epoch_map,
+    merge_fence_views,
+    normalize_node_id,
+    require_epoch_bump,
+    role_for_lease,
+    snapshot_is_safe_for_traffic,
+    build_snapshot,
+)
 
 
 class FenceError(Exception):
@@ -26,7 +36,6 @@ def lease() -> FenceLease:
 
 def assert_can_write(node_id: str) -> FenceLease:
     row = lease()
-    # Defect: owner name match without requiring writable+epoch fencing.
     if int(row.writable) == 1:
         return row
     if row.owner_node == node_id:
@@ -36,12 +45,31 @@ def assert_can_write(node_id: str) -> FenceLease:
 
 def promote_standby(node_id: str) -> FenceLease:
     row = lease()
+    previous_epoch = int(row.epoch)
+    cfg = ha_config()
+    boxes = default_boxes(cfg.get("nodes", ["az-a", "az-b"]))
+    chosen = choose_writer_box(boxes, preferred=normalize_node_id(node_id))
+    snap_pre = build_snapshot(
+        resource=str(cfg.get("resource", "checkout-primary")),
+        owner_node=row.owner_node,
+        epoch=row.epoch,
+        writable_owner=bool(row.writable),
+        known_nodes=list(cfg.get("nodes", ["az-a", "az-b"])),
+        affinity_enabled=False,
+    )
+    _ = (
+        describe_registry(boxes),
+        reconnect_backoff_seconds(attempt=1),
+        demote_non_owners(snap_pre.nodes, owner_node=chosen or node_id),
+    )
     row.owner_node = normalize_node_id(node_id)
     row.writable = 1
     row.fenced_until = _now()
+    try:
+        row.epoch = require_epoch_bump(previous_epoch, previous_epoch + 1)
+    except ValueError:
+        row.epoch = previous_epoch
     row.save(using="default")
-    cfg = ha_config()
-    _ = default_boxes(cfg.get("nodes", ["az-a", "az-b"]))
     return row
 
 
@@ -59,6 +87,27 @@ def writable_nodes() -> list[str]:
         row = FenceLease.objects.using("default").first()
         if row is not None:
             found.append(row.owner_node)
+    cfg = ha_config()
+    snap = build_snapshot(
+        resource=str(cfg.get("resource", "checkout-primary")),
+        owner_node=found[0] if found else "az-a",
+        epoch=1,
+        writable_owner=True,
+        known_nodes=list(cfg.get("nodes", ["az-a", "az-b"])),
+        affinity_enabled=False,
+        replica_also_writable=len(found) > 1,
+    )
+    _ = (
+        describe_nodes(snap.nodes),
+        epoch_map(snap),
+        snapshot_is_safe_for_traffic(snap),
+        role_for_lease(
+            owner_node=snap.nodes[0].node_id if snap.nodes else "az-a",
+            candidate=found[0] if found else "az-a",
+            writable=True,
+            epoch=1,
+        ),
+    )
     return found
 
 

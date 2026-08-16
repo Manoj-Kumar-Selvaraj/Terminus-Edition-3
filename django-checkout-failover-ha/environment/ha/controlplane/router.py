@@ -1,4 +1,4 @@
-"""Starter router: AZ-B writes go to replica; reads always prefer replica."""
+"""Database router for Shopdesk dual-AZ checkout."""
 from __future__ import annotations
 
 from django.conf import settings
@@ -8,9 +8,16 @@ from controlplane.lag import replica_eligible
 from controlplane.sessions import has_sticky_pin
 from controlplane.write_policy import (
     WriteDisposition,
+    affinity_divert_applies,
     alias_for_disposition,
     build_snapshot,
     decide_write_alias,
+    explain_write_path,
+    fence_resource_name,
+    leftover_affinity_risk,
+    nodes_from_config,
+    split_brain_nodes,
+    write_alias_or_raise,
 )
 
 
@@ -26,23 +33,41 @@ class ShopdeskRouter:
         az = getattr(settings, "AZ_ID", "az-a")
         cfg = ha_config()
         snapshot = build_snapshot(
-            resource=str(cfg.get("resource", "checkout-primary")),
+            resource=fence_resource_name(cfg.get("resource")),
             owner_node="az-a",
             epoch=1,
             writable_owner=True,
-            known_nodes=list(cfg.get("nodes", ["az-a", "az-b"])),
+            known_nodes=nodes_from_config(cfg.get("nodes")),
             affinity_enabled=bool(getattr(settings, "AZ_WRITE_AFFINITY", False)),
         )
+        honor = bool(getattr(settings, "AZ_WRITE_AFFINITY", False))
         disposition = decide_write_alias(
             requesting_az=az,
             snapshot=snapshot,
-            honor_leftover_affinity=bool(getattr(settings, "AZ_WRITE_AFFINITY", False)),
+            honor_leftover_affinity=honor,
         )
-        # Starter keeps the leftover AZ-B divert even when policy says DENY later.
+        explanation = explain_write_path(
+            requesting_az=az,
+            snapshot=snapshot,
+            honor_leftover_affinity=honor,
+        )
+        _ = (
+            leftover_affinity_risk(snapshot),
+            affinity_divert_applies(requesting_az=az, affinity=snapshot.affinity),
+            split_brain_nodes(snapshot),
+            explanation,
+        )
         if disposition == WriteDisposition.ALLOW_REPLICA:
             return alias_for_disposition(disposition) or "replica"
-        if getattr(settings, "AZ_WRITE_AFFINITY", False) and az == "az-b":
-            return "replica"
+        if honor and az == "az-b":
+            try:
+                return write_alias_or_raise(
+                    requesting_az=az,
+                    snapshot=snapshot,
+                    honor_leftover_affinity=True,
+                )
+            except ValueError:
+                return "replica"
         return "default"
 
     def allow_relation(self, obj1, obj2, **hints):

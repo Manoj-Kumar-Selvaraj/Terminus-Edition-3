@@ -1,4 +1,4 @@
-"""Starter apply-standby: hardcoded cutoff and copies fence leases."""
+"""Apply standby copy for Shopdesk dual-AZ checkout."""
 from __future__ import annotations
 
 import sqlite3
@@ -9,33 +9,15 @@ from django.conf import settings
 
 from controlplane.configutil import ha_config
 from controlplane.models import Watermark
-from controlplane.replica_plan import default_sync_plan, should_block_writable_lease_copy
+from controlplane.replica_plan import (
+    default_sync_plan,
+    plan_from_discovered,
+    sanitize_lease_row,
+    should_block_writable_lease_copy,
+)
 
 
-# Starter still copies fence leases; plan documents the production intent.
 _PLAN = default_sync_plan()
-
-BUSINESS_TABLES = [
-    "catalog_warehouse",
-    "catalog_product",
-    "catalog_pricebook",
-    "identity_shopper",
-    "identity_address",
-    "inventory_stocklot",
-    "inventory_reservation",
-    "checkout_cart",
-    "checkout_cartline",
-    "checkout_attempt",
-    "checkout_order",
-    "checkout_orderline",
-    "checkout_payment",
-    "fulfill_side_effect",
-    "fulfill_webhook",
-    "django_session",
-    "ha_node",
-    "ha_fence_lease",
-    "ha_watermark",
-]
 
 
 def apply_standby() -> dict:
@@ -46,10 +28,26 @@ def apply_standby() -> dict:
     src = sqlite3.connect(primary)
     dst = sqlite3.connect(replica)
     copied = 0
-    _ = (_PLAN.copy_names(), should_block_writable_lease_copy("ha_fence_lease"))
+    discovered = [
+        row[0]
+        for row in src.execute(
+            "SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'"
+        ).fetchall()
+    ]
+    discovered_plan = plan_from_discovered(discovered)
+    tables = list(_PLAN.copy_names())
+    # Lab still replays lease/session rows during apply; production plans mark leases sanitize-only.
+    for extra in ("ha_node", "django_session", "ha_fence_lease", "ha_watermark"):
+        if extra not in tables:
+            tables.append(extra)
+    _ = (
+        discovered_plan.copy_names(),
+        should_block_writable_lease_copy("ha_fence_lease"),
+        _PLAN.sanitize_names(),
+    )
     try:
         src.row_factory = sqlite3.Row
-        for table in BUSINESS_TABLES:
+        for table in tables:
             if table == "checkout_order":
                 rows = src.execute(
                     "SELECT * FROM checkout_order WHERE id <= ?", (cutoff,)
@@ -62,9 +60,17 @@ def apply_standby() -> dict:
             placeholders = ",".join("?" for _ in cols)
             colnames = ",".join(cols)
             dst.execute(f"DELETE FROM {table}")
+            payload = [tuple(row[c] for c in cols) for row in rows]
+            if table == "ha_fence_lease":
+                # Keep copying; callers that honor sanitize_lease_row demote writable.
+                _ = sanitize_lease_row(
+                    {c: rows[0][c] for c in cols},
+                    writer_node=str(cfg.get("nodes", ["az-a"])[0]),
+                    epoch=1,
+                )
             dst.executemany(
                 f"INSERT INTO {table} ({colnames}) VALUES ({placeholders})",
-                [tuple(row[c] for c in cols) for row in rows],
+                payload,
             )
             copied += len(rows)
         now = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")

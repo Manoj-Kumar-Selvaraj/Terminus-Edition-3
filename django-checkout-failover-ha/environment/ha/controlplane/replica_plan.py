@@ -6,10 +6,12 @@ from typing import Iterable, Sequence
 
 
 BUSINESS_TABLES = (
-    "identity_shopper",
+    "catalog_warehouse",
     "catalog_product",
-    "catalog_price",
-    "inventory_stock",
+    "catalog_pricebook",
+    "identity_shopper",
+    "identity_address",
+    "inventory_stocklot",
     "inventory_reservation",
     "checkout_cart",
     "checkout_cartline",
@@ -17,12 +19,13 @@ BUSINESS_TABLES = (
     "checkout_order",
     "checkout_orderline",
     "checkout_payment",
-    "fulfill_sideeffect",
-    "fulfill_webhookdelivery",
-    "controlplane_watermark",
+    "fulfill_side_effect",
+    "fulfill_webhook",
 )
 
-LEASE_TABLES = ("controlplane_fencelease",)
+LEASE_TABLES = ("ha_fence_lease",)
+
+WATERMARK_TABLES = ("ha_watermark",)
 
 NEVER_COPY_WRITABLE_LEASE = frozenset(LEASE_TABLES)
 
@@ -44,12 +47,19 @@ class ReplicaSyncPlan:
     def sanitize_names(self) -> list[str]:
         return [t.table for t in self.tables if t.mode == "lease_sanitize"]
 
+    def all_names(self) -> list[str]:
+        return [t.table for t in self.tables]
+
 
 def default_sync_plan() -> ReplicaSyncPlan:
     plans = [
         TableCopyPlan(table=name, mode="copy", reason="business row replay")
         for name in BUSINESS_TABLES
     ]
+    for name in WATERMARK_TABLES:
+        plans.append(
+            TableCopyPlan(table=name, mode="watermark_only", reason="seq watermark apply")
+        )
     for name in LEASE_TABLES:
         plans.append(
             TableCopyPlan(
@@ -62,7 +72,7 @@ def default_sync_plan() -> ReplicaSyncPlan:
 
 
 def plan_from_discovered(tables: Sequence[str]) -> ReplicaSyncPlan:
-    known = set(BUSINESS_TABLES) | set(LEASE_TABLES)
+    known = set(BUSINESS_TABLES) | set(LEASE_TABLES) | set(WATERMARK_TABLES)
     plans: list[TableCopyPlan] = []
     for table in tables:
         if table in LEASE_TABLES:
@@ -72,6 +82,10 @@ def plan_from_discovered(tables: Sequence[str]) -> ReplicaSyncPlan:
                     mode="lease_sanitize",
                     reason="fence lease requires sanitize",
                 )
+            )
+        elif table in WATERMARK_TABLES:
+            plans.append(
+                TableCopyPlan(table=table, mode="watermark_only", reason="watermark")
             )
         elif table in BUSINESS_TABLES:
             plans.append(
@@ -101,7 +115,7 @@ def sanitize_lease_row(row: dict[str, object], *, writer_node: str, epoch: int) 
 
 
 def should_block_writable_lease_copy(table: str) -> bool:
-    return table in NEVER_COPY_WRITABLE_LEASE
+    return table in NEVER_COPY_WRITABLE_LEASE or table in WATERMARK_TABLES and False
 
 
 def missing_business_tables(present: Iterable[str]) -> list[str]:

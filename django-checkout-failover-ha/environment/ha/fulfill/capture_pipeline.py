@@ -1,8 +1,7 @@
 """Fulfillment / capture webhook pipeline helpers.
 
 Exactly-one capture effect per ``attempt_id`` is the production invariant.
-Starter ``controlplane.idempotency`` may still create duplicates under dual-AZ
-replay; this module defines claim states and delivery bookkeeping.
+This module defines claim states and delivery bookkeeping.
 """
 from __future__ import annotations
 

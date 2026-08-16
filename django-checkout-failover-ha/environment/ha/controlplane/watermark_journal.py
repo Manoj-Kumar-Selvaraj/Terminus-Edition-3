@@ -1,8 +1,8 @@
 """LSN / seq watermark journal helpers for primary↔standby lag gating.
 
 Shopdesk readiness and sticky-read eligibility depend on durable watermarks, not
-row counts or wall-clock heartbeats. Starter ``controlplane.lag`` still takes
-shortcuts; this journal is the shared vocabulary for seq gaps.
+row counts or wall-clock heartbeats. This journal is the shared vocabulary for
+seq gaps.
 """
 from __future__ import annotations
 

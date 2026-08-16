@@ -12,7 +12,9 @@ python manage.py dump_failover --output /app/ha/out/failover-status.json
 
 Writer ownership is row `checkout-primary` in `ha_fence_lease`. The pair is `(owner_node, epoch)`; epoch only moves forward. A demoted box must have `writable=0`. `sync_standby` copies business tables and the replica seq watermark. It must not make the standby lease writable.
 
-Reads after a write stay on the writer for `sticky_seconds` (see `config/ha.json`). Other reads may use replica only when `primary.wal_lsn - replica.applied_lsn` is `<= max_lag_lsn`. `/healthz` means the process answers. `/readyz` means checkout may take traffic: one writer, seq gap inside budget, pins reachable, no repeat capture rows.
+Reads after a write stay on the writer for `sticky_seconds` (see `config/ha.json`). Other reads may use replica only when `primary.wal_lsn - replica.applied_lsn` is `<= max_lag_lsn`. Place rejects a blank `attempt_id`. Capture/pay must not emit effects while the order `write_lsn` is ahead of the writer primary `wal_lsn`.
+
+`/healthz` means the process answers. Live `/readyz` is the traffic gate and returns 503 unless all of the following hold: exactly one writable writer across both shop files, seq gap inside `max_lag_lsn`, the `pins` store is reachable, and `repeat_captures` is 0. Dump `accepting_checkout` is stricter than live `/readyz`: it is true only when the live `/readyz` gates pass, `pins` is `"shared"`, `standby_only_orders` is 0, incident-window orders exist on standby, and the standby lease is not writable (`fence_copied_to_standby` is false).
 
 `dump_failover` writes `/app/ha/out/failover-status.json`:
 
@@ -35,5 +37,3 @@ Reads after a write stay on the writer for `sticky_seconds` (see `config/ha.json
   "fence_copied_to_standby": false
 }
 ```
-
-`accepting_checkout` is true only when there is a single writer, `repeat_captures` is 0, `standby_only_orders` is 0, seq gap is inside budget, incident-window orders exist on standby, and the standby lease is not writable.

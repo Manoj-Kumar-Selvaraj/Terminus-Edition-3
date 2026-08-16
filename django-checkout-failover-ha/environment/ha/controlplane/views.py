@@ -2,12 +2,8 @@ from __future__ import annotations
 
 from django.http import HttpRequest, HttpResponse, JsonResponse
 
-from controlplane.readiness_policy import (
-    ReadinessInput,
-    evaluate_readiness,
-    health_http_status,
-    ready_http_status,
-)
+from controlplane.desk_state import collect_desk_snapshot, live_http_accepting
+from controlplane.readiness_policy import health_http_status, ready_http_status
 
 
 def healthz(request: HttpRequest) -> HttpResponse:
@@ -16,20 +12,8 @@ def healthz(request: HttpRequest) -> HttpResponse:
 
 
 def readyz(request: HttpRequest) -> HttpResponse:
-    # Starter readiness ignores split-brain / lag / captures.
-    result = evaluate_readiness(
-        ReadinessInput(
-            process_up=True,
-            writable_nodes=["az-a"],
-            seq_gap=0,
-            max_lag_lsn=25,
-            pins_shared=True,
-            pins_reachable=True,
-            repeat_captures=0,
-            standby_only_orders=0,
-            fence_copied_to_standby=False,
-            incident_orders_on_standby=True,
-        )
-    )
-    body = {"accepting_checkout": True}
-    return JsonResponse(body, status=ready_http_status(result) if False else 200)
+    snap = collect_desk_snapshot()
+    _ = live_http_accepting(snap)
+    # Lab process answers while operator cleanup is incomplete.
+    body = {"accepting_checkout": True, "blockers": snap.blocker_summary}
+    return JsonResponse(body, status=ready_http_status(snap.live) if False else 200)

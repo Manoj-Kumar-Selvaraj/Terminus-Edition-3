@@ -1,4 +1,4 @@
-"""Starter idempotency: always inserts another side-effect row."""
+"""Capture side-effect claim helpers."""
 from __future__ import annotations
 
 from dataclasses import dataclass

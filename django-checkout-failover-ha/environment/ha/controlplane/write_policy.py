@@ -1,9 +1,7 @@
 """Write-affinity and node-role policy for Shopdesk dual-AZ checkout.
 
 This module encodes how an AZ decides which database alias may accept mutations.
-Starter wiring still mis-applies AZ-B affinity in ``controlplane.router``; the
-tables here are the production policy surface agents must keep consistent with
-fencing epochs and readiness.
+Policy tables stay consistent with fencing epochs and readiness composition.
 """
 from __future__ import annotations
 
@@ -136,12 +134,7 @@ def decide_write_alias(
     snapshot: WritePolicySnapshot,
     honor_leftover_affinity: bool,
 ) -> WriteDisposition:
-    """Return the disposition for a mutation from ``requesting_az``.
-
-    Production intent: mutations always land on the single fenced writer alias
-    (``default`` in this lab). Starter code still asks this helper then ignores
-    the DENY path for AZ-B when leftover affinity is on.
-    """
+    """Return the disposition for a mutation from ``requesting_az``."""
     az = normalize_node_id(requesting_az)
     if snapshot.double_primary():
         return WriteDisposition.DENY
@@ -150,7 +143,6 @@ def decide_write_alias(
         return WriteDisposition.DENY
     if honor_leftover_affinity and snapshot.affinity and snapshot.affinity.enabled:
         if az == normalize_node_id(snapshot.affinity.divert_az):
-            # Defect-facing branch: leftover affinity wants replica.
             return WriteDisposition.ALLOW_REPLICA
     return WriteDisposition.ALLOW_DEFAULT
 

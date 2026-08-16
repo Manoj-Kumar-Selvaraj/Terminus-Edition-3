@@ -23,7 +23,6 @@ def _config() -> dict:
 
 def record_capture_effect(*, attempt_id: str, order: Order) -> SideEffect:
     digest = payload_hash_for(order.order_ref, attempt_id, order.total_cents)
-    # Starter still always inserts; decide_claim is consulted then ignored.
     _ = decide_claim(
         existing_hashes={},
         attempt_id=attempt_id,
