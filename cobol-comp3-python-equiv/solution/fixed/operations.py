@@ -90,6 +90,7 @@ def preflight(db: sqlite3.Connection, config: CutoverConfig) -> dict[str, object
     history_issues = validate_scale(history)
     database = maintenance_summary(db)
     catalog = Catalog(db).snapshot()
+    catalog_healthy = int(catalog["active_items"]) > 0 and int(catalog["active_warehouses"]) > 0
     integrity = create_integrity(
         identity.generation_id,
         {
@@ -106,6 +107,7 @@ def preflight(db: sqlite3.Connection, config: CutoverConfig) -> dict[str, object
     run_authorization = authorize(system_principal(), "RUN")
     migration = default_plan(identity.generation_id)
     recovery = database_plan(db, identity)
+    recovery_healthy = recovery.action.value != "BLOCK"
 
     passed = all(
         [
@@ -117,7 +119,9 @@ def preflight(db: sqlite3.Connection, config: CutoverConfig) -> dict[str, object
             not schema_issues,
             not history_issues,
             bool(database["healthy"]),
+            catalog_healthy,
             not integrity_issues,
+            recovery_healthy,
             bool(run_authorization.allowed),
             bool(summarize_runbook(runbook)["passed"]),
         ]

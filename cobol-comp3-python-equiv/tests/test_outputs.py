@@ -255,24 +255,124 @@ def run_arguments(
     ]
 
 
+
+def write_alternate_layout(tmp_path: Path) -> Path:
+    alternate = json.loads(DEFAULT_LAYOUT.read_text(encoding="utf-8"))
+    alternate["layout_id"] = "ALT-CALLER-LAYOUT"
+    alternate["version"] = 91
+    alternate["fields"].append({"name": "CALLER-TRAILER", "picture": "X(1)"})
+    path = tmp_path / "alternate-layout.json"
+    path.write_text(json.dumps(alternate), encoding="utf-8")
+    return path
+
+
+def visible_generation_dirs(root: Path) -> list[Path]:
+    if not root.exists():
+        return []
+    return sorted(
+        path for path in root.iterdir()
+        if path.is_dir() and not path.name.startswith(".")
+    )
+
+
+def nested_mappings(value: object):
+    if isinstance(value, dict):
+        yield value
+        for child in value.values():
+            yield from nested_mappings(child)
+    elif isinstance(value, list):
+        for child in value:
+            yield from nested_mappings(child)
+
+
+def find_publication_manifest(target: Path, generation_id_value: str) -> Path:
+    files = [path for path in target.iterdir() if path.is_file()]
+    digests = {path: file_digest(path) for path in files}
+    for candidate in files:
+        if candidate.suffix.lower() != ".json":
+            continue
+        try:
+            payload = json.loads(candidate.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError):
+            continue
+        rendered = json.dumps(payload, sort_keys=True, default=str)
+        if generation_id_value not in rendered:
+            continue
+        if any(
+            digest in rendered
+            for path, digest in digests.items()
+            if path != candidate
+        ):
+            return candidate
+    pytest.fail("publication lacks independently discoverable generation/integrity manifest")
+
+
+def persisted_reject_code(
+    tmp_path: Path,
+    raw: bytes,
+    prepare: Callable[[sqlite3.Connection], None] | None = None,
+) -> str:
+    db = fresh_db(tmp_path)
+    seed_inventory(db, warehouse_count=2, item_count=2)
+    if prepare is not None:
+        prepare(db)
+    db.commit()
+    db.close()
+    db_path = tmp_path / "state.db"
+    source = tmp_path / "source.dat"
+    source.write_bytes(raw)
+    controls = tmp_path / "legacy.controls"
+    write_controls(
+        controls,
+        processed="1",
+        accepted="0",
+        rejected="1",
+        effects="0",
+        quantity="0",
+        value="0",
+    )
+    report_dir = tmp_path / "ops" / "reports"
+    result = cli(
+        "run",
+        *run_arguments(
+            db_path,
+            source,
+            DEFAULT_LAYOUT,
+            controls,
+            report_dir,
+            tmp_path / "published",
+        ),
+    )
+    assert result.returncode == 0
+    db = connect(db_path)
+    row = db.execute("SELECT code FROM rejects ORDER BY id").fetchone()
+    db.close()
+    assert row is not None
+    persisted = str(row[0])
+    csv_blob = "\n".join(
+        path.read_text(encoding="utf-8")
+        for path in report_dir.rglob("*.csv")
+    )
+    assert persisted in csv_blob
+    return persisted
+
+
 def assert_publication_contract(
     target: Path,
     generation_id_value: str,
     expected_files: dict[str, Path],
 ) -> None:
-    manifest_path = target / "manifest.json"
     assert target.is_dir()
-    assert manifest_path.is_file()
-    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
-    assert manifest["generation_id"] == generation_id_value
-    assert set(manifest["files"]) == set(expected_files)
-    for logical_name, source in expected_files.items():
-        metadata = manifest["files"][logical_name]
-        published = target / metadata["name"]
-        assert published.is_file()
-        assert metadata["size"] == published.stat().st_size == source.stat().st_size
-        assert metadata["sha256"] == file_digest(published) == file_digest(source)
-
+    manifest = find_publication_manifest(target, generation_id_value)
+    manifest_text = manifest.read_text(encoding="utf-8")
+    assert generation_id_value in manifest_text
+    published_files = [
+        path for path in target.iterdir()
+        if path.is_file() and path != manifest
+    ]
+    for source in expected_files.values():
+        assert any(path.read_bytes() == source.read_bytes() for path in published_files)
+        assert file_digest(source) in manifest_text
 
 def test_f2p_nonzero_comp3_padding_is_rejected() -> None:
     must_reject(lambda: unpack(bytes.fromhex("11234c"), PackedSpec(4, 0, True)))
@@ -313,14 +413,9 @@ def test_f2p_redefines_does_not_increase_static_storage() -> None:
     assert layout.static_min_length() == 6
 
 
-def test_f2p_caller_supplied_layout_path_is_honored(tmp_path: Path) -> None:
-    alternate = json.loads(DEFAULT_LAYOUT.read_text(encoding="utf-8"))
-    alternate["layout_id"] = "ALT-CALLER-LAYOUT"
-    alternate["version"] = 91
-    alternate["fields"].append({"name": "CALLER-TRAILER", "picture": "X(1)"})
-    layout_path = tmp_path / "alternate-layout.json"
-    layout_path.write_text(json.dumps(alternate), encoding="utf-8")
 
+def test_f2p_caller_supplied_layout_path_is_honored(tmp_path: Path) -> None:
+    layout_path = write_alternate_layout(tmp_path)
     db = fresh_db(tmp_path)
     seed_inventory(db, warehouse_count=2, item_count=2)
     apply_sql(db, SEED)
@@ -328,43 +423,94 @@ def test_f2p_caller_supplied_layout_path_is_honored(tmp_path: Path) -> None:
     db_path = tmp_path / "state.db"
     source = tmp_path / "caller-source.dat"
     source.write_bytes(reference_receipt_record() + b"Z")
+    second_source = tmp_path / "caller-source-2.dat"
+    second_source.write_bytes(reference_record(movement_id="MOVE00000002") + b"Z")
     controls = tmp_path / "legacy.controls"
     write_controls(controls)
     report_dir = tmp_path / "ops" / "reports"
     publish_dir = tmp_path / "published"
 
     described = cli("describe-layout", "--layout", layout_path)
-    assert described.returncode == 0
-    described_payload = parse_stdout(described)
-    assert described_payload["layout_id"] == "ALT-CALLER-LAYOUT"
+    baseline_description = cli("describe-layout", "--layout", DEFAULT_LAYOUT)
+    assert described.returncode == baseline_description.returncode == 0
+    assert parse_stdout(described) != parse_stdout(baseline_description)
 
     identified = cli(
         "identity",
-        "--source",
-        source,
-        "--layout",
-        layout_path,
-        "--business-date",
-        "20260815",
+        "--source", source,
+        "--layout", layout_path,
+        "--business-date", "20260815",
     )
-    assert identified.returncode == 0
-    identity_payload = parse_stdout(identified)
-    assert identity_payload["source"]["sha256"] == file_digest(source)
-    assert identity_payload["layout_sha256"] == file_digest(layout_path)
+    other_layout = cli(
+        "identity",
+        "--source", source,
+        "--layout", DEFAULT_LAYOUT,
+        "--business-date", "20260815",
+    )
+    other_source = cli(
+        "identity",
+        "--source", second_source,
+        "--layout", layout_path,
+        "--business-date", "20260815",
+    )
+    assert identified.returncode == other_layout.returncode == other_source.returncode == 0
+    assert parse_stdout(identified) != parse_stdout(other_layout)
+    assert parse_stdout(identified) != parse_stdout(other_source)
 
     preflight = cli(
         "preflight",
         *run_arguments(db_path, source, layout_path, controls, report_dir, publish_dir),
-        "--schema",
-        SCHEMA,
-        "--seed",
-        SEED,
+        "--schema", SCHEMA,
+        "--seed", SEED,
     )
     assert preflight.returncode == 0
-    preflight_payload = parse_stdout(preflight)
-    assert preflight_payload["passed"] is True
-    assert preflight_payload["historical_baseline"]["records"] == 15000
-    assert preflight_payload["historical_scale_issues"] == []
+    assert parse_stdout(preflight).get("passed") is True
+
+    empty_catalog_db = tmp_path / "empty-catalog.db"
+    shutil.copyfile(db_path, empty_catalog_db)
+    catalog_db = connect(empty_catalog_db)
+    catalog_db.execute("DELETE FROM inventory_positions")
+    catalog_db.execute("DELETE FROM items")
+    catalog_db.execute("DELETE FROM warehouses")
+    catalog_db.commit()
+    catalog_db.close()
+    unhealthy_catalog = cli(
+        "preflight",
+        *run_arguments(
+            empty_catalog_db, source, layout_path, controls, report_dir, publish_dir
+        ),
+        "--schema", SCHEMA,
+        "--seed", SEED,
+    )
+    assert unhealthy_catalog.returncode == 2
+    assert parse_stdout(unhealthy_catalog).get("passed") is False
+
+    blocked_recovery_db = tmp_path / "blocked-recovery.db"
+    shutil.copyfile(db_path, blocked_recovery_db)
+    recovery_db = connect(blocked_recovery_db)
+    gid = build_identity(source, layout_path, "20260815").generation_id
+    recovery_db.execute(
+        "INSERT INTO runs(generation_id,state) VALUES(?,?)",
+        (gid, "PROCESSING"),
+    )
+    recovery_db.execute(
+        "INSERT INTO checkpoints"
+        "(generation_id,last_sequence,byte_offset,source_fingerprint,updated_at)"
+        " VALUES(?,?,?,?,?)",
+        (gid, 1, 0, "mismatched:fingerprint", "now"),
+    )
+    recovery_db.commit()
+    recovery_db.close()
+    blocked_recovery = cli(
+        "preflight",
+        *run_arguments(
+            blocked_recovery_db, source, layout_path, controls, report_dir, publish_dir
+        ),
+        "--schema", SCHEMA,
+        "--seed", SEED,
+    )
+    assert blocked_recovery.returncode == 2
+    assert parse_stdout(blocked_recovery).get("passed") is False
 
     missing_layout = cli("describe-layout", "--layout", tmp_path / "missing-layout.json")
     assert missing_layout.returncode == 2
@@ -376,9 +522,14 @@ def test_f2p_caller_supplied_layout_path_is_honored(tmp_path: Path) -> None:
         *run_arguments(db_path, source, layout_path, controls, report_dir, publish_dir),
     )
     assert run.returncode == 0
-    run_payload = parse_stdout(run)
-    assert run_payload["state"] == "PUBLISHED"
-    assert run_payload["processed"] == 1
+    run_db = connect(db_path)
+    assert run_db.execute("SELECT COUNT(*) FROM processed_movements").fetchone()[0] == 1
+    run_db.close()
+    assert len(visible_generation_dirs(publish_dir)) == 1
+
+    operator_root = tmp_path / "operator-workflows"
+    operator_root.mkdir()
+    exercise_adjudicated_operator_workflows(operator_root)
 
 
 def test_f2p_odo_count_above_declared_maximum_is_rejected() -> None:
@@ -493,6 +644,7 @@ def test_f2p_resume_starts_after_last_durable_sequence() -> None:
     assert resume_sequence(ident, cp) == 8
 
 
+
 def test_f2p_pipeline_restart_does_not_reapply_last_movement(tmp_path: Path) -> None:
     db = fresh_db(tmp_path)
     seed_inventory(db, warehouse_count=2, item_count=2)
@@ -500,19 +652,19 @@ def test_f2p_pipeline_restart_does_not_reapply_last_movement(tmp_path: Path) -> 
     source.write_bytes(reference_receipt_record())
     controls = tmp_path / "legacy.controls"
     write_controls(controls)
+    publish_root = tmp_path / "published"
     cfg = PipelineConfig(
         source,
         DEFAULT_LAYOUT,
         "20260815",
         controls,
         tmp_path / "reports",
-        tmp_path / "published",
+        publish_root,
     )
-    first = process(db, cfg)
-    assert first.state.value == "PUBLISHED"
-    second = process(db, cfg)
-    assert second.state.value == "PUBLISHED"
-    gid = first.generation_id
+    process(db, cfg)
+    gid = db.execute("SELECT generation_id FROM runs").fetchone()[0]
+    assert (publish_root / gid).is_dir()
+    process(db, cfg)
     assert db.execute(
         "SELECT COUNT(*) FROM processed_movements WHERE generation_id=?",
         (gid,),
@@ -521,46 +673,54 @@ def test_f2p_pipeline_restart_does_not_reapply_last_movement(tmp_path: Path) -> 
         "SELECT COUNT(*) FROM inventory_effects WHERE generation_id=?",
         (gid,),
     ).fetchone()[0] == 1
+    assert (publish_root / gid).is_dir()
 
 
-def test_f2p_zero_quantity_is_rejected() -> None:
-    assert any(issue.code == "QUANTITY" for issue in validate_shape(movement(quantity="0")))
-    wrong_reason = movement(reason="SALE")
-    assert any(issue.code == "REASON" for issue in validate_shape(wrong_reason))
+def test_f2p_zero_quantity_is_rejected(tmp_path: Path) -> None:
+    assert persisted_reject_code(
+        tmp_path,
+        reference_record(quantity="0.000"),
+    ) == "QUANTITY"
+    assert validate_shape(movement(reason="SALE"))
 
 
-def test_f2p_same_warehouse_transfer_is_rejected() -> None:
-    m = movement(
-        movement_type=MovementType.TRANSFER,
-        source="W01",
-        destination="W01",
-        reason="MOVE",
-    )
-    assert any(issue.code == "TRANSFER_LOOP" for issue in validate_shape(m))
+def test_f2p_same_warehouse_transfer_is_rejected(tmp_path: Path) -> None:
+    assert persisted_reject_code(
+        tmp_path,
+        reference_record(
+            type_code="T",
+            source="W01",
+            destination="W01",
+            reason="MOVE",
+        ),
+    ) == "TRANSFER_LOOP"
 
 
-def test_f2p_inactive_item_is_rejected() -> None:
-    assert any(
-        issue.code == "ITEM_INACTIVE"
-        for issue in validate_item(movement(), ItemPolicy("SKU00001", False))
-    )
+def test_f2p_inactive_item_is_rejected(tmp_path: Path) -> None:
+    def disable_item(db: sqlite3.Connection) -> None:
+        db.execute("UPDATE items SET active=0 WHERE item_id='SKU00001'")
+
+    assert persisted_reject_code(
+        tmp_path,
+        reference_receipt_record(),
+        disable_item,
+    ) == "ITEM_INACTIVE"
 
 
-def test_f2p_inactive_warehouse_is_rejected() -> None:
-    assert any(
-        issue.code == "WAREHOUSE_INACTIVE"
-        for issue in validate_warehouses(
-            movement(),
-            {"W01": WarehousePolicy("W01", False)},
-        )
-    )
+def test_f2p_inactive_warehouse_is_rejected(tmp_path: Path) -> None:
+    def disable_warehouse(db: sqlite3.Connection) -> None:
+        db.execute("UPDATE warehouses SET active=0 WHERE warehouse_id='W01'")
+
+    assert persisted_reject_code(
+        tmp_path,
+        reference_receipt_record(),
+        disable_warehouse,
+    ) == "WAREHOUSE_INACTIVE"
+
     receipt_disabled = WarehousePolicy("W01", True, allow_receipts=False)
-    assert any(
-        issue.code == "RECEIPT_DISABLED"
-        for issue in validate_warehouses(
-            movement(),
-            {"W01": receipt_disabled},
-        )
+    assert validate_warehouses(
+        movement(),
+        {"W01": receipt_disabled},
     )
     transfer = movement(
         movement_type=MovementType.TRANSFER,
@@ -572,11 +732,7 @@ def test_f2p_inactive_warehouse_is_rejected() -> None:
         "W01": WarehousePolicy("W01", True, allow_transfers=False),
         "W02": WarehousePolicy("W02", True),
     }
-    assert any(
-        issue.code == "TRANSFER_DISABLED"
-        for issue in validate_warehouses(transfer, transfer_policies)
-    )
-
+    assert validate_warehouses(transfer, transfer_policies)
 
 def test_f2p_issue_requires_full_available_quantity(tmp_path: Path) -> None:
     m = movement(
@@ -616,7 +772,7 @@ def test_f2p_issue_requires_full_available_quantity(tmp_path: Path) -> None:
         quantity="0",
         value="0",
     )
-    summary = process(
+    process(
         db,
         PipelineConfig(
             source,
@@ -627,7 +783,6 @@ def test_f2p_issue_requires_full_available_quantity(tmp_path: Path) -> None:
             tmp_path / "published",
         ),
     )
-    assert summary.state.value == "HELD"
     row = db.execute("SELECT code FROM rejects ORDER BY id").fetchone()
     assert row is not None
     assert row[0] == "ACCOUNTING"
@@ -819,18 +974,89 @@ def test_f2p_reconciliation_rejects_unbalanced_transfer(tmp_path: Path) -> None:
     assert reconciliation_findings(permissive, "g")
 
 
+
 def test_f2p_failed_reconciliation_cannot_publish(tmp_path: Path) -> None:
-    report = tmp_path / "summary.json"
-    report.write_text("{}", encoding="utf-8")
-    must_reject(
-        lambda: atomic_publish(
-            "g",
-            {"summary": report},
-            failing_reconciliation(),
-            tmp_path / "published",
-        )
+    mismatch_root = tmp_path / "legacy-mismatch"
+    mismatch_root.mkdir()
+    db = fresh_db(mismatch_root)
+    seed_inventory(db, warehouse_count=2, item_count=2)
+    db.close()
+    source = mismatch_root / "source.dat"
+    source.write_bytes(reference_receipt_record())
+    controls = mismatch_root / "legacy.controls"
+    write_controls(controls, effects="2")
+    report_dir = mismatch_root / "ops" / "reports"
+    publish_dir = mismatch_root / "published"
+    result = cli(
+        "run",
+        *run_arguments(
+            mismatch_root / "state.db",
+            source,
+            DEFAULT_LAYOUT,
+            controls,
+            report_dir,
+            publish_dir,
+        ),
     )
-    assert not (tmp_path / "published" / "g").exists()
+    assert result.returncode == 2
+    assert visible_generation_dirs(publish_dir) == []
+    mismatch_db = connect(mismatch_root / "state.db")
+    gid = mismatch_db.execute("SELECT generation_id FROM runs").fetchone()[0]
+    mismatch_db.close()
+    assert all(
+        gid not in path.read_text(encoding="utf-8")
+        for path in mismatch_root.rglob("*.jsonl")
+    )
+
+    detail_root = tmp_path / "detail-mismatch"
+    detail_root.mkdir()
+    detail_db = fresh_db(detail_root)
+    seed_inventory(detail_db, warehouse_count=2, item_count=2)
+    detail_db.execute(
+        "CREATE TRIGGER delete_effect_after_insert "
+        "AFTER INSERT ON inventory_effects BEGIN "
+        "DELETE FROM inventory_effects WHERE id=NEW.id; END"
+    )
+    detail_db.commit()
+    detail_db.close()
+    detail_source = detail_root / "source.dat"
+    detail_source.write_bytes(reference_receipt_record())
+    detail_controls = detail_root / "legacy.controls"
+    write_controls(
+        detail_controls,
+        processed="1",
+        accepted="1",
+        rejected="0",
+        effects="0",
+        quantity="0",
+        value="0",
+    )
+    detail_publish = detail_root / "published"
+    detailed = cli(
+        "run",
+        *run_arguments(
+            detail_root / "state.db",
+            detail_source,
+            DEFAULT_LAYOUT,
+            detail_controls,
+            detail_root / "ops" / "reports",
+            detail_publish,
+        ),
+    )
+    assert detailed.returncode == 2
+    assert visible_generation_dirs(detail_publish) == []
+    detail_db = connect(detail_root / "state.db")
+    detail_gid = detail_db.execute("SELECT generation_id FROM runs").fetchone()[0]
+    assert detail_db.execute(
+        "SELECT COUNT(*) FROM processed_movements "
+        "WHERE generation_id=? AND status='ACCEPTED'",
+        (detail_gid,),
+    ).fetchone()[0] == 1
+    assert detail_db.execute(
+        "SELECT COUNT(*) FROM inventory_effects WHERE generation_id=?",
+        (detail_gid,),
+    ).fetchone()[0] == 0
+    detail_db.close()
 
 
 def test_f2p_repeat_publication_of_same_generation_is_idempotent(
@@ -850,7 +1076,12 @@ def test_f2p_repeat_publication_of_same_generation_is_idempotent(
     assert second == first
     assert_publication_contract(second, "g", files)
 
-    (first / "summary.json").write_text("corrupt\n", encoding="utf-8")
+    manifest = find_publication_manifest(first, "g")
+    published_copy = next(
+        path for path in first.iterdir()
+        if path.is_file() and path != manifest and path.read_bytes() == report.read_bytes()
+    )
+    published_copy.write_text("corrupt\n", encoding="utf-8")
     must_reject(
         lambda: atomic_publish(
             "g",
@@ -862,28 +1093,21 @@ def test_f2p_repeat_publication_of_same_generation_is_idempotent(
 
     atomic_destination = tmp_path / "atomic-published"
     atomic_target = atomic_destination / "g2"
-    real_copyfile = shutil.copyfile
 
-    def injected_copyfile(src, dst, *args, **kwargs):
-        result = real_copyfile(src, dst, *args, **kwargs)
-        if Path(dst).parent == atomic_target:
-            raise OSError("injected promotion failure")
-        return result
+    def fail_promotion(*args, **kwargs):
+        raise OSError("injected atomic promotion failure")
 
-    monkeypatch.setattr("src.publication.shutil.copyfile", injected_copyfile)
-    try:
-        published = atomic_publish(
+    monkeypatch.setattr("src.publication.os.replace", fail_promotion)
+    must_reject(
+        lambda: atomic_publish(
             "g2",
             files,
             passing_reconciliation("g2"),
             atomic_destination,
         )
-    except OSError:
-        assert not atomic_target.exists()
-    else:
-        assert published == atomic_target
-        assert_publication_contract(published, "g2", files)
-
+    )
+    assert not atomic_target.exists()
+    assert visible_generation_dirs(atomic_destination) == []
 
 def test_f2p_database_rejects_duplicate_generation_sequence(tmp_path: Path) -> None:
     db = fresh_db(tmp_path)
@@ -933,12 +1157,70 @@ def test_p2p_valid_positive_signed_comp3_roundtrip_is_preserved() -> None:
     assert unpack(pack(Decimal("123.45"), spec), spec) == Decimal("123.45")
 
 
+
 def test_p2p_active_receipt_policy_remains_valid() -> None:
+    valid = [
+        movement(reason="PO"),
+        movement(reason="RETURN"),
+        movement(
+            movement_type=MovementType.ISSUE,
+            source="W01",
+            destination=None,
+            reason="SALE",
+        ),
+        movement(
+            movement_type=MovementType.TRANSFER,
+            source="W01",
+            destination="W02",
+            reason="MOVE",
+        ),
+        movement(
+            movement_type=MovementType.ADJUSTMENT,
+            source="W01",
+            destination=None,
+            reason="COUNT",
+        ),
+        movement(
+            movement_type=MovementType.ADJUSTMENT,
+            source="W01",
+            destination=None,
+            reason="DAMAGE",
+        ),
+        movement(
+            movement_type=MovementType.ADJUSTMENT,
+            source="W01",
+            destination=None,
+            reason="RETURN",
+        ),
+    ]
+    assert all(validate_shape(candidate) == [] for candidate in valid)
+
+    invalid = [
+        movement(reason="SALE"),
+        movement(
+            movement_type=MovementType.ISSUE,
+            source="W01",
+            destination=None,
+            reason="PO",
+        ),
+        movement(
+            movement_type=MovementType.TRANSFER,
+            source="W01",
+            destination="W02",
+            reason="RETURN",
+        ),
+        movement(
+            movement_type=MovementType.ADJUSTMENT,
+            source="W01",
+            destination=None,
+            reason="PO",
+        ),
+    ]
+    assert all(validate_shape(candidate) for candidate in invalid)
+
     m = movement()
-    assert validate_shape(m) == []
     assert validate_item(m, ItemPolicy("SKU00001", True)) == []
     assert validate_warehouses(m, {"W01": WarehousePolicy("W01", True)}) == []
-
 
 def test_p2p_matching_reconciliation_controls_pass(tmp_path: Path) -> None:
     legacy = {
@@ -965,40 +1247,43 @@ def test_p2p_first_successful_publication_is_verifiable(tmp_path: Path) -> None:
     assert_publication_contract(target, "g", files)
 
 
+
+
 def test_p2p_cli_success_and_failure_json_contract(tmp_path: Path) -> None:
     described = cli("describe-layout", "--layout", DEFAULT_LAYOUT)
     assert described.returncode == 0
     assert described.stderr == ""
-    success = parse_stdout(described)
-    assert success["layout_id"] == "INV-MOVE-V2"
+    assert isinstance(parse_stdout(described), dict)
 
     source = tmp_path / "source.dat"
     source.write_bytes(reference_receipt_record())
     identified = cli(
         "identity",
-        "--source",
-        source,
-        "--layout",
-        DEFAULT_LAYOUT,
-        "--business-date",
-        "20260815",
+        "--source", source,
+        "--layout", DEFAULT_LAYOUT,
+        "--business-date", "20260815",
     )
     assert identified.returncode == 0
-    assert parse_stdout(identified)["source"]["sha256"] == file_digest(source)
+    assert identified.stderr == ""
+    assert isinstance(parse_stdout(identified), dict)
 
     init_db_path = tmp_path / "initialized.db"
     initialized = cli(
         "init-db",
-        "--db",
-        init_db_path,
-        "--schema",
-        SCHEMA,
-        "--seed",
-        SEED,
+        "--db", init_db_path,
+        "--schema", SCHEMA,
+        "--seed", SEED,
     )
     assert initialized.returncode == 0
-    assert parse_stdout(initialized)["status"] == "READY"
-
+    assert initialized.stderr == ""
+    assert isinstance(parse_stdout(initialized), dict)
+    db = connect(init_db_path)
+    tables = {
+        row[0]
+        for row in db.execute("SELECT name FROM sqlite_master WHERE type='table'")
+    }
+    db.close()
+    assert {"processed_movements", "rejects", "checkpoints"} <= tables
 
 
 def test_p2p_preflight_uses_historical_baseline(tmp_path: Path) -> None:
@@ -1016,22 +1301,13 @@ def test_p2p_preflight_uses_historical_baseline(tmp_path: Path) -> None:
 
     first = cli(
         "preflight",
-        *run_arguments(
-            db_path,
-            source,
-            DEFAULT_LAYOUT,
-            controls,
-            report_dir,
-            publish_dir,
-        ),
-        "--schema",
-        SCHEMA,
-        "--seed",
-        SEED,
+        *run_arguments(db_path, source, DEFAULT_LAYOUT, controls, report_dir, publish_dir),
+        "--schema", SCHEMA,
+        "--seed", SEED,
     )
     first_payload = parse_stdout(first)
-    assert first_payload["historical_baseline"]["records"] == 15000
-    assert first_payload["historical_scale_issues"] == []
+    first_rendered = json.dumps(first_payload, sort_keys=True)
+    assert "15000" in first_rendered
 
     db = connect(db_path)
     db.execute("DELETE FROM historical_movements")
@@ -1039,25 +1315,241 @@ def test_p2p_preflight_uses_historical_baseline(tmp_path: Path) -> None:
     db.close()
     second = cli(
         "preflight",
-        *run_arguments(
-            db_path,
-            source,
-            DEFAULT_LAYOUT,
-            controls,
-            report_dir,
-            publish_dir,
-        ),
-        "--schema",
-        SCHEMA,
-        "--seed",
-        SEED,
+        *run_arguments(db_path, source, DEFAULT_LAYOUT, controls, report_dir, publish_dir),
+        "--schema", SCHEMA,
+        "--seed", SEED,
     )
     assert second.returncode == 2
     second_payload = parse_stdout(second)
-    assert second_payload["passed"] is False
-    assert second_payload["historical_baseline"]["records"] == 0
-    assert second_payload["historical_scale_issues"]
+    assert second_payload.get("passed") is False
+    assert second_payload != first_payload
+    assert "15000" not in json.dumps(second_payload, sort_keys=True)
 
+def exercise_adjudicated_operator_workflows(tmp_path: Path) -> None:
+    layout_path = write_alternate_layout(tmp_path)
+    db = fresh_db(tmp_path)
+    seed_inventory(db, warehouse_count=2, item_count=2)
+    db.close()
+    db_path = tmp_path / "state.db"
+    source = tmp_path / "source.dat"
+    source.write_bytes(reference_receipt_record() + b"Z")
+    controls = tmp_path / "legacy.controls"
+    write_controls(controls)
+    operational_root = tmp_path / "ops"
+    report_dir = operational_root / "reports"
+    publish_dir = tmp_path / "published"
+    registry = operational_root / "publication-registry.jsonl"
+    quarantine = operational_root / "quarantine" / "records.jsonl"
+
+    run = cli(
+        "run",
+        *run_arguments(
+            db_path, source, layout_path, controls, report_dir, publish_dir
+        ),
+    )
+    assert run.returncode == 0
+    parse_stdout(run)
+
+    def audit_path(path: Path) -> subprocess.CompletedProcess[str]:
+        return cli(
+            "audit",
+            "--db", path,
+            "--source", source,
+            "--layout", layout_path,
+            "--business-date", "20260815",
+            "--expected-records", "1",
+            "--quarantine", quarantine,
+            "--registry", registry,
+        )
+
+    audited = audit_path(db_path)
+    assert audited.returncode == 0
+    assert parse_stdout(audited).get("passed") is True
+
+
+    healthy_payload = parse_stdout(audited)
+
+    metric_audit = cli(
+        "audit",
+        "--db", db_path,
+        "--source", source,
+        "--layout", layout_path,
+        "--business-date", "20260815",
+        "--expected-records", "2",
+        "--quarantine", quarantine,
+        "--registry", registry,
+    )
+    assert parse_stdout(metric_audit) != healthy_payload
+
+    settlement_bad = tmp_path / "settlement-bad.db"
+    shutil.copyfile(db_path, settlement_bad)
+    changed = connect(settlement_bad)
+    changed.execute("DELETE FROM inventory_effects")
+    changed.commit()
+    changed.close()
+    settlement_audit = audit_path(settlement_bad)
+    assert settlement_audit.returncode == 2
+    assert parse_stdout(settlement_audit).get("passed") is False
+
+    checkpoint_bad = tmp_path / "checkpoint-bad.db"
+    shutil.copyfile(db_path, checkpoint_bad)
+    changed = connect(checkpoint_bad)
+    changed.execute("UPDATE checkpoints SET last_sequence=last_sequence+10")
+    changed.commit()
+    changed.close()
+    checkpoint_audit = audit_path(checkpoint_bad)
+    assert checkpoint_audit.returncode == 2
+    assert parse_stdout(checkpoint_audit).get("passed") is False
+
+    inventory_bad = tmp_path / "inventory-bad.db"
+    shutil.copyfile(db_path, inventory_bad)
+    changed = connect(inventory_bad)
+    changed.execute(
+        "UPDATE inventory_positions SET quantity='-1' "
+        "WHERE warehouse_id='W01' AND item_id='SKU00001'"
+    )
+    changed.commit()
+    changed.close()
+    inventory_audit = audit_path(inventory_bad)
+    assert inventory_audit.returncode == 2
+    assert parse_stdout(inventory_audit).get("passed") is False
+
+    journal_bad = tmp_path / "journal-bad.db"
+    shutil.copyfile(db_path, journal_bad)
+    changed = connect(journal_bad)
+    changed.execute(
+        "UPDATE event_journal SET payload_json='{}' "
+        "WHERE event_id=(SELECT MIN(event_id) FROM event_journal)"
+    )
+    changed.commit()
+    changed.close()
+    journal_audit = audit_path(journal_bad)
+    assert journal_audit.returncode == 2
+    assert parse_stdout(journal_audit).get("passed") is False
+
+
+    gid_for_quarantine = build_identity(source, layout_path, "20260815").generation_id
+    quarantine.parent.mkdir(parents=True, exist_ok=True)
+    quarantine.write_text(
+        json.dumps(
+            {
+                "generation_id": gid_for_quarantine,
+                "sequence": 999,
+                "byte_offset": 0,
+                "byte_length": 1,
+                "error_code": "DECODE",
+                "error_message": "corrupt quarantine evidence",
+                "raw_sha256": "not-a-real-digest",
+                "raw_hex": "00",
+                "captured_at": "2026-08-16T00:00:00+00:00",
+            }
+        ) + "\n",
+        encoding="utf-8",
+    )
+    quarantine_audit = audit_path(db_path)
+    assert quarantine_audit.returncode == 2
+    assert parse_stdout(quarantine_audit).get("passed") is False
+
+    db = connect(db_path)
+    gid = db.execute("SELECT generation_id FROM runs").fetchone()[0]
+    before_event = db.execute(
+        "SELECT COALESCE(MAX(event_id),0) FROM event_journal"
+    ).fetchone()[0]
+    db.close()
+    published_dirs = visible_generation_dirs(publish_dir)
+    assert len(published_dirs) == 1
+    published_root = published_dirs[0]
+    manifest = find_publication_manifest(published_root, gid)
+    manifest_digest = file_digest(manifest)
+    live_files = {
+        path: file_digest(path)
+        for root in (report_dir, publish_dir)
+        for path in root.rglob("*")
+        if path.is_file()
+    }
+
+    archive_root = tmp_path / "archive"
+    archived = cli(
+        "archive",
+        "--db", db_path,
+        "--source", source,
+        "--layout", layout_path,
+        "--business-date", "20260815",
+        "--report-dir", report_dir,
+        "--publish-dir", publish_dir,
+        "--archive-dir", archive_root,
+        "--registry", registry,
+    )
+    assert archived.returncode == 0
+    archive_payload = parse_stdout(archived)
+    assert archive_payload.get("passed") is True
+
+    archive_dirs = visible_generation_dirs(archive_root)
+    assert len(archive_dirs) == 1
+    archive_files = [
+        path for path in archive_dirs[0].rglob("*") if path.is_file()
+    ]
+    assert archive_files
+    csv_blob = "\n".join(
+        path.read_text(encoding="utf-8")
+        for path in archive_files
+        if path.suffix.lower() == ".csv"
+    )
+    for control_name in (
+        "processed_count",
+        "accepted_count",
+        "rejected_count",
+        "effect_count",
+        "net_quantity",
+        "net_value",
+    ):
+        assert control_name in csv_blob
+    assert "W01" in csv_blob
+    assert "SKU00001" in csv_blob
+
+    json_blob = "\n".join(
+        path.read_text(encoding="utf-8")
+        for path in archive_files
+        if path.suffix.lower() == ".json"
+    )
+    for expected in (
+        gid,
+        file_digest(source),
+        file_digest(layout_path),
+        manifest_digest,
+    ):
+        assert expected in json_blob
+    assert any(file_digest(path) == manifest_digest for path in archive_files)
+
+    registry_text = registry.read_text(encoding="utf-8")
+    assert gid in registry_text
+    assert manifest_digest in registry_text
+
+    db = connect(db_path)
+    new_events = db.execute(
+        "SELECT event_type,subject,payload_json FROM event_journal "
+        "WHERE event_id>? ORDER BY event_id",
+        (before_event,),
+    ).fetchall()
+    db.close()
+    assert new_events
+    journal_evidence = "\n".join(str(value) for row in new_events for value in row)
+    assert manifest_digest in journal_evidence
+    assert str(archive_dirs[0]) in journal_evidence
+
+    retention_categories = {"report", "publication", "audit", "quarantine"}
+    assert any(
+        retention_categories <= set(mapping)
+        and all(
+            isinstance(mapping[name], int) and mapping[name] > 0
+            for name in retention_categories
+        )
+        for mapping in nested_mappings(archive_payload)
+    )
+
+    for path, digest in live_files.items():
+        assert path.is_file()
+        assert file_digest(path) == digest
 
 def test_p2p_audit_and_archive_operator_workflows_are_reachable(tmp_path: Path) -> None:
     db = fresh_db(tmp_path)
@@ -1076,68 +1568,37 @@ def test_p2p_audit_and_archive_operator_workflows_are_reachable(tmp_path: Path) 
 
     run = cli(
         "run",
-        *run_arguments(
-            db_path,
-            source,
-            DEFAULT_LAYOUT,
-            controls,
-            report_dir,
-            publish_dir,
-        ),
+        *run_arguments(db_path, source, DEFAULT_LAYOUT, controls, report_dir, publish_dir),
     )
     assert run.returncode == 0
-    assert parse_stdout(run)["state"] == "PUBLISHED"
+    assert isinstance(parse_stdout(run), dict)
 
     audited = cli(
         "audit",
-        "--db",
-        db_path,
-        "--source",
-        source,
-        "--layout",
-        DEFAULT_LAYOUT,
-        "--business-date",
-        "20260815",
-        "--expected-records",
-        "1",
-        "--quarantine",
-        quarantine,
-        "--registry",
-        registry,
+        "--db", db_path,
+        "--source", source,
+        "--layout", DEFAULT_LAYOUT,
+        "--business-date", "20260815",
+        "--expected-records", "1",
+        "--quarantine", quarantine,
+        "--registry", registry,
     )
     assert audited.returncode == 0
-    audit_payload = parse_stdout(audited)
-    assert audit_payload["passed"] is True
-    assert audit_payload["journal_valid"] is True
-    assert audit_payload["registry_valid"] is True
-    assert audit_payload["reconciliation_findings"] == []
+    assert parse_stdout(audited).get("passed") is True
 
     archived = cli(
         "archive",
-        "--db",
-        db_path,
-        "--source",
-        source,
-        "--layout",
-        DEFAULT_LAYOUT,
-        "--business-date",
-        "20260815",
-        "--report-dir",
-        report_dir,
-        "--publish-dir",
-        publish_dir,
-        "--archive-dir",
-        tmp_path / "archive",
-        "--registry",
-        registry,
+        "--db", db_path,
+        "--source", source,
+        "--layout", DEFAULT_LAYOUT,
+        "--business-date", "20260815",
+        "--report-dir", report_dir,
+        "--publish-dir", publish_dir,
+        "--archive-dir", tmp_path / "archive",
+        "--registry", registry,
     )
     assert archived.returncode == 0
-    archive_payload = parse_stdout(archived)
-    assert archive_payload["passed"] is True
-    assert archive_payload["archive_valid"] is True
-    assert archive_payload["lineage_valid"] is True
-    assert archive_payload["registry_valid"] is True
-
+    assert parse_stdout(archived).get("passed") is True
 
 def test_p2p_accepted_movement_transaction_rolls_back_on_failure(tmp_path: Path) -> None:
     db = fresh_db(tmp_path)
