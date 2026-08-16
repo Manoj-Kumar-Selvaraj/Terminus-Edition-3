@@ -10,7 +10,7 @@ This is the durable operational checkpoint for one task. Keep it evidence-orient
 - Controller state: `FROZEN_CANDIDATE`
 - Working branch: `main`
 - Pull request: `none`
-- Current task commit: `b9ee4816204f1a51857407e4a6f9bf9e38dd937a`
+- Current task commit: `03749a0ed4dcf6f691bb6d1c9bd573d923d92403`
 - Agent-system policy: `2.4`
 - Specialist prompt policy: `2.2`
 - Specialist protocol policy: `2.2`
@@ -32,18 +32,18 @@ This is the durable operational checkpoint for one task. Keep it evidence-orient
 | STB auth/AI credentials | SKIP | local Harbor oracle/nop without STB |
 | Oracle = 1 | PASS | Harbor job `jobs/2026-08-16__17-38-02` reward.txt=`1`; 28 F2P suite |
 | NOP = 0 | PASS | Harbor job `jobs/2026-08-16__17-39-27` reward.txt=`0` |
-| Q4 Spec-Test Contract Reviewer | PASS | review `.../b9ee4816/...-spec-test-contract-2baa2168bf.json` (HIGH) |
-| Q6 Production Logic Auditor | PASS | scope-preserved (`review_scope_hash=5031e765…`); tests-only change |
-| Quality Interlock | PASS | Q4 PASS on `b9ee4816` + Q6 scope-hash reuse |
-| Pre-LLMaJ specialist panel | REVISE | Instruction REVISE (INST-01/02); remaining specialists PASS |
-| Task Architect | PASS | review `.../b9ee4816/...-task-architect-9d3c66428b.json` (HIGH) |
-| Verifier Engineer | PASS | review `.../b9ee4816/...-verifier-engineer-ed25c4beec.json` (HIGH) |
-| Originality & Authenticity | PASS | review `.../b9ee4816/...-originality-9c88957c99.json` (HIGH) |
-| Difficulty design | PASS | review `.../b9ee4816/...-difficulty-design-490134a9ce.json` (MEDIUM); tier UNMEASURED (trials deferred) |
-| Compliance pre-review | PASS | review `.../b9ee4816/...-compliance-55d7325ce9.json` (HIGH) |
-| Instruction Reviewer | REVISE | review `.../b9ee4816/...-instruction-50ee95a34e.json` (HIGH); blocking INST-01, INST-02 |
-| Documentation Reviewer | PASS | review `.../b9ee4816/...-documentation-2e3067d67a.json` (HIGH) |
-| Comprehensive Reviewer | PENDING | after remaining specialists freeze |
+| Q4 Spec-Test Contract Reviewer | PENDING | packet under `03749a0e/` (prior `b9ee4816` PASS STALE after instruction rewrite) |
+| Q6 Production Logic Auditor | PASS | scope-preserved (`review_scope_hash=5031e765…`); instruction-only change |
+| Quality Interlock | PENDING | awaiting cold Q4 on `03749a0e` |
+| Pre-LLMaJ specialist panel | PENDING | Instruction rewrite done; cold re-Instruction on `03749a0e` |
+| Task Architect | PASS | retained from `b9ee4816` (scenario unchanged) |
+| Verifier Engineer | PASS | retained from `b9ee4816` (tests/env unchanged) |
+| Originality & Authenticity | PASS | retained from `b9ee4816` |
+| Difficulty design | PASS | retained from `b9ee4816`; tier UNMEASURED |
+| Compliance pre-review | PASS | retained from `b9ee4816` |
+| Instruction Reviewer | PENDING | packet under `03749a0e/` after INST-01/02 repair |
+| Documentation Reviewer | PASS | retained from `b9ee4816` |
+| Comprehensive Reviewer | PENDING | after Instruction PASS |
 | Pre-LLMaJ aggregate | PENDING | |
 | Q8 GPT Perspective Simulation | PENDING | diagnostic only |
 | Q8 Claude Perspective Simulation | PENDING | diagnostic only |
@@ -55,7 +55,7 @@ This is the durable operational checkpoint for one task. Keep it evidence-orient
 | Per-test solvability 1/10 | DEFERRED | user-deferred |
 | Trial Analysis | DEFERRED | depends on deferred trials |
 | Final Compliance | PENDING | after Pre-LLMaJ/Q8 |
-| Final Human Quality | PASS | review `.../b9ee4816/...-human-quality-c942763c8f.json` (HIGH); advisory HQ-1/HQ-2 |
+| Final Human Quality | PASS | retained from `b9ee4816`; advisory HQ-1/HQ-2 |
 | Final package | PENDING | |
 
 ## Latest CI
@@ -69,17 +69,17 @@ This is the durable operational checkpoint for one task. Keep it evidence-orient
 
 ## Current blocker
 
-Instruction Reviewer REVISE on `b9ee4816` (INST-01/INST-02). Quality Interlock is PASS again (Q4 PASS + Q6 reuse).
+Cold Instruction re-review (+ Q4 rebind) on freeze `03749a0e` after INST-01/02 handoff rewrite.
 
 ## Root-cause classification
 
-- Owner: Instruction Reviewer / writing repair
-- Classification: `instruction_shape` (compressed rubric)
-- Evidence: `...-instruction-50ee95a34e.json`
+- Owner: Instruction writer (closed on `03749a0e`)
+- Classification: `instruction_shape`
+- Evidence: prior `...-instruction-50ee95a34e.json`; repair commit `03749a0e`
 
 ## Next action
 
-Rewrite `instruction.md` paragraph 2 as operational invariants; drop orphaned `1)`. Re-freeze; cold re-Instruction (and Comprehensive only after Instruction PASS). Harbor LLMaJ and official trials remain deferred.
+Cold Instruction + Q4 with `model: inherit` on `03749a0e`. Cite Q6 scope-hash reuse. Then Comprehensive → aggregate → Q8 → package. Harbor LLMaJ and official trials remain deferred.
 
 ## Review evidence ledger
 
