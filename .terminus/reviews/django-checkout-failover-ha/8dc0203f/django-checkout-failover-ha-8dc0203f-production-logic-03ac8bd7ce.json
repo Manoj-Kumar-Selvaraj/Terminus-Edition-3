@@ -1,0 +1,240 @@
+{
+  "schema_version": "3.0",
+  "role": "Production Logic Auditor",
+  "review_id": "django-checkout-failover-ha-8dc0203f-production-logic-03ac8bd7ce",
+  "task": "django-checkout-failover-ha",
+  "task_commit": "8dc0203f55e6112a093bfc680c831f6f5b357f9b",
+  "control_plane_commit": "8dc0203f55e6112a093bfc680c831f6f5b357f9b",
+  "protocol_policy_version": "2.2",
+  "prompt_policy_version": "2.2",
+  "role_policy_version": "1.1",
+  "role_contract_hash": "ee7d1cfd6e19fcc0e831cc75829457593d7410613c3b3fb811aef925e85a1607",
+  "review_scope_hash": "5a9db7fc2c248c3aa962bad9e1734b83dca9eca5bade04e9c462874bfe04f412",
+  "context_packet": ".terminus/reviews/django-checkout-failover-ha/8dc0203f/django-checkout-failover-ha-8dc0203f-production-logic-03ac8bd7ce.packet.json",
+  "verdict": "REVISE",
+  "confidence": "HIGH",
+  "evidence_status": "SUFFICIENT",
+  "summary": "Solver-visible Shopdesk HA core is a real, entrypoint-reachable dual-SQLite Django checkout plane with coupled fencing, AZ write affinity, sticky pins, seq-lag gates, capture effects, standby sync, and readiness composition. It fails large_system_strict Q6: systematic discard-touch `_ = (...)` wiring plus ~650 LOC of never-productively-called helpers inflate apparent scale, so honest substantive reachable runtime/config LOC is ~2,860 (excl. seed.sql/standby_seed.sql/generate_seed.py and theater), below the >=3,000 floor, with PADDING_RISK HIGH.",
+  "evidence": [
+    {
+      "type": "rule",
+      "ref": ".terminus/agents/QUALITY_AGENT_REGISTRY.md",
+      "observation": "Q6 independently judges whether the solver-visible core is complex, reachable, coupled, non-toy, and non-padded. For large_system_strict, >=3,000 substantive reachable runtime/config LOC is necessary but not sufficient; Complexity Governor or authenticity-validator PASS is not enough."
+    },
+    {
+      "type": "rule",
+      "ref": ".terminus/agents/QUALITY_AGENT_PROMPTS.md",
+      "observation": "Q6 method requires entrypoint tracing, reachability, distinct module responsibilities, clone/wrapper/padding checks, cross-module invariants, a ~25% removal test, and separating production logic from generated/config/data noise. PASS needs >=3,000 substantive reachable LOC and no HIGH toy/padding risk."
+    },
+    {
+      "type": "rule",
+      "ref": ".terminus/agents/PRODUCTION_AUTHENTICITY.md",
+      "observation": "Count only implementation that materially participates in the claimed operational system. Dead/unreachable/unnecessary code and construction toward the 3,000-LOC floor via filler are authenticity defects. Seed volume is not authored runtime complexity."
+    },
+    {
+      "type": "file",
+      "ref": "django-checkout-failover-ha/task.toml@8dc0203f55e6112a093bfc680c831f6f5b357f9b",
+      "observation": "Declares Software/Systems Django/SQLite failover checkout task with artifacts [/app/ha], separate verifier, public network, workdir /app/ha. Profile large_system_strict is confirmed by the design authenticity report, not by this file alone."
+    },
+    {
+      "type": "file",
+      "ref": ".terminus/designs/django-checkout-failover-ha.json",
+      "observation": "Design authenticity report records profile=large_system_strict. Used only to bind the strict LOC/padding gate; not treated as a copied complexity verdict."
+    },
+    {
+      "type": "file",
+      "ref": "django-checkout-failover-ha/environment/ha/shopdesk/urls.py@8dc0203f55e6112a093bfc680c831f6f5b357f9b",
+      "observation": "Public HTTP entrypoints: /healthz, /readyz, place/pay/confirmation/order APIs wired to checkout and controlplane views."
+    },
+    {
+      "type": "file",
+      "ref": "django-checkout-failover-ha/environment/ha/shopdesk/settings.py@8dc0203f55e6112a093bfc680c831f6f5b357f9b",
+      "observation": "Runtime config installs catalog/identity/inventory/checkout/fulfill/controlplane, dual DATABASES default/replica, ShopdeskRouter, and pins cache alias—real Django operator surface."
+    },
+    {
+      "type": "file",
+      "ref": "django-checkout-failover-ha/environment/ha/docs/runbook.md@8dc0203f55e6112a093bfc680c831f6f5b357f9b",
+      "observation": "Operator workflow documents manage.py sync_standby/cutover/dump_failover, fence lease semantics, sticky pins, lag gates, and failover-status.json schema."
+    },
+    {
+      "type": "file",
+      "ref": "django-checkout-failover-ha/environment/ha/controlplane/management/commands/cutover.py@8dc0203f55e6112a093bfc680c831f6f5b357f9b",
+      "observation": "Cutover command reaches fencing + cutover_fsm + audit; includes discard-touch `_ = (plan, demoted_nodes(...))` that does not drive control flow."
+    },
+    {
+      "type": "file",
+      "ref": "django-checkout-failover-ha/environment/ha/controlplane/router.py@8dc0203f55e6112a093bfc680c831f6f5b357f9b",
+      "observation": "ShopdeskRouter is DATABASE_ROUTERS-reachable and couples sticky pins, lag eligibility, and write_policy dispositions, but also discard-touches leftover_affinity_risk/split_brain_nodes/explain_write_path without using results."
+    },
+    {
+      "type": "file",
+      "ref": "django-checkout-failover-ha/environment/ha/controlplane/fencing.py@8dc0203f55e6112a093bfc680c831f6f5b357f9b",
+      "observation": "Lease promote/writable_nodes/LSN bump are load-bearing for mutations, yet promote_standby/writable_nodes wrap describe_registry/demote_non_owners/snapshot_is_safe_for_traffic/role_for_lease in `_ = (...)` theater."
+    },
+    {
+      "type": "file",
+      "ref": "django-checkout-failover-ha/environment/ha/controlplane/views.py@8dc0203f55e6112a093bfc680c831f6f5b357f9b",
+      "observation": "/readyz collects desk snapshot then discard-touches live_http_accepting and forces HTTP 200 via `ready_http_status(snap.live) if False else 200` with accepting_checkout hardcoded True—entrypoint exists, readiness composition is not honestly wired."
+    },
+    {
+      "type": "file",
+      "ref": "django-checkout-failover-ha/environment/ha/checkout/services.py@8dc0203f55e6112a093bfc680c831f6f5b357f9b",
+      "observation": "Place/pay/confirmation couple attempt validation, inventory reservation, fencing LSN, sticky pins, payment transitions, and fulfill capture effects—material multi-branch checkout logic, not a constant shell."
+    },
+    {
+      "type": "file",
+      "ref": "django-checkout-failover-ha/environment/ha/controlplane/desk_state.py@8dc0203f55e6112a093bfc680c831f6f5b357f9b",
+      "observation": "Aggregates writers, watermarks, pins, duplicate captures, alias health, and readiness inputs across controlplane/fulfill—real cross-component coupling—while still discard-touching describe_assessment/describe_probes/probe_codes."
+    },
+    {
+      "type": "file",
+      "ref": "django-checkout-failover-ha/environment/ha/sql/schema.sql@8dc0203f55e6112a093bfc680c831f6f5b357f9b",
+      "observation": "Native SQLite schema for catalog/identity/inventory/checkout/fulfill/HA fence+watermark tables (~157 substantive lines). Counts as runtime/config structure; seed dumps do not."
+    },
+    {
+      "type": "file",
+      "ref": "django-checkout-failover-ha/environment/ha/sql/seed.sql@8dc0203f55e6112a093bfc680c831f6f5b357f9b",
+      "observation": "Large deterministic seed (~20k checkout_order value tuples, multi-dimension variance). Evidence of stateful scale only; excluded from substantive runtime/config LOC per packet/profile instructions."
+    },
+    {
+      "type": "file",
+      "ref": "django-checkout-failover-ha/environment/ha/sql/generate_seed.py@8dc0203f55e6112a093bfc680c831f6f5b357f9b",
+      "observation": "Offline seed generator; excluded from substantive runtime LOC per audit instructions."
+    },
+    {
+      "type": "artifact",
+      "ref": "independent_loc_inventory@8dc0203f",
+      "observation": "M1 (py/json/schema.sql/start-lab, excl. seed.sql/standby_seed.sql/generate_seed.py/docs/logs/pin-cache, excl. `_=` theater blocks ~66 lines): ~3,510. M2 after also excluding never-productively-called function bodies (~650 lines, including discard-only helpers): ~2,860. Import closure from urls/wsgi/settings/manage.py commands reaches 58 Python modules; padding is mostly intra-module unused/discard-only helpers, not wholly unimported packages."
+    }
+  ],
+  "findings": [
+    {
+      "id": "Q6-PAD-DISCARD-TOUCH",
+      "severity": "HIGH",
+      "status": "OBSERVED",
+      "criterion": "Padding / false reachability must not inflate substantive LOC",
+      "evidence_refs": [
+        "django-checkout-failover-ha/environment/ha/controlplane/router.py@8dc0203f55e6112a093bfc680c831f6f5b357f9b",
+        "django-checkout-failover-ha/environment/ha/controlplane/fencing.py@8dc0203f55e6112a093bfc680c831f6f5b357f9b",
+        "django-checkout-failover-ha/environment/ha/controlplane/views.py@8dc0203f55e6112a093bfc680c831f6f5b357f9b",
+        "django-checkout-failover-ha/environment/ha/controlplane/desk_state.py@8dc0203f55e6112a093bfc680c831f6f5b357f9b",
+        "django-checkout-failover-ha/environment/ha/controlplane/lag.py@8dc0203f55e6112a093bfc680c831f6f5b357f9b",
+        "django-checkout-failover-ha/environment/ha/controlplane/replica.py@8dc0203f55e6112a093bfc680c831f6f5b357f9b",
+        "django-checkout-failover-ha/environment/ha/controlplane/sessions.py@8dc0203f55e6112a093bfc680c831f6f5b357f9b",
+        "django-checkout-failover-ha/environment/ha/fulfill/services.py@8dc0203f55e6112a093bfc680c831f6f5b357f9b"
+      ],
+      "why_it_matters": "Sixteen `_ = (...)` discard-touch blocks (~66 lines) call helpers (write_policy risk/split-brain, replica_plan sanitize, watermark describe/replica_read_allowed, pin survival checks, decide_claim, live_http_accepting, etc.) and throw away results. That manufactures import/call-graph reachability without changing starter behavior and is exactly the padding theater the strict gate excludes.",
+      "minimal_remediation": "Delete discard-touch statements and either wire those helpers into real control-flow/error decisions or remove the unused helper surfaces.",
+      "regression_risk": "Low if removals are unused; medium if a helper is later needed—prefer wiring over silent delete when the helper encodes a required invariant."
+    },
+    {
+      "id": "Q6-LOC-UNDER-FLOOR",
+      "severity": "BLOCKER",
+      "status": "OBSERVED",
+      "criterion": "large_system_strict requires >=3,000 substantive reachable runtime/config LOC",
+      "evidence_refs": [
+        "independent_loc_inventory@8dc0203f",
+        ".terminus/agents/QUALITY_AGENT_PROMPTS.md",
+        ".terminus/agents/PRODUCTION_AUTHENTICITY.md",
+        "django-checkout-failover-ha/environment/ha/sql/seed.sql@8dc0203f55e6112a093bfc680c831f6f5b357f9b",
+        "django-checkout-failover-ha/environment/ha/sql/generate_seed.py@8dc0203f55e6112a093bfc680c831f6f5b357f9b"
+      ],
+      "why_it_matters": "Gross count excluding seeds/theater sits only slightly above 3,500. After removing never-productively-called helper bodies that do not change behavior, honest substantive reachable LOC is ~2,860—below the floor. Seed SQL and generate_seed.py must not close the gap.",
+      "minimal_remediation": "Add or deepen load-bearing reachable runtime/config logic so an honest post-padding inventory clears >=3,000 without counting seeds or discard-touch.",
+      "regression_risk": "Medium: naive LOC expansion can reintroduce padding; prefer wiring incomplete HA paths (readyz, lease sanitize, capture claim) over new dead modules."
+    },
+    {
+      "id": "Q6-PAD-DEAD-HELPERS",
+      "severity": "HIGH",
+      "status": "OBSERVED",
+      "criterion": "Major modules must contain material reachable branching, not unused filler",
+      "evidence_refs": [
+        "independent_loc_inventory@8dc0203f",
+        "django-checkout-failover-ha/environment/ha/controlplane/write_policy.py@8dc0203f55e6112a093bfc680c831f6f5b357f9b",
+        "django-checkout-failover-ha/environment/ha/controlplane/status_schema.py@8dc0203f55e6112a093bfc680c831f6f5b357f9b",
+        "django-checkout-failover-ha/environment/ha/controlplane/ha_metrics.py@8dc0203f55e6112a093bfc680c831f6f5b357f9b",
+        "django-checkout-failover-ha/environment/ha/checkout/pipeline_stages.py@8dc0203f55e6112a093bfc680c831f6f5b357f9b",
+        "django-checkout-failover-ha/environment/ha/inventory/reservation_ledger.py@8dc0203f55e6112a093bfc680c831f6f5b357f9b"
+      ],
+      "why_it_matters": "Static call analysis shows dozens of helpers that are never productively called or are only discard-touched (e.g. multiple write_policy descriptors, status_schema validate_status_object, ha_metrics probe helpers, pipeline stage-order helpers, reservation_ledger extras). Removing them would not change observed starter behavior—classic scale padding near the floor.",
+      "minimal_remediation": "Cull or productively integrate unused helpers; keep modules whose decisions actually gate writes/reads/readyz/capture.",
+      "regression_risk": "Low for pure dead code removal; verify oracle/NOP after integration of any helper that encodes a required invariant."
+    }
+  ],
+  "missing_evidence": [],
+  "change_scope": [
+    "Solver-visible environment/ha Python runtime modules (especially controlplane helpers and discard-touch call sites).",
+    "Optional deepening of honestly wired readiness/fencing/replica/capture paths.",
+    "Recompute Q6 review_scope_hash after environment/task.toml changes."
+  ],
+  "do_not_change": [
+    "Do not count seed.sql, standby_seed.sql, or offline generate_seed.py as substantive runtime LOC.",
+    "Do not treat Complexity Governor or desired difficulty tier as a substitute for this Q6 judgment.",
+    "Do not weaken verifier/tests or instruction solely to dodge the production-logic floor.",
+    "Do not replace coupled HA defects with disconnected LOC filler modules."
+  ],
+  "next_gate": "Environment Builder removes discard-touch/dead-helper padding and raises honest substantive reachable runtime/config LOC to >=3,000 with PADDING_RISK no higher than MEDIUM, then re-issue Q6 on the new task commit/scope hash. Quality Interlock cannot PASS on this REVISE.",
+  "role_output": {
+    "CORE_LOGIC_DEPTH": "HIGH",
+    "RUNTIME_REACHABILITY": "MEDIUM",
+    "MODULE_DIVERSITY": "HIGH",
+    "CROSS_COMPONENT_COUPLING": "HIGH",
+    "TOY_LOGIC_RISK": "LOW",
+    "PADDING_RISK": "HIGH",
+    "SUBSTANTIVE_LOC_ASSESSMENT": "Independent inventory at 8dc0203f: excluding seed.sql/standby_seed.sql/generate_seed.py, docs/logs/pin-cache, and `_=` discard-touch theater (~66 lines), solver-visible py+json+schema.sql+start-lab ≈ 3,510 substantive lines. Import-reachable from urls/wsgi/settings/manage.py commands. After also excluding never-productively-called / discard-only helper bodies (~650 lines), honest substantive reachable runtime/config ≈ 2,860—below large_system_strict >=3,000. Core checkout/fencing/router/desk_state/fulfill paths are real; the miss is padding inflation, not absence of a domain system.",
+    "MAJOR_MODULES": [
+      {
+        "module": "shopdesk (settings/urls/wsgi) + bin/start-lab + manage.py",
+        "responsibility": "Django process config, HTTP routes, dual DB/pins cache, lab bootstrap of primary/standby SQLite.",
+        "reachability": "Primary runtime entrypoints for agents and operators.",
+        "state_error_behavior": "AZ_ID/AZ_WRITE_AFFINITY env gates affinity; start-lab seeds DBs if missing."
+      },
+      {
+        "module": "checkout (views/services/models/attempt_guard/payment_states/cart_workflow)",
+        "responsibility": "Place/pay/confirmation with attempt validation, cart totals, payment transitions, LSN bumps, sticky pins.",
+        "reachability": "HTTP /api/checkout/* and /api/orders/*; calls fencing/sessions/fulfill/inventory.",
+        "state_error_behavior": "CheckoutError on blank attempt, missing cart, fence deny, illegal payment transition; pipeline_stages mostly bookkeeping."
+      },
+      {
+        "module": "controlplane router/fencing/sessions/lag/replica + management commands",
+        "responsibility": "DB routing, writer lease/epoch, sticky pin store, lag eligibility, standby copy, cutover/sync/dump.",
+        "reachability": "DATABASE_ROUTERS, checkout mutations, manage.py cutover/sync_standby/dump_failover.",
+        "state_error_behavior": "FenceError; replica copy of business tables; discard-touch around sanitize/risk helpers weakens honest enforcement in starter."
+      },
+      {
+        "module": "controlplane desk_state/readiness_policy/reports/status_schema/ha_metrics/write_policy",
+        "responsibility": "Compose writers/gap/pins/captures into live vs dump readiness and failover-status.json.",
+        "reachability": "/readyz, dump_failover; write_policy also used by router/fencing.",
+        "state_error_behavior": "Material readiness finding codes exist, but /readyz currently hardcodes accept + HTTP 200; several schema/metrics helpers are unused or discard-only."
+      },
+      {
+        "module": "fulfill + inventory + catalog + identity",
+        "responsibility": "Capture side effects/webhooks, stock reservation ledger, pricing/offers, shopper directory.",
+        "reachability": "Imported from checkout/services and desk_state duplicate-effect checks.",
+        "state_error_behavior": "Reservation commit/idempotent capture paths present; some ledger/effect helpers unused."
+      },
+      {
+        "module": "sql/schema.sql + config/ha.json + incident evidence",
+        "responsibility": "Native schema, HA knobs (sticky_seconds/max_lag_lsn), oncall notes and captured logs.",
+        "reachability": "Loaded by start-lab/settings; evidence referenced from instruction.",
+        "state_error_behavior": "Config drives lag/sticky budgets; evidence supports incident narrative without counting as LOC."
+      }
+    ],
+    "PARTIAL_FIX_TRAPS": [
+      "Pointing DATABASES['default'] at the intended writer without fencing/epoch demotion still leaves double-writable shop files.",
+      "Fixing ShopdeskRouter alone while AZ_WRITE_AFFINITY still diverts AZ-B mutations to replica leaves split placement.",
+      "Making /healthz green or forcing /readyz 200 without writer-count/seq-gap/pins/repeat-capture gates admits unsafe traffic.",
+      "Moving sticky keys without a shared pins store still loses read-your-writes across boxes after session wipe.",
+      "Idempotent pay path without unique capture effect per attempt_id still double-fires webhooks.",
+      "sync_standby that copies a writable fence lease recreates double-primary on standby.",
+      "Deleting discard-touch/dead helpers without adding productive reachable depth can leave the LOC floor unmet."
+    ],
+    "REMOVAL_TEST": "Removing ~25% of the load-bearing core (router+fencing+sessions+lag, checkout place/pay, fulfill capture, desk_state/readiness composition, replica sync) would collapse the claimed HA/checkout behaviors and operator commands. Separately, removing the discard-touch blocks and never-productively-called helper bodies (~700 lines class) would not materially change current starter outcomes—evidence those lines are padding rather than production behavior.",
+    "REQUIRED_CHANGES": [
+      "Eliminate HIGH padding risk: remove `_ = (...)` discard-touch theater and cull or productively wire discard-only/unused helpers.",
+      "Raise honest substantive reachable runtime/config LOC to >=3,000 without counting seed.sql/standby_seed.sql/generate_seed.py or theater.",
+      "Prefer completing real control-flow for readiness/fencing/replica/capture invariants over adding new unused modules.",
+      "Re-issue Q6 on the updated review_scope_hash after environment changes."
+    ]
+  }
+}
