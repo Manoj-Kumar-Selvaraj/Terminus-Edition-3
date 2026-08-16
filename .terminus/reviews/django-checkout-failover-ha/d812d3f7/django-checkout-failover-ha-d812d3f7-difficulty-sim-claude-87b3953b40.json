@@ -1,0 +1,103 @@
+{
+  "schema_version": "3.0",
+  "role": "Model Perspective Difficulty Simulator",
+  "review_id": "django-checkout-failover-ha-d812d3f7-difficulty-sim-claude-87b3953b40",
+  "task": "django-checkout-failover-ha",
+  "task_commit": "d812d3f739d4b987e3db6f2b6cf52298511ece3f",
+  "control_plane_commit": "1a2ca37fcd585249e9096a0c1ab886084fcdcafb",
+  "protocol_policy_version": "2.2",
+  "prompt_policy_version": "2.2",
+  "role_policy_version": "1.0",
+  "role_contract_hash": "988f3f143cf2c5659dabb6e0031d6404295cc3f63e39bb49af3595902d09cae8",
+  "context_packet": ".terminus/reviews/django-checkout-failover-ha/d812d3f7/django-checkout-failover-ha-d812d3f7-difficulty-sim-claude-87b3953b40.packet.json",
+  "verdict": "PASS",
+  "confidence": "MEDIUM",
+  "evidence_status": "SUFFICIENT",
+  "summary": "DIAGNOSTIC ONLY (not official Claude Opus 4.8×5). SIMULATION_NOT_EXECUTED. Claude-style prior: reconstruct runbook/readyz/dump/pin/fence/sync/capture matrix before edits; over-scope risk on peripheral HA helpers → USEFUL.",
+  "evidence": [
+    {
+      "type": "file",
+      "ref": "django-checkout-failover-ha/instruction.md",
+      "observation": "Incident symptoms (double place, OPEN after pay, repeat captures) plus absolute paths and failover-status.json obligation; no step recipe."
+    },
+    {
+      "type": "file",
+      "ref": "django-checkout-failover-ha/environment/ha/docs/runbook.md",
+      "observation": "Dense dual gates: live /readyz vs stricter dump accepting_checkout; sticky/lag/fence/sync contracts invite full matrix reading."
+    },
+    {
+      "type": "file",
+      "ref": "django-checkout-failover-ha/environment/ha/notes/oncall.md",
+      "observation": "Operator narrative aligns with router-to-replica, sticky miss, double capture, and writable lease on standby."
+    },
+    {
+      "type": "file",
+      "ref": "django-checkout-failover-ha/environment/ha/controlplane/views.py",
+      "observation": "Live /readyz hard-returns 200 with accepting_checkout true despite desk snapshot blockers."
+    },
+    {
+      "type": "file",
+      "ref": "django-checkout-failover-ha/environment/ha/controlplane/router.py",
+      "observation": "Write path can divert to replica under affinity/split-brain dispositions; sticky reads gated incompletely."
+    },
+    {
+      "type": "file",
+      "ref": "django-checkout-failover-ha/environment/ha/controlplane/sessions.py",
+      "observation": "Sticky pins still mirrored into default cache and django_session instead of shared pins alias."
+    },
+    {
+      "type": "file",
+      "ref": "django-checkout-failover-ha/environment/ha/controlplane/replica.py",
+      "observation": "sync_standby still copies writable fence lease and truncates checkout_order by cutoff."
+    },
+    {
+      "type": "rule",
+      "ref": ".terminus/agents/QUALITY_AGENT_PROMPTS.md#Q8",
+      "observation": "No disposable isolated solve+verifier in this session → SIMULATION_NOT_EXECUTED; Claude prior emphasizes architecture/contract reconstruction and over-scope risk."
+    }
+  ],
+  "findings": [],
+  "missing_evidence": [
+    "Disposable isolated agent solve trajectory and post-solve verifier reward (not run in this session)"
+  ],
+  "change_scope": [],
+  "do_not_change": [
+    "Do not treat this as official Claude Opus 4.8×5 difficulty evidence.",
+    "Do not open solution/, tests/, GPT-perspective Q8, or Pre-LLMaJ specialist verdicts for this diagnostic."
+  ],
+  "next_gate": "Q8 aggregate",
+  "role_output": {
+    "PERSPECTIVE": "CLAUDE_PERSPECTIVE",
+    "EXECUTION": "SIMULATION_NOT_EXECUTED",
+    "DIAGNOSTIC_SUMMARY": "Cold Claude/Claude-Code style would inventory instruction symptoms against runbook gates, then cross-read fencing/router/sessions/replica/readyz/reports/idempotency as one heal matrix before patching. Likely first pass demotes dual writers and wires readiness; second pass fixes sticky pins, sync lease sanitization, lag-gated reads, and capture claim uniqueness. Main failure mode is over-expanding into write_policy/heal_plan/cutover_fsm/catalog rather than surgical controlplane+fulfill fixes.",
+    "FIRST_DIAGNOSIS": "Split-brain writable leases (primary+standby) plus router diverting AZ-B writes to replica; /readyz not enforcing live gates; pins not on shared alias; capture claim always creates; status dump lies about pins/double_primary.",
+    "FILES_TOUCHED": [
+      "environment/ha/controlplane/fencing.py",
+      "environment/ha/controlplane/router.py",
+      "environment/ha/controlplane/sessions.py",
+      "environment/ha/controlplane/replica.py",
+      "environment/ha/controlplane/views.py",
+      "environment/ha/controlplane/reports.py",
+      "environment/ha/controlplane/idempotency.py",
+      "environment/ha/fulfill/services.py"
+    ],
+    "SHORTCUTS_ATTEMPTED": [
+      "Treat cutover promote alone as sufficient without demoting az-a and sanitizing standby lease",
+      "Make /readyz mirror dump accepting_checkout gates instead of live-only conjunction",
+      "Rewrite write_policy/heal_plan stacks instead of fixing call sites that ignore them",
+      "Clear repeat captures by deleting SideEffect rows without fixing claim uniqueness"
+    ],
+    "FIRST_MEANINGFUL_DIVERGENCE": "After mapping readiness_policy LIVE vs DUMP steps, expand into redesigning cutover_fsm/box_registry/catalog rather than closing the concrete router/pin/sync/idempotency defects that match the incident.",
+    "FINAL_VERIFIER_RESULT": "NOT_RUN",
+    "LIKELY_REASONING_WALLS": [
+      "Live /readyz vs dump accepting_checkout stricter conjunction (pins shared, incident replay, fence_copied_to_standby)",
+      "Sticky pin store must be pins alias, not django_session/default mirror",
+      "sync_standby must copy business data/watermarks without making standby lease writable",
+      "Capture idempotency per attempt_id interacting with dual-box emission",
+      "Lag/sticky read eligibility after place so confirmation is not OPEN on replica"
+    ],
+    "ENVIRONMENT_TOOL_FRICTION": "Multi-module Django HA tree with two SQLite files and cache aliases; operator commands and API must stay; reasoning cost is state/contract cross-checks more than missing tooling.",
+    "PREDICTED_OFFICIAL_SIGNAL": "USEFUL",
+    "SIMULATION_NOTE": "Diagnostic Claude-perspective strategy prior only; NOT official Claude Opus 4.8×5 Harbor evidence."
+  }
+}
