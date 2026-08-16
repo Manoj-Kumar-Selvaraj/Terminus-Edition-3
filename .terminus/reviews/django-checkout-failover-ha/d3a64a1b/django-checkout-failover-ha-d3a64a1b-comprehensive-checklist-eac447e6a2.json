@@ -1,0 +1,458 @@
+{
+  "schema_version": "3.0",
+  "role": "Comprehensive Reviewer",
+  "review_id": "django-checkout-failover-ha-d3a64a1b-comprehensive-checklist-eac447e6a2",
+  "task": "django-checkout-failover-ha",
+  "task_commit": "d3a64a1bcab9579787745e952a6bf8132fc6ad67",
+  "control_plane_commit": "a3ab7d7287f07ea4a158920dadca7bb3ee15b201",
+  "protocol_policy_version": "2.2",
+  "prompt_policy_version": "2.2",
+  "role_policy_version": "1.0",
+  "role_contract_hash": "7b4f0432fc31dc69dcf55d9cd988930880cd7cb6c5f8ae95332d54ab128732ae",
+  "context_packet": ".terminus/reviews/django-checkout-failover-ha/d3a64a1b/django-checkout-failover-ha-d3a64a1b-comprehensive-checklist-eac447e6a2.packet.json",
+  "verdict": "APPROVE",
+  "confidence": "HIGH",
+  "evidence_status": "SUFFICIENT",
+  "summary": "Independent 61-criterion checklist walk at 100% coverage finds no High/Medium/Low failures in pre-trial scope. Instruction is a concise absolute-path on-call handoff; environment uses the canonical digest-pinned Python base with tmux/asciinema; oracle/NOP are green (reward 1/0); rubrics and official trial/meta difficulty rows are N/A or user-deferred without inventing defects.",
+  "evidence": [
+    {
+      "type": "file",
+      "ref": "django-checkout-failover-ha/instruction.md",
+      "observation": "Two short on-call paragraphs; absolute /app/ha paths; no task slug/canary; outcomes and runbook-backed schema without a fix walkthrough."
+    },
+    {
+      "type": "file",
+      "ref": "django-checkout-failover-ha/task.toml",
+      "observation": "Flat Edition 3 metadata with top-level artifacts=['/app/ha'], Software/Systems taxonomy, separate verifier, public network, agent timeout 10800s."
+    },
+    {
+      "type": "file",
+      "ref": "django-checkout-failover-ha/environment/Dockerfile",
+      "observation": "Canonical python:3.13-slim-bookworm@sha256:01f42367…; pinned Django/pytest; tmux/asciinema; COPY ha/ only."
+    },
+    {
+      "type": "file",
+      "ref": "django-checkout-failover-ha/tests/test_outputs.py",
+      "observation": "34 docstringed pytest cases (28 F2P / 6 P2P) driving WSGI, manage.py, DB/cache invariants for writer fencing, sticky pins, capture uniqueness, /readyz, and dump schema."
+    },
+    {
+      "type": "file",
+      "ref": "django-checkout-failover-ha/tests/test.sh",
+      "observation": "Always seeds reward 0, runs pytest with ctrf, then writes binary 1/0; installs nothing."
+    },
+    {
+      "type": "file",
+      "ref": "django-checkout-failover-ha/solution/solve.sh",
+      "observation": "set -euo pipefail; installs repaired modules; runs sync_standby/cutover/dump_failover plus deterministic lease/dedupe heal—not a golden JSON echo."
+    },
+    {
+      "type": "run",
+      "ref": "jobs/2026-08-16__18-04-39",
+      "observation": "Harbor oracle reward.txt=1; ctrf 34/34 passed (post d812d3f packaging/base fix; d3a64a1 is instruction-only)."
+    },
+    {
+      "type": "run",
+      "ref": "jobs/2026-08-16__18-06-28",
+      "observation": "Harbor NOP reward.txt=0; ctrf 15 passed / 19 failed."
+    },
+    {
+      "type": "rule",
+      "ref": ".terminus/reviewers/reviewer_criteria.json",
+      "observation": "Checklist snapshot 2026-08-08-user-supplied; all 61 criteria dispositioned."
+    },
+    {
+      "type": "public_reference",
+      "ref": "https://snorkel-ai.github.io/Terminus-EC-Training-stateful/portal/docs/reviewing-tasks/reviewer-checklist",
+      "observation": "Live checklist URL returned HTTP 404; POLICY_FRESHNESS=UNVERIFIED against stored snapshot."
+    },
+    {
+      "type": "ci",
+      "ref": "ruff check django-checkout-failover-ha/tests",
+      "observation": "Ruff clean on verifier tests."
+    }
+  ],
+  "findings": [],
+  "missing_evidence": [
+    "Platform test-quality eval / Harbor LLMaJ flag artifacts (user-deferred)",
+    "Official combined GPT-5.5 ×5 + Claude Opus 4.8 ×5 trial-analysis flags (user-deferred)"
+  ],
+  "change_scope": [],
+  "do_not_change": [
+    "Do not weaken writer-fencing, sticky pins, capture idempotency, live /readyz vs dump accepting_checkout conjunctions, or F2P behavioral coverage to chase pass rate.",
+    "Do not treat deferred Harbor/trial absence as instruction or verifier defects at this gate."
+  ],
+  "next_gate": "Pre-LLMaJ aggregate; then Q8 refresh; Harbor LLMaJ and combined ×10 difficulty trials remain user-deferred",
+  "role_output": {
+    "reviewer_checklist_version": "2026-08-08-user-supplied",
+    "policy_freshness": "UNVERIFIED",
+    "checklist_snapshot": "2026-08-08-user-supplied",
+    "checklist_total": 61,
+    "checklist_coverage_percent": 100,
+    "recommendation": "APPROVE",
+    "counts": {
+      "pass": 41,
+      "fail": 0,
+      "not_applicable": 20,
+      "insufficient_evidence": 0,
+      "policy_conflict": 0,
+      "high_failures": 0,
+      "medium_failures": 0,
+      "low_failures": 0,
+      "special_trial_revision_flags": 0
+    },
+    "criteria": {
+      "RC-INS-001": "PASS",
+      "RC-INS-002": "PASS",
+      "RC-INS-003": "PASS",
+      "RC-INS-004": "PASS",
+      "RC-INS-005": "PASS",
+      "RC-INS-006": "PASS",
+      "RC-INS-007": "PASS",
+      "RC-INS-008": "PASS",
+      "RC-INS-009": "PASS",
+      "RC-INS-010": "PASS",
+      "RC-ENV-001": "PASS",
+      "RC-ENV-002": "PASS",
+      "RC-ENV-003": "PASS",
+      "RC-ENV-004": "PASS",
+      "RC-ENV-005": "PASS",
+      "RC-ENV-006": "PASS",
+      "RC-ENV-007": "PASS",
+      "RC-ENV-008": "PASS",
+      "RC-ENV-009": "PASS",
+      "RC-ENV-010": "PASS",
+      "RC-ENV-011": "PASS",
+      "RC-ENV-012": "PASS",
+      "RC-ENV-013": "PASS",
+      "RC-ENV-014": "PASS",
+      "RC-SOL-001": "PASS",
+      "RC-SOL-002": "PASS",
+      "RC-SOL-003": "PASS",
+      "RC-VER-001": "PASS",
+      "RC-VER-002": "PASS",
+      "RC-VER-003": "PASS",
+      "RC-VER-004": "PASS",
+      "RC-VER-005": "PASS",
+      "RC-VER-006": "PASS",
+      "RC-VER-007": "PASS",
+      "RC-VER-008": "PASS",
+      "RC-TRIAL-001": "NOT_APPLICABLE",
+      "RC-TRIAL-002": "NOT_APPLICABLE",
+      "RC-TRIAL-003": "NOT_APPLICABLE",
+      "RC-TRIAL-004": "NOT_APPLICABLE",
+      "RC-TRIAL-005": "NOT_APPLICABLE",
+      "RC-TRIAL-006": "NOT_APPLICABLE",
+      "RC-RUB-001": "NOT_APPLICABLE",
+      "RC-RUB-002": "NOT_APPLICABLE",
+      "RC-RUB-003": "NOT_APPLICABLE",
+      "RC-RUB-004": "NOT_APPLICABLE",
+      "RC-RUB-005": "NOT_APPLICABLE",
+      "RC-RUB-006": "NOT_APPLICABLE",
+      "RC-RUB-007": "NOT_APPLICABLE",
+      "RC-RUB-008": "NOT_APPLICABLE",
+      "RC-RUB-009": "NOT_APPLICABLE",
+      "RC-RUB-010": "NOT_APPLICABLE",
+      "RC-RUB-011": "NOT_APPLICABLE",
+      "RC-STRUCT-001": "PASS",
+      "RC-STRUCT-002": "PASS",
+      "RC-META-001": "PASS",
+      "RC-META-002": "NOT_APPLICABLE",
+      "RC-META-003": "PASS",
+      "RC-META-004": "NOT_APPLICABLE",
+      "RC-META-005": "PASS",
+      "RC-META-006": "PASS",
+      "RC-META-007": "NOT_APPLICABLE"
+    },
+    "criterion_evidence": {
+      "RC-INS-001": {
+        "result": "PASS",
+        "evidence": "Two short paragraphs; concise on-call handoff without step lists."
+      },
+      "RC-INS-002": {
+        "result": "PASS",
+        "evidence": "Measurable goal (one fenced writer, safe /readyz, matching confirmation, one capture per attempt_id, failover-status.json); schema/gates delegated to /app/ha/docs/runbook.md."
+      },
+      "RC-INS-003": {
+        "result": "PASS",
+        "evidence": "Realistic Django multi-AZ checkout failover repair useful to backend/on-call engineers."
+      },
+      "RC-INS-004": {
+        "result": "PASS",
+        "evidence": "Symptoms and outcomes only; no file-by-file patch order or oracle module list."
+      },
+      "RC-INS-005": {
+        "result": "PASS",
+        "evidence": "oncall.md/runbook.md/logs are incident evidence; no hidden solution walkthrough."
+      },
+      "RC-INS-006": {
+        "result": "PASS",
+        "evidence": "Runbook is a realistic operator contract (commands, lag/sticky, /readyz vs dump gates, JSON schema), not prompt-overflow edit checklist."
+      },
+      "RC-INS-007": {
+        "result": "PASS",
+        "evidence": "No Edition 3 twin with same Django SQLite dual-shop + pins sticky + capture idempotency premise; payment-eod is a different domain."
+      },
+      "RC-INS-008": {
+        "result": "PASS",
+        "evidence": "All referenced paths are absolute under /app/ha/..."
+      },
+      "RC-INS-009": {
+        "result": "PASS",
+        "evidence": "No canary string in instruction.md."
+      },
+      "RC-INS-010": {
+        "result": "PASS",
+        "evidence": "Task name django-checkout-failover-ha absent from instruction.md."
+      },
+      "RC-ENV-001": {
+        "result": "PASS",
+        "evidence": "Build installs apt packages and pinned pip wheels only; task SQL/data is local."
+      },
+      "RC-ENV-002": {
+        "result": "PASS",
+        "evidence": "network_mode=public; answer not network-retrievable; runtime deps baked."
+      },
+      "RC-ENV-003": {
+        "result": "PASS",
+        "evidence": "pip==25.2, Django==4.2.23, pytest==8.4.1, pytest-json-ctrf==0.3.5 pinned in agent and verifier images."
+      },
+      "RC-ENV-004": {
+        "result": "PASS",
+        "evidence": "COPY ha/ from environment/; no ../ context capture."
+      },
+      "RC-ENV-005": {
+        "result": "PASS",
+        "evidence": "solution/ and tests/ excluded from agent image; .dockerignore lists both."
+      },
+      "RC-ENV-006": {
+        "result": "PASS",
+        "evidence": "No privileged mode, dangerous caps, or docker.sock."
+      },
+      "RC-ENV-007": {
+        "result": "PASS",
+        "evidence": "Agent image does not create /tests, /solution, or /logs/verifier; only /app/ha workdirs."
+      },
+      "RC-ENV-008": {
+        "result": "PASS",
+        "evidence": "No CLAUDE.md, AGENTS.md, skills.md, or .cursor under environment/."
+      },
+      "RC-ENV-009": {
+        "result": "PASS",
+        "evidence": "Agent and verifier FROM lines use @sha256 digests."
+      },
+      "RC-ENV-010": {
+        "result": "PASS",
+        "evidence": "Final base is canonical python:3.13-slim-bookworm@sha256:01f42367a0a94ad4bc17111776fd66e3500c1d87c15bbd6055b7371d39c124fb; README notes Edition 3 canonical choice."
+      },
+      "RC-ENV-011": {
+        "result": "PASS",
+        "evidence": "environment/ ~19.8 MiB total; no single file >50 MiB."
+      },
+      "RC-ENV-012": {
+        "result": "PASS",
+        "evidence": "Single apt-get update/install --no-install-recommends with list cleanup; no apt upgrade/version pins."
+      },
+      "RC-ENV-013": {
+        "result": "PASS",
+        "evidence": "environment/.dockerignore excludes .git, caches, solution/, tests/, .env."
+      },
+      "RC-ENV-014": {
+        "result": "PASS",
+        "evidence": "No Dockerfile heredoc source embeds; sources live under environment/ha/."
+      },
+      "RC-SOL-001": {
+        "result": "PASS",
+        "evidence": "Oracle job 2026-08-16__18-04-39 reward 1 (34/34); solve.sh uses set -euo pipefail and deterministic manage.py/heal steps."
+      },
+      "RC-SOL-002": {
+        "result": "PASS",
+        "evidence": "Oracle does not fetch packages or answers at runtime; compatible with public network_mode."
+      },
+      "RC-SOL-003": {
+        "result": "PASS",
+        "evidence": "Oracle patches router/fencing/lag/sessions/idempotency/replica/reports/views/settings/fulfill and runs sync/cutover/dump plus lease/dedupe heal covering instruction outcomes."
+      },
+      "RC-VER-001": {
+        "result": "PASS",
+        "evidence": "tests/test.sh always writes /logs/verifier/reward.txt before/after pytest on success and failure paths."
+      },
+      "RC-VER-002": {
+        "result": "PASS",
+        "evidence": "No oracle-vs-agent conditional grading in test.sh or test_outputs.py."
+      },
+      "RC-VER-003": {
+        "result": "PASS",
+        "evidence": "Verifier image bakes pytest/Django; test.sh installs nothing; no runtime content fetch."
+      },
+      "RC-VER-004": {
+        "result": "PASS",
+        "evidence": "Observed rewards are binary 1 (oracle) and 0 (NOP) only."
+      },
+      "RC-VER-005": {
+        "result": "PASS",
+        "evidence": "Tests map to instruction/runbook: writer placement, AZ refuse, sticky pins, lag/seq, capture uniqueness, /readyz gates, dump schema/accept conjunctions, route/schema preservation."
+      },
+      "RC-VER-006": {
+        "result": "PASS",
+        "evidence": "Behavioral WSGI/DB/cache/side-effect checks; not format-only schema presence."
+      },
+      "RC-VER-007": {
+        "result": "PASS",
+        "evidence": "Tests exercise submitted app and invariants; no callable end-to-end solver that emits full failover-status.json from inputs."
+      },
+      "RC-VER-008": {
+        "result": "PASS",
+        "evidence": "max_lag_lsn is fixed at 25 in shipped /app/ha/config/ha.json; test literals match that fixed lab contract."
+      },
+      "RC-TRIAL-001": {
+        "result": "NOT_APPLICABLE",
+        "evidence": "Harbor LLMaJ and official trials user-deferred; no task_specification flag artifact to adjudicate."
+      },
+      "RC-TRIAL-002": {
+        "result": "NOT_APPLICABLE",
+        "evidence": "No reward_hacking trial flag available; deferred."
+      },
+      "RC-TRIAL-003": {
+        "result": "NOT_APPLICABLE",
+        "evidence": "No difficulty_crux flag available; deferred."
+      },
+      "RC-TRIAL-004": {
+        "result": "NOT_APPLICABLE",
+        "evidence": "No near_miss flag available; deferred."
+      },
+      "RC-TRIAL-005": {
+        "result": "NOT_APPLICABLE",
+        "evidence": "No refusals flag available; deferred."
+      },
+      "RC-TRIAL-006": {
+        "result": "NOT_APPLICABLE",
+        "evidence": "No low_timeout flag available; deferred."
+      },
+      "RC-RUB-001": {
+        "result": "NOT_APPLICABLE",
+        "evidence": "Edition 3 forbids packaged rubrics.txt; rubrics live in platform UI only."
+      },
+      "RC-RUB-002": {
+        "result": "NOT_APPLICABLE",
+        "evidence": "No packaged rubric present."
+      },
+      "RC-RUB-003": {
+        "result": "NOT_APPLICABLE",
+        "evidence": "No packaged rubric present."
+      },
+      "RC-RUB-004": {
+        "result": "NOT_APPLICABLE",
+        "evidence": "No packaged rubric present."
+      },
+      "RC-RUB-005": {
+        "result": "NOT_APPLICABLE",
+        "evidence": "No packaged rubric present."
+      },
+      "RC-RUB-006": {
+        "result": "NOT_APPLICABLE",
+        "evidence": "No packaged rubric present."
+      },
+      "RC-RUB-007": {
+        "result": "NOT_APPLICABLE",
+        "evidence": "No packaged rubric present."
+      },
+      "RC-RUB-008": {
+        "result": "NOT_APPLICABLE",
+        "evidence": "No packaged rubric present."
+      },
+      "RC-RUB-009": {
+        "result": "NOT_APPLICABLE",
+        "evidence": "No packaged rubric present."
+      },
+      "RC-RUB-010": {
+        "result": "NOT_APPLICABLE",
+        "evidence": "No packaged rubric present."
+      },
+      "RC-RUB-011": {
+        "result": "NOT_APPLICABLE",
+        "evidence": "No packaged rubric present."
+      },
+      "RC-STRUCT-001": {
+        "result": "PASS",
+        "evidence": "Required flat layout present: task.toml, instruction.md, environment/Dockerfile, solution/solve.sh, tests/Dockerfile, tests/test.sh, tests/test_outputs.py, README.md."
+      },
+      "RC-STRUCT-002": {
+        "result": "PASS",
+        "evidence": "Task root has no jobs/, stray parent data, or AI scaffolding leftovers."
+      },
+      "RC-META-001": {
+        "result": "PASS",
+        "evidence": "Canonical top-level fields including artifacts before [metadata]; verifier/agent/environment tables complete."
+      },
+      "RC-META-002": {
+        "result": "NOT_APPLICABLE",
+        "evidence": "Single-container Dockerfile task; is_multi_container not required."
+      },
+      "RC-META-003": {
+        "result": "PASS",
+        "evidence": "Software/Systems with django/sqlite/failover/checkout/idempotency/cache tags and python/bash/sql languages match the desk."
+      },
+      "RC-META-004": {
+        "result": "NOT_APPLICABLE",
+        "evidence": "Official combined ×10 difficulty trials user-deferred; difficulty=advanced is provisional/UNMEASURED, not scored as a defect at this gate."
+      },
+      "RC-META-005": {
+        "result": "PASS",
+        "evidence": "expert_time_estimate_hours=14 is plausible for multi-module HA desk repair."
+      },
+      "RC-META-006": {
+        "result": "PASS",
+        "evidence": "agent timeout_sec=10800 and verifier timeout_sec=2400 within Edition 3 bounds without using time as difficulty."
+      },
+      "RC-META-007": {
+        "result": "NOT_APPLICABLE",
+        "evidence": "Optional GPU/resource fields correctly omitted."
+      }
+    },
+    "policy_conflicts": [
+      {
+        "id": "PC-FRESHNESS-001",
+        "status": "UNVERIFIED",
+        "issue": "Live reviewer checklist URL returned HTTP 404; stored snapshot could not be refreshed.",
+        "resolution": "Used stored checklist 2026-08-08-user-supplied plus current TERMINUS_3_AI_INSTRUCTIONS.md; recorded POLICY_FRESHNESS=UNVERIFIED (not a blocking POLICY_CONFLICT)."
+      },
+      {
+        "id": "PC-RUBRIC-PACKAGING-001",
+        "status": "RESOLVED",
+        "issue": "Checklist includes RC-RUB-* while Edition 3 forbids packaged rubrics.txt in the task ZIP.",
+        "resolution": "Marked RC-RUB-001..011 NOT_APPLICABLE under current Edition 3 packaging (platform UI only)."
+      },
+      {
+        "id": "PC-DIFFICULTY-TRIALS-001",
+        "status": "RESOLVED",
+        "issue": "Empirical difficulty/solvability requires combined GPT-5.5×5 + Claude Opus 4.8×5; Harbor/trials user-deferred.",
+        "resolution": "RC-META-004 and RC-TRIAL-001..006 marked NOT_APPLICABLE/deferred with explicit disposition; missing trials are not invented failures."
+      }
+    ],
+    "TEST_QUALITY_EVAL_DISPOSITIONS": {
+      "req-gap": "INSUFFICIENT_EVIDENCE",
+      "weak-assertion": "INSUFFICIENT_EVIDENCE",
+      "phantom-spec": "INSUFFICIENT_EVIDENCE",
+      "flaky-execution": "INSUFFICIENT_EVIDENCE",
+      "vacuous-test": "INSUFFICIENT_EVIDENCE",
+      "note": "No automated TQ-eval/Harbor LLMaJ flag artifact for this revision (user-deferred). Manual read of test_outputs.py did not independently confirm those named defect classes as observed failures."
+    },
+    "TRIAL_ANALYSIS_DISPOSITIONS": {
+      "task_specification": "NOT_APPLICABLE",
+      "reward_hacking": "NOT_APPLICABLE",
+      "difficulty_crux": "NOT_APPLICABLE",
+      "near_miss": "NOT_APPLICABLE",
+      "refusals": "NOT_APPLICABLE",
+      "low_timeout": "NOT_APPLICABLE",
+      "note": "Official model trials and Harbor LLMaJ user-deferred; missing trial flags are deferred/N/A, not task defects at Pre-LLMaJ comprehensive gate."
+    },
+    "acceptance_notes": [
+      "Blocking IDs: none.",
+      "Oracle/NOP on jobs/2026-08-16__18-04-39 (1, 34/34) and jobs/2026-08-16__18-06-28 (0) remain applicable: d3a64a1 vs d812d3f is instruction.md-only.",
+      "Working tree for django-checkout-failover-ha matches task_commit d3a64a1bcab9579787745e952a6bf8132fc6ad67 (empty git diff).",
+      "Prior Comprehensive under d812d3f7/ and specialist verdict JSONs were not opened for criterion decisions (PROCEDURAL isolation).",
+      "RC-META-004 remains provisional until combined ×10 trials; do not treat deferred measurement as APPROVE of final difficulty tier."
+    ],
+    "review_independence_note": "PROCEDURAL isolation Auto/default: criterion walk used task files at pinned commit, authoritative rules, ruff, and Harbor oracle/NOP job evidence only; specialist verdicts and prior Comprehensive JSON were not used as criterion evidence."
+  }
+}

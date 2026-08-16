@@ -7,7 +7,7 @@ This is the durable operational checkpoint for one task. Keep it evidence-orient
 ## Identity
 
 - Task: `django-checkout-failover-ha`
-- Controller state: `FROZEN_CANDIDATE`
+- Controller state: `PRE_LLMAJ`
 - Working branch: `main`
 - Pull request: `none`
 - Current task commit: `d3a64a1bcab9579787745e952a6bf8132fc6ad67`
@@ -35,8 +35,8 @@ This is the durable operational checkpoint for one task. Keep it evidence-orient
 | Q4 Spec-Test Contract Reviewer | PASS | review `.../d3a64a1b/...-spec-test-contract-317c810878.json` (HIGH) |
 | Q6 Production Logic Auditor | PASS | retained scope `888ea3ba…` from `d812d3f7` (instruction-only delta) |
 | Quality Interlock | PASS | cold Q4 on `d3a64a1b` + Q6 scope-preserved |
-| Pre-LLMaJ specialist panel | PENDING | Instruction PASS; Comprehensive packet next |
-| Pre-LLMaJ aggregate | STALE | awaiting Comprehensive APPROVE on `d3a64a1b` |
+| Pre-LLMaJ specialist panel | PASS | Stage-B retained; Instruction + Comprehensive on `d3a64a1b` |
+| Pre-LLMaJ aggregate | PASS | `.terminus/reviews/django-checkout-failover-ha/d3a64a1b/pre-llmaj-aggregate.md` |
 | Task Architect | PASS | retained from `b9ee4816` |
 | Verifier Engineer | PASS | retained from `b9ee4816` |
 | Originality & Authenticity | PASS | retained from `b9ee4816` |
@@ -44,10 +44,10 @@ This is the durable operational checkpoint for one task. Keep it evidence-orient
 | Compliance pre-review | PASS | retained from `b9ee4816` |
 | Instruction Reviewer | PASS | review `.../d3a64a1b/...-instruction-d681620c9c.json` (HIGH; HUMAN_SIGNAL HIGH; AI_TEMPLATE LOW) |
 | Documentation Reviewer | PASS | retained from `b9ee4816` |
-| Comprehensive Reviewer | PENDING | packet `.../d3a64a1b/...-comprehensive-checklist-eac447e6a2.packet.json` |
-| Q8 GPT Perspective Simulation | STALE | instruction rewrite; prior diagnostic unbound |
-| Q8 Claude Perspective Simulation | STALE | instruction rewrite; prior diagnostic unbound |
-| Q8 aggregate | STALE | depends on re-Q8 after instruction freeze |
+| Comprehensive Reviewer | APPROVE | review `.../d3a64a1b/...-comprehensive-checklist-eac447e6a2.json` (HIGH); coverage 100% |
+| Q8 GPT Perspective Simulation | PENDING | diagnostic; packets next |
+| Q8 Claude Perspective Simulation | PENDING | diagnostic; packets next |
+| Q8 aggregate | PENDING | after both Q8 perspectives |
 | Harbor LLMaJ | DEFERRED | user-deferred |
 | Difficulty trials | DEFERRED | user-deferred (GPT×5 + Claude×5) |
 | GPT-5.5 difficulty ×5 | DEFERRED | user-deferred |
@@ -70,11 +70,11 @@ This is the durable operational checkpoint for one task. Keep it evidence-orient
 
 ## Current blocker
 
-Awaiting Comprehensive on `d3a64a1b`. Quality Interlock PASS (Q4 exact + Q6 scope-preserved).
+None for Pre-LLMaJ. Q8 diagnostics pending on `d3a64a1b`. Harbor/trials remain deferred.
 
 ## Next action
 
-Reconcile Comprehensive → Pre-LLMaJ aggregate → Q8 refresh. Harbor/trials remain deferred.
+Run Q8 GPT/Claude → Q8 aggregate. Final Compliance/package wait on Harbor/trials authorization.
 
 ## Review evidence ledger
 
@@ -90,7 +90,7 @@ Reconcile Comprehensive → Pre-LLMaJ aggregate → Q8 refresh. Harbor/trials re
 | Instruction | django-checkout-failover-ha-d3a64a1b-instruction-d681620c9c | d3a64a1bcab9579787745e952a6bf8132fc6ad67 | 2.2 | 2.2 | 1.0 | ce36982fb77ce80b4c8f53015d566f5bcfb3288c7408243b9a807b8856930703 | | `.terminus/reviews/django-checkout-failover-ha/d3a64a1b/django-checkout-failover-ha-d3a64a1b-instruction-d681620c9c.json` | PASS | HIGH | HUMAN HIGH / AI_TEMPLATE LOW |
 | Instruction | django-checkout-failover-ha-03749a0e-instruction-5b7fcb0fa3 | 03749a0ed4dcf6f691bb6d1c9bd573d923d92403 | 2.2 | 2.2 | | | | `.terminus/reviews/django-checkout-failover-ha/03749a0e/django-checkout-failover-ha-03749a0e-instruction-5b7fcb0fa3.json` | PASS | HIGH | INST-01/02 closed (superseded by d3a64a1b) |
 | Documentation | django-checkout-failover-ha-b9ee4816-documentation-2e3067d67a | b9ee4816204f1a51857407e4a6f9bf9e38dd937a | 2.2 | 2.2 | | | | `.terminus/reviews/django-checkout-failover-ha/b9ee4816/django-checkout-failover-ha-b9ee4816-documentation-2e3067d67a.json` | PASS | HIGH | |
-| Comprehensive Reviewer | django-checkout-failover-ha-d812d3f7-comprehensive-checklist-41d3c4e34b | d812d3f739d4b987e3db6f2b6cf52298511ece3f | 2.2 | 2.2 | 1.0 | 7b4f0432fc31 | | `.terminus/reviews/django-checkout-failover-ha/d812d3f7/django-checkout-failover-ha-d812d3f7-comprehensive-checklist-41d3c4e34b.json` | APPROVE | HIGH | coverage 100% |
+| Comprehensive Reviewer | django-checkout-failover-ha-d3a64a1b-comprehensive-checklist-eac447e6a2 | d3a64a1bcab9579787745e952a6bf8132fc6ad67 | 2.2 | 2.2 | 1.0 | 7b4f0432fc31 | | `.terminus/reviews/django-checkout-failover-ha/d3a64a1b/django-checkout-failover-ha-d3a64a1b-comprehensive-checklist-eac447e6a2.json` | APPROVE | HIGH | coverage 100% |
 | Q8 GPT Perspective Simulation | django-checkout-failover-ha-d812d3f7-difficulty-sim-gpt-8788a1f29a | d812d3f739d4b987e3db6f2b6cf52298511ece3f | 2.2 | 2.2 | 1.0 | 988f3f143cf2c5659dabb6e0031d6404295cc3f63e39bb49af3595902d09cae8 | | `.terminus/reviews/django-checkout-failover-ha/d812d3f7/django-checkout-failover-ha-d812d3f7-difficulty-sim-gpt-8788a1f29a.json` | PASS | MEDIUM | SIMULATION_NOT_EXECUTED; USEFUL |
 | Q8 Claude Perspective Simulation | django-checkout-failover-ha-d812d3f7-difficulty-sim-claude-87b3953b40 | d812d3f739d4b987e3db6f2b6cf52298511ece3f | 2.2 | 2.2 | 1.0 | 988f3f143cf2c5659dabb6e0031d6404295cc3f63e39bb49af3595902d09cae8 | | `.terminus/reviews/django-checkout-failover-ha/d812d3f7/django-checkout-failover-ha-d812d3f7-difficulty-sim-claude-87b3953b40.json` | PASS | MEDIUM | SIMULATION_NOT_EXECUTED; USEFUL |
 | Trial Analysis | | | | | | | | | DEFERRED | | |
@@ -115,9 +115,9 @@ Reconcile Comprehensive → Pre-LLMaJ aggregate → Q8 refresh. Harbor/trials re
 
 ## Comprehensive reviewer checkpoint
 
-- Review ID: `django-checkout-failover-ha-d812d3f7-comprehensive-checklist-41d3c4e34b`
-- Result path: `.terminus/reviews/django-checkout-failover-ha/d812d3f7/django-checkout-failover-ha-d812d3f7-comprehensive-checklist-41d3c4e34b.json`
-- Task commit: `d812d3f739d4b987e3db6f2b6cf52298511ece3f`
+- Review ID: `django-checkout-failover-ha-d3a64a1b-comprehensive-checklist-eac447e6a2`
+- Result path: `.terminus/reviews/django-checkout-failover-ha/d3a64a1b/django-checkout-failover-ha-d3a64a1b-comprehensive-checklist-eac447e6a2.json`
+- Task commit: `d3a64a1bcab9579787745e952a6bf8132fc6ad67`
 - Role contract hash: `7b4f0432fc31`
 - Checklist snapshot: `2026-08-08-user-supplied`
 - Policy freshness: `UNVERIFIED`
@@ -135,29 +135,29 @@ Reconcile Comprehensive → Pre-LLMaJ aggregate → Q8 refresh. Harbor/trials re
 ## Pre-LLMaJ checkpoint
 
 - Aggregate: `PASS`
-- Aggregate path: `.terminus/reviews/django-checkout-failover-ha/d812d3f7/pre-llmaj-aggregate.md`
-- Task commit: `d812d3f739d4b987e3db6f2b6cf52298511ece3f`
+- Aggregate path: `.terminus/reviews/django-checkout-failover-ha/d3a64a1b/pre-llmaj-aggregate.md`
+- Task commit: `d3a64a1bcab9579787745e952a6bf8132fc6ad67`
 - Panel policy: `2.2`
 - Static check: `PASS`
 - Quality interlock: `PASS`
 - Comprehensive Reviewer: `APPROVE`
 - Checklist coverage: `100%`
 - Adjudications: `none`
-- Open findings: `Q4-A01–A04 LOW; Q6 residual padding MEDIUM risk; DD/HQ LOW (tier unmeasured)`
+- Open findings: `Q4 advisory LOWs; Q6 residual padding; DD/HQ LOW (tier unmeasured)`
 - Policy conflicts: `none`
 
 ## Q8 model-perspective simulation checkpoint
 
-- Task commit: `d812d3f739d4b987e3db6f2b6cf52298511ece3f`
-- GPT perspective review ID/result: `django-checkout-failover-ha-d812d3f7-difficulty-sim-gpt-8788a1f29a` / `.terminus/reviews/django-checkout-failover-ha/d812d3f7/django-checkout-failover-ha-d812d3f7-difficulty-sim-gpt-8788a1f29a.json`
-- GPT execution: `SIMULATION_NOT_EXECUTED`
-- GPT final verifier result: `NOT_RUN`
-- GPT predicted signal: `USEFUL`
-- Claude perspective review ID/result: `django-checkout-failover-ha-d812d3f7-difficulty-sim-claude-87b3953b40` / `.terminus/reviews/django-checkout-failover-ha/d812d3f7/django-checkout-failover-ha-d812d3f7-difficulty-sim-claude-87b3953b40.json`
-- Claude execution: `SIMULATION_NOT_EXECUTED`
-- Claude final verifier result: `NOT_RUN`
-- Claude predicted signal: `USEFUL`
-- Cross-perspective comparison: `both USEFUL; GPT under-fix after local green vs Claude over-scope; see d812d3f7/q8-aggregate.md`
+- Task commit: `d3a64a1bcab9579787745e952a6bf8132fc6ad67`
+- GPT perspective review ID/result: `none`
+- GPT execution: `PENDING`
+- GPT final verifier result: `none`
+- GPT predicted signal: `PENDING`
+- Claude perspective review ID/result: `none`
+- Claude execution: `PENDING`
+- Claude final verifier result: `none`
+- Claude predicted signal: `PENDING`
+- Cross-perspective comparison: `n/a`
 
 ## Difficulty / solvability checkpoint
 
@@ -209,8 +209,9 @@ Reconcile Comprehensive → Pre-LLMaJ aggregate → Q8 refresh. Harbor/trials re
 
 Newest first; keep only meaningful state-changing attempts.
 
+- Comprehensive APPROVE via [Comprehensive Reviewer](f9361d0f-7c55-4d0c-955c-289171caa748) on `d3a64a1b` (100%); Pre-LLMaJ aggregate PASS. Q8 refresh next.
 - Q4 cold PASS via [Q4 Spec-Test Review](00f08941-af79-4e8f-b6c1-e9e5e74ea339) on `d3a64a1b` → Quality Interlock PASS (Q6 scope-preserved). Comprehensive packet generated.
-- Instruction PASS via [Instruction Reviewer](2b511b03-1d32-4ffe-8e73-76f95477898d) on freeze `d3a64a1b` → `...-instruction-d681620c9c.json` (HUMAN HIGH / AI_TEMPLATE LOW). Awaiting cold Q4.
+- Instruction PASS via [Instruction Reviewer](2b511b03-1d32-4ffe-8e73-76f95477898d) on freeze `d3a64a1b` → `...-instruction-d681620c9c.json` (HUMAN HIGH / AI_TEMPLATE LOW).
 - Q8 aggregate COMPLETE on `d812d3f7` (both USEFUL, SIMULATION_NOT_EXECUTED): GPT [Q8 GPT Perspective Sim](0fd54f26-1ca6-4b6d-ade1-fbad9e16083f), Claude [Q8 Claude Perspective Sim](363cd2bc-72fd-4b3b-9f2c-29111bc03941). Harbor/trials still deferred.
 - Q4 cold review PASS via [Q4 Spec-Test Review](788e2051-b353-4915-ae08-1f8cad0d6e7f) on freeze `d812d3f7` → `...-spec-test-contract-3db980b472.json` (advisory Q4-A01–A04). Quality Interlock PASS with Q6 exact-commit PASS; Pre-LLMaJ aggregate PASS.
 - Comprehensive APPROVE via [Comprehensive Reviewer](99ca5acb-b42e-46c7-8687-b5fdb6652d4d) on `d812d3f7` (61/61).
