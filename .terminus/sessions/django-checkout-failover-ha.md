@@ -10,7 +10,7 @@ This is the durable operational checkpoint for one task. Keep it evidence-orient
 - Controller state: `FROZEN_CANDIDATE`
 - Working branch: `main`
 - Pull request: `none`
-- Current task commit: `f9022bd10e98152efcc245a1a0a738bf29f77a80`
+- Current task commit: `7cdda65f0097221e44da943dfaca24ea6c440f8f`
 - Agent-system policy: `2.4`
 - Specialist prompt policy: `2.2`
 - Specialist protocol policy: `2.2`
@@ -23,18 +23,18 @@ This is the durable operational checkpoint for one task. Keep it evidence-orient
 | Gate | Status | Evidence / version |
 | --- | --- | --- |
 | Q1 Spec Gap Repair | DONE | pay commit-fence + blank attempt documented in instruction/runbook |
-| Q2 Verifier Coverage Repair | DONE | phantoms dropped/rewritten; /readyz pins+repeats; accepting_checkout conjuncts added (42 tests) |
+| Q2 Verifier Coverage Repair | DONE | Q4-001..004 closed on `7cdda65` (46 tests: positive /readyz, pay writer+confirm, capture non-effect, exact 503) |
 | Q3 Spec Ambiguity Repair | DONE | live `/readyz` vs dump `accepting_checkout` authority split in runbook + readiness_policy |
 | Q7 Task Format Enforcer | PENDING | layout present; `tests/test_ha.py` not `test_outputs.py`; no CTRF flag |
 | Creator Complexity Gate | PASS | reachable Python non-blank LOC excl. `generate_seed.py` ≈ 3646 after heal_plan |
 | Preflight/static | PENDING | |
 | Ruff verifier | PENDING | |
 | STB auth/AI credentials | PENDING | |
-| Oracle = 1 | PASS | Harbor job `jobs/2026-08-16__17-09-55` trial `django-checkout-failover-ha__v78pfFk` reward.txt=`1`; 44/44 pytest |
-| NOP = 0 | PASS | Harbor job `jobs/2026-08-16__17-11-37` trial `django-checkout-failover-ha__DxQFQcm` reward.txt=`0` |
-| Q4 Spec-Test Contract Reviewer | REVISE | review `.terminus/reviews/django-checkout-failover-ha/f9022bd1/django-checkout-failover-ha-f9022bd1-spec-test-contract-c6e2481129.json` (HIGH); blocking Q4-001..004 |
-| Q6 Production Logic Auditor | PASS | review `.terminus/reviews/django-checkout-failover-ha/f9022bd1/django-checkout-failover-ha-f9022bd1-production-logic-b02c7d085b.json` (HIGH); PADDING_RISK MEDIUM |
-| Quality Interlock | REVISE | Q4 REVISE on `f9022bd1` (Q6 PASS alone insufficient) |
+| Oracle = 1 | PASS | Harbor job `jobs/2026-08-16__17-22-11` trial `django-checkout-failover-ha__avkChD3` reward.txt=`1`; 46/46 pytest |
+| NOP = 0 | PASS | Harbor job `jobs/2026-08-16__17-23-52` reward.txt=`0` |
+| Q4 Spec-Test Contract Reviewer | PENDING | packet `.terminus/reviews/django-checkout-failover-ha/7cdda65f/django-checkout-failover-ha-7cdda65f-spec-test-contract-7c38e34c80.packet.json` |
+| Q6 Production Logic Auditor | PASS | scope-preserved from `f9022bd1` (`review_scope_hash=5031e765…`); tests-only change |
+| Quality Interlock | PENDING | awaiting cold Q4 on `7cdda65` (Q6 reusable) |
 | Pre-LLMaJ specialist panel | PENDING | |
 | Task Architect | PENDING | |
 | Verifier Engineer | PENDING | |
@@ -69,17 +69,17 @@ This is the durable operational checkpoint for one task. Keep it evidence-orient
 
 ## Current blocker
 
-Q4 REVISE on freeze `f9022bd1` (blocking Q4-001..004: positive /readyz, pay writer+sticky, capture non-effect, exact 503). Q6 PASS recorded; Quality Interlock still blocked.
+Cold Q4 on freeze `7cdda65` after Q4-001..004 verifier repair. Q6 PASS reusable if production `review_scope_hash` unchanged (`5031e765…`).
 
 ## Root-cause classification
 
-- Owner: Q2 Verifier + Environment Builder (consolidated with Q6 padding repair)
-- Classification: `verifier_gap` / `spec_ambiguity` + `production_logic`
-- Evidence: Q4 `...-spec-test-contract-8ff470e1b2.json`; Q6 `...-production-logic-03ac8bd7ce.json`
+- Owner: Q2 Verifier Coverage Repairer
+- Classification: `verifier_gap` (closed on `7cdda65`)
+- Evidence: Harbor oracle `jobs/2026-08-16__17-22-11` (46/46); nop `jobs/2026-08-16__17-23-52`
 
 ## Next action
 
-Q2 verifier repair for Q4-001..004 on `f9022bd1`, re-oracle/NOP, re-freeze, cold Q4 (inherit only). Q6 PASS may reuse if production scope hash unchanged.
+Generate exact-commit Q4 packet for `7cdda65`; run cold Q4 with `model: inherit`. Cite Q6 scope-hash reuse if hash matches `5031e765140c0035a98df555161234e16eefdf18772a836f8c9dc31787be9d63`.
 
 ## Review evidence ledger
 
@@ -213,6 +213,7 @@ Q2 verifier repair for Q4-001..004 on `f9022bd1`, re-oracle/NOP, re-freeze, cold
 
 Newest first; keep only meaningful state-changing attempts.
 
+- Q2 closed Q4-001..004 on freeze `7cdda65f0097221e44da943dfaca24ea6c440f8f`; Harbor oracle `jobs/2026-08-16__17-22-11` → **1** (46/46); nop `jobs/2026-08-16__17-23-52` → **0**. Q6 scope hash unchanged (`5031e765…`).
 - Q4 cold review REVISE via [Q4 Spec-Test Review](f7ffac96-1d87-4554-8e95-af9c8c0441c6) on freeze `f9022bd1` → `...-spec-test-contract-c6e2481129.json` (blocking Q4-001..004).
 - Q6 cold review PASS via [Q6 Production Logic Audit](888be563-4fc7-47d3-8b31-0905d30ca567) on freeze `f9022bd1` → `...-production-logic-b02c7d085b.json` (PADDING_RISK MEDIUM).
 - Freeze `f9022bd1` / `f9022bd10e98152efcc245a1a0a738bf29f77a80` after Q4-F1..F4 + Q6 padding repair; Harbor oracle `jobs/2026-08-16__17-09-55` → **1** (44/44); nop `jobs/2026-08-16__17-11-37` → **0**.
