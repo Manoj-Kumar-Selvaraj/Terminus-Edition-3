@@ -8,7 +8,7 @@ Session schema version: `2.4`
 - Controller state: `BLOCKED`
 - Working branch: `task/cobol-comp3-python-equiv-strict-rebuild`
 - Pull request: `#23`
-- Current task commit: `bb2e042c45873da3f3d78836d915ddb6446debf2`
+- Current task commit: `a88d119d44363decb8baf6ddf4ad3b86aabd4a04`
 - Agent-system policy: `2.5`
 - Specialist prompt policy: `2.2`
 - Specialist protocol policy: `2.2`
@@ -24,43 +24,48 @@ Large-system-strict warehouse inventory cutover task: legacy COBOL packed-decima
 
 | Gate | Status | Evidence / version |
 | --- | --- | --- |
-| Q1 Spec Gap Repair | PASS | fresh independent direct Q1 execution at task commit `bb2e042c45873da3f3d78836d915ddb6446debf2`: `STATUS=NO_GAP`, requirement completeness `SUFFICIENT`, instruction shape `PASS`, instruction/docs boundary `CLEAN`, handoff `PASS`, reverse-outline risk `LOW`; live task SHA reverified unchanged after execution |
-| Q2 Verifier Coverage Repair | PASS | controller disposition from packet-bound Adjudicator `.terminus/reviews/cobol-comp3-python-equiv/bb2e042c/cobol-comp3-python-equiv-bb2e042c-adjudication-1cb69323e3.json` (`PASS/HIGH/SUFFICIENT`, `Q2_CONTROLLING_BLOCKER=NO`, no bounded verifier repair authorized). Preserve frozen direct Q2 diagnostic `.terminus/reviews/cobol-comp3-python-equiv/bb2e042c/cobol-comp3-python-equiv-bb2e042c-q2-verifier-coverage-direct-20260816.md` as `REPAIR_PROPOSED`; do not rewrite it to `COVERED`. |
-| Q3 Spec Ambiguity Repair | PASS | fresh independent direct Q3 execution at unchanged task commit `bb2e042c45873da3f3d78836d915ddb6446debf2`: `STATUS=CLEAR`, no ambiguities, implementation freedom preserved, instruction-policy compliance `PASS`, spec-file-loophole risk `LOW`, spec-dump risk `LOW`; task files were not modified and live task SHA was reverified unchanged |
-| Q7 Task Format Enforcer | PENDING | final mandatory current-candidate producer-quality gate before Quality Interlock rerun |
-| Deterministic closure Oracle | PASS | run `31943332388`, job `95155548440`: `40 passed in 6.09s` |
-| Deterministic closure NOP | PASS | run `31943332388`, job `95155548440`: `30 failed, 10 passed in 3.05s` |
-| Q4 Spec-Test Contract Reviewer | REVISE | frozen final Q4: `.terminus/reviews/cobol-comp3-python-equiv/bb2e042c/cobol-comp3-python-equiv-bb2e042c-spec-test-contract-852fc1b28a.json` |
-| Q4 Adjudicated Closure | PASS | `.terminus/reviews/cobol-comp3-python-equiv/bb2e042c/cobol-comp3-python-equiv-bb2e042c-q4-closure-adjudication-c00658ae75.json`; deterministic closure-chain validation PASS in run `31953426334`, job `95180306897` |
-| Q6 Production Logic Auditor | PASS | `.terminus/reviews/cobol-comp3-python-equiv/02a558ab/cobol-comp3-python-equiv-02a558ab-production-logic-80ad7c5258.json`; Protocol-2.2 scope reuse accepted by the repository validator from task commit `02a558ab...` to `bb2e042c...` because the validated production `review_scope_hash` is unchanged |
-| Quality Interlock | BLOCKED | Q1/Q2/Q3 are complete; Q4 is satisfied through `ADJUDICATED_CLOSURE_PASS`; Q6 is current by scope reuse. Q7 remains the sole missing mandatory producer-quality PASS gate. |
+| Q1 Spec Gap Repair | PASS | retained controller gate: fresh direct Q1 at `bb2e042c45873da3f3d78836d915ddb6446debf2` returned `NO_GAP`; Q7 changed only `task.toml`, `environment/Dockerfile`, `environment/.dockerignore`, and `tests/test.sh`, leaving `instruction.md` and referenced requirement contracts unchanged |
+| Q2 Verifier Coverage Repair | PASS | retained controller disposition: bb2e direct Q2 diagnostic remains historical `REPAIR_PROPOSED`, resolved by packet-bound Adjudicator `.terminus/reviews/cobol-comp3-python-equiv/bb2e042c/cobol-comp3-python-equiv-bb2e042c-adjudication-1cb69323e3.json`; Q7 did not change verifier test bodies or solver-visible requirements. Do not implement Q2-S01..Q2-S12 or rewrite the historical diagnostic. |
+| Q3 Spec Ambiguity Repair | PASS | retained controller gate: fresh direct Q3 at `bb2e042c45873da3f3d78836d915ddb6446debf2` returned `CLEAR`; Q7 did not change `instruction.md` or referenced semantic contracts |
+| Q7 Task Format Enforcer | FIXED | fresh direct Q7 began at `bb2e042c45873da3f3d78836d915ddb6446debf2` and repaired four deterministic package paths, ending at `a88d119d44363decb8baf6ddf4ad3b86aabd4a04`; requires a fresh independent no-edit `FORMAT_PASS` recheck before controller PASS because a fixer does not self-certify its own revision |
+| Deterministic closure Oracle | PASS | current run `31960876405`, job `95198588781`: Oracle reward `1.000` on PR merge candidate containing task commit `a88d119d44363decb8baf6ddf4ad3b86aabd4a04` |
+| Deterministic closure NOP | PASS | current run `31960876405`, job `95198588781`: NOP reward `0.000` on PR merge candidate containing task commit `a88d119d44363decb8baf6ddf4ad3b86aabd4a04` |
+| Q4 Spec-Test Contract Reviewer | STALE | historical frozen final Q4 `.terminus/reviews/cobol-comp3-python-equiv/bb2e042c/cobol-comp3-python-equiv-bb2e042c-spec-test-contract-852fc1b28a.json`; Q4 is exact-commit and cannot be reused after the Q7 task edit |
+| Q4 Adjudicated Closure | STALE | historical closure `.terminus/reviews/cobol-comp3-python-equiv/bb2e042c/cobol-comp3-python-equiv-bb2e042c-q4-closure-adjudication-c00658ae75.json`; live freshness validator explicitly reports bb2e closure stale versus current `a88d119d...` |
+| Q6 Production Logic Auditor | STALE | historical Q6 `.terminus/reviews/cobol-comp3-python-equiv/02a558ab/cobol-comp3-python-equiv-02a558ab-production-logic-80ad7c5258.json`; current production scope hash changed from `e00d2d343c91...` to `844ea4394e02...` after Q7 changed `task.toml` and `environment/**`, so Protocol scope reuse is invalid |
+| Quality Interlock | BLOCKED | Q7 repair is not independently rechecked yet; Q4/Q4 closure and Q6 are stale on the current task commit |
 
 ## Current blocker
 
-The Protocol-2.2 Q4 circuit-breaker closure is resolved. The frozen final Q4 remains `REVISE`, while the independent Q4 Closure Adjudicator result is `PASS/HIGH/SUFFICIENT` and no further ordinary Q4 patch loop is authorized.
+Q7 found and repaired deterministic Edition 3 package-format defects. The exact Q7 task diff from the prior controller checkpoint changes only:
 
-Q1 is complete on the unchanged final task candidate. Q2 is complete by controller disposition after packet-bound Adjudication established that none of the frozen direct Q2 `REPAIR_PROPOSED` scenarios is a controlling current blocker and no verifier repair is authorized. Q3 has now completed independently on the same unchanged task commit with `STATUS=CLEAR`, no material ambiguity, preserved implementation freedom, instruction-policy compliance `PASS`, and no task-file edits.
+- `cobol-comp3-python-equiv/task.toml` — tags reduced from seven to six;
+- `cobol-comp3-python-equiv/environment/Dockerfile` — installs required `tmux` and `asciinema`;
+- `cobol-comp3-python-equiv/environment/.dockerignore` — adds the current safe exclusion baseline while preserving the intentional solver-visible archive log;
+- `cobol-comp3-python-equiv/tests/test.sh` — writes binary reward only after pytest completes.
 
-The live Git-derived task commit remains exactly `bb2e042c45873da3f3d78836d915ddb6446debf2`, so Q3 did not stale Q4 closure, Q6 scope reuse, Oracle/NOP evidence, or the earlier producer-gate dispositions.
+The resulting Git-derived task commit is `a88d119d44363decb8baf6ddf4ad3b86aabd4a04`. Current GitHub Actions run `31960876405`, job `95198588781` passed Preflight, Ruff, Docker/STB setup, Oracle reward 1 and NOP reward 0. The job then failed while preparing LLMaJ credentials with HTTP 401; that is an external credential/control-plane dependency, not a Q7 or deterministic task failure.
 
-Quality Interlock still cannot advance to `PRE_LLMAJ` because Q7 Task Format Enforcer remains PENDING.
+Protocol exact-commit/scope rules require a rewind of later semantic evidence. Repository-native `validate_review_freshness.py` on the new head explicitly reports the bb2e Q4 closure stale and Q6 stale; Q6 production scope changed from `e00d2d343c91...` to `844ea4394e02...`. The historical bb2e Q4/Q4-closure/Q6 results remain immutable learning evidence but cannot satisfy current Quality Interlock.
 
 ## Required strategy change
 
-Do not reopen Q2, Q3 or Q4. Continue with one fresh bounded Q7 Task Format Enforcer execution on the unchanged candidate. If Q7 proposes a real task change, stop and reconcile all affected staleness before continuing. If Q7 passes without task changes, record Q7 PASS and rerun `.terminus/validate_quality_interlock.py --task cobol-comp3-python-equiv`. Advance only if the repository validator passes.
+Do not mark Q7 PASS from the same fixer execution that authored the format repair. First route current task commit `a88d119d44363decb8baf6ddf4ad3b86aabd4a04` to a fresh independent Q7 execution constrained to read/validate only; it must return `FORMAT_PASS` with no task edits. If it changes any task file again, repeat staleness reconciliation.
+
+After current Q7 PASS, preserve the refreshed Oracle/NOP evidence from run `31960876405` and refreeze the current candidate. Then obtain fresh current-candidate Q4 and Q6 evidence. Q6 must be rerun because its production-scope hash changed. Q4 must be rerun because Q4 is never scope-reusable. Do not use the historical bb2e Q4 Closure PASS as current acceptance evidence; any new Q4 `REVISE` must be reconciled under the live Protocol/Q4-closure policy before Quality Interlock can advance.
 
 ## Next action
 
-Route unchanged task commit `bb2e042c45873da3f3d78836d915ddb6446debf2` to a fresh independent direct `Q7 — Task Format Enforcer` execution under the current authoritative Edition 3 structural contract and enforcement code/CI. Do not expose a desired PASS and do not modify task files during the diagnostic execution. If Q7 is clean, record Q7 PASS and immediately run the Quality Interlock validator.
+Route `a88d119d44363decb8baf6ddf4ad3b86aabd4a04` to a fresh independent direct `Q7 — Task Format Enforcer` execution. It must independently verify that exact Git-derived task SHA, perform the full current structural walk, make no edits unless a genuinely new deterministic defect exists, and return `STATUS: FORMAT_PASS` if the repaired package is now clean. Do not rerun Q4 or Q6 until Q7 is frozen clean.
 
 ## Decisions that must survive chat changes
 
-- Q4 circuit-breaker closure is complete and deterministically valid; do not start another Q4 patch loop.
-- Preserve the frozen final Q4 as `REVISE`; Q4 satisfaction is the separate `ADJUDICATED_CLOSURE_PASS` route.
-- Preserve the frozen Adjudicator's rejected/narrowed scopes and the closure's `REJECTED_SCOPE_REOPEN` / `LATENT_AFTER_BOUNDARY` dispositions.
-- Q6 remains reusable only while its exact production-scope hash and Q6 role contract remain current; the repository validator accepted reuse for the current candidate.
-- Q1 is complete: fresh direct execution returned `NO_GAP` on unchanged task commit `bb2e042c45873da3f3d78836d915ddb6446debf2`.
-- Q2 is complete by controller disposition: preserve the direct Q2 `REPAIR_PROPOSED` diagnostic unchanged, and cite packet-bound Adjudicator `.terminus/reviews/cobol-comp3-python-equiv/bb2e042c/cobol-comp3-python-equiv-bb2e042c-adjudication-1cb69323e3.json` as the authority for Q2 producer-gate `PASS`. No Q2 repair is authorized.
-- Q3 is complete: fresh direct execution returned `CLEAR` on unchanged task commit `bb2e042c45873da3f3d78836d915ddb6446debf2`; no ambiguity repair or task edit was required.
-- Q7 is the only remaining mandatory producer-quality gate.
-- Quality Interlock remains BLOCKED until Q7 is legitimately PASS and the deterministic validator passes.
+- Current Git-derived task commit is `a88d119d44363decb8baf6ddf4ad3b86aabd4a04`, not `bb2e042c...`.
+- Q7 repair changed exactly `task.toml`, `environment/Dockerfile`, `environment/.dockerignore`, and `tests/test.sh`.
+- Q7 is `FIXED`, not controller PASS yet; a fresh no-edit Q7 `FORMAT_PASS` recheck is required.
+- Current deterministic evidence: run `31960876405`, job `95198588781`, Preflight PASS, Ruff PASS, Oracle reward 1, NOP reward 0; later LLMaJ credential preparation failed with HTTP 401.
+- Q1 and Q3 remain controller PASS because their semantic specification/ambiguity surfaces were unchanged by the Q7 format-only repair.
+- Q2 remains controller PASS; verifier test bodies/requirement mapping were unchanged. Preserve the historical direct Q2 diagnostic and its historical adjudication; do not reopen Q2-S01..Q2-S12 absent genuinely changed Q2 evidence.
+- Historical bb2e Q4 and Q4 Adjudicated Closure are stale for the current task commit and cannot satisfy Quality Interlock.
+- Historical Q6 is stale: production scope hash changed from `e00d2d343c91...` to `844ea4394e02...`.
+- Quality Interlock remains BLOCKED.
