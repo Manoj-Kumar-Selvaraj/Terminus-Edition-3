@@ -24,7 +24,7 @@ Large-system-strict warehouse inventory cutover task: legacy COBOL packed-decima
 
 | Gate | Status | Evidence / version |
 | --- | --- | --- |
-| Q1 Spec Gap Repair | PENDING | no current durable PASS row/evidence recorded for the strict-rebuild candidate |
+| Q1 Spec Gap Repair | PASS | fresh independent direct Q1 execution at task commit `bb2e042c45873da3f3d78836d915ddb6446debf2`: `STATUS=NO_GAP`, requirement completeness `SUFFICIENT`, instruction shape `PASS`, instruction/docs boundary `CLEAN`, handoff `PASS`, reverse-outline risk `LOW`; live task SHA reverified unchanged after execution |
 | Q2 Verifier Coverage Repair | PENDING | no current durable PASS row/evidence recorded for the strict-rebuild candidate |
 | Q3 Spec Ambiguity Repair | PENDING | no current durable PASS row/evidence recorded for the strict-rebuild candidate |
 | Q7 Task Format Enforcer | PENDING | no current durable PASS row/evidence recorded for the strict-rebuild candidate |
@@ -33,21 +33,23 @@ Large-system-strict warehouse inventory cutover task: legacy COBOL packed-decima
 | Q4 Spec-Test Contract Reviewer | REVISE | frozen final Q4: `.terminus/reviews/cobol-comp3-python-equiv/bb2e042c/cobol-comp3-python-equiv-bb2e042c-spec-test-contract-852fc1b28a.json` |
 | Q4 Adjudicated Closure | PASS | `.terminus/reviews/cobol-comp3-python-equiv/bb2e042c/cobol-comp3-python-equiv-bb2e042c-q4-closure-adjudication-c00658ae75.json`; deterministic closure-chain validation PASS in run `31953426334`, job `95180306897` |
 | Q6 Production Logic Auditor | PASS | `.terminus/reviews/cobol-comp3-python-equiv/02a558ab/cobol-comp3-python-equiv-02a558ab-production-logic-80ad7c5258.json`; Protocol-2.2 scope reuse accepted by the repository validator from task commit `02a558ab...` to `bb2e042c...` because the validated production `review_scope_hash` is unchanged |
-| Quality Interlock | BLOCKED | Q4 is satisfied through `ADJUDICATED_CLOSURE_PASS` and Q6 is current by scope reuse, but prospective interlock validation reports missing mandatory PASS gates Q1, Q2, Q3 and Q7 |
+| Quality Interlock | BLOCKED | Q4 is satisfied through `ADJUDICATED_CLOSURE_PASS`, Q6 is current by scope reuse and Q1 is complete; mandatory current-candidate gates Q2, Q3 and Q7 remain PENDING |
 
 ## Current blocker
 
 The Protocol-2.2 Q4 circuit-breaker closure is resolved. The frozen final Q4 remains `REVISE`, but the independent Q4 Closure Adjudicator result is `PASS/HIGH/SUFFICIENT`, reconciles all five final-Q4 findings exactly once, and passes `.terminus/q4_closure.py`. No further task repair or ordinary Q4 rerun is authorized by that closure path.
 
-Quality Interlock still cannot advance to `PRE_LLMAJ` because the current durable strict-rebuild session does not contain PASS rows for four mandatory pre-freeze quality gates: Q1 Spec Gap Repair, Q2 Verifier Coverage Repair, Q3 Spec Ambiguity Repair and Q7 Task Format Enforcer. A prospective `validate_quality_interlock.py --task cobol-comp3-python-equiv` run reported exactly these four errors and no Q4/Q6 staleness error. The same validation accepted historical Q6 reuse under the unchanged production scope.
+Q1 Spec Gap Repair is now complete on the unchanged final task candidate. The fresh direct Q1 execution returned `NO_GAP`; the task SHA remained exactly `bb2e042c45873da3f3d78836d915ddb6446debf2`, so no Q1 repair/refreeze was required.
+
+Quality Interlock still cannot advance to `PRE_LLMAJ` because the current durable strict-rebuild session still lacks legitimate PASS evidence for Q2 Verifier Coverage Repair, Q3 Spec Ambiguity Repair and Q7 Task Format Enforcer.
 
 ## Required strategy change
 
-Do not reopen Q4. Backfill the mandatory current-candidate producer-quality gates under the active Edition 3 contracts. Reuse prior evidence only when its exact currentness/provenance is demonstrable; otherwise perform fresh bounded Q1/Q2/Q3/Q7 executions. After all four rows are legitimately PASS, rerun the repository Quality Interlock validator. Only then may the controller transition to `PRE_LLMAJ`.
+Do not reopen Q4 and do not alter the task merely to backfill gate rows. Continue the mandatory current-candidate producer-quality sequence with fresh bounded Q2, then Q3, then Q7 executions. If any role proposes a real task change, stop and reconcile staleness before continuing. If all three complete without task changes, rerun the repository Quality Interlock validator and advance only if it passes.
 
 ## Next action
 
-Do not modify `cobol-comp3-python-equiv/**` merely because of the Q4 closure result. Establish current PASS evidence for Q1 Spec Gap Repair, Q2 Verifier Coverage Repair, Q3 Spec Ambiguity Repair and Q7 Task Format Enforcer. Then rerun `.terminus/validate_quality_interlock.py --task cobol-comp3-python-equiv`. If it passes, record Quality Interlock PASS with Q4 satisfaction `ADJUDICATED_CLOSURE_PASS` and transition to `PRE_LLMAJ`.
+Route the unchanged task commit `bb2e042c45873da3f3d78836d915ddb6446debf2` to a fresh independent direct `Q2 — Verifier Coverage Repairer` execution. Q2 must inspect every material solver-visible requirement against meaningful verifier coverage and return `COVERED`, `REPAIR_PROPOSED`, `SPEC_PROBLEM`, or `BLOCKED`. Do not pre-mark Q3/Q7 and do not modify task files during the diagnostic pass.
 
 ## Decisions that must survive chat changes
 
@@ -55,5 +57,6 @@ Do not modify `cobol-comp3-python-equiv/**` merely because of the Q4 closure res
 - Preserve the frozen final Q4 as `REVISE`; Q4 satisfaction is the separate `ADJUDICATED_CLOSURE_PASS` route.
 - Preserve the frozen Adjudicator's rejected/narrowed scopes.
 - Q6 remains reusable only while its exact production-scope hash and Q6 role contract remain current; the repository validator accepted reuse for the current candidate.
-- Do not fabricate Q1/Q2/Q3/Q7 PASS rows. They must be backed by legitimate current evidence.
-- Quality Interlock remains BLOCKED until those four mandatory gates are PASS.
+- Q1 is complete: fresh direct execution returned `NO_GAP` on unchanged task commit `bb2e042c45873da3f3d78836d915ddb6446debf2`.
+- Do not fabricate Q2/Q3/Q7 PASS rows. They must be backed by legitimate current evidence.
+- Quality Interlock remains BLOCKED until Q2, Q3 and Q7 are complete.
