@@ -19,6 +19,7 @@ import requests
 
 APP = Path(os.environ.get("OUTBOX_ROOT", "/app/outbox"))
 BINARY = APP / "bin" / "outboxd"
+CTL_BINARY = APP / "bin" / "outboxctl"
 
 
 def _free_port() -> int:
@@ -34,12 +35,24 @@ def read_text(path: Path) -> str:
         return ""
 
 
+def _go_build(env: dict[str, str], package: str, out: Path) -> subprocess.CompletedProcess[str]:
+    return subprocess.run(
+        ["go", "build", "-o", str(out), package],
+        cwd=APP,
+        text=True,
+        capture_output=True,
+        env=env,
+        check=False,
+    )
+
+
 @pytest.fixture(scope="session")
 def built_binary() -> Path:
-    """Rebuild the submitted outboxd binary once per verifier session."""
+    """Rebuild the submitted outboxd and outboxctl binaries once per verifier session."""
     assert APP.is_dir(), f"missing artifact tree {APP}"
     env = os.environ.copy()
     env.setdefault("GOPROXY", "https://proxy.golang.org,direct")
+    (APP / "bin").mkdir(parents=True, exist_ok=True)
     tidy = subprocess.run(
         ["go", "mod", "tidy"],
         cwd=APP,
@@ -48,22 +61,32 @@ def built_binary() -> Path:
         env=env,
         check=False,
     )
-    build = subprocess.run(
-        ["go", "build", "-o", str(BINARY), "./cmd/outboxd"],
-        cwd=APP,
-        text=True,
-        capture_output=True,
-        env=env,
-        check=False,
-    )
+    build = _go_build(env, "./cmd/outboxd", BINARY)
     if build.returncode != 0:
         pytest.fail(
-            "go build failed\n" + tidy.stdout + tidy.stderr + build.stdout + build.stderr
+            "go build outboxd failed\n"
+            + tidy.stdout
+            + tidy.stderr
+            + build.stdout
+            + build.stderr
+        )
+    ctl = _go_build(env, "./cmd/outboxctl", CTL_BINARY)
+    if ctl.returncode != 0:
+        pytest.fail(
+            "go build outboxctl failed\n" + ctl.stdout + ctl.stderr
         )
     assert BINARY.is_file()
+    assert CTL_BINARY.is_file()
     BINARY.chmod(0o755)
+    CTL_BINARY.chmod(0o755)
     return BINARY
 
+
+@pytest.fixture(scope="session")
+def built_ctl(built_binary: Path) -> Path:
+    """Return the rebuilt outboxctl binary path."""
+    assert CTL_BINARY.is_file()
+    return CTL_BINARY
 
 class _SinkHandler(BaseHTTPRequestHandler):
     captures: list[dict]

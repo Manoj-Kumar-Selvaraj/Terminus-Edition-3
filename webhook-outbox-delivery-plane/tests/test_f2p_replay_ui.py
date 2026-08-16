@@ -41,7 +41,7 @@ def test_f2p_replay_with_token_returns_pending(outbox):
 
 
 def test_f2p_resume_allows_claim_again(outbox):
-    """After resume, claims against a previously paused endpoint succeed."""
+    """After resume, claims succeed and a resume audit action is recorded."""
     t = create_tenant(outbox["api"], "res1")
     ep = create_endpoint(outbox["api"], t["id"], outbox["sink"]["url"])
     ev, _ = enqueue(outbox["api"], ep["id"], {"n": 1})
@@ -54,9 +54,14 @@ def test_f2p_resume_allows_claim_again(outbox):
     )
     assert r.status_code == 200
     assert r.json()["status"] == "claimed"
+    actions = [
+        e["action"]
+        for e in outbox["api"]("GET", "/api/v1/audit?limit=50").json()["events"]
+    ]
+    assert "resume" in actions
 
 
-def test_f2p_ui_index_served(outbox):
+def test_p2p_ui_index_served(outbox):
     """Static UI index is served from /."""
     r = outbox["api"]("GET", "/")
     assert r.status_code == 200
@@ -80,7 +85,7 @@ def test_f2p_ui_js_surfaces_api_errors(outbox):
     assert "data.error" in js or "data && data.error" in js
 
 
-def test_f2p_schema_file_present(outbox):
+def test_p2p_schema_file_present(outbox):
     """Schema SQL used on boot is present under the product tree."""
     schema = APP / "db" / "schema.sql"
     assert schema.is_file()

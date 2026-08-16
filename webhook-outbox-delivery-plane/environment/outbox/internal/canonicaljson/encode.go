@@ -24,7 +24,7 @@ func MarshalObject(v map[string]any) ([]byte, error) {
 		if err != nil {
 			return nil, err
 		}
-		vb, err := json.Marshal(v[k])
+		vb, err := marshalValue(v[k])
 		if err != nil {
 			return nil, err
 		}
@@ -36,10 +36,31 @@ func MarshalObject(v map[string]any) ([]byte, error) {
 	return buf.Bytes(), nil
 }
 
+func marshalValue(v any) ([]byte, error) {
+	switch t := v.(type) {
+	case map[string]any:
+		return MarshalObject(t)
+	default:
+		return json.Marshal(v)
+	}
+}
+
 func MustMarshalObject(v map[string]any) []byte {
 	b, err := MarshalObject(v)
 	if err != nil {
 		panic(fmt.Sprintf("canonicaljson: %v", err))
 	}
 	return b
+}
+
+// EncodeAny canonicalizes map[string]any payloads; other values use json.Marshal.
+func EncodeAny(v any) ([]byte, error) {
+	switch t := v.(type) {
+	case map[string]any:
+		return MarshalObject(t)
+	case nil:
+		return nil, fmt.Errorf("canonicaljson: nil")
+	default:
+		return json.Marshal(t)
+	}
 }

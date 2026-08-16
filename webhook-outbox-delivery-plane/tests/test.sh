@@ -20,6 +20,7 @@ python3 -m pytest --ctrf /logs/verifier/ctrf.json \
   "$TEST_DIR/test_f2p_claim_delivery.py" \
   "$TEST_DIR/test_f2p_quota_audit.py" \
   "$TEST_DIR/test_f2p_replay_ui.py" \
+  "$TEST_DIR/test_f2p_contract_edges.py" \
   "$TEST_DIR/test_p2p_preserve.py" \
   -rA
 if [ $? -eq 0 ]; then

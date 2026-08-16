@@ -9,14 +9,15 @@ import (
 )
 
 type TenantUsage struct {
-	TenantID          string `json:"tenant_id"`
-	Slug              string `json:"slug"`
-	DeliveriesPerHour int    `json:"deliveries_per_hour"`
-	SuccessfulLastHour int   `json:"successful_last_hour"`
-	FailedLastHour    int    `json:"failed_last_hour"`
-	Pending           int    `json:"pending"`
-	DLQ               int    `json:"dlq"`
-	QuotaRemaining    int    `json:"quota_remaining"`
+	TenantID           string `json:"tenant_id"`
+	Slug               string `json:"slug"`
+	DeliveriesPerHour  int    `json:"deliveries_per_hour"`
+	SuccessfulLastHour int    `json:"successful_last_hour"`
+	FailedLastHour     int    `json:"failed_last_hour"`
+	Pending            int    `json:"pending"`
+	DLQ                int    `json:"dlq"`
+	QuotaRemaining     int    `json:"quota_remaining"`
+	AttemptsLastHour   int    `json:"attempts_last_hour"`
 }
 
 func TenantUsages(st *store.Store, now time.Time) ([]TenantUsage, error) {
@@ -24,18 +25,14 @@ func TenantUsages(st *store.Store, now time.Time) ([]TenantUsage, error) {
 	if err != nil {
 		return nil, err
 	}
-	since := now.UTC().Add(-quota.Window)
+	qs := &quota.Service{Store: st}
 	var out []TenantUsage
 	for _, t := range tenants {
-		okN, err := st.CountSuccessfulDeliveriesSince(t.ID, since)
+		used, okN, remain, err := qs.Snapshot(t, now)
 		if err != nil {
 			return nil, err
 		}
-		allN, err := st.CountAllAttemptsSince(t.ID, since)
-		if err != nil {
-			return nil, err
-		}
-		failN := allN - okN
+		failN := used - okN
 		if failN < 0 {
 			failN = 0
 		}
@@ -47,10 +44,6 @@ func TenantUsages(st *store.Store, now time.Time) ([]TenantUsage, error) {
 		if err != nil {
 			return nil, err
 		}
-		remain := t.DeliveriesPerHour - okN
-		if remain < 0 {
-			remain = 0
-		}
 		out = append(out, TenantUsage{
 			TenantID:           t.ID,
 			Slug:               t.Slug,
@@ -60,6 +53,7 @@ func TenantUsages(st *store.Store, now time.Time) ([]TenantUsage, error) {
 			Pending:            pending,
 			DLQ:                dlq,
 			QuotaRemaining:     remain,
+			AttemptsLastHour:   used,
 		})
 	}
 	return out, nil

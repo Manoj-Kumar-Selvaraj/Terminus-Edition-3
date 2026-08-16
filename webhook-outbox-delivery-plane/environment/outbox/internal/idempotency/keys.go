@@ -44,3 +44,25 @@ func Valid(key string) bool {
 	}
 	return true
 }
+
+// Prepare normalizes and validates; empty input yields ok=false without error.
+func Prepare(key string) (normalized string, ok bool) {
+	n := Normalize(key)
+	if n == "" {
+		return "", false
+	}
+	if !Valid(n) {
+		return "", false
+	}
+	return n, true
+}
+
+// ScopeKey builds a stable diagnostic key spanning endpoint and idempotency material.
+func ScopeKey(endpointID, key string) string {
+	return endpointID + ":" + Normalize(key)
+}
+
+// Equal reports whether two raw keys collide after normalization.
+func Equal(a, b string) bool {
+	return Normalize(a) != "" && Normalize(a) == Normalize(b)
+}

@@ -4,6 +4,7 @@ import (
 	"errors"
 	"time"
 
+	"outbox/internal/lease"
 	"outbox/internal/model"
 	"outbox/internal/store"
 )
@@ -27,10 +28,8 @@ func (s *Service) Acquire(ev model.Event, ep model.Endpoint, owner string, lease
 	if !model.CanClaimStatus(ev.Status) && ev.Status != model.StatusClaimed {
 		return model.Event{}, ErrBadStatus
 	}
-	if leaseSeconds < 1 {
-		leaseSeconds = 30
-	}
-	until := now.UTC().Add(time.Duration(leaseSeconds) * time.Second)
+	leaseSeconds = lease.DefaultSeconds(leaseSeconds)
+	until := lease.Until(now, leaseSeconds)
 
 	if err := s.Store.UpdateEventLease(ev.ID, owner, until, model.StatusClaimed); err != nil {
 		return model.Event{}, err
@@ -42,8 +41,19 @@ func (s *Service) AssertHolder(ev model.Event, owner string, now time.Time) erro
 	if ev.LeaseOwner == nil || *ev.LeaseOwner != owner {
 		return ErrLeaseMismatch
 	}
-	if ev.LeaseUntil != nil && ev.LeaseUntil.Before(now) {
+	if ev.LeaseUntil != nil && lease.Expired(ev.LeaseUntil, now) {
 		return ErrLeaseMismatch
 	}
 	return nil
+}
+
+// FenceBlocks documents the production fence check used by corrected claim paths.
+// The starter Acquire path deliberately does not call this helper.
+func FenceBlocks(ev model.Event, owner string, now time.Time) bool {
+	return lease.HeldByOther(ev.LeaseOwner, ev.LeaseUntil, owner, now)
+}
+
+// RenewAllowed reports whether the candidate may extend an existing lease wall-clock.
+func RenewAllowed(ev model.Event, owner string, now time.Time) bool {
+	return lease.RenewWindow(ev.LeaseOwner, ev.LeaseUntil, owner, now)
 }

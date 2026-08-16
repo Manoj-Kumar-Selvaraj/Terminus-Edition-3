@@ -98,11 +98,11 @@ def test_f2p_complete_requires_lease_holder(outbox):
 
 
 def test_f2p_deliver_posts_signed_headers(outbox):
-    """Deliver POSTs to the endpoint with contract HMAC headers and body."""
+    """Deliver POSTs with HMAC headers, application/json, and compact sorted-key body."""
     secret = "sig-secret-9"
     t = create_tenant(outbox["api"], "sig1")
     ep = create_endpoint(outbox["api"], t["id"], outbox["sink"]["url"], secret=secret)
-    ev, _ = enqueue(outbox["api"], ep["id"], {"hello": "world"})
+    ev, _ = enqueue(outbox["api"], ep["id"], {"z": 2, "a": 1})
     outbox["api"](
         "POST",
         f"/api/v1/events/{ev['id']}/claim",
@@ -121,33 +121,65 @@ def test_f2p_deliver_posts_signed_headers(outbox):
     assert hdrs["x-outbox-id"] == ev["id"]
     assert "x-outbox-timestamp" in hdrs
     assert "x-outbox-signature" in hdrs
+    assert hdrs.get("content-type", "").startswith("application/json")
+    assert cap["body"] == b'{"a":1,"z":2}'
     expect = expect_signature(secret, ev["id"], hdrs["x-outbox-timestamp"], cap["body"])
     assert hdrs["x-outbox-signature"] == expect
 
 
 def test_f2p_failed_delivery_retries_then_dlq(outbox):
-    """Exhausted max_attempts after failures lands the event in dlq."""
+    """First failure stays pending with backoff; exhausted max_attempts lands in dlq."""
+    from datetime import datetime, timezone
+    import time as time_mod
+
     t = create_tenant(outbox["api"], "dlq1")
-    # Point at a closed port so deliver fails.
     ep = create_endpoint(
         outbox["api"], t["id"], "http://127.0.0.1:1/nope", max_attempts=2
     )
     ev, _ = enqueue(outbox["api"], ep["id"], {"x": 1})
-    for i in range(2):
-        outbox["api"](
-            "POST",
-            f"/api/v1/events/{ev['id']}/claim",
-            json={"lease_owner": f"w{i}", "lease_seconds": 30},
-        )
-        outbox["api"](
-            "POST",
-            f"/api/v1/events/{ev['id']}/deliver",
-            json={"lease_owner": f"w{i}"},
-        )
+    before = time_mod.time()
+    outbox["api"](
+        "POST",
+        f"/api/v1/events/{ev['id']}/claim",
+        json={"lease_owner": "w0", "lease_seconds": 30},
+    )
+    outbox["api"](
+        "POST",
+        f"/api/v1/events/{ev['id']}/deliver",
+        json={"lease_owner": "w0"},
+    )
+    after = time_mod.time()
+    mid = outbox["api"]("GET", f"/api/v1/events/{ev['id']}").json()
+    assert mid["status"] == "pending"
+    assert mid["attempt_count"] == 1
+    assert mid["lease_owner"] is None
+    nxt_raw = mid["next_attempt_at"]
+    if nxt_raw.endswith("Z"):
+        nxt_raw = nxt_raw[:-1] + "+00:00"
+    nxt = datetime.fromisoformat(nxt_raw).astimezone(timezone.utc).timestamp()
+    assert before + 4.0 <= nxt <= after + 7.0
+
+    outbox["api"](
+        "POST",
+        f"/api/v1/events/{ev['id']}/claim",
+        json={"lease_owner": "w1", "lease_seconds": 30},
+    )
+    outbox["api"](
+        "POST",
+        f"/api/v1/events/{ev['id']}/deliver",
+        json={"lease_owner": "w1"},
+    )
     got = outbox["api"]("GET", f"/api/v1/events/{ev['id']}")
     assert got.status_code == 200
     assert got.json()["status"] == "dlq"
     assert got.json()["attempt_count"] == 2
+
+    actions = [
+        e["action"]
+        for e in outbox["api"]("GET", "/api/v1/audit?limit=100").json()["events"]
+    ]
+    assert "deliver.fail" in actions
+    assert "dlq" in actions
 
 
 def test_f2p_attempts_list_records_outcomes(outbox):

@@ -5,7 +5,7 @@ from __future__ import annotations
 from conftest import create_endpoint, create_tenant, enqueue
 
 
-def test_f2p_health_ok(outbox):
+def test_p2p_health_ok(outbox):
     """Health endpoint reports status ok after boot."""
     r = outbox["api"]("GET", "/api/v1/health")
     assert r.status_code == 200
@@ -70,9 +70,12 @@ def test_f2p_list_events_and_get_event(outbox):
 
 
 def test_f2p_stats_endpoint_shape(outbox):
-    """Stats reports tenant/endpoint counts and by_status map."""
+    """Stats reports tenant/endpoint counts and by_status map object."""
     create_tenant(outbox["api"], "zeta")
     r = outbox["api"]("GET", "/api/v1/stats")
     assert r.status_code == 200
     body = r.json()
     assert "tenants" in body and "endpoints" in body and "by_status" in body
+    assert isinstance(body["by_status"], dict)
+    assert isinstance(body["tenants"], int)
+    assert isinstance(body["endpoints"], int)

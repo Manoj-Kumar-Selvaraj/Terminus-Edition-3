@@ -10,7 +10,7 @@ Absolute product root: `/app/outbox`.
 | `OUTBOX_ADDR` | HTTP listen address | `127.0.0.1:8080` |
 | `OUTBOX_DATA` | Auxiliary data directory | `/app/outbox/data` |
 | `OUTBOX_TOKEN` | Bearer token required for DLQ replay (and other operator mutations listed below) when set; empty disables token checks | empty |
-| `OUTBOX_SYNC` | When `1`, claim→deliver→complete runs synchronously inside claim/deliver helpers used by tests | empty |
+| `OUTBOX_SYNC` | When `1`, claim→deliver→complete runs synchronously inside claim/deliver helpers used by graded API flows | empty |
 | `OUTBOX_ROOT` | Product root (docs, ui, schema) | `/app/outbox` |
 
 On startup the server must:
@@ -20,6 +20,12 @@ On startup the server must:
 3. Serve static UI files from `/app/outbox/ui` at `/`.
 4. Expose JSON API under `/api/v1/...`.
 5. Expose CLI at `/app/outbox/bin/outboxctl` against the same API.
+
+### Graded delivery path vs background worker
+
+The graded delivery contract is exercised through `POST .../claim` then `POST .../deliver` (and `complete`) with `OUTBOX_SYNC=1`. That synchronous helper path is authoritative for signatures, quota, backoff, audit, and lease fencing. An optional background worker loop may deliver pending events for operators when `OUTBOX_SYNC` is unset; it is not a separately graded path unless a verifier explicitly drives it.
+
+Image builds seed a catalog database at the default `OUTBOX_DB` path (`/app/outbox/data/outbox.db`) plus `/app/outbox/bin/seed` and `/app/outbox/scripts/seed.sh`. Fresh verifier databases may be empty; schema application and seed tooling under `/app/outbox` must remain available.
 
 ## Authentication
 
@@ -85,6 +91,10 @@ While `paused=true` or `enabled=false`, `POST .../claim` on events for that endp
 - `POST /api/v1/events/{event_id}/deliver` body `{"lease_owner":string}` → performs HTTP POST then complete (used when `OUTBOX_SYNC=1` or by workers)
 - `POST /api/v1/events/{event_id}/replay` → moves `dlq` → `pending`, clears lease (200)
 
+Unknown `event_id` on `GET /api/v1/events/{event_id}` → HTTP 404 `{"error":"not_found"}`.
+
+`payload` on enqueue must be a JSON object. Arrays, scalars, or other non-object values → HTTP 400 (validation error body).
+
 ```json
 {
   "id":"evt_...",
@@ -123,6 +133,7 @@ Failed attempts do **not** consume quota.
 - Successful claim sets `status=claimed`, `lease_owner`, `lease_until=now+lease_seconds` (default 30 if omitted or <1).
 - If another non-expired lease is held by a different owner → 409 `{"error":"lease_held"}`.
 - Same owner renewing before expiry is allowed (200, refreshed lease).
+- After `lease_until` passes, a different owner may claim successfully (reclaim).
 - Only the current `lease_owner` may `complete` or `deliver`. Mismatch → 409 `{"error":"lease_mismatch"}`.
 - Paused/disabled endpoints reject claim as above.
 
@@ -134,6 +145,8 @@ Failed attempts do **not** consume quota.
 - `X-Outbox-Id: <event id>`
 - `X-Outbox-Timestamp: <unix seconds decimal string>`
 - `X-Outbox-Signature: hex(HMAC-SHA256(secret, canonical))`
+
+**Compact JSON encoding (exact):** serialize the payload object with no insignificant whitespace (same rules as Go `encoding/json` default `Marshal`). Object keys are sorted lexicographically at every nesting level. Nested objects follow the same sorted-key compact form. The signed body bytes must be exactly those compact bytes.
 
 Canonical string (exact bytes):
 
@@ -175,16 +188,34 @@ Required actions (string `action` field): `enqueue`, `claim`, `deliver.ok`, `del
 {"id":"aud_...","action":"claim","entity_type":"event","entity_id":"evt_...","actor":"worker-1","detail":{},"created_at":"RFC3339"}
 ```
 
-Every successful claim must write `claim`. Transition into `dlq` must write `dlq`. Pause/resume write `pause`/`resume`.
+Every successful claim must write `claim`. Transition into `dlq` must write `dlq`. Pause/resume write `pause`/`resume`. Failed delivery attempts must write `deliver.fail`. Successful deliveries write `deliver.ok`.
+
+For `enqueue` audits, `detail` MUST include `endpoint_id` set to the endpoint that received the event.
 
 ## Health / stats
 
 - `GET /api/v1/health` → `{"status":"ok"}`
-- `GET /api/v1/stats` → counts by status plus `tenants`, `endpoints`
+- `GET /api/v1/stats` → exact shape:
+
+```json
+{
+  "tenants": 0,
+  "endpoints": 0,
+  "by_status": {
+    "pending": 0,
+    "claimed": 0,
+    "delivered": 0,
+    "failed": 0,
+    "dlq": 0
+  }
+}
+```
+
+`tenants` and `endpoints` are integer counts. `by_status` maps each event status string to its count (missing keys may be omitted or zero).
 
 ## CLI (`outboxctl`)
 
-Subcommands (talk to `OUTBOX_ADDR` base URL `http://$OUTBOX_ADDR`):
+Binary path: `/app/outbox/bin/outboxctl`. Subcommands talk to `OUTBOX_ADDR` base URL `http://$OUTBOX_ADDR`:
 
 - `outboxctl health`
 - `outboxctl tenants list`
@@ -198,7 +229,7 @@ Subcommands (talk to `OUTBOX_ADDR` base URL `http://$OUTBOX_ADDR`):
 
 ## UI
 
-Static pages under `/app/outbox/ui`. Forms must POST JSON using contract field names:
+Static pages under `/app/outbox/ui`. The index document title (and page heading) is `Outbox Delivery Plane`. Forms must POST JSON using contract field names:
 
 - claim: `lease_owner`, `lease_seconds`
 - replay: POST with no body (Authorization header from token input)

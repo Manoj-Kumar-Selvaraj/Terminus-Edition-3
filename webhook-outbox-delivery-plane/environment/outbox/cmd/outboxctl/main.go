@@ -7,8 +7,11 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"strconv"
 	"strings"
 	"time"
+
+	"outbox/internal/httpx"
 )
 
 func main() {
@@ -23,7 +26,19 @@ func main() {
 	args := os.Args[2:]
 	switch cmd {
 	case "health":
+		if flag(args, "--wait") {
+			timeout := parseTimeout(args, 15*time.Second)
+			if err := httpx.WaitHTTP(base+"/api/v1/health", timeout); err != nil {
+				fatal(err)
+			}
+		}
 		get(base + "/api/v1/health")
+	case "wait":
+		timeout := parseTimeout(args, 30*time.Second)
+		if err := httpx.WaitHTTP(base+"/api/v1/health", timeout); err != nil {
+			fatal(err)
+		}
+		fmt.Println(`{"ready":true}`)
 	case "tenants":
 		if flag(args, "list") || len(args) == 0 || args[0] == "list" {
 			get(base + "/api/v1/tenants")
@@ -82,7 +97,21 @@ func main() {
 }
 
 func usage() {
-	fmt.Fprintln(os.Stderr, "outboxctl health|tenants list|enqueue|claim|deliver|replay|pause|resume|audit")
+	fmt.Fprintln(os.Stderr, "outboxctl health[--wait]|wait|tenants list|enqueue|claim|deliver|replay|pause|resume|audit")
+}
+
+func parseTimeout(args []string, def time.Duration) time.Duration {
+	raw := optionalFlag(args, "--timeout")
+	if raw == "" {
+		return def
+	}
+	if secs, err := strconv.Atoi(raw); err == nil && secs > 0 {
+		return time.Duration(secs) * time.Second
+	}
+	if d, err := time.ParseDuration(raw); err == nil {
+		return d
+	}
+	return def
 }
 
 func getenv(k, d string) string {

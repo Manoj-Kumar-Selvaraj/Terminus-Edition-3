@@ -39,3 +39,40 @@ func DefaultSeconds(n int) int {
 	}
 	return n
 }
+
+// Until computes the absolute lease deadline from now and a clamped duration.
+func Until(now time.Time, leaseSeconds int) time.Time {
+	return now.UTC().Add(time.Duration(DefaultSeconds(leaseSeconds)) * time.Second)
+}
+
+// HeldByOther is true when a non-expired lease belongs to a different owner.
+func HeldByOther(owner *string, until *time.Time, candidate string, now time.Time) bool {
+	if !Active(owner, until, now) {
+		return false
+	}
+	return owner != nil && *owner != candidate
+}
+
+// SameHolder is true when the active lease owner matches candidate.
+func SameHolder(owner *string, until *time.Time, candidate string, now time.Time) bool {
+	if !Active(owner, until, now) {
+		return false
+	}
+	return owner != nil && *owner == candidate
+}
+
+// RenewWindow reports whether renewing is allowed (same holder or expired).
+func RenewWindow(owner *string, until *time.Time, candidate string, now time.Time) bool {
+	if Expired(until, now) {
+		return true
+	}
+	return SameHolder(owner, until, candidate, now)
+}
+
+// StaleClaimed is true when a claimed row still has an expired lease wall-clock.
+func StaleClaimed(status string, owner *string, until *time.Time, now time.Time) bool {
+	if status != "claimed" {
+		return false
+	}
+	return Expired(until, now) || !Active(owner, until, now)
+}

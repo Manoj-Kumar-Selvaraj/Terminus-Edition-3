@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"outbox/internal/config"
+	"outbox/internal/filter"
 	"outbox/internal/policy"
 	"outbox/internal/service"
 	"outbox/internal/store"
@@ -50,7 +51,10 @@ func (s *Server) handleHealth(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusMethodNotAllowed)
 		return
 	}
-	writeJSON(w, http.StatusOK, map[string]string{"status": "ok"})
+	writeJSON(w, http.StatusOK, map[string]any{
+		"status":  "ok",
+		"metrics": s.Svc.RuntimeMetrics(),
+	})
 }
 
 func (s *Server) handleStats(w http.ResponseWriter, r *http.Request) {
@@ -63,7 +67,12 @@ func (s *Server) handleStats(w http.ResponseWriter, r *http.Request) {
 		writeErr(w, err)
 		return
 	}
-	writeJSON(w, http.StatusOK, st)
+	writeJSON(w, http.StatusOK, map[string]any{
+		"tenants":   st.Tenants,
+		"endpoints": st.Endpoints,
+		"by_status": st.ByStatus,
+		"runtime":   s.Svc.RuntimeMetrics(),
+	})
 }
 
 func (s *Server) handleTenants(w http.ResponseWriter, r *http.Request) {
@@ -174,14 +183,24 @@ func (s *Server) handleTenantEvents(w http.ResponseWriter, r *http.Request, tena
 		w.WriteHeader(http.StatusMethodNotAllowed)
 		return
 	}
-	status := r.URL.Query().Get("status")
-	limit, _ := strconv.Atoi(r.URL.Query().Get("limit"))
-	list, err := s.Store.ListEvents(tenantID, status, limit)
+	q := filter.ParseQuery(r.URL.Query())
+	fetchLimit := q.Limit
+	if fetchLimit < 1 {
+		fetchLimit = 50
+	}
+	if q.Endpoint != "" || q.HasLease != nil || q.MinAge > 0 || q.MaxAge > 0 {
+		fetchLimit = 500
+	}
+	list, err := s.Store.ListEvents(tenantID, q.Status, fetchLimit)
 	if err != nil {
 		writeErr(w, err)
 		return
 	}
-	writeJSON(w, http.StatusOK, map[string]any{"events": list})
+	list = filter.Apply(list, q, s.Store.Now())
+	writeJSON(w, http.StatusOK, map[string]any{
+		"events":      list,
+		"filter_tally": filter.CountByStatus(list, filter.EventQuery{}, s.Store.Now()),
+	})
 }
 
 func (s *Server) handleEndpointsSub(w http.ResponseWriter, r *http.Request) {

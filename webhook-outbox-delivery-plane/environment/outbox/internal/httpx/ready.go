@@ -1,22 +1,32 @@
 package httpx
 
 import (
+	"fmt"
 	"net"
 	"net/http"
 	"time"
 )
 
 func WaitHTTP(url string, timeout time.Duration) error {
+	return WaitHTTPStatus(url, timeout, 200)
+}
+
+func WaitHTTPStatus(url string, timeout time.Duration, want int) error {
+	if timeout <= 0 {
+		timeout = 10 * time.Second
+	}
 	deadline := time.Now().Add(timeout)
 	var last error
+	client := &http.Client{Timeout: 2 * time.Second}
 	for time.Now().Before(deadline) {
-		resp, err := http.Get(url)
+		resp, err := client.Get(url)
 		if err == nil {
+			code := resp.StatusCode
 			_ = resp.Body.Close()
-			if resp.StatusCode == 200 {
+			if code == want {
 				return nil
 			}
-			last = err
+			last = fmt.Errorf("httpx: status %d want %d", code, want)
 		} else {
 			last = err
 		}
