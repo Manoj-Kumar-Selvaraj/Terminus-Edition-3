@@ -33,8 +33,8 @@ This is the durable operational checkpoint for one task. Keep it evidence-orient
 | Oracle = 1 | PASS | Harbor job `jobs/2026-08-16__18-04-39` reward.txt=`1` |
 | NOP = 0 | PASS | Harbor job `jobs/2026-08-16__18-06-28` reward.txt=`0` |
 | Q4 Spec-Test Contract Reviewer | PENDING | packet under `d812d3f7/` (prior PASS STALE after packaging fix) |
-| Q6 Production Logic Auditor | PENDING | packet under `d812d3f7/` (scope hash changed after Dockerfile swap) |
-| Quality Interlock | PENDING | awaiting cold Q4+Q6 on `d812d3f7` |
+| Q6 Production Logic Auditor | PASS | review `.../d812d3f7/...-production-logic-e58327c292.json` (HIGH); PADDING_RISK MEDIUM; scope `888ea3ba…` |
+| Quality Interlock | PENDING | awaiting cold Q4 on `d812d3f7` (Q6 PASS) |
 | Pre-LLMaJ specialist panel | PENDING | awaiting Q4/Q6/Comprehensive on `d812d3f7` |
 | Task Architect | PASS | retained from `b9ee4816` |
 | Verifier Engineer | PASS | retained from `b9ee4816` |
@@ -69,24 +69,18 @@ This is the durable operational checkpoint for one task. Keep it evidence-orient
 
 ## Current blocker
 
-Cold Q4 + Q6 + Comprehensive on freeze `d812d3f7` after RC-STRUCT-001/RC-ENV-010 packaging fix. Prior Comprehensive REQUEST_CHANGES remediated.
-
-## Root-cause classification
-
-- Owner: packaging (closed on `d812d3f7`)
-- Classification: `format` / `environment_base`
-- Evidence: oracle `jobs/2026-08-16__18-04-39`; nop `jobs/2026-08-16__18-06-28`
+Awaiting cold Q4 (+ Comprehensive) on `d812d3f7`. Q6 PASS recorded.
 
 ## Next action
 
-Cold Q4, Q6, and Comprehensive (`model: inherit`) on `d812d3f7`. Then Pre-LLMaJ aggregate → Q8 → package. Harbor LLMaJ and official trials remain deferred.
+Reconcile Q4 and Comprehensive when they land; then Pre-LLMaJ aggregate → Q8 → package. Harbor LLMaJ and official trials remain deferred.
 
 ## Review evidence ledger
 
 | Review | Review ID | Task commit | Protocol | Prompt | Role policy | Role contract hash | Scope hash | Result path | Verdict | Confidence | Evidence |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | Q4 Spec-Test Contract Reviewer | django-checkout-failover-ha-03749a0e-spec-test-contract-3fc3ff16d8 | 03749a0ed4dcf6f691bb6d1c9bd573d923d92403 | 2.2 | 2.2 | 1.1 | c860dfe8b8ed0a04c729e4d6a828741b206b7067a780863ec7b22ee09d02c5a0 | n/a | `.terminus/reviews/django-checkout-failover-ha/03749a0e/django-checkout-failover-ha-03749a0e-spec-test-contract-3fc3ff16d8.json` | PASS | HIGH | advisory Q4-A01–A03 |
-| Q6 Production Logic Auditor | django-checkout-failover-ha-f9022bd1-production-logic-b02c7d085b | f9022bd10e98152efcc245a1a0a738bf29f77a80 | 2.2 | 2.2 | 1.1 | ee7d1cfd6e19fcc0e831cc75829457593d7410613c3b3fb811aef925e85a1607 | 5031e765140c0035a98df555161234e16eefdf18772a836f8c9dc31787be9d63 | `.terminus/reviews/django-checkout-failover-ha/f9022bd1/django-checkout-failover-ha-f9022bd1-production-logic-b02c7d085b.json` | PASS | HIGH | scope-reuse on `03749a0e` |
+| Q6 Production Logic Auditor | django-checkout-failover-ha-d812d3f7-production-logic-e58327c292 | d812d3f739d4b987e3db6f2b6cf52298511ece3f | 2.2 | 2.2 | 1.1 | ee7d1cfd6e19fcc0e831cc75829457593d7410613c3b3fb811aef925e85a1607 | 888ea3bacea1c12a24c17ba5488b64bf7bfefa41e6e2402bbf13118e86bc1532 | `.terminus/reviews/django-checkout-failover-ha/d812d3f7/django-checkout-failover-ha-d812d3f7-production-logic-e58327c292.json` | PASS | HIGH | PADDING_RISK MEDIUM |
 | Task Architect | django-checkout-failover-ha-b9ee4816-task-architect-9d3c66428b | b9ee4816204f1a51857407e4a6f9bf9e38dd937a | 2.2 | 2.2 | | | | `.terminus/reviews/django-checkout-failover-ha/b9ee4816/django-checkout-failover-ha-b9ee4816-task-architect-9d3c66428b.json` | PASS | HIGH | |
 | Verifier Engineer | django-checkout-failover-ha-b9ee4816-verifier-engineer-ed25c4beec | b9ee4816204f1a51857407e4a6f9bf9e38dd937a | 2.2 | 2.2 | | | | `.terminus/reviews/django-checkout-failover-ha/b9ee4816/django-checkout-failover-ha-b9ee4816-verifier-engineer-ed25c4beec.json` | PASS | HIGH | advisory VE-A01/A02 |
 | Originality | django-checkout-failover-ha-b9ee4816-originality-9c88957c99 | b9ee4816204f1a51857407e4a6f9bf9e38dd937a | 2.2 | 2.2 | | | | `.terminus/reviews/django-checkout-failover-ha/b9ee4816/django-checkout-failover-ha-b9ee4816-originality-9c88957c99.json` | PASS | HIGH | |
