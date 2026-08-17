@@ -27,44 +27,46 @@ Large-system-strict warehouse inventory cutover task: legacy COBOL packed-decima
 | Q1 Spec Gap Repair | PASS | retained controller gate: fresh direct Q1 at `bb2e042c45873da3f3d78836d915ddb6446debf2` returned `NO_GAP`; subsequent Q7 repairs did not change `instruction.md`, referenced solver-visible requirements, or executable verifier behavior |
 | Q2 Verifier Coverage Repair | PASS | retained adjudicated controller disposition: historical direct Q2 diagnostic remains `REPAIR_PROPOSED`, resolved by packet-bound Adjudicator `.terminus/reviews/cobol-comp3-python-equiv/bb2e042c/cobol-comp3-python-equiv-bb2e042c-adjudication-1cb69323e3.json`; the `3a463000...` verifier edit is docstring-only and preserves executable AST exactly after stripping test docstrings, so requirement-to-behavior coverage is unchanged. Do not reopen Q2-S01..Q2-S12. |
 | Q3 Spec Ambiguity Repair | PASS | retained controller gate: fresh direct Q3 at `bb2e042c45873da3f3d78836d915ddb6446debf2` returned `CLEAR`; no solver-visible specification/contract or grading behavior changed in the Q7 docstring repair |
-| Q7 Task Format Enforcer | FIXED | bounded Q7 fixer at `a88d119d...` added exactly one informative first-statement docstring to each of 40 pytest test functions in `tests/test_outputs.py`; repair commit `3a463000607f2dcdf88785a77d2dc5767f473e05`, 40 additions/0 deletions, 40 tests before/after, 0/40 -> 40/40 docstrings, docstring-stripped AST equality `YES`; requires separate independent no-edit `FORMAT_PASS` |
+| Q7 Task Format Enforcer | PASS | fresh independent no-edit Q7 at exact task commit `3a463000607f2dcdf88785a77d2dc5767f473e05` returned `FORMAT_PASS`; complete FORMAT_GATE walk found no remaining deterministic defect; 40 pytest tests and 40/40 informative docstrings; `TASK_FILES_MODIFIED: NO` and before/after task SHA unchanged |
 | Deterministic closure Oracle | PASS | current run `31965076474`, job `95208912312`: Oracle reward `1.000` on PR merge candidate containing task commit `3a463000607f2dcdf88785a77d2dc5767f473e05` |
 | Deterministic closure NOP | PASS | current run `31965076474`, job `95208912312`: NOP reward `0.000` on PR merge candidate containing task commit `3a463000607f2dcdf88785a77d2dc5767f473e05` |
 | Preflight / Ruff verifier | PASS | current run `31965076474`, job `95208912312`: Preflight PASS and exact `ruff==0.12.8` verifier check PASS (`All checks passed!`) |
 | Q4 Spec-Test Contract Reviewer | STALE | historical frozen final Q4 `.terminus/reviews/cobol-comp3-python-equiv/bb2e042c/cobol-comp3-python-equiv-bb2e042c-spec-test-contract-852fc1b28a.json`; Q4 is exact-commit and cannot be reused on `3a463000...` |
 | Q4 Adjudicated Closure | STALE | historical closure `.terminus/reviews/cobol-comp3-python-equiv/bb2e042c/cobol-comp3-python-equiv-bb2e042c-q4-closure-adjudication-c00658ae75.json`; not current acceptance evidence |
-| Q6 Production Logic Auditor | STALE | historical Q6 `.terminus/reviews/cobol-comp3-python-equiv/02a558ab/cobol-comp3-python-equiv-02a558ab-production-logic-80ad7c5258.json`; Q6 production scope already changed under prior Q7 `task.toml`/`environment/**` repair, so scope reuse remains invalid |
-| Quality Interlock | BLOCKED | Q7 awaits independent no-edit `FORMAT_PASS`; Q4 and Q6 require fresh current-candidate evidence |
+| Q6 Production Logic Auditor | STALE | historical Q6 `.terminus/reviews/cobol-comp3-python-equiv/02a558ab/cobol-comp3-python-equiv-02a558ab-production-logic-80ad7c5258.json`; Q6 production scope changed during the earlier Q7 `task.toml`/`environment/**` repair, so Protocol scope reuse is invalid |
+| Quality Interlock | BLOCKED | Q7 and current deterministic evidence are clean; fresh current-candidate Q4 and Q6 packet-bound reviews are now the first incomplete mandatory gates |
 
 ## Current blocker
 
-The independent Q7 recheck at task commit `a88d119d44363decb8baf6ddf4ad3b86aabd4a04` found one remaining deterministic Edition 3 defect: missing informative test-function docstrings. A bounded Q7 fixer then used exact GitHub blob `79a1e9e87c46ec8bb0b3c122a1f56c04b86bd257` as its source/concurrency guard and changed only `cobol-comp3-python-equiv/tests/test_outputs.py`.
+Q7 is now independently complete. The final current task candidate is `3a463000607f2dcdf88785a77d2dc5767f473e05`. A fresh independent no-edit Q7 execution performed the full current FORMAT_GATE walk from the live GitHub tree and returned `STATUS: FORMAT_PASS`, with 40 module-level pytest tests, 40/40 informative test docstrings, and no task modifications.
 
-Repair commit `3a463000607f2dcdf88785a77d2dc5767f473e05` has exactly 40 additions and 0 deletions in that task file. Mechanical proof: 40 test functions before and after; 0/40 informative docstrings before and 40/40 after; ASTs are identical after stripping the inserted test-function docstrings. No verifier semantics changed.
+Current deterministic evidence is also current for this exact task commit: GitHub Actions run `31965076474`, job `95208912312` passed Preflight, exact Ruff verifier checks, Oracle reward `1.000`, and NOP reward `0.000`. Artifact `9268280495` (`terminus-validation-cobol-comp3-python-equiv-31965076474-1`) is bound to head SHA `3a463000607f2dcdf88785a77d2dc5767f473e05`, digest `sha256:a0ec7a73fbd578c4707ca8d9b1065bc089dec6aa3aa0bb6e3c9f6dbd99fc6353`. The later LLMaJ credential preparation failed HTTP 401 and Harbor LLMaJ was skipped; this remains an external credential dependency and is not current Q7/deterministic task failure evidence.
 
-GitHub Actions run `31965076474`, job `95208912312` is current deterministic evidence: Preflight PASS, Ruff verifier PASS, Oracle reward `1.000`, NOP reward `0.000`. The job later failed during LLMaJ credential preparation because SNORKEL authentication returned HTTP 401; Harbor LLMaJ was skipped. This remains external credential infrastructure and does not invalidate the deterministic task evidence.
-
-The repository freshness validator on the same candidate reported the session stale only because it still named the prior task commit; it did not identify a new Q2 semantic conflict. Q1/Q2/Q3 remain controller-current because the Q7 repair changed neither solver-visible requirements nor executable verifier behavior. Historical Q4/Q4-closure and Q6 remain stale for Quality Interlock.
+The remaining Quality Interlock blockers are semantic-review freshness only: Q4 must be freshly rerun on the exact current task commit, and Q6 must be freshly rerun because its production scope changed earlier. Historical bb2e Q4/Q4-closure and historical 02a558ab Q6 remain immutable provenance but cannot satisfy the current interlock.
 
 ## Required strategy change
 
-Do not treat the authoring Q7 fixer as acceptance evidence. Route exact task commit `3a463000607f2dcdf88785a77d2dc5767f473e05` to a fresh independent Q7 read-only/no-edit execution. It must perform the complete current FORMAT_GATE walk and return `FORMAT_PASS` only if the package is clean, with `TASK_FILES_MODIFIED: NO`.
+Freeze `3a463000607f2dcdf88785a77d2dc5767f473e05` as the current candidate and do not modify task files while current Q4/Q6 are being obtained. Generate a fresh immutable packet for `Spec-Test Contract Reviewer` using `.terminus/new_review_packet.py` semantics and a separate fresh immutable packet for `Production Logic Auditor`. Each reviewer must run in a fresh role-specific chat, remain read-only, use only packet-allowed evidence, and persist its result at the packet-declared output path.
 
-If Q7 passes without edits, record Q7 PASS. Preserve current deterministic evidence from run `31965076474`/job `95208912312`. Then freeze the current candidate and obtain fresh current-candidate Q4 and Q6 packet-bound reviews before Quality Interlock. Q4 must be current exact-commit. Q6 must be rerun because its production scope changed earlier. Do not reuse historical bb2e Q4 Closure PASS or historical Q6 as current acceptance evidence.
+Q4 is exact-commit-only and must bind to `3a463000607f2dcdf88785a77d2dc5767f473e05`. Q6 must bind to the same current task commit and record the current production `review_scope_hash` over `task.toml + environment/**`; do not reuse the old `e00d...` Q6 result. Q4 and Q6 must be independent of each other and must not see prior specialist verdicts before their own reviews are frozen.
+
+If fresh Q4 returns `PASS` with sufficient evidence and fresh Q6 returns `PASS` with sufficient evidence, run the repository Quality Interlock validators. If fresh Q4 returns `REVISE`, do not silently patch: reconcile the fresh findings against the existing circuit-breaker/adjudication history under current Protocol/Q4 closure policy before authorizing any repair. If fresh Q6 returns a blocker, route it to the smallest responsible production owner.
 
 ## Next action
 
-Route task commit `3a463000607f2dcdf88785a77d2dc5767f473e05` to a fresh independent no-edit `Q7 — Task Format Enforcer` execution. It must verify the exact task SHA, perform the full current structural/format walk including informative test docstrings, and return `STATUS: FORMAT_PASS` only if clean. It must make no task edits.
+Generate and freeze a fresh current-candidate packet for `Q4 — Spec-Test Contract Reviewer` at task commit `3a463000607f2dcdf88785a77d2dc5767f473e05`, then route that packet to a fresh independent Q4 chat. In parallel only if packet isolation can be preserved, generate a separate fresh current-candidate packet for `Q6 — Production Logic Auditor`; otherwise run Q4 then Q6 sequentially. Do not run Quality Interlock, PRE_LLMAJ, Harbor LLMaJ, official model trials, or merge until both current semantic review prerequisites are satisfied.
 
 ## Decisions that must survive chat changes
 
 - Current Git-derived task commit is `3a463000607f2dcdf88785a77d2dc5767f473e05`.
-- Q7 docstring repair commit is exactly `3a463000607f2dcdf88785a77d2dc5767f473e05` and changes only `tests/test_outputs.py` within the task: 40 additions, 0 deletions.
-- Q7 repair proof: 40 -> 40 test functions; 0/40 -> 40/40 informative docstrings; docstring-stripped AST equality `YES`; verifier semantics unchanged.
-- Q7 remains `FIXED`, not PASS, until an independent no-edit Q7 returns `FORMAT_PASS` on the current task SHA.
-- Current deterministic evidence: run `31965076474`, job `95208912312`, Preflight PASS, Ruff PASS, Oracle `1.000`, NOP `0.000`; later LLMaJ credential preparation failed HTTP 401 and Harbor LLMaJ was skipped.
+- Q7 is now controller `PASS` from a fresh independent no-edit `FORMAT_PASS` at that exact task SHA.
+- Q7 final verification found 40 pytest tests and 40/40 informative docstrings, with no task edits.
+- Current deterministic evidence: run `31965076474`, job `95208912312`, Preflight PASS, Ruff PASS, Oracle `1.000`, NOP `0.000`.
+- Current deterministic artifact: ID `9268280495`, name `terminus-validation-cobol-comp3-python-equiv-31965076474-1`, digest `sha256:a0ec7a73fbd578c4707ca8d9b1065bc089dec6aa3aa0bb6e3c9f6dbd99fc6353`, bound to head SHA `3a463000...`.
+- The later LLMaJ credential HTTP 401 is external infrastructure and Harbor LLMaJ was skipped; it does not invalidate current Q7/Oracle/NOP evidence.
 - Q1 and Q3 remain controller PASS because solver-visible semantic surfaces are unchanged.
 - Q2 remains controller PASS by the prior adjudicated disposition because executable verifier behavior is unchanged; do not reopen Q2-S01..Q2-S12 merely because test docstrings were added.
 - Historical bb2e Q4 and Q4 Adjudicated Closure are stale and cannot satisfy current Quality Interlock.
 - Historical Q6 is stale because production scope changed during the earlier Q7 `task.toml`/`environment/**` repair.
-- Quality Interlock remains BLOCKED until Q7 PASS plus fresh current Q4/Q6 evidence.
+- The first incomplete mandatory gates are now fresh packet-bound Q4 and fresh packet-bound Q6.
+- Quality Interlock remains BLOCKED until both current semantic reviews satisfy the current protocol.
