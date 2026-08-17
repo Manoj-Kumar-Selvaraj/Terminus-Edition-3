@@ -8,9 +8,7 @@ from src.tenancy.directory import TenantDirectory
 # Catalog plans overlay session_gap_ms for warehouse tenants only.
 # Lab feeds (acme/beta/hold/other) are absent from the catalog and keep processor.json.
 ENTERPRISE_SESSION_GAP_MS = 45_000
-FREE_SESSION_GAP_MS = 15_000
 PLAN_GAP_MS = {
-    "free": FREE_SESSION_GAP_MS,
     "standard": None,
     "internal": None,
     "enterprise": ENTERPRISE_SESSION_GAP_MS,

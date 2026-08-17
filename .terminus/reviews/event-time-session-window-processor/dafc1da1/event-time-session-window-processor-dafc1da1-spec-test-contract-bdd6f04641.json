@@ -1,0 +1,426 @@
+{
+  "schema_version": "3.0",
+  "role": "Spec-Test Contract Reviewer",
+  "review_id": "event-time-session-window-processor-dafc1da1-spec-test-contract-bdd6f04641",
+  "task": "event-time-session-window-processor",
+  "task_commit": "dafc1da19dc0b15d95a25f33a8a26a7469983575",
+  "control_plane_commit": "dafc1da19dc0b15d95a25f33a8a26a7469983575",
+  "protocol_policy_version": "2.2",
+  "prompt_policy_version": "2.2",
+  "role_policy_version": "1.1",
+  "role_contract_hash": "c860dfe8b8ed0a04c729e4d6a828741b206b7067a780863ec7b22ee09d02c5a0",
+  "context_packet": ".terminus/reviews/event-time-session-window-processor/dafc1da1/event-time-session-window-processor-dafc1da1-spec-test-contract-bdd6f04641.packet.json",
+  "verdict": "REVISE",
+  "confidence": "HIGH",
+  "evidence_status": "SUFFICIENT",
+  "summary": "Bidirectional alignment fails on two material phantoms. test_p2p_schema_malformed_classes grades reject detail substrings missing/empty/type that session-contract.md does not require, so a fail-closed implementation with different short reasons fails. test_p2p_ops_report_uses_warehouse_catalog grades last_run.warehouse.event_count, ops-report.catalog.available, and ops-report.inventory.event_count although the solver-visible contract only says to rewrite those files with warehouse inventory counts. Event-time, lateness, journal, CLI, restart, and catalog-enterprise overlay behavior are otherwise discoverable and tested. Advisory gaps remain on free/other-plan overlay, reject-watermark isolation, and a private warehouse 10000-line floor.",
+  "evidence": [
+    {
+      "type": "file",
+      "ref": "event-time-session-window-processor/instruction.md",
+      "observation": "Two paragraphs bind repair of the Python processor under /app/sessions, name run-sessions, session-contract.md, oncall.md, logs, processor.json, journal/open state, sessions.jsonl, late.jsonl, rejects.jsonl, last_run.json, ops-report.json, and warehouse, and require catalog session_gap overlay as the contract specifies."
+    },
+    {
+      "type": "file",
+      "ref": "event-time-session-window-processor/environment/sessions/docs/session-contract.md",
+      "observation": "Binding CLI, event schema, reject/late/session/journal/open-snapshot JSON, watermark formula and order, lateness membership, gap/duration/watermark closes, catalog overlay table (enterprise 45000, free 15000, other plans keep processor.json), idempotent SHA-256, and last_run/ops-report rewrite with warehouse inventory counts — without field layouts for those two desk files."
+    },
+    {
+      "type": "file",
+      "ref": "event-time-session-window-processor/environment/sessions/notes/oncall.md",
+      "observation": "Incident notes cite mixed tenants for user_id=u1, late 85000 after a 100000 anchor, straggler missing from late.jsonl, --reset-output wiping the journal, and seq stuck at 1. Symptoms only; no module/function diagnosis."
+    },
+    {
+      "type": "file",
+      "ref": "event-time-session-window-processor/environment/sessions/logs/processor-bounce.log",
+      "observation": "Captured log supports the current-state claims: mixed acme/beta keys, on_time classification of f3/f4, journal rewrite seq=1, and --reset-output clearing watermark.journal."
+    },
+    {
+      "type": "test",
+      "ref": "event-time-session-window-processor/tests/test_outputs.py",
+      "observation": "40 pytest behaviors: F2P CLI/empty/gap/tenant/journal/late/idempotent/restart/config/holdout/feed/reset/watermark/schema plus P2P late-allowed, duration, warehouse, Python CLI, ops artifacts, catalog overlay, and reject-class detail tokens."
+    },
+    {
+      "type": "test",
+      "ref": "event-time-session-window-processor/tests/test_outputs.py::test_p2p_schema_malformed_classes",
+      "observation": "After schema_rejects.jsonl, asserts reject details contain the substrings missing, empty, and type. Contract only requires code REJECT_MALFORMED, event_id/null, a short reason, and line_no."
+    },
+    {
+      "type": "test",
+      "ref": "event-time-session-window-processor/tests/test_outputs.py::test_p2p_ops_report_uses_warehouse_catalog",
+      "observation": "Requires last_run['warehouse']['event_count'] >= 10000, ops-report catalog.available is True, and inventory.event_count >= 10000. Those nested keys are not in instruction.md or session-contract.md."
+    },
+    {
+      "type": "file",
+      "ref": "event-time-session-window-processor/environment/sessions/sql/seed.sql",
+      "observation": "Catalog tenants use plans standard, enterprise, and internal. No free-plan rows exist, so the contract's free=15000 overlay is uninstantiable on inherited catalog data."
+    },
+    {
+      "type": "file",
+      "ref": "event-time-session-window-processor/environment/sessions/src/ops/desk.py",
+      "observation": "Inherited desk emitter already writes last_run.warehouse.event_count. Graded nested keys match this starter layout, not a documented public schema."
+    },
+    {
+      "type": "file",
+      "ref": ".terminus/designs/event-time-session-window-processor-test-map.json",
+      "observation": "Used only for F2P/P2P classification labels. Coverage claims in the map were not treated as evidence."
+    },
+    {
+      "type": "rule",
+      "ref": ".terminus/agents/QUALITY_AGENT_PROMPTS.md#Q4",
+      "observation": "Any material phantom, untested requirement, or grading-relevant ambiguity is REVISE. PASS requires empty BLOCKING_FINDING_IDS after the exhaustive walk."
+    },
+    {
+      "type": "rule",
+      "ref": ".terminus/agents/INSTRUCTION_POLICY.md",
+      "observation": "Exact externally graded structured-output schema must live in instruction.md or a referenced technical contract. Environment source is not that contract."
+    },
+    {
+      "type": "rule",
+      "ref": "TERMINUS_3_AI_INSTRUCTIONS.md",
+      "observation": "Every tested behavior must be discoverable from instruction.md and clearly referenced contracts; tests must not enforce unstated rules."
+    }
+  ],
+  "findings": [
+    {
+      "id": "Q4-B01",
+      "severity": "HIGH",
+      "status": "OBSERVED",
+      "criterion": "phantom-spec: reject detail substrings missing/empty/type are graded but not required by the solver-visible reject schema.",
+      "evidence_refs": [
+        "event-time-session-window-processor/environment/sessions/docs/session-contract.md",
+        "event-time-session-window-processor/tests/test_outputs.py::test_p2p_schema_malformed_classes",
+        "event-time-session-window-processor/tests/fixtures/schema_rejects.jsonl"
+      ],
+      "why_it_matters": "A fail-closed processor that rejects missing fields, empty ids, and wrong types with other short reasons (and accepts empty payload) is contract-correct and still fails grading. That is a hidden vocabulary requirement, not a behavioral class check.",
+      "minimal_remediation": "Identify the three reject classes by event_id or by code+count+accepted m4; stop asserting English tokens in detail. Alternatively, if those tokens are the public contract, state them in session-contract.md.",
+      "regression_risk": "Low if class coverage is kept via event_id/m4 acceptance; do not drop the empty-payload-is-valid case."
+    },
+    {
+      "id": "Q4-B02",
+      "severity": "HIGH",
+      "status": "OBSERVED",
+      "criterion": "phantom-spec and grading-relevant ambiguity: last_run.json and ops-report.json nested fields are graded without a solver-visible schema.",
+      "evidence_refs": [
+        "event-time-session-window-processor/instruction.md",
+        "event-time-session-window-processor/environment/sessions/docs/session-contract.md",
+        "event-time-session-window-processor/tests/test_outputs.py::test_p2p_ops_report_uses_warehouse_catalog"
+      ],
+      "why_it_matters": "Instruction and contract only require a successful run to refresh those two files with warehouse inventory counts. Tests KeyError-fail any conforming layout that is not warehouse.event_count, catalog.available, and inventory.event_count. A solver who implements the written contract without copying the starter desk JSON fails.",
+      "minimal_remediation": "Publish the graded fields, types, and nesting in session-contract.md (or a compact schema in instruction.md). Keep the test, or weaken it to file existence plus a documented inventory-count field.",
+      "regression_risk": "Low if the documented schema matches the three already-graded keys; do not add more private desk fields to the grader."
+    },
+    {
+      "id": "Q4-A01",
+      "severity": "LOW",
+      "status": "OBSERVED",
+      "criterion": "Private cardinality floor: warehouse line count >= 10000 is not stated in the solver-visible contract.",
+      "evidence_refs": [
+        "event-time-session-window-processor/instruction.md",
+        "event-time-session-window-processor/tests/test_outputs.py::test_p2p_warehouse_at_least_10k",
+        "event-time-session-window-processor/tests/test_outputs.py::test_p2p_ops_report_uses_warehouse_catalog"
+      ],
+      "why_it_matters": "Leave-warehouse-alone is already enforced by SHA-256. The 10000 floor does not fail a correct leave-alone solver, but it is an undocumented scale literal. Advisory.",
+      "minimal_remediation": "Drop the numeric floor or replace it with non-empty presence; keep the hash preservation test.",
+      "regression_risk": "Negligible if sha256 preservation remains."
+    },
+    {
+      "id": "Q4-A02",
+      "severity": "LOW",
+      "status": "OBSERVED",
+      "criterion": "Catalog overlay family is only asserted for enterprise idle-close; free=15000 and other-plan keep-processor.json are untested.",
+      "evidence_refs": [
+        "event-time-session-window-processor/environment/sessions/docs/session-contract.md",
+        "event-time-session-window-processor/tests/test_outputs.py::test_p2p_catalog_enterprise_gap_overlay",
+        "event-time-session-window-processor/environment/sessions/sql/seed.sql"
+      ],
+      "why_it_matters": "Enterprise overlay is graded as 'session stays open when default 30000 would watermark-close'. Seed has no free-plan tenants, so 15000 is a dead contract row. Advisory relative to the tested overlay family; non-catalog acme/beta/hold still prove processor.json gap.",
+      "minimal_remediation": "Optional: add a free-plan fixture or pin end_ms to 45000; or drop free from the contract if the catalog never uses it.",
+      "regression_risk": "Low."
+    },
+    {
+      "id": "Q4-A03",
+      "severity": "LOW",
+      "status": "OBSERVED",
+      "criterion": "Rejected malformed lines must not update max_observed/watermark; no test isolates that invariant.",
+      "evidence_refs": [
+        "event-time-session-window-processor/environment/sessions/docs/session-contract.md",
+        "event-time-session-window-processor/tests/test_outputs.py::test_p2p_schema_malformed_classes",
+        "event-time-session-window-processor/tests/test_outputs.py::test_p2p_malformed_json_rejected"
+      ],
+      "why_it_matters": "Reject fixtures do not combine a high event_time_ms reject with a later lateness decision, so a solver who journals or watermarks rejects can still pass. Branch of an otherwise tested watermark family. Advisory.",
+      "minimal_remediation": "Optional: one reject with a large event_time_ms followed by a too-late/on-time probe and journal-length check.",
+      "regression_risk": "Low."
+    },
+    {
+      "id": "Q4-A04",
+      "severity": "LOW",
+      "status": "OBSERVED",
+      "criterion": "Omitting --input/--feed/--empty-check is only asserted not to create the journal, not outputs.",
+      "evidence_refs": [
+        "event-time-session-window-processor/instruction.md",
+        "event-time-session-window-processor/tests/test_outputs.py::test_f2p_missing_source_does_not_create_journal",
+        "event-time-session-window-processor/tests/test_outputs.py::test_f2p_unknown_flag_leaves_journal_untouched"
+      ],
+      "why_it_matters": "Unknown-flag tests already require exit 2 with journal, opens, and side files untouched. The omitted-source variant is a weaker sibling. Advisory.",
+      "minimal_remediation": "Mirror the unknown-flag output-untouched asserts on the empty-argv case.",
+      "regression_risk": "Low."
+    },
+    {
+      "id": "Q4-A05",
+      "severity": "LOW",
+      "status": "OBSERVED",
+      "criterion": "Enterprise overlay test is a one-sided non-close; it does not pin session_gap_ms=45000.",
+      "evidence_refs": [
+        "event-time-session-window-processor/environment/sessions/docs/session-contract.md",
+        "event-time-session-window-processor/tests/test_outputs.py::test_p2p_catalog_enterprise_gap_overlay",
+        "event-time-session-window-processor/tests/fixtures/catalog_enterprise.jsonl"
+      ],
+      "why_it_matters": "Any overlay gap above 33000 (watermark 35000 minus last_event 2000) keeps t01/u0 open. 40000 and 100000 would both pass. Weak assertion on the published 45000 value. Advisory.",
+      "minimal_remediation": "Optional second bump that would close under 40000 but not 45000, or assert closed end_ms using 45000 on a larger watermark.",
+      "regression_risk": "Low."
+    },
+    {
+      "id": "Q4-A06",
+      "severity": "LOW",
+      "status": "OBSERVED",
+      "criterion": "test_p2p_config_keys is vacuous under the autouse fixture that rewrites processor.json before every test.",
+      "evidence_refs": [
+        "event-time-session-window-processor/tests/test_outputs.py::test_p2p_config_keys",
+        "event-time-session-window-processor/tests/test_outputs.py"
+      ],
+      "why_it_matters": "The three knobs are meaningfully graded by gap/lateness/duration mutation tests. This P2P reads the fixture file, not solver behavior. Advisory weak/vacuous assertion.",
+      "minimal_remediation": "Run the processor first, or drop the smoke test.",
+      "regression_risk": "None."
+    }
+  ],
+  "missing_evidence": [],
+  "change_scope": [
+    "event-time-session-window-processor/environment/sessions/docs/session-contract.md",
+    "event-time-session-window-processor/tests/test_outputs.py",
+    "event-time-session-window-processor/instruction.md only if the ops-artifact schema is placed there instead of the contract"
+  ],
+  "do_not_change": [
+    "F2P event-time gap, tenant isolation, feed/input order, late/too-late, journal seq/nondecreasing, restart, reset-output, and empty-check behaviors",
+    "P2P warehouse SHA-256 preservation",
+    "P2P Python run-sessions entrypoint and binding contract path",
+    "Catalog enterprise overlay as a behavioral non-close (strengthen, do not remove)",
+    "Reject fail-closed plus empty-payload-accepted coverage"
+  ],
+  "next_gate": "Q1/Q3 to publish the graded last_run/ops-report schema in the solver-visible contract; Q2 to stop grading reject detail tokens; then Q4 re-review on the new task commit.",
+  "role_output": {
+    "REQUIREMENT_TEST_MATRIX": [
+      {
+        "id": "R_PYTHON_JOURNAL_PROTOCOL",
+        "requirement": "Repair the existing Python processor; do not move session logic to another language or discard the journal protocol.",
+        "coverage": "complete",
+        "tests": ["test_p2p_python_cli_entrypoint", "test_p2p_bin_and_contract_present", "test_f2p_journal_seq_starts_at_one"]
+      },
+      {
+        "id": "R_CLI_USAGE",
+        "requirement": "Unknown flags or omitting --input/--feed/--empty-check exit 2 before journal or output mutation.",
+        "coverage": "partial",
+        "tests": ["test_f2p_unknown_flag_leaves_journal_untouched", "test_f2p_unknown_flag_with_reset_does_not_clear_journal", "test_f2p_missing_source_does_not_create_journal"]
+      },
+      {
+        "id": "R_INPUT_TIEBREAK",
+        "requirement": "--input applies event-time then (tenant_id, user_id, event_id) tie-break.",
+        "coverage": "complete",
+        "tests": ["test_f2p_input_sorts_before_gap_close", "test_p2p_input_tie_break_stable"]
+      },
+      {
+        "id": "R_FEED_ORDER",
+        "requirement": "--feed preserves file/arrival order.",
+        "coverage": "complete",
+        "tests": ["test_f2p_feed_preserves_arrival_order"]
+      },
+      {
+        "id": "R_RESET_OUTPUT",
+        "requirement": "--reset-output truncates side files only; journal and in-flight sessions remain.",
+        "coverage": "complete",
+        "tests": ["test_f2p_reset_output_keeps_journal", "test_f2p_unknown_flag_with_reset_does_not_clear_journal"]
+      },
+      {
+        "id": "R_EMPTY",
+        "requirement": "Empty input and --empty-check leave sessions.jsonl and late.jsonl empty without advancing the watermark.",
+        "coverage": "complete",
+        "tests": ["test_f2p_empty_check_no_journal_file", "test_f2p_zero_event_file_no_journal_advance"]
+      },
+      {
+        "id": "R_SESSION_KEY_HALFCLOSE",
+        "requirement": "Sessions are event-time, keyed by (tenant_id, user_id), half-open [start_ms, end_ms).",
+        "coverage": "complete",
+        "tests": ["test_f2p_gap_close_half_open_end", "test_f2p_tenant_isolation_same_user", "test_f2p_open_snapshot_keeps_beta_u1", "test_f2p_holdout_gap_and_tenant"]
+      },
+      {
+        "id": "R_GAP_DURATION",
+        "requirement": "Gap and max-duration closes follow the contract; knobs come from processor.json.",
+        "coverage": "complete",
+        "tests": ["test_f2p_gap_close_half_open_end", "test_f2p_config_gap_honored", "test_p2p_config_max_duration_close"]
+      },
+      {
+        "id": "R_WATERMARK",
+        "requirement": "watermark_ms = max_observed - allowed_lateness; raw negative journaled; nondecreasing across observations and restarts; one journal line per parsed observation including unchanged watermark.",
+        "coverage": "complete",
+        "tests": ["test_f2p_journal_seq_starts_at_one", "test_f2p_journal_append_keeps_prefix", "test_f2p_journal_watermark_nondecreasing", "test_f2p_watermark_formula_in_journal", "test_f2p_restart_watermark_nondecreasing"]
+      },
+      {
+        "id": "R_LATE",
+        "requirement": "Compare against current watermark before updating; late-but-allowed joins without lowering last_event_time_ms; too-late goes to late.jsonl with comparison watermark and reason TOO_LATE.",
+        "coverage": "complete",
+        "tests": ["test_p2p_feed_late_allowed_joins_open", "test_f2p_feed_too_late_side_output", "test_f2p_late_record_schema", "test_p2p_late_straggler_keeps_last_event_time", "test_f2p_config_lateness_marks_too_late"]
+      },
+      {
+        "id": "R_WATERMARK_CLOSE",
+        "requirement": "After watermark update, close open sessions where last_event_time_ms + session_gap_ms <= W.",
+        "coverage": "complete",
+        "tests": ["test_f2p_holdout_gap_and_tenant"]
+      },
+      {
+        "id": "R_REJECT",
+        "requirement": "Malformed JSON, missing fields, wrong types, empty ids, and negative event_time_ms fail closed into rejects.jsonl with REJECT_MALFORMED; empty payload is accepted; continue later lines.",
+        "coverage": "partial",
+        "tests": ["test_p2p_malformed_json_rejected", "test_p2p_negative_event_time_rejected", "test_p2p_schema_malformed_classes"]
+      },
+      {
+        "id": "R_CLOSED_SCHEMA",
+        "requirement": "Closed session records include contract fields; event_count equals len(event_ids); positive gap implies end_ms > start_ms.",
+        "coverage": "complete",
+        "tests": ["test_f2p_event_count_matches_ids", "test_f2p_closed_session_schema"]
+      },
+      {
+        "id": "R_RESTART",
+        "requirement": "Reload journal and open-session snapshot; continue seq and in-flight sessions.",
+        "coverage": "complete",
+        "tests": ["test_f2p_restart_extends_open_session", "test_f2p_restart_watermark_nondecreasing"]
+      },
+      {
+        "id": "R_IDEMPOTENT",
+        "requirement": "From a clean journal, a second identical --reset-output run keeps SHA-256 digests of sessions.jsonl and late.jsonl.",
+        "coverage": "complete",
+        "tests": ["test_f2p_idempotent_session_digest"]
+      },
+      {
+        "id": "R_OPS_ARTIFACTS",
+        "requirement": "Each successful run refreshes last_run.json and ops-report.json from the warehouse catalog.",
+        "coverage": "partial",
+        "tests": ["test_p2p_ops_report_uses_warehouse_catalog"]
+      },
+      {
+        "id": "R_CATALOG_GAP",
+        "requirement": "Catalog-backed tenants overlay session_gap_ms from plan (enterprise 45000, free 15000, other plans keep processor.json); non-catalog tenants keep processor.json.",
+        "coverage": "partial",
+        "tests": ["test_p2p_catalog_enterprise_gap_overlay", "test_f2p_gap_close_half_open_end"]
+      },
+      {
+        "id": "R_WAREHOUSE",
+        "requirement": "Leave /app/sessions/warehouse (production click dump) untouched.",
+        "coverage": "complete",
+        "tests": ["test_p2p_warehouse_untouched_after_run", "test_p2p_warehouse_at_least_10k"]
+      },
+      {
+        "id": "R_PATHS_CONFIG",
+        "requirement": "Documented output paths and processor.json knobs remain the operator interface.",
+        "coverage": "complete",
+        "tests": ["test_p2p_output_paths", "test_p2p_config_keys"]
+      }
+    ],
+    "PHANTOM_TEST_CONTRACTS": [
+      {
+        "id": "P_REJECT_DETAIL_TOKENS",
+        "test": "test_p2p_schema_malformed_classes",
+        "extra_rule": "detail must contain substrings missing, empty, and type",
+        "finding": "Q4-B01"
+      },
+      {
+        "id": "P_OPS_NESTED_SCHEMA",
+        "test": "test_p2p_ops_report_uses_warehouse_catalog",
+        "extra_rule": "last_run.warehouse.event_count, ops-report.catalog.available, ops-report.inventory.event_count",
+        "finding": "Q4-B02"
+      },
+      {
+        "id": "P_WAREHOUSE_10K_FLOOR",
+        "test": "test_p2p_warehouse_at_least_10k",
+        "extra_rule": "click_ledger.jsonl >= 10000 non-empty lines",
+        "finding": "Q4-A01"
+      }
+    ],
+    "UNTESTED_REQUIREMENTS": [
+      {
+        "id": "U_FREE_AND_OTHER_PLAN_OVERLAY",
+        "requirement": "free plan overlays session_gap_ms=15000; non-enterprise/non-free catalog plans keep processor.json gap",
+        "finding": "Q4-A02"
+      },
+      {
+        "id": "U_REJECTS_DO_NOT_ADVANCE_WATERMARK",
+        "requirement": "Rejected malformed lines do not update max_observed_event_time_ms or the journal",
+        "finding": "Q4-A03"
+      },
+      {
+        "id": "U_NEGATIVE_WATERMARK_COMPARISON_FLOOR",
+        "requirement": "Consumers treat a negative watermark as 0 for lateness comparisons while journaling the raw integer",
+        "note": "Raw negative journal value is tested; comparison floor is not. Advisory, not blocking."
+      },
+      {
+        "id": "U_CRASH_CONSISTENT_SNAPSHOT",
+        "requirement": "Write journal/snapshot crash-consistently (temp file then atomic replace)",
+        "note": "Implementation durability; not blocking."
+      },
+      {
+        "id": "U_UTF8_NO_BOM",
+        "requirement": "Outputs are UTF-8 JSONL with no BOM",
+        "note": "Advisory encoding detail."
+      }
+    ],
+    "AMBIGUITIES": [
+      {
+        "id": "A_OPS_ARTIFACT_SCHEMA",
+        "statement": "rewrites last_run.json and ops-report.json with warehouse inventory counts",
+        "competing_interpretations": [
+          "Any JSON that includes inventory counts derived from catalog/ledger",
+          "Exactly last_run.warehouse.event_count, ops-report.catalog.available, and ops-report.inventory.event_count as graded"
+        ],
+        "grading_consequence": "Contract-following layouts KeyError in test_p2p_ops_report_uses_warehouse_catalog",
+        "finding": "Q4-B02"
+      },
+      {
+        "id": "A_REJECT_DETAIL_VOCABULARY",
+        "statement": "detail is a short reason",
+        "competing_interpretations": [
+          "Any concise explanation of the malformation",
+          "Must include the English tokens missing, empty, and type"
+        ],
+        "grading_consequence": "Contract-correct reject wording fails test_p2p_schema_malformed_classes",
+        "finding": "Q4-B01"
+      }
+    ],
+    "INSTRUCTION_SHAPE": "PASS",
+    "INSTRUCTION_REQUIREMENT_COMPLETENESS": "INSUFFICIENT",
+    "DELEGATED_CONTRACT_CHECK": "session-contract.md is legitimate protocol/schema/CLI/runbook documentation referenced by instruction.md. oncall.md is an incident note, not a second work request. The contract is missing the graded last_run/ops-report field layout, so the delegated schema is incomplete rather than a prompt-extension dump.",
+    "INSTRUCTION_DOC_BOUNDARY": "CLEAN",
+    "IMPLEMENTATION_DIAGNOSIS_LEAKAGE": "LOW",
+    "CURRENT_STATE_EVIDENCE": "PASS",
+    "SPEC_DUMP_RISK": "MEDIUM",
+    "BIDIRECTIONAL_ALIGNMENT": "FAIL",
+    "BLOCKING_FINDING_IDS": ["Q4-B01", "Q4-B02"],
+    "ADVISORY_FINDING_IDS": ["Q4-A01", "Q4-A02", "Q4-A03", "Q4-A04", "Q4-A05", "Q4-A06"],
+    "EXHAUSTIVENESS": {
+      "REQUIREMENTS_ENUMERATED": "COMPLETE",
+      "VERIFIER_BEHAVIORS_ENUMERATED": "COMPLETE",
+      "FORWARD_MATRIX_COMPLETE": "YES",
+      "REVERSE_MATRIX_COMPLETE": "YES",
+      "INSTRUCTION_COMPLETENESS_COMPLETE": "YES",
+      "DELEGATED_CONTRACTS_COMPLETE": "YES",
+      "PROMPT_EXTENSION_WALK_COMPLETE": "YES",
+      "P2P_BOUNDARIES_COMPLETE": "YES",
+      "F2P_BOUNDARIES_COMPLETE": "YES",
+      "OUTPUT_INTERFACES_COMPLETE": "YES",
+      "SECOND_OMISSION_SWEEP_COMPLETE": "YES",
+      "SECOND_PASS_OMISSION_SWEEP": "PASS",
+      "UNINSPECTED_SCOPE": [
+        "solution/ (packet-excluded)",
+        "prior Q1/Q2/Q3/Q4 review JSON under this task (packet-excluded)"
+      ]
+    }
+  }
+}

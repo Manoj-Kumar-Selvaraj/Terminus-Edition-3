@@ -10,7 +10,7 @@ This is the durable operational checkpoint for one task. Keep it evidence-orient
 - Controller state: `FROZEN_CANDIDATE`
 - Working branch: `main`
 - Pull request: `none`
-- Current task commit: `pending freeze after Q4/Q6 repair`
+- Current task commit: `pending freeze after Q4-B01/B02 patch`
 - Agent-system policy: `2.4`
 - Specialist prompt policy: `2.2`
 - Specialist protocol policy: `2.2`
@@ -31,37 +31,29 @@ KNOWN_POLICY_CONFLICTS: none
 
 | Gate | Status | Evidence / version |
 | --- | --- | --- |
-| Creator Complexity Gate | PASS | 25 F2P / 15 P2P; 25 defects; 6 root causes |
-| Runtime authenticity | PASS | 12000 click_event rows; notes+log evidence |
-| Independent cli-closure LOC | ~3128 | non-blank non-comment src.cli closure + schema.sql + processor.json + run-sessions; seed.sql excluded |
-| Q1 Spec Gap Repair | REPAIR_PROPOSED | `.terminus/reviews/event-time-session-window-processor/q1-spec-gap.md` |
-| Q2 Verifier Coverage Repair | COVERED | `.terminus/reviews/event-time-session-window-processor/q2-coverage.md` |
-| Q3 Spec Ambiguity Repair | REPAIR_PROPOSED | `.terminus/reviews/event-time-session-window-processor/q3-ambiguity.md` |
-| Q7 Task Format Enforcer | FORMAT_PASS | `.terminus/reviews/event-time-session-window-processor/q7-format-check.md` |
-| Ruff verifier | PASS | `python -m ruff check event-time-session-window-processor/tests/test_outputs.py` |
-| Oracle = 1 | PASS | Harbor `/tmp/e3-ets/2026-08-17__13-38-36` reward 1.0 |
-| NOP = 0 | PASS | Harbor `/tmp/e3-ets/2026-08-17__13-39-42` reward 0.0 |
-| Q4 Spec-Test Contract | PENDING | re-issue after this freeze |
-| Q6 Production Logic | PENDING | re-issue after this freeze |
-| Quality interlock | PENDING | needs independent Q4+Q6 PASS |
-| Pre-LLMaJ | BLOCKED | Quality Interlock not PASS |
-| Q8 GPT/Claude sim | BLOCKED | after PRE_LLMAJ |
+| Creator Complexity Gate | PASS | 25 F2P / 15 P2P |
+| Runtime authenticity | PASS | 12000 click_event rows |
+| Q6 on dafc1da | PASS | independent LOC 3263; PADDING MEDIUM; TOY LOW |
+| Q4 on dafc1da | REVISE | Q4-B01 detail tokens; Q4-B02 nested ops schema — patched on working tree |
+| Ruff verifier | PASS | tests/test_outputs.py |
+| Oracle = 1 | PASS | Harbor `/tmp/e3-ets/2026-08-17__13-49-36` reward 1.0 (post-patch) |
+| NOP = 0 | PASS | Harbor `/tmp/e3-ets/2026-08-17__13-50-53` reward 0.0 (post-patch) |
+| Quality interlock | PENDING | needs independent Q4+Q6 PASS on the same freeze |
 | Harbor LLMaJ | DEFERRED | user-deferred unless asked |
 | Difficulty trials | DEFERRED | user-deferred unless asked |
 
 ## Current blocker
 
-Independent Q4/Q6 re-review of the freeze that closed 4e6aa2d findings (empty fixture, close-then-open, journal-per-observation, late last_event_time, rejects reset, schema classes, omitted-flag exit 2, catalog overlay, bind_config used on the session hot path).
+Q4 REVISE on dafc1da is patched (reject event_id classes; last_run/ops-report schema in session-contract.md; drop unused free-plan overlay). Environment change invalidates Q6 reuse. Re-freeze and re-issue Q4+Q6.
 
 ## Decisions that must survive chat changes
 
 - Profile `large_system_strict`; Software/Systems; artifacts `["/app/sessions"]`.
-- Domain: event-time session windows with allowed lateness, tenant isolation, journal restart.
-- Planted defects: session_key drops tenant; watermark last-write-wins + classify after record; arrival-index gap; journal overwrite seq=1; CLI mutates before parse and reset clears journal.
+- Planted defects unchanged: session_key, watermark last-write, record-before-classify, arrival gap, journal overwrite, CLI mutate-before-parse.
 - Oracle copies: session_key, journal, pipeline, cli, watermark_track.
-- Catalog enterprise plan overlays session_gap_ms=45000; lab tenants keep processor.json. bind_config return is used in classify/gap/duration/idle close.
-- Q5: CRLF shebangs on solve.sh/test.sh/run-sessions caused Harbor 127; LF + `.gitattributes`.
-- Harbor LLMaJ and official GPT×5/Claude×5 deferred unless the user asks.
+- Catalog enterprise overlay 45000; no free-plan overlay.
+- last_run.warehouse.event_count and ops-report catalog.available + inventory.event_count are public contract fields.
+- Harbor LLMaJ and official GPT×5/Claude×5 deferred unless asked.
 - Leave unrelated dirty work untouched (including jetstream).
 
 ## Resume rule

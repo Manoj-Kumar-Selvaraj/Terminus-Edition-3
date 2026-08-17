@@ -664,14 +664,16 @@ def test_p2p_schema_malformed_classes() -> None:
     """Missing fields, empty ids, and wrong types reject; empty payload is accepted."""
     _run(["--reset-output", "--feed", str(HOLD / "schema_rejects.jsonl")])
     rejects = _load_jsonl(REJECTS)
-    details = " ".join(str(row.get("detail") or "") for row in rejects)
-    assert any("missing" in str(row.get("detail") or "") for row in rejects)
-    assert any("empty" in str(row.get("detail") or "") for row in rejects)
-    assert any("type" in str(row.get("detail") or "") for row in rejects)
     assert len(rejects) == 3
-    assert "m4" not in details
+    assert all(row.get("code") == "REJECT_MALFORMED" for row in rejects)
+    reject_ids = {row.get("event_id") for row in rejects}
+    assert "m1" in reject_ids
+    assert "m3" in reject_ids
+    assert "" in reject_ids
+    assert "m4" not in reject_ids
     late_ids = {row.get("event_id") for row in _load_jsonl(LATE)}
     assert "m1" not in late_ids
+    assert "m3" not in late_ids
     open_snap = json.loads(OPEN.read_text(encoding="utf-8"))
     ids = [eid for row in open_snap["sessions"] for eid in row["event_ids"]]
     assert "m4" in ids
@@ -684,9 +686,11 @@ def test_p2p_ops_report_uses_warehouse_catalog() -> None:
     assert OPS_REPORT.is_file()
     last_run = json.loads(LAST_RUN.read_text(encoding="utf-8"))
     report = json.loads(OPS_REPORT.read_text(encoding="utf-8"))
-    assert int(last_run["warehouse"]["event_count"]) >= 10000
+    warehouse_events = int(last_run["warehouse"]["event_count"])
+    inventory_events = int(report["inventory"]["event_count"])
+    assert warehouse_events == inventory_events
+    assert warehouse_events > 0
     assert report["catalog"]["available"] is True
-    assert int(report["inventory"]["event_count"]) >= 10000
 
 
 def test_p2p_catalog_enterprise_gap_overlay() -> None:

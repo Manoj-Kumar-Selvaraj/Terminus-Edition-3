@@ -31,7 +31,9 @@ Create parent directories as needed. Outputs are UTF-8 JSONL, no BOM.
 - Omitting `--input`, `--feed`, and `--empty-check` is a usage error: exit status `2` before mutating journal, open-session state, or outputs.
 - Unknown flags must be rejected with exit status `2` before mutating journal, open-session state, or outputs.
 - `--reset-output` truncates `sessions.jsonl`, `late.jsonl`, and `rejects.jsonl` before the run. It must not clear the watermark journal or open-session state.
-- A successful run (including `--empty-check`) requires `/app/sessions/warehouse/catalog.sqlite` and rewrites `last_run.json` and `ops-report.json` with warehouse inventory counts.
+- A successful run (including `--empty-check`) requires `/app/sessions/warehouse/catalog.sqlite` and rewrites `last_run.json` and `ops-report.json`.
+
+`last_run.json` is a JSON object and must include integer `warehouse.event_count` equal to `COUNT(*)` of `click_event` in `catalog.sqlite`. `ops-report.json` is a JSON object and must include boolean `catalog.available` (`true` when that catalog loaded) and integer `inventory.event_count` equal to the same `click_event` count.
 
 ## Input event schema
 
@@ -67,7 +69,7 @@ Load `/app/sessions/config/processor.json` on every run:
 
 All three values are positive integers. Honor the file; changing it between runs must change behavior.
 
-Catalog-backed tenants (those listed in `/app/sessions/warehouse/catalog.sqlite`) overlay `session_gap_ms` from plan: `enterprise` uses `45000`, `free` uses `15000`, and every other catalog plan keeps the processor.json gap. Tenants that are not in the catalog keep all three knobs from processor.json. `allowed_lateness_ms` and `max_session_duration_ms` always come from processor.json.
+Catalog-backed tenants (those listed in `/app/sessions/warehouse/catalog.sqlite`) overlay `session_gap_ms` from plan: `enterprise` uses `45000`; every other catalog plan keeps the processor.json gap. Tenants that are not in the catalog keep all three knobs from processor.json. `allowed_lateness_ms` and `max_session_duration_ms` always come from processor.json.
 
 ## Session identity and intervals
 
