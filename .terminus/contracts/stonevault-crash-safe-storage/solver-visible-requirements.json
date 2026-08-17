@@ -1,0 +1,58 @@
+{
+  "contract_version": "1.0",
+  "task_id": "stonevault-crash-safe-storage",
+  "requirement_contract_hash": "sha256:5682c26c67796215d9e2c3f006a039ee998229bf5205df61c3fb8120b6b071c2",
+  "engineering_objective": "Complete the reliability hardening of the embedded database under /app/stonevault and rebuild /app/stonevault/bin/stonevault without changing its documented compatibility contracts.",
+  "affected_system_location": "/app/stonevault",
+  "required_end_state": "A single-writer crash-safe embedded transactional store whose MVCC reads/scans, conflict handling, WAL recovery, snapshots/checkpoints, integrity checks, operator status, binary protocol and documented compatibility remain correct across restart and maintenance cycles.",
+  "functional_requirements": [
+    "Only one writable process may hold a database directory at a time, and writer exclusion must be released cleanly when that process exits.",
+    "An explicit --data-dir must override STONEVAULT_DATA, which overrides the documented default directory.",
+    "Transactions must provide stable snapshot point reads and prefix scans for their full lifetime while exposing their own puts and deletes.",
+    "Prefix scans must filter raw-byte prefixes and return keys in deterministic unsigned bytewise order.",
+    "Concurrent writers must use first-committer-wins write/write conflict detection; a stale writer touching a newer committed key is rejected atomically, ends, and does not consume a commit sequence.",
+    "Successful commits must be atomic, receive contiguous increasing commit sequences, and return only after the commit record is durable.",
+    "Rollback and a process killed with an open transaction must never publish that transaction's WAL mutations after restart.",
+    "Recovery must preserve valid committed transactions, discard only a short final WAL header or payload as a torn tail, and fail closed on corruption of complete WAL records or committed-sequence history.",
+    "Checkpoint must refuse while any transaction is active; otherwise it must atomically publish the current committed snapshot, preserve its sequence and rows durably, and reclaim wal.log to zero bytes.",
+    "Opening must reject corrupt snapshots including checksum, truncation, ordering, size, row-count, magic and trailing-byte failures while ignoring or removing only an abandoned snapshot.tmp.",
+    "STATS must report durable commit sequence, visible committed-key count and actual WAL byte size.",
+    "HEALTH must validate reachable catalog/storage invariants and report sequence, key count, active transaction count, WAL bytes and whether a published snapshot exists.",
+    "Keys, values and prefixes remain arbitrary binary data represented as hexadecimal; input hex is case-insensitive and returned hex is lowercase.",
+    "The documented 4096-byte key/prefix and 1048576-byte value limits are inclusive; oversized inputs must be rejected without terminating the process.",
+    "Malformed commands and unknown transaction IDs must return ERR and leave the process able to accept later valid commands."
+  ],
+  "preservation_requirements": [
+    "Preserve committed data and commit sequence across restart.",
+    "Preserve correct rollback, malformed-command, unknown-transaction and oversized-input rejection behavior while repairing reliability defects.",
+    "Preserve native C++20/Rust product implementation; Python remains verifier-only and Go is not introduced."
+  ],
+  "compatibility_requirements": [
+    "Preserve the documented C ABI.",
+    "Preserve the documented ASCII command/response shapes.",
+    "Preserve the existing WAL record layout and snapshot layout.",
+    "Preserve compatibility with existing database data that conforms to /app/stonevault/docs/storage-format.md."
+  ],
+  "safety_requirements": [
+    "Never expose uncommitted or rolled-back writes after restart.",
+    "Fail closed on complete-record WAL corruption and snapshot corruption rather than silently repairing valid history.",
+    "Never partially publish a conflicted multi-key transaction.",
+    "Do not checkpoint while transactions are active."
+  ],
+  "referenced_docs": [
+    "/app/stonevault/docs/storage-format.md"
+  ],
+  "required_outputs": [
+    {
+      "path": "/app/stonevault/bin/stonevault",
+      "notes": "Rebuilt native executable satisfying the documented command and disk contracts."
+    },
+    {
+      "path": "/app/stonevault",
+      "notes": "Product source/build tree remains C++20 and Rust only."
+    }
+  ],
+  "source_task_commit": "35f5a0d223110204f0a4145d052f984b7d702b6f",
+  "control_plane_commit": "bd97512d72353b75d03e24f7535cedd5dce4df93",
+  "private_sources_excluded": true
+}
