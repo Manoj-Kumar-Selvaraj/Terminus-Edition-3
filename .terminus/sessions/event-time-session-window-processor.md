@@ -10,7 +10,7 @@ This is the durable operational checkpoint for one task. Keep it evidence-orient
 - Controller state: `FROZEN_CANDIDATE`
 - Working branch: `main`
 - Pull request: `none`
-- Current task commit: `pending freeze after Q4-B01/B02 patch`
+- Current task commit: `pending freeze after catalog COUNT(*) assert`
 - Agent-system policy: `2.4`
 - Specialist prompt policy: `2.2`
 - Specialist protocol policy: `2.2`
@@ -33,26 +33,24 @@ KNOWN_POLICY_CONFLICTS: none
 | --- | --- | --- |
 | Creator Complexity Gate | PASS | 25 F2P / 15 P2P |
 | Runtime authenticity | PASS | 12000 click_event rows |
-| Q6 on dafc1da | PASS | independent LOC 3263; PADDING MEDIUM; TOY LOW |
-| Q4 on dafc1da | REVISE | Q4-B01 detail tokens; Q4-B02 nested ops schema — patched on working tree |
+| Q6 on 4927f2e | PASS | independent LOC 3122; PADDING MEDIUM; TOY LOW; reusable if environment hash unchanged |
+| Q4 on 4927f2e | REVISE | Q4-B01 COUNT(*) not bound — patched in tests only |
 | Ruff verifier | PASS | tests/test_outputs.py |
-| Oracle = 1 | PASS | Harbor `/tmp/e3-ets/2026-08-17__13-49-36` reward 1.0 (post-patch) |
-| NOP = 0 | PASS | Harbor `/tmp/e3-ets/2026-08-17__13-50-53` reward 0.0 (post-patch) |
-| Quality interlock | PENDING | needs independent Q4+Q6 PASS on the same freeze |
+| Oracle = 1 | PASS | Harbor `/tmp/e3-ets/2026-08-17__13-59-38` reward 1.0 |
+| NOP = 0 | PASS | Harbor `/tmp/e3-ets/2026-08-17__14-00-43` reward 0.0 |
+| Quality interlock | PENDING | Q4 re-review after COUNT(*) freeze; Q6 reuse if scope hash matches |
 | Harbor LLMaJ | DEFERRED | user-deferred unless asked |
 | Difficulty trials | DEFERRED | user-deferred unless asked |
 
 ## Current blocker
 
-Q4 REVISE on dafc1da is patched (reject event_id classes; last_run/ops-report schema in session-contract.md; drop unused free-plan overlay). Environment change invalidates Q6 reuse. Re-freeze and re-issue Q4+Q6.
+Q4 REVISE on 4927f2e: ops counts must equal SELECT COUNT(*) FROM click_event. Tests-only patch. Environment unchanged so Q6 PASS may reuse.
 
 ## Decisions that must survive chat changes
 
 - Profile `large_system_strict`; Software/Systems; artifacts `["/app/sessions"]`.
-- Planted defects unchanged: session_key, watermark last-write, record-before-classify, arrival gap, journal overwrite, CLI mutate-before-parse.
-- Oracle copies: session_key, journal, pipeline, cli, watermark_track.
-- Catalog enterprise overlay 45000; no free-plan overlay.
-- last_run.warehouse.event_count and ops-report catalog.available + inventory.event_count are public contract fields.
+- Planted defects unchanged.
+- last_run.warehouse.event_count and ops-report.inventory.event_count equal catalog click_event COUNT(*).
 - Harbor LLMaJ and official GPT×5/Claude×5 deferred unless asked.
 - Leave unrelated dirty work untouched (including jetstream).
 

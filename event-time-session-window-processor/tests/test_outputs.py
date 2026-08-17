@@ -4,6 +4,7 @@ from __future__ import annotations
 import hashlib
 import json
 import os
+import sqlite3
 import subprocess
 from pathlib import Path
 
@@ -22,6 +23,7 @@ REJECTS = OUT / "rejects.jsonl"
 LAST_RUN = DATA / "last_run.json"
 OPS_REPORT = DATA / "ops-report.json"
 WAREHOUSE = ROOT / "warehouse" / "click_ledger.jsonl"
+CATALOG = ROOT / "warehouse" / "catalog.sqlite"
 HOLD = Path("/tests/fixtures")
 
 
@@ -68,6 +70,15 @@ def _journal_rows() -> list[dict]:
 
 def _sha256(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def _catalog_click_event_count() -> int:
+    con = sqlite3.connect(str(CATALOG))
+    try:
+        row = con.execute("SELECT COUNT(*) FROM click_event").fetchone()
+    finally:
+        con.close()
+    return int(row[0])
 
 
 def _write_config(gap: int = 30000, late: int = 10000, dur: int = 3600000) -> None:
@@ -684,12 +695,11 @@ def test_p2p_ops_report_uses_warehouse_catalog() -> None:
     _run(["--reset-output", "--input", str(ROOT / "fixtures" / "sample_basic.jsonl")])
     assert LAST_RUN.is_file()
     assert OPS_REPORT.is_file()
+    expected = _catalog_click_event_count()
     last_run = json.loads(LAST_RUN.read_text(encoding="utf-8"))
     report = json.loads(OPS_REPORT.read_text(encoding="utf-8"))
-    warehouse_events = int(last_run["warehouse"]["event_count"])
-    inventory_events = int(report["inventory"]["event_count"])
-    assert warehouse_events == inventory_events
-    assert warehouse_events > 0
+    assert int(last_run["warehouse"]["event_count"]) == expected
+    assert int(report["inventory"]["event_count"]) == expected
     assert report["catalog"]["available"] is True
 
 
