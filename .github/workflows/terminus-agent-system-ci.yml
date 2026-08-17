@@ -122,11 +122,15 @@ jobs:
           fi
 
           for session in "${sessions[@]}"; do
+            task="$(basename "$session" .md)"
             if [[ ! -f "$session" ]]; then
-              echo "Session removed in this change: $session"
+              if [[ -f "$task/task.toml" ]]; then
+                echo "::error::Session checkpoint $session was deleted while task $task still exists. Durable task state cannot be removed to bypass freshness validation."
+                exit 1
+              fi
+              echo "Task and session removed together: $task"
               continue
             fi
-            task="$(basename "$session" .md)"
             echo "==> validating current freshness for changed session: $task"
             python3 .terminus/validate_review_freshness.py --task "$task"
           done
