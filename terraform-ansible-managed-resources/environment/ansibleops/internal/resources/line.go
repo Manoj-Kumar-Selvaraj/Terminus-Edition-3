@@ -16,6 +16,7 @@ import (
 type lineResource struct{ rt *ansibleRuntime.Config }
 type lineResourceModel struct {
 	ID                  types.String `tfsdk:"id"`
+	Name                types.String `tfsdk:"name"`
 	Path                types.String `tfsdk:"path"`
 	Line                types.String `tfsdk:"line"`
 	Regexp              types.String `tfsdk:"regexp"`
@@ -29,9 +30,9 @@ func (r *lineResource) Metadata(_ context.Context, req resource.MetadataRequest,
 	resp.TypeName = req.ProviderTypeName + "_line"
 }
 func (r *lineResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
-	resp.Schema = schema.Schema{Description: "Manages one line in a text file through Ansible lineinfile.", Attributes: map[string]schema.Attribute{
-		"id": schema.StringAttribute{Computed: true}, "path": schema.StringAttribute{Required: true}, "line": schema.StringAttribute{Required: true},
-		"regexp": schema.StringAttribute{Optional: true}, "create": schema.BoolAttribute{Optional: true},
+	resp.Schema = schema.Schema{Description: "Manages one named line in a text file through Ansible lineinfile.", Attributes: map[string]schema.Attribute{
+		"id": schema.StringAttribute{Computed: true}, "name": schema.StringAttribute{Required: true}, "path": schema.StringAttribute{Required: true},
+		"line": schema.StringAttribute{Required: true}, "regexp": schema.StringAttribute{Optional: true}, "create": schema.BoolAttribute{Optional: true},
 		"observed_exact_count": schema.Int64Attribute{Computed: true}, "observed_regexp_count": schema.Int64Attribute{Computed: true},
 	}}
 }
@@ -44,6 +45,10 @@ func (r *lineResource) Create(ctx context.Context, req resource.CreateRequest, r
 	if resp.Diagnostics.HasError() || !requireAbsolute(stringValue(plan.Path), "path", &resp.Diagnostics) {
 		return
 	}
+	if err := lifecycle.ValidateUnixName("line name", stringValue(plan.Name)); err != nil {
+		resp.Diagnostics.AddError("Invalid line name", err.Error())
+		return
+	}
 	if err := lifecycle.ValidateLine(stringValue(plan.Line)); err != nil {
 		resp.Diagnostics.AddError("Invalid managed line", err.Error())
 		return
@@ -51,7 +56,7 @@ func (r *lineResource) Create(ctx context.Context, req resource.CreateRequest, r
 	if !execute(ctx, r.rt, ansible.LineTask("ensure managed line", stringValue(plan.Path), stringValue(plan.Line), stringValue(plan.Regexp), boolValue(plan.Create, true), "present"), &resp.Diagnostics) {
 		return
 	}
-	plan.ID = types.StringValue(lifecycle.ResourceIdentity("line", stringValue(plan.Path), stringValue(plan.Line), stringValue(plan.Regexp)))
+	plan.ID = types.StringValue(lifecycle.ResourceIdentity("line", stringValue(plan.Path), stringValue(plan.Name)))
 	r.refresh(&plan, &resp.Diagnostics)
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 }
@@ -74,7 +79,7 @@ func (r *lineResource) Update(ctx context.Context, req resource.UpdateRequest, r
 	if resp.Diagnostics.HasError() {
 		return
 	}
-	plan.ID = types.StringValue(lifecycle.ResourceIdentity("line", stringValue(plan.Path), stringValue(plan.Line), stringValue(plan.Regexp)))
+	plan.ID = types.StringValue(lifecycle.ResourceIdentity("line", stringValue(plan.Path), stringValue(plan.Name)))
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 	if !execute(ctx, r.rt, ansible.LineTask("update managed line", stringValue(plan.Path), stringValue(plan.Line), stringValue(plan.Regexp), boolValue(plan.Create, true), "present"), &resp.Diagnostics) {
 		return
