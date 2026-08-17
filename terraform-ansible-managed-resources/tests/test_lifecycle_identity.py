@@ -1,3 +1,4 @@
+import grp
 import json
 import pathlib
 
@@ -23,6 +24,17 @@ def user_body(name, *, shell="/bin/sh", home=None, create_home=False, remove_hom
     if groups:
         fields.append("  groups = [" + ", ".join(json.dumps(g) for g in groups) + "]")
     return 'resource "ansibleops_user" "managed" {\n' + "\n".join(fields) + "\n}\n"
+
+
+def unused_gids(count=2):
+    used = {entry.gr_gid for entry in grp.getgrall()}
+    found = []
+    for candidate in range(40000, 60000):
+        if candidate not in used:
+            found.append(candidate)
+            if len(found) == count:
+                return found
+    raise AssertionError("unable to find unused local group IDs")
 
 
 def test_f2p_user_identity_survives_shell_update(tmp_path, cleanup_registry):
@@ -71,6 +83,30 @@ resource "ansibleops_user" "managed" {{
     run(["gpasswd", "-d", user, group2])
     _, plan = tf_plan_json(workspace)
     assert plan_actions(plan, "ansibleops_user.managed") == ["update"]
+
+
+def test_f2p_group_gid_drift_reconciles_without_identity_churn(tmp_path, cleanup_registry):
+    """A managed group observes native gid drift and restores it while retaining the group-name identity."""
+    name = cleanup_registry.group(unique_unix_name("aopsg"))
+    desired_gid, drift_gid = unused_gids(2)
+    workspace = make_workspace(
+        tmp_path,
+        f'''resource "ansibleops_group" "managed" {{
+  name = {json.dumps(name)}
+  gid  = {desired_gid}
+}}
+''',
+    )
+    tf_apply(workspace)
+    before = resource_values(workspace, "ansibleops_group.managed")["id"]
+    assert grp.getgrnam(name).gr_gid == desired_gid
+    run(["groupmod", "-g", str(drift_gid), name])
+    _, plan = tf_plan_json(workspace)
+    assert plan_actions(plan, "ansibleops_group.managed") == ["update"]
+    tf_apply(workspace)
+    after = resource_values(workspace, "ansibleops_group.managed")["id"]
+    assert after == before
+    assert grp.getgrnam(name).gr_gid == desired_gid
 
 
 def test_f2p_deleted_user_is_planned_for_recreation(tmp_path, cleanup_registry):
