@@ -111,7 +111,7 @@ jobs:
           fi
 
           mapfile -t sessions < <(
-            git diff --name-only "$base" "${{ github.sha }}" -- '.terminus/sessions/*.md' \
+            git diff --no-renames --name-only "$base" "${{ github.sha }}" -- '.terminus/sessions/*.md' \
               | grep -v '^\.terminus/sessions/TEMPLATE\.md$' \
               || true
           )
