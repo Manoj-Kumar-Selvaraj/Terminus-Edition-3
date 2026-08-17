@@ -27,8 +27,9 @@
     ["test_read_snapshot_survives_newer_delete","F2P","R03_SNAPSHOT_POINT_READS"],
     ["test_scan_snapshot_excludes_later_insert","F2P","R04_PREFIX_SCAN_SEMANTICS"],
     ["test_scan_snapshot_retains_later_delete","F2P","R04_PREFIX_SCAN_SEMANTICS"],
-    ["test_scan_applies_local_put_overlay","F2P","R04_PREFIX_SCAN_SEMANTICS"],
+    ["test_scan_applies_local_put_overlay","F2P","R04_PREFIX_SCAN_SEMANTICS","C_LOCAL_SCAN_OVERLAY"],
     ["test_scan_applies_local_delete_overlay","F2P","R04_PREFIX_SCAN_SEMANTICS"],
+    ["test_hex_input_is_case_insensitive_and_output_is_lowercase","F2P","R04_PREFIX_SCAN_SEMANTICS","C_LOCAL_SCAN_OVERLAY"],
     ["test_stale_put_conflicts_with_newer_version","F2P","R05_WRITE_CONFLICTS"],
     ["test_stale_delete_conflicts_with_newer_version","F2P","R05_WRITE_CONFLICTS"],
     ["test_conflicted_multi_key_commit_is_atomic","F2P","R05_WRITE_CONFLICTS"],
@@ -57,10 +58,10 @@
     ["test_stats_match_durable_state_and_file_size","P2P","R11_STATS"],
     ["test_oversized_inputs_are_rejected_without_terminating","P2P","R14_INCLUSIVE_LIMITS"],
     ["test_malformed_commands_and_unknown_transactions_do_not_kill_session","P2P","R15_PROTOCOL_RESILIENCE"],
-    ["test_hex_input_is_case_insensitive_and_output_is_lowercase","P2P","R13_BINARY_HEX"],
     ["test_environment_only_data_directory_is_honored","P2P","R02_DATA_DIR_PRECEDENCE"],
     ["test_oversized_scan_prefix_is_rejected_without_terminating","P2P","R14_INCLUSIVE_LIMITS"],
     ["test_arbitrary_binary_key_and_value_round_trip","P2P","R13_BINARY_HEX"],
+    ["test_committed_hex_output_is_canonical","P2P","R13_BINARY_HEX"],
     ["test_snapshot_bad_magic_is_fatal","P2P","R10_SNAPSHOT_INTEGRITY"],
     ["test_snapshot_truncation_is_fatal","P2P","R10_SNAPSHOT_INTEGRITY"],
     ["test_snapshot_invalid_size_is_fatal","P2P","R10_SNAPSHOT_INTEGRITY"],
@@ -68,7 +69,7 @@
     ["test_snapshot_out_of_order_rows_are_fatal","P2P","R10_SNAPSHOT_INTEGRITY"],
     ["test_documented_c_abi_declarations_remain_available","P2P","R16_NATIVE_COMPATIBILITY"]
   ],
-  "planned_change_required_probe_count": 27,
+  "planned_change_required_probe_count": 28,
   "planned_change_required_behavioral_case_count": 25,
   "planned_preservation_count": 19,
   "behavioral_case_groups": {
@@ -77,10 +78,16 @@
       "requirement": "R14_INCLUSIVE_LIMITS",
       "tests": ["test_exact_key_limit_is_accepted","test_exact_value_limit_is_accepted","test_exact_scan_prefix_limit_is_accepted"],
       "rationale": "Key, value, and scan-prefix probes exercise the same shared decoded-size boundary rule at three public protocol positions; they are independent probes of one behavioral case rather than three distinct requirements."
+    },
+    "C_LOCAL_SCAN_OVERLAY": {
+      "classification": "F2P",
+      "requirement": "R04_PREFIX_SCAN_SEMANTICS",
+      "tests": ["test_scan_applies_local_put_overlay","test_hex_input_is_case_insensitive_and_output_is_lowercase"],
+      "rationale": "Both probes fail the starter because SCAN omits an uncommitted local put. The hexadecimal probe additionally exercises uppercase operands and lowercase rendering, but its starter-to-Oracle transition is caused by the same local-scan-overlay invariant; committed hexadecimal canonicalization is preserved independently by test_committed_hex_output_is_canonical."
     }
   },
   "edge_boundary_coverage": ["inclusive key/prefix/value limits","unsigned high-bit byte ordering","torn WAL header/payload boundaries","snapshot structural bounds"],
   "negative_failure_coverage": ["concurrent writer rejection","conflict atomic rejection","complete WAL corruption","snapshot structural corruption","malformed protocol and unknown transaction IDs"],
   "independence": "Every runtime pytest probe uses a fresh tmp_path database; the ABI/source preservation probe performs an isolated immutable interface check against published task artifacts.",
-  "classification_note": "F2P/P2P are private authoring classifications; neutral pytest names are intentional. Five probes were reclassified to P2P after empirical NOP evidence showed the starter already preserved those behaviors. The hex canonicalization P2P probe was isolated from transaction-overlay behavior before rerunning the matrix."
+  "classification_note": "F2P/P2P are private authoring classifications; neutral pytest names are intentional. Five originally planned change-required probes were reclassified to P2P after NOP evidence showed those behaviors were already preserved. The pre-existing hexadecimal test remains an F2P probe because it intentionally scans an uncommitted put and therefore shares the local-scan-overlay transition; a committed-state hexadecimal test isolates the R13 preservation contract."
 }
