@@ -1,7 +1,12 @@
 {
-  "schema_version": "1.1",
-  "policy_version": "1.1",
+  "schema_version": "1.2",
+  "policy_version": "1.2",
   "selection_model": "retrieval_calibration_with_measured_learning_loop",
+  "cache_policy": {
+    "minimum_relevance_score": 0.08,
+    "maximum_prefilter_candidates": 500,
+    "require_source_revision_for_external_cache": true
+  },
   "datasets": [
     {
       "id": "terminus-human-engineering",
@@ -9,12 +14,9 @@
       "source": ".terminus/reviewers/HUMAN_ENGINEERING_SOURCE_CORPUS.md",
       "license": "source-specific public metadata and structural paraphrase; no long source bodies vendored",
       "enabled": true,
+      "allowed_roles": ["writer", "reviewer"],
       "human_authored_signal": "HIGH",
-      "purpose": [
-        "human_information_selection",
-        "engineering_ticket_structure",
-        "domain_vocabulary"
-      ],
+      "purpose": ["human_information_selection", "engineering_ticket_structure", "domain_vocabulary"],
       "writer_weight": 0.3,
       "reviewer_weight": 0.3,
       "content_mode": "local_structural_catalog"
@@ -25,12 +27,9 @@
       "source": ".terminus/human_writing/seed_catalog.json",
       "license": "repository-authored calibration metadata",
       "enabled": true,
+      "allowed_roles": ["reviewer"],
       "human_authored_signal": "CALIBRATION_CASES",
-      "purpose": [
-        "hard_positive",
-        "hard_negative",
-        "reviewer_discrimination"
-      ],
+      "purpose": ["hard_positive", "hard_negative", "reviewer_discrimination"],
       "writer_weight": 0.0,
       "reviewer_weight": 0.0,
       "content_mode": "local_structural_catalog"
@@ -41,20 +40,14 @@
       "source": "https://huggingface.co/datasets/HuggingFaceH4/stack-exchange-preferences",
       "license": "CC-BY-SA-4.0",
       "enabled": true,
+      "allowed_roles": ["writer", "reviewer"],
       "human_authored_signal": "HIGH",
-      "purpose": [
-        "human_technical_questions",
-        "human_preference",
-        "technical_explanation"
-      ],
+      "purpose": ["human_technical_questions", "human_preference", "technical_explanation"],
       "writer_weight": 0.5,
       "reviewer_weight": 0.3,
       "content_mode": "external_retrieval_or_local_cache",
-      "provenance_requirements": [
-        "source_question_id",
-        "source_site",
-        "author_attribution_when_text_is_retained"
-      ],
+      "provenance_requirements": ["source_question_id", "source_site", "source_revision"],
+      "retained_text_requirements": ["source_url", "source_revision", "source_site", "author", "author_url"],
       "notes": "Primary external human technical corpus. Do not copy distinctive wording into task instructions."
     },
     {
@@ -63,15 +56,14 @@
       "source": "https://huggingface.co/datasets/allenai/tulu-3-pref-personas-instruction-following",
       "license": "ODC-BY",
       "enabled": true,
+      "allowed_roles": ["writer", "reviewer"],
       "human_authored_signal": "SYNTHETIC_PREFERENCE",
-      "purpose": [
-        "constraint_preservation",
-        "chosen_rejected_comparison",
-        "requirement_completeness"
-      ],
+      "purpose": ["constraint_preservation", "chosen_rejected_comparison", "requirement_completeness"],
       "writer_weight": 0.15,
       "reviewer_weight": 0.25,
       "content_mode": "external_retrieval_or_local_cache",
+      "provenance_requirements": ["source_revision"],
+      "retained_text_requirements": ["source_url", "source_revision"],
       "notes": "Use for preserving constraints while rewriting. It is not a human-voice source."
     },
     {
@@ -80,15 +72,14 @@
       "source": "https://huggingface.co/datasets/HumanLLMs/Human-Like-DPO-Dataset",
       "license": "llama3",
       "enabled": true,
+      "allowed_roles": ["writer", "reviewer"],
       "human_authored_signal": "SYNTHETIC_STYLE_CONTRAST",
-      "purpose": [
-        "anti_ai_template",
-        "mechanical_disclaimer_detection",
-        "conversational_overcorrection_detection"
-      ],
+      "purpose": ["anti_ai_template", "mechanical_disclaimer_detection", "conversational_overcorrection_detection"],
       "writer_weight": 0.05,
       "reviewer_weight": 0.1,
       "content_mode": "external_retrieval_or_local_cache",
+      "provenance_requirements": ["source_revision"],
+      "retained_text_requirements": ["source_url", "source_revision"],
       "notes": "Low-weight negative/contrast source only. Never imitate casual persona, emoji, invented experience, or personal-claim style."
     },
     {
@@ -97,16 +88,15 @@
       "source": "https://huggingface.co/datasets/code-review-bench/code-review-bench",
       "license": "CC-BY-4.0",
       "enabled": true,
+      "allowed_roles": ["reviewer"],
       "human_authored_signal": "HUMAN_EXPERT_ANNOTATION",
-      "purpose": [
-        "reviewer_quality_judgment",
-        "technical_review_precision",
-        "actionability_and_relevance"
-      ],
+      "purpose": ["reviewer_quality_judgment", "technical_review_precision", "actionability_and_relevance"],
       "writer_weight": 0.0,
       "reviewer_weight": 0.05,
       "content_mode": "external_retrieval_or_local_cache",
       "audit_path": ".terminus/human_writing/dataset_audits/code-review-bench.json",
+      "provenance_requirements": ["source_revision", "annotation_kind"],
+      "retained_text_requirements": ["source_url", "source_revision", "annotation_kind"],
       "notes": "Reviewer-only low-weight technical judgment source. Prefer expert offline issues and human annotation fields; do not imitate bot review wording."
     },
     {
@@ -115,34 +105,23 @@
       "source": "https://huggingface.co/datasets/ronantakizawa/github-codereview",
       "license": "other",
       "enabled": false,
+      "allowed_roles": [],
       "human_authored_signal": "HIGH",
-      "purpose": [
-        "reviewer_comment_style",
-        "technical_review_specificity"
-      ],
+      "purpose": ["reviewer_comment_style", "technical_review_specificity"],
       "writer_weight": 0.0,
       "reviewer_weight": 0.0,
       "content_mode": "disabled_pending_license_audit",
       "audit_path": ".terminus/human_writing/dataset_audits/github-human-codereview.json",
-      "disabled_reason": "Current dataset metadata reports license=other. README claims permissive source repositories, and a historical revision declared MIT, but the current metadata is ambiguous; keep disabled until an explicit legal/provenance decision changes this audit."
+      "disabled_reason": "Current dataset metadata reports license=other. Keep disabled until an explicit legal/provenance decision changes this audit."
     }
   ],
   "external_sample_targets": {
-    "writer": {
-      "total": 12,
-      "minimum_primary_human": 6,
-      "minimum_constraint_pairs": 2,
-      "maximum_anti_template": 1
-    },
-    "reviewer": {
-      "total": 12,
-      "minimum_primary_human": 5,
-      "minimum_constraint_pairs": 3,
-      "maximum_anti_template": 2
-    }
+    "writer": {"total": 12, "minimum_primary_human": 6, "minimum_constraint_pairs": 2, "maximum_anti_template": 1},
+    "reviewer": {"total": 12, "minimum_primary_human": 5, "minimum_constraint_pairs": 3, "maximum_anti_template": 2}
   },
   "empirical_adjustment": {
     "minimum_tasks_before_recommendation": 20,
+    "minimum_ablation_observations_per_dataset": 5,
     "maximum_absolute_weight_change_per_release": 0.05,
     "automatic_registry_mutation": false,
     "approval_required": true,
@@ -150,11 +129,12 @@
   },
   "invariants": [
     "writer and reviewer raw/sample IDs must be disjoint for the same task",
+    "dataset role permissions are enforced both at cache ingest and retrieval",
     "requirement completeness outranks stylistic naturalness",
     "human-like-dpo is contrast evidence, never a target voice",
     "disabled datasets cannot contribute samples or weight",
     "raw external dataset text is never committed into the repository or task packages",
     "distinctive source wording must not be copied into solver-visible instructions",
-    "dataset weight changes require empirical evidence and explicit approval"
+    "dataset weight changes require controlled attribution evidence and explicit approval"
   ]
 }
