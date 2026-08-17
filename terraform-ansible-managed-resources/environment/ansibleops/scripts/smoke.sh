@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-ROOT="${ANSIBLEOPS_ROOT:-/app/ansibleops}"
+ROOT="${ANSIBLEOPS_ROOT:-/app/provider}"
 WORK="$(mktemp -d /tmp/ansibleops-smoke.XXXXXX)"
 cleanup() {
   rm -rf "${WORK}"
