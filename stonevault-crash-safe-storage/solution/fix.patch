@@ -1,0 +1,84 @@
+--- a/storage/engine.cpp
++++ b/storage/engine.cpp
+@@ -194,7 +194,14 @@
+ 
+         lock_fd_ = ::open(lock_path_.c_str(), O_CREAT | O_RDWR | O_CLOEXEC, 0644);
+         if (lock_fd_ < 0) throw std::runtime_error("cannot open writer lock: " + std::string(std::strerror(errno)));
+-        // Writer exclusion was historically delegated to the caller.
++        if (::flock(lock_fd_, LOCK_EX | LOCK_NB) != 0) {
++            const std::string msg = (errno == EWOULDBLOCK || errno == EAGAIN)
++                ? "writer lock is already held"
++                : "cannot acquire writer lock: " + std::string(std::strerror(errno));
++            ::close(lock_fd_);
++            lock_fd_ = -1;
++            throw std::runtime_error(msg);
++        }
+ 
+         wal_fd_ = ::open(wal_path_.c_str(), O_CREAT | O_RDWR | O_APPEND | O_CLOEXEC, 0644);
+         if (wal_fd_ < 0) throw std::runtime_error("cannot open WAL: " + std::string(std::strerror(errno)));
+@@ -244,7 +251,7 @@
+         if (tx_it == txs_.end()) throw std::runtime_error("unknown transaction");
+         const auto local = tx_it->second.writes.find(key);
+         if (local != tx_it->second.writes.end()) return local->second;
+-        return visible_value(key, commit_sequence_);
++        return visible_value(key, tx_it->second.snapshot);
+     }
+ 
+     OrderedStringMap scan(std::uint64_t tx_id, const std::string& prefix) {
+@@ -254,7 +261,7 @@
+         OrderedStringMap rows;
+         for (const auto& [key, versions] : versions_) {
+             if (!starts_with(key, prefix)) continue;
+-            const auto value = visible_value_from_versions(versions, commit_sequence_);
++            const auto value = visible_value_from_versions(versions, tx_it->second.snapshot);
+             if (value) rows[key] = *value;
+         }
+         for (const auto& [key, value] : tx_it->second.writes) {
+@@ -270,6 +277,15 @@
+         auto tx_it = txs_.find(tx_id);
+         if (tx_it == txs_.end()) throw std::runtime_error("unknown transaction");
+ 
++        for (const auto& [key, _] : tx_it->second.writes) {
++            const auto versions_it = versions_.find(key);
++            if (versions_it != versions_.end() && !versions_it->second.empty() &&
++                versions_it->second.back().sequence > tx_it->second.snapshot) {
++                txs_.erase(tx_it);
++                return 1;
++            }
++        }
++
+         sequence = commit_sequence_ + 1;
+         std::vector<unsigned char> payload;
+         payload.push_back(3);
+@@ -294,7 +310,8 @@
+         if (!txs_.empty()) return 1;
+         sequence = commit_sequence_;
+         write_snapshot_atomically();
+-        if (::fdatasync(wal_fd_) != 0) throw std::runtime_error("cannot sync WAL after checkpoint: " + std::string(std::strerror(errno)));
++        if (::ftruncate(wal_fd_, 0) != 0) throw std::runtime_error("cannot truncate WAL: " + std::string(std::strerror(errno)));
++        if (::fdatasync(wal_fd_) != 0) throw std::runtime_error("cannot sync truncated WAL: " + std::string(std::strerror(errno)));
+         return 0;
+     }
+ 
+@@ -444,8 +461,7 @@
+             }
+             const unsigned char* payload_data = bytes.data() + pos;
+             if (crc32(payload_data, length) != expected_crc) {
+-                truncate_torn_tail(valid_end);
+-                break;
++                throw std::runtime_error("WAL corruption: checksum mismatch at offset " + std::to_string(record_start));
+             }
+             std::vector<unsigned char> payload(payload_data, payload_data + length);
+             pos += length;
+@@ -478,9 +494,9 @@
+             pos += key_len;
+             if (type == 1) {
+                 std::string value(reinterpret_cast<const char*>(payload.data() + pos), value_len);
+-                versions_[key].push_back(Version{commit_sequence_, false, std::move(value)});
++                pending[tx_id][std::move(key)] = std::move(value);
+             } else {
+-                versions_[key].push_back(Version{commit_sequence_, true, ""});
++                pending[tx_id][std::move(key)] = std::nullopt;
+             }
+             return;
+         }
