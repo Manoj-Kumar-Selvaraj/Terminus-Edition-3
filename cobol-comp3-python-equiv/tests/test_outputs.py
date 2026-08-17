@@ -16,7 +16,7 @@ import pytest
 ROOT = Path(os.environ.get("EQUIV_ROOT", "/app/equiv"))
 sys.path.insert(0, str(ROOT))
 
-from src.accounting import apply_effect, issue_effect, transfer_effect
+from src.accounting import apply_effect, issue_effect
 from src.checkpoint import resume_sequence, validate_checkpoint
 from src.comp3 import PackedSpec, pack, unpack
 from src.database import apply_sql, connect, seed_inventory
