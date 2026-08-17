@@ -11,6 +11,18 @@
 
 namespace stonevault {
 
+struct CatalogAudit {
+    std::size_t key_histories{};
+    std::size_t total_versions{};
+    std::size_t visible_keys{};
+    std::size_t tombstone_versions{};
+    std::size_t value_versions{};
+    std::size_t multi_version_histories{};
+    std::size_t tombstoned_histories{};
+    std::size_t max_history_depth{};
+    std::uint64_t max_sequence{};
+};
+
 class VersionCatalog {
 public:
     void load_snapshot(const SnapshotImage& image);
@@ -23,6 +35,7 @@ public:
     std::size_t visible_key_count(std::uint64_t snapshot) const;
     SnapshotImage snapshot_image(std::uint64_t sequence) const;
     std::uint64_t latest_sequence_for(const std::string& key) const;
+    CatalogAudit audit(std::uint64_t committed_sequence) const;
 
 private:
     std::map<std::string, std::vector<Version>, ByteLess> versions_;
