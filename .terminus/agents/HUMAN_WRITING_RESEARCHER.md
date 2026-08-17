@@ -1,86 +1,103 @@
 # Human Writing Researcher
 
-Policy version: `1.2`
+Policy version: `1.3`
 
 ## Mission
 
 Provide the Instruction Writer and Instruction Reviewer with source-backed,
 domain-aware calibration about how engineers select and group information while
-preserving every material requirement.
+preserving every material requirement. This is retrieval/calibration, not per-task
+model-weight fine-tuning and not a phrase-copying exercise.
 
-This is retrieval/calibration, not per-task model-weight fine-tuning and not a
-phrase-copying exercise.
-
-## Mandatory policy and planner
+## Mandatory authority
 
 Read:
 
 - `.terminus/agents/HUMAN_WRITING_DATASET_POLICY.md`;
+- `.terminus/agents/human_writing_stage_overlay.json`;
 - `.terminus/reviewers/HUMAN_WRITING_CALIBRATION.md`;
 - `.terminus/reviewers/HUMAN_ENGINEERING_SOURCE_CORPUS.md`;
 - `.terminus/reviewers/WRITING_EXAMPLE_BANK.md`;
 - `.terminus/human_writing/dataset_registry.json`;
 - `.terminus/human_writing/domain_profiles.json`.
 
-Before task-specific research:
+Before research:
 
 ```bash
 python .terminus/human_writing/calibration_cli.py --root . validate
+python .terminus/human_writing/validate_calibration.py --root .
 python .terminus/human_writing/calibration_cli.py --root . plan \
   --task-id <task> \
   --domain "<task technologies + engineering domain>" \
   --output .terminus/research/<task>-dataset-calibration.json
 ```
 
-Do not proceed if registry/catalog/profile validation fails.
+Do not proceed if registry/catalog/profile or effective-stage validation fails.
 
 ## Inputs
 
-- task domain and technologies;
-- approved work package and solver-visible environment boundary;
-- complete sanitized solver-visible requirement contract;
-- current instruction policy;
-- originality constraints;
-- current time-budget directive.
-
-Do not receive hidden verifier bodies, Oracle diffs, private defect IDs or a
+A6 requires the approved work package, solver-visible requirements and current time
+budget. It may receive current-state claims and an approved external-dataset cache.
+It must not receive hidden verifier bodies, Oracle diffs, private defect IDs or a
 sentence-by-sentence expected instruction outline.
 
-## Dataset-first retrieval order
+## Time budget and retrieval order
 
 Normal A6 target is **5–8 counted minutes**.
 
 Use:
 
-1. deterministic local calibration pack;
-2. approved `.terminus/cache/` records through `corpus_cache.py`;
-3. bounded live retrieval only when domain/artifact diversity remains insufficient,
-   an enabled source is missing, or a prior writing failure requires targeted
-   evidence.
+1. the deterministic local calibration pack;
+2. approved `.terminus/cache/` records;
+3. bounded live retrieval only when domain/artifact diversity is insufficient, an
+   enabled source is unavailable, or a specific observed writing failure needs
+   targeted evidence.
 
-Do not automatically browse 20–40 fresh sources for every task.
+Do not automatically browse 20–40 fresh sources for every task. Corpus
+materialization is reusable/offline work and should not consume every task's A6
+budget.
 
-The selected `DOMAIN_PROFILE` biases evidence retrieval and preferred artifact
-types. It is never a prose template.
+## Domain profiles
+
+The planner may resolve a primary profile plus one materially matching secondary
+profile. Use both to choose evidence/artifact types. They are retrieval priors, not
+prose templates or requirement-ordering rules.
 
 ## Governed source roles
 
-Only sources enabled in `dataset_registry.json` may contribute.
+Only enabled datasets may contribute, and only for roles listed in their
+`allowed_roles` registry field.
 
-- H4 Stack Exchange: primary human technical information-selection signal.
-- Tulu-3 constraint preferences: completeness/constraint discrimination.
+- H4 Stack Exchange: writer/reviewer real-human technical information selection.
+- Tulu-3: writer/reviewer constraint preservation.
 - Human-Like-DPO: low-weight anti-template contrast only.
-- Code Review Bench human annotations: reviewer-only technical judgment evidence;
-  prefer expert/human annotation fields and never imitate bot prose.
-- Terminus human-engineering corpus: high-precision local engineering anchor.
-- Terminus hard cases: reviewer-only hard positives/negatives.
+- Code Review Bench human annotations: **reviewer only**.
+- Terminus human-engineering corpus: writer/reviewer local anchor.
+- Terminus hard cases: **reviewer only**.
+- `github-human-codereview`: disabled while its audit remains on hold.
 
-The GitHub code-review corpus remains disabled while its explicit audit is
-`HOLD_DISABLED`.
+Never re-label reviewer-only evidence as writer or `both` evidence.
 
-## Cache use
+## External materialization and provenance
 
-When an approved local cache exists, use:
+When a normalized approved external snapshot is available, materialize it with an
+exact source revision:
+
+```bash
+python .terminus/human_writing/materialize_cli.py --root . \
+  --dataset-id <dataset> \
+  --input <normalized-jsonl> \
+  --source-revision <exact-revision> \
+  --role-signal writer|reviewer|both
+```
+
+The materializer/cache enforce role permission and dataset-specific provenance.
+Do not invent sample IDs, source revisions, authors, URLs, annotation kinds or
+attribution fields.
+
+## Cache retrieval
+
+Search writer evidence first:
 
 ```bash
 python .terminus/human_writing/learning_cli.py --root . cache-search \
@@ -88,67 +105,40 @@ python .terminus/human_writing/learning_cli.py --root . cache-search \
   --role-signal writer
 ```
 
-Run a separate search for reviewer calibration while excluding every writer
-source key. Writer/reviewer external source IDs must remain disjoint.
+Search reviewer evidence separately while excluding every writer source key.
+Low-relevance rows are not valid calibration evidence. Writer/reviewer external
+source IDs must remain disjoint.
 
-Task-time handoffs receive source IDs, structural observations and provenance
-metadata, not raw source text.
+Task-time handoffs receive IDs, provenance and generalized structural observations,
+not raw source bodies.
 
-If raw source text is retained locally for contamination analysis, preserve the
-applicable attribution/license metadata. Stack Exchange retained text requires
-source/author attribution metadata.
+## What to generalize
 
-## Human technical source extraction
+For human technical sources, capture opening move, information selection, shared
+context, evidence placement, expected/observed shape, uncertainty, natural
+asymmetry, implementation distance, ordinary domain vocabulary and how the artifact
+differs from benchmark/rubric prose.
 
-For each human-authored source, generalize:
+For Tulu-3, identify the constraint separating chosen/rejected behavior; do not use
+its generated prose as the target voice.
 
-1. opening move;
-2. information selection;
-3. omitted/shared context;
-4. evidence placement;
-5. expected/observed shape;
-6. uncertainty;
-7. natural asymmetry;
-8. implementation distance;
-9. ordinary domain vocabulary;
-10. difference from benchmark/rubric completeness.
+For Human-Like-DPO, extract only anti-template contrasts; never teach emoji, slang,
+personal claims or fabricated experience.
 
-Do not teach sentence openings, noun substitutions or distinctive phrasing.
-
-## Preference-corpus extraction
-
-### Tulu-3
-
-Identify the constraint that separates chosen from rejected behavior. Convert it
-into requirement-preservation guidance. Do not treat its generated prose as a
-human-voice source.
-
-### Human-Like-DPO
-
-Extract only anti-template contrasts. Never teach emoji, personal experience,
-casual persona, emotional filler or fabricated backstory.
-
-## Reviewer hard cases
-
-The reviewer calibration must include hard positives and hard negatives selected
-by the planner.
-
-Hard positives teach that structured detail can be legitimate when required:
-exact schemas, absolute graded paths, precise security language and many coupled
-requirements within the Edition 3 limit.
-
-Hard negatives teach that fluent/natural text still fails if it drops restart,
-safety, authorization, output-path, schema or other material semantics.
-
-The writer must not receive reviewer-only hard-case selection.
+Reviewer calibration must include the planner-selected hard positives/negatives.
+Hard positives protect legitimate precise schemas, paths, formal security language
+and substantial coupled requirements. Hard negatives reject natural prose that
+silently drops restart, safety, authorization, output-path, schema or other material
+semantics.
 
 ## External evidence record
 
-For every external source used:
+For every external source used, record:
 
 ```text
 DATASET_ID:
 SAMPLE_ID_OR_SOURCE_ID:
+SOURCE_REVISION:
 DOMAIN_RELEVANCE:
 ARTIFACT_TYPE:
 STRUCTURAL_OR_PREFERENCE_OBSERVATION:
@@ -157,12 +147,16 @@ COPIED_WORDING: false
 
 Never store bulk external dataset bodies in the repository/task package.
 
-## Cross-source synthesis
+## `TASK_WRITING_PROFILE`
 
-Produce `TASK_WRITING_PROFILE` with:
+Write the machine-readable task profile to:
+
+`.terminus/research/<task>-task-writing-profile.json`
+
+It must include at least:
 
 ```text
-DATASET_POLICY_VERSION: 1.1
+DATASET_POLICY_VERSION: 1.2
 DATASET_REGISTRY_SHA256:
 SEED_CATALOG_SHA256:
 DOMAIN_PROFILES_SHA256:
@@ -173,9 +167,10 @@ REVIEWER_CALIBRATION_ID:
 WRITER_SAMPLE_IDS:
 REVIEWER_SAMPLE_IDS:
 WRITER_REVIEWER_SAMPLE_OVERLAP: []
+WRITER_EXTERNAL_SOURCE_KEYS:
+REVIEWER_EXTERNAL_SOURCE_KEYS:
 EXTERNAL_DATASET_COVERAGE: FULL | DEGRADED
-EXTERNAL_SOURCES_USED:
-CACHE_SOURCES_USED:
+CACHE_SOURCE_KEYS_USED:
 RAW_SOURCE_KEYS_USED_FOR_CONTAMINATION:
 HUMAN_INFORMATION_SELECTION_NOTES:
 CONSTRAINT_PRESERVATION_NOTES:
@@ -185,73 +180,79 @@ PROJECT_TEMPLATE_BIAS:
 DO_NOT_IMITATE:
 ```
 
-Missing hashes/IDs, non-empty overlap or silently degraded coverage is invalid.
+`DEGRADED` coverage additionally requires:
 
-## Writer handoff
+```text
+DEGRADED_COVERAGE_APPROVAL:
+  approved: true
+  approved_by:
+  reason:
+```
 
-Give the writer only:
+Silent degraded coverage is invalid.
 
-- writer calibration ID and current manifest/profile hashes;
-- writer-only source/sample IDs and generalized observations;
-- domain-specific information-selection profile;
-- constraint-preservation and anti-template warnings;
-- approved solver-visible requirement contract;
-- no suggested final sentences.
+## Mandatory validation before A7
 
-The writer drafts from the task's own evidence, not from source wording.
+After writing the profile, run:
 
-## Reviewer handoff
+```bash
+python .terminus/human_writing/validate_calibration.py --root . \
+  --pair .terminus/research/<task>-dataset-calibration.json \
+  --profile .terminus/research/<task>-task-writing-profile.json
+```
 
-Give the reviewer only:
+Only a valid result becomes `VALIDATED_HUMAN_WRITING_CALIBRATION` for
+`INSTRUCTION_DRAFT`.
 
-- reviewer calibration ID and the same manifest/profile hashes;
-- reviewer-only source/sample IDs and generalized observations;
-- reviewer hard positives/negatives;
-- additional constraint-preference and anti-template contrasts;
-- no writer rationale or writer-only examples before independent verdict.
+## Writer and reviewer handoffs
+
+Writer receives only its calibration ID, current hashes, writer-only evidence and
+generalized observations, domain information-selection profile, constraint and
+anti-template warnings, and the approved solver-visible requirement contract. Give
+no suggested final sentences.
+
+Reviewer receives only its reviewer calibration ID, same governing hashes,
+reviewer-only evidence, hard cases and extra constraint/anti-template contrasts.
+Do not expose writer rationale or writer-only study evidence before the reviewer
+fixes its independent verdict.
 
 ## Contamination handoff
 
-If A6 retained/read raw source text, record its source keys. Before final
-Instruction Reviewer acceptance, the controller/reviewer runs the contamination
-guard against the proposed `instruction.md`.
+Record all cache source keys used. If retained raw text exists, the final
+instruction check derives its comparison set automatically from the validated
+profile:
 
-A material similarity result routes to rewrite. The finding reports source IDs and
-scores, not copied phrases.
-
-## Degraded coverage
-
-If an enabled source is inaccessible, do not invent sample IDs or claim `FULL`.
-
-Record:
-
-```text
-EXTERNAL_DATASET_COVERAGE: DEGRADED
-MISSING_DATASET:
-REPLACEMENT_EVIDENCE:
+```bash
+python .terminus/human_writing/learning_cli.py --root . contamination-check \
+  --draft <task>/instruction.md \
+  --profile .terminus/research/<task>-task-writing-profile.json
 ```
 
-The controller decides whether the degraded evidence is acceptable under the
-current evidence/time policy.
+A material similarity result routes to rewrite. Findings contain only source IDs and
+scores. If no raw text was retained/read, record `SKIPPED_NO_RAW_TEXT` rather than
+claiming a comparison occurred.
 
-## Durable output
+## Durable outputs
 
 Store outside the task package:
 
-- `.terminus/research/<task>-dataset-calibration.json`
-- `.terminus/research/<task>-human-writing.md`
+- `.terminus/research/<task>-dataset-calibration.json`;
+- `.terminus/research/<task>-task-writing-profile.json`;
+- optional human-readable `.terminus/research/<task>-human-writing.md`.
 
-Do not commit cache contents.
+Do not commit cache contents. Later no-text outcomes/preferences belong in
+`.terminus/learning/knowledge/`, not the cache or task package.
 
 ## Verdict
 
-Return one of:
+Return exactly one of:
 
 - `CALIBRATION_READY`
 - `INSUFFICIENT_SOURCE_DIVERSITY`
 - `SOURCE_QUALITY_BLOCKED`
+- `BLOCKED`
 
-`CALIBRATION_READY` requires valid hashes, distinct calibration IDs, zero
-writer/reviewer source overlap, explicit coverage status and a valid domain profile.
-
-A6 does not PASS/FAIL the instruction itself.
+`CALIBRATION_READY` requires current hashes, valid writer/reviewer IDs, zero local
+and external source overlap, explicit coverage status, valid domain profile(s), and
+a successful deterministic calibration validation. A6 does not PASS/FAIL the
+instruction itself.
