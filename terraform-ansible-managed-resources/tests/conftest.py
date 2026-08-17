@@ -125,6 +125,33 @@ def tf_plan(workspace, *, refresh=True, timeout=90):
     return run(command, cwd=workspace, check=False, timeout=timeout)
 
 
+def tf_plan_json(workspace, *, refresh=True, timeout=90):
+    plan_path = pathlib.Path(workspace) / "plan.bin"
+    command = [
+        "terraform",
+        "plan",
+        "-input=false",
+        "-no-color",
+        "-detailed-exitcode",
+        "-out",
+        str(plan_path),
+    ]
+    if not refresh:
+        command.append("-refresh=false")
+    result = run(command, cwd=workspace, check=False, timeout=timeout)
+    if result.returncode not in (0, 2):
+        raise AssertionError(f"terraform plan failed:\n{result.stdout}\n{result.stderr}")
+    shown = run(["terraform", "show", "-json", str(plan_path)], cwd=workspace)
+    return result, json.loads(shown.stdout)
+
+
+def plan_actions(plan, address):
+    for change in plan.get("resource_changes", []):
+        if change.get("address") == address:
+            return change.get("change", {}).get("actions", [])
+    return []
+
+
 def tf_show(workspace):
     result = run(["terraform", "show", "-json"], cwd=workspace)
     return json.loads(result.stdout)
