@@ -142,7 +142,7 @@ def test_comprehensive_packet_excludes_specialist_verdicts(repo: Path) -> None:
     assert any("specialist verdicts" in item for item in packet["evidence_excluded"])
 
 
-def test_every_role_produces_schema_valid_packet(repo: Path) -> None:
+def test_every_generic_role_produces_schema_valid_packet(repo: Path) -> None:
     schema = json.loads(
         (repo / ".terminus" / "agents" / "schemas" / "context_packet.schema.json").read_text(
             encoding="utf-8"
@@ -151,10 +151,31 @@ def test_every_role_produces_schema_valid_packet(repo: Path) -> None:
     from review_contract import validate_schema
 
     for role_key in generator.ROLES:
+        if role_key == "q4-closure-adjudication":
+            continue
         packet = generator.build(TASK, role_key, "PRE_LLMAJ", "change", task_commit(repo))
         problems: list[str] = []
         validate_schema(packet, schema, role_key, problems)
         assert problems == []
+
+
+def test_q4_closure_packet_requires_dedicated_generator() -> None:
+    assert generator.ROLES["q4-closure-adjudication"]["role"] == "Q4 Closure Adjudicator"
+    assert (CONTROL_PLANE / "new_q4_closure_packet.py").is_file()
+    schema = json.loads(
+        (CONTROL_PLANE / "agents" / "schemas" / "context_packet.schema.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    closure_required = schema["allOf"][1]["then"]["required"]
+    assert set(closure_required) == {
+        "closure_policy_version",
+        "boundary_adjudication",
+        "final_q4_result",
+        "repair_base_task_commit",
+        "final_task_commit",
+        "finding_fingerprints",
+    }
 
 
 def test_repeated_generation_uses_unique_immutable_review_ids(repo: Path) -> None:
