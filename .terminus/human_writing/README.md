@@ -1,18 +1,38 @@
-# Human Writing Calibration Subsystem
+# Human Writing Calibration and Learning Subsystem
 
-This directory implements deterministic pre-task calibration for Terminus instruction writing and instruction review.
+This directory implements deterministic, dataset-backed calibration for Terminus
+instruction writing/review plus the measured learning loop that evaluates whether
+calibration actually improves artifact quality.
 
-It is intentionally **not** a model-training data dump. External corpora remain external; Terminus stores the dataset registry, compact structural/preference summaries, deterministic selection logic and per-task calibration IDs.
+It is intentionally **not** a model-training data dump. External corpora remain
+external. Raw source text may exist only in the ignored local cache used for
+retrieval and contamination checks.
 
-## Files
+## Components
 
-- `dataset_registry.json` — enabled/disabled corpora, license metadata, role weights and sampling constraints.
-- `seed_catalog.json` — compact generalized structural/preference cases; no long external source bodies.
-- `calibration.py` — validates the corpus configuration and builds disjoint writer/reviewer study packs.
-- `calibration_cli.py` — repository CLI used by A6/controller.
-- `test_calibration.py` — isolated regression suite.
+- `dataset_registry.json` — governed corpora, licenses, weights, audit state and
+  empirical-weight policy.
+- `dataset_audits/` — explicit enable/hold decisions for ambiguous sources.
+- `seed_catalog.json` — generalized local human/constraint/anti-template and
+  hard-positive/hard-negative calibration cases.
+- `domain_profiles.json` — task-domain profiles used to bias retrieval without
+  turning prose into templates.
+- `calibration.py` / `calibration_cli.py` — deterministic disjoint
+  writer/reviewer calibration planning.
+- `corpus_cache.py` — ignored SQLite cache with metadata filtering and optional
+  vector scoring. Task-time packs receive summaries/IDs, not raw text.
+- `contamination.py` — lexical similarity guard that reports source IDs/scores
+  without echoing copied phrases.
+- `evaluation.py` — blind A/B packet generation and completeness-gated scoring.
+- `preference_store.py` — Terminus-native chosen/rejected references stored as
+  hashes plus provenance, never prior wording in task-time prompts.
+- `learning_loop.py` / `learning_cli.py` — outcome metrics, reviewer disagreement,
+  bounded dataset-weight recommendations and adapter-readiness gating.
+- `adapter_policy.json` — fail-closed requirements for any future reusable
+  writer/reviewer adapters.
+- `test_calibration.py` / `test_learning_loop.py` — isolated regression suites.
 
-## Normal use
+## Normal calibration
 
 ```bash
 python .terminus/human_writing/calibration_cli.py --root . validate
@@ -22,28 +42,51 @@ python .terminus/human_writing/calibration_cli.py --root . plan \
   --output .terminus/research/example-task-dataset-calibration.json
 ```
 
-A6 then satisfies the generated external sampling plan and writes generalized observations into its existing `TASK_WRITING_PROFILE`.
+A6 first uses the local governed catalog/cache, then performs live retrieval only
+when the domain/profile or evidence budget requires it.
 
-## Role split
+## Local cache
 
-The planner selects different local sample IDs for writer and reviewer. A6 must preserve disjointness for any external samples too.
+`.terminus/cache/` is ignored by Git. Ingest only approved records:
 
-Writer emphasis:
+```bash
+python .terminus/human_writing/learning_cli.py --root . cache-ingest \
+  --input /tmp/human-writing-records.jsonl
 
-- real human technical information selection;
-- natural grouping around engineering responsibilities;
-- strict preservation of the approved requirement contract.
+python .terminus/human_writing/learning_cli.py --root . cache-search \
+  --query 'terraform migration recovery' \
+  --role-signal writer
+```
 
-Reviewer emphasis:
+Source text retained for contamination analysis must carry the applicable
+license/provenance fields. Stack Exchange text additionally requires author
+attribution metadata.
 
-- more chosen/rejected constraint comparisons;
-- more anti-template contrasts;
-- independent completeness-first judgment.
+## Blind A/B evaluation
 
-## External data
+For a controlled evaluation, prepare a baseline and calibrated variant:
 
-Do not commit raw external corpora here or inside task packages.
+```bash
+python .terminus/human_writing/learning_cli.py --root . ab-prepare \
+  --task-id example-task \
+  --baseline /tmp/baseline.md \
+  --calibrated /tmp/calibrated.md \
+  --requirement-contract-sha256 <sha256> \
+  --output /tmp/ab-public.json \
+  --sealed-mapping-output /tmp/ab-mapping.json
+```
 
-If a local runtime caches external samples, keep that cache outside Git or under an ignored machine-local path. Preserve source IDs and required attribution/license metadata. Source wording is calibration evidence, not a phrase bank.
+The evaluator sees only the public packet. Requirement completeness and technical
+precision are hard eligibility gates before human-style preference can win.
 
-The GitHub code-review corpus remains disabled until its current `license: other` metadata is resolved by an explicit provenance/license audit.
+## Learning and future adapters
+
+Per-task outcome/preference state is stored beneath `.terminus/learning/state/`,
+which is already ignored. Durable repository changes should contain only
+approved aggregate policy/metrics, never a source-text or prior-instruction phrase
+bank.
+
+Dataset-weight changes are recommendations only and require explicit approval.
+Per-task fine-tuning is forbidden. Any future reusable adapter remains disabled
+until `adapter_policy.json` readiness gates pass and a human explicitly approves
+the release.
