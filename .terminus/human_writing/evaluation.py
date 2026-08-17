@@ -21,6 +21,11 @@ GOOD_LOW = (
     "rubric_mirroring",
     "implementation_leakage",
 )
+_ALLOWED_EVALUATOR_ROLES = {
+    "Instruction Reviewer",
+    "Human Quality Reviewer",
+    "Blind A/B Evaluator",
+}
 
 
 class EvaluationError(ValueError):
@@ -33,10 +38,13 @@ def prepare_blind_ab(
     baseline_text: str,
     calibrated_text: str,
     requirement_contract_sha256: str,
+    writer_actor_id: str,
 ) -> dict[str, Any]:
-    """Create an anonymized A/B packet plus a sealed origin mapping."""
+    """Create an anonymized A/B packet plus a sealed origin/author mapping."""
     if not baseline_text.strip() or not calibrated_text.strip():
         raise EvaluationError("both variants must be non-empty")
+    if not writer_actor_id.strip():
+        raise EvaluationError("writer_actor_id is required")
     identity = {
         "task_id": task_id,
         "baseline_sha256": _sha(baseline_text),
@@ -58,15 +66,23 @@ def prepare_blind_ab(
             "higher_is_better": list(GOOD_HIGH),
             "lower_is_better": list(GOOD_LOW),
         },
+        "eligibility_gates": {
+            "requirement_completeness": 5,
+            "technical_precision_minimum": 4,
+            "rubric_mirroring_maximum": 1,
+            "implementation_leakage_maximum": 1,
+            "ai_template_signal_maximum": 2,
+        },
         "review_instruction": (
-            "Score both variants independently. Requirement completeness is a hard gate; "
-            "do not prefer a more natural variant that loses a material requirement."
+            "Score both variants independently. Completeness/precision are hard gates; "
+            "material rubric mirroring or implementation leakage also disqualifies a variant."
         ),
     }
     sealed_mapping = {
         "eval_id": public["eval_id"],
         "mapping": {"A": ordered[0][0], "B": ordered[1][0]},
         "variant_sha256": {"A": _sha(ordered[0][1]), "B": _sha(ordered[1][1])},
+        "writer_actor_hash": _sha(writer_actor_id),
     }
     return {"public_packet": public, "sealed_mapping": sealed_mapping}
 
@@ -76,10 +92,20 @@ def score_blind_ab(
     public_packet: dict[str, Any],
     sealed_mapping: dict[str, Any],
     scores: dict[str, dict[str, int]],
+    evaluator_actor_id: str,
+    evaluator_role: str,
 ) -> dict[str, Any]:
-    """Validate scores and reveal preference only after the blind score is fixed."""
+    """Validate independent scores and reveal preference only after they are fixed."""
     if public_packet.get("eval_id") != sealed_mapping.get("eval_id"):
         raise EvaluationError("public/sealed eval ids differ")
+    if evaluator_role not in _ALLOWED_EVALUATOR_ROLES:
+        raise EvaluationError(f"unauthorized evaluator role: {evaluator_role}")
+    if not evaluator_actor_id.strip():
+        raise EvaluationError("evaluator_actor_id is required")
+    evaluator_hash = _sha(evaluator_actor_id)
+    if evaluator_hash == sealed_mapping.get("writer_actor_hash"):
+        raise EvaluationError("blind evaluator must be independent from the writer")
+
     for label in ("A", "B"):
         dimensions = scores.get(label)
         if not isinstance(dimensions, dict):
@@ -92,8 +118,13 @@ def score_blind_ab(
                 raise EvaluationError(f"{label}.{name} must be integer 0..5")
 
     eligible = {
-        label: scores[label]["requirement_completeness"] == 5
-        and scores[label]["technical_precision"] >= 4
+        label: (
+            scores[label]["requirement_completeness"] == 5
+            and scores[label]["technical_precision"] >= 4
+            and scores[label]["rubric_mirroring"] <= 1
+            and scores[label]["implementation_leakage"] <= 1
+            and scores[label]["ai_template_signal"] <= 2
+        )
         for label in ("A", "B")
     }
     utility = {
@@ -127,6 +158,11 @@ def score_blind_ab(
         "eligibility": eligible,
         "utility": utility,
         "scores": scores,
+        "evaluator_binding": {
+            "actor_hash": evaluator_hash,
+            "role": evaluator_role,
+            "independent_from_writer": True,
+        },
     }
 
 
@@ -136,6 +172,7 @@ def aggregate_ab_results(results: list[dict[str, Any]]) -> dict[str, Any]:
         result
         for result in results
         if result.get("preferred_origin") in {"baseline", "calibrated"}
+        and result.get("evaluator_binding", {}).get("independent_from_writer") is True
     ]
     calibrated_wins = sum(
         result.get("preferred_origin") == "calibrated" for result in decided

@@ -1,63 +1,66 @@
 # Dataset-Backed Human Writing Calibration Policy
 
-Policy version: `1.1`
+Policy version: `1.2`
 
 This policy specializes Terminus instruction writing and instruction review with a
-reusable, provenance-aware calibration and measurement layer. It does **not**
+provenance-aware calibration, evaluation and learning layer. It does **not**
 authorize per-task model-weight fine-tuning, copying source prose into task
 packages, or weakening correctness to sound more human.
 
-## Objective
+## Governing priority
 
-Before the Instruction Writer drafts and before the Instruction Reviewer judges,
-each role receives a task-specific calibration pack derived from:
+1. preserve every material solver-visible requirement;
+2. preserve technical precision, fairness, safety, output/schema/path contracts;
+3. select and group information like a real engineer in the applicable domain;
+4. remove synthetic benchmark cadence and unnecessary explanation.
 
-1. real human technical-writing signals;
-2. explicit constraint-preservation preference pairs;
-3. low-weight anti-template contrasts;
-4. Terminus hard-positive/hard-negative reviewer cases;
-5. the existing high-precision Terminus human-engineering corpus.
+Naturalness never outranks #1 or #2.
 
-The writer and reviewer must use different sample IDs for the same task. Quality
-is then measured after drafting/review so corpus choices can improve from evidence
-rather than opinion.
-
-## Canonical subsystem
+## Canonical implementation
 
 Machine-readable policy lives under `.terminus/human_writing/`:
 
-- `dataset_registry.json`
-- `seed_catalog.json`
-- `domain_profiles.json`
-- `adapter_policy.json`
-- `dataset_audits/`
-- deterministic calibration/retrieval/evaluation/learning code and tests.
+- `dataset_registry.json` — dataset enablement, role permissions, weights,
+  provenance and cache policy;
+- `seed_catalog.json` — compact generalized human/preference/hard-case signals;
+- `domain_profiles.json` — domain retrieval profiles;
+- `adapter_policy.json` — fail-closed future adapter gate;
+- `dataset_audits/` — explicit source/license decisions;
+- `calibration.py` / `validate_calibration.py` — deterministic planner and validator;
+- `corpus_cache.py` / `materialize.py` — approved local retrieval/materialization;
+- `contamination.py` — source-copy guard;
+- `evaluation.py` — blind independent A/B evaluation;
+- `preference_store.py` / `learning_loop.py` — durable no-text learning evidence.
 
-Raw external corpora are never committed. `.terminus/cache/` is the approved
-machine-local cache boundary and is already ignored by Git.
+The execution specialization is
+`.terminus/agents/human_writing_stage_overlay.json`. `RetrievalPolicy` applies that
+overlay before building stage invocations. The effective A6 status contract is:
 
-## Enabled corpus roles
+`CALIBRATION_READY | INSUFFICIENT_SOURCE_DIVERSITY | SOURCE_QUALITY_BLOCKED | BLOCKED`
 
-The current registry controls enablement and weights. The intended source roles are:
+`INSTRUCTION_DRAFT` requires `VALIDATED_HUMAN_WRITING_CALIBRATION`.
 
-- `terminus-human-engineering` — high-precision local structural summaries of real
-  engineering issues/change requests;
-- `h4-stack-exchange-preferences` — primary external human technical-writing and
-  preference source;
-- `tulu3-constraint-preferences` — chosen/rejected constraint-preservation source;
-- `human-like-dpo` — low-weight anti-template contrast only;
-- `code-review-bench-human-annotations` — low-weight reviewer-only technical
-  judgment source using expert/human annotation fields, not bot prose as a voice;
-- `terminus-reviewer-hard-cases` — repository-authored hard positives and hard
-  negatives for reviewer discrimination.
+## Dataset roles
 
-`github-human-codereview` remains disabled. Its current public dataset metadata
-reports `license: other`; its README says source repositories are permissively
-licensed and an older card revision declared MIT, but those signals are not
-sufficiently consistent to enable the dataset automatically. The controlling audit
-is `.terminus/human_writing/dataset_audits/github-human-codereview.json`.
+The registry is authoritative. A dataset may be consumed only by a role listed in
+its `allowed_roles` field. Role authorization is enforced both during cache ingest
+and retrieval; caller-provided `role_signal` cannot promote reviewer-only evidence
+into writer evidence.
 
-## Mandatory calibration planning
+Current roles:
+
+- `terminus-human-engineering` — writer + reviewer high-precision local anchor;
+- `h4-stack-exchange-preferences` — writer + reviewer primary real-human technical
+  signal;
+- `tulu3-constraint-preferences` — writer + reviewer constraint-preservation signal;
+- `human-like-dpo` — low-weight writer/reviewer anti-template contrast only;
+- `code-review-bench-human-annotations` — **reviewer only**;
+- `terminus-reviewer-hard-cases` — **reviewer only**;
+- `github-human-codereview` — disabled pending a clean license/provenance decision.
+
+Disabled or unaudited corpora cannot contribute samples, cache rows or weight.
+
+## Calibration planning
 
 For each task:
 
@@ -69,213 +72,98 @@ python .terminus/human_writing/calibration_cli.py --root . plan \
   --output .terminus/research/<task>-dataset-calibration.json
 ```
 
-The pair binds:
+The pair binds current registry/catalog/domain-profile hashes, one writer
+calibration ID, one reviewer calibration ID, disjoint local samples, role-specific
+external targets and directives.
 
-- dataset-registry SHA-256;
-- seed-catalog SHA-256;
-- domain-profile SHA-256 and selected domain profile;
-- one writer calibration ID;
-- one reviewer calibration ID;
-- disjoint local study sample IDs;
-- role-specific external sampling targets and directives.
+The planner may blend up to two materially matching domain profiles. The first is
+the primary profile; the second exists only when it has meaningful token overlap.
+Profiles influence evidence selection and artifact types, never sentence templates.
 
-Missing IDs, mismatched hashes or non-empty writer/reviewer overlap invalidate
-calibration.
+## Reproducible external materialization
 
-## Domain-aware retrieval
+Raw external corpora are never committed. `.terminus/cache/` is the ignored local
+boundary.
 
-`domain_profiles.json` provides broad engineering profiles such as SRE/incident,
-platform/cloud, data migration, distributed systems, security, compiler/runtime and
-application/backend.
-
-Profiles influence which evidence is retrieved and which artifact types are useful.
-They are **not** prose templates and may never prescribe sentence wording or
-requirement ordering.
-
-The local cache/retrieval layer is:
-
-`.terminus/human_writing/corpus_cache.py`
-
-It supports:
-
-- dataset/license allow-list enforcement;
-- domain/artifact/role metadata filters;
-- deterministic lexical/domain ranking;
-- optional precomputed vector similarity without requiring a vector dependency;
-- writer/reviewer source-ID exclusions;
-- source attribution checks when raw text is retained.
-
-Task-time calibration packs receive source IDs and generalized observations. Raw
-cached text is available only to contamination analysis or an explicitly
-authorized offline evaluation/training job.
-
-## Source-text contamination guard
-
-Before final Instruction Reviewer acceptance, compare the proposed solver-visible
-instruction against any raw external examples actually retained/read for that task.
-
-Use `.terminus/human_writing/contamination.py` or:
+Approved external snapshots are materialized through:
 
 ```bash
-python .terminus/human_writing/learning_cli.py --root . contamination-check ...
+python .terminus/human_writing/materialize_cli.py --root . \
+  --dataset-id <enabled-dataset> \
+  --input <normalized-jsonl-snapshot> \
+  --source-revision <exact-source-revision> \
+  --role-signal writer|reviewer|both
 ```
 
-The guard reports source IDs and similarity scores only. It must not echo copied
-phrases into reviewer output. A material similarity finding routes to rewrite.
+A materialization records:
 
-Necessary shared technical vocabulary, absolute paths, protocol names and schema
-terms are not by themselves evidence of copying; reviewers interpret scores in
-context.
+- dataset ID and exact source revision;
+- role scope;
+- normalized input SHA-256;
+- source-ID-set SHA-256;
+- cache/registry schema versions;
+- a local materialization ID/manifest.
 
-## Writer calibration
+The normalized rows must satisfy dataset-specific provenance and retained-text
+requirements from `dataset_registry.json`. A missing source revision or required
+attribution field is a hard error.
 
-The writer receives only:
+## Cache and retrieval
 
-- writer calibration ID;
-- manifest/profile hashes;
-- writer-only sample/source IDs and generalized observations;
-- task-specific information-selection profile;
-- constraint-preservation and anti-template warnings;
-- the approved solver-visible requirement contract.
+`corpus_cache.py` enforces:
 
-Priority order is fixed:
+- dataset enablement;
+- dataset role permissions at ingest and search;
+- dataset-specific provenance/retained-text requirements;
+- writer/reviewer source exclusions;
+- minimum relevance score;
+- bounded candidate prefiltering;
+- FTS5 prefilter when available, with bounded fallback;
+- no raw text in search results.
 
-1. preserve every material solver-visible requirement;
-2. preserve technical precision, fairness and output/schema/path contracts;
-3. select/group information like a real engineer in the applicable domain;
-4. remove synthetic benchmark cadence and unnecessary explanation.
+A sparse cache must return no evidence rather than unrelated zero-score rows.
 
-Naturalness never outranks #1 or #2.
+Normal A6 retrieval order:
 
-## Reviewer calibration
+1. deterministic local calibration pack;
+2. approved local cache/index;
+3. bounded live retrieval only for missing domain/artifact diversity, inaccessible
+   enabled sources, or a specific observed writing failure.
 
-The reviewer receives only:
+Do not automatically research 20–40 fresh sources for every task.
 
-- reviewer calibration ID;
-- the same manifest/profile hashes;
-- reviewer-only source/sample IDs and generalized observations;
-- additional constraint-preference contrasts;
-- hard-positive and hard-negative reviewer cases;
-- solver-visible instruction/contracts plus only the discoverability summary
-  authorized by the reviewer contract.
+## Writer/reviewer independence
 
-The reviewer must not see writer rationale or writer-only study examples before
-fixing an independent verdict.
+Writer and reviewer local sample IDs and external source IDs must be disjoint for
+the task. The reviewer does not receive writer rationale or writer-only examples
+before fixing its independent verdict.
 
-Hard positives prevent false positives such as rejecting a required exact schema,
-required absolute paths, a legitimate 15–20-bullet work package, or precise formal
-security language merely because it looks structured.
+Writer receives only its calibration ID, manifest/profile hashes, writer-only
+source/sample IDs/generalized observations, requirement-preservation warnings and
+the approved solver-visible requirement contract.
 
-Hard negatives prevent false passes such as accepting concise natural prose that
-silently drops restart, safety, authorization, output-path or schema requirements.
+Reviewer receives its own calibration ID, reviewer-only evidence, extra constraint
+contrasts and hard positives/negatives. Structured precision is not a defect when
+required; natural prose is not a pass when it omits material semantics.
 
-## Blind A/B effectiveness evaluation
+## Deterministic calibration validation
 
-The subsystem includes `.terminus/human_writing/evaluation.py`.
+Before instruction drafting, run:
 
-For calibration releases and sampled production tasks, compare:
+```bash
+python .terminus/human_writing/validate_calibration.py --root . \
+  --pair .terminus/research/<task>-dataset-calibration.json \
+  --profile .terminus/research/<task>-task-writing-profile.json
+```
 
-- baseline/previous-policy instruction;
-- dataset-calibrated instruction.
+The validator checks the effective A6/A7 contract, current registry/catalog/profile
+hashes, calibration IDs, writer/reviewer disjointness, external-source disjointness,
+coverage state and explicit approval for degraded coverage.
 
-Variant identity is hidden from the blind evaluator until scores are fixed.
-
-Required scoring dimensions include requirement completeness, technical precision,
-human information selection, natural grouping, implementation distance, verbosity
-fit, AI-template signal, synthetic completeness, rubric mirroring and
-implementation leakage.
-
-**Requirement completeness = 5/5 and technical precision >=4/5 are eligibility
-gates.** A more natural but incomplete variant cannot win.
-
-Do not turn blind A/B into a mandatory second full review on every task when the
-task time budget is tight. Sample it during rollout, calibration-policy changes,
-suspected regressions and enough normal tasks to estimate performance.
-
-## Terminus-native preference evidence
-
-`.terminus/human_writing/preference_store.py` records chosen/rejected evidence as:
-
-- task and exact commit;
-- chosen/rejected SHA-256;
-- label source;
-- reason codes;
-- calibration pair ID;
-- holdout eligibility.
-
-The store intentionally does not place prior wording in the task-time calibration
-surface. Exact historical content may be resolved only by an authorized offline
-training/evaluation job from the recorded task/commit.
-
-This prevents the Terminus-native corpus from becoming a phrase-copying or
-originality-contamination bank.
-
-## Effectiveness metrics and disagreement tracking
-
-`.terminus/human_writing/learning_loop.py` records no-text per-task outcome data and
-computes:
-
-- initial/final instruction pass rate;
-- average revision count;
-- human-signal outcomes;
-- LLMaJ writing-finding rate;
-- blind A/B calibrated win rate;
-- per-dataset task exposure and quality;
-- Instruction Reviewer vs Human Quality Reviewer disagreement rate/classes.
-
-Repeated disagreement is evidence to inspect calibration policy, not permission to
-rerun reviewers until one agrees.
-
-Dataset-weight changes are generated only as bounded recommendations after the
-registry's minimum task count. Recommendations never mutate
-`dataset_registry.json` automatically and require explicit approval.
-
-## Controller telemetry hook
-
-The Creation Controller records a no-text writing outcome when the instruction
-artifact reaches a stable review point and refreshes/finalizes it after final human
-quality / LLMaJ writing evidence is available.
-
-At minimum record:
-
-- exact task/commit and calibration IDs;
-- draft/final content hashes, never prompt text in the telemetry record;
-- material requirement count and completeness status;
-- revision count;
-- dataset/cache source counts by dataset;
-- Instruction Reviewer and Human Quality Reviewer verdicts;
-- human-signal assessment;
-- contamination status;
-- blind A/B result when sampled;
-- LLMaJ writing finding when available;
-- calibration time and writing/review time when available.
-
-Use `learning_cli.py record-outcome`. If a revision clearly establishes a
-chosen/rejected preference, also use `preference-add` so the Terminus-native
-preference store grows without exposing historical wording to future task writers.
-
-Telemetry collection is non-blocking for task correctness when the learning store
-is unavailable, but the controller must not fabricate records or silently claim
-metrics it did not capture.
-
-## Future reusable adapter training
-
-Per-task weight fine-tuning remains forbidden.
-
-`adapter_policy.json` is fail-closed. A future writer/reviewer adapter can only
-become a candidate after sufficient distinct tasks, preference pairs, holdouts,
-blind A/B evidence and zero requirement-completeness regressions. Writer and
-reviewer adapters remain separate.
-
-Even when readiness is achieved, training/release requires explicit human approval
-and a holdout evaluation. Adapters never replace per-task provenance/calibration.
-
-## Required `TASK_WRITING_PROFILE` fields
-
-A6's existing profile must include at least:
+A6's `TASK_WRITING_PROFILE` must contain at least:
 
 ```text
-DATASET_POLICY_VERSION: 1.1
+DATASET_POLICY_VERSION: 1.2
 DATASET_REGISTRY_SHA256:
 SEED_CATALOG_SHA256:
 DOMAIN_PROFILES_SHA256:
@@ -286,47 +174,127 @@ REVIEWER_CALIBRATION_ID:
 WRITER_SAMPLE_IDS:
 REVIEWER_SAMPLE_IDS:
 WRITER_REVIEWER_SAMPLE_OVERLAP: []
+WRITER_EXTERNAL_SOURCE_KEYS:
+REVIEWER_EXTERNAL_SOURCE_KEYS:
 EXTERNAL_DATASET_COVERAGE: FULL | DEGRADED
-EXTERNAL_SOURCES_USED:
-CACHE_SOURCES_USED:
+CACHE_SOURCE_KEYS_USED:
+RAW_SOURCE_KEYS_USED_FOR_CONTAMINATION:
 HUMAN_INFORMATION_SELECTION_NOTES:
 CONSTRAINT_PRESERVATION_NOTES:
 ANTI_TEMPLATE_NOTES:
 DO_NOT_IMITATE:
 ```
 
-If raw source text was used, also record the source IDs needed for contamination
-checking. Do not embed the raw source text in the profile.
+`DEGRADED` requires a recorded controller approval with `approved=true`,
+`approved_by` and `reason`. Silent degraded coverage is invalid.
 
-## Time-budget behavior
+## Source-text contamination guard
 
-Normal A6 calibration target remains **5–8 counted minutes**.
+Before final Instruction Reviewer acceptance, run the contamination guard against
+retained raw examples used by the task. `learning_cli.py contamination-check
+--profile ...` automatically derives the retained source set from
+`CACHE_SOURCE_KEYS_USED`; callers do not have to remember every source key.
 
-Use, in order:
+The guard uses n-gram containment, whole-document similarity, local-window
+similarity and longest contiguous token match. This is intentionally able to catch
+a copied paragraph embedded inside a much longer source. Findings expose only
+source IDs and scores, never copied phrases.
 
-1. deterministic local plan;
-2. approved local cache/index;
-3. bounded live retrieval only for missing domain diversity, novel artifact type,
-   a specific prior failure mode, or insufficient evidence.
+If no raw text was retained/read, record `SKIPPED_NO_RAW_TEXT` rather than pretending
+a comparison occurred.
 
-Do not automatically browse 20–40 fresh sources when the governed corpus/cache
-already provides sufficient calibration.
+## Blind A/B effectiveness evaluation
 
-Blind A/B, extended live research and weight analysis are optional/sampled
-measurement work unless a policy release, regression or evidence gap makes them
-necessary. They must respect the controller's 4-hour target / 5-hour hard limit.
+Blind A/B is sampled for policy releases, rollout measurement and suspected
+regressions; it is not a mandatory second full review on every time-constrained
+task.
+
+The writer identity is sealed when the A/B packet is created. Scoring requires an
+allowed evaluator role and a different evaluator identity. Self-evaluation is
+rejected.
+
+A variant is eligible only when:
+
+- requirement completeness = 5/5;
+- technical precision >= 4/5;
+- rubric mirroring <= 1/5;
+- implementation leakage <= 1/5;
+- AI-template signal <= 2/5.
+
+A natural but incomplete/leaky variant cannot win.
+
+## Durable Terminus-native learning
+
+No-text learning is stored in the committable knowledge area:
+
+- `.terminus/learning/knowledge/human-writing-outcomes.jsonl`
+- `.terminus/learning/knowledge/human-writing-preferences.jsonl`
+
+Do not store prior instruction wording in these files.
+
+Preference records contain chosen/rejected hashes, label source/reason codes,
+calibration pair and holdout eligibility. Before append, the chosen text must hash
+to the actual `<task>/instruction.md` at the exact recorded task commit. Holdout
+preferences require an independent label source and `requirements_preserved`.
+
+Outcome telemetry is also provenance-bound. It requires exact task commit/domain,
+current deterministic calibration IDs, accepted instruction hash matching the task
+commit, explicit requirement-regression boolean, contamination status, reviewer
+evidence reference and known enabled dataset IDs. Prohibited text fields are
+rejected recursively, including nested objects.
+
+## Metrics and dataset weighting
+
+Exposure correlation is descriptive only. A task's overall quality is **not**
+credited causally to every dataset it happened to use.
+
+Weight recommendations require:
+
+- the registry minimum number of distinct tasks;
+- the configured minimum controlled ablation observations for **every active dataset
+  in that role**;
+- per-observation `controlled=true`, role and bounded `quality_delta`.
+
+Without sufficient controlled attribution the result is
+`INSUFFICIENT_ATTRIBUTION`. Recommendations are bounded, never mutate the registry
+automatically and require explicit approval.
+
+Reviewer disagreement is tracked as calibration evidence. It is not permission to
+rerun reviewers until one agrees.
+
+## Future adapters
+
+Per-task fine-tuning remains forbidden.
+
+Adapter readiness counts real bound preference-store records and bound holdout
+records, not mere inequality between draft/final hashes. Every recorded task must
+explicitly show no requirement regression. Blind A/B performance must meet the
+policy threshold.
+
+While `adapter_policy.enabled=false`, readiness status is `DISABLED` regardless of
+other metrics. Enabling/training/releasing an adapter always requires explicit human
+approval and separate writer/reviewer adapters.
+
+## Time budget
+
+Normal A6 calibration target remains **5–8 counted minutes**. Materialization is a
+reusable/offline cache-building operation and should not consume every task's A6
+budget. Blind A/B and controlled dataset ablations are sampled measurement work.
+All task-time work remains subordinate to the controller's 4-hour target / 5-hour
+hard limit and explicit time-extension mechanism.
 
 ## Non-negotiable invariants
 
 - no material requirement is removed to improve human signal;
-- writer and reviewer calibration samples are disjoint;
-- disabled/unaudited corpora cannot contribute samples;
+- writer/reviewer calibration evidence is disjoint;
+- dataset role permissions are mechanically enforced;
+- disabled/unaudited corpora cannot contribute evidence;
 - source wording is evidence, never a phrase bank;
-- raw source corpora and local cache are not committed/package-visible;
+- raw source corpora/cache are not committed or task-package-visible;
 - hidden verifier/oracle evidence is never writing-training input;
 - no invented incidents, typos, slang, customers, dates or business impact;
-- contamination findings are handled before final instruction acceptance;
-- prior Terminus wording is not projected into new writer prompts;
-- empirical learning may recommend policy changes but cannot silently mutate them;
-- if calibration evidence is missing/stale, stop or explicitly route a degraded
-  evidence decision rather than pretending the agent was trained.
+- contamination is resolved before final acceptance when raw evidence exists;
+- prior Terminus wording is never projected into new task-time writer prompts;
+- learning records are no-text and provenance-bound;
+- empirical learning can recommend policy changes but cannot silently apply them;
+- missing/stale calibration blocks or explicitly routes a degraded-evidence decision.

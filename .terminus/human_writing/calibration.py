@@ -15,7 +15,7 @@ class CalibrationError(ValueError):
 class HumanWritingCalibrationPlanner:
     """Build independent writer/reviewer calibration packs for one task."""
 
-    schema_version = "1.1"
+    schema_version = "1.2"
     _ROLE_KINDS = {
         "writer": {"human_issue": 6, "constraint_pair": 2, "anti_template": 1},
         "reviewer": {
@@ -36,7 +36,7 @@ class HumanWritingCalibrationPlanner:
         self.validate()
 
     def validate(self) -> dict[str, Any]:
-        """Validate registry weights, source state, catalog breadth and profiles."""
+        """Validate registry weights, role permissions, catalog breadth and profiles."""
         datasets = self.registry.get("datasets")
         if not isinstance(datasets, list) or not datasets:
             raise CalibrationError("dataset registry must contain datasets")
@@ -54,6 +54,12 @@ class HumanWritingCalibrationPlanner:
             enabled = dataset.get("enabled") is True
             if enabled:
                 enabled_ids.add(dataset_id)
+            allowed_roles = dataset.get("allowed_roles")
+            if not isinstance(allowed_roles, list) or not set(allowed_roles) <= {
+                "writer",
+                "reviewer",
+            }:
+                raise CalibrationError(f"invalid allowed_roles for {dataset_id}")
             for role in ("writer", "reviewer"):
                 weight = dataset.get(f"{role}_weight")
                 if not isinstance(weight, (int, float)) or weight < 0:
@@ -61,6 +67,10 @@ class HumanWritingCalibrationPlanner:
                 if not enabled and weight != 0:
                     raise CalibrationError(
                         f"disabled dataset {dataset_id} must have zero {role} weight"
+                    )
+                if weight > 0 and role not in allowed_roles:
+                    raise CalibrationError(
+                        f"dataset {dataset_id} has {role} weight but role is not authorized"
                     )
         for role in ("writer", "reviewer"):
             total = sum(
@@ -90,8 +100,7 @@ class HumanWritingCalibrationPlanner:
             source_dataset = sample.get("source_dataset")
             if source_dataset not in enabled_ids:
                 raise CalibrationError(
-                    f"seed sample {sample_id} uses disabled or unknown dataset "
-                    f"{source_dataset}"
+                    f"seed sample {sample_id} uses disabled or unknown dataset {source_dataset}"
                 )
             kind = sample.get("kind")
             if not isinstance(kind, str):
@@ -105,8 +114,7 @@ class HumanWritingCalibrationPlanner:
         for kind, count in required.items():
             if counts.get(kind, 0) < count:
                 raise CalibrationError(
-                    f"seed catalog needs {count} disjoint {kind} samples; "
-                    f"found {counts.get(kind, 0)}"
+                    f"seed catalog needs {count} disjoint {kind} samples; found {counts.get(kind, 0)}"
                 )
 
         profiles = self.domain_profiles.get("profiles")
@@ -139,8 +147,8 @@ class HumanWritingCalibrationPlanner:
     def domain_profiles_sha256(self) -> str:
         return self._hash(self.domain_profiles)
 
-    def resolve_domain_profile(self, domain: str) -> dict[str, Any]:
-        """Resolve one deterministic domain profile from task/domain tokens."""
+    def resolve_domain_profiles(self, domain: str, *, max_profiles: int = 2) -> list[dict[str, Any]]:
+        """Resolve a deterministic primary profile plus one materially matching secondary."""
         tokens = self._tokens(domain)
         candidates: list[tuple[int, str, dict[str, Any]]] = []
         for profile in self.domain_profiles["profiles"]:
@@ -149,51 +157,57 @@ class HumanWritingCalibrationPlanner:
             match = len(tokens & {token.lower() for token in profile["match_tokens"]})
             if match:
                 candidates.append((-match, profile["id"], profile))
-        if candidates:
-            return sorted(candidates, key=lambda item: (item[0], item[1]))[0][2]
-        return next(
-            profile
-            for profile in self.domain_profiles["profiles"]
-            if profile["id"] == "general"
-        )
+        if not candidates:
+            return [
+                next(
+                    profile
+                    for profile in self.domain_profiles["profiles"]
+                    if profile["id"] == "general"
+                )
+            ]
+        ranked = sorted(candidates, key=lambda item: (item[0], item[1]))
+        top_match = -ranked[0][0]
+        threshold = max(1, (top_match + 1) // 2)
+        selected = [item[2] for item in ranked if -item[0] >= threshold]
+        return selected[:max_profiles]
+
+    def resolve_domain_profile(self, domain: str) -> dict[str, Any]:
+        """Backward-compatible primary-profile resolver."""
+        return self.resolve_domain_profiles(domain, max_profiles=1)[0]
 
     def build_pair(self, *, task_id: str, domain: str) -> dict[str, Any]:
         """Create disjoint writer/reviewer calibration packs for one task."""
         if not task_id.strip():
             raise CalibrationError("task_id must be non-empty")
         domain_tokens = self._tokens(domain)
-        profile = self.resolve_domain_profile(domain)
+        profiles = self.resolve_domain_profiles(domain)
         profile_tokens = {
             token.lower()
+            for profile in profiles
             for token in profile.get("match_tokens", [])
             if isinstance(token, str)
         }
         rank_tokens = domain_tokens | profile_tokens
         writer_samples = self._select_role_samples(
-            role="writer",
-            task_id=task_id,
-            domain_tokens=rank_tokens,
-            excluded=set(),
+            role="writer", task_id=task_id, domain_tokens=rank_tokens, excluded=set()
         )
         used = {sample["id"] for sample in writer_samples}
         reviewer_samples = self._select_role_samples(
-            role="reviewer",
-            task_id=task_id,
-            domain_tokens=rank_tokens,
-            excluded=used,
+            role="reviewer", task_id=task_id, domain_tokens=rank_tokens, excluded=used
         )
         reviewer_ids = {sample["id"] for sample in reviewer_samples}
         overlap = used & reviewer_ids
         if overlap:
             raise CalibrationError(f"writer/reviewer seed overlap: {sorted(overlap)}")
 
-        writer = self._pack("writer", task_id, domain, profile, writer_samples)
-        reviewer = self._pack("reviewer", task_id, domain, profile, reviewer_samples)
+        writer = self._pack("writer", task_id, domain, profiles, writer_samples)
+        reviewer = self._pack("reviewer", task_id, domain, profiles, reviewer_samples)
+        profile_ids = [profile["id"] for profile in profiles]
         pair_identity = {
             "schema_version": self.schema_version,
             "task_id": task_id,
             "domain": domain,
-            "domain_profile": profile["id"],
+            "domain_profiles": profile_ids,
             "registry_sha256": self.registry_sha256,
             "catalog_sha256": self.catalog_sha256,
             "domain_profiles_sha256": self.domain_profiles_sha256,
@@ -202,11 +216,9 @@ class HumanWritingCalibrationPlanner:
         }
         return {
             **pair_identity,
+            "domain_profile": profile_ids[0],
             "pair_id": "hwpair-" + self._hash(pair_identity)[:20],
-            "independence": {
-                "writer_reviewer_seed_overlap": [],
-                "status": "PASS",
-            },
+            "independence": {"writer_reviewer_seed_overlap": [], "status": "PASS"},
             "writer": writer,
             "reviewer": reviewer,
         }
@@ -216,7 +228,7 @@ class HumanWritingCalibrationPlanner:
         role: str,
         task_id: str,
         domain: str,
-        profile: dict[str, Any],
+        profiles: list[dict[str, Any]],
         samples: list[dict[str, Any]],
     ) -> dict[str, Any]:
         source_ids = [sample["id"] for sample in samples]
@@ -225,12 +237,13 @@ class HumanWritingCalibrationPlanner:
             "role": role,
             "task_id": task_id,
             "domain": domain,
-            "domain_profile": profile,
+            "domain_profile": profiles[0],
+            "domain_profiles": profiles,
             "registry_sha256": self.registry_sha256,
             "catalog_sha256": self.catalog_sha256,
             "domain_profiles_sha256": self.domain_profiles_sha256,
             "local_seed_sample_ids": source_ids,
-            "external_sampling": self._external_sampling(role, profile),
+            "external_sampling": self._external_sampling(role, profiles),
             "dataset_weights": self._weights(role),
             "directives": self._directives(role),
         }
@@ -259,10 +272,7 @@ class HumanWritingCalibrationPlanner:
             ranked = sorted(
                 candidates,
                 key=lambda sample: self._rank_key(
-                    sample,
-                    task_id=task_id,
-                    role=role,
-                    domain_tokens=domain_tokens,
+                    sample, task_id=task_id, role=role, domain_tokens=domain_tokens
                 ),
             )
             if len(ranked) < count:
@@ -288,20 +298,20 @@ class HumanWritingCalibrationPlanner:
             if isinstance(token, str)
         }
         overlap = len(domain_tokens & sample_domains)
-        digest = hashlib.sha256(
-            f"{task_id}\0{role}\0{sample['id']}".encode()
-        ).hexdigest()
+        digest = hashlib.sha256(f"{task_id}\0{role}\0{sample['id']}".encode()).hexdigest()
         return (-overlap, digest)
 
     def _weights(self, role: str) -> dict[str, float]:
         return {
             dataset["id"]: float(dataset[f"{role}_weight"])
             for dataset in self.registry["datasets"]
-            if dataset.get("enabled") is True and dataset[f"{role}_weight"] > 0
+            if dataset.get("enabled") is True
+            and role in dataset.get("allowed_roles", [])
+            and dataset[f"{role}_weight"] > 0
         }
 
     def _external_sampling(
-        self, role: str, profile: dict[str, Any]
+        self, role: str, profiles: list[dict[str, Any]]
     ) -> dict[str, Any]:
         target = self.registry["external_sample_targets"][role]
         eligible = [
@@ -315,17 +325,27 @@ class HumanWritingCalibrationPlanner:
             }
             for dataset in self.registry["datasets"]
             if dataset.get("enabled") is True
+            and role in dataset.get("allowed_roles", [])
             and dataset.get("content_mode") != "local_structural_catalog"
             and dataset[f"{role}_weight"] > 0
         ]
+        artifact_types = list(
+            dict.fromkeys(
+                artifact
+                for profile in profiles
+                for artifact in profile.get("artifact_types", [])
+            )
+        )
         return {
             "target": target,
-            "domain_profile": profile["id"],
-            "preferred_artifact_types": profile.get("artifact_types", []),
+            "domain_profile": profiles[0]["id"],
+            "domain_profiles": [profile["id"] for profile in profiles],
+            "preferred_artifact_types": artifact_types,
             "eligible_datasets": eligible,
             "required_record_fields": [
                 "dataset_id",
                 "sample_id_or_source_id",
+                "source_revision",
                 "domain_relevance",
                 "artifact_type",
                 "structural_or_preference_observation",

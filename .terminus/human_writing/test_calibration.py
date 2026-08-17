@@ -8,6 +8,7 @@ import tempfile
 import unittest
 
 from calibration import CalibrationError, HumanWritingCalibrationPlanner, sample_ids
+from validate_calibration import validate_effective_stage_contract
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -24,11 +25,27 @@ class HumanWritingCalibrationTests(unittest.TestCase):
         self.assertGreaterEqual(result["seed_sample_count"], 39)
         self.assertGreaterEqual(result["domain_profile_count"], 8)
 
+    def test_effective_a6_a7_contract_is_hardened(self) -> None:
+        result = validate_effective_stage_contract(ROOT)
+        self.assertTrue(result["a7_requires_validated_calibration"])
+        self.assertIn("CALIBRATION_READY", result["a6_status_values"])
+        self.assertNotIn("CALIBRATED", result["a6_status_values"])
+
     def test_pair_is_deterministic(self) -> None:
         planner = HumanWritingCalibrationPlanner(ROOT)
         first = planner.build_pair(task_id="demo-task", domain="kubernetes recovery")
         second = planner.build_pair(task_id="demo-task", domain="kubernetes recovery")
         self.assertEqual(first, second)
+
+    def test_multi_profile_blend_keeps_material_secondary_domain(self) -> None:
+        planner = HumanWritingCalibrationPlanner(ROOT)
+        pair = planner.build_pair(
+            task_id="recovery-task",
+            domain="kubernetes platform recovery availability incident",
+        )
+        self.assertEqual(pair["domain_profiles"][0], "sre_incident")
+        self.assertIn("platform_cloud", pair["domain_profiles"])
+        self.assertLessEqual(len(pair["domain_profiles"]), 2)
 
     def test_writer_and_reviewer_study_sets_are_disjoint(self) -> None:
         planner = HumanWritingCalibrationPlanner(ROOT)

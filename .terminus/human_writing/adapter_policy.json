@@ -1,5 +1,5 @@
 {
-  "schema_version": "1.0",
+  "schema_version": "1.1",
   "enabled": false,
   "mode": "future_reusable_adapter_only",
   "minimum_distinct_tasks": 30,
@@ -7,11 +7,16 @@
   "minimum_holdout_cases": 20,
   "minimum_blind_ab_calibrated_win_rate": 0.6,
   "requirement_completeness_regression_tolerance": 0,
+  "require_bound_preference_store": true,
+  "require_explicit_no_requirement_regression": true,
+  "disabled_status": "DISABLED",
   "separate_writer_reviewer_adapters": true,
   "human_approval_required": true,
   "notes": [
     "Do not fine-tune model weights per task.",
-    "Do not enable adapter training until readiness gates pass.",
+    "A disabled adapter policy can never report READY_FOR_HUMAN_APPROVAL.",
+    "Preference and holdout counts come from bound TerminusPreferenceStore records, not draft/final hash inequality.",
+    "Do not enable adapter training until all readiness gates pass and a human explicitly approves it.",
     "Exact prior task wording is never projected into task-time writer calibration.",
     "Any future adapter release must pass holdout evaluation and preserve 100% material requirement completeness."
   ]
