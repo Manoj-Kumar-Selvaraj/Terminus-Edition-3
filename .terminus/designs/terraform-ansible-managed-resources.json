@@ -1,331 +1,72 @@
 {
   "schema_version": "1.0",
   "task": "terraform-ansible-managed-resources",
-  "phase": "A2A_CLEAN_ARCHITECTURE",
-  "status": "COMPLETE_A3_PENDING",
+  "profile": "large_system_strict",
+  "task_kind": "software",
+  "phase": "A9_ASSEMBLY",
+  "status": "ASSEMBLED",
   "rule_context": {
-    "repository": "Manoj-Kumar-Selvaraj/Terminus-Edition-3",
     "base_commit": "fa2a409e86c4676bd3039df3e4e8339708454fad",
-    "profile": "large_system_strict",
     "category": "Software",
     "subcategory": "Systems",
-    "difficulty_target": "advanced",
-    "task_shape": "inherited_repair",
-    "boundary": "Architecture is defined independently of defects. Do not materialize a broken starter from this packet before A3 topology approval."
+    "difficulty_target": "advanced"
   },
-  "scenario_research": {
-    "candidates": [
-      {
-        "id": "WP1",
-        "name": "generic_ansible_playbook_resource",
-        "decision": "rejected",
-        "reason": "An execution-event abstraction gives weak Read and drift semantics and encourages replay-oriented behavior."
-      },
-      {
-        "id": "WP2",
-        "name": "ansible_backed_managed_os_resources",
-        "decision": "selected",
-        "reason": "A bounded managed-object provider gives real CRUD, drift reconciliation, stable identity, failure-state, idempotency, and Terraform state-lifecycle behavior."
-      },
-      {
-        "id": "WP3",
-        "name": "provider_defined_terraform_state_store",
-        "decision": "rejected",
-        "reason": "Provider-defined state storage is a separate concern and would distract from managed-resource lifecycle correctness."
-      },
-      {
-        "id": "WP4",
-        "name": "remote_multi_host_ansible_orchestrator",
-        "decision": "rejected",
-        "reason": "SSH, bastions, Vault, Galaxy, dynamic inventory, and fleet orchestration make transport integration the dominant difficulty and reduce determinism."
-      }
-    ],
-    "selected_work_package": "WP2"
-  },
-  "product_contract": {
-    "provider_name": "ansibleops",
-    "provider_source_for_examples": "local/ansibleops",
-    "execution_backend": "ansible-playbook",
-    "target_scope": "deterministic local Linux target",
-    "terraform_state_contract": "Terraform Core owns the physical state. Resource methods publish state only through Terraform Plugin Framework response-state APIs.",
-    "no_secondary_source_of_truth": true,
-    "ownership_rule": "One Terraform resource owns one external object key. Overlapping ownership of the same path, user, group, or cron name is outside the supported contract.",
-    "forbidden_semantic_substitutes": [
-      "null_resource",
-      "terraform_data used as an execution wrapper",
-      "local-exec provisioners",
-      "remote-exec provisioners",
-      "manual terraform.tfstate generation or editing",
-      "provider-owned durable state database"
-    ]
-  },
-  "dependencies": {
-    "language": "Go",
-    "go_runtime_target": "1.24",
-    "terraform_plugin_framework": "v1.16.1",
-    "terraform_cli": "v1.15.5",
-    "ansible_core": "pinned at image-build time",
-    "compatibility_note": "Use the Go 1.24-compatible Plugin Framework line to remain compatible with the repository's current canonical Go runtime."
-  },
-  "architecture": {
+  "architecture_contract": {
+    "provider": "ansibleops",
     "root": "/app/provider",
-    "entrypoints": [
-      "cmd/terraform-provider-ansibleops/main.go"
-    ],
-    "runtime_flow": [
-      "Terraform Core starts terraform-provider-ansibleops through the provider plugin protocol.",
-      "Provider registration exposes exactly ten ansibleops managed resources.",
-      "Create, Update, and Delete translate desired resource state into typed internal specifications.",
-      "Typed specifications are rendered as ephemeral Ansible tasks or playbooks.",
-      "The common runner invokes ansible-playbook using argv isolation and context-aware process control.",
-      "Successful mutations publish Terraform state; failed mutations return diagnostics without claiming an uncommitted transition.",
-      "Read uses native Linux observers to inspect actual target state and never invokes Ansible.",
-      "Observed state is normalized and written back to Terraform so normal plan and refresh can detect drift."
-    ],
-    "component_groups": {
-      "provider": [
-        "internal/provider/provider.go",
-        "internal/provider/config.go",
-        "internal/provider/metadata.go"
-      ],
-      "lifecycle": [
-        "internal/lifecycle/identity.go",
-        "internal/lifecycle/state.go",
-        "internal/lifecycle/create.go",
-        "internal/lifecycle/update.go",
-        "internal/lifecycle/delete.go"
-      ],
-      "ansible_execution": [
-        "internal/ansible/task.go",
-        "internal/ansible/playbook.go",
-        "internal/ansible/generator.go",
-        "internal/ansible/runner.go",
-        "internal/ansible/command.go",
-        "internal/ansible/result.go",
-        "internal/ansible/timeout.go",
-        "internal/ansible/cleanup.go",
-        "internal/ansible/redaction.go"
-      ],
-      "observation": [
-        "internal/observe/filesystem.go",
-        "internal/observe/content.go",
-        "internal/observe/identity.go",
-        "internal/observe/cron.go",
-        "internal/observe/normalize.go"
-      ],
-      "validation": [
-        "internal/validation/path.go",
-        "internal/validation/mode.go",
-        "internal/validation/identity.go",
-        "internal/validation/cron.go"
-      ],
-      "diagnostics": [
-        "internal/diagnostics/errors.go",
-        "internal/diagnostics/output.go"
-      ],
-      "resources": [
-        "internal/resources/file",
-        "internal/resources/directory",
-        "internal/resources/copy",
-        "internal/resources/template",
-        "internal/resources/line",
-        "internal/resources/block",
-        "internal/resources/symlink",
-        "internal/resources/user",
-        "internal/resources/group",
-        "internal/resources/cron"
-      ]
-    },
-    "state_ownership": {
-      "terraform_core": [
-        "physical Terraform state in verifier workspaces",
-        "prior state, proposed state, refresh state, dependency graph"
-      ],
-      "provider": [
-        "resource schema",
-        "stable external identity",
-        "state-transition decisions",
-        "normalization of observed values",
-        "diagnostics"
-      ],
-      "target_linux_os": [
-        "files, directories, and symlinks",
-        "rendered and copied content",
-        "managed lines and blocks",
-        "users and groups",
-        "crontab entries"
-      ],
-      "ephemeral_only": [
-        "generated Ansible playbooks",
-        "bounded execution output",
-        "temporary runner files"
-      ]
-    },
-    "docs_plan": [
-      "/app/provider/docs/provider-contract.md",
-      "/app/provider/docs/resource-reference.md",
-      "/app/provider/docs/lifecycle.md",
-      "/app/provider/examples/"
-    ]
+    "entrypoint": "cmd/terraform-provider-ansibleops/main.go",
+    "execution_backend": "ansible-playbook",
+    "state_authority": "Terraform Core owns durable state; provider lifecycle methods publish state only through Terraform Plugin Framework APIs.",
+    "observation_boundary": "Read uses native Linux observation and never invokes Ansible.",
+    "managed_resource_types": ["ansibleops_file","ansibleops_directory","ansibleops_copy","ansibleops_template","ansibleops_line","ansibleops_block","ansibleops_symlink","ansibleops_user","ansibleops_group","ansibleops_cron"],
+    "shared_subsystems": ["provider registration","lifecycle identity/state","Ansible generation","process execution/cleanup","native observation","validation/normalization"],
+    "scale_rationale": "Depth comes from ten differentiated lifecycles coupled through shared state, observation, normalization and process-control layers; generated/vendor/dead code does not count."
   },
-  "provider_schema": {
-    "inventory_path": {"type": "string", "optional": true, "default": "/app/provider/ansible/inventory.ini"},
-    "host": {"type": "string", "optional": true, "default": "localhost"},
-    "ansible_binary": {"type": "string", "optional": true, "default": "ansible-playbook"},
-    "timeout_seconds": {"type": "int64", "optional": true, "default": 30, "validation": "positive bounded duration"}
+  "topology_reference": ".terminus/designs/terraform-ansible-managed-resources-topology.json",
+  "root_cause_clusters": {
+    "RC1_STATE_IDENTITY": "Identity/applied state can derive from mutable plan data rather than stable external keys and the last successful transition.",
+    "RC2_REFRESH_RECONCILIATION": "Read can reuse stale state or mutation helpers instead of side-effect-free native observation.",
+    "RC3_UPDATE_TRANSACTION": "Update can advance state before Ansible mutation succeeds, breaking retry/recovery semantics.",
+    "RC4_DELETE_FAILURE": "Delete can complete too early or remove beyond the owned external object.",
+    "RC5_RUNNER_COMMAND": "Runner argv/process/timeout/cancellation/temp-file handling can violate safe terminal-outcome semantics.",
+    "RC6_NORMALIZATION_IDEMPOTENCY": "Desired and observed canonical forms can differ for unordered/defaulted values, creating false diffs."
   },
-  "resource_contracts": [
-    {
-      "name": "ansibleops_file",
-      "family": "filesystem",
-      "identity": "regular-file:<absolute path>",
-      "required": ["path"],
-      "optional": ["mode", "owner", "group"],
-      "create_update": "Ensure a regular file exists with requested managed metadata without repeated timestamp mutation.",
-      "read": "Inspect path existence, object type, mode, owner, and group.",
-      "delete": "Ensure the managed path is absent."
-    },
-    {
-      "name": "ansibleops_directory",
-      "family": "filesystem",
-      "identity": "directory:<absolute path>",
-      "required": ["path"],
-      "optional": ["mode", "owner", "group"],
-      "create_update": "Ensure a directory exists with requested managed metadata.",
-      "read": "Inspect path type, mode, owner, and group.",
-      "delete": "Ensure the managed directory path is absent."
-    },
-    {
-      "name": "ansibleops_copy",
-      "family": "content",
-      "identity": "copy:<destination absolute path>",
-      "required": ["source", "source_digest", "destination"],
-      "optional": ["mode", "owner", "group"],
-      "create_update": "Copy source content to destination; source_digest makes source-content changes explicit to Terraform planning.",
-      "read": "Observe destination type, metadata, and SHA-256 content digest.",
-      "delete": "Ensure destination is absent."
-    },
-    {
-      "name": "ansibleops_template",
-      "family": "content",
-      "identity": "template:<destination absolute path>",
-      "required": ["source", "source_digest", "destination"],
-      "optional": ["vars", "mode", "owner", "group"],
-      "create_update": "Render source template using deterministic variables and install destination.",
-      "read": "Observe destination type, metadata, and rendered content digest.",
-      "delete": "Ensure destination is absent.",
-      "normalization": "vars is semantically unordered and must be canonicalized deterministically."
-    },
-    {
-      "name": "ansibleops_line",
-      "family": "content",
-      "identity": "line:<absolute path>:<stable name>",
-      "required": ["name", "path", "line"],
-      "optional": ["regexp", "insertafter", "create"],
-      "create_update": "Manage one named line contract without duplicate insertion.",
-      "read": "Inspect the file and report whether the managed line contract is satisfied.",
-      "delete": "Remove only the managed line matching the resource contract."
-    },
-    {
-      "name": "ansibleops_block",
-      "family": "content",
-      "identity": "block:<absolute path>:<stable name>",
-      "required": ["name", "path", "block"],
-      "optional": ["marker", "create"],
-      "create_update": "Manage one marker-delimited named block.",
-      "read": "Parse marker boundaries and compare the current managed block.",
-      "delete": "Remove only the named managed block.",
-      "default_marker": "# {mark} ANSIBLEOPS <name>"
-    },
-    {
-      "name": "ansibleops_symlink",
-      "family": "filesystem",
-      "identity": "symlink:<absolute link path>",
-      "required": ["path", "target"],
-      "optional": ["force"],
-      "create_update": "Ensure symlink path points to requested target.",
-      "read": "Use lstat and readlink; distinguish missing, symlink, and wrong object type.",
-      "delete": "Remove the link path without deleting the link target."
-    },
-    {
-      "name": "ansibleops_user",
-      "family": "identity",
-      "identity": "user:<name>",
-      "required": ["name"],
-      "optional": ["uid", "shell", "home", "groups", "remove_home_on_destroy"],
-      "create_update": "Ensure local user attributes and supplementary groups match requested managed values.",
-      "read": "Observe passwd and group databases using native OS APIs or commands.",
-      "delete": "Ensure user is absent; home removal follows remove_home_on_destroy only.",
-      "defaults": {"remove_home_on_destroy": false}
-    },
-    {
-      "name": "ansibleops_group",
-      "family": "identity",
-      "identity": "group:<name>",
-      "required": ["name"],
-      "optional": ["gid"],
-      "create_update": "Ensure local group exists with requested managed gid.",
-      "read": "Observe the local group database.",
-      "delete": "Ensure group is absent."
-    },
-    {
-      "name": "ansibleops_cron",
-      "family": "scheduled",
-      "identity": "cron:<user>:<stable name>",
-      "required": ["name", "job"],
-      "optional": ["user", "minute", "hour", "day", "month", "weekday"],
-      "create_update": "Manage one named crontab entry through Ansible.",
-      "read": "Inspect the user's crontab and parse the named managed entry without requiring a running cron daemon.",
-      "delete": "Remove only the named managed entry.",
-      "defaults": {"user": "root", "minute": "*", "hour": "*", "day": "*", "month": "*", "weekday": "*"}
-    }
+  "defects": [
+    {"id":"D01","root_cause":"RC1_STATE_IDENTITY","component":"internal/lifecycle/state.go","observable_failure":"Successful Create can publish an empty or missing stable id.","partial_fix_trap":"A one-resource Create patch leaves shared identity publication incorrect."},
+    {"id":"D02","root_cause":"RC1_STATE_IDENTITY","component":"internal/lifecycle/identity.go","observable_failure":"Mutable directory mode or symlink target can change resource identity.","partial_fix_trap":"Special-casing one attribute leaves other identities plan-derived."},
+    {"id":"D03","root_cause":"RC1_STATE_IDENTITY","component":"internal/lifecycle/state.go","observable_failure":"Observed values can disappear after provider restart because they depend on transient process state.","partial_fix_trap":"Persisting one field leaves restart-safe publication incomplete."},
+    {"id":"D04","root_cause":"RC1_STATE_IDENTITY","component":"internal/resources/copy/resource.go","observable_failure":"Copy destination digest is not consistently reproducible in a fresh provider process.","partial_fix_trap":"Copy-only repair leaves shared restart identity defects."},
+    {"id":"D05","root_cause":"RC1_STATE_IDENTITY","component":"internal/lifecycle/identity.go","observable_failure":"An unchanged managed object can churn identity/state in a fresh Terraform process.","partial_fix_trap":"Suppressing the diff hides rather than repairs stable identity."},
+    {"id":"D06","root_cause":"RC2_REFRESH_RECONCILIATION","component":"internal/lifecycle/read.go","observable_failure":"Externally deleting a managed directory is not reliably detected by refresh.","partial_fix_trap":"Directory-only existence checks leave sibling Read paths wrong."},
+    {"id":"D07","root_cause":"RC2_REFRESH_RECONCILIATION","component":"internal/observe/filesystem.go","observable_failure":"External mode drift can be echoed as prior state instead of native target state.","partial_fix_trap":"Plan normalization without observation still misses drift."},
+    {"id":"D08","root_cause":"RC2_REFRESH_RECONCILIATION","component":"internal/observe/filesystem.go","observable_failure":"Out-of-band symlink retargeting is not reliably reported as drift.","partial_fix_trap":"Existence checks without readlink semantics accept wrong state."},
+    {"id":"D09","root_cause":"RC2_REFRESH_RECONCILIATION","component":"internal/observe/content.go","observable_failure":"Out-of-band copy destination changes are not reflected in refreshed content state.","partial_fix_trap":"Source-digest planning alone cannot detect destination drift."},
+    {"id":"D10","root_cause":"RC2_REFRESH_RECONCILIATION","component":"internal/observe/identity.go","observable_failure":"Out-of-band user shell or supplementary-group changes are not reliably detected.","partial_fix_trap":"Passwd-only observation leaves group drift incomplete."},
+    {"id":"D11","root_cause":"RC2_REFRESH_RECONCILIATION","component":"internal/lifecycle/read.go","observable_failure":"Clean plan or refresh can invoke ansible-playbook.","partial_fix_trap":"Fixing one resource Read leaves the shared observation boundary violated."},
+    {"id":"D12","root_cause":"RC3_UPDATE_TRANSACTION","component":"internal/lifecycle/update.go","observable_failure":"Update can publish planned values before Ansible succeeds.","partial_fix_trap":"Moving one State.Set leaves other transition ordering unsafe."},
+    {"id":"D13","root_cause":"RC3_UPDATE_TRANSACTION","component":"internal/lifecycle/update.go","observable_failure":"Failed Update can leave Terraform state claiming the new desired configuration.","partial_fix_trap":"Returning an error after state advancement still corrupts retry state."},
+    {"id":"D14","root_cause":"RC3_UPDATE_TRANSACTION","component":"internal/lifecycle/update.go","observable_failure":"Retry after failed Update can be skipped because state was advanced prematurely.","partial_fix_trap":"Unconditional replay does not restore transactional semantics."},
+    {"id":"D15","root_cause":"RC3_UPDATE_TRANSACTION","component":"internal/resources/copy/resource.go","observable_failure":"Changing source_digest does not reliably perform one copy update and publish the resulting digest.","partial_fix_trap":"Digest special-casing leaves shared success ordering broken."},
+    {"id":"D16","root_cause":"RC3_UPDATE_TRANSACTION","component":"internal/resources/line/resource.go","observable_failure":"Changing a managed line can append or replay instead of replacing exactly once.","partial_fix_trap":"Post-mutation deduplication does not repair lifecycle decisions."},
+    {"id":"D17","root_cause":"RC4_DELETE_FAILURE","component":"internal/lifecycle/delete.go","observable_failure":"Delete can clear logical management before teardown success is known.","partial_fix_trap":"One destroy guard leaves the common delete transaction unsafe."},
+    {"id":"D18","root_cause":"RC4_DELETE_FAILURE","component":"internal/lifecycle/delete.go","observable_failure":"Forced Ansible deletion failure can still appear as completed destroy.","partial_fix_trap":"Retry cannot recover management after state is discarded."},
+    {"id":"D19","root_cause":"RC4_DELETE_FAILURE","component":"internal/resources/block/resource.go","observable_failure":"Deleting one named line, block or cron entry can remove a sibling-managed entry.","partial_fix_trap":"Fixing one backing store leaves sibling ownership unsafe elsewhere."},
+    {"id":"D20","root_cause":"RC4_DELETE_FAILURE","component":"internal/resources/user/resource.go","observable_failure":"User destroy can violate remove_home_on_destroy preservation/removal policy.","partial_fix_trap":"Always remove or always preserve fixes one branch and breaks the other."},
+    {"id":"D21","root_cause":"RC5_RUNNER_COMMAND","component":"internal/ansible/command.go","observable_failure":"Shell metacharacters in managed data or paths can be interpreted by command construction.","partial_fix_trap":"Character escaping is not a substitute for structural argv/data boundaries."},
+    {"id":"D22","root_cause":"RC5_RUNNER_COMMAND","component":"internal/ansible/command.go","observable_failure":"Valid paths containing spaces can be split incorrectly during Ansible execution.","partial_fix_trap":"Whitespace quoting alone leaves other runner failures."},
+    {"id":"D23","root_cause":"RC5_RUNNER_COMMAND","component":"internal/ansible/runner.go","observable_failure":"Non-zero ansible-playbook exit can be treated as lifecycle success.","partial_fix_trap":"Exit checks after state publication remain transactionally wrong."},
+    {"id":"D24","root_cause":"RC5_RUNNER_COMMAND","component":"internal/ansible/timeout.go","observable_failure":"Cancellation or timeout may not terminate Ansible and surface failure reliably.","partial_fix_trap":"A timer without child termination can leak work and state."},
+    {"id":"D25","root_cause":"RC5_RUNNER_COMMAND","component":"internal/ansible/cleanup.go","observable_failure":"Temporary playbooks can remain after failure, timeout or cancellation.","partial_fix_trap":"Success-only cleanup leaves terminal failure paths leaking."},
+    {"id":"D26","root_cause":"RC6_NORMALIZATION_IDEMPOTENCY","component":"internal/ansible/generator.go","observable_failure":"Equivalent template vars in different map orders can cause unstable payloads or false updates.","partial_fix_trap":"Template sorting alone leaves other canonicalization defects."},
+    {"id":"D27","root_cause":"RC6_NORMALIZATION_IDEMPOTENCY","component":"internal/observe/normalize.go","observable_failure":"Equivalent mode or owner/group representations can compare unequal and cause perpetual drift.","partial_fix_trap":"One observer formatter leaves desired/observed representations inconsistent."},
+    {"id":"D28","root_cause":"RC6_NORMALIZATION_IDEMPOTENCY","component":"internal/observe/cron.go","observable_failure":"Omitted cron schedule fields and explicit wildcard defaults can normalize differently.","partial_fix_trap":"Config defaulting alone leaves observed cron state non-canonical."}
   ],
-  "cross_resource_invariants": [
-    "All ten resource types are registered as real Terraform managed resources.",
-    "Stable identity derives only from the external object key, never from mutable desired values.",
-    "Read is side-effect free and never invokes ansible-playbook.",
-    "Create and Update publish new Terraform state only after successful Ansible completion.",
-    "Failed Update preserves the last successfully applied state.",
-    "Delete completes only after successful teardown or verified already-absent state.",
-    "Clean plan and refresh do not execute Ansible.",
-    "Ansible commands execute without shell interpolation.",
-    "Paths containing spaces and shell metacharacters are passed as literal arguments or data.",
-    "Context cancellation, timeout, and non-zero Ansible exit are failures.",
-    "Generated playbooks are cleaned up on success, failure, timeout, and cancellation.",
-    "Map-like configuration is normalized deterministically.",
-    "Observed modes, ownership, identifiers, and schedule values use stable canonical representations.",
-    "Diagnostics are bounded and full command output is not persisted in Terraform state."
-  ],
-  "production_characteristics": [
-    "Ten differentiated Terraform resource contracts sharing four backend families.",
-    "Real Terraform provider server entrypoint and Plugin Framework lifecycle integration.",
-    "Separate mutation and observation paths so refresh cannot replay configuration management.",
-    "Persistent external reality in the Linux filesystem, passwd/group databases, and crontab.",
-    "Restart-safe behavior because durable Terraform state is owned by Terraform Core rather than process memory.",
-    "Shared validation, normalization, diagnostics, task generation, execution, timeout, and cleanup layers.",
-    "Representative examples and solver-visible product and lifecycle documentation."
-  ],
-  "strict_scale": {
-    "target_substantive_reachable_loc": "3500-5000",
-    "scale_rationale": "Scale comes from ten real schemas and observers plus shared lifecycle, execution, normalization, validation, and diagnostics. Boilerplate duplication, generated code, vendored dependencies, dead modules, and prompt-extension padding do not count.",
-    "deep_verification_resources": ["ansibleops_directory", "ansibleops_copy", "ansibleops_symlink", "ansibleops_user", "ansibleops_line"],
-    "representative_verification_resources": ["ansibleops_file", "ansibleops_template", "ansibleops_block", "ansibleops_group", "ansibleops_cron"],
-    "f2p_behavioral_test_target": "25-30 non-duplicative tests arising from shared lifecycle invariants and representative resource semantics"
-  },
-  "excluded_scope": [
-    "SSH bastions and remote fleet orchestration",
-    "Ansible Vault",
-    "Ansible Galaxy resolution at runtime",
-    "dynamic inventories",
-    "Windows targets",
-    "become/sudo policy engine",
-    "arbitrary user-supplied playbook resource",
-    "Terraform import",
-    "provider-defined Terraform state stores or backends",
-    "multi-host convergence semantics"
-  ],
-  "next_gate": {
-    "phase": "A3_DEFECT_TOPOLOGY",
-    "requirement": "Define 4-8 root-cause clusters and 20-30 causally related observable manifestations against this clean architecture. Do not materialize the broken starter before independent approval of that topology."
-  }
+  "causal_edges": [
+    {"from":"D01","to":"D05"},{"from":"D02","to":"D05"},{"from":"D03","to":"D05"},{"from":"D04","to":"D05"},
+    {"from":"D06","to":"D11"},{"from":"D07","to":"D11"},{"from":"D08","to":"D11"},{"from":"D09","to":"D15"},{"from":"D10","to":"D11"},{"from":"D11","to":"D05"},
+    {"from":"D12","to":"D13"},{"from":"D13","to":"D14"},{"from":"D14","to":"D15"},{"from":"D15","to":"D04"},{"from":"D16","to":"D11"},
+    {"from":"D17","to":"D18"},{"from":"D18","to":"D05"},{"from":"D19","to":"D06"},{"from":"D20","to":"D18"},
+    {"from":"D21","to":"D22"},{"from":"D21","to":"D23"},{"from":"D23","to":"D13"},{"from":"D24","to":"D13"},{"from":"D24","to":"D25"},
+    {"from":"D26","to":"D15"},{"from":"D26","to":"D11"},{"from":"D27","to":"D11"},{"from":"D28","to":"D11"}
+  ]
 }
