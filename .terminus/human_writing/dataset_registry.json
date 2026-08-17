@@ -1,0 +1,94 @@
+{
+  "schema_version": "1.0",
+  "policy_version": "1.0",
+  "selection_model": "retrieval_calibration_not_per_task_weight_training",
+  "datasets": [
+    {
+      "id": "terminus-human-engineering",
+      "name": "Terminus Human Engineering Source Corpus",
+      "source": ".terminus/reviewers/HUMAN_ENGINEERING_SOURCE_CORPUS.md",
+      "license": "source-specific public metadata and structural paraphrase; no long source bodies vendored",
+      "enabled": true,
+      "human_authored_signal": "HIGH",
+      "purpose": ["human_information_selection", "engineering_ticket_structure", "domain_vocabulary"],
+      "writer_weight": 0.30,
+      "reviewer_weight": 0.30,
+      "content_mode": "local_structural_catalog"
+    },
+    {
+      "id": "h4-stack-exchange-preferences",
+      "name": "HuggingFaceH4/stack-exchange-preferences",
+      "source": "https://huggingface.co/datasets/HuggingFaceH4/stack-exchange-preferences",
+      "license": "CC-BY-SA-4.0",
+      "enabled": true,
+      "human_authored_signal": "HIGH",
+      "purpose": ["human_technical_questions", "human_preference", "technical_explanation"],
+      "writer_weight": 0.50,
+      "reviewer_weight": 0.35,
+      "content_mode": "external_retrieval_or_local_cache",
+      "provenance_requirements": ["source_question_id", "source_site", "author_attribution_when_text_is_retained"],
+      "notes": "Primary external human technical corpus. Do not copy distinctive wording into task instructions."
+    },
+    {
+      "id": "tulu3-constraint-preferences",
+      "name": "allenai/tulu-3-pref-personas-instruction-following",
+      "source": "https://huggingface.co/datasets/allenai/tulu-3-pref-personas-instruction-following",
+      "license": "ODC-BY",
+      "enabled": true,
+      "human_authored_signal": "SYNTHETIC_PREFERENCE",
+      "purpose": ["constraint_preservation", "chosen_rejected_comparison", "requirement_completeness"],
+      "writer_weight": 0.15,
+      "reviewer_weight": 0.25,
+      "content_mode": "external_retrieval_or_local_cache",
+      "notes": "Use for preserving constraints while rewriting. It is not a human-voice source."
+    },
+    {
+      "id": "human-like-dpo",
+      "name": "HumanLLMs/Human-Like-DPO-Dataset",
+      "source": "https://huggingface.co/datasets/HumanLLMs/Human-Like-DPO-Dataset",
+      "license": "llama3",
+      "enabled": true,
+      "human_authored_signal": "SYNTHETIC_STYLE_CONTRAST",
+      "purpose": ["anti_ai_template", "mechanical_disclaimer_detection", "conversational_overcorrection_detection"],
+      "writer_weight": 0.05,
+      "reviewer_weight": 0.10,
+      "content_mode": "external_retrieval_or_local_cache",
+      "notes": "Low-weight negative/contrast source only. Never imitate its casual persona, emoji, invented experience, or personal-claim style."
+    },
+    {
+      "id": "github-human-codereview",
+      "name": "ronantakizawa/github-codereview",
+      "source": "https://huggingface.co/datasets/ronantakizawa/github-codereview",
+      "license": "other",
+      "enabled": false,
+      "human_authored_signal": "HIGH",
+      "purpose": ["reviewer_comment_style", "technical_review_specificity"],
+      "writer_weight": 0.0,
+      "reviewer_weight": 0.0,
+      "content_mode": "disabled_pending_license_audit",
+      "disabled_reason": "Dataset card currently reports license=other. Enable only after a repository-level provenance/license audit."
+    }
+  ],
+  "external_sample_targets": {
+    "writer": {
+      "total": 12,
+      "minimum_primary_human": 6,
+      "minimum_constraint_pairs": 2,
+      "maximum_anti_template": 1
+    },
+    "reviewer": {
+      "total": 12,
+      "minimum_primary_human": 5,
+      "minimum_constraint_pairs": 3,
+      "maximum_anti_template": 2
+    }
+  },
+  "invariants": [
+    "writer and reviewer raw/sample IDs must be disjoint for the same task",
+    "requirement completeness outranks stylistic naturalness",
+    "human-like-dpo is contrast evidence, never a target voice",
+    "disabled datasets cannot contribute samples or weight",
+    "raw external dataset text is not committed into task packages",
+    "distinctive source wording must not be copied into solver-visible instructions"
+  ]
+}
