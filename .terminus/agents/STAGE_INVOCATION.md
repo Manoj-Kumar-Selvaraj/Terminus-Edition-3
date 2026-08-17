@@ -31,7 +31,7 @@ Every invocation records the stage ID, canonical executable role, owner/class, e
 
 Task ID/task commit are a pair. For a **durable** lifecycle execution, the controller reserves the task ID and binds the input task commit before `RULE_RESOLUTION`; taskless packets are preview-only and cannot become durable execution records. The invocation task commit is the input snapshot. A producer/fixer that changes the task later reports the committed output snapshot in the result envelope.
 
-The builder verifies referenced commits and refuses to label the loaded machine contracts as another control-plane commit.
+The builder verifies referenced commits and refuses to label the loaded machine contracts as another control-plane commit. Any machine-readable overlay that changes the effective stage contract, including `.terminus/agents/human_writing_stage_overlay.json`, is part of that commit-bound snapshot and must match the declared `control_plane_commit` exactly.
 
 ## Execution authority versus retrieval audience
 
