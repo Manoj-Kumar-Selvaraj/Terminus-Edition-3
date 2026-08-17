@@ -71,6 +71,70 @@ void TransactionTable::advance_next_id(std::uint64_t minimum_next_id) {
     next_id_ = std::max(next_id_, minimum_next_id);
 }
 
+TransactionAudit TransactionTable::audit(std::uint64_t committed_sequence) const {
+    TransactionAudit audit;
+    bool first = true;
+
+    if (next_id_ == 0) {
+        throw std::runtime_error("transaction integrity: next id is zero");
+    }
+
+    for (const auto& [id, transaction] : active_) {
+        if (id == 0 || transaction.id == 0 || id != transaction.id) {
+            throw std::runtime_error("transaction integrity: active id mismatch");
+        }
+        if (id >= next_id_) {
+            throw std::runtime_error("transaction integrity: active id is not below next id");
+        }
+        if (transaction.snapshot > committed_sequence) {
+            throw std::runtime_error("transaction integrity: snapshot is newer than committed state");
+        }
+
+        ++audit.active_transactions;
+        audit.highest_transaction_id = std::max(audit.highest_transaction_id, id);
+        if (first || transaction.snapshot < audit.oldest_snapshot) {
+            audit.oldest_snapshot = transaction.snapshot;
+        }
+        if (first || transaction.snapshot > audit.newest_snapshot) {
+            audit.newest_snapshot = transaction.snapshot;
+        }
+        first = false;
+
+        audit.max_write_set_size = std::max(audit.max_write_set_size, transaction.writes.size());
+        if (!transaction.writes.empty()) {
+            ++audit.transactions_with_writes;
+        }
+        for (const auto& [key, value] : transaction.writes) {
+            if (key.size() > kMaxKeyBytes) {
+                throw std::runtime_error("transaction integrity: pending key exceeds configured limit");
+            }
+            ++audit.pending_mutations;
+            if (value.has_value()) {
+                if (value->size() > kMaxValueBytes) {
+                    throw std::runtime_error("transaction integrity: pending value exceeds configured limit");
+                }
+                ++audit.pending_puts;
+            } else {
+                ++audit.pending_deletes;
+            }
+        }
+    }
+
+    if (audit.pending_puts + audit.pending_deletes != audit.pending_mutations) {
+        throw std::runtime_error("transaction integrity: mutation accounting mismatch");
+    }
+    if (audit.transactions_with_writes > audit.active_transactions) {
+        throw std::runtime_error("transaction integrity: write-set accounting mismatch");
+    }
+    if (audit.max_write_set_size > audit.pending_mutations && audit.pending_mutations != 0) {
+        throw std::runtime_error("transaction integrity: invalid maximum write-set size");
+    }
+    if (audit.active_transactions != active_.size()) {
+        throw std::runtime_error("transaction integrity: active transaction accounting mismatch");
+    }
+    return audit;
+}
+
 bool key_has_prefix(
     const std::string& key,
     const std::string& prefix) noexcept {
