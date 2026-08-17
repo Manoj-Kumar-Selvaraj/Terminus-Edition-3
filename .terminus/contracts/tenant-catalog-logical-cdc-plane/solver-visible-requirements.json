@@ -1,0 +1,82 @@
+{
+  "contract_version": "1.0",
+  "task_id": "tenant-catalog-logical-cdc-plane",
+  "engineering_objective": "Repair the inherited Go catalog plane so snapshot isolation, commit-time constraints, secondary indexes, WAL-decoded logical CDC, LSN/epoch-fenced replica apply, and checkpoint redo agree after the bounce.",
+  "affected_system_location": "/app/catalog",
+  "required_end_state": "Operator workflows through /app/catalog/bin/catalogctl satisfy the binding catalog contract for visibility, commit durability, constraints, indexes, decode, apply, recover, CLI usage errors, and health/apply/rejects/cdc report schemas while leaving the warehouse dump untouched.",
+  "functional_requirements": [
+    "Drive all operator work through /app/catalog/bin/catalogctl against the Go catalog plane and WAL protocol.",
+    "Unknown flags or unknown commands exit 2 before any WAL, heap, index, replica, or slot mutation.",
+    "commit requires --input; missing --input exits 2 without opening a transaction.",
+    "--reset-output may clear /app/catalog/out only and must not truncate WAL, heap, indexes, checkpoint, replica, slot, or warehouse.",
+    "Snapshot isolation, commit-after-WAL heap/index install, CDC decode from committed WAL, LSN/epoch-fenced FK-ordered apply, and checkpoint redo of committed records follow /app/catalog/docs/catalog-contract.md.",
+    "Constraint failures fail closed with rejects.jsonl and WAL ABORT without heap/index install.",
+    "Secondary indexes rebuild from committed-visible heap after successful COMMIT and after recover.",
+    "decode emits committed WAL mutations only, in WAL LSN order, with update before/after images when present.",
+    "apply rejects a whole batch on epoch mismatch without advancing confirmed_lsn; skips already-confirmed LSNs; applies remaining records in FK order within a txn.",
+    "recover restores from checkpoint, redos only committed WAL beyond checkpoint.lsn, does not bump replica epoch, and rebuilds indexes.",
+    "inspect and empty-check rewrite /app/catalog/out/health.json from observed state and must not recover, decode-apply, bump epoch, or append WAL.",
+    "Successful operator commands rewrite health.json with the contracted fields and semantics."
+  ],
+  "preservation_requirements": [
+    "Keep the existing Go catalog plane; do not move catalog logic into another language or abandon the WAL protocol.",
+    "Leave /app/catalog/warehouse untouched."
+  ],
+  "compatibility_requirements": [
+    "Knobs remain in /app/catalog/config/catalog.json.",
+    "Binding contract remains /app/catalog/docs/catalog-contract.md."
+  ],
+  "safety_requirements": [
+    "Usage errors exit 2 without durable mutation of WAL/heap/indexes/replica/slot.",
+    "Stale-epoch CDC batches apply nothing and do not advance confirmed_lsn.",
+    "Uncommitted WAL records are not installed by recover and are not emitted by decode."
+  ],
+  "referenced_docs": [
+    "/app/catalog/docs/catalog-contract.md",
+    "/app/catalog/notes/oncall.md",
+    "/app/catalog/logs/bounce.log",
+    "/app/catalog/config/catalog.json"
+  ],
+  "required_outputs": [
+    {
+      "path": "/app/catalog/out/health.json",
+      "notes": "Contracted health schema after successful operator commands."
+    },
+    {
+      "path": "/app/catalog/out/cdc.jsonl",
+      "notes": "CDC decode output; committed WAL mutations only."
+    },
+    {
+      "path": "/app/catalog/out/apply-report.json",
+      "notes": "applied, skipped, rejected, confirmed_lsn, epoch integers."
+    },
+    {
+      "path": "/app/catalog/out/rejects.jsonl",
+      "notes": "Constraint reject objects on failed commits."
+    },
+    {
+      "path": "/app/catalog/data/indexes.json",
+      "notes": "sku_code and offer_code maps with tenant_id\\\\0code keys."
+    },
+    {
+      "path": "/app/catalog/data/checkpoint.json",
+      "notes": "Checkpoint with durable lsn and committed heap identity."
+    },
+    {
+      "path": "/app/catalog/data/replica_slot.json",
+      "notes": "epoch and confirmed_lsn fencing state."
+    }
+  ],
+  "current_state_claims": [
+    "After the bounce, snapshot reads, constraints, indexes, WAL-decoded CDC, replica apply, and checkpoint redo disagree even though quiet commits still succeed.",
+    "Shift notes and bounce log remain under /app/catalog/notes and /app/catalog/logs."
+  ],
+  "current_state_evidence": [
+    "/app/catalog/notes/oncall.md",
+    "/app/catalog/logs/bounce.log"
+  ],
+  "source_task_commit": "0000000000000000000000000000000000000000",
+  "control_plane_commit": "458d047c28c9ac65373147bbe56f2b1b013dbc49",
+  "private_sources_excluded": true,
+  "requirement_contract_hash": "sha256:239d7e7cbac2642cd6a3dd707f7160d474838c21c42379cd134a87dae7d804f0"
+}

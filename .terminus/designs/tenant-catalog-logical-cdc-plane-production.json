@@ -1,0 +1,55 @@
+{
+  "schema_version": "1.0",
+  "task": "tenant-catalog-logical-cdc-plane",
+  "production_authenticity": {
+    "incident_evidence": [
+      "environment/catalog/notes/oncall.md",
+      "environment/catalog/logs/bounce.log"
+    ],
+    "instruction_evidence_paths": [
+      "/app/catalog/notes/oncall.md",
+      "/app/catalog/logs"
+    ],
+    "stateful_dataset": {
+      "schema": "environment/catalog/sql/schema.sql",
+      "seed": "environment/catalog/sql/seed.sql",
+      "primary_table": "row_version",
+      "min_records": 12000,
+      "max_records": 12000,
+      "variance_queries": {
+        "tenants": {
+          "sql": "SELECT COUNT(DISTINCT json_extract(payload, '$.tenant_id')) FROM row_version WHERE table_name = 'tenant'",
+          "min": 40
+        },
+        "skus": {
+          "sql": "SELECT COUNT(*) FROM row_version WHERE table_name = 'sku' AND xmax IS NULL AND committed = 1",
+          "min": 800
+        },
+        "offers": {
+          "sql": "SELECT COUNT(*) FROM row_version WHERE table_name = 'offer' AND xmax IS NULL AND committed = 1",
+          "min": 6400
+        },
+        "holds": {
+          "sql": "SELECT COUNT(*) FROM row_version WHERE table_name = 'hold' AND xmax IS NULL AND committed = 1",
+          "min": 3200
+        },
+        "regions": {
+          "sql": "SELECT COUNT(DISTINCT region) FROM tenant_meta",
+          "min": 4
+        },
+        "plans": {
+          "sql": "SELECT COUNT(DISTINCT plan) FROM tenant_meta",
+          "min": 3
+        },
+        "categories": {
+          "sql": "SELECT COUNT(DISTINCT category) FROM sku_meta",
+          "min": 5
+        },
+        "txns": {
+          "sql": "SELECT COUNT(DISTINCT xmin) FROM row_version",
+          "min": 10000
+        }
+      }
+    }
+  }
+}
