@@ -78,6 +78,19 @@ def test_arbitrary_binary_key_and_value_round_trip(tmp_path: Path) -> None:
         assert restarted.command(f"ROLLBACK {tx_id}") == "OK"
 
 
+def test_committed_hex_output_is_canonical(tmp_path: Path) -> None:
+    """Uppercase hexadecimal input is accepted and committed GET/SCAN output is lowercase without relying on a local scan overlay."""
+    data_dir = tmp_path / "db"
+    with Session(data_dir) as session:
+        tx_id = session.begin()
+        assert session.command(f"PUT {tx_id} A0FF CAFE") == "OK"
+        assert session.commit(tx_id) == 1
+        reader = session.begin()
+        assert session.command(f"GET {reader} A0FF") == "VALUE cafe"
+        assert session.command(f"SCAN {reader} A0") == "ROWS 1 a0ff=cafe"
+        assert session.command(f"ROLLBACK {reader}") == "OK"
+
+
 def test_snapshot_bad_magic_is_fatal(tmp_path: Path) -> None:
     """A published snapshot with invalid magic is rejected rather than interpreted as another format."""
     data_dir = tmp_path / "db"
