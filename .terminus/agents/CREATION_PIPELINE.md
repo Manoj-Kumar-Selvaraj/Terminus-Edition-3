@@ -46,10 +46,12 @@ Operational/stateful tasks also satisfy `.terminus/agents/PRODUCTION_AUTHENTICIT
 
 Before `FROZEN_CANDIDATE`:
 - the creation-rule context is current;
+- when the task asserts inherited current-state or incident facts, build and validate the solver-visible **production evidence surface**; when no such facts are asserted, record the controller-owned not-applicable rationale instead of fabricating evidence;
 - solver-visible current-state claims are supported by legitimate evidence when such claims are made;
 - desired functional requirements are not disguised as incident evidence;
-- data-backed strict tasks normally start with **10,000–20,000** deterministic, varied primary business records;
+- data-backed strict tasks normally start with **10,000–20,000** deterministic, varied primary business records, unless the controller records a policy-allowed domain-specific exemption;
 - major business modules contain substantive reachable domain logic;
+- reject **thin business logic**, copied templates, dead/unreachable scale and quota-driven module/resource/test inflation;
 - module/resource/test scale is structurally necessary rather than quota-driven;
 - normal, edge, boundary, negative and failure-path behavior is sufficiently represented;
 - `.terminus/validate_runtime_authenticity.py <task>` passes.

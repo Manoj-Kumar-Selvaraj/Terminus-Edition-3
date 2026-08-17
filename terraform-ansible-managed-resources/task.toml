@@ -1,0 +1,30 @@
+version = "2.0"
+name = "terraform-ansible-managed-resources"
+category = "Software"
+subcategory = "Systems"
+tags = ["terraform", "ansible", "linux", "provider", "state-reconciliation"]
+languages = ["go", "bash", "hcl", "yaml"]
+difficulty = "advanced"
+expert_time_estimate_hours = 10
+artifacts = [
+  "/app/provider",
+]
+
+[metadata]
+author_name = "anonymous"
+author_email = "anonymous@example.com"
+
+[verifier]
+timeout_sec = 2400
+environment_mode = "separate"
+
+[agent]
+timeout_sec = 7200
+
+[environment]
+network_mode = "public"
+build_timeout_sec = 1800
+cpus = 2
+memory_mb = 8192
+storage_mb = 10240
+workdir = "/app/provider"

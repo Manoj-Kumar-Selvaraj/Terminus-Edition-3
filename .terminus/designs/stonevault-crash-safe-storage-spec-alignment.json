@@ -1,0 +1,77 @@
+{
+  "schema_version": "1.0",
+  "task": "stonevault-crash-safe-storage",
+  "task_content_commit": "463ec6412dad040c5d0fb96dc540741ffcb6904c",
+  "control_plane_commit": "595332219a62dbc1c3e835f5b7b055cb984ef469",
+  "requirement_contract_hash": "sha256:2682c1d1e017307a5deed0c0f57680afa079933f47bf05b16c11132c399435b6",
+  "inputs": {
+    "solver_visible_requirement_contract": ".terminus/contracts/stonevault-crash-safe-storage/solver-visible-requirements.json",
+    "instruction": "stonevault-crash-safe-storage/instruction.md",
+    "technical_contract": "stonevault-crash-safe-storage/environment/stonevault/docs/storage-format.md",
+    "private_test_map": ".terminus/designs/stonevault-crash-safe-storage-test-map.json"
+  },
+  "q1_spec_gap_repair": {
+    "status": "PRODUCER_ALIGNMENT_PASS",
+    "changes_required": false,
+    "findings": [],
+    "evidence": [
+      "instruction.md states the engineering objective, C++20/Rust product-language boundary, Python-verifier-only rule and no-Go rule",
+      "instruction.md states writer fencing and path precedence",
+      "instruction.md states transaction snapshot point-read/scan visibility and transaction-local puts/deletes",
+      "instruction.md states first-committer-wins conflict rejection, atomicity and contiguous durable commit sequencing",
+      "instruction.md states rollback/crash recovery, torn-tail versus complete-corruption behavior, checkpoint quiescence/publication/WAL reclamation and snapshot corruption handling",
+      "instruction.md states STATS/HEALTH, binary hexadecimal semantics, inclusive limits, malformed-command resilience and preservation of C ABI/ASCII/WAL/snapshot/data compatibility",
+      "storage-format.md remains a technical layout/protocol contract rather than a repair map or second prompt"
+    ]
+  },
+  "q2_verifier_coverage_repair": {
+    "status": "PRODUCER_ALIGNMENT_PASS_PENDING_CURRENT_EMPIRICAL_MATRIX",
+    "changes_required": false,
+    "requirements_with_behavioral_coverage": [
+      "R01_WRITER_FENCING",
+      "R02_DATA_DIR_PRECEDENCE",
+      "R03_SNAPSHOT_POINT_READS",
+      "R04_PREFIX_SCAN_SEMANTICS",
+      "R05_WRITE_CONFLICTS",
+      "R06_SEQUENCE_DURABILITY",
+      "R07_UNCOMMITTED_RECOVERY",
+      "R08_WAL_RECOVERY_INTEGRITY",
+      "R09_CHECKPOINT_LIFECYCLE",
+      "R10_SNAPSHOT_INTEGRITY",
+      "R11_STATS",
+      "R12_HEALTH",
+      "R13_BINARY_HEX",
+      "R14_INCLUSIVE_LIMITS",
+      "R15_PROTOCOL_RESILIENCE",
+      "R16_NATIVE_COMPATIBILITY"
+    ],
+    "coverage_notes": [
+      "committed restart round trips and checkpoint restart exercise durable data/sequence preservation",
+      "WAL and snapshot mutation probes exercise documented on-disk compatibility/integrity boundaries behaviorally",
+      "command-response tests exercise documented ASCII shapes through the Rust CLI/FFI path",
+      "the public C ABI is preserved by an explicit declaration check while normal CLI execution reaches the same C ABI through Rust FFI",
+      "28 planned F2P probes represent 25 distinct behavioral cases through two explicitly justified multi-probe invariant groups",
+      "19 planned P2P probes cover preservation risks; classifications await current-head NOP/Oracle evidence"
+    ]
+  },
+  "q3_spec_ambiguity_repair": {
+    "status": "PRODUCER_ALIGNMENT_PASS",
+    "changes_required": false,
+    "findings": [],
+    "clarity_checks": [
+      "snapshot lifetime is explicitly the full transaction lifetime",
+      "prefix matching and ordering are explicitly raw-byte/unsigned-byte semantics",
+      "conflict behavior states rejection atomicity, transaction termination and no sequence consumption",
+      "WAL recovery distinguishes only short final header/payload from corruption of complete records/history",
+      "checkpoint quiescence and zero-byte WAL reclamation are explicit",
+      "4096-byte key/prefix and 1048576-byte value limits are explicitly inclusive",
+      "compatibility preservation names the C ABI, ASCII response shapes, WAL layout, snapshot layout and existing data"
+    ]
+  },
+  "privacy_boundary": {
+    "private_defect_topology_used_as_instruction_source": false,
+    "oracle_diff_used_as_instruction_source": false,
+    "hidden_test_names_copied_into_solver_prose": false
+  },
+  "overall_status": "PRODUCER_SPEC_ALIGNMENT_COMPLETE_PENDING_CURRENT_EMPIRICAL_MATRIX"
+}

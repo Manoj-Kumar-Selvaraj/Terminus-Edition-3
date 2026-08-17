@@ -15,6 +15,15 @@
     "R-DB": "Database constraints must preserve generation-scoped movement identity, generation sequence ownership and reject-sequence ownership while allowing the same movement id in a different generation.",
     "R-PRESERVE": "Existing valid packed-decimal, active-policy and matching-control behavior must remain working."
   },
+  "behavioral_case_groups": {
+    "R-RESTART-NO-REPLAY": {
+      "tests": [
+        "test_f2p_pipeline_restart_does_not_reapply_last_movement",
+        "test_f2p_transfer_overdraw_rejection_is_durable_across_restart"
+      ],
+      "rationale": "Both probes exercise the same restart invariant: after sequence 1 is durably checkpointed, rerunning the same generation must resume after that movement rather than replay it. One probe covers the accepted path and the other covers a durably rejected transfer, preserving independent path coverage without counting the same restart contract twice."
+    }
+  },
   "tests": [
     [
       "test_f2p_nonzero_comp3_padding_is_rejected",
@@ -94,7 +103,8 @@
     [
       "test_f2p_pipeline_restart_does_not_reapply_last_movement",
       "F2P",
-      "R-RESTART"
+      "R-RESTART",
+      "R-RESTART-NO-REPLAY"
     ],
     [
       "test_f2p_zero_quantity_is_rejected",
@@ -120,6 +130,12 @@
       "test_f2p_issue_requires_full_available_quantity",
       "F2P",
       "R-ACCOUNTING"
+    ],
+    [
+      "test_f2p_transfer_overdraw_rejection_is_durable_across_restart",
+      "F2P",
+      "R-RESTART",
+      "R-RESTART-NO-REPLAY"
     ],
     [
       "test_f2p_issue_uses_weighted_source_unit_cost",
@@ -192,7 +208,17 @@
       "R-CLI"
     ],
     [
+      "test_p2p_cross_generation_same_movement_is_processed_once_per_generation",
+      "P2P",
+      "R-DB"
+    ],
+    [
       "test_p2p_preflight_uses_historical_baseline",
+      "P2P",
+      "R-CLI"
+    ],
+    [
+      "test_p2p_preflight_discriminates_batch_window_and_authorization_safety_state",
       "P2P",
       "R-CLI"
     ],

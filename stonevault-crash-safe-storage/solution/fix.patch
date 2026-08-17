@@ -1,0 +1,228 @@
+--- a/src/config.rs
++++ b/src/config.rs
+@@ -51,14 +51,14 @@
+             }
+         }
+ 
+-        let selected = if let Some(path) = env_data_dir {
++        let selected = if let Some(path) = data_dir {
++            path
++        } else if let Some(path) = env_data_dir {
+             if path.is_empty() {
+                 PathBuf::from(DEFAULT_DATA_DIR)
+             } else {
+                 PathBuf::from(path)
+             }
+-        } else if let Some(path) = data_dir {
+-            path
+         } else {
+             PathBuf::from(DEFAULT_DATA_DIR)
+         };
+--- a/src/protocol.rs
++++ b/src/protocol.rs
+@@ -148,10 +148,10 @@
+         return Err(ParseError::InvalidHex { field });
+     }
+     let bytes = text.len() / 2;
+-    if field == "value" && bytes >= max_bytes {
++    if field == "value" && bytes > max_bytes {
+         return Err(ParseError::ValueTooLarge);
+     }
+-    if field != "value" && bytes >= max_bytes {
++    if field != "value" && bytes > max_bytes {
+         return Err(ParseError::KeyTooLarge);
+     }
+     Ok(())
+--- a/storage/engine.cpp
++++ b/storage/engine.cpp
+@@ -125,7 +125,7 @@
+         if (local != tx.writes.end()) {
+             return local->second;
+         }
+-        return catalog_.visible_value(key, commit_sequence_);
++        return catalog_.visible_value(key, tx.snapshot);
+     }
+ 
+     OrderedValues scan(
+@@ -135,7 +135,10 @@
+ 
+         std::lock_guard<std::mutex> guard(mutex_);
+         const Transaction& tx = transactions_.require(tx_id);
+-        return catalog_.scan(prefix, commit_sequence_);
++        return apply_transaction_overlay(
++            catalog_.scan(prefix, tx.snapshot),
++            tx.writes,
++            prefix);
+     }
+ 
+     int commit(
+@@ -143,6 +146,12 @@
+         std::uint64_t& sequence) {
+         std::lock_guard<std::mutex> guard(mutex_);
+         Transaction& tx = transactions_.require(tx_id);
++
++        if (catalog_.conflicts(tx.writes, tx.snapshot)) {
++            transactions_.erase(tx_id);
++            sequence = commit_sequence_;
++            return 1;
++        }
+ 
+         const std::uint64_t next_sequence = commit_sequence_ + 1;
+         wal_.append_commit(tx_id, next_sequence);
+@@ -164,9 +173,13 @@
+ 
+     int checkpoint(std::uint64_t& sequence) {
+         std::lock_guard<std::mutex> guard(mutex_);
+-        SnapshotImage image =
++        if (!transactions_.empty()) {
++            sequence = commit_sequence_;
++            return 1;
++        }
++
++        const SnapshotImage image =
+             catalog_.snapshot_image(commit_sequence_);
+-        image.sequence = 0;
+         snapshot_store_.publish(image);
+         wal_.reset_after_checkpoint();
+         sequence = commit_sequence_;
+@@ -188,12 +201,17 @@
+ 
+     std::string health() {
+         std::lock_guard<std::mutex> guard(mutex_);
++        const RuntimeAudit audit = audit_runtime_state(
++            paths_, catalog_, transactions_, commit_sequence_);
++        if (audit.storage.wal_bytes != wal_.size()) {
++            throw std::runtime_error("runtime integrity: WAL size views disagree");
++        }
+         return render_health(IntegrityReport{
+             commit_sequence_,
+-            static_cast<std::uint64_t>(catalog_.visible_key_count(commit_sequence_)),
+-            0,
+-            wal_.size(),
+-            false,
++            static_cast<std::uint64_t>(audit.catalog.visible_keys),
++            static_cast<std::uint64_t>(audit.transactions.active_transactions),
++            audit.storage.wal_bytes,
++            audit.storage.snapshot_present,
+         });
+     }
+ 
+--- a/storage/lock.cpp
++++ b/storage/lock.cpp
+@@ -14,6 +14,14 @@
+     if (fd_ < 0) {
+         throw std::runtime_error(codec::errno_message("cannot open writer lock"));
+     }
++    if (::flock(fd_, LOCK_EX | LOCK_NB) != 0) {
++        const std::string message = errno == EWOULDBLOCK || errno == EAGAIN
++            ? "database is already open for writing"
++            : codec::errno_message("cannot acquire writer lock");
++        ::close(fd_);
++        fd_ = -1;
++        throw std::runtime_error(message);
++    }
+ }
+ 
+ WriterLock::~WriterLock() {
+--- a/storage/snapshot.cpp
++++ b/storage/snapshot.cpp
+@@ -55,6 +55,9 @@
+         previous_key = row.key;
+         have_previous = true;
+         image.rows.push_back(std::move(row));
++    }
++    if (pos != bytes.size()) {
++        throw std::runtime_error("snapshot corruption: trailing bytes");
+     }
+     return image;
+ }
+@@ -105,8 +108,10 @@
+     const std::uint32_t actual_crc = codec::crc32(
+         bytes.data() + record_start,
+         pos - record_start - 4);
+-    (void)actual_crc;
+-    (void)expected_crc;
++    if (actual_crc != expected_crc) {
++        throw std::runtime_error(
++            "snapshot corruption: row checksum mismatch");
++    }
+     return row;
+ }
+ 
+@@ -191,6 +196,12 @@
+ }
+ 
+ void SnapshotStore::remove_stale_temporary() const {
++    std::error_code error;
++    std::filesystem::remove(temporary_path_, error);
++    if (error && error.value() != ENOENT) {
++        throw std::runtime_error(
++            "cannot remove stale snapshot temporary: " + error.message());
++    }
+ }
+ 
+ }  // namespace stonevault
+--- a/storage/wal.cpp
++++ b/storage/wal.cpp
+@@ -130,9 +130,9 @@
+             throw std::runtime_error("WAL corruption: invalid record header");
+         }
+         if (magic != kWalMagic || length == 0 || length > kMaxWalPayload) {
+-            truncate_to(valid_end);
+-            result.truncated_torn_tail = true;
+-            break;
++            throw std::runtime_error(
++                "WAL corruption: invalid record header at offset " +
++                std::to_string(record_start));
+         }
+         if (bytes.size() - pos < length) {
+             truncate_to(valid_end);
+@@ -144,9 +144,9 @@
+             bytes.begin() + static_cast<std::ptrdiff_t>(pos),
+             bytes.begin() + static_cast<std::ptrdiff_t>(pos + length));
+         if (codec::crc32(payload) != expected_crc) {
+-            truncate_to(valid_end);
+-            result.truncated_torn_tail = true;
+-            break;
++            throw std::runtime_error(
++                "WAL corruption: checksum mismatch at offset " +
++                std::to_string(record_start));
+         }
+         pos += length;
+         valid_end = pos;
+@@ -180,6 +180,10 @@
+             if (commit.sequence <= snapshot_sequence) {
+                 continue;
+             }
++            if (commit.sequence != sequence + 1) {
++                throw std::runtime_error(
++                    "WAL corruption: non-contiguous commit sequence");
++            }
+             sequence = commit.sequence;
+             result.commits.push_back(
+                 RecoveredCommit{commit.sequence, std::move(writes)});
+@@ -189,17 +193,17 @@
+         throw std::runtime_error("WAL corruption: unknown record type");
+     }
+ 
+-    for (auto& [_, writes] : pending) {
+-        if (!writes.empty()) {
+-            ++sequence;
+-            result.commits.push_back(RecoveredCommit{sequence, std::move(writes)});
+-        }
+-    }
+     return result;
+ }
+ 
+ void WalManager::reset_after_checkpoint() {
+-    codec::sync_fd(fd_, true, "checkpoint WAL");
++    if (::ftruncate(fd_, 0) != 0) {
++        throw std::runtime_error(codec::errno_message("cannot truncate WAL"));
++    }
++    if (::lseek(fd_, 0, SEEK_SET) < 0) {
++        throw std::runtime_error(codec::errno_message("cannot seek WAL"));
++    }
++    codec::sync_fd(fd_, true, "truncated WAL");
+ }
+ 
+ std::uint64_t WalManager::size() const {

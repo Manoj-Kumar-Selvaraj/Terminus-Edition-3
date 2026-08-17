@@ -1,0 +1,270 @@
+{
+  "schema_version": "1.0",
+  "profile": "large_system_strict",
+  "task": "terraform-ansible-managed-resources",
+  "phase": "A3_DEFECT_TOPOLOGY",
+  "status": "PROPOSED_PENDING_INDEPENDENT_APPROVAL",
+  "architecture_commit": "bb149cececdca9f0de6505afcb82c3c850fa2f21",
+  "materialization_gate": "Do not build or inject the broken starter from this topology until an independent creation controller approves it against the clean A2A architecture.",
+  "topology_summary": {
+    "root_cause_clusters": 6,
+    "observable_manifestations": 28,
+    "intent": "A small number of shared lifecycle defects should fan out across several resource families. The solver should repair common production logic rather than patch tests or ten unrelated implementations."
+  },
+  "root_cause_clusters": {
+    "RC1_STATE_IDENTITY": "The common lifecycle state layer derives or publishes identity and applied state from mutable plan data instead of a stable external object key and the last successful transition.",
+    "RC2_REFRESH_RECONCILIATION": "Read is not a true observation path: it reuses prior Terraform state and, on some branches, routes through Ansible mutation helpers rather than native Linux observers.",
+    "RC3_UPDATE_TRANSACTION": "Update advances Terraform state or decides no work is required before the Ansible mutation has durably succeeded, so retries and source-driven updates become incorrect.",
+    "RC4_DELETE_FAILURE": "Delete treats requested teardown as completed before independently establishing successful or already-absent external state, and resource-specific removal selectors are not sufficiently scoped.",
+    "RC5_RUNNER_COMMAND": "The shared Ansible runner constructs commands through shell-oriented text, weakly handles process outcomes, and does not own timeout/cancellation/temp-file cleanup as one transaction.",
+    "RC6_NORMALIZATION_IDEMPOTENCY": "Desired and observed values use inconsistent canonical forms for unordered maps, modes/ownership, and cron defaults, creating false diffs and unnecessary mutations."
+  },
+  "defects": [
+    {
+      "id": "D01",
+      "root_cause": "RC1_STATE_IDENTITY",
+      "component": "internal/lifecycle/state.go",
+      "observable": "A successful Create can return a resource whose Terraform state has an empty or missing stable id."
+    },
+    {
+      "id": "D02",
+      "root_cause": "RC1_STATE_IDENTITY",
+      "component": "internal/lifecycle/identity.go",
+      "observable": "Changing mutable directory mode or symlink target changes resource identity even though the external object key is unchanged."
+    },
+    {
+      "id": "D03",
+      "root_cause": "RC1_STATE_IDENTITY",
+      "component": "internal/lifecycle/state.go",
+      "observable": "Computed observed values are reconstructed from transient process data instead of the applied Terraform state and disappear after provider restart."
+    },
+    {
+      "id": "D04",
+      "root_cause": "RC1_STATE_IDENTITY",
+      "component": "internal/resources/copy/resource.go",
+      "observable": "After successful copy creation the destination digest is not persisted consistently, so a fresh process cannot establish the same applied state."
+    },
+    {
+      "id": "D05",
+      "root_cause": "RC1_STATE_IDENTITY",
+      "component": "internal/lifecycle/identity.go",
+      "observable": "Apply followed by a new Terraform process produces identity/state churn on an otherwise unchanged managed object."
+    },
+    {
+      "id": "D06",
+      "root_cause": "RC2_REFRESH_RECONCILIATION",
+      "component": "internal/lifecycle/read.go",
+      "observable": "Externally deleting a managed directory is not detected by terraform plan or refresh."
+    },
+    {
+      "id": "D07",
+      "root_cause": "RC2_REFRESH_RECONCILIATION",
+      "component": "internal/observe/filesystem.go",
+      "observable": "External mode drift on a file or directory is echoed as the prior value instead of refreshed from the target."
+    },
+    {
+      "id": "D08",
+      "root_cause": "RC2_REFRESH_RECONCILIATION",
+      "component": "internal/observe/filesystem.go",
+      "observable": "Changing a managed symlink to point at a different target is not reported as drift."
+    },
+    {
+      "id": "D09",
+      "root_cause": "RC2_REFRESH_RECONCILIATION",
+      "component": "internal/observe/content.go",
+      "observable": "Out-of-band modification of ansibleops_copy destination content is not reflected in refreshed state."
+    },
+    {
+      "id": "D10",
+      "root_cause": "RC2_REFRESH_RECONCILIATION",
+      "component": "internal/observe/identity.go",
+      "observable": "Out-of-band changes to a managed user's shell or supplementary groups are not detected."
+    },
+    {
+      "id": "D11",
+      "root_cause": "RC2_REFRESH_RECONCILIATION",
+      "component": "internal/lifecycle/read.go",
+      "observable": "A clean plan or refresh invokes ansible-playbook and increments the verifier's execution counter even when no mutation is required."
+    },
+    {
+      "id": "D12",
+      "root_cause": "RC3_UPDATE_TRANSACTION",
+      "component": "internal/lifecycle/update.go",
+      "observable": "Update publishes the planned values before ansible-playbook finishes successfully."
+    },
+    {
+      "id": "D13",
+      "root_cause": "RC3_UPDATE_TRANSACTION",
+      "component": "internal/lifecycle/update.go",
+      "observable": "An intentionally failed Update leaves Terraform state claiming the new desired configuration rather than the previous successful configuration."
+    },
+    {
+      "id": "D14",
+      "root_cause": "RC3_UPDATE_TRANSACTION",
+      "component": "internal/lifecycle/update.go",
+      "observable": "Retry after a failed Update can be skipped because the prematurely advanced state makes the desired configuration appear already applied."
+    },
+    {
+      "id": "D15",
+      "root_cause": "RC3_UPDATE_TRANSACTION",
+      "component": "internal/resources/copy/resource.go",
+      "observable": "Changing source_digest does not reliably execute one copy update and publish the resulting destination digest."
+    },
+    {
+      "id": "D16",
+      "root_cause": "RC3_UPDATE_TRANSACTION",
+      "component": "internal/resources/line/resource.go",
+      "observable": "Changing a managed line can append a second line or execute repeatedly instead of replacing the named line contract exactly once."
+    },
+    {
+      "id": "D17",
+      "root_cause": "RC4_DELETE_FAILURE",
+      "component": "internal/lifecycle/delete.go",
+      "observable": "Delete clears the logical resource before the Ansible teardown result is known."
+    },
+    {
+      "id": "D18",
+      "root_cause": "RC4_DELETE_FAILURE",
+      "component": "internal/lifecycle/delete.go",
+      "observable": "When Ansible deletion is forced to fail, Terraform nevertheless finishes destroy as though the resource were gone."
+    },
+    {
+      "id": "D19",
+      "root_cause": "RC4_DELETE_FAILURE",
+      "component": "internal/resources/block/resource.go",
+      "observable": "Deleting one named line, block, or cron resource can remove a sibling managed entry because the removal selector is scoped only by the backing file or user."
+    },
+    {
+      "id": "D20",
+      "root_cause": "RC4_DELETE_FAILURE",
+      "component": "internal/resources/user/resource.go",
+      "observable": "Destroy removes a managed user's home even when remove_home_on_destroy is false, or preserves it when the option is true."
+    },
+    {
+      "id": "D21",
+      "root_cause": "RC5_RUNNER_COMMAND",
+      "component": "internal/ansible/command.go",
+      "observable": "The runner assembles ansible-playbook through sh -c or equivalent shell text, allowing shell metacharacters in input to be interpreted."
+    },
+    {
+      "id": "D22",
+      "root_cause": "RC5_RUNNER_COMMAND",
+      "component": "internal/ansible/command.go",
+      "observable": "Valid source, destination, or temporary paths containing spaces are split incorrectly and fail execution."
+    },
+    {
+      "id": "D23",
+      "root_cause": "RC5_RUNNER_COMMAND",
+      "component": "internal/ansible/runner.go",
+      "observable": "A non-zero ansible-playbook exit can be reported as a successful lifecycle transition."
+    },
+    {
+      "id": "D24",
+      "root_cause": "RC5_RUNNER_COMMAND",
+      "component": "internal/ansible/timeout.go",
+      "observable": "Context cancellation or timeout does not reliably terminate the Ansible child process and is not returned as a failed transition."
+    },
+    {
+      "id": "D25",
+      "root_cause": "RC5_RUNNER_COMMAND",
+      "component": "internal/ansible/cleanup.go",
+      "observable": "Generated temporary playbooks remain after success, failure, or timeout and accumulate across Terraform runs."
+    },
+    {
+      "id": "D26",
+      "root_cause": "RC6_NORMALIZATION_IDEMPOTENCY",
+      "component": "internal/ansible/generator.go",
+      "observable": "Equivalent template vars supplied in different map insertion orders produce unstable rendered task payloads or false updates."
+    },
+    {
+      "id": "D27",
+      "root_cause": "RC6_NORMALIZATION_IDEMPOTENCY",
+      "component": "internal/observe/normalize.go",
+      "observable": "Equivalent file modes or owner/group representations compare unequal and cause a perpetual plan diff after successful apply."
+    },
+    {
+      "id": "D28",
+      "root_cause": "RC6_NORMALIZATION_IDEMPOTENCY",
+      "component": "internal/observe/cron.go",
+      "observable": "Omitted cron schedule fields and explicit wildcard defaults normalize differently, causing repeated updates on an otherwise unchanged cron resource."
+    }
+  ],
+  "causal_edges": [
+    ["D01", "D05"],
+    ["D02", "D05"],
+    ["D03", "D05"],
+    ["D04", "D05"],
+    ["D06", "D11"],
+    ["D07", "D11"],
+    ["D08", "D11"],
+    ["D09", "D15"],
+    ["D10", "D11"],
+    ["D11", "D05"],
+    ["D12", "D13"],
+    ["D13", "D14"],
+    ["D14", "D15"],
+    ["D15", "D04"],
+    ["D16", "D11"],
+    ["D17", "D18"],
+    ["D18", "D05"],
+    ["D19", "D06"],
+    ["D20", "D18"],
+    ["D21", "D22"],
+    ["D21", "D23"],
+    ["D23", "D13"],
+    ["D24", "D13"],
+    ["D24", "D25"],
+    ["D26", "D15"],
+    ["D26", "D11"],
+    ["D27", "D11"],
+    ["D28", "D11"]
+  ],
+  "partial_fix_traps": [
+    "Fixing individual resource Read methods without repairing the shared observation/refresh path leaves sibling drift and side-effect failures.",
+    "Suppressing state diffs without correcting native observation can make plans appear clean while external state remains wrong.",
+    "Checking ansible-playbook exit status alone is insufficient if Update already advanced Terraform state before execution.",
+    "Escaping a few shell characters is insufficient; the runner must stop using shell interpretation and pass argv/data structurally.",
+    "Sorting template variables alone does not fix mode, ownership, or cron canonicalization.",
+    "Special-casing failed destroy in one resource leaves the shared delete transaction and sibling selectors incorrect."
+  ],
+  "expected_verifier_surfaces": {
+    "provider_contract": [
+      "provider starts",
+      "exact ten resources are exposed through Terraform provider schema",
+      "forbidden null_resource/terraform_data/provisioner substitutes cannot satisfy lifecycle tests"
+    ],
+    "create_and_state": [
+      "first apply executes expected Ansible mutation",
+      "stable id and applied attributes persist in real Terraform state",
+      "new Terraform/provider process observes the same resource identity"
+    ],
+    "refresh_and_drift": [
+      "clean plan is side-effect free",
+      "external deletion, mode drift, content drift, symlink drift, and user drift are detected through Read"
+    ],
+    "update_transaction": [
+      "real configuration change executes once",
+      "stable id survives in-place update",
+      "failed update retains prior successful state and retry converges"
+    ],
+    "delete_transaction": [
+      "successful delete removes only the owned external object and Terraform state",
+      "failed delete keeps resource managed",
+      "named line/block/cron siblings are preserved"
+    ],
+    "runner_safety": [
+      "spaces and shell metacharacters remain literal",
+      "non-zero exit, timeout, and cancellation fail safely",
+      "temporary playbooks are cleaned up"
+    ],
+    "idempotency": [
+      "unordered maps and canonical defaults do not create perpetual diffs",
+      "repeated plan and refresh do not replay Ansible"
+    ]
+  },
+  "next_gate": {
+    "phase": "A2B_ENVIRONMENT_BUILDER",
+    "blocked_until": "independent A3 approval",
+    "on_approval": "Materialize the already-designed clean provider and inject only defects represented by this approved topology."
+  }
+}
