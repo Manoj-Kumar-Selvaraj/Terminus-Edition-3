@@ -1,0 +1,41 @@
+{
+  "schema_version": "3.0",
+  "review_id": "cobol-comp3-python-equiv-3a463000-spec-test-contract-1dec81c843",
+  "protocol_policy_version": "2.2",
+  "prompt_policy_version": "2.2",
+  "role_policy_version": "1.1",
+  "control_plane_commit": "992aa77c65b93f58c3aecc45b6777025b5fb264a",
+  "role_contract_hash": "0c40044ec13f0109a5526301cac6e5d2f52f5596d006bee2cdcaa90c0771d7f6",
+  "task": "cobol-comp3-python-equiv",
+  "task_commit": "3a463000607f2dcdf88785a77d2dc5767f473e05",
+  "state": "FROZEN_CANDIDATE",
+  "role": "Spec-Test Contract Reviewer",
+  "question": "Is every substantive verifier behavior discoverable from the solver-visible contract, every material requirement tested, and every grading-relevant statement unambiguous?",
+  "authoritative_rules": [
+    "TERMINUS_3_AI_INSTRUCTIONS.md",
+    ".terminus/AGENT_SYSTEM.md",
+    ".terminus/agents/PROTOCOL.md",
+    ".terminus/agents/PROMPTS.md",
+    ".terminus/agents/QUALITY_AGENT_REGISTRY.md",
+    ".terminus/agents/QUALITY_AGENT_PROMPTS.md"
+  ],
+  "evidence_allowed": [
+    "instruction.md",
+    "all solver-visible contracts referenced by instruction.md",
+    "tests/",
+    "test map when needed to identify classification only",
+    "environment interfaces required to interpret observable behavior"
+  ],
+  "evidence_excluded": [
+    "Q1/Q2/Q3 conclusions before the independent matrix is frozen",
+    "Verifier Author coverage rationale",
+    "previous Spec-Test Contract Reviewer verdict",
+    "other specialist verdicts",
+    "desired aggregate outcome"
+  ],
+  "prior_verdicts_visible": false,
+  "isolation_mode": "PROCEDURAL",
+  "change_since_last_review": "Current exact candidate is task commit 3a463000607f2dcdf88785a77d2dc5767f473e05. Since the prior Q4 evidence surface, deterministic Q7 format repairs changed task.toml tag count, environment/Dockerfile runtime tooling, environment/.dockerignore exclusions, tests/test.sh reward sequencing, and added informative first-statement docstrings to all 40 pytest tests. instruction.md, referenced solver-visible requirement contracts, test executable AST after stripping docstrings, and production solution/runtime logic were not changed by the final docstring repair. Current deterministic corroboration is GitHub Actions run 31965076474/job 95208912312: Preflight PASS, Ruff PASS, Oracle reward 1.000, NOP reward 0.000. Review this candidate independently from scratch; prior Q1/Q2/Q3 conclusions and prior Q4 verdicts are excluded until the independent matrix is frozen.",
+  "output_schema": ".terminus/agents/schemas/review_result.schema.json",
+  "review_output_path": ".terminus/reviews/cobol-comp3-python-equiv/3a463000/cobol-comp3-python-equiv-3a463000-spec-test-contract-1dec81c843.json"
+}
