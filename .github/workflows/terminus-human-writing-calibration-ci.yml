@@ -1,0 +1,62 @@
+name: Terminus Human Writing Calibration CI
+
+on:
+  pull_request:
+    paths:
+      - '.terminus/human_writing/**'
+      - '.terminus/agents/HUMAN_WRITING_DATASET_POLICY.md'
+      - '.terminus/agents/HUMAN_WRITING_RESEARCHER.md'
+      - '.terminus/agents/INSTRUCTION_POLICY.md'
+      - '.github/workflows/terminus-human-writing-calibration-ci.yml'
+  push:
+    branches: [main]
+    paths:
+      - '.terminus/human_writing/**'
+      - '.terminus/agents/HUMAN_WRITING_DATASET_POLICY.md'
+      - '.terminus/agents/HUMAN_WRITING_RESEARCHER.md'
+      - '.terminus/agents/INSTRUCTION_POLICY.md'
+      - '.github/workflows/terminus-human-writing-calibration-ci.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  validate-human-writing-calibration:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Install pinned lint tool
+        run: python -m pip install --quiet ruff==0.14.10
+      - name: Compile calibration engine
+        run: |
+          python -m py_compile \
+            .terminus/human_writing/calibration.py \
+            .terminus/human_writing/calibration_cli.py \
+            .terminus/human_writing/test_calibration.py
+      - name: Lint calibration engine
+        run: |
+          ruff check \
+            .terminus/human_writing/calibration.py \
+            .terminus/human_writing/calibration_cli.py \
+            .terminus/human_writing/test_calibration.py
+      - name: Validate dataset registry
+        run: python .terminus/human_writing/calibration_cli.py --root . validate
+      - name: Run calibration regression tests
+        run: python .terminus/human_writing/test_calibration.py
+      - name: Smoke deterministic task pair
+        run: |
+          python .terminus/human_writing/calibration_cli.py --root . plan \
+            --task-id ci-smoke \
+            --domain 'kubernetes terraform recovery' \
+            --output /tmp/calibration.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          value = json.loads(Path('/tmp/calibration.json').read_text())
+          assert value['independence']['status'] == 'PASS'
+          assert value['writer']['calibration_id'] != value['reviewer']['calibration_id']
+          assert not set(value['writer']['local_seed_sample_ids']) & set(value['reviewer']['local_seed_sample_ids'])
+          PY
