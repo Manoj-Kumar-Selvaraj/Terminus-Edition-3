@@ -32,26 +32,13 @@ func (r *copyResource) Metadata(_ context.Context, req resource.MetadataRequest,
 }
 func (r *copyResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{Description: "Copies a local source file to a managed destination through Ansible.", Attributes: map[string]schema.Attribute{
-		"id": schema.StringAttribute{Computed: true}, "source": schema.StringAttribute{Required: true}, "destination": schema.StringAttribute{Required: true},
-		"mode": schema.StringAttribute{Optional: true}, "owner": schema.StringAttribute{Optional: true}, "group": schema.StringAttribute{Optional: true},
-		"source_digest": schema.StringAttribute{Computed: true}, "destination_digest": schema.StringAttribute{Computed: true}, "observed_mode": schema.StringAttribute{Computed: true},
+		"id": schema.StringAttribute{Computed: true}, "source": schema.StringAttribute{Required: true}, "source_digest": schema.StringAttribute{Required: true},
+		"destination": schema.StringAttribute{Required: true}, "mode": schema.StringAttribute{Optional: true}, "owner": schema.StringAttribute{Optional: true},
+		"group": schema.StringAttribute{Optional: true}, "destination_digest": schema.StringAttribute{Computed: true}, "observed_mode": schema.StringAttribute{Computed: true},
 	}}
 }
 func (r *copyResource) Configure(_ context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
 	configure(req, resp, &r.rt)
-}
-
-func (r *copyResource) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
-	if req.Plan.Raw.IsNull() {
-		return
-	}
-	var plan copyResourceModel
-	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
-	if resp.Diagnostics.HasError() || plan.Source.IsUnknown() || plan.Source.IsNull() {
-		return
-	}
-	plan.SourceDigest = types.StringValue(lifecycle.SourceFingerprint(stringValue(plan.Source)))
-	resp.Diagnostics.Append(resp.Plan.Set(ctx, &plan)...)
 }
 func (r *copyResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	var plan copyResourceModel
@@ -66,9 +53,6 @@ func (r *copyResource) Create(ctx context.Context, req resource.CreateRequest, r
 		return
 	}
 	plan.ID = types.StringValue(lifecycle.ResourceIdentity("copy", stringValue(plan.Destination), stringValue(plan.Source), stringValue(plan.Mode), stringValue(plan.Owner), stringValue(plan.Group)))
-	if plan.SourceDigest.IsNull() || plan.SourceDigest.IsUnknown() {
-		plan.SourceDigest = types.StringValue(lifecycle.SourceFingerprint(stringValue(plan.Source)))
-	}
 	r.refresh(&plan, &resp.Diagnostics)
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 }
@@ -102,7 +86,7 @@ func (r *copyResource) Update(ctx context.Context, req resource.UpdateRequest, r
 	if resp.Diagnostics.HasError() {
 		return
 	}
-	if stringValue(prior.SourceDigest) == stringValue(plan.SourceDigest) && stringValue(prior.Destination) == stringValue(plan.Destination) && stringValue(prior.Mode) == stringValue(plan.Mode) && stringValue(prior.Owner) == stringValue(plan.Owner) && stringValue(prior.Group) == stringValue(plan.Group) {
+	if stringValue(prior.Source) == stringValue(plan.Source) && stringValue(prior.Destination) == stringValue(plan.Destination) && stringValue(prior.Mode) == stringValue(plan.Mode) && stringValue(prior.Owner) == stringValue(plan.Owner) && stringValue(prior.Group) == stringValue(plan.Group) {
 		return
 	}
 	if !execute(ctx, r.rt, ansible.CopyTask("update managed copy", stringValue(plan.Source), stringValue(plan.Destination), stringValue(plan.Mode), stringValue(plan.Owner), stringValue(plan.Group)), &resp.Diagnostics) {
@@ -138,4 +122,3 @@ func (r *copyResource) refresh(model *copyResourceModel, diagnostics interface{ 
 var _ resource.Resource = (*copyResource)(nil)
 var _ resource.ResourceWithConfigure = (*copyResource)(nil)
 var _ resource.ResourceWithImportState = (*copyResource)(nil)
-var _ resource.ResourceWithModifyPlan = (*copyResource)(nil)
