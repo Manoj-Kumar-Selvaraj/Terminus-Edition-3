@@ -15,6 +15,9 @@ void require_regular_or_missing(
     std::error_code error;
     const auto status = std::filesystem::symlink_status(path, error);
     if (error) {
+        if (error == std::errc::no_such_file_or_directory) {
+            return;
+        }
         throw std::runtime_error(
             std::string("cannot inspect ") + label + ": " + error.message());
     }
