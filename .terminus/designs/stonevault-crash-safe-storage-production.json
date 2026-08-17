@@ -1,5 +1,5 @@
 {
-  "schema_version": "1.0",
+  "schema_version": "1.1",
   "profile": "large_system_strict",
   "task": "stonevault-crash-safe-storage",
   "substantive_runtime_loc": 3022,
@@ -19,6 +19,23 @@
     "operator STATS and HEALTH surfaces",
     "binary key/value protocol with explicit size limits"
   ],
+  "production_authenticity": {
+    "current_state_evidence_required": false,
+    "stateful_dataset_exemption": {
+      "approved": true,
+      "approved_by": "creation-controller",
+      "reason": "StoneVault is an embedded general-purpose storage engine whose persisted keys and values are arbitrary caller-owned binary bytes, not a fixed business-domain record corpus. Shipping 10,000-20,000 invented business rows would be decorative and would not participate in normal engine behavior. Production statefulness is instead exercised through the reachable WAL, MVCC catalog, snapshots, transactions and restart/recovery paths using deterministic verifier-created state."
+    },
+    "domain_state_model": [
+      "caller-owned binary key/value records",
+      "MVCC committed-version catalog",
+      "active transaction overlays",
+      "checksummed append-only WAL",
+      "published checkpoint snapshot",
+      "writer lock and operator-visible health/statistics"
+    ],
+    "reachability_evidence": "All state is created and consumed through /app/stonevault/bin/stonevault and its documented transaction, checkpoint, recovery, STATS and HEALTH interfaces; no decorative offline corpus is used."
+  },
   "reachability_note": "All listed production modules participate in the production build path; semantic reachability remains subject to Complexity Governor and Q6.",
   "status": "PRODUCER_EVIDENCE_ONLY_NOT_Q6_APPROVAL"
 }
