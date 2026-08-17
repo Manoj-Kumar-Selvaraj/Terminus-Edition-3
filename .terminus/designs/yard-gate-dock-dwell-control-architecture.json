@@ -1,0 +1,110 @@
+{
+  "status": "ARCHITECTURE_READY",
+  "task_slug": "yard-gate-dock-dwell-control",
+  "control_plane_commit": "6e3944669a62da5c2a9ae9c6a2528e11b772ca86",
+  "creation_profile": "large_system_strict",
+  "category": "Operations",
+  "subcategory": "Logistics",
+  "languages": ["python", "sql"],
+  "workdir": "/app/yard",
+  "network_mode": "public",
+  "defects_injected": false,
+  "component_graph": [
+    "cli/yardctl",
+    "yard.journal",
+    "yard.replay",
+    "yard.identity",
+    "yard.appointments",
+    "yard.timeutil",
+    "yard.gate",
+    "yard.inventory",
+    "yard.doors",
+    "yard.chassis",
+    "yard.moves",
+    "yard.holds",
+    "yard.detention",
+    "yard.publish",
+    "yard.policy",
+    "sql/schema.sql",
+    "cmd/seed"
+  ],
+  "entrypoints": {
+    "cli": "/app/yard/bin/yardctl",
+    "seed": "/app/yard/bin/seed",
+    "config": "/app/yard/config/yard.json",
+    "contracts_table": "/app/yard/config/carrier_contracts.json",
+    "binding_contract": "/app/yard/docs/yard-contract.md",
+    "env_root": "YARD_ROOT"
+  },
+  "state_model": {
+    "source_of_truth": "/app/yard/var/events.jsonl",
+    "derived": "/app/yard/var/yard.sqlite",
+    "checkpoint": "/app/yard/var/checkpoint.json",
+    "warehouse_excluded": "/app/yard/warehouse/prior_cycle.sqlite",
+    "yard_tz": "America/Chicago",
+    "visit_states": ["SCHEDULED", "ON_YARD", "MOVING", "DOCKED", "CLOSED", "NO_SHOW"],
+    "move_states": ["REQUESTED", "DISPATCHED", "IN_TRANSIT", "COMPLETED", "CANCELLED", "FAILED"]
+  },
+  "solver_visible_doc_plan": [
+    "/app/yard/docs/yard-contract.md",
+    "/app/yard/docs/layout.md",
+    "/app/yard/sql/schema.sql",
+    "/app/yard/config/yard.json",
+    "/app/yard/config/carrier_contracts.json"
+  ],
+  "production_characteristics": [
+    "differentiated_modules",
+    "operator_cli",
+    "sqlite_jsonl_persistence",
+    "checkpoint_replay",
+    "fail_closed_rejects",
+    "event_id_idempotency",
+    "coupled_appointment_door_chassis_hold_detention"
+  ],
+  "scale_fit": "PASS",
+  "resource_graph": [
+    "/app/yard/var/events.jsonl",
+    "/app/yard/var/yard.sqlite",
+    "/app/yard/var/checkpoint.json",
+    "/app/yard/config/yard.json",
+    "/app/yard/config/carrier_contracts.json",
+    "/app/yard/sql/schema.sql",
+    "/app/yard/warehouse/prior_cycle.sqlite",
+    "/app/yard/out/snapshot.json",
+    "/app/yard/out/moves.jsonl",
+    "/app/yard/out/detention.jsonl",
+    "/app/yard/out/rejects.jsonl",
+    "/app/yard/out/health.json"
+  ],
+  "data_volume_plan": {
+    "primary_record": "visit",
+    "primary_count": 12600,
+    "facility_id": "DC-AUR-01",
+    "horizon": ["2026-03-02", "2026-03-15"],
+    "doors": 48,
+    "spots": 720,
+    "scacs": 72,
+    "open_at_start_approx": 100,
+    "includes_us_dst_2026_03_08": true
+  },
+  "suggested_artifacts_for_a7": [
+    "/app/yard/out/snapshot.json",
+    "/app/yard/out/moves.jsonl",
+    "/app/yard/out/detention.jsonl",
+    "/app/yard/out/rejects.jsonl",
+    "/app/yard/out/health.json"
+  ],
+  "unresolved_risks": [
+    "instruction_budget_for_clock_and_replay",
+    "harbor_artifact_copy_of_var",
+    "tzdata_and_dst",
+    "do_not_merge_l5_customs_rail",
+    "python_sql_only_not_polyglot_reskin",
+    "seed_loc_must_not_count_toward_floor"
+  ],
+  "anti_reskin": [
+    "freight-triage-polyglot-ledger-recovery",
+    "depot-transfer-ledger",
+    "workshop-slot-transaction-control"
+  ]
+}

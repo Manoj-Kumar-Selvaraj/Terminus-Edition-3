@@ -1,0 +1,335 @@
+{
+  "status": "DESIGN_READY",
+  "profile": "large_system_strict",
+  "task": "yard-gate-dock-dwell-control",
+  "control_plane_commit": "6e3944669a62da5c2a9ae9c6a2528e11b772ca86",
+  "architecture_ref": ".terminus/designs/yard-gate-dock-dwell-control-architecture.md",
+  "defects_injected": true,
+  "environment_materialized": true,
+  "root_cause_clusters": {
+    "RC_CIVIL_TIME": "yard_tz is stored but unused. Window, grace, DST, and live clock_start all treat civil America/Chicago times as naive UTC (or a fixed -06:00 offset).",
+    "RC_OCCUPANCY": "Spot occupancy is last-writer sqlite, not exclusive occupancy plus dest reservation. Move dispatch/confirm/cancel do not implement IN_TRANSIT vacancy.",
+    "RC_FIT": "Physical fit is 'door exists' / 'chassis optional'. Door capability flags and on-ground wheels are not constraints.",
+    "RC_HOLD_PAUSE": "Holds are recorded but have no class semantics: gate-out ignores them; pause vs non-pause is inverted; release does not clear the active row.",
+    "RC_JOURNAL": "Derived sqlite is the working copy. Journal/event_id/checkpoint are best-effort: usage writes files first, event_id is not a payload fence, replay reapplies from seq 0, sqlite commits before the journal line exists.",
+    "RC_IDENTITY": "Open-visit key, seal, pool appointment, and carrier contract lookup are incomplete: trailer-only uniqueness, optional seal, named-trailer-only match, default free-time.",
+    "RC_PUBLISH": "Publish reads every sqlite it can see. Warehouse prior-cycle rows mix into snapshot/detention; health is a constant ok."
+  },
+  "cluster_components": {
+    "RC_CIVIL_TIME": ["yard.timeutil", "yard.appointments", "yard.detention"],
+    "RC_OCCUPANCY": ["yard.inventory", "yard.moves", "sql occupancy uniqueness omitted in starter"],
+    "RC_FIT": ["yard.doors", "yard.chassis"],
+    "RC_HOLD_PAUSE": ["yard.holds", "yard.gate", "yard.detention"],
+    "RC_JOURNAL": ["cli/yardctl", "yard.journal", "yard.replay"],
+    "RC_IDENTITY": ["yard.identity", "yard.gate", "yard.appointments", "yard.policy"],
+    "RC_PUBLISH": ["yard.publish"]
+  },
+  "defects": [
+    {
+      "id": "D01",
+      "component": "yard.timeutil",
+      "observable_failure": "Gate-in inside the Chicago appointment window is APPOINTMENT_WINDOW (or a UTC-hour match is accepted while Chicago is outside the window).",
+      "root_cause": "RC_CIVIL_TIME",
+      "partial_fix_trap": "Hardcoding CST -06:00 still fails D03 on 2026-03-08 and still leaves D02/D04 wrong."
+    },
+    {
+      "id": "D02",
+      "component": "yard.appointments",
+      "observable_failure": "Gate-in within grace_early_minutes before window_start or grace_late_minutes after window_end is rejected even after local conversion is fixed.",
+      "root_cause": "RC_CIVIL_TIME",
+      "partial_fix_trap": "Applying only late grace still rejects legitimate early arrivals."
+    },
+    {
+      "id": "D03",
+      "component": "yard.timeutil",
+      "observable_failure": "Visits whose Chicago local window crosses 2026-03-08 spring-forward accept or reject with a one-hour error versus zoneinfo.",
+      "root_cause": "RC_CIVIL_TIME",
+      "partial_fix_trap": "A fixed offset that passes March 2–7 still fails March 8–15."
+    },
+    {
+      "id": "D04",
+      "component": "yard.detention",
+      "observable_failure": "LIVE_IN/LIVE_OUT detention uses clock_start=gate_in_utc; early arrivals start free time before window_start.",
+      "root_cause": "RC_CIVIL_TIME",
+      "partial_fix_trap": "Using window_start without converting it to UTC (or without max()) still mis-bills late-within-grace live visits."
+    },
+    {
+      "id": "D05",
+      "component": "yard.inventory",
+      "observable_failure": "A second open visit can occupy a spot that already has an occupant.",
+      "root_cause": "RC_OCCUPANCY",
+      "partial_fix_trap": "Rejecting only exact spot_id reuse at gate-in still allows D10 dest collisions during IN_TRANSIT."
+    },
+    {
+      "id": "D06",
+      "component": "yard.moves",
+      "observable_failure": "dispatch-move writes dest occupancy immediately so the trailer is counted at origin and dest.",
+      "root_cause": "RC_OCCUPANCY",
+      "partial_fix_trap": "Clearing origin at dispatch without dest reservation still loses the trailer (D07/D10)."
+    },
+    {
+      "id": "D07",
+      "component": "yard.moves",
+      "observable_failure": "IN_TRANSIT visits still appear in occupancy at origin; snapshot in_transit is empty or wrong.",
+      "root_cause": "RC_OCCUPANCY",
+      "partial_fix_trap": "Hiding origin in snapshot without dest reservation still lets a second move take the apron."
+    },
+    {
+      "id": "D08",
+      "component": "yard.moves",
+      "observable_failure": "confirm-move occupies dest and leaves origin occupied; door occupant may not update for DOCK_APRON dest.",
+      "root_cause": "RC_OCCUPANCY",
+      "partial_fix_trap": "Freeing origin without writing door.occupant still double-books the door (cross RC_FIT/D12)."
+    },
+    {
+      "id": "D09",
+      "component": "yard.moves",
+      "observable_failure": "cancel-move from IN_TRANSIT does not restore origin occupancy and/or leaves dest reserved forever.",
+      "root_cause": "RC_OCCUPANCY",
+      "partial_fix_trap": "Restoring origin without clearing dest reservation still blocks the apron."
+    },
+    {
+      "id": "D10",
+      "component": "yard.inventory",
+      "observable_failure": "Dest spot is not reserved during IN_TRANSIT; a second dispatch can claim the same apron/door.",
+      "root_cause": "RC_OCCUPANCY",
+      "partial_fix_trap": "Exclusive check only on occupied spots (D05) still misses reservation-only dests."
+    },
+    {
+      "id": "D11",
+      "component": "yard.doors",
+      "observable_failure": "REEFER_53 is accepted on a DRY door with reefer_plug=false.",
+      "root_cause": "RC_FIT",
+      "partial_fix_trap": "Matching appointment.door_class==DRY vs door.door_class still ignores the plug bit."
+    },
+    {
+      "id": "D12",
+      "component": "yard.doors",
+      "observable_failure": "LIVE_IN/LIVE_OUT accepted on drop-only doors; DROP_IN spotted on live-only doors.",
+      "root_cause": "RC_FIT",
+      "partial_fix_trap": "Fixing only live_capable still parks drops on live-only doors."
+    },
+    {
+      "id": "D13",
+      "component": "yard.chassis",
+      "observable_failure": "Dropped on_ground DRY_53/REEFER_53/CONTAINER_40 can dispatch-move without a mounted chassis.",
+      "root_cause": "RC_FIT",
+      "partial_fix_trap": "Requiring chassis for every visit_type, including live tractor arrivals, over-rejects LIVE_IN rolls."
+    },
+    {
+      "id": "D14",
+      "component": "yard.chassis",
+      "observable_failure": "One chassis_id can be mounted to two open visits.",
+      "root_cause": "RC_FIT",
+      "partial_fix_trap": "Checking chassis free at mount but not setting visit.chassis_id still lets D13 succeed after a fake mount."
+    },
+    {
+      "id": "D15",
+      "component": "yard.chassis",
+      "observable_failure": "mount-chassis leaves on_ground=true so a later dispatch still needs wheels (or still skips the check).",
+      "root_cause": "RC_FIT",
+      "partial_fix_trap": "This is the trap after fixing D13: require chassis, mount, still cannot roll."
+    },
+    {
+      "id": "D16",
+      "component": "yard.gate",
+      "observable_failure": "gate-out succeeds while YARD_SAFETY/YARD_OSND/CARRIER_SEAL/CARRIER_DOCS is active.",
+      "root_cause": "RC_HOLD_PAUSE",
+      "partial_fix_trap": "Blocking gate-out without a working release (D18) traps the trailer forever."
+    },
+    {
+      "id": "D17",
+      "component": "yard.detention",
+      "observable_failure": "CARRIER_SEAL/CARRIER_DOCS pause the detention clock; YARD_OSND/YARD_SAFETY do not.",
+      "root_cause": "RC_HOLD_PAUSE",
+      "partial_fix_trap": "Pausing every hold 'to be safe' still mis-bills carrier-caused delays."
+    },
+    {
+      "id": "D18",
+      "component": "yard.holds",
+      "observable_failure": "release-hold returns success (or HOLD_MISSING never) but the hold row stays active.",
+      "root_cause": "RC_HOLD_PAUSE",
+      "partial_fix_trap": "Deleting all holds on the visit instead of the named code over-releases a second hold."
+    },
+    {
+      "id": "D19",
+      "component": "cli/yardctl",
+      "observable_failure": "Missing flags / unknown verb / bad --event-id shape exits non-zero but creates, truncates, or appends journal, sqlite, checkpoint, or /app/yard/out/*.",
+      "root_cause": "RC_JOURNAL",
+      "partial_fix_trap": "Guarding only snapshot.json still truncates rejects.jsonl or opens sqlite."
+    },
+    {
+      "id": "D20",
+      "component": "yard.journal",
+      "observable_failure": "Repeating the same event_id and payload inserts a second accepted event and a second occupancy/visit.",
+      "root_cause": "RC_JOURNAL",
+      "partial_fix_trap": "Short-circuiting on event_id without storing the payload still accepts D21 conflicts."
+    },
+    {
+      "id": "D21",
+      "component": "yard.journal",
+      "observable_failure": "Same event_id with a different payload is accepted (no EVENT_CONFLICT); original visit/move is overwritten or duplicated.",
+      "root_cause": "RC_JOURNAL",
+      "partial_fix_trap": "Comparing only trailer_number of the payload still allows door/spot/seal mutations under the same id."
+    },
+    {
+      "id": "D22",
+      "component": "yard.replay",
+      "observable_failure": "replay or start-of-command catch-up re-applies the whole journal; occupancy and open visits double versus checkpoint.",
+      "root_cause": "RC_JOURNAL",
+      "partial_fix_trap": "Skipping events already in sqlite by visit_id still re-applies moves and holds (D06/D16)."
+    },
+    {
+      "id": "D23",
+      "component": "cli/yardctl",
+      "observable_failure": "Kill after sqlite occupancy write and before journal append: restart either drops the visit (sqlite rolled back inconsistently) or keeps occupancy with no journal line so replay cannot reconstruct.",
+      "root_cause": "RC_JOURNAL",
+      "partial_fix_trap": "Journal-first without treating sqlite as derived still duplicates on replay (D22)."
+    },
+    {
+      "id": "D24",
+      "component": "yard.identity",
+      "observable_failure": "Open-visit uniqueness uses trailer_number only: a second SCAC with the same unit is VISIT_OPEN, or two SCACs both stay open.",
+      "root_cause": "RC_IDENTITY",
+      "partial_fix_trap": "Unique(scac, trailer) that also includes CLOSED rows blocks a legitimate return visit."
+    },
+    {
+      "id": "D25",
+      "component": "yard.gate",
+      "observable_failure": "Loaded LIVE_IN/LIVE_OUT/LOADED_PICKUP with empty seal is accepted (SEAL_REQUIRED never emitted).",
+      "root_cause": "RC_IDENTITY",
+      "partial_fix_trap": "Requiring seal on DROP_IN empties still over-rejects drops."
+    },
+    {
+      "id": "D26",
+      "component": "yard.appointments",
+      "observable_failure": "Pool appointments (trailer_number null) never match a same-SCAC unit, or match any SCAC.",
+      "root_cause": "RC_IDENTITY",
+      "partial_fix_trap": "Matching null trailer as wildcard across all SCACs steals another carrier's pool slot."
+    },
+    {
+      "id": "D27",
+      "component": "yard.policy",
+      "observable_failure": "Missing (scac, visit_type) in carrier_contracts.json uses free_minutes=120 instead of CONTRACT_MISSING reject.",
+      "root_cause": "RC_IDENTITY",
+      "partial_fix_trap": "Rejecting missing SCAC but defaulting missing visit_type still mis-clocks EMPTY_OUT."
+    },
+    {
+      "id": "D28",
+      "component": "yard.publish",
+      "observable_failure": "snapshot.json and detention.jsonl include visits from warehouse/prior_cycle.sqlite mixed into live occupancy or live charges.",
+      "root_cause": "RC_PUBLISH",
+      "partial_fix_trap": "Filtering warehouse from snapshot but not detention-run still bills prior-cycle dwell."
+    },
+    {
+      "id": "D29",
+      "component": "yard.publish",
+      "observable_failure": "health.json reports ok=true even when occupancy view digest disagrees with journal-derived occupancy or warehouse_untouched is false.",
+      "root_cause": "RC_PUBLISH",
+      "partial_fix_trap": "Comparing row counts only still misses D05/D06 double occupancy of the same spot."
+    },
+    {
+      "id": "D30",
+      "component": "yard.detention",
+      "observable_failure": "chargeable_minutes uses wall-clock seconds (or ceil/floor inconsistently) instead of whole minutes excluding pause intervals; OPEN rows omitted or pause_minutes always 0.",
+      "root_cause": "RC_HOLD_PAUSE",
+      "partial_fix_trap": "Whole-minute truncation without subtracting D17 pause intervals still mis-bills yard holds. Crosses RC_CIVIL_TIME when clock_start is already wrong."
+    }
+  ],
+  "causal_edges": [
+    {"from": "D01", "to": "D02", "why": "Grace is applied in the same civil-time compare; fixing UTC match without grace still rejects early/late."},
+    {"from": "D01", "to": "D03", "why": "DST is the same unused zoneinfo path as window conversion."},
+    {"from": "D01", "to": "D04", "why": "Live clock_start needs a converted window_start_utc; naive windows make max() meaningless."},
+    {"from": "D03", "to": "D04", "why": "Spring-forward window_start conversion error shifts free-time start by an hour."},
+    {"from": "D04", "to": "D17", "why": "Wrong clock_start plus inverted pause map compounds LIVE detention."},
+    {"from": "D04", "to": "D30", "why": "Accrual arithmetic consumes clock_start."},
+    {"from": "D05", "to": "D10", "why": "No exclusive occupant implies no dest reservation either."},
+    {"from": "D06", "to": "D07", "why": "Immediate dest occupy without vacancy is the IN_TRANSIT occupancy bug."},
+    {"from": "D07", "to": "D08", "why": "Confirm that does not free origin continues the double-count."},
+    {"from": "D07", "to": "D16", "why": "Visit still ON_YARD in occupancy lets gate-out proceed while a move is in flight."},
+    {"from": "D08", "to": "D12", "why": "Stuck origin plus door dest can occupy a door the fit rules would have rejected."},
+    {"from": "D09", "to": "D10", "why": "Cancel that leaves dest reserved is the reservation leak of D10."},
+    {"from": "D10", "to": "D05", "why": "Unreserved dest becomes a second occupant on confirm."},
+    {"from": "D11", "to": "D12", "why": "One eligibility function ignoring all door flags."},
+    {"from": "D12", "to": "D13", "why": "A drop spotted on a live door still needs wheels to leave; skipped chassis lets it roll anyway."},
+    {"from": "D13", "to": "D15", "why": "Requiring chassis without clearing on_ground on mount still cannot dispatch."},
+    {"from": "D14", "to": "D13", "why": "Stolen chassis makes an illegal roll look mounted."},
+    {"from": "D15", "to": "D14", "why": "Mount that does not exclusive-lock chassis_id enables double mount."},
+    {"from": "D16", "to": "D18", "why": "Adding gate-out blocking without release leaves visits stuck."},
+    {"from": "D17", "to": "D30", "why": "Inverted pause classes feed chargeable_minutes."},
+    {"from": "D16", "to": "D04", "why": "Held visits that gate-out early close the detention clock too soon."},
+    {"from": "D19", "to": "D23", "why": "Usage path that opens sqlite/out files is the same write-before-validate as sqlite-before-journal."},
+    {"from": "D20", "to": "D21", "why": "event_id index without payload hash."},
+    {"from": "D20", "to": "D05", "why": "Idempotent retry of gate-in double-occupies a spot."},
+    {"from": "D21", "to": "D24", "why": "Conflict overwrite can attach another SCAC to the same trailer key."},
+    {"from": "D22", "to": "D05", "why": "Full-journal replay duplicates occupancy."},
+    {"from": "D22", "to": "D20", "why": "Re-applying accepted event_ids looks like a second accept."},
+    {"from": "D23", "to": "D22", "why": "Sqlite-ahead-of-journal makes catch-up replay invent or drop visits."},
+    {"from": "D24", "to": "D20", "why": "Trailer-only key plus non-idempotent event_id double-opens units."},
+    {"from": "D25", "to": "D16", "why": "Unsealed loaded gate-out is a second fail-closed hole beside holds."},
+    {"from": "D26", "to": "D01", "why": "Pool match failure surfaces as APPOINTMENT_MISSING overlapping window errors."},
+    {"from": "D27", "to": "D04", "why": "Default 120 minutes silently wrong-clocks uncontracted SCACs."},
+    {"from": "D28", "to": "D29", "why": "Warehouse mix must fail health warehouse_untouched and occupancy digest."},
+    {"from": "D28", "to": "D30", "why": "Prior-cycle visits appear as detention rows."},
+    {"from": "D29", "to": "D05", "why": "Health that ignores digest cannot catch double occupancy."}
+  ],
+  "partial_fix_traps_summary": [
+    "Fix UTC→Chicago conversion but not grace or DST (D01 without D02/D03).",
+    "Fix exclusive gate-in occupancy but not dest reservation / IN_TRANSIT vacancy (D05 without D06–D10).",
+    "Require chassis for drops but leave on_ground true after mount, or require chassis for live tractors (D13 vs D15/D14).",
+    "Block gate-out on holds but leave release-hold a no-op (D16 vs D18).",
+    "Index event_id without payload hash (D20 vs D21); replay skip-by-visit_id still duplicates moves (D22).",
+    "Filter warehouse from snapshot but not detention-run (D28).",
+    "Pause every hold instead of inverting the class map (D17)."
+  ],
+  "behavioral_surfaces": {
+    "normal": [
+      "On-window LIVE_IN with seal, matching door, exclusive apron, event_id stored once.",
+      "DROP_IN to DROP_LOT, mount chassis, dispatch, confirm to staging, snapshot occupancy unique.",
+      "Closed visit detention 0 when dwell inside free_minutes with no holds.",
+      "Identical event_id+payload replay returns stored result and does not add occupancy."
+    ],
+    "edge_boundary": [
+      "Gate-in exactly at window_start / window_end in America/Chicago.",
+      "Gate-in at last minute of grace_early and grace_late.",
+      "Visit whose local window crosses 2026-03-08 02:00 Chicago.",
+      "Early LIVE_IN: clock_start must be window_start not gate_in.",
+      "Adjacent free-time boundary: chargeable_minutes 0 vs 1 whole minute.",
+      "Last chassis in pool; last empty DROP_LOT spot."
+    ],
+    "negative_rejection": [
+      "APPOINTMENT_MISSING / APPOINTMENT_WINDOW / VISIT_OPEN / SEAL_REQUIRED / SPOT_OCCUPIED / DOOR_CLASS / DOOR_OCCUPIED / CHASSIS_REQUIRED / CONTRACT_MISSING / HOLD_BLOCKS_OUT / MOVE_IN_FLIGHT / EVENT_CONFLICT / HOLD_ACTIVE.",
+      "Usage errors exit 2 with no file touch.",
+      "Pool appointment must not match a foreign SCAC.",
+      "Loaded outbound without seal rejected."
+    ],
+    "failure_recovery": [
+      "Kill between sqlite write and journal append leaves reconstructible state (journal absent => occupancy absent after replay).",
+      "replay from checkpoint does not double 12k historical visits.",
+      "Start-of-command catch-up when applied_seq lags journal.",
+      "cancel-move after kill during IN_TRANSIT restores origin."
+    ],
+    "cross_component": [
+      "Appointment TZ × live detention clock_start × pause holds × publish ledger.",
+      "Door fit × chassis on_ground × move occupancy × snapshot doors/in_transit.",
+      "Hold block × release × gate-out × detention pause class.",
+      "event_id idempotency × identity (scac+trailer) × occupancy exclusive.",
+      "Warehouse prior cycle × snapshot × detention × health warehouse_untouched."
+    ]
+  },
+  "organic_f2p_surface_assessment": "SUFFICIENT",
+  "organic_f2p_note": "25–30 F2P should fall out of these surfaces (window, grace, DST, clock_start, exclusive spot, in-transit vacancy, confirm/cancel, dest reservation, reefer plug, live/drop door, chassis require/mount/exclusive, hold block, pause classes, release, usage no-touch, idempotent replay, EVENT_CONFLICT, checkpoint replay, sqlite-before-journal, scac+trailer open key, seal, pool appointment, CONTRACT_MISSING, warehouse isolation, health digest). Do not author one test per defect id. Several defects share a test (e.g. D06/D07/D08 as one occupancy invariant). Several tests share a defect (D01 at on-window vs off-window).",
+  "do_not_inject": [
+    "cmd/seed — seed writes a consistent inherited journal+sqlite+checkpoint as if the clean system had run; it must not import defective runtime packages.",
+    "warehouse/prior_cycle.sqlite contents — keep a real prior cycle; the defect is publish mixing it, not a corrupt dump.",
+    "config/yard.json yard_tz and grace values — they must be correct so unused-config is discoverable.",
+    "carrier_contracts.json for the 72 seeded SCACs — leave one held-out SCAC without a row so D27 is exercisable.",
+    "docs/yard-contract.md — state the complete-system rules; do not name modules to patch or defect ids."
+  ],
+  "starter_schema_notes": [
+    "Omit UNIQUE occupant on spots so D05 can exist; Oracle restores application checks and may add the unique.",
+    "Do not UNIQUE(trailer_number) alone in a way that becomes the intended contract; starter may use that wrong unique (D24).",
+    "Keep occupancy SQL views present so D29 has something to disagree with."
+  ],
+  "hidden_knowledge_check": "Every manifestation is implied by architecture + yard-contract (TZ, occupancy, fit, holds, journal, identity, warehouse). No graded behavior depends on private defect ids. Instruction at A7 states the what (clock, exclusive occupancy, fail-closed, restart, warehouse exclusion) without this graph."
+}

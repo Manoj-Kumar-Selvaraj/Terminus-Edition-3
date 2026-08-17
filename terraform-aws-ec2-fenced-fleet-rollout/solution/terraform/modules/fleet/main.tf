@@ -25,6 +25,10 @@ resource "aws_launch_template" "this" {
   instance_type = var.instance_type
   user_data     = base64encode("userdata-sha256=${var.user_data_sha256}")
 
+  iam_instance_profile {
+    name = aws_iam_instance_profile.instance.name
+  }
+
   metadata_options {
     http_tokens                 = "required"
     http_endpoint               = "enabled"
@@ -126,6 +130,11 @@ resource "aws_security_group" "instance" {
     to_port         = 53
     security_groups = [var.resolver_security_group_id]
   }
+}
+
+resource "aws_iam_instance_profile" "instance" {
+  name = "profile-${var.app}-${var.environment}"
+  role = aws_iam_role.instance.name
 }
 
 resource "aws_iam_role" "instance" {

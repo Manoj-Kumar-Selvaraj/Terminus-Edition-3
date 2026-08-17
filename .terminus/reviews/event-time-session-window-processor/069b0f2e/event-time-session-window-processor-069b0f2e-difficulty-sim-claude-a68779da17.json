@@ -1,0 +1,159 @@
+{
+  "schema_version": "3.0",
+  "role": "Model Perspective Difficulty Simulator",
+  "review_id": "event-time-session-window-processor-069b0f2e-difficulty-sim-claude-a68779da17",
+  "task": "event-time-session-window-processor",
+  "task_commit": "069b0f2e56b11eb0fda344a82c8b50e0461d6755",
+  "control_plane_commit": "458d047c28c9ac65373147bbe56f2b1b013dbc49",
+  "protocol_policy_version": "2.2",
+  "prompt_policy_version": "2.2",
+  "role_policy_version": "1.0",
+  "role_contract_hash": "988f3f143cf2c5659dabb6e0031d6404295cc3f63e39bb49af3595902d09cae8",
+  "context_packet": ".terminus/reviews/event-time-session-window-processor/069b0f2e/event-time-session-window-processor-069b0f2e-difficulty-sim-claude-a68779da17.packet.json",
+  "verdict": "PASS",
+  "confidence": "MEDIUM",
+  "evidence_status": "SUFFICIENT",
+  "summary": "DIAGNOSTIC ONLY (not official Claude Opus 4.8×5). SIMULATION_NOT_EXECUTED. Claude-style prior: reconstruct session-contract∪oncall∪CLI matrix (tenant+user key, compare-then-update watermark, JSONL journal append, fail-closed argv, event-time vs arrival gap, catalog overlay) before patches; over-scope risk across journal_codec/ops/catalog helpers → USEFUL.",
+  "evidence": [
+    {
+      "type": "file",
+      "ref": "event-time-session-window-processor/instruction.md",
+      "observation": "Incident handoff names late/out-of-order/bounce failures, binds session-contract.md and processor.json, requires fail-closed CLI, event-time sessions, nondecreasing journal, idempotent outputs, catalog-backed last_run/ops-report, and warehouse leave-alone."
+    },
+    {
+      "type": "file",
+      "ref": "event-time-session-window-processor/environment/sessions/docs/session-contract.md",
+      "observation": "Dense binding contract: --input tie-break vs --feed file order; usage errors exit 2 before journal/output touch; watermark compare-then-update; late-but-allowed vs TOO_LATE; JSONL journal seq; catalog enterprise 45000 overlay; empty input must not advance watermark."
+    },
+    {
+      "type": "file",
+      "ref": "event-time-session-window-processor/environment/sessions/notes/oncall.md",
+      "observation": "Symptoms map to tenant mix on shared user_id, late click classified on-time after a later anchor, straggler missing from late.jsonl, --reset-output wiping journal, seq stuck at 1."
+    },
+    {
+      "type": "file",
+      "ref": "event-time-session-window-processor/environment/sessions/logs/processor-bounce.log",
+      "observation": "Captured run shows journal rewrite seq=1, watermark rewind after t=1000, --reset-output cleared journal, unknown --replay-from still created watermark.journal."
+    },
+    {
+      "type": "file",
+      "ref": "event-time-session-window-processor/environment/sessions/src/cli.py",
+      "observation": "_touch_runtime runs before argparse; --reset-output truncates watermark.journal; process_events always called with use_arrival_gap=True."
+    },
+    {
+      "type": "file",
+      "ref": "event-time-session-window-processor/environment/sessions/src/keys/session_key.py",
+      "observation": "session_key discards tenant_id and returns ('*', user_id), collapsing acme/beta keys that share u1."
+    },
+    {
+      "type": "file",
+      "ref": "event-time-session-window-processor/environment/sessions/src/engine/pipeline.py",
+      "observation": "WatermarkTrack.record runs before classify_lateness, so lateness uses a watermark already updated by the current event."
+    },
+    {
+      "type": "file",
+      "ref": "event-time-session-window-processor/environment/sessions/src/runtime/watermark_track.py",
+      "observation": "record() overwrites max_observed with the current event_time_ms instead of observe()/max, matching the log rewind to max_observed=1000."
+    },
+    {
+      "type": "file",
+      "ref": "event-time-session-window-processor/environment/sessions/src/state/journal.py",
+      "observation": "append_journal write_text-replaces the file with seq hardcoded to 1 rather than appending incrementing JSONL."
+    },
+    {
+      "type": "file",
+      "ref": "event-time-session-window-processor/environment/sessions/src/windows/assign.py",
+      "observation": "use_arrival_gap path uses arrival_index*1000 as a synthetic clock, bypassing event-time gap_exceeded even though ingest/order.py already implements --input sort vs --feed file order."
+    },
+    {
+      "type": "file",
+      "ref": "event-time-session-window-processor/environment/sessions/src/tenancy/policy.py",
+      "observation": "Catalog overlay already encodes enterprise 45000 vs other catalog plans and lab tenants keeping processor.json; a Claude sweep may over-edit this instead of wiring it."
+    },
+    {
+      "type": "run",
+      "ref": "workspace Harbor/stb availability",
+      "observation": "docker.exe and host python3 exist; stb/Harbor CLI is absent. No disposable isolated Harbor solve+verifier was executed."
+    },
+    {
+      "type": "rule",
+      "ref": ".terminus/agents/QUALITY_AGENT_PROMPTS.md#Q8",
+      "observation": "Packet requires SIMULATION_NOT_EXECUTED when a disposable Harbor/oracle run is unavailable; this result is a Claude-perspective strategy prior only, not official model evidence."
+    }
+  ],
+  "findings": [
+    {
+      "id": "Q8-CLAUDE-01",
+      "severity": "LOW",
+      "status": "INFERRED",
+      "criterion": "Claude/Claude-Code over-scope vs surgical wiring",
+      "evidence_refs": [
+        "event-time-session-window-processor/environment/sessions/docs/session-contract.md",
+        "event-time-session-window-processor/environment/sessions/src/cli.py",
+        "event-time-session-window-processor/environment/sessions/src/engine/pipeline.py"
+      ],
+      "why_it_matters": "Correct helpers already exist (observe(), event_crosses_gap, bind_config, order_for_mode). A broad architecture pass can spend budget rewriting journal_codec health, PartitionedMap, IdleClosePlanner, and ops-report instead of CLI parse-first + tenant key + compare-then-update + JSONL append.",
+      "minimal_remediation": "N/A for Q8 diagnostic; official trials still required. Authors should keep catalog/ops helpers as wiring targets, not extra graded recipes.",
+      "regression_risk": "None from this diagnostic JSON; no task files changed."
+    },
+    {
+      "id": "Q8-CLAUDE-02",
+      "severity": "LOW",
+      "status": "OBSERVED",
+      "criterion": "Simulation execution surface",
+      "evidence_refs": [
+        "workspace Harbor/stb availability",
+        ".terminus/agents/QUALITY_AGENT_PROMPTS.md#Q8"
+      ],
+      "why_it_matters": "Without Harbor, this cannot produce a verifier reward or a frozen solve trajectory; predicted USEFUL must not be treated as pass@1.",
+      "minimal_remediation": "Optional later disposable Harbor solve+verify after both Q8 perspectives freeze; never treat this JSON as official difficulty evidence.",
+      "regression_risk": "None."
+    }
+  ],
+  "missing_evidence": [
+    "Disposable isolated cold solve trajectory and post-freeze verifier reward (not executed in this Q8 run)"
+  ],
+  "change_scope": [],
+  "do_not_change": [
+    "Do not treat this as official Claude Opus 4.8×5 evidence.",
+    "Do not set task.toml difficulty from this diagnostic simulation.",
+    "Do not overwrite sibling GPT Q8 packet/result or any other review under this freeze."
+  ],
+  "next_gate": "Freeze the sibling GPT_PERSPECTIVE Q8 result if not already frozen, then Q8 aggregate; this simulation does not replace Harbor LLMaJ or official x5 trials.",
+  "role_output": {
+    "PERSPECTIVE": "CLAUDE_PERSPECTIVE",
+    "EXECUTION": "SIMULATION_NOT_EXECUTED",
+    "DIAGNOSTIC_SUMMARY": "Cold Claude/Claude-Code style would map the full session-contract∪oncall∪bounce-log matrix (tenant+user identity, watermark compare-then-update, JSONL journal seq/nondecreasing, fail-closed argv before any touch, --input event-time gap vs --feed file order, catalog enterprise overlay, empty/zero-event no-append) across cli/pipeline/journal/keys before patching, then heal via run-sessions on isolated data/output.",
+    "FIRST_DIAGNOSIS": "session_key collapses tenants to ('*', user_id); CLI touches/creates journal before parse and --reset-output wipes it; WatermarkTrack.record overwrites max_observed and pipeline records before classify so late events look on-time and the journal rewinds; append_journal rewrite+seq=1; use_arrival_gap=True bypasses event-time gap.",
+    "FILES_TOUCHED": [
+      "src/cli.py",
+      "src/keys/session_key.py",
+      "src/state/journal.py",
+      "src/runtime/watermark_track.py",
+      "src/engine/pipeline.py",
+      "src/windows/assign.py",
+      "src/engine/session_step.py",
+      "src/runtime/keyed_state.py",
+      "src/ops/finalize.py"
+    ],
+    "SHORTCUTS_ATTEMPTED": [
+      "Broad rewrite of journal_codec health checks, PartitionedMap, and IdleClosePlanner instead of surgical session_key + observe-after-classify + JSONL append + parse-before-touch",
+      "Treating catalog overlay and ops-report/last_run as a second repair surface and over-editing bind_config/desk helpers that already encode the contract",
+      "Unifying --input and --feed into one ordered pipeline and leaving use_arrival_gap=True"
+    ],
+    "FIRST_MEANINGFUL_DIVERGENCE": "After reconstructing the contract, over-expand into ungraded catalog/ops-report/journal_codec/PartitionedMap internals, delaying the minimal tenant-key + compare-then-update watermark + journal append + CLI fail-closed-before-mutation loop.",
+    "FINAL_VERIFIER_RESULT": "NOT_RUN",
+    "LIKELY_REASONING_WALLS": [
+      "Watermark must be compared before updating max_observed; updating first classifies stragglers as on-time and can rewind the journal",
+      "--input event-time gap vs --feed file order, and the use_arrival_gap synthetic clock trap",
+      "JSONL append with incrementing seq and nondecreasing raw watermark vs rewrite-with-seq=1",
+      "Session identity is (tenant_id, user_id); '*' collapse mixes lab tenants that share user ids",
+      "Unknown/omitted flags must exit 2 before creating or mutating journal/outputs; --reset-output must not clear journal or open sessions",
+      "Catalog enterprise 45000 overlay vs non-enterprise catalog and lab tenants keeping processor.json",
+      "Empty/zero-event runs must not append watermarks; malformed lines reject-closed without advancing max_observed"
+    ],
+    "ENVIRONMENT_TOOL_FRICTION": "Large Python package under /app/sessions with many helper modules (catalog, ledger, ops, windows, journal_codec). Operator path is bash run-sessions → python3 -m src.cli; warehouse SQLite is image-baked. Host has docker/python but no stb/Harbor, so a disposable isolated solve+verifier could not be run here.",
+    "PREDICTED_OFFICIAL_SIGNAL": "USEFUL",
+    "SIMULATION_NOTE": "Diagnostic Claude-perspective strategy prior only; NOT official Claude Opus 4.8×5 Harbor evidence."
+  }
+}

@@ -1,0 +1,29 @@
+{
+  "schema_version": "1.0",
+  "status": "ARCHITECTURE_READY",
+  "task": "terraform-aws-ec2-fenced-fleet-rollout",
+  "profile": "large_system_strict",
+  "task_kind": "software",
+  "entrypoint": "/app/bin/fenced-fleet-rollout",
+  "control_plane": "/opt/ec2-controlplane",
+  "packages": [
+    "controller",
+    "internal/types",
+    "internal/ipam",
+    "internal/validate",
+    "internal/identity",
+    "internal/placement",
+    "internal/network",
+    "internal/iam",
+    "internal/volume",
+    "internal/rollout",
+    "internal/fence",
+    "internal/drift",
+    "internal/importdata",
+    "internal/journal",
+    "internal/controlplane",
+    "internal/render",
+    "cmd/fleetctl",
+    "cmd/controlplane"
+  ]
+}

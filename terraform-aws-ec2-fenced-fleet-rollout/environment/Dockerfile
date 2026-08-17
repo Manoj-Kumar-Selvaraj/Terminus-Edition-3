@@ -4,7 +4,7 @@
 FROM public.ecr.aws/docker/library/golang:1.24-bookworm@sha256:1a6d4452c65dea36aac2e2d606b01b4a029ec90cc1ae53890540ce6173ea77ac AS controlplane_build
 
 WORKDIR /build
-COPY go.mod /build/go.mod
+RUN printf 'module fleetrollout\n\ngo 1.24\n' > /build/go.mod
 COPY cmd/controlplane /build/cmd/controlplane
 RUN go build -o /out/ec2-controlplane ./cmd/controlplane \
     && sha256sum /out/ec2-controlplane > /out/ec2-controlplane.sha256
@@ -61,12 +61,19 @@ COPY data/ /app/data/
 COPY evidence/ /app/evidence/
 COPY go.mod /app/go.mod
 COPY controller/ /app/controller/
+COPY internal/ /app/internal/
 COPY cmd/fleetctl/ /app/cmd/fleetctl/
 COPY terraform/ /app/terraform/
+COPY scripts/ /app/scripts/
 COPY bin/ /app/bin/
 
-RUN mkdir -p /app/var/fleet /app/output \
+RUN python3 -c "import sqlite3, pathlib; pathlib.Path('/app/data').mkdir(parents=True, exist_ok=True); con=sqlite3.connect('/app/data/ipam.sqlite'); con.executescript(pathlib.Path('/app/docs/sql/schema.sql').read_text()); con.executescript(pathlib.Path('/app/docs/sql/seed.sql').read_text()); con.close(); pathlib.Path('/opt/ipam.sqlite').write_bytes(pathlib.Path('/app/data/ipam.sqlite').read_bytes())" \
+    && cd /app \
+    && go mod tidy \
+    && go build -o /tmp/fleetctl-bake ./cmd/fleetctl \
+    && rm -f /tmp/fleetctl-bake \
+    && mkdir -p /app/var/fleet /app/output \
     && chmod +x /app/bin/fenced-fleet-rollout \
-    && chmod -R go-w /app/docs /app/data /app/evidence
+    && chmod -R go-w /app/docs /app/data /app/evidence /opt/ipam.sqlite
 
 CMD ["/bin/bash", "-l"]

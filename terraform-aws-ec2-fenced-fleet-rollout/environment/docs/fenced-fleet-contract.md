@@ -4,7 +4,7 @@ Offline release controller for a private payments fleet. Terraform expresses des
 
 ## Configuration
 
-Input schema `ec2-module-config.v2` is loaded from `/app/data/fleet_config.json` unless overridden. Required families: `release_artifact`, `ami_catalog`, `asg`, `placement`, `network`, `ebs_volumes`, and `rollout.owner_token`.
+Input schema `ec2-module-config.v2` is loaded from `/app/data/fleet_config.json` unless overridden. Required families: `release_artifact`, `ami_catalog`, `asg`, `placement`, `network`, `ebs_volumes`, and `rollout.owner_token`. Configured subnet IDs and the approved AMI must exist in `/app/data/ipam.sqlite` as documented in `/app/docs/ipam-catalog.md`.
 
 `release_artifact` is authoritative. Never select `ami_catalog.latest`. Manifest digest is lowercase SHA-256 of canonical JSON over keys `manifest_version`, `ami_id`, `ami_owner_account_id`, `architecture`, `commit_sha`, `build_id`, `user_data_sha256` (sorted keys, compact separators). `manifest_sha256` is not part of its own input.
 
@@ -34,7 +34,7 @@ Legacy state recovers slot from `Slot` tags and preserves imported instance IDs 
 
 ## Control plane and operator
 
-The trusted control plane binary is `/opt/ec2-controlplane`. Controllers commit rendered inventory through it; local state alone is not proof. Operator entrypoint `/app/bin/fenced-fleet-rollout` regenerates `/app/var/fleet/plan.json`, applies through the control plane, and writes `/app/output/rollout-report.json` with fields `status`, `report_digest`, `state_digest`, `control_plane_state_digest`, `refresh_status`, `instance_count`, `volume_count`, `operation_id`, and release identity. Success requires `status: READY` and matching controller/control-plane digests. A second identical run must keep the same `report_digest`.
+The trusted control plane binary is `/opt/ec2-controlplane`. The Go controller lives under `/app/controller` and `/app/internal`. Controllers commit rendered inventory through the control plane; local state alone is not proof. Operator entrypoint `/app/bin/fenced-fleet-rollout` regenerates `/app/var/fleet/plan.json`, applies through the control plane, and writes `/app/output/rollout-report.json` with fields `status`, `report_digest`, `state_digest`, `control_plane_state_digest`, `refresh_status`, `instance_count`, `volume_count`, `operation_id`, and release identity. Success requires `status: READY` and matching controller/control-plane digests. A second identical run must keep the same `report_digest`.
 
 ## IAM
 

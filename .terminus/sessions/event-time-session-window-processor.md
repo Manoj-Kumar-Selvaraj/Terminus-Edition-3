@@ -7,7 +7,7 @@ This is the durable operational checkpoint for one task. Keep it evidence-orient
 ## Identity
 
 - Task: `event-time-session-window-processor`
-- Controller state: `FROZEN_CANDIDATE`
+- Controller state: `PRE_LLMAJ`
 - Working branch: `main`
 - Pull request: `none`
 - Current task commit: `069b0f2e56b11eb0fda344a82c8b50e0461d6755`
@@ -31,42 +31,31 @@ KNOWN_POLICY_CONFLICTS: none
 
 | Gate | Status | Evidence / version |
 | --- | --- | --- |
-| Q1 Spec Gap Repair | PASS | `.terminus/reviews/event-time-session-window-processor/q1-spec-gap.md` |
-| Q2 Verifier Coverage Repair | REPAIR_PROPOSED | VE-01..VE-03 and CR-01/CR-02 applied; recheck after freeze |
-| Q3 Spec Ambiguity Repair | PASS | `.terminus/reviews/event-time-session-window-processor/q3-ambiguity.md` |
-| Q7 Task Format Enforcer | PASS | layout/Docker unchanged; oracle CLI + tests only |
-| Creator Complexity Gate | PASS | local validator; 27 F2P / 15 P2P |
-| Runtime authenticity | PASS | 12000 click_event rows |
-| Ruff verifier | PASS | `tests/test_outputs.py` and `solution/fixed/cli.py` clean |
-| Oracle = 1 | STALE | last Harbor `/tmp/e3-ets/2026-08-17__15-46-13`; rerun after freeze |
-| NOP = 0 | STALE | last Harbor `/tmp/e3-ets/2026-08-17__15-47-24`; rerun after freeze |
+| Harbor Oracle | PASS | `/tmp/e3-ets/2026-08-17__16-52-27` reward **1.0** |
+| Harbor NOP | PASS | `/tmp/e3-ets/2026-08-17__16-53-36` reward **0.0** |
 | Freeze | PASS | `069b0f2e56b11eb0fda344a82c8b50e0461d6755` |
-| Q4 Spec-Test Contract Reviewer | STALE | tests/oracle changed; `3fec54c` Q4 historical |
-| Q6 Production Logic Auditor | PASS | environment/task.toml unchanged; scope reuse still eligible |
-| Quality Interlock | STALE | Q4 stale after producer repair |
-| Instruction Reviewer | PASS | `3fec54c` `...-instruction-21c452f480.json`; instruction.md not edited this cycle |
-| Documentation Reviewer | PASS | `3fec54c` `...-documentation-e12cdcdf16.json`; README not edited this cycle |
-| Verifier Engineer | REVISE | Adjudicator `b229a618a5` controls VE-01..VE-03; same-path later PASS overwrite is not a new packet |
-| Comprehensive Reviewer | REQUEST_CHANGES | Adjudicator controls CR-01 CR-02; same-path later APPROVE overwrite is not a new packet |
-| Adjudicator | REQUEST_CHANGES | `.terminus/reviews/event-time-session-window-processor/3fec54c6/event-time-session-window-processor-3fec54c6-adjudication-b229a618a5.json` HIGH |
-| Pre-LLMaJ aggregate | REVISE | controlling findings still open until refreeze + cold re-review |
-| Q8 GPT/Claude | STALE | diagnostics were bound to `3fec54c`; task tree moving |
-| Harbor LLMaJ | DEFERRED | user-deferred unless asked |
-| Difficulty trials | DEFERRED | user-deferred unless asked |
+| Q4 Spec-Test | PASS | `.../069b0f2e/...-spec-test-contract-56b468be19.json` HIGH; advisory Q4-A01..Q4-A04 |
+| Q6 Production Logic | PASS | scope-preserved `c52a4631cd7a23d97a66b566737ae50487e12cdc4988699900d4b71cd89b51da` |
+| Quality Interlock | PASS | `.terminus/reviews/event-time-session-window-processor/069b0f2e/quality-interlock.md` |
+| Instruction Reviewer | PASS | retained `3fec54c` `...-instruction-21c452f480.json` |
+| Documentation Reviewer | PASS | retained `3fec54c` `...-documentation-e12cdcdf16.json` |
+| Verifier Engineer | PASS | `.../069b0f2e/...-verifier-engineer-21a190e78a.json` HIGH; advisory VE-01..VE-03 |
+| Comprehensive Reviewer | INSUFFICIENT_EVIDENCE | `.../069b0f2e/...-comprehensive-checklist-6f06ff7069.json` (later-gate hold; not converted to APPROVE) |
+| Adjudicator | PASS | `.../069b0f2e/...-adjudication-20c0830d02.json` BOTH_PARTLY HIGH |
+| Pre-LLMaJ aggregate | PASS | `.terminus/reviews/event-time-session-window-processor/069b0f2e/pre-llmaj-aggregate.md` |
+| Q8 GPT Perspective | PASS (diagnostic) | `.../069b0f2e/...-difficulty-sim-gpt-ca5c146922.json` EXECUTED disposable copy; Harbor NOT_RUN; USEFUL; not official GPT evidence |
+| Q8 Claude Perspective | PASS (diagnostic) | `.../069b0f2e/...-difficulty-sim-claude-a68779da17.json` SIMULATION_NOT_EXECUTED; USEFUL; not official Claude evidence |
+| Q8 aggregate | COMPLETE | `.terminus/reviews/event-time-session-window-processor/069b0f2e/q8-aggregate.md` |
+| Harbor LLMaJ | DEFERRED | unless asked |
+| Difficulty trials | DEFERRED | unless asked |
 
 ## Current blocker
 
-Frozen at `069b0f2e56b11eb0fda344a82c8b50e0461d6755`. Harbor oracle/NOP on this commit are pending, then cold Q4, Verifier, Comprehensive.
-
-## Root-cause classification
-
-- Owner: Q2 / Oracle Author
-- Classification: verifier_gap, oracle_contract
-- Evidence: Adjudicator `b229a618a5` REQUEST_CHANGES
+None for Q8. Harbor LLMaJ and official GPT×5/Claude×5 remain deferred. Comprehensive INSUFFICIENT_EVIDENCE still holds RC-META-004 and RC-TRIAL-001..006 until those later gates run.
 
 ## Next action
 
-Harbor oracle 1 / NOP 0 on `069b0f2` with `JOBS_DIR=/tmp/e3-ets`. Then new Q4 packet (Q6 reuse if production scope hash still `c52a4631…`) and cold Verifier + Comprehensive. Do not edit instruction.md.
+None unless the user authorizes Harbor LLMaJ or official difficulty trials. Do not convert Comprehensive to APPROVE. Do not set difficulty from Q8.
 
 ## Decisions that must survive chat changes
 
@@ -74,11 +63,12 @@ Harbor oracle 1 / NOP 0 on `069b0f2` with `JOBS_DIR=/tmp/e3-ets`. Then new Q4 pa
 - Planted starter defects unchanged (oracle copies five files only).
 - last_run.warehouse.event_count and ops-report.inventory.event_count equal catalog click_event COUNT(*).
 - Harbor LLMaJ and official GPT×5/Claude×5 deferred unless asked.
-- Leave unrelated dirty work untouched (including jetstream and cobol-comp3).
+- Leave unrelated dirty work untouched.
 - Do not count `sql/seed.sql` or `warehouse/click_ledger.jsonl` toward Q6 LOC.
 - Do not add `task.toml` explanation fields.
-- Do not majority-vote a later same-path PASS/APPROVE overwrite over Adjudicator `b229a618a5`. Controlling IDs: VE-01, VE-02, VE-03, CR-01, CR-02. VE-04..VE-07 advisory only.
+- Adjudicator `20c0830d02` is controlling Stage E: later-gate holds stay; no current-gate repair; this is not SUBMISSION_READY.
+- Do not overwrite frozen `069b0f2e` reviews.
 
 ## Resume rule
 
-A new controller follows `.terminus/CONTINUE_SESSION.md`, reconciles this checkpoint with Git and live review provenance, and treats Adjudicator `b229a618a5` as controlling over any same-path later overwrite of Verifier/Comprehensive JSON.
+A new controller follows `.terminus/CONTINUE_SESSION.md` and treats freeze `069b0f2e56b11eb0fda344a82c8b50e0461d6755`, Harbor `/tmp/e3-ets/2026-08-17__16-52-27` (1.0) and `/tmp/e3-ets/2026-08-17__16-53-36` (0.0), Quality Interlock PASS, Adjudicator `20c0830d02`, Pre-LLMaJ aggregate PASS, and Q8 aggregate COMPLETE as current. Harbor LLMaJ and official ×10 remain deferred.

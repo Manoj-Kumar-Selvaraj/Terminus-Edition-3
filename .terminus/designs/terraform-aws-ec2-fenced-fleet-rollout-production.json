@@ -1,0 +1,51 @@
+{
+  "schema_version": "1.0",
+  "task": "terraform-aws-ec2-fenced-fleet-rollout",
+  "production_authenticity": {
+    "incident_evidence": [
+      "environment/evidence/controlplane-lost-reply.log",
+      "environment/evidence/torn_rollout_journal.jsonl"
+    ],
+    "instruction_evidence_paths": [
+      "/app/docs",
+      "/app/evidence"
+    ],
+    "stateful_dataset": {
+      "schema": "environment/docs/sql/schema.sql",
+      "seed": "environment/docs/sql/seed.sql",
+      "primary_table": "subnets",
+      "min_records": 12000,
+      "max_records": 12000,
+      "variance_queries": {
+        "accounts": {
+          "sql": "SELECT COUNT(DISTINCT account_id) FROM subnets",
+          "min": 4
+        },
+        "azs": {
+          "sql": "SELECT COUNT(DISTINCT az) FROM subnets",
+          "min": 6
+        },
+        "tiers": {
+          "sql": "SELECT COUNT(DISTINCT tier) FROM subnets",
+          "min": 5
+        },
+        "private_app": {
+          "sql": "SELECT COUNT(*) FROM subnets WHERE tier = 'private_app' AND account_id = '111122223333'",
+          "min": 4
+        },
+        "images": {
+          "sql": "SELECT COUNT(*) FROM images",
+          "min": 100
+        },
+        "available_images": {
+          "sql": "SELECT COUNT(*) FROM images WHERE state = 'available'",
+          "min": 50
+        },
+        "cidrs": {
+          "sql": "SELECT COUNT(DISTINCT cidr) FROM subnets",
+          "min": 1000
+        }
+      }
+    }
+  }
+}

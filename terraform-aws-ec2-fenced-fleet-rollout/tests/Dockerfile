@@ -1,7 +1,7 @@
 FROM public.ecr.aws/docker/library/golang:1.24-bookworm@sha256:1a6d4452c65dea36aac2e2d606b01b4a029ec90cc1ae53890540ce6173ea77ac AS controlplane_build
 
 WORKDIR /build
-COPY fixtures/go.mod /build/go.mod
+RUN printf 'module fleetrollout\n\ngo 1.24\n' > /build/go.mod
 COPY fixtures/controlplane/ /build/cmd/controlplane/
 RUN go build -o /out/ec2-controlplane ./cmd/controlplane \
     && sha256sum /out/ec2-controlplane > /out/ec2-controlplane.sha256
@@ -43,6 +43,10 @@ RUN pip3 install --no-cache-dir --break-system-packages \
         pytest-json-ctrf==0.5.3 \
         ruff==0.8.4
 
+WORKDIR /tmp/gomod
+RUN printf 'module fleetrollout\n\ngo 1.24\n\nrequire modernc.org/sqlite v1.38.2\n' > go.mod \
+    && go mod download
+
 COPY fixtures/mirror/providers.tf /opt/terraform-mirror-src/providers.tf
 RUN mkdir -p /opt/terraform-provider-mirror \
     && cd /opt/terraform-mirror-src \
@@ -55,13 +59,16 @@ RUN chmod 0555 /opt/ec2-controlplane
 
 WORKDIR /app
 COPY terraform.tfrc /app/terraform.tfrc
-RUN mkdir -p /app/controller /app/terraform /app/cmd /app/var/fleet /app/output /app/bin /app/data /tests
+RUN mkdir -p /app/controller /app/terraform /app/cmd /app/internal /app/var/fleet /app/output /app/bin /app/data /app/scripts /tests
 
 COPY test.sh /tests/test.sh
 COPY test_outputs.py /tests/test_outputs.py
 COPY fixtures/ /tests/fixtures/
 COPY fixtures/bin/fenced-fleet-rollout /app/bin/fenced-fleet-rollout
+COPY fixtures/scripts/ /app/scripts/
+COPY fixtures/sql/ /tmp/sql/
 
-RUN chmod +x /tests/test.sh /app/bin/fenced-fleet-rollout
+RUN python3 -c "import sqlite3, pathlib; con=sqlite3.connect('/opt/ipam.sqlite'); con.executescript(pathlib.Path('/tmp/sql/schema.sql').read_text()); con.executescript(pathlib.Path('/tmp/sql/seed.sql').read_text()); con.close()" \
+    && chmod +x /tests/test.sh /app/bin/fenced-fleet-rollout
 
 WORKDIR /tests

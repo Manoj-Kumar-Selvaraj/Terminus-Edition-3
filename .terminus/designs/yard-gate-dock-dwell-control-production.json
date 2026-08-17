@@ -1,0 +1,51 @@
+{
+  "schema_version": "1.0",
+  "task": "yard-gate-dock-dwell-control",
+  "production_authenticity": {
+    "incident_evidence": [
+      "environment/yard/logs/gate-desk.log",
+      "environment/yard/ops/handoff.txt"
+    ],
+    "instruction_evidence_paths": [
+      "/app/yard/logs/gate-desk.log",
+      "/app/yard/ops/handoff.txt"
+    ],
+    "stateful_dataset": {
+      "schema": "environment/yard/sql/schema.sql",
+      "seed": "environment/yard/sql/seed.sql",
+      "primary_table": "visits",
+      "min_records": 12600,
+      "max_records": 12600,
+      "variance_queries": {
+        "scacs": {
+          "sql": "SELECT COUNT(DISTINCT scac) FROM visits",
+          "min": 70
+        },
+        "visit_types": {
+          "sql": "SELECT COUNT(DISTINCT visit_type) FROM visits",
+          "min": 5
+        },
+        "equipment": {
+          "sql": "SELECT COUNT(DISTINCT equipment) FROM visits",
+          "min": 4
+        },
+        "states": {
+          "sql": "SELECT COUNT(DISTINCT state) FROM visits",
+          "min": 2
+        },
+        "days": {
+          "sql": "SELECT COUNT(DISTINCT substr(gate_in, 1, 10)) FROM visits",
+          "min": 14
+        },
+        "open_or_closed": {
+          "sql": "SELECT COUNT(*) FROM visits WHERE state = 'CLOSED'",
+          "min": 10000
+        },
+        "trailers": {
+          "sql": "SELECT COUNT(DISTINCT trailer_number) FROM visits",
+          "min": 10000
+        }
+      }
+    }
+  }
+}

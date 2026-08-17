@@ -1,0 +1,198 @@
+{
+  "schema_version": "3.0",
+  "role": "Adjudicator",
+  "review_id": "event-time-session-window-processor-069b0f2e-adjudication-20c0830d02",
+  "task": "event-time-session-window-processor",
+  "task_commit": "069b0f2e56b11eb0fda344a82c8b50e0461d6755",
+  "control_plane_commit": "458d047c28c9ac65373147bbe56f2b1b013dbc49",
+  "protocol_policy_version": "2.2",
+  "prompt_policy_version": "2.2",
+  "role_policy_version": "1.0",
+  "role_contract_hash": "559077c47ef75f5c4bdbea023f30c1a2a26ba037ff4291534c836e5f342a0135",
+  "context_packet": ".terminus/reviews/event-time-session-window-processor/069b0f2e/event-time-session-window-processor-069b0f2e-adjudication-20c0830d02.packet.json",
+  "verdict": "PASS",
+  "confidence": "HIGH",
+  "evidence_status": "SUFFICIENT",
+  "summary": "BOTH_PARTLY on cluster 1: Comprehensive INSUFFICIENT_EVIDENCE on RC-META-004 and RC-TRIAL-001..006 is controlling for later gates (Harbor LLMaJ, official x10, trial analysis, difficulty, SUBMISSION_READY) and forbids converting missing trials into APPROVE. It is not controlling at PRE_LLMAJ/FROZEN_CANDIDATE because those criteria are not yet applicable by stage contract; requiring official trials to obtain Comprehensive APPROVE deadlocks Harbor LLMaJ, whose input_contract requires PRE_LLMAJ_PASS. Cluster 2: Q4-A01..Q4-A04 and VE-01..VE-03 are advisory LOW only. This file is not Pre-LLMaJ aggregate PASS and not SUBMISSION_READY.",
+  "evidence": [
+    {
+      "type": "artifact",
+      "ref": ".terminus/reviews/event-time-session-window-processor/069b0f2e/event-time-session-window-processor-069b0f2e-adjudication-20c0830d02.packet.json",
+      "observation": "Bound packet: Adjudicator, state FROZEN_CANDIDATE, task_commit 069b0f2e56b11eb0fda344a82c8b50e0461d6755, control_plane_commit 458d047c28c9ac65373147bbe56f2b1b013dbc49, role_contract_hash 559077c47ef75f5c4bdbea023f30c1a2a26ba037ff4291534c836e5f342a0135. Allowed evidence is authoritative rules, disputed artifact, frozen reviewer reports, and run evidence. Desired verdicts and unfrozen reviews are excluded."
+    },
+    {
+      "type": "rule",
+      "ref": ".terminus/agents/PROMPTS.md#Adjudicator",
+      "observation": "Adjudicator must identify controlling rule/evidence, distinguish scopes that can both be correct, request more evidence only when unresolved, and must not majority-vote or author a compromise solely to satisfy both reviewers."
+    },
+    {
+      "type": "rule",
+      "ref": ".terminus/agents/CI_ORCHESTRATOR.md#stage-order",
+      "observation": "Registered chain is QUALITY_INTERLOCK -> PRE_LLMAJ -> MODEL_DIAGNOSTIC_GPT -> MODEL_DIAGNOSTIC_CLAUDE -> MODEL_DIAGNOSTIC_AGGREGATE -> HARBOR_LLMAJ -> OFFICIAL_MODEL_TRIALS -> TRIAL_ANALYSIS -> DIFFICULTY_ASSESSMENT -> FINAL_REVIEW -> SUBMISSION_READY. HARBOR_LLMAJ and OFFICIAL_MODEL_TRIALS are EXTERNAL_GATE stages. Pending later-gate state is not PASS evidence for those later gates. Pre-LLMaJ is before Harbor LLMaJ and official x10."
+    },
+    {
+      "type": "rule",
+      "ref": ".terminus/agents/stage_contracts.json#HARBOR_LLMAJ",
+      "observation": "HARBOR_LLMAJ input_contract required_fields include PRE_LLMAJ_PASS. OFFICIAL_MODEL_TRIALS input_contract required_fields include PRE_LLMAJ_PASS and HARBOR_LLMAJ_PASS. Evidence_required for official trials is GPT-5.5/Codex x5 plus Claude Opus 4.8/Claude Code x5. Those artifacts are later-gate inputs, not PRE_LLMAJ evidence_required."
+    },
+    {
+      "type": "rule",
+      "ref": ".terminus/reviewers/PRE_LLMAJ.md",
+      "observation": "Purpose is to predict Harbor/human failures before spending Harbor/model time. Only PRE_LLMAJ: PASS permits slow Harbor LLMaJ. INSUFFICIENT_EVIDENCE blocks aggregate PASS when the missing evidence is required at this panel. Low does not block on its own. Official difficulty/solvability interpretation applies to the combined 10 official trials when those trials exist. Inspectable High FAIL and valid special trial-analysis flags are current blockers; absence of later-gate flags is not a valid revision flag."
+    },
+    {
+      "type": "rule",
+      "ref": ".terminus/agents/COMPREHENSIVE_REVIEWER.md",
+      "observation": "Disposition every available trial-analysis flag. Missing acceptance-relevant evidence is INSUFFICIENT_EVIDENCE, not a guessed PASS/FAIL. Comprehensive packet evidence_allowed is trial evidence when available. Criterion-level INSUFFICIENT_EVIDENCE on unproduced official trials is correct; converting that gap to APPROVE is forbidden. That does not make later-gate artifacts currently due."
+    },
+    {
+      "type": "rule",
+      "ref": ".terminus/reviewers/REVIEWER_CHECKLIST.md#RC-META-004",
+      "observation": "RC-META-004 High: difficulty must match measured pass-rate policy, not author intent. Measurement is the combined official 10-run mean. That measurement is DIFFICULTY_ASSESSMENT / OFFICIAL_MODEL_TRIALS evidence, not a PRE_LLMAJ inspectable task-file FAIL."
+    },
+    {
+      "type": "rule",
+      "ref": ".terminus/reviewers/REVIEWER_CHECKLIST.md#RC-TRIAL-001",
+      "observation": "RC-TRIAL-001 through RC-TRIAL-006 require explicit disposition of every available trial-analysis flag. Valid High flags and valid special Medium flags can require revision. No official flags were supplied on this freeze. Absence of flags is not examined-and-clear, and is also not a present valid revision flag."
+    },
+    {
+      "type": "rule",
+      "ref": ".terminus/agents/QUALITY_AGENT_REGISTRY.md#QUALITY_INTERLOCK_PASS",
+      "observation": "QUALITY_INTERLOCK_PASS is a prerequisite of independent Pre-LLMaJ. Official 10 difficulty trials are after PRE_LLMAJ PASS. Frozen quality-interlock.md records QUALITY_INTERLOCK: PASS on this task_commit, with Q8/HARBOR_LLMAJ/DIFFICULTY_TRIALS blocked or deferred until PRE_LLMAJ PASS."
+    },
+    {
+      "type": "rule",
+      "ref": ".terminus/agents/QUALITY_AGENT_PROMPTS.md#Q4-materiality",
+      "observation": "LOW is advisory and does not block Quality Interlock unless an authoritative rule makes that condition mandatory. PASS requires empty BLOCKING_FINDING_IDS; advisory IDs may accompany PASS when non-blocking materiality is explicit."
+    },
+    {
+      "type": "review",
+      "ref": ".terminus/reviews/event-time-session-window-processor/069b0f2e/event-time-session-window-processor-069b0f2e-comprehensive-checklist-6f06ff7069.json",
+      "observation": "Frozen Comprehensive INSUFFICIENT_EVIDENCE. Walk: 0 High/Medium FAIL, FAIL count 0, special trial revision flags 0, coverage 100%. Recommendation is INSUFFICIENT_EVIDENCE solely because official GPT-5.5x5 + Claude Opus 4.8x5 and Harbor LLMaJ trial-analysis flags are absent. Findings F-RC-META-004-UNMEASURED and F-RC-TRIAL-NO-OFFICIAL-FLAGS say not to treat missing measurement as a task-file defect and not to guess PASS from missing flags. next_gate asked for official trials before any APPROVE-class verdict."
+    },
+    {
+      "type": "review",
+      "ref": ".terminus/reviews/event-time-session-window-processor/069b0f2e/event-time-session-window-processor-069b0f2e-spec-test-contract-56b468be19.json",
+      "observation": "Frozen Q4 PASS HIGH, evidence SUFFICIENT. BLOCKING_FINDING_IDS empty. ADVISORY_FINDING_IDS Q4-A01..Q4-A04 only, all LOW."
+    },
+    {
+      "type": "review",
+      "ref": ".terminus/reviews/event-time-session-window-processor/069b0f2e/event-time-session-window-processor-069b0f2e-verifier-engineer-21a190e78a.json",
+      "observation": "Frozen Verifier Engineer PASS HIGH, evidence SUFFICIENT. BLOCKING_FINDING_IDS empty. ADVISORY_FINDING_IDS VE-01..VE-03 only, all LOW."
+    },
+    {
+      "type": "review",
+      "ref": ".terminus/reviews/event-time-session-window-processor/069b0f2e/quality-interlock.md",
+      "observation": "Frozen QUALITY_INTERLOCK PASS on 069b0f2e. Q4 PASS HIGH; Q6 reused under production-scope hash c52a4631. PRE_LLMAJ: NEXT. Q8 blocked until PRE_LLMAJ PASS. HARBOR_LLMAJ DEFERRED. DIFFICULTY_TRIALS DEFERRED."
+    },
+    {
+      "type": "run",
+      "ref": "/tmp/e3-ets/2026-08-17__16-52-27",
+      "observation": "Packet-recorded Harbor oracle reward 1.0 for this freeze. Not official x10 or trial-analysis flags."
+    },
+    {
+      "type": "run",
+      "ref": "/tmp/e3-ets/2026-08-17__16-53-36",
+      "observation": "Packet-recorded Harbor NOP reward 0.0 for this freeze. Confirms starter discrimination; does not measure RC-META-004 or RC-TRIAL-*."
+    }
+  ],
+  "findings": [],
+  "missing_evidence": [],
+  "change_scope": [],
+  "do_not_change": [
+    "Do not convert Comprehensive INSUFFICIENT_EVIDENCE into APPROVE or APPROVE_WITH_NOTE while official x10 and trial-analysis flags remain absent.",
+    "Do not dispatch Harbor LLMaJ or official GPT-5.5x5 + Claude Opus 4.8x5 as a prerequisite for Pre-LLMaJ or Comprehensive APPROVE; that inverts stage_contracts.json (HARBOR_LLMAJ requires PRE_LLMAJ_PASS).",
+    "Do not treat this Adjudicator file as PRE_LLMAJ Stage F aggregate PASS or as SUBMISSION_READY.",
+    "Do not retune task.toml difficulty from author intent without the official 10-run mean.",
+    "Do not promote Q4-A01..Q4-A04 or VE-01..VE-03 from advisory LOW to blockers.",
+    "Do not edit instruction.md, README.md, tests, oracle, or environment on the strength of these two clusters.",
+    "Do not overwrite other frozen reviews."
+  ],
+  "next_gate": "Return to CI Orchestrator Stage E/F. Apply this scope split: later-gate holds remain on RC-META-004 and RC-TRIAL-001..006; no current-gate task repair and no official-trial dispatch from this dispute. This file is not PRE_LLMAJ PASS.",
+  "role_output": {
+    "DECISION": "BOTH_PARTLY",
+    "CONTROLLING_RULE_OR_EVIDENCE": "Stage order and contracts control current-gate applicability: CI_ORCHESTRATOR.md / AGENT_SYSTEM.md chain places Harbor LLMaJ and official x10 after PRE_LLMAJ; HARBOR_LLMAJ and OFFICIAL_MODEL_TRIALS input_contract require PRE_LLMAJ_PASS; PRE_LLMAJ.md permits Harbor only after PRE_LLMAJ PASS; Comprehensive packet allows trial evidence only when available. RC-META-004 and RC-TRIAL-001..006 plus COMPREHENSIVE_REVIEWER.md (do not guess PASS from missing acceptance evidence) control later gates and forbid APPROVE until official trials and flags exist. Q4 materiality and PRE_LLMAJ Low-does-not-block control cluster 2.",
+    "SCOPE_RECONCILIATION": "Pre-LLMaJ/FROZEN_CANDIDATE inspects task files, Oracle/NOP, Q4/Q6/quality interlock, and specialist/comprehensive walks of currently available evidence. SUBMISSION_READY / DIFFICULTY_ASSESSMENT / TRIAL_ANALYSIS / OFFICIAL_MODEL_TRIALS / HARBOR_LLMAJ require measured difficulty and disposition of official trial-analysis flags. Both scopes are correct. Comprehensive criterion-level INSUFFICIENT_EVIDENCE is the right non-PASS, non-FAIL mark for unproduced later-gate evidence; it is not a PRE_LLMAJ High FAIL and not a warrant to run those gates now.",
+    "REASON": "No majority vote and no blended compromise. Cluster 1 is BOTH_PARTLY because A is right that missing official x10/LLMaJ cannot be scored PASS/APPROVE, and B is right that RC-META-004 and RC-TRIAL-001..006 are not yet applicable as PRE_LLMAJ blockers. Treating Comprehensive INSUFFICIENT_EVIDENCE as a current requirement to produce those trials would deadlock Harbor LLMaJ. Cluster 2 is B: frozen Q4 and Verifier Engineer mark the items advisory LOW with empty BLOCKING_FINDING_IDS. Envelope PASS means this dispute has no controlling current-gate repair; it is not Stage F PRE_LLMAJ PASS.",
+    "REQUIRED_ACTION": "Leave the task tree unchanged for these clusters. Keep Comprehensive INSUFFICIENT_EVIDENCE as the non-APPROVE later-gate hold. Do not require official x10 or Harbor LLMaJ to close Pre-LLMaJ Stage E. Do not promote Q4-A01..Q4-A04 or VE-01..VE-03. Orchestrator performs its own Stage F aggregate; do not start producer repair or trial dispatch from this execution.",
+    "RECHECK": "PRE_LLMAJ Stage F uses this adjudication as the Stage E resolution, not as aggregate PASS. After a later PRE_LLMAJ PASS, Harbor LLMaJ, then official x10, re-score RC-META-004 and RC-TRIAL-001..006 with Comprehensive (or the trial/difficulty owners) before SUBMISSION_READY. Recheck cluster 2 only if those tests are edited.",
+    "CLUSTERS": [
+      {
+        "id": "1",
+        "A": "Comprehensive Reviewer INSUFFICIENT_EVIDENCE: F-RC-META-004-UNMEASURED and F-RC-TRIAL-NO-OFFICIAL-FLAGS block aggregate PASS and require official x10 plus Harbor LLMaJ trial-analysis flags now",
+        "B": "Pre-LLMaJ/FROZEN_CANDIDATE stage contract: RC-META-004 and RC-TRIAL-001..006 are not yet applicable; Q4 PASS HIGH, Verifier Engineer PASS HIGH, Quality Interlock PASS, inspectable walk 0 High/Medium FAIL",
+        "DECISION": "BOTH_PARTLY",
+        "CONTROLLING_RULE_OR_EVIDENCE": "A controls later gates: RC-META-004 High (measured 10-run mean, not author intent); RC-TRIAL-001..006 (available flags must be dispositioned; missing flags are not examined-and-clear); COMPREHENSIVE_REVIEWER.md missing acceptance evidence is INSUFFICIENT_EVIDENCE not APPROVE. B controls the current gate: CI_ORCHESTRATOR.md / stage_contracts.json place HARBOR_LLMAJ and OFFICIAL_MODEL_TRIALS after PRE_LLMAJ; HARBOR_LLMAJ requires PRE_LLMAJ_PASS; PRE_LLMAJ.md Only PRE_LLMAJ PASS permits slow Harbor LLMaJ; Comprehensive packet trial evidence when available; PRE_LLMAJ evidence_required does not include official x10.",
+        "SCOPE_RECONCILIATION": "Comprehensive is controlling against premature APPROVE/SUBMISSION_READY and against guessing PASS/FAIL on unmeasured High trial/difficulty criteria. Q4/VE/Quality Interlock plus the Comprehensive inspectable walk (FAIL=0, High/Medium failure count=0, special trial flags=0) control that there is no current PRE_LLMAJ task-file High FAIL and no valid special trial revision flag from this freeze. Official trials remain deferred later-gate evidence, not a Pre-LLMaJ revision demand.",
+        "REASON": "Requiring official trials to obtain Comprehensive APPROVE inverts the stage contract and deadlocks Harbor LLMaJ. Leaving RC-META-004/RC-TRIAL-* as criterion-level INSUFFICIENT_EVIDENCE preserves the later-gate hold without inventing PRE_LLMAJ PASS or converting missing flags into cleared criteria.",
+        "REQUIRED_ACTION": "Do not run official x10 or Harbor LLMaJ from this finding. Do not rewrite difficulty. Do not APPROVE the checklist. Do not treat F-RC-META-004-UNMEASURED or F-RC-TRIAL-NO-OFFICIAL-FLAGS as current task-file FAILs.",
+        "RECHECK": "After PRE_LLMAJ PASS and the later EXTERNAL_GATE sequence, disposition RC-META-004 from the combined 10-run mean and RC-TRIAL-001..006 from official flags/trajectories."
+      },
+      {
+        "id": "2",
+        "A": "Q4-A01..Q4-A04 and VE-01..VE-03 as possible controlling blockers",
+        "B": "Q4 and Verifier Engineer: advisory LOW only; BLOCKING_FINDING_IDS empty",
+        "DECISION": "B",
+        "CONTROLLING_RULE_OR_EVIDENCE": "QUALITY_AGENT_PROMPTS.md Q4 materiality: LOW is advisory and does not block Quality Interlock unless an authoritative rule makes it mandatory. PRE_LLMAJ.md Comprehensive severity: Low does not block on its own. Frozen Q4 ADVISORY_FINDING_IDS Q4-A01..Q4-A04; frozen VE ADVISORY_FINDING_IDS VE-01..VE-03; both BLOCKING_FINDING_IDS empty. Comprehensive walk recorded 0 High/Medium FAIL and did not FAIL these items.",
+        "SCOPE_RECONCILIATION": "Q4 and Verifier Engineer are in-scope for spec-test and verifier defects. Their own LOW classification is the controlling severity, not a later-gate measurement issue. No frozen review at this commit promoted these four Q4 or three VE items to HIGH/MEDIUM FAIL.",
+        "REASON": "Atomic-write protocol, python3 launcher substring, warehouse 10k floor, open-snapshot wrapper field, vacuous config/path asserts, coincidental desk counts, and untested empty-tenant/exact-gap variants were frozen as optional/advisory. They cannot change current-gate pass/fail under the Q4 LOW rule.",
+        "REQUIRED_ACTION": "None. Do not repair the task to close these advisories. Do not use them to block PRE_LLMAJ or Quality Interlock.",
+        "RECHECK": "Only if those tests or contract clauses are edited on a later commit."
+      }
+    ],
+    "CONTROLLING_FINDING_IDS": [],
+    "REJECTED_OR_NARROWED": [
+      {
+        "id": "F-RC-META-004-UNMEASURED",
+        "disposition": "NARROWED_TO_LATER_GATE_HOLD",
+        "reason": "Criterion-level INSUFFICIENT_EVIDENCE remains correct until the official 10-run mean exists. Not a PRE_LLMAJ High FAIL and not a warrant to dispatch OFFICIAL_MODEL_TRIALS now. Controls DIFFICULTY_ASSESSMENT / SUBMISSION_READY, not the current gate."
+      },
+      {
+        "id": "F-RC-TRIAL-NO-OFFICIAL-FLAGS",
+        "disposition": "NARROWED_TO_LATER_GATE_HOLD",
+        "reason": "Missing Harbor LLMaJ / official trial-analysis flags cannot be scored PASS or FAIL. Not a valid special trial revision flag (Comprehensive recorded 0). Controls HARBOR_LLMAJ / TRIAL_ANALYSIS / SUBMISSION_READY after PRE_LLMAJ PASS, not a current-gate blocker."
+      },
+      {
+        "id": "Comprehensive-INSUFFICIENT_EVIDENCE-as-PRE_LLMAJ-blocker",
+        "disposition": "REJECTED_AS_CURRENT_GATE_CONTROLLER",
+        "reason": "Using the overall Comprehensive recommendation to demand official x10 before PRE_LLMAJ PASS contradicts HARBOR_LLMAJ input_contract PRE_LLMAJ_PASS and PRE_LLMAJ.md Harbor-permission rule. The recommendation still forbids APPROVE."
+      },
+      {
+        "id": "Q4-A01",
+        "disposition": "NARROWED_ADVISORY",
+        "reason": "LOW atomic-replace protocol; restart/prefix already graded."
+      },
+      {
+        "id": "Q4-A02",
+        "disposition": "NARROWED_ADVISORY",
+        "reason": "LOW python3 substring proxy; session behavior still graded."
+      },
+      {
+        "id": "Q4-A03",
+        "disposition": "NARROWED_ADVISORY",
+        "reason": "LOW hidden 10k warehouse floor; SHA-256 leave-alone remains the contract test."
+      },
+      {
+        "id": "Q4-A04",
+        "disposition": "NARROWED_ADVISORY",
+        "reason": "LOW unasserted open-snapshot wrapper field; restart/journal max_observed already graded."
+      },
+      {
+        "id": "VE-01",
+        "disposition": "NARROWED_ADVISORY",
+        "reason": "LOW vacuous config-keys/output-parent asserts; mutation and exists() checks remain."
+      },
+      {
+        "id": "VE-02",
+        "disposition": "NARROWED_ADVISORY",
+        "reason": "LOW coincidental catalog/ledger counts; not independently blocking."
+      },
+      {
+        "id": "VE-03",
+        "disposition": "NARROWED_ADVISORY",
+        "reason": "LOW untested empty-tenant/user and exact-gap boundary; stated reject and gap rules remain otherwise graded."
+      }
+    ],
+    "UNRESOLVED": []
+  }
+}

@@ -1,0 +1,119 @@
+{
+  "schema_version": "3.0",
+  "role": "Model Perspective Difficulty Simulator",
+  "review_id": "event-time-session-window-processor-069b0f2e-difficulty-sim-gpt-ca5c146922",
+  "task": "event-time-session-window-processor",
+  "task_commit": "069b0f2e56b11eb0fda344a82c8b50e0461d6755",
+  "control_plane_commit": "458d047c28c9ac65373147bbe56f2b1b013dbc49",
+  "protocol_policy_version": "2.2",
+  "prompt_policy_version": "2.2",
+  "role_policy_version": "1.0",
+  "role_contract_hash": "988f3f143cf2c5659dabb6e0031d6404295cc3f63e39bb49af3595902d09cae8",
+  "context_packet": ".terminus/reviews/event-time-session-window-processor/069b0f2e/event-time-session-window-processor-069b0f2e-difficulty-sim-gpt-ca5c146922.packet.json",
+  "verdict": "PASS",
+  "confidence": "MEDIUM",
+  "evidence_status": "SUFFICIENT",
+  "summary": "DIAGNOSTIC ONLY (not official GPT-5.5×5). EXECUTED a cold GPT-style solve in a disposable copy of environment/sessions: grepped oncall/log/contract, patched CLI/key/watermark/journal/pipeline, and drove run-sessions until local contract probes passed. Harbor verifier was not run (FINAL_VERIFIER_RESULT=NOT_RUN). Predicted official signal USEFUL.",
+  "evidence": [
+    {
+      "type": "file",
+      "ref": "event-time-session-window-processor/instruction.md",
+      "observation": "Repair existing Python processor via /app/sessions/bin/run-sessions; contract, knobs, journal restart, empty/fail-closed, catalog last_run/ops-report; leave warehouse untouched."
+    },
+    {
+      "type": "file",
+      "ref": "event-time-session-window-processor/environment/sessions/notes/oncall.md",
+      "observation": "Symptoms: late click treated on-time, two tenants sharing u1 merged, --reset-output wiped journal, seq stuck at 1."
+    },
+    {
+      "type": "file",
+      "ref": "event-time-session-window-processor/environment/sessions/logs/processor-bounce.log",
+      "observation": "Journal rewrite seq=1, watermark rewind to 1000, --reset-output cleared journal, unknown --replay-from still created watermark.journal."
+    },
+    {
+      "type": "file",
+      "ref": "event-time-session-window-processor/environment/sessions/docs/session-contract.md",
+      "observation": "Binding: classify against current watermark before updating max_observed; tenant+user key; event-time gap; append journal with increasing seq; nondecreasing watermark; --reset-output must not clear journal/open sessions."
+    },
+    {
+      "type": "file",
+      "ref": "event-time-session-window-processor/environment/sessions/src/keys/session_key.py",
+      "observation": "Starter drops tenant_id and keys as ('*', user_id), matching mixed-tenant oncall."
+    },
+    {
+      "type": "file",
+      "ref": "event-time-session-window-processor/environment/sessions/src/cli.py",
+      "observation": "Starter creates/wipes journal before flag validation; always passes use_arrival_gap=True."
+    },
+    {
+      "type": "file",
+      "ref": "event-time-session-window-processor/environment/sessions/src/engine/pipeline.py",
+      "observation": "Starter records event time into watermark before lateness classify, then appends journal."
+    },
+    {
+      "type": "file",
+      "ref": "event-time-session-window-processor/environment/sessions/src/state/journal.py",
+      "observation": "Starter rewrites the journal to a single seq=1 line instead of appending."
+    },
+    {
+      "type": "trajectory",
+      "ref": "disposable copy $TEMP/q8-ets-gpt-069b0f2e/sessions (original task tree not modified)",
+      "observation": "Patched session_key, WatermarkTrack.record(observe/max), pipeline classify-then-record, journal append+seq+nondecreasing clamp, CLI parse-before-mutate / no journal wipe / use_arrival_gap=False, ensure empty late.jsonl. Relative ROOT only for Windows local run."
+    },
+    {
+      "type": "run",
+      "ref": "python local_probe.py in disposable copy",
+      "observation": "50 local contract probes passed (unknown/missing flags, empty-check, tenant isolation, gap close, seq, reset keeps journal, TOO_LATE/late-allowed, restart nondecreasing watermark, --input tie-break, idempotent SHA-256, enterprise 45000 overlay, max duration). Not Harbor pytest."
+    },
+    {
+      "type": "rule",
+      "ref": ".terminus/agents/QUALITY_AGENT_PROMPTS.md#Q8",
+      "observation": "Diagnostic GPT_PERSPECTIVE only; must not set official tier or substitute GPT×5 trials. Harbor verifier outcome recorded as NOT_RUN rather than invented."
+    }
+  ],
+  "findings": [],
+  "missing_evidence": [
+    "Harbor/oracle verifier reward against the frozen disposable solve was not executed in this session."
+  ],
+  "change_scope": [],
+  "do_not_change": [
+    "Do not treat this as official GPT-5.5×5 trial evidence.",
+    "Do not set official difficulty tier from this diagnostic simulation.",
+    "Do not modify the task tree from this Q8 run; patches lived only in a disposable copy."
+  ],
+  "next_gate": "Q8 Claude perspective then aggregate",
+  "role_output": {
+    "PERSPECTIVE": "GPT_PERSPECTIVE",
+    "EXECUTION": "EXECUTED",
+    "DIAGNOSTIC_SUMMARY": "Cold GPT path: grep oncall/log, patch the six obvious modules, iterate run-sessions on shipped fixtures plus hand probes until locally green. Local probes 50/50 pass; Harbor verifier not run.",
+    "FIRST_DIAGNOSIS": "Tenant-blind session_key; journal rewrite seq=1; watermark overwritten and updated before classify; CLI mutates journal before unknown-flag reject; --reset-output wipes journal; arrival-index gap always on.",
+    "FILES_TOUCHED": [
+      "environment/sessions/src/cli.py",
+      "environment/sessions/src/keys/session_key.py",
+      "environment/sessions/src/runtime/watermark_track.py",
+      "environment/sessions/src/engine/pipeline.py",
+      "environment/sessions/src/state/journal.py",
+      "environment/sessions/src/paths.py"
+    ],
+    "SHORTCUTS_ATTEMPTED": [
+      "Treat oncall.md + processor-bounce.log as the defect list",
+      "Force use_arrival_gap=False instead of deleting arrival_gap_exceeded",
+      "Point ROOT at __file__ to run on Windows instead of /app/sessions",
+      "Hand-roll local_probe.py instead of Harbor pytest",
+      "Stop once fixtures, restart, overlay, and SHA-256 probes look green"
+    ],
+    "FIRST_MEANINGFUL_DIVERGENCE": "Call the task done after local probes match oncall+contract samples, without a Harbor hidden-holdout/processor.json-mutation/warehouse-checksum pass.",
+    "FINAL_VERIFIER_RESULT": "NOT_RUN",
+    "LIKELY_REASONING_WALLS": [
+      "Classify-vs-update order: fixing overwrite alone still classifies against the new watermark",
+      "IdleClose pop_key uses (tenant,user) while store may still key ('*', user)",
+      "CLI mutation-before-parse vs usage-error isolation",
+      "Catalog enterprise 45000 overlay vs lab acme/beta keeping processor.json",
+      "Empty late.jsonl must exist for idempotent SHA-256 even when no TOO_LATE rows",
+      "--feed is file order only; gap clock is still event-time"
+    ],
+    "ENVIRONMENT_TOOL_FRICTION": "paths.py hardcodes /app/sessions; catalog.sqlite is image-build via generate_seed.py (absent on a raw tree); no in-image unit tests; Docker present but stb not on PATH so Harbor pytest was not invoked.",
+    "PREDICTED_OFFICIAL_SIGNAL": "USEFUL",
+    "SIMULATION_NOTE": "Diagnostic GPT/Codex strategy prior from a disposable local solve. NOT official GPT-5.5×5 Harbor evidence. No official difficulty tier."
+  }
+}
