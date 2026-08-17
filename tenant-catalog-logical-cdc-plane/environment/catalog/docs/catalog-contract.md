@@ -112,6 +112,7 @@ Commands: `commit`, `decode`, `apply`, `recover`, `checkpoint`, `inspect`, `empt
 
 - Unknown flags or an unknown command exit 2 before any WAL, heap, index, replica, or slot mutation.
 - `commit` requires `--input <path>` to a JSONL of mutation objects `{op, table, pk, payload}`. `op` is `insert`, `update`, or `delete`. Missing `--input` exits 2 without opening a transaction.
+- `apply` may take `--cdc <path>` to read CDC JSONL from a file other than `/app/catalog/out/cdc.jsonl`. When `--cdc` is omitted, apply reads the default CDC path. Unknown flags still exit 2.
 - `--reset-output` may delete files under `/app/catalog/out/` only. It must not truncate WAL, heap, indexes, checkpoint, replica, slot, or warehouse.
 - `inspect` and `empty-check` rewrite health.json from observed state and must not append WAL, change heap, rebuild indexes, apply CDC, or change the replica slot.
 - `empty-check` still requires the engine database and writes health.json. It does not assign a txn_id.

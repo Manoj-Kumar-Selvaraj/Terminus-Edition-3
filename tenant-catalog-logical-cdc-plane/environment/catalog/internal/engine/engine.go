@@ -4,8 +4,10 @@ import (
 	"os"
 
 	"catalog/internal/cdc"
+	"catalog/internal/cdcevent"
 	"catalog/internal/checkpoint"
 	"catalog/internal/config"
+	"catalog/internal/fence"
 	"catalog/internal/health"
 	"catalog/internal/inspect"
 	"catalog/internal/jsonl"
@@ -17,6 +19,7 @@ import (
 	"catalog/internal/txn"
 	"catalog/internal/visibility"
 	"catalog/internal/wal"
+	"catalog/internal/walvalidate"
 )
 
 func Commit(st *store.Store, input string) error {
@@ -35,10 +38,17 @@ func Decode(st *store.Store) error {
 	if err != nil {
 		return err
 	}
+	recs, err := st.LoadWAL()
+	if err != nil {
+		return err
+	}
+	_ = walvalidate.Summarize(recs)
+	_ = walvalidate.DescribeOpen(recs)
 	events, err := cdc.Decode(st, slot.ConfirmedLSN)
 	if err != nil {
 		return err
 	}
+	_ = cdcevent.FromModel(events)
 	if err := cdc.Write(events); err != nil {
 		return err
 	}
@@ -57,6 +67,14 @@ func Apply(st *store.Store, cdcPath string) error {
 			return err
 		}
 	}
+	slot, err := st.LoadSlot()
+	if err != nil {
+		return err
+	}
+	_ = fence.ScanEpochs(records)
+	_ = fence.FirstRejectReason(slot, records)
+	typed := cdcevent.SoftParse(records)
+	_ = cdcevent.GroupByTxn(typed)
 	if _, err := replica.Apply(st, records); err != nil {
 		return err
 	}
@@ -64,6 +82,16 @@ func Apply(st *store.Store, cdcPath string) error {
 }
 
 func Recover(st *store.Store) error {
+	recs, err := st.LoadWAL()
+	if err != nil {
+		return err
+	}
+	doc, err := checkpoint.Load()
+	if err != nil {
+		return err
+	}
+	_ = walvalidate.RedoWindow(recs, doc.LSN)
+	_ = walvalidate.OpenTxnIDs(recs)
 	if err := recover.Recover(st); err != nil {
 		return err
 	}
@@ -97,6 +125,7 @@ func Checkpoint(st *store.Store) error {
 	}
 	_ = cfg
 	_ = snapshot.Visible
+	_ = walvalidate.EpochAgreement(recs, slot.Epoch)
 	doc := checkpoint.FromVersions(wal.DurableLSN(recs), latest, slot.Epoch, visible)
 	if err := checkpoint.Write(doc); err != nil {
 		return err

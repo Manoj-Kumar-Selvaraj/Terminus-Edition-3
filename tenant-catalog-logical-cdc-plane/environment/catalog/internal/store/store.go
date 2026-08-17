@@ -3,6 +3,7 @@ package store
 import (
 	"database/sql"
 	"encoding/json"
+	"fmt"
 	"os"
 	"strings"
 
@@ -605,5 +606,21 @@ func AsInt64(v any) int64 {
 		return i
 	default:
 		return 0
+	}
+}
+
+func AsString(v any) string {
+	switch s := v.(type) {
+	case string:
+		return s
+	case []byte:
+		return string(s)
+	case fmt.Stringer:
+		return s.String()
+	default:
+		if v == nil {
+			return ""
+		}
+		return fmt.Sprint(v)
 	}
 }

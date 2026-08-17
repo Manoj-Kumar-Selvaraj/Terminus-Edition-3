@@ -1,0 +1,686 @@
+{
+  "schema_version": "3.0",
+  "role": "Spec-Test Contract Reviewer",
+  "review_id": "tenant-catalog-logical-cdc-plane-bf0338e2-spec-test-contract-6b152d7cea",
+  "task": "tenant-catalog-logical-cdc-plane",
+  "task_commit": "bf0338e23979bd7802473064fd0e02967e3de880",
+  "control_plane_commit": "02968862b6e0c36271370b97d1c75bdbeb9b9978",
+  "protocol_policy_version": "2.2",
+  "prompt_policy_version": "2.2",
+  "role_policy_version": "1.1",
+  "role_contract_hash": "c860dfe8b8ed0a04c729e4d6a828741b206b7067a780863ec7b22ee09d02c5a0",
+  "context_packet": ".terminus/reviews/tenant-catalog-logical-cdc-plane/bf0338e2/tenant-catalog-logical-cdc-plane-bf0338e2-spec-test-contract-6b152d7cea.packet.json",
+  "verdict": "REVISE",
+  "confidence": "HIGH",
+  "evidence_status": "SUFFICIENT",
+  "summary": "Bidirectional alignment fails after an exhaustive walk: the verifier requires apply --cdc while the binding CLI contract omits that flag; instruction-mandated WAL ABORT on constraint failure is untested; inspect/empty-check must-not-recover and must-not-decode-apply are only weakly covered; several other material contract obligations lack meaningful assertions. Instruction shape and work-request placement are otherwise acceptable, with mild ops-note checklist risk.",
+  "evidence": [
+    {
+      "type": "file",
+      "ref": "tenant-catalog-logical-cdc-plane/instruction.md",
+      "observation": "One short paragraph plus six bullets: repair Go catalog plane via catalogctl; catalog-contract.md binding; CLI/exit-2/reset/commit --input; snapshot/commit-order/CDC/apply/recover; fail-closed reject+WAL ABORT+no install; index rebuild; inspect/empty-check health rewrite without recover/decode-apply/epoch/WAL; other commands rewrite health; leave warehouse alone."
+    },
+    {
+      "type": "file",
+      "ref": "tenant-catalog-logical-cdc-plane/environment/catalog/docs/catalog-contract.md",
+      "observation": "Delegated technical contract covers paths, tables/FK ranks, WAL/txn shape, snapshot visibility, constraint codes and reject schema, indexes, CDC decode, epoch-fenced FK-ordered apply, checkpoint/recover, CLI, and health/apply-report schemas. CLI documents --input and --reset-output but not --cdc."
+    },
+    {
+      "type": "file",
+      "ref": "tenant-catalog-logical-cdc-plane/environment/catalog/notes/oncall.md",
+      "observation": "Shift notes describe crash pending sku, WAL-sourced CDC, frozen tenants, replica lag, and --reset-output scope; symptom-level handoff rather than module repair steps."
+    },
+    {
+      "type": "file",
+      "ref": "tenant-catalog-logical-cdc-plane/environment/catalog/logs/bounce.log",
+      "observation": "Bounce log enumerates observed wrong behaviors (uncommitted heap install, heap-row LSNs, inspect epoch flip, warehouse untouched) aligned with several F2P scenarios."
+    },
+    {
+      "type": "file",
+      "ref": "tenant-catalog-logical-cdc-plane/environment/catalog/config/catalog.json",
+      "observation": "Knobs isolation=snapshot, replica_epoch=3, cdc_source=wal as referenced by instruction."
+    },
+    {
+      "type": "file",
+      "ref": "tenant-catalog-logical-cdc-plane/environment/catalog/internal/policy/policy.go",
+      "observation": "Starter usage/KnownFlags advertise --cdc PATH; binding contract CLI section does not."
+    },
+    {
+      "type": "test",
+      "ref": "tenant-catalog-logical-cdc-plane/tests/test_outputs.py",
+      "observation": "34 pytest behaviors covering CLI usage errors, reset-output, inspect/empty-check epoch/WAL, commit/reject codes, recover/CDC/apply/index/health/checkpoint/warehouse/Go preservation; no WAL ABORT assertion; stale-epoch apply uses --cdc; inspect/empty-check do not assert crash row / replica / CDC untouched."
+    },
+    {
+      "type": "test",
+      "ref": "tenant-catalog-logical-cdc-plane/tests/test.sh",
+      "observation": "Reward-gated pytest runner; no installs; creates /logs/verifier at runtime."
+    },
+    {
+      "type": "file",
+      "ref": ".terminus/designs/tenant-catalog-logical-cdc-plane-test-map.json",
+      "observation": "Used only for F2P/P2P classification labels; requirement text rebuilt independently from instruction+contract."
+    },
+    {
+      "type": "rule",
+      "ref": ".terminus/agents/INSTRUCTION_POLICY.md",
+      "observation": "Applied instruction shape, requirement-completeness, delegated-docs boundary, current-state evidence, and leakage rules."
+    },
+    {
+      "type": "rule",
+      "ref": ".terminus/agents/QUALITY_AGENT_PROMPTS.md",
+      "observation": "Executed exhaustive Q4 method: inventories, forward/reverse matrices, F2P/P2P, second omission sweep, all findings in one result."
+    }
+  ],
+  "findings": [
+    {
+      "id": "Q4-ST-001",
+      "severity": "HIGH",
+      "status": "OBSERVED",
+      "criterion": "grading-relevant ambiguity / phantom public CLI surface",
+      "evidence_refs": [
+        "tenant-catalog-logical-cdc-plane/environment/catalog/docs/catalog-contract.md",
+        "tenant-catalog-logical-cdc-plane/instruction.md",
+        "tenant-catalog-logical-cdc-plane/tests/test_outputs.py",
+        "tenant-catalog-logical-cdc-plane/environment/catalog/internal/policy/policy.go"
+      ],
+      "why_it_matters": "Instruction declares catalog-contract.md binding for CLI. Contract documents --input and --reset-output but never --cdc. test_f2p_stale_epoch_rejects_batch invokes apply --cdc. A contract-faithful CLI that treats unknown flags as exit 2 (as required) rejects --cdc and fails grading despite correct default-path apply semantics.",
+      "minimal_remediation": "Document --cdc PATH in the binding CLI contract (or stop requiring it in tests and inject via the default cdc.jsonl path only), and keep unknown-flag behavior consistent with that surface.",
+      "regression_risk": "Clarifying --cdc may require a small CLI/docs sync; tests that rely on default path alone remain valid."
+    },
+    {
+      "id": "Q4-ST-002",
+      "severity": "HIGH",
+      "status": "OBSERVED",
+      "criterion": "material untested requirement",
+      "evidence_refs": [
+        "tenant-catalog-logical-cdc-plane/instruction.md",
+        "tenant-catalog-logical-cdc-plane/environment/catalog/docs/catalog-contract.md",
+        "tenant-catalog-logical-cdc-plane/tests/test_outputs.py"
+      ],
+      "why_it_matters": "Instruction and contract require constraint failures to append a reject, write WAL ABORT, and skip heap/index install. Reject tests assert code and (for unique conflict) absent heap row, but never assert a WAL ABORT record. An implementation that rejects without ABORT durability can still pass.",
+      "minimal_remediation": "On at least one fail-closed commit path, assert a WAL record with kind ABORT for the rejected txn_id (and still no heap/index install).",
+      "regression_risk": "Low; adds an independent durability check without narrowing allowed repair strategies."
+    },
+    {
+      "id": "Q4-ST-003",
+      "severity": "HIGH",
+      "status": "OBSERVED",
+      "criterion": "material untested / weak assertion of inspect and empty-check side-effect bans",
+      "evidence_refs": [
+        "tenant-catalog-logical-cdc-plane/instruction.md",
+        "tenant-catalog-logical-cdc-plane/environment/catalog/docs/catalog-contract.md",
+        "tenant-catalog-logical-cdc-plane/tests/test_outputs.py"
+      ],
+      "why_it_matters": "Instruction requires inspect/empty-check to rewrite health from observed state and must not recover, decode-apply, bump epoch, or append WAL. Tests only prove exit 0 plus no WAL append / no epoch bump (empty-check also checks cdc_source and heap_visible_count type). They do not assert the seeded uncommitted crash row remains, that replica/slot/CDC are unchanged, or that recover/apply did not run. A side-effecting inspect/empty-check that recovers quietly still passes those tests.",
+      "minimal_remediation": "Before/after inspect and empty-check, assert crash pending heap presence (or equivalent observed unclean state), unchanged replica_slot, and unchanged cdc/replica bytes as applicable.",
+      "regression_risk": "Low; strengthens side-effect bans already stated in the work request."
+    },
+    {
+      "id": "Q4-ST-004",
+      "severity": "MEDIUM",
+      "status": "OBSERVED",
+      "criterion": "material untested requirement",
+      "evidence_refs": [
+        "tenant-catalog-logical-cdc-plane/instruction.md",
+        "tenant-catalog-logical-cdc-plane/environment/catalog/docs/catalog-contract.md",
+        "tenant-catalog-logical-cdc-plane/tests/test_outputs.py"
+      ],
+      "why_it_matters": "Instruction and health contract require every successful commit, decode, and apply (among others) to rewrite health.json. Verifier reads health after inspect/empty-check/recover/checkpoint but never asserts health rewrite after commit, decode, or apply. Missing rewrites on those paths would not fail current tests.",
+      "minimal_remediation": "After successful commit, decode, and apply, assert health.json exists and reflects contracted fields (at least durable_lsn/epoch/cdc_source) from observed state.",
+      "regression_risk": "Low; may need stable generated_at tolerance already allowed by contract."
+    },
+    {
+      "id": "Q4-ST-005",
+      "severity": "MEDIUM",
+      "status": "OBSERVED",
+      "criterion": "material untested requirement",
+      "evidence_refs": [
+        "tenant-catalog-logical-cdc-plane/environment/catalog/docs/catalog-contract.md",
+        "tenant-catalog-logical-cdc-plane/tests/test_outputs.py"
+      ],
+      "why_it_matters": "Contract states checkpoint does not change replica epoch. test_p2p_checkpoint_lsn_not_zero_after_checkpoint checks checkpoint.lsn only. An epoch bump during checkpoint would not be caught, despite epoch fencing being a graded apply invariant.",
+      "minimal_remediation": "Assert replica_slot.epoch unchanged across checkpoint.",
+      "regression_risk": "Negligible."
+    },
+    {
+      "id": "Q4-ST-006",
+      "severity": "LOW",
+      "status": "OBSERVED",
+      "criterion": "partial coverage of reject object schema",
+      "evidence_refs": [
+        "tenant-catalog-logical-cdc-plane/environment/catalog/docs/catalog-contract.md",
+        "tenant-catalog-logical-cdc-plane/tests/test_outputs.py"
+      ],
+      "why_it_matters": "Reject objects must include txn_id, code, table, pk, detail. Tests assert only code (and absence of install). Incomplete schema can still pass.",
+      "minimal_remediation": "On one reject path, assert all five reject fields with correct types.",
+      "regression_risk": "Low."
+    },
+    {
+      "id": "Q4-ST-007",
+      "severity": "LOW",
+      "status": "OBSERVED",
+      "criterion": "partial constraint-code and frozen-hold coverage",
+      "evidence_refs": [
+        "tenant-catalog-logical-cdc-plane/environment/catalog/docs/catalog-contract.md",
+        "tenant-catalog-logical-cdc-plane/tests/test_outputs.py"
+      ],
+      "why_it_matters": "Contract defines PK_CONFLICT and CHECK_FAIL, and frozen tenants reject offer or hold. Verifier covers UNIQUE/FK/FROZEN(offer)/HOLD_QTY only. Fail-closed family is represented, but those codes/hold path are unexercised.",
+      "minimal_remediation": "Optional fixtures for PK_CONFLICT and/or CHECK_FAIL and a frozen hold insert; not required to unblock if higher findings are fixed first.",
+      "regression_risk": "Low."
+    },
+    {
+      "id": "Q4-ST-008",
+      "severity": "LOW",
+      "status": "OBSERVED",
+      "criterion": "ops evidence checklist / mild spec-dump risk",
+      "evidence_refs": [
+        "tenant-catalog-logical-cdc-plane/environment/catalog/notes/oncall.md",
+        "tenant-catalog-logical-cdc-plane/environment/catalog/logs/bounce.log",
+        "tenant-catalog-logical-cdc-plane/instruction.md"
+      ],
+      "why_it_matters": "Referenced oncall notes and bounce log enumerate several defect classes that closely mirror F2P themes. They stay symptom-level (no module/function repair map) and goals remain in instruction, but the pairing raises mild compressed-rubric risk.",
+      "minimal_remediation": "Keep realistic incident evidence; optionally soften bounce.log so it is not a near one-to-one defect inventory of verifier scenarios.",
+      "regression_risk": "Editorial only; avoid removing legitimate current-state evidence for the bounce claim."
+    },
+    {
+      "id": "Q4-ST-009",
+      "severity": "LOW",
+      "status": "OBSERVED",
+      "criterion": "partial CLI pre-mutation surface check",
+      "evidence_refs": [
+        "tenant-catalog-logical-cdc-plane/instruction.md",
+        "tenant-catalog-logical-cdc-plane/tests/test_outputs.py"
+      ],
+      "why_it_matters": "Instruction requires unknown flags/commands exit 2 before WAL, heap, index, replica, or slot mutation. Tests compare WAL bytes only.",
+      "minimal_remediation": "Optionally fingerprint heap/index/replica/slot alongside WAL on usage-error paths.",
+      "regression_risk": "Low."
+    },
+    {
+      "id": "Q4-ST-010",
+      "severity": "LOW",
+      "status": "OBSERVED",
+      "criterion": "partial snapshot-isolation depth coverage",
+      "evidence_refs": [
+        "tenant-catalog-logical-cdc-plane/environment/catalog/docs/catalog-contract.md",
+        "tenant-catalog-logical-cdc-plane/tests/test_outputs.py"
+      ],
+      "why_it_matters": "Full xmin/xmax visibility rules are delegated in the contract. Coverage is mostly write-set parent/child commit plus visibility_ok after recover, not multi-snapshot read of committed UPDATE/DELETE pre/post images.",
+      "minimal_remediation": "Add a targeted visibility scenario if stronger SI assurance is desired; current family coverage is partial, not absent.",
+      "regression_risk": "Medium if over-specified to oracle-private snapshots."
+    }
+  ],
+  "missing_evidence": [],
+  "change_scope": [
+    "tenant-catalog-logical-cdc-plane/environment/catalog/docs/catalog-contract.md (CLI --cdc authority)",
+    "tenant-catalog-logical-cdc-plane/tests/test_outputs.py (WAL ABORT; inspect/empty-check side effects; health rewrite; checkpoint epoch)",
+    "Optionally instruction.md only if CLI authority wording needs clarifying",
+    "Optionally oncall.md/bounce.log wording if reducing checklist coupling"
+  ],
+  "do_not_change": [
+    "Do not read or edit solution/ for this Q4 remediation framing",
+    "Do not weaken legitimate semantic asserts already present",
+    "Do not relocate material work-request goals out of instruction.md into docs",
+    "Do not treat test-map requirement prose as authoritative"
+  ],
+  "next_gate": "Route to Q3 for --cdc/CLI authority clarification and/or Q2 Verifier Coverage Repairer for WAL ABORT, inspect/empty-check side-effect, health-rewrite, and checkpoint-epoch gaps; then re-run Q4 on the new task commit.",
+  "role_output": {
+    "REQUIREMENT_TEST_MATRIX": [
+      {
+        "id": "R-I-01",
+        "source": "instruction.md",
+        "requirement": "Repair existing Go catalog plane; do not move catalog logic to another language or abandon WAL protocol.",
+        "tests": ["test_p2p_ctl_exists", "test_p2p_go_module"],
+        "coverage": "complete"
+      },
+      {
+        "id": "R-I-02",
+        "source": "instruction.md",
+        "requirement": "Use oncall notes and bounce log as shift evidence for the post-bounce disagreement.",
+        "tests": [],
+        "coverage": "n/a-orientation"
+      },
+      {
+        "id": "R-I-03",
+        "source": "instruction.md",
+        "requirement": "catalog-contract.md is binding for visibility, commit order, constraints, indexes, decode, apply, recover, CLI, and health/cdc/apply-report/rejects schemas; knobs in catalog.json.",
+        "tests": ["test_p2p_contract_exists", "test_p2p_health_schema", "test_p2p_apply_report_integers"],
+        "coverage": "partial"
+      },
+      {
+        "id": "R-I-04",
+        "source": "instruction.md",
+        "requirement": "Drive work through /app/catalog/bin/catalogctl.",
+        "tests": ["test_p2p_ctl_exists", "all behavioral run_ctl tests"],
+        "coverage": "complete"
+      },
+      {
+        "id": "R-I-05",
+        "source": "instruction.md",
+        "requirement": "Unknown flags or unknown command exit 2 before WAL/heap/index/replica/slot mutation.",
+        "tests": ["test_f2p_unknown_flag_leaves_wal", "test_f2p_unknown_command_leaves_wal"],
+        "coverage": "partial"
+      },
+      {
+        "id": "R-I-06",
+        "source": "instruction.md",
+        "requirement": "commit requires --input; missing input is usage failure without opening a transaction.",
+        "tests": ["test_f2p_missing_commit_input_leaves_wal"],
+        "coverage": "complete"
+      },
+      {
+        "id": "R-I-07",
+        "source": "instruction.md",
+        "requirement": "--reset-output may wipe /app/catalog/out only (not WAL/durable stores).",
+        "tests": ["test_f2p_reset_output_does_not_truncate_wal"],
+        "coverage": "partial"
+      },
+      {
+        "id": "R-I-08",
+        "source": "instruction.md + contract",
+        "requirement": "Snapshot isolation visibility rules.",
+        "tests": ["test_f2p_same_txn_parent_then_child", "test_f2p_visibility_ok_after_recover"],
+        "coverage": "partial"
+      },
+      {
+        "id": "R-I-09",
+        "source": "instruction.md + contract",
+        "requirement": "Commit-after-WAL heap/index install (never before COMMIT durability).",
+        "tests": ["test_p2p_commit_insert_sku", "test_f2p_reject_does_not_install_row"],
+        "coverage": "partial"
+      },
+      {
+        "id": "R-I-10",
+        "source": "instruction.md + contract",
+        "requirement": "CDC decode from committed WAL in lsn order; no heap-invented records; skip uncommitted; update before/after.",
+        "tests": ["test_f2p_decode_skips_uncommitted", "test_f2p_decode_uses_wal_lsn", "test_f2p_decode_update_has_before"],
+        "coverage": "complete"
+      },
+      {
+        "id": "R-I-11",
+        "source": "instruction.md + contract",
+        "requirement": "LSN/epoch-fenced FK-safe apply with integer apply-report.",
+        "tests": ["test_f2p_apply_is_monotonic", "test_f2p_stale_epoch_rejects_batch", "test_f2p_apply_fk_order", "test_p2p_apply_report_integers"],
+        "coverage": "complete-with-cli-ambiguity"
+      },
+      {
+        "id": "R-I-12",
+        "source": "instruction.md + contract",
+        "requirement": "Checkpoint redo of committed records; recover skips uncommitted; recover does not bump epoch; recovery_ok/index rebuild.",
+        "tests": ["test_f2p_recover_skips_uncommitted", "test_f2p_recover_does_not_bump_epoch", "test_f2p_recovery_ok_after_recover", "test_f2p_indexes_rebuild_after_recover", "test_f2p_index_ok_after_recover", "test_p2p_checkpoint_lsn_not_zero_after_checkpoint"],
+        "coverage": "partial"
+      },
+      {
+        "id": "R-I-13",
+        "source": "instruction.md + contract",
+        "requirement": "Constraint failures fail closed: reject append, WAL ABORT, no heap/index install; codes including UNIQUE/FK/FROZEN/HOLD_QTY.",
+        "tests": ["test_f2p_duplicate_sku_code_rejects", "test_f2p_reject_does_not_install_row", "test_f2p_missing_offer_fk_rejects", "test_f2p_frozen_tenant_rejects_offer", "test_f2p_hold_qty_rejects"],
+        "coverage": "partial"
+      },
+      {
+        "id": "R-I-14",
+        "source": "instruction.md + contract",
+        "requirement": "Indexes rebuild from committed-visible rows after successful COMMIT and after recover.",
+        "tests": ["test_f2p_indexes_match_after_commit", "test_f2p_indexes_rebuild_after_recover", "test_f2p_index_ok_after_recover"],
+        "coverage": "complete"
+      },
+      {
+        "id": "R-I-15",
+        "source": "instruction.md + contract",
+        "requirement": "inspect and empty-check rewrite health from observed state; must not recover, decode-apply, bump epoch, or append WAL.",
+        "tests": ["test_f2p_inspect_does_not_recover", "test_f2p_empty_check_does_not_bump_epoch", "test_p2p_health_schema", "test_p2p_health_replica_epoch_matches_slot"],
+        "coverage": "partial"
+      },
+      {
+        "id": "R-I-16",
+        "source": "instruction.md + contract",
+        "requirement": "Other successful operator commands also rewrite health.json under the contract.",
+        "tests": ["test_p2p_checkpoint_lsn_not_zero_after_checkpoint", "test_f2p_recovery_ok_after_recover"],
+        "coverage": "absent-for-commit-decode-apply"
+      },
+      {
+        "id": "R-I-17",
+        "source": "instruction.md + contract",
+        "requirement": "Leave /app/catalog/warehouse alone; do not use warehouse as commit/CDC/apply source.",
+        "tests": ["test_p2p_warehouse_untouched"],
+        "coverage": "complete"
+      },
+      {
+        "id": "R-C-01",
+        "source": "catalog-contract.md",
+        "requirement": "Reject object schema {txn_id, code, table, pk, detail}.",
+        "tests": ["test_f2p_duplicate_sku_code_rejects", "test_f2p_missing_offer_fk_rejects", "test_f2p_frozen_tenant_rejects_offer", "test_f2p_hold_qty_rejects"],
+        "coverage": "partial"
+      },
+      {
+        "id": "R-C-02",
+        "source": "catalog-contract.md",
+        "requirement": "Constraint codes PK_CONFLICT and CHECK_FAIL; frozen rejects hold as well as offer.",
+        "tests": [],
+        "coverage": "absent"
+      },
+      {
+        "id": "R-C-03",
+        "source": "catalog-contract.md",
+        "requirement": "Decode does not apply to replica and does not advance slot.",
+        "tests": ["test_f2p_decode_uses_wal_lsn"],
+        "coverage": "complete-indirect"
+      },
+      {
+        "id": "R-C-04",
+        "source": "catalog-contract.md",
+        "requirement": "Checkpoint does not change replica epoch.",
+        "tests": [],
+        "coverage": "absent"
+      },
+      {
+        "id": "R-C-05",
+        "source": "catalog-contract.md",
+        "requirement": "Writer snapshot plus write set evaluates constraints (same-txn parent/child).",
+        "tests": ["test_f2p_same_txn_parent_then_child"],
+        "coverage": "complete"
+      },
+      {
+        "id": "R-C-06",
+        "source": "catalog-contract.md",
+        "requirement": "Health schema fields and epoch==replica_epoch==slot.epoch; cdc_source=wal; healthy conjunction semantics.",
+        "tests": ["test_p2p_health_schema", "test_p2p_health_replica_epoch_matches_slot", "test_f2p_empty_check_does_not_bump_epoch", "test_f2p_visibility_ok_after_recover", "test_f2p_index_ok_after_recover", "test_f2p_recovery_ok_after_recover"],
+        "coverage": "partial"
+      }
+    ],
+    "PHANTOM_TEST_CONTRACTS": [
+      {
+        "test": "test_f2p_stale_epoch_rejects_batch",
+        "issue": "Requires apply --cdc though binding contract CLI section does not define --cdc; conflicts with unknown-flag exit 2 if solvers implement contract-only CLI.",
+        "classification": "authority-ambiguity bordering on phantom public flag",
+        "finding_id": "Q4-ST-001"
+      },
+      {
+        "test": "test_p2p_go_module",
+        "issue": "Asserts go.mod contains 'module catalog' and binary is not a shebang script.",
+        "classification": "discoverable from instruction language-preservation + shipped module; not phantom"
+      },
+      {
+        "test": "test_p2p_contract_exists",
+        "issue": "Requires catalog-contract.md present on transferred tree.",
+        "classification": "discoverable preservation of binding contract; not phantom"
+      }
+    ],
+    "UNTESTED_REQUIREMENTS": [
+      {
+        "id": "R-I-13-ABORT",
+        "requirement": "WAL ABORT on constraint failure",
+        "finding_id": "Q4-ST-002"
+      },
+      {
+        "id": "R-I-15-RECOVER-BAN",
+        "requirement": "inspect/empty-check must not recover or decode-apply (beyond WAL/epoch checks)",
+        "finding_id": "Q4-ST-003"
+      },
+      {
+        "id": "R-I-16",
+        "requirement": "health.json rewrite after successful commit/decode/apply",
+        "finding_id": "Q4-ST-004"
+      },
+      {
+        "id": "R-C-04",
+        "requirement": "checkpoint does not change replica epoch",
+        "finding_id": "Q4-ST-005"
+      },
+      {
+        "id": "R-C-01-fields",
+        "requirement": "full reject object fields",
+        "finding_id": "Q4-ST-006"
+      },
+      {
+        "id": "R-C-02",
+        "requirement": "PK_CONFLICT / CHECK_FAIL / frozen hold paths",
+        "finding_id": "Q4-ST-007"
+      }
+    ],
+    "AMBIGUITIES": [
+      {
+        "id": "A-CDC-FLAG",
+        "topic": "Whether --cdc is part of the public CLI",
+        "competing_interpretations": [
+          "Binding contract CLI is exhaustive: only --input and --reset-output; --cdc is unknown -> exit 2",
+          "Starter usage/KnownFlags and verifier define --cdc as a supported apply override"
+        ],
+        "grading_consequence": "Contract-only correct CLI fails test_f2p_stale_epoch_rejects_batch",
+        "finding_id": "Q4-ST-001"
+      }
+    ],
+    "INSTRUCTION_SHAPE": "PASS",
+    "INSTRUCTION_REQUIREMENT_COMPLETENESS": "SUFFICIENT",
+    "DELEGATED_CONTRACT_CHECK": {
+      "catalog-contract.md": "LEGITIMATE_TECHNICAL_CONTRACT",
+      "oncall.md": "LEGITIMATE_OPS_HANDOFF_WITH_MILD_CHECKLIST_RISK",
+      "bounce.log": "LEGITIMATE_INCIDENT_EVIDENCE_WITH_MILD_CHECKLIST_RISK",
+      "catalog.json": "LEGITIMATE_CONFIG_KNOBS",
+      "notes": "Material goals remain in instruction.md; detailed schemas/protocols correctly delegated. --cdc omission in CLI section is a contract incompleteness relative to graded behavior."
+    },
+    "INSTRUCTION_DOC_BOUNDARY": "LEAKY",
+    "IMPLEMENTATION_DIAGNOSIS_LEAKAGE": "LOW",
+    "CURRENT_STATE_EVIDENCE": "PASS",
+    "SPEC_DUMP_RISK": "MEDIUM",
+    "BIDIRECTIONAL_ALIGNMENT": "FAIL",
+    "F2P_P2P_BOUNDARY_NOTES": {
+      "F2P": [
+        "Usage errors, reset-output, inspect/empty-check epoch/WAL, constraint rejects, recover/CDC/apply/index/visibility paths are behavioral fail-to-pass checks against seeded or fixture-driven broken outcomes.",
+        "Gaps: WAL ABORT durability; inspect/empty-check recover/decode-apply bans; --cdc authority."
+      ],
+      "P2P": [
+        "ctl executable, go.mod/Go binary, contract file presence, warehouse bytes, health schema, valid sku commit, checkpoint lsn, apply-report integers, health epoch match slot.",
+        "No circular end-to-end oracle in verifier; warehouse_digest() on APP path is incidental tautology beside the home-copy check.",
+        "Preservation tests do not substitute for missing fail-closed ABORT or health-rewrite obligations."
+      ]
+    },
+    "REVERSE_MATRIX_SUMMARY": [
+      {
+        "test": "test_f2p_unknown_flag_leaves_wal",
+        "maps_to": ["R-I-05"],
+        "ok": true
+      },
+      {
+        "test": "test_f2p_unknown_command_leaves_wal",
+        "maps_to": ["R-I-05"],
+        "ok": true
+      },
+      {
+        "test": "test_f2p_missing_commit_input_leaves_wal",
+        "maps_to": ["R-I-06"],
+        "ok": true
+      },
+      {
+        "test": "test_f2p_reset_output_does_not_truncate_wal",
+        "maps_to": ["R-I-07"],
+        "ok": true
+      },
+      {
+        "test": "test_f2p_empty_check_does_not_bump_epoch",
+        "maps_to": ["R-I-15", "R-C-06"],
+        "ok": "partial"
+      },
+      {
+        "test": "test_f2p_inspect_does_not_recover",
+        "maps_to": ["R-I-15"],
+        "ok": "partial"
+      },
+      {
+        "test": "test_p2p_commit_insert_sku",
+        "maps_to": ["R-I-09", "R-I-04"],
+        "ok": true
+      },
+      {
+        "test": "test_f2p_duplicate_sku_code_rejects",
+        "maps_to": ["R-I-13"],
+        "ok": "partial"
+      },
+      {
+        "test": "test_f2p_reject_does_not_install_row",
+        "maps_to": ["R-I-13"],
+        "ok": "partial"
+      },
+      {
+        "test": "test_f2p_missing_offer_fk_rejects",
+        "maps_to": ["R-I-13"],
+        "ok": true
+      },
+      {
+        "test": "test_f2p_frozen_tenant_rejects_offer",
+        "maps_to": ["R-I-13"],
+        "ok": true
+      },
+      {
+        "test": "test_f2p_hold_qty_rejects",
+        "maps_to": ["R-I-13"],
+        "ok": true
+      },
+      {
+        "test": "test_f2p_same_txn_parent_then_child",
+        "maps_to": ["R-C-05", "R-I-08"],
+        "ok": true
+      },
+      {
+        "test": "test_f2p_recover_skips_uncommitted",
+        "maps_to": ["R-I-12"],
+        "ok": true
+      },
+      {
+        "test": "test_f2p_recover_does_not_bump_epoch",
+        "maps_to": ["R-I-12"],
+        "ok": true
+      },
+      {
+        "test": "test_f2p_recovery_ok_after_recover",
+        "maps_to": ["R-I-12", "R-C-06"],
+        "ok": true
+      },
+      {
+        "test": "test_f2p_visibility_ok_after_recover",
+        "maps_to": ["R-I-08", "R-C-06"],
+        "ok": true
+      },
+      {
+        "test": "test_f2p_decode_skips_uncommitted",
+        "maps_to": ["R-I-10"],
+        "ok": true
+      },
+      {
+        "test": "test_f2p_decode_uses_wal_lsn",
+        "maps_to": ["R-I-10", "R-C-03"],
+        "ok": true
+      },
+      {
+        "test": "test_f2p_decode_update_has_before",
+        "maps_to": ["R-I-10"],
+        "ok": true
+      },
+      {
+        "test": "test_f2p_apply_is_monotonic",
+        "maps_to": ["R-I-11"],
+        "ok": true
+      },
+      {
+        "test": "test_f2p_stale_epoch_rejects_batch",
+        "maps_to": ["R-I-11"],
+        "ok": "ambiguous-cli"
+      },
+      {
+        "test": "test_f2p_apply_fk_order",
+        "maps_to": ["R-I-11"],
+        "ok": true
+      },
+      {
+        "test": "test_p2p_apply_report_integers",
+        "maps_to": ["R-I-11"],
+        "ok": true
+      },
+      {
+        "test": "test_f2p_indexes_match_after_commit",
+        "maps_to": ["R-I-14"],
+        "ok": true
+      },
+      {
+        "test": "test_f2p_indexes_rebuild_after_recover",
+        "maps_to": ["R-I-14"],
+        "ok": true
+      },
+      {
+        "test": "test_f2p_index_ok_after_recover",
+        "maps_to": ["R-I-14", "R-C-06"],
+        "ok": true
+      },
+      {
+        "test": "test_p2p_health_schema",
+        "maps_to": ["R-C-06", "R-I-15"],
+        "ok": true
+      },
+      {
+        "test": "test_p2p_health_replica_epoch_matches_slot",
+        "maps_to": ["R-C-06"],
+        "ok": true
+      },
+      {
+        "test": "test_p2p_checkpoint_lsn_not_zero_after_checkpoint",
+        "maps_to": ["R-I-12"],
+        "ok": "partial"
+      },
+      {
+        "test": "test_p2p_warehouse_untouched",
+        "maps_to": ["R-I-17"],
+        "ok": true
+      },
+      {
+        "test": "test_p2p_ctl_exists",
+        "maps_to": ["R-I-01", "R-I-04"],
+        "ok": true
+      },
+      {
+        "test": "test_p2p_contract_exists",
+        "maps_to": ["R-I-03"],
+        "ok": true
+      },
+      {
+        "test": "test_p2p_go_module",
+        "maps_to": ["R-I-01"],
+        "ok": true
+      }
+    ],
+    "SECOND_PASS_OMISSION_SWEEP": [
+      "Re-read instruction SHALL/MUST-equivalent bullets: WAL ABORT still unasserted; inspect/empty-check recover/decode-apply bans still weak; health rewrite for commit/decode/apply still missing.",
+      "Re-read contract CLI: --cdc still undocumented while graded.",
+      "Re-read contract checkpoint epoch sentence: still no test.",
+      "Re-read reject schema and PK_CONFLICT/CHECK_FAIL: still advisory gaps only.",
+      "No additional material work-request omission from instruction.md itself; goals are present and delegated detail is mostly fair.",
+      "All 34 tests appear in reverse matrix; none left unmapped."
+    ],
+    "BLOCKING_FINDING_IDS": [
+      "Q4-ST-001",
+      "Q4-ST-002",
+      "Q4-ST-003",
+      "Q4-ST-004",
+      "Q4-ST-005"
+    ],
+    "ADVISORY_FINDING_IDS": [
+      "Q4-ST-006",
+      "Q4-ST-007",
+      "Q4-ST-008",
+      "Q4-ST-009",
+      "Q4-ST-010"
+    ],
+    "EXHAUSTIVENESS": {
+      "REQUIREMENTS_ENUMERATED": "COMPLETE",
+      "VERIFIER_BEHAVIORS_ENUMERATED": "COMPLETE",
+      "FORWARD_MATRIX_COMPLETE": "YES",
+      "REVERSE_MATRIX_COMPLETE": "YES",
+      "INSTRUCTION_COMPLETENESS_COMPLETE": "YES",
+      "DELEGATED_CONTRACTS_COMPLETE": "YES",
+      "PROMPT_EXTENSION_WALK_COMPLETE": "YES",
+      "P2P_BOUNDARIES_COMPLETE": "YES",
+      "F2P_BOUNDARIES_COMPLETE": "YES",
+      "OUTPUT_INTERFACES_COMPLETE": "YES",
+      "SECOND_PASS_OMISSION_SWEEP": "PASS",
+      "UNINSPECTED_SCOPE": []
+    }
+  }
+}

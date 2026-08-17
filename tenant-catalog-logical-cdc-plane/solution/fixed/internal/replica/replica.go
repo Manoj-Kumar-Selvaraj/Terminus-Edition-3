@@ -6,6 +6,7 @@ import (
 
 	"catalog/internal/applyexec"
 	"catalog/internal/applyorder"
+	"catalog/internal/fence"
 	"catalog/internal/model"
 	"catalog/internal/paths"
 	"catalog/internal/store"
@@ -28,19 +29,21 @@ func Apply(st *store.Store, records []map[string]any) (Report, error) {
 	if len(records) == 0 {
 		return rep, writeReport(rep)
 	}
-	for _, rec := range records {
-		if store.AsInt64(rec["epoch"]) != slot.Epoch {
-			rep.Rejected = len(records)
-			return rep, writeReport(rep)
-		}
+	if !fence.BatchEpochOK(slot, fence.ScanEpochs(records)) {
+		rep.Applied, rep.Skipped, rep.Rejected, rep.ConfirmedLSN = fence.RejectWholeBatch(slot, len(records))
+		return rep, writeReport(rep)
 	}
 	ordered := applyorder.Order(records, false)
 	var maxApplied int64
 	appliedAny := false
 	var ops []store.ReplicaOp
 	for _, rec := range ordered {
-		lsn, _, _, table, pk, op := applyexec.Fields(rec)
-		if lsn <= slot.ConfirmedLSN {
+		lsn, epoch, _, table, pk, op := applyexec.Fields(rec)
+		switch fence.Classify(slot, epoch, lsn) {
+		case fence.DecisionRejectBatch:
+			rep.Applied, rep.Skipped, rep.Rejected, rep.ConfirmedLSN = fence.RejectWholeBatch(slot, len(records))
+			return rep, writeReport(rep)
+		case fence.DecisionSkip:
 			rep.Skipped++
 			continue
 		}
@@ -58,8 +61,8 @@ func Apply(st *store.Store, records []map[string]any) (Report, error) {
 	if err := st.ApplyReplicaBatch(ops); err != nil {
 		return Report{}, err
 	}
+	slot.ConfirmedLSN = fence.AdvanceConfirmed(slot.ConfirmedLSN, maxApplied, appliedAny)
 	if appliedAny {
-		slot.ConfirmedLSN = maxApplied
 		if err := st.WriteSlot(slot); err != nil {
 			return Report{}, err
 		}

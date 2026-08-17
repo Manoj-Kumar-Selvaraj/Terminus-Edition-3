@@ -58,6 +58,50 @@ def warehouse_digest() -> str:
     return hashlib.sha256(WAREHOUSE.read_bytes()).hexdigest()
 
 
+def install_pending_sentinel(home: Path) -> None:
+    """Install a local uncommitted heap row so inspect/empty-check cannot quietly recover."""
+    engine = sqlite3.connect(str(home / "data" / "engine.sqlite"))
+    engine.execute(
+        "INSERT INTO row_version(table_name, pk, xmin, xmax, committed, lsn, payload) VALUES (?,?,?,?,?,?,?)",
+        (
+            "sku",
+            "s-test-pending",
+            9_999_999,
+            None,
+            0,
+            9_999_999,
+            '{"sku_id":"s-test-pending","tenant_id":"t00","sku_code":"PENDTEST"}',
+        ),
+    )
+    engine.commit()
+    engine.close()
+
+
+def pending_sentinel_count(home: Path) -> int:
+    engine = sqlite3.connect(str(home / "data" / "engine.sqlite"))
+    count = engine.execute(
+        "SELECT COUNT(*) FROM row_version WHERE pk = 's-test-pending'"
+    ).fetchone()[0]
+    engine.close()
+    return int(count)
+
+
+def fingerprint_state(home: Path) -> dict:
+    data = home / "data"
+    return {
+        "wal": wal_bytes(home),
+        "slot": (data / "replica_slot.json").read_bytes(),
+        "indexes": (data / "indexes.json").read_bytes() if (data / "indexes.json").is_file() else b"",
+        "replica": (data / "replica.sqlite").read_bytes(),
+        "pending": pending_sentinel_count(home),
+    }
+
+
+def wal_records(home: Path) -> list[dict]:
+    text = (home / "data" / "wal.jsonl").read_text(encoding="utf-8")
+    return [json.loads(line) for line in text.splitlines() if line.strip()]
+
+
 @pytest.fixture()
 def home(tmp_path: Path) -> Path:
     return _copy_home(tmp_path)
@@ -88,24 +132,42 @@ def test_f2p_reset_output_does_not_truncate_wal(home: Path) -> None:
 
 
 def test_f2p_empty_check_does_not_bump_epoch(home: Path) -> None:
-    """empty-check rewrites health without changing replica epoch."""
-    before = slot(home)["epoch"]
+    """empty-check rewrites health without recover, apply, WAL append, or epoch bump."""
+    install_pending_sentinel(home)
+    before = fingerprint_state(home)
+    before_epoch = slot(home)["epoch"]
+    assert before["pending"] == 1
     proc = run_ctl(home, "empty-check")
     assert proc.returncode == 0
-    assert slot(home)["epoch"] == before
+    assert slot(home)["epoch"] == before_epoch
+    after = fingerprint_state(home)
+    assert after["wal"] == before["wal"]
+    assert after["slot"] == before["slot"]
+    assert after["indexes"] == before["indexes"]
+    assert after["replica"] == before["replica"]
+    assert after["pending"] == 1
     body = health(home)
     assert body["cdc_source"] == "wal"
     assert isinstance(body["heap_visible_count"], int)
 
 
 def test_f2p_inspect_does_not_recover(home: Path) -> None:
-    """inspect must not bump epoch or append WAL."""
-    before_wal = wal_bytes(home)
+    """inspect rewrites health without recover, decode-apply, WAL append, or epoch bump."""
+    install_pending_sentinel(home)
+    before = fingerprint_state(home)
     before_epoch = slot(home)["epoch"]
+    assert before["pending"] == 1
     proc = run_ctl(home, "inspect")
     assert proc.returncode == 0
-    assert wal_bytes(home) == before_wal
+    assert wal_bytes(home) == before["wal"]
     assert slot(home)["epoch"] == before_epoch
+    after = fingerprint_state(home)
+    assert after["slot"] == before["slot"]
+    assert after["indexes"] == before["indexes"]
+    assert after["replica"] == before["replica"]
+    assert after["pending"] == 1
+    body = health(home)
+    assert body["cdc_source"] == "wal"
 
 
 def test_p2p_commit_insert_sku(home: Path) -> None:
@@ -118,16 +180,63 @@ def test_p2p_commit_insert_sku(home: Path) -> None:
     ).fetchone()
     engine.close()
     assert row[0] == 1
+    body = health(home)
+    assert body["cdc_source"] == "wal"
+    assert isinstance(body["durable_lsn"], int)
+    assert body["durable_lsn"] > 0
+
+
+def test_f2p_health_rewrite_after_decode_apply(home: Path) -> None:
+    """Successful decode and apply rewrite health.json from observed state."""
+    run_ctl(home, "recover")
+    health_path = home / "out" / "health.json"
+    if health_path.is_file():
+        health_path.unlink()
+    proc = run_ctl(home, "decode")
+    assert proc.returncode == 0
+    assert health_path.is_file()
+    decoded = health(home)
+    assert decoded["cdc_source"] == "wal"
+    assert isinstance(decoded["durable_lsn"], int)
+    health_path.unlink()
+    proc = run_ctl(home, "apply")
+    assert proc.returncode == 0
+    assert health_path.is_file()
+    applied = health(home)
+    assert applied["cdc_source"] == "wal"
+    assert isinstance(applied["epoch"], int)
+    assert applied["epoch"] == slot(home)["epoch"]
+
+
+def test_p2p_checkpoint_lsn_not_zero_after_checkpoint(home: Path) -> None:
+    """checkpoint stores the durable WAL lsn and does not change replica epoch."""
+    before_epoch = slot(home)["epoch"]
+    proc = run_ctl(home, "checkpoint")
+    assert proc.returncode == 0
+    payload = json.loads((home / "data" / "checkpoint.json").read_text(encoding="utf-8"))
+    assert int(payload["lsn"]) == health(home)["durable_lsn"]
+    assert int(payload["lsn"]) > 0
+    assert slot(home)["epoch"] == before_epoch
+    body = health(home)
+    assert body["epoch"] == before_epoch
+    assert body["cdc_source"] == "wal"
 
 
 def test_f2p_duplicate_sku_code_rejects(home: Path) -> None:
-    """Duplicate visible (tenant_id, sku_code) is UNIQUE_CONFLICT."""
+    """Duplicate visible (tenant_id, sku_code) is UNIQUE_CONFLICT with WAL ABORT."""
+    before_len = len(wal_records(home))
     proc = run_ctl(home, "commit", "--input", str(FIXTURES / "dup_sku.jsonl"))
     assert proc.returncode == 0
     lines = (home / "out" / "rejects.jsonl").read_text(encoding="utf-8").strip().splitlines()
     assert lines
     body = json.loads(lines[-1])
     assert body["code"] == "UNIQUE_CONFLICT"
+    assert "txn_id" in body and "table" in body and "pk" in body and "detail" in body
+    recs = wal_records(home)
+    assert len(recs) > before_len
+    aborts = [r for r in recs if r.get("kind") == "ABORT"]
+    assert aborts
+    assert any(r.get("txn_id") == body["txn_id"] for r in aborts)
 
 
 def test_f2p_missing_offer_fk_rejects(home: Path) -> None:
@@ -309,15 +418,6 @@ def test_p2p_health_schema(home: Path) -> None:
     assert body["cdc_source"] == "wal"
     assert isinstance(body["epoch"], int)
     assert isinstance(body["durable_lsn"], int)
-
-
-def test_p2p_checkpoint_lsn_not_zero_after_checkpoint(home: Path) -> None:
-    """checkpoint stores the durable WAL lsn."""
-    proc = run_ctl(home, "checkpoint")
-    assert proc.returncode == 0
-    payload = json.loads((home / "data" / "checkpoint.json").read_text(encoding="utf-8"))
-    assert int(payload["lsn"]) == health(home)["durable_lsn"]
-    assert int(payload["lsn"]) > 0
 
 
 def test_f2p_decode_update_has_before(home: Path) -> None:

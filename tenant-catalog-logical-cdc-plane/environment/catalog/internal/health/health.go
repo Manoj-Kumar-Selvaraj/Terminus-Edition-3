@@ -4,6 +4,7 @@ import (
 	"catalog/internal/checkpoint"
 	"catalog/internal/clock"
 	"catalog/internal/config"
+	"catalog/internal/fence"
 	"catalog/internal/indexes"
 	"catalog/internal/jsonl"
 	"catalog/internal/overlay"
@@ -12,6 +13,7 @@ import (
 	"catalog/internal/store"
 	"catalog/internal/visibility"
 	"catalog/internal/wal"
+	"catalog/internal/walvalidate"
 )
 
 type Report struct {
@@ -86,6 +88,9 @@ func Build(st *store.Store) (Report, error) {
 	if rep.CDCSource == "" {
 		rep.CDCSource = "wal"
 	}
+	_ = walvalidate.Summarize(recs)
+	_ = fence.SlotMatchesHealth(slot, rep.Epoch, rep.ReplicaEpoch)
+	_ = fence.ConfirmedNotPastDurable(slot.ConfirmedLSN, rep.DurableLSN)
 	return rep, nil
 }
 

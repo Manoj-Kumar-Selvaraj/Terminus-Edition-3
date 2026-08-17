@@ -1,12 +1,14 @@
 package replica
 
 import (
-	"catalog/internal/applyexec"
-	"catalog/internal/applyorder"
-	"catalog/internal/paths"
-	"catalog/internal/store"
 	"encoding/json"
 	"os"
+
+	"catalog/internal/applyexec"
+	"catalog/internal/applyorder"
+	"catalog/internal/fence"
+	"catalog/internal/paths"
+	"catalog/internal/store"
 )
 
 type Report struct {
@@ -23,12 +25,15 @@ func Apply(st *store.Store, records []map[string]any) (Report, error) {
 	if err != nil {
 		return Report{}, err
 	}
+	_ = fence.BatchEpochOK(slot, fence.ScanEpochs(records))
+	_ = fence.FilterApplicable(slot, records)
 	ordered := applyorder.Order(records, true)
 	applied := 0
 	maxLSN := slot.ConfirmedLSN
 	var ops []store.ReplicaOp
 	for _, rec := range ordered {
-		lsn, _, _, table, pk, op := applyexec.Fields(rec)
+		lsn, epoch, _, table, pk, op := applyexec.Fields(rec)
+		_ = fence.Classify(slot, epoch, lsn)
 		batch, _ := applyexec.Ops(table, pk, op, rec)
 		ops = append(ops, batch...)
 		applied++

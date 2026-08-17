@@ -1,0 +1,275 @@
+{
+  "schema_version": "3.0",
+  "role": "Production Logic Auditor",
+  "review_id": "tenant-catalog-logical-cdc-plane-bf0338e2-production-logic-711b9c2c50",
+  "task": "tenant-catalog-logical-cdc-plane",
+  "task_commit": "bf0338e23979bd7802473064fd0e02967e3de880",
+  "control_plane_commit": "02968862b6e0c36271370b97d1c75bdbeb9b9978",
+  "protocol_policy_version": "2.2",
+  "prompt_policy_version": "2.2",
+  "role_policy_version": "1.1",
+  "role_contract_hash": "ee7d1cfd6e19fcc0e831cc75829457593d7410613c3b3fb811aef925e85a1607",
+  "review_scope_hash": "668185615d1aafcb301c53a5debe66ddd9e7014b521d9d1489c595087484f6c3",
+  "context_packet": ".terminus/reviews/tenant-catalog-logical-cdc-plane/bf0338e2/tenant-catalog-logical-cdc-plane-bf0338e2-production-logic-711b9c2c50.packet.json",
+  "verdict": "REVISE",
+  "confidence": "HIGH",
+  "evidence_status": "SUFFICIENT",
+  "summary": "Independent Q6 walk of catalogctl at bf0338e2 finds a real multi-package MVCC/WAL/CDC/replica catalog plane with distinct store, visibility, overlay, txn, indexes, apply, recover, and health responsibilities and genuine cross-component traps. Honest substantive reachable runtime/config LOC from the operator entrypoint is about 2734 (2706 Go non-blank non-comment in the catalogctl import closure excluding cmd/seed, plus replica_schema.sql 27 and catalog.json 1), which fails the large_system_strict >=3000 floor. sql/seed.sql (~14402 lines / ~3 MB INSERT dump) and cmd/seed (Docker build-only, 399 NBC) were excluded. TOY_LOGIC_RISK is LOW and PADDING_RISK is MEDIUM; the blocking defect is scale under the floor, not a toy core.",
+  "evidence": [
+    {
+      "type": "rule",
+      "ref": ".terminus/agents/QUALITY_AGENT_REGISTRY.md",
+      "observation": "Q6 independently judges whether solver-visible core is complex, reachable, coupled, non-toy, and non-padded. For large_system_strict, >=3000 substantive reachable runtime/config LOC is necessary but not sufficient. Complexity Governor or authenticity-validator PASS is not copied as a conclusion."
+    },
+    {
+      "type": "rule",
+      "ref": ".terminus/agents/QUALITY_AGENT_PROMPTS.md",
+      "observation": "Required method: entrypoints, reachability, distinct responsibilities, clone/wrapper/filler risk, cross-module invariants, ~25% removal test, data vs consuming logic. large_system_strict PASS forbids HIGH toy/padding risk and requires >=3000 substantive reachable LOC."
+    },
+    {
+      "type": "rule",
+      "ref": ".terminus/agents/PRODUCTION_AUTHENTICITY.md",
+      "observation": "Profile large_system_strict treats 3000 substantive reachable runtime/config LOC as a floor. Warehouse/seed SQL volume must not count as authored runtime complexity."
+    },
+    {
+      "type": "file",
+      "ref": ".terminus/designs/tenant-catalog-logical-cdc-plane.json",
+      "observation": "Design record binds profile=large_system_strict. Defect lists were used only as topology context, not as a verdict to copy."
+    },
+    {
+      "type": "file",
+      "ref": "tenant-catalog-logical-cdc-plane/task.toml@bf0338e23979bd7802473064fd0e02967e3de880",
+      "observation": "Software/Databases Go+SQL task; artifacts [\"/app/catalog\"]; separate verifier; workdir /app. Public operator surface is the catalog plane under /app/catalog."
+    },
+    {
+      "type": "file",
+      "ref": "tenant-catalog-logical-cdc-plane/environment/catalog/cmd/catalogctl/main.go@bf0338e23979bd7802473064fd0e02967e3de880",
+      "observation": "Sole public runtime entry: os.Exit(cli.Main()). This is the reachability root for the LOC walk."
+    },
+    {
+      "type": "file",
+      "ref": "tenant-catalog-logical-cdc-plane/environment/catalog/internal/cli/cli.go@bf0338e23979bd7802473064fd0e02967e3de880",
+      "observation": "Dispatches commit/decode/apply/recover/checkpoint/inspect/empty-check into engine. Starter defects (WAL BEGIN before argv parse; --reset-output can clear WAL) sit on a real operator path with exit-2 usage handling."
+    },
+    {
+      "type": "file",
+      "ref": "tenant-catalog-logical-cdc-plane/environment/catalog/internal/engine/engine.go@bf0338e23979bd7802473064fd0e02967e3de880",
+      "observation": "Orchestrates txn.Commit, cdc.Decode/Write, replica.Apply, recover.Recover, checkpoint.FromVersions, inspect, and health.Write. Couples WAL, heap visibility, CDC file, replica SQLite, and health.json."
+    },
+    {
+      "type": "file",
+      "ref": "tenant-catalog-logical-cdc-plane/environment/catalog/internal/store/store.go@bf0338e23979bd7802473064fd0e02967e3de880",
+      "observation": "Largest package (~571 NBC): engine SQLite row_version/txn_reg, WAL JSONL, checkpoint/indexes/slot files, replica FK upserts/batch apply. Material persistence and error paths, not a facade."
+    },
+    {
+      "type": "file",
+      "ref": "tenant-catalog-logical-cdc-plane/environment/catalog/internal/overlay/overlay.go@bf0338e23979bd7802473064fd0e02967e3de880",
+      "observation": "Merge/Evaluate/CommittedConsistent encode PK/FK/unique/frozen-tenant/qty/hold-aggregate checks (~202 NBC). health uses CommittedConsistent; Evaluate has no callers in the starter graph (intended constraint body currently unwired)."
+    },
+    {
+      "type": "file",
+      "ref": "tenant-catalog-logical-cdc-plane/environment/catalog/internal/txn/txn.go@bf0338e23979bd7802473064fd0e02967e3de880",
+      "observation": "Commit path allocates txn/LSN, appends BEGIN/mutation/COMMIT-or-ABORT WAL, calls constraints.Check, heap.Install, indexes.Rebuild, and reject JSONL. Real commit pipeline with fail-closed abort branch."
+    },
+    {
+      "type": "file",
+      "ref": "tenant-catalog-logical-cdc-plane/environment/catalog/internal/heap/heap.go@bf0338e23979bd7802473064fd0e02967e3de880",
+      "observation": "xmin/xmax visibility helpers and Install for insert/update/delete versioning (~164 NBC). Parallel visibility rules also exist in visibility.SnapshotVisible (modest duplication, not a cloned thick template portfolio)."
+    },
+    {
+      "type": "file",
+      "ref": "tenant-catalog-logical-cdc-plane/environment/catalog/internal/cdc/cdc.go@bf0338e23979bd7802473064fd0e02967e3de880",
+      "observation": "Starter Decode scans heap SKU rows and invents LSNs; Write emits cdc.jsonl. Thin wrong algorithm on a real decode/write path, not a constant-output shell."
+    },
+    {
+      "type": "file",
+      "ref": "tenant-catalog-logical-cdc-plane/environment/catalog/internal/replica/replica.go@bf0338e23979bd7802473064fd0e02967e3de880",
+      "observation": "Apply uses applyorder + applyexec into Store.ApplyReplicaBatch and advances replica_slot; starter ignores LSN/epoch fences. FK-order helper exists and is live."
+    },
+    {
+      "type": "file",
+      "ref": "tenant-catalog-logical-cdc-plane/environment/catalog/internal/recover/recover.go@bf0338e23979bd7802473064fd0e02967e3de880",
+      "observation": "Checkpoint restore plus WAL redo and epoch bump; starter installs uncommitted mutations. Coupled to indexes.Rebuild and inspect's mistaken recover side effect."
+    },
+    {
+      "type": "file",
+      "ref": "tenant-catalog-logical-cdc-plane/environment/catalog/internal/health/health.go@bf0338e23979bd7802473064fd0e02967e3de880",
+      "observation": "Build/Write health.json combining durable LSN, checkpoint, replica slot, index match, visibility, overlay constraints, recovery consistency, and replica row match (~205 NBC with consistency.go)."
+    },
+    {
+      "type": "file",
+      "ref": "tenant-catalog-logical-cdc-plane/environment/Dockerfile@bf0338e23979bd7802473064fd0e02967e3de880",
+      "observation": "Builds catalogctl and seed, then RUN seed at image build. cmd/seed is build-time state generation, analogous to excluded generate_seed tooling in other Q6 reviews; not on the catalogctl operator path."
+    },
+    {
+      "type": "file",
+      "ref": "tenant-catalog-logical-cdc-plane/environment/catalog/sql/seed.sql@bf0338e23979bd7802473064fd0e02967e3de880",
+      "observation": "14402 lines / ~3.0 MB of INSERT warehouse dump (~12840 INSERT statements). Contract says warehouse is not commit/CDC/apply source. Excluded entirely from substantive runtime LOC."
+    },
+    {
+      "type": "file",
+      "ref": "tenant-catalog-logical-cdc-plane/environment/catalog/sql/schema.sql@bf0338e23979bd7802473064fd0e02967e3de880",
+      "observation": "22-line engine DDL mirrored by store.engineSchema. paths.SQLEngine() is defined but never called; schema.sql is not loaded at runtime, so it was not added to the honest reachable config total."
+    },
+    {
+      "type": "file",
+      "ref": "tenant-catalog-logical-cdc-plane/environment/catalog/sql/replica_schema.sql@bf0338e23979bd7802473064fd0e02967e3de880",
+      "observation": "27 NBC FK schema loaded via store.OpenReplica / paths.SQLReplica(). Counted as runtime config."
+    },
+    {
+      "type": "file",
+      "ref": "tenant-catalog-logical-cdc-plane/environment/catalog/config/catalog.json@bf0338e23979bd7802473064fd0e02967e3de880",
+      "observation": "One-line runtime knobs: isolation=snapshot, replica_epoch=3, cdc_source=wal. Loaded by config.Load."
+    },
+    {
+      "type": "file",
+      "ref": "tenant-catalog-logical-cdc-plane/environment/catalog/notes/oncall.md@bf0338e23979bd7802473064fd0e02967e3de880",
+      "observation": "Incident evidence: epoch 3, open WAL crash pending SKU, CDC-must-be-WAL, frozen tenants, replica lag through SKU batch. Supports stateful work package; not LOC."
+    },
+    {
+      "type": "file",
+      "ref": "independent_go_import_closure_from_catalogctl@bf0338e23979bd7802473064fd0e02967e3de880",
+      "observation": "Independent recount: 27 internal packages + cmd/catalogctl; 30 Go files excluding cmd/seed; 2706 non-blank non-full-line-comment Go lines. Package NBC (approx): store 571, health 205, overlay 202, txn 200, heap 164, schema 159, cli 112, model 108, engine 104, checkpoint 94, applyorder 74, jsonl 70, recover 65, visibility 64, indexes 57, cdc 55, wal 52, replica 49, applyexec 48, snapshot 47, constraints 45, policy 38, paths 37, config 34, holdqty 21, inspect 15, clock 8, catalogctl main 8. Plus replica_schema.sql 27 + catalog.json 1 => honest reachable runtime/config ≈ 2734. Excluded: cmd/seed 399 (Docker RUN only), seed.sql 14402. Dead/unwired helpers inside the closure include overlay.Evaluate (definition-only), paths.SQLEngine, several policy helpers, heap.InstallRecord/AlignPK, clock.UnixSeconds, applyexec.One — modest padding, not the scale of the shortfall (~266 lines below 3000)."
+    }
+  ],
+  "findings": [
+    {
+      "id": "Q6-LOC-FLOOR",
+      "severity": "BLOCKER",
+      "status": "OBSERVED",
+      "criterion": "large_system_strict requires >=3000 substantive reachable solver-visible runtime/config LOC",
+      "evidence_refs": [
+        "independent_go_import_closure_from_catalogctl@bf0338e23979bd7802473064fd0e02967e3de880",
+        "tenant-catalog-logical-cdc-plane/environment/catalog/cmd/catalogctl/main.go@bf0338e23979bd7802473064fd0e02967e3de880",
+        "tenant-catalog-logical-cdc-plane/environment/Dockerfile@bf0338e23979bd7802473064fd0e02967e3de880",
+        "tenant-catalog-logical-cdc-plane/environment/catalog/sql/seed.sql@bf0338e23979bd7802473064fd0e02967e3de880",
+        ".terminus/designs/tenant-catalog-logical-cdc-plane.json"
+      ],
+      "why_it_matters": "Without clearing the floor on catalogctl-reachable runtime/config logic, the task cannot PASS Q6 under large_system_strict even though the architecture is otherwise non-toy.",
+      "minimal_remediation": "Add substantive reachable domain/runtime logic on the catalogctl path (or deepen existing live packages) until honest reachable runtime/config LOC is >=3000. Do not count seed.sql warehouse dumps or build-only seed generators toward the floor.",
+      "regression_risk": "Naive LOC padding, duplicated wrappers, or moving seed.sql volume into counted code would create HIGH padding risk and still fail Q6."
+    },
+    {
+      "id": "Q6-UNWIRED-OVERLAY-EVALUATE",
+      "severity": "MEDIUM",
+      "status": "OBSERVED",
+      "criterion": "Major domain modules should participate in live operator workflows rather than sit as dead bodies beside thin starter replacements",
+      "evidence_refs": [
+        "tenant-catalog-logical-cdc-plane/environment/catalog/internal/overlay/overlay.go@bf0338e23979bd7802473064fd0e02967e3de880",
+        "tenant-catalog-logical-cdc-plane/environment/catalog/internal/constraints/constraints.go@bf0338e23979bd7802473064fd0e02967e3de880",
+        "tenant-catalog-logical-cdc-plane/environment/catalog/internal/txn/txn.go@bf0338e23979bd7802473064fd0e02967e3de880"
+      ],
+      "why_it_matters": "overlay.Evaluate holds the richer constraint topology but has no callers; commit uses the thin replica-lag constraints.Check instead. That is a realistic starter defect, but it also means some counted overlay LOC is not executed until repaired.",
+      "minimal_remediation": "When expanding scale, prefer wiring/deepening live commit/decode/apply/recover paths over leaving large helper bodies unreachable.",
+      "regression_risk": "Counting Evaluate as executed production depth without wiring it overstates live complexity."
+    },
+    {
+      "id": "Q6-UNUSED-ENGINE-SCHEMA-FILE",
+      "severity": "LOW",
+      "status": "OBSERVED",
+      "criterion": "Runtime/config LOC must be loaded or otherwise participate in the operational system",
+      "evidence_refs": [
+        "tenant-catalog-logical-cdc-plane/environment/catalog/sql/schema.sql@bf0338e23979bd7802473064fd0e02967e3de880",
+        "tenant-catalog-logical-cdc-plane/environment/catalog/internal/paths/paths.go@bf0338e23979bd7802473064fd0e02967e3de880",
+        "tenant-catalog-logical-cdc-plane/environment/catalog/internal/store/store.go@bf0338e23979bd7802473064fd0e02967e3de880"
+      ],
+      "why_it_matters": "schema.sql duplicates store.engineSchema while SQLEngine() is never called; adding its 22 lines would be config padding.",
+      "minimal_remediation": "Either load schema.sql at runtime or treat it as documentation and keep it out of LOC claims.",
+      "regression_risk": "Low if left as docs; inflates claims if counted without a reader."
+    }
+  ],
+  "missing_evidence": [],
+  "change_scope": [
+    "Solver-visible environment/catalog runtime packages reachable from catalogctl (and related runtime DDL/config actually loaded)",
+    "Possibly Dockerfile build wiring if new runtime modules must be compiled into catalogctl"
+  ],
+  "do_not_change": [
+    "Do not treat sql/seed.sql or warehouse dumps as runtime/config LOC",
+    "Do not treat cmd/seed Docker build generation as catalogctl-reachable runtime without a documented operator workflow",
+    "Do not use Complexity Governor / authenticity-validator PASS as a substitute for this Q6 result",
+    "Do not use this Q6 result as Q4 spec-test evidence",
+    "A production-scope change under task.toml + environment/ stales this review_scope_hash"
+  ],
+  "next_gate": "Route to the environment/runtime owner to expand substantive catalogctl-reachable logic above the 3000 floor without HIGH padding/toy inflation. After any production-scope change, mint a fresh Q6 packet and re-run independent Production Logic Auditor before Quality Interlock.",
+  "role_output": {
+    "CORE_LOGIC_DEPTH": "MEDIUM",
+    "RUNTIME_REACHABILITY": "HIGH",
+    "MODULE_DIVERSITY": "HIGH",
+    "CROSS_COMPONENT_COUPLING": "HIGH",
+    "TOY_LOGIC_RISK": "LOW",
+    "PADDING_RISK": "MEDIUM",
+    "SUBSTANTIVE_LOC_ASSESSMENT": "FAIL large_system_strict floor. Independent catalogctl import closure at bf0338e2: 30 Go files excluding cmd/seed, 2706 non-blank non-full-line-comment Go lines across 27 internal packages + catalogctl main. Runtime config actually loaded: sql/replica_schema.sql 27 NBC + config/catalog.json 1 => honest reachable runtime/config ≈ 2734. Excluded: cmd/seed/main.go 399 (Dockerfile RUN only), sql/seed.sql 14402 INSERT dump (~3 MB), unread sql/schema.sql 22 (SQLEngine never called; DDL embedded in store). Total Go including seed is ~3105 but seed is not operator-reachable runtime. Shortfall ≈ 266 lines below 3000. Inside the closure, unwired overlay.Evaluate and a handful of definition-only helpers are modest padding (PADDING_RISK MEDIUM), not HIGH. Core store/overlay/txn/heap/health/engine paths are branched and stateful (TOY_LOGIC_RISK LOW).",
+    "MAJOR_MODULES": [
+      {
+        "module": "cmd/catalogctl + internal/cli + internal/engine + internal/policy + internal/config + internal/paths",
+        "responsibility": "Public operator CLI, argv/usage, command dispatch, knobs, and filesystem layout.",
+        "reachability": "bin/catalogctl -> cli.Main -> engine.*; config.Load reads catalog.json.",
+        "state_error_behavior": "Unknown command/flag should exit 2 before mutation; starter currently appends WAL BEGIN first. Successful commands rewrite health.json; --reset-output is scoped to out/ (starter may also wipe WAL)."
+      },
+      {
+        "module": "internal/store + sql/replica_schema.sql",
+        "responsibility": "Engine SQLite versions/txn registry, WAL/checkpoint/index/slot files, replica SQLite FK upserts and batched apply.",
+        "reachability": "Every engine command path; OpenReplica loads replica_schema.sql.",
+        "state_error_behavior": "SQL/IO errors propagate; MarkAborted rolls back uncommitted versions; ApplyReplicaBatch transactional."
+      },
+      {
+        "module": "internal/txn + internal/constraints + internal/heap + internal/indexes + internal/snapshot + internal/visibility",
+        "responsibility": "Mutation commit, constraint gate, MVCC heap install, secondary indexes, snapshot visibility.",
+        "reachability": "engine.Commit and health/checkpoint visibility reads.",
+        "state_error_behavior": "Constraint reject -> WAL ABORT + rejects.jsonl + no heap/index install (intended). Starter constraints.Check is replica-lag thin; snapshot.Visible uses LatestXmaxNull (leaks uncommitted)."
+      },
+      {
+        "module": "internal/overlay + internal/holdqty + internal/schema + internal/model",
+        "responsibility": "Domain table/PK/FK/unique/frozen/qty/hold-aggregate model and overlay evaluation.",
+        "reachability": "health.CommittedConsistent; schema used widely; Evaluate currently unwired from commit.",
+        "state_error_behavior": "Evaluate returns typed Reject codes; holdqty enforces aggregate qty <= on_hand."
+      },
+      {
+        "module": "internal/cdc + internal/wal + internal/jsonl",
+        "responsibility": "WAL decode to logical CDC JSONL and WAL committed-set helpers.",
+        "reachability": "engine.Decode; wal helpers used by txn/health/checkpoint/seed.",
+        "state_error_behavior": "Starter CDC invents LSNs from heap SKU scan; Write truncates/rewrites cdc.jsonl."
+      },
+      {
+        "module": "internal/replica + internal/applyorder + internal/applyexec",
+        "responsibility": "CDC apply ordering, field extraction, replica mutation batch, apply-report.",
+        "reachability": "engine.Apply.",
+        "state_error_behavior": "Starter applies in reverse-FK order without LSN/epoch fences; advances confirmed_lsn to max seen."
+      },
+      {
+        "module": "internal/recover + internal/checkpoint + internal/inspect",
+        "responsibility": "Checkpoint document I/O, redo, index rebuild, inspect/empty-check health refresh.",
+        "reachability": "engine.Recover/Checkpoint/Inspect/EmptyCheck.",
+        "state_error_behavior": "Starter recover installs uncommitted WAL and bumps epoch; inspect incorrectly calls recover."
+      },
+      {
+        "module": "internal/health (+ consistency) + internal/clock",
+        "responsibility": "Contracted health.json aggregation across index/visibility/constraints/replica/recovery flags.",
+        "reachability": "engine success paths and inspect.",
+        "state_error_behavior": "Healthy is conjunction of subsystem OK flags; clock stamps generated_at."
+      },
+      {
+        "module": "cmd/seed (excluded from reachable runtime LOC)",
+        "responsibility": "Deterministic build-time population of ~12000 committed versions, WAL, replica lag, crash-pending row, warehouse.",
+        "reachability": "Dockerfile RUN only; not instruction operator workflow.",
+        "state_error_behavior": "verifySeed asserts version/slot/WAL invariants at image build."
+      }
+    ],
+    "PARTIAL_FIX_TRAPS": [
+      "Fixing snapshot.Visible xmin/xmax without switching constraints off replica-lag Check still allows unique/FK/frozen/hold failures to commit.",
+      "Filtering aborted heap rows in CDC while still scanning heap (not WAL) keeps LSN/replica desync.",
+      "Rebuilding indexes from all versions or before COMMIT still leaves aborted or crash-window index rows.",
+      "Idempotent replica upserts without LSN monotonicity and epoch fencing can rewind confirmed_lsn or apply stale epoch batches.",
+      "Recover that replays every INSERT/UPDATE/DELETE after checkpoint LSN still installs the open crash-pending txn.",
+      "Making inspect avoid epoch bump while still calling recover mutates heap/slot contrary to inspect contract.",
+      "Parsing argv before clearing out/ but still appending BEGIN on unknown flags leaves WAL pollution.",
+      "Wiring overlay.Evaluate without also fixing snapshot visibility feeds Evaluate the wrong visible set."
+    ],
+    "REMOVAL_TEST": "PASS on architectural necessity, FAIL on scale sufficiency. Removing ~25% of the catalogctl-reachable core (for example store ~571 plus overlay/txn/health ~600, ~1170/2706) would destroy persistence, commit constraints, and health/replica coupling; the live system is not a removable padding island. However, the remaining reachable volume still sits at ~2734 runtime/config LOC, so the removal test does not rescue the unmet 3000 floor. Excluding seed.sql and cmd/seed from the budget is required; those are data/build generators, not this removal set.",
+    "REQUIRED_CHANGES": [
+      "Increase substantive catalogctl-reachable runtime/config LOC to >=3000 without counting seed.sql warehouse dumps or Docker-only seed generators.",
+      "Prefer deepening or adding live commit/decode/apply/recover/visibility/constraint/index logic over unread DDL duplicates, constant wrappers, or cloned micro-packages.",
+      "Keep TOY_LOGIC_RISK and PADDING_RISK below HIGH after the expansion (no filler modules whose removal leaves behavior intact)."
+    ]
+  }
+}
