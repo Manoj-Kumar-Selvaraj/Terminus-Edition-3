@@ -1,0 +1,497 @@
+{
+  "schema_version": "3.0",
+  "role": "Spec-Test Contract Reviewer",
+  "review_id": "cobol-comp3-python-equiv-3a463000-spec-test-contract-1dec81c843",
+  "task": "cobol-comp3-python-equiv",
+  "task_commit": "3a463000607f2dcdf88785a77d2dc5767f473e05",
+  "control_plane_commit": "992aa77c65b93f58c3aecc45b6777025b5fb264a",
+  "protocol_policy_version": "2.2",
+  "prompt_policy_version": "2.2",
+  "role_policy_version": "1.1",
+  "role_contract_hash": "0c40044ec13f0109a5526301cac6e5d2f52f5596d006bee2cdcaa90c0771d7f6",
+  "context_packet": ".terminus/reviews/cobol-comp3-python-equiv/3a463000/cobol-comp3-python-equiv-3a463000-spec-test-contract-1dec81c843.packet.json",
+  "verdict": "REVISE",
+  "confidence": "HIGH",
+  "evidence_status": "SUFFICIENT",
+  "summary": "Fresh packet-bound Q4 review completed from scratch at task commit 3a463000607f2dcdf88785a77d2dc5767f473e05. The instruction and delegated runtime contract cover a coherent engineering objective and the verifier has substantial independent coverage, but bidirectional alignment is not complete. Eleven material blocking findings remain: solver-visible implementation-diagnosis leakage; material movement/catalog policy gaps; transfer valuation/availability gaps; incomplete cross-generation replay verification; incomplete detailed-settlement safety verification; archive verification that lacks an adversarial independent negative case; incomplete preflight/audit operational-domain verification; non-public internal Python API coupling; an overbroad no-generation-id-in-any-JSONL assertion; grading-relevant ambiguity in item-policy semantics; and incomplete successful rejected-movement durability verification. One LOW advisory notes evaluation-framed wording. All 40 verifier tests and all material instruction/runtime-contract requirement families were inventoried in both directions, and the second adversarial omission sweep completed.",
+  "evidence": [
+    {
+      "type": "artifact",
+      "ref": ".terminus/reviews/cobol-comp3-python-equiv/3a463000/cobol-comp3-python-equiv-3a463000-spec-test-contract-1dec81c843.packet.json",
+      "observation": "Packet fields match schema_version 3.0, protocol 2.2, prompt 2.2, role policy 1.1, task/control-plane commits, requested review ID/path, role, role-contract hash, prior_verdicts_visible=false, and PROCEDURAL isolation."
+    },
+    {
+      "type": "rule",
+      "ref": ".terminus/agents/QUALITY_AGENT_REGISTRY.md@992aa77c65b93f58c3aecc45b6777025b5fb264a",
+      "observation": "Q4 must independently rebuild both matrices, inspect delegated contracts/interfaces and F2P/P2P boundaries, perform a second omission sweep, and report every material blocker."
+    },
+    {
+      "type": "rule",
+      "ref": ".terminus/agents/QUALITY_AGENT_PROMPTS.md@992aa77c65b93f58c3aecc45b6777025b5fb264a",
+      "observation": "Q4 requires bidirectional discoverability, prompt-extension/implementation-diagnosis checks, ambiguity analysis, output-interface review, exhaustive evidence, and no first-defect stopping."
+    },
+    {
+      "type": "rule",
+      "ref": ".terminus/agents/INSTRUCTION_POLICY.md@992aa77c65b93f58c3aecc45b6777025b5fb264a",
+      "observation": "Solver-visible contracts may define architecture/schema/protocol/API/CLI/runbook semantics but must not become a second prompt or reveal unnecessary implementation diagnosis/repair maps."
+    },
+    {
+      "type": "file",
+      "ref": "cobol-comp3-python-equiv/instruction.md@3a463000607f2dcdf88785a77d2dc5767f473e05",
+      "observation": "Sixteen-bullet work request defines the executable/workflows, caller-selected source/layout behavior, movement policy, durability/replay, reconciliation/publication, preflight/audit/archive, preservation, and delegates exact record/durable/reconciliation/CLI semantics to runtime-contract.md."
+    },
+    {
+      "type": "file",
+      "ref": "cobol-comp3-python-equiv/environment/equiv/ops/runtime-contract.md@3a463000607f2dcdf88785a77d2dc5767f473e05",
+      "observation": "Delegated solver-visible contract specifies COMP-3/layout/framing, generation/checkpoint durability, uniqueness and reject-code interfaces, six legacy controls and tolerances, safety controls, publication semantics, CLI exit/JSON behavior, and preflight/audit/archive operational responsibilities."
+    },
+    {
+      "type": "file",
+      "ref": "cobol-comp3-python-equiv/environment/equiv/config/movement.layout.json@3a463000607f2dcdf88785a77d2dc5767f473e05",
+      "observation": "Default layout makes ODO, REDEFINES and unsigned packed quantity/cost fields solver-visible."
+    },
+    {
+      "type": "file",
+      "ref": "cobol-comp3-python-equiv/environment/equiv/config/legacy.controls@3a463000607f2dcdf88785a77d2dc5767f473e05",
+      "observation": "The six legacy controls and supplied values are present as delegated input evidence."
+    },
+    {
+      "type": "test",
+      "ref": "cobol-comp3-python-equiv/tests/test_outputs.py@3345790c28ecbf9f95a9fae2cf60bc094e859d08",
+      "observation": "Complete verifier body contains 40 tests: 30 named F2P and 10 named P2P. The large caller-layout F2P case also executes the detailed audit/archive helper."
+    },
+    {
+      "type": "test",
+      "ref": "cobol-comp3-python-equiv/tests/test.sh@f66868a86bbca0d41fb720ff5288c1f210162729",
+      "observation": "Reward is 1 only when the entire pytest suite passes."
+    },
+    {
+      "type": "file",
+      "ref": "cobol-comp3-python-equiv/environment/equiv/sql/schema.sql@3a463000607f2dcdf88785a77d2dc5767f473e05",
+      "observation": "Solver-visible SQLite schema provides the durable tables whose uniqueness and transactional behavior are graded."
+    },
+    {
+      "type": "file",
+      "ref": "cobol-comp3-python-equiv/environment/equiv/sql/seed.sql@3a463000607f2dcdf88785a77d2dc5767f473e05",
+      "observation": "Historical seed deterministically creates 15,000 historical movements, supporting the documented baseline."
+    },
+    {
+      "type": "file",
+      "ref": "cobol-comp3-python-equiv/environment/equiv/src/__init__.py@3a463000607f2dcdf88785a77d2dc5767f473e05",
+      "observation": "Package __all__ exports only PipelineConfig, process and main; many functions/classes directly imported by the verifier are not declared package-public interfaces."
+    },
+    {
+      "type": "file",
+      "ref": "cobol-comp3-python-equiv/environment/equiv/src/cli.py@3a463000607f2dcdf88785a77d2dc5767f473e05",
+      "observation": "CLI parser confirms the inherited command and option surface and JSON/exit dispatch used by integration tests."
+    },
+    {
+      "type": "file",
+      "ref": "cobol-comp3-python-equiv/environment/equiv/src/policy.py@3a463000607f2dcdf88785a77d2dc5767f473e05",
+      "observation": "Solver-visible comments explicitly identify the zero-quantity, transfer-loop, inactive-item and destination-warehouse validation defects rather than merely documenting intended interfaces."
+    },
+    {
+      "type": "file",
+      "ref": "cobol-comp3-python-equiv/environment/equiv/src/generation.py@3a463000607f2dcdf88785a77d2dc5767f473e05",
+      "observation": "Solver-visible comments state that layout identity is omitted and identify the compound resume predicate defect."
+    },
+    {
+      "type": "file",
+      "ref": "cobol-comp3-python-equiv/environment/equiv/src/checkpoint.py@3a463000607f2dcdf88785a77d2dc5767f473e05",
+      "observation": "Solver-visible comments state the mid-file fingerprint defect and exact off-by-one restart defect."
+    },
+    {
+      "type": "file",
+      "ref": "cobol-comp3-python-equiv/environment/equiv/src/pipeline.py@3a463000607f2dcdf88785a77d2dc5767f473e05",
+      "observation": "Solver-visible comment identifies the exact replay-boundary predicate defect."
+    },
+    {
+      "type": "file",
+      "ref": "cobol-comp3-python-equiv/environment/equiv/src/reconciliation.py@3a463000607f2dcdf88785a77d2dc5767f473e05",
+      "observation": "Solver-visible comments identify the transfer effect-kind query bug and exact plural legacy-control key bug."
+    },
+    {
+      "type": "file",
+      "ref": "cobol-comp3-python-equiv/environment/equiv/src/publication.py@3a463000607f2dcdf88785a77d2dc5767f473e05",
+      "observation": "Solver-visible comments identify the permissive reconciliation gate, replay collision behavior and non-atomic promotion mechanism."
+    },
+    {
+      "type": "file",
+      "ref": "cobol-comp3-python-equiv/environment/equiv/src/operations.py@3a463000607f2dcdf88785a77d2dc5767f473e05",
+      "observation": "Observable preflight/audit/archive interfaces show the intended operational domains and output surfaces needed to judge whether the verifier tests those contracts."
+    },
+    {
+      "type": "file",
+      "ref": "cobol-comp3-python-equiv/environment/equiv/ops/handoff.txt@3a463000607f2dcdf88785a77d2dc5767f473e05",
+      "observation": "Handoff is a legitimate high-level operational summary and does not itself identify modules/functions to patch."
+    },
+    {
+      "type": "file",
+      "ref": "cobol-comp3-python-equiv/environment/equiv/log/archive/cutover_20260815.log@3a463000607f2dcdf88785a77d2dc5767f473e05",
+      "observation": "Archived cutover evidence supports the instruction's inherited-cutover current-state reference."
+    }
+  ],
+  "findings": [
+    {
+      "id": "Q4-001",
+      "severity": "HIGH",
+      "status": "OBSERVED",
+      "criterion": "No unnecessary solver-visible implementation diagnosis or repair map",
+      "evidence_refs": [
+        "cobol-comp3-python-equiv/environment/equiv/src/policy.py",
+        "cobol-comp3-python-equiv/environment/equiv/src/generation.py",
+        "cobol-comp3-python-equiv/environment/equiv/src/checkpoint.py",
+        "cobol-comp3-python-equiv/environment/equiv/src/pipeline.py",
+        "cobol-comp3-python-equiv/environment/equiv/src/reconciliation.py",
+        "cobol-comp3-python-equiv/environment/equiv/src/publication.py"
+      ],
+      "why_it_matters": "Multiple solver-visible comments name the exact defective condition and the intended correction: zero quantity, MOVE transfer-loop exception, inactive-item/destination status omissions, layout omission from generation identity, the compound resume predicate, the resume off-by-one, the replay-boundary predicate, the wrong transfer effect-kind selector, the plural effect-count key, the permissive publication gate, idempotency collision handling, and copytree promotion. These are not architecture/API/runbook documentation; they collapse diagnosis work and expose the repair topology.",
+      "minimal_remediation": "Remove or rewrite defect-specific comments so they document intended invariant/domain semantics without identifying the current faulty branch, predicate, key, or replacement mechanism. Preserve ordinary code readability and the solver-visible functional contracts.",
+      "regression_risk": "Low if only diagnosis comments are neutralized; do not remove legitimate contract documentation or change runtime behavior in this remediation."
+    },
+    {
+      "id": "Q4-002",
+      "severity": "HIGH",
+      "status": "OBSERVED",
+      "criterion": "Every material movement-shape, item-policy and warehouse-policy requirement is semantically verified",
+      "evidence_refs": [
+        "cobol-comp3-python-equiv/instruction.md",
+        "test_f2p_zero_quantity_is_rejected",
+        "test_f2p_same_warehouse_transfer_is_rejected",
+        "test_f2p_inactive_item_is_rejected",
+        "test_f2p_inactive_warehouse_is_rejected",
+        "test_p2p_active_receipt_policy_remains_valid"
+      ],
+      "why_it_matters": "The instruction requires exact source/destination shape by movement type, item existence, item active status, item max_unit_cost and quantity_precision policy, and existence/active status for every referenced warehouse. Current tests cover valid reason/type combinations, several invalid reason/type combinations, zero quantity, same-warehouse transfer, inactive item and inactive receipt destination, but do not exercise the prohibited/missing source/destination shapes, unknown item, unknown warehouse, max_unit_cost or quantity_precision behavior. A solver can omit those material acceptance/rejection rules and still pass.",
+      "minimal_remediation": "Add independent behavioral cases for each unverified material policy boundary, using CLI/pipeline behavior where possible rather than only internal helper calls.",
+      "regression_risk": "Policy tests must preserve the documented valid cases and avoid inventing new reject-code contracts for item/warehouse unknown cases unless those codes are made solver-visible."
+    },
+    {
+      "id": "Q4-003",
+      "severity": "HIGH",
+      "status": "OBSERVED",
+      "criterion": "Weighted valuation and available-quantity requirements are tested for each materially distinct movement boundary",
+      "evidence_refs": [
+        "cobol-comp3-python-equiv/instruction.md",
+        "test_f2p_issue_requires_full_available_quantity",
+        "test_f2p_issue_uses_weighted_source_unit_cost",
+        "test_f2p_transfer_preserves_source_value_across_warehouses",
+        "test_f2p_effect_application_rejects_negative_inventory"
+      ],
+      "why_it_matters": "Issue valuation is independently pinned to source weighted cost, but transfer valuation is checked only by asserting that the two transfer values net to zero. An implementation that prices both transfer legs from the movement-supplied unit cost can satisfy that assertion while violating source-weighted valuation. Available-quantity coverage is also issue-centric; transfer overdraw is not independently exercised. These are observable inventory-value/safety requirements.",
+      "minimal_remediation": "For transfer, assert the absolute source-weighted value carried by both legs as well as zero net value, and exercise a transfer whose requested quantity exceeds available source quantity. Add any other distinct valuation boundary that the instruction intends to grade.",
+      "regression_risk": "Keep receipt/issue/adjustment semantics separate; do not accidentally force movement unit cost to be ignored where the documented contract intends it to be used."
+    },
+    {
+      "id": "Q4-004",
+      "severity": "HIGH",
+      "status": "OBSERVED",
+      "criterion": "Current-generation replay suppression and cross-generation non-duplication are behaviorally verified",
+      "evidence_refs": [
+        "cobol-comp3-python-equiv/instruction.md",
+        "test_f2p_pipeline_restart_does_not_reapply_last_movement",
+        "test_f2p_database_rejects_duplicate_generation_sequence"
+      ],
+      "why_it_matters": "The pipeline rerun test covers same-generation replay suppression, and the database test proves the schema permits the same movement_id in another generation. It does not exercise the processing/replay guard across two generations. A globally keyed replay guard can therefore reject a legitimate movement in a new source/layout/date generation while all current tests still pass.",
+      "minimal_remediation": "Process the same movement identity in two distinct generation identities and verify the second generation is accepted/applied independently while same-generation replay remains suppressed.",
+      "regression_risk": "Ensure the added test changes a documented generation component and does not merely insert rows directly into the database."
+    },
+    {
+      "id": "Q4-005",
+      "severity": "HIGH",
+      "status": "OBSERVED",
+      "criterion": "Every detailed-settlement publication blocker is independently tested",
+      "evidence_refs": [
+        "cobol-comp3-python-equiv/instruction.md",
+        "cobol-comp3-python-equiv/environment/equiv/ops/runtime-contract.md",
+        "test_f2p_reconciliation_rejects_unbalanced_transfer",
+        "test_f2p_failed_reconciliation_cannot_publish",
+        "exercise_adjudicated_operator_workflows"
+      ],
+      "why_it_matters": "The verifier exercises missing accepted effects, unbalanced transfers, duplicate movement identities/orphan effects, and negative quantity. It does not independently create duplicate effect_kind rows for one movement or a position whose quantity is non-negative while value is below -0.01. A solver can omit either documented settlement invariant and still pass, allowing unsafe publication/audit behavior.",
+      "minimal_remediation": "Add independent negative cases for duplicate effect kinds and negative inventory value below the documented threshold, and verify both reconciliation/audit detection and publication blocking where the contract makes them gates.",
+      "regression_risk": "Isolate quantity and value failures so one invariant cannot mask the other."
+    },
+    {
+      "id": "Q4-006",
+      "severity": "HIGH",
+      "status": "OBSERVED",
+      "criterion": "Archive verification is independently verified rather than accepted from a healthy/self-reported path",
+      "evidence_refs": [
+        "cobol-comp3-python-equiv/instruction.md",
+        "cobol-comp3-python-equiv/environment/equiv/ops/runtime-contract.md",
+        "exercise_adjudicated_operator_workflows",
+        "test_p2p_audit_and_archive_operator_workflows_are_reachable"
+      ],
+      "why_it_matters": "Archive is required to verify report/publication contracts and create a verified archive. The archive workflow is only invoked on healthy inputs. The verifier checks returned passed=true plus the presence of controls/delta/lineage strings and later registry/audit evidence, but it never corrupts a report/publication input before archive and requires archive to fail, nor independently validates the generated archive's integrity structure. A solver can substantially weaken the archive verification gate and still satisfy the happy-path evidence.",
+      "minimal_remediation": "Add at least one independently corrupted report/publication negative case that archive must reject without a visible successful archive/registry event, and independently validate the generated archive integrity/lineage evidence rather than relying only on archive's own passed flag and embedded strings.",
+      "regression_risk": "Do not conflate audit's publication corruption check with archive verification; archive needs its own negative boundary."
+    },
+    {
+      "id": "Q4-007",
+      "severity": "MEDIUM",
+      "status": "OBSERVED",
+      "criterion": "Delegated preflight and audit operational domains are meaningfully exercised and stable health output is verified",
+      "evidence_refs": [
+        "cobol-comp3-python-equiv/environment/equiv/ops/runtime-contract.md",
+        "cobol-comp3-python-equiv/instruction.md",
+        "test_f2p_caller_supplied_layout_path_is_honored",
+        "test_p2p_preflight_uses_historical_baseline",
+        "exercise_adjudicated_operator_workflows"
+      ],
+      "why_it_matters": "Preflight's schema, framing, catalog, historical baseline and recovery domains are substantively tested, but the batch-window probe only requires a payload difference for another business date; generation identity alone makes that payload differ without proving batch-window evaluation. Authorization/safety state is not independently varied. Audit corruption cases cover many domains, but the contract says audit exposes accounting and other named health domains while tests mostly assert passed/failed and payload inequality, not the presence/meaning of the stable health surface. These operational requirements can change observable correctness and operator interface behavior.",
+      "minimal_remediation": "Use independent state/input mutations whose only relevant effect is the delegated batch-window/authorization/safety domain, and assert semantically meaningful audit health fields for each documented operator domain, especially accounting, without over-specifying incidental formatting.",
+      "regression_risk": "Avoid asserting volatile timestamps or implementation-only field ordering; grade stable semantic health signals."
+    },
+    {
+      "id": "Q4-008",
+      "severity": "MEDIUM",
+      "status": "OBSERVED",
+      "criterion": "Verifier must not require undocumented/non-public implementation API topology when public behavior is the contract",
+      "evidence_refs": [
+        "cobol-comp3-python-equiv/instruction.md",
+        "cobol-comp3-python-equiv/environment/equiv/src/__init__.py",
+        "cobol-comp3-python-equiv/tests/test_outputs.py"
+      ],
+      "why_it_matters": "The solver-visible request explicitly preserves the public executable and CLI/state contracts, while src.__all__ exposes only PipelineConfig, process and main. The verifier nevertheless imports numerous non-exported module-local types/functions directly from accounting, checkpoint, comp3, database, framing, generation, layout, models, policy, publication, reconciliation and reconciliation_detail. A behaviorally conforming repair that legitimately refactors those internal modules/signatures can fail before public behavior is evaluated.",
+      "minimal_remediation": "Move material grading toward the public CLI/durable-state interfaces, or explicitly designate any Python APIs that truly must remain stable as solver-visible inherited interfaces. Retain direct unit tests only where the API itself is part of the contract.",
+      "regression_risk": "Do not weaken semantic precision: public-path tests may still create controlled DB/state fixtures and independently inspect durable outputs."
+    },
+    {
+      "id": "Q4-009",
+      "severity": "MEDIUM",
+      "status": "OBSERVED",
+      "criterion": "Negative verifier assertions must match the documented publication boundary and not forbid legitimate diagnostics",
+      "evidence_refs": [
+        "cobol-comp3-python-equiv/environment/equiv/ops/runtime-contract.md",
+        "test_f2p_failed_reconciliation_cannot_publish"
+      ],
+      "why_it_matters": "On failed reconciliation the test correctly requires no visible publication directory, but additionally asserts that the generation id appears in no *.jsonl anywhere under the temporary work root. The contract forbids publication, not diagnostic/audit/quarantine JSONL evidence that records a failed generation. A conforming implementation can therefore fail for emitting legitimate failure evidence unrelated to publication.",
+      "minimal_remediation": "Scope the assertion to publication-registry/publication-success evidence, or otherwise identify the specific JSONL artifact whose absence constitutes non-publication. Permit legitimate failure/audit/quarantine records.",
+      "regression_risk": "Keep the strong no-visible-publication assertion and ensure failed generations are never registered as successfully published."
+    },
+    {
+      "id": "Q4-010",
+      "severity": "MEDIUM",
+      "status": "OBSERVED",
+      "criterion": "Grading-relevant item-policy semantics must have a single solver-visible authority",
+      "evidence_refs": [
+        "cobol-comp3-python-equiv/instruction.md",
+        "cobol-comp3-python-equiv/environment/equiv/ops/runtime-contract.md"
+      ],
+      "why_it_matters": "The instruction says item-policy decisions use items.active, items.max_unit_cost and items.quantity_precision, but it does not state the acceptance rule for max_unit_cost or whether quantity_precision means reject excess scale, round/quantize, or another policy. The delegated runtime contract does not resolve these two fields. Because these are material acceptance rules, different reasonable implementations can disagree on observable correctness.",
+      "minimal_remediation": "State the functional acceptance semantics for max_unit_cost and quantity_precision in the solver-visible work request or a legitimate referenced policy contract, without naming the module/function to change.",
+      "regression_risk": "Specify behavior, not implementation mechanics or hidden test examples."
+    },
+    {
+      "id": "Q4-011",
+      "severity": "MEDIUM",
+      "status": "OBSERVED",
+      "criterion": "Successful rejected-movement durability must verify all documented durable components, not rollback alone",
+      "evidence_refs": [
+        "cobol-comp3-python-equiv/environment/equiv/ops/runtime-contract.md",
+        "test_p2p_rejected_movement_transaction_rolls_back_on_failure",
+        "persisted_reject_code",
+        "test_p2p_decode_and_transform_reject_codes_are_stable"
+      ],
+      "why_it_matters": "The rejection rollback test proves reject/processed/checkpoint/event state rolls back when the REJECT journal insertion aborts, and other cases prove a reject row/code can persist. No successful rejected-movement case independently verifies that the checkpoint advances and the journal event is durable (and that processed status is durable where applicable). An implementation can omit successful checkpoint advancement while still pass the current rejection tests, breaking restart safety.",
+      "minimal_remediation": "After a successful policy/accounting rejection and after a framing/transform rejection as applicable, inspect durable checkpoint and journal state and verify the documented sequence/fingerprint advancement together with the reject/processed rows.",
+      "regression_risk": "Respect the contract's 'processed-row status when applicable' distinction for decode/transform failures."
+    },
+    {
+      "id": "Q4-012",
+      "severity": "LOW",
+      "status": "OBSERVED",
+      "criterion": "Solver-facing prose should describe engineering authority rather than benchmark evaluation framing",
+      "evidence_refs": [
+        "cobol-comp3-python-equiv/instruction.md"
+      ],
+      "why_it_matters": "The phrase 'movement-shape authority for grading is functional' is evaluation-framed language in an otherwise production-style handoff. It does not expose a hidden test, but it is unnecessary benchmark framing.",
+      "minimal_remediation": "Rephrase as an engineering authority statement, for example that the listed functional movement rules are authoritative, without mentioning grading.",
+      "regression_risk": "None if only wording changes and the same functional rules remain."
+    }
+  ],
+  "missing_evidence": [],
+  "change_scope": [
+    ".terminus/reviews/cobol-comp3-python-equiv/3a463000/cobol-comp3-python-equiv-3a463000-spec-test-contract-1dec81c843.json"
+  ],
+  "do_not_change": [
+    "cobol-comp3-python-equiv/instruction.md",
+    "cobol-comp3-python-equiv/environment/**",
+    "cobol-comp3-python-equiv/tests/**",
+    "cobol-comp3-python-equiv/solution/**",
+    "any task file during this Q4 execution"
+  ],
+  "next_gate": "STOP_REVISE: route findings to the smallest responsible spec/verifier/environment producers; regenerate a fresh packet and rerun Q4 only after task changes are frozen.",
+  "role_output": {
+    "INSTRUCTION_SHAPE": "PASS",
+    "INSTRUCTION_REQUIREMENT_COMPLETENESS": "FAIL",
+    "INSTRUCTION_DOC_BOUNDARY": "CLEAN",
+    "IMPLEMENTATION_DIAGNOSIS_LEAKAGE": "MATERIAL",
+    "CURRENT_STATE_EVIDENCE": "PASS",
+    "REQUIREMENT_TEST_MATRIX": [
+      {"id":"R01","requirement":"Repair /app/equiv while preserving /app/equiv/bin/equiv-eval and init-db/describe-layout/identity/run/preflight/audit/archive workflows.","source":"instruction bullets 1-2","coverage":"COVERED","tests":["T08","T35","T37"]},
+      {"id":"R02","requirement":"Every command accepting --source/--layout uses caller-provided path.","source":"instruction bullet 3 + runtime contract","coverage":"COVERED","tests":["T08"]},
+      {"id":"R03","requirement":"Strict COMP-3 decimal nibbles, zero pad, signed C/D, unsigned F and unsigned-negative rejection.","source":"runtime contract record/layout","coverage":"COVERED","tests":["T01","T02","T03","T04","T05","T06","T31"]},
+      {"id":"R04","requirement":"REDEFINES overlays target and does not advance owning cursor.","source":"runtime contract record/layout","coverage":"COVERED","tests":["T07","T10"]},
+      {"id":"R05","requirement":"ODO uses decoded controller and rejects outside 0..occurs.","source":"runtime contract record/layout","coverage":"COVERED","tests":["T09"]},
+      {"id":"R06","requirement":"Malformed complete record reports full layout-derived boundary; indeterminate framing reports byte_length 0.","source":"runtime contract record/layout","coverage":"COVERED","tests":["T11","T40"]},
+      {"id":"R07","requirement":"Generation identity binds source SHA, layout SHA and business date; changes cannot resume prior identity.","source":"instruction bullet 8 + runtime contract durable processing","coverage":"COVERED","tests":["T08","T12","T13"]},
+      {"id":"R08","requirement":"Checkpoint carries identity fingerprint and resume begins at last_sequence+1.","source":"instruction bullet 8 + runtime contract durable processing","coverage":"PARTIAL","tests":["T14","T15","T16"],"gap":"T14 proves a generic/source-side fingerprint mismatch, but successful rejected-path checkpoint durability is not verified; see Q4-011."},
+      {"id":"R09","requirement":"Accepted processed row, all effects, positions, journal and checkpoint are one transaction.","source":"instruction bullet 7 + runtime contract durable processing","coverage":"COVERED","tests":["T38"]},
+      {"id":"R10","requirement":"Rejected reject/processed-when-applicable/journal/checkpoint are one transaction and durable on success.","source":"instruction bullet 7 + runtime contract durable processing","coverage":"PARTIAL_BLOCKING","tests":["T17","T18","T19","T20","T21","T39","T40"],"gap":"Rollback is strong; successful checkpoint/journal persistence is not independently asserted; Q4-011."},
+      {"id":"R11","requirement":"processed_movements unique by (generation,movement_id) and (generation,sequence); rejects unique by (generation,sequence).","source":"runtime contract durable processing","coverage":"COVERED","tests":["T29","T30"]},
+      {"id":"R12","requirement":"Stable reject codes DECODE, TRANSFORM, ACCOUNTING, QUANTITY, TRANSFER_LOOP, ITEM_INACTIVE, WAREHOUSE_INACTIVE persist to DB/operational reject CSV.","source":"runtime contract durable processing","coverage":"COVERED","tests":["T17","T18","T19","T20","T21","T40"]},
+      {"id":"R13","requirement":"Movement quantity positive; exact source/destination shape; type/reason compatibility.","source":"instruction bullet 6","coverage":"PARTIAL_BLOCKING","tests":["T17","T18","T32"],"gap":"No independent invalid missing/extra source/destination matrix; Q4-002."},
+      {"id":"R14","requirement":"Item exists, active and max_unit_cost/quantity_precision govern policy.","source":"instruction bullet 6","coverage":"PARTIAL_BLOCKING","tests":["T19","T32"],"gap":"Unknown item, max_unit_cost and quantity_precision are untested; max/precision semantics are also ambiguous; Q4-002/Q4-010."},
+      {"id":"R15","requirement":"Every referenced warehouse exists and active=1; no separate solver-visible capability switch.","source":"instruction bullet 6","coverage":"PARTIAL_BLOCKING","tests":["T20","T32"],"gap":"Unknown warehouse is untested; Q4-002."},
+      {"id":"R16","requirement":"Movement has sufficient available source quantity.","source":"instruction bullet 6","coverage":"PARTIAL_BLOCKING","tests":["T21","T24"],"gap":"Issue is covered; transfer overdraw is not independently exercised; Q4-003."},
+      {"id":"R17","requirement":"Weighted inventory valuation uses source inventory value where required and transfer carries value without gain/loss.","source":"instruction bullet 6 and handoff","coverage":"PARTIAL_BLOCKING","tests":["T22","T23"],"gap":"Transfer only asserts net-zero, not source-weighted absolute value; Q4-003."},
+      {"id":"R18","requirement":"Current-generation replay is not reapplied; same movement identity in another generation is not globally duplicated.","source":"instruction bullet 9","coverage":"PARTIAL_BLOCKING","tests":["T16","T29"],"gap":"Cross-generation behavior is only schema-tested, not processing/replay behavior; Q4-004."},
+      {"id":"R19","requirement":"Six legacy controls compared independently with count=0, quantity=.0001 and value=.01 tolerances.","source":"instruction bullet 5 + runtime contract reconciliation","coverage":"COVERED","tests":["T25","T33"]},
+      {"id":"R20","requirement":"Safety controls detect duplicate movement identities, orphan effects and unbalanced transfer pairs.","source":"runtime contract reconciliation","coverage":"COVERED","tests":["T26"]},
+      {"id":"R21","requirement":"Detailed settlement: every accepted movement has effects, no duplicate effect kind, no negative quantity/value below threshold, transfer nets zero.","source":"instruction bullet 10","coverage":"PARTIAL_BLOCKING","tests":["T24","T26","T27","T08-helper"],"gap":"Duplicate effect-kind and isolated negative-value cases are missing; Q4-005."},
+      {"id":"R22","requirement":"Publication blocked unless legacy/safety/detailed settlement all pass.","source":"instruction bullet 10 + runtime contract publication","coverage":"PARTIAL_BLOCKING","tests":["T27"],"gap":"Legacy mismatch and missing effect are covered, but not every detailed blocker; inherits Q4-005."},
+      {"id":"R23","requirement":"Publication visible generation promotion is atomic; repeat same verified generation idempotent; corrupt/conflicting existing publication errors.","source":"instruction bullet 11 + runtime contract publication","coverage":"COVERED","tests":["T16","T28","T34"]},
+      {"id":"R24","requirement":"CLI success emits one JSON stdout/0; completed passed=false and runtime/input errors use exit2 with documented stream behavior.","source":"runtime contract CLI","coverage":"COVERED","tests":["T08","T27","T35","T37"]},
+      {"id":"R25","requirement":"Preflight consumes schema, real framing/profile, 15k historical baseline, catalog, integrity, batch-window, authorization/safety and recovery state; unsafe catalog/recovery fails.","source":"instruction bullet 12 + runtime contract CLI","coverage":"PARTIAL_BLOCKING","tests":["T08","T36"],"gap":"Batch-window probe is non-discriminating because business-date changes generation output; authorization/safety is not independently varied; Q4-007."},
+      {"id":"R26","requirement":"Audit exposes replay/recovery, checkpoint, controls/reconciliation, accounting, inventory, quarantine, journal, registry, metrics and settlement health.","source":"instruction bullet 13 + runtime contract CLI","coverage":"PARTIAL_BLOCKING","tests":["T08-helper","T37"],"gap":"Many failure domains are exercised, but stable health exposure/accounting semantics are not directly asserted; Q4-007."},
+      {"id":"R27","requirement":"Archive verifies report/publication contracts, exports controls/deltas, binds lineage/integrity, records registry and journal evidence, creates a verified generation archive.","source":"instruction bullet 14 + runtime contract CLI","coverage":"PARTIAL_BLOCKING","tests":["T08-helper","T37"],"gap":"Healthy-path contents are strong but archive verification has no independent corrupted-input negative boundary; Q4-006."},
+      {"id":"R28","requirement":"Archive reports positive retention horizons for report/publication/audit/quarantine and does not mutate live report/publication files.","source":"instruction bullet 14","coverage":"COVERED","tests":["T08-helper"]},
+      {"id":"R29","requirement":"SQLite constraints/state and report/publication formats remain compatible with solver-visible contracts; required constraints are not bypassed in code.","source":"instruction bullet 16","coverage":"PARTIAL","tests":["T29","T30","T17-T20","T28","T34"],"gap":"Core uniqueness/reject/publication surfaces are covered; broader report compatibility is exercised indirectly by archive/report-contract flow rather than exact undocumented schemas."},
+      {"id":"R30","requirement":"Inspect inherited cutover evidence under /app/equiv/log/archive and /app/equiv/ops before changing behavior.","source":"instruction bullet 15","coverage":"NON_GRADING_PROCESS_REQUIREMENT","tests":[],"gap":"This is a solver workflow/orientation instruction, not an observable final-state property; no blocker assigned solely for non-verifiability."}
+    ],
+    "VERIFIER_REQUIREMENT_MATRIX": [
+      {"test":"T01 test_f2p_nonzero_comp3_padding_is_rejected","class":"F2P","requirements":["R03"],"discoverability":"DIRECT","interface":"internal src.comp3"},
+      {"test":"T02 test_f2p_invalid_comp3_digit_nibble_a_is_rejected","class":"F2P","requirements":["R03"],"discoverability":"DIRECT","interface":"internal src.comp3"},
+      {"test":"T03 test_f2p_signed_comp3_rejects_unsigned_f_sign","class":"F2P","requirements":["R03"],"discoverability":"DIRECT","interface":"internal src.comp3"},
+      {"test":"T04 test_f2p_unsigned_comp3_rejects_signed_c_sign","class":"F2P","requirements":["R03"],"discoverability":"DIRECT","interface":"internal src.comp3"},
+      {"test":"T05 test_f2p_unsigned_pack_uses_f_and_rejects_negative","class":"F2P","requirements":["R03"],"discoverability":"DIRECT","interface":"internal src.comp3"},
+      {"test":"T06 test_f2p_signed_negative_pack_uses_d_sign","class":"F2P","requirements":["R03"],"discoverability":"DIRECT","interface":"internal src.comp3"},
+      {"test":"T07 test_f2p_redefines_does_not_increase_static_storage","class":"F2P","requirements":["R04"],"discoverability":"DIRECT","interface":"internal src.layout"},
+      {"test":"T08 test_f2p_caller_supplied_layout_path_is_honored","class":"F2P","requirements":["R01","R02","R24","R25","R26","R27","R28"],"discoverability":"DIRECT_WITH_HELPER","notes":"Also exercises alternate layout through describe-layout/identity/preflight/run and the full audit/archive helper."},
+      {"test":"T09 test_f2p_odo_count_above_declared_maximum_is_rejected","class":"F2P","requirements":["R05"],"discoverability":"DIRECT","interface":"internal src.layout/src.framing"},
+      {"test":"T10 test_f2p_redefines_offset_overlaps_target_without_cursor_advance","class":"F2P","requirements":["R04"],"discoverability":"DIRECT","interface":"internal src.layout"},
+      {"test":"T11 test_f2p_complete_malformed_record_reports_full_boundary","class":"F2P","requirements":["R06"],"discoverability":"DIRECT","interface":"internal src.framing"},
+      {"test":"T12 test_f2p_generation_id_binds_layout_digest","class":"F2P","requirements":["R07"],"discoverability":"DIRECT","interface":"internal src.generation"},
+      {"test":"T13 test_f2p_resume_rejects_layout_change","class":"F2P","requirements":["R07"],"discoverability":"DIRECT","interface":"internal src.generation"},
+      {"test":"T14 test_f2p_checkpoint_fingerprint_mismatch_is_rejected","class":"F2P","requirements":["R08"],"discoverability":"DIRECT","interface":"internal src.checkpoint"},
+      {"test":"T15 test_f2p_resume_starts_after_last_durable_sequence","class":"F2P","requirements":["R08"],"discoverability":"DIRECT","interface":"internal src.checkpoint"},
+      {"test":"T16 test_f2p_pipeline_restart_does_not_reapply_last_movement","class":"F2P","requirements":["R08","R18","R23"],"discoverability":"DIRECT","interface":"exported process plus durable DB/publication"},
+      {"test":"T17 test_f2p_zero_quantity_is_rejected","class":"F2P","requirements":["R12","R13"],"discoverability":"DIRECT","notes":"Persists QUANTITY to DB and CSV; also checks one invalid reason/type shape internally."},
+      {"test":"T18 test_f2p_same_warehouse_transfer_is_rejected","class":"F2P","requirements":["R12","R13"],"discoverability":"DIRECT"},
+      {"test":"T19 test_f2p_inactive_item_is_rejected","class":"F2P","requirements":["R12","R14"],"discoverability":"DIRECT"},
+      {"test":"T20 test_f2p_inactive_warehouse_is_rejected","class":"F2P","requirements":["R12","R15"],"discoverability":"DIRECT"},
+      {"test":"T21 test_f2p_issue_requires_full_available_quantity","class":"F2P","requirements":["R12","R16"],"discoverability":"DIRECT","notes":"Direct issue_effect overdraw plus pipeline ACCOUNTING reject."},
+      {"test":"T22 test_f2p_issue_uses_weighted_source_unit_cost","class":"F2P","requirements":["R17"],"discoverability":"DIRECT","interface":"internal src.accounting"},
+      {"test":"T23 test_f2p_transfer_preserves_source_value_across_warehouses","class":"F2P","requirements":["R17","R21"],"discoverability":"DIRECT_BUT_WEAK","notes":"Only asserts net zero; does not pin absolute source-weighted transfer value; Q4-003."},
+      {"test":"T24 test_f2p_effect_application_rejects_negative_inventory","class":"F2P","requirements":["R16","R21"],"discoverability":"DIRECT","notes":"Negative quantity/value occur together, so negative-value invariant is not isolated."},
+      {"test":"T25 test_f2p_reconciliation_checks_legacy_effect_count","class":"F2P","requirements":["R19"],"discoverability":"DIRECT","notes":"Independently varies all six controls and tolerance bands."},
+      {"test":"T26 test_f2p_reconciliation_rejects_unbalanced_transfer","class":"F2P","requirements":["R20","R21"],"discoverability":"DIRECT","notes":"Covers unbalanced transfer plus duplicate movement/orphan effects; not duplicate effect-kind."},
+      {"test":"T27 test_f2p_failed_reconciliation_cannot_publish","class":"F2P","requirements":["R21","R22","R24"],"discoverability":"DIRECT_PLUS_PHANTOM_NEGATIVE","notes":"Correctly blocks visible publication for legacy/detail failure, but also forbids generation id in every JSONL under root; Q4-009."},
+      {"test":"T28 test_f2p_repeat_publication_of_same_generation_is_idempotent","class":"F2P","requirements":["R23"],"discoverability":"DIRECT","notes":"Independently checks manifest/member integrity, corruption rejection and no visible partial target on missing input."},
+      {"test":"T29 test_f2p_database_rejects_duplicate_generation_sequence","class":"F2P","requirements":["R11","R18"],"discoverability":"DIRECT","notes":"Cross-generation same movement_id is only schema-level, not replay-processing behavior; Q4-004."},
+      {"test":"T30 test_f2p_database_rejects_duplicate_reject_sequence","class":"F2P","requirements":["R11"],"discoverability":"DIRECT"},
+      {"test":"T31 test_p2p_valid_positive_signed_comp3_roundtrip_is_preserved","class":"P2P","requirements":["R03"],"discoverability":"DIRECT","interface":"internal src.comp3"},
+      {"test":"T32 test_p2p_active_receipt_policy_remains_valid","class":"P2P","requirements":["R13","R14","R15"],"discoverability":"DIRECT","interface":"internal src.policy"},
+      {"test":"T33 test_p2p_matching_reconciliation_controls_pass","class":"P2P","requirements":["R19"],"discoverability":"DIRECT","interface":"internal src.reconciliation"},
+      {"test":"T34 test_p2p_first_successful_publication_is_verifiable","class":"P2P","requirements":["R23","R29"],"discoverability":"DIRECT","notes":"Publication manifest is independently inspected for generation and member digests."},
+      {"test":"T35 test_p2p_cli_success_and_failure_json_contract","class":"P2P","requirements":["R01","R24","R29"],"discoverability":"DIRECT","notes":"Despite name, this function itself checks successful describe-layout/identity/init-db; failure cases occur elsewhere."},
+      {"test":"T36 test_p2p_preflight_uses_historical_baseline","class":"P2P","requirements":["R25"],"discoverability":"DIRECT","notes":"Proves 15,000 baseline presence matters by deleting historical_movements."},
+      {"test":"T37 test_p2p_audit_and_archive_operator_workflows_are_reachable","class":"P2P","requirements":["R01","R26","R27"],"discoverability":"DIRECT","notes":"Healthy reachability only; detailed negative audit/helper coverage is invoked by T08."},
+      {"test":"T38 test_p2p_accepted_movement_transaction_rolls_back_on_failure","class":"P2P","requirements":["R09"],"discoverability":"DIRECT","notes":"Injected ACCEPT journal failure proves processed/effects/positions/checkpoint/journal rollback together."},
+      {"test":"T39 test_p2p_rejected_movement_transaction_rolls_back_on_failure","class":"P2P","requirements":["R10"],"discoverability":"DIRECT","notes":"Injected REJECT journal failure proves rollback, but not successful checkpoint/journal persistence; Q4-011."},
+      {"test":"T40 test_p2p_decode_and_transform_reject_codes_are_stable","class":"P2P","requirements":["R06","R10","R12"],"discoverability":"DIRECT","notes":"Pins DECODE/TRANSFORM and indeterminate DECODE byte_length=0; does not inspect successful checkpoint/journal state."}
+    ],
+    "PHANTOM_TEST_CONTRACTS": [
+      {
+        "id":"P01",
+        "finding":"Q4-008",
+        "contract":"Verifier requires numerous non-exported internal Python module names/signatures even though the solver-visible public contract centers the CLI/durable state and src.__all__ exports only PipelineConfig/process/main."
+      },
+      {
+        "id":"P02",
+        "finding":"Q4-009",
+        "contract":"Failed reconciliation is required to leave the generation id absent from every JSONL anywhere under the work root, broader than the documented no-publication boundary."
+      }
+    ],
+    "UNTESTED_REQUIREMENTS": [
+      "Invalid/missing/extra source/destination shape cases for all movement types are not independently covered.",
+      "Unknown item rejection is not covered.",
+      "items.max_unit_cost policy is not covered.",
+      "items.quantity_precision policy is not covered.",
+      "Unknown referenced warehouse rejection is not covered.",
+      "Transfer overdraw is not independently covered.",
+      "Transfer absolute source-weighted valuation is not pinned; only zero-net value is checked.",
+      "Cross-generation replay behavior is not exercised through the processing/replay path.",
+      "Duplicate effect_kind detailed-settlement failure is not covered.",
+      "Negative inventory value below -0.01 with non-negative quantity is not covered.",
+      "Archive rejection of corrupt report/publication inputs and independent archive-integrity verification are not covered.",
+      "Preflight authorization/safety and batch-window semantics are not independently discriminated.",
+      "Audit's stable accounting/health exposure is not directly asserted.",
+      "Successful rejected-movement checkpoint advancement and durable journal evidence are not independently asserted."
+    ],
+    "AMBIGUITIES": [
+      {
+        "id":"A01",
+        "finding":"Q4-010",
+        "statement":"item-policy decisions use items.max_unit_cost and items.quantity_precision",
+        "ambiguity":"The solver-visible contract does not define the max-cost comparison behavior or whether quantity_precision rejects excess scale, rounds, or quantizes."
+      }
+    ],
+    "DELEGATED_CONTRACT_CHECK": "PASS: runtime-contract.md is legitimate architecture/record/durability/reconciliation/CLI/operator contract documentation rather than a second prompt. The blocking diagnosis leakage is in solver-visible implementation comments, not in the delegated contract itself.",
+    "PROMPT_EXTENSION_WALK": "CLEAN: instruction.md retains the engineering objective and material work request; runtime-contract.md supplies legitimate technical semantics instead of displaced goals/repair steps.",
+    "IMPLEMENTATION_DIAGNOSIS_WALK": "FAIL: exact current defects and repair predicates are narrated in multiple solver-visible source comments; Q4-001.",
+    "F2P_P2P_BOUNDARY_SUMMARY": {
+      "F2P_TESTS": 30,
+      "P2P_TESTS": 10,
+      "F2P_ASSESSED": "ALL_30",
+      "P2P_ASSESSED": "ALL_10",
+      "NOTES": "P2P preserves valid positive signed COMP-3, valid policy combinations, matching controls, first publication, CLI success, historical baseline, healthy audit/archive reachability, accepted/rejected rollback semantics, and stable decode/transform rejects. F2P spans malformed encodings/layout, caller paths, generation/restart, policy/accounting, reconciliation/publication and uniqueness."
+    },
+    "OUTPUT_INTERFACE_WALK": {
+      "CLI":"JSON/exit/stream contract materially covered, with runtime-input failure and completed-check failures represented.",
+      "REJECTS":"Stable reject-code DB/CSV interface covered for all seven documented stable codes.",
+      "PUBLICATION":"Manifest/member digest and idempotency/corruption behavior strongly covered.",
+      "AUDIT":"Behavioral failure detection broad but stable health exposure incomplete; Q4-007.",
+      "ARCHIVE":"Healthy artifacts/lineage/registry/retention/live-preservation broad, but independent negative verification incomplete; Q4-006.",
+      "DATABASE":"Generation-scoped movement/sequence/reject uniqueness covered."
+    },
+    "SPEC_DUMP_RISK": "LOW",
+    "BIDIRECTIONAL_ALIGNMENT": "FAIL",
+    "BLOCKING_FINDING_IDS": [
+      "Q4-001",
+      "Q4-002",
+      "Q4-003",
+      "Q4-004",
+      "Q4-005",
+      "Q4-006",
+      "Q4-007",
+      "Q4-008",
+      "Q4-009",
+      "Q4-010",
+      "Q4-011"
+    ],
+    "ADVISORY_FINDING_IDS": [
+      "Q4-012"
+    ],
+    "SECOND_PASS_NOTES": [
+      "Rewalked every instruction bullet and every runtime-contract bullet after freezing first matrices.",
+      "Rewalked all 40 tests in order and decomposed T08's adjudicated operator helper into its audit/archive sub-behaviors.",
+      "Specifically challenged same-generation versus cross-generation replay, successful versus rollback durability, absolute versus zero-net valuation, individual detailed-settlement invariants, archive negative verification, preflight discriminating mutations, audit output exposure, direct internal API imports, and broad negative filesystem assertions.",
+      "No prior Q1/Q2/Q3 conclusion, prior Q4 verdict, Verifier Author rationale, other specialist verdict, solution/oracle diff, or private test map was used to form the matrices."
+    ],
+    "EXHAUSTIVENESS": {
+      "REQUIREMENTS_ENUMERATED": "COMPLETE",
+      "VERIFIER_BEHAVIORS_ENUMERATED": "COMPLETE",
+      "FORWARD_MATRIX_COMPLETE": "YES",
+      "REVERSE_MATRIX_COMPLETE": "YES",
+      "DELEGATED_CONTRACTS_COMPLETE": "YES",
+      "P2P_BOUNDARIES_COMPLETE": "YES",
+      "F2P_BOUNDARIES_COMPLETE": "YES",
+      "OUTPUT_INTERFACES_COMPLETE": "YES",
+      "SECOND_PASS_OMISSION_SWEEP": "PASS",
+      "UNINSPECTED_SCOPE": []
+    }
+  }
+}
