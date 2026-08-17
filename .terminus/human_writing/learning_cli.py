@@ -39,15 +39,17 @@ def main() -> int:
 
     search = sub.add_parser("cache-search")
     search.add_argument("--query", required=True)
-    search.add_argument("--role-signal")
+    search.add_argument("--role-signal", choices=["writer", "reviewer"])
     search.add_argument("--artifact-type", action="append", default=[])
     search.add_argument("--exclude", action="append", default=[])
     search.add_argument("--limit", type=int, default=12)
+    search.add_argument("--min-score", type=float)
     search.add_argument("--cache")
     search.add_argument("--output")
 
     contam = sub.add_parser("contamination-check")
     contam.add_argument("--draft", required=True)
+    contam.add_argument("--profile")
     contam.add_argument("--source-key", action="append", default=[])
     contam.add_argument("--cache")
     contam.add_argument("--output")
@@ -57,6 +59,7 @@ def main() -> int:
     ab.add_argument("--baseline", required=True)
     ab.add_argument("--calibrated", required=True)
     ab.add_argument("--requirement-contract-sha256", required=True)
+    ab.add_argument("--writer-actor-id", required=True)
     ab.add_argument("--output", required=True)
     ab.add_argument("--sealed-mapping-output", required=True)
 
@@ -64,6 +67,12 @@ def main() -> int:
     ab_score.add_argument("--public", required=True)
     ab_score.add_argument("--sealed-mapping", required=True)
     ab_score.add_argument("--scores", required=True)
+    ab_score.add_argument("--evaluator-actor-id", required=True)
+    ab_score.add_argument(
+        "--evaluator-role",
+        choices=["Instruction Reviewer", "Human Quality Reviewer", "Blind A/B Evaluator"],
+        required=True,
+    )
     ab_score.add_argument("--output")
 
     outcome = sub.add_parser("record-outcome")
@@ -127,16 +136,32 @@ def main() -> int:
             artifact_types=args.artifact_type,
             exclude_source_keys=args.exclude,
             limit=args.limit,
+            min_score=args.min_score,
         )
         _write_json(result, args.output)
         return 0
 
     if args.command == "contamination-check":
         cache = HumanWritingCorpusCache(root, cache_path)
-        references = cache.retained_texts(args.source_key)
+        source_keys = set(args.source_key)
+        if args.profile:
+            profile = _json_file(Path(args.profile))
+            cache_keys = set(profile.get("CACHE_SOURCE_KEYS_USED", []))
+            source_keys.update(cache.retained_source_keys(cache_keys))
+        references = cache.retained_texts(sorted(source_keys))
+        if not references:
+            result = {
+                "status": "SKIPPED_NO_RAW_TEXT",
+                "finding_count": 0,
+                "findings": [],
+                "source_keys_checked": [],
+            }
+            _write_json(result, args.output)
+            return 0
         result = analyze_contamination(
             Path(args.draft).read_text(encoding="utf-8"), references
         )
+        result["source_keys_checked"] = sorted(source_keys)
         _write_json(result, args.output)
         return 0 if result["status"] == "PASS" else 2
 
@@ -146,6 +171,7 @@ def main() -> int:
             baseline_text=Path(args.baseline).read_text(encoding="utf-8"),
             calibrated_text=Path(args.calibrated).read_text(encoding="utf-8"),
             requirement_contract_sha256=args.requirement_contract_sha256,
+            writer_actor_id=args.writer_actor_id,
         )
         _write_json(prepared["public_packet"], args.output)
         _write_json(prepared["sealed_mapping"], args.sealed_mapping_output)
@@ -156,6 +182,8 @@ def main() -> int:
             public_packet=_json_file(Path(args.public)),
             sealed_mapping=_json_file(Path(args.sealed_mapping)),
             scores=_json_file(Path(args.scores)),
+            evaluator_actor_id=args.evaluator_actor_id,
+            evaluator_role=args.evaluator_role,
         )
         _write_json(result, args.output)
         return 0
