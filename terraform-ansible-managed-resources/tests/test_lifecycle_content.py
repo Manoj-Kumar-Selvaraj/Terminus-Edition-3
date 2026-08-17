@@ -95,25 +95,24 @@ def test_f2p_content_identities_survive_source_and_variable_updates(tmp_path, cl
 
 
 def test_f2p_failed_update_preserves_last_successful_template_state(tmp_path, cleanup_registry):
-    """A timed-out mutation must not publish the proposed template variables into Terraform state."""
+    """A failed mutation must not publish proposed template variables into Terraform state."""
     source = tmp_path / "template.j2"
     source.write_text("value={{ value }}\n", encoding="utf-8")
     destination = cleanup_registry.path(tmp_path / "rendered.txt")
-    sleep_flag = tmp_path / "sleep.flag"
-    wrapper = make_ansible_wrapper(tmp_path, sleep_flag=sleep_flag)
+    fail_flag = tmp_path / "fail.flag"
+    wrapper = make_ansible_wrapper(tmp_path, fail_flag=fail_flag)
     runner_tmp = tmp_path / "runner"
     body_one = template_body(source, destination, sha256_file(source), "one")
     workspace = make_workspace(
         tmp_path,
         body_one,
         ansible_binary=wrapper,
-        timeout_seconds=1,
         temp_dir=runner_tmp,
     )
     tf_apply(workspace)
-    sleep_flag.write_text("sleep", encoding="utf-8")
+    fail_flag.write_text("fail", encoding="utf-8")
     body_two = template_body(source, destination, sha256_file(source), "two")
-    rewrite_body(workspace, body_two, ansible_binary=wrapper, timeout_seconds=1, temp_dir=runner_tmp)
+    rewrite_body(workspace, body_two, ansible_binary=wrapper, temp_dir=runner_tmp)
     tf_apply(workspace, expect_success=False, timeout=20)
     values = resource_values(workspace, "ansibleops_template.managed")
     assert values["variables"]["value"] == "one"
@@ -125,27 +124,25 @@ def test_f2p_retry_after_failed_update_reexecutes_and_converges(tmp_path, cleanu
     source = tmp_path / "template.j2"
     source.write_text("value={{ value }}\n", encoding="utf-8")
     destination = cleanup_registry.path(tmp_path / "rendered.txt")
-    sleep_flag = tmp_path / "sleep.flag"
-    wrapper = make_ansible_wrapper(tmp_path, sleep_flag=sleep_flag)
+    fail_flag = tmp_path / "fail.flag"
+    wrapper = make_ansible_wrapper(tmp_path, fail_flag=fail_flag)
     runner_tmp = tmp_path / "runner"
     workspace = make_workspace(
         tmp_path,
         template_body(source, destination, sha256_file(source), "one"),
         ansible_binary=wrapper,
-        timeout_seconds=1,
         temp_dir=runner_tmp,
     )
     tf_apply(workspace)
-    sleep_flag.write_text("sleep", encoding="utf-8")
+    fail_flag.write_text("fail", encoding="utf-8")
     rewrite_body(
         workspace,
         template_body(source, destination, sha256_file(source), "two"),
         ansible_binary=wrapper,
-        timeout_seconds=1,
         temp_dir=runner_tmp,
     )
     tf_apply(workspace, expect_success=False, timeout=20)
-    sleep_flag.unlink()
+    fail_flag.unlink()
     tf_apply(workspace)
     assert pathlib.Path(destination).read_text(encoding="utf-8") == "value=two\n"
 
