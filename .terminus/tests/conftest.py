@@ -25,6 +25,7 @@ def _complete_external_gate_temp_snapshot(
 
     original_repo = request.module._temp_control_repo
     original_record = request.module._record
+    valid_outputs = original_record.__globals__["_valid_outputs"]
 
     def wrapped_repo(tmp_path: Path):
         root, _commit = original_repo(tmp_path)
@@ -58,11 +59,23 @@ def _complete_external_gate_temp_snapshot(
         outputs_override: dict[str, object] | None = None,
         **kwargs,
     ):
+        effective_outputs = dict(valid_outputs(resolver, stage_id))
+        if stage_id == "QUALITY_INTERLOCK":
+            effective_outputs["Q4_SATISFACTION"] = "DIRECT_PASS"
+        if outputs_override:
+            effective_outputs.update(outputs_override)
+            if (
+                stage_id == "HARBOR_LLMAJ"
+                and "EXTERNAL_RUN_ID" in outputs_override
+            ):
+                effective_outputs["HARBOR_RUN_ID"] = outputs_override["EXTERNAL_RUN_ID"]
+
         value = original_record(
             resolver,
             stage_id,
             task_id,
             commit,
+            outputs_override=effective_outputs,
             **kwargs,
         )
         outputs = value["outputs"]
@@ -84,14 +97,6 @@ def _complete_external_gate_temp_snapshot(
                 CLAUDE_PERSPECTIVE_RESULT={"EXECUTION": "EXECUTED"},
                 ISOLATION_CHECK="PASS",
             )
-
-        if outputs_override:
-            outputs.update(outputs_override)
-            if (
-                stage_id == "HARBOR_LLMAJ"
-                and "EXTERNAL_RUN_ID" in outputs_override
-            ):
-                outputs["HARBOR_RUN_ID"] = outputs_override["EXTERNAL_RUN_ID"]
 
         value.pop("record_id", None)
         value["record_id"] = ExecutionRecordBuilder._record_id(value)
