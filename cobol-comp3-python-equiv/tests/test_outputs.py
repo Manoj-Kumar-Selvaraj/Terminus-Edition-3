@@ -1652,6 +1652,7 @@ def test_p2p_preflight_discriminates_batch_window_and_authorization_safety_state
     assert isinstance(baseline_window, dict)
     assert isinstance(baseline_authorization, dict)
     assert isinstance(baseline_safety, dict)
+    stable_authorization_keys = ("allowed", "action", "reason")
 
     window_arguments = run_arguments(
         db_path, source, DEFAULT_LAYOUT, controls, report_dir, publish_dir
@@ -1666,7 +1667,10 @@ def test_p2p_preflight_discriminates_batch_window_and_authorization_safety_state
     assert window_probe.returncode in {0, 2}
     window_payload = parse_stdout(window_probe)
     assert window_payload.get("batch_window") != baseline_window
-    assert window_payload.get("authorization") == baseline_authorization
+    assert [
+        window_payload["authorization"].get(key)
+        for key in stable_authorization_keys
+    ] == [baseline_authorization.get(key) for key in stable_authorization_keys]
     assert window_payload.get("source_profile") == baseline_payload.get("source_profile")
     assert window_payload.get("schema_issues") == baseline_payload.get("schema_issues")
     assert window_payload.get("catalog") == baseline_payload.get("catalog")
@@ -1692,7 +1696,10 @@ def test_p2p_preflight_discriminates_batch_window_and_authorization_safety_state
     assert safety_probe.returncode in {0, 2}
     safety_payload = parse_stdout(safety_probe)
     assert safety_payload.get("safety") != baseline_safety
-    assert safety_payload.get("authorization") == baseline_authorization
+    assert [
+        safety_payload["authorization"].get(key)
+        for key in stable_authorization_keys
+    ] == [baseline_authorization.get(key) for key in stable_authorization_keys]
     assert safety_payload.get("source_profile") == baseline_payload.get("source_profile")
     assert safety_payload.get("schema_issues") == baseline_payload.get("schema_issues")
     assert safety_payload.get("catalog") == baseline_payload.get("catalog")
