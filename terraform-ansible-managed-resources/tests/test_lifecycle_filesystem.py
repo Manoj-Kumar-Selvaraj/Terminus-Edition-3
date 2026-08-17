@@ -12,44 +12,34 @@ from conftest import (
 )
 
 
-def test_f2p_file_identity_survives_metadata_update(tmp_path, cleanup_registry):
-    """Changing mutable file metadata must not change the Terraform resource identity."""
-    target = cleanup_registry.path(tmp_path / "managed-file")
+def test_f2p_filesystem_identities_survive_mutable_updates(tmp_path, cleanup_registry):
+    """File and directory identities stay stable while their managed metadata changes in place."""
+    file_path = cleanup_registry.path(tmp_path / "managed-file")
+    directory = cleanup_registry.path(tmp_path / "managed-dir")
     runner_tmp = tmp_path / "runner"
     body = f'''resource "ansibleops_file" "managed" {{
-  path = {json.dumps(str(target))}
+  path = {json.dumps(str(file_path))}
   mode = "0640"
 }}
-'''
-    workspace = make_workspace(tmp_path, body, temp_dir=runner_tmp)
-    tf_apply(workspace)
-    before = resource_values(workspace, "ansibleops_file.managed")["id"]
-    rewrite_body(
-        workspace,
-        body.replace('mode = "0640"', 'mode = "0600"'),
-        temp_dir=runner_tmp,
-    )
-    tf_apply(workspace)
-    after = resource_values(workspace, "ansibleops_file.managed")["id"]
-    assert after == before
-
-
-def test_f2p_directory_identity_survives_mode_update(tmp_path, cleanup_registry):
-    """A directory keeps one stable identity while its managed mode changes in place."""
-    target = cleanup_registry.path(tmp_path / "managed-dir")
-    runner_tmp = tmp_path / "runner"
-    body = f'''resource "ansibleops_directory" "managed" {{
-  path = {json.dumps(str(target))}
+resource "ansibleops_directory" "managed" {{
+  path = {json.dumps(str(directory))}
   mode = "0750"
 }}
 '''
     workspace = make_workspace(tmp_path, body, temp_dir=runner_tmp)
     tf_apply(workspace)
-    before = resource_values(workspace, "ansibleops_directory.managed")["id"]
-    rewrite_body(workspace, body.replace('mode = "0750"', 'mode = "0700"'), temp_dir=runner_tmp)
+    file_before = resource_values(workspace, "ansibleops_file.managed")["id"]
+    directory_before = resource_values(workspace, "ansibleops_directory.managed")["id"]
+    updated = body.replace('mode = "0640"', 'mode = "0600"').replace(
+        'mode = "0750"', 'mode = "0700"'
+    )
+    rewrite_body(workspace, updated, temp_dir=runner_tmp)
     tf_apply(workspace)
-    after = resource_values(workspace, "ansibleops_directory.managed")["id"]
-    assert after == before
+    assert resource_values(workspace, "ansibleops_file.managed")["id"] == file_before
+    assert (
+        resource_values(workspace, "ansibleops_directory.managed")["id"]
+        == directory_before
+    )
 
 
 def test_f2p_symlink_identity_survives_target_update(tmp_path, cleanup_registry):
@@ -92,38 +82,28 @@ def test_f2p_deleted_directory_is_planned_for_recreation(tmp_path, cleanup_regis
     assert plan_actions(plan, "ansibleops_directory.managed") == ["create"]
 
 
-def test_f2p_directory_mode_drift_requires_reconciliation(tmp_path, cleanup_registry):
-    """Out-of-band directory permission drift must produce an in-place reconciliation action."""
-    target = cleanup_registry.path(tmp_path / "mode-dir")
+def test_f2p_filesystem_mode_drift_requires_reconciliation(tmp_path, cleanup_registry):
+    """Out-of-band file and directory mode drift must both plan in-place reconciliation."""
+    file_path = cleanup_registry.path(tmp_path / "mode-file")
+    directory = cleanup_registry.path(tmp_path / "mode-dir")
     workspace = make_workspace(
         tmp_path,
-        f'''resource "ansibleops_directory" "managed" {{
-  path = {json.dumps(str(target))}
+        f'''resource "ansibleops_file" "managed" {{
+  path = {json.dumps(str(file_path))}
+  mode = "0640"
+}}
+resource "ansibleops_directory" "managed" {{
+  path = {json.dumps(str(directory))}
   mode = "0750"
 }}
 ''',
     )
     tf_apply(workspace)
-    os.chmod(target, 0o777)
-    _, plan = tf_plan_json(workspace)
-    assert plan_actions(plan, "ansibleops_directory.managed") == ["update"]
-
-
-def test_f2p_file_mode_drift_requires_reconciliation(tmp_path, cleanup_registry):
-    """Out-of-band file permission drift must update the managed file instead of only a computed observation field."""
-    target = cleanup_registry.path(tmp_path / "mode-file")
-    workspace = make_workspace(
-        tmp_path,
-        f'''resource "ansibleops_file" "managed" {{
-  path = {json.dumps(str(target))}
-  mode = "0640"
-}}
-''',
-    )
-    tf_apply(workspace)
-    os.chmod(target, 0o666)
+    os.chmod(file_path, 0o666)
+    os.chmod(directory, 0o777)
     _, plan = tf_plan_json(workspace)
     assert plan_actions(plan, "ansibleops_file.managed") == ["update"]
+    assert plan_actions(plan, "ansibleops_directory.managed") == ["update"]
 
 
 def test_f2p_symlink_target_drift_requires_reconciliation(tmp_path, cleanup_registry):
