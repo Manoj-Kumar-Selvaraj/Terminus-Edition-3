@@ -16,9 +16,9 @@ type Config struct {
 
 func Default() *Config {
 	return &Config{
-		Inventory:     "/app/ansibleops/config/inventory.ini",
+		Inventory:     "/app/provider/config/inventory.ini",
 		AnsibleBinary: "ansible-playbook",
-		Timeout:       90 * time.Second,
+		Timeout:       30 * time.Second,
 		TempDir:       "/tmp/ansibleops",
 		Runner:        runner.NewProcessRunner(),
 	}
