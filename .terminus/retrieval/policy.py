@@ -11,6 +11,7 @@ from typing import Any, Mapping
 from review_contract import role_contract_hash as current_role_contract_hash
 
 from .models import InvocationContext
+from .stage_overlay import apply_stage_overlays
 
 ALL_STAGES = "ALL_AUTHORIZED_STAGES"
 ALL_ROLES = "ALL_AUTHORIZED_ROLES"
@@ -67,6 +68,7 @@ class RetrievalPolicy:
         self.root = root.resolve()
         agents = self.root / ".terminus" / "agents"
         self.stage_registry = self._load(agents / "stage_contracts.json")
+        apply_stage_overlays(self.root, self.stage_registry)
         self.visibility_registry = self._load(agents / "evidence_visibility.json")
         self.metadata_registry = self._load(agents / "retrieval_metadata.json")
 
