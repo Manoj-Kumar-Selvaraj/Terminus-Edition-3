@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-ROOT="${ANSIBLEOPS_ROOT:-/app/ansibleops}"
+ROOT="${ANSIBLEOPS_ROOT:-/app/provider}"
 VERSION="0.1.0"
 TARGET="/opt/terraform/plugins/registry.terraform.io/local/ansibleops/${VERSION}/linux_amd64"
 BINARY="${TARGET}/terraform-provider-ansibleops_v${VERSION}"
