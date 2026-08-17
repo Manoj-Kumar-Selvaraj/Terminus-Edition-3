@@ -14,6 +14,7 @@ import sys
 from pathlib import Path
 
 import validate_review_freshness as freshness
+import q4_closure
 from review_contract import current_task_commit
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -207,27 +208,55 @@ def validate_session(session: dict, report: freshness.Report) -> None:
             _require_ready_gate(gates, needle, display, report, context)
 
     if state in PRE_LLMAJ_OR_LATER:
-        interlock_paths: list[Path] = []
-        for needle, (display, role) in INTERLOCK_GATES.items():
-            gate = _require_ready_gate(gates, needle, display, report, context)
-            if gate is None:
-                continue
-            path_result = _validate_packet_review_gate(
-                task, truth_commit, gate, display, role, report
-            )
-            if path_result is not None:
-                interlock_paths.append(path_result)
+        q4_satisfied = False
+        q4_gate = _find_gate(gates, "q4 spec-test contract reviewer")
+        if q4_gate is None:
+            report.error(f"{context}: missing mandatory quality gate 'Q4 Spec-Test Contract Reviewer'")
+        else:
+            q4_status = str(q4_gate["status"]).upper()
+            if q4_status == "PASS":
+                q4_path = _validate_packet_review_gate(
+                    task, truth_commit, q4_gate, "Q4 Spec-Test Contract Reviewer", "Spec-Test Contract Reviewer", report
+                )
+                q4_satisfied = q4_path is not None
+            elif q4_status == "REVISE":
+                q4_rel = freshness.review_path_from_evidence(q4_gate["evidence"])
+                closure_gate = _find_gate(gates, "q4 adjudicated closure")
+                if not q4_rel:
+                    report.error(f"{context}: Q4 REVISE row must cite its exact frozen review result")
+                if closure_gate is None or str(closure_gate["status"]).upper() != "PASS":
+                    report.error(f"{context}: Q4 REVISE requires Q4 Adjudicated Closure PASS before advancing")
+                elif q4_rel:
+                    closure_path = _validate_packet_review_gate(
+                        task, truth_commit, closure_gate, "Q4 Adjudicated Closure", "Q4 Closure Adjudicator", report
+                    )
+                    if closure_path is not None:
+                        closure_errors, metadata = q4_closure.validate_ready_closure(
+                            ROOT, str(closure_path.relative_to(ROOT))
+                        )
+                        for error in closure_errors:
+                            report.error(f"Q4 Adjudicated Closure: {error}")
+                        if not closure_errors and metadata.get("final_q4_result") != q4_rel:
+                            report.error(f"{context}: closure result does not bind the Q4 REVISE evidence row")
+                        q4_satisfied = not closure_errors and metadata.get("final_q4_result") == q4_rel
+            else:
+                report.error(
+                    f"{context}: Q4 gate must be PASS or a frozen REVISE paired with adjudicated closure; found {q4_status}"
+                )
 
-        summary = _require_ready_gate(
-            gates,
-            "quality interlock",
-            "Quality Interlock",
-            report,
-            context,
+        q6_gate = _require_ready_gate(
+            gates, "q6 production logic auditor", "Q6 Production Logic Auditor", report, context
         )
-        if summary is not None and len(interlock_paths) != 2:
+        q6_path = None
+        if q6_gate is not None:
+            q6_path = _validate_packet_review_gate(
+                task, truth_commit, q6_gate, "Q6 Production Logic Auditor", "Production Logic Auditor", report
+            )
+
+        summary = _require_ready_gate(gates, "quality interlock", "Quality Interlock", report, context)
+        if summary is not None and (not q4_satisfied or q6_path is None):
             report.error(
-                f"{context}: Quality Interlock PASS requires current packet-bound Q4 and Q6 results"
+                f"{context}: Quality Interlock PASS requires Q4 direct PASS or validated adjudicated closure, plus current Q6 PASS"
             )
 
     if state in MODEL_BACKED_STATES:

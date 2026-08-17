@@ -20,6 +20,7 @@ ROLE_POLICY_VERSIONS = {
     "Comprehensive Reviewer": "1.0",
     "Trajectory Analyst": "1.0",
     "Adjudicator": "1.0",
+    "Q4 Closure Adjudicator": "1.0",
     "Spec-Test Contract Reviewer": "1.1",
     "Production Logic Auditor": "1.1",
     "Model Perspective Difficulty Simulator": "1.0",
@@ -37,6 +38,7 @@ ROLE_PROMPT_HEADINGS = {
     "Comprehensive Reviewer": "Comprehensive Reviewer",
     "Trajectory Analyst": "Trajectory Analyst",
     "Adjudicator": "Adjudicator",
+    "Q4 Closure Adjudicator": "Q4 Closure Adjudicator",
     "Spec-Test Contract Reviewer": "Q4 — Spec-Test Contract Reviewer",
     "Production Logic Auditor": "Q6 — Production Logic Auditor",
     "Model Perspective Difficulty Simulator": "Q8 — Model Perspective Difficulty Simulator",
@@ -124,6 +126,8 @@ def role_contract_inputs(root: Path, role: str) -> list[Path]:
                 t / "agents" / "QUALITY_AGENT_PROMPTS.md",
             ]
         )
+    if role == "Q4 Closure Adjudicator":
+        inputs.append(t / "agents" / "Q4_CLOSURE_POLICY.md")
     if role == "Comprehensive Reviewer":
         inputs.extend(
             [

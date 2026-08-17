@@ -249,13 +249,13 @@ def main() -> int:
     evals = texts.get(T / "reviewers" / "REVIEWER_EVALS.md", "")
     calibration = texts.get(T / "reviewers" / "CALIBRATION_DATASET.md", "")
 
-    require_declared(errors, agent_system, agent_system_path, "Agent-system policy version", "2.4")
+    require_declared(errors, agent_system, agent_system_path, "Agent-system policy version", "2.5")
     require_declared(errors, bootstrap, bootstrap_path, "Bootstrap policy version", "2.2")
     require_declared(errors, operating, operating_path, "Operating policy version", "1.1")
     require_declared(errors, protocol, protocol_path, "Policy version", "2.2")
     require_declared(errors, invoke, invoke_path, "Invocation policy version", "1.1")
     require_declared(
-        errors, orchestrator, orchestrator_path, "Orchestrator policy version", "1.2"
+        errors, orchestrator, orchestrator_path, "Orchestrator policy version", "1.3"
     )
     require_declared(errors, prompts, prompts_path, "Prompt policy version", "2.2")
     require_declared(errors, comprehensive, comprehensive_path, "Reviewer policy version", "1.0")

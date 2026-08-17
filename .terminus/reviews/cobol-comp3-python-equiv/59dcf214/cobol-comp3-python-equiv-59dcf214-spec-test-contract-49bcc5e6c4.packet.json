@@ -1,0 +1,41 @@
+{
+  "schema_version": "3.0",
+  "review_id": "cobol-comp3-python-equiv-59dcf214-spec-test-contract-49bcc5e6c4",
+  "protocol_policy_version": "2.2",
+  "prompt_policy_version": "2.2",
+  "role_policy_version": "1.1",
+  "control_plane_commit": "e041db86211fda37630427648287f7d9ab788db8",
+  "role_contract_hash": "0c40044ec13f0109a5526301cac6e5d2f52f5596d006bee2cdcaa90c0771d7f6",
+  "task": "cobol-comp3-python-equiv",
+  "task_commit": "59dcf2146e1bac84cbc98d7d641e79b5a0138c4a",
+  "state": "FROZEN_CANDIDATE",
+  "role": "Spec-Test Contract Reviewer",
+  "question": "Is every substantive verifier behavior discoverable from the solver-visible contract, every material requirement tested, and every grading-relevant statement unambiguous?",
+  "authoritative_rules": [
+    "TERMINUS_3_AI_INSTRUCTIONS.md",
+    ".terminus/AGENT_SYSTEM.md",
+    ".terminus/agents/PROTOCOL.md",
+    ".terminus/agents/PROMPTS.md",
+    ".terminus/agents/QUALITY_AGENT_REGISTRY.md",
+    ".terminus/agents/QUALITY_AGENT_PROMPTS.md"
+  ],
+  "evidence_allowed": [
+    "instruction.md",
+    "all solver-visible contracts referenced by instruction.md",
+    "tests/",
+    "test map when needed to identify classification only",
+    "environment interfaces required to interpret observable behavior"
+  ],
+  "evidence_excluded": [
+    "Q1/Q2/Q3 conclusions before the independent matrix is frozen",
+    "Verifier Author coverage rationale",
+    "previous Spec-Test Contract Reviewer verdict",
+    "other specialist verdicts",
+    "desired aggregate outcome"
+  ],
+  "prior_verdicts_visible": false,
+  "isolation_mode": "PROCEDURAL",
+  "change_since_last_review": "Fresh Q4 after Adjudicator-authorized closure of Q4-001 through Q4-007. Solver-visible instruction now defines the reason/type compatibility table and detailed-settlement invariants, plus preflight recovery/catalog health and archive retention/non-mutation obligations. Verifier coverage now uses grouped black-box caller/preflight/audit perturbations; independently inspects archive exports, lineage/integrity, registry, archive journal evidence, retention and live-artifact preservation; drives real reconciliation and detailed-settlement failures through the pipeline to independently prove non-publication; proves QUANTITY, TRANSFER_LOOP, ITEM_INACTIVE and WAREHOUSE_INACTIVE at operational reject DB/CSV persistence boundaries; and removes grading dependence on undocumented private policy labels, pipeline state strings, incidental CLI JSON field layouts and a fixed manifest serialization shape. Authoritative Edition 3 run 31940594234/job 95149083356 on final task commit 59dcf2146e1bac84cbc98d7d641e79b5a0138c4a passed Preflight, Ruff, Oracle reward 1 and NOP reward 0; artifact 9261919232 independently records Oracle 40/40 PASS and untouched starter 30/30 F2P FAIL plus 10/10 P2P PASS. Strict complexity remains task-specific PASS at 3907 substantive LOC, 29 defects, 7 root causes, 40 tests, 30 F2P, 10 P2P and 12 requirements. Q6 task.toml plus environment production scope is unchanged from the existing PASS/HIGH/SUFFICIENT result and remains scope-reusable.",
+  "output_schema": ".terminus/agents/schemas/review_result.schema.json",
+  "review_output_path": ".terminus/reviews/cobol-comp3-python-equiv/59dcf214/cobol-comp3-python-equiv-59dcf214-spec-test-contract-49bcc5e6c4.json"
+}

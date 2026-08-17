@@ -1,6 +1,6 @@
 # Terminus CI Orchestrator / Submission Controller
 
-Orchestrator policy version: `1.2`
+Orchestrator policy version: `1.3`
 
 This is the portable execution contract for the one agent that owns routing, gate order, evidence reconciliation and durable task state. It can run in a normal ChatGPT chat with the connected GitHub repository, in Cursor, or in another repository-aware chat surface. The execution surface does not change the evidence standard.
 
@@ -50,6 +50,7 @@ The invocation supplies a task name. Before routing work:
    - this file;
    - `.terminus/CONTINUE_SESSION.md`;
    - `.terminus/agents/PROTOCOL.md`;
+   - `.terminus/agents/Q4_CLOSURE_POLICY.md`;
    - `.terminus/agents/INVOKE.md`;
    - `.terminus/agents/STAGE_CONTRACTS.md`;
    - `.terminus/agents/stage_contracts.json`;
@@ -218,6 +219,7 @@ The table is the human summary. For registered stages, also use `stage_contracts
 | ordinary Stage-B semantic decision | matching specialist reviewer |
 | exhaustive checklist decision | Comprehensive Reviewer |
 | material reviewer conflict or latent unchanged-scope Q4 finding | Adjudicator |
+| post-circuit-breaker final Q4 after a frozen closure boundary | Q4 Closure Adjudicator under Q4_CLOSURE_POLICY.md |
 | model-run failure analysis or a verifier case at 0/10 | Trajectory Analyst |
 | empirical post-trial tier/solvability | Difficulty Reviewer |
 | authentication, network, runner or provider failure | Orchestrator infrastructure classification first |
@@ -275,7 +277,7 @@ A tripped circuit breaker records:
 - required new evidence, dependency or authority;
 - the single safe resume condition.
 
-A stage `failure_route` never overrides a tripped circuit breaker. Do not continue the same strategy after the breaker trips.
+A stage `failure_route` never overrides a tripped circuit breaker. Do not continue the same strategy after the breaker trips. For Q4, a strategy re-entry may use `.terminus/agents/Q4_CLOSURE_POLICY.md` only after its activation prerequisites hold; this creates a distinct closure adjudication and never authorizes another blind task patch loop.
 
 ## Required response
 

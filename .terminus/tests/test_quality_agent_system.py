@@ -49,6 +49,7 @@ def test_packet_generator_exposes_independent_quality_review_packets() -> None:
     packet = _load_module("quality_packet_generator", T / "new_review_packet.py")
     assert packet.ROLES["spec-test-contract"]["role"] == "Spec-Test Contract Reviewer"
     assert packet.ROLES["production-logic"]["role"] == "Production Logic Auditor"
+    assert packet.ROLES["q4-closure-adjudication"]["role"] == "Q4 Closure Adjudicator"
     assert (
         packet.ROLES["difficulty-sim-gpt"]["role"]
         == "Model Perspective Difficulty Simulator"
@@ -63,21 +64,24 @@ def test_quality_review_roles_have_provenance_contract_versions() -> None:
     contract = _load_module("quality_review_contract", T / "review_contract.py")
     expected = {
         "Spec-Test Contract Reviewer": "1.1",
+        "Q4 Closure Adjudicator": "1.0",
         "Production Logic Auditor": "1.1",
         "Model Perspective Difficulty Simulator": "1.0",
     }
     for role, version in expected.items():
         assert contract.ROLE_POLICY_VERSIONS[role] == version
-        assert role in contract.QUALITY_REVIEW_ROLES
+        if role != "Q4 Closure Adjudicator":
+            assert role in contract.QUALITY_REVIEW_ROLES
         assert contract.ROLE_PROMPT_HEADINGS[role]
 
 
 def test_session_template_tracks_current_quality_policy_identity() -> None:
     template = (T / "sessions/TEMPLATE.md").read_text(encoding="utf-8")
-    assert "- Agent-system policy: `2.4`" in template
+    assert "- Agent-system policy: `2.5`" in template
     assert "- Specialist protocol policy: `2.2`" in template
     assert "| Q4 Spec-Test Contract Reviewer |" in template
     assert "| Q6 Production Logic Auditor |" in template
+    assert "| Q4 Adjudicated Closure |" in template
     assert "Role policy | Role contract hash | Scope hash |" in template
 
 
@@ -123,6 +127,16 @@ def test_q4_is_exhaustive_bidirectional_and_q6_is_not_loc_only() -> None:
     assert "reachability" in q6.lower()
     assert ">=3,000 substantive reachable" in q6
     assert "review_scope_hash" in q6
+
+
+def test_q4_closure_policy_is_additive_and_machine_enforced() -> None:
+    policy = (T / "agents/Q4_CLOSURE_POLICY.md").read_text(encoding="utf-8")
+    assert "ADJUDICATED_CLOSURE_PASS" in policy
+    assert "REJECTED_SCOPE_REOPEN" in policy
+    assert "LATENT_AFTER_BOUNDARY" in policy
+    assert "SURVIVING_BOUND_BLOCKER" in policy
+    assert (T / "q4_closure.py").is_file()
+    assert (T / "new_q4_closure_packet.py").is_file()
 
 
 def test_protocol_has_no_drip_adjudication_rule() -> None:

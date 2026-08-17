@@ -16,6 +16,8 @@ import sys
 from dataclasses import dataclass
 from pathlib import Path
 
+from q4_closure import validate_ready_closure
+
 from review_contract import (
     ROLE_POLICY_VERSIONS,
     current_task_commit,
@@ -64,6 +66,9 @@ SEMANTIC_GATES: dict[str, GateSpec] = {
     "q4 spec-test contract reviewer": GateSpec(
         "Spec-Test Contract Reviewer", frozenset(SPECIALIST_READY)
     ),
+    "q4 adjudicated closure": GateSpec(
+        "Q4 Closure Adjudicator", frozenset(SPECIALIST_READY)
+    ),
     "q6 production logic auditor": GateSpec(
         "Production Logic Auditor", frozenset(SPECIALIST_READY)
     ),
@@ -81,6 +86,7 @@ CANONICAL_ALIASES: tuple[tuple[str, str], ...] = (
     ("oracle = 1", "Oracle = 1"),
     ("nop = 0", "NOP = 0"),
     ("q4 spec-test contract reviewer", "Q4 Spec-Test Contract Reviewer"),
+    ("q4 adjudicated closure", "Q4 Adjudicated Closure"),
     ("q6 production logic auditor", "Q6 Production Logic Auditor"),
     ("task architect", "Task Architect"),
     ("verifier engineer", "Verifier Engineer"),
@@ -188,6 +194,7 @@ def semantic_gate_spec(label: str) -> GateSpec | None:
         "pre-llmaj aggregate",
         "pre-llmaj specialist panel",
         "comprehensive reviewer",
+        "q4 adjudicated closure",
         "q4 spec-test contract reviewer",
         "q6 production logic auditor",
         "documentation reviewer",
@@ -525,6 +532,10 @@ def validate_semantic_gate(
         validate_packet_and_review(
             review_path, data, spec.role, spec.verdicts, task, truth_commit, report
         )
+        if spec.role == "Q4 Closure Adjudicator":
+            closure_errors, _ = validate_ready_closure(ROOT, str(review_path.relative_to(ROOT)))
+            for error in closure_errors:
+                report.error(f"{review_path.relative_to(ROOT)}: {error}")
 
 
 def validate_deterministic_gate(gate: dict[str, str], report: Report) -> None:
@@ -610,8 +621,15 @@ def check_session(path: Path, report: Report) -> None:
             canonical_gate(g["label"]): g["status"].upper() for g in session["gates"]
         }
         required = set(BASE_SUBMISSION_READY_GATES)
+        required.discard("Q4 Spec-Test Contract Reviewer")
         if strict_profile(task):
             required.add("Creator Complexity Gate")
+        q4_direct = canonical_status.get("Q4 Spec-Test Contract Reviewer") in SESSION_READY
+        q4_closure = canonical_status.get("Q4 Adjudicated Closure") in SESSION_READY
+        if not (q4_direct or q4_closure):
+            report.error(
+                f"{rel}: SUBMISSION_READY requires either direct Q4 PASS or validated Q4 Adjudicated Closure PASS"
+            )
         missing = sorted(required - set(canonical_status))
         if missing:
             report.error(

@@ -1,0 +1,173 @@
+{
+  "schema_version": "3.0",
+  "role": "Adjudicator",
+  "review_id": "cobol-comp3-python-equiv-bb2e042c-adjudication-1cb69323e3",
+  "task": "cobol-comp3-python-equiv",
+  "task_commit": "bb2e042c45873da3f3d78836d915ddb6446debf2",
+  "control_plane_commit": "ecdce8dde4ce08a6e3cf5357e9085cbc76bd116b",
+  "protocol_policy_version": "2.2",
+  "prompt_policy_version": "2.2",
+  "role_policy_version": "1.0",
+  "role_contract_hash": "ae7523f7674adecdb0ca242024e8ee1cc0483105b249621469ec288184485cca",
+  "context_packet": ".terminus/reviews/cobol-comp3-python-equiv/bb2e042c/cobol-comp3-python-equiv-bb2e042c-adjudication-1cb69323e3.packet.json",
+  "verdict": "PASS",
+  "confidence": "HIGH",
+  "evidence_status": "SUFFICIENT",
+  "summary": "BOTH_PARTLY. The frozen direct Q2 REPAIR_PROPOSED diagnostic contains useful verifier-strengthening ideas, but none is a controlling blocker for the unchanged bb2e042c candidate. Q2-S04 and Q2-S06 through Q2-S11 are REJECTED_SCOPE_REOPEN-equivalent to scope already rejected or narrowed by the frozen boundary and Q4 Closure PASS. Q2-S01, Q2-S02, Q2-S03, Q2-S05 and Q2-S12 are late coverage-strengthening observations on unchanged evidence that the exact-commit exhaustive Q4 already treated as covered; they are LATENT_AFTER_BOUNDARY/no-drip-equivalent for this closure and do not authorize another verifier repair loop. No bounded verifier repair is authorized. The Q2 producer gate may be treated as having no unresolved controlling finding. No control-plane code or policy change is required: role status and controller gate state are distinct, and the current Quality Interlock validator requires a literal controller-owned producer gate PASS rather than a Q2 role output string of COVERED. The CI Orchestrator may record that PASS only as the controller disposition of this adjudicated conflict; it must not rewrite the frozen Q2 diagnostic or invent a fresh Q2 COVERED result.",
+  "evidence": [
+    {
+      "type": "artifact",
+      "ref": ".terminus/reviews/cobol-comp3-python-equiv/bb2e042c/cobol-comp3-python-equiv-bb2e042c-adjudication-1cb69323e3.packet.json",
+      "observation": "Packet is schema 3.0 and binds this execution to task commit bb2e042c45873da3f3d78836d915ddb6446debf2, control-plane commit ecdce8dde4ce08a6e3cf5357e9085cbc76bd116b, Adjudicator role-contract hash ae7523f7674adecdb0ca242024e8ee1cc0483105b249621469ec288184485cca, Protocol/Prompt 2.2, the frozen Q2 conflict, and the immutable output path."
+    },
+    {
+      "type": "rule",
+      "ref": ".terminus/AGENT_SYSTEM.md",
+      "observation": "Current system policy separates role verdicts from controller/task state, assigns one authoritative decision owner at a time, routes material frozen-judgment conflict through Adjudicator, and requires meaningful changed evidence or strategy before retrying a blocked path."
+    },
+    {
+      "type": "rule",
+      "ref": ".terminus/agents/PROTOCOL.md",
+      "observation": "Protocol 2.2 forbids majority-vote resolution, requires controlling rule/evidence and scope reconciliation, routes latent unchanged-scope completeness findings to adjudication, and blocks blind post-exhaustive-Q4 patch loops."
+    },
+    {
+      "type": "rule",
+      "ref": ".terminus/agents/PROMPTS.md#Adjudicator",
+      "observation": "Adjudicator resolves completed-review disagreement by identifying controlling rule/evidence, distinguishing scopes that can both be correct, and refusing compromise merely to satisfy both sides."
+    },
+    {
+      "type": "rule",
+      "ref": ".terminus/agents/QUALITY_AGENT_REGISTRY.md + .terminus/agents/QUALITY_AGENT_PROMPTS.md#Q2",
+      "observation": "Q2 is a producer-side Verifier Coverage Repairer whose output vocabulary is COVERED/REPAIR_PROPOSED/SPEC_PROBLEM/BLOCKED; it supplies coverage diagnosis/repair rather than independent post-freeze semantic acceptance. Quality Interlock requires no unresolved Q1/Q2/Q3 finding."
+    },
+    {
+      "type": "rule",
+      "ref": ".terminus/agents/Q4_CLOSURE_POLICY.md",
+      "observation": "Post-circuit-breaker closure makes REJECTED_SCOPE_REOPEN and LATENT_AFTER_BOUNDARY non-blocking for this task closure, forbids another ordinary Q4 patch loop on those scopes, and preserves the distinct ADJUDICATED_CLOSURE_PASS route without rewriting the frozen final Q4."
+    },
+    {
+      "type": "review",
+      "ref": ".terminus/reviews/cobol-comp3-python-equiv/59dcf214/cobol-comp3-python-equiv-59dcf214-adjudication-516e0ca6b1.json",
+      "observation": "Frozen boundary rejected the blanket private-src ABI theory and every-safety-subclass expansion, rejected corrupt/missing archive-input expansion, narrowed movement/item/warehouse authority, and bounded the final repair to specific observable preflight/audit/archive/publication concerns."
+    },
+    {
+      "type": "review",
+      "ref": ".terminus/reviews/cobol-comp3-python-equiv/bb2e042c/cobol-comp3-python-equiv-bb2e042c-spec-test-contract-852fc1b28a.json",
+      "observation": "Final exact-commit exhaustive Q4 is REVISE/HIGH/SUFFICIENT with a complete forward/reverse walk and second omission sweep. Its matrix nevertheless treats generation source/layout/date identity, current/cross-generation replay ownership, documented stable reject-code families, available quantity/weighted valuation, and archive lineage/control/delta positive-path behavior as covered; its five blockers are separately reconciled by closure."
+    },
+    {
+      "type": "review",
+      "ref": ".terminus/reviews/cobol-comp3-python-equiv/bb2e042c/cobol-comp3-python-equiv-bb2e042c-q4-closure-adjudication-c00658ae75.json",
+      "observation": "Frozen Q4 Closure Adjudicator is PASS/HIGH/SUFFICIENT and reconciles every final-Q4 blocker exactly once: blanket private-src coupling, expanded movement/item/warehouse case inventory, extra safety/publication subclasses, stronger preflight/audit demands, and corrupt/missing archive-input expansion are rejected scope reopen or latent."
+    },
+    {
+      "type": "artifact",
+      "ref": ".terminus/reviews/cobol-comp3-python-equiv/bb2e042c/cobol-comp3-python-equiv-bb2e042c-q2-verifier-coverage-direct-20260816.md",
+      "observation": "Direct Q2 is explicitly a producer/fixer diagnostic rather than a schema-v3 semantic review. It modifies no task files, reports REPAIR_PROPOSED, and proposes Q2-S01..Q2-S12 across both already-closed scope families and several extra end-to-end/depth variants."
+    },
+    {
+      "type": "file",
+      "ref": "cobol-comp3-python-equiv/environment/equiv/ops/runtime-contract.md@bb2e042c45873da3f3d78836d915ddb6446debf2",
+      "observation": "Solver-visible contract explicitly defines source/layout/date generation identity, generation-scoped replay/uniqueness, stable reject-code operational evidence, reconciliation/publication safety, preflight/audit responsibilities, and archive verification/controls/deltas/lineage semantics."
+    },
+    {
+      "type": "test",
+      "ref": "cobol-comp3-python-equiv/tests/test_outputs.py@bb2e042c45873da3f3d78836d915ddb6446debf2",
+      "observation": "Current verifier contains generation/checkpoint/replay tests, stable reject-code tests plus a helper that checks persisted reject codes against generated reject CSV, weighted-source valuation tests, broad operator workflow perturbations, and independent archive/publication lineage/integrity checks. Q2's disputed scenarios strengthen combinations/depth rather than arise from changed verifier evidence."
+    },
+    {
+      "type": "rule",
+      "ref": ".terminus/validate_quality_interlock.py",
+      "observation": "Current validator requires controller session rows for Q1/Q2/Q3/Q7 producer gates to have literal status PASS at freeze or later. It does not require the Q2 role-output status itself to equal PASS or COVERED; producer-gate status is controller state. Q4 has a separate explicit adjudicated-closure route."
+    }
+  ],
+  "findings": [],
+  "missing_evidence": [],
+  "change_scope": [
+    "Write only this canonical Adjudicator result to .terminus/reviews/cobol-comp3-python-equiv/bb2e042c/cobol-comp3-python-equiv-bb2e042c-adjudication-1cb69323e3.json."
+  ],
+  "do_not_change": [
+    "Do not modify cobol-comp3-python-equiv task files, verifier files, solution files, instruction files, or environment files.",
+    "Do not implement Q2-S01 through Q2-S12.",
+    "Do not rerun or rewrite the frozen final Q4 or the Q4 Closure Adjudicator result.",
+    "Do not rewrite the frozen direct Q2 diagnostic from REPAIR_PROPOSED to COVERED.",
+    "Do not act as Q2, Producer, Fixer, Q4, Q6, or Q4 Closure Adjudicator.",
+    "Do not convert this role result itself into durable controller/session state; that belongs to the CI Orchestrator / Submission Controller."
+  ],
+  "next_gate": "Return this frozen adjudication to the CI Orchestrator / Submission Controller. At unchanged task commit bb2e042c45873da3f3d78836d915ddb6446debf2, the controller may resolve the Q2 producer gate as PASS because this adjudication leaves no unresolved controlling Q2 finding, while preserving the frozen Q2 REPAIR_PROPOSED diagnostic as historical evidence. Then run only the normal deterministic freshness/Quality Interlock validation required for advancement. Do not repair the verifier and do not rerun Q4.",
+  "role_output": {
+    "DECISION": "BOTH_PARTLY",
+    "CONTROLLING_RULE_OR_EVIDENCE": "Protocol 2.2 plus AGENT_SYSTEM decision/state ownership, the frozen 59dcf214 boundary Adjudication, the exact-commit exhaustive bb2e042c Q4, and the Q4 Closure PASS control current scope. Q2 is a producer-side repair diagnostic, not the post-freeze independent acceptance owner. The current Quality Interlock validator's literal producer-gate PASS requirement applies to controller session state, not to the Q2 diagnostic's STATUS vocabulary.",
+    "SCOPE_RECONCILIATION": "Q2-S01 LATENT_NO_DRIP_NONCONTROLLING: positive-C encoding is an extra preservation-strengthening assertion on unchanged COMP-3 evidence that final exhaustive Q4 treated as complete. Q2-S02 LATENT_NO_DRIP_NONCONTROLLING: explicit business-date perturbation plus a second-generation end-to-end replay combines/deepens generation/date and cross-generation ownership already classified covered by final Q4. Q2-S03 LATENT_NO_DRIP_NONCONTROLLING: requiring DECODE/TRANSFORM to be re-proved on both DB and CSV surfaces is a per-code/per-surface strengthening after final Q4 treated the documented stable reject-code family as covered. Q2-S04 REJECTED_SCOPE_REOPEN_EQUIVALENT: expands movement-shape/reason/item/warehouse cases beyond the narrowed functional authority boundary already rejected by closure. Q2-S05 LATENT_NO_DRIP_NONCONTROLLING: an end-to-end durable weighted-valuation scenario is a depth upgrade on unchanged evidence after final Q4 treated weighted valuation as covered. Q2-S06 REJECTED_SCOPE_REOPEN_EQUIVALENT: isolating duplicate/orphan/transfer subcases reopens the boundary-rejected every-safety-subclass expansion. Q2-S07 REJECTED_SCOPE_REOPEN_EQUIVALENT: duplicate-same-kind/value-floor publication gating is the same rejected detailed-settlement/safety subclass expansion. Q2-S08 REJECTED_SCOPE_REOPEN_EQUIVALENT: the conflicting-existing-publication variant was explicitly identified by closure as fully reviewable before the boundary and not new evidence. Q2-S09 REJECTED_SCOPE_REOPEN_EQUIVALENT: all-inactive nonempty catalog preflight reopens a preflight domain the closure treated as demonstrated. Q2-S10 REJECTED_SCOPE_REOPEN_EQUIVALENT: one perturbation/evidence delta per audit family strengthens the narrowed audit obligation beyond the authorized grouped proof. Q2-S11 REJECTED_SCOPE_REOPEN_EQUIVALENT: corrupt/missing report/publication archive-input expansion was explicitly rejected by the frozen boundary and closure. Q2-S12 LATENT_NO_DRIP_NONCONTROLLING: second-generation archive controls/deltas and archived-byte hash reproof strengthen unchanged archive lineage/control/delta evidence that final Q4 already treated as covered. Q2's general blanket private-src coupling concern is also REJECTED_SCOPE_REOPEN-equivalent; only the former os.replace-specific regression was controlling, and the final repair removed it.",
+    "REASON": "None of Q2-S01..Q2-S12 is supported by task/verifier evidence introduced after the frozen boundary or final repair. The direct Q2 diagnostic is later and asks for additional scenario granularity against an unchanged candidate. Seven scenario groups map directly to rejected/narrowed closure scope; the remaining five disagree with completeness judgments already frozen by the exact-commit exhaustive Q4 on evidence that was fully reviewable then. Treating those five as fresh blockers would recreate the no-drip/circuit-breaker failure mode the closure strategy exists to terminate. Their ideas may be retained as future verifier/policy learning, but they are not authorized current-task repair obligations.",
+    "REQUIRED_ACTION": "Authorize no verifier/task repair. Preserve the frozen Q2 diagnostic unchanged. Return this result to the controller, which may record the Q2 Verifier Coverage Repair producer gate as PASS for the unchanged candidate because the diagnostic's proposed repairs have been adjudicated non-controlling and no unresolved Q2 finding remains. The controller should cite this adjudication as the conflict disposition rather than claiming Q2 itself returned COVERED.",
+    "RECHECK": "Reconfirm unchanged Git-derived task commit and this packet/result binding, preserve the frozen final Q4 plus Q4 Closure PASS, then run the normal deterministic review-freshness/Quality Interlock validation only. Do not rerun Q4, Q2, Oracle/NOP, or implement any Q2 scenario unless a later controller-owned strategy is triggered by genuinely new evidence or changed authority.",
+    "Q2_CONTROLLING_BLOCKER": "NO",
+    "BOUNDED_VERIFIER_REPAIR_AUTHORIZED": "NO",
+    "CONTROL_PLANE_CODE_OR_POLICY_CHANGE_REQUIRED": "NO",
+    "CONTROLLER_DISPOSITION_REQUIRED": "YES",
+    "PRODUCER_GATE_DISPOSITION": "Q2 producer gate may be recorded PASS by the CI Orchestrator at unchanged task commit, with this adjudication as the resolution of the frozen REPAIR_PROPOSED diagnostic. Do not rewrite the Q2 artifact or manufacture a Q2 COVERED status.",
+    "Q2_SCENARIO_DISPOSITIONS": [
+      {
+        "scenario": "Q2-S01",
+        "disposition": "LATENT_NO_DRIP_NONCONTROLLING",
+        "repair_authorized": false
+      },
+      {
+        "scenario": "Q2-S02",
+        "disposition": "LATENT_NO_DRIP_NONCONTROLLING",
+        "repair_authorized": false
+      },
+      {
+        "scenario": "Q2-S03",
+        "disposition": "LATENT_NO_DRIP_NONCONTROLLING",
+        "repair_authorized": false
+      },
+      {
+        "scenario": "Q2-S04",
+        "disposition": "REJECTED_SCOPE_REOPEN_EQUIVALENT",
+        "repair_authorized": false
+      },
+      {
+        "scenario": "Q2-S05",
+        "disposition": "LATENT_NO_DRIP_NONCONTROLLING",
+        "repair_authorized": false
+      },
+      {
+        "scenario": "Q2-S06",
+        "disposition": "REJECTED_SCOPE_REOPEN_EQUIVALENT",
+        "repair_authorized": false
+      },
+      {
+        "scenario": "Q2-S07",
+        "disposition": "REJECTED_SCOPE_REOPEN_EQUIVALENT",
+        "repair_authorized": false
+      },
+      {
+        "scenario": "Q2-S08",
+        "disposition": "REJECTED_SCOPE_REOPEN_EQUIVALENT",
+        "repair_authorized": false
+      },
+      {
+        "scenario": "Q2-S09",
+        "disposition": "REJECTED_SCOPE_REOPEN_EQUIVALENT",
+        "repair_authorized": false
+      },
+      {
+        "scenario": "Q2-S10",
+        "disposition": "REJECTED_SCOPE_REOPEN_EQUIVALENT",
+        "repair_authorized": false
+      },
+      {
+        "scenario": "Q2-S11",
+        "disposition": "REJECTED_SCOPE_REOPEN_EQUIVALENT",
+        "repair_authorized": false
+      },
+      {
+        "scenario": "Q2-S12",
+        "disposition": "LATENT_NO_DRIP_NONCONTROLLING",
+        "repair_authorized": false
+      }
+    ]
+  }
+}

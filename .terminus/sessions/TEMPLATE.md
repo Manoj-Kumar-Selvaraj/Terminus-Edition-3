@@ -11,7 +11,7 @@ This is the durable operational checkpoint for one task. Keep it evidence-orient
 - Working branch: `<branch>`
 - Pull request: `<number-or-none>`
 - Current task commit: `<git-derived-sha>`
-- Agent-system policy: `2.4`
+- Agent-system policy: `2.5`
 - Specialist prompt policy: `2.2`
 - Specialist protocol policy: `2.2`
 - Pre-LLMaJ panel policy: `2.2`
@@ -33,6 +33,7 @@ This is the durable operational checkpoint for one task. Keep it evidence-orient
 | Oracle = 1 | PENDING | Q5 owns deep repair when this/runtime fails |
 | NOP = 0 | PENDING | |
 | Q4 Spec-Test Contract Reviewer | PENDING | packet-bound independent exhaustive quality-interlock review; exact current task commit |
+| Q4 Adjudicated Closure | NOT_APPLICABLE | only after Protocol circuit-breaker + Q4_CLOSURE_POLICY activation |
 | Q6 Production Logic Auditor | PENDING | packet-bound independent quality-interlock review; exact task commit or Protocol-valid unchanged production scope |
 | Quality Interlock | PENDING | Q4 current PASS + Q6 current/scope-preserved PASS |
 | Pre-LLMaJ specialist panel | PENDING | |
