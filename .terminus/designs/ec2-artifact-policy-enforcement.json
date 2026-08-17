@@ -1,0 +1,45 @@
+{
+  "schema_version": "1.0",
+  "profile": "large_system",
+  "task_kind": "software",
+  "task": "ec2-artifact-policy-enforcement",
+  "root_cause_clusters": {
+    "RC1_INGRESS_BOUNDARY": "Ingress adapters have compatibility escape hatches or insufficient immutable-identity validation, allowing package files, dependency URLs, or mutable container identities to bypass the intended source/digest boundary.",
+    "RC2_SCANNER_FAIL_OPEN": "Missing or unknown vulnerability evidence is converted into ALLOW and can be persisted as an ordinary decision instead of failing closed.",
+    "RC3_CACHE_BINDING": "Decision cache identity is based on user-facing artifact coordinates and TTL only, omitting immutable digest, policy generation, and scanner database generation.",
+    "RC4_EXCEPTION_SCOPE": "Exception lookup matches only artifact kind and name, ignoring digest, environment, and expiry.",
+    "RC5_PERMIT_INTEGRITY": "Authorization permits are unsigned compatibility strings and verification ignores expiry and current policy generation.",
+    "RC6_AUDIT_DURABILITY": "The audit writer intentionally drops deny decisions, so security evidence is incomplete across process invocations."
+  },
+  "defects": [
+    {"id":"D01","component":"package-adapter","observable_failure":"A direct file: package source is admitted without being present in the trusted package-source set.","root_cause":"RC1_INGRESS_BOUNDARY","partial_fix_trap":"Blocking only apt/dnf wrapper names leaves the adapter escape hatch usable by local package installs."},
+    {"id":"D02","component":"dependency-adapter","observable_failure":"A direct HTTP(S) dependency URL is admitted even though the URL is not an approved dependency repository.","root_cause":"RC1_INGRESS_BOUNDARY","partial_fix_trap":"Checking vulnerability severity after download does not establish source trust for the artifact that entered the build."},
+    {"id":"D03","component":"decision-engine","observable_failure":"A container request with a non-empty but non-sha256 digest string passes the inherited immutable-identity guard.","root_cause":"RC1_INGRESS_BOUNDARY","partial_fix_trap":"Testing only for an empty digest still authorizes mutable or malformed container identities."},
+    {"id":"D04","component":"scanner-decision","observable_failure":"When the scanner reports unavailable, the engine returns ALLOW instead of an enforcement denial.","root_cause":"RC2_SCANNER_FAIL_OPEN","partial_fix_trap":"Logging scanner outage while still returning zero leaves the host admission path fail-open."},
+    {"id":"D05","component":"scanner-decision","observable_failure":"A digest absent from the vulnerability database is treated as ALLOW rather than unknown security evidence.","root_cause":"RC2_SCANNER_FAIL_OPEN","partial_fix_trap":"Treating an unknown digest as severity NONE makes missing data indistinguishable from a verified clean result."},
+    {"id":"D06","component":"scanner-cache","observable_failure":"A fail-open scanner-unavailable ALLOW is eligible for the same persistent cache path as evidence-backed decisions.","root_cause":"RC2_SCANNER_FAIL_OPEN","partial_fix_trap":"Changing only the immediate outage response still leaves previously cached fail-open admissions reusable."},
+    {"id":"D07","component":"scanner-cache","observable_failure":"An ALLOW created from an unknown scanner result can be cached and replayed without obtaining trustworthy evidence.","root_cause":"RC2_SCANNER_FAIL_OPEN","partial_fix_trap":"Fixing scanner lookup without invalidating unsafe cached decisions preserves the earlier bypass until TTL expiry."},
+    {"id":"D08","component":"decision-cache","observable_failure":"The cache key omits artifact digest and follows kind/name/version/source coordinates instead of immutable artifact identity.","root_cause":"RC3_CACHE_BINDING","partial_fix_trap":"Adding digest checks only for containers in the engine does not stop cache reuse under a mutable tag."},
+    {"id":"D09","component":"decision-cache","observable_failure":"A container tag that moves from a clean digest to a vulnerable digest can reuse the earlier cached ALLOW.","root_cause":"RC3_CACHE_BINDING","partial_fix_trap":"Scanning the first pull correctly is insufficient when the cache remains keyed by tag-level coordinates."},
+    {"id":"D10","component":"decision-cache","observable_failure":"Changing policy_version does not invalidate an otherwise unexpired cached decision.","root_cause":"RC3_CACHE_BINDING","partial_fix_trap":"Reading the new policy on every invocation does not matter if lookup returns a decision produced under the old generation."},
+    {"id":"D11","component":"decision-cache","observable_failure":"Changing scanner_db_version does not invalidate an otherwise unexpired cached decision.","root_cause":"RC3_CACHE_BINDING","partial_fix_trap":"Refreshing the vulnerability fixture cannot affect admission while the cache ignores the scanner generation."},
+    {"id":"D12","component":"decision-cache","observable_failure":"A cached DENY can remain authoritative after policy or scanner evidence changes because cache freshness is only TTL-based.","root_cause":"RC3_CACHE_BINDING","partial_fix_trap":"Special-casing cached ALLOW entries leaves stale denials and inconsistent operator behavior under the same storage contract."},
+    {"id":"D13","component":"exception-matcher","observable_failure":"An expired vulnerability exception is still selected because lookup ignores the evaluation timestamp.","root_cause":"RC4_EXCEPTION_SCOPE","partial_fix_trap":"Deleting the single expired fixture does not enforce expiry for future waivers."},
+    {"id":"D14","component":"exception-matcher","observable_failure":"A staging exception can authorize the same named artifact in production because environment is ignored.","root_cause":"RC4_EXCEPTION_SCOPE","partial_fix_trap":"Checking only artifact name and kind allows a valid lower-environment waiver to cross deployment boundaries."},
+    {"id":"D15","component":"exception-matcher","observable_failure":"An exception for one immutable digest authorizes a different rebuilt digest with the same artifact name.","root_cause":"RC4_EXCEPTION_SCOPE","partial_fix_trap":"Version or name matching is not a substitute for binding the waiver to the scanned immutable artifact."},
+    {"id":"D16","component":"permit-issuer","observable_failure":"ALLOW returns a permit whose payload is marked UNSIGNED and has no integrity protection.","root_cause":"RC5_PERMIT_INTEGRITY","partial_fix_trap":"Base64 or obscuring the payload would still allow offline mutation without an authenticating MAC/signature."},
+    {"id":"D17","component":"permit-verifier","observable_failure":"Editing permit payload fields not used by the legacy verifier can leave the permit accepted.","root_cause":"RC5_PERMIT_INTEGRITY","partial_fix_trap":"Checking digest and instance alone does not prove the rest of the authorization claims were issued by PolicyGuard."},
+    {"id":"D18","component":"permit-verifier","observable_failure":"A permit remains valid after its encoded expiry because verification ignores current time.","root_cause":"RC5_PERMIT_INTEGRITY","partial_fix_trap":"Issuing a short TTL has no security effect unless verification enforces it."},
+    {"id":"D19","component":"permit-verifier","observable_failure":"A permit issued under an older policy generation verifies after the active policy generation changes.","root_cause":"RC5_PERMIT_INTEGRITY","partial_fix_trap":"Binding only artifact and instance allows authorization minted under obsolete policy to survive a policy rollout."},
+    {"id":"D20","component":"audit-journal","observable_failure":"DENY outcomes are returned to callers but omitted from audit.jsonl, leaving no durable record after the process exits.","root_cause":"RC6_AUDIT_DURABILITY","partial_fix_trap":"Printing denial JSON to stdout does not provide append-only host evidence across separate process invocations."}
+  ],
+  "causal_edges": [
+    {"from":"D01","to":"D04"},{"from":"D02","to":"D05"},{"from":"D03","to":"D08"},
+    {"from":"D04","to":"D06"},{"from":"D05","to":"D07"},{"from":"D06","to":"D10"},{"from":"D07","to":"D11"},
+    {"from":"D08","to":"D09"},{"from":"D09","to":"D11"},{"from":"D10","to":"D12"},{"from":"D11","to":"D12"},
+    {"from":"D05","to":"D13"},{"from":"D13","to":"D14"},{"from":"D14","to":"D15"},
+    {"from":"D15","to":"D16"},{"from":"D16","to":"D17"},{"from":"D17","to":"D18"},{"from":"D18","to":"D19"},
+    {"from":"D04","to":"D20"},{"from":"D05","to":"D20"},{"from":"D09","to":"D20"},{"from":"D14","to":"D20"},{"from":"D19","to":"D20"},
+    {"from":"D01","to":"D13"},{"from":"D03","to":"D16"}
+  ]
+}
