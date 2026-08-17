@@ -8,7 +8,7 @@ Session schema version: `2.4`
 - Controller state: `WORK_PACKAGE_RESEARCH`
 - Working branch: `task/edge-router-runtime`
 - Pull request: `#28`
-- Current task commit at reconciliation: `a2f8ddac0ef3006cde3b697c7f09056b169f0164`
+- Logical task snapshot for current creation stage: `6c91b9aca662fa192c144d55c8aee0e693adcc0d`
 - Control-plane commit: `fa2a409e86c4676bd3039df3e4e8339708454fad`
 - Agent-system policy: `2.5`
 - Creator pipeline policy: `1.1`
@@ -23,77 +23,93 @@ Session schema version: `2.4`
 ```text
 CONTROL_PLANE_COMMIT: fa2a409e86c4676bd3039df3e4e8339708454fad
 RULE_SOURCES: TERMINUS_3_AI_INSTRUCTIONS.md; .terminus/AGENT_SYSTEM.md; .terminus/agents/CREATION_CONTROLLER.md; .terminus/agents/CREATION_PIPELINE.md; .terminus/agents/PRODUCTION_AUTHENTICITY.md; .terminus/reviewers/REVIEWER_CHECKLIST.md; .terminus/agents/stage_contracts.json
-ACTIVE_VALIDATORS: validate_agent_system.py; validate_stage_contracts.py; validate_task_complexity.py; validate_runtime_authenticity.py; validate_review_freshness.py; validate_quality_interlock.py; Terminus Edition 3 CI; Terminus Creator Complexity Gate; Terminus Production Authenticity Gate
+ACTIVE_VALIDATORS: .terminus/validate_agent_system.py; .terminus/validate_stage_contracts.py; .terminus/validate_task_complexity.py; .terminus/validate_runtime_authenticity.py; .terminus/validate_review_freshness.py; .terminus/validate_quality_interlock.py; Terminus Edition 3 CI; Terminus Creator Complexity Gate; Terminus Production Authenticity Gate
 CREATION_PROFILE: large_system_strict
 REQUESTED_DOMAIN: production Go HTTP edge-routing and traffic-management runtime; real-time non-Python product
 NETWORK/ENVIRONMENT_CONSTRAINTS: network_mode public; separate verifier; digest-pinned canonical Go runtime; no privileged Docker/capability/socket shortcuts; tmux and asciinema required in agent image
-KNOWN_POLICY_CONFLICTS: none affecting creation-stage routing; final reviewer-checklist freshness remains to be verified at final review
+KNOWN_POLICY_CONFLICTS: none
 NAMING/FRAMING_CONSTRAINT: solver-facing task material must not describe the product using the comparison prohibited by the user request
 ```
 
-## Reconciliation of the existing PR candidate
+## Reconciliation of the pre-workflow task candidate
 
-The files currently under `edge-router-runtime/` were authored before the Edition 3 creation lifecycle was followed. They are retained only as a discarded/pre-workflow design candidate and are not evidence that any producer stage has completed.
+The existing files under `edge-router-runtime/` were authored before the Edition 3 creation lifecycle was followed. They remain a discarded/pre-workflow candidate and are not accepted producer-stage evidence.
 
-The requested task is an Advanced operational Software/Systems task. Under the current creation policy it therefore defaults to `large_system_strict` unless the Creation Controller records a justified smaller profile. The existing candidate does not represent the required strict-scale work package: the original PR candidate had only 1,137 total added lines across task, oracle, verifier and documentation, while strict creation requires at least 3,000 substantive reachable solver-visible runtime/configuration LOC plus production-scale coupled behavior, 20–30 manifestations and organically derived 25–30 F2P cases.
+This Advanced operational Software/Systems task uses `large_system_strict`. The original candidate does not meet the strict work-package shape: strict creation requires at least 3,000 substantive reachable solver-visible runtime/configuration LOC, 20–30 observable manifestations, at least 15 participating in meaningful causal/interdependency relationships, and 25–30 organically derived F2P cases, plus preservation-driven P2P coverage and production-authentic behavior.
 
-No `.terminus/executions/edge-router-runtime/ledger.jsonl` exists. Historical chat statements and the pre-workflow commit are not converted into lifecycle PASS evidence.
+## Rule Resolution — durable execution
 
-## Current CI evidence
+`RULE_RESOLUTION` is now ledger-materialized through the repository's canonical invocation/result/record machinery.
 
-- `Terminus Edition 3 CI` run `32034154404`, task job `95400582147`: task preflight passed; Ruff failed on `edge-router-runtime/tests/test_outputs.py` because `os` is imported but unused. Oracle/NOP/LLMaJ did not run after that failure.
-- `Terminus Production Authenticity Gate` run `32034154343`: failed in repository control-plane policy self-validation (`validate_production_policy.py`) before task-profile validation. This is not attributed to `edge-router-runtime`.
-- `Terminus Creator Complexity Gate` run `32034154336`: its regression suite passed, then repository-wide profile validation failed on the existing `cobol-comp3-python-equiv` task. This is not attributed to `edge-router-runtime`; the current edge-router candidate has no strict design manifest and therefore was not evaluated by that profile validator.
+- Invocation: `inv_66fd6ae81cde9400a2230e790c8d7e75cccb1d237c0375ca378a640e43f453f1`
+- Status: `RULES_RESOLVED`
+- Disposition: `ADVANCE`
+- Record: `rec_db529167d9f7620f1d8a2023315a67c78acc95e4bf48f6b0ebbaaee5ad218ba3`
+- Ledger event: `evt_d7aab08d8fed1baa374e21794bb633b134a57b893ff130e44161b5c67e718fd7`
+- Input/output task snapshot: `6c91b9aca662fa192c144d55c8aee0e693adcc0d`
+- Control-plane evidence: `fa2a409e86c4676bd3039df3e4e8339708454fad`
+- Durable record: `.terminus/executions/edge-router-runtime/inv_66fd6ae81cde9400a2230e790c8d7e75cccb1d237c0375ca378a640e43f453f1.result.json`
+- Ledger: `.terminus/executions/edge-router-runtime/ledger.jsonl`
+- Committed-ledger replay: GitHub Actions run `32040419728`, job `95418624275`, PASS; controller resolved the next action as `WORK_PACKAGE_RESEARCH` owned by `A1_SCENARIO_RESEARCHER`.
 
-## A1 research received
+Temporary GitHub Actions workflows used only to execute/replay the controller in a full Git checkout were removed after validation; they are not part of the task package.
 
-A fresh Scenario Researcher response was returned with `STATUS: CANDIDATES_READY` and four coherent candidates:
+## A1 research received before bounded invocation
+
+A fresh Scenario Researcher response previously returned four coherent work-package candidates:
 
 1. `ATOMIC_CONFIG_CONVERGENCE`
 2. `FAILURE_AWARE_UPSTREAM_POOL`
 3. `PROGRESSIVE_TRAFFIC_POLICY`
 4. `OVERLOAD_ADMISSION_CONTROL`
 
-The research recommends `ATOMIC_CONFIG_CONVERGENCE`. Semantically, that recommendation fits the requested domain and the `large_system_strict` policy: the work package centers one coherent control-to-data-plane convergence problem spanning validation/compilation, immutable generations, revision ordering and fencing, atomic publication/rejection, in-flight request consistency, generation drain/reclaim, durable last-known-good recovery, startup reconstruction and operator-visible revision state. The proposed scale comes from coupled responsibilities rather than unrelated feature accumulation.
+That response recommended `ATOMIC_CONFIG_CONVERGENCE`. Semantically, it is a strong `large_system_strict` direction because validation/compilation, immutable generations, revision ordering and fencing, atomic publication/rejection, request-generation consistency, generation drain/reclaim, durable last-known-good recovery, startup reconstruction, and revision observability form one coupled production responsibility rather than unrelated feature accumulation.
 
-The A1 output is useful creation research and should be reused as input to the bounded A1 execution rather than discarded.
+The earlier response remains useful research context, but it is not itself lifecycle advancement evidence because it predates the canonical A1 invocation. It must not be retroactively wrapped or treated as a recorded PASS.
 
-### A1 provenance disposition
+## Current bounded A1 invocation
 
-The returned A1 prose is **not yet lifecycle advancement evidence** under the current execution-record contract. The earlier controller handoff did not include a machine-generated stage invocation, so the response does not contain the required `invocation_id`, `output_task_commit`, structured `outputs`, and immutable `evidence_refs` defined by `.terminus/agents/schemas/stage_result.schema.json`.
+The canonical controller generated a READY `WORK_PACKAGE_RESEARCH` invocation:
 
-Do not retroactively invent an invocation ID or fabricate a ledger PASS. The smallest repair is to compile a current `WORK_PACKAGE_RESEARCH` invocation through `.terminus/execution/controller_cli.py continue`, then have a fresh A1 context validate/re-emit the already-completed research under that exact invocation and record the resulting stage envelope through `controller_cli.py record`.
+- Invocation: `inv_79d4551ca8b96875e1f37dc7cea565949e1ade639e32fa1b5de68d5a081bf0d8`
+- Stage: `WORK_PACKAGE_RESEARCH`
+- Owner: `A1 Scenario Researcher`
+- Role ID: `A1_SCENARIO_RESEARCHER`
+- Input task snapshot: `6c91b9aca662fa192c144d55c8aee0e693adcc0d`
+- Control-plane commit: `fa2a409e86c4676bd3039df3e4e8339708454fad`
+- Readiness: `READY`
+- Required outputs: `CANDIDATES`, `RECOMMENDATION`, `WHY_THIS_ONE`
+- Legal success status: `CANDIDATES_READY`
+- Success transition: `SYSTEM_ARCHITECTURE`
+- Invocation generation evidence: GitHub Actions run `32040322187`, job `95418358086`
+- Controller state snapshot: `state_7d6fc5390c4c642d5b0f906becc4cabcbcdfea4ffdc84ea8d9e23d501138c47e`
 
-The recommendation remains `ATOMIC_CONFIG_CONVERGENCE` unless the bounded rerun finds a material contradiction.
+A1 evidence boundary from the machine packet:
+
+- allowed: `CONTROL_PLANE_POLICY`, `PUBLIC_REFERENCE`, `SOLVER_VISIBLE_TASK`
+- excluded: `CI_RUNTIME_EVIDENCE`, `CURRENT_REVIEW_PACKET`, `DURABLE_SESSION_STATE`, `FINAL_PACKAGE_EVIDENCE`, `MODEL_TRIAL_EVIDENCE`, `PRIOR_REVIEW_RESULTS`, `PRIVATE_CREATION_DESIGN`, `SOLUTION_ORACLE`, `VERIFIER_PRIVATE`
+- mandatory exact reads: `.terminus/agents/CREATION_PIPELINE.md`, `.terminus/agents/CREATOR_AGENT_REGISTRY.md`, `.terminus/agents/PRODUCTION_AUTHENTICITY.md`, `.terminus/agents/CREATOR_PROMPTS.md`
 
 ## Gate state
 
 | Gate | Status | Evidence / disposition |
 | --- | --- | --- |
-| Rule resolution | RECONCILED, not ledger-materialized | Current control-plane sources read and pinned above |
-| Work package research | SEMANTIC RESULT RECEIVED / PROVENANCE REPAIR REQUIRED | A1 recommended `ATOMIC_CONFIG_CONVERGENCE`; machine invocation/result record missing |
-| System architecture | MISSING | Cannot precede a valid A1 execution record |
+| Rule resolution | `RULES_RESOLVED / ADVANCE` | Canonical record + hash-chained ledger; replay PASS |
+| Work package research | `READY / INVOCATION GENERATED` | `inv_79d4551c...`; must execute in fresh A1 producer context |
+| System architecture | MISSING | Cannot start before a valid A1 execution record |
 | Defect topology | MISSING | Cannot precede clean A2 architecture |
-| Environment build | MISSING | Existing task environment is pre-workflow candidate only |
+| Environment build | MISSING | Existing environment is pre-workflow candidate only |
 | Reference solution | MISSING | Existing solution is pre-workflow candidate only |
 | Verifier build | MISSING | Existing tests are pre-workflow candidate only |
-| Human writing calibration | MISSING | No valid A6 calibration pair/profile for this task |
+| Human writing calibration | MISSING | No valid A6 calibration/profile yet |
 | Instruction draft | MISSING | Existing instruction is pre-workflow candidate only |
-| Q1/Q2/Q3/Q7 | MISSING | Not valid before rebuilt producer artifacts exist |
+| Q1/Q2/Q3/Q7 | MISSING | Not eligible yet |
 | Assembly / complexity / authenticity | MISSING | Not eligible yet |
-| Deterministic validation | MISSING | Oracle/NOP were never reached in current CI |
-| Freeze / Q4 / Q6 / Pre-LLMaJ / model gates | MISSING | Not eligible |
+| Deterministic validation | MISSING | Not eligible yet |
+| Freeze / Q4 / Q6 / Pre-LLMaJ / model gates | MISSING | Not eligible yet |
 
-## Next bounded invocation
+## Current blocker and resume condition
 
-`WORK_PACKAGE_RESEARCH` — owner `A1 Scenario Researcher` in a separate fresh role context, this time generated through the machine stage-invocation contract.
+The current ChatGPT context is the CI Orchestrator. `.terminus/agents/CI_ORCHESTRATOR.md` and `.terminus/agents/INVOKE.md` prohibit reusing this controller context as the A1 producer. A fresh role-specific repository-connected chat must execute `inv_79d4551ca8b96875e1f37dc7cea565949e1ade639e32fa1b5de68d5a081bf0d8` under its machine-defined evidence boundary and return a schema-valid stage result envelope for task snapshot `6c91b9aca662fa192c144d55c8aee0e693adcc0d`.
 
-The bounded rerun should use the existing A1 research as supporting input/evidence and should not redo broad ideation unless validation reveals a material gap. It must return the exact legal stage result envelope and stop before `SYSTEM_ARCHITECTURE`.
-
-## Current blocker
-
-The current ChatGPT context is acting as the CI Orchestrator. `.terminus/agents/CI_ORCHESTRATOR.md` and `.terminus/agents/INVOKE.md` prohibit reusing this controller context as the routed A1 producer context. This execution surface also cannot run the repository-local controller CLI because the local runtime has no network path to clone the GitHub repository.
-
-## Resume condition
-
-Generate the bounded `WORK_PACKAGE_RESEARCH` invocation in a repository-local/connected execution surface, run the A1 producer under that exact invocation using the existing research as input, record the schema-valid result, then return the invocation/result/record identity to the Orchestrator. Only then route to `SYSTEM_ARCHITECTURE`.
+After the A1 result is returned, the Orchestrator will validate and record it through the same canonical execution machinery. Only a valid A1 `CANDIDATES_READY / ADVANCE` record may route the task to `SYSTEM_ARCHITECTURE`.
