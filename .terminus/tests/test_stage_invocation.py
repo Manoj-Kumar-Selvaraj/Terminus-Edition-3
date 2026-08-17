@@ -88,10 +88,7 @@ def test_all_registered_stages_compile_from_machine_contract() -> None:
             packet["output_contract"]["allowed_status_values"]
             == stage["output_contract"]["status_values"]
         )
-        assert (
-            packet["routing"]["success_transition"]
-            == stage["success_transition"]
-        )
+        assert packet["routing"]["success_transition"] == stage["success_transition"]
 
 
 def test_q8_perspectives_are_separate_solver_visible_only_packets() -> None:
@@ -127,10 +124,7 @@ def test_external_gate_owners_are_explicit() -> None:
         authority.primary_role_for_stage("OFFICIAL_MODEL_TRIALS")
         == "OFFICIAL_MODEL_EVALUATION_GATE"
     )
-    assert (
-        authority.primary_role_for_stage("DIFFICULTY_ASSESSMENT")
-        == "DIFFICULTY_REVIEWER"
-    )
+    assert authority.primary_role_for_stage("DIFFICULTY_ASSESSMENT") == "DIFFICULTY_REVIEWER"
 
 
 def test_controller_observer_cannot_execute_producer_stage() -> None:
@@ -218,21 +212,30 @@ def test_unavailable_control_plane_commit_fails_closed() -> None:
         )
 
 
-def test_effective_stage_overlay_is_bound_to_control_plane_commit(
+@pytest.mark.parametrize(
+    "relative",
+    [
+        ".terminus/agents/human_writing_stage_overlay.json",
+        ".terminus/retrieval/stage_overlay.py",
+        ".terminus/retrieval/policy.py",
+    ],
+)
+def test_effective_stage_overlay_surface_is_bound_to_control_plane_commit(
     monkeypatch: pytest.MonkeyPatch,
+    relative: str,
 ) -> None:
     builder = StageInvocationBuilder(ROOT)
-    overlay = (ROOT / ".terminus" / "agents" / "human_writing_stage_overlay.json").resolve()
+    target = (ROOT / relative).resolve()
     original_read_bytes = Path.read_bytes
 
     def drifted_read_bytes(path: Path) -> bytes:
         content = original_read_bytes(path)
-        if path.resolve() == overlay:
+        if path.resolve() == target:
             return content + b"\n"
         return content
 
     monkeypatch.setattr(Path, "read_bytes", drifted_read_bytes)
-    with pytest.raises(ValueError, match="human_writing_stage_overlay.json"):
+    with pytest.raises(ValueError, match=re.escape(relative)):
         builder.build(
             _context("RULE_RESOLUTION"),
             {"CREATION_REQUEST": "create"},
