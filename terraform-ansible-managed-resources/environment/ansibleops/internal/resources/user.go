@@ -111,7 +111,7 @@ func (r *userResource) Delete(ctx context.Context, req resource.DeleteRequest, r
 	if resp.Diagnostics.HasError() {
 		return
 	}
-	_ = execute(ctx, r.rt, ansible.UserTask("remove local user", stringValue(state.Name), "absent", 0, "", nil, "", "", false, boolValue(state.RemoveHome, false)), &resp.Diagnostics)
+	_ = execute(ctx, r.rt, ansible.UserTask("remove local user", stringValue(state.Name), "absent", 0, "", nil, "", "", false, !boolValue(state.RemoveHome, false)), &resp.Diagnostics)
 }
 func (r *userResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
 	resource.ImportStatePassthroughID(ctx, path.Root("name"), req, resp)
