@@ -1,0 +1,132 @@
+name: Terminus Human Writing Calibration CI
+
+on:
+  pull_request:
+    paths:
+      - '.terminus/human_writing/**'
+      - '.terminus/agents/HUMAN_WRITING_DATASET_POLICY.md'
+      - '.terminus/agents/HUMAN_WRITING_RESEARCHER.md'
+      - '.terminus/agents/INSTRUCTION_POLICY.md'
+      - '.github/workflows/terminus-human-writing-calibration-ci.yml'
+  push:
+    branches: [main]
+    paths:
+      - '.terminus/human_writing/**'
+      - '.terminus/agents/HUMAN_WRITING_DATASET_POLICY.md'
+      - '.terminus/agents/HUMAN_WRITING_RESEARCHER.md'
+      - '.terminus/agents/INSTRUCTION_POLICY.md'
+      - '.github/workflows/terminus-human-writing-calibration-ci.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  validate-human-writing-calibration:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+
+      - name: Install pinned lint tool
+        run: python -m pip install --quiet ruff==0.14.10
+
+      - name: Compile human-writing subsystem
+        run: |
+          python -m py_compile \
+            .terminus/human_writing/calibration.py \
+            .terminus/human_writing/calibration_cli.py \
+            .terminus/human_writing/corpus_cache.py \
+            .terminus/human_writing/contamination.py \
+            .terminus/human_writing/evaluation.py \
+            .terminus/human_writing/learning_loop.py \
+            .terminus/human_writing/learning_cli.py \
+            .terminus/human_writing/preference_store.py \
+            .terminus/human_writing/test_calibration.py \
+            .terminus/human_writing/test_learning_loop.py
+
+      - name: Lint human-writing subsystem
+        run: |
+          ruff check \
+            .terminus/human_writing/calibration.py \
+            .terminus/human_writing/calibration_cli.py \
+            .terminus/human_writing/corpus_cache.py \
+            .terminus/human_writing/contamination.py \
+            .terminus/human_writing/evaluation.py \
+            .terminus/human_writing/learning_loop.py \
+            .terminus/human_writing/learning_cli.py \
+            .terminus/human_writing/preference_store.py \
+            .terminus/human_writing/test_calibration.py \
+            .terminus/human_writing/test_learning_loop.py
+
+      - name: Validate dataset registry and domain profiles
+        run: python .terminus/human_writing/calibration_cli.py --root . validate
+
+      - name: Run calibration regression tests
+        run: python .terminus/human_writing/test_calibration.py
+
+      - name: Run learning-loop regression tests
+        run: python .terminus/human_writing/test_learning_loop.py
+
+      - name: Smoke deterministic task pair
+        run: |
+          python .terminus/human_writing/calibration_cli.py --root . plan \
+            --task-id ci-smoke \
+            --domain 'kubernetes terraform recovery' \
+            --output /tmp/calibration.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          value = json.loads(Path('/tmp/calibration.json').read_text())
+          assert value['independence']['status'] == 'PASS'
+          assert value['domain_profile'] in {'platform_cloud', 'sre_incident'}
+          assert value['writer']['calibration_id'] != value['reviewer']['calibration_id']
+          assert not (
+              set(value['writer']['local_seed_sample_ids'])
+              & set(value['reviewer']['local_seed_sample_ids'])
+          )
+          kinds = [sample['kind'] for sample in value['reviewer']['local_seed_samples']]
+          assert 'hard_positive' in kinds and 'hard_negative' in kinds
+          PY
+
+      - name: Smoke local cache and retrieval
+        run: |
+          cat > /tmp/hw-cache.jsonl <<'JSONL'
+          {"dataset_id":"tulu3-constraint-preferences","source_id":"ci-constraint-1","source_url":"https://example.invalid/ci-constraint-1","domain":"kubernetes recovery","artifact_type":"preference_pair","role_signal":"reviewer","structural_summary":"restart requirement omitted by rejected response"}
+          JSONL
+          python .terminus/human_writing/learning_cli.py --root . cache-ingest \
+            --input /tmp/hw-cache.jsonl --cache /tmp/hw.sqlite3
+          python .terminus/human_writing/learning_cli.py --root . cache-search \
+            --query 'kubernetes restart recovery' --role-signal reviewer \
+            --cache /tmp/hw.sqlite3 --output /tmp/hw-search.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          rows = json.loads(Path('/tmp/hw-search.json').read_text())
+          assert rows and rows[0]['source_id'] == 'ci-constraint-1'
+          assert 'retained_text' not in rows[0]
+          PY
+
+      - name: Smoke blind A/B and adapter fail-closed state
+        run: |
+          printf '%s\n' 'Baseline instruction with all required behavior.' > /tmp/baseline.md
+          printf '%s\n' 'Calibrated instruction with all required behavior.' > /tmp/calibrated.md
+          python .terminus/human_writing/learning_cli.py --root . ab-prepare \
+            --task-id ci-smoke --baseline /tmp/baseline.md \
+            --calibrated /tmp/calibrated.md \
+            --requirement-contract-sha256 aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa \
+            --output /tmp/ab-public.json --sealed-mapping-output /tmp/ab-mapping.json
+          python .terminus/human_writing/learning_cli.py --root . adapter-readiness \
+            --state /tmp/empty-outcomes.jsonl --output /tmp/adapter.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          public = json.loads(Path('/tmp/ab-public.json').read_text())
+          mapping = json.loads(Path('/tmp/ab-mapping.json').read_text())
+          adapter = json.loads(Path('/tmp/adapter.json').read_text())
+          assert set(public['variants']) == {'A', 'B'}
+          assert set(mapping['mapping'].values()) == {'baseline', 'calibrated'}
+          assert adapter['status'] == 'NOT_READY'
+          assert adapter['enabled'] is False
+          PY

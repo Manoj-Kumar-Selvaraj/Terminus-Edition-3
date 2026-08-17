@@ -1,0 +1,30 @@
+{
+  "schema_version": "1.0",
+  "dataset_id": "github-human-codereview",
+  "audit_date": "2026-08-17",
+  "status": "HOLD_DISABLED",
+  "evidence": [
+    {
+      "claim": "Current Hugging Face dataset metadata reports license=other.",
+      "source": "current dataset card metadata",
+      "weight": "HIGH"
+    },
+    {
+      "claim": "The dataset README states source repositories were selected from permissively licensed projects.",
+      "source": "current dataset README",
+      "weight": "MEDIUM"
+    },
+    {
+      "claim": "A historical README revision declared license=mit, but the current card no longer exposes that license.",
+      "source": "dataset history",
+      "weight": "MEDIUM"
+    }
+  ],
+  "decision": "Do not use this corpus in Terminus calibration until the dataset-level redistribution/training license and per-record provenance obligations are resolved consistently.",
+  "reenable_requirements": [
+    "current dataset-level license is explicit and compatible with intended calibration/training use",
+    "source-repository license/provenance fields are retained per record",
+    "repository owner approves enabling the source",
+    "dataset_registry.json is updated in a reviewed commit"
+  ]
+}

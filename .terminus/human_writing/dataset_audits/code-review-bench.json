@@ -1,0 +1,30 @@
+{
+  "schema_version": "1.0",
+  "dataset_id": "code-review-bench-human-annotations",
+  "audit_date": "2026-08-17",
+  "status": "APPROVED_REVIEWER_ONLY",
+  "license": "CC-BY-4.0",
+  "evidence": [
+    {
+      "claim": "Current dataset card reports CC-BY-4.0.",
+      "source": "current Hugging Face dataset card",
+      "weight": "HIGH"
+    },
+    {
+      "claim": "Offline split contains expert-identified review issues and separate human annotation files score factual accuracy, relevance, actionability, severity and overall quality.",
+      "source": "current dataset card",
+      "weight": "HIGH"
+    }
+  ],
+  "allowed_use": [
+    "low-weight reviewer calibration for technical review quality judgment",
+    "holdout/evaluation examples with provenance",
+    "structural observations about actionable/relevant review"
+  ],
+  "prohibited_use": [
+    "writer voice imitation",
+    "copying bot review wording into task instructions",
+    "treating model-generated bot suggestions as human prose"
+  ],
+  "decision": "Enable at reviewer weight 0.05; use human expert/annotation fields preferentially and retain attribution/provenance."
+}

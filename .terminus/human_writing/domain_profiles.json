@@ -1,0 +1,53 @@
+{
+  "schema_version": "1.0",
+  "profiles": [
+    {
+      "id": "general",
+      "match_tokens": [],
+      "artifact_types": ["issue", "change_request", "incident", "maintenance"],
+      "description": "Fallback profile for mixed engineering work."
+    },
+    {
+      "id": "sre_incident",
+      "match_tokens": ["sre", "incident", "outage", "recovery", "availability", "alerting", "oncall", "failover", "observability"],
+      "artifact_types": ["incident", "operational_report", "change_request"],
+      "description": "Operational reliability, incidents, recovery and availability work."
+    },
+    {
+      "id": "platform_cloud",
+      "match_tokens": ["terraform", "kubernetes", "aws", "azure", "gcp", "jenkins", "devops", "platform", "infrastructure", "cloud", "helm"],
+      "artifact_types": ["change_request", "maintenance", "incident"],
+      "description": "Cloud/platform/IaC engineering changes."
+    },
+    {
+      "id": "data_migration",
+      "match_tokens": ["database", "migration", "cutover", "schema", "data", "etl", "backfill", "warehouse", "sql"],
+      "artifact_types": ["change_request", "migration", "incident"],
+      "description": "Database/data migration and cutover work."
+    },
+    {
+      "id": "distributed_systems",
+      "match_tokens": ["etcd", "kafka", "nats", "consensus", "distributed", "replication", "queue", "raft", "stream"],
+      "artifact_types": ["incident", "change_request", "performance"],
+      "description": "Distributed state, replication and messaging systems."
+    },
+    {
+      "id": "security",
+      "match_tokens": ["security", "authorization", "authentication", "iam", "tls", "secret", "policy", "rbac", "credential"],
+      "artifact_types": ["security_change", "incident", "change_request"],
+      "description": "Security, identity and authorization work."
+    },
+    {
+      "id": "compiler_runtime",
+      "match_tokens": ["compiler", "runtime", "go", "python", "java", "cobol", "parser", "build", "linker"],
+      "artifact_types": ["bug", "regression", "change_request"],
+      "description": "Compiler/runtime/build-system work."
+    },
+    {
+      "id": "application_backend",
+      "match_tokens": ["api", "backend", "django", "node", "service", "payments", "webhook", "application"],
+      "artifact_types": ["bug", "change_request", "incident"],
+      "description": "Application/backend service work."
+    }
+  ]
+}

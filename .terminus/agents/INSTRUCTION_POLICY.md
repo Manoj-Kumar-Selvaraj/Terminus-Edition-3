@@ -1,6 +1,6 @@
 # Terminus Edition 3 Instruction Policy
 
-Instruction policy version: `1.0`
+Instruction policy version: `1.1`
 
 This file is the authoritative detailed policy for authoring, repairing and reviewing solver-visible `instruction.md` content. `TERMINUS_3_AI_INSTRUCTIONS.md` remains the repository-wide Edition 3 task-rule source. `.terminus/AGENT_SYSTEM.md` owns the system-level invariant and routing model; this file specializes that invariant for instruction work.
 
@@ -13,6 +13,38 @@ This policy is consumed by the Instruction Writer, Instruction Reviewer, Q1 Spec
 Edition 3 allows **<=2 short paragraphs or <=20 concise bullets**. For a `large_system_strict` task, use as many concise bullets as materially needed up to 20. Brevity must never cause omission of a material requirement needed for a fair solve.
 
 A substantial task may therefore contain a substantial chain of functional requirements. The problem is not the number of legitimate requirements; the problem is hidden-test-shaped enumeration, repair guidance, or displaced task goals hidden in technical documentation.
+
+## Mandatory dataset-backed calibration
+
+Instruction writing and Instruction Review are calibrated roles. Before either role starts, the current task must have a valid A6 calibration pair governed by `.terminus/agents/HUMAN_WRITING_DATASET_POLICY.md` and generated from `.terminus/human_writing/dataset_registry.json`.
+
+The writer receives only the writer projection. The reviewer receives only the reviewer projection. Their sample/source IDs must be disjoint for the same task. Both projections must bind the same dataset-registry and seed-catalog hashes.
+
+The existing `TASK_WRITING_PROFILE` must carry, at minimum:
+
+- `DATASET_POLICY_VERSION`;
+- `DATASET_REGISTRY_SHA256`;
+- `SEED_CATALOG_SHA256`;
+- `CALIBRATION_PAIR_ID`;
+- `WRITER_CALIBRATION_ID`;
+- `REVIEWER_CALIBRATION_ID`;
+- writer/reviewer sample IDs;
+- `WRITER_REVIEWER_SAMPLE_OVERLAP: []`;
+- external dataset coverage (`FULL` or explicitly accepted `DEGRADED`);
+- human-information-selection, constraint-preservation and anti-template notes.
+
+A missing calibration ID, mismatched manifest hash, non-empty writer/reviewer sample overlap, or silently degraded external coverage is a calibration failure. The role must return control rather than pretending it was trained.
+
+This calibration is **retrieval/preference calibration, not per-task model-weight fine-tuning**. It teaches information selection, requirement preservation and anti-template discrimination. It does not authorize copying source wording or making prose informal for its own sake.
+
+The governing priority is:
+
+1. material requirement completeness and fairness;
+2. technical precision and solver-visible contract integrity;
+3. natural human engineering information selection/grouping;
+4. concision and anti-template cleanup.
+
+A natural-sounding instruction that loses a material requirement is worse than a less elegant complete instruction and must fail review.
 
 ## Required instruction content
 
@@ -156,10 +188,10 @@ Where a structured output is required, the exact externally graded schema belong
 
 ## Role ownership
 
-- **Instruction Writer** — produces/revises `instruction.md` under this policy from the approved solver-visible requirement projection.
+- **Instruction Writer** — produces/revises `instruction.md` under this policy from the approved solver-visible requirement projection and a valid writer calibration projection.
 - **Q1 Spec Gap Repairer** — repairs legitimate verifier->spec gaps without hidden-test leakage or spec-file loopholes.
 - **Q3 Spec Ambiguity Repairer** — clarifies grading-relevant ambiguity while preserving the instruction/docs boundary and implementation freedom.
-- **Instruction Reviewer** — cold semantic review of completeness, fairness, concision, naturalness and leakage.
+- **Instruction Reviewer** — cold semantic review of completeness, fairness, concision, naturalness and leakage using an independent reviewer calibration projection.
 - **Q4 Spec-Test Contract Reviewer** — independently verifies bidirectional requirement/test alignment plus instruction completeness and documentation-boundary integrity only after deterministic freeze through the packet-bound quality interlock.
 - **Human Quality Reviewer** — checks final solver-facing prose for synthetic/benchmark-shaped writing and unsupported claims.
 - **Comprehensive Reviewer** — breadth backstop across the current instruction-related criterion registry.
@@ -170,10 +202,13 @@ The canonical stage metadata, expected inputs/outputs, validators/reviewers, fai
 
 `INSTRUCTION_DRAFT` consumes `APPROVED_SOLVER_VISIBLE_REQUIREMENT_CONTRACT` rather than a loose collection of independently sourced requirement fields. The controller validates its schema/hash/provenance and then projects only the fields A7 needs.
 
+The existing `TASK_WRITING_PROFILE` is the compatibility surface for dataset calibration. Its calibration IDs/hashes are mandatory under this policy even though the high-level stage field name is unchanged.
+
 Role prompts should consume the stage contract and this policy rather than restating this entire document at runtime. Runtime projection should include only the fields and policy excerpts required by the role.
 
 ## Failure routing
 
+- missing/stale dataset calibration, sample overlap or manifest mismatch -> A6 Human Writing Researcher / Creation Controller;
 - missing material solver-visible requirement -> Q1 Spec Gap Repairer;
 - material solver-visible requirement not meaningfully tested -> Q2 Verifier Coverage Repairer;
 - grading-relevant ambiguity -> Q3 Spec Ambiguity Repairer;
