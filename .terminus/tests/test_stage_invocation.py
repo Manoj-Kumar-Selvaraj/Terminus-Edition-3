@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import re
 import subprocess
 import sys
 from pathlib import Path
@@ -21,6 +22,14 @@ CONTROL_COMMIT = subprocess.run(
     capture_output=True,
     text=True,
 ).stdout.strip()
+_AGENT_SYSTEM_TEXT = (ROOT / ".terminus" / "AGENT_SYSTEM.md").read_text(encoding="utf-8")
+_AGENT_SYSTEM_VERSION_MATCH = re.search(
+    r"^Agent-system policy version:\s*`([^`]+)`\s*$",
+    _AGENT_SYSTEM_TEXT,
+    flags=re.MULTILINE,
+)
+assert _AGENT_SYSTEM_VERSION_MATCH is not None
+AGENT_SYSTEM_VERSION = _AGENT_SYSTEM_VERSION_MATCH.group(1)
 
 
 def _policy() -> RetrievalPolicy:
@@ -37,7 +46,7 @@ def _context(
         stage_id=stage,
         role_id=resolved_role,
         control_plane_commit=CONTROL_COMMIT,
-        policy_versions={"agent_system": "2.4"},
+        policy_versions={"agent_system": AGENT_SYSTEM_VERSION},
     )
 
 
@@ -205,6 +214,27 @@ def test_unavailable_control_plane_commit_fails_closed() -> None:
                 role_id="CREATION_CONTROLLER",
                 control_plane_commit="f" * 40,
             ),
+            {"CREATION_REQUEST": "create"},
+        )
+
+
+def test_effective_stage_overlay_is_bound_to_control_plane_commit(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    builder = StageInvocationBuilder(ROOT)
+    overlay = (ROOT / ".terminus" / "agents" / "human_writing_stage_overlay.json").resolve()
+    original_read_bytes = Path.read_bytes
+
+    def drifted_read_bytes(path: Path) -> bytes:
+        content = original_read_bytes(path)
+        if path.resolve() == overlay:
+            return content + b"\n"
+        return content
+
+    monkeypatch.setattr(Path, "read_bytes", drifted_read_bytes)
+    with pytest.raises(ValueError, match="human_writing_stage_overlay.json"):
+        builder.build(
+            _context("RULE_RESOLUTION"),
             {"CREATION_REQUEST": "create"},
         )
 
