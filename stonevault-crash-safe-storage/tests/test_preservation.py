@@ -4,7 +4,7 @@ import os
 import struct
 from pathlib import Path
 
-from test_outputs import BINARY, PRODUCT_ROOT, Session, get, open_failure, put, scan, seed_one
+from test_outputs import BINARY, PRODUCT_ROOT, Session, get, open_failure, put, scan
 
 
 def _checkpoint_snapshot(data_dir: Path, rows: list[tuple[bytes, bytes]]) -> Path:
