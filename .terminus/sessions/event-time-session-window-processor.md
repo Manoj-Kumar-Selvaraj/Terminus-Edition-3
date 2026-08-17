@@ -7,10 +7,10 @@ This is the durable operational checkpoint for one task. Keep it evidence-orient
 ## Identity
 
 - Task: `event-time-session-window-processor`
-- Controller state: `FIXING`
+- Controller state: `FROZEN_CANDIDATE`
 - Working branch: `main`
 - Pull request: `none`
-- Current task commit: pending freeze (Adjudicator `b229a618a5` producer repair)
+- Current task commit: `069b0f2e56b11eb0fda344a82c8b50e0461d6755`
 - Agent-system policy: `2.5`
 - Specialist prompt policy: `2.2`
 - Specialist protocol policy: `2.2`
@@ -40,7 +40,7 @@ KNOWN_POLICY_CONFLICTS: none
 | Ruff verifier | PASS | `tests/test_outputs.py` and `solution/fixed/cli.py` clean |
 | Oracle = 1 | STALE | last Harbor `/tmp/e3-ets/2026-08-17__15-46-13`; rerun after freeze |
 | NOP = 0 | STALE | last Harbor `/tmp/e3-ets/2026-08-17__15-47-24`; rerun after freeze |
-| Freeze | PENDING | producer repair for VE-01..VE-03, CR-01, CR-02 |
+| Freeze | PASS | `069b0f2e56b11eb0fda344a82c8b50e0461d6755` |
 | Q4 Spec-Test Contract Reviewer | STALE | tests/oracle changed; `3fec54c` Q4 historical |
 | Q6 Production Logic Auditor | PASS | environment/task.toml unchanged; scope reuse still eligible |
 | Quality Interlock | STALE | Q4 stale after producer repair |
@@ -56,7 +56,7 @@ KNOWN_POLICY_CONFLICTS: none
 
 ## Current blocker
 
-Producer repair applied for Adjudicator-controlling findings. Next: freeze this task only, Harbor oracle 1 / NOP 0, then cold Q4, Verifier, Comprehensive.
+Frozen at `069b0f2e56b11eb0fda344a82c8b50e0461d6755`. Harbor oracle/NOP on this commit are pending, then cold Q4, Verifier, Comprehensive.
 
 ## Root-cause classification
 
@@ -66,7 +66,7 @@ Producer repair applied for Adjudicator-controlling findings. Next: freeze this 
 
 ## Next action
 
-After freeze: Harbor oracle 1 / NOP 0 with `JOBS_DIR=/tmp/e3-ets`. Then new Q4 packet (Q6 reuse if production scope hash unchanged) and cold Verifier + Comprehensive. Do not edit instruction.md.
+Harbor oracle 1 / NOP 0 on `069b0f2` with `JOBS_DIR=/tmp/e3-ets`. Then new Q4 packet (Q6 reuse if production scope hash still `c52a4631…`) and cold Verifier + Comprehensive. Do not edit instruction.md.
 
 ## Decisions that must survive chat changes
 
