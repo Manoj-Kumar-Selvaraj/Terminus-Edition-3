@@ -1,0 +1,148 @@
+{
+  "schema_version": "3.0",
+  "role": "Model Perspective Difficulty Simulator",
+  "review_id": "event-time-session-window-processor-3fec54c6-difficulty-sim-gpt-8aad19f50c",
+  "task": "event-time-session-window-processor",
+  "task_commit": "3fec54c647e703efea3e10b25d157c27f2267e81",
+  "control_plane_commit": "8ade8b91d26bee3dfcd6dc56e1bca8543f26378f",
+  "protocol_policy_version": "2.2",
+  "prompt_policy_version": "2.2",
+  "role_policy_version": "1.0",
+  "role_contract_hash": "988f3f143cf2c5659dabb6e0031d6404295cc3f63e39bb49af3595902d09cae8",
+  "context_packet": ".terminus/reviews/event-time-session-window-processor/3fec54c6/event-time-session-window-processor-3fec54c6-difficulty-sim-gpt-8aad19f50c.packet.json",
+  "verdict": "PASS",
+  "confidence": "MEDIUM",
+  "evidence_status": "SUFFICIENT",
+  "summary": "Cold GPT_PERSPECTIVE diagnostic only (not official GPT-5.5 / Claude Opus 4.8 trial evidence). Solver-visible inspection shows multiple interacting defects aligned with oncall symptoms; Harbor/oracle was not executed, so FINAL_VERIFIER_RESULT is NOT_RUN. Predicted official difficulty signal is USEFUL: fast search can clear obvious journal/tenant/reset bugs, but watermark ordering and event-time gap logic are easy to leave half-fixed after locally green micro-repros.",
+  "evidence": [
+    {
+      "type": "file",
+      "ref": "event-time-session-window-processor/instruction.md",
+      "observation": "Repair-in-place Python sessionizer under /app/sessions; binding contract, CLI modes, journal/open-state persistence, idempotent digests, catalog-backed last_run/ops-report, warehouse must stay untouched."
+    },
+    {
+      "type": "file",
+      "ref": "event-time-session-window-processor/environment/sessions/notes/oncall.md",
+      "observation": "Oncall lists mixed-tenant closes, late misclassification after high anchor, --reset-output wiping journal, and seq stuck at 1 — maps directly to starter defects found by search."
+    },
+    {
+      "type": "file",
+      "ref": "event-time-session-window-processor/environment/sessions/logs/processor-bounce.log",
+      "observation": "Captured run shows tenants_seen=acme,beta for one u1 key, late events classified on_time, journal rewrite with seq=1, and --reset-output clearing watermark.journal."
+    },
+    {
+      "type": "file",
+      "ref": "event-time-session-window-processor/environment/sessions/src/keys/session_key.py",
+      "observation": "session_key discards tenant_id and returns ('*', user_id), which merges tenants that share a user id."
+    },
+    {
+      "type": "file",
+      "ref": "event-time-session-window-processor/environment/sessions/src/cli.py",
+      "observation": "--reset-output clears watermark.journal; _touch_runtime runs before argv validation; process_events called with use_arrival_gap=True."
+    },
+    {
+      "type": "file",
+      "ref": "event-time-session-window-processor/environment/sessions/src/state/journal.py",
+      "observation": "append_journal write_text-overwrites the journal with hard-coded seq=1 instead of appending monotonic seq."
+    },
+    {
+      "type": "file",
+      "ref": "event-time-session-window-processor/environment/sessions/src/engine/pipeline.py",
+      "observation": "track.record updates max_observed before classify_lateness, violating contract advance order (compare then update)."
+    },
+    {
+      "type": "file",
+      "ref": "event-time-session-window-processor/environment/sessions/src/runtime/watermark_track.py",
+      "observation": "record() assigns event_time_ms outright instead of observe()/max, allowing max_observed and watermark to step backward."
+    },
+    {
+      "type": "file",
+      "ref": "event-time-session-window-processor/environment/sessions/src/windows/assign.py",
+      "observation": "When use_arrival_gap is true, gap closes use arrival_index*1000 synthetic times rather than event_time_ms."
+    },
+    {
+      "type": "file",
+      "ref": "event-time-session-window-processor/environment/sessions/docs/session-contract.md",
+      "observation": "Contract fully specifies event-time half-open sessions, lateness/watermark order, journal non-decreasing watermark, CLI exit-2 pre-mutation, catalog gap overlay, and idempotent re-runs."
+    },
+    {
+      "type": "rule",
+      "ref": ".terminus/agents/QUALITY_AGENT_PROMPTS.md#Q8",
+      "observation": "No disposable Harbor/oracle run was performed; EXECUTION set to SIMULATION_NOT_EXECUTED and verifier result NOT_RUN rather than inventing a score."
+    }
+  ],
+  "findings": [
+    {
+      "id": "Q8-GPT-01",
+      "severity": "MEDIUM",
+      "status": "INFERRED",
+      "criterion": "GPT-style shortcut risk after locally green symptoms",
+      "evidence_refs": [
+        "event-time-session-window-processor/environment/sessions/src/keys/session_key.py",
+        "event-time-session-window-processor/environment/sessions/src/cli.py",
+        "event-time-session-window-processor/environment/sessions/src/state/journal.py",
+        "event-time-session-window-processor/environment/sessions/src/engine/pipeline.py"
+      ],
+      "why_it_matters": "A Codex-like pass can patch tenant key, reset-output, and journal rewrite to match oncall notes, then stop while watermark-before-classify and arrival-gap still fail hidden event-time cases.",
+      "minimal_remediation": "N/A for Q8 diagnostic; official trials still required. Authors should ensure verifier cases cover watermark order and event-time gaps beyond oncall symptoms.",
+      "regression_risk": "none (read-only diagnostic)"
+    },
+    {
+      "id": "Q8-GPT-02",
+      "severity": "LOW",
+      "status": "OBSERVED",
+      "criterion": "Execution surface for disposable Harbor verifier",
+      "evidence_refs": [
+        ".terminus/agents/QUALITY_AGENT_PROMPTS.md#Q8"
+      ],
+      "why_it_matters": "Without an honest Harbor/oracle run, this packet cannot claim pass/fail; prediction remains strategy-based.",
+      "minimal_remediation": "Optional later disposable Harbor solve+verify after both Q8 perspectives freeze; never treat this JSON as official difficulty evidence.",
+      "regression_risk": "none"
+    }
+  ],
+  "missing_evidence": [
+    "Disposable Harbor/oracle or agent-solve verifier run under GPT_PERSPECTIVE (intentionally not executed in this cold diagnostic)."
+  ],
+  "change_scope": [],
+  "do_not_change": [
+    "event-time-session-window-processor/ (task tree untouched)",
+    "packet file event-time-session-window-processor-3fec54c6-difficulty-sim-gpt-8aad19f50c.packet.json",
+    "solution/",
+    "tests/",
+    "official difficulty tier metadata"
+  ],
+  "next_gate": "Complete isolated CLAUDE_PERSPECTIVE Q8 if not already frozen; Orchestrator may compare perspectives; do not set official tier from this simulation.",
+  "role_output": {
+    "PERSPECTIVE": "GPT_PERSPECTIVE",
+    "EXECUTION": "SIMULATION_NOT_EXECUTED",
+    "DIAGNOSTIC_SUMMARY": "Simulated GPT/Codex cold solve (not official GPT-5.5 evidence): ripgrep/oncall-first triage finds concrete starter defects—tenant-blind session_key, journal overwrite with seq=1, --reset-output wiping watermark.journal, watermark updated before lateness classify, max_observed assigned not maximized, and use_arrival_gap synthetic timing. Likely trajectory is patch those files with tiny local JSONL repros and stop when bounce-log symptoms clear, under-testing catalog gap overlay, --feed vs --input ordering, exit-2 pre-touch, and idempotent digest constraints.",
+    "FIRST_DIAGNOSIS": "Processor is mostly wired but violates event-time/session identity and persistence: sessions keyed by user only; journal rewrite + reset clears watermark; lateness uses post-update watermark; gap path can use arrival index instead of event time.",
+    "FILES_TOUCHED": [
+      "environment/sessions/src/keys/session_key.py (hypothetical)",
+      "environment/sessions/src/cli.py (hypothetical)",
+      "environment/sessions/src/state/journal.py (hypothetical)",
+      "environment/sessions/src/engine/pipeline.py (hypothetical)",
+      "environment/sessions/src/runtime/watermark_track.py (hypothetical)",
+      "environment/sessions/src/windows/assign.py or call site use_arrival_gap (hypothetical)",
+      "local scratch JSONL repros under /tmp (hypothetical)"
+    ],
+    "SHORTCUTS_ATTEMPTED": [
+      "Grep oncall tokens (mixed tenant, reset-output, seq, late) and patch only matching call sites",
+      "Micro-repro one-tenant then two-tenant u1 feeds until sessions.jsonl looks right",
+      "Fix journal append/seq and stop once watermark.journal length grows",
+      "Flip use_arrival_gap or delete arrival branch only if a local gap sample still fails",
+      "Risk: declare done when bounce-log symptoms disappear without exhaustive contract matrix"
+    ],
+    "FIRST_MEANINGFUL_DIVERGENCE": "After fixing session_key + journal rewrite + reset-output, a tidy sorted --input sample looks correct; remaining failures appear only on --feed out-of-order late windows and restart/idempotency where classify-before-observe and non-decreasing watermark still matter.",
+    "FINAL_VERIFIER_RESULT": "NOT_RUN",
+    "LIKELY_REASONING_WALLS": [
+      "Watermark compare-then-update ordering vs updating max_observed first",
+      "Late-but-allowed membership vs too-late when open session/gap windows interact with catalog enterprise 45000 gap overlay",
+      "Crash-consistent journal append + open_sessions atomic snapshot across bounce",
+      "CLI must exit 2 on unknown/omitted modes without creating journal/outputs",
+      "Byte-identical sessions/late digests on second identical run from clean baseline"
+    ],
+    "ENVIRONMENT_TOOL_FRICTION": "Large multi-module Python tree under environment/sessions/src with many supporting packages; friction is navigation and false leads in ledger/catalog helpers, not missing toolchain. No Harbor run in this diagnostic, so container/catalog.sqlite bake issues were not timed.",
+    "PREDICTED_OFFICIAL_SIGNAL": "USEFUL"
+  }
+}

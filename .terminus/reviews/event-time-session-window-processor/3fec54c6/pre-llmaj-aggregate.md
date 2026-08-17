@@ -15,7 +15,7 @@ INSTRUCTION: PASS
 DOCUMENTATION: PASS
 COMPREHENSIVE_REVIEW: APPROVE
 CHECKLIST_COVERAGE: 100%
-ADJUDICATIONS: none current; 3fec54c6-adjudication-b229a618a5 is STALE (inputs were pre-rerun Verifier REVISE / Comprehensive REQUEST_CHANGES)
+ADJUDICATIONS: none current; 3fec54c6-adjudication-b229a618a5 is STALE vs the PASS/APPROVE specialist set
 OPEN_FINDINGS: Q4 advisory LOWs; VE-A01..A03 LOW; official ×10 trials deferred
 POLICY_CONFLICTS: none blocking
 ```
@@ -24,4 +24,4 @@ Harbor oracle `/tmp/e3-ets/2026-08-17__15-46-13` reward 1.0 (40/40). NOP `/tmp/e
 
 Quality Interlock: cold Q4 PASS on exact `3fec54c6` + Q6 PASS retained via production scope `c52a4631…`.
 
-Current specialist/Comprehensive reports on this commit do not disagree at blocking severity. Harbor LLMaJ and official GPT×5/Claude×5 remain deferred.
+Q8 aggregate COMPLETE (both USEFUL, SIMULATION_NOT_EXECUTED). Harbor LLMaJ and official GPT×5/Claude×5 remain deferred.
