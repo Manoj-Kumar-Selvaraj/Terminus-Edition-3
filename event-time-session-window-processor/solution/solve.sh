@@ -1,10 +1,11 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Oracle installs the corrected modules, then exercises the public operator CLI.
-cp /solution/fixed/processor.py /app/sessions/src/processor.py
-cp /solution/fixed/state.py /app/sessions/src/state.py
+cp /solution/fixed/session_key.py /app/sessions/src/keys/session_key.py
+cp /solution/fixed/journal.py /app/sessions/src/state/journal.py
+cp /solution/fixed/pipeline.py /app/sessions/src/engine/pipeline.py
 cp /solution/fixed/cli.py /app/sessions/src/cli.py
+cp /solution/fixed/watermark_track.py /app/sessions/src/runtime/watermark_track.py
 
 rm -f /app/sessions/data/watermark.journal \
       /app/sessions/data/open_sessions.json \

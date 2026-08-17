@@ -15,9 +15,8 @@ COPY requirements.lock /tmp/requirements.lock
 RUN pip install --no-cache-dir --no-deps -r /tmp/requirements.lock \
     && rm -f /tmp/requirements.lock
 
-RUN mkdir -p /app/sessions /logs/verifier /tests
 COPY test.sh test_outputs.py /tests/
 COPY fixtures/ /tests/fixtures/
 RUN chmod 0755 /tests/test.sh
 
-WORKDIR /app/sessions
+WORKDIR /app

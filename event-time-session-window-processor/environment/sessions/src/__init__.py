@@ -1,1 +1,1 @@
-"""Session processor package."""
+"""Click sessionizer package. Public operators use bin/run-sessions."""

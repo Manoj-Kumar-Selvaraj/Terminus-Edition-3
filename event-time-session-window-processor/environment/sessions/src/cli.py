@@ -4,8 +4,14 @@ import argparse
 import sys
 from pathlib import Path
 
-from .config import load_config
-from .paths import (
+from src.config import load_config
+from src.engine.empty import apply_empty_check
+from src.engine.pipeline import process_events
+from src.ingest.decoder import read_events
+from src.ingest.order import order_for_mode
+from src.metrics.counters import RunCounters
+from src.ops.desk import persist_desk
+from src.paths import (
     CONFIG_PATH,
     JOURNAL_PATH,
     LATE_OUT,
@@ -13,17 +19,29 @@ from .paths import (
     REJECTS_OUT,
     SESSIONS_OUT,
 )
-from .processor import process_events, read_events, sort_for_input
-from .state import load_state, save_open_sessions
+from src.sinks.jsonl import append_jsonl, truncate_jsonl
+from src.state.recover import load_state
+
+
+def _touch_runtime() -> None:
+    JOURNAL_PATH.parent.mkdir(parents=True, exist_ok=True)
+    SESSIONS_OUT.parent.mkdir(parents=True, exist_ok=True)
+    if not JOURNAL_PATH.exists():
+        JOURNAL_PATH.write_text("", encoding="utf-8")
 
 
 def _reset_outputs() -> None:
     for path in (SESSIONS_OUT, LATE_OUT, REJECTS_OUT):
-        path.parent.mkdir(parents=True, exist_ok=True)
-        path.write_text("", encoding="utf-8")
+        truncate_jsonl(path)
 
 
 def main(argv: list[str] | None = None) -> int:
+    argv = list(sys.argv[1:] if argv is None else argv)
+    _touch_runtime()
+    if "--reset-output" in argv:
+        _reset_outputs()
+        if JOURNAL_PATH.exists():
+            JOURNAL_PATH.write_text("", encoding="utf-8")
     parser = argparse.ArgumentParser(prog="run-sessions", add_help=True)
     parser.add_argument("--input", type=Path, default=None)
     parser.add_argument("--feed", type=Path, default=None)
@@ -36,21 +54,12 @@ def main(argv: list[str] | None = None) -> int:
         return code if code else 0
 
     cfg = load_config(CONFIG_PATH)
-    JOURNAL_PATH.parent.mkdir(parents=True, exist_ok=True)
-    SESSIONS_OUT.parent.mkdir(parents=True, exist_ok=True)
-
-    if args.reset_output:
-        _reset_outputs()
-
     state = load_state(JOURNAL_PATH, OPEN_SESSIONS_PATH)
+    counters = RunCounters()
 
     if args.empty_check and args.input is None and args.feed is None:
-        SESSIONS_OUT.parent.mkdir(parents=True, exist_ok=True)
-        if not SESSIONS_OUT.exists():
-            SESSIONS_OUT.write_text("", encoding="utf-8")
-        if not LATE_OUT.exists():
-            LATE_OUT.write_text("", encoding="utf-8")
-        save_open_sessions(OPEN_SESSIONS_PATH, state)
+        apply_empty_check(SESSIONS_OUT, LATE_OUT, OPEN_SESSIONS_PATH, state)
+        persist_desk(counters)
         return 0
 
     source = args.feed if args.feed is not None else args.input
@@ -59,24 +68,16 @@ def main(argv: list[str] | None = None) -> int:
         return 2
 
     events, rejects = read_events(source)
+    counters.rejected = len(rejects)
+    counters.source_path = str(source)
+    counters.feed_mode = args.feed is not None
     for rej in rejects:
-        REJECTS_OUT.parent.mkdir(parents=True, exist_ok=True)
-        from .processor import _append_jsonl
+        append_jsonl(REJECTS_OUT, rej)
 
-        _append_jsonl(REJECTS_OUT, rej)
-
-    if args.feed is not None:
-        ordered = events
-        use_arrival_gap = True
-    else:
-        ordered = sort_for_input(events)
-        use_arrival_gap = True  # BUG: still uses arrival-style gap even for --input
-
+    ordered = order_for_mode(events, feed=args.feed is not None)
     if not ordered and not rejects:
-        if not SESSIONS_OUT.exists():
-            SESSIONS_OUT.write_text("", encoding="utf-8")
-        if not LATE_OUT.exists():
-            LATE_OUT.write_text("", encoding="utf-8")
+        apply_empty_check(SESSIONS_OUT, LATE_OUT, OPEN_SESSIONS_PATH, state)
+        persist_desk(counters)
         return 0
 
     process_events(
@@ -85,11 +86,12 @@ def main(argv: list[str] | None = None) -> int:
         state,
         SESSIONS_OUT,
         LATE_OUT,
-        REJECTS_OUT,
         JOURNAL_PATH,
         OPEN_SESSIONS_PATH,
-        arrival_index_for_gap=use_arrival_gap,
+        counters,
+        use_arrival_gap=True,
     )
+    persist_desk(counters)
     return 0
 
 

@@ -1,0 +1,55 @@
+{
+  "schema_version": "1.0",
+  "task": "event-time-session-window-processor",
+  "production_authenticity": {
+    "incident_evidence": [
+      "environment/sessions/notes/oncall.md",
+      "environment/sessions/logs/processor-bounce.log"
+    ],
+    "instruction_evidence_paths": [
+      "/app/sessions/notes/oncall.md",
+      "/app/sessions/logs"
+    ],
+    "stateful_dataset": {
+      "schema": "environment/sessions/sql/schema.sql",
+      "seed": "environment/sessions/sql/seed.sql",
+      "primary_table": "click_event",
+      "min_records": 12000,
+      "max_records": 12000,
+      "variance_queries": {
+        "tenants": {
+          "sql": "SELECT COUNT(DISTINCT tenant_id) FROM click_event",
+          "min": 40
+        },
+        "users": {
+          "sql": "SELECT COUNT(*) FROM click_user",
+          "min": 600
+        },
+        "channels": {
+          "sql": "SELECT COUNT(DISTINCT channel) FROM click_event",
+          "min": 6
+        },
+        "kinds": {
+          "sql": "SELECT COUNT(DISTINCT kind) FROM click_event",
+          "min": 8
+        },
+        "devices": {
+          "sql": "SELECT COUNT(DISTINCT device) FROM click_event",
+          "min": 12
+        },
+        "countries": {
+          "sql": "SELECT COUNT(DISTINCT country) FROM click_event",
+          "min": 15
+        },
+        "pages": {
+          "sql": "SELECT COUNT(DISTINCT page) FROM click_event",
+          "min": 80
+        },
+        "batches": {
+          "sql": "SELECT COUNT(*) FROM ingest_batch",
+          "min": 40
+        }
+      }
+    }
+  }
+}
