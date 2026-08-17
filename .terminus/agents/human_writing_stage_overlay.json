@@ -1,0 +1,92 @@
+{
+  "schema_version": "1.0",
+  "stages": {
+    "HUMAN_WRITING_RESEARCH": {
+      "policy_files_append": [
+        ".terminus/agents/HUMAN_WRITING_DATASET_POLICY.md",
+        ".terminus/agents/human_writing_stage_overlay.json",
+        ".terminus/human_writing/dataset_registry.json",
+        ".terminus/human_writing/domain_profiles.json"
+      ],
+      "input_contract": {
+        "required_fields": [
+          "APPROVED_WORK_PACKAGE",
+          "SOLVER_VISIBLE_REQUIREMENTS",
+          "CURRENT_TIME_BUDGET"
+        ],
+        "optional_fields": [
+          "CURRENT_STATE_CLAIMS",
+          "APPROVED_EXTERNAL_DATASET_CACHE"
+        ]
+      },
+      "output_contract": {
+        "status_values": [
+          "CALIBRATION_READY",
+          "INSUFFICIENT_SOURCE_DIVERSITY",
+          "SOURCE_QUALITY_BLOCKED",
+          "BLOCKED"
+        ],
+        "required_fields": [
+          "DATASET_POLICY_VERSION",
+          "DATASET_REGISTRY_SHA256",
+          "SEED_CATALOG_SHA256",
+          "DOMAIN_PROFILES_SHA256",
+          "DOMAIN_PROFILE",
+          "CALIBRATION_PAIR_ID",
+          "WRITER_CALIBRATION_ID",
+          "REVIEWER_CALIBRATION_ID",
+          "WRITER_SAMPLE_IDS",
+          "REVIEWER_SAMPLE_IDS",
+          "WRITER_REVIEWER_SAMPLE_OVERLAP",
+          "EXTERNAL_DATASET_COVERAGE",
+          "TASK_WRITING_PROFILE"
+        ],
+        "optional_fields": [
+          "CACHE_SOURCE_KEYS_USED",
+          "RAW_SOURCE_KEYS_USED_FOR_CONTAMINATION",
+          "DEGRADED_COVERAGE_APPROVAL",
+          "CURRENT_STATE_EVIDENCE_NOTES"
+        ],
+        "persisted_artifacts": [
+          ".terminus/research/<task>-dataset-calibration.json",
+          ".terminus/research/<task>-task-writing-profile.json"
+        ]
+      },
+      "evidence_required": [
+        "current dataset/catalog/domain-profile hashes",
+        "disjoint writer/reviewer calibration evidence",
+        "explicit external coverage state",
+        "validated task-writing profile"
+      ],
+      "deterministic_validators_append": [
+        ".terminus/human_writing/validate_calibration.py"
+      ],
+      "failure_routes": {
+        "INSUFFICIENT_SOURCE_DIVERSITY": "A6 Human Writing Researcher -> bounded additional retrieval or explicit degraded-coverage decision",
+        "SOURCE_QUALITY_BLOCKED": "Creation Controller -> source/provenance owner",
+        "INVALID_CALIBRATION": "Creation Controller -> A6 Human Writing Researcher"
+      },
+      "stale_on_append": [
+        "dataset registry change",
+        "seed catalog change",
+        "domain profile change",
+        "human-writing stage overlay change"
+      ]
+    },
+    "INSTRUCTION_DRAFT": {
+      "input_contract": {
+        "required_fields_append": [
+          "VALIDATED_HUMAN_WRITING_CALIBRATION"
+        ]
+      },
+      "deterministic_validators_append": [
+        ".terminus/human_writing/validate_calibration.py"
+      ],
+      "stale_on_append": [
+        "human-writing calibration change",
+        "dataset registry change",
+        "domain profile change"
+      ]
+    }
+  }
+}
