@@ -2,7 +2,7 @@
 
 ```text
 STATUS: ASSEMBLED
-TASK_COMMIT: pending-freeze
+TASK_COMMIT: bf0338e23979bd7802473064fd0e02967e3de880
 STRUCTURE: PASS — flat Edition 3 tree with Go agent runtime and Python verifier
 INSTRUCTION_SHAPE: PASS — one short paragraph + six bullets (<=20)
 INSTRUCTION_REQUIREMENT_COMPLETENESS: PASS — work package + preservation + CLI/safety; schemas via binding contract
