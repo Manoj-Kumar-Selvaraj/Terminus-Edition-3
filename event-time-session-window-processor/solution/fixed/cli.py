@@ -42,6 +42,10 @@ def main(argv: list[str] | None = None) -> int:
         code = exc.code if isinstance(exc.code, int) else 2
         return code if code else 0
 
+    if args.input is None and args.feed is None and not args.empty_check:
+        print("error: --input, --feed, or --empty-check required", file=sys.stderr)
+        return 2
+
     directory = TenantDirectory.load()
     if not directory.catalog_ready():
         print("error: operator catalog unavailable", file=sys.stderr)
@@ -88,7 +92,7 @@ def main(argv: list[str] | None = None) -> int:
         JOURNAL_PATH,
         OPEN_SESSIONS_PATH,
         counters,
-        use_arrival_gap=args.feed is not None,
+        use_arrival_gap=False,
         directory=directory,
     )
     finalize_run(counters, state, cfg, directory)

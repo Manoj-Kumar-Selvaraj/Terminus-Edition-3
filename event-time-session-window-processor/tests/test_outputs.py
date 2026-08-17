@@ -30,9 +30,17 @@ HOLD = Path("/tests/fixtures")
 def _clear_runtime() -> None:
     DATA.mkdir(parents=True, exist_ok=True)
     OUT.mkdir(parents=True, exist_ok=True)
-    for path in (JOURNAL, OPEN, SESSIONS, LATE, REJECTS):
+    for path in (JOURNAL, OPEN, SESSIONS, LATE, REJECTS, LAST_RUN, OPS_REPORT):
         if path.exists():
             path.unlink()
+
+
+def _assert_unique_closes(rows: list[dict]) -> None:
+    keys = [
+        (row["tenant_id"], row["user_id"], int(row["start_ms"]), int(row["end_ms"]))
+        for row in rows
+    ]
+    assert len(keys) == len(set(keys))
 
 
 def _run(args: list[str], check: bool = True) -> subprocess.CompletedProcess[str]:
@@ -154,14 +162,41 @@ def test_f2p_missing_source_does_not_create_journal() -> None:
     assert REJECTS.read_text(encoding="utf-8") == "{}\n"
 
 
+def test_f2p_reset_output_without_source_leaves_outputs() -> None:
+    """`--reset-output` without --input/--feed/--empty-check must exit 2 without truncation."""
+    JOURNAL.write_text("keep\n", encoding="utf-8")
+    OPEN.write_text('{"sessions":[]}\n', encoding="utf-8")
+    SESSIONS.write_text("{}\n", encoding="utf-8")
+    LATE.write_text("{}\n", encoding="utf-8")
+    REJECTS.write_text("{}\n", encoding="utf-8")
+    completed = _run(["--reset-output"], check=False)
+    assert completed.returncode == 2
+    assert JOURNAL.read_text(encoding="utf-8") == "keep\n"
+    assert OPEN.read_text(encoding="utf-8") == '{"sessions":[]}\n'
+    assert SESSIONS.read_text(encoding="utf-8") == "{}\n"
+    assert LATE.read_text(encoding="utf-8") == "{}\n"
+    assert REJECTS.read_text(encoding="utf-8") == "{}\n"
+
+
 def test_f2p_empty_check_no_journal_file() -> None:
     """--empty-check must not create or append a watermark journal."""
+    LAST_RUN.write_text('{"warehouse":{"event_count":1}}\n', encoding="utf-8")
+    OPS_REPORT.write_text(
+        '{"catalog":{"available":false},"inventory":{"event_count":1}}\n',
+        encoding="utf-8",
+    )
     _run(["--empty-check"])
     assert SESSIONS.exists()
     assert LATE.exists()
     assert SESSIONS.read_text(encoding="utf-8") == ""
     assert LATE.read_text(encoding="utf-8") == ""
     assert not JOURNAL.exists()
+    expected = _catalog_click_event_count()
+    last_run = json.loads(LAST_RUN.read_text(encoding="utf-8"))
+    report = json.loads(OPS_REPORT.read_text(encoding="utf-8"))
+    assert int(last_run["warehouse"]["event_count"]) == expected
+    assert int(report["inventory"]["event_count"]) == expected
+    assert report["catalog"]["available"] is True
 
 
 def test_f2p_zero_event_file_no_journal_advance() -> None:
@@ -180,7 +215,8 @@ def test_f2p_gap_close_half_open_end() -> None:
         for row in _load_jsonl(SESSIONS)
         if row["tenant_id"] == "acme" and row["user_id"] == "u1"
     ]
-    assert closed
+    _assert_unique_closes(_load_jsonl(SESSIONS))
+    assert len(closed) == 1
     first = closed[0]
     assert first["start_ms"] == 1000
     assert first["end_ms"] == 35000
@@ -513,7 +549,8 @@ def test_p2p_config_max_duration_close() -> None:
     )
     _run(["--reset-output", "--input", str(events)])
     sessions = _load_jsonl(SESSIONS)
-    assert sessions
+    _assert_unique_closes(sessions)
+    assert len(sessions) == 1
     assert sessions[0]["end_ms"] == 10000
     assert sessions[0]["event_ids"] == ["d1"]
     open_snap = json.loads(OPEN.read_text(encoding="utf-8"))
@@ -542,8 +579,9 @@ def test_f2p_holdout_gap_and_tenant() -> None:
     """Holdout input must gap-close alice, watermark-close idle bob, and isolate other/alice."""
     _run(["--reset-output", "--input", str(HOLD / "holdout_sessions.jsonl")])
     sessions = _load_jsonl(SESSIONS)
+    _assert_unique_closes(sessions)
     hold_alice = [row for row in sessions if row["tenant_id"] == "hold" and row["user_id"] == "alice"]
-    assert hold_alice
+    assert len(hold_alice) == 1
     assert hold_alice[0]["event_ids"] == ["h1", "h2", "h3"]
     assert hold_alice[0]["end_ms"] == 55000
     open_snap = json.loads(OPEN.read_text(encoding="utf-8"))
@@ -554,7 +592,7 @@ def test_f2p_holdout_gap_and_tenant() -> None:
     assert other
     assert other[0]["event_ids"] == ["h6"]
     bob = [row for row in sessions if row["tenant_id"] == "hold" and row["user_id"] == "bob"]
-    assert bob
+    assert len(bob) == 1
     assert bob[0]["event_ids"] == ["h4"]
     assert bob[0]["end_ms"] == 45000
     alice_next = [
@@ -591,6 +629,24 @@ def test_f2p_feed_preserves_arrival_order() -> None:
     assert sess["event_ids"] == ["p2"]
 
 
+def test_f2p_feed_event_time_gap_close() -> None:
+    """--feed must still gap-close on event_time_ms, not arrival index."""
+    _run(["--reset-output", "--feed", str(HOLD / "feed_gap.jsonl")])
+    closed = [
+        row
+        for row in _load_jsonl(SESSIONS)
+        if row["tenant_id"] == "acme" and row["user_id"] == "u1"
+    ]
+    _assert_unique_closes(_load_jsonl(SESSIONS))
+    assert len(closed) == 1
+    assert closed[0]["event_ids"] == ["g1"]
+    assert closed[0]["end_ms"] == 31000
+    open_snap = json.loads(OPEN.read_text(encoding="utf-8"))
+    nxt = next(row for row in open_snap["sessions"] if row["user_id"] == "u1")
+    assert nxt["event_ids"] == ["g2"]
+    assert nxt["start_ms"] == 40000
+
+
 def test_f2p_reset_output_keeps_journal() -> None:
     """--reset-output may truncate side files but must leave journal and in-flight sessions."""
     _run(["--reset-output", "--input", str(ROOT / "fixtures" / "sample_basic.jsonl")])
@@ -623,6 +679,7 @@ def test_f2p_closed_session_schema() -> None:
     """Closed session lines must include the contract fields and a positive interval."""
     _run(["--reset-output", "--input", str(ROOT / "fixtures" / "sample_basic.jsonl")])
     rows = _load_jsonl(SESSIONS)
+    _assert_unique_closes(rows)
     assert rows
     row = rows[0]
     assert set(row) >= {
@@ -722,6 +779,11 @@ def test_p2p_schema_malformed_classes() -> None:
 
 def test_p2p_ops_report_uses_warehouse_catalog() -> None:
     """A successful run must refresh last_run.json and ops-report.json from the catalog."""
+    LAST_RUN.write_text('{"warehouse":{"event_count":1}}\n', encoding="utf-8")
+    OPS_REPORT.write_text(
+        '{"catalog":{"available":false},"inventory":{"event_count":1}}\n',
+        encoding="utf-8",
+    )
     _run(["--reset-output", "--input", str(ROOT / "fixtures" / "sample_basic.jsonl")])
     assert LAST_RUN.is_file()
     assert OPS_REPORT.is_file()
@@ -753,7 +815,8 @@ def test_p2p_catalog_enterprise_gap_overlay() -> None:
         for row in _load_jsonl(SESSIONS)
         if row["tenant_id"] == "t00" and row["user_id"] == "u0"
     ]
-    assert standard
+    _assert_unique_closes(_load_jsonl(SESSIONS))
+    assert len(standard) == 1
     assert standard[0]["event_ids"] == ["n1", "n2"]
     assert standard[0]["end_ms"] == 32000
 

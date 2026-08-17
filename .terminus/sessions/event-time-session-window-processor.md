@@ -2,13 +2,15 @@
 
 Session schema version: `2.4`
 
+This is the durable operational checkpoint for one task. Keep it evidence-oriented. Current repository/rules/Git/CI/review provenance override stale prose.
+
 ## Identity
 
 - Task: `event-time-session-window-processor`
-- Controller state: `PRE_LLMAJ`
+- Controller state: `FIXING`
 - Working branch: `main`
 - Pull request: `none`
-- Current task commit: `3fec54c647e703efea3e10b25d157c27f2267e81`
+- Current task commit: pending freeze (Adjudicator `b229a618a5` producer repair)
 - Agent-system policy: `2.5`
 - Specialist prompt policy: `2.2`
 - Specialist protocol policy: `2.2`
@@ -29,48 +31,54 @@ KNOWN_POLICY_CONFLICTS: none
 
 | Gate | Status | Evidence / version |
 | --- | --- | --- |
-| Harbor Oracle | PASS | `/tmp/e3-ets/2026-08-17__15-46-13` reward **1.0** (40/40) |
-| Harbor NOP | PASS | `/tmp/e3-ets/2026-08-17__15-47-24` reward **0.0** |
-| Freeze | PASS | `3fec54c647e703efea3e10b25d157c27f2267e81` |
-| Q4 Spec-Test | PASS | `...-spec-test-contract-0c0f0a111c.json` |
-| Q6 Production Logic | PASS | scope-preserved `c52a4631cd7a23d97a66b566737ae50487e12cdc4988699900d4b71cd89b51da` |
-| Quality Interlock | PASS | Q4 exact + Q6 scope-preserved |
-| Instruction Reviewer | PASS | `...-instruction-21c452f480.json` |
-| Verifier Engineer | PASS | `...-verifier-engineer-8c740522c3.json` |
-| Documentation Reviewer | PASS | `...-documentation-e12cdcdf16.json` |
-| Comprehensive Reviewer | APPROVE | `...-comprehensive-checklist-d2b8aba8d5.json` |
-| Pre-LLMaJ aggregate | PASS | `.terminus/reviews/event-time-session-window-processor/3fec54c6/pre-llmaj-aggregate.md` |
-| Q8 GPT Perspective Simulation | PASS (diagnostic) | `...-difficulty-sim-gpt-8aad19f50c.json` (SIMULATION_NOT_EXECUTED; USEFUL) |
-| Q8 Claude Perspective Simulation | PASS (diagnostic) | `...-difficulty-sim-claude-85f1de1cc0.json` (SIMULATION_NOT_EXECUTED; USEFUL) |
-| Q8 aggregate | COMPLETE | `.terminus/reviews/event-time-session-window-processor/3fec54c6/q8-aggregate.md` |
-| Harbor LLMaJ | DEFERRED | unless asked |
-| Difficulty trials | DEFERRED | unless asked |
-
-## Q8 model-perspective simulation checkpoint
-
-- Task commit: `3fec54c647e703efea3e10b25d157c27f2267e81`
-- GPT perspective review ID/result: `event-time-session-window-processor-3fec54c6-difficulty-sim-gpt-8aad19f50c` / `.terminus/reviews/event-time-session-window-processor/3fec54c6/event-time-session-window-processor-3fec54c6-difficulty-sim-gpt-8aad19f50c.json`
-- GPT execution: `SIMULATION_NOT_EXECUTED`
-- GPT final verifier result: `NOT_RUN`
-- GPT predicted signal: `USEFUL`
-- Claude perspective review ID/result: `event-time-session-window-processor-3fec54c6-difficulty-sim-claude-85f1de1cc0` / `.terminus/reviews/event-time-session-window-processor/3fec54c6/event-time-session-window-processor-3fec54c6-difficulty-sim-claude-85f1de1cc0.json`
-- Claude execution: `SIMULATION_NOT_EXECUTED`
-- Claude final verifier result: `NOT_RUN`
-- Claude predicted signal: `USEFUL`
-- Cross-perspective comparison: both USEFUL; GPT stop-after-green vs Claude contract-first over-scope; not official model evidence
+| Q1 Spec Gap Repair | PASS | `.terminus/reviews/event-time-session-window-processor/q1-spec-gap.md` |
+| Q2 Verifier Coverage Repair | REPAIR_PROPOSED | VE-01..VE-03 and CR-01/CR-02 applied; recheck after freeze |
+| Q3 Spec Ambiguity Repair | PASS | `.terminus/reviews/event-time-session-window-processor/q3-ambiguity.md` |
+| Q7 Task Format Enforcer | PASS | layout/Docker unchanged; oracle CLI + tests only |
+| Creator Complexity Gate | PASS | local validator; 27 F2P / 15 P2P |
+| Runtime authenticity | PASS | 12000 click_event rows |
+| Ruff verifier | PASS | `tests/test_outputs.py` and `solution/fixed/cli.py` clean |
+| Oracle = 1 | STALE | last Harbor `/tmp/e3-ets/2026-08-17__15-46-13`; rerun after freeze |
+| NOP = 0 | STALE | last Harbor `/tmp/e3-ets/2026-08-17__15-47-24`; rerun after freeze |
+| Freeze | PENDING | producer repair for VE-01..VE-03, CR-01, CR-02 |
+| Q4 Spec-Test Contract Reviewer | STALE | tests/oracle changed; `3fec54c` Q4 historical |
+| Q6 Production Logic Auditor | PASS | environment/task.toml unchanged; scope reuse still eligible |
+| Quality Interlock | STALE | Q4 stale after producer repair |
+| Instruction Reviewer | PASS | `3fec54c` `...-instruction-21c452f480.json`; instruction.md not edited this cycle |
+| Documentation Reviewer | PASS | `3fec54c` `...-documentation-e12cdcdf16.json`; README not edited this cycle |
+| Verifier Engineer | REVISE | Adjudicator `b229a618a5` controls VE-01..VE-03; same-path later PASS overwrite is not a new packet |
+| Comprehensive Reviewer | REQUEST_CHANGES | Adjudicator controls CR-01 CR-02; same-path later APPROVE overwrite is not a new packet |
+| Adjudicator | REQUEST_CHANGES | `.terminus/reviews/event-time-session-window-processor/3fec54c6/event-time-session-window-processor-3fec54c6-adjudication-b229a618a5.json` HIGH |
+| Pre-LLMaJ aggregate | REVISE | controlling findings still open until refreeze + cold re-review |
+| Q8 GPT/Claude | STALE | diagnostics were bound to `3fec54c`; task tree moving |
+| Harbor LLMaJ | DEFERRED | user-deferred unless asked |
+| Difficulty trials | DEFERRED | user-deferred unless asked |
 
 ## Current blocker
 
-None for Q8. Harbor LLMaJ and official GPT×5/Claude×5 remain deferred.
+Producer repair applied for Adjudicator-controlling findings. Next: freeze this task only, Harbor oracle 1 / NOP 0, then cold Q4, Verifier, Comprehensive.
 
-## Decisions that must survive chat changes
+## Root-cause classification
 
-- Profile `large_system_strict`; artifacts `["/app/sessions"]`.
-- last_run.warehouse.event_count and ops-report.inventory.event_count equal catalog click_event COUNT(*).
-- Harbor LLMaJ and official GPT×5/Claude×5 deferred unless asked.
-- Do not add `task.toml` explanation fields.
-- Q8 rows are diagnostic only.
+- Owner: Q2 / Oracle Author
+- Classification: verifier_gap, oracle_contract
+- Evidence: Adjudicator `b229a618a5` REQUEST_CHANGES
 
 ## Next action
 
-None unless the user authorizes Harbor LLMaJ or official difficulty trials.
+After freeze: Harbor oracle 1 / NOP 0 with `JOBS_DIR=/tmp/e3-ets`. Then new Q4 packet (Q6 reuse if production scope hash unchanged) and cold Verifier + Comprehensive. Do not edit instruction.md.
+
+## Decisions that must survive chat changes
+
+- Profile `large_system_strict`; Software/Systems; artifacts `["/app/sessions"]`.
+- Planted starter defects unchanged (oracle copies five files only).
+- last_run.warehouse.event_count and ops-report.inventory.event_count equal catalog click_event COUNT(*).
+- Harbor LLMaJ and official GPT×5/Claude×5 deferred unless asked.
+- Leave unrelated dirty work untouched (including jetstream and cobol-comp3).
+- Do not count `sql/seed.sql` or `warehouse/click_ledger.jsonl` toward Q6 LOC.
+- Do not add `task.toml` explanation fields.
+- Do not majority-vote a later same-path PASS/APPROVE overwrite over Adjudicator `b229a618a5`. Controlling IDs: VE-01, VE-02, VE-03, CR-01, CR-02. VE-04..VE-07 advisory only.
+
+## Resume rule
+
+A new controller follows `.terminus/CONTINUE_SESSION.md`, reconciles this checkpoint with Git and live review provenance, and treats Adjudicator `b229a618a5` as controlling over any same-path later overwrite of Verifier/Comprehensive JSON.
