@@ -2,21 +2,41 @@
   "schema_version": "1.1",
   "profile": "large_system_strict",
   "task": "stonevault-crash-safe-storage",
-  "substantive_runtime_loc": 3022,
-  "broader_native_build_loc": 3143,
-  "loc_status": "LOCAL_STATIC_COUNT_ONLY_PENDING_REPOSITORY_VALIDATOR",
+  "substantive_runtime_loc": 3033,
+  "broader_native_build_loc": 3433,
+  "loc_status": "CURRENT_STATIC_COUNT_USING_MERGED_COMPLEXITY_RULES_PENDING_TARGET_VALIDATOR_EXECUTION",
   "runtime_entrypoint": "/app/stonevault/bin/stonevault",
   "native_layers": {
-    "rust": ["config", "ffi", "line_io", "protocol", "session", "observability", "main"],
-    "cpp": ["engine", "transactions", "catalog", "wal", "recovery", "snapshot", "lock", "integrity", "maintenance", "codec", "common"]
+    "rust": [
+      "config",
+      "ffi",
+      "line_io",
+      "protocol",
+      "session",
+      "observability",
+      "main"
+    ],
+    "cpp": [
+      "engine",
+      "transactions",
+      "catalog",
+      "wal",
+      "recovery",
+      "snapshot",
+      "lock",
+      "integrity",
+      "maintenance",
+      "codec",
+      "common"
+    ]
   },
   "production_characteristics": [
     "C ABI boundary between Rust control plane and C++ durable engine",
-    "transaction lifecycle and MVCC version catalog",
+    "transaction lifecycle and MVCC version catalog with reachable history auditing",
     "append-only checksummed WAL with recovery",
     "atomic snapshots and checkpoint lifecycle",
     "writer fencing and restart recovery",
-    "operator STATS and HEALTH surfaces",
+    "operator STATS and HEALTH surfaces backed by catalog, transaction and durable-path audits",
     "binary key/value protocol with explicit size limits"
   ],
   "production_authenticity": {
@@ -28,14 +48,14 @@
     },
     "domain_state_model": [
       "caller-owned binary key/value records",
-      "MVCC committed-version catalog",
-      "active transaction overlays",
+      "MVCC committed-version catalog and history audit",
+      "active transaction overlays and transaction-table audit",
       "checksummed append-only WAL",
       "published checkpoint snapshot",
-      "writer lock and operator-visible health/statistics"
+      "writer lock and operator-visible durable-path health/statistics"
     ],
-    "reachability_evidence": "All state is created and consumed through /app/stonevault/bin/stonevault and its documented transaction, checkpoint, recovery, STATS and HEALTH interfaces; no decorative offline corpus is used."
+    "reachability_evidence": "All declared state is created, inspected or consumed through /app/stonevault/bin/stonevault and its documented transaction, STATS, HEALTH, checkpoint and recovery paths; STATS executes the runtime audit layer even in the starter, so the added integrity logic is not dead authoring scale."
   },
-  "reachability_note": "All listed production modules participate in the production build path; semantic reachability remains subject to Complexity Governor and Q6.",
+  "reachability_note": "All listed production modules participate in the production build path. The expanded catalog/transaction/storage audit code is reached by STATS in the starter and by both STATS and repaired HEALTH in the Oracle candidate; semantic reachability remains subject to Q6.",
   "status": "PRODUCER_EVIDENCE_ONLY_NOT_Q6_APPROVAL"
 }
