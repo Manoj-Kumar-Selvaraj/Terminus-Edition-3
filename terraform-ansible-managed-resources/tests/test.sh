@@ -28,7 +28,6 @@ EOF
 
 (
   cd "${ROOT}" || exit 1
-  gofmt -w ./cmd ./internal
   GOTOOLCHAIN=local go build -mod=vendor -trimpath \
     -ldflags "-s -w -X main.version=0.1.0" \
     -o "${PLUGIN_BIN}" ./cmd/terraform-provider-ansibleops
@@ -41,6 +40,7 @@ python3 -m pytest --ctrf /logs/verifier/ctrf.json \
   /tests/test_lifecycle_filesystem.py \
   /tests/test_lifecycle_content.py \
   /tests/test_lifecycle_identity.py \
+  /tests/test_lifecycle_delete.py \
   /tests/test_runner_and_cron.py \
   -rA
 status=$?
