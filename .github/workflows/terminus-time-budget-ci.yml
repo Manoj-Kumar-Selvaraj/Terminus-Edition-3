@@ -1,0 +1,51 @@
+name: Terminus Time Budget CI
+
+on:
+  pull_request:
+    paths:
+      - '.terminus/execution/time_budget.py'
+      - '.terminus/execution/budget_controller_cli.py'
+      - '.terminus/tests/test_time_budget.py'
+      - '.terminus/agents/TIME_BUDGET_POLICY.md'
+      - '.cursor/agents/terminus-ci-orchestrator.md'
+      - '.github/workflows/terminus-time-budget-ci.yml'
+  push:
+    branches: [main]
+    paths:
+      - '.terminus/execution/time_budget.py'
+      - '.terminus/execution/budget_controller_cli.py'
+      - '.terminus/tests/test_time_budget.py'
+      - '.terminus/agents/TIME_BUDGET_POLICY.md'
+      - '.cursor/agents/terminus-ci-orchestrator.md'
+      - '.github/workflows/terminus-time-budget-ci.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  validate-time-budget:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Install pinned test tools
+        run: python -m pip install --quiet ruff==0.14.10 pytest==8.4.1 jsonschema==4.23.0
+      - name: Compile budget controller
+        run: |
+          python -m py_compile \
+            .terminus/execution/time_budget.py \
+            .terminus/execution/budget_controller_cli.py
+      - name: Lint budget controller
+        run: |
+          ruff check \
+            .terminus/execution/time_budget.py \
+            .terminus/execution/budget_controller_cli.py \
+            .terminus/tests/test_time_budget.py
+      - name: Run budget accounting tests
+        env:
+          PYTHONPATH: .terminus
+        run: python -m pytest .terminus/tests/test_time_budget.py -q
+      - name: Smoke budget CLI
+        run: python .terminus/execution/budget_controller_cli.py --help >/dev/null
