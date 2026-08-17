@@ -16,11 +16,11 @@ ENV DEBIAN_FRONTEND=noninteractive \
     GOTOOLCHAIN=local \
     ANSIBLE_NOCOLOR=1 \
     ANSIBLE_HOST_KEY_CHECKING=False \
-    TF_CLI_CONFIG_FILE=/app/ansibleops/config/terraform.rc \
-    ANSIBLE_CONFIG=/app/ansibleops/config/ansible.cfg \
-    ANSIBLEOPS_ROOT=/app/ansibleops
+    TF_CLI_CONFIG_FILE=/app/provider/config/terraform.rc \
+    ANSIBLE_CONFIG=/app/provider/config/ansible.cfg \
+    ANSIBLEOPS_ROOT=/app/provider
 
-WORKDIR /app/ansibleops
+WORKDIR /app/provider
 
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
@@ -45,13 +45,13 @@ RUN curl -fsSLo /tmp/terraform.zip "https://releases.hashicorp.com/terraform/${T
     && rm -f /tmp/terraform.zip \
     && terraform version
 
-COPY ansibleops/ /app/ansibleops/
+COPY ansibleops/ /app/provider/
 
-RUN chmod 0755 /app/ansibleops/scripts/*.sh \
+RUN chmod 0755 /app/provider/scripts/*.sh \
     && mkdir -p /tmp/ansibleops /opt/terraform/plugins/registry.terraform.io/local/ansibleops/0.1.0/linux_amd64 \
     && go mod download \
-    && /app/ansibleops/scripts/build-provider.sh \
+    && /app/provider/scripts/build-provider.sh \
     && ansible-playbook --version \
     && terraform version
 
-WORKDIR /app/ansibleops
+WORKDIR /app/provider
