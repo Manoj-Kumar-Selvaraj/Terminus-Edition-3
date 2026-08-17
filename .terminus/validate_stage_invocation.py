@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import json
+import re
 import subprocess
 import sys
 from pathlib import Path
@@ -41,6 +42,23 @@ def keys(value: Any) -> set[str]:
     return result
 
 
+def policy_version_at_commit(commit: str, path: str, label: str) -> str:
+    text = subprocess.run(
+        ["git", "-C", str(ROOT), "show", f"{commit}:{path}"],
+        check=True,
+        capture_output=True,
+        text=True,
+    ).stdout
+    match = re.search(
+        rf"^{re.escape(label)}:\s*`([^`]+)`\s*$",
+        text,
+        flags=re.MULTILINE,
+    )
+    if not match:
+        raise ValueError(f"cannot resolve {label} at {commit}:{path}")
+    return match.group(1).strip()
+
+
 def main() -> int:
     errors: list[str] = []
     policy = RetrievalPolicy(ROOT)
@@ -52,6 +70,15 @@ def main() -> int:
         capture_output=True,
         text=True,
     ).stdout.strip()
+    try:
+        agent_system_version = policy_version_at_commit(
+            head,
+            ".terminus/AGENT_SYSTEM.md",
+            "Agent-system policy version",
+        )
+    except Exception as exc:
+        errors.append(f"cannot resolve current agent-system policy version: {exc}")
+        agent_system_version = ""
     schema = json.loads(
         (T / "agents" / "schemas" / "stage_invocation.schema.json").read_text(
             encoding="utf-8"
@@ -86,7 +113,7 @@ def main() -> int:
                     stage_id=stage_id,
                     role_id=role_id,
                     control_plane_commit=head,
-                    policy_versions={"agent_system": "2.4"},
+                    policy_versions={"agent_system": agent_system_version},
                 ),
                 inputs,
             )
