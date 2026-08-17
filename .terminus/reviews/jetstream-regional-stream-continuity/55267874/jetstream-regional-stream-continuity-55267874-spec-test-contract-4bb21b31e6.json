@@ -1,0 +1,403 @@
+{
+  "schema_version": "3.0",
+  "role": "Spec-Test Contract Reviewer",
+  "review_id": "jetstream-regional-stream-continuity-55267874-spec-test-contract-4bb21b31e6",
+  "task": "jetstream-regional-stream-continuity",
+  "task_commit": "552678743d74aeddd627a3d6194ce472a6ccfc5f",
+  "control_plane_commit": "552678743d74aeddd627a3d6194ce472a6ccfc5f",
+  "protocol_policy_version": "2.2",
+  "prompt_policy_version": "2.2",
+  "role_policy_version": "1.1",
+  "role_contract_hash": "c860dfe8b8ed0a04c729e4d6a828741b206b7067a780863ec7b22ee09d02c5a0",
+  "context_packet": ".terminus/reviews/jetstream-regional-stream-continuity/55267874/jetstream-regional-stream-continuity-55267874-spec-test-contract-4bb21b31e6.packet.json",
+  "verdict": "REVISE",
+  "confidence": "HIGH",
+  "evidence_status": "SUFFICIENT",
+  "summary": "The solver-visible work request and delegated continuity contract are complete enough for a fair solve, and most verifier behaviors map to discoverable identity, topology, publish, generation-hold, replay, retention-pin, fencing-start, consumer-idempotency, and report-schema rules. Bidirectional alignment still fails: required-consumer convergence is named but vacuously tested, poison is graded as a device-status predicate that the contract never defines, and several stated retention, health-flag, approval, diagnostic-mutation, and in-flight fencing obligations are untested.",
+  "evidence": [
+    {
+      "type": "file",
+      "ref": "jetstream-regional-stream-continuity/instruction.md",
+      "observation": "Two paragraphs name the repair goal, writable runtime, docs/ops/log evidence, continuityctl publish/observe-origin, exactly-once identity convergence, crash-safe consumers, generation holds, retention-vs-replay authority, report paths, generated_at, and the eight health-flag semantics including generations_ok and healthy as their conjunction."
+    },
+    {
+      "type": "file",
+      "ref": "jetstream-regional-stream-continuity/environment/continuity/docs/continuity-contract.md",
+      "observation": "Delegated protocol defines event identity/Nats-Msg-Id, generation hold/approval, unique source-only topology, publish ack rules, consumer idempotency and poison/quarantine, identity reconciliation and CONVERGED=archive-watermark AND required-consumer checkpoints, replay/lease/retention SHALLs, diagnostic vs mutating CLI, and the stable health.json/reconciliation.json interface."
+    },
+    {
+      "type": "file",
+      "ref": "jetstream-regional-stream-continuity/tests/test_outputs.py",
+      "observation": "35 pytest behaviors: 8 P2P preservation/entrypoint checks and 27 F2P checks covering reports, topology, horizon, publish identity, generation observe-origin, replay, reconcile, cleanup pins, leases, consumers_ok/publication_ok, live source-only hub, redelivery effects, and quarantined-device poison."
+    },
+    {
+      "type": "file",
+      "ref": "jetstream-regional-stream-continuity/environment/continuity/ops/shift-handoff.txt",
+      "observation": "Supports the instruction's current-state claims: west disconnect/reconnect, three west and two east archive identity gaps, ack floors ahead of application checkpoints, duplicate effect on redelivery, and replay halted before cleanup/stream changes."
+    },
+    {
+      "type": "file",
+      "ref": "jetstream-regional-stream-continuity/environment/continuity/log/archive/inc-2026-0808-17-controller.log",
+      "observation": "Operator log shows retry message ids with :attempt: suffixes, identity-count divergence, duplicate effect on evt-west-g01-005127, checkpoint disagreement, approved west replay rp-west-incident-001 range 5311-5603, and cleanup_safe_seq ignoring the replay pin."
+    },
+    {
+      "type": "file",
+      "ref": "jetstream-regional-stream-continuity/environment/continuity/ops/stream-state.json",
+      "observation": "Captured stream snapshot shows duplicated EDGE_TELEMETRY origin names, west hub source domain edge-east, hub subjects telemetry.raw.>, consumer effect/ack/JetStream disagreement, and cleanup reported_safe_sequence equal to archive rather than min(archive, consumer, pin-1)."
+    },
+    {
+      "type": "file",
+      "ref": "jetstream-regional-stream-continuity/environment/continuity/bin/continuityctl",
+      "observation": "Public operator binary delegates to continuity.cli; inspect/reconcile/verify/publish/observe-origin/plan-replay/execute-replay/lease/retention/lab-start/run-consumer/generations/approve-generation are present as inherited entrypoints."
+    },
+    {
+      "type": "file",
+      "ref": "jetstream-regional-stream-continuity/environment/continuity/config/continuity.json",
+      "observation": "Public config schema exposes region stream names/domains, hub_stream_policy.max_age_seconds, topology.hub_archive.subjects, topology.sources, derived_subject_prefix, and recovery horizon fields used by F2P topology and retention tests."
+    },
+    {
+      "type": "file",
+      "ref": "jetstream-regional-stream-continuity/environment/continuity/sql/schema.sql",
+      "observation": "Durable registry enumerates origin_generations status CONFIRMED/PENDING_APPROVAL, device_registry status QUARANTINED, poison_events, publish_attempts.message_id, retention_policies.journal_min_age_seconds, and replay/lease tables; instruction/docs never define the device-status poison predicate."
+    },
+    {
+      "type": "file",
+      "ref": "jetstream-regional-stream-continuity/environment/continuity/sql/seed.sql",
+      "observation": "Seed marks n%17==1 devices QUARANTINED (including dev-east-001), sets journal_min_age_seconds=21600, and stores approved plan rp-west-incident-001; tests use these fixtures without stating the poison rule in solver-visible docs."
+    },
+    {
+      "type": "test",
+      "ref": "jetstream-regional-stream-continuity/tests/test_outputs.py::test_f2p_convergence_waits_for_required_consumers",
+      "observation": "Assertion is consumer_lag_count >= 1 OR status == DIVERGED; seeded east already DIVERGED from archive identity gaps, so ignoring required-consumer checkpoints still passes."
+    },
+    {
+      "type": "test",
+      "ref": "jetstream-regional-stream-continuity/tests/test_outputs.py::test_p2p_cleanup_respects_minimum_age_and_holds",
+      "observation": "Docstring claims minimum journal age and holds; body only sets retention_hold=1 and asserts eligible_event_ids disjoint from held ids, with no age cutoff assertion."
+    },
+    {
+      "type": "test",
+      "ref": "jetstream-regional-stream-continuity/tests/test_outputs.py::test_p2p_generation_approval_does_not_rewrite_history",
+      "observation": "Docstring claims approving a later generation preserves historical journal generations, but the test never calls approve-generation; it only reads seeded west origin_sequence=12 generation==1."
+    },
+    {
+      "type": "rule",
+      "ref": ".terminus/agents/INSTRUCTION_POLICY.md",
+      "observation": "Instruction is a two-paragraph engineering handoff naming material goals; continuity-contract.md is protocol/schema/CLI documentation rather than a repair map; current-state claims are backed by ops/log evidence."
+    }
+  ],
+  "findings": [
+    {
+      "id": "Q4-001",
+      "severity": "HIGH",
+      "status": "OBSERVED",
+      "criterion": "req-gap/weak-assertion: CONVERGED requires required-consumer checkpoints through the confirmed watermark",
+      "evidence_refs": [
+        "jetstream-regional-stream-continuity/environment/continuity/docs/continuity-contract.md",
+        "jetstream-regional-stream-continuity/tests/test_outputs.py::test_f2p_convergence_waits_for_required_consumers",
+        "jetstream-regional-stream-continuity/instruction.md"
+      ],
+      "why_it_matters": "The contract's CONVERGED rule is archive completeness AND every enabled required consumer's application checkpoint through the confirmed watermark. The named test lets DIVERGED from archive identity gaps satisfy the assertion, so a controller that ignores consumer lag can still pass.",
+      "minimal_remediation": "Add a hidden variation where archive identity is complete through the confirmed watermark while a required consumer checkpoint lags, and assert regional status remains DIVERGED and consumer_lag_count >= 1.",
+      "regression_risk": "Low if the new case is isolated; do not weaken identity-gap tests that already keep the incident DIVERGED."
+    },
+    {
+      "id": "Q4-002",
+      "severity": "HIGH",
+      "status": "OBSERVED",
+      "criterion": "phantom-spec: poison input predicate is a hidden device-status rule",
+      "evidence_refs": [
+        "jetstream-regional-stream-continuity/environment/continuity/docs/continuity-contract.md",
+        "jetstream-regional-stream-continuity/tests/test_outputs.py::test_f2p_quarantined_device_does_not_complete_effect",
+        "jetstream-regional-stream-continuity/tests/test_outputs.py::test_f2p_checkpoint_does_not_advance_on_quarantine",
+        "jetstream-regional-stream-continuity/environment/continuity/sql/seed.sql"
+      ],
+      "why_it_matters": "The contract only says poison input is recorded in the quarantine table and must not complete a business effect or application progress. Two live tests require a well-formed event from device_id dev-east-001 (seed status QUARANTINED) to be quarantined. A solver that quarantines malformed payloads but not device-registry status fails an unstated rule.",
+      "minimal_remediation": "State in the solver-visible contract that events from device_registry status QUARANTINED are poison input, or change the tests to use a publicly specified poison condition.",
+      "regression_risk": "Low; clarifying the predicate should not disturb idempotent-effect tests that use ACTIVE devices."
+    },
+    {
+      "id": "Q4-003",
+      "severity": "MEDIUM",
+      "status": "OBSERVED",
+      "criterion": "req-gap: rows newer than configured minimum journal age are never cleanup candidates",
+      "evidence_refs": [
+        "jetstream-regional-stream-continuity/environment/continuity/docs/continuity-contract.md",
+        "jetstream-regional-stream-continuity/tests/test_outputs.py::test_p2p_cleanup_respects_minimum_age_and_holds",
+        "jetstream-regional-stream-continuity/environment/continuity/sql/schema.sql"
+      ],
+      "why_it_matters": "Retention safety in the delegated contract includes a minimum journal age, and the P2P test name/docstring claims to cover it, but the body only checks retention_hold. An implementation can delete young unheld rows and still pass. That changes whether a non-compliant retention path is graded fail.",
+      "minimal_remediation": "Insert or select a row newer than journal_min_age_seconds without a hold and assert it is absent from eligible_event_ids; keep the existing hold assertion.",
+      "regression_risk": "Low; clock/cutoff must use the configured journal_min_age_seconds rather than a hardcoded duration."
+    },
+    {
+      "id": "Q4-004",
+      "severity": "MEDIUM",
+      "status": "OBSERVED",
+      "criterion": "req-gap: generations_ok semantics are stated but never asserted",
+      "evidence_refs": [
+        "jetstream-regional-stream-continuity/instruction.md",
+        "jetstream-regional-stream-continuity/tests/test_outputs.py::test_f2p_health_and_reconciliation_reports_materialized",
+        "jetstream-regional-stream-continuity/tests/test_outputs.py::test_f2p_generation_fingerprint_change_is_held"
+      ],
+      "why_it_matters": "instruction.md defines generations_ok as one confirmed generation and no pending transition per region. Tests only require the field to exist and to participate in healthy=all(flags). observe-origin workspace cases never read generations_ok, so a hardcoded true or false does not change pass/fail despite being a documented report interface.",
+      "minimal_remediation": "After a pending observe-origin, assert inspect/verify generations_ok is false; on the submitted artifact with one confirmed generation and no pending row, assert generations_ok is true.",
+      "regression_risk": "Low; do not require generations_ok true on the incident artifact if the solver legitimately leaves a pending transition in the submitted store."
+    },
+    {
+      "id": "Q4-005",
+      "severity": "MEDIUM",
+      "status": "OBSERVED",
+      "criterion": "req-gap: approve-generation entrypoint and historical-generation preservation on approval are untested",
+      "evidence_refs": [
+        "jetstream-regional-stream-continuity/environment/continuity/docs/continuity-contract.md",
+        "jetstream-regional-stream-continuity/tests/test_outputs.py::test_p2p_generation_approval_does_not_rewrite_history",
+        "jetstream-regional-stream-continuity/tests/test_outputs.py::test_p2p_cli_recovery_entrypoints_operate"
+      ],
+      "why_it_matters": "The contract requires historical journal rows to stay on the generation in which they were accepted and lists approve-generation as a remaining operator control. The test named for approval never invokes it, and no other test calls the command. A broken approver that rewrites old generation columns can still pass.",
+      "minimal_remediation": "Call approve-generation on a pending generation and assert pre-existing journal rows retain their original generation; include the command in the remaining-entrypoint smoke if that remains a P2P obligation.",
+      "regression_risk": "Low if approval is applied only to a workspace pending row created by observe-origin, not to the submitted incident store."
+    },
+    {
+      "id": "Q4-006",
+      "severity": "MEDIUM",
+      "status": "OBSERVED",
+      "criterion": "req-gap: inspect/reconcile must not apply retention mutations",
+      "evidence_refs": [
+        "jetstream-regional-stream-continuity/environment/continuity/docs/continuity-contract.md",
+        "jetstream-regional-stream-continuity/tests/test_outputs.py::test_p2p_inspect_and_reconcile_do_not_mutate_replay"
+      ],
+      "why_it_matters": "Diagnostic CLI is specified to record reconciliation without applying replay or retention mutations. The P2P test only freezes replay_plans status. inspect/reconcile that deletes journal rows would still pass, which can change observable durability and incident preservation.",
+      "minimal_remediation": "Snapshot event_journal counts/ids (or retention_watermarks) around inspect and reconcile and assert they are unchanged, in addition to replay plan status.",
+      "regression_risk": "Low; allow reconciliation_runs/findings inserts that the contract already permits."
+    },
+    {
+      "id": "Q4-007",
+      "severity": "MEDIUM",
+      "status": "OBSERVED",
+      "criterion": "req-gap: stale in-flight replay publish must not write replay-item or terminal plan state",
+      "evidence_refs": [
+        "jetstream-regional-stream-continuity/environment/continuity/docs/continuity-contract.md",
+        "jetstream-regional-stream-continuity/tests/test_outputs.py::test_f2p_stale_recovery_worker_is_fenced"
+      ],
+      "why_it_matters": "The fencing contract requires revalidation before execution, while applying items, and again after an external replay publish returns; a stale token may leave publish ack evidence but must not write replay-item or terminal plan state. The only fencing execute test uses a stale epoch at start and never covers the in-flight ack window, so omitting post-publish revalidation still passes.",
+      "minimal_remediation": "Add a case that acquires a valid lease, starts execute-replay, expires/reacquires the lease during/before the publish return path, and asserts replay_plan_items/plan status are unchanged while a publish_attempts ack may exist.",
+      "regression_risk": "Medium; keep the test deterministic (inject a publisher/lease mutation) rather than wall-clock racing a live NATS publish."
+    },
+    {
+      "id": "Q4-008",
+      "severity": "LOW",
+      "status": "OBSERVED",
+      "criterion": "weak-assertion: hub-sequence completeness test does not bind the completeness key",
+      "evidence_refs": [
+        "jetstream-regional-stream-continuity/tests/test_outputs.py::test_f2p_reconcile_ignores_hub_sequence_as_completeness_key",
+        "jetstream-regional-stream-continuity/environment/continuity/docs/continuity-contract.md"
+      ],
+      "why_it_matters": "The test only asserts highest_contiguous_archive_origin_sequence != journal_event_count on seeded west data. That inequality holds for the incident fixture even if the implementation used hub aggregate sequence as its completeness key. Identity-gap tests still provide the material reconciliation coverage.",
+      "minimal_remediation": "Optionally assert the contiguous origin floor is computed from origin_sequence membership, or inject a hub_stream_sequence that would falsely complete if used as the watermark.",
+      "regression_risk": "Low."
+    },
+    {
+      "id": "Q4-009",
+      "severity": "LOW",
+      "status": "OBSERVED",
+      "criterion": "weak-assertion: same-payload distinctness is not actually forced",
+      "evidence_refs": [
+        "jetstream-regional-stream-continuity/tests/test_outputs.py::test_p2p_same_payload_events_remain_distinct"
+      ],
+      "why_it_matters": "The test reads two east journal rows and checks distinct event_id values plus journal_event_count >= 2. It never makes payload_sha256 coincide, so it does not exercise identity-over-checksum. Event identity is still tested elsewhere via publish retries and offsetting reconcile mismatches.",
+      "minimal_remediation": "If this P2P remains, set two rows to the same payload hash and still require distinct event_id treatment in reconcile.",
+      "regression_risk": "Low."
+    },
+    {
+      "id": "Q4-010",
+      "severity": "LOW",
+      "status": "OBSERVED",
+      "criterion": "req-gap: derived subject space is specified as telemetry.derived.> but graded only as not-raw",
+      "evidence_refs": [
+        "jetstream-regional-stream-continuity/environment/continuity/docs/continuity-contract.md",
+        "jetstream-regional-stream-continuity/tests/test_outputs.py::test_f2p_topology_uses_unique_source_only_streams"
+      ],
+      "why_it_matters": "The contract places derived processing output under telemetry.derived.> and forbids republish into the raw source space. The F2P check only requires derived_subject_prefix not to start with telemetry.raw, so a different derived prefix can pass. Safety against raw contamination is still tested.",
+      "minimal_remediation": "If the exact derived prefix is a stable public subject, assert it; otherwise relax the contract to 'outside the raw source subject space'.",
+      "regression_risk": "Low."
+    },
+    {
+      "id": "Q4-011",
+      "severity": "LOW",
+      "status": "OBSERVED",
+      "criterion": "req-gap: secondary reconciliation mismatch classes are schema-only",
+      "evidence_refs": [
+        "jetstream-regional-stream-continuity/environment/continuity/docs/continuity-contract.md",
+        "jetstream-regional-stream-continuity/tests/test_outputs.py::test_f2p_health_and_reconciliation_reports_materialized"
+      ],
+      "why_it_matters": "Reconciliation is specified to report origin metadata mismatches and payload checksum mismatches for every match. Tests require the integer fields to exist and exercise missing/unexpected identity offsets, but never mutate checksums or origin metadata on a matched id. This does not currently change pass/fail for the identity-convergence core.",
+      "minimal_remediation": "Add one checksum-mismatch and one origin-metadata-mismatch fixture if those counts remain contractual; otherwise treat them as optional diagnostic fields.",
+      "regression_risk": "Low."
+    }
+  ],
+  "missing_evidence": [],
+  "change_scope": [
+    "Solver-visible poison/generation-approval/retention-age/generations_ok statements if those rules remain graded, and/or the verifier tests named in Q4-001 through Q4-007 so every stated material rule is meaningfully asserted and no hidden poison predicate remains."
+  ],
+  "do_not_change": [
+    "Do not use this review to rewrite starter leaf modules or the oracle except as needed after an authorized producer repair of the spec/test contract.",
+    "Do not treat captured ops/log incident evidence as a defect to delete; it is legitimate current-state support.",
+    "Do not collapse legitimate protocol detail in continuity-contract.md into instruction.md merely to shorten the review."
+  ],
+  "next_gate": "QUALITY_INTERLOCK remains REVISE; route Q4-001/Q4-003/Q4-004/Q4-005/Q4-006/Q4-007 to Q2 Verifier Coverage Repairer and Q4-002 to Q1/Q3 for the missing poison predicate, then refreeze and rerun packet-bound Q4 on the new task commit.",
+  "role_output": {
+    "REQUIREMENT_TEST_MATRIX": [
+      {
+        "id": "R-OBJECTIVE",
+        "requirement": "Repair the continuity control plane so Ops can safely resume recovery without completing/hiding incident recovery.",
+        "tests": ["test_f2p_reports_do_not_erase_incident_gaps", "test_f2p_health_and_reconciliation_reports_materialized"],
+        "coverage": "COMPLETE"
+      },
+      {
+        "id": "R-PRESERVE-HISTORY",
+        "requirement": "Keep captured incident history intact; reports must not manufacture health by deleting gaps, checkpoints, or replay state.",
+        "tests": ["test_f2p_reports_do_not_erase_incident_gaps"],
+        "coverage": "COMPLETE"
+      },
+      {
+        "id": "R-ENTRYPOINTS",
+        "requirement": "Do not replace event envelope or operator entrypoints; continuityctl including publish, observe-origin, and remaining recovery commands stay operational.",
+        "tests": ["test_p2p_operator_entrypoints_and_contract_present", "test_p2p_cli_recovery_entrypoints_operate", "test_f2p_retry_uses_stable_event_identity", "test_f2p_generation_regression_is_held"],
+        "coverage": "PARTIAL"
+      },
+      {
+        "id": "R-EXACTLY-ONCE-IDENTITY",
+        "requirement": "Accepted events use one stable event_id/Nats-Msg-Id across first publish and retries; archive converges exactly once by event identity.",
+        "tests": ["test_f2p_retry_uses_stable_event_identity", "test_f2p_second_publish_attempt_keeps_same_message_id", "test_f2p_reconcile_uses_event_identity_not_counts", "test_p2p_same_payload_events_remain_distinct"],
+        "coverage": "COMPLETE"
+      },
+      {
+        "id": "R-PUBLISH-ACK",
+        "requirement": "Journal may record attempts before send; PUBLISHED only after positive JetStream ack for the expected stream; errors leave retry with same id.",
+        "tests": ["test_f2p_failed_publish_does_not_mark_journal_published", "test_f2p_retry_uses_stable_event_identity"],
+        "coverage": "COMPLETE"
+      },
+      {
+        "id": "R-GENERATION-HOLD",
+        "requirement": "One confirmed generation with monotonic sequences; recreation or sequence regression is pending until operator approval; historical rows stay on accepted generation.",
+        "tests": ["test_f2p_generation_regression_is_held", "test_f2p_generation_fingerprint_change_is_held", "test_f2p_monotonic_confirmed_generation_continues", "test_f2p_observe_origin_rejects_stream_mismatch", "test_p2p_generation_approval_does_not_rewrite_history"],
+        "coverage": "PARTIAL"
+      },
+      {
+        "id": "R-TOPOLOGY",
+        "requirement": "Unique physical origin names, hub archive source-only (no local raw listen subjects), correct per-region source stream/domain, derived output not republished to raw.",
+        "tests": ["test_f2p_topology_uses_unique_source_only_streams", "test_f2p_hub_archive_is_source_only"],
+        "coverage": "COMPLETE"
+      },
+      {
+        "id": "R-CONSUMER-IDEMPOTENCY",
+        "requirement": "Required-consumer effects are idempotent on redelivery; committed effect reused across ACK-boundary crash; restart reports effect vs JetStream floor gaps.",
+        "tests": ["test_f2p_redelivery_creates_single_effect", "test_f2p_committed_effect_survives_redelivery", "test_f2p_consumers_ok_reports_effect_ack_gap"],
+        "coverage": "COMPLETE"
+      },
+      {
+        "id": "R-POISON",
+        "requirement": "Poison input is quarantined without completing a business effect or advancing application progress.",
+        "tests": ["test_f2p_quarantined_device_does_not_complete_effect", "test_f2p_checkpoint_does_not_advance_on_quarantine"],
+        "coverage": "PHANTOM"
+      },
+      {
+        "id": "R-RECONCILE-IDENTITY",
+        "requirement": "Reconcile by stable event identity, not counts or hub aggregate sequence; report missing/unexpected even when totals match.",
+        "tests": ["test_f2p_reconcile_uses_event_identity_not_counts", "test_f2p_reconcile_ignores_hub_sequence_as_completeness_key"],
+        "coverage": "PARTIAL"
+      },
+      {
+        "id": "R-CONVERGENCE-CONSUMERS",
+        "requirement": "System/region CONVERGED only when archive is complete through confirmed watermark and every enabled required consumer checkpoint reaches that watermark.",
+        "tests": ["test_f2p_convergence_waits_for_required_consumers"],
+        "coverage": "VACUOUS"
+      },
+      {
+        "id": "R-REPLAY",
+        "requirement": "Plans from missing identities for one confirmed/approved generation; unapproved generation blocked; overlapping active ranges rejected; archived ids are no-ops.",
+        "tests": ["test_f2p_replay_plan_contains_only_missing_identities", "test_f2p_replay_refuses_unapproved_generation", "test_f2p_overlapping_active_replay_plan_is_rejected"],
+        "coverage": "COMPLETE"
+      },
+      {
+        "id": "R-FENCING",
+        "requirement": "Expired reacquire increments fence_epoch; current owner renews same epoch; stale epoch rejected on release/execute; in-flight publish revalidation before replay-item/terminal writes.",
+        "tests": ["test_f2p_expired_lease_reacquire_advances_epoch", "test_p2p_current_lease_owner_renews_same_epoch", "test_p2p_stale_lease_release_is_rejected", "test_f2p_stale_recovery_worker_is_fenced"],
+        "coverage": "PARTIAL"
+      },
+      {
+        "id": "R-RETENTION-HORIZON",
+        "requirement": "Raw retention max-age covers disconnect+replay+safety; retention_ok reflects that horizon.",
+        "tests": ["test_f2p_stream_max_age_covers_recovery_horizon"],
+        "coverage": "COMPLETE"
+      },
+      {
+        "id": "R-RETENTION-SAFE-SEQ",
+        "requirement": "Cleanup-safe sequence is min(archive contiguous, slowest required consumer, active replay pin minus one); approved/running plans pin rows.",
+        "tests": ["test_f2p_cleanup_stops_at_archive_and_consumer_and_replay_pin"],
+        "coverage": "COMPLETE"
+      },
+      {
+        "id": "R-RETENTION-HOLDS-AGE",
+        "requirement": "Held rows and rows newer than minimum journal age are never cleanup candidates.",
+        "tests": ["test_p2p_cleanup_respects_minimum_age_and_holds"],
+        "coverage": "PARTIAL"
+      },
+      {
+        "id": "R-DIAGNOSTIC-CLI",
+        "requirement": "inspect/reconcile/verify do not apply replay or retention mutations.",
+        "tests": ["test_p2p_inspect_and_reconcile_do_not_mutate_replay"],
+        "coverage": "PARTIAL"
+      },
+      {
+        "id": "R-REPORT-SCHEMA",
+        "requirement": "verify writes health.json and reconciliation.json with documented fields, generated_at formats, healthy conjunction, regional status/converged consistency, and truthful flags (topology_ok, publication_ok, archive_ok, consumers_ok, retention_ok, recovery_ok, generations_ok).",
+        "tests": ["test_f2p_health_and_reconciliation_reports_materialized", "test_f2p_reports_do_not_erase_incident_gaps", "test_f2p_topology_uses_unique_source_only_streams", "test_f2p_publication_ok_stays_false_while_retry_work_remains", "test_f2p_consumers_ok_reports_effect_ack_gap", "test_f2p_stream_max_age_covers_recovery_horizon"],
+        "coverage": "PARTIAL"
+      }
+    ],
+    "PHANTOM_TEST_CONTRACTS": [
+      "test_f2p_quarantined_device_does_not_complete_effect and test_f2p_checkpoint_does_not_advance_on_quarantine enforce device_registry QUARANTINED (dev-east-001) as poison input, which is not stated in instruction.md or continuity-contract.md."
+    ],
+    "UNTESTED_REQUIREMENTS": [
+      "CONVERGED waits for required-consumer application checkpoints when archive identity is otherwise complete (R-CONVERGENCE-CONSUMERS; vacuous named test).",
+      "Minimum journal age exclusion from cleanup (contract retention; Q4-003).",
+      "generations_ok true/false semantics (instruction health flags; Q4-004).",
+      "approve-generation remains operational and does not rewrite historical journal generations (Q4-005).",
+      "inspect/reconcile/verify do not apply retention mutations (Q4-006).",
+      "Post-publish in-flight fence revalidation before replay-item/terminal plan writes (Q4-007).",
+      "Exact derived subject prefix telemetry.derived.> (Q4-010, advisory).",
+      "Payload checksum mismatch and origin metadata mismatch reporting beyond field presence (Q4-011, advisory)."
+    ],
+    "AMBIGUITIES": [
+      "Poison input is undefined in the solver-visible protocol; tests resolve it as QUARANTINED device status (blocking via Q4-002).",
+      "observe-origin WRONG_STREAM is not explicitly required to hard-reject versus hold; current assertion only needs nonzero exit, so it is not grading-fatal.",
+      "publication_ok lists held/retrying/in-flight work; tests include ACCEPTED in a remaining-work count but do not bind publication_ok to ACCEPTED specifically."
+    ],
+    "INSTRUCTION_SHAPE": "PASS",
+    "INSTRUCTION_REQUIREMENT_COMPLETENESS": "SUFFICIENT",
+    "DELEGATED_CONTRACT_CHECK": "instruction.md owns the engineering ask, paths, CLI names, and health-flag schema. /app/continuity/docs/continuity-contract.md is legitimate protocol/schema/CLI documentation (identity, topology, publish state machine, consumers, reconcile, replay, fencing, retention). ops/shift-handoff.txt, ops/stream-state.json, and log/archive are incident evidence, not a second prompt or module-level repair map.",
+    "INSTRUCTION_DOC_BOUNDARY": "CLEAN",
+    "IMPLEMENTATION_DIAGNOSIS_LEAKAGE": "NONE",
+    "CURRENT_STATE_EVIDENCE": "PASS",
+    "SPEC_DUMP_RISK": "LOW",
+    "BIDIRECTIONAL_ALIGNMENT": "FAIL",
+    "BLOCKING_FINDING_IDS": ["Q4-001", "Q4-002", "Q4-003", "Q4-004", "Q4-005", "Q4-006", "Q4-007"],
+    "ADVISORY_FINDING_IDS": ["Q4-008", "Q4-009", "Q4-010", "Q4-011"],
+    "EXHAUSTIVENESS": {
+      "REQUIREMENTS_ENUMERATED": "COMPLETE",
+      "VERIFIER_BEHAVIORS_ENUMERATED": "COMPLETE",
+      "FORWARD_MATRIX_COMPLETE": "YES",
+      "REVERSE_MATRIX_COMPLETE": "YES",
+      "INSTRUCTION_COMPLETENESS_COMPLETE": "YES",
+      "DELEGATED_CONTRACTS_COMPLETE": "YES",
+      "PROMPT_EXTENSION_WALK_COMPLETE": "YES",
+      "P2P_BOUNDARIES_COMPLETE": "YES",
+      "F2P_BOUNDARIES_COMPLETE": "YES",
+      "OUTPUT_INTERFACES_COMPLETE": "YES",
+      "SECOND_PASS_OMISSION_SWEEP": "PASS",
+      "UNINSPECTED_SCOPE": []
+    }
+  }
+}

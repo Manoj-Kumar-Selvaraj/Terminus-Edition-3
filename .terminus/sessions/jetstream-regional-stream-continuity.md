@@ -5,10 +5,10 @@ Session schema version: `2.4`
 ## Identity
 
 - Task: `jetstream-regional-stream-continuity`
-- Controller state: `FROZEN_CANDIDATE`
+- Controller state: `QUALITY_INTERLOCK`
 - Working branch: local
 - Pull request: none
-- Current task commit: pending this freeze commit
+- Current task commit: `8b06eec0fc6fdf150bd83fe3a07bea11c55fafd7`
 - Agent-system policy: `2.4`
 - Specialist prompt policy: `2.2`
 - Specialist protocol policy: `2.2`
@@ -19,7 +19,7 @@ Session schema version: `2.4`
 ## CREATION_RULE_CONTEXT
 
 ```text
-CONTROL_PLANE_COMMIT: recorded at freeze HEAD
+CONTROL_PLANE_COMMIT: 8b06eec0fc6fdf150bd83fe3a07bea11c55fafd7
 RULE_SOURCES: TERMINUS_3_AI_INSTRUCTIONS.md; AGENT_SYSTEM.md; CREATION_PIPELINE.md; PRODUCTION_AUTHENTICITY.md
 ACTIVE_VALIDATORS: validate_task_complexity.py; validate_runtime_authenticity.py; ruff; Harbor oracle/nop
 CREATION_PROFILE: large_system_strict
@@ -36,25 +36,31 @@ Complete the inherited east/west/hub JetStream continuity control plane so recon
 
 | Gate | Status | Evidence |
 | --- | --- | --- |
+| Q1 Spec Gap Repair | PASS | QUARANTINED device poison predicate published in continuity-contract.md |
+| Q2 Verifier Coverage Repair | PASS | consumer-lag F2P, retention age, generations_ok, approve-generation, inspect/reconcile journal snapshot |
+| Q3 Spec Ambiguity Repair | PASS | fencing SHALL limited to start-of-mutate validation already covered by stale-epoch execute-replay |
+| Q7 Task Format Enforcer | PASS | flat Edition 3 layout, separate verifier, artifacts `/app/continuity` |
 | Complexity | PASS | `validate_task_complexity.py` LOC 5633, 27 F2P, 8 P2P, 24 defects |
 | Runtime authenticity | PASS | `validate_runtime_authenticity.py` 12000 journal rows |
 | Ruff | PASS | `tests/test_outputs.py` clean |
-| Harbor Oracle | PASS | `jobs/2026-08-17__15-25-58` reward **1.0** (35/35) after Q4 repair |
+| Harbor Oracle | PASS | `jobs/2026-08-17__15-25-58` reward **1.0** (35/35) |
 | Harbor NOP | PASS | `jobs/2026-08-17__15-36-49` reward **0.0** |
-| Freeze | PENDING | this commit |
-| Q4 Spec-Test | PENDING | cold rerun on this freeze; prior `55267874` was REVISE |
-| Q6 Production Logic | PENDING | rerun; contract.md changed so prior scope hash is stale |
-| Quality Interlock | PENDING | Q4 exact + Q6 exact/scope-preserved |
+| Freeze | PASS | task commit `8b06eec0fc6fdf150bd83fe3a07bea11c55fafd7` |
+| Q4 Spec-Test | PASS | `.terminus/reviews/jetstream-regional-stream-continuity/8b06eec0/jetstream-regional-stream-continuity-8b06eec0-spec-test-contract-2e324ffb6e.json` (advisory Q4-A01..A05 only) |
+| Q6 Production Logic | PASS | `.terminus/reviews/jetstream-regional-stream-continuity/8b06eec0/jetstream-regional-stream-continuity-8b06eec0-production-logic-74152b4420.json` (~4703 LOC; PADDING MEDIUM) |
+| Quality Interlock | PASS | Q4+Q6 PASS on `8b06eec` |
 
-## Historical reviews on 55267874
+## Review evidence ledger
 
-- Q4 REVISE: `.terminus/reviews/jetstream-regional-stream-continuity/55267874/jetstream-regional-stream-continuity-55267874-spec-test-contract-4bb21b31e6.json` (Q4-001..007)
-- Q6 PASS: `.terminus/reviews/jetstream-regional-stream-continuity/55267874/jetstream-regional-stream-continuity-55267874-production-logic-e9666e0d18.json`
+| Review | Review ID | Task commit | Protocol | Prompt | Role policy | Role contract hash | Scope hash | Result path | Verdict | Confidence | Evidence |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Q4 Spec-Test Contract Reviewer | jetstream-regional-stream-continuity-8b06eec0-spec-test-contract-2e324ffb6e | 8b06eec0fc6fdf150bd83fe3a07bea11c55fafd7 | 2.2 | 2.2 | 1.1 | c860dfe8b8ed0a04c729e4d6a828741b206b7067a780863ec7b22ee09d02c5a0 | n/a | `.terminus/reviews/jetstream-regional-stream-continuity/8b06eec0/jetstream-regional-stream-continuity-8b06eec0-spec-test-contract-2e324ffb6e.json` | PASS | HIGH | advisory LOWs only |
+| Q6 Production Logic Auditor | jetstream-regional-stream-continuity-8b06eec0-production-logic-74152b4420 | 8b06eec0fc6fdf150bd83fe3a07bea11c55fafd7 | 2.2 | 2.2 | 1.1 | ee7d1cfd6e19fcc0e831cc75829457593d7410613c3b3fb811aef925e85a1607 | d830f58fb699b219822088cdbe76ab84c1ca67fd63e1e89c15c0425296e09927 | `.terminus/reviews/jetstream-regional-stream-continuity/8b06eec0/jetstream-regional-stream-continuity-8b06eec0-production-logic-74152b4420.json` | PASS | HIGH | PADDING_RISK MEDIUM |
 
-## Q4 repair included in this freeze
+## Current blocker
 
-Closed blocking Q4-001..007 via verifier/contract edits. Prior Q4/Q6 packets remain historical.
+None. Quality Interlock cleared. Next: Pre-LLMaJ panel (not started).
 
 ## Next action
 
-Generate Q4/Q6 packets on the freeze SHA and run cold inherit/auto reviews.
+Invoke Pre-LLMaJ specialists when requested. Do not start Harbor LLMaJ or GPT×5/Claude×5 without explicit authorization.

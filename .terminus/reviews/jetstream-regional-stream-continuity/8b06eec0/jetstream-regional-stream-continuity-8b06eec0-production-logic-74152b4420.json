@@ -1,0 +1,241 @@
+{
+  "schema_version": "3.0",
+  "role": "Production Logic Auditor",
+  "review_id": "jetstream-regional-stream-continuity-8b06eec0-production-logic-74152b4420",
+  "task": "jetstream-regional-stream-continuity",
+  "task_commit": "8b06eec0fc6fdf150bd83fe3a07bea11c55fafd7",
+  "control_plane_commit": "8b06eec0fc6fdf150bd83fe3a07bea11c55fafd7",
+  "protocol_policy_version": "2.2",
+  "prompt_policy_version": "2.2",
+  "role_policy_version": "1.1",
+  "role_contract_hash": "ee7d1cfd6e19fcc0e831cc75829457593d7410613c3b3fb811aef925e85a1607",
+  "review_scope_hash": "d830f58fb699b219822088cdbe76ab84c1ca67fd63e1e89c15c0425296e09927",
+  "context_packet": ".terminus/reviews/jetstream-regional-stream-continuity/8b06eec0/jetstream-regional-stream-continuity-8b06eec0-production-logic-74152b4420.packet.json",
+  "verdict": "PASS",
+  "confidence": "HIGH",
+  "evidence_status": "SUFFICIENT",
+  "summary": "Independent Q6 inspection of continuityctl, lab start, and the ContinuityEngine mixin MRO at 8b06eec0 finds a genuine regional JetStream continuity control plane: SQLite durability, origin generations, publish attempts, hub archive sync, consumer effects/checkpoints, fencing, replay, retention, and live nats-server domains. Honest reachable runtime/config LOC is about 4,703 after discounting generated seed SQL, MRO-shadowed policy method copies, unused store helpers, and a dead CLI entry; that clears the large_system_strict 3,000 floor. Leaf mixins are thinner and often wrong relative to policy.py, which is starter-defect overlay rather than a toy system. PADDING_RISK is MEDIUM from those unreachable duplicates, not HIGH.",
+  "evidence": [
+    {
+      "type": "rule",
+      "ref": ".terminus/agents/QUALITY_AGENT_REGISTRY.md",
+      "observation": "Q6 independently judges whether the solver-visible core is complex, reachable, coupled, non-toy, and non-padded. For large_system_strict, >=3000 substantive reachable runtime/config LOC is necessary but not sufficient. Complexity Governor and authenticity-validator outcomes were not copied."
+    },
+    {
+      "type": "rule",
+      "ref": ".terminus/agents/QUALITY_AGENT_PROMPTS.md",
+      "observation": "Required method: trace entrypoints, module reachability, distinct responsibilities, clone/wrapper/filler risk, cross-module invariants, a ~25% removal test, and data/state consumption versus logic. large_system_strict PASS also forbids HIGH toy or padding risk."
+    },
+    {
+      "type": "rule",
+      "ref": ".terminus/agents/PRODUCTION_AUTHENTICITY.md",
+      "observation": "Count only implementation that materially participates in the claimed operational system. Dead/unreachable/duplicate code and seed volume are not authored runtime complexity. 3,000 LOC is a floor with no upper target."
+    },
+    {
+      "type": "file",
+      "ref": "jetstream-regional-stream-continuity/task.toml@8b06eec0fc6fdf150bd83fe3a07bea11c55fafd7",
+      "observation": "Software/Systems Python/bash/SQL JetStream continuity task; artifacts [/app/continuity]; separate verifier; workdir /app/continuity; public network; agent timeout 10800."
+    },
+    {
+      "type": "file",
+      "ref": ".terminus/designs/jetstream-regional-stream-continuity.json",
+      "observation": "Design record binds profile=large_system_strict only. Defect lists and creator claims were not treated as Q6 conclusions."
+    },
+    {
+      "type": "file",
+      "ref": "jetstream-regional-stream-continuity/environment/Dockerfile@8b06eec0fc6fdf150bd83fe3a07bea11c55fafd7",
+      "observation": "Pinned debian bookworm-slim installs python3, sqlite3, tmux, asciinema, and digest-checksummed nats-server 2.14.3; copies /app/continuity, bakes nats-py 2.15.0, and seeds continuity.db at image build. Real operator runtime packaging, not a stub."
+    },
+    {
+      "type": "file",
+      "ref": "jetstream-regional-stream-continuity/environment/continuity/bin/continuityctl@8b06eec0fc6fdf150bd83fe3a07bea11c55fafd7",
+      "observation": "Primary operator entrypoint execs python -m continuity.cli with CONTINUITY_ROOT=/app/continuity."
+    },
+    {
+      "type": "file",
+      "ref": "jetstream-regional-stream-continuity/environment/continuity/continuity/cli.py@8b06eec0fc6fdf150bd83fe3a07bea11c55fafd7",
+      "observation": "Operator surface reaches db-init, inspect, reconcile, observe-origin, publish, plan/execute-replay, lease, retention, lab-start/stop, archive-sync, run-consumer, reset, and verify. make_engine instantiates engine.ContinuityEngine, not policy.ContinuityEngine. main() is the process entry; async_main is unreferenced."
+    },
+    {
+      "type": "file",
+      "ref": "jetstream-regional-stream-continuity/environment/continuity/continuity/engine.py@8b06eec0fc6fdf150bd83fe3a07bea11c55fafd7",
+      "observation": "ContinuityEngine MRO is PublishMixin, GenerationMixin, ConsumerMixin, ReconcileMixin, ReplayMixin, FencingMixin, RetentionMixin, then policy.ContinuityEngine. Leaf mixins therefore win overlapping method names at runtime."
+    },
+    {
+      "type": "file",
+      "ref": "jetstream-regional-stream-continuity/environment/continuity/continuity/policy.py@8b06eec0fc6fdf150bd83fe3a07bea11c55fafd7",
+      "observation": "Base engine still supplies live config/topology, expected_stream_for_event, validate_event_generation, effect payload helpers, reconcile_all, renew_recovery_lease, execute_replay_plan, apply_retention, and inspect_health. Overlapping publish/generation/consumer/reconcile/replay/lease/retention methods are MRO-dead copies (~405 lines)."
+    },
+    {
+      "type": "file",
+      "ref": "jetstream-regional-stream-continuity/environment/continuity/continuity/publish.py@8b06eec0fc6fdf150bd83fe3a07bea11c55fafd7",
+      "observation": "Live publish_event records an attempt, marks the journal PUBLISHED before the origin ACK, then publishes with an attempt-suffixed Nats-Msg-Id. Branched timeout/error/ack paths; reduced predicates are starter defects on a real publish state machine, not a constant-output shell."
+    },
+    {
+      "type": "file",
+      "ref": "jetstream-regional-stream-continuity/environment/continuity/continuity/generation.py@8b06eec0fc6fdf150bd83fe3a07bea11c55fafd7",
+      "observation": "Live origin observation validates configured stream/domain, auto-approves first and fingerprint-change generations, and updates high-water on matching fingerprints including sequence regression. Distinct generation responsibility reachable from observe-origin."
+    },
+    {
+      "type": "file",
+      "ref": "jetstream-regional-stream-continuity/environment/continuity/continuity/consumers.py@8b06eec0fc6fdf150bd83fe3a07bea11c55fafd7",
+      "observation": "Live process_delivery advances ACK/checkpoint before effect commit, inserts effect_dispatches, and treats quarantine as an acked path. consumer_health always returns True. Called from ConsumerRunner.process_until_idle."
+    },
+    {
+      "type": "file",
+      "ref": "jetstream-regional-stream-continuity/environment/continuity/continuity/reconcile.py@8b06eec0fc6fdf150bd83fe3a07bea11c55fafd7",
+      "observation": "Live reconcile_region compares journal/archive counts and hub aggregate sequence, persists findings, and infers missing ids from origin_sequence > archive_count. Reached from continuityctl reconcile/verify via reconcile_all."
+    },
+    {
+      "type": "file",
+      "ref": "jetstream-regional-stream-continuity/environment/continuity/continuity/replay.py@8b06eec0fc6fdf150bd83fe3a07bea11c55fafd7",
+      "observation": "Live plan_replay builds a full journal min/max range from missing_event_ids and blocks only exact-equal active ranges. execute_replay_plan remains on the live policy class and publishes under a recovery lease."
+    },
+    {
+      "type": "file",
+      "ref": "jetstream-regional-stream-continuity/environment/continuity/continuity/fencing.py@8b06eec0fc6fdf150bd83fe3a07bea11c55fafd7",
+      "observation": "Live acquire_recovery_lease reuses the prior epoch on expired reacquire; assert_recovery_fence checks owner and expiry but not fence_epoch. renew_recovery_lease stays on the live policy class and calls LeaseToken.assert_current."
+    },
+    {
+      "type": "file",
+      "ref": "jetstream-regional-stream-continuity/environment/continuity/continuity/retention.py@8b06eec0fc6fdf150bd83fe3a07bea11c55fafd7",
+      "observation": "Live compute_retention_decision writes archive/consumer/replay watermarks then sets cleanup_safe_sequence to archive_sequence only. apply_retention remains live on policy and deletes eligible journal rows."
+    },
+    {
+      "type": "file",
+      "ref": "jetstream-regional-stream-continuity/environment/continuity/continuity/store.py@8b06eec0fc6fdf150bd83fe3a07bea11c55fafd7",
+      "observation": "SQLite persistence with WAL, immediate transactions, journal/publish attempts, generations, archive upsert, effects/checkpoints, replay plans/items, leases, and retention watermarks. Eighteen helpers have no package callers (~156 lines); the remainder is operator-reachable."
+    },
+    {
+      "type": "file",
+      "ref": "jetstream-regional-stream-continuity/environment/continuity/continuity/runtime.py@8b06eec0fc6fdf150bd83fe3a07bea11c55fafd7",
+      "observation": "Live NATS connection pool, JetStream STREAM/CONSUMER API upsert/info/msg-get, NatsPublisher with expected-stream ACK check, RuntimeBootstrap for east/west/hub streams, ArchiveSynchronizer, ConsumerRunner pull-fetch, and LabProcessManager pid/monitor lifecycle for three nats-server domains."
+    },
+    {
+      "type": "file",
+      "ref": "jetstream-regional-stream-continuity/environment/continuity/continuity/model.py@8b06eec0fc6fdf150bd83fe3a07bea11c55fafd7",
+      "observation": "Domain types with validation: EventIdentity event_id regex vs region/generation/sequence, envelopes, topology/sources, leases with expiry/assert_current, replay range overlap, retention horizon, health report aggregation. Not lookup-table padding."
+    },
+    {
+      "type": "file",
+      "ref": "jetstream-regional-stream-continuity/environment/continuity/sql/schema.sql@8b06eec0fc6fdf150bd83fe3a07bea11c55fafd7",
+      "observation": "Native schema (~262 substantive lines) for regions, generations, devices, journal, publish_attempts, archive_index, consumers, effects, checkpoints, reconciliation, replay, leases, retention. Counts as runtime structure."
+    },
+    {
+      "type": "file",
+      "ref": "jetstream-regional-stream-continuity/environment/continuity/sql/seed.sql@8b06eec0fc6fdf150bd83fe3a07bea11c55fafd7",
+      "observation": "Deterministic seed builds 240 devices and 12,000 journal rows across east/west with varied types/priorities/publish states, archive holes (west 5311/5489/5603, east 5397/5521), lagged required-consumer effects, and approved replay plan rp-west-incident-001. Evidence of stateful scale only; 239 generative lines excluded from runtime/config LOC."
+    },
+    {
+      "type": "file",
+      "ref": "jetstream-regional-stream-continuity/environment/continuity/config/continuity.json@8b06eec0fc6fdf150bd83fe3a07bea11c55fafd7",
+      "observation": "Runtime config binds east/west/hub URLs, duplicate stream_name EDGE_TELEMETRY, hub subjects telemetry.raw.>, source domain/subject mappings, and stream max-age. Loaded by ContinuityEngine.from_json_file and RuntimeBootstrap."
+    },
+    {
+      "type": "file",
+      "ref": "jetstream-regional-stream-continuity/environment/continuity/config/nats/@8b06eec0fc6fdf150bd83fe3a07bea11c55fafd7",
+      "observation": "Three JetStream domain configs (hub/east/west) with ports, store_dir, leafnode mesh, and resource limits. LabProcessManager starts nats-server against these files."
+    },
+    {
+      "type": "file",
+      "ref": "jetstream-regional-stream-continuity/environment/continuity/ops/shift-handoff.txt@8b06eec0fc6fdf150bd83fe3a07bea11c55fafd7",
+      "observation": "Incident handoff asserts west disconnect, archive identity gaps, ack-vs-effect disagreement, duplicate index effect, and unsafe cleanup vs approved replay. Matches seed holes and controller log; current-state claims have solver-visible evidence."
+    },
+    {
+      "type": "file",
+      "ref": "jetstream-regional-stream-continuity/environment/continuity/log/archive/inc-2026-0808-17-controller.log@8b06eec0fc6fdf150bd83fe3a07bea11c55fafd7",
+      "observation": "Controller log records west disconnect/reconnect, attempt-suffixed message ids, count-based divergence, duplicate effect on evt-west-g01-005127, checkpoint gaps, and retention candidate_rows against replay pin 5311."
+    },
+    {
+      "type": "file",
+      "ref": "jetstream-regional-stream-continuity/environment/continuity/ops/stream-state.json@8b06eec0fc6fdf150bd83fe3a07bea11c55fafd7",
+      "observation": "Captured stream/source state shows shared EDGE_TELEMETRY names, west hub source domain edge-east, consumer ack floors ahead of application sequences, and cleanup_safe_sequence equal to archive_sequence."
+    },
+    {
+      "type": "file",
+      "ref": "jetstream-regional-stream-continuity/environment/continuity/docs/continuity-contract.md@8b06eec0fc6fdf150bd83fe3a07bea11c55fafd7",
+      "observation": "Solver-visible contract states stable event_id message ids, generation hold on sequence regression, identity reconciliation, poison-not-progress, fence-epoch increment, and min(archive, consumer, replay-pin) retention. Live mixins implement weaker predicates against that contract; that is the work package, not documentation-as-LOC."
+    },
+    {
+      "type": "artifact",
+      "ref": "independent_loc_inventory@8b06eec0",
+      "observation": "Independent tokenize-excluding-docstrings Python 4785. Discount MRO-shadowed policy methods (405), policy helpers only invoked from those shadowed reconcile/missing methods (38), ContinuityStore helpers with no package callers (156), and unused cli.async_main (21) => reachable Python 4165. Add schema.sql 262, runtime_extensions.sql 33, continuity.json 127, nats confs 64, operator scripts 16, Dockerfile 36 => honest reachable runtime/config 4703. seed.sql 239 excluded."
+    }
+  ],
+  "findings": [],
+  "missing_evidence": [],
+  "change_scope": [],
+  "do_not_change": [
+    "Do not alter solver-visible production/runtime/configuration/data surfaces on the strength of this Q6 PASS; such a change would stale this review_scope_hash.",
+    "Do not use this Q6 result as evidence for Q4 spec-test alignment or any later acceptance role.",
+    "Do not treat the Complexity Governor or a production-authenticity validator outcome as the basis for this Q6 verdict.",
+    "Do not count sql/seed.sql or seeded row volume as substantive runtime/config LOC."
+  ],
+  "next_gate": "Quality Interlock may combine this Q6 PASS with a current Q4 PASS on the same task commit (or retain this Q6 via unchanged review_scope_hash).",
+  "role_output": {
+    "CORE_LOGIC_DEPTH": "HIGH",
+    "RUNTIME_REACHABILITY": "HIGH",
+    "MODULE_DIVERSITY": "HIGH",
+    "CROSS_COMPONENT_COUPLING": "HIGH",
+    "TOY_LOGIC_RISK": "LOW",
+    "PADDING_RISK": "MEDIUM",
+    "SUBSTANTIVE_LOC_ASSESSMENT": "Independent recount at 8b06eec0: Python tokenize-excluding-docstrings 4785. Discount shadowed policy.ContinuityEngine methods unreachable via engine.ContinuityEngine MRO (405), policy helpers only called from those shadowed reconcile/missing methods (38), unused ContinuityStore helpers with no package callers (156), and dead cli.async_main (21) => reachable Python 4165. Add schema.sql 262, runtime_extensions.sql 33, continuity.json 127, nats confs 64, operator scripts 16, Dockerfile 36 => honest reachable runtime/config 4703. seed.sql (239 generative lines producing 12000 journal rows / 240 devices / lagged effects / archive holes / an approved replay plan) excluded. After the ~620-line dead/duplicate discount the core still clears large_system_strict >=3000 by a wide margin. Leaf mixins are live and branched, not constant-output shells; their reduced predicates are starter defects sitting on store/runtime/model depth, not LOC theater.",
+    "MAJOR_MODULES": [
+      {
+        "module": "bin/continuityctl + continuity.cli + lab scripts",
+        "responsibility": "Operator control plane: db-init, inspect, reconcile, observe-origin, publish, replay, lease, retention, lab lifecycle, archive-sync, run-consumer, reset, verify.",
+        "reachability": "continuityctl execs python -m continuity.cli; start/stop/reset-lab.sh wrap lab-start/lab-stop/reset. main() is the process entry.",
+        "state_error_behavior": "Maps ContractError/FencingError/GenerationConflict/ReplayConflict/sqlite/OSError to exit 2; inspect/reconcile/verify return 2 when unhealthy or diverged."
+      },
+      {
+        "module": "engine.ContinuityEngine mixin MRO (publish/generation/consumers/reconcile/replay/fencing/retention)",
+        "responsibility": "Live domain verbs for publish identity, origin generations, consumer effects, journal-archive compare, replay planning, recovery leases, and cleanup watermarks.",
+        "reachability": "Instantiated by cli.make_engine; commands and ConsumerRunner/ArchiveSynchronizer/RuntimeBootstrap call these methods. policy.py copies of the same names are MRO-dead.",
+        "state_error_behavior": "Timeouts/errors on publish attempts; ContractError on unknown events/consumers; FencingError on foreign live leases; ReplayConflict on identical active ranges. Several predicates are weaker than the continuity contract (starter incompleteness)."
+      },
+      {
+        "module": "policy.ContinuityEngine live remainder",
+        "responsibility": "Config/topology/stream policy, execute_replay_plan, renew_recovery_lease, apply_retention, inspect_health and subsystem health writers.",
+        "reachability": "Inherited through engine MRO. execute_replay_plan, apply_retention, inspect_health, write_reconciliation_report are called from CLI. Shadowed overlapping methods and _journal/_archive/_required_consumer_lag helpers used only by those shadowed methods are not reachable.",
+        "state_error_behavior": "Health aggregates generation/publication/archive/consumer/retention/recovery/topology; replay execution holds/fails items and re-asserts the recovery fence around publish."
+      },
+      {
+        "module": "continuity.store + sql/schema.sql + sql/runtime_extensions.sql",
+        "responsibility": "SQLite durability for journal, generations, archive index, effects, checkpoints, replay, leases, retention, reconciliation findings, plus runtime effect_dispatches/origin_observations extensions.",
+        "reachability": "Opened by ContinuityStore(db_path); CLI ensure_database applies schema+seed+extensions. Most mutating engine paths go through Store.",
+        "state_error_behavior": "Immediate transactions, unique origin (region,generation,sequence), WAL/foreign keys, generation approve/retire, lease write/release, effect prepare/commit/quarantine."
+      },
+      {
+        "module": "continuity.runtime",
+        "responsibility": "Live nats-server process manager, JetStream admin API, publish ACK, hub archive materialization, durable consumer pull processing, stream bootstrap from topology/config.",
+        "reachability": "lab-start, publish, archive-sync, run-consumer, execute-replay. Type hints import policy.ContinuityEngine but CLI passes the mixin subclass.",
+        "state_error_behavior": "JsonApiError on JetStream API errors; expected-stream mismatch on publish ACK; monitor wait; pid-file start/stop; malformed archive payloads skipped."
+      },
+      {
+        "module": "continuity.model",
+        "responsibility": "Event identity, envelopes, topology/sources, checkpoints, replay ranges, leases, findings, health report, retention horizon math.",
+        "reachability": "Imported by cli, engine mixins, policy, store, runtime. EventEnvelope.from_mapping used on archive sync and consumer pull.",
+        "state_error_behavior": "ContractError on invalid event_id/region/sequence disagreement, subject tokens, lease expiry, overlapping replay ranges, unsafe stream horizon."
+      },
+      {
+        "module": "config/continuity.json + config/nats + incident evidence",
+        "responsibility": "Region/hub stream policy and subjects; three JetStream domain server configs; handoff/log/stream-state current-state evidence; 12k-row seed.",
+        "reachability": "from_json_file and LabProcessManager; seed applied at image build and db-init. Seed LOC excluded from the runtime floor.",
+        "state_error_behavior": "Shared EDGE_TELEMETRY names and west source domain edge-east are inherited misconfiguration consumed by bootstrap/reconcile, not decorative files."
+      }
+    ],
+    "PARTIAL_FIX_TRAPS": [
+      "Stabilizing Nats-Msg-Id to event_id without moving PUBLISHED until the expected-stream ACK still finalizes the journal on timeout/wrong-stream.",
+      "Holding fingerprint changes as pending without treating origin sequence regression as a generation transition still silently rewinds the confirmed watermark.",
+      "Committing effects before ACK without a unique (consumer,event_id) effect key still inserts a second CONFIRMED dispatch on redelivery.",
+      "Making reconcile counts match without identity set-difference still hides offsetting missing/extra event_ids, which then starves replay of the true holes.",
+      "Planning only missing ids while still allowing overlapping non-identical active ranges, or planning against an unapproved generation, still collides recovery work.",
+      "Incrementing fence_epoch on expired reacquire without asserting that epoch on execute_replay_plan item mutations still lets a stale owner finish replay.",
+      "Pinning cleanup to archive high-water only still deletes rows newer than the slowest required consumer or an approved replay start.",
+      "Renaming origin streams without correcting hub source domain/subject_transforms still lets the archive ingest the wrong leaf or local telemetry.raw inserts.",
+      "ACKing poison/quarantine as application progress still makes consumer_health and retention believe those origins are complete."
+    ],
+    "REMOVAL_TEST": "Removing ~25% of the load-bearing core (store journal/effects/checkpoints/replay/leases, runtime JetStream admin/publisher/bootstrap/lab manager, model identity/topology/lease types, cli operator commands, live mixin verbs, and policy execute_replay/inspect_health) would collapse publish, archive sync, consumer drain, reconcile, replay, retention, and lab-start. Separately, removing the ~405-line shadowed policy copies, ~38-line dead identity-lag helpers, ~156-line unused store accessors, and unused async_main would not change current starter operator outcomes—evidence of modest padding, not systemic inflation. Seed/sql/seed.sql removal does not change runtime behavior of an already-built DB.",
+    "REQUIRED_CHANGES": []
+  }
+}
