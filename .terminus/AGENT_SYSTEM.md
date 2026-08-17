@@ -1,6 +1,6 @@
 # Terminus Edition 3 Agent System
 
-Agent-system policy version: `2.4`
+Agent-system policy version: `2.5`
 
 This directory is the control plane for creating, reviewing and advancing Terminus Edition 3 tasks. Repository state, current authoritative rules, Git history, generated review packets/results, Actions/Harbor evidence and durable session checkpoints are evidence. Chat history is replaceable working context.
 
@@ -10,7 +10,7 @@ This file defines system-wide authority, trust boundaries, agent classes and dec
 
 It does not define every runnable prompt, per-agent tool permission, detailed artifact schema, task-specific evidence surface or role-specific procedure. Those are owned by the referenced protocol, controller, registry, prompt, schema and reviewer-policy files. A narrower policy may specialize a system-wide rule within its declared decision right, but it must not silently contradict this file.
 
-Execution-relevant lifecycle sections are bound to canonical stage IDs in `.terminus/agents/stage_contracts.json`, explained by `.terminus/agents/STAGE_CONTRACTS.md` and structurally described by `.terminus/agents/schemas/stage_contracts.schema.json`. Detailed instruction semantics are owned by `.terminus/agents/INSTRUCTION_POLICY.md`. Evidence/retrieval authorization is owned by `.terminus/agents/EVIDENCE_VISIBILITY.md`; retrieval/index metadata and canonical retrieval role IDs are owned by `.terminus/agents/RETRIEVAL_METADATA.md` and `.terminus/agents/retrieval_metadata.json`.
+Execution-relevant lifecycle sections are bound to canonical stage IDs in `.terminus/agents/stage_contracts.json`, explained by `.terminus/agents/STAGE_CONTRACTS.md` and structurally described by `.terminus/agents/schemas/stage_contracts.schema.json`. Detailed instruction semantics are owned by `.terminus/agents/INSTRUCTION_POLICY.md`. Post-circuit-breaker Q4 closure semantics are owned by `.terminus/agents/Q4_CLOSURE_POLICY.md`; that policy may specialize only the strategy-reentry path after Protocol has already tripped a Q4 circuit breaker and may not weaken ordinary cold Q4. Evidence/retrieval authorization is owned by `.terminus/agents/EVIDENCE_VISIBILITY.md`; retrieval/index metadata and canonical retrieval role IDs are owned by `.terminus/agents/RETRIEVAL_METADATA.md` and `.terminus/agents/retrieval_metadata.json`.
 
 `AGENT_SYSTEM.md` therefore answers **what the control plane requires, who owns it, where the detailed contract lives, how it is validated/reviewed, what state/evidence it produces, and where failures route**. Lower-level files answer how a bounded role performs that work.
 

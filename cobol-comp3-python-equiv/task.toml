@@ -1,28 +1,32 @@
 version = "2.0"
 name = "cobol-comp3-python-equiv"
 category = "Software"
-subcategory = "Languages"
-tags = ["cobol", "comp-3", "redefines", "odo", "unpack"]
-languages = ["python", "cobol"]
+subcategory = "Systems"
+tags = ["cobol", "comp-3", "python", "inventory", "reconciliation", "restart"]
+languages = ["python", "sql"]
 difficulty = "advanced"
-expert_time_estimate_hours = 8
+expert_time_estimate_hours = 14
 artifacts = ["/app/equiv"]
 
 [metadata]
 author_name = "anonymous"
 author_email = "anonymous@example.com"
+difficulty_explanation = "The failure spans packed-decimal field domains, dynamic ODO/REDEFINES storage, weighted inventory accounting, exact generation fencing, durable restart, reconciliation and atomic publication. Partial fixes can make individual records look correct while replay or close remains unsafe."
+solution_explanation = "Restore strict COBOL storage semantics, honor the caller-selected layout, preserve overlay/dynamic geometry, fence checkpoints by exact source-layout-date identity, apply weighted inventory effects atomically, reconcile independent legacy controls, and make publication reconciliation-gated and idempotent."
+verification_explanation = "The verifier exercises independent packed-decimal, layout/framing, restart, policy, accounting, reconciliation, publication and database durability behaviors. Preservation tests cover valid signed COMP-3, active policy, matching controls and first publication."
+relevant_experience = "COBOL packed decimal and record layouts, Python batch migration, SQLite transactions, inventory valuation, checkpoint/restart, idempotency and reconciliation controls."
 
 [verifier]
 timeout_sec = 1800
 environment_mode = "separate"
 
 [agent]
-timeout_sec = 5400
+timeout_sec = 10800
 
 [environment]
 network_mode = "public"
-build_timeout_sec = 900
+build_timeout_sec = 1200
 cpus = 2
 memory_mb = 8192
-storage_mb = 10240
-workdir = "/app"
+storage_mb = 12288
+workdir = "/app/equiv"

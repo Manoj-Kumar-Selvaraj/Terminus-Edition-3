@@ -25,6 +25,7 @@ class StageAcceptancePredicates:
             "gte",
             "all_gte",
             "eq_path",
+            "q4_satisfied",
         }
     )
 
@@ -47,9 +48,12 @@ class StageAcceptancePredicates:
         for predicate in self.predicates_for(stage_id, status):
             path = str(predicate["path"])
             op = str(predicate["op"])
-            observed = self._resolve(outputs, path)
+            observed = outputs if op == "q4_satisfied" else self._resolve(outputs, path)
             expected = predicate.get("value")
-            if op == "eq_path":
+            if op == "q4_satisfied":
+                passed = self._q4_satisfied(outputs)
+                expected_display = "DIRECT_PASS or ADJUDICATED_CLOSURE_PASS with coherent evidence values"
+            elif op == "eq_path":
                 assert isinstance(expected, str)
                 comparison = self._resolve(outputs, expected)
                 passed = observed == comparison
@@ -159,6 +163,36 @@ class StageAcceptancePredicates:
                 raise ValueError(f"acceptance predicate path is missing: {path}")
             current = current[part]
         return current
+
+    @staticmethod
+    def _review_ready(value: Any, *, verdict: str, role: str | None = None) -> bool:
+        if not isinstance(value, ABCMapping):
+            return False
+        if role is not None and value.get("role") != role:
+            return False
+        return (
+            value.get("verdict") == verdict
+            and value.get("confidence") in {"HIGH", "MEDIUM"}
+            and value.get("evidence_status") == "SUFFICIENT"
+            and value.get("missing_evidence") in (None, [])
+        )
+
+    @classmethod
+    def _q4_satisfied(cls, outputs: Mapping[str, Any]) -> bool:
+        mode = outputs.get("Q4_SATISFACTION")
+        q4 = outputs.get("Q4_RESULT")
+        if mode == "DIRECT_PASS":
+            return cls._review_ready(q4, verdict="PASS") and outputs.get("Q4_CLOSURE_RESULT") in (None, {}, "")
+        if mode == "ADJUDICATED_CLOSURE_PASS":
+            closure = outputs.get("Q4_CLOSURE_RESULT")
+            return (
+                cls._review_ready(q4, verdict="REVISE")
+                and cls._review_ready(closure, verdict="PASS", role="Q4 Closure Adjudicator")
+                and isinstance(closure, ABCMapping)
+                and isinstance(closure.get("role_output"), ABCMapping)
+                and closure["role_output"].get("CLOSURE_OUTCOME") == "PASS"
+            )
+        return False
 
     @classmethod
     def _evaluate(cls, op: str, observed: Any, expected: Any) -> bool:

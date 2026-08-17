@@ -1,0 +1,111 @@
+{
+  "schema_version": "3.0",
+  "role": "Q4 Closure Adjudicator",
+  "review_id": "cobol-comp3-python-equiv-bb2e042c-q4-closure-adjudication-c00658ae75",
+  "task": "cobol-comp3-python-equiv",
+  "task_commit": "bb2e042c45873da3f3d78836d915ddb6446debf2",
+  "control_plane_commit": "dd1a54eb19b3b2386024b3fdaa48161bc896ffca",
+  "protocol_policy_version": "2.2",
+  "prompt_policy_version": "2.2",
+  "role_policy_version": "1.0",
+  "role_contract_hash": "c826fc3d4932a0107e1db5bdd65fe7c0d60771465abca08eb92c198d53aeb76f",
+  "context_packet": ".terminus/reviews/cobol-comp3-python-equiv/bb2e042c/cobol-comp3-python-equiv-bb2e042c-q4-closure-adjudication-c00658ae75.packet.json",
+  "verdict": "PASS",
+  "confidence": "HIGH",
+  "evidence_status": "SUFFICIENT",
+  "summary": "Post-circuit-breaker Q4 closure reconciliation completed against the exact frozen boundary, final exhaustive Q4, packet fingerprints, and 59dcf214..bb2e042c task diff. Every one of the five final-Q4 findings is reconciled exactly once. Q4-001, Q4-002, Q4-003, and Q4-005 reopen scope that the frozen boundary explicitly rejected or narrowed after the final repair closed the authorized semantic blocker; Q4-004 is latent evidence that was fully reviewable before the frozen boundary and was not materially created by the final repair. No blocking closure disposition remains, so the distinct Q4 Adjudicated Closure outcome is PASS while the frozen final Q4 itself remains REVISE.",
+  "evidence": [
+    {
+      "type": "artifact",
+      "ref": ".terminus/reviews/cobol-comp3-python-equiv/bb2e042c/cobol-comp3-python-equiv-bb2e042c-q4-closure-adjudication-c00658ae75.packet.json",
+      "observation": "Exact closure packet binds task commit bb2e042c45873da3f3d78836d915ddb6446debf2, control-plane commit dd1a54eb19b3b2386024b3fdaa48161bc896ffca, role-contract hash c826fc3d4932a0107e1db5bdd65fe7c0d60771465abca08eb92c198d53aeb76f, the frozen boundary/final-Q4 paths, the repair-base/final commits, and the five q4-finding-v1 fingerprints."
+    },
+    {
+      "type": "rule",
+      "ref": ".terminus/agents/Q4_CLOSURE_POLICY.md",
+      "observation": "Closure policy requires exact-once reconciliation and makes only SURVIVING_BOUND_BLOCKER, REPAIR_REGRESSION, NEW_EVIDENCE, and AUTHORITATIVE_RULE_CONFLICT blocking; REJECTED_SCOPE_REOPEN and LATENT_AFTER_BOUNDARY are non-blocking under this strategy."
+    },
+    {
+      "type": "rule",
+      "ref": ".terminus/agents/PROTOCOL.md + .terminus/agents/PROMPTS.md + .terminus/AGENT_SYSTEM.md + TERMINUS_3_AI_INSTRUCTIONS.md",
+      "observation": "Current Edition 3 authority preserves the circuit-breaker/no-drip boundary, requires the Q4 Closure Adjudicator to remain read-only with respect to task files, and does not authorize another ordinary Q4 repair loop."
+    },
+    {
+      "type": "review",
+      "ref": ".terminus/reviews/cobol-comp3-python-equiv/59dcf214/cobol-comp3-python-equiv-59dcf214-adjudication-516e0ca6b1.json",
+      "observation": "Frozen boundary Adjudicator narrowed Q4-001 to the repair-added os.replace mechanism dependency; upheld representation-neutral artifact verification, remaining preflight/audit responsibility families, archive-owned registry attribution, and public policy authority; explicitly rejected Q4-005's every-safety-subclass expansion, the blanket private-src theory, and corrupt/missing archive-input expansion."
+    },
+    {
+      "type": "review",
+      "ref": ".terminus/reviews/cobol-comp3-python-equiv/bb2e042c/cobol-comp3-python-equiv-bb2e042c-spec-test-contract-852fc1b28a.json",
+      "observation": "Final exact-commit exhaustive Q4 is frozen REVISE/HIGH/SUFFICIENT with five findings Q4-001..Q4-005 and complete exhaustiveness metadata. Its exact packet/result binding is valid for task commit bb2e042c45873da3f3d78836d915ddb6446debf2."
+    },
+    {
+      "type": "artifact",
+      "ref": "repair_diff:59dcf2146e1bac84cbc98d7d641e79b5a0138c4a..bb2e042c45873da3f3d78836d915ddb6446debf2:cobol-comp3-python-equiv",
+      "observation": "The exact boundary-to-final task diff changes only instruction.md, tests/test_outputs.py, and solution/fixed/operations.py. It removes the os.replace-specific injection, relaxes archive representation assumptions, adds the authorized grouped preflight/audit perturbations, isolates archive-owned registry evidence, clarifies the narrowed functional movement/item/warehouse authority, and adds recovery BLOCK health to audit. No environment/** path is changed and no rejected Q4-005 safety-subclass or archive-corrupt-input expansion is added."
+    }
+  ],
+  "findings": [],
+  "missing_evidence": [],
+  "change_scope": [
+    "Write only this canonical Q4 Closure Adjudicator result to .terminus/reviews/cobol-comp3-python-equiv/bb2e042c/cobol-comp3-python-equiv-bb2e042c-q4-closure-adjudication-c00658ae75.json."
+  ],
+  "do_not_change": [
+    "Do not modify or repair cobol-comp3-python-equiv task files.",
+    "Do not rerun Q4 or rewrite the frozen final-Q4 verdict.",
+    "Do not reopen REJECTED_SCOPE_REOPEN or LATENT_AFTER_BOUNDARY as another ordinary task patch loop.",
+    "Do not act as Producer, Fixer, Q4, Q6, or ordinary Adjudicator from this closure result."
+  ],
+  "next_gate": "Freeze this result and return it to the CI Orchestrator/Submission Controller for deterministic .terminus/q4_closure.py and Quality Interlock validation. If the chain validators accept it, Q4 is satisfied by ADJUDICATED_CLOSURE_PASS; the frozen final Q4 remains REVISE and no task repair is authorized.",
+  "role_output": {
+    "DECISION": "BOTH_PARTLY",
+    "CONTROLLING_RULE_OR_EVIDENCE": "Q4_CLOSURE_POLICY.md and the frozen 59dcf214 boundary Adjudicator control post-circuit-breaker scope. The final Q4 controls only where its packet-bound semantic finding survives that boundary, is materially introduced by the exact final repair, is based on genuinely new evidence, or exposes a current authoritative-rule conflict.",
+    "SCOPE_RECONCILIATION": "Q4-001 REJECTED_SCOPE_REOPEN: the final Q4 revives the blanket private-src ABI theory explicitly rejected after the authorized os.replace-only blocker was removed. Q4-002 REJECTED_SCOPE_REOPEN: the boundary narrowed the movement/item/warehouse issue to public functional authority; the repair supplies that authority, while the final Q4 converts it back into a broader exhaustive policy-case coverage blocker without new evidence. Q4-003 REJECTED_SCOPE_REOPEN: its safety-completeness demand reopens the boundary-rejected Q4-005 subclass expansion; the additional conflicting-publication variant was already reviewable and supplies no new-evidence basis. Q4-004 LATENT_AFTER_BOUNDARY: successful rejected-movement checkpoint/restart coverage was fully reviewable at 59dcf214 and the final repair did not materially create or alter that semantic area. Q4-005 REJECTED_SCOPE_REOPEN: its nonempty-all-inactive catalog variant reopens a preflight domain the boundary already treated as demonstrated, its audit demand strengthens the narrowed requirement beyond proving the named responsibility families affect public audit result/evidence, and its corrupt/missing archive-input demand was explicitly rejected.",
+    "REASON": "The exact repair closes the six narrowed controlling boundary items: os.replace mechanism coupling is removed; artifact/archive checks no longer require the rejected serialization/extension/byte-identical representation; the authorized missing preflight and audit families are perturbed; archive registry attribution is isolated with a fresh registry; and solver-visible movement/item/warehouse authority is clarified without private capability switches. The five final-Q4 findings do not establish a surviving bound blocker, repair regression, genuinely new evidence, or current authoritative-rule conflict under the closure policy.",
+    "REQUIRED_ACTION": "Record this as the distinct Q4 Adjudicated Closure PASS if deterministic chain validation succeeds. Do not modify task files and do not start another ordinary Q4 repair cycle.",
+    "RECHECK": "Do not rerun Q4. Validate only the frozen closure chain, exact fingerprints, packet/result bindings, repair-base/final commit binding, and exact-once dispositions through the repository's closure/interlock validators.",
+    "CLOSURE_OUTCOME": "PASS",
+    "BOUNDARY_ADJUDICATION": ".terminus/reviews/cobol-comp3-python-equiv/59dcf214/cobol-comp3-python-equiv-59dcf214-adjudication-516e0ca6b1.json",
+    "FINAL_Q4_RESULT": ".terminus/reviews/cobol-comp3-python-equiv/bb2e042c/cobol-comp3-python-equiv-bb2e042c-spec-test-contract-852fc1b28a.json",
+    "REPAIR_BASE_TASK_COMMIT": "59dcf2146e1bac84cbc98d7d641e79b5a0138c4a",
+    "FINAL_TASK_COMMIT": "bb2e042c45873da3f3d78836d915ddb6446debf2",
+    "FINDING_DISPOSITIONS": [
+      {
+        "finding_id": "Q4-001",
+        "semantic_fingerprint": "e8f33ff93a371a48957e92890cf85da61d36ec1d3995a267a4be2277ef34b7cf",
+        "disposition": "REJECTED_SCOPE_REOPEN",
+        "controlling_boundary_ref": ".terminus/reviews/cobol-comp3-python-equiv/59dcf214/cobol-comp3-python-equiv-59dcf214-adjudication-516e0ca6b1.json#ADJ-Q4-001",
+        "reason": "The boundary expressly rejected the blanket private-src ABI theory and retained only the repair-added src.publication.os.replace mechanism dependency. The final repair removes that mechanism-specific hook. The final Q4 finding therefore reopens the rejected broad theory without genuinely new evidence."
+      },
+      {
+        "finding_id": "Q4-002",
+        "semantic_fingerprint": "b6b178871ba7d6aa8e3aefb8441881697e00d78daae413bfd9c198454b91c419",
+        "disposition": "REJECTED_SCOPE_REOPEN",
+        "controlling_boundary_ref": ".terminus/reviews/cobol-comp3-python-equiv/59dcf214/cobol-comp3-python-equiv-59dcf214-adjudication-516e0ca6b1.json#ADJ-Q4-007",
+        "reason": "The boundary narrowed the business-policy issue to the minimum solver-visible functional authority and did not preserve a new exhaustive per-policy-case coverage blocker. The final repair adds exactly the movement-shape, item-field, warehouse-existence/active, and no-private-capability authority required by that narrowed disposition. The final Q4's broader case-coverage demand reopens narrowed scope; the underlying policy domain and verifier evidence were already reviewable at the boundary."
+      },
+      {
+        "finding_id": "Q4-003",
+        "semantic_fingerprint": "cdc6180c401acc3928ccc6a0236253c4f1cfd88e4be28b62d72989e39b9bc539",
+        "disposition": "REJECTED_SCOPE_REOPEN",
+        "controlling_boundary_ref": ".terminus/reviews/cobol-comp3-python-equiv/59dcf214/cobol-comp3-python-equiv-59dcf214-adjudication-516e0ca6b1.json#ADJ-Q4-005",
+        "reason": "The frozen boundary explicitly rejected expanding representative publication-safety proof into additional duplicate-effect-kind/value-floor/safety-subclass obligations and forbade Q4-005 expansion in the final repair. The final Q4's safety-completeness finding revives that rejected semantic family. Its additional conflicting-publication variant was also fully reviewable before the boundary and does not supply genuinely new evidence."
+      },
+      {
+        "finding_id": "Q4-004",
+        "semantic_fingerprint": "764049807ad281d57384964e87750bb567563e91926ff60bc339ef8aada4e298",
+        "disposition": "LATENT_AFTER_BOUNDARY",
+        "controlling_boundary_ref": ".terminus/reviews/cobol-comp3-python-equiv/59dcf214/cobol-comp3-python-equiv-59dcf214-adjudication-516e0ca6b1.json",
+        "reason": "The successful rejected-movement durability/checkpoint/restart coverage concern was not part of the frozen boundary's controlling repair scope. The delegated reject-durability contract and the existing reject rollback/persistence tests were already reviewable at 59dcf214, and the exact final repair does not materially alter rejected-movement durability behavior or its tests. It is therefore a post-boundary latent completeness observation."
+      },
+      {
+        "finding_id": "Q4-005",
+        "semantic_fingerprint": "37bbc62d81049f2a75af15498683ec54ef44a5d84c15b4ce210b9dc2518f55bd",
+        "disposition": "REJECTED_SCOPE_REOPEN",
+        "controlling_boundary_ref": ".terminus/reviews/cobol-comp3-python-equiv/59dcf214/cobol-comp3-python-equiv-59dcf214-adjudication-516e0ca6b1.json#ADJ-Q4-003|ADJ-Q4-004|ADJ-Q4-006",
+        "reason": "The boundary already treated catalog behavior as demonstrated and limited preflight repair to other named health families; the exact repair adds those missing preflight perturbations. It also adds the authorized recovery/control/registry audit perturbations and proves they affect the public audit result, satisfying the narrowed ADJ-Q4-004 criterion. Archive-owned registry attribution is isolated with a fresh registry. The final Q4 additionally demands a stronger per-family audit exposure shape and corrupt/missing archive-input cases, the latter explicitly rejected by ADJ-Q4-006. The composite finding therefore reopens rejected/narrowed scope without genuinely new evidence."
+      }
+    ]
+  }
+}

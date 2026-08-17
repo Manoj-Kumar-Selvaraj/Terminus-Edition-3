@@ -1,0 +1,244 @@
+{
+  "schema_version": "3.0",
+  "role": "Production Logic Auditor",
+  "review_id": "cobol-comp3-python-equiv-de9b508b-production-logic-62acf09094",
+  "task": "cobol-comp3-python-equiv",
+  "task_commit": "de9b508bda9d2d9db75343f83efa15e3c7ec2750",
+  "control_plane_commit": "934fd8a08a1d7751e03a4e9e8260bb7c0180aaad",
+  "protocol_policy_version": "2.2",
+  "prompt_policy_version": "2.2",
+  "role_policy_version": "1.1",
+  "role_contract_hash": "8eb84a3715c4805f762325ceaa890339fc966a2a475cb58986578a15418c5378",
+  "review_scope_hash": "821e655e143a0238839708dcbee11772e40d8c950d7702ff231846b7da078d1b",
+  "context_packet": ".terminus/reviews/cobol-comp3-python-equiv/de9b508b/cobol-comp3-python-equiv-de9b508b-production-logic-62acf09094.packet.json",
+  "verdict": "REVISE",
+  "confidence": "HIGH",
+  "evidence_status": "SUFFICIENT",
+  "summary": "The fresh rebuild contains a real compact batch-processing core, but it does not satisfy large_system_strict production-depth requirements. The documented equiv-eval workflows reach a relatively small transitive implementation closure centered on cli.py and pipeline.py; most of the much larger module inventory is reachable only through an unreferenced services.py aggregation facade and therefore cannot count as substantive reachable production logic. A quarter-sized subset can be removed from that disconnected island without changing any documented operator workflow, and the largest seeded historical state surface is not consumed by the live run path. The reachable core also contains several production-critical constant-false guards and vacuous reconciliation controls. Independent Q6 assessment therefore finds the >=3,000 substantive reachable LOC requirement unmet, TOY_LOGIC_RISK HIGH, and PADDING_RISK HIGH.",
+  "evidence": [
+    {
+      "type": "rule",
+      "ref": ".terminus/agents/QUALITY_AGENT_PROMPTS.md#Q6",
+      "observation": "Q6 requires independent entrypoint/reachability, module-depth, coupling, padding, data-consumption and ~25% removal analysis; large_system_strict PASS requires >=3,000 substantive reachable solver-visible runtime/config LOC and no HIGH toy/padding risk."
+    },
+    {
+      "type": "file",
+      "ref": "cobol-comp3-python-equiv/environment/equiv/bin/equiv-eval",
+      "observation": "The real executable imports only src.cli.main and exits with main()."
+    },
+    {
+      "type": "file",
+      "ref": "cobol-comp3-python-equiv/environment/equiv/src/__init__.py",
+      "observation": "The package public surface exports PipelineConfig/process and main; it does not import the broad services aggregation module."
+    },
+    {
+      "type": "file",
+      "ref": "cobol-comp3-python-equiv/environment/equiv/src/cli.py",
+      "observation": "The documented operator workflows are init-db, describe-layout, identity and run; run directly invokes pipeline.process."
+    },
+    {
+      "type": "file",
+      "ref": "cobol-comp3-python-equiv/environment/equiv/src/pipeline.py",
+      "observation": "The live run path performs layout/identity loading, checkpoint selection, framing, transform, policy/accounting, transactional persistence, reconciliation, reporting and conditional publication using a compact direct import set. Its movement_seen replay check is disabled by a constant-false condition."
+    },
+    {
+      "type": "file",
+      "ref": "cobol-comp3-python-equiv/environment/equiv/src/services.py",
+      "observation": "services.py imports a broad island of recovery, replay, inventory-service, metrics, state, safety, retention, settlement and other modules, but no documented executable/CLI/pipeline path imports services.py; import aggregation does not establish operator-workflow reachability."
+    },
+    {
+      "type": "file",
+      "ref": "cobol-comp3-python-equiv/environment/equiv/src/generation.py",
+      "observation": "Generation identity plumbing is real, but generation_id omits layout_sha and assert_resume_compatible has the layout-change check disabled by a constant-false condition."
+    },
+    {
+      "type": "file",
+      "ref": "cobol-comp3-python-equiv/environment/equiv/src/checkpoint.py",
+      "observation": "Checkpoint persistence is coupled to generation/sequence/offset state, but source fingerprint validation is disabled by a constant-false condition."
+    },
+    {
+      "type": "file",
+      "ref": "cobol-comp3-python-equiv/environment/equiv/src/framing.py",
+      "observation": "The reachable parser has substantive ODO/REDEFINES framing and malformed-record behavior, so the live core is not a constant-output shell."
+    },
+    {
+      "type": "file",
+      "ref": "cobol-comp3-python-equiv/environment/equiv/src/accounting.py",
+      "observation": "The reachable accounting layer implements distinct receipt, issue, transfer and adjustment effects plus inventory-position application."
+    },
+    {
+      "type": "file",
+      "ref": "cobol-comp3-python-equiv/environment/equiv/src/database.py",
+      "observation": "The reachable persistence layer uses SQLite WAL, BEGIN IMMEDIATE transactions, processed/effect/reject/checkpoint/run-state persistence and inventory positions, creating genuine cross-module durability coupling."
+    },
+    {
+      "type": "file",
+      "ref": "cobol-comp3-python-equiv/environment/equiv/src/policy.py",
+      "observation": "Movement policy contains meaningful validation branches, but transfer-loop, inactive-item and inactive-warehouse checks are disabled by constant-false conditions."
+    },
+    {
+      "type": "file",
+      "ref": "cobol-comp3-python-equiv/environment/equiv/src/reconciliation.py",
+      "observation": "Reconciliation computes several independent database controls, but effect_count compares effects to itself and unbalanced_transfers compares the computed value to itself, making those controls vacuous."
+    },
+    {
+      "type": "file",
+      "ref": "cobol-comp3-python-equiv/environment/equiv/src/publication.py",
+      "observation": "Publication includes staging, hashing and a manifest, but its direct failed-reconciliation guard is disabled and its existing-publication validation/idempotent branch is unreachable after an unconditional FileExistsError."
+    },
+    {
+      "type": "file",
+      "ref": "cobol-comp3-python-equiv/environment/equiv/src/replay_guard.py",
+      "observation": "A substantive replay subsystem exists, but it is outside the documented CLI/pipeline closure and therefore does not provide live replay behavior to equiv-eval run."
+    },
+    {
+      "type": "file",
+      "ref": "cobol-comp3-python-equiv/environment/equiv/sql/seed.sql",
+      "observation": "The seed generates 15,000 historical_movements rows, while the documented run/reconciliation closure does not query historical_movements; the largest representative state volume therefore does not add live runtime depth."
+    }
+  ],
+  "findings": [
+    {
+      "id": "Q6-001",
+      "severity": "HIGH",
+      "status": "OBSERVED",
+      "criterion": "large_system_strict requires >=3,000 substantive reachable solver-visible runtime/config LOC.",
+      "evidence_refs": [
+        "cobol-comp3-python-equiv/environment/equiv/bin/equiv-eval",
+        "cobol-comp3-python-equiv/environment/equiv/src/__init__.py",
+        "cobol-comp3-python-equiv/environment/equiv/src/cli.py",
+        "cobol-comp3-python-equiv/environment/equiv/src/pipeline.py",
+        "cobol-comp3-python-equiv/environment/equiv/src/services.py"
+      ],
+      "why_it_matters": "The only documented executable routes through a compact CLI/pipeline transitive closure. The broad module set is not reachable merely because files are installed or imported by an unreferenced aggregation facade. Direct inspection of the live closure, approximately 54 KB of source text across the executable/package/CLI/pipeline and their transitive runtime dependencies, is materially below what could constitute 3,000 substantive reachable LOC.",
+      "minimal_remediation": "Make at least 3,000 LOC of genuinely distinct solver-visible runtime/config logic reachable through real documented operator workflows, with meaningful state/error behavior and domain responsibility; do not satisfy the threshold through import-only aggregation.",
+      "regression_risk": "HIGH: integrating previously disconnected subsystems can alter restart, accounting, reconciliation, publication and operator-interface semantics and therefore requires a fresh production-scope Q6 audit."
+    },
+    {
+      "id": "Q6-002",
+      "severity": "HIGH",
+      "status": "OBSERVED",
+      "criterion": "Production depth must not be dominated by unreachable filler, wrapper/import facades, or unconsumed data volume; the ~25% removal test must materially reduce system behavior.",
+      "evidence_refs": [
+        "cobol-comp3-python-equiv/environment/equiv/src/services.py",
+        "cobol-comp3-python-equiv/environment/equiv/src/replay_guard.py",
+        "cobol-comp3-python-equiv/environment/equiv/src/inventory_service.py",
+        "cobol-comp3-python-equiv/environment/equiv/sql/seed.sql"
+      ],
+      "why_it_matters": "A quarter-sized subset can be removed entirely from the services-only module island without changing init-db, describe-layout, identity or run behavior. The 15,000-row historical seed also does not feed the live run path. Thus repository/module/data volume materially overstates runtime depth and PADDING_RISK is HIGH.",
+      "minimal_remediation": "Either integrate the operational subsystems into genuine runtime/operator workflows with distinct responsibilities, or remove them from the claimed large-system core; ensure representative state scale is actually consumed by production branches/invariants.",
+      "regression_risk": "MEDIUM-HIGH: removing dead surface is low runtime risk but changes the production evidence scope; integrating it is high behavioral risk. Either path invalidates this Q6 scope hash."
+    },
+    {
+      "id": "Q6-003",
+      "severity": "HIGH",
+      "status": "OBSERVED",
+      "criterion": "Reachable business/runtime modules must contain credible production state, safety and failure behavior rather than disabled guards or vacuous success checks.",
+      "evidence_refs": [
+        "cobol-comp3-python-equiv/environment/equiv/src/pipeline.py",
+        "cobol-comp3-python-equiv/environment/equiv/src/generation.py",
+        "cobol-comp3-python-equiv/environment/equiv/src/checkpoint.py",
+        "cobol-comp3-python-equiv/environment/equiv/src/policy.py",
+        "cobol-comp3-python-equiv/environment/equiv/src/reconciliation.py",
+        "cobol-comp3-python-equiv/environment/equiv/src/publication.py"
+      ],
+      "why_it_matters": "Multiple production-critical controls are syntactically present but deliberately non-operative: replay/dedup, layout/fingerprint fencing, several policy checks and direct publication gating use constant-false guards, while two reconciliation controls compare a value to itself. This materially raises TOY_LOGIC_RISK to HIGH even within the otherwise substantive compact core.",
+      "minimal_remediation": "Replace constant-false and self-comparison placeholders with real invariant enforcement connected to the live workflow, preserving transactional/restart/publication semantics.",
+      "regression_risk": "HIGH: activating these guards changes accepted/rejected records, restart eligibility, reconciliation outcomes and publication behavior."
+    }
+  ],
+  "missing_evidence": [],
+  "change_scope": [],
+  "do_not_change": [
+    "production code",
+    "task files",
+    "tests",
+    "PR #23 merge state"
+  ],
+  "next_gate": "Return to the appropriate producer/remediation owner. Any production-scope change invalidates this scope; after remediation, generate a fresh packet and run a new independent Q6 before Quality Interlock.",
+  "role_output": {
+    "CORE_LOGIC_DEPTH": "MEDIUM",
+    "RUNTIME_REACHABILITY": "LOW",
+    "MODULE_DIVERSITY": "MEDIUM",
+    "CROSS_COMPONENT_COUPLING": "MEDIUM",
+    "TOY_LOGIC_RISK": "HIGH",
+    "PADDING_RISK": "HIGH",
+    "SUBSTANTIVE_LOC_ASSESSMENT": "FAIL. The live equiv-eval closure contains genuine parsing, transaction, accounting, checkpoint, reconciliation and publication logic, but direct reachability from documented operator workflows is confined to a compact module set of approximately 54 KB of source text. The many additional modules exposed only through an unreferenced services.py aggregator cannot count as substantive reachable LOC. Independent inspection does not support >=3,000 substantive reachable solver-visible runtime/config LOC.",
+    "MAJOR_MODULES": [
+      {
+        "module": "bin/equiv-eval + src/cli.py",
+        "reachability": "DIRECT",
+        "responsibility": "Operator command dispatch for init-db, describe-layout, identity and run.",
+        "state_failure_behavior": "CLI argument validation and run exit status are tied to final RunState; runtime exceptions propagate."
+      },
+      {
+        "module": "src/pipeline.py",
+        "reachability": "DIRECT_FROM_RUN",
+        "responsibility": "End-to-end batch orchestration across decode, policy, accounting, persistence, checkpointing, reconciliation, reporting and publication.",
+        "state_failure_behavior": "Transitions PROCESSING -> RECONCILING -> READY/HELD -> PUBLISHED; record rejects and accepted effects are transactionally persisted with checkpoints; stop-after leaves durable partial progress. Replay lookup is present but disabled."
+      },
+      {
+        "module": "src/layout.py + src/comp3.py + src/framing.py + src/transform.py",
+        "reachability": "TRANSITIVE_REACHABLE",
+        "responsibility": "COBOL layout geometry, packed/display numeric decode, ODO/REDEFINES framing and movement transformation.",
+        "state_failure_behavior": "Malformed geometry/data raises deterministic decode or transform errors; indeterminate record boundaries terminate iteration. Several domain strictness checks are weakened elsewhere in this stack."
+      },
+      {
+        "module": "src/policy.py + src/accounting.py",
+        "reachability": "TRANSITIVE_REACHABLE",
+        "responsibility": "Business validation and inventory quantity/value effect construction/application.",
+        "state_failure_behavior": "Policy issues become durable rejects; accounting errors reject without effects. Several policy guards are constant-disabled."
+      },
+      {
+        "module": "src/database.py + src/checkpoint.py + src/generation.py + src/models.py",
+        "reachability": "TRANSITIVE_REACHABLE",
+        "responsibility": "Durable SQLite state, transactions, domain state model, generation identity and restart checkpoints.",
+        "state_failure_behavior": "BEGIN IMMEDIATE units roll back on exception and commit on success; checkpoint identity/fingerprint concepts exist, but layout/fingerprint fencing contains disabled checks."
+      },
+      {
+        "module": "src/reconciliation.py + src/reporting.py + src/publication.py",
+        "reachability": "TRANSITIVE_REACHABLE",
+        "responsibility": "Close controls, per-generation reports, staged publication and manifest hashing.",
+        "state_failure_behavior": "Failed controls hold the pipeline and normally suppress publication through pipeline branching; however some reconciliation controls are vacuous and publication's own failed-control guard is disabled."
+      },
+      {
+        "module": "src/services.py and imported operational subsystem island",
+        "reachability": "UNREACHABLE_FROM_DOCUMENTED_OPERATOR_WORKFLOWS",
+        "responsibility": "Aggregates replay, inventory service, recovery, metrics, cutover, lineage, retention, settlement, safety and other auxiliary capabilities.",
+        "state_failure_behavior": "Several individual modules contain substantive logic, but they do not participate in equiv-eval execution because the aggregator itself is unreferenced by the executable/package/CLI/pipeline path."
+      }
+    ],
+    "STATE_AND_FAILURE_BEHAVIOR": [
+      "The live pipeline commits PROCESSING before scanning records, transactionally couples accepted/rejected record persistence with checkpoint progress, enters RECONCILING after input exhaustion, becomes READY or HELD from reconciliation, and becomes PUBLISHED only after the pipeline invokes publication on a passing result.",
+      "SQLite transaction context rolls back a record unit on exception and commits successful effects/position/checkpoint updates together.",
+      "Malformed decode/transform, policy and accounting paths are distinguishable and normally preserve inventory atomicity.",
+      "Restart/generation mechanisms persist source/layout/date fingerprints, but exact layout/fingerprint fencing is partially disabled and the generation key omits layout SHA.",
+      "Replay/dedup infrastructure exists elsewhere but is not wired into the documented workflow; the pipeline's own movement_seen branch is disabled."
+    ],
+    "CROSS_MODULE_INVARIANTS": [
+      "Record framing geometry must agree with transform raw offsets and checkpoint byte progress.",
+      "Processed movement, inventory effects, positions and checkpoint advancement must commit atomically for an accepted unit.",
+      "Generation/checkpoint identity must fence durable progress from changed source/layout/business date, but the current implementation only partially enforces that invariant.",
+      "Accounting effects and inventory positions must remain quantity/value consistent across receipt, issue, transfer and adjustment handling.",
+      "Reconciliation must independently validate durable processed/effect state before publication; current self-comparing controls weaken this invariant.",
+      "Publication manifest/file state should be generation-consistent and failure-gated; current publication contains staging/hash logic but weakened direct safety/idempotency checks."
+    ],
+    "PARTIAL_FIX_TRAPS": [
+      "Changing COMP-3 decode without preserving ODO/REDEFINES framing can shift later record boundaries and checkpoint offsets.",
+      "Changing accounting without transaction/checkpoint coupling can create replayed effects or acknowledged-but-undurable progress.",
+      "Changing generation/checkpoint identity independently can either admit stale resumes or strand otherwise compatible progress.",
+      "Adding replay checks without defining their relationship to generation identity and processed-movement uniqueness can cause duplicate application or false duplicate rejection.",
+      "Repairing reported reconciliation values without independent expectations can leave publication gated by controls that are structurally incapable of failing.",
+      "Merely importing the services module to make files technically reachable would not establish production depth unless those subsystems participate meaningfully in operator workflows and state transitions."
+    ],
+    "DATA_SCALE_ASSESSMENT": "The schema/seed provide a large historical surface, including 15,000 generated historical_movements rows, but the documented run/reconciliation path does not consume that table. database.seed_inventory can generate substantial warehouse/item state but is imported by cli.py without being called by any CLI command. Data volume therefore does not independently demonstrate live production scale.",
+    "REMOVAL_TEST": "FAIL. Roughly one quarter of the solver-visible Python core can be selected entirely from the services-only/unreferenced module island and removed without changing the documented init-db, describe-layout, identity or run call graph. Meaningful behavior would disappear only if a quarter were removed from the much smaller actual live closure. This proves the live core is substantive but the repository-wide apparent large-system volume is not materially required by runtime behavior.",
+    "REQUIRED_CHANGES": [
+      "Provide >=3,000 substantive solver-visible runtime/config LOC that are genuinely reachable from real documented operator workflows and have distinct domain/state/error responsibilities.",
+      "Eliminate, reduce, or genuinely integrate the services-only module island; import-only or facade reachability is insufficient.",
+      "Replace production-critical constant-false guard placeholders with operative restart/generation, replay, policy and publication invariants.",
+      "Replace self-comparing reconciliation controls with independent expected-versus-actual controls where those responsibilities are claimed.",
+      "Ensure representative large data/state surfaces are consumed by real runtime branches or do not count them toward production-depth claims."
+    ]
+  }
+}

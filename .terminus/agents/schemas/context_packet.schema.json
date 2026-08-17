@@ -27,47 +27,155 @@
     "review_output_path"
   ],
   "properties": {
-    "schema_version": {"const": "3.0"},
-    "review_id": {"type": "string", "minLength": 1},
-    "protocol_policy_version": {"type": "string", "minLength": 1},
-    "prompt_policy_version": {"type": "string", "minLength": 1},
-    "role_policy_version": {"type": "string", "minLength": 1},
-    "control_plane_commit": {"type": "string", "minLength": 7},
-    "role_contract_hash": {"type": "string", "minLength": 16},
-    "review_scope_hash": {"type": "string", "minLength": 16},
-    "task": {"type": "string", "minLength": 1},
-    "task_commit": {"type": "string", "minLength": 7},
-    "state": {"type": "string", "minLength": 1},
-    "role": {"type": "string", "minLength": 1},
-    "question": {"type": "string", "minLength": 1},
+    "schema_version": {
+      "const": "3.0"
+    },
+    "review_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "protocol_policy_version": {
+      "type": "string",
+      "minLength": 1
+    },
+    "prompt_policy_version": {
+      "type": "string",
+      "minLength": 1
+    },
+    "role_policy_version": {
+      "type": "string",
+      "minLength": 1
+    },
+    "control_plane_commit": {
+      "type": "string",
+      "minLength": 7
+    },
+    "role_contract_hash": {
+      "type": "string",
+      "minLength": 16
+    },
+    "review_scope_hash": {
+      "type": "string",
+      "minLength": 16
+    },
+    "task": {
+      "type": "string",
+      "minLength": 1
+    },
+    "task_commit": {
+      "type": "string",
+      "minLength": 7
+    },
+    "state": {
+      "type": "string",
+      "minLength": 1
+    },
+    "role": {
+      "type": "string",
+      "minLength": 1
+    },
+    "question": {
+      "type": "string",
+      "minLength": 1
+    },
     "authoritative_rules": {
       "type": "array",
-      "items": {"type": "string", "minLength": 1},
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
       "minItems": 1
     },
     "evidence_allowed": {
       "type": "array",
-      "items": {"type": "string", "minLength": 1}
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
     },
     "evidence_excluded": {
       "type": "array",
-      "items": {"type": "string", "minLength": 1}
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
     },
-    "prior_verdicts_visible": {"type": "boolean"},
-    "isolation_mode": {"enum": ["PROCEDURAL", "MATERIALIZED"]},
-    "change_since_last_review": {"type": "string"},
-    "output_schema": {"type": "string", "minLength": 1},
-    "review_output_path": {"type": "string", "minLength": 1}
+    "prior_verdicts_visible": {
+      "type": "boolean"
+    },
+    "isolation_mode": {
+      "enum": [
+        "PROCEDURAL",
+        "MATERIALIZED"
+      ]
+    },
+    "change_since_last_review": {
+      "type": "string"
+    },
+    "output_schema": {
+      "type": "string",
+      "minLength": 1
+    },
+    "review_output_path": {
+      "type": "string",
+      "minLength": 1
+    },
+    "closure_policy_version": {
+      "type": "string",
+      "minLength": 1
+    },
+    "boundary_adjudication": {
+      "type": "string",
+      "minLength": 1
+    },
+    "final_q4_result": {
+      "type": "string",
+      "minLength": 1
+    },
+    "repair_base_task_commit": {
+      "type": "string",
+      "minLength": 40
+    },
+    "final_task_commit": {
+      "type": "string",
+      "minLength": 40
+    },
+    "finding_fingerprints": {
+      "type": "object"
+    }
   },
   "allOf": [
     {
       "if": {
         "properties": {
-          "role": {"const": "Production Logic Auditor"}
+          "role": {
+            "const": "Production Logic Auditor"
+          }
         }
       },
       "then": {
-        "required": ["review_scope_hash"]
+        "required": [
+          "review_scope_hash"
+        ]
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "role": {
+            "const": "Q4 Closure Adjudicator"
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "closure_policy_version",
+          "boundary_adjudication",
+          "final_q4_result",
+          "repair_base_task_commit",
+          "final_task_commit",
+          "finding_fingerprints"
+        ]
       }
     }
   ]

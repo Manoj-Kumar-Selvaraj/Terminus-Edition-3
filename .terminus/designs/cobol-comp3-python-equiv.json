@@ -1,0 +1,52 @@
+{
+  "schema_version": "1.0",
+  "profile": "large_system_strict",
+  "task_kind": "software",
+  "task": "cobol-comp3-python-equiv",
+  "scenario": "Production warehouse inventory cutover from a legacy COBOL packed-decimal movement feed into a restartable Python equivalence runtime with dynamic record layouts, weighted inventory accounting, reconciliation and atomic publication.",
+  "root_cause_clusters": {
+    "RC-PACKED": "Packed-decimal field-domain rules are collapsed into permissive generic nibble handling.",
+    "RC-LAYOUT": "Dynamic COBOL storage geometry is treated as linear fixed storage instead of bounded overlays/ODO framing.",
+    "RC-RESTART": "Generation identity and checkpoint semantics do not fence exact durable progress.",
+    "RC-POLICY": "Business eligibility is validated incompletely before accounting.",
+    "RC-ACCOUNTING": "Inventory quantity/value invariants are weaker than weighted-cost movement semantics.",
+    "RC-CONTROLS": "Reconciliation/publication controls self-validate or fail to gate official output.",
+    "RC-DURABILITY": "Persistent uniqueness and repeat-publication semantics do not enforce exactly-once state."
+  },
+  "defects": [
+    {"id":"D01","component":"src/comp3.py","observable_failure":"Non-zero COMP-3 storage padding is silently normalized instead of rejected.","root_cause":"RC-PACKED","partial_fix_trap":"Fixing digit validation alone still permits corrupted storage padding."},
+    {"id":"D02","component":"src/comp3.py","observable_failure":"Packed decimal digit nibble A is accepted as a numeric digit.","root_cause":"RC-PACKED","partial_fix_trap":"Sign validation does not prevent an invalid data nibble from corrupting the value."},
+    {"id":"D03","component":"src/comp3.py","observable_failure":"A signed COMP-3 field accepts unsigned F as its sign nibble.","root_cause":"RC-PACKED","partial_fix_trap":"A global set of accepted signs cannot enforce signed field semantics."},
+    {"id":"D04","component":"src/comp3.py","observable_failure":"An unsigned COMP-3 field accepts signed C/D sign conventions.","root_cause":"RC-PACKED","partial_fix_trap":"Encoding fixes are insufficient while decoding still ignores the field sign domain."},
+    {"id":"D05","component":"src/comp3.py","observable_failure":"Unsigned packing emits signed C and does not reject negative input.","root_cause":"RC-PACKED","partial_fix_trap":"Changing only the emitted positive sign still leaves negative unsigned values encodable."},
+    {"id":"D06","component":"src/comp3.py","observable_failure":"Negative signed packing emits C instead of D and loses the negative sign on round trip.","root_cause":"RC-PACKED","partial_fix_trap":"Decoder correctness cannot recover a sign that the encoder discarded."},
+    {"id":"D07","component":"src/layout.py","observable_failure":"Caller-supplied --layout paths are replaced by the built-in layout unless the basename matches.","root_cause":"RC-LAYOUT","partial_fix_trap":"Changing layout IDs in tests is insufficient unless semantic alternate layouts are actually loaded."},
+    {"id":"D08","component":"src/layout.py","observable_failure":"REDEFINES storage is added to static record length instead of overlaying its target.","root_cause":"RC-LAYOUT","partial_fix_trap":"Offset fixes alone do not repair the static geometry exposed by describe-layout."},
+    {"id":"D09","component":"src/layout.py / src/framing.py","observable_failure":"ODO counts above the declared maximum are accepted when resolving dynamic record structure.","root_cause":"RC-LAYOUT","partial_fix_trap":"Checking only for negative counts permits oversized dynamic fields and framing drift."},
+    {"id":"D10","component":"src/layout.py","observable_failure":"REDEFINES offsets start at the current cursor and advance it instead of sharing target storage.","root_cause":"RC-LAYOUT","partial_fix_trap":"Static length can look correct while runtime offsets still consume duplicate storage."},
+    {"id":"D11","component":"src/framing.py","observable_failure":"A determinable malformed complete record reports only the partial decode cursor as byte_length.","root_cause":"RC-LAYOUT","partial_fix_trap":"Recovery can identify the next record only when complete malformed records preserve their actual boundary."},
+    {"id":"D12","component":"src/generation.py","observable_failure":"Generation IDs omit the layout digest, allowing semantic layout changes to retain the same generation ID.","root_cause":"RC-RESTART","partial_fix_trap":"Source identity alone cannot fence layout-dependent record interpretation."},
+    {"id":"D13","component":"src/generation.py","observable_failure":"Resume compatibility ignores layout digest changes.","root_cause":"RC-RESTART","partial_fix_trap":"A generation ID check cannot compensate when the ID itself historically omitted layout identity."},
+    {"id":"D14","component":"src/checkpoint.py","observable_failure":"Checkpoint source/layout/date fingerprints are not validated before resume.","root_cause":"RC-RESTART","partial_fix_trap":"Matching generation IDs do not prove the exact input generation is unchanged."},
+    {"id":"D15","component":"src/checkpoint.py","observable_failure":"Resume starts at the last durable sequence instead of the next sequence.","root_cause":"RC-RESTART","partial_fix_trap":"Deduplication may mask some replay effects but does not repair checkpoint semantics."},
+    {"id":"D16","component":"src/pipeline.py","observable_failure":"Already processed movement IDs are not skipped during replay.","root_cause":"RC-RESTART","partial_fix_trap":"A correct resume offset still needs durable duplicate protection against repeated input."},
+    {"id":"D17","component":"src/policy.py","observable_failure":"Zero-quantity movements are accepted as positive business work.","root_cause":"RC-POLICY","partial_fix_trap":"Downstream accounting cannot infer whether a zero movement was intentionally invalid."},
+    {"id":"D18","component":"src/policy.py","observable_failure":"Transfers with identical source and destination warehouses are accepted.","root_cause":"RC-POLICY","partial_fix_trap":"Balanced accounting does not make a same-warehouse transfer a valid movement."},
+    {"id":"D19","component":"src/policy.py","observable_failure":"Inactive items are accepted for movement processing.","root_cause":"RC-POLICY","partial_fix_trap":"Warehouse validation cannot compensate for item lifecycle state."},
+    {"id":"D20","component":"src/policy.py","observable_failure":"Inactive warehouses are accepted for receipts/issues/transfers.","root_cause":"RC-POLICY","partial_fix_trap":"Movement shape validation cannot replace warehouse operational state."},
+    {"id":"D21","component":"src/accounting.py","observable_failure":"Issues and transfers check only that some source inventory exists, not that requested quantity is available.","root_cause":"RC-ACCOUNTING","partial_fix_trap":"Negative-state guards occur too late and are themselves permissive in the starter."},
+    {"id":"D22","component":"src/accounting.py","observable_failure":"Issue valuation uses the movement unit cost instead of the weighted source inventory unit cost.","root_cause":"RC-ACCOUNTING","partial_fix_trap":"Quantity correctness can coexist with financially wrong inventory depletion."},
+    {"id":"D23","component":"src/accounting.py","observable_failure":"Transfer destination value is calculated from movement unit cost instead of preserving source value.","root_cause":"RC-ACCOUNTING","partial_fix_trap":"Matching transfer quantities are insufficient when transfer value is not conserved."},
+    {"id":"D24","component":"src/accounting.py","observable_failure":"Post-effect validation permits negative inventory quantity/value within broad starter thresholds.","root_cause":"RC-ACCOUNTING","partial_fix_trap":"Pre-checks do not cover every effect application path or race boundary."},
+    {"id":"D25","component":"src/reconciliation.py","observable_failure":"Effect count reconciliation compares the actual count to itself instead of the legacy control.","root_cause":"RC-CONTROLS","partial_fix_trap":"Other totals can match while a missing or duplicated effect escapes the close gate."},
+    {"id":"D26","component":"src/reconciliation.py","observable_failure":"Transfer imbalance reconciliation compares the imbalance count to itself instead of zero.","root_cause":"RC-CONTROLS","partial_fix_trap":"Net generation totals can hide a per-transfer imbalance."},
+    {"id":"D27","component":"src/publication.py","observable_failure":"Failed reconciliation can still enter the publication path.","root_cause":"RC-CONTROLS","partial_fix_trap":"Run state alone is not a publication authorization boundary."},
+    {"id":"D28","component":"src/publication.py","observable_failure":"Re-publishing the same verified generation raises a collision instead of returning the existing publication.","root_cause":"RC-DURABILITY","partial_fix_trap":"Exactly-once restart requires recognizing the already-published identical generation."},
+    {"id":"D29","component":"sql/schema.sql","observable_failure":"Durable processed/reject/effect tables lack generation-scoped uniqueness needed to fence sequence/effect replay.","root_cause":"RC-DURABILITY","partial_fix_trap":"Application-level replay checks are not a last line of defense against retries or races."}
+  ],
+  "causal_edges": [
+    {"from":"D01","to":"D11"},{"from":"D02","to":"D11"},{"from":"D03","to":"D12"},{"from":"D04","to":"D12"},{"from":"D05","to":"D07"},{"from":"D06","to":"D22"},{"from":"D07","to":"D12"},{"from":"D08","to":"D11"},{"from":"D09","to":"D11"},{"from":"D10","to":"D11"},{"from":"D12","to":"D13"},{"from":"D13","to":"D14"},{"from":"D14","to":"D15"},{"from":"D15","to":"D16"},{"from":"D16","to":"D29"},{"from":"D17","to":"D21"},{"from":"D18","to":"D23"},{"from":"D19","to":"D21"},{"from":"D20","to":"D21"},{"from":"D21","to":"D24"},{"from":"D22","to":"D25"},{"from":"D23","to":"D26"},{"from":"D24","to":"D25"},{"from":"D25","to":"D27"},{"from":"D26","to":"D27"},{"from":"D27","to":"D28"},{"from":"D28","to":"D29"},{"from":"D11","to":"D15"},{"from":"D29","to":"D25"},{"from":"D16","to":"D25"}
+  ],
+  "anti_padding_attestation": "All counted environment modules implement reachable warehouse cutover, storage, state, recovery, accounting, control or publication responsibilities. Tests, solution, documentation and generated runtime state are excluded from the solver-visible LOC floor.",
+  "status": "recovered_production_tree_tail_rebuilt_pending_gates"
+}

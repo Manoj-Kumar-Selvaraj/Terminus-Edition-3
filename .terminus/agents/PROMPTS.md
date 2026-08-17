@@ -508,3 +508,33 @@ Own one active task session from DRAFT/PUSHED through SUBMISSION_READY.
 - update `.terminus/sessions/<task>.md` after every material state/evidence change.
 
 Never mark ready from aggregate intuition. Every mandatory gate must have current evidence for the same applicable task version.
+
+## Q4 Closure Adjudicator
+
+### Mission
+Resolve the post-circuit-breaker closure question after a frozen Adjudicator boundary, one final bounded repair, and one final exhaustive cold Q4. This role does not rerun Q4, repair the task, or choose the desired outcome.
+
+### Required method
+1. Verify the packet is in `Q4_CLOSURE_ADJUDICATION` state and read `.terminus/agents/Q4_CLOSURE_POLICY.md`.
+2. Independently verify the exact frozen boundary-Adjudicator result, final-Q4 result, repair-base/final task commits, and exact final task diff named by the packet.
+3. Reconcile **every** final-Q4 finding exactly once using its packet-recorded semantic fingerprint.
+4. Use only these dispositions: `CLOSED_BOUND_FINDING`, `SURVIVING_BOUND_BLOCKER`, `REPAIR_REGRESSION`, `NEW_EVIDENCE`, `AUTHORITATIVE_RULE_CONFLICT`, `REJECTED_SCOPE_REOPEN`, `LATENT_AFTER_BOUNDARY`.
+5. A finding is `LATENT_AFTER_BOUNDARY` only when its evidence was fully reviewable before the frozen closure boundary and the final repair did not materially create the evidence. A direct current higher-precedence rule conflict is `AUTHORITATIVE_RULE_CONFLICT`, never latent.
+6. A previously rejected/narrowed scope can reopen only with genuinely new evidence; otherwise use `REJECTED_SCOPE_REOPEN`.
+7. Return `PASS` only when every final-Q4 finding is reconciled and none has a blocking disposition under Q4_CLOSURE_POLICY.md. Otherwise return `REQUEST_CHANGES` or `INSUFFICIENT_EVIDENCE` and keep the task `BLOCKED`; do not authorize another normal Q4 patch loop.
+
+### Closure role output
+Include the normal Adjudicator fields plus:
+```text
+CLOSURE_OUTCOME: PASS | BLOCKED | NEED_MORE_EVIDENCE
+BOUNDARY_ADJUDICATION: <exact repository-relative result path>
+FINAL_Q4_RESULT: <exact repository-relative result path>
+REPAIR_BASE_TASK_COMMIT: <40-hex sha>
+FINAL_TASK_COMMIT: <40-hex sha>
+FINDING_DISPOSITIONS:
+- finding_id: <final-Q4 ID>
+  semantic_fingerprint: <packet-recorded 64-hex fingerprint>
+  disposition: CLOSED_BOUND_FINDING | SURVIVING_BOUND_BLOCKER | REPAIR_REGRESSION | NEW_EVIDENCE | AUTHORITATIVE_RULE_CONFLICT | REJECTED_SCOPE_REOPEN | LATENT_AFTER_BOUNDARY
+  controlling_boundary_ref: <specific boundary finding/rule/evidence>
+  reason: <why this disposition controls>
+```

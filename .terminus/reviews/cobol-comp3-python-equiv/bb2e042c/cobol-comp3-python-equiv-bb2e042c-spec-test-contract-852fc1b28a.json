@@ -1,0 +1,562 @@
+{
+  "schema_version": "3.0",
+  "role": "Spec-Test Contract Reviewer",
+  "review_id": "cobol-comp3-python-equiv-bb2e042c-spec-test-contract-852fc1b28a",
+  "task": "cobol-comp3-python-equiv",
+  "task_commit": "bb2e042c45873da3f3d78836d915ddb6446debf2",
+  "control_plane_commit": "8b176707c94fbc55b10db371d4aa5f08bdfcd6e1",
+  "protocol_policy_version": "2.2",
+  "prompt_policy_version": "2.2",
+  "role_policy_version": "1.1",
+  "role_contract_hash": "0c40044ec13f0109a5526301cac6e5d2f52f5596d006bee2cdcaa90c0771d7f6",
+  "context_packet": ".terminus/reviews/cobol-comp3-python-equiv/bb2e042c/cobol-comp3-python-equiv-bb2e042c-spec-test-contract-852fc1b28a.packet.json",
+  "verdict": "REVISE",
+  "confidence": "HIGH",
+  "evidence_status": "SUFFICIENT",
+  "summary": "Exhaustive packet-bound Q4 review of task commit bb2e042c45873da3f3d78836d915ddb6446debf2 finds five blocking contract-alignment defects. The verifier materially binds undocumented private src.* Python APIs; movement/item/warehouse acceptance policy is only partially covered; several documented reconciliation/publication safety cases are untested; successful rejected-movement durability is not verified through checkpoint/restart behavior; and the public preflight/audit/archive operator contract retains material coverage holes. Instruction shape and the instruction-versus-docs boundary are otherwise acceptable, and the second adversarial omission sweep is complete.",
+  "evidence": [
+    {
+      "type": "rule",
+      "ref": "TERMINUS_3_AI_INSTRUCTIONS.md",
+      "observation": "Edition 3 disallows unstated grading requirements and requires tasks to be fully specified and behaviorally testable; instruction.md may contain up to 20 concise functional bullets."
+    },
+    {
+      "type": "rule",
+      "ref": ".terminus/AGENT_SYSTEM.md",
+      "observation": "Q4 is a cold packet-bound post-freeze review and must be exhaustive rather than stop at the first reason for REVISE."
+    },
+    {
+      "type": "rule",
+      "ref": ".terminus/agents/PROTOCOL.md",
+      "observation": "Q4 is exact-task-commit bound, findings must be evidence-bound, and current reviewer evidence must respect packet isolation."
+    },
+    {
+      "type": "rule",
+      "ref": ".terminus/agents/QUALITY_AGENT_REGISTRY.md#Q4",
+      "observation": "Q4 must build both requirement-to-test and test-to-requirement matrices, inspect F2P/P2P and public/private boundaries, and treats material phantom tests or untested requirements as REVISE."
+    },
+    {
+      "type": "rule",
+      "ref": ".terminus/agents/QUALITY_AGENT_PROMPTS.md#Q4",
+      "observation": "Q4 must identify phantom implementation choices/private return-value contracts, inspect public output interfaces and operator workflows, and perform a second adversarial omission sweep."
+    },
+    {
+      "type": "rule",
+      "ref": ".terminus/agents/INSTRUCTION_POLICY.md",
+      "observation": "Material functional and operational requirements belong in the work request; technical docs may define protocol/API/CLI/state details but must not become a second prompt or repair map."
+    },
+    {
+      "type": "file",
+      "ref": "cobol-comp3-python-equiv/instruction.md",
+      "observation": "The 16-bullet work request explicitly defines movement shape, item/warehouse authority, durability/replay, reconciliation/detail safety, publication, preflight, audit and archive obligations and delegates detailed runtime semantics to runtime-contract.md."
+    },
+    {
+      "type": "file",
+      "ref": "cobol-comp3-python-equiv/environment/equiv/ops/runtime-contract.md",
+      "observation": "The solver-visible contract declares the public executable/SQLite/report operational interface, exact packed/layout/durability/reconciliation/publication/CLI semantics, and preflight/audit/archive responsibilities."
+    },
+    {
+      "type": "file",
+      "ref": "cobol-comp3-python-equiv/environment/equiv/sql/schema.sql",
+      "observation": "The solver-visible schema exposes items.active, items.max_unit_cost, items.quantity_precision, warehouses.active and generation-scoped operational tables/constraints."
+    },
+    {
+      "type": "file",
+      "ref": "cobol-comp3-python-equiv/environment/equiv/bin/equiv-eval and environment/equiv/src/cli.py",
+      "observation": "The documented public runtime surface is the equiv-eval executable and its init-db, describe-layout, identity, run, preflight, audit and archive command interfaces."
+    },
+    {
+      "type": "test",
+      "ref": "cobol-comp3-python-equiv/tests/test_outputs.py",
+      "observation": "The complete 40-test verifier was inspected. It combines public CLI/state checks with extensive direct imports and calls into undocumented src.* implementation APIs."
+    },
+    {
+      "type": "file",
+      "ref": ".terminus/designs/cobol-comp3-python-equiv-test-map.json",
+      "observation": "Used only for the packet-permitted classification purpose: 30 tests are classified F2P and 10 P2P. Requirement ownership/mapping in this review was rebuilt independently from solver-visible contracts and test bodies."
+    },
+    {
+      "type": "test",
+      "ref": "GitHub code search within cobol-comp3-python-equiv/tests for max_unit_cost, quantity_precision, ITEM_UNKNOWN, WAREHOUSE_UNKNOWN, UNIT_COST_LIMIT, QUANTITY_PRECISION, RECEIPT_SOURCE and ISSUE_DESTINATION",
+      "observation": "Each targeted search returned zero matches, corroborating the independent full-file walk that these explicit policy/shape cases are not asserted."
+    }
+  ],
+  "findings": [
+    {
+      "id": "Q4-001",
+      "severity": "HIGH",
+      "status": "OBSERVED",
+      "criterion": "Verifier behavior -> discoverable solver-visible contract; no phantom private implementation/API contract.",
+      "evidence_refs": [
+        "cobol-comp3-python-equiv/tests/test_outputs.py",
+        "cobol-comp3-python-equiv/instruction.md",
+        "cobol-comp3-python-equiv/environment/equiv/ops/runtime-contract.md",
+        "cobol-comp3-python-equiv/environment/equiv/bin/equiv-eval and environment/equiv/src/cli.py",
+        ".terminus/agents/QUALITY_AGENT_PROMPTS.md#Q4"
+      ],
+      "why_it_matters": "Many substantive tests directly require exact undocumented internal symbols and signatures such as src.comp3.PackedSpec/pack/unpack, src.layout.Field/Layout/resolve_offsets/active_occurs, src.generation/checkpoint helpers, src.accounting helpers, src.policy validators, src.publication.atomic_publish, src.reconciliation.reconcile and src.pipeline.process. The solver-visible contract instead defines the public equiv-eval/SQLite/report behavior and does not declare these Python APIs stable. A conforming implementation that preserves the documented observable behavior while refactoring those internals can therefore fail grading.",
+      "minimal_remediation": "Move behavior that is externally observable to CLI/database/report/publication scenarios. Retain a direct internal assertion only where that Python API is itself intentionally made a stable, naturally solver-visible contract; do not expose hidden test topology or an implementation recipe merely to legitimize the current tests.",
+      "regression_risk": "Replacing fine-grained unit checks with black-box checks can reduce diagnostic precision; preserve equivalent negative and preservation scenarios at the documented public/state boundary."
+    },
+    {
+      "id": "Q4-002",
+      "severity": "HIGH",
+      "status": "OBSERVED",
+      "criterion": "Material solver-visible movement/item/warehouse acceptance requirements -> meaningful verifier coverage.",
+      "evidence_refs": [
+        "cobol-comp3-python-equiv/instruction.md",
+        "cobol-comp3-python-equiv/environment/equiv/sql/schema.sql",
+        "cobol-comp3-python-equiv/tests/test_outputs.py",
+        "GitHub code search within cobol-comp3-python-equiv/tests for max_unit_cost, quantity_precision, ITEM_UNKNOWN, WAREHOUSE_UNKNOWN, UNIT_COST_LIMIT, QUANTITY_PRECISION, RECEIPT_SOURCE and ISSUE_DESTINATION"
+      ],
+      "why_it_matters": "The work request makes the movement-shape matrix and the solver-visible item/warehouse fields part of the acceptance contract. Current tests cover zero quantity, same-warehouse transfer, reason/type compatibility, inactive item and inactive warehouse, but they do not distinguish implementations that ignore items.max_unit_cost or items.quantity_precision, accept an unknown item or warehouse, or omit several required source/destination shape rules such as receipt-with-source and issue-with-destination. These are movement acceptance/rejection semantics, so plausible incorrect implementations can pass.",
+      "minimal_remediation": "Add public-behavior scenarios that exercise each missing policy family without coupling to private validator functions. Preserve the stated authority model: items use the solver-visible active/max-unit-cost/quantity-precision fields, warehouses use existence plus active status only, and no hidden capability switch is introduced.",
+      "regression_risk": "New cases can accidentally turn non-stable internal validation codes into public requirements or reintroduce warehouse capability switches that the instruction expressly excludes."
+    },
+    {
+      "id": "Q4-003",
+      "severity": "HIGH",
+      "status": "OBSERVED",
+      "criterion": "Reconciliation/detail/publication safety requirements -> complete behavioral coverage.",
+      "evidence_refs": [
+        "cobol-comp3-python-equiv/instruction.md",
+        "cobol-comp3-python-equiv/environment/equiv/ops/runtime-contract.md",
+        "cobol-comp3-python-equiv/tests/test_outputs.py"
+      ],
+      "why_it_matters": "The suite meaningfully covers all six legacy controls/tolerances, duplicate movement identities, orphan effects, unbalanced transfers, accepted-with-no-effect publication blocking, negative quantity, reconciliation gating, atomic publication, same-generation idempotency and corrupt published content. It does not exercise the separate documented detailed-settlement prohibition on duplicate effects of the same effect kind for one movement, the inventory-value floor below -0.01 with non-negative quantity, or the documented conflicting-existing-publication case distinct from corruption. Implementations omitting those safety checks remain verifier-green.",
+      "minimal_remediation": "Add representation-neutral state perturbations for duplicate same-kind effects and the negative-value threshold, and a same-target conflicting-generation/publication scenario. Assert only the documented safety/publication outcomes, not incidental manifest filenames, serialization or promotion primitives.",
+      "regression_risk": "Over-specific publication fixtures can accidentally make serialization/layout or an internal promotion mechanism part of the grading contract."
+    },
+    {
+      "id": "Q4-004",
+      "severity": "HIGH",
+      "status": "OBSERVED",
+      "criterion": "Rejected-movement durability/replay contract -> meaningful positive and failure-path coverage.",
+      "evidence_refs": [
+        "cobol-comp3-python-equiv/instruction.md",
+        "cobol-comp3-python-equiv/environment/equiv/ops/runtime-contract.md",
+        "cobol-comp3-python-equiv/tests/test_outputs.py"
+      ],
+      "why_it_matters": "The rejected-transaction fault-injection test proves rollback when the REJECT journal insertion fails, and successful reject-code tests prove reject persistence. They do not verify that a successfully rejected movement also advances the checkpoint atomically, records the applicable processed status, and is skipped on restart. A runtime can persist the reject/event but omit the durable checkpoint, then reprocess the same rejected record after restart, while satisfying the current verifier.",
+      "minimal_remediation": "Add a successful rejected-record durability scenario that checks the documented checkpoint fingerprint/last-sequence advance and applicable processed state, then reruns/resumes and proves the rejected movement is not duplicated. Keep decode cases consistent with the contract's 'processed-row status when applicable' qualification.",
+      "regression_risk": "A blanket processed-row assertion for malformed records could overstate the documented 'when applicable' rule; separate decodable policy rejects from boundary-indeterminate decode rejects."
+    },
+    {
+      "id": "Q4-005",
+      "severity": "MEDIUM",
+      "status": "OBSERVED",
+      "criterion": "Stable public preflight/audit/archive operator contracts -> meaningful, representation-neutral verifier coverage.",
+      "evidence_refs": [
+        "cobol-comp3-python-equiv/instruction.md",
+        "cobol-comp3-python-equiv/environment/equiv/ops/runtime-contract.md",
+        "cobol-comp3-python-equiv/tests/test_outputs.py"
+      ],
+      "why_it_matters": "The operator workflow tests are broad but leave material distinctions unprobed. Preflight proves an actually empty catalog fails, not that a non-empty catalog with zero active items/warehouses fails, so a row-count-only catalog check can pass. Audit perturbations mostly assert only overall passed=false (or a changed payload), not that the documented replay/recovery, checkpoint, accounting, reconciliation, inventory, quarantine, journal, registry, metric and settlement health is actually exposed in the public result. Archive is exercised only against healthy report/publication inputs; publication corruption is tested against audit and restored before archive, so an archive implementation that packages evidence without first verifying the live report/publication contract can pass. These gaps affect documented public operator behavior and archive integrity, so this MEDIUM finding is blocking under Q4 materiality.",
+      "minimal_remediation": "Add an all-inactive-but-nonempty catalog preflight case; verify audit semantically exposes each documented health family without freezing incidental JSON field names/serialization; and invoke archive against a semantically corrupt report/publication set and require refusal/no verified archive or archive event.",
+      "regression_risk": "Operator tests must remain representation-neutral: do not manufacture a new exact JSON schema or archive file naming contract that solver-visible material does not define."
+    }
+  ],
+  "missing_evidence": [],
+  "change_scope": [
+    "cobol-comp3-python-equiv/instruction.md",
+    "solver-visible contracts explicitly referenced by instruction.md",
+    "cobol-comp3-python-equiv/tests/",
+    "classification-only use of .terminus/designs/cobol-comp3-python-equiv-test-map.json",
+    "public CLI/SQLite interfaces required to interpret observable verifier behavior"
+  ],
+  "do_not_change": [
+    "Task files are read-only for this reviewer; any remediation must be separately routed to the responsible producer/fixer.",
+    "Do not use or rewrite solution/ as Q4 evidence or remediation.",
+    "Do not import previous Q4, Adjudicator, Q6, Producer or Fixer conclusions into this result."
+  ],
+  "next_gate": "QUALITY_INTERLOCK remains REVISE; return control to the CI Orchestrator / Submission Controller for producer-side routing of Q4-001 through Q4-005 and a fresh exact-commit Q4 only after an authorized refreeze.",
+  "role_output": {
+    "REQUIREMENT_TEST_MATRIX": [
+      {
+        "REQ_ID": "REQ-01",
+        "REQUIREMENT": "Public /app/equiv/bin/equiv-eval and init-db, describe-layout, identity, run, preflight, audit and archive workflows remain reachable and honor caller-provided source/layout paths where accepted.",
+        "TESTS": [
+          "test_f2p_caller_supplied_layout_path_is_honored",
+          "test_p2p_cli_success_and_failure_json_contract",
+          "test_p2p_audit_and_archive_operator_workflows_are_reachable"
+        ],
+        "COVERAGE": "COMPLETE",
+        "NOTES": "Public CLI paths are exercised, including alternate caller layout/source through the integrated workflow."
+      },
+      {
+        "REQ_ID": "REQ-02",
+        "REQUIREMENT": "COMP-3 decimal digit, padding, signed C/D, unsigned F, negative-unsigned and packing semantics.",
+        "TESTS": [
+          "test_f2p_nonzero_comp3_padding_is_rejected",
+          "test_f2p_invalid_comp3_digit_nibble_a_is_rejected",
+          "test_f2p_signed_comp3_rejects_unsigned_f_sign",
+          "test_f2p_unsigned_comp3_rejects_signed_c_sign",
+          "test_f2p_unsigned_pack_uses_f_and_rejects_negative",
+          "test_f2p_signed_negative_pack_uses_d_sign",
+          "test_p2p_valid_positive_signed_comp3_roundtrip_is_preserved"
+        ],
+        "COVERAGE": "COMPLETE",
+        "NOTES": "Behavior is covered, but most assertions are coupled to undocumented private Python APIs; see Q4-001."
+      },
+      {
+        "REQ_ID": "REQ-03",
+        "REQUIREMENT": "ODO bounds, REDEFINES storage/offset behavior and determinable versus indeterminate malformed-record boundaries.",
+        "TESTS": [
+          "test_f2p_redefines_does_not_increase_static_storage",
+          "test_f2p_odo_count_above_declared_maximum_is_rejected",
+          "test_f2p_redefines_offset_overlaps_target_without_cursor_advance",
+          "test_f2p_complete_malformed_record_reports_full_boundary"
+        ],
+        "COVERAGE": "COMPLETE",
+        "NOTES": "Semantic cases are present; direct internal API binding is separately a reverse-contract defect."
+      },
+      {
+        "REQ_ID": "REQ-04",
+        "REQUIREMENT": "Generation identity binds source SHA-256, layout SHA-256 and business date; checkpoint fingerprint mismatch cannot resume; resume starts at last durable sequence + 1.",
+        "TESTS": [
+          "test_f2p_generation_id_binds_layout_digest",
+          "test_f2p_resume_rejects_layout_change",
+          "test_f2p_checkpoint_fingerprint_mismatch_is_rejected",
+          "test_f2p_resume_starts_after_last_durable_sequence",
+          "test_f2p_pipeline_restart_does_not_reapply_last_movement"
+        ],
+        "COVERAGE": "COMPLETE",
+        "NOTES": "All identity inputs and resume offset are distinguished."
+      },
+      {
+        "REQ_ID": "REQ-05",
+        "REQUIREMENT": "Current-generation replay does not reapply inventory effects; same movement identity in another generation is not itself a duplicate.",
+        "TESTS": [
+          "test_f2p_pipeline_restart_does_not_reapply_last_movement",
+          "test_f2p_database_rejects_duplicate_generation_sequence"
+        ],
+        "COVERAGE": "COMPLETE",
+        "NOTES": "Replay and cross-generation ownership are both exercised."
+      },
+      {
+        "REQ_ID": "REQ-06",
+        "REQUIREMENT": "Accepted movement processed row, effects, positions, journal and checkpoint commit atomically.",
+        "TESTS": [
+          "test_p2p_accepted_movement_transaction_rolls_back_on_failure",
+          "test_f2p_pipeline_restart_does_not_reapply_last_movement"
+        ],
+        "COVERAGE": "COMPLETE",
+        "NOTES": "Fault injection plus restart/state assertions distinguish partial accepted commits."
+      },
+      {
+        "REQ_ID": "REQ-07",
+        "REQUIREMENT": "Rejected movement reject row, applicable processed status, journal and checkpoint commit atomically and are durable across restart.",
+        "TESTS": [
+          "test_p2p_rejected_movement_transaction_rolls_back_on_failure",
+          "test_p2p_decode_and_transform_reject_codes_are_stable",
+          "test_f2p_zero_quantity_is_rejected",
+          "test_f2p_same_warehouse_transfer_is_rejected",
+          "test_f2p_inactive_item_is_rejected",
+          "test_f2p_inactive_warehouse_is_rejected"
+        ],
+        "COVERAGE": "PARTIAL",
+        "NOTES": "Rollback and reject persistence are covered; successful reject checkpoint/applicable processed state and restart skip are not. See Q4-004."
+      },
+      {
+        "REQ_ID": "REQ-08",
+        "REQUIREMENT": "Stable reject codes DECODE, TRANSFORM, ACCOUNTING, QUANTITY, TRANSFER_LOOP, ITEM_INACTIVE and WAREHOUSE_INACTIVE persist in operational reject evidence; human wording is not stable.",
+        "TESTS": [
+          "test_p2p_decode_and_transform_reject_codes_are_stable",
+          "test_f2p_issue_requires_full_available_quantity",
+          "test_f2p_zero_quantity_is_rejected",
+          "test_f2p_same_warehouse_transfer_is_rejected",
+          "test_f2p_inactive_item_is_rejected",
+          "test_f2p_inactive_warehouse_is_rejected"
+        ],
+        "COVERAGE": "COMPLETE",
+        "NOTES": "Each documented stable code family is observed."
+      },
+      {
+        "REQ_ID": "REQ-09",
+        "REQUIREMENT": "Movement quantity/source/destination shape and reason/type compatibility are enforced before acceptance.",
+        "TESTS": [
+          "test_f2p_zero_quantity_is_rejected",
+          "test_f2p_same_warehouse_transfer_is_rejected",
+          "test_p2p_active_receipt_policy_remains_valid"
+        ],
+        "COVERAGE": "PARTIAL",
+        "NOTES": "Reason matrix, zero quantity and transfer loop are covered; several required source/destination invalid shapes are not. See Q4-002."
+      },
+      {
+        "REQ_ID": "REQ-10",
+        "REQUIREMENT": "Item must exist and item policy uses items.active, items.max_unit_cost and items.quantity_precision.",
+        "TESTS": [
+          "test_f2p_inactive_item_is_rejected",
+          "test_p2p_active_receipt_policy_remains_valid"
+        ],
+        "COVERAGE": "PARTIAL",
+        "NOTES": "Active status is covered; unknown item, max_unit_cost and quantity_precision are not. See Q4-002."
+      },
+      {
+        "REQ_ID": "REQ-11",
+        "REQUIREMENT": "Every referenced warehouse must exist and have warehouses.active=1; no additional solver-visible receipt/issue/transfer capability switch is authoritative.",
+        "TESTS": [
+          "test_f2p_inactive_warehouse_is_rejected",
+          "test_p2p_active_receipt_policy_remains_valid"
+        ],
+        "COVERAGE": "PARTIAL",
+        "NOTES": "Active warehouse is covered; missing warehouse is not independently exercised. See Q4-002."
+      },
+      {
+        "REQ_ID": "REQ-12",
+        "REQUIREMENT": "Available quantity and weighted source valuation govern inventory effects; resulting inventory quantity is non-negative.",
+        "TESTS": [
+          "test_f2p_issue_requires_full_available_quantity",
+          "test_f2p_issue_uses_weighted_source_unit_cost",
+          "test_f2p_transfer_preserves_source_value_across_warehouses",
+          "test_f2p_effect_application_rejects_negative_inventory"
+        ],
+        "COVERAGE": "COMPLETE",
+        "NOTES": "Available quantity, weighted issue valuation, zero-net transfer valuation and negative quantity are distinguished."
+      },
+      {
+        "REQ_ID": "REQ-13",
+        "REQUIREMENT": "All six legacy controls are compared independently with count tolerance 0, quantity tolerance 0.0001 and value tolerance 0.01.",
+        "TESTS": [
+          "test_f2p_reconciliation_checks_legacy_effect_count",
+          "test_p2p_matching_reconciliation_controls_pass"
+        ],
+        "COVERAGE": "COMPLETE",
+        "NOTES": "Each control is independently mismatched and tolerance boundaries are exercised."
+      },
+      {
+        "REQ_ID": "REQ-14",
+        "REQUIREMENT": "Safety reconciliation enforces zero duplicate movement identities, orphan effects and unbalanced transfer pairs.",
+        "TESTS": [
+          "test_f2p_reconciliation_rejects_unbalanced_transfer",
+          "test_f2p_database_rejects_duplicate_generation_sequence"
+        ],
+        "COVERAGE": "COMPLETE",
+        "NOTES": "Unbalanced transfer plus permissive duplicate/orphan state are exercised."
+      },
+      {
+        "REQ_ID": "REQ-15",
+        "REQUIREMENT": "Detailed settlement requires at least one effect per accepted movement, no duplicate same-kind effects for one movement, non-negative position quantity and value >= -0.01.",
+        "TESTS": [
+          "test_f2p_failed_reconciliation_cannot_publish",
+          "test_f2p_effect_application_rejects_negative_inventory",
+          "test_f2p_caller_supplied_layout_path_is_honored"
+        ],
+        "COVERAGE": "PARTIAL",
+        "NOTES": "Missing-effect and negative-quantity cases are covered; duplicate same-kind effect and isolated value-floor violation are not. See Q4-003."
+      },
+      {
+        "REQ_ID": "REQ-16",
+        "REQUIREMENT": "Publication is reconciliation/detail gated, atomically visible, independently verifiable, idempotent only for a valid same generation, and rejects corrupt/conflicting existing publication.",
+        "TESTS": [
+          "test_f2p_failed_reconciliation_cannot_publish",
+          "test_f2p_repeat_publication_of_same_generation_is_idempotent",
+          "test_p2p_first_successful_publication_is_verifiable"
+        ],
+        "COVERAGE": "PARTIAL",
+        "NOTES": "Gate, atomic visibility, integrity and corrupt-existing cases are covered; a distinct conflicting existing generation/manifest case is absent. See Q4-003."
+      },
+      {
+        "REQ_ID": "REQ-17",
+        "REQUIREMENT": "Preflight consumes real source/layout, schema health, catalog, input integrity, 15,000-row historical baseline, batch-window/authorization safety and recovery state; zero active catalog or unsafe recovery fails.",
+        "TESTS": [
+          "test_f2p_caller_supplied_layout_path_is_honored",
+          "test_p2p_preflight_uses_historical_baseline"
+        ],
+        "COVERAGE": "PARTIAL",
+        "NOTES": "Many perturbations exist, but the active-catalog obligation is only tested by deleting all rows rather than leaving rows present but all inactive. See Q4-005."
+      },
+      {
+        "REQ_ID": "REQ-18",
+        "REQUIREMENT": "Audit exposes replay/recovery, checkpoint, accounting/control/reconciliation, inventory, quarantine, journal, registry, metric and settlement health for the generation.",
+        "TESTS": [
+          "test_f2p_caller_supplied_layout_path_is_honored",
+          "test_p2p_audit_and_archive_operator_workflows_are_reachable"
+        ],
+        "COVERAGE": "PARTIAL",
+        "NOTES": "Perturbations drive overall pass/fail, but the public result is not checked for semantic exposure of each documented health family. See Q4-005."
+      },
+      {
+        "REQ_ID": "REQ-19",
+        "REQUIREMENT": "Archive verifies report/publication contracts, exports controls/deltas, binds lineage/integrity, creates a verified archive, records registry/journal evidence, reports positive retention for report/publication/audit/quarantine, and does not mutate live report/publication.",
+        "TESTS": [
+          "test_f2p_caller_supplied_layout_path_is_honored",
+          "test_p2p_audit_and_archive_operator_workflows_are_reachable"
+        ],
+        "COVERAGE": "PARTIAL",
+        "NOTES": "Positive archive evidence/retention/non-mutation is strong; archive is not invoked against corrupt report/publication inputs to prove verification refusal. See Q4-005."
+      },
+      {
+        "REQ_ID": "REQ-20",
+        "REQUIREMENT": "SQLite state preserves generation-scoped movement identity/sequence and reject sequence ownership while allowing the same movement id in another generation; report/publication state remains compatible with solver-visible contracts.",
+        "TESTS": [
+          "test_f2p_database_rejects_duplicate_generation_sequence",
+          "test_f2p_database_rejects_duplicate_reject_sequence",
+          "test_p2p_cli_success_and_failure_json_contract",
+          "test_p2p_first_successful_publication_is_verifiable"
+        ],
+        "COVERAGE": "COMPLETE",
+        "NOTES": "Generation/reject uniqueness and representative public state/report compatibility are asserted."
+      },
+      {
+        "REQ_ID": "REQ-21",
+        "REQUIREMENT": "Successful CLI commands emit one JSON object on stdout with exit 0; completed failed checks return 2 with passed=false; runtime/input errors emit one JSON error object on stderr and return 2.",
+        "TESTS": [
+          "test_p2p_cli_success_and_failure_json_contract",
+          "test_f2p_caller_supplied_layout_path_is_honored"
+        ],
+        "COVERAGE": "COMPLETE",
+        "NOTES": "Success, completed-check failure and input/runtime error paths are exercised."
+      }
+    ],
+    "VERIFIER_BEHAVIOR_MATRIX": [
+      {"TEST":"test_f2p_nonzero_comp3_padding_is_rejected","CLASSIFICATION":"F2P","REQUIREMENTS":["REQ-02"],"DISCOVERABLE_BEHAVIOR":"YES","BOUNDARY":"PRIVATE_API_COUPLED"},
+      {"TEST":"test_f2p_invalid_comp3_digit_nibble_a_is_rejected","CLASSIFICATION":"F2P","REQUIREMENTS":["REQ-02"],"DISCOVERABLE_BEHAVIOR":"YES","BOUNDARY":"PRIVATE_API_COUPLED"},
+      {"TEST":"test_f2p_signed_comp3_rejects_unsigned_f_sign","CLASSIFICATION":"F2P","REQUIREMENTS":["REQ-02"],"DISCOVERABLE_BEHAVIOR":"YES","BOUNDARY":"PRIVATE_API_COUPLED"},
+      {"TEST":"test_f2p_unsigned_comp3_rejects_signed_c_sign","CLASSIFICATION":"F2P","REQUIREMENTS":["REQ-02"],"DISCOVERABLE_BEHAVIOR":"YES","BOUNDARY":"PRIVATE_API_COUPLED"},
+      {"TEST":"test_f2p_unsigned_pack_uses_f_and_rejects_negative","CLASSIFICATION":"F2P","REQUIREMENTS":["REQ-02"],"DISCOVERABLE_BEHAVIOR":"YES","BOUNDARY":"PRIVATE_API_COUPLED"},
+      {"TEST":"test_f2p_signed_negative_pack_uses_d_sign","CLASSIFICATION":"F2P","REQUIREMENTS":["REQ-02"],"DISCOVERABLE_BEHAVIOR":"YES","BOUNDARY":"PRIVATE_API_COUPLED"},
+      {"TEST":"test_f2p_redefines_does_not_increase_static_storage","CLASSIFICATION":"F2P","REQUIREMENTS":["REQ-03"],"DISCOVERABLE_BEHAVIOR":"YES","BOUNDARY":"PRIVATE_API_COUPLED"},
+      {"TEST":"test_f2p_caller_supplied_layout_path_is_honored","CLASSIFICATION":"F2P","REQUIREMENTS":["REQ-01","REQ-16","REQ-17","REQ-18","REQ-19","REQ-21"],"DISCOVERABLE_BEHAVIOR":"YES","BOUNDARY":"PUBLIC_CLI_STATE"},
+      {"TEST":"test_f2p_odo_count_above_declared_maximum_is_rejected","CLASSIFICATION":"F2P","REQUIREMENTS":["REQ-03"],"DISCOVERABLE_BEHAVIOR":"YES","BOUNDARY":"PRIVATE_API_COUPLED"},
+      {"TEST":"test_f2p_redefines_offset_overlaps_target_without_cursor_advance","CLASSIFICATION":"F2P","REQUIREMENTS":["REQ-03"],"DISCOVERABLE_BEHAVIOR":"YES","BOUNDARY":"PRIVATE_API_COUPLED"},
+      {"TEST":"test_f2p_complete_malformed_record_reports_full_boundary","CLASSIFICATION":"F2P","REQUIREMENTS":["REQ-03"],"DISCOVERABLE_BEHAVIOR":"YES","BOUNDARY":"PRIVATE_API_COUPLED"},
+      {"TEST":"test_f2p_generation_id_binds_layout_digest","CLASSIFICATION":"F2P","REQUIREMENTS":["REQ-04"],"DISCOVERABLE_BEHAVIOR":"YES","BOUNDARY":"PRIVATE_API_COUPLED"},
+      {"TEST":"test_f2p_resume_rejects_layout_change","CLASSIFICATION":"F2P","REQUIREMENTS":["REQ-04"],"DISCOVERABLE_BEHAVIOR":"YES","BOUNDARY":"PRIVATE_API_COUPLED"},
+      {"TEST":"test_f2p_checkpoint_fingerprint_mismatch_is_rejected","CLASSIFICATION":"F2P","REQUIREMENTS":["REQ-04"],"DISCOVERABLE_BEHAVIOR":"YES","BOUNDARY":"PRIVATE_API_COUPLED"},
+      {"TEST":"test_f2p_resume_starts_after_last_durable_sequence","CLASSIFICATION":"F2P","REQUIREMENTS":["REQ-04"],"DISCOVERABLE_BEHAVIOR":"YES","BOUNDARY":"PRIVATE_API_COUPLED"},
+      {"TEST":"test_f2p_pipeline_restart_does_not_reapply_last_movement","CLASSIFICATION":"F2P","REQUIREMENTS":["REQ-04","REQ-05","REQ-06"],"DISCOVERABLE_BEHAVIOR":"YES","BOUNDARY":"PRIVATE_API_PLUS_PUBLIC_STATE"},
+      {"TEST":"test_f2p_zero_quantity_is_rejected","CLASSIFICATION":"F2P","REQUIREMENTS":["REQ-08","REQ-09"],"DISCOVERABLE_BEHAVIOR":"YES","BOUNDARY":"PUBLIC_PIPELINE_PLUS_PRIVATE_VALIDATOR"},
+      {"TEST":"test_f2p_same_warehouse_transfer_is_rejected","CLASSIFICATION":"F2P","REQUIREMENTS":["REQ-08","REQ-09"],"DISCOVERABLE_BEHAVIOR":"YES","BOUNDARY":"PUBLIC_PIPELINE"},
+      {"TEST":"test_f2p_inactive_item_is_rejected","CLASSIFICATION":"F2P","REQUIREMENTS":["REQ-08","REQ-10"],"DISCOVERABLE_BEHAVIOR":"YES","BOUNDARY":"PUBLIC_PIPELINE"},
+      {"TEST":"test_f2p_inactive_warehouse_is_rejected","CLASSIFICATION":"F2P","REQUIREMENTS":["REQ-08","REQ-11"],"DISCOVERABLE_BEHAVIOR":"YES","BOUNDARY":"PUBLIC_PIPELINE"},
+      {"TEST":"test_f2p_issue_requires_full_available_quantity","CLASSIFICATION":"F2P","REQUIREMENTS":["REQ-08","REQ-12"],"DISCOVERABLE_BEHAVIOR":"YES","BOUNDARY":"PRIVATE_API_PLUS_PUBLIC_PIPELINE"},
+      {"TEST":"test_f2p_issue_uses_weighted_source_unit_cost","CLASSIFICATION":"F2P","REQUIREMENTS":["REQ-12"],"DISCOVERABLE_BEHAVIOR":"YES","BOUNDARY":"PRIVATE_API_COUPLED"},
+      {"TEST":"test_f2p_transfer_preserves_source_value_across_warehouses","CLASSIFICATION":"F2P","REQUIREMENTS":["REQ-12"],"DISCOVERABLE_BEHAVIOR":"YES","BOUNDARY":"PRIVATE_API_COUPLED"},
+      {"TEST":"test_f2p_effect_application_rejects_negative_inventory","CLASSIFICATION":"F2P","REQUIREMENTS":["REQ-12","REQ-15"],"DISCOVERABLE_BEHAVIOR":"YES","BOUNDARY":"PRIVATE_API_COUPLED"},
+      {"TEST":"test_f2p_reconciliation_checks_legacy_effect_count","CLASSIFICATION":"F2P","REQUIREMENTS":["REQ-13"],"DISCOVERABLE_BEHAVIOR":"YES","BOUNDARY":"PRIVATE_API_PLUS_SOLVER_VISIBLE_DB"},
+      {"TEST":"test_f2p_reconciliation_rejects_unbalanced_transfer","CLASSIFICATION":"F2P","REQUIREMENTS":["REQ-14"],"DISCOVERABLE_BEHAVIOR":"YES","BOUNDARY":"PRIVATE_API_PLUS_SOLVER_VISIBLE_DB"},
+      {"TEST":"test_f2p_failed_reconciliation_cannot_publish","CLASSIFICATION":"F2P","REQUIREMENTS":["REQ-15","REQ-16"],"DISCOVERABLE_BEHAVIOR":"YES","BOUNDARY":"PUBLIC_CLI_STATE"},
+      {"TEST":"test_f2p_repeat_publication_of_same_generation_is_idempotent","CLASSIFICATION":"F2P","REQUIREMENTS":["REQ-16"],"DISCOVERABLE_BEHAVIOR":"YES","BOUNDARY":"PRIVATE_API_COUPLED"},
+      {"TEST":"test_f2p_database_rejects_duplicate_generation_sequence","CLASSIFICATION":"F2P","REQUIREMENTS":["REQ-05","REQ-14","REQ-20"],"DISCOVERABLE_BEHAVIOR":"YES","BOUNDARY":"SOLVER_VISIBLE_DB_CONTRACT"},
+      {"TEST":"test_f2p_database_rejects_duplicate_reject_sequence","CLASSIFICATION":"F2P","REQUIREMENTS":["REQ-20"],"DISCOVERABLE_BEHAVIOR":"YES","BOUNDARY":"SOLVER_VISIBLE_DB_CONTRACT"},
+      {"TEST":"test_p2p_valid_positive_signed_comp3_roundtrip_is_preserved","CLASSIFICATION":"P2P","REQUIREMENTS":["REQ-02"],"DISCOVERABLE_BEHAVIOR":"YES","BOUNDARY":"PRIVATE_API_COUPLED"},
+      {"TEST":"test_p2p_active_receipt_policy_remains_valid","CLASSIFICATION":"P2P","REQUIREMENTS":["REQ-09","REQ-10","REQ-11"],"DISCOVERABLE_BEHAVIOR":"YES","BOUNDARY":"PRIVATE_API_COUPLED"},
+      {"TEST":"test_p2p_matching_reconciliation_controls_pass","CLASSIFICATION":"P2P","REQUIREMENTS":["REQ-13"],"DISCOVERABLE_BEHAVIOR":"YES","BOUNDARY":"PRIVATE_API_COUPLED"},
+      {"TEST":"test_p2p_first_successful_publication_is_verifiable","CLASSIFICATION":"P2P","REQUIREMENTS":["REQ-16","REQ-20"],"DISCOVERABLE_BEHAVIOR":"YES","BOUNDARY":"PRIVATE_API_COUPLED"},
+      {"TEST":"test_p2p_cli_success_and_failure_json_contract","CLASSIFICATION":"P2P","REQUIREMENTS":["REQ-01","REQ-20","REQ-21"],"DISCOVERABLE_BEHAVIOR":"YES","BOUNDARY":"PUBLIC_CLI_STATE"},
+      {"TEST":"test_p2p_preflight_uses_historical_baseline","CLASSIFICATION":"P2P","REQUIREMENTS":["REQ-17"],"DISCOVERABLE_BEHAVIOR":"YES","BOUNDARY":"PUBLIC_CLI_STATE"},
+      {"TEST":"test_p2p_audit_and_archive_operator_workflows_are_reachable","CLASSIFICATION":"P2P","REQUIREMENTS":["REQ-01","REQ-18","REQ-19"],"DISCOVERABLE_BEHAVIOR":"YES","BOUNDARY":"PUBLIC_CLI_STATE"},
+      {"TEST":"test_p2p_accepted_movement_transaction_rolls_back_on_failure","CLASSIFICATION":"P2P","REQUIREMENTS":["REQ-06"],"DISCOVERABLE_BEHAVIOR":"YES","BOUNDARY":"PRIVATE_API_PLUS_SOLVER_VISIBLE_DB"},
+      {"TEST":"test_p2p_rejected_movement_transaction_rolls_back_on_failure","CLASSIFICATION":"P2P","REQUIREMENTS":["REQ-07"],"DISCOVERABLE_BEHAVIOR":"YES","BOUNDARY":"PRIVATE_API_PLUS_SOLVER_VISIBLE_DB"},
+      {"TEST":"test_p2p_decode_and_transform_reject_codes_are_stable","CLASSIFICATION":"P2P","REQUIREMENTS":["REQ-07","REQ-08"],"DISCOVERABLE_BEHAVIOR":"YES","BOUNDARY":"PRIVATE_API_PLUS_SOLVER_VISIBLE_DB"}
+    ],
+    "PHANTOM_TEST_CONTRACTS": [
+      {
+        "ID": "PHANTOM-01",
+        "DESCRIPTION": "Substantive hidden assertions bind exact undocumented src.* Python classes/functions/signatures even though the solver-visible stable surface is the equiv-eval CLI plus SQLite/report/publication state.",
+        "AFFECTED_BEHAVIOR_FAMILIES": ["packed-decimal","layout/framing","generation/checkpoint","policy/accounting","reconciliation","publication","pipeline durability"],
+        "FINDING_ID": "Q4-001"
+      }
+    ],
+    "UNTESTED_REQUIREMENTS": [
+      {"REQ_ID":"REQ-07","GAP":"Successful rejected movement checkpoint/applicable processed-state durability and restart skip are not distinguished.","FINDING_ID":"Q4-004"},
+      {"REQ_ID":"REQ-09","GAP":"Several required invalid source/destination movement-shape cases are not exercised.","FINDING_ID":"Q4-002"},
+      {"REQ_ID":"REQ-10","GAP":"Unknown item, max_unit_cost and quantity_precision policy are not exercised.","FINDING_ID":"Q4-002"},
+      {"REQ_ID":"REQ-11","GAP":"Unknown referenced warehouse is not exercised.","FINDING_ID":"Q4-002"},
+      {"REQ_ID":"REQ-15","GAP":"Duplicate same-effect-kind settlement and isolated inventory value below -0.01 are not exercised.","FINDING_ID":"Q4-003"},
+      {"REQ_ID":"REQ-16","GAP":"Conflicting existing publication distinct from corrupt content is not exercised.","FINDING_ID":"Q4-003"},
+      {"REQ_ID":"REQ-17","GAP":"Non-empty catalog containing zero active items/warehouses is not exercised.","FINDING_ID":"Q4-005"},
+      {"REQ_ID":"REQ-18","GAP":"Audit overall pass/fail is perturbed but semantic exposure of every documented health family is not verified.","FINDING_ID":"Q4-005"},
+      {"REQ_ID":"REQ-19","GAP":"Archive is not invoked against corrupt report/publication inputs to prove its verification gate.","FINDING_ID":"Q4-005"}
+    ],
+    "AMBIGUITIES": [],
+    "INSTRUCTION_SHAPE": "PASS",
+    "INSTRUCTION_REQUIREMENT_COMPLETENESS": "SUFFICIENT",
+    "DELEGATED_CONTRACT_CHECK": {
+      "STATUS": "PASS",
+      "DOCUMENTS": [
+        {"REF":"/app/equiv/ops/runtime-contract.md","CLASSIFICATION":"LEGITIMATE_TECHNICAL_CONTRACT","OBSERVATION":"Defines record/layout, durable state, reconciliation/publication and CLI/operator interface semantics without turning into a repair recipe."},
+        {"REF":"/app/equiv/config/movement.layout.json","CLASSIFICATION":"LEGITIMATE_SCHEMA_LAYOUT","OBSERVATION":"Defines the inherited record layout, including ODO and REDEFINES geometry."},
+        {"REF":"/app/equiv/config/legacy.controls","CLASSIFICATION":"LEGITIMATE_CONFIGURATION_CONTRACT","OBSERVATION":"Defines the six public legacy equivalence controls and baseline values."},
+        {"REF":"/app/equiv/ops/handoff.txt","CLASSIFICATION":"LEGITIMATE_HANDOFF_EVIDENCE","OBSERVATION":"Concise inherited cutover handoff; does not enumerate hidden tests."},
+        {"REF":"/app/equiv/log/archive/cutover_20260815.log","CLASSIFICATION":"LEGITIMATE_OPERATIONAL_EVIDENCE","OBSERVATION":"Inherited cutover evidence supporting the requested inspection/current context."},
+        {"REF":"/app/equiv/sql/schema.sql","CLASSIFICATION":"LEGITIMATE_STATE_INTERFACE","OBSERVATION":"Needed to interpret solver-visible item/warehouse authority and stable operational state."}
+      ]
+    },
+    "INSTRUCTION_DOC_BOUNDARY": "CLEAN",
+    "IMPLEMENTATION_DIAGNOSIS_LEAKAGE": "NONE",
+    "CURRENT_STATE_EVIDENCE": "PASS",
+    "SPEC_DUMP_RISK": "LOW",
+    "BIDIRECTIONAL_ALIGNMENT": "FAIL",
+    "F2P_P2P_OWNERSHIP": {
+      "F2P_COUNT": 30,
+      "P2P_COUNT": 10,
+      "CLASSIFICATION_SOURCE": ".terminus/designs/cobol-comp3-python-equiv-test-map.json (classification only)",
+      "ASSESSMENT": "Both change-required and preservation boundaries are represented. The dominant contract defect is not the F2P/P2P labels themselves but that many classified scenarios enforce private src.* APIs instead of only the solver-visible behavior. The integrated caller-path F2P scenario also owns several operator-workflow perturbations; those behaviors were independently mapped above rather than treated as one caller-path requirement."
+    },
+    "PUBLIC_PRIVATE_BOUNDARY": {
+      "PUBLIC": [
+        "/app/equiv/bin/equiv-eval command surface",
+        "documented CLI JSON/exit semantics",
+        "caller-provided source/layout behavior",
+        "solver-visible movement layout and legacy controls",
+        "documented SQLite operational state/constraints",
+        "report/publication/archive/operator outcomes described by runtime-contract.md"
+      ],
+      "PRIVATE_OR_UNDECLARED": [
+        "exact src.* module decomposition",
+        "PackedSpec/Field/Layout dataclass/function signatures",
+        "generation/checkpoint helper function names",
+        "policy/accounting helper function names and return-value shapes",
+        "atomic_publish/reconcile/process callable signatures"
+      ],
+      "ASSESSMENT": "FAIL because hidden verifier behavior crosses the declared public/private boundary; see Q4-001."
+    },
+    "CLI_OPERATOR_INTERFACE_WALK": {
+      "init-db": "covered for successful JSON result and required state tables",
+      "describe-layout": "covered for caller layout and missing-layout error contract",
+      "identity": "covered for caller source/layout/date identity",
+      "run": "covered for caller input path, pipeline state, reconciliation gating and publication",
+      "preflight": "partial; broad inputs are perturbed but zero-active/nonempty catalog remains unprobed",
+      "audit": "partial; broad health perturbations exist but complete health-family exposure is not verified",
+      "archive": "partial; positive evidence/retention/non-mutation is covered, negative verification of corrupt live report/publication is not"
+    },
+    "SECOND_ADVERSARIAL_OMISSION_SWEEP": {
+      "STATUS": "PASS",
+      "METHOD": "After freezing both matrices, re-walked every SHALL/MUST-style obligation and stable operator/output boundary in instruction.md and runtime-contract.md against all 40 test bodies, then separately searched for named item/warehouse/shape policy evidence. The sweep confirmed the five reported blocking findings and found no additional material ambiguity or prompt-extension defect.",
+      "CONFIRMED_COVERED_FAMILIES": [
+        "all six legacy controls and tolerances",
+        "duplicate movement/orphan/unbalanced-transfer safety controls",
+        "packed-decimal sign/digit/pad behavior",
+        "ODO/REDEFINES/malformed framing",
+        "generation source/layout/date identity",
+        "current-generation replay and cross-generation identity",
+        "accepted transaction rollback",
+        "documented stable reject-code families",
+        "available quantity and weighted valuation",
+        "reconciliation publication gating and atomic visibility",
+        "same-generation publication idempotency and corruption detection",
+        "CLI success/completed-failure/runtime-error exit/JSON contract",
+        "historical preflight baseline",
+        "archive lineage/control/delta/retention/event/non-mutation positive path"
+      ]
+    },
+    "BLOCKING_FINDING_IDS": ["Q4-001","Q4-002","Q4-003","Q4-004","Q4-005"],
+    "ADVISORY_FINDING_IDS": [],
+    "EXHAUSTIVENESS": {
+      "REQUIREMENTS_ENUMERATED": "COMPLETE",
+      "VERIFIER_BEHAVIORS_ENUMERATED": "COMPLETE",
+      "FORWARD_MATRIX_COMPLETE": "YES",
+      "REVERSE_MATRIX_COMPLETE": "YES",
+      "INSTRUCTION_COMPLETENESS_COMPLETE": "YES",
+      "DELEGATED_CONTRACTS_COMPLETE": "YES",
+      "PROMPT_EXTENSION_WALK_COMPLETE": "YES",
+      "P2P_BOUNDARIES_COMPLETE": "YES",
+      "F2P_BOUNDARIES_COMPLETE": "YES",
+      "OUTPUT_INTERFACES_COMPLETE": "YES",
+      "SECOND_PASS_OMISSION_SWEEP": "PASS",
+      "UNINSPECTED_SCOPE": []
+    }
+  }
+}

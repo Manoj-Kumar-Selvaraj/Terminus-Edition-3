@@ -1,5 +1,4 @@
 #!/usr/bin/env bash
 set -euo pipefail
-
-install -m 0644 /solution/fixed/unpack.py /app/equiv/src/unpack.py
-/app/equiv/bin/equiv-eval
+cp -a /solution/fixed/. /app/equiv/src/
+install -m 0644 /solution/fixed/schema.sql /app/equiv/sql/schema.sql

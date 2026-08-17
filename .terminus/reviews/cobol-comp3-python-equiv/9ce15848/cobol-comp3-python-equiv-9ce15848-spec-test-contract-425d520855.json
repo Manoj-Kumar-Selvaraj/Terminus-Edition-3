@@ -1,0 +1,433 @@
+{
+  "schema_version": "3.0",
+  "role": "Spec-Test Contract Reviewer",
+  "review_id": "cobol-comp3-python-equiv-9ce15848-spec-test-contract-425d520855",
+  "task": "cobol-comp3-python-equiv",
+  "task_commit": "9ce15848421135eaa83c356c26a0661ec795532f",
+  "control_plane_commit": "cd97262d5cb9a83c45b3936de48980a3b7981f8b",
+  "protocol_policy_version": "2.2",
+  "prompt_policy_version": "2.2",
+  "role_policy_version": "1.1",
+  "role_contract_hash": "0c40044ec13f0109a5526301cac6e5d2f52f5596d006bee2cdcaa90c0771d7f6",
+  "context_packet": ".terminus/reviews/cobol-comp3-python-equiv/9ce15848/cobol-comp3-python-equiv-9ce15848-spec-test-contract-425d520855.packet.json",
+  "verdict": "REVISE",
+  "confidence": "HIGH",
+  "evidence_status": "SUFFICIENT",
+  "summary": "Exhaustive packet-bound Q4 review completed over the current instruction, delegated runtime contract, all visible tests, and only the environment interfaces needed to interpret graded behavior. Instruction shape and instruction/docs boundary pass, and COMP-3/ODO/REDEFINES, malformed-boundary, generation/checkpoint, transaction rollback, reconciliation controls, uniqueness, and the publication helper have meaningful coverage. Bidirectional alignment still fails on operator-workflow depth, end-to-end reconciliation/publication safety, archive verification, reject-code persistence, undocumented internal labels/state values, externally graded structured-output schemas, and an underdefined reason/type compatibility contract.",
+  "evidence": [
+    {
+      "type": "rule",
+      "ref": ".terminus/agents/QUALITY_AGENT_PROMPTS.md#Q4",
+      "observation": "Q4 requires exhaustive forward and reverse matrices, delegated-contract, F2P/P2P, output-interface, ambiguity and second-pass omission sweeps; any material phantom test, untested requirement or ambiguity requires REVISE."
+    },
+    {
+      "type": "rule",
+      "ref": ".terminus/agents/INSTRUCTION_POLICY.md",
+      "observation": "Externally graded structured-output schemas must be discoverable in instruction.md or a legitimate referenced technical contract; material functional requirements may not be omitted."
+    },
+    {
+      "type": "file",
+      "ref": "cobol-comp3-python-equiv/instruction.md@9ce15848421135eaa83c356c26a0661ec795532f",
+      "observation": "The current 16-bullet work request delegates exact record/durability/reconciliation/publication/CLI/reject-code semantics to /app/equiv/ops/runtime-contract.md and requires preflight, audit, archive, policy/accounting, replay, reconciliation gating, atomic publication and format compatibility."
+    },
+    {
+      "type": "file",
+      "ref": "cobol-comp3-python-equiv/environment/equiv/ops/runtime-contract.md@9ce15848421135eaa83c356c26a0661ec795532f",
+      "observation": "The delegated contract defines COMP-3/ODO/REDEFINES and malformed-boundary semantics, generation/checkpoint/transaction/uniqueness rules, six reconciliation controls plus safety controls, publication/idempotence rules, stable persisted reject codes, generic JSON/exit behavior, and detailed preflight/audit/archive responsibilities."
+    },
+    {
+      "type": "test",
+      "ref": "cobol-comp3-python-equiv/tests/test_outputs.py@9ce15848421135eaa83c356c26a0661ec795532f",
+      "observation": "The visible suite contains 40 F2P/P2P tests spanning record semantics, caller layouts, durability, policy/accounting, reconciliation, publication helper behavior, DB constraints, CLI workflows, transaction rollback and reject codes."
+    },
+    {
+      "type": "test",
+      "ref": "cobol-comp3-python-equiv/tests/test_outputs.py::test_p2p_preflight_uses_historical_baseline",
+      "observation": "Preflight is substantively perturbed only by deleting the historical baseline; the other documented preflight health domains are not independently faulted."
+    },
+    {
+      "type": "test",
+      "ref": "cobol-comp3-python-equiv/tests/test_outputs.py::test_p2p_audit_and_archive_operator_workflows_are_reachable",
+      "observation": "Audit and archive are exercised only on a healthy run and validated mainly through their own returned boolean/empty-list fields; archive artifacts, exports, registry/lineage records, journal event and retention behavior are not independently inspected."
+    },
+    {
+      "type": "test",
+      "ref": "cobol-comp3-python-equiv/tests/test_outputs.py::test_f2p_failed_reconciliation_cannot_publish",
+      "observation": "The test passes a synthetic failing ReconciliationResult directly to atomic_publish; it does not prove that the real pipeline propagates a failed reconciliation or detailed-settlement failure into non-publication."
+    },
+    {
+      "type": "test",
+      "ref": "cobol-comp3-python-equiv/tests/test_outputs.py::policy-and-reject-code tests",
+      "observation": "Reason and warehouse-capability tests assert exact internal labels REASON, RECEIPT_DISABLED and TRANSFER_DISABLED, while several documented stable persisted reject codes are checked only on internal validation objects rather than the operational reject database/CSV."
+    },
+    {
+      "type": "file",
+      "ref": "cobol-comp3-python-equiv/environment/equiv/src/cli.py@9ce15848421135eaa83c356c26a0661ec795532f",
+      "observation": "The inherited public CLI exposes the documented subcommands and arguments, but its implementation—not the public runtime contract—is the only place defining most exact JSON field names currently asserted by tests."
+    },
+    {
+      "type": "file",
+      "ref": "cobol-comp3-python-equiv/environment/equiv/sql/seed.sql@9ce15848421135eaa83c356c26a0661ec795532f",
+      "observation": "The solver-visible seed creates the documented 15,000-row historical baseline, so the baseline value used by the preflight test is publicly grounded."
+    }
+  ],
+  "findings": [
+    {
+      "id": "Q4-001",
+      "severity": "HIGH",
+      "status": "OBSERVED",
+      "criterion": "Forward requirement coverage: caller-path semantics and preflight/audit operator workflows",
+      "evidence_refs": [
+        "cobol-comp3-python-equiv/instruction.md bullets 2-3 and 12-13",
+        "cobol-comp3-python-equiv/environment/equiv/ops/runtime-contract.md#CLI-and-operator-workflows",
+        "tests/test_outputs.py::test_f2p_caller_supplied_layout_path_is_honored",
+        "tests/test_outputs.py::test_p2p_preflight_uses_historical_baseline",
+        "tests/test_outputs.py::test_p2p_audit_and_archive_operator_workflows_are_reachable"
+      ],
+      "why_it_matters": "The alternate-layout scenario meaningfully proves describe-layout, identity, preflight and run use a structurally different layout, and identity/run prove the supplied source. But audit/archive caller-path use is only exercised on a healthy default-layout run, preflight is negatively perturbed only for the historical baseline, and audit is never given replay/recovery, checkpoint, control, inventory, quarantine, metric or settlement faults. Plausible implementations that ignore several material caller inputs or return healthy constants for most required health domains can still pass.",
+      "minimal_remediation": "Add a small set of behavioral perturbations that prove audit/archive honor caller source/layout identity and that preflight/audit materially consume each distinct documented health family. Group related domains where one state mutation genuinely exercises the common invariant; do not add one test per output field.",
+      "regression_risk": "Low if added as black-box/state-perturbation scenarios; avoid coupling to internal helper call graphs."
+    },
+    {
+      "id": "Q4-002",
+      "severity": "HIGH",
+      "status": "OBSERVED",
+      "criterion": "Forward requirement coverage and independent verification: archive workflow",
+      "evidence_refs": [
+        "cobol-comp3-python-equiv/instruction.md bullet 14",
+        "cobol-comp3-python-equiv/environment/equiv/ops/runtime-contract.md#CLI-and-operator-workflows",
+        "tests/test_outputs.py::test_p2p_audit_and_archive_operator_workflows_are_reachable"
+      ],
+      "why_it_matters": "The archive contract requires report/publication verification, control and delta exports, publication-registry plus lineage/integrity evidence, a verified archive, an archive journal event and retention-policy reporting. The sole archive test accepts archive_valid, lineage_valid and registry_valid as self-reported truth and never independently inspects the produced archive, exports, registry/lineage records, database journal event or retention result. A circular implementation can self-certify those booleans without performing the required operator work.",
+      "minimal_remediation": "After invoking archive, independently inspect the archive directory and exported artifacts, verify lineage/integrity against source publications, inspect registry persistence and the archive journal event, and verify the retention-policy result from external state rather than only returned booleans.",
+      "regression_risk": "Medium: verification should assert stable public artifacts/invariants, not private filenames or incidental serialization unless those are first documented as public format contracts."
+    },
+    {
+      "id": "Q4-003",
+      "severity": "HIGH",
+      "status": "OBSERVED",
+      "criterion": "Forward requirement coverage: reconciliation and publication must be connected end-to-end",
+      "evidence_refs": [
+        "cobol-comp3-python-equiv/instruction.md bullets 10-11",
+        "cobol-comp3-python-equiv/environment/equiv/ops/runtime-contract.md#Reconciliation-and-publication-contract",
+        "tests/test_outputs.py::test_f2p_reconciliation_checks_legacy_effect_count",
+        "tests/test_outputs.py::test_f2p_reconciliation_rejects_unbalanced_transfer",
+        "tests/test_outputs.py::test_f2p_failed_reconciliation_cannot_publish",
+        "tests/test_outputs.py::test_f2p_issue_requires_full_available_quantity"
+      ],
+      "why_it_matters": "Reconciliation logic and atomic_publish are tested mostly as separate components. The publication-negative test injects an already-failing ReconciliationResult directly into atomic_publish, and the pipeline-held case does not independently assert that no publication was created. There is no scenario where a real legacy-control, safety-control or detailed-settlement failure flows through the production pipeline and is independently shown to prevent publication. The contract's 'detailed settlement' invariant is also not defined precisely enough in the delegated contract to identify the required failing states.",
+      "minimal_remediation": "Define the material detailed-settlement invariants in the runtime contract, then add end-to-end pipeline scenarios for at least one legacy mismatch, one safety/detailed-settlement failure, and independently assert absence of publication/registry promotion rather than relying only on returned state.",
+      "regression_risk": "Low to medium; keep assertions at the public reconciliation/publication state boundary."
+    },
+    {
+      "id": "Q4-004",
+      "severity": "HIGH",
+      "status": "OBSERVED",
+      "criterion": "Forward requirement coverage: stable operational reject-code persistence",
+      "evidence_refs": [
+        "cobol-comp3-python-equiv/environment/equiv/ops/runtime-contract.md#Durable-processing-contract",
+        "tests/test_outputs.py::test_p2p_decode_and_transform_reject_codes_are_stable",
+        "tests/test_outputs.py::test_f2p_issue_requires_full_available_quantity",
+        "tests/test_outputs.py::test_f2p_zero_quantity_is_rejected",
+        "tests/test_outputs.py::test_f2p_same_warehouse_transfer_is_rejected",
+        "tests/test_outputs.py::test_f2p_inactive_item_is_rejected",
+        "tests/test_outputs.py::test_f2p_inactive_warehouse_is_rejected"
+      ],
+      "why_it_matters": "The public contract makes DECODE, TRANSFORM, ACCOUNTING, QUANTITY, TRANSFER_LOOP, ITEM_INACTIVE and WAREHOUSE_INACTIVE stable codes written to the operational reject CSV/database. The suite proves persisted DECODE, TRANSFORM and ACCOUNTING, but QUANTITY, TRANSFER_LOOP, ITEM_INACTIVE and WAREHOUSE_INACTIVE are only asserted on internal validation Issue objects. The persistence boundary can remap or drop those four stable public codes and still pass.",
+      "minimal_remediation": "Drive representative end-to-end rejected movements for QUANTITY, TRANSFER_LOOP, ITEM_INACTIVE and WAREHOUSE_INACTIVE and assert the persisted operational reject code (and CSV when that public artifact is produced).",
+      "regression_risk": "Low; this strengthens an explicitly documented stable external interface."
+    },
+    {
+      "id": "Q4-005",
+      "severity": "HIGH",
+      "status": "OBSERVED",
+      "criterion": "Reverse verifier-to-contract alignment: undocumented internal labels and state values",
+      "evidence_refs": [
+        "cobol-comp3-python-equiv/instruction.md bullet 6",
+        "cobol-comp3-python-equiv/environment/equiv/ops/runtime-contract.md stable reject-code list",
+        "tests/test_outputs.py::test_f2p_zero_quantity_is_rejected",
+        "tests/test_outputs.py::test_f2p_inactive_warehouse_is_rejected",
+        "tests/test_outputs.py::test_f2p_pipeline_restart_does_not_reapply_last_movement",
+        "tests/test_outputs.py::test_f2p_issue_requires_full_available_quantity"
+      ],
+      "why_it_matters": "The verifier requires exact internal policy labels REASON, RECEIPT_DISABLED and TRANSFER_DISABLED even though the public stable-code list deliberately names a different finite set and the instruction requires only reason/type and warehouse-capability behavior. It also grades internal PipelineSummary state strings such as PUBLISHED and HELD without declaring those internal return values as a public API. A solver can satisfy the documented behavior with different internal labels/state representation and fail.",
+      "minimal_remediation": "Remove exact assertions on non-public internal labels/state names and assert the documented behavioral outcome, or explicitly promote only genuinely stable externally observable labels/state values into the solver-visible contract before grading them.",
+      "regression_risk": "Low if tests retain the same semantic invalid/held/published behavior while dropping private vocabulary."
+    },
+    {
+      "id": "Q4-006",
+      "severity": "HIGH",
+      "status": "OBSERVED",
+      "criterion": "Reverse verifier-to-contract alignment: externally graded structured-output schemas",
+      "evidence_refs": [
+        ".terminus/agents/INSTRUCTION_POLICY.md#Output-and-artifact-requirements",
+        "cobol-comp3-python-equiv/environment/equiv/ops/runtime-contract.md#CLI-and-operator-workflows",
+        "tests/test_outputs.py::test_f2p_caller_supplied_layout_path_is_honored",
+        "tests/test_outputs.py::test_p2p_cli_success_and_failure_json_contract",
+        "tests/test_outputs.py::test_p2p_preflight_uses_historical_baseline",
+        "tests/test_outputs.py::test_p2p_audit_and_archive_operator_workflows_are_reachable",
+        "tests/test_outputs.py::assert_publication_contract"
+      ],
+      "why_it_matters": "The delegated CLI contract specifies one JSON object, exit codes, the public error envelope and the passed=false convention, plus semantic report categories. The verifier additionally fixes undocumented field paths/values such as layout_id, source.sha256, layout_sha256, status=READY, run state/processed, historical_baseline.records, historical_scale_issues, journal_valid, registry_valid, reconciliation_findings, archive_valid and lineage_valid. The publication helper similarly fixes a manifest shape with generation_id, files and per-file name/size/sha256 fields. These are externally observable structured schemas, so grading them without a solver-visible schema violates the instruction policy and constrains otherwise conforming implementations.",
+      "minimal_remediation": "Either document the exact stable CLI/manifest schemas in the referenced runtime contract (only for fields that are truly public and intended to be preserved) or relax verifier assertions to the documented semantic contract and independently verify artifacts without imposing incidental JSON organization.",
+      "regression_risk": "Medium: over-documenting incidental fields would unnecessarily freeze the implementation, so only promote fields that are genuinely part of the public interface."
+    },
+    {
+      "id": "Q4-007",
+      "severity": "MEDIUM",
+      "status": "OBSERVED",
+      "criterion": "Grading-relevant ambiguity: reason/type compatibility",
+      "evidence_refs": [
+        "cobol-comp3-python-equiv/instruction.md bullet 6",
+        "cobol-comp3-python-equiv/environment/equiv/ops/runtime-contract.md",
+        "tests/test_outputs.py::test_f2p_zero_quantity_is_rejected"
+      ],
+      "why_it_matters": "The work request requires reason/type compatibility but neither the instruction nor delegated runtime contract defines the allowed reason-to-movement-type mapping. The verifier specifically treats a RECEIPT carrying reason SALE as invalid. Two competent solvers can choose different compatibility tables while both satisfying the current prose, producing different pass/fail outcomes.",
+      "minimal_remediation": "Define the allowed reason/type mapping, or a rule from which it is deterministically derived, in the runtime contract; then grade behavior against that public mapping without requiring a private internal label.",
+      "regression_risk": "Low; this is a narrow contract clarification that preserves implementation freedom."
+    }
+  ],
+  "missing_evidence": [],
+  "change_scope": [
+    "Review result only at the packet-specified .terminus/reviews path; no task files were modified."
+  ],
+  "do_not_change": [
+    "cobol-comp3-python-equiv/instruction.md, environment/, tests/, task metadata or any other task file during this reviewer execution",
+    "cobol-comp3-python-equiv/solution/ or any embedded gold/reference solution",
+    "verifier_tests/ or any excluded hidden verifier material"
+  ],
+  "next_gate": "Return to the CI Orchestrator for routing of the complete blocking finding set; QUALITY_INTERLOCK must not advance on this Q4 result.",
+  "role_output": {
+    "REQUIREMENT_TEST_MATRIX": [
+      {
+        "requirement_id": "REQ-01",
+        "requirement": "Preserve public equiv-eval and init-db/describe-layout/identity/run/preflight/audit/archive workflows.",
+        "tests": ["caller-supplied-layout", "CLI-success-and-failure", "audit-and-archive-reachable"],
+        "coverage": "COMPLETE"
+      },
+      {
+        "requirement_id": "REQ-02",
+        "requirement": "Every command accepting --source/--layout uses caller-provided paths.",
+        "tests": ["caller-supplied-layout", "audit-and-archive-reachable"],
+        "coverage": "PARTIAL",
+        "note": "Strong for describe-layout/identity/preflight/run; audit/archive lack a semantically different or mismatching path case."
+      },
+      {
+        "requirement_id": "REQ-03",
+        "requirement": "COMP-3 decimal nibbles, zero pad, signed C/D, unsigned F, negative restrictions.",
+        "tests": ["nonzero-pad", "invalid-digit", "signed-F-reject", "unsigned-C-reject", "unsigned-pack", "signed-negative-pack", "valid-roundtrip"],
+        "coverage": "COMPLETE"
+      },
+      {
+        "requirement_id": "REQ-04",
+        "requirement": "REDEFINES overlaps storage without cursor advance; ODO uses decoded count within bounds.",
+        "tests": ["redefines-static-storage", "redefines-offset", "ODO-bounds"],
+        "coverage": "COMPLETE"
+      },
+      {
+        "requirement_id": "REQ-05",
+        "requirement": "Malformed complete records report full determinable boundary; indeterminate boundary length is zero.",
+        "tests": ["complete-malformed-record-boundary"],
+        "coverage": "COMPLETE"
+      },
+      {
+        "requirement_id": "REQ-06",
+        "requirement": "Generation identity binds source/layout/date; checkpoint fingerprint matches; resume starts last_sequence+1 and rejects identity changes.",
+        "tests": ["generation-id-binds-inputs", "resume-rejects-change", "checkpoint-fingerprint", "resume-starts-after-last"],
+        "coverage": "COMPLETE"
+      },
+      {
+        "requirement_id": "REQ-07",
+        "requirement": "Current-generation replay does not reapply effects; processed/reject uniqueness is generation-scoped and cross-generation history is allowed.",
+        "tests": ["pipeline-restart-no-reapply", "duplicate-generation-sequence", "duplicate-reject-sequence"],
+        "coverage": "COMPLETE"
+      },
+      {
+        "requirement_id": "REQ-08",
+        "requirement": "Validate shape, reason/type compatibility, item/warehouse policy/capability, available quantity and weighted valuation.",
+        "tests": ["zero-quantity/reason", "transfer-loop", "inactive-item", "inactive-warehouse/capability", "issue-availability", "weighted-issue", "transfer-value", "negative-effect", "active-policy-P2P"],
+        "coverage": "PARTIAL",
+        "note": "Behavior families are exercised, but the public reason/type mapping is undefined and three private internal labels are graded."
+      },
+      {
+        "requirement_id": "REQ-09",
+        "requirement": "Accepted movement writes/effects/positions/journal/checkpoint are one transaction.",
+        "tests": ["accepted-transaction-rollback"],
+        "coverage": "COMPLETE"
+      },
+      {
+        "requirement_id": "REQ-10",
+        "requirement": "Rejected movement reject/processed/journal/checkpoint durability is one transaction.",
+        "tests": ["rejected-transaction-rollback"],
+        "coverage": "COMPLETE"
+      },
+      {
+        "requirement_id": "REQ-11",
+        "requirement": "All six legacy controls are compared independently with documented count/quantity/value tolerances.",
+        "tests": ["reconciliation-six-controls-and-tolerances", "matching-reconciliation-P2P"],
+        "coverage": "COMPLETE"
+      },
+      {
+        "requirement_id": "REQ-12",
+        "requirement": "Safety controls detect duplicate movement identities, orphan effects and unbalanced transfers.",
+        "tests": ["reconciliation-unbalanced-transfer-duplicate-orphan"],
+        "coverage": "COMPLETE"
+      },
+      {
+        "requirement_id": "REQ-13",
+        "requirement": "Any legacy/safety/detailed-settlement failure blocks publication end-to-end.",
+        "tests": ["reconciliation-component-tests", "failed-ReconciliationResult-to-atomic_publish", "issue-pipeline-held"],
+        "coverage": "PARTIAL",
+        "note": "No independent real-pipeline non-publication assertion for failed reconciliation; detailed settlement is undefined and not specifically faulted."
+      },
+      {
+        "requirement_id": "REQ-14",
+        "requirement": "Publication is verified, atomic, idempotent for same valid generation, and rejects corrupt/conflicting existing publication.",
+        "tests": ["failed-reconciliation-cannot-publish-helper", "repeat-publication-idempotent/corrupt/atomic", "first-publication-verifiable-P2P"],
+        "coverage": "COMPLETE",
+        "note": "Publication helper itself is well verified; REQ-13 captures missing pipeline integration."
+      },
+      {
+        "requirement_id": "REQ-15",
+        "requirement": "Stable operational reject CSV/database codes include DECODE, TRANSFORM, ACCOUNTING, QUANTITY, TRANSFER_LOOP, ITEM_INACTIVE, WAREHOUSE_INACTIVE.",
+        "tests": ["decode-transform-persisted", "issue-accounting-persisted", "policy-validator-code-tests"],
+        "coverage": "PARTIAL",
+        "note": "Four documented stable codes are not verified at the persistence boundary."
+      },
+      {
+        "requirement_id": "REQ-16",
+        "requirement": "CLI success emits one JSON object/0; passed=false checks return 2 on stdout; runtime/input errors return error JSON on stderr/2.",
+        "tests": ["CLI-success-and-failure", "missing-layout-error", "preflight-baseline-failure"],
+        "coverage": "COMPLETE"
+      },
+      {
+        "requirement_id": "REQ-17",
+        "requirement": "Preflight consumes schema/source framing/profile/history/catalog/input/batch-window/auth-safety/recovery state.",
+        "tests": ["caller-layout-preflight-healthy", "preflight-history-deletion"],
+        "coverage": "PARTIAL"
+      },
+      {
+        "requirement_id": "REQ-18",
+        "requirement": "Audit reports replay/recovery, checkpoints, controls/reconciliation, inventory, quarantine, journal, registry, metrics and settlement health.",
+        "tests": ["audit-and-archive-reachable"],
+        "coverage": "PARTIAL"
+      },
+      {
+        "requirement_id": "REQ-19",
+        "requirement": "Archive verifies report/publication, exports controls/deltas, records registry/lineage/integrity, creates verified archive, records event and reports retention.",
+        "tests": ["audit-and-archive-reachable"],
+        "coverage": "PARTIAL"
+      },
+      {
+        "requirement_id": "REQ-20",
+        "requirement": "Keep SQLite schema/state and report/publication formats compatible with solver-visible contracts and do not bypass constraints.",
+        "tests": ["DB-uniqueness", "transaction-rollbacks", "publication-manifest-verifier"],
+        "coverage": "PARTIAL",
+        "note": "DB and publication integrity are exercised; report-format compatibility is not substantively inspected and exact graded manifest schema is not documented."
+      },
+      {
+        "requirement_id": "REQ-21",
+        "requirement": "Inspect inherited log/archive and ops evidence before changing behavior.",
+        "tests": [],
+        "coverage": "NON_GRADING_PROCEDURAL",
+        "note": "A solver workflow instruction rather than a stable runtime outcome; no verifier coverage is required for semantic alignment."
+      }
+    ],
+    "PHANTOM_TEST_CONTRACTS": [
+      {
+        "id": "PHANTOM-01",
+        "behavior": "Exact internal policy labels REASON, RECEIPT_DISABLED and TRANSFER_DISABLED.",
+        "tests": ["test_f2p_zero_quantity_is_rejected", "test_f2p_inactive_warehouse_is_rejected"],
+        "public_owner": "NONE; the delegated stable reject-code list does not include these labels."
+      },
+      {
+        "id": "PHANTOM-02",
+        "behavior": "Exact internal pipeline state strings PUBLISHED and HELD.",
+        "tests": ["test_f2p_pipeline_restart_does_not_reapply_last_movement", "test_f2p_issue_requires_full_available_quantity"],
+        "public_owner": "No internal PipelineSummary state-value API is declared as stable."
+      },
+      {
+        "id": "PHANTOM-03",
+        "behavior": "Exact CLI JSON field paths/values beyond the documented passed/error envelope.",
+        "tests": ["caller-supplied-layout", "CLI-success-and-failure", "preflight-baseline", "audit/archive-reachable"],
+        "public_owner": "The runtime contract documents semantic categories but not these structured schemas."
+      },
+      {
+        "id": "PHANTOM-04",
+        "behavior": "Exact publication manifest JSON structure generation_id/files/name/size/sha256.",
+        "tests": ["assert_publication_contract", "first-publication-verifiable", "repeat-publication"],
+        "public_owner": "Publication verification is public, but the exact manifest schema is not specified in the referenced contract."
+      }
+    ],
+    "UNTESTED_REQUIREMENTS": [
+      "Audit/archive caller-provided source/layout semantics are not behaviorally distinguished from defaults/ignored inputs.",
+      "Preflight domains other than historical-baseline presence are not negatively perturbed.",
+      "Audit replay/recovery, checkpoint, control, inventory, quarantine, metric and settlement health are not independently fault-tested.",
+      "Detailed-settlement publication gating is not defined or tested end-to-end.",
+      "Archive controls/deltas, lineage/integrity, registry persistence, archive journal event and retention are not independently verified.",
+      "Persisted QUANTITY, TRANSFER_LOOP, ITEM_INACTIVE and WAREHOUSE_INACTIVE reject codes are not tested at the operational persistence boundary.",
+      "Report-format compatibility is not substantively inspected."
+    ],
+    "AMBIGUITIES": [
+      {
+        "id": "AMB-01",
+        "contract": "instruction.md: validate reason/type compatibility",
+        "issue": "No solver-visible mapping defines which reasons are compatible with each movement type, while the verifier specifically treats RECEIPT+SALE as invalid.",
+        "grading_consequence": "Different reasonable compatibility tables produce different verifier outcomes."
+      },
+      {
+        "id": "AMB-02",
+        "contract": "runtime-contract.md: detailed settlement checks/invariants",
+        "issue": "The material settlement invariants that must be clean before publication are not enumerated or deterministically defined.",
+        "grading_consequence": "A solver cannot know the complete publication gate and the verifier cannot fairly add settlement-specific cases without a public definition."
+      }
+    ],
+    "INSTRUCTION_SHAPE": "PASS",
+    "INSTRUCTION_REQUIREMENT_COMPLETENESS": "INSUFFICIENT",
+    "DELEGATED_CONTRACT_CHECK": {
+      "status": "FAIL",
+      "observations": [
+        "The /app/equiv/ops/runtime-contract.md delegation is legitimate and discoverable.",
+        "Most detailed record/durability/reconciliation semantics are appropriately located there.",
+        "Reason/type compatibility, detailed-settlement invariants and exact externally graded structured-output schemas remain incomplete or undefined."
+      ]
+    },
+    "INSTRUCTION_DOC_BOUNDARY": "CLEAN",
+    "IMPLEMENTATION_DIAGNOSIS_LEAKAGE": "NONE",
+    "CURRENT_STATE_EVIDENCE": "PASS",
+    "SPEC_DUMP_RISK": "LOW",
+    "BIDIRECTIONAL_ALIGNMENT": "FAIL",
+    "BLOCKING_FINDING_IDS": ["Q4-001", "Q4-002", "Q4-003", "Q4-004", "Q4-005", "Q4-006", "Q4-007"],
+    "ADVISORY_FINDING_IDS": [],
+    "EXHAUSTIVENESS": {
+      "REQUIREMENTS_ENUMERATED": "COMPLETE",
+      "VERIFIER_BEHAVIORS_ENUMERATED": "COMPLETE",
+      "FORWARD_MATRIX_COMPLETE": "YES",
+      "REVERSE_MATRIX_COMPLETE": "YES",
+      "INSTRUCTION_COMPLETENESS_COMPLETE": "YES",
+      "DELEGATED_CONTRACTS_COMPLETE": "YES",
+      "PROMPT_EXTENSION_WALK_COMPLETE": "YES",
+      "P2P_BOUNDARIES_COMPLETE": "YES",
+      "F2P_BOUNDARIES_COMPLETE": "YES",
+      "OUTPUT_INTERFACES_COMPLETE": "YES",
+      "SECOND_PASS_OMISSION_SWEEP": "PASS",
+      "UNINSPECTED_SCOPE": []
+    },
+    "F2P_P2P_BOUNDARY_REVIEW": {
+      "status": "FAIL",
+      "f2p_observation": "F2P scenarios strongly exercise record/durability/reconciliation component semantics, but several policy tests bind private labels and publication safety is split across components without an independent pipeline publication boundary.",
+      "p2p_observation": "P2P preservation owns valid COMP-3, valid receipt policy, matching reconciliation, first publication, CLI success/failure, preflight baseline, operator reachability, rollback and stable-code preservation; archive/operator P2P remains too self-referential for the full documented workflow."
+    },
+    "INDEPENDENT_PUBLICATION_VERIFICATION": {
+      "component_atomic_publish": "PASS",
+      "pipeline_reconciliation_to_publication": "PARTIAL",
+      "archive_workflow": "FAIL",
+      "reason": "The atomic_publish helper is independently verified by manifest size/digest checks, but pipeline gating lacks an independent failed-reconciliation non-publication assertion and archive relies on self-reported validity fields."
+    },
+    "SECOND_ADVERSARIAL_OMISSION_SWEEP": {
+      "status": "PASS",
+      "additional_material_findings": ["Q4-005", "Q4-006", "Q4-007"],
+      "notes": "Second pass specifically re-walked stable output fields, private labels/return values, caller-path scope, detailed settlement, archive artifacts/events and persisted reject-code boundaries."
+    }
+  }
+}
