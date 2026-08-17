@@ -2,7 +2,7 @@
   "schema_version": "1.0",
   "task": "terraform-ansible-managed-resources",
   "phase": "A5_VERIFIER_BUILD",
-  "status": "VERIFIER_READY_REQUIRES_EMPIRICAL_RERUN",
+  "status": "VERIFIER_READY",
   "profile": "large_system_strict",
   "verification_root": "/tests",
   "submitted_artifact_root": "/app/provider",
@@ -13,7 +13,7 @@
   "empirical_gate": {
     "starter_nop": "PENDING_RUNTIME_EXECUTION",
     "oracle": "PENDING_RUNTIME_EXECUTION",
-    "note": "Q2 coverage repair consolidated overlapping scenarios and added delete transaction/ownership, template-order, and group-drift coverage. All F2P/P2P classifications require a fresh deterministic starter/NOP and Oracle matrix before freeze."
+    "note": "Q2 coverage repair consolidated overlapping scenarios and added delete transaction/ownership, template-order, group-drift and cancellation coverage. All F2P/P2P classifications require a fresh deterministic starter/NOP and Oracle matrix before freeze."
   },
   "requirement_families": {
     "REQ_PROVIDER": "The submitted artifact is a real Terraform Plugin Framework provider exposing exactly the ten documented managed resources.",
@@ -24,7 +24,7 @@
     "REQ_COPY": "Copy uses caller-supplied source_digest to represent source-content changes and observes destination content.",
     "REQ_TEXT": "Named line/block resources are exact, idempotent, side-effect-free on Read, and independently owned in shared backing files.",
     "REQ_IDENTITY": "User and group resources observe native account state and preserve identity across mutable account/group changes.",
-    "REQ_RUNNER": "The Ansible runner uses structured argv, treats non-zero/timeout as failures, and cleans ephemeral playbooks on terminal outcomes.",
+    "REQ_RUNNER": "The Ansible runner uses structured argv, treats non-zero/timeout/cancellation as failures, and cleans ephemeral playbooks on terminal outcomes.",
     "REQ_NORMALIZE": "Equivalent modes, unordered values and cron defaults converge to stable canonical representations.",
     "REQ_CRON": "Cron defaults omitted user/schedule fields to root and wildcards, remains clean after apply, and preserves named siblings."
   },
@@ -33,14 +33,12 @@
     {"name":"test_p2p_directory_basic_apply_state_and_destroy","class":"P2P","file":"tests/test_provider_contract.py","requirements":["REQ_PROVIDER","REQ_STATE","REQ_DELETE"],"dimension":"basic lifecycle preservation","starter":"PENDING","oracle":"PENDING"},
     {"name":"test_p2p_state_is_owned_by_terraform_core","class":"P2P","file":"tests/test_provider_contract.py","requirements":["REQ_STATE"],"dimension":"state ownership preservation","starter":"PENDING","oracle":"PENDING"},
     {"name":"test_p2p_declared_provider_artifact_root_is_mounted","class":"P2P","file":"tests/test_outputs.py","requirements":["REQ_PROVIDER"],"dimension":"separate verifier artifact preservation","starter":"PENDING","oracle":"PENDING"},
-
     {"name":"test_f2p_filesystem_identities_survive_mutable_updates","class":"F2P","file":"tests/test_lifecycle_filesystem.py","requirements":["REQ_STATE"],"dimension":"file/directory identity and metadata update","starter":"EXPECTED_FAIL","oracle":"EXPECTED_PASS"},
     {"name":"test_f2p_symlink_identity_survives_target_update","class":"F2P","file":"tests/test_lifecycle_filesystem.py","requirements":["REQ_STATE"],"dimension":"symlink identity/update","starter":"EXPECTED_FAIL","oracle":"EXPECTED_PASS"},
     {"name":"test_f2p_deleted_directory_is_planned_for_recreation","class":"F2P","file":"tests/test_lifecycle_filesystem.py","requirements":["REQ_REFRESH"],"dimension":"missing-object refresh","starter":"EXPECTED_FAIL","oracle":"EXPECTED_PASS"},
     {"name":"test_f2p_filesystem_mode_drift_requires_reconciliation","class":"F2P","file":"tests/test_lifecycle_filesystem.py","requirements":["REQ_REFRESH","REQ_NORMALIZE"],"dimension":"file/directory permission drift","starter":"EXPECTED_FAIL","oracle":"EXPECTED_PASS"},
     {"name":"test_f2p_symlink_target_drift_requires_reconciliation","class":"F2P","file":"tests/test_lifecycle_filesystem.py","requirements":["REQ_REFRESH"],"dimension":"symlink target drift","starter":"EXPECTED_FAIL","oracle":"EXPECTED_PASS"},
     {"name":"test_f2p_wrong_object_kind_is_not_accepted_as_directory","class":"F2P","file":"tests/test_lifecycle_filesystem.py","requirements":["REQ_REFRESH"],"dimension":"wrong-kind boundary","starter":"EXPECTED_FAIL","oracle":"EXPECTED_PASS"},
-
     {"name":"test_f2p_copy_destination_content_drift_requires_reconciliation","class":"F2P","file":"tests/test_lifecycle_content.py","requirements":["REQ_COPY","REQ_REFRESH"],"dimension":"content drift","starter":"EXPECTED_FAIL","oracle":"EXPECTED_PASS"},
     {"name":"test_f2p_copy_source_digest_change_executes_content_update","class":"F2P","file":"tests/test_lifecycle_content.py","requirements":["REQ_COPY","REQ_UPDATE"],"dimension":"source-content update","starter":"EXPECTED_FAIL","oracle":"EXPECTED_PASS"},
     {"name":"test_f2p_content_identities_survive_source_and_variable_updates","class":"F2P","file":"tests/test_lifecycle_content.py","requirements":["REQ_COPY","REQ_STATE"],"dimension":"copy/template destination identity","starter":"EXPECTED_FAIL","oracle":"EXPECTED_PASS"},
@@ -50,7 +48,6 @@
     {"name":"test_f2p_clean_named_text_refresh_does_not_execute_ansible","class":"F2P","file":"tests/test_lifecycle_content.py","requirements":["REQ_REFRESH","REQ_TEXT"],"dimension":"line/block clean refresh side effects","starter":"EXPECTED_FAIL","oracle":"EXPECTED_PASS"},
     {"name":"test_f2p_line_update_replaces_previous_value_exactly_once","class":"F2P","file":"tests/test_lifecycle_content.py","requirements":["REQ_TEXT","REQ_UPDATE"],"dimension":"line replacement/idempotency","starter":"EXPECTED_FAIL","oracle":"EXPECTED_PASS"},
     {"name":"test_f2p_removed_named_text_is_planned_for_recreation","class":"F2P","file":"tests/test_lifecycle_content.py","requirements":["REQ_TEXT","REQ_REFRESH"],"dimension":"line/block drift recovery","starter":"EXPECTED_FAIL","oracle":"EXPECTED_PASS"},
-
     {"name":"test_f2p_user_identity_survives_shell_update","class":"F2P","file":"tests/test_lifecycle_identity.py","requirements":["REQ_STATE","REQ_IDENTITY"],"dimension":"user identity/update","starter":"EXPECTED_FAIL","oracle":"EXPECTED_PASS"},
     {"name":"test_f2p_user_shell_drift_requires_reconciliation","class":"F2P","file":"tests/test_lifecycle_identity.py","requirements":["REQ_REFRESH","REQ_IDENTITY"],"dimension":"account shell drift","starter":"EXPECTED_FAIL","oracle":"EXPECTED_PASS"},
     {"name":"test_f2p_user_supplementary_group_drift_requires_reconciliation","class":"F2P","file":"tests/test_lifecycle_identity.py","requirements":["REQ_REFRESH","REQ_IDENTITY","REQ_NORMALIZE"],"dimension":"supplementary-group drift","starter":"EXPECTED_FAIL","oracle":"EXPECTED_PASS"},
@@ -58,13 +55,11 @@
     {"name":"test_f2p_deleted_user_is_planned_for_recreation","class":"F2P","file":"tests/test_lifecycle_identity.py","requirements":["REQ_REFRESH","REQ_IDENTITY"],"dimension":"missing account recovery","starter":"EXPECTED_FAIL","oracle":"EXPECTED_PASS"},
     {"name":"test_f2p_destroy_preserves_home_when_remove_home_is_false","class":"F2P","file":"tests/test_lifecycle_identity.py","requirements":["REQ_DELETE","REQ_IDENTITY"],"dimension":"safe destroy/preserve home","starter":"EXPECTED_FAIL","oracle":"EXPECTED_PASS"},
     {"name":"test_f2p_destroy_removes_home_when_remove_home_is_true","class":"F2P","file":"tests/test_lifecycle_identity.py","requirements":["REQ_DELETE","REQ_IDENTITY"],"dimension":"explicit destructive destroy policy","starter":"EXPECTED_FAIL","oracle":"EXPECTED_PASS"},
-
     {"name":"test_f2p_runner_handles_temp_paths_with_spaces","class":"F2P","file":"tests/test_runner_and_cron.py","requirements":["REQ_RUNNER"],"dimension":"argv/path boundary","starter":"EXPECTED_FAIL","oracle":"EXPECTED_PASS"},
     {"name":"test_f2p_runner_does_not_interpret_shell_metacharacters","class":"F2P","file":"tests/test_runner_and_cron.py","requirements":["REQ_RUNNER"],"dimension":"command-injection rejection","starter":"EXPECTED_FAIL","oracle":"EXPECTED_PASS"},
     {"name":"test_f2p_nonzero_ansible_exit_fails_lifecycle_transition","class":"F2P","file":"tests/test_runner_and_cron.py","requirements":["REQ_RUNNER","REQ_UPDATE"],"dimension":"process failure propagation","starter":"EXPECTED_FAIL","oracle":"EXPECTED_PASS"},
-    {"name":"test_f2p_timeout_cleans_generated_playbook","class":"F2P","file":"tests/test_runner_and_cron.py","requirements":["REQ_RUNNER"],"dimension":"timeout/cleanup failure path","starter":"EXPECTED_FAIL","oracle":"EXPECTED_PASS"},
+    {"name":"test_f2p_timeout_and_cancellation_clean_generated_playbooks","class":"F2P","file":"tests/test_runner_and_cron.py","requirements":["REQ_RUNNER"],"dimension":"timeout/cancellation cleanup failure paths","starter":"EXPECTED_FAIL","oracle":"EXPECTED_PASS"},
     {"name":"test_f2p_cron_omitted_schedule_fields_converge_to_wildcards","class":"F2P","file":"tests/test_runner_and_cron.py","requirements":["REQ_CRON","REQ_NORMALIZE"],"dimension":"cron defaults/idempotency","starter":"EXPECTED_FAIL","oracle":"EXPECTED_PASS"},
-
     {"name":"test_f2p_failed_delete_preserves_managed_state_for_retry","class":"F2P","file":"tests/test_lifecycle_delete.py","requirements":["REQ_DELETE","REQ_RUNNER"],"dimension":"failed teardown state retention and retry","starter":"EXPECTED_FAIL","oracle":"EXPECTED_PASS"},
     {"name":"test_f2p_named_entry_deletes_preserve_siblings","class":"F2P","file":"tests/test_lifecycle_delete.py","requirements":["REQ_DELETE","REQ_TEXT","REQ_CRON"],"dimension":"scoped line/block/cron ownership on delete","starter":"EXPECTED_FAIL","oracle":"EXPECTED_PASS"},
     {"name":"test_f2p_symlink_destroy_preserves_target","class":"F2P","file":"tests/test_lifecycle_delete.py","requirements":["REQ_DELETE"],"dimension":"symlink target safety on destroy","starter":"EXPECTED_FAIL","oracle":"EXPECTED_PASS"}
@@ -73,11 +68,11 @@
     "normal_operation": ["provider schema", "directory apply/state/destroy", "copy/template mutation", "user/group/cron creation"],
     "edge_boundary": ["wrong object kind", "paths with spaces", "omitted cron fields", "home destroy boolean boundary", "equivalent map ordering"],
     "negative_rejection": ["shell metacharacters remain literal", "non-zero Ansible exit fails", "failed delete retains managed state"],
-    "failure_recovery": ["timed-out update preserves state", "retry converges", "timeout removes playbook", "failed destroy retries", "missing objects recreate"],
+    "failure_recovery": ["timed-out/canceled mutation preserves safe state", "retry converges", "terminal failures remove playbooks", "failed destroy retries", "missing objects recreate"],
     "ownership_safety": ["named line/block/cron sibling preservation", "symlink target preservation", "user home policy"],
     "cross_component": ["Terraform refresh plus native OS observation", "Terraform state plus Ansible failure", "copy digest plus destination drift", "user state plus group database", "Terraform destroy plus shared backing stores"]
   },
-  "organic_count_justification": "The suite remains at 30 F2P after Q2 consolidation. Redundant file/directory identity and mode-drift cases, copy/template identity cases, and line/block refresh/missing cases were grouped around their shared lifecycle invariants. The released slots now cover materially distinct delete transaction, ownership-scope, group-drift and template-normalization behavior rather than increasing the count.",
+  "organic_count_justification": "The suite remains at 30 F2P after Q2 consolidation. Redundant file/directory identity and mode-drift cases, copy/template identity cases, and line/block refresh/missing cases were grouped around their shared lifecycle invariants. The released slots now cover materially distinct delete transaction, ownership-scope, group-drift, template-normalization and cancellation behavior rather than increasing the count.",
   "test_independence": "Each test creates an isolated Terraform workspace and unique external paths/accounts or clears its isolated cron surface. Runtime wrappers control only the Ansible process boundary and do not inspect provider implementation.",
   "solver_logic_reimplementation_risk": "LOW: tests assert Terraform plan/state and native OS outcomes; they do not reproduce provider algorithms or parse source code."
 }
