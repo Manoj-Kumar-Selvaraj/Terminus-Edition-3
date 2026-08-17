@@ -13,7 +13,11 @@ PROJECT_AGENT = ROOT / ".cursor" / "agents" / "terminus-ci-orchestrator.md"
 
 def test_portable_orchestrator_contract_is_complete() -> None:
     text = PORTABLE.read_text(encoding="utf-8")
-    assert re.search(r"^Orchestrator policy version: `[^`]+`$", text, flags=re.MULTILINE)
+    assert re.search(
+        r"^Orchestrator policy version: `\d+\.\d+(?:\.\d+)?`$",
+        text,
+        flags=re.MULTILINE,
+    )
     for heading in (
         "## Decision right",
         "## Trust order",
@@ -124,3 +128,4 @@ def test_orchestrator_is_integrated_into_control_plane_and_ci() -> None:
         ROOT / ".github" / "workflows" / "terminus-agent-system-ci.yml"
     ).read_text(encoding="utf-8")
     assert ".cursor/agents/**" in workflow
+    assert 'git diff --no-renames --name-only "$base"' in workflow
