@@ -9,6 +9,18 @@
 
 namespace stonevault {
 
+struct TransactionAudit {
+    std::size_t active_transactions{};
+    std::size_t pending_mutations{};
+    std::size_t pending_puts{};
+    std::size_t pending_deletes{};
+    std::size_t transactions_with_writes{};
+    std::size_t max_write_set_size{};
+    std::uint64_t oldest_snapshot{};
+    std::uint64_t newest_snapshot{};
+    std::uint64_t highest_transaction_id{};
+};
+
 class TransactionTable {
 public:
     explicit TransactionTable(std::uint64_t next_id = 1);
@@ -24,6 +36,7 @@ public:
 
     std::uint64_t next_id() const noexcept;
     void advance_next_id(std::uint64_t minimum_next_id);
+    TransactionAudit audit(std::uint64_t committed_sequence) const;
 
 private:
     std::uint64_t next_id_;
