@@ -13,6 +13,7 @@ RUN pip install --no-cache-dir \
 
 RUN mkdir -p /app/stonevault /logs/verifier /tests
 COPY test_outputs.py /tests/test_outputs.py
+COPY test_preservation.py /tests/test_preservation.py
 COPY test.sh /tests/test.sh
 RUN chmod +x /tests/test.sh
 WORKDIR /app/stonevault
