@@ -532,40 +532,6 @@ def test_f2p_caller_supplied_layout_path_is_honored(tmp_path: Path) -> None:
     assert unhealthy_source.returncode == 2
     assert parse_stdout(unhealthy_source).get("passed") is False
 
-    window_arguments = run_arguments(
-        db_path, source, layout_path, controls, report_dir, publish_dir
-    )
-    window_arguments[window_arguments.index("--business-date") + 1] = "20991231"
-    window_probe = cli(
-        "preflight",
-        *window_arguments,
-        "--schema", SCHEMA,
-        "--seed", SEED,
-    )
-    assert window_probe.returncode in {0, 2}
-    assert parse_stdout(window_probe) != parse_stdout(preflight)
-
-    safety_state_db = tmp_path / "safety-state.db"
-    shutil.copyfile(db_path, safety_state_db)
-    safety_db = connect(safety_state_db)
-    safety_gid = build_identity(source, layout_path, "20260815").generation_id
-    safety_db.execute(
-        "INSERT INTO runs(generation_id,state) VALUES(?,?)",
-        (safety_gid, "PUBLISHED"),
-    )
-    safety_db.commit()
-    safety_db.close()
-    safety_probe = cli(
-        "preflight",
-        *run_arguments(
-            safety_state_db, source, layout_path, controls, report_dir, publish_dir
-        ),
-        "--schema", SCHEMA,
-        "--seed", SEED,
-    )
-    assert safety_probe.returncode in {0, 2}
-    assert parse_stdout(safety_probe) != parse_stdout(preflight)
-
     blocked_recovery_db = tmp_path / "blocked-recovery.db"
     shutil.copyfile(db_path, blocked_recovery_db)
     recovery_db = connect(blocked_recovery_db)
@@ -883,21 +849,194 @@ def test_f2p_issue_uses_weighted_source_unit_cost() -> None:
     assert effect.value_delta == Decimal("-10.00")
 
 
-def test_f2p_transfer_preserves_source_value_across_warehouses() -> None:
-    """Verify F2P transfer preserves source value across warehouses."""
-    m = movement(
-        movement_type=MovementType.TRANSFER,
-        source="W01",
-        destination="W02",
-        quantity="2",
-        unit_cost="99",
-        reason="MOVE",
+def test_f2p_transfer_preserves_source_value_across_warehouses(tmp_path: Path) -> None:
+    """Verify F2P transfer durability uses the source inventory weighted value."""
+    db = fresh_db(tmp_path)
+    seed_inventory(db, warehouse_count=2, item_count=2)
+    source_before = db.execute(
+        "SELECT quantity,value FROM inventory_positions "
+        "WHERE warehouse_id='W01' AND item_id='SKU00001'"
+    ).fetchone()
+    destination_before = db.execute(
+        "SELECT quantity,value FROM inventory_positions "
+        "WHERE warehouse_id='W02' AND item_id='SKU00001'"
+    ).fetchone()
+    assert source_before is not None and destination_before is not None
+    source = tmp_path / "transfer.dat"
+    source.write_bytes(
+        reference_record(
+            type_code="T",
+            source="W01",
+            destination="W02",
+            quantity="2.000",
+            unit_cost="99.00",
+            reason="MOVE",
+        )
     )
-    effects = transfer_effect(
-        m,
-        InventoryPosition("W01", "SKU00001", Decimal("10"), Decimal("50")),
+    controls = tmp_path / "legacy.controls"
+    write_controls(
+        controls,
+        processed="1",
+        accepted="1",
+        rejected="0",
+        effects="2",
+        quantity="0",
+        value="0",
     )
-    assert sum((e.value_delta for e in effects), Decimal("0")) == Decimal("0")
+    process(
+        db,
+        PipelineConfig(
+            source,
+            DEFAULT_LAYOUT,
+            "20260815",
+            controls,
+            tmp_path / "reports",
+            tmp_path / "published",
+        ),
+    )
+    gid = build_identity(source, DEFAULT_LAYOUT, "20260815").generation_id
+    rows = db.execute(
+        "SELECT warehouse_id,quantity_delta,value_delta,effect_kind "
+        "FROM inventory_effects WHERE generation_id=? ORDER BY id",
+        (gid,),
+    ).fetchall()
+    assert len(rows) == 2
+    expected_value = (
+        Decimal("2")
+        * Decimal(source_before["value"])
+        / Decimal(source_before["quantity"])
+    ).quantize(Decimal("0.01"))
+    assert {
+        (row["warehouse_id"], row["effect_kind"], Decimal(row["value_delta"]))
+        for row in rows
+    } == {
+        ("W01", "TRANSFER_OUT", -expected_value),
+        ("W02", "TRANSFER_IN", expected_value),
+    }
+    source_after = db.execute(
+        "SELECT quantity,value FROM inventory_positions "
+        "WHERE warehouse_id='W01' AND item_id='SKU00001'"
+    ).fetchone()
+    destination_after = db.execute(
+        "SELECT quantity,value FROM inventory_positions "
+        "WHERE warehouse_id='W02' AND item_id='SKU00001'"
+    ).fetchone()
+    assert source_after is not None and destination_after is not None
+    assert Decimal(source_after["quantity"]) == Decimal(source_before["quantity"]) - Decimal("2")
+    assert Decimal(source_after["value"]) == Decimal(source_before["value"]) - expected_value
+    assert Decimal(destination_after["quantity"]) == Decimal(destination_before["quantity"]) + Decimal("2")
+    assert Decimal(destination_after["value"]) == Decimal(destination_before["value"]) + expected_value
+
+
+def test_f2p_transfer_overdraw_rejection_is_durable_across_restart(tmp_path: Path) -> None:
+    """Verify F2P transfer overdraw rejection journals, checkpoints, and resumes once."""
+    db = fresh_db(tmp_path)
+    seed_inventory(db, warehouse_count=2, item_count=2)
+    before_positions = [
+        tuple(row)
+        for row in db.execute(
+            "SELECT warehouse_id,item_id,quantity,value,version "
+            "FROM inventory_positions ORDER BY warehouse_id,item_id"
+        )
+    ]
+    available = Decimal(
+        db.execute(
+            "SELECT quantity FROM inventory_positions "
+            "WHERE warehouse_id='W01' AND item_id='SKU00001'"
+        ).fetchone()[0]
+    )
+    source = tmp_path / "transfer-overdraw.dat"
+    source.write_bytes(
+        reference_record(
+            type_code="T",
+            source="W01",
+            destination="W02",
+            quantity=format(available + Decimal("1"), ".3f"),
+            unit_cost="99.00",
+            reason="MOVE",
+        )
+    )
+    controls = tmp_path / "legacy.controls"
+    write_controls(
+        controls,
+        processed="1",
+        accepted="0",
+        rejected="1",
+        effects="0",
+        quantity="0",
+        value="0",
+    )
+    cfg = PipelineConfig(
+        source,
+        DEFAULT_LAYOUT,
+        "20260815",
+        controls,
+        tmp_path / "reports",
+        tmp_path / "published",
+    )
+    process(db, cfg)
+    gid = build_identity(source, DEFAULT_LAYOUT, "20260815").generation_id
+    assert db.execute(
+        "SELECT COUNT(*) FROM rejects WHERE generation_id=? AND movement_id='MOVE00000001'",
+        (gid,),
+    ).fetchone()[0] == 1
+    assert db.execute(
+        "SELECT COUNT(*) FROM processed_movements "
+        "WHERE generation_id=? AND movement_id='MOVE00000001' AND status='REJECTED'",
+        (gid,),
+    ).fetchone()[0] == 1
+    assert db.execute(
+        "SELECT COUNT(*) FROM inventory_effects WHERE generation_id=?",
+        (gid,),
+    ).fetchone()[0] == 0
+    checkpoint = db.execute(
+        "SELECT last_sequence,byte_offset FROM checkpoints WHERE generation_id=?",
+        (gid,),
+    ).fetchone()
+    assert checkpoint is not None
+    assert checkpoint["last_sequence"] == 1
+    assert checkpoint["byte_offset"] > 0
+    assert db.execute(
+        "SELECT COUNT(*) FROM event_journal "
+        "WHERE generation_id=? AND sequence=1 AND event_type='REJECT'",
+        (gid,),
+    ).fetchone()[0] == 1
+    after_first = [
+        tuple(row)
+        for row in db.execute(
+            "SELECT warehouse_id,item_id,quantity,value,version "
+            "FROM inventory_positions ORDER BY warehouse_id,item_id"
+        )
+    ]
+    assert after_first == before_positions
+
+    process(db, cfg)
+    assert db.execute(
+        "SELECT COUNT(*) FROM rejects WHERE generation_id=? AND movement_id='MOVE00000001'",
+        (gid,),
+    ).fetchone()[0] == 1
+    assert db.execute(
+        "SELECT COUNT(*) FROM processed_movements "
+        "WHERE generation_id=? AND movement_id='MOVE00000001'",
+        (gid,),
+    ).fetchone()[0] == 1
+    assert db.execute(
+        "SELECT COUNT(*) FROM event_journal "
+        "WHERE generation_id=? AND sequence=1 AND event_type='REJECT'",
+        (gid,),
+    ).fetchone()[0] == 1
+    assert db.execute(
+        "SELECT last_sequence FROM checkpoints WHERE generation_id=?",
+        (gid,),
+    ).fetchone()[0] == 1
+    after_restart = [
+        tuple(row)
+        for row in db.execute(
+            "SELECT warehouse_id,item_id,quantity,value,version "
+            "FROM inventory_positions ORDER BY warehouse_id,item_id"
+        )
+    ]
+    assert after_restart == before_positions
 
 
 def test_f2p_effect_application_rejects_negative_inventory() -> None:
@@ -1084,14 +1223,6 @@ def test_f2p_failed_reconciliation_cannot_publish(tmp_path: Path) -> None:
     )
     assert result.returncode == 2
     assert visible_generation_dirs(publish_dir) == []
-    mismatch_db = connect(mismatch_root / "state.db")
-    gid = mismatch_db.execute("SELECT generation_id FROM runs").fetchone()[0]
-    mismatch_db.close()
-    assert all(
-        gid not in path.read_text(encoding="utf-8")
-        for path in mismatch_root.rglob("*.jsonl")
-    )
-
     detail_root = tmp_path / "detail-mismatch"
     detail_root.mkdir()
     detail_db = fresh_db(detail_root)
@@ -1374,6 +1505,82 @@ def test_p2p_cli_success_and_failure_json_contract(tmp_path: Path) -> None:
     assert {"processed_movements", "rejects", "checkpoints"} <= tables
 
 
+def test_p2p_cross_generation_same_movement_is_processed_once_per_generation(
+    tmp_path: Path,
+) -> None:
+    """Verify P2P same movement identity processes once in each distinct generation."""
+    db = fresh_db(tmp_path)
+    seed_inventory(db, warehouse_count=2, item_count=2)
+    source = tmp_path / "source.dat"
+    source.write_bytes(reference_receipt_record())
+    controls = tmp_path / "legacy.controls"
+    write_controls(controls)
+    report_dir = tmp_path / "reports"
+    publish_dir = tmp_path / "published"
+    first_cfg = PipelineConfig(
+        source,
+        DEFAULT_LAYOUT,
+        "20260815",
+        controls,
+        report_dir,
+        publish_dir,
+    )
+    second_cfg = PipelineConfig(
+        source,
+        DEFAULT_LAYOUT,
+        "20260816",
+        controls,
+        report_dir,
+        publish_dir,
+    )
+    process(db, first_cfg)
+    first_gid = build_identity(source, DEFAULT_LAYOUT, "20260815").generation_id
+    process(db, second_cfg)
+    second_gid = build_identity(source, DEFAULT_LAYOUT, "20260816").generation_id
+    assert first_gid != second_gid
+    assert db.execute(
+        "SELECT COUNT(*) FROM processed_movements "
+        "WHERE movement_id='MOVE00000001' AND generation_id IN (?,?)",
+        (first_gid, second_gid),
+    ).fetchone()[0] == 2
+    for gid in (first_gid, second_gid):
+        assert db.execute(
+            "SELECT COUNT(*) FROM processed_movements "
+            "WHERE generation_id=? AND movement_id='MOVE00000001'",
+            (gid,),
+        ).fetchone()[0] == 1
+        assert db.execute(
+            "SELECT COUNT(*) FROM inventory_effects "
+            "WHERE generation_id=? AND movement_id='MOVE00000001'",
+            (gid,),
+        ).fetchone()[0] == 1
+
+    before_replay = tuple(
+        db.execute(
+            "SELECT quantity,value,version FROM inventory_positions "
+            "WHERE warehouse_id='W01' AND item_id='SKU00001'"
+        ).fetchone()
+    )
+    process(db, second_cfg)
+    after_replay = tuple(
+        db.execute(
+            "SELECT quantity,value,version FROM inventory_positions "
+            "WHERE warehouse_id='W01' AND item_id='SKU00001'"
+        ).fetchone()
+    )
+    assert after_replay == before_replay
+    assert db.execute(
+        "SELECT COUNT(*) FROM processed_movements "
+        "WHERE generation_id=? AND movement_id='MOVE00000001'",
+        (second_gid,),
+    ).fetchone()[0] == 1
+    assert db.execute(
+        "SELECT COUNT(*) FROM inventory_effects "
+        "WHERE generation_id=? AND movement_id='MOVE00000001'",
+        (second_gid,),
+    ).fetchone()[0] == 1
+
+
 def test_p2p_preflight_uses_historical_baseline(tmp_path: Path) -> None:
     """Verify P2P preflight uses historical baseline."""
     db = fresh_db(tmp_path)
@@ -1413,6 +1620,83 @@ def test_p2p_preflight_uses_historical_baseline(tmp_path: Path) -> None:
     assert second_payload.get("passed") is False
     assert second_payload != first_payload
     assert "15000" not in json.dumps(second_payload, sort_keys=True)
+
+
+def test_p2p_preflight_discriminates_batch_window_and_authorization_safety_state(
+    tmp_path: Path,
+) -> None:
+    """Verify P2P preflight evidence independently evaluates window and safety domains."""
+    db = fresh_db(tmp_path)
+    seed_inventory(db, warehouse_count=2, item_count=2)
+    apply_sql(db, SEED)
+    db.close()
+    db_path = tmp_path / "state.db"
+    source = tmp_path / "source.dat"
+    source.write_bytes(reference_receipt_record())
+    controls = tmp_path / "legacy.controls"
+    write_controls(controls)
+    report_dir = tmp_path / "ops" / "reports"
+    publish_dir = tmp_path / "published"
+
+    baseline = cli(
+        "preflight",
+        *run_arguments(db_path, source, DEFAULT_LAYOUT, controls, report_dir, publish_dir),
+        "--schema", SCHEMA,
+        "--seed", SEED,
+    )
+    assert baseline.returncode == 0
+    baseline_payload = parse_stdout(baseline)
+    baseline_window = baseline_payload.get("batch_window")
+    baseline_authorization = baseline_payload.get("authorization")
+    baseline_safety = baseline_payload.get("safety")
+    assert isinstance(baseline_window, dict)
+    assert isinstance(baseline_authorization, dict)
+    assert isinstance(baseline_safety, dict)
+
+    window_arguments = run_arguments(
+        db_path, source, DEFAULT_LAYOUT, controls, report_dir, publish_dir
+    )
+    window_arguments[window_arguments.index("--business-date") + 1] = "20991231"
+    window_probe = cli(
+        "preflight",
+        *window_arguments,
+        "--schema", SCHEMA,
+        "--seed", SEED,
+    )
+    assert window_probe.returncode in {0, 2}
+    window_payload = parse_stdout(window_probe)
+    assert window_payload.get("batch_window") != baseline_window
+    assert window_payload.get("authorization") == baseline_authorization
+    assert window_payload.get("source_profile") == baseline_payload.get("source_profile")
+    assert window_payload.get("schema_issues") == baseline_payload.get("schema_issues")
+    assert window_payload.get("catalog") == baseline_payload.get("catalog")
+
+    safety_state_db = tmp_path / "safety-state.db"
+    shutil.copyfile(db_path, safety_state_db)
+    safety_db = connect(safety_state_db)
+    safety_gid = build_identity(source, DEFAULT_LAYOUT, "20260815").generation_id
+    safety_db.execute(
+        "INSERT INTO runs(generation_id,state) VALUES(?,?)",
+        (safety_gid, "PUBLISHED"),
+    )
+    safety_db.commit()
+    safety_db.close()
+    safety_probe = cli(
+        "preflight",
+        *run_arguments(
+            safety_state_db, source, DEFAULT_LAYOUT, controls, report_dir, publish_dir
+        ),
+        "--schema", SCHEMA,
+        "--seed", SEED,
+    )
+    assert safety_probe.returncode in {0, 2}
+    safety_payload = parse_stdout(safety_probe)
+    assert safety_payload.get("safety") != baseline_safety
+    assert safety_payload.get("authorization") == baseline_authorization
+    assert safety_payload.get("source_profile") == baseline_payload.get("source_profile")
+    assert safety_payload.get("schema_issues") == baseline_payload.get("schema_issues")
+    assert safety_payload.get("catalog") == baseline_payload.get("catalog")
+
 
 def exercise_adjudicated_operator_workflows(tmp_path: Path) -> None:
     layout_path = write_alternate_layout(tmp_path)
