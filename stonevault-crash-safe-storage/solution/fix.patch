@@ -85,20 +85,25 @@
          snapshot_store_.publish(image);
          wal_.reset_after_checkpoint();
          sequence = commit_sequence_;
-@@ -184,12 +197,14 @@
+@@ -188,12 +201,17 @@
  
      std::string health() {
          std::lock_guard<std::mutex> guard(mutex_);
-+        validate_storage_paths(paths_);
-+        validate_catalog_integrity(catalog_, commit_sequence_);
++        const RuntimeAudit audit = audit_runtime_state(
++            paths_, catalog_, transactions_, commit_sequence_);
++        if (audit.storage.wal_bytes != wal_.size()) {
++            throw std::runtime_error("runtime integrity: WAL size views disagree");
++        }
          return render_health(IntegrityReport{
              commit_sequence_,
-             static_cast<std::uint64_t>(catalog_.visible_key_count(commit_sequence_)),
+-            static_cast<std::uint64_t>(catalog_.visible_key_count(commit_sequence_)),
 -            0,
-+            static_cast<std::uint64_t>(transactions_.size()),
-             wal_.size(),
+-            wal_.size(),
 -            false,
-+            std::filesystem::exists(paths_.snapshot),
++            static_cast<std::uint64_t>(audit.catalog.visible_keys),
++            static_cast<std::uint64_t>(audit.transactions.active_transactions),
++            audit.storage.wal_bytes,
++            audit.storage.snapshot_present,
          });
      }
  
