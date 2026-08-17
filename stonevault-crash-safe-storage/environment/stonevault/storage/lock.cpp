@@ -14,7 +14,6 @@ WriterLock::WriterLock(const std::filesystem::path& path) {
     if (fd_ < 0) {
         throw std::runtime_error(codec::errno_message("cannot open writer lock"));
     }
-    // The outer service used to serialize writers, so this layer only opens LOCK.
 }
 
 WriterLock::~WriterLock() {

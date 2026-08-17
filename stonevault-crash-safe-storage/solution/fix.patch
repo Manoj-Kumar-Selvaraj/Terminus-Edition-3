@@ -56,11 +56,11 @@
      }
  
      int commit(
-@@ -144,7 +147,11 @@
+@@ -143,6 +146,12 @@
+         std::uint64_t& sequence) {
          std::lock_guard<std::mutex> guard(mutex_);
          Transaction& tx = transactions_.require(tx_id);
- 
--        // Conflict arbitration was delegated to a removed coordinator.
++
 +        if (catalog_.conflicts(tx.writes, tx.snapshot)) {
 +            transactions_.erase(tx_id);
 +            sequence = commit_sequence_;
@@ -69,7 +69,7 @@
  
          const std::uint64_t next_sequence = commit_sequence_ + 1;
          wal_.append_commit(tx_id, next_sequence);
-@@ -166,9 +173,13 @@
+@@ -164,9 +173,13 @@
  
      int checkpoint(std::uint64_t& sequence) {
          std::lock_guard<std::mutex> guard(mutex_);
@@ -85,7 +85,7 @@
          snapshot_store_.publish(image);
          wal_.reset_after_checkpoint();
          sequence = commit_sequence_;
-@@ -186,12 +197,14 @@
+@@ -184,12 +197,14 @@
  
      std::string health() {
          std::lock_guard<std::mutex> guard(mutex_);
@@ -104,11 +104,10 @@
  
 --- a/storage/lock.cpp
 +++ b/storage/lock.cpp
-@@ -14,7 +14,14 @@
+@@ -14,6 +14,14 @@
      if (fd_ < 0) {
          throw std::runtime_error(codec::errno_message("cannot open writer lock"));
      }
--    // The outer service used to serialize writers, so this layer only opens LOCK.
 +    if (::flock(fd_, LOCK_EX | LOCK_NB) != 0) {
 +        const std::string message = errno == EWOULDBLOCK || errno == EAGAIN
 +            ? "database is already open for writing"
@@ -145,11 +144,10 @@
      return row;
  }
  
-@@ -191,7 +196,12 @@
+@@ -191,6 +196,12 @@
  }
  
  void SnapshotStore::remove_stale_temporary() const {
--    // Recovery currently leaves stale snapshot.tmp files in place.
 +    std::error_code error;
 +    std::filesystem::remove(temporary_path_, error);
 +    if (error && error.value() != ENOENT) {

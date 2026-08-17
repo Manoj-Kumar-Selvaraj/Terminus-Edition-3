@@ -191,7 +191,6 @@ void SnapshotStore::publish(const SnapshotImage& image) const {
 }
 
 void SnapshotStore::remove_stale_temporary() const {
-    // Recovery currently leaves stale snapshot.tmp files in place.
 }
 
 }  // namespace stonevault
