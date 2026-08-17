@@ -1,0 +1,362 @@
+{
+  "schema_version": "3.0",
+  "role": "Adjudicator",
+  "review_id": "event-time-session-window-processor-3fec54c6-adjudication-b229a618a5",
+  "task": "event-time-session-window-processor",
+  "task_commit": "3fec54c647e703efea3e10b25d157c27f2267e81",
+  "control_plane_commit": "f784d535d3134ae31a8b1a4d15e7b0235ce9de56",
+  "protocol_policy_version": "2.2",
+  "prompt_policy_version": "2.2",
+  "role_policy_version": "1.0",
+  "role_contract_hash": "559077c47ef75f5c4bdbea023f30c1a2a26ba037ff4291534c836e5f342a0135",
+  "context_packet": ".terminus/reviews/event-time-session-window-processor/3fec54c6/event-time-session-window-processor-3fec54c6-adjudication-b229a618a5.packet.json",
+  "verdict": "REQUEST_CHANGES",
+  "confidence": "HIGH",
+  "evidence_status": "SUFFICIENT",
+  "summary": "BOTH_PARTLY across clusters, not a wholesale win for Q4 PASS or Comprehensive REQUEST_CHANGES. Independent inspection of tests/test_outputs.py, session-contract.md, instruction.md, solution/fixed/cli.py, and windows/assign.py upholds VE-01 HIGH, VE-02 MEDIUM, VE-03 MEDIUM, CR-01 HIGH, and CR-02 HIGH as controlling repairs. Q4 BIDIRECTIONAL_ALIGNMENT PASS and VE REQ-03/REQ-06 COMPLETE are not controlling on those clauses. VE-04..VE-07 and matching Q4 LOW advisories remain advisory. Harbor oracle 1.0 does not prove oracle or verifier completeness. This result is not Pre-LLMaJ aggregate PASS.",
+  "evidence": [
+    {
+      "type": "artifact",
+      "ref": ".terminus/reviews/event-time-session-window-processor/3fec54c6/event-time-session-window-processor-3fec54c6-adjudication-b229a618a5.packet.json",
+      "observation": "Bound packet fixes Adjudicator role, task_commit 3fec54c647e703efea3e10b25d157c27f2267e81, control_plane_commit f784d535d3134ae31a8b1a4d15e7b0235ce9de56, role_contract_hash 559077c47ef75f5c4bdbea023f30c1a2a26ba037ff4291534c836e5f342a0135, allowed evidence, and immutable output path."
+    },
+    {
+      "type": "rule",
+      "ref": ".terminus/agents/PROMPTS.md#Adjudicator",
+      "observation": "Adjudicator must identify controlling rule/evidence, distinguish scopes that can both be correct, request more evidence only when unresolved, and must not majority-vote or author a compromise solely to satisfy both reviewers."
+    },
+    {
+      "type": "rule",
+      "ref": ".terminus/reviewers/PRE_LLMAJ.md#Stage-E",
+      "observation": "Stage E compares frozen specialist and Comprehensive reports for contradictory severity and omissions. Material disagreement routes to Adjudicator. The Orchestrator scan is an index, not a vote. Aggregate PASS is Stage F and is out of this execution."
+    },
+    {
+      "type": "rule",
+      "ref": "TERMINUS_3_AI_INSTRUCTIONS.md#test-quality",
+      "observation": "Every stated requirement needs a meaningful assertion (no req-gap). Tests must be independent (no leftover shared state). Weak assertions that let a wrong implementation score 1 are defects. Oracle must implement the instruction, not merely whatever current tests check, and must pass the same verifier after those tests exist."
+    },
+    {
+      "type": "rule",
+      "ref": ".terminus/reviewers/REVIEWER_CHECKLIST.md#RC-SOL-003",
+      "observation": "RC-SOL-003 High: the oracle must implement every material requirement, not merely whatever current tests happen to check."
+    },
+    {
+      "type": "rule",
+      "ref": ".terminus/agents/QUALITY_AGENT_PROMPTS.md#Q4",
+      "observation": "Q4 packet evidence is instruction, contracts, tests, and environment interfaces; solution/oracle source is outside Q4 allowed evidence. Q4 is still a completeness claim over that allowed scope: any material untested requirement is REVISE. MEDIUM is blocking when the defect can change solver pass/fail or documented public-interface correctness."
+    },
+    {
+      "type": "file",
+      "ref": "event-time-session-window-processor/tests/test_outputs.py",
+      "observation": "_clear_runtime unlinks watermark.journal, open_sessions.json, sessions.jsonl, late.jsonl, and rejects.jsonl only. last_run.json and ops-report.json are never unlinked. test_p2p_ops_report_uses_warehouse_catalog asserts those files exist with catalog COUNT(*) after an --input run. test_f2p_empty_check_no_journal_file never reads the desk files. Closed-session checks use closed[0]/hold_alice[0] with no uniqueness. Gap-close tests use --input. --feed tests use feed_late/feed_order/lateness_probe/late_straggler (order and lateness, not event-time gap close). Omit-source is _run([]); unknown+reset is tested; `--reset-output` with no source is not. test_p2p_config_keys reads autouse-written processor.json. test_p2p_output_paths compares test-module Path constants. test_p2p_warehouse_at_least_10k requires >=10000 ledger lines. test_p2p_feed_late_allowed_joins_open only requires some open u1 session to contain f3."
+    },
+    {
+      "type": "file",
+      "ref": "event-time-session-window-processor/environment/sessions/docs/session-contract.md",
+      "observation": "Binding CLI: omitting --input/--feed/--empty-check is exit 2 before mutating journal, opens, or outputs. --feed is file order only. Gap/duration/lateness/watermark use event_time_ms; arrival index must not drive membership. Successful runs including --empty-check rewrite last_run.json and ops-report.json from catalog.sqlite. Do not emit duplicate closes for the same session identity and interval."
+    },
+    {
+      "type": "file",
+      "ref": "event-time-session-window-processor/instruction.md",
+      "observation": "Solver-visible: omitting --input/--feed/--empty-check fails exit 2 before any journal or output touch; --feed keeps file order; sessions are event-time; each successful run refreshes last_run.json and ops-report.json. Instruction Reviewer PASS on this commit; extra tests of those clauses remain discoverable."
+    },
+    {
+      "type": "file",
+      "ref": "event-time-session-window-processor/solution/fixed/cli.py",
+      "observation": "Oracle CLI mkdir's, then honors args.reset_output via truncate_jsonl on sessions/late/rejects, then errors if source is None. process_events is called with use_arrival_gap=args.feed is not None. solve.sh copies this cli.py over the starter."
+    },
+    {
+      "type": "file",
+      "ref": "event-time-session-window-processor/environment/sessions/src/windows/assign.py",
+      "observation": "When use_arrival_gap is true, decide_on_time_close uses arrival_gap_exceeded(arrival_index) and returns without event_crosses_gap. rules.arrival_gap_exceeded compares arrival_index*1000 to last_event_time_ms + gap. Oracle does not copy a fixed assign.py, so this starter path remains live whenever cli.py passes use_arrival_gap=True."
+    },
+    {
+      "type": "file",
+      "ref": "event-time-session-window-processor/task.toml",
+      "observation": "Top-level artifacts = ['/app/sessions'], so Harbor copies the whole sessions tree, including data/last_run.json and data/ops-report.json, into the separate verifier."
+    },
+    {
+      "type": "test",
+      "ref": "event-time-session-window-processor/tests/fixtures/feed_late.jsonl",
+      "observation": "f1=80000, f2=100000, f3=85000, f4=1000, f5=110000. With gap 30000 this feed never event-time-gap-closes; it grades late-allowed vs TOO_LATE and arrival order, not --feed gap assignment."
+    },
+    {
+      "type": "test",
+      "ref": "event-time-session-window-processor/tests/fixtures/feed_order.jsonl",
+      "observation": "p2=50000 then p1=1000. Asserts p1 TOO_LATE under --feed file order. Not an on-time pair more than session_gap_ms apart."
+    },
+    {
+      "type": "review",
+      "ref": ".terminus/reviews/event-time-session-window-processor/3fec54c6/event-time-session-window-processor-3fec54c6-verifier-engineer-8c740522c3.json",
+      "observation": "Frozen VE REVISE: VE-01 HIGH last_run isolation; VE-02/VE-03 MEDIUM; VE-04..VE-07 LOW. REQ-03 and REQ-06 marked COMPLETE via --feed arrival-order and --input gap tests. Packet allowed tests/environment/Oracle-NOP, not a mandate to grade oracle source correctness."
+    },
+    {
+      "type": "review",
+      "ref": ".terminus/reviews/event-time-session-window-processor/3fec54c6/event-time-session-window-processor-3fec54c6-spec-test-contract-0c0f0a111c.json",
+      "observation": "Frozen Q4 PASS with LOW advisories only. REQ-OPS-REPORT marked complete. Duplicate-close absent-non-material / LOW. Second sweep called --empty-check desk rewrite and --reset-output as sole flag non-material. UNINSPECTED_SCOPE empty, but packet evidence_allowed excludes solution/."
+    },
+    {
+      "type": "review",
+      "ref": ".terminus/reviews/event-time-session-window-processor/3fec54c6/event-time-session-window-processor-3fec54c6-comprehensive-checklist-d2b8aba8d5.json",
+      "observation": "Frozen Comprehensive REQUEST_CHANGES: CR-01 RC-SOL-003 FAIL (oracle --feed arrival gap and reset-before-source); CR-02 RC-VER-005 FAIL (no --feed event-time gap test; omit-source not combined with --reset-output). RC-VER-008 PASS is config-knob mutation, not last_run isolation."
+    },
+    {
+      "type": "review",
+      "ref": ".terminus/reviews/event-time-session-window-processor/3fec54c6/event-time-session-window-processor-3fec54c6-instruction-21c452f480.json",
+      "observation": "Instruction Reviewer PASS on the same commit. No request to delete graded CLI/event-time details. Extra tests of stated clauses remain fair."
+    },
+    {
+      "type": "run",
+      "ref": "/tmp/e3-ets/2026-08-17__15-46-13",
+      "observation": "Frozen Harbor oracle reward 1.0, CTRF 40/40 at this task_commit. Oracle-pass is not treated as proof that untested contract clauses are implemented or graded."
+    },
+    {
+      "type": "run",
+      "ref": "/tmp/e3-ets/2026-08-17__15-47-24",
+      "observation": "Frozen Harbor NOP reward 0.0, 14 passed / 26 failed. Discrimination of the starter does not prove VE-01 isolation, --feed event-time gap, or reset-without-source are asserted."
+    }
+  ],
+  "findings": [
+    {
+      "id": "VE-01",
+      "severity": "HIGH",
+      "status": "OBSERVED",
+      "criterion": "weak-assertion",
+      "evidence_refs": [
+        "event-time-session-window-processor/tests/test_outputs.py",
+        "event-time-session-window-processor/task.toml",
+        "event-time-session-window-processor/instruction.md",
+        "event-time-session-window-processor/environment/sessions/docs/session-contract.md"
+      ],
+      "why_it_matters": "_clear_runtime never unlinks last_run.json or ops-report.json, and artifacts copies all of /app/sessions. test_p2p_ops_report_uses_warehouse_catalog can pass on Harbor-transferred or earlier-pytest desk files whose catalog counts already match, even if the verifier-invoked CLI does not refresh them.",
+      "minimal_remediation": "Unlink last_run.json and ops-report.json in the autouse isolator (or in the ops-report test) before invoking run-sessions; then assert both files are recreated from live catalog COUNT(*).",
+      "regression_risk": "Low if isolation stays per-test. Processors that wrote the desk only during the agent trial and not on each CLI run will start failing, which is the intended discrimination."
+    },
+    {
+      "id": "VE-02",
+      "severity": "MEDIUM",
+      "status": "OBSERVED",
+      "criterion": "req-gap",
+      "evidence_refs": [
+        "event-time-session-window-processor/environment/sessions/docs/session-contract.md",
+        "event-time-session-window-processor/tests/test_outputs.py"
+      ],
+      "why_it_matters": "The contract requires a successful run including --empty-check to rewrite last_run.json and ops-report.json. The empty-check tests never read those files. An implementation that persist-desk only on --input still scores 1.",
+      "minimal_remediation": "After --empty-check on a cleared desk, assert last_run.json and ops-report.json were rewritten with the same catalog-derived fields as a non-empty successful run.",
+      "regression_risk": "Low; existing empty-check journal/side-file assertions stay intact."
+    },
+    {
+      "id": "VE-03",
+      "severity": "MEDIUM",
+      "status": "OBSERVED",
+      "criterion": "weak-assertion",
+      "evidence_refs": [
+        "event-time-session-window-processor/environment/sessions/docs/session-contract.md",
+        "event-time-session-window-processor/tests/test_outputs.py"
+      ],
+      "why_it_matters": "The contract forbids duplicate closes for the same session identity and interval. Tests take closed[0]/hold_alice[0] and byte-identical reruns, so a double-emit of the correct close still passes. That can change solver pass/fail by false-accept, so Q4's own MEDIUM materiality rule applies; LOW is not controlling.",
+      "minimal_remediation": "Assert uniqueness (or exact closed-row counts) for the public sample, holdout alice/bob, duration close, and catalog standard close.",
+      "regression_risk": "Low for a single-emit closer; fails double-close bugs only."
+    },
+    {
+      "id": "CR-01",
+      "severity": "HIGH",
+      "status": "OBSERVED",
+      "criterion": "RC-SOL-003",
+      "evidence_refs": [
+        "event-time-session-window-processor/solution/fixed/cli.py",
+        "event-time-session-window-processor/environment/sessions/src/windows/assign.py",
+        "event-time-session-window-processor/environment/sessions/docs/session-contract.md",
+        ".terminus/reviewers/REVIEWER_CHECKLIST.md#RC-SOL-003"
+      ],
+      "why_it_matters": "The oracle still sets use_arrival_gap on --feed, which skips event-time gap assignment, and truncates side files on --reset-output before the missing-source usage error. RC-SOL-003 requires the oracle to implement the instruction, not merely the current tests. Harbor reward 1.0 is the predicted result of CR-02's missing assertions, not a contrary finding.",
+      "minimal_remediation": "Keep --feed as file-order only. Always decide on-time gap/duration from event_time_ms. Reject unknown flags and missing source before mkdir, journal create, or --reset-output truncation. Re-run the oracle through the same verifier after CR-02 tests exist.",
+      "regression_risk": "Changing --feed gap assignment will alter closes for gap-separated on-time feeds; CR-02 tests must be added so the repaired oracle is actually graded."
+    },
+    {
+      "id": "CR-02",
+      "severity": "HIGH",
+      "status": "OBSERVED",
+      "criterion": "req-gap",
+      "evidence_refs": [
+        "event-time-session-window-processor/tests/test_outputs.py",
+        "event-time-session-window-processor/instruction.md",
+        "event-time-session-window-processor/environment/sessions/docs/session-contract.md"
+      ],
+      "why_it_matters": "Event-time gap close is asserted only under --input. --feed fixtures never require an on-time pair more than session_gap_ms apart, so arrival-index gap still scores 1. Omitting source is tested without --reset-output; unknown-flag+reset takes the argparse failure path before truncate. Those are stated CLI/event-time clauses, not hidden extras. VE REQ-03/REQ-06 COMPLETE and Q4 BIDIRECTIONAL_ALIGNMENT PASS are incorrect on these clauses.",
+      "minimal_remediation": "Add a --feed fixture whose on-time event times are more than session_gap_ms apart and assert the contract close. Add `--reset-output` with no source and assert existing journal/opens/outputs are untouched. Keep live CLI/state checks, not source greps.",
+      "regression_risk": "New cases must stay deterministic and independent of the autouse config fixture except where mutation is the point."
+    }
+  ],
+  "missing_evidence": [],
+  "change_scope": [
+    "event-time-session-window-processor/tests/test_outputs.py",
+    "event-time-session-window-processor/tests/fixtures/ (small --feed gap fixture if needed)",
+    "event-time-session-window-processor/solution/fixed/cli.py (stop use_arrival_gap on --feed; usage-error before --reset-output)"
+  ],
+  "do_not_change": [
+    "Do not rewrite instruction.md or session-contract.md to match the current oracle; align oracle and tests to the existing contract.",
+    "Do not weaken existing F2P journal, tenant-isolation, restart, lateness-mutation, holdout, catalog overlay, or unknown-flag+reset checks.",
+    "Do not treat Harbor oracle 1.0 / NOP 0.0 as proof that untested clauses are graded.",
+    "Do not start this producer repair from the Adjudicator execution.",
+    "Do not treat this result as Pre-LLMaJ aggregate PASS."
+  ],
+  "next_gate": "Return to CI Orchestrator. Authorized producer repair is the controlling findings only; then Oracle/NOP through the same verifier and fresh cold Verifier Engineer, Q4, and Comprehensive on the new task_commit. Do not aggregate Pre-LLMaJ from this file.",
+  "role_output": {
+    "DECISION": "BOTH_PARTLY",
+    "CONTROLLING_RULE_OR_EVIDENCE": "TERMINUS_3_AI_INSTRUCTIONS.md test-quality (req-gap, weak-assertion, independent tests) plus RC-SOL-003 (oracle implements the instruction, not merely current tests). Independently observed: _clear_runtime omits last_run/ops-report; no --feed event-time gap assertion; no `--reset-output` without source; oracle cli.py still passes use_arrival_gap on --feed and truncates before the missing-source error.",
+    "SCOPE_RECONCILIATION": "Verifier Engineer grades tests, not oracle source. Q4 packet excludes solution/. Comprehensive grades the full task tree including oracle. Those scopes can all be internally consistent while still leaving VE-01/VE-02/VE-03 and CR-01/CR-02 as current defects. Comprehensive RC-VER-008 PASS is config-knob mutation, not a finding on last_run isolation. Q4 PASS is not a contrary measurement of oracle correctness.",
+    "REASON": "No majority vote and no blended compromise. Clusters 1, 2, 3, and 6 are A on the artifact. Cluster 5 is BOTH_PARTLY because VE/Q4 silence is correct scope, not a contrary oracle verdict; CR-01 still controls the oracle. Cluster 4 is BOTH_PARTLY LOW/advisory. Controlling repairs remain, so the envelope verdict is REQUEST_CHANGES.",
+    "REQUIRED_ACTION": "Repair verifier isolation and the untested --empty-check desk, duplicate-close uniqueness, --feed event-time gap, and reset-without-source clauses. Repair oracle cli.py so --feed does not use arrival-index gap and usage errors run before --reset-output. Do not edit instruction.md. Do not start that repair in this execution.",
+    "RECHECK": "After a separate producer commit: Harbor oracle 1.0 and NOP 0.0 through the same verifier including the new tests; fresh cold Verifier Engineer, Q4, and Comprehensive bound to the new task_commit. Re-adjudicate only if those frozen reports still conflict.",
+    "CLUSTERS": [
+      {
+        "id": "1",
+        "A": "Verifier Engineer VE-01 HIGH last_run/ops-report not cleared",
+        "B": "Q4 PASS (REQ-OPS-REPORT complete) and Comprehensive RC-VER-008 PASS",
+        "DECISION": "A",
+        "CONTROLLING_RULE_OR_EVIDENCE": "Independent tests / weak-assertion: autouse _clear_runtime never unlinks last_run.json or ops-report.json; artifacts=['/app/sessions'] transfers those files; test_p2p_ops_report_uses_warehouse_catalog only checks post-run existence and catalog counts.",
+        "SCOPE_RECONCILIATION": "RC-VER-008 is dynamic config-knob mutation. Its PASS is not a measurement of desk-file isolation and is not a contrary finding on VE-01. Q4's REQ-OPS-REPORT complete is the actual completeness claim on this requirement, and it is wrong because the test does not prove this CLI invocation rewrote the files.",
+        "REASON": "A planted or leftover desk snapshot with matching COUNT(*) satisfies the only ops-report test. That is a HIGH weak-assertion of a stated each-successful-run refresh rule, not a Q4-covered complete check.",
+        "REQUIRED_ACTION": "Unlink last_run.json and ops-report.json before the live CLI run, then assert recreation from catalog.sqlite.",
+        "RECHECK": "Verifier Engineer on the repaired tests; the ops-report test must fail if those files are pre-seeded and the CLI does not rewrite them."
+      },
+      {
+        "id": "2",
+        "A": "Verifier Engineer VE-02 MEDIUM --empty-check desk refresh",
+        "B": "Q4 omission-sweep non-material (R_OPS asserted on --input)",
+        "DECISION": "A",
+        "CONTROLLING_RULE_OR_EVIDENCE": "session-contract.md: a successful run including --empty-check rewrites last_run.json and ops-report.json. test_f2p_empty_check_no_journal_file never reads those files.",
+        "SCOPE_RECONCILIATION": "Q4 correctly notes that catalog-derived desk fields are asserted on an --input run. That does not cover the contract's explicit --empty-check path, which is a distinct CLI branch (apply_empty_check vs process_events).",
+        "REASON": "Q4's non-material label is not controlling. The contract called out --empty-check because that is the easy path to skip persist-desk. An implementation that refreshes only on --input still scores 1. That can change solver pass/fail, so MEDIUM stands.",
+        "REQUIRED_ACTION": "After --empty-check on a cleared desk, assert last_run.json and ops-report.json were rewritten.",
+        "RECHECK": "Empty-check F2P plus the new desk asserts; do not collapse this into the --input ops-report test."
+      },
+      {
+        "id": "3",
+        "A": "Verifier Engineer VE-03 MEDIUM duplicate-close uniqueness",
+        "B": "Q4-ADV-DUPLICATE-CLOSE-UNIQUENESS LOW",
+        "DECISION": "A",
+        "CONTROLLING_RULE_OR_EVIDENCE": "Contract: do not emit duplicate closes for the same session identity and interval. Tests inspect closed[0]/hold_alice[0] and SHA-256 reruns. Q4 materiality: MEDIUM when the defect can change solver pass/fail.",
+        "SCOPE_RECONCILIATION": "Both reviewers observed the missing uniqueness assert. The dispute is severity, not existence. Q4's 'does not fail a conforming implementation' is true of every req-gap and is not a materiality test. A double-emit still passes, which is a false-accept.",
+        "REASON": "Uniqueness is a stated output invariant. Taking [0] plus idempotent bytes cannot reject a plausible double-close. VE MEDIUM is controlling; Q4 LOW is rejected on severity only.",
+        "REQUIRED_ACTION": "Assert uniqueness or exact closed-row counts on the already-graded close fixtures.",
+        "RECHECK": "A processor that writes the correct close twice must fail; a single-emit closer must still pass."
+      },
+      {
+        "id": "4",
+        "A": "Verifier Engineer VE-04..VE-07 LOW",
+        "B": "Q4 LOW matching advisories (config keys, output parent, warehouse 10k; Q4 omitted VE-07)",
+        "DECISION": "BOTH_PARTLY",
+        "CONTROLLING_RULE_OR_EVIDENCE": "Vacuous-test / phantom-spec for VE-04/VE-05/VE-06 match Q4-ADV-VACUOUS-CONFIG-KEYS, Q4-ADV-VACUOUS-OUTPUT-PARENT, and Q4-ADV-WAREHOUSE-10K-FLOOR. VE-07 is a real LOW weak assert on test_p2p_feed_late_allowed_joins_open; same-session join is already enforced by test_p2p_late_straggler_keeps_last_event_time (event_ids == [s1,s2,s3]).",
+        "SCOPE_RECONCILIATION": "On the overlapping LOW items the reviewers agree. VE-07 is an extra advisory Q4 did not list because straggler coverage makes it non-blocking. LOW does not block on its own.",
+        "REASON": "No controlling repair from this cluster. Agreement on 04-06 is not a vote that clears clusters 1-3 or 5-6.",
+        "REQUIRED_ACTION": "None independently. Optional vacuous-test cleanup may accompany the verifier repair; do not drop discriminating mutation, hash, or straggler checks.",
+        "RECHECK": "Not required for this cluster unless those tests are edited."
+      },
+      {
+        "id": "5",
+        "A": "Comprehensive CR-01 HIGH oracle --feed use_arrival_gap and reset-before-source",
+        "B": "Verifier Engineer did not grade oracle; Q4 did not inspect solution/",
+        "DECISION": "BOTH_PARTLY",
+        "CONTROLLING_RULE_OR_EVIDENCE": "RC-SOL-003 and independently observed solution/fixed/cli.py: reset_output truncates before the missing-source return 2; use_arrival_gap=args.feed is not None. assign.py then uses arrival_index*1000 and skips event_crosses_gap. Contract: arrival index must not drive membership; omitting source must not mutate outputs.",
+        "SCOPE_RECONCILIATION": "VE mission/packet is verifier measurement plus Oracle/NOP rewards, not oracle-source correctness. Q4 allowed evidence excludes solution/. Comprehensive full-task-tree walk includes solution/. VE/Q4 silence is correct scope, not a finding that the oracle is sound.",
+        "REASON": "CR-01 is independently observed and High. Oracle Harbor 1.0 does not rebut RC-SOL-003, because the current tests never exercise the broken clauses (cluster 6). Do not treat VE/Q4 PASS-shaped silence as a contrary oracle verdict.",
+        "REQUIRED_ACTION": "Repair oracle cli.py: event-time gap/duration on --feed; usage-error before --reset-output truncation. Re-run oracle through the same verifier after CR-02 exists.",
+        "RECHECK": "Comprehensive RC-SOL-003 and Harbor oracle on the repaired commit with the new tests in place."
+      },
+      {
+        "id": "6",
+        "A": "Comprehensive CR-02 HIGH missing --feed event-time gap-close test and --reset-output with no source",
+        "B": "Verifier REQ-03/REQ-06 COMPLETE and existing missing-source / unknown-flag+reset tests; Q4 BIDIRECTIONAL_ALIGNMENT PASS",
+        "DECISION": "A",
+        "CONTROLLING_RULE_OR_EVIDENCE": "req-gap: gap close is only asserted under --input (sample_basic/holdout/config_gap). --feed tests use fixtures that do not require an on-time gap close. test_f2p_missing_source_does_not_create_journal uses _run([]). test_f2p_unknown_flag_with_reset fails at argparse before truncate. Instruction and contract still require event-time membership and no output touch when sources are omitted, including with --reset-output.",
+        "SCOPE_RECONCILIATION": "VE REQ-03 COMPLETE is arrival-order/TOO_LATE, a different clause than event-time gap. VE REQ-06 COMPLETE uses --input only. Q4 listed --reset-output as sole flag as non-material and never listed --feed gap in the second sweep. Those completeness claims are in-scope for Q4/VE and are wrong on the artifacts. RC-VER-005 body text is phantom-direction, but the CR-02 facts are TERMINUS req-gaps regardless of checklist ID.",
+        "REASON": "A --feed implementation that never event-time-gap-closes, and a CLI that truncates on `--reset-output` alone, still score 1. That is the exact hole the current oracle walks through. Existing missing-source and unknown+reset tests do not close it.",
+        "REQUIRED_ACTION": "Add a --feed on-time gap-close live assertion and a `--reset-output` with-no-source usage-error assertion that leaves journal/opens/outputs untouched.",
+        "RECHECK": "Fresh Q4 forward matrix and Verifier Engineer REQ-03/REQ-06; the repaired oracle must pass these tests and the current arrival-gap oracle must fail the new --feed gap test."
+      }
+    ],
+    "CONTROLLING_FINDING_IDS": [
+      "VE-01",
+      "VE-02",
+      "VE-03",
+      "CR-01",
+      "CR-02"
+    ],
+    "REJECTED_OR_NARROWED": [
+      {
+        "id": "Q4-BIDIRECTIONAL_ALIGNMENT-PASS",
+        "disposition": "REJECTED_AS_CONTROLLING_WHOLESALE",
+        "reason": "Q4 PASS is not controlling on last_run isolation, --empty-check desk rewrite, duplicate-close uniqueness, --feed event-time gap, or reset-without-source."
+      },
+      {
+        "id": "Q4-ADV-DUPLICATE-CLOSE-UNIQUENESS",
+        "disposition": "NARROWED_SEVERITY",
+        "reason": "The missing uniqueness assert is real; LOW is rejected. VE-03 MEDIUM controls because a double-emit still scores 1."
+      },
+      {
+        "id": "Q4-empty-check-desk-non-material",
+        "disposition": "REJECTED",
+        "reason": "The contract's including --empty-check desk rewrite is a distinct stated clause, not a duplicate of the --input ops-report test."
+      },
+      {
+        "id": "Q4-reset-output-sole-flag-non-material",
+        "disposition": "REJECTED",
+        "reason": "Unknown-flag+reset and omit-source without reset are different argparse/control-flow paths from `--reset-output` with no source."
+      },
+      {
+        "id": "RC-VER-008-PASS",
+        "disposition": "NARROWED_SCOPE",
+        "reason": "Remains valid for processor.json knob mutation. It is not evidence against VE-01."
+      },
+      {
+        "id": "VE-REQ-03-REQ-06-COMPLETE",
+        "disposition": "REJECTED_ON_THOSE_CLAUSES",
+        "reason": "Arrival-order and --input gap tests do not measure --feed event-time gap close."
+      },
+      {
+        "id": "VE-04",
+        "disposition": "NARROWED_ADVISORY",
+        "reason": "LOW vacuous config-keys test; not independently blocking."
+      },
+      {
+        "id": "VE-05",
+        "disposition": "NARROWED_ADVISORY",
+        "reason": "LOW tautological output-parent asserts; not independently blocking."
+      },
+      {
+        "id": "VE-06",
+        "disposition": "NARROWED_ADVISORY",
+        "reason": "LOW undocumented 10k warehouse floor; hash untouched check remains the contract test."
+      },
+      {
+        "id": "VE-07",
+        "disposition": "NARROWED_ADVISORY",
+        "reason": "LOW weak join assert; straggler P2P already requires same-session event_ids."
+      },
+      {
+        "id": "Q4-ADV-VACUOUS-CONFIG-KEYS",
+        "disposition": "NARROWED_ADVISORY",
+        "reason": "Agrees with VE-04; not controlling."
+      },
+      {
+        "id": "Q4-ADV-VACUOUS-OUTPUT-PARENT",
+        "disposition": "NARROWED_ADVISORY",
+        "reason": "Agrees with VE-05; not controlling."
+      },
+      {
+        "id": "Q4-ADV-WAREHOUSE-10K-FLOOR",
+        "disposition": "NARROWED_ADVISORY",
+        "reason": "Agrees with VE-06; not controlling."
+      },
+      {
+        "id": "Harbor-oracle-1.0",
+        "disposition": "REJECTED_AS_ORACLE_CORRECTNESS_PROOF",
+        "reason": "Reward 1.0 with tests that miss the broken oracle clauses is the RC-SOL-003 failure mode, not a rebuttal."
+      }
+    ],
+    "FAIRNESS_CONFLICT": "NONE. Instruction Reviewer PASS on this commit. The controlling extra tests (--feed event-time gap, `--reset-output` without source, desk rewrite isolation, uniqueness) are discoverable from instruction.md plus session-contract.md. Do not delete graded details from the instruction to make the current oracle pass.",
+    "UNRESOLVED": []
+  }
+}

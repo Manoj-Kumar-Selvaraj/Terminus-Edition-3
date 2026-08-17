@@ -1,0 +1,70 @@
+{
+  "schema_version": "3.0",
+  "role": "Engineering Documentation Reviewer",
+  "review_id": "event-time-session-window-processor-3fec54c6-documentation-e12cdcdf16",
+  "task": "event-time-session-window-processor",
+  "task_commit": "3fec54c647e703efea3e10b25d157c27f2267e81",
+  "control_plane_commit": "f784d535d3134ae31a8b1a4d15e7b0235ce9de56",
+  "protocol_policy_version": "2.2",
+  "prompt_policy_version": "2.2",
+  "role_policy_version": "1.0",
+  "role_contract_hash": "d775a45de3eca4ad26021c2d0f0e69ff819739533ffa97c013a1fda41f13d12e",
+  "context_packet": ".terminus/reviews/event-time-session-window-processor/3fec54c6/event-time-session-window-processor-3fec54c6-documentation-e12cdcdf16.packet.json",
+  "verdict": "PASS",
+  "confidence": "HIGH",
+  "evidence_status": "SUFFICIENT",
+  "summary": "README covers difficulty, solution, and verification in concrete domain language: partial-fix traps (tenant mix, too-late extend, watermark rewind, CLI journal safety), architectural invariants (event-time sessions, nondecreasing watermark, input vs feed, catalog overlay), and live CLI scenario families that distinguish wrong behavior. Missing task.toml explanation fields are intentional and not a defect. Voice is selective and free of comprehensive/robust filler.",
+  "evidence": [
+    {
+      "type": "file",
+      "ref": "event-time-session-window-processor/README.md",
+      "observation": "Three reviewer-facing families are present: difficulty names coupling traps (sorted one-tenant gap close still mixes tenants / too-late as extend / watermark rewind / CLI must not move journal); solution states keep-processor invariants (half-open tenant+user sessions, watermark formula and never-back, open-session reload, --input tie-break vs --feed order, reset-output scope, catalog overlay vs untouched warehouse); verification says the suite drives submitted run-sessions on isolated live state and lists behavioral families with distinguishing outcomes."
+    },
+    {
+      "type": "file",
+      "ref": "event-time-session-window-processor/task.toml",
+      "observation": "No difficulty_explanation, solution_explanation, or verification_explanation fields. Packet states that is intentional when README covers those families."
+    },
+    {
+      "type": "file",
+      "ref": "event-time-session-window-processor/instruction.md",
+      "observation": "Public contract supports README claims: repair existing Python processor and journal; event-time tenant+user half-open sessions; --input tie-break vs --feed file order; exit 2 before journal/output touch on bad CLI; watermark never steps backward; empty input does not advance watermark; fail closed to rejects; last_run/ops-report from warehouse catalog; leave warehouse click dump alone; catalog session_gap overlay in processor.json."
+    },
+    {
+      "type": "rule",
+      "ref": ".terminus/reviewers/HUMAN_WRITING_CALIBRATION.md",
+      "observation": "Difficulty matches the concrete-bottleneck pattern (plausible partial fixes that still fail) rather than generic multi-component filler. Solution is invariant-focused, not a file-by-file diff. Verification names scenario purpose without claiming comprehensive/robust coverage."
+    },
+    {
+      "type": "rule",
+      "ref": ".terminus/reviewers/WRITING_EXAMPLE_BANK.md",
+      "observation": "Aligns with human difficulty/solution/verification pairs (reasoning trap, authoritative invariants, scenario families that rule out wrong classes) and avoids stock AI documentation phrases."
+    },
+    {
+      "type": "rule",
+      "ref": "TERMINUS_3_AI_INSTRUCTIONS.md",
+      "observation": "Section 12 requires human README covering difficulty rationale, solution approach, and verification approach; README supplies those without agent-facing instruction copy or oracle internals beyond naming solution/solve.sh as the Harbor reference entrypoint."
+    }
+  ],
+  "findings": [],
+  "missing_evidence": [],
+  "change_scope": [
+    "Cold Engineering Documentation Review of README and explanation families at task_commit 3fec54c647e703efea3e10b25d157c27f2267e81; no task-file edits."
+  ],
+  "do_not_change": [
+    "Do not treat absent task.toml difficulty/solution/verification explanation fields as a defect while README covers those families.",
+    "Do not expand README into an oracle walkthrough or dump hidden fixture details."
+  ],
+  "next_gate": "Return control to CI Orchestrator for remaining Pre-LLMaJ / readiness gates on this task commit.",
+  "role_output": {
+    "DIFFICULTY_QUALITY": "HIGH",
+    "SOLUTION_QUALITY": "HIGH",
+    "VERIFICATION_QUALITY": "HIGH",
+    "AI_TEMPLATE_SIGNAL": "LOW",
+    "UNSUPPORTED_CLAIMS": [],
+    "BOILERPLATE": [],
+    "CONTRADICTIONS": [],
+    "REQUIRED_CHANGES": [],
+    "REPLACEMENT_TEXT": ""
+  }
+}

@@ -1,0 +1,103 @@
+{
+  "schema_version": "3.0",
+  "role": "Instruction Reviewer",
+  "review_id": "event-time-session-window-processor-3fec54c6-instruction-21c452f480",
+  "task": "event-time-session-window-processor",
+  "task_commit": "3fec54c647e703efea3e10b25d157c27f2267e81",
+  "control_plane_commit": "f784d535d3134ae31a8b1a4d15e7b0235ce9de56",
+  "protocol_policy_version": "2.2",
+  "prompt_policy_version": "2.2",
+  "role_policy_version": "1.0",
+  "role_contract_hash": "ce36982fb77ce80b4c8f53015d566f5bcfb3288c7408243b9a807b8856930703",
+  "context_packet": ".terminus/reviews/event-time-session-window-processor/3fec54c6/event-time-session-window-processor-3fec54c6-instruction-21c452f480.packet.json",
+  "verdict": "PASS",
+  "confidence": "HIGH",
+  "evidence_status": "SUFFICIENT",
+  "summary": "The regrouped instruction is a fair on-call handoff: one incident paragraph plus six operational families, with event-time schemas and CLI details left in the binding contract. Current bounce symptoms are backed by oncall notes and the captured log. Material requirements stay discoverable, and there is no material spec-file, diagnosis, or reverse-outline leakage.",
+  "evidence": [
+    {
+      "type": "file",
+      "ref": "event-time-session-window-processor/instruction.md",
+      "observation": "212 words excluding list markers; one short incident paragraph plus six bullets. Names /app/sessions, the Python processor constraint, oncall notes, logs, binding contract, processor.json, run-sessions, journal, side outputs, rejects, last_run.json, ops-report.json, and warehouse. No task name, verifier phrases, or module-level repair recipe."
+    },
+    {
+      "type": "file",
+      "ref": "event-time-session-window-processor/environment/sessions/docs/session-contract.md",
+      "observation": "Ordinary processor contract: paths, CLI, input/output schemas, watermark formula, lateness, gap/duration, journal/restart, catalog gap overlay, and idempotent rerun. Detailed protocol/schema semantics, not a relocated task goal or step-by-step repair map."
+    },
+    {
+      "type": "file",
+      "ref": "event-time-session-window-processor/environment/sessions/notes/oncall.md",
+      "observation": "Shift note reports mixed-tenant closes, a late 85000 click treated on-time after a high anchor, a 1000ms straggler missing from late.jsonl, --reset-output wiping the journal, and seq stuck at 1. Symptom evidence, not an internal function diagnosis."
+    },
+    {
+      "type": "file",
+      "ref": "event-time-session-window-processor/environment/sessions/logs/processor-bounce.log",
+      "observation": "Captured run matches the claimed bounce: mixed acme/beta keys on user u1, 85000 and 1000 classified on_time, journal rewrite seq=1 with a backward watermark, --reset-output clearing watermark.journal, and an unknown flag still creating the journal."
+    },
+    {
+      "type": "file",
+      "ref": "event-time-session-window-processor/environment/sessions/config/processor.json",
+      "observation": "Referenced knobs file holds session_gap_ms, allowed_lateness_ms, and max_session_duration_ms, matching the contract."
+    },
+    {
+      "type": "test",
+      "ref": "requirement-to-test summary (verifier test names and docstrings only)",
+      "observation": "Graded families cover CLI usage errors, event-time gap/tenant/lateness, journal restart/nondecreasing watermark, idempotent side outputs, empty/malformed input, config knobs including catalog gap overlay, ops-report refresh, Python CLI preservation, and warehouse non-mutation. All are stated in the instruction or the referenced contract; holdouts are input variations of those rules."
+    },
+    {
+      "type": "rule",
+      "ref": ".terminus/agents/INSTRUCTION_POLICY.md",
+      "observation": "PASS gate: SUFFICIENT completeness, shape within two paragraphs or twenty bullets, Jira/Slack handoff, no MATERIAL spec-file or implementation-diagnosis leakage, current-state evidence not FAIL, reverse-outline and compressed-rubric no higher than LOW."
+    },
+    {
+      "type": "rule",
+      "ref": ".terminus/reviewers/HUMAN_WRITING_CALIBRATION.md",
+      "observation": "Incident-first, schemas delegated to the contract, related CLI/session/restart/output rules grouped by operational family rather than one sentence per grader row."
+    }
+  ],
+  "findings": [],
+  "missing_evidence": [],
+  "change_scope": [
+    "No solver-visible instruction change; cold freeze review of the regrouped handoff at the bound task commit."
+  ],
+  "do_not_change": [
+    "Do not flatten the six operational families back into a one-clause-per-test inventory.",
+    "Do not move the engineering objective out of instruction.md into session-contract.md.",
+    "Do not name internal modules or repair steps in the handoff.",
+    "Do not alter tests, oracle, or contract schemas to chase style."
+  ],
+  "next_gate": "CI Orchestrator",
+  "role_output": {
+    "WORD_COUNT": 212,
+    "BULLET_COUNT": 6,
+    "HUMAN_SIGNAL": "HIGH",
+    "AI_TEMPLATE_SIGNAL": "LOW",
+    "JIRA_SLACK_HANDOFF": "PASS",
+    "REQUIREMENT_COMPLETENESS": "SUFFICIENT",
+    "INSTRUCTION_SHAPE": "PASS",
+    "REVERSE_OUTLINE_RISK": "LOW",
+    "SPEC_FILE_LOOPHOLE": "LOW",
+    "IMPLEMENTATION_DIAGNOSIS_LEAKAGE": "NONE",
+    "CURRENT_STATE_EVIDENCE": "PASS",
+    "HUMAN_GROUPING": "HIGH",
+    "COMPRESSED_RUBRIC": "LOW",
+    "OVER_PRESCRIPTION": "LOW",
+    "SPEC_DUMP": "NONE",
+    "MATERIAL_REQUIREMENTS_PRESERVED": [
+      "repair existing Python sessionizer under /app/sessions",
+      "binding event-time contract and processor.json knobs including catalog session_gap overlay",
+      "run-sessions CLI usage, ordering modes, and --reset-output scope",
+      "tenant/user keyed half-open event-time sessions with contract lateness/gap/watermark rules",
+      "durable journal and open-session restart with nondecreasing watermark",
+      "idempotent sessions.jsonl/late.jsonl digests, empty-input watermark hold, rejects.jsonl fail-closed",
+      "last_run.json and ops-report.json from warehouse catalog; warehouse dump left untouched"
+    ],
+    "UNNECESSARY_TEXT": [],
+    "MISSING_CONTEXT": [],
+    "SUSPICIOUS_PHRASES": [],
+    "FAIRNESS_RISK": "LOW",
+    "REPLACEMENT_TEXT": "",
+    "RATIONALE": "The ticket starts from the bounce incident, points at notes/logs/contract, and groups remaining work by CLI, session semantics, restart durability, side outputs, and warehouse ops. That is a substantial engineering request, not a hidden-test outline. session-contract.md is a legitimate protocol/schema document; the ask itself stays in instruction.md. Oncall plus the bounce log support the asserted current failures."
+  }
+}
