@@ -3,14 +3,13 @@
 
 This gate complements validate_task_complexity.py. The complexity gate proves scale,
 causal coupling and test-map honesty; this gate rejects toy business logic, toy seed
-state and benchmark-only incident presentation.
+state and synthetic operational presentation.
 
-The stateful dataset validator supports two modes:
-
-* the historical payment profile when ``variance_queries`` is absent;
-* a domain-neutral declarative profile where task authors provide named scalar SQL
-  variance checks. This keeps the 10k-20k strict state-volume requirement without
-  forcing unrelated domains to imitate payment column names.
+State-volume and current-state evidence are conditional under the governing policy:
+current-state/incident artifacts are required only when the task asserts inherited
+current-state facts, and a strict data-volume floor may be replaced by an explicit
+controller-approved domain-specific exemption when business-record seeding would be
+unrealistic for the system being modeled.
 """
 
 from __future__ import annotations
@@ -197,6 +196,24 @@ def validate_incident_evidence(
                 "production profile must orient to the inherited system"
             )
     return {"evidence_files": existing, "evidence_types": sorted(suffixes)}
+
+
+def validate_stateful_dataset_exemption(cfg: dict, errors: list[str]) -> dict[str, str]:
+    exemption = cfg.get("stateful_dataset_exemption")
+    if not isinstance(exemption, dict) or exemption.get("approved") is not True:
+        errors.append(
+            "strict production profile without a stateful_dataset requires an explicit approved stateful_dataset_exemption"
+        )
+        return {}
+    approved_by = str(exemption.get("approved_by", "")).strip()
+    reason = str(exemption.get("reason", "")).strip()
+    if not approved_by or not reason:
+        errors.append("stateful_dataset_exemption requires approved_by and a domain-specific reason")
+        return {}
+    if len(reason) < 80:
+        errors.append("stateful_dataset_exemption reason is too short to establish a domain-specific rationale")
+        return {}
+    return {"approved_by": approved_by, "reason": reason}
 
 
 def _query_scalar(con: sqlite3.Connection, sql: str) -> int:
@@ -387,7 +404,25 @@ def validate(task_name: str) -> int:
     readme_path = task_dir / "README.md"
     instruction = instruction_path.read_text(encoding="utf-8") if instruction_path.is_file() else ""
     readme = readme_path.read_text(encoding="utf-8") if readme_path.is_file() else ""
-    incident = validate_incident_evidence(task_dir, cfg, instruction, readme, errors)
+
+    current_state_required = cfg.get("current_state_evidence_required", True)
+    if not isinstance(current_state_required, bool):
+        errors.append("production_authenticity.current_state_evidence_required must be boolean")
+        current_state_required = True
+    if current_state_required:
+        incident = validate_incident_evidence(task_dir, cfg, instruction, readme, errors)
+    else:
+        incident = {"evidence_files": [], "evidence_types": []}
+        if cfg.get("incident_evidence") or cfg.get("instruction_evidence_paths"):
+            errors.append(
+                "current_state_evidence_required=false cannot also declare incident evidence paths"
+            )
+        lower_readme = readme.lower()
+        for phrase in SYNTHETIC_README_PHRASES:
+            if phrase in lower_readme:
+                errors.append(
+                    f"README contains benchmark/fixture framing {phrase!r}; production profile must orient to the inherited system"
+                )
 
     cobol: dict[str, object] = {}
     if "cobol_depth" in cfg:
@@ -403,12 +438,16 @@ def validate(task_name: str) -> int:
         if isinstance(dataset_cfg, dict) and dataset_cfg
         else {}
     )
+    exemption: dict[str, str] = {}
     if strict and not dataset:
-        errors.append("strict production profile requires a validated stateful_dataset")
+        exemption = validate_stateful_dataset_exemption(cfg, errors)
 
     print(f"task={task_name} profile={profile} strict={str(strict).lower()}")
+    print(f"current_state_evidence_required={str(current_state_required).lower()}")
     if dataset:
         print("seed=" + " ".join(f"{key}={value}" for key, value in sorted(dataset.items())))
+    elif exemption:
+        print(f"stateful_dataset_exemption=approved by={exemption['approved_by']}")
     if cobol:
         print(
             f"cobol_programs={cobol.get('program_count', 0)} "

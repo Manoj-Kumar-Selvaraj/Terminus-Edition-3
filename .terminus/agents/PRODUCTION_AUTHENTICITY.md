@@ -8,7 +8,11 @@ This policy augments the Edition 3 creator and reviewer rules for tasks that cla
 
 A `large_system_strict` task should normally represent a substantial coherent production engineering work package rather than one localized bug report transplanted into a large repository. Suitable work includes feature/reliability completion, recovery implementation, migration completion, platform modernization, operability completion, security hardening, state-model rework, integration completion, or incident-driven remediation spanning multiple coupled responsibilities/invariants.
 
-When `instruction.md` asserts inherited current-state or incident facts, those claims must have solver-visible support. Use realistic artifacts such as logs, persisted state snapshots, failed-run status, operator notes, or handoff material as appropriate. Do not invent a polished production story, implementation diagnosis, fake customer impact, or fake timeline merely to make the task sound realistic.
+### Production evidence surface
+
+When `instruction.md` asserts inherited current-state or incident facts, build a solver-visible Production evidence surface from artifacts that would naturally exist for that system, such as logs, persisted state snapshots, failed-run status, operator notes, or handoff material. If the instruction makes only desired end-state requirements and no inherited current-state claim, the controller may explicitly record that no production evidence surface is applicable rather than fabricating incident artifacts.
+
+Apply an **incident evidence test** only to asserted inherited conditions or events: every such claim must be traceable to the solver-visible evidence surface. Do not invent a polished production story, implementation diagnosis, fake customer impact, or fake timeline merely to make the task sound realistic.
 
 Desired functional/operational requirements are different from current-state claims: the task may simply state what the system must do when complete. It does not need to tell the solver which internal module/function is incomplete or defective.
 
