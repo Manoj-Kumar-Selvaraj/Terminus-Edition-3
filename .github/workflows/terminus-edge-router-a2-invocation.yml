@@ -1,0 +1,97 @@
+name: Terminus Edge Router A2 Invocation
+
+on:
+  push:
+    branches:
+      - task/edge-router-runtime
+    paths:
+      - '.github/workflows/terminus-edge-router-a2-invocation.yml'
+
+permissions:
+  contents: read
+
+env:
+  TASK_ID: edge-router-runtime
+  TASK_SNAPSHOT: 6c91b9aca662fa192c144d55c8aee0e693adcc0d
+  CONTROL_PLANE_COMMIT: fa2a409e86c4676bd3039df3e4e8339708454fad
+  A1_INVOCATION_ID: inv_79d4551ca8b96875e1f37dc7cea565949e1ade639e32fa1b5de68d5a081bf0d8
+
+jobs:
+  validate-and-build-a2:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Replay committed execution ledger
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          from .terminus.execution.ledger import ExecutionLedger
+          PY
+        shell: bash
+
+      - name: Validate ledger with controller status
+        run: |
+          python3 .terminus/execution/controller_cli.py status \
+            --task-id "$TASK_ID" \
+            --task-commit "$TASK_SNAPSHOT" \
+            --control-plane-commit "$CONTROL_PLANE_COMMIT" \
+            --output /tmp/controller-status.json
+          python3 - <<'PY'
+          import json
+          state = json.load(open('/tmp/controller-status.json'))
+          assert state['ledger_event_count'] == 2, state
+          assert state['next']['stage_id'] == 'SYSTEM_ARCHITECTURE', state
+          assert state['next']['primary_role_id'] == 'A2_SYSTEM_ARCHITECT', state
+          print(json.dumps(state, indent=2, sort_keys=True))
+          PY
+
+      - name: Build A2 inputs strictly from recorded A1 output
+        run: |
+          python3 - <<'PY'
+          import json, os
+          path = f".terminus/executions/{os.environ['TASK_ID']}/{os.environ['A1_INVOCATION_ID']}.result.json"
+          record = json.load(open(path, encoding='utf-8'))
+          outputs = record['outputs']
+          recommendation = outputs['RECOMMENDATION']
+          selected = next(c for c in outputs['CANDIDATES'] if c['ID'] == recommendation)
+          rule_context = record['invocation_snapshot']['inputs']['required']['CREATION_RULE_CONTEXT']
+          operational = {
+              'REQUIRED_END_STATE': selected['REQUIRED_END_STATE'],
+              'REQUIREMENT_FAMILIES': selected['REQUIREMENT_FAMILIES'],
+              'PRESERVATION_OBLIGATIONS': selected['PRESERVATION_OBLIGATIONS'],
+              'EDGE_FAILURE_SURFACE': selected['EDGE_FAILURE_SURFACE'],
+          }
+          inputs = {
+              'APPROVED_OPERATIONAL_REQUIREMENTS': operational,
+              'APPROVED_WORK_PACKAGE': selected,
+              'CREATION_RULE_CONTEXT': rule_context,
+          }
+          json.dump(inputs, open('/tmp/a2-inputs.json','w',encoding='utf-8'), indent=2, sort_keys=True)
+          PY
+
+      - name: Generate bounded A2 invocation
+        run: |
+          python3 .terminus/execution/controller_cli.py continue \
+            --task-id "$TASK_ID" \
+            --task-commit "$TASK_SNAPSHOT" \
+            --control-plane-commit "$CONTROL_PLANE_COMMIT" \
+            --inputs-json /tmp/a2-inputs.json \
+            --output /tmp/a2-next.json
+          python3 - <<'PY'
+          import json
+          payload = json.load(open('/tmp/a2-next.json'))
+          invocation = payload.get('invocation')
+          assert isinstance(invocation, dict), payload
+          assert invocation['stage']['stage_id'] == 'SYSTEM_ARCHITECTURE', invocation
+          assert invocation['stage']['role_id'] == 'A2_SYSTEM_ARCHITECT', invocation
+          assert invocation['readiness'] == 'READY', invocation
+          print('===A2_INVOCATION_BEGIN===')
+          print(json.dumps(invocation, indent=2, sort_keys=True))
+          print('===A2_INVOCATION_END===')
+          print('===A2_STATE_SNAPSHOT===')
+          print(payload['state_snapshot_id'])
+          PY
