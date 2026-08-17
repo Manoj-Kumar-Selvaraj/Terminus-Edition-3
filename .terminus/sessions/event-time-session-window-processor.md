@@ -10,7 +10,7 @@ This is the durable operational checkpoint for one task. Keep it evidence-orient
 - Controller state: `FIXING`
 - Working branch: `main`
 - Pull request: `none`
-- Current task commit: pending freeze (Adjudicator `2ac04a2a21` producer repair)
+- Current task commit: `3fec54c647e703efea3e10b25d157c27f2267e81`
 - Agent-system policy: `2.5`
 - Specialist prompt policy: `2.2`
 - Specialist protocol policy: `2.2`
@@ -40,7 +40,7 @@ KNOWN_POLICY_CONFLICTS: none
 | Ruff verifier | PASS | local `ruff check` run 1; `tests/test_outputs.py` clean after repair |
 | Oracle = 1 | STALE | last Harbor job `2026-08-17__13-59-38`; rerun after freeze |
 | NOP = 0 | STALE | last Harbor job `2026-08-17__14-00-43`; rerun after freeze |
-| Freeze | PENDING | producer repair for VE-01..VE-05, instruction-1, DOC-1/DOC-2 |
+| Freeze | PASS | task commit `3fec54c647e703efea3e10b25d157c27f2267e81`
 | Q4 Spec-Test Contract Reviewer | STALE | instruction + verifier changed; `254c526` Q4 historical |
 | Q6 Production Logic Auditor | PASS | environment/task.toml unchanged; scope reuse still eligible after freeze |
 | Quality Interlock | STALE | Q4 stale after producer repair |
@@ -71,7 +71,7 @@ Producer repair applied for Adjudicator-controlling findings; task tree dirty. N
 
 ## Next action
 
-After this freeze: Harbor oracle 1 / NOP 0 with `JOBS_DIR=/tmp/e3-ets`. Then new Q4 packet (Q6 reuse if production scope hash unchanged) and cold re-reviews of Verifier, Instruction, Documentation, Comprehensive.
+Harbor oracle 1 / NOP 0 on `3fec54c` with `JOBS_DIR=/tmp/e3-ets`. Then new Q4 packet (Q6 reuse if production scope hash unchanged) and cold re-reviews of Verifier, Instruction, Documentation, Comprehensive.
 
 ## Decisions that must survive chat changes
 
