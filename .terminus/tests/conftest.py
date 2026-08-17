@@ -59,25 +59,28 @@ def _complete_external_gate_temp_snapshot(
         outputs_override: dict[str, object] | None = None,
         **kwargs,
     ):
-        effective_outputs = dict(valid_outputs(resolver, stage_id))
         if stage_id == "QUALITY_INTERLOCK":
+            effective_outputs = dict(valid_outputs(resolver, stage_id))
             effective_outputs["Q4_SATISFACTION"] = "DIRECT_PASS"
-        if outputs_override:
-            effective_outputs.update(outputs_override)
-            if (
-                stage_id == "HARBOR_LLMAJ"
-                and "EXTERNAL_RUN_ID" in outputs_override
-            ):
-                effective_outputs["HARBOR_RUN_ID"] = outputs_override["EXTERNAL_RUN_ID"]
+            if outputs_override:
+                effective_outputs.update(outputs_override)
+            value = original_record(
+                resolver,
+                stage_id,
+                task_id,
+                commit,
+                outputs_override=effective_outputs,
+                **kwargs,
+            )
+        else:
+            value = original_record(
+                resolver,
+                stage_id,
+                task_id,
+                commit,
+                **kwargs,
+            )
 
-        value = original_record(
-            resolver,
-            stage_id,
-            task_id,
-            commit,
-            outputs_override=effective_outputs,
-            **kwargs,
-        )
         outputs = value["outputs"]
         assert isinstance(outputs, dict)
 
@@ -97,6 +100,14 @@ def _complete_external_gate_temp_snapshot(
                 CLAUDE_PERSPECTIVE_RESULT={"EXECUTION": "EXECUTED"},
                 ISOLATION_CHECK="PASS",
             )
+
+        if outputs_override and stage_id != "QUALITY_INTERLOCK":
+            outputs.update(outputs_override)
+            if (
+                stage_id == "HARBOR_LLMAJ"
+                and "EXTERNAL_RUN_ID" in outputs_override
+            ):
+                outputs["HARBOR_RUN_ID"] = outputs_override["EXTERNAL_RUN_ID"]
 
         value.pop("record_id", None)
         value["record_id"] = ExecutionRecordBuilder._record_id(value)
