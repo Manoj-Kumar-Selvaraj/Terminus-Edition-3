@@ -120,16 +120,19 @@ def test_p2p_operator_entrypoints_and_contract_present() -> None:
 
 
 def test_p2p_inspect_and_reconcile_do_not_mutate_replay(ws: Path) -> None:
-    """Diagnostic inspect and reconcile leave approved replay plans unchanged."""
-    before = _sql(ws, "SELECT plan_id,status FROM replay_plans ORDER BY plan_id")
+    """Diagnostic inspect and reconcile leave replay plans and journal membership unchanged."""
+    before_plans = _sql(ws, "SELECT plan_id,status FROM replay_plans ORDER BY plan_id")
+    before_journal = _sql(ws, "SELECT event_id FROM event_journal ORDER BY event_id")
     inspect = _run(ws, ["inspect"])
     reconcile = _run(ws, ["reconcile"])
     assert inspect.returncode in {0, 2}
     assert reconcile.returncode in {0, 2}
-    after = _sql(ws, "SELECT plan_id,status FROM replay_plans ORDER BY plan_id")
-    assert [(row["plan_id"], row["status"]) for row in after] == [
-        (row["plan_id"], row["status"]) for row in before
+    after_plans = _sql(ws, "SELECT plan_id,status FROM replay_plans ORDER BY plan_id")
+    after_journal = _sql(ws, "SELECT event_id FROM event_journal ORDER BY event_id")
+    assert [(row["plan_id"], row["status"]) for row in after_plans] == [
+        (row["plan_id"], row["status"]) for row in before_plans
     ]
+    assert [row["event_id"] for row in after_journal] == [row["event_id"] for row in before_journal]
 
 
 def test_p2p_same_payload_events_remain_distinct(ws: Path) -> None:
@@ -182,10 +185,20 @@ def test_p2p_stale_lease_release_is_rejected(ws: Path) -> None:
 
 def test_p2p_cleanup_respects_minimum_age_and_holds(ws: Path) -> None:
     """Retention never selects rows that are younger than the journal minimum or explicitly held."""
+    young = _sql(
+        ws,
+        "SELECT event_id FROM event_journal WHERE region='east' AND origin_sequence=1",
+    )[0]["event_id"]
     _exec(ws, "UPDATE event_journal SET retention_hold=1 WHERE region='east'")
+    _exec(
+        ws,
+        "UPDATE event_journal SET retention_hold=0, accepted_at=? WHERE event_id=?",
+        (datetime.now().astimezone().isoformat(), young),
+    )
     document = _json(_run(ws, ["retention", "east", "--limit", "50"]))
     held = {row["event_id"] for row in _sql(ws, "SELECT event_id FROM event_journal WHERE retention_hold=1")}
     assert not set(document["eligible_event_ids"]) & held
+    assert young not in set(document["eligible_event_ids"])
 
 
 def test_p2p_generation_approval_does_not_rewrite_history(ws: Path) -> None:
@@ -195,8 +208,25 @@ def test_p2p_generation_approval_does_not_rewrite_history(ws: Path) -> None:
         "SELECT generation FROM event_journal WHERE region='west' AND origin_sequence=12",
     )[0]
     assert sample["generation"] == 1
+    _exec(
+        ws,
+        "INSERT INTO origin_generations(region, generation, stream_fingerprint, first_sequence, "
+        "last_observed_sequence, status, approved_by, approved_at, detected_at) VALUES "
+        "('west', 2, 'west-recreated-stream-9c', 1, 40, 'PENDING_APPROVAL', NULL, NULL, '2026-08-08T18:10:00Z')",
+    )
+    approved = _json(
+        _run(ws, ["approve-generation", "west", "2", "--approved-by", "platform-ops"])
+    )
+    assert approved["generation"] == 2
+    assert approved["status"] == "CONFIRMED"
+    after = _sql(
+        ws,
+        "SELECT generation FROM event_journal WHERE region='west' AND origin_sequence=12",
+    )[0]
+    assert after["generation"] == 1
     generations = _json(_run(ws, ["generations", "--region", "west"]))
-    assert any(item["generation"] == 1 and item["status"] == "CONFIRMED" for item in generations)
+    assert any(item["generation"] == 1 and item["status"] == "RETIRED" for item in generations)
+    assert any(item["generation"] == 2 and item["status"] == "CONFIRMED" for item in generations)
 
 
 def test_p2p_cli_recovery_entrypoints_operate(ws: Path) -> None:
@@ -254,6 +284,7 @@ def test_f2p_health_and_reconciliation_reports_materialized() -> None:
         health["recovery_ok"],
     ]
     assert health["healthy"] is all(flags)
+    assert health["generations_ok"] is True
 
 
 def test_f2p_reports_do_not_erase_incident_gaps() -> None:
@@ -407,6 +438,8 @@ def test_f2p_generation_fingerprint_change_is_held(ws: Path) -> None:
     generations = _json(_run(ws, ["generations", "--region", "west"]))
     assert any(item["generation"] == 1 and item["status"] == "CONFIRMED" for item in generations)
     assert any(item["generation"] == 2 and item["status"] == "PENDING_APPROVAL" for item in generations)
+    health = _json(_run(ws, ["inspect"]))
+    assert health["generations_ok"] is False
 
 
 def test_f2p_observe_origin_rejects_stream_mismatch(ws: Path) -> None:
@@ -571,12 +604,45 @@ def test_f2p_reconcile_ignores_hub_sequence_as_completeness_key(ws: Path) -> Non
 
 def test_f2p_convergence_waits_for_required_consumers(ws: Path) -> None:
     """A region is not CONVERGED while a required consumer checkpoint lags the confirmed watermark."""
+    watermark = 40
+    _exec(
+        ws,
+        "UPDATE origin_generations SET last_observed_sequence=? WHERE region='east' AND generation=1",
+        (watermark,),
+    )
+    _exec(ws, "DELETE FROM event_journal WHERE region='east' AND origin_sequence>?", (watermark,))
+    _exec(ws, "DELETE FROM archive_index WHERE region='east' AND origin_sequence>?", (watermark,))
+    _exec(
+        ws,
+        "DELETE FROM archive_index WHERE region='east' AND event_id NOT IN "
+        "(SELECT event_id FROM event_journal WHERE region='east')",
+    )
+    _exec(
+        ws,
+        "INSERT INTO archive_index(event_id,region,generation,origin_sequence,hub_stream_sequence,"
+        "payload_sha256,archived_at,source_stream,source_domain,duplicate_observation_count) "
+        "SELECT event_id, region, generation, origin_sequence, 9100000 + origin_sequence, "
+        "payload_sha256, '2026-08-08T18:00:00Z', 'EDGE_EAST_TELEMETRY', 'edge-east', 0 "
+        "FROM event_journal WHERE region='east' AND generation=1 AND origin_sequence<=? "
+        "AND event_id NOT IN (SELECT event_id FROM archive_index)",
+        (watermark,),
+    )
+    _exec(
+        ws,
+        "UPDATE consumer_checkpoints SET last_effect_sequence=8, last_ack_sequence=8, "
+        "jetstream_ack_floor=8 WHERE region='east'",
+    )
     document = _json(_run(ws, ["reconcile", "--region", "east"]))
     east = document["regions"]["east"]
     progress = east["required_consumer_progress"]
     assert "telemetry-indexer" in progress
     assert "safety-state-projector" in progress
-    assert east["consumer_lag_count"] >= 1 or east["status"] == "DIVERGED"
+    assert east["missing_count"] == 0
+    assert east["unexpected_count"] == 0
+    assert east["highest_contiguous_archive_origin_sequence"] >= watermark
+    assert east["consumer_lag_count"] >= 1
+    assert east["status"] == "DIVERGED"
+    assert all(int(value) < watermark for value in progress.values())
 
 
 def test_f2p_cleanup_stops_at_archive_and_consumer_and_replay_pin(ws: Path) -> None:

@@ -36,28 +36,25 @@ Complete the inherited east/west/hub JetStream continuity control plane so recon
 
 | Gate | Status | Evidence |
 | --- | --- | --- |
-| Complexity | PASS | `validate_task_complexity.py` LOC 5658, 27 F2P, 8 P2P, 24 defects |
+| Complexity | PASS | `validate_task_complexity.py` LOC 5633, 27 F2P, 8 P2P, 24 defects |
 | Runtime authenticity | PASS | `validate_runtime_authenticity.py` 12000 journal rows |
 | Ruff | PASS | `tests/test_outputs.py` clean |
-| Harbor Oracle | PASS | `jobs/2026-08-17__13-51-51` reward **1.0** (35/35); rerun `jobs/2026-08-17__14-06-34` reward **1.0** |
-| Harbor NOP | PASS | `jobs/2026-08-17__14-03-47` reward **0.0** |
+| Harbor Oracle | PASS | `jobs/2026-08-17__15-25-58` reward **1.0** (35/35) after Q4 repair |
+| Harbor NOP | PASS | `jobs/2026-08-17__15-36-49` reward **0.0** |
 | Freeze | PENDING | this commit |
-| Q4 Spec-Test Contract Reviewer | PENDING | packet-bound cold review after freeze |
-| Q6 Production Logic Auditor | PENDING | packet-bound cold review after freeze |
+| Q4 Spec-Test | PENDING | cold rerun on this freeze; prior `55267874` was REVISE |
+| Q6 Production Logic | PENDING | rerun; contract.md changed so prior scope hash is stale |
 | Quality Interlock | PENDING | Q4 exact + Q6 exact/scope-preserved |
 
-## Rebuild notes
+## Historical reviews on 55267874
 
-- Reused the authentic 12k journal, NATS lab, store/model/policy/runtime substrate.
-- Split starter defects into leaf modules; oracle copies `solution/fixed/*` rather than one engine swap.
-- Tests drive CLI / SQLite / live JetStream and do not import ContinuityEngine.
-- Removed invalid `reconnect` keys from east/west leafnode remotes (nats-server 2.14.3).
-- Removed unused `starter_cli.py` leftover.
+- Q4 REVISE: `.terminus/reviews/jetstream-regional-stream-continuity/55267874/jetstream-regional-stream-continuity-55267874-spec-test-contract-4bb21b31e6.json` (Q4-001..007)
+- Q6 PASS: `.terminus/reviews/jetstream-regional-stream-continuity/55267874/jetstream-regional-stream-continuity-55267874-production-logic-e9666e0d18.json`
 
-## Current blocker
+## Q4 repair included in this freeze
 
-None for freeze. Next: generate Q4/Q6 packets on the freeze SHA and run cold inherit/auto reviews.
+Closed blocking Q4-001..007 via verifier/contract edits. Prior Q4/Q6 packets remain historical.
 
 ## Next action
 
-Commit freeze, then invoke Q4 Spec-Test Contract Reviewer and Q6 Production Logic Auditor independently.
+Generate Q4/Q6 packets on the freeze SHA and run cold inherit/auto reviews.

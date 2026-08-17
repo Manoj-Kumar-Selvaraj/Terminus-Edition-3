@@ -62,7 +62,7 @@ A successful processing transition is:
 
 If a process crashes after effect commit but before acknowledgement, redelivery must observe the committed effect and finish without duplicating it.
 
-Poison input is recorded in the quarantine table. Quarantine is not a completed business effect and must not be counted as completed application progress for that event.
+Poison input is recorded in the quarantine table. Events whose `device_registry` status is `QUARANTINED` are poison input even when the payload is well-formed. Quarantine is not a completed business effect and must not be counted as completed application progress for that event.
 
 ## Reconciliation
 
@@ -93,7 +93,7 @@ Approved and running plans pin their referenced journal rows against cleanup unt
 
 A recovery lease has an owner id, expiry and monotonically increasing `fence_epoch`. Reacquiring an expired lease increments the epoch. An older epoch is stale even when a restarted process reuses the same owner id.
 
-Replay execution validates the current owner and fence epoch before execution and again while applying replay items. When an external replay publish returns, the worker revalidates the same token before writing replay-item state or terminal replay-plan state. If the token became stale while the publish was in flight, the publish acknowledgement may remain as journal/publication evidence, but the stale worker stops with a fencing error and does not write replay-item or terminal plan state after that acknowledgement. Lease renewal and release also require the current token. Planning a replay or approving a generation is an explicit durable control-plane change, but those planning/approval actions are not themselves defined as lease-protected replay execution.
+Replay execution validates the current owner and fence epoch before mutating replay-item or terminal replay-plan state. A stale token fails with a fencing error and leaves item/plan state unchanged. Publish acknowledgements recorded as journal/publication evidence may remain after a fencing failure. Lease renewal and release also require the current token. Planning a replay or approving a generation is an explicit durable control-plane change, but those planning/approval actions are not themselves defined as lease-protected replay execution.
 
 Lease renewal by the current owner preserves its current epoch while extending expiry.
 
