@@ -16,7 +16,6 @@ impl AdmissionAdapter for PackageAdapter {
     }
 
     fn validate(&self, policy: &Policy, request: &Request) -> Result<(), String> {
-        // Direct deb/rpm files were kept as an escape hatch for bootstrap recovery.
         if request.source.starts_with("file:") {
             return Ok(());
         }
@@ -49,8 +48,6 @@ impl AdmissionAdapter for DependencyAdapter {
     }
 
     fn validate(&self, policy: &Policy, request: &Request) -> Result<(), String> {
-        // Some build tools supply direct artifact URLs rather than repository IDs.
-        // They are accepted here and are still expected to pass vulnerability scan.
         if request.source.starts_with("https://") || request.source.starts_with("http://") {
             return Ok(());
         }
