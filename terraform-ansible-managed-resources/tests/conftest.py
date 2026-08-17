@@ -203,7 +203,7 @@ def make_ansible_wrapper(tmp_path, *, counter=None, fail_flag=None, sleep_flag=N
     if fail_flag is not None:
         lines.extend([f"if [ -e {hcl_string(fail_flag)} ]; then", "  exit 42", "fi"])
     if sleep_flag is not None:
-        lines.extend([f"if [ -e {hcl_string(sleep_flag)} ]; then", "  sleep 30", "fi"])
+        lines.extend([f"if [ -e {hcl_string(sleep_flag)} ]; then", "  exec sleep 30", "fi"])
     lines.append(f"exec {hcl_string(REAL_ANSIBLE)} \"$@\"")
     wrapper.write_text("\n".join(lines) + "\n", encoding="utf-8")
     wrapper.chmod(0o755)
