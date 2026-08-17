@@ -132,10 +132,26 @@ def test_f2p_unknown_flag_with_reset_does_not_clear_journal() -> None:
 
 
 def test_f2p_missing_source_does_not_create_journal() -> None:
-    """Omitting --input/--feed/--empty-check must exit 2 without a journal file."""
+    """Omitting --input/--feed/--empty-check must exit 2 without touching journal or outputs."""
     completed = _run([], check=False)
     assert completed.returncode == 2
     assert not JOURNAL.exists()
+    assert not OPEN.exists()
+    assert not SESSIONS.exists()
+    assert not LATE.exists()
+    assert not REJECTS.exists()
+    JOURNAL.write_text("keep\n", encoding="utf-8")
+    OPEN.write_text('{"sessions":[]}\n', encoding="utf-8")
+    SESSIONS.write_text("{}\n", encoding="utf-8")
+    LATE.write_text("{}\n", encoding="utf-8")
+    REJECTS.write_text("{}\n", encoding="utf-8")
+    completed = _run([], check=False)
+    assert completed.returncode == 2
+    assert JOURNAL.read_text(encoding="utf-8") == "keep\n"
+    assert OPEN.read_text(encoding="utf-8") == '{"sessions":[]}\n'
+    assert SESSIONS.read_text(encoding="utf-8") == "{}\n"
+    assert LATE.read_text(encoding="utf-8") == "{}\n"
+    assert REJECTS.read_text(encoding="utf-8") == "{}\n"
 
 
 def test_f2p_empty_check_no_journal_file() -> None:
@@ -507,11 +523,19 @@ def test_p2p_config_max_duration_close() -> None:
 
 
 def test_f2p_config_lateness_marks_too_late() -> None:
-    """Shrinking allowed_lateness_ms must classify a behind event as TOO_LATE."""
-    _write_config(gap=30000, late=10000, dur=3600000)
+    """Mutating allowed_lateness_ms must flip a behind event between TOO_LATE and late-but-allowed."""
+    _write_config(gap=30000, late=4000, dur=3600000)
     _run(["--reset-output", "--feed", str(HOLD / "lateness_probe.jsonl")])
-    late = _load_jsonl(LATE)
-    assert any(row["event_id"] == "l2" and row["reason"] == "TOO_LATE" for row in late)
+    late_tight = _load_jsonl(LATE)
+    assert any(row["event_id"] == "l2" and row["reason"] == "TOO_LATE" for row in late_tight)
+    _clear_runtime()
+    _write_config(gap=30000, late=20000, dur=3600000)
+    _run(["--reset-output", "--feed", str(HOLD / "lateness_probe.jsonl")])
+    late_wide = _load_jsonl(LATE)
+    assert all(row.get("event_id") != "l2" for row in late_wide)
+    open_snap = json.loads(OPEN.read_text(encoding="utf-8"))
+    sess = next(row for row in open_snap["sessions"] if row["user_id"] == "u1")
+    assert "l2" in sess["event_ids"]
 
 
 def test_f2p_holdout_gap_and_tenant() -> None:
@@ -542,20 +566,19 @@ def test_f2p_holdout_gap_and_tenant() -> None:
 
 
 def test_p2p_input_tie_break_stable() -> None:
-    """--input must tie-break equal event times so a permutation is a no-op."""
+    """--input must order same-key equal times by event_id and keep that order under permutation."""
     _run(["--reset-output", "--input", str(HOLD / "tie_break.jsonl")])
     open1 = json.loads(OPEN.read_text(encoding="utf-8"))
+    sess1 = next(row for row in open1["sessions"] if row["user_id"] == "u1")
+    assert sess1["event_ids"] == ["za", "zb"]
     permuted = HOLD / "_tie_perm.jsonl"
     rows = (HOLD / "tie_break.jsonl").read_text(encoding="utf-8").splitlines()
     permuted.write_text("\n".join(reversed(rows)) + "\n", encoding="utf-8")
     _clear_runtime()
     _run(["--reset-output", "--input", str(permuted)])
     open2 = json.loads(OPEN.read_text(encoding="utf-8"))
-
-    def by_user(snap: dict) -> dict:
-        return {row["user_id"]: row["event_ids"] for row in snap["sessions"]}
-
-    assert by_user(open1) == by_user(open2)
+    sess2 = next(row for row in open2["sessions"] if row["user_id"] == "u1")
+    assert sess2["event_ids"] == ["za", "zb"]
 
 
 def test_f2p_feed_preserves_arrival_order() -> None:
@@ -675,19 +698,26 @@ def test_p2p_schema_malformed_classes() -> None:
     """Missing fields, empty ids, and wrong types reject; empty payload is accepted."""
     _run(["--reset-output", "--feed", str(HOLD / "schema_rejects.jsonl")])
     rejects = _load_jsonl(REJECTS)
-    assert len(rejects) == 3
+    assert len(rejects) == 4
     assert all(row.get("code") == "REJECT_MALFORMED" for row in rejects)
     reject_ids = {row.get("event_id") for row in rejects}
     assert "m1" in reject_ids
     assert "m3" in reject_ids
+    assert "mhigh" in reject_ids
     assert "" in reject_ids
     assert "m4" not in reject_ids
     late_ids = {row.get("event_id") for row in _load_jsonl(LATE)}
     assert "m1" not in late_ids
     assert "m3" not in late_ids
+    assert "mhigh" not in late_ids
     open_snap = json.loads(OPEN.read_text(encoding="utf-8"))
     ids = [eid for row in open_snap["sessions"] for eid in row["event_ids"]]
     assert "m4" in ids
+    journal = _journal_rows()
+    assert len(journal) == 1
+    assert journal[0]["seq"] == 1
+    assert journal[0]["max_observed_event_time_ms"] == 3000
+    assert journal[0]["watermark_ms"] == 3000 - 10000
 
 
 def test_p2p_ops_report_uses_warehouse_catalog() -> None:
@@ -704,7 +734,7 @@ def test_p2p_ops_report_uses_warehouse_catalog() -> None:
 
 
 def test_p2p_catalog_enterprise_gap_overlay() -> None:
-    """Catalog enterprise tenants overlay session_gap_ms for watermark idle close."""
+    """Catalog enterprise tenants overlay session_gap_ms; other catalog plans keep processor.json."""
     _run(["--reset-output", "--input", str(HOLD / "catalog_enterprise.jsonl")])
     closed = [
         row
@@ -718,4 +748,12 @@ def test_p2p_catalog_enterprise_gap_overlay() -> None:
     )
     assert sess["event_ids"] == ["c1", "c2"]
     assert sess["last_event_time_ms"] == 2000
+    standard = [
+        row
+        for row in _load_jsonl(SESSIONS)
+        if row["tenant_id"] == "t00" and row["user_id"] == "u0"
+    ]
+    assert standard
+    assert standard[0]["event_ids"] == ["n1", "n2"]
+    assert standard[0]["end_ms"] == 32000
 

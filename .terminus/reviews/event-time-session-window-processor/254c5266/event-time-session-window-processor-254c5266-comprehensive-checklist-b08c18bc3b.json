@@ -1,0 +1,472 @@
+{
+  "schema_version": "3.0",
+  "role": "Comprehensive Reviewer",
+  "review_id": "event-time-session-window-processor-254c5266-comprehensive-checklist-b08c18bc3b",
+  "task": "event-time-session-window-processor",
+  "task_commit": "254c52666b0996833623464fcbf3f72029bfdead",
+  "control_plane_commit": "552678743d74aeddd627a3d6194ce472a6ccfc5f",
+  "protocol_policy_version": "2.2",
+  "prompt_policy_version": "2.2",
+  "role_policy_version": "1.0",
+  "role_contract_hash": "7b4f0432fc31dc69dcf55d9cd988930880cd7cb6c5f8ae95332d54ab128732ae",
+  "context_packet": ".terminus/reviews/event-time-session-window-processor/254c5266/event-time-session-window-processor-254c5266-comprehensive-checklist-b08c18bc3b.packet.json",
+  "verdict": "APPROVE",
+  "confidence": "HIGH",
+  "evidence_status": "SUFFICIENT",
+  "summary": "Independent 61-criterion walk at 100% coverage finds no High, Medium, or Low failures in pre-trial scope. Instruction is two absolute-path paragraphs; environment is digest-pinned canonical Python with tmux/asciinema; oracle copies five repaired modules and Harbor scores 1.0 versus NOP 0.0. Rubrics and official ×10 trials are N/A/deferred, not invented defects.",
+  "evidence": [
+    {
+      "type": "file",
+      "ref": "event-time-session-window-processor/instruction.md",
+      "observation": "Two paragraphs, 231 words; all paths absolute under /app/sessions; no task slug or canary; points at session-contract.md without a file-by-file patch list."
+    },
+    {
+      "type": "file",
+      "ref": "event-time-session-window-processor/environment/sessions/docs/session-contract.md",
+      "observation": "Binding operator contract for CLI, schemas, gap/duration/lateness, watermark order, journal/restart, catalog overlay, and output records; not a stepwise repair guide."
+    },
+    {
+      "type": "file",
+      "ref": "event-time-session-window-processor/task.toml",
+      "observation": "Edition 3 canonical shape: name matches folder, Software/Systems, five tags, python, difficulty=advanced, artifacts=['/app/sessions'] top-level, environment_mode=separate, network_mode=public, agent timeout 7200, verifier 1800."
+    },
+    {
+      "type": "file",
+      "ref": "event-time-session-window-processor/environment/Dockerfile",
+      "observation": "Canonical python:3.13-slim-bookworm@sha256:01f42367a0a94ad4bc17111776fd66e3500c1d87c15bbd6055b7371d39c124fb; one apt transaction installs tmux and asciinema; COPY sessions/ only; generate_seed.py at build."
+    },
+    {
+      "type": "file",
+      "ref": "event-time-session-window-processor/tests/test.sh",
+      "observation": "Seeds reward 0, runs python3 -m pytest with ctrf, then writes binary 1/0; installs nothing; no trailing exit $?."
+    },
+    {
+      "type": "file",
+      "ref": "event-time-session-window-processor/tests/test_outputs.py",
+      "observation": "41 docstringed pytest functions driving run-sessions live state: CLI fail-closed, event-time gap/duration, tenant keys, journal seq/append/nondecreasing, late vs too-late, rejects, restart, config mutation, holdout, catalog overlay, ops-report COUNT(*)."
+    },
+    {
+      "type": "file",
+      "ref": "event-time-session-window-processor/solution/solve.sh",
+      "observation": "set -euo pipefail; copies five repaired modules then runs the public CLI on sample fixtures; not an echo of golden JSONL."
+    },
+    {
+      "type": "job",
+      "ref": "jobs/2026-08-17__13-59-38",
+      "observation": "Harbor oracle reward 1.0 as supplied for this packet (PRE_LLMAJ deterministic evidence)."
+    },
+    {
+      "type": "job",
+      "ref": "jobs/2026-08-17__14-00-43",
+      "observation": "Harbor NOP reward 0.0 as supplied for this packet."
+    },
+    {
+      "type": "rule",
+      "ref": ".terminus/reviewers/reviewer_criteria.json",
+      "observation": "Checklist snapshot 2026-08-08-user-supplied; all 61 IDs dispositioned."
+    },
+    {
+      "type": "public_reference",
+      "ref": "https://snorkel-ai.github.io/Terminus-EC-Training-stateful/portal/docs/reviewing-tasks/reviewer-checklist",
+      "observation": "Live checklist URL returned HTTP 404; POLICY_FRESHNESS=UNVERIFIED against stored snapshot."
+    },
+    {
+      "type": "file",
+      "ref": "event-time-session-window-processor/environment",
+      "observation": "environment/ is 6.182 MiB; largest file click_ledger.jsonl is 2.518 MiB; no CLAUDE.md/AGENTS.md/skills.md/.cursor."
+    }
+  ],
+  "findings": [],
+  "missing_evidence": [
+    "Platform test-quality eval / Harbor LLMaJ flag artifacts (deferred at PRE_LLMAJ)",
+    "Official combined GPT-5.5 ×5 + Claude Opus 4.8 ×5 trial-analysis flags (deferred)",
+    "On-disk Harbor job trees for 2026-08-17__13-59-38 and 2026-08-17__14-00-43 were not present in this Windows workspace; rewards were taken from the packet assignment"
+  ],
+  "change_scope": [],
+  "do_not_change": [
+    "Do not weaken event-time gap/duration/lateness, tenant-keyed sessions, journal nondecreasing/seq, fail-closed CLI, catalog overlay, or holdout fixtures to chase pass rate.",
+    "Do not treat deferred Harbor LLMaJ or official ×10 trials as instruction or verifier defects at this gate.",
+    "Do not package rubrics.txt in the task ZIP."
+  ],
+  "next_gate": "Pre-LLMaJ aggregate; Harbor LLMaJ and combined GPT-5.5×5 + Claude Opus 4.8×5 difficulty trials remain deferred",
+  "role_output": {
+    "reviewer_checklist_version": "2026-08-08-user-supplied",
+    "policy_freshness": "UNVERIFIED",
+    "checklist_snapshot": "2026-08-08-user-supplied",
+    "checklist_total": 61,
+    "checklist_coverage_percent": 100,
+    "recommendation": "APPROVE",
+    "counts": {
+      "pass": 41,
+      "fail": 0,
+      "not_applicable": 20,
+      "insufficient_evidence": 0,
+      "policy_conflict": 0,
+      "high_failures": 0,
+      "medium_failures": 0,
+      "low_failures": 0,
+      "special_trial_revision_flags": 0
+    },
+    "criteria": {
+      "RC-INS-001": "PASS",
+      "RC-INS-002": "PASS",
+      "RC-INS-003": "PASS",
+      "RC-INS-004": "PASS",
+      "RC-INS-005": "PASS",
+      "RC-INS-006": "PASS",
+      "RC-INS-007": "PASS",
+      "RC-INS-008": "PASS",
+      "RC-INS-009": "PASS",
+      "RC-INS-010": "PASS",
+      "RC-ENV-001": "PASS",
+      "RC-ENV-002": "PASS",
+      "RC-ENV-003": "PASS",
+      "RC-ENV-004": "PASS",
+      "RC-ENV-005": "PASS",
+      "RC-ENV-006": "PASS",
+      "RC-ENV-007": "PASS",
+      "RC-ENV-008": "PASS",
+      "RC-ENV-009": "PASS",
+      "RC-ENV-010": "PASS",
+      "RC-ENV-011": "PASS",
+      "RC-ENV-012": "PASS",
+      "RC-ENV-013": "PASS",
+      "RC-ENV-014": "PASS",
+      "RC-SOL-001": "PASS",
+      "RC-SOL-002": "PASS",
+      "RC-SOL-003": "PASS",
+      "RC-VER-001": "PASS",
+      "RC-VER-002": "PASS",
+      "RC-VER-003": "PASS",
+      "RC-VER-004": "PASS",
+      "RC-VER-005": "PASS",
+      "RC-VER-006": "PASS",
+      "RC-VER-007": "PASS",
+      "RC-VER-008": "PASS",
+      "RC-TRIAL-001": "NOT_APPLICABLE",
+      "RC-TRIAL-002": "NOT_APPLICABLE",
+      "RC-TRIAL-003": "NOT_APPLICABLE",
+      "RC-TRIAL-004": "NOT_APPLICABLE",
+      "RC-TRIAL-005": "NOT_APPLICABLE",
+      "RC-TRIAL-006": "NOT_APPLICABLE",
+      "RC-RUB-001": "NOT_APPLICABLE",
+      "RC-RUB-002": "NOT_APPLICABLE",
+      "RC-RUB-003": "NOT_APPLICABLE",
+      "RC-RUB-004": "NOT_APPLICABLE",
+      "RC-RUB-005": "NOT_APPLICABLE",
+      "RC-RUB-006": "NOT_APPLICABLE",
+      "RC-RUB-007": "NOT_APPLICABLE",
+      "RC-RUB-008": "NOT_APPLICABLE",
+      "RC-RUB-009": "NOT_APPLICABLE",
+      "RC-RUB-010": "NOT_APPLICABLE",
+      "RC-RUB-011": "NOT_APPLICABLE",
+      "RC-STRUCT-001": "PASS",
+      "RC-STRUCT-002": "PASS",
+      "RC-META-001": "PASS",
+      "RC-META-002": "NOT_APPLICABLE",
+      "RC-META-003": "PASS",
+      "RC-META-004": "NOT_APPLICABLE",
+      "RC-META-005": "PASS",
+      "RC-META-006": "PASS",
+      "RC-META-007": "NOT_APPLICABLE"
+    },
+    "criterion_evidence": {
+      "RC-INS-001": {
+        "result": "PASS",
+        "evidence": "Two paragraphs (231 words). Dense but not a step list or 20-bullet marathon; paths and tested behaviors are named as Edition 3 requires."
+      },
+      "RC-INS-002": {
+        "result": "PASS",
+        "evidence": "Goal is repair of the Python sessionizer so CLI, event-time sessions, journal/restart, lateness, rejects, catalog overlay, and named outputs match the binding contract."
+      },
+      "RC-INS-003": {
+        "result": "PASS",
+        "evidence": "Realistic streaming/on-call repair of event-time session windows, watermarks, and restart — useful to stream-processing engineers."
+      },
+      "RC-INS-004": {
+        "result": "PASS",
+        "evidence": "Symptoms and outcomes only; does not name the five oracle modules or prescribe patch order."
+      },
+      "RC-INS-005": {
+        "result": "PASS",
+        "evidence": "oncall.md and processor-bounce.log are captured incident evidence; policy.py comments are domain notes, not a solution walkthrough."
+      },
+      "RC-INS-006": {
+        "result": "PASS",
+        "evidence": "session-contract.md is a realistic operator spec (schemas, watermark order, CLI). Goals stay in instruction.md; the contract is not a disguised edit checklist."
+      },
+      "RC-INS-007": {
+        "result": "PASS",
+        "evidence": "No other Edition 3 instruction.md uses this event-time session-gap/watermark/journal premise. jetstream-regional-stream-continuity is JetStream reconnect/replay, not tenant-keyed session windows."
+      },
+      "RC-INS-008": {
+        "result": "PASS",
+        "evidence": "All referenced paths are absolute /app/sessions/... ; no ./ relative paths."
+      },
+      "RC-INS-009": {
+        "result": "PASS",
+        "evidence": "No canary string in instruction.md or the rest of the task tree."
+      },
+      "RC-INS-010": {
+        "result": "PASS",
+        "evidence": "Slug event-time-session-window-processor is absent from instruction.md."
+      },
+      "RC-ENV-001": {
+        "result": "PASS",
+        "evidence": "Dockerfile apt-installs tmux/asciinema/ca-certificates only; warehouse is generated locally by generate_seed.py."
+      },
+      "RC-ENV-002": {
+        "result": "PASS",
+        "evidence": "network_mode=public default; answer is not network-retrievable; runtime deps baked."
+      },
+      "RC-ENV-003": {
+        "result": "PASS",
+        "evidence": "Agent image has no pip deps. Verifier pins pytest==8.4.1, pytest-json-ctrf==0.3.5 and transitive locks in tests/requirements.lock."
+      },
+      "RC-ENV-004": {
+        "result": "PASS",
+        "evidence": "COPY sessions/ from environment/; no ../ context capture."
+      },
+      "RC-ENV-005": {
+        "result": "PASS",
+        "evidence": "solution/ and tests/ are dockerignored and not copied into the agent image."
+      },
+      "RC-ENV-006": {
+        "result": "PASS",
+        "evidence": "No privileged mode, SYS_ADMIN, docker.sock, FROM --platform, or host binds."
+      },
+      "RC-ENV-007": {
+        "result": "PASS",
+        "evidence": "Agent image does not create /tests, /solution, /oracle, or /logs/verifier. tests/Dockerfile does not mkdir /logs/verifier (test.sh does at runtime). WORKDIR /app is the artifact parent."
+      },
+      "RC-ENV-008": {
+        "result": "PASS",
+        "evidence": "No CLAUDE.md, AGENTS.md, skills.md, or .cursor under the task environment."
+      },
+      "RC-ENV-009": {
+        "result": "PASS",
+        "evidence": "Both environment/Dockerfile and tests/Dockerfile FROM the same @sha256:01f42367… digest."
+      },
+      "RC-ENV-010": {
+        "result": "PASS",
+        "evidence": "Final runtime base is the canonical Python 3.13 slim-bookworm digest listed in TERMINUS_3_AI_INSTRUCTIONS.md."
+      },
+      "RC-ENV-011": {
+        "result": "PASS",
+        "evidence": "environment/ totals 6.182 MiB; largest file 2.518 MiB (click_ledger.jsonl)."
+      },
+      "RC-ENV-012": {
+        "result": "PASS",
+        "evidence": "Single apt-get update && install -y --no-install-recommends with list cleanup; no apt upgrade or apt version pins."
+      },
+      "RC-ENV-013": {
+        "result": "PASS",
+        "evidence": "environment/.dockerignore excludes .git, caches, .env, solution/, tests/."
+      },
+      "RC-ENV-014": {
+        "result": "PASS",
+        "evidence": "No Dockerfile heredocs; sources live under environment/sessions/."
+      },
+      "RC-SOL-001": {
+        "result": "PASS",
+        "evidence": "solve.sh is deterministic (copy modules, run CLI, no sleep/random). Harbor oracle job 2026-08-17__13-59-38 reward 1.0."
+      },
+      "RC-SOL-002": {
+        "result": "PASS",
+        "evidence": "Oracle does not fetch packages or answers; compatible with public network_mode."
+      },
+      "RC-SOL-003": {
+        "result": "PASS",
+        "evidence": "Oracle repairs session_key, journal append/seq, pipeline watermark-before-classify, CLI parse-before-mutate, and watermark observe-max, then drives run-sessions — not hardcoded JSONL."
+      },
+      "RC-VER-001": {
+        "result": "PASS",
+        "evidence": "tests/test.sh always writes /logs/verifier/reward.txt on success and failure; no trailing exit $?."
+      },
+      "RC-VER-002": {
+        "result": "PASS",
+        "evidence": "No oracle-vs-agent branching in test.sh or test_outputs.py."
+      },
+      "RC-VER-003": {
+        "result": "PASS",
+        "evidence": "Verifier bakes pytest from requirements.lock; test.sh installs nothing and fetches nothing."
+      },
+      "RC-VER-004": {
+        "result": "PASS",
+        "evidence": "Reward is binary 0 or 1. Harbor oracle 1.0 / NOP 0.0."
+      },
+      "RC-VER-005": {
+        "result": "PASS",
+        "evidence": "41 tests map to solver-visible instruction/contract: fail-closed CLI, --input sort and tie-break, --feed order, gap/duration/lateness, tenant isolation, journal protocol, restart, config knobs, catalog overlay, ops-report COUNT(*), warehouse leave-alone, rejects."
+      },
+      "RC-VER-006": {
+        "result": "PASS",
+        "evidence": "Tests run the submitted CLI and assert session intervals, late reasons, journal watermarks, restart membership, and overlay idle-close — not format-only."
+      },
+      "RC-VER-007": {
+        "result": "PASS",
+        "evidence": "Tests check local invariants and holdout outcomes; they do not contain a callable end-to-end sessionizer that maps inputs to full expected artifacts."
+      },
+      "RC-VER-008": {
+        "result": "PASS",
+        "evidence": "test_f2p_config_gap_honored, test_p2p_config_max_duration_close, and test_f2p_config_lateness_marks_too_late mutate processor.json at runtime; catalog overlay uses warehouse plan rather than a hardcoded agent-visible literal."
+      },
+      "RC-TRIAL-001": {
+        "result": "NOT_APPLICABLE",
+        "evidence": "Harbor LLMaJ and official trials deferred; no task_specification flag to adjudicate."
+      },
+      "RC-TRIAL-002": {
+        "result": "NOT_APPLICABLE",
+        "evidence": "No reward_hacking trial flag available; deferred."
+      },
+      "RC-TRIAL-003": {
+        "result": "NOT_APPLICABLE",
+        "evidence": "No difficulty_crux flag available; deferred."
+      },
+      "RC-TRIAL-004": {
+        "result": "NOT_APPLICABLE",
+        "evidence": "No near_miss flag available; deferred."
+      },
+      "RC-TRIAL-005": {
+        "result": "NOT_APPLICABLE",
+        "evidence": "No refusals flag available; deferred."
+      },
+      "RC-TRIAL-006": {
+        "result": "NOT_APPLICABLE",
+        "evidence": "No low_timeout flag available; deferred."
+      },
+      "RC-RUB-001": {
+        "result": "NOT_APPLICABLE",
+        "evidence": "Edition 3 forbids packaged rubrics.txt; none is present."
+      },
+      "RC-RUB-002": {
+        "result": "NOT_APPLICABLE",
+        "evidence": "No packaged rubric present."
+      },
+      "RC-RUB-003": {
+        "result": "NOT_APPLICABLE",
+        "evidence": "No packaged rubric present."
+      },
+      "RC-RUB-004": {
+        "result": "NOT_APPLICABLE",
+        "evidence": "No packaged rubric present."
+      },
+      "RC-RUB-005": {
+        "result": "NOT_APPLICABLE",
+        "evidence": "No packaged rubric present."
+      },
+      "RC-RUB-006": {
+        "result": "NOT_APPLICABLE",
+        "evidence": "No packaged rubric present."
+      },
+      "RC-RUB-007": {
+        "result": "NOT_APPLICABLE",
+        "evidence": "No packaged rubric present."
+      },
+      "RC-RUB-008": {
+        "result": "NOT_APPLICABLE",
+        "evidence": "No packaged rubric present."
+      },
+      "RC-RUB-009": {
+        "result": "NOT_APPLICABLE",
+        "evidence": "No packaged rubric present."
+      },
+      "RC-RUB-010": {
+        "result": "NOT_APPLICABLE",
+        "evidence": "No packaged rubric present."
+      },
+      "RC-RUB-011": {
+        "result": "NOT_APPLICABLE",
+        "evidence": "No packaged rubric present."
+      },
+      "RC-STRUCT-001": {
+        "result": "PASS",
+        "evidence": "Required flat layout present: task.toml, instruction.md, environment/Dockerfile, solution/solve.sh, tests/Dockerfile, tests/test.sh, tests/test_outputs.py, README.md. Snapshot vs Edition 3 README requirement is satisfied by both sources."
+      },
+      "RC-STRUCT-002": {
+        "result": "PASS",
+        "evidence": "No jobs/, stray parent data, or AI scaffolding. .gitattributes only forces LF on shell entrypoints."
+      },
+      "RC-META-001": {
+        "result": "PASS",
+        "evidence": "Matches TERMINUS_3_AI_INSTRUCTIONS canonical task.toml (top-level artifacts, taxonomy, timeouts, workdir). Snapshot extras such as difficulty_explanation are not required by current Edition 3 authority."
+      },
+      "RC-META-002": {
+        "result": "NOT_APPLICABLE",
+        "evidence": "Single-container Dockerfile task; is_multi_container correctly omitted."
+      },
+      "RC-META-003": {
+        "result": "PASS",
+        "evidence": "Software/Systems with tags streaming, event-time, watermarks, sessions, recovery and languages=['python'] match the processor."
+      },
+      "RC-META-004": {
+        "result": "NOT_APPLICABLE",
+        "evidence": "Official combined ×10 difficulty trials deferred; difficulty=advanced is provisional, not scored as a defect at this gate."
+      },
+      "RC-META-005": {
+        "result": "PASS",
+        "evidence": "expert_time_estimate_hours=10 is plausible for this multi-module event-time processor repair."
+      },
+      "RC-META-006": {
+        "result": "PASS",
+        "evidence": "agent timeout_sec=7200 (1800–18000) and verifier timeout_sec=1800; pytest drives small fixtures plus a 10k-line hash, not time-pressure difficulty."
+      },
+      "RC-META-007": {
+        "result": "NOT_APPLICABLE",
+        "evidence": "Optional GPU/docker_flags fields correctly omitted."
+      }
+    },
+    "policy_conflicts": [
+      {
+        "id": "PC-FRESHNESS-001",
+        "status": "UNVERIFIED",
+        "issue": "Live reviewer checklist URL returned HTTP 404; stored snapshot could not be refreshed.",
+        "resolution": "Used stored checklist 2026-08-08-user-supplied plus current TERMINUS_3_AI_INSTRUCTIONS.md; recorded POLICY_FRESHNESS=UNVERIFIED (not a blocking POLICY_CONFLICT)."
+      },
+      {
+        "id": "PC-RUBRIC-PACKAGING-001",
+        "status": "RESOLVED",
+        "issue": "Checklist includes RC-RUB-* while Edition 3 forbids packaged rubrics.txt in the task ZIP.",
+        "resolution": "Marked RC-RUB-001..011 NOT_APPLICABLE under current Edition 3 packaging (platform UI only)."
+      },
+      {
+        "id": "PC-DIFFICULTY-TRIALS-001",
+        "status": "RESOLVED",
+        "issue": "Empirical difficulty/solvability requires combined GPT-5.5×5 + Claude Opus 4.8×5; Harbor/trials deferred.",
+        "resolution": "RC-META-004 and RC-TRIAL-001..006 marked NOT_APPLICABLE/deferred; missing trials are not invented failures."
+      },
+      {
+        "id": "PC-META-FIELD-SET-001",
+        "status": "RESOLVED",
+        "issue": "Checklist snapshot expects metadata explanation fields under [metadata]; Edition 3 canonical task.toml uses top-level taxonomy without those extras.",
+        "resolution": "Followed TERMINUS_3_AI_INSTRUCTIONS.md (packet authoritative_rules). Task matches the canonical field set. Not a blocking POLICY_CONFLICT."
+      }
+    ],
+    "TEST_QUALITY_EVAL_DISPOSITIONS": {
+      "req-gap": "FALSE_POSITIVE",
+      "weak-assertion": "FALSE_POSITIVE",
+      "phantom-spec": "FALSE_POSITIVE",
+      "flaky-execution": "FALSE_POSITIVE",
+      "vacuous-test": "FALSE_POSITIVE",
+      "note": "No TQ-eval artifact. Manual read of tests/test_outputs.py: material instruction/contract behaviors have tests (CLI fail-closed, input/feed order, gap/duration/lateness, tenant key, journal protocol, restart, config mutation, catalog overlay, ops-report, rejects, warehouse leave-alone). Duplicate-close uniqueness is inherited CloseLog, not an untested primary requirement. python3 grep in bin maps to the stated language constraint. warehouse >=10000 is an anti-wipe proxy for the baked production dump. test_p2p_output_paths still requires --empty-check to create side files. No timing/random/order-flake observed; autouse resets runtime/config."
+    },
+    "TRIAL_ANALYSIS_DISPOSITIONS": {
+      "task_specification": "NOT_APPLICABLE",
+      "reward_hacking": "NOT_APPLICABLE",
+      "difficulty_crux": "NOT_APPLICABLE",
+      "near_miss": "NOT_APPLICABLE",
+      "refusals": "NOT_APPLICABLE",
+      "low_timeout": "NOT_APPLICABLE",
+      "note": "Harbor LLMaJ and official 10 trials deferred at PRE_LLMAJ. Missing trial flags are N/A, not invented FAILs."
+    },
+    "acceptance_notes": [
+      "Blocking IDs: none.",
+      "Oracle/NOP: Harbor jobs 2026-08-17__13-59-38 reward 1.0 and 2026-08-17__14-00-43 reward 0.0.",
+      "Working tree for event-time-session-window-processor matches task_commit 254c52666b0996833623464fcbf3f72029bfdead (empty git diff).",
+      "Specialist verdict JSONs and any prior Comprehensive result for this task version were not opened for criterion decisions (PROCEDURAL isolation).",
+      "RC-META-004 remains provisional until combined ×10 trials; this APPROVE does not certify the final difficulty tier.",
+      "POLICY_FRESHNESS=UNVERIFIED due to live checklist 404; not an automatic POLICY_CONFLICT."
+    ],
+    "review_independence_note": "PROCEDURAL isolation: criterion walk used the task tree at 254c5266, authoritative Edition 3 rules, reviewer checklist/registry, and packet-stated Harbor oracle/NOP rewards only."
+  }
+}

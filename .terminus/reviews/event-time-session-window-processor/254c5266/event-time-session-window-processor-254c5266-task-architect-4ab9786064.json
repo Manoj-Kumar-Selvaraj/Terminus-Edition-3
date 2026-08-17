@@ -1,0 +1,115 @@
+{
+  "schema_version": "3.0",
+  "role": "Task Architect",
+  "review_id": "event-time-session-window-processor-254c5266-task-architect-4ab9786064",
+  "task": "event-time-session-window-processor",
+  "task_commit": "254c52666b0996833623464fcbf3f72029bfdead",
+  "control_plane_commit": "d701f55d6d8c8bcde59cde211c5ae647fc45549d",
+  "protocol_policy_version": "2.2",
+  "prompt_policy_version": "2.2",
+  "role_policy_version": "1.0",
+  "role_contract_hash": "bf62a53fc4373bd2bde48f07b37004bc001e81c14239c1e0bf907adf761d2536",
+  "context_packet": ".terminus/reviews/event-time-session-window-processor/254c5266/event-time-session-window-processor-254c5266-task-architect-4ab9786064.packet.json",
+  "verdict": "PASS",
+  "confidence": "HIGH",
+  "evidence_status": "SUFFICIENT",
+  "summary": "The work package is one coherent event-time session processor: CLI fail-closed mutation, half-open keyed sessions, watermark/lateness, append-only journal restart, catalog gap overlay, and operator reports. Solver-visible instruction plus session-contract.md fully specify the end state; starter defects share a few interacting root causes, so plausible local patches still fail domain checks. Incident claims in the instruction are backed by oncall notes and the bounce log. No material contract gap or structural rewrite is required.",
+  "evidence": [
+    {
+      "type": "file",
+      "ref": "event-time-session-window-processor/instruction.md",
+      "observation": "Two-paragraph handoff names the incident, writable Python processor, binding contract, CLI, journal/open-state, event-time sessions keyed by tenant and user, config knobs, idempotent rerun, empty-input watermark freeze, rejects, last_run/ops-report, catalog session_gap overlay, and warehouse leave-alone."
+    },
+    {
+      "type": "file",
+      "ref": "event-time-session-window-processor/environment/sessions/docs/session-contract.md",
+      "observation": "Binding spec covers paths, CLI exit-2-before-mutate, input schema, watermark formula and compare-then-update order, late-but-allowed vs TOO_LATE, gap/duration/watermark closes, journal seq, open-session snapshot, and ops-report field contract. It is a domain spec, not a repair map or per-test checklist."
+    },
+    {
+      "type": "file",
+      "ref": "event-time-session-window-processor/environment/sessions/notes/oncall.md",
+      "observation": "On-call note matches the instruction's current-state claims: mixed tenants on shared user_id, late click classified on-time, missing late side output, reset-output wiping the journal, and seq stuck at 1."
+    },
+    {
+      "type": "file",
+      "ref": "event-time-session-window-processor/environment/sessions/logs/processor-bounce.log",
+      "observation": "Captured run log shows tenants_seen=acme,beta on one open key, journal rewrite seq=1, event 85000 classified on_time after a higher watermark, max_observed collapsing to 1000, reset-output clearing the journal, and an unknown flag still creating watermark.journal."
+    },
+    {
+      "type": "file",
+      "ref": "event-time-session-window-processor/environment/sessions/src/cli.py",
+      "observation": "CLI creates or clears the journal before argparse, and process_events is invoked with use_arrival_gap=True, so usage errors and event-time gap closes are coupled to journal protocol."
+    },
+    {
+      "type": "file",
+      "ref": "event-time-session-window-processor/environment/sessions/src/engine/pipeline.py",
+      "observation": "Each event records into WatermarkTrack before classify_lateness, then journals and watermark-closes, violating the contract's compare-then-update order."
+    },
+    {
+      "type": "file",
+      "ref": "event-time-session-window-processor/environment/sessions/src/runtime/watermark_track.py",
+      "observation": "WatermarkTrack.record overwrites max_observed_event_time_ms instead of taking max, so a later earlier event_time can move the journaled watermark backward."
+    },
+    {
+      "type": "file",
+      "ref": "event-time-session-window-processor/environment/sessions/src/keys/session_key.py",
+      "observation": "session_key discards tenant_id and returns ('*', user_id), so equal user ids across tenants share one open session."
+    },
+    {
+      "type": "file",
+      "ref": "event-time-session-window-processor/environment/sessions/src/windows/assign.py",
+      "observation": "When use_arrival_gap is true, gap closes use arrival_index*1000 rather than event_time_ms; a correct event-time helper already exists on the other branch."
+    },
+    {
+      "type": "file",
+      "ref": "event-time-session-window-processor/environment/sessions/src/state/journal.py",
+      "observation": "append_journal writes a single seq=1 line with path.write_text, so restarts cannot keep a contiguous append-only seq or a non-decreasing journal prefix."
+    },
+    {
+      "type": "file",
+      "ref": "event-time-session-window-processor/environment/sessions/src/tenancy/policy.py",
+      "observation": "Catalog-backed enterprise tenants overlay session_gap_ms=45000 while lateness and max duration stay on processor.json, matching the public catalog-overlay contract."
+    },
+    {
+      "type": "file",
+      "ref": ".terminus/designs/event-time-session-window-processor-test-map.json",
+      "observation": "Nineteen solver-visible requirements map onto mixed F2P/P2P cases; several requirements have more than one test, and the map is not one planted bug per test."
+    },
+    {
+      "type": "file",
+      "ref": "event-time-session-window-processor/environment/sessions/tools/generate_seed.py",
+      "observation": "Deterministic warehouse seed is 40 tenants x 15 users x 20 events (12000 click_event rows), so inherited production state is a varied catalog, not a handful of homogeneous rows."
+    },
+    {
+      "type": "rule",
+      "ref": "TERMINUS_3_AI_INSTRUCTIONS.md",
+      "observation": "Edition 3 design gate asks for inferred specs, interacting constraints, and native processor state. This task matches the documented 'debug event-time session windows' calibration shape: a design doc plus shared watermark/state root causes."
+    }
+  ],
+  "findings": [],
+  "missing_evidence": [],
+  "change_scope": [],
+  "do_not_change": [
+    "instruction.md work request and referenced contract split",
+    "environment/sessions/docs/session-contract.md semantics",
+    "environment/sessions/warehouse production click dump",
+    "catalog enterprise session_gap overlay in tenancy/policy.py",
+    "Python run-sessions CLI as the public operator entrypoint"
+  ],
+  "next_gate": "Verifier Engineer",
+  "role_output": {
+    "SCENARIO_COHERENCE": "HIGH",
+    "SOLVABILITY": "HIGH",
+    "COUPLED_REASONING": "HIGH",
+    "ARTIFICIAL_CONSTRUCTION_RISK": "LOW",
+    "PLAUSIBLE_PARTIAL_FIXES": [
+      "Restore (tenant_id, user_id) in session_key but leave use_arrival_gap=True: tenants stop merging while gap closes still follow arrival index, so half-open event-time windows stay wrong.",
+      "Flip use_arrival_gap to event time but keep pipeline.record before classify: a late click after a high anchor is still compared to an already-advanced watermark and can be treated on-time or dropped from late.jsonl.",
+      "Take max() in WatermarkTrack.record but still overwrite the journal with seq=1: watermarks stop stepping backward inside a run while restart seq and append-only prefix still fail.",
+      "Parse argv before touching files but still wipe watermark.journal on --reset-output: unknown-flag fail-closed can pass while restart/idempotence and reset semantics fail.",
+      "Append journal lines without persisting open_sessions.json across bounce: seq looks healthy while in-flight sessions reopen or duplicate-close."
+    ],
+    "CONTRACT_GAPS": [],
+    "STRUCTURAL_REMEDIATION": []
+  }
+}

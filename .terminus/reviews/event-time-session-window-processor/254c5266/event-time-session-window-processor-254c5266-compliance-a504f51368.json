@@ -1,0 +1,131 @@
+{
+  "schema_version": "3.0",
+  "role": "Compliance Auditor",
+  "review_id": "event-time-session-window-processor-254c5266-compliance-a504f51368",
+  "task": "event-time-session-window-processor",
+  "task_commit": "254c52666b0996833623464fcbf3f72029bfdead",
+  "control_plane_commit": "d701f55d6d8c8bcde59cde211c5ae647fc45549d",
+  "protocol_policy_version": "2.2",
+  "prompt_policy_version": "2.2",
+  "role_policy_version": "1.0",
+  "role_contract_hash": "a4ce6195d206dc10def9ae5c14ac2d8cc89455a681478356c53bfca18a125470",
+  "context_packet": ".terminus/reviews/event-time-session-window-processor/254c5266/event-time-session-window-processor-254c5266-compliance-a504f51368.packet.json",
+  "verdict": "PASS",
+  "confidence": "HIGH",
+  "evidence_status": "SUFFICIENT",
+  "summary": "Commit 254c5266 matches the current event-time-session-window-processor tree and would not be rejected for a current Edition 3 structural, environment, security, metadata, or packaging rule. Required flat layout, canonical task.toml, separate digest-pinned verifier, baked pins, tmux/asciinema, binary reward, and sub-limit environment size all hold. Remaining notes are preferences, not rejection-level defects.",
+  "evidence": [
+    {
+      "type": "file",
+      "ref": "event-time-session-window-processor/task.toml",
+      "observation": "Canonical top-level fields before tables: version 2.0, name matches folder, Software/Systems, 5 tags, languages python, difficulty advanced, expert_time_estimate_hours 10, artifacts=[\"/app/sessions\"]. environment_mode=separate, agent timeout_sec=7200 (1800-18000), network_mode=public, workdir=/app, 2 CPU / 8192 MB / 10240 MB. No removed Edition 2 fields; no compose flags on a single-container task."
+    },
+    {
+      "type": "file",
+      "ref": "event-time-session-window-processor/",
+      "observation": "Tracked tree is the flat Edition 3 layout: task.toml, instruction.md, README.md, environment/Dockerfile, environment/.dockerignore, solution/solve.sh, tests/Dockerfile, tests/test.sh, tests/test_outputs.py. No rubrics, milestones, jobs/, CLAUDE.md, AGENTS.md, skills.md, or task-local .cursor/. Git commit 254c5266 has no diff against the current task tree."
+    },
+    {
+      "type": "file",
+      "ref": "event-time-session-window-processor/environment/Dockerfile",
+      "observation": "Final FROM is the canonical Python digest public.ecr.aws/docker/library/python:3.13-slim-bookworm@sha256:01f42367a0a94ad4bc17111776fd66e3500c1d87c15bbd6055b7371d39c124fb. One apt transaction installs tmux and asciinema with --no-install-recommends and list cleanup; no apt upgrade or apt pins. Narrow COPY sessions/; chmod only two binaries; no FROM --platform, nproc, privileged, docker.sock, heredoc sources, reserved-path mkdir, or COPY of solution/tests."
+    },
+    {
+      "type": "file",
+      "ref": "event-time-session-window-processor/tests/Dockerfile",
+      "observation": "Separate verifier image uses the same canonical digest. Pip installs from requirements.lock with --no-deps (pytest==8.4.1, pytest-json-ctrf==0.3.5 and declared transitives). Copies test.sh, test_outputs.py, and fixtures only. Does not create /logs/verifier at build. WORKDIR /app creates the parent of declared artifact /app/sessions. No explicit RUN mkdir -p /app/sessions."
+    },
+    {
+      "type": "file",
+      "ref": "event-time-session-window-processor/tests/test.sh",
+      "observation": "Unix LF shebang. Creates /logs/verifier only at runtime, writes reward 0 then 1/0 after pytest, installs nothing, uses TEST_DIR default /tests, no trailing exit $?."
+    },
+    {
+      "type": "file",
+      "ref": "event-time-session-window-processor/tests/test_outputs.py",
+      "observation": "36 pytest functions each with a docstring. Grades live /app/sessions state via the public CLI. Ruff check passed. No callable end-to-end session solver. Hidden fixtures stay under /tests/fixtures."
+    },
+    {
+      "type": "file",
+      "ref": "event-time-session-window-processor/environment/.dockerignore",
+      "observation": "Present; excludes .git, pycache, .env, solution/, and tests/. Intentionally does not exclude *.log so processor-bounce.log ships."
+    },
+    {
+      "type": "file",
+      "ref": "event-time-session-window-processor/instruction.md",
+      "observation": "Two paragraphs, 231 words, 0 bullets, no task name, no relative paths, no canary strings. Names /app/sessions outputs and points at /app/sessions/docs/session-contract.md as binding, including the Paths table for open_sessions.json and catalog.sqlite."
+    },
+    {
+      "type": "run",
+      "ref": "environment size measurement of event-time-session-window-processor/environment",
+      "observation": "176 files, 6.182 MiB total, largest file click_ledger.jsonl at 2.64 MiB; no file exceeds 50 MiB. Under the 100 MiB environment cap."
+    },
+    {
+      "type": "run",
+      "ref": "git rev-parse / git diff --stat 254c52666b0996833623464fcbf3f72029bfdead -- event-time-session-window-processor",
+      "observation": "Packet task_commit exists and has an empty diff against the current task tree. Latest commit touching the task is 254c526. No tracked pycache, .terminus, rubrics, or jobs inside the task."
+    },
+    {
+      "type": "rule",
+      "ref": "TERMINUS_3_AI_INSTRUCTIONS.md §§2,4,7,9",
+      "observation": "Controlling rules for layout, task.toml, digest-pinned canonical base, tmux/asciinema, baked pins, separate verifier, artifact parents, runtime-only /logs/verifier, and binary reward."
+    }
+  ],
+  "findings": [
+    {
+      "id": "COMP-1",
+      "severity": "LOW",
+      "status": "OBSERVED",
+      "criterion": "TERMINUS_3_AI_INSTRUCTIONS.md §4 Artifacts / §9 tests/Dockerfile must create artifact parents",
+      "evidence_refs": [
+        "event-time-session-window-processor/tests/Dockerfile",
+        "event-time-session-window-processor/task.toml"
+      ],
+      "why_it_matters": "Explicit RUN mkdir -p /app/sessions is the usual Harbor parent-dir pattern. WORKDIR /app already creates the parent of artifacts=[\"/app/sessions\"], so this is a preference rather than a missing-parent violation.",
+      "minimal_remediation": "Optional: add RUN mkdir -p /app/sessions in tests/Dockerfile without creating /logs/verifier at build.",
+      "regression_risk": "Low; changing only mkdir would not alter grading semantics."
+    },
+    {
+      "id": "COMP-2",
+      "severity": "LOW",
+      "status": "OBSERVED",
+      "criterion": "TERMINUS_3_AI_INSTRUCTIONS.md §7 Add OCI audit labels where practical",
+      "evidence_refs": [
+        "event-time-session-window-processor/environment/Dockerfile"
+      ],
+      "why_it_matters": "title/description/version/licenses are present; source/revision/created are omitted. The rule is practical, not mandatory.",
+      "minimal_remediation": "Optional: add org.opencontainers.image.source, .revision, and .created when those values are known.",
+      "regression_risk": "None."
+    }
+  ],
+  "missing_evidence": [],
+  "change_scope": [],
+  "do_not_change": [
+    "instruction.md wording and requirement surface",
+    "tests/test_outputs.py behavioral assertions",
+    "solution/solve.sh derivation",
+    "environment/sessions processor and contract",
+    "task.toml artifacts, taxonomy, timeouts, and environment_mode"
+  ],
+  "next_gate": "Continue remaining PRE_LLMAJ Stage B specialists; this result is not SUBMISSION_READY.",
+  "role_output": {
+    "BLOCKERS": [],
+    "HIGH": [],
+    "MEDIUM": [],
+    "LOW": [
+      "COMP-1 tests/Dockerfile has no explicit RUN mkdir -p /app/sessions; WORKDIR /app creates the artifact parent. Preference, not a missing-parent reject.",
+      "COMP-2 Agent Dockerfile omits optional OCI source/revision/created labels."
+    ],
+    "CURRENT_RULE_REFERENCES": [
+      "TERMINUS_3_AI_INSTRUCTIONS.md §2 required flat layout",
+      "TERMINUS_3_AI_INSTRUCTIONS.md §4 task.toml canonical fields, top-level artifacts, environment_mode=separate, timeouts, taxonomy",
+      "TERMINUS_3_AI_INSTRUCTIONS.md §7 digest-pin, canonical Python base, tmux/asciinema, baked deps, .dockerignore, no reserved paths, no privileged/socket/platform, environment <=100 MiB",
+      "TERMINUS_3_AI_INSTRUCTIONS.md §9 separate verifier, create artifact parents, test.sh reward contract, pytest, no trial-time installs",
+      ".cursor/rules/terminus-edition-3-verifier.mdc agent/verifier isolation and canonical bases",
+      ".cursor/rules/terminus-edition-3-task-toml.mdc metadata and artifact nesting",
+      ".terminus/agents/PROMPTS.md Compliance Auditor decision right"
+    ],
+    "PACKAGE_RISK": "LOW. Git-tracked task zip root is task files only. Declared artifact /app/sessions is the live processor tree the verifier must rerun; warehouse binaries are under the size cap. On-disk ignored __pycache__ and an empty untracked .terminus/designs directory are not in task_commit 254c5266.",
+    "SECURITY_RISK": "LOW. No secrets, privileged mode, SYS_ADMIN, docker.sock, host binds, or agent-image leakage of solution/tests. Verifier fixtures remain in tests/. Oracle is mounted at /solution only for the oracle agent."
+  }
+}

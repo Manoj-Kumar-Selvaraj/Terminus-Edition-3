@@ -1,0 +1,311 @@
+{
+  "schema_version": "3.0",
+  "role": "Adjudicator",
+  "review_id": "event-time-session-window-processor-254c5266-adjudication-2ac04a2a21",
+  "task": "event-time-session-window-processor",
+  "task_commit": "254c52666b0996833623464fcbf3f72029bfdead",
+  "control_plane_commit": "552678743d74aeddd627a3d6194ce472a6ccfc5f",
+  "protocol_policy_version": "2.2",
+  "prompt_policy_version": "2.2",
+  "role_policy_version": "1.0",
+  "role_contract_hash": "559077c47ef75f5c4bdbea023f30c1a2a26ba037ff4291534c836e5f342a0135",
+  "context_packet": ".terminus/reviews/event-time-session-window-processor/254c5266/event-time-session-window-processor-254c5266-adjudication-2ac04a2a21.packet.json",
+  "verdict": "REQUEST_CHANGES",
+  "confidence": "HIGH",
+  "evidence_status": "SUFFICIENT",
+  "summary": "Four finding clusters, no majority vote. Cluster 1: Verifier Engineer is controlling for VE-01..VE-05; Q4 LOW/completeness and Comprehensive RC-VER-005/008 PASS plus TQ FALSE_POSITIVE do not waive Edition 3 vacuous/weak/req-gap defects, including VE-02 (allowed_lateness_ms never mutated). Cluster 2: BOTH_PARTLY — Q4 INSTRUCTION_SHAPE and Comprehensive RC-INS-001 concision can stand; Instruction Reviewer instruction-1 remains the controlling repair for reverse-outline/compressed-rubric. Cluster 3: BOTH_PARTLY — canonical task.toml extras are not required; TERMINUS §12 plus Documentation Reviewer control README difficulty/solution/verification prose and forbid instruction echo/oracle-module leak. Cluster 4: BOTH_PARTLY — instruction regroup and extra verifier tests are compatible scopes, not a fairness conflict. Producer work is still required.",
+  "evidence": [
+    {
+      "type": "artifact",
+      "ref": ".terminus/reviews/event-time-session-window-processor/254c5266/event-time-session-window-processor-254c5266-adjudication-2ac04a2a21.packet.json",
+      "observation": "Packet binds this execution to task commit 254c52666b0996833623464fcbf3f72029bfdead, control-plane commit 552678743d74aeddd627a3d6194ce472a6ccfc5f, Adjudicator role-contract hash 559077c47ef75f5c4bdbea023f30c1a2a26ba037ff4291534c836e5f342a0135, Protocol/Prompt 2.2, PRE_LLMAJ Stage E disagreement, and immutable output path."
+    },
+    {
+      "type": "rule",
+      "ref": ".terminus/reviewers/PRE_LLMAJ.md",
+      "observation": "Stage E/F: no majority vote; Comprehensive is a breadth backstop and does not replace specialist depth; aggregate PASS needs every mandatory specialist PASS plus resolved disagreement."
+    },
+    {
+      "type": "rule",
+      "ref": ".terminus/agents/PROMPTS.md#Adjudicator",
+      "observation": "Identify controlling rule/evidence; distinguish scopes that can both be correct; do not author a compromise solely to satisfy both reviewers."
+    },
+    {
+      "type": "rule",
+      "ref": "TERMINUS_3_AI_INSTRUCTIONS.md",
+      "observation": "Every instruction requirement must have a meaningful test; vacuous-test/weak-assertion/req-gap are ship defects. Config-driven tasks must mutate declared knobs and confirm output changes. README is required human documentation for difficulty rationale, solution approach, and verification approach, and is not a copy of the agent ticket. Canonical task.toml has no difficulty_explanation/solution_explanation/verification_explanation fields."
+    },
+    {
+      "type": "rule",
+      "ref": ".terminus/agents/INSTRUCTION_POLICY.md",
+      "observation": "Reverse-outline test requires regrouping one-clause-per-verifier-family prose around operational families without deleting legitimate requirements. Instruction Reviewer PASS additionally requires JIRA_SLACK_HANDOFF PASS and reverse-outline/compressed-rubric no higher than LOW. INSTRUCTION_SHAPE is only the <=2 paragraph / <=20 bullet length rule."
+    },
+    {
+      "type": "file",
+      "ref": "event-time-session-window-processor/tests/test_outputs.py",
+      "observation": "test_p2p_input_tie_break_stable compares per-user event_ids. test_f2p_config_lateness_marks_too_late writes allowed_lateness_ms=10000 (the default) despite a shrinking docstring; gap and max-duration tests do mutate. test_f2p_missing_source_does_not_create_journal asserts only returncode 2 and journal absence. Reject tests inspect rejects.jsonl only. Catalog overlay asserts only t01 enterprise non-close."
+    },
+    {
+      "type": "file",
+      "ref": "event-time-session-window-processor/tests/fixtures/tie_break.jsonl",
+      "observation": "Three same-timestamp events for three different users (t0/t1/t2). Permuting the file cannot change per-user event_ids, so the named tie-break test cannot fail a wrong secondary sort key."
+    },
+    {
+      "type": "file",
+      "ref": "event-time-session-window-processor/tests/fixtures/lateness_probe.jsonl",
+      "observation": "Anchor l1 at 100000 then l2 at 50000. l2 is TOO_LATE for any allowed_lateness_ms well below 50000, including a hardcoded 10000, so writing the default does not prove the lateness knob."
+    },
+    {
+      "type": "file",
+      "ref": "event-time-session-window-processor/environment/sessions/docs/session-contract.md",
+      "observation": "Binding contract requires --input tie-break (event_time_ms then tenant_id, user_id, event_id), omit-source exit 2 before journal/open/output touch, enterprise 45000 vs other catalog plans keeping processor.json gap, malformed lines not updating max_observed, and processor.json knobs including allowed_lateness_ms."
+    },
+    {
+      "type": "file",
+      "ref": "event-time-session-window-processor/instruction.md",
+      "observation": "Two paragraphs, 231 words. Paragraph 2 is a packed chain of CLI, input/feed, reset, tenant key, gap/late/watermark, knobs, journal, digests, empty input, rejects, ops-report, catalog overlay, and warehouse. Incident sentence claims 'duplicate side output'."
+    },
+    {
+      "type": "file",
+      "ref": "event-time-session-window-processor/README.md",
+      "observation": "23-line README restates the repair ticket, lists layout including 'oracle copies of the defective modules', and claims 'semantic live-state checks only'. It does not explain difficulty, solution approach, or verification scenario families."
+    },
+    {
+      "type": "file",
+      "ref": "event-time-session-window-processor/task.toml",
+      "observation": "Matches the Edition 3 canonical field set. No difficulty_explanation, solution_explanation, or verification_explanation keys."
+    },
+    {
+      "type": "review",
+      "ref": ".terminus/reviews/event-time-session-window-processor/254c5266/event-time-session-window-processor-254c5266-verifier-engineer-05b1a7505d.json",
+      "observation": "Frozen Verifier Engineer REVISE/HIGH with blocking VE-01..VE-05 on vacuous tie-break, unmutated lateness, one-sided catalog overlay, omitted-source output touch, and reject-watermark skip."
+    },
+    {
+      "type": "review",
+      "ref": ".terminus/reviews/event-time-session-window-processor/254c5266/event-time-session-window-processor-254c5266-spec-test-contract-eab4bc4e14.json",
+      "observation": "Frozen Q4 PASS with empty BLOCKING_FINDING_IDS, INSTRUCTION_SHAPE PASS, and LOW advisories Q4-A01..A05. Matrix marks secondary tie-break vacuous, other catalog plans partial, reject-watermark absent, missing-source partial, and R_CONFIG_KNOBS complete via test_f2p_config_lateness_marks_too_late."
+    },
+    {
+      "type": "review",
+      "ref": ".terminus/reviews/event-time-session-window-processor/254c5266/event-time-session-window-processor-254c5266-comprehensive-checklist-b08c18bc3b.json",
+      "observation": "Frozen Comprehensive APPROVE, 0 FAIL, RC-VER-005/008 PASS, TQ vacuous-test/weak-assertion/req-gap FALSE_POSITIVE, RC-INS-001 PASS as dense-but-not-a-step-list, RC-STRUCT-001 README present, RC-META-001 canonical task.toml extras not required. RC-VER-008 evidence claims the lateness test mutates processor.json."
+    },
+    {
+      "type": "review",
+      "ref": ".terminus/reviews/event-time-session-window-processor/254c5266/event-time-session-window-processor-254c5266-instruction-edf7356de4.json",
+      "observation": "Frozen Instruction Reviewer REVISE: INSTRUCTION_SHAPE PASS, JIRA_SLACK_HANDOFF FAIL, REVERSE_OUTLINE_RISK HIGH, COMPRESSED_RUBRIC HIGH, instruction-1 BLOCKER; replacement regroups without deleting material requirements."
+    },
+    {
+      "type": "review",
+      "ref": ".terminus/reviews/event-time-session-window-processor/254c5266/event-time-session-window-processor-254c5266-documentation-52bf3f2ac9.json",
+      "observation": "Frozen Documentation Reviewer REVISE: DOC-1 BLOCKER (README plus task.toml explanation fields), DOC-2 HIGH (instruction echo and oracle-module sentence), DOC-3 MEDIUM (live-state-only slogan)."
+    }
+  ],
+  "findings": [
+    {
+      "id": "ADJ-VE-01",
+      "severity": "HIGH",
+      "status": "OBSERVED",
+      "criterion": "vacuous-test / TERMINUS_3_AI_INSTRUCTIONS.md test-quality: every stated requirement needs a meaningful assertion",
+      "evidence_refs": [
+        "event-time-session-window-processor/tests/test_outputs.py",
+        "event-time-session-window-processor/tests/fixtures/tie_break.jsonl",
+        "event-time-session-window-processor/environment/sessions/docs/session-contract.md",
+        ".terminus/reviews/event-time-session-window-processor/254c5266/event-time-session-window-processor-254c5266-verifier-engineer-05b1a7505d.json"
+      ],
+      "why_it_matters": "The contract's --input secondary tie-break is stated, but the permutation test cannot fail a wrong (tenant_id, user_id, event_id) order because each user has one event. Q4 correctly notes primary event_time sort is graded elsewhere; that does not make the named vacuous test a shippable assertion of the secondary keys.",
+      "minimal_remediation": "Use same-timestamp events that share a session key (or otherwise collide on the sort tuple) and assert the contract order plus permutation stability of that ordered membership.",
+      "regression_risk": "Keep test_f2p_input_sorts_before_gap_close; do not weaken feed-order coverage."
+    },
+    {
+      "id": "ADJ-VE-02",
+      "severity": "HIGH",
+      "status": "OBSERVED",
+      "criterion": "weak-assertion / config-driven mutation: mutate declared knobs and confirm output changes",
+      "evidence_refs": [
+        "event-time-session-window-processor/tests/test_outputs.py",
+        "event-time-session-window-processor/tests/fixtures/lateness_probe.jsonl",
+        "event-time-session-window-processor/environment/sessions/docs/session-contract.md",
+        "TERMINUS_3_AI_INSTRUCTIONS.md"
+      ],
+      "why_it_matters": "session_gap_ms and max_session_duration_ms are mutated; allowed_lateness_ms is rewritten to the default 10000. l2 at 50000 behind a 100000 anchor is TOO_LATE for a wide lateness band, so a hardcoded 10000 passes. Q4 marking R_CONFIG_KNOBS complete is incorrect. Comprehensive RC-VER-008 evidence that this test mutates lateness is false.",
+      "minimal_remediation": "Read allowed_lateness_ms from the written config, mutate it across a threshold that flips an equivalent pair between late-but-allowed and TOO_LATE, and assert both sides.",
+      "regression_risk": "Retain existing feed_late TOO_LATE checks as default-knob coverage."
+    },
+    {
+      "id": "ADJ-VE-03",
+      "severity": "HIGH",
+      "status": "OBSERVED",
+      "criterion": "req-gap: catalog overlay is two-sided",
+      "evidence_refs": [
+        "event-time-session-window-processor/tests/test_outputs.py",
+        "event-time-session-window-processor/tests/fixtures/catalog_enterprise.jsonl",
+        "event-time-session-window-processor/environment/sessions/docs/session-contract.md",
+        "event-time-session-window-processor/environment/sessions/sql/seed.sql"
+      ],
+      "why_it_matters": "Contract: enterprise uses 45000; every other catalog plan keeps processor.json gap. Only t01 is asserted to stay open. Applying 45000 to all catalog tenants, including standard/internal rows such as t00, still passes. Lab tenants acme/beta are not that identity-overlay branch.",
+      "minimal_remediation": "Add a parallel watermark-idle case for a non-enterprise catalog tenant that must close under processor.json gap 30000 with the same bump geometry.",
+      "regression_risk": "Keep the t01 non-close assertion."
+    },
+    {
+      "id": "ADJ-VE-04",
+      "severity": "HIGH",
+      "status": "OBSERVED",
+      "criterion": "req-gap: omit-source must not touch outputs",
+      "evidence_refs": [
+        "event-time-session-window-processor/tests/test_outputs.py",
+        "event-time-session-window-processor/instruction.md",
+        "event-time-session-window-processor/environment/sessions/docs/session-contract.md"
+      ],
+      "why_it_matters": "Instruction and contract require exit 2 before any journal or output touch. The dedicated test only asserts returncode 2 and journal absence. Creating sessions.jsonl, late.jsonl, rejects.jsonl, or open_sessions.json on a usage error still passes. Unknown-flag tests already use the stronger shape; that does not grade the omitted-source path.",
+      "minimal_remediation": "Mirror test_f2p_unknown_flag_leaves_journal_untouched: assert opens and the three side outputs are not created, and with pre-seeded files that they are not rewritten.",
+      "regression_risk": "Do not weaken unknown-flag coverage."
+    },
+    {
+      "id": "ADJ-VE-05",
+      "severity": "HIGH",
+      "status": "OBSERVED",
+      "criterion": "req-gap: rejected lines must not update max_observed",
+      "evidence_refs": [
+        "event-time-session-window-processor/tests/test_outputs.py",
+        "event-time-session-window-processor/tests/fixtures/schema_rejects.jsonl",
+        "event-time-session-window-processor/environment/sessions/docs/session-contract.md"
+      ],
+      "why_it_matters": "Contract: rejected malformed lines do not update max_observed_event_time_ms. Reject tests only inspect rejects.jsonl/late.jsonl/open membership. Journaling o4/m1/m3 or advancing watermark from them would still pass.",
+      "minimal_remediation": "After a mixed reject+valid feed, assert journal seq/count equals successfully parsed observations only and watermark/max_observed ignore malformed/negative lines.",
+      "regression_risk": "Do not drop REJECT_MALFORMED code/id checks."
+    },
+    {
+      "id": "ADJ-INS-1",
+      "severity": "BLOCKER",
+      "status": "OBSERVED",
+      "criterion": "INSTRUCTION_POLICY reverse-outline / compressed-rubric / Jira-Slack handoff",
+      "evidence_refs": [
+        "event-time-session-window-processor/instruction.md",
+        ".terminus/agents/INSTRUCTION_POLICY.md",
+        ".terminus/agents/PROMPTS.md",
+        ".terminus/reviews/event-time-session-window-processor/254c5266/event-time-session-window-processor-254c5266-instruction-edf7356de4.json"
+      ],
+      "why_it_matters": "Q4 INSTRUCTION_SHAPE PASS and Comprehensive RC-INS-001 PASS only cover length/concision (two paragraphs, not a step list). Instruction Reviewer PASS separately requires reverse-outline and compressed-rubric no higher than LOW. Paragraph 2 remains a packed one-clause-per-family acceptance inventory.",
+      "minimal_remediation": "Keep paragraph 1 as the incident handoff. Regroup paragraph 2 into a few operational families that still name graded paths and easy-to-miss constraints. Do not delete distinct requirements or move the task goal into session-contract.md. Drop the unsupported 'duplicate side output' incident claim while editing that sentence.",
+      "regression_risk": "Over-delegation into the contract would create a spec-file loophole; dropping CLI, empty-input, catalog overlay, rejects, or named output paths would create a completeness gap and a fairness conflict with the verifier repairs."
+    },
+    {
+      "id": "ADJ-DOC-1",
+      "severity": "BLOCKER",
+      "status": "OBSERVED",
+      "criterion": "TERMINUS_3_AI_INSTRUCTIONS.md §12 README difficulty/solution/verification for humans",
+      "evidence_refs": [
+        "event-time-session-window-processor/README.md",
+        "event-time-session-window-processor/task.toml",
+        "TERMINUS_3_AI_INSTRUCTIONS.md"
+      ],
+      "why_it_matters": "§12 requires README to explain difficulty, solution approach, and verification. The current README does not. Canonical task.toml does not include difficulty_explanation fields; Comprehensive RC-META-001 is controlling against adding those extras. Documentation Reviewer DOC-1 is controlling only for README content.",
+      "minimal_remediation": "Rewrite README with the restart/order/tenant/watermark trap, architectural invariants, and live-CLI scenario families. Do not add non-canonical task.toml explanation fields. Do not claim trial-proven difficulty.",
+      "regression_risk": "Naming holdout fixtures or walking oracle modules would leak verifier/oracle internals."
+    },
+    {
+      "id": "ADJ-DOC-2",
+      "severity": "HIGH",
+      "status": "OBSERVED",
+      "criterion": "README must not copy the agent instruction or reveal oracle details",
+      "evidence_refs": [
+        "event-time-session-window-processor/README.md",
+        "TERMINUS_3_AI_INSTRUCTIONS.md"
+      ],
+      "why_it_matters": "The opening sentence inventories the agent ticket. Layout then points at 'oracle copies of the defective modules'. Comprehensive RC-STRUCT-001 only checks that README.md exists.",
+      "minimal_remediation": "Drop the instruction paraphrase and the oracle-module sentence. Keep warehouse-seed provenance and local Harbor commands if useful. Replace 'semantic live-state checks only' with an accurate scenario-family description.",
+      "regression_risk": "A file-by-file oracle walkthrough would be worse than the current leak."
+    }
+  ],
+  "missing_evidence": [],
+  "change_scope": [
+    "This adjudicator execution writes only .terminus/reviews/event-time-session-window-processor/254c5266/event-time-session-window-processor-254c5266-adjudication-2ac04a2a21.json."
+  ],
+  "do_not_change": [
+    "Do not modify event-time-session-window-processor task files during this adjudicator execution.",
+    "Do not majority-vote Comprehensive APPROVE over specialist REVISE.",
+    "Do not add non-canonical task.toml difficulty_explanation/solution_explanation/verification_explanation fields.",
+    "Do not delete solver-visible requirements to shorten instruction.md.",
+    "Do not weaken holdout, event-time gap, feed-order, late-but-allowed, restart, enterprise-overlay, or warehouse SHA-256 checks.",
+    "Do not treat this result as Pre-LLMaJ aggregate PASS."
+  ],
+  "next_gate": "Return control to the CI Orchestrator. Authorize producer repair only for the controlling findings in role_output. Then stale and re-run Verifier Engineer, Instruction Reviewer, Engineering Documentation Reviewer, Q4 (instruction change stales Q4), Comprehensive Reviewer, and Pre-LLMaJ aggregate. Do not start Harbor LLMaJ from this result.",
+  "role_output": {
+    "DECISION": "BOTH_PARTLY",
+    "CONTROLLING_RULE_OR_EVIDENCE": "PRE_LLMAJ Stage E/F plus AGENT_SYSTEM one-owner routing: Comprehensive is a breadth backstop, not a vote. Cluster 1 is controlled by TERMINUS_3_AI_INSTRUCTIONS.md test-quality (vacuous-test/weak-assertion/req-gap and config mutation) and the Verifier Engineer inspection of the live tests/fixtures/contract. Cluster 2 is controlled by INSTRUCTION_POLICY reverse-outline/compressed-rubric; Q4 INSTRUCTION_SHAPE is only the length rule. Cluster 3 is split: TERMINUS §12 controls README prose; canonical task.toml §4 controls metadata extras. Cluster 4 has no fairness conflict on the inspected instruction replacement versus extra tests.",
+    "SCOPE_RECONCILIATION": "Do not pick Comprehensive APPROVE, Q4 PASS, or any one specialist wholesale. Q4's Quality Interlock PASS on the primary bidirectional matrix is a different gate from Stage-B verifier-quality defects. Q4 INSTRUCTION_SHAPE PASS is a different field from reverse-outline. README presence and canonical task.toml extras are different from README human-doc quality. Instruction regroup and verifier extra tests are different artifacts.",
+    "REASON": "Independent artifact inspection confirms VE-01..VE-05 on disk, including VE-02 which Q4 marked complete and Comprehensive cited as lateness mutation. Instruction paragraph 2 is a packed acceptance inventory. README lacks §12 explanations and leaks oracle-module layout. Instruction Reviewer replacement text still names CLI, tie-break, omit-source, catalog overlay, rejects, journal, and warehouse, so extra tests remain fair after regroup.",
+    "REQUIRED_ACTION": "Orchestrator-authorized producer repair of (1) tests/fixtures for VE-01..VE-05, (2) instruction.md regroup for instruction-1 without deleting graded constraints, (3) README rewrite for §12 plus DOC-2/DOC-3, without adding task.toml explanation extras. Do not trade instruction deletions against verifier additions.",
+    "RECHECK": "After repair and deterministic refreeze: Verifier Engineer, Instruction Reviewer, Engineering Documentation Reviewer, Q4, Comprehensive, then Pre-LLMaJ aggregate on the new task commit. Later unchanged-scope novelty must be adjudicated, not majority-voted.",
+    "CLUSTERS": [
+      {
+        "id": "cluster-1-verifier",
+        "question": "VE-01..VE-05 HIGH vs Q4 LOW Q4-A02..A05 vs Comprehensive RC-VER-005/008 PASS and TQ FALSE_POSITIVE, including VE-02",
+        "DECISION": "A",
+        "PARTY_A": "Verifier Engineer VE-01..VE-05",
+        "PARTY_B": "Q4 LOW/completeness plus Comprehensive RC-VER-005/008 PASS and TQ FALSE_POSITIVE",
+        "CONTROLLING_RULE_OR_EVIDENCE": "TERMINUS_3_AI_INSTRUCTIONS.md test-quality rules (every stated requirement needs a meaningful test; vacuous-test/weak-assertion/req-gap; mutate declared config knobs) plus independent inspection of test_outputs.py and fixtures. Verifier Engineer owns Stage-B verifier coverage/quality. Comprehensive is a breadth backstop. Q4 LOW is Quality Interlock advisory materiality, not a waiver of those defects. Q4 R_CONFIG_KNOBS 'complete' is factually wrong for allowed_lateness_ms. RC-VER-005 is tests-map-to-requirements (phantom direction), not req-gap. RC-VER-008 evidence that test_f2p_config_lateness_marks_too_late mutates lateness is false: it writes the default 10000.",
+        "SCOPE_RECONCILIATION": "Q4 PASS that primary event-time gap/tenant/restart/enterprise-overlay behaviors are discoverable and tested is a different question from whether the five named assertions are vacuous, weak, or missing. Those five remain controlling. Comprehensive checklist PASS does not control specialist verifier depth.",
+        "REASON": "tie_break.jsonl has one event per user, so permutation cannot discriminate secondary keys. lateness_probe l2 is TOO_LATE for a hardcoded 10000; gap and duration are mutated, lateness is not. Catalog overlay asserts only t01. Missing-source checks only the journal file. Reject tests do not read max_observed/journal. Q4 itself listed four of five as vacuous/partial/absent, then called them LOW because a correct solver still passes — that inverts weak-assertion, which is about incorrect solvers passing.",
+        "REQUIRED_ACTION": "Repair tests/fixtures for VE-01..VE-05 exactly as the Verifier Engineer minimal remediations. Do not treat Q4-A02..A05 LOW or Comprehensive TQ FALSE_POSITIVE as closure. VE-06..VE-10 are outside this cluster and are not authorized by this decision.",
+        "RECHECK": "Cold Verifier Engineer on the repaired suite; Q4 recheck because verifier behavior changed."
+      },
+      {
+        "id": "cluster-2-instruction",
+        "question": "instruction-1 BLOCKER vs Q4 INSTRUCTION_SHAPE PASS vs Comprehensive RC-INS-001 PASS",
+        "DECISION": "BOTH_PARTLY",
+        "PARTY_A": "Instruction Reviewer instruction-1",
+        "PARTY_B": "Q4 INSTRUCTION_SHAPE PASS and Comprehensive RC-INS-001 PASS",
+        "CONTROLLING_RULE_OR_EVIDENCE": "INSTRUCTION_POLICY reverse-outline/compressed-rubric and PROMPTS.md Instruction Reviewer PASS bar (JIRA_SLACK_HANDOFF PASS; reverse-outline and compressed-rubric no higher than LOW). Instruction Reviewer owns fairness/style/leakage. Q4 INSTRUCTION_SHAPE and RC-INS-001 measure length/concision only.",
+        "SCOPE_RECONCILIATION": "Both sides are correct on their own fields. Instruction Reviewer also scored INSTRUCTION_SHAPE PASS (two paragraphs). Q4 INSTRUCTION_SHAPE PASS does not refute reverse-outline. Comprehensive RC-INS-001 PASS ('dense but not a step list') does not score reverse-outline. instruction-1 remains the controlling repair for style/fairness.",
+        "REASON": "Paragraph 2 is 162 words chaining CLI, input/feed, reset, tenant, gap/late/watermark, knobs, journal, digests, empty input, rejects, ops-report, catalog overlay, and warehouse — a compressed rubric, not a normal ticket body. Completeness is SUFFICIENT; the defect is grouping/cadence, not missing requirements.",
+        "REQUIRED_ACTION": "Instruction Writer regroups paragraph 2 into operational families without deleting distinct graded constraints. While editing paragraph 1, drop the unsupported 'duplicate side output' current-state claim (frozen instruction-2). Do not relocate the engineering ask into session-contract.md.",
+        "RECHECK": "Cold Instruction Reviewer; Q4 is stale on instruction change."
+      },
+      {
+        "id": "cluster-3-documentation",
+        "question": "DOC-1/DOC-2 vs Comprehensive README-present / canonical task.toml extras vs TERMINUS §12",
+        "DECISION": "BOTH_PARTLY",
+        "PARTY_A": "Documentation Reviewer DOC-1/DOC-2 and TERMINUS_3_AI_INSTRUCTIONS.md §12",
+        "PARTY_B": "Comprehensive RC-STRUCT-001 README present and RC-META-001 canonical task.toml extras not required",
+        "CONTROLLING_RULE_OR_EVIDENCE": "TERMINUS_3_AI_INSTRUCTIONS.md §12: README is required human documentation for difficulty rationale, solution approach, and verification approach, not provided to agents. TERMINUS §4 canonical task.toml has no difficulty_explanation/solution_explanation/verification_explanation fields. Comprehensive correctly resolved the snapshot-vs-canonical extras conflict in favor of current Edition 3 authority. Documentation Reviewer owns README quality, not a new metadata schema.",
+        "SCOPE_RECONCILIATION": "Comprehensive is controlling that task.toml must not grow non-canonical explanation fields and that README.md exists. Documentation Reviewer / §12 are controlling that the README that exists must actually contain those three human explanations and must not copy the agent instruction or reveal oracle structure. DOC-1 is narrowed: README rewrite yes; task.toml extras no.",
+        "REASON": "Current README restates the ticket, says 'oracle copies of the defective modules', and claims 'semantic live-state checks only' with no trap/invariants/scenario families. That fails §12 regardless of file presence. Adding snapshot explanation fields to task.toml would conflict with the canonical shape Comprehensive correctly followed.",
+        "REQUIRED_ACTION": "Rewrite README.md for difficulty, solution approach, and verification scenario families; remove instruction echo and the oracle-module sentence; replace the live-state-only slogan (DOC-3). Do not add task.toml explanation fields.",
+        "RECHECK": "Cold Engineering Documentation Reviewer on the new README only."
+      },
+      {
+        "id": "cluster-4-instruction-vs-verifier",
+        "question": "Whether Instruction regroup vs Verifier extra tests are compatible scopes (BOTH_PARTLY) or a fairness conflict",
+        "DECISION": "BOTH_PARTLY",
+        "PARTY_A": "Instruction Reviewer regroup of paragraph 2 without deleting requirements",
+        "PARTY_B": "Verifier Engineer extra tests for VE-01..VE-05",
+        "CONTROLLING_RULE_OR_EVIDENCE": "PRE_LLMAJ Stage E: Instruction vs Verifier is a fairness conflict only when Instruction asks to remove details the Verifier needs. INSTRUCTION_POLICY: regroup without deleting legitimate requirements. The frozen Instruction Reviewer replacement still names session-contract.md, omit-source exit 2 before journal/output touch, --input event-time tie-break, catalog session_gap overlay, rejects.jsonl, journal persist, and warehouse leave-alone — the same constraints VE-01..VE-05 grade.",
+        "SCOPE_RECONCILIATION": "Compatible scopes. Instruction repair changes solver-facing grouping. Verifier repair adds assertions for already-stated contract/instruction rules. Neither requires the other to drop work. A fairness conflict would exist only if a later instruction rewrite omitted CLI/tie-break/omit-source/catalog/reject/watermark constraints the new tests grade.",
+        "REASON": "Inspected instruction-1 replacement does not delete graded constraints. VE extra tests do not invent hidden requirements; they make stated contract rules fail closed. Producers can apply both slices.",
+        "REQUIRED_ACTION": "Apply both repairs. Instruction Writer must preserve the material requirement list in the frozen Instruction Reviewer output. Verifier Engineer must not require instruction.md to enumerate each new test name or fixture.",
+        "RECHECK": "After both slices, Instruction Reviewer confirms requirements preserved; Verifier Engineer confirms the five gaps are now discriminating; Q4 confirms bidirectional alignment without a new phantom-spec."
+      }
+    ],
+    "CONTROLLING_FINDING_IDS": [
+      "VE-01",
+      "VE-02",
+      "VE-03",
+      "VE-04",
+      "VE-05",
+      "instruction-1",
+      "DOC-1-README-ONLY",
+      "DOC-2"
+    ],
+    "REJECTED_OR_NARROWED": [
+      "Comprehensive APPROVE does not control any of the four clusters.",
+      "Q4 LOW Q4-A02..A05 do not control VE-01/VE-03/VE-04/VE-05.",
+      "Q4 R_CONFIG_KNOBS complete does not control VE-02.",
+      "DOC-1 task.toml explanation fields are rejected; README portion is upheld.",
+      "Q4 INSTRUCTION_SHAPE PASS does not waive instruction-1."
+    ],
+    "FAIRNESS_CONFLICT": "NO",
+    "UNRESOLVED": []
+  }
+}

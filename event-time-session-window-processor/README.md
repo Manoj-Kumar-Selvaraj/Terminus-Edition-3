@@ -1,14 +1,12 @@
 # event-time-session-window-processor
 
-Repair the inherited Python event-time sessionizer so tenant-keyed sessions, watermarks, lateness, gap/duration closes, and journal restart agree with `/app/sessions/docs/session-contract.md`.
+A gap close that looks right on a sorted one-tenant file can still mix tenants, treat a too-late straggler as an extend, or rewind the watermark after a bounce. Empty or invalid CLI use must not move the journal. Hardness is that coupling, not file volume.
 
-## Layout
+Keep the Python processor and journal protocol. Sessions are event-time, tenant+user keyed, half-open. Watermark is max observed minus allowed lateness and never steps back; open sessions reload so a later in-gap event extends. `--input` uses the contract tie-break; `--feed` keeps file order. Fail closed to rejects. `--reset-output` may wipe side files, not journal or in-flight sessions. Catalog overlays gap for contracted tenants; the warehouse dump stays untouched; last_run/ops-report refresh from that catalog.
 
-- `environment/sessions/` — processor, contract, fixtures, warehouse catalog, operator CLI
-- `solution/` — oracle copies of the defective modules plus `solve.sh`
-- `tests/` — separate verifier image; semantic live-state checks only
+The verifier drives the submitted `run-sessions` CLI on isolated live state. Families: unknown/missing flags leave journal and outputs untouched; empty and zero-event runs do not append watermarks; gap, max duration, and allowed lateness follow `processor.json`; `--input` sort/tie-break versus `--feed` arrival; tenant isolation; restart prefix plus nondecreasing watermark and open-session extend; late-allowed versus TOO_LATE versus rejects; warehouse dump unchanged; catalog-backed ops-report and enterprise versus non-enterprise gap overlay. Presence checks for the CLI and contract exist alongside those live-state cases.
 
-The warehouse click dump is generated at image build from `sessions/tools/generate_seed.py` into `/app/sessions/warehouse`.
+The warehouse click dump is generated at image build from `sessions/tools/generate_seed.py` into `/app/sessions/warehouse`. Reference entrypoint: `solution/solve.sh`.
 
 ## Local Harbor
 
@@ -19,4 +17,4 @@ stb harbor run -a oracle -p Terminus-Edition-3/event-time-session-window-process
 stb harbor run -a nop -p Terminus-Edition-3/event-time-session-window-processor -o /tmp/e3-jobs
 ```
 
-Expect oracle reward `1` and NOP reward `0`.
+Oracle reward 1, NOP 0.

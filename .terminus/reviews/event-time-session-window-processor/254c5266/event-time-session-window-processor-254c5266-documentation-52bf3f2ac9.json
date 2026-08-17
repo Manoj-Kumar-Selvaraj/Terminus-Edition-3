@@ -1,0 +1,135 @@
+{
+  "schema_version": "3.0",
+  "role": "Engineering Documentation Reviewer",
+  "review_id": "event-time-session-window-processor-254c5266-documentation-52bf3f2ac9",
+  "task": "event-time-session-window-processor",
+  "task_commit": "254c52666b0996833623464fcbf3f72029bfdead",
+  "control_plane_commit": "d701f55d6d8c8bcde59cde211c5ae647fc45549d",
+  "protocol_policy_version": "2.2",
+  "prompt_policy_version": "2.2",
+  "role_policy_version": "1.0",
+  "role_contract_hash": "d775a45de3eca4ad26021c2d0f0e69ff819739533ffa97c013a1fda41f13d12e",
+  "context_packet": ".terminus/reviews/event-time-session-window-processor/254c5266/event-time-session-window-processor-254c5266-documentation-52bf3f2ac9.packet.json",
+  "verdict": "REVISE",
+  "confidence": "HIGH",
+  "evidence_status": "SUFFICIENT",
+  "summary": "README and task.toml do not give a reviewer the required difficulty, solution, or verification explanations. The README restates the agent ticket, lists layout/Harbor commands, and claims 'semantic live-state checks only' while the suite also asserts paths, CLI language, config keys, and warehouse size. Write the three metadata explanations and replace the README with the actual reasoning trap, architectural invariants, and scenario families that catch partial fixes.",
+  "evidence": [
+    {
+      "type": "file",
+      "ref": "event-time-session-window-processor/README.md",
+      "observation": "23-line README: instruction restatement (tenant-keyed sessions, watermarks, lateness, gap/duration closes, journal restart vs session-contract.md), layout bullets including 'oracle copies of the defective modules', warehouse seed note, Harbor oracle/NOP commands. No reasoning trap, no solution invariants, no verification scenario families."
+    },
+    {
+      "type": "file",
+      "ref": "event-time-session-window-processor/task.toml",
+      "observation": "No difficulty_explanation, solution_explanation, or verification_explanation fields. Metadata stops at tags/languages/difficulty/hours/artifacts plus author/verifier/agent/environment tables."
+    },
+    {
+      "type": "rule",
+      "ref": "TERMINUS_3_AI_INSTRUCTIONS.md#12-README.md",
+      "observation": "README is required human documentation for difficulty rationale, solution approach, and verification approach; it must not copy the agent instruction or reveal oracle details."
+    },
+    {
+      "type": "rule",
+      "ref": ".terminus/agents/PROMPTS.md#documentation-writer",
+      "observation": "Difficulty must name the interacting-invariant / partial-fix trap; solution must stay architectural; verification must describe behavioral scenario families that distinguish plausible wrong behavior."
+    },
+    {
+      "type": "rule",
+      "ref": ".terminus/reviewers/HUMAN_WRITING_CALIBRATION.md",
+      "observation": "Generic coverage slogans and feature inventories are not difficulty/verification explanations. Human docs state what partial fix fails and which scenario families expose it."
+    },
+    {
+      "type": "test",
+      "ref": "event-time-session-window-processor/tests/test_outputs.py",
+      "observation": "Docstrings cover fail-closed CLI, empty/zero-event journal freeze, half-open gap close, --input sort/tie-break vs --feed arrival, tenant isolation, restart extend vs nondecreasing watermark, config-driven gap/duration/lateness, late-allowed vs TOO_LATE, rejects, warehouse immutability, catalog ops-report and enterprise gap overlay, plus presence checks for bin/contract/Python CLI/config keys/output paths."
+    }
+  ],
+  "findings": [
+    {
+      "id": "DOC-1",
+      "severity": "BLOCKER",
+      "status": "OBSERVED",
+      "criterion": "README and Difficulty/Solution/Verification explanations must exist, be evidence-backed, and be useful to a reviewer",
+      "evidence_refs": [
+        "event-time-session-window-processor/README.md",
+        "event-time-session-window-processor/task.toml",
+        "TERMINUS_3_AI_INSTRUCTIONS.md#12-README.md",
+        ".terminus/agents/PROMPTS.md#documentation-writer"
+      ],
+      "why_it_matters": "A reviewer cannot judge hardness, the intended repair, or how tests separate correct from plausible-wrong work. Empty explanations are not HIGH quality and cannot support PASS.",
+      "minimal_remediation": "Add difficulty_explanation, solution_explanation, and verification_explanation to task.toml. Expand README with the same three reviewer topics. Name the restart/order/tenant/watermark trap, the architectural invariants, and the live-CLI scenario families; do not claim trial-proven difficulty.",
+      "regression_risk": "Over-complete explanations that walk oracle files or name holdout fixtures would leak solution/verifier internals."
+    },
+    {
+      "id": "DOC-2",
+      "severity": "HIGH",
+      "status": "OBSERVED",
+      "criterion": "README must not copy the agent instruction or reveal oracle details",
+      "evidence_refs": [
+        "event-time-session-window-processor/README.md",
+        "TERMINUS_3_AI_INSTRUCTIONS.md#12-README.md"
+      ],
+      "why_it_matters": "The opening sentence inventories the ticket. Layout then points at 'oracle copies of the defective modules'. That is instruction echo plus oracle structure, not reviewer documentation.",
+      "minimal_remediation": "Drop the instruction paraphrase and the oracle-module sentence. Keep warehouse-seed provenance and local Harbor commands if useful. Point solution/solve.sh only as the reference entrypoint, without describing copied defective modules.",
+      "regression_risk": "A file-by-file oracle walkthrough would be worse than the current leak."
+    },
+    {
+      "id": "DOC-3",
+      "severity": "MEDIUM",
+      "status": "OBSERVED",
+      "criterion": "Verification claims must match actual verifier behavior and must not substitute slogans for scenario families",
+      "evidence_refs": [
+        "event-time-session-window-processor/README.md",
+        "event-time-session-window-processor/tests/test_outputs.py",
+        ".terminus/reviewers/HUMAN_WRITING_CALIBRATION.md"
+      ],
+      "why_it_matters": "'semantic live-state checks only' overclaims. The suite does drive live CLI state, but it also asserts bin/contract presence, Python entrypoint, config keys, output paths, and warehouse size. The phrase also skips which wrong solutions the families catch.",
+      "minimal_remediation": "Describe scenario families (fail-closed CLI, journal freeze on empty input, event-time vs feed order, tenant isolation, restart watermark/open-session, config knobs, late vs reject, warehouse/catalog). Do not say 'only' live-state or 'comprehensive'.",
+      "regression_risk": "Listing test function names or holdout records would leak the grader."
+    }
+  ],
+  "missing_evidence": [],
+  "change_scope": [
+    "event-time-session-window-processor/README.md",
+    "event-time-session-window-processor/task.toml difficulty_explanation/solution_explanation/verification_explanation"
+  ],
+  "do_not_change": [
+    "event-time-session-window-processor/instruction.md",
+    "event-time-session-window-processor/environment/",
+    "event-time-session-window-processor/tests/",
+    "event-time-session-window-processor/solution/"
+  ],
+  "next_gate": "Documentation Writer revises README.md and task.toml explanations; open a new Engineering Documentation Reviewer packet on the resulting task commit.",
+  "role_output": {
+    "DIFFICULTY_QUALITY": "LOW",
+    "SOLUTION_QUALITY": "LOW",
+    "VERIFICATION_QUALITY": "LOW",
+    "AI_TEMPLATE_SIGNAL": "MEDIUM",
+    "UNSUPPORTED_CLAIMS": [
+      "README 'semantic live-state checks only' is false as an exclusive claim: tests also assert CLI/bin/contract presence, Python entrypoint, config keys, output paths, and warehouse scale."
+    ],
+    "BOILERPLATE": [
+      "Opening feature inventory of sessions/watermarks/lateness/gap/duration/journal vs the contract.",
+      "Layout path catalog (environment/, solution/, tests/).",
+      "Standard Harbor oracle/NOP command pair plus 'Expect oracle reward 1 and NOP reward 0' with no NOP-failure reason."
+    ],
+    "CONTRADICTIONS": [
+      "README says the verifier is semantic live-state checks only; test docstrings include structural presence checks alongside live CLI/state assertions."
+    ],
+    "REQUIRED_CHANGES": [
+      "Add task.toml difficulty_explanation, solution_explanation, and verification_explanation.",
+      "Rewrite README so a reviewer sees the coupled event-time/restart/tenant trap, architectural invariants, and verification scenario families.",
+      "Remove instruction paraphrase and 'oracle copies of the defective modules'.",
+      "Replace 'semantic live-state checks only' with an accurate scenario-family description.",
+      "Do not claim measured/trial-proven difficulty; do not name hidden fixtures or oracle module paths."
+    ],
+    "REPLACEMENT_TEXT": {
+      "difficulty_explanation": "A tidy one-tenant batch can close correctly while restart, arrival order, and tenant keying still disagree. Sorting --input does not fix --feed; a same user_id under two tenants is not one session; an in-gap restart extend can still journal a lower watermark; empty or invalid invocations must not advance the journal.",
+      "solution_explanation": "Keep the Python processor and journal protocol. Sessions are event-time, tenant+user keyed, half-open. Watermark is max observed minus allowed lateness and never steps back; open sessions reload so a later in-gap event extends. --input uses the contract tie-break; --feed keeps file order. Fail closed to rejects. --reset-output may wipe side files, not journal or in-flight sessions. Catalog overlays gap for contracted tenants; the warehouse dump stays untouched; last_run/ops-report refresh from that catalog.",
+      "verification_explanation": "The verifier drives the submitted run-sessions CLI on isolated live state. Families: unknown/missing flags leave journal and outputs untouched; empty and zero-event runs do not append watermarks; gap, max duration, and allowed lateness follow processor.json; --input sort/tie-break versus --feed arrival; tenant isolation; restart prefix plus nondecreasing watermark and open-session extend; late-allowed versus TOO_LATE versus rejects; warehouse dump unchanged; catalog-backed ops-report and enterprise gap overlay.",
+      "readme": "Repair the inherited event-time sessionizer under /app/sessions so tenant+user sessions, watermarks, lateness, and journal restart stay consistent with /app/sessions/docs/session-contract.md.\n\nThe trap is coupled state: a gap close that looks right on a sorted one-tenant file can still mix tenants, treat a too-late straggler as an extend, or rewind the watermark after a bounce. Empty or invalid CLI use must not move the journal. The repair keeps the Python processor and journal protocol, treats persisted watermark/open-session state as restart authority, and leaves /app/sessions/warehouse as the baked click dump (generated at image build by sessions/tools/generate_seed.py).\n\nVerifier runs the submitted CLI against independent live states. It checks fail-closed flags, journal freeze on empty input, config-driven gap/duration/lateness, input-vs-feed ordering, tenant isolation, restart monotonicity, late/reject side outputs, warehouse immutability, and catalog-backed ops reports.\n\nLocal Harbor: stb harbor run -a oracle|nop -p Terminus-Edition-3/event-time-session-window-processor -o /tmp/e3-jobs. Oracle reward 1, NOP 0."
+    }
+  }
+}

@@ -1,0 +1,162 @@
+{
+  "schema_version": "3.0",
+  "role": "Difficulty Reviewer",
+  "review_id": "event-time-session-window-processor-254c5266-difficulty-design-8c7e0b90a5",
+  "task": "event-time-session-window-processor",
+  "task_commit": "254c52666b0996833623464fcbf3f72029bfdead",
+  "control_plane_commit": "d701f55d6d8c8bcde59cde211c5ae647fc45549d",
+  "protocol_policy_version": "2.2",
+  "prompt_policy_version": "2.2",
+  "role_policy_version": "1.0",
+  "role_contract_hash": "d80763afaced63972ac6b4eaa06bfc9779fd06dc42674f5d27122ddc2928c290",
+  "context_packet": ".terminus/reviews/event-time-session-window-processor/254c5266/event-time-session-window-processor-254c5266-difficulty-design-8c7e0b90a5.packet.json",
+  "verdict": "PASS",
+  "confidence": "MEDIUM",
+  "evidence_status": "SUFFICIENT",
+  "summary": "Pre-trial difficulty design is genuine coupled event-time session reasoning, not clerical file volume or obscure trivia. Session identity, pre-update watermark lateness, monotonic journal restart, CLI fail-closed mutation order, --input vs --feed gap semantics, and catalog gap overlay interact so local patches stay globally wrong. Official GPT×5+Claude×5 tier is UNMEASURED / NOT_MEASURABLE.",
+  "evidence": [
+    {
+      "type": "file",
+      "ref": "event-time-session-window-processor/instruction.md",
+      "observation": "Work request states interacting end-state invariants (event-time sessions, tenant+user keys, gap/lateness/watermark, journal restart, CLI exit 2 before mutation, catalog overlay, empty-input no watermark advance) without naming defective modules or a repair recipe."
+    },
+    {
+      "type": "file",
+      "ref": "event-time-session-window-processor/environment/sessions/docs/session-contract.md",
+      "observation": "Binding contract sequences lateness against the pre-update watermark, then max_observed/journal, then watermark-triggered closes; restart must restore seq/max_observed/opens with nondecreasing journaled watermark_ms."
+    },
+    {
+      "type": "file",
+      "ref": "event-time-session-window-processor/environment/sessions/notes/oncall.md",
+      "observation": "Incident notes mixed-tenant same user_id, late events classified on-time after a high anchor, journal rewrite/seq stuck at 1, and --reset-output wiping the journal—symptoms that must be reconciled together, not a file checklist."
+    },
+    {
+      "type": "file",
+      "ref": "event-time-session-window-processor/environment/sessions/logs/processor-bounce.log",
+      "observation": "Captured run shows journal rewrite path with seq=1, f3/f4 classified on_time after a 100000 anchor, restart restore from a collapsed max_observed, --reset-output clearing the journal, and an unknown flag still creating watermark.journal."
+    },
+    {
+      "type": "file",
+      "ref": "event-time-session-window-processor/environment/sessions/src/keys/session_key.py",
+      "observation": "Starter drops tenant_id and keys only on user_id, so acme/beta u1 share one session; fixing this alone does not restore late-vs-on-time or journal monotonicity."
+    },
+    {
+      "type": "file",
+      "ref": "event-time-session-window-processor/environment/sessions/src/runtime/watermark_track.py",
+      "observation": "record() assigns the current event_time instead of observe(max, event), so a later low timestamp can drop max_observed even if classify order is later repaired."
+    },
+    {
+      "type": "file",
+      "ref": "event-time-session-window-processor/environment/sessions/src/engine/pipeline.py",
+      "observation": "Starter records/updates max_observed before classify_lateness and defaults use_arrival_gap=True, violating the contract's compare-then-update order and event-time gap rule."
+    },
+    {
+      "type": "file",
+      "ref": "event-time-session-window-processor/environment/sessions/src/state/journal.py",
+      "observation": "append_journal overwrites the file with seq always 1; load can restore max_observed, but restart still cannot keep prefix, seq, or nondecreasing watermarks."
+    },
+    {
+      "type": "file",
+      "ref": "event-time-session-window-processor/environment/sessions/src/cli.py",
+      "observation": "Runtime touch and --reset-output journal wipe happen before argparse, so unknown/missing flags mutate state; CLI also always passes use_arrival_gap=True even for --input."
+    },
+    {
+      "type": "file",
+      "ref": "event-time-session-window-processor/environment/sessions/src/windows/assign.py",
+      "observation": "On-time close still has an arrival-index gap path; leaving CLI/pipeline use_arrival_gap true makes --input event-time sort a local fix that still gap-closes wrong."
+    },
+    {
+      "type": "file",
+      "ref": "event-time-session-window-processor/environment/sessions/src/tenancy/policy.py",
+      "observation": "Catalog enterprise overlay of session_gap_ms is already wired; a solver who globally retunes processor.json gap to 45000 heals the catalog holdout and breaks lab gap closes."
+    },
+    {
+      "type": "file",
+      "ref": "event-time-session-window-processor/solution/solve.sh",
+      "observation": "Oracle replaces five interacting modules (session_key, journal, pipeline, cli, watermark_track) then drives the public CLI—not a golden-output dump."
+    },
+    {
+      "type": "test",
+      "ref": "event-time-session-window-processor/tests/test_outputs.py",
+      "observation": "Independent F2P/P2P families cover CLI fail-closed, half-open gap, tenant isolation, journal seq/prefix/monotonicity, late-allowed vs TOO_LATE, restart, config mutation, --input tie-break vs --feed order, catalog enterprise idle-close, and holdout sessions; presence/warehouse checks are ancillary, not the scored hardness."
+    }
+  ],
+  "findings": [
+    {
+      "id": "DD-1",
+      "severity": "LOW",
+      "status": "OBSERVED",
+      "criterion": "official_tier_unmeasured",
+      "evidence_refs": [
+        ".terminus/reviews/event-time-session-window-processor/254c5266/event-time-session-window-processor-254c5266-difficulty-design-8c7e0b90a5.packet.json"
+      ],
+      "why_it_matters": "Packet state is PRE_LLMAJ and Harbor LLMaJ plus official 10 trials are deferred; no complete-run pass rate or per-test solvability exists, so DIFFICULTY_VERDICT cannot be a final Edition 3 tier.",
+      "minimal_remediation": "After Pre-LLMaJ/Harbor maturity, run GPT-5.5 ×5 and Claude Opus 4.8 ×5 and set DIFFICULTY_VERDICT from the combined complete-run mean; do not invent trial stats now.",
+      "regression_risk": "None for design PASS; empirical tier may differ from this design judgment."
+    },
+    {
+      "id": "DD-2",
+      "severity": "LOW",
+      "status": "INFERRED",
+      "criterion": "shortcut_risk_spec_and_incident_explicitness",
+      "evidence_refs": [
+        "event-time-session-window-processor/instruction.md",
+        "event-time-session-window-processor/environment/sessions/docs/session-contract.md",
+        "event-time-session-window-processor/environment/sessions/logs/processor-bounce.log"
+      ],
+      "why_it_matters": "Instruction plus contract enumerate the end-state rules, and the bounce log names journal rewrite, on_time misclassification, reset wiping the journal, and unknown-flag mutation. A strong agent may spec-implement the five modules without deep diagnosis. That raises shortcut risk but does not make the work clerical: watermark-before-classify, overwrite-vs-max, append-vs-rewrite, CLI parse order, and arrival-gap vs event-time still interact, and holdouts/config mutation reject hardcoded public fixtures.",
+      "minimal_remediation": "Keep coupled counterexamples and holdouts. Do not further flatten the instruction into a per-file repair list. Recalibrate shortcut risk from official trajectories if pass rate is unexpectedly high.",
+      "regression_risk": "Low if hidden holdouts and restart/lateness families remain independent."
+    },
+    {
+      "id": "DD-3",
+      "severity": "LOW",
+      "status": "OBSERVED",
+      "criterion": "surrounding_module_volume_is_not_hardness",
+      "evidence_refs": [
+        "event-time-session-window-processor/environment/sessions/src/engine/pipeline.py",
+        "event-time-session-window-processor/solution/solve.sh",
+        "event-time-session-window-processor/environment/sessions/src/tenancy/policy.py"
+      ],
+      "why_it_matters": "The agent tree contains many already-correct helpers (classify, close, catalog overlay, ingest order). Difficulty is not the LOC count. A solver who hunts every module may waste time, but the minimum successful chain is diagnosis of the five coupled defects plus contract-faithful event-time behavior.",
+      "minimal_remediation": "Do not add extra unrelated files to inflate perceived difficulty. Do not treat warehouse dump size as a reasoning bottleneck.",
+      "regression_risk": "None."
+    }
+  ],
+  "missing_evidence": [
+    "Official GPT-5.5 ×5 complete-run results",
+    "Official Claude Opus 4.8 ×5 complete-run results",
+    "Combined 10-trial per-test solvability matrix and trajectories"
+  ],
+  "change_scope": [],
+  "do_not_change": [
+    "Do not collapse tenant key, watermark update order, journal append/seq, CLI fail-closed mutation, and --input vs --feed gap semantics into a single-module bug to chase early pass rate.",
+    "Do not treat surrounding helper/warehouse LOC as the difficulty signal.",
+    "Do not assign a final Edition 3 tier before combined official 10 trials."
+  ],
+  "next_gate": "Continue Pre-LLMaJ / Harbor path; defer official model trials for empirical tier",
+  "role_output": {
+    "MODE": "PRE_TRIAL",
+    "TRIAL_SET": "PRE_TRIAL",
+    "REASONING_DEPTH": "HIGH",
+    "REASONING_CHAIN_ESTIMATE": [
+      "Diagnose mixed-tenant sessions, backward/rewritten watermark journal, late events classified on-time, --reset-output wiping journal, and unknown-flag mutation from oncall, bounce log, contract, and public CLI runs",
+      "Restore session identity as (tenant_id, user_id) so same user_id under different tenants never share opens, late-join eligibility, or closes",
+      "Classify lateness against the pre-update comparison watermark, then observe max_observed with a true max so a later low event cannot drop the watermark or journal it backwards",
+      "Persist watermark.journal as append-only increasing seq; reload next_seq and max_observed; keep --reset-output from touching journal or open-session snapshot",
+      "Parse/validate CLI before any journal or output mutation; unknown flags or omitted --input/--feed/--empty-check exit 2; --input event-time tie-break vs --feed file order; event-time gap not arrival-index gap",
+      "Honor processor.json knobs plus catalog enterprise session_gap overlay for watermark idle close; empty input leaves sessions/late empty without journal advance; reject malformed into rejects.jsonl; refresh last_run.json and ops-report.json from the warehouse catalog without rewriting the click dump"
+    ],
+    "SHORTCUT_RISK": "MEDIUM",
+    "CLERICAL_DIFFICULTY_RISK": "LOW",
+    "COMPLETE_PASSES": "NOT_MEASURED_PRETRIAL",
+    "COMPLETE_PASS_RATE": "NOT_MEASURED_PRETRIAL",
+    "PER_TEST_COVERAGE": "Oracle/NOP only; official 10-trial solvability not yet measured",
+    "ZERO_OF_TEN_TESTS": "NOT_MEASURED_PRETRIAL",
+    "TRAJECTORY_FINDINGS": [],
+    "DIFFICULTY_VERDICT": "NOT_MEASURABLE",
+    "OFFICIAL_TIER": "UNMEASURED",
+    "BLOCKING_FINDING_IDS": [],
+    "ADVISORY_FINDING_IDS": ["DD-1", "DD-2", "DD-3"]
+  }
+}

@@ -1,0 +1,145 @@
+{
+  "schema_version": "3.0",
+  "role": "Instruction Reviewer",
+  "review_id": "event-time-session-window-processor-254c5266-instruction-edf7356de4",
+  "task": "event-time-session-window-processor",
+  "task_commit": "254c52666b0996833623464fcbf3f72029bfdead",
+  "control_plane_commit": "d701f55d6d8c8bcde59cde211c5ae647fc45549d",
+  "protocol_policy_version": "2.2",
+  "prompt_policy_version": "2.2",
+  "role_policy_version": "1.0",
+  "role_contract_hash": "ce36982fb77ce80b4c8f53015d566f5bcfb3288c7408243b9a807b8856930703",
+  "context_packet": ".terminus/reviews/event-time-session-window-processor/254c5266/event-time-session-window-processor-254c5266-instruction-edf7356de4.packet.json",
+  "verdict": "REVISE",
+  "confidence": "HIGH",
+  "evidence_status": "SUFFICIENT",
+  "summary": "instruction.md opens as a real on-call handoff, but paragraph 2 is a 162-word compressed rubric: one clause per test-map family (CLI, input/feed order, reset, tenant key, gap/late/watermark, config, journal/restart, idempotent digests, empty input, rejects, ops-report, catalog overlay, warehouse). Material requirements are present and the contract is a legitimate spec, not a loophole. Regroup around operational families without deleting those requirements.",
+  "evidence": [
+    {
+      "type": "file",
+      "ref": "event-time-session-window-processor/instruction.md",
+      "observation": "231 words, 2 paragraphs, 0 bullets, 0 backticks, no task name. Paragraph 1 (69 words) is an incident-first repair ask. Paragraph 2 (162 words, 11 sentences) chains CLI exit-2, --input tie-break, --feed file order, --reset-output, tenant+user half-open sessions, gap/late/watermark, processor.json, journal persist, identical-run digests, empty input, rejects.jsonl, last_run/ops-report, catalog session_gap overlay, and warehouse leave-alone."
+    },
+    {
+      "type": "file",
+      "ref": "event-time-session-window-processor/environment/sessions/docs/session-contract.md",
+      "observation": "Ordinary binding technical contract: paths, CLI, input/output schemas, watermark formula, lateness, restart journal, idempotent rerun, empty input, catalog overlay. Not a second prompt hiding the task goal. Instruction already restates most of those families inline, which is reverse-outline rather than a spec-file loophole."
+    },
+    {
+      "type": "file",
+      "ref": "event-time-session-window-processor/environment/sessions/notes/oncall.md",
+      "observation": "Supports mixed-tenant closes, late click treated as on-time, missing late.jsonl straggler, --reset-output wiping watermark.journal, and seq stuck at 1. Does not mention duplicate side-file output."
+    },
+    {
+      "type": "file",
+      "ref": "event-time-session-window-processor/environment/sessions/logs/processor-bounce.log",
+      "observation": "Corroborates tenants_seen=acme,beta, late event classified on_time, journal rewrite/seq=1, watermark moving to -9000, --reset-output clearing the journal, and unknown flag still creating the journal."
+    },
+    {
+      "type": "test",
+      "ref": ".terminus/designs/event-time-session-window-processor-test-map.json",
+      "observation": "Requirement labels R_CLI, R_INPUT_ORDER, R_FEED_ORDER, R_RESET, R_TENANT, R_GAP, R_LATE, R_WATERMARK, R_CONFIG, R_JOURNAL, R_RESTART, R_IDEMPOTENT, R_EMPTY, R_REJECT, R_OPS, R_CATALOG_GAP, R_WAREHOUSE, R_CONTRACT, R_SCHEMA map almost clause-for-clause onto paragraph 2. Used as labels only."
+    },
+    {
+      "type": "rule",
+      "ref": ".terminus/agents/INSTRUCTION_POLICY.md",
+      "observation": "Jira/Slack handoff forbids a grading-rubric inventory; reverse-outline test forbids one-clause-per-verifier-family cadence; completeness still requires keeping those material requirements and regrouping them. Spec-file loophole is not triggered because the engineering ask stays in instruction.md."
+    },
+    {
+      "type": "rule",
+      "ref": ".terminus/reviewers/HUMAN_WRITING_CALIBRATION.md",
+      "observation": "Paragraph 2 matches synthetic-completeness and one-sentence-per-rubric-item signals. PASS needs HUMAN_SIGNAL=HIGH, AI_TEMPLATE_SIGNAL=LOW, and reverse-outline/compressed-rubric no higher than LOW."
+    },
+    {
+      "type": "public_reference",
+      "ref": ".terminus/GOLDEN_TASKS.md",
+      "observation": "wal-recovery-ordering, mvcc-lsm-compaction, and kv-live-surgery calibrate toward incident/invariant tickets rather than a packed acceptance inventory; this paragraph-2 cadence does not match that selection pattern."
+    }
+  ],
+  "findings": [
+    {
+      "id": "instruction-1",
+      "severity": "BLOCKER",
+      "status": "OBSERVED",
+      "criterion": "JIRA_SLACK_HANDOFF / REVERSE_OUTLINE_RISK / COMPRESSED_RUBRIC / HUMAN_GROUPING",
+      "evidence_refs": [
+        "event-time-session-window-processor/instruction.md",
+        ".terminus/designs/event-time-session-window-processor-test-map.json",
+        ".terminus/agents/INSTRUCTION_POLICY.md",
+        ".terminus/reviewers/HUMAN_WRITING_CALIBRATION.md"
+      ],
+      "why_it_matters": "A competent engineer would get a ticket that states the bounce/late/tenant incident and points at the session contract, not a semicolon-chained acceptance list that reconstructs the requirement map. That shape is hidden-test leakage even when every requirement is legitimate.",
+      "minimal_remediation": "Keep paragraph 1. Rewrite paragraph 2 into a few operational families (CLI/usage, event-time session+config, durable journal/restart, side outputs+catalog/warehouse) that still name graded paths and easy-to-miss constraints. Do not delete distinct requirements or move the task goal into the contract.",
+      "regression_risk": "Over-delegation into session-contract.md would create a spec-file loophole; dropping CLI, empty-input, catalog overlay, or named output paths would create a completeness gap."
+    },
+    {
+      "id": "instruction-2",
+      "severity": "LOW",
+      "status": "OBSERVED",
+      "criterion": "CURRENT_STATE_EVIDENCE",
+      "evidence_refs": [
+        "event-time-session-window-processor/instruction.md",
+        "event-time-session-window-processor/environment/sessions/notes/oncall.md",
+        "event-time-session-window-processor/environment/sessions/logs/processor-bounce.log"
+      ],
+      "why_it_matters": "The ticket asserts 'duplicate side output' as an observed bounce symptom, but on-call notes and the captured log show journal rewrite/wipe, mixed tenants, and late misclassification instead.",
+      "minimal_remediation": "Drop 'duplicate side output' from the incident sentence, or keep identical-run digest stability only as a required end state.",
+      "regression_risk": "Removing the idempotent-rerun requirement entirely would under-specify a graded behavior; only the unsupported current-state wording should change."
+    }
+  ],
+  "missing_evidence": [],
+  "change_scope": [
+    "event-time-session-window-processor/instruction.md"
+  ],
+  "do_not_change": [
+    "Do not relocate the engineering objective or material requirements solely into session-contract.md to shorten the ticket.",
+    "Do not delete distinct CLI, empty-input, catalog-overlay, reject, restart, or named output-path requirements.",
+    "Do not add module-level bug ownership, oracle steps, or one-bullet-per-test inventories.",
+    "Do not edit tests/, solution/, or solver-visible contracts except if a later producer is separately authorized."
+  ],
+  "next_gate": "Instruction Writer regroup of paragraph 2; then a fresh cold Instruction Reviewer pass (instruction change also stales Q4)",
+  "role_output": {
+    "WORD_COUNT": 231,
+    "BULLET_COUNT": 0,
+    "HUMAN_SIGNAL": "MEDIUM",
+    "AI_TEMPLATE_SIGNAL": "MEDIUM",
+    "JIRA_SLACK_HANDOFF": "FAIL",
+    "REQUIREMENT_COMPLETENESS": "SUFFICIENT",
+    "INSTRUCTION_SHAPE": "PASS",
+    "REVERSE_OUTLINE_RISK": "HIGH",
+    "SPEC_FILE_LOOPHOLE": "NONE",
+    "IMPLEMENTATION_DIAGNOSIS_LEAKAGE": "NONE",
+    "CURRENT_STATE_EVIDENCE": "PASS",
+    "HUMAN_GROUPING": "LOW",
+    "COMPRESSED_RUBRIC": "HIGH",
+    "OVER_PRESCRIPTION": "NONE",
+    "MATERIAL_REQUIREMENTS_PRESERVED": [
+      "repair existing Python processor; keep journal protocol; do not switch languages",
+      "session-contract.md binding for event-time, schemas, lateness, gaps, restarts, CLI",
+      "run-sessions only; unknown flags or omitting --input/--feed/--empty-check exit 2 before journal/output mutation",
+      "--input event-time tie-break; --feed file order; --reset-output wipes side files only",
+      "event-time sessions keyed by tenant and user; half-open intervals",
+      "gap/late/watermark follow contract; knobs in processor.json including catalog session_gap overlay",
+      "persist watermark.journal and open-session state; watermark never steps backward",
+      "identical clean rerun keeps sessions.jsonl and late.jsonl digests; empty input does not advance watermark",
+      "malformed records fail closed into rejects.jsonl",
+      "successful runs refresh last_run.json and ops-report.json from warehouse catalog",
+      "leave /app/sessions/warehouse untouched"
+    ],
+    "UNNECESSARY_TEXT": [
+      "Paragraph 2 restates contract-owned CLI/schema/lateness/gap families as a packed acceptance inventory after already declaring the contract binding."
+    ],
+    "MISSING_CONTEXT": [
+      "open-session snapshot path is only 'open-session state'; /app/sessions/data/open_sessions.json is discoverable from the binding contract path table."
+    ],
+    "SUSPICIOUS_PHRASES": [
+      "duplicate side output (incident claim not in oncall/log)",
+      "must fail with exit 2 before any journal or output touch",
+      "must keep the same digests",
+      "must leave those empty without advancing the watermark",
+      "must refresh"
+    ],
+    "FAIRNESS_RISK": "LOW",
+    "REPLACEMENT_TEXT": "The click sessionizer under /app/sessions still looks fine on a tidy one-tenant sample, but late and out-of-order events plus a process bounce leave the wrong closes, mixed tenants, or a watermark journal that moves backwards. Repair the existing Python processor; don't move session logic into another language or throw away the journal protocol. Shift notes are in /app/sessions/notes/oncall.md and the captured run log is under /app/sessions/logs.\n\n- /app/sessions/docs/session-contract.md is binding for event-time semantics, schemas, lateness, gaps, restarts, and CLI. Knobs are /app/sessions/config/processor.json, including catalog session_gap overlay.\n- Drive work through /app/sessions/bin/run-sessions. Unknown flags, or omitting --input/--feed/--empty-check, must fail with exit 2 before any journal or output touch. --input uses the contract's event-time tie-break; --feed keeps file order; --reset-output may wipe the side files, not the journal or in-flight sessions.\n- Persist /app/sessions/data/watermark.journal and open-session state across restarts so the watermark never steps backward.\n- From a clean journal, a second identical run must keep the same digests for /app/sessions/output/sessions.jsonl and /app/sessions/output/late.jsonl. Empty input must leave those empty without advancing the watermark. Fail closed on malformed records into /app/sessions/output/rejects.jsonl.\n- Each successful run must refresh /app/sessions/data/last_run.json and /app/sessions/data/ops-report.json from the warehouse catalog. Leave /app/sessions/warehouse alone — that's the production click dump."
+  }
+}

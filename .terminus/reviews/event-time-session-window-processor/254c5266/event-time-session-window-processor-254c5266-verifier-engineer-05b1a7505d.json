@@ -1,0 +1,433 @@
+{
+  "schema_version": "3.0",
+  "role": "Verifier Engineer",
+  "review_id": "event-time-session-window-processor-254c5266-verifier-engineer-05b1a7505d",
+  "task": "event-time-session-window-processor",
+  "task_commit": "254c52666b0996833623464fcbf3f72029bfdead",
+  "control_plane_commit": "d701f55d6d8c8bcde59cde211c5ae647fc45549d",
+  "protocol_policy_version": "2.2",
+  "prompt_policy_version": "2.2",
+  "role_policy_version": "1.0",
+  "role_contract_hash": "16caaf27eb6f8f682e0da0f9e3f79183d2f07a84e33a6e421d8c10642a8117e4",
+  "context_packet": ".terminus/reviews/event-time-session-window-processor/254c5266/event-time-session-window-processor-254c5266-verifier-engineer-05b1a7505d.packet.json",
+  "verdict": "REVISE",
+  "confidence": "HIGH",
+  "evidence_status": "SUFFICIENT",
+  "summary": "The suite drives the live CLI and grades many event-time, restart, and catalog behaviors, and Harbor oracle/NOP rewards are 1.0/0.0. It still does not measure every solver-visible contract: the --input tie-break test is vacuous, allowed_lateness_ms is never perturbed, non-enterprise catalog overlay is untested, omitted CLI sources are not checked for output mutation, and malformed rejects are not shown to skip the watermark journal. Those gaps are easy to game, so this is not a PASS.",
+  "evidence": [
+    {
+      "type": "file",
+      "ref": "event-time-session-window-processor/instruction.md",
+      "observation": "Solver-visible work is repair of /app/sessions via /app/sessions/bin/run-sessions, with session-contract.md binding event-time, lateness, gaps, restarts, CLI, catalog overlay, rejects, ops artifacts, and warehouse non-mutation."
+    },
+    {
+      "type": "file",
+      "ref": "event-time-session-window-processor/environment/sessions/docs/session-contract.md",
+      "observation": "Binding contract specifies --input tie-break (event_time_ms then tenant_id, user_id, event_id), omit-source exit 2 before any journal/output touch, enterprise 45000 vs other catalog plans keeping processor.json gap, malformed lines not updating max_observed, empty-check rewriting last_run/ops-report, and no duplicate closes."
+    },
+    {
+      "type": "test",
+      "ref": "event-time-session-window-processor/tests/test_outputs.py",
+      "observation": "40 pytest functions run /app/sessions/bin/run-sessions against live state. Autouse _write_config/_clear_runtime isolates runtime files. Hidden fixtures under /tests/fixtures include holdouts. Several named tests do not actually assert the requirement in their docstring."
+    },
+    {
+      "type": "file",
+      "ref": "event-time-session-window-processor/tests/fixtures/tie_break.jsonl",
+      "observation": "Three events at the same event_time_ms for three different users (t0/t1/t2). Permuting that file cannot change per-user event_ids, so test_p2p_input_tie_break_stable cannot fail a wrong sort key."
+    },
+    {
+      "type": "file",
+      "ref": "event-time-session-window-processor/tests/fixtures/lateness_probe.jsonl",
+      "observation": "Anchor 100000 then behind 50000. test_f2p_config_lateness_marks_too_late writes the default allowed_lateness_ms=10000 rather than shrinking it; l2 is TOO_LATE for a wide band of lateness values, including a hardcoded 10000."
+    },
+    {
+      "type": "file",
+      "ref": "event-time-session-window-processor/tests/fixtures/catalog_enterprise.jsonl",
+      "observation": "Only t01 (enterprise in seed.sql) is probed for overlay. No standard/internal catalog tenant is shown to keep processor.json session_gap_ms under the same watermark bump."
+    },
+    {
+      "type": "file",
+      "ref": "event-time-session-window-processor/tests/test.sh",
+      "observation": "Creates /logs/verifier at runtime, installs nothing, runs pytest on test_outputs.py, writes binary reward 0/1 after pytest. No oracle/agent branching."
+    },
+    {
+      "type": "job",
+      "ref": "jobs/2026-08-17__13-59-38",
+      "observation": "Harbor oracle reward 1.0 on the current candidate. Oracle green does not imply requirement-complete tests."
+    },
+    {
+      "type": "job",
+      "ref": "jobs/2026-08-17__14-00-43",
+      "observation": "Harbor NOP reward 0.0 on the current candidate, so the suite as a whole discriminates the untouched starter."
+    }
+  ],
+  "findings": [
+    {
+      "id": "VE-01",
+      "severity": "HIGH",
+      "status": "OBSERVED",
+      "criterion": "vacuous-test",
+      "evidence_refs": [
+        "event-time-session-window-processor/tests/test_outputs.py",
+        "event-time-session-window-processor/tests/fixtures/tie_break.jsonl",
+        "event-time-session-window-processor/environment/sessions/docs/session-contract.md"
+      ],
+      "why_it_matters": "The contract's --input tie-break is a stated CLI requirement, but test_p2p_input_tie_break_stable only compares per-user event_ids on a fixture where each user has one event. File permutation cannot change that map, so any processing order, including unsorted file order, still passes.",
+      "minimal_remediation": "Use same-timestamp events that share a session key (or otherwise collide on the sort tuple) and assert the contract order (event_time_ms, tenant_id, user_id, event_id) plus permutation stability of that ordered membership.",
+      "regression_risk": "Low if the new case stays on --input and does not weaken feed-order coverage."
+    },
+    {
+      "id": "VE-02",
+      "severity": "HIGH",
+      "status": "OBSERVED",
+      "criterion": "weak-assertion",
+      "evidence_refs": [
+        "event-time-session-window-processor/tests/test_outputs.py",
+        "event-time-session-window-processor/tests/fixtures/lateness_probe.jsonl",
+        "event-time-session-window-processor/environment/sessions/docs/session-contract.md"
+      ],
+      "why_it_matters": "processor.json allowed_lateness_ms must be honored and changing knobs must change behavior. Gap and max duration are mutated; lateness is not. test_f2p_config_lateness_marks_too_late writes the default 10000 and still classifies l2 as TOO_LATE for many other lateness values, so a hardcoded 10000 passes.",
+      "minimal_remediation": "Read allowed_lateness_ms from the written config, mutate it across a threshold that flips l2 (or an equivalent pair) between on-time/late-but-allowed and TOO_LATE, and assert both sides.",
+      "regression_risk": "Low; existing feed_late TOO_LATE checks can stay as default-knob coverage."
+    },
+    {
+      "id": "VE-03",
+      "severity": "HIGH",
+      "status": "OBSERVED",
+      "criterion": "req-gap",
+      "evidence_refs": [
+        "event-time-session-window-processor/tests/test_outputs.py",
+        "event-time-session-window-processor/tests/fixtures/catalog_enterprise.jsonl",
+        "event-time-session-window-processor/environment/sessions/docs/session-contract.md",
+        "event-time-session-window-processor/environment/sessions/sql/seed.sql"
+      ],
+      "why_it_matters": "Catalog overlay is two-sided: enterprise uses 45000; every other catalog plan keeps processor.json gap. test_p2p_catalog_enterprise_gap_overlay only checks t01 stays open. Applying 45000 to all catalog tenants, including standard/internal rows such as t00, still passes.",
+      "minimal_remediation": "Add a parallel watermark-idle case for a non-enterprise catalog tenant (for example t00/standard) that must close under processor.json gap 30000 with the same bump event.",
+      "regression_risk": "Low; keep the t01 non-close assertion so enterprise overlay remains tested."
+    },
+    {
+      "id": "VE-04",
+      "severity": "HIGH",
+      "status": "OBSERVED",
+      "criterion": "req-gap",
+      "evidence_refs": [
+        "event-time-session-window-processor/tests/test_outputs.py",
+        "event-time-session-window-processor/instruction.md",
+        "event-time-session-window-processor/environment/sessions/docs/session-contract.md"
+      ],
+      "why_it_matters": "Omitting --input/--feed/--empty-check must exit 2 before any journal or output touch. test_f2p_missing_source_does_not_create_journal only asserts returncode 2 and that the journal file is absent. Creating sessions.jsonl, late.jsonl, rejects.jsonl, or open_sessions.json on a usage error still passes, unlike the unknown-flag tests.",
+      "minimal_remediation": "Mirror test_f2p_unknown_flag_leaves_journal_untouched: assert opens and the three side outputs are not created, and with pre-seeded files that they are not rewritten.",
+      "regression_risk": "Low; unknown-flag coverage already uses this shape."
+    },
+    {
+      "id": "VE-05",
+      "severity": "HIGH",
+      "status": "OBSERVED",
+      "criterion": "req-gap",
+      "evidence_refs": [
+        "event-time-session-window-processor/tests/test_outputs.py",
+        "event-time-session-window-processor/tests/fixtures/schema_rejects.jsonl",
+        "event-time-session-window-processor/environment/sessions/docs/session-contract.md"
+      ],
+      "why_it_matters": "Rejected malformed lines must not update max_observed_event_time_ms or the journal. Reject tests only inspect rejects.jsonl/late.jsonl/open membership. Journaling o4/m1/m3 or advancing watermark from them would still pass.",
+      "minimal_remediation": "After a mixed reject+valid feed, assert journal seq/count equals successfully parsed observations only and watermark/max_observed ignore malformed/negative lines.",
+      "regression_risk": "Low; do not drop REJECT_MALFORMED code/id checks."
+    },
+    {
+      "id": "VE-06",
+      "severity": "MEDIUM",
+      "status": "OBSERVED",
+      "criterion": "req-gap",
+      "evidence_refs": [
+        "event-time-session-window-processor/tests/test_outputs.py",
+        "event-time-session-window-processor/environment/sessions/docs/session-contract.md"
+      ],
+      "why_it_matters": "A successful run including --empty-check must rewrite last_run.json and ops-report.json from catalog.sqlite. test_p2p_ops_report_uses_warehouse_catalog only runs sample_basic; empty-check tests never read those artifacts.",
+      "minimal_remediation": "Assert last_run.warehouse.event_count, ops-report.catalog.available, and inventory.event_count after --empty-check as well.",
+      "regression_risk": "Low."
+    },
+    {
+      "id": "VE-07",
+      "severity": "MEDIUM",
+      "status": "OBSERVED",
+      "criterion": "weak-assertion",
+      "evidence_refs": [
+        "event-time-session-window-processor/tests/test_outputs.py",
+        "event-time-session-window-processor/environment/sessions/docs/session-contract.md"
+      ],
+      "why_it_matters": "The contract forbids duplicate closes for the same session identity and interval. Closed-session tests take closed[0] / hold_alice[0]. Duplicate extra lines would still pass, including the idempotent SHA-256 check, because both runs would emit the same duplicates.",
+      "minimal_remediation": "Assert unique (tenant_id, user_id, start_ms, end_ms) in sessions.jsonl on a gap-close fixture.",
+      "regression_risk": "Low."
+    },
+    {
+      "id": "VE-08",
+      "severity": "LOW",
+      "status": "OBSERVED",
+      "criterion": "vacuous-test",
+      "evidence_refs": [
+        "event-time-session-window-processor/tests/test_outputs.py"
+      ],
+      "why_it_matters": "Autouse _isolate always rewrites processor.json before test_p2p_config_keys, so that test cannot fail an agent-deleted knob set. test_p2p_output_paths asserts Path constants (SESSIONS.parent == ROOT/'output') that do not depend on processor output.",
+      "minimal_remediation": "Read the shipped config before rewriting it, or drop these as standalone tests and keep mutation/empty-check existence checks.",
+      "regression_risk": "Low; config mutation tests already cover the knobs."
+    },
+    {
+      "id": "VE-09",
+      "severity": "LOW",
+      "status": "OBSERVED",
+      "criterion": "phantom-spec",
+      "evidence_refs": [
+        "event-time-session-window-processor/tests/test_outputs.py",
+        "event-time-session-window-processor/instruction.md",
+        "event-time-session-window-processor/environment/sessions/docs/session-contract.md"
+      ],
+      "why_it_matters": "test_p2p_warehouse_at_least_10k enforces an unstated >=10000 line floor. Solver-visible text only requires leaving the inherited click dump unwiped. The after-run SHA-256 check already grades non-mutation.",
+      "minimal_remediation": "Drop the numeric floor or replace it with a hash/identity check against the transferred warehouse bytes.",
+      "regression_risk": "Low if warehouse_untouched_after_run remains."
+    },
+    {
+      "id": "VE-10",
+      "severity": "LOW",
+      "status": "OBSERVED",
+      "criterion": "implementation-coupling",
+      "evidence_refs": [
+        "event-time-session-window-processor/tests/test_outputs.py",
+        "event-time-session-window-processor/environment/sessions/bin/run-sessions",
+        "event-time-session-window-processor/instruction.md"
+      ],
+      "why_it_matters": "Keeping a Python processor is a stated outcome, but test_p2p_python_cli_entrypoint only greps 'python3' in the launcher. A python shebang or equivalent correct launcher can fail; a python3 wrapper around non-Python session logic can pass.",
+      "minimal_remediation": "Prefer a behavioral/runtime check that the operator entrypoint executes the Python package (for example module load or a language-forbidden alternative failing) rather than a single substring.",
+      "regression_risk": "Low; do not turn this into source-style module-name requirements."
+    }
+  ],
+  "missing_evidence": [],
+  "change_scope": [
+    "event-time-session-window-processor/tests/test_outputs.py",
+    "event-time-session-window-processor/tests/fixtures/ (add discriminating tie-break, lateness-mutation, non-enterprise catalog, and reject-watermark cases)"
+  ],
+  "do_not_change": [
+    "Do not add a callable end-to-end session solver inside tests/.",
+    "Do not weaken holdout, event-time gap, feed-order, late-but-allowed, restart, enterprise-overlay, or warehouse SHA-256 checks.",
+    "Do not replace live CLI/state assertions with source greps of engine internals."
+  ],
+  "next_gate": "Verifier repair then re-review",
+  "role_output": {
+    "REQUIREMENT_TEST_MATRIX": [
+      {
+        "REQ_ID": "REQ-01",
+        "REQUIREMENT": "Unknown flags exit 2 before mutating journal, open-session state, or outputs (including with --reset-output).",
+        "TESTS": [
+          "test_f2p_unknown_flag_leaves_journal_untouched",
+          "test_f2p_unknown_flag_with_reset_does_not_clear_journal"
+        ],
+        "COVERAGE": "COMPLETE"
+      },
+      {
+        "REQ_ID": "REQ-02",
+        "REQUIREMENT": "Omitting --input/--feed/--empty-check exits 2 before any journal or output touch.",
+        "TESTS": ["test_f2p_missing_source_does_not_create_journal"],
+        "COVERAGE": "PARTIAL"
+      },
+      {
+        "REQ_ID": "REQ-03",
+        "REQUIREMENT": "--input batches with the contract event-time tie-break: event_time_ms then (tenant_id, user_id, event_id) ascending.",
+        "TESTS": [
+          "test_f2p_input_sorts_before_gap_close",
+          "test_p2p_input_tie_break_stable"
+        ],
+        "COVERAGE": "PARTIAL"
+      },
+      {
+        "REQ_ID": "REQ-04",
+        "REQUIREMENT": "--feed preserves file/arrival order so out-of-order event times remain.",
+        "TESTS": ["test_f2p_feed_preserves_arrival_order"],
+        "COVERAGE": "COMPLETE"
+      },
+      {
+        "REQ_ID": "REQ-05",
+        "REQUIREMENT": "--reset-output truncates side files only; journal and in-flight sessions stay.",
+        "TESTS": ["test_f2p_reset_output_keeps_journal"],
+        "COVERAGE": "COMPLETE"
+      },
+      {
+        "REQ_ID": "REQ-06",
+        "REQUIREMENT": "Sessions are keyed by (tenant_id, user_id); same user_id must not merge across tenants.",
+        "TESTS": [
+          "test_f2p_tenant_isolation_same_user",
+          "test_f2p_open_snapshot_keeps_beta_u1",
+          "test_f2p_holdout_gap_and_tenant"
+        ],
+        "COVERAGE": "COMPLETE"
+      },
+      {
+        "REQ_ID": "REQ-07",
+        "REQUIREMENT": "Event-time half-open sessions; gap close uses end_ms = last_event_time_ms + session_gap_ms.",
+        "TESTS": [
+          "test_f2p_gap_close_half_open_end",
+          "test_f2p_input_sorts_before_gap_close",
+          "test_f2p_config_gap_honored",
+          "test_f2p_holdout_gap_and_tenant",
+          "test_f2p_closed_session_schema"
+        ],
+        "COVERAGE": "COMPLETE"
+      },
+      {
+        "REQ_ID": "REQ-08",
+        "REQUIREMENT": "Max duration: close at start_ms + max_session_duration_ms before accepting an out-of-span event.",
+        "TESTS": ["test_p2p_config_max_duration_close"],
+        "COVERAGE": "COMPLETE"
+      },
+      {
+        "REQ_ID": "REQ-09",
+        "REQUIREMENT": "Gap, duration, lateness, and watermark use event_time_ms; arrival index/wall-clock must not drive membership.",
+        "TESTS": [
+          "test_f2p_gap_close_half_open_end",
+          "test_f2p_input_sorts_before_gap_close",
+          "test_f2p_feed_preserves_arrival_order",
+          "test_f2p_holdout_gap_and_tenant"
+        ],
+        "COVERAGE": "COMPLETE"
+      },
+      {
+        "REQ_ID": "REQ-10",
+        "REQUIREMENT": "Honor /app/sessions/config/processor.json; changing session_gap_ms, allowed_lateness_ms, or max_session_duration_ms between runs must change behavior.",
+        "TESTS": [
+          "test_f2p_config_gap_honored",
+          "test_p2p_config_max_duration_close",
+          "test_f2p_config_lateness_marks_too_late",
+          "test_p2p_config_keys"
+        ],
+        "COVERAGE": "PARTIAL"
+      },
+      {
+        "REQ_ID": "REQ-11",
+        "REQUIREMENT": "Catalog-backed tenants overlay session_gap_ms: enterprise 45000; other catalog plans keep processor.json; non-catalog tenants keep all three knobs.",
+        "TESTS": ["test_p2p_catalog_enterprise_gap_overlay"],
+        "COVERAGE": "PARTIAL"
+      },
+      {
+        "REQ_ID": "REQ-12",
+        "REQUIREMENT": "Journal seq starts at 1; watermark_ms = max_observed - allowed_lateness (raw, may be negative); late events still observe; malformed lines do not; watermarks are non-decreasing across restarts.",
+        "TESTS": [
+          "test_f2p_journal_seq_starts_at_one",
+          "test_f2p_journal_append_keeps_prefix",
+          "test_f2p_journal_watermark_nondecreasing",
+          "test_f2p_watermark_formula_in_journal",
+          "test_f2p_restart_watermark_nondecreasing"
+        ],
+        "COVERAGE": "PARTIAL"
+      },
+      {
+        "REQ_ID": "REQ-13",
+        "REQUIREMENT": "Late-but-allowed joins the open session (last_event_time_ms increases only if newer); too-late goes to late.jsonl with TOO_LATE and comparison watermark_ms.",
+        "TESTS": [
+          "test_p2p_feed_late_allowed_joins_open",
+          "test_f2p_feed_too_late_side_output",
+          "test_f2p_late_record_schema",
+          "test_p2p_late_straggler_keeps_last_event_time"
+        ],
+        "COVERAGE": "COMPLETE"
+      },
+      {
+        "REQ_ID": "REQ-14",
+        "REQUIREMENT": "After watermark update, close idle sessions where last_event_time_ms + session_gap_ms <= W.",
+        "TESTS": [
+          "test_f2p_holdout_gap_and_tenant",
+          "test_p2p_catalog_enterprise_gap_overlay"
+        ],
+        "COVERAGE": "COMPLETE"
+      },
+      {
+        "REQ_ID": "REQ-15",
+        "REQUIREMENT": "Persist watermark.journal and open-session snapshot across process restarts so later in-gap events extend the reloaded session.",
+        "TESTS": [
+          "test_f2p_restart_extends_open_session",
+          "test_f2p_restart_watermark_nondecreasing"
+        ],
+        "COVERAGE": "COMPLETE"
+      },
+      {
+        "REQ_ID": "REQ-16",
+        "REQUIREMENT": "From a clean journal, a second identical --reset-output run keeps SHA-256 of sessions.jsonl and late.jsonl.",
+        "TESTS": ["test_f2p_idempotent_session_digest"],
+        "COVERAGE": "COMPLETE"
+      },
+      {
+        "REQ_ID": "REQ-17",
+        "REQUIREMENT": "--empty-check or zero-event input leaves sessions.jsonl and late.jsonl empty and does not advance the watermark journal.",
+        "TESTS": [
+          "test_f2p_empty_check_no_journal_file",
+          "test_f2p_zero_event_file_no_journal_advance"
+        ],
+        "COVERAGE": "COMPLETE"
+      },
+      {
+        "REQ_ID": "REQ-18",
+        "REQUIREMENT": "Malformed JSON/fields/types/empty ids/negative event_time_ms fail closed into rejects.jsonl as REJECT_MALFORMED and are not late; later lines continue; empty payload is accepted.",
+        "TESTS": [
+          "test_p2p_malformed_json_rejected",
+          "test_p2p_negative_event_time_rejected",
+          "test_p2p_schema_malformed_classes"
+        ],
+        "COVERAGE": "COMPLETE"
+      },
+      {
+        "REQ_ID": "REQ-19",
+        "REQUIREMENT": "Each successful run, including --empty-check, refreshes last_run.json warehouse.event_count and ops-report.json catalog.available plus inventory.event_count from catalog.sqlite click_event.",
+        "TESTS": ["test_p2p_ops_report_uses_warehouse_catalog"],
+        "COVERAGE": "PARTIAL"
+      },
+      {
+        "REQ_ID": "REQ-20",
+        "REQUIREMENT": "Leave /app/sessions/warehouse (production click dump) unwiped.",
+        "TESTS": [
+          "test_p2p_warehouse_untouched_after_run",
+          "test_p2p_warehouse_at_least_10k"
+        ],
+        "COVERAGE": "COMPLETE"
+      },
+      {
+        "REQ_ID": "REQ-21",
+        "REQUIREMENT": "Keep the Python processor and watermark journal protocol; do not rewrite the binding contract to excuse incorrect behavior.",
+        "TESTS": [
+          "test_p2p_python_cli_entrypoint",
+          "test_p2p_bin_and_contract_present"
+        ],
+        "COVERAGE": "PARTIAL"
+      },
+      {
+        "REQ_ID": "REQ-22",
+        "REQUIREMENT": "Closed session records include tenant_id, user_id, start_ms, end_ms, event_ids, event_count==len(event_ids), positive interval, and no duplicate closes for the same identity and interval.",
+        "TESTS": [
+          "test_f2p_event_count_matches_ids",
+          "test_f2p_closed_session_schema"
+        ],
+        "COVERAGE": "PARTIAL"
+      },
+      {
+        "REQ_ID": "REQ-23",
+        "REQUIREMENT": "Write journal and open-session snapshot crash-consistently (temp file then atomic replace for the snapshot; whole JSON lines for the journal).",
+        "TESTS": [
+          "test_f2p_restart_extends_open_session",
+          "test_f2p_restart_watermark_nondecreasing"
+        ],
+        "COVERAGE": "PARTIAL"
+      }
+    ],
+    "PHANTOM_TESTS": [
+      "test_p2p_warehouse_at_least_10k enforces an unstated >=10000 line count; solver-visible text only requires not wiping the inherited warehouse dump."
+    ],
+    "WEAK_OR_VACUOUS_ASSERTIONS": [
+      "VE-01: test_p2p_input_tie_break_stable cannot fail a wrong --input sort key.",
+      "VE-02: test_f2p_config_lateness_marks_too_late does not mutate allowed_lateness_ms.",
+      "VE-07: closed-session tests accept duplicate extra JSONL lines.",
+      "VE-08: test_p2p_config_keys is satisfied by the autouse fixture; test_p2p_output_paths asserts Path constants."
+    ],
+    "IMPLEMENTATION_COUPLING": "LOW–MEDIUM — most cases grade CLI exit codes and JSONL/journal/snapshot semantics. Coupling is the python3 launcher grep, the contract formula substring, and hardcoded expected timestamps that still match the public gap/watermark formulas rather than source names.",
+    "FLAKINESS_RISK": "LOW — no sleeps, no wall-clock windows, autouse config/runtime reset, sequential pytest default. Temporary fixture writes use distinct names.",
+    "ANTI_CHEAT_RISK": "MEDIUM — hidden /tests/fixtures holdouts and config-gap/duration mutation resist hardcoding sample_basic. Easy remaining games: hardcoded allowed_lateness_ms=10000, 45000 gap for every catalog tenant, ignore --input tie-break, mutate outputs on omitted flags, journal malformed lines, emit duplicate closes.",
+    "ORACLE_NOP_ASSESSMENT": "Binary discrimination is present (Harbor jobs/2026-08-17__13-59-38 reward 1.0; jobs/2026-08-17__14-00-43 reward 0.0) with no test.sh oracle special-case. Oracle pass does not close the requirement gaps above.",
+    "BLOCKING_FINDING_IDS": ["VE-01", "VE-02", "VE-03", "VE-04", "VE-05"],
+    "ADVISORY_FINDING_IDS": ["VE-06", "VE-07", "VE-08", "VE-09", "VE-10"]
+  }
+}
