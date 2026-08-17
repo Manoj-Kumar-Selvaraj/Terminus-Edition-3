@@ -1,0 +1,3 @@
+The service in `/app/edge-router` is already wired up, but its runtime semantics are not safe enough to ship. Repair it so the behavior matches `/app/edge-router/CONTRACT.md`; keep the public CLI (`go run . -config /app/edge-router/config.json`) and JSON config shape intact.
+
+The verifier builds `/app/edge-router/edge-router` from the code in `/app/edge-router`, starts real upstream HTTP servers, rewrites `/app/edge-router/config.json`, sends `SIGHUP`/`SIGTERM`, and exercises concurrent requests. Your final artifact is the complete `/app/edge-router` directory. Do not remove the admin endpoints or replace live proxying with canned responses.
