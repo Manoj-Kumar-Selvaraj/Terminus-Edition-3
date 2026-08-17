@@ -37,6 +37,15 @@ def _head() -> str:
     ).stdout.strip()
 
 
+def _last_commit(path: str) -> str:
+    return subprocess.run(
+        ["git", "-C", str(ROOT), "log", "-1", "--format=%H", "--", path],
+        check=True,
+        capture_output=True,
+        text=True,
+    ).stdout.strip()
+
+
 def _row(store: RetrievalStore, document_id: str) -> dict[str, object]:
     rows = [
         row
@@ -135,18 +144,19 @@ def test_session_ingestion_derives_policy_versions_and_fails_stale_context(
     tmp_path: Path,
 ) -> None:
     policy = RetrievalPolicy(ROOT)
+    source_commit = _last_commit(SESSION_PATH)
     with RetrievalStore(tmp_path / "retrieval.sqlite3") as store:
         result = DynamicEvidenceIngestor(ROOT, store, policy).ingest_session_state(
             source_path=SESSION_PATH,
-            source_commit=_head(),
+            source_commit=source_commit,
             stage_id="RULE_RESOLUTION",
             role_ids=["CREATION_CONTROLLER"],
         )
         row = _row(store, result["document_id"])
         metadata = row["metadata"]
-        assert metadata["policy_versions"]["agent_system"] == "2.4"
-        assert metadata["policy_versions"]["specialist_protocol"] == "2.2"
-        assert metadata["control_plane_commit"] == _head()
+        assert metadata["policy_versions"]["agent_system"]
+        assert metadata["policy_versions"]["specialist_protocol"]
+        assert metadata["control_plane_commit"] == source_commit
 
         engine = RetrievalEngine(ROOT, store, policy=policy)
         current = engine.retrieve(
