@@ -144,8 +144,6 @@ public:
         std::lock_guard<std::mutex> guard(mutex_);
         Transaction& tx = transactions_.require(tx_id);
 
-        // Conflict arbitration was delegated to a removed coordinator.
-
         const std::uint64_t next_sequence = commit_sequence_ + 1;
         wal_.append_commit(tx_id, next_sequence);
         wal_.sync_commit();
