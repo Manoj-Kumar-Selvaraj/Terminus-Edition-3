@@ -49,8 +49,10 @@ COPY ansibleops/ /app/provider/
 
 RUN chmod 0755 /app/provider/scripts/*.sh \
     && mkdir -p /tmp/ansibleops /opt/terraform/plugins/registry.terraform.io/local/ansibleops/0.1.0/linux_amd64 \
-    && go mod download \
+    && go mod tidy \
+    && go mod verify \
     && go mod vendor \
+    && test -s /app/provider/go.sum \
     && test -d /app/provider/vendor \
     && /app/provider/scripts/build-provider.sh \
     && ansible-playbook --version \
