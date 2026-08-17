@@ -202,12 +202,13 @@ class HumanWritingCalibrationPlanner:
         domain_tokens: set[str],
         excluded: set[str],
     ) -> list[dict[str, Any]]:
+        blocked = set(excluded)
         selected: list[dict[str, Any]] = []
         for kind, count in self._ROLE_KINDS[role].items():
             candidates = [
                 sample
                 for sample in self.catalog["samples"]
-                if sample["kind"] == kind and sample["id"] not in excluded
+                if sample["kind"] == kind and sample["id"] not in blocked
             ]
             ranked = sorted(
                 candidates,
@@ -224,7 +225,7 @@ class HumanWritingCalibrationPlanner:
                 )
             chosen = ranked[:count]
             selected.extend(chosen)
-            excluded.update(sample["id"] for sample in chosen)
+            blocked.update(sample["id"] for sample in chosen)
         return selected
 
     def _rank_key(
