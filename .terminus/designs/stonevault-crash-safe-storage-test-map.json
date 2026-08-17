@@ -1,5 +1,5 @@
 {
-  "schema_version": "1.1",
+  "schema_version": "1.2",
   "task": "stonevault-crash-safe-storage",
   "empirical_status": "PENDING_HARBOR_ORACLE_NOP_STARTER_MATRIX",
   "requirements": {
@@ -49,12 +49,12 @@
     ["test_stale_snapshot_temporary_is_removed_on_open","F2P","R10_SNAPSHOT_INTEGRITY"],
     ["test_health_reports_active_transactions","F2P","R12_HEALTH"],
     ["test_health_tracks_published_snapshot","F2P","R12_HEALTH"],
-    ["test_exact_scan_prefix_limit_is_accepted","F2P","R14_INCLUSIVE_LIMITS"],
+    ["test_explicit_data_directory_overrides_environment","F2P","R02_DATA_DIR_PRECEDENCE"],
+    ["test_exact_key_limit_is_accepted","F2P","R14_INCLUSIVE_LIMITS","C_INCLUSIVE_SIZE_BOUNDARY"],
+    ["test_exact_value_limit_is_accepted","F2P","R14_INCLUSIVE_LIMITS","C_INCLUSIVE_SIZE_BOUNDARY"],
+    ["test_exact_scan_prefix_limit_is_accepted","F2P","R14_INCLUSIVE_LIMITS","C_INCLUSIVE_SIZE_BOUNDARY"],
 
     ["test_product_tree_keeps_native_language_boundary","P2P","R16_NATIVE_COMPATIBILITY"],
-    ["test_explicit_data_directory_overrides_environment","P2P","R02_DATA_DIR_PRECEDENCE"],
-    ["test_exact_key_limit_is_accepted","P2P","R14_INCLUSIVE_LIMITS"],
-    ["test_exact_value_limit_is_accepted","P2P","R14_INCLUSIVE_LIMITS"],
     ["test_stats_match_durable_state_and_file_size","P2P","R11_STATS"],
     ["test_oversized_inputs_are_rejected_without_terminating","P2P","R14_INCLUSIVE_LIMITS"],
     ["test_malformed_commands_and_unknown_transactions_do_not_kill_session","P2P","R15_PROTOCOL_RESILIENCE"],
@@ -69,8 +69,21 @@
     ["test_snapshot_out_of_order_rows_are_fatal","P2P","R10_SNAPSHOT_INTEGRITY"],
     ["test_documented_c_abi_declarations_remain_available","P2P","R16_NATIVE_COMPATIBILITY"]
   ],
-  "planned_change_required_count": 29,
-  "planned_preservation_count": 17,
+  "planned_change_required_probe_count": 32,
+  "planned_change_required_behavioral_case_count": 30,
+  "planned_preservation_count": 14,
+  "behavioral_case_groups": {
+    "C_INCLUSIVE_SIZE_BOUNDARY": {
+      "classification": "F2P",
+      "requirement": "R14_INCLUSIVE_LIMITS",
+      "tests": [
+        "test_exact_key_limit_is_accepted",
+        "test_exact_value_limit_is_accepted",
+        "test_exact_scan_prefix_limit_is_accepted"
+      ],
+      "rationale": "Key, value and scan-prefix probes exercise the same starter root cause: the parser uses an exclusive >= check at three operands despite one documented inclusive size-boundary contract. Keeping separate probes protects each operand while treating the shared boundary defect as one behavioral case."
+    }
+  },
   "edge_boundary_coverage": [
     "inclusive key/prefix/value limits",
     "unsigned high-bit byte ordering",
@@ -84,6 +97,6 @@
     "snapshot structural corruption",
     "malformed protocol and unknown transaction IDs"
   ],
-  "independence": "Every runtime pytest case uses a fresh tmp_path database; the ABI/source preservation probe performs an isolated immutable interface check against published task artifacts.",
-  "classification_note": "F2P/P2P are private authoring classifications only. Test function names intentionally remain neutral per the task-specific naming constraint; empirical classification remains pending starter/NOP/Oracle execution."
+  "independence": "Every runtime pytest probe uses a fresh tmp_path database; the ABI/source preservation probe performs an isolated immutable interface check against published task artifacts.",
+  "classification_note": "F2P/P2P are private authoring classifications only. Test function names intentionally remain neutral per the task-specific naming constraint. Multiple probes may belong to one behavioral case only when the map declares an explicit shared case ID and one root-cause/boundary rationale; empirical classification remains pending starter/NOP/Oracle execution."
 }
