@@ -1,0 +1,32 @@
+version = "2.0"
+name = "ec2-artifact-policy-enforcement"
+category = "Software"
+subcategory = "Systems"
+tags = ["rust", "ec2", "policy", "supply-chain", "containers", "packages", "dependencies"]
+languages = ["rust", "bash"]
+difficulty = "advanced"
+expert_time_estimate_hours = 12
+artifacts = ["/app/policyguard"]
+
+[metadata]
+author_name = "anonymous"
+author_email = "anonymous@example.com"
+difficulty_explanation = "One enforcement decision must remain correct across package, image, and build-dependency ingress while scanner evidence, policy generations, mutable image references, cached results, signed permits, scoped exceptions, and durable audit state change independently."
+solution_explanation = "Enforce immutable artifact identity and source trust before cache use, fail closed on missing scan evidence, key cached decisions by artifact/policy/scanner generations, scope and expire exceptions, HMAC-bind short-lived permits to the exact artifact and instance, and journal every decision durably."
+verification_explanation = "The verifier drives all three ingress adapters and the policy binary across clean, vulnerable, unknown, outage, mutable-reference, stale-cache, exception, permit-tamper, restart, and audit cases using a deterministic scanner database."
+relevant_experience = "Rust systems programming, Linux package and container supply-chain controls, vulnerability policy, cache invalidation, signed authorization tokens, and durable audit semantics."
+
+[verifier]
+timeout_sec = 2400
+environment_mode = "separate"
+
+[agent]
+timeout_sec = 10800
+
+[environment]
+network_mode = "public"
+build_timeout_sec = 1800
+cpus = 2
+memory_mb = 4096
+storage_mb = 8192
+workdir = "/app/policyguard"
