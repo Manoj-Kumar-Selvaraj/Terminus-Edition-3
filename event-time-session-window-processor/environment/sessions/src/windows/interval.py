@@ -23,6 +23,10 @@ def closed_interval_valid(start_ms: int, end_ms: int) -> bool:
     return int(end_ms) > int(start_ms)
 
 
+def half_open_ok(start_ms: int, end_ms: int) -> bool:
+    return closed_interval_valid(start_ms, end_ms)
+
+
 def duration_ms(start_ms: int, end_ms: int) -> int:
     return int(end_ms) - int(start_ms)
 

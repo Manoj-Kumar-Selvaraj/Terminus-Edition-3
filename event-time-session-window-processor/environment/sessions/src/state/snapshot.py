@@ -6,6 +6,7 @@ from typing import Any
 
 from src.records import OpenSession
 from src.state.atomic import atomic_write_json
+from src.state.consistency import session_identity_ok
 from src.time.watermark import comparison_watermark, raw_watermark
 
 
@@ -58,6 +59,8 @@ def _load_one_session(item: Any) -> OpenSession | None:
     except (KeyError, TypeError, ValueError):
         return None
     if sess.last_event_time_ms < sess.start_ms:
+        return None
+    if not session_identity_ok(sess):
         return None
     return sess
 

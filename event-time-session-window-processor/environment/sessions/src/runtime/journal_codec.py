@@ -75,3 +75,34 @@ def journal_watermarks_nondecreasing(text: str) -> bool:
             return False
         prev = wm
     return True
+
+
+def journal_max_observed_nondecreasing(text: str) -> bool:
+    prev = None
+    for rec in iter_journal_records(text):
+        observed = rec["max_observed_event_time_ms"]
+        if prev is not None and observed < prev:
+            return False
+        prev = observed
+    return True
+
+
+def journal_formula_holds(text: str, allowed_lateness_ms: int) -> bool:
+    for rec in iter_journal_records(text):
+        expected = rec["max_observed_event_time_ms"] - int(allowed_lateness_ms)
+        if rec["watermark_ms"] != expected:
+            return False
+    return True
+
+
+def journal_health_report(text: str, allowed_lateness_ms: int | None = None) -> dict[str, bool | int]:
+    records = list(iter_journal_records(text))
+    report: dict[str, bool | int] = {
+        "lines": len(records),
+        "contiguous_seq": journal_seq_contiguous(text),
+        "watermark_nondecreasing": journal_watermarks_nondecreasing(text),
+        "max_observed_nondecreasing": journal_max_observed_nondecreasing(text),
+    }
+    if allowed_lateness_ms is not None:
+        report["formula_ok"] = journal_formula_holds(text, allowed_lateness_ms)
+    return report

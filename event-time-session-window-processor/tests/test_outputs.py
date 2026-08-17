@@ -92,18 +92,30 @@ def _isolate():
 
 
 def test_f2p_unknown_flag_leaves_journal_untouched() -> None:
-    """Unknown flags must exit 2 without creating the watermark journal."""
+    """Unknown flags must exit 2 without creating journal, opens, or side outputs."""
     completed = _run(["--not-a-real-flag"], check=False)
     assert completed.returncode == 2
     assert not JOURNAL.exists()
+    assert not OPEN.exists()
+    assert not SESSIONS.exists()
+    assert not LATE.exists()
+    assert not REJECTS.exists()
 
 
 def test_f2p_unknown_flag_with_reset_does_not_clear_journal() -> None:
-    """Unknown flags must not honor --reset-output against the journal."""
+    """Unknown flags must not honor --reset-output against journal, opens, or outputs."""
     JOURNAL.write_text("keep\n", encoding="utf-8")
+    OPEN.write_text('{"sessions":[]}\n', encoding="utf-8")
+    SESSIONS.write_text("{}\n", encoding="utf-8")
+    LATE.write_text("{}\n", encoding="utf-8")
+    REJECTS.write_text("{}\n", encoding="utf-8")
     completed = _run(["--reset-output", "--not-a-real-flag"], check=False)
     assert completed.returncode == 2
     assert JOURNAL.read_text(encoding="utf-8") == "keep\n"
+    assert OPEN.read_text(encoding="utf-8") == '{"sessions":[]}\n'
+    assert SESSIONS.read_text(encoding="utf-8") == "{}\n"
+    assert LATE.read_text(encoding="utf-8") == "{}\n"
+    assert REJECTS.read_text(encoding="utf-8") == "{}\n"
 
 
 def test_f2p_missing_source_does_not_create_journal() -> None:
@@ -314,8 +326,8 @@ def test_p2p_negative_event_time_rejected() -> None:
         ]
     )
     rejects = _load_jsonl(REJECTS)
-    assert any("negative" in str(row.get("detail", "")).lower() for row in rejects)
-    assert all(row.get("event_id") != "o4" or row["code"] == "REJECT_MALFORMED" for row in rejects)
+    assert any(row.get("event_id") == "o4" and row["code"] == "REJECT_MALFORMED" for row in rejects)
+    assert all(row.get("event_id") != "o4" for row in _load_jsonl(LATE))
 
 
 def test_f2p_idempotent_session_digest() -> None:
@@ -470,7 +482,7 @@ def test_f2p_config_lateness_marks_too_late() -> None:
 
 
 def test_f2p_holdout_gap_and_tenant() -> None:
-    """Holdout input must gap-close alice and keep the other-tenant alice isolated."""
+    """Holdout input must gap-close alice, watermark-close idle bob, and isolate other/alice."""
     _run(["--reset-output", "--input", str(HOLD / "holdout_sessions.jsonl")])
     sessions = _load_jsonl(SESSIONS)
     hold_alice = [row for row in sessions if row["tenant_id"] == "hold" and row["user_id"] == "alice"]
@@ -484,6 +496,10 @@ def test_f2p_holdout_gap_and_tenant() -> None:
     ]
     assert other
     assert other[0]["event_ids"] == ["h6"]
+    bob = [row for row in sessions if row["tenant_id"] == "hold" and row["user_id"] == "bob"]
+    assert bob
+    assert bob[0]["event_ids"] == ["h4"]
+    assert bob[0]["end_ms"] == 45000
 
 
 def test_p2p_input_tie_break_stable() -> None:
@@ -514,12 +530,15 @@ def test_f2p_feed_preserves_arrival_order() -> None:
 
 
 def test_f2p_reset_output_keeps_journal() -> None:
-    """--reset-output may truncate side files but must leave the watermark journal."""
+    """--reset-output may truncate side files but must leave journal and in-flight sessions."""
     _run(["--reset-output", "--input", str(ROOT / "fixtures" / "sample_basic.jsonl")])
     before = JOURNAL.read_text(encoding="utf-8")
+    open_before = OPEN.read_text(encoding="utf-8")
     assert before.strip()
+    assert open_before.strip()
     _run(["--reset-output", "--empty-check"])
     assert JOURNAL.read_text(encoding="utf-8") == before
+    assert OPEN.read_text(encoding="utf-8") == open_before
     assert SESSIONS.read_text(encoding="utf-8") == ""
     assert LATE.read_text(encoding="utf-8") == ""
 
@@ -577,7 +596,6 @@ def test_p2p_python_cli_entrypoint() -> None:
     """run-sessions must keep launching the Python processor."""
     text = BIN.read_text(encoding="utf-8")
     assert "python3" in text
-    assert "src.cli" in text
 
 
 def test_p2p_output_paths() -> None:

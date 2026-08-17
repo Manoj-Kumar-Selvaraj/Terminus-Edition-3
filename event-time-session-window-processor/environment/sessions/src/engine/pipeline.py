@@ -14,6 +14,9 @@ from src.runtime.store import SessionStore
 from src.runtime.watermark_track import WatermarkTrack
 from src.sinks.jsonl import append_jsonl
 from src.state.snapshot import ProcessorState
+from src.tenancy.directory import TenantDirectory
+from src.tenancy.policy import bind_config
+from src.time.event_clock import arrival_is_not_event_time
 from src.windows.assign import decide_on_time_close
 from src.windows.close import watermark_close_candidates
 
@@ -28,7 +31,9 @@ def process_events(
     open_path: Path,
     counters: RunCounters,
     use_arrival_gap: bool = True,
+    directory: TenantDirectory | None = None,
 ) -> None:
+    directory = directory or TenantDirectory.load()
     store = SessionStore()
     store.load_from(state.sessions)
     track = WatermarkTrack()
@@ -41,6 +46,9 @@ def process_events(
         W = track.peek_comparison(cfg.allowed_lateness_ms)
         open_sess = store.open_for_event(ev)
         kind = classify_lateness(ev, open_sess, W, cfg)
+        bind_config(cfg, directory, ev.tenant_id)
+        directory.observe(ev, kind)
+        _ = arrival_is_not_event_time(idx, ev.event_time_ms)
         key = session_key(ev.tenant_id, ev.user_id)
         if kind == "too_late":
             counters.too_late += 1

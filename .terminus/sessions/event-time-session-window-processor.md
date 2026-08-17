@@ -10,7 +10,7 @@ This is the durable operational checkpoint for one task. Keep it evidence-orient
 - Controller state: `FROZEN_CANDIDATE`
 - Working branch: `main`
 - Pull request: `none`
-- Current task commit: `pending freeze commit`
+- Current task commit: `pending Q4/Q6 repair freeze`
 - Agent-system policy: `2.4`
 - Specialist prompt policy: `2.2`
 - Specialist protocol policy: `2.2`
@@ -38,19 +38,19 @@ KNOWN_POLICY_CONFLICTS: none
 | Q3 Spec Ambiguity Repair | REPAIR_PROPOSED | `.terminus/reviews/event-time-session-window-processor/q3-ambiguity.md` |
 | Q7 Task Format Enforcer | FORMAT_PASS | `.terminus/reviews/event-time-session-window-processor/q7-format-check.md` |
 | Ruff verifier | PASS | `python -m ruff check event-time-session-window-processor/tests/test_outputs.py` |
-| Oracle = 1 | PASS | Harbor `/tmp/e3-ets/2026-08-17__12-13-37` reward 1.0 |
-| NOP = 0 | PASS | Harbor `/tmp/e3-ets/2026-08-17__12-14-37` reward 0.0 |
-| Q4 Spec-Test Contract | PENDING | packet after freeze |
-| Q6 Production Logic | PENDING | packet after freeze |
+| Oracle = 1 | PASS | Harbor `/tmp/e3-ets/2026-08-17__13-16-36` reward 1.0 |
+| NOP = 0 | PASS | Harbor `/tmp/e3-ets/2026-08-17__13-17-48` reward 0.0 |
+| Q4 Spec-Test Contract | PENDING | re-issue after repair freeze |
+| Q6 Production Logic | PENDING | re-issue after repair freeze |
 | Quality interlock | PENDING | needs independent Q4+Q6 PASS |
-| Pre-LLMaJ | PENDING | after QUALITY_INTERLOCK_PASS |
-| Q8 GPT/Claude sim | PENDING | after PRE_LLMAJ |
+| Pre-LLMaJ | BLOCKED | Quality Interlock not PASS |
+| Q8 GPT/Claude sim | BLOCKED | after PRE_LLMAJ |
 | Harbor LLMaJ | DEFERRED | user-deferred unless asked |
 | Difficulty trials | DEFERRED | user-deferred unless asked |
 
 ## Current blocker
 
-Independent Q4/Q6 after freeze. Q6 is expected to scrutinize seed.sql LOC padding.
+Independent Q4/Q6 re-review after repairing bfebd13e findings. Harbor oracle 1.0 / NOP 0.0 current.
 
 ## Decisions that must survive chat changes
 

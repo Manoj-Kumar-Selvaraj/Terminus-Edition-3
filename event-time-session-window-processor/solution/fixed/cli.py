@@ -10,7 +10,8 @@ from src.engine.pipeline import process_events
 from src.ingest.decoder import read_events
 from src.ingest.order import order_for_mode
 from src.metrics.counters import RunCounters
-from src.ops.desk import persist_desk
+from src.ops.finalize import finalize_run
+from src.tenancy.directory import TenantDirectory
 from src.paths import (
     CONFIG_PATH,
     JOURNAL_PATH,
@@ -49,10 +50,11 @@ def main(argv: list[str] | None = None) -> int:
     cfg = load_config(CONFIG_PATH)
     state = load_state(JOURNAL_PATH, OPEN_SESSIONS_PATH)
     counters = RunCounters()
+    directory = TenantDirectory.load()
 
     if args.empty_check and args.input is None and args.feed is None:
         apply_empty_check(SESSIONS_OUT, LATE_OUT, OPEN_SESSIONS_PATH, state)
-        persist_desk(counters)
+        finalize_run(counters, state, cfg, directory)
         return 0
 
     source = args.feed if args.feed is not None else args.input
@@ -70,7 +72,7 @@ def main(argv: list[str] | None = None) -> int:
     ordered = order_for_mode(events, feed=args.feed is not None)
     if not ordered and not rejects:
         apply_empty_check(SESSIONS_OUT, LATE_OUT, OPEN_SESSIONS_PATH, state)
-        persist_desk(counters)
+        finalize_run(counters, state, cfg, directory)
         return 0
 
     process_events(
@@ -83,8 +85,9 @@ def main(argv: list[str] | None = None) -> int:
         OPEN_SESSIONS_PATH,
         counters,
         use_arrival_gap=args.feed is not None,
+        directory=directory,
     )
-    persist_desk(counters)
+    finalize_run(counters, state, cfg, directory)
     return 0
 
 

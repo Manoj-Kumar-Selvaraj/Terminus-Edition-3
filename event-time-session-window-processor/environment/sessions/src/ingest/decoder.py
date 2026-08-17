@@ -5,7 +5,8 @@ from pathlib import Path
 from typing import Any
 
 from src.errors import reject_record
-from src.ingest.lineio import is_blank_line, iter_source_lines, read_source_text
+from src.ingest.lineio import is_blank_line
+from src.ingest.scan import iter_nonempty, scan_source
 from src.ingest.normalize import strip_unknown_nulls
 from src.ingest.schema_event import first_type_error, missing_required_fields
 from src.records import Event
@@ -46,13 +47,13 @@ def read_events(path: Path) -> tuple[list[Event], list[dict[str, Any]]]:
     rejects: list[dict[str, Any]] = []
     if not path.is_file():
         return events, rejects
-    _text, decode_err = read_source_text(path)
-    if decode_err is not None and "missing file" in decode_err:
+    scan = scan_source(path)
+    if scan.decode_errors and scan.lines_seen == 0:
         return events, rejects
-    for line_no, line in iter_source_lines(path):
-        if is_blank_line(line):
+    for rec in iter_nonempty(scan):
+        if is_blank_line(rec.text):
             continue
-        ev, rej = decode_line(line, line_no)
+        ev, rej = decode_line(rec.text, rec.line_no)
         if rej is not None:
             rejects.append(rej)
         elif ev is not None:

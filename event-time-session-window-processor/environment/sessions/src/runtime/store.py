@@ -1,62 +1,41 @@
 from __future__ import annotations
 
-from src.keys.partition import partition_id
-from src.keys.session_key import session_key
 from src.records import Event, OpenSession
+from src.runtime.keyed_state import SessionKeyedState
 
 
 class SessionStore:
     """Partitioned in-memory map of open sessions keyed by session_key()."""
 
     def __init__(self, buckets: int = 32) -> None:
-        self.buckets = int(buckets)
-        self._parts: list[dict[tuple[str, str], OpenSession]] = [
-            {} for _ in range(self.buckets)
-        ]
-
-    def _part(self, tenant_id: str, user_id: str) -> dict[tuple[str, str], OpenSession]:
-        idx = partition_id(tenant_id, user_id, self.buckets)
-        return self._parts[idx]
+        self._state = SessionKeyedState(buckets=buckets)
 
     def lookup(self, tenant_id: str, user_id: str) -> OpenSession | None:
-        key = session_key(tenant_id, user_id)
-        return self._part(tenant_id, user_id).get(key)
+        return self._state.lookup(tenant_id, user_id)
 
     def put(self, session: OpenSession) -> None:
-        key = session_key(session.tenant_id, session.user_id)
-        self._part(session.tenant_id, session.user_id)[key] = session
+        self._state.put(session)
 
     def pop(self, tenant_id: str, user_id: str) -> OpenSession | None:
-        key = session_key(tenant_id, user_id)
-        return self._part(tenant_id, user_id).pop(key, None)
+        return self._state.pop(tenant_id, user_id)
 
     def pop_key(self, key: tuple[str, str]) -> OpenSession | None:
-        tenant_id, user_id = key
-        if tenant_id == "*":
-            for part in self._parts:
-                if key in part:
-                    return part.pop(key)
-            return None
-        return self.pop(tenant_id, user_id)
+        return self._state.pop_key(key)
 
     def items(self) -> list[tuple[tuple[str, str], OpenSession]]:
-        out: list[tuple[tuple[str, str], OpenSession]] = []
-        for part in self._parts:
-            out.extend(part.items())
-        return out
+        return self._state.items()
 
     def as_dict(self) -> dict[tuple[str, str], OpenSession]:
-        merged: dict[tuple[str, str], OpenSession] = {}
-        for part in self._parts:
-            merged.update(part)
-        return merged
+        return self._state.as_dict()
 
     def load_from(self, sessions: dict[tuple[str, str], OpenSession]) -> None:
-        for sess in sessions.values():
-            self.put(sess)
+        self._state.load_from(sessions.values())
 
     def replace_state_map(self) -> dict[tuple[str, str], OpenSession]:
         return self.as_dict()
 
     def open_for_event(self, event: Event) -> OpenSession | None:
         return self.lookup(event.tenant_id, event.user_id)
+
+    def stats(self) -> dict[str, int]:
+        return self._state.stats()

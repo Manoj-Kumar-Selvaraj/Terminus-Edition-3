@@ -141,7 +141,7 @@ One line per closed session in `sessions.jsonl`:
 
 ## Journal and restart
 
-Each watermark advance appends:
+Each successfully parsed observation appends one journal line, including when `watermark_ms` is unchanged because `max_observed_event_time_ms` did not increase:
 
 ```json
 {"watermark_ms": 0, "max_observed_event_time_ms": 0, "seq": 1}
