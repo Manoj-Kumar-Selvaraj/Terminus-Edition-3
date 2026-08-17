@@ -16,12 +16,12 @@
     "R-PRESERVE": "Existing valid packed-decimal, active-policy and matching-control behavior must remain working."
   },
   "behavioral_case_groups": {
-    "R-ACCOUNTING-AVAILABLE-QUANTITY": {
+    "R-RESTART-NO-REPLAY": {
       "tests": [
-        "test_f2p_issue_requires_full_available_quantity",
+        "test_f2p_pipeline_restart_does_not_reapply_last_movement",
         "test_f2p_transfer_overdraw_rejection_is_durable_across_restart"
       ],
-      "rationale": "Both probes exercise the same available-quantity accounting boundary: an ISSUE or TRANSFER that would overdraw source inventory must reject before applying inventory effects. The transfer probe additionally verifies that the same rejection remains single-application across restart."
+      "rationale": "Both probes exercise the same restart invariant: after sequence 1 is durably checkpointed, rerunning the same generation must resume after that movement rather than replay it. One probe covers the accepted path and the other covers a durably rejected transfer, preserving independent path coverage without counting the same restart contract twice."
     }
   },
   "tests": [
@@ -103,7 +103,8 @@
     [
       "test_f2p_pipeline_restart_does_not_reapply_last_movement",
       "F2P",
-      "R-RESTART"
+      "R-RESTART",
+      "R-RESTART-NO-REPLAY"
     ],
     [
       "test_f2p_zero_quantity_is_rejected",
@@ -128,14 +129,13 @@
     [
       "test_f2p_issue_requires_full_available_quantity",
       "F2P",
-      "R-ACCOUNTING",
-      "R-ACCOUNTING-AVAILABLE-QUANTITY"
+      "R-ACCOUNTING"
     ],
     [
       "test_f2p_transfer_overdraw_rejection_is_durable_across_restart",
       "F2P",
-      "R-ACCOUNTING",
-      "R-ACCOUNTING-AVAILABLE-QUANTITY"
+      "R-RESTART",
+      "R-RESTART-NO-REPLAY"
     ],
     [
       "test_f2p_issue_uses_weighted_source_unit_cost",
