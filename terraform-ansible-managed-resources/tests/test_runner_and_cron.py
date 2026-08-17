@@ -1,5 +1,8 @@
 import json
 import pathlib
+import signal
+import subprocess
+import time
 import uuid
 
 from conftest import (
@@ -66,26 +69,72 @@ def test_f2p_nonzero_ansible_exit_fails_lifecycle_transition(tmp_path, cleanup_r
     assert not state_has_resource(workspace, "ansibleops_directory.managed")
 
 
-def test_f2p_timeout_cleans_generated_playbook(tmp_path, cleanup_registry):
-    """A timed-out Ansible process must fail safely and leave no generated playbook behind."""
-    target = cleanup_registry.path(tmp_path / "managed-file")
-    sleep_flag = tmp_path / "sleep.flag"
-    sleep_flag.write_text("sleep", encoding="utf-8")
-    wrapper = make_ansible_wrapper(tmp_path, sleep_flag=sleep_flag)
-    temp_dir = tmp_path / "timeout-playbooks"
-    workspace = make_workspace(
-        tmp_path,
+def test_f2p_timeout_and_cancellation_clean_generated_playbooks(tmp_path, cleanup_registry):
+    """Timeout and Terraform cancellation both fail safely and remove their generated Ansible playbooks."""
+    timeout_root = tmp_path / "timeout-case"
+    timeout_target = cleanup_registry.path(tmp_path / "timeout-file")
+    timeout_sleep = timeout_root / "sleep.flag"
+    timeout_sleep.parent.mkdir(parents=True, exist_ok=True)
+    timeout_sleep.write_text("sleep", encoding="utf-8")
+    timeout_wrapper = make_ansible_wrapper(timeout_root, sleep_flag=timeout_sleep)
+    timeout_temp = timeout_root / "playbooks"
+    timeout_workspace = make_workspace(
+        timeout_root,
         f'''resource "ansibleops_file" "managed" {{
-  path = {json.dumps(str(target))}
+  path = {json.dumps(str(timeout_target))}
 }}
 ''',
-        ansible_binary=wrapper,
+        ansible_binary=timeout_wrapper,
         timeout_seconds=1,
-        temp_dir=temp_dir,
+        temp_dir=timeout_temp,
     )
-    tf_apply(workspace, expect_success=False, timeout=20)
-    leftovers = list(pathlib.Path(temp_dir).glob("ansibleops-*.yml")) if pathlib.Path(temp_dir).exists() else []
-    assert leftovers == []
+    tf_apply(timeout_workspace, expect_success=False, timeout=20)
+    timeout_leftovers = list(timeout_temp.glob("ansibleops-*.yml")) if timeout_temp.exists() else []
+    assert timeout_leftovers == []
+
+    cancel_root = tmp_path / "cancel-case"
+    cancel_target = cleanup_registry.path(tmp_path / "cancel-file")
+    cancel_sleep = cancel_root / "sleep.flag"
+    cancel_sleep.parent.mkdir(parents=True, exist_ok=True)
+    cancel_sleep.write_text("sleep", encoding="utf-8")
+    cancel_wrapper = make_ansible_wrapper(cancel_root, sleep_flag=cancel_sleep)
+    cancel_temp = cancel_root / "playbooks"
+    cancel_workspace = make_workspace(
+        cancel_root,
+        f'''resource "ansibleops_file" "managed" {{
+  path = {json.dumps(str(cancel_target))}
+}}
+''',
+        ansible_binary=cancel_wrapper,
+        timeout_seconds=20,
+        temp_dir=cancel_temp,
+    )
+    process = subprocess.Popen(
+        ["terraform", "apply", "-auto-approve", "-input=false", "-no-color"],
+        cwd=cancel_workspace,
+        text=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+    )
+    deadline = time.time() + 10
+    while time.time() < deadline:
+        if cancel_temp.exists() and list(cancel_temp.glob("ansibleops-*.yml")):
+            break
+        if process.poll() is not None:
+            break
+        time.sleep(0.1)
+    assert process.poll() is None, "terraform apply exited before cancellation could be exercised"
+    process.send_signal(signal.SIGINT)
+    try:
+        stdout, stderr = process.communicate(timeout=15)
+    except subprocess.TimeoutExpired:
+        process.kill()
+        stdout, stderr = process.communicate(timeout=5)
+        raise AssertionError(f"terraform apply did not stop after cancellation:\n{stdout}\n{stderr}")
+    assert process.returncode != 0
+    cancel_leftovers = list(cancel_temp.glob("ansibleops-*.yml")) if cancel_temp.exists() else []
+    assert cancel_leftovers == []
+    assert not state_has_resource(cancel_workspace, "ansibleops_file.managed")
 
 
 def test_f2p_cron_omitted_schedule_fields_converge_to_wildcards(tmp_path, cleanup_registry):
