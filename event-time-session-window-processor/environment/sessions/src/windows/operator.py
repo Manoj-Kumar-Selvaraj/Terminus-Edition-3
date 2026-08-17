@@ -6,7 +6,8 @@ from typing import Iterable
 from src.config import ProcessorConfig
 from src.records import OpenSession
 from src.time.timers import EventTimeTimers
-from src.windows.diagnostics import describe_open_session, eligible_for_watermark_close, watermark_close_end
+from src.windows.diagnostics import describe_open_session
+from src.windows.gap_clock import idle_beyond_watermark, watermark_idle_end
 from src.windows.interval import duration_ms, half_open_ok
 from src.windows.rules import duration_close_end, gap_close_end
 
@@ -32,9 +33,9 @@ class IdleClosePlanner:
 
     def inspect(self, session: OpenSession, comparison_w: int) -> IdleClose | None:
         self.timers.arm(session)
-        if not eligible_for_watermark_close(session, self.cfg, comparison_w):
+        if not idle_beyond_watermark(session, self.cfg, comparison_w):
             return None
-        end_ms = watermark_close_end(session, self.cfg)
+        end_ms = watermark_idle_end(session, self.cfg)
         if not half_open_ok(session.start_ms, end_ms) and self.cfg.session_gap_ms <= 0:
             return None
         gap_end = gap_close_end(session, self.cfg.session_gap_ms)

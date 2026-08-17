@@ -95,13 +95,42 @@ def journal_formula_holds(text: str, allowed_lateness_ms: int) -> bool:
     return True
 
 
-def journal_health_report(text: str, allowed_lateness_ms: int | None = None) -> dict[str, bool | int]:
+def journal_seq_starts_at_one(text: str) -> bool:
     records = list(iter_journal_records(text))
+    if not records:
+        return True
+    return records[0]["seq"] == 1
+
+
+def journal_observation_count(text: str) -> int:
+    return len(list(iter_journal_records(text)))
+
+
+def journal_has_raw_below_zero(text: str) -> bool:
+    for rec in iter_journal_records(text):
+        if rec["watermark_ms"] < 0:
+            return True
+    return False
+
+
+def journal_last_matches_state(text: str, max_observed: int | None, next_seq: int) -> bool:
+    last = last_journal_values(text)
+    if last is None:
+        return max_observed is None and int(next_seq) == 1
+    seq, _wm, observed = last
+    if max_observed is None:
+        return False
+    return int(seq) + 1 == int(next_seq) and int(observed) == int(max_observed)
+
+
+def journal_health_report(text: str, allowed_lateness_ms: int | None = None) -> dict[str, bool | int]:
     report: dict[str, bool | int] = {
-        "lines": len(records),
+        "lines": journal_observation_count(text),
         "contiguous_seq": journal_seq_contiguous(text),
         "watermark_nondecreasing": journal_watermarks_nondecreasing(text),
         "max_observed_nondecreasing": journal_max_observed_nondecreasing(text),
+        "seq_starts_at_one": journal_seq_starts_at_one(text),
+        "raw_below_zero": journal_has_raw_below_zero(text),
     }
     if allowed_lateness_ms is not None:
         report["formula_ok"] = journal_formula_holds(text, allowed_lateness_ms)

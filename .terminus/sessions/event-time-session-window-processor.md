@@ -10,7 +10,7 @@ This is the durable operational checkpoint for one task. Keep it evidence-orient
 - Controller state: `FROZEN_CANDIDATE`
 - Working branch: `main`
 - Pull request: `none`
-- Current task commit: `pending Q4/Q6 repair freeze`
+- Current task commit: `pending freeze after Q4/Q6 repair`
 - Agent-system policy: `2.4`
 - Specialist prompt policy: `2.2`
 - Specialist protocol policy: `2.2`
@@ -31,17 +31,18 @@ KNOWN_POLICY_CONFLICTS: none
 
 | Gate | Status | Evidence / version |
 | --- | --- | --- |
-| Creator Complexity Gate | PASS | 25 F2P / 11 P2P; 25 defects; 6 root causes; loc includes generated seed.sql |
+| Creator Complexity Gate | PASS | 25 F2P / 15 P2P; 25 defects; 6 root causes |
 | Runtime authenticity | PASS | 12000 click_event rows; notes+log evidence |
+| Independent cli-closure LOC | ~3128 | non-blank non-comment src.cli closure + schema.sql + processor.json + run-sessions; seed.sql excluded |
 | Q1 Spec Gap Repair | REPAIR_PROPOSED | `.terminus/reviews/event-time-session-window-processor/q1-spec-gap.md` |
 | Q2 Verifier Coverage Repair | COVERED | `.terminus/reviews/event-time-session-window-processor/q2-coverage.md` |
 | Q3 Spec Ambiguity Repair | REPAIR_PROPOSED | `.terminus/reviews/event-time-session-window-processor/q3-ambiguity.md` |
 | Q7 Task Format Enforcer | FORMAT_PASS | `.terminus/reviews/event-time-session-window-processor/q7-format-check.md` |
 | Ruff verifier | PASS | `python -m ruff check event-time-session-window-processor/tests/test_outputs.py` |
-| Oracle = 1 | PASS | Harbor `/tmp/e3-ets/2026-08-17__13-16-36` reward 1.0 |
-| NOP = 0 | PASS | Harbor `/tmp/e3-ets/2026-08-17__13-17-48` reward 0.0 |
-| Q4 Spec-Test Contract | PENDING | re-issue after repair freeze |
-| Q6 Production Logic | PENDING | re-issue after repair freeze |
+| Oracle = 1 | PASS | Harbor `/tmp/e3-ets/2026-08-17__13-38-36` reward 1.0 |
+| NOP = 0 | PASS | Harbor `/tmp/e3-ets/2026-08-17__13-39-42` reward 0.0 |
+| Q4 Spec-Test Contract | PENDING | re-issue after this freeze |
+| Q6 Production Logic | PENDING | re-issue after this freeze |
 | Quality interlock | PENDING | needs independent Q4+Q6 PASS |
 | Pre-LLMaJ | BLOCKED | Quality Interlock not PASS |
 | Q8 GPT/Claude sim | BLOCKED | after PRE_LLMAJ |
@@ -50,7 +51,7 @@ KNOWN_POLICY_CONFLICTS: none
 
 ## Current blocker
 
-Independent Q4/Q6 re-review after repairing bfebd13e findings. Harbor oracle 1.0 / NOP 0.0 current.
+Independent Q4/Q6 re-review of the freeze that closed 4e6aa2d findings (empty fixture, close-then-open, journal-per-observation, late last_event_time, rejects reset, schema classes, omitted-flag exit 2, catalog overlay, bind_config used on the session hot path).
 
 ## Decisions that must survive chat changes
 
@@ -58,9 +59,10 @@ Independent Q4/Q6 re-review after repairing bfebd13e findings. Harbor oracle 1.0
 - Domain: event-time session windows with allowed lateness, tenant isolation, journal restart.
 - Planted defects: session_key drops tenant; watermark last-write-wins + classify after record; arrival-index gap; journal overwrite seq=1; CLI mutates before parse and reset clears journal.
 - Oracle copies: session_key, journal, pipeline, cli, watermark_track.
+- Catalog enterprise plan overlays session_gap_ms=45000; lab tenants keep processor.json. bind_config return is used in classify/gap/duration/idle close.
 - Q5: CRLF shebangs on solve.sh/test.sh/run-sessions caused Harbor 127; LF + `.gitattributes`.
 - Harbor LLMaJ and official GPT×5/Claude×5 deferred unless the user asks.
-- Leave unrelated dirty work untouched.
+- Leave unrelated dirty work untouched (including jetstream).
 
 ## Resume rule
 

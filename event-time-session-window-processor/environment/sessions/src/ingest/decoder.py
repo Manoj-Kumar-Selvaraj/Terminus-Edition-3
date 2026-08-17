@@ -8,7 +8,7 @@ from src.errors import reject_record
 from src.ingest.lineio import is_blank_line
 from src.ingest.scan import iter_nonempty, scan_source
 from src.ingest.normalize import strip_unknown_nulls
-from src.ingest.schema_event import first_type_error, missing_required_fields
+from src.ingest.schema_event import first_schema_reject_reason, first_type_error, missing_required_fields
 from src.records import Event
 from src.validation.fields import as_event_time, as_nonempty_str, as_payload, event_id_from_obj
 
@@ -25,6 +25,9 @@ def decode_line(line: str, line_no: int) -> tuple[Event | None, dict[str, Any] |
         return None, reject_record(None, "not an object", line_no)
     obj = strip_unknown_nulls(obj)
     event_id = event_id_from_obj(obj)
+    schema_reason = first_schema_reject_reason(obj)
+    if schema_reason is not None:
+        return None, reject_record(event_id, schema_reason, line_no)
     missing = missing_required_fields(obj)
     if missing:
         return None, reject_record(event_id, f"missing {missing[0]}", line_no)

@@ -18,7 +18,9 @@
     "R_RESET": "--reset-output truncates side outputs and does not clear the watermark journal.",
     "R_SCHEMA": "Closed session records include the contract fields and event_count equals len(event_ids).",
     "R_WAREHOUSE": "The production click dump stays in place at warehouse scale.",
-    "R_CONTRACT": "run-sessions remains the Python CLI and the session contract stays binding."
+    "R_CONTRACT": "run-sessions remains the Python CLI and the session contract stays binding.",
+    "R_OPS": "Successful runs refresh last_run.json and ops-report.json from the warehouse catalog.",
+    "R_CATALOG_GAP": "Catalog-backed enterprise tenants overlay session_gap_ms from the catalog plan."
   },
   "tests": [
     ["test_f2p_unknown_flag_leaves_journal_untouched", "F2P", "R_CLI"],
@@ -56,6 +58,10 @@
     ["test_p2p_bin_and_contract_present", "P2P", "R_CONTRACT"],
     ["test_p2p_python_cli_entrypoint", "P2P", "R_CONTRACT"],
     ["test_p2p_output_paths", "P2P", "R_SCHEMA"],
-    ["test_p2p_config_keys", "P2P", "R_CONFIG"]
+    ["test_p2p_config_keys", "P2P", "R_CONFIG"],
+    ["test_p2p_late_straggler_keeps_last_event_time", "P2P", "R_LATE"],
+    ["test_p2p_schema_malformed_classes", "P2P", "R_REJECT"],
+    ["test_p2p_ops_report_uses_warehouse_catalog", "P2P", "R_OPS"],
+    ["test_p2p_catalog_enterprise_gap_overlay", "P2P", "R_CATALOG_GAP"]
   ]
 }

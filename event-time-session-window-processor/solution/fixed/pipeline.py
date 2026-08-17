@@ -5,19 +5,16 @@ from pathlib import Path
 from src.config import ProcessorConfig
 from src.engine.emit import emit_closed_session
 from src.engine.identity import CloseLog
-from src.keys.session_key import session_key
-from src.late.classify import classify_lateness, too_late_payload
+from src.engine.session_step import apply_classified_event
+from src.late.classify import classify_lateness
 from src.metrics.counters import RunCounters
-from src.records import Event, OpenSession
+from src.records import Event
 from src.runtime.checkpoint import append_watermark, save_open
 from src.runtime.store import SessionStore
 from src.runtime.watermark_track import WatermarkTrack
-from src.sinks.jsonl import append_jsonl
 from src.state.snapshot import ProcessorState
 from src.tenancy.directory import TenantDirectory
 from src.tenancy.policy import bind_config
-from src.time.event_clock import arrival_is_not_event_time
-from src.windows.assign import decide_on_time_close
 from src.windows.close import watermark_close_candidates
 
 
@@ -42,43 +39,31 @@ def process_events(
     for idx, ev in enumerate(events):
         counters.observed += 1
         W = track.peek_comparison(cfg.allowed_lateness_ms)
+        cfg_eff = bind_config(cfg, directory, ev.tenant_id)
         open_sess = store.open_for_event(ev)
-        kind = classify_lateness(ev, open_sess, W, cfg)
-        bind_config(cfg, directory, ev.tenant_id)
+        kind = classify_lateness(ev, open_sess, W, cfg_eff)
         directory.observe(ev, kind)
-        _ = arrival_is_not_event_time(idx, ev.event_time_ms)
-        key = session_key(ev.tenant_id, ev.user_id)
-        if kind == "too_late":
-            counters.too_late += 1
-            append_jsonl(late_out, too_late_payload(ev, int(W or 0)))
-        elif kind == "late_allowed" and open_sess is not None:
-            counters.late_allowed += 1
-            open_sess.accept(ev.event_id, ev.event_time_ms)
-        else:
-            counters.on_time += 1
-            to_close, end_ms = decide_on_time_close(open_sess, ev, cfg, idx, use_arrival_gap)
-            if to_close is not None and end_ms is not None:
-                emit_closed_session(sessions_out, to_close, end_ms, counters, close_log)
-                store.pop_key(key)
-                open_sess = None
-            if open_sess is None:
-                open_sess = OpenSession(
-                    tenant_id=ev.tenant_id,
-                    user_id=ev.user_id,
-                    start_ms=ev.event_time_ms,
-                    last_event_time_ms=ev.event_time_ms,
-                    event_ids=[ev.event_id],
-                )
-                store.put(open_sess)
-            else:
-                open_sess.accept(ev.event_id, ev.event_time_ms)
+        apply_classified_event(
+            kind,
+            ev,
+            open_sess,
+            cfg_eff,
+            W,
+            store,
+            idx,
+            use_arrival_gap,
+            sessions_out,
+            late_out,
+            counters,
+            close_log,
+        )
         track.record(ev.event_time_ms)
         state.max_observed_event_time_ms = track.max_observed_event_time_ms
         append_watermark(journal_path, state, cfg.allowed_lateness_ms)
         W2 = track.peek_comparison(cfg.allowed_lateness_ms)
         if W2 is not None:
             live = store.as_dict()
-            for ckey, sess, end in watermark_close_candidates(live, cfg, W2):
+            for ckey, sess, end in watermark_close_candidates(live, cfg, W2, directory):
                 emit_closed_session(sessions_out, sess, end, counters, close_log)
                 store.pop_key(ckey)
         state.sessions = store.as_dict()

@@ -1,0 +1,282 @@
+{
+  "schema_version": "3.0",
+  "role": "Production Logic Auditor",
+  "review_id": "event-time-session-window-processor-4e6aa2dc-production-logic-4c7eb21e9e",
+  "task": "event-time-session-window-processor",
+  "task_commit": "4e6aa2dcc66344ca06d670e033b4957ec357e6ff",
+  "control_plane_commit": "4e6aa2dcc66344ca06d670e033b4957ec357e6ff",
+  "protocol_policy_version": "2.2",
+  "prompt_policy_version": "2.2",
+  "role_policy_version": "1.1",
+  "role_contract_hash": "ee7d1cfd6e19fcc0e831cc75829457593d7410613c3b3fb811aef925e85a1607",
+  "review_scope_hash": "de5fe6631d979dd1f52d1d047465f51c4ba20d23c2d583c1b375bca5aa375a29",
+  "context_packet": ".terminus/reviews/event-time-session-window-processor/4e6aa2dc/event-time-session-window-processor-4e6aa2dc-production-logic-4c7eb21e9e.packet.json",
+  "verdict": "REVISE",
+  "confidence": "HIGH",
+  "evidence_status": "SUFFICIENT",
+  "summary": "Independent src.cli import-closure count finds a real but compact event-time processor (ingest, lateness, gap/duration closes, journal codec, restart snapshot) plus a large catalog/ledger/ops sidecar that runs at finalize but does not drive session outputs. Honest substantive reachable runtime/config LOC is ~2,760 non-blank non-comment lines (~3,479 physical including blanks/comments) after excluding seed.sql and click_ledger.jsonl; that misses the large_system_strict >=3,000 floor. PADDING_RISK is HIGH because of SQL GROUP-BY clones, triple-wrapped stores, no-op tenancy overlay (PLAN_GAP_MS all None; bind_config return discarded), and discard-touch helpers. TOY_LOGIC_RISK is MEDIUM, not HIGH: the session/watermark core is genuine, not a constant-output shell.",
+  "evidence": [
+    {
+      "type": "rule",
+      "ref": ".terminus/agents/QUALITY_AGENT_REGISTRY.md",
+      "observation": "Q6 independently judges whether the solver-visible core is complex, reachable, coupled, non-toy, and non-padded. For large_system_strict, >=3,000 substantive reachable runtime/config LOC is necessary but not sufficient; Complexity Governor or authenticity-validator PASS is not a conclusion to copy."
+    },
+    {
+      "type": "rule",
+      "ref": ".terminus/agents/QUALITY_AGENT_PROMPTS.md",
+      "observation": "Required method: trace entrypoints, reachability, distinct module responsibilities, clone/wrapper/padding checks, cross-module invariants, ~25% removal test, and data volume versus logic. PASS needs >=3,000 substantive reachable LOC and no HIGH toy/padding risk."
+    },
+    {
+      "type": "rule",
+      "ref": ".terminus/agents/PRODUCTION_AUTHENTICITY.md",
+      "observation": "Count only implementation that materially participates in the claimed operational system. Do not satisfy scale with duplicated code, generated dumps, dead modules, micro-module inflation, or code whose removal would not change production behavior. Seed/data volume is not authored runtime complexity."
+    },
+    {
+      "type": "file",
+      "ref": "event-time-session-window-processor/task.toml@4e6aa2dcc66344ca06d670e033b4957ec357e6ff",
+      "observation": "Software/Systems Python streaming task; artifacts [/app/sessions]; separate verifier; workdir /app. Profile large_system_strict is bound from the design record, not from this TOML."
+    },
+    {
+      "type": "file",
+      "ref": ".terminus/designs/event-time-session-window-processor.json",
+      "observation": "Design record sets profile=large_system_strict. Used only to bind the strict LOC/padding gate; defect lists and creator claims were not treated as Q6 conclusions."
+    },
+    {
+      "type": "file",
+      "ref": "event-time-session-window-processor/environment/sessions/bin/run-sessions@4e6aa2dcc66344ca06d670e033b4957ec357e6ff",
+      "observation": "Operator entrypoint exports PYTHONPATH and execs python3 -m src.cli. This is the sole public runtime root used for the import-closure walk."
+    },
+    {
+      "type": "file",
+      "ref": "event-time-session-window-processor/environment/sessions/src/cli.py@4e6aa2dcc66344ca06d670e033b4957ec357e6ff",
+      "observation": "CLI loads config/state, decodes events, orders by mode, calls process_events, then finalize_run. _touch_runtime runs before argparse. Reachability root for pipeline plus the ops/catalog finalize path."
+    },
+    {
+      "type": "file",
+      "ref": "event-time-session-window-processor/environment/sessions/src/engine/pipeline.py@4e6aa2dcc66344ca06d670e033b4957ec357e6ff",
+      "observation": "Per-event loop records watermark, classifies lateness, mutates SessionStore, emits closes, appends journal, saves open state. bind_config(...) return is discarded; _ = arrival_is_not_event_time(...) is discard-touch. use_arrival_gap=True is hardcoded from CLI, so on-time gap uses arrival_index*1000 rather than event_time_ms. TenantDirectory.observe is called but does not change close/late decisions."
+    },
+    {
+      "type": "file",
+      "ref": "event-time-session-window-processor/environment/sessions/src/ops/finalize.py@4e6aa2dcc66344ca06d670e033b4957ec357e6ff",
+      "observation": "Every successful CLI path loads WarehouseIndex, compose_platform_report, journal_health_report, snapshot_health, persist_desk, and record_processor_run. Catalog/ledger/ops are import-reachable and executed, but they write ops-report/metrics/processor_run rows rather than mutating sessions/late/journal semantics."
+    },
+    {
+      "type": "file",
+      "ref": "event-time-session-window-processor/environment/sessions/src/tenancy/policy.py@4e6aa2dcc66344ca06d670e033b4957ec357e6ff",
+      "observation": "PLAN_GAP_MS maps free/standard/enterprise all to None, so _plan_gap always returns processor.json fallback. Even if bind_config were assigned, catalog plans cannot change session_gap_ms."
+    },
+    {
+      "type": "file",
+      "ref": "event-time-session-window-processor/environment/sessions/src/catalog/coverage.py@4e6aa2dcc66344ca06d670e033b4957ec357e6ff",
+      "observation": "Repeated catalog_exists/connect/GROUP BY/map-rows/close template (bursty_users, channel_kind_matrix, ingest_batch_volume, plan_mix). Same skeleton as inventory.py and rollups.py."
+    },
+    {
+      "type": "file",
+      "ref": "event-time-session-window-processor/environment/sessions/src/catalog/inventory.py@4e6aa2dcc66344ca06d670e033b4957ec357e6ff",
+      "observation": "Inventory snapshot is COUNT/MIN/MAX/DISTINCT histograms over click_event/tenant/click_user plus schema_ok. Real SQLite, but aggregation wrappers rather than processing invariants."
+    },
+    {
+      "type": "file",
+      "ref": "event-time-session-window-processor/environment/sessions/src/catalog/rollups.py@4e6aa2dcc66344ca06d670e033b4957ec357e6ff",
+      "observation": "_grouped_counts clones page/device/country volume; region/cohort/plan bounds repeat the same LEFT JOIN COUNT/MIN/MAX pattern. Distinct SQL keys, same control-flow skeleton."
+    },
+    {
+      "type": "file",
+      "ref": "event-time-session-window-processor/environment/sessions/src/runtime/store.py@4e6aa2dcc66344ca06d670e033b4957ec357e6ff",
+      "observation": "SessionStore is a pass-through facade over SessionKeyedState."
+    },
+    {
+      "type": "file",
+      "ref": "event-time-session-window-processor/environment/sessions/src/runtime/keyed_state.py@4e6aa2dcc66344ca06d670e033b4957ec357e6ff",
+      "observation": "PartitionedMap (32 SHA-256 buckets, hits/misses/generation) plus SessionKeyedState wrapping it. In-memory dict ceremony; special-cases tenant_id=='*' because session_key drops tenant."
+    },
+    {
+      "type": "file",
+      "ref": "event-time-session-window-processor/environment/sessions/src/keys/session_key.py@4e6aa2dcc66344ca06d670e033b4957ec357e6ff",
+      "observation": "session_key returns ('*', user_id) and discards tenant_id. Starter identity defect, not additional production depth; the partitioned map then papers over '*' lookups."
+    },
+    {
+      "type": "file",
+      "ref": "event-time-session-window-processor/environment/sessions/src/windows/close.py@4e6aa2dcc66344ca06d670e033b4957ec357e6ff",
+      "observation": "14-line wrapper that constructs IdleClosePlanner and returns planner.plan(...)."
+    },
+    {
+      "type": "file",
+      "ref": "event-time-session-window-processor/environment/sessions/src/runtime/checkpoint.py@4e6aa2dcc66344ca06d670e033b4957ec357e6ff",
+      "observation": "Thin aliases: append_watermark -> append_journal; save_open -> save_open_sessions. persist_observation_from_config is unused by pipeline."
+    },
+    {
+      "type": "file",
+      "ref": "event-time-session-window-processor/environment/sessions/src/runtime/journal_codec.py@4e6aa2dcc66344ca06d670e033b4957ec357e6ff",
+      "observation": "Real codec: encode/decode, contiguous seq, nondecreasing watermark/max_observed, formula_ok versus allowed_lateness. Load-bearing for restart semantics; health report is consumed by finalize, not by the writer."
+    },
+    {
+      "type": "file",
+      "ref": "event-time-session-window-processor/environment/sessions/src/state/journal.py@4e6aa2dcc66344ca06d670e033b4957ec357e6ff",
+      "observation": "append_journal always writes seq=1 via path.write_text (truncate). Codec can describe a proper journal; the writer does not use next_seq. Starter incompleteness in a small real module, not scale."
+    },
+    {
+      "type": "file",
+      "ref": "event-time-session-window-processor/environment/sessions/src/windows/rules.py@4e6aa2dcc66344ca06d670e033b4957ec357e6ff",
+      "observation": "Gap/duration predicates are real but one-line. arrival_gap_exceeded uses synthetic = arrival_index * 1000, which is the path CLI actually takes."
+    },
+    {
+      "type": "file",
+      "ref": "event-time-session-window-processor/environment/sessions/src/ingest/decoder.py@4e6aa2dcc66344ca06d670e033b4957ec357e6ff",
+      "observation": "JSON decode, required fields, type errors, reject_record side output. Material ingest branching; not a wrapper shell."
+    },
+    {
+      "type": "file",
+      "ref": "event-time-session-window-processor/environment/sessions/src/late/classify.py@4e6aa2dcc66344ca06d670e033b4957ec357e6ff",
+      "observation": "on_time / late_allowed / too_late with open-session gap window. Compact but genuine domain branching used by pipeline."
+    },
+    {
+      "type": "file",
+      "ref": "event-time-session-window-processor/environment/sessions/sql/schema.sql@4e6aa2dcc66344ca06d670e033b4957ec357e6ff",
+      "observation": "60 physical / 53 non-comment lines: tenant, click_user, ingest_batch, click_event, processor_run plus indexes/FKs. Counted as runtime/config. Seed INSERT dump is a separate file and was excluded."
+    },
+    {
+      "type": "file",
+      "ref": "event-time-session-window-processor/environment/sessions/config/processor.json@4e6aa2dcc66344ca06d670e033b4957ec357e6ff",
+      "observation": "Three positive integer knobs. Counted. Honored by load_config; tenancy overlay does not change them."
+    },
+    {
+      "type": "file",
+      "ref": "event-time-session-window-processor/environment/sessions/sql/seed.sql@4e6aa2dcc66344ca06d670e033b4957ec357e6ff",
+      "observation": "12,832 lines / ~1.4 MiB generated INSERT dump. Excluded from substantive runtime/config LOC."
+    },
+    {
+      "type": "file",
+      "ref": "event-time-session-window-processor/environment/sessions/warehouse/click_ledger.jsonl@4e6aa2dcc66344ca06d670e033b4957ec357e6ff",
+      "observation": "12,000 JSONL rows / ~2.6 MiB. Stateful data volume, not authored logic. Excluded from LOC. Ledger/catalog code consumes counts/fingerprints for reports."
+    },
+    {
+      "type": "file",
+      "ref": "event-time-session-window-processor/environment/sessions/tools/generate_seed.py@4e6aa2dcc66344ca06d670e033b4957ec357e6ff",
+      "observation": "183 physical lines, Docker build-time only (Dockerfile RUN). Not on the src.cli import closure; excluded from runtime LOC."
+    },
+    {
+      "type": "file",
+      "ref": "event-time-session-window-processor/environment/Dockerfile@4e6aa2dcc66344ca06d670e033b4957ec357e6ff",
+      "observation": "Copies sessions/, runs generate_seed.py at image build, chmods run-sessions. Confirms seed generation is build, not operator runtime."
+    },
+    {
+      "type": "file",
+      "ref": "event-time-session-window-processor/environment/sessions/docs/session-contract.md@4e6aa2dcc66344ca06d670e033b4957ec357e6ff",
+      "observation": "Operator contract: run-sessions flags, event-time sessions keyed by tenant+user, processor.json knobs, journal/open-session restart. Docs are not counted as LOC; they describe a processor whose scored outputs do not mention catalog rollups or ops-report."
+    },
+    {
+      "type": "run",
+      "ref": "independent_ast_import_closure_from_src.cli@4e6aa2dc",
+      "observation": "AST import closure from src.cli: 60 Python files, 3409 physical, 613 blank, 97 comment, 2699 non-blank non-comment, 3312 non-comment. Plus schema.sql (60/53), processor.json (5/5), run-sessions (5/4) => 3479 physical / 2761 non-blank non-comment. Package __init__ re-export barrels are not in the explicit import graph (182 phys / 150 code) and are not counted as substance. Plane split of closure physical lines: catalog 455, ledger 398, tenancy 372, runtime 373, ingest 292, ops 247, windows 211, state 210, engine 166, reconcile 133, remainder ~350. Control-flow in closure: 198 If, 61 For, 0 While, 27 Try, 19 Raise, 285 functions across 60 files (~45 code lines/file)."
+    }
+  ],
+  "findings": [
+    {
+      "id": "q6-1",
+      "severity": "BLOCKER",
+      "status": "OBSERVED",
+      "criterion": "large_system_strict substantive reachable runtime/config LOC >= 3000",
+      "evidence_refs": [
+        "independent_ast_import_closure_from_src.cli@4e6aa2dc",
+        "event-time-session-window-processor/environment/sessions/src/cli.py@4e6aa2dcc66344ca06d670e033b4957ec357e6ff",
+        "event-time-session-window-processor/environment/sessions/sql/schema.sql@4e6aa2dcc66344ca06d670e033b4957ec357e6ff",
+        "event-time-session-window-processor/environment/sessions/sql/seed.sql@4e6aa2dcc66344ca06d670e033b4957ec357e6ff",
+        "event-time-session-window-processor/environment/sessions/warehouse/click_ledger.jsonl@4e6aa2dcc66344ca06d670e033b4957ec357e6ff"
+      ],
+      "why_it_matters": "The strict floor counts honest reachable runtime/config, not generated INSERT/JSONL dumps. Non-blank non-comment reachable code+schema+entry+config is ~2,761. Even counting blanks, much of the gross ~3,479 physical lines is reporting-plane clone/wrapper mass that does not participate in session/watermark outputs. The floor is not met on a conservative substantive count.",
+      "minimal_remediation": "Grow load-bearing session/journal/windows/ingest/state (and any catalog/tenancy logic that actually changes those outputs) until an independent cli-closure count of non-padded runtime/config exceeds 3,000. Do not add seed.sql rows, JSONL dumps, or more GROUP-BY report clones.",
+      "regression_risk": "Expanding real processing/recovery paths can interact with restart, lateness, and gap-close tests; keep public CLI and artifact paths stable."
+    },
+    {
+      "id": "q6-2",
+      "severity": "BLOCKER",
+      "status": "OBSERVED",
+      "criterion": "no HIGH toy/padding risk; modules must materially participate rather than inflate scale",
+      "evidence_refs": [
+        "event-time-session-window-processor/environment/sessions/src/engine/pipeline.py@4e6aa2dcc66344ca06d670e033b4957ec357e6ff",
+        "event-time-session-window-processor/environment/sessions/src/ops/finalize.py@4e6aa2dcc66344ca06d670e033b4957ec357e6ff",
+        "event-time-session-window-processor/environment/sessions/src/tenancy/policy.py@4e6aa2dcc66344ca06d670e033b4957ec357e6ff",
+        "event-time-session-window-processor/environment/sessions/src/catalog/coverage.py@4e6aa2dcc66344ca06d670e033b4957ec357e6ff",
+        "event-time-session-window-processor/environment/sessions/src/catalog/rollups.py@4e6aa2dcc66344ca06d670e033b4957ec357e6ff",
+        "event-time-session-window-processor/environment/sessions/src/runtime/store.py@4e6aa2dcc66344ca06d670e033b4957ec357e6ff",
+        "event-time-session-window-processor/environment/sessions/src/runtime/keyed_state.py@4e6aa2dcc66344ca06d670e033b4957ec357e6ff",
+        "event-time-session-window-processor/environment/sessions/src/windows/close.py@4e6aa2dcc66344ca06d670e033b4957ec357e6ff",
+        "event-time-session-window-processor/environment/sessions/src/runtime/checkpoint.py@4e6aa2dcc66344ca06d670e033b4957ec357e6ff"
+      ],
+      "why_it_matters": "Catalog+ledger+tenancy+ops are ~1,470 physical lines (~43% of the Python closure) executed from finalize_run as reports. Tenancy cannot change knobs (PLAN_GAP_MS all None) and bind_config is discarded. inventory/coverage/rollups share one SQL-aggregation skeleton. SessionStore/SessionKeyedState/PartitionedMap and checkpoint/close are pass-through layers. Removing that mass leaves sessions.jsonl, late.jsonl, and journal write behavior intact. That is HIGH padding risk, which independently blocks large_system_strict PASS.",
+      "minimal_remediation": "Either wire catalog/tenancy/ledger state into session identity, gap/lateness, or recovery so partial omission changes outputs, or delete/collapse the sidecar and spend the lines on differentiated processing logic. Collapse clone query modules and the store/checkpoint wrapper chain. Stop discard-touch (_ = arrival_is_not_event_time; unused bind_config).",
+      "regression_risk": "Collapsing facades without keeping a working SessionStore/journal writer would break restart and keyed lookup; couple first, then delete dead layers."
+    }
+  ],
+  "missing_evidence": [],
+  "change_scope": [
+    "event-time-session-window-processor/environment/sessions/src (processing path, journal writer, tenancy overlay that is actually applied, collapse of catalog/ops clone wrappers)",
+    "event-time-session-window-processor/environment/sessions/sql/schema.sql only if new processing-relevant relations are required",
+    "event-time-session-window-processor/environment/sessions/config/processor.json only if new knobs are load-bearing"
+  ],
+  "do_not_change": [
+    "Do not count sql/seed.sql INSERT dumps or warehouse/click_ledger.jsonl row volume as runtime/config LOC.",
+    "Do not treat tools/generate_seed.py as src.cli runtime.",
+    "Do not copy Complexity Governor, authenticity-validator, or any prior Q6 verdict as this result.",
+    "Do not edit tests/, solution/, or instruction.md on the strength of this Q6 review; those are other roles.",
+    "Do not add more report-only GROUP BY modules or __init__ re-export barrels to chase the floor."
+  ],
+  "next_gate": "Environment Builder / production-logic repair on the solver-visible sessions runtime, then a fresh Q6 packet on the new task commit. Quality Interlock must not consume this result as PASS.",
+  "role_output": {
+    "CORE_LOGIC_DEPTH": "MEDIUM",
+    "RUNTIME_REACHABILITY": "HIGH",
+    "MODULE_DIVERSITY": "MEDIUM",
+    "CROSS_COMPONENT_COUPLING": "MEDIUM",
+    "TOY_LOGIC_RISK": "MEDIUM",
+    "PADDING_RISK": "HIGH",
+    "SUBSTANTIVE_LOC_ASSESSMENT": "Independent src.cli AST import closure at 4e6aa2dc: 60 Python files, 3,409 physical / 2,699 non-blank non-comment. Include schema.sql (60/53), processor.json (5/5), bin/run-sessions (5/4). Exclude seed.sql (12,832 lines), click_ledger.jsonl (12,000 lines), tools/generate_seed.py (build-only 183), and __init__ re-export barrels (182/150, not in explicit import graph). Gross reachable runtime/config ~3,479 physical / ~2,761 non-blank non-comment. Catalog+ledger+tenancy+ops ~1,472 physical are executed from finalize_run as reports and do not change session/late/journal writes. After discounting that sidecar plus store/checkpoint/close wrappers, load-bearing ingest/windows/late/journal/state/engine is roughly 1,800–2,200 lines. Honest substantive reachable LOC is below the 3,000 floor.",
+    "MAJOR_MODULES": [
+      {
+        "module": "bin/run-sessions + src.cli + src.config + processor.json",
+        "responsibility": "Public operator CLI: --input/--feed/--reset-output/--empty-check, config load, output reset, dispatch to pipeline then finalize.",
+        "reachability": "Dockerfile chmod + contract path /app/sessions/bin/run-sessions -> python3 -m src.cli.",
+        "state_error_behavior": "Argparse SystemExit mapped to return codes; missing --input/--feed/--empty-check returns 2. Runtime dirs/journal may be touched before parse."
+      },
+      {
+        "module": "ingest (decoder/scan/schema_event/order/normalize/lineio) + validation + errors",
+        "responsibility": "JSONL scan, UTF-8, required fields/types, reject side output, --input tie-break vs --feed file order.",
+        "reachability": "cli.read_events -> decoder; order_for_mode from cli.",
+        "state_error_behavior": "Malformed lines become REJECT_MALFORMED and processing continues. Empty source triggers empty-check path."
+      },
+      {
+        "module": "engine.pipeline + windows + late + time.watermark + records",
+        "responsibility": "Event-time session assign/close, lateness classes, comparison watermark, half-open intervals, emit closed sessions.",
+        "reachability": "process_events from cli; watermark_close_candidates via IdleClosePlanner.",
+        "state_error_behavior": "too_late vs late_allowed vs on_time; duration vs gap close ends. Arrival-index gap path is live; event-time gap helper exists but is skipped when use_arrival_gap=True."
+      },
+      {
+        "module": "runtime/state journal+snapshot+recover + journal_codec + sinks.jsonl",
+        "responsibility": "Watermark journal encode/decode/health, open-session snapshot load/save, atomic JSON write, JSONL append/truncate.",
+        "reachability": "load_state at CLI start; append_watermark/save_open per event; codec used by finalize health.",
+        "state_error_behavior": "Corrupt snapshot lines skipped; journal writer currently truncates with seq=1. Codec can detect non-monotonic/formula breaks after the fact."
+      },
+      {
+        "module": "catalog + sql/schema.sql + tenancy + ledger + ops",
+        "responsibility": "SQLite inventory/coverage/rollups, tenant directory, warehouse index, reconcile origins, ops-report/metrics/processor_run.",
+        "reachability": "TenantDirectory.load in cli; WarehouseIndex and reports in finalize_run/compose_platform_report/persist_desk.",
+        "state_error_behavior": "Missing catalog returns available=False; SQL errors become load_error. Reports still write. Overlay cannot change processing knobs; bind_config result unused."
+      }
+    ],
+    "PARTIAL_FIX_TRAPS": [
+      "Fixing session_key to include tenant_id while leaving PartitionedMap tenant_id=='*' fallback still collapses some lookups.",
+      "Assigning bind_config without changing PLAN_GAP_MS (all None) leaves gap/lateness identical to processor.json.",
+      "Replacing arrival_gap_exceeded but leaving CLI use_arrival_gap=True still closes on index*1000.",
+      "Making journal_codec formula_ok pass while append_journal still truncates seq=1 fails restart prefix checks.",
+      "Writing tenant_id onto closed records without changing the lookup key still merges acme/u1 with beta/u1.",
+      "Improving ops-report/catalog histograms without fixing watermark max() / journal append leaves scored session outputs wrong.",
+      "Hard-coding one fixture's closed sessions fails the next processor.json gap/lateness mutation."
+    ],
+    "REMOVAL_TEST": "Removing ~25% of load-bearing ingest+pipeline+windows+late+journal/snapshot would collapse decode, gap/duration close, lateness side output, and restart state. Separately, removing ~25–40% of the closure that is catalog/coverage/rollups/tenancy/ledger-index/ops-report (on the order of 1,000–1,500 lines) would drop ops-report.json, metrics, and processor_run inserts but leave sessions.jsonl, late.jsonl, rejects.jsonl, and the journal writer behavior the same. That second cut is the padding signal. Deleting seed.sql/click_ledger.jsonl would not change authored logic; it would only empty warehouse counts in reports.",
+    "REQUIRED_CHANGES": [
+      "q6-1: Raise honest non-padded reachable runtime/config LOC above 3,000 by deepening processing/recovery/tenancy logic that changes native outputs, not by data dumps or report clones.",
+      "q6-2: Make catalog/tenancy/ledger participate in session identity, knobs, lateness, or recovery, or remove/collapse that plane; eliminate discard-touch and pass-through wrappers; stop cloned GROUP-BY modules."
+    ]
+  }
+}

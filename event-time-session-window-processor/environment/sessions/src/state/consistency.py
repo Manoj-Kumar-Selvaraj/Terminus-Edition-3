@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import Any
 
 from src.records import OpenSession
+from src.tenancy.directory import TenantDirectory
 from src.windows.interval import closed_interval_valid
 
 
@@ -37,18 +38,39 @@ def snapshot_interval_problems(sessions: list[OpenSession]) -> int:
 
 def snapshot_health(sessions: list[OpenSession], max_observed: int | None) -> dict[str, Any]:
     invalid = sum(0 if session_identity_ok(s) else 1 for s in sessions)
+    uncovered = sum(0 if last_event_covers_ids(s) else 1 for s in sessions)
     dupes = snapshot_duplicates(sessions)
     interval_problems = snapshot_interval_problems(sessions)
     covers = True
     if max_observed is not None:
         covers = all(s.last_event_time_ms <= max_observed for s in sessions)
-    ok = invalid == 0 and not dupes and interval_problems == 0 and covers
+    ok = invalid == 0 and not dupes and interval_problems == 0 and covers and uncovered == 0
     return {
         "open_sessions": len(sessions),
         "invalid_identities": invalid,
         "duplicate_keys": dupes,
         "interval_problems": interval_problems,
+        "uncovered_ids": uncovered,
         "max_observed_defined": max_observed is not None,
         "max_observed_covers_open": covers,
         "ok": ok,
     }
+
+
+def open_tenant_mix(sessions: list[OpenSession], directory: TenantDirectory) -> dict[str, int]:
+    catalog_backed = 0
+    adhoc = 0
+    for sess in sessions:
+        if directory.known_tenant(sess.tenant_id):
+            catalog_backed += 1
+        else:
+            adhoc += 1
+    return {
+        "open_sessions": len(sessions),
+        "catalog_backed": catalog_backed,
+        "adhoc": adhoc,
+    }
+
+
+def last_event_covers_ids(session: OpenSession) -> bool:
+    return bool(session.event_ids) and session.last_event_time_ms >= session.start_ms

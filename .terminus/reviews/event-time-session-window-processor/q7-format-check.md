@@ -2,7 +2,7 @@
 
 ```text
 STATUS: FORMAT_PASS
-TASK_COMMIT: PENDING_FREEZE
+TASK_COMMIT: bfebd13e37a3ad34e80373fe3f2df269bdd81e23
 CHECKS:
 - RULE: flat Edition 3 layout
   PATH: event-time-session-window-processor/

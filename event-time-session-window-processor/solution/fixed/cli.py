@@ -42,6 +42,11 @@ def main(argv: list[str] | None = None) -> int:
         code = exc.code if isinstance(exc.code, int) else 2
         return code if code else 0
 
+    directory = TenantDirectory.load()
+    if not directory.catalog_ready():
+        print("error: operator catalog unavailable", file=sys.stderr)
+        return 2
+
     JOURNAL_PATH.parent.mkdir(parents=True, exist_ok=True)
     SESSIONS_OUT.parent.mkdir(parents=True, exist_ok=True)
     if args.reset_output:
@@ -50,7 +55,6 @@ def main(argv: list[str] | None = None) -> int:
     cfg = load_config(CONFIG_PATH)
     state = load_state(JOURNAL_PATH, OPEN_SESSIONS_PATH)
     counters = RunCounters()
-    directory = TenantDirectory.load()
 
     if args.empty_check and args.input is None and args.feed is None:
         apply_empty_check(SESSIONS_OUT, LATE_OUT, OPEN_SESSIONS_PATH, state)

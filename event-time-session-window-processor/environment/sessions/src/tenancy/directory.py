@@ -153,6 +153,13 @@ class TenantDirectory:
         for row in tenant_user_coverage(path, limit=10_000):
             self._coverage[str(row["tenant_id"])] = row
 
+    def catalog_ready(self) -> bool:
+        if not self.available or self.load_error:
+            return False
+        if not self._tenants:
+            return False
+        return bool(self.inventory.get("schema_ok", False))
+
     def tenant(self, tenant_id: str) -> TenantRecord | None:
         return self._tenants.get(tenant_id)
 

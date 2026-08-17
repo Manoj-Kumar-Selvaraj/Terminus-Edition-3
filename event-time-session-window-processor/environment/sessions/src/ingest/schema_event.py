@@ -46,3 +46,56 @@ def first_type_error(obj: dict[str, Any]) -> str | None:
         if err is not None:
             return err
     return None
+
+
+def empty_identifier_fields(obj: dict[str, Any]) -> list[str]:
+    empty: list[str] = []
+    for field in ("event_id", "tenant_id", "user_id"):
+        value = obj.get(field)
+        if isinstance(value, str) and value == "":
+            empty.append(field)
+    return empty
+
+
+def whitespace_identifier_fields(obj: dict[str, Any]) -> list[str]:
+    bad: list[str] = []
+    for field in ("event_id", "tenant_id", "user_id"):
+        value = obj.get(field)
+        if isinstance(value, str) and value != value.strip():
+            bad.append(field)
+    return bad
+
+
+def payload_is_present(obj: dict[str, Any]) -> bool:
+    return "payload" in obj
+
+
+def payload_type_ok(obj: dict[str, Any]) -> bool:
+    if not payload_is_present(obj):
+        return False
+    return isinstance(obj["payload"], str)
+
+
+def event_time_type_ok(obj: dict[str, Any]) -> bool:
+    value = obj.get("event_time_ms")
+    return isinstance(value, int) and not isinstance(value, bool)
+
+
+def first_schema_reject_reason(obj: dict[str, Any]) -> str | None:
+    missing = missing_required_fields(obj)
+    if missing:
+        return f"missing {missing[0]}"
+    empty = empty_identifier_fields(obj)
+    if empty:
+        return f"{empty[0]} empty"
+    whitespace = whitespace_identifier_fields(obj)
+    if whitespace:
+        return f"{whitespace[0]} has surrounding whitespace"
+    type_err = first_type_error(obj)
+    if type_err is not None:
+        return type_err
+    if not payload_type_ok(obj):
+        return "payload type"
+    if not event_time_type_ok(obj):
+        return "event_time_ms type"
+    return None

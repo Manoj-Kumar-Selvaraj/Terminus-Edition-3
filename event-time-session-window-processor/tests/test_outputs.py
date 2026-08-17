@@ -19,6 +19,8 @@ OPEN = DATA / "open_sessions.json"
 SESSIONS = OUT / "sessions.jsonl"
 LATE = OUT / "late.jsonl"
 REJECTS = OUT / "rejects.jsonl"
+LAST_RUN = DATA / "last_run.json"
+OPS_REPORT = DATA / "ops-report.json"
 WAREHOUSE = ROOT / "warehouse" / "click_ledger.jsonl"
 HOLD = Path("/tests/fixtures")
 
@@ -157,6 +159,15 @@ def test_f2p_gap_close_half_open_end() -> None:
     assert first["end_ms"] == 35000
     assert first["event_ids"] == ["e1", "e2"]
     assert first["end_ms"] > first["start_ms"]
+    open_snap = json.loads(OPEN.read_text(encoding="utf-8"))
+    nxt = [
+        row
+        for row in open_snap["sessions"]
+        if row["tenant_id"] == "acme" and row["user_id"] == "u1"
+    ]
+    assert nxt
+    assert nxt[0]["event_ids"] == ["e3"]
+    assert nxt[0]["start_ms"] == 40000
 
 
 def test_f2p_input_sorts_before_gap_close() -> None:
@@ -193,6 +204,10 @@ def test_f2p_input_sorts_before_gap_close() -> None:
     assert closed
     assert closed[0]["event_ids"] == ["z1"]
     assert closed[0]["end_ms"] == 31000
+    open_snap = json.loads(OPEN.read_text(encoding="utf-8"))
+    nxt = next(row for row in open_snap["sessions"] if row["user_id"] == "u1")
+    assert nxt["event_ids"] == ["z2"]
+    assert nxt["start_ms"] == 40000
 
 
 def test_f2p_event_count_matches_ids() -> None:
@@ -243,6 +258,8 @@ def test_f2p_journal_seq_starts_at_one() -> None:
     seqs = [row["seq"] for row in rows]
     assert seqs == list(range(1, len(seqs) + 1))
     assert len(seqs) == 5
+    assert rows[0]["max_observed_event_time_ms"] == 1000
+    assert rows[0]["watermark_ms"] == -9000
 
 
 def test_f2p_journal_append_keeps_prefix() -> None:
@@ -261,6 +278,7 @@ def test_f2p_journal_watermark_nondecreasing() -> None:
     watermarks = [row["watermark_ms"] for row in _journal_rows()]
     assert watermarks
     assert watermarks == sorted(watermarks)
+    assert len(watermarks) == 5
 
 
 def test_p2p_feed_late_allowed_joins_open() -> None:
@@ -471,6 +489,10 @@ def test_p2p_config_max_duration_close() -> None:
     assert sessions
     assert sessions[0]["end_ms"] == 10000
     assert sessions[0]["event_ids"] == ["d1"]
+    open_snap = json.loads(OPEN.read_text(encoding="utf-8"))
+    nxt = next(row for row in open_snap["sessions"] if row["user_id"] == "u1")
+    assert nxt["event_ids"] == ["d2"]
+    assert nxt["start_ms"] == 15000
 
 
 def test_f2p_config_lateness_marks_too_late() -> None:
@@ -500,6 +522,12 @@ def test_f2p_holdout_gap_and_tenant() -> None:
     assert bob
     assert bob[0]["event_ids"] == ["h4"]
     assert bob[0]["end_ms"] == 45000
+    alice_next = [
+        row for row in open_snap["sessions"] if row["tenant_id"] == "hold" and row["user_id"] == "alice"
+    ]
+    assert alice_next
+    assert alice_next[0]["event_ids"] == ["h5"]
+    assert alice_next[0]["start_ms"] == 80000
 
 
 def test_p2p_input_tie_break_stable() -> None:
@@ -536,11 +564,16 @@ def test_f2p_reset_output_keeps_journal() -> None:
     open_before = OPEN.read_text(encoding="utf-8")
     assert before.strip()
     assert open_before.strip()
+    REJECTS.write_text(
+        '{"code":"REJECT_MALFORMED","event_id":null,"detail":"seed","line_no":1}\n',
+        encoding="utf-8",
+    )
     _run(["--reset-output", "--empty-check"])
     assert JOURNAL.read_text(encoding="utf-8") == before
     assert OPEN.read_text(encoding="utf-8") == open_before
     assert SESSIONS.read_text(encoding="utf-8") == ""
     assert LATE.read_text(encoding="utf-8") == ""
+    assert REJECTS.read_text(encoding="utf-8") == ""
 
 
 def test_f2p_watermark_formula_in_journal() -> None:
@@ -615,3 +648,60 @@ def test_p2p_config_keys() -> None:
     assert int(raw["session_gap_ms"]) > 0
     assert int(raw["allowed_lateness_ms"]) > 0
     assert int(raw["max_session_duration_ms"]) > 0
+
+
+def test_p2p_late_straggler_keeps_last_event_time() -> None:
+    """A late-but-allowed straggler must join without lowering last_event_time_ms."""
+    _run(["--reset-output", "--feed", str(HOLD / "late_straggler.jsonl")])
+    open_snap = json.loads(OPEN.read_text(encoding="utf-8"))
+    sess = next(row for row in open_snap["sessions"] if row["user_id"] == "u1")
+    assert sess["event_ids"] == ["s1", "s2", "s3"]
+    assert sess["last_event_time_ms"] == 100000
+    assert "s3" not in {row.get("event_id") for row in _load_jsonl(LATE)}
+
+
+def test_p2p_schema_malformed_classes() -> None:
+    """Missing fields, empty ids, and wrong types reject; empty payload is accepted."""
+    _run(["--reset-output", "--feed", str(HOLD / "schema_rejects.jsonl")])
+    rejects = _load_jsonl(REJECTS)
+    details = " ".join(str(row.get("detail") or "") for row in rejects)
+    assert any("missing" in str(row.get("detail") or "") for row in rejects)
+    assert any("empty" in str(row.get("detail") or "") for row in rejects)
+    assert any("type" in str(row.get("detail") or "") for row in rejects)
+    assert len(rejects) == 3
+    assert "m4" not in details
+    late_ids = {row.get("event_id") for row in _load_jsonl(LATE)}
+    assert "m1" not in late_ids
+    open_snap = json.loads(OPEN.read_text(encoding="utf-8"))
+    ids = [eid for row in open_snap["sessions"] for eid in row["event_ids"]]
+    assert "m4" in ids
+
+
+def test_p2p_ops_report_uses_warehouse_catalog() -> None:
+    """A successful run must refresh last_run.json and ops-report.json from the catalog."""
+    _run(["--reset-output", "--input", str(ROOT / "fixtures" / "sample_basic.jsonl")])
+    assert LAST_RUN.is_file()
+    assert OPS_REPORT.is_file()
+    last_run = json.loads(LAST_RUN.read_text(encoding="utf-8"))
+    report = json.loads(OPS_REPORT.read_text(encoding="utf-8"))
+    assert int(last_run["warehouse"]["event_count"]) >= 10000
+    assert report["catalog"]["available"] is True
+    assert int(report["inventory"]["event_count"]) >= 10000
+
+
+def test_p2p_catalog_enterprise_gap_overlay() -> None:
+    """Catalog enterprise tenants overlay session_gap_ms for watermark idle close."""
+    _run(["--reset-output", "--input", str(HOLD / "catalog_enterprise.jsonl")])
+    closed = [
+        row
+        for row in _load_jsonl(SESSIONS)
+        if row["tenant_id"] == "t01" and row["user_id"] == "u0"
+    ]
+    assert not closed
+    open_snap = json.loads(OPEN.read_text(encoding="utf-8"))
+    sess = next(
+        row for row in open_snap["sessions"] if row["tenant_id"] == "t01" and row["user_id"] == "u0"
+    )
+    assert sess["event_ids"] == ["c1", "c2"]
+    assert sess["last_event_time_ms"] == 2000
+

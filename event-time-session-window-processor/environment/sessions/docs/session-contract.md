@@ -9,6 +9,8 @@ Binding specification for `/app/sessions`. Operators drive the processor only th
 | `/app/sessions/config/processor.json` | `session_gap_ms`, `allowed_lateness_ms`, `max_session_duration_ms` |
 | `/app/sessions/data/watermark.journal` | JSONL watermark advances; reload on restart |
 | `/app/sessions/data/open_sessions.json` | Crash-consistent snapshot of in-flight sessions |
+| `/app/sessions/data/last_run.json` | Operator desk snapshot after a successful run |
+| `/app/sessions/data/ops-report.json` | Catalog/ledger reconcile report after a successful run |
 | `/app/sessions/output/sessions.jsonl` | Closed session records |
 | `/app/sessions/output/late.jsonl` | Too-late side output |
 | `/app/sessions/output/rejects.jsonl` | Malformed / fail-closed rejections |
@@ -26,8 +28,10 @@ Create parent directories as needed. Outputs are UTF-8 JSONL, no BOM.
 - `--input` processes a batch after the deterministic tie-break: group by `event_time_ms`, then `(tenant_id, user_id, event_id)` ascending.
 - `--feed` processes strictly in file order (arrival / processing order). Use this when out-of-order event times must be preserved.
 - When both `--input` and `--feed` are omitted and `--empty-check` is set, treat input as empty: leave `sessions.jsonl` and `late.jsonl` empty (create empty files if needed) and do not advance the watermark.
+- Omitting `--input`, `--feed`, and `--empty-check` is a usage error: exit status `2` before mutating journal, open-session state, or outputs.
 - Unknown flags must be rejected with exit status `2` before mutating journal, open-session state, or outputs.
 - `--reset-output` truncates `sessions.jsonl`, `late.jsonl`, and `rejects.jsonl` before the run. It must not clear the watermark journal or open-session state.
+- A successful run (including `--empty-check`) requires `/app/sessions/warehouse/catalog.sqlite` and rewrites `last_run.json` and `ops-report.json` with warehouse inventory counts.
 
 ## Input event schema
 
@@ -62,6 +66,8 @@ Load `/app/sessions/config/processor.json` on every run:
 ```
 
 All three values are positive integers. Honor the file; changing it between runs must change behavior.
+
+Catalog-backed tenants (those listed in `/app/sessions/warehouse/catalog.sqlite`) overlay `session_gap_ms` from plan: `enterprise` uses `45000`, `free` uses `15000`, and every other catalog plan keeps the processor.json gap. Tenants that are not in the catalog keep all three knobs from processor.json. `allowed_lateness_ms` and `max_session_duration_ms` always come from processor.json.
 
 ## Session identity and intervals
 

@@ -58,6 +58,9 @@ def main(argv: list[str] | None = None) -> int:
     state = load_state(JOURNAL_PATH, OPEN_SESSIONS_PATH)
     counters = RunCounters()
     directory = TenantDirectory.load()
+    if not directory.catalog_ready():
+        print("error: operator catalog unavailable", file=sys.stderr)
+        return 2
 
     if args.empty_check and args.input is None and args.feed is None:
         apply_empty_check(SESSIONS_OUT, LATE_OUT, OPEN_SESSIONS_PATH, state)
