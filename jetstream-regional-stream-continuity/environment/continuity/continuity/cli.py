@@ -6,13 +6,20 @@ import json
 import shutil
 import sqlite3
 import sys
-from collections.abc import Mapping, Sequence
-from datetime import UTC, datetime
+from collections.abc import Sequence
 from pathlib import Path
 from typing import Any
 
-from .model import ContractError, FencingError, ReplayStatus, canonical_json, to_iso, utcnow
-from .policy import ContinuityEngine
+from .engine import ContinuityEngine
+from .model import (
+    ContractError,
+    FencingError,
+    GenerationConflict,
+    ReplayConflict,
+    to_iso,
+    utcnow,
+)
+from .policy import OriginObservation
 from .runtime import (
     ArchiveSynchronizer,
     ConsumerRunner,
@@ -65,6 +72,7 @@ def ensure_database(root: Path, *, reset: bool = False) -> Path:
     if reset and database.exists():
         database.unlink()
     if database.exists():
+        _apply_runtime_extensions(root, database)
         return database
     schema = root / "sql" / "schema.sql"
     seed = root / "sql" / "seed.sql"
@@ -77,7 +85,20 @@ def ensure_database(root: Path, *, reset: bool = False) -> Path:
         connection.commit()
     finally:
         connection.close()
+    _apply_runtime_extensions(root, database)
     return database
+
+
+def _apply_runtime_extensions(root: Path, database: Path) -> None:
+    extension = root / "sql" / "runtime_extensions.sql"
+    if not extension.exists():
+        return
+    connection = sqlite3.connect(database)
+    try:
+        connection.executescript(extension.read_text(encoding="utf-8"))
+        connection.commit()
+    finally:
+        connection.close()
 
 
 def command_db_init(args: argparse.Namespace) -> int:
@@ -132,6 +153,41 @@ def command_generations(args: argparse.Namespace) -> int:
     values = engine.store.list_generations(args.region)
     dump([item.as_dict() for item in values], pretty=not args.compact)
     return 0
+
+
+def command_observe_origin(args: argparse.Namespace) -> int:
+    root = root_from_args(args)
+    ensure_database(root)
+    engine = make_engine(root)
+    observation = OriginObservation(
+        region=args.region,
+        stream_name=args.stream,
+        domain=args.domain,
+        stream_fingerprint=args.fingerprint,
+        first_sequence=int(args.first),
+        last_sequence=int(args.last),
+        observed_at=utcnow(),
+    )
+    record = engine.validate_origin_observation(observation)
+    dump(record.as_dict(), pretty=not args.compact)
+    return 0 if record.status.value == "CONFIRMED" else 2
+
+
+async def async_publish(args: argparse.Namespace) -> int:
+    root = root_from_args(args)
+    ensure_database(root)
+    engine = make_engine(root)
+    event = engine.store.event_by_id(args.event_id)
+    if event is None:
+        raise CliFailure(f"event {args.event_id} is not in the edge journal")
+    pool = NatsConnectionPool()
+    try:
+        publisher = NatsPublisher(pool, endpoints_from_engine(engine)[event.identity.region])
+        ack = await engine.publish_event(args.event_id, publisher)
+        dump(ack.as_dict(), pretty=not args.compact)
+        return 0
+    finally:
+        await pool.close()
 
 
 def command_approve_generation(args: argparse.Namespace) -> int:
@@ -444,6 +500,21 @@ def build_parser() -> argparse.ArgumentParser:
     approve.add_argument("--approved-by", required=True)
     approve.set_defaults(func=command_approve_generation)
 
+    observe = sub.add_parser("observe-origin", help="record an origin stream observation")
+    add_common(observe)
+    observe.add_argument("region", choices=("east", "west"))
+    observe.add_argument("--stream", required=True)
+    observe.add_argument("--domain", required=True)
+    observe.add_argument("--fingerprint", required=True)
+    observe.add_argument("--first", required=True, type=int)
+    observe.add_argument("--last", required=True, type=int)
+    observe.set_defaults(func=command_observe_origin)
+
+    publish = sub.add_parser("publish", help="publish one accepted journal event to its origin stream")
+    add_common(publish)
+    publish.add_argument("event_id")
+    publish.set_defaults(async_func=async_publish)
+
     replay = sub.add_parser("plan-replay", help="build a replay plan from reconciliation gaps")
     add_common(replay)
     replay.add_argument("region", choices=("east", "west"))
@@ -536,17 +607,59 @@ async def async_main(argv: Sequence[str] | None = None) -> int:
         if hasattr(args, "func"):
             return int(args.func(args))
         parser.error("command has no handler")
-    except (CliFailure, ContractError, FencingError, OSError, sqlite3.Error) as exc:
+    except (
+        CliFailure,
+        ContractError,
+        FencingError,
+        GenerationConflict,
+        ReplayConflict,
+        OSError,
+        sqlite3.Error,
+    ) as exc:
         print(f"continuityctl: {exc}", file=sys.stderr)
         return 2
     return 2
 
 
 def main(argv: Sequence[str] | None = None) -> int:
+    parser = build_parser()
+    args = parser.parse_args(argv)
     try:
-        return asyncio.run(async_main(argv))
+        if hasattr(args, "async_func"):
+            return int(asyncio.run(_run_async(args)))
+        if hasattr(args, "func"):
+            return int(args.func(args))
+        parser.error("command has no handler")
+    except (
+        CliFailure,
+        ContractError,
+        FencingError,
+        GenerationConflict,
+        ReplayConflict,
+        OSError,
+        sqlite3.Error,
+    ) as exc:
+        print(f"continuityctl: {exc}", file=sys.stderr)
+        return 2
     except KeyboardInterrupt:
         return 130
+    return 2
+
+
+async def _run_async(args: argparse.Namespace) -> int:
+    try:
+        return int(await args.async_func(args))
+    except (
+        CliFailure,
+        ContractError,
+        FencingError,
+        GenerationConflict,
+        ReplayConflict,
+        OSError,
+        sqlite3.Error,
+    ) as exc:
+        print(f"continuityctl: {exc}", file=sys.stderr)
+        return 2
 
 
 if __name__ == "__main__":

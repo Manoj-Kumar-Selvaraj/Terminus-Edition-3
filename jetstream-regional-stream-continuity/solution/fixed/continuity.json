@@ -3,7 +3,7 @@
   "regions": {
     "east": {
       "domain": "edge-east",
-      "stream_name": "EDGE_TELEMETRY",
+      "stream_name": "EDGE_EAST_TELEMETRY",
       "server_url": "nats://127.0.0.1:4223",
       "monitor_url": "http://127.0.0.1:8223",
       "subject_prefix": "telemetry.east",
@@ -11,8 +11,8 @@
         "retention": "limits",
         "storage": "file",
         "replicas": 1,
-        "duplicate_window_seconds": 120,
-        "max_age_seconds": 172800,
+        "duplicate_window_seconds": 21600,
+        "max_age_seconds": 259200,
         "allow_direct": false,
         "deny_delete": true,
         "deny_purge": true
@@ -20,7 +20,7 @@
     },
     "west": {
       "domain": "edge-west",
-      "stream_name": "EDGE_TELEMETRY",
+      "stream_name": "EDGE_WEST_TELEMETRY",
       "server_url": "nats://127.0.0.1:4224",
       "monitor_url": "http://127.0.0.1:8224",
       "subject_prefix": "telemetry.west",
@@ -28,8 +28,8 @@
         "retention": "limits",
         "storage": "file",
         "replicas": 1,
-        "duplicate_window_seconds": 120,
-        "max_age_seconds": 172800,
+        "duplicate_window_seconds": 21600,
+        "max_age_seconds": 259200,
         "allow_direct": false,
         "deny_delete": true,
         "deny_purge": true
@@ -46,21 +46,21 @@
     "retention": "limits",
     "storage": "file",
     "replicas": 1,
-    "duplicate_window_seconds": 120,
-    "max_age_seconds": 172800,
-    "allow_direct": true,
+    "duplicate_window_seconds": 21600,
+    "max_age_seconds": 259200,
+    "allow_direct": false,
     "deny_delete": true,
     "deny_purge": true
   },
   "topology": {
     "edge_streams": {
       "east": {
-        "name": "EDGE_TELEMETRY",
+        "name": "EDGE_EAST_TELEMETRY",
         "domain": "edge-east",
         "subjects": ["telemetry.east.>"]
       },
       "west": {
-        "name": "EDGE_TELEMETRY",
+        "name": "EDGE_WEST_TELEMETRY",
         "domain": "edge-west",
         "subjects": ["telemetry.west.>"]
       }
@@ -68,13 +68,13 @@
     "hub_archive": {
       "name": "REGIONAL_RAW_ARCHIVE",
       "domain": "hub",
-      "subjects": ["telemetry.raw.>"]
+      "subjects": []
     },
     "sources": [
       {
         "region": "east",
         "origin": {
-          "name": "EDGE_TELEMETRY",
+          "name": "EDGE_EAST_TELEMETRY",
           "domain": "edge-east",
           "subjects": ["telemetry.east.>"]
         },
@@ -83,15 +83,15 @@
       {
         "region": "west",
         "origin": {
-          "name": "EDGE_TELEMETRY",
-          "domain": "edge-east",
+          "name": "EDGE_WEST_TELEMETRY",
+          "domain": "edge-west",
           "subjects": ["telemetry.west.>"]
         },
         "destination_prefix": "telemetry.raw.west"
       }
     ],
-    "raw_archive_subjects": ["telemetry.raw.>"],
-    "derived_subject_prefix": "telemetry.raw"
+    "raw_archive_subjects": ["telemetry.raw.east.>", "telemetry.raw.west.>"],
+    "derived_subject_prefix": "telemetry.derived"
   },
   "consumers": {
     "telemetry-indexer": {

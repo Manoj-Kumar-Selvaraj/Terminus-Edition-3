@@ -1,19 +1,17 @@
 # Regional telemetry continuity service
 
-This repository tree contains the operator control plane used to keep two intermittently connected edge telemetry domains converged with a central JetStream archive. Each edge accepts device events into a local durable journal and JetStream origin stream. The hub sources both origins, processes the combined archive with durable consumers, and records application-side effects and replay/checkpoint state in SQLite.
+This task asks an agent to complete a production JetStream continuity control plane that already has a real three-domain lab, a 12k-row edge journal, and an inherited incident. The hard part is restoring one identity-safe model across origin generations, hub sourcing, consumer effects, replay leases, and retention, not patching a single queue symptom.
 
-The service is intentionally stateful. A reconnect is not considered healthy merely because the NATS servers are reachable: the edge journal, origin generation, hub archive membership, consumer checkpoint, effect ledger and retention watermark must agree. The normal operator entrypoint is `/app/continuity/bin/continuityctl`.
+The agent image uses Debian bookworm-slim rather than the canonical Python image because the lab runs a digest-pinned nats-server 2.14.3 binary next to SQLite and the Python operator CLI.
 
-## Runtime layout
+## Why it is hard
 
-- `/app/continuity/config/` — JetStream topology and policy configuration.
-- `/app/continuity/continuity/` — Python control-plane and worker implementation.
-- `/app/continuity/state/continuity.db` — durable journal, checkpoints, replay plans and effect ledger.
-- `/app/continuity/log/archive/` — captured incident/controller logs.
-- `/app/continuity/ops/` — shift handoff and captured stream state.
-- `/app/continuity/docs/` — event-envelope, continuity and operator contracts.
-- `/app/continuity/out/` — generated health and reconciliation reports.
+A reconnect can look healthy while the hub archive is missing identities, a recreated origin presents a low sequence, a consumer effect committed before ACK, or cleanup would delete the only replay authority. Fixes that stop duplicates can still skip a generation hold; fixes that catch up the archive can still emit a second effect.
 
-`bin/start-lab.sh` starts the hub and both edge JetStream domains. `bin/reset-lab.sh` recreates the inherited starting state from the deterministic SQL seed. `bin/continuityctl inspect` produces a current health snapshot; `bin/continuityctl reconcile` performs a dry-run comparison; `bin/continuityctl recover` applies a safe replay/recovery plan; and `bin/continuityctl verify` checks convergence invariants after recovery.
+## Solution approach
 
-The edge journals remain the replay authority until the hub archive and all required durable consumers have crossed the same confirmed origin watermark. Stream sequence numbers from the hub aggregate are not interchangeable with an edge origin sequence because sourced streams are interleaved at the destination. Event identity and origin metadata therefore remain explicit throughout the pipeline.
+Keep stable `event_id` as `Nats-Msg-Id`, hold ambiguous origin generations for operator approval, make the hub archive source-only, commit consumer effects before JetStream ACK, reconcile by identity, plan replay from missing identities, increment fence epochs on expired reacquire, and gate cleanup on archive, slowest required consumer, and active replay pins.
+
+## Verification
+
+The verifier drives `continuityctl`, SQLite, and the live local JetStream lab. It checks operator reports, identity reconciliation, generation holds, fencing, retention watermarks, and idempotent consumer effects. It does not grade private engine method names.

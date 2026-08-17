@@ -525,7 +525,10 @@ class RuntimeBootstrap:
         config["sources"] = [
             {
                 "name": source.origin.name,
-                "domain": source.origin.domain,
+                "external": {
+                    "api": f"$JS.{source.origin.domain}.API",
+                    "deliver": f"_CONTINUITY.SOURCE.{source.region}",
+                },
                 "subject_transforms": [
                     {
                         "src": source.origin.subjects[0] if source.origin.subjects else f"telemetry.{source.region}.>",

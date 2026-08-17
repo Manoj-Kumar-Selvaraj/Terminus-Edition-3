@@ -2,4 +2,7 @@
 set -euo pipefail
 ROOT="${CONTINUITY_ROOT:-/app/continuity}"
 export PYTHONPATH="$ROOT${PYTHONPATH:+:$PYTHONPATH}"
-exec "$ROOT/.venv/bin/python" -m continuity.starter_cli "$@"
+if [[ -x "$ROOT/.venv/bin/python" ]]; then
+  exec "$ROOT/.venv/bin/python" -m continuity.cli "$@"
+fi
+exec python3 -m continuity.cli "$@"

@@ -1,23 +1,39 @@
 #!/usr/bin/env bash
 set -euo pipefail
 ROOT="${CONTINUITY_ROOT:-/app/continuity}"
-install -m 0644 /solution/files/engine.py "$ROOT/continuity/engine.py"
-install -m 0644 /solution/files/continuity.json "$ROOT/config/continuity.json"
-if grep -Fq '"domain": source.origin.domain,' "$ROOT/continuity/runtime.py"; then
-  patch --silent -d "$ROOT" -p1 < /solution/files/runtime-domain-source.patch
+FIXED="/solution/fixed"
+install -m 0644 "$FIXED/publish.py" "$ROOT/continuity/publish.py"
+install -m 0644 "$FIXED/generation.py" "$ROOT/continuity/generation.py"
+install -m 0644 "$FIXED/consumers.py" "$ROOT/continuity/consumers.py"
+install -m 0644 "$FIXED/reconcile.py" "$ROOT/continuity/reconcile.py"
+install -m 0644 "$FIXED/replay.py" "$ROOT/continuity/replay.py"
+install -m 0644 "$FIXED/fencing.py" "$ROOT/continuity/fencing.py"
+install -m 0644 "$FIXED/retention.py" "$ROOT/continuity/retention.py"
+install -m 0644 "$FIXED/runtime.py" "$ROOT/continuity/runtime.py"
+install -m 0644 "$FIXED/continuity.json" "$ROOT/config/continuity.json"
+PYTHON="$(command -v python3)"
+if [[ -x /opt/continuity-venv/bin/python ]]; then
+  PYTHON="/opt/continuity-venv/bin/python"
+elif [[ -x "$ROOT/.venv/bin/python" ]]; then
+  PYTHON="$ROOT/.venv/bin/python"
 fi
-"$ROOT/.venv/bin/python" -m py_compile \
-  "$ROOT/continuity/model.py" \
-  "$ROOT/continuity/store.py" \
-  "$ROOT/continuity/policy.py" \
-  "$ROOT/continuity/engine.py" \
-  "$ROOT/continuity/runtime.py" \
-  "$ROOT/continuity/cli.py" \
-  "$ROOT/continuity/starter_cli.py"
+"$PYTHON" -m py_compile \
+    "$ROOT/continuity/model.py" \
+    "$ROOT/continuity/store.py" \
+    "$ROOT/continuity/policy.py" \
+    "$ROOT/continuity/engine.py" \
+    "$ROOT/continuity/publish.py" \
+    "$ROOT/continuity/generation.py" \
+    "$ROOT/continuity/consumers.py" \
+    "$ROOT/continuity/reconcile.py" \
+    "$ROOT/continuity/replay.py" \
+    "$ROOT/continuity/fencing.py" \
+    "$ROOT/continuity/retention.py" \
+    "$ROOT/continuity/runtime.py" \
+    "$ROOT/continuity/cli.py"
 
-# Preserve the inherited incident state, but leave the requested operator snapshots behind.
-# `verify` returns 2 while the captured incident state still contains unresolved data gaps;
-# report materialization itself must nevertheless succeed deterministically.
+# Preserve inherited incident rows. verify exits 2 while gaps remain;
+# report materialization must still succeed.
 set +e
 "$ROOT/bin/continuityctl" verify --compact >/tmp/continuity-final-verify.json
 verify_status=$?

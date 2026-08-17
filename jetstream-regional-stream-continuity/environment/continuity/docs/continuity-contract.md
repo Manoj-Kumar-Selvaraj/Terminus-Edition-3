@@ -115,7 +115,7 @@ Rows newer than the configured minimum journal age are never cleanup candidates.
 
 ## Operator outputs
 
-`continuityctl inspect`, `continuityctl reconcile`, and `continuityctl verify` are diagnostic operations: they may record reconciliation runs/findings, but they do not apply replay or retention mutations. `continuityctl verify` writes `/app/continuity/out/health.json` and `/app/continuity/out/reconciliation.json`.
+`continuityctl inspect`, `continuityctl reconcile`, and `continuityctl verify` are diagnostic operations: they may record reconciliation runs/findings, but they do not apply replay or retention mutations. `continuityctl verify` writes `/app/continuity/out/health.json` and `/app/continuity/out/reconciliation.json`. `continuityctl publish` publishes one accepted journal event to its origin stream using the event’s stable identity as `Nats-Msg-Id`. `continuityctl observe-origin` records an origin stream observation and applies the generation-hold rules above. `continuityctl plan-replay`, `list-replay`, `execute-replay`, `lease`, `retention`, `lab-start`, `run-consumer`, `generations`, and `approve-generation` remain the operator controls for recovery work.
 
 The output reports describe the durable state the repaired controller observes. They must not rewrite the captured incident history or manufacture a healthy result by deleting gaps, checkpoints, replay state, or other evidence.
 
