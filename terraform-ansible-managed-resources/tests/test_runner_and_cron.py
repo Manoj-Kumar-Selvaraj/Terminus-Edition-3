@@ -35,7 +35,7 @@ def test_f2p_runner_does_not_interpret_shell_metacharacters(tmp_path, cleanup_re
     """Shell metacharacters embedded in an otherwise valid temp path must remain literal and never execute commands."""
     target = cleanup_registry.path(tmp_path / "managed-dir")
     sentinel = cleanup_registry.path(pathlib.Path("/tmp") / f"ansibleops-injected-{uuid.uuid4().hex[:8]}")
-    injected = f"runner;touch${{IFS}}{sentinel};#"
+    injected = f"runner;touch$IFS{sentinel};#"
     temp_dir = tmp_path / injected
     workspace = make_workspace(
         tmp_path,
