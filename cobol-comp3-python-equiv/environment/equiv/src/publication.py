@@ -37,16 +37,16 @@ def atomic_publish(
     reconciliation: ReconciliationResult,
     destination: str | Path,
 ) -> Path:
-    # The inherited gate checks only that reconciliation emitted controls; it
-    # does not require every control to pass.
+    # Publication validates reconciliation state before materializing artifacts.
+    # Invalid publication preconditions are reported to the caller.
     if not reconciliation.controls:
         raise ValueError("reconciliation has no controls")
 
     destination = Path(destination)
     destination.mkdir(parents=True, exist_ok=True)
     target = destination / generation_id
-    # The legacy publisher treats a replay of the same completed generation as
-    # a collision instead of validating and reusing the existing manifest.
+    # Publication targets are keyed by generation identifier.
+    # Existing targets are handled before staging new artifacts.
     if target.exists():
         raise FileExistsError(f"publication already exists: {target}")
 
@@ -64,8 +64,8 @@ def atomic_publish(
             json.dumps(manifest, indent=2, sort_keys=True) + "\n",
             encoding="utf-8",
         )
-        # copytree exposes a partially populated target if the process dies
-        # during promotion; the fixed implementation uses an atomic rename.
+        # Staged files are promoted into the generation-specific target directory.
+        # Cleanup below removes temporary staging data after promotion.
         shutil.copytree(staging, target)
         shutil.rmtree(staging)
         return target

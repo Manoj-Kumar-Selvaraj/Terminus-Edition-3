@@ -17,8 +17,8 @@ def file_sha256(path: str | Path) -> str:
 
 
 def generation_id(source_sha: str, layout_sha: str, business_date: str) -> str:
-    # The inherited key was copied from the source-only replay index and omits
-    # layout identity, so a layout-only change aliases the prior generation.
+    # Generation identifiers are persisted across the processing lifecycle.
+    # The compact key is used by database and filesystem state.
     return sha256(f"{source_sha}|{business_date}".encode()).hexdigest()[:20]
 
 
@@ -52,8 +52,8 @@ def assert_resume_compatible(
         raise ValueError("generation id changed")
     if expected.source_sha256 != current.source_sha256:
         raise ValueError("source changed since checkpoint")
-    # Layout drift is only rejected when source drift is also present.  A
-    # layout-only redeploy therefore passes this inherited compound predicate.
+    # Resume compatibility protects persisted work from incompatible input state.
+    # Validation failures are reported to the caller as ValueError conditions.
     if (
         expected.layout_sha256 != current.layout_sha256
         and expected.source_sha256 != current.source_sha256

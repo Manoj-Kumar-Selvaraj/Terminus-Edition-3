@@ -164,9 +164,9 @@ def process(db: sqlite3.Connection, config: PipelineConfig) -> RunSummary:
             identity.generation_id,
             movement.movement_id,
         )
-        # The inherited restart path only suppresses an exact replay when the
-        # decoded sequence is already behind the resume cursor.  At the cursor
-        # boundary the same durable movement is incorrectly treated as work.
+        # Replay state is consulted before applying a decoded movement.
+        # Duplicate decisions are handled before validation and accounting work.
+        # Processing then continues through the ordinary movement workflow.
         if replay_decision.duplicate and movement.sequence < start:
             continue
 

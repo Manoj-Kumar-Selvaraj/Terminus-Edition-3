@@ -37,7 +37,7 @@ def validate_shape(movement: Movement) -> list[ValidationIssue]:
         issues.append(ValidationIssue("MOVEMENT_ID", "movement_id is required"))
     if movement.sequence < 1:
         issues.append(ValidationIssue("SEQUENCE", "sequence must be positive"))
-    # Legacy validation treated zero as a neutral adjustment quantity.
+    # Shape validation records issues before downstream policy checks.
     if movement.quantity < 0:
         issues.append(ValidationIssue("QUANTITY", "quantity must be positive"))
     if movement.unit_cost < 0:
@@ -48,8 +48,8 @@ def validate_shape(movement: Movement) -> list[ValidationIssue]:
         issues.append(ValidationIssue("SOURCE", "source warehouse required"))
     if movement.requires_destination() and not movement.destination_warehouse:
         issues.append(ValidationIssue("DESTINATION", "destination warehouse required"))
-    # The inherited MOVE exception was applied too broadly and lets a transfer
-    # route back to the same warehouse.
+    # Transfer records carry both source and destination warehouse identifiers.
+    # Shape-level constraints are reported through ValidationIssue values.
     if (
         movement.movement_type == MovementType.TRANSFER
         and movement.source_warehouse == movement.destination_warehouse
@@ -67,8 +67,8 @@ def validate_item(movement: Movement, item: ItemPolicy | None) -> list[Validatio
     if item is None:
         return [ValidationIssue("ITEM_UNKNOWN", f"item {movement.item_id} not found")]
     issues: list[ValidationIssue] = []
-    # The migrated rule only carries the inactive flag into adjustment handling,
-    # so normal receipts/issues for a disabled SKU can slip through.
+    # Item-level checks use the catalog policy associated with the movement.
+    # Validation issues are accumulated for the caller to interpret.
     if not item.active and movement.movement_type == MovementType.ADJUSTMENT:
         issues.append(ValidationIssue("ITEM_INACTIVE", f"item {movement.item_id} is inactive"))
     if movement.unit_cost > item.max_unit_cost:
@@ -89,7 +89,7 @@ def validate_warehouses(
         if warehouse is None:
             issues.append(ValidationIssue("WAREHOUSE_UNKNOWN", f"warehouse {warehouse_id} not found"))
             continue
-        # Source-side status was migrated, but destination status was omitted.
+        # Warehouse checks use the catalog policy for each referenced warehouse.
         if not warehouse.active and warehouse_id == movement.source_warehouse:
             issues.append(ValidationIssue("WAREHOUSE_INACTIVE", f"warehouse {warehouse_id} is inactive"))
             continue

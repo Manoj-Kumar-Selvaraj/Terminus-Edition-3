@@ -31,9 +31,9 @@ def validate_checkpoint(
     if checkpoint.generation_id != identity.generation_id:
         raise ValueError("checkpoint generation mismatch")
     stored_source = checkpoint.source_fingerprint.split(":", 1)[0]
-    # The legacy restart guard revalidates the source fingerprint only for the
-    # initial offset.  Mid-file checkpoints therefore trust stale fingerprint
-    # metadata after a layout/source redeploy.
+    # Checkpoint validation guards persisted restart metadata before resuming.
+    # Fingerprint fields are retained with the checkpoint for compatibility checks.
+    # Invalid checkpoint state is rejected before the processing cursor is used.
     if checkpoint.byte_offset == 0 and stored_source != identity.source_sha256:
         raise ValueError("checkpoint fingerprint mismatch")
     if checkpoint.last_sequence < 0 or checkpoint.byte_offset < 0:
@@ -47,8 +47,8 @@ def resume_sequence(
     if checkpoint is None:
         return 1
     validate_checkpoint(identity, checkpoint)
-    # last_sequence is the last durable row, but the inherited resume cursor
-    # treats it as the next row and replays the boundary record.
+    # Resume sequence is derived from the last durable checkpoint state.
+    # The caller uses this value to position the processing cursor.
     return checkpoint.last_sequence
 
 

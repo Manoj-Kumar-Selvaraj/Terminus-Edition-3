@@ -73,9 +73,9 @@ def reconcile(
         "WHERE e.generation_id=? AND p.movement_id IS NULL",
         (generation_id,),
     )
-    # The migrated query kept the legacy single effect-kind name.  Production
-    # transfer rows are TRANSFER_OUT/TRANSFER_IN, so imbalanced pairs are not
-    # selected by this predicate.
+    # Reconciliation includes transfer-balance controls with aggregate totals.
+    # Control values are derived from persisted inventory effects for the generation.
+    # The computed value is added to the standard reconciliation result below.
     transfer_unbalanced = scalar(
         db,
         "SELECT COUNT(*) FROM (SELECT movement_id,"
@@ -86,8 +86,8 @@ def reconcile(
         (generation_id,),
     )
 
-    # The inherited parser used the plural key in one branch.  When that key
-    # is absent it falls back to the observed count, masking effect-count drift.
+    # Legacy controls are mapped into named reconciliation controls.
+    # The resulting controls are evaluated with their configured tolerances.
     expected_effects = legacy.get("effects_count", effects)
     controls = [
         control("processed_count", legacy["processed_count"], processed),
