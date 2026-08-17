@@ -33,31 +33,14 @@ func (r *templateResource) Metadata(_ context.Context, req resource.MetadataRequ
 }
 func (r *templateResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{Description: "Renders an Ansible/Jinja template to a managed destination.", Attributes: map[string]schema.Attribute{
-		"id": schema.StringAttribute{Computed: true}, "source": schema.StringAttribute{Required: true}, "destination": schema.StringAttribute{Required: true},
-		"mode": schema.StringAttribute{Optional: true}, "owner": schema.StringAttribute{Optional: true}, "group": schema.StringAttribute{Optional: true},
-		"variables": schema.MapAttribute{Optional: true, ElementType: types.StringType}, "source_digest": schema.StringAttribute{Computed: true},
+		"id": schema.StringAttribute{Computed: true}, "source": schema.StringAttribute{Required: true}, "source_digest": schema.StringAttribute{Required: true},
+		"destination": schema.StringAttribute{Required: true}, "mode": schema.StringAttribute{Optional: true}, "owner": schema.StringAttribute{Optional: true},
+		"group": schema.StringAttribute{Optional: true}, "variables": schema.MapAttribute{Optional: true, ElementType: types.StringType},
 		"variables_fingerprint": schema.StringAttribute{Computed: true}, "destination_digest": schema.StringAttribute{Computed: true},
 	}}
 }
 func (r *templateResource) Configure(_ context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
 	configure(req, resp, &r.rt)
-}
-func (r *templateResource) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
-	if req.Plan.Raw.IsNull() {
-		return
-	}
-	var plan templateResourceModel
-	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
-	if resp.Diagnostics.HasError() || plan.Source.IsUnknown() || plan.Source.IsNull() {
-		return
-	}
-	vars := mapStrings(ctx, plan.Variables, &resp.Diagnostics)
-	if resp.Diagnostics.HasError() {
-		return
-	}
-	plan.SourceDigest = types.StringValue(lifecycle.SourceFingerprint(stringValue(plan.Source)))
-	plan.VarsFingerprint = types.StringValue(lifecycle.MapFingerprint(vars))
-	resp.Diagnostics.Append(resp.Plan.Set(ctx, &plan)...)
 }
 func (r *templateResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	var plan templateResourceModel
@@ -75,13 +58,8 @@ func (r *templateResource) Create(ctx context.Context, req resource.CreateReques
 	if !execute(ctx, r.rt, ansible.TemplateTask("render managed template", stringValue(plan.Source), stringValue(plan.Destination), stringValue(plan.Mode), stringValue(plan.Owner), stringValue(plan.Group), vars), &resp.Diagnostics) {
 		return
 	}
+	plan.VarsFingerprint = types.StringValue(lifecycle.MapFingerprint(vars))
 	plan.ID = types.StringValue(lifecycle.ResourceIdentity("template", stringValue(plan.Destination), stringValue(plan.Source), stringValue(plan.Mode), stringValue(plan.VarsFingerprint)))
-	if plan.SourceDigest.IsNull() || plan.SourceDigest.IsUnknown() {
-		plan.SourceDigest = types.StringValue(lifecycle.SourceFingerprint(stringValue(plan.Source)))
-	}
-	if plan.VarsFingerprint.IsNull() || plan.VarsFingerprint.IsUnknown() {
-		plan.VarsFingerprint = types.StringValue(lifecycle.MapFingerprint(vars))
-	}
 	r.refresh(&plan, &resp.Diagnostics)
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 }
@@ -111,6 +89,7 @@ func (r *templateResource) Update(ctx context.Context, req resource.UpdateReques
 	if resp.Diagnostics.HasError() {
 		return
 	}
+	plan.VarsFingerprint = types.StringValue(lifecycle.MapFingerprint(vars))
 	plan.ID = types.StringValue(lifecycle.ResourceIdentity("template", stringValue(plan.Destination), stringValue(plan.Source), stringValue(plan.Mode), stringValue(plan.VarsFingerprint)))
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 	if !execute(ctx, r.rt, ansible.TemplateTask("update managed template", stringValue(plan.Source), stringValue(plan.Destination), stringValue(plan.Mode), stringValue(plan.Owner), stringValue(plan.Group), vars), &resp.Diagnostics) {
@@ -145,4 +124,3 @@ func (r *templateResource) refresh(model *templateResourceModel, diagnostics int
 var _ resource.Resource = (*templateResource)(nil)
 var _ resource.ResourceWithConfigure = (*templateResource)(nil)
 var _ resource.ResourceWithImportState = (*templateResource)(nil)
-var _ resource.ResourceWithModifyPlan = (*templateResource)(nil)
