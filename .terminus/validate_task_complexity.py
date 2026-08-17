@@ -8,6 +8,12 @@ Two profiles are supported:
 * ``large_system`` uses the same scale numbers as diagnostics while still
   blocking padding, flat defect graphs and dishonest test maps.
 
+Behavioral classification is owned by the private test map. Historical
+``test_f2p_*``/``test_p2p_*`` names remain supported as an optional consistency
+signal, but neutral pytest names are valid. A test-map entry may also provide a
+fourth behavioral-case id so several independent probes of one shared invariant or
+boundary count as one behavioral case without discarding coverage.
+
 This validator is control-plane logic only and never enters a submission ZIP.
 """
 
@@ -356,20 +362,6 @@ def validate(task_name: str) -> int:
     tests = python_test_names(task_dir / "tests")
     if len(tests) != len(set(tests)):
         errors.append("duplicate pytest function names were discovered")
-    f2p = [name for name in tests if name.startswith("test_f2p_")]
-    p2p = [name for name in tests if name.startswith("test_p2p_")]
-    unclassified = [name for name in tests if not expected_test_class(name)]
-    add_scale_finding(
-        strict,
-        errors,
-        warnings,
-        25 <= len(f2p) <= 30,
-        f"F2P test count {len(f2p)} is outside required 25-30",
-    )
-    if unclassified:
-        warnings.append(
-            f"{len(unclassified)} tests are not named F2P/P2P: {', '.join(unclassified[:5])}"
-        )
 
     test_map = load_test_map(task_name)
     requirements = test_map.get("requirements", {})
@@ -382,13 +374,19 @@ def validate(task_name: str) -> int:
         entries = []
 
     mapped: dict[str, str] = {}
-    per_requirement: Counter[str] = Counter()
+    mapped_class: dict[str, str] = {}
+    mapped_case: dict[str, str] = {}
+    case_contract: dict[str, tuple[str, str]] = {}
+    per_requirement_cases: dict[str, set[str]] = defaultdict(set)
     for entry in entries:
-        if not isinstance(entry, list) or len(entry) != 3:
-            errors.append(f"test-map entry must be [name, class, requirement]: {entry!r}")
+        if not isinstance(entry, list) or len(entry) not in {3, 4}:
+            errors.append(
+                f"test-map entry must be [name, class, requirement] or [name, class, requirement, case_id]: {entry!r}"
+            )
             continue
-        name, classification, requirement = (str(item) for item in entry)
+        name, classification, requirement = (str(item) for item in entry[:3])
         classification = classification.upper()
+        case_id = str(entry[3]) if len(entry) == 4 else name
         if name in mapped:
             errors.append(f"test map contains duplicate test entry: {name}")
             continue
@@ -399,15 +397,23 @@ def validate(task_name: str) -> int:
             errors.append(
                 f"test {name} is named {actual_class} but test map class is {classification}; classification drift can hide suite inflation"
             )
-        if not actual_class:
-            errors.append(
-                f"test {name} has no F2P/P2P name classification but test map claims {classification}"
-            )
         if requirement not in requirements:
             errors.append(f"test {name} maps to undeclared requirement {requirement!r}")
+        if not case_id:
+            errors.append(f"test {name} has an empty behavioral case id")
+        previous = case_contract.get(case_id)
+        current = (classification, requirement)
+        if previous is not None and previous != current:
+            errors.append(
+                f"behavioral case {case_id!r} mixes classification/requirements: {previous!r} vs {current!r}"
+            )
+        else:
+            case_contract[case_id] = current
         mapped[name] = requirement
+        mapped_class[name] = classification
+        mapped_case[name] = case_id
         if classification == "F2P":
-            per_requirement[requirement] += 1
+            per_requirement_cases[requirement].add(case_id)
 
     missing_from_map = sorted(set(tests) - set(mapped))
     absent_tests = sorted(set(mapped) - set(tests))
@@ -420,20 +426,73 @@ def validate(task_name: str) -> int:
         if requirement not in mapped_requirements:
             errors.append(f"requirement {requirement} has no test and cannot be verified")
 
-    if per_requirement and f2p:
-        requirement, count = per_requirement.most_common(1)[0]
-        share = count / len(f2p)
+    f2p = [name for name in tests if mapped_class.get(name) == "F2P"]
+    p2p = [name for name in tests if mapped_class.get(name) == "P2P"]
+    neutral_names = [name for name in tests if not expected_test_class(name)]
+    f2p_cases = {
+        mapped_case[name]
+        for name in f2p
+        if name in mapped_case
+    }
+    p2p_cases = {
+        mapped_case[name]
+        for name in p2p
+        if name in mapped_case
+    }
+    add_scale_finding(
+        strict,
+        errors,
+        warnings,
+        25 <= len(f2p_cases) <= 30,
+        f"F2P behavioral case count {len(f2p_cases)} is outside required 25-30",
+    )
+    if neutral_names:
+        warnings.append(
+            f"{len(neutral_names)} tests use neutral names; private test-map classification is authoritative"
+        )
+
+    if per_requirement_cases and f2p_cases:
+        requirement, cases = max(
+            per_requirement_cases.items(), key=lambda item: len(item[1])
+        )
+        count = len(cases)
+        share = count / len(f2p_cases)
         if share > 0.40:
             errors.append(
-                f"{count} of {len(f2p)} F2P tests ({share:.0%}) verify {requirement}; one requirement dominates the suite"
+                f"{count} of {len(f2p_cases)} F2P behavioral cases ({share:.0%}) verify {requirement}; one requirement dominates the suite"
             )
         elif share > 0.30:
-            warnings.append(f"{requirement} accounts for {share:.0%} of F2P tests; inspect distinctness")
+            warnings.append(
+                f"{requirement} accounts for {share:.0%} of F2P behavioral cases; inspect distinctness"
+            )
 
     families = Counter(name_family(name) for name in f2p)
     for family, count in families.most_common(3):
         if count > 4:
-            warnings.append(f"{count} F2P tests share name family {family!r}; inspect for fixture renames")
+            warnings.append(f"{count} F2P probes share name family {family!r}; inspect for fixture renames")
+
+    groups = test_map.get("behavioral_case_groups", {})
+    if groups is not None and not isinstance(groups, dict):
+        errors.append("behavioral_case_groups must be an object when present")
+        groups = {}
+    if isinstance(groups, dict):
+        for case_id, group in groups.items():
+            if not isinstance(group, dict):
+                errors.append(f"behavioral case group {case_id!r} must be an object")
+                continue
+            members = group.get("tests", [])
+            rationale = str(group.get("rationale", "")).strip()
+            if not isinstance(members, list) or len(members) < 2:
+                errors.append(f"behavioral case group {case_id!r} must declare at least two tests")
+                continue
+            declared = {str(name) for name in members}
+            actual = {name for name, mapped_id in mapped_case.items() if mapped_id == case_id}
+            if declared != actual:
+                errors.append(
+                    f"behavioral case group {case_id!r} membership mismatch: declared={sorted(declared)} actual={sorted(actual)}"
+                )
+            if not rationale:
+                errors.append(f"behavioral case group {case_id!r} requires a non-empty rationale")
 
     kind = str(manifest.get("task_kind", "software")).lower()
     resource_count = 0
@@ -467,17 +526,20 @@ def validate(task_name: str) -> int:
     )
     print(f"cross_cluster_pairs={len(cross_cluster_pairs)} components={len(components)}")
     print(
-        f"tests_total={len(tests)} f2p={len(f2p)} p2p={len(p2p)} "
-        f"unclassified={len(unclassified)} requirements={len(requirements)}"
+        f"tests_total={len(tests)} f2p_probes={len(f2p)} p2p_probes={len(p2p)} "
+        f"f2p_cases={len(f2p_cases)} p2p_cases={len(p2p_cases)} "
+        f"neutral_names={len(neutral_names)} requirements={len(requirements)}"
     )
     if kind == "infrastructure":
         print(f"resources={resource_count}")
     print("largest_environment_files=")
     for path, count in sorted(loc_detail, key=lambda item: item[1], reverse=True)[:12]:
         print(f"  {count:5d}  {path}")
-    print("f2p_tests_per_requirement=")
-    for requirement, count in per_requirement.most_common():
-        print(f"  {count:3d}  {requirement}")
+    print("f2p_cases_per_requirement=")
+    for requirement, cases in sorted(
+        per_requirement_cases.items(), key=lambda item: (-len(item[1]), item[0])
+    ):
+        print(f"  {len(cases):3d}  {requirement}")
 
     for warning in warnings:
         print(f"WARNING: {warning}")
@@ -489,7 +551,7 @@ def validate(task_name: str) -> int:
 
     print(
         "large-system complexity gate: PASS. Numeric scale and structural authenticity "
-        "are both enforced for strict profile; numeric warnings are diagnostic for non-strict profile."
+        "are enforced on behavioral cases; private test-map classification is authoritative."
     )
     return 0
 
