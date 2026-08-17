@@ -1,0 +1,116 @@
+{
+  "schema_version": "1.2",
+  "task_id": "stonevault-crash-safe-storage",
+  "domain": "database storage recovery durability transactions wal snapshot checkpoint integrity",
+  "domain_profile": "data_migration",
+  "domain_profiles": [
+    "data_migration",
+    "sre_incident"
+  ],
+  "registry_sha256": "05ece08c27414d265a2a238928e4c664295434620ffe957c8e88b5050c54645a",
+  "catalog_sha256": "e205f858f8391fd88d3e26665d2f585a69cd691321b9275644e631bb949f0942",
+  "domain_profiles_sha256": "9612d83a11558d9013a82362c7405c70ddb5158b582cc2f9859c8c672ad6c838",
+  "writer_calibration_id": "hwcal-writer-27690a97aa791c9125b8",
+  "reviewer_calibration_id": "hwcal-reviewer-0f99c55e017d7bae2da2",
+  "pair_id": "hwpair-f3576af00818ed036a95",
+  "independence": {
+    "writer_reviewer_seed_overlap": [],
+    "status": "PASS"
+  },
+  "writer": {
+    "calibration_id": "hwcal-writer-27690a97aa791c9125b8",
+    "local_seed_sample_ids": [
+      "HC-005",
+      "HC-024",
+      "HC-013",
+      "HC-017",
+      "HC-001",
+      "HC-010",
+      "CP-005",
+      "CP-001",
+      "AT-006"
+    ],
+    "dataset_weights": {
+      "terminus-human-engineering": 0.3,
+      "h4-stack-exchange-preferences": 0.5,
+      "tulu3-constraint-preferences": 0.15,
+      "human-like-dpo": 0.05
+    },
+    "external_sampling": {
+      "target": {
+        "total": 12,
+        "minimum_primary_human": 6,
+        "minimum_constraint_pairs": 2,
+        "maximum_anti_template": 1
+      },
+      "domain_profiles": [
+        "data_migration",
+        "sre_incident"
+      ],
+      "preferred_artifact_types": [
+        "change_request",
+        "migration",
+        "incident",
+        "operational_report"
+      ]
+    },
+    "directives": [
+      "Learn information selection and constraint preservation, not phrases.",
+      "Never omit a material requirement for concision or naturalness.",
+      "Reference legitimate technical contracts instead of restating them as a hidden-test inventory.",
+      "Draft from the approved solver-visible requirement contract only after calibration is complete.",
+      "Use the writer pack only; do not read reviewer-only samples or verdicts."
+    ]
+  },
+  "reviewer": {
+    "calibration_id": "hwcal-reviewer-0f99c55e017d7bae2da2",
+    "local_seed_sample_ids": [
+      "HC-021",
+      "HC-016",
+      "HC-026",
+      "HC-030",
+      "HC-007",
+      "HC-020",
+      "CP-006",
+      "CP-003",
+      "CP-002",
+      "AT-004",
+      "AT-001",
+      "HP-002",
+      "HP-003",
+      "HN-001",
+      "HN-003"
+    ],
+    "dataset_weights": {
+      "terminus-human-engineering": 0.3,
+      "h4-stack-exchange-preferences": 0.3,
+      "tulu3-constraint-preferences": 0.25,
+      "human-like-dpo": 0.1,
+      "code-review-bench-human-annotations": 0.05
+    },
+    "external_sampling": {
+      "target": {
+        "total": 12,
+        "minimum_primary_human": 5,
+        "minimum_constraint_pairs": 3,
+        "maximum_anti_template": 2
+      },
+      "domain_profiles": [
+        "data_migration",
+        "sre_incident"
+      ],
+      "preferred_artifact_types": [
+        "change_request",
+        "migration",
+        "incident",
+        "operational_report"
+      ]
+    },
+    "directives": [
+      "Judge completeness before style; a natural but incomplete instruction must fail.",
+      "Use reviewer-only calibration before fixing an independent verdict.",
+      "Use hard positives and hard negatives to avoid superficial banned-style heuristics.",
+      "Treat Human-Like-DPO as anti-template contrast, never the target voice."
+    ]
+  }
+}
