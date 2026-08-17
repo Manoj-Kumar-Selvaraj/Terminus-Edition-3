@@ -150,18 +150,20 @@ def test_every_generic_role_produces_schema_valid_packet(repo: Path) -> None:
     )
     from review_contract import validate_schema
 
-    for role_key in generator.ROLES:
-        if role_key == "q4-closure-adjudication":
-            continue
+    for role_key in generator.GENERIC_ROLES:
         packet = generator.build(TASK, role_key, "PRE_LLMAJ", "change", task_commit(repo))
         problems: list[str] = []
         validate_schema(packet, schema, role_key, problems)
         assert problems == []
 
 
-def test_q4_closure_packet_requires_dedicated_generator() -> None:
+def test_q4_closure_packet_requires_dedicated_generator(repo: Path) -> None:
     assert generator.ROLES["q4-closure-adjudication"]["role"] == "Q4 Closure Adjudicator"
+    assert "q4-closure-adjudication" not in generator.GENERIC_ROLES
     assert (CONTROL_PLANE / "new_q4_closure_packet.py").is_file()
+    with pytest.raises(SystemExit) as exc:
+        generator.main([TASK, "q4-closure-adjudication"])
+    assert exc.value.code == 2
     schema = json.loads(
         (CONTROL_PLANE / "agents" / "schemas" / "context_packet.schema.json").read_text(
             encoding="utf-8"
