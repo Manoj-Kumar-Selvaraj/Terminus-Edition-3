@@ -1,0 +1,61 @@
+{
+  "schema_version": "1.0",
+  "profile": "large_system_strict",
+  "task": "stonevault-crash-safe-storage",
+  "engineering_objective": "Complete a crash-safe embedded transactional store so concurrency, MVCC visibility, WAL recovery, checkpointing, corruption handling, operator state and restart behavior agree.",
+  "root_cause_clusters": {
+    "RC_LOCK": "Writer lock file exists but the starter does not hold the documented non-blocking exclusive process lock.",
+    "RC_MVCC": "Point reads and scans resolve committed versions against the latest sequence instead of the transaction snapshot.",
+    "RC_SCAN": "Scan composition does not preserve snapshot visibility, byte ordering, prefix filtering and the transaction-local write/delete overlay together.",
+    "RC_CONFLICT": "Commit lacks first-committer-wins stale-write arbitration before publication.",
+    "RC_RECOVERY": "WAL recovery conflates incomplete tails with complete corruption and can publish mutation records without a matching durable commit.",
+    "RC_CHECKPOINT": "Checkpoint lifecycle does not consistently enforce quiescence, preserve sequence/state and reclaim the WAL.",
+    "RC_INTEGRITY": "Snapshot/recovery validation and operator health accept or report inconsistent structural state."
+  },
+  "defect_manifestations": [
+    ["D01","RC_LOCK","second writer opens concurrently"],
+    ["D02","RC_LOCK","LOCK is not actually held exclusively"],
+    ["D03","RC_LOCK","writer handoff lacks kernel fencing"],
+    ["D04","RC_MVCC","reader observes replacement committed after BEGIN"],
+    ["D05","RC_MVCC","reader loses key deleted after BEGIN"],
+    ["D06","RC_MVCC","scan acquires insert committed after BEGIN"],
+    ["D07","RC_MVCC","scan loses row deleted after BEGIN"],
+    ["D08","RC_SCAN","local insert is absent from prefix scan"],
+    ["D09","RC_SCAN","local delete does not suppress snapshot row"],
+    ["D10","RC_SCAN","high-bit keys use incorrect ordering"],
+    ["D11","RC_SCAN","scan prefix boundary handling diverges from key contract"],
+    ["D12","RC_CONFLICT","stale put commits over newer version"],
+    ["D13","RC_CONFLICT","stale delete commits over newer version"],
+    ["D14","RC_CONFLICT","multi-key stale transaction is not atomically rejected"],
+    ["D15","RC_CONFLICT","rejected conflict can disturb commit sequencing"],
+    ["D16","RC_RECOVERY","killed transaction mutation becomes visible after restart"],
+    ["D17","RC_RECOVERY","rolled-back mutation becomes visible after restart"],
+    ["D18","RC_RECOVERY","short final WAL header is mishandled"],
+    ["D19","RC_RECOVERY","short final WAL payload is mishandled"],
+    ["D20","RC_RECOVERY","complete checksum damage is mistaken for torn tail"],
+    ["D21","RC_RECOVERY","complete bad magic is silently discarded"],
+    ["D22","RC_RECOVERY","non-contiguous commit sequence is accepted"],
+    ["D23","RC_CHECKPOINT","checkpoint runs with active transaction"],
+    ["D24","RC_CHECKPOINT","successful checkpoint leaves WAL bytes behind"],
+    ["D25","RC_CHECKPOINT","checkpoint restart loses sequence or rows"],
+    ["D26","RC_INTEGRITY","snapshot row checksum corruption is accepted"],
+    ["D27","RC_INTEGRITY","snapshot trailing bytes are accepted"],
+    ["D28","RC_INTEGRITY","abandoned snapshot temporary is not cleaned"],
+    ["D29","RC_INTEGRITY","HEALTH active transaction count is stale"],
+    ["D30","RC_INTEGRITY","HEALTH snapshot state diverges from checkpoint state"]
+  ],
+  "causal_edges": [
+    ["D01","D02"],["D02","D03"],["D04","D06"],["D05","D07"],["D06","D08"],["D07","D09"],
+    ["D08","D10"],["D09","D11"],["D12","D14"],["D13","D14"],["D14","D15"],["D16","D17"],
+    ["D16","D20"],["D18","D19"],["D18","D20"],["D20","D21"],["D21","D22"],["D23","D24"],
+    ["D24","D25"],["D25","D30"],["D26","D27"],["D27","D29"],["D28","D30"],["D22","D25"]
+  ],
+  "behavioral_surfaces": {
+    "normal": ["transaction CRUD", "snapshot reads", "prefix scans", "checkpoint/restart"],
+    "edge_boundary": ["4096-byte keys/prefixes", "1048576-byte values", "unsigned high-bit ordering", "transaction overlays"],
+    "negative_rejection": ["malformed commands", "unknown transaction IDs", "oversized inputs", "concurrent writer rejection"],
+    "failure_recovery": ["killed transaction", "torn WAL header/payload", "complete WAL corruption", "snapshot corruption", "abandoned snapshot temporary"],
+    "cross_component": ["MVCC plus scan overlay", "conflict plus sequence durability", "checkpoint plus WAL plus health", "recovery plus catalog plus stats"]
+  },
+  "organic_change_required_surface": "SUFFICIENT_PENDING_EMPIRICAL_STARTER_ORACLE_MATRIX"
+}

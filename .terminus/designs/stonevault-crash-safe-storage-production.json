@@ -1,0 +1,24 @@
+{
+  "schema_version": "1.0",
+  "profile": "large_system_strict",
+  "task": "stonevault-crash-safe-storage",
+  "substantive_runtime_loc": 3022,
+  "broader_native_build_loc": 3143,
+  "loc_status": "LOCAL_STATIC_COUNT_ONLY_PENDING_REPOSITORY_VALIDATOR",
+  "runtime_entrypoint": "/app/stonevault/bin/stonevault",
+  "native_layers": {
+    "rust": ["config", "ffi", "line_io", "protocol", "session", "observability", "main"],
+    "cpp": ["engine", "transactions", "catalog", "wal", "recovery", "snapshot", "lock", "integrity", "maintenance", "codec", "common"]
+  },
+  "production_characteristics": [
+    "C ABI boundary between Rust control plane and C++ durable engine",
+    "transaction lifecycle and MVCC version catalog",
+    "append-only checksummed WAL with recovery",
+    "atomic snapshots and checkpoint lifecycle",
+    "writer fencing and restart recovery",
+    "operator STATS and HEALTH surfaces",
+    "binary key/value protocol with explicit size limits"
+  ],
+  "reachability_note": "All listed production modules participate in the production build path; semantic reachability remains subject to Complexity Governor and Q6.",
+  "status": "PRODUCER_EVIDENCE_ONLY_NOT_Q6_APPROVAL"
+}
