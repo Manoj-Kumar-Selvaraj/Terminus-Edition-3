@@ -1,7 +1,7 @@
 {
-  "schema_version": "1.0",
-  "policy_version": "1.0",
-  "selection_model": "retrieval_calibration_not_per_task_weight_training",
+  "schema_version": "1.1",
+  "policy_version": "1.1",
+  "selection_model": "retrieval_calibration_with_measured_learning_loop",
   "datasets": [
     {
       "id": "terminus-human-engineering",
@@ -10,9 +10,29 @@
       "license": "source-specific public metadata and structural paraphrase; no long source bodies vendored",
       "enabled": true,
       "human_authored_signal": "HIGH",
-      "purpose": ["human_information_selection", "engineering_ticket_structure", "domain_vocabulary"],
-      "writer_weight": 0.30,
-      "reviewer_weight": 0.30,
+      "purpose": [
+        "human_information_selection",
+        "engineering_ticket_structure",
+        "domain_vocabulary"
+      ],
+      "writer_weight": 0.3,
+      "reviewer_weight": 0.3,
+      "content_mode": "local_structural_catalog"
+    },
+    {
+      "id": "terminus-reviewer-hard-cases",
+      "name": "Terminus Reviewer Hard Positive/Negative Cases",
+      "source": ".terminus/human_writing/seed_catalog.json",
+      "license": "repository-authored calibration metadata",
+      "enabled": true,
+      "human_authored_signal": "CALIBRATION_CASES",
+      "purpose": [
+        "hard_positive",
+        "hard_negative",
+        "reviewer_discrimination"
+      ],
+      "writer_weight": 0.0,
+      "reviewer_weight": 0.0,
       "content_mode": "local_structural_catalog"
     },
     {
@@ -22,11 +42,19 @@
       "license": "CC-BY-SA-4.0",
       "enabled": true,
       "human_authored_signal": "HIGH",
-      "purpose": ["human_technical_questions", "human_preference", "technical_explanation"],
-      "writer_weight": 0.50,
-      "reviewer_weight": 0.35,
+      "purpose": [
+        "human_technical_questions",
+        "human_preference",
+        "technical_explanation"
+      ],
+      "writer_weight": 0.5,
+      "reviewer_weight": 0.3,
       "content_mode": "external_retrieval_or_local_cache",
-      "provenance_requirements": ["source_question_id", "source_site", "author_attribution_when_text_is_retained"],
+      "provenance_requirements": [
+        "source_question_id",
+        "source_site",
+        "author_attribution_when_text_is_retained"
+      ],
       "notes": "Primary external human technical corpus. Do not copy distinctive wording into task instructions."
     },
     {
@@ -36,7 +64,11 @@
       "license": "ODC-BY",
       "enabled": true,
       "human_authored_signal": "SYNTHETIC_PREFERENCE",
-      "purpose": ["constraint_preservation", "chosen_rejected_comparison", "requirement_completeness"],
+      "purpose": [
+        "constraint_preservation",
+        "chosen_rejected_comparison",
+        "requirement_completeness"
+      ],
       "writer_weight": 0.15,
       "reviewer_weight": 0.25,
       "content_mode": "external_retrieval_or_local_cache",
@@ -49,11 +81,33 @@
       "license": "llama3",
       "enabled": true,
       "human_authored_signal": "SYNTHETIC_STYLE_CONTRAST",
-      "purpose": ["anti_ai_template", "mechanical_disclaimer_detection", "conversational_overcorrection_detection"],
+      "purpose": [
+        "anti_ai_template",
+        "mechanical_disclaimer_detection",
+        "conversational_overcorrection_detection"
+      ],
       "writer_weight": 0.05,
-      "reviewer_weight": 0.10,
+      "reviewer_weight": 0.1,
       "content_mode": "external_retrieval_or_local_cache",
-      "notes": "Low-weight negative/contrast source only. Never imitate its casual persona, emoji, invented experience, or personal-claim style."
+      "notes": "Low-weight negative/contrast source only. Never imitate casual persona, emoji, invented experience, or personal-claim style."
+    },
+    {
+      "id": "code-review-bench-human-annotations",
+      "name": "code-review-bench/code-review-bench",
+      "source": "https://huggingface.co/datasets/code-review-bench/code-review-bench",
+      "license": "CC-BY-4.0",
+      "enabled": true,
+      "human_authored_signal": "HUMAN_EXPERT_ANNOTATION",
+      "purpose": [
+        "reviewer_quality_judgment",
+        "technical_review_precision",
+        "actionability_and_relevance"
+      ],
+      "writer_weight": 0.0,
+      "reviewer_weight": 0.05,
+      "content_mode": "external_retrieval_or_local_cache",
+      "audit_path": ".terminus/human_writing/dataset_audits/code-review-bench.json",
+      "notes": "Reviewer-only low-weight technical judgment source. Prefer expert offline issues and human annotation fields; do not imitate bot review wording."
     },
     {
       "id": "github-human-codereview",
@@ -62,11 +116,15 @@
       "license": "other",
       "enabled": false,
       "human_authored_signal": "HIGH",
-      "purpose": ["reviewer_comment_style", "technical_review_specificity"],
+      "purpose": [
+        "reviewer_comment_style",
+        "technical_review_specificity"
+      ],
       "writer_weight": 0.0,
       "reviewer_weight": 0.0,
       "content_mode": "disabled_pending_license_audit",
-      "disabled_reason": "Dataset card currently reports license=other. Enable only after a repository-level provenance/license audit."
+      "audit_path": ".terminus/human_writing/dataset_audits/github-human-codereview.json",
+      "disabled_reason": "Current dataset metadata reports license=other. README claims permissive source repositories, and a historical revision declared MIT, but the current metadata is ambiguous; keep disabled until an explicit legal/provenance decision changes this audit."
     }
   ],
   "external_sample_targets": {
@@ -83,12 +141,20 @@
       "maximum_anti_template": 2
     }
   },
+  "empirical_adjustment": {
+    "minimum_tasks_before_recommendation": 20,
+    "maximum_absolute_weight_change_per_release": 0.05,
+    "automatic_registry_mutation": false,
+    "approval_required": true,
+    "primary_metric": "blind_ab_preference_with_requirement_completeness_gate"
+  },
   "invariants": [
     "writer and reviewer raw/sample IDs must be disjoint for the same task",
     "requirement completeness outranks stylistic naturalness",
     "human-like-dpo is contrast evidence, never a target voice",
     "disabled datasets cannot contribute samples or weight",
-    "raw external dataset text is not committed into task packages",
-    "distinctive source wording must not be copied into solver-visible instructions"
+    "raw external dataset text is never committed into the repository or task packages",
+    "distinctive source wording must not be copied into solver-visible instructions",
+    "dataset weight changes require empirical evidence and explicit approval"
   ]
 }
