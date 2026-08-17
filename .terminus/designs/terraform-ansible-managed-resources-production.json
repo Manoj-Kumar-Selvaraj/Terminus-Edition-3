@@ -1,0 +1,28 @@
+{
+  "schema_version": "1.0",
+  "task": "terraform-ansible-managed-resources",
+  "control_plane_commit": "595332219a62dbc1c3e835f5b7b055cb984ef469",
+  "production_authenticity": {
+    "current_state_evidence_required": false,
+    "current_state_evidence_rationale": "The solver-facing work request states desired end-state lifecycle and safety requirements only; it does not assert a specific incident, failed deployment, customer impact, or inherited runtime event that would require fabricated logs or handoff evidence.",
+    "stateful_dataset_exemption": {
+      "approved": true,
+      "approved_by": "Creation Controller — rule reconciliation at 595332219a62dbc1c3e835f5b7b055cb984ef469",
+      "reason": "The provider's durable operational reality is Terraform Core state plus local Linux filesystem, passwd/group, symlink, content and crontab objects. A 10,000–20,000-row business database would be unrelated filler and would not exercise provider lifecycle semantics. Production authenticity is instead carried by ten differentiated managed-resource lifecycles, persistent OS state, native drift observation, transactional failure/retry behavior, scoped deletion and deterministic Ansible process control."
+    }
+  },
+  "rule_reconciliation": {
+    "previous_control_plane_commit": "fa2a409e86c4676bd3039df3e4e8339708454fad",
+    "current_control_plane_commit": "595332219a62dbc1c3e835f5b7b055cb984ef469",
+    "material_changes": [
+      "runtime authenticity now makes current-state evidence conditional on asserted current-state facts",
+      "strict non-data-backed systems may use an explicit controller-approved dataset exemption",
+      "complexity classification is owned by the private behavioral test map"
+    ],
+    "affected_gates_invalidated_for_rerun": [
+      "COMPLEXITY_GATE",
+      "RUNTIME_AUTHENTICITY",
+      "DETERMINISTIC_VALIDATION"
+    ]
+  }
+}

@@ -1,0 +1,53 @@
+{
+  "contract_version": "1.0",
+  "task_id": "terraform-ansible-managed-resources",
+  "requirement_contract_hash": "sha256:96dd013060c78ba862c1a4160d9e4530871a8e0e91ea1ab6c97531b11051a787",
+  "engineering_objective": "Complete the inherited ansibleops Terraform provider so its ten Ansible-backed operating-system resources behave as normal managed Terraform resources with Terraform-owned durable state, native drift reconciliation, safe lifecycle transitions, and deterministic local execution.",
+  "affected_system_location": "/app/provider",
+  "required_end_state": "The provider exposes the documented ten resources as real Terraform managed resources; repeated apply/plan/refresh cycles converge against local Linux reality, resource identity remains stable across in-place changes, failures do not corrupt Terraform state, deletes affect only owned objects, and Ansible execution is deterministic and failure-safe.",
+  "functional_requirements": [
+    "Keep exactly the ten documented ansibleops managed resource types functional through the Terraform Plugin Framework, with Terraform Core as the durable state owner and no provider-owned state database.",
+    "Derive each resource identity only from its documented external object key so mutable metadata, content, targets, variables, schedules, or account attributes update in place without identity churn.",
+    "Use Ansible for Create, Update, and Delete mutations, while Read/refresh observes native Linux state without invoking ansible-playbook.",
+    "During refresh, treat a missing or wrong-kind owned object as absent and refresh externally changed managed values so Terraform plans reconciliation rather than accepting stale prior state.",
+    "For file, directory, and symlink resources, preserve documented path/type/metadata semantics; deleting a symlink must remove only the link path and never its target.",
+    "For copy and template resources, treat source_digest as caller-supplied source-content intent, observe destination content, and make template variable handling deterministic regardless of map ordering.",
+    "For line and block resources, manage the documented named contract idempotently: updates must not accumulate duplicates, Read must be side-effect free, and delete must remove only the owned line or block.",
+    "For user and group resources, observe the native account/group databases, normalize supplementary groups deterministically, and honor remove_home_on_destroy exactly for user deletion.",
+    "For cron resources, manage one named entry, default an omitted user to root and omitted schedule fields to wildcards, preserve sibling entries, and converge cleanly after apply.",
+    "Publish new Terraform resource state only after a successful mutation; non-zero exits, timeout, or cancellation must fail the transition without advancing applied state, and a later retry must be able to converge.",
+    "Execute ansible-playbook with structured arguments rather than shell interpolation so valid paths containing spaces or shell metacharacters remain literal, and clean generated temporary playbooks after success and failure paths.",
+    "Normalize semantically equivalent modes, unordered values, ownership/account observations, and cron defaults so repeated clean plan/refresh cycles are stable and do not replay Ansible."
+  ],
+  "preservation_requirements": [
+    "Preserve the provider source address local/ansibleops, provider version 0.1.0, existing Plugin Framework entrypoint, and the documented ten resource interfaces under /app/provider.",
+    "Preserve Terraform Core as the only durable state authority; do not introduce a provider-owned durable database or manually create or edit terraform.tfstate.",
+    "Preserve solver-visible provider, resource, and lifecycle documentation as the technical contract surface unless a genuine contract correction is required."
+  ],
+  "compatibility_requirements": [
+    "The repaired provider must remain buildable with the task's Go 1.24 toolchain and current Terraform Plugin Framework dependency set.",
+    "The provider must continue to operate with the local managed inventory at /app/provider/config/inventory.ini and the existing local provider installation layout.",
+    "Keep normal Terraform apply, plan, refresh, destroy, and state inspection semantics compatible with Terraform CLI 1.10.5 used by the task environment."
+  ],
+  "safety_requirements": [
+    "Do not replace the managed resources with null_resource, terraform_data execution wrappers, local-exec, remote-exec, or other Terraform provisioner substitutes.",
+    "Do not use shell command interpolation for ansible-playbook invocation; paths and user-controlled values must remain structured data.",
+    "Failed Update or Delete operations must not claim successful external transitions in Terraform state.",
+    "Deletion of line, block, cron, symlink, and user resources must remain scoped to their documented ownership boundaries, including preserving a user's home unless remove_home_on_destroy is true.",
+    "Generated Ansible playbooks are ephemeral and must not accumulate after success, non-zero exit, timeout, or cancellation; diagnostics must not persist full command output in Terraform state."
+  ],
+  "referenced_docs": [
+    "/app/provider/docs/provider-contract.md",
+    "/app/provider/docs/resource-reference.md",
+    "/app/provider/docs/lifecycle.md"
+  ],
+  "required_outputs": [
+    {
+      "path": "/app/provider",
+      "notes": "Repair the inherited provider source in place. The verifier rebuilds and exercises this artifact."
+    }
+  ],
+  "source_task_commit": "db8ca4d5b3abb7f94ba0d43afb6f8bff27d77c72",
+  "control_plane_commit": "fa2a409e86c4676bd3039df3e4e8339708454fad",
+  "private_sources_excluded": true
+}

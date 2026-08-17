@@ -1,0 +1,59 @@
+{
+  "schema_version": "1.0",
+  "task": "terraform-ansible-managed-resources",
+  "phase": "A4_REFERENCE_SOLUTION",
+  "status": "IMPLEMENTED_RUNTIME_VALIDATION_PENDING",
+  "starter_branch": "task/terraform-ansible-managed-resources-build",
+  "restored_invariants": [
+    "Resource identity is derived from stable external object keys rather than mutable desired attributes.",
+    "Read paths use native Linux observers and remove missing or wrong-kind objects from Terraform refresh state without invoking Ansible.",
+    "Create and Update publish resulting state only after successful Ansible mutation and post-mutation observation.",
+    "Failed mutation paths return diagnostics without publishing the proposed successful transition.",
+    "Delete succeeds only for already-absent or successfully removed owned objects and verifies teardown where practical.",
+    "Named line, block and cron deletion remains scoped to the owned entry.",
+    "The process runner uses direct argv execution, caller context propagation, bounded timeout handling, non-zero exit failure and terminal temporary-file cleanup.",
+    "Map fingerprints and supplementary groups use deterministic ordering; modes and cron wildcard defaults use canonical forms.",
+    "Caller supplied source_digest participates in copy/template desired state and is validated against the local source file before mutation.",
+    "User home removal follows remove_home_on_destroy."
+  ],
+  "fixed_files": [
+    "internal/runner/runner.go",
+    "internal/lifecycle/maps.go",
+    "internal/lifecycle/normalize.go",
+    "internal/resources/file.go",
+    "internal/resources/directory.go",
+    "internal/resources/copy.go",
+    "internal/resources/template.go",
+    "internal/resources/line.go",
+    "internal/resources/block.go",
+    "internal/resources/symlink.go",
+    "internal/resources/user.go",
+    "internal/resources/group.go",
+    "internal/resources/cron.go"
+  ],
+  "solve_script": "terraform-ansible-managed-resources/solution/solve.sh",
+  "restart_idempotency_behavior": "solve.sh overlays deterministic fixed source files, formats the provider tree and rebuilds the provider binary; it does not mutate verifier files, Terraform state or target resources directly.",
+  "determinism_notes": [
+    "No random identifiers or wall-clock success criteria are introduced.",
+    "Stable IDs use path/name ownership keys.",
+    "Map and group ordering is canonicalized.",
+    "Execution errors are derived from actual process outcomes."
+  ],
+  "preserved_behavior": [
+    "Provider source address remains local/ansibleops.",
+    "All ten resource schemas and local-Ansible execution model remain intact.",
+    "Terraform Core remains the only durable Terraform state owner.",
+    "The local Linux target remains the only supported target scope."
+  ],
+  "risks_for_independent_verifier": [
+    "Verify Terraform Plugin Framework state-consistency behavior for required/configured attributes under refresh.",
+    "Verify ansible.builtin.cron absent-state invocation accepts the generated normalized argument set.",
+    "Verify copy destination drift produces the intended Terraform reconciliation plan through source_digest refresh semantics.",
+    "Exercise process cancellation and timeout against a controllable ansible-playbook shim.",
+    "Exercise user/group cases only with isolated test identities and guaranteed cleanup."
+  ],
+  "runtime_validation": {
+    "status": "PENDING",
+    "reason": "This authoring execution does not currently have reliable outbound module-resolution/runtime Docker execution; no Oracle reward or smoke PASS is asserted."
+  }
+}

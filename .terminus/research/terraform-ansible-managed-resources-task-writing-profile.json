@@ -1,0 +1,46 @@
+{
+  "DATASET_POLICY_VERSION": "1.2",
+  "DATASET_REGISTRY_SHA256": "05ece08c27414d265a2a238928e4c664295434620ffe957c8e88b5050c54645a",
+  "SEED_CATALOG_SHA256": "e205f858f8391fd88d3e26665d2f585a69cd691321b9275644e631bb949f0942",
+  "DOMAIN_PROFILES_SHA256": "9612d83a11558d9013a82362c7405c70ddb5158b582cc2f9859c8c672ad6c838",
+  "DOMAIN_PROFILE": "platform_cloud",
+  "CALIBRATION_PAIR_ID": "hwpair-90baaeeb95d02867a247",
+  "WRITER_CALIBRATION_ID": "hwcal-writer-cbf91f663d33c2126274",
+  "REVIEWER_CALIBRATION_ID": "hwcal-reviewer-aeedcfbce4e7db4cd543",
+  "WRITER_SAMPLE_IDS": ["HC-007", "HC-008", "HC-009", "HC-004", "HC-027", "HC-005", "CP-003", "CP-006", "AT-002"],
+  "REVIEWER_SAMPLE_IDS": ["HC-024", "HC-028", "HC-021", "HC-025", "HC-001", "HC-013", "CP-004", "CP-001", "CP-002", "AT-003", "AT-001", "HP-002", "HP-001", "HN-002", "HN-004"],
+  "WRITER_REVIEWER_SAMPLE_OVERLAP": [],
+  "WRITER_EXTERNAL_SOURCE_KEYS": [],
+  "REVIEWER_EXTERNAL_SOURCE_KEYS": [],
+  "EXTERNAL_DATASET_COVERAGE": "DEGRADED",
+  "DEGRADED_COVERAGE_APPROVAL": {
+    "approved": true,
+    "approved_by": "Creation Controller",
+    "reason": "This connector-only authoring execution has no approved external corpus cache or reproducibly materialized external dataset snapshot. Use the deterministic disjoint local registry-backed calibration pair for information selection and constraint preservation, do not claim FULL external coverage, and rerun materialization/validation when the normal local creation runtime is available."
+  },
+  "CACHE_SOURCE_KEYS_USED": [],
+  "RAW_SOURCE_KEYS_USED_FOR_CONTAMINATION": [],
+  "HUMAN_INFORMATION_SELECTION_NOTES": [
+    "Open with the engineering change and the managed-resource behavior that must hold, without inventing an incident or production outage.",
+    "Group state, reconciliation, mutation safety, resource ownership and runner safety as operational responsibilities rather than one sentence per verifier scenario.",
+    "Point to the existing provider, resource and lifecycle documentation for schemas and component layout instead of repeating those documents in the instruction.",
+    "Keep the request selective and implementation-neutral while retaining every material lifecycle and safety constraint."
+  ],
+  "CONSTRAINT_PRESERVATION_NOTES": [
+    "Keep all ten documented resources registered as real Terraform managed resources and keep Terraform Core as the durable state owner.",
+    "Preserve stable identity, side-effect-free native Read/drift reconciliation, transactional Update/Delete behavior, failure-safe retry, deterministic normalization and scoped ownership.",
+    "Preserve source_digest semantics for copy/template, user home-destroy policy, named line/block/cron ownership and cron defaults.",
+    "Preserve structured argv execution, non-zero/timeout/cancellation failure handling and cleanup of generated playbooks.",
+    "Preserve the prohibition on null_resource, terraform_data execution wrappers, provisioners, manual tfstate editing and provider-owned durable state."
+  ],
+  "ANTI_TEMPLATE_NOTES": [
+    "Avoid a benchmark preamble, generic motivation paragraphs and one-bullet-per-hidden-test cadence.",
+    "Do not diagnose internal repair locations or expose defect clusters, hidden test names, fixtures or Oracle behavior.",
+    "Naturalness never justifies dropping retry, failure, safety, compatibility or required-output semantics."
+  ],
+  "DO_NOT_IMITATE": [
+    "Do not copy wording, openings or issue-template structure from the calibration corpus.",
+    "Do not add slang, typos, emojis, fake operator stories, customers, dates or unsupported current-state claims.",
+    "Do not expose private design, verifier or solution evidence in solver-facing prose."
+  ]
+}
