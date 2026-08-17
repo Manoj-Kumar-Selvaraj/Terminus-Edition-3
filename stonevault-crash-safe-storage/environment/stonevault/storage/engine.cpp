@@ -175,11 +175,15 @@ public:
 
     std::string stats() {
         std::lock_guard<std::mutex> guard(mutex_);
+        const RuntimeAudit audit = audit_runtime_state(
+            paths_, catalog_, transactions_, commit_sequence_);
+        if (audit.storage.wal_bytes != wal_.size()) {
+            throw std::runtime_error("runtime integrity: WAL size views disagree");
+        }
         return render_stats(
             commit_sequence_,
-            static_cast<std::uint64_t>(
-                catalog_.visible_key_count(commit_sequence_)),
-            wal_.size());
+            static_cast<std::uint64_t>(audit.catalog.visible_keys),
+            audit.storage.wal_bytes);
     }
 
     std::string health() {
