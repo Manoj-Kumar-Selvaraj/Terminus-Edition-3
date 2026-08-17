@@ -25,15 +25,7 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Replay committed execution ledger
-        run: |
-          python3 - <<'PY'
-          from pathlib import Path
-          from .terminus.execution.ledger import ExecutionLedger
-          PY
-        shell: bash
-
-      - name: Validate ledger with controller status
+      - name: Validate committed ledger with controller status
         run: |
           python3 .terminus/execution/controller_cli.py status \
             --task-id "$TASK_ID" \
