@@ -35,6 +35,10 @@ MAX_LIST_FILES = 800
 MAX_GREP_RESULTS = 200
 MAX_API_ROUNDS = 80
 MAX_API_TOOL_CALLS = 300
+Q4_INTERFACE_SUFFIXES = frozenset(
+    {".h", ".hh", ".hpp", ".md", ".rst", ".txt", ".proto", ".json", ".yaml", ".yml", ".toml"}
+)
+Q4_INTERFACE_NAMES = frozenset({"Dockerfile", "Makefile", ".dockerignore"})
 
 
 class QualityExecutorError(RuntimeError):
@@ -215,6 +219,35 @@ def git_object_exists(root: Path, spec: str) -> bool:
     )
 
 
+def git_list_files(root: Path, commit: str, prefix: str) -> list[str]:
+    result = subprocess.run(
+        ["git", "-C", str(root), "ls-tree", "-r", "--name-only", commit, "--", prefix],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    if result.returncode != 0:
+        raise QualityExecutorError(f"could not enumerate packet evidence under {prefix}")
+    return [line.strip() for line in result.stdout.splitlines() if line.strip()]
+
+
+def q4_interface_paths(root: Path, packet: Mapping[str, Any]) -> list[str]:
+    task = str(packet["task"])
+    commit = str(packet["task_commit"])
+    prefix = f"{task}/environment/"
+    paths: list[str] = []
+    for path in git_list_files(root, commit, f"{task}/environment"):
+        relative = path[len(prefix) :] if path.startswith(prefix) else path
+        candidate = Path(relative)
+        if (
+            candidate.name in Q4_INTERFACE_NAMES
+            or candidate.suffix.lower() in Q4_INTERFACE_SUFFIXES
+            or "docs" in {part.lower() for part in candidate.parts}
+        ):
+            paths.append(path)
+    return paths
+
+
 def task_projection_paths(root: Path, packet: Mapping[str, Any]) -> list[str]:
     task = str(packet["task"])
     commit = str(packet["task_commit"])
@@ -224,7 +257,6 @@ def task_projection_paths(root: Path, packet: Mapping[str, Any]) -> list[str]:
             f"{task}/instruction.md",
             f"{task}/task.toml",
             f"{task}/tests",
-            f"{task}/environment",
         ]
     elif role == Q6_ROLE:
         candidates = [f"{task}/task.toml", f"{task}/environment"]
@@ -235,9 +267,11 @@ def task_projection_paths(root: Path, packet: Mapping[str, Any]) -> list[str]:
             f"{task}/environment",
         ]
     paths = [path for path in candidates if git_object_exists(root, f"{commit}:{path}")]
+    if role == Q4_ROLE:
+        paths.extend(q4_interface_paths(root, packet))
     if not paths:
         raise QualityExecutorError("packet task snapshot contains no role-authorized evidence")
-    return paths
+    return sorted(set(paths))
 
 
 def hash_files(root: Path) -> dict[str, str]:
@@ -266,6 +300,17 @@ def materialize_projection(
         test_map = f".terminus/designs/{packet['task']}-test-map.json"
         if git_object_exists(root, f"{task_commit}:{test_map}"):
             extract_tar(archive_bytes(root, task_commit, [test_map]), destination)
+    elif packet["role"] == Q6_ROLE:
+        report_candidates = [
+            f".terminus/designs/{packet['task']}-production.json",
+            f".terminus/designs/{packet['task']}-runtime-authenticity.json",
+            f".terminus/designs/{packet['task']}-complexity.json",
+        ]
+        reports = [
+            path for path in report_candidates if git_object_exists(root, f"{task_commit}:{path}")
+        ]
+        if reports:
+            extract_tar(archive_bytes(root, task_commit, reports), destination)
 
     # The complete agent-policy subtree is projected from the control-plane commit so
     # transitive mandatory policy reads cannot silently fall back to task history.
