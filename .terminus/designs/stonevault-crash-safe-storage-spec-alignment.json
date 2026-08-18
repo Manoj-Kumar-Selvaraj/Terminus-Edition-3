@@ -1,9 +1,10 @@
 {
   "schema_version": "1.0",
   "task": "stonevault-crash-safe-storage",
-  "task_content_commit": "463ec6412dad040c5d0fb96dc540741ffcb6904c",
-  "control_plane_commit": "595332219a62dbc1c3e835f5b7b055cb984ef469",
-  "requirement_contract_hash": "sha256:2682c1d1e017307a5deed0c0f57680afa079933f47bf05b16c11132c399435b6",
+  "task_content_commit": "29b684f3439269762235665ab2e716da53214c1e",
+  "task_tree_sha": "33a8b3ea5bce04dff6bfbc7325fc8b1dcccc6424",
+  "control_plane_commit": "cf69c9efcccc1ad1702929155d50c71d59a829aa",
+  "requirement_contract_hash": "sha256:0a17d0e49bbc05abecabe9aee85ab9ea96bfd767543054f87851128d8339c675",
   "inputs": {
     "solver_visible_requirement_contract": ".terminus/contracts/stonevault-crash-safe-storage/solver-visible-requirements.json",
     "instruction": "stonevault-crash-safe-storage/instruction.md",
@@ -25,7 +26,7 @@
     ]
   },
   "q2_verifier_coverage_repair": {
-    "status": "PRODUCER_ALIGNMENT_PASS_PENDING_CURRENT_EMPIRICAL_MATRIX",
+    "status": "PRODUCER_ALIGNMENT_PASS_EMPIRICALLY_RECONCILED",
     "changes_required": false,
     "requirements_with_behavioral_coverage": [
       "R01_WRITER_FENCING",
@@ -50,8 +51,9 @@
       "WAL and snapshot mutation probes exercise documented on-disk compatibility/integrity boundaries behaviorally",
       "command-response tests exercise documented ASCII shapes through the Rust CLI/FFI path",
       "the public C ABI is preserved by an explicit declaration check while normal CLI execution reaches the same C ABI through Rust FFI",
-      "28 planned F2P probes represent 25 distinct behavioral cases through two explicitly justified multi-probe invariant groups",
-      "19 planned P2P probes cover preservation risks; classifications await current-head NOP/Oracle evidence"
+      "28 F2P probes represent 25 distinct behavioral cases through two explicitly justified multi-probe invariant groups",
+      "19 P2P probes cover preservation risks",
+      "GitHub Actions run 32094975331 established Oracle 47/47, starter 28 failed/19 passed, all planned F2P transitions and all planned P2P preservation"
     ]
   },
   "q3_spec_ambiguity_repair": {
@@ -73,5 +75,5 @@
     "oracle_diff_used_as_instruction_source": false,
     "hidden_test_names_copied_into_solver_prose": false
   },
-  "overall_status": "PRODUCER_SPEC_ALIGNMENT_COMPLETE_PENDING_CURRENT_EMPIRICAL_MATRIX"
+  "overall_status": "PRODUCER_SPEC_ALIGNMENT_COMPLETE_CURRENT_EMPIRICAL_MATRIX"
 }
