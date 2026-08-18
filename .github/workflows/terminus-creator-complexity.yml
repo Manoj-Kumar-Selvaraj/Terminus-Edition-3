@@ -8,11 +8,18 @@ on:
       - "**/tests/**"
       - ".terminus/designs/**"
       - ".terminus/validate_task_complexity.py"
+      - ".terminus/validate_defect_topology.py"
+      - ".terminus/validate_environment_complexity.py"
       - ".terminus/tests/test_task_complexity.py"
+      - ".terminus/tests/test_defect_topology.py"
+      - ".terminus/tests/test_environment_complexity.py"
       - ".terminus/agents/CREATION_CONTROLLER.md"
       - ".terminus/agents/CREATION_PIPELINE.md"
       - ".terminus/agents/CREATOR_AGENT_REGISTRY.md"
       - ".terminus/agents/CREATOR_PROMPTS.md"
+      - ".terminus/agents/A2_PHASE_PROMPTS.md"
+      - ".terminus/agents/STAGE_CONTRACTS.md"
+      - ".terminus/agents/stage_contracts.json"
       - ".github/workflows/terminus-creator-complexity.yml"
   push:
     branches: [main]
@@ -21,11 +28,18 @@ on:
       - "**/tests/**"
       - ".terminus/designs/**"
       - ".terminus/validate_task_complexity.py"
+      - ".terminus/validate_defect_topology.py"
+      - ".terminus/validate_environment_complexity.py"
       - ".terminus/tests/test_task_complexity.py"
+      - ".terminus/tests/test_defect_topology.py"
+      - ".terminus/tests/test_environment_complexity.py"
       - ".terminus/agents/CREATION_CONTROLLER.md"
       - ".terminus/agents/CREATION_PIPELINE.md"
       - ".terminus/agents/CREATOR_AGENT_REGISTRY.md"
       - ".terminus/agents/CREATOR_PROMPTS.md"
+      - ".terminus/agents/A2_PHASE_PROMPTS.md"
+      - ".terminus/agents/STAGE_CONTRACTS.md"
+      - ".terminus/agents/stage_contracts.json"
       - ".github/workflows/terminus-creator-complexity.yml"
   workflow_dispatch:
 
@@ -43,13 +57,21 @@ jobs:
         run: python3 -m pip install --quiet pytest==8.4.1
 
       - name: Complexity gate regression suite
-        run: python3 -m pytest .terminus/tests/test_task_complexity.py -q
+        run: |
+          python3 -m pytest \
+            .terminus/tests/test_task_complexity.py \
+            .terminus/tests/test_defect_topology.py \
+            .terminus/tests/test_environment_complexity.py \
+            -q
 
       - name: Validate all declared large-system profiles
         shell: bash
         run: |
           set -euo pipefail
-          python3 -m py_compile .terminus/validate_task_complexity.py
+          python3 -m py_compile \
+            .terminus/validate_task_complexity.py \
+            .terminus/validate_defect_topology.py \
+            .terminus/validate_environment_complexity.py
 
           found=0
           shopt -s nullglob
