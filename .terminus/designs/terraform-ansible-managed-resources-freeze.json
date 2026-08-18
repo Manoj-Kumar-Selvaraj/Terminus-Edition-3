@@ -3,13 +3,12 @@
   "task": "terraform-ansible-managed-resources",
   "state": "FROZEN_CANDIDATE",
   "status": "PASS",
-  "task_commit": "2ae7ab1f5945876ea45c58aa22889846a815bf29",
-  "branch_checkpoint_before_freeze_record": "2dc03e6f39df730a0eeeef93414e5116a57e7c57",
+  "task_commit": "0b6c712febad4b40bc8ef8e1f9726da28c4bfc35",
+  "branch_checkpoint_before_freeze_record": "cc6e88ea54497ec8070c1ff024bb9f7123027dec",
   "rule_context": {
-    "repository_main_baseline": "fb3b420173f9724cd77b50b3f642810357337a90",
+    "repository_main_baseline": "0a27b3553383dfd5a38ec7f41d7ff6197937859a",
     "pr_base": "6e43722a5a8d886d692fb67550f60beb2e48f57f",
-    "governing_policy_delta_since_pr_base": "NONE",
-    "delta_observation": "The main-branch delta contains unrelated task/review/execution artifacts and no governing creation/review policy files.",
+    "governing_policy_delta_since_pr_base": "NO_TASK_RELEVANT_CREATION_OR_REVIEW_POLICY_DELTA_OBSERVED",
     "agent_system_policy": "2.5",
     "specialist_prompt_policy": "2.2",
     "specialist_protocol_policy": "2.2",
@@ -27,7 +26,7 @@
     "historical_unapproved_a2b_used_for_advancement": false
   },
   "forward_producer_evidence": {
-    "commit": "ccd5a191c2af625f36cf2d5697ced460c3516ffe",
+    "commit": "cc6e88ea54497ec8070c1ff024bb9f7123027dec",
     "artifact": ".terminus/designs/terraform-ansible-managed-resources-forward-revalidation.json",
     "reference_solution": "SOLUTION_READY",
     "verifier_build": "VERIFIER_READY",
@@ -37,58 +36,68 @@
     "q3": "PASS_NO_GRADING_RELEVANT_AMBIGUITY",
     "documentation": "DOCUMENTATION_READY",
     "format_gate": "PASS",
-    "assembly": "PASS"
+    "assembly": "PASS",
+    "q4_remediation_findings_closed": ["Q4-001","Q4-002","Q4-003","Q4-004","Q4-005","Q4-006","Q4-007"]
   },
   "complexity": {
     "status": "PASS",
-    "run": 32098976772,
-    "job": 95595687530,
+    "run": 32106574305,
+    "job": 95617137138,
     "substantive_loc": 3081,
     "defects": 28,
     "root_causes": 6,
     "interrelated_manifestations": 28,
     "causal_edges": 28,
-    "f2p": 28,
-    "p2p": 7
+    "cross_cluster_pairs": 8,
+    "components": 19,
+    "tests_total": 36,
+    "f2p": 30,
+    "p2p": 6,
+    "requirements": 13
   },
   "runtime_authenticity": {
     "status": "PASS",
-    "run": 32098976772,
-    "job": 95595687530,
+    "run": 32106574305,
+    "job": 95617137138,
     "current_state_evidence_required": false,
     "stateful_dataset_exemption": "APPROVED"
   },
   "deterministic_validation": {
     "status": "PASS",
-    "run": 32098976998,
-    "job": 95595772708,
-    "artifact_id": 9311006999,
-    "artifact_digest": "sha256:6302efb57bbe49cffed9a536b7c1cdcd168f10d5d5c61a589c7b4d7ba2d8ec83",
-    "workflow_merge_commit": "42d5973207aef27f6c709afcae3a388bd4e5c938",
+    "run": 32105762492,
+    "job": 95614841239,
+    "artifact_id": 9313235322,
+    "artifact_digest": "sha256:0016ff4842ae0291c26eddc35b04e4f6067bf30e0472c6123e7b9649954f6713",
+    "workflow_merge_commit": "613840c8a215c39312c3a36701a0351746bf28d4",
     "oracle_reward": 1,
-    "oracle_matrix": "35 passed / 35 total",
+    "oracle_matrix": "36 passed / 36 total",
     "nop_reward": 0,
-    "nop_matrix": "28 failed / 7 passed",
-    "f2p_empirical": "28/28 starter-fail and Oracle-pass",
-    "p2p_empirical": "7/7 starter-pass and Oracle-pass"
+    "nop_matrix": "30 failed / 6 passed",
+    "f2p_empirical": "30/30 starter-fail and Oracle-pass",
+    "p2p_empirical": "6/6 starter-pass and Oracle-pass"
   },
   "freeze_checks": {
-    "instruction_shape": "PASS: one short opening paragraph plus ten concise bullets",
     "instruction_material_requirements_complete": true,
     "solver_visible_docs_are_technical_contracts": true,
-    "benchmark_framing_removed_from_task_readme": true,
     "solution_verifier_name_coupling_found": false,
     "task_local_ci_trigger_present": false,
     "temporary_targeted_validation_workflow_present": false,
     "unresolved_policy_conflict": false,
-    "unresolved_prefreeze_finding_count": 0
+    "unresolved_prefreeze_finding_count": 0,
+    "strict_f2p_ceiling_respected": true,
+    "empirical_classification_current": true
   },
   "postfreeze": {
-    "quality_interlock": "PENDING",
-    "q4_spec_test_contract": "PENDING_INDEPENDENT_PACKET_BOUND_REVIEW",
-    "q6_production_logic": "PENDING_INDEPENDENT_PACKET_BOUND_REVIEW",
+    "quality_interlock": "PENDING_FRESH_Q4",
+    "q4_spec_test_contract": "PENDING_FRESH_INDEPENDENT_PACKET_BOUND_REVIEW",
+    "q6_production_logic": {
+      "status": "PASS_REUSED_BY_UNCHANGED_PRODUCTION_SCOPE",
+      "review": ".terminus/reviews/terraform-ansible-managed-resources/2ae7ab1f/terraform-ansible-managed-resources-2ae7ab1f-production-logic-8e01e961d2.json",
+      "review_scope_hash": "5024cce4e6afacd64daf5cc630576390f3b382ea422f7a39c3726d0a7bf1e76e",
+      "basis": "Protocol 2.2 explicitly permits Q6 scope reuse; no task.toml or environment/ file changed between the reviewed task commit and current task commit, and no Q6 role-contract policy input changed."
+    },
     "pre_llmaj": "NOT_REACHED",
-    "harbor_llmaj": "NOT_REACHED_POSTFREEZE; reusable AI credential was unavailable in deterministic CI but does not affect this freeze state"
+    "harbor_llmaj": "NOT_REACHED_POSTFREEZE; reusable AI credential preparation failed after deterministic gates and does not affect the frozen-candidate evidence"
   },
   "next_state": "QUALITY_INTERLOCK"
 }
