@@ -1,0 +1,51 @@
+name: Terminus EC2 Artifact Policy Direct CI
+
+on:
+  pull_request:
+    paths:
+      - 'ec2-artifact-policy-enforcement/**'
+      - '.terminus/designs/ec2-artifact-policy-enforcement-focused-hardening.json'
+      - '.github/workflows/terminus-ec2-artifact-policy-direct-ci.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  deterministic-parity:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build inherited environment
+        run: |
+          docker build \
+            -t terminus-ec2-artifact-policy:ci \
+            ec2-artifact-policy-enforcement/environment
+
+      - name: Reference solution must pass
+        run: |
+          set -euo pipefail
+          docker run --rm \
+            -v "$PWD/ec2-artifact-policy-enforcement/solution:/solution:ro" \
+            -v "$PWD/ec2-artifact-policy-enforcement/tests:/tests:ro" \
+            terminus-ec2-artifact-policy:ci \
+            bash -lc '
+              /solution/solve.sh
+              TEST_DIR=/tests bash /tests/test.sh
+              reward="$(tr -d "[:space:]" < /logs/verifier/reward.txt)"
+              echo "oracle_reward=$reward"
+              [[ "$reward" == "1" || "$reward" == "1.0" ]]
+            '
+
+      - name: Inherited starter must fail
+        run: |
+          set -euo pipefail
+          docker run --rm \
+            -v "$PWD/ec2-artifact-policy-enforcement/tests:/tests:ro" \
+            terminus-ec2-artifact-policy:ci \
+            bash -lc '
+              TEST_DIR=/tests bash /tests/test.sh
+              reward="$(tr -d "[:space:]" < /logs/verifier/reward.txt)"
+              echo "nop_reward=$reward"
+              [[ "$reward" == "0" || "$reward" == "0.0" ]]
+            '
