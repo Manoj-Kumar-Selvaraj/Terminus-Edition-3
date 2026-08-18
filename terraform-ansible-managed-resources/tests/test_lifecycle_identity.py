@@ -12,6 +12,7 @@ from conftest import (
     run,
     tf_apply,
     tf_destroy,
+    tf_plan,
     tf_plan_json,
     unique_unix_name,
 )
@@ -63,7 +64,7 @@ def test_f2p_user_shell_drift_requires_reconciliation(tmp_path, cleanup_registry
 
 
 def test_f2p_user_supplementary_group_drift_requires_reconciliation(tmp_path, cleanup_registry):
-    """Equivalent group ordering is clean, while removal of a configured group requires reconciliation."""
+    """Equivalent group ordering converges without replay, while real group removal requires reconciliation."""
     user = cleanup_registry.user(unique_unix_name("aopsu"), remove_home=False)
     group1 = cleanup_registry.group(unique_unix_name("aopsg"))
     group2 = cleanup_registry.group(unique_unix_name("aopsg"))
@@ -101,9 +102,9 @@ resource "ansibleops_user" "managed" {{
         ansible_binary=wrapper,
         temp_dir=runner_tmp,
     )
-    result, _ = tf_plan_json(workspace)
-    assert result.returncode == 0
+    tf_apply(workspace)
     assert counter_value(counter) == before
+    assert tf_plan(workspace).returncode == 0
 
     run(["gpasswd", "-d", user, group2])
     _, plan = tf_plan_json(workspace)
