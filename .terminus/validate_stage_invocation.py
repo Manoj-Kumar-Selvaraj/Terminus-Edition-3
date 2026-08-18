@@ -86,7 +86,7 @@ def main() -> int:
                     stage_id=stage_id,
                     role_id=role_id,
                     control_plane_commit=head,
-                    policy_versions={"agent_system": "2.4"},
+                    policy_versions={"agent_system": "2.5"},
                 ),
                 inputs,
             )

@@ -86,10 +86,73 @@ jobs:
         if: ${{ !cancelled() }}
         run: python3 .terminus/validate_workflow_state.py
 
-      - name: Validate current review freshness and commit binding
+      - name: Validate changed session freshness and commit binding
         if: ${{ !cancelled() }}
-        # --allow-stale is deliberately forbidden in CI.
-        run: python3 .terminus/validate_review_freshness.py
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          target="${{ github.sha }}"
+          case "${{ github.event_name }}" in
+            pull_request)
+              # The event's base SHA can lag the base branch after an explicit
+              # branch update. Derive the PR contribution from the fetched base
+              # ref and actual PR head so base-only changes are never classified
+              # as changed task sessions.
+              pr_head="${{ github.event.pull_request.head.sha }}"
+              base_ref="refs/remotes/origin/${{ github.base_ref }}"
+              if ! git rev-parse --verify "${pr_head}^{commit}" >/dev/null 2>&1; then
+                echo "::error::Cannot resolve pull-request head commit: $pr_head"
+                exit 1
+              fi
+              if ! git rev-parse --verify "${base_ref}^{commit}" >/dev/null 2>&1; then
+                echo "::error::Cannot resolve current pull-request base ref: $base_ref"
+                exit 1
+              fi
+              if ! base="$(git merge-base "$pr_head" "$base_ref")" || [[ -z "$base" ]]; then
+                echo "::error::Cannot derive pull-request merge base from $pr_head and $base_ref"
+                exit 1
+              fi
+              target="$pr_head"
+              ;;
+            push)
+              base="${{ github.event.before }}"
+              ;;
+            *)
+              echo "No changed-session freshness scope for ${{ github.event_name }}; validator behavior is covered by the regression suite."
+              exit 0
+              ;;
+          esac
+
+          if [[ -z "$base" || "$base" =~ ^0+$ ]]; then
+            echo "No comparable base commit; skipping changed-session freshness scan."
+            exit 0
+          fi
+
+          mapfile -t sessions < <(
+            git diff --no-renames --name-only "$base" "$target" -- '.terminus/sessions/*.md' \
+              | grep -v '^\.terminus/sessions/TEMPLATE\.md$' \
+              || true
+          )
+
+          if (( ${#sessions[@]} == 0 )); then
+            echo "No task session checkpoints changed; historical stale sessions remain non-advancing evidence and are not rewritten by unrelated control-plane changes."
+            exit 0
+          fi
+
+          for session in "${sessions[@]}"; do
+            task="$(basename "$session" .md)"
+            if [[ ! -f "$session" ]]; then
+              if [[ -f "$task/task.toml" ]]; then
+                echo "::error::Session checkpoint $session was deleted while task $task still exists. Durable task state cannot be removed to bypass freshness validation."
+                exit 1
+              fi
+              echo "Task and session removed together: $task"
+              continue
+            fi
+            echo "==> validating current freshness for changed session: $task"
+            python3 .terminus/validate_review_freshness.py --task "$task"
+          done
 
       - name: Check control-plane files stay outside task packages
         if: ${{ !cancelled() }}
