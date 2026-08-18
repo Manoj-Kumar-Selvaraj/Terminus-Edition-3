@@ -76,6 +76,7 @@ def _outputs(invocation: dict[str, Any]) -> dict[str, Any]:
     elif stage == "QUALITY_INTERLOCK":
         values.update(
             Q4_RESULT=_review("q4-review"),
+            Q4_SATISFACTION="DIRECT_PASS",
             Q6_RESULT=_review("q6-review"),
             EVIDENCE_SUFFICIENCY="SUFFICIENT",
         )

@@ -9,7 +9,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 T = ROOT / ".terminus"
 sys.path.insert(0, str(T))
-import q4_closure
+import q4_closure  # noqa: E402
 
 
 def _write(root: Path, rel: str, value: dict) -> None:

@@ -9,6 +9,8 @@ Canonical implementation:
 - `.terminus/execution/authority.py`
 - `.terminus/execution/invocation.py`
 - `.terminus/execution/cli.py`
+- `.terminus/retrieval/policy.py`
+- `.terminus/retrieval/stage_overlay.py`
 - `.terminus/agents/stage_acceptance_predicates.json`
 - `.terminus/agents/schemas/stage_invocation.schema.json`
 - `.terminus/validate_stage_invocation.py`
@@ -31,7 +33,7 @@ Every invocation records the stage ID, canonical executable role, owner/class, e
 
 Task ID/task commit are a pair. For a **durable** lifecycle execution, the controller reserves the task ID and binds the input task commit before `RULE_RESOLUTION`; taskless packets are preview-only and cannot become durable execution records. The invocation task commit is the input snapshot. A producer/fixer that changes the task later reports the committed output snapshot in the result envelope.
 
-The builder verifies referenced commits and refuses to label the loaded machine contracts as another control-plane commit.
+The builder verifies referenced commits and refuses to label the loaded machine contracts as another control-plane commit. Any machine-readable overlay that changes the effective stage contract, including `.terminus/agents/human_writing_stage_overlay.json`, and the retrieval policy/overlay interpreter that applies it are part of that commit-bound snapshot and must match the declared `control_plane_commit` exactly.
 
 ## Execution authority versus retrieval audience
 

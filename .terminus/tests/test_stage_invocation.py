@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import re
 import subprocess
 import sys
 from pathlib import Path
@@ -21,6 +22,14 @@ CONTROL_COMMIT = subprocess.run(
     capture_output=True,
     text=True,
 ).stdout.strip()
+_AGENT_SYSTEM_TEXT = (ROOT / ".terminus" / "AGENT_SYSTEM.md").read_text(encoding="utf-8")
+_AGENT_SYSTEM_VERSION_MATCH = re.search(
+    r"^Agent-system policy version:\s*`([^`]+)`\s*$",
+    _AGENT_SYSTEM_TEXT,
+    flags=re.MULTILINE,
+)
+assert _AGENT_SYSTEM_VERSION_MATCH is not None
+AGENT_SYSTEM_VERSION = _AGENT_SYSTEM_VERSION_MATCH.group(1)
 
 
 def _policy() -> RetrievalPolicy:
@@ -37,7 +46,7 @@ def _context(
         stage_id=stage,
         role_id=resolved_role,
         control_plane_commit=CONTROL_COMMIT,
-        policy_versions={"agent_system": "2.4"},
+        policy_versions={"agent_system": AGENT_SYSTEM_VERSION},
     )
 
 
@@ -79,10 +88,7 @@ def test_all_registered_stages_compile_from_machine_contract() -> None:
             packet["output_contract"]["allowed_status_values"]
             == stage["output_contract"]["status_values"]
         )
-        assert (
-            packet["routing"]["success_transition"]
-            == stage["success_transition"]
-        )
+        assert packet["routing"]["success_transition"] == stage["success_transition"]
 
 
 def test_q8_perspectives_are_separate_solver_visible_only_packets() -> None:
@@ -118,10 +124,7 @@ def test_external_gate_owners_are_explicit() -> None:
         authority.primary_role_for_stage("OFFICIAL_MODEL_TRIALS")
         == "OFFICIAL_MODEL_EVALUATION_GATE"
     )
-    assert (
-        authority.primary_role_for_stage("DIFFICULTY_ASSESSMENT")
-        == "DIFFICULTY_REVIEWER"
-    )
+    assert authority.primary_role_for_stage("DIFFICULTY_ASSESSMENT") == "DIFFICULTY_REVIEWER"
 
 
 def test_controller_observer_cannot_execute_producer_stage() -> None:
@@ -205,6 +208,36 @@ def test_unavailable_control_plane_commit_fails_closed() -> None:
                 role_id="CREATION_CONTROLLER",
                 control_plane_commit="f" * 40,
             ),
+            {"CREATION_REQUEST": "create"},
+        )
+
+
+@pytest.mark.parametrize(
+    "relative",
+    [
+        ".terminus/agents/human_writing_stage_overlay.json",
+        ".terminus/retrieval/stage_overlay.py",
+        ".terminus/retrieval/policy.py",
+    ],
+)
+def test_effective_stage_overlay_surface_is_bound_to_control_plane_commit(
+    monkeypatch: pytest.MonkeyPatch,
+    relative: str,
+) -> None:
+    builder = StageInvocationBuilder(ROOT)
+    target = (ROOT / relative).resolve()
+    original_read_bytes = Path.read_bytes
+
+    def drifted_read_bytes(path: Path) -> bytes:
+        content = original_read_bytes(path)
+        if path.resolve() == target:
+            return content + b"\n"
+        return content
+
+    monkeypatch.setattr(Path, "read_bytes", drifted_read_bytes)
+    with pytest.raises(ValueError, match=re.escape(relative)):
+        builder.build(
+            _context("RULE_RESOLUTION"),
             {"CREATION_REQUEST": "create"},
         )
 
