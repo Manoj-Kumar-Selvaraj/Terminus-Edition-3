@@ -50,32 +50,30 @@
     ["test_f2p_runner_handles_temp_paths_with_spaces","F2P","REQ_RUNNER"],
     ["test_f2p_runner_does_not_interpret_shell_metacharacters","F2P","REQ_RUNNER"],
     ["test_p2p_success_cleanup_and_state_output_secrecy","P2P","REQ_RUNNER"],
-    ["test_p2p_resource_families_use_ansible_for_mutations_and_native_clean_refresh","P2P","REQ_BACKEND"],
     ["test_f2p_nonzero_ansible_exit_fails_lifecycle_transition","F2P","REQ_RUNNER"],
     ["test_f2p_timeout_and_cancellation_clean_generated_playbooks","F2P","REQ_RUNNER"],
     ["test_f2p_cron_omitted_schedule_fields_converge_to_wildcards","F2P","REQ_CRON"],
     ["test_f2p_failed_delete_preserves_managed_state_for_retry","F2P","REQ_DELETE"],
     ["test_f2p_named_entry_deletes_preserve_siblings","F2P","REQ_DELETE"],
-    ["test_p2p_symlink_destroy_preserves_target","P2P","REQ_DELETE"],
-    ["test_p2p_destroy_succeeds_when_owned_object_is_already_absent","P2P","REQ_DELETE"]
+    ["test_p2p_symlink_destroy_preserves_target","P2P","REQ_DELETE"]
   ],
-  "counts": {"f2p": 30, "p2p": 8},
+  "counts": {"f2p": 30, "p2p": 6},
   "empirical_gate": {
     "starter_nop": "PENDING_RUNTIME_EXECUTION",
     "oracle": "PENDING_RUNTIME_EXECUTION",
     "current_evidence": {
-      "status": "INVALIDATED_BY_Q4_REMEDIATION",
-      "reason": "Q4-001 through Q4-007 changed verifier behavior and the hidden Oracle ownership implementation; classifications above are provisional until exact NOP/Oracle execution."
+      "status": "INVALIDATED_BY_CLASSIFICATION_CONSOLIDATION",
+      "reason": "Run 32104995104 proved the 38-case verifier had 32 starter failures and 6 preservation passes. Two standalone failing probes were consolidated into existing F2P cases to retain the same Q4 behavior surface within the strict 30-F2P ceiling; the resulting 36-case suite requires exact rerun."
     },
     "prior_evidence": {
-      "task_commit": "2ae7ab1f5945876ea45c58aa22889846a815bf29",
-      "workflow_run": 32098976998,
-      "job_id": 95595772708,
-      "artifact_id": 9311006999,
-      "artifact_digest": "sha256:6302efb57bbe49cffed9a536b7c1cdcd168f10d5d5c61a589c7b4d7ba2d8ec83",
-      "oracle_matrix": "35 passed / 35 total",
-      "nop_matrix": "28 failed / 7 passed",
-      "status": "SUPERSEDED_BY_Q4_REMEDIATION"
+      "task_commit": "53fbbf3ed06b88df5964eb0c79e05b42f09c3e14",
+      "workflow_run": 32104995104,
+      "job_id": 95612626242,
+      "artifact_id": 9312966265,
+      "artifact_digest": "sha256:163d73dc162ab93615d834476fc91e87140649a8a62c6434be1e8efc94c6ce10",
+      "oracle_matrix": "38 passed / 38 total",
+      "nop_matrix": "32 failed / 6 passed",
+      "status": "SUPERSEDED_BY_STRICT_PROFILE_CLASSIFICATION_CONSOLIDATION"
     }
   },
   "coverage": {
