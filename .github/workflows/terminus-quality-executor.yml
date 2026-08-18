@@ -4,8 +4,29 @@ on:
   workflow_dispatch:
     inputs:
       packet_path:
-        description: Exact schema-v3 Q4/Q6/Q8 packet path
-        required: true
+        description: Existing exact schema-v3 Q4/Q6/Q8 packet path; leave blank to generate from task + role_key
+        required: false
+        default: ""
+        type: string
+      task:
+        description: Task used only when generating a fresh packet
+        required: false
+        default: ""
+        type: string
+      role_key:
+        description: Packet role key used only with task (spec-test-contract, production-logic, difficulty-sim-gpt, difficulty-sim-claude)
+        required: false
+        default: ""
+        type: string
+      state:
+        description: Controller state recorded in a generated packet
+        required: false
+        default: ""
+        type: string
+      change:
+        description: Optional change-since-last-review text for a generated packet
+        required: false
+        default: ""
         type: string
       model_override:
         description: Optional model override for the selected non-Cursor backend
@@ -13,14 +34,31 @@ on:
         default: ""
         type: string
       publish_result:
-        description: Commit the validated review artifact to the selected branch
+        description: Commit the validated packet/result to the selected branch
         required: true
         default: false
         type: boolean
   workflow_call:
     inputs:
       packet_path:
-        required: true
+        required: false
+        default: ""
+        type: string
+      task:
+        required: false
+        default: ""
+        type: string
+      role_key:
+        required: false
+        default: ""
+        type: string
+      state:
+        required: false
+        default: ""
+        type: string
+      change:
+        required: false
+        default: ""
         type: string
       model_override:
         required: false
@@ -30,6 +68,37 @@ on:
         required: false
         default: false
         type: boolean
+    outputs:
+      packet_path:
+        description: Exact packet used by this execution
+        value: ${{ jobs.execute.outputs.packet_path }}
+      review_path:
+        description: Packet-defined canonical review path
+        value: ${{ jobs.execute.outputs.review_path }}
+      packet_b64:
+        description: Base64-encoded packet for lifecycle aggregation
+        value: ${{ jobs.execute.outputs.packet_b64 }}
+      review_b64:
+        description: Base64-encoded validated review for lifecycle aggregation
+        value: ${{ jobs.execute.outputs.review_b64 }}
+      verdict:
+        description: Validated review verdict
+        value: ${{ jobs.execute.outputs.verdict }}
+      confidence:
+        description: Validated review confidence
+        value: ${{ jobs.execute.outputs.confidence }}
+      evidence_status:
+        description: Validated review evidence status
+        value: ${{ jobs.execute.outputs.evidence_status }}
+      budget_stage:
+        description: Persistent Q budget bucket
+        value: ${{ jobs.execute.outputs.budget_stage }}
+      budget_used:
+        description: Used count after this execution claim
+        value: ${{ jobs.execute.outputs.budget_used }}
+      budget_limit:
+        description: Maximum count for the bucket
+        value: ${{ jobs.execute.outputs.budget_limit }}
     secrets:
       CURSOR_API_KEY:
         required: false
@@ -53,8 +122,23 @@ jobs:
   execute:
     runs-on: ubuntu-latest
     timeout-minutes: 60
+    outputs:
+      packet_path: ${{ steps.export.outputs.packet_path }}
+      review_path: ${{ steps.export.outputs.review_path }}
+      packet_b64: ${{ steps.export.outputs.packet_b64 }}
+      review_b64: ${{ steps.export.outputs.review_b64 }}
+      verdict: ${{ steps.export.outputs.verdict }}
+      confidence: ${{ steps.export.outputs.confidence }}
+      evidence_status: ${{ steps.export.outputs.evidence_status }}
+      budget_stage: ${{ steps.export.outputs.budget_stage }}
+      budget_used: ${{ steps.export.outputs.budget_used }}
+      budget_limit: ${{ steps.export.outputs.budget_limit }}
     env:
-      PACKET_PATH: ${{ inputs.packet_path }}
+      PACKET_PATH_INPUT: ${{ inputs.packet_path }}
+      TASK_INPUT: ${{ inputs.task }}
+      ROLE_KEY_INPUT: ${{ inputs.role_key }}
+      STATE_INPUT: ${{ inputs.state }}
+      CHANGE_INPUT: ${{ inputs.change }}
       MODEL_OVERRIDE: ${{ inputs.model_override }}
       PUBLISH_RESULT: ${{ inputs.publish_result }}
       ARTIFACT_DIR: /tmp/terminus-quality-${{ github.run_id }}-${{ github.run_attempt }}
@@ -71,13 +155,56 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Resolve one global Q backend flag
-        id: backend
+      - name: Resolve or generate exact review packet
+        id: packet
         shell: bash
         run: |
           set -euo pipefail
           mkdir -p "$ARTIFACT_DIR"
 
+          packet="${PACKET_PATH_INPUT:-}"
+          task="${TASK_INPUT:-}"
+          role_key="${ROLE_KEY_INPUT:-}"
+          generated=false
+
+          if [[ -n "$packet" ]]; then
+            [[ -z "$task" && -z "$role_key" ]] || {
+              echo "::error::Use either packet_path or task+role_key, never both"
+              exit 1
+            }
+            [[ -f "$packet" ]] || { echo "::error::Packet does not exist: $packet"; exit 1; }
+          else
+            [[ -n "$task" && -n "$role_key" ]] || {
+              echo "::error::Fresh packet generation requires both task and role_key"
+              exit 1
+            }
+            case "$role_key" in
+              spec-test-contract|production-logic|difficulty-sim-gpt|difficulty-sim-claude) ;;
+              *) echo "::error::Unsupported automated quality role_key: $role_key"; exit 1 ;;
+            esac
+            args=("$task" "$role_key")
+            [[ -n "${STATE_INPUT:-}" ]] && args+=(--state "$STATE_INPUT")
+            [[ -n "${CHANGE_INPUT:-}" ]] && args+=(--change "$CHANGE_INPUT")
+            output="$(python3 .terminus/new_review_packet.py "${args[@]}")"
+            printf '%s\n' "$output"
+            packet="$(printf '%s\n' "$output" | awk '/^wrote / {print $2; exit}')"
+            [[ -n "$packet" && -f "$packet" ]] || {
+              echo "::error::Packet generator did not produce a packet path"
+              exit 1
+            }
+            generated=true
+          fi
+
+          echo "PACKET_PATH=$packet" >> "$GITHUB_ENV"
+          echo "packet_path=$packet" >> "$GITHUB_OUTPUT"
+          echo "generated=$generated" >> "$GITHUB_OUTPUT"
+          echo "Packet: \`$packet\`" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Resolve one global Q backend flag
+        id: backend
+        shell: bash
+        run: |
+          set -euo pipefail
           cursor_raw="${Q_CURSOR_ENABLED:-}"
           openai_raw="${Q_OPENAI_ENABLED:-}"
           claude_raw="${Q_CLAUDE_ENABLED:-}"
@@ -129,13 +256,13 @@ jobs:
               ;;
             stb_ai)
               [[ -n "$model" ]] || model="${Q_STB_AI_MODEL:-}"
-              [[ -n "$model" ]] || { echo "::error::Set Q_STB_AI_MODEL or model_override (for example an existing Portkey model alias)"; exit 1; }
+              [[ -n "$model" ]] || { echo "::error::Set Q_STB_AI_MODEL or model_override"; exit 1; }
               ;;
           esac
 
           echo "backend=$backend" >> "$GITHUB_OUTPUT"
           echo "model=$model" >> "$GITHUB_OUTPUT"
-          echo "Selected Q backend: $backend" >> "$GITHUB_STEP_SUMMARY"
+          echo "Selected Q backend: \`$backend\`" >> "$GITHUB_STEP_SUMMARY"
 
       - name: Install deterministic validator
         run: python3 -m pip install --quiet jsonschema==4.23.0
@@ -243,25 +370,53 @@ jobs:
           [[ "$PUBLISH_RESULT" == true ]] && args+=(--publish-result)
           python3 .terminus/execution/quality_dispatch_cli.py "${args[@]}"
 
-      - name: Publish validated review commit
-        if: success() && inputs.publish_result
+      - name: Export validated lifecycle outputs
+        id: export
         shell: bash
         run: |
           set -euo pipefail
           review_path="$(python3 - "$PACKET_PATH" <<'PY'
-          import json
-          import sys
+          import json, sys
           print(json.load(open(sys.argv[1], encoding='utf-8'))['review_output_path'])
           PY
           )"
+          [[ -f "$ARTIFACT_DIR/review.json" ]] || { echo "::error::Validated review artifact missing"; exit 1; }
+          [[ -f "$PACKET_PATH" ]] || { echo "::error::Packet missing after execution"; exit 1; }
+          packet_b64="$(base64 -w0 "$PACKET_PATH")"
+          review_b64="$(base64 -w0 "$ARTIFACT_DIR/review.json")"
+          verdict="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["review"]["verdict"])' "$ARTIFACT_DIR/execution.json")"
+          confidence="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["review"]["confidence"])' "$ARTIFACT_DIR/execution.json")"
+          evidence_status="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["review"]["evidence_status"])' "$ARTIFACT_DIR/execution.json")"
+          budget_stage="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["q_stage"])' "$ARTIFACT_DIR/budget.json")"
+          budget_used="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["used"])' "$ARTIFACT_DIR/budget.json")"
+          budget_limit="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["limit"])' "$ARTIFACT_DIR/budget.json")"
+          {
+            echo "packet_path=$PACKET_PATH"
+            echo "review_path=$review_path"
+            echo "packet_b64=$packet_b64"
+            echo "review_b64=$review_b64"
+            echo "verdict=$verdict"
+            echo "confidence=$confidence"
+            echo "evidence_status=$evidence_status"
+            echo "budget_stage=$budget_stage"
+            echo "budget_used=$budget_used"
+            echo "budget_limit=$budget_limit"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Publish validated packet/review commit
+        if: success() && inputs.publish_result
+        shell: bash
+        run: |
+          set -euo pipefail
+          review_path="${{ steps.export.outputs.review_path }}"
           [[ -f "$review_path" ]] || { echo "::error::Validated review was not published into checkout"; exit 1; }
-          unexpected="$(git status --porcelain | awk '{print $2}' | grep -vFx "$review_path" || true)"
+          unexpected="$(git status --porcelain | awk '{print $2}' | grep -vFx "$review_path" | grep -vFx "$PACKET_PATH" || true)"
           [[ -z "$unexpected" ]] || { echo "::error::Unexpected repository mutations: $unexpected"; exit 1; }
           git config user.name "terminus-quality-executor[bot]"
           git config user.email "terminus-quality-executor[bot]@users.noreply.github.com"
-          git add -- "$review_path"
+          git add -- "$PACKET_PATH" "$review_path"
           if git diff --cached --quiet; then
-            echo "Validated review already matches repository content."
+            echo "Validated packet/review already match repository content."
             exit 0
           fi
           git commit -m "Persist packet-bound quality review"
