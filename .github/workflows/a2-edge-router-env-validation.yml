@@ -6,43 +6,14 @@ on:
       - ".github/workflows/a2-edge-router-env-validation.yml"
   workflow_dispatch:
 permissions:
-  contents: write
+  contents: read
 jobs:
   environment-build:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
-        with:
-          ref: ${{ github.head_ref }}
-      - name: Normalize solver-visible runtime source
-        id: normalize
-        shell: bash
-        run: |
-          set -euo pipefail
-          python3 - <<'PY'
-          from pathlib import Path
-          p=Path('edge-router-runtime/environment/internal/runtime/types.go')
-          s=p.read_text(encoding='utf-8')
-          s=s.replace('\t// Intentionally preserves the inherited behavior where a removed identity is\n\t// toggled active again instead of receiving a distinct membership incarnation.\n','')
-          s=s.replace('\t// The inherited starter exposes the route and pool pieces independently before\n\t// the final pointer swap; concurrent readers can therefore observe a mixed view.\n','')
-          p.write_text(s, encoding='utf-8')
-          PY
-          cd edge-router-runtime/environment
-          gofmt -w cmd internal
-          cd ../..
-          if ! git diff --quiet -- edge-router-runtime/environment/cmd edge-router-runtime/environment/internal; then
-            git config user.name "github-actions[bot]"
-            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-            git add edge-router-runtime/environment/cmd edge-router-runtime/environment/internal
-            git commit -m "environment-build: normalize Go source"
-            git push origin HEAD:${{ github.head_ref }}
-            echo "changed=1" >> "$GITHUB_OUTPUT"
-          else
-            echo "changed=0" >> "$GITHUB_OUTPUT"
-          fi
       - name: Go compile and vet
-        if: steps.normalize.outputs.changed == '0'
         shell: bash
         run: |
           set -euo pipefail
@@ -53,10 +24,8 @@ jobs:
           go build -trimpath -o /tmp/edge-router-runtime ./cmd/edge-router-runtime
           /tmp/edge-router-runtime validate --config config.json
       - name: Build environment image
-        if: steps.normalize.outputs.changed == '0'
         run: docker build -t edge-router-runtime:a2 edge-router-runtime/environment
       - name: Count substantive environment LOC
-        if: steps.normalize.outputs.changed == '0'
         shell: bash
         run: |
           python3 - <<'PY'
@@ -89,9 +58,7 @@ jobs:
               raise SystemExit('substantive LOC below 3000')
           PY
       - name: Exact runtime authenticity validator
-        if: steps.normalize.outputs.changed == '0'
         run: python3 .terminus/validate_runtime_authenticity.py edge-router-runtime
       - name: Exact complexity validator
-        if: steps.normalize.outputs.changed == '0'
         continue-on-error: true
         run: python3 .terminus/validate_task_complexity.py edge-router-runtime
