@@ -2,8 +2,6 @@ package provider
 
 import (
 	"context"
-	"os"
-	"path/filepath"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
@@ -12,7 +10,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
-	"github.com/terminus-labs/terraform-provider-ansibleops/internal/ansible"
 	"github.com/terminus-labs/terraform-provider-ansibleops/internal/resources"
 	ansibleRuntime "github.com/terminus-labs/terraform-provider-ansibleops/internal/runtime"
 )
@@ -81,34 +78,25 @@ func (p *ansibleOpsProvider) Configure(ctx context.Context, req provider.Configu
 		rt.Timeout = time.Duration(seconds) * time.Second
 	}
 
-	if err := validateRuntime(rt); err != nil {
+	report, err := validateRuntimePreflight(rt)
+	if err != nil {
 		resp.Diagnostics.AddError("Invalid provider configuration", err.Error())
 		return
 	}
 
 	tflog.Info(ctx, "configured ansibleops provider", map[string]any{
-		"inventory": rt.Inventory,
-		"binary":    rt.AnsibleBinary,
-		"temp_dir":  rt.TempDir,
+		"inventory":        report.InventoryPath,
+		"inventory_bytes":  report.InventoryBytes,
+		"inventory_hosts":  report.InventoryHosts,
+		"inventory_groups": report.InventoryGroups,
+		"binary":           report.BinaryRequest,
+		"binary_path":      report.BinaryPath,
+		"temp_dir":         report.TempDir,
+		"temp_parent":      report.TempParent,
+		"timeout":          report.Timeout.String(),
 	})
 	resp.ResourceData = rt
 	resp.DataSourceData = rt
-}
-
-func validateRuntime(rt *ansibleRuntime.Config) error {
-	if !filepath.IsAbs(rt.Inventory) {
-		return &pathError{field: "inventory", value: rt.Inventory}
-	}
-	if !filepath.IsAbs(rt.TempDir) {
-		return &pathError{field: "temp_dir", value: rt.TempDir}
-	}
-	if st, err := os.Stat(rt.Inventory); err != nil || st.IsDir() {
-		return &runtimeError{message: "inventory must reference an existing regular file"}
-	}
-	if err := ansible.ValidateManagedInventory(rt.Inventory); err != nil {
-		return &runtimeError{message: err.Error()}
-	}
-	return nil
 }
 
 type pathError struct {
@@ -117,10 +105,6 @@ type pathError struct {
 }
 
 func (e *pathError) Error() string { return e.field + " must be an absolute path: " + e.value }
-
-type runtimeError struct{ message string }
-
-func (e *runtimeError) Error() string { return e.message }
 
 func (p *ansibleOpsProvider) Resources(_ context.Context) []func() resource.Resource {
 	return []func() resource.Resource{
