@@ -6,12 +6,18 @@ import time
 import uuid
 
 from conftest import (
+    counter_value,
     make_ansible_wrapper,
     make_workspace,
+    plan_actions,
+    resource_values,
+    rewrite_body,
     run,
     state_has_resource,
     tf_apply,
+    tf_destroy,
     tf_plan,
+    tf_plan_json,
 )
 
 
@@ -50,12 +56,47 @@ def test_f2p_runner_does_not_interpret_shell_metacharacters(tmp_path, cleanup_re
     assert not pathlib.Path(sentinel).exists()
 
 
+def test_p2p_success_cleanup_and_state_output_secrecy(tmp_path, cleanup_registry):
+    """Successful mutations clean generated playbooks and do not persist Ansible command output in Terraform state."""
+    target = cleanup_registry.path(tmp_path / "success-directory")
+    temp_dir = tmp_path / "success-playbooks"
+    workspace = make_workspace(
+        tmp_path,
+        f'''resource "ansibleops_directory" "managed" {{
+  path = {json.dumps(str(target))}
+}}
+''',
+        temp_dir=temp_dir,
+    )
+    tf_apply(workspace)
+    leftovers = list(temp_dir.glob("ansibleops-*.yml")) if temp_dir.exists() else []
+    assert leftovers == []
+    values = resource_values(workspace, "ansibleops_directory.managed")
+    forbidden = {
+        "stdout",
+        "stderr",
+        "command",
+        "command_output",
+        "ansible_output",
+        "playbook",
+        "playbook_path",
+    }
+    assert forbidden.isdisjoint(values)
+    rendered_state = json.dumps(values, sort_keys=True)
+    assert "PLAY [" not in rendered_state
+    assert "TASK [" not in rendered_state
+    tf_destroy(workspace)
+    leftovers = list(temp_dir.glob("ansibleops-*.yml")) if temp_dir.exists() else []
+    assert leftovers == []
+
+
 def test_f2p_nonzero_ansible_exit_fails_lifecycle_transition(tmp_path, cleanup_registry):
-    """A non-zero ansible-playbook exit must fail apply and must not publish a resource that was never created."""
+    """A non-zero Ansible exit fails the transition, preserves state truth, and cleans the generated playbook."""
     target = cleanup_registry.path(tmp_path / "managed-dir")
     fail_flag = tmp_path / "fail.flag"
     fail_flag.write_text("fail", encoding="utf-8")
     wrapper = make_ansible_wrapper(tmp_path, fail_flag=fail_flag)
+    temp_dir = tmp_path / "failure-playbooks"
     workspace = make_workspace(
         tmp_path,
         f'''resource "ansibleops_directory" "managed" {{
@@ -63,10 +104,13 @@ def test_f2p_nonzero_ansible_exit_fails_lifecycle_transition(tmp_path, cleanup_r
 }}
 ''',
         ansible_binary=wrapper,
+        temp_dir=temp_dir,
     )
     tf_apply(workspace, expect_success=False)
     assert not pathlib.Path(target).exists()
     assert not state_has_resource(workspace, "ansibleops_directory.managed")
+    leftovers = list(temp_dir.glob("ansibleops-*.yml")) if temp_dir.exists() else []
+    assert leftovers == []
 
 
 def test_f2p_timeout_and_cancellation_clean_generated_playbooks(tmp_path, cleanup_registry):
@@ -138,21 +182,85 @@ def test_f2p_timeout_and_cancellation_clean_generated_playbooks(tmp_path, cleanu
 
 
 def test_f2p_cron_omitted_schedule_fields_converge_to_wildcards(tmp_path, cleanup_registry):
-    """Omitted cron user/schedule fields must mean root and wildcard defaults and remain clean on the next plan."""
+    """Cron defaults, backend use, drift, absent destroy and mutable updates converge with stable identity."""
     cleanup_registry.cron("root")
     run(["crontab", "-u", "root", "-r"], check=False)
     name = "ansibleops-defaults"
-    workspace = make_workspace(
-        tmp_path,
-        f'''resource "ansibleops_cron" "managed" {{
+    runner_tmp = tmp_path / "runner"
+    counter = tmp_path / "cron-counter.log"
+    wrapper = make_ansible_wrapper(tmp_path, counter=counter)
+    omitted = f'''resource "ansibleops_cron" "managed" {{
   name = {json.dumps(name)}
   job  = "echo ansibleops-defaults"
 }}
-''',
+'''
+    workspace = make_workspace(
+        tmp_path,
+        omitted,
+        ansible_binary=wrapper,
+        temp_dir=runner_tmp,
     )
+    before_create = counter_value(counter)
     tf_apply(workspace)
+    assert counter_value(counter) >= before_create + 1
+    before_id = resource_values(workspace, "ansibleops_cron.managed")["id"]
     listing = run(["crontab", "-u", "root", "-l"]).stdout
     assert f"#Ansible: {name}" in listing
     assert "* * * * * echo ansibleops-defaults" in listing
+    before_clean_plan = counter_value(counter)
     plan = tf_plan(workspace)
     assert plan.returncode == 0
+    assert counter_value(counter) == before_clean_plan
+
+    explicit = f'''resource "ansibleops_cron" "managed" {{
+  name    = {json.dumps(name)}
+  user    = "root"
+  minute  = "*"
+  hour    = "*"
+  day     = "*"
+  month   = "*"
+  weekday = "*"
+  job     = "echo ansibleops-defaults"
+}}
+'''
+    rewrite_body(
+        workspace,
+        explicit,
+        ansible_binary=wrapper,
+        temp_dir=runner_tmp,
+    )
+    before_equivalent_apply = counter_value(counter)
+    tf_apply(workspace)
+    assert counter_value(counter) == before_equivalent_apply
+    before_equivalent_plan = counter_value(counter)
+    assert tf_plan(workspace).returncode == 0
+    assert counter_value(counter) == before_equivalent_plan
+
+    drifted = listing.replace("echo ansibleops-defaults", "echo drifted")
+    drift_file = tmp_path / "drift.cron"
+    drift_file.write_text(drifted, encoding="utf-8")
+    run(["crontab", "-u", "root", str(drift_file)])
+    before_drift_plan = counter_value(counter)
+    _, drift_plan = tf_plan_json(workspace)
+    assert plan_actions(drift_plan, "ansibleops_cron.managed") == ["update"]
+    assert counter_value(counter) == before_drift_plan
+
+    updated = explicit.replace('hour    = "*"', 'hour    = "1"').replace(
+        'job     = "echo ansibleops-defaults"', 'job     = "echo updated"'
+    )
+    rewrite_body(
+        workspace,
+        updated,
+        ansible_binary=wrapper,
+        temp_dir=runner_tmp,
+    )
+    before_update = counter_value(counter)
+    tf_apply(workspace)
+    assert counter_value(counter) >= before_update + 1
+    assert resource_values(workspace, "ansibleops_cron.managed")["id"] == before_id
+    final_listing = run(["crontab", "-u", "root", "-l"]).stdout
+    assert "* 1 * * * echo updated" in final_listing
+
+    run(["crontab", "-u", "root", "-r"], check=False)
+    tf_destroy(workspace)
+    assert not state_has_resource(workspace, "ansibleops_cron.managed")

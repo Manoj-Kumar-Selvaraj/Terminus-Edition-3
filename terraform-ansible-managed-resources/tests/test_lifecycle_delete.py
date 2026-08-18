@@ -4,6 +4,7 @@ import pathlib
 from conftest import (
     make_ansible_wrapper,
     make_workspace,
+    resource_values,
     rewrite_body,
     run,
     state_has_resource,
@@ -13,7 +14,7 @@ from conftest import (
 
 
 def test_f2p_failed_delete_preserves_managed_state_for_retry(tmp_path, cleanup_registry):
-    """A failed Ansible teardown keeps both the external object and Terraform management so destroy can be retried."""
+    """Failed teardown is retryable, while an already-absent directory destroys successfully."""
     target = cleanup_registry.path(tmp_path / "managed-dir")
     fail_flag = tmp_path / "fail.flag"
     wrapper = make_ansible_wrapper(tmp_path, fail_flag=fail_flag)
@@ -34,6 +35,20 @@ def test_f2p_failed_delete_preserves_managed_state_for_retry(tmp_path, cleanup_r
     fail_flag.unlink()
     tf_destroy(workspace)
     assert not pathlib.Path(target).exists()
+
+    absent_root = tmp_path / "already-absent-directory"
+    absent_target = cleanup_registry.path(absent_root / "managed-dir")
+    absent_workspace = make_workspace(
+        absent_root,
+        f'''resource "ansibleops_directory" "managed" {{
+  path = {json.dumps(str(absent_target))}
+}}
+''',
+    )
+    tf_apply(absent_workspace)
+    pathlib.Path(absent_target).rmdir()
+    tf_destroy(absent_workspace)
+    assert not state_has_resource(absent_workspace, "ansibleops_directory.managed")
 
 
 def test_f2p_named_entry_deletes_preserve_siblings(tmp_path, cleanup_registry):
@@ -86,6 +101,9 @@ def test_f2p_named_entry_deletes_preserve_siblings(tmp_path, cleanup_registry):
     tf_apply(workspace)
     rewrite_body(workspace, line_one + line_two + block_one + block_two + cron_one + cron_two)
     tf_apply(workspace)
+    line_two_id = resource_values(workspace, "ansibleops_line.two")["id"]
+    block_two_id = resource_values(workspace, "ansibleops_block.two")["id"]
+    cron_two_id = resource_values(workspace, "ansibleops_cron.two")["id"]
     rewrite_body(workspace, line_two + block_two + cron_two)
     tf_apply(workspace)
 
@@ -100,9 +118,12 @@ def test_f2p_named_entry_deletes_preserve_siblings(tmp_path, cleanup_registry):
     assert "echo cron-one" not in cron_text
     assert "#Ansible: cron-two" in cron_text
     assert "echo cron-two" in cron_text
+    assert resource_values(workspace, "ansibleops_line.two")["id"] == line_two_id
+    assert resource_values(workspace, "ansibleops_block.two")["id"] == block_two_id
+    assert resource_values(workspace, "ansibleops_cron.two")["id"] == cron_two_id
 
 
-def test_f2p_symlink_destroy_preserves_target(tmp_path, cleanup_registry):
+def test_p2p_symlink_destroy_preserves_target(tmp_path, cleanup_registry):
     """Destroying a managed symlink removes the link path only and leaves the target file untouched."""
     target = cleanup_registry.path(tmp_path / "target.txt")
     target.write_text("keep-target\n", encoding="utf-8")

@@ -3,13 +3,17 @@ import json
 import pathlib
 
 from conftest import (
+    counter_value,
+    make_ansible_wrapper,
     make_workspace,
     plan_actions,
     resource_values,
     rewrite_body,
     run,
+    state_has_resource,
     tf_apply,
     tf_destroy,
+    tf_plan,
     tf_plan_json,
     unique_unix_name,
 )
@@ -61,10 +65,13 @@ def test_f2p_user_shell_drift_requires_reconciliation(tmp_path, cleanup_registry
 
 
 def test_f2p_user_supplementary_group_drift_requires_reconciliation(tmp_path, cleanup_registry):
-    """Removing one configured supplementary group externally must produce an update for the managed user."""
+    """Group ordering converges without replay; real account/group changes use Ansible and reconcile."""
     user = cleanup_registry.user(unique_unix_name("aopsu"), remove_home=False)
     group1 = cleanup_registry.group(unique_unix_name("aopsg"))
     group2 = cleanup_registry.group(unique_unix_name("aopsg"))
+    counter = tmp_path / "counter.log"
+    wrapper = make_ansible_wrapper(tmp_path, counter=counter)
+    runner_tmp = tmp_path / "runner"
     body = f'''resource "ansibleops_group" "one" {{
   name = {json.dumps(group1)}
 }}
@@ -78,11 +85,42 @@ resource "ansibleops_user" "managed" {{
   depends_on  = [ansibleops_group.one, ansibleops_group.two]
 }}
 '''
-    workspace = make_workspace(tmp_path, body)
+    workspace = make_workspace(
+        tmp_path,
+        body,
+        ansible_binary=wrapper,
+        temp_dir=runner_tmp,
+    )
+    before_create = counter_value(counter)
     tf_apply(workspace)
+    assert counter_value(counter) >= before_create + 3
+    before = counter_value(counter)
+    reordered = body.replace(
+        f'groups      = [{json.dumps(group1)}, {json.dumps(group2)}]',
+        f'groups      = [{json.dumps(group2)}, {json.dumps(group1)}]',
+    )
+    rewrite_body(
+        workspace,
+        reordered,
+        ansible_binary=wrapper,
+        temp_dir=runner_tmp,
+    )
+    tf_apply(workspace)
+    assert counter_value(counter) == before
+    before_clean_plan = counter_value(counter)
+    assert tf_plan(workspace).returncode == 0
+    assert counter_value(counter) == before_clean_plan
+
     run(["gpasswd", "-d", user, group2])
     _, plan = tf_plan_json(workspace)
     assert plan_actions(plan, "ansibleops_user.managed") == ["update"]
+    before_update = counter_value(counter)
+    tf_apply(workspace)
+    assert counter_value(counter) >= before_update + 1
+
+    before_delete = counter_value(counter)
+    tf_destroy(workspace)
+    assert counter_value(counter) >= before_delete + 3
 
 
 def test_f2p_group_gid_drift_reconciles_without_identity_churn(tmp_path, cleanup_registry):
@@ -110,13 +148,15 @@ def test_f2p_group_gid_drift_reconciles_without_identity_churn(tmp_path, cleanup
 
 
 def test_f2p_deleted_user_is_planned_for_recreation(tmp_path, cleanup_registry):
-    """A user removed outside Terraform must disappear from refreshed state and be planned for recreation."""
+    """An externally removed user plans recreation and destroy still succeeds from that absent state."""
     name = cleanup_registry.user(unique_unix_name("aopsu"), remove_home=False)
     workspace = make_workspace(tmp_path, user_body(name))
     tf_apply(workspace)
     run(["userdel", name])
     _, plan = tf_plan_json(workspace)
     assert plan_actions(plan, "ansibleops_user.managed") == ["create"]
+    tf_destroy(workspace)
+    assert not state_has_resource(workspace, "ansibleops_user.managed")
 
 
 def test_f2p_destroy_preserves_home_when_remove_home_is_false(tmp_path, cleanup_registry):

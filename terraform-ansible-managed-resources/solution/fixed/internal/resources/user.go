@@ -15,17 +15,17 @@ import (
 
 type userResource struct{ rt *ansibleRuntime.Config }
 type userResourceModel struct {
-	ID types.String `tfsdk:"id"`
-	Name types.String `tfsdk:"name"`
-	UID types.Int64 `tfsdk:"uid"`
-	Group types.String `tfsdk:"group"`
-	Groups types.List `tfsdk:"groups"`
-	Shell types.String `tfsdk:"shell"`
-	Home types.String `tfsdk:"home"`
-	CreateHome types.Bool `tfsdk:"create_home"`
-	RemoveHome types.Bool `tfsdk:"remove_home_on_destroy"`
-	ObservedUID types.Int64 `tfsdk:"observed_uid"`
-	ObservedGID types.Int64 `tfsdk:"observed_gid"`
+	ID          types.String `tfsdk:"id"`
+	Name        types.String `tfsdk:"name"`
+	UID         types.Int64  `tfsdk:"uid"`
+	Group       types.String `tfsdk:"group"`
+	Groups      types.List   `tfsdk:"groups"`
+	Shell       types.String `tfsdk:"shell"`
+	Home        types.String `tfsdk:"home"`
+	CreateHome  types.Bool   `tfsdk:"create_home"`
+	RemoveHome  types.Bool   `tfsdk:"remove_home_on_destroy"`
+	ObservedUID types.Int64  `tfsdk:"observed_uid"`
+	ObservedGID types.Int64  `tfsdk:"observed_gid"`
 	ObservedGroup types.String `tfsdk:"observed_group"`
 	ObservedGroups types.List `tfsdk:"observed_groups"`
 	ObservedShell types.String `tfsdk:"observed_shell"`
@@ -33,7 +33,9 @@ type userResourceModel struct {
 }
 
 func NewUserResource() resource.Resource { return &userResource{} }
-func (r *userResource) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) { resp.TypeName = req.ProviderTypeName + "_user" }
+func (r *userResource) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
+	resp.TypeName = req.ProviderTypeName + "_user"
+}
 func (r *userResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{Description: "Manages a local operating-system user through Ansible.", Attributes: map[string]schema.Attribute{
 		"id": schema.StringAttribute{Computed: true}, "name": schema.StringAttribute{Required: true}, "uid": schema.Int64Attribute{Optional: true},
@@ -44,65 +46,160 @@ func (r *userResource) Schema(_ context.Context, _ resource.SchemaRequest, resp 
 		"observed_shell": schema.StringAttribute{Computed: true}, "observed_home": schema.StringAttribute{Computed: true},
 	}}
 }
-func (r *userResource) Configure(_ context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) { configure(req, resp, &r.rt) }
+func (r *userResource) Configure(_ context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
+	configure(req, resp, &r.rt)
+}
 func (r *userResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	var plan userResourceModel
-	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...); if resp.Diagnostics.HasError() { return }
-	if err := lifecycle.ValidateUnixName("user", stringValue(plan.Name)); err != nil { resp.Diagnostics.AddError("Invalid user name", err.Error()); return }
-	groups := lifecycle.CanonicalGroups(listStrings(ctx, plan.Groups, &resp.Diagnostics)); if resp.Diagnostics.HasError() { return }
-	if !execute(ctx, r.rt, ansible.UserTask("ensure local user", stringValue(plan.Name), "present", int64Value(plan.UID), stringValue(plan.Group), groups, stringValue(plan.Shell), stringValue(plan.Home), boolValue(plan.CreateHome, true), false), &resp.Diagnostics) { return }
+	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+	if err := lifecycle.ValidateUnixName("user", stringValue(plan.Name)); err != nil {
+		resp.Diagnostics.AddError("Invalid user name", err.Error())
+		return
+	}
+	groups := lifecycle.CanonicalGroups(listStrings(ctx, plan.Groups, &resp.Diagnostics))
+	if resp.Diagnostics.HasError() {
+		return
+	}
+	if !execute(ctx, r.rt, ansible.UserTask("ensure local user", stringValue(plan.Name), "present", int64Value(plan.UID), stringValue(plan.Group), groups, stringValue(plan.Shell), stringValue(plan.Home), boolValue(plan.CreateHome, true), false), &resp.Diagnostics) {
+		return
+	}
 	plan.ID = types.StringValue(lifecycle.StableNameIdentity("user", stringValue(plan.Name)))
-	if !r.refreshApplied(ctx, &plan, &resp.Diagnostics) { return }
+	if !r.refreshApplied(ctx, &plan, &resp.Diagnostics) {
+		return
+	}
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 }
 func (r *userResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
 	var state userResourceModel
-	resp.Diagnostics.Append(req.State.Get(ctx, &state)...); if resp.Diagnostics.HasError() { return }
+	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
 	observed, err := observe.InspectUser(stringValue(state.Name))
-	if err != nil { resp.Diagnostics.AddError("Unable to inspect user", err.Error()); return }
-	if !observed.Exists { resp.State.RemoveResource(ctx); return }
-	if !state.UID.IsNull() && !state.UID.IsUnknown() { state.UID = types.Int64Value(observed.UID) }
-	if !state.Group.IsNull() && !state.Group.IsUnknown() { state.Group = types.StringValue(observed.Group) }
-	if !state.Groups.IsNull() && !state.Groups.IsUnknown() { state.Groups = stringListValue(ctx, lifecycle.CanonicalGroups(observed.Groups), &resp.Diagnostics) }
-	if !state.Shell.IsNull() && !state.Shell.IsUnknown() { state.Shell = types.StringValue(observed.Shell) }
-	if !state.Home.IsNull() && !state.Home.IsUnknown() { state.Home = types.StringValue(observed.Home) }
+	if err != nil {
+		resp.Diagnostics.AddError("Unable to inspect user", err.Error())
+		return
+	}
+	if !observed.Exists {
+		resp.State.RemoveResource(ctx)
+		return
+	}
+	if !state.UID.IsNull() && !state.UID.IsUnknown() {
+		state.UID = types.Int64Value(observed.UID)
+	}
+	if !state.Group.IsNull() && !state.Group.IsUnknown() {
+		state.Group = types.StringValue(observed.Group)
+	}
+	if !state.Groups.IsNull() && !state.Groups.IsUnknown() {
+		configured := lifecycle.CanonicalGroups(listStrings(ctx, state.Groups, &resp.Diagnostics))
+		actual := lifecycle.CanonicalGroups(observed.Groups)
+		if resp.Diagnostics.HasError() {
+			return
+		}
+		if !sameStringSlice(configured, actual) {
+			state.Groups = stringListValue(ctx, actual, &resp.Diagnostics)
+		}
+	}
+	if !state.Shell.IsNull() && !state.Shell.IsUnknown() {
+		state.Shell = types.StringValue(observed.Shell)
+	}
+	if !state.Home.IsNull() && !state.Home.IsUnknown() {
+		state.Home = types.StringValue(observed.Home)
+	}
 	r.applyObserved(ctx, &state, observed, &resp.Diagnostics)
 	state.ID = types.StringValue(lifecycle.StableNameIdentity("user", stringValue(state.Name)))
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 }
 func (r *userResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
 	var plan, prior userResourceModel
-	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...); resp.Diagnostics.Append(req.State.Get(ctx, &prior)...); if resp.Diagnostics.HasError() { return }
-	groups := lifecycle.CanonicalGroups(listStrings(ctx, plan.Groups, &resp.Diagnostics)); if resp.Diagnostics.HasError() { return }
-	if !execute(ctx, r.rt, ansible.UserTask("update local user", stringValue(plan.Name), "present", int64Value(plan.UID), stringValue(plan.Group), groups, stringValue(plan.Shell), stringValue(plan.Home), boolValue(plan.CreateHome, true), false), &resp.Diagnostics) { return }
+	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
+	resp.Diagnostics.Append(req.State.Get(ctx, &prior)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+	planGroups := lifecycle.CanonicalGroups(listStrings(ctx, plan.Groups, &resp.Diagnostics))
+	priorGroups := lifecycle.CanonicalGroups(listStrings(ctx, prior.Groups, &resp.Diagnostics))
+	if resp.Diagnostics.HasError() {
+		return
+	}
+	semanticallyEquivalent := sameInt64Value(plan.UID, prior.UID) &&
+		sameStringValue(plan.Group, prior.Group) &&
+		sameStringSlice(planGroups, priorGroups) &&
+		sameStringValue(plan.Shell, prior.Shell) &&
+		sameStringValue(plan.Home, prior.Home) &&
+		sameBoolValue(plan.CreateHome, prior.CreateHome) &&
+		sameBoolValue(plan.RemoveHome, prior.RemoveHome)
+	if !semanticallyEquivalent {
+		if !execute(ctx, r.rt, ansible.UserTask("update local user", stringValue(plan.Name), "present", int64Value(plan.UID), stringValue(plan.Group), planGroups, stringValue(plan.Shell), stringValue(plan.Home), boolValue(plan.CreateHome, true), false), &resp.Diagnostics) {
+			return
+		}
+	}
 	plan.ID = prior.ID
-	if plan.ID.IsNull() || plan.ID.IsUnknown() { plan.ID = types.StringValue(lifecycle.StableNameIdentity("user", stringValue(plan.Name))) }
-	if !r.refreshApplied(ctx, &plan, &resp.Diagnostics) { return }
+	if plan.ID.IsNull() || plan.ID.IsUnknown() {
+		plan.ID = types.StringValue(lifecycle.StableNameIdentity("user", stringValue(plan.Name)))
+	}
+	if !r.refreshApplied(ctx, &plan, &resp.Diagnostics) {
+		return
+	}
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 }
 func (r *userResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
 	var state userResourceModel
-	resp.Diagnostics.Append(req.State.Get(ctx, &state)...); if resp.Diagnostics.HasError() { return }
+	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
 	observed, err := observe.InspectUser(stringValue(state.Name))
-	if err != nil { resp.Diagnostics.AddError("Unable to inspect user", err.Error()); return }
-	if !observed.Exists { return }
-	if !execute(ctx, r.rt, ansible.UserTask("remove local user", stringValue(state.Name), "absent", 0, "", nil, "", "", false, boolValue(state.RemoveHome, false)), &resp.Diagnostics) { return }
+	if err != nil {
+		resp.Diagnostics.AddError("Unable to inspect user", err.Error())
+		return
+	}
+	if !observed.Exists {
+		return
+	}
+	if !execute(ctx, r.rt, ansible.UserTask("remove local user", stringValue(state.Name), "absent", 0, "", nil, "", "", false, boolValue(state.RemoveHome, false)), &resp.Diagnostics) {
+		return
+	}
 	observed, err = observe.InspectUser(stringValue(state.Name))
-	if err != nil { resp.Diagnostics.AddError("Unable to verify user deletion", err.Error()); return }
-	if observed.Exists { resp.Diagnostics.AddError("User deletion incomplete", "managed user still exists after Ansible completed") }
+	if err != nil {
+		resp.Diagnostics.AddError("Unable to verify user deletion", err.Error())
+		return
+	}
+	if observed.Exists {
+		resp.Diagnostics.AddError("User deletion incomplete", "managed user still exists after Ansible completed")
+	}
 }
-func (r *userResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) { resource.ImportStatePassthroughID(ctx, path.Root("name"), req, resp) }
+func (r *userResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
+	resource.ImportStatePassthroughID(ctx, path.Root("name"), req, resp)
+}
 func (r *userResource) refreshApplied(ctx context.Context, model *userResourceModel, diagnostics interface{ AddError(string, string) }) bool {
 	observed, err := observe.InspectUser(stringValue(model.Name))
-	if err != nil { diagnostics.AddError("Unable to inspect user", err.Error()); return false }
-	if !observed.Exists { diagnostics.AddError("User not present", "Ansible completed but the managed user is absent"); return false }
-	r.applyObserved(ctx, model, observed, diagnostics); return true
+	if err != nil {
+		diagnostics.AddError("Unable to inspect user", err.Error())
+		return false
+	}
+	if !observed.Exists {
+		diagnostics.AddError("User not present", "Ansible completed but the managed user is absent")
+		return false
+	}
+	r.applyObserved(ctx, model, observed, diagnostics)
+	return true
 }
 func (r *userResource) applyObserved(ctx context.Context, model *userResourceModel, observed observe.UserState, diagnostics interface{ AddError(string, string) }) {
-	model.ObservedUID = types.Int64Value(observed.UID); model.ObservedGID = types.Int64Value(observed.GID); model.ObservedGroup = types.StringValue(observed.Group)
-	model.ObservedShell = types.StringValue(observed.Shell); model.ObservedHome = types.StringValue(observed.Home)
+	model.ObservedUID = types.Int64Value(observed.UID)
+	model.ObservedGID = types.Int64Value(observed.GID)
+	model.ObservedGroup = types.StringValue(observed.Group)
+	model.ObservedShell = types.StringValue(observed.Shell)
+	model.ObservedHome = types.StringValue(observed.Home)
 	list, diags := types.ListValueFrom(ctx, types.StringType, lifecycle.CanonicalGroups(observed.Groups))
-	if diags.HasError() { diagnostics.AddError("Unable to encode observed groups", "observed supplementary groups could not be represented") } else { model.ObservedGroups = list }
+	if diags.HasError() {
+		diagnostics.AddError("Unable to encode observed groups", "observed supplementary groups could not be represented")
+	} else {
+		model.ObservedGroups = list
+	}
 }
 
 var _ resource.Resource = (*userResource)(nil)
