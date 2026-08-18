@@ -445,10 +445,10 @@ def validate_packet_and_review(
                 f"({recorded_scope[:12]} != {current_scope[:12]})"
             )
 
-    if packet["review_output_path"] != str(rel):
+    if Path(packet["review_output_path"]).as_posix() != rel.as_posix():
         report.error(
             f"{packet_path.relative_to(ROOT)}: review_output_path is "
-            f"{packet['review_output_path']!r}, expected {str(rel)!r}"
+            f"{packet['review_output_path']!r}, expected {rel.as_posix()!r}"
         )
 
     if expected_role == "Comprehensive Reviewer":

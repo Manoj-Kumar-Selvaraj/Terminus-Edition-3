@@ -7,7 +7,7 @@ This is the durable operational checkpoint for one task. Keep it evidence-orient
 ## Identity
 
 - Task: `terraform-aws-ec2-fenced-fleet-rollout`
-- Controller state: `FROZEN_CANDIDATE`
+- Controller state: `QUALITY_INTERLOCK`
 - Working branch: `main`
 - Pull request: none
 - Current task commit: `1320dba179b9dc7f4d44c6de5b8e6a052180d031`
@@ -43,16 +43,16 @@ Stateful 10k–20k records: org IPAM subnet catalog (`subnets` table) is reachab
 | Q2 Verifier Coverage Repair | PASS | SPEC_ALIGNMENT COVERED; 26 F2P / 2 P2P mapped in `.terminus/designs/terraform-aws-ec2-fenced-fleet-rollout-test-map.json` |
 | Q3 Spec Ambiguity Repair | PASS | SPEC_ALIGNMENT A1/A2; ipam-catalog bake paths `/app/docs/sql` |
 | Q7 Task Format Enforcer | PASS | `.terminus/reviews/terraform-aws-ec2-fenced-fleet-rollout/q7-format-check.md` FORMAT_PASS @ `1320dba` |
-| Creator Complexity Gate | PASS | `python .terminus/validate_task_complexity.py` — substantive_loc=3248, defects=24, RC=8, F2P=26, P2P=2 |
+| Creator Complexity Gate | PASS | `python .terminus/validate_task_complexity.py` artifact 3248 — substantive_loc=3248, defects=24, RC=8, F2P=26, P2P=2 |
 | Preflight/static | PENDING | Harbor `tasks check` not yet run |
-| Ruff verifier | PASS | `uvx ruff==0.8.4 check tests/test_outputs.py` — All checks passed |
+| Ruff verifier | PASS | `uvx ruff==0.8.4 check tests/test_outputs.py` run 1 — All checks passed |
 | STB auth/AI credentials | PENDING | infrastructure dependency; not itself submission proof |
-| Oracle = 1 | PASS | Harbor 0.21 `jobs/fleet-rebuild-4/2026-08-17__23-39-25` mean 1.000; 28/28 pytest passed |
-| NOP = 0 | PASS | Harbor 0.21 `jobs/fleet-nop-2/2026-08-17__23-45-23` mean 0.000; 25 failed / 3 passed |
-| Q4 Spec-Test Contract Reviewer | PENDING | next after freeze; packet-bound independent exhaustive review @ `1320dba` |
+| Oracle = 1 | PASS | Harbor 0.21 job 20260817233925 `jobs/fleet-rebuild-4/2026-08-17__23-39-25` mean 1.000; 28/28 pytest passed |
+| NOP = 0 | PASS | Harbor 0.21 job 20260817234523 `jobs/fleet-nop-2/2026-08-17__23-45-23` mean 0.000; 25 failed / 3 passed |
+| Q4 Spec-Test Contract Reviewer | PASS | `.terminus/reviews/terraform-aws-ec2-fenced-fleet-rollout/1320dba1/terraform-aws-ec2-fenced-fleet-rollout-1320dba1-spec-test-contract-61a25e0cf4.json` HIGH SUFFICIENT; advisory Q4-A01 Q4-A02 |
 | Q4 Adjudicated Closure | NOT_APPLICABLE | only after Protocol circuit-breaker + Q4_CLOSURE_POLICY activation |
-| Q6 Production Logic Auditor | PENDING | next after freeze; packet-bound production-logic review @ `1320dba` |
-| Quality Interlock | PENDING | Q4 current PASS + Q6 current/scope-preserved PASS |
+| Q6 Production Logic Auditor | PASS | `.terminus/reviews/terraform-aws-ec2-fenced-fleet-rollout/1320dba1/terraform-aws-ec2-fenced-fleet-rollout-1320dba1-production-logic-aac738b633.json` HIGH SUFFICIENT; scope `cfc39353c3df` |
+| Quality Interlock | PASS | `.terminus/reviews/terraform-aws-ec2-fenced-fleet-rollout/1320dba1/quality-interlock.md` |
 | Pre-LLMaJ specialist panel | PENDING | |
 | Task Architect | PENDING | |
 | Verifier Engineer | PENDING | |
@@ -86,7 +86,7 @@ Stateful 10k–20k records: org IPAM subnet catalog (`subnets` table) is reachab
 
 ## Current blocker
 
-`FROZEN_CANDIDATE` at `1320dba`. Next is packet-bound Q4 then Q6. This Auto chat authored the rebuild; isolation is PROCEDURAL only (user-requested combined producer/controller).
+`QUALITY_INTERLOCK` PASS at freeze `1320dba`. Next is Pre-LLMaJ specialist panel (Instruction, Documentation, Verifier Engineer, Originality, Comprehensive). Q8 and Harbor LLMaJ remain deferred until that aggregate PASS. Isolation for Q4/Q6 was PROCEDURAL in this Auto chat.
 
 ## Root-cause classification
 
@@ -96,18 +96,18 @@ Stateful 10k–20k records: org IPAM subnet catalog (`subnets` table) is reachab
 
 ## Next action
 
-Generate Q4 and Q6 packets bound to `1320dba`, then run those quality reviews.
+Generate Pre-LLMaJ packets (instruction, documentation, verifier-engineer, originality, comprehensive) bound to `1320dba`.
 
 ## Review evidence ledger
 
 | Review | Review ID | Task commit | Protocol | Prompt | Role policy | Role contract hash | Scope hash | Result path | Verdict | Confidence | Evidence |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| Q4 Spec-Test Contract Reviewer | | 1320dba | 2.2 | 2.2 | 1.1 | | n/a | | PENDING | | exhaustive one-pass review required |
-| Q6 Production Logic Auditor | | 1320dba | 2.2 | 2.2 | 1.1 | | | | PENDING | | production scope hash required |
+| Q4 Spec-Test Contract Reviewer | terraform-aws-ec2-fenced-fleet-rollout-1320dba1-spec-test-contract-61a25e0cf4 | 1320dba179b9dc7f4d44c6de5b8e6a052180d031 | 2.2 | 2.2 | 1.1 | d67c7ed4a1f5ff3ab609a8095d6f7cc822df5b4ecd2187aaadd757d6d971f861 | n/a | `.terminus/reviews/terraform-aws-ec2-fenced-fleet-rollout/1320dba1/terraform-aws-ec2-fenced-fleet-rollout-1320dba1-spec-test-contract-61a25e0cf4.json` | PASS | HIGH | exhaustive matrix; advisory A01 A02 |
+| Q6 Production Logic Auditor | terraform-aws-ec2-fenced-fleet-rollout-1320dba1-production-logic-aac738b633 | 1320dba179b9dc7f4d44c6de5b8e6a052180d031 | 2.2 | 2.2 | 1.1 | 3cfe7803de1d9a5bc376b286069bc4d70925174af82aa62a18e954c028d0e532 | cfc39353c3df03d709479d1b0eb1cf8ea8be060079e8649b76e25cc91349f95e | `.terminus/reviews/terraform-aws-ec2-fenced-fleet-rollout/1320dba1/terraform-aws-ec2-fenced-fleet-rollout-1320dba1-production-logic-aac738b633.json` | PASS | HIGH | operator/controller/terraform/ipam; PADDING MEDIUM |
 
 ## Quality interlock checkpoint
 
-- Quality interlock: `PENDING`
+- Quality interlock: `PASS` (`.terminus/reviews/terraform-aws-ec2-fenced-fleet-rollout/1320dba1/quality-interlock.md`)
 
 ## Policy-conflict ledger
 

@@ -1,0 +1,169 @@
+{
+  "schema_version": "3.0",
+  "role": "Production Logic Auditor",
+  "review_id": "terraform-aws-ec2-fenced-fleet-rollout-1320dba1-production-logic-aac738b633",
+  "task": "terraform-aws-ec2-fenced-fleet-rollout",
+  "task_commit": "1320dba179b9dc7f4d44c6de5b8e6a052180d031",
+  "control_plane_commit": "7044472d14022ef072b3f51d059a779d3dde7d09",
+  "protocol_policy_version": "2.2",
+  "prompt_policy_version": "2.2",
+  "role_policy_version": "1.1",
+  "role_contract_hash": "3cfe7803de1d9a5bc376b286069bc4d70925174af82aa62a18e954c028d0e532",
+  "review_scope_hash": "cfc39353c3df03d709479d1b0eb1cf8ea8be060079e8649b76e25cc91349f95e",
+  "context_packet": ".terminus/reviews/terraform-aws-ec2-fenced-fleet-rollout/1320dba1/terraform-aws-ec2-fenced-fleet-rollout-1320dba1-production-logic-aac738b633.packet.json",
+  "verdict": "PASS",
+  "confidence": "HIGH",
+  "evidence_status": "SUFFICIENT",
+  "summary": "Independent Q6 walk at 1320dba: the public operator plans Terraform, rebuilds fleetctl, and commits through a hash-checked control plane. Go packages implement validation, IPAM sqlite lookup, identity, placement, pilot/wave rollout, volumes, journal, fence, drift, and import with real branching. Starter spec packages are imported then discarded, which is a coupled defect rather than dead files. Honest reachable runtime/config is above the 3000-line strict floor. IPAM 12000-row catalog is consumed by eligibility checks. TOY_LOGIC_RISK LOW; PADDING_RISK MEDIUM.",
+  "evidence": [
+    {
+      "type": "rule",
+      "ref": ".terminus/agents/QUALITY_AGENT_REGISTRY.md",
+      "observation": "Q6 independently judges complexity, reachability, coupling, and padding. Complexity Governor PASS is not copied as a conclusion. large_system_strict needs >=3000 substantive reachable LOC and no HIGH toy/padding risk."
+    },
+    {
+      "type": "file",
+      "ref": "terraform-aws-ec2-fenced-fleet-rollout/task.toml",
+      "observation": "Software/Systems; artifacts include controller, internal, terraform, scripts, bin, go.mod/sum; separate verifier; agent timeout 10800."
+    },
+    {
+      "type": "file",
+      "ref": "terraform-aws-ec2-fenced-fleet-rollout/environment/bin/fenced-fleet-rollout",
+      "observation": "Thin wrapper that runs /app/scripts/rollout_operator.py."
+    },
+    {
+      "type": "file",
+      "ref": "terraform-aws-ec2-fenced-fleet-rollout/environment/scripts/rollout_operator.py",
+      "observation": "Verifies control-plane hash, terraform init/validate/plan, builds fleetctl, apply, inventory GET, writes rollout-report.json READY only when AMI, IMDS, counts, and digests agree."
+    },
+    {
+      "type": "file",
+      "ref": "terraform-aws-ec2-fenced-fleet-rollout/environment/cmd/fleetctl/main.go",
+      "observation": "plan/apply/validate CLI: journal repair, controller.Render, control-plane Commit, durable state/journal, exit 3 on lost reply."
+    },
+    {
+      "type": "file",
+      "ref": "terraform-aws-ec2-fenced-fleet-rollout/environment/internal/ipam/store.go",
+      "observation": "modernc sqlite catalog: EligibleAppSubnet and ApprovedImage are live lookups, not fixtures in RAM only."
+    },
+    {
+      "type": "file",
+      "ref": "terraform-aws-ec2-fenced-fleet-rollout/environment/internal/rollout/rollout.go",
+      "observation": "Starter Refresh discards rolloutspec.Refresh and emits rolling_replace. The discarded spec path is imported; wiring it is the repair, not unused file padding."
+    },
+    {
+      "type": "file",
+      "ref": "terraform-aws-ec2-fenced-fleet-rollout/environment/terraform/modules/fleet/main.tf",
+      "observation": "Real AWS resources: launch template, ASG, SG, IAM role/policy, EBS, attachments, log group. Starter uses latest AMI alias, optional IMDS, SSH/world, unencrypted disks."
+    },
+    {
+      "type": "file",
+      "ref": "terraform-aws-ec2-fenced-fleet-rollout/environment/cmd/controlplane/handlers.go",
+      "observation": "HTTP inventory/commit with in-progress owner fencing and lost-reply 503. Baked at /opt/ec2-controlplane with sha256 pin."
+    },
+    {
+      "type": "file",
+      "ref": "terraform-aws-ec2-fenced-fleet-rollout/environment/docs/sql/schema.sql",
+      "observation": "subnets and images tables consumed by ipam.store; seed is 12000 subnet rows plus images."
+    }
+  ],
+  "findings": [
+    {
+      "id": "Q6-A01",
+      "severity": "LOW",
+      "status": "OBSERVED",
+      "criterion": "padding vs discarded-spec defect",
+      "evidence_refs": [
+        "terraform-aws-ec2-fenced-fleet-rollout/environment/internal/rollout/rollout.go",
+        "terraform-aws-ec2-fenced-fleet-rollout/environment/internal/validate/validate.go"
+      ],
+      "why_it_matters": "Several *spec packages contain the correct algorithm and are called with discarded results. That inflates counted LOC, but it is the observable starter defect (partial wiring fails F2P), not unreachable clone files.",
+      "minimal_remediation": "Keep discarded-result defects; do not add more unused packages.",
+      "regression_risk": "Removing spec packages would drop counted LOC and remove a legitimate repair surface."
+    }
+  ],
+  "missing_evidence": [],
+  "change_scope": [],
+  "do_not_change": [
+    "Do not alter solver-visible production/runtime/configuration/data surfaces on the strength of this Q6 PASS; such a change would stale this review.",
+    "Do not use this Q6 result as evidence for Q4 spec-test alignment or later acceptance roles.",
+    "Do not treat Complexity Governor output as the basis for this verdict."
+  ],
+  "next_gate": "Q6 is satisfied for task commit 1320dba179b9dc7f4d44c6de5b8e6a052180d031. Quality Interlock aggregation may proceed only if the independently executed Q4 review also returns a current PASS.",
+  "role_output": {
+    "CORE_LOGIC_DEPTH": "HIGH",
+    "RUNTIME_REACHABILITY": "HIGH",
+    "MODULE_DIVERSITY": "HIGH",
+    "CROSS_COMPONENT_COUPLING": "HIGH",
+    "TOY_LOGIC_RISK": "LOW",
+    "PADDING_RISK": "MEDIUM",
+    "SUBSTANTIVE_LOC_ASSESSMENT": "Entrypoints are fenced-fleet-rollout -> rollout_operator.py and fleetctl main. Reachable Go includes cmd/fleetctl, cmd/controlplane, controller, internal/{validate,identity,placement,rollout,volume,journal,fence,drift,importdata,iam,network,ipam,render,inventory,types,controlplane,stateio,ebspolicy,sgcompile,iamspec,refreshmath} plus imported *spec packages on the compile graph. Terraform module and operator Python are runtime/config. Seed SQL INSERT volume is data, not counted here. Independent walk agrees the operator+controller+terraform+ipam surface is a production work package well above a one-file bug; discarded-spec calls are defects on live paths. Complexity report 3248 is corroboration only, not the verdict.",
+    "MAJOR_MODULES": [
+      {
+        "module": "bin/fenced-fleet-rollout + scripts/rollout_operator.py",
+        "responsibility": "Public operator: terraform plan, CP hash, fleetctl apply, READY report.",
+        "reachability": "/app/bin/fenced-fleet-rollout",
+        "state_error_behavior": "Non-zero unless READY; hash mismatch exits; apply 3 is lost-reply."
+      },
+      {
+        "module": "cmd/fleetctl + controller",
+        "responsibility": "validate/plan/apply over Render and journal.",
+        "reachability": "go build ./cmd/fleetctl from operator and verifier.",
+        "state_error_behavior": "validate/apply writeError exit 2; lost reply exit 3."
+      },
+      {
+        "module": "internal/ipam + docs/sql",
+        "responsibility": "SQLite subnet/image catalog lookups.",
+        "reachability": "validate.Config and placement eligibility.",
+        "state_error_behavior": "Missing/wrong-tier subnet and unapproved AMI fail closed in spec; starter validate discards Strict."
+      },
+      {
+        "module": "internal/identity + launchspec + terraform launch template",
+        "responsibility": "Release provenance, AMI pin, IMDSv2.",
+        "reachability": "render.Render -> identity.LaunchTemplate; terraform plan JSON.",
+        "state_error_behavior": "Starter selects ami_catalog.latest and optional IMDS."
+      },
+      {
+        "module": "internal/placement + network + iam",
+        "responsibility": "Slot AZ balance, SG, least-privilege statements.",
+        "reachability": "render.Render and terraform module.",
+        "state_error_behavior": "Starter public IPs, SSH/world SG, Administrator IAM."
+      },
+      {
+        "module": "internal/rollout + fence + refreshmath",
+        "responsibility": "Pilot/wave, health rollback, owner/target fence, lost reply.",
+        "reachability": "render.Refresh path from fleetctl apply.",
+        "state_error_behavior": "Starter rolling_replace and no-op fence; spec Refresh discarded."
+      },
+      {
+        "module": "internal/volume + ebspolicy",
+        "responsibility": "Slot-owned encrypted volumes and attachment tokens.",
+        "reachability": "render after instance list.",
+        "state_error_behavior": "Starter unencrypted gen=1 tokens from instance id."
+      },
+      {
+        "module": "internal/journal + drift + importdata",
+        "responsibility": "JSONL repair, report_only drift, legacy Slot moves.",
+        "reachability": "fleetctl journal.Repair; render Normalize and drift.Report.",
+        "state_error_behavior": "Starter skips bad journal lines; drift rolling_replace; empty moved list."
+      },
+      {
+        "module": "cmd/controlplane",
+        "responsibility": "Authoritative inventory HTTP with owner conflict and lost-reply 503.",
+        "reachability": "/opt/ec2-controlplane started by operator and tests.",
+        "state_error_behavior": "409 stale owner; 503 when control_plane_response_lost."
+      }
+    ],
+    "PARTIAL_FIX_TRAPS": [
+      "Pinning AMI in Terraform while identity.Release still returns ami_catalog.latest fails controller provenance F2P.",
+      "Calling validatespec.Strict but discarding the error leaves invalid-manifest and public-subnet F2P red.",
+      "Implementing pilot/wave in rollout.go while SameRelease still rolling_replace fails drift F2P.",
+      "Encrypting volumes without canonical generation/token fails R_TOKEN.",
+      "Repairing journal tails while still skipping interior lines fails interior F2P.",
+      "Local state READY without CP inventory match fails operator digest tests.",
+      "Fixing fence.Guard without persisting in_progress owner on lost-reply cannot reject a stale owner."
+    ],
+    "REMOVAL_TEST": "Dropping ~25% of reachable core cannot leave claimed behavior. Removing rollout/fence (~starter+spec) deletes pilot/wave and owner fencing. Removing ipam.store deletes eligibility. Removing terraform module deletes LT/IAM/SG/EBS plan assertions. Removing operator+controlplane deletes READY/digest and anti-forge. Discarded spec packages are on the import graph; deleting them without replacing logic still fails F2P. Seed INSERT rows are data, not this budget.",
+    "REQUIRED_CHANGES": []
+  }
+}

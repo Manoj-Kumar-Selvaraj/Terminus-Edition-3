@@ -1,0 +1,153 @@
+{
+  "schema_version": "3.0",
+  "role": "Spec-Test Contract Reviewer",
+  "review_id": "terraform-aws-ec2-fenced-fleet-rollout-1320dba1-spec-test-contract-61a25e0cf4",
+  "task": "terraform-aws-ec2-fenced-fleet-rollout",
+  "task_commit": "1320dba179b9dc7f4d44c6de5b8e6a052180d031",
+  "control_plane_commit": "7044472d14022ef072b3f51d059a779d3dde7d09",
+  "protocol_policy_version": "2.2",
+  "prompt_policy_version": "2.2",
+  "role_policy_version": "1.1",
+  "role_contract_hash": "d67c7ed4a1f5ff3ab609a8095d6f7cc822df5b4ecd2187aaadd757d6d971f861",
+  "context_packet": ".terminus/reviews/terraform-aws-ec2-fenced-fleet-rollout/1320dba1/terraform-aws-ec2-fenced-fleet-rollout-1320dba1-spec-test-contract-61a25e0cf4.packet.json",
+  "verdict": "PASS",
+  "confidence": "HIGH",
+  "evidence_status": "SUFFICIENT",
+  "summary": "Independent matrix at 1320dba: instruction.md plus /app/docs/fenced-fleet-contract.md, iam-statements.md, and ipam-catalog.md cover the graded operator/Terraform/controller families. All 26 F2P and 2 P2P tests map to discoverable requirements. Instruction is two paragraphs; docs are a binding protocol rather than a module repair map. Advisory only: report.operation_id is contracted but not keyed in the operator pytest, and moved-block file name is contract-owned while tests read import_report.",
+  "evidence": [
+    {
+      "type": "file",
+      "ref": "terraform-aws-ec2-fenced-fleet-rollout/instruction.md",
+      "observation": "Two paragraphs. Names binding contract /app/docs/fenced-fleet-contract.md, inputs, writable Go/Terraform trees, operator, plan.json, control plane, READY report_digest, IMDSv2, least-privilege IAM, placement/IPAM, pilot/wave, volumes, import, drift, fencing, journal, rerun digest, anti-forge."
+    },
+    {
+      "type": "file",
+      "ref": "terraform-aws-ec2-fenced-fleet-rollout/environment/docs/fenced-fleet-contract.md",
+      "observation": "Protocol for manifest digest, LT provenance/IMDSv2, private_app IPAM, pilot-then-wave events, fault_point lost-reply, owner/target fencing, volume generation/token, import moved addresses, report_only drift, journal tail vs interior, report schema fields, IAM Sid names."
+    },
+    {
+      "type": "file",
+      "ref": "terraform-aws-ec2-fenced-fleet-rollout/environment/docs/iam-statements.md",
+      "observation": "Four Allow Sids with actions, resources, and conditions matching the IAM F2P."
+    },
+    {
+      "type": "file",
+      "ref": "terraform-aws-ec2-fenced-fleet-rollout/environment/docs/ipam-catalog.md",
+      "observation": "private_app eligibility and approved AMI lookup against /app/data/ipam.sqlite; bake paths /app/docs/sql."
+    },
+    {
+      "type": "file",
+      "ref": "terraform-aws-ec2-fenced-fleet-rollout/tests/test_outputs.py",
+      "observation": "28 top-level tests: 26 F2P and 2 P2P. Terraform via plan JSON; controller via rebuilt fleetctl; operator via /app/bin/fenced-fleet-rollout; no HCL greps."
+    },
+    {
+      "type": "file",
+      "ref": "terraform-aws-ec2-fenced-fleet-rollout/environment/evidence/controlplane-lost-reply.log",
+      "observation": "Supports the instruction current-state claim of a lost reply after pilot_committed."
+    },
+    {
+      "type": "run",
+      "ref": "jobs/fleet-rebuild-4/2026-08-17__23-39-25",
+      "observation": "Harbor oracle reward 1.0; 28 passed."
+    },
+    {
+      "type": "run",
+      "ref": "jobs/fleet-nop-2/2026-08-17__23-45-23",
+      "observation": "Harbor NOP reward 0.0; 25 failed / 3 passed (P2P artifacts/IPAM plus forged-report overwrite path)."
+    }
+  ],
+  "findings": [
+    {
+      "id": "Q4-A01",
+      "severity": "LOW",
+      "status": "OBSERVED",
+      "criterion": "output schema field coverage",
+      "evidence_refs": [
+        "terraform-aws-ec2-fenced-fleet-rollout/environment/docs/fenced-fleet-contract.md",
+        "terraform-aws-ec2-fenced-fleet-rollout/tests/test_outputs.py"
+      ],
+      "why_it_matters": "The contract lists report fields operation_id and refresh_status. Operator F2P asserts READY, counts, and digest equality, not those keys. A replaced operator could omit them if READY were faked; fleetctl F2P still grades controller behavior.",
+      "minimal_remediation": "Optional: assert report['operation_id'] and report['refresh_status'] on the operator READY path.",
+      "regression_risk": "Low; would not change the engineering objective."
+    },
+    {
+      "id": "Q4-A02",
+      "severity": "LOW",
+      "status": "OBSERVED",
+      "criterion": "implementation freedom vs public Terraform interface",
+      "evidence_refs": [
+        "terraform-aws-ec2-fenced-fleet-rollout/environment/docs/fenced-fleet-contract.md"
+      ],
+      "why_it_matters": "Contract names state_migrations.tf for moved blocks. Tests read import_report.moved addresses, not HCL.",
+      "minimal_remediation": "Leave as the documented Terraform interface; do not add HCL greps.",
+      "regression_risk": "None if tests stay behavioral."
+    }
+  ],
+  "missing_evidence": [],
+  "change_scope": [],
+  "do_not_change": [
+    "Do not add HCL greps for moved blocks.",
+    "Do not dump test names or fixture AMI IDs into instruction.md.",
+    "Do not treat this Q4 PASS as Q6 or Pre-LLMaJ evidence."
+  ],
+  "next_gate": "Quality Interlock aggregation may proceed only if the independently executed Q6 review also returns a current PASS with sufficient evidence.",
+  "role_output": {
+    "REQUIREMENT_TEST_MATRIX": [
+      ["R_OPERATOR operator READY matching CP digests and plan.json", "test_f2p_operator_reaches_ready_with_matching_control_plane", "F2P"],
+      ["R_OPERATOR second-run report_digest", "test_f2p_second_run_keeps_report_digest", "F2P"],
+      ["R_TF_LT approved AMI and IMDSv2 hop 1", "test_f2p_launch_template_uses_approved_ami_and_imdsv2", "F2P"],
+      ["R_TF_LT instance profile bound", "test_f2p_instance_profile_is_planned", "F2P"],
+      ["R_TF_POLICY four IAM Sids no wildcard", "test_f2p_iam_policy_is_least_privilege", "F2P"],
+      ["R_TF_POLICY ALB-scoped SG", "test_f2p_security_group_is_alb_scoped", "F2P"],
+      ["R_TF_POLICY encrypted EBS", "test_f2p_volumes_are_encrypted", "F2P"],
+      ["R_PROVENANCE release identity and slots", "test_f2p_release_provenance_and_stable_slots", "F2P"],
+      ["R_PROVENANCE no public IPs", "test_f2p_no_public_ips_on_instances", "F2P"],
+      ["R_ROLLOUT pilot-then-wave and generation bump", "test_f2p_pilot_wave_rollout_and_volume_generation", "F2P"],
+      ["R_ROLLOUT fail_pilot preserves prior", "test_f2p_pilot_failure_preserves_prior_fleet", "F2P"],
+      ["R_ROLLOUT fail_wave preserves prior", "test_f2p_wave_failure_preserves_prior_fleet", "F2P"],
+      ["R_ROLLOUT lost-reply resume", "test_f2p_lost_response_resume_is_idempotent", "F2P"],
+      ["R_FENCE stale owner", "test_f2p_stale_owner_is_rejected", "F2P"],
+      ["R_FENCE target release change", "test_f2p_target_release_change_is_rejected", "F2P"],
+      ["R_PLACE subnet reorder stickiness", "test_f2p_subnet_reorder_preserves_placement", "F2P"],
+      ["R_PLACE invalid manifest", "test_f2p_invalid_manifest_fails_closed", "F2P"],
+      ["R_PLACE public IPAM subnet", "test_f2p_public_subnet_is_rejected", "F2P"],
+      ["R_PLACE odd fleet extra AZ", "test_f2p_odd_fleet_and_expanded_subnet", "F2P"],
+      ["R_PLACE key reorder identities", "test_f2p_reordered_manifest_fields_keep_identities", "F2P"],
+      ["R_JOURNAL torn tail", "test_f2p_torn_journal_tail_is_repaired", "F2P"],
+      ["R_JOURNAL interior corruption", "test_f2p_interior_journal_corruption_fails_closed", "F2P"],
+      ["R_DRIFT_IMPORT report_only drift", "test_f2p_report_only_drift_does_not_replace", "F2P"],
+      ["R_DRIFT_IMPORT legacy Slot and moved", "test_f2p_import_recovers_slot_tags_and_moves", "F2P"],
+      ["R_TOKEN canonical attachment token", "test_f2p_attachment_token_is_canonical", "F2P"],
+      ["R_ANTICHEAT forged READY", "test_f2p_forged_report_is_overwritten_or_rejected", "F2P"],
+      ["R_PRESERVE sources", "test_p2p_required_artifacts_exist", "P2P"],
+      ["R_PRESERVE IPAM catalog", "test_p2p_ipam_catalog_is_present", "P2P"]
+    ],
+    "PHANTOM_TEST_CONTRACTS": [],
+    "UNTESTED_REQUIREMENTS": ["report.operation_id key not directly asserted (Q4-A01 advisory)"],
+    "AMBIGUITIES": [],
+    "INSTRUCTION_SHAPE": "PASS",
+    "INSTRUCTION_REQUIREMENT_COMPLETENESS": "SUFFICIENT",
+    "DELEGATED_CONTRACT_CHECK": "fenced-fleet-contract.md, iam-statements.md, and ipam-catalog.md are protocol/schema/runbook docs; material goals remain in instruction.md.",
+    "INSTRUCTION_DOC_BOUNDARY": "CLEAN",
+    "IMPLEMENTATION_DIAGNOSIS_LEAKAGE": "LOW",
+    "CURRENT_STATE_EVIDENCE": "PASS",
+    "SPEC_DUMP_RISK": "LOW",
+    "BIDIRECTIONAL_ALIGNMENT": "PASS",
+    "BLOCKING_FINDING_IDS": [],
+    "ADVISORY_FINDING_IDS": ["Q4-A01", "Q4-A02"],
+    "EXHAUSTIVENESS": {
+      "REQUIREMENTS_ENUMERATED": "COMPLETE",
+      "VERIFIER_BEHAVIORS_ENUMERATED": "COMPLETE",
+      "FORWARD_MATRIX_COMPLETE": "YES",
+      "REVERSE_MATRIX_COMPLETE": "YES",
+      "INSTRUCTION_COMPLETENESS_COMPLETE": "YES",
+      "DELEGATED_CONTRACTS_COMPLETE": "YES",
+      "PROMPT_EXTENSION_WALK_COMPLETE": "YES",
+      "P2P_BOUNDARIES_COMPLETE": "YES",
+      "F2P_BOUNDARIES_COMPLETE": "YES",
+      "OUTPUT_INTERFACES_COMPLETE": "YES",
+      "SECOND_PASS_OMISSION_SWEEP": "PASS",
+      "UNINSPECTED_SCOPE": []
+    }
+  }
+}
