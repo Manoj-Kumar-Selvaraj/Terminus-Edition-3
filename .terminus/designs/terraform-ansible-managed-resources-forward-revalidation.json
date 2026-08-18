@@ -1,0 +1,114 @@
+{
+  "schema_version": "1.0",
+  "task": "terraform-ansible-managed-resources",
+  "phase": "FORWARD_REVALIDATION",
+  "status": "READY_FOR_FREEZE_EVALUATION",
+  "task_commit": "2ae7ab1f5945876ea45c58aa22889846a815bf29",
+  "control_plane_baseline": "fb3b420173f9724cd77b50b3f642810357337a90",
+  "predecessor_recovery": {
+    "a3_approval_commit": "936270bffded3166d24213653006e38982e98816",
+    "a3_approval_artifact": ".terminus/designs/terraform-ansible-managed-resources-a3-approval.json",
+    "fresh_a2b_commit": "dbb13f91e3f809a5ecb1377b5df3591aec717955",
+    "fresh_a2b_artifact": ".terminus/designs/terraform-ansible-managed-resources-environment-rematerialization.json",
+    "historical_unapproved_a2b_reused_as_approval": false
+  },
+  "producer_stages": {
+    "REFERENCE_SOLUTION": {
+      "status": "SOLUTION_READY",
+      "evidence": [
+        "terraform-ansible-managed-resources/solution/solve.sh",
+        "terraform-ansible-managed-resources/solution/fixed/",
+        "Edition-3 run 32098976998 job 95595772708: Oracle reward 1, 35/35 verifier cases passed"
+      ],
+      "assessment": "The reference repair operates through shared lifecycle, resource, normalization and runner implementation files rather than verifier-name or fixture-specific branches; the clean provider runtime-preflight subsystem remains intact."
+    },
+    "VERIFIER_BUILD": {
+      "status": "VERIFIER_READY",
+      "test_map": ".terminus/designs/terraform-ansible-managed-resources-test-map.json",
+      "tests_total": 35,
+      "f2p": 28,
+      "p2p": 7,
+      "assessment": "The suite spans state/identity, native refresh/drift, update transactionality and retry, scoped deletion, copy/template content semantics, named text ownership, account/group reconciliation, cron defaults, argv safety, terminal-path cleanup and Terraform-state output secrecy."
+    },
+    "HUMAN_WRITING_RESEARCH": {
+      "status": "CALIBRATION_REVALIDATED",
+      "calibration": ".terminus/reviewers/HUMAN_WRITING_CALIBRATION.md@fb3b420173f9724cd77b50b3f642810357337a90",
+      "assessment": "The instruction is a direct change request with one short opening paragraph and ten grouped bullets. It avoids benchmark language, test enumeration, implementation sequencing and essay transitions while retaining the complete strict-task contract."
+    },
+    "INSTRUCTION_DRAFT": {
+      "status": "INSTRUCTION_READY",
+      "path": "terraform-ansible-managed-resources/instruction.md",
+      "shape": "one opening paragraph plus ten concise bullets",
+      "requirement_contract": ".terminus/contracts/terraform-ansible-managed-resources/solver-visible-requirements.json",
+      "assessment": "The instruction owns the material end-state, preservation, compatibility and safety obligations and delegates only architecture/resource/lifecycle interface detail to named solver-visible provider documents."
+    },
+    "SPEC_ALIGNMENT": {
+      "status": "ALIGNED",
+      "q1_spec_gap_repair": "PASS_NO_UNRESOLVED_VERIFIER_TO_SPEC_GAP",
+      "q2_verifier_coverage_repair": "PASS_NO_UNRESOLVED_SPEC_TO_VERIFIER_GAP",
+      "q3_spec_ambiguity_repair": "PASS_NO_GRADING_RELEVANT_AMBIGUITY",
+      "q2_change": "Added one P2P preservation case for successful playbook cleanup plus Terraform-state output secrecy and strengthened the existing non-zero F2P case with failure-path playbook cleanup; no prior F2P assertion was weakened or reclassified.",
+      "assessment": "Every current verifier behavior is discoverable from instruction.md or its referenced technical contracts, and every material instruction safety/lifecycle obligation has behavioral coverage after the runner-cleanup repair."
+    },
+    "DOCUMENTATION_DRAFT": {
+      "status": "DOCUMENTATION_READY",
+      "paths": [
+        "terraform-ansible-managed-resources/README.md",
+        "terraform-ansible-managed-resources/environment/ansibleops/docs/provider-contract.md",
+        "terraform-ansible-managed-resources/environment/ansibleops/docs/resource-reference.md",
+        "terraform-ansible-managed-resources/environment/ansibleops/docs/lifecycle.md"
+      ],
+      "assessment": "README benchmark/verifier framing was removed. Solver-visible provider docs describe architecture/resource/lifecycle contracts without F2P/P2P, Oracle, private defect IDs, hidden tests or repair-location instructions."
+    },
+    "FORMAT_GATE": {
+      "status": "PASS",
+      "evidence": "Edition-3 run 32098976998 job 95595772708: Preflight PASS and Ruff verifier tests PASS on task commit 2ae7ab1f5945876ea45c58aa22889846a815bf29"
+    },
+    "ASSEMBLY": {
+      "status": "PASS",
+      "assessment": "Required task.toml/instruction/README/environment/solution/tests package is present; task-local CI trigger was removed before the final task commit; solution search found no pytest/verifier/test_f2p/test_p2p coupling and solver-visible environment documentation contains no benchmark taxonomy leakage."
+    }
+  },
+  "machine_gates": {
+    "COMPLEXITY_GATE": {
+      "status": "PASS",
+      "run": 32098976772,
+      "job": 95595687530,
+      "substantive_loc": 3081,
+      "defects": 28,
+      "root_causes": 6,
+      "interrelated": 28,
+      "causal_edges": 28,
+      "tests_total": 35,
+      "f2p": 28,
+      "p2p": 7
+    },
+    "RUNTIME_AUTHENTICITY": {
+      "status": "PASS",
+      "run": 32098976772,
+      "job": 95595687530,
+      "current_state_evidence_required": false,
+      "stateful_dataset_exemption": "approved"
+    },
+    "DETERMINISTIC_VALIDATION": {
+      "status": "PASS",
+      "run": 32098976998,
+      "job": 95595772708,
+      "artifact_id": 9311006999,
+      "artifact_digest": "sha256:6302efb57bbe49cffed9a536b7c1cdcd168f10d5d5c61a589c7b4d7ba2d8ec83",
+      "workflow_merge_commit": "42d5973207aef27f6c709afcae3a388bd4e5c938",
+      "oracle_reward": 1,
+      "oracle_matrix": "35 passed / 35 total",
+      "nop_reward": 0,
+      "nop_matrix": "28 failed / 7 passed",
+      "classification": "all 28 F2P Oracle-pass/starter-fail; all seven P2P Oracle-pass/starter-pass"
+    }
+  },
+  "external_postfreeze_state": {
+    "Q4": "NOT_RUN_POSTFREEZE",
+    "Q6": "NOT_RUN_POSTFREEZE",
+    "Harbor_LLMaJ": "NOT_RUN_CREDENTIAL_PREPARATION_FAILED_AFTER_DETERMINISTIC_GATES"
+  },
+  "unresolved_prefreeze_findings": [],
+  "next_state": "FROZEN_CANDIDATE"
+}
