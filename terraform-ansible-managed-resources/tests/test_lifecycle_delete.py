@@ -4,6 +4,7 @@ import pathlib
 from conftest import (
     make_ansible_wrapper,
     make_workspace,
+    resource_values,
     rewrite_body,
     run,
     state_has_resource,
@@ -87,9 +88,9 @@ def test_f2p_named_entry_deletes_preserve_siblings(tmp_path, cleanup_registry):
     tf_apply(workspace)
     rewrite_body(workspace, line_one + line_two + block_one + block_two + cron_one + cron_two)
     tf_apply(workspace)
-    line_two_id = __import__("conftest").resource_values(workspace, "ansibleops_line.two")["id"]
-    block_two_id = __import__("conftest").resource_values(workspace, "ansibleops_block.two")["id"]
-    cron_two_id = __import__("conftest").resource_values(workspace, "ansibleops_cron.two")["id"]
+    line_two_id = resource_values(workspace, "ansibleops_line.two")["id"]
+    block_two_id = resource_values(workspace, "ansibleops_block.two")["id"]
+    cron_two_id = resource_values(workspace, "ansibleops_cron.two")["id"]
     rewrite_body(workspace, line_two + block_two + cron_two)
     tf_apply(workspace)
 
@@ -104,9 +105,9 @@ def test_f2p_named_entry_deletes_preserve_siblings(tmp_path, cleanup_registry):
     assert "echo cron-one" not in cron_text
     assert "#Ansible: cron-two" in cron_text
     assert "echo cron-two" in cron_text
-    assert __import__("conftest").resource_values(workspace, "ansibleops_line.two")["id"] == line_two_id
-    assert __import__("conftest").resource_values(workspace, "ansibleops_block.two")["id"] == block_two_id
-    assert __import__("conftest").resource_values(workspace, "ansibleops_cron.two")["id"] == cron_two_id
+    assert resource_values(workspace, "ansibleops_line.two")["id"] == line_two_id
+    assert resource_values(workspace, "ansibleops_block.two")["id"] == block_two_id
+    assert resource_values(workspace, "ansibleops_cron.two")["id"] == cron_two_id
 
 
 def test_p2p_symlink_destroy_preserves_target(tmp_path, cleanup_registry):
