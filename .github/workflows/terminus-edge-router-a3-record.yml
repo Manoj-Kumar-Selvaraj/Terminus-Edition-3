@@ -71,6 +71,25 @@ jobs:
           assert r['outputs']['profile']=='large_system_strict', r
           PY
 
+      - name: Canonicalize immutable file evidence metadata
+        run: |
+          python3 - <<'PY'
+          import hashlib, json, subprocess
+          p='/tmp/a3-result.json'
+          r=json.load(open(p))
+          for ref in r['evidence_refs']:
+              if ref.get('kind') != 'FILE':
+                  continue
+              rawref=ref['ref']
+              assert rawref.startswith('git:') and '@' in rawref, rawref
+              path, commit = rawref[len('git:'):].rsplit('@',1)
+              data=subprocess.check_output(['git','show',f'{commit}:{path}'])
+              ref['ref']=f'git:{commit}:{path}'
+              ref['content_hash']='sha256:'+hashlib.sha256(data).hexdigest()
+          json.dump(r,open(p,'w'),indent=2)
+          print(json.dumps(r['evidence_refs'],indent=2))
+          PY
+
       - name: Validate persisted topology artifact matches stage outputs
         run: |
           python3 - <<'PY'
