@@ -115,7 +115,7 @@ def _run_stb_ai(
     api_key = os.environ.get("STB_AI_API_KEY", "").strip()
     if not api_key:
         raise QualityExecutorError("STB_AI_API_KEY is required for backend=stb_ai")
-    base_url = os.environ.get("STB_AI_BASE_URL", STB_AI_GATEWAY_URL).strip()
+    base_url = os.environ.get("STB_AI_BASE_URL", "").strip() or STB_AI_GATEWAY_URL
     if not base_url.startswith("https://"):
         raise QualityExecutorError("STB_AI_BASE_URL must be HTTPS")
 
