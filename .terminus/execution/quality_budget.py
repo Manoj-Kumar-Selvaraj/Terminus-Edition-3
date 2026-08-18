@@ -3,8 +3,9 @@
 
 Budget claims are immutable receipts stored on a dedicated state branch by CI.
 Q4 may execute at most three times per task, Q6 at most twice, and every other
-registered Q role at most once per task.  A claim is made immediately before a
-model-backed execution and therefore survives fresh runners and task branches.
+registered Q role/perspective at most once per task. A claim is made immediately
+before a model-backed execution and therefore survives fresh runners and task
+branches.
 """
 
 from __future__ import annotations
@@ -30,6 +31,7 @@ Q_ROLE_LIMITS = {role: 1 for role in Q_ROLE_CODES}
 Q_ROLE_LIMITS["Spec-Test Contract Reviewer"] = 3
 Q_ROLE_LIMITS["Production Logic Auditor"] = 2
 STATE_DIR = "q-runs"
+Q8_ROLE = "Model Perspective Difficulty Simulator"
 
 
 class QualityBudgetError(RuntimeError):
@@ -45,6 +47,28 @@ def role_code(role: str) -> str:
         return Q_ROLE_CODES[role]
     slug = re.sub(r"[^a-z0-9]+", "-", role.lower()).strip("-")
     return slug or "q-unknown"
+
+
+def budget_code(packet: Mapping[str, Any]) -> str:
+    """Return the immutable per-task budget bucket for one packet.
+
+    Q8 has two mandatory isolated perspectives. Each perspective is a distinct
+    one-shot budget bucket so the required GPT and Claude runs do not consume
+    each other's single allowed execution.
+    """
+
+    role = str(packet.get("role") or "")
+    code = role_code(role)
+    if role != Q8_ROLE:
+        return code
+
+    review_id = str(packet.get("review_id") or "").lower()
+    question = str(packet.get("question") or "").lower()
+    if "difficulty-sim-gpt" in review_id or "gpt/codex-style" in question:
+        return "q8-gpt"
+    if "difficulty-sim-claude" in review_id or "claude/claude-code-style" in question:
+        return "q8-claude"
+    raise QualityBudgetError("Q8 packet must identify exactly one GPT or Claude perspective")
 
 
 def _safe_task(value: Any) -> str:
@@ -74,7 +98,9 @@ def load_packet(path: Path) -> dict[str, Any]:
     return packet
 
 
-def _existing_receipts(role_dir: Path, task: str, role: str) -> list[dict[str, Any]]:
+def _existing_receipts(
+    role_dir: Path, task: str, role: str, q_stage: str
+) -> list[dict[str, Any]]:
     receipts: list[dict[str, Any]] = []
     if not role_dir.exists():
         return receipts
@@ -87,6 +113,8 @@ def _existing_receipts(role_dir: Path, task: str, role: str) -> list[dict[str, A
             raise QualityBudgetError(f"budget receipt is not an object: {path}")
         if receipt.get("task") != task or receipt.get("role") != role:
             raise QualityBudgetError(f"budget receipt identity drift: {path}")
+        if str(receipt.get("q_stage") or "").lower() != q_stage:
+            raise QualityBudgetError(f"budget receipt stage drift: {path}")
         receipts.append(receipt)
     return receipts
 
@@ -106,7 +134,7 @@ def claim_quality_budget(
     role = str(packet.get("role") or "")
     if not role:
         raise QualityBudgetError("packet missing role")
-    code = role_code(role)
+    code = budget_code(packet)
     limit = execution_limit(role)
     run_id = _safe_run_number(run_id, "run_id")
     run_attempt = _safe_run_number(run_attempt, "run_attempt")
@@ -115,7 +143,7 @@ def claim_quality_budget(
     role_dir.mkdir(parents=True, exist_ok=True)
     receipt_path = role_dir / f"{run_id}-{run_attempt}.json"
 
-    existing = _existing_receipts(role_dir, task, role)
+    existing = _existing_receipts(role_dir, task, role, code)
     if receipt_path.exists():
         receipt = json.loads(receipt_path.read_text(encoding="utf-8"))
         if receipt.get("backend") != backend or receipt.get("packet") != packet_path:
