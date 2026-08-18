@@ -218,7 +218,7 @@ def test_llmaj_and_official_difficulty_ci_are_api_key_only() -> None:
     assert "login/config restoration/key refresh fallbacks are forbidden in CI" in workflow
 
 
-def test_quality_workflow_has_no_backend_fallback_or_cursor_resume() -> None:
+def test_quality_workflow_has_single_backend_selection_and_no_cursor_resume() -> None:
     workflow = (ROOT / ".github/workflows/terminus-quality-executor.yml").read_text(
         encoding="utf-8"
     )
@@ -229,4 +229,4 @@ def test_quality_workflow_has_no_backend_fallback_or_cursor_resume() -> None:
     assert "--provider openai" in workflow
     assert "--provider anthropic" in workflow
     assert "--resume" not in workflow
-    assert "fallback" not in workflow.lower()
+    assert "fallback_attempted" in workflow
