@@ -15,3 +15,4 @@ The storage engine is designed around a single writable process per database dir
 ## Validation
 
 Validation should exercise fresh and restarted database directories, concurrent writer attempts, transaction interleavings, WAL and snapshot damage boundaries, checkpoint maintenance, binary keys/values, inclusive protocol limits, malformed input recovery, operator status, and compatibility of the documented native interfaces and disk layouts.
+
