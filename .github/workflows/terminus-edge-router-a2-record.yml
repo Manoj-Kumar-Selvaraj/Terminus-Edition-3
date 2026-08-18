@@ -9,6 +9,7 @@ on:
 
 permissions:
   contents: read
+  statuses: write
 
 env:
   TASK_ID: edge-router-runtime
@@ -118,3 +119,14 @@ jobs:
           base64 -w0 ".terminus/executions/${TASK_ID}/ledger.jsonl"
           echo
           echo '===LEDGER_B64_END==='
+
+      - name: Publish run breadcrumb
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh api \
+            --method POST \
+            "repos/${GITHUB_REPOSITORY}/statuses/${GITHUB_SHA}" \
+            -f state=success \
+            -f context=terminus/a2-recorder \
+            -f description="run:${GITHUB_RUN_ID}"
