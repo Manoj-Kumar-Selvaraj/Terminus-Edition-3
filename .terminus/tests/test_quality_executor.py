@@ -12,6 +12,7 @@ sys.path.insert(0, str(ROOT / ".terminus"))
 from execution.quality_backend import select_flag_backend  # noqa: E402
 from execution.quality_budget import (  # noqa: E402
     QualityBudgetError,
+    budget_code,
     claim_quality_budget,
     execution_limit,
 )
@@ -218,6 +219,48 @@ def test_q6_budget_allows_two_and_other_q_role_only_one(tmp_path: Path) -> None:
         )
 
 
+def test_q8_perspectives_have_distinct_one_shot_budgets(tmp_path: Path) -> None:
+    gpt = _packet(Q8_ROLE)
+    gpt["review_id"] = "quality-test-aaaaaaaa-difficulty-sim-gpt-deadbeef00"
+    gpt["question"] = "In a cold GPT/Codex-style diagnostic solve, what happens?"
+    claude = _packet(Q8_ROLE)
+    claude["review_id"] = "quality-test-aaaaaaaa-difficulty-sim-claude-deadbeef00"
+    claude["question"] = "In a cold Claude/Claude-Code-style diagnostic solve, what happens?"
+
+    assert budget_code(gpt) == "q8-gpt"
+    assert budget_code(claude) == "q8-claude"
+
+    gpt_claim = claim_quality_budget(
+        tmp_path,
+        gpt,
+        packet_path="q8-gpt.packet.json",
+        backend="stb_ai",
+        run_id="501",
+        run_attempt="1",
+    )
+    claude_claim = claim_quality_budget(
+        tmp_path,
+        claude,
+        packet_path="q8-claude.packet.json",
+        backend="stb_ai",
+        run_id="502",
+        run_attempt="1",
+    )
+    assert gpt_claim["q_stage"] == "Q8-GPT"
+    assert claude_claim["q_stage"] == "Q8-CLAUDE"
+    assert gpt_claim["limit"] == claude_claim["limit"] == 1
+
+    with pytest.raises(QualityBudgetError, match="Q8-GPT execution budget exhausted"):
+        claim_quality_budget(
+            tmp_path,
+            gpt,
+            packet_path="q8-gpt-2.packet.json",
+            backend="stb_ai",
+            run_id="503",
+            run_attempt="1",
+        )
+
+
 def test_budget_claim_is_idempotent_for_same_github_attempt(tmp_path: Path) -> None:
     packet = _packet(Q4_ROLE)
     first = claim_quality_budget(
@@ -377,3 +420,38 @@ def test_quality_workflow_uses_global_flags_shared_stb_key_and_persistent_budget
     assert "SNORKEL_API_KEY" not in workflow
     assert "--resume" not in workflow
     assert "fallback_attempted" in workflow
+    assert "Resolve or generate exact review packet" in workflow
+    assert ".terminus/new_review_packet.py" in workflow
+    assert "packet_b64" in workflow and "review_b64" in workflow
+
+
+def test_quality_lifecycle_routes_registered_q_stages_without_refresh() -> None:
+    lifecycle = (ROOT / ".github/workflows/terminus-quality-lifecycle.yml").read_text(
+        encoding="utf-8"
+    )
+    collector = (
+        ROOT / ".github/workflows/terminus-quality-lifecycle-collect.yml"
+    ).read_text(encoding="utf-8")
+    controller = (ROOT / ".terminus/execution/controller_cli.py").read_text(encoding="utf-8")
+
+    for stage in ("QUALITY_INTERLOCK", "MODEL_DIAGNOSTIC_GPT", "MODEL_DIAGNOSTIC_CLAUDE"):
+        assert stage in lifecycle
+        assert stage in controller
+    for role_key in (
+        "spec-test-contract",
+        "production-logic",
+        "difficulty-sim-gpt",
+        "difficulty-sim-claude",
+    ):
+        assert role_key in lifecycle
+    assert "uses: ./.github/workflows/terminus-quality-executor.yml" in lifecycle
+    assert "secrets: inherit" in lifecycle
+    assert "validate_quality_interlock.py" in lifecycle
+    assert "terminus-quality-lifecycle-collect.yml" in lifecycle
+    assert "GPT diagnostic received non-GPT Q8 packet" in collector
+    assert "Claude diagnostic received non-Claude Q8 packet" in collector
+    assert "QUALITY_LIFECYCLE_WORKFLOW" in controller
+    assert "existing selected secret only; login/refresh/fallback forbidden" in controller
+    for text in (lifecycle, collector, controller):
+        assert "keys-refresh" not in text
+        assert "SNORKEL_API_KEY" not in text
