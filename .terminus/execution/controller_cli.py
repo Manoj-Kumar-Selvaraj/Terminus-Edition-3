@@ -5,12 +5,14 @@ from __future__ import annotations
 
 import argparse
 import json
+import subprocess
 import sys
 from pathlib import Path
 from typing import Any
 
 if __package__ in {None, ""}:
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+    from execution.control_plane import resolve_control_plane_commit
     from execution.executor import ExecutorMode
     from execution.external_gate import project_external_state, validate_external_result
     from execution.invocation import StageInvocationBuilder
@@ -21,6 +23,7 @@ if __package__ in {None, ""}:
     from remediation.router import RemediationInterlock
     from retrieval.models import InvocationContext
 else:
+    from .control_plane import resolve_control_plane_commit
     from .executor import ExecutorMode
     from .external_gate import project_external_state, validate_external_result
     from .invocation import StageInvocationBuilder
@@ -60,6 +63,15 @@ def _write_or_print(value: Any, output: str | None) -> None:
         sys.stdout.write(rendered)
 
 
+def _git_head(root: Path) -> str:
+    return subprocess.run(
+        ["git", "-C", str(root), "rev-parse", "HEAD^{commit}"],
+        check=True,
+        capture_output=True,
+        text=True,
+    ).stdout.strip()
+
+
 def _state_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--task-id", required=True)
     parser.add_argument("--task-commit", required=True)
@@ -71,6 +83,12 @@ def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--root", default=".")
     sub = parser.add_subparsers(dest="command", required=True)
+
+    control_plane = sub.add_parser(
+        "control-plane", help="resolve the effective control-plane commit independently of state-only HEAD movement"
+    )
+    control_plane.add_argument("--head", default="HEAD")
+    control_plane.add_argument("--output")
 
     status = sub.add_parser("status", help="derive the complete workflow snapshot")
     _state_args(status)
@@ -181,6 +199,7 @@ def _quality_lifecycle_dispatch(args: argparse.Namespace, stage_id: str) -> dict
 
 
 def _controller_stage_dispatch(
+    root: Path,
     args: argparse.Namespace,
     packet: dict[str, Any],
     inputs: dict[str, Any],
@@ -189,6 +208,7 @@ def _controller_stage_dispatch(
     suffix = invocation_id.removeprefix("inv_")[:16]
     branch = f"terminus-controller-request/{args.task_id}/{suffix}"
     request_path = f".terminus/controller-requests/{args.task_id}-{suffix}.json"
+    repository_head = _git_head(root)
     return {
         "status": "READY_TO_DISPATCH",
         "stage_id": packet["stage"]["stage_id"],
@@ -203,10 +223,11 @@ def _controller_stage_dispatch(
             "task_id": args.task_id,
             "task_commit": args.task_commit,
             "stage_id": packet["stage"]["stage_id"],
-            "expected_main_sha": args.control_plane_commit,
+            "expected_repository_head": repository_head,
+            "control_plane_commit": args.control_plane_commit,
             "inputs": inputs,
         },
-        "persistence": "workflow validates, records, replays and fast-forwards main only if main is unchanged",
+        "persistence": "workflow validates, records, replays and fast-forwards main only if repository HEAD is unchanged",
     }
 
 
@@ -285,7 +306,7 @@ def _continue_payload(
             raise ValueError("automated controller stage must have CONTROLLER role_class")
         if packet.get("output_contract", {}).get("semantic_reviewers"):
             raise ValueError("automated controller stage cannot replace semantic reviewers")
-        payload["dispatch"] = _controller_stage_dispatch(args, packet, inputs)
+        payload["dispatch"] = _controller_stage_dispatch(root, args, packet, inputs)
         return payload
 
     executor_mode = getattr(args, "prepare_executor", None)
@@ -301,6 +322,19 @@ def _continue_payload(
 def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     root = Path(args.root).resolve()
+
+    if args.command == "control-plane":
+        repository_head = _git_head(root)
+        control_commit = resolve_control_plane_commit(root, args.head)
+        _write_or_print(
+            {
+                "repository_head": repository_head,
+                "control_plane_commit": control_commit,
+                "head_ref": args.head,
+            },
+            args.output,
+        )
+        return 0
 
     if args.command in {"status", "next", "materialize", "continue"}:
         resolver, durable_snapshot, controller_view = _resolve_state(root, args)
