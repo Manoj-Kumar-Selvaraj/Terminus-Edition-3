@@ -28,6 +28,7 @@ FILES = [
     T / "execution" / "schema_validation.py",
     T / "execution" / "runner.py",
     T / "execution" / "runner_cli.py",
+    T / "execution" / "controller_cli.py",
     T / "execution" / "quality_executor.py",
     T / "execution" / "quality_executor_cli.py",
     T / "execution" / "quality_backend.py",
@@ -38,6 +39,8 @@ FILES = [
     T / "tests" / "test_executor_bridge.py",
     T / "tests" / "test_quality_executor.py",
     ROOT / ".github" / "workflows" / "terminus-quality-executor.yml",
+    ROOT / ".github" / "workflows" / "terminus-quality-lifecycle.yml",
+    ROOT / ".github" / "workflows" / "terminus-quality-lifecycle-collect.yml",
 ]
 
 
@@ -84,11 +87,18 @@ def main() -> int:
     runner_text = (T / "execution" / "runner.py").read_text(encoding="utf-8")
     sandbox_text = (T / "execution" / "sandbox.py").read_text(encoding="utf-8")
     guard_text = (T / "execution" / "invocation_guard.py").read_text(encoding="utf-8")
+    controller_text = (T / "execution" / "controller_cli.py").read_text(encoding="utf-8")
     quality_text = (T / "execution" / "quality_executor.py").read_text(encoding="utf-8")
     backend_text = (T / "execution" / "quality_backend.py").read_text(encoding="utf-8")
     budget_text = (T / "execution" / "quality_budget.py").read_text(encoding="utf-8")
     quality_workflow = (
         ROOT / ".github" / "workflows" / "terminus-quality-executor.yml"
+    ).read_text(encoding="utf-8")
+    lifecycle_workflow = (
+        ROOT / ".github" / "workflows" / "terminus-quality-lifecycle.yml"
+    ).read_text(encoding="utf-8")
+    q8_collector = (
+        ROOT / ".github" / "workflows" / "terminus-quality-lifecycle-collect.yml"
     ).read_text(encoding="utf-8")
 
     for marker in ("CanonicalInvocationGuard", "handoff_id", "validate_handoff"):
@@ -143,10 +153,48 @@ def main() -> int:
         'Q_ROLE_LIMITS["Spec-Test Contract Reviewer"] = 3',
         'Q_ROLE_LIMITS["Production Logic Auditor"] = 2',
         'STATE_DIR = "q-runs"',
+        'return "q8-gpt"',
+        'return "q8-claude"',
         "execution budget exhausted",
     ):
         if marker not in budget_text:
             errors.append(f"quality budget missing invariant marker: {marker}")
+
+    lifecycle_markers = (
+        "QUALITY_INTERLOCK",
+        "MODEL_DIAGNOSTIC_GPT",
+        "MODEL_DIAGNOSTIC_CLAUDE",
+        "spec-test-contract",
+        "production-logic",
+        "difficulty-sim-gpt",
+        "difficulty-sim-claude",
+        "uses: ./.github/workflows/terminus-quality-executor.yml",
+        "validate_quality_interlock.py",
+        "terminus-quality-lifecycle-collect.yml",
+    )
+    for marker in lifecycle_markers:
+        if marker not in lifecycle_workflow:
+            errors.append(f"quality lifecycle workflow missing marker: {marker}")
+
+    controller_markers = (
+        "QUALITY_LIFECYCLE_WORKFLOW",
+        "QUALITY_INTERLOCK",
+        "MODEL_DIAGNOSTIC_GPT",
+        "MODEL_DIAGNOSTIC_CLAUDE",
+        '"quality_lifecycle": True',
+        '"credential_policy": "existing selected secret only; login/refresh/fallback forbidden"',
+    )
+    for marker in controller_markers:
+        if marker not in controller_text:
+            errors.append(f"controller quality routing missing marker: {marker}")
+
+    for marker in (
+        "GPT diagnostic received non-GPT Q8 packet",
+        "Claude diagnostic received non-Claude Q8 packet",
+        "Q8 packet is stale for task tree",
+    ):
+        if marker not in q8_collector:
+            errors.append(f"Q8 lifecycle isolation missing marker: {marker}")
 
     if "--resume" in quality_text or "--resume" in quality_workflow:
         errors.append("packet-bound quality executor must always start a fresh Cursor session")
@@ -156,12 +204,21 @@ def main() -> int:
     for flag in ("Q_CURSOR_ENABLED", "Q_OPENAI_ENABLED", "Q_CLAUDE_ENABLED", "Q_STB_AI_ENABLED"):
         if flag not in quality_workflow:
             errors.append(f"quality workflow missing repository backend flag: {flag}")
-    for forbidden in ("keys-refresh", "SNORKEL_API_KEY"):
-        if forbidden in quality_workflow:
-            errors.append(f"quality workflow contains forbidden credential refresh/login marker: {forbidden}")
+    for text, label in (
+        (quality_workflow, "quality workflow"),
+        (lifecycle_workflow, "quality lifecycle"),
+        (q8_collector, "Q8 collector"),
+        (controller_text, "controller quality routing"),
+    ):
+        for forbidden in ("keys-refresh", "SNORKEL_API_KEY"):
+            if forbidden in text:
+                errors.append(f"{label} contains forbidden credential refresh/login marker: {forbidden}")
     for marker in ("terminus-quality-budget", "quality_budget.py", "quality_dispatch_cli.py"):
         if marker not in quality_workflow:
             errors.append(f"quality workflow missing durable execution-budget marker: {marker}")
+    for marker in ("Resolve or generate exact review packet", ".terminus/new_review_packet.py"):
+        if marker not in quality_workflow:
+            errors.append(f"quality workflow missing lifecycle packet-generation marker: {marker}")
 
     invocation = _invocation()
     builder = ExecutorHandoffBuilder(ROOT)
@@ -204,11 +261,12 @@ def main() -> int:
 
     print("Terminus executor-bridge validation PASS")
     print(
-        "executor_bridge=1.3 modes=MANUAL_CHAT,LOCAL_COMMAND "
+        "executor_bridge=1.4 modes=MANUAL_CHAT,LOCAL_COMMAND "
         "quality_modes=CURSOR_AUTO,DIRECT_OPENAI,DIRECT_CLAUDE,STB_AI_GATEWAY "
         "q_selection=exactly_one_global_flag q_isolation=packet_bound_git_history_free "
         "q_fallback=forbidden q_validation=deterministic_schema_and_binding "
-        "q_budget=Q4x3,Q6x2,OTHERx1 q_budget_scope=global_task_state_branch "
+        "q_budget=Q4x3,Q6x2,OTHERx1,Q8_GPTx1,Q8_CLAUDEx1 "
+        "q_lifecycle=QUALITY_INTERLOCK,Q8_GPT,Q8_CLAUDE "
         "credential_refresh=forbidden difficulty=api_key_only "
         "record_authority=external_to_executor ledger_mutation=forbidden"
     )
