@@ -12,6 +12,7 @@ ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / ".terminus"))
 
 from execution import controller_stage_cli  # noqa: E402
+from execution.control_plane import is_control_plane_path, resolve_control_plane_commit  # noqa: E402
 from execution.controller_cli import _continue_payload  # noqa: E402
 
 
@@ -60,6 +61,7 @@ def test_rule_resolution_direct_executor_builds_schema_result(monkeypatch: pytes
     assert result["outputs"]["KNOWN_POLICY_CONFLICTS"] == []
     assert ".terminus/validate_agent_system.py" in result["outputs"]["ACTIVE_VALIDATORS"]
     assert ".terminus/agents/stage_contracts.json" in result["outputs"]["RULE_SOURCES"]
+    assert result["evidence_refs"] == [{"kind": "COMMIT", "ref": "commit:" + "c" * 40}]
 
 
 def test_direct_controller_executor_rejects_semantic_reviewer_stage() -> None:
@@ -67,6 +69,17 @@ def test_direct_controller_executor_rejects_semantic_reviewer_stage() -> None:
     invocation["output_contract"] = {"semantic_reviewers": ["Some Reviewer"]}
     with pytest.raises(ValueError, match="cannot replace semantic reviewers"):
         controller_stage_cli.execute(invocation)
+
+
+def test_control_plane_identity_excludes_runtime_state_paths() -> None:
+    assert is_control_plane_path(".terminus/execution/controller_cli.py")
+    assert is_control_plane_path(".terminus/agents/CI_ORCHESTRATOR.md")
+    assert is_control_plane_path(".github/workflows/terminus-controller-stage.yml")
+    assert not is_control_plane_path(".terminus/executions/task/ledger.jsonl")
+    assert not is_control_plane_path(".terminus/workflows/task/state.json")
+    assert not is_control_plane_path(".terminus/reviews/task/review.json")
+    assert not is_control_plane_path(".terminus/sessions/task.md")
+    assert resolve_control_plane_commit(ROOT) == _head()
 
 
 def test_controller_continue_returns_hosted_rule_resolution_dispatch(tmp_path: Path) -> None:
@@ -109,7 +122,8 @@ def test_controller_continue_returns_hosted_rule_resolution_dispatch(tmp_path: P
     assert dispatch["workflow"] == ".github/workflows/terminus-controller-stage.yml"
     assert dispatch["trigger"] == "REQUEST_BRANCH_PUSH"
     assert dispatch["branch"].startswith("terminus-controller-request/controller-stage-test/")
-    assert dispatch["request"]["expected_main_sha"] == commit
+    assert dispatch["request"]["expected_repository_head"] == commit
+    assert dispatch["request"]["control_plane_commit"] == commit
     assert dispatch["request"]["task_commit"] == commit
     assert dispatch["request"]["inputs"]["CREATION_REQUEST"] == "controller automation test"
 
@@ -121,6 +135,9 @@ def test_controller_stage_workflow_is_non_model_and_canonical() -> None:
     for marker in (
         "terminus-controller-request/**",
         ".terminus/controller-requests/*.json",
+        "expected_repository_head",
+        "control_plane_commit",
+        "controller_cli.py control-plane",
         "controller_cli.py continue",
         "controller_stage_cli.py",
         "controller_cli.py record",
