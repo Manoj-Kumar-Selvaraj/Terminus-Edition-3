@@ -1,6 +1,6 @@
 # Terminus Executor Bridge
 
-Executor-bridge policy version: `1.3`
+Executor-bridge policy version: `1.5`
 
 The executor bridge connects canonically authorized Terminus work to execution surfaces without transferring lifecycle authority. It does not replace `ExecutionRecordBuilder`, the execution ledger, workflow-state resolution, or packet-bound specialist review provenance.
 
@@ -10,14 +10,14 @@ Canonical stage flow:
 
 Canonical quality-review flow:
 
-`schema-v3 review packet -> exact task/control-plane evidence projection -> exactly one Q backend -> persistent per-task budget claim -> persisted review JSON -> deterministic validation -> optional review publication`
+`workflow state -> controller quality dispatch -> schema-v3 review packet -> exact task/control-plane evidence projection -> exactly one Q backend -> persistent per-task budget claim -> persisted review JSON -> deterministic validation -> canonical lifecycle StageInvocation/StageResult -> controller record -> ledger -> workflow state`
 
 ## Stage executor modes
 
 - `MANUAL_CHAT`: paste-ready bounded handoff for a fresh authorized chat session. No hosted-model API is required.
 - `LOCAL_COMMAND`: read-only Linux/WSL executor using a projected evidence-aware workspace inside `bubblewrap`. There is no unsafe host-process fallback.
 
-`controller_cli continue` may optionally prepare a handoff for normal `INVOKE_STAGE` or `RETRY_STAGE` actions. External gates remain dispatch/await-only and never become executor handoffs.
+`controller_cli continue` may optionally prepare a handoff for normal `INVOKE_STAGE` or `RETRY_STAGE` actions. External gates remain dispatch/await-only and never become executor handoffs. Registered model-backed quality stages are routed to `.github/workflows/terminus-quality-lifecycle.yml` instead of being treated as ordinary executor handoffs.
 
 ### Pre-execution authority
 
@@ -101,11 +101,11 @@ Command arguments may not point into the authoritative repository. The runner re
 
 ## Packet-bound quality executor
 
-`.terminus/execution/quality_dispatch_cli.py` executes one existing schema-v3 Q packet through one repository-selected backend. The older low-level `.terminus/execution/quality_executor_cli.py` remains the direct Cursor/OpenAI/Anthropic transport, while normal CI selection goes through the flag-driven dispatcher.
+`.terminus/execution/quality_dispatch_cli.py` executes one schema-v3 Q packet through one repository-selected backend. The lower-level `.terminus/execution/quality_executor_cli.py` remains the direct Cursor/OpenAI/Anthropic transport, while normal CI selection goes through the flag-driven dispatcher.
 
 Quality execution invariants:
 
-- exactly one repository Q backend flag is active for all Q executions;
+- exactly one repository Q backend flag is active for an execution;
 - Cursor is always a fresh `cursor-agent -p --model auto` session and never resumes a prior Q session;
 - direct OpenAI uses `OPENAI_API_KEY` plus `Q_OPENAI_MODEL`;
 - direct Claude uses `ANTHROPIC_API_KEY` plus `Q_CLAUDE_MODEL`;
@@ -122,32 +122,60 @@ Quality execution invariants:
 - the complete schema-v3 review JSON at `review_output_path` is canonical; Cursor stream output is diagnostic only;
 - raw Cursor thinking events are never persisted by the production runner;
 - after execution the host independently validates JSON Schema, packet/result provenance bindings, Q4 finding classification/PASS exhaustiveness, and absence of mutations outside the exact review artifact;
-- only a deterministically validated review may be copied into the checkout or uploaded as CI evidence.
+- only a deterministically validated review can enter lifecycle aggregation.
 
 ### Global Q backend flags
 
-Repository variables control the backend for all Q executions:
+Repository variables control the backend for Q executions:
 
 - `Q_CURSOR_ENABLED=yes` -> `CURSOR_API_KEY`;
 - `Q_OPENAI_ENABLED=yes` -> `OPENAI_API_KEY` and `Q_OPENAI_MODEL`;
 - `Q_CLAUDE_ENABLED=yes` -> `ANTHROPIC_API_KEY` and `Q_CLAUDE_MODEL`;
 - `Q_STB_AI_ENABLED=yes` -> existing `STB_AI_API_KEY` and `Q_STB_AI_MODEL`.
 
-Exactly one flag must resolve to `yes`. If none of these repository variables has been configured yet, CI defaults to Cursor for backward-safe rollout. Once any flag is configured, blank flags mean `no`. `model_override` is available only as an explicit workflow invocation override for non-Cursor backends.
+Exactly one flag must resolve to `yes`. If none has been configured yet, CI defaults to Cursor for backward-safe rollout. Once any flag is configured, blank flags mean `no`. `model_override` is available only as an explicit workflow invocation override for non-Cursor backends.
 
 The optional `STB_AI_BASE_URL` repository variable may point at an approved HTTPS gateway; blank/unset uses `https://api.portkey.ai/v1`.
 
+### Credential policy
+
+LLMaJ, official difficulty, and STB-backed Q execution all reuse the existing `STB_AI_API_KEY`. CI may install that already-issued credential into an ephemeral tool configuration when the tool requires it, but it must not invoke login-based recovery or `stb keys refresh`.
+
+Direct OpenAI and Claude secrets are optional placeholders for separately sourced credentials. Selecting one of those backends requires its corresponding secret and configured model. Credential failure never triggers another backend.
+
 ### Per-task Q execution budgets
 
-Before a model-backed Q call, CI claims an immutable receipt on the dedicated `terminus-quality-budget` state branch. Repository-wide quality concurrency serializes claims across all task branches, so a new branch, remediation commit, or fresh runner cannot reset the per-task count.
+Before a model-backed Q call, CI claims an immutable receipt on the dedicated `terminus-quality-budget` state branch. Repository-wide quality concurrency serializes claims across task branches, so a new branch, remediation commit, or fresh runner cannot reset the per-task count.
 
 - Q4 / Spec-Test Contract Reviewer: maximum **3** executions per task.
 - Q6 / Production Logic Auditor: maximum **2** executions per task.
+- Q8 GPT perspective: maximum **1** execution per task.
+- Q8 Claude perspective: maximum **1** execution per task.
 - Every other registered Q role: maximum **1** execution per task.
+
+Q8 uses two distinct one-shot buckets because the authoritative diagnostic contract requires both isolated perspectives. One perspective never consumes the other perspective's slot.
 
 Preflight, SDK installation, and selected-secret presence checks occur before the claim. Once the claim is durably pushed, that model-backed attempt consumes the slot even if the downstream provider call fails. Re-entering the same GitHub run attempt is idempotent; a new GitHub run attempt consumes a new slot.
 
 Budget receipts contain only execution identity/provenance and backend name—never credentials or model reasoning.
+
+### Lifecycle integration
+
+`controller_cli continue` recognizes these registered model-backed lifecycle stages:
+
+- `QUALITY_INTERLOCK` -> run Q4 `spec-test-contract` and Q6 `production-logic`;
+- `MODEL_DIAGNOSTIC_GPT` -> run Q8 `difficulty-sim-gpt`;
+- `MODEL_DIAGNOSTIC_CLAUDE` -> run Q8 `difficulty-sim-claude`.
+
+The controller returns a machine-readable dispatch target for `.github/workflows/terminus-quality-lifecycle.yml`. The workflow generates fresh packet-bound review packets when needed, executes the selected backend, enforces the global task budget, and preserves the Q8 perspective isolation boundary.
+
+For `QUALITY_INTERLOCK`, Q4 and Q6 are frozen before aggregation. Their exact packets/results are restored together and passed through `validate_review_freshness.py` and `validate_quality_interlock.py`. A REVISE result remains persisted as remediation evidence; the workflow does not retry another provider to obtain PASS.
+
+`.terminus/execution/quality_lifecycle_record.py` translates only validated review evidence into the registered lifecycle output contract. It creates the canonical StageInvocation and StageResult envelope, but it does **not** write the ledger. `.terminus/execution/controller_cli.py record` remains the only lifecycle recording path used by the quality workflow. This preserves the existing `ExecutionRecordBuilder -> ExecutionLedger -> WorkflowStateResolver` authority chain.
+
+A direct Q4/Q6 PASS therefore does not advance the lifecycle merely because the model said PASS. Advancement requires packet/schema/provenance validation, the deterministic interlock validators, a valid stage envelope, and successful canonical recording. REVISE/insufficient outcomes are recorded with their registered route/status before the workflow reports failure.
+
+Each Q8 perspective similarly records `EXECUTED` or `SIMULATION_NOT_EXECUTED` only after its exact packet/result binding is checked. The GPT collector does not receive the Claude result and the Claude collector does not receive the GPT result.
 
 ### Examples
 
@@ -163,7 +191,7 @@ CURSOR_API_KEY=... python .terminus/execution/quality_executor_cli.py \
 
 Direct OpenAI and Claude remain optional placeholders for independently sourced API credentials. STB AI mode intentionally reuses the already-issued STB/Portkey AI credential and never refreshes it.
 
-The API backends expose only bounded read/list/grep tools plus one exact `write_review` sink. Direct OpenAI requests may use their provider-native prompt-cache controls. STB AI uses Portkey's Open Responses surface without issuing credential refreshes or overriding the existing gateway credential policy. Cache hits are an efficiency optimization only and never affect review identity or acceptance.
+The API backends expose only bounded read/list/grep tools plus one exact `write_review` sink. Cache hits are an efficiency optimization only and never affect review identity or acceptance.
 
 ## Transport limits
 
@@ -180,8 +208,8 @@ Default generic executor environment propagation is reduced to PATH and locale v
 
 ## Runtime schemas and acceptance
 
-Generated stage executor handoffs are validated at runtime against `executor_handoff.schema.json`. Returned StageResult objects are validated at runtime against `stage_result.schema.json` before transport-level acceptance. Semantic stage status/output/evidence acceptance remains exclusively with `ExecutionRecordBuilder`.
+Generated stage executor handoffs are validated at runtime against `executor_handoff.schema.json`. Returned StageResult objects are validated against `stage_result.schema.json` before transport-level acceptance. Semantic stage status/output/evidence acceptance remains exclusively with `ExecutionRecordBuilder`.
 
 Packet-bound quality reviews are independently validated against the packet-selected `review_result.schema.json` plus packet provenance and role-specific deterministic invariants. A model's own claim that its output is valid is never acceptance evidence.
 
-Neither executor surface advances workflow state by itself. Harbor LLMaJ and official difficulty remain external model-backed gates and are not converted into normal executor handoffs.
+The quality model executor itself never writes execution records or workflow state. Lifecycle state changes occur only when the quality lifecycle workflow passes the validated aggregate through the canonical controller record path. Harbor LLMaJ and official difficulty remain external model-backed gates and are not converted into ordinary quality-executor reviews.
