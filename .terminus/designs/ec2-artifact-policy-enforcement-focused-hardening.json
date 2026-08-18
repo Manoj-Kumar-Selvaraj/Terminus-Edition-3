@@ -1,0 +1,48 @@
+{
+  "task": "ec2-artifact-policy-enforcement",
+  "scope": "focused_verifier_hardening",
+  "base_task_commit": "bc57da6b2a51bb61ba88b25878f3ba03bfaf3960",
+  "principle": "Close coverage gaps only for requirements already present in the solver-visible policy contract; add no hidden implementation requirements.",
+  "cases": [
+    {
+      "test": "test_untrusted_container_registry_is_denied",
+      "contract": "Surfaces/source trust",
+      "purpose": "Prove container acquisition uses the same trusted-source policy as packages and dependencies."
+    },
+    {
+      "test": "test_direct_dependency_managers_cannot_bypass_source_policy[pip|npm]",
+      "contract": "Surfaces/source trust",
+      "purpose": "Prove lower-level build dependency managers cannot bypass source checks."
+    },
+    {
+      "test": "test_exception_cannot_override_scanner_unavailable",
+      "contract": "Scanner evidence and exceptions",
+      "purpose": "Prove a vulnerability exception cannot turn missing current scanner evidence into an allow."
+    },
+    {
+      "test": "test_exception_cannot_override_stale_scanner_evidence",
+      "contract": "Scanner evidence and exceptions",
+      "purpose": "Prove an exception cannot override scanner DB revision freshness."
+    },
+    {
+      "test": "test_cache_identity_is_digest_not_package_name_or_version",
+      "contract": "Scanner cache identity",
+      "purpose": "Prove immutable digest, not mutable/display coordinates, is the reusable artifact identity."
+    },
+    {
+      "test": "test_permit_rejects_wrong_secret",
+      "contract": "Permits",
+      "purpose": "Prove permit authorization is keyed rather than an unkeyed checksum."
+    },
+    {
+      "test": "test_permit_is_bound_to_instance_even_without_rewriting_permit",
+      "contract": "Permits",
+      "purpose": "Prove a permit issued for one EC2 instance cannot be replayed on another instance."
+    },
+    {
+      "test": "test_audit_history_preserves_order_across_process_restarts",
+      "contract": "Audit durability",
+      "purpose": "Prove allow and deny decisions append durably in order across separate command processes and that last-decision reflects the latest event."
+    }
+  ]
+}
