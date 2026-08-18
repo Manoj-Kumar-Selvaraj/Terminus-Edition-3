@@ -147,7 +147,7 @@ def test_f2p_retry_after_failed_update_reexecutes_and_converges(tmp_path, cleanu
     assert pathlib.Path(destination).read_text(encoding="utf-8") == "value=two\n"
 
 
-def test_f2p_template_variable_order_is_semantically_stable(tmp_path, cleanup_registry):
+def test_p2p_template_variable_order_is_semantically_stable(tmp_path, cleanup_registry):
     """Reordering an equivalent template variable map must leave a clean plan and must not replay Ansible."""
     source = tmp_path / "template.j2"
     source.write_text("a={{ a }} b={{ b }}\n", encoding="utf-8")
