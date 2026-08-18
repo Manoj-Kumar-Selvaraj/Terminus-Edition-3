@@ -149,6 +149,48 @@ jobs:
             git push origin "HEAD:${GITHUB_REF_NAME}"
           fi
 
+      - name: Build and record canonical Q8 lifecycle stage
+        if: inputs.publish_results
+        shell: bash
+        env:
+          STAGE: ${{ inputs.stage }}
+          PACKET_PATH: ${{ inputs.packet_path }}
+          REVIEW_PATH: ${{ inputs.review_path }}
+          INVOCATION: /tmp/q8-lifecycle.invocation.json
+          RESULT: /tmp/q8-lifecycle.result.json
+        run: |
+          set -euo pipefail
+          python3 .terminus/execution/quality_lifecycle_record.py \
+            --stage "$STAGE" \
+            --run-id "$GITHUB_RUN_ID" \
+            --packet "$PACKET_PATH" \
+            --review "$REVIEW_PATH" \
+            --invocation-output "$INVOCATION" \
+            --result-output "$RESULT"
+          python3 .terminus/execution/controller_cli.py record \
+            --invocation "$INVOCATION" \
+            --result "$RESULT" \
+            --output /tmp/q8-lifecycle.record.json
+
+      - name: Persist canonical Q8 ledger/state
+        if: inputs.publish_results
+        shell: bash
+        env:
+          TASK: ${{ inputs.task }}
+        run: |
+          set -euo pipefail
+          unexpected="$(git status --porcelain | awk '{print $2}' | grep -vE "^\.terminus/(executions|workflows)/$TASK(/|$)" || true)"
+          [[ -z "$unexpected" ]] || { echo "::error::Unexpected canonical Q8 record mutations: $unexpected"; exit 1; }
+          git config user.name "terminus-quality-lifecycle[bot]"
+          git config user.email "terminus-quality-lifecycle[bot]@users.noreply.github.com"
+          git add -- ".terminus/executions/$TASK" ".terminus/workflows/$TASK"
+          if git diff --cached --quiet; then
+            echo "Q8 lifecycle execution record already persisted."
+          else
+            git commit -m "Record ${{ inputs.stage }} lifecycle result"
+            git push origin "HEAD:${GITHUB_REF_NAME}"
+          fi
+
       - name: Q8 lifecycle summary
         shell: bash
         run: |
@@ -157,3 +199,7 @@ jobs:
           echo "- Verdict: \`${{ inputs.verdict }}\`" >> "$GITHUB_STEP_SUMMARY"
           echo "- Budget: \`${{ inputs.budget_stage }} ${{ inputs.budget_used }}/${{ inputs.budget_limit }}\`" >> "$GITHUB_STEP_SUMMARY"
           echo "- Isolation/binding: \`PASS\`" >> "$GITHUB_STEP_SUMMARY"
+          if [[ "${{ inputs.publish_results }}" == true ]]; then
+            status="$(python3 -c 'import json; print(json.load(open("/tmp/q8-lifecycle.result.json"))["status"])')"
+            echo "- Canonical stage status: \`$status\`" >> "$GITHUB_STEP_SUMMARY"
+          fi
