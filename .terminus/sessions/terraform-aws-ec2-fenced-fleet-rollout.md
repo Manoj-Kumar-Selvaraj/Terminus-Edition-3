@@ -7,7 +7,7 @@ This is the durable operational checkpoint for one task. Keep it evidence-orient
 ## Identity
 
 - Task: `terraform-aws-ec2-fenced-fleet-rollout`
-- Controller state: `QUALITY_INTERLOCK`
+- Controller state: `PRE_LLMAJ`
 - Working branch: `main`
 - Pull request: none
 - Current task commit: `1320dba179b9dc7f4d44c6de5b8e6a052180d031`
@@ -53,14 +53,14 @@ Stateful 10k–20k records: org IPAM subnet catalog (`subnets` table) is reachab
 | Q4 Adjudicated Closure | NOT_APPLICABLE | only after Protocol circuit-breaker + Q4_CLOSURE_POLICY activation |
 | Q6 Production Logic Auditor | PASS | `.terminus/reviews/terraform-aws-ec2-fenced-fleet-rollout/1320dba1/terraform-aws-ec2-fenced-fleet-rollout-1320dba1-production-logic-aac738b633.json` HIGH SUFFICIENT; scope `cfc39353c3df` |
 | Quality Interlock | PASS | `.terminus/reviews/terraform-aws-ec2-fenced-fleet-rollout/1320dba1/quality-interlock.md` |
-| Pre-LLMaJ specialist panel | PENDING | |
-| Task Architect | PENDING | |
-| Verifier Engineer | PENDING | |
-| Originality & Authenticity | PENDING | |
-| Difficulty design | PENDING | |
-| Compliance pre-review | PENDING | |
-| Instruction Reviewer | PENDING | |
-| Documentation Reviewer | PENDING | |
+| Pre-LLMaJ specialist panel | IN_PROGRESS | Stage B packets at `.terminus/reviews/terraform-aws-ec2-fenced-fleet-rollout/1320dba1/` bound to `1320dba` / control plane `cbbee84` |
+| Task Architect | PENDING | packet `.terminus/reviews/terraform-aws-ec2-fenced-fleet-rollout/1320dba1/terraform-aws-ec2-fenced-fleet-rollout-1320dba1-task-architect-fed9178d6a.packet.json` |
+| Verifier Engineer | PENDING | packet `.terminus/reviews/terraform-aws-ec2-fenced-fleet-rollout/1320dba1/terraform-aws-ec2-fenced-fleet-rollout-1320dba1-verifier-engineer-8d0c7df859.packet.json` |
+| Originality & Authenticity | PENDING | packet `.terminus/reviews/terraform-aws-ec2-fenced-fleet-rollout/1320dba1/terraform-aws-ec2-fenced-fleet-rollout-1320dba1-originality-8b1edf2eb3.packet.json` |
+| Difficulty design | PENDING | packet `.terminus/reviews/terraform-aws-ec2-fenced-fleet-rollout/1320dba1/terraform-aws-ec2-fenced-fleet-rollout-1320dba1-difficulty-design-208009217d.packet.json` |
+| Compliance pre-review | PENDING | packet `.terminus/reviews/terraform-aws-ec2-fenced-fleet-rollout/1320dba1/terraform-aws-ec2-fenced-fleet-rollout-1320dba1-compliance-5b4ce3f3ed.packet.json` |
+| Instruction Reviewer | PENDING | packet `.terminus/reviews/terraform-aws-ec2-fenced-fleet-rollout/1320dba1/terraform-aws-ec2-fenced-fleet-rollout-1320dba1-instruction-b3c72efe90.packet.json` |
+| Documentation Reviewer | PENDING | packet `.terminus/reviews/terraform-aws-ec2-fenced-fleet-rollout/1320dba1/terraform-aws-ec2-fenced-fleet-rollout-1320dba1-documentation-d23a52fe72.packet.json` |
 | Comprehensive Reviewer | PENDING | checklist coverage must be 100% |
 | Pre-LLMaJ aggregate | PENDING | |
 | Q8 GPT Perspective Simulation | PENDING | packet-bound diagnostic; explicitly non-official model evidence |
@@ -86,7 +86,7 @@ Stateful 10k–20k records: org IPAM subnet catalog (`subnets` table) is reachab
 
 ## Current blocker
 
-`QUALITY_INTERLOCK` PASS at freeze `1320dba`. Next is Pre-LLMaJ specialist panel (Instruction, Documentation, Verifier Engineer, Originality, Comprehensive). Q8 and Harbor LLMaJ remain deferred until that aggregate PASS. Isolation for Q4/Q6 was PROCEDURAL in this Auto chat.
+`PRE_LLMAJ` Stage B: seven independent specialist packets are bound to freeze `1320dba` and control plane `cbbee84`. Do not write those reviews in the producer chat. Comprehensive packet waits until Stage B results freeze. Q8 and Harbor LLMaJ remain deferred.
 
 ## Root-cause classification
 
@@ -96,7 +96,7 @@ Stateful 10k–20k records: org IPAM subnet catalog (`subnets` table) is reachab
 
 ## Next action
 
-Generate Pre-LLMaJ packets (instruction, documentation, verifier-engineer, originality, comprehensive) bound to `1320dba`.
+Open one fresh chat per Stage B packet. Do not generate the Comprehensive packet until those seven results freeze.
 
 ## Review evidence ledger
 
@@ -104,6 +104,24 @@ Generate Pre-LLMaJ packets (instruction, documentation, verifier-engineer, origi
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | Q4 Spec-Test Contract Reviewer | terraform-aws-ec2-fenced-fleet-rollout-1320dba1-spec-test-contract-61a25e0cf4 | 1320dba179b9dc7f4d44c6de5b8e6a052180d031 | 2.2 | 2.2 | 1.1 | d67c7ed4a1f5ff3ab609a8095d6f7cc822df5b4ecd2187aaadd757d6d971f861 | n/a | `.terminus/reviews/terraform-aws-ec2-fenced-fleet-rollout/1320dba1/terraform-aws-ec2-fenced-fleet-rollout-1320dba1-spec-test-contract-61a25e0cf4.json` | PASS | HIGH | exhaustive matrix; advisory A01 A02 |
 | Q6 Production Logic Auditor | terraform-aws-ec2-fenced-fleet-rollout-1320dba1-production-logic-aac738b633 | 1320dba179b9dc7f4d44c6de5b8e6a052180d031 | 2.2 | 2.2 | 1.1 | 3cfe7803de1d9a5bc376b286069bc4d70925174af82aa62a18e954c028d0e532 | cfc39353c3df03d709479d1b0eb1cf8ea8be060079e8649b76e25cc91349f95e | `.terminus/reviews/terraform-aws-ec2-fenced-fleet-rollout/1320dba1/terraform-aws-ec2-fenced-fleet-rollout-1320dba1-production-logic-aac738b633.json` | PASS | HIGH | operator/controller/terraform/ipam; PADDING MEDIUM |
+| Task Architect | terraform-aws-ec2-fenced-fleet-rollout-1320dba1-task-architect-fed9178d6a | 1320dba179b9dc7f4d44c6de5b8e6a052180d031 | 2.2 | 2.2 | 1.0 | 0abe6521e2700730287c29d5ec9385ab4b0d43fc02259a9c65bcdd003396d2f6 | n/a | packet only | PENDING | | Stage B |
+| Verifier Engineer | terraform-aws-ec2-fenced-fleet-rollout-1320dba1-verifier-engineer-8d0c7df859 | 1320dba179b9dc7f4d44c6de5b8e6a052180d031 | 2.2 | 2.2 | 1.0 | b8502c798b9da8489910a78dcee4df0b642449b6f0b406ecef13351a28f7abf9 | n/a | packet only | PENDING | | Stage B |
+| Originality & Authenticity Reviewer | terraform-aws-ec2-fenced-fleet-rollout-1320dba1-originality-8b1edf2eb3 | 1320dba179b9dc7f4d44c6de5b8e6a052180d031 | 2.2 | 2.2 | 1.0 | 82cc52cc093141614f2f08d59181c7b3bf59c5f349f12a80ddf91f1c4ca8753f | n/a | packet only | PENDING | | Stage B |
+| Difficulty Reviewer | terraform-aws-ec2-fenced-fleet-rollout-1320dba1-difficulty-design-208009217d | 1320dba179b9dc7f4d44c6de5b8e6a052180d031 | 2.2 | 2.2 | 1.0 | 0e579a8e5eb5600c10067bc05d0c439c2ca8b91cb781c3e9094ed94b45a3ca9d | n/a | packet only | PENDING | | Stage B |
+| Compliance Auditor | terraform-aws-ec2-fenced-fleet-rollout-1320dba1-compliance-5b4ce3f3ed | 1320dba179b9dc7f4d44c6de5b8e6a052180d031 | 2.2 | 2.2 | 1.0 | c2e5acaf3930e9d33d09da9b1224dfd7dac42a6683009e2aa89aae1e16434464 | n/a | packet only | PENDING | | Stage B |
+| Instruction Reviewer | terraform-aws-ec2-fenced-fleet-rollout-1320dba1-instruction-b3c72efe90 | 1320dba179b9dc7f4d44c6de5b8e6a052180d031 | 2.2 | 2.2 | 1.0 | 7cdfe6091d4c44c7ce11460501bb87768f5a8d29bc70f5e2c44918004271cd54 | n/a | packet only | PENDING | | Stage B |
+| Engineering Documentation Reviewer | terraform-aws-ec2-fenced-fleet-rollout-1320dba1-documentation-d23a52fe72 | 1320dba179b9dc7f4d44c6de5b8e6a052180d031 | 2.2 | 2.2 | 1.0 | 933b73ee4ef4ed0fe66847993d121a29297efecc1fbe3887c95112c3f207f882 | n/a | packet only | PENDING | | Stage B |
+
+## Pre-LLMaJ checkpoint
+
+- Aggregate: `PENDING`
+- Aggregate path: none until Stage B, Comprehensive, and Stage E complete
+- Task commit: `1320dba179b9dc7f4d44c6de5b8e6a052180d031`
+- Panel policy: `2.2`
+- Static check: Harbor `tasks check` still PENDING
+- Quality interlock: `PASS` (`61a25e0cf4` / `aac738b633`)
+- Comprehensive Reviewer: not generated; waits for Stage B freeze
+- Isolation: packets are PROCEDURAL; Q4/Q6 ran in the producer Auto chat; Stage B must use fresh chats
 
 ## Quality interlock checkpoint
 
