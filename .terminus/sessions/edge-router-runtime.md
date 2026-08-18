@@ -5,109 +5,104 @@ Session schema version: `2.4`
 ## Identity
 
 - Task: `edge-router-runtime`
-- Controller state: `SYSTEM_ARCHITECTURE`
-- Working branch: `task/edge-router-runtime`
-- Pull request: `#28`
-- Logical task snapshot for current creation stage: `6c91b9aca662fa192c144d55c8aee0e693adcc0d`
+- Controller state: `DEFECT_TOPOLOGY`
+- Canonical lifecycle evidence branch: `main`
+- Producer/controller auxiliary branch: `task/edge-router-runtime`
+- Pull request: `#28` (merged)
+- Logical task snapshot: `6c91b9aca662fa192c144d55c8aee0e693adcc0d`
 - Control-plane commit: `fa2a409e86c4676bd3039df3e4e8339708454fad`
 - Creation profile: `large_system_strict`
 - Selected work package: `GENERATION_SAFE_DYNAMIC_RECONCILIATION`
 
-## CREATION_RULE_CONTEXT
+## Creation constraints
 
-```text
-CONTROL_PLANE_COMMIT: fa2a409e86c4676bd3039df3e4e8339708454fad
-RULE_SOURCES: TERMINUS_3_AI_INSTRUCTIONS.md; .terminus/AGENT_SYSTEM.md; .terminus/agents/CREATION_CONTROLLER.md; .terminus/agents/CREATION_PIPELINE.md; .terminus/agents/PRODUCTION_AUTHENTICITY.md; .terminus/reviewers/REVIEWER_CHECKLIST.md; .terminus/agents/stage_contracts.json
-ACTIVE_VALIDATORS: .terminus/validate_agent_system.py; .terminus/validate_stage_contracts.py; .terminus/validate_task_complexity.py; .terminus/validate_runtime_authenticity.py; .terminus/validate_review_freshness.py; .terminus/validate_quality_interlock.py; Terminus Edition 3 CI; Terminus Creator Complexity Gate; Terminus Production Authenticity Gate
-CREATION_PROFILE: large_system_strict
-REQUESTED_DOMAIN: production Go HTTP edge-routing and traffic-management runtime; real-time non-Python product
-NETWORK/ENVIRONMENT_CONSTRAINTS: network_mode public; separate verifier; digest-pinned canonical Go runtime; no privileged Docker/capability/socket shortcuts; tmux and asciinema required in agent image
-KNOWN_POLICY_CONFLICTS: none
-NAMING/FRAMING_CONSTRAINT: solver-facing task material must not describe the product using the comparison prohibited by the user request
-```
+- Domain: production Go HTTP edge-routing and traffic-management runtime; real-time non-Python product.
+- Network/runtime: public network mode, separate verifier, digest-pinned canonical Go runtime, no privileged Docker/capability/socket shortcuts; tmux and asciinema required in the agent image.
+- Solver-facing wording must preserve the user's neutral product framing and must not describe the product using the prohibited comparison.
+- The original files under `edge-router-runtime/` were authored before the Edition-3 lifecycle and remain discarded pre-workflow material until replaced by the authorized materialization stages.
 
-## Pre-workflow candidate disposition
+## Strict-profile target
 
-The existing files under `edge-router-runtime/` were authored before the Edition 3 creation lifecycle was followed. They remain a discarded/pre-workflow candidate and are not accepted producer-stage evidence or inherited architecture. In particular, A2 must not treat that implementation, its oracle, or its verifier as authoritative design input.
-
-The task uses `large_system_strict`: at least 3,000 substantive reachable solver-visible runtime/configuration LOC, 20–30 observable manifestations, at least 15 participating in meaningful causal/interdependency relationships, 25–30 organically derived F2P cases, preservation-driven P2P coverage, and production-authentic behavior without padding.
+`large_system_strict` requires production-authentic breadth: at least 3,000 substantive reachable solver-visible runtime/configuration LOC, 20–30 observable defect manifestations, meaningful interdependency with at least 15 defect IDs participating in causal edges, approximately 25–30 organic nonduplicative F2P cases, and preservation-driven P2P coverage without padding.
 
 ## Durable execution history
 
 ### Rule Resolution
 
 - Invocation: `inv_66fd6ae81cde9400a2230e790c8d7e75cccb1d237c0375ca378a640e43f453f1`
-- Status: `RULES_RESOLVED`
-- Disposition: `ADVANCE`
+- Status/disposition: `RULES_RESOLVED / ADVANCE`
 - Record: `rec_db529167d9f7620f1d8a2023315a67c78acc95e4bf48f6b0ebbaaee5ad218ba3`
 - Ledger event: `evt_d7aab08d8fed1baa374e21794bb633b134a57b893ff130e44161b5c67e718fd7`
 
 ### Work Package Research / A1
 
 - Invocation: `inv_79d4551ca8b96875e1f37dc7cea565949e1ade639e32fa1b5de68d5a081bf0d8`
-- Status: `CANDIDATES_READY`
-- Disposition: `ADVANCE`
+- Status/disposition: `CANDIDATES_READY / ADVANCE`
 - Record: `rec_54b9ea6d27eea759968696bbe6eb7a68f90130603ada78ca2c1f897ba2215afb`
 - Ledger event: `evt_71af0083033794cfa15f1ff7c30a6cea1d4fe80f11749aaaa24e79c76c47b862`
-- Record hash: `sha256:90b93e89249a39947c46cb7da9b5295853e812d4242254af6f7eae5407eafe51`
 - Selected work package: `GENERATION_SAFE_DYNAMIC_RECONCILIATION`
-- Durable record: `.terminus/executions/edge-router-runtime/inv_79d4551ca8b96875e1f37dc7cea565949e1ade639e32fa1b5de68d5a081bf0d8.result.json`
-- Ledger: `.terminus/executions/edge-router-runtime/ledger.jsonl`
-- Canonical A1 recorder run: GitHub Actions `32045318428`, job `95431795781`
-- Exact A1 record/ledger persisted to the task branch in commit `a0ba46ae013486a1b5a8e1cab6bc5a9d38e3fc3d`
 
-The recommended work package centers generation-safe dynamic route/upstream reconciliation: validation and compilation into immutable generations; stale/out-of-order fencing; atomic publication; endpoint identity/diffing; runtime-state preservation for unchanged endpoints; health/selection/retry/stickiness integration; draining and retirement; last-known-good preservation; checkpoint/restart recovery; and bounded observability lifecycle.
-
-## Committed-ledger replay and A2 routing
-
-The two-event committed ledger was replayed successfully by the repository controller in GitHub Actions run `32046069520`, job `95434167332`.
-
-The controller resolved:
-
-- `ledger_event_count`: `2`
-- ledger head: `evt_71af0083033794cfa15f1ff7c30a6cea1d4fe80f11749aaaa24e79c76c47b862`
-- lineage: `CURRENT`
-- next action: `INVOKE_STAGE`
-- next stage: `SYSTEM_ARCHITECTURE`
-- next role: `A2_SYSTEM_ARCHITECT`
-- state snapshot: `state_6ac58d198acc7a6e9ec259f6fea19f6b38801fd01b7b528f5ef4e04d59b2ea84`
-
-## Current bounded A2 invocation
+### System Architecture / A2
 
 - Invocation: `inv_b9463c264c05f24c0876eb2968702df48cc551bb7bfe1c87b1a45cf9a73df239`
-- Stage: `SYSTEM_ARCHITECTURE`
-- Owner: `A2 System Architect / Environment Builder`
-- Role ID: `A2_SYSTEM_ARCHITECT`
+- Status/disposition: `ARCHITECTURE_READY / ADVANCE`
+- Record: `rec_9ebb84387605c4e80487a12f686f03bc91c4abdb86f1d58665ffcd1317c3ec11`
+- Record hash: `sha256:2f54c40ee2e4934396f8d55887df05873df096e9c02cde3d96572e44d8041fa3`
+- Ledger event: `evt_bdcbfe8b1d2821fe6737644a649de7c95656066d65c2fa0677fa6c46e802d2c8`
+- Canonical successful recorder run: GitHub Actions `32095049963`, job `95584677065`.
+- Exact record and three-event ledger were persisted to `main` by the canonical recorder and subsequently replayed successfully.
+
+A2 clean architecture establishes immutable serving snapshots, single-writer reconciliation, atomic publication, stable route/pool/endpoint identities, endpoint membership incarnations and draining, reusable health/selection/affinity runtime state, checkpoint durability/recovery, bounded observability lifecycle, public data plane, and separate admin/operator surfaces. A2 contains clean design only; intentional defects belong to A3.
+
+## Committed-ledger replay after A2
+
+GitHub Actions run `32095373856`, job `95585603419`, checked out `main` and replayed the committed three-event ledger successfully:
+
+- event count: `3`
+- ledger head: `evt_bdcbfe8b1d2821fe6737644a649de7c95656066d65c2fa0677fa6c46e802d2c8`
+- lineage: `CURRENT`
+- controller state snapshot: `state_bc6de7d58a6fade2b862aa4d162066e7015733dc10d4aa4878ffee446a9e64d0`
+- next action: `INVOKE_STAGE`
+- next stage: `DEFECT_TOPOLOGY`
+- next role: `A3_DEFECT_TOPOLOGY_DESIGNER`
+
+## Current bounded A3 invocation
+
+- Invocation: `inv_28c1baf5125eb73cb1a52b677925c8967f6a9ceb113e42bf4c28e8f08db86f98`
+- Stage: `DEFECT_TOPOLOGY`
+- Owner: `A3 Defect Topology Designer`
+- Role ID: `A3_DEFECT_TOPOLOGY_DESIGNER`
 - Role class: `PRODUCER`
 - Input task snapshot: `6c91b9aca662fa192c144d55c8aee0e693adcc0d`
 - Control-plane commit: `fa2a409e86c4676bd3039df3e4e8339708454fad`
 - Readiness: `READY`
-- Generation evidence: GitHub Actions run `32046069520`, job `95434167332`
-- State snapshot: `state_6ac58d198acc7a6e9ec259f6fea19f6b38801fd01b7b528f5ef4e04d59b2ea84`
-- Success transition: `DEFECT_TOPOLOGY`
+- Generation evidence: GitHub Actions run `32095373856`, job `95585603419`
+- State snapshot: `state_bc6de7d58a6fade2b862aa4d162066e7015733dc10d4aa4878ffee446a9e64d0`
+- Success transition: `ENVIRONMENT_BUILD`
 
-Required A2 inputs are machine-derived from the recorded A1 result:
+Required A3 inputs are machine-derived from the committed A1/A2 records:
 
 1. `APPROVED_OPERATIONAL_REQUIREMENTS`
 2. `APPROVED_WORK_PACKAGE`
-3. `CREATION_RULE_CONTEXT`
+3. `CLEAN_SYSTEM_ARCHITECTURE`
+4. `CREATION_PROFILE`
 
-No optional `DOMAIN_REFERENCE_ARCHITECTURE` or `EXISTING_TECHNICAL_CONTRACTS` were supplied, deliberately preventing the discarded starter from becoming inherited architecture.
+Optional input: `DOMAIN_FAILURE_REFERENCES` (not supplied).
 
-A2 required outputs:
+Required successful A3 outputs:
 
-1. `COMPONENT_GRAPH`
-2. `ENTRYPOINTS`
-3. `STATE_MODEL`
-4. `SOLVER_VISIBLE_DOC_PLAN`
-5. `PRODUCTION_CHARACTERISTICS`
-6. `SCALE_FIT`
+1. `profile`
+2. `root_cause_clusters`
+3. `defects`
+4. `causal_edges`
+5. `behavioral_surfaces`
+6. `organic_f2p_surface_assessment`
 
-Optional outputs: `RESOURCE_GRAPH`, `DATA_VOLUME_PLAN`, `UNRESOLVED_RISKS`.
+Legal statuses: `DESIGN_READY`, `SCENARIO_TOO_SMALL`, `BLOCKED`.
 
-Legal statuses: `ARCHITECTURE_READY`, `SCENARIO_TOO_SMALL`, `BLOCKED`.
+A3 evidence requirements: root-cause clusters, causal/interdependency edges, partial-fix traps, and behavioral surfaces. Deterministic validator: `.terminus/validate_task_complexity.py <task>`. Persisted artifact contract: `.terminus/designs/<task>.json`.
 
-### A2 evidence boundary
+### A3 evidence boundary
 
 Allowed:
 - `CONTROL_PLANE_POLICY`
@@ -128,23 +123,24 @@ Excluded:
 Mandatory exact reads:
 - `.terminus/agents/CREATION_PIPELINE.md`
 - `.terminus/agents/CREATOR_AGENT_REGISTRY.md`
-- `.terminus/agents/PRODUCTION_AUTHENTICITY.md`
 - `.terminus/agents/CREATOR_PROMPTS.md`
-- `.terminus/agents/A2_PHASE_PROMPTS.md`
 
-A2 is the clean-design phase. It must not create or modify the starter environment, introduce intentional defects, inspect solution/oracle/verifier-private evidence, or author tests. Defect topology belongs only to the later A3 stage.
+Failure routing:
+- `ARCHITECTURE_GAP` -> Creation Controller / SYSTEM_ARCHITECTURE
+- `HIDDEN_KNOWLEDGE` -> A3 must expose a legitimate solver-visible contract or remove the defect
+- `SCENARIO_TOO_SMALL` -> Creation Controller / WORK_PACKAGE_RESEARCH
 
 ## Gate state
 
 | Gate | Status | Evidence / disposition |
 | --- | --- | --- |
-| Rule resolution | `RULES_RESOLVED / ADVANCE` | Canonical execution record |
-| Work package research | `CANDIDATES_READY / ADVANCE` | Canonical A1 record; `GENERATION_SAFE_DYNAMIC_RECONCILIATION` selected |
-| System architecture | `READY / INVOCATION GENERATED` | `inv_b9463c26...`; execute in fresh A2 producer context |
-| Defect topology | MISSING | Cannot begin before valid A2 record |
-| Environment build | MISSING | Existing environment is discarded/pre-workflow only |
-| Reference solution | MISSING | Existing solution is discarded/pre-workflow only |
-| Verifier build | MISSING | Existing tests are discarded/pre-workflow only |
+| Rule resolution | `RULES_RESOLVED / ADVANCE` | Canonical record + ledger event 1 |
+| Work package research | `CANDIDATES_READY / ADVANCE` | Canonical A1 record + ledger event 2 |
+| System architecture | `ARCHITECTURE_READY / ADVANCE` | Canonical A2 record + ledger event 3 |
+| Defect topology | `READY / INVOCATION GENERATED` | `inv_28c1baf5...` |
+| Environment build | MISSING | Cannot begin before valid A3 record |
+| Reference solution | MISSING | Not eligible yet |
+| Verifier build | MISSING | Not eligible yet |
 | Human writing research | MISSING | Not eligible yet |
 | Instruction draft | MISSING | Not eligible yet |
 | Q1/Q2/Q3/Q7 | MISSING | Not eligible yet |
@@ -154,6 +150,4 @@ A2 is the clean-design phase. It must not create or modify the starter environme
 
 ## Resume condition
 
-The current ChatGPT context remains the CI Orchestrator. It must not execute A2 itself. A fresh repository-connected A2 role context must execute `inv_b9463c264c05f24c0876eb2968702df48cc551bb7bfe1c87b1a45cf9a73df239`, obey the invocation's evidence boundary and exact reads, return a schema-valid `SYSTEM_ARCHITECTURE` stage-result envelope, and stop before `DEFECT_TOPOLOGY`.
-
-After the A2 result returns, the Orchestrator will validate and record it through the canonical execution machinery before routing A3.
+This ChatGPT context remains the CI Orchestrator and must not execute A3 itself. A fresh repository-connected `A3_DEFECT_TOPOLOGY_DESIGNER` context must execute exact invocation `inv_28c1baf5125eb73cb1a52b677925c8967f6a9ceb113e42bf4c28e8f08db86f98`, obey its evidence boundary and mandatory reads, return a schema-valid `DEFECT_TOPOLOGY` stage-result envelope, and stop before `ENVIRONMENT_BUILD`. The Orchestrator must canonically record/replay A3 before routing environment materialization.
