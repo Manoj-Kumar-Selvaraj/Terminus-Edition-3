@@ -60,19 +60,28 @@ jobs:
           import json, re, sys
           path, base = sys.argv[1:]
           request = json.load(open(path, encoding='utf-8'))
-          required = {'schema_version','task_id','task_commit','stage_id','expected_main_sha','inputs'}
+          required = {
+              'schema_version',
+              'task_id',
+              'task_commit',
+              'stage_id',
+              'expected_repository_head',
+              'control_plane_commit',
+              'inputs',
+          }
           if set(request) != required:
               raise SystemExit(f'controller request key drift: expected={sorted(required)} actual={sorted(request)}')
           if request['schema_version'] != '1.0':
               raise SystemExit('unsupported controller request schema')
           if not re.fullmatch(r'[A-Za-z0-9][A-Za-z0-9._-]*', request['task_id']):
               raise SystemExit('unsafe task_id')
-          for field in ('task_commit','expected_main_sha'):
+          for field in ('task_commit','expected_repository_head','control_plane_commit'):
               if not re.fullmatch(r'[0-9a-f]{40,64}', request[field]):
                   raise SystemExit(f'invalid {field}')
-          if request['expected_main_sha'] != base:
+          if request['expected_repository_head'] != base:
               raise SystemExit(
-                  f'request branch/base mismatch expected_main_sha={request["expected_main_sha"]} parent={base}'
+                  'request branch/base mismatch '
+                  f'expected_repository_head={request["expected_repository_head"]} parent={base}'
               )
           if request['stage_id'] != 'RULE_RESOLUTION':
               raise SystemExit('stage is not registered for hosted direct execution')
@@ -83,7 +92,8 @@ jobs:
           task="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["task_id"])' "$request")"
           task_commit="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["task_commit"])' "$request")"
           stage="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["stage_id"])' "$request")"
-          expected="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["expected_main_sha"])' "$request")"
+          expected_head="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["expected_repository_head"])' "$request")"
+          control_commit="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["control_plane_commit"])' "$request")"
           python3 - "$request" "$work/inputs.json" <<'PY'
           import json, sys
           request = json.load(open(sys.argv[1], encoding='utf-8'))
@@ -93,17 +103,19 @@ jobs:
           PY
 
           remote_main="$(git ls-remote origin refs/heads/main | cut -f1)"
-          [[ "$remote_main" == "$expected" ]] || {
-            echo "::error::main moved before controller execution expected=$expected current=$remote_main"
+          [[ "$remote_main" == "$expected_head" ]] || {
+            echo "::error::main moved before controller execution expected=$expected_head current=$remote_main"
             exit 1
           }
           git cat-file -e "$task_commit^{commit}"
+          git cat-file -e "$control_commit^{commit}"
 
           echo "work=$work" >> "$GITHUB_OUTPUT"
           echo "task=$task" >> "$GITHUB_OUTPUT"
           echo "task_commit=$task_commit" >> "$GITHUB_OUTPUT"
           echo "stage=$stage" >> "$GITHUB_OUTPUT"
-          echo "expected_main=$expected" >> "$GITHUB_OUTPUT"
+          echo "expected_head=$expected_head" >> "$GITHUB_OUTPUT"
+          echo "control_commit=$control_commit" >> "$GITHUB_OUTPUT"
 
       - name: Reconstruct exact current controller invocation
         shell: bash
@@ -112,14 +124,25 @@ jobs:
           TASK: ${{ steps.request.outputs.task }}
           TASK_COMMIT: ${{ steps.request.outputs.task_commit }}
           STAGE: ${{ steps.request.outputs.stage }}
-          EXPECTED_MAIN: ${{ steps.request.outputs.expected_main }}
+          EXPECTED_HEAD: ${{ steps.request.outputs.expected_head }}
+          CONTROL_COMMIT: ${{ steps.request.outputs.control_commit }}
         run: |
           set -euo pipefail
-          git checkout --detach "$EXPECTED_MAIN"
+          git checkout --detach "$EXPECTED_HEAD"
+
+          python3 .terminus/execution/controller_cli.py control-plane \
+            --head "$EXPECTED_HEAD" \
+            --output "$WORK/control-plane.json"
+          resolved_control="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["control_plane_commit"])' "$WORK/control-plane.json")"
+          [[ "$resolved_control" == "$CONTROL_COMMIT" ]] || {
+            echo "::error::control-plane identity changed requested=$CONTROL_COMMIT resolved=$resolved_control"
+            exit 1
+          }
+
           python3 .terminus/execution/controller_cli.py continue \
             --task-id "$TASK" \
             --task-commit "$TASK_COMMIT" \
-            --control-plane-commit "$EXPECTED_MAIN" \
+            --control-plane-commit "$CONTROL_COMMIT" \
             --inputs-json "$WORK/inputs.json" \
             --output "$WORK/continue.json"
           python3 - "$WORK/continue.json" "$WORK/invocation.json" "$STAGE" <<'PY'
@@ -168,10 +191,9 @@ jobs:
       - name: Persist only canonical controller evidence to main
         shell: bash
         env:
-          WORK: ${{ steps.request.outputs.work }}
           TASK: ${{ steps.request.outputs.task }}
           STAGE: ${{ steps.request.outputs.stage }}
-          EXPECTED_MAIN: ${{ steps.request.outputs.expected_main }}
+          EXPECTED_HEAD: ${{ steps.request.outputs.expected_head }}
         run: |
           set -euo pipefail
           unexpected="$(git status --porcelain | awk '{print $2}' | grep -vE "^\.terminus/(executions|workflows)/$TASK(/|$)" || true)"
@@ -189,8 +211,8 @@ jobs:
           git commit -m "Record $TASK $STAGE controller result"
 
           remote_main="$(git ls-remote origin refs/heads/main | cut -f1)"
-          [[ "$remote_main" == "$EXPECTED_MAIN" ]] || {
-            echo "::error::main moved during controller execution expected=$EXPECTED_MAIN current=$remote_main"
+          [[ "$remote_main" == "$EXPECTED_HEAD" ]] || {
+            echo "::error::main moved during controller execution expected=$EXPECTED_HEAD current=$remote_main"
             exit 1
           }
           git push origin HEAD:main
@@ -204,11 +226,15 @@ jobs:
           WORK: ${{ steps.request.outputs.work }}
           TASK: ${{ steps.request.outputs.task }}
           STAGE: ${{ steps.request.outputs.stage }}
+          EXPECTED_HEAD: ${{ steps.request.outputs.expected_head }}
+          CONTROL_COMMIT: ${{ steps.request.outputs.control_commit }}
         run: |
           {
             echo "### Terminus Controller Stage"
             echo "- Task: \`$TASK\`"
             echo "- Stage: \`$STAGE\`"
+            echo "- Repository head input: \`$EXPECTED_HEAD\`"
+            echo "- Control-plane commit: \`$CONTROL_COMMIT\`"
             if [[ -f "$WORK/invocation.json" ]]; then
               echo "- Invocation: \`$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["invocation_id"])' "$WORK/invocation.json")\`"
             fi
