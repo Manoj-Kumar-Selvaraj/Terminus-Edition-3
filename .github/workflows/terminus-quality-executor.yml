@@ -7,20 +7,8 @@ on:
         description: Exact schema-v3 Q4/Q6/Q8 packet path
         required: true
         type: string
-      executor:
-        description: Execute with exactly one backend
-        required: true
-        default: cursor
-        type: choice
-        options: [cursor, api]
-      api_provider:
-        description: API backend provider; use none for Cursor
-        required: true
-        default: none
-        type: choice
-        options: [none, openai, anthropic]
-      api_model:
-        description: Explicit model for API backend; leave empty for Cursor
+      model_override:
+        description: Optional model override for the selected non-Cursor backend
         required: false
         default: ""
         type: string
@@ -34,14 +22,7 @@ on:
       packet_path:
         required: true
         type: string
-      executor:
-        required: true
-        type: string
-      api_provider:
-        required: false
-        default: none
-        type: string
-      api_model:
+      model_override:
         required: false
         default: ""
         type: string
@@ -56,12 +37,16 @@ on:
         required: false
       ANTHROPIC_API_KEY:
         required: false
+      STB_AI_API_KEY:
+        required: false
 
 permissions:
   contents: write
 
+# One repository-wide queue makes the dedicated budget-branch claim atomic across
+# task branches and packets. A fresh branch/runner therefore cannot reset a Q budget.
 concurrency:
-  group: terminus-quality-${{ github.repository }}-${{ github.ref }}-${{ inputs.packet_path }}
+  group: terminus-quality-budget-${{ github.repository }}
   cancel-in-progress: false
 
 jobs:
@@ -70,41 +55,93 @@ jobs:
     timeout-minutes: 60
     env:
       PACKET_PATH: ${{ inputs.packet_path }}
-      EXECUTOR: ${{ inputs.executor }}
-      API_PROVIDER: ${{ inputs.api_provider }}
-      API_MODEL: ${{ inputs.api_model }}
+      MODEL_OVERRIDE: ${{ inputs.model_override }}
       PUBLISH_RESULT: ${{ inputs.publish_result }}
       ARTIFACT_DIR: /tmp/terminus-quality-${{ github.run_id }}-${{ github.run_attempt }}
+      Q_CURSOR_ENABLED: ${{ vars.Q_CURSOR_ENABLED }}
+      Q_OPENAI_ENABLED: ${{ vars.Q_OPENAI_ENABLED }}
+      Q_CLAUDE_ENABLED: ${{ vars.Q_CLAUDE_ENABLED }}
+      Q_STB_AI_ENABLED: ${{ vars.Q_STB_AI_ENABLED }}
+      Q_OPENAI_MODEL: ${{ vars.Q_OPENAI_MODEL }}
+      Q_CLAUDE_MODEL: ${{ vars.Q_CLAUDE_MODEL }}
+      Q_STB_AI_MODEL: ${{ vars.Q_STB_AI_MODEL }}
+      STB_AI_BASE_URL: ${{ vars.STB_AI_BASE_URL }}
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - name: Validate executor selection
+      - name: Resolve one global Q backend flag
+        id: backend
         shell: bash
         run: |
           set -euo pipefail
-          case "$EXECUTOR" in
+          mkdir -p "$ARTIFACT_DIR"
+
+          cursor_raw="${Q_CURSOR_ENABLED:-}"
+          openai_raw="${Q_OPENAI_ENABLED:-}"
+          claude_raw="${Q_CLAUDE_ENABLED:-}"
+          stb_raw="${Q_STB_AI_ENABLED:-}"
+
+          # Backward-safe default: until repository variables are configured, Cursor is
+          # the single Q backend. Once any flag is configured, blank flags mean "no".
+          if [[ -z "$cursor_raw" && -z "$openai_raw" && -z "$claude_raw" && -z "$stb_raw" ]]; then
+            cursor_raw=yes
+          fi
+
+          normalize() {
+            local value="${1,,}"
+            case "$value" in
+              1|true|yes|on) echo yes ;;
+              ""|0|false|no|off) echo no ;;
+              *) echo "::error::Q backend flags must be yes/no (received '$1')" >&2; return 2 ;;
+            esac
+          }
+
+          cursor="$(normalize "$cursor_raw")"
+          openai="$(normalize "$openai_raw")"
+          claude="$(normalize "$claude_raw")"
+          stb_ai="$(normalize "$stb_raw")"
+
+          enabled=0
+          backend=""
+          [[ "$cursor" == yes ]] && { enabled=$((enabled+1)); backend=cursor; }
+          [[ "$openai" == yes ]] && { enabled=$((enabled+1)); backend=openai; }
+          [[ "$claude" == yes ]] && { enabled=$((enabled+1)); backend=claude; }
+          [[ "$stb_ai" == yes ]] && { enabled=$((enabled+1)); backend=stb_ai; }
+          [[ "$enabled" -eq 1 ]] || {
+            echo "::error::Exactly one of Q_CURSOR_ENABLED, Q_OPENAI_ENABLED, Q_CLAUDE_ENABLED, Q_STB_AI_ENABLED must be yes"
+            exit 1
+          }
+
+          model="${MODEL_OVERRIDE:-}"
+          case "$backend" in
             cursor)
-              [[ "$API_PROVIDER" == "none" ]] || { echo "::error::Cursor execution cannot select an API provider"; exit 1; }
-              [[ -z "$API_MODEL" ]] || { echo "::error::Cursor execution fixes model=auto"; exit 1; }
+              [[ -z "$model" ]] || { echo "::error::Cursor fixes model=auto; model_override must be empty"; exit 1; }
               ;;
-            api)
-              [[ "$API_PROVIDER" == "openai" || "$API_PROVIDER" == "anthropic" ]] || { echo "::error::API execution requires openai or anthropic"; exit 1; }
-              [[ -n "$API_MODEL" ]] || { echo "::error::API execution requires an explicit model"; exit 1; }
+            openai)
+              [[ -n "$model" ]] || model="${Q_OPENAI_MODEL:-}"
+              [[ -n "$model" ]] || { echo "::error::Set Q_OPENAI_MODEL or model_override"; exit 1; }
               ;;
-            *)
-              echo "::error::executor must be cursor or api"
-              exit 1
+            claude)
+              [[ -n "$model" ]] || model="${Q_CLAUDE_MODEL:-}"
+              [[ -n "$model" ]] || { echo "::error::Set Q_CLAUDE_MODEL or model_override"; exit 1; }
+              ;;
+            stb_ai)
+              [[ -n "$model" ]] || model="${Q_STB_AI_MODEL:-}"
+              [[ -n "$model" ]] || { echo "::error::Set Q_STB_AI_MODEL or model_override (for example an existing Portkey model alias)"; exit 1; }
               ;;
           esac
-          mkdir -p "$ARTIFACT_DIR"
+
+          echo "backend=$backend" >> "$GITHUB_OUTPUT"
+          echo "model=$model" >> "$GITHUB_OUTPUT"
+          echo "Selected Q backend: $backend" >> "$GITHUB_STEP_SUMMARY"
 
       - name: Install deterministic validator
         run: python3 -m pip install --quiet jsonschema==4.23.0
 
       - name: Install Cursor CLI
-        if: inputs.executor == 'cursor'
+        if: steps.backend.outputs.backend == 'cursor'
         shell: bash
         run: |
           set -euo pipefail
@@ -112,71 +149,99 @@ jobs:
           echo "$HOME/.local/bin" >> "$GITHUB_PATH"
 
       - name: Install OpenAI SDK
-        if: inputs.executor == 'api' && inputs.api_provider == 'openai'
+        if: steps.backend.outputs.backend == 'openai' || steps.backend.outputs.backend == 'stb_ai'
         run: python3 -m pip install --quiet openai==2.48.0
 
       - name: Install Anthropic SDK
-        if: inputs.executor == 'api' && inputs.api_provider == 'anthropic'
+        if: steps.backend.outputs.backend == 'claude'
         run: python3 -m pip install --quiet anthropic==0.119.0
 
-      - name: Execute Cursor Q review
-        if: inputs.executor == 'cursor'
+      - name: Verify selected credential exists
         shell: bash
         env:
+          BACKEND: ${{ steps.backend.outputs.backend }}
           CURSOR_API_KEY: ${{ secrets.CURSOR_API_KEY }}
-        run: |
-          set -euo pipefail
-          [[ -n "$CURSOR_API_KEY" ]] || { echo "::error::CURSOR_API_KEY secret is required"; exit 1; }
-          publish=()
-          [[ "$PUBLISH_RESULT" == "true" ]] && publish+=(--publish-result)
-          python3 .terminus/execution/quality_executor_cli.py \
-            --packet "$PACKET_PATH" \
-            --executor cursor \
-            --timeout 2700 \
-            --review-output "$ARTIFACT_DIR/review.json" \
-            --diagnostic-output "$ARTIFACT_DIR/cursor-terminal-result.json" \
-            --output "$ARTIFACT_DIR/execution.json" \
-            "${publish[@]}"
-
-      - name: Execute OpenAI Q review
-        if: inputs.executor == 'api' && inputs.api_provider == 'openai'
-        shell: bash
-        env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          STB_AI_API_KEY: ${{ secrets.STB_AI_API_KEY }}
         run: |
           set -euo pipefail
-          [[ -n "$OPENAI_API_KEY" ]] || { echo "::error::OPENAI_API_KEY secret is required"; exit 1; }
-          publish=()
-          [[ "$PUBLISH_RESULT" == "true" ]] && publish+=(--publish-result)
-          python3 .terminus/execution/quality_executor_cli.py \
-            --packet "$PACKET_PATH" \
-            --executor api \
-            --provider openai \
-            --model "$API_MODEL" \
-            --timeout 2700 \
-            --review-output "$ARTIFACT_DIR/review.json" \
-            --output "$ARTIFACT_DIR/execution.json" \
-            "${publish[@]}"
+          case "$BACKEND" in
+            cursor) key="$CURSOR_API_KEY"; name=CURSOR_API_KEY ;;
+            openai) key="$OPENAI_API_KEY"; name=OPENAI_API_KEY ;;
+            claude) key="$ANTHROPIC_API_KEY"; name=ANTHROPIC_API_KEY ;;
+            stb_ai) key="$STB_AI_API_KEY"; name=STB_AI_API_KEY ;;
+            *) echo "::error::Unknown backend $BACKEND"; exit 1 ;;
+          esac
+          [[ -n "$key" ]] || { echo "::error::$name secret is required for selected Q backend"; exit 1; }
+          echo "Credential presence verified. No login, key generation, rotation, or refresh is permitted."
 
-      - name: Execute Anthropic Q review
-        if: inputs.executor == 'api' && inputs.api_provider == 'anthropic'
+      - name: Claim persistent per-task Q execution budget
+        id: budget
         shell: bash
         env:
-          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          BACKEND: ${{ steps.backend.outputs.backend }}
+          STATE_BRANCH: terminus-quality-budget
+          STATE_DIR: /tmp/terminus-quality-budget-state
         run: |
           set -euo pipefail
-          [[ -n "$ANTHROPIC_API_KEY" ]] || { echo "::error::ANTHROPIC_API_KEY secret is required"; exit 1; }
-          publish=()
-          [[ "$PUBLISH_RESULT" == "true" ]] && publish+=(--publish-result)
-          python3 .terminus/execution/quality_executor_cli.py \
+          rm -rf "$STATE_DIR"
+          git fetch origin "+refs/heads/$STATE_BRANCH:refs/remotes/origin/$STATE_BRANCH" 2>/dev/null || true
+
+          if git show-ref --verify --quiet "refs/remotes/origin/$STATE_BRANCH"; then
+            git worktree add --detach "$STATE_DIR" "refs/remotes/origin/$STATE_BRANCH"
+            git -C "$STATE_DIR" switch -C "$STATE_BRANCH"
+          else
+            git worktree add --detach "$STATE_DIR" HEAD
+            git -C "$STATE_DIR" switch --orphan "$STATE_BRANCH"
+            git -C "$STATE_DIR" rm -rf . >/dev/null 2>&1 || true
+          fi
+
+          python3 "$GITHUB_WORKSPACE/.terminus/execution/quality_budget.py" \
             --packet "$PACKET_PATH" \
-            --executor api \
-            --provider anthropic \
-            --model "$API_MODEL" \
-            --timeout 2700 \
-            --review-output "$ARTIFACT_DIR/review.json" \
-            --output "$ARTIFACT_DIR/execution.json" \
-            "${publish[@]}"
+            --state-root "$STATE_DIR" \
+            --backend "$BACKEND" \
+            --run-id "$GITHUB_RUN_ID" \
+            --run-attempt "$GITHUB_RUN_ATTEMPT" \
+            --output "$ARTIFACT_DIR/budget.json"
+
+          receipt="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["receipt"])' "$ARTIFACT_DIR/budget.json")"
+          git -C "$STATE_DIR" config user.name "terminus-quality-budget[bot]"
+          git -C "$STATE_DIR" config user.email "terminus-quality-budget[bot]@users.noreply.github.com"
+          git -C "$STATE_DIR" add -- "$receipt"
+          if ! git -C "$STATE_DIR" diff --cached --quiet; then
+            git -C "$STATE_DIR" commit -m "Claim Terminus quality execution budget"
+            git -C "$STATE_DIR" push origin "HEAD:refs/heads/$STATE_BRANCH"
+          fi
+
+          python3 - "$ARTIFACT_DIR/budget.json" <<'PY' >> "$GITHUB_STEP_SUMMARY"
+          import json, sys
+          d = json.load(open(sys.argv[1], encoding='utf-8'))
+          print(f"- Q budget: `{d['q_stage']} {d['used']}/{d['limit']}`; remaining `{d['remaining']}`")
+          PY
+
+      - name: Execute selected Q backend
+        shell: bash
+        env:
+          BACKEND: ${{ steps.backend.outputs.backend }}
+          API_MODEL: ${{ steps.backend.outputs.model }}
+          CURSOR_API_KEY: ${{ secrets.CURSOR_API_KEY }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          STB_AI_API_KEY: ${{ secrets.STB_AI_API_KEY }}
+        run: |
+          set -euo pipefail
+          args=(
+            --packet "$PACKET_PATH"
+            --backend "$BACKEND"
+            --timeout 2700
+            --review-output "$ARTIFACT_DIR/review.json"
+            --output "$ARTIFACT_DIR/execution.json"
+          )
+          [[ -n "$API_MODEL" ]] && args+=(--model "$API_MODEL")
+          [[ "$BACKEND" == cursor ]] && args+=(--diagnostic-output "$ARTIFACT_DIR/cursor-terminal-result.json")
+          [[ "$PUBLISH_RESULT" == true ]] && args+=(--publish-result)
+          python3 .terminus/execution/quality_dispatch_cli.py "${args[@]}"
 
       - name: Publish validated review commit
         if: success() && inputs.publish_result
@@ -216,8 +281,9 @@ jobs:
           b = d['backend']
           print('## Terminus quality execution')
           print()
-          print(f"- Executor: `{d['executor']}`")
+          print(f"- Selected backend: `{d.get('selected_backend', d['executor'])}`")
           print(f"- Provider/model: `{d['provider']}` / `{d['model']}`")
+          print(f"- Credential source: `{d.get('credential_source', 'backend-specific')}`")
           print(f"- Verdict: `{r['verdict']}`")
           print(f"- Confidence/evidence: `{r['confidence']}` / `{r['evidence_status']}`")
           print(f"- Findings/blocking: `{r['finding_count']}` / `{r['blocking_count']}`")
