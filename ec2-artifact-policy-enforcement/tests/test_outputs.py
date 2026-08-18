@@ -53,7 +53,11 @@ def run_eval(tmp_path, req, *, policy=None, scans=None, exceptions=None, now=NOW
     scans_path = tmp_path / "scans.json"
     exceptions_path = tmp_path / "exceptions.json"
     secret_path = tmp_path / "secret.key"
-    write(req_path, req); write(policy_path, policy); write(scans_path, scans); write(exceptions_path, exceptions); secret_path.write_bytes(secret)
+    write(req_path, req)
+    write(policy_path, policy)
+    write(scans_path, scans)
+    write(exceptions_path, exceptions)
+    secret_path.write_bytes(secret)
     proc = subprocess.run([
         BIN, "evaluate", "--request", str(req_path), "--policy", str(policy_path), "--scans", str(scans_path),
         "--exceptions", str(exceptions_path), "--state", str(state), "--secret", str(secret_path), "--now", now,
@@ -63,8 +67,14 @@ def run_eval(tmp_path, req, *, policy=None, scans=None, exceptions=None, now=NOW
 
 
 def run_verify(tmp_path, permit, req, policy, secret=b"fixture-secret", now=NOW):
-    permit_path = tmp_path / "permit.json"; req_path = tmp_path / "verify-request.json"; policy_path = tmp_path / "verify-policy.json"; secret_path = tmp_path / "verify-secret.key"
-    write(permit_path, permit); write(req_path, req); write(policy_path, policy); secret_path.write_bytes(secret)
+    permit_path = tmp_path / "permit.json"
+    req_path = tmp_path / "verify-request.json"
+    policy_path = tmp_path / "verify-policy.json"
+    secret_path = tmp_path / "verify-secret.key"
+    write(permit_path, permit)
+    write(req_path, req)
+    write(policy_path, policy)
+    secret_path.write_bytes(secret)
     proc = subprocess.run([BIN, "verify-permit", "--permit", str(permit_path), "--request", str(req_path), "--policy", str(policy_path), "--secret", str(secret_path), "--now", now], text=True, capture_output=True)
     assert proc.returncode in (0, 43), proc.stderr
     return proc.returncode, json.loads(proc.stdout)
@@ -150,8 +160,10 @@ def test_policy_version_change_invalidates_cache(tmp_path):
     req = request("policy-cache", "package", "apt", "curl", "8.5", "ubuntu-main", CLEAN_PKG)
     rc1, _, *_ = run_eval(tmp_path, req, state=state)
     assert rc1 == 0
-    policy = load("config/policy.json"); policy["version"] = "policy-2026-08-17-b"
-    scans = load("fixtures/scans.json"); scans["records"][CLEAN_PKG] = vuln_record()
+    policy = load("config/policy.json")
+    policy["version"] = "policy-2026-08-17-b"
+    scans = load("fixtures/scans.json")
+    scans["records"][CLEAN_PKG] = vuln_record()
     rc2, out2, *_ = run_eval(tmp_path, req, policy=policy, scans=scans, state=state)
     assert rc2 == 42 and out2["code"] == "DENY_VULNERABLE" and out2["cache_hit"] is False
 
@@ -161,8 +173,10 @@ def test_scanner_db_revision_change_invalidates_cache(tmp_path):
     req = request("db-cache", "package", "apt", "curl", "8.5", "ubuntu-main", CLEAN_PKG)
     rc1, _, *_ = run_eval(tmp_path, req, state=state)
     assert rc1 == 0
-    policy = load("config/policy.json"); policy["scanner_db_revision"] = "trivy-db-2026-08-18"
-    scans = load("fixtures/scans.json"); scans["records"][CLEAN_PKG] = vuln_record("trivy-db-2026-08-18")
+    policy = load("config/policy.json")
+    policy["scanner_db_revision"] = "trivy-db-2026-08-18"
+    scans = load("fixtures/scans.json")
+    scans["records"][CLEAN_PKG] = vuln_record("trivy-db-2026-08-18")
     rc2, out2, *_ = run_eval(tmp_path, req, policy=policy, scans=scans, state=state)
     assert rc2 == 42 and out2["code"] == "DENY_VULNERABLE" and out2["cache_hit"] is False
 
@@ -172,7 +186,8 @@ def test_expired_cache_is_not_reused(tmp_path):
     req = request("ttl-cache", "package", "apt", "curl", "8.5", "ubuntu-main", CLEAN_PKG)
     rc1, _, *_ = run_eval(tmp_path, req, state=state, now="2026-08-17T10:00:00Z")
     assert rc1 == 0
-    scans = load("fixtures/scans.json"); scans["records"][CLEAN_PKG] = vuln_record()
+    scans = load("fixtures/scans.json")
+    scans["records"][CLEAN_PKG] = vuln_record()
     rc2, out2, *_ = run_eval(tmp_path, req, scans=scans, state=state, now="2026-08-17T12:00:01Z")
     assert rc2 == 42 and out2["cache_hit"] is False
 
@@ -182,14 +197,16 @@ def test_exact_fresh_cache_survives_process_restart(tmp_path):
     req = request("restart-cache", "dependency", "pip", "requests", "2", "pypi.org", CLEAN_DEP)
     rc1, _, *_ = run_eval(tmp_path, req, state=state, now="2026-08-17T10:00:00Z")
     assert rc1 == 0
-    scans = load("fixtures/scans.json"); scans["records"][CLEAN_DEP] = {"status": "unavailable", "db_revision": "trivy-db-2026-08-17", "vulnerabilities": []}
+    scans = load("fixtures/scans.json")
+    scans["records"][CLEAN_DEP] = {"status": "unavailable", "db_revision": "trivy-db-2026-08-17", "vulnerabilities": []}
     rc2, out2, *_ = run_eval(tmp_path, req, scans=scans, state=state, now="2026-08-17T10:05:00Z")
     assert rc2 == 0 and out2["cache_hit"] is True
 
 
 def test_stale_scanner_revision_is_denied(tmp_path):
     req = request("stale-scan", "package", "apt", "curl", "8.5", "ubuntu-main", CLEAN_PKG)
-    policy = load("config/policy.json"); policy["scanner_db_revision"] = "trivy-db-2026-08-18"
+    policy = load("config/policy.json")
+    policy["scanner_db_revision"] = "trivy-db-2026-08-18"
     rc, out, *_ = run_eval(tmp_path, req, policy=policy)
     assert rc == 42 and out["code"] == "DENY_SCANNER_EVIDENCE_STALE"
 
@@ -198,7 +215,8 @@ def test_denies_and_allows_are_both_durable_in_audit(tmp_path):
     state = tmp_path / "state"
     allow = request("audit-allow", "package", "apt", "curl", "8.5", "ubuntu-main", CLEAN_PKG)
     deny = request("audit-deny", "package", "apt", "openssl", "3", "ubuntu-main", VULN_PKG)
-    run_eval(tmp_path, allow, state=state); run_eval(tmp_path, deny, state=state)
+    run_eval(tmp_path, allow, state=state)
+    run_eval(tmp_path, deny, state=state)
     rows = [json.loads(line) for line in (state / "audit.jsonl").read_text().splitlines()]
     by_id = {row["request_id"]: row["decision"] for row in rows}
     assert by_id["audit-allow"] == "ALLOW" and by_id["audit-deny"] == "DENY"
@@ -208,8 +226,10 @@ def test_forged_unkeyed_permit_is_rejected(tmp_path):
     req = request("permit-forge", "package", "apt", "curl", "8.5", "ubuntu-main", CLEAN_PKG)
     rc, out, *_ = run_eval(tmp_path, req)
     assert rc == 0
-    forged_req = dict(req); forged_req["instance_id"] = "i-attacker"
-    permit = dict(out["permit"]); permit["instance_id"] = "i-attacker"
+    forged_req = dict(req)
+    forged_req["instance_id"] = "i-attacker"
+    permit = dict(out["permit"])
+    permit["instance_id"] = "i-attacker"
     payload = "|".join([permit["request_id"], permit["instance_id"], permit["artifact_digest"], permit["policy_version"], permit["expires_at"]])
     permit["signature"] = hashlib.sha256(payload.encode()).hexdigest()
     vrc, result = run_verify(tmp_path, permit, forged_req, load("config/policy.json"))
