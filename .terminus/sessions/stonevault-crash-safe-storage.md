@@ -7,7 +7,7 @@ This is the durable operational checkpoint for StoneVault. Current Git/task-tree
 ## Identity
 
 - Task: `stonevault-crash-safe-storage`
-- Controller state: `FROZEN_CANDIDATE`
+- Controller state: `QUALITY_INTERLOCK`
 - Working branch: `main`
 - Pull request: none
 - Current task commit: `1cbdc0030a8a6483db4c91865aa60b8ef127c9c6`
@@ -36,15 +36,15 @@ This is the durable operational checkpoint for StoneVault. Current Git/task-tree
 | Oracle = 1 | PASS | run `32104003033`, job `95609817655`; 63 passed; artifact `9312568830` |
 | NOP = 0 | PASS | run `32104003033`, job `95609817655`; 30 failed / 33 passed |
 | Freeze | PASS | exact task commit `1cbdc0030a8a6483db4c91865aa60b8ef127c9c6`; task tree `b1ea76c23ea7bbc9652484de4c48702a5929b01b` |
-| Q4 Spec-Test Contract Reviewer | PACKET_READY | `.terminus/reviews/stonevault-crash-safe-storage/1cbdc003/stonevault-crash-safe-storage-1cbdc003-spec-test-contract-670100de41.packet.json` |
+| Q4 Spec-Test Contract Reviewer | INSUFFICIENT_EVIDENCE | `.terminus/reviews/stonevault-crash-safe-storage/1cbdc003/stonevault-crash-safe-storage-1cbdc003-spec-test-contract-670100de41.json`; HIGH confidence; packet-authorized task-commit test map is incomplete for the 63-test verifier |
 | Q6 Production Logic Auditor | PACKET_READY | `.terminus/reviews/stonevault-crash-safe-storage/1cbdc003/stonevault-crash-safe-storage-1cbdc003-production-logic-a513f6c19d.packet.json`; scope `63b1df2323f5f131c1cd51cc8126072da08ca75e8a03eaff72c16b83aaff4228` |
-| Quality Interlock | AWAITING_Q4_Q6 | deterministic refreeze complete; waits for fresh independent Q4 and Q6 result artifacts |
+| Quality Interlock | INSUFFICIENT_EVIDENCE | Q4 current result is evidence-insufficient; controller must correct Q4 private-map projection and immutable-rerun preflight before any new Q4 model execution |
 | Pre-LLMaJ | NOT_REACHED | waits for Quality Interlock |
 | Q8 GPT/Claude diagnostics | NOT_REACHED | waits for Pre-LLMaJ |
 | Harbor LLMaJ | NOT_REACHED | waits for earlier gates and reusable AI credentials |
 | Official model trials | NOT_REACHED | GPT-5.5 x5 + Claude Opus 4.8 x5 only after required preceding gates |
 | Difficulty assessment | PROVISIONAL | task.toml `frontier` remains author intent until official trial evidence |
-| Submission ready | NO | fresh Q4/Q6 and downstream gates remain open |
+| Submission ready | NO | Quality Interlock and downstream gates remain open |
 
 ## Remediation evidence
 
@@ -61,30 +61,48 @@ This is the durable operational checkpoint for StoneVault. Current Git/task-tree
 
 | Review | Review ID | Packet | Task commit | Scope hash | Status |
 | --- | --- | --- | --- | --- | --- |
-| Q4 Spec-Test Contract Reviewer | `stonevault-crash-safe-storage-1cbdc003-spec-test-contract-670100de41` | `.terminus/reviews/stonevault-crash-safe-storage/1cbdc003/stonevault-crash-safe-storage-1cbdc003-spec-test-contract-670100de41.packet.json` | `1cbdc0030a8a6483db4c91865aa60b8ef127c9c6` | n/a | AWAITING_COLD_REVIEW |
-| Q6 Production Logic Auditor | `stonevault-crash-safe-storage-1cbdc003-production-logic-a513f6c19d` | `.terminus/reviews/stonevault-crash-safe-storage/1cbdc003/stonevault-crash-safe-storage-1cbdc003-production-logic-a513f6c19d.packet.json` | `1cbdc0030a8a6483db4c91865aa60b8ef127c9c6` | `63b1df2323f5f131c1cd51cc8126072da08ca75e8a03eaff72c16b83aaff4228` | AWAITING_COLD_REVIEW |
+| Q4 Spec-Test Contract Reviewer | `stonevault-crash-safe-storage-1cbdc003-spec-test-contract-670100de41` | `.terminus/reviews/stonevault-crash-safe-storage/1cbdc003/stonevault-crash-safe-storage-1cbdc003-spec-test-contract-670100de41.packet.json` | `1cbdc0030a8a6483db4c91865aa60b8ef127c9c6` | n/a | INSUFFICIENT_EVIDENCE; canonical result `.terminus/reviews/stonevault-crash-safe-storage/1cbdc003/stonevault-crash-safe-storage-1cbdc003-spec-test-contract-670100de41.json` |
+| Q6 Production Logic Auditor | `stonevault-crash-safe-storage-1cbdc003-production-logic-a513f6c19d` | `.terminus/reviews/stonevault-crash-safe-storage/1cbdc003/stonevault-crash-safe-storage-1cbdc003-production-logic-a513f6c19d.packet.json` | `1cbdc0030a8a6483db4c91865aa60b8ef127c9c6` | `63b1df2323f5f131c1cd51cc8126072da08ca75e8a03eaff72c16b83aaff4228` | PACKET_READY; do not advance Quality Interlock while Q4 evidence projection is defective |
 
 ## Historical review evidence ledger
 
 | Review | Review ID | Reviewed task tree | Result | Current status |
-| --- | --- | --- | --- | --- |
+| --- | --- | --- | --- |
 | Q4 Spec-Test Contract Reviewer | `stonevault-crash-safe-storage-29b684f3-spec-test-contract-0a860fca37` | `33a8b3ea5bce04dff6bfbc7325fc8b1dcccc6424` | REVISE, HIGH, SUFFICIENT | SUPERSEDED_BY_REMEDIATION |
 | Q6 Production Logic Auditor | `stonevault-crash-safe-storage-29b684f3-production-logic-31d4c38000` | `33a8b3ea5bce04dff6bfbc7325fc8b1dcccc6424` | PASS, HIGH, SUFFICIENT | STALE_SCOPE_CHANGED |
+
+## Q4 evidence-projection incident
+
+- Canonical current Q4 result: `.terminus/reviews/stonevault-crash-safe-storage/1cbdc003/stonevault-crash-safe-storage-1cbdc003-spec-test-contract-670100de41.json` = `INSUFFICIENT_EVIDENCE`, confidence `HIGH`, evidence status `INSUFFICIENT`.
+- The private classification map at the frozen task commit `1cbdc0030a8a6483db4c91865aa60b8ef127c9c6` classifies only 47 names: 44 current verifier tests plus three obsolete names; all 19 tests in `test_q4_contract.py` are unclassified there.
+- The same repository-level private map at the packet control-plane commit `193870ec8f8a668d959108dcb6781c0923e40eef` classifies all 63 current verifier tests as 30 F2P and 33 P2P.
+- Current Q4 executor projection materializes the private test map from `task_commit` while policy/rules come from `control_plane_commit`; this is a controller evidence-projection defect because the map is private control-plane evidence, not solver-facing task content.
+- Model-backed Q4 run `32152753151`, attempt 1, produced an unpublished divergent `REVISE` artifact against the already-occupied immutable review ID. It did not publish or supersede the canonical committed `INSUFFICIENT_EVIDENCE` result and cannot advance Quality Interlock.
+- A future executor must fail closed before budget claim/model invocation if a packet's immutable `review_output_path` already exists; every Q rerun requires a fresh packet and new review ID.
+
+## Model-run budget state
+
+- Durable budget branch: `terminus-quality-budget`.
+- Q4: `1/3` slots consumed. Receipt: `q-runs/stonevault-crash-safe-storage/q4/32152753151-1.json`. Remaining: `2`.
+- Q6: `0/2` slots consumed. Remaining: `2`.
+- Do not automatically rerun Q4. Correct the projection/immutable-ID preflight first, generate a fresh immutable Q4 packet, then return to the Orchestrator for explicit budget-aware routing.
 
 ## Quality interlock checkpoint
 
 - Frozen candidate: `1cbdc0030a8a6483db4c91865aa60b8ef127c9c6`
 - Frozen task tree: `b1ea76c23ea7bbc9652484de4c48702a5929b01b`
-- Q4: `PACKET_READY_AWAITING_COLD_REVIEW`
-- Q6: `PACKET_READY_AWAITING_COLD_REVIEW`
-- Quality interlock: `AWAITING_Q4_Q6`
-- Next legal action: execute Q4 and Q6 in separate cold reviewer chats using the exact generated packets above; then return both result artifacts to the orchestrator for schema, packet binding, role-contract freshness and quality-interlock evaluation.
+- Q4: `INSUFFICIENT_EVIDENCE`
+- Q6: `PACKET_READY_NO_RESULT`
+- Quality interlock: `INSUFFICIENT_EVIDENCE`
+- First noncurrent gate: `QUALITY_INTERLOCK`
+- Next legal action: fresh control-plane implementation role must correct Q4 private-map projection and occupied-review-ID preflight without changing the frozen task, historical review evidence, or budget receipts; return deterministic CI evidence to the Orchestrator before any new Q4/Q6 execution.
 
 ## Circuit breakers
 
 - Status: `CLEAR`
-- Trigger: none
-- Attempts: 0
+- Trigger: none; current route is a first controller-layer correction, not a repeated no-progress retry.
+- Attempts: 0 circuit-breaker retries.
+- Budget note: one Q4 model slot is already durably consumed; no blind rerun is allowed.
 
 ## Decisions that must survive chat changes
 
@@ -93,3 +111,5 @@ This is the durable operational checkpoint for StoneVault. Current Git/task-tree
 - Do not weaken legitimate solver-visible behavior merely to make Q4 green.
 - Any solver-visible task or verifier change invalidates this freeze and requires current Oracle/NOP evidence before refreeze.
 - Do not self-issue Q4 or Q6 PASS from the controller chat.
+- Do not execute a model-backed Q rerun against an occupied review result path; generate a new immutable packet/review ID first.
+- Do not spend another Q4 model slot until the private-map projection defect is fixed and deterministic regression evidence is current.
