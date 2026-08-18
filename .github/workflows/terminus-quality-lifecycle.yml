@@ -16,7 +16,7 @@ on:
           - MODEL_DIAGNOSTIC_GPT
           - MODEL_DIAGNOSTIC_CLAUDE
       publish_results:
-        description: Persist generated packets/results to the selected branch
+        description: Persist generated packets/results and canonical stage record
         required: true
         default: true
         type: boolean
@@ -118,7 +118,7 @@ jobs:
       publish_result: false
     secrets: inherit
 
-  q8-gpt:
+  q8_gpt:
     needs: preflight
     if: inputs.stage == 'MODEL_DIAGNOSTIC_GPT'
     uses: ./.github/workflows/terminus-quality-executor.yml
@@ -130,7 +130,7 @@ jobs:
       publish_result: false
     secrets: inherit
 
-  q8-claude:
+  q8_claude:
     needs: preflight
     if: inputs.stage == 'MODEL_DIAGNOSTIC_CLAUDE'
     uses: ./.github/workflows/terminus-quality-executor.yml
@@ -142,10 +142,14 @@ jobs:
       publish_result: false
     secrets: inherit
 
-  collect-interlock:
+  collect_interlock:
     needs: [preflight, q4, q6]
     if: always() && inputs.stage == 'QUALITY_INTERLOCK'
     runs-on: ubuntu-latest
+    outputs:
+      freshness_rc: ${{ steps.gate.outputs.freshness_rc }}
+      interlock_rc: ${{ steps.gate.outputs.interlock_rc }}
+      paths: ${{ steps.restore.outputs.paths }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -179,11 +183,11 @@ jobs:
           python3 - "$TASK" "$Q4_PACKET_PATH" "$Q4_REVIEW_PATH" "$Q6_PACKET_PATH" "$Q6_REVIEW_PATH" <<'PY'
           import pathlib, sys
           task = sys.argv[1]
+          expected = pathlib.PurePosixPath('.terminus/reviews') / task
           for raw in sys.argv[2:]:
               p = pathlib.PurePosixPath(raw)
               if p.is_absolute() or '..' in p.parts:
                   raise SystemExit(f'unsafe lifecycle artifact path: {raw}')
-              expected = pathlib.PurePosixPath('.terminus/reviews') / task
               if tuple(p.parts[:3]) != tuple(expected.parts):
                   raise SystemExit(f'artifact outside task review namespace: {raw}')
           PY
@@ -215,6 +219,7 @@ jobs:
           echo "Q6: \`${{ needs.q6.outputs.verdict }}\` (${{ needs.q6.outputs.budget_used }}/${{ needs.q6.outputs.budget_limit }})" >> "$GITHUB_STEP_SUMMARY"
           echo "Freshness validator rc: \`$freshness_rc\`" >> "$GITHUB_STEP_SUMMARY"
           echo "Quality interlock validator rc: \`$interlock_rc\`" >> "$GITHUB_STEP_SUMMARY"
+          [[ "$freshness_rc" == 0 ]] || { echo "::error::Fresh review binding validation failed"; exit 1; }
 
       - name: Persist quality-interlock review evidence
         if: inputs.publish_results
@@ -240,53 +245,132 @@ jobs:
             git push origin "HEAD:${GITHUB_REF_NAME}"
           fi
 
-      - name: Enforce quality interlock outcome
+  record_interlock:
+    needs: [preflight, q4, q6, collect_interlock]
+    if: always() && inputs.stage == 'QUALITY_INTERLOCK' && needs.collect_interlock.result == 'success'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Restore exact reviews for canonical stage recording
         shell: bash
+        env:
+          Q4_PACKET_PATH: ${{ needs.q4.outputs.packet_path }}
+          Q4_REVIEW_PATH: ${{ needs.q4.outputs.review_path }}
+          Q4_PACKET_B64: ${{ needs.q4.outputs.packet_b64 }}
+          Q4_REVIEW_B64: ${{ needs.q4.outputs.review_b64 }}
+          Q6_PACKET_PATH: ${{ needs.q6.outputs.packet_path }}
+          Q6_REVIEW_PATH: ${{ needs.q6.outputs.review_path }}
+          Q6_PACKET_B64: ${{ needs.q6.outputs.packet_b64 }}
+          Q6_REVIEW_B64: ${{ needs.q6.outputs.review_b64 }}
         run: |
           set -euo pipefail
-          [[ "${{ steps.gate.outputs.freshness_rc }}" == 0 ]] || {
-            echo "::error::Review freshness validation failed"
-            exit 1
-          }
-          [[ "${{ steps.gate.outputs.interlock_rc }}" == 0 ]] || {
-            echo "::error::QUALITY_INTERLOCK did not pass; persisted reviews are remediation evidence"
+          for path in "$Q4_PACKET_PATH" "$Q4_REVIEW_PATH" "$Q6_PACKET_PATH" "$Q6_REVIEW_PATH"; do
+            mkdir -p "$(dirname "$path")"
+          done
+          printf '%s' "$Q4_PACKET_B64" | base64 -d > "$Q4_PACKET_PATH"
+          printf '%s' "$Q4_REVIEW_B64" | base64 -d > "$Q4_REVIEW_PATH"
+          printf '%s' "$Q6_PACKET_B64" | base64 -d > "$Q6_PACKET_PATH"
+          printf '%s' "$Q6_REVIEW_B64" | base64 -d > "$Q6_REVIEW_PATH"
+
+      - name: Build canonical QUALITY_INTERLOCK invocation/result
+        if: inputs.publish_results
+        shell: bash
+        env:
+          Q4_PACKET_PATH: ${{ needs.q4.outputs.packet_path }}
+          Q4_REVIEW_PATH: ${{ needs.q4.outputs.review_path }}
+          Q6_PACKET_PATH: ${{ needs.q6.outputs.packet_path }}
+          Q6_REVIEW_PATH: ${{ needs.q6.outputs.review_path }}
+          INVOCATION: /tmp/quality-interlock.invocation.json
+          RESULT: /tmp/quality-interlock.result.json
+        run: |
+          set -euo pipefail
+          python3 .terminus/execution/quality_lifecycle_record.py \
+            --stage QUALITY_INTERLOCK \
+            --run-id "$GITHUB_RUN_ID" \
+            --q4-packet "$Q4_PACKET_PATH" \
+            --q4-review "$Q4_REVIEW_PATH" \
+            --q6-packet "$Q6_PACKET_PATH" \
+            --q6-review "$Q6_REVIEW_PATH" \
+            --invocation-output "$INVOCATION" \
+            --result-output "$RESULT"
+          python3 .terminus/execution/controller_cli.py record \
+            --invocation "$INVOCATION" \
+            --result "$RESULT" \
+            --output /tmp/quality-interlock.record.json
+
+      - name: Persist canonical QUALITY_INTERLOCK ledger/state
+        if: inputs.publish_results
+        shell: bash
+        env:
+          TASK: ${{ inputs.task }}
+        run: |
+          set -euo pipefail
+          unexpected="$(git status --porcelain | awk '{print $2}' | grep -vE "^\.terminus/(executions|workflows)/$TASK(/|$)" || true)"
+          [[ -z "$unexpected" ]] || { echo "::error::Unexpected canonical-record mutations: $unexpected"; exit 1; }
+          git config user.name "terminus-quality-lifecycle[bot]"
+          git config user.email "terminus-quality-lifecycle[bot]@users.noreply.github.com"
+          git add -- ".terminus/executions/$TASK" ".terminus/workflows/$TASK"
+          if git diff --cached --quiet; then
+            echo "QUALITY_INTERLOCK execution record already persisted."
+          else
+            git commit -m "Record QUALITY_INTERLOCK lifecycle result"
+            git push origin "HEAD:${GITHUB_REF_NAME}"
+          fi
+
+      - name: Enforce recorded quality-interlock outcome
+        shell: bash
+        env:
+          PUBLISH: ${{ inputs.publish_results }}
+        run: |
+          set -euo pipefail
+          if [[ "$PUBLISH" != true ]]; then
+            echo "Dry-run lifecycle execution completed; no ledger/state mutation requested."
+            exit 0
+          fi
+          status="$(python3 -c 'import json; print(json.load(open("/tmp/quality-interlock.result.json"))["status"])')"
+          echo "Canonical QUALITY_INTERLOCK status: \`$status\`" >> "$GITHUB_STEP_SUMMARY"
+          [[ "$status" == QUALITY_INTERLOCK_PASS ]] || {
+            echo "::error::QUALITY_INTERLOCK recorded $status; remediation is required"
             exit 1
           }
 
-  collect-q8-gpt:
-    needs: [preflight, q8-gpt]
+  collect_q8_gpt:
+    needs: [preflight, q8_gpt]
     if: always() && inputs.stage == 'MODEL_DIAGNOSTIC_GPT'
     uses: ./.github/workflows/terminus-quality-lifecycle-collect.yml
     with:
       task: ${{ inputs.task }}
       stage: MODEL_DIAGNOSTIC_GPT
-      packet_path: ${{ needs.q8-gpt.outputs.packet_path }}
-      review_path: ${{ needs.q8-gpt.outputs.review_path }}
-      packet_b64: ${{ needs.q8-gpt.outputs.packet_b64 }}
-      review_b64: ${{ needs.q8-gpt.outputs.review_b64 }}
-      executor_result: ${{ needs.q8-gpt.result }}
-      verdict: ${{ needs.q8-gpt.outputs.verdict }}
-      budget_stage: ${{ needs.q8-gpt.outputs.budget_stage }}
-      budget_used: ${{ needs.q8-gpt.outputs.budget_used }}
-      budget_limit: ${{ needs.q8-gpt.outputs.budget_limit }}
+      packet_path: ${{ needs.q8_gpt.outputs.packet_path }}
+      review_path: ${{ needs.q8_gpt.outputs.review_path }}
+      packet_b64: ${{ needs.q8_gpt.outputs.packet_b64 }}
+      review_b64: ${{ needs.q8_gpt.outputs.review_b64 }}
+      executor_result: ${{ needs.q8_gpt.result }}
+      verdict: ${{ needs.q8_gpt.outputs.verdict }}
+      budget_stage: ${{ needs.q8_gpt.outputs.budget_stage }}
+      budget_used: ${{ needs.q8_gpt.outputs.budget_used }}
+      budget_limit: ${{ needs.q8_gpt.outputs.budget_limit }}
       publish_results: ${{ inputs.publish_results }}
     secrets: inherit
 
-  collect-q8-claude:
-    needs: [preflight, q8-claude]
+  collect_q8_claude:
+    needs: [preflight, q8_claude]
     if: always() && inputs.stage == 'MODEL_DIAGNOSTIC_CLAUDE'
     uses: ./.github/workflows/terminus-quality-lifecycle-collect.yml
     with:
       task: ${{ inputs.task }}
       stage: MODEL_DIAGNOSTIC_CLAUDE
-      packet_path: ${{ needs.q8-claude.outputs.packet_path }}
-      review_path: ${{ needs.q8-claude.outputs.review_path }}
-      packet_b64: ${{ needs.q8-claude.outputs.packet_b64 }}
-      review_b64: ${{ needs.q8-claude.outputs.review_b64 }}
-      executor_result: ${{ needs.q8-claude.result }}
-      verdict: ${{ needs.q8-claude.outputs.verdict }}
-      budget_stage: ${{ needs.q8-claude.outputs.budget_stage }}
-      budget_used: ${{ needs.q8-claude.outputs.budget_used }}
-      budget_limit: ${{ needs.q8-claude.outputs.budget_limit }}
+      packet_path: ${{ needs.q8_claude.outputs.packet_path }}
+      review_path: ${{ needs.q8_claude.outputs.review_path }}
+      packet_b64: ${{ needs.q8_claude.outputs.packet_b64 }}
+      review_b64: ${{ needs.q8_claude.outputs.review_b64 }}
+      executor_result: ${{ needs.q8_claude.result }}
+      verdict: ${{ needs.q8_claude.outputs.verdict }}
+      budget_stage: ${{ needs.q8_claude.outputs.budget_stage }}
+      budget_used: ${{ needs.q8_claude.outputs.budget_used }}
+      budget_limit: ${{ needs.q8_claude.outputs.budget_limit }}
       publish_results: ${{ inputs.publish_results }}
     secrets: inherit
