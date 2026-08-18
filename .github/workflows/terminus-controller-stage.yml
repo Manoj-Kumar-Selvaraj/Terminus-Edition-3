@@ -1,0 +1,227 @@
+name: Terminus Controller Stage
+
+on:
+  push:
+    branches:
+      - 'terminus-controller-request/**'
+    paths:
+      - '.terminus/controller-requests/*.json'
+  workflow_dispatch:
+    inputs:
+      request_json:
+        description: Exact controller-stage request JSON
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+concurrency:
+  group: terminus-controller-stage-${{ github.repository }}
+  cancel-in-progress: false
+
+jobs:
+  execute-controller-stage:
+    name: Execute deterministic controller stage
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Load exact controller request
+        id: request
+        shell: bash
+        env:
+          DISPATCH_JSON: ${{ inputs.request_json }}
+        run: |
+          set -euo pipefail
+          work="$RUNNER_TEMP/terminus-controller"
+          mkdir -p "$work"
+          request="$work/request.json"
+
+          if [[ "$GITHUB_EVENT_NAME" == push ]]; then
+            mapfile -t paths < <(git diff-tree --no-commit-id --name-only -r "$GITHUB_SHA" -- '.terminus/controller-requests/*.json')
+            [[ "${#paths[@]}" == 1 ]] || {
+              echo "::error::Controller request push must add/change exactly one request file; found ${#paths[@]}"
+              exit 1
+            }
+            cp "${paths[0]}" "$request"
+            request_base="$(git rev-parse "$GITHUB_SHA^")"
+          else
+            [[ -n "$DISPATCH_JSON" ]] || { echo "::error::request_json is required"; exit 1; }
+            printf '%s\n' "$DISPATCH_JSON" > "$request"
+            git fetch origin main
+            request_base="$(git rev-parse origin/main)"
+          fi
+
+          python3 - "$request" "$request_base" <<'PY'
+          import json, re, sys
+          path, base = sys.argv[1:]
+          request = json.load(open(path, encoding='utf-8'))
+          required = {'schema_version','task_id','task_commit','stage_id','expected_main_sha','inputs'}
+          if set(request) != required:
+              raise SystemExit(f'controller request key drift: expected={sorted(required)} actual={sorted(request)}')
+          if request['schema_version'] != '1.0':
+              raise SystemExit('unsupported controller request schema')
+          if not re.fullmatch(r'[A-Za-z0-9][A-Za-z0-9._-]*', request['task_id']):
+              raise SystemExit('unsafe task_id')
+          for field in ('task_commit','expected_main_sha'):
+              if not re.fullmatch(r'[0-9a-f]{40,64}', request[field]):
+                  raise SystemExit(f'invalid {field}')
+          if request['expected_main_sha'] != base:
+              raise SystemExit(
+                  f'request branch/base mismatch expected_main_sha={request["expected_main_sha"]} parent={base}'
+              )
+          if request['stage_id'] != 'RULE_RESOLUTION':
+              raise SystemExit('stage is not registered for hosted direct execution')
+          if not isinstance(request['inputs'], dict):
+              raise SystemExit('inputs must be one JSON object')
+          PY
+
+          task="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["task_id"])' "$request")"
+          task_commit="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["task_commit"])' "$request")"
+          stage="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["stage_id"])' "$request")"
+          expected="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["expected_main_sha"])' "$request")"
+          python3 - "$request" "$work/inputs.json" <<'PY'
+          import json, sys
+          request = json.load(open(sys.argv[1], encoding='utf-8'))
+          with open(sys.argv[2], 'w', encoding='utf-8') as handle:
+              json.dump(request['inputs'], handle, indent=2, sort_keys=True)
+              handle.write('\n')
+          PY
+
+          remote_main="$(git ls-remote origin refs/heads/main | cut -f1)"
+          [[ "$remote_main" == "$expected" ]] || {
+            echo "::error::main moved before controller execution expected=$expected current=$remote_main"
+            exit 1
+          }
+          git cat-file -e "$task_commit^{commit}"
+
+          echo "work=$work" >> "$GITHUB_OUTPUT"
+          echo "task=$task" >> "$GITHUB_OUTPUT"
+          echo "task_commit=$task_commit" >> "$GITHUB_OUTPUT"
+          echo "stage=$stage" >> "$GITHUB_OUTPUT"
+          echo "expected_main=$expected" >> "$GITHUB_OUTPUT"
+
+      - name: Reconstruct exact current controller invocation
+        shell: bash
+        env:
+          WORK: ${{ steps.request.outputs.work }}
+          TASK: ${{ steps.request.outputs.task }}
+          TASK_COMMIT: ${{ steps.request.outputs.task_commit }}
+          STAGE: ${{ steps.request.outputs.stage }}
+          EXPECTED_MAIN: ${{ steps.request.outputs.expected_main }}
+        run: |
+          set -euo pipefail
+          git checkout --detach "$EXPECTED_MAIN"
+          python3 .terminus/execution/controller_cli.py continue \
+            --task-id "$TASK" \
+            --task-commit "$TASK_COMMIT" \
+            --control-plane-commit "$EXPECTED_MAIN" \
+            --inputs-json "$WORK/inputs.json" \
+            --output "$WORK/continue.json"
+          python3 - "$WORK/continue.json" "$WORK/invocation.json" "$STAGE" <<'PY'
+          import json, sys
+          source, target, expected_stage = sys.argv[1:]
+          payload = json.load(open(source, encoding='utf-8'))
+          next_action = payload.get('next', {})
+          if next_action.get('action') not in {'INVOKE_STAGE','RETRY_STAGE'}:
+              raise SystemExit(f'controller action is not executable: {next_action}')
+          if next_action.get('stage_id') != expected_stage:
+              raise SystemExit(f'controller stage changed: {next_action}')
+          invocation = payload.get('invocation')
+          if not isinstance(invocation, dict) or invocation.get('readiness') != 'READY':
+              raise SystemExit('controller did not produce a READY invocation')
+          stage = invocation.get('stage', {})
+          if stage.get('stage_id') != expected_stage or stage.get('role_class') != 'CONTROLLER':
+              raise SystemExit('invocation is not the expected CONTROLLER stage')
+          if invocation.get('output_contract', {}).get('semantic_reviewers'):
+              raise SystemExit('hosted direct execution cannot replace semantic reviewers')
+          with open(target, 'w', encoding='utf-8') as handle:
+              json.dump(invocation, handle, indent=2, sort_keys=True)
+              handle.write('\n')
+          PY
+
+      - name: Execute bounded controller stage
+        shell: bash
+        env:
+          WORK: ${{ steps.request.outputs.work }}
+        run: |
+          set -euo pipefail
+          python3 .terminus/execution/controller_stage_cli.py \
+            --invocation "$WORK/invocation.json" \
+            --output "$WORK/result.json"
+
+      - name: Canonically record and replay controller state
+        shell: bash
+        env:
+          WORK: ${{ steps.request.outputs.work }}
+        run: |
+          set -euo pipefail
+          python3 .terminus/execution/controller_cli.py record \
+            --invocation "$WORK/invocation.json" \
+            --result "$WORK/result.json" \
+            --output "$WORK/record.json"
+
+      - name: Persist only canonical controller evidence to main
+        shell: bash
+        env:
+          WORK: ${{ steps.request.outputs.work }}
+          TASK: ${{ steps.request.outputs.task }}
+          STAGE: ${{ steps.request.outputs.stage }}
+          EXPECTED_MAIN: ${{ steps.request.outputs.expected_main }}
+        run: |
+          set -euo pipefail
+          unexpected="$(git status --porcelain | awk '{print $2}' | grep -vE "^\.terminus/(executions|workflows)/$TASK(/|$)" || true)"
+          [[ -z "$unexpected" ]] || {
+            echo "::error::Unexpected controller-stage mutations: $unexpected"
+            exit 1
+          }
+          git config user.name "terminus-controller-stage[bot]"
+          git config user.email "terminus-controller-stage[bot]@users.noreply.github.com"
+          git add -- ".terminus/executions/$TASK" ".terminus/workflows/$TASK"
+          git diff --cached --quiet && {
+            echo "::error::Controller stage produced no canonical state change"
+            exit 1
+          }
+          git commit -m "Record $TASK $STAGE controller result"
+
+          remote_main="$(git ls-remote origin refs/heads/main | cut -f1)"
+          [[ "$remote_main" == "$EXPECTED_MAIN" ]] || {
+            echo "::error::main moved during controller execution expected=$EXPECTED_MAIN current=$remote_main"
+            exit 1
+          }
+          git push origin HEAD:main
+          result_commit="$(git rev-parse HEAD)"
+          echo "Result commit: \`$result_commit\`" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Summarize controller execution
+        if: always()
+        shell: bash
+        env:
+          WORK: ${{ steps.request.outputs.work }}
+          TASK: ${{ steps.request.outputs.task }}
+          STAGE: ${{ steps.request.outputs.stage }}
+        run: |
+          {
+            echo "### Terminus Controller Stage"
+            echo "- Task: \`$TASK\`"
+            echo "- Stage: \`$STAGE\`"
+            if [[ -f "$WORK/invocation.json" ]]; then
+              echo "- Invocation: \`$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["invocation_id"])' "$WORK/invocation.json")\`"
+            fi
+            if [[ -f "$WORK/result.json" ]]; then
+              echo "- Status: \`$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["status"])' "$WORK/result.json")\`"
+            fi
+            echo "- Model/Q execution: \`none\`"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload immutable execution diagnostics
+        if: always() && steps.request.outputs.work != ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: terminus-controller-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ steps.request.outputs.work }}
+          if-no-files-found: warn
