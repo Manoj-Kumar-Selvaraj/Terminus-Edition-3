@@ -1,0 +1,607 @@
+{
+  "schema_version": "3.0",
+  "role": "Spec-Test Contract Reviewer",
+  "review_id": "stonevault-crash-safe-storage-29b684f3-spec-test-contract-0a860fca37",
+  "task": "stonevault-crash-safe-storage",
+  "task_commit": "29b684f3439269762235665ab2e716da53214c1e",
+  "control_plane_commit": "8de53e86fad601be9d247ba46d92b20cc1b7ef92",
+  "protocol_policy_version": "2.2",
+  "prompt_policy_version": "2.2",
+  "role_policy_version": "1.1",
+  "role_contract_hash": "0e03d81b0eba3b8e4699365da2647157bce2171c2ab0277a908666f204ca9e01",
+  "context_packet": ".terminus/reviews/stonevault-crash-safe-storage/29b684f3/stonevault-crash-safe-storage-29b684f3-spec-test-contract-0a860fca37.packet.json",
+  "verdict": "REVISE",
+  "confidence": "HIGH",
+  "evidence_status": "SUFFICIENT",
+  "summary": "The exhaustive packet-bound Q4 walk is complete over the allowed evidence surface. The solver-visible work request and delegated storage-format contract are structurally legitimate, but bidirectional alignment fails: two verifier behaviors impose undisclosed writer-lock/error-text requirements, and multiple material durability, recovery, transaction-lifecycle, snapshot-integrity, health, protocol-resilience, and compatibility obligations are absent or only weakly/vacuously asserted. Q4 therefore returns REVISE.",
+  "evidence": [
+    {
+      "type": "file",
+      "ref": ".terminus/reviews/stonevault-crash-safe-storage/29b684f3/stonevault-crash-safe-storage-29b684f3-spec-test-contract-0a860fca37.packet.json",
+      "observation": "Generated schema-v3 packet binds this Q4 review to task commit 29b684f3439269762235665ab2e716da53214c1e, control-plane commit 8de53e86fad601be9d247ba46d92b20cc1b7ef92, the stated allowed/excluded evidence, procedural isolation, and this exact result path."
+    },
+    {
+      "type": "rule",
+      "ref": ".terminus/agents/QUALITY_AGENT_PROMPTS.md@8de53e86fad601be9d247ba46d92b20cc1b7ef92",
+      "observation": "Q4 must complete the forward and reverse matrices, instruction/doc boundary, F2P/P2P, output-interface and second omission sweeps; any material phantom test, untested requirement or grading-relevant ambiguity requires REVISE."
+    },
+    {
+      "type": "rule",
+      "ref": ".terminus/agents/PROTOCOL.md@8de53e86fad601be9d247ba46d92b20cc1b7ef92",
+      "observation": "The review is read-only except for its result artifact, exact-task-commit bound, evidence-bound, and must return SUFFICIENT/INSUFFICIENT evidence explicitly."
+    },
+    {
+      "type": "file",
+      "ref": "stonevault-crash-safe-storage/instruction.md@29b684f3439269762235665ab2e716da53214c1e",
+      "observation": "The instruction contains one short opening paragraph plus 16 concise functional bullets covering locking, directory precedence, transactions/scans, conflicts, durability/recovery, checkpoint/snapshot integrity, observability, binary limits, resilience and compatibility."
+    },
+    {
+      "type": "file",
+      "ref": "stonevault-crash-safe-storage/environment/stonevault/docs/storage-format.md@29b684f3439269762235665ab2e716da53214c1e",
+      "observation": "The referenced technical contract defines startup precedence/default path, exact ASCII commands, transaction semantics, WAL record/payload formats and corruption semantics, snapshot layout/integrity, checkpoint durability order, and writer-lock lifetime."
+    },
+    {
+      "type": "test",
+      "ref": "stonevault-crash-safe-storage/tests/test_outputs.py@29b684f3439269762235665ab2e716da53214c1e",
+      "observation": "The primary verifier exercises locking, snapshot reads/scans, conflicts, rollback/crash recovery, selected WAL corruption/torn tails, checkpointing, selected snapshot corruption, precedence, limits, STATS/HEALTH, malformed commands and hexadecimal behavior."
+    },
+    {
+      "type": "test",
+      "ref": "stonevault-crash-safe-storage/tests/test_preservation.py@29b684f3439269762235665ab2e716da53214c1e",
+      "observation": "The preservation verifier exercises environment-only directory selection, scan limits, binary round-trip, committed hexadecimal rendering, additional snapshot corruption classes, and a source-text public-C-ABI preservation probe."
+    },
+    {
+      "type": "file",
+      "ref": "stonevault-crash-safe-storage/environment/stonevault/storage/engine.hpp@29b684f3439269762235665ab2e716da53214c1e",
+      "observation": "The stable public C ABI contains concrete extern-C signatures for 14 storage entry points, which is stronger than the verifier's symbol-substring checks."
+    },
+    {
+      "type": "file",
+      "ref": "stonevault-crash-safe-storage/environment/stonevault/build.rs@29b684f3439269762235665ab2e716da53214c1e",
+      "observation": "The inherited build compiles each C++ storage translation unit with -std=c++20, providing the environment interface needed to interpret the solver-visible C++20 preservation requirement."
+    },
+    {
+      "type": "file",
+      "ref": ".terminus/designs/stonevault-crash-safe-storage-test-map.json@29b684f3439269762235665ab2e716da53214c1e",
+      "observation": "Used only for the packet-authorized F2P/P2P classification walk: the map classifies 28 probes as F2P and 19 as P2P. Its requirement mapping and rationale were not used as Q4 conclusions."
+    }
+  ],
+  "findings": [
+    {
+      "id": "Q4-001",
+      "severity": "HIGH",
+      "status": "OBSERVED",
+      "criterion": "Every substantive verifier behavior must be discoverable from the solver-visible contract; implementation choices may not be phantom grading requirements.",
+      "evidence_refs": [
+        "stonevault-crash-safe-storage/environment/stonevault/docs/storage-format.md@29b684f3439269762235665ab2e716da53214c1e",
+        "stonevault-crash-safe-storage/tests/test_outputs.py@29b684f3439269762235665ab2e716da53214c1e"
+      ],
+      "why_it_matters": "The public contract requires an exclusively locked LOCK file and single-writer exclusion, but test_lock_file_is_actively_held_by_writer specifically requires compatibility with Python fcntl.flock. A conforming implementation using another valid exclusive file-lock mechanism can satisfy the documented behavior and still fail.",
+      "minimal_remediation": "Either grade only observable single-writer exclusion/release behavior, or make the required advisory locking primitive a legitimate solver-visible compatibility contract if that mechanism itself is intentionally stable.",
+      "regression_risk": "Changing lock verification can accidentally weaken writer-exclusion coverage; retain an independent concurrent-writer and release-on-exit behavioral probe."
+    },
+    {
+      "id": "Q4-002",
+      "severity": "HIGH",
+      "status": "OBSERVED",
+      "criterion": "Verifier-visible output expectations must be solver-visible; private error-message vocabulary is a phantom contract.",
+      "evidence_refs": [
+        "stonevault-crash-safe-storage/environment/stonevault/docs/storage-format.md@29b684f3439269762235665ab2e716da53214c1e",
+        "stonevault-crash-safe-storage/tests/test_outputs.py@29b684f3439269762235665ab2e716da53214c1e"
+      ],
+      "why_it_matters": "The documented startup contract requires open failure on stderr with non-zero exit, but the second-writer test additionally accepts only stderr containing 'already open' or 'writer lock'. That wording is not part of the public response contract.",
+      "minimal_remediation": "Remove the private substring requirement or document an exact stable second-writer diagnostic only if message text is intentionally compatibility-sensitive.",
+      "regression_risk": "Do not weaken the required non-zero failure and concurrent-writer exclusion semantics while removing the hidden wording dependency."
+    },
+    {
+      "id": "Q4-003",
+      "severity": "HIGH",
+      "status": "OBSERVED",
+      "criterion": "Every material solver-visible precedence branch must be meaningfully tested.",
+      "evidence_refs": [
+        "stonevault-crash-safe-storage/instruction.md@29b684f3439269762235665ab2e716da53214c1e",
+        "stonevault-crash-safe-storage/environment/stonevault/docs/storage-format.md@29b684f3439269762235665ab2e716da53214c1e",
+        "stonevault-crash-safe-storage/tests/test_outputs.py@29b684f3439269762235665ab2e716da53214c1e",
+        "stonevault-crash-safe-storage/tests/test_preservation.py@29b684f3439269762235665ab2e716da53214c1e"
+      ],
+      "why_it_matters": "The contract defines three data-directory tiers: explicit --data-dir, STONEVAULT_DATA, then /app/stonevault/data. Tests cover CLI-over-environment and environment-only selection, but never opening with neither source, so an incorrect documented-default implementation can pass.",
+      "minimal_remediation": "Add an isolated no-flag/no-STONEVAULT_DATA environment case that proves the documented default directory is selected.",
+      "regression_risk": "Run the default-path case in an isolated verifier filesystem and clean state so pre-existing /app/stonevault/data cannot make the assertion nondeterministic."
+    },
+    {
+      "id": "Q4-004",
+      "severity": "HIGH",
+      "status": "OBSERVED",
+      "criterion": "Transaction snapshot/local-overlay and conflict lifecycle requirements must be covered across their externally observable lifecycle.",
+      "evidence_refs": [
+        "stonevault-crash-safe-storage/instruction.md@29b684f3439269762235665ab2e716da53214c1e",
+        "stonevault-crash-safe-storage/environment/stonevault/docs/storage-format.md@29b684f3439269762235665ab2e716da53214c1e",
+        "stonevault-crash-safe-storage/tests/test_outputs.py@29b684f3439269762235665ab2e716da53214c1e"
+      ],
+      "why_it_matters": "Point reads are required to expose the transaction's own puts and deletes, but GET-after-own-delete is not tested. Separately, a conflicted commit is required to end the transaction, yet tests prove conflict/atomicity/sequence only and never verify that the rejected transaction is removed from the active set or becomes an unknown transaction.",
+      "minimal_remediation": "Add behavioral probes for GET after a local delete and for post-conflict transaction termination, preferably through active_tx/CHECKPOINT or a subsequent command against that transaction ID.",
+      "regression_risk": "Keep these probes state-based rather than enforcing an internal transaction-table representation."
+    },
+    {
+      "id": "Q4-005",
+      "severity": "HIGH",
+      "status": "OBSERVED",
+      "criterion": "Commit durability and recovery guarantees must be tested at the durability boundary, not only through graceful process teardown.",
+      "evidence_refs": [
+        "stonevault-crash-safe-storage/instruction.md@29b684f3439269762235665ab2e716da53214c1e",
+        "stonevault-crash-safe-storage/environment/stonevault/docs/storage-format.md@29b684f3439269762235665ab2e716da53214c1e",
+        "stonevault-crash-safe-storage/tests/test_outputs.py@29b684f3439269762235665ab2e716da53214c1e"
+      ],
+      "why_it_matters": "The contract says COMMIT returns only after its commit record is durable and recovery retains every valid committed transaction. Existing restart tests close normally after successful commits, so an implementation that acknowledges before sync but flushes on graceful shutdown can pass. There is also no multi-commit WAL-replay case proving all committed transactions/sequences survive without checkpoint.",
+      "minimal_remediation": "After a successful COMMIT response, kill the process without graceful shutdown and reopen to verify the acknowledged state/sequence. Include a multi-commit WAL history so recovery must retain the complete committed prefix.",
+      "regression_risk": "Crash probes must kill only after reading the successful COMMIT response and should avoid filesystem assumptions stronger than the documented durability contract."
+    },
+    {
+      "id": "Q4-006",
+      "severity": "HIGH",
+      "status": "OBSERVED",
+      "criterion": "All material documented WAL corruption and stable-format obligations require meaningful behavioral coverage.",
+      "evidence_refs": [
+        "stonevault-crash-safe-storage/environment/stonevault/docs/storage-format.md@29b684f3439269762235665ab2e716da53214c1e",
+        "stonevault-crash-safe-storage/tests/test_outputs.py@29b684f3439269762235665ab2e716da53214c1e"
+      ],
+      "why_it_matters": "The WAL contract declares malformed complete payloads, unknown record types and impossible complete record lengths fatal, and fixes the PUT/DELETE/COMMIT payload layout. The verifier covers checksum, magic and non-contiguous commit history plus torn tails, but does not construct independent complete unknown-type/malformed-payload/impossible-length records or a compatibility fixture that proves mutation-record layout. A writer and reader can drift together while remaining self-consistent.",
+      "minimal_remediation": "Add independently constructed, checksummed WAL records for the missing complete-corruption classes and at least one fixed-format compatibility/recovery fixture for mutation plus COMMIT records.",
+      "regression_risk": "Independent WAL fixtures must follow the public format only; do not copy implementation internals or create test-only hidden semantics."
+    },
+    {
+      "id": "Q4-007",
+      "severity": "HIGH",
+      "status": "OBSERVED",
+      "criterion": "Checkpoint's documented crash-safe publication order is a material durability requirement and must be behaviorally distinguished from a normal successful checkpoint.",
+      "evidence_refs": [
+        "stonevault-crash-safe-storage/instruction.md@29b684f3439269762235665ab2e716da53214c1e",
+        "stonevault-crash-safe-storage/environment/stonevault/docs/storage-format.md@29b684f3439269762235665ab2e716da53214c1e",
+        "stonevault-crash-safe-storage/tests/test_outputs.py@29b684f3439269762235665ab2e716da53214c1e"
+      ],
+      "why_it_matters": "Tests prove quiescence, normal snapshot publication/restart and WAL truncation, but not the crash-safety invariant implied by sync tmp -> atomic rename -> sync directory -> truncate/sync WAL. An implementation that truncates WAL before a durable snapshot publication can pass normal tests yet lose committed data on interruption.",
+      "minimal_remediation": "Add a deterministic interruption/recovery probe at a public or environment-supported checkpoint boundary that demonstrates the old WAL or new snapshot always preserves committed state.",
+      "regression_risk": "Do not require a private internal hook unless such a hook is legitimately solver-visible; use observable filesystem/state transitions where feasible."
+    },
+    {
+      "id": "Q4-008",
+      "severity": "HIGH",
+      "status": "OBSERVED",
+      "criterion": "Snapshot structural validation and stable disk compatibility require non-vacuous probes for each material corruption class.",
+      "evidence_refs": [
+        "stonevault-crash-safe-storage/environment/stonevault/docs/storage-format.md@29b684f3439269762235665ab2e716da53214c1e",
+        "stonevault-crash-safe-storage/tests/test_outputs.py@29b684f3439269762235665ab2e716da53214c1e",
+        "stonevault-crash-safe-storage/tests/test_preservation.py@29b684f3439269762235665ab2e716da53214c1e"
+      ],
+      "why_it_matters": "test_snapshot_invalid_size_is_fatal rewrites a small row's key_len to 4097 without extending the record or repairing its CRC, so the snapshot is already truncated and can fail without enforcing the 4096-byte size bound. Duplicate-key rejection is not isolated, oversized value records are not independently tested, and no independent fixed CRC/layout fixture distinguishes on-disk compatibility from writer/reader co-drift.",
+      "minimal_remediation": "Construct structurally complete, correctly checksummed snapshots that isolate oversized key/value and duplicate-key violations, and include an independently encoded valid snapshot fixture for layout/CRC compatibility.",
+      "regression_risk": "Keep fixtures minimal and derived solely from the published snapshot contract; avoid duplicating the production serializer wholesale."
+    },
+    {
+      "id": "Q4-009",
+      "severity": "HIGH",
+      "status": "OBSERVED",
+      "criterion": "Grading-relevant health semantics must be unambiguous and meaningfully tested.",
+      "evidence_refs": [
+        "stonevault-crash-safe-storage/instruction.md@29b684f3439269762235665ab2e716da53214c1e",
+        "stonevault-crash-safe-storage/environment/stonevault/docs/storage-format.md@29b684f3439269762235665ab2e716da53214c1e",
+        "stonevault-crash-safe-storage/tests/test_outputs.py@29b684f3439269762235665ab2e716da53214c1e"
+      ],
+      "why_it_matters": "The instruction requires HEALTH to 'validate the reachable catalog/storage invariants', but neither solver-visible contract defines the invariant set or the externally observable unhealthy/failure behavior. The verifier checks only healthy-state fields, so an implementation that always reports status=ok while never validating integrity can pass.",
+      "minimal_remediation": "Define the externally observable HEALTH validation/failure contract at an appropriate technical-contract level, then add a behavioral negative case for a reachable invariant violation that HEALTH is expected to detect.",
+      "regression_risk": "Do not expose private defect topology; define only stable health authority, scope and observable outcome."
+    },
+    {
+      "id": "Q4-010",
+      "severity": "HIGH",
+      "status": "OBSERVED",
+      "criterion": "Documented stable public interfaces and language/response compatibility must be enforced semantically rather than by weak source substrings.",
+      "evidence_refs": [
+        "stonevault-crash-safe-storage/instruction.md@29b684f3439269762235665ab2e716da53214c1e",
+        "stonevault-crash-safe-storage/environment/stonevault/storage/engine.hpp@29b684f3439269762235665ab2e716da53214c1e",
+        "stonevault-crash-safe-storage/environment/stonevault/build.rs@29b684f3439269762235665ab2e716da53214c1e",
+        "stonevault-crash-safe-storage/tests/test_outputs.py@29b684f3439269762235665ab2e716da53214c1e",
+        "stonevault-crash-safe-storage/tests/test_preservation.py@29b684f3439269762235665ab2e716da53214c1e"
+      ],
+      "why_it_matters": "The instruction requires C++20/Rust only and preservation of the documented C ABI and ASCII response shapes. The language test only finds .cpp/.rs files and excludes .py/.go, so it does not establish C++20 compilation. The ABI test only searches symbol substrings plus any extern \"C\", allowing changed signatures or misplaced declarations. Helpers also accept some non-exact response variants (for example READY trailing tokens and unordered/extra HEALTH fields), weakening stable response-shape preservation.",
+      "minimal_remediation": "Compile/link a small client against the published ABI or otherwise validate exact declarations/signatures, assert the C++20 build contract, and make stable wire-shape checks exact where the document declares an exact form.",
+      "regression_risk": "Preserve legitimate implementation freedom behind the ABI and avoid turning compiler/toolchain internals into additional hidden requirements."
+    },
+    {
+      "id": "Q4-011",
+      "severity": "MEDIUM",
+      "status": "OBSERVED",
+      "criterion": "Generic protocol-resilience and operand-limit requirements must cover materially distinct public command paths when separate handlers can violate them.",
+      "evidence_refs": [
+        "stonevault-crash-safe-storage/instruction.md@29b684f3439269762235665ab2e716da53214c1e",
+        "stonevault-crash-safe-storage/environment/stonevault/docs/storage-format.md@29b684f3439269762235665ab2e716da53214c1e",
+        "stonevault-crash-safe-storage/tests/test_outputs.py@29b684f3439269762235665ab2e716da53214c1e",
+        "stonevault-crash-safe-storage/tests/test_preservation.py@29b684f3439269762235665ab2e716da53214c1e"
+      ],
+      "why_it_matters": "The contract applies unknown-transaction ERR handling generically, but the verifier only demonstrates it through GET. Oversized-key rejection is demonstrated through PUT while DEL/GET and other transaction-ID command handlers are not exercised at that boundary. Separate public handlers can remain incorrect while the suite passes.",
+      "minimal_remediation": "Add a small representative cross-command matrix that proves unknown transaction IDs and decoded key bounds are consistently enforced by distinct command families without duplicating every fixture.",
+      "regression_risk": "Keep the matrix behavior-focused and minimal; avoid one test per parser branch when shared behavior can be established through representative independent paths."
+    },
+    {
+      "id": "Q4-012",
+      "severity": "LOW",
+      "status": "INFERRED",
+      "criterion": "Solver-visible corruption terminology should not admit materially different interpretations at a future grading boundary.",
+      "evidence_refs": [
+        "stonevault-crash-safe-storage/environment/stonevault/docs/storage-format.md@29b684f3439269762235665ab2e716da53214c1e"
+      ],
+      "why_it_matters": "The WAL contract permits a short final header/payload as a torn tail but also calls an 'impossible complete record length' corruption without defining the criterion that distinguishes an incomplete-at-EOF payload from an impossible declared length. Current tests do not grade that exact distinction, so this is advisory rather than blocking in this review.",
+      "minimal_remediation": "Clarify the structural/size criterion for an impossible record length if that distinction is intended to be graded in the future.",
+      "regression_risk": "Over-specifying arbitrary implementation limits could unnecessarily constrain valid implementations; define only a stable format-level bound."
+    }
+  ],
+  "missing_evidence": [],
+  "change_scope": [
+    ".terminus/reviews/stonevault-crash-safe-storage/29b684f3/stonevault-crash-safe-storage-29b684f3-spec-test-contract-0a860fca37.json"
+  ],
+  "do_not_change": [
+    "No task producer artifact was modified.",
+    "No verifier remediation was performed.",
+    "Q6 was not executed.",
+    "Excluded prior Q1/Q2/Q3 conclusions, prior Q4 verdicts, other specialist verdicts, desired aggregate outcome, and Verifier Author coverage rationale were not used as Q4 judgment evidence."
+  ],
+  "next_gate": "QUALITY_INTERLOCK cannot pass. Route Q4_REVISE to the smallest responsible specification/verifier producer, perform one consolidated repair/refreeze cycle as authorized by the controller, then run a fresh packet-bound Q4.",
+  "role_output": {
+    "REQUIREMENT_TEST_MATRIX": [
+      {
+        "REQ_ID": "Q4-REQ-01",
+        "REQUIREMENT": "Deliver and rebuild /app/stonevault/bin/stonevault with product implementation restricted to C++20 and Rust; Python only belongs in the external verifier and Go must not be added.",
+        "TESTS": [
+          "test_product_tree_keeps_native_language_boundary"
+        ],
+        "COVERAGE": "PARTIAL",
+        "NOTE": "Executable/native-language presence and Python/Go exclusion are checked, but C++20 compilation/compatibility is not."
+      },
+      {
+        "REQ_ID": "Q4-REQ-02",
+        "REQUIREMENT": "Exactly one writable process may own a database directory; the LOCK lifetime provides writer exclusion and ownership is released when the process exits.",
+        "TESTS": [
+          "test_lock_file_is_actively_held_by_writer",
+          "test_second_writer_is_excluded_and_lock_is_released",
+          "test_killed_transaction_is_invisible_after_restart"
+        ],
+        "COVERAGE": "COMPLETE",
+        "NOTE": "Observable exclusion/release is covered, but two reverse-matrix verifier details are phantom contracts: flock mechanism and second-writer stderr vocabulary."
+      },
+      {
+        "REQ_ID": "Q4-REQ-03",
+        "REQUIREMENT": "Data directory precedence is explicit --data-dir, then STONEVAULT_DATA, then /app/stonevault/data.",
+        "TESTS": [
+          "test_explicit_data_directory_overrides_environment",
+          "test_environment_only_data_directory_is_honored"
+        ],
+        "COVERAGE": "PARTIAL",
+        "NOTE": "The documented default tier is untested."
+      },
+      {
+        "REQ_ID": "Q4-REQ-04",
+        "REQUIREMENT": "Startup/open uses the documented READY/open-failure behavior and stable command-line contract.",
+        "TESTS": [
+          "Session startup helpers",
+          "open_failure helper",
+          "test_second_writer_is_excluded_and_lock_is_released",
+          "corruption-open tests"
+        ],
+        "COVERAGE": "PARTIAL",
+        "NOTE": "Nonzero/error paths are exercised, but READY helpers accept trailing tokens and the writer-lock test imposes undocumented diagnostic text."
+      },
+      {
+        "REQ_ID": "Q4-REQ-05",
+        "REQUIREMENT": "Preserve the documented ASCII command/response interface and exact stable response shapes.",
+        "TESTS": [
+          "command-specific assertions throughout test_outputs.py and test_preservation.py"
+        ],
+        "COVERAGE": "PARTIAL",
+        "NOTE": "Many shapes are exact, but READY and HEALTH parsing permit non-contractual variants; ABI/wire compatibility is therefore not comprehensively fixed."
+      },
+      {
+        "REQ_ID": "Q4-REQ-06",
+        "REQUIREMENT": "Keys/values/prefixes support arbitrary binary bytes as case-insensitive input hex with lowercase output; 4096-byte key/prefix and 1048576-byte value limits are inclusive and oversize input is rejected without process termination.",
+        "TESTS": [
+          "test_hex_input_is_case_insensitive_and_output_is_lowercase",
+          "test_committed_hex_output_is_canonical",
+          "test_arbitrary_binary_key_and_value_round_trip",
+          "test_exact_key_limit_is_accepted",
+          "test_exact_value_limit_is_accepted",
+          "test_exact_scan_prefix_limit_is_accepted",
+          "test_oversized_inputs_are_rejected_without_terminating",
+          "test_oversized_scan_prefix_is_rejected_without_terminating"
+        ],
+        "COVERAGE": "PARTIAL",
+        "NOTE": "Core boundaries are covered, but generic oversized-key enforcement is not exercised across materially distinct key-consuming command handlers."
+      },
+      {
+        "REQ_ID": "Q4-REQ-07",
+        "REQUIREMENT": "Transactions retain begin-time point-read visibility and expose their own puts and deletes.",
+        "TESTS": [
+          "test_read_snapshot_survives_newer_put",
+          "test_read_snapshot_survives_newer_delete",
+          "test_exact_key_limit_is_accepted",
+          "test_exact_value_limit_is_accepted"
+        ],
+        "COVERAGE": "PARTIAL",
+        "NOTE": "Begin-time point reads and own PUT visibility are covered; GET after the transaction's own DELETE is not."
+      },
+      {
+        "REQ_ID": "Q4-REQ-08",
+        "REQUIREMENT": "Prefix scans retain transaction snapshot visibility, overlay local puts/deletes, filter raw-byte prefixes, and return deterministic unsigned-bytewise order.",
+        "TESTS": [
+          "test_scan_snapshot_excludes_later_insert",
+          "test_scan_snapshot_retains_later_delete",
+          "test_scan_applies_local_put_overlay",
+          "test_scan_applies_local_delete_overlay",
+          "test_scan_uses_unsigned_byte_order",
+          "test_arbitrary_binary_key_and_value_round_trip",
+          "test_committed_hex_output_is_canonical"
+        ],
+        "COVERAGE": "COMPLETE",
+        "NOTE": "Snapshot, overlay and unsigned-byte ordering are meaningfully asserted; binary/hex preservation supports raw-byte semantics."
+      },
+      {
+        "REQ_ID": "Q4-REQ-09",
+        "REQUIREMENT": "First-committer-wins write/write conflicts reject stale writers atomically, end the rejected transaction, publish no partial state, and consume no commit sequence.",
+        "TESTS": [
+          "test_stale_put_conflicts_with_newer_version",
+          "test_stale_delete_conflicts_with_newer_version",
+          "test_conflicted_multi_key_commit_is_atomic",
+          "test_conflict_does_not_consume_commit_sequence"
+        ],
+        "COVERAGE": "PARTIAL",
+        "NOTE": "Conflict, atomicity and sequence preservation are covered; rejected-transaction termination is not."
+      },
+      {
+        "REQ_ID": "Q4-REQ-10",
+        "REQUIREMENT": "Successful commits are all-or-nothing, receive contiguous increasing sequences, and return only after the commit record is durable.",
+        "TESTS": [
+          "successful commit assertions throughout",
+          "test_conflict_does_not_consume_commit_sequence",
+          "test_non_contiguous_commit_sequence_is_fatal"
+        ],
+        "COVERAGE": "PARTIAL",
+        "NOTE": "Sequence/atomicity are exercised, but acknowledged-commit durability is never tested by killing immediately after a successful COMMIT response."
+      },
+      {
+        "REQ_ID": "Q4-REQ-11",
+        "REQUIREMENT": "Rollback and process death with an open transaction never publish that transaction's WAL mutations after restart.",
+        "TESTS": [
+          "test_killed_transaction_is_invisible_after_restart",
+          "test_rolled_back_transaction_is_invisible_after_restart"
+        ],
+        "COVERAGE": "COMPLETE",
+        "NOTE": "Both rollback and killed-open-transaction recovery are directly asserted."
+      },
+      {
+        "REQ_ID": "Q4-REQ-12",
+        "REQUIREMENT": "WAL recovery retains every valid committed transaction, repairs only a short final header/payload torn tail, and fails closed on every complete-record corruption or invalid committed-sequence history while preserving the published WAL layout.",
+        "TESTS": [
+          "test_short_final_wal_header_is_repaired",
+          "test_short_final_wal_payload_is_repaired",
+          "test_complete_wal_checksum_damage_is_fatal",
+          "test_complete_wal_bad_magic_is_fatal",
+          "test_non_contiguous_commit_sequence_is_fatal"
+        ],
+        "COVERAGE": "PARTIAL",
+        "NOTE": "Unknown type, malformed complete payload, impossible complete length, multi-commit retention and independent mutation-layout compatibility are not meaningfully asserted."
+      },
+      {
+        "REQ_ID": "Q4-REQ-13",
+        "REQUIREMENT": "CHECKPOINT refuses while any transaction is active; otherwise it crash-safely publishes the current committed snapshot, durably preserves sequence/rows, and truncates/syncs wal.log to zero.",
+        "TESTS": [
+          "test_checkpoint_refuses_active_transaction",
+          "test_checkpoint_reclaims_wal_after_commit",
+          "test_checkpoint_restart_preserves_sequence_and_rows",
+          "test_stale_snapshot_temporary_is_removed_on_open"
+        ],
+        "COVERAGE": "PARTIAL",
+        "NOTE": "Normal success/restart/quiescence is covered, but the required crash-safe publication order is not distinguished from a non-durable implementation."
+      },
+      {
+        "REQ_ID": "Q4-REQ-14",
+        "REQUIREMENT": "Published snapshots preserve the documented layout and reject checksum, truncation, ordering/duplicate, size, row-count, magic and trailing-byte corruption; abandoned snapshot.tmp is discarded.",
+        "TESTS": [
+          "test_snapshot_checksum_corruption_is_fatal",
+          "test_snapshot_trailing_bytes_are_fatal",
+          "test_stale_snapshot_temporary_is_removed_on_open",
+          "test_snapshot_bad_magic_is_fatal",
+          "test_snapshot_truncation_is_fatal",
+          "test_snapshot_invalid_size_is_fatal",
+          "test_snapshot_impossible_row_count_is_fatal",
+          "test_snapshot_out_of_order_rows_are_fatal"
+        ],
+        "COVERAGE": "PARTIAL",
+        "NOTE": "The invalid-size probe is vacuous for the size rule, duplicate keys and oversized values are not isolated, and no independently encoded valid snapshot fixes layout/CRC compatibility."
+      },
+      {
+        "REQ_ID": "Q4-REQ-15",
+        "REQUIREMENT": "STATS reports durable commit sequence, visible committed-key count and actual WAL byte size.",
+        "TESTS": [
+          "test_stats_match_durable_state_and_file_size",
+          "test_checkpoint_reclaims_wal_after_commit",
+          "test_conflict_does_not_consume_commit_sequence"
+        ],
+        "COVERAGE": "COMPLETE",
+        "NOTE": "All three fields are behaviorally cross-checked against state/file size."
+      },
+      {
+        "REQ_ID": "Q4-REQ-16",
+        "REQUIREMENT": "HEALTH validates reachable catalog/storage invariants and accurately reports status, sequence, key count, active transactions, WAL bytes and snapshot publication state.",
+        "TESTS": [
+          "test_health_reports_active_transactions",
+          "test_health_tracks_published_snapshot"
+        ],
+        "COVERAGE": "PARTIAL",
+        "NOTE": "Healthy counters/state are checked, but the validation authority and unhealthy behavior are undefined and no integrity-negative case is tested."
+      },
+      {
+        "REQ_ID": "Q4-REQ-17",
+        "REQUIREMENT": "Malformed commands and unknown transaction IDs return ERR and leave the process able to accept later valid commands.",
+        "TESTS": [
+          "test_malformed_commands_and_unknown_transactions_do_not_kill_session",
+          "test_oversized_inputs_are_rejected_without_terminating",
+          "test_oversized_scan_prefix_is_rejected_without_terminating"
+        ],
+        "COVERAGE": "PARTIAL",
+        "NOTE": "Session survival is covered, but unknown-transaction behavior is demonstrated only through GET even though separate command handlers can diverge."
+      },
+      {
+        "REQ_ID": "Q4-REQ-18",
+        "REQUIREMENT": "Preserve the documented public C ABI, ASCII wire contract, WAL layout, snapshot layout and existing data compatibility across restart/maintenance cycles.",
+        "TESTS": [
+          "test_documented_c_abi_declarations_remain_available",
+          "protocol response assertions throughout",
+          "WAL corruption/torn-tail tests",
+          "snapshot corruption/checkpoint tests"
+        ],
+        "COVERAGE": "PARTIAL",
+        "NOTE": "The ABI probe is substring-based rather than signature/linkage-validating; C++20 is not enforced; exact READY/HEALTH shape and independent disk-format compatibility fixtures are incomplete."
+      }
+    ],
+    "PHANTOM_TEST_CONTRACTS": [
+      {
+        "FINDING_ID": "Q4-001",
+        "VERIFIER_BEHAVIOR": "Requires the live LOCK file to reject Python fcntl.flock(LOCK_EX|LOCK_NB).",
+        "SOLVER_VISIBLE_DISCOVERABILITY": "MISSING",
+        "WHY_PHANTOM": "The contract requires exclusive writer locking, not a specific advisory-lock API."
+      },
+      {
+        "FINDING_ID": "Q4-002",
+        "VERIFIER_BEHAVIOR": "Requires second-writer stderr to contain 'already open' or 'writer lock'.",
+        "SOLVER_VISIBLE_DISCOVERABILITY": "MISSING",
+        "WHY_PHANTOM": "The contract specifies stderr plus non-zero open failure but no diagnostic vocabulary."
+      }
+    ],
+    "UNTESTED_REQUIREMENTS": [
+      {
+        "FINDING_ID": "Q4-003",
+        "REQUIREMENT": "The no-flag/no-environment default data directory is /app/stonevault/data.",
+        "COVERAGE": "NONE"
+      },
+      {
+        "FINDING_ID": "Q4-004",
+        "REQUIREMENT": "GET reflects a transaction's own delete; a conflicted transaction ends and leaves the active set.",
+        "COVERAGE": "PARTIAL"
+      },
+      {
+        "FINDING_ID": "Q4-005",
+        "REQUIREMENT": "A successful COMMIT response implies crash durability, and recovery retains the complete valid committed WAL prefix.",
+        "COVERAGE": "PARTIAL"
+      },
+      {
+        "FINDING_ID": "Q4-006",
+        "REQUIREMENT": "Complete unknown-type, malformed-payload and impossible-length WAL records fail closed, and published WAL payload layout remains compatible.",
+        "COVERAGE": "PARTIAL"
+      },
+      {
+        "FINDING_ID": "Q4-007",
+        "REQUIREMENT": "Checkpoint publication ordering remains crash-safe across snapshot publication and WAL reclamation.",
+        "COVERAGE": "NONE"
+      },
+      {
+        "FINDING_ID": "Q4-008",
+        "REQUIREMENT": "Snapshot size/duplicate/CRC-layout constraints are independently and non-vacuously validated.",
+        "COVERAGE": "PARTIAL"
+      },
+      {
+        "FINDING_ID": "Q4-009",
+        "REQUIREMENT": "HEALTH actually validates the declared reachable catalog/storage invariants and has defined observable failure behavior.",
+        "COVERAGE": "PARTIAL"
+      },
+      {
+        "FINDING_ID": "Q4-010",
+        "REQUIREMENT": "C++20, exact public C ABI signatures/linkage and exact stable wire shapes are preserved.",
+        "COVERAGE": "PARTIAL"
+      },
+      {
+        "FINDING_ID": "Q4-011",
+        "REQUIREMENT": "Unknown transaction and decoded-key limit/error-resilience rules hold across materially distinct public command handlers.",
+        "COVERAGE": "PARTIAL"
+      }
+    ],
+    "AMBIGUITIES": [
+      {
+        "FINDING_ID": "Q4-009",
+        "TEXT_OR_CONTRACT": "HEALTH must 'validate the reachable catalog/storage invariants'.",
+        "INTERPRETATION_A": "HEALTH only reports counters/state for an already-open healthy database.",
+        "INTERPRETATION_B": "HEALTH performs integrity validation and exposes a defined unhealthy/error outcome for reachable invariant violations.",
+        "GRADING_CONSEQUENCE": "The verifier currently accepts only healthy reports and therefore cannot distinguish an implementation that performs no validation.",
+        "MATERIALITY": "BLOCKING"
+      },
+      {
+        "FINDING_ID": "Q4-012",
+        "TEXT_OR_CONTRACT": "A short final WAL payload is a repairable torn tail, while an 'impossible complete record length' is corruption.",
+        "INTERPRETATION_A": "Any final header whose declared payload extends beyond EOF is a torn tail.",
+        "INTERPRETATION_B": "Some declared lengths are intrinsically invalid/corrupt even when the payload is incomplete at EOF.",
+        "GRADING_CONSEQUENCE": "Current tests do not grade this exact boundary; future grading could diverge without a format-level criterion.",
+        "MATERIALITY": "ADVISORY"
+      }
+    ],
+    "INSTRUCTION_SHAPE": "PASS",
+    "INSTRUCTION_REQUIREMENT_COMPLETENESS": "SUFFICIENT",
+    "DELEGATED_CONTRACT_CHECK": [
+      {
+        "PATH": "/app/stonevault/docs/storage-format.md",
+        "CLASSIFICATION": "LEGITIMATE_TECHNICAL_CONTRACT",
+        "ASSESSMENT": "The instruction keeps the engineering ask and material requirement families in the work request while delegating normal startup, protocol, WAL and snapshot format detail to a referenced technical contract."
+      },
+      {
+        "PATH": "/app/stonevault/storage/engine.hpp",
+        "CLASSIFICATION": "STABLE_PUBLIC_INTERFACE",
+        "ASSESSMENT": "The header is an environment interface necessary to interpret the instruction's public-C-ABI preservation obligation; it is not a second prompt or repair map."
+      }
+    ],
+    "INSTRUCTION_DOC_BOUNDARY": "CLEAN",
+    "IMPLEMENTATION_DIAGNOSIS_LEAKAGE": "NONE",
+    "CURRENT_STATE_EVIDENCE": "NOT_APPLICABLE",
+    "SPEC_DUMP_RISK": "LOW",
+    "BIDIRECTIONAL_ALIGNMENT": "FAIL",
+    "BLOCKING_FINDING_IDS": [
+      "Q4-001",
+      "Q4-002",
+      "Q4-003",
+      "Q4-004",
+      "Q4-005",
+      "Q4-006",
+      "Q4-007",
+      "Q4-008",
+      "Q4-009",
+      "Q4-010",
+      "Q4-011"
+    ],
+    "ADVISORY_FINDING_IDS": [
+      "Q4-012"
+    ],
+    "EXHAUSTIVENESS": {
+      "REQUIREMENTS_ENUMERATED": "COMPLETE",
+      "VERIFIER_BEHAVIORS_ENUMERATED": "COMPLETE",
+      "FORWARD_MATRIX_COMPLETE": "YES",
+      "REVERSE_MATRIX_COMPLETE": "YES",
+      "INSTRUCTION_COMPLETENESS_COMPLETE": "YES",
+      "DELEGATED_CONTRACTS_COMPLETE": "YES",
+      "PROMPT_EXTENSION_WALK_COMPLETE": "YES",
+      "P2P_BOUNDARIES_COMPLETE": "YES",
+      "F2P_BOUNDARIES_COMPLETE": "YES",
+      "OUTPUT_INTERFACES_COMPLETE": "YES",
+      "SECOND_PASS_OMISSION_SWEEP": "PASS",
+      "UNINSPECTED_SCOPE": []
+    },
+    "F2P_P2P_BOUNDARY_ASSESSMENT": {
+      "CLASSIFICATION_SOURCE_USE": "The private test map was used only to identify classifications, as the packet permits.",
+      "F2P": "28 classified probes were walked. The principal issue is implementation coupling in the writer-lock probe; other F2P gaps are recorded in the forward/reverse findings.",
+      "P2P": "19 classified probes were walked. Preservation weaknesses include the vacuous snapshot-size probe and source-substring C-ABI probe.",
+      "CIRCULAR_ORACLE_RISK": "No verifier use of the reference solution/Oracle as an expected-value oracle was found in the allowed tests."
+    },
+    "OUTPUT_INTERFACE_WALK": {
+      "BINARY": "/app/stonevault/bin/stonevault",
+      "ASCII_PROTOCOL": "COMPLETE_WALK",
+      "WAL_FORMAT": "COMPLETE_WALK",
+      "SNAPSHOT_FORMAT": "COMPLETE_WALK",
+      "PUBLIC_C_ABI": "COMPLETE_WALK",
+      "STATS_HEALTH": "COMPLETE_WALK"
+    }
+  }
+}
