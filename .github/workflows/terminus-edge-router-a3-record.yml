@@ -24,6 +24,16 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
+      - name: Publish recorder run breadcrumb
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh api --method POST "repos/${GITHUB_REPOSITORY}/statuses/${GITHUB_SHA}" \
+            -f state=pending \
+            -f context=terminus/a3-recorder \
+            -f description='A3 canonical recorder running' \
+            -f target_url="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
+
       - uses: actions/checkout@v4
         with:
           ref: main
@@ -68,22 +78,16 @@ jobs:
           result=json.load(open('/tmp/a3-result.json'))
           design=json.load(open('.terminus/designs/edge-router-runtime.json'))
           assert design==result['outputs'], 'persisted design manifest differs from A3 outputs'
-          defects=design['defects']
-          clusters=design['root_cause_clusters']
-          edges=design['causal_edges']
+          defects=design['defects']; clusters=design['root_cause_clusters']; edges=design['causal_edges']
           ids={d['id'] for d in defects}
           assert 20 <= len(defects) <= 30, len(defects)
           assert 4 <= len(clusters) <= 8, len(clusters)
-          connected=set()
-          cross=set()
-          dcluster={d['id']:d['root_cause'] for d in defects}
-          seen=set()
+          connected=set(); cross=set(); dcluster={d['id']:d['root_cause'] for d in defects}; seen=set()
           for e in edges:
               p=(e['from'],e['to'])
               assert e['from'] in ids and e['to'] in ids and e['from']!=e['to'], e
               assert p not in seen, e
-              seen.add(p)
-              connected.update(p)
+              seen.add(p); connected.update(p)
               if dcluster[e['from']] != dcluster[e['to']]:
                   cross.add(tuple(sorted((dcluster[e['from']],dcluster[e['to']]))))
           assert len(connected) >= 15, len(connected)
@@ -101,19 +105,9 @@ jobs:
           a2=json.load(open(f"{base}/{os.environ['A2_INVOCATION_ID']}.result.json"))
           a1o=a1['outputs']
           selected=next(c for c in a1o['CANDIDATES'] if c['ID']==a1o['RECOMMENDATION'])
-          operational={
-            'REQUIRED_END_STATE': selected['REQUIRED_END_STATE'],
-            'REQUIREMENT_FAMILIES': selected['REQUIREMENT_FAMILIES'],
-            'PRESERVATION_OBLIGATIONS': selected['PRESERVATION_OBLIGATIONS'],
-            'EDGE_FAILURE_SURFACE': selected['EDGE_FAILURE_SURFACE'],
-          }
+          operational={'REQUIRED_END_STATE':selected['REQUIRED_END_STATE'],'REQUIREMENT_FAMILIES':selected['REQUIREMENT_FAMILIES'],'PRESERVATION_OBLIGATIONS':selected['PRESERVATION_OBLIGATIONS'],'EDGE_FAILURE_SURFACE':selected['EDGE_FAILURE_SURFACE']}
           rule=a1['invocation_snapshot']['inputs']['required']['CREATION_RULE_CONTEXT']
-          json.dump({
-            'APPROVED_OPERATIONAL_REQUIREMENTS': operational,
-            'APPROVED_WORK_PACKAGE': selected,
-            'CLEAN_SYSTEM_ARCHITECTURE': a2['outputs'],
-            'CREATION_PROFILE': rule['CREATION_PROFILE'],
-          },open('/tmp/a3-inputs.json','w'),indent=2,sort_keys=True)
+          json.dump({'APPROVED_OPERATIONAL_REQUIREMENTS':operational,'APPROVED_WORK_PACKAGE':selected,'CLEAN_SYSTEM_ARCHITECTURE':a2['outputs'],'CREATION_PROFILE':rule['CREATION_PROFILE']},open('/tmp/a3-inputs.json','w'),indent=2,sort_keys=True)
           PY
           python3 .terminus/execution/controller_cli.py continue \
             --task-id "$TASK_ID" \
@@ -123,8 +117,7 @@ jobs:
             --output /tmp/a3-next.json
           python3 - <<'PY'
           import json, os
-          p=json.load(open('/tmp/a3-next.json'))
-          inv=p['invocation']
+          p=json.load(open('/tmp/a3-next.json')); inv=p['invocation']
           assert inv['invocation_id']==os.environ['A3_INVOCATION_ID'], inv
           assert inv['stage']['stage_id']=='DEFECT_TOPOLOGY', inv
           assert inv['stage']['role_id']=='A3_DEFECT_TOPOLOGY_DESIGNER', inv
@@ -140,21 +133,14 @@ jobs:
             --output /tmp/a3-record-output.json
           python3 - <<'PY'
           import json
-          out=json.load(open('/tmp/a3-record-output.json'))
-          rec=out['record']; state=out['state']
+          out=json.load(open('/tmp/a3-record-output.json')); rec=out['record']; state=out['state']
           assert rec['status']=='DESIGN_READY', rec
           assert rec['disposition']=='ADVANCE', rec
           assert rec['stage_id']=='DEFECT_TOPOLOGY', rec
           assert state['ledger_event_count']==4, state
           assert state['next']['action']=='INVOKE_STAGE', state
           assert state['next']['stage_id']=='ENVIRONMENT_BUILD', state
-          print(json.dumps({
-            'record_id':rec['record_id'],
-            'ledger_event_id':out['ledger_event']['event_id'],
-            'record_hash':out['ledger_event']['record_hash'],
-            'state_snapshot_id':state['state_snapshot_id'],
-            'next':state['next'],
-          },indent=2,sort_keys=True))
+          print(json.dumps({'record_id':rec['record_id'],'ledger_event_id':out['ledger_event']['event_id'],'record_hash':out['ledger_event']['record_hash'],'state_snapshot_id':state['state_snapshot_id'],'next':state['next']},indent=2,sort_keys=True))
           PY
 
       - name: Persist exact A3 execution evidence to main
@@ -163,15 +149,14 @@ jobs:
         run: |
           python3 - <<'PY'
           import base64, json, os, subprocess
-          repo=os.environ['GITHUB_REPOSITORY']
-          task=os.environ['TASK_ID']
-          inv=os.environ['A3_INVOCATION_ID']
+          repo=os.environ['GITHUB_REPOSITORY']; task=os.environ['TASK_ID']; inv=os.environ['A3_INVOCATION_ID']
           for path in [f'.terminus/executions/{task}/{inv}.result.json', f'.terminus/executions/{task}/ledger.jsonl']:
-              data=open(path,'rb').read()
-              encoded=base64.b64encode(data).decode()
-              api=f'repos/{repo}/contents/{path}'
-              existing=json.loads(subprocess.check_output(['gh','api',api,'-f','ref=main']))
-              payload={'message':f'workflow: record {task} A3 lifecycle evidence','content':encoded,'branch':'main','sha':existing['sha']}
+              data=open(path,'rb').read(); encoded=base64.b64encode(data).decode(); api=f'repos/{repo}/contents/{path}'
+              try:
+                  existing=json.loads(subprocess.check_output(['gh','api',api,'-f','ref=main']))
+                  payload={'message':f'workflow: record {task} A3 lifecycle evidence','content':encoded,'branch':'main','sha':existing['sha']}
+              except subprocess.CalledProcessError:
+                  payload={'message':f'workflow: record {task} A3 lifecycle evidence','content':encoded,'branch':'main'}
               subprocess.run(['gh','api','--method','PUT',api,'--input','-'],input=json.dumps(payload).encode(),check=True)
           PY
 
@@ -185,7 +170,7 @@ jobs:
             --control-plane-commit "$CONTROL_PLANE_COMMIT" \
             --output /tmp/status-after.json
           python3 - <<'PY'
-          import json, os
+          import json
           s=json.load(open('/tmp/status-after.json'))
           assert s['ledger_event_count']==4, s
           assert s['lineage']['status']=='CURRENT', s
@@ -194,8 +179,7 @@ jobs:
           print(json.dumps(s['next'],indent=2,sort_keys=True))
           PY
 
-      - name: Publish A3 recorder breadcrumb
-        if: success()
+      - name: Publish A3 recorder success
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
