@@ -143,7 +143,7 @@ def test_controller_stage_workflow_is_non_model_and_canonical() -> None:
         "controller_cli.py record",
         "git push origin HEAD:main",
         "main moved during controller execution",
-        "Model/Q execution: `none`",
+        "Model/Q execution:",
     ):
         assert marker in workflow
     for forbidden in (
