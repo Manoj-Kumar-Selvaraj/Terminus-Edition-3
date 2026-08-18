@@ -13,7 +13,7 @@
     "REQ_COPY": "Copy uses source_digest for source-content changes and observes destination content.",
     "REQ_TEXT": "Named line/block resources are exact, idempotent, side-effect-free on Read and independently owned.",
     "REQ_IDENTITY": "User/group resources observe native account state and preserve stable identity across mutable changes.",
-    "REQ_RUNNER": "Runner uses structured argv, propagates non-zero/timeout/cancellation failures and cleans ephemeral playbooks.",
+    "REQ_RUNNER": "Runner uses structured argv, propagates non-zero/timeout/cancellation failures, cleans ephemeral playbooks on every terminal path, and does not persist command output in Terraform state.",
     "REQ_NORMALIZE": "Equivalent modes, unordered values and defaults converge to stable canonical representations.",
     "REQ_CRON": "Cron omitted user/schedule fields converge to root/wildcards, stay clean and preserve named siblings."
   },
@@ -46,6 +46,7 @@
     ["test_f2p_destroy_removes_home_when_remove_home_is_true","F2P","REQ_DELETE"],
     ["test_f2p_runner_handles_temp_paths_with_spaces","F2P","REQ_RUNNER"],
     ["test_f2p_runner_does_not_interpret_shell_metacharacters","F2P","REQ_RUNNER"],
+    ["test_p2p_success_cleanup_and_state_output_secrecy","P2P","REQ_RUNNER"],
     ["test_f2p_nonzero_ansible_exit_fails_lifecycle_transition","F2P","REQ_RUNNER"],
     ["test_f2p_timeout_and_cancellation_clean_generated_playbooks","F2P","REQ_RUNNER"],
     ["test_f2p_cron_omitted_schedule_fields_converge_to_wildcards","F2P","REQ_CRON"],
@@ -53,48 +54,28 @@
     ["test_f2p_named_entry_deletes_preserve_siblings","F2P","REQ_DELETE"],
     ["test_p2p_symlink_destroy_preserves_target","P2P","REQ_DELETE"]
   ],
-  "counts": {"f2p": 28, "p2p": 6},
+  "counts": {"f2p": 28, "p2p": 7},
   "empirical_gate": {
-    "starter_nop": "VERIFIED_CURRENT",
-    "oracle": "VERIFIED_CURRENT",
-    "current_evidence": {
-      "task_commit": "72a1016159690c446baba7290de6d9bc306accd2",
-      "branch_head": "d15b4deafd789a9e8d3ea758ec64e3260ec1a98c",
-      "workflow_run": 32095514025,
+    "starter_nop": "PENDING_CURRENT_RERUN_AFTER_Q2_COVERAGE_REPAIR",
+    "oracle": "PENDING_CURRENT_RERUN_AFTER_Q2_COVERAGE_REPAIR",
+    "prior_evidence": {
+      "workflow_run": 32096217165,
       "attempt": 1,
-      "job_id": 95586028335,
-      "artifact_id": 9309905543,
-      "artifact_digest": "sha256:c398d6f2a7e68b98c3a45110052f2d46936566b91a69f2f4f32e47017cd3dfd5",
-      "workflow_merge_commit": "4b1e8feb2f867dd8abc95ba5343f987bdcf51f21",
+      "job_id": 95588011969,
+      "artifact_id": 9310131276,
+      "artifact_digest": "sha256:9ca390252177cde306c0a72a7fc8b13bc22331c558776e9b2a2dd7ad9ec68ecb",
       "oracle_reward": 1,
       "oracle_matrix": "34 passed / 34 total",
       "nop_reward": 0,
       "nop_matrix": "28 failed / 6 passed",
-      "nop_passes": [
-        "test_p2p_declared_provider_artifact_root_is_mounted",
-        "test_p2p_provider_exposes_exact_managed_resource_set",
-        "test_p2p_directory_basic_apply_state_and_destroy",
-        "test_p2p_state_is_owned_by_terraform_core",
-        "test_p2p_template_variable_order_is_semantically_stable",
-        "test_p2p_symlink_destroy_preserves_target"
-      ],
-      "classification_check": "Every F2P failed on NOP and every P2P passed on NOP; all 34 passed on Oracle."
+      "status": "HISTORICAL_AFTER_Q2_TEST_CHANGE"
     },
-    "prior_evidence": {
-      "workflow_run": 32048299413,
-      "attempt": 2,
-      "artifact_id": 9309705446,
-      "artifact_digest": "sha256:f6cb068d5a083aebaa7266253c6f8c976053bc15acd3f1d06fb64bb06743fccc",
-      "oracle_reward": 1,
-      "oracle_matrix": "34 passed / 34 total",
-      "nop_reward": 0,
-      "nop_matrix": "28 failed / 6 passed"
-    }
+    "note": "Q2 added preservation coverage for successful terminal-path cleanup and state-output secrecy and strengthened the existing non-zero failure case to verify failure-path playbook cleanup. Exact-current NOP/Oracle evidence is required before freeze."
   },
   "coverage": {
-    "normal": ["provider schema","basic lifecycle","copy/template mutation","user/group/cron creation"],
+    "normal": ["provider schema","basic lifecycle","copy/template mutation","user/group/cron creation","successful runner cleanup"],
     "edge": ["wrong object kind","spaces in paths","cron defaults","home-removal boundary","map ordering"],
-    "negative": ["shell metacharacters literal","non-zero Ansible failure","failed delete retains state"],
+    "negative": ["shell metacharacters literal","non-zero Ansible failure with cleanup","failed delete retains state","command output absent from Terraform state"],
     "recovery": ["failed update retry","timeout/cancellation cleanup","missing-object recreation","failed destroy retry"],
     "ownership": ["line/block/cron sibling preservation","symlink target preservation","user home policy"]
   }

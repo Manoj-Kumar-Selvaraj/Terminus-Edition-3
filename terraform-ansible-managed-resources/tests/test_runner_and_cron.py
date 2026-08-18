@@ -8,9 +8,11 @@ import uuid
 from conftest import (
     make_ansible_wrapper,
     make_workspace,
+    resource_values,
     run,
     state_has_resource,
     tf_apply,
+    tf_destroy,
     tf_plan,
 )
 
@@ -50,12 +52,47 @@ def test_f2p_runner_does_not_interpret_shell_metacharacters(tmp_path, cleanup_re
     assert not pathlib.Path(sentinel).exists()
 
 
+def test_p2p_success_cleanup_and_state_output_secrecy(tmp_path, cleanup_registry):
+    """Successful mutations clean generated playbooks and do not persist Ansible command output in Terraform state."""
+    target = cleanup_registry.path(tmp_path / "success-directory")
+    temp_dir = tmp_path / "success-playbooks"
+    workspace = make_workspace(
+        tmp_path,
+        f'''resource "ansibleops_directory" "managed" {{
+  path = {json.dumps(str(target))}
+}}
+''',
+        temp_dir=temp_dir,
+    )
+    tf_apply(workspace)
+    leftovers = list(temp_dir.glob("ansibleops-*.yml")) if temp_dir.exists() else []
+    assert leftovers == []
+    values = resource_values(workspace, "ansibleops_directory.managed")
+    forbidden = {
+        "stdout",
+        "stderr",
+        "command",
+        "command_output",
+        "ansible_output",
+        "playbook",
+        "playbook_path",
+    }
+    assert forbidden.isdisjoint(values)
+    rendered_state = json.dumps(values, sort_keys=True)
+    assert "PLAY [" not in rendered_state
+    assert "TASK [" not in rendered_state
+    tf_destroy(workspace)
+    leftovers = list(temp_dir.glob("ansibleops-*.yml")) if temp_dir.exists() else []
+    assert leftovers == []
+
+
 def test_f2p_nonzero_ansible_exit_fails_lifecycle_transition(tmp_path, cleanup_registry):
-    """A non-zero ansible-playbook exit must fail apply and must not publish a resource that was never created."""
+    """A non-zero Ansible exit fails the transition, preserves state truth, and cleans the generated playbook."""
     target = cleanup_registry.path(tmp_path / "managed-dir")
     fail_flag = tmp_path / "fail.flag"
     fail_flag.write_text("fail", encoding="utf-8")
     wrapper = make_ansible_wrapper(tmp_path, fail_flag=fail_flag)
+    temp_dir = tmp_path / "failure-playbooks"
     workspace = make_workspace(
         tmp_path,
         f'''resource "ansibleops_directory" "managed" {{
@@ -63,10 +100,13 @@ def test_f2p_nonzero_ansible_exit_fails_lifecycle_transition(tmp_path, cleanup_r
 }}
 ''',
         ansible_binary=wrapper,
+        temp_dir=temp_dir,
     )
     tf_apply(workspace, expect_success=False)
     assert not pathlib.Path(target).exists()
     assert not state_has_resource(workspace, "ansibleops_directory.managed")
+    leftovers = list(temp_dir.glob("ansibleops-*.yml")) if temp_dir.exists() else []
+    assert leftovers == []
 
 
 def test_f2p_timeout_and_cancellation_clean_generated_playbooks(tmp_path, cleanup_registry):
