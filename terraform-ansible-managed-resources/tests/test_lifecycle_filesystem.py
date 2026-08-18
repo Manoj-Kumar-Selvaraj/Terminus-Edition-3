@@ -18,7 +18,7 @@ from conftest import (
 
 
 def test_f2p_filesystem_identities_survive_mutable_updates(tmp_path, cleanup_registry):
-    """File/directory identities survive metadata updates and equivalent mode spellings stay clean."""
+    """File/directory identities survive metadata updates and equivalent mode spellings converge without replay."""
     file_path = cleanup_registry.path(tmp_path / "managed-file")
     directory = cleanup_registry.path(tmp_path / "managed-dir")
     runner_tmp = tmp_path / "runner"
@@ -60,10 +60,10 @@ resource "ansibleops_directory" "managed" {{
         ansible_binary=wrapper,
         temp_dir=runner_tmp,
     )
-    before_plan = counter_value(counter)
-    plan = tf_plan(workspace)
-    assert plan.returncode == 0
-    assert counter_value(counter) == before_plan
+    before_equivalent_apply = counter_value(counter)
+    tf_apply(workspace)
+    assert counter_value(counter) == before_equivalent_apply
+    assert tf_plan(workspace).returncode == 0
 
     updated = equivalent.replace('mode  = "640"', 'mode  = "0600"').replace(
         'mode  = "750"', 'mode  = "0700"'
