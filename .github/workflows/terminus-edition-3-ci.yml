@@ -27,7 +27,6 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  DEFAULT_STB_PORTKEY_PROJECT_ID: bfe79c33-8ab0-4061-9849-08d3207c9927
   DEFAULT_STB_VERSION: "2.4.3"
 
 jobs:
@@ -110,12 +109,8 @@ jobs:
     timeout-minutes: 180
     env:
       CI: "true"
-      SNORKEL_API_KEY: ${{ secrets.SNORKEL_API_KEY }}
       STB_AI_API_KEY: ${{ secrets.STB_AI_API_KEY }}
-      STB_AI_CONFIG_B64: ${{ secrets.STB_AI_CONFIG_B64 }}
-      STB_PORTKEY_PROJECT_ID: ${{ secrets.STB_PORTKEY_PROJECT_ID }}
       STB_VERSION: ${{ vars.STB_VERSION }}
-      STB_ALLOW_KEY_REFRESH: ${{ vars.STB_ALLOW_KEY_REFRESH }}
       XDG_CONFIG_HOME: /tmp/stb-xdg-${{ github.run_id }}-${{ github.run_attempt }}-${{ matrix.task }}
       EVIDENCE_DIR: /tmp/terminus-e3/${{ github.run_id }}/${{ github.run_attempt }}/${{ matrix.task }}
     steps:
@@ -125,7 +120,6 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          [[ -n "${STB_PORTKEY_PROJECT_ID:-}" ]] || echo "STB_PORTKEY_PROJECT_ID=$DEFAULT_STB_PORTKEY_PROJECT_ID" >> "$GITHUB_ENV"
           [[ -n "${STB_VERSION:-}" ]] || echo "STB_VERSION=$DEFAULT_STB_VERSION" >> "$GITHUB_ENV"
 
       - name: Preflight
@@ -211,43 +205,14 @@ jobs:
             [[ "$r" == "0" || "$r" == "0.0" ]] || { echo "::error file=$f::NOP reward=$r expected=0"; exit 1; }
           done
 
-      - name: Prepare reusable AI credentials for Harbor LLMaJ
+      - name: Install API-key-only credential for Harbor LLMaJ
         shell: bash
         run: |
           set -euo pipefail
+          [[ -n "${STB_AI_API_KEY:-}" ]] || { echo "::error::Harbor LLMaJ requires GitHub Secret STB_AI_API_KEY; login/config restoration/key refresh fallbacks are forbidden in CI"; exit 1; }
           mkdir -p "$XDG_CONFIG_HOME/stb"
-
-          if [[ -n "${STB_AI_CONFIG_B64:-}" ]]; then
-            printf '%s' "$STB_AI_CONFIG_B64" | base64 --decode | tar -xzf - -C "$XDG_CONFIG_HOME/stb"
-            echo "Restored reusable STB AI configuration."
-          fi
-
-          if [[ -n "${SNORKEL_API_KEY:-}" ]]; then
-            bash ./terminus3.sh login --noninteractive
-          fi
-
-          if [[ -n "${STB_AI_API_KEY:-}" ]]; then
-            bash ./terminus3.sh keys-set --noninteractive
-            echo "Installed reusable STB AI API key; no refresh requested."
-            exit 0
-          fi
-
-          if [[ -n "${STB_AI_CONFIG_B64:-}" ]]; then
-            echo "Using restored STB AI configuration; no refresh requested."
-            exit 0
-          fi
-
-          case "${STB_ALLOW_KEY_REFRESH:-false}" in
-            1|true|TRUE|yes|YES)
-              [[ -n "${SNORKEL_API_KEY:-}" ]] || { echo "::error::Refresh explicitly enabled but SNORKEL_API_KEY is missing"; exit 1; }
-              echo "Explicit refresh fallback enabled for this run."
-              bash ./terminus3.sh keys-refresh --noninteractive
-              ;;
-            *)
-              echo "::error::Oracle/NOP passed without AI credentials, but LLMaJ needs a reusable STB credential. Configure GitHub Secret STB_AI_API_KEY (preferred) or STB_AI_CONFIG_B64. Automatic keys-refresh is disabled."
-              exit 1
-              ;;
-          esac
+          bash ./terminus3.sh keys-set --noninteractive
+          echo "Installed existing STB AI API key; no login, config restore, or credential refresh is permitted."
 
       - name: Run Harbor LLMaJ check
         shell: bash
@@ -313,12 +278,8 @@ jobs:
     timeout-minutes: 360
     env:
       CI: "true"
-      SNORKEL_API_KEY: ${{ secrets.SNORKEL_API_KEY }}
       STB_AI_API_KEY: ${{ secrets.STB_AI_API_KEY }}
-      STB_AI_CONFIG_B64: ${{ secrets.STB_AI_CONFIG_B64 }}
-      STB_PORTKEY_PROJECT_ID: ${{ secrets.STB_PORTKEY_PROJECT_ID }}
       STB_VERSION: ${{ vars.STB_VERSION }}
-      STB_ALLOW_KEY_REFRESH: ${{ vars.STB_ALLOW_KEY_REFRESH }}
       XDG_CONFIG_HOME: /tmp/stb-xdg-diff-${{ github.run_id }}-${{ github.run_attempt }}-${{ matrix.command }}
       EVIDENCE_DIR: /tmp/terminus-e3-difficulty/${{ github.run_id }}/${{ github.run_attempt }}/${{ inputs.task }}/${{ matrix.command }}
     steps:
@@ -328,7 +289,6 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          [[ -n "${STB_PORTKEY_PROJECT_ID:-}" ]] || echo "STB_PORTKEY_PROJECT_ID=$DEFAULT_STB_PORTKEY_PROJECT_ID" >> "$GITHUB_ENV"
           [[ -n "${STB_VERSION:-}" ]] || echo "STB_VERSION=$DEFAULT_STB_VERSION" >> "$GITHUB_ENV"
 
       - name: Preflight difficulty run
@@ -358,43 +318,14 @@ jobs:
           bash ./terminus3.sh install
           bash ./terminus3.sh version
 
-      - name: Prepare reusable AI credentials
+      - name: Install API-key-only credential for difficulty
         shell: bash
         run: |
           set -euo pipefail
+          [[ -n "${STB_AI_API_KEY:-}" ]] || { echo "::error::Difficulty trials require GitHub Secret STB_AI_API_KEY; login/config restoration/key refresh fallbacks are forbidden in CI"; exit 1; }
           mkdir -p "$XDG_CONFIG_HOME/stb"
-
-          if [[ -n "${STB_AI_CONFIG_B64:-}" ]]; then
-            printf '%s' "$STB_AI_CONFIG_B64" | base64 --decode | tar -xzf - -C "$XDG_CONFIG_HOME/stb"
-            echo "Restored reusable STB AI configuration."
-          fi
-
-          if [[ -n "${SNORKEL_API_KEY:-}" ]]; then
-            bash ./terminus3.sh login --noninteractive
-          fi
-
-          if [[ -n "${STB_AI_API_KEY:-}" ]]; then
-            bash ./terminus3.sh keys-set --noninteractive
-            echo "Installed reusable STB AI API key; no refresh requested."
-            exit 0
-          fi
-
-          if [[ -n "${STB_AI_CONFIG_B64:-}" ]]; then
-            echo "Using restored STB AI configuration; no refresh requested."
-            exit 0
-          fi
-
-          case "${STB_ALLOW_KEY_REFRESH:-false}" in
-            1|true|TRUE|yes|YES)
-              [[ -n "${SNORKEL_API_KEY:-}" ]] || { echo "::error::Refresh explicitly enabled but SNORKEL_API_KEY is missing"; exit 1; }
-              echo "Explicit refresh fallback enabled for this run."
-              bash ./terminus3.sh keys-refresh --noninteractive
-              ;;
-            *)
-              echo "::error::No reusable STB AI credential configured. Set GitHub Secret STB_AI_API_KEY (preferred) or STB_AI_CONFIG_B64. Automatic keys-refresh is disabled."
-              exit 1
-              ;;
-          esac
+          bash ./terminus3.sh keys-set --noninteractive
+          echo "Installed existing STB AI API key; no login, config restore, or credential refresh is permitted."
 
       - name: Run five-trial difficulty suite
         id: suite

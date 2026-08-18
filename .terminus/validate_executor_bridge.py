@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Validate executor authorization, transport, schema and sandbox boundaries."""
+"""Validate executor authorization, transport, schema, sandbox and Q boundaries."""
 
 from __future__ import annotations
 
@@ -28,9 +28,21 @@ FILES = [
     T / "execution" / "schema_validation.py",
     T / "execution" / "runner.py",
     T / "execution" / "runner_cli.py",
+    T / "execution" / "controller_cli.py",
+    T / "execution" / "quality_executor.py",
+    T / "execution" / "quality_executor_cli.py",
+    T / "execution" / "quality_backend.py",
+    T / "execution" / "quality_budget.py",
+    T / "execution" / "quality_dispatch_cli.py",
+    T / "execution" / "quality_lifecycle_record.py",
     T / "agents" / "schemas" / "executor_handoff.schema.json",
     T / "agents" / "schemas" / "stage_result.schema.json",
     T / "tests" / "test_executor_bridge.py",
+    T / "tests" / "test_quality_executor.py",
+    T / "tests" / "test_quality_lifecycle_record.py",
+    ROOT / ".github" / "workflows" / "terminus-quality-executor.yml",
+    ROOT / ".github" / "workflows" / "terminus-quality-lifecycle.yml",
+    ROOT / ".github" / "workflows" / "terminus-quality-lifecycle-collect.yml",
 ]
 
 
@@ -77,11 +89,24 @@ def main() -> int:
     runner_text = (T / "execution" / "runner.py").read_text(encoding="utf-8")
     sandbox_text = (T / "execution" / "sandbox.py").read_text(encoding="utf-8")
     guard_text = (T / "execution" / "invocation_guard.py").read_text(encoding="utf-8")
-    for marker in (
-        "CanonicalInvocationGuard",
-        "handoff_id",
-        "validate_handoff",
-    ):
+    controller_text = (T / "execution" / "controller_cli.py").read_text(encoding="utf-8")
+    quality_text = (T / "execution" / "quality_executor.py").read_text(encoding="utf-8")
+    backend_text = (T / "execution" / "quality_backend.py").read_text(encoding="utf-8")
+    budget_text = (T / "execution" / "quality_budget.py").read_text(encoding="utf-8")
+    lifecycle_record_text = (T / "execution" / "quality_lifecycle_record.py").read_text(
+        encoding="utf-8"
+    )
+    quality_workflow = (
+        ROOT / ".github" / "workflows" / "terminus-quality-executor.yml"
+    ).read_text(encoding="utf-8")
+    lifecycle_workflow = (
+        ROOT / ".github" / "workflows" / "terminus-quality-lifecycle.yml"
+    ).read_text(encoding="utf-8")
+    q8_collector = (
+        ROOT / ".github" / "workflows" / "terminus-quality-lifecycle-collect.yml"
+    ).read_text(encoding="utf-8")
+
+    for marker in ("CanonicalInvocationGuard", "handoff_id", "validate_handoff"):
         if marker not in handoff_text:
             errors.append(f"handoff.py missing hardened marker: {marker}")
     for marker in (
@@ -98,6 +123,124 @@ def main() -> int:
             errors.append(f"sandbox.py missing isolation marker: {marker}")
     if "ExecutionRecordBuilder" not in guard_text or "_validate_invocation" not in guard_text:
         errors.append("pre-execution guard must reuse canonical recorder invocation validation")
+
+    quality_markers = (
+        "select_backend",
+        "materialize_projection",
+        "validate_review_result",
+        "CURSOR_API_KEY",
+        "OPENAI_API_KEY",
+        "ANTHROPIC_API_KEY",
+        'prompt_cache_key=cache_key(packet)',
+        '"fallback_attempted": False',
+        '"prior_review_projected": False',
+        '"git_history_projected": False',
+        "difficulty simulation is API-key-only",
+    )
+    for marker in quality_markers:
+        if marker not in quality_text:
+            errors.append(f"quality_executor.py missing invariant marker: {marker}")
+
+    for marker in (
+        "Q_CURSOR_ENABLED",
+        "Q_OPENAI_ENABLED",
+        "Q_CLAUDE_ENABLED",
+        "Q_STB_AI_ENABLED",
+        "STB_AI_API_KEY",
+        "https://api.portkey.ai/v1",
+        "exactly one Q backend flag",
+        'result["selected_backend"]',
+    ):
+        if marker not in backend_text and marker not in quality_workflow:
+            errors.append(f"Q backend routing missing invariant marker: {marker}")
+
+    for marker in (
+        'Q_ROLE_LIMITS["Spec-Test Contract Reviewer"] = 3',
+        'Q_ROLE_LIMITS["Production Logic Auditor"] = 2',
+        'STATE_DIR = "q-runs"',
+        'return "q8-gpt"',
+        'return "q8-claude"',
+        "execution budget exhausted",
+    ):
+        if marker not in budget_text:
+            errors.append(f"quality budget missing invariant marker: {marker}")
+
+    lifecycle_record_markers = (
+        "StageInvocationBuilder",
+        "QUALITY_INTERLOCK_PASS",
+        'result["route_key"] = "Q4_REVISE"',
+        'result["route_key"] = "Q6_REVISE"',
+        "MODEL_DIAGNOSTIC_GPT",
+        "MODEL_DIAGNOSTIC_CLAUDE",
+        "controller_cli.py record",
+    )
+    for marker in lifecycle_record_markers:
+        if marker not in lifecycle_record_text and marker not in lifecycle_workflow and marker not in q8_collector:
+            errors.append(f"quality lifecycle record bridge missing marker: {marker}")
+
+    lifecycle_markers = (
+        "QUALITY_INTERLOCK",
+        "MODEL_DIAGNOSTIC_GPT",
+        "MODEL_DIAGNOSTIC_CLAUDE",
+        "spec-test-contract",
+        "production-logic",
+        "difficulty-sim-gpt",
+        "difficulty-sim-claude",
+        "uses: ./.github/workflows/terminus-quality-executor.yml",
+        "validate_quality_interlock.py",
+        "terminus-quality-lifecycle-collect.yml",
+        "quality_lifecycle_record.py",
+        "controller_cli.py record",
+    )
+    for marker in lifecycle_markers:
+        if marker not in lifecycle_workflow:
+            errors.append(f"quality lifecycle workflow missing marker: {marker}")
+
+    controller_markers = (
+        "QUALITY_LIFECYCLE_WORKFLOW",
+        "QUALITY_INTERLOCK",
+        "MODEL_DIAGNOSTIC_GPT",
+        "MODEL_DIAGNOSTIC_CLAUDE",
+        '"quality_lifecycle": True',
+        '"credential_policy": "existing selected secret only; login/refresh/fallback forbidden"',
+    )
+    for marker in controller_markers:
+        if marker not in controller_text:
+            errors.append(f"controller quality routing missing marker: {marker}")
+
+    for marker in (
+        "GPT diagnostic received non-GPT Q8 packet",
+        "Claude diagnostic received non-Claude Q8 packet",
+        "Q8 packet is stale for task tree",
+        "quality_lifecycle_record.py",
+        "controller_cli.py record",
+    ):
+        if marker not in q8_collector:
+            errors.append(f"Q8 lifecycle isolation/recording missing marker: {marker}")
+
+    if "--resume" in quality_text or "--resume" in quality_workflow:
+        errors.append("packet-bound quality executor must always start a fresh Cursor session")
+    for secret in ("CURSOR_API_KEY", "OPENAI_API_KEY", "ANTHROPIC_API_KEY", "STB_AI_API_KEY"):
+        if secret not in quality_workflow:
+            errors.append(f"quality workflow missing secret boundary: {secret}")
+    for flag in ("Q_CURSOR_ENABLED", "Q_OPENAI_ENABLED", "Q_CLAUDE_ENABLED", "Q_STB_AI_ENABLED"):
+        if flag not in quality_workflow:
+            errors.append(f"quality workflow missing repository backend flag: {flag}")
+    for text, label in (
+        (quality_workflow, "quality workflow"),
+        (lifecycle_workflow, "quality lifecycle"),
+        (q8_collector, "Q8 collector"),
+        (controller_text, "controller quality routing"),
+    ):
+        for forbidden in ("keys-refresh", "SNORKEL_API_KEY"):
+            if forbidden in text:
+                errors.append(f"{label} contains forbidden credential refresh/login marker: {forbidden}")
+    for marker in ("terminus-quality-budget", "quality_budget.py", "quality_dispatch_cli.py"):
+        if marker not in quality_workflow:
+            errors.append(f"quality workflow missing durable execution-budget marker: {marker}")
+    for marker in ("Resolve or generate exact review packet", ".terminus/new_review_packet.py"):
+        if marker not in quality_workflow:
+            errors.append(f"quality workflow missing lifecycle packet-generation marker: {marker}")
 
     invocation = _invocation()
     builder = ExecutorHandoffBuilder(ROOT)
@@ -140,12 +283,15 @@ def main() -> int:
 
     print("Terminus executor-bridge validation PASS")
     print(
-        "executor_bridge=1.0 modes=MANUAL_CHAT,LOCAL_COMMAND "
-        "pre_execution_authority=canonical_recorder_validation "
-        "handoff_identity=stage_result_bound runtime_schema=validated "
-        "local_workspace=projected_read_only sandbox=bubblewrap_fail_closed "
-        "stdout_stderr=live_bounded shell=false mutating_local_roles=denied "
-        "record_authority=external_to_executor ledger_mutation=forbidden"
+        "executor_bridge=1.5 modes=MANUAL_CHAT,LOCAL_COMMAND "
+        "quality_modes=CURSOR_AUTO,DIRECT_OPENAI,DIRECT_CLAUDE,STB_AI_GATEWAY "
+        "q_selection=exactly_one_global_flag q_isolation=packet_bound_git_history_free "
+        "q_fallback=forbidden q_validation=deterministic_schema_and_binding "
+        "q_budget=Q4x3,Q6x2,OTHERx1,Q8_GPTx1,Q8_CLAUDEx1 "
+        "q_lifecycle=QUALITY_INTERLOCK,Q8_GPT,Q8_CLAUDE "
+        "q_lifecycle_record=canonical_stage_invocation_result_ledger "
+        "credential_refresh=forbidden difficulty=api_key_only "
+        "record_authority=canonical_controller ledger_mutation=controller_record_only"
     )
     return 0
 

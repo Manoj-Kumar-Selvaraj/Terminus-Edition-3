@@ -9,8 +9,14 @@ on:
       - '.terminus/agents/schemas/execution_record.schema.json'
       - '.terminus/tests/test_executor_bridge.py'
       - '.terminus/tests/test_executor_handoff_provenance.py'
+      - '.terminus/tests/test_quality_executor.py'
+      - '.terminus/tests/test_quality_lifecycle_record.py'
       - '.terminus/validate_executor_bridge.py'
       - '.github/workflows/terminus-executor-bridge-ci.yml'
+      - '.github/workflows/terminus-quality-executor.yml'
+      - '.github/workflows/terminus-quality-lifecycle.yml'
+      - '.github/workflows/terminus-quality-lifecycle-collect.yml'
+      - '.github/workflows/terminus-edition-3-ci.yml'
   push:
     branches: [main]
     paths:
@@ -20,8 +26,14 @@ on:
       - '.terminus/agents/schemas/execution_record.schema.json'
       - '.terminus/tests/test_executor_bridge.py'
       - '.terminus/tests/test_executor_handoff_provenance.py'
+      - '.terminus/tests/test_quality_executor.py'
+      - '.terminus/tests/test_quality_lifecycle_record.py'
       - '.terminus/validate_executor_bridge.py'
       - '.github/workflows/terminus-executor-bridge-ci.yml'
+      - '.github/workflows/terminus-quality-executor.yml'
+      - '.github/workflows/terminus-quality-lifecycle.yml'
+      - '.github/workflows/terminus-quality-lifecycle-collect.yml'
+      - '.github/workflows/terminus-edition-3-ci.yml'
   workflow_dispatch:
 
 permissions:
@@ -59,6 +71,13 @@ jobs:
             .terminus/execution/schema_validation.py \
             .terminus/execution/runner.py \
             .terminus/execution/runner_cli.py \
+            .terminus/execution/controller_cli.py \
+            .terminus/execution/quality_executor.py \
+            .terminus/execution/quality_executor_cli.py \
+            .terminus/execution/quality_backend.py \
+            .terminus/execution/quality_budget.py \
+            .terminus/execution/quality_dispatch_cli.py \
+            .terminus/execution/quality_lifecycle_record.py \
             .terminus/validate_executor_bridge.py
 
       - name: Lint executor bridge
@@ -72,8 +91,17 @@ jobs:
             .terminus/execution/schema_validation.py \
             .terminus/execution/runner.py \
             .terminus/execution/runner_cli.py \
+            .terminus/execution/controller_cli.py \
+            .terminus/execution/quality_executor.py \
+            .terminus/execution/quality_executor_cli.py \
+            .terminus/execution/quality_backend.py \
+            .terminus/execution/quality_budget.py \
+            .terminus/execution/quality_dispatch_cli.py \
+            .terminus/execution/quality_lifecycle_record.py \
             .terminus/tests/test_executor_bridge.py \
             .terminus/tests/test_executor_handoff_provenance.py \
+            .terminus/tests/test_quality_executor.py \
+            .terminus/tests/test_quality_lifecycle_record.py \
             .terminus/validate_executor_bridge.py
 
       - name: Run executor bridge tests
@@ -81,6 +109,8 @@ jobs:
           python3 -m pytest \
             .terminus/tests/test_executor_bridge.py \
             .terminus/tests/test_executor_handoff_provenance.py \
+            .terminus/tests/test_quality_executor.py \
+            .terminus/tests/test_quality_lifecycle_record.py \
             -q
 
       - name: Validate executor boundary

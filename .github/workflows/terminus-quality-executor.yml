@@ -1,0 +1,470 @@
+name: Terminus Quality Executor
+
+on:
+  workflow_dispatch:
+    inputs:
+      packet_path:
+        description: Existing exact schema-v3 Q4/Q6/Q8 packet path; leave blank to generate from task + role_key
+        required: false
+        default: ""
+        type: string
+      task:
+        description: Task used only when generating a fresh packet
+        required: false
+        default: ""
+        type: string
+      role_key:
+        description: Packet role key used only with task (spec-test-contract, production-logic, difficulty-sim-gpt, difficulty-sim-claude)
+        required: false
+        default: ""
+        type: string
+      state:
+        description: Controller state recorded in a generated packet
+        required: false
+        default: ""
+        type: string
+      change:
+        description: Optional change-since-last-review text for a generated packet
+        required: false
+        default: ""
+        type: string
+      model_override:
+        description: Optional model override for the selected non-Cursor backend
+        required: false
+        default: ""
+        type: string
+      source_ref:
+        description: Exact repository ref to checkout for executor code and packet; defaults to the invoking SHA
+        required: false
+        default: ""
+        type: string
+      publish_result:
+        description: Commit the validated packet/result to the selected branch
+        required: true
+        default: false
+        type: boolean
+  workflow_call:
+    inputs:
+      packet_path:
+        required: false
+        default: ""
+        type: string
+      task:
+        required: false
+        default: ""
+        type: string
+      role_key:
+        required: false
+        default: ""
+        type: string
+      state:
+        required: false
+        default: ""
+        type: string
+      change:
+        required: false
+        default: ""
+        type: string
+      model_override:
+        required: false
+        default: ""
+        type: string
+      source_ref:
+        required: false
+        default: ""
+        type: string
+      publish_result:
+        required: false
+        default: false
+        type: boolean
+    outputs:
+      packet_path:
+        description: Exact packet used by this execution
+        value: ${{ jobs.execute.outputs.packet_path }}
+      review_path:
+        description: Packet-defined canonical review path
+        value: ${{ jobs.execute.outputs.review_path }}
+      packet_b64:
+        description: Base64-encoded packet for lifecycle aggregation
+        value: ${{ jobs.execute.outputs.packet_b64 }}
+      review_b64:
+        description: Base64-encoded validated review for lifecycle aggregation
+        value: ${{ jobs.execute.outputs.review_b64 }}
+      verdict:
+        description: Validated review verdict
+        value: ${{ jobs.execute.outputs.verdict }}
+      confidence:
+        description: Validated review confidence
+        value: ${{ jobs.execute.outputs.confidence }}
+      evidence_status:
+        description: Validated review evidence status
+        value: ${{ jobs.execute.outputs.evidence_status }}
+      budget_stage:
+        description: Persistent Q budget bucket
+        value: ${{ jobs.execute.outputs.budget_stage }}
+      budget_used:
+        description: Used count after this execution claim
+        value: ${{ jobs.execute.outputs.budget_used }}
+      budget_limit:
+        description: Maximum count for the bucket
+        value: ${{ jobs.execute.outputs.budget_limit }}
+    secrets:
+      CURSOR_API_KEY:
+        required: false
+      OPENAI_API_KEY:
+        required: false
+      ANTHROPIC_API_KEY:
+        required: false
+      STB_AI_API_KEY:
+        required: false
+
+permissions:
+  contents: write
+
+# One repository-wide queue makes the dedicated budget-branch claim atomic across
+# task branches and packets. A fresh branch/runner therefore cannot reset a Q budget.
+concurrency:
+  group: terminus-quality-budget-${{ github.repository }}
+  cancel-in-progress: false
+
+jobs:
+  execute:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    outputs:
+      packet_path: ${{ steps.export.outputs.packet_path }}
+      review_path: ${{ steps.export.outputs.review_path }}
+      packet_b64: ${{ steps.export.outputs.packet_b64 }}
+      review_b64: ${{ steps.export.outputs.review_b64 }}
+      verdict: ${{ steps.export.outputs.verdict }}
+      confidence: ${{ steps.export.outputs.confidence }}
+      evidence_status: ${{ steps.export.outputs.evidence_status }}
+      budget_stage: ${{ steps.export.outputs.budget_stage }}
+      budget_used: ${{ steps.export.outputs.budget_used }}
+      budget_limit: ${{ steps.export.outputs.budget_limit }}
+    env:
+      PACKET_PATH_INPUT: ${{ inputs.packet_path }}
+      TASK_INPUT: ${{ inputs.task }}
+      ROLE_KEY_INPUT: ${{ inputs.role_key }}
+      STATE_INPUT: ${{ inputs.state }}
+      CHANGE_INPUT: ${{ inputs.change }}
+      MODEL_OVERRIDE: ${{ inputs.model_override }}
+      PUBLISH_RESULT: ${{ inputs.publish_result }}
+      ARTIFACT_DIR: /tmp/terminus-quality-${{ github.run_id }}-${{ github.run_attempt }}
+      Q_CURSOR_ENABLED: ${{ vars.Q_CURSOR_ENABLED }}
+      Q_OPENAI_ENABLED: ${{ vars.Q_OPENAI_ENABLED }}
+      Q_CLAUDE_ENABLED: ${{ vars.Q_CLAUDE_ENABLED }}
+      Q_STB_AI_ENABLED: ${{ vars.Q_STB_AI_ENABLED }}
+      Q_OPENAI_MODEL: ${{ vars.Q_OPENAI_MODEL }}
+      Q_CLAUDE_MODEL: ${{ vars.Q_CLAUDE_MODEL }}
+      Q_STB_AI_MODEL: ${{ vars.Q_STB_AI_MODEL }}
+      STB_AI_BASE_URL: ${{ vars.STB_AI_BASE_URL }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ inputs.source_ref || github.sha }}
+
+      - name: Resolve or generate exact review packet
+        id: packet
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$ARTIFACT_DIR"
+
+          packet="${PACKET_PATH_INPUT:-}"
+          task="${TASK_INPUT:-}"
+          role_key="${ROLE_KEY_INPUT:-}"
+          generated=false
+
+          if [[ -n "$packet" ]]; then
+            [[ -z "$task" && -z "$role_key" ]] || {
+              echo "::error::Use either packet_path or task+role_key, never both"
+              exit 1
+            }
+            [[ -f "$packet" ]] || { echo "::error::Packet does not exist: $packet"; exit 1; }
+          else
+            [[ -n "$task" && -n "$role_key" ]] || {
+              echo "::error::Fresh packet generation requires both task and role_key"
+              exit 1
+            }
+            case "$role_key" in
+              spec-test-contract|production-logic|difficulty-sim-gpt|difficulty-sim-claude) ;;
+              *) echo "::error::Unsupported automated quality role_key: $role_key"; exit 1 ;;
+            esac
+            args=("$task" "$role_key")
+            [[ -n "${STATE_INPUT:-}" ]] && args+=(--state "$STATE_INPUT")
+            [[ -n "${CHANGE_INPUT:-}" ]] && args+=(--change "$CHANGE_INPUT")
+            output="$(python3 .terminus/new_review_packet.py "${args[@]}")"
+            printf '%s\n' "$output"
+            packet="$(printf '%s\n' "$output" | awk '/^wrote / {print $2; exit}')"
+            [[ -n "$packet" && -f "$packet" ]] || {
+              echo "::error::Packet generator did not produce a packet path"
+              exit 1
+            }
+            generated=true
+          fi
+
+          echo "PACKET_PATH=$packet" >> "$GITHUB_ENV"
+          echo "packet_path=$packet" >> "$GITHUB_OUTPUT"
+          echo "generated=$generated" >> "$GITHUB_OUTPUT"
+          echo "Packet: \`$packet\`" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Resolve one global Q backend flag
+        id: backend
+        shell: bash
+        run: |
+          set -euo pipefail
+          cursor_raw="${Q_CURSOR_ENABLED:-}"
+          openai_raw="${Q_OPENAI_ENABLED:-}"
+          claude_raw="${Q_CLAUDE_ENABLED:-}"
+          stb_raw="${Q_STB_AI_ENABLED:-}"
+
+          # Backward-safe default: until repository variables are configured, Cursor is
+          # the single Q backend. Once any flag is configured, blank flags mean "no".
+          if [[ -z "$cursor_raw" && -z "$openai_raw" && -z "$claude_raw" && -z "$stb_raw" ]]; then
+            cursor_raw=yes
+          fi
+
+          normalize() {
+            local value="${1,,}"
+            case "$value" in
+              1|true|yes|on) echo yes ;;
+              ""|0|false|no|off) echo no ;;
+              *) echo "::error::Q backend flags must be yes/no (received '$1')" >&2; return 2 ;;
+            esac
+          }
+
+          cursor="$(normalize "$cursor_raw")"
+          openai="$(normalize "$openai_raw")"
+          claude="$(normalize "$claude_raw")"
+          stb_ai="$(normalize "$stb_raw")"
+
+          enabled=0
+          backend=""
+          [[ "$cursor" == yes ]] && { enabled=$((enabled+1)); backend=cursor; }
+          [[ "$openai" == yes ]] && { enabled=$((enabled+1)); backend=openai; }
+          [[ "$claude" == yes ]] && { enabled=$((enabled+1)); backend=claude; }
+          [[ "$stb_ai" == yes ]] && { enabled=$((enabled+1)); backend=stb_ai; }
+          [[ "$enabled" -eq 1 ]] || {
+            echo "::error::Exactly one of Q_CURSOR_ENABLED, Q_OPENAI_ENABLED, Q_CLAUDE_ENABLED, Q_STB_AI_ENABLED must be yes"
+            exit 1
+          }
+
+          model="${MODEL_OVERRIDE:-}"
+          case "$backend" in
+            cursor)
+              [[ -z "$model" ]] || { echo "::error::Cursor fixes model=auto; model_override must be empty"; exit 1; }
+              ;;
+            openai)
+              [[ -n "$model" ]] || model="${Q_OPENAI_MODEL:-}"
+              [[ -n "$model" ]] || { echo "::error::Set Q_OPENAI_MODEL or model_override"; exit 1; }
+              ;;
+            claude)
+              [[ -n "$model" ]] || model="${Q_CLAUDE_MODEL:-}"
+              [[ -n "$model" ]] || { echo "::error::Set Q_CLAUDE_MODEL or model_override"; exit 1; }
+              ;;
+            stb_ai)
+              [[ -n "$model" ]] || model="${Q_STB_AI_MODEL:-}"
+              [[ -n "$model" ]] || { echo "::error::Set Q_STB_AI_MODEL or model_override"; exit 1; }
+              ;;
+          esac
+
+          echo "backend=$backend" >> "$GITHUB_OUTPUT"
+          echo "model=$model" >> "$GITHUB_OUTPUT"
+          echo "Selected Q backend: \`$backend\`" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Install deterministic validator
+        run: python3 -m pip install --quiet jsonschema==4.23.0
+
+      - name: Install Cursor CLI
+        if: steps.backend.outputs.backend == 'cursor'
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl https://cursor.com/install -fsS | bash
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+
+      - name: Install OpenAI SDK
+        if: steps.backend.outputs.backend == 'openai' || steps.backend.outputs.backend == 'stb_ai'
+        run: python3 -m pip install --quiet openai==2.48.0
+
+      - name: Install Anthropic SDK
+        if: steps.backend.outputs.backend == 'claude'
+        run: python3 -m pip install --quiet anthropic==0.119.0
+
+      - name: Verify selected credential exists
+        shell: bash
+        env:
+          BACKEND: ${{ steps.backend.outputs.backend }}
+          CURSOR_API_KEY: ${{ secrets.CURSOR_API_KEY }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          STB_AI_API_KEY: ${{ secrets.STB_AI_API_KEY }}
+        run: |
+          set -euo pipefail
+          case "$BACKEND" in
+            cursor) key="$CURSOR_API_KEY"; name=CURSOR_API_KEY ;;
+            openai) key="$OPENAI_API_KEY"; name=OPENAI_API_KEY ;;
+            claude) key="$ANTHROPIC_API_KEY"; name=ANTHROPIC_API_KEY ;;
+            stb_ai) key="$STB_AI_API_KEY"; name=STB_AI_API_KEY ;;
+            *) echo "::error::Unknown backend $BACKEND"; exit 1 ;;
+          esac
+          [[ -n "$key" ]] || { echo "::error::$name secret is required for selected Q backend"; exit 1; }
+          echo "Credential presence verified. No login, key generation, rotation, or refresh is permitted."
+
+      - name: Claim persistent per-task Q execution budget
+        id: budget
+        shell: bash
+        env:
+          BACKEND: ${{ steps.backend.outputs.backend }}
+          STATE_BRANCH: terminus-quality-budget
+          STATE_DIR: /tmp/terminus-quality-budget-state
+        run: |
+          set -euo pipefail
+          rm -rf "$STATE_DIR"
+          git fetch origin "+refs/heads/$STATE_BRANCH:refs/remotes/origin/$STATE_BRANCH" 2>/dev/null || true
+
+          if git show-ref --verify --quiet "refs/remotes/origin/$STATE_BRANCH"; then
+            git worktree add --detach "$STATE_DIR" "refs/remotes/origin/$STATE_BRANCH"
+            git -C "$STATE_DIR" switch -C "$STATE_BRANCH"
+          else
+            git worktree add --detach "$STATE_DIR" HEAD
+            git -C "$STATE_DIR" switch --orphan "$STATE_BRANCH"
+            git -C "$STATE_DIR" rm -rf . >/dev/null 2>&1 || true
+          fi
+
+          python3 "$GITHUB_WORKSPACE/.terminus/execution/quality_budget.py" \
+            --packet "$PACKET_PATH" \
+            --state-root "$STATE_DIR" \
+            --backend "$BACKEND" \
+            --run-id "$GITHUB_RUN_ID" \
+            --run-attempt "$GITHUB_RUN_ATTEMPT" \
+            --output "$ARTIFACT_DIR/budget.json"
+
+          receipt="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["receipt"])' "$ARTIFACT_DIR/budget.json")"
+          git -C "$STATE_DIR" config user.name "terminus-quality-budget[bot]"
+          git -C "$STATE_DIR" config user.email "terminus-quality-budget[bot]@users.noreply.github.com"
+          git -C "$STATE_DIR" add -- "$receipt"
+          if ! git -C "$STATE_DIR" diff --cached --quiet; then
+            git -C "$STATE_DIR" commit -m "Claim Terminus quality execution budget"
+            git -C "$STATE_DIR" push origin "HEAD:refs/heads/$STATE_BRANCH"
+          fi
+
+          python3 - "$ARTIFACT_DIR/budget.json" <<'PY' >> "$GITHUB_STEP_SUMMARY"
+          import json, sys
+          d = json.load(open(sys.argv[1], encoding='utf-8'))
+          print(f"- Q budget: `{d['q_stage']} {d['used']}/{d['limit']}`; remaining `{d['remaining']}`")
+          PY
+
+      - name: Execute selected Q backend
+        shell: bash
+        env:
+          BACKEND: ${{ steps.backend.outputs.backend }}
+          API_MODEL: ${{ steps.backend.outputs.model }}
+          CURSOR_API_KEY: ${{ secrets.CURSOR_API_KEY }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          STB_AI_API_KEY: ${{ secrets.STB_AI_API_KEY }}
+        run: |
+          set -euo pipefail
+          args=(
+            --packet "$PACKET_PATH"
+            --backend "$BACKEND"
+            --timeout 2700
+            --review-output "$ARTIFACT_DIR/review.json"
+            --output "$ARTIFACT_DIR/execution.json"
+          )
+          [[ -n "$API_MODEL" ]] && args+=(--model "$API_MODEL")
+          [[ "$BACKEND" == cursor ]] && args+=(--diagnostic-output "$ARTIFACT_DIR/cursor-terminal-result.json")
+          [[ "$PUBLISH_RESULT" == true ]] && args+=(--publish-result)
+          python3 .terminus/execution/quality_dispatch_cli.py "${args[@]}"
+
+      - name: Export validated lifecycle outputs
+        id: export
+        shell: bash
+        run: |
+          set -euo pipefail
+          review_path="$(python3 - "$PACKET_PATH" <<'PY'
+          import json, sys
+          print(json.load(open(sys.argv[1], encoding='utf-8'))['review_output_path'])
+          PY
+          )"
+          [[ -f "$ARTIFACT_DIR/review.json" ]] || { echo "::error::Validated review artifact missing"; exit 1; }
+          [[ -f "$PACKET_PATH" ]] || { echo "::error::Packet missing after execution"; exit 1; }
+          packet_b64="$(base64 -w0 "$PACKET_PATH")"
+          review_b64="$(base64 -w0 "$ARTIFACT_DIR/review.json")"
+          verdict="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["review"]["verdict"])' "$ARTIFACT_DIR/execution.json")"
+          confidence="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["review"]["confidence"])' "$ARTIFACT_DIR/execution.json")"
+          evidence_status="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["review"]["evidence_status"])' "$ARTIFACT_DIR/execution.json")"
+          budget_stage="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["q_stage"])' "$ARTIFACT_DIR/budget.json")"
+          budget_used="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["used"])' "$ARTIFACT_DIR/budget.json")"
+          budget_limit="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["limit"])' "$ARTIFACT_DIR/budget.json")"
+          {
+            echo "packet_path=$PACKET_PATH"
+            echo "review_path=$review_path"
+            echo "packet_b64=$packet_b64"
+            echo "review_b64=$review_b64"
+            echo "verdict=$verdict"
+            echo "confidence=$confidence"
+            echo "evidence_status=$evidence_status"
+            echo "budget_stage=$budget_stage"
+            echo "budget_used=$budget_used"
+            echo "budget_limit=$budget_limit"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Publish validated packet/review commit
+        if: success() && inputs.publish_result
+        shell: bash
+        run: |
+          set -euo pipefail
+          review_path="${{ steps.export.outputs.review_path }}"
+          [[ -f "$review_path" ]] || { echo "::error::Validated review was not published into checkout"; exit 1; }
+          unexpected="$(git status --porcelain | awk '{print $2}' | grep -vFx "$review_path" | grep -vFx "$PACKET_PATH" || true)"
+          [[ -z "$unexpected" ]] || { echo "::error::Unexpected repository mutations: $unexpected"; exit 1; }
+          git config user.name "terminus-quality-executor[bot]"
+          git config user.email "terminus-quality-executor[bot]@users.noreply.github.com"
+          git add -- "$PACKET_PATH" "$review_path"
+          if git diff --cached --quiet; then
+            echo "Validated packet/review already match repository content."
+            exit 0
+          fi
+          git commit -m "Persist packet-bound quality review"
+          git push origin "HEAD:${GITHUB_REF_NAME}"
+
+      - name: Quality execution summary
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ -f "$ARTIFACT_DIR/execution.json" ]]; then
+            python3 - "$ARTIFACT_DIR/execution.json" <<'PY' >> "$GITHUB_STEP_SUMMARY"
+          import json
+          import sys
+          d = json.load(open(sys.argv[1], encoding='utf-8'))
+          r = d['review']
+          b = d['backend']
+          print('## Terminus quality execution')
+          print()
+          print(f"- Selected backend: `{d.get('selected_backend', d['executor'])}`")
+          print(f"- Provider/model: `{d['provider']}` / `{d['model']}`")
+          print(f"- Credential source: `{d.get('credential_source', 'backend-specific')}`")
+          print(f"- Verdict: `{r['verdict']}`")
+          print(f"- Confidence/evidence: `{r['confidence']}` / `{r['evidence_status']}`")
+          print(f"- Findings/blocking: `{r['finding_count']}` / `{r['blocking_count']}`")
+          print(f"- Deterministic validation: `{d['deterministic_validation']}`")
+          print(f"- Fallback attempted: `{d['fallback_attempted']}`")
+          if 'usage' in b:
+              print(f"- Usage: `{json.dumps(b['usage'], sort_keys=True)}`")
+          PY
+          fi
+
+      - name: Upload quality execution evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: terminus-quality-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ env.ARTIFACT_DIR }}/
+          if-no-files-found: warn
+          include-hidden-files: false
+          retention-days: 14

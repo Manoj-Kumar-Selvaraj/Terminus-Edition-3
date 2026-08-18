@@ -31,6 +31,13 @@ else:
     from remediation.router import RemediationInterlock
     from retrieval.models import InvocationContext
 
+QUALITY_LIFECYCLE_WORKFLOW = ".github/workflows/terminus-quality-lifecycle.yml"
+QUALITY_LIFECYCLE_STAGES = {
+    "QUALITY_INTERLOCK": ("spec-test-contract", "production-logic"),
+    "MODEL_DIAGNOSTIC_GPT": ("difficulty-sim-gpt",),
+    "MODEL_DIAGNOSTIC_CLAUDE": ("difficulty-sim-claude",),
+}
+
 
 def _json_object(path: str | None, label: str) -> dict[str, Any]:
     if path is None:
@@ -147,6 +154,30 @@ def _resolve_state(
     return resolver, durable_snapshot, controller_view
 
 
+def _quality_lifecycle_dispatch(args: argparse.Namespace, stage_id: str) -> dict[str, Any]:
+    roles = QUALITY_LIFECYCLE_STAGES[stage_id]
+    budgets = {
+        "QUALITY_INTERLOCK": {"Q4": 3, "Q6": 2},
+        "MODEL_DIAGNOSTIC_GPT": {"Q8_GPT": 1},
+        "MODEL_DIAGNOSTIC_CLAUDE": {"Q8_CLAUDE": 1},
+    }[stage_id]
+    return {
+        "status": "READY_TO_DISPATCH",
+        "stage_id": stage_id,
+        "quality_lifecycle": True,
+        "workflow": QUALITY_LIFECYCLE_WORKFLOW,
+        "inputs": {
+            "task": args.task_id,
+            "stage": stage_id,
+            "publish_results": True,
+        },
+        "quality_role_keys": list(roles),
+        "budget_limits": budgets,
+        "backend_selection": "repository Q_*_ENABLED variables; exactly one backend",
+        "credential_policy": "existing selected secret only; login/refresh/fallback forbidden",
+    }
+
+
 def _continue_payload(
     root: Path,
     args: argparse.Namespace,
@@ -177,6 +208,15 @@ def _continue_payload(
         return payload
 
     stage_id = str(next_action["stage_id"])
+    if (
+        stage_id in QUALITY_LIFECYCLE_STAGES
+        and next_action["action"] in {"INVOKE_STAGE", "RETRY_STAGE"}
+    ):
+        payload["invocation"] = None
+        payload["executor_handoff"] = None
+        payload["dispatch"] = _quality_lifecycle_dispatch(args, stage_id)
+        return payload
+
     role_id = str(next_action["primary_role_id"])
     inputs = _json_object(args.inputs_json, "--inputs-json")
     context = InvocationContext(
@@ -236,6 +276,9 @@ def main(argv: list[str] | None = None) -> int:
         invocation = payload.get("invocation")
         if isinstance(invocation, dict):
             return 0 if invocation.get("readiness") == "READY" else 2
+        dispatch = payload.get("dispatch")
+        if isinstance(dispatch, dict):
+            return 0 if dispatch.get("status") == "READY_TO_DISPATCH" else 2
         return 0 if controller_view["next"]["action"] == "END" else 2
 
     invocation = _json_object(args.invocation, "--invocation")
