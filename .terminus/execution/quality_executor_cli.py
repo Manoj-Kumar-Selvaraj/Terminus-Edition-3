@@ -24,8 +24,15 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--model")
     parser.add_argument("--timeout", type=int, default=2700)
     parser.add_argument("--publish-result", action="store_true")
-    parser.add_argument("--diagnostic-output")
-    parser.add_argument("--output")
+    parser.add_argument(
+        "--review-output",
+        help="copy the validated canonical review to this CI/artifact path",
+    )
+    parser.add_argument(
+        "--diagnostic-output",
+        help="Cursor only: persist the sanitized terminal result event, never thinking events",
+    )
+    parser.add_argument("--output", help="write the executor summary JSON to this path")
     return parser
 
 
@@ -40,6 +47,7 @@ def main(argv: list[str] | None = None) -> int:
             model=args.model,
             timeout_seconds=args.timeout,
             publish_result=args.publish_result,
+            review_copy_path=Path(args.review_output) if args.review_output else None,
             diagnostic_path=Path(args.diagnostic_output) if args.diagnostic_output else None,
         )
     except (QualityExecutorError, OSError, ValueError) as exc:
