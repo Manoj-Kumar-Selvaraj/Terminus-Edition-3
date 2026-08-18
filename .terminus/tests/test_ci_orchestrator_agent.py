@@ -10,7 +10,9 @@ T = ROOT / ".terminus"
 PORTABLE = T / "agents" / "CI_ORCHESTRATOR.md"
 PROJECT_AGENT = ROOT / ".cursor" / "agents" / "terminus-ci-orchestrator.md"
 QUALITY_LIFECYCLE = ROOT / ".github" / "workflows" / "terminus-quality-lifecycle.yml"
+CONTROLLER_STAGE_WORKFLOW = ROOT / ".github" / "workflows" / "terminus-controller-stage.yml"
 CONTROLLER_CLI = T / "execution" / "controller_cli.py"
+CONTROLLER_STAGE_CLI = T / "execution" / "controller_stage_cli.py"
 
 
 def test_portable_orchestrator_contract_is_complete() -> None:
@@ -53,6 +55,8 @@ def test_orchestrator_uses_direct_controller_and_automated_quality_routes() -> N
     portable = PORTABLE.read_text(encoding="utf-8")
     controller = CONTROLLER_CLI.read_text(encoding="utf-8")
     workflow = QUALITY_LIFECYCLE.read_text(encoding="utf-8")
+    controller_workflow = CONTROLLER_STAGE_WORKFLOW.read_text(encoding="utf-8")
+    controller_stage = CONTROLLER_STAGE_CLI.read_text(encoding="utf-8")
 
     for marker in (
         "ORCHESTRATOR_DIRECT",
@@ -71,10 +75,15 @@ def test_orchestrator_uses_direct_controller_and_automated_quality_routes() -> N
     for marker in (
         "QUALITY_LIFECYCLE_WORKFLOW",
         "QUALITY_LIFECYCLE_STAGES",
+        "CONTROLLER_STAGE_WORKFLOW",
+        "AUTOMATED_CONTROLLER_STAGES",
         '"QUALITY_INTERLOCK"',
         '"MODEL_DIAGNOSTIC_GPT"',
         '"MODEL_DIAGNOSTIC_CLAUDE"',
+        '"RULE_RESOLUTION"',
         '"quality_lifecycle": True',
+        '"controller_stage": True',
+        '"trigger": "REQUEST_BRANCH_PUSH"',
     ):
         assert marker in controller
 
@@ -88,6 +97,25 @@ def test_orchestrator_uses_direct_controller_and_automated_quality_routes() -> N
         "controller_cli.py record",
     ):
         assert marker in workflow
+
+    for marker in (
+        "Terminus Controller Stage",
+        "terminus-controller-request/**",
+        "controller_cli.py continue",
+        "controller_stage_cli.py",
+        "controller_cli.py record",
+        "git push origin HEAD:main",
+    ):
+        assert marker in controller_workflow
+
+    for marker in (
+        "SUPPORTED_DIRECT_STAGES",
+        '"RULE_RESOLUTION"',
+        "RULES_RESOLVED",
+        "validate_agent_system.py",
+        "cannot replace semantic reviewers",
+    ):
+        assert marker in controller_stage
 
 
 def test_orchestrator_requires_commit_bound_ci_and_review_evidence() -> None:
