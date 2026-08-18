@@ -1,6 +1,6 @@
 # Terminus Executor Bridge
 
-Executor-bridge policy version: `1.2`
+Executor-bridge policy version: `1.3`
 
 The executor bridge connects canonically authorized Terminus work to execution surfaces without transferring lifecycle authority. It does not replace `ExecutionRecordBuilder`, the execution ledger, workflow-state resolution, or packet-bound specialist review provenance.
 
@@ -10,7 +10,7 @@ Canonical stage flow:
 
 Canonical quality-review flow:
 
-`schema-v3 review packet -> exact task/control-plane evidence projection -> exactly one Q executor -> persisted review JSON -> deterministic validation -> optional review publication`
+`schema-v3 review packet -> exact task/control-plane evidence projection -> exactly one Q backend -> persistent per-task budget claim -> persisted review JSON -> deterministic validation -> optional review publication`
 
 ## Stage executor modes
 
@@ -101,26 +101,57 @@ Command arguments may not point into the authoritative repository. The runner re
 
 ## Packet-bound quality executor
 
-`.terminus/execution/quality_executor_cli.py` executes one existing schema-v3 Q4/Q6/Q8 packet. It is separate from the generic StageInvocation transport because the review packet already carries the specialist role, task commit, control-plane commit, evidence boundary, schema and exact review output path.
+`.terminus/execution/quality_dispatch_cli.py` executes one existing schema-v3 Q packet through one repository-selected backend. The older low-level `.terminus/execution/quality_executor_cli.py` remains the direct Cursor/OpenAI/Anthropic transport, while normal CI selection goes through the flag-driven dispatcher.
 
 Quality execution invariants:
 
-- Q4 and Q6 use exactly one backend per invocation: `cursor` **or** `api`;
-- Q8/model-perspective difficulty simulation is API-key-only and rejects Cursor;
+- exactly one repository Q backend flag is active for all Q executions;
 - Cursor is always a fresh `cursor-agent -p --model auto` session and never resumes a prior Q session;
-- API mode selects exactly one provider (`openai` or `anthropic`) and one explicit model;
+- direct OpenAI uses `OPENAI_API_KEY` plus `Q_OPENAI_MODEL`;
+- direct Claude uses `ANTHROPIC_API_KEY` plus `Q_CLAUDE_MODEL`;
+- STB AI mode uses the already-issued `STB_AI_API_KEY` plus `Q_STB_AI_MODEL` against the Portkey Open Responses gateway;
 - there is no automatic provider fallback, second Q review, or retry-after-REVISE verdict shopping;
-- credentials are read only from `CURSOR_API_KEY`, `OPENAI_API_KEY`, or `ANTHROPIC_API_KEY` environment variables and are never inserted into packets, prompts, results or execution summaries;
+- there is no Q credential login, key generation, token rotation, config restoration, or `stb keys refresh` path;
+- a missing or invalid selected credential fails closed;
+- credentials are never inserted into packets, prompts, review results, budget receipts, or execution summaries;
 - a git-history-free temporary projection materializes role-appropriate task evidence at `task_commit` and policy/schema files at `control_plane_commit`;
 - prior review conclusions, `.git`, reference solution, sibling repositories and project model-rule files are not projected;
-- Q4 receives instruction/tests/environment plus its classification-only test map when present; Q6 receives only task metadata and solver-visible environment; Q8 receives instruction/task metadata/environment and no hidden tests;
-- the minimal executor prompt points to the packet and asks for efficiency without trading accuracy or completeness;
+- Q4 receives instruction/tests plus only environment interfaces needed to interpret graded behavior and its classification-only test map when present;
+- Q6 receives task metadata, solver-visible environment, and packet-authorized task-scoped production/complexity evidence;
+- Q8 receives instruction/task metadata/environment and no hidden tests;
 - the complete schema-v3 review JSON at `review_output_path` is canonical; Cursor stream output is diagnostic only;
 - raw Cursor thinking events are never persisted by the production runner;
 - after execution the host independently validates JSON Schema, packet/result provenance bindings, Q4 finding classification/PASS exhaustiveness, and absence of mutations outside the exact review artifact;
 - only a deterministically validated review may be copied into the checkout or uploaded as CI evidence.
 
-Cursor example:
+### Global Q backend flags
+
+Repository variables control the backend for all Q executions:
+
+- `Q_CURSOR_ENABLED=yes` -> `CURSOR_API_KEY`;
+- `Q_OPENAI_ENABLED=yes` -> `OPENAI_API_KEY` and `Q_OPENAI_MODEL`;
+- `Q_CLAUDE_ENABLED=yes` -> `ANTHROPIC_API_KEY` and `Q_CLAUDE_MODEL`;
+- `Q_STB_AI_ENABLED=yes` -> existing `STB_AI_API_KEY` and `Q_STB_AI_MODEL`.
+
+Exactly one flag must resolve to `yes`. If none of these repository variables has been configured yet, CI defaults to Cursor for backward-safe rollout. Once any flag is configured, blank flags mean `no`. `model_override` is available only as an explicit workflow invocation override for non-Cursor backends.
+
+The optional `STB_AI_BASE_URL` repository variable may point at an approved HTTPS gateway; blank/unset uses `https://api.portkey.ai/v1`.
+
+### Per-task Q execution budgets
+
+Before a model-backed Q call, CI claims an immutable receipt on the dedicated `terminus-quality-budget` state branch. Repository-wide quality concurrency serializes claims across all task branches, so a new branch, remediation commit, or fresh runner cannot reset the per-task count.
+
+- Q4 / Spec-Test Contract Reviewer: maximum **3** executions per task.
+- Q6 / Production Logic Auditor: maximum **2** executions per task.
+- Every other registered Q role: maximum **1** execution per task.
+
+Preflight, SDK installation, and selected-secret presence checks occur before the claim. Once the claim is durably pushed, that model-backed attempt consumes the slot even if the downstream provider call fails. Re-entering the same GitHub run attempt is idempotent; a new GitHub run attempt consumes a new slot.
+
+Budget receipts contain only execution identity/provenance and backend name—never credentials or model reasoning.
+
+### Examples
+
+Cursor is normally selected through repository variables. The low-level direct transport remains available for debugging:
 
 ```bash
 CURSOR_API_KEY=... python .terminus/execution/quality_executor_cli.py \
@@ -130,20 +161,9 @@ CURSOR_API_KEY=... python .terminus/execution/quality_executor_cli.py \
   --output /tmp/execution.json
 ```
 
-OpenAI example:
+Direct OpenAI and Claude remain optional placeholders for independently sourced API credentials. STB AI mode intentionally reuses the already-issued STB/Portkey AI credential and never refreshes it.
 
-```bash
-OPENAI_API_KEY=... python .terminus/execution/quality_executor_cli.py \
-  --packet .terminus/reviews/<task>/<sha8>/<review>.packet.json \
-  --executor api \
-  --provider openai \
-  --model <admin-selected-model> \
-  --review-output /tmp/review.json
-```
-
-Anthropic uses the same API path with `ANTHROPIC_API_KEY`, `--provider anthropic`, and an explicit admin-selected model.
-
-The API backends expose only bounded read/list/grep tools plus one exact `write_review` sink. OpenAI requests use a stable role-contract-derived prompt-cache key; Anthropic marks the stable system prefix cacheable. Cache hits are an efficiency optimization only and never affect review identity or acceptance.
+The API backends expose only bounded read/list/grep tools plus one exact `write_review` sink. Direct OpenAI requests may use their provider-native prompt-cache controls. STB AI uses Portkey's Open Responses surface without issuing credential refreshes or overriding the existing gateway credential policy. Cache hits are an efficiency optimization only and never affect review identity or acceptance.
 
 ## Transport limits
 
