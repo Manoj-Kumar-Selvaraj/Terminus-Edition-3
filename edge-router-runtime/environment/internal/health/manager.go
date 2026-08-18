@@ -1,23 +1,213 @@
 package health
 
-import(
-    "context"
-    "fmt"
-    "net/http"
-    "sync"
-    "time"
+import (
+	"context"
+	"errors"
+	"io"
+	"net/http"
+	"sync"
+	"time"
 
-    "edge-router-runtime/internal/config"
-    rt "edge-router-runtime/internal/runtime"
-    "edge-router-runtime/internal/telemetry"
+	rt "edge-router/internal/runtime"
 )
 
-type Provider interface{Current()*rt.RuntimeSnapshot}
-type Manager struct{provider Provider;telemetry *telemetry.Registry;mu sync.Mutex;cancel map[string]context.CancelFunc}
-func New(p Provider,t *telemetry.Registry)*Manager{return &Manager{provider:p,telemetry:t,cancel:map[string]context.CancelFunc{}}}
-func (m *Manager) Run(ctx context.Context){ticker:=time.NewTicker(250*time.Millisecond);defer ticker.Stop();for{select{case<-ctx.Done():m.stopAll();return;case<-ticker.C:m.sync(ctx)}}}
-func (m *Manager) sync(parent context.Context){s:=m.provider.Current();if s==nil{return};wanted:=map[string]struct{}{};for poolID,pool:=range s.Pools{cfg:=s.PoolConfigs[poolID];for _,ep:=range pool.Endpoints{k:=fmt.Sprintf("%s/%s#%d",poolID,ep.Identity,ep.Incarnation);wanted[k]=struct{}{};m.mu.Lock();_,exists:=m.cancel[k];if !exists{ctx,cancel:=context.WithCancel(parent);m.cancel[k]=cancel;go m.probeLoop(ctx,ep,cfg)};m.mu.Unlock()}};m.mu.Lock();for k,cancel:=range m.cancel{if _,ok:=wanted[k];!ok{cancel();delete(m.cancel,k)}};m.mu.Unlock()}
-func (m *Manager) probeLoop(ctx context.Context,ep *rt.EndpointRuntime,pool config.Pool){interval:=time.Duration(max(pool.Health.IntervalMS,1000))*time.Millisecond;ticker:=time.NewTicker(interval);defer ticker.Stop();m.probe(ctx,ep,pool);for{select{case<-ctx.Done():return;case<-ticker.C:m.probe(ctx,ep,pool)}}}
-func (m *Manager) probe(ctx context.Context,ep *rt.EndpointRuntime,pool config.Pool){timeout:=time.Duration(max(pool.Health.TimeoutMS,250))*time.Millisecond;pctx,cancel:=context.WithTimeout(ctx,timeout);defer cancel();scheme:=pool.Transport.Scheme;if scheme==""{scheme="http"};req,err:=http.NewRequestWithContext(pctx,http.MethodGet,scheme+"://"+ep.Address+pool.Health.Path,nil);if err!=nil{ep.MarkFailure(pool.Health.UnhealthyThreshold);return};resp,err:=http.DefaultClient.Do(req);if err!=nil{ep.MarkFailure(pool.Health.UnhealthyThreshold);m.telemetry.Counter("edge_health_failure_total",map[string]string{"pool":pool.ID}).Inc();return};resp.Body.Close();good:=false;for _,code:=range pool.Health.ExpectedStatuses{if resp.StatusCode==code{good=true;break}};if len(pool.Health.ExpectedStatuses)==0{good=resp.StatusCode>=200&&resp.StatusCode<400};if good{ep.MarkHealthy();m.telemetry.Counter("edge_health_success_total",map[string]string{"pool":pool.ID}).Inc()}else{ep.MarkFailure(pool.Health.UnhealthyThreshold);m.telemetry.Counter("edge_health_failure_total",map[string]string{"pool":pool.ID}).Inc()}}
-func (m *Manager) Passive(ep *rt.EndpointRuntime,status int,err error,threshold int){if ep==nil{return};if err!=nil||status>=500{ep.MarkFailure(max(threshold,1));return};ep.MarkHealthy()}
-func (m *Manager) stopAll(){m.mu.Lock();defer m.mu.Unlock();for _,c:=range m.cancel{c()};m.cancel=map[string]context.CancelFunc{}}
+type Observation struct {
+	PoolID        string         `json:"pool_id"`
+	EndpointID    string         `json:"endpoint_id"`
+	Address       string         `json:"address"`
+	State         rt.HealthState `json:"state"`
+	LatencyMillis int64          `json:"latency_millis"`
+	StatusCode    int            `json:"status_code"`
+	Error         string         `json:"error,omitempty"`
+	ObservedAt    time.Time      `json:"observed_at"`
+}
+
+type counters struct {
+	success int
+	failure int
+}
+
+type Manager struct {
+	registry     *rt.Registry
+	client       *http.Client
+	mu           sync.Mutex
+	state        map[string]counters
+	observations []Observation
+	maxHistory   int
+}
+
+func New(registry *rt.Registry) *Manager {
+	return &Manager{
+		registry:   registry,
+		client:     &http.Client{Timeout: 2 * time.Second},
+		state:      make(map[string]counters),
+		maxHistory: 256,
+	}
+}
+
+func (m *Manager) SetClient(client *http.Client) {
+	if client == nil {
+		return
+	}
+	m.mu.Lock()
+	m.client = client
+	m.mu.Unlock()
+}
+
+func (m *Manager) Run(ctx context.Context, store *rt.PublicationStore) error {
+	ticker := time.NewTicker(500 * time.Millisecond)
+	defer ticker.Stop()
+	for {
+		select {
+		case <-ctx.Done():
+			return nil
+		case <-ticker.C:
+			snapshot := store.Current()
+			if snapshot == nil {
+				continue
+			}
+			m.CheckSnapshot(ctx, snapshot)
+		}
+	}
+}
+
+func (m *Manager) CheckSnapshot(ctx context.Context, snapshot *rt.RuntimeSnapshot) {
+	if snapshot == nil {
+		return
+	}
+	var group sync.WaitGroup
+	seen := make(map[string]struct{})
+	for _, pool := range snapshot.Pools {
+		for _, endpoint := range pool.Endpoints {
+			if endpoint.Runtime == nil {
+				continue
+			}
+			key := pool.ID + "\x00" + endpoint.Identity
+			if _, duplicate := seen[key]; duplicate {
+				continue
+			}
+			seen[key] = struct{}{}
+			group.Add(1)
+			go func(pool *rt.PoolView, endpoint rt.EndpointView) {
+				defer group.Done()
+				m.checkOne(ctx, pool, endpoint)
+			}(pool, endpoint)
+		}
+	}
+	group.Wait()
+}
+
+func (m *Manager) checkOne(ctx context.Context, pool *rt.PoolView, endpoint rt.EndpointView) {
+	path := pool.Health.Path
+	if path == "" {
+		path = "/healthz"
+	}
+	url := endpointURL(endpoint.Address, path)
+	timeout := time.Duration(pool.Health.TimeoutMillis) * time.Millisecond
+	if timeout <= 0 {
+		timeout = time.Second
+	}
+	checkCtx, cancel := context.WithTimeout(ctx, timeout)
+	defer cancel()
+	request, err := http.NewRequestWithContext(checkCtx, http.MethodGet, url, nil)
+	if err != nil {
+		m.apply(pool, endpoint, false, 0, 0, err)
+		return
+	}
+	started := time.Now()
+	m.mu.Lock()
+	client := m.client
+	m.mu.Unlock()
+	response, err := client.Do(request)
+	latency := time.Since(started)
+	if err != nil {
+		m.apply(pool, endpoint, false, 0, latency, err)
+		return
+	}
+	_, _ = io.Copy(io.Discard, io.LimitReader(response.Body, 4<<10))
+	_ = response.Body.Close()
+	healthy := response.StatusCode >= 200 && response.StatusCode < 400
+	m.apply(pool, endpoint, healthy, response.StatusCode, latency, nil)
+}
+
+func (m *Manager) apply(pool *rt.PoolView, endpoint rt.EndpointView, healthy bool, status int, latency time.Duration, err error) {
+	if endpoint.Runtime == nil {
+		return
+	}
+	key := pool.ID + "\x00" + endpoint.Identity
+	m.mu.Lock()
+	counts := m.state[key]
+	if healthy {
+		counts.success++
+		counts.failure = 0
+	} else {
+		counts.failure++
+		counts.success = 0
+	}
+	m.state[key] = counts
+	healthyThreshold := pool.Health.HealthyThreshold
+	if healthyThreshold < 1 {
+		healthyThreshold = 1
+	}
+	unhealthyThreshold := pool.Health.UnhealthyThreshold
+	if unhealthyThreshold < 1 {
+		unhealthyThreshold = 2
+	}
+	state := endpoint.Runtime.Health()
+	if counts.success >= healthyThreshold {
+		state = rt.HealthHealthy
+	}
+	if counts.failure >= unhealthyThreshold {
+		state = rt.HealthUnhealthy
+	}
+	observation := Observation{
+		PoolID:        pool.ID,
+		EndpointID:    endpoint.Identity,
+		Address:       endpoint.Address,
+		State:         state,
+		LatencyMillis: latency.Milliseconds(),
+		StatusCode:    status,
+		ObservedAt:    time.Now().UTC(),
+	}
+	if err != nil {
+		observation.Error = err.Error()
+	}
+	m.observations = append(m.observations, observation)
+	if len(m.observations) > m.maxHistory {
+		m.observations = append([]Observation(nil), m.observations[len(m.observations)-m.maxHistory:]...)
+	}
+	m.mu.Unlock()
+	endpoint.Runtime.SetHealth(state, observation.ObservedAt)
+}
+
+func (m *Manager) Observe(endpoint *rt.EndpointRuntime, healthy bool) error {
+	if endpoint == nil {
+		return errors.New("endpoint is nil")
+	}
+	state := rt.HealthUnhealthy
+	if healthy {
+		state = rt.HealthHealthy
+	}
+	endpoint.SetHealth(state, time.Now().UTC())
+	return nil
+}
+
+func (m *Manager) History(limit int) []Observation {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	if limit <= 0 || limit > len(m.observations) {
+		limit = len(m.observations)
+	}
+	start := len(m.observations) - limit
+	return append([]Observation(nil), m.observations[start:]...)
+}
+
+func endpointURL(address, path string) string {
+	if path == "" {
+		path = "/healthz"
+	}
+	if path[0] != '/' {
+		path = "/" + path
+	}
+	return "http://" + address + path
+}

@@ -1,3 +1,3 @@
-module edge-router-runtime
+module edge-router
 
 go 1.24
