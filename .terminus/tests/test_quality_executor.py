@@ -72,9 +72,9 @@ def test_packet_path_and_review_identity_are_bound(tmp_path: Path) -> None:
     assert loaded["task_commit"] == TASK_SHA
 
     wrong = packet_path.with_name("wrong.packet.json")
-    wrong.write_text(json.dumps(packet), encoding="utf-8")
+    (tmp_path / wrong).write_text(json.dumps(packet), encoding="utf-8")
     with pytest.raises(QualityExecutorError, match="does not match review_output_path"):
-        load_packet(tmp_path, wrong.relative_to(tmp_path))
+        load_packet(tmp_path, wrong)
 
 
 def test_q_backend_selection_is_exactly_one_and_cursor_is_auto() -> None:
@@ -138,7 +138,10 @@ def _projection_for_validation(tmp_path: Path) -> tuple[Projection, dict[str, ob
     packet_relative = _write_packet(tmp_path, packet)
     schema = tmp_path / REVIEW_SCHEMA
     schema.parent.mkdir(parents=True, exist_ok=True)
-    schema.write_text('{"$schema":"https://json-schema.org/draft/2020-12/schema","type":"object"}', encoding="utf-8")
+    schema.write_text(
+        '{"$schema":"https://json-schema.org/draft/2020-12/schema","type":"object"}',
+        encoding="utf-8",
+    )
     review_path = tmp_path / str(packet["review_output_path"])
     projection = Projection(
         root=tmp_path,
@@ -200,3 +203,30 @@ def test_deterministic_validator_rejects_binding_and_side_effect_drift(tmp_path:
     (projection.root / "unexpected.txt").write_text("mutation", encoding="utf-8")
     with pytest.raises(QualityExecutorError, match="modified files outside"):
         validate_review_result(projection, packet)
+
+
+def test_llmaj_and_official_difficulty_ci_are_api_key_only() -> None:
+    workflow = (ROOT / ".github/workflows/terminus-edition-3-ci.yml").read_text(encoding="utf-8")
+    assert "STB_AI_API_KEY" in workflow
+    for forbidden in (
+        "SNORKEL_API_KEY",
+        "STB_AI_CONFIG_B64",
+        "STB_ALLOW_KEY_REFRESH",
+        "keys-refresh --noninteractive",
+    ):
+        assert forbidden not in workflow
+    assert "login/config restoration/key refresh fallbacks are forbidden in CI" in workflow
+
+
+def test_quality_workflow_has_no_backend_fallback_or_cursor_resume() -> None:
+    workflow = (ROOT / ".github/workflows/terminus-quality-executor.yml").read_text(
+        encoding="utf-8"
+    )
+    assert "CURSOR_API_KEY" in workflow
+    assert "OPENAI_API_KEY" in workflow
+    assert "ANTHROPIC_API_KEY" in workflow
+    assert "--executor cursor" in workflow
+    assert "--provider openai" in workflow
+    assert "--provider anthropic" in workflow
+    assert "--resume" not in workflow
+    assert "fallback" not in workflow.lower()
