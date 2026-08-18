@@ -1,0 +1,109 @@
+name: Patch complexity phase contracts
+
+on:
+  push:
+    branches:
+      - fix/environment-build-complexity-boundary
+
+permissions:
+  contents: write
+
+jobs:
+  patch-contracts:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Apply exact phase-boundary contract patch
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          contract_path = Path('.terminus/agents/stage_contracts.json')
+          data = json.loads(contract_path.read_text(encoding='utf-8'))
+          stages = {stage['id']: stage for stage in data['stages']}
+
+          expected_a3 = ['.terminus/validate_task_complexity.py <task>']
+          expected_env = [
+              '.terminus/validate_task_complexity.py <task>',
+              '.terminus/validate_runtime_authenticity.py <task>',
+              '.terminus/validate_business_module_diversity.py <task> when applicable',
+          ]
+          current_a3 = stages['DEFECT_TOPOLOGY']['deterministic_validators']
+          current_env = stages['ENVIRONMENT_BUILD']['deterministic_validators']
+          allowed_a3 = [expected_a3, ['.terminus/validate_defect_topology.py <task>']]
+          allowed_env = [
+              expected_env,
+              [
+                  '.terminus/validate_environment_complexity.py <task>',
+                  '.terminus/validate_runtime_authenticity.py <task>',
+                  '.terminus/validate_business_module_diversity.py <task> when applicable',
+              ],
+          ]
+          if current_a3 not in allowed_a3:
+              raise SystemExit(f'unexpected DEFECT_TOPOLOGY validators: {current_a3!r}')
+          if current_env not in allowed_env:
+              raise SystemExit(f'unexpected ENVIRONMENT_BUILD validators: {current_env!r}')
+
+          stages['DEFECT_TOPOLOGY']['deterministic_validators'] = [
+              '.terminus/validate_defect_topology.py <task>'
+          ]
+          stages['ENVIRONMENT_BUILD']['deterministic_validators'] = [
+              '.terminus/validate_environment_complexity.py <task>',
+              '.terminus/validate_runtime_authenticity.py <task>',
+              '.terminus/validate_business_module_diversity.py <task> when applicable',
+          ]
+          contract_path.write_text(
+              json.dumps(data, separators=(',', ':'), ensure_ascii=False) + '\n', encoding='utf-8'
+          )
+
+          phase_path = Path('.terminus/agents/A2_PHASE_PROMPTS.md')
+          phase = phase_path.read_text(encoding='utf-8')
+          marker = '### Defect materialization rule\n'
+          addition = (
+              '### Phase-scoped deterministic validation\n\n'
+              'At `ENVIRONMENT_BUILD`, run `.terminus/validate_environment_complexity.py <task>` '
+              'for strict solver-visible environment/topology scale and anti-padding checks. Do not '
+              'create, inspect, or require the private verifier test map at this phase. The full '
+              '`.terminus/validate_task_complexity.py <task>` remains mandatory at `VERIFIER_BUILD` '
+              'and `COMPLEXITY_GATE`, where F2P/P2P, requirement coverage, behavioral-case grouping, '
+              'and test-map integrity are enforced.\n\n'
+          )
+          if addition not in phase:
+              if marker not in phase:
+                  raise SystemExit('A2 phase prompt insertion marker missing')
+              phase = phase.replace(marker, addition + marker, 1)
+              phase_path.write_text(phase, encoding='utf-8')
+
+          stage_md_path = Path('.terminus/agents/STAGE_CONTRACTS.md')
+          stage_md = stage_md_path.read_text(encoding='utf-8')
+          index_marker = (
+              '- `ENVIRONMENT_BUILD` is the second A2 invocation and materializes the starter from both '
+              'approved architecture and topology.\n'
+          )
+          index_addition = (
+              '\nComplexity validation is phase-scoped without weakening the final gate: '
+              '`DEFECT_TOPOLOGY` uses `.terminus/validate_defect_topology.py`, '
+              '`ENVIRONMENT_BUILD` uses `.terminus/validate_environment_complexity.py`, and '
+              '`VERIFIER_BUILD` plus `COMPLEXITY_GATE` retain the full '
+              '`.terminus/validate_task_complexity.py` contract.\n'
+          )
+          if index_addition not in stage_md:
+              if index_marker not in stage_md:
+                  raise SystemExit('stage-contract index insertion marker missing')
+              stage_md = stage_md.replace(index_marker, index_marker + index_addition, 1)
+              stage_md_path.write_text(stage_md, encoding='utf-8')
+          PY
+      - name: Commit generated contract changes
+        run: |
+          if git diff --quiet; then
+            echo "No contract changes required"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add .terminus/agents/stage_contracts.json .terminus/agents/A2_PHASE_PROMPTS.md .terminus/agents/STAGE_CONTRACTS.md
+          git commit -m "Scope complexity validators to creation phase"
+          git push origin HEAD:fix/environment-build-complexity-boundary
