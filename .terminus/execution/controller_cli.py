@@ -125,7 +125,7 @@ def build_parser() -> argparse.ArgumentParser:
     continue_parser.add_argument(
         "--prepare-executor",
         choices=[mode.value for mode in ExecutorMode],
-        help="also prepare a non-mutating executor handoff for ordinary invoke/retry/remediation actions",
+        help="explicitly prepare a non-mutating executor handoff instead of the default hosted controller route",
     )
     continue_parser.add_argument("--output")
     return parser
@@ -297,10 +297,12 @@ def _continue_payload(
         }
         return payload
 
+    executor_mode = getattr(args, "prepare_executor", None)
     if (
         stage_id in AUTOMATED_CONTROLLER_STAGES
         and next_action["action"] in {"INVOKE_STAGE", "RETRY_STAGE"}
         and packet.get("readiness") == "READY"
+        and not executor_mode
     ):
         if packet.get("stage", {}).get("role_class") != "CONTROLLER":
             raise ValueError("automated controller stage must have CONTROLLER role_class")
@@ -309,7 +311,6 @@ def _continue_payload(
         payload["dispatch"] = _controller_stage_dispatch(root, args, packet, inputs)
         return payload
 
-    executor_mode = getattr(args, "prepare_executor", None)
     if executor_mode and packet.get("readiness") == "READY":
         prepared = ExecutorRunner(root).prepare(
             packet,
