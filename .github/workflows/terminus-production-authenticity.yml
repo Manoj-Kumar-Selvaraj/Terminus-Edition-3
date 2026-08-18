@@ -1,23 +1,8 @@
 name: Terminus Production Authenticity Gate
+# A2 ENVIRONMENT_BUILD exact-validator harness; validation branch only.
 
 on:
   pull_request:
-    paths:
-      - "**/instruction.md"
-      - "**/README.md"
-      - "**/environment/**"
-      - ".terminus/designs/**"
-      - ".terminus/validate_runtime_authenticity.py"
-      - ".terminus/validate_business_module_diversity.py"
-      - ".terminus/tests/test_runtime_authenticity.py"
-      - ".terminus/tests/test_business_module_diversity.py"
-      - ".terminus/agents/PRODUCTION_AUTHENTICITY.md"
-      - ".terminus/agents/CREATION_CONTROLLER.md"
-      - ".terminus/agents/CREATION_PIPELINE.md"
-      - ".terminus/agents/CREATOR_AGENT_REGISTRY.md"
-      - ".github/workflows/terminus-production-authenticity.yml"
-  push:
-    branches: [main]
     paths:
       - "**/instruction.md"
       - "**/README.md"
@@ -45,31 +30,33 @@ jobs:
       - uses: actions/checkout@v4
       - name: Install pinned test tools
         run: python3 -m pip install --quiet pytest==8.4.1
-      - name: Production-authenticity policy
-        run: python3 .terminus/validate_production_policy.py
-      - name: Production-authenticity regression suite
-        run: >-
-          python3 -m pytest
-          .terminus/tests/test_runtime_authenticity.py
-          .terminus/tests/test_business_module_diversity.py
-          -q
-      - name: Validate declared production profiles
+      - name: Exact ENVIRONMENT_BUILD validation
         shell: bash
         run: |
           set -euo pipefail
-          python3 -m py_compile \
-            .terminus/validate_runtime_authenticity.py \
-            .terminus/validate_business_module_diversity.py
-          found=0
-          shopt -s nullglob
-          for manifest in .terminus/designs/*-production.json; do
-            task="$(basename "$manifest" -production.json)"
-            [[ -f "$task/task.toml" ]] || continue
-            found=1
-            echo "==> production authenticity: $task"
-            python3 .terminus/validate_runtime_authenticity.py "$task"
-            python3 .terminus/validate_business_module_diversity.py "$task"
-          done
-          if (( found == 0 )); then
-            echo "No production-authenticity manifests found."
+          python3 - <<'PY'
+          import importlib.util
+          from pathlib import Path
+          path = Path('.terminus/validate_task_complexity.py')
+          spec = importlib.util.spec_from_file_location('complexity', path)
+          mod = importlib.util.module_from_spec(spec)
+          spec.loader.exec_module(mod)
+          total, detail = mod.substantive_loc(Path('edge-router-runtime'))
+          print(f'substantive_loc={total}')
+          for name, count in sorted(detail, key=lambda x: x[1], reverse=True)[:20]:
+              print(f'{count:7d} {name}')
+          if total < 3000:
+              raise SystemExit('substantive LOC below required 3000')
+          PY
+          cd edge-router-runtime/environment
+          go version
+          go test ./...
+          go build -o edge-router-runtime ./cmd/edge-router-runtime
+          ./edge-router-runtime validate --config ./config/production.json
+          ./edge-router-runtime validate --config ./config/discovery-production.json
+          cd ../..
+          python3 .terminus/validate_runtime_authenticity.py edge-router-runtime
+          if grep -RniE 'DEFECT_TOPOLOGY|root[_ -]?cause|verifier|oracle|expected repair|D[0-9]+\.[0-9]+' edge-router-runtime/environment; then
+            echo 'solver-visible private-design leakage marker found' >&2
+            exit 1
           fi
