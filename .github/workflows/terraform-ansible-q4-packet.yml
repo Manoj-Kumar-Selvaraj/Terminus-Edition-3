@@ -1,0 +1,30 @@
+name: Terraform Ansible Fresh Q4 Packet
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/terraform-ansible-q4-packet.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  packet:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Generate Q4 packet
+        run: |
+          python3 .terminus/new_review_packet.py terraform-ansible-managed-resources spec-test-contract \
+            --state FROZEN_CANDIDATE \
+            --change 'Fresh exhaustive Q4 after consolidated remediation of Q4-001 through Q4-007, exact 36-test Oracle/NOP classification, task-scoped complexity/runtime revalidation, and refreeze.'
+      - name: Show generated packet path
+        run: find .terminus/reviews/terraform-ansible-managed-resources -name '*spec-test-contract*.packet.json' -type f -print
+      - uses: actions/upload-artifact@v4
+        with:
+          name: terraform-ansible-fresh-q4-packet
+          path: .terminus/reviews/terraform-ansible-managed-resources/**/*.packet.json
+          if-no-files-found: error
