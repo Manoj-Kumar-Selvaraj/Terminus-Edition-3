@@ -34,13 +34,13 @@ func (c *Compiler) Compile(state rt.DesiredState, generation uint64) (*rt.Runtim
 		}
 	}
 	return &rt.RuntimeSnapshot{
-		Generation: generation,
-		Routes: routes,
-		Pools: pools,
-		Desired: state,
+		Generation:      generation,
+		Routes:          routes,
+		Pools:           pools,
+		Desired:         state,
 		SourceRevisions: rt.CloneRevisions(state.SourceRevisions),
-		SourceDigests: rt.CloneDigests(state.SourceDigests),
-		State: rt.SnapshotBuilding,
+		SourceDigests:   rt.CloneDigests(state.SourceDigests),
+		State:           rt.SnapshotBuilding,
 	}, nil
 }
 
@@ -53,28 +53,29 @@ func (c *Compiler) compileRoutes(specs []rt.RouteSpec) ([]rt.CompiledRoute, erro
 			if method != "" {
 				methods[method] = struct{}{}
 			}
+		}
 		semantic := struct {
-			ID string
-			Host string
-			Path string
-			Methods []string
-			PoolID string
+			ID       string
+			Host     string
+			Path     string
+			Methods  []string
+			PoolID   string
 			Priority int
 		}{
-			ID: spec.ID,
-			Host: strings.ToLower(spec.Match.Host),
-			Path: spec.Match.PathPrefix,
-			Methods: sortedMethods(methods),
-			PoolID: spec.PoolID,
+			ID:       spec.ID,
+			Host:     strings.ToLower(spec.Match.Host),
+			Path:     spec.Match.PathPrefix,
+			Methods:  sortedMethods(methods),
+			PoolID:   spec.PoolID,
 			Priority: spec.Priority,
 		}
 		compiled = append(compiled, rt.CompiledRoute{
-			ID: spec.ID,
-			Host: semantic.Host,
-			PathPrefix: semantic.Path,
-			Methods: methods,
-			PoolID: spec.PoolID,
-			Priority: spec.Priority,
+			ID:             spec.ID,
+			Host:           semantic.Host,
+			PathPrefix:     semantic.Path,
+			Methods:        methods,
+			PoolID:         spec.PoolID,
+			Priority:       spec.Priority,
 			SemanticDigest: rt.SemanticDigest(semantic),
 		})
 	}
@@ -99,23 +100,23 @@ func (c *Compiler) compilePools(specs []rt.PoolSpec) (map[string]*rt.PoolView, e
 		compatibility := poolCompatibility(spec)
 		_ = c.registry.Pool(spec.ID, compatibility)
 		view := &rt.PoolView{
-			ID: spec.ID,
-			Selection: spec.Selection,
-			Retry: spec.Retry,
-			Failover: append([]string(nil), spec.Failover...),
-			Health: spec.Health,
-			Drain: spec.Drain,
+			ID:            spec.ID,
+			Selection:     spec.Selection,
+			Retry:         spec.Retry,
+			Failover:      append([]string(nil), spec.Failover...),
+			Health:        spec.Health,
+			Drain:         spec.Drain,
 			Compatibility: compatibility,
 		}
 		for index, endpoint := range spec.Endpoints {
 			identity := endpointIdentity(spec.ID, endpoint, index)
 			runtimeHandle := c.registry.Endpoint(spec.ID, identity, endpoint.Address)
 			view.Endpoints = append(view.Endpoints, rt.EndpointView{
-				Identity: identity,
-				Address: endpoint.Address,
-				Weight: endpoint.Weight,
+				Identity:    identity,
+				Address:     endpoint.Address,
+				Weight:      endpoint.Weight,
 				Incarnation: runtimeHandle.Incarnation,
-				Runtime: runtimeHandle,
+				Runtime:     runtimeHandle,
 			})
 		}
 		out[spec.ID] = view
@@ -134,12 +135,12 @@ func endpointIdentity(poolID string, endpoint rt.EndpointSpec, declarationIndex 
 func poolCompatibility(spec rt.PoolSpec) string {
 	metadata := rt.StableStringMap(spec.Metadata)
 	shape := struct {
-		ID string
-		Mode string
+		ID       string
+		Mode     string
 		Metadata [][2]string
 	}{
-		ID: spec.ID,
-		Mode: spec.Selection.Mode,
+		ID:       spec.ID,
+		Mode:     spec.Selection.Mode,
 		Metadata: metadata,
 	}
 	return rt.SemanticDigest(shape)
@@ -183,17 +184,17 @@ func SnapshotDigest(snapshot *rt.RuntimeSnapshot) string {
 		return ""
 	}
 	type routeDigest struct {
-		ID string
+		ID     string
 		Digest string
 	}
 	type poolDigest struct {
-		ID string
+		ID            string
 		Compatibility string
-		Endpoints []string
+		Endpoints     []string
 	}
 	payload := struct {
 		Routes []routeDigest
-		Pools []poolDigest
+		Pools  []poolDigest
 	}{}
 	for _, route := range snapshot.Routes {
 		payload.Routes = append(payload.Routes, routeDigest{ID: route.ID, Digest: route.SemanticDigest})
