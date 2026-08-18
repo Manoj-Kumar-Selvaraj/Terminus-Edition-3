@@ -27,30 +27,30 @@ import (
 
 type Options struct {
 	ConfigPath string
-	StateDir string
+	StateDir   string
 	ListenAddr string
-	AdminAddr string
-	LogLevel slog.Level
+	AdminAddr  string
+	LogLevel   slog.Level
 }
 
 type App struct {
-	options Options
-	logger *slog.Logger
-	registry *rt.Registry
-	store *rt.PublicationStore
-	ingress *config.Ingress
-	compiler *compiler.Compiler
+	options     Options
+	logger      *slog.Logger
+	registry    *rt.Registry
+	store       *rt.PublicationStore
+	ingress     *config.Ingress
+	compiler    *compiler.Compiler
 	checkpoints *checkpoint.Store
-	reconciler *reconcile.Reconciler
-	health *health.Manager
-	drain *drain.Manager
-	metrics *telemetry.Registry
-	selector *selection.Engine
-	transport *upstream.Transport
-	dataPlane *router.Server
-	admin *admin.Server
-	cancel context.CancelFunc
-	wg sync.WaitGroup
+	reconciler  *reconcile.Reconciler
+	health      *health.Manager
+	drain       *drain.Manager
+	metrics     *telemetry.Registry
+	selector    *selection.Engine
+	transport   *upstream.Transport
+	dataPlane   *router.Server
+	admin       *admin.Server
+	cancel      context.CancelFunc
+	wg          sync.WaitGroup
 }
 
 func New(options Options) (*App, error) {
@@ -81,21 +81,21 @@ func New(options Options) (*App, error) {
 	dataPlane := router.New(options.ListenAddr, store, selector, transport, metrics, logger)
 	adminPlane := admin.New(options.AdminAddr, ingress, reconcilerInstance, store, registry, healthManager, drainManager, checkpoints, metrics, logger)
 	app := &App{
-		options: options,
-		logger: logger,
-		registry: registry,
-		store: store,
-		ingress: ingress,
-		compiler: compilerInstance,
+		options:     options,
+		logger:      logger,
+		registry:    registry,
+		store:       store,
+		ingress:     ingress,
+		compiler:    compilerInstance,
 		checkpoints: checkpoints,
-		reconciler: reconcilerInstance,
-		health: healthManager,
-		drain: drainManager,
-		metrics: metrics,
-		selector: selector,
-		transport: transport,
-		dataPlane: dataPlane,
-		admin: adminPlane,
+		reconciler:  reconcilerInstance,
+		health:      healthManager,
+		drain:       drainManager,
+		metrics:     metrics,
+		selector:    selector,
+		transport:   transport,
+		dataPlane:   dataPlane,
+		admin:       adminPlane,
 	}
 	app.configureHooks()
 	return app, nil

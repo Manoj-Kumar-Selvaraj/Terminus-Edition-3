@@ -21,16 +21,16 @@ import (
 )
 
 type Server struct {
-	server *http.Server
-	ingress *config.Ingress
-	reconciler *reconcile.Reconciler
-	store *rt.PublicationStore
-	registry *rt.Registry
-	health *health.Manager
-	drain *drain.Manager
+	server      *http.Server
+	ingress     *config.Ingress
+	reconciler  *reconcile.Reconciler
+	store       *rt.PublicationStore
+	registry    *rt.Registry
+	health      *health.Manager
+	drain       *drain.Manager
 	checkpoints *checkpoint.Store
-	metrics *telemetry.Registry
-	logger *slog.Logger
+	metrics     *telemetry.Registry
+	logger      *slog.Logger
 }
 
 func New(addr string, ingress *config.Ingress, reconciler *reconcile.Reconciler, store *rt.PublicationStore, registry *rt.Registry, healthManager *health.Manager, drainManager *drain.Manager, checkpoints *checkpoint.Store, metrics *telemetry.Registry, logger *slog.Logger) *Server {
@@ -38,15 +38,15 @@ func New(addr string, ingress *config.Ingress, reconciler *reconcile.Reconciler,
 		logger = slog.Default()
 	}
 	s := &Server{
-		ingress: ingress,
-		reconciler: reconciler,
-		store: store,
-		registry: registry,
-		health: healthManager,
-		drain: drainManager,
+		ingress:     ingress,
+		reconciler:  reconciler,
+		store:       store,
+		registry:    registry,
+		health:      healthManager,
+		drain:       drainManager,
 		checkpoints: checkpoints,
-		metrics: metrics,
-		logger: logger,
+		metrics:     metrics,
+		logger:      logger,
 	}
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /healthz", s.healthz)
@@ -60,12 +60,12 @@ func New(addr string, ingress *config.Ingress, reconciler *reconcile.Reconciler,
 	mux.HandleFunc("POST /v1/discovery/snapshot", s.submit)
 	mux.HandleFunc("GET /metrics", s.metricsEndpoint)
 	s.server = &http.Server{
-		Addr: addr,
-		Handler: requestLogging(logger, mux),
+		Addr:              addr,
+		Handler:           requestLogging(logger, mux),
 		ReadHeaderTimeout: 5 * time.Second,
-		ReadTimeout: 10 * time.Second,
-		WriteTimeout: 10 * time.Second,
-		IdleTimeout: 60 * time.Second,
+		ReadTimeout:       10 * time.Second,
+		WriteTimeout:      10 * time.Second,
+		IdleTimeout:       60 * time.Second,
 	}
 	return s
 }
@@ -99,9 +99,9 @@ func (s *Server) status(writer http.ResponseWriter, _ *http.Request) {
 	status := s.reconciler.Status()
 	current := s.store.Current()
 	response := map[string]any{
-		"reconcile": status,
-		"pools_runtime": s.registry.PoolCount(),
-		"endpoints_runtime": s.registry.EndpointCount(),
+		"reconcile":           status,
+		"pools_runtime":       s.registry.PoolCount(),
+		"endpoints_runtime":   s.registry.EndpointCount(),
 		"metrics_cardinality": s.metrics.Cardinality(),
 	}
 	if current != nil {
@@ -120,14 +120,14 @@ func (s *Server) runtimeState(writer http.ResponseWriter, _ *http.Request) {
 		return
 	}
 	type endpoint struct {
-		Pool string `json:"pool"`
-		Identity string `json:"identity"`
-		Address string `json:"address"`
-		Incarnation uint64 `json:"incarnation"`
-		Membership rt.MembershipState `json:"membership"`
-		Health rt.HealthState `json:"health"`
-		Inflight int64 `json:"inflight"`
-		Connections int64 `json:"connections"`
+		Pool        string             `json:"pool"`
+		Identity    string             `json:"identity"`
+		Address     string             `json:"address"`
+		Incarnation uint64             `json:"incarnation"`
+		Membership  rt.MembershipState `json:"membership"`
+		Health      rt.HealthState     `json:"health"`
+		Inflight    int64              `json:"inflight"`
+		Connections int64              `json:"connections"`
 	}
 	items := make([]endpoint, 0)
 	for poolID, pool := range current.Pools {
@@ -137,13 +137,13 @@ func (s *Server) runtimeState(writer http.ResponseWriter, _ *http.Request) {
 			}
 			inflight, connections := view.Runtime.Counts()
 			items = append(items, endpoint{
-				Pool: poolID,
-				Identity: view.Identity,
-				Address: view.Address,
+				Pool:        poolID,
+				Identity:    view.Identity,
+				Address:     view.Address,
 				Incarnation: view.Incarnation,
-				Membership: view.Runtime.Membership(),
-				Health: view.Runtime.Health(),
-				Inflight: inflight,
+				Membership:  view.Runtime.Membership(),
+				Health:      view.Runtime.Health(),
+				Inflight:    inflight,
 				Connections: connections,
 			})
 		}
@@ -159,7 +159,7 @@ func (s *Server) healthState(writer http.ResponseWriter, request *http.Request) 
 func (s *Server) drains(writer http.ResponseWriter, request *http.Request) {
 	limit := parseLimit(request.URL.Query().Get("limit"), 64, 256)
 	writeJSON(writer, http.StatusOK, map[string]any{
-		"draining": s.drain.Draining(),
+		"draining":         s.drain.Draining(),
 		"recently_retired": s.drain.Retired(limit),
 	})
 }

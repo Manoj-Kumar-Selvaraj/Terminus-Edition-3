@@ -50,10 +50,10 @@ func validateCommand(args []string) error {
 	}
 	app, err := bootstrap.New(bootstrap.Options{
 		ConfigPath: *configPath,
-		StateDir: os.TempDir() + "/edge-router-validation-state",
+		StateDir:   os.TempDir() + "/edge-router-validation-state",
 		ListenAddr: "127.0.0.1:0",
-		AdminAddr: "127.0.0.1:0",
-		LogLevel: slog.LevelError,
+		AdminAddr:  "127.0.0.1:0",
+		LogLevel:   slog.LevelError,
 	})
 	if err != nil {
 		return err
@@ -84,10 +84,10 @@ func serveCommand(args []string) error {
 	}
 	app, err := bootstrap.New(bootstrap.Options{
 		ConfigPath: *configPath,
-		StateDir: *stateDir,
+		StateDir:   *stateDir,
 		ListenAddr: *listen,
-		AdminAddr: *admin,
-		LogLevel: level,
+		AdminAddr:  *admin,
+		LogLevel:   level,
 	})
 	if err != nil {
 		return err

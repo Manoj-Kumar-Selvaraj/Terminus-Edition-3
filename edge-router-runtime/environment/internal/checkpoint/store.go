@@ -18,42 +18,42 @@ import (
 )
 
 type ContinuityEndpoint struct {
-	PoolID string `json:"pool_id"`
-	Identity string `json:"identity"`
-	Health rt.HealthState `json:"health"`
-	ObservedAt time.Time `json:"observed_at"`
+	PoolID     string         `json:"pool_id"`
+	Identity   string         `json:"identity"`
+	Health     rt.HealthState `json:"health"`
+	ObservedAt time.Time      `json:"observed_at"`
 }
 
 type ContinuityAffinity struct {
-	PoolID string `json:"pool_id"`
-	Key string `json:"key"`
-	EndpointIdentity string `json:"endpoint_identity"`
-	Incarnation uint64 `json:"incarnation"`
-	ExpiresAt time.Time `json:"expires_at"`
+	PoolID           string    `json:"pool_id"`
+	Key              string    `json:"key"`
+	EndpointIdentity string    `json:"endpoint_identity"`
+	Incarnation      uint64    `json:"incarnation"`
+	ExpiresAt        time.Time `json:"expires_at"`
 }
 
 type Body struct {
-	SchemaVersion int `json:"schema_version"`
-	Generation uint64 `json:"generation"`
-	Desired rt.DesiredState `json:"desired"`
-	SourceRevisions map[string]int64 `json:"source_revisions"`
-	SourceDigests map[string]string `json:"source_digests"`
-	Endpoints []ContinuityEndpoint `json:"endpoints,omitempty"`
-	Affinity []ContinuityAffinity `json:"affinity,omitempty"`
-	ContentDigest string `json:"content_digest"`
-	Checksum string `json:"checksum"`
-	CreatedAt time.Time `json:"created_at"`
+	SchemaVersion   int                  `json:"schema_version"`
+	Generation      uint64               `json:"generation"`
+	Desired         rt.DesiredState      `json:"desired"`
+	SourceRevisions map[string]int64     `json:"source_revisions"`
+	SourceDigests   map[string]string    `json:"source_digests"`
+	Endpoints       []ContinuityEndpoint `json:"endpoints,omitempty"`
+	Affinity        []ContinuityAffinity `json:"affinity,omitempty"`
+	ContentDigest   string               `json:"content_digest"`
+	Checksum        string               `json:"checksum"`
+	CreatedAt       time.Time            `json:"created_at"`
 }
 
 type Pointer struct {
 	Generation uint64 `json:"generation"`
-	File string `json:"file"`
-	Checksum string `json:"checksum"`
+	File       string `json:"file"`
+	Checksum   string `json:"checksum"`
 }
 
 type Store struct {
-	dir string
-	mu sync.Mutex
+	dir    string
+	mu     sync.Mutex
 	retain int
 }
 
@@ -77,13 +77,13 @@ func (s *Store) Prepare(snapshot *rt.RuntimeSnapshot) (Body, error) {
 		return Body{}, errors.New("nil snapshot")
 	}
 	body := Body{
-		SchemaVersion: 1,
-		Generation: snapshot.Generation,
-		Desired: snapshot.Desired,
+		SchemaVersion:   1,
+		Generation:      snapshot.Generation,
+		Desired:         snapshot.Desired,
 		SourceRevisions: rt.CloneRevisions(snapshot.SourceRevisions),
-		SourceDigests: rt.CloneDigests(snapshot.SourceDigests),
-		ContentDigest: rt.SemanticDigest(snapshot.Desired),
-		CreatedAt: time.Now().UTC(),
+		SourceDigests:   rt.CloneDigests(snapshot.SourceDigests),
+		ContentDigest:   rt.SemanticDigest(snapshot.Desired),
+		CreatedAt:       time.Now().UTC(),
 	}
 	payload, err := payloadForChecksum(body)
 	if err != nil {
@@ -190,12 +190,12 @@ func (s *Store) Recover(bootstrap *rt.DesiredState) (Body, string, error) {
 	}
 	if bootstrap != nil {
 		body = Body{
-			SchemaVersion: 1,
-			Generation: 1,
-			Desired: *bootstrap,
+			SchemaVersion:   1,
+			Generation:      1,
+			Desired:         *bootstrap,
 			SourceRevisions: rt.CloneRevisions(bootstrap.SourceRevisions),
-			SourceDigests: rt.CloneDigests(bootstrap.SourceDigests),
-			CreatedAt: time.Now().UTC(),
+			SourceDigests:   rt.CloneDigests(bootstrap.SourceDigests),
+			CreatedAt:       time.Now().UTC(),
 		}
 		return body, "bootstrap", nil
 	}

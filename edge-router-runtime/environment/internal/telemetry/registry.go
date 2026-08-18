@@ -11,33 +11,33 @@ import (
 )
 
 type Counter struct {
-	Name string `json:"name"`
-	Labels map[string]string `json:"labels"`
-	Value uint64 `json:"value"`
-	UpdatedAt time.Time `json:"updated_at"`
-	Owner string `json:"owner"`
+	Name      string            `json:"name"`
+	Labels    map[string]string `json:"labels"`
+	Value     uint64            `json:"value"`
+	UpdatedAt time.Time         `json:"updated_at"`
+	Owner     string            `json:"owner"`
 }
 
 type Gauge struct {
-	Name string `json:"name"`
-	Labels map[string]string `json:"labels"`
-	Value float64 `json:"value"`
-	UpdatedAt time.Time `json:"updated_at"`
-	Owner string `json:"owner"`
+	Name      string            `json:"name"`
+	Labels    map[string]string `json:"labels"`
+	Value     float64           `json:"value"`
+	UpdatedAt time.Time         `json:"updated_at"`
+	Owner     string            `json:"owner"`
 }
 
 type Registry struct {
-	mu sync.RWMutex
+	mu       sync.RWMutex
 	counters map[string]*Counter
-	gauges map[string]*Gauge
-	owners map[string]map[string]struct{}
+	gauges   map[string]*Gauge
+	owners   map[string]map[string]struct{}
 }
 
 func New() *Registry {
 	return &Registry{
 		counters: make(map[string]*Counter),
-		gauges: make(map[string]*Gauge),
-		owners: make(map[string]map[string]struct{}),
+		gauges:   make(map[string]*Gauge),
+		owners:   make(map[string]map[string]struct{}),
 	}
 }
 
@@ -141,8 +141,12 @@ func (r *Registry) Snapshot() ([]Counter, []Gauge) {
 		copyValue.Labels = cloneLabels(value.Labels)
 		gauges = append(gauges, copyValue)
 	}
-	sort.Slice(counters, func(i, j int) bool { return metricKey(counters[i].Name, counters[i].Labels) < metricKey(counters[j].Name, counters[j].Labels) })
-	sort.Slice(gauges, func(i, j int) bool { return metricKey(gauges[i].Name, gauges[i].Labels) < metricKey(gauges[j].Name, gauges[j].Labels) })
+	sort.Slice(counters, func(i, j int) bool {
+		return metricKey(counters[i].Name, counters[i].Labels) < metricKey(counters[j].Name, counters[j].Labels)
+	})
+	sort.Slice(gauges, func(i, j int) bool {
+		return metricKey(gauges[i].Name, gauges[i].Labels) < metricKey(gauges[j].Name, gauges[j].Labels)
+	})
 	return counters, gauges
 }
 

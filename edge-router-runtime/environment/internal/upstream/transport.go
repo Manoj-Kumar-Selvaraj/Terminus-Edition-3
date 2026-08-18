@@ -16,23 +16,23 @@ import (
 
 type Result struct {
 	StatusCode int
-	Header http.Header
-	Body []byte
-	Duration time.Duration
+	Header     http.Header
+	Body       []byte
+	Duration   time.Duration
 }
 
 type Transport struct {
-	mu sync.Mutex
-	clients map[string]*http.Client
+	mu         sync.Mutex
+	clients    map[string]*http.Client
 	transports map[string]*http.Transport
-	maxBody int64
+	maxBody    int64
 }
 
 func New() *Transport {
 	return &Transport{
-		clients: make(map[string]*http.Client),
+		clients:    make(map[string]*http.Client),
 		transports: make(map[string]*http.Transport),
-		maxBody: 8 << 20,
+		maxBody:    8 << 20,
 	}
 }
 
@@ -44,13 +44,13 @@ func (t *Transport) client(endpoint *rt.EndpointRuntime) *http.Client {
 		return client
 	}
 	transport := &http.Transport{
-		Proxy: http.ProxyFromEnvironment,
-		DialContext: (&net.Dialer{Timeout: 2 * time.Second, KeepAlive: 30 * time.Second}).DialContext,
-		ForceAttemptHTTP2: false,
-		MaxIdleConns: 256,
-		MaxIdleConnsPerHost: 32,
-		IdleConnTimeout: 90 * time.Second,
-		TLSHandshakeTimeout: 3 * time.Second,
+		Proxy:                 http.ProxyFromEnvironment,
+		DialContext:           (&net.Dialer{Timeout: 2 * time.Second, KeepAlive: 30 * time.Second}).DialContext,
+		ForceAttemptHTTP2:     false,
+		MaxIdleConns:          256,
+		MaxIdleConnsPerHost:   32,
+		IdleConnTimeout:       90 * time.Second,
+		TLSHandshakeTimeout:   3 * time.Second,
 		ResponseHeaderTimeout: 5 * time.Second,
 	}
 	client := &http.Client{Transport: transport, CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }}

@@ -18,55 +18,55 @@ import (
 type EventKind string
 
 const (
-	EventAccepted EventKind = "accepted"
-	EventRejected EventKind = "rejected"
+	EventAccepted  EventKind = "accepted"
+	EventRejected  EventKind = "rejected"
 	EventDuplicate EventKind = "duplicate"
-	EventStale EventKind = "stale"
-	EventConflict EventKind = "conflict"
+	EventStale     EventKind = "stale"
+	EventConflict  EventKind = "conflict"
 )
 
 type Event struct {
-	Kind EventKind `json:"kind"`
-	Source string `json:"source"`
-	Revision int64 `json:"revision"`
-	Generation uint64 `json:"generation"`
-	Digest string `json:"digest,omitempty"`
-	Message string `json:"message,omitempty"`
-	At time.Time `json:"at"`
+	Kind       EventKind `json:"kind"`
+	Source     string    `json:"source"`
+	Revision   int64     `json:"revision"`
+	Generation uint64    `json:"generation"`
+	Digest     string    `json:"digest,omitempty"`
+	Message    string    `json:"message,omitempty"`
+	At         time.Time `json:"at"`
 }
 
 type Status struct {
-	Generation uint64 `json:"generation"`
-	AcceptedRevisions map[string]int64 `json:"accepted_revisions"`
-	AcceptedDigests map[string]string `json:"accepted_digests"`
-	LastEvent Event `json:"last_event"`
-	Ready bool `json:"ready"`
+	Generation        uint64            `json:"generation"`
+	AcceptedRevisions map[string]int64  `json:"accepted_revisions"`
+	AcceptedDigests   map[string]string `json:"accepted_digests"`
+	LastEvent         Event             `json:"last_event"`
+	Ready             bool              `json:"ready"`
 }
 
 type Reconciler struct {
-	mu sync.Mutex
-	ingress *config.Ingress
-	compiler *compiler.Compiler
-	store *rt.PublicationStore
-	checkpoints *checkpoint.Store
-	registry *rt.Registry
-	generation atomic.Uint64
+	mu                sync.Mutex
+	ingress           *config.Ingress
+	compiler          *compiler.Compiler
+	store             *rt.PublicationStore
+	checkpoints       *checkpoint.Store
+	registry          *rt.Registry
+	generation        atomic.Uint64
 	acceptedRevisions map[string]int64
-	acceptedDigests map[string]string
-	lastEvent Event
-	ready atomic.Bool
-	onPublish func(previous, current *rt.RuntimeSnapshot)
+	acceptedDigests   map[string]string
+	lastEvent         Event
+	ready             atomic.Bool
+	onPublish         func(previous, current *rt.RuntimeSnapshot)
 }
 
 func New(ingress *config.Ingress, compiler *compiler.Compiler, store *rt.PublicationStore, checkpoints *checkpoint.Store, registry *rt.Registry) *Reconciler {
 	return &Reconciler{
-		ingress: ingress,
-		compiler: compiler,
-		store: store,
-		checkpoints: checkpoints,
-		registry: registry,
+		ingress:           ingress,
+		compiler:          compiler,
+		store:             store,
+		checkpoints:       checkpoints,
+		registry:          registry,
 		acceptedRevisions: make(map[string]int64),
-		acceptedDigests: make(map[string]string),
+		acceptedDigests:   make(map[string]string),
 	}
 }
 
@@ -231,11 +231,11 @@ func (r *Reconciler) Status() Status {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	return Status{
-		Generation: r.generation.Load(),
+		Generation:        r.generation.Load(),
 		AcceptedRevisions: rt.CloneRevisions(r.acceptedRevisions),
-		AcceptedDigests: rt.CloneDigests(r.acceptedDigests),
-		LastEvent: r.lastEvent,
-		Ready: r.ready.Load(),
+		AcceptedDigests:   rt.CloneDigests(r.acceptedDigests),
+		LastEvent:         r.lastEvent,
+		Ready:             r.ready.Load(),
 	}
 }
 

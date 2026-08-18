@@ -10,20 +10,20 @@ import (
 )
 
 type State struct {
-	PoolID string `json:"pool_id"`
-	Identity string `json:"identity"`
-	Incarnation uint64 `json:"incarnation"`
-	Membership rt.MembershipState `json:"membership"`
-	Inflight int64 `json:"inflight"`
-	Connections int64 `json:"connections"`
-	Deadline time.Time `json:"deadline"`
+	PoolID      string             `json:"pool_id"`
+	Identity    string             `json:"identity"`
+	Incarnation uint64             `json:"incarnation"`
+	Membership  rt.MembershipState `json:"membership"`
+	Inflight    int64              `json:"inflight"`
+	Connections int64              `json:"connections"`
+	Deadline    time.Time          `json:"deadline"`
 }
 
 type Manager struct {
-	registry *rt.Registry
-	mu sync.Mutex
-	draining map[string]*rt.EndpointRuntime
-	retired []State
+	registry   *rt.Registry
+	mu         sync.Mutex
+	draining   map[string]*rt.EndpointRuntime
+	retired    []State
 	maxRetired int
 }
 
@@ -77,13 +77,13 @@ func (m *Manager) Sweep(now time.Time) int {
 		endpoint.Retire()
 		delete(m.draining, id)
 		m.retired = append(m.retired, State{
-			PoolID: endpoint.PoolID,
-			Identity: endpoint.Identity,
+			PoolID:      endpoint.PoolID,
+			Identity:    endpoint.Identity,
 			Incarnation: endpoint.Incarnation,
-			Membership: endpoint.Membership(),
-			Inflight: inflight,
+			Membership:  endpoint.Membership(),
+			Inflight:    inflight,
 			Connections: connections,
-			Deadline: deadline,
+			Deadline:    deadline,
 		})
 		retired++
 	}
@@ -100,13 +100,13 @@ func (m *Manager) Draining() []State {
 	for _, endpoint := range m.draining {
 		inflight, connections := endpoint.Counts()
 		out = append(out, State{
-			PoolID: endpoint.PoolID,
-			Identity: endpoint.Identity,
+			PoolID:      endpoint.PoolID,
+			Identity:    endpoint.Identity,
 			Incarnation: endpoint.Incarnation,
-			Membership: endpoint.Membership(),
-			Inflight: inflight,
+			Membership:  endpoint.Membership(),
+			Inflight:    inflight,
 			Connections: connections,
-			Deadline: endpoint.Deadline(),
+			Deadline:    endpoint.Deadline(),
 		})
 	}
 	sort.Slice(out, func(i, j int) bool {

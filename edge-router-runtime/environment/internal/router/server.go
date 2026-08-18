@@ -20,13 +20,13 @@ import (
 )
 
 type Server struct {
-	store *rt.PublicationStore
-	selector *selection.Engine
-	transport *upstream.Transport
-	metrics *telemetry.Registry
-	logger *slog.Logger
-	server *http.Server
-	ready atomic.Bool
+	store          *rt.PublicationStore
+	selector       *selection.Engine
+	transport      *upstream.Transport
+	metrics        *telemetry.Registry
+	logger         *slog.Logger
+	server         *http.Server
+	ready          atomic.Bool
 	maxRequestBody int64
 }
 
@@ -35,20 +35,20 @@ func New(addr string, store *rt.PublicationStore, selector *selection.Engine, tr
 		logger = slog.Default()
 	}
 	s := &Server{
-		store: store,
-		selector: selector,
-		transport: transport,
-		metrics: metrics,
-		logger: logger,
+		store:          store,
+		selector:       selector,
+		transport:      transport,
+		metrics:        metrics,
+		logger:         logger,
 		maxRequestBody: 4 << 20,
 	}
 	s.server = &http.Server{
-		Addr: addr,
-		Handler: http.HandlerFunc(s.handle),
+		Addr:              addr,
+		Handler:           http.HandlerFunc(s.handle),
 		ReadHeaderTimeout: 5 * time.Second,
-		ReadTimeout: 30 * time.Second,
-		WriteTimeout: 30 * time.Second,
-		IdleTimeout: 90 * time.Second,
+		ReadTimeout:       30 * time.Second,
+		WriteTimeout:      30 * time.Second,
+		IdleTimeout:       90 * time.Second,
 	}
 	return s
 }
@@ -226,9 +226,9 @@ func (s *Server) Debug(writer http.ResponseWriter, request *http.Request) {
 	defer lease.Release()
 	payload := map[string]any{
 		"generation": lease.Snapshot.Generation,
-		"routes": len(lease.Snapshot.Routes),
-		"pools": len(lease.Snapshot.Pools),
-		"leases": lease.Snapshot.LeaseCount(),
+		"routes":     len(lease.Snapshot.Routes),
+		"pools":      len(lease.Snapshot.Pools),
+		"leases":     lease.Snapshot.LeaseCount(),
 	}
 	writer.Header().Set("Content-Type", "application/json")
 	_ = json.NewEncoder(writer).Encode(payload)

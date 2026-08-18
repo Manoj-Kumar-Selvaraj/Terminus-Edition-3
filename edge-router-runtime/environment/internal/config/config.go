@@ -17,7 +17,7 @@ import (
 )
 
 type ValidationError struct {
-	Path string `json:"path"`
+	Path    string `json:"path"`
 	Message string `json:"message"`
 }
 
@@ -29,47 +29,47 @@ func (e ValidationError) Error() string {
 }
 
 type ValidationResult struct {
-	State rt.DesiredState `json:"state"`
+	State  rt.DesiredState   `json:"state"`
 	Errors []ValidationError `json:"errors,omitempty"`
 }
 
 type UpdateStatus string
 
 const (
-	StatusAccepted UpdateStatus = "accepted"
-	StatusRejected UpdateStatus = "rejected"
+	StatusAccepted  UpdateStatus = "accepted"
+	StatusRejected  UpdateStatus = "rejected"
 	StatusDuplicate UpdateStatus = "duplicate"
-	StatusStale UpdateStatus = "stale"
-	StatusConflict UpdateStatus = "conflict"
+	StatusStale     UpdateStatus = "stale"
+	StatusConflict  UpdateStatus = "conflict"
 )
 
 type UpdateEnvelope struct {
-	Snapshot rt.SourceSnapshot
-	Digest string
+	Snapshot   rt.SourceSnapshot
+	Digest     string
 	ReceivedAt time.Time
-	Result chan UpdateResult
+	Result     chan UpdateResult
 }
 
 type UpdateResult struct {
-	Status UpdateStatus `json:"status"`
-	Source string `json:"source"`
-	Revision int64 `json:"revision"`
-	Generation uint64 `json:"generation,omitempty"`
-	Message string `json:"message,omitempty"`
+	Status     UpdateStatus `json:"status"`
+	Source     string       `json:"source"`
+	Revision   int64        `json:"revision"`
+	Generation uint64       `json:"generation,omitempty"`
+	Message    string       `json:"message,omitempty"`
 }
 
 type AcceptedSource struct {
 	Snapshot rt.SourceSnapshot
-	Digest string
+	Digest   string
 }
 
 type Ingress struct {
-	mu sync.Mutex
-	queue chan UpdateEnvelope
-	accepted map[string]AcceptedSource
-	pending map[string]UpdateEnvelope
+	mu            sync.Mutex
+	queue         chan UpdateEnvelope
+	accepted      map[string]AcceptedSource
+	pending       map[string]UpdateEnvelope
 	globalHighest int64
-	closed bool
+	closed        bool
 }
 
 func NewIngress(capacity int) *Ingress {
@@ -77,9 +77,9 @@ func NewIngress(capacity int) *Ingress {
 		capacity = 16
 	}
 	return &Ingress{
-		queue: make(chan UpdateEnvelope, capacity),
+		queue:    make(chan UpdateEnvelope, capacity),
 		accepted: make(map[string]AcceptedSource),
-		pending: make(map[string]UpdateEnvelope),
+		pending:  make(map[string]UpdateEnvelope),
 	}
 }
 
@@ -95,10 +95,10 @@ func (i *Ingress) Submit(ctx context.Context, snapshot rt.SourceSnapshot) (<-cha
 		return nil, err
 	}
 	envelope := UpdateEnvelope{
-		Snapshot: snapshot,
-		Digest: rt.SemanticDigest(payload),
+		Snapshot:   snapshot,
+		Digest:     rt.SemanticDigest(payload),
 		ReceivedAt: time.Now().UTC(),
-		Result: make(chan UpdateResult, 1),
+		Result:     make(chan UpdateResult, 1),
 	}
 	i.mu.Lock()
 	if i.closed {
@@ -191,9 +191,9 @@ func (i *Ingress) MergeCandidate(envelope UpdateEnvelope) rt.DesiredState {
 	}
 	sort.Strings(sources)
 	state := rt.DesiredState{
-		SchemaVersion: 1,
+		SchemaVersion:   1,
 		SourceRevisions: make(map[string]int64),
-		SourceDigests: make(map[string]string),
+		SourceDigests:   make(map[string]string),
 	}
 	for _, source := range sources {
 		accepted := i.accepted[source]

@@ -18,23 +18,23 @@ type HealthState string
 type SnapshotState string
 
 type SelectionPolicy struct {
-	Mode string `json:"mode"`
-	StickyHeader string `json:"sticky_header,omitempty"`
-	AffinityTTLSeconds int `json:"affinity_ttl_seconds,omitempty"`
-	AffinityCapacity int `json:"affinity_capacity,omitempty"`
+	Mode               string `json:"mode"`
+	StickyHeader       string `json:"sticky_header,omitempty"`
+	AffinityTTLSeconds int    `json:"affinity_ttl_seconds,omitempty"`
+	AffinityCapacity   int    `json:"affinity_capacity,omitempty"`
 }
 
 type RetryPolicy struct {
-	MaxAttempts int `json:"max_attempts"`
+	MaxAttempts int   `json:"max_attempts"`
 	RetryStatus []int `json:"retry_status,omitempty"`
 }
 
 type HealthPolicy struct {
-	Path string `json:"path,omitempty"`
-	IntervalMillis int `json:"interval_millis,omitempty"`
-	TimeoutMillis int `json:"timeout_millis,omitempty"`
-	HealthyThreshold int `json:"healthy_threshold,omitempty"`
-	UnhealthyThreshold int `json:"unhealthy_threshold,omitempty"`
+	Path               string `json:"path,omitempty"`
+	IntervalMillis     int    `json:"interval_millis,omitempty"`
+	TimeoutMillis      int    `json:"timeout_millis,omitempty"`
+	HealthyThreshold   int    `json:"healthy_threshold,omitempty"`
+	UnhealthyThreshold int    `json:"unhealthy_threshold,omitempty"`
 }
 
 type DrainPolicy struct {
@@ -42,129 +42,129 @@ type DrainPolicy struct {
 }
 
 type EndpointSpec struct {
-	Address string `json:"address"`
-	Weight int `json:"weight"`
-	Transport string `json:"transport,omitempty"`
-	Metadata map[string]string `json:"metadata,omitempty"`
+	Address   string            `json:"address"`
+	Weight    int               `json:"weight"`
+	Transport string            `json:"transport,omitempty"`
+	Metadata  map[string]string `json:"metadata,omitempty"`
 }
 
 type PoolSpec struct {
-	ID string `json:"id"`
-	Endpoints []EndpointSpec `json:"endpoints"`
-	Selection SelectionPolicy `json:"selection"`
-	Retry RetryPolicy `json:"retry"`
-	Failover []string `json:"failover,omitempty"`
-	Health HealthPolicy `json:"health"`
-	Drain DrainPolicy `json:"drain"`
-	Metadata map[string]string `json:"metadata,omitempty"`
+	ID        string            `json:"id"`
+	Endpoints []EndpointSpec    `json:"endpoints"`
+	Selection SelectionPolicy   `json:"selection"`
+	Retry     RetryPolicy       `json:"retry"`
+	Failover  []string          `json:"failover,omitempty"`
+	Health    HealthPolicy      `json:"health"`
+	Drain     DrainPolicy       `json:"drain"`
+	Metadata  map[string]string `json:"metadata,omitempty"`
 }
 
 type MatchSpec struct {
-	Host string `json:"host,omitempty"`
-	PathPrefix string `json:"path_prefix,omitempty"`
-	Methods []string `json:"methods,omitempty"`
+	Host       string   `json:"host,omitempty"`
+	PathPrefix string   `json:"path_prefix,omitempty"`
+	Methods    []string `json:"methods,omitempty"`
 }
 
 type RouteSpec struct {
-	ID string `json:"id"`
-	Match MatchSpec `json:"match"`
-	PoolID string `json:"pool_id"`
-	Priority int `json:"priority,omitempty"`
+	ID       string            `json:"id"`
+	Match    MatchSpec         `json:"match"`
+	PoolID   string            `json:"pool_id"`
+	Priority int               `json:"priority,omitempty"`
 	Metadata map[string]string `json:"metadata,omitempty"`
 }
 
 type SourceSnapshot struct {
-	Source string `json:"source"`
-	Revision int64 `json:"revision"`
-	Routes []RouteSpec `json:"routes,omitempty"`
-	Pools []PoolSpec `json:"pools,omitempty"`
-	ObservedAt string `json:"observed_at,omitempty"`
+	Source     string      `json:"source"`
+	Revision   int64       `json:"revision"`
+	Routes     []RouteSpec `json:"routes,omitempty"`
+	Pools      []PoolSpec  `json:"pools,omitempty"`
+	ObservedAt string      `json:"observed_at,omitempty"`
 }
 
 type DesiredState struct {
-	SchemaVersion int `json:"schema_version"`
-	Routes []RouteSpec `json:"routes"`
-	Pools []PoolSpec `json:"pools"`
-	SourceRevisions map[string]int64 `json:"source_revisions"`
-	SourceDigests map[string]string `json:"source_digests"`
+	SchemaVersion   int               `json:"schema_version"`
+	Routes          []RouteSpec       `json:"routes"`
+	Pools           []PoolSpec        `json:"pools"`
+	SourceRevisions map[string]int64  `json:"source_revisions"`
+	SourceDigests   map[string]string `json:"source_digests"`
 }
 
 type CompiledRoute struct {
-	ID string `json:"id"`
-	Host string `json:"host,omitempty"`
-	PathPrefix string `json:"path_prefix,omitempty"`
-	Methods map[string]struct{} `json:"-"`
-	PoolID string `json:"pool_id"`
-	Priority int `json:"priority"`
-	SemanticDigest string `json:"semantic_digest"`
+	ID             string              `json:"id"`
+	Host           string              `json:"host,omitempty"`
+	PathPrefix     string              `json:"path_prefix,omitempty"`
+	Methods        map[string]struct{} `json:"-"`
+	PoolID         string              `json:"pool_id"`
+	Priority       int                 `json:"priority"`
+	SemanticDigest string              `json:"semantic_digest"`
 }
 
 type EndpointView struct {
-	Identity string `json:"identity"`
-	Address string `json:"address"`
-	Weight int `json:"weight"`
-	Incarnation uint64 `json:"incarnation"`
-	Runtime *EndpointRuntime `json:"-"`
+	Identity    string           `json:"identity"`
+	Address     string           `json:"address"`
+	Weight      int              `json:"weight"`
+	Incarnation uint64           `json:"incarnation"`
+	Runtime     *EndpointRuntime `json:"-"`
 }
 
 type PoolView struct {
-	ID string `json:"id"`
-	Endpoints []EndpointView `json:"endpoints"`
-	Selection SelectionPolicy `json:"selection"`
-	Retry RetryPolicy `json:"retry"`
-	Failover []string `json:"failover,omitempty"`
-	Health HealthPolicy `json:"health"`
-	Drain DrainPolicy `json:"drain"`
-	Compatibility string `json:"compatibility"`
+	ID            string          `json:"id"`
+	Endpoints     []EndpointView  `json:"endpoints"`
+	Selection     SelectionPolicy `json:"selection"`
+	Retry         RetryPolicy     `json:"retry"`
+	Failover      []string        `json:"failover,omitempty"`
+	Health        HealthPolicy    `json:"health"`
+	Drain         DrainPolicy     `json:"drain"`
+	Compatibility string          `json:"compatibility"`
 }
 
 type RuntimeSnapshot struct {
-	Generation uint64 `json:"generation"`
-	Routes []CompiledRoute `json:"routes"`
-	Pools map[string]*PoolView `json:"pools"`
-	Desired DesiredState `json:"desired"`
-	SourceRevisions map[string]int64 `json:"source_revisions"`
-	SourceDigests map[string]string `json:"source_digests"`
-	PublishedAt time.Time `json:"published_at"`
-	State SnapshotState `json:"state"`
-	leaseCount atomic.Int64
+	Generation      uint64               `json:"generation"`
+	Routes          []CompiledRoute      `json:"routes"`
+	Pools           map[string]*PoolView `json:"pools"`
+	Desired         DesiredState         `json:"desired"`
+	SourceRevisions map[string]int64     `json:"source_revisions"`
+	SourceDigests   map[string]string    `json:"source_digests"`
+	PublishedAt     time.Time            `json:"published_at"`
+	State           SnapshotState        `json:"state"`
+	leaseCount      atomic.Int64
 }
 
 const (
-	MembershipActive MembershipState = "ACTIVE"
+	MembershipActive   MembershipState = "ACTIVE"
 	MembershipDraining MembershipState = "DRAINING"
-	MembershipRetired MembershipState = "RETIRED"
-	HealthUnknown HealthState = "UNKNOWN"
-	HealthHealthy HealthState = "HEALTHY"
-	HealthUnhealthy HealthState = "UNHEALTHY"
-	SnapshotBuilding SnapshotState = "BUILDING"
-	SnapshotPublished SnapshotState = "PUBLISHED"
-	SnapshotRetired SnapshotState = "RETIRED"
+	MembershipRetired  MembershipState = "RETIRED"
+	HealthUnknown      HealthState     = "UNKNOWN"
+	HealthHealthy      HealthState     = "HEALTHY"
+	HealthUnhealthy    HealthState     = "UNHEALTHY"
+	SnapshotBuilding   SnapshotState   = "BUILDING"
+	SnapshotPublished  SnapshotState   = "PUBLISHED"
+	SnapshotRetired    SnapshotState   = "RETIRED"
 )
 
 type EndpointRuntime struct {
-	Identity string
-	PoolID string
-	Address string
-	Incarnation uint64
-	mu sync.RWMutex
-	membership MembershipState
-	health HealthState
-	lastHealth time.Time
-	inflight int64
+	Identity        string
+	PoolID          string
+	Address         string
+	Incarnation     uint64
+	mu              sync.RWMutex
+	membership      MembershipState
+	health          HealthState
+	lastHealth      time.Time
+	inflight        int64
 	openConnections int64
-	drainDeadline time.Time
-	closed bool
+	drainDeadline   time.Time
+	closed          bool
 }
 
 func NewEndpointRuntime(poolID, identity, address string, incarnation uint64) *EndpointRuntime {
 	return &EndpointRuntime{
-		Identity: identity,
-		PoolID: poolID,
-		Address: address,
+		Identity:    identity,
+		PoolID:      poolID,
+		Address:     address,
 		Incarnation: incarnation,
-		membership: MembershipActive,
-		health: HealthUnknown,
+		membership:  MembershipActive,
+		health:      HealthUnknown,
 	}
 }
 
@@ -267,19 +267,19 @@ func (e *EndpointRuntime) Closed() bool {
 }
 
 type AffinityEntry struct {
-	RuntimeID string
+	RuntimeID        string
 	EndpointIdentity string
-	Incarnation uint64
-	ExpiresAt time.Time
-	TouchedAt time.Time
+	Incarnation      uint64
+	ExpiresAt        time.Time
+	TouchedAt        time.Time
 }
 
 type PoolRuntime struct {
-	ID string
-	Compatibility string
-	mu sync.Mutex
-	cursor uint64
-	affinity map[string]AffinityEntry
+	ID             string
+	Compatibility  string
+	mu             sync.Mutex
+	cursor         uint64
+	affinity       map[string]AffinityEntry
 	selectionCount uint64
 }
 
@@ -351,16 +351,16 @@ func (p *PoolRuntime) AffinitySize() int {
 }
 
 type Registry struct {
-	mu sync.RWMutex
-	pools map[string]*PoolRuntime
-	endpoints map[string]*EndpointRuntime
+	mu              sync.RWMutex
+	pools           map[string]*PoolRuntime
+	endpoints       map[string]*EndpointRuntime
 	nextIncarnation uint64
 }
 
 func NewRegistry() *Registry {
 	return &Registry{
-		pools: make(map[string]*PoolRuntime),
-		endpoints: make(map[string]*EndpointRuntime),
+		pools:           make(map[string]*PoolRuntime),
+		endpoints:       make(map[string]*EndpointRuntime),
 		nextIncarnation: 1,
 	}
 }
@@ -448,10 +448,10 @@ func (s *RuntimeSnapshot) LeaseCount() int64 {
 }
 
 type PublicationStore struct {
-	current atomic.Pointer[RuntimeSnapshot]
-	mu sync.Mutex
-	routes []CompiledRoute
-	pools map[string]*PoolView
+	current    atomic.Pointer[RuntimeSnapshot]
+	mu         sync.Mutex
+	routes     []CompiledRoute
+	pools      map[string]*PoolView
 	generation uint64
 }
 
@@ -476,8 +476,6 @@ func (s *PublicationStore) Publish(snapshot *RuntimeSnapshot) {
 		return
 	}
 	s.mu.Lock()
-	// The inherited starter exposes the route and pool pieces independently before
-	// the final pointer swap; concurrent readers can therefore observe a mixed view.
 	s.routes = snapshot.Routes
 	s.mu.Unlock()
 	time.Sleep(time.Microsecond)

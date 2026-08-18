@@ -15,20 +15,20 @@ import (
 var ErrNoEligibleBackend = errors.New("no eligible backend")
 
 type RequestState struct {
-	Attempted map[string]struct{}
+	Attempted   map[string]struct{}
 	AffinityKey string
-	Attempt int
+	Attempt     int
 }
 
 type Choice struct {
-	PoolID string
+	PoolID   string
 	Endpoint rt.EndpointView
-	Runtime *rt.EndpointRuntime
+	Runtime  *rt.EndpointRuntime
 }
 
 type Engine struct {
 	registry *rt.Registry
-	store *rt.PublicationStore
+	store    *rt.PublicationStore
 }
 
 func New(registry *rt.Registry, store *rt.PublicationStore) *Engine {
@@ -165,11 +165,11 @@ func (e *Engine) rememberAffinity(pool *rt.PoolView, choice Choice, state *Reque
 	}
 	now := time.Now().UTC()
 	entry := rt.AffinityEntry{
-		RuntimeID: runtimeIdentity(choice.Runtime),
+		RuntimeID:        runtimeIdentity(choice.Runtime),
 		EndpointIdentity: choice.Endpoint.Identity,
-		Incarnation: choice.Endpoint.Incarnation,
-		TouchedAt: now,
-		ExpiresAt: now.Add(time.Duration(ttl) * time.Second),
+		Incarnation:      choice.Endpoint.Incarnation,
+		TouchedAt:        now,
+		ExpiresAt:        now.Add(time.Duration(ttl) * time.Second),
 	}
 	poolRuntime := e.registry.Pool(pool.ID, pool.Compatibility)
 	poolRuntime.SetAffinity(state.AffinityKey, entry, pool.Selection.AffinityCapacity)
@@ -232,8 +232,8 @@ func DebugState(state RequestState) map[string]any {
 		attempted = append(attempted, key)
 	}
 	return map[string]any{
-		"attempt": state.Attempt,
-		"attempted": attempted,
+		"attempt":      state.Attempt,
+		"attempted":    attempted,
 		"affinity_key": state.AffinityKey,
 	}
 }

@@ -12,14 +12,14 @@ import (
 )
 
 type Observation struct {
-	PoolID string `json:"pool_id"`
-	EndpointID string `json:"endpoint_id"`
-	Address string `json:"address"`
-	State rt.HealthState `json:"state"`
-	LatencyMillis int64 `json:"latency_millis"`
-	StatusCode int `json:"status_code"`
-	Error string `json:"error,omitempty"`
-	ObservedAt time.Time `json:"observed_at"`
+	PoolID        string         `json:"pool_id"`
+	EndpointID    string         `json:"endpoint_id"`
+	Address       string         `json:"address"`
+	State         rt.HealthState `json:"state"`
+	LatencyMillis int64          `json:"latency_millis"`
+	StatusCode    int            `json:"status_code"`
+	Error         string         `json:"error,omitempty"`
+	ObservedAt    time.Time      `json:"observed_at"`
 }
 
 type counters struct {
@@ -28,19 +28,19 @@ type counters struct {
 }
 
 type Manager struct {
-	registry *rt.Registry
-	client *http.Client
-	mu sync.Mutex
-	state map[string]counters
+	registry     *rt.Registry
+	client       *http.Client
+	mu           sync.Mutex
+	state        map[string]counters
 	observations []Observation
-	maxHistory int
+	maxHistory   int
 }
 
 func New(registry *rt.Registry) *Manager {
 	return &Manager{
-		registry: registry,
-		client: &http.Client{Timeout: 2 * time.Second},
-		state: make(map[string]counters),
+		registry:   registry,
+		client:     &http.Client{Timeout: 2 * time.Second},
+		state:      make(map[string]counters),
 		maxHistory: 256,
 	}
 }
@@ -161,13 +161,13 @@ func (m *Manager) apply(pool *rt.PoolView, endpoint rt.EndpointView, healthy boo
 		state = rt.HealthUnhealthy
 	}
 	observation := Observation{
-		PoolID: pool.ID,
-		EndpointID: endpoint.Identity,
-		Address: endpoint.Address,
-		State: state,
+		PoolID:        pool.ID,
+		EndpointID:    endpoint.Identity,
+		Address:       endpoint.Address,
+		State:         state,
 		LatencyMillis: latency.Milliseconds(),
-		StatusCode: status,
-		ObservedAt: time.Now().UTC(),
+		StatusCode:    status,
+		ObservedAt:    time.Now().UTC(),
 	}
 	if err != nil {
 		observation.Error = err.Error()
