@@ -12,13 +12,14 @@ from conftest import (
     resource_values,
     rewrite_body,
     tf_apply,
+    tf_destroy,
     tf_plan,
     tf_plan_json,
 )
 
 
 def test_f2p_filesystem_identities_survive_mutable_updates(tmp_path, cleanup_registry):
-    """File/directory identities survive metadata updates and equivalent mode spellings converge without replay."""
+    """File/directory identity, backend use and equivalent mode spellings converge correctly."""
     file_path = cleanup_registry.path(tmp_path / "managed-file")
     directory = cleanup_registry.path(tmp_path / "managed-dir")
     runner_tmp = tmp_path / "runner"
@@ -43,7 +44,9 @@ resource "ansibleops_directory" "managed" {{
         ansible_binary=wrapper,
         temp_dir=runner_tmp,
     )
+    before_create = counter_value(counter)
     tf_apply(workspace)
+    assert counter_value(counter) >= before_create + 2
     file_before = resource_values(workspace, "ansibleops_file.managed")["id"]
     directory_before = resource_values(workspace, "ansibleops_directory.managed")["id"]
     assert pathlib.Path(file_path).stat().st_uid == 0
@@ -63,7 +66,9 @@ resource "ansibleops_directory" "managed" {{
     before_equivalent_apply = counter_value(counter)
     tf_apply(workspace)
     assert counter_value(counter) == before_equivalent_apply
+    before_clean_plan = counter_value(counter)
     assert tf_plan(workspace).returncode == 0
+    assert counter_value(counter) == before_clean_plan
 
     updated = equivalent.replace('mode  = "640"', 'mode  = "0600"').replace(
         'mode  = "750"', 'mode  = "0700"'
@@ -74,12 +79,18 @@ resource "ansibleops_directory" "managed" {{
         ansible_binary=wrapper,
         temp_dir=runner_tmp,
     )
+    before_update = counter_value(counter)
     tf_apply(workspace)
+    assert counter_value(counter) >= before_update + 2
     assert resource_values(workspace, "ansibleops_file.managed")["id"] == file_before
     assert (
         resource_values(workspace, "ansibleops_directory.managed")["id"]
         == directory_before
     )
+
+    before_delete = counter_value(counter)
+    tf_destroy(workspace)
+    assert counter_value(counter) >= before_delete + 2
 
 
 def test_f2p_symlink_identity_survives_target_update(tmp_path, cleanup_registry):
