@@ -51,8 +51,8 @@ KNOWN_POLICY_CONFLICTS: none affecting StoneVault freeze; repository-wide sweeps
 | F2P empirical matrix | PASS | 28/28 planned F2P probes fail starter and pass Oracle; two explicit grouping rules yield exactly 25 distinct F2P behavioral cases |
 | P2P empirical matrix | PASS | 19/19 planned P2P probes pass starter and Oracle |
 | Freeze | PASS | exact task tree `33a8b3ea5bce04dff6bfbc7325fc8b1dcccc6424`; deterministic/runtime/complexity/spec/format state bound above; no unresolved StoneVault task conflict |
-| Q4 Spec-Test Contract Reviewer | PENDING | must now run independently, packet-bound, read-only against frozen task tree |
-| Q6 Production Logic Auditor | PENDING | must now run independently, packet-bound, read-only against frozen task tree / production scope |
+| Q4 Spec-Test Contract Reviewer | PENDING | generated packet `.terminus/reviews/stonevault-crash-safe-storage/29b684f3/stonevault-crash-safe-storage-29b684f3-spec-test-contract-0a860fca37.packet.json`; requires fresh independent reviewer result |
+| Q6 Production Logic Auditor | PENDING | generated packet `.terminus/reviews/stonevault-crash-safe-storage/29b684f3/stonevault-crash-safe-storage-29b684f3-production-logic-31d4c38000.packet.json`; scope hash `ffb9c6b644538353bb56f46a761364f697285da48b1d60e8bd16d140fd67ed43`; requires fresh independent reviewer result |
 | Quality Interlock | PENDING | requires current Q4 PASS + Q6 PASS with sufficient evidence and >=MEDIUM confidence |
 | Pre-LLMaJ | NOT_REACHED | waits for Quality Interlock |
 | Q8 GPT/Claude diagnostics | NOT_REACHED | waits for Pre-LLMaJ |
@@ -83,14 +83,16 @@ KNOWN_POLICY_CONFLICTS: none affecting StoneVault freeze; repository-wide sweeps
 
 | Review | Review ID | Task tree | Protocol | Prompt | Role policy | Scope hash | Result path | Verdict | Confidence | Evidence |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| Q4 Spec-Test Contract Reviewer | | `33a8b3ea5bce04dff6bfbc7325fc8b1dcccc6424` | 2.2 | 2.2 | current | n/a | | PENDING | | packet generation required |
-| Q6 Production Logic Auditor | | `33a8b3ea5bce04dff6bfbc7325fc8b1dcccc6424` | 2.2 | 2.2 | current | pending production-scope hash | | PENDING | | packet generation required |
+| Q4 Spec-Test Contract Reviewer | `stonevault-crash-safe-storage-29b684f3-spec-test-contract-0a860fca37` | `33a8b3ea5bce04dff6bfbc7325fc8b1dcccc6424` | 2.2 | 2.2 | 1.1 | n/a | `.terminus/reviews/stonevault-crash-safe-storage/29b684f3/stonevault-crash-safe-storage-29b684f3-spec-test-contract-0a860fca37.json` | PENDING | | immutable packet committed; cold reviewer execution required |
+| Q6 Production Logic Auditor | `stonevault-crash-safe-storage-29b684f3-production-logic-31d4c38000` | `33a8b3ea5bce04dff6bfbc7325fc8b1dcccc6424` | 2.2 | 2.2 | 1.1 | `ffb9c6b644538353bb56f46a761364f697285da48b1d60e8bd16d140fd67ed43` | `.terminus/reviews/stonevault-crash-safe-storage/29b684f3/stonevault-crash-safe-storage-29b684f3-production-logic-31d4c38000.json` | PENDING | | immutable packet committed; cold reviewer execution required |
 
 ## Quality interlock checkpoint
 
 - Frozen candidate: `PASS`
 - Quality interlock: `PENDING`
-- Next legal action: generate exact-current Q4 and Q6 packets and dispatch independent read-only reviewers.
+- Q4 packet: `stonevault-crash-safe-storage-29b684f3-spec-test-contract-0a860fca37`
+- Q6 packet: `stonevault-crash-safe-storage-29b684f3-production-logic-31d4c38000`
+- Next legal action: execute Q4 and Q6 in two separate fresh role-specific reviewer chats; validate result schema/provenance/freshness before advancing.
 
 ## Policy-conflict ledger
 
