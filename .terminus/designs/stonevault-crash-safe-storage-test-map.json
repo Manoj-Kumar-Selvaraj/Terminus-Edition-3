@@ -1,7 +1,7 @@
 {
   "schema_version": "1.2",
   "task": "stonevault-crash-safe-storage",
-  "empirical_status": "PENDING_CURRENT_HEAD_ORACLE_NOP_MATRIX_AFTER_RECLASSIFICATION",
+  "empirical_status": "PASS_CURRENT_HEAD_ORACLE_NOP_MATRIX",
   "requirements": {
     "R01_WRITER_FENCING": "Only one writable process may hold a database directory and the exclusive writer lock must be released on exit.",
     "R02_DATA_DIR_PRECEDENCE": "Explicit --data-dir overrides STONEVAULT_DATA, which overrides the documented default.",
@@ -89,5 +89,17 @@
   "edge_boundary_coverage": ["inclusive key/prefix/value limits","unsigned high-bit byte ordering","torn WAL header/payload boundaries","snapshot structural bounds"],
   "negative_failure_coverage": ["concurrent writer rejection","conflict atomic rejection","complete WAL corruption","snapshot structural corruption","malformed protocol and unknown transaction IDs"],
   "independence": "Every runtime pytest probe uses a fresh tmp_path database; the ABI/source preservation probe performs an isolated immutable interface check against published task artifacts.",
-  "classification_note": "F2P/P2P are private authoring classifications; neutral pytest names are intentional. Five originally planned change-required probes were reclassified to P2P after NOP evidence showed those behaviors were already preserved. The pre-existing hexadecimal test remains an F2P probe because it intentionally scans an uncommitted put and therefore shares the local-scan-overlay transition; a committed-state hexadecimal test isolates the R13 preservation contract."
+  "classification_note": "F2P/P2P are private authoring classifications; neutral pytest names are intentional. Five originally planned change-required probes were reclassified to P2P after earlier NOP evidence showed those behaviors were already preserved. The current-head empirical matrix confirms all 28 F2P probes fail the starter and all 19 P2P probes pass it. The pre-existing hexadecimal test remains an F2P probe because it intentionally scans an uncommitted put and therefore shares the local-scan-overlay transition; a committed-state hexadecimal test isolates the R13 preservation contract.",
+  "empirical_evidence": {
+    "workflow_run_id": 32094975331,
+    "head_sha": "2f6abef06bbc690d1a888b34a01b103b18067598",
+    "artifact_id": 9309650300,
+    "artifact_sha256": "eefb09162fa76252c081d8d8b96c2f8345920babf1815c483de4b2888330a850",
+    "oracle_reward": 1,
+    "oracle_pytest": "47 passed",
+    "nop_reward": 0,
+    "nop_pytest": "28 failed, 19 passed",
+    "f2p_transition": "28/28 planned F2P probes fail starter and pass Oracle",
+    "p2p_preservation": "19/19 planned P2P probes pass starter and Oracle"
+  }
 }
