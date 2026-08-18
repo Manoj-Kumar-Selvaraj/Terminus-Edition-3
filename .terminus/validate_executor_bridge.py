@@ -30,6 +30,9 @@ FILES = [
     T / "execution" / "runner_cli.py",
     T / "execution" / "quality_executor.py",
     T / "execution" / "quality_executor_cli.py",
+    T / "execution" / "quality_backend.py",
+    T / "execution" / "quality_budget.py",
+    T / "execution" / "quality_dispatch_cli.py",
     T / "agents" / "schemas" / "executor_handoff.schema.json",
     T / "agents" / "schemas" / "stage_result.schema.json",
     T / "tests" / "test_executor_bridge.py",
@@ -82,6 +85,8 @@ def main() -> int:
     sandbox_text = (T / "execution" / "sandbox.py").read_text(encoding="utf-8")
     guard_text = (T / "execution" / "invocation_guard.py").read_text(encoding="utf-8")
     quality_text = (T / "execution" / "quality_executor.py").read_text(encoding="utf-8")
+    backend_text = (T / "execution" / "quality_backend.py").read_text(encoding="utf-8")
+    budget_text = (T / "execution" / "quality_budget.py").read_text(encoding="utf-8")
     quality_workflow = (
         ROOT / ".github" / "workflows" / "terminus-quality-executor.yml"
     ).read_text(encoding="utf-8")
@@ -120,11 +125,43 @@ def main() -> int:
     for marker in quality_markers:
         if marker not in quality_text:
             errors.append(f"quality_executor.py missing invariant marker: {marker}")
+
+    for marker in (
+        "Q_CURSOR_ENABLED",
+        "Q_OPENAI_ENABLED",
+        "Q_CLAUDE_ENABLED",
+        "Q_STB_AI_ENABLED",
+        "STB_AI_API_KEY",
+        "https://api.portkey.ai/v1",
+        "exactly one Q backend flag",
+        'result["selected_backend"]',
+    ):
+        if marker not in backend_text and marker not in quality_workflow:
+            errors.append(f"Q backend routing missing invariant marker: {marker}")
+
+    for marker in (
+        'Q_ROLE_LIMITS["Spec-Test Contract Reviewer"] = 3',
+        'Q_ROLE_LIMITS["Production Logic Auditor"] = 2',
+        'STATE_DIR = "q-runs"',
+        "execution budget exhausted",
+    ):
+        if marker not in budget_text:
+            errors.append(f"quality budget missing invariant marker: {marker}")
+
     if "--resume" in quality_text or "--resume" in quality_workflow:
         errors.append("packet-bound quality executor must always start a fresh Cursor session")
-    for secret in ("CURSOR_API_KEY", "OPENAI_API_KEY", "ANTHROPIC_API_KEY"):
+    for secret in ("CURSOR_API_KEY", "OPENAI_API_KEY", "ANTHROPIC_API_KEY", "STB_AI_API_KEY"):
         if secret not in quality_workflow:
             errors.append(f"quality workflow missing secret boundary: {secret}")
+    for flag in ("Q_CURSOR_ENABLED", "Q_OPENAI_ENABLED", "Q_CLAUDE_ENABLED", "Q_STB_AI_ENABLED"):
+        if flag not in quality_workflow:
+            errors.append(f"quality workflow missing repository backend flag: {flag}")
+    for forbidden in ("keys-refresh", "SNORKEL_API_KEY"):
+        if forbidden in quality_workflow:
+            errors.append(f"quality workflow contains forbidden credential refresh/login marker: {forbidden}")
+    for marker in ("terminus-quality-budget", "quality_budget.py", "quality_dispatch_cli.py"):
+        if marker not in quality_workflow:
+            errors.append(f"quality workflow missing durable execution-budget marker: {marker}")
 
     invocation = _invocation()
     builder = ExecutorHandoffBuilder(ROOT)
@@ -167,10 +204,12 @@ def main() -> int:
 
     print("Terminus executor-bridge validation PASS")
     print(
-        "executor_bridge=1.2 modes=MANUAL_CHAT,LOCAL_COMMAND "
-        "quality_modes=CURSOR_AUTO,API_SINGLE_PROVIDER "
-        "q_isolation=packet_bound_git_history_free q_fallback=forbidden "
-        "q_validation=deterministic_schema_and_binding difficulty=api_key_only "
+        "executor_bridge=1.3 modes=MANUAL_CHAT,LOCAL_COMMAND "
+        "quality_modes=CURSOR_AUTO,DIRECT_OPENAI,DIRECT_CLAUDE,STB_AI_GATEWAY "
+        "q_selection=exactly_one_global_flag q_isolation=packet_bound_git_history_free "
+        "q_fallback=forbidden q_validation=deterministic_schema_and_binding "
+        "q_budget=Q4x3,Q6x2,OTHERx1 q_budget_scope=global_task_state_branch "
+        "credential_refresh=forbidden difficulty=api_key_only "
         "record_authority=external_to_executor ledger_mutation=forbidden"
     )
     return 0
