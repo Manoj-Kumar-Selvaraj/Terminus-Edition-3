@@ -1,0 +1,54 @@
+name: Terminus Quality Bootstrap
+
+on:
+  workflow_dispatch:
+    inputs:
+      packet_path:
+        description: Exact existing schema-v3 Q packet path on the pinned executor snapshot
+        required: true
+        type: string
+      confirm:
+        description: Type RUN_Q to authorize one budgeted model-backed Q execution
+        required: true
+        default: ""
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  preflight:
+    name: Confirm pinned Q execution
+    runs-on: ubuntu-latest
+    steps:
+      - name: Validate explicit confirmation
+        shell: bash
+        env:
+          PACKET_PATH: ${{ inputs.packet_path }}
+          CONFIRM: ${{ inputs.confirm }}
+        run: |
+          set -euo pipefail
+          [[ "$CONFIRM" == "RUN_Q" ]] || {
+            echo "::error::Confirmation must be exactly RUN_Q"
+            exit 1
+          }
+          case "$PACKET_PATH" in
+            .terminus/reviews/*.packet.json|.terminus/reviews/*/*/*.packet.json) ;;
+            *)
+              echo "::error::packet_path must be an existing .terminus/reviews/.../*.packet.json path"
+              exit 1
+              ;;
+          esac
+          echo "Pinned executor: 1413ca0ab2fc7c8df2111dc3fd2272ecac36c15d" >> "$GITHUB_STEP_SUMMARY"
+          echo "Publication: disabled" >> "$GITHUB_STEP_SUMMARY"
+
+  quality:
+    name: Run pinned Terminus quality executor
+    needs: preflight
+    uses: Manoj-Kumar-Selvaraj/Terminus-Edition-3/.github/workflows/terminus-quality-executor.yml@1413ca0ab2fc7c8df2111dc3fd2272ecac36c15d
+    with:
+      packet_path: ${{ inputs.packet_path }}
+      source_ref: 1413ca0ab2fc7c8df2111dc3fd2272ecac36c15d
+      model_override: ""
+      publish_result: false
+    secrets: inherit
