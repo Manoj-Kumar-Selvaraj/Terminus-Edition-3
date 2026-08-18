@@ -1,0 +1,28 @@
+name: StoneVault Q4 Q6 Packet Generation One Shot
+
+on:
+  push:
+    paths:
+      - '.github/workflows/stonevault-review-packets-temp.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  generate-packets:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Generate immutable Q4 and Q6 packets
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git pull --rebase origin main
+          python3 .terminus/new_review_packet.py stonevault-crash-safe-storage spec-test-contract --change 'Post-outage deterministic freeze: Oracle/NOP empirical matrix, strict Complexity PASS, task-scoped Runtime Authenticity PASS, current requirement projection and canonical frozen session.'
+          python3 .terminus/new_review_packet.py stonevault-crash-safe-storage production-logic --change 'Post-outage deterministic freeze: 3033 substantive LOC, 25-manifestation topology, reachable runtime audit layer, strict Complexity PASS and task-scoped Runtime Authenticity PASS.'
+          git add .terminus/reviews/stonevault-crash-safe-storage
+          git commit -m 'review: generate StoneVault Q4 Q6 packets'
+          git push origin HEAD:main
