@@ -1,0 +1,292 @@
+name: Terminus Quality Lifecycle
+
+on:
+  workflow_dispatch:
+    inputs:
+      task:
+        description: Top-level task directory
+        required: true
+        type: string
+      stage:
+        description: Current lifecycle quality stage
+        required: true
+        type: choice
+        options:
+          - QUALITY_INTERLOCK
+          - MODEL_DIAGNOSTIC_GPT
+          - MODEL_DIAGNOSTIC_CLAUDE
+      publish_results:
+        description: Persist generated packets/results to the selected branch
+        required: true
+        default: true
+        type: boolean
+      change:
+        description: Optional change-since-last-review text recorded in generated packets
+        required: false
+        default: ""
+        type: string
+  workflow_call:
+    inputs:
+      task:
+        required: true
+        type: string
+      stage:
+        required: true
+        type: string
+      publish_results:
+        required: false
+        default: true
+        type: boolean
+      change:
+        required: false
+        default: ""
+        type: string
+    secrets:
+      CURSOR_API_KEY:
+        required: false
+      OPENAI_API_KEY:
+        required: false
+      ANTHROPIC_API_KEY:
+        required: false
+      STB_AI_API_KEY:
+        required: false
+
+permissions:
+  contents: write
+
+concurrency:
+  group: terminus-quality-lifecycle-${{ github.repository }}-${{ github.ref }}-${{ inputs.task }}-${{ inputs.stage }}
+  cancel-in-progress: false
+
+jobs:
+  preflight:
+    runs-on: ubuntu-latest
+    outputs:
+      task: ${{ steps.validate.outputs.task }}
+      stage: ${{ steps.validate.outputs.stage }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - id: validate
+        name: Validate lifecycle quality dispatch
+        shell: bash
+        env:
+          TASK: ${{ inputs.task }}
+          STAGE: ${{ inputs.stage }}
+        run: |
+          set -euo pipefail
+          [[ -n "$TASK" && "$TASK" != /* && "$TASK" != *".."* && "$TASK" != */* ]] || {
+            echo "::error::task must be one safe top-level directory"
+            exit 1
+          }
+          [[ -f "$TASK/task.toml" ]] || { echo "::error::No task.toml at $TASK/task.toml"; exit 1; }
+          case "$STAGE" in
+            QUALITY_INTERLOCK|MODEL_DIAGNOSTIC_GPT|MODEL_DIAGNOSTIC_CLAUDE) ;;
+            *) echo "::error::Unsupported lifecycle quality stage: $STAGE"; exit 1 ;;
+          esac
+          [[ -z "$(git status --porcelain -- "$TASK")" ]] || {
+            echo "::error::Task tree must be committed before model-backed quality execution"
+            exit 1
+          }
+          echo "task=$TASK" >> "$GITHUB_OUTPUT"
+          echo "stage=$STAGE" >> "$GITHUB_OUTPUT"
+          echo "Quality lifecycle dispatch: \`$STAGE\` for \`$TASK\`" >> "$GITHUB_STEP_SUMMARY"
+
+  q4:
+    needs: preflight
+    if: inputs.stage == 'QUALITY_INTERLOCK'
+    uses: ./.github/workflows/terminus-quality-executor.yml
+    with:
+      task: ${{ inputs.task }}
+      role_key: spec-test-contract
+      state: FROZEN_CANDIDATE
+      change: ${{ inputs.change }}
+      publish_result: false
+    secrets: inherit
+
+  q6:
+    needs: preflight
+    if: inputs.stage == 'QUALITY_INTERLOCK'
+    uses: ./.github/workflows/terminus-quality-executor.yml
+    with:
+      task: ${{ inputs.task }}
+      role_key: production-logic
+      state: FROZEN_CANDIDATE
+      change: ${{ inputs.change }}
+      publish_result: false
+    secrets: inherit
+
+  q8-gpt:
+    needs: preflight
+    if: inputs.stage == 'MODEL_DIAGNOSTIC_GPT'
+    uses: ./.github/workflows/terminus-quality-executor.yml
+    with:
+      task: ${{ inputs.task }}
+      role_key: difficulty-sim-gpt
+      state: MODEL_DIAGNOSTIC_GPT
+      change: ${{ inputs.change }}
+      publish_result: false
+    secrets: inherit
+
+  q8-claude:
+    needs: preflight
+    if: inputs.stage == 'MODEL_DIAGNOSTIC_CLAUDE'
+    uses: ./.github/workflows/terminus-quality-executor.yml
+    with:
+      task: ${{ inputs.task }}
+      role_key: difficulty-sim-claude
+      state: MODEL_DIAGNOSTIC_CLAUDE
+      change: ${{ inputs.change }}
+      publish_result: false
+    secrets: inherit
+
+  collect-interlock:
+    needs: [preflight, q4, q6]
+    if: always() && inputs.stage == 'QUALITY_INTERLOCK'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Require both bounded Q executions
+        shell: bash
+        env:
+          Q4_JOB: ${{ needs.q4.result }}
+          Q6_JOB: ${{ needs.q6.result }}
+        run: |
+          set -euo pipefail
+          [[ "$Q4_JOB" == success ]] || { echo "::error::Q4 executor did not complete successfully: $Q4_JOB"; exit 1; }
+          [[ "$Q6_JOB" == success ]] || { echo "::error::Q6 executor did not complete successfully: $Q6_JOB"; exit 1; }
+
+      - name: Restore generated packets and validated reviews
+        id: restore
+        shell: bash
+        env:
+          Q4_PACKET_PATH: ${{ needs.q4.outputs.packet_path }}
+          Q4_REVIEW_PATH: ${{ needs.q4.outputs.review_path }}
+          Q4_PACKET_B64: ${{ needs.q4.outputs.packet_b64 }}
+          Q4_REVIEW_B64: ${{ needs.q4.outputs.review_b64 }}
+          Q6_PACKET_PATH: ${{ needs.q6.outputs.packet_path }}
+          Q6_REVIEW_PATH: ${{ needs.q6.outputs.review_path }}
+          Q6_PACKET_B64: ${{ needs.q6.outputs.packet_b64 }}
+          Q6_REVIEW_B64: ${{ needs.q6.outputs.review_b64 }}
+          TASK: ${{ inputs.task }}
+        run: |
+          set -euo pipefail
+          python3 - "$TASK" "$Q4_PACKET_PATH" "$Q4_REVIEW_PATH" "$Q6_PACKET_PATH" "$Q6_REVIEW_PATH" <<'PY'
+          import pathlib, sys
+          task = sys.argv[1]
+          for raw in sys.argv[2:]:
+              p = pathlib.PurePosixPath(raw)
+              if p.is_absolute() or '..' in p.parts:
+                  raise SystemExit(f'unsafe lifecycle artifact path: {raw}')
+              expected = pathlib.PurePosixPath('.terminus/reviews') / task
+              if tuple(p.parts[:3]) != tuple(expected.parts):
+                  raise SystemExit(f'artifact outside task review namespace: {raw}')
+          PY
+          for path in "$Q4_PACKET_PATH" "$Q4_REVIEW_PATH" "$Q6_PACKET_PATH" "$Q6_REVIEW_PATH"; do
+            mkdir -p "$(dirname "$path")"
+          done
+          printf '%s' "$Q4_PACKET_B64" | base64 -d > "$Q4_PACKET_PATH"
+          printf '%s' "$Q4_REVIEW_B64" | base64 -d > "$Q4_REVIEW_PATH"
+          printf '%s' "$Q6_PACKET_B64" | base64 -d > "$Q6_PACKET_PATH"
+          printf '%s' "$Q6_REVIEW_B64" | base64 -d > "$Q6_REVIEW_PATH"
+          echo "paths=$Q4_PACKET_PATH $Q4_REVIEW_PATH $Q6_PACKET_PATH $Q6_REVIEW_PATH" >> "$GITHUB_OUTPUT"
+
+      - name: Evaluate deterministic quality interlock
+        id: gate
+        shell: bash
+        env:
+          TASK: ${{ inputs.task }}
+        run: |
+          set -uo pipefail
+          set +e
+          python3 .terminus/validate_review_freshness.py --task "$TASK"
+          freshness_rc=$?
+          python3 .terminus/validate_quality_interlock.py --task "$TASK"
+          interlock_rc=$?
+          set -e
+          echo "freshness_rc=$freshness_rc" >> "$GITHUB_OUTPUT"
+          echo "interlock_rc=$interlock_rc" >> "$GITHUB_OUTPUT"
+          echo "Q4: \`${{ needs.q4.outputs.verdict }}\` (${{ needs.q4.outputs.budget_used }}/${{ needs.q4.outputs.budget_limit }})" >> "$GITHUB_STEP_SUMMARY"
+          echo "Q6: \`${{ needs.q6.outputs.verdict }}\` (${{ needs.q6.outputs.budget_used }}/${{ needs.q6.outputs.budget_limit }})" >> "$GITHUB_STEP_SUMMARY"
+          echo "Freshness validator rc: \`$freshness_rc\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "Quality interlock validator rc: \`$interlock_rc\`" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Persist quality-interlock review evidence
+        if: inputs.publish_results
+        shell: bash
+        run: |
+          set -euo pipefail
+          read -r -a paths <<< "${{ steps.restore.outputs.paths }}"
+          unexpected="$(git status --porcelain | awk '{print $2}' | while read -r path; do
+            allowed=false
+            for candidate in "${paths[@]}"; do
+              [[ "$path" == "$candidate" ]] && allowed=true
+            done
+            [[ "$allowed" == true ]] || echo "$path"
+          done)"
+          [[ -z "$unexpected" ]] || { echo "::error::Unexpected lifecycle mutations: $unexpected"; exit 1; }
+          git config user.name "terminus-quality-lifecycle[bot]"
+          git config user.email "terminus-quality-lifecycle[bot]@users.noreply.github.com"
+          git add -- "${paths[@]}"
+          if git diff --cached --quiet; then
+            echo "Quality review evidence already persisted."
+          else
+            git commit -m "Persist quality interlock reviews"
+            git push origin "HEAD:${GITHUB_REF_NAME}"
+          fi
+
+      - name: Enforce quality interlock outcome
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ "${{ steps.gate.outputs.freshness_rc }}" == 0 ]] || {
+            echo "::error::Review freshness validation failed"
+            exit 1
+          }
+          [[ "${{ steps.gate.outputs.interlock_rc }}" == 0 ]] || {
+            echo "::error::QUALITY_INTERLOCK did not pass; persisted reviews are remediation evidence"
+            exit 1
+          }
+
+  collect-q8-gpt:
+    needs: [preflight, q8-gpt]
+    if: always() && inputs.stage == 'MODEL_DIAGNOSTIC_GPT'
+    uses: ./.github/workflows/terminus-quality-lifecycle-collect.yml
+    with:
+      task: ${{ inputs.task }}
+      stage: MODEL_DIAGNOSTIC_GPT
+      packet_path: ${{ needs.q8-gpt.outputs.packet_path }}
+      review_path: ${{ needs.q8-gpt.outputs.review_path }}
+      packet_b64: ${{ needs.q8-gpt.outputs.packet_b64 }}
+      review_b64: ${{ needs.q8-gpt.outputs.review_b64 }}
+      executor_result: ${{ needs.q8-gpt.result }}
+      verdict: ${{ needs.q8-gpt.outputs.verdict }}
+      budget_stage: ${{ needs.q8-gpt.outputs.budget_stage }}
+      budget_used: ${{ needs.q8-gpt.outputs.budget_used }}
+      budget_limit: ${{ needs.q8-gpt.outputs.budget_limit }}
+      publish_results: ${{ inputs.publish_results }}
+    secrets: inherit
+
+  collect-q8-claude:
+    needs: [preflight, q8-claude]
+    if: always() && inputs.stage == 'MODEL_DIAGNOSTIC_CLAUDE'
+    uses: ./.github/workflows/terminus-quality-lifecycle-collect.yml
+    with:
+      task: ${{ inputs.task }}
+      stage: MODEL_DIAGNOSTIC_CLAUDE
+      packet_path: ${{ needs.q8-claude.outputs.packet_path }}
+      review_path: ${{ needs.q8-claude.outputs.review_path }}
+      packet_b64: ${{ needs.q8-claude.outputs.packet_b64 }}
+      review_b64: ${{ needs.q8-claude.outputs.review_b64 }}
+      executor_result: ${{ needs.q8-claude.result }}
+      verdict: ${{ needs.q8-claude.outputs.verdict }}
+      budget_stage: ${{ needs.q8-claude.outputs.budget_stage }}
+      budget_used: ${{ needs.q8-claude.outputs.budget_used }}
+      budget_limit: ${{ needs.q8-claude.outputs.budget_limit }}
+      publish_results: ${{ inputs.publish_results }}
+    secrets: inherit
