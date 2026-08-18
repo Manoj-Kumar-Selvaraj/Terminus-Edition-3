@@ -1,0 +1,118 @@
+name: Terminus Edge Router A3 Invoke
+
+on:
+  push:
+    branches:
+      - task/edge-router-runtime
+    paths:
+      - '.github/workflows/terminus-edge-router-a3-invoke.yml'
+
+permissions:
+  contents: read
+  statuses: write
+
+env:
+  TASK_ID: edge-router-runtime
+  TASK_SNAPSHOT: 6c91b9aca662fa192c144d55c8aee0e693adcc0d
+  CONTROL_PLANE_COMMIT: fa2a409e86c4676bd3039df3e4e8339708454fad
+  A1_INVOCATION_ID: inv_79d4551ca8b96875e1f37dc7cea565949e1ade639e32fa1b5de68d5a081bf0d8
+  A2_INVOCATION_ID: inv_b9463c264c05f24c0876eb2968702df48cc551bb7bfe1c87b1a45cf9a73df239
+
+jobs:
+  invoke-a3:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Replay committed three-event ledger
+        run: |
+          python3 .terminus/execution/controller_cli.py status \
+            --task-id "$TASK_ID" \
+            --task-commit "$TASK_SNAPSHOT" \
+            --control-plane-commit "$CONTROL_PLANE_COMMIT" \
+            --output /tmp/a3-status.json
+          python3 - <<'PY'
+          import json
+          state=json.load(open('/tmp/a3-status.json'))
+          assert state['ledger_event_count']==3, state
+          assert state['ledger_head_event_id']=='evt_bdcbfe8b1d2821fe6737644a649de7c95656066d65c2fa0677fa6c46e802d2c8', state
+          assert state['lineage']['status']=='CURRENT', state
+          assert state['next']['action']=='INVOKE_STAGE', state
+          assert state['next']['stage_id']=='DEFECT_TOPOLOGY', state
+          assert state['next']['primary_role_id']=='A3_DEFECT_TOPOLOGY_DESIGNER', state
+          print(json.dumps(state,indent=2,sort_keys=True))
+          PY
+
+      - name: Build machine-derived A3 inputs
+        run: |
+          python3 - <<'PY'
+          import json, os
+          base=f".terminus/executions/{os.environ['TASK_ID']}"
+          a1=json.load(open(f"{base}/{os.environ['A1_INVOCATION_ID']}.result.json",encoding='utf-8'))
+          a2=json.load(open(f"{base}/{os.environ['A2_INVOCATION_ID']}.result.json",encoding='utf-8'))
+          a1o=a1['outputs']
+          selected=next(c for c in a1o['CANDIDATES'] if c['ID']==a1o['RECOMMENDATION'])
+          operational={
+            'REQUIRED_END_STATE': selected['REQUIRED_END_STATE'],
+            'REQUIREMENT_FAMILIES': selected['REQUIREMENT_FAMILIES'],
+            'PRESERVATION_OBLIGATIONS': selected['PRESERVATION_OBLIGATIONS'],
+            'EDGE_FAILURE_SURFACE': selected['EDGE_FAILURE_SURFACE'],
+          }
+          rule=a1['invocation_snapshot']['inputs']['required']['CREATION_RULE_CONTEXT']
+          inputs={
+            'APPROVED_OPERATIONAL_REQUIREMENTS': operational,
+            'APPROVED_WORK_PACKAGE': selected,
+            'CLEAN_SYSTEM_ARCHITECTURE': a2['outputs'],
+            'CREATION_PROFILE': rule['CREATION_PROFILE'],
+          }
+          json.dump(inputs,open('/tmp/a3-inputs.json','w',encoding='utf-8'),indent=2,sort_keys=True)
+          PY
+
+      - name: Generate exact A3 invocation
+        run: |
+          python3 .terminus/execution/controller_cli.py continue \
+            --task-id "$TASK_ID" \
+            --task-commit "$TASK_SNAPSHOT" \
+            --control-plane-commit "$CONTROL_PLANE_COMMIT" \
+            --inputs-json /tmp/a3-inputs.json \
+            --output /tmp/a3-next.json
+          python3 - <<'PY'
+          import json
+          p=json.load(open('/tmp/a3-next.json'))
+          inv=p['invocation']
+          assert inv['readiness']=='READY', inv
+          assert inv['stage']['stage_id']=='DEFECT_TOPOLOGY', inv
+          assert inv['stage']['role_id']=='A3_DEFECT_TOPOLOGY_DESIGNER', inv
+          print('===A3_INVOCATION_ID===')
+          print(inv['invocation_id'])
+          print('===A3_STATE_SNAPSHOT===')
+          print(p['state_snapshot_id'])
+          print('===A3_INVOCATION_BEGIN===')
+          print(json.dumps(inv,indent=2,sort_keys=True))
+          print('===A3_INVOCATION_END===')
+          json.dump(inv,open('/tmp/a3-invocation.json','w',encoding='utf-8'),indent=2,sort_keys=True)
+          PY
+
+      - name: Upload bounded A3 invocation
+        uses: actions/upload-artifact@v4
+        with:
+          name: edge-router-a3-invocation
+          path: |
+            /tmp/a3-invocation.json
+            /tmp/a3-status.json
+          if-no-files-found: error
+          retention-days: 1
+
+      - name: Publish A3 invocation breadcrumb
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh api --method POST "repos/${GITHUB_REPOSITORY}/statuses/${GITHUB_SHA}" \
+            -f state=success \
+            -f context=terminus/a3-invocation \
+            -f description='A3 bounded invocation generated from committed main ledger' \
+            -f target_url="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
