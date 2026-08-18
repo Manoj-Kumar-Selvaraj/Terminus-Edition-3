@@ -122,10 +122,6 @@ def _rule_resolution(invocation: dict[str, Any]) -> dict[str, Any]:
         },
         "evidence_refs": [
             {"kind": "COMMIT", "ref": f"commit:{control_commit}"},
-            *[
-                {"kind": "FILE", "ref": f"git:{control_commit}:{path}"}
-                for path in sources
-            ],
         ],
     }
     return result
