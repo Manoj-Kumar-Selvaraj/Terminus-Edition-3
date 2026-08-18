@@ -48,6 +48,13 @@ jobs:
           if total < 3000:
               raise SystemExit('substantive LOC below required 3000')
           PY
+          if grep -RniE \
+            --include='*.go' --include='*.md' --include='*.json' --include='Dockerfile' --include='go.mod' \
+            'DEFECT_TOPOLOGY|root[_ -]?cause|verifier|oracle|expected repair|D[0-9]+\.[0-9]+' \
+            edge-router-runtime/environment; then
+            echo 'solver-visible private-design leakage marker found' >&2
+            exit 1
+          fi
           cd edge-router-runtime/environment
           go version
           go test ./...
@@ -56,7 +63,3 @@ jobs:
           ./edge-router-runtime validate --config ./config/discovery-production.json
           cd ../..
           python3 .terminus/validate_runtime_authenticity.py edge-router-runtime
-          if grep -RniE 'DEFECT_TOPOLOGY|root[_ -]?cause|verifier|oracle|expected repair|D[0-9]+\.[0-9]+' edge-router-runtime/environment; then
-            echo 'solver-visible private-design leakage marker found' >&2
-            exit 1
-          fi
