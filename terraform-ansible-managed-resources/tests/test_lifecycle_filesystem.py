@@ -1,39 +1,79 @@
+import grp
 import json
 import os
 import pathlib
+import pwd
 
 from conftest import (
+    counter_value,
+    make_ansible_wrapper,
     make_workspace,
     plan_actions,
     resource_values,
     rewrite_body,
     tf_apply,
+    tf_plan,
     tf_plan_json,
 )
 
 
 def test_f2p_filesystem_identities_survive_mutable_updates(tmp_path, cleanup_registry):
-    """File and directory identities stay stable while their managed metadata changes in place."""
+    """File/directory identities survive metadata updates and equivalent mode spellings stay clean."""
     file_path = cleanup_registry.path(tmp_path / "managed-file")
     directory = cleanup_registry.path(tmp_path / "managed-dir")
     runner_tmp = tmp_path / "runner"
+    counter = tmp_path / "counter.log"
+    wrapper = make_ansible_wrapper(tmp_path, counter=counter)
     body = f'''resource "ansibleops_file" "managed" {{
-  path = {json.dumps(str(file_path))}
-  mode = "0640"
+  path  = {json.dumps(str(file_path))}
+  mode  = "0640"
+  owner = "root"
+  group = "root"
 }}
 resource "ansibleops_directory" "managed" {{
-  path = {json.dumps(str(directory))}
-  mode = "0750"
+  path  = {json.dumps(str(directory))}
+  mode  = "0750"
+  owner = "root"
+  group = "root"
 }}
 '''
-    workspace = make_workspace(tmp_path, body, temp_dir=runner_tmp)
+    workspace = make_workspace(
+        tmp_path,
+        body,
+        ansible_binary=wrapper,
+        temp_dir=runner_tmp,
+    )
     tf_apply(workspace)
     file_before = resource_values(workspace, "ansibleops_file.managed")["id"]
     directory_before = resource_values(workspace, "ansibleops_directory.managed")["id"]
-    updated = body.replace('mode = "0640"', 'mode = "0600"').replace(
-        'mode = "0750"', 'mode = "0700"'
+    assert pathlib.Path(file_path).stat().st_uid == 0
+    assert pathlib.Path(file_path).stat().st_gid == 0
+    assert pathlib.Path(directory).stat().st_uid == 0
+    assert pathlib.Path(directory).stat().st_gid == 0
+
+    equivalent = body.replace('mode  = "0640"', 'mode  = "640"').replace(
+        'mode  = "0750"', 'mode  = "750"'
     )
-    rewrite_body(workspace, updated, temp_dir=runner_tmp)
+    rewrite_body(
+        workspace,
+        equivalent,
+        ansible_binary=wrapper,
+        temp_dir=runner_tmp,
+    )
+    before_plan = counter_value(counter)
+    plan = tf_plan(workspace)
+    assert plan.returncode == 0
+    assert counter_value(counter) == before_plan
+
+    updated = equivalent.replace('mode  = "640"', 'mode  = "0600"').replace(
+        'mode  = "750"', 'mode  = "0700"'
+    )
+    rewrite_body(
+        workspace,
+        updated,
+        ansible_binary=wrapper,
+        temp_dir=runner_tmp,
+    )
     tf_apply(workspace)
     assert resource_values(workspace, "ansibleops_file.managed")["id"] == file_before
     assert (
@@ -83,24 +123,32 @@ def test_f2p_deleted_directory_is_planned_for_recreation(tmp_path, cleanup_regis
 
 
 def test_f2p_filesystem_mode_drift_requires_reconciliation(tmp_path, cleanup_registry):
-    """Out-of-band file and directory mode drift must both plan in-place reconciliation."""
+    """Out-of-band mode and ownership drift must both plan in-place reconciliation."""
     file_path = cleanup_registry.path(tmp_path / "mode-file")
     directory = cleanup_registry.path(tmp_path / "mode-dir")
     workspace = make_workspace(
         tmp_path,
         f'''resource "ansibleops_file" "managed" {{
-  path = {json.dumps(str(file_path))}
-  mode = "0640"
+  path  = {json.dumps(str(file_path))}
+  mode  = "0640"
+  owner = "root"
+  group = "root"
 }}
 resource "ansibleops_directory" "managed" {{
-  path = {json.dumps(str(directory))}
-  mode = "0750"
+  path  = {json.dumps(str(directory))}
+  mode  = "0750"
+  owner = "root"
+  group = "root"
 }}
 ''',
     )
     tf_apply(workspace)
+    nobody_uid = pwd.getpwnam("nobody").pw_uid
+    nogroup_gid = grp.getgrnam("nogroup").gr_gid
     os.chmod(file_path, 0o666)
     os.chmod(directory, 0o777)
+    os.chown(file_path, nobody_uid, nogroup_gid)
+    os.chown(directory, nobody_uid, nogroup_gid)
     _, plan = tf_plan_json(workspace)
     assert plan_actions(plan, "ansibleops_file.managed") == ["update"]
     assert plan_actions(plan, "ansibleops_directory.managed") == ["update"]
