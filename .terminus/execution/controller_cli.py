@@ -37,6 +37,8 @@ QUALITY_LIFECYCLE_STAGES = {
     "MODEL_DIAGNOSTIC_GPT": ("difficulty-sim-gpt",),
     "MODEL_DIAGNOSTIC_CLAUDE": ("difficulty-sim-claude",),
 }
+CONTROLLER_STAGE_WORKFLOW = ".github/workflows/terminus-controller-stage.yml"
+AUTOMATED_CONTROLLER_STAGES = {"RULE_RESOLUTION"}
 
 
 def _json_object(path: str | None, label: str) -> dict[str, Any]:
@@ -178,6 +180,36 @@ def _quality_lifecycle_dispatch(args: argparse.Namespace, stage_id: str) -> dict
     }
 
 
+def _controller_stage_dispatch(
+    args: argparse.Namespace,
+    packet: dict[str, Any],
+    inputs: dict[str, Any],
+) -> dict[str, Any]:
+    invocation_id = str(packet["invocation_id"])
+    suffix = invocation_id.removeprefix("inv_")[:16]
+    branch = f"terminus-controller-request/{args.task_id}/{suffix}"
+    request_path = f".terminus/controller-requests/{args.task_id}-{suffix}.json"
+    return {
+        "status": "READY_TO_DISPATCH",
+        "stage_id": packet["stage"]["stage_id"],
+        "controller_stage": True,
+        "model_backed": False,
+        "workflow": CONTROLLER_STAGE_WORKFLOW,
+        "trigger": "REQUEST_BRANCH_PUSH",
+        "branch": branch,
+        "request_path": request_path,
+        "request": {
+            "schema_version": "1.0",
+            "task_id": args.task_id,
+            "task_commit": args.task_commit,
+            "stage_id": packet["stage"]["stage_id"],
+            "expected_main_sha": args.control_plane_commit,
+            "inputs": inputs,
+        },
+        "persistence": "workflow validates, records, replays and fast-forwards main only if main is unchanged",
+    }
+
+
 def _continue_payload(
     root: Path,
     args: argparse.Namespace,
@@ -242,6 +274,18 @@ def _continue_payload(
             "stage_id": stage_id,
             "external_gate": True,
         }
+        return payload
+
+    if (
+        stage_id in AUTOMATED_CONTROLLER_STAGES
+        and next_action["action"] in {"INVOKE_STAGE", "RETRY_STAGE"}
+        and packet.get("readiness") == "READY"
+    ):
+        if packet.get("stage", {}).get("role_class") != "CONTROLLER":
+            raise ValueError("automated controller stage must have CONTROLLER role_class")
+        if packet.get("output_contract", {}).get("semantic_reviewers"):
+            raise ValueError("automated controller stage cannot replace semantic reviewers")
+        payload["dispatch"] = _controller_stage_dispatch(args, packet, inputs)
         return payload
 
     executor_mode = getattr(args, "prepare_executor", None)
