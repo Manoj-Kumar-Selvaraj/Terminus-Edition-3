@@ -112,6 +112,28 @@ def test_project_agent_frontmatter_and_contract_reference() -> None:
     assert "Do not perform the routed role" in text
 
 
+def test_agent_ci_scopes_pr_freshness_from_live_merge_base() -> None:
+    workflow = (
+        ROOT / ".github" / "workflows" / "terminus-agent-system-ci.yml"
+    ).read_text(encoding="utf-8")
+
+    # Pull-request event payloads can retain an older base SHA after the head is
+    # explicitly updated. The freshness scan must derive the PR contribution
+    # from the fetched base ref and actual PR head instead of trusting that SHA.
+    assert "github.event.pull_request.base.sha" not in workflow
+    for marker in (
+        'pr_head="${{ github.event.pull_request.head.sha }}"',
+        'base_ref="refs/remotes/origin/${{ github.base_ref }}"',
+        'git rev-parse --verify "${pr_head}^{commit}"',
+        'git rev-parse --verify "${base_ref}^{commit}"',
+        'base="$(git merge-base "$pr_head" "$base_ref")"',
+        'target="$pr_head"',
+        'git diff --no-renames --name-only "$base" "$target"',
+        "Cannot derive pull-request merge base",
+    ):
+        assert marker in workflow
+
+
 def test_orchestrator_is_integrated_into_control_plane_and_ci() -> None:
     files = {
         "agent system": T / "AGENT_SYSTEM.md",
@@ -128,4 +150,4 @@ def test_orchestrator_is_integrated_into_control_plane_and_ci() -> None:
         ROOT / ".github" / "workflows" / "terminus-agent-system-ci.yml"
     ).read_text(encoding="utf-8")
     assert ".cursor/agents/**" in workflow
-    assert 'git diff --no-renames --name-only "$base"' in workflow
+    assert 'git diff --no-renames --name-only "$base" "$target"' in workflow
