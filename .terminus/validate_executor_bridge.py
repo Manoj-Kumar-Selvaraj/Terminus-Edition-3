@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Validate executor authorization, transport, schema and sandbox boundaries."""
+"""Validate executor authorization, transport, schema, sandbox and Q boundaries."""
 
 from __future__ import annotations
 
@@ -28,9 +28,13 @@ FILES = [
     T / "execution" / "schema_validation.py",
     T / "execution" / "runner.py",
     T / "execution" / "runner_cli.py",
+    T / "execution" / "quality_executor.py",
+    T / "execution" / "quality_executor_cli.py",
     T / "agents" / "schemas" / "executor_handoff.schema.json",
     T / "agents" / "schemas" / "stage_result.schema.json",
     T / "tests" / "test_executor_bridge.py",
+    T / "tests" / "test_quality_executor.py",
+    ROOT / ".github" / "workflows" / "terminus-quality-executor.yml",
 ]
 
 
@@ -77,11 +81,12 @@ def main() -> int:
     runner_text = (T / "execution" / "runner.py").read_text(encoding="utf-8")
     sandbox_text = (T / "execution" / "sandbox.py").read_text(encoding="utf-8")
     guard_text = (T / "execution" / "invocation_guard.py").read_text(encoding="utf-8")
-    for marker in (
-        "CanonicalInvocationGuard",
-        "handoff_id",
-        "validate_handoff",
-    ):
+    quality_text = (T / "execution" / "quality_executor.py").read_text(encoding="utf-8")
+    quality_workflow = (
+        ROOT / ".github" / "workflows" / "terminus-quality-executor.yml"
+    ).read_text(encoding="utf-8")
+
+    for marker in ("CanonicalInvocationGuard", "handoff_id", "validate_handoff"):
         if marker not in handoff_text:
             errors.append(f"handoff.py missing hardened marker: {marker}")
     for marker in (
@@ -98,6 +103,28 @@ def main() -> int:
             errors.append(f"sandbox.py missing isolation marker: {marker}")
     if "ExecutionRecordBuilder" not in guard_text or "_validate_invocation" not in guard_text:
         errors.append("pre-execution guard must reuse canonical recorder invocation validation")
+
+    quality_markers = (
+        "select_backend",
+        "materialize_projection",
+        "validate_review_result",
+        "CURSOR_API_KEY",
+        "OPENAI_API_KEY",
+        "ANTHROPIC_API_KEY",
+        'prompt_cache_key=cache_key(packet)',
+        '"fallback_attempted": False',
+        '"prior_review_projected": False',
+        '"git_history_projected": False',
+        "difficulty simulation is API-key-only",
+    )
+    for marker in quality_markers:
+        if marker not in quality_text:
+            errors.append(f"quality_executor.py missing invariant marker: {marker}")
+    if "--resume" in quality_text or "--resume" in quality_workflow:
+        errors.append("packet-bound quality executor must always start a fresh Cursor session")
+    for secret in ("CURSOR_API_KEY", "OPENAI_API_KEY", "ANTHROPIC_API_KEY"):
+        if secret not in quality_workflow:
+            errors.append(f"quality workflow missing secret boundary: {secret}")
 
     invocation = _invocation()
     builder = ExecutorHandoffBuilder(ROOT)
@@ -140,11 +167,10 @@ def main() -> int:
 
     print("Terminus executor-bridge validation PASS")
     print(
-        "executor_bridge=1.0 modes=MANUAL_CHAT,LOCAL_COMMAND "
-        "pre_execution_authority=canonical_recorder_validation "
-        "handoff_identity=stage_result_bound runtime_schema=validated "
-        "local_workspace=projected_read_only sandbox=bubblewrap_fail_closed "
-        "stdout_stderr=live_bounded shell=false mutating_local_roles=denied "
+        "executor_bridge=1.2 modes=MANUAL_CHAT,LOCAL_COMMAND "
+        "quality_modes=CURSOR_AUTO,API_SINGLE_PROVIDER "
+        "q_isolation=packet_bound_git_history_free q_fallback=forbidden "
+        "q_validation=deterministic_schema_and_binding difficulty=api_key_only "
         "record_authority=external_to_executor ledger_mutation=forbidden"
     )
     return 0
