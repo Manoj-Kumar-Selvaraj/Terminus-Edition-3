@@ -12,6 +12,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/terminus-labs/terraform-provider-ansibleops/internal/ansible"
+	"github.com/terminus-labs/terraform-provider-ansibleops/internal/lifecycle"
 	"github.com/terminus-labs/terraform-provider-ansibleops/internal/observe"
 	ansibleRuntime "github.com/terminus-labs/terraform-provider-ansibleops/internal/runtime"
 )
@@ -106,6 +107,58 @@ func releaseOwnership(key string) {
 	ownershipRegistry.Lock()
 	delete(ownershipRegistry.keys, key)
 	ownershipRegistry.Unlock()
+}
+
+func sameStringValue(left, right types.String) bool {
+	if left.IsUnknown() || right.IsUnknown() {
+		return left.IsUnknown() && right.IsUnknown()
+	}
+	if left.IsNull() || right.IsNull() {
+		return left.IsNull() && right.IsNull()
+	}
+	return left.ValueString() == right.ValueString()
+}
+
+func sameBoolValue(left, right types.Bool) bool {
+	if left.IsUnknown() || right.IsUnknown() {
+		return left.IsUnknown() && right.IsUnknown()
+	}
+	if left.IsNull() || right.IsNull() {
+		return left.IsNull() && right.IsNull()
+	}
+	return left.ValueBool() == right.ValueBool()
+}
+
+func sameInt64Value(left, right types.Int64) bool {
+	if left.IsUnknown() || right.IsUnknown() {
+		return left.IsUnknown() && right.IsUnknown()
+	}
+	if left.IsNull() || right.IsNull() {
+		return left.IsNull() && right.IsNull()
+	}
+	return left.ValueInt64() == right.ValueInt64()
+}
+
+func sameModeValue(left, right types.String) bool {
+	if left.IsUnknown() || right.IsUnknown() {
+		return left.IsUnknown() && right.IsUnknown()
+	}
+	if left.IsNull() || right.IsNull() {
+		return left.IsNull() && right.IsNull()
+	}
+	return lifecycle.ModeEqual(left.ValueString(), right.ValueString())
+}
+
+func sameStringSlice(left, right []string) bool {
+	if len(left) != len(right) {
+		return false
+	}
+	for index := range left {
+		if left[index] != right[index] {
+			return false
+		}
+	}
+	return true
 }
 
 func requireAbsolute(pathValue, field string, diagnostics *diag.Diagnostics) bool {
