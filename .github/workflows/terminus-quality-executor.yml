@@ -1,0 +1,239 @@
+name: Terminus Quality Executor
+
+on:
+  workflow_dispatch:
+    inputs:
+      packet_path:
+        description: Exact schema-v3 Q4/Q6/Q8 packet path
+        required: true
+        type: string
+      executor:
+        description: Execute with exactly one backend
+        required: true
+        default: cursor
+        type: choice
+        options: [cursor, api]
+      api_provider:
+        description: API backend provider; use none for Cursor
+        required: true
+        default: none
+        type: choice
+        options: [none, openai, anthropic]
+      api_model:
+        description: Explicit model for API backend; leave empty for Cursor
+        required: false
+        default: ""
+        type: string
+      publish_result:
+        description: Commit the validated review artifact to the selected branch
+        required: true
+        default: false
+        type: boolean
+  workflow_call:
+    inputs:
+      packet_path:
+        required: true
+        type: string
+      executor:
+        required: true
+        type: string
+      api_provider:
+        required: false
+        default: none
+        type: string
+      api_model:
+        required: false
+        default: ""
+        type: string
+      publish_result:
+        required: false
+        default: false
+        type: boolean
+    secrets:
+      CURSOR_API_KEY:
+        required: false
+      OPENAI_API_KEY:
+        required: false
+      ANTHROPIC_API_KEY:
+        required: false
+
+permissions:
+  contents: write
+
+concurrency:
+  group: terminus-quality-${{ github.repository }}-${{ github.ref }}-${{ inputs.packet_path }}
+  cancel-in-progress: false
+
+jobs:
+  execute:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      PACKET_PATH: ${{ inputs.packet_path }}
+      EXECUTOR: ${{ inputs.executor }}
+      API_PROVIDER: ${{ inputs.api_provider }}
+      API_MODEL: ${{ inputs.api_model }}
+      PUBLISH_RESULT: ${{ inputs.publish_result }}
+      ARTIFACT_DIR: /tmp/terminus-quality-${{ github.run_id }}-${{ github.run_attempt }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Validate executor selection
+        shell: bash
+        run: |
+          set -euo pipefail
+          case "$EXECUTOR" in
+            cursor)
+              [[ "$API_PROVIDER" == "none" ]] || { echo "::error::Cursor execution cannot select an API provider"; exit 1; }
+              [[ -z "$API_MODEL" ]] || { echo "::error::Cursor execution fixes model=auto"; exit 1; }
+              ;;
+            api)
+              [[ "$API_PROVIDER" == "openai" || "$API_PROVIDER" == "anthropic" ]] || { echo "::error::API execution requires openai or anthropic"; exit 1; }
+              [[ -n "$API_MODEL" ]] || { echo "::error::API execution requires an explicit model"; exit 1; }
+              ;;
+            *)
+              echo "::error::executor must be cursor or api"
+              exit 1
+              ;;
+          esac
+          mkdir -p "$ARTIFACT_DIR"
+
+      - name: Install deterministic validator
+        run: python3 -m pip install --quiet jsonschema==4.23.0
+
+      - name: Install Cursor CLI
+        if: inputs.executor == 'cursor'
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl https://cursor.com/install -fsS | bash
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+
+      - name: Install OpenAI SDK
+        if: inputs.executor == 'api' && inputs.api_provider == 'openai'
+        run: python3 -m pip install --quiet openai==2.48.0
+
+      - name: Install Anthropic SDK
+        if: inputs.executor == 'api' && inputs.api_provider == 'anthropic'
+        run: python3 -m pip install --quiet anthropic==0.119.0
+
+      - name: Execute Cursor Q review
+        if: inputs.executor == 'cursor'
+        shell: bash
+        env:
+          CURSOR_API_KEY: ${{ secrets.CURSOR_API_KEY }}
+        run: |
+          set -euo pipefail
+          [[ -n "$CURSOR_API_KEY" ]] || { echo "::error::CURSOR_API_KEY secret is required"; exit 1; }
+          publish=()
+          [[ "$PUBLISH_RESULT" == "true" ]] && publish+=(--publish-result)
+          python3 .terminus/execution/quality_executor_cli.py \
+            --packet "$PACKET_PATH" \
+            --executor cursor \
+            --timeout 2700 \
+            --review-output "$ARTIFACT_DIR/review.json" \
+            --diagnostic-output "$ARTIFACT_DIR/cursor-terminal-result.json" \
+            --output "$ARTIFACT_DIR/execution.json" \
+            "${publish[@]}"
+
+      - name: Execute OpenAI Q review
+        if: inputs.executor == 'api' && inputs.api_provider == 'openai'
+        shell: bash
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        run: |
+          set -euo pipefail
+          [[ -n "$OPENAI_API_KEY" ]] || { echo "::error::OPENAI_API_KEY secret is required"; exit 1; }
+          publish=()
+          [[ "$PUBLISH_RESULT" == "true" ]] && publish+=(--publish-result)
+          python3 .terminus/execution/quality_executor_cli.py \
+            --packet "$PACKET_PATH" \
+            --executor api \
+            --provider openai \
+            --model "$API_MODEL" \
+            --timeout 2700 \
+            --review-output "$ARTIFACT_DIR/review.json" \
+            --output "$ARTIFACT_DIR/execution.json" \
+            "${publish[@]}"
+
+      - name: Execute Anthropic Q review
+        if: inputs.executor == 'api' && inputs.api_provider == 'anthropic'
+        shell: bash
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          set -euo pipefail
+          [[ -n "$ANTHROPIC_API_KEY" ]] || { echo "::error::ANTHROPIC_API_KEY secret is required"; exit 1; }
+          publish=()
+          [[ "$PUBLISH_RESULT" == "true" ]] && publish+=(--publish-result)
+          python3 .terminus/execution/quality_executor_cli.py \
+            --packet "$PACKET_PATH" \
+            --executor api \
+            --provider anthropic \
+            --model "$API_MODEL" \
+            --timeout 2700 \
+            --review-output "$ARTIFACT_DIR/review.json" \
+            --output "$ARTIFACT_DIR/execution.json" \
+            "${publish[@]}"
+
+      - name: Publish validated review commit
+        if: success() && inputs.publish_result
+        shell: bash
+        run: |
+          set -euo pipefail
+          review_path="$(python3 - "$PACKET_PATH" <<'PY'
+          import json
+          import sys
+          print(json.load(open(sys.argv[1], encoding='utf-8'))['review_output_path'])
+          PY
+          )"
+          [[ -f "$review_path" ]] || { echo "::error::Validated review was not published into checkout"; exit 1; }
+          unexpected="$(git status --porcelain | awk '{print $2}' | grep -vFx "$review_path" || true)"
+          [[ -z "$unexpected" ]] || { echo "::error::Unexpected repository mutations: $unexpected"; exit 1; }
+          git config user.name "terminus-quality-executor[bot]"
+          git config user.email "terminus-quality-executor[bot]@users.noreply.github.com"
+          git add -- "$review_path"
+          if git diff --cached --quiet; then
+            echo "Validated review already matches repository content."
+            exit 0
+          fi
+          git commit -m "Persist packet-bound quality review"
+          git push origin "HEAD:${GITHUB_REF_NAME}"
+
+      - name: Quality execution summary
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ -f "$ARTIFACT_DIR/execution.json" ]]; then
+            python3 - "$ARTIFACT_DIR/execution.json" <<'PY' >> "$GITHUB_STEP_SUMMARY"
+          import json
+          import sys
+          d = json.load(open(sys.argv[1], encoding='utf-8'))
+          r = d['review']
+          b = d['backend']
+          print('## Terminus quality execution')
+          print()
+          print(f"- Executor: `{d['executor']}`")
+          print(f"- Provider/model: `{d['provider']}` / `{d['model']}`")
+          print(f"- Verdict: `{r['verdict']}`")
+          print(f"- Confidence/evidence: `{r['confidence']}` / `{r['evidence_status']}`")
+          print(f"- Findings/blocking: `{r['finding_count']}` / `{r['blocking_count']}`")
+          print(f"- Deterministic validation: `{d['deterministic_validation']}`")
+          print(f"- Fallback attempted: `{d['fallback_attempted']}`")
+          if 'usage' in b:
+              print(f"- Usage: `{json.dumps(b['usage'], sort_keys=True)}`")
+          PY
+          fi
+
+      - name: Upload quality execution evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: terminus-quality-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ env.ARTIFACT_DIR }}/
+          if-no-files-found: warn
+          include-hidden-files: false
+          retention-days: 14
