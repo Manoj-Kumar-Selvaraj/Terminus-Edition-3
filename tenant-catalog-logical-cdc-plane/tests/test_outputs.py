@@ -310,25 +310,73 @@ def test_f2p_decode_skips_uncommitted(home: Path) -> None:
     assert "CRASH" not in text
 
 
+def test_f2p_recover_redoes_committed_after_checkpoint(home: Path) -> None:
+    """Recover must redo a committed WAL mutation recorded after checkpoint.lsn."""
+    proc = run_ctl(home, "commit", "--input", str(FIXTURES / "insert_sku.jsonl"))
+    assert proc.returncode == 0
+    engine = sqlite3.connect(str(home / "data" / "engine.sqlite"))
+    engine.execute("DELETE FROM row_version WHERE pk = 's-t00-new'")
+    engine.commit()
+    engine.close()
+    proc = run_ctl(home, "recover")
+    assert proc.returncode == 0
+    engine = sqlite3.connect(str(home / "data" / "engine.sqlite"))
+    count = engine.execute(
+        "SELECT COUNT(*) FROM row_version WHERE pk = 's-t00-new' AND committed = 1 AND xmax IS NULL"
+    ).fetchone()[0]
+    engine.close()
+    assert count == 1
+    indexes = json.loads((home / "data" / "indexes.json").read_text(encoding="utf-8"))
+    assert indexes["sku_code"].get("t00\0NEW00") == "s-t00-new"
+
+
+def test_f2p_decode_does_not_apply(home: Path) -> None:
+    """decode must not change replica bytes or the replica slot."""
+    before_slot = (home / "data" / "replica_slot.json").read_bytes()
+    before_replica = (home / "data" / "replica.sqlite").read_bytes()
+    proc = run_ctl(home, "decode")
+    assert proc.returncode == 0
+    assert (home / "data" / "replica_slot.json").read_bytes() == before_slot
+    assert (home / "data" / "replica.sqlite").read_bytes() == before_replica
+
+
 def test_f2p_decode_uses_wal_lsn(home: Path) -> None:
-    """CDC lsn values come from WAL, not heap row numbers."""
+    """CDC lsn/pk pairs match committed WAL mutations, not heap row numbers."""
     run_ctl(home, "recover")
     proc = run_ctl(home, "decode")
     assert proc.returncode == 0
-    lines = [json.loads(line) for line in (home / "out" / "cdc.jsonl").read_text(encoding="utf-8").splitlines() if line.strip()]
+    wal = wal_records(home)
+    committed = {r["txn_id"] for r in wal if r.get("kind") == "COMMIT"}
+    wal_mut = {
+        (int(r["lsn"]), r.get("pk"))
+        for r in wal
+        if r.get("kind") in {"INSERT", "UPDATE", "DELETE"} and r.get("txn_id") in committed
+    }
+    lines = [
+        json.loads(line)
+        for line in (home / "out" / "cdc.jsonl").read_text(encoding="utf-8").splitlines()
+        if line.strip()
+    ]
     assert lines
+    confirmed = slot(home)["confirmed_lsn"]
+    for item in lines:
+        assert (int(item["lsn"]), item["pk"]) in wal_mut
+        assert int(item["lsn"]) > confirmed
     lsns = [item["lsn"] for item in lines]
     assert lsns == sorted(lsns)
-    assert lines[0]["lsn"] > slot(home)["confirmed_lsn"]
 
 
 def test_f2p_apply_is_monotonic(home: Path) -> None:
-    """apply refuses to move confirmed_lsn backwards and skips already-applied lsns."""
+    """First apply of lagged CDC advances confirmed_lsn; a second apply only skips."""
     run_ctl(home, "recover")
     run_ctl(home, "decode")
+    before = slot(home)["confirmed_lsn"]
     first = run_ctl(home, "apply")
     assert first.returncode == 0
+    report1 = json.loads((home / "out" / "apply-report.json").read_text(encoding="utf-8"))
     confirmed = slot(home)["confirmed_lsn"]
+    assert report1["applied"] >= 1
+    assert confirmed > before
     second = run_ctl(home, "apply")
     assert second.returncode == 0
     report = json.loads((home / "out" / "apply-report.json").read_text(encoding="utf-8"))

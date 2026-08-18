@@ -6,7 +6,6 @@ import (
 	"catalog/internal/store"
 )
 
-// Check is the starter implementation: replica-lag unique/FK, skips frozen/hold aggregate.
 func Check(st *store.Store, snapshot, txnID int64, mutations []model.Mutation) (*model.Reject, error) {
 	_ = snapshot
 	skus, err := st.ReplicaRows(model.TableSKU)

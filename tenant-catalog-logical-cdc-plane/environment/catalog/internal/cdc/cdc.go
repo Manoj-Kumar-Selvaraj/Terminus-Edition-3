@@ -8,7 +8,6 @@ import (
 	"os"
 )
 
-// Decode is the starter implementation: heap scan of sku rows with row numbers as LSN.
 func Decode(st *store.Store, confirmedLSN int64) ([]model.CDCEvent, error) {
 	_ = confirmedLSN
 	versions, err := st.LoadVersions()

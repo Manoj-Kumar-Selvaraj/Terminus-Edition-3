@@ -29,7 +29,6 @@ func LatestCommitted(st *store.Store) (int64, error) {
 	return max, nil
 }
 
-// Visible is the starter implementation: latest xmax-null row, including uncommitted.
 func Visible(st *store.Store, snapshot int64, writer *int64) ([]model.RowVersion, error) {
 	versions, err := st.LoadVersions()
 	if err != nil {

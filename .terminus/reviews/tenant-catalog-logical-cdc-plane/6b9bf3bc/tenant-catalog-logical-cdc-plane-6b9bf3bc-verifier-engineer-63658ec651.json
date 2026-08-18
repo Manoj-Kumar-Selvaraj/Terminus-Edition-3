@@ -1,0 +1,399 @@
+{
+  "schema_version": "3.0",
+  "role": "Verifier Engineer",
+  "review_id": "tenant-catalog-logical-cdc-plane-6b9bf3bc-verifier-engineer-63658ec651",
+  "task": "tenant-catalog-logical-cdc-plane",
+  "task_commit": "6b9bf3bc20bebaa853c6531b846d2321a124470a",
+  "control_plane_commit": "41e6d2fdc7ea680e3cec8e90ce2914e3b45af3fc",
+  "protocol_policy_version": "2.2",
+  "prompt_policy_version": "2.2",
+  "role_policy_version": "1.0",
+  "role_contract_hash": "b8502c798b9da8489910a78dcee4df0b642449b6f0b406ecef13351a28f7abf9",
+  "context_packet": ".terminus/reviews/tenant-catalog-logical-cdc-plane/6b9bf3bc/tenant-catalog-logical-cdc-plane-6b9bf3bc-verifier-engineer-63658ec651.packet.json",
+  "verdict": "REVISE",
+  "confidence": "HIGH",
+  "evidence_status": "SUFFICIENT",
+  "summary": "No. The 35 pytest cases drive the transferred catalogctl binary against native WAL/heap/index/replica/health artifacts and they fail the starter for real contract reasons (25 fail / 10 pass, Harbor NOP 0.0; oracle 1.0). Three named instruction pillars remain unenforced: checkpoint redo of committed WAL after checkpoint.lsn, decode that must not apply or advance the slot, and CDC-from-WAL versus a heap scan that reuses version.LSN and skips uncommitted rows. Those shortcuts can score 1. Constraint fail-closed, epoch fence, inspect/empty-check isolation, unique/FK/frozen/hold rejects, and warehouse preservation are otherwise semantic and deterministic.",
+  "evidence": [
+    {
+      "type": "file",
+      "ref": "tenant-catalog-logical-cdc-plane/instruction.md",
+      "observation": "Solver-visible work request names the Go catalog plane, binding contract, catalogctl CLI, snapshot isolation, commit-after-WAL, CDC-from-WAL, LSN/epoch-fenced FK-safe apply, checkpoint redo of committed records, fail-closed rejects, index rebuild after COMMIT and recover, inspect/empty-check isolation, health rewrites, and warehouse hands-off."
+    },
+    {
+      "type": "file",
+      "ref": "tenant-catalog-logical-cdc-plane/environment/catalog/docs/catalog-contract.md",
+      "observation": "Binding contract specifies visibility, WAL commit order, constraint codes, index key format, decode from replica_slot.confirmed_lsn+1 without heap invention or slot advance, epoch-mismatched apply of nothing, FK-rank apply, checkpoint identity, recover redo of committed WAL with lsn > checkpoint.lsn, CLI exit 2, and health/cdc/apply-report/rejects schemas."
+    },
+    {
+      "type": "test",
+      "ref": "tenant-catalog-logical-cdc-plane/tests/test_outputs.py",
+      "observation": "35 independent pytest functions with docstrings. Each case copies data/sql/config into tmp_path, sets CATALOG_ROOT, runs /app/catalog/bin/catalogctl, and parses sqlite/JSON/JSONL. Hidden /tests/fixtures cover insert, unique, FK, frozen, hold-qty, and reversed parent-child. No source greps of catalog arithmetic."
+    },
+    {
+      "type": "test",
+      "ref": "tenant-catalog-logical-cdc-plane/tests/test.sh",
+      "observation": "Canonical reward runner: creates /logs/verifier at runtime, writes 0 then 1/0 after pytest, installs nothing, collects test_outputs.py."
+    },
+    {
+      "type": "file",
+      "ref": "tenant-catalog-logical-cdc-plane/environment/catalog/internal/cli/cli.go",
+      "observation": "Starter appends WAL BEGIN before argv parse and --reset-output truncates WAL, so unknown-flag, missing --input, unknown-command, and reset-output tests fail the inherited binary for contract mutations rather than missing files."
+    },
+    {
+      "type": "file",
+      "ref": "tenant-catalog-logical-cdc-plane/environment/catalog/cmd/seed/main.go",
+      "observation": "Seed checkpoints at durable committed LSN, then appends only the uncommitted s-crash-pending WAL/heap row. Replica confirmed_lsn is skuEnd (2520). No committed WAL exists after checkpoint.lsn, so recover-that-only-restores-checkpoint matches recover_skips_uncommitted."
+    },
+    {
+      "type": "file",
+      "ref": "tenant-catalog-logical-cdc-plane/environment/catalog/internal/cdc/cdc.go",
+      "observation": "Starter decode is a heap scan of sku rows using row numbers as LSN. test_f2p_decode_uses_wal_lsn only requires sorted lsns with lines[0].lsn > confirmed_lsn, which a committed-heap filter on version.LSN also satisfies."
+    },
+    {
+      "type": "file",
+      "ref": "tenant-catalog-logical-cdc-plane/environment/catalog/internal/store/store.go",
+      "observation": "Replica opens with PRAGMA foreign_keys=ON against replica_schema.sql, so test_f2p_apply_fk_order (offer-then-sku file order, both rows must exist) does require parent-before-child apply, not mere end-state coincidence."
+    },
+    {
+      "type": "file",
+      "ref": "tenant-catalog-logical-cdc-plane/solution/solve.sh",
+      "observation": "Oracle copies repaired Go modules, rebuilds catalogctl, and drives recover/decode/inspect on the public CLI. It does not write reward files or branch on verifier identity."
+    },
+    {
+      "type": "run",
+      "ref": "jobs/2026-08-17__22-21-42",
+      "observation": "Harbor oracle reward 1.0; pytest collected 35 items, 35 passed in 329.93s. No oracle special-casing in tests."
+    },
+    {
+      "type": "run",
+      "ref": "jobs/2026-08-17__22-28-58",
+      "observation": "Harbor NOP reward 0.0; 25 failed, 10 passed. The 10 NOP passes are P2P presence/schema/happy-path (ctl, go.mod, warehouse SHA-256, health keys, accepted sku insert, checkpoint lsn, apply-report ints). F2P failures are usage mutation, inspect recover, constraint rejects, recover/decode/apply/index semantics."
+    },
+    {
+      "type": "file",
+      "ref": "tenant-catalog-logical-cdc-plane/task.toml",
+      "observation": "artifacts = [\"/app/catalog\"]; environment_mode = \"separate\". Hidden /tests/fixtures are unavailable to the agent. verifier timeout_sec = 1800 covers the ~330s oracle pytest runtime."
+    }
+  ],
+  "findings": [
+    {
+      "id": "VE-01",
+      "severity": "HIGH",
+      "status": "OBSERVED",
+      "criterion": "req-gap",
+      "evidence_refs": [
+        "tenant-catalog-logical-cdc-plane/instruction.md",
+        "tenant-catalog-logical-cdc-plane/environment/catalog/docs/catalog-contract.md",
+        "tenant-catalog-logical-cdc-plane/environment/catalog/cmd/seed/main.go",
+        "tenant-catalog-logical-cdc-plane/tests/test_outputs.py"
+      ],
+      "why_it_matters": "Instruction and contract require recover to restore the checkpoint then redo committed WAL records with lsn > checkpoint.lsn. Seed writes checkpoint at the durable committed max and only then appends uncommitted s-crash-pending, so no committed post-checkpoint WAL exists. Tests only assert that pk is gone, epoch is unchanged, and indexes omit the crash pk. A recover that restores checkpoint and drops uncommitted rows, without replaying later committed WAL, scores 1. There is no commit-then-recover (without a new checkpoint) case that requires redo.",
+      "minimal_remediation": "After a successful commit of a hidden fixture row, run recover without writing a new checkpoint and require that committed pk to remain on the heap and in sku_code. Keep the existing crash-pending skip.",
+      "regression_risk": "Do not require recover to bump epoch or to install s-crash-pending. Checkpoint itself must still leave replica epoch unchanged."
+    },
+    {
+      "id": "VE-02",
+      "severity": "HIGH",
+      "status": "OBSERVED",
+      "criterion": "weak-assertion",
+      "evidence_refs": [
+        "tenant-catalog-logical-cdc-plane/environment/catalog/docs/catalog-contract.md",
+        "tenant-catalog-logical-cdc-plane/tests/test_outputs.py"
+      ],
+      "why_it_matters": "Contract: decode does not apply to the replica and does not advance the slot. No test fingerprints replica.sqlite or replica_slot.json across decode. test_f2p_apply_is_monotonic only asserts the second apply has applied==0 and skipped>=1; the first apply is unchecked, so a decode that already applied the batch still passes. inspect/empty-check isolation is tested; decode isolation is not. A fused decode+apply implementation can full-score.",
+      "minimal_remediation": "Fingerprint slot.confirmed_lsn, slot.epoch, and replica bytes before/after decode and require them unchanged. On the first apply after a fresh decode of unapplied WAL, require applied>=1 (or confirmed_lsn advance) before the idempotent second apply.",
+      "regression_risk": "Keep stale-epoch apply --cdc rejecting the whole batch without advancing confirmed_lsn. Decode must still rewrite cdc.jsonl and health.json."
+    },
+    {
+      "id": "VE-03",
+      "severity": "HIGH",
+      "status": "OBSERVED",
+      "criterion": "weak-assertion",
+      "evidence_refs": [
+        "tenant-catalog-logical-cdc-plane/environment/catalog/docs/catalog-contract.md",
+        "tenant-catalog-logical-cdc-plane/environment/catalog/internal/cdc/cdc.go",
+        "tenant-catalog-logical-cdc-plane/tests/test_outputs.py"
+      ],
+      "why_it_matters": "Contract forbids scanning the heap to invent CDC. test_f2p_decode_uses_wal_lsn only checks sorted lsns and lines[0].lsn > confirmed_lsn, which is exactly the starter's row-number failure mode (NOP assert 1 > 2520). Heap versions already store the WAL mutation lsn. Filtering committed heap rows with version.LSN > confirmed_lsn, filling before from xmax'd versions, and skipping s-crash-pending passes decode_skips_uncommitted, decode_uses_wal_lsn, and decode_update_has_before without walking wal.jsonl. CDC-from-WAL is not distinguished from a smarter heap dump.",
+      "minimal_remediation": "Verifier-only: append a committed WAL INSERT (or COMMIT a mutation) without installing the heap row, then require that pk/lsn to appear in cdc.jsonl; or require each CDC lsn to match a committed WAL mutation record rather than a heap version.lsn scan. Do not leak that fixture into the agent image.",
+      "regression_risk": "Keep skipping txns without COMMIT and keep crash pending / CRASH out of cdc.jsonl. Do not require CDC to include BEGIN/COMMIT records."
+    },
+    {
+      "id": "VE-04",
+      "severity": "MEDIUM",
+      "status": "OBSERVED",
+      "criterion": "req-gap",
+      "evidence_refs": [
+        "tenant-catalog-logical-cdc-plane/environment/catalog/docs/catalog-contract.md",
+        "tenant-catalog-logical-cdc-plane/tests/test_outputs.py",
+        "tenant-catalog-logical-cdc-plane/tests/fixtures/"
+      ],
+      "why_it_matters": "Fail-closed path is tested for UNIQUE_CONFLICT, FK_MISSING, FROZEN_TENANT (offer insert), and HOLD_QTY, plus no heap install on unique abort. Contract also names PK_CONFLICT, CHECK_FAIL (unknown table, missing pk, non-integer qty), offer_code uniqueness, FROZEN hold insert/update, frozen-tenant sku/tenant maintenance still allowed, DELETE apply, and apply within-rank by lsn. Those same-class cases are untested. They do not by themselves let a heap-CDC or no-redo recover pass, but they leave stated codes unenforced.",
+      "minimal_remediation": "Optional holdouts: duplicate pk insert, unknown table or qty=-1 CHECK_FAIL, duplicate offer_code, frozen hold, sku insert on a frozen tenant accepted, and one CDC delete applied to replica.",
+      "regression_risk": "Keep business rejects at exit 0. Do not reject sku/tenant maintenance on FROZEN tenants."
+    },
+    {
+      "id": "VE-05",
+      "severity": "LOW",
+      "status": "OBSERVED",
+      "criterion": "weak-assertion",
+      "evidence_refs": [
+        "tenant-catalog-logical-cdc-plane/tests/test_outputs.py",
+        "jobs/2026-08-17__22-28-58"
+      ],
+      "why_it_matters": "recovery_ok, visibility_ok, and index_ok are asserted true only after recover, when a constant-true writer succeeds. test_f2p_health_rewrite_after_decode_apply passed NOP because it only checks that health.json exists with cdc_source=wal and integer durable_lsn/epoch. Pending-sentinel inspect/empty-check cases do not require those booleans false. Native heap/index assertions already carry the recover outcome; the iff health flags are not independently falsified.",
+      "minimal_remediation": "Optional: with the pending sentinel installed, assert visibility_ok or recovery_ok is false on inspect; after recover, assert true. Or drop the always-true post-recover flag tests as redundant with heap/index checks.",
+      "regression_risk": "None if left as-is; inspect must still not recover the sentinel."
+    },
+    {
+      "id": "VE-06",
+      "severity": "LOW",
+      "status": "OBSERVED",
+      "criterion": "weak-assertion",
+      "evidence_refs": [
+        "tenant-catalog-logical-cdc-plane/environment/catalog/docs/catalog-contract.md",
+        "tenant-catalog-logical-cdc-plane/tests/test_outputs.py"
+      ],
+      "why_it_matters": "Unknown flag/command and --reset-output tests compare only WAL bytes. Contract also forbids heap, index, replica, slot, checkpoint, and warehouse mutation on those paths. Starter's actual usage bug is WAL BEGIN / WAL truncate, so NOP still fails, but a usage path that truncates indexes or the slot while leaving WAL intact would pass.",
+      "minimal_remediation": "Optional: reuse fingerprint_state (wal/slot/indexes/replica) on unknown-flag, unknown-command, and --reset-output cases.",
+      "regression_risk": "Keep --reset-output allowed to wipe /app/catalog/out. empty-check with --reset-output must still exit 0."
+    }
+  ],
+  "missing_evidence": [],
+  "change_scope": [
+    "tenant-catalog-logical-cdc-plane/tests/test_outputs.py",
+    "tenant-catalog-logical-cdc-plane/tests/fixtures/ (verifier-only holdouts for WAL-only CDC and commit-then-recover redo)"
+  ],
+  "do_not_change": [
+    "instruction.md work request and absolute artifact paths",
+    "environment/catalog/docs/catalog-contract.md binding semantics",
+    "Hidden constraint fixtures (dup_sku, fk_hold, frozen_offer, hold_qty, parent_child, insert_sku)",
+    "Pending-sentinel inspect/empty-check isolation",
+    "Stale-epoch apply --cdc batch reject",
+    "tests/test.sh reward write pattern",
+    "solution/solve.sh public CLI derivation"
+  ],
+  "next_gate": "Repair verifier coverage for checkpoint redo, decode isolation, and WAL-versus-heap CDC; re-freeze; re-run Verifier Engineer before remaining Pre-LLMaJ specialists/aggregate.",
+  "role_output": {
+    "REQUIREMENT_TEST_MATRIX": [
+      {
+        "REQ_ID": "REQ-01",
+        "REQUIREMENT": "Repair the existing Go catalog plane; drive work through /app/catalog/bin/catalogctl; do not move catalog logic to another language or throw away the WAL protocol.",
+        "TESTS": [
+          "test_p2p_ctl_exists",
+          "test_p2p_go_module",
+          "test_p2p_contract_exists",
+          "test_f2p_decode_uses_wal_lsn"
+        ],
+        "COVERAGE": "COMPLETE"
+      },
+      {
+        "REQ_ID": "REQ-02",
+        "REQUIREMENT": "Unknown flags or an unknown command exit 2 before WAL, heap, index, replica, or slot mutation.",
+        "TESTS": [
+          "test_f2p_unknown_flag_leaves_wal",
+          "test_f2p_unknown_command_leaves_wal"
+        ],
+        "COVERAGE": "PARTIAL"
+      },
+      {
+        "REQ_ID": "REQ-03",
+        "REQUIREMENT": "commit requires --input; missing --input exits 2 without opening a transaction.",
+        "TESTS": [
+          "test_f2p_missing_commit_input_leaves_wal"
+        ],
+        "COVERAGE": "COMPLETE"
+      },
+      {
+        "REQ_ID": "REQ-04",
+        "REQUIREMENT": "--reset-output may delete files under /app/catalog/out only; it must not truncate WAL, heap, indexes, checkpoint, replica, slot, or warehouse.",
+        "TESTS": [
+          "test_f2p_reset_output_does_not_truncate_wal"
+        ],
+        "COVERAGE": "PARTIAL"
+      },
+      {
+        "REQ_ID": "REQ-05",
+        "REQUIREMENT": "Snapshot isolation: a snapshot is the txn_id at BEGIN; evaluate constraints against the writer snapshot plus its write set; uncommitted versions from other transactions are invisible.",
+        "TESTS": [
+          "test_f2p_same_txn_parent_then_child",
+          "test_f2p_empty_check_does_not_bump_epoch",
+          "test_f2p_inspect_does_not_recover"
+        ],
+        "COVERAGE": "PARTIAL"
+      },
+      {
+        "REQ_ID": "REQ-06",
+        "REQUIREMENT": "A transaction is committed only when its COMMIT record is in wal.jsonl; heap and index installation happen after that append, never before.",
+        "TESTS": [
+          "test_p2p_commit_insert_sku",
+          "test_f2p_reject_does_not_install_row",
+          "test_f2p_duplicate_sku_code_rejects"
+        ],
+        "COVERAGE": "PARTIAL"
+      },
+      {
+        "REQ_ID": "REQ-07",
+        "REQUIREMENT": "Constraint failures fail closed: append a reject {txn_id, code, table, pk, detail}, WAL ABORT, no heap/index install. Codes: PK_CONFLICT, UNIQUE_CONFLICT, FK_MISSING, CHECK_FAIL, FROZEN_TENANT, HOLD_QTY. Business rejects exit 0.",
+        "TESTS": [
+          "test_f2p_duplicate_sku_code_rejects",
+          "test_f2p_reject_does_not_install_row",
+          "test_f2p_missing_offer_fk_rejects",
+          "test_f2p_frozen_tenant_rejects_offer",
+          "test_f2p_hold_qty_rejects"
+        ],
+        "COVERAGE": "PARTIAL"
+      },
+      {
+        "REQ_ID": "REQ-08",
+        "REQUIREMENT": "Writer snapshot plus write set allows parent sku then child offer in one commit regardless of JSONL file order.",
+        "TESTS": [
+          "test_f2p_same_txn_parent_then_child"
+        ],
+        "COVERAGE": "COMPLETE"
+      },
+      {
+        "REQ_ID": "REQ-09",
+        "REQUIREMENT": "indexes.json sku_code and offer_code map tenant_id\\0code to visible pk; rebuild from committed-visible rows after every successful COMMIT and after recover; aborted/invisible versions must not remain.",
+        "TESTS": [
+          "test_f2p_indexes_match_after_commit",
+          "test_f2p_indexes_rebuild_after_recover",
+          "test_f2p_index_ok_after_recover"
+        ],
+        "COVERAGE": "COMPLETE"
+      },
+      {
+        "REQ_ID": "REQ-10",
+        "REQUIREMENT": "decode walks WAL from confirmed_lsn+1, emits one CDC object per committed mutation in WAL lsn order with before/after images, skips txns with no COMMIT, does not scan the heap to invent records, replaces cdc.jsonl, and does not apply or advance the slot.",
+        "TESTS": [
+          "test_f2p_decode_skips_uncommitted",
+          "test_f2p_decode_uses_wal_lsn",
+          "test_f2p_decode_update_has_before"
+        ],
+        "COVERAGE": "PARTIAL"
+      },
+      {
+        "REQ_ID": "REQ-11",
+        "REQUIREMENT": "apply: epoch != replica_slot.epoch rejects the whole batch (apply nothing, do not advance confirmed_lsn); lsn <= confirmed_lsn is skipped; confirmed_lsn is monotonic.",
+        "TESTS": [
+          "test_f2p_stale_epoch_rejects_batch",
+          "test_f2p_apply_is_monotonic"
+        ],
+        "COVERAGE": "COMPLETE"
+      },
+      {
+        "REQ_ID": "REQ-12",
+        "REQUIREMENT": "Records that share a txn_id apply in FK rank (tenant, sku, offer, hold) and within a rank by lsn; INSERT/UPDATE upsert; DELETE removes; apply-report fields applied/skipped/rejected/confirmed_lsn/epoch are integers.",
+        "TESTS": [
+          "test_f2p_apply_fk_order",
+          "test_p2p_apply_report_integers"
+        ],
+        "COVERAGE": "PARTIAL"
+      },
+      {
+        "REQ_ID": "REQ-13",
+        "REQUIREMENT": "checkpoint writes checkpoint.json with lsn equal to durable WAL max, plus txn_id, epoch, and visible committed heap identity (not uncommitted); it does not change replica epoch.",
+        "TESTS": [
+          "test_p2p_checkpoint_lsn_not_zero_after_checkpoint"
+        ],
+        "COVERAGE": "PARTIAL"
+      },
+      {
+        "REQ_ID": "REQ-14",
+        "REQUIREMENT": "recover restores heap and indexes from checkpoint, then redos WAL records with lsn > checkpoint.lsn that belong to committed transactions; uncommitted WAL is not installed; recover does not bump replica_slot.epoch; after redo, rebuild indexes from visible committed rows.",
+        "TESTS": [
+          "test_f2p_recover_skips_uncommitted",
+          "test_f2p_recover_does_not_bump_epoch",
+          "test_f2p_indexes_rebuild_after_recover",
+          "test_f2p_recovery_ok_after_recover",
+          "test_f2p_visibility_ok_after_recover"
+        ],
+        "COVERAGE": "PARTIAL"
+      },
+      {
+        "REQ_ID": "REQ-15",
+        "REQUIREMENT": "inspect and empty-check rewrite health.json from observed state and must not recover, decode-apply, bump epoch, or append WAL. empty-check does not assign a txn_id.",
+        "TESTS": [
+          "test_f2p_inspect_does_not_recover",
+          "test_f2p_empty_check_does_not_bump_epoch"
+        ],
+        "COVERAGE": "COMPLETE"
+      },
+      {
+        "REQ_ID": "REQ-16",
+        "REQUIREMENT": "Every successful commit, recover, decode, apply, checkpoint, inspect, and empty-check rewrites health.json with the contracted fields; cdc_source is the string wal; epoch and replica_epoch equal the slot epoch.",
+        "TESTS": [
+          "test_p2p_health_schema",
+          "test_p2p_health_replica_epoch_matches_slot",
+          "test_f2p_health_rewrite_after_decode_apply",
+          "test_p2p_commit_insert_sku",
+          "test_p2p_checkpoint_lsn_not_zero_after_checkpoint"
+        ],
+        "COVERAGE": "PARTIAL"
+      },
+      {
+        "REQ_ID": "REQ-17",
+        "REQUIREMENT": "Leave /app/catalog/warehouse untouched; do not use warehouse as commit snapshot, CDC source, or replica apply source.",
+        "TESTS": [
+          "test_p2p_warehouse_untouched"
+        ],
+        "COVERAGE": "COMPLETE"
+      },
+      {
+        "REQ_ID": "REQ-18",
+        "REQUIREMENT": "Binding contract at /app/catalog/docs/catalog-contract.md; knobs in /app/catalog/config/catalog.json; apply may take --cdc <path>.",
+        "TESTS": [
+          "test_p2p_contract_exists",
+          "test_f2p_stale_epoch_rejects_batch"
+        ],
+        "COVERAGE": "PARTIAL"
+      },
+      {
+        "REQ_ID": "REQ-19",
+        "REQUIREMENT": "Usage errors exit 2; successful operator commands and business rejects exit 0.",
+        "TESTS": [
+          "test_f2p_unknown_flag_leaves_wal",
+          "test_f2p_unknown_command_leaves_wal",
+          "test_f2p_missing_commit_input_leaves_wal",
+          "test_f2p_duplicate_sku_code_rejects",
+          "test_p2p_commit_insert_sku"
+        ],
+        "COVERAGE": "COMPLETE"
+      },
+      {
+        "REQ_ID": "REQ-20",
+        "REQUIREMENT": "A FROZEN tenant rejects INSERT or UPDATE of offer or hold; tenant and sku maintenance on a frozen tenant is still allowed.",
+        "TESTS": [
+          "test_f2p_frozen_tenant_rejects_offer"
+        ],
+        "COVERAGE": "PARTIAL"
+      }
+    ],
+    "PHANTOM_TESTS": [
+      "None material. test_p2p_go_module (non-shebang catalogctl plus go.mod module catalog) and test_p2p_ctl_exists / test_p2p_contract_exists enforce stated artifact properties. test_f2p_indexes_match_after_commit key t00\\0NEW00 is the contract index encoding, not an unstated helper name. Pending-sentinel inspect/empty-check checks prevent recover side effects the contract forbids."
+    ],
+    "WEAK_OR_VACUOUS_ASSERTIONS": [
+      "VE-01: recover tests never require redo of a committed WAL record after checkpoint.lsn.",
+      "VE-02: decode is not shown to leave replica/slot unchanged; first apply in the monotonic test need not apply anything.",
+      "VE-03: decode_uses_wal_lsn does not bind CDC lsn/pk to wal.jsonl; a committed-heap filter on version.LSN passes.",
+      "VE-05: health booleans asserted true only after recover; health_rewrite_after_decode_apply passed NOP.",
+      "VE-06: usage tests compare WAL bytes only.",
+      "test_f2p_indexes_rebuild_after_recover: seed indexes already omit s-crash-pending (indexes written before crashPending), so leaving indexes untouched also passes."
+    ],
+    "IMPLEMENTATION_COUPLING": "Low and mostly legitimate. Tests invoke catalogctl and parse native sqlite/JSON/JSONL. go.mod / non-shebang checks enforce the stated Go plane rather than helper names or file split. Index key t00\\0NEW00 is the public index format. CATALOG_ROOT relocation is harness isolation, not a solver-visible knob; a binary that honors only /app/catalog still fails tmp-home commit/inspect cases. No control-flow greps.",
+    "FLAKINESS_RISK": "LOW. No sleeps, unseeded RNG, or host-load thresholds. Per-test tmp_path copies isolate WAL/heap/replica. generated_at uses wall clock but is only checked for key presence. Oracle pytest took 330s copying the seeded catalog; verifier timeout 1800s. Shared /app/catalog is the copy source; a binary that ignores CATALOG_ROOT can pollute later copies, but a correct CATALOG_ROOT implementation is order-independent.",
+    "ANTI_CHEAT_RISK": "MEDIUM. Separate verifier, hidden fixtures, warehouse SHA-256, pending sentinel, stale-epoch --cdc, and SQLite FK-on replica apply prevent hardcoding the quiet sample or skipping constraint/epoch/inspect work. Residual full-score shortcuts: heap CDC filtered by version.LSN > confirmed_lsn, recover that only restores checkpoint, and fused decode+apply. Those game named WAL/redo/decode-apply requirements without failing current asserts.",
+    "ORACLE_NOP_ASSESSMENT": "Oracle solve.sh installs repaired Go modules, rebuilds catalogctl, and runs the public recover/decode/inspect path; tests do not branch on oracle identity, usernames, or solution hashes. Harbor jobs/2026-08-17__22-21-42 reward 1.0 with 35/35 pass. NOP jobs/2026-08-17__22-28-58 reward 0.0 with 25 fail / 10 pass: starter WAL-before-parse, inspect recover, replica-lag constraints, heap-number CDC, reverse-FK apply, and recover that installs uncommitted WAL and bumps epoch fail for substantive contract reasons. The 10 NOP passes are expected P2P presence/schema/happy-path, not vacuous F2P.",
+    "BLOCKING_FINDING_IDS": [
+      "VE-01",
+      "VE-02",
+      "VE-03"
+    ],
+    "ADVISORY_FINDING_IDS": [
+      "VE-04",
+      "VE-05",
+      "VE-06"
+    ]
+  }
+}

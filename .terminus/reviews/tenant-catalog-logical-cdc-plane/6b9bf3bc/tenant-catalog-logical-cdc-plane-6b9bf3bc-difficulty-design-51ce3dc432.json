@@ -1,0 +1,191 @@
+{
+  "schema_version": "3.0",
+  "role": "Difficulty Reviewer",
+  "review_id": "tenant-catalog-logical-cdc-plane-6b9bf3bc-difficulty-design-51ce3dc432",
+  "task": "tenant-catalog-logical-cdc-plane",
+  "task_commit": "6b9bf3bc20bebaa853c6531b846d2321a124470a",
+  "control_plane_commit": "41e6d2fdc7ea680e3cec8e90ce2914e3b45af3fc",
+  "protocol_policy_version": "2.2",
+  "prompt_policy_version": "2.2",
+  "role_policy_version": "1.0",
+  "role_contract_hash": "0e579a8e5eb5600c10067bc05d0c439c2ca8b91cb781c3e9094ed94b45a3ca9d",
+  "context_packet": ".terminus/reviews/tenant-catalog-logical-cdc-plane/6b9bf3bc/tenant-catalog-logical-cdc-plane-6b9bf3bc-difficulty-design-51ce3dc432.packet.json",
+  "verdict": "PASS",
+  "confidence": "MEDIUM",
+  "evidence_status": "SUFFICIENT",
+  "summary": "Pre-trial difficulty design is genuine coupled catalog-plane reasoning, not clerical Go-file volume or obscure trivia. Snapshot visibility, commit-time constraints on writer snapshot plus write-set, WAL-decoded CDC, LSN/epoch-fenced FK-safe apply, checkpoint redo without epoch bump, and CLI parse-before-mutate interact so local patches stay globally wrong. Official GPT×5+Claude×5 tier is UNMEASURED / NOT_MEASURABLE.",
+  "evidence": [
+    {
+      "type": "file",
+      "ref": "tenant-catalog-logical-cdc-plane/instruction.md",
+      "observation": "Work request states interacting end-state invariants (snapshot isolation, commit-after-WAL heap/index install, CDC-from-WAL, LSN/epoch-fenced FK-safe apply, checkpoint redo of committed records, fail-closed rejects, inspect/empty-check non-mutation, CLI exit 2 before mutation) without naming defective modules or a repair recipe."
+    },
+    {
+      "type": "file",
+      "ref": "tenant-catalog-logical-cdc-plane/environment/catalog/docs/catalog-contract.md",
+      "observation": "Binding contract sequences visibility (xmin committed-or-self, xmin<=S, xmax null/uncommitted/later), COMMIT-before-install, constraint codes against snapshot plus write-set, index rebuild from committed-visible rows with tenant_id NUL code keys, decode of committed WAL only, whole-batch epoch reject vs LSN skip, recover redo of committed lsn>checkpoint without replica epoch bump."
+    },
+    {
+      "type": "file",
+      "ref": "tenant-catalog-logical-cdc-plane/environment/catalog/notes/oncall.md",
+      "observation": "Shift notes mix crash-pending uncommitted sku, heap-dump CDC inventing LSNs, frozen-tenant fail-closed, replica lag through sku only, keep epoch 3 / do not rewind confirmed_lsn, and --reset-output must not truncate WAL—symptoms that must be reconciled together."
+    },
+    {
+      "type": "file",
+      "ref": "tenant-catalog-logical-cdc-plane/environment/catalog/logs/bounce.log",
+      "observation": "Captured run shows trailing open WAL txn, heap still showing s-crash-pending, decode/apply disagreeing with replica confirmed_lsn, inspect touching replica epoch, and inspect healthy=false."
+    },
+    {
+      "type": "file",
+      "ref": "tenant-catalog-logical-cdc-plane/environment/catalog/internal/snapshot/snapshot.go",
+      "observation": "Starter Visible ignores snapshot/writer and returns LatestXmaxNull, so uncommitted crash rows and pre-images remain visible; fixing this alone does not restore replica-lag constraints, indexes, or CDC."
+    },
+    {
+      "type": "file",
+      "ref": "tenant-catalog-logical-cdc-plane/environment/catalog/internal/constraints/constraints.go",
+      "observation": "Starter Check scans replica sku rows, skips frozen/hold aggregate, and never overlays the writer write-set; parent-then-child same txn, FROZEN_TENANT, HOLD_QTY, and unique-on-visible still fail after a snapshot-only patch."
+    },
+    {
+      "type": "file",
+      "ref": "tenant-catalog-logical-cdc-plane/environment/catalog/internal/indexes/indexes.go",
+      "observation": "Starter Rebuild indexes every version with slash-separated keys and Expected always returns empty maps, so index_ok and the contracted tenant_id NUL code key remain wrong even if visibility is later repaired."
+    },
+    {
+      "type": "file",
+      "ref": "tenant-catalog-logical-cdc-plane/environment/catalog/internal/cdc/cdc.go",
+      "observation": "Starter Decode heap-scans sku rows, invents row-number LSNs and epoch 1, and never walks WAL COMMIT records—so applying that stream either duplicates LSNs or advances confirmed_lsn onto junk."
+    },
+    {
+      "type": "file",
+      "ref": "tenant-catalog-logical-cdc-plane/environment/catalog/internal/replica/replica.go",
+      "observation": "Starter Apply ignores fence.BatchEpochOK / Classify, orders with reverseFK true, and always writes max LSN; epoch mismatch still mutates replica and can move confirmed_lsn."
+    },
+    {
+      "type": "file",
+      "ref": "tenant-catalog-logical-cdc-plane/environment/catalog/internal/recover/recover.go",
+      "observation": "Starter Recover installs every post-checkpoint mutation including uncommitted s-crash-pending and increments replica_slot.epoch, so a recover-only heal breaks later epoch-fenced apply."
+    },
+    {
+      "type": "file",
+      "ref": "tenant-catalog-logical-cdc-plane/environment/catalog/internal/inspect/inspect.go",
+      "observation": "Inspect and empty-check call recover as a side effect, so a health rewrite still bumps epoch and installs uncommitted WAL—the classic false-heal of using inspect to repair crash state."
+    },
+    {
+      "type": "file",
+      "ref": "tenant-catalog-logical-cdc-plane/environment/catalog/internal/cli/cli.go",
+      "observation": "CLI appends WAL BEGIN before argv parse and --reset-output truncates WAL; unknown flags and missing --input still mutate durable state even if downstream engines are later contract-correct."
+    },
+    {
+      "type": "file",
+      "ref": "tenant-catalog-logical-cdc-plane/environment/catalog/internal/visibility/visibility.go",
+      "observation": "SnapshotVisible already implements the three-clause contract; the starter simply does not call it. Surrounding helper LOC is not the scored hardness."
+    },
+    {
+      "type": "file",
+      "ref": "tenant-catalog-logical-cdc-plane/environment/catalog/internal/overlay/overlay.go",
+      "observation": "overlay.Evaluate already merges writer mutations for PK/unique/FK/frozen/hold-qty; constraints.go ignores it and uses replica lag instead, creating a wiring trap rather than a missing-library problem."
+    },
+    {
+      "type": "file",
+      "ref": "tenant-catalog-logical-cdc-plane/environment/catalog/internal/fence/fence.go",
+      "observation": "Classify, BatchEpochOK, AdvanceConfirmed, and RejectWholeBatch already encode epoch/LSN fencing; replica.Apply discards their results."
+    },
+    {
+      "type": "file",
+      "ref": "tenant-catalog-logical-cdc-plane/environment/catalog/internal/txn/txn.go",
+      "observation": "Commit already appends WAL then heap/index install and ABORT+reject on constraint failure; hardness is the eight drifted callees, not rewriting the WAL protocol."
+    },
+    {
+      "type": "file",
+      "ref": "tenant-catalog-logical-cdc-plane/solution/solve.sh",
+      "observation": "Oracle replaces eight interacting modules (snapshot, constraints, indexes, cdc, replica, recover, inspect, cli) then drives public catalogctl recover/decode/inspect—not a golden-output dump."
+    },
+    {
+      "type": "test",
+      "ref": "tenant-catalog-logical-cdc-plane/tests/test_outputs.py",
+      "observation": "Independent F2P/P2P families cover CLI fail-closed WAL, reset-output, inspect/empty-check sentinels, unique/FK/frozen/hold-qty, same-txn parent-child, recover skip uncommitted without epoch bump, WAL-LSN CDC without crash pk, apply skip/monotonic/stale-epoch/FK order, index NUL keys, health schema, and warehouse digest. Presence checks are ancillary, not the scored hardness."
+    }
+  ],
+  "findings": [
+    {
+      "id": "DD-1",
+      "severity": "LOW",
+      "status": "OBSERVED",
+      "criterion": "official_tier_unmeasured",
+      "evidence_refs": [
+        ".terminus/reviews/tenant-catalog-logical-cdc-plane/6b9bf3bc/tenant-catalog-logical-cdc-plane-6b9bf3bc-difficulty-design-51ce3dc432.packet.json"
+      ],
+      "why_it_matters": "Packet state is PRE_LLMAJ and Harbor LLMaJ plus official 10 trials are deferred; no complete-run pass rate or per-test solvability exists, so DIFFICULTY_VERDICT cannot be a final Edition 3 tier.",
+      "minimal_remediation": "After Pre-LLMaJ/Harbor maturity, run GPT-5.5 ×5 and Claude Opus 4.8 ×5 and set DIFFICULTY_VERDICT from the combined complete-run mean; do not invent trial stats now.",
+      "regression_risk": "None for design PASS; empirical tier may differ from this design judgment."
+    },
+    {
+      "id": "DD-2",
+      "severity": "LOW",
+      "status": "INFERRED",
+      "criterion": "shortcut_risk_spec_and_starter_explicitness",
+      "evidence_refs": [
+        "tenant-catalog-logical-cdc-plane/instruction.md",
+        "tenant-catalog-logical-cdc-plane/environment/catalog/docs/catalog-contract.md",
+        "tenant-catalog-logical-cdc-plane/environment/catalog/internal/snapshot/snapshot.go",
+        "tenant-catalog-logical-cdc-plane/environment/catalog/internal/cdc/cdc.go",
+        "tenant-catalog-logical-cdc-plane/environment/catalog/internal/cli/cli.go"
+      ],
+      "why_it_matters": "Instruction plus contract enumerate the end-state rules, starter comments name each drifted function, and helpers already implement SnapshotVisible, overlay.Evaluate, fence.Classify, and applyorder.Order. A strong agent may spec-wire the eight modules without deep diagnosis. That raises shortcut risk but does not make the work clerical: recover-without-epoch, WAL-decode-without-uncommitted, snapshot-without-write-set overlay, NUL index keys, CLI parse-before-BEGIN, and inspect-without-recover still interact, and sentinels/stale-epoch/parent-child reject partial heals.",
+      "minimal_remediation": "Keep coupled counterexamples and inspect/empty-check sentinels. Do not further flatten the instruction into a per-file repair list. Recalibrate shortcut risk from official trajectories if pass rate is unexpectedly high.",
+      "regression_risk": "Low if hidden sentinels, stale-epoch, and same-txn parent-child families remain independent."
+    },
+    {
+      "id": "DD-3",
+      "severity": "LOW",
+      "status": "OBSERVED",
+      "criterion": "surrounding_module_volume_is_not_hardness",
+      "evidence_refs": [
+        "tenant-catalog-logical-cdc-plane/environment/catalog/internal/engine/engine.go",
+        "tenant-catalog-logical-cdc-plane/environment/catalog/internal/visibility/visibility.go",
+        "tenant-catalog-logical-cdc-plane/environment/catalog/internal/overlay/overlay.go",
+        "tenant-catalog-logical-cdc-plane/solution/solve.sh"
+      ],
+      "why_it_matters": "The agent tree contains many already-correct helpers (engine commit/decode/apply wiring, WAL protocol, heap install, visibility, overlay, fence, applyorder, health). Difficulty is not Go LOC or package count. A solver who hunts every module may waste time, but the minimum successful chain is diagnosis of the eight coupled defects plus contract-faithful snapshot/CDC/apply/recover/CLI behavior.",
+      "minimal_remediation": "Do not add extra unrelated packages to inflate perceived difficulty. Do not treat warehouse dump size or surrounding catalog helpers as a reasoning bottleneck.",
+      "regression_risk": "None."
+    }
+  ],
+  "missing_evidence": [
+    "Official GPT-5.5 ×5 complete-run results",
+    "Official Claude Opus 4.8 ×5 complete-run results",
+    "Combined 10-trial per-test solvability matrix and trajectories"
+  ],
+  "change_scope": [],
+  "do_not_change": [
+    "Do not collapse snapshot visibility, write-set constraints, WAL CDC, epoch/LSN apply fencing, recover-without-epoch, inspect non-mutation, and CLI fail-closed parse into a single-module bug to chase early pass rate.",
+    "Do not treat surrounding helper/warehouse Go LOC as the difficulty signal.",
+    "Do not assign a final Edition 3 tier before combined official 10 trials."
+  ],
+  "next_gate": "Continue Pre-LLMaJ / Harbor path; defer official model trials for empirical tier",
+  "role_output": {
+    "MODE": "PRE_TRIAL",
+    "TRIAL_SET": "PRE_TRIAL",
+    "REASONING_DEPTH": "HIGH",
+    "REASONING_CHAIN_ESTIMATE": [
+      "Diagnose crash-pending heap row, heap-dump CDC, replica lag through sku, inspect epoch bump, and WAL-truncating --reset-output from oncall, bounce log, contract, and public catalogctl runs",
+      "Restore snapshot visibility as committed xmin (or read-your-writes), xmin<=S, and xmax null/uncommitted/later so uncommitted versions never appear as catalog inventory",
+      "Evaluate COMMIT constraints on writer snapshot plus write-set (not replica lag): UNIQUE/FK/CHECK/FROZEN_TENANT/HOLD_QTY fail closed with reject+WAL ABORT and no heap/index install; same-txn parent sku then child offer must commit",
+      "Rebuild sku_code/offer_code from currently visible committed rows with tenant_id NUL code keys after successful COMMIT and recover; aborted and invisible versions must not remain",
+      "Decode CDC from WAL committed mutations in lsn order from confirmed_lsn+1, skipping abort/open txns and never inventing heap row-number LSNs; do not apply or advance the slot in decode",
+      "Apply CDC with whole-batch epoch reject (nothing applied, confirmed_lsn unchanged), skip lsn<=confirmed, FK-rank order within txn, and monotonic confirmed_lsn; recover redos only committed lsn>checkpoint without bumping replica epoch",
+      "Parse/validate CLI before any WAL/heap/index/replica/slot mutation; unknown flags or omitted commit --input exit 2; --reset-output clears out/ only; inspect and empty-check rewrite health.json without recover, decode-apply, epoch bump, or WAL append"
+    ],
+    "SHORTCUT_RISK": "MEDIUM",
+    "CLERICAL_DIFFICULTY_RISK": "LOW",
+    "COMPLETE_PASSES": "NOT_MEASURED_PRETRIAL",
+    "COMPLETE_PASS_RATE": "NOT_MEASURED_PRETRIAL",
+    "PER_TEST_COVERAGE": "Oracle/NOP only; official 10-trial solvability not yet measured",
+    "ZERO_OF_TEN_TESTS": "NOT_MEASURED_PRETRIAL",
+    "TRAJECTORY_FINDINGS": [],
+    "DIFFICULTY_VERDICT": "NOT_MEASURABLE",
+    "OFFICIAL_TIER": "UNMEASURED",
+    "BLOCKING_FINDING_IDS": [],
+    "ADVISORY_FINDING_IDS": ["DD-1", "DD-2", "DD-3"]
+  }
+}

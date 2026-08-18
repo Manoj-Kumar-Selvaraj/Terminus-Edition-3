@@ -1,0 +1,455 @@
+{
+  "schema_version": "3.0",
+  "role": "Comprehensive Reviewer",
+  "review_id": "tenant-catalog-logical-cdc-plane-6b9bf3bc-comprehensive-checklist-792bd0e829",
+  "task": "tenant-catalog-logical-cdc-plane",
+  "task_commit": "6b9bf3bc20bebaa853c6531b846d2321a124470a",
+  "control_plane_commit": "7044472d14022ef072b3f51d059a779d3dde7d09",
+  "protocol_policy_version": "2.2",
+  "prompt_policy_version": "2.2",
+  "role_policy_version": "1.0",
+  "role_contract_hash": "d62c93560676cd66428ca1829a833f612a194534bcf58380a9984ca3c490be2c",
+  "context_packet": ".terminus/reviews/tenant-catalog-logical-cdc-plane/6b9bf3bc/tenant-catalog-logical-cdc-plane-6b9bf3bc-comprehensive-checklist-792bd0e829.packet.json",
+  "verdict": "REQUEST_CHANGES",
+  "confidence": "HIGH",
+  "evidence_status": "SUFFICIENT",
+  "summary": "Independent walk of all 61 checklist criteria at freeze 6b9bf3bc found one High FAIL: agent-visible Go comments are a file-by-file defect catalog (RC-INS-005). One Medium FAIL: task.toml at this freeze ships seven tags, outside the Edition 3 three-to-six bound (RC-META-003). Harbor oracle reward 1.0 (jobs/2026-08-17__22-21-42) and NOP reward 0.0 (jobs/2026-08-17__22-28-58) are recorded. Official GPT-5.5×5 plus Claude Opus 4.8×5 trials are absent, so RC-META-004 and RC-TRIAL-001 through RC-TRIAL-006 remain later-gate INSUFFICIENT_EVIDENCE. Rubrics are NOT_APPLICABLE. Checklist recommendation is REQUEST_CHANGES. POLICY_FRESHNESS UNVERIFIED.",
+  "evidence": [
+    {
+      "type": "file",
+      "ref": "tenant-catalog-logical-cdc-plane/instruction.md",
+      "observation": "One short paragraph plus six bullets. Absolute /app/catalog paths. Goal, CLI, contract, knobs, usage-before-mutation, fail-closed constraints, inspect/empty-check, warehouse preservation. Task name and canary strings absent."
+    },
+    {
+      "type": "file",
+      "ref": "tenant-catalog-logical-cdc-plane/environment/catalog/docs/catalog-contract.md",
+      "observation": "Realistic binding contract for paths, snapshot visibility, constraints, indexes, WAL CDC, replica apply, recover, CLI, and health/apply-report schemas. Not a numbered repair walkthrough."
+    },
+    {
+      "type": "file",
+      "ref": "tenant-catalog-logical-cdc-plane/environment/catalog/internal/cli/cli.go",
+      "observation": "Comment: 'Main is the starter CLI: WAL BEGIN before argv parse; --reset-output truncates WAL.' Implementation matches that catalogued defect."
+    },
+    {
+      "type": "file",
+      "ref": "tenant-catalog-logical-cdc-plane/environment/catalog/internal/cdc/cdc.go",
+      "observation": "Comment: 'Decode is the starter implementation: heap scan of sku rows with row numbers as LSN.'"
+    },
+    {
+      "type": "file",
+      "ref": "tenant-catalog-logical-cdc-plane/environment/catalog/internal/replica/replica.go",
+      "observation": "Comment: 'Apply is the starter implementation: reverse FK order, ignore LSN/epoch fences.'"
+    },
+    {
+      "type": "file",
+      "ref": "tenant-catalog-logical-cdc-plane/environment/catalog/internal/recover/recover.go",
+      "observation": "Comment: restore checkpoint, install uncommitted WAL mutations, and bump replica epoch."
+    },
+    {
+      "type": "file",
+      "ref": "tenant-catalog-logical-cdc-plane/environment/catalog/internal/constraints/constraints.go",
+      "observation": "Comment: replica-lag unique/FK, skips frozen/hold aggregate."
+    },
+    {
+      "type": "file",
+      "ref": "tenant-catalog-logical-cdc-plane/environment/catalog/internal/inspect/inspect.go",
+      "observation": "Comment: recover as a side effect."
+    },
+    {
+      "type": "file",
+      "ref": "tenant-catalog-logical-cdc-plane/environment/catalog/internal/indexes/indexes.go",
+      "observation": "Comment: every version, slash-separated keys."
+    },
+    {
+      "type": "file",
+      "ref": "tenant-catalog-logical-cdc-plane/environment/catalog/internal/snapshot/snapshot.go",
+      "observation": "Comment: latest xmax-null row, including uncommitted."
+    },
+    {
+      "type": "file",
+      "ref": "tenant-catalog-logical-cdc-plane/task.toml",
+      "observation": "At 6b9bf3bc tags has seven entries: golang, sqlite, mvcc, cdc, wal, indexes, replica. Working copy has already dropped indexes to six; freeze still has seven."
+    },
+    {
+      "type": "file",
+      "ref": "tenant-catalog-logical-cdc-plane/environment/Dockerfile",
+      "observation": "Digest-pinned canonical golang:1.24-bookworm; one apt transaction with tmux and asciinema; COPY catalog/; go mod tidy and build at image build; no reserved-path or solution/tests copy."
+    },
+    {
+      "type": "file",
+      "ref": "tenant-catalog-logical-cdc-plane/tests/test.sh",
+      "observation": "Creates /logs/verifier at runtime, writes binary 0 then 1/0 after pytest, installs nothing, no trailing exit $?."
+    },
+    {
+      "type": "file",
+      "ref": "tenant-catalog-logical-cdc-plane/tests/test_outputs.py",
+      "observation": "35 pytest functions with docstrings drive catalogctl on isolated copies: usage-before-WAL, inspect/empty-check, unique/FK/frozen/hold-qty, recover, WAL CDC, epoch fence, indexes, health schema, warehouse."
+    },
+    {
+      "type": "file",
+      "ref": "tenant-catalog-logical-cdc-plane/solution/solve.sh",
+      "observation": "Copies eight repaired modules, rebuilds catalogctl, runs public recover/decode/inspect. set -euo pipefail. No golden dump, no verifier reads, no reward writes."
+    },
+    {
+      "type": "run",
+      "ref": "Terminus-Edition-3/jobs/2026-08-17__22-21-42",
+      "observation": "Harbor oracle__adhoc mean reward 1.0; verifier reward.txt is 1; 35 passed in 329.93s."
+    },
+    {
+      "type": "run",
+      "ref": "Terminus-Edition-3/jobs/2026-08-17__22-28-58",
+      "observation": "Harbor nop__adhoc mean reward 0.0; verifier reward.txt is 0; usage, inspect, recover, CDC, and constraint tests fail on the starter binary."
+    },
+    {
+      "type": "rule",
+      "ref": ".terminus/reviewers/reviewer_criteria.json",
+      "observation": "Registry snapshot 2026-08-08-user-supplied lists 61 criteria. Live checklist URL returned HTTP 404, so policy freshness is UNVERIFIED."
+    }
+  ],
+  "findings": [
+    {
+      "id": "F-RC-INS-005-BUG-CATALOG-COMMENTS",
+      "severity": "HIGH",
+      "status": "OBSERVED",
+      "criterion": "RC-INS-005",
+      "evidence_refs": [
+        "tenant-catalog-logical-cdc-plane/environment/catalog/internal/cli/cli.go",
+        "tenant-catalog-logical-cdc-plane/environment/catalog/internal/cdc/cdc.go",
+        "tenant-catalog-logical-cdc-plane/environment/catalog/internal/replica/replica.go",
+        "tenant-catalog-logical-cdc-plane/environment/catalog/internal/recover/recover.go",
+        "tenant-catalog-logical-cdc-plane/environment/catalog/internal/constraints/constraints.go",
+        "tenant-catalog-logical-cdc-plane/environment/catalog/internal/inspect/inspect.go",
+        "tenant-catalog-logical-cdc-plane/environment/catalog/internal/indexes/indexes.go",
+        "tenant-catalog-logical-cdc-plane/environment/catalog/internal/snapshot/snapshot.go"
+      ],
+      "why_it_matters": "Edition 3 forbids comments that point to every defect. These comments name the exact wrong algorithm in each repair file, converting the task into comment-following instead of contract inference from the incident notes and catalog-contract.",
+      "minimal_remediation": "Rewrite agent-visible comments so they describe modules or public behavior without enumerating the defects, the wrong algorithms, or which file to change. Keep the broken implementations. Recheck that oncall.md and bounce.log remain symptom evidence only.",
+      "regression_risk": "Leaving even a subset of the catalogued comments still leaks the repair map. Do not move the same list into instruction.md or catalog-contract.md."
+    },
+    {
+      "id": "F-RC-META-003-TAG-COUNT",
+      "severity": "MEDIUM",
+      "status": "OBSERVED",
+      "criterion": "RC-META-003",
+      "evidence_refs": [
+        "tenant-catalog-logical-cdc-plane/task.toml"
+      ],
+      "why_it_matters": "Edition 3 requires three to six tags. Freeze 6b9bf3bc has seven, so metadata is out of contract even though the keywords themselves match the work.",
+      "minimal_remediation": "Keep a 3-6 tag list that still describes the task. The uncommitted working copy already dropped indexes; include that (or an equivalent trim) in the next freeze.",
+      "regression_risk": "Do not drop tags that would mis-classify the database/CDC work; only satisfy the count bound."
+    },
+    {
+      "id": "F-RC-META-004-UNMEASURED",
+      "severity": "HIGH",
+      "status": "OBSERVED",
+      "criterion": "RC-META-004",
+      "evidence_refs": [
+        "tenant-catalog-logical-cdc-plane/task.toml",
+        ".terminus/reviews/tenant-catalog-logical-cdc-plane/6b9bf3bc/tenant-catalog-logical-cdc-plane-6b9bf3bc-comprehensive-checklist-792bd0e829.packet.json"
+      ],
+      "why_it_matters": "Difficulty is author-set to advanced. RC-META-004 requires alignment with mean pass@1 from official GPT-5.5×5 plus Claude Opus 4.8×5 trials. Those trials are not on this freeze. Later-gate INSUFFICIENT_EVIDENCE, not FAIL.",
+      "minimal_remediation": "After instruction/comment repair, run the official ten Harbor trials, compute mean pass@1, set the matching tier, then re-score RC-META-004.",
+      "regression_risk": "Changing difficulty without trials would remain author intent."
+    },
+    {
+      "id": "F-RC-TRIAL-NO-OFFICIAL-FLAGS",
+      "severity": "HIGH",
+      "status": "OBSERVED",
+      "criterion": "RC-TRIAL-001",
+      "evidence_refs": [
+        ".terminus/reviews/tenant-catalog-logical-cdc-plane/6b9bf3bc/tenant-catalog-logical-cdc-plane-6b9bf3bc-comprehensive-checklist-792bd0e829.packet.json"
+      ],
+      "why_it_matters": "No official trial-analysis artifacts were supplied. Absence of flags is not examined-and-clear. RC-TRIAL-001 through RC-TRIAL-006 are later-gate INSUFFICIENT_EVIDENCE, not FAIL.",
+      "minimal_remediation": "Produce official trial-analysis dispositions for task_specification, reward_hacking, difficulty_crux, near_miss, refusals, and low_timeout, then re-score RC-TRIAL-001 through RC-TRIAL-006.",
+      "regression_risk": "Guessing PASS from missing flags would convert insufficient evidence into approval."
+    }
+  ],
+  "missing_evidence": [
+    "Official Harbor GPT-5.5 ×5 plus Claude Opus 4.8 ×5 trial suite and mean pass@1 for RC-META-004",
+    "Official trial-analysis flags and trajectories for RC-TRIAL-001 through RC-TRIAL-006",
+    "Automated test-quality eval flag set (req-gap, weak-assertion, phantom-spec, flaky-execution, vacuous-test); independent manual review substituted",
+    "Live reviewer-checklist page at the snapshot source URL (HTTP 404); stored snapshot 2026-08-08-user-supplied used with UNVERIFIED freshness",
+    "Automated similarity search against Edition 1/2 and public benchmarks; uniqueness scored from the Edition 3 instruction set"
+  ],
+  "change_scope": [
+    "Remove or rewrite the defect-catalog comments on the eight agent-visible Go modules listed in F-RC-INS-005-BUG-CATALOG-COMMENTS. Do not change the broken implementations as a substitute for comment cleanup.",
+    "At the next freeze, ship a 3-6 tag list in task.toml (working copy already dropped indexes).",
+    "Do not treat RC-META-004 or RC-TRIAL-* as task-file defects until official trials exist."
+  ],
+  "do_not_change": [
+    "catalog-contract.md, oncall.md, bounce.log, and the public CLI/schema contract unless comment cleanup accidentally moved a bug list into those files",
+    "tests/test_outputs.py semantic checks, tests/test.sh reward writer, and solution/fixed repair logic unless a later trial flag exposes a spec or verifier defect",
+    "Other review files under .terminus/reviews/",
+    "Unrelated tasks"
+  ],
+  "next_gate": "Author must clear RC-INS-005 comments and freeze a 3-6 tag list, then re-invoke Comprehensive Reviewer. Official GPT-5.5 ×5 and Claude Opus 4.8 ×5 Harbor trials with trial-analysis flags remain later-gate for RC-META-004 and RC-TRIAL-* and must not be converted to PASS or FAIL until they exist.",
+  "role_output": {
+    "reviewer_checklist_version": "2026-08-08-user-supplied",
+    "policy_freshness": "UNVERIFIED",
+    "checklist_total": 61,
+    "checklist_coverage_percent": 100,
+    "recommendation": "REQUEST_CHANGES",
+    "REVIEWER_CHECKLIST_VERSION": "2026-08-08-user-supplied",
+    "TASK_COMMIT": "6b9bf3bc20bebaa853c6531b846d2321a124470a",
+    "POLICY_FRESHNESS": "UNVERIFIED",
+    "CHECKLIST_COVERAGE": "100%",
+    "RECOMMENDATION": "REQUEST_CHANGES",
+    "HIGH_FAILURE_COUNT": 1,
+    "MEDIUM_FAILURE_COUNT": 1,
+    "LOW_FAILURE_COUNT": 0,
+    "SPECIAL_TRIAL_REVISION_FLAGS": 0,
+    "counts": {
+      "PASS": 39,
+      "FAIL": 2,
+      "NOT_APPLICABLE": 13,
+      "INSUFFICIENT_EVIDENCE": 7,
+      "POLICY_CONFLICT": 0,
+      "high_failure_count": 1,
+      "medium_failure_count": 1,
+      "low_failure_count": 0,
+      "special_trial_revision_flags": 0
+    },
+    "criteria": [
+      {"id": "RC-INS-001", "status": "PASS", "severity": "medium", "note": "One short paragraph plus six bullets, under the 20-bullet guide, without a step list."},
+      {"id": "RC-INS-002", "status": "PASS", "severity": "high", "note": "Goal, public CLI, artifact paths, and measurable success are stated; detailed semantics live in the referenced contract."},
+      {"id": "RC-INS-003", "status": "PASS", "severity": "high", "note": "Snapshot isolation, commit-time constraints, WAL CDC, and replica apply are useful catalog/OLTP work."},
+      {"id": "RC-INS-004", "status": "PASS", "severity": "high", "note": "Instruction states symptoms and requirements only; no module-level repair recipe or golden output."},
+      {"id": "RC-INS-005", "status": "FAIL", "severity": "high", "note": "Eight agent-visible Go files comment the exact defect in that file (CLI WAL-before-parse, heap-scan CDC, reverse-FK apply, uncommitted recover, replica-lag constraints, inspect-recovers, slash index keys, xmax-null visibility). That is a solution walkthrough in comments."},
+      {"id": "RC-INS-006", "status": "PASS", "severity": "high", "note": "catalog-contract.md is a realistic protocol/schema contract; instruction still owns the engineering ask. oncall.md and bounce.log are incident evidence."},
+      {"id": "RC-INS-007", "status": "PASS", "severity": "high", "note": "No other Edition 3 task is a tenant-keyed MVCC catalog with WAL-decoded logical CDC and epoch-fenced replica apply. webhook-outbox is delivery, jetstream is NATS continuity, stonevault is C++/Rust KV, workshop/depot are COBOL ledgers."},
+      {"id": "RC-INS-008", "status": "PASS", "severity": "high", "note": "All solver-facing paths in instruction.md are absolute /app/catalog/... paths."},
+      {"id": "RC-INS-009", "status": "PASS", "severity": "medium", "note": "No canary string in instruction.md."},
+      {"id": "RC-INS-010", "status": "PASS", "severity": "medium", "note": "Benchmark task name tenant-catalog-logical-cdc-plane is absent from instruction.md."},
+      {"id": "RC-ENV-001", "status": "PASS", "severity": "high", "note": "Dockerfile uses apt packages and go mod tidy/build for pinned module golang.org path modernc.org/sqlite; no arbitrary task-content web fetch."},
+      {"id": "RC-ENV-002", "status": "PASS", "severity": "high", "note": "network_mode=public is the default; runtime does not need network to obtain the answer."},
+      {"id": "RC-ENV-003", "status": "PASS", "severity": "high", "note": "go.mod pins modernc.org/sqlite v1.37.0; verifier pip deps are exact-pinned in tests/requirements.lock. go.sum is produced at image build by tidy."},
+      {"id": "RC-ENV-004", "status": "PASS", "severity": "high", "note": "Build context is environment/; COPY catalog/ only."},
+      {"id": "RC-ENV-005", "status": "PASS", "severity": "high", "note": "solution/ and tests/ are dockerignored; hidden fixtures stay under tests/fixtures/; warehouse is a production dump, not golden CDC."},
+      {"id": "RC-ENV-006", "status": "PASS", "severity": "high", "note": "No privileged mode, dangerous capabilities, or Docker socket."},
+      {"id": "RC-ENV-007", "status": "PASS", "severity": "high", "note": "Agent image does not create /tests, /solution, /oracle, /logs/verifier, or /logs/artifacts."},
+      {"id": "RC-ENV-008", "status": "PASS", "severity": "high", "note": "No CLAUDE.md, AGENTS.md, skills.md, or .cursor/ in the task environment."},
+      {"id": "RC-ENV-009", "status": "PASS", "severity": "high", "note": "Agent FROM is digest-pinned canonical Go; verifier FROM is digest-pinned canonical Python 3.13 slim."},
+      {"id": "RC-ENV-010", "status": "PASS", "severity": "high", "note": "Canonical golang:1.24-bookworm digest from TERMINUS_3_AI_INSTRUCTIONS."},
+      {"id": "RC-ENV-011", "status": "PASS", "severity": "high", "note": "environment/ is 3.022 MiB total, under 100 MiB; largest file seed.sql is about 3.0 MiB, under 50 MiB."},
+      {"id": "RC-ENV-012", "status": "PASS", "severity": "medium", "note": "Single apt-get update && install --no-install-recommends && rm lists; no apt upgrade or version pins."},
+      {"id": "RC-ENV-013", "status": "PASS", "severity": "medium", "note": "environment/.dockerignore excludes .git, caches, .env, solution/, and tests/."},
+      {"id": "RC-ENV-014", "status": "PASS", "severity": "low", "note": "No Dockerfile heredocs; sources are copied files."},
+      {"id": "RC-SOL-001", "status": "PASS", "severity": "high", "note": "Oracle is deterministic file copies plus rebuild and public CLI; Harbor oracle reward 1.0; 35/35 passed."},
+      {"id": "RC-SOL-002", "status": "PASS", "severity": "high", "note": "Oracle does not fetch network resources; compatible with public mode."},
+      {"id": "RC-SOL-003", "status": "PASS", "severity": "high", "note": "Oracle repairs snapshot, constraints, indexes, CDC-from-WAL, replica fences, recover, inspect, and CLI usage-before-touch, then exercises catalogctl rather than writing goldens."},
+      {"id": "RC-VER-001", "status": "PASS", "severity": "high", "note": "tests/test.sh always writes /logs/verifier/reward.txt on success and failure."},
+      {"id": "RC-VER-002", "status": "PASS", "severity": "high", "note": "No oracle/agent branching in verifier logic."},
+      {"id": "RC-VER-003", "status": "PASS", "severity": "high", "note": "Verifier does not fetch runtime content; pytest stack is baked from requirements.lock."},
+      {"id": "RC-VER-004", "status": "PASS", "severity": "high", "note": "Reward is exactly 0 or 1 after pytest."},
+      {"id": "RC-VER-005", "status": "PASS", "severity": "high", "note": "Stated instruction/contract behaviors have corresponding live-state tests: usage, constraints, recover, WAL CDC, epoch fence, indexes, health rewrite, warehouse. Holdout fixtures stay within declared commit/decode/apply rules."},
+      {"id": "RC-VER-006", "status": "PASS", "severity": "high", "note": "Suite checks reject codes, WAL ABORT, crash-insert absence, WAL LSNs, monotonic apply, stale epoch, index keys, and inspect non-recovery, not format-only. Replica schema enables FK so apply order is exercised."},
+      {"id": "RC-VER-007", "status": "PASS", "severity": "medium", "note": "Tests invoke catalogctl and assert outcomes/invariants; they do not embed a full WAL-to-artifact solver."},
+      {"id": "RC-VER-008", "status": "PASS", "severity": "medium", "note": "Commit inputs are runtime fixture paths. cdc_source is contract-fixed as wal. Slot epoch is read from live replica_slot.json rather than duplicated literals for apply/inspect checks."},
+      {"id": "RC-TRIAL-001", "status": "INSUFFICIENT_EVIDENCE", "severity": "high", "note": "No official trial-analysis artifacts; cannot confirm task_specification is unflagged. Later-gate."},
+      {"id": "RC-TRIAL-002", "status": "INSUFFICIENT_EVIDENCE", "severity": "high", "note": "No official trial-analysis artifacts; cannot confirm reward_hacking is unflagged. Later-gate."},
+      {"id": "RC-TRIAL-003", "status": "INSUFFICIENT_EVIDENCE", "severity": "trial_medium", "note": "difficulty_crux cannot be examined without official trials. Later-gate."},
+      {"id": "RC-TRIAL-004", "status": "INSUFFICIENT_EVIDENCE", "severity": "trial_medium", "note": "near_miss cannot be examined without official trials. Later-gate."},
+      {"id": "RC-TRIAL-005", "status": "INSUFFICIENT_EVIDENCE", "severity": "trial_medium", "note": "refusals cannot be examined without official trials. Later-gate."},
+      {"id": "RC-TRIAL-006", "status": "INSUFFICIENT_EVIDENCE", "severity": "trial_medium", "note": "low_timeout cannot be examined without official trials. Later-gate."},
+      {"id": "RC-RUB-001", "status": "NOT_APPLICABLE", "severity": "high", "note": "No rubric ships in the task tree; Edition 3 rubrics live in platform UI."},
+      {"id": "RC-RUB-002", "status": "NOT_APPLICABLE", "severity": "high", "note": "No shipped rubric."},
+      {"id": "RC-RUB-003", "status": "NOT_APPLICABLE", "severity": "high", "note": "No shipped rubric."},
+      {"id": "RC-RUB-004", "status": "NOT_APPLICABLE", "severity": "high", "note": "No shipped rubric."},
+      {"id": "RC-RUB-005", "status": "NOT_APPLICABLE", "severity": "high", "note": "No shipped rubric."},
+      {"id": "RC-RUB-006", "status": "NOT_APPLICABLE", "severity": "high", "note": "No shipped rubric."},
+      {"id": "RC-RUB-007", "status": "NOT_APPLICABLE", "severity": "medium", "note": "No shipped rubric."},
+      {"id": "RC-RUB-008", "status": "NOT_APPLICABLE", "severity": "medium", "note": "No shipped rubric."},
+      {"id": "RC-RUB-009", "status": "NOT_APPLICABLE", "severity": "medium", "note": "No shipped rubric."},
+      {"id": "RC-RUB-010", "status": "NOT_APPLICABLE", "severity": "medium", "note": "No shipped rubric."},
+      {"id": "RC-RUB-011", "status": "NOT_APPLICABLE", "severity": "low", "note": "No shipped rubric."},
+      {"id": "RC-STRUCT-001", "status": "PASS", "severity": "high", "note": "Required layout present: task.toml, instruction.md, environment/Dockerfile, solution/solve.sh, tests/Dockerfile, tests/test.sh, tests/test_outputs.py, plus required README.md."},
+      {"id": "RC-STRUCT-002", "status": "PASS", "severity": "low", "note": "No leftover jobs/, caches, or unused parent-directory task junk inside the task tree."},
+      {"id": "RC-META-001", "status": "PASS", "severity": "high", "note": "Evaluated against TERMINUS_3_AI_INSTRUCTIONS canonical task.toml; required fields are present and correctly nested. Snapshot extra explanation fields are not in the live Edition 3 schema."},
+      {"id": "RC-META-002", "status": "NOT_APPLICABLE", "severity": "high", "note": "Single-container task; is_multi_container correctly omitted."},
+      {"id": "RC-META-003", "status": "FAIL", "severity": "medium", "note": "Software/Databases and languages match, but freeze 6b9bf3bc tags has seven entries (golang sqlite mvcc cdc wal indexes replica). Edition 3 allows three to six. Working copy already dropped indexes; freeze does not."},
+      {"id": "RC-META-004", "status": "INSUFFICIENT_EVIDENCE", "severity": "high", "note": "difficulty=advanced is unmeasured; official ten-run mean pass@1 is not available on this freeze. Later-gate."},
+      {"id": "RC-META-005", "status": "PASS", "severity": "medium", "note": "expert_time_estimate_hours=12 is plausible authoring time for this coupled catalog plane, not an inflated junior-solve figure."},
+      {"id": "RC-META-006", "status": "PASS", "severity": "high", "note": "Agent 7200s and verifier 1800s are inside policy bounds. Oracle pytest finished in 330s, so verifier timeout is sufficient without manufacturing time pressure."},
+      {"id": "RC-META-007", "status": "NOT_APPLICABLE", "severity": "informational", "note": "No GPU or extra docker_flags required; omission is valid."}
+    ],
+    "criterion_evidence": {
+      "RC-INS-001": "instruction.md paragraph and six bullets",
+      "RC-INS-002": "instruction.md plus catalog-contract.md CLI/schema/CDC/apply/recover sections",
+      "RC-INS-003": "instruction.md incident plus catalog plane contract",
+      "RC-INS-004": "instruction.md; oncall.md symptoms without file-level fixes",
+      "RC-INS-005": "eight environment/catalog/internal/*.go starter-implementation comments",
+      "RC-INS-006": "environment/catalog/docs/catalog-contract.md structure (paths, schemas, CLI)",
+      "RC-INS-007": "Terminus-Edition-3/*/instruction.md set; webhook-outbox, jetstream, stonevault, workshop, depot contrast",
+      "RC-INS-008": "instruction.md absolute /app/catalog paths",
+      "RC-INS-009": "instruction.md grep for canary",
+      "RC-INS-010": "instruction.md grep for tenant-catalog-logical-cdc-plane",
+      "RC-ENV-001": "environment/Dockerfile apt and go mod tidy/build",
+      "RC-ENV-002": "task.toml network_mode=public",
+      "RC-ENV-003": "environment/catalog/go.mod modernc.org/sqlite v1.37.0; tests/requirements.lock",
+      "RC-ENV-004": "environment/Dockerfile COPY catalog/",
+      "RC-ENV-005": "environment/.dockerignore; tests/fixtures vs environment/catalog",
+      "RC-ENV-006": "environment/Dockerfile lacks privileged/socket flags",
+      "RC-ENV-007": "environment/Dockerfile WORKDIR /app/catalog; no reserved-path mkdir",
+      "RC-ENV-008": "task tree glob for AI scaffolding filenames",
+      "RC-ENV-009": "environment/Dockerfile and tests/Dockerfile FROM digest",
+      "RC-ENV-010": "canonical golang:1.24-bookworm@sha256:1a6d4452c65dea36aac2e2d606b01b4a029ec90cc1ae53890540ce6173ea77ac",
+      "RC-ENV-011": "environment/ file-size sum 3168520 bytes",
+      "RC-ENV-012": "environment/Dockerfile apt transaction",
+      "RC-ENV-013": "environment/.dockerignore",
+      "RC-ENV-014": "Dockerfiles contain no heredoc source",
+      "RC-SOL-001": "solution/solve.sh plus jobs/2026-08-17__22-21-42 oracle 1.0",
+      "RC-SOL-002": "solution/solve.sh has no network fetch",
+      "RC-SOL-003": "solution/fixed/{snapshot,constraints,indexes,cdc,replica,recover,inspect,cli}.go",
+      "RC-VER-001": "tests/test.sh reward write",
+      "RC-VER-002": "tests/test_outputs.py has no oracle identity branch",
+      "RC-VER-003": "tests/Dockerfile pip --no-deps from lockfile",
+      "RC-VER-004": "tests/test.sh echo 0/1",
+      "RC-VER-005": "requirement-to-test map over 35 tests vs instruction/contract",
+      "RC-VER-006": "semantic tests for constraints, recover, WAL CDC, epoch fence, indexes",
+      "RC-VER-007": "tests call CTL rather than reimplement decode/apply",
+      "RC-VER-008": "runtime --input fixtures; live replica_slot.json",
+      "RC-TRIAL-001": "packet: none official; Harbor LLMaJ deferred",
+      "RC-TRIAL-002": "packet: none official; Harbor LLMaJ deferred",
+      "RC-TRIAL-003": "packet: none official; Harbor LLMaJ deferred",
+      "RC-TRIAL-004": "packet: none official; Harbor LLMaJ deferred",
+      "RC-TRIAL-005": "packet: none official; Harbor LLMaJ deferred",
+      "RC-TRIAL-006": "packet: none official; Harbor LLMaJ deferred",
+      "RC-RUB-001": "no rubric file in task tree",
+      "RC-RUB-002": "no rubric file in task tree",
+      "RC-RUB-003": "no rubric file in task tree",
+      "RC-RUB-004": "no rubric file in task tree",
+      "RC-RUB-005": "no rubric file in task tree",
+      "RC-RUB-006": "no rubric file in task tree",
+      "RC-RUB-007": "no rubric file in task tree",
+      "RC-RUB-008": "no rubric file in task tree",
+      "RC-RUB-009": "no rubric file in task tree",
+      "RC-RUB-010": "no rubric file in task tree",
+      "RC-RUB-011": "no rubric file in task tree",
+      "RC-STRUCT-001": "git ls-tree 6b9bf3bc task paths",
+      "RC-STRUCT-002": "task tree listing",
+      "RC-META-001": "task.toml vs TERMINUS_3_AI_INSTRUCTIONS canonical shape",
+      "RC-META-002": "no compose file; single Dockerfile",
+      "RC-META-003": "task.toml at 6b9bf3bc has seven tags",
+      "RC-META-004": "task.toml difficulty=advanced; no official pass@1",
+      "RC-META-005": "task.toml expert_time_estimate_hours=12",
+      "RC-META-006": "task.toml agent 7200 / verifier 1800; oracle pytest 330s",
+      "RC-META-007": "optional GPU fields omitted"
+    },
+    "policy_conflicts": [
+      {
+        "id": "PC-META-001-FIELD-SHAPE",
+        "status": "RESOLVED_IN_FAVOR_OF_AUTHORITY",
+        "sources": [
+          ".terminus/reviewers/REVIEWER_CHECKLIST.md RC-META-001 snapshot (explanation fields under [metadata])",
+          "TERMINUS_3_AI_INSTRUCTIONS.md canonical task.toml"
+        ],
+        "note": "Snapshot extra difficulty/solution/verification explanation fields are not in the current Edition 3 schema. Criterion scored PASS against TERMINUS_3_AI_INSTRUCTIONS. Not an unresolved acceptance conflict."
+      },
+      {
+        "id": "PC-STRUCT-001-README",
+        "status": "RESOLVED_IN_FAVOR_OF_AUTHORITY",
+        "sources": [
+          ".terminus/reviewers/REVIEWER_CHECKLIST.md RC-STRUCT-001 (README may be platform-added)",
+          "TERMINUS_3_AI_INSTRUCTIONS.md (README.md required)"
+        ],
+        "note": "Task includes README.md, so both sources are satisfied. Criterion PASS."
+      }
+    ],
+    "POLICY_CONFLICTS": [
+      "PC-META-001-FIELD-SHAPE RESOLVED_IN_FAVOR_OF_AUTHORITY",
+      "PC-STRUCT-001-README RESOLVED_IN_FAVOR_OF_AUTHORITY"
+    ],
+    "TEST_QUALITY_EVAL_DISPOSITIONS": [
+      {
+        "flag": "req-gap",
+        "disposition": "NOT_APPLICABLE",
+        "note": "No automated test-quality eval flags were supplied. Independent map: usage-before-mutation, constraints fail-closed, recover, WAL CDC, epoch fence, indexes, inspect/empty-check, health rewrite, and warehouse have tests."
+      },
+      {
+        "flag": "weak-assertion",
+        "disposition": "NOT_APPLICABLE",
+        "note": "No eval flags supplied. Independent review: live CLI assertions check reject codes, WAL ABORT, crash pk absence, WAL LSNs, and slot monotonicity. test_p2p_ctl_exists and test_p2p_contract_exists are presence checks secondary to the semantic suite."
+      },
+      {
+        "flag": "phantom-spec",
+        "disposition": "NOT_APPLICABLE",
+        "note": "No eval flags supplied. Independent review: fixture cases stay inside catalog-contract.md; s-crash-pending is incident state named in oncall.md; pending sentinel is verifier-injected isolation, not a hidden agent requirement."
+      },
+      {
+        "flag": "flaky-execution",
+        "disposition": "NOT_APPLICABLE",
+        "note": "No eval flags supplied. Tests are deterministic CLI runs with per-test copied state; no sleeps or wall-clock windows. Oracle pytest 330s is compute, not timing flake."
+      },
+      {
+        "flag": "vacuous-test",
+        "disposition": "NOT_APPLICABLE",
+        "note": "No eval flags supplied. Presence tests would pass NOP, but NOP fails the usage/CDC/recover suite; not scored as a blocking vacuous suite."
+      }
+    ],
+    "TRIAL_ANALYSIS_DISPOSITIONS": [
+      {"flag": "task_specification", "criterion": "RC-TRIAL-001", "disposition": "INSUFFICIENT_EVIDENCE", "note": "No official trials or flags. Later-gate."},
+      {"flag": "reward_hacking", "criterion": "RC-TRIAL-002", "disposition": "INSUFFICIENT_EVIDENCE", "note": "No official trials or flags. Later-gate."},
+      {"flag": "difficulty_crux", "criterion": "RC-TRIAL-003", "disposition": "INSUFFICIENT_EVIDENCE", "note": "No official trials or flags. Later-gate."},
+      {"flag": "near_miss", "criterion": "RC-TRIAL-004", "disposition": "INSUFFICIENT_EVIDENCE", "note": "No official trials or flags. Later-gate."},
+      {"flag": "refusals", "criterion": "RC-TRIAL-005", "disposition": "INSUFFICIENT_EVIDENCE", "note": "No official trials or flags. Later-gate."},
+      {"flag": "low_timeout", "criterion": "RC-TRIAL-006", "disposition": "INSUFFICIENT_EVIDENCE", "note": "No official trials or flags. Later-gate."}
+    ],
+    "acceptance_notes": [
+      "Walked every registry criterion; did not stop after the first High FAIL.",
+      "High FAIL RC-INS-005: agent-visible comments enumerate the defect in each repair file. That blocks acceptance.",
+      "Medium FAIL RC-META-003: freeze 6b9bf3bc has seven tags. Working copy already has six (dropped indexes); include that in the next freeze.",
+      "Oracle 1.0 and NOP 0.0 are recorded for this freeze. Starter CLI mutates WAL before parse, so NOP is a real fail.",
+      "Anti-cheat: tests and solution are outside the agent image; hidden fixtures are verifier-only; usage-before-touch prevents reward from an unrepaired binary. No plausible path to reward without implementing the contract once comments are no longer a walkthrough.",
+      "Working-copy task.toml differs from 6b9bf3bc by the tags line only. Review is bound to packet task_commit 6b9bf3bc.",
+      "Live checklist URL 404 => POLICY_FRESHNESS UNVERIFIED. Stored snapshot used together with TERMINUS_3_AI_INSTRUCTIONS.",
+      "Later-gate IE for RC-META-004 and RC-TRIAL-* must not be converted to PASS, FAIL, or APPROVE."
+    ],
+    "ALL_FINDINGS": [
+      {
+        "ID": "F-RC-INS-005-BUG-CATALOG-COMMENTS",
+        "CRITERION_ID": "RC-INS-005",
+        "SEVERITY": "HIGH",
+        "STATUS": "OBSERVED",
+        "EVIDENCE": "cli.go, cdc.go, replica.go, recover.go, constraints.go, inspect.go, indexes.go, snapshot.go starter-implementation comments",
+        "WHAT_IS_WRONG": "Comments name the exact wrong algorithm in each file the agent must repair.",
+        "WHY_IT_MATTERS": "RC-INS-005 High forbids environment comments that are a solution walkthrough or defect catalog.",
+        "REQUIRED_FIX": "Rewrite comments to module-level description without listing defects or the repair.",
+        "RECHECK": "RC-INS-005 after comment cleanup; confirm instruction and contract were not turned into the same catalog."
+      },
+      {
+        "ID": "F-RC-META-003-TAG-COUNT",
+        "CRITERION_ID": "RC-META-003",
+        "SEVERITY": "MEDIUM",
+        "STATUS": "OBSERVED",
+        "EVIDENCE": "task.toml at 6b9bf3bc tags array length 7",
+        "WHAT_IS_WRONG": "Seven tags exceeds the Edition 3 three-to-six bound.",
+        "WHY_IT_MATTERS": "Metadata must match the live schema, including tag count.",
+        "REQUIRED_FIX": "Ship 3-6 applicable tags in the next freeze.",
+        "RECHECK": "RC-META-003 after the freeze includes the trimmed tags."
+      },
+      {
+        "ID": "F-RC-META-004-UNMEASURED",
+        "CRITERION_ID": "RC-META-004",
+        "SEVERITY": "HIGH",
+        "STATUS": "OBSERVED",
+        "EVIDENCE": "task.toml difficulty=advanced; no official ten-run suite",
+        "WHAT_IS_WRONG": "Empirical difficulty cannot be confirmed.",
+        "WHY_IT_MATTERS": "RC-META-004 is High and forbids author-intent tiers at acceptance. Later-gate IE, not FAIL.",
+        "REQUIRED_FIX": "Run official ten-run suite and set the measured tier.",
+        "RECHECK": "RC-META-004 after mean pass@1 is recorded."
+      },
+      {
+        "ID": "F-RC-TRIAL-NO-OFFICIAL-FLAGS",
+        "CRITERION_ID": "RC-TRIAL-001",
+        "SEVERITY": "HIGH",
+        "STATUS": "OBSERVED",
+        "EVIDENCE": "packet: trial evidence when available; none official",
+        "WHAT_IS_WRONG": "Trial-analysis flags were not produced, so RC-TRIAL-001 through RC-TRIAL-006 cannot be cleared.",
+        "WHY_IT_MATTERS": "Valid trial flags can require revision even without other Medium failures. Later-gate IE, not FAIL.",
+        "REQUIRED_FIX": "Produce official trial-analysis dispositions, then re-score all six trial criteria.",
+        "RECHECK": "RC-TRIAL-001 through RC-TRIAL-006."
+      }
+    ],
+    "ACCEPTANCE_NOTES": "Checklist coverage 100%. REQUEST_CHANGES because RC-INS-005 High FAIL (defect-catalog comments) plus RC-META-003 Medium FAIL (seven tags at freeze). Oracle 1.0 / NOP 0.0 recorded. RC-META-004 and RC-TRIAL-001..006 are later-gate INSUFFICIENT_EVIDENCE. POLICY_FRESHNESS UNVERIFIED."
+  }
+}

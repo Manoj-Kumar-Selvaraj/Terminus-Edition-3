@@ -6,7 +6,6 @@ import (
 	"catalog/internal/store"
 )
 
-// Rebuild is the starter implementation: every version, slash-separated keys.
 func Rebuild(st *store.Store, snapshot int64) error {
 	_ = snapshot
 	versions, err := st.LoadVersions()

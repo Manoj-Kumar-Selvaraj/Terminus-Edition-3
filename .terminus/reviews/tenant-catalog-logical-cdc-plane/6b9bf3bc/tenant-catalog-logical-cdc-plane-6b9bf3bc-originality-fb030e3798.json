@@ -1,0 +1,120 @@
+{
+  "schema_version": "3.0",
+  "role": "Originality & Authenticity Reviewer",
+  "review_id": "tenant-catalog-logical-cdc-plane-6b9bf3bc-originality-fb030e3798",
+  "task": "tenant-catalog-logical-cdc-plane",
+  "task_commit": "6b9bf3bc20bebaa853c6531b846d2321a124470a",
+  "control_plane_commit": "41e6d2fdc7ea680e3cec8e90ce2914e3b45af3fc",
+  "protocol_policy_version": "2.2",
+  "prompt_policy_version": "2.2",
+  "role_policy_version": "1.0",
+  "role_contract_hash": "82cc52cc093141614f2f08d59181c7b3bf59c5f349f12a80ddf91f1c4ca8753f",
+  "context_packet": ".terminus/reviews/tenant-catalog-logical-cdc-plane/6b9bf3bc/tenant-catalog-logical-cdc-plane-6b9bf3bc-originality-fb030e3798.packet.json",
+  "verdict": "PASS",
+  "confidence": "HIGH",
+  "evidence_status": "SUFFICIENT",
+  "summary": "Organic Go/SQLite tenant-catalog work package: xmin/xmax snapshot isolation, logical JSONL WAL, CDC-from-WAL, epoch-fenced replica apply, FK-ordered apply, hold-qty/frozen constraints, and checkpoint redo. Shared WAL/MVCC vocabulary with golden and local storage tasks is normal domain overlap; instruction-envelope cadence with event-time-session-window-processor is a house-style wrapper, not a renamed clone. Clone/reskin risk is low.",
+  "evidence": [
+    {
+      "type": "file",
+      "ref": "tenant-catalog-logical-cdc-plane/instruction.md",
+      "observation": "Operator repair of /app/catalog via catalogctl: visibility, commit-after-WAL, constraints, indexes, WAL-decoded CDC, LSN/epoch-fenced FK-safe apply, checkpoint redo, inspect/empty-check must not recover. Not a Python recover_engine or C++ LSM crash-repro prompt."
+    },
+    {
+      "type": "file",
+      "ref": "tenant-catalog-logical-cdc-plane/environment/catalog/docs/catalog-contract.md",
+      "observation": "Binding catalog plane: heap xmin/xmax, wal.jsonl BEGIN/mutation/COMMIT|ABORT, replica_slot confirmed_lsn+epoch, decode skips uncommitted txns, apply rejects stale epoch without advancing the slot, FK rank tenant/sku/offer/hold."
+    },
+    {
+      "type": "file",
+      "ref": "tenant-catalog-logical-cdc-plane/environment",
+      "observation": "Distinct product tree: catalogctl, SQLite heap+replica, JSONL WAL/CDC, indexes.json, bounce.log/oncall.md, seed of 12000 committed versions plus s-crash-pending. Starter CDC heap-scans SKUs; recover installs uncommitted WAL and bumps epoch; inspect calls recover."
+    },
+    {
+      "type": "test",
+      "ref": "tenant-catalog-logical-cdc-plane/tests/test_outputs.py",
+      "observation": "Verifier topology is CLI mutation-safety, frozen/hold-qty/unique/FK rejects, decode skip-abort, apply monotonic+stale-epoch+FK order, recover drops crash insert without epoch bump, indexes/health/warehouse. Not segment durable_count gaps or LSM flush/compaction races."
+    },
+    {
+      "type": "file",
+      "ref": "tenant-catalog-logical-cdc-plane/solution/solve.sh",
+      "observation": "Solution shape installs eight Go modules (snapshot, constraints, indexes, cdc, replica, recover, inspect, cli) then rebuilds catalogctl and runs recover/decode/inspect — a multi-layer catalog realignment, not a single-function WAL prefix fix."
+    },
+    {
+      "type": "file",
+      "ref": ".terminus/GOLDEN_TASKS.md",
+      "observation": "Pinned golden neighbors are wal-recovery-ordering and mvcc-lsm-compaction. Catalog/logical-CDC is not in the 25-task calibration set."
+    },
+    {
+      "type": "public_reference",
+      "ref": "https://raw.githubusercontent.com/harbor-framework/terminal-bench/adc34389da1a7c353788fb3854bce7938bd685d5/tasks/wal-recovery-ordering/instruction.md",
+      "observation": "Golden wal-recovery-ordering is a Python in-memory KV engine: make_engine/recover_engine, segment durable_count, contiguous LSN prefix, deep-copy isolation. No catalog tables, logical CDC JSONL, replica slot, or constraint/index plane."
+    },
+    {
+      "type": "public_reference",
+      "ref": "https://raw.githubusercontent.com/harbor-framework/terminal-bench/adc34389da1a7c353788fb3854bce7938bd685d5/tasks/mvcc-lsm-compaction/instruction.md",
+      "observation": "Golden mvcc-lsm-compaction is a reduced C++ RocksDB-like LSM: crash_report.txt, SnapshotContextBuilder/FlushBuilder, regression_test.cc. Visibility/compaction, not logical CDC decode/apply."
+    },
+    {
+      "type": "file",
+      "ref": "stonevault-crash-safe-storage/instruction.md",
+      "observation": "Nearest local Databases/WAL/MVCC neighbor is a C++20+Rust embedded KV: binary wal.log, hex keys, prefix scans, first-committer-wins, checksums. Same subcategory tags, different language, disk layout, and failure topology."
+    },
+    {
+      "type": "file",
+      "ref": "event-time-session-window-processor/instruction.md",
+      "observation": "Nearest local wording neighbor: quiet-sample + bounce + don't-move-language + notes/oncall.md + warehouse-untouched envelope. Work package is Python event-time sessions/watermarks, not Go catalog CDC/replica apply."
+    },
+    {
+      "type": "file",
+      "ref": "Terminus-Edition-2/go-s3-replication-inventory-repair/instruction.md",
+      "observation": "Edition 2 nearest replication motif is S3 inventory/replica_state.json cutover repair, not an OLTP catalog WAL/CDC plane."
+    },
+    {
+      "type": "public_reference",
+      "ref": "https://www.postgresql.org/docs/18/logicaldecoding.html",
+      "observation": "Public PostgreSQL logical decoding/slots (xmin, confirmed_flush_lsn) are domain provenance, not a copied benchmark instruction or verifier suite. No catalogctl/s-crash-pending public task clone found."
+    }
+  ],
+  "findings": [],
+  "missing_evidence": [],
+  "change_scope": [],
+  "do_not_change": [
+    "Do not flatten this into wal-recovery-ordering (Python segment LSN prefix) or mvcc-lsm-compaction (C++ LSM flush/compaction).",
+    "Do not replace WAL-decoded CDC, epoch fencing, inspect-must-not-recover, or hold-qty/frozen constraints with a heap-dump or KV-engine reskin.",
+    "Do not rewrite catalog-contract.md or the /app/catalog tree merely to differentiate prose from event-time-session-window-processor."
+  ],
+  "next_gate": "Remaining Pre-LLMaJ specialist reviews",
+  "role_output": {
+    "DUPLICATE_RISK": "LOW",
+    "TEMPLATE_RISK": "LOW",
+    "REALISM": "HIGH",
+    "PROVENANCE": "Original Edition 3 Go/SQLite tenant-catalog logical-CDC plane; golden wal-recovery-ordering and mvcc-lsm-compaction plus PostgreSQL logical decoding used only as domain-neighbor calibration.",
+    "NEAREST_REFERENCES": [
+      "wal-recovery-ordering (golden Python WAL prefix/concurrency engine; different stack and invariants)",
+      "mvcc-lsm-compaction (golden C++ LSM visibility/compaction; different failure topology)",
+      "stonevault-crash-safe-storage (local Databases/WAL/MVCC KV neighbor; C++/Rust binary WAL)",
+      "event-time-session-window-processor (local instruction-envelope neighbor; Python session watermarks)",
+      "PostgreSQL logical decoding / replication slots (public domain neighbor, not a task clone)"
+    ],
+    "SIMILARITY_AXES": [
+      "phrase/wording: quiet-sample/bounce/oncall/warehouse envelope shared with event-time-session-window-processor; domain nouns and required behavior are not swapped",
+      "requirement ordering: contract-first catalogctl repair common to Edition 3 operator planes, not matched to golden WAL/LSM bullets",
+      "work-package/failure topology: coupled visibility + constraints + indexes + WAL CDC + epoch-fenced apply + checkpoint redo of committed records only",
+      "verifier scenario topology: CLI safety, frozen/hold-qty/FK, decode skip-abort, apply monotonic/stale-epoch/FK order, recover crash-insert, warehouse bytes",
+      "planted-bug/incompleteness: realistic wrong layers (heap-scan CDC, uncommitted redo, inspect-as-recover, reverse FK apply) rather than one bug per test or a renamed golden pipeline",
+      "solution architecture: eight-module Go realignment to catalog-contract.md, not recover_engine or SnapshotContextBuilder",
+      "provenance/domain ownership: tenant/sku/offer/hold catalog with xmin/xmax and replica_slot, not KV segments or LSM sstables"
+    ],
+    "SUSPICIOUS_SIMILARITIES": [],
+    "ARTIFICIAL_CONSTRUCTION_SIGNALS": [],
+    "DISTINCTIVE_FEATURES": [
+      "CDC is a WAL decode of committed mutations, not a heap dump; decode does not apply or advance the slot",
+      "Apply is LSN-monotonic, epoch-fenced (stale epoch rejects the whole batch without advancing confirmed_lsn), and FK-ordered inside a txn",
+      "xmin/xmax snapshot isolation with commit-after-WAL heap/index install and fail-closed rejects (PK/unique/FK/check/frozen/hold-qty)",
+      "inspect/empty-check rewrite health.json without recover, decode-apply, epoch bump, or WAL append",
+      "Seeded 12000 committed heap versions plus s-crash-pending; replica lag parked after the sku batch at epoch 3; warehouse dump must stay unused"
+    ],
+    "REQUIRED_CHANGES": []
+  }
+}

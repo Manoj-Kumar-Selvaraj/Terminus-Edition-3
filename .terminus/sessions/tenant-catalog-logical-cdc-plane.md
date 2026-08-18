@@ -5,10 +5,10 @@ Session schema version: `2.4`
 ## Identity
 
 - Task: `tenant-catalog-logical-cdc-plane`
-- Controller state: `QUALITY_INTERLOCK_PASS`
+- Controller state: `PRE_LLMAJ`
 - Working branch: `main`
 - Pull request: `none`
-- Current task commit: `6b9bf3bc20bebaa853c6531b846d2321a124470a`
+- Current task commit: `6b9bf3bc20bebaa853c6531b846d2321a124470a` (stale; Pre-LLMaJ repair uncommitted)
 - Agent-system policy: `2.5`
 - Specialist prompt policy: `2.2`
 - Specialist protocol policy: `2.2`
@@ -31,20 +31,24 @@ KNOWN_POLICY_CONFLICTS: none
 
 | Gate | Status | Evidence |
 | --- | --- | --- |
-| Harbor oracle | PASS | 1.0 `jobs/2026-08-17__22-21-42` |
-| Harbor NOP | PASS | 0.0; 25 fail / 10 pass `jobs/2026-08-17__22-28-58` |
-| Complexity / authenticity | PASS | validators |
-| Q4 Spec-Test | PASS | `.../6b9bf3bc/...-spec-test-contract-b8c6c38ca1.json` HIGH; advisory Q4-A01..A07 |
-| Q6 Production Logic | PASS | `.../6b9bf3bc/...-production-logic-1e19de180e.json` ~3268 LOC |
-| Quality Interlock | PASS | `.terminus/reviews/tenant-catalog-logical-cdc-plane/6b9bf3bc/quality-interlock.md` |
+| Quality Interlock @ 6b9bf3b | PASS | historical for that freeze |
+| Task Architect | PASS | `...-task-architect-6d196af58c` |
+| Originality | PASS | `...-originality-fb030e3798` |
+| Difficulty design | PASS | UNMEASURED; `...-difficulty-design-51ce3dc432` |
+| Instruction | PASS | `...-instruction-2568d88623` |
+| Documentation | PASS | `...-documentation-304a411e3c` |
+| Verifier Engineer | REVISE | VE-01..VE-03 (repair applied, unfrozen) |
+| Compliance | REVISE | COMP-1 tags, COMP-2 go.sum (repair applied) |
+| Comprehensive | REQUEST_CHANGES | RC-INS-005 High; RC-META-003 Medium |
+| Harbor oracle/NOP after repair | BLOCKED | Docker daemon not running |
 
 ## Decisions that must survive chat changes
 
-- Taxonomy `Software` / `Databases`; profile `large_system_strict`.
 - Leave unrelated dirty work untouched.
-- Python verifier-only; Go catalog plane.
-- Do not start Q8 / Harbor LLMaJ / ×10 difficulty until Pre-LLMaJ PASS unless asked.
+- Python verifier-only.
+- Official Harbor LLMaJ and GPT×5/Claude×5 remain after PRE_LLMAJ PASS; they are required for SUBMISSION_READY.
+- Pre-LLMaJ repairs in working tree: 6 tags; committed go.sum; `-mod=readonly`; WAL-bound CDC tests; recover redo test; decode non-apply; strip defect-catalog comments.
 
 ## Next action
 
-Begin Pre-LLMaJ specialist panel (Instruction, Documentation, Verifier Engineer, etc.) on `6b9bf3b`, or wait for user direction.
+When Docker is available: Harbor oracle 1.0 and NOP 0.0, freeze the repair, cold-rerun stale Pre-LLMaJ roles (Verifier, Compliance, Comprehensive; Q4/Q6 because tests+env changed), then Q8, then Harbor LLMaJ and official ×10.

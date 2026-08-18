@@ -1,0 +1,130 @@
+{
+  "schema_version": "3.0",
+  "role": "Instruction Reviewer",
+  "review_id": "tenant-catalog-logical-cdc-plane-6b9bf3bc-instruction-2568d88623",
+  "task": "tenant-catalog-logical-cdc-plane",
+  "task_commit": "6b9bf3bc20bebaa853c6531b846d2321a124470a",
+  "control_plane_commit": "41e6d2fdc7ea680e3cec8e90ce2914e3b45af3fc",
+  "protocol_policy_version": "2.2",
+  "prompt_policy_version": "2.2",
+  "role_policy_version": "1.0",
+  "role_contract_hash": "7cdfe6091d4c44c7ce11460501bb87768f5a8d29bc70f5e2c44918004271cd54",
+  "context_packet": ".terminus/reviews/tenant-catalog-logical-cdc-plane/6b9bf3bc/tenant-catalog-logical-cdc-plane-6b9bf3bc-instruction-2568d88623.packet.json",
+  "verdict": "PASS",
+  "confidence": "HIGH",
+  "evidence_status": "SUFFICIENT",
+  "summary": "instruction.md is a fair 183-word on-call handoff: one incident paragraph plus six operational families, unfenced absolute paths, and catalog/CLI/schema detail left in the binding contract. Bounce symptoms are backed by oncall notes and bounce.log. Material requirements stay discoverable, and there is no material spec-file, diagnosis, or reverse-outline leakage.",
+  "evidence": [
+    {
+      "type": "file",
+      "ref": "tenant-catalog-logical-cdc-plane/instruction.md",
+      "observation": "183 words excluding list markers; one short incident paragraph plus six bullets; zero backticks. Names /app/catalog, oncall notes, bounce log, binding contract, catalog.json knobs, catalogctl, /app/catalog/out, health.json, and warehouse. No task name, verifier phrases, or module-level repair recipe."
+    },
+    {
+      "type": "file",
+      "ref": "tenant-catalog-logical-cdc-plane/environment/catalog/docs/catalog-contract.md",
+      "observation": "Ordinary catalog contract: paths, tables, snapshot visibility, constraint codes, index rebuild, WAL-decode CDC schema, LSN/epoch apply, checkpoint/recover, CLI usage, and health/apply-report/rejects fields. Detailed protocol/schema semantics, not a relocated task goal or step-by-step repair map."
+    },
+    {
+      "type": "file",
+      "ref": "tenant-catalog-logical-cdc-plane/environment/catalog/notes/oncall.md",
+      "observation": "Shift note reports replica epoch 3, an open WAL txn (sku s-crash-pending), CDC-must-come-off-WAL, frozen tenants, replica lag on offers/holds, and --reset-output scoped to /app/catalog/out. Symptom evidence, not an internal function diagnosis."
+    },
+    {
+      "type": "file",
+      "ref": "tenant-catalog-logical-cdc-plane/environment/catalog/logs/bounce.log",
+      "observation": "Captured run matches the claimed bounce: recover with trailing open txn, heap still showing s-crash-pending, decode/apply disagreeing with replica confirmed_lsn, inspect appearing to touch replica epoch, warehouse left in place, inspect healthy=false."
+    },
+    {
+      "type": "file",
+      "ref": "tenant-catalog-logical-cdc-plane/environment/catalog/config/catalog.json",
+      "observation": "Referenced knobs file holds isolation=snapshot, replica_epoch=3, and cdc_source=wal, matching the contract and oncall epoch."
+    },
+    {
+      "type": "file",
+      "ref": ".terminus/designs/tenant-catalog-logical-cdc-plane-test-map.json",
+      "observation": "Graded families cover CLI usage errors, --reset-output scope, inspect/empty-check non-mutation, commit, unique/FK/frozen/hold/writeset, recover, WAL CDC, apply fencing/order/report, indexes, health schema/rewrite, checkpoint, warehouse, and Go/contract preservation. All are stated in the instruction or the referenced contract; holdouts are input variations of those rules."
+    },
+    {
+      "type": "rule",
+      "ref": ".terminus/agents/INSTRUCTION_POLICY.md",
+      "observation": "PASS gate: SUFFICIENT completeness, shape within two paragraphs or twenty bullets, Jira/Slack handoff, no MATERIAL spec-file or implementation-diagnosis leakage, current-state evidence not FAIL, reverse-outline and compressed-rubric no higher than LOW."
+    },
+    {
+      "type": "rule",
+      "ref": ".terminus/reviewers/HUMAN_WRITING_CALIBRATION.md",
+      "observation": "Incident-first, schemas delegated to the contract, unfenced absolute paths in ordinary prose, related CLI/constraint/index/inspect rules grouped by operational family rather than one sentence per grader row."
+    },
+    {
+      "type": "rule",
+      "ref": ".terminus/reviewers/WRITING_EXAMPLE_BANK.md",
+      "observation": "Matches human patterns: no generic opening, no procedure leak, no hidden-test list, no schema dump in the ticket. Lead names disagreeing plane layers after bounce, then points at notes/logs/contract."
+    },
+    {
+      "type": "file",
+      "ref": ".terminus/contracts/tenant-catalog-logical-cdc-plane/TASK_WRITING_PROFILE.md",
+      "observation": "Reviewer calibration hwcal-reviewer-8c90efa2d3d88feadea3 / pair hwpair-ca6491d16e6d8718338e; writer/reviewer sample overlap empty. External coverage is recorded DEGRADED (local seed only), not silent. Reviewer seeds include HP-002 completeness-over-minimalism and HN-001/HN-002 omission of restart/rejection constraints."
+    },
+    {
+      "type": "public_reference",
+      "ref": ".terminus/GOLDEN_TASKS.md#wal-recovery-ordering",
+      "observation": "Writing-diversity check: incident/recovery tasks can name coupled invariants without listing buggy modules; this ticket follows that selection, not that scenario."
+    },
+    {
+      "type": "public_reference",
+      "ref": ".terminus/GOLDEN_TASKS.md#mvcc-lsm-compaction",
+      "observation": "Writing-diversity check: visibility/publication invariants belong in the contract; the instruction states the bounce disagreement and delegates snapshot/CDC/apply rules."
+    },
+    {
+      "type": "public_reference",
+      "ref": ".terminus/GOLDEN_TASKS.md#kv-live-surgery",
+      "observation": "Writing-diversity check: live-state repair tickets stay outcome-first; this handoff names catalogctl, WAL protocol preservation, and warehouse non-mutation without a repair recipe."
+    }
+  ],
+  "findings": [],
+  "missing_evidence": [],
+  "change_scope": [
+    "No solver-visible instruction change; cold freeze review of the handoff at the bound task commit."
+  ],
+  "do_not_change": [
+    "Do not flatten the six operational families back into a one-clause-per-test inventory.",
+    "Do not move the engineering objective out of instruction.md into catalog-contract.md.",
+    "Do not name internal modules or repair steps in the handoff.",
+    "Do not add backtick-fenced path catalogs.",
+    "Do not alter tests, oracle, or contract schemas to chase style."
+  ],
+  "next_gate": "CI Orchestrator; continue Pre-LLMaJ specialist panel at task_commit 6b9bf3bc",
+  "role_output": {
+    "WORD_COUNT": 183,
+    "BULLET_COUNT": 6,
+    "HUMAN_SIGNAL": "HIGH",
+    "AI_TEMPLATE_SIGNAL": "LOW",
+    "JIRA_SLACK_HANDOFF": "PASS",
+    "REQUIREMENT_COMPLETENESS": "SUFFICIENT",
+    "INSTRUCTION_SHAPE": "PASS",
+    "REVERSE_OUTLINE_RISK": "LOW",
+    "SPEC_FILE_LOOPHOLE": "LOW",
+    "IMPLEMENTATION_DIAGNOSIS_LEAKAGE": "NONE",
+    "CURRENT_STATE_EVIDENCE": "PASS",
+    "HUMAN_GROUPING": "HIGH",
+    "COMPRESSED_RUBRIC": "LOW",
+    "OVER_PRESCRIPTION": "LOW",
+    "SPEC_DUMP": "NONE",
+    "MATERIAL_REQUIREMENTS_PRESERVED": [
+      "repair existing Go catalog plane under /app/catalog; keep WAL protocol; do not move logic to another language",
+      "binding catalog-contract.md plus catalog.json knobs",
+      "catalogctl CLI: unknown flag/command exit 2 before mutation; commit --input required; --reset-output wipes /app/catalog/out only",
+      "snapshot isolation, commit-after-WAL heap/index install, CDC-from-WAL, LSN/epoch-fenced FK-safe apply, checkpoint redo of committed records",
+      "constraint fail-closed (reject + WAL ABORT, no install), including unique/FK/hold and contract frozen/writeset/check codes",
+      "indexes rebuild from committed-visible rows after COMMIT and recover",
+      "inspect/empty-check rewrite health.json from observed state without recover/decode-apply/epoch/WAL mutation; other successful commands also rewrite health",
+      "warehouse dump left untouched"
+    ],
+    "UNNECESSARY_TEXT": [],
+    "MISSING_CONTEXT": [],
+    "SUSPICIOUS_PHRASES": [],
+    "FAIRNESS_RISK": "LOW",
+    "REPLACEMENT_TEXT": "",
+    "RATIONALE": "The ticket starts from the bounce, points at notes/logs/contract, and groups remaining work by CLI, plane invariants, fail-closed indexes, inspect/health, and warehouse. That is a substantial engineering request, not a hidden-test outline. catalog-contract.md is a legitimate protocol/schema document; the ask itself stays in instruction.md. Oncall plus the bounce log support the asserted current failures. Restart/rejection constraints are present (HN-001/HN-002), and six bullets are within the legitimate large-system range (HP-002)."
+  }
+}

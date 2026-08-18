@@ -1,0 +1,124 @@
+{
+  "schema_version": "3.0",
+  "role": "Task Architect",
+  "review_id": "tenant-catalog-logical-cdc-plane-6b9bf3bc-task-architect-6d196af58c",
+  "task": "tenant-catalog-logical-cdc-plane",
+  "task_commit": "6b9bf3bc20bebaa853c6531b846d2321a124470a",
+  "control_plane_commit": "41e6d2fdc7ea680e3cec8e90ce2914e3b45af3fc",
+  "protocol_policy_version": "2.2",
+  "prompt_policy_version": "2.2",
+  "role_policy_version": "1.0",
+  "role_contract_hash": "0abe6521e2700730287c29d5ec9385ab4b0d43fc02259a9c65bcdd003396d2f6",
+  "context_packet": ".terminus/reviews/tenant-catalog-logical-cdc-plane/6b9bf3bc/tenant-catalog-logical-cdc-plane-6b9bf3bc-task-architect-6d196af58c.packet.json",
+  "verdict": "PASS",
+  "confidence": "HIGH",
+  "evidence_status": "SUFFICIENT",
+  "summary": "One coherent catalog-plane repair: snapshot isolation, commit-time constraints, secondary indexes, WAL-decoded CDC, epoch/LSN-fenced replica apply, and checkpoint redo interact on shared heap/WAL/slot state. The solver-visible contract and seeded bounce evidence make the work fair; plausible local fixes remain globally wrong for domain reasons.",
+  "evidence": [
+    {
+      "type": "file",
+      "ref": "tenant-catalog-logical-cdc-plane/instruction.md",
+      "observation": "Incident handoff names one end state: repair the Go catalog plane so snapshot reads, constraints, indexes, WAL CDC, replica apply, and checkpoint redo agree after the bounce, with catalogctl as the operator surface and warehouse left untouched."
+    },
+    {
+      "type": "file",
+      "ref": "tenant-catalog-logical-cdc-plane/environment/catalog/docs/catalog-contract.md",
+      "observation": "Binding protocol couples xmin/xmax visibility, commit-after-WAL install, fail-closed rejects, unique/FK/frozen/hold checks, WAL-only CDC, epoch/LSN fencing with FK-ordered apply, and recover redo of committed records only."
+    },
+    {
+      "type": "file",
+      "ref": "tenant-catalog-logical-cdc-plane/environment/catalog/notes/oncall.md",
+      "observation": "Shift notes support the asserted bounce: open uncommitted sku, CDC must not heap-dump it, frozen tenants remain, replica caught up only through the sku batch at epoch 3, reset-output is out/ only."
+    },
+    {
+      "type": "file",
+      "ref": "tenant-catalog-logical-cdc-plane/environment/catalog/logs/bounce.log",
+      "observation": "Bounce log records trailing open WAL, crash-pending heap sku, decode/apply vs confirmed_lsn disagreement, inspect touching replica epoch, and inspect healthy=false."
+    },
+    {
+      "type": "file",
+      "ref": "tenant-catalog-logical-cdc-plane/environment/catalog/cmd/seed/main.go",
+      "observation": "Deterministic seed installs 12000 committed versions plus s-crash-pending, replica epoch 3 confirmed only through the sku phase, and a warehouse dump that is not the catalog snapshot."
+    },
+    {
+      "type": "file",
+      "ref": "tenant-catalog-logical-cdc-plane/environment/catalog/internal/snapshot/snapshot.go",
+      "observation": "Visible() ignores snapshot/writer and returns LatestXmaxNull, so crash-pending and other xmax-null uncommitted rows leak into commit overlay, indexes, health counts, and inspect."
+    },
+    {
+      "type": "file",
+      "ref": "tenant-catalog-logical-cdc-plane/environment/catalog/internal/constraints/constraints.go",
+      "observation": "Commit checks unique/FK against replica SKU rows and skip frozen/hold aggregates, so constraint outcomes depend on replica lag rather than the writer snapshot plus write set."
+    },
+    {
+      "type": "file",
+      "ref": "tenant-catalog-logical-cdc-plane/environment/catalog/internal/cdc/cdc.go",
+      "observation": "Decode scans heap SKU versions and fabricates LSNs/epoch 1 instead of walking committed WAL from confirmed_lsn+1, which poisons apply fencing and replica_ok."
+    },
+    {
+      "type": "file",
+      "ref": "tenant-catalog-logical-cdc-plane/environment/catalog/internal/replica/replica.go",
+      "observation": "Apply ignores fence.Classify, reverse-FK-orders, always advances confirmed_lsn, and never whole-batch rejects on epoch mismatch."
+    },
+    {
+      "type": "file",
+      "ref": "tenant-catalog-logical-cdc-plane/environment/catalog/internal/recover/recover.go",
+      "observation": "Recover redos every mutation past checkpoint including uncommitted crash-pending and increments replica epoch, which then causes live CDC batches to epoch-reject if apply fencing is repaired."
+    },
+    {
+      "type": "file",
+      "ref": "tenant-catalog-logical-cdc-plane/environment/catalog/internal/inspect/inspect.go",
+      "observation": "inspect and empty-check call recover as a side effect, coupling a read-only health rewrite to epoch bump and uncommitted install."
+    },
+    {
+      "type": "file",
+      "ref": "tenant-catalog-logical-cdc-plane/environment/catalog/internal/cli/cli.go",
+      "observation": "catalogctl appends WAL BEGIN before argv parse, defaults missing --input to /dev/null, and --reset-output truncates WAL, violating usage-fail-closed and out-only reset."
+    },
+    {
+      "type": "file",
+      "ref": "tenant-catalog-logical-cdc-plane/environment/catalog/internal/indexes/indexes.go",
+      "observation": "Index rebuild includes every version with slash keys while Match compares against empty Expected maps, so commit/recover index_ok stays false until both visibility and key format are fixed."
+    },
+    {
+      "type": "file",
+      "ref": ".terminus/contracts/tenant-catalog-logical-cdc-plane/SPEC_ALIGNMENT.md",
+      "observation": "Requirement summary groups CLI, reset, inspect, unique/FK/frozen/hold, recover, CDC, apply, indexes, and health as one plane rather than unrelated chores; 25 F2P / 9–10 P2P topology is operational, not one-bug-per-test."
+    },
+    {
+      "type": "file",
+      "ref": "tenant-catalog-logical-cdc-plane/solution/solve.sh",
+      "observation": "Oracle copies eight repaired catalog modules and rebuilds catalogctl, then runs recover/decode/inspect; it does not dump golden health/cdc artifacts."
+    },
+    {
+      "type": "file",
+      "ref": "tenant-catalog-logical-cdc-plane/task.toml",
+      "observation": "Software/Databases profile with artifacts [/app/catalog], separate verifier, and public network; workdir /app matches in-container catalogctl paths."
+    }
+  ],
+  "findings": [],
+  "missing_evidence": [],
+  "change_scope": [],
+  "do_not_change": [
+    "Keep snapshot, constraints, indexes, WAL CDC, fenced apply, and checkpoint redo as one coupled catalog plane.",
+    "Do not collapse the work into a single-module bug or replace the WAL protocol / Go catalogctl surface.",
+    "Do not turn catalog-contract.md into a per-test repair checklist or name internal defect owners in instruction.md."
+  ],
+  "next_gate": "Verifier Engineer",
+  "role_output": {
+    "SCENARIO_COHERENCE": "HIGH",
+    "SOLVABILITY": "HIGH",
+    "COUPLED_REASONING": "HIGH",
+    "ARTIFICIAL_CONSTRUCTION_RISK": "LOW",
+    "PLAUSIBLE_PARTIAL_FIXES": [
+      "Fix snapshot.Visible to SnapshotVisible but leave constraints.Check on replica SKUs: unique/FK still lag and frozen/hold still accept.",
+      "Decode committed WAL but leave apply unfenced and reverse-FK: replica still diverges and confirmed_lsn can advance onto junk or wrong parents.",
+      "Stop recover from installing uncommitted rows but still bump replica epoch: a later correct apply rejects the whole live CDC batch.",
+      "Stop inspect from calling recover while recover still redos crash-pending: inspect is quiet but recover/health recovery_ok remain wrong.",
+      "Switch index keys to tenant_id\\0code while still indexing invisible versions: index_ok stays false after COMMIT and recover.",
+      "Parse CLI before mutation but leave --reset-output truncating WAL: usage-exit-2 is safer while durable catalog state is still destroyed."
+    ],
+    "CONTRACT_GAPS": [],
+    "STRUCTURAL_REMEDIATION": []
+  }
+}

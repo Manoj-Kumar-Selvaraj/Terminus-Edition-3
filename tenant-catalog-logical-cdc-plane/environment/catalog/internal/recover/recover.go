@@ -7,8 +7,6 @@ import (
 	"catalog/internal/store"
 )
 
-// Recover is the starter implementation: restore checkpoint, install uncommitted
-// WAL mutations, and bump the replica epoch.
 func Recover(st *store.Store) error {
 	doc, err := checkpoint.Load()
 	if err != nil {

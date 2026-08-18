@@ -1,0 +1,162 @@
+{
+  "schema_version": "3.0",
+  "role": "Compliance Auditor",
+  "review_id": "tenant-catalog-logical-cdc-plane-6b9bf3bc-compliance-e1c2900241",
+  "task": "tenant-catalog-logical-cdc-plane",
+  "task_commit": "6b9bf3bc20bebaa853c6531b846d2321a124470a",
+  "control_plane_commit": "41e6d2fdc7ea680e3cec8e90ce2914e3b45af3fc",
+  "protocol_policy_version": "2.2",
+  "prompt_policy_version": "2.2",
+  "role_policy_version": "1.0",
+  "role_contract_hash": "c2e5acaf3930e9d33d09da9b1224dfd7dac42a6683009e2aa89aae1e16434464",
+  "context_packet": ".terminus/reviews/tenant-catalog-logical-cdc-plane/6b9bf3bc/tenant-catalog-logical-cdc-plane-6b9bf3bc-compliance-e1c2900241.packet.json",
+  "verdict": "REVISE",
+  "confidence": "HIGH",
+  "evidence_status": "SUFFICIENT",
+  "summary": "Commit 6b9bf3bc matches the current tenant-catalog-logical-cdc-plane tree. Flat layout, separate digest-pinned verifier, tmux/asciinema, public network, binary reward, and isolation hold. Two current High metadata/pin rules fail: task.toml has 7 tags (limit 3-6) and the Go module has no committed go.sum while the agent image runs go mod tidy against modernc.org/sqlite v1.37.0. Those would be rejected under current Edition 3 field and pin rules. No BLOCKER leakage, privilege, or packaging defect.",
+  "evidence": [
+    {
+      "type": "file",
+      "ref": "tenant-catalog-logical-cdc-plane/task.toml",
+      "observation": "Canonical top-level keys before tables: version 2.0, name matches folder, Software/Databases, languages go/sql/bash, difficulty advanced, expert_time_estimate_hours 12, artifacts=[\"/app/catalog\"]. environment_mode=separate, agent timeout_sec=7200 (1800-18000), verifier timeout 1800, network_mode=public, workdir=/app, 2 CPU / 8192 MB / 10240 MB. No removed Edition 2 fields; no compose flags on a single-container task. tags has seven entries: golang, sqlite, mvcc, cdc, wal, indexes, replica."
+    },
+    {
+      "type": "file",
+      "ref": "tenant-catalog-logical-cdc-plane/",
+      "observation": "Tracked tree is the flat Edition 3 layout: task.toml, instruction.md, README.md, environment/Dockerfile, environment/.dockerignore, solution/solve.sh, tests/Dockerfile, tests/test.sh, tests/test_outputs.py. 66 tracked files, none untracked. No rubrics, milestones, jobs/, CLAUDE.md, AGENTS.md, skills.md, task-local .cursor/, or .terminus inside the task root."
+    },
+    {
+      "type": "file",
+      "ref": "tenant-catalog-logical-cdc-plane/environment/Dockerfile",
+      "observation": "Final FROM is the canonical Go digest public.ecr.aws/docker/library/golang:1.24-bookworm@sha256:1a6d4452c65dea36aac2e2d606b01b4a029ec90cc1ae53890540ce6173ea77ac. One apt transaction installs tmux, asciinema, sqlite3, bash, ca-certificates with --no-install-recommends and list cleanup; no apt upgrade or apt pins. Narrow COPY catalog/; no FROM --platform, nproc, privileged, docker.sock, heredoc sources, reserved-path mkdir, recursive chmod /app, or COPY of solution/tests. Build runs go mod tidy then go build and seed."
+    },
+    {
+      "type": "file",
+      "ref": "tenant-catalog-logical-cdc-plane/environment/catalog/go.mod",
+      "observation": "module catalog; go 1.24; require modernc.org/sqlite v1.37.0. No go.sum is present in environment/catalog or anywhere in the tracked task tree."
+    },
+    {
+      "type": "file",
+      "ref": "tenant-catalog-logical-cdc-plane/tests/Dockerfile",
+      "observation": "Separate verifier image uses canonical python:3.13-slim-bookworm@sha256:01f42367a0a94ad4bc17111776fd66e3500c1d87c15bbd6055b7371d39c124fb. Pip installs from requirements.lock with --no-deps (pytest==8.4.1, pytest-json-ctrf==0.3.5 and declared transitives). Copies test.sh, test_outputs.py, and fixtures only. RUN mkdir -p /app/catalog for the declared artifact parent. Does not create /logs/verifier at build."
+    },
+    {
+      "type": "file",
+      "ref": "tenant-catalog-logical-cdc-plane/tests/test.sh",
+      "observation": "Unix LF shebang. Creates /logs/verifier only at runtime, writes reward 0 then 1/0 after pytest, installs nothing, uses TEST_DIR default /tests, no trailing exit $?."
+    },
+    {
+      "type": "file",
+      "ref": "tenant-catalog-logical-cdc-plane/tests/test_outputs.py",
+      "observation": "35 pytest functions each with a docstring. Grades live /app/catalog via catalogctl and durable WAL/heap/replica/index/health state. Hidden fixtures stay under /tests/fixtures. Ruff check passed. No callable end-to-end catalog solver."
+    },
+    {
+      "type": "file",
+      "ref": "tenant-catalog-logical-cdc-plane/environment/.dockerignore",
+      "observation": "Present; excludes .git, pycache, .env, solution/, and tests/. Does not exclude *.log, so catalog/logs/bounce.log ships as operator evidence."
+    },
+    {
+      "type": "file",
+      "ref": "tenant-catalog-logical-cdc-plane/instruction.md",
+      "observation": "One short paragraph plus six bullets (189 words). No task name, no relative paths, no canary strings. Names /app/catalog outputs and points at /app/catalog/docs/catalog-contract.md as binding, including health/cdc/apply-report/rejects schemas."
+    },
+    {
+      "type": "run",
+      "ref": "environment size measurement of tenant-catalog-logical-cdc-plane/environment",
+      "observation": "44 files, 3.022 MiB total, largest file catalog/sql/seed.sql at 2.92 MiB; no file exceeds 50 MiB. Under the 100 MiB environment cap."
+    },
+    {
+      "type": "run",
+      "ref": "git rev-parse / git diff --stat 6b9bf3bc20bebaa853c6531b846d2321a124470a -- tenant-catalog-logical-cdc-plane",
+      "observation": "Packet task_commit exists and has an empty diff against the current task tree. Latest commit touching the task is 6b9bf3bc. Porcelain status empty. No tracked pycache, .terminus, rubrics, or jobs inside the task."
+    },
+    {
+      "type": "run",
+      "ref": "jobs/2026-08-17__22-21-42 oracle and jobs/2026-08-17__22-28-58 NOP",
+      "observation": "Harbor oracle reward 1.0; NOP reward 0.0. Oracle artifacts include a build-generated /app/catalog/go.sum that is not in the submitted environment tree."
+    },
+    {
+      "type": "rule",
+      "ref": "TERMINUS_3_AI_INSTRUCTIONS.md §§2,4,7,9,13,15 and RC-ENV-003",
+      "observation": "Controlling rules for layout, task.toml tags 3-6, digest-pinned canonical bases, tmux/asciinema, language lockfiles including go.sum, separate verifier, artifact parents, runtime-only /logs/verifier, binary reward, and High pin of non-apt dependencies."
+    }
+  ],
+  "findings": [
+    {
+      "id": "COMP-1",
+      "severity": "HIGH",
+      "status": "OBSERVED",
+      "criterion": "TERMINUS_3_AI_INSTRUCTIONS.md §4 Field rules tags **3-6**; §13 pre-submit checklist tags 3-6",
+      "evidence_refs": [
+        "tenant-catalog-logical-cdc-plane/task.toml"
+      ],
+      "why_it_matters": "tags is a required Edition 3 metadata field with an explicit 3-6 bound. Seven keywords (golang, sqlite, mvcc, cdc, wal, indexes, replica) exceed that contract and would fail a current metadata check even though taxonomy, timeouts, and artifacts are otherwise canonical.",
+      "minimal_remediation": "Keep three to six tags. Drop one redundant keyword (indexes or replica) without changing category/subcategory.",
+      "regression_risk": "Low; tag list is not solver-visible."
+    },
+    {
+      "id": "COMP-2",
+      "severity": "HIGH",
+      "status": "OBSERVED",
+      "criterion": "TERMINUS_3_AI_INSTRUCTIONS.md §7 Pin language deps with lockfiles / go.sum; RC-ENV-003 Non-apt dependencies are pinned — High",
+      "evidence_refs": [
+        "tenant-catalog-logical-cdc-plane/environment/catalog/go.mod",
+        "tenant-catalog-logical-cdc-plane/environment/Dockerfile",
+        "jobs/2026-08-17__22-21-42 oracle artifacts go.sum"
+      ],
+      "why_it_matters": "The agent module requires modernc.org/sqlite v1.37.0 but ships no go.sum. Image build runs go mod tidy, so transitive checksums exist only after a network fetch inside Docker. Verifier pip is locked; the Go third-party graph is not. High review/CI pin rules treat that as a must-revise environment defect.",
+      "minimal_remediation": "Commit environment/catalog/go.sum generated from the pinned module, then build with go mod download and go build -mod=readonly. Do not rely on tidy to invent the lockfile at image build.",
+      "regression_risk": "Low if the committed sum matches v1.37.0; rebuild the agent image once."
+    },
+    {
+      "id": "COMP-3",
+      "severity": "LOW",
+      "status": "OBSERVED",
+      "criterion": "TERMINUS_3_AI_INSTRUCTIONS.md §7 Add OCI audit labels where practical",
+      "evidence_refs": [
+        "tenant-catalog-logical-cdc-plane/environment/Dockerfile"
+      ],
+      "why_it_matters": "title/description/version/licenses are present; source/revision/created are omitted. The rule is practical, not mandatory.",
+      "minimal_remediation": "Optional: add org.opencontainers.image.source, .revision, and .created when those values are known.",
+      "regression_risk": "None."
+    }
+  ],
+  "missing_evidence": [],
+  "change_scope": [
+    "tenant-catalog-logical-cdc-plane/task.toml tags array only",
+    "tenant-catalog-logical-cdc-plane/environment/catalog/go.sum (add committed lockfile)",
+    "tenant-catalog-logical-cdc-plane/environment/Dockerfile Go module fetch/build to use the lockfile"
+  ],
+  "do_not_change": [
+    "instruction.md wording and requirement surface",
+    "tests/test_outputs.py behavioral assertions",
+    "solution/solve.sh derivation",
+    "environment/catalog plane, contract, and seeded state",
+    "task.toml artifacts, taxonomy, timeouts, and environment_mode"
+  ],
+  "next_gate": "Repair COMP-1 and COMP-2, commit, regenerate the Compliance packet; remaining PRE_LLMAJ Stage B specialists need a current Compliance PASS. This result is not SUBMISSION_READY.",
+  "role_output": {
+    "BLOCKERS": [],
+    "HIGH": [
+      "COMP-1 task.toml tags has 7 entries; Edition 3 field rule is 3-6.",
+      "COMP-2 environment/catalog has no go.sum; Dockerfile go mod tidy fetches modernc.org/sqlite transitives at image build."
+    ],
+    "MEDIUM": [],
+    "LOW": [
+      "COMP-3 Agent Dockerfile omits optional OCI source/revision/created labels."
+    ],
+    "CURRENT_RULE_REFERENCES": [
+      "TERMINUS_3_AI_INSTRUCTIONS.md §2 required flat layout",
+      "TERMINUS_3_AI_INSTRUCTIONS.md §4 task.toml canonical fields, tags 3-6, top-level artifacts, environment_mode=separate, timeouts, taxonomy",
+      "TERMINUS_3_AI_INSTRUCTIONS.md §7 digest-pin, canonical Go base, tmux/asciinema, language lockfiles including go.sum, .dockerignore, no reserved paths, no privileged/socket/platform, environment <=100 MiB",
+      "TERMINUS_3_AI_INSTRUCTIONS.md §9 separate verifier, create artifact parents, test.sh reward contract, pytest, no trial-time installs",
+      "TERMINUS_3_AI_INSTRUCTIONS.md §13 pre-submit tags 3-6; §15 High pinned package deps and required task.toml fields",
+      ".terminus/reviewers/REVIEWER_CHECKLIST.md RC-ENV-003 Non-apt dependencies are pinned — High",
+      ".cursor/rules/terminus-edition-3-verifier.mdc agent/verifier isolation and canonical bases",
+      ".cursor/rules/terminus-edition-3-task-toml.mdc metadata and artifact nesting",
+      ".terminus/agents/PROMPTS.md Compliance Auditor decision right"
+    ],
+    "PACKAGE_RISK": "LOW. Git-tracked zip root is task files only: no .terminus, rubrics, jobs, or AI scaffolding. Declared artifact /app/catalog is the live catalog plane the verifier must rerun; environment is 3.022 MiB. Oracle-generated go.sum is image/build output, not a control-plane leak into the package.",
+    "SECURITY_RISK": "LOW. No secrets, privileged mode, SYS_ADMIN, docker.sock, host binds, or agent-image leakage of solution/tests. Verifier fixtures remain in tests/. Warehouse path is operator-visible and checksum-checked, not a credential store. Oracle is mounted at /solution only for the oracle agent."
+  }
+}

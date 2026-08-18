@@ -1,0 +1,80 @@
+{
+  "schema_version": "3.0",
+  "role": "Engineering Documentation Reviewer",
+  "review_id": "tenant-catalog-logical-cdc-plane-6b9bf3bc-documentation-304a411e3c",
+  "task": "tenant-catalog-logical-cdc-plane",
+  "task_commit": "6b9bf3bc20bebaa853c6531b846d2321a124470a",
+  "control_plane_commit": "41e6d2fdc7ea680e3cec8e90ce2914e3b45af3fc",
+  "protocol_policy_version": "2.2",
+  "prompt_policy_version": "2.2",
+  "role_policy_version": "1.0",
+  "role_contract_hash": "933b73ee4ef4ed0fe66847993d121a29297efecc1fbe3887c95112c3f207f882",
+  "context_packet": ".terminus/reviews/tenant-catalog-logical-cdc-plane/6b9bf3bc/tenant-catalog-logical-cdc-plane-6b9bf3bc-documentation-304a411e3c.packet.json",
+  "verdict": "PASS",
+  "confidence": "HIGH",
+  "evidence_status": "SUFFICIENT",
+  "summary": "README is a short reviewer handoff: the heap-looks-complete trap, the WAL/visibility/CDC/apply/recover invariants, and catalogctl scenario families that distinguish plausible wrong behavior. No task.toml explanation fields; that is not a defect. Voice is terse and unpadded. Harbor run commands are present. It is not a file-by-file oracle walkthrough.",
+  "evidence": [
+    {
+      "type": "file",
+      "ref": "tenant-catalog-logical-cdc-plane/README.md",
+      "observation": "Three unlabeled families are present. Difficulty: snapshot isolation, constraints, indexes, logical CDC, and replica apply must agree on one WAL; a complete-looking heap can still leak an uncommitted crash insert into CDC, rewind a replica slot, or leave indexes on aborted versions. Solution: keep the Go catalog/WAL protocol; xmin/xmax visibility; constraints see writer snapshot plus write set; indexes rebuild from committed-visible rows after COMMIT and recover; decode walks committed WAL; apply is LSN-monotonic, epoch-fenced, and FK-ordered inside a txn; checkpoint redo skips uncommitted records; inspect does not recover; warehouse stays put. Verification: isolated copies of transferred /app/catalog; catalogctl usage errors leave WAL untouched; frozen-tenant and hold-qty rejects; unique/FK; decode skips abort; apply rejects stale epoch without advancing confirmed_lsn; recover drops the crash insert; indexes match visible heap; health schema and warehouse bytes. Harbor stb harbor run oracle/nop commands and solution/solve.sh as reference entrypoint. No patch-file sequence, no helper names, no hidden fixture paths."
+    },
+    {
+      "type": "file",
+      "ref": "tenant-catalog-logical-cdc-plane/task.toml",
+      "observation": "No difficulty_explanation, solution_explanation, or verification_explanation fields. Packet states that is expected when README covers those families."
+    },
+    {
+      "type": "file",
+      "ref": "tenant-catalog-logical-cdc-plane/instruction.md",
+      "observation": "README does not copy the agent ticket. Instruction is the bounce incident plus public catalogctl/contract rules. README restates coupling and invariants for a human reviewer and adds Harbor how-to-run. Overlap is domain fact, not an instruction dump."
+    },
+    {
+      "type": "test",
+      "ref": "tenant-catalog-logical-cdc-plane/tests/test_outputs.py",
+      "observation": "High-level suite matches README claims: drives catalogctl on isolated tree copies; unknown flag/command and missing --input leave WAL; inspect/empty-check do not recover; frozen tenant, hold-qty, unique, and FK rejects; decode skips uncommitted crash sku; apply monotonic/stale-epoch/FK order; recover drops uncommitted insert and rebuilds indexes; health schema; warehouse bytes unchanged. README names those distinguishing outcomes, not pytest internals or fixture files."
+    },
+    {
+      "type": "file",
+      "ref": "tenant-catalog-logical-cdc-plane/environment/Dockerfile",
+      "observation": "Canonical golang:1.24-bookworm digest; builds cmd/seed and runs it at image build. Supports the seeded-inventory claim. No non-canonical-base justification is required."
+    },
+    {
+      "type": "rule",
+      "ref": ".terminus/reviewers/HUMAN_WRITING_CALIBRATION.md",
+      "observation": "Difficulty is the missed state interaction, not generic multi-component filler. Solution is invariant-focused, not a diff. Verification names scenario purpose without comprehensive/robust claims. No stock documentation phrases from the anti-pattern bank."
+    },
+    {
+      "type": "rule",
+      "ref": ".terminus/reviewers/WRITING_EXAMPLE_BANK.md",
+      "observation": "Aligns with human difficulty/solution/verification pairs: plausible partial heap-visibility fix still fails CDC/replica/index agreement; authoritative WAL/visibility invariants; live catalogctl families that rule out those wrong classes."
+    },
+    {
+      "type": "rule",
+      "ref": "TERMINUS_3_AI_INSTRUCTIONS.md",
+      "observation": "Section 12 requires human README covering difficulty, solution, and verification; not shown to agents. README supplies those, does not copy instruction.md, and does not dump oracle internals beyond naming solution/solve.sh as the Harbor reference entrypoint."
+    }
+  ],
+  "findings": [],
+  "missing_evidence": [],
+  "change_scope": [
+    "Cold Engineering Documentation Review of README and explanation families at task_commit 6b9bf3bc20bebaa853c6531b846d2321a124470a; no task-file edits."
+  ],
+  "do_not_change": [
+    "Do not treat absent task.toml difficulty/solution/verification explanation fields as a defect while README covers those families.",
+    "Do not expand README into an oracle walkthrough or dump hidden fixture details."
+  ],
+  "next_gate": "Return control to CI Orchestrator for remaining Pre-LLMaJ Stage B reviews on this task commit.",
+  "role_output": {
+    "DIFFICULTY_QUALITY": "HIGH",
+    "SOLUTION_QUALITY": "HIGH",
+    "VERIFICATION_QUALITY": "HIGH",
+    "AI_TEMPLATE_SIGNAL": "LOW",
+    "UNSUPPORTED_CLAIMS": [],
+    "BOILERPLATE": [],
+    "CONTRADICTIONS": [],
+    "REQUIRED_CHANGES": [],
+    "REPLACEMENT_TEXT": ""
+  }
+}

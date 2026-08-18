@@ -19,7 +19,6 @@ type Report struct {
 	Epoch        int64 `json:"epoch"`
 }
 
-// Apply is the starter implementation: reverse FK order, ignore LSN/epoch fences.
 func Apply(st *store.Store, records []map[string]any) (Report, error) {
 	slot, err := st.LoadSlot()
 	if err != nil {

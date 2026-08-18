@@ -27,9 +27,8 @@ RUN apt-get update \
 COPY catalog/ /app/catalog/
 
 RUN mkdir -p /app/catalog/bin /app/catalog/data /app/catalog/out /app/catalog/warehouse \
-    && go mod tidy \
-    && go build -o /app/catalog/bin/catalogctl ./cmd/catalogctl \
-    && go build -o /app/catalog/bin/seed ./cmd/seed \
+    && go build -mod=readonly -o /app/catalog/bin/catalogctl ./cmd/catalogctl \
+    && go build -mod=readonly -o /app/catalog/bin/seed ./cmd/seed \
     && CATALOG_ROOT=/app/catalog /app/catalog/bin/seed
 
 WORKDIR /app

@@ -13,7 +13,6 @@ import (
 	"catalog/internal/txn"
 )
 
-// Main is the starter CLI: WAL BEGIN before argv parse; --reset-output truncates WAL.
 func Main() int {
 	st := store.New()
 	txnID, lsn, err := txn.NextIDs(st)
