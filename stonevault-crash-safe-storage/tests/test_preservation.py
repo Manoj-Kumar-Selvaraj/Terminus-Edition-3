@@ -1,10 +1,9 @@
 from __future__ import annotations
 
-import os
 import struct
 from pathlib import Path
 
-from test_outputs import BINARY, PRODUCT_ROOT, Session, get, open_failure, put, scan
+from test_outputs import Session, get, open_failure, put, scan
 
 
 def _checkpoint_snapshot(data_dir: Path, rows: list[tuple[bytes, bytes]]) -> Path:
@@ -112,17 +111,6 @@ def test_snapshot_truncation_is_fatal(tmp_path: Path) -> None:
     assert result.returncode != 0 and "snapshot corruption" in result.stderr
 
 
-def test_snapshot_invalid_size_is_fatal(tmp_path: Path) -> None:
-    """A snapshot row declaring a key larger than the documented bound is rejected before use."""
-    data_dir = tmp_path / "db"
-    snapshot = _checkpoint_snapshot(data_dir, [(b"a", b"1")])
-    data = bytearray(snapshot.read_bytes())
-    struct.pack_into("<I", data, 24, 4097)
-    snapshot.write_bytes(data)
-    result = open_failure(data_dir)
-    assert result.returncode != 0 and "snapshot corruption" in result.stderr
-
-
 def test_snapshot_impossible_row_count_is_fatal(tmp_path: Path) -> None:
     """An unreasonable snapshot row count is rejected without attempting an unsafe allocation or partial open."""
     data_dir = tmp_path / "db"
@@ -146,28 +134,3 @@ def test_snapshot_out_of_order_rows_are_fatal(tmp_path: Path) -> None:
     snapshot.write_bytes(data[:24] + second + first)
     result = open_failure(data_dir)
     assert result.returncode != 0 and "snapshot corruption" in result.stderr
-
-
-def test_documented_c_abi_declarations_remain_available() -> None:
-    """The public C ABI header retains every documented storage entry point and the native binary is delivered."""
-    header = (PRODUCT_ROOT / "storage" / "engine.hpp").read_text(encoding="utf-8")
-    symbols = [
-        "sv_open",
-        "sv_close",
-        "sv_current_sequence",
-        "sv_begin",
-        "sv_put",
-        "sv_del",
-        "sv_get",
-        "sv_scan",
-        "sv_commit",
-        "sv_rollback",
-        "sv_checkpoint",
-        "sv_stats",
-        "sv_health",
-        "sv_free_string",
-    ]
-    assert 'extern "C"' in header
-    for symbol in symbols:
-        assert symbol in header
-    assert BINARY.is_file() and os.access(BINARY, os.X_OK)

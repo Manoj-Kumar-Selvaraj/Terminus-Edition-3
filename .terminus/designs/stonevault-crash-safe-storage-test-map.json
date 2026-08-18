@@ -1,107 +1,403 @@
 {
   "schema_version": "1.2",
   "task": "stonevault-crash-safe-storage",
-  "empirical_status": "PASS_CURRENT_HEAD_ORACLE_NOP_MATRIX",
+  "empirical_status": "PASS_Q4_REMEDIATION_ORACLE_NOP_MATRIX",
   "requirements": {
-    "R01_WRITER_FENCING": "Only one writable process may hold a database directory and the exclusive writer lock must be released on exit.",
-    "R02_DATA_DIR_PRECEDENCE": "Explicit --data-dir overrides STONEVAULT_DATA, which overrides the documented default.",
-    "R03_SNAPSHOT_POINT_READS": "Transactions retain begin-time point-read visibility while exposing their own writes and deletes.",
+    "R01_WRITER_FENCING": "Only one writable process may own a database directory and ownership must be released on exit; the lock primitive and diagnostic wording are not compatibility contracts.",
+    "R02_DATA_DIR_PRECEDENCE": "Explicit --data-dir overrides STONEVAULT_DATA, which overrides /app/stonevault/data.",
+    "R03_SNAPSHOT_POINT_READS": "Transactions retain begin-time point-read visibility while exposing their own puts and deletes.",
     "R04_PREFIX_SCAN_SEMANTICS": "Prefix scans retain transaction snapshot visibility, local overlays, raw-byte prefix filtering and unsigned byte ordering.",
     "R05_WRITE_CONFLICTS": "First-committer-wins stale writes are rejected atomically, end the transaction and do not publish partial state.",
-    "R06_SEQUENCE_DURABILITY": "Successful commits use contiguous durable sequences and rejected conflicts do not consume a sequence.",
+    "R06_SEQUENCE_DURABILITY": "Successful commits use contiguous durable sequences, return only after durable commit publication, and rejected conflicts do not consume a sequence.",
     "R07_UNCOMMITTED_RECOVERY": "Killed and rolled-back transactions remain invisible after restart.",
-    "R08_WAL_RECOVERY_INTEGRITY": "Only short final WAL tails are repairable; complete corruption and invalid commit history fail closed.",
-    "R09_CHECKPOINT_LIFECYCLE": "Checkpoint requires quiescence, preserves rows/sequence and reclaims wal.log to zero bytes.",
-    "R10_SNAPSHOT_INTEGRITY": "Published snapshots reject checksum, truncation, ordering, size, row-count, magic and trailing-byte corruption while stale snapshot.tmp is discarded.",
+    "R08_WAL_RECOVERY_INTEGRITY": "Only in-range short final WAL tails are repairable; complete corruption, invalid framing/type/payload and invalid commit history fail closed while the published layout remains readable.",
+    "R09_CHECKPOINT_LIFECYCLE": "Checkpoint requires quiescence, crash-safely publishes rows/sequence before WAL reclamation and reclaims wal.log to zero bytes on success.",
+    "R10_SNAPSHOT_INTEGRITY": "Published snapshots preserve the documented layout/CRC and reject checksum, truncation, duplicate/order, size, row-count, magic and trailing-byte corruption while stale snapshot.tmp is discarded.",
     "R11_STATS": "STATS reports durable sequence, visible committed-key count and actual WAL byte size.",
-    "R12_HEALTH": "HEALTH reports reachable storage/catalog state including active transactions and published snapshot state.",
+    "R12_HEALTH": "HEALTH validates reachable catalog/transaction/durable-path invariants, reports exact healthy state and fails closed with ERR on a detected invariant violation.",
     "R13_BINARY_HEX": "Keys, values and prefixes support arbitrary binary bytes through case-insensitive hexadecimal input and lowercase output.",
-    "R14_INCLUSIVE_LIMITS": "4096-byte key/prefix and 1048576-byte value limits are inclusive and oversized inputs are rejected without terminating the process.",
-    "R15_PROTOCOL_RESILIENCE": "Malformed commands and unknown transaction IDs return ERR while the session remains usable.",
-    "R16_NATIVE_COMPATIBILITY": "The product remains C++20 and Rust only and preserves the documented public C ABI."
+    "R14_INCLUSIVE_LIMITS": "4096-byte key/prefix and 1048576-byte value limits are inclusive and oversized inputs are rejected consistently without terminating the process.",
+    "R15_PROTOCOL_RESILIENCE": "Malformed commands and unknown transaction IDs return ERR consistently across command families while the session remains usable.",
+    "R16_NATIVE_COMPATIBILITY": "The product remains C++20 and Rust only, preserves exact documented public C ABI signatures/linkage, exact stable wire shapes and published WAL/snapshot compatibility."
   },
   "tests": [
-    ["test_lock_file_is_actively_held_by_writer","F2P","R01_WRITER_FENCING"],
-    ["test_second_writer_is_excluded_and_lock_is_released","F2P","R01_WRITER_FENCING"],
-    ["test_read_snapshot_survives_newer_put","F2P","R03_SNAPSHOT_POINT_READS"],
-    ["test_read_snapshot_survives_newer_delete","F2P","R03_SNAPSHOT_POINT_READS"],
-    ["test_scan_snapshot_excludes_later_insert","F2P","R04_PREFIX_SCAN_SEMANTICS"],
-    ["test_scan_snapshot_retains_later_delete","F2P","R04_PREFIX_SCAN_SEMANTICS"],
-    ["test_scan_applies_local_put_overlay","F2P","R04_PREFIX_SCAN_SEMANTICS","C_LOCAL_SCAN_OVERLAY"],
-    ["test_scan_applies_local_delete_overlay","F2P","R04_PREFIX_SCAN_SEMANTICS"],
-    ["test_hex_input_is_case_insensitive_and_output_is_lowercase","F2P","R04_PREFIX_SCAN_SEMANTICS","C_LOCAL_SCAN_OVERLAY"],
-    ["test_stale_put_conflicts_with_newer_version","F2P","R05_WRITE_CONFLICTS"],
-    ["test_stale_delete_conflicts_with_newer_version","F2P","R05_WRITE_CONFLICTS"],
-    ["test_conflicted_multi_key_commit_is_atomic","F2P","R05_WRITE_CONFLICTS"],
-    ["test_conflict_does_not_consume_commit_sequence","F2P","R06_SEQUENCE_DURABILITY"],
-    ["test_killed_transaction_is_invisible_after_restart","F2P","R07_UNCOMMITTED_RECOVERY"],
-    ["test_rolled_back_transaction_is_invisible_after_restart","F2P","R07_UNCOMMITTED_RECOVERY"],
-    ["test_complete_wal_checksum_damage_is_fatal","F2P","R08_WAL_RECOVERY_INTEGRITY"],
-    ["test_complete_wal_bad_magic_is_fatal","F2P","R08_WAL_RECOVERY_INTEGRITY"],
-    ["test_checkpoint_refuses_active_transaction","F2P","R09_CHECKPOINT_LIFECYCLE"],
-    ["test_checkpoint_reclaims_wal_after_commit","F2P","R09_CHECKPOINT_LIFECYCLE"],
-    ["test_snapshot_checksum_corruption_is_fatal","F2P","R10_SNAPSHOT_INTEGRITY"],
-    ["test_snapshot_trailing_bytes_are_fatal","F2P","R10_SNAPSHOT_INTEGRITY"],
-    ["test_stale_snapshot_temporary_is_removed_on_open","F2P","R10_SNAPSHOT_INTEGRITY"],
-    ["test_health_reports_active_transactions","F2P","R12_HEALTH"],
-    ["test_health_tracks_published_snapshot","F2P","R12_HEALTH"],
-    ["test_explicit_data_directory_overrides_environment","F2P","R02_DATA_DIR_PRECEDENCE"],
-    ["test_exact_key_limit_is_accepted","F2P","R14_INCLUSIVE_LIMITS","C_INCLUSIVE_SIZE_BOUNDARY"],
-    ["test_exact_value_limit_is_accepted","F2P","R14_INCLUSIVE_LIMITS","C_INCLUSIVE_SIZE_BOUNDARY"],
-    ["test_exact_scan_prefix_limit_is_accepted","F2P","R14_INCLUSIVE_LIMITS","C_INCLUSIVE_SIZE_BOUNDARY"],
-    ["test_product_tree_keeps_native_language_boundary","P2P","R16_NATIVE_COMPATIBILITY"],
-    ["test_scan_uses_unsigned_byte_order","P2P","R04_PREFIX_SCAN_SEMANTICS"],
-    ["test_short_final_wal_header_is_repaired","P2P","R08_WAL_RECOVERY_INTEGRITY"],
-    ["test_short_final_wal_payload_is_repaired","P2P","R08_WAL_RECOVERY_INTEGRITY"],
-    ["test_non_contiguous_commit_sequence_is_fatal","P2P","R08_WAL_RECOVERY_INTEGRITY"],
-    ["test_checkpoint_restart_preserves_sequence_and_rows","P2P","R09_CHECKPOINT_LIFECYCLE"],
-    ["test_stats_match_durable_state_and_file_size","P2P","R11_STATS"],
-    ["test_oversized_inputs_are_rejected_without_terminating","P2P","R14_INCLUSIVE_LIMITS"],
-    ["test_malformed_commands_and_unknown_transactions_do_not_kill_session","P2P","R15_PROTOCOL_RESILIENCE"],
-    ["test_environment_only_data_directory_is_honored","P2P","R02_DATA_DIR_PRECEDENCE"],
-    ["test_oversized_scan_prefix_is_rejected_without_terminating","P2P","R14_INCLUSIVE_LIMITS"],
-    ["test_arbitrary_binary_key_and_value_round_trip","P2P","R13_BINARY_HEX"],
-    ["test_committed_hex_output_is_canonical","P2P","R13_BINARY_HEX"],
-    ["test_snapshot_bad_magic_is_fatal","P2P","R10_SNAPSHOT_INTEGRITY"],
-    ["test_snapshot_truncation_is_fatal","P2P","R10_SNAPSHOT_INTEGRITY"],
-    ["test_snapshot_invalid_size_is_fatal","P2P","R10_SNAPSHOT_INTEGRITY"],
-    ["test_snapshot_impossible_row_count_is_fatal","P2P","R10_SNAPSHOT_INTEGRITY"],
-    ["test_snapshot_out_of_order_rows_are_fatal","P2P","R10_SNAPSHOT_INTEGRITY"],
-    ["test_documented_c_abi_declarations_remain_available","P2P","R16_NATIVE_COMPATIBILITY"]
+    [
+      "test_second_writer_is_excluded_and_lock_is_released",
+      "F2P",
+      "R01_WRITER_FENCING"
+    ],
+    [
+      "test_read_snapshot_survives_newer_put",
+      "F2P",
+      "R03_SNAPSHOT_POINT_READS"
+    ],
+    [
+      "test_read_snapshot_survives_newer_delete",
+      "F2P",
+      "R03_SNAPSHOT_POINT_READS"
+    ],
+    [
+      "test_scan_snapshot_excludes_later_insert",
+      "F2P",
+      "R04_PREFIX_SCAN_SEMANTICS"
+    ],
+    [
+      "test_scan_snapshot_retains_later_delete",
+      "F2P",
+      "R04_PREFIX_SCAN_SEMANTICS"
+    ],
+    [
+      "test_scan_applies_local_put_overlay",
+      "F2P",
+      "R04_PREFIX_SCAN_SEMANTICS",
+      "C_LOCAL_SCAN_OVERLAY"
+    ],
+    [
+      "test_scan_applies_local_delete_overlay",
+      "F2P",
+      "R04_PREFIX_SCAN_SEMANTICS"
+    ],
+    [
+      "test_hex_input_is_case_insensitive_and_output_is_lowercase",
+      "F2P",
+      "R04_PREFIX_SCAN_SEMANTICS",
+      "C_LOCAL_SCAN_OVERLAY"
+    ],
+    [
+      "test_stale_put_conflicts_with_newer_version",
+      "F2P",
+      "R05_WRITE_CONFLICTS"
+    ],
+    [
+      "test_stale_delete_conflicts_with_newer_version",
+      "F2P",
+      "R05_WRITE_CONFLICTS"
+    ],
+    [
+      "test_conflicted_multi_key_commit_is_atomic",
+      "F2P",
+      "R05_WRITE_CONFLICTS"
+    ],
+    [
+      "test_conflicted_transaction_is_ended",
+      "F2P",
+      "R05_WRITE_CONFLICTS"
+    ],
+    [
+      "test_conflict_does_not_consume_commit_sequence",
+      "F2P",
+      "R06_SEQUENCE_DURABILITY"
+    ],
+    [
+      "test_killed_transaction_is_invisible_after_restart",
+      "F2P",
+      "R07_UNCOMMITTED_RECOVERY"
+    ],
+    [
+      "test_rolled_back_transaction_is_invisible_after_restart",
+      "F2P",
+      "R07_UNCOMMITTED_RECOVERY"
+    ],
+    [
+      "test_complete_wal_checksum_damage_is_fatal",
+      "F2P",
+      "R08_WAL_RECOVERY_INTEGRITY"
+    ],
+    [
+      "test_complete_wal_bad_magic_is_fatal",
+      "F2P",
+      "R08_WAL_RECOVERY_INTEGRITY"
+    ],
+    [
+      "test_impossible_wal_frame_length_is_fatal",
+      "F2P",
+      "R08_WAL_RECOVERY_INTEGRITY"
+    ],
+    [
+      "test_checkpoint_refuses_active_transaction",
+      "F2P",
+      "R09_CHECKPOINT_LIFECYCLE"
+    ],
+    [
+      "test_checkpoint_reclaims_wal_after_commit",
+      "F2P",
+      "R09_CHECKPOINT_LIFECYCLE"
+    ],
+    [
+      "test_snapshot_checksum_corruption_is_fatal",
+      "F2P",
+      "R10_SNAPSHOT_INTEGRITY"
+    ],
+    [
+      "test_snapshot_trailing_bytes_are_fatal",
+      "F2P",
+      "R10_SNAPSHOT_INTEGRITY"
+    ],
+    [
+      "test_stale_snapshot_temporary_is_removed_on_open",
+      "F2P",
+      "R10_SNAPSHOT_INTEGRITY"
+    ],
+    [
+      "test_health_reports_active_transactions",
+      "F2P",
+      "R12_HEALTH"
+    ],
+    [
+      "test_health_tracks_published_snapshot",
+      "F2P",
+      "R12_HEALTH"
+    ],
+    [
+      "test_health_rejects_missing_live_wal_path",
+      "F2P",
+      "R12_HEALTH"
+    ],
+    [
+      "test_explicit_data_directory_overrides_environment",
+      "F2P",
+      "R02_DATA_DIR_PRECEDENCE"
+    ],
+    [
+      "test_exact_key_limit_is_accepted",
+      "F2P",
+      "R14_INCLUSIVE_LIMITS",
+      "C_INCLUSIVE_SIZE_BOUNDARY"
+    ],
+    [
+      "test_exact_value_limit_is_accepted",
+      "F2P",
+      "R14_INCLUSIVE_LIMITS",
+      "C_INCLUSIVE_SIZE_BOUNDARY"
+    ],
+    [
+      "test_exact_scan_prefix_limit_is_accepted",
+      "F2P",
+      "R14_INCLUSIVE_LIMITS",
+      "C_INCLUSIVE_SIZE_BOUNDARY"
+    ],
+    [
+      "test_product_tree_keeps_native_language_boundary",
+      "P2P",
+      "R16_NATIVE_COMPATIBILITY"
+    ],
+    [
+      "test_scan_uses_unsigned_byte_order",
+      "P2P",
+      "R04_PREFIX_SCAN_SEMANTICS"
+    ],
+    [
+      "test_short_final_wal_header_is_repaired",
+      "P2P",
+      "R08_WAL_RECOVERY_INTEGRITY"
+    ],
+    [
+      "test_short_final_wal_payload_is_repaired",
+      "P2P",
+      "R08_WAL_RECOVERY_INTEGRITY"
+    ],
+    [
+      "test_non_contiguous_commit_sequence_is_fatal",
+      "P2P",
+      "R08_WAL_RECOVERY_INTEGRITY"
+    ],
+    [
+      "test_checkpoint_restart_preserves_sequence_and_rows",
+      "P2P",
+      "R09_CHECKPOINT_LIFECYCLE"
+    ],
+    [
+      "test_stats_match_durable_state_and_file_size",
+      "P2P",
+      "R11_STATS"
+    ],
+    [
+      "test_oversized_inputs_are_rejected_without_terminating",
+      "P2P",
+      "R14_INCLUSIVE_LIMITS"
+    ],
+    [
+      "test_malformed_commands_and_unknown_transactions_do_not_kill_session",
+      "P2P",
+      "R15_PROTOCOL_RESILIENCE"
+    ],
+    [
+      "test_environment_only_data_directory_is_honored",
+      "P2P",
+      "R02_DATA_DIR_PRECEDENCE"
+    ],
+    [
+      "test_oversized_scan_prefix_is_rejected_without_terminating",
+      "P2P",
+      "R14_INCLUSIVE_LIMITS"
+    ],
+    [
+      "test_arbitrary_binary_key_and_value_round_trip",
+      "P2P",
+      "R13_BINARY_HEX"
+    ],
+    [
+      "test_committed_hex_output_is_canonical",
+      "P2P",
+      "R13_BINARY_HEX"
+    ],
+    [
+      "test_snapshot_bad_magic_is_fatal",
+      "P2P",
+      "R10_SNAPSHOT_INTEGRITY"
+    ],
+    [
+      "test_snapshot_truncation_is_fatal",
+      "P2P",
+      "R10_SNAPSHOT_INTEGRITY"
+    ],
+    [
+      "test_snapshot_impossible_row_count_is_fatal",
+      "P2P",
+      "R10_SNAPSHOT_INTEGRITY"
+    ],
+    [
+      "test_snapshot_out_of_order_rows_are_fatal",
+      "P2P",
+      "R10_SNAPSHOT_INTEGRITY"
+    ],
+    [
+      "test_documented_default_data_directory_is_used",
+      "P2P",
+      "R02_DATA_DIR_PRECEDENCE"
+    ],
+    [
+      "test_point_read_observes_own_delete",
+      "P2P",
+      "R03_SNAPSHOT_POINT_READS"
+    ],
+    [
+      "test_acknowledged_commit_survives_immediate_process_kill",
+      "P2P",
+      "R06_SEQUENCE_DURABILITY"
+    ],
+    [
+      "test_multi_commit_wal_prefix_replays_completely",
+      "P2P",
+      "R08_WAL_RECOVERY_INTEGRITY"
+    ],
+    [
+      "test_independent_wal_fixture_recovers_published_layout",
+      "P2P",
+      "R08_WAL_RECOVERY_INTEGRITY"
+    ],
+    [
+      "test_complete_unknown_wal_type_is_fatal",
+      "P2P",
+      "R08_WAL_RECOVERY_INTEGRITY"
+    ],
+    [
+      "test_complete_malformed_wal_payload_is_fatal",
+      "P2P",
+      "R08_WAL_RECOVERY_INTEGRITY"
+    ],
+    [
+      "test_checkpoint_interruption_keeps_a_durable_recovery_source",
+      "P2P",
+      "R09_CHECKPOINT_LIFECYCLE"
+    ],
+    [
+      "test_independent_snapshot_fixture_preserves_layout_and_crc",
+      "P2P",
+      "R10_SNAPSHOT_INTEGRITY"
+    ],
+    [
+      "test_complete_snapshot_oversized_key_is_fatal",
+      "P2P",
+      "R10_SNAPSHOT_INTEGRITY"
+    ],
+    [
+      "test_complete_snapshot_oversized_value_is_fatal",
+      "P2P",
+      "R10_SNAPSHOT_INTEGRITY"
+    ],
+    [
+      "test_complete_snapshot_duplicate_key_is_fatal",
+      "P2P",
+      "R10_SNAPSHOT_INTEGRITY"
+    ],
+    [
+      "test_cxx20_sources_and_public_abi_signatures_compile",
+      "P2P",
+      "R16_NATIVE_COMPATIBILITY"
+    ],
+    [
+      "test_ready_and_health_wire_shapes_are_exact",
+      "P2P",
+      "R16_NATIVE_COMPATIBILITY"
+    ],
+    [
+      "test_unknown_transaction_errors_are_consistent_across_commands",
+      "P2P",
+      "R15_PROTOCOL_RESILIENCE"
+    ],
+    [
+      "test_decoded_key_limit_is_consistent_across_commands",
+      "P2P",
+      "R14_INCLUSIVE_LIMITS"
+    ]
   ],
-  "planned_change_required_probe_count": 28,
-  "planned_change_required_behavioral_case_count": 25,
-  "planned_preservation_count": 19,
+  "planned_change_required_probe_count": 30,
+  "planned_change_required_behavioral_case_count": 27,
+  "planned_preservation_count": 33,
   "behavioral_case_groups": {
     "C_INCLUSIVE_SIZE_BOUNDARY": {
       "classification": "F2P",
       "requirement": "R14_INCLUSIVE_LIMITS",
-      "tests": ["test_exact_key_limit_is_accepted","test_exact_value_limit_is_accepted","test_exact_scan_prefix_limit_is_accepted"],
+      "tests": [
+        "test_exact_key_limit_is_accepted",
+        "test_exact_value_limit_is_accepted",
+        "test_exact_scan_prefix_limit_is_accepted"
+      ],
       "rationale": "Key, value, and scan-prefix probes exercise the same shared decoded-size boundary rule at three public protocol positions; they are independent probes of one behavioral case rather than three distinct requirements."
     },
     "C_LOCAL_SCAN_OVERLAY": {
       "classification": "F2P",
       "requirement": "R04_PREFIX_SCAN_SEMANTICS",
-      "tests": ["test_scan_applies_local_put_overlay","test_hex_input_is_case_insensitive_and_output_is_lowercase"],
-      "rationale": "Both probes fail the starter because SCAN omits an uncommitted local put. The hexadecimal probe additionally exercises uppercase operands and lowercase rendering, but its starter-to-Oracle transition is caused by the same local-scan-overlay invariant; committed hexadecimal canonicalization is preserved independently by test_committed_hex_output_is_canonical."
+      "tests": [
+        "test_scan_applies_local_put_overlay",
+        "test_hex_input_is_case_insensitive_and_output_is_lowercase"
+      ],
+      "rationale": "Both probes fail the starter because SCAN omits an uncommitted local put. The hexadecimal probe additionally exercises uppercase operands and lowercase rendering, but its starter-to-Oracle transition is caused by the same local-scan-overlay invariant; committed hexadecimal canonicalization is preserved independently."
     }
   },
-  "edge_boundary_coverage": ["inclusive key/prefix/value limits","unsigned high-bit byte ordering","torn WAL header/payload boundaries","snapshot structural bounds"],
-  "negative_failure_coverage": ["concurrent writer rejection","conflict atomic rejection","complete WAL corruption","snapshot structural corruption","malformed protocol and unknown transaction IDs"],
-  "independence": "Every runtime pytest probe uses a fresh tmp_path database; the ABI/source preservation probe performs an isolated immutable interface check against published task artifacts.",
-  "classification_note": "F2P/P2P are private authoring classifications; neutral pytest names are intentional. Five originally planned change-required probes were reclassified to P2P after earlier NOP evidence showed those behaviors were already preserved. The current-head empirical matrix confirms all 28 F2P probes fail the starter and all 19 P2P probes pass it. The pre-existing hexadecimal test remains an F2P probe because it intentionally scans an uncommitted put and therefore shares the local-scan-overlay transition; a committed-state hexadecimal test isolates the R13 preservation contract.",
+  "edge_boundary_coverage": [
+    "inclusive key/prefix/value limits",
+    "unsigned high-bit byte ordering",
+    "WAL framing and torn-tail boundaries",
+    "complete independently encoded WAL fixtures",
+    "checkpoint interruption before snapshot publication",
+    "complete snapshot size/duplicate/CRC boundaries",
+    "exact ABI and wire shapes"
+  ],
+  "negative_failure_coverage": [
+    "concurrent writer rejection",
+    "post-conflict transaction termination",
+    "complete WAL corruption classes",
+    "snapshot structural corruption",
+    "live HEALTH invariant failure",
+    "malformed protocol and unknown transaction IDs across command families"
+  ],
+  "independence": "Runtime pytest probes use isolated databases. WAL and snapshot compatibility fixtures are encoded from the solver-visible format contract rather than product serializers. C ABI/C++20 preservation is compiler-validated against the published header and native sources.",
+  "classification_note": "F2P/P2P remain private authoring classifications; neutral pytest names are intentional. Q4 remediation removed the mechanism-coupled lock probe and two weak preservation probes, then added 19 contract probes. Current empirical evidence confirms exactly 30 F2P probes fail the starter and all 33 P2P probes pass it; Oracle passes all 63 probes. Two explicit grouping rules reduce 30 probes to 27 distinct change-required behavioral cases.",
   "empirical_evidence": {
-    "workflow_run_id": 32094975331,
-    "head_sha": "2f6abef06bbc690d1a888b34a01b103b18067598",
-    "validated_task_tree_sha": "33a8b3ea5bce04dff6bfbc7325fc8b1dcccc6424",
-    "main_equivalent_task_commit": "29b684f3439269762235665ab2e716da53214c1e",
-    "artifact_id": 9309650300,
-    "artifact_sha256": "eefb09162fa76252c081d8d8b96c2f8345920babf1815c483de4b2888330a850",
+    "workflow_run_id": 32104003033,
+    "head_sha": "0ffc0b374c4347591bc97f142bcb247b3b7b9013",
+    "validation_job_id": 95609817655,
+    "artifact_id": 9312568830,
+    "artifact_sha256": "ae8ebc41e485c0dc1aa8f0b08a9869e2044703d8ee889ebd55c0b28b6e10b8ee",
     "oracle_reward": 1,
-    "oracle_pytest": "47 passed",
+    "oracle_pytest": "63 passed",
     "nop_reward": 0,
-    "nop_pytest": "28 failed, 19 passed",
-    "f2p_transition": "28/28 planned F2P probes fail starter and pass Oracle",
-    "p2p_preservation": "19/19 planned P2P probes pass starter and Oracle"
-  }
+    "nop_pytest": "30 failed, 33 passed",
+    "f2p_transition": "30/30 classified F2P probes fail starter and pass Oracle",
+    "p2p_preservation": "33/33 classified P2P probes pass starter and Oracle"
+  },
+  "task_content_commit": "1cbdc0030a8a6483db4c91865aa60b8ef127c9c6",
+  "task_tree_hash": "b1ea76c23ea7bbc9652484de4c48702a5929b01b"
 }
