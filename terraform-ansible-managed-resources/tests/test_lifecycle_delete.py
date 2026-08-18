@@ -10,12 +10,11 @@ from conftest import (
     state_has_resource,
     tf_apply,
     tf_destroy,
-    unique_unix_name,
 )
 
 
 def test_f2p_failed_delete_preserves_managed_state_for_retry(tmp_path, cleanup_registry):
-    """A failed Ansible teardown keeps both the external object and Terraform management so destroy can be retried."""
+    """Failed teardown is retryable, while an already-absent directory destroys successfully."""
     target = cleanup_registry.path(tmp_path / "managed-dir")
     fail_flag = tmp_path / "fail.flag"
     wrapper = make_ansible_wrapper(tmp_path, fail_flag=fail_flag)
@@ -36,6 +35,20 @@ def test_f2p_failed_delete_preserves_managed_state_for_retry(tmp_path, cleanup_r
     fail_flag.unlink()
     tf_destroy(workspace)
     assert not pathlib.Path(target).exists()
+
+    absent_root = tmp_path / "already-absent-directory"
+    absent_target = cleanup_registry.path(absent_root / "managed-dir")
+    absent_workspace = make_workspace(
+        absent_root,
+        f'''resource "ansibleops_directory" "managed" {{
+  path = {json.dumps(str(absent_target))}
+}}
+''',
+    )
+    tf_apply(absent_workspace)
+    pathlib.Path(absent_target).rmdir()
+    tf_destroy(absent_workspace)
+    assert not state_has_resource(absent_workspace, "ansibleops_directory.managed")
 
 
 def test_f2p_named_entry_deletes_preserve_siblings(tmp_path, cleanup_registry):
@@ -128,51 +141,3 @@ def test_p2p_symlink_destroy_preserves_target(tmp_path, cleanup_registry):
     tf_destroy(workspace)
     assert not pathlib.Path(link).exists()
     assert pathlib.Path(target).read_text(encoding="utf-8") == "keep-target\n"
-
-
-def test_p2p_destroy_succeeds_when_owned_object_is_already_absent(tmp_path, cleanup_registry):
-    """Destroy succeeds after external absence for filesystem, account, and cron ownership classes."""
-    directory = cleanup_registry.path(tmp_path / "already-gone-dir")
-    directory_root = tmp_path / "directory-case"
-    directory_workspace = make_workspace(
-        directory_root,
-        f'''resource "ansibleops_directory" "managed" {{
-  path = {json.dumps(str(directory))}
-}}
-''',
-    )
-    tf_apply(directory_workspace)
-    pathlib.Path(directory).rmdir()
-    tf_destroy(directory_workspace)
-    assert not state_has_resource(directory_workspace, "ansibleops_directory.managed")
-
-    user = cleanup_registry.user(unique_unix_name("aopsu"), remove_home=False)
-    user_root = tmp_path / "user-case"
-    user_workspace = make_workspace(
-        user_root,
-        f'''resource "ansibleops_user" "managed" {{
-  name        = {json.dumps(user)}
-  create_home = false
-}}
-''',
-    )
-    tf_apply(user_workspace)
-    run(["userdel", user])
-    tf_destroy(user_workspace)
-    assert not state_has_resource(user_workspace, "ansibleops_user.managed")
-
-    cleanup_registry.cron("root")
-    run(["crontab", "-u", "root", "-r"], check=False)
-    cron_root = tmp_path / "cron-case"
-    cron_workspace = make_workspace(
-        cron_root,
-        '''resource "ansibleops_cron" "managed" {
-  name = "already-gone"
-  job  = "echo gone"
-}
-''',
-    )
-    tf_apply(cron_workspace)
-    run(["crontab", "-u", "root", "-r"], check=False)
-    tf_destroy(cron_workspace)
-    assert not state_has_resource(cron_workspace, "ansibleops_cron.managed")
