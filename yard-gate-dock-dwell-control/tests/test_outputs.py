@@ -459,6 +459,17 @@ def test_f2p_usage_empty_event_id_no_reject_append() -> None:
     assert not REJECTS.exists()
 
 
+def test_f2p_missing_required_flag_is_usage() -> None:
+    """gate-in without required flags exits 2 and must not append rejects.jsonl."""
+    if REJECTS.exists():
+        REJECTS.unlink()
+    journal_before = _journal_size()
+    proc = _run(["gate-in", "--event-id", _eid()])
+    assert proc.returncode == 2
+    assert _journal_size() == journal_before
+    assert not REJECTS.exists()
+
+
 # --- civil time / appointments ---
 
 
@@ -522,6 +533,58 @@ def test_f2p_outside_grace_window_rejected() -> None:
     )
     assert proc.returncode == 1
     assert _stdout_json(proc)["code"] == "APPOINTMENT_WINDOW"
+    rejects = _load_jsonl(REJECTS)
+    assert rejects
+    assert rejects[-1]["code"] == "APPOINTMENT_WINDOW"
+
+
+def test_f2p_grace_minutes_follow_yard_json() -> None:
+    """Raising grace_early_minutes in yard.json must accept an arrival that the shipped 30-minute band would reject."""
+    original = CONFIG.read_text(encoding="utf-8")
+    trailer = _trailer()
+    appt = _appt_id()
+    spot = _free_spot(("DROP_LOT", "STAGING"))
+    _insert_appointment(
+        appointment_id=appt,
+        scac="AAAA",
+        visit_type="DROP_IN",
+        door_class="DRY",
+        trailer=trailer,
+        window_start="2026-03-10T15:00:00Z",
+        window_end="2026-03-10T16:00:00Z",
+    )
+    try:
+        cfg = json.loads(original)
+        cfg["grace_early_minutes"] = 90
+        CONFIG.write_text(json.dumps(cfg, indent=2) + "\n", encoding="utf-8")
+        proc = _run(
+            [
+                "gate-in",
+                "--event-id",
+                _eid(),
+                "--scac",
+                "AAAA",
+                "--trailer",
+                trailer,
+                "--visit-type",
+                "DROP_IN",
+                "--equipment",
+                "DRY_53",
+                "--at",
+                "2026-03-10T13:45:00Z",
+                "--appointment-id",
+                appt,
+                "--spot-id",
+                spot,
+                "--on-ground",
+                "1",
+            ]
+        )
+        assert proc.returncode == 0, proc.stdout + proc.stderr
+        visit_id = str(_stdout_json(proc)["result"]["visit_id"])
+        assert _visit_row(visit_id)["state"] == "ON_YARD"
+    finally:
+        CONFIG.write_text(original, encoding="utf-8")
 
 
 def test_f2p_dst_horizon_grace_early() -> None:
@@ -1239,6 +1302,48 @@ def test_f2p_health_ok_when_caught_up_and_warehouse_untouched() -> None:
     assert isinstance(health["occupancy_digest"], str)
     assert len(health["occupancy_digest"]) == 64
     assert health["open_visit_ids"] == sorted(health["open_visit_ids"])
+
+
+def test_f2p_sqlite_lag_catchup_keeps_single_occupant() -> None:
+    """When sqlite applied_seq lags, the next mutating command catches up from the checkpoint fence without double occupancy."""
+    visit_id, spot, _ = _gate_drop()
+    trailer = str(_visit_row(visit_id)["trailer_number"])
+    con = _db()
+    try:
+        con.execute("UPDATE applied SET last_applied_seq = 0")
+        con.commit()
+    finally:
+        con.close()
+    hold = _run(
+        [
+            "hold",
+            "--event-id",
+            _eid(),
+            "--visit-id",
+            visit_id,
+            "--hold-code",
+            "YARD_SAFETY",
+            "--at",
+            "2026-03-10T15:41:00Z",
+        ]
+    )
+    assert hold.returncode == 0, hold.stdout + hold.stderr
+    assert _spot_row(spot)["occupant_visit_id"] == visit_id
+    con = _db()
+    try:
+        open_same = int(
+            con.execute(
+                "SELECT COUNT(*) FROM visits WHERE trailer_number = ? AND scac = ? "
+                "AND state IN ('ON_YARD','MOVING','DOCKED')",
+                (trailer, "AAAA"),
+            ).fetchone()[0]
+        )
+    finally:
+        con.close()
+    assert open_same == 1
+    events = _load_jsonl(JOURNAL)
+    head = max(int(event["seq"]) for event in events)
+    assert _applied_seq() == head
 
 
 def test_f2p_moves_publish_sorted_by_seq() -> None:

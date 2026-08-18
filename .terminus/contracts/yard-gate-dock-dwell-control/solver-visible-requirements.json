@@ -1,0 +1,89 @@
+{
+  "contract_version": "1.0",
+  "task_id": "yard-gate-dock-dwell-control",
+  "engineering_objective": "Repair the inherited Python/SQL yard desk so gate-in, occupancy, chassis, holds, detention clocks, journal catch-up, and warehouse-isolated publish agree with the binding yard contract.",
+  "affected_system_location": "/app/yard",
+  "required_end_state": "Operators drive /app/yard/bin/yardctl against a control plane that honors Chicago windows and grace, exclusive occupancy and dest reservation, chassis and hold class rules, journal-before-sqlite restart, and contracted snapshot/moves/detention/health/rejects schemas while leaving the prior-cycle warehouse untouched.",
+  "functional_requirements": [
+    "Drive operator work through /app/yard/bin/yardctl; keep the Python/SQL control plane.",
+    "Load yard.json and carrier_contracts.json on every command; yard_tz and grace minutes change window matching and live clock_start.",
+    "Usage failures exit 2 without creating or mutating the journal, sqlite, checkpoint, or any file under /app/yard/out including rejects.jsonl.",
+    "Mutating verbs require --event-id; identical event_id and payload replay without extra occupancy; a different payload is EVENT_CONFLICT.",
+    "Parsed-but-rejected mutating commands append one object to /app/yard/out/rejects.jsonl.",
+    "Gate-in matches OPEN appointments in yard_tz with grace, exclusive spots, door class/plug/live/drop, seals for loaded live types, and CONTRACT_MISSING when the SCAC/visit_type is absent.",
+    "Open visits are unique per (scac, trailer); pool appointments with a null trailer match that SCAC only.",
+    "DROP_IN occupies DROP_LOT or STAGING only; grounded DRY_53/REEFER_53/CONTAINER_40 need a mounted chassis before IN_TRANSIT; mount-chassis clears on_ground and a chassis mounts at most one open visit.",
+    "Dispatch vacates origin and reserves dest; confirm occupies dest; cancel restores origin.",
+    "All hold codes block gate-out until released; YARD_OSND and YARD_SAFETY pause detention; CARRIER_SEAL and CARRIER_DOCS do not.",
+    "LIVE clock_start is max(window_start, gate_in); drop and pickup types use gate_in; chargeable minutes are whole minutes after free time excluding pause intervals.",
+    "events.jsonl is source of truth; sqlite is derived; mutating commands catch up seq after checkpoint.last_applied_seq; replay must not invent or drop open visits.",
+    "Publish snapshot, moves, detention, and health per the contract schemas; health.ok requires matching seqs, matching occupancy digest, and warehouse_untouched."
+  ],
+  "preservation_requirements": [
+    "Keep the existing Python/SQL yardctl plane; do not move the desk into another language.",
+    "Leave /app/yard/warehouse/prior_cycle.sqlite out of live occupancy and live charges.",
+    "Preserve inherited operating scale (visits, doors, spots) and the shipped yard_tz/grace values unless a test mutates them."
+  ],
+  "compatibility_requirements": [
+    "Knobs remain in /app/yard/config/yard.json and /app/yard/config/carrier_contracts.json.",
+    "Binding contract remains /app/yard/docs/yard-contract.md."
+  ],
+  "safety_requirements": [
+    "Usage errors must not touch journal, sqlite, checkpoint, or out files.",
+    "EVENT_CONFLICT leaves occupancy unchanged.",
+    "Warehouse prior-cycle rows must not mix into live snapshot, detention, or health occupancy."
+  ],
+  "referenced_docs": [
+    "/app/yard/docs/yard-contract.md",
+    "/app/yard/ops/handoff.txt",
+    "/app/yard/logs/gate-desk.log",
+    "/app/yard/config/yard.json",
+    "/app/yard/config/carrier_contracts.json"
+  ],
+  "required_outputs": [
+    {
+      "path": "/app/yard/out/snapshot.json",
+      "notes": "Contracted snapshot schema and sort order."
+    },
+    {
+      "path": "/app/yard/out/moves.jsonl",
+      "notes": "Move extract sorted by seq."
+    },
+    {
+      "path": "/app/yard/out/detention.jsonl",
+      "notes": "Live operating visits only; contracted field order."
+    },
+    {
+      "path": "/app/yard/out/health.json",
+      "notes": "ok, applied_seq, journal_seq, occupancy_digest, open_visit_ids, warehouse_untouched."
+    },
+    {
+      "path": "/app/yard/out/rejects.jsonl",
+      "notes": "Parsed-but-rejected mutating commands only."
+    },
+    {
+      "path": "/app/yard/var/events.jsonl",
+      "notes": "Accepted-event journal; source of truth."
+    },
+    {
+      "path": "/app/yard/var/yard.sqlite",
+      "notes": "Derived operating state."
+    },
+    {
+      "path": "/app/yard/var/checkpoint.json",
+      "notes": "last_applied_seq, sorted open_visit_ids, occupancy digest."
+    }
+  ],
+  "current_state_claims": [
+    "The DC-AUR-01 yard desk drifted after a gate-to-dock control patch.",
+    "Shift notes and the desk log remain under /app/yard/ops and /app/yard/logs."
+  ],
+  "current_state_evidence": [
+    "/app/yard/ops/handoff.txt",
+    "/app/yard/logs/gate-desk.log"
+  ],
+  "source_task_commit": "1320dba179b9dc7f4d44c6de5b8e6a052180d031",
+  "control_plane_commit": "6e3944669a62da5c2a9ae9c6a2528e11b772ca86",
+  "private_sources_excluded": true,
+  "requirement_contract_hash": "sha256:5884fac2b97db22237f6e9725e817b1159ad400c97e749288bce16f512f7eed5"
+}

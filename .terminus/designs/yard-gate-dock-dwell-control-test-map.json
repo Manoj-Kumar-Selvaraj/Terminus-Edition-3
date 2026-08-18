@@ -1,30 +1,89 @@
 {
+  "schema_version": "1.0",
   "task": "yard-gate-dock-dwell-control",
-  "oracle_local": "33 passed",
-  "starter_local": "28 failed / 5 passed (3 P2P + on-window + outside-grace)",
-  "f2p_count": 30,
-  "p2p_count": 3,
-  "surfaces": [
-    "usage_no_touch",
-    "grace_early_late",
-    "dst_horizon_grace",
-    "live_clock_start",
-    "drop_clock_start",
-    "exclusive_spot",
-    "in_transit_vacancy_reservation",
-    "confirm_cancel",
-    "dest_reservation",
-    "reefer_plug",
-    "drop_apron",
-    "chassis_require_mount_exclusive",
-    "hold_block_release",
-    "pause_vs_carrier",
-    "event_id_replay_conflict",
-    "seal_contract_pool_identity",
-    "warehouse_isolation",
-    "health_digest",
-    "moves_sorted"
+  "requirements": {
+    "R_CLI": "Unknown verb/flag, missing required flags, or empty --event-id exit 2 without touching journal, sqlite, checkpoint, or out files.",
+    "R_WINDOW": "Gate-in honors yard_tz windows including DST.",
+    "R_GRACE": "grace_early_minutes and grace_late_minutes accept in-band arrivals and reject beyond the band.",
+    "R_CONFIG": "yard.json grace minutes change window matching.",
+    "R_CLOCK": "LIVE clock_start is max(window_start, gate_in); drop/pickup uses gate_in.",
+    "R_SPOT": "A second occupant of a busy spot is SPOT_OCCUPIED.",
+    "R_MOVE": "IN_TRANSIT vacates origin, reserves dest; confirm relocates; cancel restores origin; reserved dest blocks another dispatch.",
+    "R_DOOR": "REEFER_53 needs a plug; DROP_IN may not occupy DOCK_APRON.",
+    "R_CHASSIS": "Grounded drop equipment needs wheels before IN_TRANSIT; mount clears on_ground and is exclusive.",
+    "R_HOLD": "Active holds block gate-out until release.",
+    "R_PAUSE": "YARD holds pause detention; CARRIER holds do not.",
+    "R_EVENT": "Identical event_id+payload replays; different payload is EVENT_CONFLICT.",
+    "R_SEAL": "Loaded live types require a seal.",
+    "R_CONTRACT": "Missing SCAC/visit_type in carrier_contracts.json is CONTRACT_MISSING.",
+    "R_IDENTITY": "Open visits are unique per (scac, trailer).",
+    "R_POOL": "Pool appointments match the appointment SCAC only.",
+    "R_WAREHOUSE": "Snapshot and detention omit prior-cycle warehouse visits.",
+    "R_HEALTH": "health.ok requires matching seqs, occupancy digest, and warehouse_untouched.",
+    "R_JOURNAL": "Sqlite catch-up from the checkpoint fence does not double-occupy.",
+    "R_MOVES": "moves.jsonl is sorted by seq.",
+    "R_PRESERVE": "yardctl, contract, scale, and shipped timezone/grace remain present."
+  },
+  "tests": [
+    ["test_p2p_bin_and_contract_present", "P2P", "R_PRESERVE"],
+    ["test_p2p_seed_scale_preserved", "P2P", "R_PRESERVE"],
+    ["test_p2p_config_timezone_and_grace", "P2P", "R_PRESERVE"],
+    ["test_f2p_usage_unknown_verb_leaves_artifacts_untouched", "F2P", "R_CLI", "CLI_USAGE"],
+    ["test_f2p_usage_empty_event_id_no_reject_append", "F2P", "R_CLI", "CLI_USAGE"],
+    ["test_f2p_missing_required_flag_is_usage", "F2P", "R_CLI", "CLI_USAGE"],
+    ["test_f2p_on_window_gate_in_succeeds", "F2P", "R_WINDOW"],
+    ["test_f2p_grace_early_accepts", "F2P", "R_GRACE", "GRACE_BAND"],
+    ["test_f2p_grace_late_accepts", "F2P", "R_GRACE", "GRACE_BAND"],
+    ["test_f2p_outside_grace_window_rejected", "F2P", "R_GRACE"],
+    ["test_f2p_grace_minutes_follow_yard_json", "F2P", "R_CONFIG"],
+    ["test_f2p_dst_horizon_grace_early", "F2P", "R_WINDOW"],
+    ["test_f2p_live_clock_start_is_max_window_and_gate", "F2P", "R_CLOCK"],
+    ["test_f2p_drop_clock_start_is_gate_in", "F2P", "R_CLOCK"],
+    ["test_f2p_exclusive_spot_blocks_second_occupant", "F2P", "R_SPOT"],
+    ["test_f2p_dispatch_vacates_origin_and_reserves_dest", "F2P", "R_MOVE"],
+    ["test_f2p_confirm_move_relocates_occupancy", "F2P", "R_MOVE"],
+    ["test_f2p_cancel_move_restores_origin", "F2P", "R_MOVE"],
+    ["test_f2p_dest_reservation_blocks_second_dispatch", "F2P", "R_MOVE"],
+    ["test_f2p_reefer_on_dry_door_rejected", "F2P", "R_DOOR"],
+    ["test_f2p_drop_on_apron_rejected", "F2P", "R_DOOR"],
+    ["test_f2p_grounded_drop_requires_chassis_before_move", "F2P", "R_CHASSIS"],
+    ["test_f2p_mount_clears_on_ground_and_is_exclusive", "F2P", "R_CHASSIS"],
+    ["test_f2p_hold_blocks_gate_out_until_release", "F2P", "R_HOLD"],
+    ["test_f2p_yard_hold_pauses_detention_carrier_does_not", "F2P", "R_PAUSE"],
+    ["test_f2p_identical_event_id_replays_without_double_occupancy", "F2P", "R_EVENT"],
+    ["test_f2p_event_id_payload_conflict", "F2P", "R_EVENT"],
+    ["test_f2p_seal_required_for_live_in", "F2P", "R_SEAL"],
+    ["test_f2p_contract_missing_for_holdout_scac", "F2P", "R_CONTRACT"],
+    ["test_f2p_open_key_is_scac_and_trailer", "F2P", "R_IDENTITY"],
+    ["test_f2p_pool_appointment_same_scac_only", "F2P", "R_POOL"],
+    ["test_f2p_snapshot_excludes_warehouse_visits", "F2P", "R_WAREHOUSE", "WAREHOUSE_LIVE"],
+    ["test_f2p_detention_excludes_warehouse_visits", "F2P", "R_WAREHOUSE", "WAREHOUSE_LIVE"],
+    ["test_f2p_health_ok_when_caught_up_and_warehouse_untouched", "F2P", "R_HEALTH"],
+    ["test_f2p_sqlite_lag_catchup_keeps_single_occupant", "F2P", "R_JOURNAL"],
+    ["test_f2p_moves_publish_sorted_by_seq", "F2P", "R_MOVES"]
   ],
-  "artifacts": ["/app/yard"],
-  "notes": "Tests drive /app/yard/bin/yardctl. Derive expectations from docs/yard-contract.md. Apron liberate helper gates out a seed docked visit when free aprons are exhausted."
+  "behavioral_case_groups": {
+    "CLI_USAGE": {
+      "tests": [
+        "test_f2p_usage_unknown_verb_leaves_artifacts_untouched",
+        "test_f2p_usage_empty_event_id_no_reject_append",
+        "test_f2p_missing_required_flag_is_usage"
+      ],
+      "rationale": "Three probes of the same usage fence: unknown verb, empty event-id, and missing required flags."
+    },
+    "GRACE_BAND": {
+      "tests": [
+        "test_f2p_grace_early_accepts",
+        "test_f2p_grace_late_accepts"
+      ],
+      "rationale": "Early and late grace are one inclusive band around the appointment window."
+    },
+    "WAREHOUSE_LIVE": {
+      "tests": [
+        "test_f2p_snapshot_excludes_warehouse_visits",
+        "test_f2p_detention_excludes_warehouse_visits"
+      ],
+      "rationale": "Snapshot and detention are two publish surfaces of the same warehouse-isolation invariant."
+    }
+  }
 }
