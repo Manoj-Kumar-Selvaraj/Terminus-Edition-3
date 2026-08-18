@@ -55,8 +55,31 @@
   ],
   "counts": {"f2p": 28, "p2p": 6},
   "empirical_gate": {
-    "starter_nop": "PENDING_CURRENT_RERUN_AFTER_CLASSIFICATION_RENAME",
-    "oracle": "PENDING_CURRENT_RERUN_AFTER_CLASSIFICATION_RENAME",
+    "starter_nop": "VERIFIED_CURRENT",
+    "oracle": "VERIFIED_CURRENT",
+    "current_evidence": {
+      "task_commit": "72a1016159690c446baba7290de6d9bc306accd2",
+      "branch_head": "d15b4deafd789a9e8d3ea758ec64e3260ec1a98c",
+      "workflow_run": 32095514025,
+      "attempt": 1,
+      "job_id": 95586028335,
+      "artifact_id": 9309905543,
+      "artifact_digest": "sha256:c398d6f2a7e68b98c3a45110052f2d46936566b91a69f2f4f32e47017cd3dfd5",
+      "workflow_merge_commit": "4b1e8feb2f867dd8abc95ba5343f987bdcf51f21",
+      "oracle_reward": 1,
+      "oracle_matrix": "34 passed / 34 total",
+      "nop_reward": 0,
+      "nop_matrix": "28 failed / 6 passed",
+      "nop_passes": [
+        "test_p2p_declared_provider_artifact_root_is_mounted",
+        "test_p2p_provider_exposes_exact_managed_resource_set",
+        "test_p2p_directory_basic_apply_state_and_destroy",
+        "test_p2p_state_is_owned_by_terraform_core",
+        "test_p2p_template_variable_order_is_semantically_stable",
+        "test_p2p_symlink_destroy_preserves_target"
+      ],
+      "classification_check": "Every F2P failed on NOP and every P2P passed on NOP; all 34 passed on Oracle."
+    },
     "prior_evidence": {
       "workflow_run": 32048299413,
       "attempt": 2,
@@ -65,10 +88,8 @@
       "oracle_reward": 1,
       "oracle_matrix": "34 passed / 34 total",
       "nop_reward": 0,
-      "nop_matrix": "28 failed / 6 passed",
-      "classification_observation": "The two NOP-passing behaviors were template variable-map order stability and symlink-target preservation on destroy; their assertions are unchanged and are now classified P2P."
-    },
-    "note": "The assertions are unchanged, but the renamed current test identities require a fresh exact-commit deterministic rerun before freeze."
+      "nop_matrix": "28 failed / 6 passed"
+    }
   },
   "coverage": {
     "normal": ["provider schema","basic lifecycle","copy/template mutation","user/group/cron creation"],
