@@ -1,27 +1,292 @@
 package reconcile
 
-import(
-    "context"
-    "fmt"
-    "sync"
-    "sync/atomic"
-    "time"
+import (
+	"context"
+	"errors"
+	"fmt"
+	"sort"
+	"sync"
+	"sync/atomic"
+	"time"
 
-    "edge-router-runtime/internal/checkpoint"
-    "edge-router-runtime/internal/compiler"
-    "edge-router-runtime/internal/config"
-    "edge-router-runtime/internal/drain"
-    rt "edge-router-runtime/internal/runtime"
-    "edge-router-runtime/internal/telemetry"
+	"edge-router/internal/checkpoint"
+	"edge-router/internal/compiler"
+	"edge-router/internal/config"
+	rt "edge-router/internal/runtime"
 )
 
-type Reconciler struct{compiler *compiler.Compiler;store *rt.PublicationStore;checkpoints *checkpoint.Store;drains *drain.Manager;telemetry *telemetry.Registry;writer sync.Mutex;acceptedMu sync.RWMutex;acceptedRevision map[string]uint64;acceptedDigest map[string]string;generation atomic.Uint64;incMu sync.Mutex;incarnations map[string]uint64;retired map[string]*rt.EndpointRuntime}
-func New(c *compiler.Compiler,s *rt.PublicationStore,cp *checkpoint.Store,d *drain.Manager,t *telemetry.Registry)*Reconciler{return &Reconciler{compiler:c,store:s,checkpoints:cp,drains:d,telemetry:t,acceptedRevision:map[string]uint64{},acceptedDigest:map[string]string{},incarnations:map[string]uint64{},retired:map[string]*rt.EndpointRuntime{}}}
-func (r *Reconciler) Current()*rt.RuntimeSnapshot{return r.store.Current()}
-func (r *Reconciler) AcceptedRevision(source string)uint64{r.acceptedMu.RLock();defer r.acceptedMu.RUnlock();return r.acceptedRevision[source]}
-func (r *Reconciler) Process(ctx context.Context,candidate config.Candidate)config.SubmitResult{_ = ctx;currentRev:=r.AcceptedRevision(candidate.Source);if candidate.Revision<currentRev{return config.SubmitResult{Source:candidate.Source,Revision:candidate.Revision,Digest:candidate.Digest,Outcome:"stale"}};r.acceptedMu.Lock();r.acceptedRevision[candidate.Source]=candidate.Revision;r.acceptedDigest[candidate.Source]=candidate.Digest;r.acceptedMu.Unlock();compiled,err:=r.compiler.Compile(candidate.Document);if err!=nil{r.generation.Add(1);r.telemetry.Counter("edge_update_rejected_total",map[string]string{"source":candidate.Source}).Inc();return config.SubmitResult{Source:candidate.Source,Revision:candidate.Revision,Digest:candidate.Digest,Outcome:"rejected",Message:err.Error()}};r.writer.Lock();defer r.writer.Unlock();return r.publish(candidate,compiled)}
-func (r *Reconciler) publish(candidate config.Candidate,compiled *compiler.Result)config.SubmitResult{old:=r.store.Current();if candidate.Revision==r.acceptedRevision[candidate.Source]&&candidate.Digest==r.acceptedDigest[candidate.Source]&&old!=nil{r.telemetry.Counter("edge_update_duplicate_seen_total",map[string]string{"source":candidate.Source}).Inc()};generation:=r.generation.Add(1);if old!=nil&&generation<=old.Generation{generation=old.Generation+1;r.generation.Store(generation)};pools:=map[string]*rt.PoolRuntime{};oldPools:=map[string]*rt.PoolRuntime{};if old!=nil{for id,p:=range old.Pools{oldPools[id]=p}};for id,cfg:=range compiled.PoolConfigs{existing:=oldPools[id];pool,err:=r.buildPool(cfg,existing);if err!=nil{return config.SubmitResult{Source:candidate.Source,Revision:candidate.Revision,Digest:candidate.Digest,Outcome:"rejected",Message:err.Error()};pools[id]=pool};snap:=&rt.RuntimeSnapshot{Generation:generation,CreatedAt:time.Now(),Routes:compiled.Routes,Pools:pools,PoolConfigs:compiled.PoolConfigs,SourceRevisions:compiled.SourceRevisions,SourceDigests:compiled.SourceDigests,Desired:compiled.Desired,Digest:compiled.Digest};cp:=checkpoint.Checkpoint{Generation:generation,AcceptedSources:compiled.Desired.Sources,Desired:compiled.Desired,Digest:compiled.Digest};if _,err:=r.checkpoints.Prepare(cp);err!=nil{return config.SubmitResult{Source:candidate.Source,Revision:candidate.Revision,Digest:candidate.Digest,Outcome:"rejected",Message:"checkpoint prepare: "+err.Error()}};r.store.Publish(snap);r.telemetry.RegisterScope("generation",fmt.Sprintf("%d",generation));r.telemetry.Gauge("edge_current_generation",nil).Set(int64(generation));r.telemetry.Counter("edge_update_accepted_total",map[string]string{"source":candidate.Source}).Inc();r.retireRemoved(old,snap);_ = r.checkpoints.Commit(generation);return config.SubmitResult{Source:candidate.Source,Revision:candidate.Revision,Digest:candidate.Digest,Outcome:"accepted"}}
-func (r *Reconciler) buildPool(cfg config.Pool,existing *rt.PoolRuntime)(*rt.PoolRuntime,error){fingerprint:=config.PoolCompatibility(cfg);if existing!=nil&&existing.Fingerprint==fingerprint{existing.Strategy=cfg.Strategy;existing.Affinity=cfg.Affinity;return existing,nil};pool:=rt.NewPoolRuntime(cfg.ID,fingerprint,cfg.Strategy,cfg.Affinity);for _,epcfg:=range cfg.Endpoints{identity,err:=config.NormalizeAddress(epcfg.Address,cfg.Transport.Scheme);if err!=nil{return nil,err};key:=cfg.ID+"|"+identity;r.incMu.Lock();inc:=r.incarnations[key];if inc==0{inc=1;r.incarnations[key]=inc};old:=r.retired[key];r.incMu.Unlock();if old!=nil{old.Reactivate();old.Weight=epcfg.Weight;old.Zone=epcfg.Zone;pool.Endpoints=append(pool.Endpoints,old);continue};pool.Endpoints=append(pool.Endpoints,rt.NewEndpointRuntime(cfg.ID,identity,epcfg.Address,inc,epcfg.Weight,epcfg.Zone));r.telemetry.RegisterScope("endpoint",fmt.Sprintf("%s#%d",key,inc))};return pool,nil}
-func (r *Reconciler) retireRemoved(old,next *rt.RuntimeSnapshot){if old==nil{return};present:=map[string]struct{}{};for _,p:=range next.Pools{for _,ep:=range p.Endpoints{present[ep.PoolID+"|"+ep.Identity]=struct{}{}}};deadline:=time.Now().Add(time.Duration(max(next.Desired.Defaults.DrainTimeoutMS,5000))*time.Millisecond);for _,p:=range old.Pools{for _,ep:=range p.Endpoints{key:=ep.PoolID+"|"+ep.Identity;if _,ok:=present[key];ok{continue};r.incMu.Lock();r.retired[key]=ep;r.incMu.Unlock();r.drains.Start(ep,deadline)}}}
-func (r *Reconciler) RestoreMetadata(generation uint64,sources []config.SourceState){r.generation.Store(generation);r.acceptedMu.Lock();for _,s:=range sources{r.acceptedRevision[s.Name]=s.Revision;r.acceptedDigest[s.Name]=s.Digest};r.acceptedMu.Unlock()}
-func (r *Reconciler) Status()map[string]any{r.acceptedMu.RLock();defer r.acceptedMu.RUnlock();revs:=map[string]uint64{};for k,v:=range r.acceptedRevision{revs[k]=v};return map[string]any{"generation":r.generation.Load(),"accepted_revisions":revs,"draining":r.drains.Pending()}}
+type EventKind string
+
+const (
+	EventAccepted EventKind = "accepted"
+	EventRejected EventKind = "rejected"
+	EventDuplicate EventKind = "duplicate"
+	EventStale EventKind = "stale"
+	EventConflict EventKind = "conflict"
+)
+
+type Event struct {
+	Kind EventKind `json:"kind"`
+	Source string `json:"source"`
+	Revision int64 `json:"revision"`
+	Generation uint64 `json:"generation"`
+	Digest string `json:"digest,omitempty"`
+	Message string `json:"message,omitempty"`
+	At time.Time `json:"at"`
+}
+
+type Status struct {
+	Generation uint64 `json:"generation"`
+	AcceptedRevisions map[string]int64 `json:"accepted_revisions"`
+	AcceptedDigests map[string]string `json:"accepted_digests"`
+	LastEvent Event `json:"last_event"`
+	Ready bool `json:"ready"`
+}
+
+type Reconciler struct {
+	mu sync.Mutex
+	ingress *config.Ingress
+	compiler *compiler.Compiler
+	store *rt.PublicationStore
+	checkpoints *checkpoint.Store
+	registry *rt.Registry
+	generation atomic.Uint64
+	acceptedRevisions map[string]int64
+	acceptedDigests map[string]string
+	lastEvent Event
+	ready atomic.Bool
+	onPublish func(previous, current *rt.RuntimeSnapshot)
+}
+
+func New(ingress *config.Ingress, compiler *compiler.Compiler, store *rt.PublicationStore, checkpoints *checkpoint.Store, registry *rt.Registry) *Reconciler {
+	return &Reconciler{
+		ingress: ingress,
+		compiler: compiler,
+		store: store,
+		checkpoints: checkpoints,
+		registry: registry,
+		acceptedRevisions: make(map[string]int64),
+		acceptedDigests: make(map[string]string),
+	}
+}
+
+func (r *Reconciler) SetPublishHook(hook func(previous, current *rt.RuntimeSnapshot)) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	r.onPublish = hook
+}
+
+func (r *Reconciler) Run(ctx context.Context) error {
+	for {
+		envelope, err := r.ingress.Next(ctx)
+		if err != nil {
+			if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
+				return nil
+			}
+			return err
+		}
+		result := r.Apply(ctx, envelope)
+		envelope.Result <- result
+		close(envelope.Result)
+	}
+}
+
+func (r *Reconciler) Apply(ctx context.Context, envelope config.UpdateEnvelope) config.UpdateResult {
+	source := envelope.Snapshot.Source
+	revision := envelope.Snapshot.Revision
+	r.mu.Lock()
+	acceptedRevision := r.acceptedRevisions[source]
+	acceptedDigest := r.acceptedDigests[source]
+	if revision < acceptedRevision {
+		r.recordLocked(Event{Kind: EventStale, Source: source, Revision: revision, Digest: envelope.Digest, Message: "revision is stale"})
+		r.mu.Unlock()
+		return config.UpdateResult{Status: config.StatusStale, Source: source, Revision: revision, Generation: r.generation.Load()}
+	}
+	if revision == acceptedRevision && revision != 0 {
+		if acceptedDigest == envelope.Digest || acceptedDigest == "" {
+			r.recordLocked(Event{Kind: EventDuplicate, Source: source, Revision: revision, Digest: envelope.Digest})
+			r.mu.Unlock()
+			return config.UpdateResult{Status: config.StatusDuplicate, Source: source, Revision: revision, Generation: r.generation.Load()}
+		}
+		r.recordLocked(Event{Kind: EventConflict, Source: source, Revision: revision, Digest: envelope.Digest, Message: "same revision already observed"})
+		r.mu.Unlock()
+		return config.UpdateResult{Status: config.StatusDuplicate, Source: source, Revision: revision, Generation: r.generation.Load()}
+	}
+	r.mu.Unlock()
+
+	candidate := r.ingress.MergeCandidate(envelope)
+	validation := config.Validate(candidate)
+	if err := config.ValidationErrors(validation); err != nil {
+		generation := r.generation.Add(1)
+		r.mu.Lock()
+		r.acceptedRevisions[source] = revision
+		r.recordLocked(Event{Kind: EventRejected, Source: source, Revision: revision, Generation: generation, Digest: envelope.Digest, Message: err.Error()})
+		r.mu.Unlock()
+		return config.UpdateResult{Status: config.StatusRejected, Source: source, Revision: revision, Generation: generation, Message: err.Error()}
+	}
+
+	generation := r.generation.Add(1)
+	snapshot, err := r.compiler.Compile(validation.State, generation)
+	if err != nil {
+		r.mu.Lock()
+		r.acceptedRevisions[source] = revision
+		r.recordLocked(Event{Kind: EventRejected, Source: source, Revision: revision, Generation: generation, Digest: envelope.Digest, Message: err.Error()})
+		r.mu.Unlock()
+		return config.UpdateResult{Status: config.StatusRejected, Source: source, Revision: revision, Generation: generation, Message: err.Error()}
+	}
+
+	if ctx.Err() != nil {
+		return config.UpdateResult{Status: config.StatusRejected, Source: source, Revision: revision, Generation: generation, Message: ctx.Err().Error()}
+	}
+
+	body, err := r.checkpoints.Prepare(snapshot)
+	if err != nil {
+		return config.UpdateResult{Status: config.StatusRejected, Source: source, Revision: revision, Generation: generation, Message: err.Error()}
+	}
+	if err := r.checkpoints.Commit(body); err != nil {
+		return config.UpdateResult{Status: config.StatusRejected, Source: source, Revision: revision, Generation: generation, Message: err.Error()}
+	}
+
+	previous := r.store.Current()
+	r.store.Publish(snapshot)
+	r.applyRemovalLifecycle(previous, snapshot)
+
+	r.mu.Lock()
+	r.acceptedRevisions[source] = revision
+	r.acceptedDigests[source] = envelope.Digest
+	r.recordLocked(Event{Kind: EventAccepted, Source: source, Revision: revision, Generation: generation, Digest: envelope.Digest})
+	hook := r.onPublish
+	r.ready.Store(true)
+	r.mu.Unlock()
+	if hook != nil {
+		hook(previous, snapshot)
+	}
+	return config.UpdateResult{Status: config.StatusAccepted, Source: source, Revision: revision, Generation: generation}
+}
+
+func (r *Reconciler) applyRemovalLifecycle(previous, current *rt.RuntimeSnapshot) {
+	if previous == nil || current == nil {
+		return
+	}
+	currentIDs := make(map[string]struct{})
+	for _, pool := range current.Pools {
+		for _, endpoint := range pool.Endpoints {
+			currentIDs[endpoint.Identity] = struct{}{}
+		}
+	}
+	for _, pool := range previous.Pools {
+		for _, endpoint := range pool.Endpoints {
+			if _, exists := currentIDs[endpoint.Identity]; exists || endpoint.Runtime == nil {
+				continue
+			}
+			deadline := time.Now().UTC().Add(time.Duration(pool.Drain.TimeoutMillis) * time.Millisecond)
+			endpoint.Runtime.MarkDraining(deadline)
+			endpoint.Runtime.Retire()
+		}
+	}
+}
+
+func (r *Reconciler) Recover(body checkpoint.Body) (*rt.RuntimeSnapshot, error) {
+	if body.Generation == 0 {
+		return nil, errors.New("checkpoint generation is zero")
+	}
+	snapshot, err := r.compiler.Compile(body.Desired, body.Generation)
+	if err != nil {
+		return nil, err
+	}
+	snapshot.SourceRevisions = rt.CloneRevisions(body.SourceRevisions)
+	snapshot.SourceDigests = rt.CloneDigests(body.SourceDigests)
+	r.store.Publish(snapshot)
+	r.generation.Store(body.Generation)
+	r.mu.Lock()
+	r.acceptedRevisions = rt.CloneRevisions(body.SourceRevisions)
+	r.acceptedDigests = rt.CloneDigests(body.SourceDigests)
+	r.ready.Store(true)
+	r.recordLocked(Event{Kind: EventAccepted, Source: "recovery", Revision: int64(body.Generation), Generation: body.Generation, Message: "restored checkpoint"})
+	r.mu.Unlock()
+	return snapshot, nil
+}
+
+func (r *Reconciler) Bootstrap(state rt.DesiredState) (*rt.RuntimeSnapshot, error) {
+	validation := config.Validate(state)
+	if err := config.ValidationErrors(validation); err != nil {
+		return nil, err
+	}
+	generation := r.generation.Add(1)
+	snapshot, err := r.compiler.Compile(validation.State, generation)
+	if err != nil {
+		return nil, err
+	}
+	r.store.Publish(snapshot)
+	r.mu.Lock()
+	r.acceptedRevisions = rt.CloneRevisions(state.SourceRevisions)
+	r.acceptedDigests = rt.CloneDigests(state.SourceDigests)
+	r.ready.Store(true)
+	r.recordLocked(Event{Kind: EventAccepted, Source: "bootstrap", Revision: int64(generation), Generation: generation, Message: "bootstrap configuration published"})
+	r.mu.Unlock()
+	return snapshot, nil
+}
+
+func (r *Reconciler) Status() Status {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	return Status{
+		Generation: r.generation.Load(),
+		AcceptedRevisions: rt.CloneRevisions(r.acceptedRevisions),
+		AcceptedDigests: rt.CloneDigests(r.acceptedDigests),
+		LastEvent: r.lastEvent,
+		Ready: r.ready.Load(),
+	}
+}
+
+func (r *Reconciler) SetReady(ready bool) {
+	r.ready.Store(ready)
+}
+
+func (r *Reconciler) Generation() uint64 {
+	return r.generation.Load()
+}
+
+func (r *Reconciler) recordLocked(event Event) {
+	if event.At.IsZero() {
+		event.At = time.Now().UTC()
+	}
+	if event.Generation == 0 {
+		event.Generation = r.generation.Load()
+	}
+	r.lastEvent = event
+}
+
+func DiffEndpoints(previous, current *rt.RuntimeSnapshot) (added, removed, retained []string) {
+	previousIDs := snapshotEndpointIDs(previous)
+	currentIDs := snapshotEndpointIDs(current)
+	for id := range currentIDs {
+		if _, exists := previousIDs[id]; exists {
+			retained = append(retained, id)
+		} else {
+			added = append(added, id)
+		}
+	}
+	for id := range previousIDs {
+		if _, exists := currentIDs[id]; !exists {
+			removed = append(removed, id)
+		}
+	}
+	sort.Strings(added)
+	sort.Strings(removed)
+	sort.Strings(retained)
+	return
+}
+
+func snapshotEndpointIDs(snapshot *rt.RuntimeSnapshot) map[string]struct{} {
+	out := make(map[string]struct{})
+	if snapshot == nil {
+		return out
+	}
+	for poolID, pool := range snapshot.Pools {
+		for _, endpoint := range pool.Endpoints {
+			out[fmt.Sprintf("%s/%s", poolID, endpoint.Identity)] = struct{}{}
+		}
+	}
+	return out
+}

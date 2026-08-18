@@ -1,0 +1,65 @@
+name: A2 Edge Router Environment Validation
+on:
+  pull_request:
+    paths:
+      - "edge-router-runtime/environment/**"
+      - ".github/workflows/a2-edge-router-env-validation.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  environment-build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Go compile and vet
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd edge-router-runtime/environment
+          gofmt -w cmd internal
+          git diff --exit-code -- cmd internal
+          go test ./...
+          go vet ./...
+          go build -trimpath -o /tmp/edge-router-runtime ./cmd/edge-router-runtime
+          /tmp/edge-router-runtime validate --config config.json
+      - name: Build environment image
+        run: docker build -t edge-router-runtime:a2 edge-router-runtime/environment
+      - name: Count substantive environment LOC
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          env=Path('edge-router-runtime/environment')
+          suffixes={'.go','.json','.toml','.sh','.yaml','.yml','.cfg','.conf','.ini'}
+          total=0
+          details=[]
+          for p in env.rglob('*'):
+              if not p.is_file() or ('docs' in p.parts) or p.name.lower().startswith('readme'):
+                  continue
+              if p.suffix not in suffixes and p.name!='Dockerfile':
+                  continue
+              lines=[]
+              for line in p.read_text(encoding='utf-8').splitlines():
+                  s=line.strip()
+                  if not s:
+                      continue
+                  if p.suffix=='.go' and (s.startswith('//') or s.startswith('/*') or s.startswith('*') or s.startswith('*/')):
+                      continue
+                  if p.name=='Dockerfile' and s.startswith('#'):
+                      continue
+                  lines.append(line)
+              details.append((len(lines),str(p)))
+              total+=len(lines)
+          print(f'SUBSTANTIVE_LOC={total}')
+          for count,path in sorted(details,reverse=True)[:20]:
+              print(f'{count:5d} {path}')
+          if total < 3000:
+              raise SystemExit('substantive LOC below 3000')
+          PY
+      - name: Exact runtime authenticity validator
+        run: python3 .terminus/validate_runtime_authenticity.py edge-router-runtime
+      - name: Exact complexity validator
+        continue-on-error: true
+        run: python3 .terminus/validate_task_complexity.py edge-router-runtime

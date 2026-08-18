@@ -1,27 +1,235 @@
 package router
 
-import(
-    "context"
-    "encoding/json"
-    "errors"
-    "io"
-    "net/http"
-    "strings"
-    "time"
+import (
+	"bytes"
+	"context"
+	"encoding/json"
+	"errors"
+	"fmt"
+	"io"
+	"log/slog"
+	"net/http"
+	"strings"
+	"sync/atomic"
+	"time"
 
-    "edge-router-runtime/internal/health"
-    rt "edge-router-runtime/internal/runtime"
-    "edge-router-runtime/internal/selection"
-    "edge-router-runtime/internal/telemetry"
-    "edge-router-runtime/internal/upstream"
+	rt "edge-router/internal/runtime"
+	"edge-router/internal/selection"
+	"edge-router/internal/telemetry"
+	"edge-router/internal/upstream"
 )
 
-type Server struct{store *rt.PublicationStore;selector *selection.Engine;transport *upstream.Manager;health *health.Manager;telemetry *telemetry.Registry;server *http.Server}
-func New(addr string,store *rt.PublicationStore,sel *selection.Engine,tr *upstream.Manager,h *health.Manager,t *telemetry.Registry)*Server{s:=&Server{store:store,selector:sel,transport:tr,health:h,telemetry:t};s.server=&http.Server{Addr:addr,Handler:s,ReadHeaderTimeout:10*time.Second,IdleTimeout:90*time.Second};return s}
-func (s *Server) ListenAndServe()error{err:=s.server.ListenAndServe();if errors.Is(err,http.ErrServerClosed){return nil};return err}
-func (s *Server) Shutdown(ctx context.Context)error{return s.server.Shutdown(ctx)}
-func (s *Server) ServeHTTP(w http.ResponseWriter,r *http.Request){start:=time.Now();s.telemetry.Counter("edge_requests_total",map[string]string{"method":r.Method}).Inc();snap:=s.store.Acquire();if snap==nil{http.Error(w,"router not ready",http.StatusServiceUnavailable);return};route:=matchRoute(snap.Routes,r);snap.Release();if route==nil{http.NotFound(w,r);return};state:=selection.NewAttemptState();attempts:=max(route.Retry.Attempts,1);var lastErr error;for attempt:=0;attempt<attempts;attempt++{lease:=s.store.Acquire();if lease==nil{lastErr=errors.New("snapshot unavailable");break};choice,err:=s.selector.Choose(r,lease,route,state);lease.Release();if err!=nil{lastErr=err;break};poolCfg,ok:=s.store.GlobalPoolConfig(choice.PoolID);if !ok{lastErr=errors.New("pool disappeared");continue};timeout:=time.Duration(max(route.Retry.PerTryTimeoutMS,1000))*time.Millisecond;resp,err:=s.transport.Do(r.Context(),choice.Endpoint,poolCfg,r.Method,r.URL.RequestURI(),r.Header,r.Body,timeout);status:=0;if resp!=nil{status=resp.StatusCode};s.health.Passive(choice.Endpoint,status,err,poolCfg.Health.UnhealthyThreshold);if !selection.IsRetryable(status,err,route.Retry){if err!=nil{lastErr=err;break};copyResponse(w,resp);s.telemetry.Gauge("edge_request_last_duration_ms",nil).Set(time.Since(start).Milliseconds());return};if resp!=nil{io.Copy(io.Discard,resp.Body);resp.Body.Close()};lastErr=err};s.telemetry.Counter("edge_request_failures_total",nil).Inc();if lastErr!=nil{http.Error(w,"upstream unavailable: "+lastErr.Error(),http.StatusServiceUnavailable)}else{http.Error(w,"upstream unavailable",http.StatusServiceUnavailable)}}
-func matchRoute(routes []*rt.CompiledRoute,r *http.Request)*rt.CompiledRoute{host:=strings.ToLower(strings.Split(r.Host,":")[0]);for _,route:=range routes{if _,ok:=route.Methods[r.Method];!ok{continue};if len(route.Hosts)>0{if _,all:=route.Hosts["*"];!all{if _,ok:=route.Hosts[host];!ok{continue}}};if !strings.HasPrefix(r.URL.Path,route.PathPrefix){continue};matched:=true;for _,h:=range route.Headers{v:=r.Header.Get(h.Name);if h.Exact!=""&&v!=h.Exact{matched=false;break};if h.Prefix!=""&&!strings.HasPrefix(v,h.Prefix){matched=false;break}};if matched{return route}};return nil}
-func copyResponse(w http.ResponseWriter,resp *http.Response){defer resp.Body.Close();for k,values:=range resp.Header{if hopByHop(k){continue};for _,v:=range values{w.Header().Add(k,v)}};w.WriteHeader(resp.StatusCode);_,_=io.Copy(w,resp.Body)}
-func hopByHop(k string)bool{switch strings.ToLower(k){case "connection","proxy-connection","keep-alive","proxy-authenticate","proxy-authorization","te","trailers","transfer-encoding","upgrade":return true};return false}
-func JSONError(w http.ResponseWriter,status int,message string){w.Header().Set("Content-Type","application/json");w.WriteHeader(status);_ = json.NewEncoder(w).Encode(map[string]any{"error":message,"status":status})}
+type Server struct {
+	store *rt.PublicationStore
+	selector *selection.Engine
+	transport *upstream.Transport
+	metrics *telemetry.Registry
+	logger *slog.Logger
+	server *http.Server
+	ready atomic.Bool
+	maxRequestBody int64
+}
+
+func New(addr string, store *rt.PublicationStore, selector *selection.Engine, transport *upstream.Transport, metrics *telemetry.Registry, logger *slog.Logger) *Server {
+	if logger == nil {
+		logger = slog.Default()
+	}
+	s := &Server{
+		store: store,
+		selector: selector,
+		transport: transport,
+		metrics: metrics,
+		logger: logger,
+		maxRequestBody: 4 << 20,
+	}
+	s.server = &http.Server{
+		Addr: addr,
+		Handler: http.HandlerFunc(s.handle),
+		ReadHeaderTimeout: 5 * time.Second,
+		ReadTimeout: 30 * time.Second,
+		WriteTimeout: 30 * time.Second,
+		IdleTimeout: 90 * time.Second,
+	}
+	return s
+}
+
+func (s *Server) SetReady(ready bool) {
+	s.ready.Store(ready)
+}
+
+func (s *Server) ListenAndServe() error {
+	s.ready.Store(true)
+	err := s.server.ListenAndServe()
+	if errors.Is(err, http.ErrServerClosed) {
+		return nil
+	}
+	return err
+}
+
+func (s *Server) Shutdown(ctx context.Context) error {
+	s.ready.Store(false)
+	return s.server.Shutdown(ctx)
+}
+
+func (s *Server) handle(writer http.ResponseWriter, request *http.Request) {
+	started := time.Now()
+	if !s.ready.Load() {
+		http.Error(writer, "edge router not ready", http.StatusServiceUnavailable)
+		return
+	}
+	lease := s.store.Acquire()
+	if lease == nil || lease.Snapshot == nil {
+		http.Error(writer, "no published route generation", http.StatusServiceUnavailable)
+		return
+	}
+	defer lease.Release()
+	route, ok := matchRoute(lease.Snapshot, request)
+	if !ok {
+		http.Error(writer, "route not found", http.StatusNotFound)
+		s.metrics.Add(telemetry.GenerationOwner(lease.Snapshot.Generation), "edge_router_requests_total", map[string]string{"result": "not_found"}, 1)
+		return
+	}
+	body, err := readBody(request.Body, s.maxRequestBody)
+	if err != nil {
+		http.Error(writer, err.Error(), http.StatusRequestEntityTooLarge)
+		return
+	}
+	request.Body = io.NopCloser(bytes.NewReader(body))
+	state := &selection.RequestState{}
+	result, choice, err := s.proxyWithRetries(request.Context(), request, body, route, state)
+	if err != nil {
+		s.logger.Warn("upstream request failed", "route", route.ID, "pool", route.PoolID, "error", err)
+		http.Error(writer, "upstream unavailable", http.StatusServiceUnavailable)
+		s.metrics.Add(telemetry.GenerationOwner(lease.Snapshot.Generation), "edge_router_requests_total", map[string]string{"route": route.ID, "result": "unavailable"}, 1)
+		return
+	}
+	copyResponseHeaders(writer.Header(), result.Header)
+	writer.Header().Set("X-Edge-Generation", fmt.Sprintf("%d", lease.Snapshot.Generation))
+	writer.Header().Set("X-Edge-Pool", choice.PoolID)
+	writer.WriteHeader(result.StatusCode)
+	_, _ = writer.Write(result.Body)
+	owner := telemetry.GenerationOwner(lease.Snapshot.Generation)
+	s.metrics.Add(owner, "edge_router_requests_total", map[string]string{"route": route.ID, "pool": choice.PoolID, "status": fmt.Sprintf("%d", result.StatusCode)}, 1)
+	s.metrics.Set(owner, "edge_router_request_duration_milliseconds", map[string]string{"route": route.ID}, float64(time.Since(started).Milliseconds()))
+}
+
+func (s *Server) proxyWithRetries(ctx context.Context, request *http.Request, body []byte, route rt.CompiledRoute, state *selection.RequestState) (upstream.Result, selection.Choice, error) {
+	current := s.store.Current()
+	if current == nil {
+		return upstream.Result{}, selection.Choice{}, errors.New("no current generation")
+	}
+	pool := current.Pools[route.PoolID]
+	if pool == nil {
+		return upstream.Result{}, selection.Choice{}, fmt.Errorf("pool %s missing", route.PoolID)
+	}
+	attempts := selection.Attempts(pool.Retry)
+	var lastErr error
+	var lastResult upstream.Result
+	var lastChoice selection.Choice
+	for attempt := 0; attempt < attempts; attempt++ {
+		lease := s.store.Acquire()
+		if lease == nil || lease.Snapshot == nil {
+			return lastResult, lastChoice, errors.New("generation disappeared")
+		}
+		choice, err := s.selector.Select(lease.Snapshot, route.PoolID, request, state)
+		lease.Release()
+		if err != nil {
+			lastErr = err
+			break
+		}
+		lastChoice = choice
+		result, err := s.transport.Do(ctx, choice.Runtime, request, body)
+		lastResult = result
+		s.selector.MarkAttempt(state, choice)
+		if err != nil {
+			lastErr = err
+			continue
+		}
+		if !selection.Retryable(result.StatusCode, pool.Retry) {
+			return result, choice, nil
+		}
+		lastErr = fmt.Errorf("retryable upstream status %d", result.StatusCode)
+	}
+	if lastErr == nil {
+		lastErr = errors.New("retry budget exhausted")
+	}
+	return lastResult, lastChoice, lastErr
+}
+
+func matchRoute(snapshot *rt.RuntimeSnapshot, request *http.Request) (rt.CompiledRoute, bool) {
+	if snapshot == nil {
+		return rt.CompiledRoute{}, false
+	}
+	host := request.Host
+	if index := strings.IndexByte(host, ':'); index >= 0 {
+		host = host[:index]
+	}
+	host = strings.ToLower(host)
+	for _, route := range snapshot.Routes {
+		if route.Host != "" && route.Host != host {
+			continue
+		}
+		if route.PathPrefix != "" && !strings.HasPrefix(request.URL.Path, route.PathPrefix) {
+			continue
+		}
+		if len(route.Methods) > 0 {
+			if _, exists := route.Methods[request.Method]; !exists {
+				continue
+			}
+		}
+		return route, true
+	}
+	return rt.CompiledRoute{}, false
+}
+
+func readBody(reader io.ReadCloser, limit int64) ([]byte, error) {
+	if reader == nil {
+		return nil, nil
+	}
+	defer reader.Close()
+	body, err := io.ReadAll(io.LimitReader(reader, limit+1))
+	if err != nil {
+		return nil, err
+	}
+	if int64(len(body)) > limit {
+		return nil, errors.New("request body exceeds configured limit")
+	}
+	return body, nil
+}
+
+func copyResponseHeaders(destination, source http.Header) {
+	for key, values := range source {
+		if hopByHop(key) {
+			continue
+		}
+		for _, value := range values {
+			destination.Add(key, value)
+		}
+	}
+}
+
+func hopByHop(key string) bool {
+	switch strings.ToLower(key) {
+	case "connection", "keep-alive", "proxy-authenticate", "proxy-authorization", "te", "trailers", "transfer-encoding", "upgrade":
+		return true
+	default:
+		return false
+	}
+}
+
+func (s *Server) Debug(writer http.ResponseWriter, request *http.Request) {
+	lease := s.store.Acquire()
+	if lease == nil {
+		http.Error(writer, "no generation", http.StatusServiceUnavailable)
+		return
+	}
+	defer lease.Release()
+	payload := map[string]any{
+		"generation": lease.Snapshot.Generation,
+		"routes": len(lease.Snapshot.Routes),
+		"pools": len(lease.Snapshot.Pools),
+		"leases": lease.Snapshot.LeaseCount(),
+	}
+	writer.Header().Set("Content-Type", "application/json")
+	_ = json.NewEncoder(writer).Encode(payload)
+}
