@@ -36,9 +36,9 @@ This is the durable operational checkpoint for StoneVault. Current Git/task-tree
 | Oracle = 1 | PASS | run `32104003033`, job `95609817655`; 63 passed; artifact `9312568830` |
 | NOP = 0 | PASS | run `32104003033`, job `95609817655`; 30 failed / 33 passed |
 | Freeze | PASS | exact task commit `1cbdc0030a8a6483db4c91865aa60b8ef127c9c6`; task tree `b1ea76c23ea7bbc9652484de4c48702a5929b01b` |
-| Q4 Spec-Test Contract Reviewer | PENDING | prior Q4 `stonevault-crash-safe-storage-29b684f3-spec-test-contract-0a860fca37` is historical REVISE and superseded by remediation; fresh packet required |
-| Q6 Production Logic Auditor | PENDING | prior Q6 `stonevault-crash-safe-storage-29b684f3-production-logic-31d4c38000` is stale because `environment/**` review scope changed; fresh packet required |
-| Quality Interlock | AWAITING_Q4_Q6 | deterministic refreeze complete; waits for fresh independent Q4 and Q6 results |
+| Q4 Spec-Test Contract Reviewer | PACKET_READY | `.terminus/reviews/stonevault-crash-safe-storage/1cbdc003/stonevault-crash-safe-storage-1cbdc003-spec-test-contract-670100de41.packet.json` |
+| Q6 Production Logic Auditor | PACKET_READY | `.terminus/reviews/stonevault-crash-safe-storage/1cbdc003/stonevault-crash-safe-storage-1cbdc003-production-logic-a513f6c19d.packet.json`; scope `63b1df2323f5f131c1cd51cc8126072da08ca75e8a03eaff72c16b83aaff4228` |
+| Quality Interlock | AWAITING_Q4_Q6 | deterministic refreeze complete; waits for fresh independent Q4 and Q6 result artifacts |
 | Pre-LLMaJ | NOT_REACHED | waits for Quality Interlock |
 | Q8 GPT/Claude diagnostics | NOT_REACHED | waits for Pre-LLMaJ |
 | Harbor LLMaJ | NOT_REACHED | waits for earlier gates and reusable AI credentials |
@@ -57,6 +57,13 @@ This is the durable operational checkpoint for StoneVault. Current Git/task-tree
 - Empirical matrix: Oracle 63/63; NOP 30 failed / 33 passed; all 30 classified F2P probes transition starter-fail -> Oracle-pass; all 33 classified P2P probes pass starter and Oracle.
 - Target deterministic gates: run `32104316715`, job `95610679183`; Complexity PASS and Runtime Authenticity PASS.
 
+## Fresh review handoff ledger
+
+| Review | Review ID | Packet | Task commit | Scope hash | Status |
+| --- | --- | --- | --- | --- | --- |
+| Q4 Spec-Test Contract Reviewer | `stonevault-crash-safe-storage-1cbdc003-spec-test-contract-670100de41` | `.terminus/reviews/stonevault-crash-safe-storage/1cbdc003/stonevault-crash-safe-storage-1cbdc003-spec-test-contract-670100de41.packet.json` | `1cbdc0030a8a6483db4c91865aa60b8ef127c9c6` | n/a | AWAITING_COLD_REVIEW |
+| Q6 Production Logic Auditor | `stonevault-crash-safe-storage-1cbdc003-production-logic-a513f6c19d` | `.terminus/reviews/stonevault-crash-safe-storage/1cbdc003/stonevault-crash-safe-storage-1cbdc003-production-logic-a513f6c19d.packet.json` | `1cbdc0030a8a6483db4c91865aa60b8ef127c9c6` | `63b1df2323f5f131c1cd51cc8126072da08ca75e8a03eaff72c16b83aaff4228` | AWAITING_COLD_REVIEW |
+
 ## Historical review evidence ledger
 
 | Review | Review ID | Reviewed task tree | Result | Current status |
@@ -68,10 +75,10 @@ This is the durable operational checkpoint for StoneVault. Current Git/task-tree
 
 - Frozen candidate: `1cbdc0030a8a6483db4c91865aa60b8ef127c9c6`
 - Frozen task tree: `b1ea76c23ea7bbc9652484de4c48702a5929b01b`
-- Q4: `PENDING_FRESH_REVIEW`
-- Q6: `PENDING_FRESH_REVIEW`
+- Q4: `PACKET_READY_AWAITING_COLD_REVIEW`
+- Q6: `PACKET_READY_AWAITING_COLD_REVIEW`
 - Quality interlock: `AWAITING_Q4_Q6`
-- Next legal action: generate fresh immutable packet-bound Q4 and Q6 invocations for this frozen candidate, execute each in a separate cold reviewer chat, then return both result artifacts to the orchestrator for freshness/provenance validation.
+- Next legal action: execute Q4 and Q6 in separate cold reviewer chats using the exact generated packets above; then return both result artifacts to the orchestrator for schema, packet binding, role-contract freshness and quality-interlock evaluation.
 
 ## Circuit breakers
 
