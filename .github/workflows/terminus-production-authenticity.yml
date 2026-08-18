@@ -75,9 +75,23 @@ jobs:
             echo "No production-authenticity manifests found."
           fi
       - name: Exact ENVIRONMENT_BUILD runtime validation
+        if: always()
         shell: bash
         run: |
           set -euo pipefail
+          echo "==> substantive LOC from canonical validator function"
+          python3 - <<'PY'
+          import importlib.util
+          from pathlib import Path
+          path = Path('.terminus/validate_task_complexity.py')
+          spec = importlib.util.spec_from_file_location('complexity', path)
+          mod = importlib.util.module_from_spec(spec)
+          spec.loader.exec_module(mod)
+          total, detail = mod.substantive_loc(Path('edge-router-runtime'))
+          print(f'substantive_loc={total}')
+          for name, count in sorted(detail, key=lambda x: x[1], reverse=True)[:20]:
+              print(f'{count:7d} {name}')
+          PY
           echo "==> Go environment compile"
           cd edge-router-runtime/environment
           go version
