@@ -111,14 +111,18 @@ jobs:
 
       - name: Export exact generated evidence
         run: |
-          echo '===A2_RECORD_B64_BEGIN==='
-          base64 -w0 ".terminus/executions/${TASK_ID}/${A2_INVOCATION_ID}.result.json"
-          echo
-          echo '===A2_RECORD_B64_END==='
-          echo '===LEDGER_B64_BEGIN==='
-          base64 -w0 ".terminus/executions/${TASK_ID}/ledger.jsonl"
-          echo
-          echo '===LEDGER_B64_END==='
+          mkdir -p /tmp/a2-evidence
+          cp ".terminus/executions/${TASK_ID}/${A2_INVOCATION_ID}.result.json" /tmp/a2-evidence/a2-record.json
+          cp ".terminus/executions/${TASK_ID}/ledger.jsonl" /tmp/a2-evidence/ledger.jsonl
+          cp /tmp/a2-record-output.json /tmp/a2-evidence/controller-record-output.json
+
+      - name: Upload canonical A2 evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: edge-router-a2-canonical-evidence
+          path: /tmp/a2-evidence
+          if-no-files-found: error
+          retention-days: 1
 
       - name: Publish run breadcrumb
         env:
