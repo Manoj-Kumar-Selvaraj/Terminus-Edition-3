@@ -4,6 +4,10 @@ LABEL org.opencontainers.image.source="https://github.com/Manoj-Kumar-Selvaraj/T
       org.opencontainers.image.version="2.0" \
       org.opencontainers.image.licenses="MIT"
 
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends g++ \
+    && rm -rf /var/lib/apt/lists/*
+
 RUN pip install --no-cache-dir \
     iniconfig==2.0.0 \
     packaging==24.2 \
@@ -14,6 +18,7 @@ RUN pip install --no-cache-dir \
 RUN mkdir -p /app/stonevault /logs/verifier /tests
 COPY test_outputs.py /tests/test_outputs.py
 COPY test_preservation.py /tests/test_preservation.py
+COPY test_q4_contract.py /tests/test_q4_contract.py
 COPY test.sh /tests/test.sh
 RUN chmod +x /tests/test.sh
 WORKDIR /app/stonevault
