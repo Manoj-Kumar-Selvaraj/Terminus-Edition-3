@@ -1,0 +1,1527 @@
+{
+  "authority": {
+    "control_plane_commit": "fa2a409e86c4676bd3039df3e4e8339708454fad",
+    "policy_versions": {},
+    "task_commit": "6c91b9aca662fa192c144d55c8aee0e693adcc0d",
+    "task_id": "edge-router-runtime"
+  },
+  "disposition": "ADVANCE",
+  "evidence_refs": [
+    {
+      "content_hash": "sha256:403fbe7e5febc2dd471eaa93e3d94f80a94e79e25baebee53bca51f48c011951",
+      "kind": "COMMIT",
+      "ref": "commit:6c91b9aca662fa192c144d55c8aee0e693adcc0d"
+    },
+    {
+      "content_hash": "sha256:f26e394fad09ed1800e513d2e318cf9641e149b00e19c8c0f975918b52cf9426",
+      "kind": "COMMIT",
+      "ref": "commit:fa2a409e86c4676bd3039df3e4e8339708454fad"
+    },
+    {
+      "content_hash": "sha256:d98302f7bb3a50b0f82d2629f5aed6fec413164b4c041f895972d2f789e99438",
+      "kind": "FILE",
+      "ref": "git:fa2a409e86c4676bd3039df3e4e8339708454fad:.terminus/agents/CREATION_PIPELINE.md"
+    },
+    {
+      "content_hash": "sha256:6df2227846593da84f5fba197d73383bb38f56e06fb43c88817c090cf286ca5b",
+      "kind": "FILE",
+      "ref": "git:fa2a409e86c4676bd3039df3e4e8339708454fad:.terminus/agents/CREATOR_AGENT_REGISTRY.md"
+    },
+    {
+      "content_hash": "sha256:2e77b6252c61d9665e070beca27780cca38177b5d3656f573972e65ed61a48fc",
+      "kind": "FILE",
+      "ref": "git:fa2a409e86c4676bd3039df3e4e8339708454fad:.terminus/agents/CREATOR_PROMPTS.md"
+    },
+    {
+      "content_hash": "sha256:2f8f5c86a5759622d4e7de8a2a6f7f61fa321020fd8a94f625eabacbf39cc9c9",
+      "kind": "FILE",
+      "ref": "git:fa2a409e86c4676bd3039df3e4e8339708454fad:.terminus/validate_task_complexity.py"
+    }
+  ],
+  "invocation_id": "inv_28c1baf5125eb73cb1a52b677925c8967f6a9ceb113e42bf4c28e8f08db86f98",
+  "invocation_snapshot": {
+    "acceptance_predicates": {},
+    "authority": {
+      "control_plane_commit": "fa2a409e86c4676bd3039df3e4e8339708454fad",
+      "policy_versions": {},
+      "task_commit": "6c91b9aca662fa192c144d55c8aee0e693adcc0d",
+      "task_id": "edge-router-runtime"
+    },
+    "evidence": {
+      "authorized_evidence_classes": [
+        "CONTROL_PLANE_POLICY",
+        "PRIVATE_CREATION_DESIGN",
+        "PUBLIC_REFERENCE",
+        "SOLVER_VISIBLE_TASK"
+      ],
+      "evidence_required": [
+        "root-cause clusters",
+        "causal/interdependency edges",
+        "partial-fix traps",
+        "behavioral surfaces"
+      ],
+      "excluded_evidence_classes": [
+        "CI_RUNTIME_EVIDENCE",
+        "CURRENT_REVIEW_PACKET",
+        "DURABLE_SESSION_STATE",
+        "FINAL_PACKAGE_EVIDENCE",
+        "MODEL_TRIAL_EVIDENCE",
+        "PRIOR_REVIEW_RESULTS",
+        "SOLUTION_ORACLE",
+        "VERIFIER_PRIVATE"
+      ],
+      "mandatory_exact_reads": [
+        ".terminus/agents/CREATION_PIPELINE.md",
+        ".terminus/agents/CREATOR_AGENT_REGISTRY.md",
+        ".terminus/agents/CREATOR_PROMPTS.md"
+      ],
+      "retrieval_mode": "FILTERED_HYBRID"
+    },
+    "ignored_input_count": 0,
+    "inputs": {
+      "optional": {},
+      "required": {
+        "APPROVED_OPERATIONAL_REQUIREMENTS": {
+          "EDGE_FAILURE_SURFACE": [
+            "duplicate and out-of-order configuration generations",
+            "bursts of watcher or discovery events",
+            "invalid updates mixed with valid endpoint changes",
+            "backend disappearance during an active request",
+            "stale affinity targeting an ineligible backend",
+            "all backends unhealthy",
+            "restart during or immediately after an update",
+            "duplicate endpoint identities",
+            "slow or stuck drains",
+            "rapid remove and re-add of the same endpoint",
+            "retired metric cleanup",
+            "corrupt or incomplete checkpoint",
+            "concurrent request readers racing with state publication"
+          ],
+          "PRESERVATION_OBLIGATIONS": [
+            "In-flight and long-lived requests remain valid across unrelated updates.",
+            "Unchanged route semantics remain stable across generations.",
+            "Healthy unchanged endpoints preserve meaningful runtime selection and affinity state.",
+            "A rejected update cannot damage the currently serving generation.",
+            "Readers never observe a partially applied configuration.",
+            "Runtime and observability state remain bounded after repeated updates."
+          ],
+          "REQUIRED_END_STATE": [
+            "Configuration inputs are validated and compiled into immutable runtime snapshots before publication.",
+            "Every accepted configuration generation is fenced so stale or out-of-order generations cannot overwrite newer state.",
+            "Route and upstream-pool state becomes visible atomically rather than through partially applied generations.",
+            "Endpoint reconciliation identifies additions, removals, and unchanged endpoints using stable runtime identity.",
+            "Reusable load-balancing, stickiness, health, and lifecycle state is preserved for unchanged endpoints.",
+            "Removed endpoints enter an explicit draining lifecycle before retirement instead of disappearing immediately.",
+            "Retries and sticky routing avoid endpoints that are no longer eligible while preserving continuity where safe.",
+            "Invalid updates leave the last-known-good generation serving traffic.",
+            "The latest accepted generation can be checkpointed and recovered without publishing mixed or partially restored state.",
+            "Lifecycle telemetry and per-generation or per-endpoint metrics are garbage-collected when their owning runtime state is retired."
+          ],
+          "REQUIREMENT_FAMILIES": [
+            "configuration ingestion and semantic validation",
+            "route-graph compilation",
+            "generation fencing and atomic publication",
+            "backend discovery and endpoint diffing",
+            "health-state lifecycle",
+            "weighted, sticky, retry, and failover selection",
+            "connection and endpoint draining",
+            "checkpoint persistence and restart recovery",
+            "observability lifecycle and metric garbage collection"
+          ]
+        },
+        "APPROVED_WORK_PACKAGE": {
+          "DUPLICATE_RISK": "MEDIUM: dynamic reload and reconciliation are established production patterns, but coupling generation fencing, atomic publication, runtime-state migration, draining, restart checkpointing, and telemetry garbage collection into one causal state-transition system gives the candidate a materially more distinctive shape than a generic reload task.",
+          "EDGE_FAILURE_SURFACE": [
+            "duplicate and out-of-order configuration generations",
+            "bursts of watcher or discovery events",
+            "invalid updates mixed with valid endpoint changes",
+            "backend disappearance during an active request",
+            "stale affinity targeting an ineligible backend",
+            "all backends unhealthy",
+            "restart during or immediately after an update",
+            "duplicate endpoint identities",
+            "slow or stuck drains",
+            "rapid remove and re-add of the same endpoint",
+            "retired metric cleanup",
+            "corrupt or incomplete checkpoint",
+            "concurrent request readers racing with state publication"
+          ],
+          "ENGINEERING_OBJECTIVE": "Implement generation-safe dynamic route and upstream reconciliation so configuration and backend-membership changes can be applied atomically under concurrent traffic, rolling backend turnover, invalid updates, and process restart.",
+          "ID": "GENERATION_SAFE_DYNAMIC_RECONCILIATION",
+          "INHERITED_SYSTEM_STATE": "Only the solver-visible target is assumed: a Go public-facing HTTP edge-routing and traffic-management runtime. No hidden incident history, pre-existing topology, private design, implementation defect, oracle behavior, or verifier-private expectation is assumed.",
+          "INSTRUCTION_FIT": "The material behavior can be expressed in roughly 10-12 concise family-level requirements, remaining comfortably within the strict instruction-size limit without exposing an implementation blueprint.",
+          "PARTIAL_FIX_TRAPS": [
+            "Rebuilding all load-balancing or sticky state on every reload makes an apparently correct reload path operationally unstable.",
+            "Publishing routes before their referenced pools produces mixed-generation request handling.",
+            "Validating syntax without generation fencing still permits stale updates to win races.",
+            "Removing a backend immediately can terminate or strand in-flight traffic.",
+            "Keeping retired endpoint metrics indefinitely creates stale observations and unbounded cardinality.",
+            "Checkpointing metadata before the complete runtime generation is durable can recover a state that was never safely published.",
+            "Treating duplicate endpoint aliases as independent identities can split health and load-balancing state."
+          ],
+          "PERSONA": "Edge platform engineer or SRE responsible for a public-facing Go HTTP edge-routing runtime.",
+          "PRESERVATION_OBLIGATIONS": [
+            "In-flight and long-lived requests remain valid across unrelated updates.",
+            "Unchanged route semantics remain stable across generations.",
+            "Healthy unchanged endpoints preserve meaningful runtime selection and affinity state.",
+            "A rejected update cannot damage the currently serving generation.",
+            "Readers never observe a partially applied configuration.",
+            "Runtime and observability state remain bounded after repeated updates."
+          ],
+          "REASONING_CHAIN": [
+            "receive candidate update",
+            "validate and compile it",
+            "check generation ordering",
+            "diff the endpoint and route graph",
+            "migrate reusable runtime state",
+            "atomically publish the complete generation",
+            "serve requests through health, selection, retry, stickiness, and drain state",
+            "retire unreachable runtime objects and telemetry",
+            "checkpoint accepted state",
+            "recover a complete last-known-good generation after restart"
+          ],
+          "REFERENCES": [
+            "[https://caddyserver.com/docs/caddyfile/directives/reverse_proxy](https://caddyserver.com/docs/caddyfile/directives/reverse_proxy)",
+            "[https://doc.traefik.io/traefik/v3.5/reference/routing-configuration/http/load-balancing/service/](https://doc.traefik.io/traefik/v3.5/reference/routing-configuration/http/load-balancing/service/)",
+            "[https://github.com/caddyserver/caddy/issues/6844](https://github.com/caddyserver/caddy/issues/6844)",
+            "[https://github.com/traefik/traefik/issues/2068](https://github.com/traefik/traefik/issues/2068)",
+            "[https://github.com/traefik/traefik/issues/8787](https://github.com/traefik/traefik/issues/8787)",
+            "[https://github.com/traefik/traefik/issues/9836](https://github.com/traefik/traefik/issues/9836)",
+            "[https://github.com/traefik/traefik/issues/7886](https://github.com/traefik/traefik/issues/7886)"
+          ],
+          "REQUIRED_END_STATE": [
+            "Configuration inputs are validated and compiled into immutable runtime snapshots before publication.",
+            "Every accepted configuration generation is fenced so stale or out-of-order generations cannot overwrite newer state.",
+            "Route and upstream-pool state becomes visible atomically rather than through partially applied generations.",
+            "Endpoint reconciliation identifies additions, removals, and unchanged endpoints using stable runtime identity.",
+            "Reusable load-balancing, stickiness, health, and lifecycle state is preserved for unchanged endpoints.",
+            "Removed endpoints enter an explicit draining lifecycle before retirement instead of disappearing immediately.",
+            "Retries and sticky routing avoid endpoints that are no longer eligible while preserving continuity where safe.",
+            "Invalid updates leave the last-known-good generation serving traffic.",
+            "The latest accepted generation can be checkpointed and recovered without publishing mixed or partially restored state.",
+            "Lifecycle telemetry and per-generation or per-endpoint metrics are garbage-collected when their owning runtime state is retired."
+          ],
+          "REQUIREMENT_FAMILIES": [
+            "configuration ingestion and semantic validation",
+            "route-graph compilation",
+            "generation fencing and atomic publication",
+            "backend discovery and endpoint diffing",
+            "health-state lifecycle",
+            "weighted, sticky, retry, and failover selection",
+            "connection and endpoint draining",
+            "checkpoint persistence and restart recovery",
+            "observability lifecycle and metric garbage collection"
+          ],
+          "SCALE_FIT": {
+            "ASSESSMENT": "VERY_HIGH",
+            "DEFECT_MANIFESTATIONS": "Naturally supports approximately 20-30 materially distinct behavioral manifestations.",
+            "F2P_SURFACE": "Naturally supports approximately 25-30 non-duplicative functional tests spanning normal, edge, boundary, negative, concurrency, restart, and failure behavior.",
+            "MODULE_BREADTH": "Approximately 8-10 strongly coupled implementation areas.",
+            "P2P_SURFACE": "Strong preservation-test surface around last-known-good serving, unchanged-route behavior, in-flight traffic, affinity continuity, and bounded state.",
+            "SUBSTANTIVE_RUNTIME_LOC": "Naturally supports at least 3000 substantive reachable runtime/configuration LOC without filler."
+          }
+        },
+        "CLEAN_SYSTEM_ARCHITECTURE": {
+          "COMPONENT_GRAPH": {
+            "architecture_style": "single-process Go edge-routing runtime with immutable serving snapshots, single-writer reconciliation, shared lifecycle-safe runtime state, and explicit durable recovery",
+            "edges": [
+              {
+                "contract": "Recover the highest valid committed generation before declaring the runtime ready.",
+                "from": "runtime_host",
+                "to": "checkpoint_store"
+              },
+              {
+                "contract": "Start public serving only against a completely compiled and published snapshot.",
+                "from": "runtime_host",
+                "to": "data_plane_server"
+              },
+              {
+                "contract": "Operator configuration and discovery updates enter through the same generation-safe ingestion boundary as watcher/provider updates.",
+                "from": "admin_plane",
+                "to": "configuration_ingress"
+              },
+              {
+                "contract": "Only complete candidate source snapshots proceed; rejected candidates cannot mutate accepted desired state.",
+                "from": "configuration_ingress",
+                "to": "semantic_validator"
+              },
+              {
+                "contract": "Compilation receives a semantically complete normalized model.",
+                "from": "semantic_validator",
+                "to": "route_graph_compiler"
+              },
+              {
+                "contract": "The reconciler receives an immutable candidate graph plus compatibility identities and semantic digests.",
+                "from": "route_graph_compiler",
+                "to": "generation_reconciler"
+              },
+              {
+                "contract": "Continuously unchanged identities reuse compatible runtime state; additions allocate new state; removals become draining incarnations.",
+                "from": "generation_reconciler",
+                "to": "pool_runtime_registry"
+              },
+              {
+                "contract": "A complete candidate checkpoint body may be prepared durably but is not made recoverable before the corresponding runtime snapshot is published.",
+                "from": "generation_reconciler",
+                "to": "checkpoint_store"
+              },
+              {
+                "contract": "Exactly one complete RuntimeSnapshot is atomically exchanged after validation, compilation, fencing, and reconciliation finish.",
+                "from": "generation_reconciler",
+                "to": "snapshot_publication_store"
+              },
+              {
+                "contract": "Each request obtains one generation lease; request processing never combines route or pool objects from different generations.",
+                "from": "snapshot_publication_store",
+                "to": "data_plane_server"
+              },
+              {
+                "contract": "Route resolution supplies the generation-scoped pool view, affinity key, retry budget, and failover policy.",
+                "from": "data_plane_server",
+                "to": "selection_engine"
+              },
+              {
+                "contract": "Selection consults only members represented by the leased snapshot and checks current lifecycle/health eligibility before assignment.",
+                "from": "selection_engine",
+                "to": "pool_runtime_registry"
+              },
+              {
+                "contract": "A selected endpoint incarnation and request-local attempted-endpoint set are passed to forwarding.",
+                "from": "selection_engine",
+                "to": "upstream_transport"
+              },
+              {
+                "contract": "Passive transport outcomes update endpoint health evidence independently of configuration publication.",
+                "from": "upstream_transport",
+                "to": "health_manager"
+              },
+              {
+                "contract": "Health state is mutable runtime state owned by the endpoint incarnation and remains reusable across compatible generations.",
+                "from": "health_manager",
+                "to": "pool_runtime_registry"
+              },
+              {
+                "contract": "Removed membership is made ineligible for new traffic before its runtime state is retired.",
+                "from": "generation_reconciler",
+                "to": "drain_manager"
+              },
+              {
+                "contract": "Drain completion depends on in-flight requests, live reusable connections, policy deadline, and snapshot reachability.",
+                "from": "drain_manager",
+                "to": "upstream_transport"
+              },
+              {
+                "contract": "Generation-scoped telemetry remains registered only while the owning generation is reachable.",
+                "from": "snapshot_publication_store",
+                "to": "telemetry_registry"
+              },
+              {
+                "contract": "Endpoint and pool metric ownership is released when lifecycle retirement becomes final.",
+                "from": "drain_manager",
+                "to": "telemetry_registry"
+              },
+              {
+                "contract": "Recovery revalidates and recompiles durable normalized desired state rather than publishing serialized partial runtime objects.",
+                "from": "checkpoint_store",
+                "to": "route_graph_compiler"
+              }
+            ],
+            "identity_contract": {
+              "endpoint_identity": "Pool identity plus a canonicalized endpoint network identity and transport compatibility key. Equivalent textual addresses normalize to one identity; duplicate canonical identities are rejected.",
+              "endpoint_incarnation": "Continuous membership of the same canonical endpoint may reuse one runtime object. If an accepted generation removes the endpoint, a later re-add is a new membership incarnation and cannot simply reactivate the draining object.",
+              "pool_identity": "A stable explicit pool identifier; runtime-state reuse also requires a compatible selection/affinity policy fingerprint.",
+              "route_identity": "A stable explicit route identifier plus a semantic digest independent of declaration ordering."
+            },
+            "nodes": [
+              {
+                "id": "runtime_host",
+                "responsibility": "Own process bootstrap, dependency lifecycle, startup recovery, listener startup, graceful shutdown, readiness, and orchestration of all control-plane and data-plane subsystems."
+              },
+              {
+                "id": "configuration_ingress",
+                "responsibility": "Receive complete configuration and discovery snapshots from operator/file/provider inputs, normalize source metadata, bound burst queues, and deduplicate source revisions without mutating serving state."
+              },
+              {
+                "id": "semantic_validator",
+                "responsibility": "Validate syntax-independent semantics including route uniqueness, referenced pools, policy bounds, endpoint canonical identity uniqueness, failover references, retry limits, health/drain settings, and cross-object consistency."
+              },
+              {
+                "id": "route_graph_compiler",
+                "responsibility": "Compile a validated desired model into immutable route matchers, pool specifications, policy objects, semantic digests, and generation metadata before anything becomes request-visible."
+              },
+              {
+                "id": "generation_reconciler",
+                "responsibility": "Serialize writers, fence stale or duplicate revisions, merge source snapshots, diff route/pool/endpoint state, preserve compatible runtime objects, create new runtime state, initiate removals, and construct a complete next generation."
+              },
+              {
+                "id": "snapshot_publication_store",
+                "responsibility": "Hold the current immutable RuntimeSnapshot behind one atomic publication boundary and manage explicit snapshot leases so each request observes exactly one complete generation."
+              },
+              {
+                "id": "data_plane_server",
+                "responsibility": "Accept public HTTP traffic, acquire a snapshot lease, perform route matching, invoke upstream selection and forwarding, and hold generation reachability for the full request or stream lifetime."
+              },
+              {
+                "id": "pool_runtime_registry",
+                "responsibility": "Own reusable per-pool and per-endpoint runtime handles keyed by stable identities, including selection continuity, endpoint membership incarnation, health references, affinity state, and lifecycle ownership."
+              },
+              {
+                "id": "selection_engine",
+                "responsibility": "Perform weighted selection, sticky affinity lookup, retry exclusion, failover traversal, and explicit no-eligible-backend handling using one immutable snapshot plus concurrency-safe runtime state."
+              },
+              {
+                "id": "upstream_transport",
+                "responsibility": "Forward requests, reuse upstream connections, report passive success/failure signals, maintain in-flight accounting, and coordinate connection retirement with endpoint draining."
+              },
+              {
+                "id": "health_manager",
+                "responsibility": "Maintain active and passive endpoint health state, schedule bounded probing, process transport feedback, and expose concurrency-safe eligibility inputs without altering configuration generations."
+              },
+              {
+                "id": "drain_manager",
+                "responsibility": "Transition removed endpoint incarnations from active membership to draining, prevent new assignment, allow existing traffic to finish within policy, and retire runtime objects after references and in-flight work are gone."
+              },
+              {
+                "id": "checkpoint_store",
+                "responsibility": "Persist complete versioned checkpoint bodies, atomically advance the recoverable current-generation pointer only after publication, retain a previous complete recovery point, verify integrity, and restore only complete generations."
+              },
+              {
+                "id": "telemetry_registry",
+                "responsibility": "Own global and lifecycle-scoped metrics, update/rejection telemetry, health/drain/checkpoint observability, bounded status history, and explicit garbage collection when generation/pool/endpoint owners retire."
+              },
+              {
+                "id": "admin_plane",
+                "responsibility": "Expose operator update, validation/status, readiness, health, and metrics interfaces while keeping those workflows separate from the public request listener."
+              }
+            ],
+            "profile": "large_system_strict",
+            "publication_invariants": [
+              "Serving configuration is immutable after publication.",
+              "There is one serialized writer path and arbitrarily concurrent readers.",
+              "A request reads the serving snapshot once and retains it for its complete lifetime.",
+              "Rejected, stale, conflicting, or partially compiled candidates never alter the atomic current snapshot.",
+              "Mutable health, affinity, balancer, connection, and lifecycle state is referenced through explicitly owned runtime handles rather than embedded as partially mutable configuration."
+            ]
+          },
+          "DATA_VOLUME_PLAN": {
+            "business_record_rule": "Not applicable: normal operation is configuration/runtime-state backed rather than a primary business-record processing workload.",
+            "representative_materialization_plan": {
+              "discovery_sources": "Several independent complete-snapshot sources with deterministic monotonic revisions so burst, stale, duplicate, and source-merging behavior is realistic.",
+              "endpoints": "Approximately 100-200 canonical endpoints distributed non-uniformly across pools, sufficient to exercise reconciliation and runtime-state lifecycle without presenting an opaque giant fixture.",
+              "routes": "Approximately 60-100 deterministic routes spanning host/path/method matching and shared versus dedicated pools, only where each entry contributes meaningful routing behavior.",
+              "runtime_state": "Affinity, health, balancer, drain, metrics, and checkpoint state grows through normal runtime activity and remains explicitly bounded; it is not bulk-generated merely to increase apparent scale.",
+              "upstream_pools": "Approximately 16-24 pools with materially different weighting, affinity, retry, failover, health, and drain policies."
+            }
+          },
+          "ENTRYPOINTS": {
+            "binary": "edge-router-runtime",
+            "operator": [
+              {
+                "entrypoint": "edge-router-runtime validate --config <path>",
+                "purpose": "Offline parse, normalization, semantic validation, and graph compilation without publication.",
+                "reachability": [
+                  "semantic_validator",
+                  "route_graph_compiler"
+                ]
+              },
+              {
+                "entrypoint": "admin configuration submission interface",
+                "purpose": "Submit a complete versioned configuration snapshot and receive accepted, rejected, duplicate, stale, or conflicting-generation status.",
+                "reachability": [
+                  "admin_plane",
+                  "configuration_ingress",
+                  "semantic_validator",
+                  "route_graph_compiler",
+                  "generation_reconciler",
+                  "checkpoint_store",
+                  "snapshot_publication_store"
+                ]
+              },
+              {
+                "entrypoint": "admin discovery snapshot interface/provider adapter",
+                "purpose": "Submit complete versioned endpoint-membership snapshots for a discovery source so bursts can be safely deduplicated/coalesced without delta loss.",
+                "reachability": [
+                  "configuration_ingress",
+                  "semantic_validator",
+                  "generation_reconciler",
+                  "pool_runtime_registry",
+                  "drain_manager"
+                ]
+              },
+              {
+                "entrypoint": "admin status/readiness/health interfaces",
+                "purpose": "Expose current accepted generation, source revisions, last rejection, checkpoint health, active drains, and readiness without exposing private design material.",
+                "reachability": [
+                  "admin_plane",
+                  "snapshot_publication_store",
+                  "generation_reconciler",
+                  "checkpoint_store",
+                  "drain_manager",
+                  "health_manager"
+                ]
+              },
+              {
+                "entrypoint": "metrics interface",
+                "purpose": "Expose bounded process, request, generation, pool, endpoint-lifecycle, reconciliation, health, retry, drain, and checkpoint metrics.",
+                "reachability": [
+                  "telemetry_registry"
+                ]
+              },
+              {
+                "entrypoint": "SIGTERM/SIGINT graceful shutdown",
+                "purpose": "Stop new public acceptance, stop update admission, drain active request work, flush durable state where required, and terminate without corrupting the recoverable checkpoint.",
+                "reachability": [
+                  "runtime_host",
+                  "data_plane_server",
+                  "generation_reconciler",
+                  "drain_manager",
+                  "checkpoint_store",
+                  "telemetry_registry"
+                ]
+              }
+            ],
+            "reachability_rule": "Every substantive runtime package participates in the normal serve path, a documented operator path, startup recovery, or graceful shutdown. No module exists solely to satisfy code-volume requirements.",
+            "runtime": [
+              {
+                "entrypoint": "edge-router-runtime serve --config <path> --state-dir <dir> --listen <addr> --admin-listen <addr>",
+                "reachability": [
+                  "runtime_host",
+                  "checkpoint_store",
+                  "configuration_ingress",
+                  "semantic_validator",
+                  "route_graph_compiler",
+                  "generation_reconciler",
+                  "snapshot_publication_store",
+                  "data_plane_server",
+                  "pool_runtime_registry",
+                  "selection_engine",
+                  "upstream_transport",
+                  "health_manager",
+                  "drain_manager",
+                  "telemetry_registry",
+                  "admin_plane"
+                ]
+              },
+              {
+                "entrypoint": "public HTTP listener",
+                "reachability": [
+                  "data_plane_server",
+                  "snapshot_publication_store",
+                  "selection_engine",
+                  "pool_runtime_registry",
+                  "upstream_transport",
+                  "health_manager",
+                  "telemetry_registry"
+                ]
+              }
+            ]
+          },
+          "PRODUCTION_CHARACTERISTICS": {
+            "availability_and_safety": [
+              "Last-known-good serving state remains untouched when an update is malformed, semantically invalid, stale, conflicting, or fails compilation.",
+              "No-new-traffic draining preserves existing work while promptly removing retired capacity from selection.",
+              "Explicit no-eligible-backend behavior prevents unsafe routing to known-ineligible endpoints.",
+              "Unrelated configuration changes do not invalidate requests already holding an older snapshot."
+            ],
+            "boundedness": [
+              "Bounded ingress queues with complete-snapshot coalescing.",
+              "Bounded affinity tables with TTL/capacity.",
+              "Bounded recent-update status history.",
+              "Explicit snapshot, endpoint, metric, and checkpoint retirement.",
+              "No indefinitely retained per-generation/per-endpoint observability state."
+            ],
+            "concurrency": [
+              "One serialized configuration/reconciliation writer with concurrent request readers.",
+              "Atomic publication eliminates route/pool mixed-generation visibility.",
+              "Health, transport, affinity, and balancer runtime state uses explicit synchronization/atomic ownership separate from immutable configuration."
+            ],
+            "environment_fit": [
+              "Normal unprivileged Go user-space HTTP networking is sufficient.",
+              "No privileged container, host capability, Docker socket, or kernel shortcut is part of the architecture.",
+              "The architecture is compatible with a digest-pinned canonical Go runtime and public network mode."
+            ],
+            "error_handling": [
+              "Structured validation failures before publication.",
+              "Explicit stale, duplicate, and conflicting-generation outcomes.",
+              "Checkpoint integrity failures are observable and fail closed to a previous complete state or not-ready condition.",
+              "All-backend-unhealthy and retry-exhausted states have deterministic request outcomes."
+            ],
+            "operator_workflows": [
+              "real serve process",
+              "offline configuration validation",
+              "dynamic configuration submission",
+              "dynamic discovery submission",
+              "status/readiness/metrics",
+              "graceful shutdown",
+              "checkpoint restart recovery"
+            ],
+            "persistence_and_recovery": [
+              "Complete versioned checkpoint bodies with checksums.",
+              "Atomic durable CURRENT pointer.",
+              "Previous-complete fallback.",
+              "Recovery recompiles a whole generation before publication.",
+              "No partial or corrupt checkpoint is ever converted into a partially serving runtime."
+            ],
+            "stateful_reconciliation": [
+              "Stable identities and compatibility fingerprints prevent declaration ordering from resetting runtime state.",
+              "Continuously unchanged endpoints retain meaningful health, load-balancing, affinity, connection, and lifecycle continuity.",
+              "Remove/re-add is modeled as a new membership incarnation so stale drain state is not resurrected."
+            ]
+          },
+          "RESOURCE_GRAPH": {
+            "dependency_direction": "bootstrap/admin -> ingress -> validation/compiler -> reconcile -> runtime publication; request traffic -> snapshot/router -> selection -> upstream; health/drain/checkpoint/telemetry provide stateful lifecycle services around those paths.",
+            "infrastructure_resource_count_rule": "This is an application-runtime task rather than an infrastructure-provisioning task, so manufacturing 30-50 infrastructure resources would be inauthentic.",
+            "logical_packages": [
+              "cmd/edge-router-runtime",
+              "internal/bootstrap",
+              "internal/config",
+              "internal/compiler",
+              "internal/reconcile",
+              "internal/runtime",
+              "internal/router",
+              "internal/upstream",
+              "internal/selection",
+              "internal/health",
+              "internal/drain",
+              "internal/checkpoint",
+              "internal/telemetry",
+              "internal/admin"
+            ],
+            "runtime_resources": [
+              {
+                "owner": "data_plane_server",
+                "resource": "public HTTP listener"
+              },
+              {
+                "owner": "admin_plane",
+                "resource": "admin HTTP listener"
+              },
+              {
+                "owner": "snapshot_publication_store",
+                "resource": "atomic current RuntimeSnapshot"
+              },
+              {
+                "owner": "configuration_ingress",
+                "resource": "bounded configuration/discovery ingress queues"
+              },
+              {
+                "owner": "pool_runtime_registry",
+                "resource": "pool/endpoint runtime registry"
+              },
+              {
+                "owner": "upstream_transport",
+                "resource": "upstream connection pools"
+              },
+              {
+                "owner": "health_manager",
+                "resource": "health probe scheduler"
+              },
+              {
+                "owner": "drain_manager",
+                "resource": "drain scheduler"
+              },
+              {
+                "owner": "checkpoint_store",
+                "resource": "state directory with generation checkpoint bodies and CURRENT/PREVIOUS metadata"
+              },
+              {
+                "owner": "telemetry_registry",
+                "resource": "lifecycle-aware metrics registry"
+              }
+            ]
+          },
+          "SCALE_FIT": {
+            "anti_padding": "Scale comes from necessary edge-runtime responsibilities and state transitions. No duplicated modules, generated/vendor code, copied templates, decorative resources, synthetic business records, or micro-module inflation are required.",
+            "assessment": "VERY_HIGH",
+            "behavioral_breadth": [
+              "successful initial compilation and serving",
+              "valid route-only updates",
+              "valid pool/membership updates",
+              "duplicate update idempotency",
+              "same-revision content conflict rejection",
+              "out-of-order/stale rejection",
+              "invalid semantic update rejection with last-known-good preservation",
+              "concurrent readers during publication",
+              "endpoint addition",
+              "endpoint removal and draining",
+              "continuous unchanged-endpoint state reuse",
+              "pool policy compatibility versus state replacement",
+              "sticky affinity continuity",
+              "stale affinity invalidation",
+              "retry exclusion of already attempted/ineligible endpoints",
+              "configured failover",
+              "all-backends-unhealthy handling",
+              "active/passive health transitions",
+              "backend disappearance during an active request",
+              "long-running request lease across unrelated publication",
+              "duplicate canonical endpoint identity rejection",
+              "rapid remove/re-add incarnation separation",
+              "burst source-snapshot coalescing and fencing",
+              "restart with a complete accepted checkpoint",
+              "crash around the publication/checkpoint commit boundary",
+              "corrupt/incomplete current checkpoint fallback",
+              "generation retirement",
+              "endpoint metric retirement",
+              "bounded affinity/status/checkpoint retention"
+            ],
+            "causal_coupling": "Generation fencing, compilation, reconciliation, state reuse, publication, selection, draining, checkpointing, recovery, and telemetry retirement are causally linked; changing one boundary can materially alter multiple operational invariants.",
+            "downstream_surface": "The architecture naturally exposes well over 25 materially distinct normal, boundary, rejection, concurrency, lifecycle, restart, and failure behaviors without defining hidden tests or preselecting intentional defects.",
+            "module_breadth": "Approximately 12-15 substantive runtime packages/components with distinct responsibilities and strong operational coupling.",
+            "profile": "large_system_strict",
+            "reachability": "The serve entrypoint reaches every long-lived production subsystem; validate, admin, recovery, metrics, and shutdown entrypoints exercise the remaining specialized paths. No planned package is decorative or dead.",
+            "scenario_too_small": false,
+            "substantive_runtime_scale": "The differentiated responsibilities naturally imply roughly 5,000-8,000 or more substantive reachable Go runtime/configuration LOC once materialized, comfortably above the 3,000-line floor without designing toward the floor."
+          },
+          "SOLVER_VISIBLE_DOC_PLAN": {
+            "boundary": "Solver-visible documentation describes inherited structure, technical contracts, state ownership, schemas, entrypoints, and operator workflows. The eventual instruction remains responsible for the engineering objective and all material functional, operational, preservation, compatibility, and safety requirements. Documentation must not identify intentionally incomplete locations, private topology, expected fixes, or verifier behavior.",
+            "documents": [
+              {
+                "content": [
+                  "process and package responsibility map",
+                  "control-plane versus data-plane boundaries",
+                  "immutable RuntimeSnapshot model",
+                  "single-writer/atomic-reader publication contract",
+                  "pool and endpoint runtime ownership",
+                  "request snapshot-lease lifecycle"
+                ],
+                "exclusions": [
+                  "repair instructions",
+                  "implementation defect diagnosis",
+                  "private downstream topology"
+                ],
+                "path": "docs/architecture.md"
+              },
+              {
+                "content": [
+                  "configuration and discovery snapshot schemas",
+                  "source revision/generation fields",
+                  "stable route/pool/endpoint identity semantics",
+                  "normalization rules",
+                  "cross-reference and duplicate-identity validation",
+                  "selection, affinity, retry, failover, health, and drain configuration shapes"
+                ],
+                "path": "docs/configuration.md"
+              },
+              {
+                "content": [
+                  "generation lifecycle",
+                  "snapshot ownership and retirement",
+                  "endpoint membership and health state machines",
+                  "state-compatibility/reuse rules",
+                  "draining semantics",
+                  "checkpoint format and recovery ownership",
+                  "metric ownership and retirement semantics"
+                ],
+                "path": "docs/runtime-state.md"
+              },
+              {
+                "content": [
+                  "serve and validate command usage",
+                  "configuration/discovery submission workflow",
+                  "status and readiness interpretation",
+                  "graceful shutdown",
+                  "checkpoint/restart workflow",
+                  "how rejected or stale updates are reported"
+                ],
+                "path": "docs/operator-guide.md"
+              },
+              {
+                "content": [
+                  "stable metrics and status fields",
+                  "accepted/rejected/stale update telemetry",
+                  "health, retry, affinity, drain, and checkpoint signals",
+                  "lifecycle-scoped metric cleanup and cardinality constraints"
+                ],
+                "path": "docs/observability.md"
+              }
+            ]
+          },
+          "STATE_MODEL": {
+            "checkpoint_model": {
+              "checkpoint_body": [
+                "schema/version",
+                "runtime generation",
+                "accepted source revisions",
+                "normalized desired state",
+                "content digest",
+                "safe reusable health/selection continuity state where meaningful",
+                "bounded non-expired affinity entries targeting accepted endpoints",
+                "integrity checksum"
+              ],
+              "commit_protocol": "Generation-specific body write -> fsync body -> atomic in-memory publication -> atomic CURRENT pointer replace -> fsync state directory -> acceptance acknowledgement.",
+              "crash_semantics": {
+                "after_CURRENT_commit": "Recovery can restore the newly accepted generation because its full checkpoint body was durable before CURRENT referenced it.",
+                "after_publication_before_CURRENT_commit": "The unacknowledged generation may have served briefly, but restart recovers the previous durable accepted generation; it is never mistaken for a durably accepted generation.",
+                "before_publication": "CURRENT still identifies the previous complete accepted generation."
+              },
+              "recovery": [
+                "Read CURRENT.",
+                "Verify pointer, checkpoint schema, checksum, generation metadata, and complete desired state.",
+                "If CURRENT is corrupt/incomplete, attempt the retained previous complete checkpoint.",
+                "If no checkpoint is usable, attempt the explicitly configured bootstrap configuration.",
+                "If no complete valid source exists, remain not-ready rather than publish partial state.",
+                "Revalidate and recompile the entire selected desired state.",
+                "Restore only compatible, non-expired continuity state.",
+                "Publish one complete recovered RuntimeSnapshot atomically.",
+                "Resume watchers/discovery from the recovered source-revision fences."
+              ]
+            },
+            "desired_state": {
+              "fields": [
+                "normalized route definitions",
+                "pool definitions",
+                "endpoint membership snapshots",
+                "selection and affinity policies",
+                "retry and failover policies",
+                "health policies",
+                "drain policies",
+                "source revision set",
+                "content digests"
+              ],
+              "mutability": "Candidate-only until accepted; serving copies are immutable."
+            },
+            "draining": {
+              "existing_traffic": "Requests and connections already using the endpoint may finish until normal completion or the configured drain deadline.",
+              "new_traffic": "DRAINING endpoints are excluded from new assignments, retries, and sticky affinity resolution.",
+              "rapid_readd": "An endpoint absent in an intervening accepted generation receives a new membership incarnation if re-added; the old DRAINING incarnation is never toggled back to ACTIVE.",
+              "retirement": "After relevant snapshots, in-flight work, and reusable transport references are gone, the incarnation becomes RETIRED and its lifecycle-scoped telemetry is released.",
+              "transition": "An endpoint absent from the next accepted membership is marked DRAINING before the new snapshot is published."
+            },
+            "endpoint_runtime": {
+              "eligibility_rule": "Only endpoint incarnations belonging to the leased snapshot, with ACTIVE membership and health eligibility under the pool policy, may receive a new assignment.",
+              "fields": [
+                "canonical endpoint identity",
+                "membership incarnation",
+                "membership lifecycle",
+                "active/passive health state",
+                "health observation timestamps",
+                "in-flight request count",
+                "open/reusable transport accounting",
+                "drain deadline when applicable",
+                "endpoint metric scope"
+              ],
+              "health_lifecycle": [
+                "UNKNOWN",
+                "HEALTHY",
+                "UNHEALTHY"
+              ],
+              "membership_lifecycle": [
+                "ACTIVE",
+                "DRAINING",
+                "RETIRED"
+              ],
+              "ownership": "pool_runtime_registry"
+            },
+            "generation_model": {
+              "accepted_generation": "A runtime generation becomes externally acknowledged as accepted only after its complete snapshot has been published and the durable CURRENT checkpoint pointer has been committed.",
+              "duplicate_semantics": "A duplicate accepted source revision with the same content digest is an idempotent no-op; the same revision with different content is rejected as a conflict.",
+              "invalid_semantics": "Validation or compilation failure does not advance the source's accepted revision, runtime generation, serving snapshot, or durable CURRENT pointer.",
+              "runtime_generation": "A monotonically increasing internal generation allocated only to a fully merged candidate that reaches reconciliation.",
+              "source_revision": "Each independent full-snapshot source has a comparable accepted revision used for duplicate/out-of-order rejection.",
+              "stale_semantics": "A revision older than the accepted revision for that source is rejected without affecting the serving generation."
+            },
+            "observability_lifecycle": {
+              "affinity_entries": "Bounded by TTL and capacity and pruned on ineligible target lookup and periodic maintenance.",
+              "cardinality_rule": "Arbitrary request paths, affinity keys, source payloads, or retired generation identifiers are not retained indefinitely as metric labels.",
+              "endpoint_metrics": "Owned by an EndpointRuntime incarnation and removed after RETIRED.",
+              "generation_metrics": "Owned by a RuntimeSnapshot and removed after that generation becomes unreachable.",
+              "global_metrics": "Stable low-cardinality counters/gauges persist for process lifetime.",
+              "status_history": "Bounded ring of recent accepted/rejected/stale update outcomes rather than an unbounded generation ledger."
+            },
+            "pool_runtime": {
+              "ownership": "pool_runtime_registry",
+              "reusable_state": [
+                "weighted-balancer continuity state",
+                "bounded sticky-affinity state",
+                "endpoint runtime references",
+                "pool-level health aggregates",
+                "selection counters"
+              ],
+              "reuse_rule": "Reuse requires stable pool identity and a compatible state-compatibility fingerprint. Material policy changes create new incompatible state instead of silently interpreting old state under new semantics."
+            },
+            "runtime_snapshot": {
+              "fields": [
+                "runtime generation",
+                "compiled route graph",
+                "immutable pool views",
+                "immutable endpoint membership views",
+                "policy objects",
+                "references to reusable runtime handles",
+                "semantic digests",
+                "snapshot metric scope"
+              ],
+              "lease_rule": "A snapshot cannot become RETIRED until no request/stream lease still references it.",
+              "lifecycle": [
+                "BUILDING",
+                "PUBLISHED",
+                "RETIRED"
+              ]
+            },
+            "selection_state": {
+              "all_unhealthy": "If neither the selected pool nor an explicitly configured failover pool contains an eligible endpoint, the request fails deterministically with service-unavailable behavior rather than routing to a known-ineligible endpoint.",
+              "failover_state": "Failover follows the immutable generation's configured pool chain and eligibility results.",
+              "retry_state": "Per-request attempted endpoint identities are excluded from later attempts so a retry cannot repeatedly select the same ineligible/failing endpoint.",
+              "sticky_affinity": "A bounded TTL/capacity-controlled per-pool mapping is preserved for compatible unchanged pools. Every lookup rechecks target membership incarnation and health before use; stale mappings are deleted or replaced."
+            },
+            "sources_of_truth": {
+              "accepted_desired_truth": "The normalized DesiredState and accepted source-revision set embedded in the current generation.",
+              "durable_truth": "The checkpoint body referenced by the atomically committed CURRENT pointer.",
+              "non_authoritative": [
+                "metrics",
+                "status history",
+                "logs",
+                "uncommitted candidate checkpoint bodies",
+                "rejected desired-state candidates"
+              ],
+              "runtime_continuity_truth": "Concurrency-safe PoolRuntime and EndpointRuntime objects owned by pool_runtime_registry and referenced by one or more live snapshots.",
+              "serving_truth": "The RuntimeSnapshot referenced by snapshot_publication_store.current."
+            },
+            "update_transaction": [
+              "Receive one complete source snapshot and perform source-revision duplicate/stale checks.",
+              "Merge it with currently accepted source snapshots into an isolated candidate DesiredState.",
+              "Normalize and semantically validate the complete candidate.",
+              "Compile the complete immutable candidate graph.",
+              "Under the serialized reconciliation writer, recheck generation/source fences.",
+              "Diff routes, pools, and canonical endpoint identities against the current accepted generation.",
+              "Reuse only compatible continuously unchanged runtime handles; allocate additions and transition removals to draining.",
+              "Construct the complete RuntimeSnapshot without mutating the serving snapshot.",
+              "Write and fsync a complete generation-specific checkpoint body, but do not yet advance the recoverable CURRENT pointer.",
+              "Atomically exchange snapshot_publication_store.current to the complete new RuntimeSnapshot.",
+              "Atomically replace and fsync the durable CURRENT pointer so it references the already-complete checkpoint body for the published generation.",
+              "Only after CURRENT is committed, acknowledge the generation as accepted.",
+              "Retire unreachable old snapshots/runtime objects asynchronously after leases and drains complete and garbage-collect their telemetry/checkpoint retention state."
+            ]
+          },
+          "UNRESOLVED_RISKS": {
+            "blocking": [],
+            "non_blocking": [
+              {
+                "constraint": "Later materialization may choose a normal Go-friendly JSON/YAML/API schema, but it must retain complete-snapshot revisions, stable identities, semantic validation, and generation-safe publication.",
+                "risk": "The precise serialized configuration/discovery wire format is not fixed by the approved work package."
+              },
+              {
+                "constraint": "They may be chosen during technical-contract materialization without weakening health lifecycle, eligibility, bounded probing, or last-known-good guarantees.",
+                "risk": "Exact active-health transport knobs and probing defaults are not material requirements in the approved package."
+              },
+              {
+                "constraint": "The materialized runtime must use ordinary durable file primitives available in the canonical runtime environment and must fail closed if those guarantees cannot be established.",
+                "risk": "Checkpoint durability depends on filesystem rename/fsync semantics."
+              },
+              {
+                "constraint": "The selected contract must remain bounded, deterministic, generation-safe, and always revalidate endpoint eligibility before honoring an affinity target.",
+                "risk": "Sticky-affinity key extraction format is not prescribed by the approved requirements."
+              }
+            ]
+          }
+        },
+        "CREATION_PROFILE": "large_system_strict"
+      }
+    },
+    "invocation_id": "inv_28c1baf5125eb73cb1a52b677925c8967f6a9ceb113e42bf4c28e8f08db86f98",
+    "learning": {
+      "context_hash": "sha256:bb84a513aa2b6e4374d691759c4a6edf94169f479f4611e9091643b9f279ccfc",
+      "lessons": [],
+      "mode": "GENERALIZED_LESSONS_PLUS_OWNED_REMEDIATIONS",
+      "raw_feedback_exposed": false,
+      "raw_historical_findings_exposed": false,
+      "registry_heads": {
+        "feedback": "GENESIS",
+        "findings": "GENESIS",
+        "lessons": "GENESIS",
+        "patterns": "GENESIS",
+        "remediations": "GENESIS"
+      },
+      "remediations": []
+    },
+    "missing_required_inputs": [],
+    "output_contract": {
+      "allowed_status_values": [
+        "DESIGN_READY",
+        "SCENARIO_TOO_SMALL",
+        "BLOCKED"
+      ],
+      "deterministic_validators": [
+        ".terminus/validate_task_complexity.py <task>"
+      ],
+      "optional_fields": [],
+      "persisted_artifacts": [
+        ".terminus/designs/<task>.json"
+      ],
+      "required_fields": [
+        "profile",
+        "root_cause_clusters",
+        "defects",
+        "causal_edges",
+        "behavioral_surfaces",
+        "organic_f2p_surface_assessment"
+      ],
+      "semantic_reviewers": [
+        "Task Architect",
+        "Complexity Governor"
+      ]
+    },
+    "readiness": "READY",
+    "retrieval": {
+      "query": null,
+      "retrieved_chars": 0,
+      "retrieved_context": [],
+      "status": "NOT_REQUESTED"
+    },
+    "routing": {
+      "failure_routes": {
+        "ARCHITECTURE_GAP": "Creation Controller -> SYSTEM_ARCHITECTURE",
+        "HIDDEN_KNOWLEDGE": "A3 Defect Topology Designer -> expose legitimate solver-visible contract or remove defect",
+        "SCENARIO_TOO_SMALL": "Creation Controller -> WORK_PACKAGE_RESEARCH"
+      },
+      "stale_on": [
+        "work-package change",
+        "architecture change",
+        "material operational requirement change"
+      ],
+      "success_transition": "ENVIRONMENT_BUILD"
+    },
+    "schema_version": "1.0",
+    "stage": {
+      "lifecycle": "creation",
+      "owner": "A3 Defect Topology Designer",
+      "role_class": "PRODUCER",
+      "role_id": "A3_DEFECT_TOPOLOGY_DESIGNER",
+      "stage_id": "DEFECT_TOPOLOGY"
+    }
+  },
+  "outputs": {
+    "behavioral_surfaces": {
+      "cross_component": [
+        "A combined route, pool, and endpoint update crosses validation, compilation, reconciliation, checkpoint preparation, lifecycle transitions, and one publication boundary without exposing a mixed generation.",
+        "Rapid remove/re-add keeps the old draining incarnation, transport accounting, health evidence, and metric scope separate from the newly active incarnation.",
+        "Passive health feedback racing an unrelated configuration publication remains attached to the compatible endpoint runtime object and affects eligibility without mutating configuration generations.",
+        "A duplicate or rejected update cannot indirectly create drains, checkpoint authority changes, runtime-generation scopes, or stale metrics.",
+        "Generation and endpoint telemetry is retained while its owning live snapshot or endpoint incarnation remains reachable and is released only after final lifecycle retirement.",
+        "A rejected snapshot from one source cannot contaminate the accepted merge base used when another source later submits a valid snapshot.",
+        "A request using failover after a concurrent publication follows the failover chain and membership views from its own leased generation, while lifecycle and health eligibility are checked against owned runtime state.",
+        "Recovered checkpoint authority, recovered source fences, and resumed ingress cooperate so provider replay cannot roll back the restored serving generation."
+      ],
+      "edge_boundary": [
+        "Equivalent endpoint address spellings and declaration reordering preserve canonical identity and semantic equivalence while duplicate canonical identities remain distinguishable as invalid input.",
+        "The boundary between same-revision/same-digest idempotency and same-revision/different-digest conflict is deterministic under concurrent arrivals.",
+        "An endpoint that is absent for exactly one accepted generation and then reappears is a new incarnation even while the old incarnation may still be draining.",
+        "Drain completion at the configured deadline accounts for in-flight work, reusable connections, and old-snapshot reachability without permitting new assignment.",
+        "Pool compatibility distinguishes semantic policy changes from declaration-only or metadata-only changes so reusable runtime state is neither over-reused nor needlessly reset.",
+        "Burst ingestion at queue capacity converges to the newest admissible complete snapshot for each source rather than an intermediate superseded state.",
+        "A health transition that leaves every primary and failover member ineligible reaches the explicit no-eligible-backend boundary rather than selecting a known-ineligible member."
+      ],
+      "failure_recovery": [
+        "A crash before runtime publication leaves the previous complete durable generation authoritative.",
+        "A crash after publication but before durable CURRENT commit may discard the unacknowledged generation on restart but cannot make it durably accepted.",
+        "A crash after CURRENT replacement and directory durability recovers the newly accepted complete generation.",
+        "Corrupt or incomplete CURRENT state is rejected and recovery attempts the retained previous complete generation before bootstrap or not-ready fallback.",
+        "With no complete valid checkpoint or bootstrap source, startup remains not-ready and never publishes partial desired state.",
+        "Recovery recompiles normalized desired state and restores only compatible non-expired continuity data before one atomic publication.",
+        "A backend removed during an active request stops receiving new assignments while traffic already holding valid ownership may finish within drain policy."
+      ],
+      "negative_rejection": [
+        "Semantically invalid configuration, missing references, invalid policy bounds, or duplicate canonical endpoint identities are rejected without advancing accepted source state or changing the serving generation.",
+        "An out-of-order source revision is rejected even if its validation began before a newer revision was accepted.",
+        "A repeated accepted source revision with different content is rejected as a conflict and cannot replace the accepted desired snapshot.",
+        "A sticky mapping to an unhealthy, draining, retired, or different-incarnation target is invalidated before selection.",
+        "Retries exclude already attempted canonical endpoints and never convert a retry budget into repeated attempts against the same failing target.",
+        "If neither the selected pool nor its configured failover chain has an eligible member, forwarding fails deterministically instead of routing to known-ineligible capacity.",
+        "A material selection or affinity policy incompatibility prevents reuse of runtime state created under the old semantics."
+      ],
+      "normal": [
+        "Initial valid desired state is normalized, compiled, checkpoint-prepared, atomically published, durably accepted, and serves requests through healthy eligible backends.",
+        "A route-only semantic change publishes a new generation while compatible unchanged pool and endpoint runtime state remains reusable.",
+        "A membership addition creates only the new endpoint runtime state while continuously unchanged members retain health, balancing, affinity, and transport continuity.",
+        "An exact duplicate accepted source revision and digest is an idempotent no-op with no serving-generation, drain, checkpoint, or lifecycle-scope churn.",
+        "Independent complete-snapshot sources merge using their own revision authorities and the last accepted snapshot from every other source.",
+        "A long-lived request keeps its original generation lease across an unrelated publication and completes against a coherent route/pool view.",
+        "Restart from a complete accepted checkpoint reconstructs one complete generation and resumes update admission with recovered source-revision fences already authoritative."
+      ]
+    },
+    "causal_edges": [
+      {
+        "from": "D27",
+        "to": "D02"
+      },
+      {
+        "from": "D28",
+        "to": "D02"
+      },
+      {
+        "from": "D29",
+        "to": "D03"
+      },
+      {
+        "from": "D29",
+        "to": "D05"
+      },
+      {
+        "from": "D30",
+        "to": "D02"
+      },
+      {
+        "from": "D30",
+        "to": "D28"
+      },
+      {
+        "from": "D01",
+        "to": "D22"
+      },
+      {
+        "from": "D04",
+        "to": "D09"
+      },
+      {
+        "from": "D04",
+        "to": "D21"
+      },
+      {
+        "from": "D04",
+        "to": "D22"
+      },
+      {
+        "from": "D05",
+        "to": "D11"
+      },
+      {
+        "from": "D02",
+        "to": "D05"
+      },
+      {
+        "from": "D02",
+        "to": "D22"
+      },
+      {
+        "from": "D05",
+        "to": "D22"
+      },
+      {
+        "from": "D29",
+        "to": "D22"
+      },
+      {
+        "from": "D06",
+        "to": "D12"
+      },
+      {
+        "from": "D06",
+        "to": "D14"
+      },
+      {
+        "from": "D07",
+        "to": "D17"
+      },
+      {
+        "from": "D07",
+        "to": "D18"
+      },
+      {
+        "from": "D08",
+        "to": "D12"
+      },
+      {
+        "from": "D10",
+        "to": "D12"
+      },
+      {
+        "from": "D10",
+        "to": "D18"
+      },
+      {
+        "from": "D10",
+        "to": "D20"
+      },
+      {
+        "from": "D11",
+        "to": "D16"
+      },
+      {
+        "from": "D12",
+        "to": "D13"
+      },
+      {
+        "from": "D13",
+        "to": "D18"
+      },
+      {
+        "from": "D14",
+        "to": "D15"
+      },
+      {
+        "from": "D16",
+        "to": "D15"
+      },
+      {
+        "from": "D17",
+        "to": "D13"
+      },
+      {
+        "from": "D18",
+        "to": "D19"
+      },
+      {
+        "from": "D19",
+        "to": "D21"
+      },
+      {
+        "from": "D20",
+        "to": "D21"
+      },
+      {
+        "from": "D22",
+        "to": "D24"
+      },
+      {
+        "from": "D22",
+        "to": "D25"
+      },
+      {
+        "from": "D23",
+        "to": "D25"
+      },
+      {
+        "from": "D24",
+        "to": "D26"
+      },
+      {
+        "from": "D26",
+        "to": "D12"
+      }
+    ],
+    "defects": [
+      {
+        "component": "generation_reconciler",
+        "id": "D01",
+        "observable_failure": "A source revision already accepted with one content digest can later be treated as an idempotent duplicate or replacement when the same revision arrives with different content, so the conflict is not rejected deterministically.",
+        "partial_fix_trap": "Adding a duplicate-revision fast path is insufficient if it compares only the revision; the accepted digest and under-writer fence still have to participate in the decision.",
+        "root_cause": "C1_GENERATION_TRANSACTION_AND_PUBLICATION"
+      },
+      {
+        "component": "generation_reconciler",
+        "id": "D02",
+        "observable_failure": "An older source revision that began validation before a newer revision was accepted can publish after the newer generation because the stale fence is not rechecked inside the serialized reconciliation writer.",
+        "partial_fix_trap": "Serializing only the final snapshot swap still permits a candidate validated against an obsolete accepted-revision set to win unless source fences are revalidated inside that serialization boundary.",
+        "root_cause": "C1_GENERATION_TRANSACTION_AND_PUBLICATION"
+      },
+      {
+        "component": "generation_reconciler",
+        "id": "D03",
+        "observable_failure": "A candidate rejected during semantic validation or compilation can still advance accepted source-revision or runtime-generation bookkeeping, causing a later valid update to be rejected as stale or to skip a generation despite the serving snapshot remaining unchanged.",
+        "partial_fix_trap": "Preserving the old serving pointer alone does not fix poisoned acceptance metadata; all accepted-revision, generation, checkpoint, and status mutations must remain outside the rejected path.",
+        "root_cause": "C1_GENERATION_TRANSACTION_AND_PUBLICATION"
+      },
+      {
+        "component": "generation_reconciler",
+        "id": "D04",
+        "observable_failure": "An exact duplicate source snapshot with the same accepted revision and digest still allocates a runtime generation and performs reconciliation, creating avoidable checkpoint, drain, and lifecycle churn instead of an idempotent no-op.",
+        "partial_fix_trap": "Suppressing only the public update notification leaves hidden generation allocation, metrics, checkpoint bodies, or drain transitions growing unless the duplicate is stopped before candidate reconciliation.",
+        "root_cause": "C1_GENERATION_TRANSACTION_AND_PUBLICATION"
+      },
+      {
+        "component": "snapshot_publication_store",
+        "id": "D05",
+        "observable_failure": "A request can observe a new route graph together with old or not-yet-reconciled pool runtime state because publication exposes generation pieces separately instead of exchanging one complete RuntimeSnapshot.",
+        "partial_fix_trap": "Putting a lock around route replacement does not restore the invariant if pool views, runtime handles, or generation metadata are still installed through separate visibility points.",
+        "root_cause": "C1_GENERATION_TRANSACTION_AND_PUBLICATION"
+      },
+      {
+        "component": "semantic_validator",
+        "id": "D06",
+        "observable_failure": "Equivalent endpoint addresses that normalize to the same network identity are accepted as distinct members, splitting health, balancing, affinity, transport, and metric state for one backend.",
+        "partial_fix_trap": "Deduplicating raw address strings misses equivalent textual forms; canonicalization must precede uniqueness checks and the same canonical identity must be used throughout reconciliation and selection.",
+        "root_cause": "C2_STABLE_IDENTITY_AND_COMPATIBILITY"
+      },
+      {
+        "component": "generation_reconciler",
+        "id": "D07",
+        "observable_failure": "A declaration reorder or equivalent address formatting change makes a continuously present endpoint look removed and re-added, resetting health and selection continuity and unnecessarily starting a drain.",
+        "partial_fix_trap": "Preserving health by copying values into the replacement object still loses incarnation, affinity, balancer, transport, and lifecycle continuity; the unchanged identity itself has to be stable.",
+        "root_cause": "C2_STABLE_IDENTITY_AND_COMPATIBILITY"
+      },
+      {
+        "component": "pool_runtime_registry",
+        "id": "D08",
+        "observable_failure": "A material selection or affinity policy change is classified as runtime-compatible, so balancer or sticky state created under old semantics is silently reused by the new pool generation.",
+        "partial_fix_trap": "Resetting only sticky entries is incomplete when weighted-balancer continuity, counters, health aggregates, or endpoint references are also policy-sensitive; compatibility needs one coherent fingerprint.",
+        "root_cause": "C2_STABLE_IDENTITY_AND_COMPATIBILITY"
+      },
+      {
+        "component": "pool_runtime_registry",
+        "id": "D09",
+        "observable_failure": "A semantically unchanged pool is classified as incompatible because declaration-only ordering or non-semantic metadata participates in its compatibility key, so unrelated reloads discard useful balancing and affinity continuity.",
+        "partial_fix_trap": "Ignoring one ordering field merely moves the instability if the compatibility identity is not defined from normalized semantic policy; a hand-picked copy of affinity state also leaves other reusable state reset.",
+        "root_cause": "C2_STABLE_IDENTITY_AND_COMPATIBILITY"
+      },
+      {
+        "component": "generation_reconciler",
+        "id": "D10",
+        "observable_failure": "When an endpoint is absent from one accepted generation and then reappears, reconciliation reactivates its still-draining runtime object instead of creating a new membership incarnation.",
+        "partial_fix_trap": "Flipping the lifecycle flag back to ACTIVE makes selection appear fixed but carries the old drain deadline, in-flight accounting, transport ownership, health evidence, and metric scope into the new membership.",
+        "root_cause": "C2_STABLE_IDENTITY_AND_COMPATIBILITY"
+      },
+      {
+        "component": "data_plane_server",
+        "id": "D11",
+        "observable_failure": "A request or stream reacquires the current snapshot during a retry or later forwarding phase, allowing one request to resolve routes or pools from two different generations.",
+        "partial_fix_trap": "Caching only the initial route result is insufficient if retries, failover, affinity, or forwarding later consult the global current snapshot; the lease must cover the complete request lifetime.",
+        "root_cause": "C3_REQUEST_SNAPSHOT_AND_SELECTION_ELIGIBILITY"
+      },
+      {
+        "component": "selection_engine",
+        "id": "D12",
+        "observable_failure": "Sticky affinity can route to a target whose canonical identity still exists but whose membership incarnation is stale, draining, or unhealthy because affinity lookup does not revalidate full eligibility before use.",
+        "partial_fix_trap": "Deleting mappings only when an endpoint disappears misses remove/re-add incarnation changes and health transitions; every lookup must validate the current leased membership incarnation and health.",
+        "root_cause": "C3_REQUEST_SNAPSHOT_AND_SELECTION_ELIGIBILITY"
+      },
+      {
+        "component": "selection_engine",
+        "id": "D13",
+        "observable_failure": "A DRAINING endpoint remains eligible for new weighted selection because membership lifecycle is not checked independently of health.",
+        "partial_fix_trap": "Marking draining endpoints unhealthy couples two independent state machines and can corrupt preserved health evidence on reconfiguration; selection must enforce lifecycle eligibility directly.",
+        "root_cause": "C3_REQUEST_SNAPSHOT_AND_SELECTION_ELIGIBILITY"
+      },
+      {
+        "component": "selection_engine",
+        "id": "D14",
+        "observable_failure": "A retry can select the same failed canonical endpoint again after an alias, handle replacement, or reconciliation remap because the attempted set is keyed by an unstable runtime handle rather than stable endpoint identity.",
+        "partial_fix_trap": "Increasing the retry budget or excluding only the immediately previous pointer hides the loop for simple cases but does not provide request-local canonical endpoint exclusion across attempts.",
+        "root_cause": "C3_REQUEST_SNAPSHOT_AND_SELECTION_ELIGIBILITY"
+      },
+      {
+        "component": "selection_engine",
+        "id": "D15",
+        "observable_failure": "When every backend in the primary and configured failover pools is ineligible, selection still forwards to a known unhealthy or draining member instead of returning deterministic service-unavailable behavior.",
+        "partial_fix_trap": "Adding an all-unhealthy check only to the primary pool remains unsafe if failover traversal can choose ineligible members; eligibility has to gate every pool in the chain.",
+        "root_cause": "C3_REQUEST_SNAPSHOT_AND_SELECTION_ELIGIBILITY"
+      },
+      {
+        "component": "selection_engine",
+        "id": "D16",
+        "observable_failure": "Failover for a request leased to an older generation resolves the failover pool from the globally current registry, so a concurrent publication can change that request's failover target mid-flight.",
+        "partial_fix_trap": "Holding the route object stable does not help if failover pool resolution is global; route policy, pool chain, and membership views must all come from the same leased snapshot.",
+        "root_cause": "C3_REQUEST_SNAPSHOT_AND_SELECTION_ELIGIBILITY"
+      },
+      {
+        "component": "drain_manager",
+        "id": "D17",
+        "observable_failure": "A removed endpoint is not marked ineligible until after the next RuntimeSnapshot is published, leaving a transition window in which new requests can still be assigned to capacity that the accepted membership has removed.",
+        "partial_fix_trap": "Making the drain worker faster narrows but does not eliminate the unsafe window; the lifecycle transition must precede publication and selection must honor it.",
+        "root_cause": "C4_DRAIN_TRANSPORT_AND_RETIREMENT_OWNERSHIP"
+      },
+      {
+        "component": "upstream_transport",
+        "id": "D18",
+        "observable_failure": "Removing an endpoint closes or discards its runtime and reusable transport state immediately, terminating or stranding in-flight and long-lived traffic that legitimately holds an older snapshot lease.",
+        "partial_fix_trap": "Keeping only the socket open is not enough if the endpoint runtime, in-flight counters, health reference, or old snapshot reachability is retired underneath the request.",
+        "root_cause": "C4_DRAIN_TRANSPORT_AND_RETIREMENT_OWNERSHIP"
+      },
+      {
+        "component": "drain_manager",
+        "id": "D19",
+        "observable_failure": "Drain completion ignores outstanding old-generation snapshot reachability and can retire an endpoint runtime while a leased request still holds a valid reference to that incarnation.",
+        "partial_fix_trap": "Waiting for the in-flight counter alone fails for streams or reusable transport references not represented by that counter; retirement needs the complete ownership/reachability condition.",
+        "root_cause": "C4_DRAIN_TRANSPORT_AND_RETIREMENT_OWNERSHIP"
+      },
+      {
+        "component": "upstream_transport",
+        "id": "D20",
+        "observable_failure": "Idle reusable connections or post-removal keepalive reuse can keep a drain alive indefinitely or permit fresh work onto a draining endpoint, so configured drain deadlines do not bound retirement.",
+        "partial_fix_trap": "Adding a timer that only flips the endpoint to RETIRED leaves reusable connections and assignment paths alive; deadline handling must coordinate transport retirement and no-new-work semantics.",
+        "root_cause": "C4_DRAIN_TRANSPORT_AND_RETIREMENT_OWNERSHIP"
+      },
+      {
+        "component": "telemetry_registry",
+        "id": "D21",
+        "observable_failure": "Retired endpoint incarnations or unreachable generations leave lifecycle-scoped metric registrations behind, so repeated membership and generation turnover produces stale observations and unbounded metric cardinality.",
+        "partial_fix_trap": "Deleting metric values on removal is either too early for live old snapshots or too late for stuck scopes; metric ownership must follow final endpoint and generation reachability rather than configuration presence alone.",
+        "root_cause": "C4_DRAIN_TRANSPORT_AND_RETIREMENT_OWNERSHIP"
+      },
+      {
+        "component": "checkpoint_store",
+        "id": "D22",
+        "observable_failure": "The recoverable CURRENT pointer can reference a generation before its complete checkpoint body is durably fsynced or before the corresponding complete RuntimeSnapshot has been published, allowing restart to select a partial or never-safely-published generation.",
+        "partial_fix_trap": "Atomic rename of CURRENT by itself is not sufficient; body durability and publication ordering must precede the pointer commit, and directory durability must complete the transaction.",
+        "root_cause": "C5_CHECKPOINT_COMMIT_AND_RECOVERY"
+      },
+      {
+        "component": "checkpoint_store",
+        "id": "D23",
+        "observable_failure": "An update can be acknowledged as accepted after in-memory publication but before the CURRENT pointer replacement and state-directory fsync are durable, so a crash can lose a generation the operator was told was accepted.",
+        "partial_fix_trap": "Writing the checkpoint body earlier does not give accepted semantics if recovery authority still points to the previous generation; acknowledgement must wait for the durable pointer commit.",
+        "root_cause": "C5_CHECKPOINT_COMMIT_AND_RECOVERY"
+      },
+      {
+        "component": "runtime_host",
+        "id": "D24",
+        "observable_failure": "Startup can trust a corrupt, truncated, checksum-mismatched, or schema-incompatible CURRENT checkpoint and become ready with incomplete desired state instead of rejecting that recovery point.",
+        "partial_fix_trap": "Checking that the file parses is insufficient; pointer metadata, schema, checksum, generation metadata, and complete normalized desired state all have to be validated before compilation/publication.",
+        "root_cause": "C5_CHECKPOINT_COMMIT_AND_RECOVERY"
+      },
+      {
+        "component": "checkpoint_store",
+        "id": "D25",
+        "observable_failure": "A corrupt or incomplete CURRENT checkpoint causes startup failure even when a retained previous complete checkpoint or configured bootstrap state is valid, turning recoverable corruption into unnecessary unavailability.",
+        "partial_fix_trap": "Catching the CURRENT read error without an ordered complete-state fallback still leaves the process not-ready; fallback must preserve the same integrity and whole-generation validation rules.",
+        "root_cause": "C5_CHECKPOINT_COMMIT_AND_RECOVERY"
+      },
+      {
+        "component": "route_graph_compiler",
+        "id": "D26",
+        "observable_failure": "Recovery republishes serialized runtime objects or continuity state without fully revalidating and recompiling normalized desired state, allowing incompatible policy state or expired/stale affinity and health continuity to survive restart.",
+        "partial_fix_trap": "Revalidating only configuration syntax leaves runtime compatibility and expiry unchecked; recovery must rebuild the whole generation and selectively restore only compatible, non-expired continuity state.",
+        "root_cause": "C5_CHECKPOINT_COMMIT_AND_RECOVERY"
+      },
+      {
+        "component": "configuration_ingress",
+        "id": "D27",
+        "observable_failure": "Under a burst that fills the bounded ingress queue, coalescing can discard the newest complete snapshot and retain a superseded one, so the runtime converges to stale endpoint membership after the burst quiets.",
+        "partial_fix_trap": "Increasing queue capacity only delays the failure; coalescing must understand complete-snapshot replacement and retain the newest admissible revision per source.",
+        "root_cause": "C6_INGRESS_COALESCING_AND_SOURCE_AUTHORITY"
+      },
+      {
+        "component": "configuration_ingress",
+        "id": "D28",
+        "observable_failure": "Revision ordering is tracked globally across independent configuration or discovery sources, so a high revision from one source can cause a valid lower-numbered revision from another source to be rejected as stale.",
+        "partial_fix_trap": "Namespacing only the input queue is incomplete if accepted-revision bookkeeping or reconciliation fences remain global; source identity must scope revision authority end to end.",
+        "root_cause": "C6_INGRESS_COALESCING_AND_SOURCE_AUTHORITY"
+      },
+      {
+        "component": "configuration_ingress",
+        "id": "D29",
+        "observable_failure": "A source snapshot that is later rejected can still replace the cached accepted snapshot used for multi-source merging, so an unrelated valid update from another source is compiled against rejected desired state.",
+        "partial_fix_trap": "Keeping the serving RuntimeSnapshot unchanged does not protect future candidates if the ingress merge cache was mutated; accepted source material must advance only with successful acceptance.",
+        "root_cause": "C6_INGRESS_COALESCING_AND_SOURCE_AUTHORITY"
+      },
+      {
+        "component": "runtime_host",
+        "id": "D30",
+        "observable_failure": "After restart, watchers or discovery providers can resume before recovered per-source revision fences are installed, allowing an older complete snapshot to roll the recovered desired state backward.",
+        "partial_fix_trap": "Starting providers later by a fixed delay is racy; recovered accepted revisions must become authoritative before update admission is enabled.",
+        "root_cause": "C6_INGRESS_COALESCING_AND_SOURCE_AUTHORITY"
+      }
+    ],
+    "organic_f2p_surface_assessment": "SUFFICIENT",
+    "profile": "large_system_strict",
+    "root_cause_clusters": {
+      "C1_GENERATION_TRANSACTION_AND_PUBLICATION": {
+        "architectural_invariants": [
+          "Per-source stale, duplicate, and same-revision conflict decisions remain valid when rechecked under the single writer.",
+          "Rejected candidates do not advance accepted revision, runtime generation, serving state, or durable acceptance.",
+          "Exactly one complete immutable RuntimeSnapshot becomes visible atomically."
+        ],
+        "primary_components": [
+          "generation_reconciler",
+          "snapshot_publication_store",
+          "semantic_validator",
+          "route_graph_compiler"
+        ],
+        "summary": "Candidate revision fencing, accepted-state bookkeeping, runtime-generation allocation, and publication are not treated as one serialized acceptance transaction."
+      },
+      "C2_STABLE_IDENTITY_AND_COMPATIBILITY": {
+        "architectural_invariants": [
+          "Endpoint identity is canonical and duplicate canonical identities are rejected.",
+          "Continuously unchanged endpoints and compatible pools preserve runtime continuity.",
+          "Accepted removal followed by re-add creates a new endpoint incarnation.",
+          "Semantic digests are independent of declaration-only ordering."
+        ],
+        "primary_components": [
+          "semantic_validator",
+          "route_graph_compiler",
+          "generation_reconciler",
+          "pool_runtime_registry"
+        ],
+        "summary": "Reconciliation uses unstable or insufficient identity and compatibility keys, confusing continuous membership with replacement and semantic equivalence with change."
+      },
+      "C3_REQUEST_SNAPSHOT_AND_SELECTION_ELIGIBILITY": {
+        "architectural_invariants": [
+          "A request acquires one RuntimeSnapshot and retains it for its complete lifetime.",
+          "Sticky, retry, weighted, and failover selection use only members in that leased snapshot.",
+          "Every assignment rechecks membership incarnation, lifecycle, and health eligibility.",
+          "No eligible backend produces deterministic service-unavailable behavior."
+        ],
+        "primary_components": [
+          "data_plane_server",
+          "snapshot_publication_store",
+          "selection_engine",
+          "pool_runtime_registry"
+        ],
+        "summary": "Request processing does not consistently bind selection, affinity, retry, and failover decisions to one leased generation plus current incarnation eligibility."
+      },
+      "C4_DRAIN_TRANSPORT_AND_RETIREMENT_OWNERSHIP": {
+        "architectural_invariants": [
+          "Removed membership is ineligible for new work before publication of the new generation.",
+          "Existing traffic may finish until completion or the drain deadline.",
+          "Runtime objects remain alive while snapshots, in-flight work, or reusable transport references require them.",
+          "Lifecycle-scoped telemetry is released when its owner is finally retired."
+        ],
+        "primary_components": [
+          "generation_reconciler",
+          "drain_manager",
+          "upstream_transport",
+          "pool_runtime_registry",
+          "telemetry_registry"
+        ],
+        "summary": "Removal, transport draining, reachability, and lifecycle-owned retirement are not coordinated as one ownership state machine."
+      },
+      "C5_CHECKPOINT_COMMIT_AND_RECOVERY": {
+        "architectural_invariants": [
+          "A complete checkpoint body is durable before CURRENT can reference it.",
+          "CURRENT becomes recoverable only after the corresponding complete runtime snapshot is published.",
+          "Acceptance is acknowledged only after CURRENT replacement and directory durability.",
+          "Recovery verifies integrity, falls back to a previous complete state, and recompiles a whole generation.",
+          "Only compatible, non-expired continuity state is restored."
+        ],
+        "primary_components": [
+          "checkpoint_store",
+          "runtime_host",
+          "route_graph_compiler",
+          "pool_runtime_registry"
+        ],
+        "summary": "Durable checkpoint commit, acknowledgement, integrity verification, fallback, and reconstruction are not aligned with the published-generation acceptance boundary."
+      },
+      "C6_INGRESS_COALESCING_AND_SOURCE_AUTHORITY": {
+        "architectural_invariants": [
+          "Each independent source has its own accepted revision fence and accepted complete snapshot.",
+          "Bounded queues may coalesce superseded complete snapshots but must converge to the newest admissible snapshot.",
+          "Rejected candidates cannot replace accepted source material used by later merges.",
+          "Recovered source-revision fences are installed before watchers or providers resume."
+        ],
+        "primary_components": [
+          "configuration_ingress",
+          "generation_reconciler",
+          "runtime_host"
+        ],
+        "summary": "Complete-snapshot ingestion does not preserve per-source revision authority and last-accepted source state under burst coalescing, rejection, and restart."
+      }
+    }
+  },
+  "record_id": "rec_2516bd07a48e13c6c293aa4acb99622966739d8173b4d1bfe627fa994815f2f0",
+  "role_id": "A3_DEFECT_TOPOLOGY_DESIGNER",
+  "schema_version": "1.0",
+  "stage_id": "DEFECT_TOPOLOGY",
+  "status": "DESIGN_READY",
+  "task_lineage": {
+    "input_task_commit": "6c91b9aca662fa192c144d55c8aee0e693adcc0d",
+    "output_task_commit": "6c91b9aca662fa192c144d55c8aee0e693adcc0d",
+    "task_changed": false
+  },
+  "transition": {
+    "action": "ADVANCE",
+    "requires_state_validation": false,
+    "target": "ENVIRONMENT_BUILD",
+    "target_kind": "STAGE"
+  },
+  "validation": {
+    "acceptance_predicates_satisfied": true,
+    "evidence_binding_satisfied": true,
+    "evidence_refs_count": 6,
+    "invocation_identity_valid": true,
+    "invocation_policy_valid": true,
+    "output_keys_valid": true,
+    "required_outputs_satisfied": true,
+    "retrieval_context_authorized": true,
+    "status_legal": true,
+    "task_commit_change_authorized": true,
+    "task_lineage_valid": true
+  }
+}
