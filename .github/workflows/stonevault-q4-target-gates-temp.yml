@@ -1,0 +1,19 @@
+name: StoneVault Q4 Target Gates Temp
+
+on:
+  pull_request:
+    paths:
+      - '.terminus/designs/stonevault-crash-safe-storage-q4-remediation.json'
+
+permissions:
+  contents: read
+
+jobs:
+  stonevault-target-gates:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate StoneVault complexity
+        run: python3 .terminus/validate_task_complexity.py stonevault-crash-safe-storage
+      - name: Validate StoneVault runtime authenticity
+        run: python3 .terminus/validate_runtime_authenticity.py stonevault-crash-safe-storage
