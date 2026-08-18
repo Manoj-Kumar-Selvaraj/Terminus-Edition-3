@@ -9,15 +9,18 @@ ROOT = Path(__file__).resolve().parents[2]
 T = ROOT / ".terminus"
 PORTABLE = T / "agents" / "CI_ORCHESTRATOR.md"
 PROJECT_AGENT = ROOT / ".cursor" / "agents" / "terminus-ci-orchestrator.md"
+QUALITY_LIFECYCLE = ROOT / ".github" / "workflows" / "terminus-quality-lifecycle.yml"
+CONTROLLER_CLI = T / "execution" / "controller_cli.py"
 
 
 def test_portable_orchestrator_contract_is_complete() -> None:
     text = PORTABLE.read_text(encoding="utf-8")
-    assert "Orchestrator policy version: `1.2`" in text
+    assert "Orchestrator policy version: `1.3`" in text
     for heading in (
         "## Decision right",
         "## Trust order",
         "## Bootstrap",
+        "## Execution routing automation",
         "## Cursor local execution",
         "## Control loop",
         "## Gate order",
@@ -37,14 +40,54 @@ def test_orchestrator_routes_without_self_certifying() -> None:
     text = PORTABLE.read_text(encoding="utf-8")
     for marker in (
         "first genuinely incomplete, failed, stale or blocked gate",
-        "assign exactly one responsible role",
-        "Do not perform that role inside the Orchestrator context",
+        "Resolve execution mode",
+        "Do not perform producer/fixer or non-automated reviewer work",
         "does not author task implementation",
-        "does not perform the routed producer/fixer or reviewer role",
         "INSUFFICIENT_EVIDENCE",
         "NEXT_AGENT_PROMPT",
     ):
         assert marker in text
+
+
+def test_orchestrator_uses_direct_controller_and_automated_quality_routes() -> None:
+    portable = PORTABLE.read_text(encoding="utf-8")
+    controller = CONTROLLER_CLI.read_text(encoding="utf-8")
+    workflow = QUALITY_LIFECYCLE.read_text(encoding="utf-8")
+
+    for marker in (
+        "ORCHESTRATOR_DIRECT",
+        "AUTOMATED_QUALITY",
+        "FRESH_ROLE_CHAT",
+        "RULE_RESOLUTION",
+        "QUALITY_INTERLOCK",
+        "MODEL_DIAGNOSTIC_GPT",
+        "MODEL_DIAGNOSTIC_CLAUDE",
+        ".github/workflows/terminus-quality-lifecycle.yml",
+        "Do not create a manual reviewer-chat handoff",
+        "NEXT_AGENT_PROMPT: none",
+    ):
+        assert marker in portable
+
+    for marker in (
+        "QUALITY_LIFECYCLE_WORKFLOW",
+        "QUALITY_LIFECYCLE_STAGES",
+        '"QUALITY_INTERLOCK"',
+        '"MODEL_DIAGNOSTIC_GPT"',
+        '"MODEL_DIAGNOSTIC_CLAUDE"',
+        '"quality_lifecycle": True',
+    ):
+        assert marker in controller
+
+    for marker in (
+        "Terminus Quality Lifecycle",
+        "QUALITY_INTERLOCK",
+        "MODEL_DIAGNOSTIC_GPT",
+        "MODEL_DIAGNOSTIC_CLAUDE",
+        "terminus-quality-executor.yml",
+        "validate_quality_interlock.py",
+        "controller_cli.py record",
+    ):
+        assert marker in workflow
 
 
 def test_orchestrator_requires_commit_bound_ci_and_review_evidence() -> None:
@@ -59,8 +102,6 @@ def test_orchestrator_requires_commit_bound_ci_and_review_evidence() -> None:
         "A green check is a pointer to evidence, not proof by itself",
     ):
         assert marker in text
-
-
 
 
 def test_cursor_agent_uses_attached_laptop_for_preflight() -> None:
@@ -81,6 +122,7 @@ def test_cursor_agent_uses_attached_laptop_for_preflight() -> None:
     ):
         assert marker in project_agent
 
+
 def test_orchestrator_bounds_active_chat_polling() -> None:
     portable = PORTABLE.read_text(encoding="utf-8")
     project_agent = PROJECT_AGENT.read_text(encoding="utf-8")
@@ -96,6 +138,7 @@ def test_orchestrator_bounds_active_chat_polling() -> None:
     assert "bounded active-chat polling contract" in project_agent
     assert "never claim unattended background monitoring" in project_agent
 
+
 def test_project_agent_frontmatter_and_contract_reference() -> None:
     text = PROJECT_AGENT.read_text(encoding="utf-8")
     match = re.match(r"^---\n(.*?)\n---\n", text, flags=re.DOTALL)
@@ -105,7 +148,8 @@ def test_project_agent_frontmatter_and_contract_reference() -> None:
     assert re.search(r"(?m)^description: .+", frontmatter)
     assert ".terminus/agents/CI_ORCHESTRATOR.md" in text
     assert "exactly one active task" in text
-    assert "Do not perform the routed role" in text
+    assert "Do not default every stage to a fresh chat" in text
+    assert "terminus-quality-lifecycle.yml" in text
 
 
 def test_orchestrator_is_integrated_into_control_plane_and_ci() -> None:
