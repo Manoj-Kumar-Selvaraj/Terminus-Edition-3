@@ -252,12 +252,19 @@ def test_f2p_cron_omitted_schedule_fields_converge_to_wildcards(tmp_path, cleanu
     run(["crontab", "-u", "root", "-r"], check=False)
     name = "ansibleops-defaults"
     runner_tmp = tmp_path / "runner"
+    counter = tmp_path / "cron-counter.log"
+    wrapper = make_ansible_wrapper(tmp_path, counter=counter)
     omitted = f'''resource "ansibleops_cron" "managed" {{
   name = {json.dumps(name)}
   job  = "echo ansibleops-defaults"
 }}
 '''
-    workspace = make_workspace(tmp_path, omitted, temp_dir=runner_tmp)
+    workspace = make_workspace(
+        tmp_path,
+        omitted,
+        ansible_binary=wrapper,
+        temp_dir=runner_tmp,
+    )
     tf_apply(workspace)
     before_id = resource_values(workspace, "ansibleops_cron.managed")["id"]
     listing = run(["crontab", "-u", "root", "-l"]).stdout
@@ -277,7 +284,15 @@ def test_f2p_cron_omitted_schedule_fields_converge_to_wildcards(tmp_path, cleanu
   job     = "echo ansibleops-defaults"
 }}
 '''
-    rewrite_body(workspace, explicit, temp_dir=runner_tmp)
+    rewrite_body(
+        workspace,
+        explicit,
+        ansible_binary=wrapper,
+        temp_dir=runner_tmp,
+    )
+    before_equivalent_apply = counter_value(counter)
+    tf_apply(workspace)
+    assert counter_value(counter) == before_equivalent_apply
     assert tf_plan(workspace).returncode == 0
 
     drifted = listing.replace("echo ansibleops-defaults", "echo drifted")
@@ -290,7 +305,12 @@ def test_f2p_cron_omitted_schedule_fields_converge_to_wildcards(tmp_path, cleanu
     updated = explicit.replace('hour    = "*"', 'hour    = "1"').replace(
         'job     = "echo ansibleops-defaults"', 'job     = "echo updated"'
     )
-    rewrite_body(workspace, updated, temp_dir=runner_tmp)
+    rewrite_body(
+        workspace,
+        updated,
+        ansible_binary=wrapper,
+        temp_dir=runner_tmp,
+    )
     tf_apply(workspace)
     assert resource_values(workspace, "ansibleops_cron.managed")["id"] == before_id
     final_listing = run(["crontab", "-u", "root", "-l"]).stdout
