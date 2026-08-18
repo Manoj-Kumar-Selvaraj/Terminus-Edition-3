@@ -1,0 +1,60 @@
+name: StoneVault Q4 Evidence Helper
+
+on:
+  push:
+    branches:
+      - remediation/stonevault-q4-evidence-helper
+    paths:
+      - '.github/workflows/stonevault-q4-evidence-helper.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  bind-evidence:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: remediation/stonevault-q4-final
+          fetch-depth: 0
+      - name: Bind private evidence to atomic task commit
+        run: |
+          set -euo pipefail
+          git fetch origin 7fb6b821ec710165780a13ad2ef2a211ae5c9cae
+          git show 7fb6b821ec710165780a13ad2ef2a211ae5c9cae:.terminus/designs/stonevault-crash-safe-storage-test-map.json > .terminus/designs/stonevault-crash-safe-storage-test-map.json
+          git show 7fb6b821ec710165780a13ad2ef2a211ae5c9cae:.terminus/designs/stonevault-crash-safe-storage-spec-alignment.json > .terminus/designs/stonevault-crash-safe-storage-spec-alignment.json
+          git show 7fb6b821ec710165780a13ad2ef2a211ae5c9cae:.terminus/contracts/stonevault-crash-safe-storage/solver-visible-requirements.json > .terminus/contracts/stonevault-crash-safe-storage/solver-visible-requirements.json
+          python3 - <<'PY'
+          import hashlib, json
+          from pathlib import Path
+          task_commit = '1cbdc0030a8a6483db4c91865aa60b8ef127c9c6'
+          task_tree = 'b1ea76c23ea7bbc9652484de4c48702a5929b01b'
+
+          p = Path('.terminus/designs/stonevault-crash-safe-storage-test-map.json')
+          data = json.loads(p.read_text())
+          data['task_content_commit'] = task_commit
+          data['task_tree_hash'] = task_tree
+          p.write_text(json.dumps(data, indent=2) + '\n')
+
+          p = Path('.terminus/designs/stonevault-crash-safe-storage-spec-alignment.json')
+          data = json.loads(p.read_text())
+          data['task_content_commit'] = task_commit
+          data['task_tree_hash'] = task_tree
+          p.write_text(json.dumps(data, indent=2) + '\n')
+
+          p = Path('.terminus/contracts/stonevault-crash-safe-storage/solver-visible-requirements.json')
+          data = json.loads(p.read_text())
+          data['source_task_commit'] = task_commit
+          data.pop('requirement_contract_hash', None)
+          canonical = json.dumps(data, sort_keys=True, separators=(',', ':')).encode()
+          digest = hashlib.sha256(canonical).hexdigest()
+          data['requirement_contract_hash'] = 'sha256:' + digest
+          assert digest == '63d59b097aeb73a935b0504cb0d10d7e699a903331e53f9abe02ce9c4ef8e3c9'
+          p.write_text(json.dumps(data, indent=2) + '\n')
+          PY
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add .terminus/designs/stonevault-crash-safe-storage-test-map.json .terminus/designs/stonevault-crash-safe-storage-spec-alignment.json .terminus/contracts/stonevault-crash-safe-storage/solver-visible-requirements.json
+          git commit -m 'evidence: bind StoneVault Q4 remediation matrix'
+          git push origin HEAD:remediation/stonevault-q4-final
