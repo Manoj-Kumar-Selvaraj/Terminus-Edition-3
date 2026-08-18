@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import subprocess
 import sys
 from pathlib import Path
 
@@ -10,6 +11,7 @@ ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / ".terminus"))
 
 import execution.quality_lifecycle_record as lifecycle  # noqa: E402
+from execution.record import ExecutionRecordBuilder  # noqa: E402
 
 TASK_SHA = "a" * 40
 CONTROL_SHA = "b" * 40
@@ -172,3 +174,45 @@ def test_q8_perspective_maps_to_registered_stage_status(monkeypatch: pytest.Monk
             review_path=review_path,
             run_id="128",
         )
+
+
+def test_interlock_pass_builds_real_canonical_execution_record(tmp_path: Path) -> None:
+    head = subprocess.run(
+        ["git", "-C", str(ROOT), "rev-parse", "HEAD"],
+        check=True,
+        capture_output=True,
+        text=True,
+    ).stdout.strip()
+    task = "bridge-validator"
+    q4_id = "bridge-validator-aaaaaaaa-spec-test-contract-0000000000"
+    q6_id = "bridge-validator-aaaaaaaa-production-logic-0000000000"
+
+    q4_packet_value = _packet(lifecycle.Q4_ROLE, q4_id)
+    q4_review_value = _review(lifecycle.Q4_ROLE, q4_id)
+    q6_packet_value = _packet(lifecycle.Q6_ROLE, q6_id)
+    q6_review_value = _review(lifecycle.Q6_ROLE, q6_id)
+    for value in (q4_packet_value, q4_review_value, q6_packet_value, q6_review_value):
+        value["task"] = task
+        value["task_commit"] = head
+        value["control_plane_commit"] = head
+
+    q4_packet = _write(tmp_path / "q4.packet.json", q4_packet_value)
+    q4_review = _write(tmp_path / "q4.json", q4_review_value)
+    q6_packet = _write(tmp_path / "q6.packet.json", q6_packet_value)
+    q6_review = _write(tmp_path / "q6.json", q6_review_value)
+
+    invocation, result = lifecycle.build_interlock_envelopes(
+        ROOT,
+        q4_packet_path=q4_packet,
+        q4_review_path=q4_review,
+        q6_packet_path=q6_packet,
+        q6_review_path=q6_review,
+        run_id="9001",
+    )
+    record = ExecutionRecordBuilder(ROOT).build(invocation, result)
+
+    assert invocation["readiness"] == "READY"
+    assert record["stage_id"] == lifecycle.QUALITY_INTERLOCK
+    assert record["status"] == "QUALITY_INTERLOCK_PASS"
+    assert record["disposition"] == "ADVANCE"
+    assert record["task_lineage"]["task_changed"] is False
