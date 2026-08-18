@@ -8,97 +8,93 @@ Session schema version: `2.4`
 - Controller state: `FROZEN_CANDIDATE`
 - Working branch: `task/terraform-ansible-managed-resources-validation`
 - Pull request: `37`
-- Current task commit: `2ae7ab1f5945876ea45c58aa22889846a815bf29`
+- Current task commit: `0b6c712febad4b40bc8ef8e1f9726da28c4bfc35`
 - Agent-system policy: `2.5`
 - Specialist prompt policy: `2.2`
 - Specialist protocol policy: `2.2`
 - Pre-LLMaJ panel policy: `2.2`
 - Comprehensive reviewer policy: `1.0`
-- Reviewer checklist snapshot: `2026-08-08-user-supplied`
 
 ## Current gates
 
 | Gate | Status | Evidence / version |
 | --- | --- | --- |
-| A3 Defect Topology approval | PASS | forward-only controller approval `936270bffded3166d24213653006e38982e98816`; historical unapproved A2B is not reused |
-| A2B Environment Build | PASS | fresh rematerialization `dbb13f91e3f809a5ecb1377b5df3591aec717955` after A3 approval |
-| Reference Solution | PASS | forward revalidation `ccd5a191c2af625f36cf2d5697ced460c3516ffe`; Oracle 35/35 |
-| Verifier Build / Q2 | PASS | 28 F2P + 7 P2P; exact empirical classification artifact `9311006999` |
-| Q1 Spec Gap Repair | PASS | no unresolved verifier-to-spec gap in forward revalidation |
-| Q3 Spec Ambiguity Repair | PASS | no unresolved grading-relevant ambiguity in forward revalidation |
-| Instruction / writing calibration | PASS | current requirement contract + current human-writing calibration; one paragraph + ten bullets |
-| Documentation | PASS | README benchmark framing removed; provider docs remain technical contracts |
-| Q7 / Format / static | PASS | Edition-3 run `32098976998`, job `95595772708`: Preflight + Ruff + Docker setup pass |
-| Creator Complexity | PASS | targeted run `32098976772`, job `95595687530`; 3,081 substantive LOC, 28 manifestations, 6 root causes, 28 F2P, 7 P2P |
-| Production Authenticity | PASS | targeted run `32098976772`, job `95595687530`; approved non-data-backed state exemption |
-| Oracle = 1 | PASS | run `32098976998`, artifact `9311006999`; 35/35 passed |
-| NOP = 0 | PASS | run `32098976998`, artifact `9311006999`; 28 F2P failed / 7 P2P passed |
-| FROZEN_CANDIDATE | PASS | freeze record `.terminus/designs/terraform-ansible-managed-resources-freeze.json` at `e9fed0d2b7c8150f2590a95b0b61b01b1f1dcf7e` |
-| Q4 packet generation | PASS | run `32102602054`, artifact `9312065663`; immutable packet `terraform-ansible-managed-resources-2ae7ab1f-spec-test-contract-4076b462ac` |
-| Q4 Spec-Test Contract Reviewer | PENDING | requires fresh independent packet-bound reviewer chat; result path `.terminus/reviews/terraform-ansible-managed-resources/2ae7ab1f/terraform-ansible-managed-resources-2ae7ab1f-spec-test-contract-4076b462ac.json` |
-| Q6 packet generation | PASS | run `32102602054`, artifact `9312065663`; immutable packet `terraform-ansible-managed-resources-2ae7ab1f-production-logic-8e01e961d2`; scope hash `5024cce4e6afacd64daf5cc630576390f3b382ea422f7a39c3726d0a7bf1e76e` |
-| Q6 Production Logic Auditor | PENDING | requires separate fresh independent packet-bound reviewer chat; result path `.terminus/reviews/terraform-ansible-managed-resources/2ae7ab1f/terraform-ansible-managed-resources-2ae7ab1f-production-logic-8e01e961d2.json` |
-| Quality Interlock | PENDING | requires current packet-bound Q4 PASS + Q6 PASS with sufficient evidence and confidence >= MEDIUM |
-| Pre-LLMaJ specialist panel | NOT REACHED | follows quality interlock |
-| Harbor LLMaJ | NOT REACHED | reusable AI credential preparation failed in deterministic CI, after Oracle/NOP had already passed |
-| Final package | PENDING | post-review/model path not complete |
+| A3 Defect Topology approval | PASS | controller approval `936270bffded3166d24213653006e38982e98816` |
+| A2B Environment Build | PASS | fresh rematerialization `dbb13f91e3f809a5ecb1377b5df3591aec717955` |
+| Reference Solution | PASS | forward revalidation `cc6e88ea54497ec8070c1ff024bb9f7123027dec`; Oracle 36/36 |
+| Verifier Build / Q2 | PASS | 30 F2P + 6 P2P; exact empirical classification artifact `9313235322` |
+| Q1 Spec Gap Repair | PASS | no unresolved verifier-to-spec gap after Q4 remediation |
+| Q3 Spec Ambiguity Repair | PASS | no unresolved grading-relevant ambiguity; solver-visible prose unchanged |
+| Instruction / writing calibration | PASS | requirement contract hash `sha256:96dd013060c78ba862c1a4160d9e4530871a8e0e91ea1ab6c97531b11051a787` |
+| Documentation | PASS | solver-visible provider/resource/lifecycle technical contracts unchanged |
+| Q7 / Format / static | PASS | Edition-3 run `32105762492`, job `95614841239`: Preflight + Ruff + Docker setup pass |
+| Creator Complexity | PASS | targeted run `32106574305`, job `95617137138`; 3,081 substantive LOC, 28 defects, 6 roots, 30 F2P, 6 P2P |
+| Runtime Authenticity | PASS | targeted run `32106574305`, job `95617137138`; production-authenticity validator PASS |
+| Oracle = 1 | PASS | run `32105762492`, job `95614841239`, artifact `9313235322`; 36/36 passed |
+| NOP = 0 | PASS | run `32105762492`, artifact `9313235322`; 30 F2P failed / 6 P2P passed |
+| FROZEN_CANDIDATE | PASS | `.terminus/designs/terraform-ansible-managed-resources-freeze.json`; replacement freeze after Q4-001..Q4-007 remediation |
+| Q6 Production Logic Auditor | PASS (scope reused) | prior v3 PASS `terraform-ansible-managed-resources-2ae7ab1f-production-logic-8e01e961d2`; scope hash `5024cce4e6afacd64daf5cc630576390f3b382ea422f7a39c3726d0a7bf1e76e`; no `task.toml`/`environment/` or Q6-role-contract change |
+| Fresh Q4 packet generation | PASS | generated run `32106963420`, artifact `9313488150`; persisted packet `terraform-ansible-managed-resources-0b6c712f-spec-test-contract-ebc0b36335` |
+| Q4 Spec-Test Contract Reviewer | PENDING | requires separate cold reviewer; exact result path in the fresh packet |
+| Quality Interlock | PENDING_Q4 | Q6 current by scope reuse; fresh Q4 PASS still required |
+| Pre-LLMaJ specialist panel | NOT REACHED | follows Quality Interlock PASS |
+| Harbor LLMaJ | NOT REACHED | reusable AI credential preparation failed after deterministic gates |
+| Final package | PENDING | downstream review/model path incomplete |
 
-## Frozen evidence
+## Current frozen evidence
 
-- Task commit: `2ae7ab1f5945876ea45c58aa22889846a815bf29`.
-- Complexity/runtime run: `32098976772`, job `95595687530`.
-- Deterministic run: `32098976998`, job `95595772708`.
-- Validation artifact: `9311006999`.
-- Artifact digest: `sha256:6302efb57bbe49cffed9a536b7c1cdcd168f10d5d5c61a589c7b4d7ba2d8ec83`.
-- Workflow merge commit: `42d5973207aef27f6c709afcae3a388bd4e5c938`.
-- Oracle reward: `1`; `35 passed / 35 total`.
-- NOP reward: `0`; `28 failed / 7 passed`.
-- Every F2P is starter-fail/Oracle-pass; every P2P is starter-pass/Oracle-pass.
-- Current taxonomy: `28 F2P + 7 P2P`.
+- Task commit: `0b6c712febad4b40bc8ef8e1f9726da28c4bfc35`.
+- Complexity/runtime: run `32106574305`, job `95617137138`.
+- Complexity: `3081` substantive LOC; `28` defects; `6` root causes; `28` causal edges; `30 F2P / 6 P2P`.
+- Deterministic: run `32105762492`, job `95614841239`.
+- Validation artifact: `9313235322`.
+- Artifact digest: `sha256:0016ff4842ae0291c26eddc35b04e4f6067bf30e0472c6123e7b9649954f6713`.
+- Workflow merge commit: `613840c8a215c39312c3a36701a0351746bf28d4`.
+- Oracle: `1`, `36 passed / 36 total`.
+- NOP: `0`, `30 failed / 6 passed`.
+- Every F2P is starter-fail/Oracle-pass; all six P2Ps are starter-pass/Oracle-pass.
 
-## Quality-review packets
+## Fresh Q4 invocation
 
-### Q4 — Spec-Test Contract Reviewer
-
-- Review ID: `terraform-ansible-managed-resources-2ae7ab1f-spec-test-contract-4076b462ac`
-- Packet: `.terminus/reviews/terraform-ansible-managed-resources/2ae7ab1f/terraform-ansible-managed-resources-2ae7ab1f-spec-test-contract-4076b462ac.packet.json`
-- Review output: `.terminus/reviews/terraform-ansible-managed-resources/2ae7ab1f/terraform-ansible-managed-resources-2ae7ab1f-spec-test-contract-4076b462ac.json`
-- Task commit: `2ae7ab1f5945876ea45c58aa22889846a815bf29`
-- Packet control-plane commit: `779525f730b899481613300cc7e4867881cf488c`
+- Review ID: `terraform-ansible-managed-resources-0b6c712f-spec-test-contract-ebc0b36335`
+- Packet: `.terminus/reviews/terraform-ansible-managed-resources/0b6c712f/terraform-ansible-managed-resources-0b6c712f-spec-test-contract-ebc0b36335.packet.json`
+- Review output: `.terminus/reviews/terraform-ansible-managed-resources/0b6c712f/terraform-ansible-managed-resources-0b6c712f-spec-test-contract-ebc0b36335.json`
+- Task commit: `0b6c712febad4b40bc8ef8e1f9726da28c4bfc35`
+- Packet control-plane commit: `a354fbbe67f618281bae9db7ab3d486e3c89fffa`
 - Role contract hash: `0e03d81b0eba3b8e4699365da2647157bce2171c2ab0277a908666f204ca9e01`
+- Packet was generated by `.terminus/new_review_packet.py` from a checkout pinned to the actual branch head. The earlier synthetic-merge-ref packet was discarded and never persisted.
 
-### Q6 — Production Logic Auditor
+## Q6 reusable PASS
 
 - Review ID: `terraform-ansible-managed-resources-2ae7ab1f-production-logic-8e01e961d2`
-- Packet: `.terminus/reviews/terraform-ansible-managed-resources/2ae7ab1f/terraform-ansible-managed-resources-2ae7ab1f-production-logic-8e01e961d2.packet.json`
-- Review output: `.terminus/reviews/terraform-ansible-managed-resources/2ae7ab1f/terraform-ansible-managed-resources-2ae7ab1f-production-logic-8e01e961d2.json`
-- Task commit: `2ae7ab1f5945876ea45c58aa22889846a815bf29`
-- Packet control-plane commit: `779525f730b899481613300cc7e4867881cf488c`
-- Role contract hash: `9d678ba47536e0871542f29e5072684da8cbe2787624be4318f0b5bcb9654dd8`
-- Review scope hash: `5024cce4e6afacd64daf5cc630576390f3b382ea422f7a39c3726d0a7bf1e76e`
+- Review: `.terminus/reviews/terraform-ansible-managed-resources/2ae7ab1f/terraform-ansible-managed-resources-2ae7ab1f-production-logic-8e01e961d2.json`
+- Verdict/confidence/evidence: `PASS / HIGH / SUFFICIENT`.
+- Review scope hash: `5024cce4e6afacd64daf5cc630576390f3b382ea422f7a39c3726d0a7bf1e76e`.
+- Protocol 2.2 scope-reuse condition is met: remediation changed tests/solution/private metadata only; `task.toml` and full `environment/` are unchanged and the Q6 role contract is unchanged.
 
-## Provenance recovery
+## Q4 remediation history
 
-The old history remains explicitly invalid as an approval sequence: A3 topology `f8b5cbda2f4e76efa134a6106c8af28111ac4ac6` was originally pending approval before historical A2B `2de6d2863cd1eb8b03c16bc97dc377e6d8322ace`. Recovery did not backdate approval. A new controller acceptance at `936270bffded3166d24213653006e38982e98816` authorized a fresh A2B, recorded at `dbb13f91e3f809a5ecb1377b5df3591aec717955`; all downstream pre-freeze evidence was then revalidated forward.
+The prior exhaustive Q4 returned `REVISE / HIGH / SUFFICIENT` with Q4-001 through Q4-007. The consolidated remediation added exact schemas, mutation/Read backend boundaries, canonical-equivalence behavior, stronger durable-state checks, collision rejection, already-absent deletion and missing resource-specific semantics. The first stronger Oracle run exposed three reference normalization regressions, which were repaired. A subsequent 38-case NOP run revealed two provisional P2Ps were actually F2P; those behaviors were consolidated into existing F2P cases. The final strict 36-case suite is empirically exact at 30 F2P + 6 P2P.
 
 ## Decisions that must survive chat changes
 
-- Terraform Core is the only durable Terraform state authority; no provider-owned state database.
-- Exactly ten local Linux managed resource types; Ansible performs mutations while `Read` uses native observation.
-- Frozen verifier taxonomy is 28 F2P + 7 P2P.
-- Do not change task, tests, solution, instruction or solver-visible docs after this checkpoint without invalidating freeze and rerunning affected gates.
-- Q4 and Q6 are independent post-freeze packet-bound reviews; creator/controller evidence cannot substitute for them.
-- The chat that generated/froze the task cannot self-issue Q4/Q6 because it has already seen evidence explicitly excluded by those packets; use two fresh role-specific chats.
-- Do not treat the LLMaJ credential-preparation failure as a task failure, and do not claim LLMaJ PASS until the external gate actually executes.
+- Terraform Core is the only durable Terraform state authority; no provider-owned durable state database.
+- Exactly ten local Linux managed resource types; Ansible performs mutations while Read/refresh uses native observation.
+- Frozen verifier taxonomy is `30 F2P + 6 P2P`.
+- Do not change the task, tests, solution, instruction or solver-visible docs after this checkpoint without invalidating affected evidence.
+- Q4 is exact-commit-only and must be executed in a separate cold reviewer chat. This producer/remediation chat cannot self-approve the revision.
+- Q6 is the sole scope-reusable quality role and is current here because its production scope and role contract are unchanged.
+- If fresh Q4 raises a finding entirely on unchanged evidence that was fully reviewable in the previous exhaustive Q4, classify it under the protocol's latent-reviewer-omission/no-drip rule before another normal remediation cycle.
+- Do not claim Harbor LLMaJ PASS until it actually executes.
 
 ## Known repository-wide non-task issues
 
-- Repository-wide Creator Complexity and Production Authenticity workflows can fail before this task because of unrelated task manifests; task-scoped validators are the frozen evidence for this task.
-- Agent System CI has unrelated repository-wide lint/invocation/record/session-freshness debt.
+- Global Creator Complexity can stop on unrelated `edge-router-runtime` before reaching this task; task-targeted validator run `32106574305` is current evidence for this task.
+- Global Production Authenticity / Agent System workflows contain unrelated control-plane/repository-wide failures.
 
 ## Next action
 
-Open two separate fresh chats. Give Q4 only its exact packet path and role instruction; give Q6 only its exact packet path and role instruction. Each reviewer must persist schema-v3 output to the packet-defined review path. After both results exist, return to this controller chat to validate schema/provenance/freshness and advance Quality Interlock only if both are PASS with SUFFICIENT evidence and confidence >= MEDIUM.
+Execute one separate cold Q4 reviewer chat using only the persisted packet as the controlling first context. The reviewer must persist schema-v3 output to the exact packet-defined review path. Return the result here; validate packet/result provenance and freshness, then advance Quality Interlock only for `PASS` with `SUFFICIENT` evidence and confidence at least `MEDIUM`.
 
 ## Resume rule
 
