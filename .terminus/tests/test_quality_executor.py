@@ -9,8 +9,15 @@ import pytest
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / ".terminus"))
 
+from execution.quality_backend import select_flag_backend  # noqa: E402
+from execution.quality_budget import (  # noqa: E402
+    QualityBudgetError,
+    claim_quality_budget,
+    execution_limit,
+)
 from execution.quality_executor import (  # noqa: E402
     Q4_ROLE,
+    Q6_ROLE,
     Q8_ROLE,
     REVIEW_SCHEMA,
     Projection,
@@ -95,6 +102,27 @@ def test_q_backend_selection_is_exactly_one_and_cursor_is_auto() -> None:
     assert api.model == "gpt-test"
 
 
+def test_global_q_flags_choose_exactly_one_backend() -> None:
+    cursor = select_flag_backend(cursor="yes", openai="no", claude="no", stb_ai="no")
+    assert cursor.backend == "cursor"
+    assert cursor.model is None
+
+    stb = select_flag_backend(
+        cursor="no",
+        openai="no",
+        claude="no",
+        stb_ai="yes",
+        stb_ai_model="@anthropic/claude-opus-4-8",
+    )
+    assert stb.backend == "stb_ai"
+    assert stb.model == "@anthropic/claude-opus-4-8"
+
+    with pytest.raises(QualityExecutorError, match="exactly one Q backend flag"):
+        select_flag_backend(cursor="yes", openai="yes", claude="no", stb_ai="no")
+    with pytest.raises(QualityExecutorError, match="requires an explicit model"):
+        select_flag_backend(cursor="no", openai="no", claude="no", stb_ai="yes")
+
+
 def test_difficulty_quality_role_is_api_only() -> None:
     with pytest.raises(QualityExecutorError, match="API-key-only"):
         select_backend(_packet(Q8_ROLE), executor="cursor")
@@ -102,6 +130,115 @@ def test_difficulty_quality_role_is_api_only() -> None:
         _packet(Q8_ROLE), executor="api", provider="anthropic", model="claude-test"
     )
     assert selected.provider == "anthropic"
+
+
+def test_q_execution_limits_are_task_scoped_policy() -> None:
+    assert execution_limit(Q4_ROLE) == 3
+    assert execution_limit(Q6_ROLE) == 2
+    assert execution_limit("Spec Gap Repairer") == 1
+    assert execution_limit("Verifier Coverage Repairer") == 1
+    assert execution_limit("Spec Ambiguity Repairer") == 1
+    assert execution_limit("Oracle & Runtime Repair Specialist") == 1
+    assert execution_limit("Task Format Enforcer") == 1
+    assert execution_limit(Q8_ROLE) == 1
+
+
+def test_q4_budget_allows_three_claims_and_rejects_fourth(tmp_path: Path) -> None:
+    packet = _packet(Q4_ROLE)
+    for ordinal in range(1, 4):
+        claim = claim_quality_budget(
+            tmp_path,
+            packet,
+            packet_path="packet.json",
+            backend="cursor",
+            run_id=str(100 + ordinal),
+            run_attempt="1",
+        )
+        assert claim["used"] == ordinal
+        assert claim["limit"] == 3
+    with pytest.raises(QualityBudgetError, match="Q4 execution budget exhausted"):
+        claim_quality_budget(
+            tmp_path,
+            packet,
+            packet_path="packet.json",
+            backend="cursor",
+            run_id="104",
+            run_attempt="1",
+        )
+
+
+def test_q6_budget_allows_two_and_other_q_role_only_one(tmp_path: Path) -> None:
+    q6 = _packet(Q6_ROLE)
+    claim_quality_budget(
+        tmp_path,
+        q6,
+        packet_path="q6.packet.json",
+        backend="stb_ai",
+        run_id="201",
+        run_attempt="1",
+    )
+    claim = claim_quality_budget(
+        tmp_path,
+        q6,
+        packet_path="q6b.packet.json",
+        backend="stb_ai",
+        run_id="202",
+        run_attempt="1",
+    )
+    assert claim["used"] == 2
+    assert claim["remaining"] == 0
+    with pytest.raises(QualityBudgetError, match="Q6 execution budget exhausted"):
+        claim_quality_budget(
+            tmp_path,
+            q6,
+            packet_path="q6c.packet.json",
+            backend="stb_ai",
+            run_id="203",
+            run_attempt="1",
+        )
+
+    other = _packet("Spec Gap Repairer")
+    other["task"] = "other-quality-test"
+    claim_quality_budget(
+        tmp_path,
+        other,
+        packet_path="q1.packet.json",
+        backend="openai",
+        run_id="301",
+        run_attempt="1",
+    )
+    with pytest.raises(QualityBudgetError, match="Q1 execution budget exhausted"):
+        claim_quality_budget(
+            tmp_path,
+            other,
+            packet_path="q1b.packet.json",
+            backend="openai",
+            run_id="302",
+            run_attempt="1",
+        )
+
+
+def test_budget_claim_is_idempotent_for_same_github_attempt(tmp_path: Path) -> None:
+    packet = _packet(Q4_ROLE)
+    first = claim_quality_budget(
+        tmp_path,
+        packet,
+        packet_path="packet.json",
+        backend="cursor",
+        run_id="401",
+        run_attempt="1",
+    )
+    repeated = claim_quality_budget(
+        tmp_path,
+        packet,
+        packet_path="packet.json",
+        backend="cursor",
+        run_id="401",
+        run_attempt="1",
+    )
+    assert first["status"] == "CLAIMED"
+    assert repeated["status"] == "ALREADY_CLAIMED"
+    assert repeated["used"] == 1
 
 
 def test_minimal_prompt_preserves_efficiency_and_freshness_constraints() -> None:
@@ -205,7 +342,7 @@ def test_deterministic_validator_rejects_binding_and_side_effect_drift(tmp_path:
         validate_review_result(projection, packet)
 
 
-def test_llmaj_and_official_difficulty_ci_are_api_key_only() -> None:
+def test_llmaj_and_official_difficulty_ci_are_api_key_only_without_refresh() -> None:
     workflow = (ROOT / ".github/workflows/terminus-edition-3-ci.yml").read_text(encoding="utf-8")
     assert "STB_AI_API_KEY" in workflow
     for forbidden in (
@@ -218,15 +355,25 @@ def test_llmaj_and_official_difficulty_ci_are_api_key_only() -> None:
     assert "login/config restoration/key refresh fallbacks are forbidden in CI" in workflow
 
 
-def test_quality_workflow_has_single_backend_selection_and_no_cursor_resume() -> None:
+def test_quality_workflow_uses_global_flags_shared_stb_key_and_persistent_budget() -> None:
     workflow = (ROOT / ".github/workflows/terminus-quality-executor.yml").read_text(
         encoding="utf-8"
     )
-    assert "CURSOR_API_KEY" in workflow
-    assert "OPENAI_API_KEY" in workflow
-    assert "ANTHROPIC_API_KEY" in workflow
-    assert "--executor cursor" in workflow
-    assert "--provider openai" in workflow
-    assert "--provider anthropic" in workflow
+    for flag in (
+        "Q_CURSOR_ENABLED",
+        "Q_OPENAI_ENABLED",
+        "Q_CLAUDE_ENABLED",
+        "Q_STB_AI_ENABLED",
+    ):
+        assert flag in workflow
+    for secret in ("CURSOR_API_KEY", "OPENAI_API_KEY", "ANTHROPIC_API_KEY", "STB_AI_API_KEY"):
+        assert secret in workflow
+    assert "terminus-quality-budget" in workflow
+    assert "quality_budget.py" in workflow
+    assert "quality_dispatch_cli.py" in workflow
+    assert "Exactly one of Q_CURSOR_ENABLED" in workflow
+    assert "No login, key generation, rotation, or refresh is permitted" in workflow
+    assert "keys-refresh" not in workflow
+    assert "SNORKEL_API_KEY" not in workflow
     assert "--resume" not in workflow
     assert "fallback_attempted" in workflow
