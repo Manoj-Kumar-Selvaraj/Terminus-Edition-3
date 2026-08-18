@@ -102,7 +102,7 @@ def test_f2p_named_entry_deletes_preserve_siblings(tmp_path, cleanup_registry):
     assert "echo cron-two" in cron_text
 
 
-def test_f2p_symlink_destroy_preserves_target(tmp_path, cleanup_registry):
+def test_p2p_symlink_destroy_preserves_target(tmp_path, cleanup_registry):
     """Destroying a managed symlink removes the link path only and leaves the target file untouched."""
     target = cleanup_registry.path(tmp_path / "target.txt")
     target.write_text("keep-target\n", encoding="utf-8")
