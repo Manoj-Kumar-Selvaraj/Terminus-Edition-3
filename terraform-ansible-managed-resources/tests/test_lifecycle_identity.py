@@ -3,6 +3,8 @@ import json
 import pathlib
 
 from conftest import (
+    counter_value,
+    make_ansible_wrapper,
     make_workspace,
     plan_actions,
     resource_values,
@@ -61,10 +63,13 @@ def test_f2p_user_shell_drift_requires_reconciliation(tmp_path, cleanup_registry
 
 
 def test_f2p_user_supplementary_group_drift_requires_reconciliation(tmp_path, cleanup_registry):
-    """Removing one configured supplementary group externally must produce an update for the managed user."""
+    """Equivalent group ordering is clean, while removal of a configured group requires reconciliation."""
     user = cleanup_registry.user(unique_unix_name("aopsu"), remove_home=False)
     group1 = cleanup_registry.group(unique_unix_name("aopsg"))
     group2 = cleanup_registry.group(unique_unix_name("aopsg"))
+    counter = tmp_path / "counter.log"
+    wrapper = make_ansible_wrapper(tmp_path, counter=counter)
+    runner_tmp = tmp_path / "runner"
     body = f'''resource "ansibleops_group" "one" {{
   name = {json.dumps(group1)}
 }}
@@ -78,8 +83,28 @@ resource "ansibleops_user" "managed" {{
   depends_on  = [ansibleops_group.one, ansibleops_group.two]
 }}
 '''
-    workspace = make_workspace(tmp_path, body)
+    workspace = make_workspace(
+        tmp_path,
+        body,
+        ansible_binary=wrapper,
+        temp_dir=runner_tmp,
+    )
     tf_apply(workspace)
+    before = counter_value(counter)
+    reordered = body.replace(
+        f'groups      = [{json.dumps(group1)}, {json.dumps(group2)}]',
+        f'groups      = [{json.dumps(group2)}, {json.dumps(group1)}]',
+    )
+    rewrite_body(
+        workspace,
+        reordered,
+        ansible_binary=wrapper,
+        temp_dir=runner_tmp,
+    )
+    result, _ = tf_plan_json(workspace)
+    assert result.returncode == 0
+    assert counter_value(counter) == before
+
     run(["gpasswd", "-d", user, group2])
     _, plan = tf_plan_json(workspace)
     assert plan_actions(plan, "ansibleops_user.managed") == ["update"]
