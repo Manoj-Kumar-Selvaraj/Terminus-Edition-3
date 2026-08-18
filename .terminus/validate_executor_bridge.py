@@ -34,10 +34,12 @@ FILES = [
     T / "execution" / "quality_backend.py",
     T / "execution" / "quality_budget.py",
     T / "execution" / "quality_dispatch_cli.py",
+    T / "execution" / "quality_lifecycle_record.py",
     T / "agents" / "schemas" / "executor_handoff.schema.json",
     T / "agents" / "schemas" / "stage_result.schema.json",
     T / "tests" / "test_executor_bridge.py",
     T / "tests" / "test_quality_executor.py",
+    T / "tests" / "test_quality_lifecycle_record.py",
     ROOT / ".github" / "workflows" / "terminus-quality-executor.yml",
     ROOT / ".github" / "workflows" / "terminus-quality-lifecycle.yml",
     ROOT / ".github" / "workflows" / "terminus-quality-lifecycle-collect.yml",
@@ -91,6 +93,9 @@ def main() -> int:
     quality_text = (T / "execution" / "quality_executor.py").read_text(encoding="utf-8")
     backend_text = (T / "execution" / "quality_backend.py").read_text(encoding="utf-8")
     budget_text = (T / "execution" / "quality_budget.py").read_text(encoding="utf-8")
+    lifecycle_record_text = (T / "execution" / "quality_lifecycle_record.py").read_text(
+        encoding="utf-8"
+    )
     quality_workflow = (
         ROOT / ".github" / "workflows" / "terminus-quality-executor.yml"
     ).read_text(encoding="utf-8")
@@ -160,6 +165,19 @@ def main() -> int:
         if marker not in budget_text:
             errors.append(f"quality budget missing invariant marker: {marker}")
 
+    lifecycle_record_markers = (
+        "StageInvocationBuilder",
+        "QUALITY_INTERLOCK_PASS",
+        'result["route_key"] = "Q4_REVISE"',
+        'result["route_key"] = "Q6_REVISE"',
+        "MODEL_DIAGNOSTIC_GPT",
+        "MODEL_DIAGNOSTIC_CLAUDE",
+        "controller_cli.py record",
+    )
+    for marker in lifecycle_record_markers:
+        if marker not in lifecycle_record_text and marker not in lifecycle_workflow and marker not in q8_collector:
+            errors.append(f"quality lifecycle record bridge missing marker: {marker}")
+
     lifecycle_markers = (
         "QUALITY_INTERLOCK",
         "MODEL_DIAGNOSTIC_GPT",
@@ -171,6 +189,8 @@ def main() -> int:
         "uses: ./.github/workflows/terminus-quality-executor.yml",
         "validate_quality_interlock.py",
         "terminus-quality-lifecycle-collect.yml",
+        "quality_lifecycle_record.py",
+        "controller_cli.py record",
     )
     for marker in lifecycle_markers:
         if marker not in lifecycle_workflow:
@@ -192,9 +212,11 @@ def main() -> int:
         "GPT diagnostic received non-GPT Q8 packet",
         "Claude diagnostic received non-Claude Q8 packet",
         "Q8 packet is stale for task tree",
+        "quality_lifecycle_record.py",
+        "controller_cli.py record",
     ):
         if marker not in q8_collector:
-            errors.append(f"Q8 lifecycle isolation missing marker: {marker}")
+            errors.append(f"Q8 lifecycle isolation/recording missing marker: {marker}")
 
     if "--resume" in quality_text or "--resume" in quality_workflow:
         errors.append("packet-bound quality executor must always start a fresh Cursor session")
@@ -261,14 +283,15 @@ def main() -> int:
 
     print("Terminus executor-bridge validation PASS")
     print(
-        "executor_bridge=1.4 modes=MANUAL_CHAT,LOCAL_COMMAND "
+        "executor_bridge=1.5 modes=MANUAL_CHAT,LOCAL_COMMAND "
         "quality_modes=CURSOR_AUTO,DIRECT_OPENAI,DIRECT_CLAUDE,STB_AI_GATEWAY "
         "q_selection=exactly_one_global_flag q_isolation=packet_bound_git_history_free "
         "q_fallback=forbidden q_validation=deterministic_schema_and_binding "
         "q_budget=Q4x3,Q6x2,OTHERx1,Q8_GPTx1,Q8_CLAUDEx1 "
         "q_lifecycle=QUALITY_INTERLOCK,Q8_GPT,Q8_CLAUDE "
+        "q_lifecycle_record=canonical_stage_invocation_result_ledger "
         "credential_refresh=forbidden difficulty=api_key_only "
-        "record_authority=external_to_executor ledger_mutation=forbidden"
+        "record_authority=canonical_controller ledger_mutation=controller_record_only"
     )
     return 0
 
