@@ -1,4 +1,5 @@
 name: Terminus Production Authenticity Gate
+# A2 ENVIRONMENT_BUILD exact-validator harness; validation branch only.
 
 on:
   pull_request:
@@ -73,3 +74,16 @@ jobs:
           if (( found == 0 )); then
             echo "No production-authenticity manifests found."
           fi
+      - name: Exact ENVIRONMENT_BUILD runtime validation
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "==> Go environment compile"
+          cd edge-router-runtime/environment
+          go version
+          go test ./...
+          go build ./cmd/edge-router-runtime
+          ./edge-router-runtime validate --config ./config/production.json
+          cd ../..
+          echo "==> runtime authenticity"
+          python3 .terminus/validate_runtime_authenticity.py edge-router-runtime
