@@ -1,0 +1,159 @@
+name: Terminus Quality Lifecycle Collector
+
+on:
+  workflow_call:
+    inputs:
+      task:
+        required: true
+        type: string
+      stage:
+        required: true
+        type: string
+      packet_path:
+        required: true
+        type: string
+      review_path:
+        required: true
+        type: string
+      packet_b64:
+        required: true
+        type: string
+      review_b64:
+        required: true
+        type: string
+      executor_result:
+        required: true
+        type: string
+      verdict:
+        required: false
+        default: ""
+        type: string
+      budget_stage:
+        required: false
+        default: ""
+        type: string
+      budget_used:
+        required: false
+        default: ""
+        type: string
+      budget_limit:
+        required: false
+        default: ""
+        type: string
+      publish_results:
+        required: false
+        default: true
+        type: boolean
+
+permissions:
+  contents: write
+
+jobs:
+  collect:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Require bounded Q8 execution
+        shell: bash
+        env:
+          EXECUTOR_RESULT: ${{ inputs.executor_result }}
+        run: |
+          set -euo pipefail
+          [[ "$EXECUTOR_RESULT" == success ]] || {
+            echo "::error::Q8 executor did not complete successfully: $EXECUTOR_RESULT"
+            exit 1
+          }
+
+      - name: Restore isolated Q8 packet and review
+        id: restore
+        shell: bash
+        env:
+          TASK: ${{ inputs.task }}
+          STAGE: ${{ inputs.stage }}
+          PACKET_PATH: ${{ inputs.packet_path }}
+          REVIEW_PATH: ${{ inputs.review_path }}
+          PACKET_B64: ${{ inputs.packet_b64 }}
+          REVIEW_B64: ${{ inputs.review_b64 }}
+        run: |
+          set -euo pipefail
+          python3 - "$TASK" "$STAGE" "$PACKET_PATH" "$REVIEW_PATH" <<'PY'
+          import pathlib, sys
+          task, stage, packet, review = sys.argv[1:]
+          if stage not in {'MODEL_DIAGNOSTIC_GPT', 'MODEL_DIAGNOSTIC_CLAUDE'}:
+              raise SystemExit(f'unsupported Q8 stage: {stage}')
+          expected = pathlib.PurePosixPath('.terminus/reviews') / task
+          for raw in (packet, review):
+              p = pathlib.PurePosixPath(raw)
+              if p.is_absolute() or '..' in p.parts:
+                  raise SystemExit(f'unsafe lifecycle artifact path: {raw}')
+              if tuple(p.parts[:3]) != tuple(expected.parts):
+                  raise SystemExit(f'artifact outside task review namespace: {raw}')
+          PY
+          mkdir -p "$(dirname "$PACKET_PATH")" "$(dirname "$REVIEW_PATH")"
+          printf '%s' "$PACKET_B64" | base64 -d > "$PACKET_PATH"
+          printf '%s' "$REVIEW_B64" | base64 -d > "$REVIEW_PATH"
+
+          python3 - "$TASK" "$STAGE" "$PACKET_PATH" "$REVIEW_PATH" <<'PY'
+          import json, subprocess, sys
+          task, stage, packet_path, review_path = sys.argv[1:]
+          packet = json.load(open(packet_path, encoding='utf-8'))
+          review = json.load(open(review_path, encoding='utf-8'))
+          if packet.get('task') != task or review.get('task') != task:
+              raise SystemExit('Q8 task binding mismatch')
+          if packet.get('role') != 'Model Perspective Difficulty Simulator':
+              raise SystemExit('Q8 packet role mismatch')
+          if review.get('role') != packet.get('role'):
+              raise SystemExit('Q8 result role mismatch')
+          if review.get('review_id') != packet.get('review_id'):
+              raise SystemExit('Q8 result review_id mismatch')
+          if review.get('task_commit') != packet.get('task_commit'):
+              raise SystemExit('Q8 result task_commit mismatch')
+          question = str(packet.get('question', '')).lower()
+          if stage == 'MODEL_DIAGNOSTIC_GPT' and 'gpt/codex-style' not in question:
+              raise SystemExit('GPT diagnostic received non-GPT Q8 packet')
+          if stage == 'MODEL_DIAGNOSTIC_CLAUDE' and 'claude/claude-code-style' not in question:
+              raise SystemExit('Claude diagnostic received non-Claude Q8 packet')
+          current = subprocess.run(
+              ['git', 'log', '-1', '--format=%H', '--', task],
+              check=True, capture_output=True, text=True,
+          ).stdout.strip()
+          if not current or current != packet.get('task_commit'):
+              raise SystemExit(f'Q8 packet is stale for task tree: packet={packet.get("task_commit")} current={current}')
+          PY
+          echo "paths=$PACKET_PATH $REVIEW_PATH" >> "$GITHUB_OUTPUT"
+
+      - name: Persist frozen Q8 perspective
+        if: inputs.publish_results
+        shell: bash
+        run: |
+          set -euo pipefail
+          read -r -a paths <<< "${{ steps.restore.outputs.paths }}"
+          unexpected="$(git status --porcelain | awk '{print $2}' | while read -r path; do
+            allowed=false
+            for candidate in "${paths[@]}"; do
+              [[ "$path" == "$candidate" ]] && allowed=true
+            done
+            [[ "$allowed" == true ]] || echo "$path"
+          done)"
+          [[ -z "$unexpected" ]] || { echo "::error::Unexpected Q8 collector mutations: $unexpected"; exit 1; }
+          git config user.name "terminus-quality-lifecycle[bot]"
+          git config user.email "terminus-quality-lifecycle[bot]@users.noreply.github.com"
+          git add -- "${paths[@]}"
+          if git diff --cached --quiet; then
+            echo "Q8 perspective already persisted."
+          else
+            git commit -m "Persist ${{ inputs.stage }} review"
+            git push origin "HEAD:${GITHUB_REF_NAME}"
+          fi
+
+      - name: Q8 lifecycle summary
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "## ${{ inputs.stage }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Verdict: \`${{ inputs.verdict }}\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Budget: \`${{ inputs.budget_stage }} ${{ inputs.budget_used }}/${{ inputs.budget_limit }}\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Isolation/binding: \`PASS\`" >> "$GITHUB_STEP_SUMMARY"
