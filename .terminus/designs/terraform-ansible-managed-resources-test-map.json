@@ -33,7 +33,7 @@
     ["test_f2p_content_identities_survive_source_and_variable_updates","F2P","REQ_STATE"],
     ["test_f2p_failed_update_preserves_last_successful_template_state","F2P","REQ_UPDATE"],
     ["test_f2p_retry_after_failed_update_reexecutes_and_converges","F2P","REQ_UPDATE"],
-    ["test_f2p_template_variable_order_is_semantically_stable","F2P","REQ_NORMALIZE"],
+    ["test_p2p_template_variable_order_is_semantically_stable","P2P","REQ_NORMALIZE"],
     ["test_f2p_clean_named_text_refresh_does_not_execute_ansible","F2P","REQ_TEXT"],
     ["test_f2p_line_update_replaces_previous_value_exactly_once","F2P","REQ_TEXT"],
     ["test_f2p_removed_named_text_is_planned_for_recreation","F2P","REQ_TEXT"],
@@ -51,13 +51,24 @@
     ["test_f2p_cron_omitted_schedule_fields_converge_to_wildcards","F2P","REQ_CRON"],
     ["test_f2p_failed_delete_preserves_managed_state_for_retry","F2P","REQ_DELETE"],
     ["test_f2p_named_entry_deletes_preserve_siblings","F2P","REQ_DELETE"],
-    ["test_f2p_symlink_destroy_preserves_target","F2P","REQ_DELETE"]
+    ["test_p2p_symlink_destroy_preserves_target","P2P","REQ_DELETE"]
   ],
-  "counts": {"f2p": 30, "p2p": 4},
+  "counts": {"f2p": 28, "p2p": 6},
   "empirical_gate": {
-    "starter_nop": "PENDING_RUNTIME_EXECUTION",
-    "oracle": "PENDING_RUNTIME_EXECUTION",
-    "note": "Classifications remain provisional until fresh deterministic starter/NOP and Oracle execution after Q2 coverage repair."
+    "starter_nop": "PENDING_CURRENT_RERUN_AFTER_CLASSIFICATION_RENAME",
+    "oracle": "PENDING_CURRENT_RERUN_AFTER_CLASSIFICATION_RENAME",
+    "prior_evidence": {
+      "workflow_run": 32048299413,
+      "attempt": 2,
+      "artifact_id": 9309705446,
+      "artifact_digest": "sha256:f6cb068d5a083aebaa7266253c6f8c976053bc15acd3f1d06fb64bb06743fccc",
+      "oracle_reward": 1,
+      "oracle_matrix": "34 passed / 34 total",
+      "nop_reward": 0,
+      "nop_matrix": "28 failed / 6 passed",
+      "classification_observation": "The two NOP-passing behaviors were template variable-map order stability and symlink-target preservation on destroy; their assertions are unchanged and are now classified P2P."
+    },
+    "note": "The assertions are unchanged, but the renamed current test identities require a fresh exact-commit deterministic rerun before freeze."
   },
   "coverage": {
     "normal": ["provider schema","basic lifecycle","copy/template mutation","user/group/cron creation"],
