@@ -33,6 +33,11 @@ on:
         required: false
         default: ""
         type: string
+      source_ref:
+        description: Exact repository ref to checkout for executor code and packet; defaults to the invoking SHA
+        required: false
+        default: ""
+        type: string
       publish_result:
         description: Commit the validated packet/result to the selected branch
         required: true
@@ -61,6 +66,10 @@ on:
         default: ""
         type: string
       model_override:
+        required: false
+        default: ""
+        type: string
+      source_ref:
         required: false
         default: ""
         type: string
@@ -154,6 +163,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          ref: ${{ inputs.source_ref || github.sha }}
 
       - name: Resolve or generate exact review packet
         id: packet
