@@ -89,6 +89,10 @@ Materialize the approved solver-visible starter from the already-approved clean 
 - substantive LOC/resource evidence;
 - environment-rule checks.
 
+### Phase-scoped deterministic validation
+
+At `ENVIRONMENT_BUILD`, run `.terminus/validate_environment_complexity.py <task>` for strict solver-visible environment/topology scale and anti-padding checks. Do not create, inspect, or require the private verifier test map at this phase. The full `.terminus/validate_task_complexity.py <task>` remains mandatory at `VERIFIER_BUILD` and `COMPLEXITY_GATE`, where F2P/P2P, requirement coverage, behavioral-case grouping, and test-map integrity are enforced.
+
 ### Defect materialization rule
 
 Inject **only** the approved A3 defect/incomplete-behavior topology. If materialization reveals that the architecture cannot support a planned behavior, return `ARCHITECTURE_GAP`/`SCENARIO_TOO_SMALL` through the controller rather than inventing an untracked defect or silently changing the topology.
