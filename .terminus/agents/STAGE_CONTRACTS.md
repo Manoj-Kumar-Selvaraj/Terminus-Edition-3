@@ -160,6 +160,8 @@ The canonical creation path is:
 - `DEFECT_TOPOLOGY` designs against that approved clean architecture;
 - `ENVIRONMENT_BUILD` is the second A2 invocation and materializes the starter from both approved architecture and topology.
 
+Complexity validation is phase-scoped without weakening the final gate: `DEFECT_TOPOLOGY` uses `.terminus/validate_defect_topology.py`, `ENVIRONMENT_BUILD` uses `.terminus/validate_environment_complexity.py`, and `VERIFIER_BUILD` plus `COMPLEXITY_GATE` retain the full `.terminus/validate_task_complexity.py` contract.
+
 `FROZEN_CANDIDATE` is a controller state with an explicit state contract in the completion overlay. It is reached only after successful deterministic validation and exits only to `QUALITY_INTERLOCK` when its exact evidence remains current.
 
 ## Review/evaluation/submission index

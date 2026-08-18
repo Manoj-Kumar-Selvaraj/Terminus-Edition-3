@@ -10,8 +10,8 @@ This is the durable operational checkpoint for StoneVault. Current Git/task-tree
 - Controller state: `FROZEN_CANDIDATE`
 - Working branch: `main`
 - Pull request: none
-- Current task commit: `29b684f3439269762235665ab2e716da53214c1e`
-- Frozen task tree: `33a8b3ea5bce04dff6bfbc7325fc8b1dcccc6424`
+- Current task commit: `1cbdc0030a8a6483db4c91865aa60b8ef127c9c6`
+- Frozen task tree: `b1ea76c23ea7bbc9652484de4c48702a5929b01b`
 - Agent-system policy: `2.5`
 - Specialist prompt policy: `2.2`
 - Specialist protocol policy: `2.2`
@@ -25,58 +25,60 @@ This is the durable operational checkpoint for StoneVault. Current Git/task-tree
 | --- | --- | --- |
 | Rule Resolution | PASS | current Edition-3 creation policy + Agent System 2.5 reconciled |
 | A6 Human Writing Research | PASS | `.terminus/research/stonevault-crash-safe-storage-dataset-calibration.json` + task-writing profile |
-| Q1 Spec Gap Repair | PASS | `.terminus/designs/stonevault-crash-safe-storage-spec-alignment.json` |
-| Q2 Verifier Coverage Repair | PASS | run `32094975331`; Oracle/NOP empirical matrix over 47 probes |
-| Q3 Spec Ambiguity Repair | PASS | pre-freeze producer alignment evidence |
-| Q7 Task Format Enforcer | PASS | run `32094975331`, job `95584471150` |
-| A9 Assembly | ASSEMBLED | frozen task tree `33a8b3ea5bce04dff6bfbc7325fc8b1dcccc6424` |
-| Creator Complexity Gate | PASS | run `32095219892`, job `95585176864`: LOC=3033, F2P cases=25, P2P=19 |
-| Runtime Authenticity | PASS | run `32095859763`, job `95586961170`: `production-authenticity gate: PASS` |
-| Ruff verifier | PASS | run `32094975331`, job `95584471150` |
-| Oracle = 1 | PASS | run `32094975331`, job `95584471150`; 47 passed; artifact `9309650300` |
-| NOP = 0 | PASS | run `32094975331`, job `95584471150`; 28 failed / 19 passed |
-| Freeze | PASS | exact task tree `33a8b3ea5bce04dff6bfbc7325fc8b1dcccc6424` |
-| Q4 Spec-Test Contract Reviewer | REVISE | `.terminus/reviews/stonevault-crash-safe-storage/29b684f3/stonevault-crash-safe-storage-29b684f3-spec-test-contract-0a860fca37.json`; HIGH confidence; SUFFICIENT evidence; blocking `Q4-001`..`Q4-011`, advisory `Q4-012` |
-| Q6 Production Logic Auditor | PASS | `.terminus/reviews/stonevault-crash-safe-storage/29b684f3/stonevault-crash-safe-storage-29b684f3-production-logic-31d4c38000.json`; HIGH confidence; SUFFICIENT evidence; scope `ffb9c6b644538353bb56f46a761364f697285da48b1d60e8bd16d140fd67ed43` |
-| Quality Interlock | BLOCKED | Q6 PASS is current for the frozen production scope, but Q4 requires one consolidated producer repair/refreeze cycle and fresh Q4 |
+| Q1 Spec Gap Repair | PASS | `.terminus/designs/stonevault-crash-safe-storage-spec-alignment.json`; Q4 remediation producer alignment |
+| Q2 Verifier Coverage Repair | PASS | run `32104003033`, job `95609817655`; Oracle/NOP empirical matrix over 63 probes; artifact `9312568830` |
+| Q3 Spec Ambiguity Repair | PASS | `.terminus/designs/stonevault-crash-safe-storage-spec-alignment.json`; HEALTH/WAL ambiguity repair recorded |
+| Q7 Task Format Enforcer | PASS | run `32104003033`, job `95609817655`; Preflight + Ruff + Docker setup PASS |
+| A9 Assembly | ASSEMBLED | frozen task tree `b1ea76c23ea7bbc9652484de4c48702a5929b01b` |
+| Creator Complexity Gate | PASS | run `32104316715`, job `95610679183`: LOC=3033, tests=63, F2P probes=30, F2P cases=27, P2P=33 |
+| Runtime Authenticity | PASS | run `32104316715`, job `95610679183`: `production-authenticity gate: PASS` |
+| Ruff verifier | PASS | run `32104003033`, job `95609817655` |
+| Oracle = 1 | PASS | run `32104003033`, job `95609817655`; 63 passed; artifact `9312568830` |
+| NOP = 0 | PASS | run `32104003033`, job `95609817655`; 30 failed / 33 passed |
+| Freeze | PASS | exact task commit `1cbdc0030a8a6483db4c91865aa60b8ef127c9c6`; task tree `b1ea76c23ea7bbc9652484de4c48702a5929b01b` |
+| Q4 Spec-Test Contract Reviewer | PACKET_READY | `.terminus/reviews/stonevault-crash-safe-storage/1cbdc003/stonevault-crash-safe-storage-1cbdc003-spec-test-contract-670100de41.packet.json` |
+| Q6 Production Logic Auditor | PACKET_READY | `.terminus/reviews/stonevault-crash-safe-storage/1cbdc003/stonevault-crash-safe-storage-1cbdc003-production-logic-a513f6c19d.packet.json`; scope `63b1df2323f5f131c1cd51cc8126072da08ca75e8a03eaff72c16b83aaff4228` |
+| Quality Interlock | AWAITING_Q4_Q6 | deterministic refreeze complete; waits for fresh independent Q4 and Q6 result artifacts |
 | Pre-LLMaJ | NOT_REACHED | waits for Quality Interlock |
 | Q8 GPT/Claude diagnostics | NOT_REACHED | waits for Pre-LLMaJ |
 | Harbor LLMaJ | NOT_REACHED | waits for earlier gates and reusable AI credentials |
 | Official model trials | NOT_REACHED | GPT-5.5 x5 + Claude Opus 4.8 x5 only after required preceding gates |
 | Difficulty assessment | PROVISIONAL | task.toml `frontier` remains author intent until official trial evidence |
-| Submission ready | NO | Q4 remediation and downstream gates remain open |
+| Submission ready | NO | fresh Q4/Q6 and downstream gates remain open |
 
-## Review evidence ledger
+## Remediation evidence
 
-| Review | Review ID | Task tree | Protocol | Prompt | Role policy | Scope hash | Result path | Verdict | Confidence | Evidence |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| Q4 Spec-Test Contract Reviewer | `stonevault-crash-safe-storage-29b684f3-spec-test-contract-0a860fca37` | `33a8b3ea5bce04dff6bfbc7325fc8b1dcccc6424` | 2.2 | 2.2 | 1.1 | n/a | `.terminus/reviews/stonevault-crash-safe-storage/29b684f3/stonevault-crash-safe-storage-29b684f3-spec-test-contract-0a860fca37.json` | REVISE | HIGH | 11 blocking findings + 1 advisory; exhaustive bidirectional walk complete |
-| Q6 Production Logic Auditor | `stonevault-crash-safe-storage-29b684f3-production-logic-31d4c38000` | `33a8b3ea5bce04dff6bfbc7325fc8b1dcccc6424` | 2.2 | 2.2 | 1.1 | `ffb9c6b644538353bb56f46a761364f697285da48b1d60e8bd16d140fd67ed43` | `.terminus/reviews/stonevault-crash-safe-storage/29b684f3/stonevault-crash-safe-storage-29b684f3-production-logic-31d4c38000.json` | PASS | HIGH | no findings; substantive/reachable production logic confirmed |
+- Controlling historical Q4: `.terminus/reviews/stonevault-crash-safe-storage/29b684f3/stonevault-crash-safe-storage-29b684f3-spec-test-contract-0a860fca37.json`
+- Bounded remediation record: `.terminus/designs/stonevault-crash-safe-storage-q4-remediation.json`
+- Atomic task remediation commit: `1cbdc0030a8a6483db4c91865aa60b8ef127c9c6`
+- Frozen task tree: `b1ea76c23ea7bbc9652484de4c48702a5929b01b`
+- Requirement contract hash: `sha256:63d59b097aeb73a935b0504cb0d10d7e699a903331e53f9abe02ce9c4ef8e3c9`
+- Final-head validation: run `32104003033`, job `95609817655`, artifact `9312568830`, artifact SHA-256 `ae8ebc41e485c0dc1aa8f0b08a9869e2044703d8ee889ebd55c0b28b6e10b8ee`.
+- Empirical matrix: Oracle 63/63; NOP 30 failed / 33 passed; all 30 classified F2P probes transition starter-fail -> Oracle-pass; all 33 classified P2P probes pass starter and Oracle.
+- Target deterministic gates: run `32104316715`, job `95610679183`; Complexity PASS and Runtime Authenticity PASS.
 
-## Q4 consolidated remediation boundary
+## Fresh review handoff ledger
 
-Blocking findings to repair in one producer cycle:
+| Review | Review ID | Packet | Task commit | Scope hash | Status |
+| --- | --- | --- | --- | --- | --- |
+| Q4 Spec-Test Contract Reviewer | `stonevault-crash-safe-storage-1cbdc003-spec-test-contract-670100de41` | `.terminus/reviews/stonevault-crash-safe-storage/1cbdc003/stonevault-crash-safe-storage-1cbdc003-spec-test-contract-670100de41.packet.json` | `1cbdc0030a8a6483db4c91865aa60b8ef127c9c6` | n/a | AWAITING_COLD_REVIEW |
+| Q6 Production Logic Auditor | `stonevault-crash-safe-storage-1cbdc003-production-logic-a513f6c19d` | `.terminus/reviews/stonevault-crash-safe-storage/1cbdc003/stonevault-crash-safe-storage-1cbdc003-production-logic-a513f6c19d.packet.json` | `1cbdc0030a8a6483db4c91865aa60b8ef127c9c6` | `63b1df2323f5f131c1cd51cc8126072da08ca75e8a03eaff72c16b83aaff4228` | AWAITING_COLD_REVIEW |
 
-- `Q4-001` remove or legitimize the hidden `flock` mechanism requirement while preserving observable writer exclusion/release.
-- `Q4-002` remove undocumented second-writer stderr substring grading while preserving nonzero failure and exclusion.
-- `Q4-003` cover the documented default data-directory tier.
-- `Q4-004` cover GET-after-own-delete and post-conflict transaction termination.
-- `Q4-005` cover acknowledged-COMMIT crash durability and multi-commit WAL replay.
-- `Q4-006` cover unknown-type/malformed-payload/impossible-length complete WAL corruption plus independent WAL format compatibility.
-- `Q4-007` add a deterministic checkpoint interruption/recovery durability probe without private implementation hooks.
-- `Q4-008` make snapshot size checks non-vacuous; isolate duplicate key/oversized value; add independent valid format/CRC compatibility fixture.
-- `Q4-009` make HEALTH authority/outcome externally unambiguous and add a meaningful negative invariant case.
-- `Q4-010` strengthen C++20/public C ABI/wire-shape preservation semantically rather than source substrings/permissive parsing.
-- `Q4-011` add representative cross-command unknown-transaction/key-boundary coverage.
-- `Q4-012` advisory: clarify impossible WAL length vs torn-tail semantics if touched by the repair.
+## Historical review evidence ledger
+
+| Review | Review ID | Reviewed task tree | Result | Current status |
+| --- | --- | --- | --- | --- |
+| Q4 Spec-Test Contract Reviewer | `stonevault-crash-safe-storage-29b684f3-spec-test-contract-0a860fca37` | `33a8b3ea5bce04dff6bfbc7325fc8b1dcccc6424` | REVISE, HIGH, SUFFICIENT | SUPERSEDED_BY_REMEDIATION |
+| Q6 Production Logic Auditor | `stonevault-crash-safe-storage-29b684f3-production-logic-31d4c38000` | `33a8b3ea5bce04dff6bfbc7325fc8b1dcccc6424` | PASS, HIGH, SUFFICIENT | STALE_SCOPE_CHANGED |
 
 ## Quality interlock checkpoint
 
-- Frozen candidate reviewed: `29b684f3439269762235665ab2e716da53214c1e`
-- Q4: `REVISE`
-- Q6: `PASS`
-- Quality interlock: `BLOCKED_BY_Q4`
-- Next legal action: fresh producer/fixer chat performs a single consolidated Q1/Q2/Q3-aligned remediation, reruns Oracle/NOP and affected deterministic gates, refreezes the new exact task commit, then generates a fresh Q4 packet. Q6 may be reused only if its validated production `review_scope_hash` remains unchanged under the freshness rules; otherwise rerun Q6.
+- Frozen candidate: `1cbdc0030a8a6483db4c91865aa60b8ef127c9c6`
+- Frozen task tree: `b1ea76c23ea7bbc9652484de4c48702a5929b01b`
+- Q4: `PACKET_READY_AWAITING_COLD_REVIEW`
+- Q6: `PACKET_READY_AWAITING_COLD_REVIEW`
+- Quality interlock: `AWAITING_Q4_Q6`
+- Next legal action: execute Q4 and Q6 in separate cold reviewer chats using the exact generated packets above; then return both result artifacts to the orchestrator for schema, packet binding, role-contract freshness and quality-interlock evaluation.
 
 ## Circuit breakers
 
@@ -89,5 +91,5 @@ Blocking findings to repair in one producer cycle:
 - Product remains C++20 + Rust only; Python verifier-only; no Go product implementation.
 - Pytest function names remain neutral and contain neither `p2p` nor `f2p`; private test map owns classifications.
 - Do not weaken legitimate solver-visible behavior merely to make Q4 green.
-- Any solver-visible task or verifier change invalidates the old Q4 freeze and requires current Oracle/NOP evidence before refreeze.
+- Any solver-visible task or verifier change invalidates this freeze and requires current Oracle/NOP evidence before refreeze.
 - Do not self-issue Q4 or Q6 PASS from the controller chat.

@@ -1,0 +1,85 @@
+{
+  "schema_version": "1.0",
+  "task": "terraform-ansible-managed-resources",
+  "stage": "ENVIRONMENT_BUILD",
+  "status": "BUILT",
+  "recovery_kind": "fresh_rematerialization_after_current_A3_approval",
+  "predecessor": {
+    "stage": "DEFECT_TOPOLOGY",
+    "approval_commit": "936270bffded3166d24213653006e38982e98816",
+    "approval_artifact": ".terminus/designs/terraform-ansible-managed-resources-a3-approval.json",
+    "topology_commit": "f8b5cbda2f4e76efa134a6106c8af28111ac4ac6",
+    "clean_architecture_commit": "bb149cececdca9f0de6505afcb82c3c850fa2f21"
+  },
+  "environment": {
+    "root": "terraform-ansible-managed-resources/environment/",
+    "provider_root_in_container": "/app/provider",
+    "provider_entrypoint": "cmd/terraform-provider-ansibleops/main.go",
+    "current_environment_content_commit": "3b35897ea9c69d9cf8ba04d9448b6401bb361204",
+    "managed_resource_types": 10,
+    "execution_backend": "ansible-playbook",
+    "state_authority": "Terraform Core",
+    "observation_boundary": "native Linux Read paths; Ansible is mutation-only"
+  },
+  "component_graph": [
+    "provider registration/configuration/runtime preflight",
+    "shared lifecycle identity/state/normalization",
+    "Ansible task/playbook generation",
+    "process runner/timeout/cleanup",
+    "native filesystem/content/account/cron observation",
+    "ten differentiated managed-resource implementations"
+  ],
+  "entrypoints": [
+    "/app/provider/cmd/terraform-provider-ansibleops/main.go",
+    "/app/provider/scripts/build-provider.sh",
+    "/app/provider/scripts/smoke.sh"
+  ],
+  "solver_visible_docs": [
+    "/app/provider/docs/provider-contract.md",
+    "/app/provider/docs/resource-reference.md",
+    "/app/provider/docs/lifecycle.md",
+    "/app/provider/examples/basic/main.tf"
+  ],
+  "instruction_doc_boundary": "instruction owns required end-state behavior; provider docs own architecture/resource/lifecycle/operator contracts and do not expose private defect IDs or repair locations",
+  "substantive_loc": 3081,
+  "production_characteristics": [
+    "real Terraform Plugin Framework provider process",
+    "ten differentiated Linux managed-resource lifecycles",
+    "Terraform-Core-owned durable state",
+    "persistent external filesystem/passwd/group/crontab reality",
+    "separate mutation and observation paths",
+    "provider startup preflight for binary/inventory/temp-workspace/runtime prerequisites",
+    "shared process-control, normalization, validation and drift-observation layers"
+  ],
+  "runtime_reachability_notes": [
+    "Provider Configure executes runtime preflight before exposing configured resource data.",
+    "Terraform/Ansible runtime builds and executes in the Edition-3 Docker validation path.",
+    "The post-approval targeted authoring run evaluates the same current task environment after A3 acceptance."
+  ],
+  "defect_materialization": {
+    "approved_root_cause_clusters": 6,
+    "approved_manifestations": 28,
+    "intentional_defect_source": ".terminus/designs/terraform-ansible-managed-resources-topology.json",
+    "surprise_defects_intentionally_added": 0,
+    "note": "The runtime-preflight subsystem is clean production support added to satisfy substantive reachability/scale; it is not an additional planted defect and does not alter the approved 28-manifestation topology."
+  },
+  "environment_rule_checks": {
+    "post_A3_targeted_run": 32098413799,
+    "job": 95594101338,
+    "complexity": "PASS",
+    "runtime_authenticity": "PASS",
+    "business_module_diversity": "PASS_NOT_APPLICABLE_TO_NON_COBOL_PROFILE",
+    "substantive_loc": 3081,
+    "f2p_cases": 28,
+    "p2p_cases": 6
+  },
+  "historical_recovery": {
+    "original_A2B_commit": "2de6d2863cd1eb8b03c16bc97dc377e6d8322ace",
+    "original_A2B_treated_as_approved": false,
+    "superseded_by_this_forward_sequence": true
+  },
+  "unresolved_risks": [
+    "All downstream producer/gate evidence predating this fresh A2B must be treated as historical and re-earned or explicitly revalidated in forward order."
+  ],
+  "next_stage": "REFERENCE_SOLUTION"
+}

@@ -1,0 +1,114 @@
+{
+  "schema_version": "3.0",
+  "role": "Production Logic Auditor",
+  "review_id": "terraform-ansible-managed-resources-2ae7ab1f-production-logic-8e01e961d2",
+  "task": "terraform-ansible-managed-resources",
+  "task_commit": "2ae7ab1f5945876ea45c58aa22889846a815bf29",
+  "control_plane_commit": "779525f730b899481613300cc7e4867881cf488c",
+  "protocol_policy_version": "2.2",
+  "prompt_policy_version": "2.2",
+  "role_policy_version": "1.1",
+  "role_contract_hash": "9d678ba47536e0871542f29e5072684da8cbe2787624be4318f0b5bcb9654dd8",
+  "context_packet": ".terminus/reviews/terraform-ansible-managed-resources/2ae7ab1f/terraform-ansible-managed-resources-2ae7ab1f-production-logic-8e01e961d2.packet.json",
+  "review_scope_hash": "5024cce4e6afacd64daf5cc630576390f3b382ea422f7a39c3726d0a7bf1e76e",
+  "verdict": "PASS",
+  "confidence": "HIGH",
+  "evidence_status": "SUFFICIENT",
+  "summary": "The solver-visible core is a real, reachable Terraform provider whose production path crosses provider configuration/preflight, ten managed-resource lifecycles, Ansible task/playbook rendering, process execution, operating-system observation, and Terraform state refresh. Direct inspection shows material branching, validation, error handling, state/identity logic, and cross-component integration rather than constant shells. Resource CRUD contains substantial repeated Terraform-framework scaffolding and the strict-profile LOC margin is narrow, so padding risk is MEDIUM rather than LOW; however the repeated surfaces expose materially different OS-resource semantics and removing roughly a quarter of the core would remove major runtime capabilities or reconciliation behavior. This conclusion is independent of the Complexity Governor/validator verdict.",
+  "evidence": [
+    {
+      "type": "file",
+      "ref": "2ae7ab1f5945876ea45c58aa22889846a815bf29:terraform-ansible-managed-resources/environment/ansibleops/cmd/terraform-provider-ansibleops/main.go",
+      "observation": "Real providerserver entrypoint serves provider.New(version) at registry.terraform.io/local/ansibleops."
+    },
+    {
+      "type": "file",
+      "ref": "2ae7ab1f5945876ea45c58aa22889846a815bf29:terraform-ansible-managed-resources/environment/ansibleops/internal/provider/provider.go",
+      "observation": "Provider configuration creates runtime state, invokes preflight, and registers ten distinct Terraform managed-resource types."
+    },
+    {
+      "type": "file",
+      "ref": "2ae7ab1f5945876ea45c58aa22889846a815bf29:terraform-ansible-managed-resources/environment/ansibleops/internal/provider/preflight.go",
+      "observation": "Preflight performs inventory parsing and locality checks, executable resolution, temp-workspace writability probes, and bounded timeout validation with differentiated failure paths."
+    },
+    {
+      "type": "file",
+      "ref": "2ae7ab1f5945876ea45c58aa22889846a815bf29:terraform-ansible-managed-resources/environment/ansibleops/internal/runner/runner.go",
+      "observation": "The process runner materializes ephemeral playbooks, applies environment overrides, enforces a timeout, captures stdout/stderr/exit state, and distinguishes timeout, process-exit, and process-start failures."
+    },
+    {
+      "type": "file",
+      "ref": "2ae7ab1f5945876ea45c58aa22889846a815bf29:terraform-ansible-managed-resources/environment/ansibleops/internal/ansible",
+      "observation": "Execute, inventory, module builders, task rendering, and playbook rendering form a reachable translation boundary from Terraform resource intent into Ansible execution."
+    },
+    {
+      "type": "file",
+      "ref": "2ae7ab1f5945876ea45c58aa22889846a815bf29:terraform-ansible-managed-resources/environment/ansibleops/internal/observe",
+      "observation": "Observation code reads filesystem metadata/digests/symlinks, local users/groups, cron spools, and line/block state to feed resource Read/refresh behavior."
+    },
+    {
+      "type": "file",
+      "ref": "2ae7ab1f5945876ea45c58aa22889846a815bf29:terraform-ansible-managed-resources/environment/ansibleops/internal/lifecycle",
+      "observation": "Lifecycle code provides normalization, validation, change sets, identity hashing, fingerprints, and desired-state comparison used across resource paths."
+    },
+    {
+      "type": "file",
+      "ref": "2ae7ab1f5945876ea45c58aa22889846a815bf29:terraform-ansible-managed-resources/environment/ansibleops/internal/resources",
+      "observation": "Ten CRUD resource implementations share framework conventions but differ in desired-state fields, Ansible modules, validation, observation, identity, and reconciliation semantics for paths, content/templates, text edits, symlinks, accounts, groups, and cron."
+    },
+    {
+      "type": "file",
+      "ref": "2ae7ab1f5945876ea45c58aa22889846a815bf29:terraform-ansible-managed-resources/environment/ansibleops/scripts/smoke.sh",
+      "observation": "The solver-visible operator workflow builds the provider, performs terraform init/apply against directory and line resources, verifies resulting OS state, and destroys it."
+    },
+    {
+      "type": "job",
+      "ref": "GitHub Actions run 32098976772 job 95595687530",
+      "observation": "Task-targeted authoring validation associated with the task commit reports profile=large_system_strict and substantive_loc=3081; this numeric/profile evidence is used only as corroboration, not as a copied semantic verdict."
+    },
+    {
+      "type": "rule",
+      "ref": "779525f730b899481613300cc7e4867881cf488c:.terminus/agents/QUALITY_AGENT_REGISTRY.md#Q6",
+      "observation": "Q6 requires reachable major modules, material branching/state/error/integration, differentiated subsystem responsibilities, cross-component coupling, a meaningful removal test, and rejection of padding."
+    },
+    {
+      "type": "rule",
+      "ref": "779525f730b899481613300cc7e4867881cf488c:.terminus/agents/QUALITY_AGENT_PROMPTS.md#Q6",
+      "observation": "Q6 must independently trace entrypoints/reachability, distinguish production complexity from noise, evaluate partial-fix traps/removal impact, and not treat a Complexity PASS or raw LOC as sufficient."
+    }
+  ],
+  "findings": [],
+  "missing_evidence": [],
+  "change_scope": [],
+  "do_not_change": [
+    "Do not treat this Q6 result as a verdict on specification/test alignment, oracle correctness, or other specialist scopes.",
+    "Do not reuse this result after any change that alters the packet-bound review_scope_hash.",
+    "Do not inflate the solver-visible core merely to increase LOC; repeated Terraform-framework scaffolding was already treated as a padding-risk signal rather than independent complexity."
+  ],
+  "next_gate": "QUALITY_INTERLOCK",
+  "role_output": {
+    "CORE_LOGIC_DEPTH": "HIGH",
+    "RUNTIME_REACHABILITY": "HIGH",
+    "MODULE_DIVERSITY": "MEDIUM",
+    "CROSS_COMPONENT_COUPLING": "HIGH",
+    "TOY_LOGIC_RISK": "LOW",
+    "PADDING_RISK": "MEDIUM",
+    "SUBSTANTIVE_LOC_ASSESSMENT": "The task-targeted report records large_system_strict with 3,081 substantive LOC, 81 above the 3,000 floor. Direct inspection does not count that number as sufficient by itself: a meaningful fraction is repeated Terraform CRUD/schema scaffolding, but the majority of the inspected core participates in distinct provider preflight, resource lifecycle, Ansible translation/execution, observation, identity/normalization, or operator workflow behavior. The narrow margin warrants MEDIUM padding risk, not rejection.",
+    "MAJOR_MODULES": [
+      "Provider entry/configuration/preflight: real Terraform server registration plus runtime validation and dependency injection.",
+      "Managed resources: ten Terraform CRUD/import surfaces spanning filesystem objects, copied/rendered content, line/block edits, symlinks, users, groups, and cron.",
+      "Ansible translation: inventory inspection, module-specific task construction, deterministic task/playbook rendering, and execution handoff.",
+      "Runner/runtime: runtime configuration, temporary-playbook process execution, timeout/error classification, output capture, and environment composition.",
+      "Observation/reconciliation: filesystem metadata/digests/link targets, account/group state, cron spool parsing, and text-state inspection used by Reads/refreshes.",
+      "Lifecycle utilities: validation, normalization, change tracking, identities, and fingerprints that couple desired configuration to Terraform state."
+    ],
+    "PARTIAL_FIX_TRAPS": [
+      "A resource lifecycle crosses schema/plan values -> identity/change logic -> Ansible task arguments -> runner execution -> OS state -> observer -> Terraform state; repairing only one layer can leave drift or inconsistent state.",
+      "Copy/template behavior couples source/content signals and variables to update decisions, generated Ansible actions, destination observation, and persisted computed state.",
+      "User/group behavior spans Terraform desired state, Ansible account arguments, /etc/passwd and /etc/group observation, supplementary-group canonicalization, and identity/state fields.",
+      "Provider preflight constraints on inventory, binary, temp workspace, and timeout feed the shared runtime used by every resource, so configuration-path defects can affect all mutations."
+    ],
+    "REMOVAL_TEST": "Removing roughly 25% of the core cannot preserve the same operational behavior without replacing equivalent logic: removing the runner/Ansible renderer makes every mutation unreachable; removing observation eliminates drift/refresh state for all resource families; removing provider preflight removes shared runtime safety; removing two or three resource implementations removes entire Terraform-managed OS capabilities. Small helper-only surfaces exist, but they are not a large enough fraction to make the system toy or padding-dominated.",
+    "REQUIRED_CHANGES": []
+  }
+}

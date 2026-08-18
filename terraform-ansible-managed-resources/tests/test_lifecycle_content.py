@@ -21,6 +21,8 @@ def copy_body(source, destination, digest, mode="0640"):
   source_digest = {json.dumps(digest)}
   destination   = {json.dumps(str(destination))}
   mode          = {json.dumps(mode)}
+  owner         = "root"
+  group         = "root"
 }}
 '''
 
@@ -30,6 +32,9 @@ def template_body(source, destination, digest, value):
   source        = {json.dumps(str(source))}
   source_digest = {json.dumps(digest)}
   destination   = {json.dumps(str(destination))}
+  mode          = "0640"
+  owner         = "root"
+  group         = "root"
   variables = {{
     value = {json.dumps(value)}
   }}
@@ -61,12 +66,15 @@ def test_f2p_copy_source_digest_change_executes_content_update(tmp_path, cleanup
     rewrite_body(workspace, copy_body(source, destination, sha256_file(source)), temp_dir=runner_tmp)
     tf_apply(workspace)
     assert pathlib.Path(destination).read_text(encoding="utf-8") == "version-two\n"
+    stat = pathlib.Path(destination).stat()
+    assert stat.st_uid == 0 and stat.st_gid == 0
+    assert stat.st_mode & 0o777 == 0o640
     values = resource_values(workspace, "ansibleops_copy.managed")
     assert values["destination_digest"] == sha256_file(destination)
 
 
 def test_f2p_content_identities_survive_source_and_variable_updates(tmp_path, cleanup_registry):
-    """Copy and template destination identities remain stable while mutable source or variable inputs change."""
+    """Copy/template identities remain stable while source, variables and managed metadata remain functional."""
     copy_source_one = tmp_path / "copy-one.txt"
     copy_source_two = tmp_path / "copy-two.txt"
     copy_source_one.write_text("one\n", encoding="utf-8")
@@ -92,6 +100,10 @@ def test_f2p_content_identities_survive_source_and_variable_updates(tmp_path, cl
     assert resource_values(workspace, "ansibleops_template.managed")["id"] == template_before
     assert pathlib.Path(copy_destination).read_text(encoding="utf-8") == "two\n"
     assert pathlib.Path(template_destination).read_text(encoding="utf-8") == "value=two\n"
+    for path in (copy_destination, template_destination):
+        stat = pathlib.Path(path).stat()
+        assert stat.st_uid == 0 and stat.st_gid == 0
+        assert stat.st_mode & 0o777 == 0o640
 
 
 def test_f2p_failed_update_preserves_last_successful_template_state(tmp_path, cleanup_registry):
@@ -147,7 +159,7 @@ def test_f2p_retry_after_failed_update_reexecutes_and_converges(tmp_path, cleanu
     assert pathlib.Path(destination).read_text(encoding="utf-8") == "value=two\n"
 
 
-def test_f2p_template_variable_order_is_semantically_stable(tmp_path, cleanup_registry):
+def test_p2p_template_variable_order_is_semantically_stable(tmp_path, cleanup_registry):
     """Reordering an equivalent template variable map must leave a clean plan and must not replay Ansible."""
     source = tmp_path / "template.j2"
     source.write_text("a={{ a }} b={{ b }}\n", encoding="utf-8")
@@ -214,7 +226,7 @@ resource "ansibleops_block" "managed" {{
 
 
 def test_f2p_line_update_replaces_previous_value_exactly_once(tmp_path, cleanup_registry):
-    """Updating a named line without an explicit regexp must replace its prior value instead of appending a duplicate."""
+    """Named-line updates replace exactly once; explicit regexp behavior also preserves identity."""
     managed = cleanup_registry.path(tmp_path / "app.conf")
     runner_tmp = tmp_path / "runner"
     body_one = f'''resource "ansibleops_line" "managed" {{
@@ -232,14 +244,35 @@ def test_f2p_line_update_replaces_previous_value_exactly_once(tmp_path, cleanup_
     assert "endpoint=one" not in lines
     assert lines.count("endpoint=two") == 1
 
+    regexp_file = cleanup_registry.path(tmp_path / "regexp.conf")
+    pathlib.Path(regexp_file).write_text("endpoint=legacy\nother=true\n", encoding="utf-8")
+    regexp_root = tmp_path / "regexp-case"
+    regexp_body = f'''resource "ansibleops_line" "managed" {{
+  name   = "regexp-endpoint"
+  path   = {json.dumps(str(regexp_file))}
+  line   = "endpoint=managed"
+  regexp = "^endpoint="
+  create = true
+}}
+'''
+    regexp_workspace = make_workspace(regexp_root, regexp_body)
+    tf_apply(regexp_workspace)
+    before_id = resource_values(regexp_workspace, "ansibleops_line.managed")["id"]
+    rewrite_body(regexp_workspace, regexp_body.replace("endpoint=managed", "endpoint=updated"))
+    tf_apply(regexp_workspace)
+    after_id = resource_values(regexp_workspace, "ansibleops_line.managed")["id"]
+    regexp_lines = pathlib.Path(regexp_file).read_text(encoding="utf-8").splitlines()
+    assert after_id == before_id
+    assert not any(line in {"endpoint=legacy", "endpoint=managed"} for line in regexp_lines)
+    assert regexp_lines.count("endpoint=updated") == 1
+    assert "other=true" in regexp_lines
+
 
 def test_f2p_removed_named_text_is_planned_for_recreation(tmp_path, cleanup_registry):
-    """Externally removed line and block contracts must both be planned for recreation without refresh mutation."""
+    """Named block ownership/identity remain stable and externally removed text is planned for recreation."""
     line_file = cleanup_registry.path(tmp_path / "line.conf")
     block_file = cleanup_registry.path(tmp_path / "block.conf")
-    workspace = make_workspace(
-        tmp_path,
-        f'''resource "ansibleops_line" "managed" {{
+    body = f'''resource "ansibleops_line" "managed" {{
   name   = "feature"
   path   = {json.dumps(str(line_file))}
   line   = "feature=true"
@@ -249,11 +282,22 @@ resource "ansibleops_block" "managed" {{
   name   = "service"
   path   = {json.dumps(str(block_file))}
   block  = "enabled=true"
+  marker = "# {{mark}} CUSTOM SERVICE"
   create = true
 }}
-''',
-    )
+'''
+    workspace = make_workspace(tmp_path, body)
     tf_apply(workspace)
+    block_before = resource_values(workspace, "ansibleops_block.managed")["id"]
+    updated = body.replace('block  = "enabled=true"', 'block  = "enabled=false"')
+    rewrite_body(workspace, updated)
+    tf_apply(workspace)
+    assert resource_values(workspace, "ansibleops_block.managed")["id"] == block_before
+    block_text = pathlib.Path(block_file).read_text(encoding="utf-8")
+    assert "# BEGIN CUSTOM SERVICE" in block_text
+    assert "# END CUSTOM SERVICE" in block_text
+    assert "enabled=false" in block_text
+
     pathlib.Path(line_file).write_text("other=true\n", encoding="utf-8")
     pathlib.Path(block_file).write_text("unmanaged=true\n", encoding="utf-8")
     _, plan = tf_plan_json(workspace)

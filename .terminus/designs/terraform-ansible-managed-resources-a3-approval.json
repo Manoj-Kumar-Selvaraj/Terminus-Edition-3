@@ -1,0 +1,44 @@
+{
+  "schema_version": "1.0",
+  "task": "terraform-ansible-managed-resources",
+  "stage": "DEFECT_TOPOLOGY",
+  "status": "APPROVED_FOR_FRESH_REMATERIALIZATION",
+  "approval_authority": "Creation Controller",
+  "approval_scope": "current forward recovery only; this does not retroactively approve the historical A2B materialization",
+  "clean_architecture": {
+    "commit": "bb149cececdca9f0de6505afcb82c3c850fa2f21",
+    "path": ".terminus/designs/terraform-ansible-managed-resources.json",
+    "phase": "A2A_CLEAN_ARCHITECTURE"
+  },
+  "defect_topology": {
+    "commit": "f8b5cbda2f4e76efa134a6106c8af28111ac4ac6",
+    "path": ".terminus/designs/terraform-ansible-managed-resources-topology.json",
+    "profile": "large_system_strict",
+    "root_cause_clusters": 6,
+    "observable_manifestations": 28,
+    "causal_edges": 28
+  },
+  "controller_review": {
+    "architecture_alignment": "PASS",
+    "causal_coherence": "PASS",
+    "partial_fix_traps": "PASS",
+    "behavioral_surface_breadth": "PASS",
+    "anti_padding": "PASS",
+    "hidden_knowledge_boundary": "PASS",
+    "findings": []
+  },
+  "approval_rationale": [
+    "The six topology clusters are shared lifecycle/observation/transaction/runner/normalization failure causes that fit the clean provider architecture rather than ten unrelated resource-specific bugs.",
+    "The 28 manifestations span identity/state, drift refresh, failed update retry, scoped delete, process safety and normalization across multiple managed-resource families.",
+    "The topology contains explicit causal edges and partial-fix traps, so difficulty derives from coupled production invariants rather than fixture variation or numeric padding.",
+    "The topology does not require hidden fixture constants, Oracle implementation details or verifier-body knowledge to understand the intended external behavior.",
+    "The current targeted complexity validator independently confirms the topology shape remains within the strict 20-30 manifestation / fewer-root-cause model; fresh post-approval machine evidence is required before A2B is recorded complete."
+  ],
+  "historical_provenance": {
+    "original_topology_status": "PROPOSED_PENDING_INDEPENDENT_APPROVAL",
+    "original_materialization_commit": "2de6d2863cd1eb8b03c16bc97dc377e6d8322ace",
+    "historical_sequence_valid": false,
+    "recovery_rule": "Do not treat the original A2B as approved. Re-run ENVIRONMENT_BUILD after this approval and re-earn downstream current evidence."
+  },
+  "next_stage": "ENVIRONMENT_BUILD"
+}

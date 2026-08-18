@@ -1,33 +1,46 @@
 {
   "schema_version": "1.0",
   "task": "stonevault-crash-safe-storage",
-  "task_content_commit": "29b684f3439269762235665ab2e716da53214c1e",
-  "task_tree_sha": "33a8b3ea5bce04dff6bfbc7325fc8b1dcccc6424",
+  "task_content_commit": "1cbdc0030a8a6483db4c91865aa60b8ef127c9c6",
   "control_plane_commit": "cf69c9efcccc1ad1702929155d50c71d59a829aa",
-  "requirement_contract_hash": "sha256:0a17d0e49bbc05abecabe9aee85ab9ea96bfd767543054f87851128d8339c675",
   "inputs": {
     "solver_visible_requirement_contract": ".terminus/contracts/stonevault-crash-safe-storage/solver-visible-requirements.json",
     "instruction": "stonevault-crash-safe-storage/instruction.md",
     "technical_contract": "stonevault-crash-safe-storage/environment/stonevault/docs/storage-format.md",
-    "private_test_map": ".terminus/designs/stonevault-crash-safe-storage-test-map.json"
+    "private_test_map": ".terminus/designs/stonevault-crash-safe-storage-test-map.json",
+    "controlling_q4": ".terminus/reviews/stonevault-crash-safe-storage/29b684f3/stonevault-crash-safe-storage-29b684f3-spec-test-contract-0a860fca37.json"
   },
   "q1_spec_gap_repair": {
-    "status": "PRODUCER_ALIGNMENT_PASS",
-    "changes_required": false,
-    "findings": [],
+    "status": "PRODUCER_ALIGNMENT_PASS_AFTER_Q4_REMEDIATION",
+    "changes_required": true,
+    "resolved_findings": [
+      "Q4-009",
+      "Q4-012"
+    ],
     "evidence": [
-      "instruction.md states the engineering objective, C++20/Rust product-language boundary, Python-verifier-only rule and no-Go rule",
-      "instruction.md states writer fencing and path precedence",
-      "instruction.md states transaction snapshot point-read/scan visibility and transaction-local puts/deletes",
-      "instruction.md states first-committer-wins conflict rejection, atomicity and contiguous durable commit sequencing",
-      "instruction.md states rollback/crash recovery, torn-tail versus complete-corruption behavior, checkpoint quiescence/publication/WAL reclamation and snapshot corruption handling",
-      "instruction.md states STATS/HEALTH, binary hexadecimal semantics, inclusive limits, malformed-command resilience and preservation of C ABI/ASCII/WAL/snapshot/data compatibility",
-      "storage-format.md remains a technical layout/protocol contract rather than a repair map or second prompt"
+      "storage-format.md now defines HEALTH validation authority over catalog, transaction and durable-path invariants and specifies ERR rather than a healthy report on detected invariant failure",
+      "storage-format.md now states exact READY/STATS/HEALTH successful response shapes",
+      "storage-format.md states that the writer-lock implementation mechanism is not a public compatibility contract",
+      "storage-format.md defines the existing 8 MiB WAL framing ceiling and distinguishes intrinsically invalid framing from an in-range short final payload",
+      "instruction.md remains concise and continues to own the material engineering requirements without exposing private defect topology"
     ]
   },
   "q2_verifier_coverage_repair": {
     "status": "PRODUCER_ALIGNMENT_PASS_EMPIRICALLY_RECONCILED",
-    "changes_required": false,
+    "changes_required": true,
+    "resolved_findings": [
+      "Q4-001",
+      "Q4-002",
+      "Q4-003",
+      "Q4-004",
+      "Q4-005",
+      "Q4-006",
+      "Q4-007",
+      "Q4-008",
+      "Q4-009",
+      "Q4-010",
+      "Q4-011"
+    ],
     "requirements_with_behavioral_coverage": [
       "R01_WRITER_FENCING",
       "R02_DATA_DIR_PRECEDENCE",
@@ -47,27 +60,38 @@
       "R16_NATIVE_COMPATIBILITY"
     ],
     "coverage_notes": [
-      "committed restart round trips and checkpoint restart exercise durable data/sequence preservation",
-      "WAL and snapshot mutation probes exercise documented on-disk compatibility/integrity boundaries behaviorally",
-      "command-response tests exercise documented ASCII shapes through the Rust CLI/FFI path",
-      "the public C ABI is preserved by an explicit declaration check while normal CLI execution reaches the same C ABI through Rust FFI",
-      "28 F2P probes represent 25 distinct behavioral cases through two explicitly justified multi-probe invariant groups",
-      "19 P2P probes cover preservation risks",
-      "GitHub Actions run 32094975331 established Oracle 47/47, starter 28 failed/19 passed, all planned F2P transitions and all planned P2P preservation"
+      "writer fencing is now graded only through observable concurrent-writer rejection/release; the fcntl/flock mechanism probe and private diagnostic substring requirement were removed",
+      "default data-directory selection is exercised with neither CLI nor environment override",
+      "transaction coverage now includes GET after local delete and termination/removal after conflict",
+      "durability coverage now kills immediately after acknowledged COMMIT and replays a multi-commit WAL prefix without checkpoint",
+      "independently encoded WAL fixtures cover published mutation/COMMIT layout plus complete unknown type, malformed complete payload and impossible framing length",
+      "checkpoint interruption observes snapshot.tmp publication, stops the process before completion, verifies WAL remains a recovery source, kills, and restarts without a private product hook",
+      "independently encoded snapshot fixtures verify published layout/CRC and complete oversized-key, oversized-value and duplicate-key corruption classes",
+      "HEALTH has an observable negative invariant case by removing the live wal.log path while the process is open",
+      "C++20 and all public C ABI signatures/linkage are compiler-validated rather than source-substring checked; READY and HEALTH stable forms have exact wire-shape probes",
+      "unknown-transaction and decoded-key overflow behavior is sampled across materially distinct command handlers",
+      "GitHub Actions run 32103203768 established Oracle 63/63, starter 30 failed/33 passed, all 30 classified F2P transitions and all 33 P2P preservation probes",
+      "30 F2P probes represent 27 distinct behavioral cases through two explicitly justified multi-probe groups"
     ]
   },
   "q3_spec_ambiguity_repair": {
-    "status": "PRODUCER_ALIGNMENT_PASS",
-    "changes_required": false,
-    "findings": [],
+    "status": "PRODUCER_ALIGNMENT_PASS_AFTER_Q4_REMEDIATION",
+    "changes_required": true,
+    "resolved_findings": [
+      "Q4-009",
+      "Q4-012"
+    ],
     "clarity_checks": [
-      "snapshot lifetime is explicitly the full transaction lifetime",
-      "prefix matching and ordering are explicitly raw-byte/unsigned-byte semantics",
-      "conflict behavior states rejection atomicity, transaction termination and no sequence consumption",
-      "WAL recovery distinguishes only short final header/payload from corruption of complete records/history",
-      "checkpoint quiescence and zero-byte WAL reclamation are explicit",
-      "4096-byte key/prefix and 1048576-byte value limits are explicitly inclusive",
-      "compatibility preservation names the C ABI, ASCII response shapes, WAL layout, snapshot layout and existing data"
+      "writer-fencing behavior is public while the advisory-lock implementation primitive is explicitly non-contractual",
+      "startup and stable operator report forms are exact where compatibility is claimed",
+      "snapshot lifetime and local overlays cover both puts and deletes for point reads/scans",
+      "conflict behavior states atomic rejection, transaction termination and no sequence consumption",
+      "WAL framing distinguishes invalid zero/>8MiB headers from repairable in-range incomplete final records",
+      "complete WAL type/payload/history corruption remains fail-closed",
+      "checkpoint quiescence, durable snapshot-before-WAL-reclamation order and zero-byte successful reclamation are explicit",
+      "HEALTH now defines both validation scope and observable ERR behavior for reachable invariant failure",
+      "4096-byte key/prefix and 1048576-byte value limits remain explicitly inclusive",
+      "compatibility preservation names exact C ABI signatures/linkage, ASCII response shapes, WAL layout, snapshot layout and existing data"
     ]
   },
   "privacy_boundary": {
@@ -75,5 +99,18 @@
     "oracle_diff_used_as_instruction_source": false,
     "hidden_test_names_copied_into_solver_prose": false
   },
-  "overall_status": "PRODUCER_SPEC_ALIGNMENT_COMPLETE_CURRENT_EMPIRICAL_MATRIX"
+  "empirical_evidence": {
+    "workflow_run_id": 32104003033,
+    "validation_job_id": 95609817655,
+    "artifact_id": 9312568830,
+    "artifact_sha256": "ae8ebc41e485c0dc1aa8f0b08a9869e2044703d8ee889ebd55c0b28b6e10b8ee",
+    "oracle": "reward 1; 63 passed",
+    "nop": "reward 0; 30 failed / 33 passed",
+    "complexity_run_id": 32104316715,
+    "complexity_job_id": 95610679183,
+    "runtime_authenticity_run_id": 32104316715,
+    "runtime_authenticity_job_id": 95610679183
+  },
+  "overall_status": "PRODUCER_Q4_REMEDIATION_ALIGNMENT_COMPLETE_CURRENT_EMPIRICAL_MATRIX",
+  "task_tree_hash": "b1ea76c23ea7bbc9652484de4c48702a5929b01b"
 }
