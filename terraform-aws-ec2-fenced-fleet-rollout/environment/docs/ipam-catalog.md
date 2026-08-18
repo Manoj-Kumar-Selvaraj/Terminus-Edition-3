@@ -1,6 +1,6 @@
 # Org IPAM catalog
 
-SQLite database `/app/data/ipam.sqlite` is built at image bake from `/app/sql/schema.sql` and `/app/sql/seed.sql`.
+SQLite database `/app/data/ipam.sqlite` is built at image bake from `/app/docs/sql/schema.sql` and `/app/docs/sql/seed.sql`.
 
 ## Tables
 

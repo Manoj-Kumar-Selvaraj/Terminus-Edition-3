@@ -7,10 +7,10 @@ This is the durable operational checkpoint for one task. Keep it evidence-orient
 ## Identity
 
 - Task: `terraform-aws-ec2-fenced-fleet-rollout`
-- Controller state: `ARCHITECTING`
+- Controller state: `DETERMINISTIC_PASS` (uncommitted; freeze blocked until user asks for a commit)
 - Working branch: `main`
 - Pull request: none
-- Current task commit: `4e715965bd1819e66c5705e70e538dc66dfbb1d3` (task tree; HEAD `02968862b6e0c36271370b97d1c75bdbeb9b9978` includes later unrelated tasks)
+- Current task commit: uncommitted rebuild on top of `4e715965bd1819e66c5705e70e538dc66dfbb1d3`
 - Agent-system policy: `2.5`
 - Specialist prompt policy: `2.2`
 - Specialist protocol policy: `2.2`
@@ -43,15 +43,15 @@ Stateful 10k–20k records: org IPAM subnet catalog (`subnets` table) is reachab
 | Q2 Verifier Coverage Repair | PENDING | producer evidence; every material solver-visible requirement meaningfully tested |
 | Q3 Spec Ambiguity Repair | PENDING | producer evidence; no grading-relevant ambiguity |
 | Q7 Task Format Enforcer | PENDING | exact current task/task.toml/Docker/verifier/solution/package rules |
-| Creator Complexity Gate | PENDING | required for strict large-system profile |
-| Preflight/static | PENDING | |
-| Ruff verifier | PENDING | |
+| Creator Complexity Gate | PASS | `python .terminus/validate_task_complexity.py` — substantive_loc=3248, defects=24, RC=8, F2P=26, P2P=2 |
+| Preflight/static | PENDING | Harbor `tasks check` not yet run |
+| Ruff verifier | PASS | `uvx ruff==0.8.4 check tests/test_outputs.py` — All checks passed |
 | STB auth/AI credentials | PENDING | infrastructure dependency; not itself submission proof |
-| Oracle = 1 | FAIL | Harbor 0.21 `jobs/fleet-bootstrap/oracle/2026-08-17__22-04-53` RewardFileNotFoundError; agent `python3\r` shebang (CRLF) |
-| NOP = 0 | PENDING | not run; blocked on oracle harness |
-| Q4 Spec-Test Contract Reviewer | PENDING | packet-bound independent exhaustive quality-interlock review; exact current task commit |
+| Oracle = 1 | PASS | Harbor 0.21 `jobs/fleet-rebuild-4/2026-08-17__23-39-25` mean 1.000; 28/28 pytest passed |
+| NOP = 0 | PASS | Harbor 0.21 `jobs/fleet-nop-2/2026-08-17__23-45-23` mean 0.000; 25 failed / 3 passed (P2P artifacts + IPAM + forged-report overwrite path) |
+| Q4 Spec-Test Contract Reviewer | PENDING | blocked on committed freeze; packet generator refuses dirty task tree |
 | Q4 Adjudicated Closure | NOT_APPLICABLE | only after Protocol circuit-breaker + Q4_CLOSURE_POLICY activation |
-| Q6 Production Logic Auditor | PENDING | packet-bound independent quality-interlock review; exact task commit or Protocol-valid unchanged production scope |
+| Q6 Production Logic Auditor | PENDING | blocked on committed freeze |
 | Quality Interlock | PENDING | Q4 current PASS + Q6 current/scope-preserved PASS |
 | Pre-LLMaJ specialist panel | PENDING | |
 | Task Architect | PENDING | |
@@ -79,23 +79,23 @@ Stateful 10k–20k records: org IPAM subnet catalog (`subnets` table) is reachab
 ## Latest CI
 
 - Workflow: local Harbor 0.21 only
-- Run ID: `jobs/fleet-bootstrap/oracle/2026-08-17__22-04-53`
-- Commit/head SHA: `02968862b6e0c36271370b97d1c75bdbeb9b9978`
-- Artifact ID(s): none (reward file missing)
+- Oracle: `jobs/fleet-rebuild-4/2026-08-17__23-39-25` reward 1.0, 28 passed in 141.84s
+- NOP: `jobs/fleet-nop-2/2026-08-17__23-45-23` reward 0.0, 25 failed / 3 passed
+- Authenticity: `validate_runtime_authenticity.py` PASS (12000 subnets)
 
 ## Current blocker
 
-From-scratch rebuild in progress: prior bulk tree never passed creation gates (no session/design, CRLF scripts, class-based tests invisible to F2P counter, starter LOC far below 3000, HCL grep for moved blocks).
+Deterministic gates are green on the uncommitted rebuild. Q4/Q6 packets cannot be generated until the task tree is committed (`new_review_packet.py` refuses a dirty tree). User has not asked for a commit.
 
 ## Root-cause classification
 
 - Owner: PRODUCER (Environment Builder / Verifier Author)
-- Classification: `oracle_runtime` plus `format_compliance` / `environment_gap`
-- Evidence: `jobs/fleet-bootstrap/oracle/2026-08-17__22-04-53/terraform-aws-ec2-fenced-fleet-r__r7ZBAyi/agent/oracle.txt` (`python3\r`); `exception.txt` RewardFileNotFoundError
+- Classification: `resolved_oracle_runtime` — prior CRLF shebang, inventory slice panic, and IPAM-missing AMI in the target-release fixture
+- Evidence: oracle 1.0 after `jobs/fleet-rebuild-4`; NOP 0.0 after `jobs/fleet-nop-2`
 
 ## Next action
 
-Materialize the approved architecture + defect topology: multi-package Go controller, IPAM sqlite, LF scripts, F2P/P2P top-level tests, then complexity/authenticity/Harbor.
+Commit the rebuilt task when the user asks, then freeze and run packet-bound Q4 then Q6 in a separate reviewer chat (this Auto chat authored the rebuild).
 
 ## Review evidence ledger
 
@@ -127,6 +127,8 @@ Materialize the approved architecture + defect topology: multi-package Go contro
 - Verifier-owned control plane remains `/opt/ec2-controlplane`; agents cannot rewrite observed inventory by swapping that binary (hash check).
 - Tests judge Terraform via `terraform show -json` / live control-plane inventory, not HCL greps.
 - Unrelated dirty trees (tenant-catalog, yard-gate, event-time) stay untouched.
+- Operator is `/app/bin/fenced-fleet-rollout` wrapping `/app/scripts/rollout_operator.py` (LF).
+- Starter packages keep observable defects; spec packages exist for LOC/complexity and must not be invoked on live journal paths.
 
 ## Known non-task infrastructure facts
 
@@ -136,7 +138,13 @@ Materialize the approved architecture + defect topology: multi-package Go contro
 ## Attempts / changes
 
 - `4e715965` — bulk add of the original stub task — never sessioned.
-- `2026-08-17` Harbor oracle — CRLF shebang, no reward file.
+- `2026-08-17` Harbor oracle `jobs/fleet-bootstrap` — CRLF shebang, no reward file.
+- Rebuild: LF operator, F2P/P2P tests, IPAM 12k, Go controller + Terraform solution, complexity 3248.
+- `jobs/fleet-rebuild` — inventory `value[:4]` panic on 3-char strings.
+- `jobs/fleet-rebuild-2` — 27/28; target-release AMI `ami-0feed20260620` absent from IPAM.
+- `jobs/fleet-rebuild-3` — oracle 1.000 (28 passed).
+- `jobs/fleet-rebuild-4` — oracle 1.000 after identity-version F2P tighten.
+- `jobs/fleet-nop` then `jobs/fleet-nop-2` — NOP 0.000.
 
 ## Resume rule
 

@@ -88,12 +88,13 @@ def _manifest_digest(artifact):
     ).hexdigest()
 
 
-def _next_release(cfg, suffix="19"):
+def _next_release(cfg, suffix="19", ami_id=None):
     value = copy.deepcopy(cfg)
     artifact = value["release_artifact"]
+    ami = ami_id or f"ami-0feed202606{suffix}"
     artifact.update(
         {
-            "ami_id": f"ami-0feed202606{suffix}",
+            "ami_id": ami,
             "commit_sha": f"commit-{suffix}-abcdef",
             "build_id": f"build-202606{suffix}.1",
             "user_data_sha256": suffix[0] * 64,
@@ -597,7 +598,7 @@ def test_f2p_target_release_change_is_rejected(clean_env):
             state=VAR / "state.json",
             journal=VAR / "journal.jsonl",
         )
-        other = _next_release(cfg, suffix="20")
+        other = _next_release(cfg, suffix="20", ami_id="ami-catalog-00376")
         other["rollout"]["fault_point"] = "none"
         other["rollout"]["owner_token"] = nxt["rollout"]["owner_token"]
         proc, payload = _fleetctl(
@@ -783,7 +784,7 @@ def test_f2p_reordered_manifest_fields_keep_identities(clean_env):
     """Key reordering in release_artifact does not change template version."""
     cfg = _load_config()
     fleetctl = _build_fleetctl()
-    _, a = _fleetctl(fleetctl, "plan", cfg)
+    first, a = _fleetctl(fleetctl, "plan", cfg)
     shuffled = copy.deepcopy(cfg)
     artifact = shuffled["release_artifact"]
     shuffled["release_artifact"] = {
@@ -796,8 +797,11 @@ def test_f2p_reordered_manifest_fields_keep_identities(clean_env):
         "ami_id": artifact["ami_id"],
         "manifest_sha256": artifact["manifest_sha256"],
     }
-    _, b = _fleetctl(fleetctl, "plan", shuffled)
+    second, b = _fleetctl(fleetctl, "plan", shuffled)
+    assert first.returncode == 0, first.stdout + first.stderr
+    assert second.returncode == 0, second.stdout + second.stderr
     assert a["launch_template"]["version"] == b["launch_template"]["version"]
+    assert a["launch_template"]["version"] not in {"", "latest"}
     assert a["state_digest"] == b["state_digest"]
 
 
