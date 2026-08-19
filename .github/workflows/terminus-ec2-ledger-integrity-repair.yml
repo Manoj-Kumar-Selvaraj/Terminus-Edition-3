@@ -1,0 +1,183 @@
+name: Terminus EC2 Ledger Integrity Repair
+
+on:
+  push:
+    branches:
+      - orchestrator/ec2-ledger-integrity-repair-20260820
+    paths:
+      - '.github/workflows/terminus-ec2-ledger-integrity-repair.yml'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: terminus-ec2-ledger-integrity-repair
+  cancel-in-progress: false
+
+jobs:
+  repair:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Diagnose and repair serialization-only ledger mismatches
+        id: repair
+        shell: bash
+        env:
+          EXPECTED_MAIN: 5106b27ae6cc5257854f08c63bac4eca95685f36
+          TASK: ec2-artifact-policy-enforcement
+          TASK_COMMIT: 8836f886d7cfc7f2747264026da31d1dfa49c658
+          CONTROL_COMMIT: 5106b27ae6cc5257854f08c63bac4eca95685f36
+        run: |
+          set -euo pipefail
+          current="$(git rev-parse HEAD)"
+          [[ "$current" == "$EXPECTED_MAIN" ]] || {
+            echo "::error::main moved before ledger repair expected=$EXPECTED_MAIN current=$current"
+            exit 1
+          }
+
+          python3 - <<'PY'
+          import hashlib
+          import json
+          from pathlib import Path
+
+          root = Path('.')
+          task = 'ec2-artifact-policy-enforcement'
+          ledger_path = root / '.terminus' / 'executions' / task / 'ledger.jsonl'
+          events = [json.loads(line) for line in ledger_path.read_text(encoding='utf-8').splitlines() if line]
+          repaired = []
+          rows = []
+          unsafe = []
+          for event in events:
+              path = root / event['record_path']
+              raw = path.read_bytes()
+              actual = 'sha256:' + hashlib.sha256(raw).hexdigest()
+              value = json.loads(raw)
+              canonical = (json.dumps(value, indent=2, sort_keys=True, ensure_ascii=False) + '\n').encode('utf-8')
+              canonical_hash = 'sha256:' + hashlib.sha256(canonical).hexdigest()
+              expected = event['record_hash']
+              row = {
+                  'sequence': event['sequence'],
+                  'stage_id': event['stage_id'],
+                  'record_path': event['record_path'],
+                  'actual_hash': actual,
+                  'expected_hash': expected,
+                  'canonical_hash': canonical_hash,
+                  'classification': 'MATCH',
+              }
+              if actual != expected:
+                  if canonical_hash == expected:
+                      path.write_bytes(canonical)
+                      repaired.append(event['record_path'])
+                      row['classification'] = 'SERIALIZATION_ONLY_REPAIRED'
+                  else:
+                      unsafe.append(row)
+                      row['classification'] = 'UNSAFE_HASH_MISMATCH'
+              rows.append(row)
+              print(json.dumps(row, sort_keys=True))
+
+          diagnosis = {
+              'task_id': task,
+              'rows': rows,
+              'repaired_paths': repaired,
+              'unsafe_mismatches': unsafe,
+          }
+          Path('/tmp/ec2-ledger-diagnosis.json').write_text(
+              json.dumps(diagnosis, indent=2, sort_keys=True) + '\n', encoding='utf-8'
+          )
+          if unsafe:
+              raise SystemExit('ledger mismatch is not serialization-only; refusing to rewrite ledger identity')
+          PY
+
+          cat > /tmp/ec2-inputs.json <<'JSON'
+          {
+            "CREATION_REQUEST": "Recover and continue the existing ec2-artifact-policy-enforcement task under current Terminus Edition-3 rules, preserving the task's EC2 artifact policy enforcement objective and reconciling the current creation profile and validators before further lifecycle work.",
+            "REQUESTED_DOMAIN": "production Go EC2 software supply-chain and artifact policy enforcement"
+          }
+          JSON
+
+          python3 .terminus/execution/controller_cli.py continue \
+            --task-id "$TASK" \
+            --task-commit "$TASK_COMMIT" \
+            --control-plane-commit "$CONTROL_COMMIT" \
+            --inputs-json /tmp/ec2-inputs.json \
+            --output /tmp/ec2-continue.json
+
+          python3 - <<'PY'
+          import json
+          payload = json.load(open('/tmp/ec2-continue.json', encoding='utf-8'))
+          next_action = payload.get('next', {})
+          invocation = payload.get('invocation', {})
+          if next_action.get('action') not in {'INVOKE_STAGE', 'RETRY_STAGE'}:
+              raise SystemExit(f'unexpected controller action after repair: {next_action}')
+          if next_action.get('stage_id') != 'RULE_RESOLUTION':
+              raise SystemExit(f'unexpected controller stage after repair: {next_action}')
+          if invocation.get('readiness') != 'READY':
+              raise SystemExit('RULE_RESOLUTION invocation is not READY after repair')
+          print('controller_continue_ready', invocation.get('invocation_id'))
+          PY
+
+          git diff -- .terminus/executions/ec2-artifact-policy-enforcement
+          if git diff --quiet -- .terminus/executions/ec2-artifact-policy-enforcement; then
+            echo 'No serialization-only repair was necessary.'
+            exit 0
+          fi
+
+          unexpected="$(git diff --name-only | grep -vE '^\.terminus/executions/ec2-artifact-policy-enforcement/inv_[0-9a-f]{64}\.result\.json$' || true)"
+          [[ -z "$unexpected" ]] || {
+            echo "::error::Unexpected repair mutations: $unexpected"
+            exit 1
+          }
+
+          remote_main="$(git ls-remote origin refs/heads/main | cut -f1)"
+          [[ "$remote_main" == "$EXPECTED_MAIN" ]] || {
+            echo "::error::main moved during ledger repair expected=$EXPECTED_MAIN current=$remote_main"
+            exit 1
+          }
+
+          git config user.name 'terminus-ledger-repair[bot]'
+          git config user.email 'terminus-ledger-repair[bot]@users.noreply.github.com'
+          git add -- .terminus/executions/ec2-artifact-policy-enforcement
+          git commit -m 'Repair ec2-artifact-policy-enforcement execution record serialization'
+          git push origin HEAD:main
+
+      - name: Persist repair diagnostics on request branch
+        if: always()
+        shell: bash
+        env:
+          REPAIR_OUTCOME: ${{ steps.repair.outcome }}
+          REQUEST_BRANCH: orchestrator/ec2-ledger-integrity-repair-20260820
+        run: |
+          set -euo pipefail
+          status_root="$RUNNER_TEMP/ec2-ledger-repair-status"
+          git fetch origin "$REQUEST_BRANCH"
+          git worktree add "$status_root" "origin/$REQUEST_BRANCH"
+          mkdir -p "$status_root/.terminus/repair-run-status"
+          python3 - "$status_root/.terminus/repair-run-status/ec2-artifact-policy-enforcement.json" <<'PY'
+          import json, os, pathlib, sys
+          diagnosis_path = pathlib.Path('/tmp/ec2-ledger-diagnosis.json')
+          diagnosis = None
+          if diagnosis_path.is_file():
+              diagnosis = json.loads(diagnosis_path.read_text(encoding='utf-8'))
+          payload = {
+              'schema_version': '1.0',
+              'task_id': 'ec2-artifact-policy-enforcement',
+              'run_id': int(os.environ['GITHUB_RUN_ID']),
+              'run_attempt': int(os.environ['GITHUB_RUN_ATTEMPT']),
+              'workflow': os.environ['GITHUB_WORKFLOW'],
+              'repair_outcome': os.environ['REPAIR_OUTCOME'],
+              'diagnosis': diagnosis,
+          }
+          pathlib.Path(sys.argv[1]).write_text(json.dumps(payload, indent=2, sort_keys=True) + '\n', encoding='utf-8')
+          PY
+          cd "$status_root"
+          git config user.name 'terminus-ledger-repair[bot]'
+          git config user.email 'terminus-ledger-repair[bot]@users.noreply.github.com'
+          git add -- .terminus/repair-run-status/ec2-artifact-policy-enforcement.json
+          if ! git diff --cached --quiet; then
+            git commit -m 'Record EC2 ledger repair diagnostics'
+            git push origin HEAD:"$REQUEST_BRANCH"
+          fi
