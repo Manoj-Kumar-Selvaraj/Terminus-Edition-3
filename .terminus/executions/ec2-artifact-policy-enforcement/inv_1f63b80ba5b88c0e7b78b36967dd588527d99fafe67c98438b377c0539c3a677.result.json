@@ -1,0 +1,306 @@
+{
+  "authority": {
+    "control_plane_commit": "b2bd29ad9d723f1a86c0098c9574e0b872e9f859",
+    "policy_versions": {},
+    "task_commit": "8836f886d7cfc7f2747264026da31d1dfa49c658",
+    "task_id": "ec2-artifact-policy-enforcement"
+  },
+  "disposition": "ADVANCE",
+  "evidence_refs": [
+    {
+      "content_hash": "sha256:c949a75a93f4636d770dd6cb82318c90d98b3fb0fb1d16d3d8b2e6c4d50a86fc",
+      "kind": "COMMIT",
+      "ref": "commit:8836f886d7cfc7f2747264026da31d1dfa49c658"
+    },
+    {
+      "content_hash": "sha256:7317094671107e0995df3f86df1a0b68877a954c031981b0bfc141062119901e",
+      "kind": "COMMIT",
+      "ref": "commit:b2bd29ad9d723f1a86c0098c9574e0b872e9f859"
+    }
+  ],
+  "invocation_id": "inv_1f63b80ba5b88c0e7b78b36967dd588527d99fafe67c98438b377c0539c3a677",
+  "invocation_snapshot": {
+    "acceptance_predicates": {},
+    "authority": {
+      "control_plane_commit": "b2bd29ad9d723f1a86c0098c9574e0b872e9f859",
+      "policy_versions": {},
+      "task_commit": "8836f886d7cfc7f2747264026da31d1dfa49c658",
+      "task_id": "ec2-artifact-policy-enforcement"
+    },
+    "evidence": {
+      "authorized_evidence_classes": [
+        "CONTROL_PLANE_POLICY",
+        "PRIVATE_CREATION_DESIGN",
+        "PUBLIC_REFERENCE",
+        "SOLVER_VISIBLE_TASK"
+      ],
+      "evidence_required": [
+        "component/resource graph",
+        "runtime/operator reachability plan",
+        "state/persistence model",
+        "production-characteristic rationale"
+      ],
+      "excluded_evidence_classes": [
+        "CI_RUNTIME_EVIDENCE",
+        "CURRENT_REVIEW_PACKET",
+        "DURABLE_SESSION_STATE",
+        "FINAL_PACKAGE_EVIDENCE",
+        "MODEL_TRIAL_EVIDENCE",
+        "PRIOR_REVIEW_RESULTS",
+        "SOLUTION_ORACLE",
+        "VERIFIER_PRIVATE"
+      ],
+      "mandatory_exact_reads": [
+        ".terminus/agents/CREATION_PIPELINE.md",
+        ".terminus/agents/CREATOR_AGENT_REGISTRY.md",
+        ".terminus/agents/PRODUCTION_AUTHENTICITY.md",
+        ".terminus/agents/CREATOR_PROMPTS.md",
+        ".terminus/agents/A2_PHASE_PROMPTS.md"
+      ],
+      "retrieval_mode": "FILTERED_HYBRID"
+    },
+    "ignored_input_count": 0,
+    "inputs": {
+      "optional": {},
+      "required": {
+        "APPROVED_OPERATIONAL_REQUIREMENTS": {
+          "EDGE_FAILURES": [
+            "scanner unavailable/stale",
+            "mutable tag",
+            "low-level manager bypass",
+            "expired exception",
+            "permit tamper/replay/expiry",
+            "corrupt/partial state",
+            "restart"
+          ],
+          "PRESERVATION": [
+            "existing CLI/exit codes",
+            "valid cache hits",
+            "valid scoped exceptions",
+            "supplied fixtures",
+            "prior audit history"
+          ],
+          "REQUIRED_END_STATE": [
+            "One policy model applies to package/container/dependency managers.",
+            "Untrusted source or missing required digest denies before exceptions.",
+            "Scanner evidence must be current; cache identity is digest+policy version+DB revision+TTL.",
+            "Exceptions are unexpired and exact digest/surface/environment/policy-code scope.",
+            "ALLOW permits are keyed and exact request/instance/digest/policy/expiry scope.",
+            "Every ALLOW/DENY is append+fsync durable and restart-safe."
+          ]
+        },
+        "APPROVED_WORK_PACKAGE": {
+          "EDGE_FAILURE_SURFACE": [
+            "scanner outage/staleness",
+            "mutable tag digest change",
+            "manager bypass",
+            "expired/wrong-scope exception",
+            "permit tamper/replay/expiry",
+            "restart/partial state"
+          ],
+          "ENGINEERING_OBJECTIVE": "Unify OS-package, container and build-dependency acquisition behind one Go policy engine.",
+          "ID": "WP1_UNIFIED_EC2_ARTIFACT_ADMISSION",
+          "PERSONA": "EC2 platform security engineer",
+          "PRESERVATION_OBLIGATIONS": [
+            "keep evaluate/verify-permit CLI",
+            "keep valid cache/exceptions",
+            "do not rewrite supplied fixtures",
+            "preserve audit history"
+          ],
+          "REQUIRED_END_STATE": "Consistent trusted-source/digest/scanner-cache/exception/permit/audit semantics across package, container and dependency acquisition, restart-safe and CLI-compatible.",
+          "REQUIREMENT_FAMILIES": [
+            "source+digest",
+            "scanner+cache freshness",
+            "exceptions",
+            "permit integrity",
+            "durable audit+recovery",
+            "CLI preservation"
+          ],
+          "SOURCE_RECORD_ID": "rec_7eb2847fea3e5b4fa7f1205e80648d39b0406e8bb6ece94e49ab06509bba7ad7"
+        },
+        "CREATION_RULE_CONTEXT": {
+          "ACTIVE_VALIDATORS": [
+            ".terminus/validate_agent_system.py",
+            ".terminus/validate_stage_contracts.py",
+            ".terminus/validate_task_complexity.py",
+            ".terminus/validate_environment_complexity.py",
+            ".terminus/validate_runtime_authenticity.py",
+            ".terminus/validate_business_module_diversity.py",
+            ".terminus/validate_review_freshness.py",
+            ".terminus/validate_quality_interlock.py",
+            ".github/workflows/terminus-edition-3-ci.yml",
+            ".github/workflows/terminus-creator-complexity.yml",
+            ".github/workflows/terminus-production-authenticity.yml"
+          ],
+          "CONTROL_PLANE_COMMIT": "b2bd29ad9d723f1a86c0098c9574e0b872e9f859",
+          "CREATION_PROFILE": "large_system_strict",
+          "KNOWN_POLICY_CONFLICTS": [],
+          "NETWORK_ENVIRONMENT_CONSTRAINTS": "repository-default network/environment constraints",
+          "RULE_SOURCES": [
+            "TERMINUS_3_AI_INSTRUCTIONS.md",
+            ".terminus/AGENT_SYSTEM.md",
+            ".terminus/agents/CREATION_CONTROLLER.md",
+            ".terminus/agents/CREATION_PIPELINE.md",
+            ".terminus/agents/PRODUCTION_AUTHENTICITY.md",
+            ".terminus/reviewers/REVIEWER_CHECKLIST.md",
+            ".terminus/agents/QUALITY_AGENT_REGISTRY.md",
+            ".terminus/agents/STAGE_CONTRACTS.md",
+            ".terminus/agents/stage_contracts.json"
+          ]
+        }
+      }
+    },
+    "invocation_id": "inv_1f63b80ba5b88c0e7b78b36967dd588527d99fafe67c98438b377c0539c3a677",
+    "learning": {
+      "context_hash": "sha256:bb84a513aa2b6e4374d691759c4a6edf94169f479f4611e9091643b9f279ccfc",
+      "lessons": [],
+      "mode": "GENERALIZED_LESSONS_PLUS_OWNED_REMEDIATIONS",
+      "raw_feedback_exposed": false,
+      "raw_historical_findings_exposed": false,
+      "registry_heads": {
+        "feedback": "GENESIS",
+        "findings": "GENESIS",
+        "lessons": "GENESIS",
+        "patterns": "GENESIS",
+        "remediations": "GENESIS"
+      },
+      "remediations": []
+    },
+    "missing_required_inputs": [],
+    "output_contract": {
+      "allowed_status_values": [
+        "ARCHITECTURE_READY",
+        "SCENARIO_TOO_SMALL",
+        "BLOCKED"
+      ],
+      "deterministic_validators": [],
+      "optional_fields": [
+        "RESOURCE_GRAPH",
+        "DATA_VOLUME_PLAN",
+        "UNRESOLVED_RISKS"
+      ],
+      "persisted_artifacts": [],
+      "required_fields": [
+        "COMPONENT_GRAPH",
+        "ENTRYPOINTS",
+        "STATE_MODEL",
+        "SOLVER_VISIBLE_DOC_PLAN",
+        "PRODUCTION_CHARACTERISTICS",
+        "SCALE_FIT"
+      ],
+      "semantic_reviewers": [
+        "Task Architect"
+      ]
+    },
+    "readiness": "READY",
+    "retrieval": {
+      "query": null,
+      "retrieved_chars": 0,
+      "retrieved_context": [],
+      "status": "NOT_REQUESTED"
+    },
+    "routing": {
+      "failure_routes": {
+        "ARCHITECTURE_GAP": "A2 System Architect / Environment Builder",
+        "REQUIREMENT_GAP": "Creation Controller -> work-package/contract owner",
+        "SCENARIO_TOO_SMALL": "Creation Controller -> WORK_PACKAGE_RESEARCH"
+      },
+      "stale_on": [
+        "work-package change",
+        "material operational requirement change",
+        "creation-profile change"
+      ],
+      "success_transition": "DEFECT_TOPOLOGY"
+    },
+    "schema_version": "1.0",
+    "stage": {
+      "lifecycle": "creation",
+      "owner": "A2 System Architect / Environment Builder",
+      "role_class": "PRODUCER",
+      "role_id": "A2_SYSTEM_ARCHITECT",
+      "stage_id": "SYSTEM_ARCHITECTURE"
+    }
+  },
+  "outputs": {
+    "COMPONENT_GRAPH": [
+      "CLI/request normalization",
+      "artifact identity + policy snapshot",
+      "scanner gateway + durable digest-scoped cache",
+      "exception evaluator",
+      "decision engine",
+      "keyed permit signer/verifier",
+      "append-only audit + atomic last-decision",
+      "state/recovery store + deterministic clock"
+    ],
+    "DATA_VOLUME_PLAN": "Deterministic multi-surface scanner/cache/exception/audit histories covering multiple digests and policy revisions; no live AWS dependency.",
+    "ENTRYPOINTS": [
+      "artifactguard evaluate -> canonical policy pipeline -> durable audit",
+      "artifactguard verify-permit -> keyed exact-scope verification",
+      "startup -> state/cache/audit recovery before handling commands"
+    ],
+    "PRODUCTION_CHARACTERISTICS": [
+      "shared policy semantics across managers",
+      "fail-closed scanner evidence with safe cache",
+      "narrow exceptions",
+      "anti-replay permit boundary",
+      "durable restart-safe decisions",
+      "stable CLI/fixture interfaces"
+    ],
+    "RESOURCE_GRAPH": [
+      "trusted policy",
+      "scanner adapter",
+      "exception fixtures",
+      "host secret",
+      "filesystem durable state",
+      "untrusted acquisition request/artifact metadata"
+    ],
+    "SCALE_FIT": {
+      "ASSESSMENT": "VERY_HIGH",
+      "RATIONALE": ">=3000 substantive reachable Go/config LOC can arise from differentiated adapters, policy/evidence/cache/permit/persistence/recovery responsibilities; 20-30 causal manifestations and 25-30 organic F2P surfaces are plausible without filler."
+    },
+    "SOLVER_VISIBLE_DOC_PLAN": [
+      "retain docs/policy-contract.md and notes/oncall.md",
+      "add state/recovery, integration and security docs only for normal public contracts; never expose defect IDs/repair locations"
+    ],
+    "STATE_MODEL": {
+      "audit": "append-only audit.jsonl fsynced before completion",
+      "last_decision": "atomic projection after audit append",
+      "permit": "caller-carried keyed token scoped to request/instance/digest/policy/expiry",
+      "recovery": "malformed partial state fails closed without deleting prior audit",
+      "scan_cache": "digest+policy_version+scanner_db_revision with TTL"
+    },
+    "UNRESOLVED_RISKS": [
+      "A3 must keep defects causal and within this architecture",
+      "ENVIRONMENT_BUILD must prove real reachability/LOC and crash-safe state semantics"
+    ]
+  },
+  "record_id": "rec_8f6b027e6becc5c4feea441fb2d6f3071ee38c86dbe17a912bc64cb128dac8eb",
+  "role_id": "A2_SYSTEM_ARCHITECT",
+  "schema_version": "1.0",
+  "stage_id": "SYSTEM_ARCHITECTURE",
+  "status": "ARCHITECTURE_READY",
+  "task_lineage": {
+    "input_task_commit": "8836f886d7cfc7f2747264026da31d1dfa49c658",
+    "output_task_commit": "8836f886d7cfc7f2747264026da31d1dfa49c658",
+    "task_changed": false
+  },
+  "transition": {
+    "action": "ADVANCE",
+    "requires_state_validation": false,
+    "target": "DEFECT_TOPOLOGY",
+    "target_kind": "STAGE"
+  },
+  "validation": {
+    "acceptance_predicates_satisfied": true,
+    "evidence_binding_satisfied": true,
+    "evidence_refs_count": 2,
+    "invocation_identity_valid": true,
+    "invocation_policy_valid": true,
+    "output_keys_valid": true,
+    "required_outputs_satisfied": true,
+    "retrieval_context_authorized": true,
+    "status_legal": true,
+    "task_commit_change_authorized": true,
+    "task_lineage_valid": true
+  }
+}
