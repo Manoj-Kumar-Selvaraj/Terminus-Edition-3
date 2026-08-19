@@ -234,6 +234,7 @@ def _quality_lifecycle_dispatch(
 
     q8_mode = mode if stage_id != "QUALITY_INTERLOCK" else str(policy["q8_mode"])
     model_backed = stage_id == "QUALITY_INTERLOCK" or q8_mode == "AUTOMATED"
+    execute_optional_q8 = stage_id != "QUALITY_INTERLOCK" and q8_mode == "AUTOMATED"
     return {
         **common,
         "status": "READY_TO_DISPATCH",
@@ -244,8 +245,7 @@ def _quality_lifecycle_dispatch(
             "task": args.task_id,
             "stage": stage_id,
             "publish_results": True,
-            "q4_q6_mode": str(policy["q4_q6_mode"]),
-            "q8_mode": str(policy["q8_mode"]),
+            "execute_optional_q8": execute_optional_q8,
         },
         "backend_selection": (
             "repository Q_*_ENABLED variables; exactly one backend"
