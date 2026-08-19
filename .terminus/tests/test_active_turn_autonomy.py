@@ -63,7 +63,7 @@ def test_bootstrap_and_project_agent_bind_active_turn_policy() -> None:
     continuation = CONTINUE.read_text(encoding="utf-8")
     agent = PROJECT_AGENT.read_text(encoding="utf-8")
 
-    assert "Bootstrap policy version: `2.3`" in continuation
+    assert "Bootstrap policy version: `2.2`" in continuation
     assert ".terminus/agents/ACTIVE_TURN_AUTONOMY.md" in continuation
     assert "immediately re-run/reconstruct `controller_cli continue`" in continuation
     assert "`RUN_TO_BLOCKER` is mandatory" in continuation
@@ -71,5 +71,5 @@ def test_bootstrap_and_project_agent_bind_active_turn_policy() -> None:
     assert ".terminus/agents/ACTIVE_TURN_AUTONOMY.md" in agent
     assert "The default active-turn policy is `RUN_TO_BLOCKER`" in agent
     assert "Do not finish the user-visible response merely because one stage completed" in agent
-    assert "never voluntarily use interruption as a lifecycle checkpoint" in agent
+    assert "Never voluntarily use interruption as a lifecycle checkpoint" in agent
     assert "STOP_REASON" in agent
