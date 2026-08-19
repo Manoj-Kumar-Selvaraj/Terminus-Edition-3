@@ -1,40 +1,40 @@
 {
   "behavioral_surfaces": {
     "cross_component": [
-      "Canonical digest identity must agree across cache, exception matching, permit binding, and audit.",
-      "Immutable policy snapshot must agree across source/digest gates, scanner cache validation, exception evaluation, and permit issuance.",
-      "Decision completion is contingent on durable audit commit, not merely in-memory evaluation.",
-      "Recovery rebuilds derived state from durable history without changing security evidence semantics."
+      "digest identity across cache/exception/permit/audit",
+      "policy snapshot across decision pipeline",
+      "audit commit before completion",
+      "rebuild derived state from durable history"
     ],
     "edge_boundary": [
-      "Cache entry at TTL boundary versus just beyond TTL.",
-      "Exception and permit exactly at expiry boundary.",
-      "Same artifact name or mutable tag resolving to a new digest.",
-      "Policy version and scanner DB revision changes with existing cache state.",
-      "Restart after durable audit append but before derived projection update."
+      "TTL expiry",
+      "exception/permit expiry",
+      "tag digest change",
+      "policy/DB revision change",
+      "crash between journal/projection"
     ],
     "failure_recovery": [
-      "Scanner outage with and without a current valid cache entry.",
-      "Crash after journal write and before projection write.",
-      "Malformed journal tail while preserving earlier valid history.",
-      "Partially written cache record on startup.",
-      "Concurrent decisions committing audit/projection state."
+      "scanner outage",
+      "journal/projection crash",
+      "malformed journal tail",
+      "partial cache",
+      "concurrent decisions"
     ],
     "negative_rejection": [
-      "Missing required digest.",
-      "Untrusted source.",
-      "Scanner unavailable or stale scanner DB evidence.",
-      "Critical/high vulnerability without exact current exception.",
-      "Exception with wrong digest, surface, environment, policy code, or expiry.",
-      "Permit tamper, wrong instance, wrong digest, wrong policy version, or expiry.",
-      "Malformed partial cache/recovery state."
+      "missing digest",
+      "untrusted source",
+      "scanner unavailable/stale",
+      "vulnerable without exception",
+      "wrong-scope exception",
+      "permit tamper",
+      "corrupt state"
     ],
     "normal": [
-      "Clean package/container/dependency acquisitions with trusted source and immutable digest follow one policy pipeline.",
-      "Fresh scanner evidence permits clean artifacts and produces exact-scope permits.",
-      "Current exact-scope vulnerability exceptions permit only the intended vulnerable artifact.",
-      "Valid digest-scoped cache evidence survives normal restart without unnecessary rescanning.",
-      "Every allow and deny is reflected in the durable journal and last-decision projection."
+      "uniform manager policy",
+      "fresh clean scan",
+      "valid exact exception",
+      "valid cache restart",
+      "durable allow/deny"
     ]
   },
   "causal_edges": [
@@ -171,169 +171,169 @@
     {
       "component": "request_normalizer",
       "id": "D01",
-      "observable_failure": "A direct dpkg acquisition bypasses the package trusted-source gate that apt requests use.",
-      "partial_fix_trap": "Fixing only apt routing leaves lower-level package managers outside the canonical policy path.",
+      "observable_failure": "dpkg bypasses package trusted-source policy",
+      "partial_fix_trap": "Fixing apt only leaves low-level managers bypassable.",
       "root_cause": "RC1_CANONICAL_IDENTITY"
     },
     {
       "component": "request_normalizer",
       "id": "D02",
-      "observable_failure": "A Maven dependency request is classified outside the dependency surface and skips dependency source policy.",
-      "partial_fix_trap": "Adding a Maven-specific allowlist duplicates policy semantics and still permits divergence across managers.",
+      "observable_failure": "Maven bypasses dependency trusted-source policy",
+      "partial_fix_trap": "A Maven-only allowlist duplicates policy semantics.",
       "root_cause": "RC1_CANONICAL_IDENTITY"
     },
     {
       "component": "artifact_identity",
       "id": "D03",
-      "observable_failure": "A mutable container tag is treated as the cache identity after the registry resolves it to a different digest.",
-      "partial_fix_trap": "Clearing cache on one tag update hides the symptom but does not make digest the canonical artifact identity.",
+      "observable_failure": "mutable image tag reuses cache after digest changes",
+      "partial_fix_trap": "Evicting one tag does not make digest canonical.",
       "root_cause": "RC1_CANONICAL_IDENTITY"
     },
     {
       "component": "artifact_identity",
       "id": "D04",
-      "observable_failure": "A required-digest policy accepts a request whose digest field is empty when the manager supplies a version or tag.",
-      "partial_fix_trap": "Checking digest only in selected adapters leaves another acquisition surface able to bypass the invariant.",
+      "observable_failure": "missing required digest is accepted via version or tag",
+      "partial_fix_trap": "Adapter-local checks leave another surface open.",
       "root_cause": "RC1_CANONICAL_IDENTITY"
     },
     {
       "component": "scanner_gateway",
       "id": "D05",
-      "observable_failure": "A scanner outage is interpreted as no vulnerabilities and produces an allow decision without current evidence.",
-      "partial_fix_trap": "Returning an empty vulnerability list on scanner error still fails open even if later severity logic is correct.",
-      "root_cause": "RC2_EVIDENCE_CACHE_FRESHNESS"
+      "observable_failure": "scanner outage produces allow without current evidence",
+      "partial_fix_trap": "Empty findings on error still fail open.",
+      "root_cause": "RC2_EVIDENCE_FRESHNESS"
     },
     {
       "component": "scan_cache",
       "id": "D06",
-      "observable_failure": "A cached clean result is reused after the scanner database revision changes.",
-      "partial_fix_trap": "Adding TTL validation alone still accepts evidence created under an obsolete scanner database.",
-      "root_cause": "RC2_EVIDENCE_CACHE_FRESHNESS"
+      "observable_failure": "cache survives scanner database revision change",
+      "partial_fix_trap": "TTL alone does not bind scanner DB revision.",
+      "root_cause": "RC2_EVIDENCE_FRESHNESS"
     },
     {
       "component": "scan_cache",
       "id": "D07",
-      "observable_failure": "A cached result created under an older policy version is reused after vulnerability policy changes.",
-      "partial_fix_trap": "Keying by digest and scanner DB but not policy version preserves stale decision semantics.",
-      "root_cause": "RC2_EVIDENCE_CACHE_FRESHNESS"
+      "observable_failure": "cache survives policy version change",
+      "partial_fix_trap": "Digest plus DB keying still misses policy semantics.",
+      "root_cause": "RC2_EVIDENCE_FRESHNESS"
     },
     {
       "component": "scan_cache",
       "id": "D08",
-      "observable_failure": "An expired cache entry is accepted because freshness is checked from file modification time instead of the recorded evidence timestamp and TTL.",
-      "partial_fix_trap": "Touching or rewriting cache files can make stale evidence look fresh unless expiry is part of the stored contract.",
-      "root_cause": "RC2_EVIDENCE_CACHE_FRESHNESS"
+      "observable_failure": "expired cache becomes fresh after file rewrite",
+      "partial_fix_trap": "Filesystem mtime is not evidence freshness.",
+      "root_cause": "RC2_EVIDENCE_FRESHNESS"
     },
     {
       "component": "exception_evaluator",
       "id": "D09",
-      "observable_failure": "An expired vulnerability exception continues to suppress a deny decision.",
-      "partial_fix_trap": "Fixing expiry alone still leaves overbroad scope and ordering errors.",
-      "root_cause": "RC3_EXCEPTION_SCOPE_ORDERING"
+      "observable_failure": "expired vulnerability exception still permits",
+      "partial_fix_trap": "Expiry-only repair leaves scope/order defects.",
+      "root_cause": "RC3_EXCEPTION_ORDER_SCOPE"
     },
     {
       "component": "exception_evaluator",
       "id": "D10",
-      "observable_failure": "An exception for one artifact digest is applied to another digest sharing the same package name or coordinate.",
-      "partial_fix_trap": "Matching name/version plus expiry still violates immutable artifact scoping.",
-      "root_cause": "RC3_EXCEPTION_SCOPE_ORDERING"
+      "observable_failure": "exception matches another digest with same artifact name",
+      "partial_fix_trap": "Name/version matching violates digest scope.",
+      "root_cause": "RC3_EXCEPTION_ORDER_SCOPE"
     },
     {
       "component": "exception_evaluator",
       "id": "D11",
-      "observable_failure": "A dependency-surface exception is applied to a container acquisition with the same digest.",
-      "partial_fix_trap": "Digest-only exception matching remains cross-surface and overbroad.",
-      "root_cause": "RC3_EXCEPTION_SCOPE_ORDERING"
+      "observable_failure": "dependency exception applies to container surface",
+      "partial_fix_trap": "Digest-only matching remains cross-surface.",
+      "root_cause": "RC3_EXCEPTION_ORDER_SCOPE"
     },
     {
       "component": "decision_engine",
       "id": "D12",
-      "observable_failure": "A vulnerability exception is evaluated before trusted-source and scanner-evidence gates and therefore overrides a non-exemptable denial.",
-      "partial_fix_trap": "Making the exception matcher narrower does not repair policy ordering if it can still bypass source/evidence prerequisites.",
-      "root_cause": "RC3_EXCEPTION_SCOPE_ORDERING"
+      "observable_failure": "exception overrides untrusted-source or missing-evidence denial",
+      "partial_fix_trap": "Narrow matching cannot repair wrong gate ordering.",
+      "root_cause": "RC3_EXCEPTION_ORDER_SCOPE"
     },
     {
       "component": "permit_service",
       "id": "D13",
-      "observable_failure": "A permit signature can be reproduced using an unkeyed checksum of visible permit fields.",
-      "partial_fix_trap": "Switching hash algorithms without a secret still permits off-host forgery.",
-      "root_cause": "RC4_PERMIT_AUTHENTICITY_SCOPE"
+      "observable_failure": "visible permit fields allow unkeyed signature forgery",
+      "partial_fix_trap": "Changing hash algorithm without a secret is forgeable.",
+      "root_cause": "RC4_PERMIT_AUTH_SCOPE"
     },
     {
       "component": "permit_service",
       "id": "D14",
-      "observable_failure": "A valid permit remains accepted after its instance_id is changed to another EC2 instance.",
-      "partial_fix_trap": "Signing only artifact fields leaves instance binding forgeable or replayable.",
-      "root_cause": "RC4_PERMIT_AUTHENTICITY_SCOPE"
+      "observable_failure": "permit remains valid after instance id is changed",
+      "partial_fix_trap": "Artifact-only signing omits instance binding.",
+      "root_cause": "RC4_PERMIT_AUTH_SCOPE"
     },
     {
       "component": "permit_service",
       "id": "D15",
-      "observable_failure": "A permit issued for one artifact digest validates for another digest under the same request identifier.",
-      "partial_fix_trap": "Binding request ID without digest does not bind the security decision to immutable artifact identity.",
-      "root_cause": "RC4_PERMIT_AUTHENTICITY_SCOPE"
+      "observable_failure": "permit validates for a different artifact digest",
+      "partial_fix_trap": "Request binding without digest is insufficient.",
+      "root_cause": "RC4_PERMIT_AUTH_SCOPE"
     },
     {
       "component": "permit_service",
-      "id": "D16",
-      "observable_failure": "An expired permit verifies successfully because expiry is not enforced against the decision clock.",
-      "partial_fix_trap": "Authenticating all fields but skipping time validity preserves replay after authorization should end.",
-      "root_cause": "RC4_PERMIT_AUTHENTICITY_SCOPE"
+      "id"": "D16",
+      "observable_failure": "expired permit still verifies",
+      "partial_fix_trap": "Authentication without time validity permits replay.",
+      "root_cause": "RC4_PERMIT_AUTH_SCOPE"
     },
     {
       "component": "audit_store",
       "id": "D17",
-      "observable_failure": "Deny decisions are returned to the caller but never appended to the durable audit journal.",
-      "partial_fix_trap": "Logging only successful decisions leaves exactly the security-relevant deny history missing.",
-      "root_cause": "RC5_DURABLE_DECISION_HISTORY"
+      "observable_failure": "deny decisions are absent from durable audit",
+      "partial_fix_trap": "Allow-only logging omits security-relevant history.",
+      "root_cause": "RC5_AUDIT_DURABILITY"
     },
     {
       "component": "audit_store",
       "id": "D18",
-      "observable_failure": "The command reports completion before audit.jsonl is fsynced, allowing a crash to lose a reported decision.",
-      "partial_fix_trap": "Flushing buffered I/O without fsync can still acknowledge a decision that is not durable.",
-      "root_cause": "RC5_DURABLE_DECISION_HISTORY"
+      "observable_failure": "command completes before audit fsync",
+      "partial_fix_trap": "Buffered flush cannot guarantee crash durability.",
+      "root_cause": "RC5_AUDIT_DURABILITY"
     },
     {
       "component": "last_decision_store",
       "id": "D19",
-      "observable_failure": "last-decision.json is updated before the corresponding audit append, exposing a latest decision absent from durable history.",
-      "partial_fix_trap": "Making the projection atomic is insufficient if commit ordering still lets it lead the journal.",
-      "root_cause": "RC5_DURABLE_DECISION_HISTORY"
+      "observable_failure": "last-decision advances before durable journal append",
+      "partial_fix_trap": "Atomic projection alone cannot fix commit ordering.",
+      "root_cause": "RC5_AUDIT_DURABILITY"
     },
     {
       "component": "audit_store",
       "id": "D20",
-      "observable_failure": "Restart repair truncates or recreates audit.jsonl when it encounters a malformed tail, deleting previously valid history.",
-      "partial_fix_trap": "Deleting the journal restores parseability by violating the history-preservation invariant.",
-      "root_cause": "RC5_DURABLE_DECISION_HISTORY"
+      "observable_failure": "recovery truncates valid audit history after malformed tail",
+      "partial_fix_trap": "Deleting history restores parsing by violating durability.",
+      "root_cause": "RC5_AUDIT_DURABILITY"
     },
     {
       "component": "recovery_store",
       "id": "D21",
-      "observable_failure": "Startup accepts a partially written scan-cache record and uses it as valid security evidence.",
-      "partial_fix_trap": "Ignoring parse errors or defaulting missing fields can silently convert corruption into permissive evidence.",
+      "observable_failure": "partial cache record is accepted as security evidence",
+      "partial_fix_trap": "Defaulting missing fields turns corruption permissive.",
       "root_cause": "RC6_RECOVERY_CONCURRENCY"
     },
     {
       "component": "recovery_store",
       "id": "D22",
-      "observable_failure": "Two concurrent evaluations overwrite shared last-decision state so its contents do not correspond to the final durable audit append.",
-      "partial_fix_trap": "Adding a mutex only around the projection leaves journal/projection ordering inconsistent unless the whole commit boundary is serialized.",
+      "observable_failure": "concurrent decisions desynchronize journal and last-decision",
+      "partial_fix_trap": "Projection-only locking misses the commit boundary.",
       "root_cause": "RC6_RECOVERY_CONCURRENCY"
     },
     {
       "component": "decision_engine",
       "id": "D23",
-      "observable_failure": "One evaluation observes a policy version that differs from the version used to validate its cache entry and issue its permit.",
-      "partial_fix_trap": "Locking individual components cannot provide a coherent decision if policy/evidence/permit do not share one immutable snapshot.",
+      "observable_failure": "one decision mixes policy versions across cache and permit",
+      "partial_fix_trap": "Per-component locks do not create one snapshot.",
       "root_cause": "RC6_RECOVERY_CONCURRENCY"
     },
     {
       "component": "recovery_store",
       "id": "D24",
-      "observable_failure": "A restart between audit append and projection update treats the durable decision as incomplete and appends a duplicate decision record on recovery.",
-      "partial_fix_trap": "Replaying every last journal record blindly can duplicate committed history rather than rebuilding only derived state.",
+      "observable_failure": "restart duplicates an already durable decision record",
+      "partial_fix_trap": "Recovery must rebuild derived state, not re-commit history.",
       "root_cause": "RC6_RECOVERY_CONCURRENCY"
     }
   ],
@@ -341,22 +341,22 @@
   "profile": "large_system_strict",
   "root_cause_clusters": {
     "RC1_CANONICAL_IDENTITY": {
-      "invariant": "Every manager-specific request must normalize to one surface/source/digest identity before policy evaluation."
+      "invariant": "All managers normalize to one surface/source/digest identity."
     },
-    "RC2_EVIDENCE_CACHE_FRESHNESS": {
-      "invariant": "Scanner/cache evidence is usable only for the exact digest, policy version, scanner DB revision, and valid TTL."
+    "RC2_EVIDENCE_FRESHNESS": {
+      "invariant": "Scan/cache evidence binds digest, policy, DB revision and TTL."
     },
-    "RC3_EXCEPTION_SCOPE_ORDERING": {
-      "invariant": "Exceptions are evaluated only after source/digest/evidence gates and match exact allowed scope while unexpired."
+    "RC3_EXCEPTION_ORDER_SCOPE": {
+      "invariant": "Exceptions are exact-scope, current, and cannot bypass prerequisite gates."
     },
-    "RC4_PERMIT_AUTHENTICITY_SCOPE": {
-      "invariant": "ALLOW permits are keyed, time-bounded, and bound to the exact request, instance, digest, and policy version."
+    "RC4_PERMIT_AUTH_SCOPE": {
+      "invariant": "Permits are keyed, expiring, and bind exact decision scope."
     },
-    "RC5_DURABLE_DECISION_HISTORY": {
-      "invariant": "Every decision is durably appended and fsynced before completion; last-decision is only a projection."
+    "RC5_AUDIT_DURABILITY": {
+      "invariant": "Every decision is journaled and fsynced before completion."
     },
     "RC6_RECOVERY_CONCURRENCY": {
-      "invariant": "Recovery and concurrent evaluations cannot expose partial state, regress durable history, or reuse inconsistent snapshots."
+      "invariant": "Recovery/concurrency never exposes partial or inconsistent decision state."
     }
   }
 }
