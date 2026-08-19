@@ -1,10 +1,16 @@
 # Terminus Edition 3 Quality Agent Registry
 
-Quality-agent registry version: `1.1`
+Quality-agent registry version: `1.2`
 
 This registry adds eight narrow agents around the existing creator/reviewer system. It does not replace the CI Orchestrator, Verifier Engineer, Instruction Reviewer, Complexity Governor, Compliance Auditor, Difficulty Reviewer, or Comprehensive Reviewer. The purpose is to catch expensive authoring failures earlier and route them to a specialist with one decision right.
 
 All quality agents read current authoritative Edition 3 rules first, then `.terminus/AGENT_SYSTEM.md`, `.terminus/agents/PROTOCOL.md`, this registry, and `.terminus/agents/QUALITY_AGENT_PROMPTS.md`.
+
+## Default model-backed quality policy
+
+The default model-backed quality interlock executes only Q4 and Q6. Q4 is mandatory with a durable maximum of three model-backed executions per task; Q6 is mandatory with a durable maximum of two. These are maximum remediation/re-review budgets, not a requirement to spend every slot after an earlier valid PASS.
+
+Q1, Q2, Q3, Q5 and Q7 are repair/enforcement roles invoked only when current evidence routes work to them; deterministic checks associated with those responsibilities may still run without a model-backed Q-agent execution. Q8 is an optional diagnostic. The registered Q8 lifecycle stages remain present for provenance and ordering, but the default lifecycle records `SIMULATION_NOT_EXECUTED` without invoking a model or claiming Q8 budget. A model-backed Q8 perspective runs only when explicitly requested/authorized for a current diagnostic need. When Q8 is executed, its GPT and Claude perspectives remain isolated and retain their separate one-shot budgets.
 
 ## Independence model
 
@@ -146,11 +152,11 @@ It must derive exact requirements from current rule/enforcement files, not from 
 
 ## Q8 — Model Perspective Difficulty Simulator
 
-**Type:** diagnostic read-only/solve-simulation agent with two mandatory isolated modes.
+**Type:** optional diagnostic read-only/solve-simulation agent with two isolated modes when model execution is requested.
 
-**Purpose:** predict how mature tasks may behave under the two official model families before spending official difficulty trials.
+**Purpose:** predict how mature tasks may behave under the two official model families before spending official difficulty trials when such an extra diagnostic is useful.
 
-Required isolated executions:
+When explicitly invoked, the isolated execution modes are:
 - `GPT_PERSPECTIVE` — a cold solver strategy calibrated to the likely strengths/failure patterns of the GPT/Codex family.
 - `CLAUDE_PERSPECTIVE` — a separate cold solver strategy calibrated to the likely strengths/failure patterns of the Claude/Claude Code family.
 
@@ -158,9 +164,9 @@ These are **simulations, not claims that the underlying runtime actually is GPT-
 
 Default evidence boundary before solving: solver-visible instruction, environment and normal tools only; no solution, hidden tests, private defect graph, prior solver trajectory, desired tier, or other perspective result.
 
-Where the execution surface supports a disposable task clone, each perspective should attempt a full solve and preserve trajectory/diff/test outcome. If execution is unavailable, return `SIMULATION_NOT_EXECUTED` rather than invent a pass/fail.
+Where the execution surface supports a disposable task clone, each requested perspective should attempt a full solve and preserve trajectory/diff/test outcome. If execution is unavailable, or if the default Q4/Q6-only policy has not requested Q8, return/record `SIMULATION_NOT_EXECUTED` rather than invent a pass/fail. The default no-model skip consumes no Q8 budget.
 
-After both perspectives freeze, the Orchestrator may compare them for:
+After both explicitly requested perspectives freeze, the Orchestrator may compare them for:
 - likely shortcuts;
 - first divergence points;
 - different diagnosis strategies;
@@ -174,7 +180,7 @@ Q8 is diagnostic only. It cannot set the official tier or satisfy the official G
 
 Authoring/repair loop:
 
-`Verifier built -> instruction drafted -> Q1 spec-gap + instruction-boundary repair -> Q2 verifier-coverage repair -> Q3 ambiguity repair -> Q7 format enforcement -> Assembly/Complexity/Authenticity -> Oracle/NOP`
+`Verifier built -> instruction drafted -> Q1 spec-gap + instruction-boundary repair when evidence requires it -> Q2 verifier-coverage repair when evidence requires it -> Q3 ambiguity repair when evidence requires it -> Q7 deterministic format enforcement/fix when needed -> Assembly/Complexity/Authenticity -> Oracle/NOP`
 
 On Oracle/runtime failure:
 
@@ -186,7 +192,7 @@ Before independent Pre-LLMaJ:
 
 Only after Q4 passes on the current exact task commit and Q6 independently passes with sufficient evidence—either on that exact task commit or under the Protocol-defined unchanged Q6 production-scope hash—may normal Pre-LLMaJ begin.
 
-After `PRE_LLMAJ: PASS` and before expensive model-backed evaluation, run Q8 in both isolated perspectives. A simulation finding may route the task back for repair, but simulation output never substitutes for Harbor LLMaJ or the official 10 difficulty trials.
+After `PRE_LLMAJ: PASS`, Q8 is optional. By default the GPT and Claude diagnostic stages are canonically recorded as `SIMULATION_NOT_EXECUTED` with no model execution or budget claim, then the lifecycle continues. If current evidence or the user calls for an additional model-family diagnostic, explicitly authorize the applicable Q8 execution; its packet-bound isolation and one-shot budget still apply. Q8 output never substitutes for Harbor LLMaJ or the official 10 difficulty trials.
 
 ## Quality interlock PASS
 
