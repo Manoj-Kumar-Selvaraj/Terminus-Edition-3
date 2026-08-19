@@ -10,6 +10,10 @@ on:
 permissions:
   contents: write
 
+concurrency:
+  group: terminus-ec2-ledger-integrity-repair
+  cancel-in-progress: false
+
 jobs:
   repair:
     runs-on: ubuntu-24.04
@@ -19,13 +23,23 @@ jobs:
           ref: main
           fetch-depth: 0
 
-      - name: Classify every historical execution record
+      - name: Recover ledger to maximal valid prefix
         id: repair
         shell: bash
+        env:
+          EXPECTED_MAIN: 5106b27ae6cc5257854f08c63bac4eca95685f36
+          TASK: ec2-artifact-policy-enforcement
+          TASK_COMMIT: 8836f886d7cfc7f2747264026da31d1dfa49c658
+          CONTROL_COMMIT: 5106b27ae6cc5257854f08c63bac4eca95685f36
         run: |
           set -euo pipefail
+          current="$(git rev-parse HEAD)"
+          [[ "$current" == "$EXPECTED_MAIN" ]] || {
+            echo "::error::main moved before ledger recovery expected=$EXPECTED_MAIN current=$current"
+            exit 1
+          }
+
           python3 - <<'PY'
-          import hashlib
           import json
           import sys
           from pathlib import Path
@@ -38,62 +52,126 @@ jobs:
 
           task = 'ec2-artifact-policy-enforcement'
           ledger = ExecutionLedger(root, task)
-          builder = ExecutionRecordBuilder(root)
-          events = [json.loads(line) for line in ledger.ledger_path.read_text(encoding='utf-8').splitlines() if line]
-          rows = []
-          for event in events:
-              raw = (root / event['record_path']).read_bytes()
-              value = json.loads(raw)
-              identity = dict(value)
-              stored_record_id = identity.pop('record_id', None)
-              computed_record_id = ExecutionRecordBuilder._record_id(identity)
-              invocation = value.get('invocation_snapshot') or {}
-              invocation_identity = dict(invocation)
-              stored_invocation_id = invocation_identity.pop('invocation_id', None)
-              computed_invocation_id = StageInvocationBuilder._invocation_id(invocation_identity) if invocation_identity else None
-              actual_hash = ledger._sha256(raw)
-              canonical_hash = ledger._sha256(ledger._canonical_json(value))
+          lines = ledger.ledger_path.read_text(encoding='utf-8').splitlines()
+          events = [json.loads(line) for line in lines]
+          if len(events) != 4:
+              raise SystemExit(f'unexpected ledger length before recovery: {len(events)}')
 
-              current_validation = 'PASS'
+          valid_prefix = []
+          failure = None
+          for index, event in enumerate(events, start=1):
               try:
-                  builder.validate_persisted_record(value)
+                  checked = ledger._validate_event(event, index, valid_prefix)
+                  ledger._validate_record_reference(checked)
               except Exception as exc:
-                  current_validation = f'{type(exc).__name__}: {exc}'
+                  failure = {
+                      'sequence': index,
+                      'stage_id': event.get('stage_id'),
+                      'error': f'{type(exc).__name__}: {exc}',
+                  }
+                  break
+              valid_prefix.append(checked)
 
-              shadow_event = dict(event)
-              shadow_event['record_hash'] = actual_hash
-              historical_validation = 'PASS'
-              try:
-                  ledger._validate_historical_record(value, shadow_event)
-              except Exception as exc:
-                  historical_validation = f'{type(exc).__name__}: {exc}'
+          if len(valid_prefix) != 2 or not failure or failure['sequence'] != 3:
+              raise SystemExit(
+                  f'expected maximal valid prefix of 2 with first failure at sequence 3; '
+                  f'valid_prefix={len(valid_prefix)} failure={failure}'
+              )
 
-              row = {
-                  'sequence': event['sequence'],
-                  'stage_id': event['stage_id'],
-                  'invocation_id': event['invocation_id'],
-                  'ledger_record_hash': event['record_hash'],
-                  'actual_record_hash': actual_hash,
-                  'canonical_record_hash': canonical_hash,
-                  'stored_record_id': stored_record_id,
-                  'computed_record_id': computed_record_id,
-                  'record_id_valid': stored_record_id == computed_record_id,
-                  'stored_invocation_id': stored_invocation_id,
-                  'computed_invocation_id': computed_invocation_id,
-                  'invocation_id_valid': stored_invocation_id == computed_invocation_id,
-                  'current_validation': current_validation,
-                  'historical_validation': historical_validation,
-              }
-              rows.append(row)
-              print(json.dumps(row, sort_keys=True))
+          # Independently prove the first invalid record is not merely a metadata/hash issue.
+          bad_event = events[2]
+          bad_raw = (root / bad_event['record_path']).read_bytes()
+          bad_record = json.loads(bad_raw)
+          identity = dict(bad_record)
+          stored_record_id = identity.pop('record_id', None)
+          computed_record_id = ExecutionRecordBuilder._record_id(identity)
+          invocation = dict(bad_record.get('invocation_snapshot') or {})
+          stored_invocation_id = invocation.pop('invocation_id', None)
+          computed_invocation_id = StageInvocationBuilder._invocation_id(invocation)
+          if stored_record_id == computed_record_id or stored_invocation_id == computed_invocation_id:
+              raise SystemExit(
+                  'sequence 3 unexpectedly has a valid record_id or invocation_id; refusing prefix recovery'
+              )
+
+          # Sequence 4 may be individually self-consistent, but it cannot remain in a
+          # canonical append chain after an invalid sequence 3. Preserve both result files;
+          # only authoritative ledger membership is recovered.
+          seq4_event = events[3]
+          seq4_record = json.loads((root / seq4_event['record_path']).read_bytes())
+          seq4_identity = dict(seq4_record)
+          seq4_stored_record_id = seq4_identity.pop('record_id', None)
+          seq4_computed_record_id = ExecutionRecordBuilder._record_id(seq4_identity)
+          if seq4_stored_record_id != seq4_computed_record_id:
+              raise SystemExit('sequence 4 is not individually self-consistent; recovery assumptions changed')
+
+          ledger.ledger_path.write_text('\n'.join(lines[:2]) + '\n', encoding='utf-8')
+          reloaded = ledger.load(validate_record_files=True)
+          if [event['event_id'] for event in reloaded] != [event['event_id'] for event in valid_prefix]:
+              raise SystemExit('recovered prefix does not reload to the same canonical identities')
 
           diagnosis = {
               'task_id': task,
-              'classification': 'HISTORICAL_RECORD_VALIDITY_CLASSIFICATION',
-              'rows': rows,
+              'classification': 'MAXIMAL_VALID_PREFIX_RECOVERY',
+              'preserved_sequences': [1, 2],
+              'removed_from_authoritative_ledger': [3, 4],
+              'result_files_deleted': [],
+              'first_invalid_sequence': failure,
+              'sequence_3_stored_record_id': stored_record_id,
+              'sequence_3_computed_record_id': computed_record_id,
+              'sequence_3_stored_invocation_id': stored_invocation_id,
+              'sequence_3_computed_invocation_id': computed_invocation_id,
+              'sequence_4_individually_record_id_valid': True,
           }
-          Path('/tmp/ec2-ledger-diagnosis.json').write_text(json.dumps(diagnosis, indent=2, sort_keys=True) + '\n', encoding='utf-8')
+          Path('/tmp/ec2-ledger-diagnosis.json').write_text(
+              json.dumps(diagnosis, indent=2, sort_keys=True) + '\n', encoding='utf-8'
+          )
+          print(json.dumps(diagnosis, indent=2, sort_keys=True))
           PY
+
+          cat > /tmp/ec2-inputs.json <<'JSON'
+          {
+            "CREATION_REQUEST": "Recover and continue the existing ec2-artifact-policy-enforcement task under current Terminus Edition-3 rules, preserving the task's EC2 artifact policy enforcement objective and reconciling the current creation profile and validators before further lifecycle work.",
+            "REQUESTED_DOMAIN": "production Go EC2 software supply-chain and artifact policy enforcement"
+          }
+          JSON
+
+          python3 .terminus/execution/controller_cli.py continue \
+            --task-id "$TASK" \
+            --task-commit "$TASK_COMMIT" \
+            --control-plane-commit "$CONTROL_COMMIT" \
+            --inputs-json /tmp/ec2-inputs.json \
+            --output /tmp/ec2-continue.json
+
+          python3 - <<'PY'
+          import json
+          payload = json.load(open('/tmp/ec2-continue.json', encoding='utf-8'))
+          next_action = payload.get('next', {})
+          invocation = payload.get('invocation', {})
+          if next_action.get('action') not in {'INVOKE_STAGE', 'RETRY_STAGE'}:
+              raise SystemExit(f'unexpected controller action after prefix recovery: {next_action}')
+          if next_action.get('stage_id') != 'RULE_RESOLUTION':
+              raise SystemExit(f'unexpected controller stage after prefix recovery: {next_action}')
+          if invocation.get('readiness') != 'READY':
+              raise SystemExit('RULE_RESOLUTION invocation is not READY after prefix recovery')
+          print('controller_continue_ready', invocation.get('invocation_id'))
+          PY
+
+          changed="$(git diff --name-only)"
+          [[ "$changed" == '.terminus/executions/ec2-artifact-policy-enforcement/ledger.jsonl' ]] || {
+            echo "::error::Recovery mutated unexpected paths: $changed"
+            exit 1
+          }
+          remote_main="$(git ls-remote origin refs/heads/main | cut -f1)"
+          [[ "$remote_main" == "$EXPECTED_MAIN" ]] || {
+            echo "::error::main moved during ledger recovery expected=$EXPECTED_MAIN current=$remote_main"
+            exit 1
+          }
+
+          git config user.name 'terminus-ledger-repair[bot]'
+          git config user.email 'terminus-ledger-repair[bot]@users.noreply.github.com'
+          git add -- .terminus/executions/ec2-artifact-policy-enforcement/ledger.jsonl
+          git commit -m 'Recover ec2-artifact-policy-enforcement execution ledger'
+          git push origin HEAD:main
 
       - name: Persist repair diagnostics on request branch
         if: always()
@@ -127,6 +205,6 @@ jobs:
           git config user.email 'terminus-ledger-repair[bot]@users.noreply.github.com'
           git add -- .terminus/repair-run-status/ec2-artifact-policy-enforcement.json
           if ! git diff --cached --quiet; then
-            git commit -m 'Record EC2 ledger record validity diagnostics'
+            git commit -m 'Record EC2 ledger prefix recovery diagnostics'
             git push origin HEAD:"$REQUEST_BRANCH"
           fi
