@@ -1,0 +1,25 @@
+{
+  "policy_version": "1.0",
+  "variables": {
+    "TERMINUS_Q4_Q6_MODE": "AUTOMATED",
+    "TERMINUS_Q8_MODE": "OFF"
+  },
+  "allowed_values": {
+    "TERMINUS_Q4_Q6_MODE": ["AUTOMATED", "MANUAL"],
+    "TERMINUS_Q8_MODE": ["OFF", "AUTOMATED", "MANUAL"]
+  },
+  "inline_same_chat": {
+    "producer_role_classes": ["PRODUCER", "FIXER"],
+    "quality_role_ids": [
+      "Q1_SPEC_GAP_REPAIRER",
+      "Q2_VERIFIER_COVERAGE_REPAIRER",
+      "Q3_SPEC_AMBIGUITY_REPAIRER",
+      "Q5_ORACLE_RUNTIME_REPAIR_SPECIALIST",
+      "Q7_TASK_FORMAT_ENFORCER"
+    ]
+  },
+  "independent_quality": {
+    "mandatory_role_keys": ["spec-test-contract", "production-logic"],
+    "optional_role_keys": ["difficulty-sim-gpt", "difficulty-sim-claude"]
+  }
+}
