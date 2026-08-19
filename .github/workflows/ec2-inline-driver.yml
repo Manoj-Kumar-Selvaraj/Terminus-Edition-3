@@ -4,9 +4,11 @@ on:
   push:
     branches:
       - orchestrator/ec2-inline-driver-20260820
+    paths:
+      - '.github/workflows/ec2-inline-driver.yml'
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   derive-next:
@@ -18,7 +20,8 @@ jobs:
       - name: Derive current Terminus next action
         run: |
           set -euo pipefail
-          git fetch origin main
+          driver_branch="$GITHUB_REF_NAME"
+          git fetch origin main "$driver_branch"
           head="$(git rev-parse origin/main)"
           git checkout --detach "$head"
           python3 .terminus/execution/controller_cli.py control-plane --head "$head" --output /tmp/control.json
@@ -31,3 +34,12 @@ jobs:
           echo '===CONTINUE_JSON_BEGIN==='
           cat /tmp/continue.json
           echo '===CONTINUE_JSON_END==='
+          git checkout -B "$driver_branch" "origin/$driver_branch"
+          mkdir -p .terminus/orchestrator-diagnostics
+          cp /tmp/continue.json .terminus/orchestrator-diagnostics/ec2-inline-current.json
+          cp /tmp/control.json .terminus/orchestrator-diagnostics/ec2-control-current.json
+          git config user.name 'terminus-inline-driver[bot]'
+          git config user.email 'terminus-inline-driver[bot]@users.noreply.github.com'
+          git add .terminus/orchestrator-diagnostics/ec2-inline-current.json .terminus/orchestrator-diagnostics/ec2-control-current.json
+          git commit -m 'Capture current ec2 inline routing' || true
+          git push origin HEAD:"$driver_branch"
