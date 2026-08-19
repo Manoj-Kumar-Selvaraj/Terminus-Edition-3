@@ -30,7 +30,11 @@ The following Q roles are producer-side specialists and stay in the same task ch
 - Q5 Oracle & Runtime Repair Specialist
 - Q7 Task Format Enforcer
 
-Q1/Q2/Q3 checks are mandatory through `SPEC_ALIGNMENT` and its required Q1/Q2/Q3 status fields. Q7's format gate is mandatory. Deterministic runtime/oracle validation is mandatory; Q5 repair runs only when that mandatory checkpoint routes a runtime/oracle failure to Q5. A passing runtime/oracle checkpoint records no artificial Q5 repair.
+Q1/Q2/Q3 are mandatory producer-side semantic checks at `SPEC_ALIGNMENT`. `controller_cli continue` returns `INLINE_SPECIALIST_SEQUENCE` for that aggregate stage and freezes the checks in this exact order: Q1 -> Q2 -> Q3. Each substep inherits the exact aggregate StageInvocation input/evidence boundary and cannot expand it. The substeps are not independent acceptance records; after their outputs are frozen, the Creation Controller emits the single canonical `SPEC_ALIGNMENT` StageResult containing `Q1_STATUS`, `Q2_STATUS`, and `Q3_STATUS`.
+
+The mandatory inline pass is evaluation-only with respect to the aggregate invocation. If a substep finds a repair need, it reports that finding into the aggregate result and the controller routes the implicated producer/fixer under fresh task-commit authority. This prevents a same-chat repair from silently mutating the task underneath the still-bound aggregate invocation.
+
+Q7's format gate is mandatory. Deterministic runtime/oracle validation is mandatory; Q5 repair runs only when that mandatory checkpoint routes a runtime/oracle failure to Q5. A passing runtime/oracle checkpoint records no artificial Q5 repair.
 
 These same-chat roles do not consume Q4/Q6/Q8 independent-review budget slots.
 
@@ -58,10 +62,11 @@ For a current controller continuation:
 
 1. mandatory Q4/Q6 or optional Q8 stages use the mode variables above;
 2. hosted deterministic controller stages use their registered controller workflow when available;
-3. ordinary controller stages use `ORCHESTRATOR_DIRECT`;
-4. A-series producers, Q1/Q2/Q3/Q5/Q7 and other registered `PRODUCER`/`FIXER` stages use `INLINE_SPECIALIST` in the same task chat;
-5. external gates remain external dispatch/await stages;
-6. genuinely independent non-automated reviewer work may use `FRESH_ROLE_CHAT`.
+3. controller aggregate stages with a configured inline sequence use `INLINE_SPECIALIST_SEQUENCE` and execute those bounded subroles in the persistent task chat before the aggregate result is recorded;
+4. ordinary controller stages use `ORCHESTRATOR_DIRECT`;
+5. A-series producers, Q1/Q2/Q3/Q5/Q7 and other registered `PRODUCER`/`FIXER` stages use `INLINE_SPECIALIST` in the same task chat;
+6. external gates remain external dispatch/await stages;
+7. genuinely independent non-automated reviewer work may use `FRESH_ROLE_CHAT`.
 
 After any inline specialist result, the same acceptance path still applies: StageResult validation -> canonical execution record -> durable ledger -> replay/materialization -> `controller_cli continue`.
 
