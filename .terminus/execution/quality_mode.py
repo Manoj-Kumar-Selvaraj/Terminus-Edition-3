@@ -34,9 +34,11 @@ def _resolve_one(
     allowed: Any,
     override: str | None,
 ) -> str:
-    allowed_values = {
-        str(value).upper() for value in allowed if isinstance(value, str)
-    } if isinstance(allowed, list) else set()
+    allowed_values = (
+        {str(value).upper() for value in allowed if isinstance(value, str)}
+        if isinstance(allowed, list)
+        else set()
+    )
     if not allowed_values:
         raise QualityExecutionModeError(f"{name} has no allowed values")
     raw = override if override is not None else os.environ.get(name)
@@ -61,13 +63,22 @@ def resolve_quality_execution_modes(
     CLI overrides win over environment variables, which win over the versioned
     defaults in ``quality_execution_mode.json``.
     """
-    policy = _load(root.resolve())
+    root = root.resolve()
+    policy = _load(root)
     variables = policy.get("variables")
     allowed = policy.get("allowed_values")
     inline = policy.get("inline_same_chat")
+    checkpoints = policy.get("mandatory_same_chat_checkpoints")
     independent = policy.get("independent_quality")
-    if not all(isinstance(value, dict) for value in (variables, allowed, inline, independent)):
+    if not all(
+        isinstance(value, dict)
+        for value in (variables, allowed, inline, checkpoints, independent)
+    ):
         raise QualityExecutionModeError("quality execution-mode policy structure is invalid")
+
+    policy_document = str(policy.get("policy_document") or "")
+    if not policy_document or not (root / policy_document).is_file():
+        raise QualityExecutionModeError("quality execution-mode policy document is missing")
 
     q4_q6_mode = _resolve_one(
         name=_Q46_ENV,
@@ -83,19 +94,29 @@ def resolve_quality_execution_modes(
     )
 
     producer_classes = {
-        str(value) for value in inline.get("producer_role_classes", []) if isinstance(value, str)
+        str(value)
+        for value in inline.get("producer_role_classes", [])
+        if isinstance(value, str)
     }
     quality_role_ids = {
-        str(value) for value in inline.get("quality_role_ids", []) if isinstance(value, str)
+        str(value)
+        for value in inline.get("quality_role_ids", [])
+        if isinstance(value, str)
     }
     mandatory_roles = [
-        str(value) for value in independent.get("mandatory_role_keys", []) if isinstance(value, str)
+        str(value)
+        for value in independent.get("mandatory_role_keys", [])
+        if isinstance(value, str)
     ]
     optional_roles = [
-        str(value) for value in independent.get("optional_role_keys", []) if isinstance(value, str)
+        str(value)
+        for value in independent.get("optional_role_keys", [])
+        if isinstance(value, str)
     ]
     if not producer_classes or not quality_role_ids:
         raise QualityExecutionModeError("same-chat role policy is incomplete")
+    if set(checkpoints) != {"Q1", "Q2", "Q3", "Q5", "Q7"}:
+        raise QualityExecutionModeError("mandatory same-chat Q checkpoint set drift")
     if mandatory_roles != ["spec-test-contract", "production-logic"]:
         raise QualityExecutionModeError("mandatory independent quality roles must be Q4 then Q6")
     if optional_roles != ["difficulty-sim-gpt", "difficulty-sim-claude"]:
@@ -103,10 +124,12 @@ def resolve_quality_execution_modes(
 
     return {
         "policy_version": str(policy.get("policy_version") or ""),
+        "policy_document": policy_document,
         "q4_q6_mode": q4_q6_mode,
         "q8_mode": q8_mode,
         "producer_role_classes": sorted(producer_classes),
         "inline_quality_role_ids": sorted(quality_role_ids),
+        "mandatory_same_chat_checkpoints": dict(sorted(checkpoints.items())),
         "mandatory_quality_role_keys": mandatory_roles,
         "optional_q8_role_keys": optional_roles,
         "source": _POLICY_PATH,
