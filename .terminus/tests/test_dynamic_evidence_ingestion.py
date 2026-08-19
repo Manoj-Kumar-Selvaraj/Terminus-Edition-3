@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 import subprocess
 import sys
 from pathlib import Path
@@ -25,7 +26,6 @@ RESULT_PATH = (
     ".terminus/reviews/jetstream-regional-stream-continuity/f73b6c9a/"
     "jetstream-regional-stream-continuity-f73b6c9a-adjudication-e8e3160e31.json"
 )
-SESSION_PATH = ".terminus/sessions/jetstream-regional-stream-continuity.md"
 
 
 def _head() -> str:
@@ -35,6 +35,75 @@ def _head() -> str:
         capture_output=True,
         text=True,
     ).stdout.strip()
+
+
+def _git(root: Path, *args: str) -> str:
+    return subprocess.run(
+        ["git", "-C", str(root), *args],
+        check=True,
+        capture_output=True,
+        text=True,
+    ).stdout.strip()
+
+
+def _policy_version(root: Path, path: str, label: str) -> str:
+    text = (root / path).read_text(encoding="utf-8")
+    match = re.search(
+        rf"^{re.escape(label)}:\s*`([^`]+)`\s*$",
+        text,
+        flags=re.MULTILINE,
+    )
+    assert match is not None
+    return match.group(1)
+
+
+def _current_session_fixture(tmp_path: Path) -> tuple[Path, str, str, str]:
+    root = tmp_path / "session-repo"
+    subprocess.run(
+        ["git", "clone", "--quiet", "--shared", str(ROOT), str(root)],
+        check=True,
+    )
+    _git(root, "config", "user.email", "terminus-tests@example.invalid")
+    _git(root, "config", "user.name", "Terminus Tests")
+
+    task_id = "dynamic-session-fixture"
+    task_commit = _git(root, "rev-parse", "HEAD")
+    versions = {
+        "Agent-system policy": _policy_version(
+            root, ".terminus/AGENT_SYSTEM.md", "Agent-system policy version"
+        ),
+        "Specialist prompt policy": _policy_version(
+            root, ".terminus/agents/PROMPTS.md", "Prompt policy version"
+        ),
+        "Specialist protocol policy": _policy_version(
+            root, ".terminus/agents/PROTOCOL.md", "Policy version"
+        ),
+        "Pre-LLMaJ panel policy": _policy_version(
+            root, ".terminus/reviewers/PRE_LLMAJ.md", "Panel policy version"
+        ),
+        "Comprehensive reviewer policy": _policy_version(
+            root,
+            ".terminus/agents/COMPREHENSIVE_REVIEWER.md",
+            "Reviewer policy version",
+        ),
+    }
+    session_path = f".terminus/sessions/{task_id}.md"
+    lines = [
+        "# Terminus Task Session",
+        "",
+        "## Identity",
+        "",
+        f"- Task: `{task_id}`",
+        "- Controller state: `RULE_RESOLUTION`",
+        f"- Current task commit: `{task_commit}`",
+    ]
+    lines.extend(f"- {label}: `{value}`" for label, value in versions.items())
+    lines.extend(["", "## Notes", "", "FROZEN_CANDIDATE provenance fixture.", ""])
+    path = root / session_path
+    path.write_text("\n".join(lines), encoding="utf-8")
+    _git(root, "add", session_path)
+    _git(root, "commit", "-m", "Add coherent session provenance fixture")
+    return root, session_path, _git(root, "rev-parse", "HEAD"), task_id
 
 
 def _row(store: RetrievalStore, document_id: str) -> dict[str, object]:
@@ -134,21 +203,24 @@ def test_review_result_preserves_producer_binding_for_controller_consumption(
 def test_session_ingestion_derives_policy_versions_and_fails_stale_context(
     tmp_path: Path,
 ) -> None:
-    policy = RetrievalPolicy(ROOT)
-    with RetrievalStore(tmp_path / "retrieval.sqlite3") as store:
-        result = DynamicEvidenceIngestor(ROOT, store, policy).ingest_session_state(
-            source_path=SESSION_PATH,
-            source_commit=_head(),
+    root, session_path, source_commit, task_id = _current_session_fixture(tmp_path)
+    policy = RetrievalPolicy(root)
+    with RetrievalStore(tmp_path / "session-retrieval.sqlite3") as store:
+        result = DynamicEvidenceIngestor(root, store, policy).ingest_session_state(
+            source_path=session_path,
+            source_commit=source_commit,
             stage_id="RULE_RESOLUTION",
             role_ids=["CREATION_CONTROLLER"],
         )
         row = _row(store, result["document_id"])
         metadata = row["metadata"]
-        assert metadata["policy_versions"]["agent_system"] == "2.4"
-        assert metadata["policy_versions"]["specialist_protocol"] == "2.2"
-        assert metadata["control_plane_commit"] == _head()
+        assert metadata["task_id"] == task_id
+        assert metadata["policy_versions"]["agent_system"] == _policy_version(
+            root, ".terminus/AGENT_SYSTEM.md", "Agent-system policy version"
+        )
+        assert metadata["control_plane_commit"] == source_commit
 
-        engine = RetrievalEngine(ROOT, store, policy=policy)
+        engine = RetrievalEngine(root, store, policy=policy)
         current = engine.retrieve(
             _context_from_row(row, "CREATION_CONTROLLER"),
             RetrievalQuery(text="FROZEN_CANDIDATE", mode="exact"),

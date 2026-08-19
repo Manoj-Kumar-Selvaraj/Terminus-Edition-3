@@ -146,9 +146,23 @@ def test_protocol_has_no_drip_adjudication_rule() -> None:
     assert ".terminus/classify_review_delta.py" in protocol
 
 
-def test_quality_interlock_validator_accepts_current_pre_freeze_sessions() -> None:
+def test_quality_interlock_accepts_pre_freeze_session_without_quality_claims() -> None:
     quality = _load_module("quality_interlock_current", T / "validate_quality_interlock.py")
-    report = quality.validate()
+    original = quality.current_task_commit
+    quality.current_task_commit = lambda root, task: "a" * 40
+    try:
+        report = quality.freshness.Report()
+        quality.validate_session(
+            {
+                "path": ROOT / ".terminus/sessions/fake-task.md",
+                "task": "fake-task",
+                "state": "ENVIRONMENT_BUILD",
+                "gates": [],
+            },
+            report,
+        )
+    finally:
+        quality.current_task_commit = original
     assert report.errors == []
     assert report.stale == []
 

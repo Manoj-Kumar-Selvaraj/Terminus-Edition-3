@@ -277,6 +277,10 @@ ROLES: dict[str, dict[str, object]] = {
     },
 }
 
+GENERIC_ROLES = {
+    key: spec for key, spec in ROLES.items() if key != "q4-closure-adjudication"
+}
+
 
 def session_state(task: str) -> str:
     path = T / "sessions" / f"{task}.md"
@@ -339,7 +343,7 @@ def build(
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("task", help="top-level task directory name")
-    parser.add_argument("role", choices=sorted(ROLES), help="specialist role to invoke")
+    parser.add_argument("role", choices=sorted(GENERIC_ROLES), help="specialist role to invoke")
     parser.add_argument("--state", help="controller state; defaults to the session checkpoint")
     parser.add_argument(
         "--change",
