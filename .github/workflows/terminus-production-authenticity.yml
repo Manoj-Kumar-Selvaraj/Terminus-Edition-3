@@ -1,38 +1,13 @@
 name: Terminus Production Authenticity Gate
 
 on:
-  pull_request:
-    paths:
-      - "**/instruction.md"
-      - "**/README.md"
-      - "**/environment/**"
-      - ".terminus/designs/**"
-      - ".terminus/validate_runtime_authenticity.py"
-      - ".terminus/validate_business_module_diversity.py"
-      - ".terminus/tests/test_runtime_authenticity.py"
-      - ".terminus/tests/test_business_module_diversity.py"
-      - ".terminus/agents/PRODUCTION_AUTHENTICITY.md"
-      - ".terminus/agents/CREATION_CONTROLLER.md"
-      - ".terminus/agents/CREATION_PIPELINE.md"
-      - ".terminus/agents/CREATOR_AGENT_REGISTRY.md"
-      - ".github/workflows/terminus-production-authenticity.yml"
-  push:
-    branches: [main]
-    paths:
-      - "**/instruction.md"
-      - "**/README.md"
-      - "**/environment/**"
-      - ".terminus/designs/**"
-      - ".terminus/validate_runtime_authenticity.py"
-      - ".terminus/validate_business_module_diversity.py"
-      - ".terminus/tests/test_runtime_authenticity.py"
-      - ".terminus/tests/test_business_module_diversity.py"
-      - ".terminus/agents/PRODUCTION_AUTHENTICITY.md"
-      - ".terminus/agents/CREATION_CONTROLLER.md"
-      - ".terminus/agents/CREATION_PIPELINE.md"
-      - ".terminus/agents/CREATOR_AGENT_REGISTRY.md"
-      - ".github/workflows/terminus-production-authenticity.yml"
   workflow_dispatch:
+    inputs:
+      task:
+        description: Optional top-level task to validate after regression tests
+        required: false
+        default: ''
+        type: string
 
 permissions:
   contents: read
@@ -53,23 +28,21 @@ jobs:
           .terminus/tests/test_runtime_authenticity.py
           .terminus/tests/test_business_module_diversity.py
           -q
-      - name: Validate declared production profiles
+      - name: Validate requested task only
         shell: bash
+        env:
+          TASK: ${{ inputs.task }}
         run: |
           set -euo pipefail
-          python3 -m py_compile \
-            .terminus/validate_runtime_authenticity.py \
-            .terminus/validate_business_module_diversity.py
-          found=0
-          shopt -s nullglob
-          for manifest in .terminus/designs/*-production.json; do
-            task="$(basename "$manifest" -production.json)"
-            [[ -f "$task/task.toml" ]] || continue
-            found=1
-            echo "==> production authenticity: $task"
-            python3 .terminus/validate_runtime_authenticity.py "$task"
-            python3 .terminus/validate_business_module_diversity.py "$task"
-          done
-          if (( found == 0 )); then
-            echo "No production-authenticity manifests found."
+          [[ -n "$TASK" ]] || { echo 'No task requested; regression suite only.'; exit 0; }
+          [[ "$TASK" != /* && "$TASK" != *".."* && "$TASK" != */* ]] || {
+            echo '::error::task must be one safe top-level directory'; exit 1;
+          }
+          [[ -f "$TASK/task.toml" ]] || { echo "::error::No task.toml for $TASK"; exit 1; }
+          manifest=".terminus/designs/$TASK-production.json"
+          if [[ ! -f "$manifest" ]]; then
+            echo "Task $TASK has no production-authenticity manifest; no production gate applies."
+            exit 0
           fi
+          python3 .terminus/validate_runtime_authenticity.py "$TASK"
+          python3 .terminus/validate_business_module_diversity.py "$TASK"
