@@ -79,7 +79,11 @@ def test_interlock_pass_maps_to_canonical_advance(monkeypatch: pytest.MonkeyPatc
     assert result["status"] == "QUALITY_INTERLOCK_PASS"
     assert result["outputs"]["Q4_SATISFACTION"] == "DIRECT_PASS"
     assert result["outputs"]["EVIDENCE_SUFFICIENCY"] == "SUFFICIENT"
-    assert len(result["evidence_refs"]) == 2
+    assert len(result["evidence_refs"]) == 3
+    assert result["evidence_refs"][0] == {
+        "kind": "COMMIT",
+        "ref": f"commit:{TASK_SHA}",
+    }
 
 
 def test_interlock_revise_routes_q4_then_q6(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
@@ -165,6 +169,10 @@ def test_q8_perspective_maps_to_registered_stage_status(monkeypatch: pytest.Monk
     )
     assert result["status"] == "SIMULATION_NOT_EXECUTED"
     assert result["outputs"]["PERSPECTIVE"] == "GPT_PERSPECTIVE"
+    assert result["evidence_refs"][0] == {
+        "kind": "COMMIT",
+        "ref": f"commit:{TASK_SHA}",
+    }
 
     with pytest.raises(lifecycle.QualityLifecycleRecordError, match="non-Claude"):
         lifecycle.build_q8_envelopes(
@@ -215,4 +223,5 @@ def test_interlock_pass_builds_real_canonical_execution_record(tmp_path: Path) -
     assert record["stage_id"] == lifecycle.QUALITY_INTERLOCK
     assert record["status"] == "QUALITY_INTERLOCK_PASS"
     assert record["disposition"] == "ADVANCE"
+    assert record["evidence_refs"][0]["ref"] == f"commit:{head}"
     assert record["task_lineage"]["task_changed"] is False
