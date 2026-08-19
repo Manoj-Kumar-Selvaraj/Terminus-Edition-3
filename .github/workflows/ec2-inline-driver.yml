@@ -1,0 +1,33 @@
+name: EC2 Inline Driver
+
+on:
+  push:
+    branches:
+      - orchestrator/ec2-inline-driver-20260820
+
+permissions:
+  contents: read
+
+jobs:
+  derive-next:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Derive current Terminus next action
+        run: |
+          set -euo pipefail
+          git fetch origin main
+          head="$(git rev-parse origin/main)"
+          git checkout --detach "$head"
+          python3 .terminus/execution/controller_cli.py control-plane --head "$head" --output /tmp/control.json
+          control="$(python3 -c 'import json; print(json.load(open("/tmp/control.json"))["control_plane_commit"])')"
+          python3 .terminus/execution/controller_cli.py continue \
+            --task-id ec2-artifact-policy-enforcement \
+            --task-commit 8836f886d7cfc7f2747264026da31d1dfa49c658 \
+            --control-plane-commit "$control" \
+            --output /tmp/continue.json
+          echo '===CONTINUE_JSON_BEGIN==='
+          cat /tmp/continue.json
+          echo '===CONTINUE_JSON_END==='
