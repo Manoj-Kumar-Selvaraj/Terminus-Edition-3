@@ -19,6 +19,25 @@
       "Q7_TASK_FORMAT_ENFORCER"
     ]
   },
+  "inline_stage_sequences": {
+    "SPEC_ALIGNMENT": [
+      {
+        "role_id": "Q1_SPEC_GAP_REPAIRER",
+        "result_field": "Q1_STATUS",
+        "satisfied_values": ["NO_GAP", "PASS"]
+      },
+      {
+        "role_id": "Q2_VERIFIER_COVERAGE_REPAIRER",
+        "result_field": "Q2_STATUS",
+        "satisfied_values": ["COVERED", "PASS"]
+      },
+      {
+        "role_id": "Q3_SPEC_AMBIGUITY_REPAIRER",
+        "result_field": "Q3_STATUS",
+        "satisfied_values": ["CLEAR", "PASS"]
+      }
+    ]
+  },
   "mandatory_same_chat_checkpoints": {
     "Q1": "SPEC_ALIGNMENT.Q1_STATUS",
     "Q2": "SPEC_ALIGNMENT.Q2_STATUS",
