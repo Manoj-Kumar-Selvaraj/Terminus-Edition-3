@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-"""Budget-aware wrapper around the canonical Terminus controller CLI.
+"""Advisory time-telemetry wrapper around the canonical Terminus controller CLI.
 
-The wrapped controller remains the authority for workflow state and stage
-acceptance. This wrapper adds active-work timing, adaptive planning guidance,
-and a human extension interlock at the configured hard time limit.
+The canonical controller remains the sole workflow-state and routing authority.
+This wrapper may attach task-duration telemetry, but elapsed time never blocks a
+stage, changes a lifecycle action, or requires a time extension.
 """
 
 from __future__ import annotations
@@ -89,6 +89,8 @@ def build_parser() -> argparse.ArgumentParser:
     budget.add_argument("--remaining-stages", type=int)
     budget.add_argument("--output")
 
+    # Kept for compatibility with historical automation. It records advisory
+    # metadata only and is never required to resume workflow routing.
     extend = sub.add_parser("extend")
     extend.add_argument("--task-id", required=True)
     extend.add_argument("--minutes", required=True, type=int)
@@ -146,37 +148,27 @@ def _state_cli_args(args: argparse.Namespace, command: str) -> list[str]:
 
 
 def _directive(budget: dict[str, Any]) -> dict[str, Any]:
-    mode = budget["mode"]
-    if mode == "NORMAL":
-        text = "Proceed normally; preserve quality and avoid speculative breadth."
-    elif mode == "BUDGET_AWARE":
-        text = (
-            "Budget-aware mode: keep the current stage bounded, prefer targeted evidence, "
-            "and preserve reserve for all remaining mandatory gates."
-        )
-    elif mode == "CONSERVE":
-        text = (
-            "Conserve mode: stop optional analysis, consolidate compatible repairs, "
-            "reuse current valid evidence, and avoid repeated full reruns without new evidence."
-        )
-    elif mode == "CRITICAL":
-        text = (
-            "Critical mode: take the shortest protocol-valid path to an acceptance decision; "
-            "no speculative cleanup or ordinary no-progress loops."
+    guidance_seconds = int(budget["guidance_seconds"])
+    consumed_seconds = int(budget["consumed_seconds"])
+    if budget["guidance_exceeded"]:
+        instruction = (
+            "Advisory only: the task has exceeded the seven-hour planning guideline. "
+            "Continue the canonical mandatory lifecycle without weakening gates, and avoid "
+            "optional or duplicate work where possible."
         )
     else:
-        text = (
-            "Hard time limit reached. Do not invoke another stage. Ask the human owner "
-            "for an explicit time extension and record that approval before continuing."
+        instruction = (
+            "Advisory only: aim to complete the task within the seven-hour planning guideline "
+            "while preserving every mandatory quality and evidence requirement."
         )
     return {
-        "mode": mode,
-        "instruction": text,
-        "recommended_next_stage_seconds": budget.get(
-            "recommended_next_stage_seconds"
-        ),
-        "target_remaining_seconds": budget["target_remaining_seconds"],
-        "hard_remaining_seconds": budget["hard_remaining_seconds"],
+        "mode": budget["mode"],
+        "enforcement": "ADVISORY_ONLY",
+        "instruction": instruction,
+        "guidance_seconds": guidance_seconds,
+        "consumed_seconds": consumed_seconds,
+        "guidance_remaining_seconds": max(0, guidance_seconds - consumed_seconds),
+        "recommended_next_stage_seconds": None,
     }
 
 
@@ -204,22 +196,6 @@ def _load_task_id_from_invocation(path: str) -> tuple[str, str]:
     return task_id, stage_id
 
 
-def _begin_if_needed(
-    manager: TaskTimeBudget,
-    stage_id: str,
-    *,
-    source: str,
-) -> dict[str, Any]:
-    active = manager.active_span()
-    if active is None:
-        return manager.begin(stage_id, source=source)
-    if active.get("stage_id") != stage_id:
-        raise ValueError(
-            f"active timed stage {active.get('stage_id')} must finish before {stage_id}"
-        )
-    return active
-
-
 def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     root = Path(args.root).resolve()
@@ -230,7 +206,7 @@ def main(argv: list[str] | None = None) -> int:
         )
         value["budget_directive"] = _directive(value)
         _write(value, args.output)
-        return 2 if value["request_time_extension"] else 0
+        return 0
 
     if args.command == "extend":
         manager = TaskTimeBudget(root, args.task_id)
@@ -242,7 +218,10 @@ def main(argv: list[str] | None = None) -> int:
         value = {
             "extension": extension,
             "time_budget": manager.snapshot(),
-            "message": "Human-approved time extension recorded; controller may resume.",
+            "message": (
+                "Legacy advisory extension metadata recorded. No time extension is required "
+                "for controller routing because task-duration guidance is non-blocking."
+            ),
         }
         _write(value, args.output)
         return 0
@@ -280,17 +259,6 @@ def main(argv: list[str] | None = None) -> int:
     if args.command == "continue":
         _, raw_status = _delegate(root, _state_cli_args(args, "status"))
         projected_status = _project(root, args.task_id, raw_status)
-        if projected_status["time_budget"]["request_time_extension"]:
-            value = {
-                "state_snapshot_id": raw_status.get("state_snapshot_id"),
-                "next": projected_status["next"],
-                "time_budget": projected_status["time_budget"],
-                "budget_directive": projected_status["budget_directive"],
-                "invocation": None,
-                "executor_handoff": None,
-            }
-            _write(value, args.output)
-            return 2
 
         values = _state_cli_args(args, "continue")
         if args.inputs_json:
@@ -306,16 +274,8 @@ def main(argv: list[str] | None = None) -> int:
         rc, payload = _delegate(root, values)
         payload["time_budget"] = projected_status["time_budget"]
         payload["budget_directive"] = projected_status["budget_directive"]
-        invocation = payload.get("invocation")
-        if isinstance(invocation, dict) and invocation.get("readiness") == "READY":
-            stage = invocation.get("stage")
-            if isinstance(stage, dict) and isinstance(stage.get("stage_id"), str):
-                source = args.prepare_executor or "MANUAL_CHAT"
-                payload["time_span"] = _begin_if_needed(
-                    TaskTimeBudget(root, args.task_id),
-                    str(stage["stage_id"]),
-                    source=source,
-                )
+        # Do not auto-open a per-stage timer. Telemetry must never become a
+        # prerequisite for routing or a source of stale active-span failures.
         _write(payload, args.output)
         return rc
 
@@ -335,11 +295,7 @@ def main(argv: list[str] | None = None) -> int:
     if rc == 0:
         manager = TaskTimeBudget(root, task_id)
         active = manager.active_span()
-        if active is not None:
-            if active.get("stage_id") != stage_id:
-                raise ValueError(
-                    "recorded invocation stage does not match active time span"
-                )
+        if active is not None and active.get("stage_id") == stage_id:
             payload["time_event"] = manager.finish(
                 paused_seconds=args.paused_seconds,
                 category=args.time_category,
