@@ -10,10 +10,6 @@ on:
 permissions:
   contents: write
 
-concurrency:
-  group: terminus-ec2-ledger-integrity-repair
-  cancel-in-progress: false
-
 jobs:
   repair:
     runs-on: ubuntu-24.04
@@ -23,22 +19,11 @@ jobs:
           ref: main
           fetch-depth: 0
 
-      - name: Reconstruct corrupt ledger metadata from immutable records
+      - name: Classify every historical execution record
         id: repair
         shell: bash
-        env:
-          EXPECTED_MAIN: 5106b27ae6cc5257854f08c63bac4eca95685f36
-          TASK: ec2-artifact-policy-enforcement
-          TASK_COMMIT: 8836f886d7cfc7f2747264026da31d1dfa49c658
-          CONTROL_COMMIT: 5106b27ae6cc5257854f08c63bac4eca95685f36
         run: |
           set -euo pipefail
-          current="$(git rev-parse HEAD)"
-          [[ "$current" == "$EXPECTED_MAIN" ]] || {
-            echo "::error::main moved before ledger repair expected=$EXPECTED_MAIN current=$current"
-            exit 1
-          }
-
           python3 - <<'PY'
           import hashlib
           import json
@@ -47,159 +32,68 @@ jobs:
 
           root = Path('.').resolve()
           sys.path.insert(0, str(root / '.terminus'))
+          from execution.invocation import StageInvocationBuilder
           from execution.ledger import ExecutionLedger
+          from execution.record import ExecutionRecordBuilder
 
           task = 'ec2-artifact-policy-enforcement'
           ledger = ExecutionLedger(root, task)
-          ledger_path = ledger.ledger_path
-          old_events = [
-              json.loads(line)
-              for line in ledger_path.read_text(encoding='utf-8').splitlines()
-              if line
-          ]
-          if len(old_events) != 4:
-              raise SystemExit(f'unexpected ledger length: {len(old_events)}')
-
-          new_events = []
+          builder = ExecutionRecordBuilder(root)
+          events = [json.loads(line) for line in ledger.ledger_path.read_text(encoding='utf-8').splitlines() if line]
           rows = []
-          for index, old in enumerate(old_events, start=1):
-              if old.get('sequence') != index or old.get('task_id') != task:
-                  raise SystemExit(f'ledger identity drift at sequence {index}')
-              path = root / old['record_path']
-              raw = path.read_bytes()
+          for event in events:
+              raw = (root / event['record_path']).read_bytes()
               value = json.loads(raw)
-              canonical = ledger._canonical_json(value)
-              if raw != canonical:
-                  raise SystemExit(f'record is not already canonical: {old["record_path"]}')
-              record_hash = ledger._sha256(raw)
+              identity = dict(value)
+              stored_record_id = identity.pop('record_id', None)
+              computed_record_id = ExecutionRecordBuilder._record_id(identity)
+              invocation = value.get('invocation_snapshot') or {}
+              invocation_identity = dict(invocation)
+              stored_invocation_id = invocation_identity.pop('invocation_id', None)
+              computed_invocation_id = StageInvocationBuilder._invocation_id(invocation_identity) if invocation_identity else None
+              actual_hash = ledger._sha256(raw)
+              canonical_hash = ledger._sha256(ledger._canonical_json(value))
 
-              if value.get('record_id') != old.get('record_id'):
-                  raise SystemExit(f'record_id drift at sequence {index}')
-              if value.get('invocation_id') != old.get('invocation_id'):
-                  raise SystemExit(f'invocation_id drift at sequence {index}')
-              if value.get('stage_id') != old.get('stage_id'):
-                  raise SystemExit(f'stage_id drift at sequence {index}')
-              authority = value.get('authority', {})
-              lineage = value.get('task_lineage', {})
-              if authority.get('task_id') != task:
-                  raise SystemExit(f'task_id drift in record at sequence {index}')
-              if lineage.get('input_task_commit') != old.get('input_task_commit'):
-                  raise SystemExit(f'input task lineage drift at sequence {index}')
-              if lineage.get('output_task_commit') != old.get('output_task_commit'):
-                  raise SystemExit(f'output task lineage drift at sequence {index}')
-              if authority.get('control_plane_commit') != old.get('control_plane_commit'):
-                  raise SystemExit(f'control-plane drift at sequence {index}')
+              current_validation = 'PASS'
+              try:
+                  builder.validate_persisted_record(value)
+              except Exception as exc:
+                  current_validation = f'{type(exc).__name__}: {exc}'
 
-              shadow_event = dict(old)
-              shadow_event['record_hash'] = record_hash
-              ledger._validate_historical_record(value, shadow_event)
+              shadow_event = dict(event)
+              shadow_event['record_hash'] = actual_hash
+              historical_validation = 'PASS'
+              try:
+                  ledger._validate_historical_record(value, shadow_event)
+              except Exception as exc:
+                  historical_validation = f'{type(exc).__name__}: {exc}'
 
-              payload = {
-                  'schema_version': ledger.schema_version,
-                  'sequence': index,
-                  'previous_event_id': new_events[-1]['event_id'] if new_events else None,
-                  'record_id': value['record_id'],
-                  'invocation_id': value['invocation_id'],
-                  'stage_id': value['stage_id'],
-                  'task_id': task,
-                  'input_task_commit': lineage['input_task_commit'],
-                  'output_task_commit': lineage['output_task_commit'],
-                  'control_plane_commit': authority['control_plane_commit'],
-                  'record_path': old['record_path'],
-                  'record_hash': record_hash,
+              row = {
+                  'sequence': event['sequence'],
+                  'stage_id': event['stage_id'],
+                  'invocation_id': event['invocation_id'],
+                  'ledger_record_hash': event['record_hash'],
+                  'actual_record_hash': actual_hash,
+                  'canonical_record_hash': canonical_hash,
+                  'stored_record_id': stored_record_id,
+                  'computed_record_id': computed_record_id,
+                  'record_id_valid': stored_record_id == computed_record_id,
+                  'stored_invocation_id': stored_invocation_id,
+                  'computed_invocation_id': computed_invocation_id,
+                  'invocation_id_valid': stored_invocation_id == computed_invocation_id,
+                  'current_validation': current_validation,
+                  'historical_validation': historical_validation,
               }
-              new = {'event_id': ledger._event_id(payload), **payload}
-              new_events.append(new)
-
-              changed = sorted(key for key in old if old.get(key) != new.get(key))
-              rows.append({
-                  'sequence': index,
-                  'stage_id': old['stage_id'],
-                  'old_record_hash': old['record_hash'],
-                  'new_record_hash': record_hash,
-                  'changed_fields': changed,
-                  'old_event_id': old['event_id'],
-                  'new_event_id': new['event_id'],
-              })
-
-          expected_changes = {
-              1: [],
-              2: [],
-              3: ['event_id', 'record_hash'],
-              4: ['event_id', 'previous_event_id'],
-          }
-          for row in rows:
-              if row['changed_fields'] != expected_changes[row['sequence']]:
-                  raise SystemExit(
-                      f'ledger repair exceeds bounded metadata correction at sequence '
-                      f'{row["sequence"]}: {row["changed_fields"]}'
-                  )
-
-          rendered = '\n'.join(ledger._compact_json(event) for event in new_events) + '\n'
-          ledger_path.write_text(rendered, encoding='utf-8')
-
-          # The canonical loader must accept the reconstructed chain, including
-          # immutable historical invocation/record identities.
-          loaded = ledger.load(validate_record_files=True)
-          if [event['event_id'] for event in loaded] != [event['event_id'] for event in new_events]:
-              raise SystemExit('canonical ledger reload changed reconstructed identity')
+              rows.append(row)
+              print(json.dumps(row, sort_keys=True))
 
           diagnosis = {
               'task_id': task,
-              'classification': 'BOUNDED_LEDGER_METADATA_RECONSTRUCTION',
+              'classification': 'HISTORICAL_RECORD_VALIDITY_CLASSIFICATION',
               'rows': rows,
           }
-          Path('/tmp/ec2-ledger-diagnosis.json').write_text(
-              json.dumps(diagnosis, indent=2, sort_keys=True) + '\n', encoding='utf-8'
-          )
-          print(json.dumps(diagnosis, indent=2, sort_keys=True))
+          Path('/tmp/ec2-ledger-diagnosis.json').write_text(json.dumps(diagnosis, indent=2, sort_keys=True) + '\n', encoding='utf-8')
           PY
-
-          cat > /tmp/ec2-inputs.json <<'JSON'
-          {
-            "CREATION_REQUEST": "Recover and continue the existing ec2-artifact-policy-enforcement task under current Terminus Edition-3 rules, preserving the task's EC2 artifact policy enforcement objective and reconciling the current creation profile and validators before further lifecycle work.",
-            "REQUESTED_DOMAIN": "production Go EC2 software supply-chain and artifact policy enforcement"
-          }
-          JSON
-
-          python3 .terminus/execution/controller_cli.py continue \
-            --task-id "$TASK" \
-            --task-commit "$TASK_COMMIT" \
-            --control-plane-commit "$CONTROL_COMMIT" \
-            --inputs-json /tmp/ec2-inputs.json \
-            --output /tmp/ec2-continue.json
-
-          python3 - <<'PY'
-          import json
-          payload = json.load(open('/tmp/ec2-continue.json', encoding='utf-8'))
-          next_action = payload.get('next', {})
-          invocation = payload.get('invocation', {})
-          if next_action.get('action') not in {'INVOKE_STAGE', 'RETRY_STAGE'}:
-              raise SystemExit(f'unexpected controller action after repair: {next_action}')
-          if next_action.get('stage_id') != 'RULE_RESOLUTION':
-              raise SystemExit(f'unexpected controller stage after repair: {next_action}')
-          if invocation.get('readiness') != 'READY':
-              raise SystemExit('RULE_RESOLUTION invocation is not READY after repair')
-          print('controller_continue_ready', invocation.get('invocation_id'))
-          PY
-
-          changed="$(git diff --name-only)"
-          [[ "$changed" == '.terminus/executions/ec2-artifact-policy-enforcement/ledger.jsonl' ]] || {
-            echo "::error::Repair mutated unexpected paths: $changed"
-            exit 1
-          }
-
-          remote_main="$(git ls-remote origin refs/heads/main | cut -f1)"
-          [[ "$remote_main" == "$EXPECTED_MAIN" ]] || {
-            echo "::error::main moved during ledger repair expected=$EXPECTED_MAIN current=$remote_main"
-            exit 1
-          }
-
-          git config user.name 'terminus-ledger-repair[bot]'
-          git config user.email 'terminus-ledger-repair[bot]@users.noreply.github.com'
-          git add -- .terminus/executions/ec2-artifact-policy-enforcement/ledger.jsonl
-          git commit -m 'Repair ec2-artifact-policy-enforcement execution ledger integrity'
-          git push origin HEAD:main
 
       - name: Persist repair diagnostics on request branch
         if: always()
@@ -216,9 +110,7 @@ jobs:
           python3 - "$status_root/.terminus/repair-run-status/ec2-artifact-policy-enforcement.json" <<'PY'
           import json, os, pathlib, sys
           diagnosis_path = pathlib.Path('/tmp/ec2-ledger-diagnosis.json')
-          diagnosis = None
-          if diagnosis_path.is_file():
-              diagnosis = json.loads(diagnosis_path.read_text(encoding='utf-8'))
+          diagnosis = json.loads(diagnosis_path.read_text(encoding='utf-8')) if diagnosis_path.is_file() else None
           payload = {
               'schema_version': '1.0',
               'task_id': 'ec2-artifact-policy-enforcement',
@@ -235,6 +127,6 @@ jobs:
           git config user.email 'terminus-ledger-repair[bot]@users.noreply.github.com'
           git add -- .terminus/repair-run-status/ec2-artifact-policy-enforcement.json
           if ! git diff --cached --quiet; then
-            git commit -m 'Record EC2 ledger repair diagnostics'
+            git commit -m 'Record EC2 ledger record validity diagnostics'
             git push origin HEAD:"$REQUEST_BRANCH"
           fi
