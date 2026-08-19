@@ -11,9 +11,11 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import subprocess
 import sys
 from pathlib import Path
 from typing import Any, Mapping
+from urllib.parse import quote
 
 if __package__ in {None, ""}:
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
@@ -68,6 +70,70 @@ def _commit_ref(task_commit: str) -> dict[str, str]:
         "kind": "COMMIT",
         "ref": f"commit:{task_commit}",
     }
+
+
+def _git_result_ref(root: Path, path: Path, identity: str) -> dict[str, str] | None:
+    """Resolve exact review bytes to a committed RESULT reference when available.
+
+    Quality jobs persist review evidence before canonical lifecycle recording. A
+    later recording job may still be checked out at the workflow trigger SHA, so
+    search the fetched repository history rather than assuming the review commit
+    is HEAD. The returned reference is accepted only when committed bytes exactly
+    equal the validated review bytes being recorded.
+    """
+    root = root.resolve()
+    candidate = path if path.is_absolute() else root / path
+    try:
+        relative = candidate.resolve().relative_to(root)
+    except ValueError:
+        return None
+    if not identity.strip() or not candidate.is_file():
+        return None
+
+    rel = relative.as_posix()
+    history = subprocess.run(
+        ["git", "-C", str(root), "rev-list", "--all", "--", rel],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    if history.returncode != 0:
+        return None
+
+    expected = candidate.read_bytes()
+    for commit in (line.strip() for line in history.stdout.splitlines()):
+        if not commit:
+            continue
+        committed = subprocess.run(
+            ["git", "-C", str(root), "show", f"{commit}:{rel}"],
+            check=False,
+            capture_output=True,
+        )
+        if committed.returncode != 0 or committed.stdout != expected:
+            continue
+        digest = _sha256_bytes(expected)
+        return {
+            "kind": "RESULT",
+            "ref": f"git:{commit}:{quote(rel, safe='/')}#{quote(identity, safe='')}",
+            "content_hash": digest,
+        }
+    return None
+
+
+def _quality_evidence_refs(
+    root: Path,
+    *,
+    task_commit: str,
+    run_id: str,
+    reviews: list[tuple[str, Path, str]],
+) -> list[dict[str, str]]:
+    refs: list[dict[str, str]] = [_commit_ref(task_commit)]
+    for label, path, identity in reviews:
+        result_ref = _git_result_ref(root, path, identity)
+        if result_ref is not None:
+            refs.append(result_ref)
+        refs.append(_run_ref(run_id, label, path))
+    return refs
 
 
 def _review_ready(review: Mapping[str, Any], role: str) -> bool:
@@ -179,11 +245,15 @@ def build_interlock_envelopes(
         "output_task_commit": task_commit,
         "status": "BLOCKED",
         "outputs": outputs,
-        "evidence_refs": [
-            _commit_ref(task_commit),
-            _run_ref(run_id, "q4", q4_review_path),
-            _run_ref(run_id, "q6", q6_review_path),
-        ],
+        "evidence_refs": _quality_evidence_refs(
+            root,
+            task_commit=task_commit,
+            run_id=run_id,
+            reviews=[
+                ("q4", q4_review_path, str(q4["review_id"])),
+                ("q6", q6_review_path, str(q6["review_id"])),
+            ],
+        ),
     }
 
     if q4_ready and q6_ready:
@@ -256,10 +326,12 @@ def build_q8_envelopes(
         "output_task_commit": task_commit,
         "status": execution,
         "outputs": role_output,
-        "evidence_refs": [
-            _commit_ref(task_commit),
-            _run_ref(run_id, "q8", review_path),
-        ],
+        "evidence_refs": _quality_evidence_refs(
+            root,
+            task_commit=task_commit,
+            run_id=run_id,
+            reviews=[("q8", review_path, str(review["review_id"]))],
+        ),
     }
     return invocation, result
 
