@@ -20,6 +20,11 @@ on:
         required: true
         default: true
         type: boolean
+      execute_optional_q8:
+        description: Explicitly execute the optional model-backed Q8 perspective; false records a deterministic no-budget skip
+        required: true
+        default: false
+        type: boolean
       change:
         description: Optional change-since-last-review text recorded in generated packets
         required: false
@@ -36,6 +41,10 @@ on:
       publish_results:
         required: false
         default: true
+        type: boolean
+      execute_optional_q8:
+        required: false
+        default: false
         type: boolean
       change:
         required: false
@@ -75,6 +84,7 @@ jobs:
         env:
           TASK: ${{ inputs.task }}
           STAGE: ${{ inputs.stage }}
+          EXECUTE_OPTIONAL_Q8: ${{ inputs.execute_optional_q8 }}
         run: |
           set -euo pipefail
           [[ -n "$TASK" && "$TASK" != /* && "$TASK" != *".."* && "$TASK" != */* ]] || {
@@ -87,12 +97,17 @@ jobs:
             *) echo "::error::Unsupported lifecycle quality stage: $STAGE"; exit 1 ;;
           esac
           [[ -z "$(git status --porcelain -- "$TASK")" ]] || {
-            echo "::error::Task tree must be committed before model-backed quality execution"
+            echo "::error::Task tree must be committed before quality lifecycle execution"
             exit 1
           }
+          if [[ "$STAGE" == QUALITY_INTERLOCK && "$EXECUTE_OPTIONAL_Q8" == true ]]; then
+            echo "::error::execute_optional_q8 applies only to Q8 diagnostic stages"
+            exit 1
+          fi
           echo "task=$TASK" >> "$GITHUB_OUTPUT"
           echo "stage=$STAGE" >> "$GITHUB_OUTPUT"
           echo "Quality lifecycle dispatch: \`$STAGE\` for \`$TASK\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "Optional Q8 model execution: \`$EXECUTE_OPTIONAL_Q8\`" >> "$GITHUB_STEP_SUMMARY"
 
   q4:
     needs: preflight
@@ -120,7 +135,7 @@ jobs:
 
   q8_gpt:
     needs: preflight
-    if: inputs.stage == 'MODEL_DIAGNOSTIC_GPT'
+    if: inputs.stage == 'MODEL_DIAGNOSTIC_GPT' && inputs.execute_optional_q8
     uses: ./.github/workflows/terminus-quality-executor.yml
     with:
       task: ${{ inputs.task }}
@@ -132,7 +147,7 @@ jobs:
 
   q8_claude:
     needs: preflight
-    if: inputs.stage == 'MODEL_DIAGNOSTIC_CLAUDE'
+    if: inputs.stage == 'MODEL_DIAGNOSTIC_CLAUDE' && inputs.execute_optional_q8
     uses: ./.github/workflows/terminus-quality-executor.yml
     with:
       task: ${{ inputs.task }}
@@ -308,7 +323,7 @@ jobs:
             --result "$RESULT" \
             --output /tmp/quality-interlock.record.json
 
-      - name: Persist canonical QUALITY_INTERLOCK ledger/state
+      - name: Persist canonical QUALITY_INTERLOCK ledger
         if: inputs.publish_results
         shell: bash
         env:
@@ -319,7 +334,7 @@ jobs:
           [[ -z "$unexpected" ]] || { echo "::error::Unexpected canonical-record mutations: $unexpected"; exit 1; }
           git config user.name "terminus-quality-lifecycle[bot]"
           git config user.email "terminus-quality-lifecycle[bot]@users.noreply.github.com"
-          git add -- ".terminus/executions/$TASK" ".terminus/workflows/$TASK"
+          git add -- ".terminus/executions/$TASK"
           if git diff --cached --quiet; then
             echo "QUALITY_INTERLOCK execution record already persisted."
           else
@@ -346,7 +361,7 @@ jobs:
 
   collect_q8_gpt:
     needs: [preflight, q8_gpt]
-    if: always() && inputs.stage == 'MODEL_DIAGNOSTIC_GPT'
+    if: always() && inputs.stage == 'MODEL_DIAGNOSTIC_GPT' && inputs.execute_optional_q8
     uses: ./.github/workflows/terminus-quality-lifecycle-collect.yml
     with:
       task: ${{ inputs.task }}
@@ -365,7 +380,7 @@ jobs:
 
   collect_q8_claude:
     needs: [preflight, q8_claude]
-    if: always() && inputs.stage == 'MODEL_DIAGNOSTIC_CLAUDE'
+    if: always() && inputs.stage == 'MODEL_DIAGNOSTIC_CLAUDE' && inputs.execute_optional_q8
     uses: ./.github/workflows/terminus-quality-lifecycle-collect.yml
     with:
       task: ${{ inputs.task }}
@@ -381,3 +396,133 @@ jobs:
       budget_limit: ${{ needs.q8_claude.outputs.budget_limit }}
       publish_results: ${{ inputs.publish_results }}
     secrets: inherit
+
+  skip_optional_q8:
+    needs: preflight
+    if: >-
+      always() && needs.preflight.result == 'success' &&
+      (inputs.stage == 'MODEL_DIAGNOSTIC_GPT' || inputs.stage == 'MODEL_DIAGNOSTIC_CLAUDE') &&
+      !inputs.execute_optional_q8
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Build deterministic no-budget Q8 skip
+        shell: bash
+        env:
+          TASK: ${{ inputs.task }}
+          STAGE: ${{ inputs.stage }}
+          PUBLISH: ${{ inputs.publish_results }}
+        run: |
+          set -euo pipefail
+          task_commit="$(git log -1 --format=%H -- "$TASK")"
+          [[ -n "$task_commit" ]] || { echo "::error::Cannot resolve task commit for $TASK"; exit 1; }
+          python3 .terminus/execution/controller_cli.py control-plane --head HEAD --output /tmp/control-plane.json
+          control_commit="$(python3 -c 'import json; print(json.load(open("/tmp/control-plane.json"))["control_plane_commit"])')"
+
+          case "$STAGE" in
+            MODEL_DIAGNOSTIC_GPT)
+              perspective="GPT_PERSPECTIVE"
+              question="In a cold GPT/Codex-style diagnostic solve, what happens?"
+              ;;
+            MODEL_DIAGNOSTIC_CLAUDE)
+              perspective="CLAUDE_PERSPECTIVE"
+              question="In a cold Claude/Claude-Code-style diagnostic solve, what happens?"
+              ;;
+            *) echo "::error::Unsupported optional Q8 stage: $STAGE"; exit 1 ;;
+          esac
+
+          review_id="$TASK-${task_commit:0:8}-${STAGE,,}-default-skip-$GITHUB_RUN_ID"
+          python3 - "$TASK" "$task_commit" "$control_commit" "$review_id" "$perspective" "$question" <<'PY'
+          import json, sys
+          task, task_commit, control_commit, review_id, perspective, question = sys.argv[1:]
+          packet = {
+              "schema_version": "3.0",
+              "role": "Model Perspective Difficulty Simulator",
+              "review_id": review_id,
+              "task": task,
+              "task_commit": task_commit,
+              "control_plane_commit": control_commit,
+              "question": question,
+          }
+          review = {
+              "schema_version": "3.0",
+              "role": "Model Perspective Difficulty Simulator",
+              "review_id": review_id,
+              "task": task,
+              "task_commit": task_commit,
+              "control_plane_commit": control_commit,
+              "verdict": "PASS",
+              "confidence": "MEDIUM",
+              "evidence_status": "SUFFICIENT",
+              "summary": "Optional Q8 diagnostic not requested; no model execution occurred.",
+              "evidence": [],
+              "findings": [],
+              "missing_evidence": [],
+              "change_scope": [],
+              "do_not_change": ["Do not treat this skip as official model evidence."],
+              "next_gate": "continue default lifecycle",
+              "role_output": {
+                  "PERSPECTIVE": perspective,
+                  "EXECUTION": "SIMULATION_NOT_EXECUTED",
+                  "DIAGNOSTIC_SUMMARY": "Optional diagnostic skipped by default Q4/Q6-only quality policy.",
+                  "PREDICTED_OFFICIAL_SIGNAL": "NOT_EVALUATED",
+              },
+          }
+          json.dump(packet, open('/tmp/q8-skip.packet.json', 'w', encoding='utf-8'), indent=2, sort_keys=True)
+          json.dump(review, open('/tmp/q8-skip.review.json', 'w', encoding='utf-8'), indent=2, sort_keys=True)
+          PY
+
+          python3 .terminus/execution/quality_lifecycle_record.py \
+            --stage "$STAGE" \
+            --run-id "$GITHUB_RUN_ID" \
+            --packet /tmp/q8-skip.packet.json \
+            --review /tmp/q8-skip.review.json \
+            --invocation-output /tmp/q8-skip.invocation.json \
+            --result-output /tmp/q8-skip.result.json
+
+          status="$(python3 -c 'import json; print(json.load(open("/tmp/q8-skip.result.json"))["status"])')"
+          [[ "$status" == SIMULATION_NOT_EXECUTED ]] || {
+            echo "::error::Default Q8 skip did not produce SIMULATION_NOT_EXECUTED"
+            exit 1
+          }
+
+          if [[ "$PUBLISH" == true ]]; then
+            python3 .terminus/execution/controller_cli.py record \
+              --invocation /tmp/q8-skip.invocation.json \
+              --result /tmp/q8-skip.result.json \
+              --output /tmp/q8-skip.record.json
+          fi
+
+      - name: Persist canonical optional-Q8 skip ledger
+        if: inputs.publish_results
+        shell: bash
+        env:
+          TASK: ${{ inputs.task }}
+          STAGE: ${{ inputs.stage }}
+        run: |
+          set -euo pipefail
+          unexpected="$(git status --porcelain | awk '{print $2}' | grep -vE "^\.terminus/(executions|workflows)/$TASK(/|$)" || true)"
+          [[ -z "$unexpected" ]] || { echo "::error::Unexpected optional-Q8 skip mutations: $unexpected"; exit 1; }
+          git config user.name "terminus-quality-lifecycle[bot]"
+          git config user.email "terminus-quality-lifecycle[bot]@users.noreply.github.com"
+          git add -- ".terminus/executions/$TASK"
+          git diff --cached --quiet && {
+            echo "::error::Optional-Q8 skip produced no canonical execution record"
+            exit 1
+          }
+          git commit -m "Record $STAGE optional diagnostic skip"
+          git push origin "HEAD:${GITHUB_REF_NAME}"
+
+      - name: Summarize default Q8 policy
+        shell: bash
+        run: |
+          {
+            echo "## ${{ inputs.stage }}"
+            echo "- Execution: \`SIMULATION_NOT_EXECUTED\`"
+            echo "- Model/Q execution: \`none\`"
+            echo "- Q8 budget claim: \`none\`"
+            echo "- Default mandatory model-backed quality: \`Q4 + Q6 only\`"
+          } >> "$GITHUB_STEP_SUMMARY"
