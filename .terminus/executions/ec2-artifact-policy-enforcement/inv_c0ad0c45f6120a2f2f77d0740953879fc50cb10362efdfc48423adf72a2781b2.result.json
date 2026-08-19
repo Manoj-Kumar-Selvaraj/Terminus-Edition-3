@@ -1,0 +1,327 @@
+{
+  "authority": {
+    "control_plane_commit": "5106b27ae6cc5257854f08c63bac4eca95685f36",
+    "policy_versions": {},
+    "task_commit": "8836f886d7cfc7f2747264026da31d1dfa49c658",
+    "task_id": "ec2-artifact-policy-enforcement"
+  },
+  "disposition": "ADVANCE",
+  "evidence_refs": [
+    {
+      "content_hash": "sha256:c949a75a93f4636d770dd6cb82318c90d98b3fb0fb1d16d3d8b2e6c4d50a86fc",
+      "kind": "COMMIT",
+      "ref": "commit:8836f886d7cfc7f2747264026da31d1dfa49c658"
+    },
+    {
+      "content_hash": "sha256:b5a2cd19688eb8045ed51f0abaf697929821b094e8dbcc6e67c7edd479d74828",
+      "kind": "COMMIT",
+      "ref": "commit:5106b27ae6cc5257854f08c63bac4eca95685f36"
+    }
+  ],
+  "invocation_id": "inv_c0ad0c45f6120a2f2f77d0740953879fc50cb10362efdfc48423adf72a2781b2",
+  "invocation_snapshot": {
+    "acceptance_predicates": {},
+    "authority": {
+      "control_plane_commit": "5106b27ae6cc5257854f08c63bac4eca95685f36",
+      "policy_versions": {},
+      "task_commit": "8836f886d7cfc7f2747264026da31d1dfa49c658",
+      "task_id": "ec2-artifact-policy-enforcement"
+    },
+    "evidence": {
+      "authorized_evidence_classes": [
+        "CONTROL_PLANE_POLICY",
+        "PRIVATE_CREATION_DESIGN",
+        "PUBLIC_REFERENCE",
+        "SOLVER_VISIBLE_TASK"
+      ],
+      "evidence_required": [
+        "component/resource graph",
+        "runtime/operator reachability plan",
+        "state/persistence model",
+        "production-characteristic rationale"
+      ],
+      "excluded_evidence_classes": [
+        "CI_RUNTIME_EVIDENCE",
+        "CURRENT_REVIEW_PACKET",
+        "DURABLE_SESSION_STATE",
+        "FINAL_PACKAGE_EVIDENCE",
+        "MODEL_TRIAL_EVIDENCE",
+        "PRIOR_REVIEW_RESULTS",
+        "SOLUTION_ORACLE",
+        "VERIFIER_PRIVATE"
+      ],
+      "mandatory_exact_reads": [
+        ".terminus/agents/CREATION_PIPELINE.md",
+        ".terminus/agents/CREATOR_AGENT_REGISTRY.md",
+        ".terminus/agents/PRODUCTION_AUTHENTICITY.md",
+        ".terminus/agents/CREATOR_PROMPTS.md",
+        ".terminus/agents/A2_PHASE_PROMPTS.md"
+      ],
+      "retrieval_mode": "FILTERED_HYBRID"
+    },
+    "ignored_input_count": 0,
+    "inputs": {
+      "optional": {},
+      "required": {
+        "APPROVED_OPERATIONAL_REQUIREMENTS": {
+          "EDGE_FAILURES": [
+            "scanner unavailable/stale",
+            "mutable tag",
+            "low-level manager bypass",
+            "expired exception",
+            "permit tamper/replay/expiry",
+            "corrupt/partial state",
+            "restart"
+          ],
+          "PRESERVATION": [
+            "existing CLI/exit codes",
+            "valid cache hits",
+            "valid scoped exceptions",
+            "supplied fixtures",
+            "prior audit history"
+          ],
+          "REQUIRED_END_STATE": [
+            "One policy model applies to package/container/dependency managers.",
+            "Untrusted source or missing required digest denies before exceptions.",
+            "Scanner evidence must be current; cache identity is digest+policy version+DB revision+TTL.",
+            "Exceptions are unexpired and exact digest/surface/environment/policy-code scope.",
+            "ALLOW permits are keyed and exact request/instance/digest/policy/expiry scope.",
+            "Every ALLOW/DENY is append+fsync durable and restart-safe."
+          ]
+        },
+        "APPROVED_WORK_PACKAGE": {
+          "EDGE_FAILURE_SURFACE": [
+            "scanner outage/staleness",
+            "mutable tag digest change",
+            "manager bypass",
+            "expired/wrong-scope exception",
+            "permit tamper/replay/expiry",
+            "restart/partial state"
+          ],
+          "ENGINEERING_OBJECTIVE": "Unify OS-package, container and build-dependency acquisition behind one Go policy engine.",
+          "ID": "WP1_UNIFIED_EC2_ARTIFACT_ADMISSION",
+          "PERSONA": "EC2 platform security engineer",
+          "PRESERVATION_OBLIGATIONS": [
+            "keep evaluate/verify-permit CLI",
+            "keep valid cache/exceptions",
+            "do not rewrite supplied fixtures",
+            "preserve audit history"
+          ],
+          "REQUIRED_END_STATE": "Consistent trusted-source/digest/scanner-cache/exception/permit/audit semantics across package, container and dependency acquisition, restart-safe and CLI-compatible.",
+          "REQUIREMENT_FAMILIES": [
+            "source+digest",
+            "scanner+cache freshness",
+            "exceptions",
+            "permit integrity",
+            "durable audit+recovery",
+            "CLI preservation"
+          ],
+          "SOURCE_RECORD_ID": "rec_a36f9403b08ce73da31abbca36905b7656520b13c43ab19488ad1d83759bb393"
+        },
+        "CREATION_RULE_CONTEXT": {
+          "ACTIVE_VALIDATORS": [
+            ".terminus/validate_agent_system.py",
+            ".terminus/validate_stage_contracts.py",
+            ".terminus/validate_task_complexity.py",
+            ".terminus/validate_environment_complexity.py",
+            ".terminus/validate_runtime_authenticity.py",
+            ".terminus/validate_business_module_diversity.py",
+            ".terminus/validate_review_freshness.py",
+            ".terminus/validate_quality_interlock.py",
+            ".github/workflows/terminus-edition-3-ci.yml",
+            ".github/workflows/terminus-creator-complexity.yml",
+            ".github/workflows/terminus-production-authenticity.yml"
+          ],
+          "CONTROL_PLANE_COMMIT": "5106b27ae6cc5257854f08c63bac4eca95685f36",
+          "CREATION_PROFILE": "large_system_strict",
+          "KNOWN_POLICY_CONFLICTS": [],
+          "NETWORK_ENVIRONMENT_CONSTRAINTS": "repository-default network/environment constraints",
+          "RULE_SOURCES": [
+            "TERMINUS_3_AI_INSTRUCTIONS.md",
+            ".terminus/AGENT_SYSTEM.md",
+            ".terminus/agents/CREATION_CONTROLLER.md",
+            ".terminus/agents/CREATION_PIPELINE.md",
+            ".terminus/agents/PRODUCTION_AUTHENTICITY.md",
+            ".terminus/reviewers/REVIEWER_CHECKLIST.md",
+            ".terminus/agents/QUALITY_AGENT_REGISTRY.md",
+            ".terminus/agents/STAGE_CONTRACTS.md",
+            ".terminus/agents/stage_contracts.json"
+          ]
+        }
+      }
+    },
+    "invocation_id": "inv_c0ad0c45f6120a2f2f77d0740953879fc50cb10362efdfc48423adf72a2781b2",
+    "learning": {
+      "context_hash": "sha256:bb84a513aa2b6e4374d691759c4a6edf94169f479f4611e9091643b9f279ccfc",
+      "lessons": [],
+      "mode": "GENERALIZED_LESSONS_PLUS_OWNED_REMEDIATIONS",
+      "raw_feedback_exposed": false,
+      "raw_historical_findings_exposed": false,
+      "registry_heads": {
+        "feedback": "GENESIS",
+        "findings": "GENESIS",
+        "lessons": "GENESIS",
+        "patterns": "GENESIS",
+        "remediations": "GENESIS"
+      },
+      "remediations": []
+    },
+    "missing_required_inputs": [],
+    "output_contract": {
+      "allowed_status_values": [
+        "ARCHITECTURE_READY",
+        "SCENARIO_TOO_SMALL",
+        "BLOCKED"
+      ],
+      "deterministic_validators": [],
+      "optional_fields": [
+        "RESOURCE_GRAPH",
+        "DATA_VOLUME_PLAN",
+        "UNRESOLVED_RISKS"
+      ],
+      "persisted_artifacts": [],
+      "required_fields": [
+        "COMPONENT_GRAPH",
+        "ENTRYPOINTS",
+        "STATE_MODEL",
+        "SOLVER_VISIBLE_DOC_PLAN",
+        "PRODUCTION_CHARACTERISTICS",
+        "SCALE_FIT"
+      ],
+      "semantic_reviewers": [
+        "Task Architect"
+      ]
+    },
+    "readiness": "READY",
+    "retrieval": {
+      "query": null,
+      "retrieved_chars": 0,
+      "retrieved_context": [],
+      "status": "NOT_REQUESTED"
+    },
+    "routing": {
+      "failure_routes": {
+        "ARCHITECTURE_GAP": "A2 System Architect / Environment Builder",
+        "REQUIREMENT_GAP": "Creation Controller -> work-package/contract owner",
+        "SCENARIO_TOO_SMALL": "Creation Controller -> WORK_PACKAGE_RESEARCH"
+      },
+      "stale_on": [
+        "work-package change",
+        "material operational requirement change",
+        "creation-profile change"
+      ],
+      "success_transition": "DEFECT_TOPOLOGY"
+    },
+    "schema_version": "1.0",
+    "stage": {
+      "lifecycle": "creation",
+      "owner": "A2 System Architect / Environment Builder",
+      "role_class": "PRODUCER",
+      "role_id": "A2_SYSTEM_ARCHITECT",
+      "stage_id": "SYSTEM_ARCHITECTURE"
+    }
+  },
+  "outputs": {
+    "COMPONENT_GRAPH": [
+      "CLI gateway preserves evaluate and verify-permit commands, normalizes package/container/dependency inputs into one canonical AcquisitionRequest, and maps policy outcomes to stable exit codes.",
+      "Surface adapters for OS packages, OCI containers, and build dependencies perform surface-specific canonicalization while delegating all authorization semantics to the shared policy pipeline.",
+      "Artifact identity service canonicalizes source coordinates plus immutable digest identity and rejects missing/ambiguous digest requirements before exception processing.",
+      "Versioned policy snapshot loader owns trusted-source rules, digest requirements, vulnerability policy codes, environment constraints, and the policy-version identity used by downstream evidence.",
+      "Scanner gateway obtains digest-scoped vulnerability evidence through deterministic adapters and exposes explicit unavailable/stale outcomes rather than bypassing policy.",
+      "Durable evidence cache keys entries by artifact digest, policy version, scanner DB revision, and expiry/TTL; only fully matching current evidence can satisfy scanner requirements.",
+      "Exception registry/evaluator accepts only unexpired exact-scope exceptions bound to digest, acquisition surface, environment, and policy code; exceptions cannot override source/digest prerequisites.",
+      "Decision engine applies one ordered fail-closed invariant pipeline: normalize -> source/digest -> scanner/cache -> vulnerability/exception -> ALLOW/DENY.",
+      "Permit service signs keyed ALLOW permits with host secret and binds request ID, instance identity, digest, policy version and expiry; verification enforces signature, scope, expiry and replay state.",
+      "Replay ledger records consumed/verified permit identities under a filesystem lock so duplicate use is rejected across process restart.",
+      "Audit writer appends every ALLOW/DENY decision as a checksummed record, fsyncs before success is reported, and atomically maintains the last-decision/index state without rewriting prior history.",
+      "State/recovery layer owns locks, atomic replace/fsync helpers, corruption detection, cache/replay/index recovery and deterministic startup reconciliation before commands are served.",
+      "Configuration/clock boundary supplies deterministic fixture-controlled time and filesystem paths for offline execution while preserving production-style validation and ownership semantics."
+    ],
+    "DATA_VOLUME_PLAN": {
+      "anti_padding": "Fixtures are sized for realistic policy/recovery interactions and verifier isolation, not duplicated to satisfy complexity floors.",
+      "classification": "Operational security state rather than a primary-business-record database; the 10k-20k primary-business-record default is not a natural fit for this domain.",
+      "starter_plan": "Use deterministic, materially varied policy/source, scanner-evidence, exception, permit and historical audit state across all three surfaces, multiple digests, policy versions, DB revisions, expiry boundaries and decision reason families. Historical audit volume may be in the thousands to exercise replay/recovery/index rebuilding without treating generated data as authored-code scale."
+    },
+    "ENTRYPOINTS": [
+      "artifactguard evaluate <surface/request> -> CLI normalization -> surface adapter -> identity/policy snapshot -> scanner/cache -> exception evaluation -> decision engine -> permit issuance when allowed -> durable audit -> stable CLI result.",
+      "artifactguard verify-permit <permit/request context> -> parse/canonicalize -> keyed signature and exact-scope verification -> expiry/replay check -> durable replay/audit update -> stable CLI result.",
+      "process startup/operator invocation -> validate config and host secret -> acquire state ownership lock -> recover/check audit/cache/replay/index state -> expose command handling only after recovery completes.",
+      "operator inspection through documented state/audit files and normal CLI outputs; no hidden repair-only entrypoint is required for diagnosing policy decisions."
+    ],
+    "PRODUCTION_CHARACTERISTICS": [
+      "One shared policy decision model with differentiated surface adapters instead of manager-specific authorization branches.",
+      "Fail-closed dependency behavior with current scanner evidence and precisely reusable cache entries rather than availability-driven bypass.",
+      "Narrow expiring exception semantics that cannot waive trust/digest prerequisites.",
+      "Authenticated exact-scope permits with cross-restart anti-replay state.",
+      "Crash-safe append-only audit history and rebuildable derived state with explicit corruption/partial-write recovery.",
+      "Stable operator CLI/exit-code and fixture interfaces, deterministic offline execution, meaningful validation/error handling and observable reason codes.",
+      "Runtime reachability through evaluate, verify-permit and startup/recovery paths; no architecture component exists solely to inflate size."
+    ],
+    "RESOURCE_GRAPH": [
+      "Untrusted acquisition request/artifact metadata -> surface adapter -> canonical identity.",
+      "Trusted versioned policy configuration -> policy snapshot -> decision engine.",
+      "Deterministic scanner fixture/adapter -> scanner gateway -> durable evidence cache -> decision engine.",
+      "Solver-visible exception records -> exception evaluator -> decision engine.",
+      "Host secret -> permit signer/verifier; permit verification -> durable replay ledger.",
+      "Decision engine -> append-only audit log -> rebuildable decision index; filesystem state directory and locks are owned by state/recovery layer."
+    ],
+    "SCALE_FIT": {
+      "ASSESSMENT": "VERY_HIGH",
+      "RATIONALE": "The three differentiated acquisition adapters plus shared identity/policy, scanner/cache, exception, permit/replay, audit, persistence/recovery, configuration and CLI responsibilities naturally support well above the 3,000-substantive-reachable-LOC floor. Coupled trust, freshness, scope, durability and restart invariants also provide enough distinct operational states and cross-component failure/recovery surfaces for a strict task without adding unrelated features or quota-driven modules."
+    },
+    "SOLVER_VISIBLE_DOC_PLAN": [
+      "docs/architecture.md: component responsibilities, request flow, trust boundaries, state ownership and runtime/operator entrypoints without diagnosing incomplete implementation.",
+      "docs/policy-contract.md: canonical source/digest, scanner evidence/cache, exception, decision reason-code and permit-scope semantics that are legitimate public engineering contracts.",
+      "docs/state-format.md: audit/cache/replay/index record schemas, checksums, atomicity/durability expectations and recovery ownership.",
+      "docs/operations.md: startup/recovery behavior, state directory layout, deterministic fixture/scanner operation and safe operator inspection/troubleshooting without a repair recipe.",
+      "CLI usage remains discoverable through artifactguard help and concise examples; material engineering goals stay in instruction.md rather than being moved into docs."
+    ],
+    "STATE_MODEL": {
+      "artifact_identity": "Canonical acquisition identity is surface + normalized source + immutable digest; mutable names/tags are descriptive only and never cache/permit identity.",
+      "audit": "Append-only decision log is the authoritative history. Records include decision identity, canonical request/artifact identity, policy/evidence references, reason codes and integrity checksum; prior valid records are never rewritten.",
+      "derived_indices": "Last-decision, replay lookup and cache indexes are derived/rebuildable state written atomically; loss/corruption must not erase authoritative audit history or silently widen access.",
+      "durability_and_concurrency": "Single-writer filesystem locks plus write-temp/fsync/rename/fsync-directory for replaceable state; append+fsync for audit; startup validates/truncates only provably incomplete tail records while preserving valid prefix.",
+      "exceptions": "Solver-visible exception records are immutable-scope grants keyed by digest/surface/environment/policy-code with explicit expiry; invalid, expired or broader records are non-authoritative.",
+      "permits": "ALLOW permits are authenticated envelopes bound to request ID, instance ID, digest, policy version and expiry. Replay consumption is durable state separate from the permit bytes.",
+      "policy_source_of_truth": "Solver-visible versioned policy configuration is authoritative for trusted sources, digest requirements and vulnerability policy semantics. Each evaluation pins one immutable policy snapshot/version.",
+      "scanner_evidence": "Evidence contains digest, scanner DB revision, observed vulnerabilities, observed-at time and expiry. Cache eligibility additionally requires exact policy version and non-expired TTL.",
+      "time": "A validated clock abstraction provides production wall-clock semantics and deterministic fixture time in the task, so expiry/TTL decisions are reproducible."
+    },
+    "UNRESOLVED_RISKS": [
+      "Environment materialization must keep package/container/dependency adapters behaviorally differentiated and runtime-reachable rather than copied wrappers around one template.",
+      "A3 must derive defect topology from these clean invariants without exposing private defect IDs or turning solver-visible technical docs into a repair map.",
+      "Replay identity and audit-tail recovery need a precise solver-visible record contract so legitimate restart/recovery behavior is discoverable without hidden knowledge.",
+      "Offline deterministic scanner fixtures must preserve realistic unavailable/stale/DB-revision semantics without introducing a live network dependency.",
+      "The environment builder must verify that state locking and fsync/atomic-replace behavior is portable in the task container filesystem while preserving required durability semantics."
+    ]
+  },
+  "record_id": "rec_84d2bd981552d5c7dc5e299dd4ae54a8463c66d3d6f56fcdce89b048ce560737",
+  "role_id": "A2_SYSTEM_ARCHITECT",
+  "schema_version": "1.0",
+  "stage_id": "SYSTEM_ARCHITECTURE",
+  "status": "ARCHITECTURE_READY",
+  "task_lineage": {
+    "input_task_commit": "8836f886d7cfc7f2747264026da31d1dfa49c658",
+    "output_task_commit": "8836f886d7cfc7f2747264026da31d1dfa49c658",
+    "task_changed": false
+  },
+  "transition": {
+    "action": "ADVANCE",
+    "requires_state_validation": false,
+    "target": "DEFECT_TOPOLOGY",
+    "target_kind": "STAGE"
+  },
+  "validation": {
+    "acceptance_predicates_satisfied": true,
+    "evidence_binding_satisfied": true,
+    "evidence_refs_count": 2,
+    "invocation_identity_valid": true,
+    "invocation_policy_valid": true,
+    "output_keys_valid": true,
+    "required_outputs_satisfied": true,
+    "retrieval_context_authorized": true,
+    "status_legal": true,
+    "task_commit_change_authorized": true,
+    "task_lineage_valid": true
+  }
+}
