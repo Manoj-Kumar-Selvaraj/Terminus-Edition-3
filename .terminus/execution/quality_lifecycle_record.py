@@ -62,6 +62,14 @@ def _run_ref(run_id: str, label: str, path: Path) -> dict[str, str]:
     }
 
 
+def _commit_ref(task_commit: str) -> dict[str, str]:
+    """Anchor external review hashes to the immutable task snapshot they judged."""
+    return {
+        "kind": "COMMIT",
+        "ref": f"commit:{task_commit}",
+    }
+
+
 def _review_ready(review: Mapping[str, Any], role: str) -> bool:
     return (
         review.get("role") == role
@@ -172,6 +180,7 @@ def build_interlock_envelopes(
         "status": "BLOCKED",
         "outputs": outputs,
         "evidence_refs": [
+            _commit_ref(task_commit),
             _run_ref(run_id, "q4", q4_review_path),
             _run_ref(run_id, "q6", q6_review_path),
         ],
@@ -247,7 +256,10 @@ def build_q8_envelopes(
         "output_task_commit": task_commit,
         "status": execution,
         "outputs": role_output,
-        "evidence_refs": [_run_ref(run_id, "q8", review_path)],
+        "evidence_refs": [
+            _commit_ref(task_commit),
+            _run_ref(run_id, "q8", review_path),
+        ],
     }
     return invocation, result
 
