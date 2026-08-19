@@ -24,7 +24,6 @@ jobs:
   execute-controller-stage:
     name: Execute deterministic controller stage
     runs-on: ubuntu-latest
-    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
         with:
@@ -167,7 +166,7 @@ jobs:
               handle.write('\n')
           PY
 
-      - name: Execute bounded controller stage
+      - name: Execute controller stage
         shell: bash
         env:
           WORK: ${{ steps.request.outputs.work }}

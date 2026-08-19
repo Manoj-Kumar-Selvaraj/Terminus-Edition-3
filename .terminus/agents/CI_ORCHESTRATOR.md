@@ -49,6 +49,7 @@ The invocation supplies a task name. Before routing work:
 3. Read, in order:
    - `.terminus/AGENT_SYSTEM.md`;
    - this file;
+   - `.terminus/agents/TIME_BUDGET_POLICY.md`;
    - `.terminus/CONTINUE_SESSION.md`;
    - `.terminus/agents/PROTOCOL.md`;
    - `.terminus/agents/Q4_CLOSURE_POLICY.md`;
@@ -135,6 +136,8 @@ For these stages the workflow, not a manually opened reviewer chat, owns model e
 
 `RULE_RESOLUTION`, `SPEC_ALIGNMENT`, `MODEL_DIAGNOSTIC_AGGREGATE` and other registered `CONTROLLER` stages are not fresh-role boundaries merely because the controller generated a StageInvocation. The Orchestrator executes their controller decision right itself and must not impersonate any producer/reviewer that a failure route may subsequently require.
 
+When a hosted controller stage is dispatched through a `terminus-controller-request/...` branch, preserve the exact request commit returned by the Git write. The controller run-index workflow persists operational polling metadata on that request branch at `.terminus/controller-run-locators/<task>/<request-commit>.json`. Read that locator to obtain the exact workflow run ID, run number, attempt, numeric job ID when available, status and conclusion. The locator is not lifecycle PASS evidence; it exists so the Orchestrator can poll one exact execution without guessing or redispatching.
+
 A `NEXT_AGENT_PROMPT` is therefore required only when execution mode is `FRESH_ROLE_CHAT`. For `ORCHESTRATOR_DIRECT`, `AUTOMATED_QUALITY`, external dispatch/await, or terminal state, return `NEXT_AGENT_PROMPT: none`.
 
 ## Cursor local execution
@@ -197,34 +200,37 @@ For every relied-upon workflow, record:
 - relevant log or artifact IDs;
 - the exact gate/stage and validator the evidence supports.
 
+For hosted controller request-branch dispatches, also record the request branch, request commit, and controller run-locator path. Once a run/job locator exists, reuse those exact identifiers on every poll instead of rediscovering by branch name or elapsed time.
+
 A green check is a pointer to evidence, not proof by itself. Confirm that the run covers the current task commit and the required validator/test surface. Do not use an unrelated branch run, a superseded attempt, a validation-only marker commit with different task content, or a workflow that omitted the required job.
 
 On failure, preserve the first meaningful error before rerunning. Classify the owner from evidence. Retry only when there is new evidence or a credible transient infrastructure explanation. A workflow invokes a model only when its code explicitly calls a model service; ordinary tests and validators remain deterministic.
 
 For automated Q workflows, inspect whether the persistent budget claim occurred before any rerun decision. Once a durable claim exists and model execution begins, the slot is consumed even if later execution fails. Never use a provider switch, workflow rerun or new dispatch to evade a semantic `REVISE` or a consumed budget slot.
 
-## Bounded active-chat polling
+## Active-chat polling
 
-When the user asks to wait for or monitor a relevant GitHub Actions run whose status is `queued` or `in_progress`, or when the Orchestrator has just dispatched an already-authorized lifecycle workflow and advancement depends on its result, the Orchestrator may keep the current chat turn open and poll read-only Actions evidence. This is bounded foreground work, not a permanent watcher or unattended background service.
+When the user asks to wait for or monitor a relevant GitHub Actions run whose status is `queued` or `in_progress`, or when the Orchestrator has just dispatched an already-authorized lifecycle workflow and advancement depends on its result, keep polling read-only Actions evidence while the active chat/tool surface permits. Foreground polling cadence is operational guidance, not lifecycle time enforcement.
 
-Use these limits unless the user gives a smaller bound:
+Suggested cadence:
 
 - `POLL_INTERVAL_SECONDS: 30`
-- `MAX_POLL_MINUTES: 20`
 - `PROGRESS_UPDATE_SECONDS: 120`
 
-During the polling window:
+There is no policy `MAX_POLL_MINUTES`. A seven-hour task guideline is advisory only and does not terminate a stage, a queued workflow, or an Orchestrator polling loop.
 
-1. Record the repository, PR, head SHA, workflow run ID, run number, attempt and current status before waiting.
-2. Re-read only the relevant run/jobs at the polling interval. Deduplicate unchanged snapshots by run ID, attempt, head SHA, status and conclusion.
-3. Send a concise progress update at least every progress interval and immediately when state changes.
-4. Stop when the run reaches a terminal conclusion, the PR head SHA changes, the user interrupts, required access fails, or the time limit is reached.
+During active polling:
+
+1. Record the repository, PR, head SHA, workflow run ID, run number, attempt, numeric job ID when available, and current status before waiting. For hosted controller dispatches, obtain these from the durable request-branch run locator when available.
+2. Re-read only the exact relevant run/job. Deduplicate unchanged snapshots by run ID, job ID, attempt, head SHA, status and conclusion.
+3. Send concise progress updates periodically and immediately when state changes; the suggested two-minute cadence is not an acceptance or timeout rule.
+4. Stop active polling when the run reaches a terminal conclusion, the PR/head SHA changes in a way that supersedes the run, the user interrupts, required access fails, or the active chat/tool surface itself can no longer continue.
 5. On terminal completion, inspect only the job steps, logs and artifacts needed to classify the first meaningful result and route the next owner.
-6. On head-SHA change, discard the superseded run as advancement evidence and reconcile the new head before continuing.
-7. On timeout, return `PENDING` with the exact run identifiers, last observed state and a resume prompt. Do not label an ordinary still-running job `BLOCKED`.
+6. On head-SHA change, discard a genuinely superseded run as advancement evidence and reconcile the new head before continuing.
+7. If the active execution surface ends before terminal completion, return `PENDING` with the exact persisted run/job identifiers and locator path. Do not label an ordinary queued/running job `BLOCKED`, and do not redispatch merely because foreground waiting ended.
 8. Polling itself must not rerun, cancel or create an additional workflow dispatch; merge or publish unrelated changes; or launch Codex, ChatGPT Work, Harbor or another model/API trial. Initial model-backed dispatch still requires the applicable authorization and budget preflight.
 
-A normal chat cannot wake itself after its active turn ends. If monitoring must continue unattended or beyond the bound, route it to an event-driven GitHub Actions `workflow_run` controller or an explicitly configured automation.
+A normal chat cannot wake itself after its active turn ends. Durable run/job locators exist so a later Orchestrator turn can resume polling the same execution deterministically rather than creating a duplicate run.
 
 ## Routing
 

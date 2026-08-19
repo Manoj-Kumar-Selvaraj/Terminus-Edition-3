@@ -11,6 +11,7 @@ PORTABLE = T / "agents" / "CI_ORCHESTRATOR.md"
 PROJECT_AGENT = ROOT / ".cursor" / "agents" / "terminus-ci-orchestrator.md"
 QUALITY_LIFECYCLE = ROOT / ".github" / "workflows" / "terminus-quality-lifecycle.yml"
 CONTROLLER_STAGE_WORKFLOW = ROOT / ".github" / "workflows" / "terminus-controller-stage.yml"
+CONTROLLER_RUN_LOCATOR = ROOT / ".github" / "workflows" / "terminus-controller-run-locator.yml"
 CONTROLLER_CLI = T / "execution" / "controller_cli.py"
 CONTROLLER_STAGE_CLI = T / "execution" / "controller_stage_cli.py"
 
@@ -27,7 +28,7 @@ def test_portable_orchestrator_contract_is_complete() -> None:
         "## Control loop",
         "## Gate order",
         "## GitHub Actions evidence",
-        "## Bounded active-chat polling",
+        "## Active-chat polling",
         "## Routing",
         "## Review packets and independence",
         "## Write boundary",
@@ -151,20 +152,64 @@ def test_cursor_agent_uses_attached_laptop_for_preflight() -> None:
         assert marker in project_agent
 
 
-def test_orchestrator_bounds_active_chat_polling() -> None:
+def test_orchestrator_polling_is_non_blocking_and_resumable() -> None:
     portable = PORTABLE.read_text(encoding="utf-8")
     project_agent = PROJECT_AGENT.read_text(encoding="utf-8")
     for marker in (
         "POLL_INTERVAL_SECONDS: 30",
-        "MAX_POLL_MINUTES: 20",
         "PROGRESS_UPDATE_SECONDS: 120",
+        "There is no policy `MAX_POLL_MINUTES`",
+        ".terminus/controller-run-locators/",
+        "numeric job ID",
         "Deduplicate unchanged snapshots",
         "A normal chat cannot wake itself after its active turn ends",
         "POLLING_STATUS",
     ):
         assert marker in portable
-    assert "bounded active-chat polling contract" in project_agent
-    assert "never claim unattended background monitoring" in project_agent
+    assert "MAX_POLL_MINUTES: 20" not in portable
+    for marker in (
+        "seven hours",
+        ".terminus/controller-run-locators/",
+        "suggestions only",
+        "unattended background monitoring",
+    ):
+        assert marker in project_agent
+
+
+def test_controller_run_locator_persists_exact_run_and_job_identity() -> None:
+    workflow = CONTROLLER_RUN_LOCATOR.read_text(encoding="utf-8")
+    for marker in (
+        "workflow_run:",
+        'workflows: ["Terminus Controller Stage"]',
+        "requested",
+        "in_progress",
+        "completed",
+        "terminus-controller-request/",
+        ".terminus/controller-run-locators/",
+        "actions/runs/$RUN_ID/jobs?per_page=100",
+        "Execute deterministic controller stage",
+        "request_commit",
+        "run_id",
+        "run_number",
+        "run_attempt",
+        "job_id",
+    ):
+        assert marker in workflow
+    for forbidden in (
+        "CURSOR_API_KEY",
+        "OPENAI_API_KEY",
+        "ANTHROPIC_API_KEY",
+        "STB_AI_API_KEY",
+        "terminus-quality-executor.yml",
+        "stb keys refresh",
+    ):
+        assert forbidden not in workflow
+
+
+def test_controller_stage_has_no_policy_time_limit() -> None:
+    workflow = CONTROLLER_STAGE_WORKFLOW.read_text(encoding="utf-8")
+    assert "timeout-minutes:" not in workflow
+    assert "Execute controller stage" in workflow
 
 
 def test_project_agent_frontmatter_and_contract_reference() -> None:

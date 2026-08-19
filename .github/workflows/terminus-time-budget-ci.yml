@@ -6,8 +6,14 @@ on:
       - '.terminus/execution/time_budget.py'
       - '.terminus/execution/budget_controller_cli.py'
       - '.terminus/tests/test_time_budget.py'
+      - '.terminus/tests/test_ci_orchestrator_agent.py'
+      - '.terminus/tests/test_controller_stage_automation.py'
       - '.terminus/agents/TIME_BUDGET_POLICY.md'
+      - '.terminus/agents/CI_ORCHESTRATOR.md'
+      - '.terminus/validate_agent_system.py'
       - '.cursor/agents/terminus-ci-orchestrator.md'
+      - '.github/workflows/terminus-controller-stage.yml'
+      - '.github/workflows/terminus-controller-run-locator.yml'
       - '.github/workflows/terminus-time-budget-ci.yml'
   push:
     branches: [main]
@@ -15,8 +21,14 @@ on:
       - '.terminus/execution/time_budget.py'
       - '.terminus/execution/budget_controller_cli.py'
       - '.terminus/tests/test_time_budget.py'
+      - '.terminus/tests/test_ci_orchestrator_agent.py'
+      - '.terminus/tests/test_controller_stage_automation.py'
       - '.terminus/agents/TIME_BUDGET_POLICY.md'
+      - '.terminus/agents/CI_ORCHESTRATOR.md'
+      - '.terminus/validate_agent_system.py'
       - '.cursor/agents/terminus-ci-orchestrator.md'
+      - '.github/workflows/terminus-controller-stage.yml'
+      - '.github/workflows/terminus-controller-run-locator.yml'
       - '.github/workflows/terminus-time-budget-ci.yml'
 
 permissions:
@@ -32,20 +44,28 @@ jobs:
           python-version: '3.13'
       - name: Install pinned test tools
         run: python -m pip install --quiet ruff==0.14.10 pytest==8.4.1 jsonschema==4.23.0
-      - name: Compile budget controller
+      - name: Compile advisory timing controller
         run: |
           python -m py_compile \
             .terminus/execution/time_budget.py \
             .terminus/execution/budget_controller_cli.py
-      - name: Lint budget controller
+      - name: Lint advisory timing controller
         run: |
           ruff check \
             .terminus/execution/time_budget.py \
             .terminus/execution/budget_controller_cli.py \
-            .terminus/tests/test_time_budget.py
-      - name: Run budget accounting tests
+            .terminus/tests/test_time_budget.py \
+            .terminus/tests/test_ci_orchestrator_agent.py
+      - name: Run advisory timing and orchestrator regressions
         env:
           PYTHONPATH: .terminus
-        run: python -m pytest .terminus/tests/test_time_budget.py -q
-      - name: Smoke budget CLI
+        run: |
+          python -m pytest \
+            .terminus/tests/test_time_budget.py \
+            .terminus/tests/test_ci_orchestrator_agent.py \
+            .terminus/tests/test_controller_stage_automation.py \
+            -q
+      - name: Validate agent-system polling contract
+        run: python .terminus/validate_agent_system.py
+      - name: Smoke timing CLI
         run: python .terminus/execution/budget_controller_cli.py --help >/dev/null

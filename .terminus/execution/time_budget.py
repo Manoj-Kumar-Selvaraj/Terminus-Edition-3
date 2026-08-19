@@ -1,9 +1,8 @@
-"""Durable task-time accounting and adaptive budget projection.
+"""Durable task-time telemetry with non-blocking advisory guidance.
 
-This module is intentionally orthogonal to semantic acceptance. It never marks a
-quality gate PASS or waives a mandatory stage. It only accounts active work,
-projects burn-rate guidance, and blocks further routing at the hard limit until
-a human-approved extension is recorded.
+Time accounting is intentionally orthogonal to lifecycle authority. It may help
+an orchestrator understand where time is being spent, but elapsed time never
+changes gate state, blocks a stage, requests an extension, or weakens quality.
 """
 
 from __future__ import annotations
@@ -19,8 +18,10 @@ import re
 from typing import Any, Mapping
 
 _TASK_ID = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]*$")
-DEFAULT_TARGET_SECONDS = 4 * 60 * 60
-DEFAULT_HARD_SECONDS = 5 * 60 * 60
+DEFAULT_GUIDANCE_SECONDS = 7 * 60 * 60
+# Compatibility alias for callers that previously consumed the target field.
+DEFAULT_TARGET_SECONDS = DEFAULT_GUIDANCE_SECONDS
+DEFAULT_HARD_SECONDS: int | None = None
 DEFAULT_EXTENSION_MINUTES = 60
 MIN_EXTENSION_MINUTES = 5
 MAX_EXTENSION_MINUTES = 8 * 60
@@ -69,20 +70,26 @@ def _stable_id(prefix: str, value: Mapping[str, Any]) -> str:
 
 @dataclass(frozen=True)
 class BudgetPolicy:
-    target_seconds: int = DEFAULT_TARGET_SECONDS
-    hard_seconds: int = DEFAULT_HARD_SECONDS
+    """Advisory task-duration guidance.
+
+    ``hard_seconds`` is retained only as a compatibility input for older callers.
+    It is never enforced and is not projected as a lifecycle limit.
+    """
+
+    target_seconds: int = DEFAULT_GUIDANCE_SECONDS
+    hard_seconds: int | None = DEFAULT_HARD_SECONDS
 
     def __post_init__(self) -> None:
         if self.target_seconds <= 0:
             raise ValueError("target_seconds must be positive")
-        if self.hard_seconds < self.target_seconds:
-            raise ValueError("hard_seconds must be >= target_seconds")
+        if self.hard_seconds is not None and self.hard_seconds <= 0:
+            raise ValueError("hard_seconds must be positive when supplied")
 
 
 class TaskTimeBudget:
-    """Append-only timing ledger plus human-approved budget extensions."""
+    """Append-only timing telemetry plus advisory task-duration projection."""
 
-    schema_version = "1.0"
+    schema_version = "1.1"
 
     def __init__(
         self,
@@ -109,6 +116,7 @@ class TaskTimeBudget:
         source: str = "MANUAL_CHAT",
         started_at: datetime | None = None,
     ) -> dict[str, Any]:
+        """Optionally start a telemetry span; this never grants routing authority."""
         if not isinstance(stage_id, str) or not stage_id.strip():
             raise ValueError("stage_id must be non-empty")
         if self.active_span() is not None:
@@ -200,6 +208,11 @@ class TaskTimeBudget:
         reason: str = "",
         approved_at: datetime | None = None,
     ) -> dict[str, Any]:
+        """Record legacy advisory metadata without changing lifecycle routing.
+
+        Extensions are retained for backward compatibility with existing ledgers.
+        The seven-hour guidance remains advisory and does not require extension.
+        """
         if minutes < MIN_EXTENSION_MINUTES or minutes > MAX_EXTENSION_MINUTES:
             raise ValueError(
                 f"extension minutes must be between {MIN_EXTENSION_MINUTES} "
@@ -215,6 +228,7 @@ class TaskTimeBudget:
             "approved_by": approved_by.strip(),
             "reason": str(reason).strip(),
             "approved_at": _iso(approved_at or _utcnow()),
+            "advisory_only": True,
         }
         payload["extension_id"] = _stable_id("extension", payload)
         self._append(self.extensions_path, payload)
@@ -262,23 +276,11 @@ class TaskTimeBudget:
                 run_events += 1
 
         extensions = self._read(self.extensions_path)
-        extension_seconds = sum(int(row.get("seconds", 0)) for row in extensions)
-        target = self.policy.target_seconds + extension_seconds
-        hard = self.policy.hard_seconds + extension_seconds
-        target_remaining = max(0, target - consumed)
-        hard_remaining = max(0, hard - consumed)
-        burn_ratio = consumed / target if target else 1.0
-
-        if consumed >= hard:
-            mode = "HARD_LIMIT"
-        elif consumed >= target or burn_ratio >= 0.85:
-            mode = "CRITICAL"
-        elif burn_ratio >= 0.70:
-            mode = "CONSERVE"
-        elif burn_ratio >= 0.50:
-            mode = "BUDGET_AWARE"
-        else:
-            mode = "NORMAL"
+        legacy_extension_seconds = sum(int(row.get("seconds", 0)) for row in extensions)
+        guidance = self.policy.target_seconds
+        remaining = max(0, guidance - consumed)
+        burn_ratio = consumed / guidance if guidance else 0.0
+        guidance_exceeded = consumed > guidance
 
         active = self.active_span()
         active_view: dict[str, Any] | None = None
@@ -295,31 +297,26 @@ class TaskTimeBudget:
             active_view = dict(active)
             active_view["elapsed_wall_seconds"] = elapsed
 
-        recommended = None
-        if remaining_mandatory_stages:
-            planning_pool = target_remaining if target_remaining > 0 else hard_remaining
-            recommended = max(0, planning_pool // remaining_mandatory_stages)
-
-        request_extension = consumed >= hard
         return {
             "schema_version": self.schema_version,
             "task_id": self.task_id,
-            "target_seconds": target,
-            "hard_limit_seconds": hard,
-            "base_target_seconds": self.policy.target_seconds,
-            "base_hard_limit_seconds": self.policy.hard_seconds,
-            "extension_seconds": extension_seconds,
+            "enforcement": "ADVISORY_ONLY",
+            "guidance_seconds": guidance,
+            "target_seconds": guidance,
+            "hard_limit_seconds": None,
+            "base_target_seconds": guidance,
+            "base_hard_limit_seconds": None,
+            "extension_seconds": legacy_extension_seconds,
             "consumed_seconds": consumed,
-            "target_remaining_seconds": target_remaining,
-            "hard_remaining_seconds": hard_remaining,
+            "target_remaining_seconds": remaining,
+            "hard_remaining_seconds": None,
             "burn_ratio": round(burn_ratio, 4),
-            "mode": mode,
+            "mode": "ADVISORY_OVER_GUIDANCE" if guidance_exceeded else "ADVISORY",
+            "guidance_exceeded": guidance_exceeded,
             "remaining_mandatory_stages": remaining_mandatory_stages,
-            "recommended_next_stage_seconds": recommended,
-            "request_time_extension": request_extension,
-            "suggested_extension_minutes": (
-                DEFAULT_EXTENSION_MINUTES if request_extension else None
-            ),
+            "recommended_next_stage_seconds": None,
+            "request_time_extension": False,
+            "suggested_extension_minutes": None,
             "stage_totals_seconds": dict(sorted(totals.items())),
             "category_totals_seconds": dict(sorted(categories.items())),
             "completed_stage_spans": completed_spans,
@@ -329,6 +326,7 @@ class TaskTimeBudget:
         }
 
     def project_workflow(self, snapshot: Mapping[str, Any]) -> dict[str, Any]:
+        """Attach telemetry without ever changing the controller's next action."""
         projected = json.loads(json.dumps(snapshot))
         nodes = projected.get("nodes", [])
         remaining = sum(
@@ -338,25 +336,7 @@ class TaskTimeBudget:
             and node.get("node_kind") == "STAGE"
             and node.get("status") != "CURRENT"
         )
-        budget = self.snapshot(remaining_mandatory_stages=remaining)
-        projected["time_budget"] = budget
-        next_action = projected.get("next")
-        if (
-            budget["request_time_extension"]
-            and isinstance(next_action, dict)
-            and next_action.get("action") != "END"
-        ):
-            projected["next"] = {
-                "action": "REQUEST_TIME_EXTENSION",
-                "task_id": self.task_id,
-                "consumed_seconds": budget["consumed_seconds"],
-                "hard_limit_seconds": budget["hard_limit_seconds"],
-                "suggested_extension_minutes": budget["suggested_extension_minutes"],
-                "blocking_reason": (
-                    "task hard time budget reached; obtain explicit human approval "
-                    "before continuing mandatory work"
-                ),
-            }
+        projected["time_budget"] = self.snapshot(remaining_mandatory_stages=remaining)
         return projected
 
     def _category(self, value: str) -> str:
