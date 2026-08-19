@@ -17,6 +17,7 @@ if __package__ in {None, ""}:
     from execution.external_gate import project_external_state, validate_external_result
     from execution.invocation import StageInvocationBuilder
     from execution.ledger import ExecutionLedger
+    from execution.quality_mode import inline_execution_mode, resolve_quality_execution_modes
     from execution.record import ExecutionRecordBuilder
     from execution.runner import ExecutorRunner
     from execution.state import WorkflowStateResolver
@@ -28,6 +29,7 @@ else:
     from .external_gate import project_external_state, validate_external_result
     from .invocation import StageInvocationBuilder
     from .ledger import ExecutionLedger
+    from .quality_mode import inline_execution_mode, resolve_quality_execution_modes
     from .record import ExecutionRecordBuilder
     from .runner import ExecutorRunner
     from .state import WorkflowStateResolver
@@ -123,6 +125,16 @@ def build_parser() -> argparse.ArgumentParser:
     continue_parser.add_argument("--retrieval-limit", type=int, default=10)
     continue_parser.add_argument("--max-chars", type=int, default=30000)
     continue_parser.add_argument(
+        "--q4-q6-mode",
+        choices=["AUTOMATED", "MANUAL"],
+        help="override TERMINUS_Q4_Q6_MODE for this controller continuation",
+    )
+    continue_parser.add_argument(
+        "--q8-mode",
+        choices=["OFF", "AUTOMATED", "MANUAL"],
+        help="override TERMINUS_Q8_MODE for this controller continuation",
+    )
+    continue_parser.add_argument(
         "--prepare-executor",
         choices=[mode.value for mode in ExecutorMode],
         help="explicitly prepare a non-mutating executor handoff instead of the default hosted controller route",
@@ -174,27 +186,133 @@ def _resolve_state(
     return resolver, durable_snapshot, controller_view
 
 
-def _quality_lifecycle_dispatch(args: argparse.Namespace, stage_id: str) -> dict[str, Any]:
+def _quality_lifecycle_dispatch(
+    root: Path, args: argparse.Namespace, stage_id: str
+) -> dict[str, Any]:
+    policy = resolve_quality_execution_modes(
+        root,
+        q4_q6_override=getattr(args, "q4_q6_mode", None),
+        q8_override=getattr(args, "q8_mode", None),
+    )
     roles = QUALITY_LIFECYCLE_STAGES[stage_id]
     budgets = {
         "QUALITY_INTERLOCK": {"Q4": 3, "Q6": 2},
         "MODEL_DIAGNOSTIC_GPT": {"Q8_GPT": 1},
         "MODEL_DIAGNOSTIC_CLAUDE": {"Q8_CLAUDE": 1},
     }[stage_id]
-    return {
-        "status": "READY_TO_DISPATCH",
+
+    if stage_id == "QUALITY_INTERLOCK":
+        mode = str(policy["q4_q6_mode"])
+        mandatory = True
+    else:
+        mode = str(policy["q8_mode"])
+        mandatory = False
+
+    common: dict[str, Any] = {
         "stage_id": stage_id,
         "quality_lifecycle": True,
+        "quality_role_keys": list(roles),
+        "budget_limits": budgets,
+        "quality_mode_policy": policy,
+        "independent": True,
+        "mandatory": mandatory,
+        "credential_policy": "existing selected secret only; login/refresh/fallback forbidden",
+    }
+
+    if mode == "MANUAL":
+        return {
+            **common,
+            "status": "MANUAL_REVIEW_REQUIRED",
+            "execution_mode": "MANUAL_INDEPENDENT_QUALITY",
+            "model_backed_workflow": False,
+            "budget_policy": (
+                "manual independent attempts remain subject to the same durable per-task role budget; "
+                "the Orchestrator must not treat a manual result as canonical until its attempt provenance is recorded"
+            ),
+            "handoff_policy": "fresh isolated reviewer chat; never the producer/orchestrator context",
+        }
+
+    q8_mode = mode if stage_id != "QUALITY_INTERLOCK" else str(policy["q8_mode"])
+    model_backed = stage_id == "QUALITY_INTERLOCK" or q8_mode == "AUTOMATED"
+    execute_optional_q8 = stage_id != "QUALITY_INTERLOCK" and q8_mode == "AUTOMATED"
+    return {
+        **common,
+        "status": "READY_TO_DISPATCH",
+        "execution_mode": "AUTOMATED_QUALITY" if model_backed else "AUTOMATED_NO_MODEL_SKIP",
+        "model_backed_workflow": model_backed,
         "workflow": QUALITY_LIFECYCLE_WORKFLOW,
         "inputs": {
             "task": args.task_id,
             "stage": stage_id,
             "publish_results": True,
+            "execute_optional_q8": execute_optional_q8,
         },
-        "quality_role_keys": list(roles),
-        "budget_limits": budgets,
-        "backend_selection": "repository Q_*_ENABLED variables; exactly one backend",
-        "credential_policy": "existing selected secret only; login/refresh/fallback forbidden",
+        "backend_selection": (
+            "repository Q_*_ENABLED variables; exactly one backend"
+            if model_backed
+            else "none; optional Q8 is recorded as SIMULATION_NOT_EXECUTED"
+        ),
+    }
+
+
+def _inline_specialist_sequence(
+    policy: dict[str, Any],
+    stage_id: str,
+    packet: dict[str, Any],
+) -> dict[str, Any] | None:
+    """Project mandatory producer-side semantic checks into the persistent task chat."""
+    sequences = policy.get("inline_stage_sequences")
+    if not isinstance(sequences, dict):
+        raise ValueError("quality mode policy is missing inline_stage_sequences")
+    raw_steps = sequences.get(stage_id)
+    if raw_steps is None:
+        return None
+    if not isinstance(raw_steps, list) or not raw_steps:
+        raise ValueError(f"inline specialist sequence is empty for {stage_id}")
+    stage = packet.get("stage")
+    if not isinstance(stage, dict) or stage.get("role_class") != "CONTROLLER":
+        raise ValueError("inline specialist sequence must aggregate through a CONTROLLER stage")
+    reviewers = packet.get("output_contract", {}).get("semantic_reviewers", [])
+    if not isinstance(reviewers, list) or not reviewers:
+        raise ValueError("inline specialist sequence requires declared semantic reviewers")
+
+    steps: list[dict[str, Any]] = []
+    for ordinal, raw in enumerate(raw_steps, start=1):
+        if not isinstance(raw, dict):
+            raise ValueError(f"invalid inline specialist step for {stage_id}")
+        steps.append(
+            {
+                "ordinal": ordinal,
+                "role_id": str(raw["role_id"]),
+                "execution_mode": "INLINE_SPECIALIST",
+                "same_chat": True,
+                "independent_acceptance": False,
+                "result_field": str(raw["result_field"]),
+                "satisfied_values": [str(value) for value in raw["satisfied_values"]],
+                "evidence_boundary": "inherit the exact aggregate StageInvocation inputs/evidence; no expansion",
+                "mutation_policy": (
+                    "evaluate only during this aggregate pass; if repair is required, return the finding "
+                    "to the aggregate controller so the repair is routed under fresh task-commit authority"
+                ),
+            }
+        )
+
+    return {
+        "status": (
+            "READY_FOR_INLINE_SPECIALISTS"
+            if packet.get("readiness") == "READY"
+            else "BLOCKED"
+        ),
+        "stage_id": stage_id,
+        "execution_mode": "INLINE_SPECIALIST_SEQUENCE",
+        "same_chat": True,
+        "aggregate_invocation_id": packet.get("invocation_id"),
+        "aggregate_owner_role_id": stage.get("role_id"),
+        "steps": steps,
+        "recording_policy": (
+            "freeze the listed specialist outputs in order, then emit exactly one aggregate StageResult; "
+            "substeps are producer-side quality checks, not independent acceptance records"
+        ),
     }
 
 
@@ -212,6 +330,7 @@ def _controller_stage_dispatch(
     return {
         "status": "READY_TO_DISPATCH",
         "stage_id": packet["stage"]["stage_id"],
+        "execution_mode": "HOSTED_CONTROLLER",
         "controller_stage": True,
         "model_backed": False,
         "workflow": CONTROLLER_STAGE_WORKFLOW,
@@ -244,6 +363,7 @@ def _continue_payload(
     if next_action["action"] == "AWAIT_EXTERNAL_GATE":
         payload["invocation"] = None
         payload["executor_handoff"] = None
+        payload["execution_mode"] = "EXTERNAL_GATE"
         payload["dispatch"] = {
             "status": "AWAITING_EXTERNAL_RESULT",
             "stage_id": next_action["stage_id"],
@@ -267,7 +387,9 @@ def _continue_payload(
     ):
         payload["invocation"] = None
         payload["executor_handoff"] = None
-        payload["dispatch"] = _quality_lifecycle_dispatch(args, stage_id)
+        dispatch = _quality_lifecycle_dispatch(root, args, stage_id)
+        payload["execution_mode"] = dispatch["execution_mode"]
+        payload["dispatch"] = dispatch
         return payload
 
     role_id = str(next_action["primary_role_id"])
@@ -289,7 +411,31 @@ def _continue_payload(
     )
     payload["invocation"] = packet
     payload["executor_handoff"] = None
+
+    policy = resolve_quality_execution_modes(
+        root,
+        q4_q6_override=getattr(args, "q4_q6_mode", None),
+        q8_override=getattr(args, "q8_mode", None),
+    )
+    role_class = str(packet.get("stage", {}).get("role_class") or "")
+    payload["execution_mode"] = inline_execution_mode(
+        policy,
+        role_class=role_class,
+        role_id=role_id,
+    )
+    payload["quality_mode_policy"] = policy
+
+    inline_sequence = _inline_specialist_sequence(policy, stage_id, packet)
+    if inline_sequence is not None and next_action["action"] in {
+        "INVOKE_STAGE",
+        "RETRY_STAGE",
+    }:
+        payload["execution_mode"] = inline_sequence["execution_mode"]
+        payload["inline_specialist_sequence"] = inline_sequence
+        return payload
+
     if next_action["action"] == "DISPATCH_EXTERNAL_GATE":
+        payload["execution_mode"] = "EXTERNAL_GATE"
         payload["dispatch"] = {
             "status": "READY_TO_DISPATCH" if packet.get("readiness") == "READY" else "BLOCKED",
             "stage_id": stage_id,
@@ -308,7 +454,9 @@ def _continue_payload(
             raise ValueError("automated controller stage must have CONTROLLER role_class")
         if packet.get("output_contract", {}).get("semantic_reviewers"):
             raise ValueError("automated controller stage cannot replace semantic reviewers")
-        payload["dispatch"] = _controller_stage_dispatch(root, args, packet, inputs)
+        dispatch = _controller_stage_dispatch(root, args, packet, inputs)
+        payload["execution_mode"] = dispatch["execution_mode"]
+        payload["dispatch"] = dispatch
         return payload
 
     if executor_mode and packet.get("readiness") == "READY":
@@ -357,7 +505,7 @@ def main(argv: list[str] | None = None) -> int:
             return 0 if invocation.get("readiness") == "READY" else 2
         dispatch = payload.get("dispatch")
         if isinstance(dispatch, dict):
-            return 0 if dispatch.get("status") == "READY_TO_DISPATCH" else 2
+            return 0 if dispatch.get("status") in {"READY_TO_DISPATCH", "MANUAL_REVIEW_REQUIRED"} else 2
         return 0 if controller_view["next"]["action"] == "END" else 2
 
     invocation = _json_object(args.invocation, "--invocation")

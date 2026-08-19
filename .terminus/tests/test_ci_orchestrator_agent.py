@@ -8,6 +8,8 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 T = ROOT / ".terminus"
 PORTABLE = T / "agents" / "CI_ORCHESTRATOR.md"
+QUALITY_MODE = T / "agents" / "QUALITY_EXECUTION_MODE.md"
+QUALITY_MODE_JSON = T / "agents" / "quality_execution_mode.json"
 PROJECT_AGENT = ROOT / ".cursor" / "agents" / "terminus-ci-orchestrator.md"
 QUALITY_LIFECYCLE = ROOT / ".github" / "workflows" / "terminus-quality-lifecycle.yml"
 CONTROLLER_STAGE_WORKFLOW = ROOT / ".github" / "workflows" / "terminus-controller-stage.yml"
@@ -18,7 +20,7 @@ CONTROLLER_STAGE_CLI = T / "execution" / "controller_stage_cli.py"
 
 def test_portable_orchestrator_contract_is_complete() -> None:
     text = PORTABLE.read_text(encoding="utf-8")
-    assert "Orchestrator policy version: `1.3`" in text
+    assert "Orchestrator policy version: `1.4`" in text
     for heading in (
         "## Decision right",
         "## Trust order",
@@ -44,15 +46,15 @@ def test_orchestrator_routes_without_self_certifying() -> None:
     for marker in (
         "first genuinely incomplete, failed, stale or blocked gate",
         "Resolve execution mode",
-        "Do not perform producer/fixer or non-automated reviewer work",
-        "does not author task implementation",
+        "INLINE_SPECIALIST",
+        "does not issue an independent semantic PASS for its own production work",
         "INSUFFICIENT_EVIDENCE",
         "NEXT_AGENT_PROMPT",
     ):
         assert marker in text
 
 
-def test_orchestrator_uses_direct_controller_and_automated_quality_routes() -> None:
+def test_orchestrator_uses_inline_controller_and_independent_quality_routes() -> None:
     portable = PORTABLE.read_text(encoding="utf-8")
     controller = CONTROLLER_CLI.read_text(encoding="utf-8")
     workflow = QUALITY_LIFECYCLE.read_text(encoding="utf-8")
@@ -61,14 +63,18 @@ def test_orchestrator_uses_direct_controller_and_automated_quality_routes() -> N
 
     for marker in (
         "ORCHESTRATOR_DIRECT",
+        "HOSTED_CONTROLLER",
+        "INLINE_SPECIALIST",
         "AUTOMATED_QUALITY",
+        "AUTOMATED_NO_MODEL_SKIP",
+        "MANUAL_INDEPENDENT_QUALITY",
         "FRESH_ROLE_CHAT",
+        "TERMINUS_Q4_Q6_MODE",
+        "TERMINUS_Q8_MODE",
         "RULE_RESOLUTION",
         "QUALITY_INTERLOCK",
         "MODEL_DIAGNOSTIC_GPT",
         "MODEL_DIAGNOSTIC_CLAUDE",
-        ".github/workflows/terminus-quality-lifecycle.yml",
-        "Do not create a manual reviewer-chat handoff",
         "NEXT_AGENT_PROMPT: none",
     ):
         assert marker in portable
@@ -78,12 +84,17 @@ def test_orchestrator_uses_direct_controller_and_automated_quality_routes() -> N
         "QUALITY_LIFECYCLE_STAGES",
         "CONTROLLER_STAGE_WORKFLOW",
         "AUTOMATED_CONTROLLER_STAGES",
+        "resolve_quality_execution_modes",
+        "inline_execution_mode",
+        "INLINE_SPECIALIST_SEQUENCE",
+        "_inline_specialist_sequence",
         '"QUALITY_INTERLOCK"',
         '"MODEL_DIAGNOSTIC_GPT"',
         '"MODEL_DIAGNOSTIC_CLAUDE"',
         '"RULE_RESOLUTION"',
         '"quality_lifecycle": True',
         '"controller_stage": True',
+        '"execution_mode": "MANUAL_INDEPENDENT_QUALITY"',
         '"trigger": "REQUEST_BRANCH_PUSH"',
     ):
         assert marker in controller
@@ -93,6 +104,7 @@ def test_orchestrator_uses_direct_controller_and_automated_quality_routes() -> N
         "QUALITY_INTERLOCK",
         "MODEL_DIAGNOSTIC_GPT",
         "MODEL_DIAGNOSTIC_CLAUDE",
+        "execute_optional_q8",
         "terminus-quality-executor.yml",
         "validate_quality_interlock.py",
         "controller_cli.py record",
@@ -117,6 +129,38 @@ def test_orchestrator_uses_direct_controller_and_automated_quality_routes() -> N
         "cannot replace semantic reviewers",
     ):
         assert marker in controller_stage
+
+
+def test_quality_execution_mode_policy_is_bound_to_orchestrator() -> None:
+    portable = PORTABLE.read_text(encoding="utf-8")
+    policy = QUALITY_MODE.read_text(encoding="utf-8")
+    policy_json = QUALITY_MODE_JSON.read_text(encoding="utf-8")
+    for marker in (
+        ".terminus/agents/QUALITY_EXECUTION_MODE.md",
+        ".terminus/agents/quality_execution_mode.json",
+        "Q1/Q2/Q3",
+        "Q5",
+        "Q7",
+    ):
+        assert marker in portable
+    for marker in (
+        "TERMINUS_Q4_Q6_MODE=AUTOMATED|MANUAL",
+        "TERMINUS_Q8_MODE=OFF|AUTOMATED|MANUAL",
+        "INLINE_SPECIALIST",
+        "INLINE_SPECIALIST_SEQUENCE",
+        "MANUAL_INDEPENDENT_QUALITY",
+    ):
+        assert marker in policy
+    for marker in (
+        '"TERMINUS_Q4_Q6_MODE": "AUTOMATED"',
+        '"TERMINUS_Q8_MODE": "OFF"',
+        '"Q1_SPEC_GAP_REPAIRER"',
+        '"Q5_ORACLE_RUNTIME_REPAIR_SPECIALIST"',
+        '"Q7_TASK_FORMAT_ENFORCER"',
+        '"inline_stage_sequences"',
+        '"SPEC_ALIGNMENT"',
+    ):
+        assert marker in policy_json
 
 
 def test_orchestrator_requires_commit_bound_ci_and_review_evidence() -> None:
@@ -222,6 +266,7 @@ def test_project_agent_frontmatter_and_contract_reference() -> None:
     assert ".terminus/agents/CI_ORCHESTRATOR.md" in text
     assert "exactly one active task" in text
     assert "Do not default every stage to a fresh chat" in text
+    assert "INLINE_SPECIALIST_SEQUENCE" in text
     assert "terminus-quality-lifecycle.yml" in text
 
 

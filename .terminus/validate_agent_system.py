@@ -24,6 +24,8 @@ REQUIRED = [
     T / "agents" / "PROTOCOL.md",
     T / "agents" / "INVOKE.md",
     T / "agents" / "CI_ORCHESTRATOR.md",
+    T / "agents" / "QUALITY_EXECUTION_MODE.md",
+    T / "agents" / "quality_execution_mode.json",
     T / "agents" / "PROMPTS.md",
     T / "agents" / "COMPREHENSIVE_REVIEWER.md",
     T / "agents" / "CREATION_CONTROLLER.md",
@@ -255,7 +257,7 @@ def main() -> int:
     require_declared(errors, protocol, protocol_path, "Policy version", "2.2")
     require_declared(errors, invoke, invoke_path, "Invocation policy version", "1.1")
     require_declared(
-        errors, orchestrator, orchestrator_path, "Orchestrator policy version", "1.3"
+        errors, orchestrator, orchestrator_path, "Orchestrator policy version", "1.4"
     )
     require_declared(errors, prompts, prompts_path, "Prompt policy version", "2.2")
     require_declared(errors, comprehensive, comprehensive_path, "Reviewer policy version", "1.0")
@@ -325,6 +327,10 @@ def main() -> int:
         "first genuinely incomplete, failed, stale or blocked gate",
         "INSUFFICIENT_EVIDENCE",
         "NEXT_AGENT_PROMPT",
+        "INLINE_SPECIALIST",
+        "MANUAL_INDEPENDENT_QUALITY",
+        "TERMINUS_Q4_Q6_MODE",
+        "TERMINUS_Q8_MODE",
     ]:
         if marker.lower() not in orchestrator.lower():
             fail(errors, f"CI_ORCHESTRATOR.md missing control marker: {marker}")
@@ -335,7 +341,8 @@ def main() -> int:
         ".terminus/agents/CI_ORCHESTRATOR.md",
         "exactly one active task",
         "first genuinely incomplete, failed, stale or blocked",
-        "Do not perform the routed role",
+        "Do not default every stage to a fresh chat",
+        "INLINE_SPECIALIST_SEQUENCE",
         "attached laptop's local terminal and hardware",
         "Docker checks yourself",
         ".terminus/controller-run-locators/",
