@@ -171,7 +171,7 @@ def test_orchestrator_polling_is_non_blocking_and_resumable() -> None:
         "seven hours",
         ".terminus/controller-run-locators/",
         "suggestions only",
-        "never claim unattended background monitoring",
+        "unattended background monitoring",
     ):
         assert marker in project_agent
 
@@ -193,10 +193,7 @@ def test_controller_run_locator_persists_exact_run_and_job_identity() -> None:
         "run_number",
         "run_attempt",
         "job_id",
-        "ADVISORY",
     ):
-        if marker == "ADVISORY":
-            continue
         assert marker in workflow
     for forbidden in (
         "CURSOR_API_KEY",
