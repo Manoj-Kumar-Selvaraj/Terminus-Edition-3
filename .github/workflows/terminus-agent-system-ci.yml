@@ -3,17 +3,41 @@ name: Terminus Agent System CI
 on:
   pull_request:
     paths:
-      - '.terminus/**'
+      - '.terminus/*.py'
+      - '.terminus/*.md'
+      - '.terminus/agents/**'
+      - '.terminus/reviewers/**'
+      - '.terminus/retrieval/**'
+      - '.terminus/execution/**'
+      - '.terminus/authority/**'
+      - '.terminus/feedback/**'
+      - '.terminus/remediation/**'
+      - '.terminus/learning/**'
+      - '.terminus/human_writing/**'
+      - '.terminus/tests/**'
+      - '.terminus/conftest.py'
       - '.cursor/agents/**'
-      - '.github/workflows/terminus-agent-system-ci.yml'
-      - '.github/workflows/terminus-controller-stage.yml'
+      - '.github/workflows/**'
+      - 'terminus3.sh'
   push:
     branches: [main]
     paths:
-      - '.terminus/**'
+      - '.terminus/*.py'
+      - '.terminus/*.md'
+      - '.terminus/agents/**'
+      - '.terminus/reviewers/**'
+      - '.terminus/retrieval/**'
+      - '.terminus/execution/**'
+      - '.terminus/authority/**'
+      - '.terminus/feedback/**'
+      - '.terminus/remediation/**'
+      - '.terminus/learning/**'
+      - '.terminus/human_writing/**'
+      - '.terminus/tests/**'
+      - '.terminus/conftest.py'
       - '.cursor/agents/**'
-      - '.github/workflows/terminus-agent-system-ci.yml'
-      - '.github/workflows/terminus-controller-stage.yml'
+      - '.github/workflows/**'
+      - 'terminus3.sh'
   workflow_dispatch:
 
 permissions:
@@ -97,10 +121,6 @@ jobs:
           target="${{ github.sha }}"
           case "${{ github.event_name }}" in
             pull_request)
-              # The event's base SHA can lag the base branch after an explicit
-              # branch update. Derive the PR contribution from the fetched base
-              # ref and actual PR head so base-only changes are never classified
-              # as changed task sessions.
               pr_head="${{ github.event.pull_request.head.sha }}"
               base_ref="refs/remotes/origin/${{ github.base_ref }}"
               if ! git rev-parse --verify "${pr_head}^{commit}" >/dev/null 2>&1; then
