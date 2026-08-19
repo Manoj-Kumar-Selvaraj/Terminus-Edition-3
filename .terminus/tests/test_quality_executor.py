@@ -385,30 +385,22 @@ def test_deterministic_validator_rejects_binding_and_side_effect_drift(tmp_path:
         validate_review_result(projection, packet)
 
 
-def test_automatic_task_ci_is_model_free_and_quality_ci_is_key_only_without_refresh() -> None:
-    task_workflow = (
-        ROOT / ".github/workflows/terminus-edition-3-ci.yml"
-    ).read_text(encoding="utf-8")
+def test_automatic_task_ci_is_model_free_and_never_refreshes_credentials() -> None:
+    workflow = (ROOT / ".github/workflows/terminus-edition-3-ci.yml").read_text(
+        encoding="utf-8"
+    )
     for forbidden in (
         "STB_AI_API_KEY",
         "SNORKEL_API_KEY",
         "STB_AI_CONFIG_B64",
         "STB_ALLOW_KEY_REFRESH",
-        "keys-refresh --noninteractive",
-        "keys-set --noninteractive",
+        "keys-refresh",
+        "keys-set",
         "Run Harbor LLMaJ",
         "diff-gpt",
         "diff-claude",
     ):
-        assert forbidden not in task_workflow
-
-    quality_workflow = (
-        ROOT / ".github/workflows/terminus-quality-executor.yml"
-    ).read_text(encoding="utf-8")
-    assert "STB_AI_API_KEY" in quality_workflow
-    assert "No login, key generation, rotation, or refresh is permitted" in quality_workflow
-    assert "keys-refresh" not in quality_workflow
-    assert "SNORKEL_API_KEY" not in quality_workflow
+        assert forbidden not in workflow
 
 
 def test_quality_workflow_uses_global_flags_shared_stb_key_and_persistent_budget() -> None:

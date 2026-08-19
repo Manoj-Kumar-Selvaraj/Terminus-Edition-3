@@ -18,6 +18,7 @@ CONTROL_SHA = "b" * 40
 
 
 def _write(path: Path, value: dict[str, object]) -> Path:
+    path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(value), encoding="utf-8")
     return path
 
@@ -53,26 +54,6 @@ def _stub_invocation(monkeypatch: pytest.MonkeyPatch) -> None:
         return {"invocation_id": "inv_" + "1" * 64, "readiness": "READY"}
 
     monkeypatch.setattr(lifecycle, "_build_invocation", build)
-
-
-def _stub_committed_result_refs(
-    monkeypatch: pytest.MonkeyPatch, head: str
-) -> None:
-    """Keep the recorder real while providing immutable committed RESULT fixtures."""
-    fixture = ROOT / ".terminus/tests/test_quality_lifecycle_record.py"
-    digest = lifecycle._sha256_bytes(fixture.read_bytes())
-
-    def resolve(_root: Path, _path: Path, identity: str) -> dict[str, str]:
-        return {
-            "kind": "RESULT",
-            "ref": (
-                f"git:{head}:.terminus/tests/test_quality_lifecycle_record.py"
-                f"#{identity}"
-            ),
-            "content_hash": digest,
-        }
-
-    monkeypatch.setattr(lifecycle, "_git_result_ref", resolve)
 
 
 def test_interlock_pass_maps_to_canonical_advance(
@@ -118,7 +99,9 @@ def test_interlock_revise_routes_q4_then_q6(
     q6_packet = _write(tmp_path / "q6.packet.json", _packet(lifecycle.Q6_ROLE, q6_id))
     q6_review = _write(tmp_path / "q6.json", _review(lifecycle.Q6_ROLE, q6_id))
 
-    q4_review = _write(tmp_path / "q4.json", _review(lifecycle.Q4_ROLE, q4_id, "REVISE"))
+    q4_review = _write(
+        tmp_path / "q4.json", _review(lifecycle.Q4_ROLE, q4_id, "REVISE")
+    )
     _, q4_result = lifecycle.build_interlock_envelopes(
         tmp_path,
         q4_packet_path=q4_packet,
@@ -130,8 +113,12 @@ def test_interlock_revise_routes_q4_then_q6(
     assert q4_result["status"] == "REVISE"
     assert q4_result["route_key"] == "Q4_REVISE"
 
-    q4_review.write_text(json.dumps(_review(lifecycle.Q4_ROLE, q4_id)), encoding="utf-8")
-    q6_review.write_text(json.dumps(_review(lifecycle.Q6_ROLE, q6_id, "REVISE")), encoding="utf-8")
+    q4_review.write_text(
+        json.dumps(_review(lifecycle.Q4_ROLE, q4_id)), encoding="utf-8"
+    )
+    q6_review.write_text(
+        json.dumps(_review(lifecycle.Q6_ROLE, q6_id, "REVISE")), encoding="utf-8"
+    )
     _, q6_result = lifecycle.build_interlock_envelopes(
         tmp_path,
         q4_packet_path=q4_packet,
@@ -212,16 +199,24 @@ def test_q8_perspective_maps_to_registered_stage_status(
         )
 
 
-def test_interlock_pass_builds_real_canonical_execution_record(
-    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
-) -> None:
+def test_interlock_pass_builds_real_canonical_execution_record(tmp_path: Path) -> None:
     head = subprocess.run(
         ["git", "-C", str(ROOT), "rev-parse", "HEAD"],
         check=True,
         capture_output=True,
         text=True,
     ).stdout.strip()
-    _stub_committed_result_refs(monkeypatch, head)
+    repo = tmp_path / "repo"
+    subprocess.run(
+        ["git", "clone", "--quiet", "--no-checkout", str(ROOT), str(repo)],
+        check=True,
+    )
+    subprocess.run(["git", "-C", str(repo), "checkout", "--quiet", "--detach", head], check=True)
+    subprocess.run(["git", "-C", str(repo), "config", "user.name", "Terminus Test"], check=True)
+    subprocess.run(
+        ["git", "-C", str(repo), "config", "user.email", "terminus-test@example.invalid"],
+        check=True,
+    )
 
     task = "bridge-validator"
     q4_id = "bridge-validator-aaaaaaaa-spec-test-contract-0000000000"
@@ -236,29 +231,56 @@ def test_interlock_pass_builds_real_canonical_execution_record(
         value["task_commit"] = head
         value["control_plane_commit"] = head
 
-    q4_packet = _write(tmp_path / "q4.packet.json", q4_packet_value)
-    q4_review = _write(tmp_path / "q4.json", q4_review_value)
-    q6_packet = _write(tmp_path / "q6.packet.json", q6_packet_value)
-    q6_review = _write(tmp_path / "q6.json", q6_review_value)
+    review_dir = repo / ".terminus" / "reviews" / task / "aaaaaaaa"
+    q4_packet = _write(review_dir / f"{q4_id}.packet.json", q4_packet_value)
+    q4_review = _write(review_dir / f"{q4_id}.json", q4_review_value)
+    q6_packet = _write(review_dir / f"{q6_id}.packet.json", q6_packet_value)
+    q6_review = _write(review_dir / f"{q6_id}.json", q6_review_value)
+
+    subprocess.run(
+        [
+            "git",
+            "-C",
+            str(repo),
+            "add",
+            q4_packet.relative_to(repo).as_posix(),
+            q4_review.relative_to(repo).as_posix(),
+            q6_packet.relative_to(repo).as_posix(),
+            q6_review.relative_to(repo).as_posix(),
+        ],
+        check=True,
+    )
+    subprocess.run(
+        ["git", "-C", str(repo), "commit", "--quiet", "-m", "Persist test quality evidence"],
+        check=True,
+    )
+    evidence_commit = subprocess.run(
+        ["git", "-C", str(repo), "rev-parse", "HEAD"],
+        check=True,
+        capture_output=True,
+        text=True,
+    ).stdout.strip()
 
     invocation, result = lifecycle.build_interlock_envelopes(
-        ROOT,
+        repo,
         q4_packet_path=q4_packet,
         q4_review_path=q4_review,
         q6_packet_path=q6_packet,
         q6_review_path=q6_review,
         run_id="9001",
+        evidence_commit=evidence_commit,
     )
-    record = ExecutionRecordBuilder(ROOT).build(invocation, result)
+    record = ExecutionRecordBuilder(repo).build(invocation, result)
 
     assert invocation["readiness"] == "READY"
     assert record["stage_id"] == lifecycle.QUALITY_INTERLOCK
     assert record["status"] == "QUALITY_INTERLOCK_PASS"
     assert record["disposition"] == "ADVANCE"
-    assert record["evidence_refs"][0]["ref"] == f"commit:{head}"
-    assert {ref["kind"] for ref in record["evidence_refs"]} >= {
-        "COMMIT",
-        "RESULT",
-        "RUN",
+    result_refs = [ref for ref in record["evidence_refs"] if ref["kind"] == "RESULT"]
+    assert len(result_refs) == 2
+    assert {lifecycle.Q4_ROLE, lifecycle.Q6_ROLE} == {
+        record["outputs"]["Q4_RESULT"]["role"],
+        record["outputs"]["Q6_RESULT"]["role"],
     }
+    assert all(ref["ref"].startswith(f"git:{evidence_commit}:") for ref in result_refs)
     assert record["task_lineage"]["task_changed"] is False

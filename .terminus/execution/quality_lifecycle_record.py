@@ -11,11 +11,11 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import re
 import subprocess
 import sys
 from pathlib import Path
 from typing import Any, Mapping
-from urllib.parse import quote
 
 if __package__ in {None, ""}:
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
@@ -35,6 +35,7 @@ Q8_CLAUDE_STAGE = "MODEL_DIAGNOSTIC_CLAUDE"
 Q4_ROLE = "Spec-Test Contract Reviewer"
 Q6_ROLE = "Production Logic Auditor"
 Q8_ROLE = "Model Perspective Difficulty Simulator"
+_SHA = re.compile(r"^[0-9a-f]{40,64}$")
 
 
 class QualityLifecycleRecordError(RuntimeError):
@@ -72,68 +73,46 @@ def _commit_ref(task_commit: str) -> dict[str, str]:
     }
 
 
-def _git_result_ref(root: Path, path: Path, identity: str) -> dict[str, str] | None:
-    """Resolve exact review bytes to a committed RESULT reference when available.
-
-    Quality jobs persist review evidence before canonical lifecycle recording. A
-    later recording job may still be checked out at the workflow trigger SHA, so
-    search the fetched repository history rather than assuming the review commit
-    is HEAD. The returned reference is accepted only when committed bytes exactly
-    equal the validated review bytes being recorded.
-    """
+def _git_result_ref(
+    root: Path,
+    evidence_commit: str,
+    path: Path,
+    review_id: str,
+) -> dict[str, str]:
+    """Bind a review result to exact repository bytes at the evidence commit."""
+    if not _SHA.fullmatch(evidence_commit):
+        raise QualityLifecycleRecordError(
+            "evidence_commit must be a full hexadecimal Git commit"
+        )
     root = root.resolve()
-    candidate = path if path.is_absolute() else root / path
+    source = path.resolve() if path.is_absolute() else (root / path).resolve()
     try:
-        relative = candidate.resolve().relative_to(root)
-    except ValueError:
-        return None
-    if not identity.strip() or not candidate.is_file():
-        return None
+        relative = source.relative_to(root).as_posix()
+    except ValueError as exc:
+        raise QualityLifecycleRecordError(
+            "review evidence path must be inside the repository"
+        ) from exc
 
-    rel = relative.as_posix()
-    history = subprocess.run(
-        ["git", "-C", str(root), "rev-list", "--all", "--", rel],
+    raw = source.read_bytes()
+    committed = subprocess.run(
+        ["git", "-C", str(root), "show", f"{evidence_commit}:{relative}"],
         check=False,
         capture_output=True,
-        text=True,
     )
-    if history.returncode != 0:
-        return None
-
-    expected = candidate.read_bytes()
-    for commit in (line.strip() for line in history.stdout.splitlines()):
-        if not commit:
-            continue
-        committed = subprocess.run(
-            ["git", "-C", str(root), "show", f"{commit}:{rel}"],
-            check=False,
-            capture_output=True,
+    if committed.returncode != 0:
+        raise QualityLifecycleRecordError(
+            f"review evidence is not present at evidence_commit: {relative}"
         )
-        if committed.returncode != 0 or committed.stdout != expected:
-            continue
-        digest = _sha256_bytes(expected)
-        return {
-            "kind": "RESULT",
-            "ref": f"git:{commit}:{quote(rel, safe='/')}#{quote(identity, safe='')}",
-            "content_hash": digest,
-        }
-    return None
-
-
-def _quality_evidence_refs(
-    root: Path,
-    *,
-    task_commit: str,
-    run_id: str,
-    reviews: list[tuple[str, Path, str]],
-) -> list[dict[str, str]]:
-    refs: list[dict[str, str]] = [_commit_ref(task_commit)]
-    for label, path, identity in reviews:
-        result_ref = _git_result_ref(root, path, identity)
-        if result_ref is not None:
-            refs.append(result_ref)
-        refs.append(_run_ref(run_id, label, path))
-    return refs
+    if committed.stdout != raw:
+        raise QualityLifecycleRecordError(
+            f"review evidence bytes do not match evidence_commit: {relative}"
+        )
+    digest = _sha256_bytes(raw)
+    return {
+        "kind": "RESULT",
+        "ref": f"git:{evidence_commit}:{relative}#{review_id}",
+        "content_hash": digest,
+    }
 
 
 def _review_ready(review: Mapping[str, Any], role: str) -> bool:
@@ -155,7 +134,9 @@ def _same_binding(values: list[Mapping[str, Any]]) -> tuple[str, str, str]:
     if len(task_commits) != 1 or "" in task_commits:
         raise QualityLifecycleRecordError("quality artifacts do not share one task_commit")
     if len(control_commits) != 1 or "" in control_commits:
-        raise QualityLifecycleRecordError("quality artifacts do not share one control_plane_commit")
+        raise QualityLifecycleRecordError(
+            "quality artifacts do not share one control_plane_commit"
+        )
     return next(iter(tasks)), next(iter(task_commits)), next(iter(control_commits))
 
 
@@ -194,6 +175,7 @@ def build_interlock_envelopes(
     q6_packet_path: Path,
     q6_review_path: Path,
     run_id: str,
+    evidence_commit: str | None = None,
 ) -> tuple[dict[str, Any], dict[str, Any]]:
     q4_packet = _load_object(q4_packet_path, "Q4 packet")
     q4 = _load_object(q4_review_path, "Q4 review")
@@ -239,26 +221,46 @@ def build_interlock_envelopes(
         "Q6_RESULT": q6,
         "EVIDENCE_SUFFICIENCY": "SUFFICIENT" if sufficient else "INSUFFICIENT",
     }
+    evidence_refs: list[dict[str, str]] = [_commit_ref(task_commit)]
+    if evidence_commit is not None:
+        evidence_refs.extend(
+            [
+                _git_result_ref(
+                    root,
+                    evidence_commit,
+                    q4_review_path,
+                    str(q4["review_id"]),
+                ),
+                _git_result_ref(
+                    root,
+                    evidence_commit,
+                    q6_review_path,
+                    str(q6["review_id"]),
+                ),
+            ]
+        )
+    evidence_refs.extend(
+        [
+            _run_ref(run_id, "q4", q4_review_path),
+            _run_ref(run_id, "q6", q6_review_path),
+        ]
+    )
     result: dict[str, Any] = {
         "schema_version": "1.0",
         "invocation_id": invocation["invocation_id"],
         "output_task_commit": task_commit,
         "status": "BLOCKED",
         "outputs": outputs,
-        "evidence_refs": _quality_evidence_refs(
-            root,
-            task_commit=task_commit,
-            run_id=run_id,
-            reviews=[
-                ("q4", q4_review_path, str(q4["review_id"])),
-                ("q6", q6_review_path, str(q6["review_id"])),
-            ],
-        ),
+        "evidence_refs": evidence_refs,
     }
 
     if q4_ready and q6_ready:
         result["status"] = "QUALITY_INTERLOCK_PASS"
-    elif not sufficient or q4.get("verdict") == "INSUFFICIENT_EVIDENCE" or q6.get("verdict") == "INSUFFICIENT_EVIDENCE":
+    elif (
+        not sufficient
+        or q4.get("verdict") == "INSUFFICIENT_EVIDENCE"
+        or q6.get("verdict") == "INSUFFICIENT_EVIDENCE"
+    ):
         result["status"] = "INSUFFICIENT_EVIDENCE"
         result["route_key"] = "INSUFFICIENT_EVIDENCE"
     elif q4.get("verdict") == "REVISE":
@@ -312,7 +314,12 @@ def build_q8_envelopes(
     role_output = review.get("role_output")
     if not isinstance(role_output, dict):
         raise QualityLifecycleRecordError("Q8 review role_output must be an object")
-    required = {"PERSPECTIVE", "EXECUTION", "DIAGNOSTIC_SUMMARY", "PREDICTED_OFFICIAL_SIGNAL"}
+    required = {
+        "PERSPECTIVE",
+        "EXECUTION",
+        "DIAGNOSTIC_SUMMARY",
+        "PREDICTED_OFFICIAL_SIGNAL",
+    }
     missing = sorted(required - set(role_output))
     if missing:
         raise QualityLifecycleRecordError(f"Q8 role_output missing fields: {missing}")
@@ -326,26 +333,32 @@ def build_q8_envelopes(
         "output_task_commit": task_commit,
         "status": execution,
         "outputs": role_output,
-        "evidence_refs": _quality_evidence_refs(
-            root,
-            task_commit=task_commit,
-            run_id=run_id,
-            reviews=[("q8", review_path, str(review["review_id"]))],
-        ),
+        "evidence_refs": [
+            _commit_ref(task_commit),
+            _run_ref(run_id, "q8", review_path),
+        ],
     }
     return invocation, result
 
 
 def _write(path: Path, value: Mapping[str, Any]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(value, indent=2, sort_keys=True, ensure_ascii=False) + "\n", encoding="utf-8")
+    path.write_text(
+        json.dumps(value, indent=2, sort_keys=True, ensure_ascii=False) + "\n",
+        encoding="utf-8",
+    )
 
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--root", default=".")
-    parser.add_argument("--stage", required=True, choices=[QUALITY_INTERLOCK, Q8_GPT_STAGE, Q8_CLAUDE_STAGE])
+    parser.add_argument(
+        "--stage",
+        required=True,
+        choices=[QUALITY_INTERLOCK, Q8_GPT_STAGE, Q8_CLAUDE_STAGE],
+    )
     parser.add_argument("--run-id", required=True)
+    parser.add_argument("--evidence-commit")
     parser.add_argument("--packet")
     parser.add_argument("--review")
     parser.add_argument("--q4-packet")
@@ -364,7 +377,9 @@ def main(argv: list[str] | None = None) -> int:
         if args.stage == QUALITY_INTERLOCK:
             required = (args.q4_packet, args.q4_review, args.q6_packet, args.q6_review)
             if any(value is None for value in required):
-                raise QualityLifecycleRecordError("QUALITY_INTERLOCK requires Q4/Q6 packet and review paths")
+                raise QualityLifecycleRecordError(
+                    "QUALITY_INTERLOCK requires Q4/Q6 packet and review paths"
+                )
             invocation, result = build_interlock_envelopes(
                 root,
                 q4_packet_path=Path(args.q4_packet),
@@ -372,10 +387,13 @@ def main(argv: list[str] | None = None) -> int:
                 q6_packet_path=Path(args.q6_packet),
                 q6_review_path=Path(args.q6_review),
                 run_id=args.run_id,
+                evidence_commit=args.evidence_commit,
             )
         else:
             if args.packet is None or args.review is None:
-                raise QualityLifecycleRecordError("Q8 lifecycle recording requires --packet and --review")
+                raise QualityLifecycleRecordError(
+                    "Q8 lifecycle recording requires --packet and --review"
+                )
             invocation, result = build_q8_envelopes(
                 root,
                 stage=args.stage,
