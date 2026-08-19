@@ -1,47 +1,10 @@
 name: Terminus Executor Bridge CI
 
 on:
-  pull_request:
-    paths:
-      - '.terminus/execution/**'
-      - '.terminus/agents/schemas/executor_handoff.schema.json'
-      - '.terminus/agents/schemas/stage_result.schema.json'
-      - '.terminus/agents/schemas/execution_record.schema.json'
-      - '.terminus/tests/test_executor_bridge.py'
-      - '.terminus/tests/test_executor_handoff_provenance.py'
-      - '.terminus/tests/test_quality_executor.py'
-      - '.terminus/tests/test_quality_lifecycle_record.py'
-      - '.terminus/validate_executor_bridge.py'
-      - '.github/workflows/terminus-executor-bridge-ci.yml'
-      - '.github/workflows/terminus-quality-executor.yml'
-      - '.github/workflows/terminus-quality-lifecycle.yml'
-      - '.github/workflows/terminus-quality-lifecycle-collect.yml'
-      - '.github/workflows/terminus-edition-3-ci.yml'
-  push:
-    branches: [main]
-    paths:
-      - '.terminus/execution/**'
-      - '.terminus/agents/schemas/executor_handoff.schema.json'
-      - '.terminus/agents/schemas/stage_result.schema.json'
-      - '.terminus/agents/schemas/execution_record.schema.json'
-      - '.terminus/tests/test_executor_bridge.py'
-      - '.terminus/tests/test_executor_handoff_provenance.py'
-      - '.terminus/tests/test_quality_executor.py'
-      - '.terminus/tests/test_quality_lifecycle_record.py'
-      - '.terminus/validate_executor_bridge.py'
-      - '.github/workflows/terminus-executor-bridge-ci.yml'
-      - '.github/workflows/terminus-quality-executor.yml'
-      - '.github/workflows/terminus-quality-lifecycle.yml'
-      - '.github/workflows/terminus-quality-lifecycle-collect.yml'
-      - '.github/workflows/terminus-edition-3-ci.yml'
   workflow_dispatch:
 
 permissions:
   contents: read
-
-concurrency:
-  group: terminus-executor-bridge-${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
 
 jobs:
   validate-executor-bridge:
@@ -51,59 +14,25 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-
       - name: Install bubblewrap sandbox
         run: |
           sudo apt-get update -qq
           sudo apt-get install -y bubblewrap
-
       - name: Install pinned test tools
         run: python3 -m pip install --quiet ruff==0.14.10 pytest==8.4.1 jsonschema==4.23.0
-
       - name: Compile executor bridge
         run: |
-          python3 -m py_compile \
-            .terminus/execution/executor.py \
-            .terminus/execution/handoff_contract.py \
-            .terminus/execution/handoff.py \
-            .terminus/execution/invocation_guard.py \
-            .terminus/execution/sandbox.py \
-            .terminus/execution/schema_validation.py \
-            .terminus/execution/runner.py \
-            .terminus/execution/runner_cli.py \
-            .terminus/execution/controller_cli.py \
-            .terminus/execution/quality_executor.py \
-            .terminus/execution/quality_executor_cli.py \
-            .terminus/execution/quality_backend.py \
-            .terminus/execution/quality_budget.py \
-            .terminus/execution/quality_dispatch_cli.py \
-            .terminus/execution/quality_lifecycle_record.py \
-            .terminus/validate_executor_bridge.py
-
+          python3 -m compileall -q .terminus/execution
+          python3 -m py_compile .terminus/validate_executor_bridge.py
       - name: Lint executor bridge
         run: |
           ruff check \
-            .terminus/execution/executor.py \
-            .terminus/execution/handoff_contract.py \
-            .terminus/execution/handoff.py \
-            .terminus/execution/invocation_guard.py \
-            .terminus/execution/sandbox.py \
-            .terminus/execution/schema_validation.py \
-            .terminus/execution/runner.py \
-            .terminus/execution/runner_cli.py \
-            .terminus/execution/controller_cli.py \
-            .terminus/execution/quality_executor.py \
-            .terminus/execution/quality_executor_cli.py \
-            .terminus/execution/quality_backend.py \
-            .terminus/execution/quality_budget.py \
-            .terminus/execution/quality_dispatch_cli.py \
-            .terminus/execution/quality_lifecycle_record.py \
+            .terminus/execution \
             .terminus/tests/test_executor_bridge.py \
             .terminus/tests/test_executor_handoff_provenance.py \
             .terminus/tests/test_quality_executor.py \
             .terminus/tests/test_quality_lifecycle_record.py \
             .terminus/validate_executor_bridge.py
-
       - name: Run executor bridge tests
         run: |
           python3 -m pytest \
@@ -112,10 +41,8 @@ jobs:
             .terminus/tests/test_quality_executor.py \
             .terminus/tests/test_quality_lifecycle_record.py \
             -q
-
       - name: Validate executor boundary
         run: python3 .terminus/validate_executor_bridge.py
-
       - name: Recheck invocation and recorder compatibility
         run: |
           python3 .terminus/validate_stage_invocation.py
