@@ -1,6 +1,6 @@
 # Continue a Terminus Session
 
-Bootstrap policy version: `2.2`
+Bootstrap policy version: `2.3`
 
 Use this when a task moves to a new controller/chat. Repository state, current authoritative rules, generated review provenance, GitHub Actions/Harbor evidence and the durable task checkpoint are continuity; chat recollection is not acceptance evidence.
 
@@ -10,7 +10,7 @@ Before changing a task:
 
 1. Read current authoritative Edition 3 rules.
 2. Read `.terminus/AGENT_SYSTEM.md`.
-3. When acting as the controller, read `.terminus/agents/CI_ORCHESTRATOR.md`.
+3. When acting as the controller, read `.terminus/agents/CI_ORCHESTRATOR.md` and `.terminus/agents/ACTIVE_TURN_AUTONOMY.md`.
 4. Read `.terminus/agents/PROTOCOL.md` and `.terminus/agents/INVOKE.md`.
 5. Read `.terminus/agents/STAGE_CONTRACTS.md`, `.terminus/agents/WORKFLOW_STATE.md`, and the canonical machine contracts they reference.
 6. Read `.terminus/agents/QUALITY_AGENT_REGISTRY.md`; read `.terminus/agents/QUALITY_AGENT_PROMPTS.md` only for the quality role being invoked.
@@ -112,9 +112,11 @@ Never store or repeat API keys, passwords, Portkey credentials, GitHub tokens or
 7. mark affected semantic evidence stale using exact-task or role-scoped freshness as defined by Protocol;
 8. generate a fresh Q4 packet whenever its evidence surface changes; generate a fresh Q6 packet only when no current Protocol-valid Q6 PASS can be retained by unchanged production-scope hash;
 9. validate the returned result against its invocation, persist the immutable execution record, append its hash-chained ledger event, and re-materialize workflow state;
-10. update the durable checkpoint from actual evidence rather than rewriting historical records.
+10. update the durable checkpoint from actual evidence rather than rewriting historical records;
+11. immediately re-run/reconstruct `controller_cli continue` and execute or poll the next legal already-authorized action under `.terminus/agents/ACTIVE_TURN_AUTONOMY.md`;
+12. repeat steps 1-11 until a genuine stop condition from the active-turn autonomy policy is reached.
 
-This is interactive work, not a background promise.
+This remains interactive foreground work rather than a promise of unattended background execution. Within an active turn, however, `RUN_TO_BLOCKER` is mandatory: completing a stage, dispatching a workflow, observing a queued/running workflow, or discovering another executable controller action is not a reason to return control to the user. If the execution surface itself ends, preserve exact durable recovery identifiers and return `PENDING`; do not deliberately use interruption as a lifecycle checkpoint.
 
 ## Final continuity rule
 
