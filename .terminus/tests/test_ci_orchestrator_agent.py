@@ -86,6 +86,8 @@ def test_orchestrator_uses_inline_controller_and_independent_quality_routes() ->
         "AUTOMATED_CONTROLLER_STAGES",
         "resolve_quality_execution_modes",
         "inline_execution_mode",
+        "INLINE_SPECIALIST_SEQUENCE",
+        "_inline_specialist_sequence",
         '"QUALITY_INTERLOCK"',
         '"MODEL_DIAGNOSTIC_GPT"',
         '"MODEL_DIAGNOSTIC_CLAUDE"',
@@ -145,6 +147,7 @@ def test_quality_execution_mode_policy_is_bound_to_orchestrator() -> None:
         "TERMINUS_Q4_Q6_MODE=AUTOMATED|MANUAL",
         "TERMINUS_Q8_MODE=OFF|AUTOMATED|MANUAL",
         "INLINE_SPECIALIST",
+        "INLINE_SPECIALIST_SEQUENCE",
         "MANUAL_INDEPENDENT_QUALITY",
     ):
         assert marker in policy
@@ -154,6 +157,8 @@ def test_quality_execution_mode_policy_is_bound_to_orchestrator() -> None:
         '"Q1_SPEC_GAP_REPAIRER"',
         '"Q5_ORACLE_RUNTIME_REPAIR_SPECIALIST"',
         '"Q7_TASK_FORMAT_ENFORCER"',
+        '"inline_stage_sequences"',
+        '"SPEC_ALIGNMENT"',
     ):
         assert marker in policy_json
 
@@ -261,6 +266,7 @@ def test_project_agent_frontmatter_and_contract_reference() -> None:
     assert ".terminus/agents/CI_ORCHESTRATOR.md" in text
     assert "exactly one active task" in text
     assert "Do not default every stage to a fresh chat" in text
+    assert "INLINE_SPECIALIST_SEQUENCE" in text
     assert "terminus-quality-lifecycle.yml" in text
 
 
