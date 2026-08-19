@@ -385,17 +385,22 @@ def test_deterministic_validator_rejects_binding_and_side_effect_drift(tmp_path:
         validate_review_result(projection, packet)
 
 
-def test_llmaj_and_official_difficulty_ci_are_api_key_only_without_refresh() -> None:
-    workflow = (ROOT / ".github/workflows/terminus-edition-3-ci.yml").read_text(encoding="utf-8")
-    assert "STB_AI_API_KEY" in workflow
+def test_automatic_task_ci_is_model_free_and_never_refreshes_credentials() -> None:
+    workflow = (ROOT / ".github/workflows/terminus-edition-3-ci.yml").read_text(
+        encoding="utf-8"
+    )
     for forbidden in (
+        "STB_AI_API_KEY",
         "SNORKEL_API_KEY",
         "STB_AI_CONFIG_B64",
         "STB_ALLOW_KEY_REFRESH",
-        "keys-refresh --noninteractive",
+        "keys-refresh",
+        "keys-set",
+        "Run Harbor LLMaJ",
+        "diff-gpt",
+        "diff-claude",
     ):
         assert forbidden not in workflow
-    assert "login/config restoration/key refresh fallbacks are forbidden in CI" in workflow
 
 
 def test_quality_workflow_uses_global_flags_shared_stb_key_and_persistent_budget() -> None:

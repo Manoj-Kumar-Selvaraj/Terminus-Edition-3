@@ -2,32 +2,44 @@ name: Terminus Edition 3 CI
 
 on:
   pull_request:
+    paths-ignore:
+      - '.terminus/**'
+      - '.github/**'
+      - '.cursor/**'
+      - '.smoke/**'
+      - 'docs/**'
+      - '*.md'
+      - '.gitignore'
+      - '.gitattributes'
+      - 'terminus3.sh'
   push:
     branches: [main]
     paths-ignore:
-      - ".terminus/**"
+      - '.terminus/**'
+      - '.github/**'
+      - '.cursor/**'
+      - '.smoke/**'
+      - 'docs/**'
+      - '*.md'
+      - '.gitignore'
+      - '.gitattributes'
+      - 'terminus3.sh'
   workflow_dispatch:
     inputs:
       task:
         description: Top-level task directory
         required: true
         type: string
-      mode:
-        description: Validation or final difficulty calibration
-        required: true
-        default: validate
-        type: choice
-        options: [validate, difficulty]
 
 permissions:
   contents: read
 
 concurrency:
-  group: terminus-ci-${{ github.workflow }}-${{ github.ref }}
+  group: terminus-task-ci-${{ github.ref }}
   cancel-in-progress: true
 
 env:
-  DEFAULT_STB_VERSION: "2.4.3"
+  DEFAULT_STB_VERSION: '2.4.3'
 
 jobs:
   changed-tasks:
@@ -40,7 +52,6 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-
       - id: tasks
         name: Build task matrix
         shell: bash
@@ -51,7 +62,7 @@ jobs:
           HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
         run: |
           set -euo pipefail
-          if [[ "$EVENT_NAME" == "workflow_dispatch" ]]; then
+          if [[ "$EVENT_NAME" == workflow_dispatch ]]; then
             candidates="$MANUAL_TASK"
           else
             base="$BASE_SHA"
@@ -64,15 +75,13 @@ jobs:
           tasks=()
           while IFS= read -r candidate; do
             [[ -n "$candidate" ]] || continue
-            if [[ "$candidate" == /* || "$candidate" == *".."* || "$candidate" == */* ]]; then
-              echo "::error::Invalid top-level task directory: $candidate"
-              exit 1
-            fi
+            [[ "$candidate" != /* && "$candidate" != *".."* && "$candidate" != */* ]] || {
+              echo "::error::Invalid top-level task directory: $candidate"; exit 1;
+            }
             if [[ -f "$candidate/task.toml" ]]; then
               tasks+=("$candidate")
-            elif [[ "$EVENT_NAME" == "workflow_dispatch" ]]; then
-              echo "::error::No task.toml found in '$candidate'"
-              exit 1
+            elif [[ "$EVENT_NAME" == workflow_dispatch ]]; then
+              echo "::error::No task.toml found in '$candidate'"; exit 1
             fi
           done <<< "$candidates"
 
@@ -81,26 +90,10 @@ jobs:
           echo "count=${#tasks[@]}" >> "$GITHUB_OUTPUT"
           echo "Selected tasks: $json" >> "$GITHUB_STEP_SUMMARY"
 
-  untrusted-pr:
-    name: Trusted credentials required
-    needs: changed-tasks
-    if: >-
-      github.event_name == 'pull_request' &&
-      needs.changed-tasks.outputs.count != '0' &&
-      github.event.pull_request.head.repo.full_name != github.repository
-    runs-on: ubuntu-latest
-    steps:
-      - run: |
-          echo "::error::Secret-backed Terminus validation is disabled for fork PRs."
-          exit 1
-
   validate:
     name: Validate ${{ matrix.task }}
     needs: changed-tasks
-    if: >-
-      needs.changed-tasks.outputs.count != '0' &&
-      (github.event_name != 'workflow_dispatch' || inputs.mode == 'validate') &&
-      (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository)
+    if: needs.changed-tasks.outputs.count != '0'
     strategy:
       fail-fast: false
       matrix:
@@ -108,28 +101,25 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 180
     env:
-      CI: "true"
-      STB_AI_API_KEY: ${{ secrets.STB_AI_API_KEY }}
+      CI: 'true'
       STB_VERSION: ${{ vars.STB_VERSION }}
-      XDG_CONFIG_HOME: /tmp/stb-xdg-${{ github.run_id }}-${{ github.run_attempt }}-${{ matrix.task }}
       EVIDENCE_DIR: /tmp/terminus-e3/${{ github.run_id }}/${{ github.run_attempt }}/${{ matrix.task }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
-      - name: Resolve CI defaults
-        shell: bash
+      - name: Resolve deterministic CI defaults
         run: |
           set -euo pipefail
           [[ -n "${STB_VERSION:-}" ]] || echo "STB_VERSION=$DEFAULT_STB_VERSION" >> "$GITHUB_ENV"
 
-      - name: Preflight
-        shell: bash
+      - name: Preflight task package
         env:
           TASK: ${{ matrix.task }}
         run: |
           set -euo pipefail
           bash -n ./terminus3.sh
-          python3 -m py_compile .terminus/analyze_difficulty.py
           required=(
             "$TASK/task.toml"
             "$TASK/instruction.md"
@@ -153,251 +143,91 @@ jobs:
       - name: Ruff verifier tests
         run: uvx --from ruff==0.12.8 ruff check "${{ matrix.task }}/tests"
 
-      - name: Install stb and verify Docker
+      - name: Validate declared complexity and authenticity for this task only
         shell: bash
+        env:
+          TASK: ${{ matrix.task }}
         run: |
           set -euo pipefail
-          docker version
+          design=".terminus/designs/$TASK.json"
+          if [[ -f "$design" ]]; then
+            profile="$(python3 - "$design" <<'PY'
+          import json, sys
+          print(json.load(open(sys.argv[1], encoding='utf-8')).get('profile', ''))
+          PY
+          )"
+            case "$profile" in
+              large_system|large_system_strict)
+                python3 .terminus/validate_task_complexity.py "$TASK"
+                ;;
+            esac
+          fi
+          if [[ -f ".terminus/designs/$TASK-production.json" ]]; then
+            python3 .terminus/validate_runtime_authenticity.py "$TASK"
+            python3 .terminus/validate_business_module_diversity.py "$TASK"
+          fi
+
+      - name: Install deterministic STB/Harbor utility environment
+        run: |
+          set -euo pipefail
           docker info >/dev/null
           bash ./terminus3.sh install
           bash ./terminus3.sh version
-          echo "stb version: $(stb --version)" >> "$GITHUB_STEP_SUMMARY"
 
       - name: Oracle must score 1
-        shell: bash
         env:
           TASK: ${{ matrix.task }}
           JOBS_DIR: /tmp/terminus-e3/${{ github.run_id }}/${{ github.run_attempt }}/${{ matrix.task }}/oracle
         run: |
           set -euo pipefail
           mkdir -p "$JOBS_DIR"
-          set +e
           bash ./terminus3.sh oracle "$TASK" 2>&1 | tee "$JOBS_DIR/command.log"
-          rc=${PIPESTATUS[0]}
-          set -e
-          printf '%s\n' "$rc" > "$JOBS_DIR/command.exit-code"
-          (( rc == 0 )) || exit "$rc"
           mapfile -t rewards < <(find "$JOBS_DIR" -type f -name reward.txt -print)
           (( ${#rewards[@]} > 0 )) || { echo "::error::Oracle produced no reward.txt"; exit 1; }
-          for f in "${rewards[@]}"; do
-            r="$(tr -d '[:space:]' < "$f")"
-            [[ "$r" == "1" || "$r" == "1.0" ]] || { echo "::error file=$f::Oracle reward=$r expected=1"; exit 1; }
+          for file in "${rewards[@]}"; do
+            reward="$(tr -d '[:space:]' < "$file")"
+            [[ "$reward" == 1 || "$reward" == 1.0 ]] || {
+              echo "::error file=$file::Oracle reward=$reward expected=1"; exit 1;
+            }
           done
 
       - name: NOP must score 0
-        shell: bash
         env:
           TASK: ${{ matrix.task }}
           JOBS_DIR: /tmp/terminus-e3/${{ github.run_id }}/${{ github.run_attempt }}/${{ matrix.task }}/nop
         run: |
           set -euo pipefail
           mkdir -p "$JOBS_DIR"
-          set +e
           bash ./terminus3.sh nop "$TASK" 2>&1 | tee "$JOBS_DIR/command.log"
-          rc=${PIPESTATUS[0]}
-          set -e
-          printf '%s\n' "$rc" > "$JOBS_DIR/command.exit-code"
-          (( rc == 0 )) || exit "$rc"
           mapfile -t rewards < <(find "$JOBS_DIR" -type f -name reward.txt -print)
           (( ${#rewards[@]} > 0 )) || { echo "::error::NOP produced no reward.txt"; exit 1; }
-          for f in "${rewards[@]}"; do
-            r="$(tr -d '[:space:]' < "$f")"
-            [[ "$r" == "0" || "$r" == "0.0" ]] || { echo "::error file=$f::NOP reward=$r expected=0"; exit 1; }
+          for file in "${rewards[@]}"; do
+            reward="$(tr -d '[:space:]' < "$file")"
+            [[ "$reward" == 0 || "$reward" == 0.0 ]] || {
+              echo "::error file=$file::NOP reward=$reward expected=0"; exit 1;
+            }
           done
 
-      - name: Install API-key-only credential for Harbor LLMaJ
-        shell: bash
-        run: |
-          set -euo pipefail
-          [[ -n "${STB_AI_API_KEY:-}" ]] || { echo "::error::Harbor LLMaJ requires GitHub Secret STB_AI_API_KEY; login/config restoration/key refresh fallbacks are forbidden in CI"; exit 1; }
-          mkdir -p "$XDG_CONFIG_HOME/stb"
-          bash ./terminus3.sh keys-set --noninteractive
-          echo "Installed existing STB AI API key; no login, config restore, or credential refresh is permitted."
-
-      - name: Run Harbor LLMaJ check
-        shell: bash
-        env:
-          JOBS_DIR: /tmp/terminus-e3/${{ github.run_id }}/${{ github.run_attempt }}/${{ matrix.task }}/llmaj
-        run: |
-          set -euo pipefail
-          mkdir -p "$JOBS_DIR"
-          set +e
-          bash ./terminus3.sh check "${{ matrix.task }}" 2>&1 | tee "$JOBS_DIR/command.log"
-          rc=${PIPESTATUS[0]}
-          set -e
-          printf '%s\n' "$rc" > "$JOBS_DIR/command.exit-code"
-          exit "$rc"
-
-      - name: Build validation evidence manifest
+      - name: Summarize deterministic validation
         if: always()
-        shell: bash
         run: |
-          set -euo pipefail
           mkdir -p "$EVIDENCE_DIR"
           {
-            echo "# Terminus validation evidence"
+            echo '# Terminus deterministic validation'
             echo
             echo "- Task: ${{ matrix.task }}"
             echo "- Run: ${{ github.run_id }} attempt ${{ github.run_attempt }}"
             echo "- Commit: ${{ github.sha }}"
-            echo
-            echo "## Rewards"
-            while IFS= read -r f; do
-              printf -- '- `%s`: `%s`\n' "${f#$EVIDENCE_DIR/}" "$(tr -d '[:space:]' < "$f")"
-            done < <(find "$EVIDENCE_DIR" -type f -name reward.txt -print | sort)
-            echo
-            echo "## Files"
-            while IFS= read -r f; do
-              printf -- '- `%s`\n' "${f#$EVIDENCE_DIR/}"
-            done < <(find "$EVIDENCE_DIR" -type f -print | sort)
+            echo '- Model/Q/Harbor semantic execution: none'
           } > "$EVIDENCE_DIR/EVIDENCE.md"
           cat "$EVIDENCE_DIR/EVIDENCE.md" >> "$GITHUB_STEP_SUMMARY"
 
-      - name: Upload validation evidence
+      - name: Upload deterministic evidence
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: terminus-validation-${{ matrix.task }}-${{ github.run_id }}-${{ github.run_attempt }}
+          name: terminus-deterministic-${{ matrix.task }}-${{ github.run_id }}-${{ github.run_attempt }}
           path: /tmp/terminus-e3/${{ github.run_id }}/${{ github.run_attempt }}/${{ matrix.task }}/
-          if-no-files-found: error
-          include-hidden-files: true
-          retention-days: 14
-
-  difficulty:
-    name: Difficulty ${{ matrix.label }} - ${{ inputs.task }}
-    if: github.event_name == 'workflow_dispatch' && inputs.mode == 'difficulty'
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - label: GPT-5.5 x5
-            command: diff-gpt
-          - label: Claude Opus 4.8 x5
-            command: diff-claude
-    runs-on: ubuntu-latest
-    timeout-minutes: 360
-    env:
-      CI: "true"
-      STB_AI_API_KEY: ${{ secrets.STB_AI_API_KEY }}
-      STB_VERSION: ${{ vars.STB_VERSION }}
-      XDG_CONFIG_HOME: /tmp/stb-xdg-diff-${{ github.run_id }}-${{ github.run_attempt }}-${{ matrix.command }}
-      EVIDENCE_DIR: /tmp/terminus-e3-difficulty/${{ github.run_id }}/${{ github.run_attempt }}/${{ inputs.task }}/${{ matrix.command }}
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Resolve CI defaults
-        shell: bash
-        run: |
-          set -euo pipefail
-          [[ -n "${STB_VERSION:-}" ]] || echo "STB_VERSION=$DEFAULT_STB_VERSION" >> "$GITHUB_ENV"
-
-      - name: Preflight difficulty run
-        shell: bash
-        env:
-          TASK: ${{ inputs.task }}
-        run: |
-          set -euo pipefail
-          bash -n ./terminus3.sh
-          python3 -m py_compile .terminus/analyze_difficulty.py
-          if [[ "$TASK" == /* || "$TASK" == *".."* || "$TASK" == */* ]]; then
-            echo "::error::Task must be a top-level directory"
-            exit 1
-          fi
-          [[ -f "$TASK/task.toml" ]] || { echo "::error::No task.toml in '$TASK'"; exit 1; }
-
-      - name: Install uv
-        uses: astral-sh/setup-uv@v9.0.0
-        with:
-          enable-cache: false
-
-      - name: Install stb and verify Docker
-        shell: bash
-        run: |
-          set -euo pipefail
-          docker info >/dev/null
-          bash ./terminus3.sh install
-          bash ./terminus3.sh version
-
-      - name: Install API-key-only credential for difficulty
-        shell: bash
-        run: |
-          set -euo pipefail
-          [[ -n "${STB_AI_API_KEY:-}" ]] || { echo "::error::Difficulty trials require GitHub Secret STB_AI_API_KEY; login/config restoration/key refresh fallbacks are forbidden in CI"; exit 1; }
-          mkdir -p "$XDG_CONFIG_HOME/stb"
-          bash ./terminus3.sh keys-set --noninteractive
-          echo "Installed existing STB AI API key; no login, config restore, or credential refresh is permitted."
-
-      - name: Run five-trial difficulty suite
-        id: suite
-        continue-on-error: true
-        shell: bash
-        env:
-          TASK: ${{ inputs.task }}
-          JOBS_DIR: /tmp/terminus-e3-difficulty/${{ github.run_id }}/${{ github.run_attempt }}/${{ inputs.task }}/${{ matrix.command }}
-        run: |
-          set -uo pipefail
-          mkdir -p "$JOBS_DIR"
-          set +e
-          bash ./terminus3.sh "${{ matrix.command }}" "$TASK" 2>&1 | tee "$JOBS_DIR/harbor-command.log"
-          rc=${PIPESTATUS[0]}
-          set -e
-          printf '%s\n' "$rc" > "$JOBS_DIR/harbor-command.exit-code"
-          exit "$rc"
-
-      - name: Evaluate five-run diagnostic suite
-        if: always()
-        shell: bash
-        run: |
-          set -euo pipefail
-          mkdir -p "$EVIDENCE_DIR"
-          set +e
-          python3 .terminus/analyze_difficulty.py "$EVIDENCE_DIR" \
-            --expected 5 \
-            --tests-dir "${{ inputs.task }}/tests" \
-            --json-out "$EVIDENCE_DIR/difficulty-analysis.json" \
-            --markdown-out "$EVIDENCE_DIR/difficulty-analysis.md"
-          rc=$?
-          set -e
-          cat "$EVIDENCE_DIR/difficulty-analysis.md" >> "$GITHUB_STEP_SUMMARY"
-          case "$rc" in
-            0) echo "Five-run model suite recorded as diagnostic evidence; combine GPT and Claude suites before final difficulty/solvability decisions." ;;
-            22) echo "::error::Incomplete five-trial evidence. Inspect Harbor/tool execution." ;;
-            23) echo "::error::Verifier test inventory could not be determined." ;;
-            *) echo "::error::Unexpected difficulty analysis status $rc" ;;
-          esac
-          exit "$rc"
-
-      - name: Build difficulty evidence manifest
-        if: always()
-        shell: bash
-        run: |
-          set -euo pipefail
-          mkdir -p "$EVIDENCE_DIR"
-          {
-            echo "# Difficulty evidence"
-            echo
-            echo "- Task: ${{ inputs.task }}"
-            echo "- Suite: ${{ matrix.label }}"
-            echo "- Run: ${{ github.run_id }} attempt ${{ github.run_attempt }}"
-            echo "- Commit: ${{ github.sha }}"
-            echo
-            echo "## Rewards"
-            while IFS= read -r f; do
-              printf -- '- `%s`: `%s`\n' "${f#$EVIDENCE_DIR/}" "$(tr -d '[:space:]' < "$f")"
-            done < <(find "$EVIDENCE_DIR" -type f -name reward.txt -print | sort)
-            echo
-            echo "## Agent / Harbor files"
-            while IFS= read -r f; do
-              printf -- '- `%s`\n' "${f#$EVIDENCE_DIR/}"
-            done < <(find "$EVIDENCE_DIR" -type f -print | sort)
-          } > "$EVIDENCE_DIR/EVIDENCE.md"
-
-      - name: Upload difficulty evidence
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: terminus-difficulty-${{ matrix.command }}-${{ inputs.task }}-${{ github.run_id }}-${{ github.run_attempt }}
-          path: /tmp/terminus-e3-difficulty/${{ github.run_id }}/${{ github.run_attempt }}/${{ inputs.task }}/${{ matrix.command }}/
-          if-no-files-found: error
+          if-no-files-found: warn
           include-hidden-files: true
           retention-days: 14

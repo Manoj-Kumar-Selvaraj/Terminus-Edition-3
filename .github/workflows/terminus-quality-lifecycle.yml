@@ -150,6 +150,7 @@ jobs:
       freshness_rc: ${{ steps.gate.outputs.freshness_rc }}
       interlock_rc: ${{ steps.gate.outputs.interlock_rc }}
       paths: ${{ steps.restore.outputs.paths }}
+      evidence_commit: ${{ steps.persist.outputs.evidence_commit }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -222,6 +223,7 @@ jobs:
           [[ "$freshness_rc" == 0 ]] || { echo "::error::Fresh review binding validation failed"; exit 1; }
 
       - name: Persist quality-interlock review evidence
+        id: persist
         if: inputs.publish_results
         shell: bash
         run: |
@@ -244,6 +246,8 @@ jobs:
             git commit -m "Persist quality interlock reviews"
             git push origin "HEAD:${GITHUB_REF_NAME}"
           fi
+          evidence_commit="$(git rev-parse HEAD)"
+          echo "evidence_commit=$evidence_commit" >> "$GITHUB_OUTPUT"
 
   record_interlock:
     needs: [preflight, q4, q6, collect_interlock]
@@ -253,6 +257,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          ref: ${{ needs.collect_interlock.outputs.evidence_commit }}
 
       - name: Restore exact reviews for canonical stage recording
         shell: bash
@@ -283,6 +288,7 @@ jobs:
           Q4_REVIEW_PATH: ${{ needs.q4.outputs.review_path }}
           Q6_PACKET_PATH: ${{ needs.q6.outputs.packet_path }}
           Q6_REVIEW_PATH: ${{ needs.q6.outputs.review_path }}
+          EVIDENCE_COMMIT: ${{ needs.collect_interlock.outputs.evidence_commit }}
           INVOCATION: /tmp/quality-interlock.invocation.json
           RESULT: /tmp/quality-interlock.result.json
         run: |
@@ -290,6 +296,7 @@ jobs:
           python3 .terminus/execution/quality_lifecycle_record.py \
             --stage QUALITY_INTERLOCK \
             --run-id "$GITHUB_RUN_ID" \
+            --evidence-commit "$EVIDENCE_COMMIT" \
             --q4-packet "$Q4_PACKET_PATH" \
             --q4-review "$Q4_REVIEW_PATH" \
             --q6-packet "$Q6_PACKET_PATH" \

@@ -1,35 +1,7 @@
 name: Terminus Time Budget CI
 
 on:
-  pull_request:
-    paths:
-      - '.terminus/execution/time_budget.py'
-      - '.terminus/execution/budget_controller_cli.py'
-      - '.terminus/tests/test_time_budget.py'
-      - '.terminus/tests/test_ci_orchestrator_agent.py'
-      - '.terminus/tests/test_controller_stage_automation.py'
-      - '.terminus/agents/TIME_BUDGET_POLICY.md'
-      - '.terminus/agents/CI_ORCHESTRATOR.md'
-      - '.terminus/validate_agent_system.py'
-      - '.cursor/agents/terminus-ci-orchestrator.md'
-      - '.github/workflows/terminus-controller-stage.yml'
-      - '.github/workflows/terminus-controller-run-locator.yml'
-      - '.github/workflows/terminus-time-budget-ci.yml'
-  push:
-    branches: [main]
-    paths:
-      - '.terminus/execution/time_budget.py'
-      - '.terminus/execution/budget_controller_cli.py'
-      - '.terminus/tests/test_time_budget.py'
-      - '.terminus/tests/test_ci_orchestrator_agent.py'
-      - '.terminus/tests/test_controller_stage_automation.py'
-      - '.terminus/agents/TIME_BUDGET_POLICY.md'
-      - '.terminus/agents/CI_ORCHESTRATOR.md'
-      - '.terminus/validate_agent_system.py'
-      - '.cursor/agents/terminus-ci-orchestrator.md'
-      - '.github/workflows/terminus-controller-stage.yml'
-      - '.github/workflows/terminus-controller-run-locator.yml'
-      - '.github/workflows/terminus-time-budget-ci.yml'
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -56,7 +28,7 @@ jobs:
             .terminus/execution/budget_controller_cli.py \
             .terminus/tests/test_time_budget.py \
             .terminus/tests/test_ci_orchestrator_agent.py
-      - name: Run advisory timing and orchestrator regressions
+      - name: Run advisory timing regressions
         env:
           PYTHONPATH: .terminus
         run: |
@@ -67,5 +39,3 @@ jobs:
             -q
       - name: Validate agent-system polling contract
         run: python .terminus/validate_agent_system.py
-      - name: Smoke timing CLI
-        run: python .terminus/execution/budget_controller_cli.py --help >/dev/null

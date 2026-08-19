@@ -24,6 +24,9 @@ _VALID_SENSITIVITIES = frozenset(
 )
 _CONTRACT_SNAPSHOT_PATHS = (
     ".terminus/agents/stage_contracts.json",
+    ".terminus/agents/human_writing_stage_overlay.json",
+    ".terminus/retrieval/stage_overlay.py",
+    ".terminus/retrieval/policy.py",
     ".terminus/agents/evidence_visibility.json",
     ".terminus/agents/retrieval_metadata.json",
     ".terminus/agents/stage_acceptance_predicates.json",

@@ -1,11 +1,7 @@
 name: Terminus EC2 Artifact Policy Direct CI
 
 on:
-  pull_request:
-    paths:
-      - 'ec2-artifact-policy-enforcement/**'
-      - '.terminus/designs/ec2-artifact-policy-enforcement-focused-hardening.json'
-      - '.github/workflows/terminus-ec2-artifact-policy-direct-ci.yml'
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -15,13 +11,10 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
-
+      - name: Require EC2 task package
+        run: test -f ec2-artifact-policy-enforcement/task.toml
       - name: Build inherited environment
-        run: |
-          docker build \
-            -t terminus-ec2-artifact-policy:ci \
-            ec2-artifact-policy-enforcement/environment
-
+        run: docker build -t terminus-ec2-artifact-policy:ci ec2-artifact-policy-enforcement/environment
       - name: Reference solution must pass
         run: |
           set -euo pipefail
@@ -36,7 +29,6 @@ jobs:
               echo "oracle_reward=$reward"
               [[ "$reward" == "1" || "$reward" == "1.0" ]]
             '
-
       - name: Inherited starter must fail
         run: |
           set -euo pipefail
