@@ -55,7 +55,29 @@ def _stub_invocation(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(lifecycle, "_build_invocation", build)
 
 
-def test_interlock_pass_maps_to_canonical_advance(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+def _stub_committed_result_refs(
+    monkeypatch: pytest.MonkeyPatch, head: str
+) -> None:
+    """Keep the recorder real while providing immutable committed RESULT fixtures."""
+    fixture = ROOT / ".terminus/tests/test_quality_lifecycle_record.py"
+    digest = lifecycle._sha256_bytes(fixture.read_bytes())
+
+    def resolve(_root: Path, _path: Path, identity: str) -> dict[str, str]:
+        return {
+            "kind": "RESULT",
+            "ref": (
+                f"git:{head}:.terminus/tests/test_quality_lifecycle_record.py"
+                f"#{identity}"
+            ),
+            "content_hash": digest,
+        }
+
+    monkeypatch.setattr(lifecycle, "_git_result_ref", resolve)
+
+
+def test_interlock_pass_maps_to_canonical_advance(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
     _stub_invocation(monkeypatch)
     q4_id = "quality-test-aaaaaaaa-spec-test-contract-0000000000"
     q6_id = "quality-test-aaaaaaaa-production-logic-0000000000"
@@ -86,7 +108,9 @@ def test_interlock_pass_maps_to_canonical_advance(monkeypatch: pytest.MonkeyPatc
     }
 
 
-def test_interlock_revise_routes_q4_then_q6(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+def test_interlock_revise_routes_q4_then_q6(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
     _stub_invocation(monkeypatch)
     q4_id = "quality-test-aaaaaaaa-spec-test-contract-0000000000"
     q6_id = "quality-test-aaaaaaaa-production-logic-0000000000"
@@ -120,7 +144,9 @@ def test_interlock_revise_routes_q4_then_q6(monkeypatch: pytest.MonkeyPatch, tmp
     assert q6_result["route_key"] == "Q6_REVISE"
 
 
-def test_interlock_rejects_cross_control_plane_binding(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+def test_interlock_rejects_cross_control_plane_binding(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
     _stub_invocation(monkeypatch)
     q4_id = "quality-test-aaaaaaaa-spec-test-contract-0000000000"
     q6_id = "quality-test-aaaaaaaa-production-logic-0000000000"
@@ -142,7 +168,9 @@ def test_interlock_rejects_cross_control_plane_binding(monkeypatch: pytest.Monke
         )
 
 
-def test_q8_perspective_maps_to_registered_stage_status(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+def test_q8_perspective_maps_to_registered_stage_status(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
     _stub_invocation(monkeypatch)
     review_id = "quality-test-aaaaaaaa-difficulty-sim-gpt-0000000000"
     packet = _packet(
@@ -184,13 +212,17 @@ def test_q8_perspective_maps_to_registered_stage_status(monkeypatch: pytest.Monk
         )
 
 
-def test_interlock_pass_builds_real_canonical_execution_record(tmp_path: Path) -> None:
+def test_interlock_pass_builds_real_canonical_execution_record(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
     head = subprocess.run(
         ["git", "-C", str(ROOT), "rev-parse", "HEAD"],
         check=True,
         capture_output=True,
         text=True,
     ).stdout.strip()
+    _stub_committed_result_refs(monkeypatch, head)
+
     task = "bridge-validator"
     q4_id = "bridge-validator-aaaaaaaa-spec-test-contract-0000000000"
     q6_id = "bridge-validator-aaaaaaaa-production-logic-0000000000"
@@ -224,4 +256,9 @@ def test_interlock_pass_builds_real_canonical_execution_record(tmp_path: Path) -
     assert record["status"] == "QUALITY_INTERLOCK_PASS"
     assert record["disposition"] == "ADVANCE"
     assert record["evidence_refs"][0]["ref"] == f"commit:{head}"
+    assert {ref["kind"] for ref in record["evidence_refs"]} >= {
+        "COMMIT",
+        "RESULT",
+        "RUN",
+    }
     assert record["task_lineage"]["task_changed"] is False
