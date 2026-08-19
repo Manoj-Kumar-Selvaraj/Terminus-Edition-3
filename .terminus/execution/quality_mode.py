@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import os
+from copy import deepcopy
 from pathlib import Path
 from typing import Any
 
@@ -50,6 +51,41 @@ def _resolve_one(
             f"invalid {name}={mode!r}; allowed={sorted(allowed_values)}"
         )
     return mode
+
+
+def _validate_inline_sequences(value: Any) -> dict[str, list[dict[str, Any]]]:
+    if not isinstance(value, dict):
+        raise QualityExecutionModeError("inline_stage_sequences must be an object")
+    sequences: dict[str, list[dict[str, Any]]] = {}
+    for stage_id, raw_steps in value.items():
+        if not isinstance(stage_id, str) or not stage_id:
+            raise QualityExecutionModeError("inline stage sequence has invalid stage id")
+        if not isinstance(raw_steps, list) or not raw_steps:
+            raise QualityExecutionModeError(f"inline stage sequence is empty: {stage_id}")
+        steps: list[dict[str, Any]] = []
+        seen_fields: set[str] = set()
+        for raw in raw_steps:
+            if not isinstance(raw, dict):
+                raise QualityExecutionModeError(f"invalid inline step for {stage_id}")
+            role_id = str(raw.get("role_id") or "")
+            result_field = str(raw.get("result_field") or "")
+            satisfied = raw.get("satisfied_values")
+            if not role_id or not result_field or not isinstance(satisfied, list) or not satisfied:
+                raise QualityExecutionModeError(f"incomplete inline step for {stage_id}")
+            if result_field in seen_fields:
+                raise QualityExecutionModeError(
+                    f"duplicate inline result field for {stage_id}: {result_field}"
+                )
+            seen_fields.add(result_field)
+            steps.append(
+                {
+                    "role_id": role_id,
+                    "result_field": result_field,
+                    "satisfied_values": [str(item) for item in satisfied],
+                }
+            )
+        sequences[stage_id] = steps
+    return sequences
 
 
 def resolve_quality_execution_modes(
@@ -103,6 +139,7 @@ def resolve_quality_execution_modes(
         for value in inline.get("quality_role_ids", [])
         if isinstance(value, str)
     }
+    inline_sequences = _validate_inline_sequences(policy.get("inline_stage_sequences"))
     mandatory_roles = [
         str(value)
         for value in independent.get("mandatory_role_keys", [])
@@ -117,6 +154,21 @@ def resolve_quality_execution_modes(
         raise QualityExecutionModeError("same-chat role policy is incomplete")
     if set(checkpoints) != {"Q1", "Q2", "Q3", "Q5", "Q7"}:
         raise QualityExecutionModeError("mandatory same-chat Q checkpoint set drift")
+    spec_sequence = inline_sequences.get("SPEC_ALIGNMENT")
+    if spec_sequence is None or [step["role_id"] for step in spec_sequence] != [
+        "Q1_SPEC_GAP_REPAIRER",
+        "Q2_VERIFIER_COVERAGE_REPAIRER",
+        "Q3_SPEC_AMBIGUITY_REPAIRER",
+    ]:
+        raise QualityExecutionModeError("SPEC_ALIGNMENT must execute Q1, Q2 and Q3 in order")
+    if [step["result_field"] for step in spec_sequence] != [
+        "Q1_STATUS",
+        "Q2_STATUS",
+        "Q3_STATUS",
+    ]:
+        raise QualityExecutionModeError("SPEC_ALIGNMENT inline result-field binding drift")
+    if not {step["role_id"] for step in spec_sequence} <= quality_role_ids:
+        raise QualityExecutionModeError("SPEC_ALIGNMENT sequence contains non-inline Q role")
     if mandatory_roles != ["spec-test-contract", "production-logic"]:
         raise QualityExecutionModeError("mandatory independent quality roles must be Q4 then Q6")
     if optional_roles != ["difficulty-sim-gpt", "difficulty-sim-claude"]:
@@ -129,6 +181,7 @@ def resolve_quality_execution_modes(
         "q8_mode": q8_mode,
         "producer_role_classes": sorted(producer_classes),
         "inline_quality_role_ids": sorted(quality_role_ids),
+        "inline_stage_sequences": deepcopy(inline_sequences),
         "mandatory_same_chat_checkpoints": dict(sorted(checkpoints.items())),
         "mandatory_quality_role_keys": mandatory_roles,
         "optional_q8_role_keys": optional_roles,
