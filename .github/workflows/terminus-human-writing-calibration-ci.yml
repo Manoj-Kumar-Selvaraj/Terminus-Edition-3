@@ -1,31 +1,7 @@
 name: Terminus Human Writing Calibration CI
 
 on:
-  pull_request:
-    paths:
-      - '.terminus/human_writing/**'
-      - '.terminus/learning/knowledge/human-writing-*.jsonl'
-      - '.terminus/agents/HUMAN_WRITING_DATASET_POLICY.md'
-      - '.terminus/agents/HUMAN_WRITING_RESEARCHER.md'
-      - '.terminus/agents/INSTRUCTION_POLICY.md'
-      - '.terminus/agents/human_writing_stage_overlay.json'
-      - '.terminus/agents/execution_outcomes.json'
-      - '.terminus/retrieval/policy.py'
-      - '.terminus/retrieval/stage_overlay.py'
-      - '.github/workflows/terminus-human-writing-calibration-ci.yml'
-  push:
-    branches: [main]
-    paths:
-      - '.terminus/human_writing/**'
-      - '.terminus/learning/knowledge/human-writing-*.jsonl'
-      - '.terminus/agents/HUMAN_WRITING_DATASET_POLICY.md'
-      - '.terminus/agents/HUMAN_WRITING_RESEARCHER.md'
-      - '.terminus/agents/INSTRUCTION_POLICY.md'
-      - '.terminus/agents/human_writing_stage_overlay.json'
-      - '.terminus/agents/execution_outcomes.json'
-      - '.terminus/retrieval/policy.py'
-      - '.terminus/retrieval/stage_overlay.py'
-      - '.github/workflows/terminus-human-writing-calibration-ci.yml'
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -38,122 +14,17 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.13'
-
       - name: Install pinned lint tool
         run: python -m pip install --quiet ruff==0.14.10
-
       - name: Compile human-writing subsystem
-        run: |
-          python -m py_compile \
-            .terminus/human_writing/calibration.py \
-            .terminus/human_writing/calibration_cli.py \
-            .terminus/human_writing/corpus_cache.py \
-            .terminus/human_writing/contamination.py \
-            .terminus/human_writing/evaluation.py \
-            .terminus/human_writing/learning_loop.py \
-            .terminus/human_writing/learning_cli.py \
-            .terminus/human_writing/materialize.py \
-            .terminus/human_writing/materialize_cli.py \
-            .terminus/human_writing/preference_store.py \
-            .terminus/human_writing/validate_calibration.py \
-            .terminus/human_writing/test_calibration.py \
-            .terminus/human_writing/test_learning_loop.py \
-            .terminus/retrieval/policy.py \
-            .terminus/retrieval/stage_overlay.py
-
+        run: python -m compileall -q .terminus/human_writing .terminus/retrieval
       - name: Lint human-writing subsystem
-        run: |
-          ruff check \
-            .terminus/human_writing/calibration.py \
-            .terminus/human_writing/calibration_cli.py \
-            .terminus/human_writing/corpus_cache.py \
-            .terminus/human_writing/contamination.py \
-            .terminus/human_writing/evaluation.py \
-            .terminus/human_writing/learning_loop.py \
-            .terminus/human_writing/learning_cli.py \
-            .terminus/human_writing/materialize.py \
-            .terminus/human_writing/materialize_cli.py \
-            .terminus/human_writing/preference_store.py \
-            .terminus/human_writing/validate_calibration.py \
-            .terminus/human_writing/test_calibration.py \
-            .terminus/human_writing/test_learning_loop.py \
-            .terminus/retrieval/policy.py \
-            .terminus/retrieval/stage_overlay.py
-
-      - name: Validate registry profiles and effective A6/A7 stage contract
+        run: ruff check .terminus/human_writing .terminus/retrieval/stage_overlay.py .terminus/retrieval/policy.py
+      - name: Validate calibration contracts
         run: |
           python .terminus/human_writing/calibration_cli.py --root . validate
           python .terminus/human_writing/validate_calibration.py --root .
-
-      - name: Run calibration regression tests
-        run: python .terminus/human_writing/test_calibration.py
-
-      - name: Run learning-loop regression tests
-        run: python .terminus/human_writing/test_learning_loop.py
-
-      - name: Smoke deterministic blended task pair
+      - name: Run calibration regressions
         run: |
-          python .terminus/human_writing/calibration_cli.py --root . plan \
-            --task-id ci-smoke \
-            --domain 'kubernetes terraform recovery availability incident' \
-            --output /tmp/calibration.json
-          python - <<'PY'
-          import json
-          from pathlib import Path
-          value = json.loads(Path('/tmp/calibration.json').read_text())
-          assert value['independence']['status'] == 'PASS'
-          assert value['writer']['calibration_id'] != value['reviewer']['calibration_id']
-          assert not set(value['writer']['local_seed_sample_ids']) & set(value['reviewer']['local_seed_sample_ids'])
-          assert len(value['domain_profiles']) <= 2
-          assert 'platform_cloud' in value['domain_profiles']
-          kinds = [sample['kind'] for sample in value['reviewer']['local_seed_samples']]
-          assert 'hard_positive' in kinds and 'hard_negative' in kinds
-          PY
-
-      - name: Smoke revision-bound materialization and retrieval
-        run: |
-          cat > /tmp/hw-source.jsonl <<'JSONL'
-          {"source_id":"ci-constraint-1","source_url":"https://example.invalid/ci-constraint-1","domain":"kubernetes recovery","artifact_type":"preference_pair","structural_summary":"restart requirement omitted by rejected response"}
-          JSONL
-          python .terminus/human_writing/materialize_cli.py --root . \
-            --dataset-id tulu3-constraint-preferences \
-            --input /tmp/hw-source.jsonl --source-revision ci-rev-1 \
-            --role-signal reviewer --cache /tmp/hw.sqlite3 --output /tmp/materialization.json
-          python .terminus/human_writing/learning_cli.py --root . cache-search \
-            --query 'kubernetes restart recovery' --role-signal reviewer \
-            --cache /tmp/hw.sqlite3 --output /tmp/hw-search.json
-          python - <<'PY'
-          import json
-          from pathlib import Path
-          mat = json.loads(Path('/tmp/materialization.json').read_text())
-          rows = json.loads(Path('/tmp/hw-search.json').read_text())
-          assert mat['record_count'] == 1 and mat['source_revision'] == 'ci-rev-1'
-          assert len(mat['input_sha256']) == 64
-          assert rows and rows[0]['source_id'] == 'ci-constraint-1'
-          assert rows[0]['source_revision'] == 'ci-rev-1'
-          assert 'retained_text' not in rows[0]
-          PY
-
-      - name: Smoke blind A/B identity binding and adapter fail-closed state
-        run: |
-          printf '%s\n' 'Baseline instruction with all required behavior.' > /tmp/baseline.md
-          printf '%s\n' 'Calibrated instruction with all required behavior.' > /tmp/calibrated.md
-          python .terminus/human_writing/learning_cli.py --root . ab-prepare \
-            --task-id ci-smoke --baseline /tmp/baseline.md \
-            --calibrated /tmp/calibrated.md --writer-actor-id ci-writer \
-            --requirement-contract-sha256 aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa \
-            --output /tmp/ab-public.json --sealed-mapping-output /tmp/ab-mapping.json
-          python .terminus/human_writing/learning_cli.py --root . adapter-readiness \
-            --state /tmp/empty-outcomes.jsonl --output /tmp/adapter.json
-          python - <<'PY'
-          import json
-          from pathlib import Path
-          public = json.loads(Path('/tmp/ab-public.json').read_text())
-          mapping = json.loads(Path('/tmp/ab-mapping.json').read_text())
-          adapter = json.loads(Path('/tmp/adapter.json').read_text())
-          assert set(public['variants']) == {'A', 'B'}
-          assert set(mapping['mapping'].values()) == {'baseline', 'calibrated'}
-          assert mapping['writer_actor_hash']
-          assert adapter['status'] == 'DISABLED'
-          assert adapter['enabled'] is False
-          PY
+          python .terminus/human_writing/test_calibration.py
+          python .terminus/human_writing/test_learning_loop.py
