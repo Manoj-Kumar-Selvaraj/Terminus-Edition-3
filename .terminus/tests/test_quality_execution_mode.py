@@ -21,8 +21,9 @@ from execution.quality_mode import (  # noqa: E402
 def _policy_root(tmp_path: Path) -> Path:
     target = tmp_path / ".terminus" / "agents"
     target.mkdir(parents=True)
-    source = ROOT / ".terminus" / "agents" / "quality_execution_mode.json"
-    (target / source.name).write_text(source.read_text(encoding="utf-8"), encoding="utf-8")
+    for name in ("quality_execution_mode.json", "QUALITY_EXECUTION_MODE.md"):
+        source = ROOT / ".terminus" / "agents" / name
+        (target / name).write_text(source.read_text(encoding="utf-8"), encoding="utf-8")
     return tmp_path
 
 
