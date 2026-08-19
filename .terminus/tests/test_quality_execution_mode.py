@@ -73,6 +73,14 @@ def test_inline_same_chat_roles_and_producers() -> None:
 def _args(**overrides: object) -> SimpleNamespace:
     values: dict[str, object] = {
         "task_id": "quality-test",
+        "task_commit": "a" * 40,
+        "control_plane_commit": "b" * 40,
+        "inputs_json": None,
+        "query": None,
+        "db": None,
+        "retrieval_limit": 10,
+        "max_chars": 30000,
+        "prepare_executor": None,
         "q4_q6_mode": None,
         "q8_mode": None,
     }
@@ -127,3 +135,91 @@ def test_policy_file_declares_mandatory_inline_quality_checkpoints() -> None:
         "Q5_ORACLE_RUNTIME_REPAIR_SPECIALIST",
         "Q7_TASK_FORMAT_ENFORCER",
     ]
+    assert [
+        step["role_id"] for step in raw["inline_stage_sequences"]["SPEC_ALIGNMENT"]
+    ] == [
+        "Q1_SPEC_GAP_REPAIRER",
+        "Q2_VERIFIER_COVERAGE_REPAIRER",
+        "Q3_SPEC_AMBIGUITY_REPAIRER",
+    ]
+
+
+def test_spec_alignment_inline_sequence_is_ordered_and_aggregate_only() -> None:
+    policy = resolve_quality_execution_modes(ROOT)
+    packet = {
+        "readiness": "READY",
+        "invocation_id": "inv_spec_alignment",
+        "stage": {
+            "stage_id": "SPEC_ALIGNMENT",
+            "role_id": "CREATION_CONTROLLER",
+            "role_class": "CONTROLLER",
+        },
+        "output_contract": {
+            "semantic_reviewers": [
+                "Q1 Spec Gap Repairer",
+                "Q2 Verifier Coverage Repairer",
+                "Q3 Spec Ambiguity Repairer",
+            ]
+        },
+    }
+    sequence = controller_cli._inline_specialist_sequence(
+        policy, "SPEC_ALIGNMENT", packet
+    )
+    assert sequence is not None
+    assert sequence["execution_mode"] == "INLINE_SPECIALIST_SEQUENCE"
+    assert sequence["same_chat"] is True
+    assert sequence["aggregate_invocation_id"] == "inv_spec_alignment"
+    assert [step["role_id"] for step in sequence["steps"]] == [
+        "Q1_SPEC_GAP_REPAIRER",
+        "Q2_VERIFIER_COVERAGE_REPAIRER",
+        "Q3_SPEC_AMBIGUITY_REPAIRER",
+    ]
+    assert [step["result_field"] for step in sequence["steps"]] == [
+        "Q1_STATUS",
+        "Q2_STATUS",
+        "Q3_STATUS",
+    ]
+    assert all(step["same_chat"] for step in sequence["steps"])
+    assert all(not step["independent_acceptance"] for step in sequence["steps"])
+
+
+def test_continue_routes_spec_alignment_to_inline_specialist_sequence(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    packet = {
+        "readiness": "READY",
+        "invocation_id": "inv_spec_alignment",
+        "stage": {
+            "stage_id": "SPEC_ALIGNMENT",
+            "role_id": "CREATION_CONTROLLER",
+            "role_class": "CONTROLLER",
+        },
+        "output_contract": {
+            "semantic_reviewers": [
+                "Q1 Spec Gap Repairer",
+                "Q2 Verifier Coverage Repairer",
+                "Q3 Spec Ambiguity Repairer",
+            ]
+        },
+    }
+
+    class FakeBuilder:
+        def __init__(self, root: Path):
+            assert root == ROOT
+
+        def build(self, *_args: object, **_kwargs: object) -> dict[str, object]:
+            return packet
+
+    monkeypatch.setattr(controller_cli, "StageInvocationBuilder", FakeBuilder)
+    snapshot = {
+        "state_snapshot_id": "state_test",
+        "next": {
+            "action": "INVOKE_STAGE",
+            "stage_id": "SPEC_ALIGNMENT",
+            "primary_role_id": "CREATION_CONTROLLER",
+        },
+    }
+    payload = controller_cli._continue_payload(ROOT, _args(), snapshot)
+    assert payload["execution_mode"] == "INLINE_SPECIALIST_SEQUENCE"
+    assert payload["invocation"] is packet
+    assert payload["inline_specialist_sequence"]["status"] == "READY_FOR_INLINE_SPECIALISTS"
