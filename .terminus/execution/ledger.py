@@ -6,6 +6,7 @@ import hashlib
 import json
 import os
 import re
+import subprocess
 from pathlib import Path
 from typing import Any, Mapping
 
@@ -15,6 +16,11 @@ _INVOCATION_ID = re.compile(r"^inv_[0-9a-f]{64}$")
 _EVENT_ID = re.compile(r"^evt_[0-9a-f]{64}$")
 _SHA = re.compile(r"^[0-9a-f]{40,64}$")
 _SHA256 = re.compile(r"^sha256:[0-9a-f]{64}$")
+_HISTORICAL_SNAPSHOT_ERRORS = (
+    "control_plane_commit does not match the loaded stage-invocation contracts:",
+    "control_plane_commit does not match loaded execution-record contracts:",
+    "control_plane_commit does not match loaded execution-record implementation:",
+)
 
 
 class ExecutionLedger:
@@ -242,7 +248,15 @@ class ExecutionLedger:
             raise ValueError("execution ledger record JSON is invalid") from exc
         if not isinstance(value, dict):
             raise ValueError("execution ledger record must be an object")
-        value = ExecutionRecordBuilder(self.root).validate_persisted_record(value)
+
+        builder = ExecutionRecordBuilder(self.root)
+        try:
+            value = builder.validate_persisted_record(value)
+        except ValueError as exc:
+            if not self._is_historical_snapshot_mismatch(exc):
+                raise
+            value = self._validate_historical_record(value, event)
+
         if value.get("record_id") != event["record_id"]:
             raise ValueError("execution ledger event/record record_id mismatch")
         if value.get("invocation_id") != event["invocation_id"]:
@@ -271,6 +285,114 @@ class ExecutionLedger:
             raise ValueError(
                 "execution record control_plane_commit does not match ledger"
             )
+
+    @staticmethod
+    def _is_historical_snapshot_mismatch(exc: ValueError) -> bool:
+        message = str(exc)
+        return any(message.startswith(prefix) for prefix in _HISTORICAL_SNAPSHOT_ERRORS)
+
+    def _validate_historical_record(
+        self,
+        record: Mapping[str, Any],
+        event: Mapping[str, Any],
+    ) -> dict[str, Any]:
+        """Validate immutable historical identity without applying today's contracts.
+
+        A record whose control-plane snapshot differs from the loaded repository is
+        history, not a candidate for current semantic advancement.  Re-applying the
+        current contracts would incorrectly make legitimate old records unreadable.
+        This path therefore verifies only snapshot-independent integrity; the workflow
+        resolver separately marks the record STALE when its control-plane commit is not
+        the active one.
+        """
+        from .invocation import StageInvocationBuilder
+        from .record import ExecutionRecordBuilder
+
+        value = self._normalize_record(record)
+        if value.get("schema_version") != self.schema_version:
+            raise ValueError("historical execution record has unsupported schema_version")
+
+        identity = dict(value)
+        record_id = identity.pop("record_id", None)
+        if record_id != ExecutionRecordBuilder._record_id(identity):
+            raise ValueError("historical execution record record_id hash mismatch")
+
+        invocation = value.get("invocation_snapshot")
+        if not isinstance(invocation, Mapping):
+            raise ValueError(
+                "historical execution record is missing canonical invocation_snapshot"
+            )
+        try:
+            invocation_value = json.loads(
+                json.dumps(
+                    invocation,
+                    sort_keys=True,
+                    separators=(",", ":"),
+                    ensure_ascii=False,
+                )
+            )
+        except (TypeError, ValueError) as exc:
+            raise ValueError("historical invocation snapshot is not JSON-compatible") from exc
+        if not isinstance(invocation_value, dict):
+            raise ValueError("historical invocation snapshot must be one object")
+        if invocation_value.get("schema_version") != "1.0":
+            raise ValueError("historical invocation snapshot has unsupported schema_version")
+        if invocation_value.get("readiness") != "READY":
+            raise ValueError("historical durable invocation snapshot must be READY")
+
+        invocation_identity = dict(invocation_value)
+        invocation_id = invocation_identity.pop("invocation_id", None)
+        if invocation_id != StageInvocationBuilder._invocation_id(invocation_identity):
+            raise ValueError("historical invocation_id does not match invocation content")
+        if invocation_id != value.get("invocation_id"):
+            raise ValueError("historical record/invocation invocation_id mismatch")
+
+        stage = invocation_value.get("stage")
+        authority = invocation_value.get("authority")
+        lineage = value.get("task_lineage")
+        if not isinstance(stage, dict) or not isinstance(authority, dict):
+            raise ValueError("historical invocation stage/authority is invalid")
+        if not isinstance(lineage, dict):
+            raise ValueError("historical execution record task_lineage is invalid")
+        if stage.get("stage_id") != value.get("stage_id"):
+            raise ValueError("historical invocation/record stage_id mismatch")
+        if stage.get("role_id") != value.get("role_id"):
+            raise ValueError("historical invocation/record role_id mismatch")
+        if authority != value.get("authority"):
+            raise ValueError("historical invocation/record authority mismatch")
+        if authority.get("task_id") != self.task_id:
+            raise ValueError("historical execution record task_id does not match ledger")
+        if authority.get("task_commit") != lineage.get("input_task_commit"):
+            raise ValueError(
+                "historical invocation task_commit does not match record lineage"
+            )
+        if authority.get("control_plane_commit") != event.get("control_plane_commit"):
+            raise ValueError(
+                "historical invocation control_plane_commit does not match ledger"
+            )
+
+        for label, commit in (
+            ("input_task_commit", lineage.get("input_task_commit")),
+            ("output_task_commit", lineage.get("output_task_commit")),
+            ("control_plane_commit", authority.get("control_plane_commit")),
+        ):
+            if not isinstance(commit, str) or not _SHA.fullmatch(commit):
+                raise ValueError(f"historical execution record has invalid {label}")
+            available = subprocess.run(
+                ["git", "-C", str(self.root), "cat-file", "-e", f"{commit}^{{commit}}"],
+                capture_output=True,
+            )
+            if available.returncode != 0:
+                raise ValueError(
+                    f"historical execution record {label} is not present in repository history"
+                )
+
+        evidence_refs = value.get("evidence_refs")
+        if not isinstance(evidence_refs, list) or not all(
+            isinstance(item, dict) for item in evidence_refs
+        ):
+            raise ValueError("historical execution record evidence_refs are invalid")
+        return value
 
     def _normalize_record(self, record: Mapping[str, Any]) -> dict[str, Any]:
         try:
