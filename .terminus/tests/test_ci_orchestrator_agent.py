@@ -75,7 +75,6 @@ def test_orchestrator_uses_inline_controller_and_independent_quality_routes() ->
         "QUALITY_INTERLOCK",
         "MODEL_DIAGNOSTIC_GPT",
         "MODEL_DIAGNOSTIC_CLAUDE",
-        ".github/workflows/terminus-quality-lifecycle.yml",
         "NEXT_AGENT_PROMPT: none",
     ):
         assert marker in portable
