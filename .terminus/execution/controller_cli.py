@@ -255,6 +255,67 @@ def _quality_lifecycle_dispatch(
     }
 
 
+def _inline_specialist_sequence(
+    policy: dict[str, Any],
+    stage_id: str,
+    packet: dict[str, Any],
+) -> dict[str, Any] | None:
+    """Project mandatory producer-side semantic checks into the persistent task chat."""
+    sequences = policy.get("inline_stage_sequences")
+    if not isinstance(sequences, dict):
+        raise ValueError("quality mode policy is missing inline_stage_sequences")
+    raw_steps = sequences.get(stage_id)
+    if raw_steps is None:
+        return None
+    if not isinstance(raw_steps, list) or not raw_steps:
+        raise ValueError(f"inline specialist sequence is empty for {stage_id}")
+    stage = packet.get("stage")
+    if not isinstance(stage, dict) or stage.get("role_class") != "CONTROLLER":
+        raise ValueError("inline specialist sequence must aggregate through a CONTROLLER stage")
+    reviewers = packet.get("output_contract", {}).get("semantic_reviewers", [])
+    if not isinstance(reviewers, list) or not reviewers:
+        raise ValueError("inline specialist sequence requires declared semantic reviewers")
+
+    steps: list[dict[str, Any]] = []
+    for ordinal, raw in enumerate(raw_steps, start=1):
+        if not isinstance(raw, dict):
+            raise ValueError(f"invalid inline specialist step for {stage_id}")
+        steps.append(
+            {
+                "ordinal": ordinal,
+                "role_id": str(raw["role_id"]),
+                "execution_mode": "INLINE_SPECIALIST",
+                "same_chat": True,
+                "independent_acceptance": False,
+                "result_field": str(raw["result_field"]),
+                "satisfied_values": [str(value) for value in raw["satisfied_values"]],
+                "evidence_boundary": "inherit the exact aggregate StageInvocation inputs/evidence; no expansion",
+                "mutation_policy": (
+                    "evaluate only during this aggregate pass; if repair is required, return the finding "
+                    "to the aggregate controller so the repair is routed under fresh task-commit authority"
+                ),
+            }
+        )
+
+    return {
+        "status": (
+            "READY_FOR_INLINE_SPECIALISTS"
+            if packet.get("readiness") == "READY"
+            else "BLOCKED"
+        ),
+        "stage_id": stage_id,
+        "execution_mode": "INLINE_SPECIALIST_SEQUENCE",
+        "same_chat": True,
+        "aggregate_invocation_id": packet.get("invocation_id"),
+        "aggregate_owner_role_id": stage.get("role_id"),
+        "steps": steps,
+        "recording_policy": (
+            "freeze the listed specialist outputs in order, then emit exactly one aggregate StageResult; "
+            "substeps are producer-side quality checks, not independent acceptance records"
+        ),
+    }
+
+
 def _controller_stage_dispatch(
     root: Path,
     args: argparse.Namespace,
@@ -363,6 +424,15 @@ def _continue_payload(
         role_id=role_id,
     )
     payload["quality_mode_policy"] = policy
+
+    inline_sequence = _inline_specialist_sequence(policy, stage_id, packet)
+    if inline_sequence is not None and next_action["action"] in {
+        "INVOKE_STAGE",
+        "RETRY_STAGE",
+    }:
+        payload["execution_mode"] = inline_sequence["execution_mode"]
+        payload["inline_specialist_sequence"] = inline_sequence
+        return payload
 
     if next_action["action"] == "DISPATCH_EXTERNAL_GATE":
         payload["execution_mode"] = "EXTERNAL_GATE"
