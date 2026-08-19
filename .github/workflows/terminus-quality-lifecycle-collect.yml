@@ -172,7 +172,7 @@ jobs:
             --result "$RESULT" \
             --output /tmp/q8-lifecycle.record.json
 
-      - name: Persist canonical Q8 ledger/state
+      - name: Persist canonical Q8 ledger
         if: inputs.publish_results
         shell: bash
         env:
@@ -183,7 +183,7 @@ jobs:
           [[ -z "$unexpected" ]] || { echo "::error::Unexpected canonical Q8 record mutations: $unexpected"; exit 1; }
           git config user.name "terminus-quality-lifecycle[bot]"
           git config user.email "terminus-quality-lifecycle[bot]@users.noreply.github.com"
-          git add -- ".terminus/executions/$TASK" ".terminus/workflows/$TASK"
+          git add -- ".terminus/executions/$TASK"
           if git diff --cached --quiet; then
             echo "Q8 lifecycle execution record already persisted."
           else
