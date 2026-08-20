@@ -1,0 +1,619 @@
+{
+  "ledger_event": {
+    "control_plane_commit": "7d8a6d8c62a62e6d24949344c7fd712e59bc8829",
+    "event_id": "evt_82b3c9198fac4d16f8b4f9ed40e3f26e1de7a26f43ddcbf47322c8c05daca415",
+    "input_task_commit": "9663e4da67ab20e6bd66b942ac54b57667408dd8",
+    "invocation_id": "inv_4e02aa98dfb3b77b7247e9fde160ebfa328b1f62507a3b5a8a4a8a399693c15c",
+    "output_task_commit": "9663e4da67ab20e6bd66b942ac54b57667408dd8",
+    "previous_event_id": "evt_0d57123fe146569012ce13e0e87f3a4bba77867805a303e067c9f12f9db7f0fc",
+    "record_hash": "sha256:2396e972235d7474145a681636474313920028cb4e68e9ac3d07a6ac88bef900",
+    "record_id": "rec_647ebb9c82563cf235e241152fa6f8815ba5eeb579a9049fca5b0e54e959d31d",
+    "record_path": ".terminus/executions/edge-router-runtime/inv_4e02aa98dfb3b77b7247e9fde160ebfa328b1f62507a3b5a8a4a8a399693c15c.result.json",
+    "schema_version": "1.0",
+    "sequence": 96,
+    "stage_id": "VERIFIER_BUILD",
+    "task_id": "edge-router-runtime"
+  },
+  "record": {
+    "authority": {
+      "control_plane_commit": "7d8a6d8c62a62e6d24949344c7fd712e59bc8829",
+      "policy_versions": {},
+      "task_commit": "9663e4da67ab20e6bd66b942ac54b57667408dd8",
+      "task_id": "edge-router-runtime"
+    },
+    "disposition": "ADVANCE",
+    "evidence_refs": [],
+    "invocation_id": "inv_4e02aa98dfb3b77b7247e9fde160ebfa328b1f62507a3b5a8a4a8a399693c15c",
+    "invocation_snapshot": {
+      "acceptance_predicates": {},
+      "authority": {
+        "control_plane_commit": "7d8a6d8c62a62e6d24949344c7fd712e59bc8829",
+        "policy_versions": {},
+        "task_commit": "9663e4da67ab20e6bd66b942ac54b57667408dd8",
+        "task_id": "edge-router-runtime"
+      },
+      "evidence": {
+        "authorized_evidence_classes": [
+          "CI_RUNTIME_EVIDENCE",
+          "CONTROL_PLANE_POLICY",
+          "PRIVATE_CREATION_DESIGN",
+          "SOLVER_VISIBLE_TASK"
+        ],
+        "evidence_required": [
+          "requirement-to-test map",
+          "behavioral scenario families",
+          "F2P/P2P classification",
+          "test independence"
+        ],
+        "excluded_evidence_classes": [
+          "CURRENT_REVIEW_PACKET",
+          "DURABLE_SESSION_STATE",
+          "FINAL_PACKAGE_EVIDENCE",
+          "MODEL_TRIAL_EVIDENCE",
+          "PRIOR_REVIEW_RESULTS",
+          "PUBLIC_REFERENCE",
+          "SOLUTION_ORACLE",
+          "VERIFIER_PRIVATE"
+        ],
+        "mandatory_exact_reads": [
+          "TERMINUS_3_AI_INSTRUCTIONS.md",
+          ".terminus/agents/CREATION_PIPELINE.md",
+          ".terminus/agents/CREATOR_PROMPTS.md"
+        ],
+        "retrieval_mode": "FILTERED_HYBRID"
+      },
+      "ignored_input_count": 0,
+      "inputs": {
+        "optional": {},
+        "required": {
+          "BEHAVIORAL_SURFACES": {
+            "cross_component": [
+              "source fence to publication",
+              "snapshot lease to retry/failover",
+              "membership incarnation to affinity/health/transport",
+              "publication to durable recovery"
+            ],
+            "edge_boundary": [
+              "duplicate canonical endpoint aliases",
+              "same-revision conflicts",
+              "rapid remove/re-add",
+              "all-down pools"
+            ],
+            "failure_recovery": [
+              "crash around checkpoint authority",
+              "corrupt CURRENT with previous fallback",
+              "slow drain deadline"
+            ],
+            "negative_rejection": [
+              "invalid configuration",
+              "stale/conflicting source update",
+              "ineligible backend selection"
+            ],
+            "normal": [
+              "accepted complete updates",
+              "stable unchanged endpoint continuity",
+              "live proxy selection"
+            ]
+          },
+          "SOLVER_VISIBLE_CONTRACTS": [
+            "edge-router-runtime/environment/docs/architecture.md",
+            "edge-router-runtime/environment/docs/configuration.md",
+            "edge-router-runtime/environment/docs/runtime-state.md",
+            "edge-router-runtime/environment/docs/operator-guide.md",
+            "edge-router-runtime/environment/docs/observability.md"
+          ],
+          "SOLVER_VISIBLE_REQUIREMENTS": {
+            "PRESERVATION": [
+              "in-flight and long-lived requests remain valid across unrelated updates",
+              "unchanged route semantics remain stable across generations",
+              "healthy unchanged endpoints preserve meaningful runtime state",
+              "rejected updates cannot damage the serving generation",
+              "readers never observe partially applied configuration",
+              "runtime and observability state remain bounded after repeated updates"
+            ],
+            "REQUIRED_END_STATE": [
+              "atomic complete generation publication",
+              "per-source fencing",
+              "stable endpoint identity/incarnation",
+              "compatible runtime-state continuity",
+              "health/lifecycle-aware selection",
+              "bounded draining",
+              "durable complete checkpoint recovery",
+              "bounded runtime/telemetry retirement"
+            ]
+          }
+        }
+      },
+      "invocation_id": "inv_4e02aa98dfb3b77b7247e9fde160ebfa328b1f62507a3b5a8a4a8a399693c15c",
+      "learning": {
+        "context_hash": "sha256:bb84a513aa2b6e4374d691759c4a6edf94169f479f4611e9091643b9f279ccfc",
+        "lessons": [],
+        "mode": "GENERALIZED_LESSONS_PLUS_OWNED_REMEDIATIONS",
+        "raw_feedback_exposed": false,
+        "raw_historical_findings_exposed": false,
+        "registry_heads": {
+          "feedback": "GENESIS",
+          "findings": "GENESIS",
+          "lessons": "GENESIS",
+          "patterns": "GENESIS",
+          "remediations": "GENESIS"
+        },
+        "remediations": []
+      },
+      "missing_required_inputs": [],
+      "output_contract": {
+        "allowed_status_values": [
+          "VERIFIER_READY",
+          "REQUIREMENT_GAP",
+          "SCENARIO_TOO_SMALL",
+          "BLOCKED"
+        ],
+        "deterministic_validators": [
+          "verifier lint/static checks",
+          ".terminus/validate_task_complexity.py <task>"
+        ],
+        "optional_fields": [
+          "STARTER_EMPIRICAL_STATUS",
+          "ORACLE_EMPIRICAL_STATUS",
+          "SOLVER_LOGIC_REIMPLEMENTATION_RISK"
+        ],
+        "persisted_artifacts": [
+          "<task>/tests/",
+          ".terminus/designs/<task>-test-map.json"
+        ],
+        "required_fields": [
+          "REQUIREMENT_TEST_MATRIX",
+          "F2P_COUNT",
+          "P2P_COUNT",
+          "EDGE_BOUNDARY_COVERAGE",
+          "NEGATIVE_FAILURE_COVERAGE",
+          "ORGANIC_COUNT_JUSTIFICATION",
+          "TEST_INDEPENDENCE"
+        ],
+        "semantic_reviewers": [
+          "Q2 Verifier Coverage Repairer",
+          "Verifier Engineer"
+        ]
+      },
+      "readiness": "READY",
+      "retrieval": {
+        "query": null,
+        "retrieved_chars": 0,
+        "retrieved_context": [],
+        "status": "NOT_REQUESTED"
+      },
+      "routing": {
+        "failure_routes": {
+          "DUPLICATE_OR_WEAK_TEST": "A5 Verifier Author / Q2 Verifier Coverage Repairer",
+          "REQUIREMENT_GAP": "Q1 Spec Gap Repairer / contract owner",
+          "SCENARIO_TOO_SMALL": "Creation Controller -> WORK_PACKAGE_RESEARCH"
+        },
+        "stale_on": [
+          "solver-visible requirement change",
+          "referenced contract change",
+          "behavioral surface change",
+          "verifier change"
+        ],
+        "success_transition": "HUMAN_WRITING_RESEARCH"
+      },
+      "schema_version": "1.0",
+      "stage": {
+        "lifecycle": "creation",
+        "owner": "A5 Verifier Author",
+        "role_class": "PRODUCER",
+        "role_id": "A5_VERIFIER_AUTHOR",
+        "stage_id": "VERIFIER_BUILD"
+      }
+    },
+    "outputs": {
+      "EDGE_BOUNDARY_COVERAGE": [
+        "canonical endpoint aliases",
+        "same-revision different-digest conflict",
+        "independent source revision boundaries",
+        "endpoint declaration reorder and equivalent address normalization",
+        "remove/re-add incarnation reset",
+        "all-backends-unhealthy deterministic unavailability",
+        "old leased generation failover while endpoint is draining"
+      ],
+      "F2P_COUNT": 28,
+      "NEGATIVE_FAILURE_COVERAGE": [
+        "invalid/rejected candidate cannot advance accepted fence",
+        "stale revisions cannot publish",
+        "source-local conflicts cannot poison other source material",
+        "unhealthy or removed endpoints cannot receive fresh work",
+        "corrupt, missing, checksum-invalid or schema-incompatible current checkpoints cannot be restored as current",
+        "unknown JSON fields are rejected"
+      ],
+      "ORGANIC_COUNT_JUSTIFICATION": "Twenty-eight F2P cases cover distinct generation authority, source independence, identity/compatibility, snapshot/retry/failover, drain ownership, checkpoint recovery and lifecycle-observability failures. Six P2P cases preserve independent public CLI/admin/data-plane behavior. The 34 cases arise from distinct externally observable lifecycle contracts rather than duplicated parameter variants or quota padding.",
+      "P2P_COUNT": 6,
+      "REQUIREMENT_TEST_MATRIX": {
+        "REQ_CHECKPOINT_RECOVERY": [
+          "test_f2p_corrupt_current_body_falls_back_to_previous_complete_generation",
+          "test_f2p_corrupt_current_pointer_falls_back_to_previous_complete_generation",
+          "test_f2p_checksum_mismatch_is_not_recovered_as_current",
+          "test_f2p_schema_incompatible_checkpoint_is_not_recovered",
+          "test_f2p_missing_current_body_falls_back_to_retained_previous"
+        ],
+        "REQ_DRAIN_OWNERSHIP": [
+          "test_f2p_removed_endpoint_is_not_used_for_fresh_requests",
+          "test_f2p_inflight_request_survives_unrelated_publication"
+        ],
+        "REQ_GENERATION_FENCE": [
+          "test_f2p_same_revision_different_digest_is_conflict",
+          "test_f2p_exact_duplicate_is_generation_noop",
+          "test_f2p_stale_revision_cannot_publish",
+          "test_f2p_rejected_candidate_does_not_advance_fence",
+          "test_f2p_conflict_preserves_last_serving_digest"
+        ],
+        "REQ_IDENTITY_COMPATIBILITY": [
+          "test_f2p_canonical_duplicate_endpoint_identity_is_rejected",
+          "test_f2p_endpoint_reorder_preserves_sticky_continuity",
+          "test_f2p_nonsemantic_pool_metadata_preserves_sticky_state",
+          "test_f2p_equivalent_address_format_preserves_sticky_state",
+          "test_f2p_selection_policy_change_resets_balancer_state",
+          "test_f2p_remove_readd_does_not_reuse_old_unhealthy_incarnation"
+        ],
+        "REQ_OBSERVABILITY": [
+          "test_f2p_metric_scope_count_remains_bounded_under_churn",
+          "test_p2p_metrics_and_events_are_operator_readable"
+        ],
+        "REQ_PUBLIC_INTERFACE": [
+          "test_p2p_validate_accepts_normal_configuration",
+          "test_p2p_validate_rejects_unknown_json_field",
+          "test_p2p_health_ready_and_status_surfaces",
+          "test_p2p_data_plane_proxies_request",
+          "test_p2p_route_host_mismatch_returns_not_found"
+        ],
+        "REQ_SNAPSHOT_SELECTION": [
+          "test_f2p_sticky_affinity_revalidates_unhealthy_endpoint",
+          "test_f2p_all_unhealthy_backends_return_service_unavailable",
+          "test_f2p_retry_exclusion_survives_runtime_object_replacement",
+          "test_f2p_failover_uses_request_leased_generation"
+        ],
+        "REQ_SOURCE_AUTHORITY": [
+          "test_f2p_sources_have_independent_revision_sequences",
+          "test_f2p_low_revision_new_source_not_blocked_by_high_other_source",
+          "test_f2p_source_conflict_is_scoped_to_that_source",
+          "test_f2p_duplicate_one_source_does_not_poison_another",
+          "test_f2p_recovered_source_fence_rejects_older_revision"
+        ]
+      },
+      "TEST_INDEPENDENCE": "Tests drive the documented CLI, operator API, data plane and externally observable runtime/checkpoint behavior. They do not import or inspect solution payloads, key assertions on private defect IDs, or reproduce the reference implementation algorithm."
+    },
+    "record_id": "rec_647ebb9c82563cf235e241152fa6f8815ba5eeb579a9049fca5b0e54e959d31d",
+    "role_id": "A5_VERIFIER_AUTHOR",
+    "schema_version": "1.0",
+    "stage_id": "VERIFIER_BUILD",
+    "status": "VERIFIER_READY",
+    "task_lineage": {
+      "input_task_commit": "9663e4da67ab20e6bd66b942ac54b57667408dd8",
+      "output_task_commit": "9663e4da67ab20e6bd66b942ac54b57667408dd8",
+      "task_changed": false
+    },
+    "transition": {
+      "action": "ADVANCE",
+      "requires_state_validation": false,
+      "target": "HUMAN_WRITING_RESEARCH",
+      "target_kind": "STAGE"
+    },
+    "validation": {
+      "acceptance_predicates_satisfied": true,
+      "evidence_binding_satisfied": true,
+      "evidence_refs_count": 0,
+      "invocation_identity_valid": true,
+      "invocation_policy_valid": true,
+      "output_keys_valid": true,
+      "required_outputs_satisfied": true,
+      "retrieval_context_authorized": true,
+      "status_legal": true,
+      "task_commit_change_authorized": true,
+      "task_lineage_valid": true
+    }
+  },
+  "remediation_updates": [],
+  "state": {
+    "control_plane_commit": "7d8a6d8c62a62e6d24949344c7fd712e59bc8829",
+    "derived_from": {
+      "freshness_overlay_hash": null,
+      "record_ids": [
+        "rec_30312d5365ae0ef22d2c2dcc528081673ed9f4dd57a2c5f53d2d2857fb923e42",
+        "rec_385a112c91cdf523fff7d4ea408c8507afc5616584a988c0d2e918f1b7bcd586",
+        "rec_3b0730e2ac55e78b9340dd72c9a482f091595e6bd6d2fba5bc432f95f6ebd898",
+        "rec_451f6b033b6a9e99a1a34f519e8ced70a296b7a82f79b752433ce469e281f63d",
+        "rec_647ebb9c82563cf235e241152fa6f8815ba5eeb579a9049fca5b0e54e959d31d",
+        "rec_a7beeccea4e72b7f2b7701fc257cfe4fd501154ffa91b857eed42f54ab115a6f",
+        "rec_c33550d7c21ed79785b5077e61afe6657186c8dbc9d2b22650ce485530bfb12a"
+      ]
+    },
+    "ledger_event_count": 96,
+    "ledger_head_event_id": "evt_82b3c9198fac4d16f8b4f9ed40e3f26e1de7a26f43ddcbf47322c8c05daca415",
+    "lineage": {
+      "bootstrap_task_commit": "9663e4da67ab20e6bd66b942ac54b57667408dd8",
+      "current_task_commit": "9663e4da67ab20e6bd66b942ac54b57667408dd8",
+      "recorded_task_commit": "9663e4da67ab20e6bd66b942ac54b57667408dd8",
+      "status": "CURRENT"
+    },
+    "next": {
+      "action": "INVOKE_STAGE",
+      "optional_inputs": [
+        "APPROVED_EXTERNAL_DATASET_CACHE",
+        "CURRENT_STATE_CLAIMS"
+      ],
+      "owner": "A6 Human Writing Researcher",
+      "primary_role_id": "A6_HUMAN_WRITING_RESEARCHER",
+      "required_inputs": [
+        "APPROVED_WORK_PACKAGE",
+        "CURRENT_TIME_BUDGET",
+        "SOLVER_VISIBLE_REQUIREMENTS"
+      ],
+      "stage_id": "HUMAN_WRITING_RESEARCH"
+    },
+    "nodes": [
+      {
+        "disposition": "ADVANCE",
+        "input_task_commit": "9663e4da67ab20e6bd66b942ac54b57667408dd8",
+        "invocation_id": "inv_b6e7f0a821cde5d6f53dbff8210afcd3c7aae00bdb044429e9a3022b14619202",
+        "ledger_event_id": "evt_374dedc3bf209860abe66f782c1b58623c13b043c10a4346a865ee60818ea56b",
+        "node_id": "RULE_RESOLUTION",
+        "node_kind": "STAGE",
+        "output_task_commit": "9663e4da67ab20e6bd66b942ac54b57667408dd8",
+        "reason": "validated ADVANCE record reaches WORK_PACKAGE_RESEARCH",
+        "record_id": "rec_c33550d7c21ed79785b5077e61afe6657186c8dbc9d2b22650ce485530bfb12a",
+        "status": "CURRENT"
+      },
+      {
+        "disposition": "ADVANCE",
+        "input_task_commit": "9663e4da67ab20e6bd66b942ac54b57667408dd8",
+        "invocation_id": "inv_55568453eb270d32bce2d6d055f5da31249ce149a004c50578c8450cef0f3505",
+        "ledger_event_id": "evt_33a2591ee90666056c0ca127dfa7a304ea8144211cc378a837dc211f64e37a42",
+        "node_id": "WORK_PACKAGE_RESEARCH",
+        "node_kind": "STAGE",
+        "output_task_commit": "9663e4da67ab20e6bd66b942ac54b57667408dd8",
+        "reason": "validated ADVANCE record reaches SYSTEM_ARCHITECTURE",
+        "record_id": "rec_385a112c91cdf523fff7d4ea408c8507afc5616584a988c0d2e918f1b7bcd586",
+        "status": "CURRENT"
+      },
+      {
+        "disposition": "ADVANCE",
+        "input_task_commit": "9663e4da67ab20e6bd66b942ac54b57667408dd8",
+        "invocation_id": "inv_5a6a2a5f4563ddcc0f6c0c6f18e44504973cc2fabed2ec58135a474e151ddbf9",
+        "ledger_event_id": "evt_82f10cfdbbb90628eab73c6d72b5906e27479ea24749be42f3bbdb8380c2f6c5",
+        "node_id": "SYSTEM_ARCHITECTURE",
+        "node_kind": "STAGE",
+        "output_task_commit": "9663e4da67ab20e6bd66b942ac54b57667408dd8",
+        "reason": "validated ADVANCE record reaches DEFECT_TOPOLOGY",
+        "record_id": "rec_451f6b033b6a9e99a1a34f519e8ced70a296b7a82f79b752433ce469e281f63d",
+        "status": "CURRENT"
+      },
+      {
+        "disposition": "ADVANCE",
+        "input_task_commit": "9663e4da67ab20e6bd66b942ac54b57667408dd8",
+        "invocation_id": "inv_c53bce84757f08054287605735cff5053f67358a19aeeb6732835314ced5412d",
+        "ledger_event_id": "evt_d52545e4809a4d76104ea15ae5ab471123203b780f33bdd108bab23d78834767",
+        "node_id": "DEFECT_TOPOLOGY",
+        "node_kind": "STAGE",
+        "output_task_commit": "9663e4da67ab20e6bd66b942ac54b57667408dd8",
+        "reason": "validated ADVANCE record reaches ENVIRONMENT_BUILD",
+        "record_id": "rec_3b0730e2ac55e78b9340dd72c9a482f091595e6bd6d2fba5bc432f95f6ebd898",
+        "status": "CURRENT"
+      },
+      {
+        "disposition": "ADVANCE",
+        "input_task_commit": "9663e4da67ab20e6bd66b942ac54b57667408dd8",
+        "invocation_id": "inv_2e13e12156bfcb2f1efecf19a640bd0a3198282de8cc5557f3a2d2b002c4400d",
+        "ledger_event_id": "evt_c1cb0a49bd311ffc5491fd0b9fbc007a68a504dbe06c538bfb1296d488501267",
+        "node_id": "ENVIRONMENT_BUILD",
+        "node_kind": "STAGE",
+        "output_task_commit": "9663e4da67ab20e6bd66b942ac54b57667408dd8",
+        "reason": "validated ADVANCE record reaches REFERENCE_SOLUTION",
+        "record_id": "rec_a7beeccea4e72b7f2b7701fc257cfe4fd501154ffa91b857eed42f54ab115a6f",
+        "status": "CURRENT"
+      },
+      {
+        "disposition": "ADVANCE",
+        "input_task_commit": "9663e4da67ab20e6bd66b942ac54b57667408dd8",
+        "invocation_id": "inv_8dcd442b2c4d235787bd05daa786af4e815330abd118c57b4ecdd85c43665564",
+        "ledger_event_id": "evt_0d57123fe146569012ce13e0e87f3a4bba77867805a303e067c9f12f9db7f0fc",
+        "node_id": "REFERENCE_SOLUTION",
+        "node_kind": "STAGE",
+        "output_task_commit": "9663e4da67ab20e6bd66b942ac54b57667408dd8",
+        "reason": "validated ADVANCE record reaches VERIFIER_BUILD",
+        "record_id": "rec_30312d5365ae0ef22d2c2dcc528081673ed9f4dd57a2c5f53d2d2857fb923e42",
+        "status": "CURRENT"
+      },
+      {
+        "disposition": "ADVANCE",
+        "input_task_commit": "9663e4da67ab20e6bd66b942ac54b57667408dd8",
+        "invocation_id": "inv_4e02aa98dfb3b77b7247e9fde160ebfa328b1f62507a3b5a8a4a8a399693c15c",
+        "ledger_event_id": "evt_82b3c9198fac4d16f8b4f9ed40e3f26e1de7a26f43ddcbf47322c8c05daca415",
+        "node_id": "VERIFIER_BUILD",
+        "node_kind": "STAGE",
+        "output_task_commit": "9663e4da67ab20e6bd66b942ac54b57667408dd8",
+        "reason": "validated ADVANCE record reaches HUMAN_WRITING_RESEARCH",
+        "record_id": "rec_647ebb9c82563cf235e241152fa6f8815ba5eeb579a9049fca5b0e54e959d31d",
+        "status": "CURRENT"
+      },
+      {
+        "input_task_commit": "9663e4da67ab20e6bd66b942ac54b57667408dd8",
+        "invocation_id": "inv_579f61acfc5e2423499f825cb50ac332c05ca73b3e62b37a729e2536e56bf8a6",
+        "ledger_event_id": "evt_4d0da8f6b426710fa4292f4b56b949e6f82639d769fd348052ffa80b6ed9254e",
+        "node_id": "HUMAN_WRITING_RESEARCH",
+        "node_kind": "STAGE",
+        "output_task_commit": "9663e4da67ab20e6bd66b942ac54b57667408dd8",
+        "reason": "latest execution record predates the latest current predecessor execution; the downstream stage must be rerun even when task/control commits are unchanged",
+        "record_id": "rec_a9f3c34c95a385ebdb1bd0d686c87835170916fe137a3eb3e0eee007f769dcc4",
+        "status": "STALE"
+      },
+      {
+        "input_task_commit": "9663e4da67ab20e6bd66b942ac54b57667408dd8",
+        "invocation_id": "inv_be1072bc94fe81ae158b4acebf5571142eaf982a60e8e35728e8d8007d2f10cc",
+        "ledger_event_id": "evt_ae03f291e0841cfacbea8225df278d80c599cc6353cf9aefe63e2ead33ba9bfc",
+        "node_id": "INSTRUCTION_DRAFT",
+        "node_kind": "STAGE",
+        "output_task_commit": "9663e4da67ab20e6bd66b942ac54b57667408dd8",
+        "reason": "upstream node HUMAN_WRITING_RESEARCH is not current; later historical evidence cannot advance",
+        "record_id": "rec_285a40d019eaea9aebd0f4b284c3b8d8f7ce5a9f4bfa916b9e9a5ade39e229ea",
+        "status": "STALE"
+      },
+      {
+        "input_task_commit": "9663e4da67ab20e6bd66b942ac54b57667408dd8",
+        "invocation_id": "inv_2f06110aee2594f39b53f1ffddcd5a0783100abf897795c7972b68c71d2de255",
+        "ledger_event_id": "evt_a2e57de03e15d1456cb70d50c1a29b3ba8d708ccc0be617854b8bca4bb82e282",
+        "node_id": "SPEC_ALIGNMENT",
+        "node_kind": "STAGE",
+        "output_task_commit": "9663e4da67ab20e6bd66b942ac54b57667408dd8",
+        "reason": "upstream node INSTRUCTION_DRAFT is not current; later historical evidence cannot advance",
+        "record_id": "rec_800d9d67697f03411af14bdbc5c4999d59a70029413c6b7b8246958142137901",
+        "status": "STALE"
+      },
+      {
+        "input_task_commit": "9663e4da67ab20e6bd66b942ac54b57667408dd8",
+        "invocation_id": "inv_074e12f5b4f588fce1036ecb2a36d519e6440f6442eda274491f86aa7ac56e99",
+        "ledger_event_id": "evt_e3788272f2f3b431c03d69e0fa3bff1a8d6aa4504aafbef35a05fa6e0f099a8f",
+        "node_id": "DOCUMENTATION_DRAFT",
+        "node_kind": "STAGE",
+        "output_task_commit": "9663e4da67ab20e6bd66b942ac54b57667408dd8",
+        "reason": "upstream node SPEC_ALIGNMENT is not current; later historical evidence cannot advance",
+        "record_id": "rec_cbf9f1a320b8aa592003dea47fad12a50c588ece095b54a4f06033ee10e034e3",
+        "status": "STALE"
+      },
+      {
+        "input_task_commit": "9663e4da67ab20e6bd66b942ac54b57667408dd8",
+        "invocation_id": "inv_030a3c3e8e0edfb7b6ca90098cc87976cb956a32ed57bc87c941ac8a3f6c3f2f",
+        "ledger_event_id": "evt_a8bc13d18dd3b4a068cfc11885d3e919ead26f695435abdca10a7c875bcd1353",
+        "node_id": "FORMAT_GATE",
+        "node_kind": "STAGE",
+        "output_task_commit": "9663e4da67ab20e6bd66b942ac54b57667408dd8",
+        "reason": "upstream node DOCUMENTATION_DRAFT is not current; later historical evidence cannot advance",
+        "record_id": "rec_72ffbd9ea865eecc13ec47b37ef770128b2cedb80803b9a96fd6f776919bdd76",
+        "status": "STALE"
+      },
+      {
+        "input_task_commit": "9663e4da67ab20e6bd66b942ac54b57667408dd8",
+        "invocation_id": "inv_d3fa76e8d7ccf78683cfae67ef6c7a28cd2669e5e7bf4e5a07799575024484f8",
+        "ledger_event_id": "evt_58a0a75c33a473e1e0c2ecc63cb2bbd983806d69eb5afb0daf9298cc15be36a5",
+        "node_id": "ASSEMBLY",
+        "node_kind": "STAGE",
+        "output_task_commit": "9663e4da67ab20e6bd66b942ac54b57667408dd8",
+        "reason": "upstream node FORMAT_GATE is not current; later historical evidence cannot advance",
+        "record_id": "rec_386675bc6e6d27e456e205dc84c8dbb9fb3274b7eaac00494d2065bacda947c7",
+        "status": "STALE"
+      },
+      {
+        "input_task_commit": "9663e4da67ab20e6bd66b942ac54b57667408dd8",
+        "invocation_id": "inv_8791503bb7c11843796a291111b17b9f6d0b32f8cf03dfcc46b33a81cae24169",
+        "ledger_event_id": "evt_39c954474f826f5ecd443944209c77a906e5f476f5777bcdef96f4b59283babd",
+        "node_id": "COMPLEXITY_GATE",
+        "node_kind": "STAGE",
+        "output_task_commit": "9663e4da67ab20e6bd66b942ac54b57667408dd8",
+        "reason": "upstream node ASSEMBLY is not current; later historical evidence cannot advance",
+        "record_id": "rec_b6a254a7e6880daa0cd860995e0eee65f3424d8e9b393fef8a93eed714ac3736",
+        "status": "STALE"
+      },
+      {
+        "input_task_commit": "9663e4da67ab20e6bd66b942ac54b57667408dd8",
+        "invocation_id": "inv_16ef6f864d6c85ccb2d9615c8d3b35b3845e44dce37af0246d9acb572433511d",
+        "ledger_event_id": "evt_01e7b5d3377459194725e2f7d35f7959738be201bdeaf9e438454c500c52f680",
+        "node_id": "RUNTIME_AUTHENTICITY",
+        "node_kind": "STAGE",
+        "output_task_commit": "9663e4da67ab20e6bd66b942ac54b57667408dd8",
+        "reason": "upstream node COMPLEXITY_GATE is not current; later historical evidence cannot advance",
+        "record_id": "rec_a599027937fdf9be91a134f70e1d610cf2be972301173ba0581a832598c850fd",
+        "status": "STALE"
+      },
+      {
+        "input_task_commit": "9663e4da67ab20e6bd66b942ac54b57667408dd8",
+        "invocation_id": "inv_c3181c2d7d21a1d402353f1b1c308c6a0f4475156cd1226e42378d0c96b31581",
+        "ledger_event_id": "evt_cd8ddcfbe9cf6d1b526ecb805632a66f43df70a9daa53d65339db548632309fc",
+        "node_id": "DETERMINISTIC_VALIDATION",
+        "node_kind": "STAGE",
+        "output_task_commit": "9663e4da67ab20e6bd66b942ac54b57667408dd8",
+        "reason": "upstream node RUNTIME_AUTHENTICITY is not current; later historical evidence cannot advance",
+        "record_id": "rec_b4fc1acbf308093110a02e1e6a548a9360c3a17f03d25ef5b5c1a9d284a6434c",
+        "status": "STALE"
+      },
+      {
+        "node_id": "FROZEN_CANDIDATE",
+        "node_kind": "STATE",
+        "reason": "state cannot be current while its predecessor chain is non-current",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "QUALITY_INTERLOCK",
+        "node_kind": "STAGE",
+        "reason": "upstream node FROZEN_CANDIDATE is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "PRE_LLMAJ",
+        "node_kind": "STAGE",
+        "reason": "upstream node QUALITY_INTERLOCK is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "MODEL_DIAGNOSTIC_GPT",
+        "node_kind": "STAGE",
+        "reason": "upstream node PRE_LLMAJ is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "MODEL_DIAGNOSTIC_CLAUDE",
+        "node_kind": "STAGE",
+        "reason": "upstream node MODEL_DIAGNOSTIC_GPT is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "MODEL_DIAGNOSTIC_AGGREGATE",
+        "node_kind": "STAGE",
+        "reason": "upstream node MODEL_DIAGNOSTIC_CLAUDE is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "HARBOR_LLMAJ",
+        "node_kind": "STAGE",
+        "reason": "upstream node MODEL_DIAGNOSTIC_AGGREGATE is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "OFFICIAL_MODEL_TRIALS",
+        "node_kind": "STAGE",
+        "reason": "upstream node HARBOR_LLMAJ is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "TRIAL_ANALYSIS",
+        "node_kind": "STAGE",
+        "reason": "upstream node OFFICIAL_MODEL_TRIALS is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "DIFFICULTY_ASSESSMENT",
+        "node_kind": "STAGE",
+        "reason": "upstream node TRIAL_ANALYSIS is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "FINAL_REVIEW",
+        "node_kind": "STAGE",
+        "reason": "upstream node DIFFICULTY_ASSESSMENT is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "SUBMISSION_READY",
+        "node_kind": "STAGE",
+        "reason": "upstream node FINAL_REVIEW is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      }
+    ],
+    "schema_version": "1.0",
+    "state_snapshot_id": "state_10dc47fc350507290f5a354fcb0add7bf14c1960eb248857870dfad6e37e268c",
+    "summary": {
+      "BLOCKED": 0,
+      "CURRENT": 7,
+      "MISSING": 12,
+      "STALE": 9
+    },
+    "task_commit": "9663e4da67ab20e6bd66b942ac54b57667408dd8",
+    "task_id": "edge-router-runtime"
+  }
+}
