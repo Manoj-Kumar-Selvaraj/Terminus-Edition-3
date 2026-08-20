@@ -1,22 +1,22 @@
 {
   "ledger_event": {
-    "control_plane_commit": "67b805a297ac005ee08e82facc533f53a3233192",
-    "event_id": "evt_8b71bf73031d7069ec391fdba89185b38d0c76c854c5808cd0a1a37999bd8dba",
+    "control_plane_commit": "5aebce7e213fa5f5864bdd741e6139d39bf5e059",
+    "event_id": "evt_48d6c66c437a283130988f841328c9c370fd263347c9cae20b184a4cae0caaba",
     "input_task_commit": "78ad422902b27dea954905130a1267b02cff3596",
-    "invocation_id": "inv_874c75d27f882f6e055d0d6ba2bd400647a3f1ae79308b6de2fffa2041ab5644",
+    "invocation_id": "inv_5cbde9e63c9347e99036c94c94bf3a7083d528254a639f4c8d9ea2e9402b1856",
     "output_task_commit": "78ad422902b27dea954905130a1267b02cff3596",
-    "previous_event_id": "evt_82ea66deaa4a6eccfbf434211096ae909c8fba72e07cc1f5b6eabdb30558c82f",
-    "record_hash": "sha256:b847a116f586ed5977840930c2fd9a709d5de9b2b75237d21b45ec18056de58e",
-    "record_id": "rec_e7d4ab9b3b426be089694aca0e89f6598dc5b7e4a8ed8acf662bf2f5cd76fb8b",
-    "record_path": ".terminus/executions/terraform-ansible-managed-resources/inv_874c75d27f882f6e055d0d6ba2bd400647a3f1ae79308b6de2fffa2041ab5644.result.json",
+    "previous_event_id": "evt_b3ca05eddaa9a3bd3078aad2c4f1f3105bc2ebe6b6f7af4ec2a202d796b9d6b5",
+    "record_hash": "sha256:a2750dc70326a49def260a9add5355b3bed6378d12d38161bc9d07dbeac3edc4",
+    "record_id": "rec_8dbb01771754d1eb0f3a511739e2fd5eceea6c3fe72786323ff545cf096116ca",
+    "record_path": ".terminus/executions/terraform-ansible-managed-resources/inv_5cbde9e63c9347e99036c94c94bf3a7083d528254a639f4c8d9ea2e9402b1856.result.json",
     "schema_version": "1.0",
-    "sequence": 48,
+    "sequence": 63,
     "stage_id": "VERIFIER_BUILD",
     "task_id": "terraform-ansible-managed-resources"
   },
   "record": {
     "authority": {
-      "control_plane_commit": "67b805a297ac005ee08e82facc533f53a3233192",
+      "control_plane_commit": "5aebce7e213fa5f5864bdd741e6139d39bf5e059",
       "policy_versions": {},
       "task_commit": "78ad422902b27dea954905130a1267b02cff3596",
       "task_id": "terraform-ansible-managed-resources"
@@ -27,18 +27,13 @@
         "content_hash": "sha256:104817a239b92de3e53f14d6bc0176563437894773e060648776dc09c6280374",
         "kind": "COMMIT",
         "ref": "commit:78ad422902b27dea954905130a1267b02cff3596"
-      },
-      {
-        "content_hash": "sha256:fca3ef4b283f1a1fe2aa6d960cd36a17b7232eb0b7a130f9cc8d43d948d6ec42",
-        "kind": "COMMIT",
-        "ref": "commit:67b805a297ac005ee08e82facc533f53a3233192"
       }
     ],
-    "invocation_id": "inv_874c75d27f882f6e055d0d6ba2bd400647a3f1ae79308b6de2fffa2041ab5644",
+    "invocation_id": "inv_5cbde9e63c9347e99036c94c94bf3a7083d528254a639f4c8d9ea2e9402b1856",
     "invocation_snapshot": {
       "acceptance_predicates": {},
       "authority": {
-        "control_plane_commit": "67b805a297ac005ee08e82facc533f53a3233192",
+        "control_plane_commit": "5aebce7e213fa5f5864bdd741e6139d39bf5e059",
         "policy_versions": {},
         "task_commit": "78ad422902b27dea954905130a1267b02cff3596",
         "task_id": "terraform-ansible-managed-resources"
@@ -75,110 +70,39 @@
       },
       "ignored_input_count": 0,
       "inputs": {
-        "optional": {
-          "PRESERVATION_RISK_MODEL": {
-            "preservation_obligations": [
-              "exact ten interfaces",
-              "local/ansibleops 0.1.0",
-              "Terraform Core sole durable state",
-              "clean Read never runs Ansible",
-              "sibling entries and symlink targets preserved"
-            ],
-            "starter_public_interfaces": [
-              "terraform-provider-ansibleops",
-              "provider Configure/CRUD callbacks",
-              "build-provider.sh",
-              "smoke.sh",
-              "examples/basic/main.tf"
-            ]
-          },
-          "RUNTIME_INTERFACE_MAP": {
-            "entrypoints": [
-              "/app/provider/cmd/terraform-provider-ansibleops/main.go",
-              "Terraform Configure/Create/Read/Update/Delete",
-              "/app/provider/scripts/build-provider.sh",
-              "/app/provider/scripts/smoke.sh"
-            ],
-            "reachability": [
-              "Terraform provider registration reaches exactly ten resource implementations",
-              "CRUD mutation reaches shared Ansible runner",
-              "Read reaches native filesystem/content/account/cron observers",
-              "normalization and identity logic are shared across resource families"
-            ]
-          }
-        },
+        "optional": {},
         "required": {
-          "BEHAVIORAL_SURFACES": {
-            "cross_component": [
-              "identity across mutable updates",
-              "native observation versus mutation boundary",
-              "state commit ordering versus runner outcome",
-              "normalization across desired and observed state"
-            ],
-            "edge_boundary": [
-              "wrong object kind",
-              "spaces in paths",
-              "omitted versus explicit cron defaults",
-              "remove_home boundary",
-              "map/group/mode ordering equivalence",
-              "already-absent destroy"
-            ],
-            "failure_recovery": [
-              "failed update retry",
-              "timeout/cancellation cleanup",
-              "missing-object recreation",
-              "failed destroy retry",
-              "external drift"
-            ],
-            "negative_rejection": [
-              "duplicate external ownership",
-              "shell metacharacters remain literal",
-              "non-zero Ansible failure",
-              "failed delete retains state",
-              "command output absent from state"
-            ],
-            "normal": [
-              "exact ten provider schemas",
-              "basic lifecycle/state",
-              "copy/template content and metadata",
-              "account/group/cron lifecycle",
-              "successful runner cleanup",
-              "Ansible mutation backend"
-            ],
-            "ownership": [
-              "path/user/group/cron collision rejection",
-              "line/block/cron sibling preservation",
-              "block marker ownership",
-              "symlink target preservation",
-              "user home policy"
-            ]
-          },
-          "SOLVER_VISIBLE_CONTRACTS": {
-            "lifecycle.md": "Create mutate-observe-publish; Read native and drift-aware; Update stable identity and retry-safe state; Delete scoped and failure-safe; repeated apply/refresh/plan idempotent with canonical representations.",
-            "provider-contract.md": "One Terraform resource owns one external key; Create/Update/Delete may use Ansible; Read is native-only; mutations use process arguments not shell text; non-zero/timeout/cancel fail; temp playbooks always cleaned; successful state publication follows external mutation; failed update preserves prior state; destroy completes only after absence.",
-            "resource-reference.md": "Exactly ten resources: file,directory,copy,template,line,block,symlink,user,group,cron with documented external identities; copy/template source_digest semantics; named text independent ownership; cron root/wildcard defaults; native filesystem/account/cron observation."
-          },
+          "BEHAVIORAL_SURFACES": [
+            "create/state",
+            "refresh/drift",
+            "update transaction",
+            "delete transaction",
+            "runner safety",
+            "idempotency",
+            "filesystem/content/account/cron ownership and scoped preservation"
+          ],
+          "SOLVER_VISIBLE_CONTRACTS": [
+            "terraform-ansible-managed-resources/instruction.md",
+            "terraform-ansible-managed-resources/environment/ansibleops/docs/provider-contract.md",
+            "terraform-ansible-managed-resources/environment/ansibleops/docs/lifecycle.md",
+            "terraform-ansible-managed-resources/environment/ansibleops/docs/resource-reference.md"
+          ],
           "SOLVER_VISIBLE_REQUIREMENTS": {
-            "instruction.md": "Complete the inherited ansibleops provider as exactly ten normal managed Terraform resources; stable external-key identity; Ansible-only mutation; native side-effect-free Read; transactional state publication; scoped delete; copy/template source intent and destination observation; named line/block ownership; account/group/cron reconciliation; structured argv and cleanup; canonical convergence; Terraform Core sole durable state authority; no wrapper/provisioner/manual-state substitutes.",
-            "requirement_families": [
-              "provider/schema",
-              "state/identity",
-              "native refresh/drift",
-              "transactional create/update",
-              "failure-safe scoped delete",
-              "copy/template content intent",
-              "line/block ownership",
-              "user/group native reconciliation",
-              "runner/process safety",
-              "normalization/idempotency",
-              "cron defaults/drift/siblings",
-              "external ownership collision",
-              "Ansible mutation backend"
+            "ENGINEERING_OBJECTIVE": "Complete the ten-resource ansibleops Terraform provider as one coherent lifecycle/reconciliation system.",
+            "REQUIRED_END_STATE": [
+              "stable external-object identity",
+              "Ansible-only Create/Update/Delete mutation",
+              "native Linux side-effect-free Read/refresh and drift reconciliation",
+              "state publication only after successful mutation with failure-safe retry semantics",
+              "scoped ownership/deletion",
+              "structured argv plus timeout/cancellation/temp cleanup",
+              "canonical normalization/idempotency",
+              "Terraform Core sole durable state authority"
             ]
           }
         }
       },
-      "invocation_id": "inv_874c75d27f882f6e055d0d6ba2bd400647a3f1ae79308b6de2fffa2041ab5644",
+      "invocation_id": "inv_5cbde9e63c9347e99036c94c94bf3a7083d528254a639f4c8d9ea2e9402b1856",
       "learning": {
         "context_hash": "sha256:bb84a513aa2b6e4374d691759c4a6edf94169f479f4611e9091643b9f279ccfc",
         "lessons": [],
@@ -262,91 +186,44 @@
     "outputs": {
       "EDGE_BOUNDARY_COVERAGE": [
         "wrong object kind",
-        "spaces in paths",
+        "paths with spaces",
         "cron omitted/explicit defaults",
-        "home-removal boundary",
-        "map/group/mode ordering equivalence",
+        "remove_home boundary",
+        "unordered/mode equivalence",
         "already-absent destroy"
       ],
       "F2P_COUNT": 30,
       "NEGATIVE_FAILURE_COVERAGE": [
         "duplicate external ownership",
         "literal shell metacharacters",
-        "non-zero Ansible failure with cleanup",
+        "Ansible non-zero",
+        "failed update retry",
         "failed delete retains state",
-        "command output absent from Terraform state"
+        "timeout/cancellation cleanup",
+        "command output absent from state"
       ],
-      "ORACLE_EMPIRICAL_STATUS": "DEFERRED_TO_DETERMINISTIC_VALIDATION_CURRENT_TASK_COMMIT",
-      "ORGANIC_COUNT_JUSTIFICATION": "Thirty F2P cases cover distinct lifecycle, drift, transaction, ownership, process and normalization obligations across ten managed-resource families; six P2P cases establish preserved baseline behavior without padding.",
+      "ORACLE_EMPIRICAL_STATUS": "NOT_REEARNED_UNDER_CURRENT_CONTROL",
+      "ORGANIC_COUNT_JUSTIFICATION": "The 30 F2P cases arise from distinct lifecycle, drift, transactional failure, ownership, runner-safety, normalization and differentiated resource-family behavior; the 6 P2P cases preserve baseline behavior without padding.",
       "P2P_COUNT": 6,
       "REQUIREMENT_TEST_MATRIX": {
-        "REQ_BACKEND": [
-          "test_f2p_clean_named_text_refresh_does_not_execute_ansible"
-        ],
-        "REQ_COPY": [
-          "test_f2p_copy_destination_content_drift_requires_reconciliation",
-          "test_f2p_copy_source_digest_change_executes_content_update"
-        ],
-        "REQ_CRON": [
-          "test_f2p_cron_omitted_schedule_fields_converge_to_wildcards"
-        ],
-        "REQ_DELETE": [
-          "test_f2p_destroy_preserves_home_when_remove_home_is_false",
-          "test_f2p_destroy_removes_home_when_remove_home_is_true",
-          "test_f2p_failed_delete_preserves_managed_state_for_retry",
-          "test_f2p_named_entry_deletes_preserve_siblings",
-          "test_p2p_symlink_destroy_preserves_target"
-        ],
-        "REQ_IDENTITY": [
-          "test_f2p_filesystem_identities_survive_mutable_updates",
-          "test_f2p_content_identities_survive_source_and_variable_updates",
-          "test_f2p_user_identity_survives_shell_update",
-          "test_f2p_group_gid_drift_reconciles_without_identity_churn"
-        ],
-        "REQ_NORMALIZE": [
-          "test_p2p_template_variable_order_is_semantically_stable",
-          "test_f2p_user_supplementary_group_drift_requires_reconciliation"
-        ],
-        "REQ_OWNERSHIP": [
-          "test_f2p_duplicate_external_ownership_is_rejected"
-        ],
-        "REQ_PROVIDER": [
-          "test_f2p_provider_exposes_exact_managed_resource_schemas",
-          "test_p2p_directory_basic_apply_state_and_destroy",
-          "test_p2p_declared_provider_artifact_root_is_mounted"
-        ],
-        "REQ_REFRESH": [
-          "test_f2p_deleted_directory_is_planned_for_recreation",
-          "test_f2p_filesystem_mode_drift_requires_reconciliation",
-          "test_f2p_symlink_target_drift_requires_reconciliation",
-          "test_f2p_deleted_user_is_planned_for_recreation"
-        ],
-        "REQ_RUNNER": [
-          "test_f2p_runner_handles_temp_paths_with_spaces",
-          "test_f2p_runner_does_not_interpret_shell_metacharacters",
-          "test_p2p_success_cleanup_and_state_output_secrecy",
-          "test_f2p_nonzero_ansible_exit_fails_lifecycle_transition",
-          "test_f2p_timeout_and_cancellation_clean_generated_playbooks"
-        ],
-        "REQ_STATE": [
-          "test_p2p_state_is_owned_by_terraform_core",
-          "test_f2p_symlink_identity_survives_target_update"
-        ],
-        "REQ_TEXT": [
-          "test_f2p_clean_named_text_refresh_does_not_execute_ansible",
-          "test_f2p_line_update_replaces_previous_value_exactly_once",
-          "test_f2p_removed_named_text_is_planned_for_recreation"
-        ],
-        "REQ_UPDATE": [
-          "test_f2p_failed_update_preserves_last_successful_template_state",
-          "test_f2p_retry_after_failed_update_reexecutes_and_converges"
-        ]
+        "canonical_normalization_and_idempotency": "covered",
+        "copy_template_digest_semantics": "covered",
+        "cron_defaults_drift_and_sibling_preservation": "covered",
+        "delete_failure_and_retry": "covered",
+        "line_block_scoped_ownership": "covered",
+        "native_refresh_and_external_drift": "covered",
+        "ownership_collision_and_backend_boundaries": "covered",
+        "provider_schema": "covered",
+        "runner_argv_timeout_cancel_cleanup": "covered",
+        "state_identity_and_durability": "covered",
+        "update_failure_and_retry": "covered",
+        "user_group_observation_and_normalization": "covered"
       },
-      "SOLVER_LOGIC_REIMPLEMENTATION_RISK": "LOW: tests assert observable lifecycle contracts rather than duplicating provider algorithms.",
-      "STARTER_EMPIRICAL_STATUS": "DEFERRED_TO_DETERMINISTIC_VALIDATION_CURRENT_TASK_COMMIT",
-      "TEST_INDEPENDENCE": "Verifier assertions observe public Terraform/provider behavior and external Linux state; they do not inspect or reproduce reference-solution implementation internals."
+      "SOLVER_LOGIC_REIMPLEMENTATION_RISK": "LOW: tests assert observable contracts and external state transitions rather than reimplementing provider algorithms.",
+      "STARTER_EMPIRICAL_STATUS": "NOT_REEARNED_UNDER_CURRENT_CONTROL",
+      "TEST_INDEPENDENCE": "Verifier assertions exercise public Terraform/provider behavior and external Linux effects rather than copying the reference solution implementation or private defect IDs."
     },
-    "record_id": "rec_e7d4ab9b3b426be089694aca0e89f6598dc5b7e4a8ed8acf662bf2f5cd76fb8b",
+    "record_id": "rec_8dbb01771754d1eb0f3a511739e2fd5eceea6c3fe72786323ff545cf096116ca",
     "role_id": "A5_VERIFIER_AUTHOR",
     "schema_version": "1.0",
     "stage_id": "VERIFIER_BUILD",
@@ -365,7 +242,7 @@
     "validation": {
       "acceptance_predicates_satisfied": true,
       "evidence_binding_satisfied": true,
-      "evidence_refs_count": 2,
+      "evidence_refs_count": 1,
       "invocation_identity_valid": true,
       "invocation_policy_valid": true,
       "output_keys_valid": true,
@@ -378,21 +255,21 @@
   },
   "remediation_updates": [],
   "state": {
-    "control_plane_commit": "67b805a297ac005ee08e82facc533f53a3233192",
+    "control_plane_commit": "5aebce7e213fa5f5864bdd741e6139d39bf5e059",
     "derived_from": {
       "freshness_overlay_hash": null,
       "record_ids": [
-        "rec_014b2e2b43577ba2129283387f220992b19db2b5ce7d34a8954c413b8cf20197",
-        "rec_0476e3fe0f666bca3546794a21e86db2a789d169a62e761f443cf518905d809c",
-        "rec_43fdadbfe64e7529f478ce2b20d76d0240739faf2a3cff92861a0bebc46d45b8",
-        "rec_684f5e4792a8d581e66fbcab96327b38665985cfb962fff4b8c11d0ec0b1a03f",
-        "rec_9aed8dab03d79ef32376cf11b0a87d5882784956c8dcccd3e45e1179ac38d7e9",
-        "rec_deb95ba0e51aaead9fb77a0a8f0e9387f4090ad23de66a595f5bb2b985f3039e",
-        "rec_e7d4ab9b3b426be089694aca0e89f6598dc5b7e4a8ed8acf662bf2f5cd76fb8b"
+        "rec_00a5fcaa44dbb9d8d491adec58309cbe597c2da542e8ac51895a501df79dc093",
+        "rec_13bc9990abc6c74a3a62973c2fe0a1702809c2959a76a2dc38d155983647ee67",
+        "rec_361a0e0d9454ac84715cbfd98f3adb54067a9a38b19aceb439d35d96f4960ef8",
+        "rec_6449473708094f65a4c8588a793beb4f53dcca69ca20ce313c44667fb11d1c6a",
+        "rec_8dbb01771754d1eb0f3a511739e2fd5eceea6c3fe72786323ff545cf096116ca",
+        "rec_cfa55b94010c3e2fd9b60e5226e6a05c273750f9e51ac45302dc4670503fe5e0",
+        "rec_f9cec20ce670199e6fd90f4de7eeb8b250212747b6d81fcee414399663285f8a"
       ]
     },
-    "ledger_event_count": 48,
-    "ledger_head_event_id": "evt_8b71bf73031d7069ec391fdba89185b38d0c76c854c5808cd0a1a37999bd8dba",
+    "ledger_event_count": 63,
+    "ledger_head_event_id": "evt_48d6c66c437a283130988f841328c9c370fd263347c9cae20b184a4cae0caaba",
     "lineage": {
       "bootstrap_task_commit": "78ad422902b27dea954905130a1267b02cff3596",
       "current_task_commit": "78ad422902b27dea954905130a1267b02cff3596",
@@ -418,164 +295,174 @@
       {
         "disposition": "ADVANCE",
         "input_task_commit": "78ad422902b27dea954905130a1267b02cff3596",
-        "invocation_id": "inv_2e4858b04863a34510dc963b580b6ae093ff22889c5085e5030ec9d834c17ca1",
-        "ledger_event_id": "evt_f43ac7af27e791799477c414097ce6152507022000fab4098bb308ff5f7f0759",
+        "invocation_id": "inv_6627bdcc8c1cc4c689ffb14880936fb550b7093b0a4b84492060fdf3a4efafa1",
+        "ledger_event_id": "evt_d783afed611c02c76bb09c1029e32f7c7549de091195b528ff84f5925556a100",
         "node_id": "RULE_RESOLUTION",
         "node_kind": "STAGE",
         "output_task_commit": "78ad422902b27dea954905130a1267b02cff3596",
         "reason": "validated ADVANCE record reaches WORK_PACKAGE_RESEARCH",
-        "record_id": "rec_deb95ba0e51aaead9fb77a0a8f0e9387f4090ad23de66a595f5bb2b985f3039e",
+        "record_id": "rec_f9cec20ce670199e6fd90f4de7eeb8b250212747b6d81fcee414399663285f8a",
         "status": "CURRENT"
       },
       {
         "disposition": "ADVANCE",
         "input_task_commit": "78ad422902b27dea954905130a1267b02cff3596",
-        "invocation_id": "inv_be0f48e67cb0bca43545b4bf83487db0fb49249470cdea68cf2dcbcdd8896db0",
-        "ledger_event_id": "evt_83b8053e389cbdabed686abe7f67ad47a8901bd0ce05313e1aeabfb2b50562b4",
+        "invocation_id": "inv_d5cb39517147a7a08d73295fa24fbb164b062e3601428140370ebaceb9caf456",
+        "ledger_event_id": "evt_fb91d76621637cf1d8380d84d3e659c7341554ccb0b72a639b7b0494fdfba2e9",
         "node_id": "WORK_PACKAGE_RESEARCH",
         "node_kind": "STAGE",
         "output_task_commit": "78ad422902b27dea954905130a1267b02cff3596",
         "reason": "validated ADVANCE record reaches SYSTEM_ARCHITECTURE",
-        "record_id": "rec_9aed8dab03d79ef32376cf11b0a87d5882784956c8dcccd3e45e1179ac38d7e9",
+        "record_id": "rec_361a0e0d9454ac84715cbfd98f3adb54067a9a38b19aceb439d35d96f4960ef8",
         "status": "CURRENT"
       },
       {
         "disposition": "ADVANCE",
         "input_task_commit": "78ad422902b27dea954905130a1267b02cff3596",
-        "invocation_id": "inv_7535df2b879eaf0094d827a574577aa0d66b20252626442b628e1468a56ebc87",
-        "ledger_event_id": "evt_c16a42c38771dad6909a97ff84f7b695804e2523333e1e363ccd0754d6aa303e",
+        "invocation_id": "inv_84ff3bf30a7e1573b335802d5c9ad12d8e86971ae653f9ead89364d128f61315",
+        "ledger_event_id": "evt_088443ffb7a2aaf435ccc41d4b569807a3909ec86e4b77d74ccf72e2cfd6b503",
         "node_id": "SYSTEM_ARCHITECTURE",
         "node_kind": "STAGE",
         "output_task_commit": "78ad422902b27dea954905130a1267b02cff3596",
         "reason": "validated ADVANCE record reaches DEFECT_TOPOLOGY",
-        "record_id": "rec_43fdadbfe64e7529f478ce2b20d76d0240739faf2a3cff92861a0bebc46d45b8",
+        "record_id": "rec_13bc9990abc6c74a3a62973c2fe0a1702809c2959a76a2dc38d155983647ee67",
         "status": "CURRENT"
       },
       {
         "disposition": "ADVANCE",
         "input_task_commit": "78ad422902b27dea954905130a1267b02cff3596",
-        "invocation_id": "inv_386a110d0b25e4a3187bc63ce2dfcb542e87289dc1d1f834ce16b27f6689f6db",
-        "ledger_event_id": "evt_da9c79397992cff2ddadeb7ce18e322d0a83c184d8b00e97e9fcad94a75f1e44",
+        "invocation_id": "inv_89c8c715c91c84245e8ee0a162053222c577c7d6346bae95acd9675200aac18a",
+        "ledger_event_id": "evt_bebc5ff5360e23d5c87e3361db31c5a3d8250c01bd7a94575e6db1914acd1957",
         "node_id": "DEFECT_TOPOLOGY",
         "node_kind": "STAGE",
         "output_task_commit": "78ad422902b27dea954905130a1267b02cff3596",
         "reason": "validated ADVANCE record reaches ENVIRONMENT_BUILD",
-        "record_id": "rec_0476e3fe0f666bca3546794a21e86db2a789d169a62e761f443cf518905d809c",
+        "record_id": "rec_cfa55b94010c3e2fd9b60e5226e6a05c273750f9e51ac45302dc4670503fe5e0",
         "status": "CURRENT"
       },
       {
         "disposition": "ADVANCE",
         "input_task_commit": "78ad422902b27dea954905130a1267b02cff3596",
-        "invocation_id": "inv_a52f15d6f5c304e3235055760da5dac5369e99b10d0eb9d5bd9f627fe05a25b8",
-        "ledger_event_id": "evt_33ae68e89f3696e342063832b9cfe139d3360a8a0ab26347936c2ef71494f0e9",
+        "invocation_id": "inv_da204397fab764ce07c4ab997ff34b83ff5cece0e65baae128d050ba43425131",
+        "ledger_event_id": "evt_a33ca6d26fb28e6dfad3d1ea8f8c168d13197357dd9e4c07f10ab32ea8f6332d",
         "node_id": "ENVIRONMENT_BUILD",
         "node_kind": "STAGE",
         "output_task_commit": "78ad422902b27dea954905130a1267b02cff3596",
         "reason": "validated ADVANCE record reaches REFERENCE_SOLUTION",
-        "record_id": "rec_014b2e2b43577ba2129283387f220992b19db2b5ce7d34a8954c413b8cf20197",
+        "record_id": "rec_6449473708094f65a4c8588a793beb4f53dcca69ca20ce313c44667fb11d1c6a",
         "status": "CURRENT"
       },
       {
         "disposition": "ADVANCE",
         "input_task_commit": "78ad422902b27dea954905130a1267b02cff3596",
-        "invocation_id": "inv_8da58936222d8034df64cb7eaa1bea6a4f689676b20f79eab623155d2189de6b",
-        "ledger_event_id": "evt_82ea66deaa4a6eccfbf434211096ae909c8fba72e07cc1f5b6eabdb30558c82f",
+        "invocation_id": "inv_4d388d410e7c36c5dd156a8025321e2fc5a67d79ca9de00419817b9b0af9b6c4",
+        "ledger_event_id": "evt_b3ca05eddaa9a3bd3078aad2c4f1f3105bc2ebe6b6f7af4ec2a202d796b9d6b5",
         "node_id": "REFERENCE_SOLUTION",
         "node_kind": "STAGE",
         "output_task_commit": "78ad422902b27dea954905130a1267b02cff3596",
         "reason": "validated ADVANCE record reaches VERIFIER_BUILD",
-        "record_id": "rec_684f5e4792a8d581e66fbcab96327b38665985cfb962fff4b8c11d0ec0b1a03f",
+        "record_id": "rec_00a5fcaa44dbb9d8d491adec58309cbe597c2da542e8ac51895a501df79dc093",
         "status": "CURRENT"
       },
       {
         "disposition": "ADVANCE",
         "input_task_commit": "78ad422902b27dea954905130a1267b02cff3596",
-        "invocation_id": "inv_874c75d27f882f6e055d0d6ba2bd400647a3f1ae79308b6de2fffa2041ab5644",
-        "ledger_event_id": "evt_8b71bf73031d7069ec391fdba89185b38d0c76c854c5808cd0a1a37999bd8dba",
+        "invocation_id": "inv_5cbde9e63c9347e99036c94c94bf3a7083d528254a639f4c8d9ea2e9402b1856",
+        "ledger_event_id": "evt_48d6c66c437a283130988f841328c9c370fd263347c9cae20b184a4cae0caaba",
         "node_id": "VERIFIER_BUILD",
         "node_kind": "STAGE",
         "output_task_commit": "78ad422902b27dea954905130a1267b02cff3596",
         "reason": "validated ADVANCE record reaches HUMAN_WRITING_RESEARCH",
-        "record_id": "rec_e7d4ab9b3b426be089694aca0e89f6598dc5b7e4a8ed8acf662bf2f5cd76fb8b",
+        "record_id": "rec_8dbb01771754d1eb0f3a511739e2fd5eceea6c3fe72786323ff545cf096116ca",
         "status": "CURRENT"
       },
       {
         "input_task_commit": "78ad422902b27dea954905130a1267b02cff3596",
-        "invocation_id": "inv_2cfc2eb5f29d7a9ee05f766b4da80fb55b21172795dc66134c67b359c110feda",
-        "ledger_event_id": "evt_cd2015de8160ff6352abdf7eb48531fe525ba7096ad7829a85a2738aa37225c4",
+        "invocation_id": "inv_b670fa3082eb87f04718fe135fa2bf2223389f1be2b1a543501bf7e21d1cbe79",
+        "ledger_event_id": "evt_0d65cb49beb03bcf94bde9c189cf4a89a03056098671655842d85e385a079d1f",
         "node_id": "HUMAN_WRITING_RESEARCH",
         "node_kind": "STAGE",
         "output_task_commit": "78ad422902b27dea954905130a1267b02cff3596",
         "reason": "latest execution record predates the latest current predecessor execution; the downstream stage must be rerun even when task/control commits are unchanged",
-        "record_id": "rec_3eed5b22a4b199a41a85e55367314df9ec0061d5bd3123e1cbe567ef5ef76dfe",
+        "record_id": "rec_5eb8b1b4638aaff30da1aca13af5ec426c5148c34af2f19a3672dd654bb5e404",
         "status": "STALE"
       },
       {
         "input_task_commit": "78ad422902b27dea954905130a1267b02cff3596",
-        "invocation_id": "inv_f2ea738cec97eea1c67ce2815f535d8ebb8a24f9e696b6fb957ba4cc667f2050",
-        "ledger_event_id": "evt_9da7f879a45538f6d191203305f41f25063b3477c22142da0a6f0c807f474e65",
+        "invocation_id": "inv_139e8e8691c017f87c02d68e7735826449aaceeafd435b43c51df66ad1fe4ae5",
+        "ledger_event_id": "evt_f4160a5bc24b24523390507107d804421e1d6cc045bd64240fa9f61a2e45db40",
         "node_id": "INSTRUCTION_DRAFT",
         "node_kind": "STAGE",
         "output_task_commit": "78ad422902b27dea954905130a1267b02cff3596",
         "reason": "upstream node HUMAN_WRITING_RESEARCH is not current; later historical evidence cannot advance",
-        "record_id": "rec_c0dc833e87427fab67608db1572605fb7eb48af6adb57da01e6eb124b605142d",
+        "record_id": "rec_810c6e0120acbf3c766abbb4b92b8baa85c255753e44d6c898fb7c3383dd82c5",
         "status": "STALE"
       },
       {
         "input_task_commit": "78ad422902b27dea954905130a1267b02cff3596",
-        "invocation_id": "inv_360e5c6ed4a7ff71c83090662c4f066ec08d8d68da0aa871f9f1fc4cb8d7d1c4",
-        "ledger_event_id": "evt_068641440012c85a716c5eddf701e804f187c64de2b6aec09fab314778ea9b9b",
+        "invocation_id": "inv_bbb71b2809a2d6f82e239d1d27f6a6446edfc8a83d093ed92ce5c969911135bc",
+        "ledger_event_id": "evt_e276c62a2afe70adaafd1665742347a4cb9a462c03bc27fb4857100825644578",
         "node_id": "SPEC_ALIGNMENT",
         "node_kind": "STAGE",
         "output_task_commit": "78ad422902b27dea954905130a1267b02cff3596",
         "reason": "upstream node INSTRUCTION_DRAFT is not current; later historical evidence cannot advance",
-        "record_id": "rec_918cee26b5118cc98cc60d195a9a28e08a0cdd4d3094d937cb9ecde623d2cde5",
+        "record_id": "rec_9b17b32c92c0d1c69cc93cca79024b0a934d9561e30ed8938a552a820660dc81",
         "status": "STALE"
       },
       {
         "input_task_commit": "78ad422902b27dea954905130a1267b02cff3596",
-        "invocation_id": "inv_74d80f6e1606f1cc974cdcbd5d5cf94a2b28dd4810203dac042d2a4d83126a09",
-        "ledger_event_id": "evt_4fdd774a1a56a85784910b4fb3b53f40b49166774df9185d91cbaf0ff0157c4b",
+        "invocation_id": "inv_7ca5f4628adf487e46bd3980124c7a68c891e2ba7f26a7ea0a3e961f2046e77b",
+        "ledger_event_id": "evt_32aa0c94f5edab9cbbdc24f5767dd84759c9f410261b7b5d3dc9881007ed2ac5",
         "node_id": "DOCUMENTATION_DRAFT",
         "node_kind": "STAGE",
         "output_task_commit": "78ad422902b27dea954905130a1267b02cff3596",
         "reason": "upstream node SPEC_ALIGNMENT is not current; later historical evidence cannot advance",
-        "record_id": "rec_72c1e973eaf44fb8003253649b19d701b65e091c5c5f5752dde4ea5faa9245eb",
+        "record_id": "rec_e5207b7b714923ec4c7c70318b32f26385c8645ec3997006f58d778b9b133f7a",
         "status": "STALE"
       },
       {
         "input_task_commit": "78ad422902b27dea954905130a1267b02cff3596",
-        "invocation_id": "inv_341524492282b5d2f5bca54eb380504cf349f84ec6dff45f4cb52fc7d16e59ff",
-        "ledger_event_id": "evt_6662fd82a6f7b422acd7f195cc627449926114448f1bd31817c48265046939ef",
+        "invocation_id": "inv_4e03ec70b8e339ba1e4f60d3a1d4f7548590cc2c2ebcf0a30e1f15ed451ed78a",
+        "ledger_event_id": "evt_2f8c2597ee786230b7650b6ba37afc00bb79c66ad2d111eef2fda9bd2cc1fcec",
         "node_id": "FORMAT_GATE",
         "node_kind": "STAGE",
         "output_task_commit": "78ad422902b27dea954905130a1267b02cff3596",
         "reason": "upstream node DOCUMENTATION_DRAFT is not current; later historical evidence cannot advance",
-        "record_id": "rec_c5fb9ce88cbda2c6a7e74e02734f2ac72da288e4c5372597f236d54dbbb67ab9",
+        "record_id": "rec_3c2e28c8e14712d530ab2b50f20455d2297afe923f9fcf92b4dd18c81c2449c0",
         "status": "STALE"
       },
       {
         "input_task_commit": "78ad422902b27dea954905130a1267b02cff3596",
-        "invocation_id": "inv_7cfcc5d3886ea8ec691f64b670fac799b8b024fd206b1cdd8a739c2dbe1da39f",
-        "ledger_event_id": "evt_1f8374a0c2eee135e692117fe11be9b84b666372a023f29f33d96e6f2eb730df",
+        "invocation_id": "inv_cb1cfc64c139890961995b696242edd858db4a76fcb8d6f22c502912589eb97a",
+        "ledger_event_id": "evt_7ff4bab23ca5bc872e7b9ab4cd39966a02fa1fe43dc2c6d1803d01d2f2803301",
         "node_id": "ASSEMBLY",
         "node_kind": "STAGE",
         "output_task_commit": "78ad422902b27dea954905130a1267b02cff3596",
         "reason": "upstream node FORMAT_GATE is not current; later historical evidence cannot advance",
-        "record_id": "rec_81277275adfd88ca55119fb06d5fa4f56cce6977adc2b7b9b60769303b5293a1",
+        "record_id": "rec_1d127e20231c7a6a5e6f8b9e7724e3e8db236d847266ba1286b8711a5c4f35f2",
         "status": "STALE"
       },
       {
+        "input_task_commit": "78ad422902b27dea954905130a1267b02cff3596",
+        "invocation_id": "inv_bfeeba41af0ecd795bae0478f536c56c177522646a97f9558de8e15351e3a379",
+        "ledger_event_id": "evt_6828112fd7382edc0f841978c69c8521bb0da114865cf1fe855bcab4abd267c6",
         "node_id": "COMPLEXITY_GATE",
         "node_kind": "STAGE",
+        "output_task_commit": "78ad422902b27dea954905130a1267b02cff3596",
         "reason": "upstream node ASSEMBLY is not current; later historical evidence cannot advance",
-        "status": "MISSING"
+        "record_id": "rec_919e1c7c1d57e5469938c77acd365dfdc2431122e2490840d553eab3d1ee0d73",
+        "status": "STALE"
       },
       {
+        "input_task_commit": "78ad422902b27dea954905130a1267b02cff3596",
+        "invocation_id": "inv_ac12ed1439601ed48599df4415934b9df1058bd1fc708d1f1fb06fa8e8846057",
+        "ledger_event_id": "evt_6f4c8b0313f43e43b10b3957a3747a524eedf27e496fbf0c708ce44bfecc78e6",
         "node_id": "RUNTIME_AUTHENTICITY",
         "node_kind": "STAGE",
+        "output_task_commit": "78ad422902b27dea954905130a1267b02cff3596",
         "reason": "upstream node COMPLEXITY_GATE is not current; later historical evidence cannot advance",
-        "status": "MISSING"
+        "record_id": "rec_3badd5239f366d28a604a3e18aabae3b6e7f85a4182692b64a39f421a8a6fec2",
+        "status": "STALE"
       },
       {
         "node_id": "DETERMINISTIC_VALIDATION",
@@ -657,12 +544,12 @@
       }
     ],
     "schema_version": "1.0",
-    "state_snapshot_id": "state_0ffc2b20775998531f2127d7036cea9e9bfe38371015ee8c6cc406b95c798e10",
+    "state_snapshot_id": "state_1264f1259b44d0b38d72305e7ea90c88a12ee826ff44153f4bd45c107fef03af",
     "summary": {
       "BLOCKED": 0,
       "CURRENT": 7,
-      "MISSING": 15,
-      "STALE": 6
+      "MISSING": 13,
+      "STALE": 8
     },
     "task_commit": "78ad422902b27dea954905130a1267b02cff3596",
     "task_id": "terraform-ansible-managed-resources"

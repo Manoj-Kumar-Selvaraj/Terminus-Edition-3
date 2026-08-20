@@ -4,101 +4,49 @@
       "content_hash": "sha256:104817a239b92de3e53f14d6bc0176563437894773e060648776dc09c6280374",
       "kind": "COMMIT",
       "ref": "commit:78ad422902b27dea954905130a1267b02cff3596"
-    },
-    {
-      "content_hash": "sha256:fca3ef4b283f1a1fe2aa6d960cd36a17b7232eb0b7a130f9cc8d43d948d6ec42",
-      "kind": "COMMIT",
-      "ref": "commit:67b805a297ac005ee08e82facc533f53a3233192"
     }
   ],
-  "invocation_id": "inv_874c75d27f882f6e055d0d6ba2bd400647a3f1ae79308b6de2fffa2041ab5644",
+  "invocation_id": "inv_5cbde9e63c9347e99036c94c94bf3a7083d528254a639f4c8d9ea2e9402b1856",
   "output_task_commit": "78ad422902b27dea954905130a1267b02cff3596",
   "outputs": {
     "EDGE_BOUNDARY_COVERAGE": [
       "wrong object kind",
-      "spaces in paths",
+      "paths with spaces",
       "cron omitted/explicit defaults",
-      "home-removal boundary",
-      "map/group/mode ordering equivalence",
+      "remove_home boundary",
+      "unordered/mode equivalence",
       "already-absent destroy"
     ],
     "F2P_COUNT": 30,
     "NEGATIVE_FAILURE_COVERAGE": [
       "duplicate external ownership",
       "literal shell metacharacters",
-      "non-zero Ansible failure with cleanup",
+      "Ansible non-zero",
+      "failed update retry",
       "failed delete retains state",
-      "command output absent from Terraform state"
+      "timeout/cancellation cleanup",
+      "command output absent from state"
     ],
-    "ORACLE_EMPIRICAL_STATUS": "DEFERRED_TO_DETERMINISTIC_VALIDATION_CURRENT_TASK_COMMIT",
-    "ORGANIC_COUNT_JUSTIFICATION": "Thirty F2P cases cover distinct lifecycle, drift, transaction, ownership, process and normalization obligations across ten managed-resource families; six P2P cases establish preserved baseline behavior without padding.",
+    "ORACLE_EMPIRICAL_STATUS": "NOT_REEARNED_UNDER_CURRENT_CONTROL",
+    "ORGANIC_COUNT_JUSTIFICATION": "The 30 F2P cases arise from distinct lifecycle, drift, transactional failure, ownership, runner-safety, normalization and differentiated resource-family behavior; the 6 P2P cases preserve baseline behavior without padding.",
     "P2P_COUNT": 6,
     "REQUIREMENT_TEST_MATRIX": {
-      "REQ_BACKEND": [
-        "test_f2p_clean_named_text_refresh_does_not_execute_ansible"
-      ],
-      "REQ_COPY": [
-        "test_f2p_copy_destination_content_drift_requires_reconciliation",
-        "test_f2p_copy_source_digest_change_executes_content_update"
-      ],
-      "REQ_CRON": [
-        "test_f2p_cron_omitted_schedule_fields_converge_to_wildcards"
-      ],
-      "REQ_DELETE": [
-        "test_f2p_destroy_preserves_home_when_remove_home_is_false",
-        "test_f2p_destroy_removes_home_when_remove_home_is_true",
-        "test_f2p_failed_delete_preserves_managed_state_for_retry",
-        "test_f2p_named_entry_deletes_preserve_siblings",
-        "test_p2p_symlink_destroy_preserves_target"
-      ],
-      "REQ_IDENTITY": [
-        "test_f2p_filesystem_identities_survive_mutable_updates",
-        "test_f2p_content_identities_survive_source_and_variable_updates",
-        "test_f2p_user_identity_survives_shell_update",
-        "test_f2p_group_gid_drift_reconciles_without_identity_churn"
-      ],
-      "REQ_NORMALIZE": [
-        "test_p2p_template_variable_order_is_semantically_stable",
-        "test_f2p_user_supplementary_group_drift_requires_reconciliation"
-      ],
-      "REQ_OWNERSHIP": [
-        "test_f2p_duplicate_external_ownership_is_rejected"
-      ],
-      "REQ_PROVIDER": [
-        "test_f2p_provider_exposes_exact_managed_resource_schemas",
-        "test_p2p_directory_basic_apply_state_and_destroy",
-        "test_p2p_declared_provider_artifact_root_is_mounted"
-      ],
-      "REQ_REFRESH": [
-        "test_f2p_deleted_directory_is_planned_for_recreation",
-        "test_f2p_filesystem_mode_drift_requires_reconciliation",
-        "test_f2p_symlink_target_drift_requires_reconciliation",
-        "test_f2p_deleted_user_is_planned_for_recreation"
-      ],
-      "REQ_RUNNER": [
-        "test_f2p_runner_handles_temp_paths_with_spaces",
-        "test_f2p_runner_does_not_interpret_shell_metacharacters",
-        "test_p2p_success_cleanup_and_state_output_secrecy",
-        "test_f2p_nonzero_ansible_exit_fails_lifecycle_transition",
-        "test_f2p_timeout_and_cancellation_clean_generated_playbooks"
-      ],
-      "REQ_STATE": [
-        "test_p2p_state_is_owned_by_terraform_core",
-        "test_f2p_symlink_identity_survives_target_update"
-      ],
-      "REQ_TEXT": [
-        "test_f2p_clean_named_text_refresh_does_not_execute_ansible",
-        "test_f2p_line_update_replaces_previous_value_exactly_once",
-        "test_f2p_removed_named_text_is_planned_for_recreation"
-      ],
-      "REQ_UPDATE": [
-        "test_f2p_failed_update_preserves_last_successful_template_state",
-        "test_f2p_retry_after_failed_update_reexecutes_and_converges"
-      ]
+      "canonical_normalization_and_idempotency": "covered",
+      "copy_template_digest_semantics": "covered",
+      "cron_defaults_drift_and_sibling_preservation": "covered",
+      "delete_failure_and_retry": "covered",
+      "line_block_scoped_ownership": "covered",
+      "native_refresh_and_external_drift": "covered",
+      "ownership_collision_and_backend_boundaries": "covered",
+      "provider_schema": "covered",
+      "runner_argv_timeout_cancel_cleanup": "covered",
+      "state_identity_and_durability": "covered",
+      "update_failure_and_retry": "covered",
+      "user_group_observation_and_normalization": "covered"
     },
-    "SOLVER_LOGIC_REIMPLEMENTATION_RISK": "LOW: tests assert observable lifecycle contracts rather than duplicating provider algorithms.",
-    "STARTER_EMPIRICAL_STATUS": "DEFERRED_TO_DETERMINISTIC_VALIDATION_CURRENT_TASK_COMMIT",
-    "TEST_INDEPENDENCE": "Verifier assertions observe public Terraform/provider behavior and external Linux state; they do not inspect or reproduce reference-solution implementation internals."
+    "SOLVER_LOGIC_REIMPLEMENTATION_RISK": "LOW: tests assert observable contracts and external state transitions rather than reimplementing provider algorithms.",
+    "STARTER_EMPIRICAL_STATUS": "NOT_REEARNED_UNDER_CURRENT_CONTROL",
+    "TEST_INDEPENDENCE": "Verifier assertions exercise public Terraform/provider behavior and external Linux effects rather than copying the reference solution implementation or private defect IDs."
   },
   "schema_version": "1.0",
   "status": "VERIFIER_READY"
