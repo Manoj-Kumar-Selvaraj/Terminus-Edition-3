@@ -1,0 +1,42 @@
+name: EC2 Q6 Remediation Validation
+
+on:
+  push:
+    branches: [remediation/ec2-q4-q6-20260820]
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build production runtime
+        shell: bash
+        run: |
+          set -euo pipefail
+          ROOT=ec2-artifact-policy-enforcement/environment/enforcer
+          cd "$ROOT"
+          echo '--- gofmt diff ---'
+          test -z "$(gofmt -l ./cmd ./internal)" || { gofmt -l ./cmd ./internal; exit 11; }
+          go test ./...
+          go build -o /tmp/artifactguard ./cmd/artifactguard
+      - name: Measure reachable authored Go
+        shell: bash
+        run: |
+          set -euo pipefail
+          ROOT=ec2-artifact-policy-enforcement/environment/enforcer
+          echo '--- authored Go LOC ---'
+          find "$ROOT/cmd" "$ROOT/internal" -type f -name '*.go' -print0 | sort -z | xargs -0 wc -l
+          echo '--- catalog residue ---'
+          if find "$ROOT/internal" -type f -name 'catalog*.go' | grep -q .; then
+            find "$ROOT/internal" -type f -name 'catalog*.go'
+            exit 12
+          fi
+      - name: Run Terminus structural gates
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 .terminus/validate_environment_complexity.py ec2-artifact-policy-enforcement
+          python3 .terminus/validate_task_complexity.py ec2-artifact-policy-enforcement
