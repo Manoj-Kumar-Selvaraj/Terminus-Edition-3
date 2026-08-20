@@ -1,0 +1,69 @@
+{
+  "schema_version": "1.0",
+  "mode": "RECORD",
+  "task_id": "route-control-plane",
+  "task_commit": "22d2e9e09f4deb58029559fe9a0863c2e032f25c",
+  "control_plane_commit": "df7ef7569e2947b9f0bf7cf89ed4dec6c2a5a1fe",
+  "expected_repository_head": "9ec56a184c7fa69c32310c86920ac14d928167f0",
+  "stage_id": "INSTRUCTION_DRAFT",
+  "inputs": {
+    "CREATION_RULE_CONTEXT": {
+      "CONTROL_PLANE_COMMIT": "df7ef7569e2947b9f0bf7cf89ed4dec6c2a5a1fe",
+      "CREATION_PROFILE": "large_system_strict",
+      "KNOWN_POLICY_CONFLICTS": []
+    },
+    "APPROVED_SOLVER_VISIBLE_REQUIREMENT_CONTRACT": {
+      "instruction_path": "route-control-plane/instruction.md",
+      "objective": "Complete the inherited Go route control plane under /app/routecp as a fleet-wide desired-state routing and policy reconciliation system.",
+      "material_requirements": [
+        "canonical IPv4/IPv6 route and policy-rule identities with valid rule/table dependencies",
+        "revision-fenced preview/apply/rollback with idempotent retries and no partial publication",
+        "failure-safe per-node recovery across restart without overwriting newer state",
+        "fresh owned drift reconciliation that preserves unowned routing objects and management reachability",
+        "fleet rollout isolation for failed canaries/offline nodes and no redundant reapply for nodes already at target",
+        "idempotent Ansible deployment with host-specific protected routing taking precedence over defaults",
+        "dashboard mutations bound to the exact preview revision so concurrent operator changes are not silently overwritten",
+        "preserve existing public Go API/runtime and fleet/configuration interfaces",
+        "all routing mutations remain inside the supplied isolated deterministic model and never alter the benchmark host network"
+      ],
+      "referenced_contracts": [
+        "/app/routecp/config/fleet.yaml",
+        "/app/routecp/ansible/roles/routecp/defaults/main.yml"
+      ]
+    },
+    "TASK_WRITING_PROFILE": {
+      "voice": "direct platform engineering change request",
+      "structure": ["state the approved engineering objective first","preserve exact public contracts and hard safety/state constraints","reference solver-visible technical contracts instead of reproducing hidden verifier rows","keep implementation-neutral observable outcomes"],
+      "avoid": ["invented incidents or personal claims","rubric-like hidden-test enumeration","style-driven omission of lifecycle constraints","copied distinctive source wording","task details copied from unrelated calibration domains"],
+      "must_preserve": ["fleet-wide desired-state routing","safe management reachability","no partial publication","idempotent retries","no host network mutation","revision fencing and restart recovery","fresh owned reconciliation","rollout isolation","Ansible convergence and host precedence","dashboard CAS","public API/runtime preservation"]
+    },
+    "VALIDATED_HUMAN_WRITING_CALIBRATION": {
+      "CALIBRATION_PAIR_ID": "hwpair-f96b53b6ac9b1882f1c8",
+      "DOMAIN_PROFILE": "compiler_runtime",
+      "EXTERNAL_DATASET_COVERAGE": "DEGRADED",
+      "WRITER_CALIBRATION_ID": "hwcal-writer-91bf6e65c8382bcb7f7d",
+      "REVIEWER_CALIBRATION_ID": "hwcal-reviewer-d01aa0a5501e7e083424"
+    }
+  },
+  "result": {
+    "status": "READY",
+    "output_task_commit": "22d2e9e09f4deb58029559fe9a0863c2e032f25c",
+    "outputs": {
+      "INSTRUCTION_PATH": "route-control-plane/instruction.md",
+      "REQUIREMENT_COVERAGE": {
+        "routing_policy_identity": "canonical route/rule identity and dependency validity are explicit",
+        "transactions_recovery": "revision fencing, retry safety, partial-publication prevention and restart recovery are explicit",
+        "reconcile_safety": "fresh owned reconciliation, unowned-object preservation and management reachability are explicit",
+        "fleet_automation": "canary/offline isolation, target-revision retry safety, Ansible convergence and host precedence are explicit",
+        "dashboard_and_compatibility": "preview-revision CAS, public API/runtime preservation and isolated routing are explicit"
+      },
+      "DOC_REFERENCES": ["/app/routecp/config/fleet.yaml","/app/routecp/ansible/roles/routecp/defaults/main.yml"],
+      "INSTRUCTION_SHAPE": "Two short direct platform-engineering paragraphs within the Edition-3 instruction limit.",
+      "HANDOFF_TEST": "A platform/network engineer can identify the route-control-plane root, transactional desired-state end state, reconciliation/rollout/deployment/dashboard safety obligations, and inherited contracts without private verifier, defect or Oracle information.",
+      "REVERSE_OUTLINE_RISK": "LOW: requirements are grouped around routing state, transaction/recovery, fleet operations and compatibility rather than private verifier rows.",
+      "SPEC_FILE_LOOPHOLE": "CLOSED: the instruction owns all material requested behavior; the two referenced files are ordinary inherited configuration contracts, not prompt extensions.",
+      "UNRESOLVED_GAPS": []
+    },
+    "evidence_refs": []
+  }
+}
