@@ -1,0 +1,357 @@
+{
+  "authority": {
+    "control_plane_commit": "5106b27ae6cc5257854f08c63bac4eca95685f36",
+    "policy_versions": {},
+    "task_commit": "8836f886d7cfc7f2747264026da31d1dfa49c658",
+    "task_id": "ec2-artifact-policy-enforcement"
+  },
+  "disposition": "ADVANCE",
+  "evidence_refs": [
+    {
+      "content_hash": "sha256:c949a75a93f4636d770dd6cb82318c90d98b3fb0fb1d16d3d8b2e6c4d50a86fc",
+      "kind": "COMMIT",
+      "ref": "commit:8836f886d7cfc7f2747264026da31d1dfa49c658"
+    },
+    {
+      "content_hash": "sha256:b5a2cd19688eb8045ed51f0abaf697929821b094e8dbcc6e67c7edd479d74828",
+      "kind": "COMMIT",
+      "ref": "commit:5106b27ae6cc5257854f08c63bac4eca95685f36"
+    }
+  ],
+  "invocation_id": "inv_d7bccac1d9b8b8390f7e48460bf999303244a1b942ddd0e101992273920dcc64",
+  "invocation_snapshot": {
+    "acceptance_predicates": {},
+    "authority": {
+      "control_plane_commit": "5106b27ae6cc5257854f08c63bac4eca95685f36",
+      "policy_versions": {},
+      "task_commit": "8836f886d7cfc7f2747264026da31d1dfa49c658",
+      "task_id": "ec2-artifact-policy-enforcement"
+    },
+    "evidence": {
+      "authorized_evidence_classes": [
+        "CONTROL_PLANE_POLICY",
+        "PRIVATE_CREATION_DESIGN",
+        "SOLVER_VISIBLE_TASK"
+      ],
+      "evidence_required": [
+        "deterministic general repair/completion",
+        "preservation rationale",
+        "no hidden-test special casing"
+      ],
+      "excluded_evidence_classes": [
+        "CI_RUNTIME_EVIDENCE",
+        "CURRENT_REVIEW_PACKET",
+        "DURABLE_SESSION_STATE",
+        "FINAL_PACKAGE_EVIDENCE",
+        "MODEL_TRIAL_EVIDENCE",
+        "PRIOR_REVIEW_RESULTS",
+        "PUBLIC_REFERENCE",
+        "SOLUTION_ORACLE",
+        "VERIFIER_PRIVATE"
+      ],
+      "mandatory_exact_reads": [
+        ".terminus/agents/CREATION_PIPELINE.md",
+        ".terminus/agents/CREATOR_PROMPTS.md"
+      ],
+      "retrieval_mode": "EXACT_ONLY"
+    },
+    "ignored_input_count": 0,
+    "inputs": {
+      "optional": {},
+      "required": {
+        "APPROVED_OPERATIONAL_REQUIREMENTS": {
+          "EDGE_FAILURE_SURFACE": [
+            "scanner outage/staleness",
+            "tag mutation",
+            "expired exception",
+            "permit replay/tamper",
+            "restart/partial state"
+          ],
+          "ENGINEERING_OBJECTIVE": "Unify OS-package, container, and build-dependency acquisition behind one Go policy engine.",
+          "PERSONA": "EC2 platform security engineer",
+          "PRESERVATION_OBLIGATIONS": [
+            "keep public CLI",
+            "keep cache/exceptions",
+            "do not rewrite supplied fixtures",
+            "preserve audit history"
+          ],
+          "REASONING_CHAIN": "normalize -> identity/source -> scan/cache -> vulnerability/exception -> permit -> durable audit",
+          "REQUIRED_END_STATE": "All surfaces enforce trusted sources, immutable digests, current scanner/cache evidence, scoped expiring exceptions, exact-scope keyed permits, and restart-safe allow/deny audit history.",
+          "REQUIREMENT_FAMILIES": [
+            "source/digest policy",
+            "scanner/cache freshness",
+            "vulnerability exceptions",
+            "permit integrity",
+            "durable audit/recovery",
+            "CLI compatibility"
+          ],
+          "WORK_PACKAGE_ID": "WP1_UNIFIED_EC2_ARTIFACT_ADMISSION"
+        },
+        "STARTER_ENVIRONMENT": {
+          "COMPONENT_GRAPH": [
+            "cmd/artifactguard CLI gateway -> internal/core compatibility bridge -> internal/platform policy runtime",
+            "platform request normalization and artifact identity -> source/digest policy prerequisites -> scanner/cache evidence -> vulnerability/exception decision -> permit issuance -> durable state/audit",
+            "platform permit verification preserves the stable verify-permit CLI while exposing permit scope/authentication repair surfaces",
+            "package/container/dependency control catalogs select runtime-reachable controls by surface, manager and environment",
+            "state/cache/audit/replay modules expose restart, corruption, durability and concurrency repair surfaces approved by A3"
+          ],
+          "ENTRYPOINTS": [
+            "environment/enforcer/cmd/artifactguard/main.go: artifactguard evaluate",
+            "environment/enforcer/cmd/artifactguard/main.go: artifactguard verify-permit"
+          ],
+          "ENVIRONMENT_RULE_CHECKS": {
+            "business_module_diversity": "N/A/PASS: business_module_diversity not declared, so no production portfolio check applies",
+            "environment_complexity": "PASS; substantive_loc=4097; profile=large_system_strict; defects=26; root_causes=6; interrelated=26; edges=37; cross_cluster_pairs=11; components=11",
+            "go_build": "PASS: go build ./cmd/artifactguard",
+            "go_test": "PASS: go test ./...",
+            "runtime_authenticity": "N/A/PASS: production_authenticity not declared, so no runtime-authenticity policy applies"
+          },
+          "INSTRUCTION_DOC_BOUNDARY": {
+            "private": ".terminus design/topology, creator prompts, orchestration records and later solution/verifier material remain outside solver-visible documentation",
+            "solver_visible": "environment/enforcer/docs, CLI help/output, config and fixtures describe legitimate production contracts and operations without naming private defect IDs"
+          },
+          "PRODUCTION_CHARACTERISTICS": [
+            "single Go admission policy runtime spans OS packages, OCI containers and build dependencies",
+            "stable evaluate and verify-permit CLI contracts with existing exit-code behavior",
+            "versioned source/digest policy, scanner evidence and reusable local cache state",
+            "scoped exception, signed-permit, audit, replay and restart-state subsystems",
+            "surface/manager/environment control catalogs are selected on the live evaluate path rather than existing as dead padding",
+            "deterministic offline fixtures and caller-provided state/secret/time make CI execution reproducible"
+          ],
+          "RUNTIME_REACHABILITY_NOTES": [
+            "evaluate -> core.Evaluate -> platform.Evaluate -> NormalizeRequest, BuildIdentity, ApplicableRules, EnsureStateLayout, exception/source/digest checks, cache/scanner, permit, projection and audit",
+            "verify-permit -> core.VerifyPermit -> platform.VerifyPermit; authentication/scope/expiry behavior remains reachable through the public CLI",
+            "cache, audit, state and replay helpers are solver-visible production repair surfaces; replay enforcement is intentionally absent from the current verify-permit path per approved A3 defects",
+            "catalog_package.go, catalog_container.go and catalog_dependency.go are reached through ApplicableRules from platform.Evaluate"
+          ],
+          "SOLVER_VISIBLE_DOCS": [
+            "environment/enforcer/docs/architecture.md",
+            "environment/enforcer/docs/policy-contract.md",
+            "environment/enforcer/docs/state-format.md",
+            "environment/enforcer/docs/operations.md",
+            "environment/enforcer/notes/oncall.md"
+          ],
+          "SUBSTANTIVE_LOC": 4097,
+          "UNRESOLVED_RISKS": [
+            "No ENVIRONMENT_BUILD blocker remains; later runtime/oracle validation must still exercise the approved defect topology after reference solution and verifier materialization.",
+            "Replay and crash/concurrency semantics are intentionally defective starter behavior and must not be treated as accepted production behavior."
+          ]
+        },
+        "SYSTEM_ARCHITECTURE": {
+          "COMPONENT_GRAPH": [
+            "CLI gateway preserves evaluate and verify-permit commands, normalizes package/container/dependency inputs into one canonical AcquisitionRequest, and maps policy outcomes to stable exit codes.",
+            "Surface adapters for OS packages, OCI containers, and build dependencies perform surface-specific canonicalization while delegating all authorization semantics to the shared policy pipeline.",
+            "Artifact identity service canonicalizes source coordinates plus immutable digest identity and rejects missing/ambiguous digest requirements before exception processing.",
+            "Versioned policy snapshot loader owns trusted-source rules, digest requirements, vulnerability policy codes, environment constraints, and the policy-version identity used by downstream evidence.",
+            "Scanner gateway obtains digest-scoped vulnerability evidence through deterministic adapters and exposes explicit unavailable/stale outcomes rather than bypassing policy.",
+            "Durable evidence cache keys entries by artifact digest, policy version, scanner DB revision, and expiry/TTL; only fully matching current evidence can satisfy scanner requirements.",
+            "Exception registry/evaluator accepts only unexpired exact-scope exceptions bound to digest, acquisition surface, environment, and policy code; exceptions cannot override source/digest prerequisites.",
+            "Decision engine applies one ordered fail-closed invariant pipeline: normalize -> source/digest -> scanner/cache -> vulnerability/exception -> ALLOW/DENY.",
+            "Permit service signs keyed ALLOW permits with host secret and binds request ID, instance identity, digest, policy version and expiry; verification enforces signature, scope, expiry and replay state.",
+            "Replay ledger records consumed/verified permit identities under a filesystem lock so duplicate use is rejected across process restart.",
+            "Audit writer appends every ALLOW/DENY decision as a checksummed record, fsyncs before success is reported, and atomically maintains the last-decision/index state without rewriting prior history.",
+            "State/recovery layer owns locks, atomic replace/fsync helpers, corruption detection, cache/replay/index recovery and deterministic startup reconciliation before commands are served.",
+            "Configuration/clock boundary supplies deterministic fixture-controlled time and filesystem paths for offline execution while preserving production-style validation and ownership semantics."
+          ],
+          "DATA_VOLUME_PLAN": {
+            "anti_padding": "Fixtures are sized for realistic policy/recovery interactions and verifier isolation, not duplicated to satisfy complexity floors.",
+            "classification": "Operational security state rather than a primary-business-record database; the 10k-20k primary-business-record default is not a natural fit for this domain.",
+            "starter_plan": "Use deterministic, materially varied policy/source, scanner-evidence, exception, permit and historical audit state across all three surfaces, multiple digests, policy versions, DB revisions, expiry boundaries and decision reason families. Historical audit volume may be in the thousands to exercise replay/recovery/index rebuilding without treating generated data as authored-code scale."
+          },
+          "ENTRYPOINTS": [
+            "artifactguard evaluate <surface/request> -> CLI normalization -> surface adapter -> identity/policy snapshot -> scanner/cache -> exception evaluation -> decision engine -> permit issuance when allowed -> durable audit -> stable CLI result.",
+            "artifactguard verify-permit <permit/request context> -> parse/canonicalize -> keyed signature and exact-scope verification -> expiry/replay check -> durable replay/audit update -> stable CLI result.",
+            "process startup/operator invocation -> validate config and host secret -> acquire state ownership lock -> recover/check audit/cache/replay/index state -> expose command handling only after recovery completes.",
+            "operator inspection through documented state/audit files and normal CLI outputs; no hidden repair-only entrypoint is required for diagnosing policy decisions."
+          ],
+          "PRODUCTION_CHARACTERISTICS": [
+            "One shared policy decision model with differentiated surface adapters instead of manager-specific authorization branches.",
+            "Fail-closed dependency behavior with current scanner evidence and precisely reusable cache entries rather than availability-driven bypass.",
+            "Narrow expiring exception semantics that cannot waive trust/digest prerequisites.",
+            "Authenticated exact-scope permits with cross-restart anti-replay state.",
+            "Crash-safe append-only audit history and rebuildable derived state with explicit corruption/partial-write recovery.",
+            "Stable operator CLI/exit-code and fixture interfaces, deterministic offline execution, meaningful validation/error handling and observable reason codes.",
+            "Runtime reachability through evaluate, verify-permit and startup/recovery paths; no architecture component exists solely to inflate size."
+          ],
+          "RESOURCE_GRAPH": [
+            "Untrusted acquisition request/artifact metadata -> surface adapter -> canonical identity.",
+            "Trusted versioned policy configuration -> policy snapshot -> decision engine.",
+            "Deterministic scanner fixture/adapter -> scanner gateway -> durable evidence cache -> decision engine.",
+            "Solver-visible exception records -> exception evaluator -> decision engine.",
+            "Host secret -> permit signer/verifier; permit verification -> durable replay ledger.",
+            "Decision engine -> append-only audit log -> rebuildable decision index; filesystem state directory and locks are owned by state/recovery layer."
+          ],
+          "SCALE_FIT": {
+            "ASSESSMENT": "VERY_HIGH",
+            "RATIONALE": "The three differentiated acquisition adapters plus shared identity/policy, scanner/cache, exception, permit/replay, audit, persistence/recovery, configuration and CLI responsibilities naturally support well above the 3,000-substantive-reachable-LOC floor. Coupled trust, freshness, scope, durability and restart invariants also provide enough distinct operational states and cross-component failure/recovery surfaces for a strict task without adding unrelated features or quota-driven modules."
+          },
+          "SOLVER_VISIBLE_DOC_PLAN": [
+            "docs/architecture.md: component responsibilities, request flow, trust boundaries, state ownership and runtime/operator entrypoints without diagnosing incomplete implementation.",
+            "docs/policy-contract.md: canonical source/digest, scanner evidence/cache, exception, decision reason-code and permit-scope semantics that are legitimate public engineering contracts.",
+            "docs/state-format.md: audit/cache/replay/index record schemas, checksums, atomicity/durability expectations and recovery ownership.",
+            "docs/operations.md: startup/recovery behavior, state directory layout, deterministic fixture/scanner operation and safe operator inspection/troubleshooting without a repair recipe.",
+            "CLI usage remains discoverable through artifactguard help and concise examples; material engineering goals stay in instruction.md rather than being moved into docs."
+          ],
+          "STATE_MODEL": {
+            "artifact_identity": "Canonical acquisition identity is surface + normalized source + immutable digest; mutable names/tags are descriptive only and never cache/permit identity.",
+            "audit": "Append-only decision log is the authoritative history. Records include decision identity, canonical request/artifact identity, policy/evidence references, reason codes and integrity checksum; prior valid records are never rewritten.",
+            "derived_indices": "Last-decision, replay lookup and cache indexes are derived/rebuildable state written atomically; loss/corruption must not erase authoritative audit history or silently widen access.",
+            "durability_and_concurrency": "Single-writer filesystem locks plus write-temp/fsync/rename/fsync-directory for replaceable state; append+fsync for audit; startup validates/truncates only provably incomplete tail records while preserving valid prefix.",
+            "exceptions": "Solver-visible exception records are immutable-scope grants keyed by digest/surface/environment/policy-code with explicit expiry; invalid, expired or broader records are non-authoritative.",
+            "permits": "ALLOW permits are authenticated envelopes bound to request ID, instance ID, digest, policy version and expiry. Replay consumption is durable state separate from the permit bytes.",
+            "policy_source_of_truth": "Solver-visible versioned policy configuration is authoritative for trusted sources, digest requirements and vulnerability policy semantics. Each evaluation pins one immutable policy snapshot/version.",
+            "scanner_evidence": "Evidence contains digest, scanner DB revision, observed vulnerabilities, observed-at time and expiry. Cache eligibility additionally requires exact policy version and non-expired TTL.",
+            "time": "A validated clock abstraction provides production wall-clock semantics and deterministic fixture time in the task, so expiry/TTL decisions are reproducible."
+          },
+          "UNRESOLVED_RISKS": [
+            "Environment materialization must keep package/container/dependency adapters behaviorally differentiated and runtime-reachable rather than copied wrappers around one template.",
+            "A3 must derive defect topology from these clean invariants without exposing private defect IDs or turning solver-visible technical docs into a repair map.",
+            "Replay identity and audit-tail recovery need a precise solver-visible record contract so legitimate restart/recovery behavior is discoverable without hidden knowledge.",
+            "Offline deterministic scanner fixtures must preserve realistic unavailable/stale/DB-revision semantics without introducing a live network dependency.",
+            "The environment builder must verify that state locking and fsync/atomic-replace behavior is portable in the task container filesystem while preserving required durability semantics."
+          ]
+        }
+      }
+    },
+    "invocation_id": "inv_d7bccac1d9b8b8390f7e48460bf999303244a1b942ddd0e101992273920dcc64",
+    "learning": {
+      "context_hash": "sha256:bb84a513aa2b6e4374d691759c4a6edf94169f479f4611e9091643b9f279ccfc",
+      "lessons": [],
+      "mode": "GENERALIZED_LESSONS_PLUS_OWNED_REMEDIATIONS",
+      "raw_feedback_exposed": false,
+      "raw_historical_findings_exposed": false,
+      "registry_heads": {
+        "feedback": "GENESIS",
+        "findings": "GENESIS",
+        "lessons": "GENESIS",
+        "patterns": "GENESIS",
+        "remediations": "GENESIS"
+      },
+      "remediations": []
+    },
+    "missing_required_inputs": [],
+    "output_contract": {
+      "allowed_status_values": [
+        "IMPLEMENTED",
+        "CONTRACT_GAP",
+        "BLOCKED"
+      ],
+      "deterministic_validators": [],
+      "optional_fields": [],
+      "persisted_artifacts": [
+        "<task>/solution/solve.sh",
+        "<task>/solution/"
+      ],
+      "required_fields": [
+        "RESTORED_INVARIANTS",
+        "FILES_CHANGED",
+        "RESTART_IDEMPOTENCY_BEHAVIOR",
+        "DETERMINISM_NOTES",
+        "PRESERVED_BEHAVIOR",
+        "RISKS_FOR_INDEPENDENT_VERIFIER"
+      ],
+      "semantic_reviewers": [
+        "Verifier Engineer"
+      ]
+    },
+    "readiness": "READY",
+    "retrieval": {
+      "query": null,
+      "retrieved_chars": 0,
+      "retrieved_context": [],
+      "status": "NOT_REQUESTED"
+    },
+    "routing": {
+      "failure_routes": {
+        "CONTRACT_GAP": "Creation Controller -> appropriate contract owner",
+        "RUNTIME_FAILURE": "Q5 Oracle & Runtime Repair Specialist"
+      },
+      "stale_on": [
+        "operational requirement change",
+        "environment implementation change",
+        "solver-visible contract change"
+      ],
+      "success_transition": "VERIFIER_BUILD"
+    },
+    "schema_version": "1.0",
+    "stage": {
+      "lifecycle": "creation",
+      "owner": "A4 Reference Solution Author",
+      "role_class": "PRODUCER",
+      "role_id": "A4_REFERENCE_SOLUTION_AUTHOR",
+      "stage_id": "REFERENCE_SOLUTION"
+    }
+  },
+  "outputs": {
+    "DETERMINISM_NOTES": [
+      "No random identifiers or fixture-specific branches are introduced; decision identity derives from request/digest/policy/code/evaluation time.",
+      "Caller-provided --now controls cache TTL, exception expiry, and permit expiry boundaries.",
+      "The deterministic scanner fixture, policy fixture, and exception fixture remain unchanged and no network dependency is added.",
+      "Permit authentication is derived solely from canonical permit fields plus the caller-supplied secret."
+    ],
+    "FILES_CHANGED": [
+      "solution/solve.sh",
+      "solution/files/platform/policy.go",
+      "solution/files/platform/cache.go",
+      "solution/files/platform/exceptions.go",
+      "solution/files/platform/permit.go",
+      "solution/files/platform/state.go",
+      "solution/files/platform/audit.go",
+      "solution/files/platform/replay.go",
+      "solution/files/platform/engine.go",
+      "solution/files/core/engine.go",
+      "solution/files/cmd/main.go"
+    ],
+    "PRESERVED_BEHAVIOR": [
+      "artifactguard evaluate keeps its existing required flags, JSON decision output, operational exit 2, and DENY exit 42.",
+      "artifactguard verify-permit keeps its existing required permit/request/policy/secret flags and invalid exit 43; optional --state (or ARTIFACTGUARD_STATE_DIR) adds durable replay enforcement without breaking existing stateless callers.",
+      "Package, container, and dependency surface models remain intact; cache and exceptions remain enabled operational controls.",
+      "Audit remains JSONL decision history and existing valid history is preserved rather than replaced."
+    ],
+    "RESTART_IDEMPOTENCY_BEHAVIOR": "solve.sh deterministically overlays the fixed source, formats/tests/builds it, and is safe to rerun. Audit decisions use stable IDs to avoid duplicate durable entries on identical retries; cache/audit survive restart; replay consumption persists so a consumed permit remains rejected after restart.",
+    "RESTORED_INVARIANTS": [
+      "All package, container, and dependency managers enforce the same trusted-source and required-digest prerequisites; direct dpkg/rpm and Maven paths are not exemptions.",
+      "Scanner evidence is usable only when status is ok and the scanner DB revision matches policy; cache reuse additionally requires exact digest, policy version, DB revision, and unexpired TTL, otherwise enforcement fails closed.",
+      "Vulnerability exceptions require exact digest, acquisition surface, environment, policy code, and unexpired time, and are evaluated only after source, digest, and current-evidence prerequisites succeed.",
+      "ALLOW permits use HMAC-SHA256 with the supplied secret and bind request ID, instance ID, artifact digest, policy version, and expiry; stateful verification atomically consumes a permit once across restart and concurrent processes.",
+      "Both ALLOW and DENY decisions are appended and fsynced before completion; the last-decision projection is written atomically only after durable journal append, and incomplete final audit tails recover without deleting the valid prefix.",
+      "Cache/projection writes are atomic and fsynced, and evaluation/replay transitions use a process-shared filesystem lock so restart and concurrency cannot widen authorization."
+    ],
+    "RISKS_FOR_INDEPENDENT_VERIFIER": [
+      "Independently exercise optional stateful verify-permit replay and concurrent-process locking on the Linux task filesystem.",
+      "Distinguish an incomplete final audit tail, which is recoverable, from durable interior corruption, which must fail closed.",
+      "Exercise cache invalidation across digest, policy-version, scanner-DB-revision, and TTL boundaries.",
+      "Exercise exception scope and exact expiry boundaries and CLI compatibility for callers that omit optional replay state.",
+      "Full Oracle/NOP reward is intentionally not claimed until the independent verifier and deterministic validation stages exist."
+    ]
+  },
+  "record_id": "rec_baae5886e1ff5705213bad87c3bf488e33462d796b4f153fc88fa09514aa8a01",
+  "role_id": "A4_REFERENCE_SOLUTION_AUTHOR",
+  "schema_version": "1.0",
+  "stage_id": "REFERENCE_SOLUTION",
+  "status": "IMPLEMENTED",
+  "task_lineage": {
+    "input_task_commit": "8836f886d7cfc7f2747264026da31d1dfa49c658",
+    "output_task_commit": "8836f886d7cfc7f2747264026da31d1dfa49c658",
+    "task_changed": false
+  },
+  "transition": {
+    "action": "ADVANCE",
+    "requires_state_validation": false,
+    "target": "VERIFIER_BUILD",
+    "target_kind": "STAGE"
+  },
+  "validation": {
+    "acceptance_predicates_satisfied": true,
+    "evidence_binding_satisfied": true,
+    "evidence_refs_count": 2,
+    "invocation_identity_valid": true,
+    "invocation_policy_valid": true,
+    "output_keys_valid": true,
+    "required_outputs_satisfied": true,
+    "retrieval_context_authorized": true,
+    "status_legal": true,
+    "task_commit_change_authorized": true,
+    "task_lineage_valid": true
+  }
+}
