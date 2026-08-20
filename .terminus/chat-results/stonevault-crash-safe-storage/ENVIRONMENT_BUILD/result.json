@@ -1,0 +1,44 @@
+{
+  "evidence_refs": [
+    {
+      "kind": "COMMIT",
+      "ref": "commit:03317f8218069b9e0b5d073bf87ecf7a0ae8e4a1"
+    }
+  ],
+  "invocation_id": "inv_02abf7ae9a91b88bd476859b11b3e4d884c8e1cb863564eeb2308ee7f2d3fc15",
+  "output_task_commit": "03317f8218069b9e0b5d073bf87ecf7a0ae8e4a1",
+  "outputs": {
+    "COMPONENT_GRAPH": {
+      "cpp": [
+        "engine",
+        "wal",
+        "snapshot",
+        "lock"
+      ],
+      "rust": [
+        "config",
+        "protocol",
+        "session"
+      ]
+    },
+    "ENTRYPOINTS": [
+      "/app/stonevault/bin/stonevault"
+    ],
+    "ENVIRONMENT_RULE_CHECKS": "digest-pinned base, bounded apt install, self-contained build, native product boundary",
+    "INSTRUCTION_DOC_BOUNDARY": "instruction states observable requirements; storage-format.md owns detailed ABI/disk contracts",
+    "PRODUCTION_CHARACTERISTICS": [
+      "persistent WAL/snapshot",
+      "MVCC transactions",
+      "process writer lock",
+      "checkpoint maintenance",
+      "operator health"
+    ],
+    "RUNTIME_REACHABILITY_NOTES": "single binary exercises Rust ingress and C++ storage through stable C ABI",
+    "SOLVER_VISIBLE_DOCS": [
+      "/app/stonevault/docs/storage-format.md"
+    ],
+    "SUBSTANTIVE_LOC": "native multi-module C++20 and Rust implementation"
+  },
+  "schema_version": "1.0",
+  "status": "BUILT"
+}
