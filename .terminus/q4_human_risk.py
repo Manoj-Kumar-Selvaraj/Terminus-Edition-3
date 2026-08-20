@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import re
+import subprocess
 from collections.abc import Mapping
 from pathlib import Path
 from typing import Any
@@ -11,11 +12,13 @@ from feedback.provenance import ProvenanceValidator
 from feedback.registry import LearningStore
 from feedback.schema_validation import LearningSchemaValidator
 from retrieval.policy import RetrievalPolicy
+from review_contract import current_task_commit
 
 SATISFACTION_MODE = "AUTHENTICATED_HUMAN_RISK_ACCEPTANCE"
 CATEGORY = "HUMAN_RISK_ACCEPTANCE"
 _GATE_STAGE = "QUALITY_INTERLOCK"
 _FEEDBACK_ID_RE = re.compile(r"\bfeedback_[0-9a-f]{64}\b")
+_COMMIT_RE = re.compile(r"^[0-9a-f]{40,64}$")
 
 
 def feedback_id_from_evidence(evidence: str) -> str:
@@ -32,17 +35,52 @@ def _machine_principals(root: Path) -> set[str]:
     return principals
 
 
+def _require_commit(root: Path, commit: Any, label: str) -> str:
+    if not isinstance(commit, str) or not _COMMIT_RE.fullmatch(commit):
+        raise ValueError(f"{label} must be an exact repository commit")
+    check = subprocess.run(
+        ["git", "-C", str(root), "cat-file", "-e", f"{commit}^{{commit}}"],
+        capture_output=True,
+    )
+    if check.returncode != 0:
+        raise ValueError(f"{label} is not available in repository history")
+    return commit
+
+
+def _require_ancestor(root: Path, ancestor: str, descendant: str) -> None:
+    ancestry = subprocess.run(
+        [
+            "git",
+            "-C",
+            str(root),
+            "merge-base",
+            "--is-ancestor",
+            ancestor,
+            descendant,
+        ],
+        capture_output=True,
+    )
+    if ancestry.returncode != 0:
+        raise ValueError(
+            "accepted_task_commit must equal or descend from q4_task_commit"
+        )
+
+
 def validate_human_risk_acceptance(
     root: Path,
     *,
     envelope: Mapping[str, Any],
     q4_result: Mapping[str, Any],
     store: LearningStore | None = None,
+    current_task_commit_override: str | None = None,
 ) -> dict[str, Any]:
     """Return normalized acceptance metadata or raise ValueError.
 
     The signed HUMAN_FEEDBACK event is the authority artifact. The stage-result
     envelope only points at the exact feedback event and cannot create authority.
+    A risk decision may carry a frozen Q4 REVISE forward to one exact current
+    descendant snapshot only when the human-signed event explicitly binds both
+    commits and the repository proves the ancestry/current-snapshot relationship.
     """
     root = root.resolve()
     if envelope.get("type") != SATISFACTION_MODE:
@@ -52,9 +90,9 @@ def validate_human_risk_acceptance(
         raise ValueError("Q4 human-risk envelope requires one canonical feedback_id")
 
     task_id = q4_result.get("task")
-    task_commit = q4_result.get("task_commit")
+    q4_task_commit = _require_commit(root, q4_result.get("task_commit"), "q4_task_commit")
     review_id = q4_result.get("review_id")
-    if not all(isinstance(value, str) and value for value in (task_id, task_commit, review_id)):
+    if not isinstance(task_id, str) or not task_id or not isinstance(review_id, str) or not review_id:
         raise ValueError("Q4 REVISE result is missing exact task/review identity")
     if q4_result.get("role") != "Spec-Test Contract Reviewer":
         raise ValueError("Q4 human risk acceptance requires the canonical Q4 reviewer")
@@ -93,11 +131,19 @@ def validate_human_risk_acceptance(
     if producer in _machine_principals(root):
         raise ValueError("Q4 risk acceptance cannot be authored by a Terminus machine role")
     if provenance.get("trust_status") != "HUMAN_AUTHENTICATED":
-        raise ValueError("Q4 human risk acceptance feedback is not authoritative: HUMAN_AUTHENTICATED required")
+        raise ValueError(
+            "Q4 human risk acceptance feedback is not authoritative: "
+            "HUMAN_AUTHENTICATED required"
+        )
     if not ProvenanceValidator(root).validate_feedback_event(event):
         raise ValueError("Q4 human risk acceptance feedback is not authoritative")
-    if task.get("task_id") != task_id or task.get("task_commit") != task_commit:
-        raise ValueError("Q4 risk acceptance must bind the exact Q4 task commit")
+    if task.get("task_id") != task_id:
+        raise ValueError("Q4 risk acceptance must bind the exact Q4 task ID")
+    accepted_task_commit = _require_commit(
+        root,
+        task.get("task_commit"),
+        "accepted_task_commit",
+    )
     if observation.get("category") != CATEGORY:
         raise ValueError("Q4 risk acceptance feedback has the wrong category")
     if observation.get("stage_hint") != _GATE_STAGE:
@@ -112,6 +158,22 @@ def validate_human_risk_acceptance(
         raise ValueError("Q4 risk acceptance must preserve q4_verdict=REVISE")
     if detail.get("q4_review_id") != review_id:
         raise ValueError("Q4 risk acceptance does not bind the frozen Q4 review")
+    if detail.get("q4_task_commit") != q4_task_commit:
+        raise ValueError("Q4 risk acceptance does not bind the frozen Q4 task commit")
+    if detail.get("accepted_task_commit") != accepted_task_commit:
+        raise ValueError("Q4 risk acceptance does not bind the accepted task commit")
+
+    _require_ancestor(root, q4_task_commit, accepted_task_commit)
+    observed_current = (
+        current_task_commit_override
+        if current_task_commit_override is not None
+        else current_task_commit(root, task_id)
+    )
+    if observed_current != accepted_task_commit:
+        raise ValueError(
+            "Q4 risk acceptance is stale: accepted_task_commit is not the current task commit"
+        )
+
     accepted = detail.get("accepted_finding_ids")
     if accepted != expected_findings:
         raise ValueError("Q4 risk acceptance must explicitly accept every blocking Q4 finding")
@@ -126,7 +188,9 @@ def validate_human_risk_acceptance(
         "feedback_id": feedback_id,
         "principal": f"human:{producer}",
         "task_id": task_id,
-        "task_commit": task_commit,
+        "task_commit": accepted_task_commit,
+        "q4_task_commit": q4_task_commit,
+        "accepted_task_commit": accepted_task_commit,
         "q4_review_id": review_id,
         "q4_verdict": "REVISE",
         "accepted_finding_ids": expected_findings,
