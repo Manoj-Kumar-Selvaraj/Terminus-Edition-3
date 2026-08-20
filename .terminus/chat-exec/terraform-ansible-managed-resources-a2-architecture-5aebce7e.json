@@ -1,0 +1,50 @@
+{
+  "schema_version": "1.0",
+  "mode": "RECORD",
+  "task_id": "terraform-ansible-managed-resources",
+  "task_commit": "78ad422902b27dea954905130a1267b02cff3596",
+  "control_plane_commit": "5aebce7e213fa5f5864bdd741e6139d39bf5e059",
+  "expected_repository_head": "1ea0bd7ecca060f0a35a017f3eedf367b2e2416c",
+  "stage_id": "SYSTEM_ARCHITECTURE",
+  "inputs": {
+    "CREATION_RULE_CONTEXT": {
+      "CONTROL_PLANE_COMMIT": "5aebce7e213fa5f5864bdd741e6139d39bf5e059",
+      "CREATION_PROFILE": "large_system_strict",
+      "KNOWN_POLICY_CONFLICTS": [],
+      "NETWORK_ENVIRONMENT_CONSTRAINTS": "repository-default network/environment constraints"
+    },
+    "APPROVED_WORK_PACKAGE": {
+      "ID": "MANAGED_RESOURCE_LIFECYCLE_COMPLETION",
+      "OBJECTIVE": "Complete the ten-resource ansibleops provider as one coherent Terraform lifecycle/reconciliation system.",
+      "PERSONA": "Platform engineer maintaining an internal Terraform provider for local Linux configuration through Ansible."
+    },
+    "APPROVED_OPERATIONAL_REQUIREMENTS": [
+      "exactly ten documented ansibleops resource types and interfaces",
+      "provider source local/ansibleops version 0.1.0 and supplied local inventory",
+      "Terraform Core is sole durable state authority",
+      "stable identity from documented external object key",
+      "Ansible for create/update/delete mutations only",
+      "native Linux side-effect-free read/refresh with missing/wrong-kind absence and drift reflection",
+      "publish Terraform state only after successful mutation; failure/timeout/cancel preserves prior state and retryability",
+      "scoped filesystem/content/line/block/symlink/user/group/cron lifecycle semantics",
+      "structured ansible-playbook argv with cleanup on every terminal outcome and no full command output in state",
+      "canonical normalization for modes unordered values account observations and cron defaults",
+      "Go 1.24 current Plugin Framework and Terraform CLI 1.10.5 compatibility",
+      "no null_resource terraform_data provisioners manual state edits or provider-owned durable store"
+    ]
+  },
+  "result": {
+    "status": "ARCHITECTURE_READY",
+    "outputs": {
+      "COMPONENT_GRAPH": ["provider registration/configuration/runtime preflight","shared lifecycle identity/state transitions","Ansible task/playbook generation","structured runner","native Linux observation","normalization/validation","ten differentiated resource implementations"],
+      "ENTRYPOINTS": ["/app/provider/cmd/terraform-provider-ansibleops/main.go","/app/provider/scripts/build-provider.sh","/app/provider/scripts/smoke.sh"],
+      "STATE_MODEL": {"external_state":"filesystem/passwd/group/crontab external truth","identity":"documented external object key","mutation":"Ansible before state publication","observation":"native read only","terraform_state":"Terraform Core sole durable state authority"},
+      "SOLVER_VISIBLE_DOC_PLAN": ["docs/provider-contract.md","docs/resource-reference.md","docs/lifecycle.md","examples/basic/main.tf"],
+      "PRODUCTION_CHARACTERISTICS": ["real provider process","differentiated lifecycles","mutation/observation split","failure-safe transitions","stable ownership","runner safety","canonical convergence"],
+      "SCALE_FIT": "large_system_strict natural fit",
+      "RESOURCE_GRAPH": {"accounts":["user","group"],"content":["copy","template","line","block"],"filesystem":["file","directory","symlink"],"scheduler":["cron"]},
+      "UNRESOLVED_RISKS": []
+    },
+    "evidence_refs": []
+  }
+}
