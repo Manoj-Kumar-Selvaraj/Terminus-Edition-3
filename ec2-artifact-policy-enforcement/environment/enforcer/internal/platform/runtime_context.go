@@ -43,15 +43,15 @@ type StageTrace struct {
 // decoding.  It preserves the original request for diagnostics while carrying
 // the normalized identity and manager-specific acquisition semantics.
 type RequestEnvelope struct {
-	Original          Request
-	Request           Request
-	Identity          ArtifactIdentity
-	Profile           ManagerProfile
-	Coordinate        string
-	CanonicalSource   string
-	RepositoryHost    string
-	RepositoryPath    string
-	ActionClass       string
+	Original           Request
+	Request            Request
+	Identity           ArtifactIdentity
+	Profile            ManagerProfile
+	Coordinate         string
+	CanonicalSource    string
+	RepositoryHost     string
+	RepositoryPath     string
+	ActionClass        string
 	RequestFingerprint string
 }
 
@@ -72,15 +72,15 @@ type StatePaths struct {
 // EvaluationContext is the per-request state shared by policy, evidence,
 // exception, permit and persistence subsystems.
 type EvaluationContext struct {
-	Envelope       RequestEnvelope
-	Policy         Policy
-	Compiled       CompiledPolicy
-	Paths          StatePaths
-	Now            time.Time
-	Trace          []StageTrace
-	SnapshotID     string
-	DecisionSeed   string
-	Warnings       []string
+	Envelope        RequestEnvelope
+	Policy          Policy
+	Compiled        CompiledPolicy
+	Paths           StatePaths
+	Now             time.Time
+	Trace           []StageTrace
+	SnapshotID      string
+	DecisionSeed    string
+	Warnings        []string
 	OperationalTags map[string]string
 }
 

@@ -24,30 +24,30 @@ type JournalRecordState struct {
 // JournalInspection is used by the commit path to understand durable history
 // before writing a new projection/journal record.
 type JournalInspection struct {
-	Path                 string
-	Exists               bool
-	Size                 int64
-	Records              []JournalRecordState
-	ValidDecisions       []Decision
-	MalformedLines       []int
-	UnterminatedFinal    bool
-	InteriorCorruption   bool
-	LastValidOffset      int64
-	LastRequestID        string
-	LastDecisionID       string
+	Path               string
+	Exists             bool
+	Size               int64
+	Records            []JournalRecordState
+	ValidDecisions     []Decision
+	MalformedLines     []int
+	UnterminatedFinal  bool
+	InteriorCorruption bool
+	LastValidOffset    int64
+	LastRequestID      string
+	LastDecisionID     string
 }
 
 // DecisionCommitPlan connects idempotency intent, durable history and the
 // projection that will be materialized.
 type DecisionCommitPlan struct {
-	Decision          Decision
-	Inspection        JournalInspection
-	DuplicateRequest  bool
-	DuplicateDecision bool
-	Existing          *Decision
-	JournalRequired   bool
+	Decision           Decision
+	Inspection         JournalInspection
+	DuplicateRequest   bool
+	DuplicateDecision  bool
+	Existing           *Decision
+	JournalRequired    bool
 	ProjectionRequired bool
-	PlanID            string
+	PlanID             string
 }
 
 func inspectJournalBytes(path string, data []byte) JournalInspection {

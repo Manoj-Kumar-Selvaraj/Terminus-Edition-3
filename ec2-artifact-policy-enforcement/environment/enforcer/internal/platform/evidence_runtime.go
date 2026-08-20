@@ -21,32 +21,32 @@ const (
 // starter decision.  The reference solution changes only the intentional
 // legacy acceptance rule; the rest of the cache workflow is production logic.
 type CacheAssessment struct {
-	Key                 string
-	Present             bool
-	Decoded             bool
-	ArtifactMatches     bool
-	PolicyMatches       bool
-	ScannerMatches      bool
-	Fresh               bool
-	ExpiresAt           time.Time
-	ScannedAt           time.Time
-	Usable              bool
-	Reason              string
-	Entry               CacheEntry
+	Key             string
+	Present         bool
+	Decoded         bool
+	ArtifactMatches bool
+	PolicyMatches   bool
+	ScannerMatches  bool
+	Fresh           bool
+	ExpiresAt       time.Time
+	ScannedAt       time.Time
+	Usable          bool
+	Reason          string
+	Entry           CacheEntry
 }
 
 // ScannerAssessment describes health, revision, data quality and normalized
 // vulnerability content of the configured scanner record.
 type ScannerAssessment struct {
-	Digest              string
-	Present             bool
-	Healthy             bool
-	RevisionMatches     bool
-	Status              string
-	DBRevision          string
-	Vulnerabilities     []Vulnerability
-	MaximumSeverity     string
-	Reason              string
+	Digest          string
+	Present         bool
+	Healthy         bool
+	RevisionMatches bool
+	Status          string
+	DBRevision      string
+	Vulnerabilities []Vulnerability
+	MaximumSeverity string
+	Reason          string
 }
 
 // EvidenceAssessment is the complete evidence result consumed by the policy
@@ -253,13 +253,13 @@ func scannerAssessmentSummary(assessment ScannerAssessment) string {
 func resolveFromCache(context *EvaluationContext, cache CacheAssessment) EvidenceAssessment {
 	entry := cache.Entry
 	assessment := EvidenceAssessment{
-		Source:             EvidenceCache,
-		Cache:              cache,
-		ArtifactDigest:     context.Request().Digest,
-		PolicyVersion:      context.Compiled.Version,
-		ScannerDBRevision:  entry.ScanDBRevision,
-		Vulnerabilities:    normalizeVulnerabilities(entry.Vulnerabilities),
-		CacheHit:           true,
+		Source:            EvidenceCache,
+		Cache:             cache,
+		ArtifactDigest:    context.Request().Digest,
+		PolicyVersion:     context.Compiled.Version,
+		ScannerDBRevision: entry.ScanDBRevision,
+		Vulnerabilities:   normalizeVulnerabilities(entry.Vulnerabilities),
+		CacheHit:          true,
 	}
 	assessment.EvidenceFingerprint = evidenceFingerprint(
 		assessment.Source,
@@ -273,13 +273,13 @@ func resolveFromCache(context *EvaluationContext, cache CacheAssessment) Evidenc
 
 func resolveFromScanner(context *EvaluationContext, scanner ScannerAssessment) EvidenceAssessment {
 	assessment := EvidenceAssessment{
-		Source:             EvidenceScanner,
-		Scanner:            scanner,
-		ArtifactDigest:     context.Request().Digest,
-		PolicyVersion:      context.Compiled.Version,
-		ScannerDBRevision:  scanner.DBRevision,
-		Vulnerabilities:    normalizeVulnerabilities(scanner.Vulnerabilities),
-		CacheHit:           false,
+		Source:            EvidenceScanner,
+		Scanner:           scanner,
+		ArtifactDigest:    context.Request().Digest,
+		PolicyVersion:     context.Compiled.Version,
+		ScannerDBRevision: scanner.DBRevision,
+		Vulnerabilities:   normalizeVulnerabilities(scanner.Vulnerabilities),
+		CacheHit:          false,
 	}
 	assessment.EvidenceFingerprint = evidenceFingerprint(
 		assessment.Source,

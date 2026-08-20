@@ -24,30 +24,30 @@ type PermitClaims struct {
 // PermitIssueAssessment is used by the admission engine after successful
 // policy evaluation.
 type PermitIssueAssessment struct {
-	Permit          Permit
-	Claims          PermitClaims
-	SecretPresent   bool
+	Permit           Permit
+	Claims           PermitClaims
+	SecretPresent    bool
 	SignaturePresent bool
-	FieldsBound     bool
-	Fingerprint     string
+	FieldsBound      bool
+	Fingerprint      string
 }
 
 // PermitVerificationAssessment exposes both the legacy starter verdict and the
 // strict binding facts.  The effective starter result intentionally preserves
 // the approved instance/signing defect through VerifyPermit.
 type PermitVerificationAssessment struct {
-	LegacyValid       bool
-	LegacyCode        string
-	StrictValid       bool
-	RequestMatches    bool
-	InstanceMatches   bool
-	DigestMatches     bool
-	PolicyMatches     bool
-	Unexpired         bool
-	SignaturePresent  bool
-	SecretPresent     bool
-	ScopeID           string
-	FailureReasons    []string
+	LegacyValid      bool
+	LegacyCode       string
+	StrictValid      bool
+	RequestMatches   bool
+	InstanceMatches  bool
+	DigestMatches    bool
+	PolicyMatches    bool
+	Unexpired        bool
+	SignaturePresent bool
+	SecretPresent    bool
+	ScopeID          string
+	FailureReasons   []string
 }
 
 func canonicalPermitScopeID(requestID, instanceID, digest, policyVersion string) string {

@@ -28,13 +28,13 @@ type ExceptionCandidateAssessment struct {
 
 // ExceptionAssessment is consumed by the vulnerability decision path.
 type ExceptionAssessment struct {
-	PolicyCode      string
-	Matched         *Exception
-	CandidateCount  int
-	Candidates      []ExceptionCandidateAssessment
-	StrictMatch     bool
-	FailureReasons  []string
-	Fingerprint     string
+	PolicyCode     string
+	Matched        *Exception
+	CandidateCount int
+	Candidates     []ExceptionCandidateAssessment
+	StrictMatch    bool
+	FailureReasons []string
+	Fingerprint    string
 }
 
 func exceptionExpiry(candidate Exception) (time.Time, bool) {
@@ -194,12 +194,12 @@ func ExceptionAssessmentSummary(assessment ExceptionAssessment) map[string]inter
 		matched = assessment.Matched.ID
 	}
 	return map[string]interface{}{
-		"policy_code":      assessment.PolicyCode,
-		"matched_id":       matched,
-		"candidate_count":  assessment.CandidateCount,
-		"strict_match":     assessment.StrictMatch,
-		"failure_reasons":  append([]string(nil), assessment.FailureReasons...),
-		"fingerprint":      assessment.Fingerprint,
+		"policy_code":     assessment.PolicyCode,
+		"matched_id":      matched,
+		"candidate_count": assessment.CandidateCount,
+		"strict_match":    assessment.StrictMatch,
+		"failure_reasons": append([]string(nil), assessment.FailureReasons...),
+		"fingerprint":     assessment.Fingerprint,
 	}
 }
 
@@ -251,7 +251,7 @@ func ExceptionPolicyCodeCoverage(db ExceptionDB) map[string]int {
 			if code != "" {
 				coverage[code]++
 			}
-	}
+		}
 	}
 	return coverage
 }

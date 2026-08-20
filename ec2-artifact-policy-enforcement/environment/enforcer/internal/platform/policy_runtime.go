@@ -13,17 +13,17 @@ import (
 // removes repeated map interpretation from each phase and makes the policy
 // snapshot an explicit participant in cache, permit and audit semantics.
 type CompiledPolicy struct {
-	Version             string
-	ScannerRevision     string
-	SnapshotID          string
-	DenySeveritySet     map[string]bool
-	TrustedBySurface    map[string][]string
-	DigestRequired      map[string]bool
-	CacheTTL            time.Duration
-	PermitTTL           time.Duration
-	SupportedSurfaces   map[string]bool
-	ProfileSurface      string
-	ProfileManager      string
+	Version           string
+	ScannerRevision   string
+	SnapshotID        string
+	DenySeveritySet   map[string]bool
+	TrustedBySurface  map[string][]string
+	DigestRequired    map[string]bool
+	CacheTTL          time.Duration
+	PermitTTL         time.Duration
+	SupportedSurfaces map[string]bool
+	ProfileSurface    string
+	ProfileManager    string
 }
 
 // SourceDecision carries the evidence behind trusted-source admission.
@@ -55,23 +55,23 @@ type DigestDecision struct {
 
 // VulnerabilityDecision is the policy-side interpretation of scanner output.
 type VulnerabilityDecision struct {
-	Denied            bool
-	Blocking          []Vulnerability
-	Observed          []Vulnerability
-	MaximumSeverity   string
-	DenySeverities    []string
-	FailureCode       string
-	FailureMessage    string
+	Denied          bool
+	Blocking        []Vulnerability
+	Observed        []Vulnerability
+	MaximumSeverity string
+	DenySeverities  []string
+	FailureCode     string
+	FailureMessage  string
 }
 
 var severityRanks = map[string]int{
-	"UNKNOWN":  0,
-	"NONE":     0,
+	"UNKNOWN":    0,
+	"NONE":       0,
 	"NEGLIGIBLE": 1,
-	"LOW":      2,
-	"MEDIUM":   3,
-	"HIGH":     4,
-	"CRITICAL": 5,
+	"LOW":        2,
+	"MEDIUM":     3,
+	"HIGH":       4,
+	"CRITICAL":   5,
 }
 
 func canonicalSeverity(value string) string {

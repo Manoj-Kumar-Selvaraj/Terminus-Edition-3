@@ -451,12 +451,12 @@ func ManagerSupportsRemoval(profile ManagerProfile) bool {
 
 func ManagerOperationSummary(profile ManagerProfile) map[string]interface{} {
 	return map[string]interface{}{
-		"manager":        profile.Name,
-		"surface":        profile.Surface,
-		"family":         ManagerFamily(profile),
-		"source_kind":    profile.SourceKind,
-		"name_kind":      profile.NameKind,
-		"digest_kinds":   ManagerDigestKinds(profile),
+		"manager":         profile.Name,
+		"surface":         profile.Surface,
+		"family":          ManagerFamily(profile),
+		"source_kind":     profile.SourceKind,
+		"name_kind":       profile.NameKind,
+		"digest_kinds":    ManagerDigestKinds(profile),
 		"install_actions": append([]string(nil), profile.InstallActions...),
 		"update_actions":  append([]string(nil), profile.UpdateActions...),
 		"remove_actions":  append([]string(nil), profile.RemoveActions...),
