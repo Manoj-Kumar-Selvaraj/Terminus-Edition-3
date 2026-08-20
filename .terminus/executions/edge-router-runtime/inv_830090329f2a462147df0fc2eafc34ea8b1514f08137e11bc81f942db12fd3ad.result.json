@@ -1,0 +1,270 @@
+{
+  "authority": {
+    "control_plane_commit": "f52e8994c9ca04c08ee3f5158f1f7135e1482ca9",
+    "policy_versions": {},
+    "task_commit": "9663e4da67ab20e6bd66b942ac54b57667408dd8",
+    "task_id": "edge-router-runtime"
+  },
+  "disposition": "ADVANCE",
+  "evidence_refs": [],
+  "invocation_id": "inv_830090329f2a462147df0fc2eafc34ea8b1514f08137e11bc81f942db12fd3ad",
+  "invocation_snapshot": {
+    "acceptance_predicates": {},
+    "authority": {
+      "control_plane_commit": "f52e8994c9ca04c08ee3f5158f1f7135e1482ca9",
+      "policy_versions": {},
+      "task_commit": "9663e4da67ab20e6bd66b942ac54b57667408dd8",
+      "task_id": "edge-router-runtime"
+    },
+    "evidence": {
+      "authorized_evidence_classes": [
+        "CONTROL_PLANE_POLICY",
+        "PRIVATE_CREATION_DESIGN",
+        "PUBLIC_REFERENCE",
+        "SOLVER_VISIBLE_TASK"
+      ],
+      "evidence_required": [
+        "component/resource graph",
+        "runtime/operator reachability plan",
+        "state/persistence model",
+        "production-characteristic rationale"
+      ],
+      "excluded_evidence_classes": [
+        "CI_RUNTIME_EVIDENCE",
+        "CURRENT_REVIEW_PACKET",
+        "DURABLE_SESSION_STATE",
+        "FINAL_PACKAGE_EVIDENCE",
+        "MODEL_TRIAL_EVIDENCE",
+        "PRIOR_REVIEW_RESULTS",
+        "SOLUTION_ORACLE",
+        "VERIFIER_PRIVATE"
+      ],
+      "mandatory_exact_reads": [
+        ".terminus/agents/CREATION_PIPELINE.md",
+        ".terminus/agents/CREATOR_AGENT_REGISTRY.md",
+        ".terminus/agents/PRODUCTION_AUTHENTICITY.md",
+        ".terminus/agents/CREATOR_PROMPTS.md",
+        ".terminus/agents/A2_PHASE_PROMPTS.md"
+      ],
+      "retrieval_mode": "FILTERED_HYBRID"
+    },
+    "ignored_input_count": 0,
+    "inputs": {
+      "optional": {},
+      "required": {
+        "APPROVED_OPERATIONAL_REQUIREMENTS": {
+          "PRESERVATION": [
+            "in-flight requests remain valid across unrelated updates",
+            "unchanged route semantics remain stable",
+            "healthy unchanged endpoints preserve meaningful state",
+            "rejected updates cannot damage serving generation",
+            "readers never observe partially applied configuration",
+            "runtime and observability state remain bounded"
+          ],
+          "REQUIRED_END_STATE": [
+            "Validate and compile candidate configuration into immutable runtime snapshots before publication.",
+            "Fence accepted generations so stale or out-of-order updates cannot overwrite newer state.",
+            "Publish route and upstream state atomically and retain last-known-good serving state when candidates are rejected.",
+            "Reconcile endpoints by stable canonical identity and membership incarnation.",
+            "Preserve compatible selection, affinity, health, transport and lifecycle continuity for unchanged endpoints.",
+            "Exclude removed/ineligible endpoints from new work while allowing bounded drain of existing traffic.",
+            "Checkpoint only complete accepted state and recover a complete last-known-good generation.",
+            "Retire unreachable snapshots, runtimes, transports, affinity and telemetry without unbounded growth."
+          ]
+        },
+        "APPROVED_WORK_PACKAGE": {
+          "ENGINEERING_OBJECTIVE": "Implement generation-safe dynamic route and upstream reconciliation so complete configuration and membership changes apply atomically under concurrent traffic, rolling backend turnover, invalid updates and restart.",
+          "ID": "GENERATION_SAFE_DYNAMIC_RECONCILIATION",
+          "REQUIREMENT_FAMILIES": [
+            "configuration ingestion and semantic validation",
+            "route-graph compilation",
+            "generation fencing and atomic publication",
+            "backend discovery and endpoint diffing",
+            "health-state lifecycle",
+            "weighted/sticky/retry/failover selection",
+            "connection and endpoint draining",
+            "checkpoint persistence and restart recovery",
+            "observability lifecycle and metric garbage collection"
+          ]
+        },
+        "CREATION_RULE_CONTEXT": {
+          "CONTROL_PLANE_COMMIT": "f52e8994c9ca04c08ee3f5158f1f7135e1482ca9",
+          "CREATION_PROFILE": "large_system_strict",
+          "KNOWN_POLICY_CONFLICTS": [],
+          "NETWORK_ENVIRONMENT_CONSTRAINTS": "network_mode public; separate verifier; digest-pinned canonical Go runtime; no privileged Docker/capability/socket shortcuts; tmux and asciinema required in agent image"
+        }
+      }
+    },
+    "invocation_id": "inv_830090329f2a462147df0fc2eafc34ea8b1514f08137e11bc81f942db12fd3ad",
+    "learning": {
+      "context_hash": "sha256:bb84a513aa2b6e4374d691759c4a6edf94169f479f4611e9091643b9f279ccfc",
+      "lessons": [],
+      "mode": "GENERALIZED_LESSONS_PLUS_OWNED_REMEDIATIONS",
+      "raw_feedback_exposed": false,
+      "raw_historical_findings_exposed": false,
+      "registry_heads": {
+        "feedback": "GENESIS",
+        "findings": "GENESIS",
+        "lessons": "GENESIS",
+        "patterns": "GENESIS",
+        "remediations": "GENESIS"
+      },
+      "remediations": []
+    },
+    "missing_required_inputs": [],
+    "output_contract": {
+      "allowed_status_values": [
+        "ARCHITECTURE_READY",
+        "SCENARIO_TOO_SMALL",
+        "BLOCKED"
+      ],
+      "deterministic_validators": [],
+      "optional_fields": [
+        "RESOURCE_GRAPH",
+        "DATA_VOLUME_PLAN",
+        "UNRESOLVED_RISKS"
+      ],
+      "persisted_artifacts": [],
+      "required_fields": [
+        "COMPONENT_GRAPH",
+        "ENTRYPOINTS",
+        "STATE_MODEL",
+        "SOLVER_VISIBLE_DOC_PLAN",
+        "PRODUCTION_CHARACTERISTICS",
+        "SCALE_FIT"
+      ],
+      "semantic_reviewers": [
+        "Task Architect"
+      ]
+    },
+    "readiness": "READY",
+    "retrieval": {
+      "query": null,
+      "retrieved_chars": 0,
+      "retrieved_context": [],
+      "status": "NOT_REQUESTED"
+    },
+    "routing": {
+      "failure_routes": {
+        "ARCHITECTURE_GAP": "A2 System Architect / Environment Builder",
+        "REQUIREMENT_GAP": "Creation Controller -> work-package/contract owner",
+        "SCENARIO_TOO_SMALL": "Creation Controller -> WORK_PACKAGE_RESEARCH"
+      },
+      "stale_on": [
+        "work-package change",
+        "material operational requirement change",
+        "creation-profile change"
+      ],
+      "success_transition": "DEFECT_TOPOLOGY"
+    },
+    "schema_version": "1.0",
+    "stage": {
+      "lifecycle": "creation",
+      "owner": "A2 System Architect / Environment Builder",
+      "role_class": "PRODUCER",
+      "role_id": "A2_SYSTEM_ARCHITECT",
+      "stage_id": "SYSTEM_ARCHITECTURE"
+    }
+  },
+  "outputs": {
+    "COMPONENT_GRAPH": {
+      "architecture_style": "single-process Go edge runtime with immutable serving generations, serialized reconciliation, lifecycle-safe shared runtime objects, explicit data/operator planes and durable recovery",
+      "identity_contract": {
+        "endpoint": "pool id + canonical network endpoint + transport compatibility; accepted remove/re-add creates a new incarnation",
+        "pool": "stable pool id plus semantic compatibility fingerprint",
+        "route": "stable route id plus declaration-order-independent semantic digest",
+        "source": "source identity + monotonic revision + content digest"
+      },
+      "nodes": [
+        "runtime_host",
+        "configuration_ingress",
+        "semantic_validator",
+        "route_graph_compiler",
+        "generation_reconciler",
+        "snapshot_store",
+        "pool_runtime_registry",
+        "selection_engine",
+        "upstream_transport",
+        "health_manager",
+        "drain_manager",
+        "checkpoint_store",
+        "telemetry_registry",
+        "data_plane_server",
+        "admin_plane"
+      ],
+      "publication_contract": "validate, compile, recheck source fences, reconcile runtime state, prepare durable checkpoint body and atomically publish one complete snapshot before acknowledgement"
+    },
+    "DATA_VOLUME_PLAN": {
+      "classification": "configuration/runtime-state edge service",
+      "plan": "materially varied route/pool/endpoint and independent source snapshots sufficient to exercise reconciliation and runtime lifecycle; generated data does not count as authored-code scale"
+    },
+    "ENTRYPOINTS": [
+      "edge-router-runtime serve",
+      "edge-router-runtime validate",
+      "operator POST /v1/config",
+      "operator POST /v1/discovery",
+      "public HTTP data plane",
+      "startup checkpoint recovery",
+      "graceful shutdown/drain"
+    ],
+    "PRODUCTION_CHARACTERISTICS": [
+      "public HTTP proxying",
+      "independent operator/discovery updates",
+      "concurrent immutable generation publication",
+      "health-aware selection/retry/failover",
+      "bounded draining",
+      "durable crash recovery",
+      "bounded lifecycle telemetry",
+      "production-scale deterministic configuration"
+    ],
+    "SCALE_FIT": {
+      "ASSESSMENT": "VERY_HIGH",
+      "BEHAVIORAL_SURFACE": "25+ normal/edge/negative/concurrency/restart/preservation scenarios without quota padding",
+      "DEFECT_SURFACE": "30 coherent manifestations across six causal clusters",
+      "SUBSTANTIVE_RUNTIME_LOC": "strict >=3000 floor already materialized"
+    },
+    "SOLVER_VISIBLE_DOC_PLAN": [
+      "environment/docs/architecture.md",
+      "environment/docs/configuration.md",
+      "environment/docs/runtime-state.md",
+      "environment/docs/operator-guide.md",
+      "environment/docs/observability.md"
+    ],
+    "STATE_MODEL": {
+      "durability": "checksummed generation body plus atomic CURRENT authority with retained previous complete generations",
+      "endpoint_state": "canonical identity + incarnation + health + lifecycle + inflight + transport/affinity continuity",
+      "serving_state": "one immutable RuntimeSnapshot leased for a complete request",
+      "source_state": "per-source accepted revision/digest and complete accepted source material"
+    },
+    "UNRESOLVED_RISKS": []
+  },
+  "record_id": "rec_854483d818dfeda44833eb490691d16b3c535e9fa52dddec29939352cfd7d578",
+  "role_id": "A2_SYSTEM_ARCHITECT",
+  "schema_version": "1.0",
+  "stage_id": "SYSTEM_ARCHITECTURE",
+  "status": "ARCHITECTURE_READY",
+  "task_lineage": {
+    "input_task_commit": "9663e4da67ab20e6bd66b942ac54b57667408dd8",
+    "output_task_commit": "9663e4da67ab20e6bd66b942ac54b57667408dd8",
+    "task_changed": false
+  },
+  "transition": {
+    "action": "ADVANCE",
+    "requires_state_validation": false,
+    "target": "DEFECT_TOPOLOGY",
+    "target_kind": "STAGE"
+  },
+  "validation": {
+    "acceptance_predicates_satisfied": true,
+    "evidence_binding_satisfied": true,
+    "evidence_refs_count": 0,
+    "invocation_identity_valid": true,
+    "invocation_policy_valid": true,
+    "output_keys_valid": true,
+    "required_outputs_satisfied": true,
+    "retrieval_context_authorized": true,
+    "status_legal": true,
+    "task_commit_change_authorized": true,
+    "task_lineage_valid": true
+  }
+}
