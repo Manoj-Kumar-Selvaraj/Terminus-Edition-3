@@ -1,0 +1,50 @@
+{
+  "evidence_refs": [
+    {
+      "kind": "COMMIT",
+      "ref": "commit:03317f8218069b9e0b5d073bf87ecf7a0ae8e4a1"
+    }
+  ],
+  "invocation_id": "inv_29dbdffbbf5360bbb771cd8739ed6a2828085e43b3fb112e17a21c0d9487c101",
+  "output_task_commit": "03317f8218069b9e0b5d073bf87ecf7a0ae8e4a1",
+  "outputs": {
+    "CONNECTED_MANIFESTATIONS": 25,
+    "DEFECT_MANIFESTATIONS": 25,
+    "EDGE_BOUNDARY_COVERAGE": [
+      "inclusive sizes",
+      "unsigned byte ordering",
+      "WAL framing/torn-tail boundaries",
+      "snapshot structural/CRC boundaries",
+      "ABI/wire compatibility"
+    ],
+    "F2P_COUNT": 30,
+    "F2P_ORGANICITY": "PASS: F2P cases span distinct state, concurrency, recovery, maintenance and interface behaviors rather than repeated assertions.",
+    "INSTRUCTION_CHECKLIST_RISK": "LOW: instruction states public engineering invariants without hidden verifier names or private defect IDs.",
+    "NEGATIVE_FAILURE_COVERAGE": [
+      "writer exclusion",
+      "stale conflict termination",
+      "complete WAL/snapshot corruption",
+      "operator invariant failure",
+      "malformed/unknown protocol requests"
+    ],
+    "P2P_COUNT": 33,
+    "PADDING_RISK": "LOW: solver-visible native modules correspond to distinct runtime responsibilities and are reachable from the actual product binary.",
+    "PRODUCTION_CHARACTERISTICS": [
+      "persistent binary WAL/snapshot",
+      "process writer fencing",
+      "MVCC transactions and overlays",
+      "conflict arbitration",
+      "crash/restart recovery",
+      "atomic checkpoint publication",
+      "operator STATS/HEALTH",
+      "stable native ABI/protocol compatibility"
+    ],
+    "REACHABLE_PRODUCTION_LOC": "PASS: production logic is reachable through /app/stonevault/bin/stonevault across Rust ingress/session and C++ storage paths.",
+    "REQUIRED_CHANGES": [],
+    "ROOT_CAUSE_CLUSTERS": 8,
+    "SUBSTANTIVE_LOC": "PASS: current deterministic complexity validator confirms the native multi-module StoneVault environment meets its configured profile threshold.",
+    "TEST_DUPLICATION_RISK": "LOW: coverage spans independent locking, configuration, MVCC, conflict, recovery, checkpoint, operator and protocol contracts."
+  },
+  "schema_version": "1.0",
+  "status": "PASS"
+}
