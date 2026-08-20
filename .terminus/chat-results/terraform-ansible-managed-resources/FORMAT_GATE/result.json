@@ -6,26 +6,25 @@
       "ref": "commit:78ad422902b27dea954905130a1267b02cff3596"
     },
     {
-      "content_hash": "sha256:ed5990238b212bd16e28ea8955e272cd66c8043e1026f4fe3d0ccd6c430f49a6",
+      "content_hash": "sha256:fca3ef4b283f1a1fe2aa6d960cd36a17b7232eb0b7a130f9cc8d43d948d6ec42",
       "kind": "COMMIT",
-      "ref": "commit:4cc1f68cb57b284c4817e3f354ea6eb74c5f717d"
+      "ref": "commit:67b805a297ac005ee08e82facc533f53a3233192"
     }
   ],
-  "invocation_id": "inv_341524492282b5d2f5bca54eb380504cf349f84ec6dff45f4cb52fc7d16e59ff",
+  "invocation_id": "inv_4e03ec70b8e339ba1e4f60d3a1d4f7548590cc2c2ebcf0a30e1f15ed451ed78a",
   "output_task_commit": "78ad422902b27dea954905130a1267b02cff3596",
   "outputs": {
-    "CHECKS": {
-      "agent_image": "PASS: digest-pinned Go 1.24 base; tmux and asciinema are installed; Terraform 1.10.5 is checksum-pinned",
-      "instruction_paths": "PASS: /app/provider and public contract paths are absolute/solver-visible; private verifier paths are not disclosed",
-      "isolation": "PASS: solution/tests are excluded from agent build context and verifier content remains outside solver-visible provider source",
-      "policy_conflicts": "PASS: none identified",
-      "solution_layout": "PASS: solution/solve.sh and solution/fixed overlay are separated from the starter environment",
-      "task_root_and_name": "PASS: kebab-case task root matches task.toml name",
-      "task_toml": "PASS: absolute artifact /app/provider, separate verifier, agent/verifier timeouts and public network mode are declared",
-      "test_sh": "PASS: no dependency installation; canonical reward file is 1 only on pytest success and script exits the pytest status",
-      "verifier_image": "PASS: separate digest-pinned verifier image with pytest dependencies baked at build time"
-    },
-    "RERUN": "NOT_REQUIRED_AFTER_REPAIR: Q7 made no task mutation. The immutable task tree was reviewed against the active format rules; later repository CI remains responsible for its normal task-format/packaging execution and no unearned CI-pass claim is made here."
+    "CHECKS": [
+      "PASS: required top-level task layout is present: README.md, environment/, instruction.md, solution/, task.toml, tests/.",
+      "PASS: task.toml declares Software/Systems advanced task, absolute artifact /app/provider, workdir /app/provider, public network, separate verifier and bounded agent/verifier timeouts.",
+      "PASS: agent image uses digest-pinned Go 1.24 base and provides ansible-core, tmux, asciinema and pinned Terraform 1.10.5 tooling without privileged/container-socket shortcuts.",
+      "PASS: .dockerignore excludes solution, tests, Go test files, Terraform state/cache/lock files and logs from the solver environment build context.",
+      "PASS: verifier is separate, uses the pinned Go base and baked pytest dependencies, and its test harness builds the provider from the declared artifact root.",
+      "PASS: test.sh writes reward 1 only after successful pytest execution and exits with pytest status.",
+      "PASS: instruction exposes solver-visible provider/docs paths only and does not expose verifier-private or reference-solution internals.",
+      "PASS: solution entrypoint and implementation overlay reside under solution/ and are not copied into the agent image."
+    ],
+    "RERUN": "No format repair was required. No later CI/runtime/oracle pass is claimed by this Q7 result; downstream gates must earn their own evidence."
   },
   "schema_version": "1.0",
   "status": "FORMAT_PASS"
