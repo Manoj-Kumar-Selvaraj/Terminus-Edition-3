@@ -1,0 +1,227 @@
+{
+  "authority": {
+    "control_plane_commit": "7d8a6d8c62a62e6d24949344c7fd712e59bc8829",
+    "policy_versions": {},
+    "task_commit": "03317f8218069b9e0b5d073bf87ecf7a0ae8e4a1",
+    "task_id": "stonevault-crash-safe-storage"
+  },
+  "disposition": "ADVANCE",
+  "evidence_refs": [
+    {
+      "content_hash": "sha256:38d1e6b49a6cd52e4cefce949ec274c9b07daf9b5ba2735bb2a094820f7c78de",
+      "kind": "COMMIT",
+      "ref": "commit:03317f8218069b9e0b5d073bf87ecf7a0ae8e4a1"
+    }
+  ],
+  "invocation_id": "inv_285b14904b4508ab2a65825b35d267af38681e73e7eff111e02c648dafb3706e",
+  "invocation_snapshot": {
+    "acceptance_predicates": {},
+    "authority": {
+      "control_plane_commit": "7d8a6d8c62a62e6d24949344c7fd712e59bc8829",
+      "policy_versions": {},
+      "task_commit": "03317f8218069b9e0b5d073bf87ecf7a0ae8e4a1",
+      "task_id": "stonevault-crash-safe-storage"
+    },
+    "evidence": {
+      "authorized_evidence_classes": [
+        "CI_RUNTIME_EVIDENCE",
+        "CONTROL_PLANE_POLICY",
+        "PRIVATE_CREATION_DESIGN",
+        "SOLVER_VISIBLE_TASK"
+      ],
+      "evidence_required": [
+        "requirement-to-test map",
+        "behavioral scenario families",
+        "F2P/P2P classification",
+        "test independence"
+      ],
+      "excluded_evidence_classes": [
+        "CURRENT_REVIEW_PACKET",
+        "DURABLE_SESSION_STATE",
+        "FINAL_PACKAGE_EVIDENCE",
+        "MODEL_TRIAL_EVIDENCE",
+        "PRIOR_REVIEW_RESULTS",
+        "PUBLIC_REFERENCE",
+        "SOLUTION_ORACLE",
+        "VERIFIER_PRIVATE"
+      ],
+      "mandatory_exact_reads": [
+        "TERMINUS_3_AI_INSTRUCTIONS.md",
+        ".terminus/agents/CREATION_PIPELINE.md",
+        ".terminus/agents/CREATOR_PROMPTS.md"
+      ],
+      "retrieval_mode": "FILTERED_HYBRID"
+    },
+    "ignored_input_count": 0,
+    "inputs": {
+      "optional": {},
+      "required": {
+        "BEHAVIORAL_SURFACES": {
+          "edge_boundary": [
+            "inclusive sizes",
+            "byte ordering",
+            "WAL/snapshot framing"
+          ],
+          "failure_recovery": [
+            "killed/rolled-back transactions",
+            "torn WAL",
+            "checkpoint interruption",
+            "snapshot corruption"
+          ],
+          "negative_failure": [
+            "second writer",
+            "stale conflict",
+            "malformed protocol",
+            "complete corruption"
+          ],
+          "normal": [
+            "transaction CRUD",
+            "snapshot reads",
+            "prefix scans",
+            "checkpoint/restart"
+          ]
+        },
+        "SOLVER_VISIBLE_CONTRACTS": [
+          "stonevault-crash-safe-storage/instruction.md",
+          "stonevault-crash-safe-storage/environment/stonevault/docs/storage-format.md"
+        ],
+        "SOLVER_VISIBLE_REQUIREMENTS": {
+          "R01-R16": "See .terminus/designs/stonevault-crash-safe-storage-test-map.json and task instruction"
+        }
+      }
+    },
+    "invocation_id": "inv_285b14904b4508ab2a65825b35d267af38681e73e7eff111e02c648dafb3706e",
+    "learning": {
+      "context_hash": "sha256:bb84a513aa2b6e4374d691759c4a6edf94169f479f4611e9091643b9f279ccfc",
+      "lessons": [],
+      "mode": "GENERALIZED_LESSONS_PLUS_OWNED_REMEDIATIONS",
+      "raw_feedback_exposed": false,
+      "raw_historical_findings_exposed": false,
+      "registry_heads": {
+        "feedback": "GENESIS",
+        "findings": "GENESIS",
+        "lessons": "GENESIS",
+        "patterns": "GENESIS",
+        "remediations": "GENESIS"
+      },
+      "remediations": []
+    },
+    "missing_required_inputs": [],
+    "output_contract": {
+      "allowed_status_values": [
+        "VERIFIER_READY",
+        "REQUIREMENT_GAP",
+        "SCENARIO_TOO_SMALL",
+        "BLOCKED"
+      ],
+      "deterministic_validators": [
+        "verifier lint/static checks",
+        ".terminus/validate_task_complexity.py <task>"
+      ],
+      "optional_fields": [
+        "STARTER_EMPIRICAL_STATUS",
+        "ORACLE_EMPIRICAL_STATUS",
+        "SOLVER_LOGIC_REIMPLEMENTATION_RISK"
+      ],
+      "persisted_artifacts": [
+        "<task>/tests/",
+        ".terminus/designs/<task>-test-map.json"
+      ],
+      "required_fields": [
+        "REQUIREMENT_TEST_MATRIX",
+        "F2P_COUNT",
+        "P2P_COUNT",
+        "EDGE_BOUNDARY_COVERAGE",
+        "NEGATIVE_FAILURE_COVERAGE",
+        "ORGANIC_COUNT_JUSTIFICATION",
+        "TEST_INDEPENDENCE"
+      ],
+      "semantic_reviewers": [
+        "Q2 Verifier Coverage Repairer",
+        "Verifier Engineer"
+      ]
+    },
+    "readiness": "READY",
+    "retrieval": {
+      "query": null,
+      "retrieved_chars": 0,
+      "retrieved_context": [],
+      "status": "NOT_REQUESTED"
+    },
+    "routing": {
+      "failure_routes": {
+        "DUPLICATE_OR_WEAK_TEST": "A5 Verifier Author / Q2 Verifier Coverage Repairer",
+        "REQUIREMENT_GAP": "Q1 Spec Gap Repairer / contract owner",
+        "SCENARIO_TOO_SMALL": "Creation Controller -> WORK_PACKAGE_RESEARCH"
+      },
+      "stale_on": [
+        "solver-visible requirement change",
+        "referenced contract change",
+        "behavioral surface change",
+        "verifier change"
+      ],
+      "success_transition": "HUMAN_WRITING_RESEARCH"
+    },
+    "schema_version": "1.0",
+    "stage": {
+      "lifecycle": "creation",
+      "owner": "A5 Verifier Author",
+      "role_class": "PRODUCER",
+      "role_id": "A5_VERIFIER_AUTHOR",
+      "stage_id": "VERIFIER_BUILD"
+    }
+  },
+  "outputs": {
+    "EDGE_BOUNDARY_COVERAGE": [
+      "inclusive key/prefix/value limits",
+      "unsigned high-bit byte ordering",
+      "WAL framing and torn-tail boundaries",
+      "independent WAL fixtures",
+      "checkpoint interruption",
+      "snapshot structural/size/duplicate/CRC boundaries",
+      "exact ABI and wire shapes"
+    ],
+    "F2P_COUNT": 30,
+    "NEGATIVE_FAILURE_COVERAGE": [
+      "concurrent writer rejection",
+      "post-conflict transaction termination",
+      "complete WAL corruption classes",
+      "snapshot corruption",
+      "HEALTH invariant failure",
+      "malformed protocol and unknown transaction IDs"
+    ],
+    "ORGANIC_COUNT_JUSTIFICATION": "30 change-required probes correspond to 27 distinct behavioral cases after two explicit grouping rules; 33 preservation probes independently constrain compatibility and already-correct behavior.",
+    "P2P_COUNT": 33,
+    "REQUIREMENT_TEST_MATRIX": "Canonical private matrix: .terminus/designs/stonevault-crash-safe-storage-test-map.json; 63 probes cover R01-R16, with known residual F01 (committed DELETE restart durability) separately backlogged and not represented as covered.",
+    "TEST_INDEPENDENCE": "Runtime probes isolate database directories; independent WAL/snapshot fixtures encode solver-visible formats rather than product serializers; ABI/C++20 preservation is compiler validated."
+  },
+  "record_id": "rec_a597f929bbe8a0c9bbc96c1d5d52940c4d63d48dc2091b565ed28fbed2cfb52e",
+  "role_id": "A5_VERIFIER_AUTHOR",
+  "schema_version": "1.0",
+  "stage_id": "VERIFIER_BUILD",
+  "status": "VERIFIER_READY",
+  "task_lineage": {
+    "input_task_commit": "03317f8218069b9e0b5d073bf87ecf7a0ae8e4a1",
+    "output_task_commit": "03317f8218069b9e0b5d073bf87ecf7a0ae8e4a1",
+    "task_changed": false
+  },
+  "transition": {
+    "action": "ADVANCE",
+    "requires_state_validation": false,
+    "target": "HUMAN_WRITING_RESEARCH",
+    "target_kind": "STAGE"
+  },
+  "validation": {
+    "acceptance_predicates_satisfied": true,
+    "evidence_binding_satisfied": true,
+    "evidence_refs_count": 1,
+    "invocation_identity_valid": true,
+    "invocation_policy_valid": true,
+    "output_keys_valid": true,
+    "required_outputs_satisfied": true,
+    "retrieval_context_authorized": true,
+    "status_legal": true,
+    "task_commit_change_authorized": true,
+    "task_lineage_valid": true
+  }
+}
