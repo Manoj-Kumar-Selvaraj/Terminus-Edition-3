@@ -14,5 +14,6 @@ func SignPermit(req Request, policy Policy, secret []byte, now time.Time) Permit
 }
 
 func VerifyPermit(permit Permit, req Request, policy Policy, secret []byte, now time.Time) (bool, string) {
-	return platform.VerifyPermit(permit, req, policy, secret, now)
+	assessment := platform.VerifyAdmissionPermit(permit, req, policy, secret, now)
+	return platform.EffectivePermitVerification(assessment)
 }
