@@ -1,0 +1,43 @@
+{
+  "schema_version": "1.0",
+  "mode": "RECORD",
+  "task_id": "stonevault-crash-safe-storage",
+  "task_commit": "03317f8218069b9e0b5d073bf87ecf7a0ae8e4a1",
+  "control_plane_commit": "df7ef7569e2947b9f0bf7cf89ed4dec6c2a5a1fe",
+  "expected_repository_head": "67863b5bc897f39c498f08c7f53f98c03dd2c6ce",
+  "stage_id": "SYSTEM_ARCHITECTURE",
+  "inputs": {
+    "APPROVED_WORK_PACKAGE": {"id": "stonevault-crash-safe-storage"},
+    "APPROVED_OPERATIONAL_REQUIREMENTS": [
+      "single writer fencing",
+      "transaction-lifetime MVCC snapshots",
+      "first-committer-wins conflicts",
+      "durable WAL sequencing and crash recovery",
+      "atomic checkpoint/snapshot publication",
+      "fail-closed corruption handling",
+      "operator STATS/HEALTH accuracy",
+      "binary protocol limits and stable compatibility"
+    ],
+    "CREATION_RULE_CONTEXT": {"profile": "large_system_strict"}
+  },
+  "result": {
+    "status": "ARCHITECTURE_READY",
+    "outputs": {
+      "COMPONENT_GRAPH": {
+        "boundary": "stable C ABI",
+        "cpp_storage_core": ["storage/engine.cpp", "storage/wal.cpp", "storage/snapshot.cpp", "storage/lock.cpp"],
+        "rust_control_plane": ["src/config.rs", "src/protocol.rs", "src/main.rs"]
+      },
+      "ENTRYPOINTS": ["/app/stonevault/bin/stonevault", "line-oriented command protocol", "C ABI storage calls"],
+      "PRODUCTION_CHARACTERISTICS": ["cross-language native runtime", "persistent binary formats", "process-level lock ownership", "crash/restart recovery", "operator observability"],
+      "SCALE_FIT": "large_system_strict",
+      "SOLVER_VISIBLE_DOC_PLAN": ["/app/stonevault/docs/storage-format.md", "/app/stonevault/instruction.md", "/app/stonevault/README.md"],
+      "STATE_MODEL": {
+        "durable": ["wal.log", "snapshot.dat", "commit sequence"],
+        "live": ["transaction snapshots", "transaction-local mutation overlays", "writer lock"],
+        "maintenance": ["snapshot.tmp", "checkpoint quiescence"]
+      }
+    },
+    "evidence_refs": [{"kind": "COMMIT", "ref": "commit:03317f8218069b9e0b5d073bf87ecf7a0ae8e4a1"}]
+  }
+}
