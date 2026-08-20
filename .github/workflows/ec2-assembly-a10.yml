@@ -5,7 +5,6 @@ on:
     branches:
       - diagnostic/ec2-ledger-integrity-20260820
     paths:
-      - .github/ec2_assembly_a10.py
       - .github/workflows/ec2-assembly-a10.yml
 
 permissions:
@@ -28,6 +27,7 @@ jobs:
         run: |
           set -euo pipefail
           cp .github/ec2_assembly_a10.py "$RUNNER_TEMP/ec2_assembly_a10.py"
+          sed -i 's/215cc70bcebcccc3c9a401af1b74a97d90026da3/67b805a297ac005ee08e82facc533f53a3233192/g' "$RUNNER_TEMP/ec2_assembly_a10.py"
           path=".terminus/diagnostic-run-locators/ec2-assembly-a10-${GITHUB_SHA}.json"
           mkdir -p "$(dirname "$path")"
           printf '{"run_id":%s,"run_attempt":%s,"event_sha":"%s","branch":"%s"}\n' "$GITHUB_RUN_ID" "$GITHUB_RUN_ATTEMPT" "$GITHUB_SHA" "$GITHUB_REF_NAME" > "$path"
@@ -45,6 +45,11 @@ jobs:
           base="$(git rev-parse origin/main)"
           echo "BASE=$base" >> "$GITHUB_ENV"
           git checkout --detach "$base"
+          work="$RUNNER_TEMP/ec2-assembly-a10"
+          mkdir -p "$work"
+          python3 .terminus/execution/controller_cli.py control-plane --head "$base" --output "$work/base-control.json"
+          resolved="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["control_plane_commit"])' "$work/base-control.json")"
+          [[ "$resolved" == "67b805a297ac005ee08e82facc533f53a3233192" ]] || { echo "::error::effective control changed before assembly/A10: $resolved"; exit 75; }
           python3 "$RUNNER_TEMP/ec2_assembly_a10.py"
 
       - name: Persist canonical execution evidence with unrelated-main guard
@@ -54,21 +59,30 @@ jobs:
           task="ec2-artifact-policy-enforcement"
           git config user.name 'terminus-ec2-a9-a10[bot]'
           git config user.email 'terminus-ec2-a9-a10[bot]@users.noreply.github.com'
+          unexpected="$(git status --porcelain | awk '{print $2}' | grep -vE "^\.terminus/(executions|workflows)/${task}(/|$)" || true)"
+          [[ -z "$unexpected" ]] || { echo "::error::unexpected assembly/A10 mutations: $unexpected"; exit 1; }
           git add -- ".terminus/executions/$task"
           git diff --cached --check
+          git diff --cached --quiet && { echo "::error::no canonical A9/A10 evidence produced"; exit 1; }
           git commit -m "Record ${task} assembly and complexity gate"
-          git fetch origin main
-          remote="$(git rev-parse origin/main)"
-          if [[ "$remote" != "$BASE" ]]; then
-            work="$RUNNER_TEMP/ec2-assembly-a10"
-            python3 .terminus/execution/controller_cli.py control-plane --head "$remote" --output "$work/remote-control.json"
-            resolved="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["control_plane_commit"])' "$work/remote-control.json")"
-            [[ "$resolved" == "215cc70bcebcccc3c9a401af1b74a97d90026da3" ]] || { echo "::error::control changed during assembly/A10"; exit 75; }
-            ec2_drift="$(git diff --name-only "$BASE" "$remote" -- "$task" ".terminus/executions/$task" || true)"
-            [[ -z "$ec2_drift" ]] || { echo "::error::EC2 changed concurrently:"; echo "$ec2_drift"; exit 75; }
-            git rebase "$remote"
-          fi
-          git push origin HEAD:main
+          original_base="$BASE"
+          for attempt in 1 2 3 4 5 6 7 8; do
+            git fetch origin main
+            remote="$(git rev-parse origin/main)"
+            if [[ "$remote" != "$original_base" ]]; then
+              work="$RUNNER_TEMP/ec2-assembly-a10"
+              python3 .terminus/execution/controller_cli.py control-plane --head "$remote" --output "$work/remote-control.json"
+              resolved="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["control_plane_commit"])' "$work/remote-control.json")"
+              [[ "$resolved" == "67b805a297ac005ee08e82facc533f53a3233192" ]] || { echo "::error::control changed during assembly/A10 to $resolved"; exit 75; }
+              ec2_drift="$(git diff --name-only "$original_base" "$remote" -- "$task" ".terminus/designs/${task}.json" ".terminus/designs/${task}-test-map.json" ".terminus/executions/$task" || true)"
+              [[ -z "$ec2_drift" ]] || { echo "::error::EC2 changed concurrently:"; echo "$ec2_drift"; exit 75; }
+              git rebase "$remote"
+            fi
+            if git push origin HEAD:main; then exit 0; fi
+            sleep 1
+          done
+          echo "::error::unable to publish A9/A10 after unrelated-main retries"
+          exit 1
 
       - name: Upload diagnostics
         if: always()
