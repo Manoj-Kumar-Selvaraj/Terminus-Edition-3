@@ -1,0 +1,333 @@
+{
+  "execution_mode": "INLINE_SPECIALIST_SEQUENCE",
+  "executor_handoff": null,
+  "inline_specialist_sequence": {
+    "aggregate_invocation_id": "inv_507d40dc28c3ae1ef95ebe69857c77dd62d53e69462c562a4e54a8b535856e95",
+    "aggregate_owner_role_id": "CREATION_CONTROLLER",
+    "execution_mode": "INLINE_SPECIALIST_SEQUENCE",
+    "recording_policy": "freeze the listed specialist outputs in order, then emit exactly one aggregate StageResult; substeps are producer-side quality checks, not independent acceptance records",
+    "same_chat": true,
+    "stage_id": "SPEC_ALIGNMENT",
+    "status": "READY_FOR_INLINE_SPECIALISTS",
+    "steps": [
+      {
+        "evidence_boundary": "inherit the exact aggregate StageInvocation inputs/evidence; no expansion",
+        "execution_mode": "INLINE_SPECIALIST",
+        "independent_acceptance": false,
+        "mutation_policy": "evaluate only during this aggregate pass; if repair is required, return the finding to the aggregate controller so the repair is routed under fresh task-commit authority",
+        "ordinal": 1,
+        "result_field": "Q1_STATUS",
+        "role_id": "Q1_SPEC_GAP_REPAIRER",
+        "same_chat": true,
+        "satisfied_values": [
+          "NO_GAP",
+          "PASS"
+        ]
+      },
+      {
+        "evidence_boundary": "inherit the exact aggregate StageInvocation inputs/evidence; no expansion",
+        "execution_mode": "INLINE_SPECIALIST",
+        "independent_acceptance": false,
+        "mutation_policy": "evaluate only during this aggregate pass; if repair is required, return the finding to the aggregate controller so the repair is routed under fresh task-commit authority",
+        "ordinal": 2,
+        "result_field": "Q2_STATUS",
+        "role_id": "Q2_VERIFIER_COVERAGE_REPAIRER",
+        "same_chat": true,
+        "satisfied_values": [
+          "COVERED",
+          "PASS"
+        ]
+      },
+      {
+        "evidence_boundary": "inherit the exact aggregate StageInvocation inputs/evidence; no expansion",
+        "execution_mode": "INLINE_SPECIALIST",
+        "independent_acceptance": false,
+        "mutation_policy": "evaluate only during this aggregate pass; if repair is required, return the finding to the aggregate controller so the repair is routed under fresh task-commit authority",
+        "ordinal": 3,
+        "result_field": "Q3_STATUS",
+        "role_id": "Q3_SPEC_AMBIGUITY_REPAIRER",
+        "same_chat": true,
+        "satisfied_values": [
+          "CLEAR",
+          "PASS"
+        ]
+      }
+    ]
+  },
+  "invocation": {
+    "acceptance_predicates": {
+      "ALIGNED": [
+        {
+          "op": "in",
+          "path": "Q1_STATUS",
+          "value": [
+            "NO_GAP",
+            "PASS"
+          ]
+        },
+        {
+          "op": "in",
+          "path": "Q2_STATUS",
+          "value": [
+            "COVERED",
+            "PASS"
+          ]
+        },
+        {
+          "op": "in",
+          "path": "Q3_STATUS",
+          "value": [
+            "CLEAR",
+            "PASS"
+          ]
+        }
+      ]
+    },
+    "authority": {
+      "control_plane_commit": "5aebce7e213fa5f5864bdd741e6139d39bf5e059",
+      "policy_versions": {},
+      "task_commit": "6c7909d5c0efd3e6e64443d6de3b227c1820b01b",
+      "task_id": "ec2-artifact-policy-enforcement"
+    },
+    "evidence": {
+      "authorized_evidence_classes": [
+        "CONTROL_PLANE_POLICY",
+        "PRIVATE_CREATION_DESIGN",
+        "SOLVER_VISIBLE_TASK",
+        "VERIFIER_PRIVATE"
+      ],
+      "evidence_required": [
+        "Q1 no unresolved verifier->spec gap",
+        "Q2 no unresolved spec->verifier gap",
+        "Q3 no unresolved grading-relevant ambiguity"
+      ],
+      "excluded_evidence_classes": [
+        "CI_RUNTIME_EVIDENCE",
+        "CURRENT_REVIEW_PACKET",
+        "DURABLE_SESSION_STATE",
+        "FINAL_PACKAGE_EVIDENCE",
+        "MODEL_TRIAL_EVIDENCE",
+        "PRIOR_REVIEW_RESULTS",
+        "PUBLIC_REFERENCE",
+        "SOLUTION_ORACLE"
+      ],
+      "mandatory_exact_reads": [
+        ".terminus/agents/INSTRUCTION_POLICY.md",
+        ".terminus/agents/QUALITY_AGENT_REGISTRY.md",
+        ".terminus/agents/QUALITY_AGENT_PROMPTS.md"
+      ],
+      "retrieval_mode": "EXACT_ONLY"
+    },
+    "ignored_input_count": 0,
+    "inputs": {
+      "optional": {
+        "PRIVATE_TEST_MAP": {
+          "f2p_count": 28,
+          "new_cases": [
+            "F2P-SRC-05",
+            "P2P-10",
+            "P2P-11",
+            "P2P-12"
+          ],
+          "organic_count_justification": "28 F2P cases are distinct externally observable trust, evidence, exception, permit and audit/recovery transitions; 12 P2P cases preserve healthy and invalid baseline behavior.",
+          "p2p_count": 12,
+          "profile": "large_system_strict",
+          "requirements": {
+            "REQ_AUDIT_RECOVERY": "Allow/deny journal durability precedes projection; retry/corruption/restart/recovery are safe.",
+            "REQ_EVIDENCE_CACHE": "Current scanner evidence or exact digest/policy/DB/TTL cache; unavailable/stale/expired/corrupt evidence fails closed.",
+            "REQ_EXCEPTION_SCOPE": "Exceptions are unexpired and exact for digest/surface/environment/policy code and cannot override prerequisites.",
+            "REQ_PERMIT_AUTH_REPLAY": "Permits are keyed, exact-scope, expiring and single-use across restart/concurrency.",
+            "REQ_PRESERVATION": "Healthy allow/deny, exact exception, invalid permit, cache/stateless compatibility, supplied fixtures and CLI exits remain intact.",
+            "REQ_SOURCE_DIGEST": "All acquisition surfaces/managers enforce trusted source and immutable digest before exceptions."
+          },
+          "schema_version": "1.0",
+          "task": "ec2-artifact-policy-enforcement"
+        }
+      },
+      "required": {
+        "CURRENT_INSTRUCTION": "Security reproduced inconsistent acquisition decisions in `/app/enforcer`: an `apt` request was allowed without current scanner evidence, direct `dpkg` and Maven paths skipped source policy, a moved container tag reused an older clean result, an expired exception still applied, permit scope could be altered, and deny history disappeared after restart. Repair the gate so package, container, and dependency acquisition share one policy boundary. Use `/app/enforcer/notes/oncall.md` for the observed symptoms and `/app/enforcer/docs/policy-contract.md`, `/app/enforcer/docs/state-format.md`, and `/app/enforcer/docs/operations.md` for the governing contracts.\n\nKeep the existing `artifactguard evaluate` and `artifactguard verify-permit` interfaces and documented exit behavior, keep cache and exceptions operational, do not rewrite the supplied policy/scanner/exception fixtures, and preserve existing audit history. Trusted-source and required immutable-digest checks must apply before exceptions; scanner or cache evidence must be current for the artifact and active policy/scanner revisions and fail closed when unavailable or stale. Exceptions may waive only the vulnerability threshold within their exact current scope. Permits must be secret-keyed, unexpired, bound to the exact request/instance/artifact/policy decision, and single-use across restart and concurrent verification. Every ALLOW or DENY must be durably journaled before completion, with recovery preserving valid history and keeping the latest-decision projection consistent.\n",
+        "CURRENT_VERIFIER": {
+          "added_contract_cases": [
+            "F2P-SRC-05 exact exception cannot override untrusted source",
+            "P2P-10 permit request_id mismatch remains invalid",
+            "P2P-11 permit policy-version mismatch remains invalid",
+            "P2P-12 wrong exception policy code remains non-authorizing"
+          ],
+          "behavioral_case_count": 40,
+          "f2p_count": 28,
+          "files": [
+            "tests/Dockerfile",
+            "tests/test.sh",
+            "tests/test_outputs.py",
+            "tests/test_q4_contract_gaps.py",
+            "tests/verifier_lib.py"
+          ],
+          "p2p_count": 12,
+          "requirement_families": [
+            "REQ_SOURCE_DIGEST",
+            "REQ_EVIDENCE_CACHE",
+            "REQ_EXCEPTION_SCOPE",
+            "REQ_PERMIT_AUTH_REPLAY",
+            "REQ_AUDIT_RECOVERY",
+            "REQ_PRESERVATION"
+          ],
+          "source_of_truth": ".terminus/designs/ec2-artifact-policy-enforcement-test-map.json"
+        },
+        "REFERENCED_SOLVER_VISIBLE_CONTRACTS": {
+          "architecture": "ArtifactGuard preserves evaluate/verify-permit CLI and routes package/container/dependency requests through normalization, policy, scanner, cache, exception, permit, audit, replay and state subsystems; durable state is caller-provided; repair coupled trust/evidence/exception/permit/audit/recovery behavior without breaking CLI.",
+          "operations_contract": "evaluate returns 42 on policy denial and 2 on operational failure. verify-permit returns 43 for invalid permits and remains stateless-compatible without replay state. Optional --state enables durable single-use: first exact valid use succeeds and records consumption; later/concurrent use returns 43/PERMIT_REPLAYED; successful verification reports PERMIT_VALID.",
+          "policy_contract": "All managers share surface policy; trusted source and required immutable digest are prerequisites before exceptions. Scanner evidence must be status ok at active DB revision. Cache is valid only for exact digest, policy version, scanner DB revision and unexpired TTL. Vulnerability exceptions require exact digest/surface/environment/policy code VULNERABILITY_THRESHOLD and unexpired scope, and never override trust/digest/scanner prerequisites. Permits are secret-keyed and bind exact request ID, instance ID, artifact digest, policy version and expiry. Every ALLOW/DENY is fsynced to audit before completion; exits are deny=42, invalid permit=43.",
+          "state_contract": "Cache, audit, last-decision and replay state are durable. Repeated unchanged request/policy input is idempotent and reuses decision_id without duplicate audit. Audit is authoritative; projection advances only after journal durability. A complete unterminated final JSON record is valid. Malformed durable audit JSON is corruption and new operations fail closed without truncating/extending history."
+        }
+      }
+    },
+    "invocation_id": "inv_507d40dc28c3ae1ef95ebe69857c77dd62d53e69462c562a4e54a8b535856e95",
+    "learning": {
+      "context_hash": "sha256:bb84a513aa2b6e4374d691759c4a6edf94169f479f4611e9091643b9f279ccfc",
+      "lessons": [],
+      "mode": "GENERALIZED_LESSONS_PLUS_OWNED_REMEDIATIONS",
+      "raw_feedback_exposed": false,
+      "raw_historical_findings_exposed": false,
+      "registry_heads": {
+        "feedback": "GENESIS",
+        "findings": "GENESIS",
+        "lessons": "GENESIS",
+        "patterns": "GENESIS",
+        "remediations": "GENESIS"
+      },
+      "remediations": []
+    },
+    "missing_required_inputs": [],
+    "output_contract": {
+      "allowed_status_values": [
+        "ALIGNED",
+        "REPAIR_REQUIRED",
+        "BLOCKED"
+      ],
+      "deterministic_validators": [],
+      "optional_fields": [
+        "REPAIR_EVIDENCE"
+      ],
+      "persisted_artifacts": [],
+      "required_fields": [
+        "Q1_STATUS",
+        "Q2_STATUS",
+        "Q3_STATUS"
+      ],
+      "semantic_reviewers": [
+        "Q1 Spec Gap Repairer",
+        "Q2 Verifier Coverage Repairer",
+        "Q3 Spec Ambiguity Repairer"
+      ]
+    },
+    "readiness": "READY",
+    "retrieval": {
+      "query": null,
+      "retrieved_chars": 0,
+      "retrieved_context": [],
+      "status": "NOT_REQUESTED"
+    },
+    "routing": {
+      "failure_routes": {
+        "AMBIGUITY": "Q3 Spec Ambiguity Repairer",
+        "PERSISTENT_DISAGREEMENT": "Creation Controller -> block freeze and route to the applicable contract/policy owner",
+        "SPEC_TO_VERIFIER_GAP": "Q2 Verifier Coverage Repairer",
+        "VERIFIER_TO_SPEC_GAP": "Q1 Spec Gap Repairer"
+      },
+      "stale_on": [
+        "instruction change",
+        "referenced contract change",
+        "verifier change",
+        "grading-semantics change"
+      ],
+      "success_transition": "DOCUMENTATION_DRAFT"
+    },
+    "schema_version": "1.0",
+    "stage": {
+      "lifecycle": "creation",
+      "owner": "Creation Controller",
+      "role_class": "CONTROLLER",
+      "role_id": "CREATION_CONTROLLER",
+      "stage_id": "SPEC_ALIGNMENT"
+    }
+  },
+  "next": {
+    "action": "INVOKE_STAGE",
+    "optional_inputs": [
+      "PRIVATE_TEST_MAP"
+    ],
+    "owner": "Creation Controller",
+    "primary_role_id": "CREATION_CONTROLLER",
+    "required_inputs": [
+      "CURRENT_INSTRUCTION",
+      "CURRENT_VERIFIER",
+      "REFERENCED_SOLVER_VISIBLE_CONTRACTS"
+    ],
+    "stage_id": "SPEC_ALIGNMENT"
+  },
+  "quality_mode_policy": {
+    "inline_creation_governor_role_ids": [
+      "A10_COMPLEXITY_GOVERNOR"
+    ],
+    "inline_quality_role_ids": [
+      "Q1_SPEC_GAP_REPAIRER",
+      "Q2_VERIFIER_COVERAGE_REPAIRER",
+      "Q3_SPEC_AMBIGUITY_REPAIRER",
+      "Q5_ORACLE_RUNTIME_REPAIR_SPECIALIST",
+      "Q7_TASK_FORMAT_ENFORCER"
+    ],
+    "inline_stage_sequences": {
+      "SPEC_ALIGNMENT": [
+        {
+          "result_field": "Q1_STATUS",
+          "role_id": "Q1_SPEC_GAP_REPAIRER",
+          "satisfied_values": [
+            "NO_GAP",
+            "PASS"
+          ]
+        },
+        {
+          "result_field": "Q2_STATUS",
+          "role_id": "Q2_VERIFIER_COVERAGE_REPAIRER",
+          "satisfied_values": [
+            "COVERED",
+            "PASS"
+          ]
+        },
+        {
+          "result_field": "Q3_STATUS",
+          "role_id": "Q3_SPEC_AMBIGUITY_REPAIRER",
+          "satisfied_values": [
+            "CLEAR",
+            "PASS"
+          ]
+        }
+      ]
+    },
+    "mandatory_quality_role_keys": [
+      "spec-test-contract",
+      "production-logic"
+    ],
+    "mandatory_same_chat_checkpoints": {
+      "Q1": "SPEC_ALIGNMENT.Q1_STATUS",
+      "Q2": "SPEC_ALIGNMENT.Q2_STATUS",
+      "Q3": "SPEC_ALIGNMENT.Q3_STATUS",
+      "Q5": "DETERMINISTIC_VALIDATION runtime/oracle checkpoint; invoke Q5 repair only on registered runtime/oracle failure",
+      "Q7": "FORMAT_GATE"
+    },
+    "optional_q8_role_keys": [
+      "difficulty-sim-gpt",
+      "difficulty-sim-claude"
+    ],
+    "policy_document": ".terminus/agents/QUALITY_EXECUTION_MODE.md",
+    "policy_version": "1.0",
+    "producer_role_classes": [
+      "FIXER",
+      "PRODUCER"
+    ],
+    "q4_q6_mode": "AUTOMATED",
+    "q8_mode": "OFF",
+    "source": ".terminus/agents/quality_execution_mode.json"
+  },
+  "state_snapshot_id": "state_5d603c15af131d1744b7c69252fe35b4ebcc1d2a4ad57c9ce2a3b410fc799b10"
+}
