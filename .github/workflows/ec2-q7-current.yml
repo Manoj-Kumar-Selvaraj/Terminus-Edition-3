@@ -1,0 +1,73 @@
+name: EC2 Q7 Current Control
+
+on:
+  push:
+    branches:
+      - diagnostic/ec2-ledger-integrity-20260820
+    paths:
+      - .github/ec2_q7_current.py
+      - .github/workflows/ec2-q7-current.yml
+
+permissions:
+  contents: write
+
+concurrency:
+  group: ec2-q7-current
+  cancel-in-progress: false
+
+jobs:
+  q7:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Persist run locator
+        shell: bash
+        run: |
+          set -euo pipefail
+          path=".terminus/diagnostic-run-locators/ec2-q7-${GITHUB_SHA}.json"
+          mkdir -p "$(dirname "$path")"
+          printf '{"run_id":%s,"run_attempt":%s,"event_sha":"%s","branch":"%s"}\n' \
+            "$GITHUB_RUN_ID" "$GITHUB_RUN_ATTEMPT" "$GITHUB_SHA" "$GITHUB_REF_NAME" > "$path"
+          git config user.name 'terminus-diagnostic-locator[bot]'
+          git config user.email 'terminus-diagnostic-locator[bot]@users.noreply.github.com'
+          git add -- "$path"
+          git commit -m "Track EC2 Q7 run $GITHUB_RUN_ID"
+          git push origin HEAD:"$GITHUB_REF_NAME"
+
+      - name: Execute Q7 against canonical main
+        shell: bash
+        run: |
+          set -euo pipefail
+          work="$RUNNER_TEMP/ec2-q7"
+          git fetch origin main
+          base="$(git rev-parse origin/main)"
+          echo "BASE=$base" >> "$GITHUB_ENV"
+          git checkout --detach "$base"
+          python3 "$GITHUB_WORKSPACE/.github/ec2_q7_current.py"
+
+      - name: CAS-persist Q7 repair and canonical execution evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          task="ec2-artifact-policy-enforcement"
+          unexpected="$(git status --porcelain | awk '{print $2}' | grep -vE "^\.terminus/(executions|workflows)/${task}(/|$)" || true)"
+          [[ -z "$unexpected" ]] || { echo "::error::unexpected Q7 post-record mutations: $unexpected"; exit 1; }
+          git add -- ".terminus/executions/${task}"
+          git diff --cached --check
+          if ! git diff --cached --quiet; then
+            git commit -m "Record ${task} Q7 format gate"
+          fi
+          remote="$(git ls-remote origin refs/heads/main | cut -f1)"
+          [[ "$remote" == "$BASE" ]] || { echo "::error::main moved during Q7 base=$BASE current=$remote"; exit 75; }
+          git push origin HEAD:main
+
+      - name: Upload Q7 diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ec2-q7-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/ec2-q7
+          if-no-files-found: warn
