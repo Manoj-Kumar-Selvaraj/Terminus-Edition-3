@@ -21,9 +21,16 @@ def _collect_strings(value: Any) -> list[str]:
     return []
 
 
+def _required_inputs(inputs: Mapping[str, Any]) -> Mapping[str, Any]:
+    required = inputs.get("required")
+    if isinstance(required, Mapping):
+        return required
+    return inputs
+
+
 def derive_human_writing_domain(task_id: str, inputs: Mapping[str, Any]) -> str:
     """Build a deterministic task-specific calibration query from solver-visible inputs."""
-    required = inputs.get("required", {})
+    required = _required_inputs(inputs)
     source = {
         "task_id": task_id,
         "approved_work_package": required.get("APPROVED_WORK_PACKAGE", {}),
@@ -35,7 +42,7 @@ def derive_human_writing_domain(task_id: str, inputs: Mapping[str, Any]) -> str:
 
 def build_task_writing_profile(task_id: str, inputs: Mapping[str, Any]) -> dict[str, Any]:
     """Create a task-specific profile using only solver-visible request inputs."""
-    required = inputs.get("required", {})
+    required = _required_inputs(inputs)
     work_package = required.get("APPROVED_WORK_PACKAGE", {})
     requirements = required.get("SOLVER_VISIBLE_REQUIREMENTS", {})
     must_preserve = list(
