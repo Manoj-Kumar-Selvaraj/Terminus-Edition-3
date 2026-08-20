@@ -1,0 +1,29 @@
+{
+  "schema_version":"1.0",
+  "mode":"RECORD",
+  "task_id":"ec2-artifact-policy-enforcement",
+  "task_commit":"6c7909d5c0efd3e6e64443d6de3b227c1820b01b",
+  "control_plane_commit":"0579a0f2f1e7e3560d13ff1530f467c8e01b6a1a",
+  "expected_repository_head":"3d637d9b878b7aa4b6cd1ee0d25efb7437ba19ec",
+  "stage_id":"REFERENCE_SOLUTION",
+  "inputs":{
+    "APPROVED_OPERATIONAL_REQUIREMENTS":{
+      "REQUIRED_END_STATE":["Use one consistent admission policy across supported acquisition surfaces.","Require trusted source and immutable identity before exception handling.","Use current evidence bound to the active policy and scanner revisions.","Keep exceptions narrow and current.","Bind authorization permits to their exact request scope and validity window.","Make stateful permit use durable and single-use.","Commit every decision durably before reporting completion.","Recover valid history and keep repeated deterministic evaluation idempotent."],
+      "PRESERVATION":["existing CLI and documented exit behavior","valid cache reuse","valid scoped exceptions","supplied fixtures","valid audit history","stateless verification compatibility"]
+    },
+    "STARTER_ENVIRONMENT":{"SOURCE_RECORD_ID":"rec_13516988b40a28816e75d9873d2ebcd6d606bdee731d4af5cec56d88a846c989","SOURCE":"current canonical ENVIRONMENT_BUILD result"},
+    "SYSTEM_ARCHITECTURE":{"SOURCE_RECORD_ID":"rec_c7113662704e00ec908b7912f1f6e11869163956ea9721ec8fa0f757a9021b9c","SOURCE":"current canonical SYSTEM_ARCHITECTURE result"}
+  },
+  "result":{
+    "status":"IMPLEMENTED",
+    "evidence_refs":[],
+    "outputs":{
+      "RESTORED_INVARIANTS":["All supported acquisition managers pass through the shared source and immutable-identity prerequisites.","Reusable vulnerability evidence is accepted only for the exact artifact and active policy/scanner revisions within its freshness window; unavailable or unusable evidence fails closed.","Exceptions are evaluated only after prerequisites and are limited to current exact-scope vulnerability-policy waivers.","Authorization permits use a secret-keyed canonical scope covering request, instance, artifact, policy and expiry.","Stateful permit verification performs durable single-use consumption under one synchronization boundary while stateless verification remains compatible.","Every ALLOW and DENY is committed to the authoritative decision journal before derived projection publication and successful completion.","Recovery preserves valid committed history, distinguishes trailing incompleteness from durable corruption, rebuilds derived state and keeps repeated deterministic decisions idempotent."],
+      "FILES_CHANGED":["ec2-artifact-policy-enforcement/solution/solve.sh","ec2-artifact-policy-enforcement/solution/files/platform/engine.go","ec2-artifact-policy-enforcement/solution/files/platform/evidence_runtime.go","ec2-artifact-policy-enforcement/solution/files/platform/journal_runtime.go","ec2-artifact-policy-enforcement/solution/files/platform/audit.go","ec2-artifact-policy-enforcement/solution/files/platform/cache.go","ec2-artifact-policy-enforcement/solution/files/platform/exceptions.go","ec2-artifact-policy-enforcement/solution/files/platform/permit.go","ec2-artifact-policy-enforcement/solution/files/platform/replay.go","ec2-artifact-policy-enforcement/solution/files/platform/state.go"],
+      "RESTART_IDEMPOTENCY_BEHAVIOR":"The solution is deterministic and rerunnable: applying it repeatedly converges to the same repaired source tree and build. Durable decision and stateful permit-consumption records remain authoritative across restart; derived cache/projection state is validated or reconstructed without duplicating already committed decisions.",
+      "DETERMINISM_NOTES":"The repair is input/state driven and does not branch on test names, fixture identifiers, reward values or hidden verifier details. The solve script installs fixed source repairs, formats the Go sources and builds the registered artifactguard entrypoint deterministically.",
+      "PRESERVED_BEHAVIOR":"The evaluate and verify-permit command surfaces, documented exit-code conventions, supplied policy/scanner/exception inputs, healthy cache reuse, valid scoped exceptions, existing valid audit history and stateless permit-verification mode remain available.",
+      "RISKS_FOR_INDEPENDENT_VERIFIER":["Independently exercise every acquisition surface through the shared prerequisite boundary.","Check cache reuse across digest, policy revision, scanner revision and freshness boundaries.","Check exact exception scope and prerequisite ordering.","Check authorization scope, expiry, restart persistence and simultaneous stateful consumption.","Check both ALLOW and DENY durability, journal-before-projection ordering, repeated evaluation and restart recovery with trailing incomplete versus durable corrupt state."]
+    }
+  }
+}
