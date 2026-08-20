@@ -1,0 +1,217 @@
+{
+  "execution_mode": "INLINE_SPECIALIST",
+  "executor_handoff": null,
+  "invocation": {
+    "acceptance_predicates": {},
+    "authority": {
+      "control_plane_commit": "bde51f1c20b2d6d78b33f02956da9c58cd42d2a4",
+      "policy_versions": {},
+      "task_commit": "03317f8218069b9e0b5d073bf87ecf7a0ae8e4a1",
+      "task_id": "stonevault-crash-safe-storage"
+    },
+    "evidence": {
+      "authorized_evidence_classes": [
+        "CONTROL_PLANE_POLICY",
+        "PRIVATE_CREATION_DESIGN",
+        "PUBLIC_REFERENCE",
+        "SOLVER_VISIBLE_TASK"
+      ],
+      "evidence_required": [
+        "component/resource graph",
+        "runtime/operator reachability plan",
+        "state/persistence model",
+        "production-characteristic rationale"
+      ],
+      "excluded_evidence_classes": [
+        "CI_RUNTIME_EVIDENCE",
+        "CURRENT_REVIEW_PACKET",
+        "DURABLE_SESSION_STATE",
+        "FINAL_PACKAGE_EVIDENCE",
+        "MODEL_TRIAL_EVIDENCE",
+        "PRIOR_REVIEW_RESULTS",
+        "SOLUTION_ORACLE",
+        "VERIFIER_PRIVATE"
+      ],
+      "mandatory_exact_reads": [
+        ".terminus/agents/CREATION_PIPELINE.md",
+        ".terminus/agents/CREATOR_AGENT_REGISTRY.md",
+        ".terminus/agents/PRODUCTION_AUTHENTICITY.md",
+        ".terminus/agents/CREATOR_PROMPTS.md",
+        ".terminus/agents/A2_PHASE_PROMPTS.md"
+      ],
+      "retrieval_mode": "FILTERED_HYBRID"
+    },
+    "ignored_input_count": 0,
+    "inputs": {
+      "optional": {},
+      "required": {
+        "APPROVED_OPERATIONAL_REQUIREMENTS": [
+          "single writer fencing",
+          "transaction-lifetime MVCC snapshots",
+          "first-committer-wins conflicts",
+          "durable WAL sequencing and crash recovery",
+          "atomic checkpoint/snapshot publication",
+          "fail-closed corruption handling",
+          "operator STATS/HEALTH accuracy",
+          "binary protocol limits and stable compatibility"
+        ],
+        "APPROVED_WORK_PACKAGE": {
+          "id": "stonevault-crash-safe-storage"
+        },
+        "CREATION_RULE_CONTEXT": {
+          "profile": "large_system_strict"
+        }
+      }
+    },
+    "invocation_id": "inv_021fec88af2cc25cd51cce0b59a9c6016d566fe4fc3cd9ae4090d6562a11510a",
+    "learning": {
+      "context_hash": "sha256:bb84a513aa2b6e4374d691759c4a6edf94169f479f4611e9091643b9f279ccfc",
+      "lessons": [],
+      "mode": "GENERALIZED_LESSONS_PLUS_OWNED_REMEDIATIONS",
+      "raw_feedback_exposed": false,
+      "raw_historical_findings_exposed": false,
+      "registry_heads": {
+        "feedback": "GENESIS",
+        "findings": "GENESIS",
+        "lessons": "GENESIS",
+        "patterns": "GENESIS",
+        "remediations": "GENESIS"
+      },
+      "remediations": []
+    },
+    "missing_required_inputs": [],
+    "output_contract": {
+      "allowed_status_values": [
+        "ARCHITECTURE_READY",
+        "SCENARIO_TOO_SMALL",
+        "BLOCKED"
+      ],
+      "deterministic_validators": [],
+      "optional_fields": [
+        "RESOURCE_GRAPH",
+        "DATA_VOLUME_PLAN",
+        "UNRESOLVED_RISKS"
+      ],
+      "persisted_artifacts": [],
+      "required_fields": [
+        "COMPONENT_GRAPH",
+        "ENTRYPOINTS",
+        "STATE_MODEL",
+        "SOLVER_VISIBLE_DOC_PLAN",
+        "PRODUCTION_CHARACTERISTICS",
+        "SCALE_FIT"
+      ],
+      "semantic_reviewers": [
+        "Task Architect"
+      ]
+    },
+    "readiness": "READY",
+    "retrieval": {
+      "query": null,
+      "retrieved_chars": 0,
+      "retrieved_context": [],
+      "status": "NOT_REQUESTED"
+    },
+    "routing": {
+      "failure_routes": {
+        "ARCHITECTURE_GAP": "A2 System Architect / Environment Builder",
+        "REQUIREMENT_GAP": "Creation Controller -> work-package/contract owner",
+        "SCENARIO_TOO_SMALL": "Creation Controller -> WORK_PACKAGE_RESEARCH"
+      },
+      "stale_on": [
+        "work-package change",
+        "material operational requirement change",
+        "creation-profile change"
+      ],
+      "success_transition": "DEFECT_TOPOLOGY"
+    },
+    "schema_version": "1.0",
+    "stage": {
+      "lifecycle": "creation",
+      "owner": "A2 System Architect / Environment Builder",
+      "role_class": "PRODUCER",
+      "role_id": "A2_SYSTEM_ARCHITECT",
+      "stage_id": "SYSTEM_ARCHITECTURE"
+    }
+  },
+  "next": {
+    "action": "INVOKE_STAGE",
+    "optional_inputs": [
+      "DOMAIN_REFERENCE_ARCHITECTURE",
+      "EXISTING_TECHNICAL_CONTRACTS"
+    ],
+    "owner": "A2 System Architect / Environment Builder",
+    "primary_role_id": "A2_SYSTEM_ARCHITECT",
+    "required_inputs": [
+      "APPROVED_OPERATIONAL_REQUIREMENTS",
+      "APPROVED_WORK_PACKAGE",
+      "CREATION_RULE_CONTEXT"
+    ],
+    "stage_id": "SYSTEM_ARCHITECTURE"
+  },
+  "quality_mode_policy": {
+    "inline_creation_governor_role_ids": [
+      "A10_COMPLEXITY_GOVERNOR"
+    ],
+    "inline_quality_role_ids": [
+      "Q1_SPEC_GAP_REPAIRER",
+      "Q2_VERIFIER_COVERAGE_REPAIRER",
+      "Q3_SPEC_AMBIGUITY_REPAIRER",
+      "Q5_ORACLE_RUNTIME_REPAIR_SPECIALIST",
+      "Q7_TASK_FORMAT_ENFORCER"
+    ],
+    "inline_stage_sequences": {
+      "SPEC_ALIGNMENT": [
+        {
+          "result_field": "Q1_STATUS",
+          "role_id": "Q1_SPEC_GAP_REPAIRER",
+          "satisfied_values": [
+            "NO_GAP",
+            "PASS"
+          ]
+        },
+        {
+          "result_field": "Q2_STATUS",
+          "role_id": "Q2_VERIFIER_COVERAGE_REPAIRER",
+          "satisfied_values": [
+            "COVERED",
+            "PASS"
+          ]
+        },
+        {
+          "result_field": "Q3_STATUS",
+          "role_id": "Q3_SPEC_AMBIGUITY_REPAIRER",
+          "satisfied_values": [
+            "CLEAR",
+            "PASS"
+          ]
+        }
+      ]
+    },
+    "mandatory_quality_role_keys": [
+      "spec-test-contract",
+      "production-logic"
+    ],
+    "mandatory_same_chat_checkpoints": {
+      "Q1": "SPEC_ALIGNMENT.Q1_STATUS",
+      "Q2": "SPEC_ALIGNMENT.Q2_STATUS",
+      "Q3": "SPEC_ALIGNMENT.Q3_STATUS",
+      "Q5": "DETERMINISTIC_VALIDATION runtime/oracle checkpoint; invoke Q5 repair only on registered runtime/oracle failure",
+      "Q7": "FORMAT_GATE"
+    },
+    "optional_q8_role_keys": [
+      "difficulty-sim-gpt",
+      "difficulty-sim-claude"
+    ],
+    "policy_document": ".terminus/agents/QUALITY_EXECUTION_MODE.md",
+    "policy_version": "1.0",
+    "producer_role_classes": [
+      "FIXER",
+      "PRODUCER"
+    ],
+    "q4_q6_mode": "AUTOMATED",
+    "q8_mode": "OFF",
+    "source": ".terminus/agents/quality_execution_mode.json"
+  },
+  "state_snapshot_id": "state_178845c5d9feb37b7a96d7b0c76eb0e98a6059c03584315af247bd31e3c59d05"
+}
