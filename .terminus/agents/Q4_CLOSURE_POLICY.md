@@ -1,6 +1,6 @@
 # Q4 Closure and Human Risk-Acceptance Policy
 
-Policy version: `1.1`
+Policy version: `1.2`
 
 This policy governs exceptional Q4 satisfaction after ordinary Q4 repair iteration can no longer proceed. It does not weaken ordinary cold Q4, rewrite a frozen Q4 verdict, or permit the Orchestrator to waive a semantic finding.
 
@@ -60,15 +60,22 @@ It is valid only when all of the following are true:
 - the event source is `HUMAN_REVIEW` and provenance is `HUMAN_AUTHENTICATED`;
 - the authority receipt validates for action `HUMAN_FEEDBACK` and the exact human principal;
 - the feedback category is exactly `HUMAN_RISK_ACCEPTANCE` and `stage_hint` is `QUALITY_INTERLOCK`;
-- the event binds the exact task ID and exact task commit of the frozen Q4 result;
+- the event binds the exact task ID;
 - the signed decision is `ACCEPTED`, while `q4_verdict` remains exactly `REVISE`;
 - the event binds the exact frozen Q4 `review_id`;
+- `observation.value.q4_task_commit` exactly equals the frozen Q4 result's task commit;
+- `observation.value.accepted_task_commit` exactly equals the feedback event's task commit;
+- both commits exist in repository history;
+- `accepted_task_commit` equals or descends from `q4_task_commit` according to Git ancestry;
+- the repository's current task commit exactly equals `accepted_task_commit` when the authority is consumed;
 - `accepted_finding_ids` exactly equals the frozen Q4 blocking-finding set;
 - `residual_backlog` is non-empty and remains durable as accepted unresolved risk;
 - the human producer is not any registered Terminus machine/agent role;
 - the referenced feedback event is revalidated every time the satisfaction route is consumed.
 
-A task-commit change makes the acceptance stale. A receipt or feedback event for another task, commit, Q4 review, category, finding set, or decision cannot be reused. The CI Orchestrator may consume and validate this authority, but may not manufacture it.
+The descendant relationship is **not** an implicit equivalence rule. A human acceptance must explicitly sign both commits. A valid acceptance for one descendant snapshot cannot be reused for another later descendant, sibling, ancestor, or unrelated commit. Any task mutation after `accepted_task_commit` makes the acceptance stale.
+
+The CI Orchestrator may consume and validate this authority, but may not manufacture it.
 
 The canonical lifecycle representation remains:
 
@@ -76,6 +83,8 @@ The canonical lifecycle representation remains:
 Q4 verdict: REVISE
 Q4 satisfaction: AUTHENTICATED_HUMAN_RISK_ACCEPTANCE
 Q4 Human Risk Acceptance: PASS
+frozen Q4 task commit: <q4_task_commit>
+accepted task commit: <accepted_task_commit>
 ```
 
 The `Q4_CLOSURE_RESULT` optional stage-output field is also the compatibility envelope for exceptional Q4-satisfaction evidence. For this human route it contains only the authority locator:
@@ -95,10 +104,10 @@ The Q4 side of Quality Interlock is satisfied by exactly one of three routes:
 
 1. `DIRECT_PASS` — a current ordinary Q4 `PASS` under normal Protocol rules;
 2. `ADJUDICATED_CLOSURE_PASS` — a final cold Q4 `REVISE` plus a current closure result that passes `.terminus/q4_closure.py` and `.terminus/validate_quality_interlock.py`; or
-3. `AUTHENTICATED_HUMAN_RISK_ACCEPTANCE` — a frozen Q4 `REVISE` plus exact authenticated human acceptance that passes `.terminus/q4_human_risk.py` and `.terminus/validate_quality_interlock.py`.
+3. `AUTHENTICATED_HUMAN_RISK_ACCEPTANCE` — a frozen Q4 `REVISE` plus exact authenticated human acceptance of its complete blocking-finding set against one exact current descendant snapshot that passes `.terminus/q4_human_risk.py` and `.terminus/validate_quality_interlock.py`.
 
 The two exceptional routes preserve the original Q4 verdict. Q6 and every other mandatory gate remain independently required and unchanged.
 
 ## Termination
 
-A closure result containing any blocking disposition leaves the task `BLOCKED`. It does not authorize another normal Q4 patch cycle. Re-entry then requires a genuinely different strategy, new authority, or higher-precedence policy change. A valid authenticated human-risk decision is such a new authority only for the exact signed task/Q4 snapshot and accepted residual findings.
+A closure result containing any blocking disposition leaves the task `BLOCKED`. It does not authorize another normal Q4 patch cycle. Re-entry then requires a genuinely different strategy, new authority, or higher-precedence policy change. A valid authenticated human-risk decision is such a new authority only for the exact signed task/Q4 snapshot, exact accepted current descendant snapshot, and accepted residual findings.
