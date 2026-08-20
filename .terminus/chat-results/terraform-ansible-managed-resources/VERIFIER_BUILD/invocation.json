@@ -1,7 +1,7 @@
 {
   "acceptance_predicates": {},
   "authority": {
-    "control_plane_commit": "67b805a297ac005ee08e82facc533f53a3233192",
+    "control_plane_commit": "5aebce7e213fa5f5864bdd741e6139d39bf5e059",
     "policy_versions": {},
     "task_commit": "78ad422902b27dea954905130a1267b02cff3596",
     "task_id": "terraform-ansible-managed-resources"
@@ -38,110 +38,39 @@
   },
   "ignored_input_count": 0,
   "inputs": {
-    "optional": {
-      "PRESERVATION_RISK_MODEL": {
-        "preservation_obligations": [
-          "exact ten interfaces",
-          "local/ansibleops 0.1.0",
-          "Terraform Core sole durable state",
-          "clean Read never runs Ansible",
-          "sibling entries and symlink targets preserved"
-        ],
-        "starter_public_interfaces": [
-          "terraform-provider-ansibleops",
-          "provider Configure/CRUD callbacks",
-          "build-provider.sh",
-          "smoke.sh",
-          "examples/basic/main.tf"
-        ]
-      },
-      "RUNTIME_INTERFACE_MAP": {
-        "entrypoints": [
-          "/app/provider/cmd/terraform-provider-ansibleops/main.go",
-          "Terraform Configure/Create/Read/Update/Delete",
-          "/app/provider/scripts/build-provider.sh",
-          "/app/provider/scripts/smoke.sh"
-        ],
-        "reachability": [
-          "Terraform provider registration reaches exactly ten resource implementations",
-          "CRUD mutation reaches shared Ansible runner",
-          "Read reaches native filesystem/content/account/cron observers",
-          "normalization and identity logic are shared across resource families"
-        ]
-      }
-    },
+    "optional": {},
     "required": {
-      "BEHAVIORAL_SURFACES": {
-        "cross_component": [
-          "identity across mutable updates",
-          "native observation versus mutation boundary",
-          "state commit ordering versus runner outcome",
-          "normalization across desired and observed state"
-        ],
-        "edge_boundary": [
-          "wrong object kind",
-          "spaces in paths",
-          "omitted versus explicit cron defaults",
-          "remove_home boundary",
-          "map/group/mode ordering equivalence",
-          "already-absent destroy"
-        ],
-        "failure_recovery": [
-          "failed update retry",
-          "timeout/cancellation cleanup",
-          "missing-object recreation",
-          "failed destroy retry",
-          "external drift"
-        ],
-        "negative_rejection": [
-          "duplicate external ownership",
-          "shell metacharacters remain literal",
-          "non-zero Ansible failure",
-          "failed delete retains state",
-          "command output absent from state"
-        ],
-        "normal": [
-          "exact ten provider schemas",
-          "basic lifecycle/state",
-          "copy/template content and metadata",
-          "account/group/cron lifecycle",
-          "successful runner cleanup",
-          "Ansible mutation backend"
-        ],
-        "ownership": [
-          "path/user/group/cron collision rejection",
-          "line/block/cron sibling preservation",
-          "block marker ownership",
-          "symlink target preservation",
-          "user home policy"
-        ]
-      },
-      "SOLVER_VISIBLE_CONTRACTS": {
-        "lifecycle.md": "Create mutate-observe-publish; Read native and drift-aware; Update stable identity and retry-safe state; Delete scoped and failure-safe; repeated apply/refresh/plan idempotent with canonical representations.",
-        "provider-contract.md": "One Terraform resource owns one external key; Create/Update/Delete may use Ansible; Read is native-only; mutations use process arguments not shell text; non-zero/timeout/cancel fail; temp playbooks always cleaned; successful state publication follows external mutation; failed update preserves prior state; destroy completes only after absence.",
-        "resource-reference.md": "Exactly ten resources: file,directory,copy,template,line,block,symlink,user,group,cron with documented external identities; copy/template source_digest semantics; named text independent ownership; cron root/wildcard defaults; native filesystem/account/cron observation."
-      },
+      "BEHAVIORAL_SURFACES": [
+        "create/state",
+        "refresh/drift",
+        "update transaction",
+        "delete transaction",
+        "runner safety",
+        "idempotency",
+        "filesystem/content/account/cron ownership and scoped preservation"
+      ],
+      "SOLVER_VISIBLE_CONTRACTS": [
+        "terraform-ansible-managed-resources/instruction.md",
+        "terraform-ansible-managed-resources/environment/ansibleops/docs/provider-contract.md",
+        "terraform-ansible-managed-resources/environment/ansibleops/docs/lifecycle.md",
+        "terraform-ansible-managed-resources/environment/ansibleops/docs/resource-reference.md"
+      ],
       "SOLVER_VISIBLE_REQUIREMENTS": {
-        "instruction.md": "Complete the inherited ansibleops provider as exactly ten normal managed Terraform resources; stable external-key identity; Ansible-only mutation; native side-effect-free Read; transactional state publication; scoped delete; copy/template source intent and destination observation; named line/block ownership; account/group/cron reconciliation; structured argv and cleanup; canonical convergence; Terraform Core sole durable state authority; no wrapper/provisioner/manual-state substitutes.",
-        "requirement_families": [
-          "provider/schema",
-          "state/identity",
-          "native refresh/drift",
-          "transactional create/update",
-          "failure-safe scoped delete",
-          "copy/template content intent",
-          "line/block ownership",
-          "user/group native reconciliation",
-          "runner/process safety",
-          "normalization/idempotency",
-          "cron defaults/drift/siblings",
-          "external ownership collision",
-          "Ansible mutation backend"
+        "ENGINEERING_OBJECTIVE": "Complete the ten-resource ansibleops Terraform provider as one coherent lifecycle/reconciliation system.",
+        "REQUIRED_END_STATE": [
+          "stable external-object identity",
+          "Ansible-only Create/Update/Delete mutation",
+          "native Linux side-effect-free Read/refresh and drift reconciliation",
+          "state publication only after successful mutation with failure-safe retry semantics",
+          "scoped ownership/deletion",
+          "structured argv plus timeout/cancellation/temp cleanup",
+          "canonical normalization/idempotency",
+          "Terraform Core sole durable state authority"
         ]
       }
     }
   },
-  "invocation_id": "inv_874c75d27f882f6e055d0d6ba2bd400647a3f1ae79308b6de2fffa2041ab5644",
+  "invocation_id": "inv_5cbde9e63c9347e99036c94c94bf3a7083d528254a639f4c8d9ea2e9402b1856",
   "learning": {
     "context_hash": "sha256:bb84a513aa2b6e4374d691759c4a6edf94169f479f4611e9091643b9f279ccfc",
     "lessons": [],
