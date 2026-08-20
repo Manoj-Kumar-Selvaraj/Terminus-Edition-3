@@ -1,0 +1,38 @@
+{
+  "schema_version": "1.0",
+  "mode": "RECORD",
+  "task_id": "route-control-plane",
+  "task_commit": "e459e99dc6cd9de8f17189e09b28e6f592e1968f",
+  "control_plane_commit": "df7ef7569e2947b9f0bf7cf89ed4dec6c2a5a1fe",
+  "expected_repository_head": "525156a95c0a201905b7e7ac4f37cfaadd149ed9",
+  "stage_id": "ENVIRONMENT_BUILD",
+  "inputs": {
+    "CLEAN_SYSTEM_ARCHITECTURE": {
+      "COMPONENT_GRAPH": ["api","node_registry","route_catalog","policy_rules","revision_planner","transaction_coordinator","kernel_model","snapshot_store","drift_engine","rollout_engine","audit_service","frontend","ansible_role"],
+      "ENTRYPOINTS": ["/app/routecp/cmd/routecp/main.go","/app/routecp/ansible/roles/routecp/tasks/main.yml","/app/routecp/web/app.ts"],
+      "STATE_MODEL": {"desired":"versioned route/rule/link desired state","durability":"atomic state.json publication","fleet":"node labels, heartbeat revision and rollout waves","observed":"per-node independently collected routing state","transactions":"per-node before/after apply snapshots and phases"}
+    },
+    "CREATION_RULE_CONTEXT": {"CONTROL_PLANE_COMMIT":"df7ef7569e2947b9f0bf7cf89ed4dec6c2a5a1fe","CREATION_PROFILE":"large_system_strict"},
+    "DEFECT_TOPOLOGY": {"behavioral_surfaces":["route/rule lifecycle","multipath normalization","revision preview/apply/rollback","management safety","drift/reconcile","restart recovery","fleet rollout isolation","Ansible idempotency","dashboard concurrency"],"manifestation_count":24,"profile":"large_system_strict","root_cause_clusters":["C1_ROUTE_IDENTITY_NORMALIZATION","C2_POLICY_RULE_DEPENDENCY","C3_REVISION_TRANSACTION_FENCING","C4_MANAGEMENT_SAFETY","C5_APPLY_ROLLBACK_RECOVERY","C6_DRIFT_RECONCILIATION","C7_FLEET_ROLLOUT","C8_DEPLOYMENT_AND_UI_CONCURRENCY"]},
+    "SOLVER_VISIBLE_DOC_PLAN": ["/app/routecp/task.toml","/app/routecp/config/fleet.yaml","/app/routecp/ansible/roles/routecp/defaults/main.yml"]
+  },
+  "result": {
+    "status": "BUILT",
+    "role_id": "A2_ENVIRONMENT_BUILDER",
+    "outputs": {
+      "COMPONENT_GRAPH": ["HTTP API and node registry","route and policy-rule catalog","revision planner and transaction coordinator","durable snapshot store","drift and reconciliation engine","fleet rollout engine","Ansible deployment role","operator dashboard client"],
+      "ENTRYPOINTS": ["/app/routecp/cmd/routecp/main.go","/app/routecp/ansible/roles/routecp/tasks/main.yml","/app/routecp/web/app.ts"],
+      "SOLVER_VISIBLE_DOCS": ["/app/routecp/task.toml","/app/routecp/config/fleet.yaml","/app/routecp/ansible/roles/routecp/defaults/main.yml"],
+      "INSTRUCTION_DOC_BOUNDARY": "Environment exposes ordinary routing, fleet, API and deployment contracts only; private defect topology, verifier mappings and solution patches remain outside solver-visible task files.",
+      "SUBSTANTIVE_LOC": 3524,
+      "PRODUCTION_CHARACTERISTICS": ["real Go HTTP control-plane process","IPv4/IPv6 route and policy-rule state models","revision preview/apply/rollback transactions","durable desired and observed snapshots","drift and reconciliation paths","160-node multi-site representative fleet","wave rollout isolation","systemd-based Ansible deployment","operator-facing TypeScript dashboard"],
+      "RUNTIME_REACHABILITY_NOTES": ["HTTP entrypoint reaches route, rule, transaction, drift, reconcile, rollout and audit paths","Ansible role installs and runs the same routecp process","dashboard reaches normal mutation, reconcile and rollout APIs","runtime image now exposes the solver-visible Go source tree with writable Go cache and Python for deterministic reference repair"],
+      "ENVIRONMENT_RULE_CHECKS": {"business_module_diversity":"NOT_APPLICABLE_SYSTEMS_TASK","environment_complexity":"PASS_EXPECTED","runtime_authenticity":"PASS_EXPECTED"},
+      "RESOURCE_COUNT": 160,
+      "UNRESOLVED_RISKS": ["Fresh Oracle/NOP evidence is available from GitHub Actions run 32391489866; canonical deterministic lifecycle recording remains downstream."]
+    },
+    "evidence_refs": [
+      {"class":"CI_RUNTIME_EVIDENCE","locator":"github-actions:32391489866","sha256":"ec510722501207dd1463c7a6bbc8ef4dd2e02a6a11465ee13232fd39ed808cee"}
+    ]
+  }
+}
