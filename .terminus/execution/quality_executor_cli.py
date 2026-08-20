@@ -10,8 +10,14 @@ from pathlib import Path
 
 if __package__ in {None, ""}:
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+    from execution.quality_execution_guard import install_quality_execution_guards
+
+    install_quality_execution_guards()
     from execution.quality_executor import QualityExecutorError, execute_quality_packet
 else:
+    from .quality_execution_guard import install_quality_execution_guards
+
+    install_quality_execution_guards()
     from .quality_executor import QualityExecutorError, execute_quality_packet
 
 
