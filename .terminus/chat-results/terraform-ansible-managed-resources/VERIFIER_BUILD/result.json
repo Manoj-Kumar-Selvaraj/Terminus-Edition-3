@@ -1,0 +1,118 @@
+{
+  "evidence_refs": [
+    {
+      "content_hash": "sha256:104817a239b92de3e53f14d6bc0176563437894773e060648776dc09c6280374",
+      "kind": "COMMIT",
+      "ref": "commit:78ad422902b27dea954905130a1267b02cff3596"
+    },
+    {
+      "content_hash": "sha256:334e6029ea34515d0f9364b213a51af19ed193f7c1c22cdf7b978781c2e856d7",
+      "kind": "COMMIT",
+      "ref": "commit:215cc70bcebcccc3c9a401af1b74a97d90026da3"
+    }
+  ],
+  "invocation_id": "inv_5f17a49d39744c6382f89dfbe8033838bb947e182f0372db4d88da5fedc2a3cc",
+  "output_task_commit": "78ad422902b27dea954905130a1267b02cff3596",
+  "outputs": {
+    "EDGE_BOUNDARY_COVERAGE": [
+      "wrong object kind versus absence",
+      "spaces in runtime paths",
+      "omitted versus explicit cron wildcard defaults",
+      "remove_home_on_destroy true/false boundary",
+      "unordered template vars and supplementary groups",
+      "equivalent modes and already-absent destroy behavior"
+    ],
+    "F2P_COUNT": 30,
+    "NEGATIVE_FAILURE_COVERAGE": [
+      "duplicate external ownership rejected",
+      "shell metacharacters remain literal",
+      "non-zero Ansible exit fails transition",
+      "timeout/cancellation clean generated playbooks",
+      "failed update retains prior state and retry executes",
+      "failed delete preserves management",
+      "command output is not persisted as Terraform state"
+    ],
+    "ORACLE_EMPIRICAL_STATUS": "NOT_REEARNED_UNDER_CURRENT_CONTROL; deferred to deterministic validation.",
+    "ORGANIC_COUNT_JUSTIFICATION": "Thirty F2P cases cover distinct observable lifecycle failures across schema, identity, native drift, transactional update/delete, content intent, text ownership, accounts, runner process safety, normalization and cron semantics. Six P2P cases preserve independently important already-correct behaviors. The count follows ten differentiated resources plus shared lifecycle/runner/observation layers rather than quota padding or duplicated parameter variants.",
+    "P2P_COUNT": 6,
+    "REQUIREMENT_TEST_MATRIX": {
+      "REQ_BACKEND": [
+        "test_f2p_clean_named_text_refresh_does_not_execute_ansible",
+        "test_p2p_directory_basic_apply_state_and_destroy"
+      ],
+      "REQ_COPY": [
+        "test_f2p_copy_destination_content_drift_requires_reconciliation",
+        "test_f2p_copy_source_digest_change_executes_content_update",
+        "test_f2p_content_identities_survive_source_and_variable_updates"
+      ],
+      "REQ_CRON": [
+        "test_f2p_cron_omitted_schedule_fields_converge_to_wildcards",
+        "test_f2p_named_entry_deletes_preserve_siblings"
+      ],
+      "REQ_DELETE": [
+        "test_f2p_destroy_preserves_home_when_remove_home_is_false",
+        "test_f2p_destroy_removes_home_when_remove_home_is_true",
+        "test_f2p_failed_delete_preserves_managed_state_for_retry",
+        "test_f2p_named_entry_deletes_preserve_siblings",
+        "test_p2p_symlink_destroy_preserves_target"
+      ],
+      "REQ_IDENTITY": [
+        "test_f2p_content_identities_survive_source_and_variable_updates",
+        "test_f2p_user_identity_survives_shell_update",
+        "test_f2p_user_shell_drift_requires_reconciliation",
+        "test_f2p_group_gid_drift_reconciles_without_identity_churn"
+      ],
+      "REQ_NORMALIZE": [
+        "test_f2p_filesystem_identities_survive_mutable_updates",
+        "test_p2p_template_variable_order_is_semantically_stable",
+        "test_f2p_user_supplementary_group_drift_requires_reconciliation",
+        "test_f2p_cron_omitted_schedule_fields_converge_to_wildcards"
+      ],
+      "REQ_OWNERSHIP": [
+        "test_f2p_duplicate_external_ownership_is_rejected",
+        "test_f2p_named_entry_deletes_preserve_siblings"
+      ],
+      "REQ_PROVIDER": [
+        "test_f2p_provider_exposes_exact_managed_resource_schemas",
+        "test_p2p_directory_basic_apply_state_and_destroy",
+        "test_p2p_declared_provider_artifact_root_is_mounted"
+      ],
+      "REQ_REFRESH": [
+        "test_f2p_deleted_directory_is_planned_for_recreation",
+        "test_f2p_filesystem_mode_drift_requires_reconciliation",
+        "test_f2p_symlink_target_drift_requires_reconciliation",
+        "test_f2p_wrong_object_kind_is_not_accepted_as_directory",
+        "test_f2p_deleted_user_is_planned_for_recreation"
+      ],
+      "REQ_RUNNER": [
+        "test_f2p_runner_handles_temp_paths_with_spaces",
+        "test_f2p_runner_does_not_interpret_shell_metacharacters",
+        "test_p2p_success_cleanup_and_state_output_secrecy",
+        "test_f2p_nonzero_ansible_exit_fails_lifecycle_transition",
+        "test_f2p_timeout_and_cancellation_clean_generated_playbooks"
+      ],
+      "REQ_STATE": [
+        "test_p2p_state_is_owned_by_terraform_core",
+        "test_f2p_symlink_identity_survives_target_update",
+        "test_f2p_filesystem_identities_survive_mutable_updates"
+      ],
+      "REQ_TEXT": [
+        "test_f2p_clean_named_text_refresh_does_not_execute_ansible",
+        "test_f2p_line_update_replaces_previous_value_exactly_once",
+        "test_f2p_removed_named_text_is_planned_for_recreation",
+        "test_f2p_named_entry_deletes_preserve_siblings"
+      ],
+      "REQ_UPDATE": [
+        "test_f2p_failed_update_preserves_last_successful_template_state",
+        "test_f2p_retry_after_failed_update_reexecutes_and_converges",
+        "test_f2p_copy_source_digest_change_executes_content_update",
+        "test_f2p_line_update_replaces_previous_value_exactly_once"
+      ]
+    },
+    "SOLVER_LOGIC_REIMPLEMENTATION_RISK": "LOW_TO_MODERATE: scenario assertions are organized around externally observable state, failure and ownership contracts; independent review should still watch for helper logic that accidentally mirrors implementation details.",
+    "STARTER_EMPIRICAL_STATUS": "NOT_REEARNED_UNDER_CURRENT_CONTROL; historical empirical fields embedded in the design map were excluded from this decision.",
+    "TEST_INDEPENDENCE": "Tests exercise public Terraform/provider interfaces and external Linux effects through the supplied task environment. The verifier classification and assertions do not require reference-solution source inspection or hidden repair locations; current oracle execution is deliberately deferred to deterministic validation."
+  },
+  "schema_version": "1.0",
+  "status": "VERIFIER_READY"
+}
