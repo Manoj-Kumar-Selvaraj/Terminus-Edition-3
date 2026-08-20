@@ -1,11 +1,13 @@
 from __future__ import annotations
 
 import copy
+import hashlib
 from datetime import timedelta
 import json
 
 from verifier_lib import (
     NOW,
+    ROOT,
     audit_records,
     base_policy,
     base_scans,
@@ -396,3 +398,36 @@ def test_p2p_permit_digest_mismatch_remains_invalid():
         changed["digest"] = find_digest(vulnerable=True)
         cp, out = run_verify(permit, changed, policy, b"verifier-secret-a", work=root / "verify")
         assert cp.returncode == 43 and out["valid"] is False
+
+def test_p2p_current_cache_entry_remains_operational():
+    """A current exact cache entry remains usable instead of disabling the cache as a workaround."""
+    with case_dir() as root:
+        policy = base_policy()
+        digest = find_digest(vulnerable=False)
+        state = root / "state"
+        req = make_request("req-p2p-cache-a", "package", "apt", digest, trusted_source("package", policy), name="cache-preserve")
+        cp1, out1, _ = run_evaluate(root / "a", req, state=state, policy=policy)
+        assert cp1.returncode == 0 and out1["cache_hit"] is False
+        req["request_id"] = "req-p2p-cache-b"
+        scans2 = changed_scan(base_scans(), digest, status="unavailable")
+        cp2, out2, _ = run_evaluate(root / "b", req, state=state, policy=policy, scans=scans2)
+        assert cp2.returncode == 0 and out2["decision"] == "ALLOW" and out2["cache_hit"] is True
+
+
+def test_p2p_valid_stateless_permit_remains_valid():
+    """The existing stateless verify-permit path still accepts an exact unexpired permit."""
+    with case_dir() as root:
+        permit, req, policy = issue_clean_permit(root / "issue")
+        cp, out = run_verify(permit, req, policy, b"verifier-secret-a", work=root / "verify")
+        assert cp.returncode == 0 and out["valid"] is True and out["code"] == "PERMIT_VALID"
+
+
+def test_p2p_supplied_policy_scanner_exception_fixtures_remain_unchanged():
+    """The shipped policy, scanner, and exception fixtures remain byte-for-byte unchanged."""
+    expected = {
+        "config/policy.json": "d5c9673e074c72bf2dfd0b1a5d7a868145ccee4d405927819e41f22e83aa6ea8",
+        "fixtures/scans.json": "f8f969cc35cd6f4e7e80eff6628311ba5d63e8fd06f010b9ebd1d786d53d3e5c",
+        "fixtures/exceptions.json": "f188638bac295f3601107ef74cbaeeef69d0bcea84c1c234aa8da35fb2d1043b",
+    }
+    for rel, digest in expected.items():
+        assert hashlib.sha256((ROOT / rel).read_bytes()).hexdigest() == digest
