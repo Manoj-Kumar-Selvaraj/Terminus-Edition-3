@@ -1,0 +1,205 @@
+{
+  "authority": {
+    "control_plane_commit": "df7ef7569e2947b9f0bf7cf89ed4dec6c2a5a1fe",
+    "policy_versions": {},
+    "task_commit": "03317f8218069b9e0b5d073bf87ecf7a0ae8e4a1",
+    "task_id": "stonevault-crash-safe-storage"
+  },
+  "disposition": "ADVANCE",
+  "evidence_refs": [
+    {
+      "content_hash": "sha256:38d1e6b49a6cd52e4cefce949ec274c9b07daf9b5ba2735bb2a094820f7c78de",
+      "kind": "COMMIT",
+      "ref": "commit:03317f8218069b9e0b5d073bf87ecf7a0ae8e4a1"
+    }
+  ],
+  "invocation_id": "inv_37918a13438689de24684f3d057e5a763a6a3e11e6447b37a37bd60adfe8da74",
+  "invocation_snapshot": {
+    "acceptance_predicates": {},
+    "authority": {
+      "control_plane_commit": "df7ef7569e2947b9f0bf7cf89ed4dec6c2a5a1fe",
+      "policy_versions": {},
+      "task_commit": "03317f8218069b9e0b5d073bf87ecf7a0ae8e4a1",
+      "task_id": "stonevault-crash-safe-storage"
+    },
+    "evidence": {
+      "authorized_evidence_classes": [
+        "CONTROL_PLANE_POLICY",
+        "PRIVATE_CREATION_DESIGN",
+        "SOLVER_VISIBLE_TASK"
+      ],
+      "evidence_required": [
+        "deterministic general repair/completion",
+        "preservation rationale",
+        "no hidden-test special casing"
+      ],
+      "excluded_evidence_classes": [
+        "CI_RUNTIME_EVIDENCE",
+        "CURRENT_REVIEW_PACKET",
+        "DURABLE_SESSION_STATE",
+        "FINAL_PACKAGE_EVIDENCE",
+        "MODEL_TRIAL_EVIDENCE",
+        "PRIOR_REVIEW_RESULTS",
+        "PUBLIC_REFERENCE",
+        "SOLUTION_ORACLE",
+        "VERIFIER_PRIVATE"
+      ],
+      "mandatory_exact_reads": [
+        ".terminus/agents/CREATION_PIPELINE.md",
+        ".terminus/agents/CREATOR_PROMPTS.md"
+      ],
+      "retrieval_mode": "EXACT_ONLY"
+    },
+    "ignored_input_count": 0,
+    "inputs": {
+      "optional": {},
+      "required": {
+        "APPROVED_OPERATIONAL_REQUIREMENTS": [
+          "writer fencing",
+          "snapshot isolation",
+          "FCW conflicts",
+          "durable WAL/recovery",
+          "checkpoint/snapshot integrity",
+          "operator state",
+          "protocol limits"
+        ],
+        "STARTER_ENVIRONMENT": {
+          "artifact": "/app/stonevault/bin/stonevault"
+        },
+        "SYSTEM_ARCHITECTURE": {
+          "boundary": "Rust command/session plus C++20 storage core"
+        }
+      }
+    },
+    "invocation_id": "inv_37918a13438689de24684f3d057e5a763a6a3e11e6447b37a37bd60adfe8da74",
+    "learning": {
+      "context_hash": "sha256:bb84a513aa2b6e4374d691759c4a6edf94169f479f4611e9091643b9f279ccfc",
+      "lessons": [],
+      "mode": "GENERALIZED_LESSONS_PLUS_OWNED_REMEDIATIONS",
+      "raw_feedback_exposed": false,
+      "raw_historical_findings_exposed": false,
+      "registry_heads": {
+        "feedback": "GENESIS",
+        "findings": "GENESIS",
+        "lessons": "GENESIS",
+        "patterns": "GENESIS",
+        "remediations": "GENESIS"
+      },
+      "remediations": []
+    },
+    "missing_required_inputs": [],
+    "output_contract": {
+      "allowed_status_values": [
+        "IMPLEMENTED",
+        "CONTRACT_GAP",
+        "BLOCKED"
+      ],
+      "deterministic_validators": [],
+      "optional_fields": [],
+      "persisted_artifacts": [
+        "<task>/solution/solve.sh",
+        "<task>/solution/"
+      ],
+      "required_fields": [
+        "RESTORED_INVARIANTS",
+        "FILES_CHANGED",
+        "RESTART_IDEMPOTENCY_BEHAVIOR",
+        "DETERMINISM_NOTES",
+        "PRESERVED_BEHAVIOR",
+        "RISKS_FOR_INDEPENDENT_VERIFIER"
+      ],
+      "semantic_reviewers": [
+        "Verifier Engineer"
+      ]
+    },
+    "readiness": "READY",
+    "retrieval": {
+      "query": null,
+      "retrieved_chars": 0,
+      "retrieved_context": [],
+      "status": "NOT_REQUESTED"
+    },
+    "routing": {
+      "failure_routes": {
+        "CONTRACT_GAP": "Creation Controller -> appropriate contract owner",
+        "RUNTIME_FAILURE": "Q5 Oracle & Runtime Repair Specialist"
+      },
+      "stale_on": [
+        "operational requirement change",
+        "environment implementation change",
+        "solver-visible contract change"
+      ],
+      "success_transition": "VERIFIER_BUILD"
+    },
+    "schema_version": "1.0",
+    "stage": {
+      "lifecycle": "creation",
+      "owner": "A4 Reference Solution Author",
+      "role_class": "PRODUCER",
+      "role_id": "A4_REFERENCE_SOLUTION_AUTHOR",
+      "stage_id": "REFERENCE_SOLUTION"
+    }
+  },
+  "outputs": {
+    "DETERMINISM_NOTES": "no network or time-dependent repair logic; deterministic native rebuild",
+    "FILES_CHANGED": [
+      "solution/fix.patch",
+      "solution/solve.sh"
+    ],
+    "PRESERVED_BEHAVIOR": [
+      "stable C ABI",
+      "ASCII response shapes",
+      "documented WAL layout",
+      "documented snapshot layout",
+      "binary key/value representation"
+    ],
+    "RESTART_IDEMPOTENCY_BEHAVIOR": "solve.sh applies one bounded patch then cleanly rebuilds; repaired runtime preserves committed state across restart and ignores only documented crash-temporary/torn-tail cases",
+    "RESTORED_INVARIANTS": [
+      "exclusive writer ownership",
+      "transaction snapshot visibility with local overlays",
+      "atomic first-committer-wins rejection",
+      "durable contiguous commit sequencing",
+      "fail-closed complete-record corruption handling",
+      "checkpoint quiescence/publication/WAL reclamation",
+      "snapshot integrity",
+      "accurate health/stats",
+      "configuration precedence and inclusive protocol bounds"
+    ],
+    "RISKS_FOR_INDEPENDENT_VERIFIER": [
+      "restart semantics",
+      "complete-vs-torn corruption boundary",
+      "MVCC tombstones/scan overlay",
+      "checkpoint publication",
+      "operator-state reachability"
+    ]
+  },
+  "record_id": "rec_de05228bf369b7a11c24462bd755cddc35aef5b6428c7109d61290cff0644e9d",
+  "role_id": "A4_REFERENCE_SOLUTION_AUTHOR",
+  "schema_version": "1.0",
+  "stage_id": "REFERENCE_SOLUTION",
+  "status": "IMPLEMENTED",
+  "task_lineage": {
+    "input_task_commit": "03317f8218069b9e0b5d073bf87ecf7a0ae8e4a1",
+    "output_task_commit": "03317f8218069b9e0b5d073bf87ecf7a0ae8e4a1",
+    "task_changed": false
+  },
+  "transition": {
+    "action": "ADVANCE",
+    "requires_state_validation": false,
+    "target": "VERIFIER_BUILD",
+    "target_kind": "STAGE"
+  },
+  "validation": {
+    "acceptance_predicates_satisfied": true,
+    "evidence_binding_satisfied": true,
+    "evidence_refs_count": 1,
+    "invocation_identity_valid": true,
+    "invocation_policy_valid": true,
+    "output_keys_valid": true,
+    "required_outputs_satisfied": true,
+    "retrieval_context_authorized": true,
+    "status_legal": true,
+    "task_commit_change_authorized": true,
+    "task_lineage_valid": true
+  }
+}
