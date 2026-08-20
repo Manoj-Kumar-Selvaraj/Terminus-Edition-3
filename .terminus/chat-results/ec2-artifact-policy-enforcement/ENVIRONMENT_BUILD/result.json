@@ -1,0 +1,65 @@
+{
+  "evidence_refs": [],
+  "invocation_id": "inv_e89a3ad2524ca41bf9801f87e4bbd3c79e2ee75000523e9fc18fa1c17984846b",
+  "output_task_commit": "6c7909d5c0efd3e6e64443d6de3b227c1820b01b",
+  "outputs": {
+    "COMPONENT_GRAPH": [
+      "cmd/artifactguard",
+      "internal/core compatibility bridge",
+      "internal/platform manager_profiles",
+      "internal/platform runtime_context",
+      "internal/platform policy_runtime",
+      "internal/platform evidence_runtime and cache",
+      "internal/platform exception_runtime",
+      "internal/platform permit_runtime",
+      "internal/platform journal_runtime and audit",
+      "internal/platform state_runtime and replay",
+      "deterministic policy/scanner/exception fixtures",
+      "solver-visible architecture/state/operations docs"
+    ],
+    "ENTRYPOINTS": [
+      "artifactguard evaluate",
+      "artifactguard verify-permit",
+      "go test ./...",
+      "go build ./cmd/artifactguard"
+    ],
+    "ENVIRONMENT_RULE_CHECKS": {
+      "business_module_diversity": "PASS when applicable; current modules have differentiated reachable responsibilities",
+      "environment_complexity": "PASS by mandatory validator on current materialized task",
+      "runtime_authenticity": "PASS by mandatory validator on current materialized task"
+    },
+    "INSTRUCTION_DOC_BOUNDARY": "instruction.md states the material repair objective and preservation obligations; solver-visible docs define legitimate architecture, CLI, policy, state-format and operations contracts without exposing private defect IDs, hidden test mapping or the Oracle repair recipe.",
+    "PRODUCTION_CHARACTERISTICS": [
+      "real Go admission CLI spanning package/container/dependency acquisition",
+      "differentiated manager normalization, policy, evidence/cache, exception, permit, journal, replay and state responsibilities",
+      "caller-owned persistent security state",
+      "explicit failure and corruption handling",
+      "restart/idempotency semantics",
+      "concurrency-sensitive permit consumption",
+      "durable authoritative journal with derived projection",
+      "deterministic scanner/policy/exception fixture boundary",
+      "stable CLI exit behavior"
+    ],
+    "RESOURCE_COUNT": "not an infrastructure-resource-count task; scale is production Go/runtime-state complexity rather than Terraform resource quantity",
+    "RUNTIME_REACHABILITY_NOTES": [
+      "Docker/task runtime builds and invokes cmd/artifactguard",
+      "evaluate reaches normalization, policy, evidence/cache, exception, decision, permit and durable decision-state paths",
+      "verify-permit reaches keyed scope validation and optional stateful replay path",
+      "state recovery and journal/projection code are reached through normal command startup/mutation flows",
+      "removed catalog clones are absent from the counted environment"
+    ],
+    "SOLVER_VISIBLE_DOCS": [
+      "environment/enforcer/docs/architecture.md",
+      "environment/enforcer/docs/policy-contract.md",
+      "environment/enforcer/docs/state-format.md",
+      "environment/enforcer/docs/operations.md",
+      "environment/enforcer/notes/oncall.md"
+    ],
+    "SUBSTANTIVE_LOC": "3515 substantive reachable solver-visible production/domain LOC; >=3000 strict floor satisfied without generated/vendor/dead/catalog padding.",
+    "UNRESOLVED_RISKS": [
+      "Oracle/NOP scoring and empirical F2P/P2P remain downstream verifier/deterministic-validation responsibilities; this phase intentionally does not read verifier-private or solution evidence."
+    ]
+  },
+  "schema_version": "1.0",
+  "status": "BUILT"
+}
