@@ -1,0 +1,31 @@
+{
+  "schema_version":"1.0",
+  "mode":"RECORD",
+  "task_id":"edge-router-runtime",
+  "task_commit":"9663e4da67ab20e6bd66b942ac54b57667408dd8",
+  "control_plane_commit":"67b805a297ac005ee08e82facc533f53a3233192",
+  "expected_repository_head":"33311c81d0f14bc557e1814ddb74b0ac83c5cc9f",
+  "stage_id":"VERIFIER_BUILD",
+  "inputs":{
+    "SOLVER_VISIBLE_REQUIREMENTS":{"REQUIRED_END_STATE":["atomic complete generation publication","per-source fencing","stable endpoint identity/incarnation","compatible runtime-state continuity","health/lifecycle-aware selection","bounded draining","durable complete checkpoint recovery","bounded runtime/telemetry retirement"],"PRESERVATION":["in-flight and long-lived requests remain valid across unrelated updates","unchanged route semantics remain stable across generations","healthy unchanged endpoints preserve meaningful runtime state","rejected updates cannot damage the serving generation","readers never observe partially applied configuration","runtime and observability state remain bounded after repeated updates"]},
+    "SOLVER_VISIBLE_CONTRACTS":["edge-router-runtime/environment/docs/architecture.md","edge-router-runtime/environment/docs/configuration.md","edge-router-runtime/environment/docs/runtime-state.md","edge-router-runtime/environment/docs/operator-guide.md","edge-router-runtime/environment/docs/observability.md"],
+    "BEHAVIORAL_SURFACES":{"normal":["accepted complete updates","stable unchanged endpoint continuity","live proxy selection"],"edge_boundary":["duplicate canonical endpoint aliases","same-revision conflicts","rapid remove/re-add","all-down pools"],"negative_rejection":["invalid configuration","stale/conflicting source update","ineligible backend selection"],"failure_recovery":["crash around checkpoint authority","corrupt CURRENT with previous fallback","slow drain deadline"],"cross_component":["source fence to publication","snapshot lease to retry/failover","membership incarnation to affinity/health/transport","publication to durable recovery"]}
+  },
+  "result":{
+    "status":"VERIFIER_READY",
+    "output_task_commit":"9663e4da67ab20e6bd66b942ac54b57667408dd8",
+    "outputs":{
+      "REQUIREMENT_TEST_MATRIX":{"REQ_GENERATION_FENCE":["same-revision different-digest conflict","exact duplicate generation no-op","stale revision cannot publish","rejected candidate does not advance fence","conflict preserves last serving digest"],"REQ_SOURCE_AUTHORITY":["independent source revisions","low revision new source","source conflict scoped","duplicate source isolation","recovered source fence"],"REQ_IDENTITY_COMPATIBILITY":["canonical duplicate identity rejection","endpoint reorder continuity","nonsemantic metadata continuity","equivalent address continuity","policy incompatibility reset","remove/readd incarnation reset"],"REQ_SNAPSHOT_SELECTION":["affinity unhealthy revalidation","all unhealthy unavailable","retry exclusion across runtime replacement","leased-generation failover"],"REQ_DRAIN_OWNERSHIP":["removed endpoint excludes fresh work","inflight request survives unrelated publication"],"REQ_CHECKPOINT_RECOVERY":["corrupt body fallback","corrupt pointer fallback","checksum mismatch rejection","schema mismatch rejection","missing current body fallback"],"REQ_OBSERVABILITY":["bounded metric scopes","operator-readable metrics/events"],"REQ_PUBLIC_INTERFACE":["validate accepts normal config","validate rejects unknown JSON field","health/readiness/status","live data-plane proxy","host mismatch not found"]},
+      "F2P_COUNT":28,
+      "P2P_COUNT":6,
+      "EDGE_BOUNDARY_COVERAGE":["canonical endpoint aliases","same-revision different-digest conflict","independent source revision boundaries","endpoint reorder/equivalent address normalization","remove/re-add incarnation reset","all-backends-unhealthy deterministic unavailability","old leased-generation failover while draining"],
+      "NEGATIVE_FAILURE_COVERAGE":["invalid/rejected candidate cannot advance accepted fence","stale revisions cannot publish","source-local conflicts cannot poison other source material","unhealthy or removed endpoints cannot receive fresh work","corrupt/missing/checksum-invalid/schema-incompatible current checkpoints cannot be restored as current","unknown JSON fields are rejected"],
+      "ORGANIC_COUNT_JUSTIFICATION":"Twenty-eight F2P cases cover distinct generation authority, source independence, identity/compatibility, snapshot/retry/failover, drain ownership, checkpoint recovery and lifecycle-observability failures. Six P2P cases preserve independent public CLI/admin/data-plane behavior. The Q7-only test.sh exit-status repair does not alter behavioral case semantics.",
+      "TEST_INDEPENDENCE":"Tests drive documented CLI, operator API, data plane and externally observable runtime/checkpoint behavior and do not inspect solution payloads or private defect IDs.",
+      "STARTER_EMPIRICAL_STATUS":"NOP previously scored 0 against this unchanged behavioral suite; test.sh exit-status propagation changed after that run, so final empirical validation is re-earned at DETERMINISTIC_VALIDATION.",
+      "ORACLE_EMPIRICAL_STATUS":"Oracle previously scored 1 against this unchanged behavioral suite; test.sh exit-status propagation changed after that run, so final empirical validation is re-earned at DETERMINISTIC_VALIDATION.",
+      "SOLVER_LOGIC_REIMPLEMENTATION_RISK":"LOW"
+    },
+    "evidence_refs":[]
+  }
+}
