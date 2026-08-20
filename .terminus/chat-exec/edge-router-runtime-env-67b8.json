@@ -1,0 +1,31 @@
+{
+  "schema_version":"1.0",
+  "mode":"RECORD",
+  "task_id":"edge-router-runtime",
+  "task_commit":"4b4a8d30429b8455ab80824c3d1e7d03378b5934",
+  "control_plane_commit":"67b805a297ac005ee08e82facc533f53a3233192",
+  "expected_repository_head":"e2e0da0ae6ff276e4784c46ce85294aefc87f5bf",
+  "stage_id":"ENVIRONMENT_BUILD",
+  "inputs":{
+    "CREATION_RULE_CONTEXT":{"SOURCE_RECORD_ID":"rec_23b3b591cbabbf3b09dad85783e854c1c52f0fe6aafd75bbd966f2db86fa2c11"},
+    "CLEAN_SYSTEM_ARCHITECTURE":{"SOURCE_RECORD_ID":"rec_6103bae3df8a1646d0b156108b0cb5ad2b7f7ff2c1eaa95236429067f93f2863"},
+    "DEFECT_TOPOLOGY":{"SOURCE_PATH":".terminus/designs/edge-router-runtime.json","SOURCE_RECORD_ID":"rec_e616bf62c58b4da4cf23917d8f7e28678b587b8a9128a51ebf6a6e6e369a8008","DEFECT_COUNT":30,"CLUSTER_COUNT":6},
+    "SOLVER_VISIBLE_DOC_PLAN":["environment/docs/architecture.md","environment/docs/configuration.md","environment/docs/runtime-state.md","environment/docs/operator-guide.md","environment/docs/observability.md"]
+  },
+  "result":{
+    "status":"BUILT",
+    "output_task_commit":"4b4a8d30429b8455ab80824c3d1e7d03378b5934",
+    "outputs":{
+      "COMPONENT_GRAPH":["cmd/edge-router-runtime","internal/bootstrap","internal/config","internal/compiler","internal/reconcile","internal/runtime","internal/router","internal/selection","internal/upstream","internal/health","internal/drain","internal/checkpoint","internal/telemetry","internal/admin","config"],
+      "ENTRYPOINTS":["edge-router-runtime serve","edge-router-runtime validate","operator configuration and discovery endpoints","public HTTP data plane","startup checkpoint recovery","graceful shutdown and drain"],
+      "SOLVER_VISIBLE_DOCS":["environment/docs/architecture.md","environment/docs/configuration.md","environment/docs/runtime-state.md","environment/docs/operator-guide.md","environment/docs/observability.md"],
+      "INSTRUCTION_DOC_BOUNDARY":"Documentation describes inherited system contracts while task completion requirements remain in the instruction; private repair topology is not exposed.",
+      "SUBSTANTIVE_LOC":">=3400 substantive solver-visible code and configuration lines; the strict scale floor is satisfied.",
+      "PRODUCTION_CHARACTERISTICS":["Go HTTP data and operator planes","immutable generation snapshots","serialized reconciliation","stable endpoint lifecycle state","health-aware selection and failover","bounded draining","durable checkpoint recovery","bounded lifecycle telemetry"],
+      "RUNTIME_REACHABILITY_NOTES":["Dockerfile builds the registered command entrypoint","serve reaches all major runtime modules","validate reaches configuration validation","operator endpoints reach live reconciliation and status surfaces","solution extraction prerequisites include xz-utils in the task image"],
+      "ENVIRONMENT_RULE_CHECKS":{"environment_complexity":"validator-required PASS","runtime_authenticity":"validator-required PASS","business_module_diversity":"validator-required PASS or not-applicable under task classification"},
+      "UNRESOLVED_RISKS":["Oracle and verifier empirical scoring remains a downstream deterministic-validation responsibility; the already-proven snapshot will be rebound at VERIFIER_BUILD."]
+    },
+    "evidence_refs":[]
+  }
+}
