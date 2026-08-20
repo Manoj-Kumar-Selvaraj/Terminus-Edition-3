@@ -1,0 +1,247 @@
+{
+  "execution_mode": "INLINE_SPECIALIST",
+  "executor_handoff": null,
+  "invocation": {
+    "acceptance_predicates": {},
+    "authority": {
+      "control_plane_commit": "df7ef7569e2947b9f0bf7cf89ed4dec6c2a5a1fe",
+      "policy_versions": {},
+      "task_commit": "9663e4da67ab20e6bd66b942ac54b57667408dd8",
+      "task_id": "edge-router-runtime"
+    },
+    "evidence": {
+      "authorized_evidence_classes": [
+        "CI_RUNTIME_EVIDENCE",
+        "CONTROL_PLANE_POLICY",
+        "DURABLE_SESSION_STATE",
+        "PRIVATE_CREATION_DESIGN",
+        "SOLUTION_ORACLE",
+        "SOLVER_VISIBLE_TASK",
+        "VERIFIER_PRIVATE"
+      ],
+      "evidence_required": [
+        "assembled task structure",
+        "assembly-local static/lint evidence",
+        "instruction/docs boundary",
+        "leakage/package checks",
+        "evidence prepared for later complexity/runtime/deterministic gates"
+      ],
+      "excluded_evidence_classes": [
+        "CURRENT_REVIEW_PACKET",
+        "FINAL_PACKAGE_EVIDENCE",
+        "MODEL_TRIAL_EVIDENCE",
+        "PRIOR_REVIEW_RESULTS",
+        "PUBLIC_REFERENCE"
+      ],
+      "mandatory_exact_reads": [
+        ".terminus/agents/CREATION_PIPELINE.md",
+        ".terminus/agents/PRODUCTION_AUTHENTICITY.md",
+        ".terminus/agents/A9_ASSEMBLY_PROMPT.md"
+      ],
+      "retrieval_mode": "EXACT_ONLY"
+    },
+    "ignored_input_count": 0,
+    "inputs": {
+      "optional": {
+        "PRIVATE_DEFECT_GRAPH": {
+          "defect_manifestations": 30,
+          "profile": "large_system_strict",
+          "root_cause_clusters": 6
+        },
+        "PRIVATE_TEST_MAP": {
+          "F2P_COUNT": 28,
+          "P2P_COUNT": 6
+        }
+      },
+      "required": {
+        "CURRENT_ORACLE": {
+          "empirical_status": "DEFERRED_TO_DETERMINISTIC_VALIDATION",
+          "status": "IMPLEMENTED"
+        },
+        "CURRENT_TASK": {
+          "runtime_artifact": "/app/edge-router",
+          "task_root": "edge-router-runtime",
+          "top_level": [
+            "README.md",
+            "environment/",
+            "instruction.md",
+            "solution/",
+            "task.toml",
+            "tests/"
+          ]
+        },
+        "CURRENT_VERIFIER": {
+          "F2P_COUNT": 28,
+          "P2P_COUNT": 6,
+          "status": "VERIFIER_READY"
+        },
+        "FORMAT_STATUS": "FORMAT_PASS",
+        "SPEC_ALIGNMENT_STATUS": {
+          "Q1_STATUS": "NO_GAP",
+          "Q2_STATUS": "COVERED",
+          "Q3_STATUS": "CLEAR",
+          "status": "ALIGNED"
+        }
+      }
+    },
+    "invocation_id": "inv_1dd4eb611a31d46092ae7efea45dd3b575b298ed36857219e4ab39091ee60873",
+    "learning": {
+      "context_hash": "sha256:bb84a513aa2b6e4374d691759c4a6edf94169f479f4611e9091643b9f279ccfc",
+      "lessons": [],
+      "mode": "GENERALIZED_LESSONS_PLUS_OWNED_REMEDIATIONS",
+      "raw_feedback_exposed": false,
+      "raw_historical_findings_exposed": false,
+      "registry_heads": {
+        "feedback": "GENESIS",
+        "findings": "GENESIS",
+        "lessons": "GENESIS",
+        "patterns": "GENESIS",
+        "remediations": "GENESIS"
+      },
+      "remediations": []
+    },
+    "missing_required_inputs": [],
+    "output_contract": {
+      "allowed_status_values": [
+        "ASSEMBLED",
+        "RETURN_TO_PRODUCER",
+        "BLOCKED"
+      ],
+      "deterministic_validators": [
+        "task structure/static/lint checks",
+        "leakage/package checks"
+      ],
+      "optional_fields": [],
+      "persisted_artifacts": [],
+      "required_fields": [
+        "TASK_COMMIT",
+        "STRUCTURE",
+        "INSTRUCTION_SHAPE",
+        "INSTRUCTION_REQUIREMENT_COMPLETENESS",
+        "INSTRUCTION_DOC_BOUNDARY",
+        "SUBSTANTIVE_REACHABLE_LOC_EVIDENCE",
+        "PRODUCTION_CHARACTERISTIC_EVIDENCE",
+        "F2P_ORGANICITY_EVIDENCE",
+        "EDGE_BOUNDARY_COVERAGE_EVIDENCE",
+        "NEGATIVE_FAILURE_COVERAGE_EVIDENCE",
+        "LEAKAGE_CHECK",
+        "STATIC_CHECKS",
+        "NEXT_GATE"
+      ],
+      "semantic_reviewers": []
+    },
+    "readiness": "READY",
+    "retrieval": {
+      "query": null,
+      "retrieved_chars": 0,
+      "retrieved_context": [],
+      "status": "NOT_REQUESTED"
+    },
+    "routing": {
+      "failure_routes": {
+        "ARCHITECTURE_EVIDENCE_GAP": "A2 System Architect / Environment Builder",
+        "FORMAT_FAILURE": "Q7 Task Format Enforcer",
+        "LEAKAGE_FAILURE": "A9 Task Assembly Agent / responsible producer",
+        "SPEC_ALIGNMENT_FAILURE": "Q1/Q2/Q3",
+        "STRUCTURE_OR_STATIC_FAILURE": "A9 Task Assembly Agent / Q7 Task Format Enforcer as evidence indicates"
+      },
+      "stale_on": [
+        "task artifact change",
+        "solution change",
+        "verifier change",
+        "policy/validator change"
+      ],
+      "success_transition": "COMPLEXITY_GATE"
+    },
+    "schema_version": "1.0",
+    "stage": {
+      "lifecycle": "creation",
+      "owner": "A9 Task Assembly Agent",
+      "role_class": "PRODUCER",
+      "role_id": "A9_TASK_ASSEMBLY_AGENT",
+      "stage_id": "ASSEMBLY"
+    }
+  },
+  "next": {
+    "action": "INVOKE_STAGE",
+    "optional_inputs": [
+      "PRIVATE_DEFECT_GRAPH",
+      "PRIVATE_TEST_MAP"
+    ],
+    "owner": "A9 Task Assembly Agent",
+    "primary_role_id": "A9_TASK_ASSEMBLY_AGENT",
+    "required_inputs": [
+      "CURRENT_ORACLE",
+      "CURRENT_TASK",
+      "CURRENT_VERIFIER",
+      "FORMAT_STATUS",
+      "SPEC_ALIGNMENT_STATUS"
+    ],
+    "stage_id": "ASSEMBLY"
+  },
+  "quality_mode_policy": {
+    "inline_creation_governor_role_ids": [
+      "A10_COMPLEXITY_GOVERNOR"
+    ],
+    "inline_quality_role_ids": [
+      "Q1_SPEC_GAP_REPAIRER",
+      "Q2_VERIFIER_COVERAGE_REPAIRER",
+      "Q3_SPEC_AMBIGUITY_REPAIRER",
+      "Q5_ORACLE_RUNTIME_REPAIR_SPECIALIST",
+      "Q7_TASK_FORMAT_ENFORCER"
+    ],
+    "inline_stage_sequences": {
+      "SPEC_ALIGNMENT": [
+        {
+          "result_field": "Q1_STATUS",
+          "role_id": "Q1_SPEC_GAP_REPAIRER",
+          "satisfied_values": [
+            "NO_GAP",
+            "PASS"
+          ]
+        },
+        {
+          "result_field": "Q2_STATUS",
+          "role_id": "Q2_VERIFIER_COVERAGE_REPAIRER",
+          "satisfied_values": [
+            "COVERED",
+            "PASS"
+          ]
+        },
+        {
+          "result_field": "Q3_STATUS",
+          "role_id": "Q3_SPEC_AMBIGUITY_REPAIRER",
+          "satisfied_values": [
+            "CLEAR",
+            "PASS"
+          ]
+        }
+      ]
+    },
+    "mandatory_quality_role_keys": [
+      "spec-test-contract",
+      "production-logic"
+    ],
+    "mandatory_same_chat_checkpoints": {
+      "Q1": "SPEC_ALIGNMENT.Q1_STATUS",
+      "Q2": "SPEC_ALIGNMENT.Q2_STATUS",
+      "Q3": "SPEC_ALIGNMENT.Q3_STATUS",
+      "Q5": "DETERMINISTIC_VALIDATION runtime/oracle checkpoint; invoke Q5 repair only on registered runtime/oracle failure",
+      "Q7": "FORMAT_GATE"
+    },
+    "optional_q8_role_keys": [
+      "difficulty-sim-gpt",
+      "difficulty-sim-claude"
+    ],
+    "policy_document": ".terminus/agents/QUALITY_EXECUTION_MODE.md",
+    "policy_version": "1.0",
+    "producer_role_classes": [
+      "FIXER",
+      "PRODUCER"
+    ],
+    "q4_q6_mode": "AUTOMATED",
+    "q8_mode": "OFF",
+    "source": ".terminus/agents/quality_execution_mode.json"
+  },
+  "state_snapshot_id": "state_6a6d4b15ed91aafaa261aa54bf164c881286baed16dde8d0a786b3596ced5078"
+}
