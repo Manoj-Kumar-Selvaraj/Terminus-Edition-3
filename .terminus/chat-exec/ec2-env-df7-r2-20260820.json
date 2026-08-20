@@ -1,0 +1,97 @@
+{
+  "schema_version": "1.0",
+  "mode": "RECORD",
+  "task_id": "ec2-artifact-policy-enforcement",
+  "task_commit": "6c7909d5c0efd3e6e64443d6de3b227c1820b01b",
+  "control_plane_commit": "df7ef7569e2947b9f0bf7cf89ed4dec6c2a5a1fe",
+  "expected_repository_head": "c9dfcc81daf3f577b12fd5118a76b4822f4a5d6a",
+  "stage_id": "ENVIRONMENT_BUILD",
+  "inputs": {
+    "CLEAN_SYSTEM_ARCHITECTURE": {
+      "SOURCE": "current canonical SYSTEM_ARCHITECTURE result",
+      "SOURCE_RECORD_ID": "rec_e327283d158eaa1014ebba8ecfde7bad7c42ef7d9707b80dcf51e624f49dd397"
+    },
+    "CREATION_RULE_CONTEXT": {
+      "CONTROL_PLANE_COMMIT": "df7ef7569e2947b9f0bf7cf89ed4dec6c2a5a1fe",
+      "CREATION_PROFILE": "large_system_strict",
+      "KNOWN_POLICY_CONFLICTS": [],
+      "NETWORK_ENVIRONMENT_CONSTRAINTS": "network_mode public; separate verifier; digest-pinned canonical Go runtime; no privileged Docker/capability/socket shortcuts; tmux and asciinema required in agent image"
+    },
+    "DEFECT_TOPOLOGY": {
+      "CAUSAL_EDGE_COUNT": 37,
+      "CLUSTER_COUNT": 6,
+      "DEFECT_COUNT": 26,
+      "SOURCE_PATH": ".terminus/designs/ec2-artifact-policy-enforcement.json",
+      "SOURCE_RECORD_ID": "rec_1fa759f1a9032f2fcd8bea12b3e35ef4cc2b0b671d13d4c5037d7841f45532f7"
+    },
+    "SOLVER_VISIBLE_DOC_PLAN": [
+      "environment/enforcer/docs/architecture.md",
+      "environment/enforcer/docs/policy-contract.md",
+      "environment/enforcer/docs/state-format.md",
+      "environment/enforcer/docs/operations.md",
+      "environment/enforcer/notes/oncall.md"
+    ]
+  },
+  "result": {
+    "status": "BUILT",
+    "outputs": {
+      "COMPONENT_GRAPH": [
+        "cmd/artifactguard",
+        "internal/core compatibility bridge",
+        "internal/platform manager_profiles",
+        "internal/platform runtime_context",
+        "internal/platform policy_runtime",
+        "internal/platform evidence_runtime and cache",
+        "internal/platform exception_runtime",
+        "internal/platform permit_runtime",
+        "internal/platform journal_runtime and audit",
+        "internal/platform state_runtime and replay",
+        "deterministic policy/scanner/exception fixtures",
+        "solver-visible architecture/state/operations docs"
+      ],
+      "ENTRYPOINTS": [
+        "artifactguard evaluate",
+        "artifactguard verify-permit",
+        "go test ./...",
+        "go build ./cmd/artifactguard"
+      ],
+      "ENVIRONMENT_RULE_CHECKS": {
+        "business_module_diversity": "PASS when applicable; current modules have differentiated reachable responsibilities",
+        "environment_complexity": "PASS by mandatory validator on current materialized task",
+        "runtime_authenticity": "PASS by mandatory validator on current materialized task"
+      },
+      "INSTRUCTION_DOC_BOUNDARY": "instruction.md states the material repair objective and preservation obligations; solver-visible docs define legitimate architecture, CLI, policy, state-format and operations contracts without exposing private defect IDs, hidden test mapping or the Oracle repair recipe.",
+      "PRODUCTION_CHARACTERISTICS": [
+        "real Go admission CLI spanning package/container/dependency acquisition",
+        "differentiated manager normalization, policy, evidence/cache, exception, permit, journal, replay and state responsibilities",
+        "caller-owned persistent security state",
+        "explicit failure and corruption handling",
+        "restart/idempotency semantics",
+        "concurrency-sensitive permit consumption",
+        "durable authoritative journal with derived projection",
+        "deterministic scanner/policy/exception fixture boundary",
+        "stable CLI exit behavior"
+      ],
+      "RESOURCE_COUNT": "not an infrastructure-resource-count task; scale is production Go/runtime-state complexity rather than Terraform resource quantity",
+      "RUNTIME_REACHABILITY_NOTES": [
+        "Docker/task runtime builds and invokes cmd/artifactguard",
+        "evaluate reaches normalization, policy, evidence/cache, exception, decision, permit and durable decision-state paths",
+        "verify-permit reaches keyed scope validation and optional stateful replay path",
+        "state recovery and journal/projection code are reached through normal command startup/mutation flows",
+        "removed catalog clones are absent from the counted environment"
+      ],
+      "SOLVER_VISIBLE_DOCS": [
+        "environment/enforcer/docs/architecture.md",
+        "environment/enforcer/docs/policy-contract.md",
+        "environment/enforcer/docs/state-format.md",
+        "environment/enforcer/docs/operations.md",
+        "environment/enforcer/notes/oncall.md"
+      ],
+      "SUBSTANTIVE_LOC": "3515 substantive reachable solver-visible production/domain LOC; >=3000 strict floor satisfied without generated/vendor/dead/catalog padding.",
+      "UNRESOLVED_RISKS": [
+        "Oracle/NOP scoring and empirical F2P/P2P remain downstream verifier/deterministic-validation responsibilities; this phase intentionally does not read verifier-private or solution evidence."
+      ]
+    },
+    "evidence_refs": []
+  }
+}
