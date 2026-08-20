@@ -58,6 +58,12 @@ jobs:
           if p.get('execution_mode') not in {'INLINE_SPECIALIST','INLINE_SPECIALIST_SEQUENCE','ORCHESTRATOR_DIRECT'}: raise SystemExit(f"unsupported execution mode {p.get('execution_mode')}")
           json.dump(inv,open(sys.argv[2],'w',encoding='utf-8'),indent=2,sort_keys=True)
           PY
+          if [[ "$stage" == "HUMAN_WRITING_RESEARCH" ]]; then
+            python3 .terminus/human_writing/calibration_cli.py --root . plan \
+              --task-id "$task" \
+              --domain "terraform ansible provider platform cloud infrastructure linux managed resources lifecycle" \
+              --output "$work/calibration-pair.json"
+          fi
           if [[ "$mode" == "RECORD" ]]; then
             python3 - "$work/invocation.json" "$work/result-template.json" "$work/result.json" <<'PY'
           import json,sys
@@ -82,6 +88,13 @@ jobs:
                 python3 .terminus/validate_runtime_authenticity.py "$task"
                 python3 .terminus/validate_business_module_diversity.py "$task"
                 ;;
+              HUMAN_WRITING_RESEARCH|INSTRUCTION_DRAFT)
+                if [[ -f ".terminus/research/$task-dataset-calibration.json" && -f ".terminus/research/$task-task-writing-profile.json" ]]; then
+                  python3 .terminus/human_writing/validate_calibration.py --root . \
+                    --pair ".terminus/research/$task-dataset-calibration.json" \
+                    --profile ".terminus/research/$task-task-writing-profile.json"
+                fi
+                ;;
             esac
             python3 .terminus/execution/controller_cli.py record --invocation "$work/invocation.json" --result "$work/result.json" --output "$work/record.json"
             unexpected="$(git status --porcelain | awk '{print $2}' | grep -vE "^\.terminus/(executions|workflows)/$task(/|$)" || true)"
@@ -102,6 +115,7 @@ jobs:
           mkdir -p "$diag"
           cp "$work/continue.json" "$diag/continue.json"
           cp "$work/invocation.json" "$diag/invocation.json"
+          [[ -f "$work/calibration-pair.json" ]] && cp "$work/calibration-pair.json" "$diag/calibration-pair.json" || true
           [[ -f "$work/result.json" ]] && cp "$work/result.json" "$diag/result.json" || true
           [[ -f "$work/record.json" ]] && cp "$work/record.json" "$diag/record.json" || true
           git config user.name 'terminus-chat-adapter[bot]'
