@@ -1,0 +1,362 @@
+{
+  "authority": {
+    "control_plane_commit": "67b805a297ac005ee08e82facc533f53a3233192",
+    "policy_versions": {},
+    "task_commit": "78ad422902b27dea954905130a1267b02cff3596",
+    "task_id": "terraform-ansible-managed-resources"
+  },
+  "disposition": "ADVANCE",
+  "evidence_refs": [
+    {
+      "content_hash": "sha256:104817a239b92de3e53f14d6bc0176563437894773e060648776dc09c6280374",
+      "kind": "COMMIT",
+      "ref": "commit:78ad422902b27dea954905130a1267b02cff3596"
+    },
+    {
+      "content_hash": "sha256:fca3ef4b283f1a1fe2aa6d960cd36a17b7232eb0b7a130f9cc8d43d948d6ec42",
+      "kind": "COMMIT",
+      "ref": "commit:67b805a297ac005ee08e82facc533f53a3233192"
+    }
+  ],
+  "invocation_id": "inv_874c75d27f882f6e055d0d6ba2bd400647a3f1ae79308b6de2fffa2041ab5644",
+  "invocation_snapshot": {
+    "acceptance_predicates": {},
+    "authority": {
+      "control_plane_commit": "67b805a297ac005ee08e82facc533f53a3233192",
+      "policy_versions": {},
+      "task_commit": "78ad422902b27dea954905130a1267b02cff3596",
+      "task_id": "terraform-ansible-managed-resources"
+    },
+    "evidence": {
+      "authorized_evidence_classes": [
+        "CI_RUNTIME_EVIDENCE",
+        "CONTROL_PLANE_POLICY",
+        "PRIVATE_CREATION_DESIGN",
+        "SOLVER_VISIBLE_TASK"
+      ],
+      "evidence_required": [
+        "requirement-to-test map",
+        "behavioral scenario families",
+        "F2P/P2P classification",
+        "test independence"
+      ],
+      "excluded_evidence_classes": [
+        "CURRENT_REVIEW_PACKET",
+        "DURABLE_SESSION_STATE",
+        "FINAL_PACKAGE_EVIDENCE",
+        "MODEL_TRIAL_EVIDENCE",
+        "PRIOR_REVIEW_RESULTS",
+        "PUBLIC_REFERENCE",
+        "SOLUTION_ORACLE",
+        "VERIFIER_PRIVATE"
+      ],
+      "mandatory_exact_reads": [
+        "TERMINUS_3_AI_INSTRUCTIONS.md",
+        ".terminus/agents/CREATION_PIPELINE.md",
+        ".terminus/agents/CREATOR_PROMPTS.md"
+      ],
+      "retrieval_mode": "FILTERED_HYBRID"
+    },
+    "ignored_input_count": 0,
+    "inputs": {
+      "optional": {
+        "PRESERVATION_RISK_MODEL": {
+          "preservation_obligations": [
+            "exact ten interfaces",
+            "local/ansibleops 0.1.0",
+            "Terraform Core sole durable state",
+            "clean Read never runs Ansible",
+            "sibling entries and symlink targets preserved"
+          ],
+          "starter_public_interfaces": [
+            "terraform-provider-ansibleops",
+            "provider Configure/CRUD callbacks",
+            "build-provider.sh",
+            "smoke.sh",
+            "examples/basic/main.tf"
+          ]
+        },
+        "RUNTIME_INTERFACE_MAP": {
+          "entrypoints": [
+            "/app/provider/cmd/terraform-provider-ansibleops/main.go",
+            "Terraform Configure/Create/Read/Update/Delete",
+            "/app/provider/scripts/build-provider.sh",
+            "/app/provider/scripts/smoke.sh"
+          ],
+          "reachability": [
+            "Terraform provider registration reaches exactly ten resource implementations",
+            "CRUD mutation reaches shared Ansible runner",
+            "Read reaches native filesystem/content/account/cron observers",
+            "normalization and identity logic are shared across resource families"
+          ]
+        }
+      },
+      "required": {
+        "BEHAVIORAL_SURFACES": {
+          "cross_component": [
+            "identity across mutable updates",
+            "native observation versus mutation boundary",
+            "state commit ordering versus runner outcome",
+            "normalization across desired and observed state"
+          ],
+          "edge_boundary": [
+            "wrong object kind",
+            "spaces in paths",
+            "omitted versus explicit cron defaults",
+            "remove_home boundary",
+            "map/group/mode ordering equivalence",
+            "already-absent destroy"
+          ],
+          "failure_recovery": [
+            "failed update retry",
+            "timeout/cancellation cleanup",
+            "missing-object recreation",
+            "failed destroy retry",
+            "external drift"
+          ],
+          "negative_rejection": [
+            "duplicate external ownership",
+            "shell metacharacters remain literal",
+            "non-zero Ansible failure",
+            "failed delete retains state",
+            "command output absent from state"
+          ],
+          "normal": [
+            "exact ten provider schemas",
+            "basic lifecycle/state",
+            "copy/template content and metadata",
+            "account/group/cron lifecycle",
+            "successful runner cleanup",
+            "Ansible mutation backend"
+          ],
+          "ownership": [
+            "path/user/group/cron collision rejection",
+            "line/block/cron sibling preservation",
+            "block marker ownership",
+            "symlink target preservation",
+            "user home policy"
+          ]
+        },
+        "SOLVER_VISIBLE_CONTRACTS": {
+          "lifecycle.md": "Create mutate-observe-publish; Read native and drift-aware; Update stable identity and retry-safe state; Delete scoped and failure-safe; repeated apply/refresh/plan idempotent with canonical representations.",
+          "provider-contract.md": "One Terraform resource owns one external key; Create/Update/Delete may use Ansible; Read is native-only; mutations use process arguments not shell text; non-zero/timeout/cancel fail; temp playbooks always cleaned; successful state publication follows external mutation; failed update preserves prior state; destroy completes only after absence.",
+          "resource-reference.md": "Exactly ten resources: file,directory,copy,template,line,block,symlink,user,group,cron with documented external identities; copy/template source_digest semantics; named text independent ownership; cron root/wildcard defaults; native filesystem/account/cron observation."
+        },
+        "SOLVER_VISIBLE_REQUIREMENTS": {
+          "instruction.md": "Complete the inherited ansibleops provider as exactly ten normal managed Terraform resources; stable external-key identity; Ansible-only mutation; native side-effect-free Read; transactional state publication; scoped delete; copy/template source intent and destination observation; named line/block ownership; account/group/cron reconciliation; structured argv and cleanup; canonical convergence; Terraform Core sole durable state authority; no wrapper/provisioner/manual-state substitutes.",
+          "requirement_families": [
+            "provider/schema",
+            "state/identity",
+            "native refresh/drift",
+            "transactional create/update",
+            "failure-safe scoped delete",
+            "copy/template content intent",
+            "line/block ownership",
+            "user/group native reconciliation",
+            "runner/process safety",
+            "normalization/idempotency",
+            "cron defaults/drift/siblings",
+            "external ownership collision",
+            "Ansible mutation backend"
+          ]
+        }
+      }
+    },
+    "invocation_id": "inv_874c75d27f882f6e055d0d6ba2bd400647a3f1ae79308b6de2fffa2041ab5644",
+    "learning": {
+      "context_hash": "sha256:bb84a513aa2b6e4374d691759c4a6edf94169f479f4611e9091643b9f279ccfc",
+      "lessons": [],
+      "mode": "GENERALIZED_LESSONS_PLUS_OWNED_REMEDIATIONS",
+      "raw_feedback_exposed": false,
+      "raw_historical_findings_exposed": false,
+      "registry_heads": {
+        "feedback": "GENESIS",
+        "findings": "GENESIS",
+        "lessons": "GENESIS",
+        "patterns": "GENESIS",
+        "remediations": "GENESIS"
+      },
+      "remediations": []
+    },
+    "missing_required_inputs": [],
+    "output_contract": {
+      "allowed_status_values": [
+        "VERIFIER_READY",
+        "REQUIREMENT_GAP",
+        "SCENARIO_TOO_SMALL",
+        "BLOCKED"
+      ],
+      "deterministic_validators": [
+        "verifier lint/static checks",
+        ".terminus/validate_task_complexity.py <task>"
+      ],
+      "optional_fields": [
+        "STARTER_EMPIRICAL_STATUS",
+        "ORACLE_EMPIRICAL_STATUS",
+        "SOLVER_LOGIC_REIMPLEMENTATION_RISK"
+      ],
+      "persisted_artifacts": [
+        "<task>/tests/",
+        ".terminus/designs/<task>-test-map.json"
+      ],
+      "required_fields": [
+        "REQUIREMENT_TEST_MATRIX",
+        "F2P_COUNT",
+        "P2P_COUNT",
+        "EDGE_BOUNDARY_COVERAGE",
+        "NEGATIVE_FAILURE_COVERAGE",
+        "ORGANIC_COUNT_JUSTIFICATION",
+        "TEST_INDEPENDENCE"
+      ],
+      "semantic_reviewers": [
+        "Q2 Verifier Coverage Repairer",
+        "Verifier Engineer"
+      ]
+    },
+    "readiness": "READY",
+    "retrieval": {
+      "query": null,
+      "retrieved_chars": 0,
+      "retrieved_context": [],
+      "status": "NOT_REQUESTED"
+    },
+    "routing": {
+      "failure_routes": {
+        "DUPLICATE_OR_WEAK_TEST": "A5 Verifier Author / Q2 Verifier Coverage Repairer",
+        "REQUIREMENT_GAP": "Q1 Spec Gap Repairer / contract owner",
+        "SCENARIO_TOO_SMALL": "Creation Controller -> WORK_PACKAGE_RESEARCH"
+      },
+      "stale_on": [
+        "solver-visible requirement change",
+        "referenced contract change",
+        "behavioral surface change",
+        "verifier change"
+      ],
+      "success_transition": "HUMAN_WRITING_RESEARCH"
+    },
+    "schema_version": "1.0",
+    "stage": {
+      "lifecycle": "creation",
+      "owner": "A5 Verifier Author",
+      "role_class": "PRODUCER",
+      "role_id": "A5_VERIFIER_AUTHOR",
+      "stage_id": "VERIFIER_BUILD"
+    }
+  },
+  "outputs": {
+    "EDGE_BOUNDARY_COVERAGE": [
+      "wrong object kind",
+      "spaces in paths",
+      "cron omitted/explicit defaults",
+      "home-removal boundary",
+      "map/group/mode ordering equivalence",
+      "already-absent destroy"
+    ],
+    "F2P_COUNT": 30,
+    "NEGATIVE_FAILURE_COVERAGE": [
+      "duplicate external ownership",
+      "literal shell metacharacters",
+      "non-zero Ansible failure with cleanup",
+      "failed delete retains state",
+      "command output absent from Terraform state"
+    ],
+    "ORACLE_EMPIRICAL_STATUS": "DEFERRED_TO_DETERMINISTIC_VALIDATION_CURRENT_TASK_COMMIT",
+    "ORGANIC_COUNT_JUSTIFICATION": "Thirty F2P cases cover distinct lifecycle, drift, transaction, ownership, process and normalization obligations across ten managed-resource families; six P2P cases establish preserved baseline behavior without padding.",
+    "P2P_COUNT": 6,
+    "REQUIREMENT_TEST_MATRIX": {
+      "REQ_BACKEND": [
+        "test_f2p_clean_named_text_refresh_does_not_execute_ansible"
+      ],
+      "REQ_COPY": [
+        "test_f2p_copy_destination_content_drift_requires_reconciliation",
+        "test_f2p_copy_source_digest_change_executes_content_update"
+      ],
+      "REQ_CRON": [
+        "test_f2p_cron_omitted_schedule_fields_converge_to_wildcards"
+      ],
+      "REQ_DELETE": [
+        "test_f2p_destroy_preserves_home_when_remove_home_is_false",
+        "test_f2p_destroy_removes_home_when_remove_home_is_true",
+        "test_f2p_failed_delete_preserves_managed_state_for_retry",
+        "test_f2p_named_entry_deletes_preserve_siblings",
+        "test_p2p_symlink_destroy_preserves_target"
+      ],
+      "REQ_IDENTITY": [
+        "test_f2p_filesystem_identities_survive_mutable_updates",
+        "test_f2p_content_identities_survive_source_and_variable_updates",
+        "test_f2p_user_identity_survives_shell_update",
+        "test_f2p_group_gid_drift_reconciles_without_identity_churn"
+      ],
+      "REQ_NORMALIZE": [
+        "test_p2p_template_variable_order_is_semantically_stable",
+        "test_f2p_user_supplementary_group_drift_requires_reconciliation"
+      ],
+      "REQ_OWNERSHIP": [
+        "test_f2p_duplicate_external_ownership_is_rejected"
+      ],
+      "REQ_PROVIDER": [
+        "test_f2p_provider_exposes_exact_managed_resource_schemas",
+        "test_p2p_directory_basic_apply_state_and_destroy",
+        "test_p2p_declared_provider_artifact_root_is_mounted"
+      ],
+      "REQ_REFRESH": [
+        "test_f2p_deleted_directory_is_planned_for_recreation",
+        "test_f2p_filesystem_mode_drift_requires_reconciliation",
+        "test_f2p_symlink_target_drift_requires_reconciliation",
+        "test_f2p_deleted_user_is_planned_for_recreation"
+      ],
+      "REQ_RUNNER": [
+        "test_f2p_runner_handles_temp_paths_with_spaces",
+        "test_f2p_runner_does_not_interpret_shell_metacharacters",
+        "test_p2p_success_cleanup_and_state_output_secrecy",
+        "test_f2p_nonzero_ansible_exit_fails_lifecycle_transition",
+        "test_f2p_timeout_and_cancellation_clean_generated_playbooks"
+      ],
+      "REQ_STATE": [
+        "test_p2p_state_is_owned_by_terraform_core",
+        "test_f2p_symlink_identity_survives_target_update"
+      ],
+      "REQ_TEXT": [
+        "test_f2p_clean_named_text_refresh_does_not_execute_ansible",
+        "test_f2p_line_update_replaces_previous_value_exactly_once",
+        "test_f2p_removed_named_text_is_planned_for_recreation"
+      ],
+      "REQ_UPDATE": [
+        "test_f2p_failed_update_preserves_last_successful_template_state",
+        "test_f2p_retry_after_failed_update_reexecutes_and_converges"
+      ]
+    },
+    "SOLVER_LOGIC_REIMPLEMENTATION_RISK": "LOW: tests assert observable lifecycle contracts rather than duplicating provider algorithms.",
+    "STARTER_EMPIRICAL_STATUS": "DEFERRED_TO_DETERMINISTIC_VALIDATION_CURRENT_TASK_COMMIT",
+    "TEST_INDEPENDENCE": "Verifier assertions observe public Terraform/provider behavior and external Linux state; they do not inspect or reproduce reference-solution implementation internals."
+  },
+  "record_id": "rec_e7d4ab9b3b426be089694aca0e89f6598dc5b7e4a8ed8acf662bf2f5cd76fb8b",
+  "role_id": "A5_VERIFIER_AUTHOR",
+  "schema_version": "1.0",
+  "stage_id": "VERIFIER_BUILD",
+  "status": "VERIFIER_READY",
+  "task_lineage": {
+    "input_task_commit": "78ad422902b27dea954905130a1267b02cff3596",
+    "output_task_commit": "78ad422902b27dea954905130a1267b02cff3596",
+    "task_changed": false
+  },
+  "transition": {
+    "action": "ADVANCE",
+    "requires_state_validation": false,
+    "target": "HUMAN_WRITING_RESEARCH",
+    "target_kind": "STAGE"
+  },
+  "validation": {
+    "acceptance_predicates_satisfied": true,
+    "evidence_binding_satisfied": true,
+    "evidence_refs_count": 2,
+    "invocation_identity_valid": true,
+    "invocation_policy_valid": true,
+    "output_keys_valid": true,
+    "required_outputs_satisfied": true,
+    "retrieval_context_authorized": true,
+    "status_legal": true,
+    "task_commit_change_authorized": true,
+    "task_lineage_valid": true
+  }
+}
