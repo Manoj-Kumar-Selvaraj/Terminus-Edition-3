@@ -324,6 +324,12 @@ func profileAllowsAction(profile ManagerProfile, action string) bool {
 	if action == "" {
 		return profile.AllowEmptyAction
 	}
+	// The external request contract uses "install" as the generic admission
+	// operation for all three surfaces; manager-specific verbs are accepted in
+	// addition to that stable compatibility action.
+	if action == "install" && profile.DefaultActionClass == "install" {
+		return true
+	}
 	return contains(profile.InstallActions, action) || contains(profile.UpdateActions, action) || contains(profile.RemoveActions, action)
 }
 
