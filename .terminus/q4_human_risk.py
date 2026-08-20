@@ -80,8 +80,6 @@ def validate_human_risk_acceptance(
     if event is None:
         raise ValueError("Q4 human risk acceptance feedback is unavailable")
     LearningSchemaValidator(root).validate("feedback", event)
-    if not ProvenanceValidator(root).validate_feedback_event(event):
-        raise ValueError("Q4 human risk acceptance feedback is not authoritative")
 
     source = event.get("source")
     task = event.get("task")
@@ -95,7 +93,9 @@ def validate_human_risk_acceptance(
     if producer in _machine_principals(root):
         raise ValueError("Q4 risk acceptance cannot be authored by a Terminus machine role")
     if provenance.get("trust_status") != "HUMAN_AUTHENTICATED":
-        raise ValueError("Q4 risk acceptance requires HUMAN_AUTHENTICATED provenance")
+        raise ValueError("Q4 human risk acceptance feedback is not authoritative: HUMAN_AUTHENTICATED required")
+    if not ProvenanceValidator(root).validate_feedback_event(event):
+        raise ValueError("Q4 human risk acceptance feedback is not authoritative")
     if task.get("task_id") != task_id or task.get("task_commit") != task_commit:
         raise ValueError("Q4 risk acceptance must bind the exact Q4 task commit")
     if observation.get("category") != CATEGORY:
