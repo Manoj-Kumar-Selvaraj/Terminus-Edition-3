@@ -1,0 +1,29 @@
+{
+  "schema_version":"1.0",
+  "mode":"RECORD",
+  "task_id":"route-control-plane",
+  "task_commit":"22d2e9e09f4deb58029559fe9a0863c2e032f25c",
+  "control_plane_commit":"7d8a6d8c62a62e6d24949344c7fd712e59bc8829",
+  "expected_repository_head":"a4184368a957360f7a7d227bc9c4577660fee015",
+  "stage_id":"SYSTEM_ARCHITECTURE",
+  "inputs":{
+    "CREATION_RULE_CONTEXT":{"CONTROL_PLANE_COMMIT":"7d8a6d8c62a62e6d24949344c7fd712e59bc8829","CREATION_PROFILE":"large_system_strict","NETWORK_ENVIRONMENT_CONSTRAINTS":"Deterministic offline/local benchmark runtime; no cloud credentials, privileged external infrastructure, internet services, or destructive host routing; preserve realistic Linux routing semantics through an isolated kernel model.","KNOWN_POLICY_CONFLICTS":[]},
+    "APPROVED_WORK_PACKAGE":{"ID":"FLEET_ROUTE_DESIRED_STATE_RECONCILIATION","ENGINEERING_OBJECTIVE":"Build a production-style Go route control plane that models desired route and policy state, reconciles it across a multi-node Linux fleet, detects drift, protects management reachability, records revision history, and exposes the same lifecycle through an operator dashboard and Ansible-driven installation/configuration.","REQUIREMENT_FAMILIES":["IPv4/IPv6 route CRUD","policy routing rules and named tables","multipath weighted next hops","revision validation","node inventory","preview/diff/apply","rollback/recovery","drift/reconcile","idempotency/concurrency","fleet rollout","Ansible deployment","audit/health","dashboard operations"],"PRESERVATION_OBLIGATIONS":["never mutate benchmark host routes","rejected changes preserve serving state","management reachability safety","monotonic revision/audit history","idempotent Ansible reruns"]},
+    "APPROVED_OPERATIONAL_REQUIREMENTS":{"REQUIRED_END_STATE":["At least 16 route-control API operations spanning nodes, tables, routes, rules, revisions, preview/apply/rollback, drift/reconcile, rollouts, audit, health and dashboard summary.","All route mutations target an isolated deterministic kernel model.","Desired and observed state are revisioned and restart-recoverable.","Per-node failures are isolated during wave rollout with rollback.","Ansible installs binary/config/service and projects variables idempotently.","Frontend exposes inventory, route/rule state, revisions, drift and rollouts."],"PRESERVATION_OBLIGATIONS":["safe management reachability","no partial revision publication","idempotent retries","stable audit ordering","no host-network mutation"]}
+  },
+  "result":{
+    "status":"ARCHITECTURE_READY",
+    "outputs":{
+      "COMPONENT_GRAPH":{"api":["HTTP router","validation","optimistic revision headers","structured errors"],"domain":["node registry","route-table catalog","route service","policy-rule service","revision planner","transaction coordinator","drift engine","rollout engine","audit service"],"adapters":["deterministic kernel-model adapter","atomic JSON store","clock/id generator","Ansible projection"],"frontend":["summary","node inventory","routes/rules explorer","revision diff/apply","drift/reconcile","rollout monitor","audit"],"automation":["Ansible role","inventory/group_vars","service template","config template","health checks"]},
+      "ENTRYPOINTS":["cmd/routecp server --config <path>","GET /healthz","GET /readyz","node/table/route/rule API operations","revision preview/apply/rollback","drift scan/reconcile","rollout create/advance/cancel","audit/events","embedded dashboard","ansible/playbooks/install.yml"],
+      "STATE_MODEL":{"entities":["Node","Interface","RouteTable","Route","NextHop","PolicyRule","DesiredRevision","ObservedSnapshot","ChangePlan","ApplyTransaction","Rollout","DriftRecord","AuditEvent"],"persistence":"Atomic JSON checkpoint with schema version, monotonic revision, nodes, desired revisions, observed snapshots, rollouts and audit sequence; startup validates primary and last-known-good backup.","concurrency":"store-level compare-and-swap revision plus per-node apply serialization; immutable read snapshots","safety":"management CIDRs/interfaces and protected routes are explicit policy; unsafe plans are rejected before publication"},
+      "SOLVER_VISIBLE_DOC_PLAN":["README.md","docs/api.md","docs/state-model.md","docs/routing-semantics.md","docs/ansible.md","docs/operator-runbook.md"],
+      "PRODUCTION_CHARACTERISTICS":["layered Go packages","transactional desired-state revisions","per-node failure isolation","durable restart recovery","optimistic concurrency/idempotency","bounded audit retention","structured health/errors","multi-node Ansible deployment","dashboard consuming same API"],
+      "SCALE_FIT":{"profile":"large_system_strict","runtime_loc_plan":"3500-5000 substantive Go/JS/Ansible/config LOC","module_count":16,"f2p_plan":28,"p2p_plan":8,"manifestation_plan":24},
+      "RESOURCE_GRAPH":["control-plane process -> store + kernel-model","node -> interfaces + protected policy","revision -> route tables + routes + rules","transaction -> node operations","rollout -> node waves -> transactions","dashboard -> API","Ansible -> binary/config/service"],
+      "DATA_VOLUME_PLAN":"Seed eight deterministic nodes across three sites, fourteen named route tables, IPv4/IPv6 and multipath routes, policy rules, drift fixtures and multiple historical revisions.",
+      "UNRESOLVED_RISKS":[]
+    },
+    "evidence_refs":[{"kind":"COMMIT","ref":"commit:7d8a6d8c62a62e6d24949344c7fd712e59bc8829"},{"kind":"COMMIT","ref":"commit:22d2e9e09f4deb58029559fe9a0863c2e032f25c"}]
+  }
+}
