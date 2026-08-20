@@ -1,0 +1,241 @@
+{
+  "execution_mode": "INLINE_SPECIALIST",
+  "executor_handoff": null,
+  "invocation": {
+    "acceptance_predicates": {},
+    "authority": {
+      "control_plane_commit": "df7ef7569e2947b9f0bf7cf89ed4dec6c2a5a1fe",
+      "policy_versions": {},
+      "task_commit": "03317f8218069b9e0b5d073bf87ecf7a0ae8e4a1",
+      "task_id": "stonevault-crash-safe-storage"
+    },
+    "evidence": {
+      "authorized_evidence_classes": [
+        "CONTROL_PLANE_POLICY",
+        "PUBLIC_REFERENCE",
+        "SOLVER_VISIBLE_TASK"
+      ],
+      "evidence_required": [
+        "current dataset/catalog/domain-profile hashes",
+        "disjoint writer/reviewer calibration evidence",
+        "explicit external coverage state",
+        "validated task-writing profile"
+      ],
+      "excluded_evidence_classes": [
+        "CI_RUNTIME_EVIDENCE",
+        "CURRENT_REVIEW_PACKET",
+        "DURABLE_SESSION_STATE",
+        "FINAL_PACKAGE_EVIDENCE",
+        "MODEL_TRIAL_EVIDENCE",
+        "PRIOR_REVIEW_RESULTS",
+        "PRIVATE_CREATION_DESIGN",
+        "SOLUTION_ORACLE",
+        "VERIFIER_PRIVATE"
+      ],
+      "mandatory_exact_reads": [
+        ".terminus/reviewers/HUMAN_WRITING_CALIBRATION.md",
+        ".terminus/reviewers/HUMAN_ENGINEERING_SOURCE_CORPUS.md",
+        ".terminus/reviewers/WRITING_EXAMPLE_BANK.md",
+        ".terminus/agents/HUMAN_WRITING_DATASET_POLICY.md",
+        ".terminus/agents/human_writing_stage_overlay.json",
+        ".terminus/human_writing/dataset_registry.json",
+        ".terminus/human_writing/domain_profiles.json",
+        ".terminus/agents/HUMAN_WRITING_RESEARCHER.md",
+        ".terminus/agents/HUMAN_WRITING_CORPUS_AGENT.md",
+        ".terminus/agents/CREATOR_PROMPTS.md"
+      ],
+      "retrieval_mode": "FILTERED_HYBRID"
+    },
+    "ignored_input_count": 0,
+    "inputs": {
+      "optional": {},
+      "required": {
+        "APPROVED_WORK_PACKAGE": {
+          "domain": "native embedded databases crash safety",
+          "id": "stonevault-crash-safe-storage"
+        },
+        "CURRENT_TIME_BUDGET": {
+          "enforcement": "ADVISORY_ONLY",
+          "guidance_seconds": 25200,
+          "hard_limit": null,
+          "policy_version": "1.1",
+          "quality_gates_may_be_skipped_for_time": false,
+          "time_extension_required": false
+        },
+        "SOLVER_VISIBLE_REQUIREMENTS": {
+          "summary": "writer fencing, data-dir precedence, MVCC snapshot/overlay, FCW conflicts, durable contiguous commits, WAL recovery, checkpoint/snapshot integrity, STATS/HEALTH, binary protocol limits, stable native compatibility"
+        }
+      }
+    },
+    "invocation_id": "inv_342242d9dde301a549ce34c7cb336f4c2965b1ab659e353ee45a26151a3d4f85",
+    "learning": {
+      "context_hash": "sha256:bb84a513aa2b6e4374d691759c4a6edf94169f479f4611e9091643b9f279ccfc",
+      "lessons": [],
+      "mode": "GENERALIZED_LESSONS_PLUS_OWNED_REMEDIATIONS",
+      "raw_feedback_exposed": false,
+      "raw_historical_findings_exposed": false,
+      "registry_heads": {
+        "feedback": "GENESIS",
+        "findings": "GENESIS",
+        "lessons": "GENESIS",
+        "patterns": "GENESIS",
+        "remediations": "GENESIS"
+      },
+      "remediations": []
+    },
+    "missing_required_inputs": [],
+    "output_contract": {
+      "allowed_status_values": [
+        "CALIBRATION_READY",
+        "INSUFFICIENT_SOURCE_DIVERSITY",
+        "SOURCE_QUALITY_BLOCKED",
+        "BLOCKED"
+      ],
+      "deterministic_validators": [
+        ".terminus/human_writing/validate_calibration.py"
+      ],
+      "optional_fields": [
+        "CACHE_SOURCE_KEYS_USED",
+        "RAW_SOURCE_KEYS_USED_FOR_CONTAMINATION",
+        "DEGRADED_COVERAGE_APPROVAL",
+        "CURRENT_STATE_EVIDENCE_NOTES"
+      ],
+      "persisted_artifacts": [
+        ".terminus/research/<task>-dataset-calibration.json",
+        ".terminus/research/<task>-task-writing-profile.json"
+      ],
+      "required_fields": [
+        "DATASET_POLICY_VERSION",
+        "DATASET_REGISTRY_SHA256",
+        "SEED_CATALOG_SHA256",
+        "DOMAIN_PROFILES_SHA256",
+        "DOMAIN_PROFILE",
+        "CALIBRATION_PAIR_ID",
+        "WRITER_CALIBRATION_ID",
+        "REVIEWER_CALIBRATION_ID",
+        "WRITER_SAMPLE_IDS",
+        "REVIEWER_SAMPLE_IDS",
+        "WRITER_REVIEWER_SAMPLE_OVERLAP",
+        "EXTERNAL_DATASET_COVERAGE",
+        "TASK_WRITING_PROFILE"
+      ],
+      "semantic_reviewers": [
+        "Human Quality Reviewer"
+      ]
+    },
+    "readiness": "READY",
+    "retrieval": {
+      "query": null,
+      "retrieved_chars": 0,
+      "retrieved_context": [],
+      "status": "NOT_REQUESTED"
+    },
+    "routing": {
+      "failure_routes": {
+        "INSUFFICIENT_CALIBRATION": "A6 Human Writing Researcher",
+        "INSUFFICIENT_SOURCE_DIVERSITY": "A6 Human Writing Researcher -> bounded additional retrieval or explicit degraded-coverage decision",
+        "INVALID_CALIBRATION": "Creation Controller -> A6 Human Writing Researcher",
+        "SOURCE_QUALITY_BLOCKED": "Creation Controller -> source/provenance owner",
+        "UNSUPPORTED_CURRENT_STATE_CLAIM": "Instruction Writer / Environment Builder"
+      },
+      "stale_on": [
+        "material work-package change",
+        "instruction-policy change",
+        "human-writing calibration policy change",
+        "dataset registry change",
+        "seed catalog change",
+        "domain profile change",
+        "human-writing stage overlay change"
+      ],
+      "success_transition": "INSTRUCTION_DRAFT"
+    },
+    "schema_version": "1.0",
+    "stage": {
+      "lifecycle": "creation",
+      "owner": "A6 Human Writing Researcher",
+      "role_class": "PRODUCER",
+      "role_id": "A6_HUMAN_WRITING_RESEARCHER",
+      "stage_id": "HUMAN_WRITING_RESEARCH"
+    }
+  },
+  "next": {
+    "action": "INVOKE_STAGE",
+    "optional_inputs": [
+      "APPROVED_EXTERNAL_DATASET_CACHE",
+      "CURRENT_STATE_CLAIMS"
+    ],
+    "owner": "A6 Human Writing Researcher",
+    "primary_role_id": "A6_HUMAN_WRITING_RESEARCHER",
+    "required_inputs": [
+      "APPROVED_WORK_PACKAGE",
+      "CURRENT_TIME_BUDGET",
+      "SOLVER_VISIBLE_REQUIREMENTS"
+    ],
+    "stage_id": "HUMAN_WRITING_RESEARCH"
+  },
+  "quality_mode_policy": {
+    "inline_creation_governor_role_ids": [
+      "A10_COMPLEXITY_GOVERNOR"
+    ],
+    "inline_quality_role_ids": [
+      "Q1_SPEC_GAP_REPAIRER",
+      "Q2_VERIFIER_COVERAGE_REPAIRER",
+      "Q3_SPEC_AMBIGUITY_REPAIRER",
+      "Q5_ORACLE_RUNTIME_REPAIR_SPECIALIST",
+      "Q7_TASK_FORMAT_ENFORCER"
+    ],
+    "inline_stage_sequences": {
+      "SPEC_ALIGNMENT": [
+        {
+          "result_field": "Q1_STATUS",
+          "role_id": "Q1_SPEC_GAP_REPAIRER",
+          "satisfied_values": [
+            "NO_GAP",
+            "PASS"
+          ]
+        },
+        {
+          "result_field": "Q2_STATUS",
+          "role_id": "Q2_VERIFIER_COVERAGE_REPAIRER",
+          "satisfied_values": [
+            "COVERED",
+            "PASS"
+          ]
+        },
+        {
+          "result_field": "Q3_STATUS",
+          "role_id": "Q3_SPEC_AMBIGUITY_REPAIRER",
+          "satisfied_values": [
+            "CLEAR",
+            "PASS"
+          ]
+        }
+      ]
+    },
+    "mandatory_quality_role_keys": [
+      "spec-test-contract",
+      "production-logic"
+    ],
+    "mandatory_same_chat_checkpoints": {
+      "Q1": "SPEC_ALIGNMENT.Q1_STATUS",
+      "Q2": "SPEC_ALIGNMENT.Q2_STATUS",
+      "Q3": "SPEC_ALIGNMENT.Q3_STATUS",
+      "Q5": "DETERMINISTIC_VALIDATION runtime/oracle checkpoint; invoke Q5 repair only on registered runtime/oracle failure",
+      "Q7": "FORMAT_GATE"
+    },
+    "optional_q8_role_keys": [
+      "difficulty-sim-gpt",
+      "difficulty-sim-claude"
+    ],
+    "policy_document": ".terminus/agents/QUALITY_EXECUTION_MODE.md",
+    "policy_version": "1.0",
+    "producer_role_classes": [
+      "FIXER",
+      "PRODUCER"
+    ],
+    "q4_q6_mode": "AUTOMATED",
+    "q8_mode": "OFF",
+    "source": ".terminus/agents/quality_execution_mode.json"
+  },
+  "state_snapshot_id": "state_c63557b6163e02202e9b2e21c9252a09616be8df304211b396ad9bdab297d74a"
+}
