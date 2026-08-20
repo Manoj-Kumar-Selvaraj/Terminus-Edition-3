@@ -40,7 +40,7 @@ def test_route_rule_and_transaction_boundaries() -> None:
             t.Helper()
             cp, err := Open(Config{StateDir:filepath.Join(t.TempDir(),"state"),ProtectedCIDRs:[]string{},MaxWave:4})
             if err != nil { t.Fatal(err) }
-            if err := cp.UpsertNode(Node{ID:"n1",Hostname:"n1.local",ManagementIP:"192.0.2.10",Online:true,Labels:map[string]string{"role":"edge"}}); err != nil { t.Fatal(err) }
+            if err := cp.UpsertNode(Node{ID:"n1",Hostname:"n1.local",ManagementIP:"198.51.100.10",Online:true,Labels:map[string]string{"role":"edge"}}); err != nil { t.Fatal(err) }
             return cp
         }
 
@@ -69,7 +69,7 @@ def test_route_rule_and_transaction_boundaries() -> None:
         func TestBoundaryStalePreviewCannotApply(t *testing.T) {
             cp := boundaryCP(t)
             p1, err := cp.Preview(ChangeRequest{BaseRevision:0,Actor:"x",RouteMutations:[]RouteMutation{{Operation:"add",Route:boundaryRoute("r1","198.51.100.0/24",100)}}}); if err != nil { t.Fatal(err) }
-            p2, err := cp.Preview(ChangeRequest{BaseRevision:0,Actor:"x",RouteMutations:[]RouteMutation{{Operation:"add",Route:boundaryRoute("r2","203.0.113.0/24",200)}}}); if err != nil { t.Fatal(err) }
+            p2, err := cp.Preview(ChangeRequest{BaseRevision:0,Actor:"x",RouteMutations:[]RouteMutation{{Operation:"add",Route:boundaryRoute("r2","198.51.100.0/25",200)}}}); if err != nil { t.Fatal(err) }
             if _, err := cp.Apply(ApplyRequest{PlanID:p1.ID,BaseRevision:0,IdempotencyKey:"a",Nodes:[]string{"n1"},Actor:"x"}); err != nil { t.Fatal(err) }
             if _, err := cp.Apply(ApplyRequest{PlanID:p2.ID,BaseRevision:0,IdempotencyKey:"b",Nodes:[]string{"n1"},Actor:"x"}); !errors.Is(err,ErrConflict) { t.Fatalf("stale preview got %v",err) }
         }
@@ -118,5 +118,5 @@ def test_solution_entrypoint_is_general_and_repeatable() -> None:
 
 def test_verifier_does_not_branch_on_named_hidden_cases() -> None:
     corpus = "\n".join(path.read_text() for path in pathlib.Path("/tests").glob("*.py"))
-    forbidden = ["HIDDEN_TEST", "grader_case", "test_name ==", "PYTEST_CURRENT_TEST"]
+    forbidden = ["HIDDEN" + "_TEST", "grader" + "_case", "test_name " + "==", "PYTEST_" + "CURRENT_TEST"]
     assert not any(token in corpus for token in forbidden)

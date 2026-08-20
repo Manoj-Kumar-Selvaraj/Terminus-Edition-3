@@ -29,7 +29,7 @@ def test_go_runtime_contracts() -> None:
             t.Helper()
             cp, err := Open(Config{StateDir: filepath.Join(t.TempDir(), "state"), ProtectedCIDRs: []string{"10.0.0.0/8"}, MaxWave: 10})
             if err != nil { t.Fatal(err) }
-            if err := cp.UpsertNode(Node{ID:"n1",Hostname:"n1.local",Site:"lab",Environment:"test",ManagementIP:"192.0.2.10",Online:true,Labels:map[string]string{"role":"edge"}}); err != nil { t.Fatal(err) }
+            if err := cp.UpsertNode(Node{ID:"n1",Hostname:"n1.local",Site:"lab",Environment:"test",ManagementIP:"198.51.100.10",Online:true,Labels:map[string]string{"role":"edge"}}); err != nil { t.Fatal(err) }
             return cp
         }
 
@@ -177,7 +177,7 @@ def test_go_runtime_contracts() -> None:
         func TestVerifierPersistenceRetainsIdempotency(t *testing.T) {
             dir := filepath.Join(t.TempDir(),"state")
             cp, err := Open(Config{StateDir:dir,ProtectedCIDRs:[]string{},MaxWave:10}); if err != nil { t.Fatal(err) }
-            if err := cp.UpsertNode(Node{ID:"n1",Hostname:"n1.local",ManagementIP:"192.0.2.10",Online:true}); err != nil { t.Fatal(err) }
+            if err := cp.UpsertNode(Node{ID:"n1",Hostname:"n1.local",ManagementIP:"198.51.100.10",Online:true}); err != nil { t.Fatal(err) }
             txn := verifierApplyRoute(t,cp,"r1","198.51.100.0/24","persist-key")
             reopened, err := Open(Config{StateDir:dir,ProtectedCIDRs:[]string{},MaxWave:10}); if err != nil { t.Fatal(err) }
             plan := Plan{ID:txn.PlanID}
