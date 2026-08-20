@@ -1,0 +1,212 @@
+{
+  "authority": {
+    "control_plane_commit": "7d8a6d8c62a62e6d24949344c7fd712e59bc8829",
+    "policy_versions": {},
+    "task_commit": "6c7909d5c0efd3e6e64443d6de3b227c1820b01b",
+    "task_id": "ec2-artifact-policy-enforcement"
+  },
+  "disposition": "ADVANCE",
+  "evidence_refs": [],
+  "invocation_id": "inv_c23422a65f3d3c1edfa6211a499606b1ec272223cc12dcce6541790e4691062f",
+  "invocation_snapshot": {
+    "acceptance_predicates": {},
+    "authority": {
+      "control_plane_commit": "7d8a6d8c62a62e6d24949344c7fd712e59bc8829",
+      "policy_versions": {},
+      "task_commit": "6c7909d5c0efd3e6e64443d6de3b227c1820b01b",
+      "task_id": "ec2-artifact-policy-enforcement"
+    },
+    "evidence": {
+      "authorized_evidence_classes": [
+        "CONTROL_PLANE_POLICY",
+        "PRIVATE_CREATION_DESIGN",
+        "SOLVER_VISIBLE_TASK"
+      ],
+      "evidence_required": [
+        "deterministic general repair/completion",
+        "preservation rationale",
+        "no hidden-test special casing"
+      ],
+      "excluded_evidence_classes": [
+        "CI_RUNTIME_EVIDENCE",
+        "CURRENT_REVIEW_PACKET",
+        "DURABLE_SESSION_STATE",
+        "FINAL_PACKAGE_EVIDENCE",
+        "MODEL_TRIAL_EVIDENCE",
+        "PRIOR_REVIEW_RESULTS",
+        "PUBLIC_REFERENCE",
+        "SOLUTION_ORACLE",
+        "VERIFIER_PRIVATE"
+      ],
+      "mandatory_exact_reads": [
+        ".terminus/agents/CREATION_PIPELINE.md",
+        ".terminus/agents/CREATOR_PROMPTS.md"
+      ],
+      "retrieval_mode": "EXACT_ONLY"
+    },
+    "ignored_input_count": 0,
+    "inputs": {
+      "optional": {},
+      "required": {
+        "APPROVED_OPERATIONAL_REQUIREMENTS": {
+          "PRESERVATION": [
+            "existing CLI and documented exit behavior",
+            "valid cache reuse",
+            "valid scoped exceptions",
+            "supplied fixtures",
+            "valid audit history",
+            "stateless verification compatibility"
+          ],
+          "REQUIRED_END_STATE": [
+            "Use one consistent admission policy across supported acquisition surfaces.",
+            "Require trusted source and immutable identity before exception handling.",
+            "Use current evidence bound to the active policy and scanner revisions.",
+            "Keep exceptions narrow and current.",
+            "Bind authorization permits to their exact request scope and validity window.",
+            "Make stateful permit use durable and single-use.",
+            "Commit every decision durably before reporting completion.",
+            "Recover valid history and keep repeated deterministic evaluation idempotent."
+          ]
+        },
+        "STARTER_ENVIRONMENT": {
+          "SOURCE": "current canonical ENVIRONMENT_BUILD result",
+          "SOURCE_RECORD_ID": "rec_e41d408d9cbe4b8749846cae1cf4f118a0e5b846d2696d004c732c806667a3fd"
+        },
+        "SYSTEM_ARCHITECTURE": {
+          "SOURCE": "current canonical SYSTEM_ARCHITECTURE result",
+          "SOURCE_RECORD_ID": "rec_1e4ddbadda6be750c85f5488125d3626b3406c2d494e7b75537e1251ed3bd7dd"
+        }
+      }
+    },
+    "invocation_id": "inv_c23422a65f3d3c1edfa6211a499606b1ec272223cc12dcce6541790e4691062f",
+    "learning": {
+      "context_hash": "sha256:bb84a513aa2b6e4374d691759c4a6edf94169f479f4611e9091643b9f279ccfc",
+      "lessons": [],
+      "mode": "GENERALIZED_LESSONS_PLUS_OWNED_REMEDIATIONS",
+      "raw_feedback_exposed": false,
+      "raw_historical_findings_exposed": false,
+      "registry_heads": {
+        "feedback": "GENESIS",
+        "findings": "GENESIS",
+        "lessons": "GENESIS",
+        "patterns": "GENESIS",
+        "remediations": "GENESIS"
+      },
+      "remediations": []
+    },
+    "missing_required_inputs": [],
+    "output_contract": {
+      "allowed_status_values": [
+        "IMPLEMENTED",
+        "CONTRACT_GAP",
+        "BLOCKED"
+      ],
+      "deterministic_validators": [],
+      "optional_fields": [],
+      "persisted_artifacts": [
+        "<task>/solution/solve.sh",
+        "<task>/solution/"
+      ],
+      "required_fields": [
+        "RESTORED_INVARIANTS",
+        "FILES_CHANGED",
+        "RESTART_IDEMPOTENCY_BEHAVIOR",
+        "DETERMINISM_NOTES",
+        "PRESERVED_BEHAVIOR",
+        "RISKS_FOR_INDEPENDENT_VERIFIER"
+      ],
+      "semantic_reviewers": [
+        "Verifier Engineer"
+      ]
+    },
+    "readiness": "READY",
+    "retrieval": {
+      "query": null,
+      "retrieved_chars": 0,
+      "retrieved_context": [],
+      "status": "NOT_REQUESTED"
+    },
+    "routing": {
+      "failure_routes": {
+        "CONTRACT_GAP": "Creation Controller -> appropriate contract owner",
+        "RUNTIME_FAILURE": "Q5 Oracle & Runtime Repair Specialist"
+      },
+      "stale_on": [
+        "operational requirement change",
+        "environment implementation change",
+        "solver-visible contract change"
+      ],
+      "success_transition": "VERIFIER_BUILD"
+    },
+    "schema_version": "1.0",
+    "stage": {
+      "lifecycle": "creation",
+      "owner": "A4 Reference Solution Author",
+      "role_class": "PRODUCER",
+      "role_id": "A4_REFERENCE_SOLUTION_AUTHOR",
+      "stage_id": "REFERENCE_SOLUTION"
+    }
+  },
+  "outputs": {
+    "DETERMINISM_NOTES": "The repair is input/state driven and does not branch on test names, fixture identifiers, reward values or hidden verifier details. The solve script installs fixed source repairs, formats Go sources and builds artifactguard deterministically.",
+    "FILES_CHANGED": [
+      "ec2-artifact-policy-enforcement/solution/solve.sh",
+      "ec2-artifact-policy-enforcement/solution/files/platform/engine.go",
+      "ec2-artifact-policy-enforcement/solution/files/platform/evidence_runtime.go",
+      "ec2-artifact-policy-enforcement/solution/files/platform/journal_runtime.go",
+      "ec2-artifact-policy-enforcement/solution/files/platform/audit.go",
+      "ec2-artifact-policy-enforcement/solution/files/platform/cache.go",
+      "ec2-artifact-policy-enforcement/solution/files/platform/exceptions.go",
+      "ec2-artifact-policy-enforcement/solution/files/platform/permit.go",
+      "ec2-artifact-policy-enforcement/solution/files/platform/replay.go",
+      "ec2-artifact-policy-enforcement/solution/files/platform/state.go"
+    ],
+    "PRESERVED_BEHAVIOR": "The evaluate and verify-permit command surfaces, documented exit-code conventions, supplied policy/scanner/exception inputs, healthy cache reuse, valid scoped exceptions, existing valid audit history and stateless permit-verification mode remain available.",
+    "RESTART_IDEMPOTENCY_BEHAVIOR": "The solution is deterministic and rerunnable: applying it repeatedly converges to the same repaired source tree and build. Durable decision and stateful permit-consumption records remain authoritative across restart; derived cache/projection state is validated or reconstructed without duplicating already committed decisions.",
+    "RESTORED_INVARIANTS": [
+      "All supported acquisition managers pass through shared source and immutable-identity prerequisites.",
+      "Reusable vulnerability evidence is accepted only for the exact artifact and active policy/scanner revisions within its freshness window; unavailable or unusable evidence fails closed.",
+      "Exceptions are evaluated only after prerequisites and are limited to current exact-scope vulnerability-policy waivers.",
+      "Authorization permits use a secret-keyed canonical scope covering request, instance, artifact, policy and expiry.",
+      "Stateful permit verification performs durable single-use consumption under one synchronization boundary while stateless verification remains compatible.",
+      "Every ALLOW and DENY is committed to the authoritative decision journal before derived projection publication and successful completion.",
+      "Recovery preserves valid committed history, distinguishes trailing incompleteness from durable corruption, rebuilds derived state and keeps repeated deterministic decisions idempotent."
+    ],
+    "RISKS_FOR_INDEPENDENT_VERIFIER": [
+      "exercise every acquisition surface through the shared prerequisite boundary",
+      "check cache reuse across digest, policy revision, scanner revision and freshness boundaries",
+      "check exact exception scope and prerequisite ordering",
+      "check authorization scope, expiry, restart persistence and simultaneous stateful consumption",
+      "check ALLOW/DENY durability, journal-before-projection ordering, repeated evaluation and restart recovery with trailing incomplete versus durable corrupt state"
+    ]
+  },
+  "record_id": "rec_dc97fd5679f41e2e8f768f03fad6421e7446ea51da26d4328fcef6f737bde832",
+  "role_id": "A4_REFERENCE_SOLUTION_AUTHOR",
+  "schema_version": "1.0",
+  "stage_id": "REFERENCE_SOLUTION",
+  "status": "IMPLEMENTED",
+  "task_lineage": {
+    "input_task_commit": "6c7909d5c0efd3e6e64443d6de3b227c1820b01b",
+    "output_task_commit": "6c7909d5c0efd3e6e64443d6de3b227c1820b01b",
+    "task_changed": false
+  },
+  "transition": {
+    "action": "ADVANCE",
+    "requires_state_validation": false,
+    "target": "VERIFIER_BUILD",
+    "target_kind": "STAGE"
+  },
+  "validation": {
+    "acceptance_predicates_satisfied": true,
+    "evidence_binding_satisfied": true,
+    "evidence_refs_count": 0,
+    "invocation_identity_valid": true,
+    "invocation_policy_valid": true,
+    "output_keys_valid": true,
+    "required_outputs_satisfied": true,
+    "retrieval_context_authorized": true,
+    "status_legal": true,
+    "task_commit_change_authorized": true,
+    "task_lineage_valid": true
+  }
+}

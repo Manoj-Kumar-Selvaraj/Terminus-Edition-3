@@ -1,0 +1,288 @@
+{
+  "authority": {
+    "control_plane_commit": "7d8a6d8c62a62e6d24949344c7fd712e59bc8829",
+    "policy_versions": {},
+    "task_commit": "03317f8218069b9e0b5d073bf87ecf7a0ae8e4a1",
+    "task_id": "stonevault-crash-safe-storage"
+  },
+  "disposition": "ADVANCE",
+  "evidence_refs": [
+    {
+      "content_hash": "sha256:38d1e6b49a6cd52e4cefce949ec274c9b07daf9b5ba2735bb2a094820f7c78de",
+      "kind": "COMMIT",
+      "ref": "commit:03317f8218069b9e0b5d073bf87ecf7a0ae8e4a1"
+    }
+  ],
+  "invocation_id": "inv_29dbdffbbf5360bbb771cd8739ed6a2828085e43b3fb112e17a21c0d9487c101",
+  "invocation_snapshot": {
+    "acceptance_predicates": {},
+    "authority": {
+      "control_plane_commit": "7d8a6d8c62a62e6d24949344c7fd712e59bc8829",
+      "policy_versions": {},
+      "task_commit": "03317f8218069b9e0b5d073bf87ecf7a0ae8e4a1",
+      "task_id": "stonevault-crash-safe-storage"
+    },
+    "evidence": {
+      "authorized_evidence_classes": [
+        "CI_RUNTIME_EVIDENCE",
+        "CONTROL_PLANE_POLICY",
+        "PRIVATE_CREATION_DESIGN",
+        "SOLVER_VISIBLE_TASK",
+        "VERIFIER_PRIVATE"
+      ],
+      "evidence_required": [
+        "removal/reachability analysis",
+        "scale authenticity",
+        "test organicity",
+        "behavioral breadth"
+      ],
+      "excluded_evidence_classes": [
+        "CURRENT_REVIEW_PACKET",
+        "DURABLE_SESSION_STATE",
+        "FINAL_PACKAGE_EVIDENCE",
+        "MODEL_TRIAL_EVIDENCE",
+        "PRIOR_REVIEW_RESULTS",
+        "PUBLIC_REFERENCE",
+        "SOLUTION_ORACLE"
+      ],
+      "mandatory_exact_reads": [
+        ".terminus/agents/CREATION_PIPELINE.md",
+        ".terminus/agents/PRODUCTION_AUTHENTICITY.md",
+        ".terminus/agents/CREATOR_PROMPTS.md"
+      ],
+      "retrieval_mode": "EXACT_ONLY"
+    },
+    "ignored_input_count": 0,
+    "inputs": {
+      "optional": {},
+      "required": {
+        "DEFECT_GRAPH": {
+          "behavioral_surfaces": [
+            "locking/configuration",
+            "MVCC/scan overlay",
+            "conflict arbitration",
+            "WAL recovery",
+            "checkpoint/snapshot integrity",
+            "operator health",
+            "binary protocol/native boundary"
+          ],
+          "connected_manifestations": 25,
+          "defect_manifestations": 25,
+          "profile": "large_system_strict",
+          "root_cause_clusters": 8
+        },
+        "ENVIRONMENT_TREE": {
+          "components": [
+            "Rust config/protocol/session",
+            "C++ engine",
+            "WAL",
+            "snapshot",
+            "writer lock",
+            "C ABI boundary"
+          ],
+          "entrypoints": [
+            "/app/stonevault/bin/stonevault"
+          ],
+          "runtime_artifact": "/app/stonevault",
+          "task_root": "stonevault-crash-safe-storage"
+        },
+        "INSTRUCTION": "Complete the reliability hardening of the inherited native StoneVault embedded database while preserving its documented public ABI, protocol and disk formats.",
+        "PRODUCTION_CHARACTERISTIC_EVIDENCE": [
+          "persistent binary WAL/snapshot",
+          "process-level writer fencing",
+          "transaction-lifetime MVCC",
+          "first-committer-wins conflicts",
+          "crash/restart recovery",
+          "checkpoint maintenance",
+          "operator health",
+          "cross-language native ABI"
+        ],
+        "RUNTIME_REACHABILITY_EVIDENCE": [
+          "single public binary reaches Rust ingress/session and C++ storage through stable C ABI",
+          "transactions exercise MVCC overlays/conflicts and WAL sequencing",
+          "open/restart exercises snapshot/WAL recovery",
+          "checkpoint and STATS/HEALTH exercise maintenance/operator surfaces"
+        ],
+        "SUBSTANTIVE_LOC_REPORT": {
+          "reachable_production_loc": "validator-confirmed solver-reachable native implementation",
+          "runtime_entrypoint": "/app/stonevault/bin/stonevault",
+          "substantive_loc": "validator-confirmed large_system_strict native multi-module implementation"
+        },
+        "TEST_CLASSIFICATION_MAP": {
+          "F2P_COUNT": 30,
+          "P2P_COUNT": 33,
+          "classification": "30 F2P + 33 P2P",
+          "coverage": {
+            "edge": [
+              "inclusive limits",
+              "high-bit byte order",
+              "WAL/snapshot framing",
+              "ABI/wire shapes"
+            ],
+            "negative": [
+              "second writer",
+              "stale conflict",
+              "complete corruption",
+              "malformed protocol"
+            ],
+            "normal": [
+              "CRUD",
+              "snapshot reads",
+              "prefix scans",
+              "checkpoint/restart"
+            ],
+            "recovery": [
+              "killed transaction",
+              "torn WAL",
+              "snapshot/checkpoint failure"
+            ]
+          }
+        }
+      }
+    },
+    "invocation_id": "inv_29dbdffbbf5360bbb771cd8739ed6a2828085e43b3fb112e17a21c0d9487c101",
+    "learning": {
+      "context_hash": "sha256:bb84a513aa2b6e4374d691759c4a6edf94169f479f4611e9091643b9f279ccfc",
+      "lessons": [],
+      "mode": "GENERALIZED_LESSONS_PLUS_OWNED_REMEDIATIONS",
+      "raw_feedback_exposed": false,
+      "raw_historical_findings_exposed": false,
+      "registry_heads": {
+        "feedback": "GENESIS",
+        "findings": "GENESIS",
+        "lessons": "GENESIS",
+        "patterns": "GENESIS",
+        "remediations": "GENESIS"
+      },
+      "remediations": []
+    },
+    "missing_required_inputs": [],
+    "output_contract": {
+      "allowed_status_values": [
+        "PASS",
+        "REVISE",
+        "SCENARIO_TOO_SMALL"
+      ],
+      "deterministic_validators": [
+        ".terminus/validate_task_complexity.py <task>"
+      ],
+      "optional_fields": [
+        "MEANINGFUL_RESOURCE_COUNT"
+      ],
+      "persisted_artifacts": [],
+      "required_fields": [
+        "SUBSTANTIVE_LOC",
+        "REACHABLE_PRODUCTION_LOC",
+        "PRODUCTION_CHARACTERISTICS",
+        "DEFECT_MANIFESTATIONS",
+        "CONNECTED_MANIFESTATIONS",
+        "ROOT_CAUSE_CLUSTERS",
+        "F2P_COUNT",
+        "P2P_COUNT",
+        "F2P_ORGANICITY",
+        "EDGE_BOUNDARY_COVERAGE",
+        "NEGATIVE_FAILURE_COVERAGE",
+        "PADDING_RISK",
+        "TEST_DUPLICATION_RISK",
+        "INSTRUCTION_CHECKLIST_RISK",
+        "REQUIRED_CHANGES"
+      ],
+      "semantic_reviewers": []
+    },
+    "readiness": "READY",
+    "retrieval": {
+      "query": null,
+      "retrieved_chars": 0,
+      "retrieved_context": [],
+      "status": "NOT_REQUESTED"
+    },
+    "routing": {
+      "failure_routes": {
+        "REVISE": "smallest responsible producer",
+        "SCENARIO_TOO_SMALL": "Creation Controller -> WORK_PACKAGE_RESEARCH"
+      },
+      "stale_on": [
+        "solver-visible environment change",
+        "defect-graph change",
+        "verifier/test-map change",
+        "instruction change affecting complexity claims"
+      ],
+      "success_transition": "RUNTIME_AUTHENTICITY"
+    },
+    "schema_version": "1.0",
+    "stage": {
+      "lifecycle": "creation",
+      "owner": "A10 Complexity Governor",
+      "role_class": "REVIEWER",
+      "role_id": "A10_COMPLEXITY_GOVERNOR",
+      "stage_id": "COMPLEXITY_GATE"
+    }
+  },
+  "outputs": {
+    "CONNECTED_MANIFESTATIONS": 25,
+    "DEFECT_MANIFESTATIONS": 25,
+    "EDGE_BOUNDARY_COVERAGE": [
+      "inclusive sizes",
+      "unsigned byte ordering",
+      "WAL framing/torn-tail boundaries",
+      "snapshot structural/CRC boundaries",
+      "ABI/wire compatibility"
+    ],
+    "F2P_COUNT": 30,
+    "F2P_ORGANICITY": "PASS: F2P cases span distinct state, concurrency, recovery, maintenance and interface behaviors rather than repeated assertions.",
+    "INSTRUCTION_CHECKLIST_RISK": "LOW: instruction states public engineering invariants without hidden verifier names or private defect IDs.",
+    "NEGATIVE_FAILURE_COVERAGE": [
+      "writer exclusion",
+      "stale conflict termination",
+      "complete WAL/snapshot corruption",
+      "operator invariant failure",
+      "malformed/unknown protocol requests"
+    ],
+    "P2P_COUNT": 33,
+    "PADDING_RISK": "LOW: solver-visible native modules correspond to distinct runtime responsibilities and are reachable from the actual product binary.",
+    "PRODUCTION_CHARACTERISTICS": [
+      "persistent binary WAL/snapshot",
+      "process writer fencing",
+      "MVCC transactions and overlays",
+      "conflict arbitration",
+      "crash/restart recovery",
+      "atomic checkpoint publication",
+      "operator STATS/HEALTH",
+      "stable native ABI/protocol compatibility"
+    ],
+    "REACHABLE_PRODUCTION_LOC": "PASS: production logic is reachable through /app/stonevault/bin/stonevault across Rust ingress/session and C++ storage paths.",
+    "REQUIRED_CHANGES": [],
+    "ROOT_CAUSE_CLUSTERS": 8,
+    "SUBSTANTIVE_LOC": "PASS: current deterministic complexity validator confirms the native multi-module StoneVault environment meets its configured profile threshold.",
+    "TEST_DUPLICATION_RISK": "LOW: coverage spans independent locking, configuration, MVCC, conflict, recovery, checkpoint, operator and protocol contracts."
+  },
+  "record_id": "rec_134bc931a2186053130d7d7a86101c67ae26f31a8c117f1928c1b9cedc8c8cdd",
+  "role_id": "A10_COMPLEXITY_GOVERNOR",
+  "schema_version": "1.0",
+  "stage_id": "COMPLEXITY_GATE",
+  "status": "PASS",
+  "task_lineage": {
+    "input_task_commit": "03317f8218069b9e0b5d073bf87ecf7a0ae8e4a1",
+    "output_task_commit": "03317f8218069b9e0b5d073bf87ecf7a0ae8e4a1",
+    "task_changed": false
+  },
+  "transition": {
+    "action": "ADVANCE",
+    "requires_state_validation": false,
+    "target": "RUNTIME_AUTHENTICITY",
+    "target_kind": "STAGE"
+  },
+  "validation": {
+    "acceptance_predicates_satisfied": true,
+    "evidence_binding_satisfied": true,
+    "evidence_refs_count": 1,
+    "invocation_identity_valid": true,
+    "invocation_policy_valid": true,
+    "output_keys_valid": true,
+    "required_outputs_satisfied": true,
+    "retrieval_context_authorized": true,
+    "status_legal": true,
+    "task_commit_change_authorized": true,
+    "task_lineage_valid": true
+  }
+}
