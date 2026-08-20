@@ -1,0 +1,69 @@
+{
+  "evidence_refs": [],
+  "invocation_id": "inv_813bcad8c7ac571e85069285aa654874d6b9ec84efe9812077e253083de7dc03",
+  "output_task_commit": "22d2e9e09f4deb58029559fe9a0863c2e032f25c",
+  "outputs": {
+    "EDGE_BOUNDARY_COVERAGE": "PASS: IPv6 aliases, multipath ordering, metric replacement, distinct tables, out-of-selector canary and wave limits are independently represented.",
+    "F2P_COUNT": 25,
+    "NEGATIVE_FAILURE_COVERAGE": "PASS: duplicate priorities, missing tables, unknown nodes, stale previews, idempotency rebinding, offline apply and stale rollback are covered.",
+    "ORACLE_EMPIRICAL_STATUS": "PENDING_DETERMINISTIC_VALIDATION",
+    "ORGANIC_COUNT_JUSTIFICATION": "The 25 F2P behavioral cases arise from eight coupled defect clusters across routing identity, policy dependencies, transaction fencing, recovery, drift, rollout, Ansible and dashboard concurrency; they are not parameter-split aliases.",
+    "P2P_COUNT": 4,
+    "REQUIREMENT_TEST_MATRIX": {
+      "REQ_ANSIBLE": [
+        "host-specific protected route precedence"
+      ],
+      "REQ_ATOMIC_RECOVERY": [
+        "offline apply preservation",
+        "monotonic rollback",
+        "stale rollback rejection",
+        "incomplete transaction restart",
+        "runtime contracts"
+      ],
+      "REQ_DASHBOARD": [
+        "preview revision CAS binding"
+      ],
+      "REQ_DRIFT_OWNERSHIP": [
+        "normalized ownership",
+        "stale observed rejection",
+        "unowned unexpected route preservation"
+      ],
+      "REQ_INTERFACE": [
+        "public API surface",
+        "runtime build",
+        "general repeatable solution entrypoint"
+      ],
+      "REQ_POLICY_RULES": [
+        "duplicate priority rejection",
+        "missing-table rejection",
+        "unknown-node rejection"
+      ],
+      "REQ_ROLLOUT": [
+        "stale heartbeat",
+        "already-current skip",
+        "canary selector",
+        "wave limit"
+      ],
+      "REQ_ROUTE_IDENTITY": [
+        "IPv6 aliases",
+        "multipath ordering",
+        "metric replacement",
+        "table-distinct identities"
+      ],
+      "REQ_TRANSACTION_FENCING": [
+        "stale preview rejection",
+        "idempotency replay",
+        "idempotency key rebinding rejection",
+        "route/rule/transaction boundaries"
+      ],
+      "REQ_VERIFIER_INDEPENDENCE": [
+        "no hidden-case branching"
+      ]
+    },
+    "SOLVER_LOGIC_REIMPLEMENTATION_RISK": "LOW_TO_MODERATE: tests use temporary Go behavioral probes and public/configuration surfaces rather than reproducing repair.py logic.",
+    "STARTER_EMPIRICAL_STATUS": "PENDING_DETERMINISTIC_VALIDATION",
+    "TEST_INDEPENDENCE": "PASS: verifier assertions are requirement-driven through public/runtime behavior and do not branch on solution-private secrets or hidden test names."
+  },
+  "schema_version": "1.0",
+  "status": "VERIFIER_READY"
+}
