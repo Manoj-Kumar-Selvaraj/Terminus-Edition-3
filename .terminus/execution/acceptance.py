@@ -53,7 +53,7 @@ class StageAcceptancePredicates:
             observed = outputs if op == "q4_satisfied" else self._resolve(outputs, path)
             expected = predicate.get("value")
             if op == "q4_satisfied":
-                passed = self._q4_satisfied(outputs)
+                passed = self._q4_satisfied(outputs, self.root)
                 expected_display = (
                     "DIRECT_PASS, ADJUDICATED_CLOSURE_PASS, or "
                     "AUTHENTICATED_HUMAN_RISK_ACCEPTANCE with coherent evidence values"
@@ -182,27 +182,38 @@ class StageAcceptancePredicates:
             and value.get("missing_evidence") in (None, [])
         )
 
-    def _q4_satisfied(self, outputs: Mapping[str, Any]) -> bool:
+    @staticmethod
+    def _q4_satisfied(
+        outputs: Mapping[str, Any], root: Path | None = None
+    ) -> bool:
         mode = outputs.get("Q4_SATISFACTION")
         q4 = outputs.get("Q4_RESULT")
         if mode == "DIRECT_PASS":
-            return self._review_ready(q4, verdict="PASS") and outputs.get("Q4_CLOSURE_RESULT") in (None, {}, "")
+            return StageAcceptancePredicates._review_ready(
+                q4, verdict="PASS"
+            ) and outputs.get("Q4_CLOSURE_RESULT") in (None, {}, "")
         if mode == "ADJUDICATED_CLOSURE_PASS":
             closure = outputs.get("Q4_CLOSURE_RESULT")
             return (
-                self._review_ready(q4, verdict="REVISE")
-                and self._review_ready(closure, verdict="PASS", role="Q4 Closure Adjudicator")
+                StageAcceptancePredicates._review_ready(q4, verdict="REVISE")
+                and StageAcceptancePredicates._review_ready(
+                    closure, verdict="PASS", role="Q4 Closure Adjudicator"
+                )
                 and isinstance(closure, ABCMapping)
                 and isinstance(closure.get("role_output"), ABCMapping)
                 and closure["role_output"].get("CLOSURE_OUTCOME") == "PASS"
             )
         if mode == SATISFACTION_MODE:
             envelope = outputs.get("Q4_CLOSURE_RESULT")
-            if not isinstance(q4, ABCMapping) or not isinstance(envelope, ABCMapping):
+            if (
+                root is None
+                or not isinstance(q4, ABCMapping)
+                or not isinstance(envelope, ABCMapping)
+            ):
                 return False
             try:
                 validate_human_risk_acceptance(
-                    self.root,
+                    root,
                     envelope=envelope,
                     q4_result=q4,
                 )
