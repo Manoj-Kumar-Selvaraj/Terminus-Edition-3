@@ -1,0 +1,38 @@
+{
+  "schema_version": "1.0",
+  "mode": "RECORD",
+  "task_id": "stonevault-crash-safe-storage",
+  "task_commit": "03317f8218069b9e0b5d073bf87ecf7a0ae8e4a1",
+  "control_plane_commit": "df7ef7569e2947b9f0bf7cf89ed4dec6c2a5a1fe",
+  "expected_repository_head": "778c0fd91cfb978da46170900b7598c947d78640",
+  "stage_id": "DOCUMENTATION_DRAFT",
+  "inputs": {
+    "APPROVED_WORK_PACKAGE": {
+      "ENGINEERING_OBJECTIVE": "Complete the inherited native StoneVault embedded database as a crash-safe transactional store while preserving its public ABI, command protocol, disk formats and existing data compatibility.",
+      "REQUIRED_END_STATE": "Exclusive writer fencing, stable MVCC snapshots and overlays, FCW conflicts, durable contiguous commits, fail-closed WAL/snapshot recovery, atomic checkpoint publication, accurate operator state, bounded binary protocol handling and stable native compatibility."
+    },
+    "IMPLEMENTATION_EVIDENCE": {
+      "REFERENCE_SOLUTION_STATUS": "IMPLEMENTED",
+      "RESTORED_INVARIANTS": ["exclusive writer ownership", "transaction snapshot visibility with local overlays", "atomic first-committer-wins rejection", "durable contiguous commit sequencing", "fail-closed complete-record corruption handling", "checkpoint quiescence/publication/WAL reclamation", "snapshot integrity", "accurate health/stats", "configuration precedence and inclusive protocol bounds"],
+      "PRESERVED_BEHAVIOR": "Stable C ABI, ASCII response shapes, documented WAL layout, documented snapshot layout and binary key/value representation remain preserved."
+    },
+    "VERIFICATION_EVIDENCE": {
+      "VERIFIER_STATUS": "VERIFIER_READY",
+      "F2P_COUNT": 30,
+      "P2P_COUNT": 33,
+      "SPEC_ALIGNMENT": {"Q1_STATUS": "NO_GAP", "Q2_STATUS": "COVERED", "Q3_STATUS": "CLEAR"},
+      "EMPIRICAL_STATUS": "Earlier deterministic validation passed Oracle=1 and NOP=0 for the current StoneVault task content; runtime/oracle validation will be re-earned at the dedicated current-control-plane checkpoint.",
+      "RESIDUAL_RISK": "Committed DELETE durability across restart remains explicitly backlogged as issue #66 and is not represented as verifier coverage; historical Q4 remains REVISE."
+    }
+  },
+  "result": {
+    "status": "DOCUMENTATION_READY",
+    "outputs": {
+      "README_PATH": "stonevault-crash-safe-storage/README.md",
+      "DIFFICULTY_EXPLANATION": "StoneVault couples a Rust command/session boundary to a C++20 persistent storage core and requires non-local reasoning across process writer fencing, transaction-lifetime MVCC, conflict arbitration, binary WAL/snapshot recovery, checkpoint publication, operator state and compatibility across crashes and restarts.",
+      "SOLUTION_EXPLANATION": "The reference completion restores writer exclusion, stable snapshot visibility with transaction-local overlays, first-committer-wins conflict handling, durable contiguous sequencing, corruption-aware recovery, atomic checkpoint/snapshot publication, correct health/stats and protocol-boundary behavior while preserving the documented native ABI and on-disk formats.",
+      "VERIFICATION_EXPLANATION": "The verifier contains 30 change-required probes and 33 preservation probes spanning locking, configuration, MVCC/scan overlay, conflicts, WAL recovery, checkpoint/snapshot integrity, operator state, protocol bounds and native compatibility. The known committed-DELETE restart coverage gap remains explicitly outside claimed coverage and tracked under backlog #66; final runtime/oracle success is owned by DETERMINISTIC_VALIDATION."
+    },
+    "evidence_refs": [{"kind": "COMMIT", "ref": "commit:03317f8218069b9e0b5d073bf87ecf7a0ae8e4a1"}]
+  }
+}
