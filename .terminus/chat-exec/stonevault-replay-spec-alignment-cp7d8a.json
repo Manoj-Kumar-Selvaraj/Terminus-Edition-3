@@ -1,0 +1,54 @@
+{
+  "schema_version": "1.0",
+  "mode": "RECORD",
+  "task_id": "stonevault-crash-safe-storage",
+  "task_commit": "03317f8218069b9e0b5d073bf87ecf7a0ae8e4a1",
+  "control_plane_commit": "7d8a6d8c62a62e6d24949344c7fd712e59bc8829",
+  "expected_repository_head": "a8f124e267ce0adfd1639de08969e495562c6a2e",
+  "stage_id": "SPEC_ALIGNMENT",
+  "inputs": {
+    "CURRENT_INSTRUCTION": {
+      "path": "stonevault-crash-safe-storage/instruction.md",
+      "shape": "one reliability-hardening orientation paragraph plus 16 concise observable invariant bullets",
+      "material_requirements": [
+        "exclusive writer ownership and clean release",
+        "data-directory precedence",
+        "transaction-lifetime MVCC snapshots with own mutation overlay",
+        "raw-byte prefix filtering and unsigned bytewise ordering",
+        "first-committer-wins atomic conflict rejection and sequence semantics",
+        "atomic durable commits with contiguous sequences",
+        "rollback and killed-open-transaction invisibility after restart",
+        "WAL recovery retaining valid commits, tolerating only torn final tails and rejecting complete corruption/history gaps",
+        "checkpoint quiescence, atomic durable snapshot publication and WAL reclamation",
+        "snapshot corruption rejection and abandoned snapshot.tmp cleanup",
+        "accurate STATS and HEALTH",
+        "binary hex representation and inclusive size limits",
+        "malformed command and unknown transaction resilience",
+        "C ABI, response, WAL, snapshot and existing-data compatibility"
+      ]
+    },
+    "CURRENT_VERIFIER": {
+      "status": "VERIFIER_READY",
+      "F2P_COUNT": 30,
+      "P2P_COUNT": 33,
+      "coverage_families": ["locking", "configuration precedence", "MVCC", "scan overlay", "conflicts", "WAL recovery", "checkpoint/snapshot integrity", "operator state", "binary protocol", "native compatibility"],
+      "accepted_residual_risk": "F01 committed DELETE restart durability remains explicitly unclaimed as verifier coverage and is separately tracked in backlog #66 under authenticated human risk acceptance"
+    },
+    "REFERENCED_SOLVER_VISIBLE_CONTRACTS": ["/app/stonevault/docs/storage-format.md"],
+    "PRIVATE_TEST_MAP": {
+      "path": ".terminus/designs/stonevault-crash-safe-storage-test-map.json",
+      "independence": "isolated runtime directories, independently encoded WAL/snapshot fixtures and compiler-validated ABI/C++20 preservation",
+      "residual_backlog": ["F01 committed DELETE durability across restart; issue #66"]
+    }
+  },
+  "result": {
+    "status": "ALIGNED",
+    "outputs": {
+      "Q1_STATUS": "NO_GAP",
+      "Q2_STATUS": "COVERED",
+      "Q3_STATUS": "CLEAR",
+      "REPAIR_EVIDENCE": "No new producer repair is required for progression. Q1 finds no verifier-to-spec requirement leakage and Q3 finds no grading-relevant ambiguity. Q2 confirms the declared verifier map covers the current grading contract except the already disclosed F01 committed-DELETE restart probe, which is not falsely represented as covered and is separately bound to authenticated human residual-risk acceptance/backlog #66. Historical Q4 remains REVISE and is not rewritten by this stage."
+    },
+    "evidence_refs": [{"kind": "COMMIT", "ref": "commit:03317f8218069b9e0b5d073bf87ecf7a0ae8e4a1"}]
+  }
+}
