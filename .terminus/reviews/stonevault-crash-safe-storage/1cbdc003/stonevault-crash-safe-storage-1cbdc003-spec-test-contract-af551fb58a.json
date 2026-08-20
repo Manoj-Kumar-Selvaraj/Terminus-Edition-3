@@ -1,0 +1,143 @@
+{
+  "schema_version": "3.0",
+  "role": "Spec-Test Contract Reviewer",
+  "review_id": "stonevault-crash-safe-storage-1cbdc003-spec-test-contract-af551fb58a",
+  "task": "stonevault-crash-safe-storage",
+  "task_commit": "1cbdc0030a8a6483db4c91865aa60b8ef127c9c6",
+  "control_plane_commit": "5678a234fa57a29bef76d422cea20547a32810a5",
+  "protocol_policy_version": "2.2",
+  "prompt_policy_version": "2.2",
+  "role_policy_version": "1.1",
+  "role_contract_hash": "9607c7323be7db66eb7b520db4498f29efc686073e6f3d565c8e2c99ad26a34c",
+  "context_packet": ".terminus/reviews/stonevault-crash-safe-storage/1cbdc003/stonevault-crash-safe-storage-1cbdc003-spec-test-contract-af551fb58a.packet.json",
+  "verdict": "REVISE",
+  "confidence": "HIGH",
+  "evidence_status": "SUFFICIENT",
+  "summary": "Bidirectional alignment is nearly complete and solver-visible contracts are well-formed, but recovery of committed DELETE mutations across process restart is a material instruction requirement with no meaningful behavioral test. A solver could omit durable DELETE WAL replay and still pass all 63 probes.",
+  "evidence": [
+    {
+      "type": "file",
+      "ref": "stonevault-crash-safe-storage/instruction.md",
+      "observation": "Sixteen concise bullets plus one short paragraph state writer fencing, precedence, snapshot/scan semantics, conflict rules, commit durability, rollback/kill invisibility, recovery integrity, checkpoint lifecycle, snapshot open rules, STATS/HEALTH, hex/binary limits, protocol resilience, and compatibility preservation."
+    },
+    {
+      "type": "file",
+      "ref": "stonevault-crash-safe-storage/environment/stonevault/docs/storage-format.md",
+      "observation": "Delegated contract documents ASCII wire shapes, WAL framing and payload types (PUT/DELETE/COMMIT), snapshot layout, checkpoint publication, HEALTH invariant checks, and stderr behavior for open failures."
+    },
+    {
+      "type": "test",
+      "ref": "stonevault-crash-safe-storage/tests/test_outputs.py",
+      "observation": "35 behavioral probes cover fencing, snapshots, scans, conflicts, torn-tail WAL repair, WAL corruption classes, checkpoint, snapshot integrity, precedence, limits, STATS/HEALTH, hex, and protocol resilience; restart cases exercise PUT commits and torn WAL repair but never a committed DELETE."
+    },
+    {
+      "type": "test",
+      "ref": "stonevault-crash-safe-storage/tests/test_q4_contract.py",
+      "observation": "19 contract probes add default data-dir ownership, local delete visibility, conflict termination, durable COMMIT ack across kill, multi-commit WAL replay (PUT-only), independent PUT+COMMIT WAL fixture, WAL/snapshot corruption classes, checkpoint interruption recovery, exact READY/HEALTH shapes, C++20/ABI compile checks, and cross-command limit/error consistency."
+    },
+    {
+      "type": "test",
+      "ref": "stonevault-crash-safe-storage/tests/test_preservation.py",
+      "observation": "9 preservation probes cover STONEVAULT_DATA selection, scan-prefix limits, binary round-trip restart (PUT-only), committed hex canonicalization, and additional snapshot corruption classes."
+    },
+    {
+      "type": "rule",
+      "ref": ".terminus/agents/QUALITY_AGENT_PROMPTS.md",
+      "observation": "Q4 requires exhaustive forward/reverse matrices, delegated-contract walk, F2P/P2P boundary inspection, ambiguity scan, second omission sweep, and REVISE on any material untested requirement or phantom test contract."
+    }
+  ],
+  "findings": [
+    {
+      "id": "F01",
+      "severity": "HIGH",
+      "status": "OBSERVED",
+      "criterion": "Every material requirement has meaningful behavioral test coverage (forward matrix completeness)",
+      "evidence_refs": [
+        "stonevault-crash-safe-storage/instruction.md:8-9",
+        "stonevault-crash-safe-storage/environment/stonevault/docs/storage-format.md:44-52",
+        "stonevault-crash-safe-storage/tests/test_outputs.py",
+        "stonevault-crash-safe-storage/tests/test_q4_contract.py",
+        "stonevault-crash-safe-storage/tests/test_preservation.py"
+      ],
+      "why_it_matters": "Instruction requires recovery to retain every valid committed transaction and documents DELETE WAL records, but no probe commits a DELETE and restarts (with or without checkpoint) to verify the deletion survives durability/recovery. An implementation that applies DELETE only in-memory or fails to replay DELETE frames would pass all current tests.",
+      "minimal_remediation": "Add at least one restart probe that seeds a key, commits a DELETE, restarts the engine, and asserts NOT_FOUND/empty scan plus correct sequence; optionally add an independently encoded DELETE+COMMIT WAL fixture mirroring the existing PUT fixture.",
+      "regression_risk": "Low if added as a new preservation or contract probe without weakening existing corruption or conflict checks."
+    },
+    {
+      "id": "F02",
+      "severity": "LOW",
+      "status": "OBSERVED",
+      "criterion": "Edge-boundary coverage completeness",
+      "evidence_refs": [
+        "stonevault-crash-safe-storage/environment/stonevault/docs/storage-format.md:42",
+        "stonevault-crash-safe-storage/tests/test_q4_contract.py"
+      ],
+      "why_it_matters": "Storage-format declares zero-byte declared WAL payload length as intrinsic corruption, but no probe supplies a complete header with payload_length=0; this is a narrow framing edge unlike the DELETE recovery gap.",
+      "minimal_remediation": "Optional: add a corruption probe with a complete zero-length framing header expecting fail-closed open.",
+      "regression_risk": "Minimal."
+    }
+  ],
+  "missing_evidence": [],
+  "change_scope": [
+    "stonevault-crash-safe-storage/tests/test_outputs.py",
+    "stonevault-crash-safe-storage/tests/test_q4_contract.py",
+    "stonevault-crash-safe-storage/tests/test_preservation.py"
+  ],
+  "do_not_change": [
+    "stonevault-crash-safe-storage/instruction.md",
+    "stonevault-crash-safe-storage/environment/stonevault/docs/storage-format.md",
+    "stonevault-crash-safe-storage/environment/"
+  ],
+  "next_gate": "VERIFIER_AUTHOR",
+  "role_output": {
+    "REQUIREMENT_TEST_MATRIX": [
+      {"id": "R01", "source": "instruction.md:4", "coverage": "complete", "tests": ["test_second_writer_is_excluded_and_lock_is_released"]},
+      {"id": "R02", "source": "instruction.md:5", "coverage": "complete", "tests": ["test_explicit_data_directory_overrides_environment", "test_environment_only_data_directory_is_honored", "test_documented_default_data_directory_is_used"]},
+      {"id": "R03", "source": "instruction.md:6", "coverage": "complete", "tests": ["test_read_snapshot_survives_newer_put", "test_read_snapshot_survives_newer_delete", "test_point_read_observes_own_delete"]},
+      {"id": "R04", "source": "instruction.md:7-8", "coverage": "complete", "tests": ["test_scan_snapshot_excludes_later_insert", "test_scan_snapshot_retains_later_delete", "test_scan_applies_local_put_overlay", "test_scan_applies_local_delete_overlay", "test_scan_uses_unsigned_byte_order", "test_exact_scan_prefix_limit_is_accepted"]},
+      {"id": "R05", "source": "instruction.md:9", "coverage": "complete", "tests": ["test_stale_put_conflicts_with_newer_version", "test_stale_delete_conflicts_with_newer_version", "test_conflicted_multi_key_commit_is_atomic", "test_conflicted_transaction_is_ended"]},
+      {"id": "R06", "source": "instruction.md:10", "coverage": "complete", "tests": ["test_acknowledged_commit_survives_immediate_process_kill", "test_conflict_does_not_consume_commit_sequence", "test_multi_commit_wal_prefix_replays_completely"]},
+      {"id": "R07", "source": "instruction.md:11", "coverage": "complete", "tests": ["test_killed_transaction_is_invisible_after_restart", "test_rolled_back_transaction_is_invisible_after_restart"]},
+      {"id": "R08", "source": "instruction.md:12", "coverage": "partial", "gap": "Committed DELETE durability across restart is untested; independent WAL fixture covers PUT+COMMIT only.", "tests": ["test_short_final_wal_header_is_repaired", "test_short_final_wal_payload_is_repaired", "test_complete_wal_checksum_damage_is_fatal", "test_complete_wal_bad_magic_is_fatal", "test_non_contiguous_commit_sequence_is_fatal", "test_impossible_wal_frame_length_is_fatal", "test_complete_unknown_wal_type_is_fatal", "test_complete_malformed_wal_payload_is_fatal", "test_independent_wal_fixture_recovers_published_layout", "test_multi_commit_wal_prefix_replays_completely"]},
+      {"id": "R09", "source": "instruction.md:13", "coverage": "complete", "tests": ["test_checkpoint_refuses_active_transaction", "test_checkpoint_reclaims_wal_after_commit", "test_checkpoint_restart_preserves_sequence_and_rows", "test_checkpoint_interruption_keeps_a_durable_recovery_source"]},
+      {"id": "R10", "source": "instruction.md:14", "coverage": "complete", "tests": ["test_snapshot_checksum_corruption_is_fatal", "test_snapshot_trailing_bytes_are_fatal", "test_stale_snapshot_temporary_is_removed_on_open", "test_snapshot_bad_magic_is_fatal", "test_snapshot_truncation_is_fatal", "test_snapshot_impossible_row_count_is_fatal", "test_snapshot_out_of_order_rows_are_fatal", "test_independent_snapshot_fixture_preserves_layout_and_crc", "test_complete_snapshot_oversized_key_is_fatal", "test_complete_snapshot_oversized_value_is_fatal", "test_complete_snapshot_duplicate_key_is_fatal"]},
+      {"id": "R11", "source": "instruction.md:15", "coverage": "complete", "tests": ["test_stats_match_durable_state_and_file_size"]},
+      {"id": "R12", "source": "instruction.md:16", "coverage": "complete", "tests": ["test_health_reports_active_transactions", "test_health_tracks_published_snapshot", "test_health_rejects_missing_live_wal_path", "test_ready_and_health_wire_shapes_are_exact"]},
+      {"id": "R13", "source": "instruction.md:17", "coverage": "complete", "tests": ["test_hex_input_is_case_insensitive_and_output_is_lowercase", "test_arbitrary_binary_key_and_value_round_trip", "test_committed_hex_output_is_canonical"]},
+      {"id": "R14", "source": "instruction.md:18", "coverage": "complete", "tests": ["test_exact_key_limit_is_accepted", "test_exact_value_limit_is_accepted", "test_exact_scan_prefix_limit_is_accepted", "test_oversized_inputs_are_rejected_without_terminating", "test_oversized_scan_prefix_is_rejected_without_terminating", "test_decoded_key_limit_is_consistent_across_commands"]},
+      {"id": "R15", "source": "instruction.md:19", "coverage": "complete", "tests": ["test_malformed_commands_and_unknown_transactions_do_not_kill_session", "test_unknown_transaction_errors_are_consistent_across_commands"]},
+      {"id": "R16", "source": "instruction.md:1-3,20", "coverage": "complete", "tests": ["test_product_tree_keeps_native_language_boundary", "test_cxx20_sources_and_public_abi_signatures_compile", "test_ready_and_health_wire_shapes_are_exact"]}
+    ],
+    "PHANTOM_TEST_CONTRACTS": [],
+    "UNTESTED_REQUIREMENTS": [
+      "R08: Recovery of a committed DELETE transaction across process restart (WAL replay and/or post-checkpoint snapshot reload) — instruction.md:12 and storage-format.md DELETE payload type are solver-visible but no probe restarts after a successful DELETE commit."
+    ],
+    "AMBIGUITIES": [],
+    "DELEGATED_CONTRACT_CHECK": {
+      "storage-format.md": {
+        "classification": "LEGITIMATE_TECHNICAL_DOCUMENTATION",
+        "notes": "Wire protocol, WAL/snapshot layouts, HEALTH semantics, and startup precedence are architecture/schema documentation referenced by instruction.md; not a hidden second prompt or repair map."
+      },
+      "engine.hpp": {
+        "classification": "LEGITIMATE_PUBLIC_ABI",
+        "notes": "C ABI signatures exercised by test_cxx20_sources_and_public_abi_signatures_compile match instruction preservation requirement."
+      }
+    },
+    "SPEC_DUMP_RISK": "LOW",
+    "BIDIRECTIONAL_ALIGNMENT": "FAIL",
+    "BLOCKING_FINDING_IDS": ["F01"],
+    "ADVISORY_FINDING_IDS": ["F02"],
+    "EXHAUSTIVENESS": {
+      "REQUIREMENTS_ENUMERATED": "COMPLETE",
+      "VERIFIER_BEHAVIORS_ENUMERATED": "COMPLETE",
+      "FORWARD_MATRIX_COMPLETE": "NO",
+      "REVERSE_MATRIX_COMPLETE": "YES",
+      "DELEGATED_CONTRACTS_COMPLETE": "YES",
+      "P2P_BOUNDARIES_COMPLETE": "YES",
+      "F2P_BOUNDARIES_COMPLETE": "YES",
+      "OUTPUT_INTERFACES_COMPLETE": "YES",
+      "SECOND_PASS_OMISSION_SWEEP": "PASS",
+      "UNINSPECTED_SCOPE": []
+    }
+  }
+}
