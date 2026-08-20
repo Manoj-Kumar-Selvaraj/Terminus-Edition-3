@@ -4,327 +4,339 @@
       "content_hash": "sha256:104817a239b92de3e53f14d6bc0176563437894773e060648776dc09c6280374",
       "kind": "COMMIT",
       "ref": "commit:78ad422902b27dea954905130a1267b02cff3596"
-    },
-    {
-      "content_hash": "sha256:fca3ef4b283f1a1fe2aa6d960cd36a17b7232eb0b7a130f9cc8d43d948d6ec42",
-      "kind": "COMMIT",
-      "ref": "commit:67b805a297ac005ee08e82facc533f53a3233192"
     }
   ],
-  "invocation_id": "inv_386a110d0b25e4a3187bc63ce2dfcb542e87289dc1d1f834ce16b27f6689f6db",
+  "invocation_id": "inv_e6a085bd2c4b4ebfdf6243c0c59cd24232433ba3c7b3e4b10924b5189adac46c",
   "output_task_commit": "78ad422902b27dea954905130a1267b02cff3596",
   "outputs": {
     "behavioral_surfaces": {
       "create_state": [
-        "mutation",
-        "stable identity",
-        "restart durability"
+        "Ansible mutation on first apply",
+        "stable id/applied attributes persist",
+        "fresh provider process sees same identity"
       ],
       "delete_transaction": [
-        "scoped removal",
+        "owned object only",
         "failed delete remains managed",
-        "siblings preserved"
+        "named siblings preserved"
       ],
       "idempotency": [
-        "canonical modes",
-        "unordered values",
-        "account groups",
-        "cron defaults"
+        "unordered/default-equivalent values converge",
+        "plan/refresh do not replay Ansible"
+      ],
+      "provider_contract": [
+        "provider starts",
+        "exact ten resources exposed",
+        "forbidden substitute patterns rejected"
       ],
       "refresh_drift": [
-        "side-effect-free native Read",
-        "missing/wrong-kind absence",
-        "external drift"
+        "clean plan side-effect free",
+        "external deletion/mode/content/symlink/user drift detected"
       ],
       "runner_safety": [
-        "literal argv",
-        "non-zero/timeout/cancel failure",
-        "cleanup",
-        "no output persistence"
+        "spaces/metacharacters literal",
+        "nonzero/timeout/cancel fail safely",
+        "temp playbooks cleaned"
       ],
       "update_transaction": [
-        "single update",
-        "failure-safe retry",
-        "source intent"
+        "real change executes once",
+        "stable id survives",
+        "failed update retains prior state and retry converges"
       ]
     },
     "causal_edges": [
-      {
-        "from": "D01",
-        "to": "D09"
-      },
-      {
-        "from": "D02",
-        "to": "D21"
-      },
-      {
-        "from": "D03",
-        "to": "D07"
-      },
-      {
-        "from": "D04",
-        "to": "D11"
-      },
-      {
-        "from": "D05",
-        "to": "D13"
-      },
-      {
-        "from": "D06",
-        "to": "D21"
-      },
-      {
-        "from": "D07",
-        "to": "D14"
-      },
-      {
-        "from": "D08",
-        "to": "D23"
-      },
-      {
-        "from": "D09",
-        "to": "D10"
-      },
-      {
-        "from": "D10",
-        "to": "D13"
-      },
-      {
-        "from": "D11",
-        "to": "D04"
-      },
-      {
-        "from": "D12",
-        "to": "D15"
-      },
-      {
-        "from": "D13",
-        "to": "D16"
-      },
-      {
-        "from": "D14",
-        "to": "D17"
-      },
-      {
-        "from": "D15",
-        "to": "D12"
-      },
-      {
-        "from": "D16",
-        "to": "D24"
-      },
-      {
-        "from": "D17",
-        "to": "D18"
-      },
-      {
-        "from": "D18",
-        "to": "D19"
-      },
-      {
-        "from": "D19",
-        "to": "D10"
-      },
-      {
-        "from": "D20",
-        "to": "D01"
-      },
-      {
-        "from": "D21",
-        "to": "D22"
-      },
-      {
-        "from": "D22",
-        "to": "D11"
-      },
-      {
-        "from": "D23",
-        "to": "D08"
-      },
-      {
-        "from": "D24",
-        "to": "D16"
-      }
+      [
+        "D01",
+        "D05"
+      ],
+      [
+        "D02",
+        "D05"
+      ],
+      [
+        "D03",
+        "D05"
+      ],
+      [
+        "D04",
+        "D05"
+      ],
+      [
+        "D06",
+        "D11"
+      ],
+      [
+        "D07",
+        "D11"
+      ],
+      [
+        "D08",
+        "D11"
+      ],
+      [
+        "D09",
+        "D15"
+      ],
+      [
+        "D10",
+        "D11"
+      ],
+      [
+        "D11",
+        "D05"
+      ],
+      [
+        "D12",
+        "D13"
+      ],
+      [
+        "D13",
+        "D14"
+      ],
+      [
+        "D14",
+        "D15"
+      ],
+      [
+        "D15",
+        "D04"
+      ],
+      [
+        "D16",
+        "D11"
+      ],
+      [
+        "D17",
+        "D18"
+      ],
+      [
+        "D18",
+        "D05"
+      ],
+      [
+        "D19",
+        "D06"
+      ],
+      [
+        "D20",
+        "D18"
+      ],
+      [
+        "D21",
+        "D22"
+      ],
+      [
+        "D21",
+        "D23"
+      ],
+      [
+        "D23",
+        "D13"
+      ],
+      [
+        "D24",
+        "D13"
+      ],
+      [
+        "D24",
+        "D25"
+      ],
+      [
+        "D26",
+        "D15"
+      ],
+      [
+        "D26",
+        "D11"
+      ],
+      [
+        "D27",
+        "D11"
+      ],
+      [
+        "D28",
+        "D11"
+      ]
     ],
     "defects": [
       {
         "component": "internal/lifecycle/state.go",
         "id": "D01",
-        "observable_failure": "Create can publish an empty stable id after successful mutation.",
-        "partial_fix_trap": "Per-resource id patches leave shared publication wrong.",
+        "observable_failure": "Create can publish empty stable id.",
         "root_cause": "RC1_STATE_IDENTITY"
       },
       {
         "component": "internal/lifecycle/identity.go",
         "id": "D02",
-        "observable_failure": "Mutable directory mode can alter resource identity.",
-        "partial_fix_trap": "Special-casing mode leaves other mutable fields plan-derived.",
+        "observable_failure": "Mutable mode or symlink target can change identity.",
         "root_cause": "RC1_STATE_IDENTITY"
       },
       {
-        "component": "internal/resources/symlink/resource.go",
+        "component": "internal/lifecycle/state.go",
         "id": "D03",
-        "observable_failure": "Changing a symlink target can churn Terraform identity.",
-        "partial_fix_trap": "Symlink-only suppression hides shared identity defects.",
+        "observable_failure": "Observed values can disappear after provider restart.",
         "root_cause": "RC1_STATE_IDENTITY"
       },
       {
         "component": "internal/resources/copy/resource.go",
         "id": "D04",
-        "observable_failure": "Copy destination digest can disappear after provider restart.",
-        "partial_fix_trap": "Caching the digest in process memory is not durable state.",
+        "observable_failure": "Copy destination digest is not restart-stable.",
+        "root_cause": "RC1_STATE_IDENTITY"
+      },
+      {
+        "component": "internal/lifecycle/identity.go",
+        "id": "D05",
+        "observable_failure": "Unchanged object can churn identity/state in a fresh process.",
         "root_cause": "RC1_STATE_IDENTITY"
       },
       {
         "component": "internal/lifecycle/read.go",
-        "id": "D05",
-        "observable_failure": "External deletion of a directory is not reflected as absence on refresh.",
-        "partial_fix_trap": "Directory-only checks leave other resource Reads inconsistent.",
-        "root_cause": "RC2_REFRESH_RECONCILIATION"
-      },
-      {
-        "component": "internal/observe/filesystem.go",
         "id": "D06",
-        "observable_failure": "External mode drift can be replaced by stale prior state.",
-        "partial_fix_trap": "Normalization without native observation still misses drift.",
+        "observable_failure": "External directory deletion may not be detected.",
         "root_cause": "RC2_REFRESH_RECONCILIATION"
       },
       {
         "component": "internal/observe/filesystem.go",
         "id": "D07",
-        "observable_failure": "Out-of-band symlink retargeting is not reported as drift.",
-        "partial_fix_trap": "Existence checks without readlink semantics accept wrong state.",
+        "observable_failure": "External mode drift can echo prior state.",
+        "root_cause": "RC2_REFRESH_RECONCILIATION"
+      },
+      {
+        "component": "internal/observe/filesystem.go",
+        "id": "D08",
+        "observable_failure": "Symlink retargeting may not surface as drift.",
+        "root_cause": "RC2_REFRESH_RECONCILIATION"
+      },
+      {
+        "component": "internal/observe/content.go",
+        "id": "D09",
+        "observable_failure": "Destination content drift may not refresh.",
         "root_cause": "RC2_REFRESH_RECONCILIATION"
       },
       {
         "component": "internal/observe/identity.go",
-        "id": "D08",
-        "observable_failure": "External supplementary-group changes are not reflected in user state.",
-        "partial_fix_trap": "Passwd-only observation leaves group membership stale.",
+        "id": "D10",
+        "observable_failure": "User shell or supplementary-group drift may not refresh.",
+        "root_cause": "RC2_REFRESH_RECONCILIATION"
+      },
+      {
+        "component": "internal/lifecycle/read.go",
+        "id": "D11",
+        "observable_failure": "Read/refresh can invoke ansible-playbook.",
         "root_cause": "RC2_REFRESH_RECONCILIATION"
       },
       {
         "component": "internal/lifecycle/update.go",
-        "id": "D09",
-        "observable_failure": "Update can publish planned values before Ansible succeeds.",
-        "partial_fix_trap": "Moving one State.Set leaves other update paths unsafe.",
+        "id": "D12",
+        "observable_failure": "Update can publish planned values before mutation succeeds.",
         "root_cause": "RC3_UPDATE_TRANSACTION"
       },
       {
         "component": "internal/lifecycle/update.go",
-        "id": "D10",
-        "observable_failure": "Failed update can leave state claiming the new desired configuration.",
-        "partial_fix_trap": "Returning an error after advancement still corrupts retry state.",
+        "id": "D13",
+        "observable_failure": "Failed update can leave state claiming new desired values.",
+        "root_cause": "RC3_UPDATE_TRANSACTION"
+      },
+      {
+        "component": "internal/lifecycle/update.go",
+        "id": "D14",
+        "observable_failure": "Retry after failed update can be skipped.",
         "root_cause": "RC3_UPDATE_TRANSACTION"
       },
       {
         "component": "internal/resources/copy/resource.go",
-        "id": "D11",
-        "observable_failure": "Changing source_digest can fail to trigger exactly one copy update.",
-        "partial_fix_trap": "Digest-specific logic does not repair shared transaction ordering.",
+        "id": "D15",
+        "observable_failure": "source_digest change may not execute/publish exactly once.",
         "root_cause": "RC3_UPDATE_TRANSACTION"
       },
       {
         "component": "internal/resources/line/resource.go",
-        "id": "D12",
-        "observable_failure": "Updating a managed line can append instead of replace once.",
-        "partial_fix_trap": "Content matching alone does not restore stable ownership semantics.",
+        "id": "D16",
+        "observable_failure": "Named line update can append or replay instead of replace once.",
         "root_cause": "RC3_UPDATE_TRANSACTION"
       },
       {
         "component": "internal/lifecycle/delete.go",
-        "id": "D13",
-        "observable_failure": "Failed delete can remove the resource from Terraform state.",
-        "partial_fix_trap": "Resource-specific retention leaves shared destroy semantics broken.",
+        "id": "D17",
+        "observable_failure": "Delete can clear management before teardown result.",
         "root_cause": "RC4_DELETE_FAILURE"
       },
       {
-        "component": "internal/resources/symlink/resource.go",
-        "id": "D14",
-        "observable_failure": "Destroying a symlink can remove or mutate its target object.",
-        "partial_fix_trap": "Path deletion without lstat semantics is unsafe.",
+        "component": "internal/lifecycle/delete.go",
+        "id": "D18",
+        "observable_failure": "Failed deletion can appear completed.",
         "root_cause": "RC4_DELETE_FAILURE"
       },
       {
         "component": "internal/resources/block/resource.go",
-        "id": "D15",
-        "observable_failure": "Deleting one named block can remove unrelated sibling text.",
-        "partial_fix_trap": "Marker matching without ownership scope remains destructive.",
-        "root_cause": "RC4_DELETE_FAILURE"
-      },
-      {
-        "component": "internal/resources/cron/resource.go",
-        "id": "D16",
-        "observable_failure": "Deleting one named cron entry can disturb sibling entries.",
-        "partial_fix_trap": "Whole-crontab replacement violates scoped ownership.",
-        "root_cause": "RC4_DELETE_FAILURE"
-      },
-      {
-        "component": "internal/runner/runner.go",
-        "id": "D17",
-        "observable_failure": "Shell metacharacters in paths can be interpreted instead of passed literally.",
-        "partial_fix_trap": "Escaping strings still leaves shell-text execution unsafe.",
-        "root_cause": "RC5_RUNNER_COMMAND"
-      },
-      {
-        "component": "internal/runner/runner.go",
-        "id": "D18",
-        "observable_failure": "Ansible timeout can leave a temporary playbook behind.",
-        "partial_fix_trap": "Success-path cleanup does not cover timeout terminals.",
-        "root_cause": "RC5_RUNNER_COMMAND"
-      },
-      {
-        "component": "internal/runner/runner.go",
         "id": "D19",
-        "observable_failure": "Cancellation can publish success-like state before process termination is confirmed.",
-        "partial_fix_trap": "Context cancellation without transactional ordering remains unsafe.",
-        "root_cause": "RC5_RUNNER_COMMAND"
-      },
-      {
-        "component": "internal/runner/result.go",
-        "id": "D20",
-        "observable_failure": "Full command output can leak into durable Terraform state.",
-        "partial_fix_trap": "Truncation still persists prohibited process output.",
-        "root_cause": "RC5_RUNNER_COMMAND"
-      },
-      {
-        "component": "internal/lifecycle/normalize.go",
-        "id": "D21",
-        "observable_failure": "Equivalent file modes can produce perpetual diffs.",
-        "partial_fix_trap": "Formatting only desired state leaves observed state noncanonical.",
-        "root_cause": "RC6_NORMALIZATION_IDEMPOTENCY"
-      },
-      {
-        "component": "internal/lifecycle/maps.go",
-        "id": "D22",
-        "observable_failure": "Equivalent unordered variable maps can produce nondeterministic plans.",
-        "partial_fix_trap": "Sorting one resource leaves shared map serialization unstable.",
-        "root_cause": "RC6_NORMALIZATION_IDEMPOTENCY"
+        "observable_failure": "Deleting one named entry can remove a sibling-managed entry.",
+        "root_cause": "RC4_DELETE_FAILURE"
       },
       {
         "component": "internal/resources/user/resource.go",
+        "id": "D20",
+        "observable_failure": "User destroy can violate remove_home_on_destroy.",
+        "root_cause": "RC4_DELETE_FAILURE"
+      },
+      {
+        "component": "internal/ansible/command.go",
+        "id": "D21",
+        "observable_failure": "Shell metacharacters may be interpreted.",
+        "root_cause": "RC5_RUNNER_COMMAND"
+      },
+      {
+        "component": "internal/ansible/command.go",
+        "id": "D22",
+        "observable_failure": "Paths with spaces may split incorrectly.",
+        "root_cause": "RC5_RUNNER_COMMAND"
+      },
+      {
+        "component": "internal/ansible/runner.go",
         "id": "D23",
-        "observable_failure": "Equivalent supplementary group orderings can cause repeated updates.",
-        "partial_fix_trap": "Plan sorting without observed-state normalization still churns.",
+        "observable_failure": "Nonzero ansible exit may be treated as success.",
+        "root_cause": "RC5_RUNNER_COMMAND"
+      },
+      {
+        "component": "internal/ansible/timeout.go",
+        "id": "D24",
+        "observable_failure": "Timeout/cancellation may not terminate and fail reliably.",
+        "root_cause": "RC5_RUNNER_COMMAND"
+      },
+      {
+        "component": "internal/ansible/cleanup.go",
+        "id": "D25",
+        "observable_failure": "Temporary playbooks may leak on terminal paths.",
+        "root_cause": "RC5_RUNNER_COMMAND"
+      },
+      {
+        "component": "internal/ansible/generator.go",
+        "id": "D26",
+        "observable_failure": "Equivalent template vars can produce unstable payloads.",
         "root_cause": "RC6_NORMALIZATION_IDEMPOTENCY"
       },
       {
-        "component": "internal/resources/cron/resource.go",
-        "id": "D24",
-        "observable_failure": "Omitted cron defaults and explicit wildcard defaults can fail to converge.",
-        "partial_fix_trap": "Defaulting only Create leaves Read and Update representations divergent.",
+        "component": "internal/observe/normalize.go",
+        "id": "D27",
+        "observable_failure": "Equivalent mode/owner/group representations can compare unequal.",
+        "root_cause": "RC6_NORMALIZATION_IDEMPOTENCY"
+      },
+      {
+        "component": "internal/observe/cron.go",
+        "id": "D28",
+        "observable_failure": "Omitted cron fields and explicit wildcards can normalize differently.",
         "root_cause": "RC6_NORMALIZATION_IDEMPOTENCY"
       }
     ],
-    "organic_f2p_surface_assessment": "The defects arise from six coupled provider lifecycle concerns spanning shared state, native observation, mutation transactions, scoped deletion, process control and normalization; they are reachable through normal Terraform operations across the ten resources rather than synthetic padding.",
+    "organic_f2p_surface_assessment": "PASS: the six shared root causes fan out naturally across ten differentiated resource families and lifecycle boundaries; failures are connected production behaviors rather than independent test-targeted defects.",
     "profile": "large_system_strict",
     "root_cause_clusters": {
-      "RC1_STATE_IDENTITY": "identity/state publication defects",
-      "RC2_REFRESH_RECONCILIATION": "native observation and drift defects",
-      "RC3_UPDATE_TRANSACTION": "update ordering and retry defects",
-      "RC4_DELETE_FAILURE": "scoped destroy and failed-delete defects",
-      "RC5_RUNNER_COMMAND": "process invocation timeout cancellation and cleanup defects",
-      "RC6_NORMALIZATION_IDEMPOTENCY": "canonical representation and convergence defects"
+      "RC1_STATE_IDENTITY": "Identity/applied state can derive from mutable plan data rather than stable external keys and the last successful transition.",
+      "RC2_REFRESH_RECONCILIATION": "Read can reuse stale state or mutation helpers instead of side-effect-free native observation.",
+      "RC3_UPDATE_TRANSACTION": "Update can advance state before Ansible mutation succeeds, breaking retry/recovery semantics.",
+      "RC4_DELETE_FAILURE": "Delete can complete too early or remove beyond the owned external object.",
+      "RC5_RUNNER_COMMAND": "Runner argv/process/timeout/cancellation/temp-file handling can violate safe terminal-outcome semantics.",
+      "RC6_NORMALIZATION_IDEMPOTENCY": "Desired and observed canonical forms can differ for unordered/defaulted values, creating false diffs."
     }
   },
   "schema_version": "1.0",
