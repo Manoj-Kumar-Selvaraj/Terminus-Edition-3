@@ -1,0 +1,128 @@
+{
+  "evidence_refs": [
+    {
+      "kind": "COMMIT",
+      "ref": "commit:7d8a6d8c62a62e6d24949344c7fd712e59bc8829"
+    },
+    {
+      "kind": "COMMIT",
+      "ref": "commit:22d2e9e09f4deb58029559fe9a0863c2e032f25c"
+    }
+  ],
+  "invocation_id": "inv_61d3ba92b4c729f5f0da2ac9aa1f316984d38cecee8b1d85fb64b5a504aa9391",
+  "output_task_commit": "22d2e9e09f4deb58029559fe9a0863c2e032f25c",
+  "outputs": {
+    "COMPONENT_GRAPH": {
+      "adapters": [
+        "deterministic kernel model",
+        "atomic JSON store",
+        "clock/id generator",
+        "Ansible projection"
+      ],
+      "api": [
+        "HTTP router",
+        "validation",
+        "optimistic revision headers",
+        "structured errors"
+      ],
+      "automation": [
+        "Ansible role",
+        "inventory/group_vars",
+        "service/config templates",
+        "health checks"
+      ],
+      "domain": [
+        "node registry",
+        "route-table catalog",
+        "route service",
+        "policy-rule service",
+        "revision planner",
+        "transaction coordinator",
+        "drift engine",
+        "rollout engine",
+        "audit service"
+      ],
+      "frontend": [
+        "summary",
+        "inventory",
+        "routes/rules",
+        "revision diff/apply",
+        "drift/reconcile",
+        "rollout monitor",
+        "audit"
+      ]
+    },
+    "DATA_VOLUME_PLAN": "Eight deterministic nodes across three sites, fourteen named route tables, IPv4/IPv6/multipath routes, policy rules, drift fixtures and revision history.",
+    "ENTRYPOINTS": [
+      "cmd/routecp server --config",
+      "GET /healthz",
+      "GET /readyz",
+      "node/table/route/rule API",
+      "revision preview/apply/rollback",
+      "drift scan/reconcile",
+      "rollout create/advance/cancel",
+      "audit/events",
+      "embedded dashboard",
+      "ansible/playbooks/install.yml"
+    ],
+    "PRODUCTION_CHARACTERISTICS": [
+      "layered Go packages",
+      "transactional revisions",
+      "failure isolation",
+      "restart recovery",
+      "optimistic concurrency/idempotency",
+      "bounded audit retention",
+      "structured health/errors",
+      "Ansible fleet deployment",
+      "same-API dashboard"
+    ],
+    "RESOURCE_GRAPH": [
+      "control plane -> store + kernel model",
+      "node -> interfaces + protected policy",
+      "revision -> tables/routes/rules",
+      "transaction -> node operations",
+      "rollout -> waves -> transactions",
+      "dashboard -> API",
+      "Ansible -> binary/config/service"
+    ],
+    "SCALE_FIT": {
+      "f2p_plan": 28,
+      "manifestation_plan": 24,
+      "module_count": 16,
+      "p2p_plan": 8,
+      "profile": "large_system_strict",
+      "runtime_loc_plan": "3500-5000 substantive Go/JS/Ansible/config LOC"
+    },
+    "SOLVER_VISIBLE_DOC_PLAN": [
+      "README.md",
+      "docs/api.md",
+      "docs/state-model.md",
+      "docs/routing-semantics.md",
+      "docs/ansible.md",
+      "docs/operator-runbook.md"
+    ],
+    "STATE_MODEL": {
+      "concurrency": "store compare-and-swap plus per-node serialization; immutable read snapshots",
+      "entities": [
+        "Node",
+        "Interface",
+        "RouteTable",
+        "Route",
+        "NextHop",
+        "PolicyRule",
+        "DesiredRevision",
+        "ObservedSnapshot",
+        "ChangePlan",
+        "ApplyTransaction",
+        "Rollout",
+        "DriftRecord",
+        "AuditEvent"
+      ],
+      "persistence": "Atomic JSON checkpoint with schema version, monotonic revision, desired/observed state, rollouts and audit; primary validation with last-known-good backup.",
+      "safety": "protected management CIDRs/interfaces/routes; unsafe plans rejected before publication"
+    },
+    "UNRESOLVED_RISKS": []
+  },
+  "schema_version": "1.0",
+  "status": "ARCHITECTURE_READY"
+}
