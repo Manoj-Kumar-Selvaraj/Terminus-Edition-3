@@ -1,7 +1,7 @@
 {
   "acceptance_predicates": {},
   "authority": {
-    "control_plane_commit": "4cc1f68cb57b284c4817e3f354ea6eb74c5f717d",
+    "control_plane_commit": "67b805a297ac005ee08e82facc533f53a3233192",
     "policy_versions": {},
     "task_commit": "78ad422902b27dea954905130a1267b02cff3596",
     "task_id": "terraform-ansible-managed-resources"
@@ -40,92 +40,55 @@
   "ignored_input_count": 0,
   "inputs": {
     "optional": {
+      "PRIVATE_DEFECT_GRAPH": {
+        "behavioral_surfaces": [
+          "create/state",
+          "refresh/drift",
+          "update transaction",
+          "delete transaction",
+          "runner safety",
+          "idempotency"
+        ],
+        "defect_manifestations": 24,
+        "profile": "large_system_strict",
+        "root_cause_clusters": 6
+      },
       "PRIVATE_TEST_MAP": {
-        "classification": "30 F2P + 6 P2P",
-        "empirical_status": "current runtime/oracle empirical evidence deferred to DETERMINISTIC_VALIDATION"
+        "F2P_COUNT": 30,
+        "P2P_COUNT": 6,
+        "classification": "30 F2P + 6 P2P"
       }
     },
     "required": {
       "CURRENT_ORACLE": {
-        "empirical_oracle_status": "not yet re-earned; deferred to DETERMINISTIC_VALIDATION",
-        "entrypoint": "terraform-ansible-managed-resources/solution/solve.sh",
-        "restored_invariants": [
-          "stable external-key IDs",
-          "Ansible mutation before state publication",
-          "native Read and external drift",
-          "failure-safe update/delete retry semantics",
-          "structured runner argv, timeout/cancel handling and cleanup",
-          "canonical convergence and Terraform Core sole durable state authority"
+        "empirical_status": "DEFERRED_TO_DETERMINISTIC_VALIDATION",
+        "files": [
+          "solution/solve.sh",
+          "solution/fixed/internal/lifecycle/maps.go",
+          "solution/fixed/internal/lifecycle/normalize.go",
+          "solution/fixed/internal/resources/",
+          "solution/fixed/internal/runner/runner.go"
         ],
-        "solution_tree": "terraform-ansible-managed-resources/solution/fixed/",
-        "status": "IMPLEMENTED",
-        "task_commit": "78ad422902b27dea954905130a1267b02cff3596"
+        "status": "IMPLEMENTED"
       },
       "CURRENT_TASK": {
-        "environment_root": "terraform-ansible-managed-resources/environment/ansibleops",
-        "instruction_path": "terraform-ansible-managed-resources/instruction.md",
-        "language_runtime": "Go 1.24/current Plugin Framework",
-        "provider": "local/ansibleops 0.1.0",
+        "environment": "environment/",
+        "instruction": "instruction.md",
+        "readme": "README.md",
         "resource_count": 10,
-        "root": "terraform-ansible-managed-resources",
         "runtime_artifact": "/app/provider",
-        "state_authority": "Terraform Core only",
-        "substantive_loc": 3081,
-        "task_commit": "78ad422902b27dea954905130a1267b02cff3596",
-        "terraform_cli": "1.10.5",
-        "top_level": [
-          "README.md",
-          "environment/",
-          "instruction.md",
-          "solution/",
-          "task.toml",
-          "tests/"
-        ]
+        "solution": "solution/",
+        "task_root": "terraform-ansible-managed-resources",
+        "task_toml": "task.toml",
+        "tests": "tests/"
       },
       "CURRENT_VERIFIER": {
         "F2P_COUNT": 30,
         "P2P_COUNT": 6,
-        "edge_boundary_coverage": [
-          "wrong kind",
-          "spaces/metacharacters",
-          "cron defaults",
-          "home removal",
-          "unordered/mode equivalence",
-          "already absent destroy",
-          "external drift",
-          "missing-object recreation"
-        ],
-        "negative_failure_coverage": [
-          "duplicate ownership",
-          "non-zero mutation failure",
-          "timeout/cancellation cleanup",
-          "failed update preserves state",
-          "failed delete retains managed state",
-          "command output absent from state"
-        ],
-        "requirement_families": [
-          "provider/schema",
-          "state/identity",
-          "native refresh/drift",
-          "transactional create/update",
-          "failure-safe scoped delete",
-          "copy/template content intent",
-          "line/block ownership",
-          "user/group native reconciliation",
-          "runner/process safety",
-          "normalization/idempotency",
-          "cron defaults/drift/siblings",
-          "external ownership collision",
-          "Ansible mutation backend"
-        ],
-        "status": "VERIFIER_READY",
-        "test_independence": "Public Terraform/provider behavior and external Linux observation; no reference-solution inspection."
+        "empirical_status": "DEFERRED_TO_DETERMINISTIC_VALIDATION",
+        "status": "VERIFIER_READY"
       },
-      "FORMAT_STATUS": {
-        "checks": "task root/name, task.toml, digest-pinned images, separate verifier, canonical test.sh reward, solution/tests isolation and instruction paths all pass",
-        "status": "FORMAT_PASS",
-        "task_changed": false
-      },
+      "FORMAT_STATUS": "FORMAT_PASS",
       "SPEC_ALIGNMENT_STATUS": {
         "Q1_STATUS": "NO_GAP",
         "Q2_STATUS": "COVERED",
@@ -134,7 +97,7 @@
       }
     }
   },
-  "invocation_id": "inv_7cfcc5d3886ea8ec691f64b670fac799b8b024fd206b1cdd8a739c2dbe1da39f",
+  "invocation_id": "inv_cb1cfc64c139890961995b696242edd858db4a76fcb8d6f22c502912589eb97a",
   "learning": {
     "context_hash": "sha256:bb84a513aa2b6e4374d691759c4a6edf94169f479f4611e9091643b9f279ccfc",
     "lessons": [],
