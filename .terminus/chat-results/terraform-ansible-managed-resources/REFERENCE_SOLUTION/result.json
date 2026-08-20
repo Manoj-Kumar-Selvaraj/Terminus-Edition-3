@@ -1,0 +1,59 @@
+{
+  "evidence_refs": [
+    {
+      "content_hash": "sha256:104817a239b92de3e53f14d6bc0176563437894773e060648776dc09c6280374",
+      "kind": "COMMIT",
+      "ref": "commit:78ad422902b27dea954905130a1267b02cff3596"
+    },
+    {
+      "content_hash": "sha256:334e6029ea34515d0f9364b213a51af19ed193f7c1c22cdf7b978781c2e856d7",
+      "kind": "COMMIT",
+      "ref": "commit:215cc70bcebcccc3c9a401af1b74a97d90026da3"
+    }
+  ],
+  "invocation_id": "inv_7fa551cb3d0d6d4ab7538111f18856823b8c587481f357abe3fa39ffee595218",
+  "output_task_commit": "78ad422902b27dea954905130a1267b02cff3596",
+  "outputs": {
+    "DETERMINISM_NOTES": "The reference completion is contract-driven: solve.sh deterministically installs the fixed Go sources in sorted order, gofmt/builds them, structured exec.CommandContext argv preserves spaces/metacharacters as data, temporary playbooks are deferred for cleanup, and normalization uses canonical ordering/default forms rather than hidden-test identities, timing shortcuts or verifier-specific branches.",
+    "FILES_CHANGED": [
+      "solution/solve.sh",
+      "solution/fixed/internal/lifecycle/maps.go",
+      "solution/fixed/internal/lifecycle/normalize.go",
+      "solution/fixed/internal/runner/runner.go",
+      "solution/fixed/internal/resources/common.go",
+      "solution/fixed/internal/resources/file.go",
+      "solution/fixed/internal/resources/directory.go",
+      "solution/fixed/internal/resources/copy.go",
+      "solution/fixed/internal/resources/template.go",
+      "solution/fixed/internal/resources/line.go",
+      "solution/fixed/internal/resources/block.go",
+      "solution/fixed/internal/resources/symlink.go",
+      "solution/fixed/internal/resources/user.go",
+      "solution/fixed/internal/resources/group.go",
+      "solution/fixed/internal/resources/cron.go"
+    ],
+    "PRESERVED_BEHAVIOR": [
+      "Exactly the documented ten ansibleops resource interfaces remain the task surface.",
+      "Provider source local/ansibleops version 0.1.0 and the supplied local inventory contract remain unchanged.",
+      "Terraform Core remains the sole durable Terraform state authority; no manual state file or provider-owned store is introduced.",
+      "Mutation/observation separation is preserved: Ansible is for C/U/D, native Linux reads are for refresh.",
+      "Destruction remains scoped to the owned object and preserves sibling entries and symlink targets."
+    ],
+    "RESTART_IDEMPOTENCY_BEHAVIOR": "The repair does not introduce provider-owned durable state: stable IDs derive from external object keys, refreshed values are rebuilt from native Linux observation, and canonical representations converge after provider restart. Generated playbooks/process output are ephemeral, so a fresh process with unchanged external objects has no reason to replay Ansible during Read/clean planning.",
+    "RESTORED_INVARIANTS": [
+      "All ten resources use stable documented external-object identity rather than mutable desired attributes.",
+      "Create/Update/Delete remain Ansible-backed while Read/refresh is native and side-effect-free.",
+      "Terraform state is advanced only after successful external mutation; non-zero, timeout and cancellation remain failures and preserve retryable prior state.",
+      "Delete remains ownership-scoped, including sibling preservation, symlink-target preservation, named line/block/cron ownership and user-home policy.",
+      "Runner execution is structured argv rather than shell-string execution, validates runtime inputs, bounds surfaced stderr, observes timeout/cancellation, and removes temporary playbooks on terminal outcomes.",
+      "Desired/observed modes, unordered values, account observations, template inputs and cron defaults converge through canonical normalization."
+    ],
+    "RISKS_FOR_INDEPENDENT_VERIFIER": [
+      "Empirical oracle/runtime success is intentionally not claimed by A4; deterministic validation must exercise the installed reference solution.",
+      "Independent verification should cover provider restart, external drift/missing/wrong-kind observation, non-zero/timeout/cancellation retry semantics, already-absent destroy, sibling preservation, user home policy, digest transitions, spaces/metacharacters and normalization convergence.",
+      "Process-local duplicate-ownership detection should be tested only as a runtime guard; it is not a durable state authority and must not be mistaken for restart persistence."
+    ]
+  },
+  "schema_version": "1.0",
+  "status": "IMPLEMENTED"
+}

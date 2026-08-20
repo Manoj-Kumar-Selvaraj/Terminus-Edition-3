@@ -1,0 +1,638 @@
+{
+  "ledger_event": {
+    "control_plane_commit": "215cc70bcebcccc3c9a401af1b74a97d90026da3",
+    "event_id": "evt_f1dca49efe2b159905c193abae2c959fc802b466072ec0f4d1856589c646ee97",
+    "input_task_commit": "78ad422902b27dea954905130a1267b02cff3596",
+    "invocation_id": "inv_7fa551cb3d0d6d4ab7538111f18856823b8c587481f357abe3fa39ffee595218",
+    "output_task_commit": "78ad422902b27dea954905130a1267b02cff3596",
+    "previous_event_id": "evt_2d3a324ec747a54e672fb33d4864a5a0fdfa765344a3cacfd2132d604daea674",
+    "record_hash": "sha256:8ba918608a6b0ce5538d12095f072114541c8953075bd1c49b2cc36abf794137",
+    "record_id": "rec_d8486d5a046253f222fe65e14fa121c17e752f27d4b648737a87735573fc0045",
+    "record_path": ".terminus/executions/terraform-ansible-managed-resources/inv_7fa551cb3d0d6d4ab7538111f18856823b8c587481f357abe3fa39ffee595218.result.json",
+    "schema_version": "1.0",
+    "sequence": 25,
+    "stage_id": "REFERENCE_SOLUTION",
+    "task_id": "terraform-ansible-managed-resources"
+  },
+  "record": {
+    "authority": {
+      "control_plane_commit": "215cc70bcebcccc3c9a401af1b74a97d90026da3",
+      "policy_versions": {},
+      "task_commit": "78ad422902b27dea954905130a1267b02cff3596",
+      "task_id": "terraform-ansible-managed-resources"
+    },
+    "disposition": "ADVANCE",
+    "evidence_refs": [
+      {
+        "content_hash": "sha256:104817a239b92de3e53f14d6bc0176563437894773e060648776dc09c6280374",
+        "kind": "COMMIT",
+        "ref": "commit:78ad422902b27dea954905130a1267b02cff3596"
+      },
+      {
+        "content_hash": "sha256:334e6029ea34515d0f9364b213a51af19ed193f7c1c22cdf7b978781c2e856d7",
+        "kind": "COMMIT",
+        "ref": "commit:215cc70bcebcccc3c9a401af1b74a97d90026da3"
+      }
+    ],
+    "invocation_id": "inv_7fa551cb3d0d6d4ab7538111f18856823b8c587481f357abe3fa39ffee595218",
+    "invocation_snapshot": {
+      "acceptance_predicates": {},
+      "authority": {
+        "control_plane_commit": "215cc70bcebcccc3c9a401af1b74a97d90026da3",
+        "policy_versions": {},
+        "task_commit": "78ad422902b27dea954905130a1267b02cff3596",
+        "task_id": "terraform-ansible-managed-resources"
+      },
+      "evidence": {
+        "authorized_evidence_classes": [
+          "CONTROL_PLANE_POLICY",
+          "PRIVATE_CREATION_DESIGN",
+          "SOLVER_VISIBLE_TASK"
+        ],
+        "evidence_required": [
+          "deterministic general repair/completion",
+          "preservation rationale",
+          "no hidden-test special casing"
+        ],
+        "excluded_evidence_classes": [
+          "CI_RUNTIME_EVIDENCE",
+          "CURRENT_REVIEW_PACKET",
+          "DURABLE_SESSION_STATE",
+          "FINAL_PACKAGE_EVIDENCE",
+          "MODEL_TRIAL_EVIDENCE",
+          "PRIOR_REVIEW_RESULTS",
+          "PUBLIC_REFERENCE",
+          "SOLUTION_ORACLE",
+          "VERIFIER_PRIVATE"
+        ],
+        "mandatory_exact_reads": [
+          ".terminus/agents/CREATION_PIPELINE.md",
+          ".terminus/agents/CREATOR_PROMPTS.md"
+        ],
+        "retrieval_mode": "EXACT_ONLY"
+      },
+      "ignored_input_count": 0,
+      "inputs": {
+        "optional": {},
+        "required": {
+          "APPROVED_OPERATIONAL_REQUIREMENTS": {
+            "EDGE_FAILURE_SURFACE": [
+              "missing/wrong-kind objects",
+              "drift",
+              "Ansible non-zero",
+              "timeout",
+              "cancellation",
+              "already-absent destroy",
+              "collisions",
+              "digest changes",
+              "unordered values",
+              "mode equivalence",
+              "cron defaults/siblings",
+              "metacharacters/spaces"
+            ],
+            "ENGINEERING_OBJECTIVE": "Complete the ten-resource ansibleops provider as one coherent Terraform lifecycle/reconciliation system.",
+            "PERSONA": "Platform engineer maintaining an internal Terraform provider for local Linux configuration through Ansible.",
+            "PRESERVATION_OBLIGATIONS": [
+              "exact ten documented resource interfaces",
+              "provider source local/ansibleops version 0.1.0",
+              "Terraform Core sole durable state authority",
+              "clean plan never replays Ansible",
+              "preserve sibling objects and symlink targets"
+            ],
+            "REQUIRED_END_STATE": [
+              "stable external-object identity",
+              "Ansible-only create/update/delete mutation",
+              "native Linux side-effect-free read/refresh and drift reconciliation",
+              "state publication only after successful mutation and retry after failure",
+              "scoped ownership/deletion across ten documented resource types",
+              "structured argv plus timeout/cancellation/temp cleanup",
+              "canonical normalization/idempotency"
+            ],
+            "REQUIREMENT_FAMILIES": [
+              "provider runtime",
+              "identity/state",
+              "mutation runner",
+              "native observation",
+              "filesystem/content",
+              "line/block ownership",
+              "user/group",
+              "cron",
+              "normalization",
+              "failure/retry"
+            ],
+            "WORK_PACKAGE_ID": "MANAGED_RESOURCE_LIFECYCLE_COMPLETION"
+          },
+          "STARTER_ENVIRONMENT": {
+            "COMPONENT_GRAPH": [
+              "provider registration/configuration/runtime preflight",
+              "shared lifecycle identity/state/normalization",
+              "Ansible task/playbook generation",
+              "process runner/timeout/cancellation/cleanup",
+              "native filesystem/content/account/cron observation",
+              "ten differentiated managed-resource implementations"
+            ],
+            "ENTRYPOINTS": [
+              "/app/provider/cmd/terraform-provider-ansibleops/main.go",
+              "/app/provider/scripts/build-provider.sh",
+              "/app/provider/scripts/smoke.sh"
+            ],
+            "ENVIRONMENT_RULE_CHECKS": {
+              "business_module_diversity": "PASS_OR_NOT_APPLICABLE",
+              "environment_complexity": "PASS",
+              "runtime_authenticity": "PASS"
+            },
+            "INSTRUCTION_DOC_BOUNDARY": "instruction owns required end-state behavior; provider docs own architecture/resource/lifecycle/operator contracts",
+            "PRODUCTION_CHARACTERISTICS": [
+              "real Terraform Plugin Framework provider process",
+              "ten differentiated Linux managed-resource lifecycles",
+              "Terraform-Core-owned durable state",
+              "persistent external Linux state",
+              "separate mutation and observation paths",
+              "provider startup preflight",
+              "shared process-control normalization validation and drift-observation layers"
+            ],
+            "RUNTIME_REACHABILITY_NOTES": [
+              "Configure preflight is live",
+              "Terraform reaches provider resource callbacks",
+              "Ansible mutation/native observation are reachable"
+            ],
+            "SOLVER_VISIBLE_DOCS": [
+              "/app/provider/docs/provider-contract.md",
+              "/app/provider/docs/resource-reference.md",
+              "/app/provider/docs/lifecycle.md",
+              "/app/provider/examples/basic/main.tf"
+            ],
+            "SUBSTANTIVE_LOC": 3081,
+            "UNRESOLVED_RISKS": []
+          },
+          "SYSTEM_ARCHITECTURE": {
+            "COMPONENT_GRAPH": [
+              "provider registration/configuration/runtime preflight",
+              "shared lifecycle identity/state transitions",
+              "Ansible task/playbook generation",
+              "structured runner",
+              "native Linux observation",
+              "normalization/validation",
+              "ten differentiated resource implementations"
+            ],
+            "ENTRYPOINTS": [
+              "/app/provider/cmd/terraform-provider-ansibleops/main.go",
+              "/app/provider/scripts/build-provider.sh",
+              "/app/provider/scripts/smoke.sh"
+            ],
+            "PRODUCTION_CHARACTERISTICS": [
+              "real provider process",
+              "differentiated lifecycles",
+              "mutation/observation split",
+              "failure-safe transitions",
+              "stable ownership",
+              "runner safety",
+              "canonical convergence"
+            ],
+            "SCALE_FIT": "large_system_strict natural fit",
+            "SOLVER_VISIBLE_DOC_PLAN": [
+              "docs/provider-contract.md",
+              "docs/resource-reference.md",
+              "docs/lifecycle.md",
+              "examples/basic/main.tf"
+            ],
+            "STATE_MODEL": {
+              "external_state": "filesystem/passwd/group/crontab external truth",
+              "identity": "documented external object key",
+              "mutation": "Ansible before state publication",
+              "observation": "native read only",
+              "terraform_state": "Terraform Core sole durable state authority"
+            }
+          }
+        }
+      },
+      "invocation_id": "inv_7fa551cb3d0d6d4ab7538111f18856823b8c587481f357abe3fa39ffee595218",
+      "learning": {
+        "context_hash": "sha256:bb84a513aa2b6e4374d691759c4a6edf94169f479f4611e9091643b9f279ccfc",
+        "lessons": [],
+        "mode": "GENERALIZED_LESSONS_PLUS_OWNED_REMEDIATIONS",
+        "raw_feedback_exposed": false,
+        "raw_historical_findings_exposed": false,
+        "registry_heads": {
+          "feedback": "GENESIS",
+          "findings": "GENESIS",
+          "lessons": "GENESIS",
+          "patterns": "GENESIS",
+          "remediations": "GENESIS"
+        },
+        "remediations": []
+      },
+      "missing_required_inputs": [],
+      "output_contract": {
+        "allowed_status_values": [
+          "IMPLEMENTED",
+          "CONTRACT_GAP",
+          "BLOCKED"
+        ],
+        "deterministic_validators": [],
+        "optional_fields": [],
+        "persisted_artifacts": [
+          "<task>/solution/solve.sh",
+          "<task>/solution/"
+        ],
+        "required_fields": [
+          "RESTORED_INVARIANTS",
+          "FILES_CHANGED",
+          "RESTART_IDEMPOTENCY_BEHAVIOR",
+          "DETERMINISM_NOTES",
+          "PRESERVED_BEHAVIOR",
+          "RISKS_FOR_INDEPENDENT_VERIFIER"
+        ],
+        "semantic_reviewers": [
+          "Verifier Engineer"
+        ]
+      },
+      "readiness": "READY",
+      "retrieval": {
+        "query": null,
+        "retrieved_chars": 0,
+        "retrieved_context": [],
+        "status": "NOT_REQUESTED"
+      },
+      "routing": {
+        "failure_routes": {
+          "CONTRACT_GAP": "Creation Controller -> appropriate contract owner",
+          "RUNTIME_FAILURE": "Q5 Oracle & Runtime Repair Specialist"
+        },
+        "stale_on": [
+          "operational requirement change",
+          "environment implementation change",
+          "solver-visible contract change"
+        ],
+        "success_transition": "VERIFIER_BUILD"
+      },
+      "schema_version": "1.0",
+      "stage": {
+        "lifecycle": "creation",
+        "owner": "A4 Reference Solution Author",
+        "role_class": "PRODUCER",
+        "role_id": "A4_REFERENCE_SOLUTION_AUTHOR",
+        "stage_id": "REFERENCE_SOLUTION"
+      }
+    },
+    "outputs": {
+      "DETERMINISM_NOTES": "The reference completion is contract-driven: solve.sh deterministically installs the fixed Go sources in sorted order, gofmt/builds them, structured exec.CommandContext argv preserves spaces/metacharacters as data, temporary playbooks are deferred for cleanup, and normalization uses canonical ordering/default forms rather than hidden-test identities, timing shortcuts or verifier-specific branches.",
+      "FILES_CHANGED": [
+        "solution/solve.sh",
+        "solution/fixed/internal/lifecycle/maps.go",
+        "solution/fixed/internal/lifecycle/normalize.go",
+        "solution/fixed/internal/runner/runner.go",
+        "solution/fixed/internal/resources/common.go",
+        "solution/fixed/internal/resources/file.go",
+        "solution/fixed/internal/resources/directory.go",
+        "solution/fixed/internal/resources/copy.go",
+        "solution/fixed/internal/resources/template.go",
+        "solution/fixed/internal/resources/line.go",
+        "solution/fixed/internal/resources/block.go",
+        "solution/fixed/internal/resources/symlink.go",
+        "solution/fixed/internal/resources/user.go",
+        "solution/fixed/internal/resources/group.go",
+        "solution/fixed/internal/resources/cron.go"
+      ],
+      "PRESERVED_BEHAVIOR": [
+        "Exactly the documented ten ansibleops resource interfaces remain the task surface.",
+        "Provider source local/ansibleops version 0.1.0 and the supplied local inventory contract remain unchanged.",
+        "Terraform Core remains the sole durable Terraform state authority; no manual state file or provider-owned store is introduced.",
+        "Mutation/observation separation is preserved: Ansible is for C/U/D, native Linux reads are for refresh.",
+        "Destruction remains scoped to the owned object and preserves sibling entries and symlink targets."
+      ],
+      "RESTART_IDEMPOTENCY_BEHAVIOR": "The repair does not introduce provider-owned durable state: stable IDs derive from external object keys, refreshed values are rebuilt from native Linux observation, and canonical representations converge after provider restart. Generated playbooks/process output are ephemeral, so a fresh process with unchanged external objects has no reason to replay Ansible during Read/clean planning.",
+      "RESTORED_INVARIANTS": [
+        "All ten resources use stable documented external-object identity rather than mutable desired attributes.",
+        "Create/Update/Delete remain Ansible-backed while Read/refresh is native and side-effect-free.",
+        "Terraform state is advanced only after successful external mutation; non-zero, timeout and cancellation remain failures and preserve retryable prior state.",
+        "Delete remains ownership-scoped, including sibling preservation, symlink-target preservation, named line/block/cron ownership and user-home policy.",
+        "Runner execution is structured argv rather than shell-string execution, validates runtime inputs, bounds surfaced stderr, observes timeout/cancellation, and removes temporary playbooks on terminal outcomes.",
+        "Desired/observed modes, unordered values, account observations, template inputs and cron defaults converge through canonical normalization."
+      ],
+      "RISKS_FOR_INDEPENDENT_VERIFIER": [
+        "Empirical oracle/runtime success is intentionally not claimed by A4; deterministic validation must exercise the installed reference solution.",
+        "Independent verification should cover provider restart, external drift/missing/wrong-kind observation, non-zero/timeout/cancellation retry semantics, already-absent destroy, sibling preservation, user home policy, digest transitions, spaces/metacharacters and normalization convergence.",
+        "Process-local duplicate-ownership detection should be tested only as a runtime guard; it is not a durable state authority and must not be mistaken for restart persistence."
+      ]
+    },
+    "record_id": "rec_d8486d5a046253f222fe65e14fa121c17e752f27d4b648737a87735573fc0045",
+    "role_id": "A4_REFERENCE_SOLUTION_AUTHOR",
+    "schema_version": "1.0",
+    "stage_id": "REFERENCE_SOLUTION",
+    "status": "IMPLEMENTED",
+    "task_lineage": {
+      "input_task_commit": "78ad422902b27dea954905130a1267b02cff3596",
+      "output_task_commit": "78ad422902b27dea954905130a1267b02cff3596",
+      "task_changed": false
+    },
+    "transition": {
+      "action": "ADVANCE",
+      "requires_state_validation": false,
+      "target": "VERIFIER_BUILD",
+      "target_kind": "STAGE"
+    },
+    "validation": {
+      "acceptance_predicates_satisfied": true,
+      "evidence_binding_satisfied": true,
+      "evidence_refs_count": 2,
+      "invocation_identity_valid": true,
+      "invocation_policy_valid": true,
+      "output_keys_valid": true,
+      "required_outputs_satisfied": true,
+      "retrieval_context_authorized": true,
+      "status_legal": true,
+      "task_commit_change_authorized": true,
+      "task_lineage_valid": true
+    }
+  },
+  "remediation_updates": [],
+  "state": {
+    "control_plane_commit": "215cc70bcebcccc3c9a401af1b74a97d90026da3",
+    "derived_from": {
+      "freshness_overlay_hash": null,
+      "record_ids": [
+        "rec_51f1f89efc85f52b06e9f604b11827d323c55ea8b35c65c588df16353b05ed28",
+        "rec_55c5fe0ac89cbde25d737dfeba32dcd0d05921bd42b9525f7d06f497cfb97832",
+        "rec_9991c9503ef4b367076604bb336f348286791e8c998e54470726e382c95bb9f4",
+        "rec_d8486d5a046253f222fe65e14fa121c17e752f27d4b648737a87735573fc0045",
+        "rec_f568d60b5255002b3cc2a54522182d395df603e757cda0e7f3e90b76781f706a",
+        "rec_fba50694e328516733a77ca0f5710f38571cdfda0035fe10107e5835659cd30d"
+      ]
+    },
+    "ledger_event_count": 25,
+    "ledger_head_event_id": "evt_f1dca49efe2b159905c193abae2c959fc802b466072ec0f4d1856589c646ee97",
+    "lineage": {
+      "bootstrap_task_commit": "78ad422902b27dea954905130a1267b02cff3596",
+      "current_task_commit": "78ad422902b27dea954905130a1267b02cff3596",
+      "recorded_task_commit": "78ad422902b27dea954905130a1267b02cff3596",
+      "status": "CURRENT"
+    },
+    "next": {
+      "action": "INVOKE_STAGE",
+      "optional_inputs": [
+        "PRESERVATION_RISK_MODEL",
+        "RUNTIME_INTERFACE_MAP"
+      ],
+      "owner": "A5 Verifier Author",
+      "primary_role_id": "A5_VERIFIER_AUTHOR",
+      "required_inputs": [
+        "BEHAVIORAL_SURFACES",
+        "SOLVER_VISIBLE_CONTRACTS",
+        "SOLVER_VISIBLE_REQUIREMENTS"
+      ],
+      "stage_id": "VERIFIER_BUILD"
+    },
+    "nodes": [
+      {
+        "disposition": "ADVANCE",
+        "input_task_commit": "78ad422902b27dea954905130a1267b02cff3596",
+        "invocation_id": "inv_3906502d2198dd5fe8d9630704622b7a69ef6ff8438b5048ffc0de2ab08b9d7f",
+        "ledger_event_id": "evt_e04d6afff7a5995161708015c2aa6d00611bc674d2d4a640297cc574c03aa027",
+        "node_id": "RULE_RESOLUTION",
+        "node_kind": "STAGE",
+        "output_task_commit": "78ad422902b27dea954905130a1267b02cff3596",
+        "reason": "validated ADVANCE record reaches WORK_PACKAGE_RESEARCH",
+        "record_id": "rec_55c5fe0ac89cbde25d737dfeba32dcd0d05921bd42b9525f7d06f497cfb97832",
+        "status": "CURRENT"
+      },
+      {
+        "disposition": "ADVANCE",
+        "input_task_commit": "78ad422902b27dea954905130a1267b02cff3596",
+        "invocation_id": "inv_bfef1ed44348c1c2154c7421449bb82e412e404242a38ac5df75bcf7b9e27b7b",
+        "ledger_event_id": "evt_77808877ae0de56cc2ecc7a12e9ff0121e1257acafb43f1ce15cebe67e03db99",
+        "node_id": "WORK_PACKAGE_RESEARCH",
+        "node_kind": "STAGE",
+        "output_task_commit": "78ad422902b27dea954905130a1267b02cff3596",
+        "reason": "validated ADVANCE record reaches SYSTEM_ARCHITECTURE",
+        "record_id": "rec_f568d60b5255002b3cc2a54522182d395df603e757cda0e7f3e90b76781f706a",
+        "status": "CURRENT"
+      },
+      {
+        "disposition": "ADVANCE",
+        "input_task_commit": "78ad422902b27dea954905130a1267b02cff3596",
+        "invocation_id": "inv_527d4d91ae80aca517faf6d2db1d8acee688e3329019e186a4a07b0e38af045b",
+        "ledger_event_id": "evt_41f574d5a0aa4094ddd4cce43e47bfb087c81c60fda7e86bc62264a5393bf2c7",
+        "node_id": "SYSTEM_ARCHITECTURE",
+        "node_kind": "STAGE",
+        "output_task_commit": "78ad422902b27dea954905130a1267b02cff3596",
+        "reason": "validated ADVANCE record reaches DEFECT_TOPOLOGY",
+        "record_id": "rec_51f1f89efc85f52b06e9f604b11827d323c55ea8b35c65c588df16353b05ed28",
+        "status": "CURRENT"
+      },
+      {
+        "disposition": "ADVANCE",
+        "input_task_commit": "78ad422902b27dea954905130a1267b02cff3596",
+        "invocation_id": "inv_7edfc7a8dbc6613be4b6d3e7ebdb258ccce2f9a59463bfafe22d888fc10b24ac",
+        "ledger_event_id": "evt_a8ca9d19d7456e3f3dbba67e23c1e3be6ac6ab1ed0f28dfd8bc964ad8e066d16",
+        "node_id": "DEFECT_TOPOLOGY",
+        "node_kind": "STAGE",
+        "output_task_commit": "78ad422902b27dea954905130a1267b02cff3596",
+        "reason": "validated ADVANCE record reaches ENVIRONMENT_BUILD",
+        "record_id": "rec_9991c9503ef4b367076604bb336f348286791e8c998e54470726e382c95bb9f4",
+        "status": "CURRENT"
+      },
+      {
+        "disposition": "ADVANCE",
+        "input_task_commit": "78ad422902b27dea954905130a1267b02cff3596",
+        "invocation_id": "inv_75d449df003d927b6e6c66f991e4d0f58ebcc3b8cb95f1791979cda6e7493693",
+        "ledger_event_id": "evt_2d3a324ec747a54e672fb33d4864a5a0fdfa765344a3cacfd2132d604daea674",
+        "node_id": "ENVIRONMENT_BUILD",
+        "node_kind": "STAGE",
+        "output_task_commit": "78ad422902b27dea954905130a1267b02cff3596",
+        "reason": "validated ADVANCE record reaches REFERENCE_SOLUTION",
+        "record_id": "rec_fba50694e328516733a77ca0f5710f38571cdfda0035fe10107e5835659cd30d",
+        "status": "CURRENT"
+      },
+      {
+        "disposition": "ADVANCE",
+        "input_task_commit": "78ad422902b27dea954905130a1267b02cff3596",
+        "invocation_id": "inv_7fa551cb3d0d6d4ab7538111f18856823b8c587481f357abe3fa39ffee595218",
+        "ledger_event_id": "evt_f1dca49efe2b159905c193abae2c959fc802b466072ec0f4d1856589c646ee97",
+        "node_id": "REFERENCE_SOLUTION",
+        "node_kind": "STAGE",
+        "output_task_commit": "78ad422902b27dea954905130a1267b02cff3596",
+        "reason": "validated ADVANCE record reaches VERIFIER_BUILD",
+        "record_id": "rec_d8486d5a046253f222fe65e14fa121c17e752f27d4b648737a87735573fc0045",
+        "status": "CURRENT"
+      },
+      {
+        "input_task_commit": "78ad422902b27dea954905130a1267b02cff3596",
+        "invocation_id": "inv_7a225d5d2fa263fabc7692a5d7aa78930a8aa76269a6c2a2324181994cf8da46",
+        "ledger_event_id": "evt_f0fbb5c9eecf25fb411b95137de8cce90875f7888da3d6082ddc502491a0051c",
+        "node_id": "VERIFIER_BUILD",
+        "node_kind": "STAGE",
+        "output_task_commit": "78ad422902b27dea954905130a1267b02cff3596",
+        "reason": "latest execution record predates the latest current predecessor execution; the downstream stage must be rerun even when task/control commits are unchanged",
+        "record_id": "rec_789dd33732878f24c02faabf07a2255b1ce81a0c44a5ab28baff1cf934a855d5",
+        "status": "STALE"
+      },
+      {
+        "input_task_commit": "78ad422902b27dea954905130a1267b02cff3596",
+        "invocation_id": "inv_97dbdf46c57e7c365184d2d57d569aa35662d3e9b785f6804127db981cd43656",
+        "ledger_event_id": "evt_60cb7308c5bb7dc816db1b7ce9842eaa9a8f82dda1db22eb42e89bfc925d2ecc",
+        "node_id": "HUMAN_WRITING_RESEARCH",
+        "node_kind": "STAGE",
+        "output_task_commit": "78ad422902b27dea954905130a1267b02cff3596",
+        "reason": "upstream node VERIFIER_BUILD is not current; later historical evidence cannot advance",
+        "record_id": "rec_e4b76169b1361596c1e05a23146a7de748ee52d98cbf2ae403c9cff86872cdd7",
+        "status": "STALE"
+      },
+      {
+        "input_task_commit": "78ad422902b27dea954905130a1267b02cff3596",
+        "invocation_id": "inv_ac57ef3c720874346bc4853d5d00a4f9e4ed953ddbd2f5a358200a0405305e89",
+        "ledger_event_id": "evt_cb8298b085203a580e3e3d736b6b82f65af25096835a8c7722a75a5b42bfdd1c",
+        "node_id": "INSTRUCTION_DRAFT",
+        "node_kind": "STAGE",
+        "output_task_commit": "78ad422902b27dea954905130a1267b02cff3596",
+        "reason": "upstream node HUMAN_WRITING_RESEARCH is not current; later historical evidence cannot advance",
+        "record_id": "rec_1abcd8130330cda1380d1e3423ea559278aac8cbaa2784f281889793241526ce",
+        "status": "STALE"
+      },
+      {
+        "input_task_commit": "78ad422902b27dea954905130a1267b02cff3596",
+        "invocation_id": "inv_0183be101e74e7876325a3a3623b91409c6f8e2faa05b276bfdee25f81456709",
+        "ledger_event_id": "evt_e9497960bc7a36a3767e6a1cd8aa2b7b05e4ce420840ab243f730181aa542352",
+        "node_id": "SPEC_ALIGNMENT",
+        "node_kind": "STAGE",
+        "output_task_commit": "78ad422902b27dea954905130a1267b02cff3596",
+        "reason": "upstream node INSTRUCTION_DRAFT is not current; later historical evidence cannot advance",
+        "record_id": "rec_a26b236f358d006cc7c2646d12d26f7e769758b46360a76d55756536f4f2f002",
+        "status": "STALE"
+      },
+      {
+        "input_task_commit": "78ad422902b27dea954905130a1267b02cff3596",
+        "invocation_id": "inv_a2b4baa57f66bd5cbc0733d1f36acd6dccbde7b3262e160b8d35be9c22496937",
+        "ledger_event_id": "evt_9b3ae280fe943fb5f575b20c2aec10759da20f09e63a6d78f114f932200a5425",
+        "node_id": "DOCUMENTATION_DRAFT",
+        "node_kind": "STAGE",
+        "output_task_commit": "78ad422902b27dea954905130a1267b02cff3596",
+        "reason": "upstream node SPEC_ALIGNMENT is not current; later historical evidence cannot advance",
+        "record_id": "rec_21e7e6dcf542bfcc7f09a1cda190dff4aaaa9fbdc0262c0f2ef9fac62c12d5f6",
+        "status": "STALE"
+      },
+      {
+        "input_task_commit": "78ad422902b27dea954905130a1267b02cff3596",
+        "invocation_id": "inv_341524492282b5d2f5bca54eb380504cf349f84ec6dff45f4cb52fc7d16e59ff",
+        "ledger_event_id": "evt_6662fd82a6f7b422acd7f195cc627449926114448f1bd31817c48265046939ef",
+        "node_id": "FORMAT_GATE",
+        "node_kind": "STAGE",
+        "output_task_commit": "78ad422902b27dea954905130a1267b02cff3596",
+        "reason": "upstream node DOCUMENTATION_DRAFT is not current; later historical evidence cannot advance",
+        "record_id": "rec_c5fb9ce88cbda2c6a7e74e02734f2ac72da288e4c5372597f236d54dbbb67ab9",
+        "status": "STALE"
+      },
+      {
+        "input_task_commit": "78ad422902b27dea954905130a1267b02cff3596",
+        "invocation_id": "inv_7cfcc5d3886ea8ec691f64b670fac799b8b024fd206b1cdd8a739c2dbe1da39f",
+        "ledger_event_id": "evt_1f8374a0c2eee135e692117fe11be9b84b666372a023f29f33d96e6f2eb730df",
+        "node_id": "ASSEMBLY",
+        "node_kind": "STAGE",
+        "output_task_commit": "78ad422902b27dea954905130a1267b02cff3596",
+        "reason": "upstream node FORMAT_GATE is not current; later historical evidence cannot advance",
+        "record_id": "rec_81277275adfd88ca55119fb06d5fa4f56cce6977adc2b7b9b60769303b5293a1",
+        "status": "STALE"
+      },
+      {
+        "node_id": "COMPLEXITY_GATE",
+        "node_kind": "STAGE",
+        "reason": "upstream node ASSEMBLY is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "RUNTIME_AUTHENTICITY",
+        "node_kind": "STAGE",
+        "reason": "upstream node COMPLEXITY_GATE is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "DETERMINISTIC_VALIDATION",
+        "node_kind": "STAGE",
+        "reason": "upstream node RUNTIME_AUTHENTICITY is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "FROZEN_CANDIDATE",
+        "node_kind": "STATE",
+        "reason": "state cannot be current while its predecessor chain is non-current",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "QUALITY_INTERLOCK",
+        "node_kind": "STAGE",
+        "reason": "upstream node FROZEN_CANDIDATE is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "PRE_LLMAJ",
+        "node_kind": "STAGE",
+        "reason": "upstream node QUALITY_INTERLOCK is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "MODEL_DIAGNOSTIC_GPT",
+        "node_kind": "STAGE",
+        "reason": "upstream node PRE_LLMAJ is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "MODEL_DIAGNOSTIC_CLAUDE",
+        "node_kind": "STAGE",
+        "reason": "upstream node MODEL_DIAGNOSTIC_GPT is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "MODEL_DIAGNOSTIC_AGGREGATE",
+        "node_kind": "STAGE",
+        "reason": "upstream node MODEL_DIAGNOSTIC_CLAUDE is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "HARBOR_LLMAJ",
+        "node_kind": "STAGE",
+        "reason": "upstream node MODEL_DIAGNOSTIC_AGGREGATE is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "OFFICIAL_MODEL_TRIALS",
+        "node_kind": "STAGE",
+        "reason": "upstream node HARBOR_LLMAJ is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "TRIAL_ANALYSIS",
+        "node_kind": "STAGE",
+        "reason": "upstream node OFFICIAL_MODEL_TRIALS is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "DIFFICULTY_ASSESSMENT",
+        "node_kind": "STAGE",
+        "reason": "upstream node TRIAL_ANALYSIS is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "FINAL_REVIEW",
+        "node_kind": "STAGE",
+        "reason": "upstream node DIFFICULTY_ASSESSMENT is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "SUBMISSION_READY",
+        "node_kind": "STAGE",
+        "reason": "upstream node FINAL_REVIEW is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      }
+    ],
+    "schema_version": "1.0",
+    "state_snapshot_id": "state_8118a67c52d157c33d66feaf7578666e1e417bc460c0e9cf490b0e43f9606e69",
+    "summary": {
+      "BLOCKED": 0,
+      "CURRENT": 6,
+      "MISSING": 15,
+      "STALE": 7
+    },
+    "task_commit": "78ad422902b27dea954905130a1267b02cff3596",
+    "task_id": "terraform-ansible-managed-resources"
+  }
+}
