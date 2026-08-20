@@ -103,3 +103,6 @@ def install_quality_execution_guards() -> None:
     _base.materialize_projection = materialize_projection
     _base.execute_quality_packet = execute_quality_packet
     _INSTALLED = True
+
+
+install_quality_execution_guards()
