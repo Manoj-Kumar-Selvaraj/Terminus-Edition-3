@@ -1,7 +1,7 @@
 {
   "acceptance_predicates": {},
   "authority": {
-    "control_plane_commit": "67b805a297ac005ee08e82facc533f53a3233192",
+    "control_plane_commit": "5aebce7e213fa5f5864bdd741e6139d39bf5e059",
     "policy_versions": {},
     "task_commit": "78ad422902b27dea954905130a1267b02cff3596",
     "task_id": "terraform-ansible-managed-resources"
@@ -41,81 +41,36 @@
     "optional": {},
     "required": {
       "ACTIVE_FORMAT_VALIDATORS": [
-        "current Terminus task-format/packaging CI",
-        "task.toml structure and absolute artifact-path checks",
-        "digest-pinned agent/verifier image checks",
-        "separate-verifier and test.sh reward-contract checks",
-        "solution/tests isolation checks",
-        "Q7 Task Format Enforcer same-chat review"
+        "task.toml schema and required package paths",
+        "agent/verifier Dockerfile and .dockerignore boundaries",
+        "tests/test.sh verifier entrypoint/reward contract",
+        "instruction required-output/path constraints"
       ],
       "CREATION_RULE_CONTEXT": {
-        "CONTROL_PLANE_COMMIT": "67b805a297ac005ee08e82facc533f53a3233192",
+        "CONTROL_PLANE_COMMIT": "5aebce7e213fa5f5864bdd741e6139d39bf5e059",
         "CREATION_PROFILE": "large_system_strict",
-        "KNOWN_POLICY_CONFLICTS": [],
-        "NETWORK_ENVIRONMENT_CONSTRAINTS": "network_mode public; separate verifier; digest-pinned canonical Go runtime; no privileged Docker/capability/socket shortcuts; tmux and asciinema required in agent image"
+        "KNOWN_POLICY_CONFLICTS": []
       },
       "CURRENT_TASK_TREE": {
-        "environment": {
-          "Dockerfile": "digest-pinned golang:1.24-bookworm; installs ansible-core, tmux, asciinema and Terraform 1.10.5; copies only ansibleops into /app/provider",
-          "dockerignore": [
-            ".git",
-            ".gitignore",
-            "solution",
-            "tests",
-            "**/*_test.go",
-            "**/.terraform",
-            "**/.terraform.lock.hcl",
-            "**/terraform.tfstate*",
-            "**/*.log"
-          ],
-          "source_dir": "environment/ansibleops/"
-        },
-        "instruction": "instruction.md uses /app/provider and solver-visible docs; no verifier/private paths exposed",
-        "solution": {
-          "entrypoint": "solution/solve.sh",
-          "implementation_overlay": "solution/fixed/"
-        },
-        "task_root": "terraform-ansible-managed-resources",
-        "task_toml": {
-          "agent_timeout_sec": 7200,
-          "artifacts": [
-            "/app/provider"
-          ],
-          "category": "Software",
-          "difficulty": "advanced",
-          "name": "terraform-ansible-managed-resources",
-          "network_mode": "public",
-          "subcategory": "Systems",
-          "verifier_environment_mode": "separate",
-          "verifier_timeout_sec": 2400,
-          "workdir": "/app/provider"
-        },
-        "tests": {
-          "Dockerfile": "digest-pinned same Go base; pytest and pytest-json-ctrf pinned at image build; /tests mounted/copied separately",
-          "private_test_files": [
-            "conftest.py",
-            "test_outputs.py",
-            "test_provider_contract.py",
-            "test_lifecycle_filesystem.py",
-            "test_lifecycle_content.py",
-            "test_lifecycle_identity.py",
-            "test_lifecycle_delete.py",
-            "test_runner_and_cron.py"
-          ],
-          "test_sh": "builds provider from /app/provider vendored source; runs declared pytest suite; writes /logs/verifier/reward.txt 1 only on success and exits pytest status"
-        },
-        "top_level": [
+        "go_version": "1.24",
+        "provider_source": "local/ansibleops",
+        "provider_version": "0.1.0",
+        "required_paths": [
           "README.md",
           "environment/",
           "instruction.md",
           "solution/",
           "task.toml",
           "tests/"
-        ]
+        ],
+        "resource_count": 10,
+        "runtime_artifact": "/app/provider",
+        "task_root": "terraform-ansible-managed-resources",
+        "terraform_version": "1.10.5"
       }
     }
   },
-  "invocation_id": "inv_4e03ec70b8e339ba1e4f60d3a1d4f7548590cc2c2ebcf0a30e1f15ed451ed78a",
+  "invocation_id": "inv_20b2d50c4433762dee71ef985695d946ba418dd7f8e1dbbfa21ac51ae02d4b87",
   "learning": {
     "context_hash": "sha256:bb84a513aa2b6e4374d691759c4a6edf94169f479f4611e9091643b9f279ccfc",
     "lessons": [],
