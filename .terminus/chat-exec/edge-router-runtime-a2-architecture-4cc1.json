@@ -1,0 +1,29 @@
+{
+  "schema_version":"1.0",
+  "mode":"RECORD",
+  "task_id":"edge-router-runtime",
+  "task_commit":"123dd1e34d12845f94daa4679820b9b51e195609",
+  "control_plane_commit":"4cc1f68cb57b284c4817e3f354ea6eb74c5f717d",
+  "expected_repository_head":"90d4fa7136a676236cbe9facbcaed559d02cff78",
+  "stage_id":"SYSTEM_ARCHITECTURE",
+  "inputs":{
+    "CREATION_RULE_CONTEXT":{"CONTROL_PLANE_COMMIT":"4cc1f68cb57b284c4817e3f354ea6eb74c5f717d","CREATION_PROFILE":"large_system_strict","KNOWN_POLICY_CONFLICTS":[],"NETWORK_ENVIRONMENT_CONSTRAINTS":"network_mode public; separate verifier; digest-pinned canonical Go runtime; no privileged Docker/capability/socket shortcuts; tmux and asciinema required in agent image"},
+    "APPROVED_WORK_PACKAGE":{"ID":"GENERATION_SAFE_DYNAMIC_RECONCILIATION","ENGINEERING_OBJECTIVE":"Implement generation-safe dynamic route and upstream reconciliation so complete configuration and membership changes apply atomically under concurrent traffic, rolling backend turnover, invalid updates and restart.","REQUIREMENT_FAMILIES":["configuration ingestion and semantic validation","route-graph compilation","generation fencing and atomic publication","backend discovery and endpoint diffing","health-state lifecycle","weighted/sticky/retry/failover selection","connection and endpoint draining","checkpoint persistence and restart recovery","observability lifecycle and metric garbage collection"]},
+    "APPROVED_OPERATIONAL_REQUIREMENTS":{"REQUIRED_END_STATE":["Validate and compile candidate configuration into immutable runtime snapshots before publication.","Fence accepted generations so stale or out-of-order updates cannot overwrite newer state.","Publish route and upstream state atomically and retain last-known-good serving state when candidates are rejected.","Reconcile endpoints by stable canonical identity and membership incarnation.","Preserve compatible selection, affinity, health, transport and lifecycle continuity for unchanged endpoints.","Exclude removed/ineligible endpoints from new work while allowing bounded drain of existing traffic.","Checkpoint only complete accepted state and recover a complete last-known-good generation.","Retire unreachable snapshots, runtimes, transports, affinity and telemetry without unbounded growth."],"PRESERVATION":["in-flight requests remain valid across unrelated updates","unchanged route semantics remain stable","healthy unchanged endpoints preserve meaningful state","rejected updates cannot damage serving generation","readers never observe partially applied configuration","runtime and observability state remain bounded"]}
+  },
+  "result":{
+    "status":"ARCHITECTURE_READY",
+    "output_task_commit":"123dd1e34d12845f94daa4679820b9b51e195609",
+    "outputs":{
+      "COMPONENT_GRAPH":{"architecture_style":"single-process Go edge runtime with immutable serving generations, serialized reconciliation, lifecycle-safe shared runtime objects, explicit data/operator planes and durable recovery","nodes":["runtime_host","configuration_ingress","semantic_validator","route_graph_compiler","generation_reconciler","snapshot_store","pool_runtime_registry","selection_engine","upstream_transport","health_manager","drain_manager","checkpoint_store","telemetry_registry","data_plane_server","admin_plane"],"identity_contract":{"endpoint":"pool id + canonical network endpoint + transport compatibility; accepted remove/re-add creates a new incarnation","pool":"stable pool id plus semantic compatibility fingerprint","route":"stable route id plus declaration-order-independent semantic digest","source":"source identity + monotonic revision + content digest"},"publication_contract":"validate, compile, recheck source fences, reconcile runtime state, prepare durable checkpoint body and atomically publish one complete snapshot before acknowledgement"},
+      "ENTRYPOINTS":["edge-router-runtime serve","edge-router-runtime validate","operator POST /v1/config","operator POST /v1/discovery","public HTTP data plane","startup checkpoint recovery","graceful shutdown/drain"],
+      "STATE_MODEL":{"serving_state":"one immutable RuntimeSnapshot leased for a complete request","endpoint_state":"canonical identity + incarnation + health + lifecycle + inflight + transport/affinity continuity","source_state":"per-source accepted revision/digest and complete accepted source material","durability":"checksummed generation body plus atomic CURRENT authority with retained previous complete generations"},
+      "SOLVER_VISIBLE_DOC_PLAN":["environment/docs/architecture.md","environment/docs/configuration.md","environment/docs/runtime-state.md","environment/docs/operator-guide.md","environment/docs/observability.md"],
+      "PRODUCTION_CHARACTERISTICS":["public HTTP proxying","independent operator/discovery updates","concurrent immutable generation publication","health-aware selection/retry/failover","bounded draining","durable crash recovery","bounded lifecycle telemetry","production-scale deterministic configuration"],
+      "SCALE_FIT":{"ASSESSMENT":"VERY_HIGH","SUBSTANTIVE_RUNTIME_LOC":"strict >=3000 floor already materialized","DEFECT_SURFACE":"30 coherent manifestations across six causal clusters","BEHAVIORAL_SURFACE":"25+ normal/edge/negative/concurrency/restart/preservation scenarios without quota padding"},
+      "DATA_VOLUME_PLAN":{"classification":"configuration/runtime-state edge service","plan":"materially varied route/pool/endpoint and independent source snapshots sufficient to exercise reconciliation and runtime lifecycle; generated data does not count as authored-code scale"},
+      "UNRESOLVED_RISKS":[]
+    },
+    "evidence_refs":[]
+  }
+}
