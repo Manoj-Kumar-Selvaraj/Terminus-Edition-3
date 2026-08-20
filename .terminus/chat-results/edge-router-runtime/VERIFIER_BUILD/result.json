@@ -1,0 +1,85 @@
+{
+  "evidence_refs": [],
+  "invocation_id": "inv_cbb52b46070684e3fa49be1d737ce4ea4e12f597ff143fd8f59ff317d3e071c5",
+  "output_task_commit": "9663e4da67ab20e6bd66b942ac54b57667408dd8",
+  "outputs": {
+    "EDGE_BOUNDARY_COVERAGE": [
+      "canonical endpoint aliases",
+      "same-revision different-digest conflict",
+      "independent source revision boundaries",
+      "endpoint declaration reorder and equivalent address normalization",
+      "remove/re-add incarnation reset",
+      "all-backends-unhealthy deterministic unavailability",
+      "old leased generation failover while endpoint is draining"
+    ],
+    "F2P_COUNT": 28,
+    "NEGATIVE_FAILURE_COVERAGE": [
+      "invalid/rejected candidate cannot advance accepted fence",
+      "stale revisions cannot publish",
+      "source-local conflicts cannot poison other source material",
+      "unhealthy or removed endpoints cannot receive fresh work",
+      "corrupt, missing, checksum-invalid or schema-incompatible current checkpoints cannot be restored as current",
+      "unknown JSON fields are rejected"
+    ],
+    "ORACLE_EMPIRICAL_STATUS": "DEFERRED_TO_DETERMINISTIC_VALIDATION",
+    "ORGANIC_COUNT_JUSTIFICATION": "Twenty-eight F2P cases cover distinct generation authority, source independence, identity/compatibility, snapshot/retry/failover, drain ownership, checkpoint recovery and lifecycle-observability failures. Six P2P cases preserve independent public CLI/admin/data-plane behavior; the cases are not quota padding.",
+    "P2P_COUNT": 6,
+    "REQUIREMENT_TEST_MATRIX": {
+      "REQ_CHECKPOINT_RECOVERY": [
+        "corrupt body fallback",
+        "corrupt pointer fallback",
+        "checksum mismatch rejection",
+        "schema-incompatible rejection",
+        "missing-current fallback"
+      ],
+      "REQ_DRAIN_OWNERSHIP": [
+        "removed endpoint excluded from fresh requests",
+        "inflight request survives unrelated publication"
+      ],
+      "REQ_GENERATION_FENCE": [
+        "same revision different digest conflict",
+        "exact duplicate generation no-op",
+        "stale revision rejection",
+        "rejected candidate preserves fence",
+        "conflict preserves serving digest"
+      ],
+      "REQ_IDENTITY_COMPATIBILITY": [
+        "canonical duplicate rejection",
+        "reorder continuity",
+        "nonsemantic metadata continuity",
+        "equivalent address continuity",
+        "selection-policy change resets balancer state",
+        "remove/re-add gets new incarnation"
+      ],
+      "REQ_OBSERVABILITY": [
+        "metric scopes bounded under churn",
+        "metrics/events readable"
+      ],
+      "REQ_PUBLIC_INTERFACE": [
+        "validate accepts normal config",
+        "validate rejects unknown field",
+        "health/ready/status surfaces",
+        "data plane proxies",
+        "host mismatch not found"
+      ],
+      "REQ_SNAPSHOT_SELECTION": [
+        "sticky revalidates unhealthy endpoint",
+        "all unhealthy unavailable",
+        "retry exclusion survives runtime replacement",
+        "failover uses request-leased generation"
+      ],
+      "REQ_SOURCE_AUTHORITY": [
+        "independent source revisions",
+        "low revision new source accepted",
+        "source conflict isolation",
+        "duplicate source does not poison another",
+        "recovered fence rejects older revision"
+      ]
+    },
+    "SOLVER_LOGIC_REIMPLEMENTATION_RISK": "LOW",
+    "STARTER_EMPIRICAL_STATUS": "DEFERRED_TO_DETERMINISTIC_VALIDATION",
+    "TEST_INDEPENDENCE": "Tests drive documented CLI, operator API, data plane and externally observable runtime/checkpoint behavior without importing solution payloads, keying assertions on private defect IDs, or reproducing the reference implementation algorithm."
+  },
+  "schema_version": "1.0",
+  "status": "VERIFIER_READY"
+}
