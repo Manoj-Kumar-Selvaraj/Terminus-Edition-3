@@ -1,0 +1,51 @@
+{
+  "schema_version": "1.0",
+  "mode": "RECORD",
+  "task_id": "route-control-plane",
+  "task_commit": "22d2e9e09f4deb58029559fe9a0863c2e032f25c",
+  "control_plane_commit": "7d8a6d8c62a62e6d24949344c7fd712e59bc8829",
+  "expected_repository_head": "83387313aacdfd4edbee64626bbfd9eb1683a7d3",
+  "stage_id": "REFERENCE_SOLUTION",
+  "inputs": {
+    "APPROVED_OPERATIONAL_REQUIREMENTS": {
+      "PRESERVATION": ["safe management reachability", "no partial publication", "stable audit ordering", "no host-network mutation", "idempotent deployment"],
+      "REQUIRED_END_STATE": ["canonical route and rule lifecycle", "revision preview/apply/rollback with CAS fencing", "drift detection and owned reconciliation", "fleet rollout isolation and retry safety", "Ansible idempotency and host precedence", "dashboard mutations bound to exact preview revision"]
+    },
+    "SYSTEM_ARCHITECTURE": {"SOURCE_RECORD_ID": "rec_c11fa37e2e63944d75513e2619936e1893f0de4102920233f767f12b7b1a9679"},
+    "STARTER_ENVIRONMENT": {"SOURCE_RECORD_ID": "rec_9cedd1766844e63c29ed4381df48acc7ce941aaf790d03e1c16d052c149dfea0"},
+    "DEFECT_TOPOLOGY": {"SOURCE_RECORD_ID": "rec_dd1cbef88ad3d177ee8912b065d42b1737cc1aacba6431664bed1df47c3dd37b"}
+  },
+  "result": {
+    "status": "IMPLEMENTED",
+    "output_task_commit": "22d2e9e09f4deb58029559fe9a0863c2e032f25c",
+    "outputs": {
+      "RESTORED_INVARIANTS": [
+        "Canonical route identities collapse equivalent prefixes and ignore multipath ordering while preserving route-table identity.",
+        "Policy-rule effective priority is unique per node/family and lookup rules cannot reference absent tables.",
+        "Apply is fenced to the exact preview base revision and idempotency keys cannot be rebound to a different plan.",
+        "Desired, observed, transaction, idempotency and audit state publish atomically through one durable replacement with directory fsync.",
+        "Rollback restores each affected node's own prior snapshot as a new monotonic revision and refuses to overwrite newer state.",
+        "Reconcile refuses stale observed snapshots and never removes unowned unexpected routes or rules.",
+        "Rollouts stop at failed canaries, reject stale/offline heartbeats, and do not replay nodes already at target revision.",
+        "Ansible config projection is stable across reruns and preserves host-specific protected routes over group/default routes.",
+        "Dashboard Apply uses the immutable base revision returned by Preview rather than a concurrently refreshed UI revision."
+      ],
+      "FILES_CHANGED": [
+        "route-control-plane/solution/solve.sh",
+        "route-control-plane/solution/repair.py"
+      ],
+      "RESTART_IDEMPOTENCY_BEHAVIOR": "Repeated solve.sh execution applies the same root-cause repairs, formats and rebuilds the same Go program; durable state uses atomic rename plus directory fsync and startup marks incomplete historical transactions failed rather than replaying partial publication.",
+      "DETERMINISM_NOTES": "The repair is source-structural and deterministic. It contains no verifier-name, hidden-input, random test-case or environment-specific branching; solve.sh formats, tests and builds the repaired program after installation.",
+      "PRESERVED_BEHAVIOR": "The public Go HTTP API, task metadata, Docker runtime, solver-visible fleet data, Ansible role surfaces and TypeScript dashboard remain intact while the approved transactional, reconciliation, rollout and concurrency invariants are restored.",
+      "RISKS_FOR_INDEPENDENT_VERIFIER": [
+        "Exercise rollback after intervening revisions and verify conflict rather than clobber.",
+        "Exercise IPv6 aliases, multipath reorder and route replace normalization independently.",
+        "Exercise stale observed reconciliation and unowned-route preservation.",
+        "Exercise stale heartbeat, failed canary and rollout retry behavior.",
+        "Exercise Ansible rerun convergence and host-specific protected route precedence.",
+        "Exercise dashboard preview/apply races against concurrent revisions."
+      ]
+    },
+    "evidence_refs": []
+  }
+}
