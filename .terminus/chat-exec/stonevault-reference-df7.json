@@ -1,0 +1,26 @@
+{
+  "schema_version": "1.0",
+  "mode": "RECORD",
+  "task_id": "stonevault-crash-safe-storage",
+  "task_commit": "03317f8218069b9e0b5d073bf87ecf7a0ae8e4a1",
+  "control_plane_commit": "df7ef7569e2947b9f0bf7cf89ed4dec6c2a5a1fe",
+  "expected_repository_head": "3ca08eb0c238cf0750e3c83ee44faa620a36ba30",
+  "stage_id": "REFERENCE_SOLUTION",
+  "inputs": {
+    "APPROVED_OPERATIONAL_REQUIREMENTS": ["writer fencing", "snapshot isolation", "FCW conflicts", "durable WAL/recovery", "checkpoint/snapshot integrity", "operator state", "protocol limits"],
+    "STARTER_ENVIRONMENT": {"artifact": "/app/stonevault/bin/stonevault"},
+    "SYSTEM_ARCHITECTURE": {"boundary": "Rust command/session plus C++20 storage core"}
+  },
+  "result": {
+    "status": "IMPLEMENTED",
+    "outputs": {
+      "DETERMINISM_NOTES": "no network or time-dependent repair logic; deterministic native rebuild",
+      "FILES_CHANGED": ["solution/fix.patch", "solution/solve.sh"],
+      "PRESERVED_BEHAVIOR": ["stable C ABI", "ASCII response shapes", "documented WAL layout", "documented snapshot layout", "binary key/value representation"],
+      "RESTART_IDEMPOTENCY_BEHAVIOR": "solve.sh applies one bounded patch then cleanly rebuilds; repaired runtime preserves committed state across restart and ignores only documented crash-temporary/torn-tail cases",
+      "RESTORED_INVARIANTS": ["exclusive writer ownership", "transaction snapshot visibility with local overlays", "atomic first-committer-wins rejection", "durable contiguous commit sequencing", "fail-closed complete-record corruption handling", "checkpoint quiescence/publication/WAL reclamation", "snapshot integrity", "accurate health/stats", "configuration precedence and inclusive protocol bounds"],
+      "RISKS_FOR_INDEPENDENT_VERIFIER": ["restart semantics", "complete-vs-torn corruption boundary", "MVCC tombstones/scan overlay", "checkpoint publication", "operator-state reachability"]
+    },
+    "evidence_refs": [{"kind": "COMMIT", "ref": "commit:03317f8218069b9e0b5d073bf87ecf7a0ae8e4a1"}]
+  }
+}
