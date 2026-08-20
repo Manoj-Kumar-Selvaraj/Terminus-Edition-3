@@ -1,0 +1,160 @@
+{
+  "acceptance_predicates": {},
+  "authority": {
+    "control_plane_commit": "5aebce7e213fa5f5864bdd741e6139d39bf5e059",
+    "policy_versions": {},
+    "task_commit": "9663e4da67ab20e6bd66b942ac54b57667408dd8",
+    "task_id": "edge-router-runtime"
+  },
+  "evidence": {
+    "authorized_evidence_classes": [
+      "CONTROL_PLANE_POLICY",
+      "PRIVATE_CREATION_DESIGN",
+      "SOLVER_VISIBLE_TASK"
+    ],
+    "evidence_required": [
+      "deterministic general repair/completion",
+      "preservation rationale",
+      "no hidden-test special casing"
+    ],
+    "excluded_evidence_classes": [
+      "CI_RUNTIME_EVIDENCE",
+      "CURRENT_REVIEW_PACKET",
+      "DURABLE_SESSION_STATE",
+      "FINAL_PACKAGE_EVIDENCE",
+      "MODEL_TRIAL_EVIDENCE",
+      "PRIOR_REVIEW_RESULTS",
+      "PUBLIC_REFERENCE",
+      "SOLUTION_ORACLE",
+      "VERIFIER_PRIVATE"
+    ],
+    "mandatory_exact_reads": [
+      ".terminus/agents/CREATION_PIPELINE.md",
+      ".terminus/agents/CREATOR_PROMPTS.md"
+    ],
+    "retrieval_mode": "EXACT_ONLY"
+  },
+  "ignored_input_count": 0,
+  "inputs": {
+    "optional": {
+      "SOLVER_VISIBLE_CONTRACTS": [
+        "edge-router-runtime/environment/docs/architecture.md",
+        "edge-router-runtime/environment/docs/configuration.md",
+        "edge-router-runtime/environment/docs/runtime-state.md",
+        "edge-router-runtime/environment/docs/operator-guide.md",
+        "edge-router-runtime/environment/docs/observability.md"
+      ]
+    },
+    "required": {
+      "APPROVED_OPERATIONAL_REQUIREMENTS": {
+        "EDGE_FAILURES": [
+          "duplicate/out-of-order generations",
+          "burst discovery events",
+          "invalid update mixed with valid membership change",
+          "backend disappearance during active request",
+          "stale affinity to ineligible backend",
+          "all backends unhealthy",
+          "restart around publication/checkpoint",
+          "duplicate endpoint identities",
+          "slow drains",
+          "rapid remove/re-add",
+          "retired metric cleanup",
+          "corrupt/incomplete checkpoint",
+          "concurrent readers racing publication"
+        ],
+        "PRESERVATION": [
+          "in-flight and long-lived requests remain valid across unrelated updates",
+          "unchanged route semantics remain stable across generations",
+          "healthy unchanged endpoints preserve meaningful runtime state",
+          "rejected updates cannot damage the serving generation",
+          "readers never observe partially applied configuration",
+          "runtime and observability state remain bounded after repeated updates"
+        ],
+        "REQUIRED_END_STATE": [
+          "Validate and compile candidate configuration into immutable runtime snapshots before publication.",
+          "Fence accepted generations so stale or out-of-order updates cannot overwrite newer state.",
+          "Publish route and upstream state atomically and retain last-known-good serving state when candidates are rejected.",
+          "Reconcile endpoint additions, removals, and unchanged endpoints by stable canonical identity and membership incarnation.",
+          "Preserve compatible selection, affinity, health, transport, and lifecycle continuity for unchanged endpoints.",
+          "Exclude removed or ineligible endpoints from fresh selection/retry while allowing bounded drain of existing traffic.",
+          "Checkpoint only complete accepted state and recover a complete last-known-good generation after restart.",
+          "Retire unreachable snapshots, endpoint runtimes, transports, affinity state, and telemetry without unbounded growth."
+        ]
+      },
+      "STARTER_ENVIRONMENT": {
+        "SOURCE": "current canonical ENVIRONMENT_BUILD result"
+      },
+      "SYSTEM_ARCHITECTURE": {
+        "SOURCE": "current canonical SYSTEM_ARCHITECTURE result"
+      }
+    }
+  },
+  "invocation_id": "inv_97024c42ab41953c603ed21f4d9785790f72924654f472eeb8aaa90ad479f2fe",
+  "learning": {
+    "context_hash": "sha256:bb84a513aa2b6e4374d691759c4a6edf94169f479f4611e9091643b9f279ccfc",
+    "lessons": [],
+    "mode": "GENERALIZED_LESSONS_PLUS_OWNED_REMEDIATIONS",
+    "raw_feedback_exposed": false,
+    "raw_historical_findings_exposed": false,
+    "registry_heads": {
+      "feedback": "GENESIS",
+      "findings": "GENESIS",
+      "lessons": "GENESIS",
+      "patterns": "GENESIS",
+      "remediations": "GENESIS"
+    },
+    "remediations": []
+  },
+  "missing_required_inputs": [],
+  "output_contract": {
+    "allowed_status_values": [
+      "IMPLEMENTED",
+      "CONTRACT_GAP",
+      "BLOCKED"
+    ],
+    "deterministic_validators": [],
+    "optional_fields": [],
+    "persisted_artifacts": [
+      "<task>/solution/solve.sh",
+      "<task>/solution/"
+    ],
+    "required_fields": [
+      "RESTORED_INVARIANTS",
+      "FILES_CHANGED",
+      "RESTART_IDEMPOTENCY_BEHAVIOR",
+      "DETERMINISM_NOTES",
+      "PRESERVED_BEHAVIOR",
+      "RISKS_FOR_INDEPENDENT_VERIFIER"
+    ],
+    "semantic_reviewers": [
+      "Verifier Engineer"
+    ]
+  },
+  "readiness": "READY",
+  "retrieval": {
+    "query": null,
+    "retrieved_chars": 0,
+    "retrieved_context": [],
+    "status": "NOT_REQUESTED"
+  },
+  "routing": {
+    "failure_routes": {
+      "CONTRACT_GAP": "Creation Controller -> appropriate contract owner",
+      "RUNTIME_FAILURE": "Q5 Oracle & Runtime Repair Specialist"
+    },
+    "stale_on": [
+      "operational requirement change",
+      "environment implementation change",
+      "solver-visible contract change"
+    ],
+    "success_transition": "VERIFIER_BUILD"
+  },
+  "schema_version": "1.0",
+  "stage": {
+    "lifecycle": "creation",
+    "owner": "A4 Reference Solution Author",
+    "role_class": "PRODUCER",
+    "role_id": "A4_REFERENCE_SOLUTION_AUTHOR",
+    "stage_id": "REFERENCE_SOLUTION"
+  }
+}
