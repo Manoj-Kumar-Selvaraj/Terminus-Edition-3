@@ -15,6 +15,13 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
+from .quality_execution_guard import (
+    ensure_review_output_unoccupied,
+    install_quality_execution_guards,
+)
+
+install_quality_execution_guards()
+
 from .quality_executor import (
     MAX_API_ROUNDS,
     Q4_ROLE,
@@ -253,6 +260,10 @@ def execute_flag_backend(
     diagnostic_path: Path | None = None,
 ) -> dict[str, Any]:
     """Execute exactly one already-selected backend with no fallback."""
+
+    root = root.resolve()
+    _, packet = load_packet(root, packet_path)
+    ensure_review_output_unoccupied(root, packet)
 
     if backend == BACKEND_CURSOR:
         if model:
