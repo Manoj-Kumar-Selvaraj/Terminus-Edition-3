@@ -1,0 +1,31 @@
+{
+  "schema_version":"1.0",
+  "mode":"RECORD",
+  "task_id":"ec2-artifact-policy-enforcement",
+  "task_commit":"6c7909d5c0efd3e6e64443d6de3b227c1820b01b",
+  "control_plane_commit":"0579a0f2f1e7e3560d13ff1530f467c8e01b6a1a",
+  "expected_repository_head":"5d8c2c1c57e1f0c55d202e0655d960d034eb36a5",
+  "stage_id":"ENVIRONMENT_BUILD",
+  "inputs":{
+    "CLEAN_SYSTEM_ARCHITECTURE":{"SOURCE_RECORD_ID":"rec_c7113662704e00ec908b7912f1f6e11869163956ea9721ec8fa0f757a9021b9c","SOURCE":"current canonical SYSTEM_ARCHITECTURE result"},
+    "CREATION_RULE_CONTEXT":{"CONTROL_PLANE_COMMIT":"0579a0f2f1e7e3560d13ff1530f467c8e01b6a1a","CREATION_PROFILE":"large_system_strict","KNOWN_POLICY_CONFLICTS":[],"NETWORK_ENVIRONMENT_CONSTRAINTS":"network_mode public; separate verifier; digest-pinned canonical Go runtime; no privileged Docker/capability/socket shortcuts; tmux and asciinema required in agent image"},
+    "DEFECT_TOPOLOGY":{"SOURCE_RECORD_ID":"rec_0258e50d634c12a3e7a497b5162b9e5525aeee2213b80e52f3be66665cff240f","CLUSTER_COUNT":6,"DEFECT_COUNT":26,"CAUSAL_EDGE_COUNT":37,"SOURCE_PATH":".terminus/designs/ec2-artifact-policy-enforcement.json"},
+    "SOLVER_VISIBLE_DOC_PLAN":["environment/enforcer/docs/architecture.md","environment/enforcer/docs/policy-contract.md","environment/enforcer/docs/state-format.md","environment/enforcer/docs/operations.md","environment/enforcer/notes/oncall.md"]
+  },
+  "result":{
+    "status":"BUILT",
+    "evidence_refs":[],
+    "outputs":{
+      "COMPONENT_GRAPH":["cmd/artifactguard","internal/core compatibility bridge","internal/platform manager_profiles","internal/platform runtime_context","internal/platform policy_runtime","internal/platform evidence_runtime and cache","internal/platform exception_runtime","internal/platform permit_runtime","internal/platform journal_runtime and audit","internal/platform state_runtime and replay","deterministic policy/scanner/exception fixtures","solver-visible architecture/state/operations docs"],
+      "ENTRYPOINTS":["artifactguard evaluate","artifactguard verify-permit","go test ./...","go build ./cmd/artifactguard"],
+      "SOLVER_VISIBLE_DOCS":["environment/enforcer/docs/architecture.md","environment/enforcer/docs/policy-contract.md","environment/enforcer/docs/state-format.md","environment/enforcer/docs/operations.md","environment/enforcer/notes/oncall.md"],
+      "INSTRUCTION_DOC_BOUNDARY":"instruction.md states the material repair objective and preservation obligations; solver-visible docs define legitimate architecture, CLI, policy, state-format and operations contracts without exposing private defect IDs, hidden test mapping or the Oracle repair recipe.",
+      "SUBSTANTIVE_LOC":"3515 substantive reachable solver-visible production/domain LOC; >=3000 strict floor satisfied without generated/vendor/dead/catalog padding.",
+      "PRODUCTION_CHARACTERISTICS":["real Go admission CLI spanning package/container/dependency acquisition","differentiated manager normalization, policy, evidence/cache, exception, permit, journal, replay and state responsibilities","caller-owned persistent security state","explicit failure and corruption handling","restart/idempotency semantics","concurrency-sensitive permit consumption","durable authoritative journal with derived projection","deterministic scanner/policy/exception fixture boundary","stable CLI exit behavior"],
+      "RUNTIME_REACHABILITY_NOTES":["Docker/task runtime builds and invokes cmd/artifactguard","evaluate reaches normalization, policy, evidence/cache, exception, decision, permit and durable decision-state paths","verify-permit reaches keyed scope validation and optional stateful replay path","state recovery and journal/projection code are reached through normal command startup/mutation flows","the removed catalog clones are not part of the current counted environment"],
+      "ENVIRONMENT_RULE_CHECKS":{"environment_complexity":"PASS expected from mandatory validator on the current materialized task","runtime_authenticity":"PASS expected from mandatory validator on the current materialized task","business_module_diversity":"PASS when applicable; current modules have differentiated reachable responsibilities"},
+      "RESOURCE_COUNT":"not an infrastructure-resource-count task; scale is production Go/runtime-state complexity rather than Terraform resource quantity",
+      "UNRESOLVED_RISKS":["Oracle/NOP scoring and empirical F2P/P2P remain downstream verifier/deterministic-validation responsibilities; this phase intentionally does not read verifier-private or solution evidence."]
+    }
+  }
+}
