@@ -5,7 +5,7 @@ LABEL org.opencontainers.image.source="https://github.com/Manoj-Kumar-Selvaraj/T
       org.opencontainers.image.licenses="MIT"
 
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends tmux asciinema ca-certificates curl jq \
+    && apt-get install -y --no-install-recommends tmux asciinema ca-certificates curl jq xz-utils \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app/edge-router
