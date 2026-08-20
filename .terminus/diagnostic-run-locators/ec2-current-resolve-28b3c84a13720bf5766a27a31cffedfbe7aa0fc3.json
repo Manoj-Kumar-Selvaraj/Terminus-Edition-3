@@ -1,0 +1,429 @@
+{
+  "control_plane_commit": "02ac3445191f96a9309d3a08248f09e17a738c5b",
+  "main": "b8d0b8562a3f66bf103c58b685a689dc7d8fb08c",
+  "run_id": 32356100542,
+  "states": {
+    "0ad08868799c19ea2e02458bd2fc92ec64eaa288": {
+      "payload": {
+        "execution_mode": "ORCHESTRATOR_DIRECT",
+        "executor_handoff": null,
+        "invocation": {
+          "acceptance_predicates": {
+            "RULES_RESOLVED": [
+              {
+                "op": "empty",
+                "path": "KNOWN_POLICY_CONFLICTS"
+              }
+            ]
+          },
+          "authority": {
+            "control_plane_commit": "02ac3445191f96a9309d3a08248f09e17a738c5b",
+            "policy_versions": {},
+            "task_commit": "0ad08868799c19ea2e02458bd2fc92ec64eaa288",
+            "task_id": "ec2-artifact-policy-enforcement"
+          },
+          "evidence": {
+            "authorized_evidence_classes": [
+              "CONTROL_PLANE_POLICY",
+              "DURABLE_SESSION_STATE"
+            ],
+            "evidence_required": [
+              "resolved authoritative rule sources",
+              "active validator inventory",
+              "creation profile decision"
+            ],
+            "excluded_evidence_classes": [
+              "CI_RUNTIME_EVIDENCE",
+              "CURRENT_REVIEW_PACKET",
+              "FINAL_PACKAGE_EVIDENCE",
+              "MODEL_TRIAL_EVIDENCE",
+              "PRIOR_REVIEW_RESULTS",
+              "PRIVATE_CREATION_DESIGN",
+              "PUBLIC_REFERENCE",
+              "SOLUTION_ORACLE",
+              "SOLVER_VISIBLE_TASK",
+              "VERIFIER_PRIVATE"
+            ],
+            "mandatory_exact_reads": [
+              "TERMINUS_3_AI_INSTRUCTIONS.md",
+              ".terminus/AGENT_SYSTEM.md",
+              ".terminus/agents/CREATION_CONTROLLER.md",
+              ".terminus/agents/CREATION_PIPELINE.md",
+              ".terminus/agents/PRODUCTION_AUTHENTICITY.md",
+              ".terminus/reviewers/REVIEWER_CHECKLIST.md"
+            ],
+            "retrieval_mode": "EXACT_ONLY"
+          },
+          "ignored_input_count": 0,
+          "inputs": {
+            "optional": {},
+            "required": {}
+          },
+          "invocation_id": "inv_fc58b9e001775ed27d268c55ca7532265111d6a486eef19a820ea04663457e5e",
+          "learning": {
+            "context_hash": "sha256:bb84a513aa2b6e4374d691759c4a6edf94169f479f4611e9091643b9f279ccfc",
+            "lessons": [],
+            "mode": "GENERALIZED_LESSONS_PLUS_OWNED_REMEDIATIONS",
+            "raw_feedback_exposed": false,
+            "raw_historical_findings_exposed": false,
+            "registry_heads": {
+              "feedback": "GENESIS",
+              "findings": "GENESIS",
+              "lessons": "GENESIS",
+              "patterns": "GENESIS",
+              "remediations": "GENESIS"
+            },
+            "remediations": []
+          },
+          "missing_required_inputs": [
+            "CREATION_REQUEST"
+          ],
+          "output_contract": {
+            "allowed_status_values": [
+              "RULES_RESOLVED",
+              "POLICY_CONFLICT",
+              "BLOCKED"
+            ],
+            "deterministic_validators": [
+              ".terminus/validate_agent_system.py"
+            ],
+            "optional_fields": [
+              "RULE_DELTA"
+            ],
+            "persisted_artifacts": [
+              "CREATION_RULE_CONTEXT"
+            ],
+            "required_fields": [
+              "CONTROL_PLANE_COMMIT",
+              "RULE_SOURCES",
+              "ACTIVE_VALIDATORS",
+              "CREATION_PROFILE",
+              "NETWORK_ENVIRONMENT_CONSTRAINTS",
+              "KNOWN_POLICY_CONFLICTS"
+            ],
+            "semantic_reviewers": []
+          },
+          "readiness": "BLOCKED_MISSING_INPUTS",
+          "retrieval": {
+            "query": null,
+            "retrieved_chars": 0,
+            "retrieved_context": [],
+            "status": "NOT_REQUESTED"
+          },
+          "routing": {
+            "failure_routes": {
+              "MISSING_RULE_SOURCE": "Creation Controller",
+              "POLICY_CONFLICT": "Creation Controller -> policy conflict ledger -> blocked affected gate"
+            },
+            "stale_on": [
+              "governing task-rule change",
+              "active validator change",
+              "creation profile change",
+              "network/environment policy change"
+            ],
+            "success_transition": "WORK_PACKAGE_RESEARCH"
+          },
+          "schema_version": "1.0",
+          "stage": {
+            "lifecycle": "creation",
+            "owner": "Creation Controller",
+            "role_class": "CONTROLLER",
+            "role_id": "CREATION_CONTROLLER",
+            "stage_id": "RULE_RESOLUTION"
+          }
+        },
+        "next": {
+          "action": "INVOKE_STAGE",
+          "optional_inputs": [
+            "NETWORK_ENVIRONMENT_CONSTRAINTS",
+            "REQUESTED_DOMAIN",
+            "REQUESTED_PROFILE"
+          ],
+          "owner": "Creation Controller",
+          "primary_role_id": "CREATION_CONTROLLER",
+          "required_inputs": [
+            "CREATION_REQUEST"
+          ],
+          "stage_id": "RULE_RESOLUTION"
+        },
+        "quality_mode_policy": {
+          "inline_creation_governor_role_ids": [
+            "A10_COMPLEXITY_GOVERNOR"
+          ],
+          "inline_quality_role_ids": [
+            "Q1_SPEC_GAP_REPAIRER",
+            "Q2_VERIFIER_COVERAGE_REPAIRER",
+            "Q3_SPEC_AMBIGUITY_REPAIRER",
+            "Q5_ORACLE_RUNTIME_REPAIR_SPECIALIST",
+            "Q7_TASK_FORMAT_ENFORCER"
+          ],
+          "inline_stage_sequences": {
+            "SPEC_ALIGNMENT": [
+              {
+                "result_field": "Q1_STATUS",
+                "role_id": "Q1_SPEC_GAP_REPAIRER",
+                "satisfied_values": [
+                  "NO_GAP",
+                  "PASS"
+                ]
+              },
+              {
+                "result_field": "Q2_STATUS",
+                "role_id": "Q2_VERIFIER_COVERAGE_REPAIRER",
+                "satisfied_values": [
+                  "COVERED",
+                  "PASS"
+                ]
+              },
+              {
+                "result_field": "Q3_STATUS",
+                "role_id": "Q3_SPEC_AMBIGUITY_REPAIRER",
+                "satisfied_values": [
+                  "CLEAR",
+                  "PASS"
+                ]
+              }
+            ]
+          },
+          "mandatory_quality_role_keys": [
+            "spec-test-contract",
+            "production-logic"
+          ],
+          "mandatory_same_chat_checkpoints": {
+            "Q1": "SPEC_ALIGNMENT.Q1_STATUS",
+            "Q2": "SPEC_ALIGNMENT.Q2_STATUS",
+            "Q3": "SPEC_ALIGNMENT.Q3_STATUS",
+            "Q5": "DETERMINISTIC_VALIDATION runtime/oracle checkpoint; invoke Q5 repair only on registered runtime/oracle failure",
+            "Q7": "FORMAT_GATE"
+          },
+          "optional_q8_role_keys": [
+            "difficulty-sim-gpt",
+            "difficulty-sim-claude"
+          ],
+          "policy_document": ".terminus/agents/QUALITY_EXECUTION_MODE.md",
+          "policy_version": "1.0",
+          "producer_role_classes": [
+            "FIXER",
+            "PRODUCER"
+          ],
+          "q4_q6_mode": "AUTOMATED",
+          "q8_mode": "OFF",
+          "source": ".terminus/agents/quality_execution_mode.json"
+        },
+        "state_snapshot_id": "state_19b309196b0cee165cf0f1c39ded8e34b4c50d735bff70d2347f4916735ffb9d"
+      },
+      "rc": 2
+    },
+    "8836f886d7cfc7f2747264026da31d1dfa49c658": {
+      "payload": {
+        "execution_mode": "ORCHESTRATOR_DIRECT",
+        "executor_handoff": null,
+        "invocation": {
+          "acceptance_predicates": {
+            "RULES_RESOLVED": [
+              {
+                "op": "empty",
+                "path": "KNOWN_POLICY_CONFLICTS"
+              }
+            ]
+          },
+          "authority": {
+            "control_plane_commit": "02ac3445191f96a9309d3a08248f09e17a738c5b",
+            "policy_versions": {},
+            "task_commit": "8836f886d7cfc7f2747264026da31d1dfa49c658",
+            "task_id": "ec2-artifact-policy-enforcement"
+          },
+          "evidence": {
+            "authorized_evidence_classes": [
+              "CONTROL_PLANE_POLICY",
+              "DURABLE_SESSION_STATE"
+            ],
+            "evidence_required": [
+              "resolved authoritative rule sources",
+              "active validator inventory",
+              "creation profile decision"
+            ],
+            "excluded_evidence_classes": [
+              "CI_RUNTIME_EVIDENCE",
+              "CURRENT_REVIEW_PACKET",
+              "FINAL_PACKAGE_EVIDENCE",
+              "MODEL_TRIAL_EVIDENCE",
+              "PRIOR_REVIEW_RESULTS",
+              "PRIVATE_CREATION_DESIGN",
+              "PUBLIC_REFERENCE",
+              "SOLUTION_ORACLE",
+              "SOLVER_VISIBLE_TASK",
+              "VERIFIER_PRIVATE"
+            ],
+            "mandatory_exact_reads": [
+              "TERMINUS_3_AI_INSTRUCTIONS.md",
+              ".terminus/AGENT_SYSTEM.md",
+              ".terminus/agents/CREATION_CONTROLLER.md",
+              ".terminus/agents/CREATION_PIPELINE.md",
+              ".terminus/agents/PRODUCTION_AUTHENTICITY.md",
+              ".terminus/reviewers/REVIEWER_CHECKLIST.md"
+            ],
+            "retrieval_mode": "EXACT_ONLY"
+          },
+          "ignored_input_count": 0,
+          "inputs": {
+            "optional": {},
+            "required": {}
+          },
+          "invocation_id": "inv_4eeb1891ff1d50ca8d472ef74bbda32919ab00ae76de5a158e691654c386aa15",
+          "learning": {
+            "context_hash": "sha256:bb84a513aa2b6e4374d691759c4a6edf94169f479f4611e9091643b9f279ccfc",
+            "lessons": [],
+            "mode": "GENERALIZED_LESSONS_PLUS_OWNED_REMEDIATIONS",
+            "raw_feedback_exposed": false,
+            "raw_historical_findings_exposed": false,
+            "registry_heads": {
+              "feedback": "GENESIS",
+              "findings": "GENESIS",
+              "lessons": "GENESIS",
+              "patterns": "GENESIS",
+              "remediations": "GENESIS"
+            },
+            "remediations": []
+          },
+          "missing_required_inputs": [
+            "CREATION_REQUEST"
+          ],
+          "output_contract": {
+            "allowed_status_values": [
+              "RULES_RESOLVED",
+              "POLICY_CONFLICT",
+              "BLOCKED"
+            ],
+            "deterministic_validators": [
+              ".terminus/validate_agent_system.py"
+            ],
+            "optional_fields": [
+              "RULE_DELTA"
+            ],
+            "persisted_artifacts": [
+              "CREATION_RULE_CONTEXT"
+            ],
+            "required_fields": [
+              "CONTROL_PLANE_COMMIT",
+              "RULE_SOURCES",
+              "ACTIVE_VALIDATORS",
+              "CREATION_PROFILE",
+              "NETWORK_ENVIRONMENT_CONSTRAINTS",
+              "KNOWN_POLICY_CONFLICTS"
+            ],
+            "semantic_reviewers": []
+          },
+          "readiness": "BLOCKED_MISSING_INPUTS",
+          "retrieval": {
+            "query": null,
+            "retrieved_chars": 0,
+            "retrieved_context": [],
+            "status": "NOT_REQUESTED"
+          },
+          "routing": {
+            "failure_routes": {
+              "MISSING_RULE_SOURCE": "Creation Controller",
+              "POLICY_CONFLICT": "Creation Controller -> policy conflict ledger -> blocked affected gate"
+            },
+            "stale_on": [
+              "governing task-rule change",
+              "active validator change",
+              "creation profile change",
+              "network/environment policy change"
+            ],
+            "success_transition": "WORK_PACKAGE_RESEARCH"
+          },
+          "schema_version": "1.0",
+          "stage": {
+            "lifecycle": "creation",
+            "owner": "Creation Controller",
+            "role_class": "CONTROLLER",
+            "role_id": "CREATION_CONTROLLER",
+            "stage_id": "RULE_RESOLUTION"
+          }
+        },
+        "next": {
+          "action": "INVOKE_STAGE",
+          "optional_inputs": [
+            "NETWORK_ENVIRONMENT_CONSTRAINTS",
+            "REQUESTED_DOMAIN",
+            "REQUESTED_PROFILE"
+          ],
+          "owner": "Creation Controller",
+          "primary_role_id": "CREATION_CONTROLLER",
+          "required_inputs": [
+            "CREATION_REQUEST"
+          ],
+          "stage_id": "RULE_RESOLUTION"
+        },
+        "quality_mode_policy": {
+          "inline_creation_governor_role_ids": [
+            "A10_COMPLEXITY_GOVERNOR"
+          ],
+          "inline_quality_role_ids": [
+            "Q1_SPEC_GAP_REPAIRER",
+            "Q2_VERIFIER_COVERAGE_REPAIRER",
+            "Q3_SPEC_AMBIGUITY_REPAIRER",
+            "Q5_ORACLE_RUNTIME_REPAIR_SPECIALIST",
+            "Q7_TASK_FORMAT_ENFORCER"
+          ],
+          "inline_stage_sequences": {
+            "SPEC_ALIGNMENT": [
+              {
+                "result_field": "Q1_STATUS",
+                "role_id": "Q1_SPEC_GAP_REPAIRER",
+                "satisfied_values": [
+                  "NO_GAP",
+                  "PASS"
+                ]
+              },
+              {
+                "result_field": "Q2_STATUS",
+                "role_id": "Q2_VERIFIER_COVERAGE_REPAIRER",
+                "satisfied_values": [
+                  "COVERED",
+                  "PASS"
+                ]
+              },
+              {
+                "result_field": "Q3_STATUS",
+                "role_id": "Q3_SPEC_AMBIGUITY_REPAIRER",
+                "satisfied_values": [
+                  "CLEAR",
+                  "PASS"
+                ]
+              }
+            ]
+          },
+          "mandatory_quality_role_keys": [
+            "spec-test-contract",
+            "production-logic"
+          ],
+          "mandatory_same_chat_checkpoints": {
+            "Q1": "SPEC_ALIGNMENT.Q1_STATUS",
+            "Q2": "SPEC_ALIGNMENT.Q2_STATUS",
+            "Q3": "SPEC_ALIGNMENT.Q3_STATUS",
+            "Q5": "DETERMINISTIC_VALIDATION runtime/oracle checkpoint; invoke Q5 repair only on registered runtime/oracle failure",
+            "Q7": "FORMAT_GATE"
+          },
+          "optional_q8_role_keys": [
+            "difficulty-sim-gpt",
+            "difficulty-sim-claude"
+          ],
+          "policy_document": ".terminus/agents/QUALITY_EXECUTION_MODE.md",
+          "policy_version": "1.0",
+          "producer_role_classes": [
+            "FIXER",
+            "PRODUCER"
+          ],
+          "q4_q6_mode": "AUTOMATED",
+          "q8_mode": "OFF",
+          "source": ".terminus/agents/quality_execution_mode.json"
+        },
+        "state_snapshot_id": "state_6d04210b045f96a50122fbe30e396c41ccfdac7d7ed3ce555896c8c700ab3918"
+      },
+      "rc": 2
+    }
+  }
+}
