@@ -4,7 +4,7 @@
   "invocation": {
     "acceptance_predicates": {},
     "authority": {
-      "control_plane_commit": "67b805a297ac005ee08e82facc533f53a3233192",
+      "control_plane_commit": "5aebce7e213fa5f5864bdd741e6139d39bf5e059",
       "policy_versions": {},
       "task_commit": "78ad422902b27dea954905130a1267b02cff3596",
       "task_id": "terraform-ansible-managed-resources"
@@ -44,57 +44,34 @@
       "required": {
         "APPROVED_WORK_PACKAGE": {
           "ENGINEERING_OBJECTIVE": "Complete the ten-resource ansibleops provider as one coherent Terraform lifecycle/reconciliation system.",
-          "ID": "MANAGED_RESOURCE_LIFECYCLE_COMPLETION",
-          "REQUIRED_END_STATE": "Exactly ten real managed resources with stable external-key identity, Ansible-only mutation, native refresh, transactional Terraform state, scoped ownership/delete, safe runner behavior and canonical convergence."
+          "WORK_PACKAGE_ID": "MANAGED_RESOURCE_LIFECYCLE_COMPLETION"
         },
         "IMPLEMENTATION_EVIDENCE": {
-          "FILES_CHANGED": [
-            "solution/solve.sh",
-            "solution/fixed/internal/lifecycle/maps.go",
-            "solution/fixed/internal/lifecycle/normalize.go",
-            "solution/fixed/internal/resources/",
-            "solution/fixed/internal/runner/runner.go"
+          "components": [
+            "provider/runtime",
+            "lifecycle identity and normalization",
+            "Ansible playbook generation",
+            "structured runner",
+            "native observation",
+            "ten resource implementations"
           ],
-          "PRESERVED_BEHAVIOR": "Exact ten resource interfaces, local/ansibleops 0.1.0, supplied local inventory, Go 1.24/current Plugin Framework and Terraform 1.10.5 compatibility.",
-          "REFERENCE_SOLUTION_STATUS": "IMPLEMENTED",
-          "RESTORED_INVARIANTS": [
-            "stable external-key IDs",
-            "mutation before state publication",
-            "native Read and external drift reflection",
-            "failure-safe update/delete semantics",
-            "structured runner argv, timeout/cancel handling and cleanup",
-            "canonical convergence and Terraform Core sole durable state authority"
-          ]
+          "resource_count": 10,
+          "status": "IMPLEMENTED",
+          "task_commit": "78ad422902b27dea954905130a1267b02cff3596"
         },
         "VERIFICATION_EVIDENCE": {
-          "COVERAGE_FAMILIES": [
-            "provider/schema",
-            "state/identity",
-            "native refresh/drift",
-            "transactional create/update",
-            "failure-safe scoped delete",
-            "copy/template content intent",
-            "line/block ownership",
-            "user/group native reconciliation",
-            "runner/process safety",
-            "normalization/idempotency",
-            "cron defaults/drift/siblings",
-            "external ownership collision",
-            "Ansible mutation backend"
-          ],
-          "EMPIRICAL_STATUS": "Current runtime/oracle empirical validation remains intentionally deferred to DETERMINISTIC_VALIDATION; no pass claim is made here.",
           "F2P_COUNT": 30,
           "P2P_COUNT": 6,
-          "SPEC_ALIGNMENT": {
-            "Q1_STATUS": "NO_GAP",
-            "Q2_STATUS": "COVERED",
-            "Q3_STATUS": "CLEAR"
-          },
-          "VERIFIER_STATUS": "VERIFIER_READY"
+          "Q1_STATUS": "NO_GAP",
+          "Q2_STATUS": "COVERED",
+          "Q3_STATUS": "CLEAR",
+          "SPEC_ALIGNMENT": "ALIGNED",
+          "runtime_oracle_empirical": "DEFERRED_TO_DETERMINISTIC_VALIDATION",
+          "status": "STRUCTURALLY_READY"
         }
       }
     },
-    "invocation_id": "inv_7ca5f4628adf487e46bd3980124c7a68c891e2ba7f26a7ea0a3e961f2046e77b",
+    "invocation_id": "inv_eaab44fdc626649101be51b8ca9da68a2f55872453156fcda70b11141acd4616",
     "learning": {
       "context_hash": "sha256:bb84a513aa2b6e4374d691759c4a6edf94169f479f4611e9091643b9f279ccfc",
       "lessons": [],
@@ -239,5 +216,5 @@
     "q8_mode": "OFF",
     "source": ".terminus/agents/quality_execution_mode.json"
   },
-  "state_snapshot_id": "state_5fba51c7f49a06e26d108b4d84feadd109b265268482a9b0150f717ab686fcca"
+  "state_snapshot_id": "state_34fbf8b83b6ec2c2f0de6a2764f9ef9d6310bb01464c4ddd09961cc725cf03fd"
 }
