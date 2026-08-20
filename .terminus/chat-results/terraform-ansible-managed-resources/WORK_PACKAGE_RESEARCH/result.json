@@ -4,67 +4,44 @@
       "content_hash": "sha256:104817a239b92de3e53f14d6bc0176563437894773e060648776dc09c6280374",
       "kind": "COMMIT",
       "ref": "commit:78ad422902b27dea954905130a1267b02cff3596"
-    },
-    {
-      "content_hash": "sha256:fca3ef4b283f1a1fe2aa6d960cd36a17b7232eb0b7a130f9cc8d43d948d6ec42",
-      "kind": "COMMIT",
-      "ref": "commit:67b805a297ac005ee08e82facc533f53a3233192"
     }
   ],
-  "invocation_id": "inv_be0f48e67cb0bca43545b4bf83487db0fb49249470cdea68cf2dcbcdd8896db0",
+  "invocation_id": "inv_e961b4ab2c99f5afdbdfed0043218b207625ddce143599572fbd365e9e679a1b",
   "output_task_commit": "78ad422902b27dea954905130a1267b02cff3596",
   "outputs": {
     "CANDIDATES": [
       {
-        "ENGINEERING_OBJECTIVE": "Complete the ten-resource ansibleops provider as one coherent Terraform lifecycle and reconciliation system.",
-        "ID": "MANAGED_RESOURCE_LIFECYCLE_COMPLETION",
-        "PERSONA": "Platform engineer maintaining an internal Terraform provider for local Linux configuration through Ansible.",
-        "REQUIREMENT_FAMILIES": [
-          "provider runtime",
-          "identity/state",
-          "mutation runner",
-          "native observation",
-          "filesystem/content",
-          "line/block ownership",
-          "user/group",
-          "cron",
-          "normalization",
-          "failure/retry"
+        "id": "MANAGED_RESOURCE_LIFECYCLE_COMPLETION",
+        "requirement_families": [
+          "provider registration/preflight",
+          "stable identity/state transitions",
+          "Ansible mutation backend",
+          "native Linux refresh/drift",
+          "transactional failure semantics",
+          "scoped deletion/ownership",
+          "runner argv/timeout/cleanup",
+          "normalization/idempotency",
+          "filesystem/content/text/account/cron resource families"
         ],
-        "SCALE_FIT": "VERY_HIGH: ten differentiated lifecycles plus shared provider, state, runner, observation and normalization layers form a strict-scale system without filler."
+        "scale_fit": "HIGH",
+        "scope": "Complete all ten documented ansibleops managed resources as one coherent Terraform lifecycle/reconciliation system."
       },
       {
-        "ENGINEERING_OBJECTIVE": "Harden shared mutation, observation and state-transition machinery under process failure and drift.",
-        "ID": "TRANSACTION_SAFE_RECONCILIATION_CORE",
-        "PERSONA": "Terraform provider reliability engineer.",
-        "REQUIREMENT_FAMILIES": [
-          "runner",
-          "state transition",
-          "observation",
-          "identity",
-          "normalization",
-          "retry"
-        ],
-        "SCALE_FIT": "HIGH but narrower than the inherited task contract."
+        "id": "RUNNER_AND_STATE_CORE_ONLY",
+        "reason": "would underrepresent the ten differentiated resource families and their owned deletion/normalization semantics",
+        "scale_fit": "LOW",
+        "scope": "Limit work to runner safety plus generic Terraform state semantics."
       },
       {
-        "ENGINEERING_OBJECTIVE": "Reconcile filesystem, content, account and cron ownership and drift without damaging siblings.",
-        "ID": "LINUX_OBJECT_OWNERSHIP_AND_DRIFT",
-        "PERSONA": "Linux configuration platform engineer.",
-        "REQUIREMENT_FAMILIES": [
-          "filesystem",
-          "content",
-          "line/block",
-          "accounts",
-          "cron",
-          "drift"
-        ],
-        "SCALE_FIT": "HIGH but omits key runner and Terraform transaction obligations."
+        "id": "RESOURCE_FAMILY_SUBSET",
+        "reason": "would omit account and cron lifecycle semantics required by the inherited task",
+        "scale_fit": "LOW",
+        "scope": "Implement only filesystem/content resource families."
       }
     ],
-    "DUPLICATE_RISK_NOTES": "The technology pairing is familiar, but the transaction, durability, observation, ownership and multi-family lifecycle contract materially differentiates the work package.",
+    "DUPLICATE_RISK_NOTES": "No external task/template provenance is being claimed. The recommendation is derived from the inherited solver-visible task contract and current repository policy; originality risk is limited to generic Terraform/Ansible domain concepts rather than copied benchmark structure.",
     "RECOMMENDATION": "MANAGED_RESOURCE_LIFECYCLE_COMPLETION",
-    "WHY_THIS_ONE": "It exactly matches the inherited solver-visible task without inventing incident backstory. Difficulty arises naturally from Terraform identity/state semantics coupled to Ansible mutations, native Linux observation, process-failure handling, scoped ownership across ten differentiated resources, and canonical convergence."
+    "WHY_THIS_ONE": "The inherited task is already a coherent large-system package: ten real managed resources share cross-cutting identity, mutation/read separation, failure-safe Terraform state, ownership-scoped deletion, runner safety and normalization invariants. Preserving the whole lifecycle system is the only candidate that matches the existing solver-visible requirement breadth without artificial padding or narrowing."
   },
   "schema_version": "1.0",
   "status": "CANDIDATES_READY"
