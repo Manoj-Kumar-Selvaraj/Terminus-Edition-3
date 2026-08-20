@@ -1,0 +1,217 @@
+{
+  "execution_mode": "INLINE_SPECIALIST",
+  "executor_handoff": null,
+  "invocation": {
+    "acceptance_predicates": {},
+    "authority": {
+      "control_plane_commit": "7d8a6d8c62a62e6d24949344c7fd712e59bc8829",
+      "policy_versions": {},
+      "task_commit": "03317f8218069b9e0b5d073bf87ecf7a0ae8e4a1",
+      "task_id": "stonevault-crash-safe-storage"
+    },
+    "evidence": {
+      "authorized_evidence_classes": [
+        "CONTROL_PLANE_POLICY",
+        "PRIVATE_CREATION_DESIGN",
+        "PUBLIC_REFERENCE",
+        "SOLVER_VISIBLE_TASK"
+      ],
+      "evidence_required": [
+        "root-cause clusters",
+        "causal/interdependency edges",
+        "partial-fix traps",
+        "behavioral surfaces"
+      ],
+      "excluded_evidence_classes": [
+        "CI_RUNTIME_EVIDENCE",
+        "CURRENT_REVIEW_PACKET",
+        "DURABLE_SESSION_STATE",
+        "FINAL_PACKAGE_EVIDENCE",
+        "MODEL_TRIAL_EVIDENCE",
+        "PRIOR_REVIEW_RESULTS",
+        "SOLUTION_ORACLE",
+        "VERIFIER_PRIVATE"
+      ],
+      "mandatory_exact_reads": [
+        ".terminus/agents/CREATION_PIPELINE.md",
+        ".terminus/agents/CREATOR_AGENT_REGISTRY.md",
+        ".terminus/agents/CREATOR_PROMPTS.md"
+      ],
+      "retrieval_mode": "FILTERED_HYBRID"
+    },
+    "ignored_input_count": 0,
+    "inputs": {
+      "optional": {},
+      "required": {
+        "APPROVED_OPERATIONAL_REQUIREMENTS": [
+          "locking",
+          "MVCC",
+          "scan overlay",
+          "conflicts",
+          "WAL recovery",
+          "checkpoint/snapshot integrity",
+          "health reporting",
+          "Rust ingress policy"
+        ],
+        "APPROVED_WORK_PACKAGE": {
+          "id": "stonevault-crash-safe-storage"
+        },
+        "CLEAN_SYSTEM_ARCHITECTURE": {
+          "boundary": "Rust control/session layer over stable C ABI to C++20 storage core"
+        },
+        "CREATION_PROFILE": "large_system_strict"
+      }
+    },
+    "invocation_id": "inv_891e1d8c4501e72edbac6c686ee1d175f3156689d9d2c943bc218a40b210790c",
+    "learning": {
+      "context_hash": "sha256:bb84a513aa2b6e4374d691759c4a6edf94169f479f4611e9091643b9f279ccfc",
+      "lessons": [],
+      "mode": "GENERALIZED_LESSONS_PLUS_OWNED_REMEDIATIONS",
+      "raw_feedback_exposed": false,
+      "raw_historical_findings_exposed": false,
+      "registry_heads": {
+        "feedback": "GENESIS",
+        "findings": "GENESIS",
+        "lessons": "GENESIS",
+        "patterns": "GENESIS",
+        "remediations": "GENESIS"
+      },
+      "remediations": []
+    },
+    "missing_required_inputs": [],
+    "output_contract": {
+      "allowed_status_values": [
+        "DESIGN_READY",
+        "SCENARIO_TOO_SMALL",
+        "BLOCKED"
+      ],
+      "deterministic_validators": [
+        ".terminus/validate_defect_topology.py <task>"
+      ],
+      "optional_fields": [],
+      "persisted_artifacts": [
+        ".terminus/designs/<task>.json"
+      ],
+      "required_fields": [
+        "profile",
+        "root_cause_clusters",
+        "defects",
+        "causal_edges",
+        "behavioral_surfaces",
+        "organic_f2p_surface_assessment"
+      ],
+      "semantic_reviewers": [
+        "Task Architect",
+        "Complexity Governor"
+      ]
+    },
+    "readiness": "READY",
+    "retrieval": {
+      "query": null,
+      "retrieved_chars": 0,
+      "retrieved_context": [],
+      "status": "NOT_REQUESTED"
+    },
+    "routing": {
+      "failure_routes": {
+        "ARCHITECTURE_GAP": "Creation Controller -> SYSTEM_ARCHITECTURE",
+        "HIDDEN_KNOWLEDGE": "A3 Defect Topology Designer -> expose legitimate solver-visible contract or remove defect",
+        "SCENARIO_TOO_SMALL": "Creation Controller -> WORK_PACKAGE_RESEARCH"
+      },
+      "stale_on": [
+        "work-package change",
+        "architecture change",
+        "material operational requirement change"
+      ],
+      "success_transition": "ENVIRONMENT_BUILD"
+    },
+    "schema_version": "1.0",
+    "stage": {
+      "lifecycle": "creation",
+      "owner": "A3 Defect Topology Designer",
+      "role_class": "PRODUCER",
+      "role_id": "A3_DEFECT_TOPOLOGY_DESIGNER",
+      "stage_id": "DEFECT_TOPOLOGY"
+    }
+  },
+  "next": {
+    "action": "INVOKE_STAGE",
+    "optional_inputs": [
+      "DOMAIN_FAILURE_REFERENCES"
+    ],
+    "owner": "A3 Defect Topology Designer",
+    "primary_role_id": "A3_DEFECT_TOPOLOGY_DESIGNER",
+    "required_inputs": [
+      "APPROVED_OPERATIONAL_REQUIREMENTS",
+      "APPROVED_WORK_PACKAGE",
+      "CLEAN_SYSTEM_ARCHITECTURE",
+      "CREATION_PROFILE"
+    ],
+    "stage_id": "DEFECT_TOPOLOGY"
+  },
+  "quality_mode_policy": {
+    "inline_creation_governor_role_ids": [
+      "A10_COMPLEXITY_GOVERNOR"
+    ],
+    "inline_quality_role_ids": [
+      "Q1_SPEC_GAP_REPAIRER",
+      "Q2_VERIFIER_COVERAGE_REPAIRER",
+      "Q3_SPEC_AMBIGUITY_REPAIRER",
+      "Q5_ORACLE_RUNTIME_REPAIR_SPECIALIST",
+      "Q7_TASK_FORMAT_ENFORCER"
+    ],
+    "inline_stage_sequences": {
+      "SPEC_ALIGNMENT": [
+        {
+          "result_field": "Q1_STATUS",
+          "role_id": "Q1_SPEC_GAP_REPAIRER",
+          "satisfied_values": [
+            "NO_GAP",
+            "PASS"
+          ]
+        },
+        {
+          "result_field": "Q2_STATUS",
+          "role_id": "Q2_VERIFIER_COVERAGE_REPAIRER",
+          "satisfied_values": [
+            "COVERED",
+            "PASS"
+          ]
+        },
+        {
+          "result_field": "Q3_STATUS",
+          "role_id": "Q3_SPEC_AMBIGUITY_REPAIRER",
+          "satisfied_values": [
+            "CLEAR",
+            "PASS"
+          ]
+        }
+      ]
+    },
+    "mandatory_quality_role_keys": [
+      "spec-test-contract",
+      "production-logic"
+    ],
+    "mandatory_same_chat_checkpoints": {
+      "Q1": "SPEC_ALIGNMENT.Q1_STATUS",
+      "Q2": "SPEC_ALIGNMENT.Q2_STATUS",
+      "Q3": "SPEC_ALIGNMENT.Q3_STATUS",
+      "Q5": "DETERMINISTIC_VALIDATION runtime/oracle checkpoint; invoke Q5 repair only on registered runtime/oracle failure",
+      "Q7": "FORMAT_GATE"
+    },
+    "optional_q8_role_keys": [
+      "difficulty-sim-gpt",
+      "difficulty-sim-claude"
+    ],
+    "policy_document": ".terminus/agents/QUALITY_EXECUTION_MODE.md",
+    "policy_version": "1.0",
+    "producer_role_classes": [
+      "FIXER",
+      "PRODUCER"
+    ],
+    "q4_q6_mode": "AUTOMATED",
+    "q8_mode": "OFF",
+    "source": ".terminus/agents/quality_execution_mode.json"
+  },
+  "state_snapshot_id": "state_f832a34023e4a4bae8506519549200acc316b3fbcd5619c0742494a51520899e"
+}

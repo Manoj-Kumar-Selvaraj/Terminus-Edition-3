@@ -1,0 +1,66 @@
+{
+  "evidence_refs": [
+    {
+      "kind": "COMMIT",
+      "ref": "commit:03317f8218069b9e0b5d073bf87ecf7a0ae8e4a1"
+    }
+  ],
+  "invocation_id": "inv_891e1d8c4501e72edbac6c686ee1d175f3156689d9d2c943bc218a40b210790c",
+  "output_task_commit": "03317f8218069b9e0b5d073bf87ecf7a0ae8e4a1",
+  "outputs": {
+    "behavioral_surfaces": {
+      "edge_boundary": [
+        "inclusive limits",
+        "unsigned ordering",
+        "overlay",
+        "snapshot bounds"
+      ],
+      "failure_recovery": [
+        "killed tx",
+        "torn WAL",
+        "complete WAL corruption",
+        "snapshot corruption",
+        "abandoned temp"
+      ],
+      "negative_rejection": [
+        "malformed commands",
+        "unknown tx",
+        "oversize",
+        "second writer",
+        "stale conflict"
+      ],
+      "normal": [
+        "transaction CRUD",
+        "snapshot reads",
+        "prefix scans",
+        "checkpoint/restart"
+      ]
+    },
+    "causal_edges": [
+      "locking->writer exclusion",
+      "MVCC->scan visibility/overlay",
+      "conflicts->atomic sequencing",
+      "recovery->corruption classification",
+      "checkpoint->WAL/health",
+      "snapshot integrity->restart safety",
+      "ingress policy->operator/protocol boundaries"
+    ],
+    "defects": [
+      "D01-D25 as canonically recorded in .terminus/designs/stonevault-crash-safe-storage.json"
+    ],
+    "organic_f2p_surface_assessment": "SUFFICIENT_PENDING_CURRENT_HEAD_EMPIRICAL_MATRIX",
+    "profile": "large_system_strict",
+    "root_cause_clusters": [
+      "RC_LOCK",
+      "RC_MVCC",
+      "RC_SCAN_OVERLAY",
+      "RC_CONFLICT",
+      "RC_RECOVERY",
+      "RC_CHECKPOINT_INTEGRITY",
+      "RC_HEALTH",
+      "RC_RUST_INTERFACE"
+    ]
+  },
+  "schema_version": "1.0",
+  "status": "DESIGN_READY"
+}
