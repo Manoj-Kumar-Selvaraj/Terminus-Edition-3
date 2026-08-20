@@ -1,0 +1,53 @@
+{
+  "schema_version": "1.0",
+  "mode": "RECORD",
+  "task_id": "stonevault-crash-safe-storage",
+  "task_commit": "03317f8218069b9e0b5d073bf87ecf7a0ae8e4a1",
+  "control_plane_commit": "bde51f1c20b2d6d78b33f02956da9c58cd42d2a4",
+  "expected_repository_head": "4158abf4a7fb901c3000a37236109ef556dd1858",
+  "stage_id": "PRE_LLMAJ",
+  "inputs": {
+    "QUALITY_INTERLOCK_PASS": {
+      "status": "QUALITY_INTERLOCK_PASS",
+      "record_path": ".terminus/executions/stonevault-crash-safe-storage/inv_fe8600116ca3fe9f494f671d0f7f10d286c4553d715d8266d1997bee5af3abf4.result.json",
+      "q4_satisfaction": "CHAT_HUMAN_RISK_ACCEPTANCE",
+      "decision_id": "hd_ff27cac48dceb14bcfab5829df7235c64971dddb4a1b0abee595c95cfc38869b"
+    },
+    "CURRENT_TASK_COMMIT": "03317f8218069b9e0b5d073bf87ecf7a0ae8e4a1",
+    "CURRENT_SPECIALIST_PACKETS": {
+      "task_architect": {"verdict":"PASS","confidence":"HIGH","evidence_status":"SUFFICIENT","summary":"Coherent embedded-database reliability scenario with coupled locking, MVCC, WAL recovery, checkpointing, binary protocol, operator health, and compatibility constraints; solver-visible contracts are concrete and technically credible."},
+      "verifier_engineer": {"verdict":"PASS","confidence":"HIGH","evidence_status":"SUFFICIENT","summary":"Verifier is behavioral and broad across snapshot semantics, conflicts, WAL/snapshot corruption, checkpointing, protocol limits, state reporting, and restart behavior. Residual DELETE-after-commit/restart coverage gap F01 remains real but is explicitly accepted and backlogged under the commit-bound human decision; it is not represented as tested."},
+      "originality_authenticity": {"verdict":"PASS","confidence":"HIGH","evidence_status":"SUFFICIENT","summary":"Native Rust/C++ transactional storage engine with stable ABI and custom WAL/snapshot formats presents a production-like, non-template debugging surface."},
+      "difficulty_pretrial": {"verdict":"PASS","confidence":"MEDIUM","evidence_status":"SUFFICIENT","summary":"Task requires cross-language reasoning over durability, MVCC, recovery and binary formats. Frontier label remains provisional until official trials; no obvious clerical shortcut is evident."},
+      "compliance": {"verdict":"PASS","confidence":"HIGH","evidence_status":"SUFFICIENT","summary":"Task metadata and structure are present; environment image is digest-pinned; apt install is bounded; product language boundary is native; verifier emits binary reward; deterministic CI is green."},
+      "instruction": {"verdict":"PASS","confidence":"HIGH","evidence_status":"SUFFICIENT","summary":"Instruction is concise relative to scope, uses absolute /app/stonevault references, specifies observable reliability behavior and compatibility constraints, and does not disclose a repair implementation."},
+      "documentation": {"verdict":"PASS","confidence":"HIGH","evidence_status":"SUFFICIENT","summary":"README accurately describes architecture, reliability scope, build output and validation surfaces without unsupported benchmark claims or solution leakage."}
+    },
+    "ADJUDICATION_RESULTS": {
+      "F01": {
+        "disposition": "ACCEPTED_RESIDUAL_RISK",
+        "decision_id": "hd_ff27cac48dceb14bcfab5829df7235c64971dddb4a1b0abee595c95cfc38869b",
+        "backlog": "https://github.com/Manoj-Kumar-Selvaraj/Terminus-Edition-3/issues/66",
+        "q4_verdict_preserved": "REVISE",
+        "scope": "Committed DELETE durability across process restart lacks a dedicated behavioral test. No production defect was demonstrated."
+      }
+    }
+  },
+  "result": {
+    "status": "PASS",
+    "outputs": {
+      "STAGE_A": "PASS",
+      "STAGE_B": "PASS",
+      "STAGE_C": "PASS",
+      "STAGE_D": "PASS",
+      "STAGE_E": "PASS",
+      "STAGE_F": "PASS"
+    },
+    "evidence_refs": [
+      {"kind":"COMMIT","ref":"commit:03317f8218069b9e0b5d073bf87ecf7a0ae8e4a1"},
+      {"kind":"RESULT","ref":"git:bb3282e3f7f62feece3777bcd649f0db45c1a43c:.terminus/executions/stonevault-crash-safe-storage/inv_fe8600116ca3fe9f494f671d0f7f10d286c4553d715d8266d1997bee5af3abf4.result.json#inv_fe8600116ca3fe9f494f671d0f7f10d286c4553d715d8266d1997bee5af3abf4"},
+      {"kind":"RUN","ref":"run:github:32340413861-deterministic"},
+      {"kind":"RESULT","ref":"git:e4985223c0f74562c6339dce931864dd012d50ea:.terminus/human-decisions/stonevault-crash-safe-storage/ledger.jsonl#hd_ff27cac48dceb14bcfab5829df7235c64971dddb4a1b0abee595c95cfc38869b"}
+    ]
+  }
+}
