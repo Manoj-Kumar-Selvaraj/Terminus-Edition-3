@@ -1,0 +1,54 @@
+{
+  "schema_version": "1.0",
+  "mode": "RECORD",
+  "task_id": "stonevault-crash-safe-storage",
+  "task_commit": "03317f8218069b9e0b5d073bf87ecf7a0ae8e4a1",
+  "control_plane_commit": "7d8a6d8c62a62e6d24949344c7fd712e59bc8829",
+  "expected_repository_head": "d6bc167576ea631a074462d72fbcb53cb86018e7",
+  "stage_id": "DETERMINISTIC_VALIDATION",
+  "inputs": {
+    "CURRENT_TASK_COMMIT": {
+      "task_id": "stonevault-crash-safe-storage",
+      "task_commit": "03317f8218069b9e0b5d073bf87ecf7a0ae8e4a1",
+      "status": "CURRENT",
+      "evidence": "Exact task snapshot validated by GitHub Actions run 32340413861 job 96338237255; deterministic artifact terminus-deterministic-stonevault-crash-safe-storage-32340413861-1 digest sha256:c15d9119af4d065e135f8934da805449bcb088ace6c7bb6e70e9abe932b0fe33."
+    },
+    "ORACLE": {
+      "task_id": "stonevault-crash-safe-storage",
+      "task_commit": "03317f8218069b9e0b5d073bf87ecf7a0ae8e4a1",
+      "status": "CURRENT",
+      "evidence": "Oracle must score 1 completed successfully in GitHub Actions run 32340413861 job 96338237255."
+    },
+    "STARTER_NOP_STATE": {
+      "task_id": "stonevault-crash-safe-storage",
+      "task_commit": "03317f8218069b9e0b5d073bf87ecf7a0ae8e4a1",
+      "status": "CURRENT",
+      "evidence": "NOP must score 0 completed successfully in GitHub Actions run 32340413861 job 96338237255."
+    },
+    "VERIFIER": {
+      "F2P_COUNT": 30,
+      "P2P_COUNT": 33,
+      "entrypoint": "stonevault-crash-safe-storage/tests/test.sh",
+      "residual_backlog": "Committed DELETE durability across restart remains explicitly accepted/backlogged in issue #66 and is not claimed as verifier coverage."
+    }
+  },
+  "result": {
+    "status": "PASS",
+    "outputs": {
+      "ORACLE_REWARD": 1,
+      "NOP_REWARD": 0,
+      "F2P_EMPIRICAL_MATRIX": [
+        "Exact deterministic GitHub Actions run 32340413861 job 96338237255 passed the current StoneVault verifier against the Oracle; 30 classified F2P probes are bound to this unchanged task snapshot."
+      ],
+      "P2P_EMPIRICAL_MATRIX": [
+        "Exact deterministic GitHub Actions run 32340413861 job 96338237255 passed the current StoneVault verifier against the Oracle while preserving 33 classified P2P behaviors."
+      ]
+    },
+    "evidence_refs": [
+      {
+        "kind": "COMMIT",
+        "ref": "commit:03317f8218069b9e0b5d073bf87ecf7a0ae8e4a1"
+      }
+    ]
+  }
+}
