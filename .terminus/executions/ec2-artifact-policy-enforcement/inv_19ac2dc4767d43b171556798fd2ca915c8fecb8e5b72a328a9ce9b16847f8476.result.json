@@ -1,0 +1,507 @@
+{
+  "authority": {
+    "control_plane_commit": "215cc70bcebcccc3c9a401af1b74a97d90026da3",
+    "policy_versions": {},
+    "task_commit": "8836f886d7cfc7f2747264026da31d1dfa49c658",
+    "task_id": "ec2-artifact-policy-enforcement"
+  },
+  "disposition": "ADVANCE",
+  "evidence_refs": [
+    {
+      "content_hash": "sha256:c949a75a93f4636d770dd6cb82318c90d98b3fb0fb1d16d3d8b2e6c4d50a86fc",
+      "kind": "COMMIT",
+      "ref": "commit:8836f886d7cfc7f2747264026da31d1dfa49c658"
+    },
+    {
+      "content_hash": "sha256:334e6029ea34515d0f9364b213a51af19ed193f7c1c22cdf7b978781c2e856d7",
+      "kind": "COMMIT",
+      "ref": "commit:215cc70bcebcccc3c9a401af1b74a97d90026da3"
+    }
+  ],
+  "invocation_id": "inv_19ac2dc4767d43b171556798fd2ca915c8fecb8e5b72a328a9ce9b16847f8476",
+  "invocation_snapshot": {
+    "acceptance_predicates": {
+      "ALIGNED": [
+        {
+          "op": "in",
+          "path": "Q1_STATUS",
+          "value": [
+            "NO_GAP",
+            "PASS"
+          ]
+        },
+        {
+          "op": "in",
+          "path": "Q2_STATUS",
+          "value": [
+            "COVERED",
+            "PASS"
+          ]
+        },
+        {
+          "op": "in",
+          "path": "Q3_STATUS",
+          "value": [
+            "CLEAR",
+            "PASS"
+          ]
+        }
+      ]
+    },
+    "authority": {
+      "control_plane_commit": "215cc70bcebcccc3c9a401af1b74a97d90026da3",
+      "policy_versions": {},
+      "task_commit": "8836f886d7cfc7f2747264026da31d1dfa49c658",
+      "task_id": "ec2-artifact-policy-enforcement"
+    },
+    "evidence": {
+      "authorized_evidence_classes": [
+        "CONTROL_PLANE_POLICY",
+        "PRIVATE_CREATION_DESIGN",
+        "SOLVER_VISIBLE_TASK",
+        "VERIFIER_PRIVATE"
+      ],
+      "evidence_required": [
+        "Q1 no unresolved verifier->spec gap",
+        "Q2 no unresolved spec->verifier gap",
+        "Q3 no unresolved grading-relevant ambiguity"
+      ],
+      "excluded_evidence_classes": [
+        "CI_RUNTIME_EVIDENCE",
+        "CURRENT_REVIEW_PACKET",
+        "DURABLE_SESSION_STATE",
+        "FINAL_PACKAGE_EVIDENCE",
+        "MODEL_TRIAL_EVIDENCE",
+        "PRIOR_REVIEW_RESULTS",
+        "PUBLIC_REFERENCE",
+        "SOLUTION_ORACLE"
+      ],
+      "mandatory_exact_reads": [
+        ".terminus/agents/INSTRUCTION_POLICY.md",
+        ".terminus/agents/QUALITY_AGENT_REGISTRY.md",
+        ".terminus/agents/QUALITY_AGENT_PROMPTS.md"
+      ],
+      "retrieval_mode": "EXACT_ONLY"
+    },
+    "ignored_input_count": 0,
+    "inputs": {
+      "optional": {
+        "PRIVATE_TEST_MAP": {
+          "behavioral_dimensions": {
+            "cross_component": [
+              "F2P-EVID-03",
+              "F2P-EX-05",
+              "F2P-PERMIT-02",
+              "F2P-PERMIT-04"
+            ],
+            "edge_boundary": [
+              "F2P-SRC-04",
+              "F2P-EVID-02",
+              "F2P-EVID-04",
+              "F2P-EVID-05",
+              "F2P-EVID-06",
+              "F2P-EX-01",
+              "F2P-AUDIT-03"
+            ],
+            "failure_recovery": [
+              "F2P-EVID-01",
+              "F2P-EVID-07",
+              "F2P-PERMIT-05",
+              "F2P-PERMIT-06",
+              "F2P-AUDIT-01",
+              "F2P-AUDIT-02",
+              "F2P-AUDIT-04",
+              "F2P-AUDIT-05"
+            ],
+            "negative_rejection": [
+              "F2P-SRC-01",
+              "F2P-SRC-02",
+              "F2P-SRC-03",
+              "F2P-EX-02",
+              "F2P-EX-03",
+              "F2P-EX-04",
+              "F2P-PERMIT-01",
+              "F2P-PERMIT-03"
+            ],
+            "normal": [
+              "P2P-01",
+              "P2P-02",
+              "P2P-03",
+              "P2P-04",
+              "P2P-05",
+              "P2P-06",
+              "P2P-07",
+              "P2P-08",
+              "P2P-09"
+            ]
+          },
+          "organic_count_justification": "The 27 F2P cases are separate externally observable policy/state transitions across five coupled requirement families: alternate acquisition paths, evidence identity/freshness, exception boundaries, permit authentication/replay, and audit/recovery. Cases are not parameter-renamed copies; each changes a distinct trust prerequisite, version/expiry boundary, scope dimension, concurrency/restart transition, or durability/recovery invariant.",
+          "profile": "large_system_strict",
+          "requirements": {
+            "REQ_AUDIT_RECOVERY": "Every allow/deny is durably journaled before derived projection and audit/replay state remains safe under retry, corruption, restart, and recovery.",
+            "REQ_EVIDENCE_CACHE": "Authorization requires current scanner evidence or an exact digest/policy/DB/TTL cache entry; unavailable, stale, expired, or corrupt evidence fails closed.",
+            "REQ_EXCEPTION_SCOPE": "Vulnerability exceptions are unexpired and exact for digest, surface, environment, and policy code and cannot override scanner prerequisites.",
+            "REQ_PERMIT_AUTH_REPLAY": "Permits are keyed, exact-scope, expiring, and single-use across restart and concurrent verification.",
+            "REQ_PRESERVATION": "Existing healthy allow/deny, exact exception, and invalid-permit behavior and CLI exit semantics remain intact.",
+            "REQ_SOURCE_DIGEST": "All acquisition surfaces and managers enforce trusted source and immutable digest prerequisites before any exception path."
+          },
+          "schema_version": "1.0",
+          "task": "ec2-artifact-policy-enforcement",
+          "tests": [
+            [
+              "test_f2p_dpkg_untrusted_source_rejected",
+              "F2P",
+              "REQ_SOURCE_DIGEST",
+              "F2P-SRC-01"
+            ],
+            [
+              "test_f2p_rpm_untrusted_source_rejected",
+              "F2P",
+              "REQ_SOURCE_DIGEST",
+              "F2P-SRC-02"
+            ],
+            [
+              "test_f2p_maven_untrusted_source_rejected",
+              "F2P",
+              "REQ_SOURCE_DIGEST",
+              "F2P-SRC-03"
+            ],
+            [
+              "test_f2p_missing_digest_cannot_be_excepted",
+              "F2P",
+              "REQ_SOURCE_DIGEST",
+              "F2P-SRC-04"
+            ],
+            [
+              "test_f2p_scanner_unavailable_fails_closed",
+              "F2P",
+              "REQ_EVIDENCE_CACHE",
+              "F2P-EVID-01"
+            ],
+            [
+              "test_f2p_scanner_db_revision_mismatch_is_stale",
+              "F2P",
+              "REQ_EVIDENCE_CACHE",
+              "F2P-EVID-02"
+            ],
+            [
+              "test_f2p_mutable_name_digest_change_invalidates_cache",
+              "F2P",
+              "REQ_EVIDENCE_CACHE",
+              "F2P-EVID-03"
+            ],
+            [
+              "test_f2p_policy_version_change_invalidates_cache",
+              "F2P",
+              "REQ_EVIDENCE_CACHE",
+              "F2P-EVID-04"
+            ],
+            [
+              "test_f2p_scanner_revision_change_invalidates_cache",
+              "F2P",
+              "REQ_EVIDENCE_CACHE",
+              "F2P-EVID-05"
+            ],
+            [
+              "test_f2p_cache_ttl_expiry_forces_scanner_recheck",
+              "F2P",
+              "REQ_EVIDENCE_CACHE",
+              "F2P-EVID-06"
+            ],
+            [
+              "test_f2p_corrupt_cache_does_not_become_clean_evidence",
+              "F2P",
+              "REQ_EVIDENCE_CACHE",
+              "F2P-EVID-07"
+            ],
+            [
+              "test_f2p_expired_exception_is_ignored",
+              "F2P",
+              "REQ_EXCEPTION_SCOPE",
+              "F2P-EX-01"
+            ],
+            [
+              "test_f2p_exception_same_name_wrong_digest_is_rejected",
+              "F2P",
+              "REQ_EXCEPTION_SCOPE",
+              "F2P-EX-02"
+            ],
+            [
+              "test_f2p_exception_wrong_surface_is_rejected",
+              "F2P",
+              "REQ_EXCEPTION_SCOPE",
+              "F2P-EX-03"
+            ],
+            [
+              "test_f2p_exception_wrong_environment_is_rejected",
+              "F2P",
+              "REQ_EXCEPTION_SCOPE",
+              "F2P-EX-04"
+            ],
+            [
+              "test_f2p_exception_cannot_override_scanner_unavailable",
+              "F2P",
+              "REQ_EXCEPTION_SCOPE",
+              "F2P-EX-05"
+            ],
+            [
+              "test_f2p_permit_rejected_with_different_secret",
+              "F2P",
+              "REQ_PERMIT_AUTH_REPLAY",
+              "F2P-PERMIT-01"
+            ],
+            [
+              "test_f2p_permit_signature_depends_on_secret",
+              "F2P",
+              "REQ_PERMIT_AUTH_REPLAY",
+              "F2P-PERMIT-02"
+            ],
+            [
+              "test_f2p_permit_instance_binding_is_enforced",
+              "F2P",
+              "REQ_PERMIT_AUTH_REPLAY",
+              "F2P-PERMIT-03"
+            ],
+            [
+              "test_f2p_stateful_permit_first_use_is_valid",
+              "F2P",
+              "REQ_PERMIT_AUTH_REPLAY",
+              "F2P-PERMIT-04"
+            ],
+            [
+              "test_f2p_permit_replay_is_rejected_after_restart",
+              "F2P",
+              "REQ_PERMIT_AUTH_REPLAY",
+              "F2P-PERMIT-05"
+            ],
+            [
+              "test_f2p_concurrent_permit_replay_has_single_winner",
+              "F2P",
+              "REQ_PERMIT_AUTH_REPLAY",
+              "F2P-PERMIT-06"
+            ],
+            [
+              "test_f2p_deny_decision_is_durably_journaled",
+              "F2P",
+              "REQ_AUDIT_RECOVERY",
+              "F2P-AUDIT-01"
+            ],
+            [
+              "test_f2p_deny_projection_matches_durable_journal",
+              "F2P",
+              "REQ_AUDIT_RECOVERY",
+              "F2P-AUDIT-02"
+            ],
+            [
+              "test_f2p_valid_unterminated_audit_record_survives_recovery",
+              "F2P",
+              "REQ_AUDIT_RECOVERY",
+              "F2P-AUDIT-03"
+            ],
+            [
+              "test_f2p_interior_audit_corruption_fails_closed",
+              "F2P",
+              "REQ_AUDIT_RECOVERY",
+              "F2P-AUDIT-04"
+            ],
+            [
+              "test_f2p_identical_retry_does_not_duplicate_audit_decision",
+              "F2P",
+              "REQ_AUDIT_RECOVERY",
+              "F2P-AUDIT-05"
+            ],
+            [
+              "test_p2p_trusted_clean_package_remains_allowed",
+              "P2P",
+              "REQ_PRESERVATION",
+              "P2P-01"
+            ],
+            [
+              "test_p2p_trusted_clean_container_remains_allowed",
+              "P2P",
+              "REQ_PRESERVATION",
+              "P2P-02"
+            ],
+            [
+              "test_p2p_exact_current_exception_remains_allowed",
+              "P2P",
+              "REQ_PRESERVATION",
+              "P2P-03"
+            ],
+            [
+              "test_p2p_ordinary_untrusted_apt_remains_denied",
+              "P2P",
+              "REQ_PRESERVATION",
+              "P2P-04"
+            ],
+            [
+              "test_p2p_expired_permit_remains_invalid",
+              "P2P",
+              "REQ_PRESERVATION",
+              "P2P-05"
+            ],
+            [
+              "test_p2p_permit_digest_mismatch_remains_invalid",
+              "P2P",
+              "REQ_PRESERVATION",
+              "P2P-06"
+            ],
+            [
+              "test_p2p_current_cache_entry_remains_operational",
+              "P2P",
+              "REQ_PRESERVATION",
+              "P2P-07"
+            ],
+            [
+              "test_p2p_valid_stateless_permit_remains_valid",
+              "P2P",
+              "REQ_PRESERVATION",
+              "P2P-08"
+            ],
+            [
+              "test_p2p_supplied_policy_scanner_exception_fixtures_remain_unchanged",
+              "P2P",
+              "REQ_PRESERVATION",
+              "P2P-09"
+            ]
+          ]
+        }
+      },
+      "required": {
+        "CURRENT_INSTRUCTION": "Security reproduced inconsistent acquisition decisions in `/app/enforcer`: an `apt` request was allowed without current scanner evidence, direct `dpkg` and Maven paths skipped source policy, a moved container tag reused an older clean result, an expired exception still applied, permit scope could be altered, and deny history disappeared after restart. Repair the gate so package, container, and dependency acquisition share one policy boundary. Use `/app/enforcer/notes/oncall.md` for the observed symptoms and `/app/enforcer/docs/policy-contract.md`, `/app/enforcer/docs/state-format.md`, and `/app/enforcer/docs/operations.md` for the governing contracts.\n\nKeep the existing `artifactguard evaluate` and `artifactguard verify-permit` interfaces and documented exit behavior, keep cache and exceptions operational, do not rewrite the supplied policy/scanner/exception fixtures, and preserve existing audit history. Trusted-source and required immutable-digest checks must apply before exceptions; scanner or cache evidence must be current for the artifact and active policy/scanner revisions and fail closed when unavailable or stale. Exceptions may waive only the vulnerability threshold within their exact current scope. Permits must be secret-keyed, unexpired, bound to the exact request/instance/artifact/policy decision, and single-use across restart and concurrent verification. Every ALLOW or DENY must be durably journaled before completion, with recovery preserving valid history and keeping the latest-decision projection consistent.\n",
+        "CURRENT_VERIFIER": {
+          "tests/Dockerfile": "FROM public.ecr.aws/docker/library/python:3.13-slim-bookworm@sha256:01f42367a0a94ad4bc17111776fd66e3500c1d87c15bbd6055b7371d39c124fb\nRUN apt-get update \\\n && apt-get install -y --no-install-recommends golang-go ca-certificates \\\n && rm -rf /var/lib/apt/lists/* \\\n && python3 -m pip install --no-cache-dir \"pytest==8.4.1\" \"pytest-json-ctrf==0.3.5\"\nWORKDIR /tests\nCOPY . /tests/\n",
+          "tests/test.sh": "#!/bin/bash\nset -uo pipefail\nmkdir -p /logs/verifier\necho 0 > /logs/verifier/reward.txt\nTEST_DIR=\"${TEST_DIR:-/tests}\"\nROOT=\"${ENFORCER_ROOT:-/app/enforcer}\"\ncd \"$ROOT\" || true\nif [ -d \"$ROOT\" ] && command -v go >/dev/null 2>&1; then\n  if go build -o /tmp/artifactguard ./cmd/artifactguard; then\n    export AG_BIN=/tmp/artifactguard\n  fi\nfi\npython3 -m pytest --ctrf /logs/verifier/ctrf.json \"$TEST_DIR/test_outputs.py\" -rA\nif [ $? -eq 0 ]; then\n  echo 1 > /logs/verifier/reward.txt\nelse\n  echo 0 > /logs/verifier/reward.txt\nfi\n",
+          "tests/test_outputs.py": "from __future__ import annotations\n\nimport copy\nimport hashlib\nfrom datetime import timedelta\nimport json\n\nfrom verifier_lib import (\n    NOW,\n    ROOT,\n    audit_records,\n    base_policy,\n    base_scans,\n    case_dir,\n    changed_scan,\n    empty_exceptions,\n    exception_for,\n    find_digest,\n    iso,\n    issue_clean_permit,\n    make_request,\n    other_surface,\n    run_evaluate,\n    run_two_verifications,\n    run_verify,\n    trusted_source,\n)\n\n\ndef test_f2p_dpkg_untrusted_source_rejected():\n    \"\"\"Direct dpkg acquisition must not bypass the package trusted-source policy.\"\"\"\n    with case_dir() as root:\n        req = make_request(\"req-dpkg\", \"package\", \"dpkg\", find_digest(vulnerable=False), \"attacker.invalid/repo\")\n        cp, out, _ = run_evaluate(root, req)\n        assert cp.returncode == 42 and out[\"code\"] == \"DENY_UNTRUSTED_SOURCE\"\n\n\ndef test_f2p_rpm_untrusted_source_rejected():\n    \"\"\"Direct rpm acquisition must obey the same trusted-source policy as other packages.\"\"\"\n    with case_dir() as root:\n        req = make_request(\"req-rpm\", \"package\", \"rpm\", find_digest(vulnerable=False), \"attacker.invalid/repo\")\n        cp, out, _ = run_evaluate(root, req)\n        assert cp.returncode == 42 and out[\"code\"] == \"DENY_UNTRUSTED_SOURCE\"\n\n\ndef test_f2p_maven_untrusted_source_rejected():\n    \"\"\"Maven dependency acquisition must reject a repository outside the dependency allow-list.\"\"\"\n    with case_dir() as root:\n        req = make_request(\"req-maven\", \"dependency\", \"maven\", find_digest(vulnerable=False), \"attacker.invalid/maven\")\n        cp, out, _ = run_evaluate(root, req)\n        assert cp.returncode == 42 and out[\"code\"] == \"DENY_UNTRUSTED_SOURCE\"\n\n\ndef test_f2p_missing_digest_cannot_be_excepted():\n    \"\"\"An exception cannot waive the immutable-digest prerequisite for a digest-required surface.\"\"\"\n    with case_dir() as root:\n        policy = base_policy()\n        surface = next(s for s, required in policy[\"require_digest\"].items() if required)\n        manager = {\"package\": \"apt\", \"container\": \"docker\", \"dependency\": \"maven\"}[surface]\n        req = make_request(\"req-no-digest\", surface, manager, \"\", trusted_source(surface, policy), name=\"digest-required\")\n        exceptions = {\"exceptions\": [exception_for(req, digest=\"\")]}\n        cp, out, _ = run_evaluate(root, req, exceptions=exceptions)\n        assert cp.returncode == 42 and out[\"code\"] == \"DENY_MISSING_DIGEST\"\n\n\ndef test_f2p_scanner_unavailable_fails_closed():\n    \"\"\"Unavailable current scanner evidence must deny rather than synthesize a clean result.\"\"\"\n    with case_dir() as root:\n        digest = find_digest(status=\"unavailable\")\n        req = make_request(\"req-scan-down\", \"package\", \"apt\", digest, trusted_source(\"package\"))\n        cp, out, _ = run_evaluate(root, req)\n        assert cp.returncode == 42 and out[\"code\"] == \"DENY_SCANNER_UNAVAILABLE\"\n\n\ndef test_f2p_scanner_db_revision_mismatch_is_stale():\n    \"\"\"Scanner evidence from a DB revision other than the policy revision must be rejected as stale.\"\"\"\n    with case_dir() as root:\n        policy = base_policy()\n        digest = find_digest(vulnerable=False)\n        scans = changed_scan(base_scans(), digest, db_revision=policy[\"scanner_db_revision\"] + \"-old\")\n        req = make_request(\"req-stale-db\", \"package\", \"apt\", digest, trusted_source(\"package\", policy))\n        cp, out, _ = run_evaluate(root, req, policy=policy, scans=scans)\n        assert cp.returncode == 42 and out[\"code\"] == \"DENY_SCANNER_EVIDENCE_STALE\"\n\n\ndef test_f2p_mutable_name_digest_change_invalidates_cache():\n    \"\"\"Reusing the same mutable name/version with a different digest must not reuse old clean evidence.\"\"\"\n    with case_dir() as root:\n        policy = base_policy()\n        clean = find_digest(vulnerable=False)\n        vulnerable = find_digest(vulnerable=True)\n        state = root / \"state\"\n        req1 = make_request(\"req-tag-a\", \"container\", \"docker\", clean, trusted_source(\"container\", policy), name=\"service\", version=\"stable\")\n        cp1, out1, _ = run_evaluate(root / \"a\", req1, state=state)\n        assert cp1.returncode == 0 and out1[\"cache_hit\"] is False\n        req2 = make_request(\"req-tag-b\", \"container\", \"docker\", vulnerable, trusted_source(\"container\", policy), name=\"service\", version=\"stable\")\n        cp2, out2, _ = run_evaluate(root / \"b\", req2, state=state)\n        assert cp2.returncode == 42 and out2[\"code\"] == \"DENY_VULNERABLE\" and out2[\"cache_hit\"] is False\n\n\ndef test_f2p_policy_version_change_invalidates_cache():\n    \"\"\"A policy-version change must force current evidence instead of reusing an older policy cache entry.\"\"\"\n    with case_dir() as root:\n        policy1 = base_policy()\n        digest = find_digest(vulnerable=False)\n        state = root / \"state\"\n        req = make_request(\"req-policy-a\", \"package\", \"apt\", digest, trusted_source(\"package\", policy1), name=\"policy-cache\")\n        cp1, out1, _ = run_evaluate(root / \"a\", req, state=state, policy=policy1)\n        assert cp1.returncode == 0 and out1[\"cache_hit\"] is False\n        policy2 = copy.deepcopy(policy1)\n        policy2[\"version\"] = policy1[\"version\"] + \"-next\"\n        scans2 = changed_scan(base_scans(), digest, vulnerable=True)\n        req[\"request_id\"] = \"req-policy-b\"\n        cp2, out2, _ = run_evaluate(root / \"b\", req, state=state, policy=policy2, scans=scans2)\n        assert cp2.returncode == 42 and out2[\"code\"] == \"DENY_VULNERABLE\" and out2[\"cache_hit\"] is False\n\n\ndef test_f2p_scanner_revision_change_invalidates_cache():\n    \"\"\"Changing the policy scanner DB revision must invalidate evidence cached under the prior revision.\"\"\"\n    with case_dir() as root:\n        policy1 = base_policy()\n        digest = find_digest(vulnerable=False)\n        state = root / \"state\"\n        req = make_request(\"req-db-a\", \"package\", \"apt\", digest, trusted_source(\"package\", policy1), name=\"db-cache\")\n        cp1, out1, _ = run_evaluate(root / \"a\", req, state=state, policy=policy1)\n        assert cp1.returncode == 0 and out1[\"cache_hit\"] is False\n        policy2 = copy.deepcopy(policy1)\n        policy2[\"scanner_db_revision\"] = policy1[\"scanner_db_revision\"] + \"-next\"\n        scans2 = changed_scan(base_scans(), digest, db_revision=policy2[\"scanner_db_revision\"], vulnerable=True)\n        req[\"request_id\"] = \"req-db-b\"\n        cp2, out2, _ = run_evaluate(root / \"b\", req, state=state, policy=policy2, scans=scans2)\n        assert cp2.returncode == 42 and out2[\"code\"] == \"DENY_VULNERABLE\" and out2[\"cache_hit\"] is False\n\n\ndef test_f2p_cache_ttl_expiry_forces_scanner_recheck():\n    \"\"\"Expired cached evidence must not hide a scanner outage after its TTL boundary.\"\"\"\n    with case_dir() as root:\n        policy = base_policy()\n        digest = find_digest(vulnerable=False)\n        state = root / \"state\"\n        req = make_request(\"req-ttl-a\", \"package\", \"apt\", digest, trusted_source(\"package\", policy), name=\"ttl-cache\")\n        cp1, out1, _ = run_evaluate(root / \"a\", req, state=state, policy=policy)\n        assert cp1.returncode == 0 and out1[\"cache_hit\"] is False\n        scans2 = changed_scan(base_scans(), digest, status=\"unavailable\")\n        req[\"request_id\"] = \"req-ttl-b\"\n        later = NOW + timedelta(seconds=int(policy[\"cache_ttl_seconds\"]) + 1)\n        cp2, out2, _ = run_evaluate(root / \"b\", req, state=state, policy=policy, scans=scans2, now=later)\n        assert cp2.returncode == 42 and out2[\"code\"] == \"DENY_SCANNER_UNAVAILABLE\"\n\n\ndef test_f2p_expired_exception_is_ignored():\n    \"\"\"An otherwise exact vulnerability exception must stop authorizing at its expiry boundary.\"\"\"\n    with case_dir() as root:\n        policy = base_policy()\n        digest = find_digest(vulnerable=True)\n        req = make_request(\"req-ex-expired\", \"package\", \"apt\", digest, trusted_source(\"package\", policy))\n        ex = exception_for(req, expires=iso(NOW - timedelta(seconds=1)))\n        cp, out, _ = run_evaluate(root, req, exceptions={\"exceptions\": [ex]})\n        assert cp.returncode == 42 and out[\"code\"] == \"DENY_VULNERABLE\"\n\n\ndef test_f2p_exception_same_name_wrong_digest_is_rejected():\n    \"\"\"Artifact name equality cannot let an exception authorize a different immutable digest.\"\"\"\n    with case_dir() as root:\n        policy = base_policy()\n        vulnerable = find_digest(vulnerable=True)\n        clean = find_digest(vulnerable=False)\n        req = make_request(\"req-ex-digest\", \"package\", \"apt\", vulnerable, trusted_source(\"package\", policy), name=\"shared-name\")\n        ex = exception_for(req, digest=clean, name=\"shared-name\")\n        cp, out, _ = run_evaluate(root, req, exceptions={\"exceptions\": [ex]})\n        assert cp.returncode == 42 and out[\"code\"] == \"DENY_VULNERABLE\"\n\n\ndef test_f2p_exception_wrong_surface_is_rejected():\n    \"\"\"A vulnerability exception issued for another acquisition surface must not apply cross-surface.\"\"\"\n    with case_dir() as root:\n        policy = base_policy()\n        digest = find_digest(vulnerable=True)\n        req = make_request(\"req-ex-surface\", \"container\", \"docker\", digest, trusted_source(\"container\", policy))\n        ex = exception_for(req, surfaces=[other_surface(req[\"surface\"])])\n        cp, out, _ = run_evaluate(root, req, exceptions={\"exceptions\": [ex]})\n        assert cp.returncode == 42 and out[\"code\"] == \"DENY_VULNERABLE\"\n\n\ndef test_f2p_exception_wrong_environment_is_rejected():\n    \"\"\"An exception scoped to another environment must not authorize the current environment.\"\"\"\n    with case_dir() as root:\n        policy = base_policy()\n        digest = find_digest(vulnerable=True)\n        req = make_request(\"req-ex-env\", \"package\", \"apt\", digest, trusted_source(\"package\", policy), environment=\"staging\")\n        ex = exception_for(req, environments=[\"production\"])\n        cp, out, _ = run_evaluate(root, req, exceptions={\"exceptions\": [ex]})\n        assert cp.returncode == 42 and out[\"code\"] == \"DENY_VULNERABLE\"\n\n\ndef test_f2p_exception_cannot_override_scanner_unavailable():\n    \"\"\"Even an exact current exception cannot waive the requirement for current scanner evidence.\"\"\"\n    with case_dir() as root:\n        policy = base_policy()\n        digest = find_digest(status=\"unavailable\")\n        req = make_request(\"req-ex-scan\", \"package\", \"apt\", digest, trusted_source(\"package\", policy))\n        ex = exception_for(req)\n        cp, out, _ = run_evaluate(root, req, exceptions={\"exceptions\": [ex]})\n        assert cp.returncode == 42 and out[\"code\"] == \"DENY_SCANNER_UNAVAILABLE\"\n\n\ndef test_f2p_permit_rejected_with_different_secret():\n    \"\"\"A permit authenticated under one host secret must fail verification under a different secret.\"\"\"\n    with case_dir() as root:\n        permit, req, policy = issue_clean_permit(root / \"issue\", secret=b\"secret-one\")\n        cp, out = run_verify(permit, req, policy, b\"secret-two\", work=root / \"verify\")\n        assert cp.returncode == 43 and out[\"valid\"] is False\n\n\ndef test_f2p_permit_signature_depends_on_secret():\n    \"\"\"Identical permit fields signed with different host secrets must not produce the same authenticator.\"\"\"\n    with case_dir() as root:\n        permit1, _, _ = issue_clean_permit(root / \"one\", secret=b\"secret-one\", request_id=\"req-same\", instance=\"i-same\")\n        permit2, _, _ = issue_clean_permit(root / \"two\", secret=b\"secret-two\", request_id=\"req-same\", instance=\"i-same\")\n        assert permit1[\"signature\"] != permit2[\"signature\"]\n\n\ndef test_f2p_permit_instance_binding_is_enforced():\n    \"\"\"A valid permit must not authorize the same request and digest on another EC2 instance.\"\"\"\n    with case_dir() as root:\n        permit, req, policy = issue_clean_permit(root / \"issue\")\n        changed = copy.deepcopy(req)\n        changed[\"instance_id\"] = \"i-different\"\n        cp, out = run_verify(permit, changed, policy, b\"verifier-secret-a\", work=root / \"verify\")\n        assert cp.returncode == 43 and out[\"valid\"] is False\n\n\ndef test_f2p_stateful_permit_first_use_is_valid():\n    \"\"\"The stable verifier CLI must accept the first exact-scope permit use while recording durable consumption state.\"\"\"\n    with case_dir() as root:\n        permit, req, policy = issue_clean_permit(root / \"issue\")\n        cp, out = run_verify(permit, req, policy, b\"verifier-secret-a\", work=root / \"verify\", state=root / \"replay\")\n        assert cp.returncode == 0 and out[\"valid\"] is True\n\n\ndef test_f2p_permit_replay_is_rejected_after_restart():\n    \"\"\"A permit consumed by one verifier process must be rejected by a later process using the same durable state.\"\"\"\n    with case_dir() as root:\n        permit, req, policy = issue_clean_permit(root / \"issue\")\n        state = root / \"replay\"\n        first, first_out = run_verify(permit, req, policy, b\"verifier-secret-a\", work=root / \"first\", state=state)\n        assert first.returncode == 0 and first_out[\"valid\"] is True\n        second, second_out = run_verify(permit, req, policy, b\"verifier-secret-a\", work=root / \"second\", state=state)\n        assert second.returncode == 43 and second_out[\"valid\"] is False and second_out[\"code\"] == \"PERMIT_REPLAYED\"\n\n\ndef test_f2p_concurrent_permit_replay_has_single_winner():\n    \"\"\"Concurrent verification of one single-use permit must yield one success and one replay rejection.\"\"\"\n    with case_dir() as root:\n        permit, req, policy = issue_clean_permit(root / \"issue\")\n        results = run_two_verifications(permit, req, policy, b\"verifier-secret-a\", root / \"replay\", root / \"verify\")\n        codes = sorted(cp.returncode for cp, _ in results)\n        outcomes = sorted(out[\"code\"] for _, out in results)\n        assert codes == [0, 43]\n        assert outcomes == [\"PERMIT_REPLAYED\", \"PERMIT_VALID\"]\n\n\ndef test_f2p_deny_decision_is_durably_journaled():\n    \"\"\"A policy denial must appear in the durable audit journal before evaluate returns its denial.\"\"\"\n    with case_dir() as root:\n        policy = base_policy()\n        req = make_request(\"req-deny-audit\", \"package\", \"apt\", find_digest(vulnerable=False), \"attacker.invalid/repo\")\n        state = root / \"state\"\n        cp, out, _ = run_evaluate(root / \"run\", req, state=state, policy=policy)\n        assert cp.returncode == 42\n        records = audit_records(state)\n        assert records and records[-1][\"request_id\"] == req[\"request_id\"] and records[-1][\"decision\"] == \"DENY\"\n\n\ndef test_f2p_deny_projection_matches_durable_journal():\n    \"\"\"After a denied evaluation, last-decision must agree with the newest durable audit record.\"\"\"\n    with case_dir() as root:\n        req = make_request(\"req-deny-projection\", \"package\", \"apt\", find_digest(vulnerable=False), \"attacker.invalid/repo\")\n        state = root / \"state\"\n        cp, _, _ = run_evaluate(root / \"run\", req, state=state)\n        assert cp.returncode == 42\n        last = json.loads((state / \"last-decision.json\").read_text())\n        records = audit_records(state)\n        assert records and last[\"decision_id\"] == records[-1][\"decision_id\"]\n\n\ndef test_f2p_valid_unterminated_audit_record_survives_recovery():\n    \"\"\"Recovery must preserve a complete final audit record even when its trailing newline was not durable.\"\"\"\n    with case_dir() as root:\n        digest = find_digest(vulnerable=False)\n        source = trusted_source(\"package\")\n        state = root / \"state\"\n        req1 = make_request(\"req-tail-valid-a\", \"package\", \"apt\", digest, source)\n        cp1, _, _ = run_evaluate(root / \"a\", req1, state=state)\n        assert cp1.returncode == 0\n        path = state / \"audit.jsonl\"\n        path.write_bytes(path.read_bytes().rstrip(b\"\\n\"))\n        req2 = make_request(\"req-tail-valid-b\", \"package\", \"apt\", digest, source)\n        cp2, _, _ = run_evaluate(root / \"b\", req2, state=state)\n        assert cp2.returncode == 0\n        assert [record[\"request_id\"] for record in audit_records(state)] == [req1[\"request_id\"], req2[\"request_id\"]]\n\n\ndef test_f2p_interior_audit_corruption_fails_closed():\n    \"\"\"Durable interior audit corruption must stop a new decision instead of silently extending corrupted history.\"\"\"\n    with case_dir() as root:\n        digest = find_digest(vulnerable=False)\n        source = trusted_source(\"package\")\n        state = root / \"state\"\n        req1 = make_request(\"req-corrupt-a\", \"package\", \"apt\", digest, source)\n        cp1, _, _ = run_evaluate(root / \"a\", req1, state=state)\n        assert cp1.returncode == 0\n        with (state / \"audit.jsonl\").open(\"ab\") as fh:\n            fh.write(b'{\"broken\":\\n')\n        req2 = make_request(\"req-corrupt-b\", \"package\", \"apt\", digest, source)\n        cp2, _, _ = run_evaluate(root / \"b\", req2, state=state)\n        assert cp2.returncode == 2\n\n\ndef test_f2p_identical_retry_does_not_duplicate_audit_decision():\n    \"\"\"Repeating the same deterministic evaluation must not create a duplicate durable decision record.\"\"\"\n    with case_dir() as root:\n        digest = find_digest(vulnerable=False)\n        req = make_request(\"req-idempotent\", \"package\", \"apt\", digest, trusted_source(\"package\"))\n        state = root / \"state\"\n        cp1, out1, _ = run_evaluate(root / \"a\", req, state=state)\n        cp2, out2, _ = run_evaluate(root / \"b\", req, state=state)\n        assert cp1.returncode == 0 and cp2.returncode == 0\n        assert out1[\"decision_id\"] == out2[\"decision_id\"]\n        assert len(audit_records(state)) == 1\n\n\ndef test_f2p_corrupt_cache_does_not_become_clean_evidence():\n    \"\"\"A malformed cache entry must be treated as unusable evidence and cannot mask a scanner outage.\"\"\"\n    with case_dir() as root:\n        digest = find_digest(vulnerable=False)\n        req = make_request(\"req-cache-corrupt-a\", \"package\", \"apt\", digest, trusted_source(\"package\"), name=\"cache-corrupt\")\n        state = root / \"state\"\n        cp1, _, _ = run_evaluate(root / \"a\", req, state=state)\n        assert cp1.returncode == 0\n        entries = list((state / \"cache\").glob(\"*.json\"))\n        assert len(entries) == 1\n        entries[0].write_text('{\"partial\":')\n        scans = changed_scan(base_scans(), digest, status=\"unavailable\")\n        req[\"request_id\"] = \"req-cache-corrupt-b\"\n        cp2, out2, _ = run_evaluate(root / \"b\", req, state=state, scans=scans)\n        assert cp2.returncode == 42 and out2[\"code\"] == \"DENY_SCANNER_UNAVAILABLE\"\n\n\ndef test_p2p_trusted_clean_package_remains_allowed():\n    \"\"\"A trusted digest-pinned clean package remains an ordinary allowed acquisition.\"\"\"\n    with case_dir() as root:\n        req = make_request(\"req-p2p-package\", \"package\", \"apt\", find_digest(vulnerable=False), trusted_source(\"package\"))\n        cp, out, _ = run_evaluate(root, req)\n        assert cp.returncode == 0 and out[\"decision\"] == \"ALLOW\"\n\n\ndef test_p2p_trusted_clean_container_remains_allowed():\n    \"\"\"A trusted digest-pinned clean container remains allowed through the shared policy path.\"\"\"\n    with case_dir() as root:\n        req = make_request(\"req-p2p-container\", \"container\", \"docker\", find_digest(vulnerable=False), trusted_source(\"container\"))\n        cp, out, _ = run_evaluate(root, req)\n        assert cp.returncode == 0 and out[\"decision\"] == \"ALLOW\"\n\n\ndef test_p2p_exact_current_exception_remains_allowed():\n    \"\"\"A current exact-scope vulnerability exception still authorizes its intended vulnerable artifact.\"\"\"\n    with case_dir() as root:\n        digest = find_digest(vulnerable=True)\n        req = make_request(\"req-p2p-exception\", \"package\", \"apt\", digest, trusted_source(\"package\"))\n        ex = exception_for(req)\n        cp, out, _ = run_evaluate(root, req, exceptions={\"exceptions\": [ex]})\n        assert cp.returncode == 0 and out[\"code\"] == \"ALLOW_EXCEPTION\"\n\n\ndef test_p2p_ordinary_untrusted_apt_remains_denied():\n    \"\"\"The already-enforced normal apt source rejection remains a policy denial with exit 42.\"\"\"\n    with case_dir() as root:\n        req = make_request(\"req-p2p-untrusted\", \"package\", \"apt\", find_digest(vulnerable=False), \"attacker.invalid/repo\")\n        cp, out, _ = run_evaluate(root, req)\n        assert cp.returncode == 42 and out[\"code\"] == \"DENY_UNTRUSTED_SOURCE\"\n\n\ndef test_p2p_expired_permit_remains_invalid():\n    \"\"\"An otherwise authentic permit remains invalid once its expiry time has passed.\"\"\"\n    with case_dir() as root:\n        permit, req, policy = issue_clean_permit(root / \"issue\")\n        expiry = NOW + timedelta(seconds=int(policy[\"permit_ttl_seconds\"]) + 1)\n        cp, out = run_verify(permit, req, policy, b\"verifier-secret-a\", work=root / \"verify\", now=expiry)\n        assert cp.returncode == 43 and out[\"valid\"] is False\n\n\ndef test_p2p_permit_digest_mismatch_remains_invalid():\n    \"\"\"A permit must continue rejecting a request whose immutable artifact digest differs from its signed scope.\"\"\"\n    with case_dir() as root:\n        permit, req, policy = issue_clean_permit(root / \"issue\")\n        changed = copy.deepcopy(req)\n        changed[\"digest\"] = find_digest(vulnerable=True)\n        cp, out = run_verify(permit, changed, policy, b\"verifier-secret-a\", work=root / \"verify\")\n        assert cp.returncode == 43 and out[\"valid\"] is False\n\ndef test_p2p_current_cache_entry_remains_operational():\n    \"\"\"A current exact cache entry remains usable instead of disabling the cache as a workaround.\"\"\"\n    with case_dir() as root:\n        policy = base_policy()\n        digest = find_digest(vulnerable=False)\n        state = root / \"state\"\n        req = make_request(\"req-p2p-cache-a\", \"package\", \"apt\", digest, trusted_source(\"package\", policy), name=\"cache-preserve\")\n        cp1, out1, _ = run_evaluate(root / \"a\", req, state=state, policy=policy)\n        assert cp1.returncode == 0 and out1[\"cache_hit\"] is False\n        req[\"request_id\"] = \"req-p2p-cache-b\"\n        scans2 = changed_scan(base_scans(), digest, status=\"unavailable\")\n        cp2, out2, _ = run_evaluate(root / \"b\", req, state=state, policy=policy, scans=scans2)\n        assert cp2.returncode == 0 and out2[\"decision\"] == \"ALLOW\" and out2[\"cache_hit\"] is True\n\n\ndef test_p2p_valid_stateless_permit_remains_valid():\n    \"\"\"The existing stateless verify-permit path still accepts an exact unexpired permit.\"\"\"\n    with case_dir() as root:\n        permit, req, policy = issue_clean_permit(root / \"issue\")\n        cp, out = run_verify(permit, req, policy, b\"verifier-secret-a\", work=root / \"verify\")\n        assert cp.returncode == 0 and out[\"valid\"] is True and out[\"code\"] == \"PERMIT_VALID\"\n\n\ndef test_p2p_supplied_policy_scanner_exception_fixtures_remain_unchanged():\n    \"\"\"The shipped policy, scanner, and exception fixtures remain byte-for-byte unchanged.\"\"\"\n    expected = {\n        \"config/policy.json\": \"d5c9673e074c72bf2dfd0b1a5d7a868145ccee4d405927819e41f22e83aa6ea8\",\n        \"fixtures/scans.json\": \"f8f969cc35cd6f4e7e80eff6628311ba5d63e8fd06f010b9ebd1d786d53d3e5c\",\n        \"fixtures/exceptions.json\": \"f188638bac295f3601107ef74cbaeeef69d0bcea84c1c234aa8da35fb2d1043b\",\n    }\n    for rel, digest in expected.items():\n        assert hashlib.sha256((ROOT / rel).read_bytes()).hexdigest() == digest\n",
+          "tests/verifier_lib.py": "from __future__ import annotations\n\nimport concurrent.futures\nimport copy\nimport json\nimport os\nfrom contextlib import contextmanager\nfrom datetime import datetime, timedelta, timezone\nfrom pathlib import Path\nimport subprocess\nimport tempfile\n\nROOT = Path(os.environ.get(\"ENFORCER_ROOT\", \"/app/enforcer\"))\nBIN = Path(os.environ.get(\"AG_BIN\", \"/usr/local/bin/artifactguard\"))\nNOW = datetime(2026, 8, 19, 12, 0, 0, tzinfo=timezone.utc)\n\n\ndef load_json(path: Path):\n    return json.loads(path.read_text())\n\n\ndef base_policy():\n    return load_json(ROOT / \"config\" / \"policy.json\")\n\n\ndef base_scans():\n    return load_json(ROOT / \"fixtures\" / \"scans.json\")\n\n\ndef empty_exceptions():\n    return {\"exceptions\": []}\n\n\ndef denied_severities(policy):\n    return {str(value).lower() for value in policy[\"deny_severities\"]}\n\n\ndef scan_is_vulnerable(record, policy):\n    denied = denied_severities(policy)\n    return any(str(v.get(\"severity\", \"\")).lower() in denied for v in record.get(\"vulnerabilities\", []))\n\n\ndef find_digest(*, vulnerable=None, status=\"ok\"):\n    policy = base_policy()\n    for digest, record in base_scans()[\"records\"].items():\n        if record.get(\"status\") != status:\n            continue\n        if status == \"ok\" and record.get(\"db_revision\") != policy[\"scanner_db_revision\"]:\n            continue\n        if vulnerable is None or scan_is_vulnerable(record, policy) == vulnerable:\n            return digest\n    raise AssertionError(f\"fixture lacks digest status={status!r} vulnerable={vulnerable!r}\")\n\n\ndef trusted_source(surface, policy=None):\n    policy = policy or base_policy()\n    values = policy[\"trusted_sources\"][surface]\n    assert values\n    return values[0]\n\n\ndef other_surface(surface):\n    return next(value for value in (\"package\", \"container\", \"dependency\") if value != surface)\n\n\ndef iso(moment):\n    return moment.astimezone(timezone.utc).strftime(\"%Y-%m-%dT%H:%M:%SZ\")\n\n\ndef make_request(request_id, surface, manager, digest, source, *, name=\"artifact\", version=\"1.0\", environment=\"staging\", instance=\"i-verifier\"):\n    return {\n        \"request_id\": request_id,\n        \"instance_id\": instance,\n        \"environment\": environment,\n        \"surface\": surface,\n        \"manager\": manager,\n        \"name\": name,\n        \"version\": version,\n        \"source\": source,\n        \"digest\": digest,\n        \"action\": \"install\",\n    }\n\n\ndef exception_for(req, *, digest=None, surfaces=None, environments=None, codes=None, expires=None, name=None):\n    return {\n        \"id\": \"EX-VERIFIER\",\n        \"name\": req[\"name\"] if name is None else name,\n        \"digest\": req[\"digest\"] if digest is None else digest,\n        \"surfaces\": [req[\"surface\"]] if surfaces is None else surfaces,\n        \"environments\": [req[\"environment\"]] if environments is None else environments,\n        \"policy_codes\": [\"VULNERABILITY_THRESHOLD\"] if codes is None else codes,\n        \"expires_at\": iso(NOW + timedelta(hours=2)) if expires is None else expires,\n    }\n\n\ndef write_json(path, value):\n    path.write_text(json.dumps(value, indent=2, sort_keys=True) + \"\\n\")\n\n\n@contextmanager\ndef case_dir():\n    with tempfile.TemporaryDirectory(prefix=\"artifactguard-verifier-\") as td:\n        yield Path(td)\n\n\ndef run_evaluate(work, req, *, state=None, policy=None, scans=None, exceptions=None, secret=b\"verifier-secret-a\", now=NOW):\n    work.mkdir(parents=True, exist_ok=True)\n    state = state or work / \"state\"\n    policy = copy.deepcopy(policy or base_policy())\n    scans = copy.deepcopy(scans or base_scans())\n    exceptions = copy.deepcopy(exceptions or empty_exceptions())\n    req_path = work / \"request.json\"\n    policy_path = work / \"policy.json\"\n    scans_path = work / \"scans.json\"\n    exceptions_path = work / \"exceptions.json\"\n    secret_path = work / \"secret\"\n    write_json(req_path, req)\n    write_json(policy_path, policy)\n    write_json(scans_path, scans)\n    write_json(exceptions_path, exceptions)\n    secret_path.write_bytes(secret)\n    cp = subprocess.run([\n        str(BIN), \"evaluate\",\n        \"--request\", str(req_path),\n        \"--policy\", str(policy_path),\n        \"--scans\", str(scans_path),\n        \"--exceptions\", str(exceptions_path),\n        \"--state\", str(state),\n        \"--secret\", str(secret_path),\n        \"--now\", iso(now),\n    ], text=True, capture_output=True)\n    output = json.loads(cp.stdout) if cp.stdout.strip() else None\n    return cp, output, {\n        \"request\": req_path,\n        \"policy\": policy_path,\n        \"secret\": secret_path,\n        \"state\": Path(state),\n    }\n\n\ndef run_verify(permit, req, policy, secret, *, work, state=None, now=NOW):\n    work.mkdir(parents=True, exist_ok=True)\n    permit_path = work / \"permit.json\"\n    req_path = work / \"request.json\"\n    policy_path = work / \"policy.json\"\n    secret_path = work / \"secret\"\n    write_json(permit_path, permit)\n    write_json(req_path, req)\n    write_json(policy_path, policy)\n    secret_path.write_bytes(secret)\n    cmd = [\n        str(BIN), \"verify-permit\",\n        \"--permit\", str(permit_path),\n        \"--request\", str(req_path),\n        \"--policy\", str(policy_path),\n        \"--secret\", str(secret_path),\n        \"--now\", iso(now),\n    ]\n    if state is not None:\n        cmd.extend([\"--state\", str(state)])\n    cp = subprocess.run(cmd, text=True, capture_output=True)\n    output = json.loads(cp.stdout) if cp.stdout.strip() else None\n    return cp, output\n\n\ndef assert_decision(cp, output, rc, code):\n    assert cp.returncode == rc, (cp.returncode, cp.stdout, cp.stderr)\n    assert output is not None, (cp.stdout, cp.stderr)\n    assert output[\"code\"] == code, output\n\n\ndef audit_records(state):\n    path = Path(state) / \"audit.jsonl\"\n    if not path.exists():\n        return []\n    return [json.loads(line) for line in path.read_text().splitlines() if line.strip()]\n\n\ndef issue_clean_permit(work, *, secret=b\"verifier-secret-a\", request_id=\"req-permit\", instance=\"i-permit\"):\n    policy = base_policy()\n    digest = find_digest(vulnerable=False)\n    req = make_request(request_id, \"package\", \"apt\", digest, trusted_source(\"package\", policy), instance=instance)\n    cp, output, _ = run_evaluate(work, req, secret=secret)\n    assert_decision(cp, output, 0, \"ALLOW_CLEAN\")\n    assert output.get(\"permit\")\n    return output[\"permit\"], req, policy\n\n\ndef changed_scan(scans, digest, *, status=\"ok\", db_revision=None, vulnerable=None):\n    result = copy.deepcopy(scans)\n    record = copy.deepcopy(result[\"records\"][digest])\n    record[\"status\"] = status\n    if db_revision is not None:\n        record[\"db_revision\"] = db_revision\n    if vulnerable is not None:\n        policy = base_policy()\n        if vulnerable:\n            template_digest = find_digest(vulnerable=True)\n            record[\"vulnerabilities\"] = copy.deepcopy(base_scans()[\"records\"][template_digest][\"vulnerabilities\"])\n        else:\n            record[\"vulnerabilities\"] = []\n    result[\"records\"][digest] = record\n    return result\n\n\ndef run_two_verifications(permit, req, policy, secret, state, work):\n    def one(index):\n        return run_verify(permit, req, policy, secret, work=work / f\"v{index}\", state=state)\n    with concurrent.futures.ThreadPoolExecutor(max_workers=2) as pool:\n        return list(pool.map(one, range(2)))\n"
+        },
+        "REFERENCED_SOLVER_VISIBLE_CONTRACTS": {
+          "environment/enforcer/docs/operations.md": "# Operations\n\nOperators provide policy, scanner fixtures, exception data, state directory, secret material, and optional RFC3339 time through the stable CLI. `evaluate` returns exit 42 on policy denial and 2 on operational failure. `verify-permit` returns exit 43 for an invalid permit and retains its existing stateless integrity/scope/expiry behavior when no replay state is supplied.\n\n`verify-permit` may additionally receive `--state <dir>` for durable single-use enforcement. With replay state enabled, the first exact valid permit use returns the normal valid result and durably records consumption; later or concurrent use of that permit must return exit 43 with `PERMIT_REPLAYED`, while the successful verification reports `PERMIT_VALID`. Production repair must fail closed on stale or unavailable scanner evidence, preserve durable audit history, and prevent permit replay across restart and concurrency boundaries.\n",
+          "environment/enforcer/docs/policy-contract.md": "# Software acquisition policy contract\n\n`artifactguard` is the local enforcement client used by governed EC2 instances. Production scanner implementations may call Trivy or an internal vulnerability service; this lab supplies a deterministic scanner mirror with the same decision boundary.\n\n## Surfaces\n\nEvery request has exactly one `surface`: `package`, `container`, or `dependency`. `manager` identifies the acquisition path (`apt`, `dnf`, `dpkg`, `rpm`, `docker`, `pip`, `npm`, `maven`, etc.). Policy applies to the surface regardless of manager, so switching to a lower-level installer is not an exemption.\n\nThe source must appear in `trusted_sources[surface]`. An exception never overrides an untrusted source. If `require_digest[surface]` is true, an immutable digest is mandatory.\n\n## Scanner evidence and cache\n\nA scanner result is usable only when its status is `ok` and its `db_revision` equals the policy's `scanner_db_revision`. Without current scanner evidence the request is denied with `DENY_SCANNER_UNAVAILABLE` or `DENY_SCANNER_EVIDENCE_STALE`.\n\nA durable cache entry may stand in for a fresh scanner call only while all of these remain identical/current:\n\n- artifact digest;\n- policy version;\n- scanner DB revision;\n- cache TTL.\n\nName, package version, image tag, or dependency coordinate alone are not immutable cache identities. A mutable tag that resolves to another digest is a different artifact.\n\n## Vulnerability policy and exceptions\n\nAny vulnerability whose severity appears in `deny_severities` causes `DENY_VULNERABLE` unless a current exception matches the exact artifact digest, acquisition surface, environment, policy code `VULNERABILITY_THRESHOLD`, and has not expired. Exceptions do not override missing scanner evidence, source trust, or digest requirements.\n\n## Permits\n\nAn ALLOW decision returns a short-lived permit. The permit must be keyed with the supplied secret and cover the exact request ID, EC2 instance ID, artifact digest, policy version, and expiry. Altering any field or recomputing an unkeyed checksum must not create a valid permit. `verify-permit` returns exit 0 only for a valid, unexpired, exact-scope permit.\n\n## Audit durability\n\nEvery policy decision, both ALLOW and DENY, is appended to `state/audit.jsonl` and fsynced before the command reports completion. `state/last-decision.json` contains the most recent decision. Scan cache and audit history must survive normal process restart; existing history must not be deleted to repair the task.\n\n## Decision codes\n\n- `ALLOW_CLEAN`\n- `ALLOW_EXCEPTION`\n- `DENY_MISSING_DIGEST`\n- `DENY_UNTRUSTED_SOURCE`\n- `DENY_SCANNER_UNAVAILABLE`\n- `DENY_SCANNER_EVIDENCE_STALE`\n- `DENY_VULNERABLE`\n\nDenials exit with code 42. Permit verification failures exit with code 43.\n",
+          "environment/enforcer/docs/state-format.md": "# State format\n\n`cache/<key>.json` stores scan evidence, `audit.jsonl` stores durable decision records, `last-decision.json` is a derived projection, and `replay/consumed.jsonl` records permit consumption. Cache evidence is usable only for the same immutable artifact digest, policy version, scanner DB revision, and unexpired TTL.\n\nState transitions must be crash-safe and replay-safe. Repeating the same request against unchanged material request/policy inputs is an idempotent retry: it reuses the existing `decision_id` and does not append a second audit decision. The audit journal is authoritative; `last-decision.json` may advance only after its corresponding journal record is durable and must agree with the newest valid record. A complete final JSON record remains valid even when its trailing newline was not durable. A malformed JSON audit record is durable corruption: a new operation must fail closed with the normal operational-failure exit behavior and must not silently truncate or extend corrupted history.\n",
+          "environment/enforcer/notes/oncall.md": "# On-call handoff\n\nSecurity reproduced the incident with three paths:\n\n- an `apt` request with digest `sha256:777...` was allowed while the vulnerability mirror was unavailable;\n- `dpkg -i` and Maven resolution did not consult the same source allow-list as the higher-level paths;\n- `docker pull app:stable` was scanned clean, then the tag moved to another digest and the second request reported `cache_hit=true` with the old result.\n\nThey also supplied an expired production dependency exception that still passed. A red-team script changed `instance_id` in an allow permit and generated another valid-looking signature without the host secret. Deny decisions were visible on stdout but absent after restarting the process and reading `state/audit.jsonl`.\n\nDo not solve this by disabling cache or exceptions: both are required operational controls. Keep the scanner fixture boundary deterministic; the real service swaps that adapter for Trivy/internal scanning.\n"
+        }
+      }
+    },
+    "invocation_id": "inv_19ac2dc4767d43b171556798fd2ca915c8fecb8e5b72a328a9ce9b16847f8476",
+    "learning": {
+      "context_hash": "sha256:bb84a513aa2b6e4374d691759c4a6edf94169f479f4611e9091643b9f279ccfc",
+      "lessons": [],
+      "mode": "GENERALIZED_LESSONS_PLUS_OWNED_REMEDIATIONS",
+      "raw_feedback_exposed": false,
+      "raw_historical_findings_exposed": false,
+      "registry_heads": {
+        "feedback": "GENESIS",
+        "findings": "GENESIS",
+        "lessons": "GENESIS",
+        "patterns": "GENESIS",
+        "remediations": "GENESIS"
+      },
+      "remediations": []
+    },
+    "missing_required_inputs": [],
+    "output_contract": {
+      "allowed_status_values": [
+        "ALIGNED",
+        "REPAIR_REQUIRED",
+        "BLOCKED"
+      ],
+      "deterministic_validators": [],
+      "optional_fields": [
+        "REPAIR_EVIDENCE"
+      ],
+      "persisted_artifacts": [],
+      "required_fields": [
+        "Q1_STATUS",
+        "Q2_STATUS",
+        "Q3_STATUS"
+      ],
+      "semantic_reviewers": [
+        "Q1 Spec Gap Repairer",
+        "Q2 Verifier Coverage Repairer",
+        "Q3 Spec Ambiguity Repairer"
+      ]
+    },
+    "readiness": "READY",
+    "retrieval": {
+      "query": null,
+      "retrieved_chars": 0,
+      "retrieved_context": [],
+      "status": "NOT_REQUESTED"
+    },
+    "routing": {
+      "failure_routes": {
+        "AMBIGUITY": "Q3 Spec Ambiguity Repairer",
+        "PERSISTENT_DISAGREEMENT": "Creation Controller -> block freeze and route to the applicable contract/policy owner",
+        "SPEC_TO_VERIFIER_GAP": "Q2 Verifier Coverage Repairer",
+        "VERIFIER_TO_SPEC_GAP": "Q1 Spec Gap Repairer"
+      },
+      "stale_on": [
+        "instruction change",
+        "referenced contract change",
+        "verifier change",
+        "grading-semantics change"
+      ],
+      "success_transition": "DOCUMENTATION_DRAFT"
+    },
+    "schema_version": "1.0",
+    "stage": {
+      "lifecycle": "creation",
+      "owner": "Creation Controller",
+      "role_class": "CONTROLLER",
+      "role_id": "CREATION_CONTROLLER",
+      "stage_id": "SPEC_ALIGNMENT"
+    }
+  },
+  "outputs": {
+    "Q1_STATUS": "NO_GAP",
+    "Q2_STATUS": "COVERED",
+    "Q3_STATUS": "CLEAR",
+    "REPAIR_EVIDENCE": [
+      {
+        "repair": "Clarified idempotent evaluation replay and durable audit recovery semantics in state-format.md.",
+        "role": "Q1"
+      },
+      {
+        "repair": "Added preservation coverage for current cache reuse, valid stateless permit verification, and immutable shipped fixtures.",
+        "role": "Q2"
+      },
+      {
+        "repair": "Defined verify-permit optional --state replay semantics plus PERMIT_VALID/PERMIT_REPLAYED outcomes and fail-closed audit-corruption behavior.",
+        "role": "Q3"
+      },
+      {
+        "validation": "27/27 F2P fail starter; all 9 P2P pass starter; strict task-complexity gate passes."
+      }
+    ]
+  },
+  "record_id": "rec_53ccfba8d6d0674f3f2bd61947a829d9fd897dcccc3511a695b5f53ed72de551",
+  "role_id": "CREATION_CONTROLLER",
+  "schema_version": "1.0",
+  "stage_id": "SPEC_ALIGNMENT",
+  "status": "ALIGNED",
+  "task_lineage": {
+    "input_task_commit": "8836f886d7cfc7f2747264026da31d1dfa49c658",
+    "output_task_commit": "8836f886d7cfc7f2747264026da31d1dfa49c658",
+    "task_changed": false
+  },
+  "transition": {
+    "action": "ADVANCE",
+    "requires_state_validation": false,
+    "target": "DOCUMENTATION_DRAFT",
+    "target_kind": "STAGE"
+  },
+  "validation": {
+    "acceptance_predicates_satisfied": true,
+    "evidence_binding_satisfied": true,
+    "evidence_refs_count": 2,
+    "invocation_identity_valid": true,
+    "invocation_policy_valid": true,
+    "output_keys_valid": true,
+    "required_outputs_satisfied": true,
+    "retrieval_context_authorized": true,
+    "status_legal": true,
+    "task_commit_change_authorized": true,
+    "task_lineage_valid": true
+  }
+}
