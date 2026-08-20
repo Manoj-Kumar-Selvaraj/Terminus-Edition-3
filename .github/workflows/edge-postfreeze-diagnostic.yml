@@ -1,0 +1,46 @@
+name: Edge post-freeze controller diagnostic
+
+on:
+  push:
+    branches:
+      - 'terminus-diagnostic/edge-postfreeze-df7'
+    paths:
+      - '.terminus/diagnostic-trigger/edge-postfreeze.json'
+
+permissions:
+  contents: write
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Resolve exact controller continuation
+        shell: bash
+        run: |
+          set -euo pipefail
+          printf '{}\n' > /tmp/inputs.json
+          set +e
+          python3 .terminus/execution/controller_cli.py continue \
+            --task-id edge-router-runtime \
+            --task-commit 9663e4da67ab20e6bd66b942ac54b57667408dd8 \
+            --control-plane-commit df7ef7569e2947b9f0bf7cf89ed4dec6c2a5a1fe \
+            --inputs-json /tmp/inputs.json \
+            --output /tmp/continue.json
+          rc=$?
+          set -e
+          mkdir -p .terminus/diagnostic-results
+          cp /tmp/continue.json .terminus/diagnostic-results/edge-postfreeze-continue.json
+          printf '%s\n' "$rc" > .terminus/diagnostic-results/edge-postfreeze-rc.txt
+      - name: Persist branch-only diagnostics
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'terminus-diagnostic[bot]'
+          git config user.email 'terminus-diagnostic[bot]@users.noreply.github.com'
+          git add -- .terminus/diagnostic-results/edge-postfreeze-continue.json .terminus/diagnostic-results/edge-postfreeze-rc.txt
+          git diff --cached --quiet && exit 0
+          git commit -m 'Persist edge post-freeze controller diagnostic'
+          git push origin HEAD:${GITHUB_REF_NAME}
