@@ -1,0 +1,38 @@
+{
+  "schema_version":"1.0",
+  "mode":"RECORD",
+  "task_id":"edge-router-runtime",
+  "task_commit":"9663e4da67ab20e6bd66b942ac54b57667408dd8",
+  "control_plane_commit":"67b805a297ac005ee08e82facc533f53a3233192",
+  "expected_repository_head":"33311c81d0f14bc557e1814ddb74b0ac83c5cc9f",
+  "stage_id":"ASSEMBLY",
+  "inputs":{
+    "CURRENT_TASK":{"task_root":"edge-router-runtime","environment":"environment/","instruction":"instruction.md","readme":"README.md","solution":"solution/","task_toml":"task.toml","tests":"tests/","runtime_artifact":"/app/edge-router"},
+    "CURRENT_ORACLE":{"status":"IMPLEMENTED","empirical_status":"DEFERRED_TO_DETERMINISTIC_VALIDATION","files":["solution/solve.sh","solution/reference.patch.xz.b64"]},
+    "CURRENT_VERIFIER":{"status":"VERIFIER_READY","F2P_COUNT":28,"P2P_COUNT":6,"empirical_status":"DEFERRED_TO_DETERMINISTIC_VALIDATION"},
+    "SPEC_ALIGNMENT_STATUS":{"status":"ALIGNED","Q1_STATUS":"NO_GAP","Q2_STATUS":"COVERED","Q3_STATUS":"CLEAR"},
+    "FORMAT_STATUS":"FORMAT_PASS",
+    "PRIVATE_DEFECT_GRAPH":{"profile":"large_system_strict","root_cause_clusters":6,"defect_manifestations":30,"behavioral_surfaces":["generation/source authority","identity/continuity","snapshot selection","drain ownership","checkpoint recovery","bounded observability/runtime retirement"]},
+    "PRIVATE_TEST_MAP":{"F2P_COUNT":28,"P2P_COUNT":6,"classification":"28 F2P + 6 P2P"}
+  },
+  "result":{
+    "status":"ASSEMBLED",
+    "output_task_commit":"9663e4da67ab20e6bd66b942ac54b57667408dd8",
+    "outputs":{
+      "TASK_COMMIT":"9663e4da67ab20e6bd66b942ac54b57667408dd8",
+      "STRUCTURE":"PASS: README.md, environment/, instruction.md, solution/, task.toml and tests/ are present; runtime artifact is /app/edge-router; verifier is separate.",
+      "INSTRUCTION_SHAPE":"PASS: one direct platform-engineering orientation paragraph plus 13 concise responsibility/invariant bullets, within Edition-3 limits.",
+      "INSTRUCTION_REQUIREMENT_COMPLETENESS":"PASS: SPEC_ALIGNMENT is ALIGNED with Q1 NO_GAP, Q2 COVERED and Q3 CLEAR.",
+      "INSTRUCTION_DOC_BOUNDARY":"PASS: instruction owns the required end state while public docs own architecture/configuration/runtime/operator/observability details; private verifier/Oracle/defect material is not solver-visible.",
+      "SUBSTANTIVE_REACHABLE_LOC_EVIDENCE":{"substantive_loc":">=3400","runtime_entrypoint":"cmd/edge-router-runtime","components":["bootstrap","config","compiler","reconcile","runtime","router","selection","upstream","health","drain","checkpoint","telemetry","admin"]},
+      "PRODUCTION_CHARACTERISTIC_EVIDENCE":["Go HTTP data and operator planes","immutable serving generations","serialized reconciliation","stable endpoint lifecycle state","health-aware selection/failover","bounded draining","durable checkpoint recovery","bounded lifecycle telemetry"],
+      "F2P_ORGANICITY_EVIDENCE":"28 F2P cases cover materially distinct generation authority, source independence, identity/compatibility, request snapshot, drain, recovery and lifecycle-observability behaviors; 6 P2P cases preserve public baseline behavior.",
+      "EDGE_BOUNDARY_COVERAGE_EVIDENCE":["canonical duplicate endpoint aliases","same-revision conflicting digest","rapid remove/re-add incarnation reset","all-backends-unhealthy deterministic unavailability","old-generation failover while draining","corrupt CURRENT/body fallback"],
+      "NEGATIVE_FAILURE_COVERAGE_EVIDENCE":["invalid candidate rejection without fence advance","stale/conflicting source update rejection","ineligible backend exclusion","checkpoint checksum/schema rejection","missing-current fallback","unknown JSON-field rejection"],
+      "LEAKAGE_CHECK":"PASS: solver environment and instruction do not expose solution/test internals, hidden test names, private defect IDs or reference implementation details; README benchmark framing was removed before assembly.",
+      "STATIC_CHECKS":"PASS for assembly-local structure, clean Q7 packaging, instruction alignment, task isolation and static evidence. Runtime/oracle empirical success remains owned by later gates.",
+      "NEXT_GATE":"COMPLEXITY_GATE"
+    },
+    "evidence_refs":[]
+  }
+}
