@@ -1,0 +1,41 @@
+{
+  "evidence_refs": [
+    {
+      "content_hash": "sha256:104817a239b92de3e53f14d6bc0176563437894773e060648776dc09c6280374",
+      "kind": "COMMIT",
+      "ref": "commit:78ad422902b27dea954905130a1267b02cff3596"
+    },
+    {
+      "content_hash": "sha256:334e6029ea34515d0f9364b213a51af19ed193f7c1c22cdf7b978781c2e856d7",
+      "kind": "COMMIT",
+      "ref": "commit:215cc70bcebcccc3c9a401af1b74a97d90026da3"
+    }
+  ],
+  "invocation_id": "inv_28cced7e764579cedcb36a9388668234a646039b0c0e37638ed8b582a8b1f3cc",
+  "output_task_commit": "78ad422902b27dea954905130a1267b02cff3596",
+  "outputs": {
+    "DOC_REFERENCES": [
+      "/app/provider/docs/provider-contract.md",
+      "/app/provider/docs/resource-reference.md",
+      "/app/provider/docs/lifecycle.md"
+    ],
+    "HANDOFF_TEST": "A platform engineer can identify the provider root, public contracts, exact managed-resource boundary, mutation/observation split, transactional failure semantics, ownership rules, runner safety requirements, convergence rules and prohibited substitutes without private verifier or solution material.",
+    "INSTRUCTION_PATH": "terraform-ansible-managed-resources/instruction.md",
+    "INSTRUCTION_SHAPE": "Direct platform-engineering change request: objective first, hard lifecycle/state boundaries explicit, family-specific semantics delegated to legitimate solver-visible contracts, no hidden-test inventory.",
+    "REQUIREMENT_COVERAGE": {
+      "convergence": "mode, unordered values, account observations and cron-default normalization are explicit",
+      "failure_and_retry": "state publication ordering, non-zero/timeout/cancellation preservation and failed-delete retryability are explicit",
+      "mutation_and_refresh": "Ansible-only Create/Update/Delete and native side-effect-free Read/refresh are explicit",
+      "prohibited_shortcuts": "null_resource/terraform_data execution wrappers, provisioners, manual state edits and provider-owned durable state are explicitly prohibited",
+      "provider_and_interface": "exactly ten documented ansibleops resources, local/ansibleops 0.1.0, supplied inventory and Go/Terraform compatibility are explicit",
+      "resource_semantics": "filesystem/symlink, copy/template, named text, user/group and cron ownership/default/drift semantics are explicit",
+      "runner_safety": "structured argv, literal metacharacters, cleanup and no command-output state persistence are explicit",
+      "state_and_identity": "Terraform Core sole durable state, external-key stable identity and in-place mutable updates are explicit"
+    },
+    "REVERSE_OUTLINE_RISK": "LOW: wording follows public operational/resource contracts and observable lifecycle requirements rather than verifier row order or private defect IDs.",
+    "SPEC_FILE_LOOPHOLE": "CLOSED: the instruction requires preserving supplied technical contracts unless a genuine contract correction is necessary, while independently stating immutable behavioral requirements, so editing docs/spec files cannot substitute for implementing provider behavior.",
+    "UNRESOLVED_GAPS": []
+  },
+  "schema_version": "1.0",
+  "status": "READY"
+}
