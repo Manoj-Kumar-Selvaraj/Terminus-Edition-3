@@ -1,0 +1,131 @@
+{
+  "acceptance_predicates": {
+    "PASS": [
+      {
+        "op": "eq",
+        "path": "RUNTIME_AUTHENTICITY_STATUS",
+        "value": "PASS"
+      }
+    ]
+  },
+  "authority": {
+    "control_plane_commit": "0579a0f2f1e7e3560d13ff1530f467c8e01b6a1a",
+    "policy_versions": {},
+    "task_commit": "9663e4da67ab20e6bd66b942ac54b57667408dd8",
+    "task_id": "edge-router-runtime"
+  },
+  "evidence": {
+    "authorized_evidence_classes": [
+      "CI_RUNTIME_EVIDENCE",
+      "CONTROL_PLANE_POLICY",
+      "SOLVER_VISIBLE_TASK"
+    ],
+    "evidence_required": [
+      "runtime authenticity validator output",
+      "business module diversity output when applicable"
+    ],
+    "excluded_evidence_classes": [
+      "CURRENT_REVIEW_PACKET",
+      "DURABLE_SESSION_STATE",
+      "FINAL_PACKAGE_EVIDENCE",
+      "MODEL_TRIAL_EVIDENCE",
+      "PRIOR_REVIEW_RESULTS",
+      "PRIVATE_CREATION_DESIGN",
+      "PUBLIC_REFERENCE",
+      "SOLUTION_ORACLE",
+      "VERIFIER_PRIVATE"
+    ],
+    "mandatory_exact_reads": [
+      ".terminus/agents/PRODUCTION_AUTHENTICITY.md"
+    ],
+    "retrieval_mode": "EXACT_ONLY"
+  },
+  "ignored_input_count": 0,
+  "inputs": {
+    "optional": {},
+    "required": {
+      "CURRENT_TASK": {
+        "environment_root": "edge-router-runtime/environment",
+        "instruction_path": "edge-router-runtime/instruction.md",
+        "runtime_artifact": "/app/edge-router",
+        "task_commit": "9663e4da67ab20e6bd66b942ac54b57667408dd8",
+        "task_id": "edge-router-runtime",
+        "task_root": "edge-router-runtime"
+      },
+      "PRODUCTION_CHARACTERISTIC_EVIDENCE": [
+        "live Go HTTP data and operator planes",
+        "immutable serving generations",
+        "serialized dynamic reconciliation",
+        "stable endpoint lifecycle state",
+        "health-aware selection and failover",
+        "bounded draining",
+        "durable checkpoint recovery",
+        "bounded lifecycle telemetry"
+      ]
+    }
+  },
+  "invocation_id": "inv_16ef6f864d6c85ccb2d9615c8d3b35b3845e44dce37af0246d9acb572433511d",
+  "learning": {
+    "context_hash": "sha256:bb84a513aa2b6e4374d691759c4a6edf94169f479f4611e9091643b9f279ccfc",
+    "lessons": [],
+    "mode": "GENERALIZED_LESSONS_PLUS_OWNED_REMEDIATIONS",
+    "raw_feedback_exposed": false,
+    "raw_historical_findings_exposed": false,
+    "registry_heads": {
+      "feedback": "GENESIS",
+      "findings": "GENESIS",
+      "lessons": "GENESIS",
+      "patterns": "GENESIS",
+      "remediations": "GENESIS"
+    },
+    "remediations": []
+  },
+  "missing_required_inputs": [],
+  "output_contract": {
+    "allowed_status_values": [
+      "PASS",
+      "FAIL",
+      "BLOCKED"
+    ],
+    "deterministic_validators": [
+      ".terminus/validate_runtime_authenticity.py <task>",
+      ".terminus/validate_business_module_diversity.py <task> when applicable"
+    ],
+    "optional_fields": [
+      "BUSINESS_MODULE_DIVERSITY_STATUS",
+      "FAILURE_DETAILS"
+    ],
+    "persisted_artifacts": [],
+    "required_fields": [
+      "RUNTIME_AUTHENTICITY_STATUS"
+    ],
+    "semantic_reviewers": []
+  },
+  "readiness": "READY",
+  "retrieval": {
+    "query": null,
+    "retrieved_chars": 0,
+    "retrieved_context": [],
+    "status": "NOT_REQUESTED"
+  },
+  "routing": {
+    "failure_routes": {
+      "BUSINESS_MODULE_DIVERSITY_FAILURE": "A2 System Architect / Environment Builder",
+      "PRODUCTION_AUTHENTICITY_FAILURE": "A2 System Architect / Environment Builder",
+      "RUNTIME_FAILURE": "Q5 Oracle & Runtime Repair Specialist"
+    },
+    "stale_on": [
+      "solver-visible environment change",
+      "runtime-authenticity policy/validator change"
+    ],
+    "success_transition": "DETERMINISTIC_VALIDATION"
+  },
+  "schema_version": "1.0",
+  "stage": {
+    "lifecycle": "creation",
+    "owner": "Creation Controller",
+    "role_class": "CONTROLLER",
+    "role_id": "CREATION_CONTROLLER",
+    "stage_id": "RUNTIME_AUTHENTICITY"
+  }
+}
