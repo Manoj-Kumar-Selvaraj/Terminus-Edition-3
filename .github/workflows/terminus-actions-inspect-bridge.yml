@@ -1,0 +1,34 @@
+name: Terminus Actions Inspect Bridge
+
+on:
+  push:
+    branches:
+      - 'terminus-quality-dispatch/**'
+    paths:
+      - '.terminus/actions-inspect-requests/*.json'
+
+permissions:
+  contents: write
+  actions: read
+
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Inspect quality lifecycle runs
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          out=".terminus/actions-inspect-results/$GITHUB_SHA.json"
+          mkdir -p "$(dirname "$out")"
+          gh run list --repo "$GITHUB_REPOSITORY" --workflow terminus-quality-lifecycle.yml --limit 30 --json databaseId,status,conclusion,createdAt,updatedAt,headBranch,headSha,event,displayTitle,url > "$out"
+          git config user.name 'terminus-actions-inspector[bot]'
+          git config user.email 'terminus-actions-inspector[bot]@users.noreply.github.com'
+          git add -- "$out"
+          git commit -m "Persist Actions inspection for $GITHUB_SHA"
+          git push origin HEAD:"$GITHUB_REF_NAME"
