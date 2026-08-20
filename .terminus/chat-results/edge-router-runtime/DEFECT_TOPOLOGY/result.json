@@ -1,0 +1,61 @@
+{
+  "evidence_refs": [],
+  "invocation_id": "inv_c53bce84757f08054287605735cff5053f67358a19aeeb6732835314ced5412d",
+  "output_task_commit": "9663e4da67ab20e6bd66b942ac54b57667408dd8",
+  "outputs": {
+    "behavioral_surfaces": {
+      "cross_component": [
+        "source fence to publication",
+        "snapshot lease to retry/failover",
+        "membership incarnation to affinity/health/transport",
+        "publication to durable recovery"
+      ],
+      "edge_boundary": [
+        "duplicate canonical endpoint aliases",
+        "same-revision conflicts",
+        "rapid remove/re-add",
+        "all-down pools"
+      ],
+      "failure_recovery": [
+        "crash around checkpoint authority",
+        "corrupt CURRENT with previous fallback",
+        "slow drain deadline"
+      ],
+      "negative_rejection": [
+        "invalid configuration",
+        "stale/conflicting source update",
+        "ineligible backend selection"
+      ],
+      "normal": [
+        "accepted complete updates",
+        "stable unchanged endpoint continuity",
+        "live proxy selection"
+      ]
+    },
+    "causal_edges": {
+      "character": "cross-cluster dependencies connect source authority, publication, identity, request leases, drain ownership and recovery",
+      "count": 37,
+      "source": ".terminus/designs/edge-router-runtime.json"
+    },
+    "defects": {
+      "count": 30,
+      "coverage": "D01-D30 across six causally coupled clusters",
+      "source": ".terminus/designs/edge-router-runtime.json"
+    },
+    "organic_f2p_surface_assessment": "SUFFICIENT: the current validated topology provides 30 materially distinct manifestations and more than 25 natural behavioral scenarios without duplicated quota padding.",
+    "profile": "large_system_strict",
+    "root_cause_clusters": {
+      "count": 6,
+      "ids": [
+        "C1_GENERATION_TRANSACTION_AND_PUBLICATION",
+        "C2_STABLE_IDENTITY_AND_COMPATIBILITY",
+        "C3_REQUEST_SNAPSHOT_AND_SELECTION_ELIGIBILITY",
+        "C4_DRAIN_TRANSPORT_AND_RETIREMENT_OWNERSHIP",
+        "C5_CHECKPOINT_COMMIT_AND_RECOVERY",
+        "C6_INGRESS_COALESCING_AND_SOURCE_AUTHORITY"
+      ]
+    }
+  },
+  "schema_version": "1.0",
+  "status": "DESIGN_READY"
+}
