@@ -1,0 +1,56 @@
+{
+  "evidence_refs": [],
+  "invocation_id": "inv_06c269a63846481e8ef7d9b5d33e276cc915e01e9c7718869e03ed2fcf51fcad",
+  "output_task_commit": "22d2e9e09f4deb58029559fe9a0863c2e032f25c",
+  "outputs": {
+    "COMPONENT_GRAPH": [
+      "HTTP API and node registry",
+      "route and policy-rule catalog",
+      "revision planner and transaction coordinator",
+      "durable snapshot store",
+      "drift and reconciliation engine",
+      "fleet rollout engine",
+      "Ansible deployment role",
+      "operator dashboard client"
+    ],
+    "ENTRYPOINTS": [
+      "/app/routecp/cmd/routecp/main.go",
+      "/app/routecp/ansible/roles/routecp/tasks/main.yml",
+      "/app/routecp/web/app.ts"
+    ],
+    "ENVIRONMENT_RULE_CHECKS": {
+      "business_module_diversity": "NOT_APPLICABLE_SYSTEMS_TASK",
+      "environment_complexity": "PASS_EXPECTED",
+      "runtime_authenticity": "PASS_EXPECTED"
+    },
+    "INSTRUCTION_DOC_BOUNDARY": "Environment exposes ordinary routing, fleet, API and deployment contracts only; private defect topology, verifier mappings and solution patches remain outside solver-visible task files.",
+    "PRODUCTION_CHARACTERISTICS": [
+      "real Go HTTP control-plane process",
+      "IPv4/IPv6 route and policy-rule state models",
+      "revision preview/apply/rollback transactions",
+      "durable desired and observed snapshots",
+      "drift and reconciliation paths",
+      "160-node multi-site representative fleet",
+      "wave rollout isolation",
+      "systemd-based Ansible deployment",
+      "operator-facing TypeScript dashboard"
+    ],
+    "RESOURCE_COUNT": 160,
+    "RUNTIME_REACHABILITY_NOTES": [
+      "HTTP entrypoint reaches route, rule, transaction, drift, reconcile, rollout and audit paths",
+      "Ansible role installs and runs the same routecp process",
+      "dashboard reaches normal mutation, reconcile and rollout APIs"
+    ],
+    "SOLVER_VISIBLE_DOCS": [
+      "/app/routecp/task.toml",
+      "/app/routecp/config/fleet.yaml",
+      "/app/routecp/ansible/roles/routecp/defaults/main.yml"
+    ],
+    "SUBSTANTIVE_LOC": 3524,
+    "UNRESOLVED_RISKS": [
+      "Fresh deterministic runtime behavior remains owned by later Oracle validation."
+    ]
+  },
+  "schema_version": "1.0",
+  "status": "BUILT"
+}
