@@ -1,0 +1,100 @@
+{
+  "evidence_refs": [],
+  "invocation_id": "inv_3775a82c9b564b388807a87d1dce29cac04d1e025ffb88f85e7be08648af4152",
+  "output_task_commit": "6c7909d5c0efd3e6e64443d6de3b227c1820b01b",
+  "outputs": {
+    "CACHE_SOURCE_KEYS_USED": [],
+    "CALIBRATION_PAIR_ID": "hwpair-e6d896faff95603b208b",
+    "CURRENT_STATE_EVIDENCE_NOTES": [
+      "Current deterministic repository planner generated the pair for this task/domain.",
+      "No Oracle, verifier-private, prior-review, model-trial, or private defect evidence was consumed by A6."
+    ],
+    "DATASET_POLICY_VERSION": "1.2",
+    "DATASET_REGISTRY_SHA256": "05ece08c27414d265a2a238928e4c664295434620ffe957c8e88b5050c54645a",
+    "DEGRADED_COVERAGE_APPROVAL": {
+      "approved": true,
+      "approved_by": "CI_ORCHESTRATOR",
+      "reason": "No approved external human-writing cache was supplied; repository policy permits deterministic local calibration with explicit DEGRADED coverage and no claim of FULL external coverage."
+    },
+    "DOMAIN_PROFILE": "security",
+    "DOMAIN_PROFILES_SHA256": "9612d83a11558d9013a82362c7405c70ddb5158b582cc2f9859c8c672ad6c838",
+    "EXTERNAL_DATASET_COVERAGE": "DEGRADED",
+    "RAW_SOURCE_KEYS_USED_FOR_CONTAMINATION": [],
+    "REVIEWER_CALIBRATION_ID": "hwcal-reviewer-74395c69f41eab1b619c",
+    "REVIEWER_SAMPLE_IDS": [
+      "HC-016",
+      "HC-005",
+      "HC-024",
+      "HC-020",
+      "HC-013",
+      "HC-009",
+      "CP-005",
+      "CP-003",
+      "CP-002",
+      "AT-005",
+      "AT-004",
+      "HP-001",
+      "HP-002",
+      "HN-002",
+      "HN-001"
+    ],
+    "SEED_CATALOG_SHA256": "e205f858f8391fd88d3e26665d2f585a69cd691321b9275644e631bb949f0942",
+    "TASK_WRITING_PROFILE": {
+      "avoid": [
+        "invented incidents or personal claims",
+        "rubric-like hidden-test enumeration",
+        "style-driven omission of lifecycle constraints",
+        "copied distinctive source wording",
+        "task details copied from unrelated calibration domains"
+      ],
+      "must_preserve": [
+        "Make package, container, and build-dependency acquisition converge on one host-local Go admission boundary that enforces artifact identity, source trust, current vulnerability evidence, scoped exceptions, permit integrity, and durable decision state.",
+        "WP1_UNIFIED_EC2_ARTIFACT_ADMISSION",
+        "Strong: the objective and material invariants fit the concise Edition-3 instruction shape while architecture, CLI, state formats, and operational semantics remain in solver-visible engineering docs.",
+        "EC2 platform security engineer",
+        "preserve artifactguard evaluate and verify-permit interfaces and documented exit behavior",
+        "keep cache and exceptions operational rather than disabling them",
+        "do not rewrite supplied policy, scanner, or exception fixtures",
+        "preserve valid existing audit history and healthy cached evidence",
+        "retain stateless permit-verification compatibility while making stateful verification durable and single-use",
+        "Every acquisition surface applies the same prerequisite trust and immutable-identity rules, uses only current artifact/policy/scanner evidence, limits exceptions to the exact vulnerability scope, issues and consumes exact-scope keyed permits safely, and commits restart-safe ALLOW/DENY history before completion.",
+        "manager normalization and source trust",
+        "immutable artifact identity",
+        "scanner availability and evidence freshness",
+        "cache keying and revision/TTL validation",
+        "vulnerability threshold and exception scope",
+        "secret-keyed permit binding and expiry",
+        "single-use replay protection under restart/concurrency",
+        "durable journal, projection, corruption handling, and idempotency",
+        "public CLI and exit-code compatibility",
+        "# ArtifactGuard architecture\n\nArtifactGuard keeps the existing `evaluate` and `verify-permit` CLI contract while routing evaluation through a policy platform composed of normalization, policy, scanner, cache, exception, permit, audit, replay, and state subsystems. Acquisition requests carry package, container, or dependency surface context. Policy controls are selected by surface, manager, and environment. Durable state is rooted at the caller-provided state directory.\n\nThe starter intentionally contains the approved defect topology across trust normalization, evidence freshness, exception ordering and scope, permit authentication and binding, audit durability, and recovery/concurrency boundaries. The solver must repair those coupled behaviors without breaking the CLI contract.",
+        "# Operations\n\nOperators provide policy, scanner fixtures, exception data, state directory, secret material, and optional RFC3339 time through the stable CLI. `evaluate` returns exit 42 on policy denial and 2 on operational failure. `verify-permit` returns exit 43 for an invalid permit and retains its existing stateless integrity/scope/expiry behavior when no replay state is supplied.\n\n`verify-permit` may additionally receive `--state <dir>` for durable single-use enforcement. With replay state enabled, the first exact valid permit use returns the normal valid result and durably records consumption; later or concurrent use of that permit must return exit 43 with `PERMIT_REPLAYED`, while the successful verification reports `PERMIT_VALID`. Production repair must fail closed on stale or unavailable scanner evidence, preserve durable audit history, and prevent permit replay across restart and concurrency boundaries.",
+        "# Software acquisition policy contract\n\n`artifactguard` is the local enforcement client used by governed EC2 instances. Production scanner implementations may call Trivy or an internal vulnerability service; this lab supplies a deterministic scanner mirror with the same decision boundary.\n\n## Surfaces\n\nEvery request has exactly one `surface`: `package`, `container`, or `dependency`. `manager` identifies the acquisition path (`apt`, `dnf`, `dpkg`, `rpm`, `docker`, `pip`, `npm`, `maven`, etc.). Policy applies to the surface regardless of manager, so switching to a lower-level installer is not an exemption.\n\nThe source must appear in `trusted_sources[surface]`. An exception never overrides an untrusted source. If `require_digest[surface]` is true, an immutable digest is mandatory.\n\n## Scanner evidence and cache\n\nA scanner result is usable only when its status is `ok` and its `db_revision` equals the policy's `scanner_db_revision`. Without current scanner evidence the request is denied with `DENY_SCANNER_UNAVAILABLE` or `DENY_SCANNER_EVIDENCE_STALE`.\n\nA durable cache entry may stand in for a fresh scanner call only while all of these remain identical/current: artifact digest; policy version; scanner DB revision; cache TTL. Name, package version, image tag, or dependency coordinate alone are not immutable cache identities. A mutable tag that resolves to another digest is a different artifact.\n\n## Vulnerability policy and exceptions\n\nAny vulnerability whose severity appears in `deny_severities` causes `DENY_VULNERABLE` unless a current exception matches the exact artifact digest, acquisition surface, environment, policy code `VULNERABILITY_THRESHOLD`, and has not expired. Exceptions do not override missing scanner evidence, source trust, or digest requirements.\n\n## Permits\n\nAn ALLOW decision returns a short-lived permit. The permit must be keyed with the supplied secret and cover the exact request ID, EC2 instance ID, artifact digest, policy version, and expiry. Altering any field or recomputing an unkeyed checksum must not create a valid permit. `verify-permit` returns exit 0 only for a valid, unexpired, exact-scope permit.\n\n## Audit durability\n\nEvery policy decision, both ALLOW and DENY, is appended to `state/audit.jsonl` and fsynced before the command reports completion. `state/last-decision.json` contains the most recent decision. Scan cache and audit history must survive normal process restart; existing history must not be deleted to repair the task.\n\nDenials exit with code 42. Permit verification failures exit with code 43.",
+        "# State format\n\n`cache/<key>.json` stores scan evidence, `audit.jsonl` stores durable decision records, `last-decision.json` is a derived projection, and `replay/consumed.jsonl` records permit consumption. Cache evidence is usable only for the same immutable artifact digest, policy version, scanner DB revision, and unexpired TTL.\n\nState transitions must be crash-safe and replay-safe. Repeating the same request against unchanged material request/policy inputs is an idempotent retry: it reuses the existing `decision_id` and does not append a second audit decision. The audit journal is authoritative; `last-decision.json` may advance only after its corresponding journal record is durable and must agree with the newest valid record. A complete final JSON record remains valid even when its trailing newline was not durable. A malformed JSON audit record is durable corruption: a new operation must fail closed with the normal operational-failure exit behavior and must not silently truncate or extend corrupted history.",
+        "Security reproduced inconsistent acquisition decisions in `/app/enforcer`: an `apt` request was allowed without current scanner evidence, direct `dpkg` and Maven paths skipped source policy, a moved container tag reused an older clean result, an expired exception still applied, permit scope could be altered, and deny history disappeared after restart. Repair the gate so package, container, and dependency acquisition share one policy boundary. Use `/app/enforcer/notes/oncall.md` for the observed symptoms and `/app/enforcer/docs/policy-contract.md`, `/app/enforcer/docs/state-format.md`, and `/app/enforcer/docs/operations.md` for the governing contracts.\n\nKeep the existing `artifactguard evaluate` and `artifactguard verify-permit` interfaces and documented exit behavior, keep cache and exceptions operational, do not rewrite the supplied policy/scanner/exception fixtures, and preserve existing audit history. Trusted-source and required immutable-digest checks must apply before exceptions; scanner or cache evidence must be current for the artifact and active policy/scanner revisions and fail closed when unavailable or stale. Exceptions may waive only the vulnerability threshold within their exact current scope. Permits must be secret-keyed, unexpired, bound to the exact request/instance/artifact/policy decision, and single-use across restart and concurrent verification. Every ALLOW or DENY must be durably journaled before completion, with recovery preserving valid history and keeping the latest-decision projection consistent."
+      ],
+      "structure": [
+        "state the approved engineering objective first",
+        "preserve exact public contracts and hard safety/state constraints",
+        "reference solver-visible technical contracts instead of reproducing hidden verifier rows",
+        "keep implementation-neutral observable outcomes"
+      ],
+      "voice": "direct platform engineering change request"
+    },
+    "WRITER_CALIBRATION_ID": "hwcal-writer-bab715cf3aa7b934a75c",
+    "WRITER_REVIEWER_SAMPLE_OVERLAP": [],
+    "WRITER_SAMPLE_IDS": [
+      "HC-001",
+      "HC-030",
+      "HC-022",
+      "HC-010",
+      "HC-008",
+      "HC-017",
+      "CP-006",
+      "CP-004",
+      "AT-001"
+    ]
+  },
+  "schema_version": "1.0",
+  "status": "CALIBRATION_READY"
+}
