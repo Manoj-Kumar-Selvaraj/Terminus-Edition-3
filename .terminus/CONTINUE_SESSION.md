@@ -1,6 +1,6 @@
 # Continue a Terminus Session
 
-Bootstrap policy version: `2.2`
+Bootstrap policy version: `2.3`
 
 Use this when a task moves to a new controller/chat. Repository state, current authoritative rules, generated review provenance, GitHub Actions/Harbor evidence and the durable task checkpoint are continuity; chat recollection is not acceptance evidence.
 
@@ -11,7 +11,7 @@ Before changing a task:
 1. Read current authoritative Edition 3 rules.
 2. Read `.terminus/AGENT_SYSTEM.md`.
 3. When acting as the controller, read `.terminus/agents/CI_ORCHESTRATOR.md` and `.terminus/agents/ACTIVE_TURN_AUTONOMY.md`.
-4. Read `.terminus/agents/PROTOCOL.md` and `.terminus/agents/INVOKE.md`.
+4. Read `.terminus/agents/PROTOCOL.md`, `.terminus/agents/INVOKE.md`, and `.terminus/agents/HUMAN_DECISION_GATE.md`.
 5. Read `.terminus/agents/STAGE_CONTRACTS.md`, `.terminus/agents/WORKFLOW_STATE.md`, and the canonical machine contracts they reference.
 6. Read `.terminus/agents/QUALITY_AGENT_REGISTRY.md`; read `.terminus/agents/QUALITY_AGENT_PROMPTS.md` only for the quality role being invoked.
 7. When running locally in Cursor, read `.terminus/CURSOR_OPERATING.md`.
@@ -22,12 +22,23 @@ Before changing a task:
 12. Resolve the current task commit from Git rather than trusting session prose.
 13. Inspect current PR/branch and applicable Actions/Harbor runs, jobs, logs and artifacts.
 14. Run `.terminus/validate_review_freshness.py --task <task>` before relying on stored semantic PASS evidence.
-15. If `.terminus/executions/<task>/ledger.jsonl` exists, derive the current workflow view from the hash-chained execution ledger using `.terminus/execution/controller_cli.py status`; locally materialize `.terminus/workflows/<task>/state.json` when useful. Do not trust an old materialized state snapshot without re-deriving it for the exact task/control-plane commits.
-16. Resume from the deterministic `next` action when the ledger/state layer is present; otherwise use the legacy first genuinely incomplete, failed or stale gate rule without fabricating missing execution history.
+15. Check `.terminus/human-decisions/<task>/ledger.jsonl` through `.terminus/human_decision_cli.py status --task-id <task> --task-commit <current-task-commit>`. If it returns `HUMAN_DECISION_REQUIRED`, present that exact outstanding request and do not infer an answer from earlier prose.
+16. If `.terminus/executions/<task>/ledger.jsonl` exists, derive the current workflow view from the hash-chained execution ledger using `.terminus/execution/controller_cli.py status`; locally materialize `.terminus/workflows/<task>/state.json` when useful. Do not trust an old materialized state snapshot without re-deriving it for the exact task/control-plane commits.
+17. Resume from the deterministic `next` action when the ledger/state layer is present; otherwise use the legacy first genuinely incomplete, failed or stale gate rule without fabricating missing execution history.
 
 The execution ledger and materialized workflow state are additive to the existing session/freshness system during migration. Historical session PASS text is never auto-converted into execution records. If a task predates the ledger, missing records remain `MISSING` unless current evidence is explicitly validated and recorded through the current invocation/result/record contract.
 
-When local Python is unavailable, a normal ChatGPT conversation may reconstruct the same state directly from the canonical stage contracts, `.terminus/executions/<task>/ledger.jsonl`, referenced immutable records, exact current task/control-plane commits, and any explicit evidence-freshness information. The helper CLI is an execution adapter, not a prerequisite for correctness.
+When local Python is unavailable, a normal ChatGPT conversation may reconstruct the same state directly from the canonical stage contracts, `.terminus/executions/<task>/ledger.jsonl`, referenced immutable records, exact current task/control-plane commits, the human-decision ledger, and any explicit evidence-freshness information. The helper CLIs are execution adapters, not prerequisites for correctness.
+
+## Human decision resume rule
+
+`HUMAN_DECISION_REQUIRED` is a genuine foreground stop condition. A decision is valid only for the exact outstanding deterministic request and task commit. The Orchestrator must not mine chat history for an implied approval.
+
+When one pending request exists, present its reason, consequences, allowed decisions, task, task commit and stage. The human may answer naturally in the same chat. Map that reply to one allowed decision only after the request is outstanding, record it with `.terminus/human_decision_cli.py resolve`, then immediately resume the normal controller loop.
+
+If the task commit changes before resolution, the old request is stale for the new snapshot. If a chat ends before the human responds, the next chat must rediscover and re-present the unresolved request instead of guessing.
+
+`CHAT_HUMAN_APPROVAL` is lower assurance than externally signed `HUMAN_AUTHENTICATED` authority. Never relabel one as the other. Use external signing only when the current policy explicitly requires it.
 
 ## Quality-agent resume rule
 
@@ -35,7 +46,7 @@ For tasks created or materially rebuilt under the quality-agent workflow, do not
 
 - Before freeze, Q1/Q2/Q3 must have no unresolved material spec/test/ambiguity issue and Q7 must have a current exact-format result.
 - Oracle/build/runtime failure routes to Q5 after preserving the first meaningful deterministic failure.
-- After `FROZEN_CANDIDATE`, Q4 Spec-Test Contract Reviewer must independently PASS on the exact current task commit. Q6 Production Logic Auditor must independently PASS either on that exact task commit or under Protocol-valid unchanged production-scope reuse using the recorded `review_scope_hash`.
+- After `FROZEN_CANDIDATE`, Q4 Spec-Test Contract Reviewer must independently PASS on the exact current task commit unless an explicit current Q4 exceptional-satisfaction route defined in `.terminus/agents/Q4_CLOSURE_POLICY.md` applies. Q6 Production Logic Auditor must independently PASS either on that exact task commit or under Protocol-valid unchanged production-scope reuse using the recorded `review_scope_hash`.
 - Q4 is exhaustive: it inventories the full allowed requirement/test contract, completes both mapping directions and a second omission sweep, and returns all material findings in the same result rather than stopping after the first reason for `REVISE`.
 - After one consolidated repair/refreeze following an exhaustive Q4 `REVISE`, a later Q4 finding on unchanged previously-reviewable evidence is `LATENT_REVIEWER_OMISSION` and routes to Adjudicator before another normal repair loop.
 - After `PRE_LLMAJ: PASS`, Q8 runs two isolated diagnostic executions: `GPT_PERSPECTIVE` and `CLAUDE_PERSPECTIVE`. They are simulations only and never replace official model evidence.
@@ -70,7 +81,7 @@ New semantic reviews use schema v3 and must have a generated packet. For every r
 - confidence/evidence sufficiency;
 - role-specific completion requirements such as Q4 exhaustiveness and Comprehensive Reviewer 100% coverage.
 
-Q4, Q6 and both Q8 perspective executions use the same generated packet/provenance system. Q4 remains exact-task-bound. Q6 is the only quality role whose PASS may remain current after an unrelated task change when packet/result/current production-scope hashes are identical and the role contract is still current. Q1/Q2/Q3/Q5/Q7 are producer/fixer roles and their notes cannot be used as semantic PASS evidence.
+Q4, Q6 and both Q8 perspective executions use the same generated packet/provenance system. Q4 remains exact-task-bound unless an explicit exceptional satisfaction route preserves the Q4 `REVISE` while binding a separate current task snapshot. Q6 is the only quality role whose PASS may remain current after an unrelated task change when packet/result/current production-scope hashes are identical and the role contract is still current. Q1/Q2/Q3/Q5/Q7 are producer/fixer roles and their notes cannot be used as semantic PASS evidence.
 
 Historical legacy reviews remain historical evidence. Do not rewrite them merely because schemas evolved, and do not promote them to current PASS without satisfying the current role contract and freshness rules.
 
@@ -104,20 +115,21 @@ Never store or repeat API keys, passwords, Portkey credentials, GitHub tokens or
 ## Active-session loop
 
 1. inspect live evidence and exact task/control-plane commits;
-2. derive/reconcile workflow state from the execution ledger when present;
-3. classify infrastructure vs task/control-plane failure;
-4. apply the smallest justified producer/fixer change;
-5. run the applicable deterministic checks;
-6. run Q1/Q2/Q3/Q7 when their evidence surface changed;
-7. mark affected semantic evidence stale using exact-task or role-scoped freshness as defined by Protocol;
-8. generate a fresh Q4 packet whenever its evidence surface changes; generate a fresh Q6 packet only when no current Protocol-valid Q6 PASS can be retained by unchanged production-scope hash;
-9. validate the returned result against its invocation, persist the immutable execution record, append its hash-chained ledger event, and re-materialize workflow state;
-10. update the durable checkpoint from actual evidence rather than rewriting historical records;
-11. immediately re-run/reconstruct `controller_cli continue` and execute or poll the next legal already-authorized action under `.terminus/agents/ACTIVE_TURN_AUTONOMY.md`;
-12. repeat steps 1-11 until a genuine stop condition from the active-turn autonomy policy is reached.
+2. check the human-decision ledger for one exact outstanding current-snapshot decision;
+3. derive/reconcile workflow state from the execution ledger when present;
+4. classify infrastructure vs task/control-plane failure;
+5. apply the smallest justified producer/fixer change;
+6. run the applicable deterministic checks;
+7. run Q1/Q2/Q3/Q7 when their evidence surface changed;
+8. mark affected semantic evidence stale using exact-task or role-scoped freshness as defined by Protocol;
+9. generate a fresh Q4 packet whenever its evidence surface changes; generate a fresh Q6 packet only when no current Protocol-valid Q6 PASS can be retained by unchanged production-scope hash;
+10. validate the returned result against its invocation, persist the immutable execution record, append its hash-chained ledger event, and re-materialize workflow state;
+11. update the durable checkpoint from actual evidence rather than rewriting historical records;
+12. immediately re-run/reconstruct `controller_cli continue` and execute or poll the next legal already-authorized action under `.terminus/agents/ACTIVE_TURN_AUTONOMY.md`;
+13. repeat until a genuine stop condition is reached. `HUMAN_DECISION_REQUIRED` is one such stop condition; after the user responds and the decision is recorded, resume immediately.
 
 This remains interactive foreground work rather than a promise of unattended background execution. Within an active turn, however, `RUN_TO_BLOCKER` is mandatory: completing a stage, dispatching a workflow, observing a queued/running workflow, or discovering another executable controller action is not a reason to return control to the user. If the execution surface itself ends, preserve exact durable recovery identifiers and return `PENDING`; do not deliberately use interruption as a lifecycle checkpoint.
 
 ## Final continuity rule
 
-A task cannot become `SUBMISSION_READY` until every mandatory deterministic and semantic gate has current evidence for its required evidence surface, all 10 official trials and trial analysis are complete, final Compliance/Human Quality are current, and no unresolved finding, policy conflict, adjudication, circuit breaker or insufficient-evidence condition affects acceptance.
+A task cannot become `SUBMISSION_READY` until every mandatory deterministic and semantic gate has current evidence for its required evidence surface, all 10 official trials and trial analysis are complete, final Compliance/Human Quality are current, and no unresolved finding, policy conflict, adjudication, circuit breaker, outstanding human decision or insufficient-evidence condition affects acceptance.
