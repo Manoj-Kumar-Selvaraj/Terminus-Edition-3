@@ -1,0 +1,160 @@
+name: Edge Router HWR Replay
+
+on:
+  push:
+    branches:
+      - 'terminus-hwr-replay/edge-router-runtime'
+    paths:
+      - '.terminus/hwr-replay-trigger.json'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: edge-router-hwr-replay
+  cancel-in-progress: false
+
+jobs:
+  replay:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Validate authority and replay edge-specific calibration
+        shell: bash
+        run: |
+          set -euo pipefail
+          task='edge-router-runtime'
+          task_commit='9663e4da67ab20e6bd66b942ac54b57667408dd8'
+          control='bde51f1c20b2d6d78b33f02956da9c58cd42d2a4'
+          work="$RUNNER_TEMP/edge-hwr"
+          mkdir -p "$work"
+
+          git fetch origin main
+          base="$(git rev-parse origin/main)"
+          requested_tree="$(git rev-parse "$task_commit:$task")"
+          current_tree="$(git rev-parse "$base:$task")"
+          [[ "$requested_tree" == "$current_tree" ]] || {
+            echo "::error::edge-router task tree changed requested=$task_commit current_main=$base"
+            exit 1
+          }
+
+          python3 .terminus/execution/controller_cli.py control-plane \
+            --head "$base" --output "$work/control.json"
+          resolved="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["control_plane_commit"])' "$work/control.json")"
+          [[ "$resolved" == "$control" ]] || {
+            echo "::error::control plane changed expected=$control current=$resolved"
+            exit 1
+          }
+
+          git checkout --detach "$base"
+          cat > "$work/inputs.json" <<'JSON'
+          {
+            "APPROVED_WORK_PACKAGE": {
+              "ENGINEERING_OBJECTIVE": "Implement generation-safe dynamic route and upstream reconciliation so complete configuration and membership changes apply atomically under concurrent traffic, rolling backend turnover, invalid updates and restart.",
+              "ID": "GENERATION_SAFE_DYNAMIC_RECONCILIATION"
+            },
+            "CURRENT_TIME_BUDGET": {
+              "enforcement": "ADVISORY_ONLY",
+              "guidance_seconds": 25200,
+              "hard_limit": null,
+              "policy_version": "1.1",
+              "quality_gates_may_be_skipped_for_time": false,
+              "time_extension_required": false
+            },
+            "SOLVER_VISIBLE_REQUIREMENTS": {
+              "PRESERVATION": [
+                "in-flight and long-lived requests remain valid across unrelated updates",
+                "unchanged route semantics remain stable across generations",
+                "healthy unchanged endpoints preserve meaningful runtime state",
+                "rejected updates cannot damage the serving generation",
+                "readers never observe partially applied configuration",
+                "runtime and observability state remain bounded after repeated updates"
+              ],
+              "REQUIRED_END_STATE": [
+                "Validate and compile candidate configuration into immutable runtime snapshots before publication.",
+                "Fence accepted generations so stale or out-of-order updates cannot overwrite newer state.",
+                "Publish route and upstream state atomically and retain last-known-good serving state when candidates are rejected.",
+                "Reconcile endpoint additions, removals, and unchanged endpoints by stable canonical identity and membership incarnation.",
+                "Preserve compatible selection, affinity, health, transport, and lifecycle continuity for unchanged endpoints.",
+                "Exclude removed or ineligible endpoints from fresh selection/retry while allowing bounded drain of existing traffic.",
+                "Checkpoint only complete accepted state and recover a complete last-known-good generation after restart.",
+                "Retire unreachable snapshots, endpoint runtimes, transports, affinity state, and telemetry without unbounded growth."
+              ]
+            }
+          }
+          JSON
+
+          python3 .terminus/execution/controller_cli.py continue \
+            --task-id "$task" \
+            --task-commit "$task_commit" \
+            --control-plane-commit "$control" \
+            --inputs-json "$work/inputs.json" \
+            --output "$work/continue.json"
+
+          python3 - "$work/continue.json" "$work/invocation.json" <<'PY'
+          import json, pathlib, sys
+          c=json.load(open(sys.argv[1], encoding='utf-8'))
+          if c.get('next',{}).get('stage_id') != 'HUMAN_WRITING_RESEARCH':
+              raise SystemExit(f"machine stage changed: {c.get('next')}")
+          inv=c.get('invocation')
+          if not isinstance(inv,dict) or inv.get('readiness')!='READY' or inv.get('stage',{}).get('stage_id')!='HUMAN_WRITING_RESEARCH':
+              raise SystemExit('HWR invocation not READY')
+          pathlib.Path(sys.argv[2]).write_text(json.dumps(inv,indent=2,sort_keys=True)+'\n',encoding='utf-8')
+          PY
+
+          python3 .terminus/human_writing/validate_calibration.py \
+            --root . \
+            --pair .terminus/research/edge-router-runtime-dataset-calibration.json \
+            --profile .terminus/research/edge-router-runtime-task-writing-profile.json
+
+          python3 - "$work/invocation.json" "$work/result.json" <<'PY'
+          import json, pathlib, sys
+          inv=json.load(open(sys.argv[1], encoding='utf-8'))
+          outputs=json.load(open('.terminus/research/edge-router-runtime-task-writing-profile.json', encoding='utf-8'))
+          result={
+            'schema_version':'1.0',
+            'invocation_id':inv['invocation_id'],
+            'status':'CALIBRATION_READY',
+            'evidence_refs':[],
+            'outputs':outputs,
+            'output_task_commit':'9663e4da67ab20e6bd66b942ac54b57667408dd8'
+          }
+          pathlib.Path(sys.argv[2]).write_text(json.dumps(result,indent=2,sort_keys=True)+'\n',encoding='utf-8')
+          PY
+
+          python3 .terminus/execution/controller_cli.py record \
+            --invocation "$work/invocation.json" \
+            --result "$work/result.json" \
+            --output "$work/record.json"
+
+          unexpected="$(git status --porcelain | awk '{print $2}' | grep -vE '^\.terminus/(executions|workflows)/edge-router-runtime(/|$)' || true)"
+          [[ -z "$unexpected" ]] || { echo "::error::Unexpected mutations: $unexpected"; exit 1; }
+
+          git config user.name 'terminus-hwr-replay[bot]'
+          git config user.email 'terminus-hwr-replay[bot]@users.noreply.github.com'
+          git add -- ".terminus/executions/$task"
+          git commit -m "Record edge-router-runtime HUMAN_WRITING_RESEARCH replay"
+
+          latest="$(git ls-remote origin refs/heads/main | awk '{print $1}')"
+          if [[ "$latest" != "$base" ]]; then
+            git fetch origin main
+            latest="$(git rev-parse origin/main)"
+            latest_tree="$(git rev-parse "$latest:$task")"
+            [[ "$latest_tree" == "$requested_tree" ]] || { echo '::error::task scope changed during HWR record'; exit 1; }
+            python3 .terminus/execution/controller_cli.py control-plane --head "$latest" --output "$work/latest-control.json"
+            latest_control="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["control_plane_commit"])' "$work/latest-control.json")"
+            [[ "$latest_control" == "$control" ]] || { echo '::error::control plane changed during HWR record'; exit 1; }
+            git rebase origin/main
+          fi
+          git push origin HEAD:main
+
+      - name: Upload HWR replay diagnostics
+        uses: actions/upload-artifact@v4
+        with:
+          name: edge-router-hwr-replay-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/edge-hwr
+          if-no-files-found: warn
