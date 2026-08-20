@@ -189,14 +189,22 @@ def test_complete_malformed_wal_payload_is_fatal(tmp_path: Path) -> None:
 
 
 def test_impossible_wal_frame_length_is_fatal(tmp_path: Path) -> None:
-    """A frame declaring a payload above the published 8 MiB framing ceiling is corruption, not a torn tail."""
-    data_dir = tmp_path / "db"
-    data_dir.mkdir()
-    header = struct.pack("<III", WAL_MAGIC, MAX_WAL_FRAME_PAYLOAD + 1, 0)
-    (data_dir / "wal.log").write_bytes(header)
-    result = run_open(data_dir)
-    assert result.returncode != 0
-    assert "WAL corruption" in result.stderr
+    """Complete WAL headers outside the published payload-length range are corruption, not torn tails."""
+    zero_dir = tmp_path / "zero"
+    zero_dir.mkdir()
+    zero_header = struct.pack("<III", WAL_MAGIC, 0, zlib.crc32(b"") & 0xFFFFFFFF)
+    (zero_dir / "wal.log").write_bytes(zero_header)
+    zero_result = run_open(zero_dir)
+    assert zero_result.returncode != 0
+    assert "WAL corruption" in zero_result.stderr
+
+    oversized_dir = tmp_path / "oversized"
+    oversized_dir.mkdir()
+    oversized_header = struct.pack("<III", WAL_MAGIC, MAX_WAL_FRAME_PAYLOAD + 1, 0)
+    (oversized_dir / "wal.log").write_bytes(oversized_header)
+    oversized_result = run_open(oversized_dir)
+    assert oversized_result.returncode != 0
+    assert "WAL corruption" in oversized_result.stderr
 
 
 def test_checkpoint_interruption_keeps_a_durable_recovery_source(tmp_path: Path) -> None:
