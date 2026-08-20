@@ -10,15 +10,11 @@ from pathlib import Path
 
 if __package__ in {None, ""}:
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-    from execution.quality_execution_guard import install_quality_execution_guards
-
-    install_quality_execution_guards()
-    from execution.quality_executor import QualityExecutorError, execute_quality_packet
+    from execution.quality_execution_guard import execute_quality_packet
+    from execution.quality_executor import QualityExecutorError
 else:
-    from .quality_execution_guard import install_quality_execution_guards
-
-    install_quality_execution_guards()
-    from .quality_executor import QualityExecutorError, execute_quality_packet
+    from .quality_execution_guard import execute_quality_packet
+    from .quality_executor import QualityExecutorError
 
 
 def build_parser() -> argparse.ArgumentParser:
