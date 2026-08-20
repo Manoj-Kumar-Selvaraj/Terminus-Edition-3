@@ -1,0 +1,29 @@
+{
+  "schema_version": "1.0",
+  "mode": "RECORD",
+  "task_id": "stonevault-crash-safe-storage",
+  "task_commit": "03317f8218069b9e0b5d073bf87ecf7a0ae8e4a1",
+  "control_plane_commit": "df7ef7569e2947b9f0bf7cf89ed4dec6c2a5a1fe",
+  "expected_repository_head": "cb413cad543572026de93716f568d951b4a6fee3",
+  "stage_id": "ENVIRONMENT_BUILD",
+  "inputs": {
+    "CLEAN_SYSTEM_ARCHITECTURE": {"boundary": "Rust control/session plus C++20 storage core"},
+    "CREATION_RULE_CONTEXT": {"profile": "large_system_strict"},
+    "DEFECT_TOPOLOGY": {"path": ".terminus/designs/stonevault-crash-safe-storage.json"},
+    "SOLVER_VISIBLE_DOC_PLAN": ["docs/storage-format.md", "instruction.md", "README.md"]
+  },
+  "result": {
+    "status": "BUILT",
+    "outputs": {
+      "COMPONENT_GRAPH": {"cpp": ["engine", "wal", "snapshot", "lock"], "rust": ["config", "protocol", "session"]},
+      "ENTRYPOINTS": ["/app/stonevault/bin/stonevault"],
+      "ENVIRONMENT_RULE_CHECKS": "digest-pinned base, bounded apt install, self-contained build, native product boundary",
+      "INSTRUCTION_DOC_BOUNDARY": "instruction states observable requirements; storage-format.md owns detailed ABI/disk contracts",
+      "PRODUCTION_CHARACTERISTICS": ["persistent WAL/snapshot", "MVCC transactions", "process writer lock", "checkpoint maintenance", "operator health"],
+      "RUNTIME_REACHABILITY_NOTES": "single binary exercises Rust ingress and C++ storage through stable C ABI",
+      "SOLVER_VISIBLE_DOCS": ["/app/stonevault/docs/storage-format.md"],
+      "SUBSTANTIVE_LOC": "native multi-module C++20 and Rust implementation"
+    },
+    "evidence_refs": [{"kind": "COMMIT", "ref": "commit:03317f8218069b9e0b5d073bf87ecf7a0ae8e4a1"}]
+  }
+}
