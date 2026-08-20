@@ -1,0 +1,62 @@
+{
+  "evidence_refs": [
+    {
+      "kind": "COMMIT",
+      "ref": "commit:03317f8218069b9e0b5d073bf87ecf7a0ae8e4a1"
+    }
+  ],
+  "invocation_id": "inv_f0ae495d7b6af0115b830e48c845cc2412d739c9dffd134fbaaa726ed040ae1d",
+  "output_task_commit": "03317f8218069b9e0b5d073bf87ecf7a0ae8e4a1",
+  "outputs": {
+    "COMPONENT_GRAPH": {
+      "boundary": "stable C ABI",
+      "cpp_storage_core": [
+        "storage/engine.cpp",
+        "storage/wal.cpp",
+        "storage/snapshot.cpp",
+        "storage/lock.cpp"
+      ],
+      "rust_control_plane": [
+        "src/config.rs",
+        "src/protocol.rs",
+        "src/main.rs"
+      ]
+    },
+    "ENTRYPOINTS": [
+      "/app/stonevault/bin/stonevault",
+      "line-oriented command protocol",
+      "C ABI storage calls"
+    ],
+    "PRODUCTION_CHARACTERISTICS": [
+      "cross-language native runtime",
+      "persistent binary formats",
+      "process-level lock ownership",
+      "crash/restart recovery",
+      "operator observability"
+    ],
+    "SCALE_FIT": "large_system_strict",
+    "SOLVER_VISIBLE_DOC_PLAN": [
+      "/app/stonevault/docs/storage-format.md",
+      "/app/stonevault/instruction.md",
+      "/app/stonevault/README.md"
+    ],
+    "STATE_MODEL": {
+      "durable": [
+        "wal.log",
+        "snapshot.dat",
+        "commit sequence"
+      ],
+      "live": [
+        "transaction snapshots",
+        "transaction-local mutation overlays",
+        "writer lock"
+      ],
+      "maintenance": [
+        "snapshot.tmp",
+        "checkpoint quiescence"
+      ]
+    }
+  },
+  "schema_version": "1.0",
+  "status": "ARCHITECTURE_READY"
+}
