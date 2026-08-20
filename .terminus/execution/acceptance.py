@@ -7,6 +7,10 @@ from collections.abc import Mapping as ABCMapping
 from pathlib import Path
 from typing import Any, Mapping
 
+from q4_chat_human_risk import (
+    SATISFACTION_MODE as CHAT_HUMAN_SATISFACTION_MODE,
+    validate_chat_human_risk_acceptance,
+)
 from q4_human_risk import SATISFACTION_MODE, validate_human_risk_acceptance
 
 
@@ -55,8 +59,9 @@ class StageAcceptancePredicates:
             if op == "q4_satisfied":
                 passed = self._q4_satisfied(outputs, self.root)
                 expected_display = (
-                    "DIRECT_PASS, ADJUDICATED_CLOSURE_PASS, or "
-                    "AUTHENTICATED_HUMAN_RISK_ACCEPTANCE with coherent evidence values"
+                    "DIRECT_PASS, ADJUDICATED_CLOSURE_PASS, "
+                    "AUTHENTICATED_HUMAN_RISK_ACCEPTANCE, or "
+                    "CHAT_HUMAN_RISK_ACCEPTANCE with coherent evidence values"
                 )
             elif op == "eq_path":
                 assert isinstance(expected, str)
@@ -203,7 +208,7 @@ class StageAcceptancePredicates:
                 and isinstance(closure.get("role_output"), ABCMapping)
                 and closure["role_output"].get("CLOSURE_OUTCOME") == "PASS"
             )
-        if mode == SATISFACTION_MODE:
+        if mode in {SATISFACTION_MODE, CHAT_HUMAN_SATISFACTION_MODE}:
             envelope = outputs.get("Q4_CLOSURE_RESULT")
             if (
                 root is None
@@ -212,11 +217,18 @@ class StageAcceptancePredicates:
             ):
                 return False
             try:
-                validate_human_risk_acceptance(
-                    root,
-                    envelope=envelope,
-                    q4_result=q4,
-                )
+                if mode == SATISFACTION_MODE:
+                    validate_human_risk_acceptance(
+                        root,
+                        envelope=envelope,
+                        q4_result=q4,
+                    )
+                else:
+                    validate_chat_human_risk_acceptance(
+                        root,
+                        envelope=envelope,
+                        q4_result=q4,
+                    )
             except ValueError:
                 return False
             return True
