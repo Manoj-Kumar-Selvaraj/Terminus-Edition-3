@@ -1,0 +1,40 @@
+{
+  "evidence_refs": [],
+  "invocation_id": "inv_b777b290207939bff337f2a425ebae4fd1baf542ec35b79702d36aba5782e52c",
+  "output_task_commit": "4b4a8d30429b8455ab80824c3d1e7d03378b5934",
+  "outputs": {
+    "CANDIDATES": [
+      {
+        "ASSESSMENT": "VERY_HIGH",
+        "ID": "GENERATION_SAFE_DYNAMIC_RECONCILIATION",
+        "OBJECTIVE": "Generation-safe configuration and endpoint reconciliation with atomic serving snapshots, stable runtime identity, bounded drains and durable recovery.",
+        "REQUIREMENT_FAMILIES": [
+          "configuration ingestion",
+          "route compilation",
+          "generation fencing",
+          "endpoint reconciliation",
+          "health lifecycle",
+          "selection/retry/failover",
+          "draining",
+          "checkpoint recovery",
+          "telemetry lifecycle"
+        ]
+      },
+      {
+        "ASSESSMENT": "HIGH",
+        "ID": "HEALTH_AWARE_POOL_LIFECYCLE_AND_FAILOVER",
+        "OBJECTIVE": "Health-aware endpoint lifecycle, selection, affinity, retries and failover under dynamic membership."
+      },
+      {
+        "ASSESSMENT": "MEDIUM_HIGH",
+        "ID": "PROTOCOL_SAFE_PROXY_PIPELINE",
+        "OBJECTIVE": "Protocol-safe forwarding, streaming, cancellation and retry behavior for a public reverse proxy."
+      }
+    ],
+    "DUPLICATE_RISK_NOTES": "Dynamic proxy reload is a known production pattern, but the coupled generation fencing, source authority, runtime-state migration, drain ownership and durable recovery package remains sufficiently differentiated.",
+    "RECOMMENDATION": "GENERATION_SAFE_DYNAMIC_RECONCILIATION",
+    "WHY_THIS_ONE": "The existing multi-package Go edge runtime exposes the coherent production surface required for strict-scale generation reconciliation: independent update sources, immutable routing generations, stable endpoint lifecycle state, health-aware selection, draining, checkpoint recovery and bounded observability. Revalidation preserves the current task rather than inventing a different scenario and naturally supports the approved 30-defect coupled surface and 25+ behavioral scenarios without padding."
+  },
+  "schema_version": "1.0",
+  "status": "CANDIDATES_READY"
+}
