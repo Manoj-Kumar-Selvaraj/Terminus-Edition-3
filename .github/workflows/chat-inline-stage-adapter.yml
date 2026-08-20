@@ -1,0 +1,104 @@
+name: Chat Inline Stage Adapter
+
+on:
+  push:
+    branches:
+      - 'terminus-controller-request/**'
+    paths:
+      - '.terminus/chat-exec/*.json'
+
+permissions:
+  contents: write
+
+jobs:
+  adapter:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Compile or record exact current inline stage
+        shell: bash
+        run: |
+          set -euo pipefail
+          work="$RUNNER_TEMP/chat-inline"
+          mkdir -p "$work"
+          mapfile -t paths < <(git diff-tree --no-commit-id --name-only -r "$GITHUB_SHA" -- '.terminus/chat-exec/*.json')
+          [[ "${#paths[@]}" == 1 ]] || { echo "::error::expected exactly one chat-exec request"; exit 1; }
+          cp "${paths[0]}" "$work/request.json"
+          python3 - "$work/request.json" "$work/inputs.json" "$work/result-template.json" <<'PY'
+          import json,sys
+          req=json.load(open(sys.argv[1],encoding='utf-8'))
+          required={'schema_version','mode','task_id','task_commit','control_plane_commit','expected_repository_head','stage_id','inputs','result'}
+          if set(req)!=required or req['schema_version']!='1.0': raise SystemExit('invalid adapter request')
+          json.dump(req['inputs'],open(sys.argv[2],'w',encoding='utf-8'),indent=2,sort_keys=True)
+          json.dump(req['result'],open(sys.argv[3],'w',encoding='utf-8'),indent=2,sort_keys=True)
+          PY
+          task="$(python3 -c 'import json;print(json.load(open("'$work'/request.json"))["task_id"])')"
+          task_commit="$(python3 -c 'import json;print(json.load(open("'$work'/request.json"))["task_commit"])')"
+          control="$(python3 -c 'import json;print(json.load(open("'$work'/request.json"))["control_plane_commit"])')"
+          stage="$(python3 -c 'import json;print(json.load(open("'$work'/request.json"))["stage_id"])')"
+          mode="$(python3 -c 'import json;print(json.load(open("'$work'/request.json"))["mode"])')"
+          expected="$(python3 -c 'import json;print(json.load(open("'$work'/request.json"))["expected_repository_head"])')"
+          remote_main="$(git ls-remote origin refs/heads/main | cut -f1)"
+          [[ "$remote_main" == "$expected" ]] || { echo "::error::main moved before adapter execution expected=$expected current=$remote_main"; exit 1; }
+          git checkout --detach "$expected"
+          python3 .terminus/execution/controller_cli.py control-plane --head "$expected" --output "$work/control-plane.json"
+          resolved="$(python3 -c 'import json;print(json.load(open("'$work'/control-plane.json"))["control_plane_commit"])')"
+          [[ "$resolved" == "$control" ]] || { echo "::error::control-plane mismatch $resolved != $control"; exit 1; }
+          python3 .terminus/execution/controller_cli.py continue --task-id "$task" --task-commit "$task_commit" --control-plane-commit "$control" --inputs-json "$work/inputs.json" --output "$work/continue.json"
+          python3 - "$work/continue.json" "$work/invocation.json" "$stage" <<'PY'
+          import json,sys
+          p=json.load(open(sys.argv[1],encoding='utf-8')); stage=sys.argv[3]
+          if p.get('next',{}).get('stage_id')!=stage: raise SystemExit(f"machine stage changed: {p.get('next')}")
+          inv=p.get('invocation')
+          if not isinstance(inv,dict) or inv.get('readiness')!='READY': raise SystemExit('invocation not READY')
+          if inv.get('stage',{}).get('stage_id')!=stage: raise SystemExit('wrong invocation stage')
+          if p.get('execution_mode') not in {'INLINE_SPECIALIST','INLINE_SPECIALIST_SEQUENCE','ORCHESTRATOR_DIRECT'}: raise SystemExit(f"unsupported execution mode {p.get('execution_mode')}")
+          json.dump(inv,open(sys.argv[2],'w',encoding='utf-8'),indent=2,sort_keys=True)
+          PY
+          if [[ "$mode" == "RECORD" ]]; then
+            python3 - "$work/invocation.json" "$work/result-template.json" "$work/result.json" <<'PY'
+          import json,sys
+          inv=json.load(open(sys.argv[1],encoding='utf-8')); r=json.load(open(sys.argv[2],encoding='utf-8'))
+          r['schema_version']='1.0'; r['invocation_id']=inv['invocation_id']
+          r.setdefault('output_task_commit',inv['authority']['task_commit'])
+          json.dump(r,open(sys.argv[3],'w',encoding='utf-8'),indent=2,sort_keys=True)
+          PY
+            python3 .terminus/execution/controller_cli.py record --invocation "$work/invocation.json" --result "$work/result.json" --output "$work/record.json"
+            unexpected="$(git status --porcelain | awk '{print $2}' | grep -vE "^\.terminus/(executions|workflows)/$task(/|$)" || true)"
+            [[ -z "$unexpected" ]] || { echo "::error::unexpected mutations: $unexpected"; exit 1; }
+            git config user.name 'terminus-chat-adapter[bot]'
+            git config user.email 'terminus-chat-adapter[bot]@users.noreply.github.com'
+            git add -- ".terminus/executions/$task"
+            git diff --cached --quiet && { echo "::error::no canonical record mutation"; exit 1; }
+            git commit -m "Record $task $stage inline result"
+            remote_main="$(git ls-remote origin refs/heads/main | cut -f1)"
+            [[ "$remote_main" == "$expected" ]] || { echo "::error::main moved during record expected=$expected current=$remote_main"; exit 1; }
+            git push origin HEAD:main
+          fi
+
+          git fetch origin "$GITHUB_REF_NAME"
+          git checkout -B chat-diagnostics "origin/$GITHUB_REF_NAME"
+          diag=".terminus/chat-results/$task/$stage"
+          mkdir -p "$diag"
+          cp "$work/continue.json" "$diag/continue.json"
+          cp "$work/invocation.json" "$diag/invocation.json"
+          [[ -f "$work/result.json" ]] && cp "$work/result.json" "$diag/result.json" || true
+          [[ -f "$work/record.json" ]] && cp "$work/record.json" "$diag/record.json" || true
+          git config user.name 'terminus-chat-adapter[bot]'
+          git config user.email 'terminus-chat-adapter[bot]@users.noreply.github.com'
+          git add -- "$diag"
+          if ! git diff --cached --quiet; then
+            git commit -m "Persist chat diagnostics for $task $stage"
+            git push origin HEAD:"$GITHUB_REF_NAME"
+          fi
+
+      - name: Upload adapter diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: chat-inline-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/chat-inline
+          if-no-files-found: warn
