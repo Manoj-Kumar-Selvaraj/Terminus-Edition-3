@@ -4,40 +4,48 @@
       "content_hash": "sha256:104817a239b92de3e53f14d6bc0176563437894773e060648776dc09c6280374",
       "kind": "COMMIT",
       "ref": "commit:78ad422902b27dea954905130a1267b02cff3596"
-    },
-    {
-      "content_hash": "sha256:fca3ef4b283f1a1fe2aa6d960cd36a17b7232eb0b7a130f9cc8d43d948d6ec42",
-      "kind": "COMMIT",
-      "ref": "commit:67b805a297ac005ee08e82facc533f53a3233192"
     }
   ],
-  "invocation_id": "inv_8da58936222d8034df64cb7eaa1bea6a4f689676b20f79eab623155d2189de6b",
+  "invocation_id": "inv_4ed7303f369ba58a866d83c86e23a226ea41b21a734008ddde3fcb6f4a686ae0",
   "output_task_commit": "78ad422902b27dea954905130a1267b02cff3596",
   "outputs": {
-    "DETERMINISM_NOTES": "Map/list-like values and equivalent modes/defaults are canonically normalized; template variables and process argv are emitted deterministically; temporary playbooks are ephemeral and cleaned on all terminal outcomes.",
+    "DETERMINISM_NOTES": "solve.sh performs deterministic sorted installation/gofmt/build; Ansible execution uses structured exec.CommandContext argv; generated playbooks are temporary and cleaned on all terminal paths; normalized equivalent representations suppress false churn.",
     "FILES_CHANGED": [
       "solution/solve.sh",
-      "solution/fixed/internal/lifecycle/maps.go",
-      "solution/fixed/internal/lifecycle/normalize.go",
-      "solution/fixed/internal/resources/",
-      "solution/fixed/internal/runner/runner.go"
+      "solution/fixed/internal/runner/runner.go",
+      "solution/fixed/internal/resources/common.go",
+      "solution/fixed/internal/resources/resource_file.go",
+      "solution/fixed/internal/resources/resource_directory.go",
+      "solution/fixed/internal/resources/resource_copy.go",
+      "solution/fixed/internal/resources/resource_template.go",
+      "solution/fixed/internal/resources/resource_line.go",
+      "solution/fixed/internal/resources/resource_block.go",
+      "solution/fixed/internal/resources/resource_symlink.go",
+      "solution/fixed/internal/resources/resource_user.go",
+      "solution/fixed/internal/resources/resource_group.go",
+      "solution/fixed/internal/resources/resource_cron.go"
     ],
-    "PRESERVED_BEHAVIOR": "Exact ten resource interfaces, local/ansibleops 0.1.0, supplied local inventory, Go 1.24/current Plugin Framework and Terraform 1.10.5 compatibility are preserved.",
-    "RESTART_IDEMPOTENCY_BEHAVIOR": "The reference completion derives durable identity and observed state from Terraform Core plus native external Linux truth rather than provider-process memory, so restart followed by refresh/plan converges without replaying Ansible when the target is already correct.",
+    "PRESERVED_BEHAVIOR": [
+      "exact ten documented resource schemas/interfaces",
+      "provider source local/ansibleops version 0.1.0",
+      "supplied local inventory and /app/provider runtime",
+      "public provider/resource/lifecycle contracts",
+      "Terraform-owned state and native drift semantics"
+    ],
+    "RESTART_IDEMPOTENCY_BEHAVIOR": "The completion derives identity from external keys and reconstructs observed state natively, so a fresh Terraform/provider process can converge on the same object without transient provider memory or replaying Ansible during Read.",
     "RESTORED_INVARIANTS": [
-      "stable external-key IDs",
-      "mutation before state publication",
-      "native Read and external drift reflection",
-      "failure-safe update/delete semantics",
-      "structured runner argv, timeout/cancel handling and cleanup",
-      "canonical convergence and Terraform Core sole durable state authority"
+      "stable documented external-object IDs across mutable updates",
+      "Ansible-only Create/Update/Delete mutation path",
+      "native side-effect-free Read/refresh with absence and drift reconciliation",
+      "state publication only after successful mutation; failures preserve prior state and retryability",
+      "scoped deletion for symlink, named text entries, accounts and cron siblings",
+      "structured ansible-playbook argv with literal data, timeout/cancel propagation and temp-playbook cleanup",
+      "canonical mode/unordered/account/cron normalization",
+      "Terraform Core remains sole durable state authority"
     ],
     "RISKS_FOR_INDEPENDENT_VERIFIER": [
-      "verify failed update/delete retain prior managed state",
-      "verify Read never invokes Ansible",
-      "verify literal argv under spaces/metacharacters",
-      "verify sibling preservation for line/block/cron and symlink target preservation",
-      "verify external drift and canonical normalization across fresh provider processes"
+      "Fresh empirical Oracle/NOP execution is not asserted by this stage and must be re-earned at DETERMINISTIC_VALIDATION.",
+      "Verifier should independently exercise failed update/delete retryability, process timeout/cancellation, literal argv handling, sibling preservation, and restart/idempotency behavior."
     ]
   },
   "schema_version": "1.0",
