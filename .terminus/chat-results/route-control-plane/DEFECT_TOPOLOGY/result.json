@@ -1,0 +1,336 @@
+{
+  "evidence_refs": [
+    {
+      "kind": "COMMIT",
+      "ref": "commit:7d8a6d8c62a62e6d24949344c7fd712e59bc8829"
+    },
+    {
+      "kind": "COMMIT",
+      "ref": "commit:22d2e9e09f4deb58029559fe9a0863c2e032f25c"
+    }
+  ],
+  "invocation_id": "inv_a0a7486f2d8e3a7fccde0f7af3c9349ac63d8d0595296b60dc2a091b581de840",
+  "output_task_commit": "22d2e9e09f4deb58029559fe9a0863c2e032f25c",
+  "outputs": {
+    "behavioral_surfaces": {
+      "cross_component": [
+        "rule plus table deletion",
+        "management safety through policy selection",
+        "apply then drift",
+        "rollback feeding rollout",
+        "Ansible safety state",
+        "dashboard CAS"
+      ],
+      "edge_boundary": [
+        "IPv6 aliases",
+        "multipath order",
+        "reserved table aliases",
+        "variable merge"
+      ],
+      "failure_recovery": [
+        "mid-apply rollback",
+        "restart pending transaction",
+        "checkpoint fallback",
+        "failed canary"
+      ],
+      "negative_rejection": [
+        "invalid route",
+        "priority collision",
+        "unsafe management change",
+        "stale revision"
+      ],
+      "normal": [
+        "route/rule lifecycle",
+        "multipath normalization",
+        "revision apply",
+        "drift/reconcile",
+        "rollout",
+        "Ansible install",
+        "dashboard mutation"
+      ]
+    },
+    "causal_edges": [
+      {
+        "from": "D01",
+        "to": "D16"
+      },
+      {
+        "from": "D02",
+        "to": "D16"
+      },
+      {
+        "from": "D03",
+        "to": "D17"
+      },
+      {
+        "from": "D04",
+        "to": "D05"
+      },
+      {
+        "from": "D05",
+        "to": "D11"
+      },
+      {
+        "from": "D06",
+        "to": "D05"
+      },
+      {
+        "from": "D07",
+        "to": "D09"
+      },
+      {
+        "from": "D07",
+        "to": "D18"
+      },
+      {
+        "from": "D08",
+        "to": "D20"
+      },
+      {
+        "from": "D09",
+        "to": "D14"
+      },
+      {
+        "from": "D10",
+        "to": "D13"
+      },
+      {
+        "from": "D11",
+        "to": "D13"
+      },
+      {
+        "from": "D12",
+        "to": "D13"
+      },
+      {
+        "from": "D13",
+        "to": "D15"
+      },
+      {
+        "from": "D14",
+        "to": "D15"
+      },
+      {
+        "from": "D15",
+        "to": "D19"
+      },
+      {
+        "from": "D16",
+        "to": "D18"
+      },
+      {
+        "from": "D17",
+        "to": "D18"
+      },
+      {
+        "from": "D18",
+        "to": "D20"
+      },
+      {
+        "from": "D19",
+        "to": "D21"
+      },
+      {
+        "from": "D20",
+        "to": "D21"
+      },
+      {
+        "from": "D22",
+        "to": "D21"
+      },
+      {
+        "from": "D23",
+        "to": "D10"
+      },
+      {
+        "from": "D24",
+        "to": "D07"
+      },
+      {
+        "from": "D24",
+        "to": "D09"
+      }
+    ],
+    "defects": [
+      {
+        "component": "route_catalog",
+        "id": "D01",
+        "observable_failure": "Equivalent IPv6 prefixes can coexist as duplicate routes.",
+        "root_cause": "C1_ROUTE_IDENTITY_NORMALIZATION"
+      },
+      {
+        "component": "route_catalog",
+        "id": "D02",
+        "observable_failure": "Multipath next-hop reorder produces a false mutation.",
+        "root_cause": "C1_ROUTE_IDENTITY_NORMALIZATION"
+      },
+      {
+        "component": "route_catalog",
+        "id": "D03",
+        "observable_failure": "Route replace duplicates identity when metric/table normalization differs.",
+        "root_cause": "C1_ROUTE_IDENTITY_NORMALIZATION"
+      },
+      {
+        "component": "policy_rules",
+        "id": "D04",
+        "observable_failure": "Two policy rules can claim the same effective priority.",
+        "root_cause": "C2_POLICY_RULE_DEPENDENCY"
+      },
+      {
+        "component": "policy_rules",
+        "id": "D05",
+        "observable_failure": "A rule can reference a route table removed in the same revision.",
+        "root_cause": "C2_POLICY_RULE_DEPENDENCY"
+      },
+      {
+        "component": "revision_planner",
+        "id": "D06",
+        "observable_failure": "Named-table aliases collide with reserved numeric tables.",
+        "root_cause": "C2_POLICY_RULE_DEPENDENCY"
+      },
+      {
+        "component": "revision_planner",
+        "id": "D07",
+        "observable_failure": "A stale preview can apply after a newer revision.",
+        "root_cause": "C3_REVISION_TRANSACTION_FENCING"
+      },
+      {
+        "component": "transaction_coordinator",
+        "id": "D08",
+        "observable_failure": "Retrying an idempotency key creates a second transaction and audit event.",
+        "root_cause": "C3_REVISION_TRANSACTION_FENCING"
+      },
+      {
+        "component": "snapshot_store",
+        "id": "D09",
+        "observable_failure": "Readers observe desired revision metadata before all node plans publish.",
+        "root_cause": "C3_REVISION_TRANSACTION_FENCING"
+      },
+      {
+        "component": "revision_planner",
+        "id": "D10",
+        "observable_failure": "Deleting a management route is accepted with no safe replacement.",
+        "root_cause": "C4_MANAGEMENT_SAFETY"
+      },
+      {
+        "component": "revision_planner",
+        "id": "D11",
+        "observable_failure": "A policy change diverts management CIDRs into an empty table.",
+        "root_cause": "C4_MANAGEMENT_SAFETY"
+      },
+      {
+        "component": "kernel_model",
+        "id": "D12",
+        "observable_failure": "Interface removal strands a protected gateway.",
+        "root_cause": "C4_MANAGEMENT_SAFETY"
+      },
+      {
+        "component": "transaction_coordinator",
+        "id": "D13",
+        "observable_failure": "Mid-node apply failure leaves a partial observed snapshot.",
+        "root_cause": "C5_APPLY_ROLLBACK_RECOVERY"
+      },
+      {
+        "component": "snapshot_store",
+        "id": "D14",
+        "observable_failure": "Crash after desired publication loses rollback authority.",
+        "root_cause": "C5_APPLY_ROLLBACK_RECOVERY"
+      },
+      {
+        "component": "transaction_coordinator",
+        "id": "D15",
+        "observable_failure": "Rollback can use another node's last-known-good revision.",
+        "root_cause": "C5_APPLY_ROLLBACK_RECOVERY"
+      },
+      {
+        "component": "drift_engine",
+        "id": "D16",
+        "observable_failure": "Equivalent multipath ordering is reported as drift.",
+        "root_cause": "C6_DRIFT_RECONCILIATION"
+      },
+      {
+        "component": "drift_engine",
+        "id": "D17",
+        "observable_failure": "An unowned observed route is scheduled for deletion.",
+        "root_cause": "C6_DRIFT_RECONCILIATION"
+      },
+      {
+        "component": "drift_engine",
+        "id": "D18",
+        "observable_failure": "Reconcile acts on an observed snapshot older than the latest apply.",
+        "root_cause": "C6_DRIFT_RECONCILIATION"
+      },
+      {
+        "component": "rollout_engine",
+        "id": "D19",
+        "observable_failure": "A failed canary wave still allows the next wave.",
+        "root_cause": "C7_FLEET_ROLLOUT"
+      },
+      {
+        "component": "rollout_engine",
+        "id": "D20",
+        "observable_failure": "Rollout retry reapplies nodes already at target revision.",
+        "root_cause": "C7_FLEET_ROLLOUT"
+      },
+      {
+        "component": "rollout_engine",
+        "id": "D21",
+        "observable_failure": "An offline node is recorded successful from a stale heartbeat.",
+        "root_cause": "C7_FLEET_ROLLOUT"
+      },
+      {
+        "component": "ansible_role",
+        "id": "D22",
+        "observable_failure": "Ansible rerun rewrites unchanged config and restarts service.",
+        "root_cause": "C8_DEPLOYMENT_AND_UI_CONCURRENCY"
+      },
+      {
+        "component": "ansible_role",
+        "id": "D23",
+        "observable_failure": "Host protected routes are overwritten by group defaults.",
+        "root_cause": "C8_DEPLOYMENT_AND_UI_CONCURRENCY"
+      },
+      {
+        "component": "frontend",
+        "id": "D24",
+        "observable_failure": "A stale dashboard mutation overwrites a newer operator change.",
+        "root_cause": "C8_DEPLOYMENT_AND_UI_CONCURRENCY"
+      }
+    ],
+    "organic_f2p_surface_assessment": {
+      "assessment": "SUFFICIENT",
+      "planned_f2p": 28,
+      "planned_p2p": 8,
+      "rationale": "Twenty-four manifestations across eight coupled root causes yield distinct safety, transaction, recovery, fleet, automation and UI behavior without padding."
+    },
+    "profile": "large_system_strict",
+    "root_cause_clusters": {
+      "C1_ROUTE_IDENTITY_NORMALIZATION": {
+        "summary": "Route and next-hop identity is compared using non-canonical raw values."
+      },
+      "C2_POLICY_RULE_DEPENDENCY": {
+        "summary": "Policy priorities and table dependencies are not validated as one coherent graph."
+      },
+      "C3_REVISION_TRANSACTION_FENCING": {
+        "summary": "Revision planning/apply lacks consistent CAS, idempotency and atomic publication."
+      },
+      "C4_MANAGEMENT_SAFETY": {
+        "summary": "Protected reachability is not checked against the post-change effective graph."
+      },
+      "C5_APPLY_ROLLBACK_RECOVERY": {
+        "summary": "Per-node apply/rollback does not preserve complete last-known-good state."
+      },
+      "C6_DRIFT_RECONCILIATION": {
+        "summary": "Desired-observed comparison loses normalization, ownership and freshness boundaries."
+      },
+      "C7_FLEET_ROLLOUT": {
+        "summary": "Wave rollout state allows progress or retry on stale/incomplete outcomes."
+      },
+      "C8_DEPLOYMENT_AND_UI_CONCURRENCY": {
+        "summary": "Ansible projection and dashboard mutations lack stable idempotency/concurrency contracts."
+      }
+    }
+  },
+  "schema_version": "1.0",
+  "status": "DESIGN_READY"
+}
