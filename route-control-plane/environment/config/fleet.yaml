@@ -1,0 +1,801 @@
+fleet:
+  - id: blr-edge-001
+    hostname: blr-edge-001.routecp.local
+    site: blr
+    environment: prod
+    management_ip: 10.40.1.11
+    online: true
+    labels: {role: edge, wave: canary, region: ap-south}
+    links: [{name: eth0, index: 2, up: true, addresses: [10.40.1.11/24]}]
+    routes: [{id: mgmt-001, destination: 10.40.0.0/16, table: 100, metric: 10, gateway: 10.40.1.1, interface: eth0}]
+    rules: [{id: mgmt-rule-001, priority: 100, source: 10.40.1.11/32, table: 100, action: lookup}]
+  - id: blr-edge-002
+    hostname: blr-edge-002.routecp.local
+    site: blr
+    environment: prod
+    management_ip: 10.40.1.12
+    online: true
+    labels: {role: edge, wave: canary, region: ap-south}
+    links: [{name: eth0, index: 2, up: true, addresses: [10.40.1.12/24]}]
+    routes: [{id: mgmt-002, destination: 10.40.0.0/16, table: 100, metric: 10, gateway: 10.40.1.1, interface: eth0}]
+    rules: [{id: mgmt-rule-002, priority: 100, source: 10.40.1.12/32, table: 100, action: lookup}]
+  - id: blr-edge-003
+    hostname: blr-edge-003.routecp.local
+    site: blr
+    environment: prod
+    management_ip: 10.40.1.13
+    online: true
+    labels: {role: edge, wave: one, region: ap-south}
+    links: [{name: eth0, index: 2, up: true, addresses: [10.40.1.13/24]}]
+    routes: [{id: mgmt-003, destination: 10.40.0.0/16, table: 100, metric: 10, gateway: 10.40.1.1, interface: eth0}]
+    rules: [{id: mgmt-rule-003, priority: 100, source: 10.40.1.13/32, table: 100, action: lookup}]
+  - id: blr-edge-004
+    hostname: blr-edge-004.routecp.local
+    site: blr
+    environment: prod
+    management_ip: 10.40.1.14
+    online: true
+    labels: {role: edge, wave: one, region: ap-south}
+    links: [{name: eth0, index: 2, up: true, addresses: [10.40.1.14/24]}]
+    routes: [{id: mgmt-004, destination: 10.40.0.0/16, table: 100, metric: 10, gateway: 10.40.1.1, interface: eth0}]
+    rules: [{id: mgmt-rule-004, priority: 100, source: 10.40.1.14/32, table: 100, action: lookup}]
+  - id: blr-edge-005
+    hostname: blr-edge-005.routecp.local
+    site: blr
+    environment: prod
+    management_ip: 10.40.1.15
+    online: true
+    labels: {role: edge, wave: one, region: ap-south}
+    links: [{name: eth0, index: 2, up: true, addresses: [10.40.1.15/24]}]
+    routes: [{id: mgmt-005, destination: 10.40.0.0/16, table: 100, metric: 10, gateway: 10.40.1.1, interface: eth0}]
+    rules: [{id: mgmt-rule-005, priority: 100, source: 10.40.1.15/32, table: 100, action: lookup}]
+  - id: blr-edge-006
+    hostname: blr-edge-006.routecp.local
+    site: blr
+    environment: prod
+    management_ip: 10.40.1.16
+    online: true
+    labels: {role: edge, wave: one, region: ap-south}
+    links: [{name: eth0, index: 2, up: true, addresses: [10.40.1.16/24]}]
+    routes: [{id: mgmt-006, destination: 10.40.0.0/16, table: 100, metric: 10, gateway: 10.40.1.1, interface: eth0}]
+    rules: [{id: mgmt-rule-006, priority: 100, source: 10.40.1.16/32, table: 100, action: lookup}]
+  - id: blr-edge-007
+    hostname: blr-edge-007.routecp.local
+    site: blr
+    environment: prod
+    management_ip: 10.40.1.17
+    online: true
+    labels: {role: edge, wave: one, region: ap-south}
+    links: [{name: eth0, index: 2, up: true, addresses: [10.40.1.17/24]}]
+    routes: [{id: mgmt-007, destination: 10.40.0.0/16, table: 100, metric: 10, gateway: 10.40.1.1, interface: eth0}]
+    rules: [{id: mgmt-rule-007, priority: 100, source: 10.40.1.17/32, table: 100, action: lookup}]
+  - id: blr-edge-008
+    hostname: blr-edge-008.routecp.local
+    site: blr
+    environment: prod
+    management_ip: 10.40.1.18
+    online: true
+    labels: {role: edge, wave: one, region: ap-south}
+    links: [{name: eth0, index: 2, up: true, addresses: [10.40.1.18/24]}]
+    routes: [{id: mgmt-008, destination: 10.40.0.0/16, table: 100, metric: 10, gateway: 10.40.1.1, interface: eth0}]
+    rules: [{id: mgmt-rule-008, priority: 100, source: 10.40.1.18/32, table: 100, action: lookup}]
+  - id: blr-edge-009
+    hostname: blr-edge-009.routecp.local
+    site: blr
+    environment: prod
+    management_ip: 10.40.1.19
+    online: true
+    labels: {role: edge, wave: one, region: ap-south}
+    links: [{name: eth0, index: 2, up: true, addresses: [10.40.1.19/24]}]
+    routes: [{id: mgmt-009, destination: 10.40.0.0/16, table: 100, metric: 10, gateway: 10.40.1.1, interface: eth0}]
+    rules: [{id: mgmt-rule-009, priority: 100, source: 10.40.1.19/32, table: 100, action: lookup}]
+  - id: blr-edge-010
+    hostname: blr-edge-010.routecp.local
+    site: blr
+    environment: prod
+    management_ip: 10.40.1.20
+    online: true
+    labels: {role: edge, wave: one, region: ap-south}
+    links: [{name: eth0, index: 2, up: true, addresses: [10.40.1.20/24]}]
+    routes: [{id: mgmt-010, destination: 10.40.0.0/16, table: 100, metric: 10, gateway: 10.40.1.1, interface: eth0}]
+    rules: [{id: mgmt-rule-010, priority: 100, source: 10.40.1.20/32, table: 100, action: lookup}]
+  - id: blr-edge-011
+    hostname: blr-edge-011.routecp.local
+    site: blr
+    environment: prod
+    management_ip: 10.40.1.21
+    online: true
+    labels: {role: edge, wave: two, region: ap-south}
+    links: [{name: eth0, index: 2, up: true, addresses: [10.40.1.21/24]}]
+    routes: [{id: mgmt-011, destination: 10.40.0.0/16, table: 100, metric: 10, gateway: 10.40.1.1, interface: eth0}]
+    rules: [{id: mgmt-rule-011, priority: 100, source: 10.40.1.21/32, table: 100, action: lookup}]
+  - id: blr-edge-012
+    hostname: blr-edge-012.routecp.local
+    site: blr
+    environment: prod
+    management_ip: 10.40.1.22
+    online: true
+    labels: {role: edge, wave: two, region: ap-south}
+    links: [{name: eth0, index: 2, up: true, addresses: [10.40.1.22/24]}]
+    routes: [{id: mgmt-012, destination: 10.40.0.0/16, table: 100, metric: 10, gateway: 10.40.1.1, interface: eth0}]
+    rules: [{id: mgmt-rule-012, priority: 100, source: 10.40.1.22/32, table: 100, action: lookup}]
+  - id: blr-edge-013
+    hostname: blr-edge-013.routecp.local
+    site: blr
+    environment: prod
+    management_ip: 10.40.1.23
+    online: true
+    labels: {role: edge, wave: two, region: ap-south}
+    links: [{name: eth0, index: 2, up: true, addresses: [10.40.1.23/24]}]
+    routes: [{id: mgmt-013, destination: 10.40.0.0/16, table: 100, metric: 10, gateway: 10.40.1.1, interface: eth0}]
+    rules: [{id: mgmt-rule-013, priority: 100, source: 10.40.1.23/32, table: 100, action: lookup}]
+  - id: blr-edge-014
+    hostname: blr-edge-014.routecp.local
+    site: blr
+    environment: prod
+    management_ip: 10.40.1.24
+    online: true
+    labels: {role: edge, wave: two, region: ap-south}
+    links: [{name: eth0, index: 2, up: true, addresses: [10.40.1.24/24]}]
+    routes: [{id: mgmt-014, destination: 10.40.0.0/16, table: 100, metric: 10, gateway: 10.40.1.1, interface: eth0}]
+    rules: [{id: mgmt-rule-014, priority: 100, source: 10.40.1.24/32, table: 100, action: lookup}]
+  - id: blr-edge-015
+    hostname: blr-edge-015.routecp.local
+    site: blr
+    environment: prod
+    management_ip: 10.40.1.25
+    online: true
+    labels: {role: edge, wave: two, region: ap-south}
+    links: [{name: eth0, index: 2, up: true, addresses: [10.40.1.25/24]}]
+    routes: [{id: mgmt-015, destination: 10.40.0.0/16, table: 100, metric: 10, gateway: 10.40.1.1, interface: eth0}]
+    rules: [{id: mgmt-rule-015, priority: 100, source: 10.40.1.25/32, table: 100, action: lookup}]
+  - id: blr-edge-016
+    hostname: blr-edge-016.routecp.local
+    site: blr
+    environment: prod
+    management_ip: 10.40.1.26
+    online: true
+    labels: {role: edge, wave: two, region: ap-south}
+    links: [{name: eth0, index: 2, up: true, addresses: [10.40.1.26/24]}]
+    routes: [{id: mgmt-016, destination: 10.40.0.0/16, table: 100, metric: 10, gateway: 10.40.1.1, interface: eth0}]
+    rules: [{id: mgmt-rule-016, priority: 100, source: 10.40.1.26/32, table: 100, action: lookup}]
+  - id: blr-edge-017
+    hostname: blr-edge-017.routecp.local
+    site: blr
+    environment: prod
+    management_ip: 10.40.1.27
+    online: true
+    labels: {role: edge, wave: two, region: ap-south}
+    links: [{name: eth0, index: 2, up: true, addresses: [10.40.1.27/24]}]
+    routes: [{id: mgmt-017, destination: 10.40.0.0/16, table: 100, metric: 10, gateway: 10.40.1.1, interface: eth0}]
+    rules: [{id: mgmt-rule-017, priority: 100, source: 10.40.1.27/32, table: 100, action: lookup}]
+  - id: blr-edge-018
+    hostname: blr-edge-018.routecp.local
+    site: blr
+    environment: prod
+    management_ip: 10.40.1.28
+    online: true
+    labels: {role: edge, wave: two, region: ap-south}
+    links: [{name: eth0, index: 2, up: true, addresses: [10.40.1.28/24]}]
+    routes: [{id: mgmt-018, destination: 10.40.0.0/16, table: 100, metric: 10, gateway: 10.40.1.1, interface: eth0}]
+    rules: [{id: mgmt-rule-018, priority: 100, source: 10.40.1.28/32, table: 100, action: lookup}]
+  - id: blr-edge-019
+    hostname: blr-edge-019.routecp.local
+    site: blr
+    environment: prod
+    management_ip: 10.40.1.29
+    online: true
+    labels: {role: edge, wave: two, region: ap-south}
+    links: [{name: eth0, index: 2, up: true, addresses: [10.40.1.29/24]}]
+    routes: [{id: mgmt-019, destination: 10.40.0.0/16, table: 100, metric: 10, gateway: 10.40.1.1, interface: eth0}]
+    rules: [{id: mgmt-rule-019, priority: 100, source: 10.40.1.29/32, table: 100, action: lookup}]
+  - id: blr-edge-020
+    hostname: blr-edge-020.routecp.local
+    site: blr
+    environment: prod
+    management_ip: 10.40.1.30
+    online: true
+    labels: {role: edge, wave: two, region: ap-south}
+    links: [{name: eth0, index: 2, up: true, addresses: [10.40.1.30/24]}]
+    routes: [{id: mgmt-020, destination: 10.40.0.0/16, table: 100, metric: 10, gateway: 10.40.1.1, interface: eth0}]
+    rules: [{id: mgmt-rule-020, priority: 100, source: 10.40.1.30/32, table: 100, action: lookup}]
+  - id: maa-edge-021
+    hostname: maa-edge-021.routecp.local
+    site: maa
+    environment: prod
+    management_ip: 10.41.1.11
+    online: true
+    labels: {role: edge, wave: canary, region: ap-south}
+    links: [{name: eth0, index: 2, up: true, addresses: [10.41.1.11/24]}]
+    routes: [{id: mgmt-021, destination: 10.41.0.0/16, table: 100, metric: 10, gateway: 10.41.1.1, interface: eth0}]
+    rules: [{id: mgmt-rule-021, priority: 100, source: 10.41.1.11/32, table: 100, action: lookup}]
+  - id: maa-edge-022
+    hostname: maa-edge-022.routecp.local
+    site: maa
+    environment: prod
+    management_ip: 10.41.1.12
+    online: true
+    labels: {role: edge, wave: canary, region: ap-south}
+    links: [{name: eth0, index: 2, up: true, addresses: [10.41.1.12/24]}]
+    routes: [{id: mgmt-022, destination: 10.41.0.0/16, table: 100, metric: 10, gateway: 10.41.1.1, interface: eth0}]
+    rules: [{id: mgmt-rule-022, priority: 100, source: 10.41.1.12/32, table: 100, action: lookup}]
+  - id: maa-edge-023
+    hostname: maa-edge-023.routecp.local
+    site: maa
+    environment: prod
+    management_ip: 10.41.1.13
+    online: true
+    labels: {role: edge, wave: one, region: ap-south}
+    links: [{name: eth0, index: 2, up: true, addresses: [10.41.1.13/24]}]
+    routes: [{id: mgmt-023, destination: 10.41.0.0/16, table: 100, metric: 10, gateway: 10.41.1.1, interface: eth0}]
+    rules: [{id: mgmt-rule-023, priority: 100, source: 10.41.1.13/32, table: 100, action: lookup}]
+  - id: maa-edge-024
+    hostname: maa-edge-024.routecp.local
+    site: maa
+    environment: prod
+    management_ip: 10.41.1.14
+    online: true
+    labels: {role: edge, wave: one, region: ap-south}
+    links: [{name: eth0, index: 2, up: true, addresses: [10.41.1.14/24]}]
+    routes: [{id: mgmt-024, destination: 10.41.0.0/16, table: 100, metric: 10, gateway: 10.41.1.1, interface: eth0}]
+    rules: [{id: mgmt-rule-024, priority: 100, source: 10.41.1.14/32, table: 100, action: lookup}]
+  - id: maa-edge-025
+    hostname: maa-edge-025.routecp.local
+    site: maa
+    environment: prod
+    management_ip: 10.41.1.15
+    online: true
+    labels: {role: edge, wave: one, region: ap-south}
+    links: [{name: eth0, index: 2, up: true, addresses: [10.41.1.15/24]}]
+    routes: [{id: mgmt-025, destination: 10.41.0.0/16, table: 100, metric: 10, gateway: 10.41.1.1, interface: eth0}]
+    rules: [{id: mgmt-rule-025, priority: 100, source: 10.41.1.15/32, table: 100, action: lookup}]
+  - id: maa-edge-026
+    hostname: maa-edge-026.routecp.local
+    site: maa
+    environment: prod
+    management_ip: 10.41.1.16
+    online: true
+    labels: {role: edge, wave: one, region: ap-south}
+    links: [{name: eth0, index: 2, up: true, addresses: [10.41.1.16/24]}]
+    routes: [{id: mgmt-026, destination: 10.41.0.0/16, table: 100, metric: 10, gateway: 10.41.1.1, interface: eth0}]
+    rules: [{id: mgmt-rule-026, priority: 100, source: 10.41.1.16/32, table: 100, action: lookup}]
+  - id: maa-edge-027
+    hostname: maa-edge-027.routecp.local
+    site: maa
+    environment: prod
+    management_ip: 10.41.1.17
+    online: true
+    labels: {role: edge, wave: one, region: ap-south}
+    links: [{name: eth0, index: 2, up: true, addresses: [10.41.1.17/24]}]
+    routes: [{id: mgmt-027, destination: 10.41.0.0/16, table: 100, metric: 10, gateway: 10.41.1.1, interface: eth0}]
+    rules: [{id: mgmt-rule-027, priority: 100, source: 10.41.1.17/32, table: 100, action: lookup}]
+  - id: maa-edge-028
+    hostname: maa-edge-028.routecp.local
+    site: maa
+    environment: prod
+    management_ip: 10.41.1.18
+    online: true
+    labels: {role: edge, wave: one, region: ap-south}
+    links: [{name: eth0, index: 2, up: true, addresses: [10.41.1.18/24]}]
+    routes: [{id: mgmt-028, destination: 10.41.0.0/16, table: 100, metric: 10, gateway: 10.41.1.1, interface: eth0}]
+    rules: [{id: mgmt-rule-028, priority: 100, source: 10.41.1.18/32, table: 100, action: lookup}]
+  - id: maa-edge-029
+    hostname: maa-edge-029.routecp.local
+    site: maa
+    environment: prod
+    management_ip: 10.41.1.19
+    online: true
+    labels: {role: edge, wave: one, region: ap-south}
+    links: [{name: eth0, index: 2, up: true, addresses: [10.41.1.19/24]}]
+    routes: [{id: mgmt-029, destination: 10.41.0.0/16, table: 100, metric: 10, gateway: 10.41.1.1, interface: eth0}]
+    rules: [{id: mgmt-rule-029, priority: 100, source: 10.41.1.19/32, table: 100, action: lookup}]
+  - id: maa-edge-030
+    hostname: maa-edge-030.routecp.local
+    site: maa
+    environment: prod
+    management_ip: 10.41.1.20
+    online: true
+    labels: {role: edge, wave: one, region: ap-south}
+    links: [{name: eth0, index: 2, up: true, addresses: [10.41.1.20/24]}]
+    routes: [{id: mgmt-030, destination: 10.41.0.0/16, table: 100, metric: 10, gateway: 10.41.1.1, interface: eth0}]
+    rules: [{id: mgmt-rule-030, priority: 100, source: 10.41.1.20/32, table: 100, action: lookup}]
+  - id: maa-edge-031
+    hostname: maa-edge-031.routecp.local
+    site: maa
+    environment: prod
+    management_ip: 10.41.1.21
+    online: true
+    labels: {role: edge, wave: two, region: ap-south}
+    links: [{name: eth0, index: 2, up: true, addresses: [10.41.1.21/24]}]
+    routes: [{id: mgmt-031, destination: 10.41.0.0/16, table: 100, metric: 10, gateway: 10.41.1.1, interface: eth0}]
+    rules: [{id: mgmt-rule-031, priority: 100, source: 10.41.1.21/32, table: 100, action: lookup}]
+  - id: maa-edge-032
+    hostname: maa-edge-032.routecp.local
+    site: maa
+    environment: prod
+    management_ip: 10.41.1.22
+    online: true
+    labels: {role: edge, wave: two, region: ap-south}
+    links: [{name: eth0, index: 2, up: true, addresses: [10.41.1.22/24]}]
+    routes: [{id: mgmt-032, destination: 10.41.0.0/16, table: 100, metric: 10, gateway: 10.41.1.1, interface: eth0}]
+    rules: [{id: mgmt-rule-032, priority: 100, source: 10.41.1.22/32, table: 100, action: lookup}]
+  - id: maa-edge-033
+    hostname: maa-edge-033.routecp.local
+    site: maa
+    environment: prod
+    management_ip: 10.41.1.23
+    online: true
+    labels: {role: edge, wave: two, region: ap-south}
+    links: [{name: eth0, index: 2, up: true, addresses: [10.41.1.23/24]}]
+    routes: [{id: mgmt-033, destination: 10.41.0.0/16, table: 100, metric: 10, gateway: 10.41.1.1, interface: eth0}]
+    rules: [{id: mgmt-rule-033, priority: 100, source: 10.41.1.23/32, table: 100, action: lookup}]
+  - id: maa-edge-034
+    hostname: maa-edge-034.routecp.local
+    site: maa
+    environment: prod
+    management_ip: 10.41.1.24
+    online: true
+    labels: {role: edge, wave: two, region: ap-south}
+    links: [{name: eth0, index: 2, up: true, addresses: [10.41.1.24/24]}]
+    routes: [{id: mgmt-034, destination: 10.41.0.0/16, table: 100, metric: 10, gateway: 10.41.1.1, interface: eth0}]
+    rules: [{id: mgmt-rule-034, priority: 100, source: 10.41.1.24/32, table: 100, action: lookup}]
+  - id: maa-edge-035
+    hostname: maa-edge-035.routecp.local
+    site: maa
+    environment: prod
+    management_ip: 10.41.1.25
+    online: true
+    labels: {role: edge, wave: two, region: ap-south}
+    links: [{name: eth0, index: 2, up: true, addresses: [10.41.1.25/24]}]
+    routes: [{id: mgmt-035, destination: 10.41.0.0/16, table: 100, metric: 10, gateway: 10.41.1.1, interface: eth0}]
+    rules: [{id: mgmt-rule-035, priority: 100, source: 10.41.1.25/32, table: 100, action: lookup}]
+  - id: maa-edge-036
+    hostname: maa-edge-036.routecp.local
+    site: maa
+    environment: prod
+    management_ip: 10.41.1.26
+    online: true
+    labels: {role: edge, wave: two, region: ap-south}
+    links: [{name: eth0, index: 2, up: true, addresses: [10.41.1.26/24]}]
+    routes: [{id: mgmt-036, destination: 10.41.0.0/16, table: 100, metric: 10, gateway: 10.41.1.1, interface: eth0}]
+    rules: [{id: mgmt-rule-036, priority: 100, source: 10.41.1.26/32, table: 100, action: lookup}]
+  - id: maa-edge-037
+    hostname: maa-edge-037.routecp.local
+    site: maa
+    environment: prod
+    management_ip: 10.41.1.27
+    online: true
+    labels: {role: edge, wave: two, region: ap-south}
+    links: [{name: eth0, index: 2, up: true, addresses: [10.41.1.27/24]}]
+    routes: [{id: mgmt-037, destination: 10.41.0.0/16, table: 100, metric: 10, gateway: 10.41.1.1, interface: eth0}]
+    rules: [{id: mgmt-rule-037, priority: 100, source: 10.41.1.27/32, table: 100, action: lookup}]
+  - id: maa-edge-038
+    hostname: maa-edge-038.routecp.local
+    site: maa
+    environment: prod
+    management_ip: 10.41.1.28
+    online: true
+    labels: {role: edge, wave: two, region: ap-south}
+    links: [{name: eth0, index: 2, up: true, addresses: [10.41.1.28/24]}]
+    routes: [{id: mgmt-038, destination: 10.41.0.0/16, table: 100, metric: 10, gateway: 10.41.1.1, interface: eth0}]
+    rules: [{id: mgmt-rule-038, priority: 100, source: 10.41.1.28/32, table: 100, action: lookup}]
+  - id: maa-edge-039
+    hostname: maa-edge-039.routecp.local
+    site: maa
+    environment: prod
+    management_ip: 10.41.1.29
+    online: true
+    labels: {role: edge, wave: two, region: ap-south}
+    links: [{name: eth0, index: 2, up: true, addresses: [10.41.1.29/24]}]
+    routes: [{id: mgmt-039, destination: 10.41.0.0/16, table: 100, metric: 10, gateway: 10.41.1.1, interface: eth0}]
+    rules: [{id: mgmt-rule-039, priority: 100, source: 10.41.1.29/32, table: 100, action: lookup}]
+  - id: maa-edge-040
+    hostname: maa-edge-040.routecp.local
+    site: maa
+    environment: prod
+    management_ip: 10.41.1.30
+    online: true
+    labels: {role: edge, wave: two, region: ap-south}
+    links: [{name: eth0, index: 2, up: true, addresses: [10.41.1.30/24]}]
+    routes: [{id: mgmt-040, destination: 10.41.0.0/16, table: 100, metric: 10, gateway: 10.41.1.1, interface: eth0}]
+    rules: [{id: mgmt-rule-040, priority: 100, source: 10.41.1.30/32, table: 100, action: lookup}]
+  - id: hyd-edge-041
+    hostname: hyd-edge-041.routecp.local
+    site: hyd
+    environment: prod
+    management_ip: 10.42.1.11
+    online: true
+    labels: {role: edge, wave: canary, region: ap-south}
+    links: [{name: eth0, index: 2, up: true, addresses: [10.42.1.11/24]}]
+    routes: [{id: mgmt-041, destination: 10.42.0.0/16, table: 100, metric: 10, gateway: 10.42.1.1, interface: eth0}]
+    rules: [{id: mgmt-rule-041, priority: 100, source: 10.42.1.11/32, table: 100, action: lookup}]
+  - id: hyd-edge-042
+    hostname: hyd-edge-042.routecp.local
+    site: hyd
+    environment: prod
+    management_ip: 10.42.1.12
+    online: true
+    labels: {role: edge, wave: canary, region: ap-south}
+    links: [{name: eth0, index: 2, up: true, addresses: [10.42.1.12/24]}]
+    routes: [{id: mgmt-042, destination: 10.42.0.0/16, table: 100, metric: 10, gateway: 10.42.1.1, interface: eth0}]
+    rules: [{id: mgmt-rule-042, priority: 100, source: 10.42.1.12/32, table: 100, action: lookup}]
+  - id: hyd-edge-043
+    hostname: hyd-edge-043.routecp.local
+    site: hyd
+    environment: prod
+    management_ip: 10.42.1.13
+    online: true
+    labels: {role: edge, wave: one, region: ap-south}
+    links: [{name: eth0, index: 2, up: true, addresses: [10.42.1.13/24]}]
+    routes: [{id: mgmt-043, destination: 10.42.0.0/16, table: 100, metric: 10, gateway: 10.42.1.1, interface: eth0}]
+    rules: [{id: mgmt-rule-043, priority: 100, source: 10.42.1.13/32, table: 100, action: lookup}]
+  - id: hyd-edge-044
+    hostname: hyd-edge-044.routecp.local
+    site: hyd
+    environment: prod
+    management_ip: 10.42.1.14
+    online: true
+    labels: {role: edge, wave: one, region: ap-south}
+    links: [{name: eth0, index: 2, up: true, addresses: [10.42.1.14/24]}]
+    routes: [{id: mgmt-044, destination: 10.42.0.0/16, table: 100, metric: 10, gateway: 10.42.1.1, interface: eth0}]
+    rules: [{id: mgmt-rule-044, priority: 100, source: 10.42.1.14/32, table: 100, action: lookup}]
+  - id: hyd-edge-045
+    hostname: hyd-edge-045.routecp.local
+    site: hyd
+    environment: prod
+    management_ip: 10.42.1.15
+    online: true
+    labels: {role: edge, wave: one, region: ap-south}
+    links: [{name: eth0, index: 2, up: true, addresses: [10.42.1.15/24]}]
+    routes: [{id: mgmt-045, destination: 10.42.0.0/16, table: 100, metric: 10, gateway: 10.42.1.1, interface: eth0}]
+    rules: [{id: mgmt-rule-045, priority: 100, source: 10.42.1.15/32, table: 100, action: lookup}]
+  - id: hyd-edge-046
+    hostname: hyd-edge-046.routecp.local
+    site: hyd
+    environment: prod
+    management_ip: 10.42.1.16
+    online: true
+    labels: {role: edge, wave: one, region: ap-south}
+    links: [{name: eth0, index: 2, up: true, addresses: [10.42.1.16/24]}]
+    routes: [{id: mgmt-046, destination: 10.42.0.0/16, table: 100, metric: 10, gateway: 10.42.1.1, interface: eth0}]
+    rules: [{id: mgmt-rule-046, priority: 100, source: 10.42.1.16/32, table: 100, action: lookup}]
+  - id: hyd-edge-047
+    hostname: hyd-edge-047.routecp.local
+    site: hyd
+    environment: prod
+    management_ip: 10.42.1.17
+    online: true
+    labels: {role: edge, wave: one, region: ap-south}
+    links: [{name: eth0, index: 2, up: true, addresses: [10.42.1.17/24]}]
+    routes: [{id: mgmt-047, destination: 10.42.0.0/16, table: 100, metric: 10, gateway: 10.42.1.1, interface: eth0}]
+    rules: [{id: mgmt-rule-047, priority: 100, source: 10.42.1.17/32, table: 100, action: lookup}]
+  - id: hyd-edge-048
+    hostname: hyd-edge-048.routecp.local
+    site: hyd
+    environment: prod
+    management_ip: 10.42.1.18
+    online: true
+    labels: {role: edge, wave: one, region: ap-south}
+    links: [{name: eth0, index: 2, up: true, addresses: [10.42.1.18/24]}]
+    routes: [{id: mgmt-048, destination: 10.42.0.0/16, table: 100, metric: 10, gateway: 10.42.1.1, interface: eth0}]
+    rules: [{id: mgmt-rule-048, priority: 100, source: 10.42.1.18/32, table: 100, action: lookup}]
+  - id: hyd-edge-049
+    hostname: hyd-edge-049.routecp.local
+    site: hyd
+    environment: prod
+    management_ip: 10.42.1.19
+    online: true
+    labels: {role: edge, wave: one, region: ap-south}
+    links: [{name: eth0, index: 2, up: true, addresses: [10.42.1.19/24]}]
+    routes: [{id: mgmt-049, destination: 10.42.0.0/16, table: 100, metric: 10, gateway: 10.42.1.1, interface: eth0}]
+    rules: [{id: mgmt-rule-049, priority: 100, source: 10.42.1.19/32, table: 100, action: lookup}]
+  - id: hyd-edge-050
+    hostname: hyd-edge-050.routecp.local
+    site: hyd
+    environment: prod
+    management_ip: 10.42.1.20
+    online: true
+    labels: {role: edge, wave: one, region: ap-south}
+    links: [{name: eth0, index: 2, up: true, addresses: [10.42.1.20/24]}]
+    routes: [{id: mgmt-050, destination: 10.42.0.0/16, table: 100, metric: 10, gateway: 10.42.1.1, interface: eth0}]
+    rules: [{id: mgmt-rule-050, priority: 100, source: 10.42.1.20/32, table: 100, action: lookup}]
+  - id: hyd-edge-051
+    hostname: hyd-edge-051.routecp.local
+    site: hyd
+    environment: prod
+    management_ip: 10.42.1.21
+    online: true
+    labels: {role: edge, wave: two, region: ap-south}
+    links: [{name: eth0, index: 2, up: true, addresses: [10.42.1.21/24]}]
+    routes: [{id: mgmt-051, destination: 10.42.0.0/16, table: 100, metric: 10, gateway: 10.42.1.1, interface: eth0}]
+    rules: [{id: mgmt-rule-051, priority: 100, source: 10.42.1.21/32, table: 100, action: lookup}]
+  - id: hyd-edge-052
+    hostname: hyd-edge-052.routecp.local
+    site: hyd
+    environment: prod
+    management_ip: 10.42.1.22
+    online: true
+    labels: {role: edge, wave: two, region: ap-south}
+    links: [{name: eth0, index: 2, up: true, addresses: [10.42.1.22/24]}]
+    routes: [{id: mgmt-052, destination: 10.42.0.0/16, table: 100, metric: 10, gateway: 10.42.1.1, interface: eth0}]
+    rules: [{id: mgmt-rule-052, priority: 100, source: 10.42.1.22/32, table: 100, action: lookup}]
+  - id: hyd-edge-053
+    hostname: hyd-edge-053.routecp.local
+    site: hyd
+    environment: prod
+    management_ip: 10.42.1.23
+    online: true
+    labels: {role: edge, wave: two, region: ap-south}
+    links: [{name: eth0, index: 2, up: true, addresses: [10.42.1.23/24]}]
+    routes: [{id: mgmt-053, destination: 10.42.0.0/16, table: 100, metric: 10, gateway: 10.42.1.1, interface: eth0}]
+    rules: [{id: mgmt-rule-053, priority: 100, source: 10.42.1.23/32, table: 100, action: lookup}]
+  - id: hyd-edge-054
+    hostname: hyd-edge-054.routecp.local
+    site: hyd
+    environment: prod
+    management_ip: 10.42.1.24
+    online: true
+    labels: {role: edge, wave: two, region: ap-south}
+    links: [{name: eth0, index: 2, up: true, addresses: [10.42.1.24/24]}]
+    routes: [{id: mgmt-054, destination: 10.42.0.0/16, table: 100, metric: 10, gateway: 10.42.1.1, interface: eth0}]
+    rules: [{id: mgmt-rule-054, priority: 100, source: 10.42.1.24/32, table: 100, action: lookup}]
+  - id: hyd-edge-055
+    hostname: hyd-edge-055.routecp.local
+    site: hyd
+    environment: prod
+    management_ip: 10.42.1.25
+    online: true
+    labels: {role: edge, wave: two, region: ap-south}
+    links: [{name: eth0, index: 2, up: true, addresses: [10.42.1.25/24]}]
+    routes: [{id: mgmt-055, destination: 10.42.0.0/16, table: 100, metric: 10, gateway: 10.42.1.1, interface: eth0}]
+    rules: [{id: mgmt-rule-055, priority: 100, source: 10.42.1.25/32, table: 100, action: lookup}]
+  - id: hyd-edge-056
+    hostname: hyd-edge-056.routecp.local
+    site: hyd
+    environment: prod
+    management_ip: 10.42.1.26
+    online: true
+    labels: {role: edge, wave: two, region: ap-south}
+    links: [{name: eth0, index: 2, up: true, addresses: [10.42.1.26/24]}]
+    routes: [{id: mgmt-056, destination: 10.42.0.0/16, table: 100, metric: 10, gateway: 10.42.1.1, interface: eth0}]
+    rules: [{id: mgmt-rule-056, priority: 100, source: 10.42.1.26/32, table: 100, action: lookup}]
+  - id: hyd-edge-057
+    hostname: hyd-edge-057.routecp.local
+    site: hyd
+    environment: prod
+    management_ip: 10.42.1.27
+    online: true
+    labels: {role: edge, wave: two, region: ap-south}
+    links: [{name: eth0, index: 2, up: true, addresses: [10.42.1.27/24]}]
+    routes: [{id: mgmt-057, destination: 10.42.0.0/16, table: 100, metric: 10, gateway: 10.42.1.1, interface: eth0}]
+    rules: [{id: mgmt-rule-057, priority: 100, source: 10.42.1.27/32, table: 100, action: lookup}]
+  - id: hyd-edge-058
+    hostname: hyd-edge-058.routecp.local
+    site: hyd
+    environment: prod
+    management_ip: 10.42.1.28
+    online: true
+    labels: {role: edge, wave: two, region: ap-south}
+    links: [{name: eth0, index: 2, up: true, addresses: [10.42.1.28/24]}]
+    routes: [{id: mgmt-058, destination: 10.42.0.0/16, table: 100, metric: 10, gateway: 10.42.1.1, interface: eth0}]
+    rules: [{id: mgmt-rule-058, priority: 100, source: 10.42.1.28/32, table: 100, action: lookup}]
+  - id: hyd-edge-059
+    hostname: hyd-edge-059.routecp.local
+    site: hyd
+    environment: prod
+    management_ip: 10.42.1.29
+    online: true
+    labels: {role: edge, wave: two, region: ap-south}
+    links: [{name: eth0, index: 2, up: true, addresses: [10.42.1.29/24]}]
+    routes: [{id: mgmt-059, destination: 10.42.0.0/16, table: 100, metric: 10, gateway: 10.42.1.1, interface: eth0}]
+    rules: [{id: mgmt-rule-059, priority: 100, source: 10.42.1.29/32, table: 100, action: lookup}]
+  - id: hyd-edge-060
+    hostname: hyd-edge-060.routecp.local
+    site: hyd
+    environment: prod
+    management_ip: 10.42.1.30
+    online: true
+    labels: {role: edge, wave: two, region: ap-south}
+    links: [{name: eth0, index: 2, up: true, addresses: [10.42.1.30/24]}]
+    routes: [{id: mgmt-060, destination: 10.42.0.0/16, table: 100, metric: 10, gateway: 10.42.1.1, interface: eth0}]
+    rules: [{id: mgmt-rule-060, priority: 100, source: 10.42.1.30/32, table: 100, action: lookup}]
+  - id: bom-edge-061
+    hostname: bom-edge-061.routecp.local
+    site: bom
+    environment: prod
+    management_ip: 10.43.1.11
+    online: true
+    labels: {role: edge, wave: canary, region: ap-south}
+    links: [{name: eth0, index: 2, up: true, addresses: [10.43.1.11/24]}]
+    routes: [{id: mgmt-061, destination: 10.43.0.0/16, table: 100, metric: 10, gateway: 10.43.1.1, interface: eth0}]
+    rules: [{id: mgmt-rule-061, priority: 100, source: 10.43.1.11/32, table: 100, action: lookup}]
+  - id: bom-edge-062
+    hostname: bom-edge-062.routecp.local
+    site: bom
+    environment: prod
+    management_ip: 10.43.1.12
+    online: true
+    labels: {role: edge, wave: canary, region: ap-south}
+    links: [{name: eth0, index: 2, up: true, addresses: [10.43.1.12/24]}]
+    routes: [{id: mgmt-062, destination: 10.43.0.0/16, table: 100, metric: 10, gateway: 10.43.1.1, interface: eth0}]
+    rules: [{id: mgmt-rule-062, priority: 100, source: 10.43.1.12/32, table: 100, action: lookup}]
+  - id: bom-edge-063
+    hostname: bom-edge-063.routecp.local
+    site: bom
+    environment: prod
+    management_ip: 10.43.1.13
+    online: true
+    labels: {role: edge, wave: one, region: ap-south}
+    links: [{name: eth0, index: 2, up: true, addresses: [10.43.1.13/24]}]
+    routes: [{id: mgmt-063, destination: 10.43.0.0/16, table: 100, metric: 10, gateway: 10.43.1.1, interface: eth0}]
+    rules: [{id: mgmt-rule-063, priority: 100, source: 10.43.1.13/32, table: 100, action: lookup}]
+  - id: bom-edge-064
+    hostname: bom-edge-064.routecp.local
+    site: bom
+    environment: prod
+    management_ip: 10.43.1.14
+    online: true
+    labels: {role: edge, wave: one, region: ap-south}
+    links: [{name: eth0, index: 2, up: true, addresses: [10.43.1.14/24]}]
+    routes: [{id: mgmt-064, destination: 10.43.0.0/16, table: 100, metric: 10, gateway: 10.43.1.1, interface: eth0}]
+    rules: [{id: mgmt-rule-064, priority: 100, source: 10.43.1.14/32, table: 100, action: lookup}]
+  - id: bom-edge-065
+    hostname: bom-edge-065.routecp.local
+    site: bom
+    environment: prod
+    management_ip: 10.43.1.15
+    online: true
+    labels: {role: edge, wave: one, region: ap-south}
+    links: [{name: eth0, index: 2, up: true, addresses: [10.43.1.15/24]}]
+    routes: [{id: mgmt-065, destination: 10.43.0.0/16, table: 100, metric: 10, gateway: 10.43.1.1, interface: eth0}]
+    rules: [{id: mgmt-rule-065, priority: 100, source: 10.43.1.15/32, table: 100, action: lookup}]
+  - id: bom-edge-066
+    hostname: bom-edge-066.routecp.local
+    site: bom
+    environment: prod
+    management_ip: 10.43.1.16
+    online: true
+    labels: {role: edge, wave: one, region: ap-south}
+    links: [{name: eth0, index: 2, up: true, addresses: [10.43.1.16/24]}]
+    routes: [{id: mgmt-066, destination: 10.43.0.0/16, table: 100, metric: 10, gateway: 10.43.1.1, interface: eth0}]
+    rules: [{id: mgmt-rule-066, priority: 100, source: 10.43.1.16/32, table: 100, action: lookup}]
+  - id: bom-edge-067
+    hostname: bom-edge-067.routecp.local
+    site: bom
+    environment: prod
+    management_ip: 10.43.1.17
+    online: true
+    labels: {role: edge, wave: one, region: ap-south}
+    links: [{name: eth0, index: 2, up: true, addresses: [10.43.1.17/24]}]
+    routes: [{id: mgmt-067, destination: 10.43.0.0/16, table: 100, metric: 10, gateway: 10.43.1.1, interface: eth0}]
+    rules: [{id: mgmt-rule-067, priority: 100, source: 10.43.1.17/32, table: 100, action: lookup}]
+  - id: bom-edge-068
+    hostname: bom-edge-068.routecp.local
+    site: bom
+    environment: prod
+    management_ip: 10.43.1.18
+    online: true
+    labels: {role: edge, wave: one, region: ap-south}
+    links: [{name: eth0, index: 2, up: true, addresses: [10.43.1.18/24]}]
+    routes: [{id: mgmt-068, destination: 10.43.0.0/16, table: 100, metric: 10, gateway: 10.43.1.1, interface: eth0}]
+    rules: [{id: mgmt-rule-068, priority: 100, source: 10.43.1.18/32, table: 100, action: lookup}]
+  - id: bom-edge-069
+    hostname: bom-edge-069.routecp.local
+    site: bom
+    environment: prod
+    management_ip: 10.43.1.19
+    online: true
+    labels: {role: edge, wave: one, region: ap-south}
+    links: [{name: eth0, index: 2, up: true, addresses: [10.43.1.19/24]}]
+    routes: [{id: mgmt-069, destination: 10.43.0.0/16, table: 100, metric: 10, gateway: 10.43.1.1, interface: eth0}]
+    rules: [{id: mgmt-rule-069, priority: 100, source: 10.43.1.19/32, table: 100, action: lookup}]
+  - id: bom-edge-070
+    hostname: bom-edge-070.routecp.local
+    site: bom
+    environment: prod
+    management_ip: 10.43.1.20
+    online: true
+    labels: {role: edge, wave: one, region: ap-south}
+    links: [{name: eth0, index: 2, up: true, addresses: [10.43.1.20/24]}]
+    routes: [{id: mgmt-070, destination: 10.43.0.0/16, table: 100, metric: 10, gateway: 10.43.1.1, interface: eth0}]
+    rules: [{id: mgmt-rule-070, priority: 100, source: 10.43.1.20/32, table: 100, action: lookup}]
+  - id: bom-edge-071
+    hostname: bom-edge-071.routecp.local
+    site: bom
+    environment: prod
+    management_ip: 10.43.1.21
+    online: true
+    labels: {role: edge, wave: two, region: ap-south}
+    links: [{name: eth0, index: 2, up: true, addresses: [10.43.1.21/24]}]
+    routes: [{id: mgmt-071, destination: 10.43.0.0/16, table: 100, metric: 10, gateway: 10.43.1.1, interface: eth0}]
+    rules: [{id: mgmt-rule-071, priority: 100, source: 10.43.1.21/32, table: 100, action: lookup}]
+  - id: bom-edge-072
+    hostname: bom-edge-072.routecp.local
+    site: bom
+    environment: prod
+    management_ip: 10.43.1.22
+    online: true
+    labels: {role: edge, wave: two, region: ap-south}
+    links: [{name: eth0, index: 2, up: true, addresses: [10.43.1.22/24]}]
+    routes: [{id: mgmt-072, destination: 10.43.0.0/16, table: 100, metric: 10, gateway: 10.43.1.1, interface: eth0}]
+    rules: [{id: mgmt-rule-072, priority: 100, source: 10.43.1.22/32, table: 100, action: lookup}]
+  - id: bom-edge-073
+    hostname: bom-edge-073.routecp.local
+    site: bom
+    environment: prod
+    management_ip: 10.43.1.23
+    online: true
+    labels: {role: edge, wave: two, region: ap-south}
+    links: [{name: eth0, index: 2, up: true, addresses: [10.43.1.23/24]}]
+    routes: [{id: mgmt-073, destination: 10.43.0.0/16, table: 100, metric: 10, gateway: 10.43.1.1, interface: eth0}]
+    rules: [{id: mgmt-rule-073, priority: 100, source: 10.43.1.23/32, table: 100, action: lookup}]
+  - id: bom-edge-074
+    hostname: bom-edge-074.routecp.local
+    site: bom
+    environment: prod
+    management_ip: 10.43.1.24
+    online: true
+    labels: {role: edge, wave: two, region: ap-south}
+    links: [{name: eth0, index: 2, up: true, addresses: [10.43.1.24/24]}]
+    routes: [{id: mgmt-074, destination: 10.43.0.0/16, table: 100, metric: 10, gateway: 10.43.1.1, interface: eth0}]
+    rules: [{id: mgmt-rule-074, priority: 100, source: 10.43.1.24/32, table: 100, action: lookup}]
+  - id: bom-edge-075
+    hostname: bom-edge-075.routecp.local
+    site: bom
+    environment: prod
+    management_ip: 10.43.1.25
+    online: true
+    labels: {role: edge, wave: two, region: ap-south}
+    links: [{name: eth0, index: 2, up: true, addresses: [10.43.1.25/24]}]
+    routes: [{id: mgmt-075, destination: 10.43.0.0/16, table: 100, metric: 10, gateway: 10.43.1.1, interface: eth0}]
+    rules: [{id: mgmt-rule-075, priority: 100, source: 10.43.1.25/32, table: 100, action: lookup}]
+  - id: bom-edge-076
+    hostname: bom-edge-076.routecp.local
+    site: bom
+    environment: prod
+    management_ip: 10.43.1.26
+    online: true
+    labels: {role: edge, wave: two, region: ap-south}
+    links: [{name: eth0, index: 2, up: true, addresses: [10.43.1.26/24]}]
+    routes: [{id: mgmt-076, destination: 10.43.0.0/16, table: 100, metric: 10, gateway: 10.43.1.1, interface: eth0}]
+    rules: [{id: mgmt-rule-076, priority: 100, source: 10.43.1.26/32, table: 100, action: lookup}]
+  - id: bom-edge-077
+    hostname: bom-edge-077.routecp.local
+    site: bom
+    environment: prod
+    management_ip: 10.43.1.27
+    online: true
+    labels: {role: edge, wave: two, region: ap-south}
+    links: [{name: eth0, index: 2, up: true, addresses: [10.43.1.27/24]}]
+    routes: [{id: mgmt-077, destination: 10.43.0.0/16, table: 100, metric: 10, gateway: 10.43.1.1, interface: eth0}]
+    rules: [{id: mgmt-rule-077, priority: 100, source: 10.43.1.27/32, table: 100, action: lookup}]
+  - id: bom-edge-078
+    hostname: bom-edge-078.routecp.local
+    site: bom
+    environment: prod
+    management_ip: 10.43.1.28
+    online: true
+    labels: {role: edge, wave: two, region: ap-south}
+    links: [{name: eth0, index: 2, up: true, addresses: [10.43.1.28/24]}]
+    routes: [{id: mgmt-078, destination: 10.43.0.0/16, table: 100, metric: 10, gateway: 10.43.1.1, interface: eth0}]
+    rules: [{id: mgmt-rule-078, priority: 100, source: 10.43.1.28/32, table: 100, action: lookup}]
+  - id: bom-edge-079
+    hostname: bom-edge-079.routecp.local
+    site: bom
+    environment: prod
+    management_ip: 10.43.1.29
+    online: true
+    labels: {role: edge, wave: two, region: ap-south}
+    links: [{name: eth0, index: 2, up: true, addresses: [10.43.1.29/24]}]
+    routes: [{id: mgmt-079, destination: 10.43.0.0/16, table: 100, metric: 10, gateway: 10.43.1.1, interface: eth0}]
+    rules: [{id: mgmt-rule-079, priority: 100, source: 10.43.1.29/32, table: 100, action: lookup}]
+  - id: bom-edge-080
+    hostname: bom-edge-080.routecp.local
+    site: bom
+    environment: prod
+    management_ip: 10.43.1.30
+    online: true
+    labels: {role: edge, wave: two, region: ap-south}
+    links: [{name: eth0, index: 2, up: true, addresses: [10.43.1.30/24]}]
+    routes: [{id: mgmt-080, destination: 10.43.0.0/16, table: 100, metric: 10, gateway: 10.43.1.1, interface: eth0}]
+    rules: [{id: mgmt-rule-080, priority: 100, source: 10.43.1.30/32, table: 100, action: lookup}]
