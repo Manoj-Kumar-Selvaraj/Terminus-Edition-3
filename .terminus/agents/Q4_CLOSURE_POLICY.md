@@ -1,10 +1,10 @@
-# Q4 Adjudicated Closure Policy
+# Q4 Closure and Human Risk-Acceptance Policy
 
-Policy version: `1.0`
+Policy version: `1.1`
 
-This policy is the required strategy change after the Protocol circuit breaker has stopped ordinary Q4 repair iteration. It specializes only the post-circuit-breaker closure path. It does not weaken ordinary cold Q4, rewrite a frozen Q4 verdict, or permit the Orchestrator to waive a semantic finding.
+This policy governs exceptional Q4 satisfaction after ordinary Q4 repair iteration can no longer proceed. It does not weaken ordinary cold Q4, rewrite a frozen Q4 verdict, or permit the Orchestrator to waive a semantic finding.
 
-## Activation prerequisites
+## Adjudicated-closure activation prerequisites
 
 The adjudicated-closure path is available only when all of the following are true:
 
@@ -50,15 +50,55 @@ The closure packet records a deterministic `q4-finding-v1` SHA-256 fingerprint f
 
 A closure PASS does **not** change the final Q4 result from `REVISE` to `PASS`. The durable session retains the frozen Q4 verdict and adds a distinct `Q4 Adjudicated Closure` PASS row.
 
+## Authenticated human risk acceptance
+
+`AUTHENTICATED_HUMAN_RISK_ACCEPTANCE` is a separate satisfaction authority for an exact frozen Q4 `REVISE`. It is not a Q4 PASS, reviewer override, or Orchestrator waiver.
+
+It is valid only when all of the following are true:
+
+- the authority artifact is a canonical feedback event in the append-only feedback registry;
+- the event source is `HUMAN_REVIEW` and provenance is `HUMAN_AUTHENTICATED`;
+- the authority receipt validates for action `HUMAN_FEEDBACK` and the exact human principal;
+- the feedback category is exactly `HUMAN_RISK_ACCEPTANCE` and `stage_hint` is `QUALITY_INTERLOCK`;
+- the event binds the exact task ID and exact task commit of the frozen Q4 result;
+- the signed decision is `ACCEPTED`, while `q4_verdict` remains exactly `REVISE`;
+- the event binds the exact frozen Q4 `review_id`;
+- `accepted_finding_ids` exactly equals the frozen Q4 blocking-finding set;
+- `residual_backlog` is non-empty and remains durable as accepted unresolved risk;
+- the human producer is not any registered Terminus machine/agent role;
+- the referenced feedback event is revalidated every time the satisfaction route is consumed.
+
+A task-commit change makes the acceptance stale. A receipt or feedback event for another task, commit, Q4 review, category, finding set, or decision cannot be reused. The CI Orchestrator may consume and validate this authority, but may not manufacture it.
+
+The canonical lifecycle representation remains:
+
+```text
+Q4 verdict: REVISE
+Q4 satisfaction: AUTHENTICATED_HUMAN_RISK_ACCEPTANCE
+Q4 Human Risk Acceptance: PASS
+```
+
+The `Q4_CLOSURE_RESULT` optional stage-output field is also the compatibility envelope for exceptional Q4-satisfaction evidence. For this human route it contains only the authority locator:
+
+```json
+{
+  "type": "AUTHENTICATED_HUMAN_RISK_ACCEPTANCE",
+  "feedback_id": "feedback_<sha256>"
+}
+```
+
+The envelope itself has no authority. `.terminus/q4_human_risk.py` resolves and revalidates the signed feedback event before advancement.
+
 ## Quality Interlock semantics
 
-The Q4 side of Quality Interlock is satisfied by exactly one of two routes:
+The Q4 side of Quality Interlock is satisfied by exactly one of three routes:
 
-1. `DIRECT_PASS` — a current ordinary Q4 `PASS` under normal Protocol rules; or
-2. `ADJUDICATED_CLOSURE_PASS` — a final cold Q4 `REVISE` plus a current closure result that passes `.terminus/q4_closure.py` and `.terminus/validate_quality_interlock.py`.
+1. `DIRECT_PASS` — a current ordinary Q4 `PASS` under normal Protocol rules;
+2. `ADJUDICATED_CLOSURE_PASS` — a final cold Q4 `REVISE` plus a current closure result that passes `.terminus/q4_closure.py` and `.terminus/validate_quality_interlock.py`; or
+3. `AUTHENTICATED_HUMAN_RISK_ACCEPTANCE` — a frozen Q4 `REVISE` plus exact authenticated human acceptance that passes `.terminus/q4_human_risk.py` and `.terminus/validate_quality_interlock.py`.
 
-This exceptional route supersedes lower-level prose that describes only the normal direct-Q4-PASS path, but only after the activation prerequisites above. Q6 and every other mandatory gate remain independently required and unchanged.
+The two exceptional routes preserve the original Q4 verdict. Q6 and every other mandatory gate remain independently required and unchanged.
 
 ## Termination
 
-A closure result containing any blocking disposition leaves the task `BLOCKED`. It does not authorize another normal Q4 patch cycle. Re-entry then requires a genuinely different strategy, new authority, or higher-precedence policy change.
+A closure result containing any blocking disposition leaves the task `BLOCKED`. It does not authorize another normal Q4 patch cycle. Re-entry then requires a genuinely different strategy, new authority, or higher-precedence policy change. A valid authenticated human-risk decision is such a new authority only for the exact signed task/Q4 snapshot and accepted residual findings.

@@ -13,8 +13,9 @@ import argparse
 import sys
 from pathlib import Path
 
-import validate_review_freshness as freshness
 import q4_closure
+import q4_human_risk
+import validate_review_freshness as freshness
 from review_contract import current_task_commit
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -155,6 +156,56 @@ def _validate_packet_review_gate(
     return review_path
 
 
+def _validate_human_risk_gate(
+    task: str,
+    truth_commit: str,
+    q4_rel: str,
+    gate: dict[str, str],
+    report: freshness.Report,
+    context: str,
+) -> bool:
+    if str(gate["status"]).upper() != "PASS":
+        report.error(
+            f"{context}: Q4 Human Risk Acceptance must be PASS before advancing"
+        )
+        return False
+    feedback_id = q4_human_risk.feedback_id_from_evidence(gate["evidence"])
+    if not feedback_id:
+        report.error(
+            f"{context}: Q4 Human Risk Acceptance must cite exactly one "
+            "feedback_<sha256> ID"
+        )
+        return False
+    q4_path = freshness.safe_repo_path(
+        q4_rel,
+        report,
+        "Q4 Spec-Test Contract Reviewer",
+    )
+    if q4_path is None:
+        return False
+    q4 = freshness.load_json(q4_path, report, "Q4 Spec-Test Contract Reviewer")
+    if q4 is None:
+        return False
+    try:
+        q4_human_risk.validate_human_risk_acceptance(
+            ROOT,
+            envelope={
+                "type": q4_human_risk.SATISFACTION_MODE,
+                "feedback_id": feedback_id,
+            },
+            q4_result=q4,
+        )
+    except ValueError as exc:
+        report.error(f"{context}: Q4 Human Risk Acceptance invalid: {exc}")
+        return False
+    if q4.get("task") != task or q4.get("task_commit") != truth_commit:
+        report.error(
+            f"{context}: Q4 Human Risk Acceptance does not bind the current task commit"
+        )
+        return False
+    return True
+
+
 def _validate_simulation_identity(
     result_path: Path,
     expected_perspective: str,
@@ -222,11 +273,10 @@ def validate_session(session: dict, report: freshness.Report) -> None:
             elif q4_status == "REVISE":
                 q4_rel = freshness.review_path_from_evidence(q4_gate["evidence"])
                 closure_gate = _find_gate(gates, "q4 adjudicated closure")
+                risk_gate = _find_gate(gates, "q4 human risk acceptance")
                 if not q4_rel:
                     report.error(f"{context}: Q4 REVISE row must cite its exact frozen review result")
-                if closure_gate is None or str(closure_gate["status"]).upper() != "PASS":
-                    report.error(f"{context}: Q4 REVISE requires Q4 Adjudicated Closure PASS before advancing")
-                elif q4_rel:
+                if closure_gate is not None and str(closure_gate["status"]).upper() == "PASS":
                     closure_path = _validate_packet_review_gate(
                         task, truth_commit, closure_gate, "Q4 Adjudicated Closure", "Q4 Closure Adjudicator", report
                     )
@@ -239,9 +289,25 @@ def validate_session(session: dict, report: freshness.Report) -> None:
                         if not closure_errors and metadata.get("final_q4_result") != q4_rel:
                             report.error(f"{context}: closure result does not bind the Q4 REVISE evidence row")
                         q4_satisfied = not closure_errors and metadata.get("final_q4_result") == q4_rel
+                elif risk_gate is not None and q4_rel:
+                    q4_satisfied = _validate_human_risk_gate(
+                        task,
+                        truth_commit,
+                        q4_rel,
+                        risk_gate,
+                        report,
+                        context,
+                    )
+                else:
+                    report.error(
+                        f"{context}: Q4 REVISE requires Q4 Adjudicated Closure PASS "
+                        "or Q4 Human Risk Acceptance PASS before advancing"
+                    )
             else:
                 report.error(
-                    f"{context}: Q4 gate must be PASS or a frozen REVISE paired with adjudicated closure; found {q4_status}"
+                    f"{context}: Q4 gate must be PASS or a frozen REVISE paired "
+                    f"with adjudicated closure/authenticated human risk acceptance; "
+                    f"found {q4_status}"
                 )
 
         q6_gate = _require_ready_gate(
@@ -256,7 +322,9 @@ def validate_session(session: dict, report: freshness.Report) -> None:
         summary = _require_ready_gate(gates, "quality interlock", "Quality Interlock", report, context)
         if summary is not None and (not q4_satisfied or q6_path is None):
             report.error(
-                f"{context}: Quality Interlock PASS requires Q4 direct PASS or validated adjudicated closure, plus current Q6 PASS"
+                f"{context}: Quality Interlock PASS requires Q4 direct PASS, "
+                "validated adjudicated closure, or authenticated human risk "
+                "acceptance, plus current Q6 PASS"
             )
 
     if state in MODEL_BACKED_STATES:
