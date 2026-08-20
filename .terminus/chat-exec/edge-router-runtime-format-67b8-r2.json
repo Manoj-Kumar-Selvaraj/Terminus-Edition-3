@@ -1,0 +1,23 @@
+{
+  "schema_version":"1.0",
+  "mode":"RECORD",
+  "task_id":"edge-router-runtime",
+  "task_commit":"9663e4da67ab20e6bd66b942ac54b57667408dd8",
+  "control_plane_commit":"67b805a297ac005ee08e82facc533f53a3233192",
+  "expected_repository_head":"17e8a5fbf72127dbd5443efb155c0279c7811db9",
+  "stage_id":"FORMAT_GATE",
+  "inputs":{
+    "CREATION_RULE_CONTEXT":{"CONTROL_PLANE_COMMIT":"67b805a297ac005ee08e82facc533f53a3233192","CREATION_PROFILE":"large_system_strict","KNOWN_POLICY_CONFLICTS":[],"NETWORK_ENVIRONMENT_CONSTRAINTS":"public network; separate verifier; digest-pinned Go runtime; no privileged/container-socket shortcuts; tmux and asciinema present in agent image"},
+    "CURRENT_TASK_TREE":{"task_root":"edge-router-runtime","top_level":["README.md","environment/","instruction.md","solution/","task.toml","tests/"],"task_toml":{"category":"Software","subcategory":"Systems","difficulty":"advanced","artifacts":["/app/edge-router"],"verifier_environment_mode":"separate","network_mode":"public","agent_timeout_sec":5400,"verifier_timeout_sec":1800,"workdir":"/app"},"environment":{"Dockerfile":"digest-pinned golang:1.24-bookworm; installs tmux, asciinema, ca-certificates, curl, jq, xz-utils; builds edge-router-runtime; copies solver-visible runtime/config/docs only"},"tests":{"Dockerfile":"digest-pinned same Go base with pinned pytest 8.4.1 and separate /tests boundary","test_sh":"runs /tests/test_outputs.py, captures pytest status, writes reward 1 only on success, and exits with pytest status"},"solution":{"entrypoint":"solution/solve.sh"},"instruction":"instruction.md names /app/edge-router output and only solver-visible documentation/contracts"},
+    "ACTIVE_FORMAT_VALIDATORS":["current Terminus task-format/packaging CI","task.toml structure and absolute artifact-path checks","digest-pinned agent/verifier image checks","separate-verifier and test.sh reward-contract checks","solution/tests isolation checks","Q7 Task Format Enforcer same-chat review"]
+  },
+  "result":{
+    "status":"FORMAT_PASS",
+    "output_task_commit":"9663e4da67ab20e6bd66b942ac54b57667408dd8",
+    "outputs":{
+      "CHECKS":["PASS: required top-level task layout is present.","PASS: task.toml declares Software/Systems advanced task, absolute artifact /app/edge-router, public network, separate verifier and bounded timeouts.","PASS: agent and verifier images use digest-pinned Go 1.24 base; agent image includes tmux/asciinema and no privileged/container-socket shortcut.","PASS: solver-facing instruction and README expose only public runtime/contracts and no solution/verifier-private internals.","PASS: solution remains isolated under solution/ and verifier remains isolated under tests/.","PASS: repaired tests/test.sh writes reward 1 only after pytest success and propagates the original pytest exit status."],
+      "RERUN":"Clean Q7 rerun after the bounded verifier-harness repair; no further format defect found. Downstream gates retain independent ownership of runtime/oracle evidence."
+    },
+    "evidence_refs":[]
+  }
+}
