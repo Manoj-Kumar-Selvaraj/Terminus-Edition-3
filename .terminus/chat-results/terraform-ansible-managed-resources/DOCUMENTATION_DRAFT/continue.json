@@ -1,0 +1,240 @@
+{
+  "execution_mode": "INLINE_SPECIALIST",
+  "executor_handoff": null,
+  "invocation": {
+    "acceptance_predicates": {},
+    "authority": {
+      "control_plane_commit": "4cc1f68cb57b284c4817e3f354ea6eb74c5f717d",
+      "policy_versions": {},
+      "task_commit": "78ad422902b27dea954905130a1267b02cff3596",
+      "task_id": "terraform-ansible-managed-resources"
+    },
+    "evidence": {
+      "authorized_evidence_classes": [
+        "CI_RUNTIME_EVIDENCE",
+        "CONTROL_PLANE_POLICY",
+        "PUBLIC_REFERENCE",
+        "SOLUTION_ORACLE",
+        "SOLVER_VISIBLE_TASK"
+      ],
+      "evidence_required": [
+        "implementation evidence",
+        "verification evidence",
+        "no benchmark framing/leakage"
+      ],
+      "excluded_evidence_classes": [
+        "CURRENT_REVIEW_PACKET",
+        "DURABLE_SESSION_STATE",
+        "FINAL_PACKAGE_EVIDENCE",
+        "MODEL_TRIAL_EVIDENCE",
+        "PRIOR_REVIEW_RESULTS",
+        "PRIVATE_CREATION_DESIGN",
+        "VERIFIER_PRIVATE"
+      ],
+      "mandatory_exact_reads": [
+        ".terminus/agents/CREATION_PIPELINE.md",
+        ".terminus/agents/CREATOR_PROMPTS.md",
+        ".terminus/agents/PROMPTS.md"
+      ],
+      "retrieval_mode": "FILTERED_HYBRID"
+    },
+    "ignored_input_count": 0,
+    "inputs": {
+      "optional": {},
+      "required": {
+        "APPROVED_WORK_PACKAGE": {
+          "ENGINEERING_OBJECTIVE": "Complete the ten-resource ansibleops provider as one coherent Terraform lifecycle/reconciliation system.",
+          "ID": "MANAGED_RESOURCE_LIFECYCLE_COMPLETION",
+          "REQUIRED_END_STATE": "Exactly ten real managed resources with stable external-key identity, Ansible-only mutation, native refresh, transactional Terraform state, scoped ownership/delete, safe runner behavior and canonical convergence."
+        },
+        "IMPLEMENTATION_EVIDENCE": {
+          "FILES_CHANGED": [
+            "solution/solve.sh",
+            "solution/fixed/internal/lifecycle/maps.go",
+            "solution/fixed/internal/lifecycle/normalize.go",
+            "solution/fixed/internal/resources/",
+            "solution/fixed/internal/runner/runner.go"
+          ],
+          "PRESERVED_BEHAVIOR": "Exact ten resource interfaces, local/ansibleops 0.1.0, supplied local inventory, Go 1.24/current Plugin Framework and Terraform 1.10.5 compatibility.",
+          "REFERENCE_SOLUTION_STATUS": "IMPLEMENTED",
+          "RESTORED_INVARIANTS": [
+            "stable external-key IDs",
+            "mutation before state publication",
+            "native Read and external drift reflection",
+            "failure-safe update/delete semantics",
+            "structured runner argv, timeout/cancel handling and cleanup",
+            "canonical convergence and Terraform Core sole durable state authority"
+          ]
+        },
+        "VERIFICATION_EVIDENCE": {
+          "COVERAGE_FAMILIES": [
+            "provider/schema",
+            "state/identity",
+            "native refresh/drift",
+            "transactional create/update",
+            "failure-safe scoped delete",
+            "copy/template content intent",
+            "line/block ownership",
+            "user/group native reconciliation",
+            "runner/process safety",
+            "normalization/idempotency",
+            "cron defaults/drift/siblings",
+            "external ownership collision",
+            "Ansible mutation backend"
+          ],
+          "EMPIRICAL_STATUS": "Current runtime/oracle empirical validation remains intentionally deferred to DETERMINISTIC_VALIDATION; no pass claim is made here.",
+          "F2P_COUNT": 30,
+          "P2P_COUNT": 6,
+          "SPEC_ALIGNMENT": {
+            "Q1_STATUS": "NO_GAP",
+            "Q2_STATUS": "COVERED",
+            "Q3_STATUS": "CLEAR"
+          },
+          "VERIFIER_STATUS": "VERIFIER_READY"
+        }
+      }
+    },
+    "invocation_id": "inv_a2b4baa57f66bd5cbc0733d1f36acd6dccbde7b3262e160b8d35be9c22496937",
+    "learning": {
+      "context_hash": "sha256:bb84a513aa2b6e4374d691759c4a6edf94169f479f4611e9091643b9f279ccfc",
+      "lessons": [],
+      "mode": "GENERALIZED_LESSONS_PLUS_OWNED_REMEDIATIONS",
+      "raw_feedback_exposed": false,
+      "raw_historical_findings_exposed": false,
+      "registry_heads": {
+        "feedback": "GENESIS",
+        "findings": "GENESIS",
+        "lessons": "GENESIS",
+        "patterns": "GENESIS",
+        "remediations": "GENESIS"
+      },
+      "remediations": []
+    },
+    "missing_required_inputs": [],
+    "output_contract": {
+      "allowed_status_values": [
+        "DOCUMENTATION_READY",
+        "REWRITE_REQUIRED",
+        "BLOCKED"
+      ],
+      "deterministic_validators": [],
+      "optional_fields": [],
+      "persisted_artifacts": [
+        "<task>/README.md"
+      ],
+      "required_fields": [
+        "README_PATH",
+        "DIFFICULTY_EXPLANATION",
+        "SOLUTION_EXPLANATION",
+        "VERIFICATION_EXPLANATION"
+      ],
+      "semantic_reviewers": [
+        "Engineering Documentation Reviewer",
+        "Human Quality Reviewer"
+      ]
+    },
+    "readiness": "READY",
+    "retrieval": {
+      "query": null,
+      "retrieved_chars": 0,
+      "retrieved_context": [],
+      "status": "NOT_REQUESTED"
+    },
+    "routing": {
+      "failure_routes": {
+        "LEAKAGE_OR_SYNTHETIC_PROSE": "A8 Documentation Writer / Human Quality Reviewer",
+        "UNSUPPORTED_CLAIM": "A8 Documentation Writer"
+      },
+      "stale_on": [
+        "implementation evidence change",
+        "verification evidence change",
+        "material task-description change"
+      ],
+      "success_transition": "FORMAT_GATE"
+    },
+    "schema_version": "1.0",
+    "stage": {
+      "lifecycle": "creation",
+      "owner": "A8 Documentation Writer",
+      "role_class": "PRODUCER",
+      "role_id": "A8_DOCUMENTATION_WRITER",
+      "stage_id": "DOCUMENTATION_DRAFT"
+    }
+  },
+  "next": {
+    "action": "INVOKE_STAGE",
+    "optional_inputs": [
+      "DIFFICULTY_EVIDENCE"
+    ],
+    "owner": "A8 Documentation Writer",
+    "primary_role_id": "A8_DOCUMENTATION_WRITER",
+    "required_inputs": [
+      "APPROVED_WORK_PACKAGE",
+      "IMPLEMENTATION_EVIDENCE",
+      "VERIFICATION_EVIDENCE"
+    ],
+    "stage_id": "DOCUMENTATION_DRAFT"
+  },
+  "quality_mode_policy": {
+    "inline_quality_role_ids": [
+      "Q1_SPEC_GAP_REPAIRER",
+      "Q2_VERIFIER_COVERAGE_REPAIRER",
+      "Q3_SPEC_AMBIGUITY_REPAIRER",
+      "Q5_ORACLE_RUNTIME_REPAIR_SPECIALIST",
+      "Q7_TASK_FORMAT_ENFORCER"
+    ],
+    "inline_stage_sequences": {
+      "SPEC_ALIGNMENT": [
+        {
+          "result_field": "Q1_STATUS",
+          "role_id": "Q1_SPEC_GAP_REPAIRER",
+          "satisfied_values": [
+            "NO_GAP",
+            "PASS"
+          ]
+        },
+        {
+          "result_field": "Q2_STATUS",
+          "role_id": "Q2_VERIFIER_COVERAGE_REPAIRER",
+          "satisfied_values": [
+            "COVERED",
+            "PASS"
+          ]
+        },
+        {
+          "result_field": "Q3_STATUS",
+          "role_id": "Q3_SPEC_AMBIGUITY_REPAIRER",
+          "satisfied_values": [
+            "CLEAR",
+            "PASS"
+          ]
+        }
+      ]
+    },
+    "mandatory_quality_role_keys": [
+      "spec-test-contract",
+      "production-logic"
+    ],
+    "mandatory_same_chat_checkpoints": {
+      "Q1": "SPEC_ALIGNMENT.Q1_STATUS",
+      "Q2": "SPEC_ALIGNMENT.Q2_STATUS",
+      "Q3": "SPEC_ALIGNMENT.Q3_STATUS",
+      "Q5": "DETERMINISTIC_VALIDATION runtime/oracle checkpoint; invoke Q5 repair only on registered runtime/oracle failure",
+      "Q7": "FORMAT_GATE"
+    },
+    "optional_q8_role_keys": [
+      "difficulty-sim-gpt",
+      "difficulty-sim-claude"
+    ],
+    "policy_document": ".terminus/agents/QUALITY_EXECUTION_MODE.md",
+    "policy_version": "1.0",
+    "producer_role_classes": [
+      "FIXER",
+      "PRODUCER"
+    ],
+    "q4_q6_mode": "AUTOMATED",
+    "q8_mode": "OFF",
+    "source": ".terminus/agents/quality_execution_mode.json"
+  },
+  "state_snapshot_id": "state_e3f183cb45ccdd8ccaca52872477ec0b97343192e5bac3018cfe829878df7b1f"
+}
