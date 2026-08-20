@@ -1,0 +1,79 @@
+{
+  "schema_version": "1.0",
+  "mode": "RECORD",
+  "task_id": "edge-router-runtime",
+  "task_commit": "9663e4da67ab20e6bd66b942ac54b57667408dd8",
+  "control_plane_commit": "2ae22589fec762b3c85e54118cfd770fa588faf7",
+  "expected_repository_head": "7f00f000530ea6271c5d2d2fa1a8cd5fcac04b8f",
+  "stage_id": "WORK_PACKAGE_RESEARCH",
+  "inputs": {
+    "CREATION_RULE_CONTEXT": {
+      "ACTIVE_VALIDATORS": [
+        ".terminus/validate_agent_system.py",
+        ".terminus/validate_stage_contracts.py",
+        ".terminus/validate_task_complexity.py",
+        ".terminus/validate_environment_complexity.py",
+        ".terminus/validate_runtime_authenticity.py",
+        ".terminus/validate_business_module_diversity.py",
+        ".terminus/validate_review_freshness.py",
+        ".terminus/validate_quality_interlock.py",
+        ".github/workflows/terminus-edition-3-ci.yml",
+        ".github/workflows/terminus-creator-complexity.yml",
+        ".github/workflows/terminus-production-authenticity.yml"
+      ],
+      "CONTROL_PLANE_COMMIT": "2ae22589fec762b3c85e54118cfd770fa588faf7",
+      "CREATION_PROFILE": "large_system_strict",
+      "KNOWN_POLICY_CONFLICTS": [],
+      "NETWORK_ENVIRONMENT_CONSTRAINTS": "network_mode public; separate verifier; digest-pinned canonical Go runtime; no privileged Docker/capability/socket shortcuts; tmux and asciinema required in agent image",
+      "RULE_SOURCES": [
+        "TERMINUS_3_AI_INSTRUCTIONS.md",
+        ".terminus/AGENT_SYSTEM.md",
+        ".terminus/agents/CREATION_CONTROLLER.md",
+        ".terminus/agents/CREATION_PIPELINE.md",
+        ".terminus/agents/PRODUCTION_AUTHENTICITY.md",
+        ".terminus/reviewers/REVIEWER_CHECKLIST.md",
+        ".terminus/agents/QUALITY_AGENT_REGISTRY.md",
+        ".terminus/agents/STAGE_CONTRACTS.md",
+        ".terminus/agents/stage_contracts.json"
+      ]
+    },
+    "REQUESTED_DOMAIN": "production Go HTTP edge-routing and traffic-management runtime"
+  },
+  "result": {
+    "status": "CANDIDATES_READY",
+    "evidence_refs": [],
+    "outputs": {
+      "CANDIDATES": [
+        {
+          "ASSESSMENT": "VERY_HIGH",
+          "ID": "GENERATION_SAFE_DYNAMIC_RECONCILIATION",
+          "OBJECTIVE": "Generation-safe configuration and endpoint reconciliation with atomic serving snapshots, stable runtime identity, bounded drains and durable recovery.",
+          "REQUIREMENT_FAMILIES": [
+            "configuration ingestion",
+            "route compilation",
+            "generation fencing",
+            "endpoint reconciliation",
+            "health lifecycle",
+            "selection/retry/failover",
+            "draining",
+            "checkpoint recovery",
+            "telemetry lifecycle"
+          ]
+        },
+        {
+          "ASSESSMENT": "HIGH",
+          "ID": "HEALTH_AWARE_POOL_LIFECYCLE_AND_FAILOVER",
+          "OBJECTIVE": "Health-aware endpoint lifecycle, selection, affinity, retries and failover under dynamic membership."
+        },
+        {
+          "ASSESSMENT": "MEDIUM_HIGH",
+          "ID": "PROTOCOL_SAFE_PROXY_PIPELINE",
+          "OBJECTIVE": "Protocol-safe forwarding, streaming, cancellation and retry behavior for a public reverse proxy."
+        }
+      ],
+      "DUPLICATE_RISK_NOTES": "Dynamic proxy reload is a known production pattern, but the coupled generation fencing, source authority, runtime-state migration, drain ownership and durable recovery package remains sufficiently differentiated.",
+      "RECOMMENDATION": "GENERATION_SAFE_DYNAMIC_RECONCILIATION",
+      "WHY_THIS_ONE": "The existing multi-package Go edge runtime exposes the coherent production surface required for strict-scale generation reconciliation: independent update sources, immutable routing generations, stable endpoint lifecycle state, health-aware selection, draining, checkpoint recovery and bounded observability. Revalidation preserves the current task rather than inventing a different scenario and naturally supports the approved 30-defect coupled surface and 25+ behavioral scenarios without padding."
+    }
+  }
+}
