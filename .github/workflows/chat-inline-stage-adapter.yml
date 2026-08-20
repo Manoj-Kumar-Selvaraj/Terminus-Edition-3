@@ -29,7 +29,7 @@ jobs:
           git commit -m "Persist chat run locator $GITHUB_RUN_ID"
           git push origin HEAD:"$GITHUB_REF_NAME"
       - name: Execute chat stage transport
-        run: python3 .github/chat_inline_stage_adapter.py
+        run: python3 .github/chat_inline_stage_adapter_edge.py
       - name: Upload adapter diagnostics
         if: always()
         uses: actions/upload-artifact@v4
