@@ -1,0 +1,60 @@
+{
+  "schema_version": "1.0",
+  "mode": "RECORD",
+  "task_id": "route-control-plane",
+  "task_commit": "22d2e9e09f4deb58029559fe9a0863c2e032f25c",
+  "control_plane_commit": "7eaf93f6d3149fd01a40d720ff38a09b649327c1",
+  "expected_repository_head": "c74305d6294cf92f7aa05c65ec958354224543c9",
+  "stage_id": "SYSTEM_ARCHITECTURE",
+  "inputs": {
+    "CREATION_RULE_CONTEXT": {
+      "CONTROL_PLANE_COMMIT": "7eaf93f6d3149fd01a40d720ff38a09b649327c1",
+      "RULE_SOURCES": ["TERMINUS_3_AI_INSTRUCTIONS.md", ".terminus/AGENT_SYSTEM.md", ".terminus/agents/CREATION_CONTROLLER.md", ".terminus/agents/CREATION_PIPELINE.md", ".terminus/agents/PRODUCTION_AUTHENTICITY.md", ".terminus/reviewers/REVIEWER_CHECKLIST.md", ".terminus/agents/QUALITY_AGENT_REGISTRY.md", ".terminus/agents/STAGE_CONTRACTS.md", ".terminus/agents/stage_contracts.json"],
+      "ACTIVE_VALIDATORS": [".terminus/validate_agent_system.py", ".terminus/validate_stage_contracts.py", ".terminus/validate_task_complexity.py", ".terminus/validate_environment_complexity.py", ".terminus/validate_runtime_authenticity.py", ".terminus/validate_business_module_diversity.py", ".terminus/validate_review_freshness.py", ".terminus/validate_quality_interlock.py"],
+      "CREATION_PROFILE": "large_system_strict",
+      "NETWORK_ENVIRONMENT_CONSTRAINTS": "Deterministic offline/local benchmark runtime; no dependence on cloud credentials, privileged external infrastructure, internet services, or destructive host routing. Simulate or namespace route operations safely while preserving realistic Linux routing semantics and Ansible-managed multi-node behavior.",
+      "KNOWN_POLICY_CONFLICTS": []
+    },
+    "APPROVED_WORK_PACKAGE": {
+      "ID": "FLEET_ROUTE_DESIRED_STATE_RECONCILIATION",
+      "ENGINEERING_OBJECTIVE": "Build a production-style Go route control plane that models desired route and policy state, reconciles it across a multi-node Linux fleet, detects drift, protects management reachability, records revision history, and exposes the same lifecycle through an operator dashboard and Ansible-driven installation/configuration.",
+      "REQUIREMENT_FAMILIES": ["IPv4 and IPv6 route CRUD", "policy routing rules and named tables", "multipath and weighted next hops", "desired-state revisions and validation", "per-node inventory and capability discovery", "preview/diff/apply transactions", "rollback and last-known-good recovery", "drift detection and reconciliation", "idempotency and optimistic concurrency", "fleet rollout waves and failure isolation", "Ansible install/config/service lifecycle", "audit/event history", "health and readiness", "dashboard inventory, route, drift, rollout and revision views"],
+      "EDGE_FAILURE_SURFACE": ["duplicate route identity", "invalid CIDR or gateway family", "unknown interface", "management route deletion", "stale revision apply", "partial fleet failure", "node offline during rollout", "multipath normalization", "policy priority collision", "table-name collision", "drift after apply", "rollback after partial apply", "concurrent mutation", "restart with pending transaction", "malformed persisted state", "Ansible rerun idempotency", "mixed per-node variables", "dashboard stale revision submission"],
+      "PRESERVATION_OBLIGATIONS": ["never mutate the benchmark host routing table", "rejected changes leave serving state unchanged", "unchanged nodes remain stable across retries", "management-safety routes cannot be removed without a safe replacement", "revision and audit history remains monotonic", "Ansible reruns do not duplicate service or config state"]
+    },
+    "APPROVED_OPERATIONAL_REQUIREMENTS": {
+      "REQUIREMENT_FAMILIES": ["route/rule lifecycle", "revision transactions", "fleet reconciliation", "safety validation", "Ansible rollout", "dashboard operations", "audit and recovery"],
+      "REQUIRED_END_STATE": ["At least 16 route-control API operations cover nodes, tables, routes, rules, revisions, previews, applies, rollbacks, drift, reconcile, rollouts, audit, health and dashboard summary.", "All route mutations are performed against an isolated deterministic kernel model rather than the CI host network.", "Desired and observed state are revisioned and recoverable after restart.", "Per-node failures are isolated during wave rollout and support rollback.", "Ansible installs the binary/config/service and projects host/group variables idempotently.", "The frontend exposes network inventory, route/rule tables, revisions, drift and rollout controls."],
+      "PRESERVATION_OBLIGATIONS": ["safe management reachability", "no partial revision publication", "idempotent retries", "stable audit ordering", "no host-network mutation"]
+    }
+  },
+  "result": {
+    "status": "ARCHITECTURE_READY",
+    "outputs": {
+      "COMPONENT_GRAPH": {
+        "api": ["HTTP router", "request validation", "optimistic revision headers", "error envelopes"],
+        "domain": ["node registry", "route-table catalog", "route service", "policy-rule service", "revision planner", "transaction coordinator", "drift engine", "rollout engine", "audit service"],
+        "adapters": ["deterministic kernel-model adapter", "JSON snapshot store", "clock/id generator", "Ansible configuration projection"],
+        "frontend": ["network summary", "node inventory", "routes and rules explorer", "revision diff/apply", "drift/reconcile", "rollout monitor", "audit view"],
+        "automation": ["Ansible role", "inventory/group_vars", "service template", "config template", "health-check tasks"]
+      },
+      "ENTRYPOINTS": ["cmd/routecp server --config <path>", "GET /healthz", "GET /readyz", "GET /api/v1/nodes", "GET/POST/PATCH/DELETE route and policy resources", "POST revision preview/apply/rollback", "POST drift scan/reconcile", "POST rollout create/advance/cancel", "GET audit/events", "GET / dashboard static frontend", "ansible/playbooks/install.yml"],
+      "STATE_MODEL": {
+        "entities": ["Node", "Interface", "RouteTable", "Route", "NextHop", "PolicyRule", "DesiredRevision", "ObservedSnapshot", "ChangePlan", "ApplyTransaction", "Rollout", "DriftRecord", "AuditEvent"],
+        "persistence": "Atomic JSON checkpoint containing schema version, monotonic revision, nodes, desired revisions, observed snapshots, rollouts and audit sequence. Writes use temp-file + fsync-like atomic replace semantics in the model; startup validates and falls back to last-known-good backup on corrupt primary.",
+        "concurrency": "One store-level compare-and-swap revision plus per-node apply serialization; read snapshots are immutable copies.",
+        "safety": "Management CIDRs/interfaces and protected routes are explicit node policy. Plans that strand protected reachability are rejected before publication."
+      },
+      "SOLVER_VISIBLE_DOC_PLAN": ["README.md for architecture and local run", "docs/api.md for endpoints and request/response schemas", "docs/state-model.md for revision/transaction semantics", "docs/routing-semantics.md for route/rule identity, multipath normalization and safety", "docs/ansible.md for inventory variables and rollout", "docs/operator-runbook.md for drift/reconcile/rollback"],
+      "PRODUCTION_CHARACTERISTICS": ["layered Go packages with interfaces between orchestration and kernel model", "transactional desired-state revisions", "safe failure isolation per node", "durable restart recovery", "optimistic concurrency and idempotency keys", "bounded audit/event retention", "structured errors and health endpoints", "multi-node variable-driven Ansible deployment", "operator dashboard consuming the same API"],
+      "SCALE_FIT": {"profile": "large_system_strict", "runtime_loc_plan": "3500-5000 substantive Go/JS/Ansible/config LOC", "module_count": 16, "f2p_plan": 28, "p2p_plan": 8, "manifestation_plan": 24},
+      "RESOURCE_GRAPH": ["control-plane process -> store + kernel-model adapters", "node -> interfaces + protected management policy", "revision -> route tables + routes + rules", "apply transaction -> per-node operations", "rollout -> ordered node waves -> transactions", "dashboard -> API only", "Ansible -> binary/config/service per fleet host"],
+      "DATA_VOLUME_PLAN": "Seed 8 deterministic nodes across three sites, 14 named route tables, IPv4/IPv6 routes, multipath entries, policy rules, drift fixtures and multiple historical revisions; expand through deterministic fixtures for test breadth without synthetic business-record padding.",
+      "UNRESOLVED_RISKS": []
+    },
+    "evidence_refs": [
+      {"kind": "COMMIT", "ref": "commit:7eaf93f6d3149fd01a40d720ff38a09b649327c1"},
+      {"kind": "COMMIT", "ref": "commit:22d2e9e09f4deb58029559fe9a0863c2e032f25c"}
+    ]
+  }
+}
