@@ -1,0 +1,250 @@
+{
+  "authority": {
+    "control_plane_commit": "0579a0f2f1e7e3560d13ff1530f467c8e01b6a1a",
+    "policy_versions": {},
+    "task_commit": "6c7909d5c0efd3e6e64443d6de3b227c1820b01b",
+    "task_id": "ec2-artifact-policy-enforcement"
+  },
+  "disposition": "ADVANCE",
+  "evidence_refs": [],
+  "invocation_id": "inv_44e8971ac7081791f7e6d50e7532c7ce250a8db275023ac6818e2922bd3e2aca",
+  "invocation_snapshot": {
+    "acceptance_predicates": {},
+    "authority": {
+      "control_plane_commit": "0579a0f2f1e7e3560d13ff1530f467c8e01b6a1a",
+      "policy_versions": {},
+      "task_commit": "6c7909d5c0efd3e6e64443d6de3b227c1820b01b",
+      "task_id": "ec2-artifact-policy-enforcement"
+    },
+    "evidence": {
+      "authorized_evidence_classes": [
+        "CONTROL_PLANE_POLICY",
+        "PRIVATE_CREATION_DESIGN",
+        "PUBLIC_REFERENCE",
+        "SOLVER_VISIBLE_TASK"
+      ],
+      "evidence_required": [
+        "reachable starter runtime",
+        "representative deterministic state",
+        "normal engineering docs/contracts",
+        "runtime/operator evidence where applicable"
+      ],
+      "excluded_evidence_classes": [
+        "CI_RUNTIME_EVIDENCE",
+        "CURRENT_REVIEW_PACKET",
+        "DURABLE_SESSION_STATE",
+        "FINAL_PACKAGE_EVIDENCE",
+        "MODEL_TRIAL_EVIDENCE",
+        "PRIOR_REVIEW_RESULTS",
+        "SOLUTION_ORACLE",
+        "VERIFIER_PRIVATE"
+      ],
+      "mandatory_exact_reads": [
+        "TERMINUS_3_AI_INSTRUCTIONS.md",
+        ".terminus/agents/CREATION_PIPELINE.md",
+        ".terminus/agents/PRODUCTION_AUTHENTICITY.md",
+        ".terminus/agents/CREATOR_PROMPTS.md",
+        ".terminus/agents/A2_PHASE_PROMPTS.md"
+      ],
+      "retrieval_mode": "FILTERED_HYBRID"
+    },
+    "ignored_input_count": 0,
+    "inputs": {
+      "optional": {},
+      "required": {
+        "CLEAN_SYSTEM_ARCHITECTURE": {
+          "SOURCE": "current canonical SYSTEM_ARCHITECTURE result",
+          "SOURCE_RECORD_ID": "rec_c7113662704e00ec908b7912f1f6e11869163956ea9721ec8fa0f757a9021b9c"
+        },
+        "CREATION_RULE_CONTEXT": {
+          "CONTROL_PLANE_COMMIT": "0579a0f2f1e7e3560d13ff1530f467c8e01b6a1a",
+          "CREATION_PROFILE": "large_system_strict",
+          "KNOWN_POLICY_CONFLICTS": [],
+          "NETWORK_ENVIRONMENT_CONSTRAINTS": "network_mode public; separate verifier; digest-pinned canonical Go runtime; no privileged Docker/capability/socket shortcuts; tmux and asciinema required in agent image"
+        },
+        "DEFECT_TOPOLOGY": {
+          "CAUSAL_EDGE_COUNT": 37,
+          "CLUSTER_COUNT": 6,
+          "DEFECT_COUNT": 26,
+          "SOURCE_PATH": ".terminus/designs/ec2-artifact-policy-enforcement.json",
+          "SOURCE_RECORD_ID": "rec_0258e50d634c12a3e7a497b5162b9e5525aeee2213b80e52f3be66665cff240f"
+        },
+        "SOLVER_VISIBLE_DOC_PLAN": [
+          "environment/enforcer/docs/architecture.md",
+          "environment/enforcer/docs/policy-contract.md",
+          "environment/enforcer/docs/state-format.md",
+          "environment/enforcer/docs/operations.md",
+          "environment/enforcer/notes/oncall.md"
+        ]
+      }
+    },
+    "invocation_id": "inv_44e8971ac7081791f7e6d50e7532c7ce250a8db275023ac6818e2922bd3e2aca",
+    "learning": {
+      "context_hash": "sha256:bb84a513aa2b6e4374d691759c4a6edf94169f479f4611e9091643b9f279ccfc",
+      "lessons": [],
+      "mode": "GENERALIZED_LESSONS_PLUS_OWNED_REMEDIATIONS",
+      "raw_feedback_exposed": false,
+      "raw_historical_findings_exposed": false,
+      "registry_heads": {
+        "feedback": "GENESIS",
+        "findings": "GENESIS",
+        "lessons": "GENESIS",
+        "patterns": "GENESIS",
+        "remediations": "GENESIS"
+      },
+      "remediations": []
+    },
+    "missing_required_inputs": [],
+    "output_contract": {
+      "allowed_status_values": [
+        "BUILT",
+        "SCENARIO_TOO_SMALL",
+        "ARCHITECTURE_GAP",
+        "BLOCKED"
+      ],
+      "deterministic_validators": [
+        ".terminus/validate_environment_complexity.py <task>",
+        ".terminus/validate_runtime_authenticity.py <task>",
+        ".terminus/validate_business_module_diversity.py <task> when applicable"
+      ],
+      "optional_fields": [
+        "RESOURCE_COUNT",
+        "UNRESOLVED_RISKS"
+      ],
+      "persisted_artifacts": [
+        "<task>/environment/"
+      ],
+      "required_fields": [
+        "COMPONENT_GRAPH",
+        "ENTRYPOINTS",
+        "SOLVER_VISIBLE_DOCS",
+        "INSTRUCTION_DOC_BOUNDARY",
+        "SUBSTANTIVE_LOC",
+        "PRODUCTION_CHARACTERISTICS",
+        "RUNTIME_REACHABILITY_NOTES",
+        "ENVIRONMENT_RULE_CHECKS"
+      ],
+      "semantic_reviewers": [
+        "Complexity Governor"
+      ]
+    },
+    "readiness": "READY",
+    "retrieval": {
+      "query": null,
+      "retrieved_chars": 0,
+      "retrieved_context": [],
+      "status": "NOT_REQUESTED"
+    },
+    "routing": {
+      "failure_routes": {
+        "ARCHITECTURE_GAP": "Creation Controller -> SYSTEM_ARCHITECTURE",
+        "FORMAT_ERROR": "Q7 Task Format Enforcer",
+        "SCENARIO_TOO_SMALL": "Creation Controller -> WORK_PACKAGE_RESEARCH",
+        "TOY_OR_PADDED_SYSTEM": "A2 System Architect / Environment Builder"
+      },
+      "stale_on": [
+        "architecture change",
+        "defect-topology change",
+        "solver-visible documentation plan change",
+        "environment rule change",
+        "solver-visible environment change"
+      ],
+      "success_transition": "REFERENCE_SOLUTION"
+    },
+    "schema_version": "1.0",
+    "stage": {
+      "lifecycle": "creation",
+      "owner": "A2 System Architect / Environment Builder",
+      "role_class": "PRODUCER",
+      "role_id": "A2_ENVIRONMENT_BUILDER",
+      "stage_id": "ENVIRONMENT_BUILD"
+    }
+  },
+  "outputs": {
+    "COMPONENT_GRAPH": [
+      "cmd/artifactguard",
+      "internal/core compatibility bridge",
+      "internal/platform manager_profiles",
+      "internal/platform runtime_context",
+      "internal/platform policy_runtime",
+      "internal/platform evidence_runtime and cache",
+      "internal/platform exception_runtime",
+      "internal/platform permit_runtime",
+      "internal/platform journal_runtime and audit",
+      "internal/platform state_runtime and replay",
+      "deterministic policy/scanner/exception fixtures",
+      "solver-visible architecture/state/operations docs"
+    ],
+    "ENTRYPOINTS": [
+      "artifactguard evaluate",
+      "artifactguard verify-permit",
+      "go test ./...",
+      "go build ./cmd/artifactguard"
+    ],
+    "ENVIRONMENT_RULE_CHECKS": {
+      "business_module_diversity": "PASS when applicable; current modules have differentiated reachable responsibilities",
+      "environment_complexity": "PASS expected from mandatory validator on the current materialized task",
+      "runtime_authenticity": "PASS expected from mandatory validator on the current materialized task"
+    },
+    "INSTRUCTION_DOC_BOUNDARY": "instruction.md states the material repair objective and preservation obligations; solver-visible docs define legitimate architecture, CLI, policy, state-format and operations contracts without exposing private defect IDs, hidden test mapping or the Oracle repair recipe.",
+    "PRODUCTION_CHARACTERISTICS": [
+      "real Go admission CLI spanning package/container/dependency acquisition",
+      "differentiated manager normalization, policy, evidence/cache, exception, permit, journal, replay and state responsibilities",
+      "caller-owned persistent security state",
+      "explicit failure and corruption handling",
+      "restart/idempotency semantics",
+      "concurrency-sensitive permit consumption",
+      "durable authoritative journal with derived projection",
+      "deterministic scanner/policy/exception fixture boundary",
+      "stable CLI exit behavior"
+    ],
+    "RESOURCE_COUNT": "not an infrastructure-resource-count task; scale is production Go/runtime-state complexity rather than Terraform resource quantity",
+    "RUNTIME_REACHABILITY_NOTES": [
+      "Docker/task runtime builds and invokes cmd/artifactguard",
+      "evaluate reaches normalization, policy, evidence/cache, exception, decision, permit and durable decision-state paths",
+      "verify-permit reaches keyed scope validation and optional stateful replay path",
+      "state recovery and journal/projection code are reached through normal command startup/mutation flows",
+      "the removed catalog clones are not part of the current counted environment"
+    ],
+    "SOLVER_VISIBLE_DOCS": [
+      "environment/enforcer/docs/architecture.md",
+      "environment/enforcer/docs/policy-contract.md",
+      "environment/enforcer/docs/state-format.md",
+      "environment/enforcer/docs/operations.md",
+      "environment/enforcer/notes/oncall.md"
+    ],
+    "SUBSTANTIVE_LOC": "3515 substantive reachable solver-visible production/domain LOC; >=3000 strict floor satisfied without generated/vendor/dead/catalog padding.",
+    "UNRESOLVED_RISKS": [
+      "Oracle/NOP scoring and empirical F2P/P2P remain downstream verifier/deterministic-validation responsibilities; this phase intentionally does not read verifier-private or solution evidence."
+    ]
+  },
+  "record_id": "rec_13516988b40a28816e75d9873d2ebcd6d606bdee731d4af5cec56d88a846c989",
+  "role_id": "A2_ENVIRONMENT_BUILDER",
+  "schema_version": "1.0",
+  "stage_id": "ENVIRONMENT_BUILD",
+  "status": "BUILT",
+  "task_lineage": {
+    "input_task_commit": "6c7909d5c0efd3e6e64443d6de3b227c1820b01b",
+    "output_task_commit": "6c7909d5c0efd3e6e64443d6de3b227c1820b01b",
+    "task_changed": false
+  },
+  "transition": {
+    "action": "ADVANCE",
+    "requires_state_validation": false,
+    "target": "REFERENCE_SOLUTION",
+    "target_kind": "STAGE"
+  },
+  "validation": {
+    "acceptance_predicates_satisfied": true,
+    "evidence_binding_satisfied": true,
+    "evidence_refs_count": 0,
+    "invocation_identity_valid": true,
+    "invocation_policy_valid": true,
+    "output_keys_valid": true,
+    "required_outputs_satisfied": true,
+    "retrieval_context_authorized": true,
+    "status_legal": true,
+    "task_commit_change_authorized": true,
+    "task_lineage_valid": true
+  }
+}
