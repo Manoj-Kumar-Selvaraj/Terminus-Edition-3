@@ -1,0 +1,53 @@
+{
+  "schema_version": "1.0",
+  "mode": "RECORD",
+  "task_id": "route-control-plane",
+  "task_commit": "22d2e9e09f4deb58029559fe9a0863c2e032f25c",
+  "control_plane_commit": "df7ef7569e2947b9f0bf7cf89ed4dec6c2a5a1fe",
+  "expected_repository_head": "2ee8e5950e92eea608ed575541d610ce065e9335",
+  "stage_id": "DOCUMENTATION_DRAFT",
+  "inputs": {
+    "APPROVED_WORK_PACKAGE": {
+      "ENGINEERING_OBJECTIVE": "Build a production-style Go route control plane that models desired route and policy state, reconciles it across a multi-node Linux fleet, detects drift, protects management reachability, records revision history, and exposes the same lifecycle through an operator dashboard and Ansible-driven installation/configuration.",
+      "REQUIRED_END_STATE": "Canonical route/rule desired state, revision-fenced preview/apply/rollback, failure-safe persistence/restart, fresh ownership-aware reconciliation, safe canary/wave fleet rollout, idempotent Ansible convergence with host/protected route precedence, dashboard compare-and-swap mutation safety, and preserved public Go API/runtime surfaces without host-network mutation."
+    },
+    "IMPLEMENTATION_EVIDENCE": {
+      "REFERENCE_SOLUTION_STATUS": "IMPLEMENTED",
+      "RESTORED_INVARIANTS": [
+        "canonical IPv4/IPv6 route and policy-rule identities with valid table dependencies",
+        "revision-fenced preview/apply/rollback with idempotent retry safety",
+        "failure-safe durable desired/observed/transaction state across restart",
+        "fresh observation and ownership-aware drift reconciliation",
+        "canary and wave rollout safety with already-current retry avoidance",
+        "management reachability protection",
+        "Ansible host/protected route precedence",
+        "dashboard apply bound to exact preview revision",
+        "preserved public API/build/runtime surface"
+      ],
+      "PRESERVED_BEHAVIOR": "The inherited Go service, HTTP API, dashboard, Ansible deployment surface, deterministic routing model, audit ordering and build/runtime entrypoints remain available; task code does not mutate the host network."
+    },
+    "VERIFICATION_EVIDENCE": {
+      "VERIFIER_STATUS": "VERIFIER_READY",
+      "F2P_COUNT": 25,
+      "P2P_COUNT": 4,
+      "SPEC_ALIGNMENT": {
+        "Q1_STATUS": "NO_GAP",
+        "Q2_STATUS": "COVERED",
+        "Q3_STATUS": "CLEAR"
+      },
+      "EMPIRICAL_STATUS": "Final runtime/oracle success remains owned by DETERMINISTIC_VALIDATION; earlier CI failures were preflight format failures and are not treated as runtime acceptance evidence."
+    }
+  },
+  "result": {
+    "schema_version": "1.0",
+    "status": "DOCUMENTATION_READY",
+    "evidence_refs": [],
+    "outputs": {
+      "README_PATH": "route-control-plane/README.md",
+      "DIFFICULTY_EXPLANATION": "The system couples canonical route/rule identity, revision-fenced transactional desired state, management reachability safety, persistent recovery, fresh ownership-aware reconciliation, fleet rollout policy, Ansible convergence, dashboard concurrency and stable audit/API behavior across multiple operational surfaces.",
+      "SOLUTION_EXPLANATION": "The reference completion restores canonical networking identities, fenced and idempotent transactions, failure-safe persistence/restart, owned drift reconciliation, safe rollout behavior, management-route protection, host-aware Ansible precedence and dashboard compare-and-swap semantics while preserving the public runtime interfaces and isolated routing model.",
+      "VERIFICATION_EXPLANATION": "The verifier contains 25 fail-to-pass behavioral cases and 4 preservation cases spanning identity, policy validation, transaction fencing, recovery, drift ownership, rollout, Ansible behavior, dashboard concurrency, public interfaces and verifier independence. Final Oracle/NOP/runtime acceptance remains owned by DETERMINISTIC_VALIDATION."
+    },
+    "output_task_commit": "22d2e9e09f4deb58029559fe9a0863c2e032f25c"
+  }
+}
