@@ -1,0 +1,598 @@
+{
+  "ledger_event": {
+    "control_plane_commit": "df7ef7569e2947b9f0bf7cf89ed4dec6c2a5a1fe",
+    "event_id": "evt_f09a8f9dd2dfb2ba3eab913ae95a2a03682fc82621e4b8bf1e5b1a50d086d773",
+    "input_task_commit": "03317f8218069b9e0b5d073bf87ecf7a0ae8e4a1",
+    "invocation_id": "inv_e611f2f4029ee5481a4d896ccf7f8c624edd34448108e6db54ebf81bcbf8fdb7",
+    "output_task_commit": "03317f8218069b9e0b5d073bf87ecf7a0ae8e4a1",
+    "previous_event_id": "evt_ff4087204a2abc723bbfb2ad8cbf52242310f94e1d1a3f7dd001f47742dce316",
+    "record_hash": "sha256:bf217715307594df844052357ee40e2213ed1e7940e372ad22a389f18b9c2a73",
+    "record_id": "rec_825fede02426e8dbe50cbe9ebeda0ab5c549f65f1dda4043e4ca9120dd2ce969",
+    "record_path": ".terminus/executions/stonevault-crash-safe-storage/inv_e611f2f4029ee5481a4d896ccf7f8c624edd34448108e6db54ebf81bcbf8fdb7.result.json",
+    "schema_version": "1.0",
+    "sequence": 38,
+    "stage_id": "COMPLEXITY_GATE",
+    "task_id": "stonevault-crash-safe-storage"
+  },
+  "record": {
+    "authority": {
+      "control_plane_commit": "df7ef7569e2947b9f0bf7cf89ed4dec6c2a5a1fe",
+      "policy_versions": {},
+      "task_commit": "03317f8218069b9e0b5d073bf87ecf7a0ae8e4a1",
+      "task_id": "stonevault-crash-safe-storage"
+    },
+    "disposition": "ADVANCE",
+    "evidence_refs": [
+      {
+        "content_hash": "sha256:38d1e6b49a6cd52e4cefce949ec274c9b07daf9b5ba2735bb2a094820f7c78de",
+        "kind": "COMMIT",
+        "ref": "commit:03317f8218069b9e0b5d073bf87ecf7a0ae8e4a1"
+      }
+    ],
+    "invocation_id": "inv_e611f2f4029ee5481a4d896ccf7f8c624edd34448108e6db54ebf81bcbf8fdb7",
+    "invocation_snapshot": {
+      "acceptance_predicates": {},
+      "authority": {
+        "control_plane_commit": "df7ef7569e2947b9f0bf7cf89ed4dec6c2a5a1fe",
+        "policy_versions": {},
+        "task_commit": "03317f8218069b9e0b5d073bf87ecf7a0ae8e4a1",
+        "task_id": "stonevault-crash-safe-storage"
+      },
+      "evidence": {
+        "authorized_evidence_classes": [
+          "CI_RUNTIME_EVIDENCE",
+          "CONTROL_PLANE_POLICY",
+          "PRIVATE_CREATION_DESIGN",
+          "SOLVER_VISIBLE_TASK",
+          "VERIFIER_PRIVATE"
+        ],
+        "evidence_required": [
+          "removal/reachability analysis",
+          "scale authenticity",
+          "test organicity",
+          "behavioral breadth"
+        ],
+        "excluded_evidence_classes": [
+          "CURRENT_REVIEW_PACKET",
+          "DURABLE_SESSION_STATE",
+          "FINAL_PACKAGE_EVIDENCE",
+          "MODEL_TRIAL_EVIDENCE",
+          "PRIOR_REVIEW_RESULTS",
+          "PUBLIC_REFERENCE",
+          "SOLUTION_ORACLE"
+        ],
+        "mandatory_exact_reads": [
+          ".terminus/agents/CREATION_PIPELINE.md",
+          ".terminus/agents/PRODUCTION_AUTHENTICITY.md",
+          ".terminus/agents/CREATOR_PROMPTS.md"
+        ],
+        "retrieval_mode": "EXACT_ONLY"
+      },
+      "ignored_input_count": 0,
+      "inputs": {
+        "optional": {},
+        "required": {
+          "DEFECT_GRAPH": {
+            "behavioral_surfaces": [
+              "locking/configuration",
+              "MVCC/scan overlay",
+              "conflict arbitration",
+              "WAL recovery",
+              "checkpoint/snapshot integrity",
+              "operator health",
+              "binary protocol/native boundary"
+            ],
+            "connected_manifestations": 25,
+            "defect_manifestations": 25,
+            "profile": "large_system_strict",
+            "root_cause_clusters": 8
+          },
+          "ENVIRONMENT_TREE": {
+            "components": [
+              "Rust config/protocol/session",
+              "C++ engine",
+              "WAL",
+              "snapshot",
+              "writer lock",
+              "C ABI boundary"
+            ],
+            "entrypoints": [
+              "/app/stonevault/bin/stonevault"
+            ],
+            "runtime_artifact": "/app/stonevault",
+            "task_root": "stonevault-crash-safe-storage"
+          },
+          "INSTRUCTION": "Complete reliability hardening of the inherited native StoneVault embedded database while preserving documented public compatibility.",
+          "PRODUCTION_CHARACTERISTIC_EVIDENCE": [
+            "persistent storage",
+            "writer fencing",
+            "MVCC",
+            "conflicts",
+            "crash recovery",
+            "checkpoint maintenance",
+            "operator state",
+            "native ABI"
+          ],
+          "RUNTIME_REACHABILITY_EVIDENCE": [
+            "public binary reaches Rust session and C++ storage through stable C ABI",
+            "transactions exercise state/conflict/WAL paths",
+            "restart exercises recovery",
+            "checkpoint and status commands exercise maintenance/operator paths"
+          ],
+          "SUBSTANTIVE_LOC_REPORT": {
+            "reachable_production_loc": "validator-confirmed solver-reachable native implementation",
+            "runtime_entrypoint": "/app/stonevault/bin/stonevault",
+            "substantive_loc": "validator-confirmed large_system_strict native multi-module implementation"
+          },
+          "TEST_CLASSIFICATION_MAP": {
+            "F2P_COUNT": 30,
+            "P2P_COUNT": 33,
+            "classification": "30 F2P + 33 P2P"
+          }
+        }
+      },
+      "invocation_id": "inv_e611f2f4029ee5481a4d896ccf7f8c624edd34448108e6db54ebf81bcbf8fdb7",
+      "learning": {
+        "context_hash": "sha256:bb84a513aa2b6e4374d691759c4a6edf94169f479f4611e9091643b9f279ccfc",
+        "lessons": [],
+        "mode": "GENERALIZED_LESSONS_PLUS_OWNED_REMEDIATIONS",
+        "raw_feedback_exposed": false,
+        "raw_historical_findings_exposed": false,
+        "registry_heads": {
+          "feedback": "GENESIS",
+          "findings": "GENESIS",
+          "lessons": "GENESIS",
+          "patterns": "GENESIS",
+          "remediations": "GENESIS"
+        },
+        "remediations": []
+      },
+      "missing_required_inputs": [],
+      "output_contract": {
+        "allowed_status_values": [
+          "PASS",
+          "REVISE",
+          "SCENARIO_TOO_SMALL"
+        ],
+        "deterministic_validators": [
+          ".terminus/validate_task_complexity.py <task>"
+        ],
+        "optional_fields": [
+          "MEANINGFUL_RESOURCE_COUNT"
+        ],
+        "persisted_artifacts": [],
+        "required_fields": [
+          "SUBSTANTIVE_LOC",
+          "REACHABLE_PRODUCTION_LOC",
+          "PRODUCTION_CHARACTERISTICS",
+          "DEFECT_MANIFESTATIONS",
+          "CONNECTED_MANIFESTATIONS",
+          "ROOT_CAUSE_CLUSTERS",
+          "F2P_COUNT",
+          "P2P_COUNT",
+          "F2P_ORGANICITY",
+          "EDGE_BOUNDARY_COVERAGE",
+          "NEGATIVE_FAILURE_COVERAGE",
+          "PADDING_RISK",
+          "TEST_DUPLICATION_RISK",
+          "INSTRUCTION_CHECKLIST_RISK",
+          "REQUIRED_CHANGES"
+        ],
+        "semantic_reviewers": []
+      },
+      "readiness": "READY",
+      "retrieval": {
+        "query": null,
+        "retrieved_chars": 0,
+        "retrieved_context": [],
+        "status": "NOT_REQUESTED"
+      },
+      "routing": {
+        "failure_routes": {
+          "REVISE": "smallest responsible producer",
+          "SCENARIO_TOO_SMALL": "Creation Controller -> WORK_PACKAGE_RESEARCH"
+        },
+        "stale_on": [
+          "solver-visible environment change",
+          "defect-graph change",
+          "verifier/test-map change",
+          "instruction change affecting complexity claims"
+        ],
+        "success_transition": "RUNTIME_AUTHENTICITY"
+      },
+      "schema_version": "1.0",
+      "stage": {
+        "lifecycle": "creation",
+        "owner": "A10 Complexity Governor",
+        "role_class": "REVIEWER",
+        "role_id": "A10_COMPLEXITY_GOVERNOR",
+        "stage_id": "COMPLEXITY_GATE"
+      }
+    },
+    "outputs": {
+      "CONNECTED_MANIFESTATIONS": 25,
+      "DEFECT_MANIFESTATIONS": 25,
+      "EDGE_BOUNDARY_COVERAGE": [
+        "inclusive sizes",
+        "byte ordering",
+        "WAL framing",
+        "snapshot integrity",
+        "ABI/wire compatibility"
+      ],
+      "F2P_COUNT": 30,
+      "F2P_ORGANICITY": "PASS: cases span distinct state, concurrency, recovery, maintenance and interface behaviors.",
+      "INSTRUCTION_CHECKLIST_RISK": "LOW",
+      "NEGATIVE_FAILURE_COVERAGE": [
+        "writer exclusion",
+        "conflict termination",
+        "corruption rejection",
+        "operator invariant failure",
+        "malformed requests"
+      ],
+      "P2P_COUNT": 33,
+      "PADDING_RISK": "LOW",
+      "PRODUCTION_CHARACTERISTICS": [
+        "persistent WAL/snapshot",
+        "writer fencing",
+        "MVCC",
+        "conflict arbitration",
+        "crash recovery",
+        "checkpoint publication",
+        "operator state",
+        "native compatibility"
+      ],
+      "REACHABLE_PRODUCTION_LOC": "PASS: production logic is reachable through /app/stonevault/bin/stonevault.",
+      "REQUIRED_CHANGES": [],
+      "ROOT_CAUSE_CLUSTERS": 8,
+      "SUBSTANTIVE_LOC": "PASS: current deterministic complexity validator confirms configured profile threshold.",
+      "TEST_DUPLICATION_RISK": "LOW"
+    },
+    "record_id": "rec_825fede02426e8dbe50cbe9ebeda0ab5c549f65f1dda4043e4ca9120dd2ce969",
+    "role_id": "A10_COMPLEXITY_GOVERNOR",
+    "schema_version": "1.0",
+    "stage_id": "COMPLEXITY_GATE",
+    "status": "PASS",
+    "task_lineage": {
+      "input_task_commit": "03317f8218069b9e0b5d073bf87ecf7a0ae8e4a1",
+      "output_task_commit": "03317f8218069b9e0b5d073bf87ecf7a0ae8e4a1",
+      "task_changed": false
+    },
+    "transition": {
+      "action": "ADVANCE",
+      "requires_state_validation": false,
+      "target": "RUNTIME_AUTHENTICITY",
+      "target_kind": "STAGE"
+    },
+    "validation": {
+      "acceptance_predicates_satisfied": true,
+      "evidence_binding_satisfied": true,
+      "evidence_refs_count": 1,
+      "invocation_identity_valid": true,
+      "invocation_policy_valid": true,
+      "output_keys_valid": true,
+      "required_outputs_satisfied": true,
+      "retrieval_context_authorized": true,
+      "status_legal": true,
+      "task_commit_change_authorized": true,
+      "task_lineage_valid": true
+    }
+  },
+  "remediation_updates": [],
+  "state": {
+    "control_plane_commit": "df7ef7569e2947b9f0bf7cf89ed4dec6c2a5a1fe",
+    "derived_from": {
+      "freshness_overlay_hash": null,
+      "record_ids": [
+        "rec_2b5d61cca917ec28da60979ee76c2923603f9f9d9e5602f4af3c98c207a8014f",
+        "rec_464ebe25bec10772c1b2220bf15df2f518f6ba9d1cd4ac292d911fa37a3a53b5",
+        "rec_558a8242a79aeda4bd260b9ec8857fa89112b67b48218e062ddfbaf16f6efa5e",
+        "rec_63907faf55af6ad4864ccaa906b46e7077636c22e68402d9e83ac33d2c9ed87d",
+        "rec_825fede02426e8dbe50cbe9ebeda0ab5c549f65f1dda4043e4ca9120dd2ce969",
+        "rec_9012c7863898a8eee0a06d1d0a4473636ddfe9abfc0eedad85059796b737fed9",
+        "rec_90dd24cd7d95fe451a0802cc6955b3b7c9b9fc7d2705f2e0443417e63d33391f",
+        "rec_a275025dbc44b0abcc569e24044f68c1e924c1295d8bd4cea3d6c3bcd7a66bae",
+        "rec_b0674eebb82e638479ea345269bb3cd2194ae9b6577cba70b58bdea50123d093",
+        "rec_bcc41ee5fac44a769416635833b3c9f52249ad8e67f1baa74e69f90debb82f99",
+        "rec_c1d84e1ed56cffdd0ce437268c1527ae144c89992085b1bc775758cc3f429add",
+        "rec_c47183172545df3abe5ab980e261f7a21529e4b5f578bb4d9385c65d738d4384",
+        "rec_de05228bf369b7a11c24462bd755cddc35aef5b6428c7109d61290cff0644e9d",
+        "rec_ff83e961c9da28923fae71488b64c9bf98708422e33fac858cdd423d36d2cd11"
+      ]
+    },
+    "ledger_event_count": 38,
+    "ledger_head_event_id": "evt_f09a8f9dd2dfb2ba3eab913ae95a2a03682fc82621e4b8bf1e5b1a50d086d773",
+    "lineage": {
+      "bootstrap_task_commit": "03317f8218069b9e0b5d073bf87ecf7a0ae8e4a1",
+      "current_task_commit": "03317f8218069b9e0b5d073bf87ecf7a0ae8e4a1",
+      "recorded_task_commit": "03317f8218069b9e0b5d073bf87ecf7a0ae8e4a1",
+      "status": "CURRENT"
+    },
+    "next": {
+      "action": "INVOKE_STAGE",
+      "optional_inputs": [
+        "BUSINESS_MODULE_PORTFOLIO"
+      ],
+      "owner": "Creation Controller",
+      "primary_role_id": "CREATION_CONTROLLER",
+      "required_inputs": [
+        "CURRENT_TASK",
+        "PRODUCTION_CHARACTERISTIC_EVIDENCE"
+      ],
+      "stage_id": "RUNTIME_AUTHENTICITY"
+    },
+    "nodes": [
+      {
+        "disposition": "ADVANCE",
+        "input_task_commit": "03317f8218069b9e0b5d073bf87ecf7a0ae8e4a1",
+        "invocation_id": "inv_b31ffcc59afb817590646712298be20de8c726058b57728b9d6534dbfab7d612",
+        "ledger_event_id": "evt_db456d7eae88bc698d534513dcfc27e9f2bdacddba9364f8b89cf1e618de749d",
+        "node_id": "RULE_RESOLUTION",
+        "node_kind": "STAGE",
+        "output_task_commit": "03317f8218069b9e0b5d073bf87ecf7a0ae8e4a1",
+        "reason": "validated ADVANCE record reaches WORK_PACKAGE_RESEARCH",
+        "record_id": "rec_bcc41ee5fac44a769416635833b3c9f52249ad8e67f1baa74e69f90debb82f99",
+        "status": "CURRENT"
+      },
+      {
+        "disposition": "ADVANCE",
+        "input_task_commit": "03317f8218069b9e0b5d073bf87ecf7a0ae8e4a1",
+        "invocation_id": "inv_a9806dcdbf7b83efe2e44a4cc53fdd8daed124bedd1753f5178a2b58f27f97f6",
+        "ledger_event_id": "evt_bfbdb256f869db7b2c8422f75f1ffd2f9cc0fb565c11f1a1fc653f6b0ccfb6af",
+        "node_id": "WORK_PACKAGE_RESEARCH",
+        "node_kind": "STAGE",
+        "output_task_commit": "03317f8218069b9e0b5d073bf87ecf7a0ae8e4a1",
+        "reason": "validated ADVANCE record reaches SYSTEM_ARCHITECTURE",
+        "record_id": "rec_90dd24cd7d95fe451a0802cc6955b3b7c9b9fc7d2705f2e0443417e63d33391f",
+        "status": "CURRENT"
+      },
+      {
+        "disposition": "ADVANCE",
+        "input_task_commit": "03317f8218069b9e0b5d073bf87ecf7a0ae8e4a1",
+        "invocation_id": "inv_f0ae495d7b6af0115b830e48c845cc2412d739c9dffd134fbaaa726ed040ae1d",
+        "ledger_event_id": "evt_a72933e5453470de040745739edc4aa740fb054c292e4321d9455436be0d6a79",
+        "node_id": "SYSTEM_ARCHITECTURE",
+        "node_kind": "STAGE",
+        "output_task_commit": "03317f8218069b9e0b5d073bf87ecf7a0ae8e4a1",
+        "reason": "validated ADVANCE record reaches DEFECT_TOPOLOGY",
+        "record_id": "rec_ff83e961c9da28923fae71488b64c9bf98708422e33fac858cdd423d36d2cd11",
+        "status": "CURRENT"
+      },
+      {
+        "disposition": "ADVANCE",
+        "input_task_commit": "03317f8218069b9e0b5d073bf87ecf7a0ae8e4a1",
+        "invocation_id": "inv_3ee79b60afba4db4d08c675515e3c343bd9e1e34d74237dd3f4427b29253204c",
+        "ledger_event_id": "evt_151bd431310ed8b16a9cd86e50ea55d8dd163ac46ec66986ddbe06f943136bbe",
+        "node_id": "DEFECT_TOPOLOGY",
+        "node_kind": "STAGE",
+        "output_task_commit": "03317f8218069b9e0b5d073bf87ecf7a0ae8e4a1",
+        "reason": "validated ADVANCE record reaches ENVIRONMENT_BUILD",
+        "record_id": "rec_c1d84e1ed56cffdd0ce437268c1527ae144c89992085b1bc775758cc3f429add",
+        "status": "CURRENT"
+      },
+      {
+        "disposition": "ADVANCE",
+        "input_task_commit": "03317f8218069b9e0b5d073bf87ecf7a0ae8e4a1",
+        "invocation_id": "inv_035379f56e3f89edab6d2556ad85e6922e9b035a6d04f4d258e64ab7b97910ef",
+        "ledger_event_id": "evt_4bf9bb98af1388e42f690a9edefe852c5b1eae226108a4c58f45eaac4e9be46e",
+        "node_id": "ENVIRONMENT_BUILD",
+        "node_kind": "STAGE",
+        "output_task_commit": "03317f8218069b9e0b5d073bf87ecf7a0ae8e4a1",
+        "reason": "validated ADVANCE record reaches REFERENCE_SOLUTION",
+        "record_id": "rec_558a8242a79aeda4bd260b9ec8857fa89112b67b48218e062ddfbaf16f6efa5e",
+        "status": "CURRENT"
+      },
+      {
+        "disposition": "ADVANCE",
+        "input_task_commit": "03317f8218069b9e0b5d073bf87ecf7a0ae8e4a1",
+        "invocation_id": "inv_37918a13438689de24684f3d057e5a763a6a3e11e6447b37a37bd60adfe8da74",
+        "ledger_event_id": "evt_fe199fa73349a07c1a52807a7bd52c968e9d885ee20f0c0a40f77502f9b6b875",
+        "node_id": "REFERENCE_SOLUTION",
+        "node_kind": "STAGE",
+        "output_task_commit": "03317f8218069b9e0b5d073bf87ecf7a0ae8e4a1",
+        "reason": "validated ADVANCE record reaches VERIFIER_BUILD",
+        "record_id": "rec_de05228bf369b7a11c24462bd755cddc35aef5b6428c7109d61290cff0644e9d",
+        "status": "CURRENT"
+      },
+      {
+        "disposition": "ADVANCE",
+        "input_task_commit": "03317f8218069b9e0b5d073bf87ecf7a0ae8e4a1",
+        "invocation_id": "inv_fed17c1ecd4c15b7e204a8fbe62a298bd7c91c4b2a50e9922434c0056692fafc",
+        "ledger_event_id": "evt_c477bf2b96e1aa585af1c67d27555b6d5571d9bfbca405c9de84ed2683032f4c",
+        "node_id": "VERIFIER_BUILD",
+        "node_kind": "STAGE",
+        "output_task_commit": "03317f8218069b9e0b5d073bf87ecf7a0ae8e4a1",
+        "reason": "validated ADVANCE record reaches HUMAN_WRITING_RESEARCH",
+        "record_id": "rec_9012c7863898a8eee0a06d1d0a4473636ddfe9abfc0eedad85059796b737fed9",
+        "status": "CURRENT"
+      },
+      {
+        "disposition": "ADVANCE",
+        "input_task_commit": "03317f8218069b9e0b5d073bf87ecf7a0ae8e4a1",
+        "invocation_id": "inv_342242d9dde301a549ce34c7cb336f4c2965b1ab659e353ee45a26151a3d4f85",
+        "ledger_event_id": "evt_a1788737f1308cde9ffa88a31f7ca048eaabf3496e2d0b92545b8d6dd45e67c5",
+        "node_id": "HUMAN_WRITING_RESEARCH",
+        "node_kind": "STAGE",
+        "output_task_commit": "03317f8218069b9e0b5d073bf87ecf7a0ae8e4a1",
+        "reason": "validated ADVANCE record reaches INSTRUCTION_DRAFT",
+        "record_id": "rec_464ebe25bec10772c1b2220bf15df2f518f6ba9d1cd4ac292d911fa37a3a53b5",
+        "status": "CURRENT"
+      },
+      {
+        "disposition": "ADVANCE",
+        "input_task_commit": "03317f8218069b9e0b5d073bf87ecf7a0ae8e4a1",
+        "invocation_id": "inv_e6049baeeb415c92896561049820655f8d46f0e4e205fcd3ded46c3cf9f26463",
+        "ledger_event_id": "evt_f0037a8c15ffb611d6cc798a16a209a57fe413d0251109ce08ae59862c130689",
+        "node_id": "INSTRUCTION_DRAFT",
+        "node_kind": "STAGE",
+        "output_task_commit": "03317f8218069b9e0b5d073bf87ecf7a0ae8e4a1",
+        "reason": "validated ADVANCE record reaches SPEC_ALIGNMENT",
+        "record_id": "rec_c47183172545df3abe5ab980e261f7a21529e4b5f578bb4d9385c65d738d4384",
+        "status": "CURRENT"
+      },
+      {
+        "disposition": "ADVANCE",
+        "input_task_commit": "03317f8218069b9e0b5d073bf87ecf7a0ae8e4a1",
+        "invocation_id": "inv_8f552202d0bc5e1c7349833a33293eea51a7cee90c669956c37553eb1556cb47",
+        "ledger_event_id": "evt_33d8fe6cb9e45f68dbfe443315028d2f39ab60c7ed775b54f4dae2dbe6899699",
+        "node_id": "SPEC_ALIGNMENT",
+        "node_kind": "STAGE",
+        "output_task_commit": "03317f8218069b9e0b5d073bf87ecf7a0ae8e4a1",
+        "reason": "validated ADVANCE record reaches DOCUMENTATION_DRAFT",
+        "record_id": "rec_2b5d61cca917ec28da60979ee76c2923603f9f9d9e5602f4af3c98c207a8014f",
+        "status": "CURRENT"
+      },
+      {
+        "disposition": "ADVANCE",
+        "input_task_commit": "03317f8218069b9e0b5d073bf87ecf7a0ae8e4a1",
+        "invocation_id": "inv_8e40a0427056b26e1f907ad9db9872ccce6162a77039d4529b96465da7533a26",
+        "ledger_event_id": "evt_7cf42143a1f77792c36b7220d3cafe9805c8ce5da9d2e9b9d965856925a216d6",
+        "node_id": "DOCUMENTATION_DRAFT",
+        "node_kind": "STAGE",
+        "output_task_commit": "03317f8218069b9e0b5d073bf87ecf7a0ae8e4a1",
+        "reason": "validated ADVANCE record reaches FORMAT_GATE",
+        "record_id": "rec_63907faf55af6ad4864ccaa906b46e7077636c22e68402d9e83ac33d2c9ed87d",
+        "status": "CURRENT"
+      },
+      {
+        "disposition": "ADVANCE",
+        "input_task_commit": "03317f8218069b9e0b5d073bf87ecf7a0ae8e4a1",
+        "invocation_id": "inv_1a5fb484c87cc31424c92105245179b6b43c08c30c6dc930e083525a076fa028",
+        "ledger_event_id": "evt_88ff3a9bd492a2d7e1463d0305d2c090854e682f7d1c9534e82aa55da8b1ba99",
+        "node_id": "FORMAT_GATE",
+        "node_kind": "STAGE",
+        "output_task_commit": "03317f8218069b9e0b5d073bf87ecf7a0ae8e4a1",
+        "reason": "validated ADVANCE record reaches ASSEMBLY",
+        "record_id": "rec_b0674eebb82e638479ea345269bb3cd2194ae9b6577cba70b58bdea50123d093",
+        "status": "CURRENT"
+      },
+      {
+        "disposition": "ADVANCE",
+        "input_task_commit": "03317f8218069b9e0b5d073bf87ecf7a0ae8e4a1",
+        "invocation_id": "inv_c5cb731473acc7e28224f5d6d393f59a0c24d36aed6272928a66e6f0e6c4b97f",
+        "ledger_event_id": "evt_ff4087204a2abc723bbfb2ad8cbf52242310f94e1d1a3f7dd001f47742dce316",
+        "node_id": "ASSEMBLY",
+        "node_kind": "STAGE",
+        "output_task_commit": "03317f8218069b9e0b5d073bf87ecf7a0ae8e4a1",
+        "reason": "validated ADVANCE record reaches COMPLEXITY_GATE",
+        "record_id": "rec_a275025dbc44b0abcc569e24044f68c1e924c1295d8bd4cea3d6c3bcd7a66bae",
+        "status": "CURRENT"
+      },
+      {
+        "disposition": "ADVANCE",
+        "input_task_commit": "03317f8218069b9e0b5d073bf87ecf7a0ae8e4a1",
+        "invocation_id": "inv_e611f2f4029ee5481a4d896ccf7f8c624edd34448108e6db54ebf81bcbf8fdb7",
+        "ledger_event_id": "evt_f09a8f9dd2dfb2ba3eab913ae95a2a03682fc82621e4b8bf1e5b1a50d086d773",
+        "node_id": "COMPLEXITY_GATE",
+        "node_kind": "STAGE",
+        "output_task_commit": "03317f8218069b9e0b5d073bf87ecf7a0ae8e4a1",
+        "reason": "validated ADVANCE record reaches RUNTIME_AUTHENTICITY",
+        "record_id": "rec_825fede02426e8dbe50cbe9ebeda0ab5c549f65f1dda4043e4ca9120dd2ce969",
+        "status": "CURRENT"
+      },
+      {
+        "input_task_commit": "03317f8218069b9e0b5d073bf87ecf7a0ae8e4a1",
+        "invocation_id": "inv_b4e025b7bccc9475c2fd910afe6d6a8d560421dac70e467b14e7f4f7854fb88f",
+        "ledger_event_id": "evt_dc22613c57348b6a882bb45557fb049c084f4f535742f9cf1070e4fcbc2921de",
+        "node_id": "RUNTIME_AUTHENTICITY",
+        "node_kind": "STAGE",
+        "output_task_commit": "03317f8218069b9e0b5d073bf87ecf7a0ae8e4a1",
+        "reason": "latest execution record predates the latest current predecessor execution; the downstream stage must be rerun even when task/control commits are unchanged",
+        "record_id": "rec_203c436d2fa6680cf11f46451a8d64747ff5ab86500690e5b13e25538dd58172",
+        "status": "STALE"
+      },
+      {
+        "node_id": "DETERMINISTIC_VALIDATION",
+        "node_kind": "STAGE",
+        "reason": "upstream node RUNTIME_AUTHENTICITY is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "FROZEN_CANDIDATE",
+        "node_kind": "STATE",
+        "reason": "state cannot be current while its predecessor chain is non-current",
+        "status": "MISSING"
+      },
+      {
+        "input_task_commit": "03317f8218069b9e0b5d073bf87ecf7a0ae8e4a1",
+        "invocation_id": "inv_fe8600116ca3fe9f494f671d0f7f10d286c4553d715d8266d1997bee5af3abf4",
+        "ledger_event_id": "evt_51a8ee1f5770b52aa3dc13af434a1dc58560004d43f33cb24b3f11786a4d97cc",
+        "node_id": "QUALITY_INTERLOCK",
+        "node_kind": "STAGE",
+        "output_task_commit": "03317f8218069b9e0b5d073bf87ecf7a0ae8e4a1",
+        "reason": "upstream node FROZEN_CANDIDATE is not current; later historical evidence cannot advance",
+        "record_id": "rec_a7a2f46337fea62d3bd249232eb336ca2f6a8c52f7f02b3ac5ebe1b4ba63092e",
+        "status": "STALE"
+      },
+      {
+        "node_id": "PRE_LLMAJ",
+        "node_kind": "STAGE",
+        "reason": "upstream node QUALITY_INTERLOCK is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "MODEL_DIAGNOSTIC_GPT",
+        "node_kind": "STAGE",
+        "reason": "upstream node PRE_LLMAJ is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "MODEL_DIAGNOSTIC_CLAUDE",
+        "node_kind": "STAGE",
+        "reason": "upstream node MODEL_DIAGNOSTIC_GPT is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "MODEL_DIAGNOSTIC_AGGREGATE",
+        "node_kind": "STAGE",
+        "reason": "upstream node MODEL_DIAGNOSTIC_CLAUDE is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "HARBOR_LLMAJ",
+        "node_kind": "STAGE",
+        "reason": "upstream node MODEL_DIAGNOSTIC_AGGREGATE is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "OFFICIAL_MODEL_TRIALS",
+        "node_kind": "STAGE",
+        "reason": "upstream node HARBOR_LLMAJ is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "TRIAL_ANALYSIS",
+        "node_kind": "STAGE",
+        "reason": "upstream node OFFICIAL_MODEL_TRIALS is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "DIFFICULTY_ASSESSMENT",
+        "node_kind": "STAGE",
+        "reason": "upstream node TRIAL_ANALYSIS is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "FINAL_REVIEW",
+        "node_kind": "STAGE",
+        "reason": "upstream node DIFFICULTY_ASSESSMENT is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "SUBMISSION_READY",
+        "node_kind": "STAGE",
+        "reason": "upstream node FINAL_REVIEW is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      }
+    ],
+    "schema_version": "1.0",
+    "state_snapshot_id": "state_3e9c093995aafa87da9c593487c4e40fc03feddd388d2d2ead99571fb9e44fde",
+    "summary": {
+      "BLOCKED": 0,
+      "CURRENT": 14,
+      "MISSING": 12,
+      "STALE": 2
+    },
+    "task_commit": "03317f8218069b9e0b5d073bf87ecf7a0ae8e4a1",
+    "task_id": "stonevault-crash-safe-storage"
+  }
+}
