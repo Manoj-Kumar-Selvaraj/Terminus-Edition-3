@@ -1,0 +1,39 @@
+{
+  "schema_version":"1.0",
+  "mode":"RECORD",
+  "task_id":"route-control-plane",
+  "task_commit":"1e099e020dc1ef88f1032b896e97d6b49c7684b5",
+  "control_plane_commit":"df7ef7569e2947b9f0bf7cf89ed4dec6c2a5a1fe",
+  "expected_repository_head":"d4d007dd93bd602f97bbe341919c7d5322997985",
+  "stage_id":"COMPLEXITY_GATE",
+  "inputs":{
+    "DEFECT_GRAPH":{"profile":"large_system_strict","defect_manifestations":24,"connected_manifestations":24,"root_cause_clusters":8,"behavioral_surfaces":["route/rule lifecycle","multipath normalization","revision transaction fencing","management safety","apply/rollback recovery","drift reconciliation","fleet rollout","Ansible/UI concurrency"]},
+    "ENVIRONMENT_TREE":{"task_root":"route-control-plane","runtime_artifact":"/app/routecp","entrypoints":["/app/routecp/cmd/routecp/main.go","/app/routecp/ansible/roles/routecp/tasks/main.yml","/app/routecp/web/app.ts"],"components":["api","node-registry","route-catalog","policy-rules","revision-planner","transaction-coordinator","snapshot-store","drift-engine","reconcile-engine","rollout-engine","audit-service","Ansible-role","dashboard"]},
+    "INSTRUCTION":"Complete the inherited Go route-control-plane as a fleet-safe desired-state routing system with transactional revision control, drift/reconciliation, Ansible deployment and an operator dashboard while preserving management reachability and public operational contracts.",
+    "PRODUCTION_CHARACTERISTIC_EVIDENCE":["live Go HTTP control-plane API","IPv4/IPv6 route and policy-rule lifecycle","preview/apply/rollback revision transactions","durable desired and observed snapshots","drift detection and ownership-aware reconciliation","160-node representative multi-site fleet rollout","Ansible systemd deployment","operator-facing TypeScript dashboard"],
+    "RUNTIME_REACHABILITY_EVIDENCE":["Go entrypoint reaches node, route, policy, transaction, drift, reconcile, rollout and audit paths","revision publication feeds durable state and per-node observed state","Ansible role installs/configures/runs the same routecp service","dashboard reaches preview/apply/reconcile/rollout API paths","runtime image exposes the solver-visible source tree at /app/routecp"],
+    "SUBSTANTIVE_LOC_REPORT":{"substantive_loc":3524,"reachable_production_loc":3524,"runtime_entrypoint":"cmd/routecp/main.go"},
+    "TEST_CLASSIFICATION_MAP":{"F2P_COUNT":25,"P2P_COUNT":4,"classification":"25 F2P + 4 P2P","coverage":{"normal":["route/rule normalization","transaction apply","rollout success"],"edge":["IPv6 aliasing","multipath ordering","same prefix different tables","canary/wave boundaries"],"negative":["unknown nodes","duplicate priorities","missing lookup tables","offline apply","stale rollback"],"recovery":["restart incomplete transaction","rollback revision","drift reconciliation"],"cross_component":["management safety through mutation paths","Ansible protected-route precedence","dashboard revision binding"]}}
+  },
+  "result":{
+    "status":"PASS",
+    "outputs":{
+      "SUBSTANTIVE_LOC":3524,
+      "REACHABLE_PRODUCTION_LOC":3524,
+      "PRODUCTION_CHARACTERISTICS":["live Go HTTP routing control plane","IPv4/IPv6 route and policy-rule lifecycle","revision preview/apply/rollback transactions","durable desired/observed state","drift detection and reconciliation","160-node representative fleet rollout","Ansible systemd deployment","operator dashboard"],
+      "DEFECT_MANIFESTATIONS":24,
+      "CONNECTED_MANIFESTATIONS":24,
+      "ROOT_CAUSE_CLUSTERS":8,
+      "F2P_COUNT":25,
+      "P2P_COUNT":4,
+      "F2P_ORGANICITY":"PASS: 25 F2P cases exercise distinct route identity, rule dependency, transaction fencing, recovery, ownership-aware reconciliation, rollout and deployment/UI behaviors rather than aliases of one assertion.",
+      "EDGE_BOUNDARY_COVERAGE":["IPv4/IPv6 canonicalization and default-family separation","multipath ordering equivalence","same prefix across routing tables","stale preview/idempotency fencing","restart and rollback boundaries","stale observed state and heartbeat","canary selector and wave limits"],
+      "NEGATIVE_FAILURE_COVERAGE":["unknown-node rejection","duplicate policy-priority rejection","missing lookup-table rejection","offline apply preserves desired state","stale rollback conflict","unowned drift preservation","management reachability enforcement"],
+      "PADDING_RISK":"LOW: solver-visible Go, configuration, Ansible and dashboard surfaces correspond to distinct reachable runtime/deployment responsibilities; no cloned module or duplicated-file expansion is used to meet scale.",
+      "TEST_DUPLICATION_RISK":"LOW: 25 F2P cases span independent identity, policy, transaction, recovery, reconciliation, rollout, deployment and UI contracts with four preservation cases.",
+      "INSTRUCTION_CHECKLIST_RISK":"LOW: instruction states engineering outcomes and public invariants without enumerating private test rows or defect IDs.",
+      "REQUIRED_CHANGES":[]
+    },
+    "evidence_refs":[]
+  }
+}
