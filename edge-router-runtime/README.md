@@ -1,17 +1,19 @@
 # Edge Router Runtime
 
-A Terminus Edition-3 systems task built around repairing a live Go HTTP edge-routing service. The starter is intentionally plausible: it compiles and serves traffic, but several individually reasonable implementation choices violate production semantics when routing, retry, reload, and shutdown behavior interact.
+`edge-router-runtime` is a Go HTTP edge-routing service that accepts dynamic routing-source updates, compiles them into immutable serving generations, proxies live traffic to upstream pools, persists recovery checkpoints, and exposes operator health and observability surfaces.
 
-## Why this task is useful
+## Runtime responsibilities
 
-The agent must reason about HTTP proxy behavior, host/path precedence, hop-by-hop headers, retry safety, atomic configuration publication, signal handling, and graceful connection draining. Verification is black-box: the tests build the submitted service, launch real local upstreams, mutate the documented configuration, and drive the process with real requests and Unix signals.
+The service must keep configuration authority separate from serving state. Source revisions and content digests are fenced independently, candidates are fully validated before publication, and rejected or stale updates leave the last accepted generation serving unchanged. Published generations are immutable so concurrent requests never observe a partially applied configuration.
 
-The verifier is designed to reject common partial fixes such as sorting routes once without respecting exact-host precedence, retrying every failed request, clearing the active config before parsing a reload, or terminating immediately on SIGTERM.
+Endpoint continuity is based on canonical endpoint identity plus membership incarnation. Runtime state may carry forward only when membership and pool semantics remain compatible. Each request leases one serving generation for route matching, affinity, retry and failover; backend selection must continue to respect endpoint lifecycle and health. Removed endpoints stop receiving fresh work while requests already bound to older generations may drain within the documented bound.
 
-## Calibration
+## Persistence and recovery
 
-- Category: Software / Systems
-- Language: Go
-- Intended tier: advanced
-- Agent-visible task stays concise; the detailed runtime semantics live in the product contract shipped with the starter code.
-- No network access is required at runtime, although the task uses the repository default public network mode.
+Checkpoint publication is transactional: a complete generation body is durably written and validated before `CURRENT` is advanced. Recovery verifies schema and integrity and may fall back to the most recent retained complete generation when the current pointer or body is unusable. Restored source fences and accepted merge authority must be established before live providers can publish new updates.
+
+## Operations
+
+The service preserves the documented CLI, JSON configuration, data-plane proxying, administrative endpoints, readiness/health reporting, metrics and event surfaces. Runtime, snapshot, transport, affinity and telemetry state must retire within bounded lifecycle rules so repeated configuration churn does not leak unbounded resources.
+
+The authoritative engineering contracts are in `environment/docs/architecture.md`, `environment/docs/configuration.md`, `environment/docs/runtime-state.md`, `environment/docs/operator-guide.md`, and `environment/docs/observability.md`. The implementation under `environment/` is expected to satisfy those contracts without replacing live proxying with canned behavior.
