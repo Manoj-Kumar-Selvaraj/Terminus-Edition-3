@@ -1,0 +1,73 @@
+{
+  "evidence_refs": [],
+  "invocation_id": "inv_40cdf827b3f803e5bb89b39f954e73c7c1988c65326e2698720e77bf3fc36018",
+  "output_task_commit": "9663e4da67ab20e6bd66b942ac54b57667408dd8",
+  "outputs": {
+    "COMPONENT_GRAPH": {
+      "architecture_style": "single-process Go edge runtime with immutable serving generations, serialized reconciliation, lifecycle-safe shared runtime objects, explicit data/operator planes and durable recovery",
+      "identity_contract": {
+        "endpoint": "pool id + canonical endpoint + transport compatibility; accepted remove/re-add creates a new incarnation",
+        "pool": "stable pool id + semantic compatibility fingerprint",
+        "route": "stable route id + semantic digest",
+        "source": "source identity + monotonic revision + content digest"
+      },
+      "nodes": [
+        "runtime_host",
+        "configuration_ingress",
+        "semantic_validator",
+        "route_graph_compiler",
+        "generation_reconciler",
+        "snapshot_store",
+        "pool_runtime_registry",
+        "selection_engine",
+        "upstream_transport",
+        "health_manager",
+        "drain_manager",
+        "checkpoint_store",
+        "telemetry_registry",
+        "data_plane_server",
+        "admin_plane"
+      ],
+      "publication_contract": "validate, compile, recheck source fences, reconcile runtime state, prepare durable checkpoint body and atomically publish one complete snapshot before acknowledgement"
+    },
+    "DATA_VOLUME_PLAN": {
+      "classification": "configuration/runtime-state edge service",
+      "plan": "varied routes, pools, endpoints and independent source snapshots"
+    },
+    "ENTRYPOINTS": [
+      "edge-router-runtime serve",
+      "edge-router-runtime validate",
+      "operator POST /v1/config",
+      "operator POST /v1/discovery",
+      "public HTTP data plane",
+      "startup checkpoint recovery",
+      "graceful shutdown/drain"
+    ],
+    "PRODUCTION_CHARACTERISTICS": [
+      "public HTTP proxying",
+      "independent operator/discovery updates",
+      "concurrent immutable generation publication",
+      "health-aware selection/retry/failover",
+      "bounded draining and transport retirement",
+      "durable restart recovery",
+      "bounded telemetry lifecycle"
+    ],
+    "SCALE_FIT": "large_system_strict: multi-package runtime exceeds the 3000 substantive reachable LOC floor and supports 30 connected defect manifestations across six root-cause clusters without padding.",
+    "SOLVER_VISIBLE_DOC_PLAN": [
+      "environment/docs/architecture.md",
+      "environment/docs/configuration.md",
+      "environment/docs/runtime-state.md",
+      "environment/docs/operator-guide.md",
+      "environment/docs/observability.md"
+    ],
+    "STATE_MODEL": {
+      "authority": "accepted per-source revision/digest fences and accepted merge material advance only with successful generation publication",
+      "durability": "checkpoint body is durable before CURRENT authority replacement; recovery verifies current then falls back to prior valid generation before provider admission",
+      "endpoint_runtime": "continuously present compatible canonical endpoints preserve runtime state; remove/re-add creates a new incarnation",
+      "serving": "one immutable complete RuntimeSnapshot is atomically published and request-held for matching, retries and failover"
+    },
+    "UNRESOLVED_RISKS": []
+  },
+  "schema_version": "1.0",
+  "status": "ARCHITECTURE_READY"
+}
