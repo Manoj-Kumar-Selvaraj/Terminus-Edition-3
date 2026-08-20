@@ -1,0 +1,81 @@
+{
+  "evidence_refs": [
+    {
+      "content_hash": "sha256:104817a239b92de3e53f14d6bc0176563437894773e060648776dc09c6280374",
+      "kind": "COMMIT",
+      "ref": "commit:78ad422902b27dea954905130a1267b02cff3596"
+    }
+  ],
+  "invocation_id": "inv_0c98e5a17778a51283ee41d7aec54753813315adcbb3d7e271f3c73ee5328c9a",
+  "output_task_commit": "78ad422902b27dea954905130a1267b02cff3596",
+  "outputs": {
+    "behavioral_surfaces": [
+      "create/state identity",
+      "refresh/drift reconciliation",
+      "update transaction",
+      "delete transaction/scoped ownership",
+      "runner argv/process lifecycle",
+      "normalization/idempotency across filesystem content accounts and cron"
+    ],
+    "causal_edges": [
+      "D01/D02/D03/D04 -> D05",
+      "D06/D07/D08/D10 -> D11",
+      "D09 -> D15 -> D04",
+      "D11 -> D05",
+      "D12 -> D13 -> D14 -> D15",
+      "D16 -> D11",
+      "D17 -> D18 -> D05",
+      "D19 -> D06",
+      "D20 -> D18",
+      "D21 -> D22 and D23",
+      "D23/D24 -> D13",
+      "D24 -> D25",
+      "D26 -> D15 and D11",
+      "D27/D28 -> D11"
+    ],
+    "defects": [
+      {
+        "count": 5,
+        "id": "D01-D05",
+        "root_cause": "RC1_STATE_IDENTITY"
+      },
+      {
+        "count": 6,
+        "id": "D06-D11",
+        "root_cause": "RC2_REFRESH_RECONCILIATION"
+      },
+      {
+        "count": 5,
+        "id": "D12-D16",
+        "root_cause": "RC3_UPDATE_TRANSACTION"
+      },
+      {
+        "count": 4,
+        "id": "D17-D20",
+        "root_cause": "RC4_DELETE_FAILURE"
+      },
+      {
+        "count": 5,
+        "id": "D21-D25",
+        "root_cause": "RC5_RUNNER_COMMAND"
+      },
+      {
+        "count": 3,
+        "id": "D26-D28",
+        "root_cause": "RC6_NORMALIZATION_IDEMPOTENCY"
+      }
+    ],
+    "organic_f2p_surface_assessment": "28 connected defect manifestations across six root-cause clusters exercise shared provider lifecycle subsystems; fixes must generalize across multiple resource types rather than target isolated tests.",
+    "profile": "large_system_strict",
+    "root_cause_clusters": {
+      "RC1_STATE_IDENTITY": "stable identity and applied-state publication",
+      "RC2_REFRESH_RECONCILIATION": "native side-effect-free observation and drift reconciliation",
+      "RC3_UPDATE_TRANSACTION": "mutation-before-state transactional update ordering",
+      "RC4_DELETE_FAILURE": "failed-delete state retention and scoped ownership",
+      "RC5_RUNNER_COMMAND": "structured argv process timeout cancellation and cleanup",
+      "RC6_NORMALIZATION_IDEMPOTENCY": "canonical desired/observed normalization"
+    }
+  },
+  "schema_version": "1.0",
+  "status": "DESIGN_READY"
+}
