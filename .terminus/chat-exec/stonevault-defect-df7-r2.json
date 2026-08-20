@@ -1,0 +1,38 @@
+{
+  "schema_version": "1.0",
+  "mode": "RECORD",
+  "task_id": "stonevault-crash-safe-storage",
+  "task_commit": "03317f8218069b9e0b5d073bf87ecf7a0ae8e4a1",
+  "control_plane_commit": "df7ef7569e2947b9f0bf7cf89ed4dec6c2a5a1fe",
+  "expected_repository_head": "28ea89811b7c7b338fbbbbbf6d0d81abc0278232",
+  "stage_id": "DEFECT_TOPOLOGY",
+  "inputs": {
+    "APPROVED_OPERATIONAL_REQUIREMENTS": ["locking","MVCC","scan overlay","conflicts","WAL recovery","checkpoint/snapshot integrity","health reporting","Rust ingress policy"],
+    "APPROVED_WORK_PACKAGE": {"id":"stonevault-crash-safe-storage"},
+    "CLEAN_SYSTEM_ARCHITECTURE": {"boundary":"Rust control/session layer over stable C ABI to C++20 storage core"},
+    "CREATION_PROFILE": "large_system_strict"
+  },
+  "result": {
+    "status": "DESIGN_READY",
+    "evidence_refs": [
+      {
+        "kind": "COMMIT",
+        "ref": "commit:03317f8218069b9e0b5d073bf87ecf7a0ae8e4a1",
+        "content_hash": "sha256:38d1e6b49a6cd52e4cefce949ec274c9b07daf9b5ba2735bb2a094820f7c78de"
+      }
+    ],
+    "outputs": {
+      "behavioral_surfaces": {
+        "edge_boundary": ["inclusive limits","unsigned ordering","overlay","snapshot bounds"],
+        "failure_recovery": ["killed tx","torn WAL","complete WAL corruption","snapshot corruption","abandoned temp"],
+        "negative_rejection": ["malformed commands","unknown tx","oversize","second writer","stale conflict"],
+        "normal": ["transaction CRUD","snapshot reads","prefix scans","checkpoint/restart"]
+      },
+      "causal_edges": ["locking->writer exclusion","MVCC->scan visibility/overlay","conflicts->atomic sequencing","recovery->corruption classification","checkpoint->WAL/health","snapshot integrity->restart safety","ingress policy->operator/protocol boundaries"],
+      "defects": ["D01-D25 as canonically recorded in .terminus/designs/stonevault-crash-safe-storage.json"],
+      "organic_f2p_surface_assessment": "SUFFICIENT_PENDING_CURRENT_HEAD_EMPIRICAL_MATRIX",
+      "profile": "large_system_strict",
+      "root_cause_clusters": ["RC_LOCK","RC_MVCC","RC_SCAN_OVERLAY","RC_CONFLICT","RC_RECOVERY","RC_CHECKPOINT_INTEGRITY","RC_HEALTH","RC_RUST_INTERFACE"]
+    }
+  }
+}
