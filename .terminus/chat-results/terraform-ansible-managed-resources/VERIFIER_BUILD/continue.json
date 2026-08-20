@@ -1,0 +1,308 @@
+{
+  "execution_mode": "INLINE_SPECIALIST",
+  "executor_handoff": null,
+  "invocation": {
+    "acceptance_predicates": {},
+    "authority": {
+      "control_plane_commit": "215cc70bcebcccc3c9a401af1b74a97d90026da3",
+      "policy_versions": {},
+      "task_commit": "78ad422902b27dea954905130a1267b02cff3596",
+      "task_id": "terraform-ansible-managed-resources"
+    },
+    "evidence": {
+      "authorized_evidence_classes": [
+        "CI_RUNTIME_EVIDENCE",
+        "CONTROL_PLANE_POLICY",
+        "PRIVATE_CREATION_DESIGN",
+        "SOLVER_VISIBLE_TASK"
+      ],
+      "evidence_required": [
+        "requirement-to-test map",
+        "behavioral scenario families",
+        "F2P/P2P classification",
+        "test independence"
+      ],
+      "excluded_evidence_classes": [
+        "CURRENT_REVIEW_PACKET",
+        "DURABLE_SESSION_STATE",
+        "FINAL_PACKAGE_EVIDENCE",
+        "MODEL_TRIAL_EVIDENCE",
+        "PRIOR_REVIEW_RESULTS",
+        "PUBLIC_REFERENCE",
+        "SOLUTION_ORACLE",
+        "VERIFIER_PRIVATE"
+      ],
+      "mandatory_exact_reads": [
+        "TERMINUS_3_AI_INSTRUCTIONS.md",
+        ".terminus/agents/CREATION_PIPELINE.md",
+        ".terminus/agents/CREATOR_PROMPTS.md"
+      ],
+      "retrieval_mode": "FILTERED_HYBRID"
+    },
+    "ignored_input_count": 0,
+    "inputs": {
+      "optional": {
+        "PRESERVATION_RISK_MODEL": {
+          "preservation_obligations": [
+            "exact ten interfaces",
+            "local/ansibleops 0.1.0",
+            "Terraform Core sole durable state",
+            "clean Read never runs Ansible",
+            "sibling entries and symlink targets preserved"
+          ],
+          "starter_public_interfaces": [
+            "terraform-provider-ansibleops",
+            "provider Configure/CRUD callbacks",
+            "build-provider.sh",
+            "smoke.sh",
+            "examples/basic/main.tf"
+          ]
+        },
+        "RUNTIME_INTERFACE_MAP": {
+          "entrypoints": [
+            "/app/provider/cmd/terraform-provider-ansibleops/main.go",
+            "Terraform Configure/Create/Read/Update/Delete",
+            "/app/provider/scripts/build-provider.sh",
+            "/app/provider/scripts/smoke.sh"
+          ],
+          "reachability": [
+            "Terraform provider registration reaches exactly ten resource implementations",
+            "CRUD mutation reaches shared Ansible runner",
+            "Read reaches native filesystem/content/account/cron observers",
+            "normalization and identity logic are shared across resource families"
+          ]
+        }
+      },
+      "required": {
+        "BEHAVIORAL_SURFACES": {
+          "cross_component": [
+            "identity across mutable updates",
+            "native observation versus mutation boundary",
+            "state commit ordering versus runner outcome",
+            "normalization across desired and observed state"
+          ],
+          "edge_boundary": [
+            "wrong object kind",
+            "spaces in paths",
+            "omitted versus explicit cron defaults",
+            "remove_home boundary",
+            "map/group/mode ordering equivalence",
+            "already-absent destroy"
+          ],
+          "failure_recovery": [
+            "failed update retry",
+            "timeout/cancellation cleanup",
+            "missing-object recreation",
+            "failed destroy retry",
+            "external drift"
+          ],
+          "negative_rejection": [
+            "duplicate external ownership",
+            "shell metacharacters remain literal",
+            "non-zero Ansible failure",
+            "failed delete retains state",
+            "command output absent from state"
+          ],
+          "normal": [
+            "exact ten provider schemas",
+            "basic lifecycle/state",
+            "copy/template content and metadata",
+            "account/group/cron lifecycle",
+            "successful runner cleanup",
+            "Ansible mutation backend"
+          ],
+          "ownership": [
+            "path/user/group/cron collision rejection",
+            "line/block/cron sibling preservation",
+            "block marker ownership",
+            "symlink target preservation",
+            "user home policy"
+          ]
+        },
+        "SOLVER_VISIBLE_CONTRACTS": {
+          "lifecycle.md": "Create mutate-observe-publish; Read native and drift-aware; Update stable identity and retry-safe state; Delete scoped and failure-safe; repeated apply/refresh/plan idempotent with canonical representations.",
+          "provider-contract.md": "One Terraform resource owns one external key; Create/Update/Delete may use Ansible; Read is native-only; mutations use process arguments not shell text; non-zero/timeout/cancel fail; temp playbooks always cleaned; successful state publication follows external mutation; failed update preserves prior state; destroy completes only after absence.",
+          "resource-reference.md": "Exactly ten resources: file,directory,copy,template,line,block,symlink,user,group,cron with documented external identities; copy/template source_digest semantics; named text independent ownership; cron root/wildcard defaults; native filesystem/account/cron observation."
+        },
+        "SOLVER_VISIBLE_REQUIREMENTS": {
+          "instruction.md": "Complete the inherited ansibleops provider as exactly ten normal managed Terraform resources; stable external-key identity; Ansible-only mutation; native side-effect-free Read; transactional state publication; scoped delete; copy/template source intent and destination observation; named line/block ownership; account/group/cron reconciliation; structured argv and cleanup; canonical convergence; Terraform Core sole durable state authority; no wrapper/provisioner/manual-state substitutes.",
+          "requirement_families": [
+            "provider/schema",
+            "state/identity",
+            "native refresh/drift",
+            "transactional create/update",
+            "failure-safe scoped delete",
+            "copy/template content intent",
+            "line/block ownership",
+            "user/group native reconciliation",
+            "runner/process safety",
+            "normalization/idempotency",
+            "cron defaults/drift/siblings",
+            "external ownership collision",
+            "Ansible mutation backend"
+          ]
+        }
+      }
+    },
+    "invocation_id": "inv_5f17a49d39744c6382f89dfbe8033838bb947e182f0372db4d88da5fedc2a3cc",
+    "learning": {
+      "context_hash": "sha256:bb84a513aa2b6e4374d691759c4a6edf94169f479f4611e9091643b9f279ccfc",
+      "lessons": [],
+      "mode": "GENERALIZED_LESSONS_PLUS_OWNED_REMEDIATIONS",
+      "raw_feedback_exposed": false,
+      "raw_historical_findings_exposed": false,
+      "registry_heads": {
+        "feedback": "GENESIS",
+        "findings": "GENESIS",
+        "lessons": "GENESIS",
+        "patterns": "GENESIS",
+        "remediations": "GENESIS"
+      },
+      "remediations": []
+    },
+    "missing_required_inputs": [],
+    "output_contract": {
+      "allowed_status_values": [
+        "VERIFIER_READY",
+        "REQUIREMENT_GAP",
+        "SCENARIO_TOO_SMALL",
+        "BLOCKED"
+      ],
+      "deterministic_validators": [
+        "verifier lint/static checks",
+        ".terminus/validate_task_complexity.py <task>"
+      ],
+      "optional_fields": [
+        "STARTER_EMPIRICAL_STATUS",
+        "ORACLE_EMPIRICAL_STATUS",
+        "SOLVER_LOGIC_REIMPLEMENTATION_RISK"
+      ],
+      "persisted_artifacts": [
+        "<task>/tests/",
+        ".terminus/designs/<task>-test-map.json"
+      ],
+      "required_fields": [
+        "REQUIREMENT_TEST_MATRIX",
+        "F2P_COUNT",
+        "P2P_COUNT",
+        "EDGE_BOUNDARY_COVERAGE",
+        "NEGATIVE_FAILURE_COVERAGE",
+        "ORGANIC_COUNT_JUSTIFICATION",
+        "TEST_INDEPENDENCE"
+      ],
+      "semantic_reviewers": [
+        "Q2 Verifier Coverage Repairer",
+        "Verifier Engineer"
+      ]
+    },
+    "readiness": "READY",
+    "retrieval": {
+      "query": null,
+      "retrieved_chars": 0,
+      "retrieved_context": [],
+      "status": "NOT_REQUESTED"
+    },
+    "routing": {
+      "failure_routes": {
+        "DUPLICATE_OR_WEAK_TEST": "A5 Verifier Author / Q2 Verifier Coverage Repairer",
+        "REQUIREMENT_GAP": "Q1 Spec Gap Repairer / contract owner",
+        "SCENARIO_TOO_SMALL": "Creation Controller -> WORK_PACKAGE_RESEARCH"
+      },
+      "stale_on": [
+        "solver-visible requirement change",
+        "referenced contract change",
+        "behavioral surface change",
+        "verifier change"
+      ],
+      "success_transition": "HUMAN_WRITING_RESEARCH"
+    },
+    "schema_version": "1.0",
+    "stage": {
+      "lifecycle": "creation",
+      "owner": "A5 Verifier Author",
+      "role_class": "PRODUCER",
+      "role_id": "A5_VERIFIER_AUTHOR",
+      "stage_id": "VERIFIER_BUILD"
+    }
+  },
+  "next": {
+    "action": "INVOKE_STAGE",
+    "optional_inputs": [
+      "PRESERVATION_RISK_MODEL",
+      "RUNTIME_INTERFACE_MAP"
+    ],
+    "owner": "A5 Verifier Author",
+    "primary_role_id": "A5_VERIFIER_AUTHOR",
+    "required_inputs": [
+      "BEHAVIORAL_SURFACES",
+      "SOLVER_VISIBLE_CONTRACTS",
+      "SOLVER_VISIBLE_REQUIREMENTS"
+    ],
+    "stage_id": "VERIFIER_BUILD"
+  },
+  "quality_mode_policy": {
+    "inline_creation_governor_role_ids": [
+      "A10_COMPLEXITY_GOVERNOR"
+    ],
+    "inline_quality_role_ids": [
+      "Q1_SPEC_GAP_REPAIRER",
+      "Q2_VERIFIER_COVERAGE_REPAIRER",
+      "Q3_SPEC_AMBIGUITY_REPAIRER",
+      "Q5_ORACLE_RUNTIME_REPAIR_SPECIALIST",
+      "Q7_TASK_FORMAT_ENFORCER"
+    ],
+    "inline_stage_sequences": {
+      "SPEC_ALIGNMENT": [
+        {
+          "result_field": "Q1_STATUS",
+          "role_id": "Q1_SPEC_GAP_REPAIRER",
+          "satisfied_values": [
+            "NO_GAP",
+            "PASS"
+          ]
+        },
+        {
+          "result_field": "Q2_STATUS",
+          "role_id": "Q2_VERIFIER_COVERAGE_REPAIRER",
+          "satisfied_values": [
+            "COVERED",
+            "PASS"
+          ]
+        },
+        {
+          "result_field": "Q3_STATUS",
+          "role_id": "Q3_SPEC_AMBIGUITY_REPAIRER",
+          "satisfied_values": [
+            "CLEAR",
+            "PASS"
+          ]
+        }
+      ]
+    },
+    "mandatory_quality_role_keys": [
+      "spec-test-contract",
+      "production-logic"
+    ],
+    "mandatory_same_chat_checkpoints": {
+      "Q1": "SPEC_ALIGNMENT.Q1_STATUS",
+      "Q2": "SPEC_ALIGNMENT.Q2_STATUS",
+      "Q3": "SPEC_ALIGNMENT.Q3_STATUS",
+      "Q5": "DETERMINISTIC_VALIDATION runtime/oracle checkpoint; invoke Q5 repair only on registered runtime/oracle failure",
+      "Q7": "FORMAT_GATE"
+    },
+    "optional_q8_role_keys": [
+      "difficulty-sim-gpt",
+      "difficulty-sim-claude"
+    ],
+    "policy_document": ".terminus/agents/QUALITY_EXECUTION_MODE.md",
+    "policy_version": "1.0",
+    "producer_role_classes": [
+      "FIXER",
+      "PRODUCER"
+    ],
+    "q4_q6_mode": "AUTOMATED",
+    "q8_mode": "OFF",
+    "source": ".terminus/agents/quality_execution_mode.json"
+  },
+  "state_snapshot_id": "state_8118a67c52d157c33d66feaf7578666e1e417bc460c0e9cf490b0e43f9606e69"
+}
