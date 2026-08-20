@@ -1,0 +1,9 @@
+---
+- name: Reload systemd
+  ansible.builtin.systemd_service:
+    daemon_reload: true
+
+- name: Restart routecp
+  ansible.builtin.systemd_service:
+    name: "{{ routecp_service_name }}"
+    state: restarted
