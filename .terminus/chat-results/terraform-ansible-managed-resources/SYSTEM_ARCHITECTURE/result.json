@@ -6,91 +6,72 @@
       "ref": "commit:78ad422902b27dea954905130a1267b02cff3596"
     },
     {
-      "content_hash": "sha256:8d7c0b246bf0e279a1462c24246dd49052a0367fc23fe9b1f13c800165271b24",
+      "content_hash": "sha256:fca3ef4b283f1a1fe2aa6d960cd36a17b7232eb0b7a130f9cc8d43d948d6ec42",
       "kind": "COMMIT",
-      "ref": "commit:02ac3445191f96a9309d3a08248f09e17a738c5b"
+      "ref": "commit:67b805a297ac005ee08e82facc533f53a3233192"
     }
   ],
-  "invocation_id": "inv_6f044814fb55d8b1a40ebbb589ef6602d3e12c431c52bb60dd15ac19cef00a71",
+  "invocation_id": "inv_7535df2b879eaf0094d827a574577aa0d66b20252626442b628e1468a56ebc87",
   "output_task_commit": "78ad422902b27dea954905130a1267b02cff3596",
   "outputs": {
     "COMPONENT_GRAPH": [
-      "Terraform Plugin Framework provider registration/configuration and runtime preflight",
-      "shared lifecycle identity/state transition layer",
-      "Ansible playbook/task generation layer",
-      "structured process runner with timeout/cancellation/cleanup",
-      "native Linux observation layer for filesystem/content/accounts/groups/cron",
-      "normalization and validation layer",
-      "ten differentiated resource implementations: file directory copy template line block symlink user group cron"
+      "provider registration/configuration/runtime preflight",
+      "shared lifecycle identity/state transitions",
+      "Ansible task/playbook generation",
+      "structured runner",
+      "native Linux observation",
+      "normalization/validation",
+      "ten differentiated resource implementations"
     ],
-    "DATA_VOLUME_PLAN": "Not a record-oriented business-data task. Production realism comes from persistent Linux object state and repeated Terraform lifecycle transitions rather than a synthetic bulk dataset.",
     "ENTRYPOINTS": [
       "/app/provider/cmd/terraform-provider-ansibleops/main.go",
-      "Terraform provider Configure/resource CRUD callbacks",
       "/app/provider/scripts/build-provider.sh",
-      "/app/provider/scripts/smoke.sh",
-      "documented Terraform examples using local/ansibleops"
+      "/app/provider/scripts/smoke.sh"
     ],
     "PRODUCTION_CHARACTERISTICS": [
-      "real Terraform provider process using current Plugin Framework",
-      "ten differentiated Linux managed-resource lifecycles",
-      "separate mutation and observation paths",
-      "failure-safe state transition/retry semantics",
-      "stable ownership identities over persistent external Linux state",
-      "process timeout cancellation cleanup and argv safety",
-      "cross-resource canonical normalization and idempotent convergence",
-      "scoped shared backing-store ownership for line/block/cron"
+      "real provider process",
+      "differentiated lifecycles",
+      "mutation/observation split",
+      "failure-safe transitions",
+      "stable ownership",
+      "runner safety",
+      "canonical convergence"
     ],
     "RESOURCE_GRAPH": {
-      "provider": "configures runner and resource data",
-      "resource_families": {
-        "accounts": [
-          "user",
-          "group"
-        ],
-        "content": [
-          "copy",
-          "template",
-          "line",
-          "block"
-        ],
-        "filesystem": [
-          "file",
-          "directory",
-          "symlink"
-        ],
-        "scheduler": [
-          "cron"
-        ]
-      },
-      "shared_layers": [
-        "identity/state",
-        "Ansible generation",
-        "runner",
-        "observation",
-        "normalization"
+      "accounts": [
+        "user",
+        "group"
+      ],
+      "content": [
+        "copy",
+        "template",
+        "line",
+        "block"
+      ],
+      "filesystem": [
+        "file",
+        "directory",
+        "symlink"
+      ],
+      "scheduler": [
+        "cron"
       ]
     },
-    "SCALE_FIT": "large_system_strict is natural: shared provider/lifecycle/runner/observation layers plus ten distinct resource families require substantive reachable implementation well beyond a localized wrapper without padding; behavioral breadth arises from state transitions, drift, ownership, process failures and family-specific semantics.",
+    "SCALE_FIT": "large_system_strict natural fit",
     "SOLVER_VISIBLE_DOC_PLAN": [
-      "docs/provider-contract.md for provider/runtime/ownership/mutation-state boundaries",
-      "docs/resource-reference.md for exact ten resource schemas identities and family semantics",
-      "docs/lifecycle.md for Create/Read/Update/Delete/idempotency contracts",
-      "examples/basic/main.tf for normal operator usage",
-      "configuration inventory and build/smoke scripts for runtime/operator entrypoints"
+      "docs/provider-contract.md",
+      "docs/resource-reference.md",
+      "docs/lifecycle.md",
+      "examples/basic/main.tf"
     ],
     "STATE_MODEL": {
-      "ephemeral_state": "Generated Ansible playbooks and process output are runtime-only; playbooks are cleaned on every terminal outcome and full output is not durable resource state.",
-      "external_state": "Linux filesystem, passwd/group databases and per-user crontabs are authoritative external objects.",
-      "identity": "Each resource ID derives only from its documented external object key and remains stable across mutable attribute updates.",
-      "mutation": "Create/Update/Delete use Ansible and publish new Terraform state only after successful external mutation.",
-      "observation": "Read/refresh performs native observation only and maps missing/wrong-kind ownership to absence plus canonical observed values.",
-      "terraform_state": "Terraform Core is the only durable Terraform state authority; provider methods publish through Plugin Framework APIs only."
+      "external_state": "filesystem/passwd/group/crontab external truth",
+      "identity": "documented external object key",
+      "mutation": "Ansible before state publication",
+      "observation": "native read only",
+      "terraform_state": "Terraform Core sole durable state authority"
     },
-    "UNRESOLVED_RISKS": [
-      "A3 must derive coupled incomplete-behavior topology from these clean boundaries without one-defect-per-resource padding.",
-      "A2B must preserve docs as technical contracts rather than exposing defect locations or repair recipes."
-    ]
+    "UNRESOLVED_RISKS": []
   },
   "schema_version": "1.0",
   "status": "ARCHITECTURE_READY"
