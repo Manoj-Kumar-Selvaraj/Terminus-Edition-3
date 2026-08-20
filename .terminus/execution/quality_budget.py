@@ -13,9 +13,18 @@ from __future__ import annotations
 import argparse
 import json
 import re
+import sys
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Mapping
+
+if __package__ in {None, ""}:
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+    from execution.quality_execution_guard import ensure_review_output_unoccupied
+    from execution.quality_executor import QualityExecutorError
+else:
+    from .quality_execution_guard import ensure_review_output_unoccupied
+    from .quality_executor import QualityExecutorError
 
 Q_ROLE_CODES = {
     "Spec Gap Repairer": "q1",
@@ -92,7 +101,14 @@ def load_packet(path: Path) -> dict[str, Any]:
         raise QualityBudgetError(f"cannot read packet: {exc}") from exc
     if not isinstance(packet, dict):
         raise QualityBudgetError("packet must contain one JSON object")
-    for field in ("task", "task_commit", "control_plane_commit", "review_id", "role"):
+    for field in (
+        "task",
+        "task_commit",
+        "control_plane_commit",
+        "review_id",
+        "role",
+        "review_output_path",
+    ):
         if not packet.get(field):
             raise QualityBudgetError(f"packet missing {field}")
     return packet
@@ -196,6 +212,7 @@ def claim_quality_budget(
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--root", default=".")
     parser.add_argument("--packet", required=True)
     parser.add_argument("--state-root", required=True)
     parser.add_argument("--backend", required=True)
@@ -209,6 +226,7 @@ def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     try:
         packet = load_packet(Path(args.packet))
+        ensure_review_output_unoccupied(Path(args.root), packet)
         result = claim_quality_budget(
             Path(args.state_root),
             packet,
@@ -217,7 +235,7 @@ def main(argv: list[str] | None = None) -> int:
             run_id=args.run_id,
             run_attempt=args.run_attempt,
         )
-    except QualityBudgetError as exc:
+    except (QualityBudgetError, QualityExecutorError) as exc:
         print(f"quality budget failed: {exc}")
         return 2
 
