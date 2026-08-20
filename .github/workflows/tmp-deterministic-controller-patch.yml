@@ -1,0 +1,67 @@
+name: Temporary deterministic controller patch
+
+on:
+  push:
+    branches:
+      - control-plane/deterministic-controller-reconciliation
+    paths:
+      - .terminus/patches/deterministic-controller-reconciliation.trigger
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Patch controller deterministically
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+
+          path = Path('.terminus/execution/controller_cli.py')
+          text = path.read_text(encoding='utf-8')
+
+          def replace_once(old: str, new: str) -> None:
+              global text
+              count = text.count(old)
+              if count != 1:
+                  raise SystemExit(f'expected one controller patch anchor, found {count}: {old[:80]!r}')
+              text = text.replace(old, new, 1)
+
+          replace_once(
+              '    from execution.control_plane import resolve_control_plane_commit\n',
+              '    from execution.control_plane import resolve_control_plane_commit\n'
+              '    from execution.deterministic_request import (\n'
+              '        build_request as build_deterministic_request,\n'
+              '        dispatch_envelope as deterministic_dispatch_envelope,\n'
+              '    )\n',
+          )
+          replace_once(
+              '    from .control_plane import resolve_control_plane_commit\n',
+              '    from .control_plane import resolve_control_plane_commit\n'
+              '    from .deterministic_request import (\n'
+              '        build_request as build_deterministic_request,\n'
+              '        dispatch_envelope as deterministic_dispatch_envelope,\n'
+              '    )\n',
+          )
+
+          anchor = '''    payload["invocation"] = packet\n    payload["executor_handoff"] = None\n\n    policy = resolve_quality_execution_modes(\n'''
+          block = '''    payload["invocation"] = packet\n    payload["executor_handoff"] = None\n\n    if stage_id == "DETERMINISTIC_VALIDATION" and next_action["action"] in {\n        "INVOKE_STAGE",\n        "RETRY_STAGE",\n    }:\n        payload["execution_mode"] = "HOSTED_DETERMINISTIC_VALIDATION"\n        if packet.get("readiness") != "READY":\n            payload["dispatch"] = {\n                "status": "BLOCKED",\n                "stage_id": stage_id,\n                "blocking_reason": "deterministic StageInvocation is not READY",\n            }\n            return payload\n        stage = packet.get("stage")\n        if not isinstance(stage, dict) or stage.get("role_class") != "CONTROLLER":\n            raise ValueError("DETERMINISTIC_VALIDATION must execute under CONTROLLER authority")\n        if stage.get("role_id") != "CREATION_CONTROLLER":\n            raise ValueError("DETERMINISTIC_VALIDATION has unexpected controller role")\n        if packet.get("output_contract", {}).get("semantic_reviewers"):\n            raise ValueError("deterministic hosted execution cannot replace semantic reviewers")\n        request = build_deterministic_request(\n            root,\n            task_id=args.task_id,\n            task_commit=args.task_commit,\n            control_plane_commit=args.control_plane_commit,\n            invocation_id=str(packet["invocation_id"]),\n            inputs=inputs,\n            expected_repository_head=_git_head(root),\n        )\n        dispatch = deterministic_dispatch_envelope(request)\n        payload["execution_mode"] = dispatch["execution_mode"]\n        payload["dispatch"] = dispatch\n        return payload\n\n    policy = resolve_quality_execution_modes(\n'''
+          replace_once(anchor, block)
+          path.write_text(text, encoding='utf-8')
+          PY
+
+          rm -f .github/workflows/tmp-deterministic-controller-patch.yml
+          rm -f .terminus/patches/deterministic-controller-reconciliation.trigger
+          git config user.name 'terminus-control-plane-patch[bot]'
+          git config user.email 'terminus-control-plane-patch[bot]@users.noreply.github.com'
+          git add -- .terminus/execution/controller_cli.py .github/workflows/tmp-deterministic-controller-patch.yml .terminus/patches/deterministic-controller-reconciliation.trigger
+          git diff --cached --check
+          git commit -m 'Route deterministic validation through hosted request adapter'
+          git push origin HEAD:control-plane/deterministic-controller-reconciliation
