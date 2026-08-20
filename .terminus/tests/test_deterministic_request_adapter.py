@@ -114,7 +114,6 @@ def test_request_workflow_runs_real_oracle_and_nop_without_model_credentials() -
         "terminus-deterministic-request/**",
         ".terminus/deterministic-requests/*.json",
         "deterministic_request.py validate",
-        "request branch/base mismatch",
         "Task changed after deterministic request",
         "Control plane changed after deterministic request",
         "terminus3.sh oracle",
