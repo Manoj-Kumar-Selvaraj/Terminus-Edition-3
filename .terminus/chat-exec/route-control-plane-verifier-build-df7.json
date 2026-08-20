@@ -1,0 +1,45 @@
+{
+  "schema_version": "1.0",
+  "mode": "RECORD",
+  "task_id": "route-control-plane",
+  "task_commit": "22d2e9e09f4deb58029559fe9a0863c2e032f25c",
+  "control_plane_commit": "df7ef7569e2947b9f0bf7cf89ed4dec6c2a5a1fe",
+  "expected_repository_head": "d94389c0e2a0da04c9bf88972c84bdcf4954ed86",
+  "stage_id": "VERIFIER_BUILD",
+  "inputs": {
+    "SOLVER_VISIBLE_REQUIREMENTS": {
+      "ENGINEERING_OBJECTIVE": "Complete the production-style route-control-plane so route/rule lifecycle, revision fencing, rollback/recovery, drift ownership, rollout isolation, Ansible deployment and dashboard concurrency behave coherently.",
+      "REQUIRED_END_STATE": ["canonical route identity","valid policy-rule/table dependencies","exact preview/apply CAS fencing","atomic failure-safe recovery","owned fresh drift reconciliation","safe rollout retry/canary behavior","idempotent Ansible projection with host precedence","dashboard CAS binding"]
+    },
+    "SOLVER_VISIBLE_CONTRACTS": ["route-control-plane/environment/config/fleet.yaml","route-control-plane/environment/ansible/roles/routecp/defaults/main.yml","route-control-plane/environment/cmd/routecp/main.go","route-control-plane/environment/web/app.ts"],
+    "BEHAVIORAL_SURFACES": ["route normalization","rule/table validation","preview/apply fencing","rollback/restart recovery","drift ownership/freshness","rollout heartbeat/canary/retry","Ansible idempotency/host precedence","dashboard CAS","public API/build integrity"]
+  },
+  "result": {
+    "status": "VERIFIER_READY",
+    "output_task_commit": "22d2e9e09f4deb58029559fe9a0863c2e032f25c",
+    "outputs": {
+      "REQUIREMENT_TEST_MATRIX": {
+        "REQ_ROUTE_IDENTITY": ["IPv6 aliases","multipath ordering","metric replacement","table-distinct identities"],
+        "REQ_POLICY_RULES": ["duplicate priority rejection","missing-table rejection","unknown-node rejection"],
+        "REQ_TRANSACTION_FENCING": ["stale preview rejection","idempotency replay","idempotency key rebinding rejection","route/rule/transaction boundaries"],
+        "REQ_ATOMIC_RECOVERY": ["offline apply preservation","monotonic rollback","stale rollback rejection","incomplete transaction restart","runtime contracts"],
+        "REQ_DRIFT_OWNERSHIP": ["normalized ownership","stale observed rejection","unowned unexpected route preservation"],
+        "REQ_ROLLOUT": ["stale heartbeat","already-current skip","canary selector","wave limit"],
+        "REQ_ANSIBLE": ["host-specific protected route precedence"],
+        "REQ_DASHBOARD": ["preview revision CAS binding"],
+        "REQ_INTERFACE": ["public API surface","runtime build","general repeatable solution entrypoint"],
+        "REQ_VERIFIER_INDEPENDENCE": ["no hidden-case branching"]
+      },
+      "F2P_COUNT": 25,
+      "P2P_COUNT": 4,
+      "EDGE_BOUNDARY_COVERAGE": "PASS: IPv6 aliases, multipath ordering, metric replacement, distinct tables, out-of-selector canary and wave limits are independently represented.",
+      "NEGATIVE_FAILURE_COVERAGE": "PASS: duplicate priorities, missing tables, unknown nodes, stale previews, idempotency rebinding, offline apply and stale rollback are covered.",
+      "ORGANIC_COUNT_JUSTIFICATION": "The 25 F2P behavioral cases arise from eight coupled defect clusters across routing identity, policy dependencies, transaction fencing, recovery, drift, rollout, Ansible and dashboard concurrency; they are not parameter-split aliases.",
+      "TEST_INDEPENDENCE": "PASS: verifier assertions are requirement-driven through public/runtime behavior and do not branch on solution-private secrets or hidden test names.",
+      "STARTER_EMPIRICAL_STATUS": "PENDING_DETERMINISTIC_VALIDATION",
+      "ORACLE_EMPIRICAL_STATUS": "PENDING_DETERMINISTIC_VALIDATION",
+      "SOLVER_LOGIC_REIMPLEMENTATION_RISK": "LOW_TO_MODERATE: tests use temporary Go behavioral probes and public/configuration surfaces rather than reproducing repair.py logic."
+    },
+    "evidence_refs": []
+  }
+}
