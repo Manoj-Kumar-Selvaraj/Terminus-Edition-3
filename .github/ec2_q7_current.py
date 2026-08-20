@@ -2,21 +2,23 @@
 import json
 import os
 import pathlib
+import shutil
 import subprocess
-import sys
 
 ROOT = pathlib.Path.cwd()
 TASK = "ec2-artifact-policy-enforcement"
 CONTROL = "215cc70bcebcccc3c9a401af1b74a97d90026da3"
 INPUT_TASK = "8836f886d7cfc7f2747264026da31d1dfa49c658"
+SNAPSHOT_BRANCH = "task/ec2-artifact-policy-enforcement-q7-snapshot-20260820"
 WORK = pathlib.Path(os.environ["RUNNER_TEMP"]) / "ec2-q7"
 WORK.mkdir(parents=True, exist_ok=True)
 
 
-def run(*args, capture=False):
+def run(*args, cwd=None, capture=False):
+    where = pathlib.Path(cwd) if cwd is not None else ROOT
     if capture:
-        return subprocess.check_output(args, cwd=ROOT, text=True).strip()
-    subprocess.run(args, cwd=ROOT, check=True)
+        return subprocess.check_output(args, cwd=where, text=True).strip()
+    subprocess.run(args, cwd=where, check=True)
 
 
 def write_json(path, value):
@@ -121,8 +123,9 @@ def q7_inputs(fixed=False):
     }
 
 
-def apply_fixes():
-    task_toml = ROOT / TASK / "task.toml"
+def apply_fixes(root):
+    root = pathlib.Path(root)
+    task_toml = root / TASK / "task.toml"
     text = task_toml.read_text()
     text = text.replace(
         'tags = ["aws", "ec2", "policy-as-code", "supply-chain", "containers", "packages", "vulnerability", "security"]',
@@ -131,7 +134,7 @@ def apply_fixes():
     text = text.replace('network_mode = "none"', 'network_mode = "public"')
     task_toml.write_text(text)
 
-    (ROOT / TASK / "environment" / "Dockerfile").write_text(
+    (root / TASK / "environment" / "Dockerfile").write_text(
         'FROM public.ecr.aws/docker/library/golang:1.24-bookworm@sha256:1a6d4452c65dea36aac2e2d606b01b4a029ec90cc1ae53890540ce6173ea77ac\n\n'
         'LABEL org.opencontainers.image.title="EC2 artifact policy enforcement lab"\n'
         'LABEL org.opencontainers.image.version="1.0"\n\n'
@@ -145,27 +148,106 @@ def apply_fixes():
         'ENV ENFORCER_ROOT="/app/enforcer"\n'
     )
 
-    (ROOT / TASK / "environment" / ".dockerignore").write_text(
+    (root / TASK / "environment" / ".dockerignore").write_text(
         ".git\n.gitignore\n.env\n__pycache__/\n*.pyc\nstate\nout\n*.tmp\n"
     )
 
-    test_docker = ROOT / TASK / "tests" / "Dockerfile"
+    test_docker = root / TASK / "tests" / "Dockerfile"
     t = test_docker.read_text()
     if "mkdir -p /app/enforcer" not in t:
         t = t.replace("WORKDIR /tests\n", "RUN mkdir -p /app/enforcer\nWORKDIR /tests\n")
     test_docker.write_text(t)
 
-    run("git", "diff", "--check", "--", TASK)
-    run("git", "add", "--",
-        f"{TASK}/task.toml",
-        f"{TASK}/environment/Dockerfile",
-        f"{TASK}/environment/.dockerignore",
-        f"{TASK}/tests/Dockerfile",
-    )
-    run("git", "config", "user.name", "terminus-q7[bot]")
-    run("git", "config", "user.email", "terminus-q7[bot]@users.noreply.github.com")
-    run("git", "commit", "-m", f"Fix {TASK} Edition 3 task format")
-    return run("git", "rev-parse", "HEAD", capture=True)
+
+def copy_current_task_to_snapshot(snapshot):
+    snapshot = pathlib.Path(snapshot)
+    target = snapshot / TASK
+    if target.exists():
+        shutil.rmtree(target)
+    shutil.copytree(ROOT / TASK, target, symlinks=True)
+
+    design_dir = snapshot / ".terminus" / "designs"
+    design_dir.mkdir(parents=True, exist_ok=True)
+    for old in design_dir.glob(f"{TASK}*"):
+        if old.is_dir():
+            shutil.rmtree(old)
+        else:
+            old.unlink()
+    source_design = ROOT / ".terminus" / "designs"
+    if source_design.exists():
+        for src in source_design.glob(f"{TASK}*"):
+            dst = design_dir / src.name
+            if src.is_dir():
+                shutil.copytree(src, dst, symlinks=True)
+            else:
+                shutil.copy2(src, dst)
+
+    source_contract = ROOT / ".terminus" / "contracts" / TASK
+    if source_contract.exists():
+        contract_parent = snapshot / ".terminus" / "contracts"
+        contract_parent.mkdir(parents=True, exist_ok=True)
+        dst = contract_parent / TASK
+        if dst.exists():
+            shutil.rmtree(dst)
+        shutil.copytree(source_contract, dst, symlinks=True)
+
+
+def make_task_snapshot():
+    snap = pathlib.Path(os.environ["RUNNER_TEMP"]) / "ec2-q7-task-snapshot"
+    if snap.exists():
+        shutil.rmtree(snap)
+    run("git", "worktree", "add", "--detach", str(snap), INPUT_TASK)
+    copy_current_task_to_snapshot(snap)
+    # ROOT already contains the Q7 repair; copied task tree therefore contains it too.
+    run("git", "config", "user.name", "terminus-q7-snapshot[bot]", cwd=snap)
+    run("git", "config", "user.email", "terminus-q7-snapshot[bot]@users.noreply.github.com", cwd=snap)
+    run("git", "add", "--", TASK, f".terminus/designs/{TASK}*", cwd=snap)
+    contract = snap / ".terminus" / "contracts" / TASK
+    if contract.exists():
+        run("git", "add", "--", f".terminus/contracts/{TASK}", cwd=snap)
+    changed = run("git", "diff", "--cached", "--name-only", cwd=snap, capture=True).splitlines()
+    if not changed:
+        raise SystemExit("task snapshot contains no task-scoped delta")
+    forbidden = [
+        p for p in changed
+        if not (
+            p.startswith(f"{TASK}/")
+            or p == f".terminus/designs/{TASK}.json"
+            or p.startswith(f".terminus/designs/{TASK}-")
+            or p.startswith(f".terminus/designs/{TASK}/")
+            or p.startswith(f".terminus/contracts/{TASK}/")
+        )
+    ]
+    if forbidden:
+        raise SystemExit("task snapshot contains protected paths: " + ", ".join(forbidden))
+    run("git", "diff", "--cached", "--check", cwd=snap)
+    run("git", "commit", "-m", f"Snapshot {TASK} repaired Q7 task state", cwd=snap)
+    sha = run("git", "rev-parse", "HEAD", cwd=snap, capture=True)
+    relation = run("git", "merge-base", "--is-ancestor", INPUT_TASK, sha, cwd=snap)
+    del relation
+    diff_names = run("git", "diff", "--name-only", INPUT_TASK, sha, "--", cwd=snap, capture=True).splitlines()
+    forbidden = [
+        p for p in diff_names
+        if not (
+            p.startswith(f"{TASK}/")
+            or p == f".terminus/designs/{TASK}.json"
+            or p.startswith(f".terminus/designs/{TASK}-")
+            or p.startswith(f".terminus/designs/{TASK}/")
+            or p.startswith(f".terminus/contracts/{TASK}/")
+        )
+    ]
+    if forbidden:
+        raise SystemExit("snapshot lineage has protected paths: " + ", ".join(forbidden))
+
+    remote = run("git", "ls-remote", "origin", f"refs/heads/{SNAPSHOT_BRANCH}", capture=True)
+    if remote:
+        remote_sha = remote.split()[0]
+        if remote_sha != sha:
+            raise SystemExit(f"snapshot branch already exists at different sha: {remote_sha}")
+    else:
+        run("git", "push", "origin", f"{sha}:refs/heads/{SNAPSHOT_BRANCH}")
+    write_json(WORK / "task-snapshot.json", {"branch": SNAPSHOT_BRANCH, "sha": sha, "changed_paths": diff_names})
+    return sha
 
 
 def main():
@@ -177,9 +259,12 @@ def main():
         raise SystemExit(f"control changed expected={CONTROL} actual={resolved}")
 
     inv1, inv1_path = continue_stage(INPUT_TASK, q7_inputs(False), "01")
-    fix_sha = apply_fixes()
+    apply_fixes(ROOT)
+    run("git", "diff", "--check", "--", TASK)
+    snapshot_sha = make_task_snapshot()
+
     rec1 = record(
-        inv1, inv1_path, fix_sha, "FIXED",
+        inv1, inv1_path, snapshot_sha, "FIXED",
         {
             "CHECKS": {
                 "task_toml": "FIXED: reduced tags to six and replaced invalid network_mode=none with canonical public",
@@ -189,6 +274,7 @@ def main():
                 "test_sh": "PASS: binary reward file is assigned on normal pytest success/failure; current policy does not require trailing exit",
                 "isolation": "PASS: agent build context is environment/ and does not include solution/ or tests/",
                 "instruction_paths": "PASS: absolute /app/enforcer references and no private verifier path leakage",
+                "task_lineage": f"FIXED task state is durably anchored at {SNAPSHOT_BRANCH}:{snapshot_sha}; delta from {INPUT_TASK} is task/design scoped only",
             },
             "RERUN": "REQUIRED: Q7 repaired task-format files; recompile FORMAT_GATE against the committed repaired task snapshot and rerun format/build checks.",
         },
@@ -197,7 +283,6 @@ def main():
     if rec1.get("transition", {}).get("action") != "RETRY":
         raise SystemExit(f"FIXED did not RETRY: {rec1.get('transition')}")
 
-    # Mechanical checks on the repaired tree before the retry result.
     run("python3", ".terminus/validate_task_complexity.py", TASK)
     run("python3", ".terminus/validate_environment_complexity.py", TASK)
     run("python3", ".terminus/validate_runtime_authenticity.py", TASK)
@@ -207,9 +292,9 @@ def main():
     td = (ROOT / TASK / "tests" / "Dockerfile").read_text()
     assert "@sha256:" in td and "mkdir -p /app/enforcer" in td
 
-    inv2, inv2_path = continue_stage(fix_sha, q7_inputs(True), "02")
+    inv2, inv2_path = continue_stage(snapshot_sha, q7_inputs(True), "02")
     rec2 = record(
-        inv2, inv2_path, fix_sha, "FORMAT_PASS",
+        inv2, inv2_path, snapshot_sha, "FORMAT_PASS",
         {
             "CHECKS": {
                 "task_root_and_name": "PASS: flat Edition 3 task root and kebab-case name match task.toml",
@@ -223,6 +308,7 @@ def main():
                 "instruction_paths": "PASS: solver references are absolute and public contracts remain under /app/enforcer",
                 "complexity": "PASS: current strict task/environment complexity validators pass after format-only repair",
                 "policy_conflicts": "PASS: none found",
+                "task_lineage": f"PASS: retry consumes durable repaired task snapshot {snapshot_sha}",
             },
             "RERUN": "PASS_AFTER_REPAIR: format-owned files were repaired and current structural/complexity/authenticity validators reran successfully; runtime/oracle remains mandatory at its later lifecycle checkpoint.",
         },
@@ -231,7 +317,8 @@ def main():
     if rec2.get("transition", {}).get("target") != "ASSEMBLY":
         raise SystemExit(f"FORMAT_PASS did not advance to ASSEMBLY: {rec2.get('transition')}")
 
-    print(f"Q7_FIX_SHA={fix_sha}")
+    write_json(WORK / "q7-output.json", {"base_main": base, "task_snapshot": snapshot_sha, "snapshot_branch": SNAPSHOT_BRANCH})
+    print(f"Q7_TASK_SNAPSHOT={snapshot_sha}")
     print("Q7_COMPLETE=PASS")
 
 
