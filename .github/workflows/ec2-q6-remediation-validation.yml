@@ -54,6 +54,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          python3 -m pip install --user --disable-pip-version-check 'pytest==8.4.1'
           ROOT="$(realpath ec2-artifact-policy-enforcement/environment/enforcer)"
           TESTS="$(realpath ec2-artifact-policy-enforcement/tests)"
           export ENFORCER_ROOT="$ROOT"
