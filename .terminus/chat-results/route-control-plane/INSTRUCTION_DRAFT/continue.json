@@ -1,0 +1,276 @@
+{
+  "execution_mode": "INLINE_SPECIALIST",
+  "executor_handoff": null,
+  "invocation": {
+    "acceptance_predicates": {},
+    "authority": {
+      "control_plane_commit": "df7ef7569e2947b9f0bf7cf89ed4dec6c2a5a1fe",
+      "policy_versions": {},
+      "task_commit": "22d2e9e09f4deb58029559fe9a0863c2e032f25c",
+      "task_id": "route-control-plane"
+    },
+    "evidence": {
+      "authorized_evidence_classes": [
+        "CONTROL_PLANE_POLICY",
+        "PUBLIC_REFERENCE",
+        "SOLVER_VISIBLE_TASK"
+      ],
+      "evidence_required": [
+        "schema-valid current solver-visible requirement contract",
+        "complete material requirement set",
+        "instruction/docs boundary",
+        "absolute required output paths",
+        "current-state evidence only when claimed"
+      ],
+      "excluded_evidence_classes": [
+        "CI_RUNTIME_EVIDENCE",
+        "CURRENT_REVIEW_PACKET",
+        "DURABLE_SESSION_STATE",
+        "FINAL_PACKAGE_EVIDENCE",
+        "MODEL_TRIAL_EVIDENCE",
+        "PRIOR_REVIEW_RESULTS",
+        "PRIVATE_CREATION_DESIGN",
+        "SOLUTION_ORACLE",
+        "VERIFIER_PRIVATE"
+      ],
+      "mandatory_exact_reads": [
+        "TERMINUS_3_AI_INSTRUCTIONS.md",
+        ".terminus/agents/INSTRUCTION_POLICY.md",
+        ".terminus/agents/CREATOR_PROMPTS.md"
+      ],
+      "retrieval_mode": "FILTERED_HYBRID"
+    },
+    "ignored_input_count": 0,
+    "inputs": {
+      "optional": {},
+      "required": {
+        "APPROVED_SOLVER_VISIBLE_REQUIREMENT_CONTRACT": {
+          "instruction_path": "route-control-plane/instruction.md",
+          "material_requirements": [
+            "canonical IPv4/IPv6 route and policy-rule identities with valid rule/table dependencies",
+            "revision-fenced preview/apply/rollback with idempotent retries and no partial publication",
+            "failure-safe per-node recovery across restart without overwriting newer state",
+            "fresh owned drift reconciliation that preserves unowned routing objects and management reachability",
+            "fleet rollout isolation for failed canaries/offline nodes and no redundant reapply for nodes already at target",
+            "idempotent Ansible deployment with host-specific protected routing taking precedence over defaults",
+            "dashboard mutations bound to the exact preview revision so concurrent operator changes are not silently overwritten",
+            "preserve existing public Go API/runtime and fleet/configuration interfaces",
+            "all routing mutations remain inside the supplied isolated deterministic model and never alter the benchmark host network"
+          ],
+          "objective": "Complete the inherited Go route control plane under /app/routecp as a fleet-wide desired-state routing and policy reconciliation system.",
+          "referenced_contracts": [
+            "/app/routecp/config/fleet.yaml",
+            "/app/routecp/ansible/roles/routecp/defaults/main.yml"
+          ]
+        },
+        "CREATION_RULE_CONTEXT": {
+          "CONTROL_PLANE_COMMIT": "df7ef7569e2947b9f0bf7cf89ed4dec6c2a5a1fe",
+          "CREATION_PROFILE": "large_system_strict",
+          "KNOWN_POLICY_CONFLICTS": []
+        },
+        "TASK_WRITING_PROFILE": {
+          "avoid": [
+            "invented incidents or personal claims",
+            "rubric-like hidden-test enumeration",
+            "style-driven omission of lifecycle constraints",
+            "copied distinctive source wording",
+            "task details copied from unrelated calibration domains"
+          ],
+          "must_preserve": [
+            "fleet-wide desired-state routing",
+            "safe management reachability",
+            "no partial publication",
+            "idempotent retries",
+            "no host network mutation",
+            "revision fencing and restart recovery",
+            "fresh owned reconciliation",
+            "rollout isolation",
+            "Ansible convergence and host precedence",
+            "dashboard CAS",
+            "public API/runtime preservation"
+          ],
+          "structure": [
+            "state the approved engineering objective first",
+            "preserve exact public contracts and hard safety/state constraints",
+            "reference solver-visible technical contracts instead of reproducing hidden verifier rows",
+            "keep implementation-neutral observable outcomes"
+          ],
+          "voice": "direct platform engineering change request"
+        },
+        "VALIDATED_HUMAN_WRITING_CALIBRATION": {
+          "CALIBRATION_PAIR_ID": "hwpair-f96b53b6ac9b1882f1c8",
+          "DOMAIN_PROFILE": "compiler_runtime",
+          "EXTERNAL_DATASET_COVERAGE": "DEGRADED",
+          "REVIEWER_CALIBRATION_ID": "hwcal-reviewer-d01aa0a5501e7e083424",
+          "WRITER_CALIBRATION_ID": "hwcal-writer-91bf6e65c8382bcb7f7d"
+        }
+      }
+    },
+    "invocation_id": "inv_d23b06c8daf1055a9a56ea398527f6542dc90036f768423e96910db17adccd69",
+    "learning": {
+      "context_hash": "sha256:bb84a513aa2b6e4374d691759c4a6edf94169f479f4611e9091643b9f279ccfc",
+      "lessons": [],
+      "mode": "GENERALIZED_LESSONS_PLUS_OWNED_REMEDIATIONS",
+      "raw_feedback_exposed": false,
+      "raw_historical_findings_exposed": false,
+      "registry_heads": {
+        "feedback": "GENESIS",
+        "findings": "GENESIS",
+        "lessons": "GENESIS",
+        "patterns": "GENESIS",
+        "remediations": "GENESIS"
+      },
+      "remediations": []
+    },
+    "missing_required_inputs": [],
+    "output_contract": {
+      "allowed_status_values": [
+        "READY",
+        "REWRITE_REQUIRED",
+        "BLOCKED"
+      ],
+      "deterministic_validators": [
+        "solver-visible requirement contract schema/hash/provenance checks",
+        "Q7 structural/path checks where mechanically enforceable",
+        ".terminus/human_writing/validate_calibration.py"
+      ],
+      "optional_fields": [
+        "CURRENT_STATE_EVIDENCE",
+        "UNRESOLVED_GAPS"
+      ],
+      "persisted_artifacts": [
+        "<task>/instruction.md"
+      ],
+      "required_fields": [
+        "INSTRUCTION_PATH",
+        "REQUIREMENT_COVERAGE",
+        "DOC_REFERENCES",
+        "INSTRUCTION_SHAPE",
+        "HANDOFF_TEST",
+        "REVERSE_OUTLINE_RISK",
+        "SPEC_FILE_LOOPHOLE"
+      ],
+      "semantic_reviewers": [
+        "Instruction Reviewer",
+        "Q1 Spec Gap Repairer",
+        "Q3 Spec Ambiguity Repairer"
+      ]
+    },
+    "readiness": "READY",
+    "retrieval": {
+      "query": null,
+      "retrieved_chars": 0,
+      "retrieved_context": [],
+      "status": "NOT_REQUESTED"
+    },
+    "routing": {
+      "failure_routes": {
+        "AMBIGUITY": "Q3 Spec Ambiguity Repairer",
+        "FORMAT_OR_PATH_ERROR": "Q7 Task Format Enforcer",
+        "HIDDEN_TEST_OR_REPAIR_LEAKAGE": "A7 Instruction Writer",
+        "MISSING_REQUIREMENT": "Q1 Spec Gap Repairer",
+        "SPEC_FILE_LOOPHOLE": "A7 Instruction Writer / Q1 Spec Gap Repairer",
+        "STALE_OR_INVALID_REQUIREMENT_CONTRACT": "Creation Controller -> requirement owner/Q1 -> regenerate projection"
+      },
+      "stale_on": [
+        "solver-visible requirement contract change",
+        "material requirement change",
+        "referenced solver-visible contract change",
+        "required output/schema change",
+        "instruction-policy change",
+        "human-writing calibration change",
+        "dataset registry change",
+        "domain profile change"
+      ],
+      "success_transition": "SPEC_ALIGNMENT"
+    },
+    "schema_version": "1.0",
+    "stage": {
+      "lifecycle": "creation",
+      "owner": "A7 Instruction Writer",
+      "role_class": "PRODUCER",
+      "role_id": "A7_INSTRUCTION_WRITER",
+      "stage_id": "INSTRUCTION_DRAFT"
+    }
+  },
+  "next": {
+    "action": "INVOKE_STAGE",
+    "optional_inputs": [
+      "CURRENT_STATE_EVIDENCE"
+    ],
+    "owner": "A7 Instruction Writer",
+    "primary_role_id": "A7_INSTRUCTION_WRITER",
+    "required_inputs": [
+      "APPROVED_SOLVER_VISIBLE_REQUIREMENT_CONTRACT",
+      "CREATION_RULE_CONTEXT",
+      "TASK_WRITING_PROFILE",
+      "VALIDATED_HUMAN_WRITING_CALIBRATION"
+    ],
+    "stage_id": "INSTRUCTION_DRAFT"
+  },
+  "quality_mode_policy": {
+    "inline_creation_governor_role_ids": [
+      "A10_COMPLEXITY_GOVERNOR"
+    ],
+    "inline_quality_role_ids": [
+      "Q1_SPEC_GAP_REPAIRER",
+      "Q2_VERIFIER_COVERAGE_REPAIRER",
+      "Q3_SPEC_AMBIGUITY_REPAIRER",
+      "Q5_ORACLE_RUNTIME_REPAIR_SPECIALIST",
+      "Q7_TASK_FORMAT_ENFORCER"
+    ],
+    "inline_stage_sequences": {
+      "SPEC_ALIGNMENT": [
+        {
+          "result_field": "Q1_STATUS",
+          "role_id": "Q1_SPEC_GAP_REPAIRER",
+          "satisfied_values": [
+            "NO_GAP",
+            "PASS"
+          ]
+        },
+        {
+          "result_field": "Q2_STATUS",
+          "role_id": "Q2_VERIFIER_COVERAGE_REPAIRER",
+          "satisfied_values": [
+            "COVERED",
+            "PASS"
+          ]
+        },
+        {
+          "result_field": "Q3_STATUS",
+          "role_id": "Q3_SPEC_AMBIGUITY_REPAIRER",
+          "satisfied_values": [
+            "CLEAR",
+            "PASS"
+          ]
+        }
+      ]
+    },
+    "mandatory_quality_role_keys": [
+      "spec-test-contract",
+      "production-logic"
+    ],
+    "mandatory_same_chat_checkpoints": {
+      "Q1": "SPEC_ALIGNMENT.Q1_STATUS",
+      "Q2": "SPEC_ALIGNMENT.Q2_STATUS",
+      "Q3": "SPEC_ALIGNMENT.Q3_STATUS",
+      "Q5": "DETERMINISTIC_VALIDATION runtime/oracle checkpoint; invoke Q5 repair only on registered runtime/oracle failure",
+      "Q7": "FORMAT_GATE"
+    },
+    "optional_q8_role_keys": [
+      "difficulty-sim-gpt",
+      "difficulty-sim-claude"
+    ],
+    "policy_document": ".terminus/agents/QUALITY_EXECUTION_MODE.md",
+    "policy_version": "1.0",
+    "producer_role_classes": [
+      "FIXER",
+      "PRODUCER"
+    ],
+    "q4_q6_mode": "AUTOMATED",
+    "q8_mode": "OFF",
+    "source": ".terminus/agents/quality_execution_mode.json"
+  },
+  "state_snapshot_id": "state_faba53136fe8b649985198b928e27952cb5bc6817a92d07b34a19b15c8dc292f"
+}
