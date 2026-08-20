@@ -1,0 +1,49 @@
+{
+  "evidence_refs": [
+    {
+      "kind": "COMMIT",
+      "ref": "commit:03317f8218069b9e0b5d073bf87ecf7a0ae8e4a1"
+    }
+  ],
+  "invocation_id": "inv_5bbf3e5c42680ff3ea17c9826e8be1d0a6e9e99d21ab2f85cfc5dfa5f3deb35b",
+  "output_task_commit": "03317f8218069b9e0b5d073bf87ecf7a0ae8e4a1",
+  "outputs": {
+    "EDGE_BOUNDARY_COVERAGE_EVIDENCE": [
+      "inclusive key/prefix/value limits",
+      "unsigned byte ordering",
+      "WAL framing and torn-tail boundaries",
+      "snapshot structural/CRC boundaries",
+      "exact ABI and wire shapes"
+    ],
+    "F2P_ORGANICITY_EVIDENCE": "30 F2P probes span distinct locking/configuration/MVCC/conflict/recovery/checkpoint/operator/protocol surfaces; 33 P2P probes independently preserve compatibility and already-correct behavior.",
+    "INSTRUCTION_DOC_BOUNDARY": "PASS: instruction owns the engineering requirements; storage-format.md provides only public ABI/disk-format compatibility details.",
+    "INSTRUCTION_REQUIREMENT_COMPLETENESS": "PASS for progression: Q1 NO_GAP, Q2 COVERED, Q3 CLEAR with the separately authenticated/backlogged F01 residual not misrepresented as covered.",
+    "INSTRUCTION_SHAPE": "PASS: direct reliability-hardening orientation plus concise observable invariant bullets.",
+    "LEAKAGE_CHECK": "PASS: solver-facing task exposes no solution payloads, private defect IDs, verifier assertions or Oracle material.",
+    "NEGATIVE_FAILURE_COVERAGE_EVIDENCE": [
+      "second writer rejection",
+      "stale conflict termination",
+      "complete WAL corruption",
+      "snapshot corruption",
+      "HEALTH invariant failure",
+      "malformed command and unknown transaction handling"
+    ],
+    "NEXT_GATE": "COMPLEXITY_GATE",
+    "PRODUCTION_CHARACTERISTIC_EVIDENCE": [
+      "persistent binary WAL/snapshot formats",
+      "process-level writer fencing",
+      "MVCC transaction snapshots and overlays",
+      "first-committer-wins conflict arbitration",
+      "crash/restart recovery",
+      "atomic checkpoint publication",
+      "operator STATS/HEALTH",
+      "stable native C ABI and protocol compatibility"
+    ],
+    "STATIC_CHECKS": "PASS: current Q7 package/format review is green; task structure and solution/tests isolation are coherent.",
+    "STRUCTURE": "PASS: canonical package contains README.md, environment/, instruction.md, solution/, task.toml and tests/ with /app/stonevault declared and separate verifier isolation.",
+    "SUBSTANTIVE_REACHABLE_LOC_EVIDENCE": "Native multi-module C++20 storage core plus Rust command/session layer provide substantial solver-reachable implementation scope appropriate to the large_system_strict profile.",
+    "TASK_COMMIT": "03317f8218069b9e0b5d073bf87ecf7a0ae8e4a1"
+  },
+  "schema_version": "1.0",
+  "status": "ASSEMBLED"
+}
