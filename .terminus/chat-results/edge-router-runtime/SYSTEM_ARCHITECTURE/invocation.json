@@ -1,0 +1,158 @@
+{
+  "acceptance_predicates": {},
+  "authority": {
+    "control_plane_commit": "4cc1f68cb57b284c4817e3f354ea6eb74c5f717d",
+    "policy_versions": {},
+    "task_commit": "123dd1e34d12845f94daa4679820b9b51e195609",
+    "task_id": "edge-router-runtime"
+  },
+  "evidence": {
+    "authorized_evidence_classes": [
+      "CONTROL_PLANE_POLICY",
+      "PRIVATE_CREATION_DESIGN",
+      "PUBLIC_REFERENCE",
+      "SOLVER_VISIBLE_TASK"
+    ],
+    "evidence_required": [
+      "component/resource graph",
+      "runtime/operator reachability plan",
+      "state/persistence model",
+      "production-characteristic rationale"
+    ],
+    "excluded_evidence_classes": [
+      "CI_RUNTIME_EVIDENCE",
+      "CURRENT_REVIEW_PACKET",
+      "DURABLE_SESSION_STATE",
+      "FINAL_PACKAGE_EVIDENCE",
+      "MODEL_TRIAL_EVIDENCE",
+      "PRIOR_REVIEW_RESULTS",
+      "SOLUTION_ORACLE",
+      "VERIFIER_PRIVATE"
+    ],
+    "mandatory_exact_reads": [
+      ".terminus/agents/CREATION_PIPELINE.md",
+      ".terminus/agents/CREATOR_AGENT_REGISTRY.md",
+      ".terminus/agents/PRODUCTION_AUTHENTICITY.md",
+      ".terminus/agents/CREATOR_PROMPTS.md",
+      ".terminus/agents/A2_PHASE_PROMPTS.md"
+    ],
+    "retrieval_mode": "FILTERED_HYBRID"
+  },
+  "ignored_input_count": 0,
+  "inputs": {
+    "optional": {},
+    "required": {
+      "APPROVED_OPERATIONAL_REQUIREMENTS": {
+        "PRESERVATION": [
+          "in-flight requests remain valid across unrelated updates",
+          "unchanged route semantics remain stable",
+          "healthy unchanged endpoints preserve meaningful state",
+          "rejected updates cannot damage serving generation",
+          "readers never observe partially applied configuration",
+          "runtime and observability state remain bounded"
+        ],
+        "REQUIRED_END_STATE": [
+          "Validate and compile candidate configuration into immutable runtime snapshots before publication.",
+          "Fence accepted generations so stale or out-of-order updates cannot overwrite newer state.",
+          "Publish route and upstream state atomically and retain last-known-good serving state when candidates are rejected.",
+          "Reconcile endpoints by stable canonical identity and membership incarnation.",
+          "Preserve compatible selection, affinity, health, transport and lifecycle continuity for unchanged endpoints.",
+          "Exclude removed/ineligible endpoints from new work while allowing bounded drain of existing traffic.",
+          "Checkpoint only complete accepted state and recover a complete last-known-good generation.",
+          "Retire unreachable snapshots, runtimes, transports, affinity and telemetry without unbounded growth."
+        ]
+      },
+      "APPROVED_WORK_PACKAGE": {
+        "ENGINEERING_OBJECTIVE": "Implement generation-safe dynamic route and upstream reconciliation so complete configuration and membership changes apply atomically under concurrent traffic, rolling backend turnover, invalid updates and restart.",
+        "ID": "GENERATION_SAFE_DYNAMIC_RECONCILIATION",
+        "REQUIREMENT_FAMILIES": [
+          "configuration ingestion and semantic validation",
+          "route-graph compilation",
+          "generation fencing and atomic publication",
+          "backend discovery and endpoint diffing",
+          "health-state lifecycle",
+          "weighted/sticky/retry/failover selection",
+          "connection and endpoint draining",
+          "checkpoint persistence and restart recovery",
+          "observability lifecycle and metric garbage collection"
+        ]
+      },
+      "CREATION_RULE_CONTEXT": {
+        "CONTROL_PLANE_COMMIT": "4cc1f68cb57b284c4817e3f354ea6eb74c5f717d",
+        "CREATION_PROFILE": "large_system_strict",
+        "KNOWN_POLICY_CONFLICTS": [],
+        "NETWORK_ENVIRONMENT_CONSTRAINTS": "network_mode public; separate verifier; digest-pinned canonical Go runtime; no privileged Docker/capability/socket shortcuts; tmux and asciinema required in agent image"
+      }
+    }
+  },
+  "invocation_id": "inv_1e29d10f3cfe1150ba6d5fa02ae34a0ca5815e9fc9e811eadb4f4c7fe0993d95",
+  "learning": {
+    "context_hash": "sha256:bb84a513aa2b6e4374d691759c4a6edf94169f479f4611e9091643b9f279ccfc",
+    "lessons": [],
+    "mode": "GENERALIZED_LESSONS_PLUS_OWNED_REMEDIATIONS",
+    "raw_feedback_exposed": false,
+    "raw_historical_findings_exposed": false,
+    "registry_heads": {
+      "feedback": "GENESIS",
+      "findings": "GENESIS",
+      "lessons": "GENESIS",
+      "patterns": "GENESIS",
+      "remediations": "GENESIS"
+    },
+    "remediations": []
+  },
+  "missing_required_inputs": [],
+  "output_contract": {
+    "allowed_status_values": [
+      "ARCHITECTURE_READY",
+      "SCENARIO_TOO_SMALL",
+      "BLOCKED"
+    ],
+    "deterministic_validators": [],
+    "optional_fields": [
+      "RESOURCE_GRAPH",
+      "DATA_VOLUME_PLAN",
+      "UNRESOLVED_RISKS"
+    ],
+    "persisted_artifacts": [],
+    "required_fields": [
+      "COMPONENT_GRAPH",
+      "ENTRYPOINTS",
+      "STATE_MODEL",
+      "SOLVER_VISIBLE_DOC_PLAN",
+      "PRODUCTION_CHARACTERISTICS",
+      "SCALE_FIT"
+    ],
+    "semantic_reviewers": [
+      "Task Architect"
+    ]
+  },
+  "readiness": "READY",
+  "retrieval": {
+    "query": null,
+    "retrieved_chars": 0,
+    "retrieved_context": [],
+    "status": "NOT_REQUESTED"
+  },
+  "routing": {
+    "failure_routes": {
+      "ARCHITECTURE_GAP": "A2 System Architect / Environment Builder",
+      "REQUIREMENT_GAP": "Creation Controller -> work-package/contract owner",
+      "SCENARIO_TOO_SMALL": "Creation Controller -> WORK_PACKAGE_RESEARCH"
+    },
+    "stale_on": [
+      "work-package change",
+      "material operational requirement change",
+      "creation-profile change"
+    ],
+    "success_transition": "DEFECT_TOPOLOGY"
+  },
+  "schema_version": "1.0",
+  "stage": {
+    "lifecycle": "creation",
+    "owner": "A2 System Architect / Environment Builder",
+    "role_class": "PRODUCER",
+    "role_id": "A2_SYSTEM_ARCHITECT",
+    "stage_id": "SYSTEM_ARCHITECTURE"
+  }
+}
