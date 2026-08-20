@@ -1,0 +1,57 @@
+name: Terminus Quality Dispatch Bridge
+
+on:
+  push:
+    branches:
+      - 'terminus-quality-dispatch/**'
+    paths:
+      - '.terminus/quality-dispatch-requests/*.json'
+
+permissions:
+  contents: read
+  actions: write
+
+jobs:
+  dispatch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Validate controller route and dispatch canonical quality lifecycle
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          mapfile -t reqs < <(git diff-tree --no-commit-id --name-only -r "$GITHUB_SHA" -- '.terminus/quality-dispatch-requests/*.json')
+          [[ ${#reqs[@]} -eq 1 ]] || { echo "::error::expected exactly one quality dispatch request"; exit 1; }
+          req="${reqs[0]}"
+          task="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["task_id"])' "$req")"
+          task_commit="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["task_commit"])' "$req")"
+          control="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["control_plane_commit"])' "$req")"
+          stage="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["stage_id"])' "$req")"
+          [[ "$stage" == QUALITY_INTERLOCK ]] || { echo "::error::bridge is scoped to QUALITY_INTERLOCK"; exit 1; }
+          git fetch origin main
+          main="$(git rev-parse origin/main)"
+          requested_tree="$(git rev-parse "$task_commit:$task")"
+          current_tree="$(git rev-parse "$main:$task")"
+          [[ "$requested_tree" == "$current_tree" ]] || { echo "::error::task snapshot changed"; exit 1; }
+          git checkout --detach "$main"
+          python3 .terminus/execution/controller_cli.py control-plane --head "$main" --output /tmp/cp.json
+          current_control="$(python3 -c 'import json; print(json.load(open("/tmp/cp.json"))["control_plane_commit"])')"
+          [[ "$current_control" == "$control" ]] || { echo "::error::control plane changed requested=$control current=$current_control"; exit 1; }
+          python3 .terminus/execution/controller_cli.py continue --task-id "$task" --task-commit "$task_commit" --control-plane-commit "$control" --output /tmp/continue.json
+          python3 - <<'PY'
+          import json
+          c=json.load(open('/tmp/continue.json'))
+          assert c['next']['action']=='INVOKE_STAGE', c['next']
+          assert c['next']['stage_id']=='QUALITY_INTERLOCK', c['next']
+          assert c['execution_mode']=='AUTOMATED_QUALITY', c.get('execution_mode')
+          d=c['dispatch']
+          assert d['status']=='READY_TO_DISPATCH', d
+          assert d['inputs']['task']=='edge-router-runtime', d
+          assert d['inputs']['stage']=='QUALITY_INTERLOCK', d
+          PY
+          gh workflow run terminus-quality-lifecycle.yml --repo "$GITHUB_REPOSITORY" --ref main -f task="$task" -f stage=QUALITY_INTERLOCK -f publish_results=true -f execute_optional_q8=false
+          echo "Controller route verified and QUALITY_INTERLOCK workflow_dispatch submitted on main." >> "$GITHUB_STEP_SUMMARY"
