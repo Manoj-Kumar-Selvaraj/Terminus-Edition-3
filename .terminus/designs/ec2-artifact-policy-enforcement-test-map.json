@@ -4,7 +4,8 @@
       "F2P-EVID-03",
       "F2P-EX-05",
       "F2P-PERMIT-02",
-      "F2P-PERMIT-04"
+      "F2P-PERMIT-04",
+      "F2P-SRC-05"
     ],
     "edge_boundary": [
       "F2P-SRC-04",
@@ -44,10 +45,13 @@
       "P2P-06",
       "P2P-07",
       "P2P-08",
-      "P2P-09"
+      "P2P-09",
+      "P2P-10",
+      "P2P-11",
+      "P2P-12"
     ]
   },
-  "organic_count_justification": "The 27 F2P cases are separate externally observable policy/state transitions across five coupled requirement families: alternate acquisition paths, evidence identity/freshness, exception boundaries, permit authentication/replay, and audit/recovery. Cases are not parameter-renamed copies; each changes a distinct trust prerequisite, version/expiry boundary, scope dimension, concurrency/restart transition, or durability/recovery invariant.",
+  "organic_count_justification": "The 28 F2P cases are separate externally observable policy/state transitions across five coupled requirement families: alternate acquisition paths, evidence identity/freshness, exception boundaries, permit authentication/replay, and audit/recovery. Cases are not parameter-renamed copies; each changes a distinct trust prerequisite, version/expiry boundary, scope dimension, concurrency/restart transition, or durability/recovery invariant.",
   "profile": "large_system_strict",
   "requirements": {
     "REQ_AUDIT_RECOVERY": "Every allow/deny is durably journaled before derived projection and audit/replay state remains safe under retry, corruption, restart, and recovery.",
@@ -275,6 +279,30 @@
       "P2P",
       "REQ_PRESERVATION",
       "P2P-09"
+    ],
+    [
+      "test_f2p_exact_exception_cannot_override_untrusted_source",
+      "F2P",
+      "REQ_SOURCE_DIGEST",
+      "F2P-SRC-05"
+    ],
+    [
+      "test_p2p_permit_request_id_mismatch_remains_invalid",
+      "P2P",
+      "REQ_PRESERVATION",
+      "P2P-10"
+    ],
+    [
+      "test_p2p_permit_policy_version_mismatch_remains_invalid",
+      "P2P",
+      "REQ_PRESERVATION",
+      "P2P-11"
+    ],
+    [
+      "test_p2p_wrong_exception_policy_code_remains_non_authorizing",
+      "P2P",
+      "REQ_PRESERVATION",
+      "P2P-12"
     ]
   ]
 }
