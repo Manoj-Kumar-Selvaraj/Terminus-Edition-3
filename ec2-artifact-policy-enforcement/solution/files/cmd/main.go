@@ -102,6 +102,7 @@ func verifyPermit(args []string) int {
 	requestPath := required(fs, "request")
 	policyPath := required(fs, "policy")
 	secretPath := required(fs, "secret")
+	stateDir := fs.String("state", os.Getenv("ARTIFACTGUARD_STATE_DIR"), "durable state directory for replay protection")
 	nowValue := fs.String("now", "", "RFC3339 verification time")
 	if err := fs.Parse(args); err != nil {
 		return 2
@@ -135,7 +136,17 @@ func verifyPermit(args []string) int {
 		fmt.Fprintln(os.Stderr, err)
 		return 2
 	}
-	valid, code := core.VerifyPermit(permit, req, policy, secret, now)
+	var valid bool
+	var code string
+	if *stateDir != "" {
+		valid, code, err = core.VerifyPermitWithState(permit, req, policy, secret, *stateDir, now)
+		if err != nil {
+			fmt.Fprintln(os.Stderr, err)
+			return 2
+		}
+	} else {
+		valid, code = core.VerifyPermit(permit, req, policy, secret, now)
+	}
 	_ = json.NewEncoder(os.Stdout).Encode(map[string]interface{}{"valid": valid, "code": code})
 	if !valid {
 		return 43
