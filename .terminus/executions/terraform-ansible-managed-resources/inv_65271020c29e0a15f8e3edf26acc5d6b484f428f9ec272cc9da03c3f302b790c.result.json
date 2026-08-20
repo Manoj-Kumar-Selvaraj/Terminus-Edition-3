@@ -1,0 +1,198 @@
+{
+  "authority": {
+    "control_plane_commit": "bde51f1c20b2d6d78b33f02956da9c58cd42d2a4",
+    "policy_versions": {},
+    "task_commit": "78ad422902b27dea954905130a1267b02cff3596",
+    "task_id": "terraform-ansible-managed-resources"
+  },
+  "disposition": "ADVANCE",
+  "evidence_refs": [
+    {
+      "content_hash": "sha256:104817a239b92de3e53f14d6bc0176563437894773e060648776dc09c6280374",
+      "kind": "COMMIT",
+      "ref": "commit:78ad422902b27dea954905130a1267b02cff3596"
+    }
+  ],
+  "invocation_id": "inv_65271020c29e0a15f8e3edf26acc5d6b484f428f9ec272cc9da03c3f302b790c",
+  "invocation_snapshot": {
+    "acceptance_predicates": {},
+    "authority": {
+      "control_plane_commit": "bde51f1c20b2d6d78b33f02956da9c58cd42d2a4",
+      "policy_versions": {},
+      "task_commit": "78ad422902b27dea954905130a1267b02cff3596",
+      "task_id": "terraform-ansible-managed-resources"
+    },
+    "evidence": {
+      "authorized_evidence_classes": [
+        "CI_RUNTIME_EVIDENCE",
+        "CONTROL_PLANE_POLICY",
+        "SOLVER_VISIBLE_TASK"
+      ],
+      "evidence_required": [
+        "task structure",
+        "task.toml",
+        "Docker/verifier/solution layout",
+        "artifact/isolation checks"
+      ],
+      "excluded_evidence_classes": [
+        "CURRENT_REVIEW_PACKET",
+        "DURABLE_SESSION_STATE",
+        "FINAL_PACKAGE_EVIDENCE",
+        "MODEL_TRIAL_EVIDENCE",
+        "PRIOR_REVIEW_RESULTS",
+        "PRIVATE_CREATION_DESIGN",
+        "PUBLIC_REFERENCE",
+        "SOLUTION_ORACLE",
+        "VERIFIER_PRIVATE"
+      ],
+      "mandatory_exact_reads": [
+        "TERMINUS_3_AI_INSTRUCTIONS.md",
+        ".terminus/reviewers/REVIEWER_CHECKLIST.md",
+        ".terminus/agents/QUALITY_AGENT_PROMPTS.md"
+      ],
+      "retrieval_mode": "EXACT_ONLY"
+    },
+    "ignored_input_count": 0,
+    "inputs": {
+      "optional": {},
+      "required": {
+        "ACTIVE_FORMAT_VALIDATORS": [
+          "task.toml schema and required package paths",
+          "agent/verifier Dockerfile and .dockerignore boundaries",
+          "tests/test.sh verifier entrypoint/reward contract",
+          "instruction required-output/path constraints"
+        ],
+        "CREATION_RULE_CONTEXT": {
+          "CONTROL_PLANE_COMMIT": "bde51f1c20b2d6d78b33f02956da9c58cd42d2a4",
+          "CREATION_PROFILE": "large_system_strict",
+          "KNOWN_POLICY_CONFLICTS": []
+        },
+        "CURRENT_TASK_TREE": {
+          "go_version": "1.24",
+          "provider_source": "local/ansibleops",
+          "provider_version": "0.1.0",
+          "required_paths": [
+            "README.md",
+            "environment/",
+            "instruction.md",
+            "solution/",
+            "task.toml",
+            "tests/"
+          ],
+          "resource_count": 10,
+          "runtime_artifact": "/app/provider",
+          "task_root": "terraform-ansible-managed-resources",
+          "terraform_version": "1.10.5"
+        }
+      }
+    },
+    "invocation_id": "inv_65271020c29e0a15f8e3edf26acc5d6b484f428f9ec272cc9da03c3f302b790c",
+    "learning": {
+      "context_hash": "sha256:bb84a513aa2b6e4374d691759c4a6edf94169f479f4611e9091643b9f279ccfc",
+      "lessons": [],
+      "mode": "GENERALIZED_LESSONS_PLUS_OWNED_REMEDIATIONS",
+      "raw_feedback_exposed": false,
+      "raw_historical_findings_exposed": false,
+      "registry_heads": {
+        "feedback": "GENESIS",
+        "findings": "GENESIS",
+        "lessons": "GENESIS",
+        "patterns": "GENESIS",
+        "remediations": "GENESIS"
+      },
+      "remediations": []
+    },
+    "missing_required_inputs": [],
+    "output_contract": {
+      "allowed_status_values": [
+        "FORMAT_PASS",
+        "FIXED",
+        "BLOCKED",
+        "POLICY_CONFLICT"
+      ],
+      "deterministic_validators": [
+        "current task-format/packaging CI and validators"
+      ],
+      "optional_fields": [],
+      "persisted_artifacts": [],
+      "required_fields": [
+        "CHECKS",
+        "RERUN"
+      ],
+      "semantic_reviewers": [
+        "Compliance Auditor"
+      ]
+    },
+    "readiness": "READY",
+    "retrieval": {
+      "query": null,
+      "retrieved_chars": 0,
+      "retrieved_context": [],
+      "status": "NOT_REQUESTED"
+    },
+    "routing": {
+      "failure_routes": {
+        "FORMAT_DEFECT": "Q7 Task Format Enforcer",
+        "POLICY_CONFLICT": "Creation Controller",
+        "SEMANTIC_DEFECT": "route to semantic owner"
+      },
+      "stale_on": [
+        "task structure change",
+        "task.toml change",
+        "Docker/test/solution/package change",
+        "format-rule change"
+      ],
+      "success_transition": "ASSEMBLY"
+    },
+    "schema_version": "1.0",
+    "stage": {
+      "lifecycle": "creation",
+      "owner": "Q7 Task Format Enforcer",
+      "role_class": "FIXER",
+      "role_id": "Q7_TASK_FORMAT_ENFORCER",
+      "stage_id": "FORMAT_GATE"
+    }
+  },
+  "outputs": {
+    "CHECKS": {
+      "agent_image_and_tooling": "PASS",
+      "dockerignore_isolation": "PASS",
+      "instruction_path_isolation": "PASS",
+      "separate_verifier": "PASS",
+      "solution_isolation": "PASS",
+      "task_toml": "PASS",
+      "tests_test_sh_reward_exit_contract": "PASS",
+      "top_level_layout": "PASS"
+    },
+    "RERUN": "PASS — current task-format/package validators report no repair-required defect."
+  },
+  "record_id": "rec_675e8fdb418e24e3a0bacb2720e93071b113bd4a01bec97dda6a0f53c46923ce",
+  "role_id": "Q7_TASK_FORMAT_ENFORCER",
+  "schema_version": "1.0",
+  "stage_id": "FORMAT_GATE",
+  "status": "FORMAT_PASS",
+  "task_lineage": {
+    "input_task_commit": "78ad422902b27dea954905130a1267b02cff3596",
+    "output_task_commit": "78ad422902b27dea954905130a1267b02cff3596",
+    "task_changed": false
+  },
+  "transition": {
+    "action": "ADVANCE",
+    "requires_state_validation": false,
+    "target": "ASSEMBLY",
+    "target_kind": "STAGE"
+  },
+  "validation": {
+    "acceptance_predicates_satisfied": true,
+    "evidence_binding_satisfied": true,
+    "evidence_refs_count": 1,
+    "invocation_identity_valid": true,
+    "invocation_policy_valid": true,
+    "output_keys_valid": true,
+    "required_outputs_satisfied": true,
+    "retrieval_context_authorized": true,
+    "status_legal": true,
+    "task_commit_change_authorized": true,
+    "task_lineage_valid": true
+  }
+}
