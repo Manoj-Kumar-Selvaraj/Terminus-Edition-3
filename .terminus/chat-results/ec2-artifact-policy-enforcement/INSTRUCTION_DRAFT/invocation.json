@@ -1,0 +1,201 @@
+{
+  "acceptance_predicates": {},
+  "authority": {
+    "control_plane_commit": "7d8a6d8c62a62e6d24949344c7fd712e59bc8829",
+    "policy_versions": {},
+    "task_commit": "6c7909d5c0efd3e6e64443d6de3b227c1820b01b",
+    "task_id": "ec2-artifact-policy-enforcement"
+  },
+  "evidence": {
+    "authorized_evidence_classes": [
+      "CONTROL_PLANE_POLICY",
+      "PUBLIC_REFERENCE",
+      "SOLVER_VISIBLE_TASK"
+    ],
+    "evidence_required": [
+      "schema-valid current solver-visible requirement contract",
+      "complete material requirement set",
+      "instruction/docs boundary",
+      "absolute required output paths",
+      "current-state evidence only when claimed"
+    ],
+    "excluded_evidence_classes": [
+      "CI_RUNTIME_EVIDENCE",
+      "CURRENT_REVIEW_PACKET",
+      "DURABLE_SESSION_STATE",
+      "FINAL_PACKAGE_EVIDENCE",
+      "MODEL_TRIAL_EVIDENCE",
+      "PRIOR_REVIEW_RESULTS",
+      "PRIVATE_CREATION_DESIGN",
+      "SOLUTION_ORACLE",
+      "VERIFIER_PRIVATE"
+    ],
+    "mandatory_exact_reads": [
+      "TERMINUS_3_AI_INSTRUCTIONS.md",
+      ".terminus/agents/INSTRUCTION_POLICY.md",
+      ".terminus/agents/CREATOR_PROMPTS.md"
+    ],
+    "retrieval_mode": "FILTERED_HYBRID"
+  },
+  "ignored_input_count": 0,
+  "inputs": {
+    "optional": {
+      "CURRENT_STATE_EVIDENCE": {
+        "scope": "observed acquisition, scanner, exception, permit, and audit symptoms only",
+        "solver_visible_path": "/app/enforcer/notes/oncall.md"
+      }
+    },
+    "required": {
+      "APPROVED_SOLVER_VISIBLE_REQUIREMENT_CONTRACT": {
+        "current_instruction_path": "ec2-artifact-policy-enforcement/instruction.md",
+        "current_state_contract_delta": "verify-permit may accept --state for durable single-use replay enforcement; first exact valid use succeeds and records consumption, later or concurrent use returns 43/PERMIT_REPLAYED; repeated unchanged evaluation is idempotent; audit is authoritative; malformed durable audit corruption fails closed without truncation.",
+        "engineering_objective": "Unify OS-package, container, and build-dependency acquisition behind one Go policy engine.",
+        "preservation_obligations": [
+          "keep artifactguard evaluate and verify-permit interfaces and documented exits",
+          "keep cache and exceptions operational",
+          "do not rewrite supplied policy/scanner/exception fixtures",
+          "preserve existing audit history"
+        ],
+        "required_end_state": "All acquisition surfaces enforce trusted sources, immutable digests, current scanner/cache evidence, exact current vulnerability exceptions, secret-keyed exact-scope permits, restart/concurrency-safe single use, and durable allow/deny audit history.",
+        "requirement_families": [
+          "source/digest policy",
+          "scanner/cache freshness",
+          "vulnerability exceptions",
+          "permit integrity and replay",
+          "durable audit/recovery",
+          "CLI compatibility"
+        ],
+        "solver_visible_contract_paths": [
+          "ec2-artifact-policy-enforcement/environment/enforcer/docs/architecture.md",
+          "ec2-artifact-policy-enforcement/environment/enforcer/docs/policy-contract.md",
+          "ec2-artifact-policy-enforcement/environment/enforcer/docs/state-format.md",
+          "ec2-artifact-policy-enforcement/environment/enforcer/docs/operations.md",
+          "ec2-artifact-policy-enforcement/environment/enforcer/notes/oncall.md"
+        ]
+      },
+      "CREATION_RULE_CONTEXT": {
+        "CONTROL_PLANE_COMMIT": "7d8a6d8c62a62e6d24949344c7fd712e59bc8829",
+        "CREATION_PROFILE": "large_system_strict",
+        "KNOWN_POLICY_CONFLICTS": []
+      },
+      "TASK_WRITING_PROFILE": {
+        "avoid": [
+          "invented incidents or personal claims",
+          "rubric-like hidden-test enumeration",
+          "style-driven omission of lifecycle constraints",
+          "copied distinctive source wording",
+          "task details copied from unrelated calibration domains"
+        ],
+        "must_preserve": [
+          "three acquisition surfaces",
+          "source and immutable-digest policy",
+          "scanner/cache freshness",
+          "exact exception scope",
+          "keyed exact-scope permit and replay safety",
+          "durable allow/deny audit and recovery",
+          "public CLI compatibility"
+        ],
+        "structure": [
+          "state the approved engineering objective first",
+          "preserve exact public contracts and hard safety/state constraints",
+          "reference solver-visible technical contracts instead of reproducing hidden verifier rows",
+          "keep implementation-neutral observable outcomes"
+        ],
+        "voice": "direct EC2/platform-security engineering change request"
+      },
+      "VALIDATED_HUMAN_WRITING_CALIBRATION": {
+        "CALIBRATION_PAIR_ID": "hwpair-e6d896faff95603b208b",
+        "DOMAIN_PROFILE": "security",
+        "EXTERNAL_DATASET_COVERAGE": "DEGRADED",
+        "REVIEWER_CALIBRATION_ID": "hwcal-reviewer-74395c69f41eab1b619c",
+        "WRITER_CALIBRATION_ID": "hwcal-writer-bab715cf3aa7b934a75c"
+      }
+    }
+  },
+  "invocation_id": "inv_64386fab4e344a7a61657f9427362eca3da73cc81b6527c950c4315d5a67db5b",
+  "learning": {
+    "context_hash": "sha256:bb84a513aa2b6e4374d691759c4a6edf94169f479f4611e9091643b9f279ccfc",
+    "lessons": [],
+    "mode": "GENERALIZED_LESSONS_PLUS_OWNED_REMEDIATIONS",
+    "raw_feedback_exposed": false,
+    "raw_historical_findings_exposed": false,
+    "registry_heads": {
+      "feedback": "GENESIS",
+      "findings": "GENESIS",
+      "lessons": "GENESIS",
+      "patterns": "GENESIS",
+      "remediations": "GENESIS"
+    },
+    "remediations": []
+  },
+  "missing_required_inputs": [],
+  "output_contract": {
+    "allowed_status_values": [
+      "READY",
+      "REWRITE_REQUIRED",
+      "BLOCKED"
+    ],
+    "deterministic_validators": [
+      "solver-visible requirement contract schema/hash/provenance checks",
+      "Q7 structural/path checks where mechanically enforceable",
+      ".terminus/human_writing/validate_calibration.py"
+    ],
+    "optional_fields": [
+      "CURRENT_STATE_EVIDENCE",
+      "UNRESOLVED_GAPS"
+    ],
+    "persisted_artifacts": [
+      "<task>/instruction.md"
+    ],
+    "required_fields": [
+      "INSTRUCTION_PATH",
+      "REQUIREMENT_COVERAGE",
+      "DOC_REFERENCES",
+      "INSTRUCTION_SHAPE",
+      "HANDOFF_TEST",
+      "REVERSE_OUTLINE_RISK",
+      "SPEC_FILE_LOOPHOLE"
+    ],
+    "semantic_reviewers": [
+      "Instruction Reviewer",
+      "Q1 Spec Gap Repairer",
+      "Q3 Spec Ambiguity Repairer"
+    ]
+  },
+  "readiness": "READY",
+  "retrieval": {
+    "query": null,
+    "retrieved_chars": 0,
+    "retrieved_context": [],
+    "status": "NOT_REQUESTED"
+  },
+  "routing": {
+    "failure_routes": {
+      "AMBIGUITY": "Q3 Spec Ambiguity Repairer",
+      "FORMAT_OR_PATH_ERROR": "Q7 Task Format Enforcer",
+      "HIDDEN_TEST_OR_REPAIR_LEAKAGE": "A7 Instruction Writer",
+      "MISSING_REQUIREMENT": "Q1 Spec Gap Repairer",
+      "SPEC_FILE_LOOPHOLE": "A7 Instruction Writer / Q1 Spec Gap Repairer",
+      "STALE_OR_INVALID_REQUIREMENT_CONTRACT": "Creation Controller -> requirement owner/Q1 -> regenerate projection"
+    },
+    "stale_on": [
+      "solver-visible requirement contract change",
+      "material requirement change",
+      "referenced solver-visible contract change",
+      "required output/schema change",
+      "instruction-policy change",
+      "human-writing calibration change",
+      "dataset registry change",
+      "domain profile change"
+    ],
+    "success_transition": "SPEC_ALIGNMENT"
+  },
+  "schema_version": "1.0",
+  "stage": {
+    "lifecycle": "creation",
+    "owner": "A7 Instruction Writer",
+    "role_class": "PRODUCER",
+    "role_id": "A7_INSTRUCTION_WRITER",
+    "stage_id": "INSTRUCTION_DRAFT"
+  }
+}
