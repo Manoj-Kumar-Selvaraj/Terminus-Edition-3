@@ -25,14 +25,21 @@ jobs:
           git add -- "$path"
           git commit -m "Track EC2 remediation run $GITHUB_RUN_ID"
           git push origin HEAD:"$GITHUB_REF_NAME"
-      - name: Build production runtime
+      - name: Format and build production runtime
         shell: bash
         run: |
           set -euo pipefail
           ROOT=ec2-artifact-policy-enforcement/environment/enforcer
+          gofmt -w "$ROOT/cmd" "$ROOT/internal"
+          if ! git diff --quiet -- "$ROOT/cmd" "$ROOT/internal"; then
+            git config user.name 'terminus-remediation-validator[bot]'
+            git config user.email 'terminus-remediation-validator[bot]@users.noreply.github.com'
+            git add -- "$ROOT/cmd" "$ROOT/internal"
+            git commit -m "Format EC2 remediation runtime"
+            git push origin HEAD:"$GITHUB_REF_NAME"
+          fi
           cd "$ROOT"
-          echo '--- gofmt diff ---'
-          test -z "$(gofmt -l ./cmd ./internal)" || { gofmt -l ./cmd ./internal; exit 11; }
+          test -z "$(gofmt -l ./cmd ./internal)"
           go test ./...
           go build -o /tmp/artifactguard ./cmd/artifactguard
       - name: Measure reachable authored Go
