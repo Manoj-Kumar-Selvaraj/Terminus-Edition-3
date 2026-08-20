@@ -1,0 +1,233 @@
+{
+  "authority": {
+    "control_plane_commit": "bde51f1c20b2d6d78b33f02956da9c58cd42d2a4",
+    "policy_versions": {},
+    "task_commit": "9663e4da67ab20e6bd66b942ac54b57667408dd8",
+    "task_id": "edge-router-runtime"
+  },
+  "disposition": "ADVANCE",
+  "evidence_refs": [],
+  "invocation_id": "inv_c13c3ca9770dcc38d924c3ecaddd941f9a8cd95e8baf54d4de4a92196a306f06",
+  "invocation_snapshot": {
+    "acceptance_predicates": {},
+    "authority": {
+      "control_plane_commit": "bde51f1c20b2d6d78b33f02956da9c58cd42d2a4",
+      "policy_versions": {},
+      "task_commit": "9663e4da67ab20e6bd66b942ac54b57667408dd8",
+      "task_id": "edge-router-runtime"
+    },
+    "evidence": {
+      "authorized_evidence_classes": [
+        "CONTROL_PLANE_POLICY",
+        "PRIVATE_CREATION_DESIGN",
+        "SOLVER_VISIBLE_TASK"
+      ],
+      "evidence_required": [
+        "deterministic general repair/completion",
+        "preservation rationale",
+        "no hidden-test special casing"
+      ],
+      "excluded_evidence_classes": [
+        "CI_RUNTIME_EVIDENCE",
+        "CURRENT_REVIEW_PACKET",
+        "DURABLE_SESSION_STATE",
+        "FINAL_PACKAGE_EVIDENCE",
+        "MODEL_TRIAL_EVIDENCE",
+        "PRIOR_REVIEW_RESULTS",
+        "PUBLIC_REFERENCE",
+        "SOLUTION_ORACLE",
+        "VERIFIER_PRIVATE"
+      ],
+      "mandatory_exact_reads": [
+        ".terminus/agents/CREATION_PIPELINE.md",
+        ".terminus/agents/CREATOR_PROMPTS.md"
+      ],
+      "retrieval_mode": "EXACT_ONLY"
+    },
+    "ignored_input_count": 0,
+    "inputs": {
+      "optional": {
+        "SOLVER_VISIBLE_CONTRACTS": [
+          "edge-router-runtime/environment/docs/architecture.md",
+          "edge-router-runtime/environment/docs/configuration.md",
+          "edge-router-runtime/environment/docs/runtime-state.md",
+          "edge-router-runtime/environment/docs/operator-guide.md",
+          "edge-router-runtime/environment/docs/observability.md"
+        ]
+      },
+      "required": {
+        "APPROVED_OPERATIONAL_REQUIREMENTS": {
+          "EDGE_FAILURES": [
+            "duplicate/out-of-order generations",
+            "burst discovery events",
+            "invalid update mixed with valid membership change",
+            "backend disappearance during active request",
+            "stale affinity to ineligible backend",
+            "all backends unhealthy",
+            "restart around publication/checkpoint",
+            "duplicate endpoint identities",
+            "slow drains",
+            "rapid remove/re-add",
+            "retired metric cleanup",
+            "corrupt/incomplete checkpoint",
+            "concurrent readers racing publication"
+          ],
+          "PRESERVATION": [
+            "in-flight and long-lived requests remain valid across unrelated updates",
+            "unchanged route semantics remain stable across generations",
+            "healthy unchanged endpoints preserve meaningful runtime state",
+            "rejected updates cannot damage the serving generation",
+            "readers never observe partially applied configuration",
+            "runtime and observability state remain bounded after repeated updates"
+          ],
+          "REQUIRED_END_STATE": [
+            "Validate and compile candidate configuration into immutable runtime snapshots before publication.",
+            "Fence accepted generations so stale or out-of-order updates cannot overwrite newer state.",
+            "Publish route and upstream state atomically and retain last-known-good serving state when candidates are rejected.",
+            "Reconcile endpoint additions, removals, and unchanged endpoints by stable canonical identity and membership incarnation.",
+            "Preserve compatible selection, affinity, health, transport, and lifecycle continuity for unchanged endpoints.",
+            "Exclude removed or ineligible endpoints from fresh selection/retry while allowing bounded drain of existing traffic.",
+            "Checkpoint only complete accepted state and recover a complete last-known-good generation after restart.",
+            "Retire unreachable snapshots, endpoint runtimes, transports, affinity state, and telemetry without unbounded growth."
+          ]
+        },
+        "STARTER_ENVIRONMENT": {
+          "SOURCE": "current canonical ENVIRONMENT_BUILD result"
+        },
+        "SYSTEM_ARCHITECTURE": {
+          "SOURCE": "current canonical SYSTEM_ARCHITECTURE result"
+        }
+      }
+    },
+    "invocation_id": "inv_c13c3ca9770dcc38d924c3ecaddd941f9a8cd95e8baf54d4de4a92196a306f06",
+    "learning": {
+      "context_hash": "sha256:bb84a513aa2b6e4374d691759c4a6edf94169f479f4611e9091643b9f279ccfc",
+      "lessons": [],
+      "mode": "GENERALIZED_LESSONS_PLUS_OWNED_REMEDIATIONS",
+      "raw_feedback_exposed": false,
+      "raw_historical_findings_exposed": false,
+      "registry_heads": {
+        "feedback": "GENESIS",
+        "findings": "GENESIS",
+        "lessons": "GENESIS",
+        "patterns": "GENESIS",
+        "remediations": "GENESIS"
+      },
+      "remediations": []
+    },
+    "missing_required_inputs": [],
+    "output_contract": {
+      "allowed_status_values": [
+        "IMPLEMENTED",
+        "CONTRACT_GAP",
+        "BLOCKED"
+      ],
+      "deterministic_validators": [],
+      "optional_fields": [],
+      "persisted_artifacts": [
+        "<task>/solution/solve.sh",
+        "<task>/solution/"
+      ],
+      "required_fields": [
+        "RESTORED_INVARIANTS",
+        "FILES_CHANGED",
+        "RESTART_IDEMPOTENCY_BEHAVIOR",
+        "DETERMINISM_NOTES",
+        "PRESERVED_BEHAVIOR",
+        "RISKS_FOR_INDEPENDENT_VERIFIER"
+      ],
+      "semantic_reviewers": [
+        "Verifier Engineer"
+      ]
+    },
+    "readiness": "READY",
+    "retrieval": {
+      "query": null,
+      "retrieved_chars": 0,
+      "retrieved_context": [],
+      "status": "NOT_REQUESTED"
+    },
+    "routing": {
+      "failure_routes": {
+        "CONTRACT_GAP": "Creation Controller -> appropriate contract owner",
+        "RUNTIME_FAILURE": "Q5 Oracle & Runtime Repair Specialist"
+      },
+      "stale_on": [
+        "operational requirement change",
+        "environment implementation change",
+        "solver-visible contract change"
+      ],
+      "success_transition": "VERIFIER_BUILD"
+    },
+    "schema_version": "1.0",
+    "stage": {
+      "lifecycle": "creation",
+      "owner": "A4 Reference Solution Author",
+      "role_class": "PRODUCER",
+      "role_id": "A4_REFERENCE_SOLUTION_AUTHOR",
+      "stage_id": "REFERENCE_SOLUTION"
+    }
+  },
+  "outputs": {
+    "DETERMINISM_NOTES": "No test-name, hidden-input or environment-specific branching is used. Fixed compressed source overlays are applied deterministically, formatted, tested with go test ./..., and built from the registered command entrypoint.",
+    "FILES_CHANGED": [
+      "edge-router-runtime/solution/solve.sh",
+      "edge-router-runtime/solution/payload.00",
+      "edge-router-runtime/solution/payload.01",
+      "edge-router-runtime/solution/payload.02",
+      "edge-router-runtime/solution/payload.03",
+      "edge-router-runtime/solution/payload.04",
+      "edge-router-runtime/solution/q5-overlay.xz",
+      "edge-router-runtime/solution/q5-overlay2.xz",
+      "edge-router-runtime/solution/q5-overlay3.xz"
+    ],
+    "PRESERVED_BEHAVIOR": "The public serve/validate CLI, JSON configuration schema, operator configuration/discovery APIs, HTTP data plane, health/status/readiness/metrics/events surfaces, routing policies and durable state directory remain intact.",
+    "RESTART_IDEMPOTENCY_BEHAVIOR": "The deterministic solution overlay reconstructs the same repaired runtime from the same payload and Q5 overlays on repeated execution; restart recovery validates durable checkpoint authority before readiness and falls back to a previous complete generation when current recovery state is invalid.",
+    "RESTORED_INVARIANTS": [
+      "Per-source revision and digest authority is fenced under serialized acceptance; rejected or conflicting updates do not alter accepted metadata.",
+      "Candidate validation, runtime reconciliation, checkpoint preparation, publication and acknowledgement preserve last-known-good serving state on rejection.",
+      "Serving publication exposes one complete immutable runtime snapshot and each request retains one snapshot lease across route selection, retry and failover.",
+      "Canonical endpoint identity and membership incarnation distinguish continuous reuse from accepted removal followed by re-add.",
+      "Affinity, balancing, retry and failover revalidate incarnation, lifecycle and health eligibility, with deterministic failure when no eligible backend remains.",
+      "Removed endpoints become ineligible for fresh generations while already-leased generations may complete bounded attempts against DRAINING endpoints; RETIRED endpoints remain forbidden.",
+      "Checkpoint bodies and CURRENT authority use durable ordering, integrity verification and previous-complete fallback on restart.",
+      "Lifecycle-scoped runtime, transport and telemetry state is retired when unreachable rather than growing without bound."
+    ],
+    "RISKS_FOR_INDEPENDENT_VERIFIER": [
+      "Exercise same-revision/different-digest conflicts and rejected-update preservation independently.",
+      "Hold live requests across publication and verify generation-consistent retry and failover, including DRAINING completion for already-leased generations.",
+      "Cover canonical endpoint aliases, remove/re-add incarnation changes, draining/ineligible endpoints and all-down behavior.",
+      "Exercise restart around checkpoint publication, corrupt CURRENT and retained-previous fallback through public behavior.",
+      "Repeat update/remove/re-add cycles and verify transport, affinity and telemetry state remain bounded."
+    ]
+  },
+  "record_id": "rec_92417a3a830baaad2cd91c4496e6e85ae7268e58470fcb6f9a00f0bf0dd852d6",
+  "role_id": "A4_REFERENCE_SOLUTION_AUTHOR",
+  "schema_version": "1.0",
+  "stage_id": "REFERENCE_SOLUTION",
+  "status": "IMPLEMENTED",
+  "task_lineage": {
+    "input_task_commit": "9663e4da67ab20e6bd66b942ac54b57667408dd8",
+    "output_task_commit": "9663e4da67ab20e6bd66b942ac54b57667408dd8",
+    "task_changed": false
+  },
+  "transition": {
+    "action": "ADVANCE",
+    "requires_state_validation": false,
+    "target": "VERIFIER_BUILD",
+    "target_kind": "STAGE"
+  },
+  "validation": {
+    "acceptance_predicates_satisfied": true,
+    "evidence_binding_satisfied": true,
+    "evidence_refs_count": 0,
+    "invocation_identity_valid": true,
+    "invocation_policy_valid": true,
+    "output_keys_valid": true,
+    "required_outputs_satisfied": true,
+    "retrieval_context_authorized": true,
+    "status_legal": true,
+    "task_commit_change_authorized": true,
+    "task_lineage_valid": true
+  }
+}
