@@ -1,0 +1,157 @@
+{
+  "acceptance_predicates": {},
+  "authority": {
+    "control_plane_commit": "df7ef7569e2947b9f0bf7cf89ed4dec6c2a5a1fe",
+    "policy_versions": {},
+    "task_commit": "03317f8218069b9e0b5d073bf87ecf7a0ae8e4a1",
+    "task_id": "stonevault-crash-safe-storage"
+  },
+  "evidence": {
+    "authorized_evidence_classes": [
+      "CI_RUNTIME_EVIDENCE",
+      "CONTROL_PLANE_POLICY",
+      "PRIVATE_CREATION_DESIGN",
+      "SOLVER_VISIBLE_TASK"
+    ],
+    "evidence_required": [
+      "requirement-to-test map",
+      "behavioral scenario families",
+      "F2P/P2P classification",
+      "test independence"
+    ],
+    "excluded_evidence_classes": [
+      "CURRENT_REVIEW_PACKET",
+      "DURABLE_SESSION_STATE",
+      "FINAL_PACKAGE_EVIDENCE",
+      "MODEL_TRIAL_EVIDENCE",
+      "PRIOR_REVIEW_RESULTS",
+      "PUBLIC_REFERENCE",
+      "SOLUTION_ORACLE",
+      "VERIFIER_PRIVATE"
+    ],
+    "mandatory_exact_reads": [
+      "TERMINUS_3_AI_INSTRUCTIONS.md",
+      ".terminus/agents/CREATION_PIPELINE.md",
+      ".terminus/agents/CREATOR_PROMPTS.md"
+    ],
+    "retrieval_mode": "FILTERED_HYBRID"
+  },
+  "ignored_input_count": 0,
+  "inputs": {
+    "optional": {},
+    "required": {
+      "BEHAVIORAL_SURFACES": {
+        "edge_boundary": [
+          "inclusive sizes",
+          "byte ordering",
+          "WAL/snapshot framing"
+        ],
+        "failure_recovery": [
+          "killed/rolled-back transactions",
+          "torn WAL",
+          "checkpoint interruption",
+          "snapshot corruption"
+        ],
+        "negative_failure": [
+          "second writer",
+          "stale conflict",
+          "malformed protocol",
+          "complete corruption"
+        ],
+        "normal": [
+          "transaction CRUD",
+          "snapshot reads",
+          "prefix scans",
+          "checkpoint/restart"
+        ]
+      },
+      "SOLVER_VISIBLE_CONTRACTS": [
+        "stonevault-crash-safe-storage/instruction.md",
+        "stonevault-crash-safe-storage/environment/stonevault/docs/storage-format.md"
+      ],
+      "SOLVER_VISIBLE_REQUIREMENTS": {
+        "R01-R16": "See .terminus/designs/stonevault-crash-safe-storage-test-map.json and task instruction"
+      }
+    }
+  },
+  "invocation_id": "inv_fed17c1ecd4c15b7e204a8fbe62a298bd7c91c4b2a50e9922434c0056692fafc",
+  "learning": {
+    "context_hash": "sha256:bb84a513aa2b6e4374d691759c4a6edf94169f479f4611e9091643b9f279ccfc",
+    "lessons": [],
+    "mode": "GENERALIZED_LESSONS_PLUS_OWNED_REMEDIATIONS",
+    "raw_feedback_exposed": false,
+    "raw_historical_findings_exposed": false,
+    "registry_heads": {
+      "feedback": "GENESIS",
+      "findings": "GENESIS",
+      "lessons": "GENESIS",
+      "patterns": "GENESIS",
+      "remediations": "GENESIS"
+    },
+    "remediations": []
+  },
+  "missing_required_inputs": [],
+  "output_contract": {
+    "allowed_status_values": [
+      "VERIFIER_READY",
+      "REQUIREMENT_GAP",
+      "SCENARIO_TOO_SMALL",
+      "BLOCKED"
+    ],
+    "deterministic_validators": [
+      "verifier lint/static checks",
+      ".terminus/validate_task_complexity.py <task>"
+    ],
+    "optional_fields": [
+      "STARTER_EMPIRICAL_STATUS",
+      "ORACLE_EMPIRICAL_STATUS",
+      "SOLVER_LOGIC_REIMPLEMENTATION_RISK"
+    ],
+    "persisted_artifacts": [
+      "<task>/tests/",
+      ".terminus/designs/<task>-test-map.json"
+    ],
+    "required_fields": [
+      "REQUIREMENT_TEST_MATRIX",
+      "F2P_COUNT",
+      "P2P_COUNT",
+      "EDGE_BOUNDARY_COVERAGE",
+      "NEGATIVE_FAILURE_COVERAGE",
+      "ORGANIC_COUNT_JUSTIFICATION",
+      "TEST_INDEPENDENCE"
+    ],
+    "semantic_reviewers": [
+      "Q2 Verifier Coverage Repairer",
+      "Verifier Engineer"
+    ]
+  },
+  "readiness": "READY",
+  "retrieval": {
+    "query": null,
+    "retrieved_chars": 0,
+    "retrieved_context": [],
+    "status": "NOT_REQUESTED"
+  },
+  "routing": {
+    "failure_routes": {
+      "DUPLICATE_OR_WEAK_TEST": "A5 Verifier Author / Q2 Verifier Coverage Repairer",
+      "REQUIREMENT_GAP": "Q1 Spec Gap Repairer / contract owner",
+      "SCENARIO_TOO_SMALL": "Creation Controller -> WORK_PACKAGE_RESEARCH"
+    },
+    "stale_on": [
+      "solver-visible requirement change",
+      "referenced contract change",
+      "behavioral surface change",
+      "verifier change"
+    ],
+    "success_transition": "HUMAN_WRITING_RESEARCH"
+  },
+  "schema_version": "1.0",
+  "stage": {
+    "lifecycle": "creation",
+    "owner": "A5 Verifier Author",
+    "role_class": "PRODUCER",
+    "role_id": "A5_VERIFIER_AUTHOR",
+    "stage_id": "VERIFIER_BUILD"
+  }
+}
