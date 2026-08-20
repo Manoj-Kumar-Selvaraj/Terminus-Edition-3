@@ -9,7 +9,7 @@ permissions:
 
 jobs:
   validate:
-    if: ${{ !contains(github.event.head_commit.message, 'Track EC2 remediation run') }}
+    if: ${{ !contains(github.event.head_commit.message, 'Track EC2 remediation run') && !contains(github.event.head_commit.message, 'Materialize EC2 Q4 Q6 remediation') && !contains(github.event.head_commit.message, 'Materialize EC2 Oracle remediation') }}
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
@@ -80,6 +80,43 @@ jobs:
               raise SystemExit(f'expected 12 clean P2P passes, got {p2p}')
           if f2p != (28, 28, 0, 0):
               raise SystemExit(f'expected all 28 F2P probes to fail on starter, got {f2p}')
+          PY
+      - name: Materialize Oracle repair
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 .github/ec2_oracle_remediate.py
+          chmod +x ec2-artifact-policy-enforcement/solution/solve.sh
+          if ! git diff --quiet -- ec2-artifact-policy-enforcement/solution; then
+            git config user.name 'terminus-remediation[bot]'
+            git config user.email 'terminus-remediation[bot]@users.noreply.github.com'
+            git add -- ec2-artifact-policy-enforcement/solution
+            git commit -m 'Materialize EC2 Oracle remediation'
+            git push origin HEAD:"$GITHUB_REF_NAME"
+          fi
+      - name: Validate Oracle twice and full matrix
+        shell: bash
+        run: |
+          set -euo pipefail
+          SRC="$(realpath ec2-artifact-policy-enforcement/environment/enforcer)"
+          SOLUTION_ROOT="$(realpath ec2-artifact-policy-enforcement/solution)"
+          TESTS="$(realpath ec2-artifact-policy-enforcement/tests)"
+          rm -rf /tmp/ec2-oracle
+          cp -a "$SRC" /tmp/ec2-oracle
+          ENFORCER_ROOT=/tmp/ec2-oracle SOLUTION_ROOT="$SOLUTION_ROOT" ARTIFACTGUARD_BIN=/tmp/artifactguard-oracle bash "$SOLUTION_ROOT/solve.sh"
+          ENFORCER_ROOT=/tmp/ec2-oracle SOLUTION_ROOT="$SOLUTION_ROOT" ARTIFACTGUARD_BIN=/tmp/artifactguard-oracle bash "$SOLUTION_ROOT/solve.sh"
+          export ENFORCER_ROOT=/tmp/ec2-oracle
+          export AG_BIN=/tmp/artifactguard-oracle
+          cd "$TESTS"
+          python3 -m pytest -q test_outputs.py test_q4_contract_gaps.py --junitxml=/tmp/oracle.xml
+          python3 - <<'PY'
+          import xml.etree.ElementTree as ET
+          root = ET.parse('/tmp/oracle.xml').getroot()
+          suites = [root] if root.tag == 'testsuite' else list(root.findall('testsuite'))
+          counts = tuple(sum(int(s.attrib.get(k, 0)) for s in suites) for k in ('tests','failures','errors','skipped'))
+          print('ORACLE_MATRIX', counts)
+          if counts != (40, 0, 0, 0):
+              raise SystemExit(f'expected 40 clean Oracle passes, got {counts}')
           PY
       - name: Measure production logic
         shell: bash
