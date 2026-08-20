@@ -1,0 +1,45 @@
+{
+  "evidence_refs": [
+    {
+      "kind": "COMMIT",
+      "ref": "commit:03317f8218069b9e0b5d073bf87ecf7a0ae8e4a1"
+    }
+  ],
+  "invocation_id": "inv_37918a13438689de24684f3d057e5a763a6a3e11e6447b37a37bd60adfe8da74",
+  "output_task_commit": "03317f8218069b9e0b5d073bf87ecf7a0ae8e4a1",
+  "outputs": {
+    "DETERMINISM_NOTES": "no network or time-dependent repair logic; deterministic native rebuild",
+    "FILES_CHANGED": [
+      "solution/fix.patch",
+      "solution/solve.sh"
+    ],
+    "PRESERVED_BEHAVIOR": [
+      "stable C ABI",
+      "ASCII response shapes",
+      "documented WAL layout",
+      "documented snapshot layout",
+      "binary key/value representation"
+    ],
+    "RESTART_IDEMPOTENCY_BEHAVIOR": "solve.sh applies one bounded patch then cleanly rebuilds; repaired runtime preserves committed state across restart and ignores only documented crash-temporary/torn-tail cases",
+    "RESTORED_INVARIANTS": [
+      "exclusive writer ownership",
+      "transaction snapshot visibility with local overlays",
+      "atomic first-committer-wins rejection",
+      "durable contiguous commit sequencing",
+      "fail-closed complete-record corruption handling",
+      "checkpoint quiescence/publication/WAL reclamation",
+      "snapshot integrity",
+      "accurate health/stats",
+      "configuration precedence and inclusive protocol bounds"
+    ],
+    "RISKS_FOR_INDEPENDENT_VERIFIER": [
+      "restart semantics",
+      "complete-vs-torn corruption boundary",
+      "MVCC tombstones/scan overlay",
+      "checkpoint publication",
+      "operator-state reachability"
+    ]
+  },
+  "schema_version": "1.0",
+  "status": "IMPLEMENTED"
+}
