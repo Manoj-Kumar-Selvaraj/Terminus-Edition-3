@@ -3,5 +3,6 @@ RUN apt-get update \
  && apt-get install -y --no-install-recommends golang-go ca-certificates \
  && rm -rf /var/lib/apt/lists/* \
  && python3 -m pip install --no-cache-dir "pytest==8.4.1" "pytest-json-ctrf==0.3.5"
+RUN mkdir -p /app/enforcer
 WORKDIR /tests
 COPY . /tests/
