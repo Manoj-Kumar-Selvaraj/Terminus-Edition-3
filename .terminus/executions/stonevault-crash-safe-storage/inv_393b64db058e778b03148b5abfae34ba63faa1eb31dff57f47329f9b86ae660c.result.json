@@ -1,0 +1,774 @@
+{
+  "authority": {
+    "control_plane_commit": "8b0c265a1b12b4b066751be160b75abb6b23339f",
+    "policy_versions": {},
+    "task_commit": "1cbdc0030a8a6483db4c91865aa60b8ef127c9c6",
+    "task_id": "stonevault-crash-safe-storage"
+  },
+  "disposition": "ROUTE",
+  "evidence_refs": [
+    {
+      "content_hash": "sha256:3d5690c8407ba5e950e539f9381b3711359851e57038080d58e335b97aed02e0",
+      "kind": "COMMIT",
+      "ref": "commit:1cbdc0030a8a6483db4c91865aa60b8ef127c9c6"
+    },
+    {
+      "content_hash": "sha256:c38031ec409177e89a4068ad57989de6756317840c009ee2ae3d516a5068de72",
+      "kind": "RESULT",
+      "ref": "git:871f526547453b6ae236842630e3ce0dc5e4f376:.terminus/reviews/stonevault-crash-safe-storage/1cbdc003/stonevault-crash-safe-storage-1cbdc003-spec-test-contract-37f462215d.json#stonevault-crash-safe-storage-1cbdc003-spec-test-contract-37f462215d"
+    },
+    {
+      "content_hash": "sha256:d77d45c767fd8237c9e06f63fb03208e784344d4a11484c66827b51e7e837a98",
+      "kind": "RESULT",
+      "ref": "git:871f526547453b6ae236842630e3ce0dc5e4f376:.terminus/reviews/stonevault-crash-safe-storage/1cbdc003/stonevault-crash-safe-storage-1cbdc003-production-logic-791d72c77a.json#stonevault-crash-safe-storage-1cbdc003-production-logic-791d72c77a"
+    },
+    {
+      "content_hash": "sha256:c38031ec409177e89a4068ad57989de6756317840c009ee2ae3d516a5068de72",
+      "kind": "RUN",
+      "ref": "run:github:32339368147-q4#sha256:c38031ec409177e89a4068ad57989de6756317840c009ee2ae3d516a5068de72"
+    },
+    {
+      "content_hash": "sha256:d77d45c767fd8237c9e06f63fb03208e784344d4a11484c66827b51e7e837a98",
+      "kind": "RUN",
+      "ref": "run:github:32339368147-q6#sha256:d77d45c767fd8237c9e06f63fb03208e784344d4a11484c66827b51e7e837a98"
+    }
+  ],
+  "invocation_id": "inv_393b64db058e778b03148b5abfae34ba63faa1eb31dff57f47329f9b86ae660c",
+  "invocation_snapshot": {
+    "acceptance_predicates": {
+      "QUALITY_INTERLOCK_PASS": [
+        {
+          "op": "q4_satisfied",
+          "path": "Q4_RESULT"
+        },
+        {
+          "op": "eq",
+          "path": "Q6_RESULT.verdict",
+          "value": "PASS"
+        },
+        {
+          "op": "in",
+          "path": "Q6_RESULT.confidence",
+          "value": [
+            "HIGH",
+            "MEDIUM"
+          ]
+        },
+        {
+          "op": "eq",
+          "path": "Q6_RESULT.evidence_status",
+          "value": "SUFFICIENT"
+        },
+        {
+          "op": "empty",
+          "path": "Q6_RESULT.missing_evidence"
+        },
+        {
+          "op": "in",
+          "path": "EVIDENCE_SUFFICIENCY",
+          "value": [
+            "SUFFICIENT",
+            true
+          ]
+        }
+      ]
+    },
+    "authority": {
+      "control_plane_commit": "8b0c265a1b12b4b066751be160b75abb6b23339f",
+      "policy_versions": {},
+      "task_commit": "1cbdc0030a8a6483db4c91865aa60b8ef127c9c6",
+      "task_id": "stonevault-crash-safe-storage"
+    },
+    "evidence": {
+      "authorized_evidence_classes": [
+        "CI_RUNTIME_EVIDENCE",
+        "CONTROL_PLANE_POLICY",
+        "CURRENT_REVIEW_PACKET",
+        "DURABLE_SESSION_STATE",
+        "SOLVER_VISIBLE_TASK"
+      ],
+      "evidence_required": [
+        "Q4 exact-current PASS with sufficient evidence",
+        "Q6 current or Protocol-valid scope-preserved PASS with sufficient evidence",
+        "Q4 direct PASS or validated adjudicated closure PASS"
+      ],
+      "excluded_evidence_classes": [
+        "FINAL_PACKAGE_EVIDENCE",
+        "MODEL_TRIAL_EVIDENCE",
+        "PRIOR_REVIEW_RESULTS",
+        "PRIVATE_CREATION_DESIGN",
+        "PUBLIC_REFERENCE",
+        "SOLUTION_ORACLE",
+        "VERIFIER_PRIVATE"
+      ],
+      "mandatory_exact_reads": [
+        ".terminus/AGENT_SYSTEM.md",
+        ".terminus/agents/PROTOCOL.md",
+        ".terminus/agents/QUALITY_AGENT_REGISTRY.md",
+        ".terminus/agents/INSTRUCTION_POLICY.md",
+        ".terminus/agents/QUALITY_AGENT_PROMPTS.md",
+        ".terminus/agents/INVOKE.md"
+      ],
+      "retrieval_mode": "EXACT_ONLY"
+    },
+    "ignored_input_count": 0,
+    "inputs": {
+      "optional": {
+        "Q6_REVIEW_SCOPE_HASH": "63b1df2323f5f131c1cd51cc8126072da08ca75e8a03eaff72c16b83aaff4228"
+      },
+      "required": {
+        "FROZEN_TASK_COMMIT": "1cbdc0030a8a6483db4c91865aa60b8ef127c9c6",
+        "Q4_CONTEXT_PACKET": {
+          "authoritative_rules": [
+            "TERMINUS_3_AI_INSTRUCTIONS.md",
+            ".terminus/AGENT_SYSTEM.md",
+            ".terminus/agents/PROTOCOL.md",
+            ".terminus/agents/PROMPTS.md",
+            ".terminus/agents/QUALITY_AGENT_REGISTRY.md",
+            ".terminus/agents/QUALITY_AGENT_PROMPTS.md"
+          ],
+          "change_since_last_review": "Controller-layer repair 44f23180d180f759a10e48ec5cf95011796eadac corrected Q4 private-map projection and immutable review-output preflight; deterministic Terminus Agent System CI 32338961777 passed.",
+          "control_plane_commit": "8b0c265a1b12b4b066751be160b75abb6b23339f",
+          "evidence_allowed": [
+            "instruction.md",
+            "all solver-visible contracts referenced by instruction.md",
+            "tests/",
+            "test map when needed to identify classification only",
+            "environment interfaces required to interpret observable behavior"
+          ],
+          "evidence_excluded": [
+            "Q1/Q2/Q3 conclusions before the independent matrix is frozen",
+            "Verifier Author coverage rationale",
+            "previous Spec-Test Contract Reviewer verdict",
+            "other specialist verdicts",
+            "desired aggregate outcome"
+          ],
+          "isolation_mode": "PROCEDURAL",
+          "output_schema": ".terminus/agents/schemas/review_result.schema.json",
+          "prior_verdicts_visible": false,
+          "prompt_policy_version": "2.2",
+          "protocol_policy_version": "2.2",
+          "question": "Is every substantive verifier behavior discoverable from the solver-visible contract, every material requirement tested, and every grading-relevant statement unambiguous?",
+          "review_id": "stonevault-crash-safe-storage-1cbdc003-spec-test-contract-37f462215d",
+          "review_output_path": ".terminus/reviews/stonevault-crash-safe-storage/1cbdc003/stonevault-crash-safe-storage-1cbdc003-spec-test-contract-37f462215d.json",
+          "role": "Spec-Test Contract Reviewer",
+          "role_contract_hash": "9607c7323be7db66eb7b520db4498f29efc686073e6f3d565c8e2c99ad26a34c",
+          "role_policy_version": "1.1",
+          "schema_version": "3.0",
+          "state": "FROZEN_CANDIDATE",
+          "task": "stonevault-crash-safe-storage",
+          "task_commit": "1cbdc0030a8a6483db4c91865aa60b8ef127c9c6"
+        },
+        "Q6_CONTEXT_PACKET": {
+          "authoritative_rules": [
+            "TERMINUS_3_AI_INSTRUCTIONS.md",
+            ".terminus/AGENT_SYSTEM.md",
+            ".terminus/agents/PROTOCOL.md",
+            ".terminus/agents/PROMPTS.md",
+            ".terminus/agents/QUALITY_AGENT_REGISTRY.md",
+            ".terminus/agents/QUALITY_AGENT_PROMPTS.md"
+          ],
+          "change_since_last_review": "Controller-layer repair 44f23180d180f759a10e48ec5cf95011796eadac corrected Q4 private-map projection and immutable review-output preflight; deterministic Terminus Agent System CI 32338961777 passed.",
+          "control_plane_commit": "8b0c265a1b12b4b066751be160b75abb6b23339f",
+          "evidence_allowed": [
+            "task.toml",
+            "solver-visible environment/runtime/configuration code",
+            "entrypoints and operator workflows",
+            "runtime-authenticity and complexity reports",
+            "representative data/state and incident evidence"
+          ],
+          "evidence_excluded": [
+            "Complexity Governor verdict as a conclusion to copy",
+            "creator claims that code is production-grade",
+            "previous Production Logic Auditor verdict",
+            "other specialist verdicts",
+            "desired difficulty tier"
+          ],
+          "isolation_mode": "PROCEDURAL",
+          "output_schema": ".terminus/agents/schemas/review_result.schema.json",
+          "prior_verdicts_visible": false,
+          "prompt_policy_version": "2.2",
+          "protocol_policy_version": "2.2",
+          "question": "Is the solver-visible core genuinely complex, reachable, coupled, non-toy and credible as production logic rather than LOC or module padding?",
+          "review_id": "stonevault-crash-safe-storage-1cbdc003-production-logic-791d72c77a",
+          "review_output_path": ".terminus/reviews/stonevault-crash-safe-storage/1cbdc003/stonevault-crash-safe-storage-1cbdc003-production-logic-791d72c77a.json",
+          "review_scope_hash": "63b1df2323f5f131c1cd51cc8126072da08ca75e8a03eaff72c16b83aaff4228",
+          "role": "Production Logic Auditor",
+          "role_contract_hash": "828f84c63f4e37642ab42740b22aa95646ddaa42972f30902e9fe9a034e5458c",
+          "role_policy_version": "1.1",
+          "schema_version": "3.0",
+          "state": "FROZEN_CANDIDATE",
+          "task": "stonevault-crash-safe-storage",
+          "task_commit": "1cbdc0030a8a6483db4c91865aa60b8ef127c9c6"
+        }
+      }
+    },
+    "invocation_id": "inv_393b64db058e778b03148b5abfae34ba63faa1eb31dff57f47329f9b86ae660c",
+    "learning": {
+      "context_hash": "sha256:bb84a513aa2b6e4374d691759c4a6edf94169f479f4611e9091643b9f279ccfc",
+      "lessons": [],
+      "mode": "GENERALIZED_LESSONS_PLUS_OWNED_REMEDIATIONS",
+      "raw_feedback_exposed": false,
+      "raw_historical_findings_exposed": false,
+      "registry_heads": {
+        "feedback": "GENESIS",
+        "findings": "GENESIS",
+        "lessons": "GENESIS",
+        "patterns": "GENESIS",
+        "remediations": "GENESIS"
+      },
+      "remediations": []
+    },
+    "missing_required_inputs": [],
+    "output_contract": {
+      "allowed_status_values": [
+        "QUALITY_INTERLOCK_PASS",
+        "REVISE",
+        "INSUFFICIENT_EVIDENCE",
+        "BLOCKED"
+      ],
+      "deterministic_validators": [
+        ".terminus/validate_review_freshness.py",
+        ".terminus/validate_quality_interlock.py"
+      ],
+      "optional_fields": [
+        "ADJUDICATION_REQUIRED",
+        "Q4_CLOSURE_RESULT"
+      ],
+      "persisted_artifacts": [
+        "Q4/Q6 packets and results",
+        ".terminus/sessions/<task>.md"
+      ],
+      "required_fields": [
+        "Q4_RESULT",
+        "Q4_SATISFACTION",
+        "Q6_RESULT",
+        "EVIDENCE_SUFFICIENCY"
+      ],
+      "semantic_reviewers": [
+        "Q4 Spec-Test Contract Reviewer",
+        "Q6 Production Logic Auditor",
+        "Q4 Closure Adjudicator"
+      ]
+    },
+    "readiness": "READY",
+    "retrieval": {
+      "query": null,
+      "retrieved_chars": 0,
+      "retrieved_context": [],
+      "status": "NOT_REQUESTED"
+    },
+    "routing": {
+      "failure_routes": {
+        "INSUFFICIENT_EVIDENCE": "CI Orchestrator / Submission Controller",
+        "LATENT_REVIEWER_OMISSION": "Adjudicator",
+        "Q4_CIRCUIT_BREAKER": "CI Orchestrator -> Q4_CLOSURE_POLICY -> Q4 Closure Adjudicator",
+        "Q4_REVISE": "smallest responsible spec/verifier producer",
+        "Q6_REVISE": "A2/A4 or responsible production producer"
+      },
+      "stale_on": [
+        "Q4 evidence-surface change",
+        "Q6 production-scope change",
+        "role-contract hash change",
+        "protocol/prompt policy change"
+      ],
+      "success_transition": "PRE_LLMAJ"
+    },
+    "schema_version": "1.0",
+    "stage": {
+      "lifecycle": "review",
+      "owner": "CI Orchestrator / Submission Controller",
+      "role_class": "CONTROLLER",
+      "role_id": "CI_ORCHESTRATOR",
+      "stage_id": "QUALITY_INTERLOCK"
+    }
+  },
+  "outputs": {
+    "EVIDENCE_SUFFICIENCY": "SUFFICIENT",
+    "Q4_RESULT": {
+      "change_scope": [
+        "stonevault-crash-safe-storage/tests/test_q4_contract.py"
+      ],
+      "confidence": "HIGH",
+      "context_packet": ".terminus/reviews/stonevault-crash-safe-storage/1cbdc003/stonevault-crash-safe-storage-1cbdc003-spec-test-contract-37f462215d.packet.json",
+      "control_plane_commit": "8b0c265a1b12b4b066751be160b75abb6b23339f",
+      "do_not_change": [
+        "stonevault-crash-safe-storage/instruction.md",
+        "stonevault-crash-safe-storage/environment/stonevault/docs/storage-format.md",
+        "stonevault-crash-safe-storage/environment/stonevault/storage/"
+      ],
+      "evidence": [
+        {
+          "observation": "Sixteen concise functional bullets plus one intro paragraph state writer fencing, data-dir precedence, snapshot/scan semantics, conflict rules, durability/recovery, checkpoint, integrity checks, STATS/HEALTH, hex/binary limits, protocol resilience, and compatibility preservation within the Edition 3 shape limit.",
+          "ref": "stonevault-crash-safe-storage/instruction.md",
+          "type": "file"
+        },
+        {
+          "observation": "Delegated compatibility contract documents startup precedence, exact stable wire shapes, WAL/snapshot binary layouts, torn-tail vs corruption boundaries (including zero-byte and >8 MiB invalid framing lengths), HEALTH invariant scope, and C++ engine ownership boundaries without hidden-test topology.",
+          "ref": "stonevault-crash-safe-storage/environment/stonevault/docs/storage-format.md",
+          "type": "file"
+        },
+        {
+          "observation": "35 F2P-oriented behavioral probes cover writer exclusion, snapshot isolation, scan overlays/ordering, conflicts, recovery, checkpoint refusal/success, snapshot corruption classes, STATS/HEALTH reporting, limits, and protocol resilience with exact-shape helpers for READY/STATS/HEALTH.",
+          "ref": "stonevault-crash-safe-storage/tests/test_outputs.py",
+          "type": "test"
+        },
+        {
+          "observation": "Nine P2P preservation probes validate env-only data-dir selection, inclusive scan-prefix boundary, binary round-trip, committed hex canonicalization, and additional snapshot structural corruption rejections.",
+          "ref": "stonevault-crash-safe-storage/tests/test_preservation.py",
+          "type": "test"
+        },
+        {
+          "observation": "Nineteen contract probes add default data-dir ownership, local delete visibility, conflicted-tx termination, durable commit survival, multi-commit WAL replay, independently encoded WAL/snapshot fixtures, impossible framing length (>8 MiB), checkpoint interruption recovery, HEALTH fail-closed on missing wal.log, C++20/ABI compile checks, exact READY/HEALTH shapes, and cross-command limit/error consistency.",
+          "ref": "stonevault-crash-safe-storage/tests/test_q4_contract.py",
+          "type": "test"
+        },
+        {
+          "observation": "Line 42 declares that a WAL header with zero declared payload bytes is intrinsically invalid framing and corruption, not a repairable torn tail; no pytest constructs a complete 12-byte header with length=0.",
+          "ref": "stonevault-crash-safe-storage/environment/stonevault/docs/storage-format.md",
+          "type": "file"
+        },
+        {
+          "observation": "Covers only framing length above the 8 MiB ceiling; the paired zero-length invalid-framing case from the same contract sentence is absent from all three test modules.",
+          "ref": "stonevault-crash-safe-storage/tests/test_q4_contract.py::test_impossible_wal_frame_length_is_fatal",
+          "type": "test"
+        }
+      ],
+      "evidence_status": "SUFFICIENT",
+      "findings": [
+        {
+          "criterion": "Every material requirement in the solver-visible contract must have meaningful verifier coverage.",
+          "evidence_refs": [
+            "stonevault-crash-safe-storage/environment/stonevault/docs/storage-format.md",
+            "stonevault-crash-safe-storage/tests/test_q4_contract.py::test_impossible_wal_frame_length_is_fatal",
+            "stonevault-crash-safe-storage/instruction.md"
+          ],
+          "id": "F-UNTESTED-WAL-ZERO-FRAMING",
+          "minimal_remediation": "Add a pytest open probe that writes a complete final WAL header with magic, length=0, and valid CRC for an empty payload, then asserts non-zero exit and WAL corruption on stderr—mirroring test_impossible_wal_frame_length_is_fatal for the lower framing bound.",
+          "regression_risk": "Low if framed as an independent fixture-encoded corruption case; avoid coupling to product serializers.",
+          "severity": "HIGH",
+          "status": "OBSERVED",
+          "why_it_matters": "storage-format.md distinguishes zero declared WAL payload length as fail-closed corruption rather than torn-tail repair; a solver that truncates or ignores this complete header could pass all current probes yet violate the published open/recovery contract and diverge from the symmetric >8 MiB behavior already graded."
+        }
+      ],
+      "missing_evidence": [],
+      "next_gate": "Q4_REVISE",
+      "prompt_policy_version": "2.2",
+      "protocol_policy_version": "2.2",
+      "review_id": "stonevault-crash-safe-storage-1cbdc003-spec-test-contract-37f462215d",
+      "role": "Spec-Test Contract Reviewer",
+      "role_contract_hash": "9607c7323be7db66eb7b520db4498f29efc686073e6f3d565c8e2c99ad26a34c",
+      "role_output": {
+        "ADVISORY_FINDING_IDS": [],
+        "AMBIGUITIES": [],
+        "BIDIRECTIONAL_ALIGNMENT": "FAIL",
+        "BLOCKING_FINDING_IDS": [
+          "F-UNTESTED-WAL-ZERO-FRAMING"
+        ],
+        "CURRENT_STATE_EVIDENCE": "NOT_APPLICABLE",
+        "DELEGATED_CONTRACT_CHECK": {
+          "storage-format.md": "legitimate technical documentation (layout/protocol/runbook); all graded binary and wire semantics referenced by instruction remain discoverable without hidden-test enumeration"
+        },
+        "EXHAUSTIVENESS": {
+          "DELEGATED_CONTRACTS_COMPLETE": "YES",
+          "F2P_BOUNDARIES_COMPLETE": "YES",
+          "FORWARD_MATRIX_COMPLETE": "YES",
+          "OUTPUT_INTERFACES_COMPLETE": "YES",
+          "P2P_BOUNDARIES_COMPLETE": "YES",
+          "REQUIREMENTS_ENUMERATED": "COMPLETE",
+          "REVERSE_MATRIX_COMPLETE": "YES",
+          "SECOND_PASS_OMISSION_SWEEP": "PASS",
+          "UNINSPECTED_SCOPE": [],
+          "VERIFIER_BEHAVIORS_ENUMERATED": "COMPLETE"
+        },
+        "IMPLEMENTATION_DIAGNOSIS_LEAKAGE": "NONE",
+        "INSTRUCTION_DOC_BOUNDARY": "CLEAN",
+        "INSTRUCTION_REQUIREMENT_COMPLETENESS": "SUFFICIENT",
+        "INSTRUCTION_SHAPE": "PASS",
+        "PHANTOM_TEST_CONTRACTS": [],
+        "REQUIREMENT_TEST_MATRIX": {
+          "R01_WRITER_FENCING": {
+            "coverage": "complete",
+            "sources": [
+              "instruction.md L3",
+              "storage-format.md Startup LOCK"
+            ],
+            "tests": [
+              "test_second_writer_is_excluded_and_lock_is_released"
+            ]
+          },
+          "R02_DATA_DIR_PRECEDENCE": {
+            "coverage": "complete",
+            "sources": [
+              "instruction.md L4",
+              "storage-format.md Startup"
+            ],
+            "tests": [
+              "test_explicit_data_directory_overrides_environment",
+              "test_environment_only_data_directory_is_honored",
+              "test_documented_default_data_directory_is_used"
+            ]
+          },
+          "R03_SNAPSHOT_POINT_READS": {
+            "coverage": "complete",
+            "sources": [
+              "instruction.md L5",
+              "storage-format.md Transactions"
+            ],
+            "tests": [
+              "test_read_snapshot_survives_newer_put",
+              "test_read_snapshot_survives_newer_delete",
+              "test_point_read_observes_own_delete"
+            ]
+          },
+          "R04_PREFIX_SCAN_SEMANTICS": {
+            "coverage": "complete",
+            "sources": [
+              "instruction.md L6-L7",
+              "storage-format.md Transactions/Commands"
+            ],
+            "tests": [
+              "test_scan_snapshot_excludes_later_insert",
+              "test_scan_snapshot_retains_later_delete",
+              "test_scan_applies_local_put_overlay",
+              "test_scan_applies_local_delete_overlay",
+              "test_scan_uses_unsigned_byte_order",
+              "test_hex_input_is_case_insensitive_and_output_is_lowercase",
+              "test_exact_scan_prefix_limit_is_accepted",
+              "test_oversized_scan_prefix_is_rejected_without_terminating"
+            ]
+          },
+          "R05_WRITE_CONFLICTS": {
+            "coverage": "complete",
+            "sources": [
+              "instruction.md L8",
+              "storage-format.md Transactions"
+            ],
+            "tests": [
+              "test_stale_put_conflicts_with_newer_version",
+              "test_stale_delete_conflicts_with_newer_version",
+              "test_conflicted_multi_key_commit_is_atomic",
+              "test_conflicted_transaction_is_ended"
+            ]
+          },
+          "R06_SEQUENCE_DURABILITY": {
+            "coverage": "complete",
+            "sources": [
+              "instruction.md L9",
+              "storage-format.md Transactions/WAL"
+            ],
+            "tests": [
+              "test_conflict_does_not_consume_commit_sequence",
+              "test_acknowledged_commit_survives_immediate_process_kill",
+              "test_multi_commit_wal_prefix_replays_completely"
+            ]
+          },
+          "R07_UNCOMMITTED_RECOVERY": {
+            "coverage": "complete",
+            "sources": [
+              "instruction.md L10",
+              "storage-format.md WAL"
+            ],
+            "tests": [
+              "test_killed_transaction_is_invisible_after_restart",
+              "test_rolled_back_transaction_is_invisible_after_restart"
+            ]
+          },
+          "R08_WAL_RECOVERY_INTEGRITY": {
+            "coverage": "partial",
+            "gap": "zero declared payload length corruption untested",
+            "sources": [
+              "instruction.md L11",
+              "storage-format.md WAL"
+            ],
+            "tests": [
+              "test_short_final_wal_header_is_repaired",
+              "test_short_final_wal_payload_is_repaired",
+              "test_complete_wal_checksum_damage_is_fatal",
+              "test_complete_wal_bad_magic_is_fatal",
+              "test_non_contiguous_commit_sequence_is_fatal",
+              "test_independent_wal_fixture_recovers_published_layout",
+              "test_complete_unknown_wal_type_is_fatal",
+              "test_complete_malformed_wal_payload_is_fatal",
+              "test_impossible_wal_frame_length_is_fatal"
+            ]
+          },
+          "R09_CHECKPOINT_LIFECYCLE": {
+            "coverage": "complete",
+            "sources": [
+              "instruction.md L12",
+              "storage-format.md Snapshot"
+            ],
+            "tests": [
+              "test_checkpoint_refuses_active_transaction",
+              "test_checkpoint_reclaims_wal_after_commit",
+              "test_checkpoint_restart_preserves_sequence_and_rows",
+              "test_checkpoint_interruption_keeps_a_durable_recovery_source"
+            ]
+          },
+          "R10_SNAPSHOT_INTEGRITY": {
+            "coverage": "complete",
+            "sources": [
+              "instruction.md L13",
+              "storage-format.md Snapshot"
+            ],
+            "tests": [
+              "test_snapshot_checksum_corruption_is_fatal",
+              "test_snapshot_trailing_bytes_are_fatal",
+              "test_stale_snapshot_temporary_is_removed_on_open",
+              "test_snapshot_bad_magic_is_fatal",
+              "test_snapshot_truncation_is_fatal",
+              "test_snapshot_impossible_row_count_is_fatal",
+              "test_snapshot_out_of_order_rows_are_fatal",
+              "test_independent_snapshot_fixture_preserves_layout_and_crc",
+              "test_complete_snapshot_oversized_key_is_fatal",
+              "test_complete_snapshot_oversized_value_is_fatal",
+              "test_complete_snapshot_duplicate_key_is_fatal"
+            ]
+          },
+          "R11_STATS": {
+            "coverage": "complete",
+            "sources": [
+              "instruction.md L14",
+              "storage-format.md Commands"
+            ],
+            "tests": [
+              "test_stats_match_durable_state_and_file_size"
+            ]
+          },
+          "R12_HEALTH": {
+            "coverage": "complete",
+            "sources": [
+              "instruction.md L15",
+              "storage-format.md Runtime health"
+            ],
+            "tests": [
+              "test_health_reports_active_transactions",
+              "test_health_tracks_published_snapshot",
+              "test_health_rejects_missing_live_wal_path",
+              "test_ready_and_health_wire_shapes_are_exact"
+            ]
+          },
+          "R13_BINARY_HEX": {
+            "coverage": "complete",
+            "sources": [
+              "instruction.md L16",
+              "storage-format.md Commands"
+            ],
+            "tests": [
+              "test_hex_input_is_case_insensitive_and_output_is_lowercase",
+              "test_arbitrary_binary_key_and_value_round_trip",
+              "test_committed_hex_output_is_canonical"
+            ]
+          },
+          "R14_INCLUSIVE_LIMITS": {
+            "coverage": "complete",
+            "sources": [
+              "instruction.md L17",
+              "storage-format.md Commands"
+            ],
+            "tests": [
+              "test_exact_key_limit_is_accepted",
+              "test_exact_value_limit_is_accepted",
+              "test_exact_scan_prefix_limit_is_accepted",
+              "test_oversized_inputs_are_rejected_without_terminating",
+              "test_oversized_scan_prefix_is_rejected_without_terminating",
+              "test_decoded_key_limit_is_consistent_across_commands"
+            ]
+          },
+          "R15_PROTOCOL_RESILIENCE": {
+            "coverage": "complete",
+            "sources": [
+              "instruction.md L18",
+              "storage-format.md Commands"
+            ],
+            "tests": [
+              "test_malformed_commands_and_unknown_transactions_do_not_kill_session",
+              "test_unknown_transaction_errors_are_consistent_across_commands"
+            ]
+          },
+          "R16_NATIVE_COMPATIBILITY": {
+            "coverage": "complete",
+            "sources": [
+              "instruction.md L1-L2,L19",
+              "storage-format.md"
+            ],
+            "tests": [
+              "test_product_tree_keeps_native_language_boundary",
+              "test_cxx20_sources_and_public_abi_signatures_compile",
+              "test_ready_and_health_wire_shapes_are_exact",
+              "test_independent_wal_fixture_recovers_published_layout",
+              "test_independent_snapshot_fixture_preserves_layout_and_crc"
+            ]
+          }
+        },
+        "SPEC_DUMP_RISK": "LOW",
+        "UNTESTED_REQUIREMENTS": [
+          "WAL header declaring zero payload bytes must fail closed as corruption (storage-format.md WAL framing) rather than be repaired as a torn tail"
+        ]
+      },
+      "role_policy_version": "1.1",
+      "schema_version": "3.0",
+      "summary": "Bidirectional alignment is nearly complete across instruction.md, storage-format.md, and 63 pytest probes, but a documented WAL framing corruption class (zero declared payload length) lacks any behavioral test while the symmetric >8 MiB case is covered.",
+      "task": "stonevault-crash-safe-storage",
+      "task_commit": "1cbdc0030a8a6483db4c91865aa60b8ef127c9c6",
+      "verdict": "REVISE"
+    },
+    "Q4_SATISFACTION": "UNSATISFIED",
+    "Q6_RESULT": {
+      "change_scope": [],
+      "confidence": "HIGH",
+      "context_packet": ".terminus/reviews/stonevault-crash-safe-storage/1cbdc003/stonevault-crash-safe-storage-1cbdc003-production-logic-791d72c77a.packet.json",
+      "control_plane_commit": "8b0c265a1b12b4b066751be160b75abb6b23339f",
+      "do_not_change": [
+        "Rust/C++ boundary split and documented /app/stonevault/bin/stonevault entrypoint",
+        "WAL/MVCC/snapshot module decomposition and cross-module recovery/checkpoint coupling",
+        "Integrity audit layer invoked from STATS/HEALTH",
+        "Intentionally incomplete wiring that defines the repair work (e.g., snapshot CRC verification, writer lock acquisition, transaction overlay on scan, commit conflict checks) unless a separate defect-remediation pass is authorized"
+      ],
+      "evidence": [
+        {
+          "observation": "Frontier Software/Databases task declaring artifact /app/stonevault, 10800s agent timeout, and workdir /app/stonevault—consistent with a substantial storage-engine work package subject to large_system_strict production-depth floors.",
+          "ref": "stonevault-crash-safe-storage/task.toml",
+          "type": "file"
+        },
+        {
+          "observation": "Documents operator entrypoint /app/stonevault/bin/stonevault, READY handshake, transactional command surface, WAL/snapshot on-disk contracts, and HEALTH invariants—establishing real production workflows rather than a single-function stub.",
+          "ref": "stonevault-crash-safe-storage/environment/stonevault/docs/storage-format.md",
+          "type": "file"
+        },
+        {
+          "observation": "Stdin/stdout REPL loads RuntimeConfig, opens Engine via FFI, emits READY, and dispatches parsed commands through session guards into protocol::execute for every supported operator command.",
+          "ref": "stonevault-crash-safe-storage/environment/stonevault/src/main.rs",
+          "type": "file"
+        },
+        {
+          "observation": "Engine construction calls restore_database, wires WAL append/sync on commit, catalog MVCC apply_commit, snapshot publish on checkpoint, and exposes full sv_* C API used by Rust FFI for all storage operations.",
+          "ref": "stonevault-crash-safe-storage/environment/stonevault/storage/engine.cpp",
+          "type": "file"
+        },
+        {
+          "observation": "Implements framed append-only WAL records with CRC validation, torn-tail truncation, pending-transaction replay, and contiguous commit-sequence enforcement during recovery—non-trivial branching persistence logic.",
+          "ref": "stonevault-crash-safe-storage/environment/stonevault/storage/wal.cpp",
+          "type": "file"
+        },
+        {
+          "observation": "VersionCatalog maintains per-key version histories with tombstones, snapshot-image export, conflict detection helper, prefix scan, and extensive integrity audit accounting over committed sequence.",
+          "ref": "stonevault-crash-safe-storage/environment/stonevault/storage/catalog.cpp",
+          "type": "file"
+        },
+        {
+          "observation": "restore_database orchestrates snapshot load, WAL recover/replay, and next-transaction-id advancement—central cross-module startup path coupling snapshot, WAL, and catalog state.",
+          "ref": "stonevault-crash-safe-storage/environment/stonevault/storage/recovery.cpp",
+          "type": "file"
+        },
+        {
+          "observation": "audit_runtime_state and validate_* routines cross-check catalog snapshots, active transactions, and durable path presence/aliasing; engine stats/health invoke this layer, keeping integrity logic reachable from operator STATS/HEALTH commands.",
+          "ref": "stonevault-crash-safe-storage/environment/stonevault/storage/integrity.cpp",
+          "type": "file"
+        },
+        {
+          "observation": "Build script compiles eleven separate C++ storage translation units into libstonevault_engine.a and links them into the Rust binary—config volume that repeats near-identical g++ invocations per module.",
+          "ref": "stonevault-crash-safe-storage/environment/stonevault/build.rs",
+          "type": "file"
+        },
+        {
+          "observation": "Q6 large_system_strict PASS requires >=3,000 substantive reachable solver-visible runtime/config LOC and no HIGH toy_logic_risk or padding_risk; judgment must be rebuilt from code and interactions, not LOC alone.",
+          "ref": ".terminus/agents/QUALITY_AGENT_PROMPTS.md",
+          "type": "rule"
+        }
+      ],
+      "evidence_status": "SUFFICIENT",
+      "findings": [
+        {
+          "criterion": "Separate production complexity from generated/vendor/comment/config-volume noise (.terminus/agents/QUALITY_AGENT_PROMPTS.md Q6 method step 8)",
+          "evidence_refs": [
+            "stonevault-crash-safe-storage/environment/stonevault/build.rs"
+          ],
+          "id": "Q6-1",
+          "minimal_remediation": "Refactor build.rs to iterate storage/*.cpp sources in a loop or Makefile rule set while preserving the same linked artifact.",
+          "regression_risk": "Low if link order and compile flags remain identical.",
+          "severity": "LOW",
+          "status": "OBSERVED",
+          "why_it_matters": "Eleven near-duplicate g++ compile blocks inflate configuration LOC without adding domain behavior, creating mild padding signal even though overall runtime depth remains credible."
+        }
+      ],
+      "missing_evidence": [],
+      "next_gate": "QUALITY_INTERLOCK aggregate with Q4 Spec-Test Contract Reviewer; Q6 PASS with HIGH confidence and SUFFICIENT evidence satisfies the Q6 predicate when paired with a current Q4 PASS.",
+      "prompt_policy_version": "2.2",
+      "protocol_policy_version": "2.2",
+      "review_id": "stonevault-crash-safe-storage-1cbdc003-production-logic-791d72c77a",
+      "review_scope_hash": "63b1df2323f5f131c1cd51cc8126072da08ca75e8a03eaff72c16b83aaff4228",
+      "role": "Production Logic Auditor",
+      "role_contract_hash": "828f84c63f4e37642ab42740b22aa95646ddaa42972f30902e9fe9a034e5458c",
+      "role_output": {
+        "CORE_LOGIC_DEPTH": "HIGH",
+        "CROSS_COMPONENT_COUPLING": "HIGH",
+        "MAJOR_MODULES": [
+          "engine: lifecycle orchestration, mutex-guarded mutations, C ABI surface",
+          "wal: framed append, fsync commit, recovery with torn-tail repair",
+          "catalog: MVCC version histories, scans, snapshot export, conflict helper",
+          "snapshot: load/publish snapshot.dat via temp file + rename + directory sync",
+          "recovery: open-time snapshot+WAL replay orchestration",
+          "transactions: active transaction table, write-set overlay helper",
+          "integrity: catalog/transaction/storage path audits for STATS/HEALTH",
+          "codec: endian serialization, CRC32, hex transcoding, durable I/O helpers",
+          "lock/maintenance: writer lock file and data-dir preparation",
+          "Rust protocol/session/ffi: ASCII command grammar, session tx tracking, FFI error bridging"
+        ],
+        "MODULE_DIVERSITY": "HIGH",
+        "PADDING_RISK": "MEDIUM",
+        "PARTIAL_FIX_TRAPS": [
+          "Repairing WAL torn-tail handling without matching snapshot CRC acceptance breaks checkpoint/recovery agreement",
+          "Fixing GET local overlay without also wiring SCAN through apply_transaction_overlay leaves inconsistent transactional visibility",
+          "Enabling commit conflict detection in catalog.conflicts without WAL ordering/sync semantics can publish or reject commits inconsistently",
+          "Tightening HEALTH integrity checks without aligning stats() WAL byte cross-check causes divergent observability surfaces",
+          "Implementing writer lock acquisition independently of open/recovery path risks conflicting multi-process durability assumptions"
+        ],
+        "REMOVAL_TEST": "Deleting wal.cpp+catalog.cpp+recovery.cpp (~650 lines, ~19% of runtime) removes durability, MVCC, and startup replay—core behavior collapses. Deleting integrity.cpp and related audit helpers (~330 lines, ~10%) removes HEALTH/STATS cross-validation while leaving naive mutations. Removing repetitive build.rs blocks (~90 lines) would not change runtime semantics.",
+        "REQUIRED_CHANGES": "None for Q6 PASS; optional advisory reduction of build.rs repetition to lower MEDIUM padding_risk.",
+        "RUNTIME_REACHABILITY": "HIGH",
+        "SUBSTANTIVE_LOC_ASSESSMENT": "Approximately 1,869 lines of C++ implementation, ~490 lines of storage headers with domain types/constants, and ~990 lines of Rust runtime (protocol, FFI, session, I/O, observability) yield ~3,350 substantive reachable runtime lines; build.rs adds ~110 configuration lines (~90 of which are repetitive compile boilerplate). Excluding that boilerplate still clears the >=3,000 large_system_strict floor.",
+        "TOY_LOGIC_RISK": "LOW"
+      },
+      "role_policy_version": "1.1",
+      "schema_version": "3.0",
+      "summary": "The solver-visible Stonevault core is a credible crash-safe storage engine: a Rust line-protocol front end over a multi-module C++ WAL/MVCC/snapshot backend with recovery, checkpointing, and cross-layer integrity auditing. Major modules are reachable from the documented operator entrypoint, materially differentiated, and coupled through shared commit-sequence and durability invariants. Roughly 3,300+ lines of runtime/configuration code exceed the large_system_strict substantive LOC floor; toy and high-padding risks are not present, though build-script repetition is mildly inflating config volume.",
+      "task": "stonevault-crash-safe-storage",
+      "task_commit": "1cbdc0030a8a6483db4c91865aa60b8ef127c9c6",
+      "verdict": "PASS"
+    }
+  },
+  "record_id": "rec_9629ea45d2d7bc23961788a9b020504947c707710029c56289d305bdb79636ec",
+  "role_id": "CI_ORCHESTRATOR",
+  "route_key": "Q4_REVISE",
+  "schema_version": "1.0",
+  "stage_id": "QUALITY_INTERLOCK",
+  "status": "REVISE",
+  "task_lineage": {
+    "input_task_commit": "1cbdc0030a8a6483db4c91865aa60b8ef127c9c6",
+    "output_task_commit": "1cbdc0030a8a6483db4c91865aa60b8ef127c9c6",
+    "task_changed": false
+  },
+  "transition": {
+    "action": "ROUTE",
+    "requires_state_validation": false,
+    "route_instruction": "smallest responsible spec/verifier producer",
+    "route_key": "Q4_REVISE",
+    "target": null,
+    "target_kind": "ROUTE"
+  },
+  "validation": {
+    "acceptance_predicates_satisfied": true,
+    "evidence_binding_satisfied": true,
+    "evidence_refs_count": 5,
+    "invocation_identity_valid": true,
+    "invocation_policy_valid": true,
+    "output_keys_valid": true,
+    "required_outputs_satisfied": true,
+    "retrieval_context_authorized": true,
+    "status_legal": true,
+    "task_commit_change_authorized": true,
+    "task_lineage_valid": true
+  }
+}
