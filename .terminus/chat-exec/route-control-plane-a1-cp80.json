@@ -1,0 +1,60 @@
+{
+  "schema_version": "1.0",
+  "mode": "RECORD",
+  "task_id": "route-control-plane",
+  "task_commit": "22d2e9e09f4deb58029559fe9a0863c2e032f25c",
+  "control_plane_commit": "7eaf93f6d3149fd01a40d720ff38a09b649327c1",
+  "expected_repository_head": "984d4f9709b5e83521dedc404cc2be5504202edf",
+  "stage_id": "WORK_PACKAGE_RESEARCH",
+  "inputs": {
+    "CREATION_RULE_CONTEXT": {
+      "CONTROL_PLANE_COMMIT": "7eaf93f6d3149fd01a40d720ff38a09b649327c1",
+      "RULE_SOURCES": ["TERMINUS_3_AI_INSTRUCTIONS.md", ".terminus/AGENT_SYSTEM.md", ".terminus/agents/CREATION_CONTROLLER.md", ".terminus/agents/CREATION_PIPELINE.md", ".terminus/agents/PRODUCTION_AUTHENTICITY.md", ".terminus/reviewers/REVIEWER_CHECKLIST.md", ".terminus/agents/QUALITY_AGENT_REGISTRY.md", ".terminus/agents/STAGE_CONTRACTS.md", ".terminus/agents/stage_contracts.json"],
+      "ACTIVE_VALIDATORS": [".terminus/validate_agent_system.py", ".terminus/validate_stage_contracts.py", ".terminus/validate_task_complexity.py", ".terminus/validate_environment_complexity.py", ".terminus/validate_runtime_authenticity.py", ".terminus/validate_business_module_diversity.py", ".terminus/validate_review_freshness.py", ".terminus/validate_quality_interlock.py", ".github/workflows/terminus-edition-3-ci.yml", ".github/workflows/terminus-creator-complexity.yml", ".github/workflows/terminus-production-authenticity.yml"],
+      "CREATION_PROFILE": "large_system_strict",
+      "NETWORK_ENVIRONMENT_CONSTRAINTS": "Deterministic offline/local benchmark runtime; no dependence on cloud credentials, privileged external infrastructure, internet services, or destructive host routing. Simulate or namespace route operations safely while preserving realistic Linux routing semantics and Ansible-managed multi-node behavior.",
+      "KNOWN_POLICY_CONFLICTS": []
+    },
+    "REQUESTED_DOMAIN": "Linux route-table and policy-routing control plane in Go, Ansible-managed fleet rollout, and network operations dashboard"
+  },
+  "result": {
+    "status": "CANDIDATES_READY",
+    "outputs": {
+      "CANDIDATES": [
+        {
+          "ID": "FLEET_ROUTE_DESIRED_STATE_RECONCILIATION",
+          "ENGINEERING_OBJECTIVE": "Build a production-style Go route control plane that models desired route and policy state, reconciles it across a multi-node Linux fleet, detects drift, protects management reachability, records revision history, and exposes the same lifecycle through an operator dashboard and Ansible-driven installation/configuration.",
+          "REQUIREMENT_FAMILIES": ["IPv4 and IPv6 route CRUD", "policy routing rules and named tables", "multipath and weighted next hops", "desired-state revisions and validation", "per-node inventory and capability discovery", "preview/diff/apply transactions", "rollback and last-known-good recovery", "drift detection and reconciliation", "idempotency and optimistic concurrency", "fleet rollout waves and failure isolation", "Ansible install/config/service lifecycle", "audit/event history", "health and readiness", "dashboard inventory, route, drift, rollout and revision views"],
+          "SCALE_FIT": "VERY_HIGH: naturally supports more than 3000 substantive runtime/configuration LOC, 20-30 coupled failure manifestations, and 25-30 distinct behavioral F2P cases without padding.",
+          "EDGE_FAILURE_SURFACE": ["duplicate route identity", "invalid CIDR or gateway family", "unknown interface", "management route deletion", "stale revision apply", "partial fleet failure", "node offline during rollout", "multipath normalization", "policy priority collision", "table-name collision", "drift after apply", "rollback after partial apply", "concurrent mutation", "restart with pending transaction", "malformed persisted state", "Ansible rerun idempotency", "mixed per-node variables", "dashboard stale revision submission"],
+          "PRESERVATION_OBLIGATIONS": ["never mutate the benchmark host routing table", "rejected changes leave serving state unchanged", "unchanged nodes remain stable across retries", "management-safety routes cannot be removed without a safe replacement", "revision and audit history remains monotonic", "Ansible reruns do not duplicate service or config state"],
+          "DUPLICATE_RISK": "LOW_MEDIUM: route CRUD and Ansible deployment are established patterns, but revisioned multi-node desired state, policy rules, multipath, drift/reconcile, safety invariants, rollout/rollback, service deployment and one dashboard form a distinct coupled work package."
+        },
+        {
+          "ID": "POLICY_ROUTING_TRANSACTION_ENGINE",
+          "ENGINEERING_OBJECTIVE": "Implement atomic route-table plus FIB-rule transactions, dependency ordering, validation, rollback and restart recovery for complex Linux policy-routing changes.",
+          "REQUIREMENT_FAMILIES": ["route CRUD", "FIB rule CRUD", "table dependencies", "transaction planning", "preflight validation", "commit/rollback", "journal recovery", "conflict detection", "audit history", "API observability"],
+          "SCALE_FIT": "HIGH but narrower than the requested fleet and dashboard system.",
+          "DUPLICATE_RISK": "MEDIUM"
+        },
+        {
+          "ID": "ROUTE_FLEET_OBSERVABILITY_AND_DRIFT_MANAGER",
+          "ENGINEERING_OBJECTIVE": "Center the system on inventory, route snapshots, drift analytics, compliance policies, remediation waves and dashboard workflows across many nodes.",
+          "REQUIREMENT_FAMILIES": ["node inventory", "route snapshots", "desired-vs-observed diff", "policy checks", "drift events", "remediation", "fleet waves", "dashboard", "Ansible bootstrap", "audit exports"],
+          "SCALE_FIT": "HIGH but route mutation semantics would be less central than requested.",
+          "DUPLICATE_RISK": "MEDIUM"
+        }
+      ],
+      "RECOMMENDATION": "FLEET_ROUTE_DESIRED_STATE_RECONCILIATION",
+      "WHY_THIS_ONE": "It preserves the Go API, Ansible fleet deployment, and frontend as first-class coupled responsibilities. The API owns realistic route and policy transaction semantics, Ansible owns repeatable multi-node installation and variable projection, and the dashboard operates revisions, nodes, routes, drift and rollouts. A safe kernel-model adapter preserves Linux semantics without altering the runner network.",
+      "DUPLICATE_RISK_NOTES": "Use rtnetlink route/rule semantics as calibration only. Do not clone edge-router-runtime: this task manages host route tables and FIB policy desired state, not HTTP traffic routing."
+    },
+    "evidence_refs": [
+      {"kind": "COMMIT", "ref": "commit:7eaf93f6d3149fd01a40d720ff38a09b649327c1"},
+      {"kind": "COMMIT", "ref": "commit:22d2e9e09f4deb58029559fe9a0863c2e032f25c"},
+      {"kind": "EXTERNAL", "ref": "external:https://www.kernel.org/doc/html/latest/netlink/specs/rt-route.html"},
+      {"kind": "EXTERNAL", "ref": "external:https://www.kernel.org/doc/html/v6.13/networking/netlink_spec/rt_rule.html"},
+      {"kind": "EXTERNAL", "ref": "external:https://github.com/natesales/pathvector"}
+    ]
+  }
+}
