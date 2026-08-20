@@ -1,0 +1,35 @@
+{
+  "schema_version": "1.0",
+  "mode": "RECORD",
+  "task_id": "stonevault-crash-safe-storage",
+  "task_commit": "03317f8218069b9e0b5d073bf87ecf7a0ae8e4a1",
+  "control_plane_commit": "7d8a6d8c62a62e6d24949344c7fd712e59bc8829",
+  "expected_repository_head": "d1cdfc3b220bd0f9ccb2ad7427b7145b02a925c4",
+  "stage_id": "FORMAT_GATE",
+  "inputs": {
+    "ACTIVE_FORMAT_VALIDATORS": ["current Terminus task-format/packaging CI", "task.toml structure and absolute artifact-path checks", "digest-pinned agent/verifier image checks", "separate-verifier and test.sh reward-contract checks", "solution/tests isolation checks", "Q7 Task Format Enforcer same-chat review"],
+    "CREATION_RULE_CONTEXT": {
+      "CONTROL_PLANE_COMMIT": "7d8a6d8c62a62e6d24949344c7fd712e59bc8829",
+      "CREATION_PROFILE": "large_system_strict",
+      "KNOWN_POLICY_CONFLICTS": [],
+      "NETWORK_ENVIRONMENT_CONSTRAINTS": "public network; separate verifier; native C++20/Rust runtime; no privileged/container-socket shortcut"
+    },
+    "CURRENT_TASK_TREE": {
+      "task_root": "stonevault-crash-safe-storage",
+      "top_level": ["README.md", "environment/", "instruction.md", "solution/", "task.toml", "tests/"],
+      "task_toml": {"category": "Software", "subcategory": "Databases", "difficulty": "frontier", "artifacts": ["/app/stonevault"], "network_mode": "public", "verifier_environment_mode": "separate", "agent_timeout_sec": 10800, "verifier_timeout_sec": 2400, "workdir": "/app/stonevault"},
+      "instruction": "instruction.md names /app/stonevault and only solver-visible storage-format contracts",
+      "solution": {"entrypoint": "solution/solve.sh"},
+      "tests": {"boundary": "separate verifier under tests/ with reward contract"},
+      "environment": {"boundary": "native C++20/Rust StoneVault product environment with solver-visible docs only"}
+    }
+  },
+  "result": {
+    "status": "FORMAT_PASS",
+    "outputs": {
+      "CHECKS": ["PASS: required top-level task layout is present.", "PASS: task.toml declares Software/Databases frontier task, absolute artifact /app/stonevault, public network, separate verifier and bounded resource/time settings.", "PASS: solver-facing instruction references only public StoneVault storage-format contracts and contains no private verifier/Oracle material.", "PASS: solution remains isolated under solution/ and verifier remains isolated under tests/.", "PASS: native C++20/Rust environment and artifact boundary are consistent with the task metadata.", "PASS: no Q7 structural/path repair is required on the current StoneVault snapshot."],
+      "RERUN": "Current Q7 format review passes without task mutation; downstream assembly/runtime/deterministic gates remain independently mandatory."
+    },
+    "evidence_refs": [{"kind": "COMMIT", "ref": "commit:03317f8218069b9e0b5d073bf87ecf7a0ae8e4a1"}]
+  }
+}
