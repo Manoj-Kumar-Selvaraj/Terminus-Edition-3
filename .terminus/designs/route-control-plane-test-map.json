@@ -1,0 +1,62 @@
+{
+  "schema_version": "1.0",
+  "task": "route-control-plane",
+  "phase": "A5_VERIFIER_BUILD",
+  "status": "VERIFIER_READY",
+  "profile": "large_system_strict",
+  "requirements": {
+    "REQ_ROUTE_IDENTITY": "Equivalent route representations converge to canonical identity while distinct routing tables and address families remain distinct.",
+    "REQ_POLICY_RULES": "Policy rules have unique effective priorities and lookup rules reference valid route tables and nodes.",
+    "REQ_TRANSACTION_FENCING": "Preview/apply use exact revision fencing and idempotency keys cannot create duplicate or cross-plan transactions.",
+    "REQ_ATOMIC_RECOVERY": "Failed changes do not partially publish, rollback is per-node and monotonic, and incomplete durable transactions recover safely.",
+    "REQ_DRIFT_OWNERSHIP": "Reconciliation uses fresh observations, treats equivalent state as equal, and preserves unowned observed objects.",
+    "REQ_ROLLOUT": "Fleet rollout enforces canary isolation, heartbeat freshness, wave policy and already-current retry safety.",
+    "REQ_ANSIBLE": "Deployment reruns converge without unnecessary change and host/protected routing inputs are preserved over defaults.",
+    "REQ_DASHBOARD": "Dashboard mutations are CAS-bound to the exact preview revision and cannot silently overwrite a concurrent operator change.",
+    "REQ_INTERFACE": "The documented route-control-plane API and build/runtime entrypoint remain available.",
+    "REQ_VERIFIER_INDEPENDENCE": "Verifier behavior is requirement-driven and does not branch on hidden test names or solution-specific secrets."
+  },
+  "tests": [
+    ["test_f2p_ipv6_aliases_canonicalize", "F2P", "REQ_ROUTE_IDENTITY"],
+    ["test_f2p_multipath_order_is_semantically_stable", "F2P", "REQ_ROUTE_IDENTITY"],
+    ["test_f2p_route_metric_updates_do_not_change_identity", "F2P", "REQ_ROUTE_IDENTITY"],
+    ["test_f2p_same_prefix_in_distinct_tables_remains_distinct", "F2P", "REQ_ROUTE_IDENTITY"],
+    ["test_f2p_route_owner_normalizes_before_ownership_checks", "F2P", "REQ_DRIFT_OWNERSHIP"],
+    ["test_f2p_duplicate_effective_rule_priority_is_rejected", "F2P", "REQ_POLICY_RULES"],
+    ["test_f2p_rule_lookup_requires_existing_table", "F2P", "REQ_POLICY_RULES"],
+    ["test_f2p_unknown_node_route_is_rejected", "F2P", "REQ_POLICY_RULES"],
+    ["test_f2p_stale_preview_cannot_apply_after_new_revision", "F2P", "REQ_TRANSACTION_FENCING"],
+    ["test_f2p_idempotency_replay_returns_same_transaction", "F2P", "REQ_TRANSACTION_FENCING"],
+    ["test_f2p_idempotency_key_cannot_rebind_to_new_plan", "F2P", "REQ_TRANSACTION_FENCING"],
+    ["test_f2p_offline_apply_preserves_last_desired_revision", "F2P", "REQ_ATOMIC_RECOVERY"],
+    ["test_f2p_rollback_is_a_new_monotonic_revision", "F2P", "REQ_ATOMIC_RECOVERY"],
+    ["test_f2p_stale_rollback_cannot_clobber_newer_revision", "F2P", "REQ_ATOMIC_RECOVERY"],
+    ["test_f2p_incomplete_transaction_is_failed_on_restart", "F2P", "REQ_ATOMIC_RECOVERY"],
+    ["test_f2p_reconcile_rejects_stale_observed_snapshot", "F2P", "REQ_DRIFT_OWNERSHIP"],
+    ["test_f2p_reconcile_preserves_unowned_unexpected_route", "F2P", "REQ_DRIFT_OWNERSHIP"],
+    ["test_f2p_rollout_rejects_stale_heartbeat", "F2P", "REQ_ROLLOUT"],
+    ["test_f2p_rollout_skips_nodes_already_at_target_revision", "F2P", "REQ_ROLLOUT"],
+    ["test_f2p_rollout_rejects_canary_outside_selector", "F2P", "REQ_ROLLOUT"],
+    ["test_f2p_rollout_enforces_configured_wave_limit", "F2P", "REQ_ROLLOUT"],
+    ["test_go_runtime_contracts", "F2P", "REQ_ATOMIC_RECOVERY"],
+    ["test_dashboard_apply_is_bound_to_preview_revision", "F2P", "REQ_DASHBOARD"],
+    ["test_ansible_preserves_host_specific_protected_routes", "F2P", "REQ_ANSIBLE"],
+    ["test_route_rule_and_transaction_boundaries", "F2P", "REQ_TRANSACTION_FENCING"],
+    ["test_public_api_surface_remains_present", "P2P", "REQ_INTERFACE"],
+    ["test_repaired_runtime_builds", "P2P", "REQ_INTERFACE"],
+    ["test_solution_entrypoint_is_general_and_repeatable", "P2P", "REQ_INTERFACE"],
+    ["test_verifier_does_not_branch_on_named_hidden_cases", "P2P", "REQ_VERIFIER_INDEPENDENCE"]
+  ],
+  "counts": {"f2p": 25, "p2p": 4},
+  "empirical_gate": {
+    "starter_nop": "PENDING_DETERMINISTIC_VALIDATION",
+    "oracle": "PENDING_DETERMINISTIC_VALIDATION"
+  },
+  "coverage": {
+    "normal": ["route normalization", "rule/table validation", "preview/apply", "rollback", "reconcile", "rollout", "API/build"],
+    "edge": ["IPv6 aliases", "multipath ordering", "metric replacement", "distinct route tables", "out-of-selector canary", "wave limits"],
+    "negative": ["duplicate priority", "missing table", "unknown node", "stale preview", "idempotency key rebinding", "offline apply", "stale rollback"],
+    "recovery": ["restart with incomplete transaction", "stale observed reconciliation", "stale heartbeat", "already-current rollout retry"],
+    "ownership": ["normalized owner", "unowned unexpected route preservation", "host/protected Ansible route precedence", "dashboard CAS"]
+  }
+}
