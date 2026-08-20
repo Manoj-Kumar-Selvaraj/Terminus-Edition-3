@@ -12,43 +12,73 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - name: Resolve current canonical authority and EC2 state
+      - name: Persist run locator and helper
+        shell: bash
+        run: |
+          set -euo pipefail
+          cp .github/ec2_reauthorize_02ac.py "$RUNNER_TEMP/ec2_reauthorize_02ac.py"
+          path=".terminus/diagnostic-run-locators/ec2-current-resolve-${GITHUB_SHA}.json"
+          mkdir -p "$(dirname "$path")"
+          printf '{"run_id":%s,"run_attempt":%s,"event_sha":"%s","branch":"%s"}\n' "$GITHUB_RUN_ID" "$GITHUB_RUN_ATTEMPT" "$GITHUB_SHA" "$GITHUB_REF_NAME" > "$path"
+          git config user.name 'terminus-diagnostic-locator[bot]'
+          git config user.email 'terminus-diagnostic-locator[bot]@users.noreply.github.com'
+          git add -- "$path"
+          git commit -m "Track EC2 reauthorization run $GITHUB_RUN_ID"
+          git push origin HEAD:"$GITHUB_REF_NAME"
+      - name: Reauthorize EC2 creation chain through Q7
         shell: bash
         run: |
           set -euo pipefail
           git fetch origin main task/ec2-artifact-policy-enforcement-q7-snapshot-20260820
-          main="$(git rev-parse origin/main)"
-          git checkout --detach "$main"
-          work="$RUNNER_TEMP/ec2-current-resolve"
-          mkdir -p "$work"
-          python3 .terminus/execution/controller_cli.py control-plane --head "$main" --output "$work/control.json"
-          control="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["control_plane_commit"])' "$work/control.json")"
-          for task_commit in 8836f886d7cfc7f2747264026da31d1dfa49c658 0ad08868799c19ea2e02458bd2fc92ec64eaa288; do
-            set +e
-            python3 .terminus/execution/controller_cli.py continue \
-              --task-id ec2-artifact-policy-enforcement \
-              --task-commit "$task_commit" \
-              --control-plane-commit "$control" \
-              --output "$work/state-${task_commit}.json"
-            rc=$?
-            set -e
-            printf '%s\n' "$rc" > "$work/rc-${task_commit}.txt"
+          base="$(git rev-parse origin/main)"
+          echo "BASE=$base" >> "$GITHUB_ENV"
+          git checkout --detach "$base"
+          control_file="$RUNNER_TEMP/control.json"
+          python3 .terminus/execution/controller_cli.py control-plane --head "$base" --output "$control_file"
+          control="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["control_plane_commit"])' "$control_file")"
+          [[ "$control" == "02ac3445191f96a9309d3a08248f09e17a738c5b" ]] || { echo "::error::control changed to $control"; exit 1; }
+          python3 "$RUNNER_TEMP/ec2_reauthorize_02ac.py"
+      - name: Commit and guarded-integrate canonical EC2 records
+        shell: bash
+        run: |
+          set -euo pipefail
+          task="ec2-artifact-policy-enforcement"
+          unexpected="$(git status --porcelain | awk '{print $2}' | grep -vE "^\.terminus/(executions|workflows)/${task}(/|$)" || true)"
+          [[ -z "$unexpected" ]] || { echo "::error::unexpected reauthorization mutations: $unexpected"; exit 1; }
+          git config user.name 'terminus-chat-adapter[bot]'
+          git config user.email 'terminus-chat-adapter[bot]@users.noreply.github.com'
+          git add -- ".terminus/executions/${task}"
+          git diff --cached --check
+          git diff --cached --quiet && { echo "::error::no canonical EC2 reauthorization changes"; exit 1; }
+          git commit -m "Reauthorize ${task} creation chain under current control"
+          original_base="$BASE"
+          for attempt in 1 2 3 4 5 6 7 8; do
+            git fetch origin main
+            remote="$(git rev-parse origin/main)"
+            if [[ "$remote" != "$original_base" ]]; then
+              drift="$(git diff --name-only "$original_base" "$remote" -- \
+                "$task" ".terminus/designs/${task}.json" ".terminus/designs/${task}-test-map.json" ".terminus/executions/${task}" || true)"
+              [[ -z "$drift" ]] || { echo "::error::EC2-relevant main drift during reauthorization: $drift"; exit 1; }
+              git checkout --detach "$remote"
+              ctl="$RUNNER_TEMP/control-latest.json"
+              python3 .terminus/execution/controller_cli.py control-plane --head "$remote" --output "$ctl"
+              got="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["control_plane_commit"])' "$ctl")"
+              [[ "$got" == "02ac3445191f96a9309d3a08248f09e17a738c5b" ]] || { echo "::error::control drifted to $got"; exit 1; }
+              git checkout -
+              git rebase "$remote"
+            fi
+            if git push origin HEAD:main; then
+              echo "EC2 reauthorization published at $(git rev-parse HEAD)"
+              exit 0
+            fi
+            sleep 1
           done
-          git checkout -B diagnostic/ec2-ledger-integrity-20260820 origin/diagnostic/ec2-ledger-integrity-20260820
-          out=".terminus/diagnostic-run-locators/ec2-current-resolve-${GITHUB_SHA}.json"
-          python3 - "$work" "$out" "$main" "$control" "$GITHUB_RUN_ID" <<'PY'
-          import json, pathlib, sys
-          work, out, main, control, run_id = sys.argv[1:]
-          w=pathlib.Path(work)
-          payload={"run_id":int(run_id),"main":main,"control_plane_commit":control,"states":{}}
-          for tc in ["8836f886d7cfc7f2747264026da31d1dfa49c658","0ad08868799c19ea2e02458bd2fc92ec64eaa288"]:
-              p=w/f"state-{tc}.json"
-              payload["states"][tc]={"rc":int((w/f"rc-{tc}.txt").read_text().strip()),"payload":json.loads(p.read_text()) if p.exists() else None}
-          pathlib.Path(out).parent.mkdir(parents=True,exist_ok=True)
-          pathlib.Path(out).write_text(json.dumps(payload,indent=2,sort_keys=True)+"\n")
-          PY
-          git config user.name 'terminus-diagnostic-locator[bot]'
-          git config user.email 'terminus-diagnostic-locator[bot]@users.noreply.github.com'
-          git add -- "$out"
-          git commit -m "Track EC2 current resolver run $GITHUB_RUN_ID"
-          git push origin HEAD:diagnostic/ec2-ledger-integrity-20260820
+          echo "::error::unable to publish after unrelated-main retries"
+          exit 1
+      - name: Upload diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ec2-reauthorize-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/ec2-reauthorize-02ac
+          if-no-files-found: warn
