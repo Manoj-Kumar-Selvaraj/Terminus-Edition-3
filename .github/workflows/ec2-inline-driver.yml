@@ -11,35 +11,18 @@ permissions:
   contents: write
 
 jobs:
-  derive-next:
+  reauthorize:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - name: Derive current Terminus next action
-        run: |
-          set -euo pipefail
-          driver_branch="$GITHUB_REF_NAME"
-          git fetch origin main "$driver_branch"
-          head="$(git rev-parse origin/main)"
-          git checkout --detach "$head"
-          python3 .terminus/execution/controller_cli.py control-plane --head "$head" --output /tmp/control.json
-          control="$(python3 -c 'import json; print(json.load(open("/tmp/control.json"))["control_plane_commit"])')"
-          python3 .terminus/execution/controller_cli.py continue \
-            --task-id ec2-artifact-policy-enforcement \
-            --task-commit 8836f886d7cfc7f2747264026da31d1dfa49c658 \
-            --control-plane-commit "$control" \
-            --output /tmp/continue.json
-          echo '===CONTINUE_JSON_BEGIN==='
-          cat /tmp/continue.json
-          echo '===CONTINUE_JSON_END==='
-          git checkout -B "$driver_branch" "origin/$driver_branch"
-          mkdir -p .terminus/orchestrator-diagnostics
-          cp /tmp/continue.json .terminus/orchestrator-diagnostics/ec2-inline-current.json
-          cp /tmp/control.json .terminus/orchestrator-diagnostics/ec2-control-current.json
-          git config user.name 'terminus-inline-driver[bot]'
-          git config user.email 'terminus-inline-driver[bot]@users.noreply.github.com'
-          git add .terminus/orchestrator-diagnostics/ec2-inline-current.json .terminus/orchestrator-diagnostics/ec2-control-current.json
-          git commit -m 'Capture current ec2 inline routing' || true
-          git push origin HEAD:"$driver_branch"
+      - name: Reauthorize EC2 remediated stages under current control
+        run: python3 .github/ec2_reauthorize_current.py
+      - name: Upload diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ec2-reauthorize-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/ec2-reauthorize
+          if-no-files-found: warn
