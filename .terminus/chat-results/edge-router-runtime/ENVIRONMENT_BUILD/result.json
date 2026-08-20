@@ -1,0 +1,66 @@
+{
+  "evidence_refs": [],
+  "invocation_id": "inv_cd451ed9c64147f1da1d18fe57543399790e0a27dfe66fdb3909a687e703ba59",
+  "output_task_commit": "9663e4da67ab20e6bd66b942ac54b57667408dd8",
+  "outputs": {
+    "COMPONENT_GRAPH": [
+      "cmd/edge-router-runtime",
+      "internal/bootstrap",
+      "internal/config",
+      "internal/compiler",
+      "internal/reconcile",
+      "internal/runtime",
+      "internal/router",
+      "internal/selection",
+      "internal/upstream",
+      "internal/health",
+      "internal/drain",
+      "internal/checkpoint",
+      "internal/telemetry",
+      "internal/admin",
+      "config"
+    ],
+    "ENTRYPOINTS": [
+      "edge-router-runtime serve",
+      "edge-router-runtime validate",
+      "operator configuration and discovery endpoints",
+      "public HTTP data plane",
+      "startup checkpoint recovery",
+      "graceful shutdown and drain"
+    ],
+    "ENVIRONMENT_RULE_CHECKS": {
+      "business_module_diversity": "PASS or not-applicable under task classification",
+      "environment_complexity": "PASS",
+      "runtime_authenticity": "PASS"
+    },
+    "INSTRUCTION_DOC_BOUNDARY": "Documentation describes inherited system contracts while task completion requirements remain in the instruction; private repair topology is not exposed.",
+    "PRODUCTION_CHARACTERISTICS": [
+      "Go HTTP data and operator planes",
+      "immutable generation snapshots",
+      "serialized reconciliation",
+      "stable endpoint lifecycle state",
+      "health-aware selection and failover",
+      "bounded draining",
+      "durable checkpoint recovery",
+      "bounded lifecycle telemetry"
+    ],
+    "RUNTIME_REACHABILITY_NOTES": [
+      "Dockerfile builds the registered command entrypoint at /app/edge-router",
+      "serve reaches all major runtime modules",
+      "validate reaches configuration validation",
+      "operator endpoints reach live reconciliation and status surfaces",
+      "xz-utils is available for deterministic private solution application"
+    ],
+    "SOLVER_VISIBLE_DOCS": [
+      "environment/docs/architecture.md",
+      "environment/docs/configuration.md",
+      "environment/docs/runtime-state.md",
+      "environment/docs/operator-guide.md",
+      "environment/docs/observability.md"
+    ],
+    "SUBSTANTIVE_LOC": ">=3400 substantive solver-visible code and configuration lines; the strict scale floor is satisfied.",
+    "UNRESOLVED_RISKS": []
+  },
+  "schema_version": "1.0",
+  "status": "BUILT"
+}
