@@ -217,6 +217,7 @@ def test_stage_acceptance_route_is_explicit_and_keeps_q4_revise(
             "Q4_SATISFACTION": q4_human_risk.SATISFACTION_MODE,
             "Q4_RESULT": q4,
             "Q4_CLOSURE_RESULT": envelope,
-        }
+        },
+        ROOT,
     )
     assert called["q4"]["verdict"] == "REVISE"
