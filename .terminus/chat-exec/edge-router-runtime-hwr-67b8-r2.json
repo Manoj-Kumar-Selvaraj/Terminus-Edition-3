@@ -1,0 +1,15 @@
+{
+  "schema_version":"1.0",
+  "mode":"RECORD",
+  "task_id":"edge-router-runtime",
+  "task_commit":"4b4a8d30429b8455ab80824c3d1e7d03378b5934",
+  "control_plane_commit":"67b805a297ac005ee08e82facc533f53a3233192",
+  "expected_repository_head":"48da0a700cbdcbb75808d1fad25a5a25398a25b8",
+  "stage_id":"HUMAN_WRITING_RESEARCH",
+  "inputs":{
+    "APPROVED_WORK_PACKAGE":{"ID":"GENERATION_SAFE_DYNAMIC_RECONCILIATION","ENGINEERING_OBJECTIVE":"Implement generation-safe dynamic route and upstream reconciliation so complete configuration and membership changes apply atomically under concurrent traffic, rolling backend turnover, invalid updates and restart."},
+    "CURRENT_TIME_BUDGET":{"enforcement":"ADVISORY_ONLY","guidance_seconds":25200,"hard_limit":null,"policy_version":"1.1","quality_gates_may_be_skipped_for_time":false,"time_extension_required":false},
+    "SOLVER_VISIBLE_REQUIREMENTS":{"REQUIRED_END_STATE":["Validate and compile candidate configuration into immutable runtime snapshots before publication.","Fence accepted generations so stale or out-of-order updates cannot overwrite newer state.","Publish route and upstream state atomically and retain last-known-good serving state when candidates are rejected.","Reconcile endpoint additions, removals, and unchanged endpoints by stable canonical identity and membership incarnation.","Preserve compatible selection, affinity, health, transport, and lifecycle continuity for unchanged endpoints.","Exclude removed or ineligible endpoints from fresh selection/retry while allowing bounded drain of existing traffic.","Checkpoint only complete accepted state and recover a complete last-known-good generation after restart.","Retire unreachable snapshots, endpoint runtimes, transports, affinity state, and telemetry without unbounded growth."],"PRESERVATION":["in-flight and long-lived requests remain valid across unrelated updates","unchanged route semantics remain stable across generations","healthy unchanged endpoints preserve meaningful runtime state","rejected updates cannot damage the serving generation","readers never observe partially applied configuration","runtime and observability state remain bounded after repeated updates"]}
+  },
+  "result":{"status":"CALIBRATION_READY","output_task_commit":"4b4a8d30429b8455ab80824c3d1e7d03378b5934","outputs":{},"evidence_refs":[]}
+}
