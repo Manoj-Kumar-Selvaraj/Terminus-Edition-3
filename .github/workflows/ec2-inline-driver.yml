@@ -11,7 +11,7 @@ permissions:
   contents: write
 
 jobs:
-  reauthorize:
+  hwr:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -21,19 +21,18 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p .terminus/orchestrator-diagnostics
-          printf '{"run_id":%s,"run_attempt":%s,"job":"reauthorize","event_sha":"%s"}\n' "$GITHUB_RUN_ID" "$GITHUB_RUN_ATTEMPT" "$GITHUB_SHA" > ".terminus/orchestrator-diagnostics/ec2-reauthorize-$GITHUB_SHA.json"
+          printf '{"run_id":%s,"run_attempt":%s,"job":"hwr","event_sha":"%s"}\n' "$GITHUB_RUN_ID" "$GITHUB_RUN_ATTEMPT" "$GITHUB_SHA" > ".terminus/orchestrator-diagnostics/ec2-hwr-$GITHUB_SHA.json"
           git config user.name 'terminus-inline-driver[bot]'
           git config user.email 'terminus-inline-driver[bot]@users.noreply.github.com'
-          git add -- ".terminus/orchestrator-diagnostics/ec2-reauthorize-$GITHUB_SHA.json"
-          git commit -m "Persist EC2 reauthorization locator $GITHUB_RUN_ID"
+          git add -- ".terminus/orchestrator-diagnostics/ec2-hwr-$GITHUB_SHA.json"
+          git commit -m "Persist EC2 HWR locator $GITHUB_RUN_ID"
           git push origin HEAD:"$GITHUB_REF_NAME"
-      - name: Reauthorize EC2 remediated stages under current control
-        run: python3 .github/ec2_reauthorize_current.py
+      - name: Execute EC2-specific Human Writing Research
+        run: python3 .github/ec2_hwr_current.py
       - name: Upload diagnostics
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: ec2-reauthorize-${{ github.run_id }}-${{ github.run_attempt }}
-          path: ${{ runner.temp }}/ec2-reauthorize
+          name: ec2-hwr-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/ec2-hwr-current
           if-no-files-found: warn
-      # retry marker: exact-path-guard
