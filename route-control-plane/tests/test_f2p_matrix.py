@@ -91,7 +91,7 @@ def test_f2p_unknown_node_route_is_rejected() -> None:
 
 
 def test_f2p_stale_preview_cannot_apply_after_new_revision() -> None:
-    go_case(r'''func TestMatrixStalePreview(t *testing.T){ cp:=matrixCP(t); p1,_:=cp.Preview(ChangeRequest{BaseRevision:0,RouteMutations:[]RouteMutation{{Operation:"add",Route:matrixRoute("a","198.51.100.0/24",100,10)}}}); p2,_:=cp.Preview(ChangeRequest{BaseRevision:0,RouteMutations:[]RouteMutation{{Operation:"add",Route:matrixRoute("b","203.0.113.0/24",100,10)}}}); if _,err:=cp.Apply(ApplyRequest{PlanID:p1.ID,BaseRevision:0,IdempotencyKey:"a",Nodes:[]string{"n1"}});err!=nil{t.Fatal(err)}; if _,err:=cp.Apply(ApplyRequest{PlanID:p2.ID,BaseRevision:0,IdempotencyKey:"b",Nodes:[]string{"n1"}});!errors.Is(err,ErrConflict){t.Fatalf("got %v",err)} }''')
+    go_case(r'''func TestMatrixStalePreview(t *testing.T){ cp:=matrixCP(t); p1,_:=cp.Preview(ChangeRequest{BaseRevision:0,RouteMutations:[]RouteMutation{{Operation:"add",Route:matrixRoute("a","198.51.100.0/24",100,10)}}}); p2,_:=cp.Preview(ChangeRequest{BaseRevision:0,RouteMutations:[]RouteMutation{{Operation:"add",Route:matrixRoute("b","198.51.100.0/25",100,10)}}}); if _,err:=cp.Apply(ApplyRequest{PlanID:p1.ID,BaseRevision:0,IdempotencyKey:"a",Nodes:[]string{"n1"}});err!=nil{t.Fatal(err)}; if _,err:=cp.Apply(ApplyRequest{PlanID:p2.ID,BaseRevision:0,IdempotencyKey:"b",Nodes:[]string{"n1"}});!errors.Is(err,ErrConflict){t.Fatalf("got %v",err)} }''')
 
 
 def test_f2p_idempotency_replay_returns_same_transaction() -> None:
