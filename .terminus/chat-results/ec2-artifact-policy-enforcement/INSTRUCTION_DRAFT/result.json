@@ -1,0 +1,37 @@
+{
+  "evidence_refs": [],
+  "invocation_id": "inv_b3a309dd8fa26220b53eeb57c7fcff3d07060da3787fa96eb57688d97f8abaa3",
+  "output_task_commit": "6c7909d5c0efd3e6e64443d6de3b227c1820b01b",
+  "outputs": {
+    "CURRENT_STATE_EVIDENCE": {
+      "path": "/app/enforcer/notes/oncall.md",
+      "supports": "scanner-unavailable allow, lower-level source bypass, mutable-tag cache reuse, expired exception, permit alteration, and missing deny history after restart"
+    },
+    "DOC_REFERENCES": [
+      "/app/enforcer/notes/oncall.md",
+      "/app/enforcer/docs/policy-contract.md",
+      "/app/enforcer/docs/state-format.md",
+      "/app/enforcer/docs/operations.md"
+    ],
+    "HANDOFF_TEST": "PASS: the instruction states the observed operational failure, end-state invariants and preservation requirements while leaving implementation choices to the solver.",
+    "INSTRUCTION_PATH": "ec2-artifact-policy-enforcement/instruction.md",
+    "INSTRUCTION_SHAPE": {
+      "bullets": 0,
+      "paragraphs": 2,
+      "style": "incident-first EC2 platform-security repair request with solver-visible contract references",
+      "word_count": 211
+    },
+    "REQUIREMENT_COVERAGE": {
+      "CLI compatibility": "Preserves evaluate/verify-permit interfaces and documented exits, cache/exceptions, supplied fixtures, and existing audit history.",
+      "durable audit/recovery": "Every ALLOW and DENY is durably journaled before completion; recovery preserves valid history and latest-decision consistency.",
+      "permit integrity and replay": "Secret-keyed, unexpired, exact request/instance/artifact/policy binding with single-use semantics across restart and concurrent verification.",
+      "scanner/cache freshness": "Explicit current-evidence and fail-closed requirement bound to the artifact and active policy/scanner revisions; detailed cache identity and TTL semantics remain in the referenced policy/state contracts.",
+      "source/digest policy": "Explicit trusted-source and required immutable-digest enforcement across package, container, and dependency acquisition before exception handling.",
+      "vulnerability exceptions": "Explicitly limited to the vulnerability threshold within exact current scope; digest, surface, environment, code, and expiry mechanics remain in the referenced policy contract."
+    },
+    "REVERSE_OUTLINE_RISK": "LOW: requirements are grouped by policy and state responsibilities rather than mirroring verifier cases or private defect identifiers.",
+    "SPEC_FILE_LOOPHOLE": "PASS: instruction.md owns the repair objective and material requirement families; referenced docs carry legitimate detailed policy/state/operations semantics rather than acting as a hidden second prompt."
+  },
+  "schema_version": "1.0",
+  "status": "READY"
+}
