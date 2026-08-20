@@ -1,0 +1,227 @@
+{
+  "authority": {
+    "control_plane_commit": "df7ef7569e2947b9f0bf7cf89ed4dec6c2a5a1fe",
+    "policy_versions": {},
+    "task_commit": "22d2e9e09f4deb58029559fe9a0863c2e032f25c",
+    "task_id": "route-control-plane"
+  },
+  "disposition": "ADVANCE",
+  "evidence_refs": [],
+  "invocation_id": "inv_d3e9453b089efbc83a409fe768d745b18f76fe4ac9daac43f35615519f6f05a0",
+  "invocation_snapshot": {
+    "acceptance_predicates": {},
+    "authority": {
+      "control_plane_commit": "df7ef7569e2947b9f0bf7cf89ed4dec6c2a5a1fe",
+      "policy_versions": {},
+      "task_commit": "22d2e9e09f4deb58029559fe9a0863c2e032f25c",
+      "task_id": "route-control-plane"
+    },
+    "evidence": {
+      "authorized_evidence_classes": [
+        "CONTROL_PLANE_POLICY",
+        "PUBLIC_REFERENCE",
+        "SOLVER_VISIBLE_TASK"
+      ],
+      "evidence_required": [
+        "work-package candidates",
+        "scale-fit assessment",
+        "requirement-family breadth",
+        "originality/reference provenance"
+      ],
+      "excluded_evidence_classes": [
+        "CI_RUNTIME_EVIDENCE",
+        "CURRENT_REVIEW_PACKET",
+        "DURABLE_SESSION_STATE",
+        "FINAL_PACKAGE_EVIDENCE",
+        "MODEL_TRIAL_EVIDENCE",
+        "PRIOR_REVIEW_RESULTS",
+        "PRIVATE_CREATION_DESIGN",
+        "SOLUTION_ORACLE",
+        "VERIFIER_PRIVATE"
+      ],
+      "mandatory_exact_reads": [
+        ".terminus/agents/CREATION_PIPELINE.md",
+        ".terminus/agents/CREATOR_AGENT_REGISTRY.md",
+        ".terminus/agents/PRODUCTION_AUTHENTICITY.md",
+        ".terminus/agents/CREATOR_PROMPTS.md"
+      ],
+      "retrieval_mode": "FILTERED_HYBRID"
+    },
+    "ignored_input_count": 0,
+    "inputs": {
+      "optional": {},
+      "required": {
+        "CREATION_RULE_CONTEXT": {
+          "CONTROL_PLANE_COMMIT": "df7ef7569e2947b9f0bf7cf89ed4dec6c2a5a1fe",
+          "CREATION_PROFILE": "large_system_strict",
+          "KNOWN_POLICY_CONFLICTS": [],
+          "NETWORK_ENVIRONMENT_CONSTRAINTS": "Deterministic offline/local benchmark runtime; no dependence on cloud credentials, privileged external infrastructure, internet services, or destructive host routing. Simulate or namespace route operations safely while preserving realistic Linux routing semantics and Ansible-managed multi-node behavior."
+        },
+        "REQUESTED_DOMAIN": "Linux route-table and policy-routing control plane in Go, Ansible-managed fleet rollout, and network operations dashboard"
+      }
+    },
+    "invocation_id": "inv_d3e9453b089efbc83a409fe768d745b18f76fe4ac9daac43f35615519f6f05a0",
+    "learning": {
+      "context_hash": "sha256:bb84a513aa2b6e4374d691759c4a6edf94169f479f4611e9091643b9f279ccfc",
+      "lessons": [],
+      "mode": "GENERALIZED_LESSONS_PLUS_OWNED_REMEDIATIONS",
+      "raw_feedback_exposed": false,
+      "raw_historical_findings_exposed": false,
+      "registry_heads": {
+        "feedback": "GENESIS",
+        "findings": "GENESIS",
+        "lessons": "GENESIS",
+        "patterns": "GENESIS",
+        "remediations": "GENESIS"
+      },
+      "remediations": []
+    },
+    "missing_required_inputs": [],
+    "output_contract": {
+      "allowed_status_values": [
+        "CANDIDATES_READY",
+        "SCENARIO_TOO_SMALL",
+        "BLOCKED"
+      ],
+      "deterministic_validators": [],
+      "optional_fields": [
+        "DUPLICATE_RISK_NOTES"
+      ],
+      "persisted_artifacts": [],
+      "required_fields": [
+        "CANDIDATES",
+        "RECOMMENDATION",
+        "WHY_THIS_ONE"
+      ],
+      "semantic_reviewers": [
+        "Task Architect",
+        "Originality & Authenticity Reviewer"
+      ]
+    },
+    "readiness": "READY",
+    "retrieval": {
+      "query": null,
+      "retrieved_chars": 0,
+      "retrieved_context": [],
+      "status": "NOT_REQUESTED"
+    },
+    "routing": {
+      "failure_routes": {
+        "DUPLICATE_RISK": "A1 Scenario Researcher / Originality & Authenticity Reviewer",
+        "POLICY_CONFLICT": "Creation Controller",
+        "SCENARIO_TOO_SMALL": "A1 Scenario Researcher -> select richer coherent work package"
+      },
+      "stale_on": [
+        "creation-rule change",
+        "selected work-package change",
+        "material requirement-family change"
+      ],
+      "success_transition": "SYSTEM_ARCHITECTURE"
+    },
+    "schema_version": "1.0",
+    "stage": {
+      "lifecycle": "creation",
+      "owner": "A1 Scenario Researcher",
+      "role_class": "PRODUCER",
+      "role_id": "A1_SCENARIO_RESEARCHER",
+      "stage_id": "WORK_PACKAGE_RESEARCH"
+    }
+  },
+  "outputs": {
+    "CANDIDATES": [
+      {
+        "DUPLICATE_RISK": "LOW_MEDIUM",
+        "EDGE_FAILURE_SURFACE": [
+          "duplicate route identity",
+          "invalid CIDR/gateway family",
+          "unknown interface",
+          "management route deletion",
+          "stale revision apply",
+          "partial fleet failure",
+          "node offline",
+          "multipath normalization",
+          "policy priority collision",
+          "table collision",
+          "post-apply drift",
+          "partial rollback",
+          "concurrent mutation",
+          "restart pending transaction",
+          "corrupt state",
+          "Ansible rerun idempotency",
+          "mixed node variables",
+          "stale dashboard revision"
+        ],
+        "ENGINEERING_OBJECTIVE": "Build a production-style Go route control plane that models desired route and policy state, reconciles it across a multi-node Linux fleet, detects drift, protects management reachability, records revision history, and exposes the same lifecycle through an operator dashboard and Ansible-driven installation/configuration.",
+        "ID": "FLEET_ROUTE_DESIRED_STATE_RECONCILIATION",
+        "PRESERVATION_OBLIGATIONS": [
+          "never mutate benchmark host routing",
+          "rejected changes preserve serving state",
+          "unchanged nodes stable across retries",
+          "management safety routes remain reachable",
+          "revision/audit history monotonic",
+          "Ansible reruns idempotent"
+        ],
+        "REQUIREMENT_FAMILIES": [
+          "IPv4/IPv6 route CRUD",
+          "policy routing rules/named tables",
+          "multipath weighted next hops",
+          "revision validation",
+          "node inventory",
+          "preview/diff/apply",
+          "rollback/recovery",
+          "drift/reconcile",
+          "idempotency/concurrency",
+          "fleet rollout",
+          "Ansible deployment",
+          "audit/health",
+          "dashboard operations"
+        ],
+        "SCALE_FIT": "VERY_HIGH: naturally supports >3000 substantive LOC, 20-30 coupled manifestations, and 25-30 non-duplicative F2P cases."
+      },
+      {
+        "DUPLICATE_RISK": "MEDIUM",
+        "ENGINEERING_OBJECTIVE": "Implement atomic route-table and FIB-rule transactions, dependency ordering, validation, rollback and restart recovery.",
+        "ID": "POLICY_ROUTING_TRANSACTION_ENGINE",
+        "SCALE_FIT": "HIGH but narrower than requested."
+      },
+      {
+        "DUPLICATE_RISK": "MEDIUM",
+        "ENGINEERING_OBJECTIVE": "Inventory, route snapshots, drift analytics, remediation waves and dashboard workflows across nodes.",
+        "ID": "ROUTE_FLEET_OBSERVABILITY_AND_DRIFT_MANAGER",
+        "SCALE_FIT": "HIGH but route mutation semantics are less central."
+      }
+    ],
+    "DUPLICATE_RISK_NOTES": "Do not clone edge-router-runtime; this task manages host route/FIB desired state, not HTTP traffic routing.",
+    "RECOMMENDATION": "FLEET_ROUTE_DESIRED_STATE_RECONCILIATION",
+    "WHY_THIS_ONE": "It keeps Go API route/policy transactions, Ansible fleet deployment, and frontend operations as coupled first-class responsibilities while remaining safely deterministic through an isolated kernel model."
+  },
+  "record_id": "rec_dd47d0a5d4c98ceadd4ca3289787f6c44282581cd92a45f3a40fa1897f2b2f31",
+  "role_id": "A1_SCENARIO_RESEARCHER",
+  "schema_version": "1.0",
+  "stage_id": "WORK_PACKAGE_RESEARCH",
+  "status": "CANDIDATES_READY",
+  "task_lineage": {
+    "input_task_commit": "22d2e9e09f4deb58029559fe9a0863c2e032f25c",
+    "output_task_commit": "22d2e9e09f4deb58029559fe9a0863c2e032f25c",
+    "task_changed": false
+  },
+  "transition": {
+    "action": "ADVANCE",
+    "requires_state_validation": false,
+    "target": "SYSTEM_ARCHITECTURE",
+    "target_kind": "STAGE"
+  },
+  "validation": {
+    "acceptance_predicates_satisfied": true,
+    "evidence_binding_satisfied": true,
+    "evidence_refs_count": 0,
+    "invocation_identity_valid": true,
+    "invocation_policy_valid": true,
+    "output_keys_valid": true,
+    "required_outputs_satisfied": true,
+    "retrieval_context_authorized": true,
+    "status_legal": true,
+    "task_commit_change_authorized": true,
+    "task_lineage_valid": true
+  }
+}
