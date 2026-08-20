@@ -1,0 +1,307 @@
+{
+  "execution_mode": "INLINE_SPECIALIST",
+  "executor_handoff": null,
+  "invocation": {
+    "acceptance_predicates": {},
+    "authority": {
+      "control_plane_commit": "df7ef7569e2947b9f0bf7cf89ed4dec6c2a5a1fe",
+      "policy_versions": {},
+      "task_commit": "1e099e020dc1ef88f1032b896e97d6b49c7684b5",
+      "task_id": "route-control-plane"
+    },
+    "evidence": {
+      "authorized_evidence_classes": [
+        "CI_RUNTIME_EVIDENCE",
+        "CONTROL_PLANE_POLICY",
+        "PRIVATE_CREATION_DESIGN",
+        "SOLVER_VISIBLE_TASK",
+        "VERIFIER_PRIVATE"
+      ],
+      "evidence_required": [
+        "removal/reachability analysis",
+        "scale authenticity",
+        "test organicity",
+        "behavioral breadth"
+      ],
+      "excluded_evidence_classes": [
+        "CURRENT_REVIEW_PACKET",
+        "DURABLE_SESSION_STATE",
+        "FINAL_PACKAGE_EVIDENCE",
+        "MODEL_TRIAL_EVIDENCE",
+        "PRIOR_REVIEW_RESULTS",
+        "PUBLIC_REFERENCE",
+        "SOLUTION_ORACLE"
+      ],
+      "mandatory_exact_reads": [
+        ".terminus/agents/CREATION_PIPELINE.md",
+        ".terminus/agents/PRODUCTION_AUTHENTICITY.md",
+        ".terminus/agents/CREATOR_PROMPTS.md"
+      ],
+      "retrieval_mode": "EXACT_ONLY"
+    },
+    "ignored_input_count": 0,
+    "inputs": {
+      "optional": {},
+      "required": {
+        "DEFECT_GRAPH": {
+          "behavioral_surfaces": [
+            "route/rule lifecycle",
+            "multipath normalization",
+            "revision transaction fencing",
+            "management safety",
+            "apply/rollback recovery",
+            "drift reconciliation",
+            "fleet rollout",
+            "Ansible/UI concurrency"
+          ],
+          "connected_manifestations": 24,
+          "defect_manifestations": 24,
+          "profile": "large_system_strict",
+          "root_cause_clusters": 8
+        },
+        "ENVIRONMENT_TREE": {
+          "components": [
+            "api",
+            "node-registry",
+            "route-catalog",
+            "policy-rules",
+            "revision-planner",
+            "transaction-coordinator",
+            "snapshot-store",
+            "drift-engine",
+            "reconcile-engine",
+            "rollout-engine",
+            "audit-service",
+            "Ansible-role",
+            "dashboard"
+          ],
+          "entrypoints": [
+            "/app/routecp/cmd/routecp/main.go",
+            "/app/routecp/ansible/roles/routecp/tasks/main.yml",
+            "/app/routecp/web/app.ts"
+          ],
+          "runtime_artifact": "/app/routecp",
+          "task_root": "route-control-plane"
+        },
+        "INSTRUCTION": "Complete the inherited Go route-control-plane as a fleet-safe desired-state routing system with transactional revision control, drift/reconciliation, Ansible deployment and an operator dashboard while preserving management reachability and public operational contracts.",
+        "PRODUCTION_CHARACTERISTIC_EVIDENCE": [
+          "live Go HTTP control-plane API",
+          "IPv4/IPv6 route and policy-rule lifecycle",
+          "preview/apply/rollback revision transactions",
+          "durable desired and observed snapshots",
+          "drift detection and ownership-aware reconciliation",
+          "160-node representative multi-site fleet rollout",
+          "Ansible systemd deployment",
+          "operator-facing TypeScript dashboard"
+        ],
+        "RUNTIME_REACHABILITY_EVIDENCE": [
+          "Go entrypoint reaches node, route, policy, transaction, drift, reconcile, rollout and audit paths",
+          "revision publication feeds durable state and per-node observed state",
+          "Ansible role installs/configures/runs the same routecp service",
+          "dashboard reaches preview/apply/reconcile/rollout API paths",
+          "runtime image exposes the solver-visible source tree at /app/routecp"
+        ],
+        "SUBSTANTIVE_LOC_REPORT": {
+          "reachable_production_loc": 3524,
+          "runtime_entrypoint": "cmd/routecp/main.go",
+          "substantive_loc": 3524
+        },
+        "TEST_CLASSIFICATION_MAP": {
+          "F2P_COUNT": 25,
+          "P2P_COUNT": 4,
+          "classification": "25 F2P + 4 P2P",
+          "coverage": {
+            "cross_component": [
+              "management safety through mutation paths",
+              "Ansible protected-route precedence",
+              "dashboard revision binding"
+            ],
+            "edge": [
+              "IPv6 aliasing",
+              "multipath ordering",
+              "same prefix different tables",
+              "canary/wave boundaries"
+            ],
+            "negative": [
+              "unknown nodes",
+              "duplicate priorities",
+              "missing lookup tables",
+              "offline apply",
+              "stale rollback"
+            ],
+            "normal": [
+              "route/rule normalization",
+              "transaction apply",
+              "rollout success"
+            ],
+            "recovery": [
+              "restart incomplete transaction",
+              "rollback revision",
+              "drift reconciliation"
+            ]
+          }
+        }
+      }
+    },
+    "invocation_id": "inv_ef338627513e6763db7e6ca623415c5e88f74f0da523a457da6749388d2483a6",
+    "learning": {
+      "context_hash": "sha256:bb84a513aa2b6e4374d691759c4a6edf94169f479f4611e9091643b9f279ccfc",
+      "lessons": [],
+      "mode": "GENERALIZED_LESSONS_PLUS_OWNED_REMEDIATIONS",
+      "raw_feedback_exposed": false,
+      "raw_historical_findings_exposed": false,
+      "registry_heads": {
+        "feedback": "GENESIS",
+        "findings": "GENESIS",
+        "lessons": "GENESIS",
+        "patterns": "GENESIS",
+        "remediations": "GENESIS"
+      },
+      "remediations": []
+    },
+    "missing_required_inputs": [],
+    "output_contract": {
+      "allowed_status_values": [
+        "PASS",
+        "REVISE",
+        "SCENARIO_TOO_SMALL"
+      ],
+      "deterministic_validators": [
+        ".terminus/validate_task_complexity.py <task>"
+      ],
+      "optional_fields": [
+        "MEANINGFUL_RESOURCE_COUNT"
+      ],
+      "persisted_artifacts": [],
+      "required_fields": [
+        "SUBSTANTIVE_LOC",
+        "REACHABLE_PRODUCTION_LOC",
+        "PRODUCTION_CHARACTERISTICS",
+        "DEFECT_MANIFESTATIONS",
+        "CONNECTED_MANIFESTATIONS",
+        "ROOT_CAUSE_CLUSTERS",
+        "F2P_COUNT",
+        "P2P_COUNT",
+        "F2P_ORGANICITY",
+        "EDGE_BOUNDARY_COVERAGE",
+        "NEGATIVE_FAILURE_COVERAGE",
+        "PADDING_RISK",
+        "TEST_DUPLICATION_RISK",
+        "INSTRUCTION_CHECKLIST_RISK",
+        "REQUIRED_CHANGES"
+      ],
+      "semantic_reviewers": []
+    },
+    "readiness": "READY",
+    "retrieval": {
+      "query": null,
+      "retrieved_chars": 0,
+      "retrieved_context": [],
+      "status": "NOT_REQUESTED"
+    },
+    "routing": {
+      "failure_routes": {
+        "REVISE": "smallest responsible producer",
+        "SCENARIO_TOO_SMALL": "Creation Controller -> WORK_PACKAGE_RESEARCH"
+      },
+      "stale_on": [
+        "solver-visible environment change",
+        "defect-graph change",
+        "verifier/test-map change",
+        "instruction change affecting complexity claims"
+      ],
+      "success_transition": "RUNTIME_AUTHENTICITY"
+    },
+    "schema_version": "1.0",
+    "stage": {
+      "lifecycle": "creation",
+      "owner": "A10 Complexity Governor",
+      "role_class": "REVIEWER",
+      "role_id": "A10_COMPLEXITY_GOVERNOR",
+      "stage_id": "COMPLEXITY_GATE"
+    }
+  },
+  "next": {
+    "action": "INVOKE_STAGE",
+    "optional_inputs": [
+      "RESOURCE_GRAPH"
+    ],
+    "owner": "A10 Complexity Governor",
+    "primary_role_id": "A10_COMPLEXITY_GOVERNOR",
+    "required_inputs": [
+      "DEFECT_GRAPH",
+      "ENVIRONMENT_TREE",
+      "INSTRUCTION",
+      "PRODUCTION_CHARACTERISTIC_EVIDENCE",
+      "RUNTIME_REACHABILITY_EVIDENCE",
+      "SUBSTANTIVE_LOC_REPORT",
+      "TEST_CLASSIFICATION_MAP"
+    ],
+    "stage_id": "COMPLEXITY_GATE"
+  },
+  "quality_mode_policy": {
+    "inline_creation_governor_role_ids": [
+      "A10_COMPLEXITY_GOVERNOR"
+    ],
+    "inline_quality_role_ids": [
+      "Q1_SPEC_GAP_REPAIRER",
+      "Q2_VERIFIER_COVERAGE_REPAIRER",
+      "Q3_SPEC_AMBIGUITY_REPAIRER",
+      "Q5_ORACLE_RUNTIME_REPAIR_SPECIALIST",
+      "Q7_TASK_FORMAT_ENFORCER"
+    ],
+    "inline_stage_sequences": {
+      "SPEC_ALIGNMENT": [
+        {
+          "result_field": "Q1_STATUS",
+          "role_id": "Q1_SPEC_GAP_REPAIRER",
+          "satisfied_values": [
+            "NO_GAP",
+            "PASS"
+          ]
+        },
+        {
+          "result_field": "Q2_STATUS",
+          "role_id": "Q2_VERIFIER_COVERAGE_REPAIRER",
+          "satisfied_values": [
+            "COVERED",
+            "PASS"
+          ]
+        },
+        {
+          "result_field": "Q3_STATUS",
+          "role_id": "Q3_SPEC_AMBIGUITY_REPAIRER",
+          "satisfied_values": [
+            "CLEAR",
+            "PASS"
+          ]
+        }
+      ]
+    },
+    "mandatory_quality_role_keys": [
+      "spec-test-contract",
+      "production-logic"
+    ],
+    "mandatory_same_chat_checkpoints": {
+      "Q1": "SPEC_ALIGNMENT.Q1_STATUS",
+      "Q2": "SPEC_ALIGNMENT.Q2_STATUS",
+      "Q3": "SPEC_ALIGNMENT.Q3_STATUS",
+      "Q5": "DETERMINISTIC_VALIDATION runtime/oracle checkpoint; invoke Q5 repair only on registered runtime/oracle failure",
+      "Q7": "FORMAT_GATE"
+    },
+    "optional_q8_role_keys": [
+      "difficulty-sim-gpt",
+      "difficulty-sim-claude"
+    ],
+    "policy_document": ".terminus/agents/QUALITY_EXECUTION_MODE.md",
+    "policy_version": "1.0",
+    "producer_role_classes": [
+      "FIXER",
+      "PRODUCER"
+    ],
+    "q4_q6_mode": "AUTOMATED",
+    "q8_mode": "OFF",
+    "source": ".terminus/agents/quality_execution_mode.json"
+  },
+  "state_snapshot_id": "state_64d5e005cb074d9aaaf1b2e1c1aac2c537ef22cd558fd0ca606d48851dfbe4f2"
+}
