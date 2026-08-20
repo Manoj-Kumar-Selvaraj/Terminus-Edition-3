@@ -6,6 +6,7 @@ target="${EDGE_ROUTER_ROOT:-/app/edge-router}"
 
 test -d "$target"
 cat "$solution_dir"/fix_payload.* | base64 --decode | xz --decompress | tar -xf - -C "$target"
+cat "$solution_dir"/fix2_payload.* | base64 --decode | xz --decompress | tar -xf - -C "$target"
 
 cd "$target"
 gofmt -w ./cmd ./internal
