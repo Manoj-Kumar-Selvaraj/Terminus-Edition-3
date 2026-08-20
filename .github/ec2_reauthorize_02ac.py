@@ -76,7 +76,28 @@ def invocation(inputs, expected_stage, label):
         raise SystemExit(f"unexpected next for {expected_stage}: {nxt}")
     if not isinstance(inv,dict) or inv.get("readiness") != "READY": raise SystemExit(f"invocation not READY for {expected_stage}")
     mode=payload.get("execution_mode")
-    if mode != "INLINE_SPECIALIST": raise SystemExit(f"{expected_stage} mode drift: {mode}")
+    if expected_stage == "SPEC_ALIGNMENT":
+        if mode != "INLINE_SPECIALIST_SEQUENCE":
+            raise SystemExit(f"SPEC_ALIGNMENT mode drift: {mode}")
+        seq=payload.get("inline_specialist_sequence")
+        if not isinstance(seq,dict) or seq.get("status") != "READY_FOR_INLINE_SPECIALISTS" or seq.get("same_chat") is not True:
+            raise SystemExit(f"SPEC_ALIGNMENT sequence is not ready/same-chat: {seq}")
+        expected=[
+            ("Q1_SPEC_GAP_REPAIRER","Q1_STATUS"),
+            ("Q2_VERIFIER_COVERAGE_REPAIRER","Q2_STATUS"),
+            ("Q3_SPEC_AMBIGUITY_REPAIRER","Q3_STATUS"),
+        ]
+        steps=seq.get("steps")
+        actual=[]
+        if isinstance(steps,list):
+            for step in steps:
+                if not isinstance(step,dict) or step.get("execution_mode") != "INLINE_SPECIALIST" or step.get("same_chat") is not True or step.get("independent_acceptance") is not False:
+                    raise SystemExit(f"invalid SPEC_ALIGNMENT inline specialist step: {step}")
+                actual.append((step.get("role_id"),step.get("result_field")))
+        if actual != expected:
+            raise SystemExit(f"SPEC_ALIGNMENT sequence drift expected={expected} actual={actual}")
+    elif mode != "INLINE_SPECIALIST":
+        raise SystemExit(f"{expected_stage} mode drift: {mode}")
     write_json(vp, inv)
     return inv, vp
 
@@ -136,6 +157,9 @@ def main():
         inv, invp=invocation(merged, stage, f"{idx:02d}-{stage.lower()}")
         outputs=replace(src["outputs"])
         status=src["status"]
+        if stage == "SPEC_ALIGNMENT":
+            if outputs.get("Q1_STATUS") not in {"NO_GAP","PASS"} or outputs.get("Q2_STATUS") not in {"COVERED","PASS"} or outputs.get("Q3_STATUS") not in {"CLEAR","PASS"}:
+                raise SystemExit(f"SPEC_ALIGNMENT prior same-chat sequence is not satisfied: {outputs}")
         record(inv, invp, status, outputs, f"{idx:02d}-{stage.lower()}")
         if stage=="DEFECT_TOPOLOGY": run("python3", ".terminus/validate_defect_topology.py", TASK)
         if stage=="ENVIRONMENT_BUILD":
