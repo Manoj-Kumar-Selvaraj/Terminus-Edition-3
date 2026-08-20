@@ -1,0 +1,32 @@
+{
+  "schema_version": "1.0",
+  "mode": "RECORD",
+  "task_id": "stonevault-crash-safe-storage",
+  "task_commit": "03317f8218069b9e0b5d073bf87ecf7a0ae8e4a1",
+  "control_plane_commit": "7d8a6d8c62a62e6d24949344c7fd712e59bc8829",
+  "expected_repository_head": "7733124f8f93fe537ea78f1cc9c6eab4f13c6ba1",
+  "stage_id": "DEFECT_TOPOLOGY",
+  "inputs": {
+    "APPROVED_OPERATIONAL_REQUIREMENTS": ["locking", "MVCC", "scan overlay", "conflicts", "WAL recovery", "checkpoint/snapshot integrity", "health reporting", "Rust ingress policy"],
+    "APPROVED_WORK_PACKAGE": {"id": "stonevault-crash-safe-storage"},
+    "CLEAN_SYSTEM_ARCHITECTURE": {"boundary": "Rust control/session layer over stable C ABI to C++20 storage core"},
+    "CREATION_PROFILE": "large_system_strict"
+  },
+  "result": {
+    "status": "DESIGN_READY",
+    "outputs": {
+      "profile": "large_system_strict",
+      "root_cause_clusters": ["RC_LOCK", "RC_MVCC", "RC_SCAN_OVERLAY", "RC_CONFLICT", "RC_RECOVERY", "RC_CHECKPOINT_INTEGRITY", "RC_HEALTH", "RC_RUST_INTERFACE"],
+      "defects": ["D01-D25 as canonically recorded in .terminus/designs/stonevault-crash-safe-storage.json"],
+      "causal_edges": ["locking->writer exclusion", "MVCC->scan visibility/overlay", "conflicts->atomic sequencing", "recovery->corruption classification", "checkpoint->WAL/health", "snapshot integrity->restart safety", "ingress policy->operator/protocol boundaries"],
+      "behavioral_surfaces": {
+        "normal": ["transaction CRUD", "snapshot reads", "prefix scans", "checkpoint/restart"],
+        "negative_rejection": ["malformed commands", "unknown tx", "oversize", "second writer", "stale conflict"],
+        "failure_recovery": ["killed tx", "torn WAL", "complete WAL corruption", "snapshot corruption", "abandoned temp"],
+        "edge_boundary": ["inclusive limits", "unsigned ordering", "overlay", "snapshot bounds"]
+      },
+      "organic_f2p_surface_assessment": "SUFFICIENT_PENDING_CURRENT_HEAD_EMPIRICAL_MATRIX"
+    },
+    "evidence_refs": [{"kind": "COMMIT", "ref": "commit:03317f8218069b9e0b5d073bf87ecf7a0ae8e4a1"}]
+  }
+}
