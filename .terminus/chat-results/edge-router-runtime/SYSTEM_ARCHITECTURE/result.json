@@ -1,0 +1,79 @@
+{
+  "evidence_refs": [],
+  "invocation_id": "inv_7c620888a06b99c651190d2bfe0b0ffcd90b3ae5ff6e64e8292ecee829cf83cb",
+  "output_task_commit": "4b4a8d30429b8455ab80824c3d1e7d03378b5934",
+  "outputs": {
+    "COMPONENT_GRAPH": {
+      "architecture_style": "single-process Go edge runtime with immutable serving generations, serialized reconciliation, lifecycle-safe shared runtime objects, explicit data/operator planes and durable recovery",
+      "identity_contract": {
+        "endpoint": "pool id + canonical network endpoint + transport compatibility; accepted remove/re-add creates a new incarnation",
+        "pool": "stable pool id plus semantic compatibility fingerprint",
+        "route": "stable route id plus declaration-order-independent semantic digest",
+        "source": "source identity + monotonic revision + content digest"
+      },
+      "nodes": [
+        "runtime_host",
+        "configuration_ingress",
+        "semantic_validator",
+        "route_graph_compiler",
+        "generation_reconciler",
+        "snapshot_store",
+        "pool_runtime_registry",
+        "selection_engine",
+        "upstream_transport",
+        "health_manager",
+        "drain_manager",
+        "checkpoint_store",
+        "telemetry_registry",
+        "data_plane_server",
+        "admin_plane"
+      ],
+      "publication_contract": "validate, compile, recheck source fences, reconcile runtime state, prepare durable checkpoint body and atomically publish one complete snapshot before acknowledgement"
+    },
+    "DATA_VOLUME_PLAN": {
+      "classification": "configuration/runtime-state edge service",
+      "plan": "materially varied route/pool/endpoint and independent source snapshots sufficient to exercise reconciliation and runtime lifecycle; generated data does not count as authored-code scale"
+    },
+    "ENTRYPOINTS": [
+      "edge-router-runtime serve",
+      "edge-router-runtime validate",
+      "operator POST /v1/config",
+      "operator POST /v1/discovery",
+      "public HTTP data plane",
+      "startup checkpoint recovery",
+      "graceful shutdown/drain"
+    ],
+    "PRODUCTION_CHARACTERISTICS": [
+      "public HTTP proxying",
+      "independent operator/discovery updates",
+      "concurrent immutable generation publication",
+      "health-aware selection/retry/failover",
+      "bounded draining",
+      "durable crash recovery",
+      "bounded lifecycle telemetry",
+      "production-scale deterministic configuration"
+    ],
+    "SCALE_FIT": {
+      "ASSESSMENT": "VERY_HIGH",
+      "BEHAVIORAL_SURFACE": "25+ normal/edge/negative/concurrency/restart/preservation scenarios without quota padding",
+      "DEFECT_SURFACE": "30 coherent manifestations across six causal clusters",
+      "SUBSTANTIVE_RUNTIME_LOC": "strict >=3000 floor already materialized"
+    },
+    "SOLVER_VISIBLE_DOC_PLAN": [
+      "environment/docs/architecture.md",
+      "environment/docs/configuration.md",
+      "environment/docs/runtime-state.md",
+      "environment/docs/operator-guide.md",
+      "environment/docs/observability.md"
+    ],
+    "STATE_MODEL": {
+      "durability": "checksummed generation body plus atomic CURRENT authority with retained previous complete generations",
+      "endpoint_state": "canonical identity + incarnation + health + lifecycle + inflight + transport/affinity continuity",
+      "serving_state": "one immutable RuntimeSnapshot leased for a complete request",
+      "source_state": "per-source accepted revision/digest and complete accepted source material"
+    },
+    "UNRESOLVED_RISKS": []
+  },
+  "schema_version": "1.0",
+  "status": "ARCHITECTURE_READY"
+}
