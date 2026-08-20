@@ -1,0 +1,185 @@
+{
+  "authority": {
+    "control_plane_commit": "bde51f1c20b2d6d78b33f02956da9c58cd42d2a4",
+    "policy_versions": {},
+    "task_commit": "9663e4da67ab20e6bd66b942ac54b57667408dd8",
+    "task_id": "edge-router-runtime"
+  },
+  "disposition": "ADVANCE",
+  "evidence_refs": [],
+  "invocation_id": "inv_074e12f5b4f588fce1036ecb2a36d519e6440f6442eda274491f86aa7ac56e99",
+  "invocation_snapshot": {
+    "acceptance_predicates": {},
+    "authority": {
+      "control_plane_commit": "bde51f1c20b2d6d78b33f02956da9c58cd42d2a4",
+      "policy_versions": {},
+      "task_commit": "9663e4da67ab20e6bd66b942ac54b57667408dd8",
+      "task_id": "edge-router-runtime"
+    },
+    "evidence": {
+      "authorized_evidence_classes": [
+        "CI_RUNTIME_EVIDENCE",
+        "CONTROL_PLANE_POLICY",
+        "PUBLIC_REFERENCE",
+        "SOLUTION_ORACLE",
+        "SOLVER_VISIBLE_TASK"
+      ],
+      "evidence_required": [
+        "implementation evidence",
+        "verification evidence",
+        "no benchmark framing/leakage"
+      ],
+      "excluded_evidence_classes": [
+        "CURRENT_REVIEW_PACKET",
+        "DURABLE_SESSION_STATE",
+        "FINAL_PACKAGE_EVIDENCE",
+        "MODEL_TRIAL_EVIDENCE",
+        "PRIOR_REVIEW_RESULTS",
+        "PRIVATE_CREATION_DESIGN",
+        "VERIFIER_PRIVATE"
+      ],
+      "mandatory_exact_reads": [
+        ".terminus/agents/CREATION_PIPELINE.md",
+        ".terminus/agents/CREATOR_PROMPTS.md",
+        ".terminus/agents/PROMPTS.md"
+      ],
+      "retrieval_mode": "FILTERED_HYBRID"
+    },
+    "ignored_input_count": 0,
+    "inputs": {
+      "optional": {},
+      "required": {
+        "APPROVED_WORK_PACKAGE": {
+          "ENGINEERING_OBJECTIVE": "Complete the inherited Go edge-router runtime as a generation-safe dynamic routing and upstream-reconciliation system.",
+          "REQUIRED_END_STATE": "Atomic complete generation publication, independent source fencing, stable endpoint incarnation, request snapshot consistency, lifecycle/health-aware selection, bounded drain, durable recovery and bounded runtime retirement while preserving public interfaces."
+        },
+        "IMPLEMENTATION_EVIDENCE": {
+          "PRESERVED_BEHAVIOR": "Existing Go module, serve/validate CLI, JSON configuration shape, data-plane proxying, operator/admin, readiness/health, metrics and event surfaces remain preserved.",
+          "REFERENCE_SOLUTION_STATUS": "IMPLEMENTED",
+          "RESTORED_INVARIANTS": [
+            "atomic complete generation publication",
+            "independent per-source revision/digest authority",
+            "stable endpoint identity/incarnation",
+            "request-held generation consistency",
+            "health/lifecycle-aware selection",
+            "bounded draining",
+            "durable complete checkpoint recovery",
+            "bounded runtime/telemetry retirement"
+          ]
+        },
+        "VERIFICATION_EVIDENCE": {
+          "EMPIRICAL_STATUS": "Oracle previously scored 1 and NOP scored 0 against the current implementation/verifier content; deterministic validation must be re-earned at its dedicated stage.",
+          "F2P_COUNT": 28,
+          "P2P_COUNT": 6,
+          "SPEC_ALIGNMENT": {
+            "Q1_STATUS": "NO_GAP",
+            "Q2_STATUS": "COVERED",
+            "Q3_STATUS": "CLEAR"
+          },
+          "VERIFIER_STATUS": "VERIFIER_READY"
+        }
+      }
+    },
+    "invocation_id": "inv_074e12f5b4f588fce1036ecb2a36d519e6440f6442eda274491f86aa7ac56e99",
+    "learning": {
+      "context_hash": "sha256:bb84a513aa2b6e4374d691759c4a6edf94169f479f4611e9091643b9f279ccfc",
+      "lessons": [],
+      "mode": "GENERALIZED_LESSONS_PLUS_OWNED_REMEDIATIONS",
+      "raw_feedback_exposed": false,
+      "raw_historical_findings_exposed": false,
+      "registry_heads": {
+        "feedback": "GENESIS",
+        "findings": "GENESIS",
+        "lessons": "GENESIS",
+        "patterns": "GENESIS",
+        "remediations": "GENESIS"
+      },
+      "remediations": []
+    },
+    "missing_required_inputs": [],
+    "output_contract": {
+      "allowed_status_values": [
+        "DOCUMENTATION_READY",
+        "REWRITE_REQUIRED",
+        "BLOCKED"
+      ],
+      "deterministic_validators": [],
+      "optional_fields": [],
+      "persisted_artifacts": [
+        "<task>/README.md"
+      ],
+      "required_fields": [
+        "README_PATH",
+        "DIFFICULTY_EXPLANATION",
+        "SOLUTION_EXPLANATION",
+        "VERIFICATION_EXPLANATION"
+      ],
+      "semantic_reviewers": [
+        "Engineering Documentation Reviewer",
+        "Human Quality Reviewer"
+      ]
+    },
+    "readiness": "READY",
+    "retrieval": {
+      "query": null,
+      "retrieved_chars": 0,
+      "retrieved_context": [],
+      "status": "NOT_REQUESTED"
+    },
+    "routing": {
+      "failure_routes": {
+        "LEAKAGE_OR_SYNTHETIC_PROSE": "A8 Documentation Writer / Human Quality Reviewer",
+        "UNSUPPORTED_CLAIM": "A8 Documentation Writer"
+      },
+      "stale_on": [
+        "implementation evidence change",
+        "verification evidence change",
+        "material task-description change"
+      ],
+      "success_transition": "FORMAT_GATE"
+    },
+    "schema_version": "1.0",
+    "stage": {
+      "lifecycle": "creation",
+      "owner": "A8 Documentation Writer",
+      "role_class": "PRODUCER",
+      "role_id": "A8_DOCUMENTATION_WRITER",
+      "stage_id": "DOCUMENTATION_DRAFT"
+    }
+  },
+  "outputs": {
+    "DIFFICULTY_EXPLANATION": "The runtime couples dynamic source authority, immutable serving generations, endpoint incarnation and state continuity, request-scoped routing snapshots, health-aware selection, bounded drain, crash-safe checkpoint recovery and bounded lifecycle retirement under concurrent live proxy traffic.",
+    "README_PATH": "edge-router-runtime/README.md",
+    "SOLUTION_EXPLANATION": "The reference completion restores generation-safe publication, source-local fencing, stable identity/incarnation, compatible runtime continuity, request-held generation semantics, lifecycle-aware selection, bounded draining, transactional checkpoint recovery and bounded cleanup while preserving the public runtime surfaces.",
+    "VERIFICATION_EXPLANATION": "The verifier contains 28 fail-to-pass behavioral cases plus 6 preservation cases spanning generation/source authority, identity compatibility, snapshot selection, drain ownership, checkpoint recovery, observability and public interfaces. Final runtime/oracle success remains owned by DETERMINISTIC_VALIDATION."
+  },
+  "record_id": "rec_cbf9f1a320b8aa592003dea47fad12a50c588ece095b54a4f06033ee10e034e3",
+  "role_id": "A8_DOCUMENTATION_WRITER",
+  "schema_version": "1.0",
+  "stage_id": "DOCUMENTATION_DRAFT",
+  "status": "DOCUMENTATION_READY",
+  "task_lineage": {
+    "input_task_commit": "9663e4da67ab20e6bd66b942ac54b57667408dd8",
+    "output_task_commit": "9663e4da67ab20e6bd66b942ac54b57667408dd8",
+    "task_changed": false
+  },
+  "transition": {
+    "action": "ADVANCE",
+    "requires_state_validation": false,
+    "target": "FORMAT_GATE",
+    "target_kind": "STAGE"
+  },
+  "validation": {
+    "acceptance_predicates_satisfied": true,
+    "evidence_binding_satisfied": true,
+    "evidence_refs_count": 0,
+    "invocation_identity_valid": true,
+    "invocation_policy_valid": true,
+    "output_keys_valid": true,
+    "required_outputs_satisfied": true,
+    "retrieval_context_authorized": true,
+    "status_legal": true,
+    "task_commit_change_authorized": true,
+    "task_lineage_valid": true
+  }
+}
