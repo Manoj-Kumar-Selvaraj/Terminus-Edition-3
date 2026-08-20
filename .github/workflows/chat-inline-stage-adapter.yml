@@ -66,6 +66,23 @@ jobs:
           r.setdefault('output_task_commit',inv['authority']['task_commit'])
           json.dump(r,open(sys.argv[3],'w',encoding='utf-8'),indent=2,sort_keys=True)
           PY
+            case "$stage" in
+              DEFECT_TOPOLOGY)
+                python3 .terminus/validate_defect_topology.py "$task"
+                ;;
+              ENVIRONMENT_BUILD)
+                python3 .terminus/validate_environment_complexity.py "$task"
+                python3 .terminus/validate_runtime_authenticity.py "$task"
+                python3 .terminus/validate_business_module_diversity.py "$task"
+                ;;
+              VERIFIER_BUILD|COMPLEXITY_GATE)
+                python3 .terminus/validate_task_complexity.py "$task"
+                ;;
+              RUNTIME_AUTHENTICITY)
+                python3 .terminus/validate_runtime_authenticity.py "$task"
+                python3 .terminus/validate_business_module_diversity.py "$task"
+                ;;
+            esac
             python3 .terminus/execution/controller_cli.py record --invocation "$work/invocation.json" --result "$work/result.json" --output "$work/record.json"
             unexpected="$(git status --porcelain | awk '{print $2}' | grep -vE "^\.terminus/(executions|workflows)/$task(/|$)" || true)"
             [[ -z "$unexpected" ]] || { echo "::error::unexpected mutations: $unexpected"; exit 1; }
