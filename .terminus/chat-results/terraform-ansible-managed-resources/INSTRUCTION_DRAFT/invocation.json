@@ -1,7 +1,7 @@
 {
   "acceptance_predicates": {},
   "authority": {
-    "control_plane_commit": "67b805a297ac005ee08e82facc533f53a3233192",
+    "control_plane_commit": "5aebce7e213fa5f5864bdd741e6139d39bf5e059",
     "policy_versions": {},
     "task_commit": "78ad422902b27dea954905130a1267b02cff3596",
     "task_id": "terraform-ansible-managed-resources"
@@ -42,36 +42,59 @@
     "optional": {},
     "required": {
       "APPROVED_SOLVER_VISIBLE_REQUIREMENT_CONTRACT": {
-        "instruction_path": "terraform-ansible-managed-resources/instruction.md",
-        "material_requirements": [
-          "preserve exactly ten documented resource interfaces, provider source local/ansibleops version 0.1.0 and supplied local inventory",
-          "Terraform Core is the sole durable Terraform state authority",
-          "resource identity derives only from documented external object keys and survives mutable updates",
-          "Create/Update/Delete use Ansible mutations; Read/refresh uses native Linux observation only and is side-effect free",
-          "publish new Terraform state only after successful mutation; failures/timeouts/cancellation preserve prior successful state and remain retryable",
-          "delete only after successful scoped teardown or confirmed absence; failed delete remains managed",
-          "copy/template preserve source_digest intent, destination observation and deterministic variable ordering",
-          "named line/block updates are idempotent and deletion preserves siblings",
-          "user/group reconcile native account state with deterministic supplementary groups and exact remove_home_on_destroy behavior",
-          "cron defaults omitted user/schedule fields to root/wildcards, updates in place and preserves sibling entries",
-          "ansible-playbook uses structured argv with literal spaces/metacharacters; temporary playbooks clean on all terminal outcomes; full output is never persisted in state",
-          "canonical normalization makes equivalent modes/unordered values/account observations/cron defaults converge",
-          "preserve Go 1.24/current Plugin Framework and Terraform CLI 1.10.5 compatibility",
-          "do not substitute null_resource, terraform_data execution wrappers, local-exec, remote-exec, provisioners, manual terraform.tfstate edits or provider-owned durable state"
+        "engineering_objective": "Complete the inherited ansibleops Terraform provider so its ten Ansible-backed operating-system resources behave as normal managed Terraform resources with Terraform-owned durable state, native drift reconciliation, safe lifecycle transitions, and deterministic local execution.",
+        "preservation_obligations": [
+          "exact ten documented resource interfaces",
+          "provider source local/ansibleops version 0.1.0",
+          "Terraform Core sole durable state authority",
+          "preserve solver-visible provider/resource/lifecycle documentation"
         ],
-        "objective": "Complete the inherited ansibleops Terraform Plugin Framework provider under /app/provider as exactly ten normal managed resources.",
-        "referenced_contracts": [
-          "/app/provider/docs/provider-contract.md",
-          "/app/provider/docs/resource-reference.md",
-          "/app/provider/docs/lifecycle.md"
+        "required_end_state": "The provider exposes the documented ten resources as real Terraform managed resources; repeated apply/plan/refresh cycles converge against local Linux reality, resource identity remains stable across in-place changes, failures do not corrupt Terraform state, deletes affect only owned objects, and Ansible execution is deterministic and failure-safe.",
+        "required_output_path": "/app/provider",
+        "requirement_contract_hash": "sha256:96dd013060c78ba862c1a4160d9e4530871a8e0e91ea1ab6c97531b11051a787",
+        "solver_visible_contract_paths": [
+          "terraform-ansible-managed-resources/environment/ansibleops/docs/provider-contract.md",
+          "terraform-ansible-managed-resources/environment/ansibleops/docs/resource-reference.md",
+          "terraform-ansible-managed-resources/environment/ansibleops/docs/lifecycle.md"
         ]
       },
       "CREATION_RULE_CONTEXT": {
-        "CONTROL_PLANE_COMMIT": "67b805a297ac005ee08e82facc533f53a3233192",
+        "ACTIVE_VALIDATORS": [
+          ".terminus/validate_agent_system.py",
+          ".terminus/validate_stage_contracts.py",
+          ".terminus/validate_task_complexity.py",
+          ".terminus/validate_environment_complexity.py",
+          ".terminus/validate_runtime_authenticity.py",
+          ".terminus/validate_business_module_diversity.py",
+          ".terminus/validate_review_freshness.py",
+          ".terminus/validate_quality_interlock.py",
+          ".github/workflows/terminus-edition-3-ci.yml",
+          ".github/workflows/terminus-creator-complexity.yml",
+          ".github/workflows/terminus-production-authenticity.yml"
+        ],
+        "CONTROL_PLANE_COMMIT": "5aebce7e213fa5f5864bdd741e6139d39bf5e059",
         "CREATION_PROFILE": "large_system_strict",
-        "KNOWN_POLICY_CONFLICTS": []
+        "KNOWN_POLICY_CONFLICTS": [],
+        "NETWORK_ENVIRONMENT_CONSTRAINTS": "repository-default network/environment constraints",
+        "RULE_SOURCES": [
+          "TERMINUS_3_AI_INSTRUCTIONS.md",
+          ".terminus/AGENT_SYSTEM.md",
+          ".terminus/agents/CREATION_CONTROLLER.md",
+          ".terminus/agents/CREATION_PIPELINE.md",
+          ".terminus/agents/PRODUCTION_AUTHENTICITY.md",
+          ".terminus/reviewers/REVIEWER_CHECKLIST.md",
+          ".terminus/agents/QUALITY_AGENT_REGISTRY.md",
+          ".terminus/agents/STAGE_CONTRACTS.md",
+          ".terminus/agents/stage_contracts.json"
+        ]
       },
       "TASK_WRITING_PROFILE": {
+        "CALIBRATION_PAIR_ID": "hwpair-cad07099d9b7745c8d0d",
+        "DATASET_POLICY_VERSION": "1.2",
+        "DOMAIN_PROFILE": "platform_cloud",
+        "EXTERNAL_DATASET_COVERAGE": "DEGRADED",
+        "REVIEWER_CALIBRATION_ID": "hwcal-reviewer-9f65bbba6663cdf3d4b1",
+        "WRITER_CALIBRATION_ID": "hwcal-writer-af32c86623c671bdb2bf",
         "avoid": [
           "invented incidents or personal claims",
           "rubric-like hidden-test enumeration",
@@ -88,24 +111,49 @@
           "normalization/idempotency",
           "Terraform Core sole durable state authority"
         ],
-        "structure": [
-          "state the inherited provider objective first",
-          "preserve exact public contracts and hard safety/state constraints",
-          "reference solver-visible technical contracts instead of reproducing hidden verifier rows",
-          "keep implementation-neutral observable outcomes"
-        ],
         "voice": "direct platform engineering change request"
       },
       "VALIDATED_HUMAN_WRITING_CALIBRATION": {
-        "CALIBRATION_PAIR_ID": "hwpair-cad07099d9b7745c8d0d",
-        "DOMAIN_PROFILE": "platform_cloud",
-        "EXTERNAL_DATASET_COVERAGE": "DEGRADED",
-        "REVIEWER_CALIBRATION_ID": "hwcal-reviewer-9f65bbba6663cdf3d4b1",
-        "WRITER_CALIBRATION_ID": "hwcal-writer-af32c86623c671bdb2bf"
+        "external_dataset_coverage": "DEGRADED",
+        "pair_id": "hwpair-cad07099d9b7745c8d0d",
+        "pair_path": ".terminus/research/terraform-ansible-managed-resources-dataset-calibration.json",
+        "profile_path": ".terminus/research/terraform-ansible-managed-resources-task-writing-profile.json",
+        "reviewer_calibration_id": "hwcal-reviewer-9f65bbba6663cdf3d4b1",
+        "reviewer_sample_ids": [
+          "HC-024",
+          "HC-028",
+          "HC-021",
+          "HC-025",
+          "HC-001",
+          "HC-013",
+          "CP-004",
+          "CP-001",
+          "CP-002",
+          "AT-003",
+          "AT-001",
+          "HP-002",
+          "HP-001",
+          "HN-002",
+          "HN-004"
+        ],
+        "status": "VALID",
+        "writer_calibration_id": "hwcal-writer-af32c86623c671bdb2bf",
+        "writer_reviewer_overlap": [],
+        "writer_sample_ids": [
+          "HC-007",
+          "HC-009",
+          "HC-004",
+          "HC-027",
+          "HC-005",
+          "HC-008",
+          "CP-003",
+          "CP-006",
+          "AT-002"
+        ]
       }
     }
   },
-  "invocation_id": "inv_139e8e8691c017f87c02d68e7735826449aaceeafd435b43c51df66ad1fe4ae5",
+  "invocation_id": "inv_2c1746a8a6400557f28766facf4ec70298a5fa108533a05c3aab206a808b2022",
   "learning": {
     "context_hash": "sha256:bb84a513aa2b6e4374d691759c4a6edf94169f479f4611e9091643b9f279ccfc",
     "lessons": [],
