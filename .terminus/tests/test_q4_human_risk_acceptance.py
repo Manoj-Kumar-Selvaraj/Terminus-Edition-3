@@ -18,13 +18,21 @@ from feedback.registry import LearningStore  # noqa: E402
 import q4_human_risk  # noqa: E402
 
 
-def _head() -> str:
+def _git(*args: str) -> str:
     return subprocess.run(
-        ["git", "-C", str(ROOT), "rev-parse", "HEAD"],
+        ["git", "-C", str(ROOT), *args],
         check=True,
         capture_output=True,
         text=True,
     ).stdout.strip()
+
+
+def _head() -> str:
+    return _git("rev-parse", "HEAD")
+
+
+def _parent() -> str:
+    return _git("rev-parse", "HEAD^")
 
 
 def _store(tmp_path: Path) -> LearningStore:
@@ -35,15 +43,15 @@ def _store(tmp_path: Path) -> LearningStore:
     )
 
 
-def _q4() -> dict[str, object]:
+def _q4(*, task: str = "risk-task", task_commit: str | None = None) -> dict[str, object]:
     return {
         "role": "Spec-Test Contract Reviewer",
         "verdict": "REVISE",
         "confidence": "HIGH",
         "evidence_status": "SUFFICIENT",
         "missing_evidence": [],
-        "task": "risk-task",
-        "task_commit": _head(),
+        "task": task,
+        "task_commit": task_commit or _head(),
         "review_id": "risk-task-review-1",
         "role_output": {"BLOCKING_FINDING_IDS": ["Q4-001", "Q4-002"]},
     }
@@ -55,10 +63,12 @@ def _capture(
     producer: str = "alice",
     category: str = "HUMAN_RISK_ACCEPTANCE",
     task_id: str = "risk-task",
-    task_commit: str | None = None,
+    accepted_task_commit: str | None = None,
+    q4_task_commit: str | None = None,
     accepted: list[str] | None = None,
 ) -> dict[str, object]:
-    commit = task_commit or _head()
+    accepted_commit = accepted_task_commit or _head()
+    frozen_commit = q4_task_commit or accepted_commit
     accepted_ids = accepted if accepted is not None else ["Q4-001", "Q4-002"]
     captured_at = "2026-08-20T09:00:00Z"
     source = {"type": "HUMAN_REVIEW", "producer": producer}
@@ -71,13 +81,15 @@ def _capture(
             "decision": "ACCEPTED",
             "q4_verdict": "REVISE",
             "q4_review_id": "risk-task-review-1",
+            "q4_task_commit": frozen_commit,
+            "accepted_task_commit": accepted_commit,
             "accepted_finding_ids": accepted_ids,
             "residual_backlog": ["issue #66"],
         },
     }
     claim = FeedbackIngestor.authority_claim(
         source=source,
-        task={"task_id": task_id, "task_commit": commit},
+        task={"task_id": task_id, "task_commit": accepted_commit},
         observation=observation,
         captured_at=captured_at,
         source_binding=None,
@@ -87,7 +99,7 @@ def _capture(
         source_type="HUMAN_REVIEW",
         producer=producer,
         task_id=task_id,
-        task_commit=commit,
+        task_commit=accepted_commit,
         severity="HIGH",
         message=observation["message"],
         category=category,
@@ -119,64 +131,88 @@ class _OneEventStore:
         self.feedback = _OneEventFeedback(event)
 
 
+def _validate(event, q4, store, *, current: str | None = None):
+    return q4_human_risk.validate_human_risk_acceptance(
+        ROOT,
+        envelope=_envelope(event),
+        q4_result=q4,
+        store=store,
+        current_task_commit_override=current or str(event["task"]["task_commit"]),
+    )
+
+
 def test_authenticated_human_risk_acceptance_validates(tmp_path: Path) -> None:
     store = _store(tmp_path)
     event = _capture(store)
-    result = q4_human_risk.validate_human_risk_acceptance(
-        ROOT,
-        envelope=_envelope(event),
-        q4_result=_q4(),
-        store=store,
-    )
+    result = _validate(event, _q4(), store)
     assert result["satisfaction"] == "AUTHENTICATED_HUMAN_RISK_ACCEPTANCE"
     assert result["q4_verdict"] == "REVISE"
     assert result["accepted_finding_ids"] == ["Q4-001", "Q4-002"]
+    assert result["q4_task_commit"] == _head()
+    assert result["accepted_task_commit"] == _head()
+
+
+def test_authenticated_human_risk_acceptance_allows_exact_descendant(tmp_path: Path) -> None:
+    store = _store(tmp_path)
+    frozen = _parent()
+    accepted = _head()
+    event = _capture(
+        store,
+        q4_task_commit=frozen,
+        accepted_task_commit=accepted,
+    )
+    result = _validate(event, _q4(task_commit=frozen), store, current=accepted)
+    assert result["q4_task_commit"] == frozen
+    assert result["accepted_task_commit"] == accepted
+    assert result["task_commit"] == accepted
+
+
+def test_non_descendant_or_stale_current_snapshot_is_rejected(tmp_path: Path) -> None:
+    backward_store = _store(tmp_path / "backward")
+    frozen = _head()
+    accepted = _parent()
+    backward = _capture(
+        backward_store,
+        q4_task_commit=frozen,
+        accepted_task_commit=accepted,
+    )
+    with pytest.raises(ValueError, match="equal or descend"):
+        _validate(backward, _q4(task_commit=frozen), backward_store, current=accepted)
+
+    stale_store = _store(tmp_path / "stale")
+    frozen = _parent()
+    accepted = _head()
+    stale = _capture(
+        stale_store,
+        q4_task_commit=frozen,
+        accepted_task_commit=accepted,
+    )
+    with pytest.raises(ValueError, match="not the current task commit"):
+        _validate(stale, _q4(task_commit=frozen), stale_store, current=frozen)
 
 
 def test_wrong_task_or_commit_cannot_reuse_acceptance(tmp_path: Path) -> None:
     store = _store(tmp_path)
     event = _capture(store)
-    wrong_task = copy.deepcopy(_q4())
-    wrong_task["task"] = "other-task"
-    with pytest.raises(ValueError, match="exact Q4 task commit"):
-        q4_human_risk.validate_human_risk_acceptance(
-            ROOT,
-            envelope=_envelope(event),
-            q4_result=wrong_task,
-            store=store,
-        )
+    wrong_task = _q4(task="other-task")
+    with pytest.raises(ValueError, match="exact Q4 task ID"):
+        _validate(event, wrong_task, store)
 
-    wrong_commit = copy.deepcopy(_q4())
-    wrong_commit["task_commit"] = "0" * 40
-    with pytest.raises(ValueError, match="exact Q4 task commit"):
-        q4_human_risk.validate_human_risk_acceptance(
-            ROOT,
-            envelope=_envelope(event),
-            q4_result=wrong_commit,
-            store=store,
-        )
+    wrong_commit = _q4(task_commit=_parent())
+    with pytest.raises(ValueError, match="frozen Q4 task commit"):
+        _validate(event, wrong_commit, store)
 
 
 def test_wrong_category_or_incomplete_finding_set_is_rejected(tmp_path: Path) -> None:
     store = _store(tmp_path)
     wrong_category = _capture(store, category="FINDING_VERIFICATION")
     with pytest.raises(ValueError, match="wrong category"):
-        q4_human_risk.validate_human_risk_acceptance(
-            ROOT,
-            envelope=_envelope(wrong_category),
-            q4_result=_q4(),
-            store=store,
-        )
+        _validate(wrong_category, _q4(), store)
 
     store2 = _store(tmp_path / "second")
     incomplete = _capture(store2, accepted=["Q4-001"])
     with pytest.raises(ValueError, match="every blocking Q4 finding"):
-        q4_human_risk.validate_human_risk_acceptance(
-            ROOT,
-            envelope=_envelope(incomplete),
-            q4_result=_q4(),
-            store=store2,
-        )
+        _validate(incomplete, _q4(), store2)
 
 
 def test_unauthenticated_or_machine_authored_acceptance_is_rejected(
@@ -187,22 +223,12 @@ def test_unauthenticated_or_machine_authored_acceptance_is_rejected(
     asserted["provenance"]["trust_status"] = "HUMAN_ASSERTED"
     direct_store = _OneEventStore(asserted)
     with pytest.raises(ValueError, match="not authoritative"):
-        q4_human_risk.validate_human_risk_acceptance(
-            ROOT,
-            envelope=_envelope(asserted),
-            q4_result=_q4(),
-            store=direct_store,
-        )
+        _validate(asserted, _q4(), direct_store)
 
     machine_store = _store(tmp_path / "machine")
     machine = _capture(machine_store, producer="CI_ORCHESTRATOR")
     with pytest.raises(ValueError, match="machine role"):
-        q4_human_risk.validate_human_risk_acceptance(
-            ROOT,
-            envelope=_envelope(machine),
-            q4_result=_q4(),
-            store=machine_store,
-        )
+        _validate(machine, _q4(), machine_store)
 
 
 def test_stage_acceptance_route_is_explicit_and_keeps_q4_revise(
@@ -216,7 +242,7 @@ def test_stage_acceptance_route_is_explicit_and_keeps_q4_revise(
     }
     called: dict[str, object] = {}
 
-    def fake_validate(root: Path, *, envelope, q4_result):
+    def fake_validate(root: Path, *, envelope, q4_result, **kwargs):
         called["root"] = root
         called["envelope"] = envelope
         called["q4"] = q4_result
