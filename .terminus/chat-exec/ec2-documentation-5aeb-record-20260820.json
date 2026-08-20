@@ -1,0 +1,64 @@
+{
+  "schema_version": "1.0",
+  "mode": "RECORD",
+  "task_id": "ec2-artifact-policy-enforcement",
+  "task_commit": "6c7909d5c0efd3e6e64443d6de3b227c1820b01b",
+  "control_plane_commit": "5aebce7e213fa5f5864bdd741e6139d39bf5e059",
+  "expected_repository_head": "2a20e2bb752bd25b9f20aeeec00291af64d21358",
+  "stage_id": "DOCUMENTATION_DRAFT",
+  "inputs": {
+    "APPROVED_WORK_PACKAGE": {
+      "ENGINEERING_OBJECTIVE": "Unify OS-package, container, and build-dependency acquisition behind one Go policy engine.",
+      "ID": "WP1_UNIFIED_EC2_ARTIFACT_ADMISSION",
+      "REQUIRED_END_STATE": "All acquisition surfaces enforce trusted sources, immutable digests, current scanner/cache evidence, scoped current vulnerability exceptions, exact-scope secret-keyed permits with replay safety, and durable restart-safe allow/deny audit history."
+    },
+    "IMPLEMENTATION_EVIDENCE": {
+      "DETERMINISM": "caller-provided time, local fixtures, local state and no required network dependency",
+      "PRESERVED_BEHAVIOR": [
+        "artifactguard evaluate and verify-permit interfaces and documented exits",
+        "valid cache reuse and valid scoped exceptions",
+        "supplied policy/scanner/exception fixtures",
+        "existing audit history"
+      ],
+      "REFERENCE_SOLUTION_STATUS": "IMPLEMENTED",
+      "RESTORED_INVARIANTS": [
+        "one source/digest policy boundary across package, container and dependency managers",
+        "current scanner evidence and cache identity bound to digest, policy version, scanner DB revision and TTL",
+        "exact current vulnerability exceptions that cannot bypass prerequisites",
+        "secret-keyed exact-scope permits with optional durable single-use replay enforcement",
+        "durable ALLOW/DENY audit before derived projection and crash-safe state transitions",
+        "restart/concurrency-safe idempotency and replay semantics"
+      ],
+      "PRODUCTION_AUTHENTICITY": "3515 substantive reachable Go LOC after removal of cloned catalog padding"
+    },
+    "VERIFICATION_EVIDENCE": {
+      "COVERAGE_FAMILIES": [
+        "source/digest prerequisites across acquisition managers and exception ordering",
+        "scanner/cache freshness and corruption",
+        "exception expiry/scope/prerequisite ordering and policy-code scope",
+        "permit authentication, exact request/policy scope and restart/concurrent replay",
+        "audit durability, projection, recovery and idempotent retry",
+        "healthy behavior, cache, stateless permit, invalid-permit and fixture preservation"
+      ],
+      "EMPIRICAL_STATUS": "Runtime/oracle validation remains mandatory at the later deterministic-validation checkpoint; no pass claim is made at documentation time.",
+      "F2P_COUNT": 28,
+      "P2P_COUNT": 12,
+      "SPEC_ALIGNMENT": {
+        "Q1_STATUS": "NO_GAP",
+        "Q2_STATUS": "COVERED",
+        "Q3_STATUS": "CLEAR"
+      },
+      "VERIFIER_STATUS": "VERIFIER_READY"
+    }
+  },
+  "result": {
+    "status": "DOCUMENTATION_READY",
+    "outputs": {
+      "README_PATH": "ec2-artifact-policy-enforcement/README.md",
+      "DIFFICULTY_EXPLANATION": "The engineering difficulty is the coupling between canonical artifact identity, fail-closed evidence freshness, exact exception scope, permit authentication/replay, and crash-safe durable state. A local fix to only one manager, cache field, permit check, or projection can leave another acquisition or restart/concurrency path inconsistent.",
+      "SOLUTION_EXPLANATION": "The reference repair restores one normalized package/container/dependency admission pipeline; binds cache evidence to immutable digest plus policy/scanner freshness; restricts exceptions to exact current vulnerability scope; authenticates exact-scope permits with secret-keyed integrity and optional durable single-use replay state; and commits ALLOW/DENY journal state durably before derived projection while preserving idempotent retry and recovery semantics.",
+      "VERIFICATION_EXPLANATION": "The verifier maps the public contract to 28 failure-to-pass and 12 preservation cases covering manager/source/digest policy and exception ordering, scanner/cache freshness, exception scope and policy-code boundaries, permit authentication/exact request and policy scope/replay, audit/recovery/idempotency, healthy cache/stateless-permit compatibility, invalid-permit preservation, and fixture preservation. SPEC_ALIGNMENT is current with Q1=NO_GAP, Q2=COVERED, Q3=CLEAR. Runtime/oracle success is deliberately not claimed here and remains mandatory downstream."
+    },
+    "evidence_refs": []
+  }
+}
