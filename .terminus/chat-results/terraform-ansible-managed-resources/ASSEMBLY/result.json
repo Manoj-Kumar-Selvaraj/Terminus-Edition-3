@@ -6,73 +6,57 @@
       "ref": "commit:78ad422902b27dea954905130a1267b02cff3596"
     },
     {
-      "content_hash": "sha256:ed5990238b212bd16e28ea8955e272cd66c8043e1026f4fe3d0ccd6c430f49a6",
+      "content_hash": "sha256:fca3ef4b283f1a1fe2aa6d960cd36a17b7232eb0b7a130f9cc8d43d948d6ec42",
       "kind": "COMMIT",
-      "ref": "commit:4cc1f68cb57b284c4817e3f354ea6eb74c5f717d"
+      "ref": "commit:67b805a297ac005ee08e82facc533f53a3233192"
     }
   ],
-  "invocation_id": "inv_7cfcc5d3886ea8ec691f64b670fac799b8b024fd206b1cdd8a739c2dbe1da39f",
+  "invocation_id": "inv_cb1cfc64c139890961995b696242edd858db4a76fcb8d6f22c502912589eb97a",
   "output_task_commit": "78ad422902b27dea954905130a1267b02cff3596",
   "outputs": {
     "EDGE_BOUNDARY_COVERAGE_EVIDENCE": [
-      "missing and wrong-kind objects",
-      "external drift and recreation",
-      "spaces and shell metacharacters as literal argv data",
-      "cron omitted-user/wildcard defaults",
-      "user home removal policy",
-      "mode/unordered canonicalization",
-      "already-absent destroy",
-      "line/block/cron sibling preservation",
-      "symlink-target preservation"
+      "wrong object kind",
+      "paths with spaces",
+      "cron omitted/explicit defaults",
+      "remove_home boundary",
+      "unordered/mode equivalence",
+      "already-absent destroy"
     ],
-    "F2P_ORGANICITY_EVIDENCE": "30 F2P scenarios arise from observable lifecycle, drift, retry, ownership, runner and normalization behavior rather than synthetic one-off branches; 6 P2P tests protect preserved normal behavior.",
-    "INSTRUCTION_DOC_BOUNDARY": "PASS: instruction states the material end-state and delegates detailed schemas/lifecycle semantics to solver-visible provider-contract.md, resource-reference.md and lifecycle.md without relying on private tests or solution content.",
-    "INSTRUCTION_REQUIREMENT_COMPLETENESS": "PASS: Q1 NO_GAP, Q2 COVERED and Q3 CLEAR across provider/schema, identity/state, native refresh, mutation/state transaction, scoped delete, content/text, account/group, cron, runner and normalization requirements.",
-    "INSTRUCTION_SHAPE": "PASS: direct engineering completion request; absolute /app/provider and public-contract references; no rubric/test enumeration or private verifier disclosure.",
-    "LEAKAGE_CHECK": "PASS: environment image receives only starter source; solution and tests are isolated; instruction/README do not expose private test cases, defect IDs, oracle outcomes or model-trial evidence.",
+    "F2P_ORGANICITY_EVIDENCE": "30 F2P cases cover distinct normal, cross-component, recovery, ownership, edge and negative behaviors arising organically from the ten-resource lifecycle system; 6 P2P cases preserve baseline behavior.",
+    "INSTRUCTION_DOC_BOUNDARY": "PASS: instruction owns required end-state behavior while provider docs own architecture/resource/lifecycle detail; no private verifier/solution paths are solver-visible.",
+    "INSTRUCTION_REQUIREMENT_COMPLETENESS": "PASS: current SPEC_ALIGNMENT is ALIGNED with Q1 NO_GAP, Q2 COVERED and Q3 CLEAR.",
+    "INSTRUCTION_SHAPE": "PASS: direct implementation-oriented platform engineering request with explicit lifecycle/state constraints and legitimate solver-visible contract references.",
+    "LEAKAGE_CHECK": "PASS: agent build context excludes solution/tests and instruction does not reveal private test names, defect IDs or reference implementation internals.",
     "NEGATIVE_FAILURE_COVERAGE_EVIDENCE": [
-      "duplicate external ownership rejection",
-      "non-zero Ansible mutation failure",
-      "timeout/cancellation and temporary-file cleanup",
-      "failed update preserves prior applied state",
-      "failed delete remains managed for retry",
-      "full command output is not persisted in Terraform state"
+      "duplicate external ownership",
+      "literal shell metacharacters",
+      "non-zero Ansible failure",
+      "failed delete retains state",
+      "command output absent from state",
+      "timeout/cancellation cleanup"
     ],
     "NEXT_GATE": "COMPLEXITY_GATE",
     "PRODUCTION_CHARACTERISTIC_EVIDENCE": [
-      "Terraform Plugin Framework provider with real resource schemas and lifecycle methods",
-      "external Linux filesystem/account/group/cron state as runtime truth",
-      "Ansible-backed mutation with native read/refresh separation",
-      "structured subprocess handling with failure, timeout, cancellation and cleanup semantics",
-      "Terraform Core as sole durable state authority",
-      "digest-pinned build/verifier images and vendored Go dependency path"
+      "real Terraform Plugin Framework provider process",
+      "persistent external Linux state",
+      "Ansible mutation/native Read split",
+      "failure-safe Terraform state transitions",
+      "Terraform Core sole durable state",
+      "digest-pinned production-like build/runtime tooling"
     ],
-    "STATIC_CHECKS": "PASS for assembly-local structure, task.toml/image/test.sh/isolation and instruction-boundary checks already evidenced by Q7. Runtime/oracle execution is intentionally not claimed and remains for later registered gates.",
-    "STRUCTURE": {
-      "required_top_level": [
-        "task.toml",
-        "instruction.md",
-        "README.md",
-        "environment/",
-        "tests/",
-        "solution/"
+    "STATIC_CHECKS": "PASS for assembly-local structure, format, package isolation, instruction alignment and static evidence only. Runtime/oracle empirical success remains intentionally unclaimed until DETERMINISTIC_VALIDATION.",
+    "STRUCTURE": "PASS: README.md, environment/, instruction.md, solution/, task.toml and tests/ are present; runtime artifact /app/provider; separate verifier; exactly ten registered managed resources.",
+    "SUBSTANTIVE_REACHABLE_LOC_EVIDENCE": {
+      "components": [
+        "provider",
+        "resources",
+        "ansible/playbook generation",
+        "runner",
+        "native observation",
+        "lifecycle/normalization"
       ],
       "resource_count": 10,
-      "runtime_artifact": "/app/provider",
-      "separate_verifier": true,
-      "task_root": "terraform-ansible-managed-resources"
-    },
-    "SUBSTANTIVE_REACHABLE_LOC_EVIDENCE": {
-      "major_components": [
-        "internal/provider",
-        "internal/resources",
-        "internal/ansible",
-        "internal/runner",
-        "internal/observe",
-        "internal/lifecycle"
-      ],
-      "resource_implementations": 10,
-      "runtime_entrypoint": "environment/ansibleops/cmd/terraform-provider-ansibleops/main.go",
+      "runtime_entrypoint": "cmd/terraform-provider-ansibleops/main.go",
       "substantive_loc": 3081
     },
     "TASK_COMMIT": "78ad422902b27dea954905130a1267b02cff3596"
