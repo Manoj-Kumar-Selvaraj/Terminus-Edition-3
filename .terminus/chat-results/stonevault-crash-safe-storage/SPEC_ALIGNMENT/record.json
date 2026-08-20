@@ -1,0 +1,544 @@
+{
+  "ledger_event": {
+    "control_plane_commit": "7d8a6d8c62a62e6d24949344c7fd712e59bc8829",
+    "event_id": "evt_28f224a5a3421e19b63aaa409a9985e27aaa2c3bb85389d19f41af84fc406b77",
+    "input_task_commit": "03317f8218069b9e0b5d073bf87ecf7a0ae8e4a1",
+    "invocation_id": "inv_d8d9255851b15408cfab2df09d32f5daf93557eae8c25304e01a0cd109a0531e",
+    "output_task_commit": "03317f8218069b9e0b5d073bf87ecf7a0ae8e4a1",
+    "previous_event_id": "evt_6895800a8006cf8b7aad059f7e64e199d0c1562316567a48b62c312ba28d0a76",
+    "record_hash": "sha256:82cef2585417fb9ad3b3f3cfc3afdcf3028b302e05c7a0f65ce4558fe612cc15",
+    "record_id": "rec_fc98557d5247ed9b22df3c364926ee51ce8b3a493b2576d6a09831e9698c0f78",
+    "record_path": ".terminus/executions/stonevault-crash-safe-storage/inv_d8d9255851b15408cfab2df09d32f5daf93557eae8c25304e01a0cd109a0531e.result.json",
+    "schema_version": "1.0",
+    "sequence": 19,
+    "stage_id": "SPEC_ALIGNMENT",
+    "task_id": "stonevault-crash-safe-storage"
+  },
+  "record": {
+    "authority": {
+      "control_plane_commit": "7d8a6d8c62a62e6d24949344c7fd712e59bc8829",
+      "policy_versions": {},
+      "task_commit": "03317f8218069b9e0b5d073bf87ecf7a0ae8e4a1",
+      "task_id": "stonevault-crash-safe-storage"
+    },
+    "disposition": "ADVANCE",
+    "evidence_refs": [
+      {
+        "content_hash": "sha256:38d1e6b49a6cd52e4cefce949ec274c9b07daf9b5ba2735bb2a094820f7c78de",
+        "kind": "COMMIT",
+        "ref": "commit:03317f8218069b9e0b5d073bf87ecf7a0ae8e4a1"
+      }
+    ],
+    "invocation_id": "inv_d8d9255851b15408cfab2df09d32f5daf93557eae8c25304e01a0cd109a0531e",
+    "invocation_snapshot": {
+      "acceptance_predicates": {
+        "ALIGNED": [
+          {
+            "op": "in",
+            "path": "Q1_STATUS",
+            "value": [
+              "NO_GAP",
+              "PASS"
+            ]
+          },
+          {
+            "op": "in",
+            "path": "Q2_STATUS",
+            "value": [
+              "COVERED",
+              "PASS"
+            ]
+          },
+          {
+            "op": "in",
+            "path": "Q3_STATUS",
+            "value": [
+              "CLEAR",
+              "PASS"
+            ]
+          }
+        ]
+      },
+      "authority": {
+        "control_plane_commit": "7d8a6d8c62a62e6d24949344c7fd712e59bc8829",
+        "policy_versions": {},
+        "task_commit": "03317f8218069b9e0b5d073bf87ecf7a0ae8e4a1",
+        "task_id": "stonevault-crash-safe-storage"
+      },
+      "evidence": {
+        "authorized_evidence_classes": [
+          "CONTROL_PLANE_POLICY",
+          "PRIVATE_CREATION_DESIGN",
+          "SOLVER_VISIBLE_TASK",
+          "VERIFIER_PRIVATE"
+        ],
+        "evidence_required": [
+          "Q1 no unresolved verifier->spec gap",
+          "Q2 no unresolved spec->verifier gap",
+          "Q3 no unresolved grading-relevant ambiguity"
+        ],
+        "excluded_evidence_classes": [
+          "CI_RUNTIME_EVIDENCE",
+          "CURRENT_REVIEW_PACKET",
+          "DURABLE_SESSION_STATE",
+          "FINAL_PACKAGE_EVIDENCE",
+          "MODEL_TRIAL_EVIDENCE",
+          "PRIOR_REVIEW_RESULTS",
+          "PUBLIC_REFERENCE",
+          "SOLUTION_ORACLE"
+        ],
+        "mandatory_exact_reads": [
+          ".terminus/agents/INSTRUCTION_POLICY.md",
+          ".terminus/agents/QUALITY_AGENT_REGISTRY.md",
+          ".terminus/agents/QUALITY_AGENT_PROMPTS.md"
+        ],
+        "retrieval_mode": "EXACT_ONLY"
+      },
+      "ignored_input_count": 0,
+      "inputs": {
+        "optional": {
+          "PRIVATE_TEST_MAP": {
+            "independence": "isolated runtime directories, independently encoded WAL/snapshot fixtures and compiler-validated ABI/C++20 preservation",
+            "path": ".terminus/designs/stonevault-crash-safe-storage-test-map.json",
+            "residual_backlog": [
+              "F01 committed DELETE durability across restart; issue #66"
+            ]
+          }
+        },
+        "required": {
+          "CURRENT_INSTRUCTION": {
+            "material_requirements": [
+              "exclusive writer ownership and clean release",
+              "data-directory precedence",
+              "transaction-lifetime MVCC snapshots with own mutation overlay",
+              "raw-byte prefix filtering and unsigned bytewise ordering",
+              "first-committer-wins atomic conflict rejection and sequence semantics",
+              "atomic durable commits with contiguous sequences",
+              "rollback and killed-open-transaction invisibility after restart",
+              "WAL recovery retaining valid commits, tolerating only torn final tails and rejecting complete corruption/history gaps",
+              "checkpoint quiescence, atomic durable snapshot publication and WAL reclamation",
+              "snapshot corruption rejection and abandoned snapshot.tmp cleanup",
+              "accurate STATS and HEALTH",
+              "binary hex representation and inclusive size limits",
+              "malformed command and unknown transaction resilience",
+              "C ABI, response, WAL, snapshot and existing-data compatibility"
+            ],
+            "path": "stonevault-crash-safe-storage/instruction.md",
+            "shape": "one reliability-hardening orientation paragraph plus 16 concise observable invariant bullets"
+          },
+          "CURRENT_VERIFIER": {
+            "F2P_COUNT": 30,
+            "P2P_COUNT": 33,
+            "accepted_residual_risk": "F01 committed DELETE restart durability remains explicitly unclaimed as verifier coverage and is separately tracked in backlog #66 under authenticated human risk acceptance",
+            "coverage_families": [
+              "locking",
+              "configuration precedence",
+              "MVCC",
+              "scan overlay",
+              "conflicts",
+              "WAL recovery",
+              "checkpoint/snapshot integrity",
+              "operator state",
+              "binary protocol",
+              "native compatibility"
+            ],
+            "status": "VERIFIER_READY"
+          },
+          "REFERENCED_SOLVER_VISIBLE_CONTRACTS": [
+            "/app/stonevault/docs/storage-format.md"
+          ]
+        }
+      },
+      "invocation_id": "inv_d8d9255851b15408cfab2df09d32f5daf93557eae8c25304e01a0cd109a0531e",
+      "learning": {
+        "context_hash": "sha256:bb84a513aa2b6e4374d691759c4a6edf94169f479f4611e9091643b9f279ccfc",
+        "lessons": [],
+        "mode": "GENERALIZED_LESSONS_PLUS_OWNED_REMEDIATIONS",
+        "raw_feedback_exposed": false,
+        "raw_historical_findings_exposed": false,
+        "registry_heads": {
+          "feedback": "GENESIS",
+          "findings": "GENESIS",
+          "lessons": "GENESIS",
+          "patterns": "GENESIS",
+          "remediations": "GENESIS"
+        },
+        "remediations": []
+      },
+      "missing_required_inputs": [],
+      "output_contract": {
+        "allowed_status_values": [
+          "ALIGNED",
+          "REPAIR_REQUIRED",
+          "BLOCKED"
+        ],
+        "deterministic_validators": [],
+        "optional_fields": [
+          "REPAIR_EVIDENCE"
+        ],
+        "persisted_artifacts": [],
+        "required_fields": [
+          "Q1_STATUS",
+          "Q2_STATUS",
+          "Q3_STATUS"
+        ],
+        "semantic_reviewers": [
+          "Q1 Spec Gap Repairer",
+          "Q2 Verifier Coverage Repairer",
+          "Q3 Spec Ambiguity Repairer"
+        ]
+      },
+      "readiness": "READY",
+      "retrieval": {
+        "query": null,
+        "retrieved_chars": 0,
+        "retrieved_context": [],
+        "status": "NOT_REQUESTED"
+      },
+      "routing": {
+        "failure_routes": {
+          "AMBIGUITY": "Q3 Spec Ambiguity Repairer",
+          "PERSISTENT_DISAGREEMENT": "Creation Controller -> block freeze and route to the applicable contract/policy owner",
+          "SPEC_TO_VERIFIER_GAP": "Q2 Verifier Coverage Repairer",
+          "VERIFIER_TO_SPEC_GAP": "Q1 Spec Gap Repairer"
+        },
+        "stale_on": [
+          "instruction change",
+          "referenced contract change",
+          "verifier change",
+          "grading-semantics change"
+        ],
+        "success_transition": "DOCUMENTATION_DRAFT"
+      },
+      "schema_version": "1.0",
+      "stage": {
+        "lifecycle": "creation",
+        "owner": "Creation Controller",
+        "role_class": "CONTROLLER",
+        "role_id": "CREATION_CONTROLLER",
+        "stage_id": "SPEC_ALIGNMENT"
+      }
+    },
+    "outputs": {
+      "Q1_STATUS": "NO_GAP",
+      "Q2_STATUS": "COVERED",
+      "Q3_STATUS": "CLEAR",
+      "REPAIR_EVIDENCE": "No new producer repair is required for progression. Q1 finds no verifier-to-spec requirement leakage and Q3 finds no grading-relevant ambiguity. Q2 confirms the declared verifier map covers the current grading contract except the already disclosed F01 committed-DELETE restart probe, which is not falsely represented as covered and is separately bound to authenticated human residual-risk acceptance/backlog #66. Historical Q4 remains REVISE and is not rewritten by this stage."
+    },
+    "record_id": "rec_fc98557d5247ed9b22df3c364926ee51ce8b3a493b2576d6a09831e9698c0f78",
+    "role_id": "CREATION_CONTROLLER",
+    "schema_version": "1.0",
+    "stage_id": "SPEC_ALIGNMENT",
+    "status": "ALIGNED",
+    "task_lineage": {
+      "input_task_commit": "03317f8218069b9e0b5d073bf87ecf7a0ae8e4a1",
+      "output_task_commit": "03317f8218069b9e0b5d073bf87ecf7a0ae8e4a1",
+      "task_changed": false
+    },
+    "transition": {
+      "action": "ADVANCE",
+      "requires_state_validation": false,
+      "target": "DOCUMENTATION_DRAFT",
+      "target_kind": "STAGE"
+    },
+    "validation": {
+      "acceptance_predicates_satisfied": true,
+      "evidence_binding_satisfied": true,
+      "evidence_refs_count": 1,
+      "invocation_identity_valid": true,
+      "invocation_policy_valid": true,
+      "output_keys_valid": true,
+      "required_outputs_satisfied": true,
+      "retrieval_context_authorized": true,
+      "status_legal": true,
+      "task_commit_change_authorized": true,
+      "task_lineage_valid": true
+    }
+  },
+  "remediation_updates": [],
+  "state": {
+    "control_plane_commit": "7d8a6d8c62a62e6d24949344c7fd712e59bc8829",
+    "derived_from": {
+      "freshness_overlay_hash": null,
+      "record_ids": [
+        "rec_18e8b47cae57745c9b3f3dfdd4210ceeee6b43efa13c72e0e6a5e11dcb40e357",
+        "rec_5ec8e29d7e5f22e3ce959607ae8a8017976030a576cafe408e10416aeb3fb10a",
+        "rec_5f1040e16e2ee4819358503bfa4055d0db72811f08232622d51418ab4685cddd",
+        "rec_78efe4c93714e7a024b3ebe28ceb880165ec80bca9043329cd9b851d646b9dab",
+        "rec_965f8a42c145be8cde71d7c38660ac2ff0c47edc21057cb440ad957eae45d95e",
+        "rec_a597f929bbe8a0c9bbc96c1d5d52940c4d63d48dc2091b565ed28fbed2cfb52e",
+        "rec_b300e72e0375f295b33dcd8280f6a842c709b93333b2f4aff0f034eca66ca06e",
+        "rec_c2844e1796f3ce2c49693e6416a38cf0e6eaaee8cd71e7d3f727d6d348fc5c66",
+        "rec_f0900400f07d79e6ea6977cb53e3a3cf9adcc5fb35fd0691bb51add2bac3b36b",
+        "rec_fc98557d5247ed9b22df3c364926ee51ce8b3a493b2576d6a09831e9698c0f78"
+      ]
+    },
+    "ledger_event_count": 19,
+    "ledger_head_event_id": "evt_28f224a5a3421e19b63aaa409a9985e27aaa2c3bb85389d19f41af84fc406b77",
+    "lineage": {
+      "bootstrap_task_commit": "03317f8218069b9e0b5d073bf87ecf7a0ae8e4a1",
+      "current_task_commit": "03317f8218069b9e0b5d073bf87ecf7a0ae8e4a1",
+      "recorded_task_commit": "03317f8218069b9e0b5d073bf87ecf7a0ae8e4a1",
+      "status": "CURRENT"
+    },
+    "next": {
+      "action": "INVOKE_STAGE",
+      "optional_inputs": [
+        "DIFFICULTY_EVIDENCE"
+      ],
+      "owner": "A8 Documentation Writer",
+      "primary_role_id": "A8_DOCUMENTATION_WRITER",
+      "required_inputs": [
+        "APPROVED_WORK_PACKAGE",
+        "IMPLEMENTATION_EVIDENCE",
+        "VERIFICATION_EVIDENCE"
+      ],
+      "stage_id": "DOCUMENTATION_DRAFT"
+    },
+    "nodes": [
+      {
+        "disposition": "ADVANCE",
+        "input_task_commit": "03317f8218069b9e0b5d073bf87ecf7a0ae8e4a1",
+        "invocation_id": "inv_4d4830721fcb61bebb30f302a6cba273e1ee8e979023ceb1924bd490f46e10fb",
+        "ledger_event_id": "evt_5ff08d148fec0c5491f6501280ce05eb2d15daf05e1d66aa68e23552eabb6b30",
+        "node_id": "RULE_RESOLUTION",
+        "node_kind": "STAGE",
+        "output_task_commit": "03317f8218069b9e0b5d073bf87ecf7a0ae8e4a1",
+        "reason": "validated ADVANCE record reaches WORK_PACKAGE_RESEARCH",
+        "record_id": "rec_f0900400f07d79e6ea6977cb53e3a3cf9adcc5fb35fd0691bb51add2bac3b36b",
+        "status": "CURRENT"
+      },
+      {
+        "disposition": "ADVANCE",
+        "input_task_commit": "03317f8218069b9e0b5d073bf87ecf7a0ae8e4a1",
+        "invocation_id": "inv_0d7f13dfd74ad82310c1514d7c77bf440237ada6588a9a2deb5dcb2473534b1c",
+        "ledger_event_id": "evt_224efa3cef84a8798491480877657bde96717c56a7692935f6fd9eb852326fcb",
+        "node_id": "WORK_PACKAGE_RESEARCH",
+        "node_kind": "STAGE",
+        "output_task_commit": "03317f8218069b9e0b5d073bf87ecf7a0ae8e4a1",
+        "reason": "validated ADVANCE record reaches SYSTEM_ARCHITECTURE",
+        "record_id": "rec_18e8b47cae57745c9b3f3dfdd4210ceeee6b43efa13c72e0e6a5e11dcb40e357",
+        "status": "CURRENT"
+      },
+      {
+        "disposition": "ADVANCE",
+        "input_task_commit": "03317f8218069b9e0b5d073bf87ecf7a0ae8e4a1",
+        "invocation_id": "inv_7e59653264d9dc0c35d0596188ffc9b33b0aae96fb157a3d93b0782c7ab4077b",
+        "ledger_event_id": "evt_1952400fd340ac66c2a7a28e4756758671aaf9619b1f740b592e327cb31a88f2",
+        "node_id": "SYSTEM_ARCHITECTURE",
+        "node_kind": "STAGE",
+        "output_task_commit": "03317f8218069b9e0b5d073bf87ecf7a0ae8e4a1",
+        "reason": "validated ADVANCE record reaches DEFECT_TOPOLOGY",
+        "record_id": "rec_c2844e1796f3ce2c49693e6416a38cf0e6eaaee8cd71e7d3f727d6d348fc5c66",
+        "status": "CURRENT"
+      },
+      {
+        "disposition": "ADVANCE",
+        "input_task_commit": "03317f8218069b9e0b5d073bf87ecf7a0ae8e4a1",
+        "invocation_id": "inv_891e1d8c4501e72edbac6c686ee1d175f3156689d9d2c943bc218a40b210790c",
+        "ledger_event_id": "evt_88583e8b32b12f7cf5a023317b0f3542a590f2088711360b3331bf73b3a00d63",
+        "node_id": "DEFECT_TOPOLOGY",
+        "node_kind": "STAGE",
+        "output_task_commit": "03317f8218069b9e0b5d073bf87ecf7a0ae8e4a1",
+        "reason": "validated ADVANCE record reaches ENVIRONMENT_BUILD",
+        "record_id": "rec_5ec8e29d7e5f22e3ce959607ae8a8017976030a576cafe408e10416aeb3fb10a",
+        "status": "CURRENT"
+      },
+      {
+        "disposition": "ADVANCE",
+        "input_task_commit": "03317f8218069b9e0b5d073bf87ecf7a0ae8e4a1",
+        "invocation_id": "inv_756044ad9976e5083714c048cb34eb59a52f97d4af8d0c76d15ffa7b6939749e",
+        "ledger_event_id": "evt_9f1d39507eb51e34f9edda08f0adcb55a1406c4275286bbdbdb811a74a7def25",
+        "node_id": "ENVIRONMENT_BUILD",
+        "node_kind": "STAGE",
+        "output_task_commit": "03317f8218069b9e0b5d073bf87ecf7a0ae8e4a1",
+        "reason": "validated ADVANCE record reaches REFERENCE_SOLUTION",
+        "record_id": "rec_b300e72e0375f295b33dcd8280f6a842c709b93333b2f4aff0f034eca66ca06e",
+        "status": "CURRENT"
+      },
+      {
+        "disposition": "ADVANCE",
+        "input_task_commit": "03317f8218069b9e0b5d073bf87ecf7a0ae8e4a1",
+        "invocation_id": "inv_d6f5470d9a95d9cdb3ee3cf46e95b4a287cd40fcbfc7671a555cb4f3e638b889",
+        "ledger_event_id": "evt_b4fce234128b3b817add2239209f9b2d76e59873fec08d18e79dc323d6f25637",
+        "node_id": "REFERENCE_SOLUTION",
+        "node_kind": "STAGE",
+        "output_task_commit": "03317f8218069b9e0b5d073bf87ecf7a0ae8e4a1",
+        "reason": "validated ADVANCE record reaches VERIFIER_BUILD",
+        "record_id": "rec_78efe4c93714e7a024b3ebe28ceb880165ec80bca9043329cd9b851d646b9dab",
+        "status": "CURRENT"
+      },
+      {
+        "disposition": "ADVANCE",
+        "input_task_commit": "03317f8218069b9e0b5d073bf87ecf7a0ae8e4a1",
+        "invocation_id": "inv_285b14904b4508ab2a65825b35d267af38681e73e7eff111e02c648dafb3706e",
+        "ledger_event_id": "evt_afbf7b05aecb3561b9704e8f101f10ff7fab22fd00452dae64b64a278a51f1af",
+        "node_id": "VERIFIER_BUILD",
+        "node_kind": "STAGE",
+        "output_task_commit": "03317f8218069b9e0b5d073bf87ecf7a0ae8e4a1",
+        "reason": "validated ADVANCE record reaches HUMAN_WRITING_RESEARCH",
+        "record_id": "rec_a597f929bbe8a0c9bbc96c1d5d52940c4d63d48dc2091b565ed28fbed2cfb52e",
+        "status": "CURRENT"
+      },
+      {
+        "disposition": "ADVANCE",
+        "input_task_commit": "03317f8218069b9e0b5d073bf87ecf7a0ae8e4a1",
+        "invocation_id": "inv_234b32951509630a9ff50f82ada536ac030e1b27d83eca09f757891be70c9067",
+        "ledger_event_id": "evt_84ce1b3724e9911667f991e37fd6a77c08e651d373ab05542668e2b8674953b7",
+        "node_id": "HUMAN_WRITING_RESEARCH",
+        "node_kind": "STAGE",
+        "output_task_commit": "03317f8218069b9e0b5d073bf87ecf7a0ae8e4a1",
+        "reason": "validated ADVANCE record reaches INSTRUCTION_DRAFT",
+        "record_id": "rec_5f1040e16e2ee4819358503bfa4055d0db72811f08232622d51418ab4685cddd",
+        "status": "CURRENT"
+      },
+      {
+        "disposition": "ADVANCE",
+        "input_task_commit": "03317f8218069b9e0b5d073bf87ecf7a0ae8e4a1",
+        "invocation_id": "inv_fc63970179dc7fc2b24a7948786876fba7a63cdbcb2bfc2928defab59b225577",
+        "ledger_event_id": "evt_6895800a8006cf8b7aad059f7e64e199d0c1562316567a48b62c312ba28d0a76",
+        "node_id": "INSTRUCTION_DRAFT",
+        "node_kind": "STAGE",
+        "output_task_commit": "03317f8218069b9e0b5d073bf87ecf7a0ae8e4a1",
+        "reason": "validated ADVANCE record reaches SPEC_ALIGNMENT",
+        "record_id": "rec_965f8a42c145be8cde71d7c38660ac2ff0c47edc21057cb440ad957eae45d95e",
+        "status": "CURRENT"
+      },
+      {
+        "disposition": "ADVANCE",
+        "input_task_commit": "03317f8218069b9e0b5d073bf87ecf7a0ae8e4a1",
+        "invocation_id": "inv_d8d9255851b15408cfab2df09d32f5daf93557eae8c25304e01a0cd109a0531e",
+        "ledger_event_id": "evt_28f224a5a3421e19b63aaa409a9985e27aaa2c3bb85389d19f41af84fc406b77",
+        "node_id": "SPEC_ALIGNMENT",
+        "node_kind": "STAGE",
+        "output_task_commit": "03317f8218069b9e0b5d073bf87ecf7a0ae8e4a1",
+        "reason": "validated ADVANCE record reaches DOCUMENTATION_DRAFT",
+        "record_id": "rec_fc98557d5247ed9b22df3c364926ee51ce8b3a493b2576d6a09831e9698c0f78",
+        "status": "CURRENT"
+      },
+      {
+        "node_id": "DOCUMENTATION_DRAFT",
+        "node_kind": "STAGE",
+        "reason": "no execution-ledger event exists for this stage",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "FORMAT_GATE",
+        "node_kind": "STAGE",
+        "reason": "upstream node DOCUMENTATION_DRAFT is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "ASSEMBLY",
+        "node_kind": "STAGE",
+        "reason": "upstream node FORMAT_GATE is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "COMPLEXITY_GATE",
+        "node_kind": "STAGE",
+        "reason": "upstream node ASSEMBLY is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "RUNTIME_AUTHENTICITY",
+        "node_kind": "STAGE",
+        "reason": "upstream node COMPLEXITY_GATE is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "DETERMINISTIC_VALIDATION",
+        "node_kind": "STAGE",
+        "reason": "upstream node RUNTIME_AUTHENTICITY is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "FROZEN_CANDIDATE",
+        "node_kind": "STATE",
+        "reason": "state cannot be current while its predecessor chain is non-current",
+        "status": "MISSING"
+      },
+      {
+        "input_task_commit": "03317f8218069b9e0b5d073bf87ecf7a0ae8e4a1",
+        "invocation_id": "inv_fe8600116ca3fe9f494f671d0f7f10d286c4553d715d8266d1997bee5af3abf4",
+        "ledger_event_id": "evt_51a8ee1f5770b52aa3dc13af434a1dc58560004d43f33cb24b3f11786a4d97cc",
+        "node_id": "QUALITY_INTERLOCK",
+        "node_kind": "STAGE",
+        "output_task_commit": "03317f8218069b9e0b5d073bf87ecf7a0ae8e4a1",
+        "reason": "upstream node FROZEN_CANDIDATE is not current; later historical evidence cannot advance",
+        "record_id": "rec_a7a2f46337fea62d3bd249232eb336ca2f6a8c52f7f02b3ac5ebe1b4ba63092e",
+        "status": "STALE"
+      },
+      {
+        "node_id": "PRE_LLMAJ",
+        "node_kind": "STAGE",
+        "reason": "upstream node QUALITY_INTERLOCK is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "MODEL_DIAGNOSTIC_GPT",
+        "node_kind": "STAGE",
+        "reason": "upstream node PRE_LLMAJ is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "MODEL_DIAGNOSTIC_CLAUDE",
+        "node_kind": "STAGE",
+        "reason": "upstream node MODEL_DIAGNOSTIC_GPT is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "MODEL_DIAGNOSTIC_AGGREGATE",
+        "node_kind": "STAGE",
+        "reason": "upstream node MODEL_DIAGNOSTIC_CLAUDE is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "HARBOR_LLMAJ",
+        "node_kind": "STAGE",
+        "reason": "upstream node MODEL_DIAGNOSTIC_AGGREGATE is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "OFFICIAL_MODEL_TRIALS",
+        "node_kind": "STAGE",
+        "reason": "upstream node HARBOR_LLMAJ is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "TRIAL_ANALYSIS",
+        "node_kind": "STAGE",
+        "reason": "upstream node OFFICIAL_MODEL_TRIALS is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "DIFFICULTY_ASSESSMENT",
+        "node_kind": "STAGE",
+        "reason": "upstream node TRIAL_ANALYSIS is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "FINAL_REVIEW",
+        "node_kind": "STAGE",
+        "reason": "upstream node DIFFICULTY_ASSESSMENT is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "SUBMISSION_READY",
+        "node_kind": "STAGE",
+        "reason": "upstream node FINAL_REVIEW is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      }
+    ],
+    "schema_version": "1.0",
+    "state_snapshot_id": "state_01d01c00389e7b9d11802a3b8963e8f0f42e75f1eb4e2c42885e9e37b10ca540",
+    "summary": {
+      "BLOCKED": 0,
+      "CURRENT": 10,
+      "MISSING": 17,
+      "STALE": 1
+    },
+    "task_commit": "03317f8218069b9e0b5d073bf87ecf7a0ae8e4a1",
+    "task_id": "stonevault-crash-safe-storage"
+  }
+}
