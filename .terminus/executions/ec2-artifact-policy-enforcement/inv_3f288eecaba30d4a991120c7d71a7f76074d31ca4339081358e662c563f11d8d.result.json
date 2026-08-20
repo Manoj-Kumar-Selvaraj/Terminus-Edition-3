@@ -1,0 +1,333 @@
+{
+  "authority": {
+    "control_plane_commit": "67b805a297ac005ee08e82facc533f53a3233192",
+    "policy_versions": {},
+    "task_commit": "0ad08868799c19ea2e02458bd2fc92ec64eaa288",
+    "task_id": "ec2-artifact-policy-enforcement"
+  },
+  "disposition": "ADVANCE",
+  "evidence_refs": [
+    {
+      "content_hash": "sha256:a1385e62584e08355e26fc6ac5ed82f10a4ab2ceb6081c309eae7f766ef77f03",
+      "kind": "COMMIT",
+      "ref": "commit:0ad08868799c19ea2e02458bd2fc92ec64eaa288"
+    },
+    {
+      "content_hash": "sha256:fca3ef4b283f1a1fe2aa6d960cd36a17b7232eb0b7a130f9cc8d43d948d6ec42",
+      "kind": "COMMIT",
+      "ref": "commit:67b805a297ac005ee08e82facc533f53a3233192"
+    }
+  ],
+  "invocation_id": "inv_3f288eecaba30d4a991120c7d71a7f76074d31ca4339081358e662c563f11d8d",
+  "invocation_snapshot": {
+    "acceptance_predicates": {},
+    "authority": {
+      "control_plane_commit": "67b805a297ac005ee08e82facc533f53a3233192",
+      "policy_versions": {},
+      "task_commit": "0ad08868799c19ea2e02458bd2fc92ec64eaa288",
+      "task_id": "ec2-artifact-policy-enforcement"
+    },
+    "evidence": {
+      "authorized_evidence_classes": [
+        "CONTROL_PLANE_POLICY",
+        "PRIVATE_CREATION_DESIGN",
+        "PUBLIC_REFERENCE",
+        "SOLVER_VISIBLE_TASK"
+      ],
+      "evidence_required": [
+        "reachable starter runtime",
+        "representative deterministic state",
+        "normal engineering docs/contracts",
+        "runtime/operator evidence where applicable"
+      ],
+      "excluded_evidence_classes": [
+        "CI_RUNTIME_EVIDENCE",
+        "CURRENT_REVIEW_PACKET",
+        "DURABLE_SESSION_STATE",
+        "FINAL_PACKAGE_EVIDENCE",
+        "MODEL_TRIAL_EVIDENCE",
+        "PRIOR_REVIEW_RESULTS",
+        "SOLUTION_ORACLE",
+        "VERIFIER_PRIVATE"
+      ],
+      "mandatory_exact_reads": [
+        "TERMINUS_3_AI_INSTRUCTIONS.md",
+        ".terminus/agents/CREATION_PIPELINE.md",
+        ".terminus/agents/PRODUCTION_AUTHENTICITY.md",
+        ".terminus/agents/CREATOR_PROMPTS.md",
+        ".terminus/agents/A2_PHASE_PROMPTS.md"
+      ],
+      "retrieval_mode": "FILTERED_HYBRID"
+    },
+    "ignored_input_count": 0,
+    "inputs": {
+      "optional": {},
+      "required": {
+        "CLEAN_SYSTEM_ARCHITECTURE": {
+          "COMPONENT_GRAPH": [
+            "CLI/request normalization",
+            "artifact identity + policy snapshot",
+            "scanner gateway + durable cache",
+            "exception evaluator",
+            "decision engine",
+            "keyed permit signer/verifier",
+            "append-only audit + atomic projection",
+            "state/recovery + deterministic clock"
+          ],
+          "ENTRYPOINTS": [
+            "artifactguard evaluate",
+            "artifactguard verify-permit",
+            "startup recovery"
+          ],
+          "PRODUCTION_CHARACTERISTICS": [
+            "shared cross-manager policy",
+            "fail-closed evidence",
+            "narrow exceptions",
+            "anti-replay permit boundary",
+            "durable restart-safe decisions",
+            "stable CLI/fixtures"
+          ],
+          "STATE_MODEL": {
+            "audit": "append-only fsynced JSONL",
+            "cache": "digest+policy+DB+TTL",
+            "last_decision": "derived atomic projection",
+            "permit": "exact-scope keyed token with optional replay state",
+            "recovery": "fail closed without deleting valid history"
+          }
+        },
+        "CREATION_RULE_CONTEXT": {
+          "ACTIVE_VALIDATORS": [
+            ".terminus/validate_agent_system.py",
+            ".terminus/validate_stage_contracts.py",
+            ".terminus/validate_task_complexity.py",
+            ".terminus/validate_environment_complexity.py",
+            ".terminus/validate_runtime_authenticity.py",
+            ".terminus/validate_business_module_diversity.py",
+            ".terminus/validate_review_freshness.py",
+            ".terminus/validate_quality_interlock.py",
+            ".github/workflows/terminus-edition-3-ci.yml",
+            ".github/workflows/terminus-creator-complexity.yml",
+            ".github/workflows/terminus-production-authenticity.yml"
+          ],
+          "CONTROL_PLANE_COMMIT": "67b805a297ac005ee08e82facc533f53a3233192",
+          "CREATION_PROFILE": "large_system_strict",
+          "KNOWN_POLICY_CONFLICTS": [],
+          "NETWORK_ENVIRONMENT_CONSTRAINTS": "network_mode public; separate verifier; digest-pinned canonical Go runtime; no privileged Docker/capability/socket shortcuts; tmux and asciinema required in agent image",
+          "RULE_SOURCES": [
+            "TERMINUS_3_AI_INSTRUCTIONS.md",
+            ".terminus/AGENT_SYSTEM.md",
+            ".terminus/agents/CREATION_CONTROLLER.md",
+            ".terminus/agents/CREATION_PIPELINE.md",
+            ".terminus/agents/PRODUCTION_AUTHENTICITY.md",
+            ".terminus/reviewers/REVIEWER_CHECKLIST.md",
+            ".terminus/agents/QUALITY_AGENT_REGISTRY.md",
+            ".terminus/agents/STAGE_CONTRACTS.md",
+            ".terminus/agents/stage_contracts.json"
+          ]
+        },
+        "DEFECT_TOPOLOGY": {
+          "causal_edge_count": 37,
+          "defect_ids": [
+            "D01",
+            "D02",
+            "D03",
+            "D04",
+            "D05",
+            "D06",
+            "D07",
+            "D08",
+            "D09",
+            "D10",
+            "D11",
+            "D12",
+            "D13",
+            "D14",
+            "D15",
+            "D16",
+            "D17",
+            "D18",
+            "D19",
+            "D20",
+            "D21",
+            "D22",
+            "D23",
+            "D24",
+            "D25",
+            "D26"
+          ],
+          "organic_f2p_surface_assessment": "SUFFICIENT",
+          "profile": "large_system_strict",
+          "root_cause_clusters": [
+            "RC1_CANONICAL_IDENTITY",
+            "RC2_EVIDENCE_FRESHNESS",
+            "RC3_EXCEPTION_ORDER_SCOPE",
+            "RC4_PERMIT_AUTH_SCOPE",
+            "RC5_AUDIT_DURABILITY",
+            "RC6_RECOVERY_CONCURRENCY"
+          ]
+        },
+        "SOLVER_VISIBLE_DOC_PLAN": [
+          "retain docs/policy-contract.md and notes/oncall.md",
+          "retain docs/state-format.md, docs/operations.md and docs/architecture.md as normal public technical contracts without private defect IDs"
+        ]
+      }
+    },
+    "invocation_id": "inv_3f288eecaba30d4a991120c7d71a7f76074d31ca4339081358e662c563f11d8d",
+    "learning": {
+      "context_hash": "sha256:bb84a513aa2b6e4374d691759c4a6edf94169f479f4611e9091643b9f279ccfc",
+      "lessons": [],
+      "mode": "GENERALIZED_LESSONS_PLUS_OWNED_REMEDIATIONS",
+      "raw_feedback_exposed": false,
+      "raw_historical_findings_exposed": false,
+      "registry_heads": {
+        "feedback": "GENESIS",
+        "findings": "GENESIS",
+        "lessons": "GENESIS",
+        "patterns": "GENESIS",
+        "remediations": "GENESIS"
+      },
+      "remediations": []
+    },
+    "missing_required_inputs": [],
+    "output_contract": {
+      "allowed_status_values": [
+        "BUILT",
+        "SCENARIO_TOO_SMALL",
+        "ARCHITECTURE_GAP",
+        "BLOCKED"
+      ],
+      "deterministic_validators": [
+        ".terminus/validate_environment_complexity.py <task>",
+        ".terminus/validate_runtime_authenticity.py <task>",
+        ".terminus/validate_business_module_diversity.py <task> when applicable"
+      ],
+      "optional_fields": [
+        "RESOURCE_COUNT",
+        "UNRESOLVED_RISKS"
+      ],
+      "persisted_artifacts": [
+        "<task>/environment/"
+      ],
+      "required_fields": [
+        "COMPONENT_GRAPH",
+        "ENTRYPOINTS",
+        "SOLVER_VISIBLE_DOCS",
+        "INSTRUCTION_DOC_BOUNDARY",
+        "SUBSTANTIVE_LOC",
+        "PRODUCTION_CHARACTERISTICS",
+        "RUNTIME_REACHABILITY_NOTES",
+        "ENVIRONMENT_RULE_CHECKS"
+      ],
+      "semantic_reviewers": [
+        "Complexity Governor"
+      ]
+    },
+    "readiness": "READY",
+    "retrieval": {
+      "query": null,
+      "retrieved_chars": 0,
+      "retrieved_context": [],
+      "status": "NOT_REQUESTED"
+    },
+    "routing": {
+      "failure_routes": {
+        "ARCHITECTURE_GAP": "Creation Controller -> SYSTEM_ARCHITECTURE",
+        "FORMAT_ERROR": "Q7 Task Format Enforcer",
+        "SCENARIO_TOO_SMALL": "Creation Controller -> WORK_PACKAGE_RESEARCH",
+        "TOY_OR_PADDED_SYSTEM": "A2 System Architect / Environment Builder"
+      },
+      "stale_on": [
+        "architecture change",
+        "defect-topology change",
+        "solver-visible documentation plan change",
+        "environment rule change",
+        "solver-visible environment change"
+      ],
+      "success_transition": "REFERENCE_SOLUTION"
+    },
+    "schema_version": "1.0",
+    "stage": {
+      "lifecycle": "creation",
+      "owner": "A2 System Architect / Environment Builder",
+      "role_class": "PRODUCER",
+      "role_id": "A2_ENVIRONMENT_BUILDER",
+      "stage_id": "ENVIRONMENT_BUILD"
+    }
+  },
+  "outputs": {
+    "COMPONENT_GRAPH": [
+      "cmd/artifactguard CLI gateway -> internal/core compatibility bridge -> internal/platform policy runtime",
+      "platform request normalization and artifact identity -> source/digest prerequisites -> scanner/cache -> vulnerability/exception -> permit -> durable state/audit",
+      "package/container/dependency control catalogs select live controls by surface, manager and environment",
+      "state/cache/audit/replay modules expose approved restart/corruption/durability/concurrency repair surfaces"
+    ],
+    "ENTRYPOINTS": [
+      "environment/enforcer/cmd/artifactguard/main.go: artifactguard evaluate",
+      "environment/enforcer/cmd/artifactguard/main.go: artifactguard verify-permit"
+    ],
+    "ENVIRONMENT_RULE_CHECKS": {
+      "business_module_diversity": "N/A/PASS: business_module_diversity not declared",
+      "environment_complexity": "PASS; substantive_loc=4097; profile=large_system_strict; defects=26; root_causes=6; edges=37; cross_cluster_pairs=11; components=11",
+      "go_build": "PASS: go build ./cmd/artifactguard",
+      "go_test": "PASS: go test ./...",
+      "runtime_authenticity": "N/A/PASS: production_authenticity not declared"
+    },
+    "INSTRUCTION_DOC_BOUNDARY": {
+      "private": ".terminus topology/orchestration and solution/verifier evidence stay outside solver-visible documentation",
+      "solver_visible": "environment/enforcer/docs, CLI help/output, config and fixtures describe normal contracts/operations without private defect IDs"
+    },
+    "PRODUCTION_CHARACTERISTICS": [
+      "one Go admission runtime spans OS packages, OCI containers and build dependencies",
+      "stable evaluate/verify-permit CLI and exit behavior",
+      "versioned source/digest policy and reusable scanner cache",
+      "scoped exceptions, permits, audit, replay and restart state",
+      "live manager/surface/environment control catalogs",
+      "deterministic offline fixtures and caller-provided state/secret/time"
+    ],
+    "RUNTIME_REACHABILITY_NOTES": [
+      "evaluate reaches NormalizeRequest, identity/rules, state layout, prerequisites, cache/scanner, exceptions, permit, projection and audit",
+      "verify-permit reaches permit authentication/scope/expiry through public CLI; replay state is an intentional starter repair surface",
+      "catalog_package.go, catalog_container.go and catalog_dependency.go are reached through ApplicableRules"
+    ],
+    "SOLVER_VISIBLE_DOCS": [
+      "environment/enforcer/docs/architecture.md",
+      "environment/enforcer/docs/policy-contract.md",
+      "environment/enforcer/docs/state-format.md",
+      "environment/enforcer/docs/operations.md",
+      "environment/enforcer/notes/oncall.md"
+    ],
+    "SUBSTANTIVE_LOC": 4097,
+    "UNRESOLVED_RISKS": [
+      "Downstream runtime/oracle validation must still exercise the repaired reference solution against all verifier surfaces."
+    ]
+  },
+  "record_id": "rec_cd6aef39a57525e5b138fbc5c67b5218582d14c1f4212c7da4007f12775cee95",
+  "role_id": "A2_ENVIRONMENT_BUILDER",
+  "schema_version": "1.0",
+  "stage_id": "ENVIRONMENT_BUILD",
+  "status": "BUILT",
+  "task_lineage": {
+    "input_task_commit": "0ad08868799c19ea2e02458bd2fc92ec64eaa288",
+    "output_task_commit": "0ad08868799c19ea2e02458bd2fc92ec64eaa288",
+    "task_changed": false
+  },
+  "transition": {
+    "action": "ADVANCE",
+    "requires_state_validation": false,
+    "target": "REFERENCE_SOLUTION",
+    "target_kind": "STAGE"
+  },
+  "validation": {
+    "acceptance_predicates_satisfied": true,
+    "evidence_binding_satisfied": true,
+    "evidence_refs_count": 2,
+    "invocation_identity_valid": true,
+    "invocation_policy_valid": true,
+    "output_keys_valid": true,
+    "required_outputs_satisfied": true,
+    "retrieval_context_authorized": true,
+    "status_legal": true,
+    "task_commit_change_authorized": true,
+    "task_lineage_valid": true
+  }
+}

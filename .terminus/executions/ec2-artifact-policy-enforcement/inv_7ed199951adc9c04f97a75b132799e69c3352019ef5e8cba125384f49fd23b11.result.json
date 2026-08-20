@@ -1,0 +1,337 @@
+{
+  "authority": {
+    "control_plane_commit": "67b805a297ac005ee08e82facc533f53a3233192",
+    "policy_versions": {},
+    "task_commit": "0ad08868799c19ea2e02458bd2fc92ec64eaa288",
+    "task_id": "ec2-artifact-policy-enforcement"
+  },
+  "disposition": "ADVANCE",
+  "evidence_refs": [
+    {
+      "content_hash": "sha256:a1385e62584e08355e26fc6ac5ed82f10a4ab2ceb6081c309eae7f766ef77f03",
+      "kind": "COMMIT",
+      "ref": "commit:0ad08868799c19ea2e02458bd2fc92ec64eaa288"
+    },
+    {
+      "content_hash": "sha256:fca3ef4b283f1a1fe2aa6d960cd36a17b7232eb0b7a130f9cc8d43d948d6ec42",
+      "kind": "COMMIT",
+      "ref": "commit:67b805a297ac005ee08e82facc533f53a3233192"
+    }
+  ],
+  "invocation_id": "inv_7ed199951adc9c04f97a75b132799e69c3352019ef5e8cba125384f49fd23b11",
+  "invocation_snapshot": {
+    "acceptance_predicates": {},
+    "authority": {
+      "control_plane_commit": "67b805a297ac005ee08e82facc533f53a3233192",
+      "policy_versions": {},
+      "task_commit": "0ad08868799c19ea2e02458bd2fc92ec64eaa288",
+      "task_id": "ec2-artifact-policy-enforcement"
+    },
+    "evidence": {
+      "authorized_evidence_classes": [
+        "CONTROL_PLANE_POLICY",
+        "PUBLIC_REFERENCE",
+        "SOLVER_VISIBLE_TASK"
+      ],
+      "evidence_required": [
+        "schema-valid current solver-visible requirement contract",
+        "complete material requirement set",
+        "instruction/docs boundary",
+        "absolute required output paths",
+        "current-state evidence only when claimed"
+      ],
+      "excluded_evidence_classes": [
+        "CI_RUNTIME_EVIDENCE",
+        "CURRENT_REVIEW_PACKET",
+        "DURABLE_SESSION_STATE",
+        "FINAL_PACKAGE_EVIDENCE",
+        "MODEL_TRIAL_EVIDENCE",
+        "PRIOR_REVIEW_RESULTS",
+        "PRIVATE_CREATION_DESIGN",
+        "SOLUTION_ORACLE",
+        "VERIFIER_PRIVATE"
+      ],
+      "mandatory_exact_reads": [
+        "TERMINUS_3_AI_INSTRUCTIONS.md",
+        ".terminus/agents/INSTRUCTION_POLICY.md",
+        ".terminus/agents/CREATOR_PROMPTS.md"
+      ],
+      "retrieval_mode": "FILTERED_HYBRID"
+    },
+    "ignored_input_count": 0,
+    "inputs": {
+      "optional": {
+        "CURRENT_STATE_EVIDENCE": {
+          "scope": "observed acquisition, scanner, exception, permit, and audit symptoms only",
+          "solver_visible_path": "/app/enforcer/notes/oncall.md"
+        }
+      },
+      "required": {
+        "APPROVED_SOLVER_VISIBLE_REQUIREMENT_CONTRACT": {
+          "current_instruction_path": "ec2-artifact-policy-enforcement/instruction.md",
+          "current_state_contract_delta": "verify-permit may accept --state for durable single-use replay enforcement; first exact valid use succeeds and records consumption, later or concurrent use returns 43/PERMIT_REPLAYED; repeated unchanged evaluation is idempotent; audit is authoritative; malformed durable audit corruption fails closed without truncation.",
+          "engineering_objective": "Unify OS-package, container, and build-dependency acquisition behind one Go policy engine.",
+          "preservation_obligations": [
+            "keep artifactguard evaluate and verify-permit interfaces and documented exits",
+            "keep cache and exceptions operational",
+            "do not rewrite supplied policy/scanner/exception fixtures",
+            "preserve existing audit history"
+          ],
+          "required_end_state": "All acquisition surfaces enforce trusted sources, immutable digests, current scanner/cache evidence, exact current vulnerability exceptions, secret-keyed exact-scope permits, restart/concurrency-safe single use, and durable allow/deny audit history.",
+          "requirement_families": [
+            "source/digest policy",
+            "scanner/cache freshness",
+            "vulnerability exceptions",
+            "permit integrity and replay",
+            "durable audit/recovery",
+            "CLI compatibility"
+          ],
+          "solver_visible_contract_paths": [
+            "ec2-artifact-policy-enforcement/environment/enforcer/docs/architecture.md",
+            "ec2-artifact-policy-enforcement/environment/enforcer/docs/policy-contract.md",
+            "ec2-artifact-policy-enforcement/environment/enforcer/docs/state-format.md",
+            "ec2-artifact-policy-enforcement/environment/enforcer/docs/operations.md",
+            "ec2-artifact-policy-enforcement/environment/enforcer/notes/oncall.md"
+          ]
+        },
+        "CREATION_RULE_CONTEXT": {
+          "ACTIVE_VALIDATORS": [
+            ".terminus/validate_agent_system.py",
+            ".terminus/validate_stage_contracts.py",
+            ".terminus/validate_task_complexity.py",
+            ".terminus/validate_environment_complexity.py",
+            ".terminus/validate_runtime_authenticity.py",
+            ".terminus/validate_business_module_diversity.py",
+            ".terminus/validate_review_freshness.py",
+            ".terminus/validate_quality_interlock.py",
+            ".github/workflows/terminus-edition-3-ci.yml",
+            ".github/workflows/terminus-creator-complexity.yml",
+            ".github/workflows/terminus-production-authenticity.yml"
+          ],
+          "CONTROL_PLANE_COMMIT": "67b805a297ac005ee08e82facc533f53a3233192",
+          "CREATION_PROFILE": "large_system_strict",
+          "KNOWN_POLICY_CONFLICTS": [],
+          "NETWORK_ENVIRONMENT_CONSTRAINTS": "network_mode public; separate verifier; digest-pinned canonical Go runtime; no privileged Docker/capability/socket shortcuts; tmux and asciinema required in agent image",
+          "RULE_SOURCES": [
+            "TERMINUS_3_AI_INSTRUCTIONS.md",
+            ".terminus/AGENT_SYSTEM.md",
+            ".terminus/agents/CREATION_CONTROLLER.md",
+            ".terminus/agents/CREATION_PIPELINE.md",
+            ".terminus/agents/PRODUCTION_AUTHENTICITY.md",
+            ".terminus/reviewers/REVIEWER_CHECKLIST.md",
+            ".terminus/agents/QUALITY_AGENT_REGISTRY.md",
+            ".terminus/agents/STAGE_CONTRACTS.md",
+            ".terminus/agents/stage_contracts.json"
+          ]
+        },
+        "TASK_WRITING_PROFILE": {
+          "CALIBRATION_PAIR_ID": "hwpair-bd493f630458de8a9de6",
+          "DATASET_POLICY_VERSION": "1.2",
+          "DOMAIN_PROFILE": "security",
+          "EXTERNAL_DATASET_COVERAGE": "DEGRADED",
+          "REVIEWER_CALIBRATION_ID": "hwcal-reviewer-6d5f51f467994f76398d",
+          "WRITER_CALIBRATION_ID": "hwcal-writer-62345b735ac3ae92bb45",
+          "avoid": [
+            "hidden-test enumeration",
+            "implementation-specific patch prescription",
+            "invented incidents or personal claims",
+            "copied calibration wording"
+          ],
+          "must_preserve": [
+            "three acquisition surfaces",
+            "source and immutable-digest policy",
+            "scanner/cache freshness",
+            "exact exception scope",
+            "keyed exact-scope permit and replay safety",
+            "durable allow/deny audit and recovery",
+            "public CLI compatibility"
+          ],
+          "voice": "direct EC2/platform-security engineering change request"
+        },
+        "VALIDATED_HUMAN_WRITING_CALIBRATION": {
+          "external_dataset_coverage": "DEGRADED",
+          "pair_id": "hwpair-bd493f630458de8a9de6",
+          "pair_path": ".terminus/research/ec2-artifact-policy-enforcement-dataset-calibration.json",
+          "profile_path": ".terminus/research/ec2-artifact-policy-enforcement-task-writing-profile.json",
+          "reviewer_calibration_id": "hwcal-reviewer-6d5f51f467994f76398d",
+          "reviewer_sample_ids": [
+            "HC-022",
+            "HC-016",
+            "HC-005",
+            "HC-027",
+            "HC-025",
+            "HC-028",
+            "CP-003",
+            "CP-001",
+            "CP-005",
+            "AT-005",
+            "AT-004",
+            "HP-003",
+            "HP-001",
+            "HN-002",
+            "HN-001"
+          ],
+          "status": "VALID",
+          "writer_calibration_id": "hwcal-writer-62345b735ac3ae92bb45",
+          "writer_reviewer_overlap": [],
+          "writer_sample_ids": [
+            "HC-001",
+            "HC-030",
+            "HC-024",
+            "HC-010",
+            "HC-021",
+            "HC-008",
+            "CP-002",
+            "CP-006",
+            "AT-001"
+          ]
+        }
+      }
+    },
+    "invocation_id": "inv_7ed199951adc9c04f97a75b132799e69c3352019ef5e8cba125384f49fd23b11",
+    "learning": {
+      "context_hash": "sha256:bb84a513aa2b6e4374d691759c4a6edf94169f479f4611e9091643b9f279ccfc",
+      "lessons": [],
+      "mode": "GENERALIZED_LESSONS_PLUS_OWNED_REMEDIATIONS",
+      "raw_feedback_exposed": false,
+      "raw_historical_findings_exposed": false,
+      "registry_heads": {
+        "feedback": "GENESIS",
+        "findings": "GENESIS",
+        "lessons": "GENESIS",
+        "patterns": "GENESIS",
+        "remediations": "GENESIS"
+      },
+      "remediations": []
+    },
+    "missing_required_inputs": [],
+    "output_contract": {
+      "allowed_status_values": [
+        "READY",
+        "REWRITE_REQUIRED",
+        "BLOCKED"
+      ],
+      "deterministic_validators": [
+        "solver-visible requirement contract schema/hash/provenance checks",
+        "Q7 structural/path checks where mechanically enforceable",
+        ".terminus/human_writing/validate_calibration.py"
+      ],
+      "optional_fields": [
+        "CURRENT_STATE_EVIDENCE",
+        "UNRESOLVED_GAPS"
+      ],
+      "persisted_artifacts": [
+        "<task>/instruction.md"
+      ],
+      "required_fields": [
+        "INSTRUCTION_PATH",
+        "REQUIREMENT_COVERAGE",
+        "DOC_REFERENCES",
+        "INSTRUCTION_SHAPE",
+        "HANDOFF_TEST",
+        "REVERSE_OUTLINE_RISK",
+        "SPEC_FILE_LOOPHOLE"
+      ],
+      "semantic_reviewers": [
+        "Instruction Reviewer",
+        "Q1 Spec Gap Repairer",
+        "Q3 Spec Ambiguity Repairer"
+      ]
+    },
+    "readiness": "READY",
+    "retrieval": {
+      "query": null,
+      "retrieved_chars": 0,
+      "retrieved_context": [],
+      "status": "NOT_REQUESTED"
+    },
+    "routing": {
+      "failure_routes": {
+        "AMBIGUITY": "Q3 Spec Ambiguity Repairer",
+        "FORMAT_OR_PATH_ERROR": "Q7 Task Format Enforcer",
+        "HIDDEN_TEST_OR_REPAIR_LEAKAGE": "A7 Instruction Writer",
+        "MISSING_REQUIREMENT": "Q1 Spec Gap Repairer",
+        "SPEC_FILE_LOOPHOLE": "A7 Instruction Writer / Q1 Spec Gap Repairer",
+        "STALE_OR_INVALID_REQUIREMENT_CONTRACT": "Creation Controller -> requirement owner/Q1 -> regenerate projection"
+      },
+      "stale_on": [
+        "solver-visible requirement contract change",
+        "material requirement change",
+        "referenced solver-visible contract change",
+        "required output/schema change",
+        "instruction-policy change",
+        "human-writing calibration change",
+        "dataset registry change",
+        "domain profile change"
+      ],
+      "success_transition": "SPEC_ALIGNMENT"
+    },
+    "schema_version": "1.0",
+    "stage": {
+      "lifecycle": "creation",
+      "owner": "A7 Instruction Writer",
+      "role_class": "PRODUCER",
+      "role_id": "A7_INSTRUCTION_WRITER",
+      "stage_id": "INSTRUCTION_DRAFT"
+    }
+  },
+  "outputs": {
+    "CURRENT_STATE_EVIDENCE": {
+      "path": "/app/enforcer/notes/oncall.md",
+      "supports": "scanner-unavailable allow, lower-level source bypass, mutable-tag cache reuse, expired exception, permit alteration, and missing deny history after restart"
+    },
+    "DOC_REFERENCES": [
+      "/app/enforcer/notes/oncall.md",
+      "/app/enforcer/docs/policy-contract.md",
+      "/app/enforcer/docs/state-format.md",
+      "/app/enforcer/docs/operations.md"
+    ],
+    "HANDOFF_TEST": "PASS: the instruction states the observed operational failure, end-state invariants and preservation requirements while leaving implementation choices to the solver.",
+    "INSTRUCTION_PATH": "ec2-artifact-policy-enforcement/instruction.md",
+    "INSTRUCTION_SHAPE": {
+      "bullets": 0,
+      "paragraphs": 2,
+      "style": "incident-first EC2 platform-security repair request with solver-visible contract references",
+      "word_count": 211
+    },
+    "REQUIREMENT_COVERAGE": {
+      "CLI compatibility": "Preserves evaluate/verify-permit interfaces and documented exits, cache/exceptions, supplied fixtures, and existing audit history.",
+      "durable audit/recovery": "Every ALLOW and DENY is durably journaled before completion; recovery preserves valid history and latest-decision consistency.",
+      "permit integrity and replay": "Secret-keyed, unexpired, exact request/instance/artifact/policy binding with single-use semantics across restart and concurrent verification.",
+      "scanner/cache freshness": "Explicit current-evidence and fail-closed requirement bound to the artifact and active policy/scanner revisions; detailed cache identity and TTL semantics remain in the referenced policy/state contracts.",
+      "source/digest policy": "Explicit trusted-source and required immutable-digest enforcement across package, container, and dependency acquisition before exception handling.",
+      "vulnerability exceptions": "Explicitly limited to the vulnerability threshold within exact current scope; digest, surface, environment, code, and expiry mechanics remain in the referenced policy contract."
+    },
+    "REVERSE_OUTLINE_RISK": "LOW: requirements are grouped by policy and state responsibilities rather than mirroring verifier cases or private defect identifiers.",
+    "SPEC_FILE_LOOPHOLE": "PASS: instruction.md owns the repair objective and material requirement families; referenced docs carry legitimate detailed policy/state/operations semantics rather than acting as a hidden second prompt."
+  },
+  "record_id": "rec_7d382cdff67bf81711eb4e05b07e349c76e25fe6d6764dd0721efdb2b7299adf",
+  "role_id": "A7_INSTRUCTION_WRITER",
+  "schema_version": "1.0",
+  "stage_id": "INSTRUCTION_DRAFT",
+  "status": "READY",
+  "task_lineage": {
+    "input_task_commit": "0ad08868799c19ea2e02458bd2fc92ec64eaa288",
+    "output_task_commit": "0ad08868799c19ea2e02458bd2fc92ec64eaa288",
+    "task_changed": false
+  },
+  "transition": {
+    "action": "ADVANCE",
+    "requires_state_validation": false,
+    "target": "SPEC_ALIGNMENT",
+    "target_kind": "STAGE"
+  },
+  "validation": {
+    "acceptance_predicates_satisfied": true,
+    "evidence_binding_satisfied": true,
+    "evidence_refs_count": 2,
+    "invocation_identity_valid": true,
+    "invocation_policy_valid": true,
+    "output_keys_valid": true,
+    "required_outputs_satisfied": true,
+    "retrieval_context_authorized": true,
+    "status_legal": true,
+    "task_commit_change_authorized": true,
+    "task_lineage_valid": true
+  }
+}

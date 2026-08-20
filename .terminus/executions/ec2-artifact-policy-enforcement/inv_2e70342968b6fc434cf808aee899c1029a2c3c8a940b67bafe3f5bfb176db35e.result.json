@@ -1,0 +1,320 @@
+{
+  "authority": {
+    "control_plane_commit": "67b805a297ac005ee08e82facc533f53a3233192",
+    "policy_versions": {},
+    "task_commit": "0ad08868799c19ea2e02458bd2fc92ec64eaa288",
+    "task_id": "ec2-artifact-policy-enforcement"
+  },
+  "disposition": "ADVANCE",
+  "evidence_refs": [
+    {
+      "content_hash": "sha256:a1385e62584e08355e26fc6ac5ed82f10a4ab2ceb6081c309eae7f766ef77f03",
+      "kind": "COMMIT",
+      "ref": "commit:0ad08868799c19ea2e02458bd2fc92ec64eaa288"
+    },
+    {
+      "content_hash": "sha256:fca3ef4b283f1a1fe2aa6d960cd36a17b7232eb0b7a130f9cc8d43d948d6ec42",
+      "kind": "COMMIT",
+      "ref": "commit:67b805a297ac005ee08e82facc533f53a3233192"
+    }
+  ],
+  "invocation_id": "inv_2e70342968b6fc434cf808aee899c1029a2c3c8a940b67bafe3f5bfb176db35e",
+  "invocation_snapshot": {
+    "acceptance_predicates": {},
+    "authority": {
+      "control_plane_commit": "67b805a297ac005ee08e82facc533f53a3233192",
+      "policy_versions": {},
+      "task_commit": "0ad08868799c19ea2e02458bd2fc92ec64eaa288",
+      "task_id": "ec2-artifact-policy-enforcement"
+    },
+    "evidence": {
+      "authorized_evidence_classes": [
+        "CONTROL_PLANE_POLICY",
+        "PUBLIC_REFERENCE",
+        "SOLVER_VISIBLE_TASK"
+      ],
+      "evidence_required": [
+        "work-package candidates",
+        "scale-fit assessment",
+        "requirement-family breadth",
+        "originality/reference provenance"
+      ],
+      "excluded_evidence_classes": [
+        "CI_RUNTIME_EVIDENCE",
+        "CURRENT_REVIEW_PACKET",
+        "DURABLE_SESSION_STATE",
+        "FINAL_PACKAGE_EVIDENCE",
+        "MODEL_TRIAL_EVIDENCE",
+        "PRIOR_REVIEW_RESULTS",
+        "PRIVATE_CREATION_DESIGN",
+        "SOLUTION_ORACLE",
+        "VERIFIER_PRIVATE"
+      ],
+      "mandatory_exact_reads": [
+        ".terminus/agents/CREATION_PIPELINE.md",
+        ".terminus/agents/CREATOR_AGENT_REGISTRY.md",
+        ".terminus/agents/PRODUCTION_AUTHENTICITY.md",
+        ".terminus/agents/CREATOR_PROMPTS.md"
+      ],
+      "retrieval_mode": "FILTERED_HYBRID"
+    },
+    "ignored_input_count": 0,
+    "inputs": {
+      "optional": {},
+      "required": {
+        "CREATION_RULE_CONTEXT": {
+          "ACTIVE_VALIDATORS": [
+            ".terminus/validate_agent_system.py",
+            ".terminus/validate_stage_contracts.py",
+            ".terminus/validate_task_complexity.py",
+            ".terminus/validate_environment_complexity.py",
+            ".terminus/validate_runtime_authenticity.py",
+            ".terminus/validate_business_module_diversity.py",
+            ".terminus/validate_review_freshness.py",
+            ".terminus/validate_quality_interlock.py",
+            ".github/workflows/terminus-edition-3-ci.yml",
+            ".github/workflows/terminus-creator-complexity.yml",
+            ".github/workflows/terminus-production-authenticity.yml"
+          ],
+          "CONTROL_PLANE_COMMIT": "67b805a297ac005ee08e82facc533f53a3233192",
+          "CREATION_PROFILE": "large_system_strict",
+          "KNOWN_POLICY_CONFLICTS": [],
+          "NETWORK_ENVIRONMENT_CONSTRAINTS": "network_mode public; separate verifier; digest-pinned canonical Go runtime; no privileged Docker/capability/socket shortcuts; tmux and asciinema required in agent image",
+          "RULE_SOURCES": [
+            "TERMINUS_3_AI_INSTRUCTIONS.md",
+            ".terminus/AGENT_SYSTEM.md",
+            ".terminus/agents/CREATION_CONTROLLER.md",
+            ".terminus/agents/CREATION_PIPELINE.md",
+            ".terminus/agents/PRODUCTION_AUTHENTICITY.md",
+            ".terminus/reviewers/REVIEWER_CHECKLIST.md",
+            ".terminus/agents/QUALITY_AGENT_REGISTRY.md",
+            ".terminus/agents/STAGE_CONTRACTS.md",
+            ".terminus/agents/stage_contracts.json"
+          ]
+        },
+        "REQUESTED_DOMAIN": "production Go EC2 software supply-chain and artifact policy enforcement"
+      }
+    },
+    "invocation_id": "inv_2e70342968b6fc434cf808aee899c1029a2c3c8a940b67bafe3f5bfb176db35e",
+    "learning": {
+      "context_hash": "sha256:bb84a513aa2b6e4374d691759c4a6edf94169f479f4611e9091643b9f279ccfc",
+      "lessons": [],
+      "mode": "GENERALIZED_LESSONS_PLUS_OWNED_REMEDIATIONS",
+      "raw_feedback_exposed": false,
+      "raw_historical_findings_exposed": false,
+      "registry_heads": {
+        "feedback": "GENESIS",
+        "findings": "GENESIS",
+        "lessons": "GENESIS",
+        "patterns": "GENESIS",
+        "remediations": "GENESIS"
+      },
+      "remediations": []
+    },
+    "missing_required_inputs": [],
+    "output_contract": {
+      "allowed_status_values": [
+        "CANDIDATES_READY",
+        "SCENARIO_TOO_SMALL",
+        "BLOCKED"
+      ],
+      "deterministic_validators": [],
+      "optional_fields": [
+        "DUPLICATE_RISK_NOTES"
+      ],
+      "persisted_artifacts": [],
+      "required_fields": [
+        "CANDIDATES",
+        "RECOMMENDATION",
+        "WHY_THIS_ONE"
+      ],
+      "semantic_reviewers": [
+        "Task Architect",
+        "Originality & Authenticity Reviewer"
+      ]
+    },
+    "readiness": "READY",
+    "retrieval": {
+      "query": null,
+      "retrieved_chars": 0,
+      "retrieved_context": [],
+      "status": "NOT_REQUESTED"
+    },
+    "routing": {
+      "failure_routes": {
+        "DUPLICATE_RISK": "A1 Scenario Researcher / Originality & Authenticity Reviewer",
+        "POLICY_CONFLICT": "Creation Controller",
+        "SCENARIO_TOO_SMALL": "A1 Scenario Researcher -> select richer coherent work package"
+      },
+      "stale_on": [
+        "creation-rule change",
+        "selected work-package change",
+        "material requirement-family change"
+      ],
+      "success_transition": "SYSTEM_ARCHITECTURE"
+    },
+    "schema_version": "1.0",
+    "stage": {
+      "lifecycle": "creation",
+      "owner": "A1 Scenario Researcher",
+      "role_class": "PRODUCER",
+      "role_id": "A1_SCENARIO_RESEARCHER",
+      "stage_id": "WORK_PACKAGE_RESEARCH"
+    }
+  },
+  "outputs": {
+    "CANDIDATES": [
+      {
+        "DUPLICATE_RISK": "Moderate generic supply-chain overlap; the multi-surface cache/exception/permit/audit coupling is distinctive.",
+        "EDGE_FAILURE_SURFACE": [
+          "scanner outage/staleness",
+          "tag mutation",
+          "expired exception",
+          "permit replay/tamper",
+          "restart/partial state"
+        ],
+        "ENGINEERING_OBJECTIVE": "Unify OS-package, container, and build-dependency acquisition behind one Go policy engine.",
+        "ID": "WP1_UNIFIED_EC2_ARTIFACT_ADMISSION",
+        "INHERITED_SYSTEM_STATE": "artifactguard evaluate/verify-permit, deterministic fixtures, persistent state, and package/container/dependency surfaces.",
+        "INSTRUCTION_FIT": "Strong; objective fits concise instruction while contracts hold technical semantics.",
+        "PARTIAL_FIX_TRAPS": [
+          "manager-specific bypass",
+          "mutable-tag cache reuse",
+          "overbroad exception",
+          "unbound permit",
+          "non-durable deny audit"
+        ],
+        "PERSONA": "EC2 platform security engineer",
+        "PRESERVATION_OBLIGATIONS": [
+          "keep public CLI",
+          "keep cache/exceptions",
+          "do not rewrite supplied fixtures",
+          "preserve audit history"
+        ],
+        "REASONING_CHAIN": "normalize -> identity/source -> scan/cache -> vulnerability/exception -> permit -> durable audit",
+        "REFERENCES": [
+          "instruction.md@8836f886",
+          "docs/policy-contract.md@8836f886",
+          "notes/oncall.md@8836f886"
+        ],
+        "REQUIRED_END_STATE": "All surfaces enforce trusted sources, immutable digests, current scanner/cache evidence, scoped expiring exceptions, exact-scope keyed permits, and restart-safe allow/deny audit history.",
+        "REQUIREMENT_FAMILIES": [
+          "source/digest policy",
+          "scanner/cache freshness",
+          "vulnerability exceptions",
+          "permit integrity",
+          "durable audit/recovery",
+          "CLI compatibility"
+        ],
+        "SCALE_FIT": "Strong: differentiated adapters, policy, evidence/cache, exception, permit, persistence and recovery modules naturally support strict-scale coupled behavior and broad F2P coverage."
+      },
+      {
+        "DUPLICATE_RISK": "Moderate because AMI pipeline governance is a familiar pattern.",
+        "EDGE_FAILURE_SURFACE": [
+          "copy failure",
+          "KMS mismatch",
+          "stale evidence",
+          "rollback after partial publish"
+        ],
+        "ENGINEERING_OBJECTIVE": "Govern AMI promotion across build, test, security evidence, encryption, sharing and multi-region distribution.",
+        "ID": "WP2_AMI_PROMOTION_GOVERNANCE",
+        "INHERITED_SYSTEM_STATE": "Stateful Go image-promotion controller.",
+        "INSTRUCTION_FIT": "Good.",
+        "PARTIAL_FIX_TRAPS": [
+          "promote on stale scan",
+          "partial-region success",
+          "retry without idempotency"
+        ],
+        "PERSONA": "EC2 image platform engineer",
+        "PRESERVATION_OBLIGATIONS": [
+          "stable promotion interface",
+          "retain approved history"
+        ],
+        "REASONING_CHAIN": "build identity -> evidence -> eligibility -> distribution -> convergence/audit",
+        "REFERENCES": [
+          "requested EC2 supply-chain domain"
+        ],
+        "REQUIRED_END_STATE": "Immutable image identity, current security evidence, idempotent promotion, controlled distribution, rollback and durable history converge safely.",
+        "REQUIREMENT_FAMILIES": [
+          "provenance",
+          "test/security gates",
+          "KMS/share policy",
+          "regional distribution",
+          "state/idempotency",
+          "rollback/audit"
+        ],
+        "SCALE_FIT": "Strong, but less aligned to the existing acquisition-policy task."
+      },
+      {
+        "DUPLICATE_RISK": "Moderate-high because fleet patch controllers are common.",
+        "EDGE_FAILURE_SURFACE": [
+          "package lock",
+          "lost host",
+          "reboot timeout",
+          "exception expiry",
+          "controller restart"
+        ],
+        "ENGINEERING_OBJECTIVE": "Turn software inventory and vulnerability policy into restart-safe staged package remediation across an EC2 fleet.",
+        "ID": "WP3_RUNTIME_REMEDIATION_CONVERGENCE",
+        "INHERITED_SYSTEM_STATE": "Go fleet reconciliation service with persisted per-host state.",
+        "INSTRUCTION_FIT": "Good.",
+        "PARTIAL_FIX_TRAPS": [
+          "success before rescan",
+          "non-durable phase retry",
+          "stale inventory"
+        ],
+        "PERSONA": "EC2 fleet security/SRE engineer",
+        "PRESERVATION_OBLIGATIONS": [
+          "do not touch compliant hosts",
+          "retain maintenance semantics/history"
+        ],
+        "REASONING_CHAIN": "inventory -> policy -> plan -> execute -> reboot/recheck -> converge",
+        "REFERENCES": [
+          "requested EC2 supply-chain domain"
+        ],
+        "REQUIRED_END_STATE": "Inventory, planning, execution, reboot/recheck, exception and recovery states converge deterministically with durable audit.",
+        "REQUIREMENT_FAMILIES": [
+          "inventory freshness",
+          "policy eligibility",
+          "maintenance windows",
+          "package adapters",
+          "reboot/recheck",
+          "resume/recovery"
+        ],
+        "SCALE_FIT": "Strong and stateful, but shifts from acquisition-time enforcement to post-install remediation."
+      }
+    ],
+    "DUPLICATE_RISK_NOTES": "No ORIGINALITY_REFERENCES input was supplied; this is not an independent duplicate-search PASS and remains subject to the registered originality review boundary.",
+    "RECOMMENDATION": "WP1_UNIFIED_EC2_ARTIFACT_ADMISSION",
+    "WHY_THIS_ONE": "WP1 preserves the existing task objective and obtains strict-scale difficulty from coupled security/state invariants across three acquisition surfaces rather than unrelated feature accumulation. The current instruction and policy contract already expose stable interfaces and a concise end state suitable for deeper architecture/topology work."
+  },
+  "record_id": "rec_fc8e5d612de68f6e19942e3730770eec5abc28883541cd6c6517d46fd890abe5",
+  "role_id": "A1_SCENARIO_RESEARCHER",
+  "schema_version": "1.0",
+  "stage_id": "WORK_PACKAGE_RESEARCH",
+  "status": "CANDIDATES_READY",
+  "task_lineage": {
+    "input_task_commit": "0ad08868799c19ea2e02458bd2fc92ec64eaa288",
+    "output_task_commit": "0ad08868799c19ea2e02458bd2fc92ec64eaa288",
+    "task_changed": false
+  },
+  "transition": {
+    "action": "ADVANCE",
+    "requires_state_validation": false,
+    "target": "SYSTEM_ARCHITECTURE",
+    "target_kind": "STAGE"
+  },
+  "validation": {
+    "acceptance_predicates_satisfied": true,
+    "evidence_binding_satisfied": true,
+    "evidence_refs_count": 2,
+    "invocation_identity_valid": true,
+    "invocation_policy_valid": true,
+    "output_keys_valid": true,
+    "required_outputs_satisfied": true,
+    "retrieval_context_authorized": true,
+    "status_legal": true,
+    "task_commit_change_authorized": true,
+    "task_lineage_valid": true
+  }
+}

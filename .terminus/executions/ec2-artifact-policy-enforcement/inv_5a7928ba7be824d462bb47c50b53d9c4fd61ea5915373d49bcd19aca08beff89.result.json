@@ -1,0 +1,607 @@
+{
+  "authority": {
+    "control_plane_commit": "67b805a297ac005ee08e82facc533f53a3233192",
+    "policy_versions": {},
+    "task_commit": "0ad08868799c19ea2e02458bd2fc92ec64eaa288",
+    "task_id": "ec2-artifact-policy-enforcement"
+  },
+  "disposition": "ADVANCE",
+  "evidence_refs": [
+    {
+      "content_hash": "sha256:a1385e62584e08355e26fc6ac5ed82f10a4ab2ceb6081c309eae7f766ef77f03",
+      "kind": "COMMIT",
+      "ref": "commit:0ad08868799c19ea2e02458bd2fc92ec64eaa288"
+    },
+    {
+      "content_hash": "sha256:fca3ef4b283f1a1fe2aa6d960cd36a17b7232eb0b7a130f9cc8d43d948d6ec42",
+      "kind": "COMMIT",
+      "ref": "commit:67b805a297ac005ee08e82facc533f53a3233192"
+    }
+  ],
+  "invocation_id": "inv_5a7928ba7be824d462bb47c50b53d9c4fd61ea5915373d49bcd19aca08beff89",
+  "invocation_snapshot": {
+    "acceptance_predicates": {},
+    "authority": {
+      "control_plane_commit": "67b805a297ac005ee08e82facc533f53a3233192",
+      "policy_versions": {},
+      "task_commit": "0ad08868799c19ea2e02458bd2fc92ec64eaa288",
+      "task_id": "ec2-artifact-policy-enforcement"
+    },
+    "evidence": {
+      "authorized_evidence_classes": [
+        "CONTROL_PLANE_POLICY",
+        "PRIVATE_CREATION_DESIGN",
+        "PUBLIC_REFERENCE",
+        "SOLVER_VISIBLE_TASK"
+      ],
+      "evidence_required": [
+        "root-cause clusters",
+        "causal/interdependency edges",
+        "partial-fix traps",
+        "behavioral surfaces"
+      ],
+      "excluded_evidence_classes": [
+        "CI_RUNTIME_EVIDENCE",
+        "CURRENT_REVIEW_PACKET",
+        "DURABLE_SESSION_STATE",
+        "FINAL_PACKAGE_EVIDENCE",
+        "MODEL_TRIAL_EVIDENCE",
+        "PRIOR_REVIEW_RESULTS",
+        "SOLUTION_ORACLE",
+        "VERIFIER_PRIVATE"
+      ],
+      "mandatory_exact_reads": [
+        ".terminus/agents/CREATION_PIPELINE.md",
+        ".terminus/agents/CREATOR_AGENT_REGISTRY.md",
+        ".terminus/agents/CREATOR_PROMPTS.md"
+      ],
+      "retrieval_mode": "FILTERED_HYBRID"
+    },
+    "ignored_input_count": 0,
+    "inputs": {
+      "optional": {},
+      "required": {
+        "APPROVED_OPERATIONAL_REQUIREMENTS": {
+          "EDGE_FAILURES": [
+            "scanner unavailable/stale",
+            "mutable tag",
+            "manager bypass",
+            "expired/wrong-scope exception",
+            "permit tamper/replay/expiry",
+            "corrupt/partial state",
+            "restart/concurrency"
+          ],
+          "PRESERVATION": [
+            "CLI/exit codes",
+            "valid cache hits",
+            "valid scoped exceptions",
+            "supplied fixtures",
+            "audit history"
+          ],
+          "REQUIRED_END_STATE": [
+            "uniform manager policy",
+            "trusted source and required digest before exceptions",
+            "current scanner/cache evidence",
+            "exact current exceptions",
+            "keyed exact-scope permits",
+            "durable restart-safe allow/deny history"
+          ]
+        },
+        "APPROVED_WORK_PACKAGE": {
+          "ENGINEERING_OBJECTIVE": "Unify OS-package, container, and build-dependency acquisition behind one Go policy engine.",
+          "ID": "WP1_UNIFIED_EC2_ARTIFACT_ADMISSION",
+          "REQUIRED_END_STATE": "All surfaces enforce trusted sources, immutable digests, current scanner/cache evidence, scoped expiring exceptions, exact-scope keyed permits, and restart-safe allow/deny audit history.",
+          "REQUIREMENT_FAMILIES": [
+            "source/digest policy",
+            "scanner/cache freshness",
+            "vulnerability exceptions",
+            "permit integrity",
+            "durable audit/recovery",
+            "CLI compatibility"
+          ]
+        },
+        "CLEAN_SYSTEM_ARCHITECTURE": {
+          "COMPONENT_GRAPH": [
+            "CLI/request normalization",
+            "artifact identity + policy snapshot",
+            "scanner gateway + durable cache",
+            "exception evaluator",
+            "decision engine",
+            "keyed permit signer/verifier",
+            "append-only audit + atomic projection",
+            "state/recovery + deterministic clock"
+          ],
+          "ENTRYPOINTS": [
+            "artifactguard evaluate",
+            "artifactguard verify-permit",
+            "startup recovery"
+          ],
+          "STATE_MODEL": {
+            "audit": "append-only fsynced JSONL",
+            "cache": "digest+policy+DB+TTL",
+            "last_decision": "derived atomic projection",
+            "permit": "exact-scope keyed token plus durable consumption",
+            "recovery": "fail closed without deleting valid history"
+          }
+        },
+        "CREATION_PROFILE": "large_system_strict"
+      }
+    },
+    "invocation_id": "inv_5a7928ba7be824d462bb47c50b53d9c4fd61ea5915373d49bcd19aca08beff89",
+    "learning": {
+      "context_hash": "sha256:bb84a513aa2b6e4374d691759c4a6edf94169f479f4611e9091643b9f279ccfc",
+      "lessons": [],
+      "mode": "GENERALIZED_LESSONS_PLUS_OWNED_REMEDIATIONS",
+      "raw_feedback_exposed": false,
+      "raw_historical_findings_exposed": false,
+      "registry_heads": {
+        "feedback": "GENESIS",
+        "findings": "GENESIS",
+        "lessons": "GENESIS",
+        "patterns": "GENESIS",
+        "remediations": "GENESIS"
+      },
+      "remediations": []
+    },
+    "missing_required_inputs": [],
+    "output_contract": {
+      "allowed_status_values": [
+        "DESIGN_READY",
+        "SCENARIO_TOO_SMALL",
+        "BLOCKED"
+      ],
+      "deterministic_validators": [
+        ".terminus/validate_defect_topology.py <task>"
+      ],
+      "optional_fields": [],
+      "persisted_artifacts": [
+        ".terminus/designs/<task>.json"
+      ],
+      "required_fields": [
+        "profile",
+        "root_cause_clusters",
+        "defects",
+        "causal_edges",
+        "behavioral_surfaces",
+        "organic_f2p_surface_assessment"
+      ],
+      "semantic_reviewers": [
+        "Task Architect",
+        "Complexity Governor"
+      ]
+    },
+    "readiness": "READY",
+    "retrieval": {
+      "query": null,
+      "retrieved_chars": 0,
+      "retrieved_context": [],
+      "status": "NOT_REQUESTED"
+    },
+    "routing": {
+      "failure_routes": {
+        "ARCHITECTURE_GAP": "Creation Controller -> SYSTEM_ARCHITECTURE",
+        "HIDDEN_KNOWLEDGE": "A3 Defect Topology Designer -> expose legitimate solver-visible contract or remove defect",
+        "SCENARIO_TOO_SMALL": "Creation Controller -> WORK_PACKAGE_RESEARCH"
+      },
+      "stale_on": [
+        "work-package change",
+        "architecture change",
+        "material operational requirement change"
+      ],
+      "success_transition": "ENVIRONMENT_BUILD"
+    },
+    "schema_version": "1.0",
+    "stage": {
+      "lifecycle": "creation",
+      "owner": "A3 Defect Topology Designer",
+      "role_class": "PRODUCER",
+      "role_id": "A3_DEFECT_TOPOLOGY_DESIGNER",
+      "stage_id": "DEFECT_TOPOLOGY"
+    }
+  },
+  "outputs": {
+    "behavioral_surfaces": {
+      "cross_component": [
+        "digest identity across cache/exception/permit/audit",
+        "policy snapshot across decision pipeline",
+        "audit before completion",
+        "derived-state rebuild",
+        "permit consumption across restart",
+        "atomic replay verification"
+      ],
+      "edge_boundary": [
+        "TTL expiry",
+        "exception/permit expiry",
+        "tag digest change",
+        "policy/DB revision change",
+        "crash between journal/projection"
+      ],
+      "failure_recovery": [
+        "scanner outage",
+        "journal/projection crash",
+        "malformed journal tail",
+        "partial cache",
+        "concurrent decisions",
+        "cross-restart permit replay",
+        "concurrent single-use permit"
+      ],
+      "negative_rejection": [
+        "missing digest",
+        "untrusted source",
+        "scanner unavailable/stale",
+        "vulnerable without exception",
+        "wrong-scope exception",
+        "permit tamper",
+        "corrupt state",
+        "permit replay",
+        "concurrent duplicate permit verification"
+      ],
+      "normal": [
+        "uniform manager policy",
+        "fresh clean scan",
+        "valid exact exception",
+        "valid cache restart",
+        "durable allow/deny"
+      ]
+    },
+    "causal_edges": [
+      {
+        "from": "D01",
+        "to": "D12"
+      },
+      {
+        "from": "D02",
+        "to": "D12"
+      },
+      {
+        "from": "D03",
+        "to": "D06"
+      },
+      {
+        "from": "D03",
+        "to": "D10"
+      },
+      {
+        "from": "D03",
+        "to": "D15"
+      },
+      {
+        "from": "D04",
+        "to": "D12"
+      },
+      {
+        "from": "D05",
+        "to": "D12"
+      },
+      {
+        "from": "D06",
+        "to": "D23"
+      },
+      {
+        "from": "D07",
+        "to": "D23"
+      },
+      {
+        "from": "D08",
+        "to": "D05"
+      },
+      {
+        "from": "D09",
+        "to": "D12"
+      },
+      {
+        "from": "D10",
+        "to": "D15"
+      },
+      {
+        "from": "D11",
+        "to": "D12"
+      },
+      {
+        "from": "D12",
+        "to": "D17"
+      },
+      {
+        "from": "D13",
+        "to": "D14"
+      },
+      {
+        "from": "D14",
+        "to": "D17"
+      },
+      {
+        "from": "D15",
+        "to": "D17"
+      },
+      {
+        "from": "D16",
+        "to": "D17"
+      },
+      {
+        "from": "D17",
+        "to": "D19"
+      },
+      {
+        "from": "D18",
+        "to": "D24"
+      },
+      {
+        "from": "D19",
+        "to": "D24"
+      },
+      {
+        "from": "D20",
+        "to": "D24"
+      },
+      {
+        "from": "D21",
+        "to": "D05"
+      },
+      {
+        "from": "D21",
+        "to": "D23"
+      },
+      {
+        "from": "D22",
+        "to": "D19"
+      },
+      {
+        "from": "D23",
+        "to": "D13"
+      },
+      {
+        "from": "D23",
+        "to": "D17"
+      },
+      {
+        "from": "D24",
+        "to": "D22"
+      },
+      {
+        "from": "D02",
+        "to": "D07"
+      },
+      {
+        "from": "D11",
+        "to": "D23"
+      },
+      {
+        "from": "D04",
+        "to": "D05"
+      },
+      {
+        "from": "D10",
+        "to": "D23"
+      },
+      {
+        "from": "D13",
+        "to": "D25"
+      },
+      {
+        "from": "D16",
+        "to": "D25"
+      },
+      {
+        "from": "D25",
+        "to": "D26"
+      },
+      {
+        "from": "D22",
+        "to": "D26"
+      },
+      {
+        "from": "D26",
+        "to": "D17"
+      }
+    ],
+    "defects": [
+      {
+        "component": "request_normalizer",
+        "id": "D01",
+        "observable_failure": "dpkg bypasses package source policy",
+        "root_cause": "RC1_CANONICAL_IDENTITY"
+      },
+      {
+        "component": "request_normalizer",
+        "id": "D02",
+        "observable_failure": "Maven bypasses dependency source policy",
+        "root_cause": "RC1_CANONICAL_IDENTITY"
+      },
+      {
+        "component": "artifact_identity",
+        "id": "D03",
+        "observable_failure": "mutable tag reuses cache across digest change",
+        "root_cause": "RC1_CANONICAL_IDENTITY"
+      },
+      {
+        "component": "artifact_identity",
+        "id": "D04",
+        "observable_failure": "missing required digest accepted",
+        "root_cause": "RC1_CANONICAL_IDENTITY"
+      },
+      {
+        "component": "scanner_gateway",
+        "id": "D05",
+        "observable_failure": "scanner outage fails open",
+        "root_cause": "RC2_EVIDENCE_FRESHNESS"
+      },
+      {
+        "component": "scan_cache",
+        "id": "D06",
+        "observable_failure": "cache survives scanner DB revision change",
+        "root_cause": "RC2_EVIDENCE_FRESHNESS"
+      },
+      {
+        "component": "scan_cache",
+        "id": "D07",
+        "observable_failure": "cache survives policy version change",
+        "root_cause": "RC2_EVIDENCE_FRESHNESS"
+      },
+      {
+        "component": "scan_cache",
+        "id": "D08",
+        "observable_failure": "expired cache treated fresh",
+        "root_cause": "RC2_EVIDENCE_FRESHNESS"
+      },
+      {
+        "component": "exception_evaluator",
+        "id": "D09",
+        "observable_failure": "expired exception still permits",
+        "root_cause": "RC3_EXCEPTION_ORDER_SCOPE"
+      },
+      {
+        "component": "exception_evaluator",
+        "id": "D10",
+        "observable_failure": "exception matches wrong digest by name",
+        "root_cause": "RC3_EXCEPTION_ORDER_SCOPE"
+      },
+      {
+        "component": "exception_evaluator",
+        "id": "D11",
+        "observable_failure": "exception crosses acquisition surface",
+        "root_cause": "RC3_EXCEPTION_ORDER_SCOPE"
+      },
+      {
+        "component": "decision_engine",
+        "id": "D12",
+        "observable_failure": "exception overrides prerequisite denial",
+        "root_cause": "RC3_EXCEPTION_ORDER_SCOPE"
+      },
+      {
+        "component": "permit_service",
+        "id": "D13",
+        "observable_failure": "unkeyed permit signature forgeable",
+        "root_cause": "RC4_PERMIT_AUTH_SCOPE"
+      },
+      {
+        "component": "permit_service",
+        "id": "D14",
+        "observable_failure": "permit not instance-bound",
+        "root_cause": "RC4_PERMIT_AUTH_SCOPE"
+      },
+      {
+        "component": "permit_service",
+        "id": "D15",
+        "observable_failure": "permit validates for another digest",
+        "root_cause": "RC4_PERMIT_AUTH_SCOPE"
+      },
+      {
+        "component": "permit_service",
+        "id": "D16",
+        "observable_failure": "expired permit verifies",
+        "root_cause": "RC4_PERMIT_AUTH_SCOPE"
+      },
+      {
+        "component": "audit_store",
+        "id": "D17",
+        "observable_failure": "deny absent from durable audit",
+        "root_cause": "RC5_AUDIT_DURABILITY"
+      },
+      {
+        "component": "audit_store",
+        "id": "D18",
+        "observable_failure": "completion precedes audit fsync",
+        "root_cause": "RC5_AUDIT_DURABILITY"
+      },
+      {
+        "component": "last_decision_store",
+        "id": "D19",
+        "observable_failure": "projection advances before journal",
+        "root_cause": "RC5_AUDIT_DURABILITY"
+      },
+      {
+        "component": "audit_store",
+        "id": "D20",
+        "observable_failure": "recovery truncates valid history",
+        "root_cause": "RC5_AUDIT_DURABILITY"
+      },
+      {
+        "component": "recovery_store",
+        "id": "D21",
+        "observable_failure": "partial cache accepted",
+        "root_cause": "RC6_RECOVERY_CONCURRENCY"
+      },
+      {
+        "component": "recovery_store",
+        "id": "D22",
+        "observable_failure": "concurrent decisions desynchronize journal/projection",
+        "root_cause": "RC6_RECOVERY_CONCURRENCY"
+      },
+      {
+        "component": "decision_engine",
+        "id": "D23",
+        "observable_failure": "one decision mixes policy versions",
+        "root_cause": "RC6_RECOVERY_CONCURRENCY"
+      },
+      {
+        "component": "recovery_store",
+        "id": "D24",
+        "observable_failure": "restart duplicates durable decision",
+        "root_cause": "RC6_RECOVERY_CONCURRENCY"
+      },
+      {
+        "component": "permit_replay_store",
+        "id": "D25",
+        "observable_failure": "consumed permit accepted after restart",
+        "root_cause": "RC4_PERMIT_AUTH_SCOPE"
+      },
+      {
+        "component": "permit_replay_store",
+        "id": "D26",
+        "observable_failure": "concurrent verification accepts same permit twice",
+        "root_cause": "RC6_RECOVERY_CONCURRENCY"
+      }
+    ],
+    "organic_f2p_surface_assessment": "SUFFICIENT",
+    "profile": "large_system_strict",
+    "root_cause_clusters": {
+      "RC1_CANONICAL_IDENTITY": {
+        "invariant": "All managers normalize to one surface/source/digest identity."
+      },
+      "RC2_EVIDENCE_FRESHNESS": {
+        "invariant": "Scan/cache evidence binds digest, policy, DB revision and TTL."
+      },
+      "RC3_EXCEPTION_ORDER_SCOPE": {
+        "invariant": "Exceptions are exact-scope, current, and cannot bypass prerequisite gates."
+      },
+      "RC4_PERMIT_AUTH_SCOPE": {
+        "invariant": "Permits are keyed, expiring, exact-scope and consumption-aware."
+      },
+      "RC5_AUDIT_DURABILITY": {
+        "invariant": "Every decision is journaled and fsynced before completion."
+      },
+      "RC6_RECOVERY_CONCURRENCY": {
+        "invariant": "Recovery/concurrency never exposes partial or inconsistent decision state."
+      }
+    }
+  },
+  "record_id": "rec_6e45ae71e05f3dc131a0b353d0a415fd2873c8fa8089db161098183932ca0eac",
+  "role_id": "A3_DEFECT_TOPOLOGY_DESIGNER",
+  "schema_version": "1.0",
+  "stage_id": "DEFECT_TOPOLOGY",
+  "status": "DESIGN_READY",
+  "task_lineage": {
+    "input_task_commit": "0ad08868799c19ea2e02458bd2fc92ec64eaa288",
+    "output_task_commit": "0ad08868799c19ea2e02458bd2fc92ec64eaa288",
+    "task_changed": false
+  },
+  "transition": {
+    "action": "ADVANCE",
+    "requires_state_validation": false,
+    "target": "ENVIRONMENT_BUILD",
+    "target_kind": "STAGE"
+  },
+  "validation": {
+    "acceptance_predicates_satisfied": true,
+    "evidence_binding_satisfied": true,
+    "evidence_refs_count": 2,
+    "invocation_identity_valid": true,
+    "invocation_policy_valid": true,
+    "output_keys_valid": true,
+    "required_outputs_satisfied": true,
+    "retrieval_context_authorized": true,
+    "status_legal": true,
+    "task_commit_change_authorized": true,
+    "task_lineage_valid": true
+  }
+}
