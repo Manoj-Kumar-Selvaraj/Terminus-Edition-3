@@ -1,0 +1,69 @@
+name: Temporary deterministic orchestration policy patch
+
+on:
+  push:
+    branches:
+      - control-plane/deterministic-controller-reconciliation
+    paths:
+      - .terminus/patches/deterministic-policy-reconciliation.trigger
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Patch portable orchestrator and regression markers
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+
+          portable = Path('.terminus/agents/CI_ORCHESTRATOR.md')
+          text = portable.read_text(encoding='utf-8')
+
+          old = '''2. **Hosted controller stage.** If `controller_cli continue` returns `HOSTED_CONTROLLER`, dispatch the exact controller request/workflow and poll its durable run locator. If a controller stage returns `ORCHESTRATOR_DIRECT`, execute the bounded controller decision in the persistent task chat.\n3. **Inline specialist.**'''
+          new = '''2. **Hosted controller stage.** If `controller_cli continue` returns `HOSTED_CONTROLLER`, dispatch the exact controller request/workflow and poll its durable run locator. If a controller stage returns `ORCHESTRATOR_DIRECT`, execute the bounded controller decision in the persistent task chat.\n3. **Hosted deterministic validation.** If `controller_cli continue` returns `HOSTED_DETERMINISTIC_VALIDATION`, create the exact returned `terminus-deterministic-request/...` branch from the returned `expected_repository_head` and write exactly the returned `.terminus/deterministic-requests/*.json` request once. Read `.terminus/deterministic-run-locators/<task>/<request-commit>.json` to discover the exact run/job and poll it through terminal state. The hosted workflow reconstructs the exact StageInvocation, executes Oracle/NOP, compiles per-test F2P/P2P evidence from CTRF, and records the canonical StageResult. The Orchestrator must never synthesize `DETERMINISTIC_VALIDATION=PASS` from workflow color, logs, or prose, and must not redispatch while the exact request run is nonterminal.\n4. **Inline specialist.**'''
+          if text.count(old) != 1:
+              raise SystemExit('portable execution-routing anchor drift')
+          text = text.replace(old, new, 1)
+          text = text.replace('4. **External gate.**', '5. **External gate.**', 1)
+          text = text.replace('5. **Fresh isolated role.**', '6. **Fresh isolated role.**', 1)
+
+          old = '''When a hosted controller stage is dispatched through a `terminus-controller-request/...` branch, preserve the exact request commit returned by the Git write. The controller run-index workflow persists operational polling metadata on that request branch at `.terminus/controller-run-locators/<task>/<request-commit>.json`. Read that locator to obtain the exact workflow run ID, run number, attempt, numeric job ID when available, status and conclusion. The locator is not lifecycle PASS evidence; it exists so the Orchestrator can poll one exact execution without guessing or redispatching.\n\nA `NEXT_AGENT_PROMPT` is required only for `FRESH_ROLE_CHAT` and `MANUAL_INDEPENDENT_QUALITY`. For `INLINE_SPECIALIST`, `ORCHESTRATOR_DIRECT`, `HOSTED_CONTROLLER`, `AUTOMATED_QUALITY`, `AUTOMATED_NO_MODEL_SKIP`, external dispatch/await, or terminal state, return `NEXT_AGENT_PROMPT: none`.'''
+          new = '''When a hosted controller stage is dispatched through a `terminus-controller-request/...` branch, preserve the exact request commit returned by the Git write. The controller run-index workflow persists operational polling metadata on that request branch at `.terminus/controller-run-locators/<task>/<request-commit>.json`. Read that locator to obtain the exact workflow run ID, run number, attempt, numeric job ID when available, status and conclusion. The locator is not lifecycle PASS evidence; it exists so the Orchestrator can poll one exact execution without guessing or redispatching.\n\nWhen hosted deterministic validation is dispatched through a `terminus-deterministic-request/...` branch, preserve the exact request commit returned by the Git write and use `.terminus/deterministic-run-locators/<task>/<request-commit>.json` as the sole run-discovery locator. A missing direct `workflow_dispatch` API or a missing push-run list API is not a blocker when repository branch/file writes and locator reads are available. The deterministic workflow, not the chat, owns empirical result compilation and canonical `controller_cli record`; a locator or green workflow alone is never lifecycle PASS evidence.\n\nA `NEXT_AGENT_PROMPT` is required only for `FRESH_ROLE_CHAT` and `MANUAL_INDEPENDENT_QUALITY`. For `INLINE_SPECIALIST`, `ORCHESTRATOR_DIRECT`, `HOSTED_CONTROLLER`, `HOSTED_DETERMINISTIC_VALIDATION`, `AUTOMATED_QUALITY`, `AUTOMATED_NO_MODEL_SKIP`, external dispatch/await, or terminal state, return `NEXT_AGENT_PROMPT: none`.'''
+          if text.count(old) != 1:
+              raise SystemExit('portable locator anchor drift')
+          text = text.replace(old, new, 1)
+          portable.write_text(text, encoding='utf-8')
+
+          test = Path('.terminus/tests/test_ci_orchestrator_agent.py')
+          t = test.read_text(encoding='utf-8')
+          old = '''CONTROLLER_RUN_LOCATOR = ROOT / ".github" / "workflows" / "terminus-controller-run-locator.yml"\nCONTROLLER_CLI = T / "execution" / "controller_cli.py"'''
+          new = '''CONTROLLER_RUN_LOCATOR = ROOT / ".github" / "workflows" / "terminus-controller-run-locator.yml"\nDETERMINISTIC_WORKFLOW = ROOT / ".github" / "workflows" / "terminus-deterministic-request.yml"\nDETERMINISTIC_RUN_LOCATOR = ROOT / ".github" / "workflows" / "terminus-deterministic-run-locator.yml"\nCONTROLLER_CLI = T / "execution" / "controller_cli.py"'''
+          if t.count(old) != 1:
+              raise SystemExit('test constant anchor drift')
+          t = t.replace(old, new, 1)
+          t = t.replace('''        "HOSTED_CONTROLLER",\n        "INLINE_SPECIALIST",''', '''        "HOSTED_CONTROLLER",\n        "HOSTED_DETERMINISTIC_VALIDATION",\n        "INLINE_SPECIALIST",''', 1)
+          t = t.replace('''        "CONTROLLER_STAGE_WORKFLOW",\n        "AUTOMATED_CONTROLLER_STAGES",''', '''        "CONTROLLER_STAGE_WORKFLOW",\n        "AUTOMATED_CONTROLLER_STAGES",\n        "build_deterministic_request",\n        "deterministic_dispatch_envelope",\n        'stage_id == "DETERMINISTIC_VALIDATION"',\n        '"execution_mode": "HOSTED_DETERMINISTIC_VALIDATION"',''', 1)
+
+          append = '''\n\ndef test_orchestrator_owns_hosted_deterministic_dispatch_poll_and_record() -> None:\n    portable = PORTABLE.read_text(encoding="utf-8")\n    workflow = DETERMINISTIC_WORKFLOW.read_text(encoding="utf-8")\n    locator = DETERMINISTIC_RUN_LOCATOR.read_text(encoding="utf-8")\n    for marker in (\n        "HOSTED_DETERMINISTIC_VALIDATION",\n        "terminus-deterministic-request/",\n        ".terminus/deterministic-run-locators/<task>/<request-commit>.json",\n        "must never synthesize `DETERMINISTIC_VALIDATION=PASS`",\n        "missing direct `workflow_dispatch` API",\n        "workflow, not the chat",\n    ):\n        assert marker in portable\n    for marker in (\n        "Reconstruct exact controller invocation",\n        "Compile empirical StageResult",\n        "deterministic_evidence.py",\n        "controller_cli.py record",\n        "Record deterministic result on canonical main",\n    ):\n        assert marker in workflow\n    for marker in (\n        'workflows: ["Terminus Deterministic Request"]',\n        ".terminus/deterministic-run-locators/$task/$REQUEST_SHA.json",\n        "run_id",\n        "job_id",\n    ):\n        assert marker in locator\n'''
+          if 'test_orchestrator_owns_hosted_deterministic_dispatch_poll_and_record' in t:
+              raise SystemExit('deterministic orchestrator test already exists')
+          t += append
+          test.write_text(t, encoding='utf-8')
+          PY
+
+          rm -f .github/workflows/tmp-deterministic-policy-patch.yml
+          rm -f .terminus/patches/deterministic-policy-reconciliation.trigger
+          git config user.name 'terminus-control-plane-patch[bot]'
+          git config user.email 'terminus-control-plane-patch[bot]@users.noreply.github.com'
+          git add -- .terminus/agents/CI_ORCHESTRATOR.md .terminus/tests/test_ci_orchestrator_agent.py .github/workflows/tmp-deterministic-policy-patch.yml .terminus/patches/deterministic-policy-reconciliation.trigger
+          git diff --cached --check
+          git commit -m 'Bind orchestrator to hosted deterministic validation'
+          git push origin HEAD:control-plane/deterministic-controller-reconciliation
