@@ -1,0 +1,243 @@
+{
+  "execution_mode": "INLINE_SPECIALIST",
+  "executor_handoff": null,
+  "invocation": {
+    "acceptance_predicates": {},
+    "authority": {
+      "control_plane_commit": "67b805a297ac005ee08e82facc533f53a3233192",
+      "policy_versions": {},
+      "task_commit": "4b4a8d30429b8455ab80824c3d1e7d03378b5934",
+      "task_id": "edge-router-runtime"
+    },
+    "evidence": {
+      "authorized_evidence_classes": [
+        "CONTROL_PLANE_POLICY",
+        "PRIVATE_CREATION_DESIGN",
+        "SOLVER_VISIBLE_TASK"
+      ],
+      "evidence_required": [
+        "deterministic general repair/completion",
+        "preservation rationale",
+        "no hidden-test special casing"
+      ],
+      "excluded_evidence_classes": [
+        "CI_RUNTIME_EVIDENCE",
+        "CURRENT_REVIEW_PACKET",
+        "DURABLE_SESSION_STATE",
+        "FINAL_PACKAGE_EVIDENCE",
+        "MODEL_TRIAL_EVIDENCE",
+        "PRIOR_REVIEW_RESULTS",
+        "PUBLIC_REFERENCE",
+        "SOLUTION_ORACLE",
+        "VERIFIER_PRIVATE"
+      ],
+      "mandatory_exact_reads": [
+        ".terminus/agents/CREATION_PIPELINE.md",
+        ".terminus/agents/CREATOR_PROMPTS.md"
+      ],
+      "retrieval_mode": "EXACT_ONLY"
+    },
+    "ignored_input_count": 0,
+    "inputs": {
+      "optional": {
+        "SOLVER_VISIBLE_CONTRACTS": [
+          "edge-router-runtime/environment/docs/architecture.md",
+          "edge-router-runtime/environment/docs/configuration.md",
+          "edge-router-runtime/environment/docs/runtime-state.md",
+          "edge-router-runtime/environment/docs/operator-guide.md",
+          "edge-router-runtime/environment/docs/observability.md"
+        ]
+      },
+      "required": {
+        "APPROVED_OPERATIONAL_REQUIREMENTS": {
+          "EDGE_FAILURES": [
+            "duplicate/out-of-order generations",
+            "burst discovery events",
+            "invalid update mixed with valid membership change",
+            "backend disappearance during active request",
+            "stale affinity to ineligible backend",
+            "all backends unhealthy",
+            "restart around publication/checkpoint",
+            "duplicate endpoint identities",
+            "slow drains",
+            "rapid remove/re-add",
+            "retired metric cleanup",
+            "corrupt/incomplete checkpoint",
+            "concurrent readers racing publication"
+          ],
+          "PRESERVATION": [
+            "in-flight and long-lived requests remain valid across unrelated updates",
+            "unchanged route semantics remain stable across generations",
+            "healthy unchanged endpoints preserve meaningful runtime state",
+            "rejected updates cannot damage the serving generation",
+            "readers never observe partially applied configuration",
+            "runtime and observability state remain bounded after repeated updates"
+          ],
+          "REQUIRED_END_STATE": [
+            "Validate and compile candidate configuration into immutable runtime snapshots before publication.",
+            "Fence accepted generations so stale or out-of-order updates cannot overwrite newer state.",
+            "Publish route and upstream state atomically and retain last-known-good serving state when candidates are rejected.",
+            "Reconcile endpoint additions, removals, and unchanged endpoints by stable canonical identity and membership incarnation.",
+            "Preserve compatible selection, affinity, health, transport, and lifecycle continuity for unchanged endpoints.",
+            "Exclude removed or ineligible endpoints from fresh selection/retry while allowing bounded drain of existing traffic.",
+            "Checkpoint only complete accepted state and recover a complete last-known-good generation after restart.",
+            "Retire unreachable snapshots, endpoint runtimes, transports, affinity state, and telemetry without unbounded growth."
+          ]
+        },
+        "STARTER_ENVIRONMENT": {
+          "SOURCE_RECORD_ID": "rec_38a4687fdcea4c92d50111eebec96d651970c711de5d38790576f24059b2fbd9"
+        },
+        "SYSTEM_ARCHITECTURE": {
+          "SOURCE_RECORD_ID": "rec_6103bae3df8a1646d0b156108b0cb5ad2b7f7ff2c1eaa95236429067f93f2863"
+        }
+      }
+    },
+    "invocation_id": "inv_fd7cc7b4cb306df81feb8aff3a71f64227f2a5de451f2a535a0144c26b111a0f",
+    "learning": {
+      "context_hash": "sha256:bb84a513aa2b6e4374d691759c4a6edf94169f479f4611e9091643b9f279ccfc",
+      "lessons": [],
+      "mode": "GENERALIZED_LESSONS_PLUS_OWNED_REMEDIATIONS",
+      "raw_feedback_exposed": false,
+      "raw_historical_findings_exposed": false,
+      "registry_heads": {
+        "feedback": "GENESIS",
+        "findings": "GENESIS",
+        "lessons": "GENESIS",
+        "patterns": "GENESIS",
+        "remediations": "GENESIS"
+      },
+      "remediations": []
+    },
+    "missing_required_inputs": [],
+    "output_contract": {
+      "allowed_status_values": [
+        "IMPLEMENTED",
+        "CONTRACT_GAP",
+        "BLOCKED"
+      ],
+      "deterministic_validators": [],
+      "optional_fields": [],
+      "persisted_artifacts": [
+        "<task>/solution/solve.sh",
+        "<task>/solution/"
+      ],
+      "required_fields": [
+        "RESTORED_INVARIANTS",
+        "FILES_CHANGED",
+        "RESTART_IDEMPOTENCY_BEHAVIOR",
+        "DETERMINISM_NOTES",
+        "PRESERVED_BEHAVIOR",
+        "RISKS_FOR_INDEPENDENT_VERIFIER"
+      ],
+      "semantic_reviewers": [
+        "Verifier Engineer"
+      ]
+    },
+    "readiness": "READY",
+    "retrieval": {
+      "query": null,
+      "retrieved_chars": 0,
+      "retrieved_context": [],
+      "status": "NOT_REQUESTED"
+    },
+    "routing": {
+      "failure_routes": {
+        "CONTRACT_GAP": "Creation Controller -> appropriate contract owner",
+        "RUNTIME_FAILURE": "Q5 Oracle & Runtime Repair Specialist"
+      },
+      "stale_on": [
+        "operational requirement change",
+        "environment implementation change",
+        "solver-visible contract change"
+      ],
+      "success_transition": "VERIFIER_BUILD"
+    },
+    "schema_version": "1.0",
+    "stage": {
+      "lifecycle": "creation",
+      "owner": "A4 Reference Solution Author",
+      "role_class": "PRODUCER",
+      "role_id": "A4_REFERENCE_SOLUTION_AUTHOR",
+      "stage_id": "REFERENCE_SOLUTION"
+    }
+  },
+  "next": {
+    "action": "INVOKE_STAGE",
+    "optional_inputs": [
+      "SOLVER_VISIBLE_CONTRACTS"
+    ],
+    "owner": "A4 Reference Solution Author",
+    "primary_role_id": "A4_REFERENCE_SOLUTION_AUTHOR",
+    "required_inputs": [
+      "APPROVED_OPERATIONAL_REQUIREMENTS",
+      "STARTER_ENVIRONMENT",
+      "SYSTEM_ARCHITECTURE"
+    ],
+    "stage_id": "REFERENCE_SOLUTION"
+  },
+  "quality_mode_policy": {
+    "inline_creation_governor_role_ids": [
+      "A10_COMPLEXITY_GOVERNOR"
+    ],
+    "inline_quality_role_ids": [
+      "Q1_SPEC_GAP_REPAIRER",
+      "Q2_VERIFIER_COVERAGE_REPAIRER",
+      "Q3_SPEC_AMBIGUITY_REPAIRER",
+      "Q5_ORACLE_RUNTIME_REPAIR_SPECIALIST",
+      "Q7_TASK_FORMAT_ENFORCER"
+    ],
+    "inline_stage_sequences": {
+      "SPEC_ALIGNMENT": [
+        {
+          "result_field": "Q1_STATUS",
+          "role_id": "Q1_SPEC_GAP_REPAIRER",
+          "satisfied_values": [
+            "NO_GAP",
+            "PASS"
+          ]
+        },
+        {
+          "result_field": "Q2_STATUS",
+          "role_id": "Q2_VERIFIER_COVERAGE_REPAIRER",
+          "satisfied_values": [
+            "COVERED",
+            "PASS"
+          ]
+        },
+        {
+          "result_field": "Q3_STATUS",
+          "role_id": "Q3_SPEC_AMBIGUITY_REPAIRER",
+          "satisfied_values": [
+            "CLEAR",
+            "PASS"
+          ]
+        }
+      ]
+    },
+    "mandatory_quality_role_keys": [
+      "spec-test-contract",
+      "production-logic"
+    ],
+    "mandatory_same_chat_checkpoints": {
+      "Q1": "SPEC_ALIGNMENT.Q1_STATUS",
+      "Q2": "SPEC_ALIGNMENT.Q2_STATUS",
+      "Q3": "SPEC_ALIGNMENT.Q3_STATUS",
+      "Q5": "DETERMINISTIC_VALIDATION runtime/oracle checkpoint; invoke Q5 repair only on registered runtime/oracle failure",
+      "Q7": "FORMAT_GATE"
+    },
+    "optional_q8_role_keys": [
+      "difficulty-sim-gpt",
+      "difficulty-sim-claude"
+    ],
+    "policy_document": ".terminus/agents/QUALITY_EXECUTION_MODE.md",
+    "policy_version": "1.0",
+    "producer_role_classes": [
+      "FIXER",
+      "PRODUCER"
+    ],
+    "q4_q6_mode": "AUTOMATED",
+    "q8_mode": "OFF",
+    "source": ".terminus/agents/quality_execution_mode.json"
+  },
+  "state_snapshot_id": "state_866860b6f3c05cea4b60674194f839d7a71945c6c1e5aed6b691e98ce1b3eca5"
+}

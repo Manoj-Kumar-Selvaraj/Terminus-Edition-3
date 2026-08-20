@@ -1,0 +1,504 @@
+{
+  "ledger_event": {
+    "control_plane_commit": "67b805a297ac005ee08e82facc533f53a3233192",
+    "event_id": "evt_08d04577b61a5b994267a62de634b0788a585d42dc2431329092f1bae7c94fa0",
+    "input_task_commit": "4b4a8d30429b8455ab80824c3d1e7d03378b5934",
+    "invocation_id": "inv_fd7cc7b4cb306df81feb8aff3a71f64227f2a5de451f2a535a0144c26b111a0f",
+    "output_task_commit": "4b4a8d30429b8455ab80824c3d1e7d03378b5934",
+    "previous_event_id": "evt_b8b17477a3fbb2386514db6abbeeffe25c59f51fd81d80fe322a80e4924facd1",
+    "record_hash": "sha256:e985be2aa2c561edc2664fd5a705d1c7ef6c26d28b00fd49c0e752899617d756",
+    "record_id": "rec_85499122c2f497600b84fc61f62ff10d9a57cf17f7bcc32c9c9d20a506333b51",
+    "record_path": ".terminus/executions/edge-router-runtime/inv_fd7cc7b4cb306df81feb8aff3a71f64227f2a5de451f2a535a0144c26b111a0f.result.json",
+    "schema_version": "1.0",
+    "sequence": 33,
+    "stage_id": "REFERENCE_SOLUTION",
+    "task_id": "edge-router-runtime"
+  },
+  "record": {
+    "authority": {
+      "control_plane_commit": "67b805a297ac005ee08e82facc533f53a3233192",
+      "policy_versions": {},
+      "task_commit": "4b4a8d30429b8455ab80824c3d1e7d03378b5934",
+      "task_id": "edge-router-runtime"
+    },
+    "disposition": "ADVANCE",
+    "evidence_refs": [],
+    "invocation_id": "inv_fd7cc7b4cb306df81feb8aff3a71f64227f2a5de451f2a535a0144c26b111a0f",
+    "invocation_snapshot": {
+      "acceptance_predicates": {},
+      "authority": {
+        "control_plane_commit": "67b805a297ac005ee08e82facc533f53a3233192",
+        "policy_versions": {},
+        "task_commit": "4b4a8d30429b8455ab80824c3d1e7d03378b5934",
+        "task_id": "edge-router-runtime"
+      },
+      "evidence": {
+        "authorized_evidence_classes": [
+          "CONTROL_PLANE_POLICY",
+          "PRIVATE_CREATION_DESIGN",
+          "SOLVER_VISIBLE_TASK"
+        ],
+        "evidence_required": [
+          "deterministic general repair/completion",
+          "preservation rationale",
+          "no hidden-test special casing"
+        ],
+        "excluded_evidence_classes": [
+          "CI_RUNTIME_EVIDENCE",
+          "CURRENT_REVIEW_PACKET",
+          "DURABLE_SESSION_STATE",
+          "FINAL_PACKAGE_EVIDENCE",
+          "MODEL_TRIAL_EVIDENCE",
+          "PRIOR_REVIEW_RESULTS",
+          "PUBLIC_REFERENCE",
+          "SOLUTION_ORACLE",
+          "VERIFIER_PRIVATE"
+        ],
+        "mandatory_exact_reads": [
+          ".terminus/agents/CREATION_PIPELINE.md",
+          ".terminus/agents/CREATOR_PROMPTS.md"
+        ],
+        "retrieval_mode": "EXACT_ONLY"
+      },
+      "ignored_input_count": 0,
+      "inputs": {
+        "optional": {
+          "SOLVER_VISIBLE_CONTRACTS": [
+            "edge-router-runtime/environment/docs/architecture.md",
+            "edge-router-runtime/environment/docs/configuration.md",
+            "edge-router-runtime/environment/docs/runtime-state.md",
+            "edge-router-runtime/environment/docs/operator-guide.md",
+            "edge-router-runtime/environment/docs/observability.md"
+          ]
+        },
+        "required": {
+          "APPROVED_OPERATIONAL_REQUIREMENTS": {
+            "EDGE_FAILURES": [
+              "duplicate/out-of-order generations",
+              "burst discovery events",
+              "invalid update mixed with valid membership change",
+              "backend disappearance during active request",
+              "stale affinity to ineligible backend",
+              "all backends unhealthy",
+              "restart around publication/checkpoint",
+              "duplicate endpoint identities",
+              "slow drains",
+              "rapid remove/re-add",
+              "retired metric cleanup",
+              "corrupt/incomplete checkpoint",
+              "concurrent readers racing publication"
+            ],
+            "PRESERVATION": [
+              "in-flight and long-lived requests remain valid across unrelated updates",
+              "unchanged route semantics remain stable across generations",
+              "healthy unchanged endpoints preserve meaningful runtime state",
+              "rejected updates cannot damage the serving generation",
+              "readers never observe partially applied configuration",
+              "runtime and observability state remain bounded after repeated updates"
+            ],
+            "REQUIRED_END_STATE": [
+              "Validate and compile candidate configuration into immutable runtime snapshots before publication.",
+              "Fence accepted generations so stale or out-of-order updates cannot overwrite newer state.",
+              "Publish route and upstream state atomically and retain last-known-good serving state when candidates are rejected.",
+              "Reconcile endpoint additions, removals, and unchanged endpoints by stable canonical identity and membership incarnation.",
+              "Preserve compatible selection, affinity, health, transport, and lifecycle continuity for unchanged endpoints.",
+              "Exclude removed or ineligible endpoints from fresh selection/retry while allowing bounded drain of existing traffic.",
+              "Checkpoint only complete accepted state and recover a complete last-known-good generation after restart.",
+              "Retire unreachable snapshots, endpoint runtimes, transports, affinity state, and telemetry without unbounded growth."
+            ]
+          },
+          "STARTER_ENVIRONMENT": {
+            "SOURCE_RECORD_ID": "rec_38a4687fdcea4c92d50111eebec96d651970c711de5d38790576f24059b2fbd9"
+          },
+          "SYSTEM_ARCHITECTURE": {
+            "SOURCE_RECORD_ID": "rec_6103bae3df8a1646d0b156108b0cb5ad2b7f7ff2c1eaa95236429067f93f2863"
+          }
+        }
+      },
+      "invocation_id": "inv_fd7cc7b4cb306df81feb8aff3a71f64227f2a5de451f2a535a0144c26b111a0f",
+      "learning": {
+        "context_hash": "sha256:bb84a513aa2b6e4374d691759c4a6edf94169f479f4611e9091643b9f279ccfc",
+        "lessons": [],
+        "mode": "GENERALIZED_LESSONS_PLUS_OWNED_REMEDIATIONS",
+        "raw_feedback_exposed": false,
+        "raw_historical_findings_exposed": false,
+        "registry_heads": {
+          "feedback": "GENESIS",
+          "findings": "GENESIS",
+          "lessons": "GENESIS",
+          "patterns": "GENESIS",
+          "remediations": "GENESIS"
+        },
+        "remediations": []
+      },
+      "missing_required_inputs": [],
+      "output_contract": {
+        "allowed_status_values": [
+          "IMPLEMENTED",
+          "CONTRACT_GAP",
+          "BLOCKED"
+        ],
+        "deterministic_validators": [],
+        "optional_fields": [],
+        "persisted_artifacts": [
+          "<task>/solution/solve.sh",
+          "<task>/solution/"
+        ],
+        "required_fields": [
+          "RESTORED_INVARIANTS",
+          "FILES_CHANGED",
+          "RESTART_IDEMPOTENCY_BEHAVIOR",
+          "DETERMINISM_NOTES",
+          "PRESERVED_BEHAVIOR",
+          "RISKS_FOR_INDEPENDENT_VERIFIER"
+        ],
+        "semantic_reviewers": [
+          "Verifier Engineer"
+        ]
+      },
+      "readiness": "READY",
+      "retrieval": {
+        "query": null,
+        "retrieved_chars": 0,
+        "retrieved_context": [],
+        "status": "NOT_REQUESTED"
+      },
+      "routing": {
+        "failure_routes": {
+          "CONTRACT_GAP": "Creation Controller -> appropriate contract owner",
+          "RUNTIME_FAILURE": "Q5 Oracle & Runtime Repair Specialist"
+        },
+        "stale_on": [
+          "operational requirement change",
+          "environment implementation change",
+          "solver-visible contract change"
+        ],
+        "success_transition": "VERIFIER_BUILD"
+      },
+      "schema_version": "1.0",
+      "stage": {
+        "lifecycle": "creation",
+        "owner": "A4 Reference Solution Author",
+        "role_class": "PRODUCER",
+        "role_id": "A4_REFERENCE_SOLUTION_AUTHOR",
+        "stage_id": "REFERENCE_SOLUTION"
+      }
+    },
+    "outputs": {
+      "DETERMINISM_NOTES": "No test-name, hidden-input or environment-specific branching is used. Fixed compressed source overlays are applied deterministically, formatted, tested with go test ./..., and built from the registered command entrypoint.",
+      "FILES_CHANGED": [
+        "edge-router-runtime/solution/solve.sh",
+        "edge-router-runtime/solution/payload.00",
+        "edge-router-runtime/solution/payload.01",
+        "edge-router-runtime/solution/payload.02",
+        "edge-router-runtime/solution/payload.03",
+        "edge-router-runtime/solution/payload.04",
+        "edge-router-runtime/solution/q5-overlay.xz",
+        "edge-router-runtime/solution/q5-overlay2.xz",
+        "edge-router-runtime/solution/q5-overlay3.xz"
+      ],
+      "PRESERVED_BEHAVIOR": "The public serve/validate CLI, JSON configuration schema, operator configuration/discovery APIs, HTTP data plane, health/status/readiness/metrics/events surfaces, routing policies and durable state directory remain intact.",
+      "RESTART_IDEMPOTENCY_BEHAVIOR": "The deterministic solution overlay reconstructs the same repaired runtime from the same payload and Q5 overlays on repeated execution; restart recovery validates durable checkpoint authority before readiness and falls back to a previous complete generation when current recovery state is invalid.",
+      "RESTORED_INVARIANTS": [
+        "Per-source revision and digest authority is fenced under serialized acceptance; rejected or conflicting updates do not alter accepted metadata.",
+        "Candidate validation, runtime reconciliation, checkpoint preparation, publication and acknowledgement preserve last-known-good serving state on rejection.",
+        "Serving publication exposes one complete immutable runtime snapshot and each request retains one snapshot lease across route selection, retry and failover.",
+        "Canonical endpoint identity and membership incarnation distinguish continuous reuse from accepted removal followed by re-add.",
+        "Affinity, balancing, retry and failover revalidate incarnation, lifecycle and health eligibility, with deterministic failure when no eligible backend remains.",
+        "Removed endpoints become ineligible for fresh generations while already-leased generations may complete bounded attempts against DRAINING endpoints; RETIRED endpoints remain forbidden.",
+        "Checkpoint bodies and CURRENT authority use durable ordering, integrity verification and previous-complete fallback on restart.",
+        "Lifecycle-scoped runtime, transport and telemetry state is retired when unreachable rather than growing without bound."
+      ],
+      "RISKS_FOR_INDEPENDENT_VERIFIER": [
+        "Exercise same-revision/different-digest conflicts and rejected-update preservation independently.",
+        "Hold live requests across publication and verify generation-consistent retry and failover, including DRAINING completion for already-leased generations.",
+        "Cover canonical endpoint aliases, remove/re-add incarnation changes, draining/ineligible endpoints and all-down behavior.",
+        "Exercise restart around checkpoint publication, corrupt CURRENT and retained-previous fallback through public behavior.",
+        "Repeat update/remove/re-add cycles and verify transport, affinity and telemetry state remain bounded."
+      ]
+    },
+    "record_id": "rec_85499122c2f497600b84fc61f62ff10d9a57cf17f7bcc32c9c9d20a506333b51",
+    "role_id": "A4_REFERENCE_SOLUTION_AUTHOR",
+    "schema_version": "1.0",
+    "stage_id": "REFERENCE_SOLUTION",
+    "status": "IMPLEMENTED",
+    "task_lineage": {
+      "input_task_commit": "4b4a8d30429b8455ab80824c3d1e7d03378b5934",
+      "output_task_commit": "4b4a8d30429b8455ab80824c3d1e7d03378b5934",
+      "task_changed": false
+    },
+    "transition": {
+      "action": "ADVANCE",
+      "requires_state_validation": false,
+      "target": "VERIFIER_BUILD",
+      "target_kind": "STAGE"
+    },
+    "validation": {
+      "acceptance_predicates_satisfied": true,
+      "evidence_binding_satisfied": true,
+      "evidence_refs_count": 0,
+      "invocation_identity_valid": true,
+      "invocation_policy_valid": true,
+      "output_keys_valid": true,
+      "required_outputs_satisfied": true,
+      "retrieval_context_authorized": true,
+      "status_legal": true,
+      "task_commit_change_authorized": true,
+      "task_lineage_valid": true
+    }
+  },
+  "remediation_updates": [],
+  "state": {
+    "control_plane_commit": "67b805a297ac005ee08e82facc533f53a3233192",
+    "derived_from": {
+      "freshness_overlay_hash": null,
+      "record_ids": [
+        "rec_23b3b591cbabbf3b09dad85783e854c1c52f0fe6aafd75bbd966f2db86fa2c11",
+        "rec_38a4687fdcea4c92d50111eebec96d651970c711de5d38790576f24059b2fbd9",
+        "rec_6103bae3df8a1646d0b156108b0cb5ad2b7f7ff2c1eaa95236429067f93f2863",
+        "rec_85499122c2f497600b84fc61f62ff10d9a57cf17f7bcc32c9c9d20a506333b51",
+        "rec_920ecef4078ab554125161683a1b02bbc7b2df6ab0aada275553b94228b081ca",
+        "rec_e616bf62c58b4da4cf23917d8f7e28678b587b8a9128a51ebf6a6e6e369a8008"
+      ]
+    },
+    "ledger_event_count": 33,
+    "ledger_head_event_id": "evt_08d04577b61a5b994267a62de634b0788a585d42dc2431329092f1bae7c94fa0",
+    "lineage": {
+      "bootstrap_task_commit": "4b4a8d30429b8455ab80824c3d1e7d03378b5934",
+      "current_task_commit": "4b4a8d30429b8455ab80824c3d1e7d03378b5934",
+      "recorded_task_commit": "4b4a8d30429b8455ab80824c3d1e7d03378b5934",
+      "status": "CURRENT"
+    },
+    "next": {
+      "action": "INVOKE_STAGE",
+      "optional_inputs": [
+        "PRESERVATION_RISK_MODEL",
+        "RUNTIME_INTERFACE_MAP"
+      ],
+      "owner": "A5 Verifier Author",
+      "primary_role_id": "A5_VERIFIER_AUTHOR",
+      "required_inputs": [
+        "BEHAVIORAL_SURFACES",
+        "SOLVER_VISIBLE_CONTRACTS",
+        "SOLVER_VISIBLE_REQUIREMENTS"
+      ],
+      "stage_id": "VERIFIER_BUILD"
+    },
+    "nodes": [
+      {
+        "disposition": "ADVANCE",
+        "input_task_commit": "4b4a8d30429b8455ab80824c3d1e7d03378b5934",
+        "invocation_id": "inv_177907252f4ff1e3b832336b70b73ffe68a6f2dd1b9d4c7f93dd2f473fab3563",
+        "ledger_event_id": "evt_736099725e03626aa3a00b03e574bea0649142f1a246f6d4cf41c0517f508376",
+        "node_id": "RULE_RESOLUTION",
+        "node_kind": "STAGE",
+        "output_task_commit": "4b4a8d30429b8455ab80824c3d1e7d03378b5934",
+        "reason": "validated ADVANCE record reaches WORK_PACKAGE_RESEARCH",
+        "record_id": "rec_23b3b591cbabbf3b09dad85783e854c1c52f0fe6aafd75bbd966f2db86fa2c11",
+        "status": "CURRENT"
+      },
+      {
+        "disposition": "ADVANCE",
+        "input_task_commit": "4b4a8d30429b8455ab80824c3d1e7d03378b5934",
+        "invocation_id": "inv_037b00817c03f309e10c2897fded90c313a516e540044910e6512cfb6a0cea28",
+        "ledger_event_id": "evt_8baf9e2027402d56e7734fe60117888d1dd14d8fb3c10a0d62d0d68dc2dfaba9",
+        "node_id": "WORK_PACKAGE_RESEARCH",
+        "node_kind": "STAGE",
+        "output_task_commit": "4b4a8d30429b8455ab80824c3d1e7d03378b5934",
+        "reason": "validated ADVANCE record reaches SYSTEM_ARCHITECTURE",
+        "record_id": "rec_920ecef4078ab554125161683a1b02bbc7b2df6ab0aada275553b94228b081ca",
+        "status": "CURRENT"
+      },
+      {
+        "disposition": "ADVANCE",
+        "input_task_commit": "4b4a8d30429b8455ab80824c3d1e7d03378b5934",
+        "invocation_id": "inv_31d59a1baeed67d19265ab35147fcc3f7afbd1a68c7159c0c6178e10856d7419",
+        "ledger_event_id": "evt_49b54709daf4dd5a01fa58c589a30a4621d1847eb1fe4142762fd6c5dd68832a",
+        "node_id": "SYSTEM_ARCHITECTURE",
+        "node_kind": "STAGE",
+        "output_task_commit": "4b4a8d30429b8455ab80824c3d1e7d03378b5934",
+        "reason": "validated ADVANCE record reaches DEFECT_TOPOLOGY",
+        "record_id": "rec_6103bae3df8a1646d0b156108b0cb5ad2b7f7ff2c1eaa95236429067f93f2863",
+        "status": "CURRENT"
+      },
+      {
+        "disposition": "ADVANCE",
+        "input_task_commit": "4b4a8d30429b8455ab80824c3d1e7d03378b5934",
+        "invocation_id": "inv_968d88a8b98512684e37adcac952e846b0a9951dd80240517ce4c884f7531d58",
+        "ledger_event_id": "evt_0dbe2132086561c195acbddeeb5495204397fda56dadf532a5e249e905ad9e51",
+        "node_id": "DEFECT_TOPOLOGY",
+        "node_kind": "STAGE",
+        "output_task_commit": "4b4a8d30429b8455ab80824c3d1e7d03378b5934",
+        "reason": "validated ADVANCE record reaches ENVIRONMENT_BUILD",
+        "record_id": "rec_e616bf62c58b4da4cf23917d8f7e28678b587b8a9128a51ebf6a6e6e369a8008",
+        "status": "CURRENT"
+      },
+      {
+        "disposition": "ADVANCE",
+        "input_task_commit": "4b4a8d30429b8455ab80824c3d1e7d03378b5934",
+        "invocation_id": "inv_6a0782abe0614c68624ba23f600decfc0e7d19ea32d1cd7166e56c4a0c15af21",
+        "ledger_event_id": "evt_b8b17477a3fbb2386514db6abbeeffe25c59f51fd81d80fe322a80e4924facd1",
+        "node_id": "ENVIRONMENT_BUILD",
+        "node_kind": "STAGE",
+        "output_task_commit": "4b4a8d30429b8455ab80824c3d1e7d03378b5934",
+        "reason": "validated ADVANCE record reaches REFERENCE_SOLUTION",
+        "record_id": "rec_38a4687fdcea4c92d50111eebec96d651970c711de5d38790576f24059b2fbd9",
+        "status": "CURRENT"
+      },
+      {
+        "disposition": "ADVANCE",
+        "input_task_commit": "4b4a8d30429b8455ab80824c3d1e7d03378b5934",
+        "invocation_id": "inv_fd7cc7b4cb306df81feb8aff3a71f64227f2a5de451f2a535a0144c26b111a0f",
+        "ledger_event_id": "evt_08d04577b61a5b994267a62de634b0788a585d42dc2431329092f1bae7c94fa0",
+        "node_id": "REFERENCE_SOLUTION",
+        "node_kind": "STAGE",
+        "output_task_commit": "4b4a8d30429b8455ab80824c3d1e7d03378b5934",
+        "reason": "validated ADVANCE record reaches VERIFIER_BUILD",
+        "record_id": "rec_85499122c2f497600b84fc61f62ff10d9a57cf17f7bcc32c9c9d20a506333b51",
+        "status": "CURRENT"
+      },
+      {
+        "node_id": "VERIFIER_BUILD",
+        "node_kind": "STAGE",
+        "reason": "no execution-ledger event exists for this stage",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "HUMAN_WRITING_RESEARCH",
+        "node_kind": "STAGE",
+        "reason": "upstream node VERIFIER_BUILD is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "INSTRUCTION_DRAFT",
+        "node_kind": "STAGE",
+        "reason": "upstream node HUMAN_WRITING_RESEARCH is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "SPEC_ALIGNMENT",
+        "node_kind": "STAGE",
+        "reason": "upstream node INSTRUCTION_DRAFT is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "DOCUMENTATION_DRAFT",
+        "node_kind": "STAGE",
+        "reason": "upstream node SPEC_ALIGNMENT is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "FORMAT_GATE",
+        "node_kind": "STAGE",
+        "reason": "upstream node DOCUMENTATION_DRAFT is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "ASSEMBLY",
+        "node_kind": "STAGE",
+        "reason": "upstream node FORMAT_GATE is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "COMPLEXITY_GATE",
+        "node_kind": "STAGE",
+        "reason": "upstream node ASSEMBLY is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "RUNTIME_AUTHENTICITY",
+        "node_kind": "STAGE",
+        "reason": "upstream node COMPLEXITY_GATE is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "DETERMINISTIC_VALIDATION",
+        "node_kind": "STAGE",
+        "reason": "upstream node RUNTIME_AUTHENTICITY is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "FROZEN_CANDIDATE",
+        "node_kind": "STATE",
+        "reason": "state cannot be current while its predecessor chain is non-current",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "QUALITY_INTERLOCK",
+        "node_kind": "STAGE",
+        "reason": "upstream node FROZEN_CANDIDATE is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "PRE_LLMAJ",
+        "node_kind": "STAGE",
+        "reason": "upstream node QUALITY_INTERLOCK is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "MODEL_DIAGNOSTIC_GPT",
+        "node_kind": "STAGE",
+        "reason": "upstream node PRE_LLMAJ is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "MODEL_DIAGNOSTIC_CLAUDE",
+        "node_kind": "STAGE",
+        "reason": "upstream node MODEL_DIAGNOSTIC_GPT is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "MODEL_DIAGNOSTIC_AGGREGATE",
+        "node_kind": "STAGE",
+        "reason": "upstream node MODEL_DIAGNOSTIC_CLAUDE is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "HARBOR_LLMAJ",
+        "node_kind": "STAGE",
+        "reason": "upstream node MODEL_DIAGNOSTIC_AGGREGATE is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "OFFICIAL_MODEL_TRIALS",
+        "node_kind": "STAGE",
+        "reason": "upstream node HARBOR_LLMAJ is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "TRIAL_ANALYSIS",
+        "node_kind": "STAGE",
+        "reason": "upstream node OFFICIAL_MODEL_TRIALS is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "DIFFICULTY_ASSESSMENT",
+        "node_kind": "STAGE",
+        "reason": "upstream node TRIAL_ANALYSIS is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "FINAL_REVIEW",
+        "node_kind": "STAGE",
+        "reason": "upstream node DIFFICULTY_ASSESSMENT is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "SUBMISSION_READY",
+        "node_kind": "STAGE",
+        "reason": "upstream node FINAL_REVIEW is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      }
+    ],
+    "schema_version": "1.0",
+    "state_snapshot_id": "state_f965fb3c5e14beefaaa9e28894c35ecbb0697cfb68c1d74cbbc1355cbd6f9c20",
+    "summary": {
+      "BLOCKED": 0,
+      "CURRENT": 6,
+      "MISSING": 22,
+      "STALE": 0
+    },
+    "task_commit": "4b4a8d30429b8455ab80824c3d1e7d03378b5934",
+    "task_id": "edge-router-runtime"
+  }
+}
