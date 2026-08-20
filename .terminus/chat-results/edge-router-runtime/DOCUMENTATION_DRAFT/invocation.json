@@ -1,0 +1,139 @@
+{
+  "acceptance_predicates": {},
+  "authority": {
+    "control_plane_commit": "67b805a297ac005ee08e82facc533f53a3233192",
+    "policy_versions": {},
+    "task_commit": "12b7c7f4bbf3d120c7d48e5ac2f849ab1f4006bb",
+    "task_id": "edge-router-runtime"
+  },
+  "evidence": {
+    "authorized_evidence_classes": [
+      "CI_RUNTIME_EVIDENCE",
+      "CONTROL_PLANE_POLICY",
+      "PUBLIC_REFERENCE",
+      "SOLUTION_ORACLE",
+      "SOLVER_VISIBLE_TASK"
+    ],
+    "evidence_required": [
+      "implementation evidence",
+      "verification evidence",
+      "no benchmark framing/leakage"
+    ],
+    "excluded_evidence_classes": [
+      "CURRENT_REVIEW_PACKET",
+      "DURABLE_SESSION_STATE",
+      "FINAL_PACKAGE_EVIDENCE",
+      "MODEL_TRIAL_EVIDENCE",
+      "PRIOR_REVIEW_RESULTS",
+      "PRIVATE_CREATION_DESIGN",
+      "VERIFIER_PRIVATE"
+    ],
+    "mandatory_exact_reads": [
+      ".terminus/agents/CREATION_PIPELINE.md",
+      ".terminus/agents/CREATOR_PROMPTS.md",
+      ".terminus/agents/PROMPTS.md"
+    ],
+    "retrieval_mode": "FILTERED_HYBRID"
+  },
+  "ignored_input_count": 0,
+  "inputs": {
+    "optional": {},
+    "required": {
+      "APPROVED_WORK_PACKAGE": {
+        "ENGINEERING_OBJECTIVE": "Complete the inherited Go edge-router runtime as a generation-safe dynamic routing and upstream-reconciliation system.",
+        "REQUIRED_END_STATE": "Atomic complete generation publication, independent source fencing, stable endpoint incarnation, request snapshot consistency, lifecycle/health-aware selection, bounded drain, durable recovery and bounded runtime retirement while preserving public interfaces."
+      },
+      "IMPLEMENTATION_EVIDENCE": {
+        "PRESERVED_BEHAVIOR": "Existing Go module, serve/validate CLI, JSON configuration shape, data-plane proxying, operator/admin, readiness/health, metrics and event surfaces remain preserved.",
+        "REFERENCE_SOLUTION_STATUS": "IMPLEMENTED",
+        "RESTORED_INVARIANTS": [
+          "atomic complete generation publication",
+          "independent per-source revision/digest authority",
+          "stable endpoint identity/incarnation",
+          "request-held generation consistency",
+          "health/lifecycle-aware selection",
+          "bounded draining",
+          "durable complete checkpoint recovery",
+          "bounded runtime/telemetry retirement"
+        ]
+      },
+      "VERIFICATION_EVIDENCE": {
+        "EMPIRICAL_STATUS": "Oracle previously scored 1 and NOP scored 0 against the current implementation/verifier content before the solver-facing instruction/README-only changes; deterministic validation must be re-earned at its dedicated stage.",
+        "F2P_COUNT": 28,
+        "P2P_COUNT": 6,
+        "SPEC_ALIGNMENT": {
+          "Q1_STATUS": "NO_GAP",
+          "Q2_STATUS": "COVERED",
+          "Q3_STATUS": "CLEAR"
+        },
+        "VERIFIER_STATUS": "VERIFIER_READY"
+      }
+    }
+  },
+  "invocation_id": "inv_d9b1c8947eaca2952bfc24edc6490733f03f6d49a400abc17f4e1a80bfbaa49e",
+  "learning": {
+    "context_hash": "sha256:bb84a513aa2b6e4374d691759c4a6edf94169f479f4611e9091643b9f279ccfc",
+    "lessons": [],
+    "mode": "GENERALIZED_LESSONS_PLUS_OWNED_REMEDIATIONS",
+    "raw_feedback_exposed": false,
+    "raw_historical_findings_exposed": false,
+    "registry_heads": {
+      "feedback": "GENESIS",
+      "findings": "GENESIS",
+      "lessons": "GENESIS",
+      "patterns": "GENESIS",
+      "remediations": "GENESIS"
+    },
+    "remediations": []
+  },
+  "missing_required_inputs": [],
+  "output_contract": {
+    "allowed_status_values": [
+      "DOCUMENTATION_READY",
+      "REWRITE_REQUIRED",
+      "BLOCKED"
+    ],
+    "deterministic_validators": [],
+    "optional_fields": [],
+    "persisted_artifacts": [
+      "<task>/README.md"
+    ],
+    "required_fields": [
+      "README_PATH",
+      "DIFFICULTY_EXPLANATION",
+      "SOLUTION_EXPLANATION",
+      "VERIFICATION_EXPLANATION"
+    ],
+    "semantic_reviewers": [
+      "Engineering Documentation Reviewer",
+      "Human Quality Reviewer"
+    ]
+  },
+  "readiness": "READY",
+  "retrieval": {
+    "query": null,
+    "retrieved_chars": 0,
+    "retrieved_context": [],
+    "status": "NOT_REQUESTED"
+  },
+  "routing": {
+    "failure_routes": {
+      "LEAKAGE_OR_SYNTHETIC_PROSE": "A8 Documentation Writer / Human Quality Reviewer",
+      "UNSUPPORTED_CLAIM": "A8 Documentation Writer"
+    },
+    "stale_on": [
+      "implementation evidence change",
+      "verification evidence change",
+      "material task-description change"
+    ],
+    "success_transition": "FORMAT_GATE"
+  },
+  "schema_version": "1.0",
+  "stage": {
+    "lifecycle": "creation",
+    "owner": "A8 Documentation Writer",
+    "role_class": "PRODUCER",
+    "role_id": "A8_DOCUMENTATION_WRITER",
+    "stage_id": "DOCUMENTATION_DRAFT"
+  }
+}
