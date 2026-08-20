@@ -1,0 +1,55 @@
+name: Edge Router A4 Ready Direct Diagnostic
+
+on:
+  push:
+    branches:
+      - 'terminus-controller-request/edge-router-a4-ready-20260820-1213'
+
+permissions:
+  contents: write
+
+jobs:
+  compile:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Compile exact REFERENCE_SOLUTION invocation
+        shell: bash
+        run: |
+          set -euo pipefail
+          work="$RUNNER_TEMP/edge-a4-ready"
+          mkdir -p "$work"
+          request='.terminus/chat-exec/edge-router-runtime-reference-solution-ready-20260820-1213.json'
+          python3 - "$request" "$work/inputs.json" <<'PY'
+          import json,sys
+          req=json.load(open(sys.argv[1],encoding='utf-8'))
+          json.dump(req['inputs'],open(sys.argv[2],'w',encoding='utf-8'),indent=2,sort_keys=True)
+          PY
+          git checkout --detach 25a001e30c5ebb0008a71b205f5c9e13819196f9
+          python3 .terminus/execution/controller_cli.py continue \
+            --task-id edge-router-runtime \
+            --task-commit 1c0b7175298afbd1e05bda103ea97e344e56b30e \
+            --control-plane-commit 5106b27ae6cc5257854f08c63bac4eca95685f36 \
+            --inputs-json "$work/inputs.json" \
+            --output "$work/continue.json"
+          python3 - "$work/continue.json" "$work/invocation.json" <<'PY'
+          import json,sys
+          p=json.load(open(sys.argv[1],encoding='utf-8'))
+          if p.get('next',{}).get('stage_id')!='REFERENCE_SOLUTION': raise SystemExit(p.get('next'))
+          inv=p.get('invocation')
+          if not isinstance(inv,dict): raise SystemExit('missing invocation')
+          if inv.get('readiness')!='READY': raise SystemExit(f"not ready: {inv.get('missing_required_inputs')}")
+          json.dump(inv,open(sys.argv[2],'w',encoding='utf-8'),indent=2,sort_keys=True)
+          PY
+          git fetch origin terminus-controller-request/edge-router-a4-ready-20260820-1213
+          git checkout -B edge-a4-ready-output origin/terminus-controller-request/edge-router-a4-ready-20260820-1213
+          mkdir -p .terminus/chat-results/edge-router-runtime/REFERENCE_SOLUTION
+          cp "$work/continue.json" .terminus/chat-results/edge-router-runtime/REFERENCE_SOLUTION/continue.json
+          cp "$work/invocation.json" .terminus/chat-results/edge-router-runtime/REFERENCE_SOLUTION/invocation.json
+          git config user.name 'terminus-a4-diagnostic[bot]'
+          git config user.email 'terminus-a4-diagnostic[bot]@users.noreply.github.com'
+          git add -- .terminus/chat-results/edge-router-runtime/REFERENCE_SOLUTION
+          git commit -m 'Persist edge-router REFERENCE_SOLUTION ready invocation'
+          git push origin HEAD:terminus-controller-request/edge-router-a4-ready-20260820-1213
