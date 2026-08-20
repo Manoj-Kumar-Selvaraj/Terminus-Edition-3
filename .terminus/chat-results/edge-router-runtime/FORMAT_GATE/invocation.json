@@ -1,0 +1,161 @@
+{
+  "acceptance_predicates": {},
+  "authority": {
+    "control_plane_commit": "7d8a6d8c62a62e6d24949344c7fd712e59bc8829",
+    "policy_versions": {},
+    "task_commit": "9663e4da67ab20e6bd66b942ac54b57667408dd8",
+    "task_id": "edge-router-runtime"
+  },
+  "evidence": {
+    "authorized_evidence_classes": [
+      "CI_RUNTIME_EVIDENCE",
+      "CONTROL_PLANE_POLICY",
+      "SOLVER_VISIBLE_TASK"
+    ],
+    "evidence_required": [
+      "task structure",
+      "task.toml",
+      "Docker/verifier/solution layout",
+      "artifact/isolation checks"
+    ],
+    "excluded_evidence_classes": [
+      "CURRENT_REVIEW_PACKET",
+      "DURABLE_SESSION_STATE",
+      "FINAL_PACKAGE_EVIDENCE",
+      "MODEL_TRIAL_EVIDENCE",
+      "PRIOR_REVIEW_RESULTS",
+      "PRIVATE_CREATION_DESIGN",
+      "PUBLIC_REFERENCE",
+      "SOLUTION_ORACLE",
+      "VERIFIER_PRIVATE"
+    ],
+    "mandatory_exact_reads": [
+      "TERMINUS_3_AI_INSTRUCTIONS.md",
+      ".terminus/reviewers/REVIEWER_CHECKLIST.md",
+      ".terminus/agents/QUALITY_AGENT_PROMPTS.md"
+    ],
+    "retrieval_mode": "EXACT_ONLY"
+  },
+  "ignored_input_count": 0,
+  "inputs": {
+    "optional": {},
+    "required": {
+      "ACTIVE_FORMAT_VALIDATORS": [
+        "current Terminus task-format/packaging CI",
+        "task.toml structure and absolute artifact-path checks",
+        "digest-pinned agent/verifier image checks",
+        "separate-verifier and reward-contract checks",
+        "solution/tests isolation checks",
+        "Q7 same-chat review"
+      ],
+      "CREATION_RULE_CONTEXT": {
+        "CONTROL_PLANE_COMMIT": "7d8a6d8c62a62e6d24949344c7fd712e59bc8829",
+        "CREATION_PROFILE": "large_system_strict",
+        "KNOWN_POLICY_CONFLICTS": [],
+        "NETWORK_ENVIRONMENT_CONSTRAINTS": "repository-default network/environment constraints"
+      },
+      "CURRENT_TASK_TREE": {
+        "environment": {
+          "Dockerfile": "digest-pinned Go 1.24 base with tmux/asciinema; builds live edge-router runtime; solver-visible code/config/docs only"
+        },
+        "instruction": "instruction.md names /app/edge-router output and solver-visible documentation/contracts only",
+        "readme": "engineering-only runtime documentation with benchmark/verifier framing removed",
+        "solution": {
+          "entrypoint": "solution/solve.sh"
+        },
+        "task_root": "edge-router-runtime",
+        "task_toml": {
+          "agent_timeout_sec": 5400,
+          "artifacts": [
+            "/app/edge-router"
+          ],
+          "category": "Software",
+          "difficulty": "advanced",
+          "network_mode": "public",
+          "subcategory": "Systems",
+          "verifier_environment_mode": "separate",
+          "verifier_timeout_sec": 1800,
+          "workdir": "/app"
+        },
+        "tests": {
+          "Dockerfile": "digest-pinned Go base with pinned pytest and separate /tests boundary",
+          "test_sh": "captures pytest status, writes reward 1 only on success, exits with pytest status"
+        },
+        "top_level": [
+          "README.md",
+          "environment/",
+          "instruction.md",
+          "solution/",
+          "task.toml",
+          "tests/"
+        ]
+      }
+    }
+  },
+  "invocation_id": "inv_1bfc529e4ca62366a5cda6795431935298f647c938999b157b1188c4de9ea140",
+  "learning": {
+    "context_hash": "sha256:bb84a513aa2b6e4374d691759c4a6edf94169f479f4611e9091643b9f279ccfc",
+    "lessons": [],
+    "mode": "GENERALIZED_LESSONS_PLUS_OWNED_REMEDIATIONS",
+    "raw_feedback_exposed": false,
+    "raw_historical_findings_exposed": false,
+    "registry_heads": {
+      "feedback": "GENESIS",
+      "findings": "GENESIS",
+      "lessons": "GENESIS",
+      "patterns": "GENESIS",
+      "remediations": "GENESIS"
+    },
+    "remediations": []
+  },
+  "missing_required_inputs": [],
+  "output_contract": {
+    "allowed_status_values": [
+      "FORMAT_PASS",
+      "FIXED",
+      "BLOCKED",
+      "POLICY_CONFLICT"
+    ],
+    "deterministic_validators": [
+      "current task-format/packaging CI and validators"
+    ],
+    "optional_fields": [],
+    "persisted_artifacts": [],
+    "required_fields": [
+      "CHECKS",
+      "RERUN"
+    ],
+    "semantic_reviewers": [
+      "Compliance Auditor"
+    ]
+  },
+  "readiness": "READY",
+  "retrieval": {
+    "query": null,
+    "retrieved_chars": 0,
+    "retrieved_context": [],
+    "status": "NOT_REQUESTED"
+  },
+  "routing": {
+    "failure_routes": {
+      "FORMAT_DEFECT": "Q7 Task Format Enforcer",
+      "POLICY_CONFLICT": "Creation Controller",
+      "SEMANTIC_DEFECT": "route to semantic owner"
+    },
+    "stale_on": [
+      "task structure change",
+      "task.toml change",
+      "Docker/test/solution/package change",
+      "format-rule change"
+    ],
+    "success_transition": "ASSEMBLY"
+  },
+  "schema_version": "1.0",
+  "stage": {
+    "lifecycle": "creation",
+    "owner": "Q7 Task Format Enforcer",
+    "role_class": "FIXER",
+    "role_id": "Q7_TASK_FORMAT_ENFORCER",
+    "stage_id": "FORMAT_GATE"
+  }
+}
