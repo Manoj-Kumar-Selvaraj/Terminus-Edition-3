@@ -1,0 +1,677 @@
+{
+  "ledger_event": {
+    "control_plane_commit": "0579a0f2f1e7e3560d13ff1530f467c8e01b6a1a",
+    "event_id": "evt_ebe3fb6dad0ea4fac682262de08e4041a5dfd4f4b62429c461085188a66b70c2",
+    "input_task_commit": "6c7909d5c0efd3e6e64443d6de3b227c1820b01b",
+    "invocation_id": "inv_205463a2e2e52a9174c89ca6a79cb88f9af57885a87cc79ba7a7ba478da1ce41",
+    "output_task_commit": "6c7909d5c0efd3e6e64443d6de3b227c1820b01b",
+    "previous_event_id": "evt_99567241f168ca750a5e80a4561ac81e3f5904e1340d3dc2e38f0512071da7ea",
+    "record_hash": "sha256:c506a9dca758e878344a3438b2a01fe3313e17a1bee78af60dd7e4814931cd0a",
+    "record_id": "rec_c7113662704e00ec908b7912f1f6e11869163956ea9721ec8fa0f757a9021b9c",
+    "record_path": ".terminus/executions/ec2-artifact-policy-enforcement/inv_205463a2e2e52a9174c89ca6a79cb88f9af57885a87cc79ba7a7ba478da1ce41.result.json",
+    "schema_version": "1.0",
+    "sequence": 54,
+    "stage_id": "SYSTEM_ARCHITECTURE",
+    "task_id": "ec2-artifact-policy-enforcement"
+  },
+  "record": {
+    "authority": {
+      "control_plane_commit": "0579a0f2f1e7e3560d13ff1530f467c8e01b6a1a",
+      "policy_versions": {},
+      "task_commit": "6c7909d5c0efd3e6e64443d6de3b227c1820b01b",
+      "task_id": "ec2-artifact-policy-enforcement"
+    },
+    "disposition": "ADVANCE",
+    "evidence_refs": [],
+    "invocation_id": "inv_205463a2e2e52a9174c89ca6a79cb88f9af57885a87cc79ba7a7ba478da1ce41",
+    "invocation_snapshot": {
+      "acceptance_predicates": {},
+      "authority": {
+        "control_plane_commit": "0579a0f2f1e7e3560d13ff1530f467c8e01b6a1a",
+        "policy_versions": {},
+        "task_commit": "6c7909d5c0efd3e6e64443d6de3b227c1820b01b",
+        "task_id": "ec2-artifact-policy-enforcement"
+      },
+      "evidence": {
+        "authorized_evidence_classes": [
+          "CONTROL_PLANE_POLICY",
+          "PRIVATE_CREATION_DESIGN",
+          "PUBLIC_REFERENCE",
+          "SOLVER_VISIBLE_TASK"
+        ],
+        "evidence_required": [
+          "component/resource graph",
+          "runtime/operator reachability plan",
+          "state/persistence model",
+          "production-characteristic rationale"
+        ],
+        "excluded_evidence_classes": [
+          "CI_RUNTIME_EVIDENCE",
+          "CURRENT_REVIEW_PACKET",
+          "DURABLE_SESSION_STATE",
+          "FINAL_PACKAGE_EVIDENCE",
+          "MODEL_TRIAL_EVIDENCE",
+          "PRIOR_REVIEW_RESULTS",
+          "SOLUTION_ORACLE",
+          "VERIFIER_PRIVATE"
+        ],
+        "mandatory_exact_reads": [
+          ".terminus/agents/CREATION_PIPELINE.md",
+          ".terminus/agents/CREATOR_AGENT_REGISTRY.md",
+          ".terminus/agents/PRODUCTION_AUTHENTICITY.md",
+          ".terminus/agents/CREATOR_PROMPTS.md",
+          ".terminus/agents/A2_PHASE_PROMPTS.md"
+        ],
+        "retrieval_mode": "FILTERED_HYBRID"
+      },
+      "ignored_input_count": 0,
+      "inputs": {
+        "optional": {},
+        "required": {
+          "APPROVED_OPERATIONAL_REQUIREMENTS": {
+            "EDGE_FAILURES": [
+              "scanner outage and scanner DB rollover",
+              "mutable identity digest change",
+              "manager/source bypass",
+              "expired or wrong-scope exception",
+              "permit tamper/replay/expiry/concurrency",
+              "partial cache/state write",
+              "crash around journal/projection publication",
+              "restart with incomplete tail or durable corruption"
+            ],
+            "PRESERVATION": [
+              "existing evaluate/verify-permit CLI and documented exit codes",
+              "healthy cache reuse",
+              "valid exact-scope exceptions",
+              "supplied policy/scanner/exception fixtures",
+              "valid existing audit history",
+              "stateless verify-permit compatibility"
+            ],
+            "REQUIRED_END_STATE": [
+              "All package, container, and dependency managers enter one normalized admission boundary.",
+              "Trusted-source and required immutable-digest checks are prerequisites and cannot be waived by exceptions.",
+              "Scanner or cached vulnerability evidence must match the exact artifact plus active policy/scanner revisions and be within its freshness window.",
+              "Scanner unavailability, stale evidence, malformed evidence, or partial evidence fails closed.",
+              "Exceptions may waive only the vulnerability threshold and must be unexpired and exact digest/surface/environment/policy-code scope.",
+              "ALLOW permits are secret-keyed and bind request, instance, artifact digest, policy version, and expiry.",
+              "Stateful permit verification is single-use across restart and concurrent verification.",
+              "Every ALLOW and DENY is durably journaled before completion; derived projection state follows the authoritative journal.",
+              "Repeated deterministic evaluation is idempotent and recovery preserves valid history while rejecting durable corruption."
+            ]
+          },
+          "APPROVED_WORK_PACKAGE": {
+            "EDGE_FAILURE_SURFACE": [
+              "scanner unavailable or scanner database revision changes",
+              "mutable tag/version resolving to a new digest",
+              "stale, malformed, or partially written cache evidence",
+              "expired or cross-surface/environment exception",
+              "permit tamper, expiry, replay, restart, and concurrent consumption",
+              "crash between journal durability and derived projection update",
+              "malformed/incomplete journal tail versus corruption in durable history",
+              "repeated deterministic evaluation after restart"
+            ],
+            "ENGINEERING_OBJECTIVE": "Make package, container, and build-dependency acquisition converge on one host-local Go admission boundary that enforces artifact identity, source trust, current vulnerability evidence, scoped exceptions, permit integrity, and durable decision state.",
+            "ID": "WP1_UNIFIED_EC2_ARTIFACT_ADMISSION",
+            "PERSONA": "EC2 platform security engineer",
+            "PRESERVATION_OBLIGATIONS": [
+              "preserve artifactguard evaluate and verify-permit interfaces and documented exit behavior",
+              "keep cache and exceptions operational rather than disabling them",
+              "do not rewrite supplied policy, scanner, or exception fixtures",
+              "preserve valid existing audit history and healthy cached evidence",
+              "retain stateless permit-verification compatibility while making stateful verification durable and single-use"
+            ],
+            "REQUIRED_END_STATE": "Every acquisition surface applies the same prerequisite trust and immutable-identity rules, uses only current artifact/policy/scanner evidence, limits exceptions to the exact vulnerability scope, issues and consumes exact-scope keyed permits safely, and commits restart-safe ALLOW/DENY history before completion.",
+            "REQUIREMENT_FAMILIES": [
+              "manager normalization and source trust",
+              "immutable artifact identity",
+              "scanner availability and evidence freshness",
+              "cache keying and revision/TTL validation",
+              "vulnerability threshold and exception scope",
+              "secret-keyed permit binding and expiry",
+              "single-use replay protection under restart/concurrency",
+              "durable journal, projection, corruption handling, and idempotency",
+              "public CLI and exit-code compatibility"
+            ],
+            "SOURCE_RECORD_ID": "rec_cd582c78afef910a7bd0db2c41b40d2dcd968a2163818ebc3276f27d95be2346"
+          },
+          "CREATION_RULE_CONTEXT": {
+            "ACTIVE_VALIDATORS": [
+              ".terminus/validate_agent_system.py",
+              ".terminus/validate_stage_contracts.py",
+              ".terminus/validate_task_complexity.py",
+              ".terminus/validate_environment_complexity.py",
+              ".terminus/validate_runtime_authenticity.py",
+              ".terminus/validate_business_module_diversity.py",
+              ".terminus/validate_review_freshness.py",
+              ".terminus/validate_quality_interlock.py",
+              ".github/workflows/terminus-edition-3-ci.yml",
+              ".github/workflows/terminus-creator-complexity.yml",
+              ".github/workflows/terminus-production-authenticity.yml"
+            ],
+            "CONTROL_PLANE_COMMIT": "0579a0f2f1e7e3560d13ff1530f467c8e01b6a1a",
+            "CREATION_PROFILE": "large_system_strict",
+            "KNOWN_POLICY_CONFLICTS": [],
+            "NETWORK_ENVIRONMENT_CONSTRAINTS": "network_mode public; separate verifier; digest-pinned canonical Go runtime; no privileged Docker/capability/socket shortcuts; tmux and asciinema required in agent image",
+            "RULE_SOURCES": [
+              "TERMINUS_3_AI_INSTRUCTIONS.md",
+              ".terminus/AGENT_SYSTEM.md",
+              ".terminus/agents/CREATION_CONTROLLER.md",
+              ".terminus/agents/CREATION_PIPELINE.md",
+              ".terminus/agents/PRODUCTION_AUTHENTICITY.md",
+              ".terminus/reviewers/REVIEWER_CHECKLIST.md",
+              ".terminus/agents/QUALITY_AGENT_REGISTRY.md",
+              ".terminus/agents/STAGE_CONTRACTS.md",
+              ".terminus/agents/stage_contracts.json"
+            ]
+          }
+        }
+      },
+      "invocation_id": "inv_205463a2e2e52a9174c89ca6a79cb88f9af57885a87cc79ba7a7ba478da1ce41",
+      "learning": {
+        "context_hash": "sha256:bb84a513aa2b6e4374d691759c4a6edf94169f479f4611e9091643b9f279ccfc",
+        "lessons": [],
+        "mode": "GENERALIZED_LESSONS_PLUS_OWNED_REMEDIATIONS",
+        "raw_feedback_exposed": false,
+        "raw_historical_findings_exposed": false,
+        "registry_heads": {
+          "feedback": "GENESIS",
+          "findings": "GENESIS",
+          "lessons": "GENESIS",
+          "patterns": "GENESIS",
+          "remediations": "GENESIS"
+        },
+        "remediations": []
+      },
+      "missing_required_inputs": [],
+      "output_contract": {
+        "allowed_status_values": [
+          "ARCHITECTURE_READY",
+          "SCENARIO_TOO_SMALL",
+          "BLOCKED"
+        ],
+        "deterministic_validators": [],
+        "optional_fields": [
+          "RESOURCE_GRAPH",
+          "DATA_VOLUME_PLAN",
+          "UNRESOLVED_RISKS"
+        ],
+        "persisted_artifacts": [],
+        "required_fields": [
+          "COMPONENT_GRAPH",
+          "ENTRYPOINTS",
+          "STATE_MODEL",
+          "SOLVER_VISIBLE_DOC_PLAN",
+          "PRODUCTION_CHARACTERISTICS",
+          "SCALE_FIT"
+        ],
+        "semantic_reviewers": [
+          "Task Architect"
+        ]
+      },
+      "readiness": "READY",
+      "retrieval": {
+        "query": null,
+        "retrieved_chars": 0,
+        "retrieved_context": [],
+        "status": "NOT_REQUESTED"
+      },
+      "routing": {
+        "failure_routes": {
+          "ARCHITECTURE_GAP": "A2 System Architect / Environment Builder",
+          "REQUIREMENT_GAP": "Creation Controller -> work-package/contract owner",
+          "SCENARIO_TOO_SMALL": "Creation Controller -> WORK_PACKAGE_RESEARCH"
+        },
+        "stale_on": [
+          "work-package change",
+          "material operational requirement change",
+          "creation-profile change"
+        ],
+        "success_transition": "DEFECT_TOPOLOGY"
+      },
+      "schema_version": "1.0",
+      "stage": {
+        "lifecycle": "creation",
+        "owner": "A2 System Architect / Environment Builder",
+        "role_class": "PRODUCER",
+        "role_id": "A2_SYSTEM_ARCHITECT",
+        "stage_id": "SYSTEM_ARCHITECTURE"
+      }
+    },
+    "outputs": {
+      "COMPONENT_GRAPH": {
+        "cli": "cmd/artifactguard parses evaluate and verify-permit requests, preserves documented exit codes, loads deterministic policy/scanner/exception inputs, and delegates to the runtime boundary.",
+        "decision_engine": "ordered engine composes normalized request, policy snapshot, evidence, exception result, vulnerability decision, and permit issuance into one deterministic ALLOW/DENY result.",
+        "decision_journal": "append-only authoritative journal commits every ALLOW and DENY before successful command completion; latest-decision projection is derived only after the corresponding durable journal record.",
+        "evidence_gateway": "scanner/cache subsystem selects current vulnerability evidence for the exact immutable artifact and active policy/scanner revisions; scanner errors and unusable cache state remain explicit fail-closed conditions.",
+        "exception_evaluator": "exception subsystem applies only after prerequisite identity/source/evidence checks and may waive only vulnerability-threshold denials for exact current digest/surface/environment/policy-code scope.",
+        "normalization": "manager-profile adapters canonicalize package, container, and dependency acquisitions into one request model while retaining surface, manager, environment, source, immutable digest, request, and instance identity.",
+        "permit_service": "permit subsystem uses a secret-keyed canonical payload bound to request ID, instance ID, artifact digest, policy version, and expiry; stateful verification delegates replay consumption to durable state.",
+        "policy_snapshot": "policy runtime validates one versioned snapshot per decision and exposes trusted-source, digest, severity, cache-TTL, permit-TTL, and scanner-revision requirements.",
+        "replay_ledger": "optional stateful verify-permit path atomically checks-and-records permit consumption so restart or concurrent verification cannot accept a second use.",
+        "state_coordinator": "state subsystem owns locks, atomic file replacement, directory durability, cache persistence, replay state, journal recovery, and derived projections under the caller-provided state root."
+      },
+      "DATA_VOLUME_PLAN": "No 10k-20k primary-business-record seed is applicable: this host-local policy runtime is configuration/state-backed rather than a business-record processing system. Deterministic policy/scanner/exception fixtures stay compact because they model control inputs, while operational state grows organically with evidence-cache entries, decisions, and permit consumptions. Scale is supplied by reachable production logic and coupled state transitions, not bulk fixture duplication.",
+      "ENTRYPOINTS": [
+        {
+          "name": "artifactguard evaluate",
+          "reachability": "CLI -> input loaders -> normalized manager profile -> policy snapshot -> evidence/cache -> prerequisite gates -> vulnerability/exception -> optional permit -> durable decision commit -> JSON result; DENY exits 42, operational/malformed failures exit 2."
+        },
+        {
+          "name": "artifactguard verify-permit",
+          "reachability": "CLI -> permit/request/policy canonicalization -> keyed signature/scope/expiry verification -> optional state lock/replay consumption -> verification result; invalid/expired/out-of-scope/replayed stateful permits exit 43."
+        },
+        {
+          "name": "Go module build/test",
+          "reachability": "go test ./... and go build ./cmd/artifactguard exercise compile-time/package reachability for the same production packages used by the CLI."
+        }
+      ],
+      "PRODUCTION_CHARACTERISTICS": [
+        "one real Go CLI reaches all major runtime responsibilities",
+        "differentiated manager, policy, evidence, exception, permit, journal, replay, and state modules",
+        "caller-owned persistent state with explicit source-of-truth and derived-state boundaries",
+        "deterministic configuration/time inputs and stable machine-readable CLI results",
+        "fail-closed negative behavior for trust, identity, evidence, authorization, and corruption failures",
+        "restart-safe/idempotent decision handling",
+        "concurrency-safe single-use authorization",
+        "atomic/durable publication ordering and recovery",
+        "preservation of valid cache, exception, and audit behavior instead of disabling operational features"
+      ],
+      "RESOURCE_GRAPH": [
+        "CLI -> request/policy/scanner/exception loaders",
+        "CLI -> manager normalization -> canonical acquisition request",
+        "canonical request + policy snapshot -> prerequisite trust/digest gates",
+        "canonical digest + policy/scanner revisions -> evidence gateway -> cache or scanner",
+        "current evidence -> vulnerability threshold -> exact exception evaluator",
+        "ALLOW decision -> keyed permit issuer",
+        "decision -> authoritative journal -> latest-decision projection",
+        "verify-permit -> keyed verifier -> optional replay lock/ledger",
+        "state coordinator -> cache/journal/projection/replay durable files"
+      ],
+      "SCALE_FIT": "VERY_HIGH. The strict-scale footprint is justified by independent production responsibilities and their stateful coupling rather than file/LOC padding: manager normalization feeds policy identity; identity gates evidence; evidence feeds exception/vulnerability logic; decisions issue permits; permits and decisions share durable locking/replay/journal semantics; recovery must reconcile authoritative and derived state. The same architecture naturally yields materially distinct normal, denial, freshness, revision, restart, corruption, idempotency, and concurrency behavior.",
+      "SOLVER_VISIBLE_DOC_PLAN": [
+        {
+          "path": "docs/architecture.md",
+          "purpose": "component boundaries, entrypoints, source-of-truth relationships, and request flow without identifying defect locations"
+        },
+        {
+          "path": "docs/policy-contract.md",
+          "purpose": "manager normalization, source/digest prerequisites, scanner/cache freshness, vulnerability/exception semantics, permit scope, and stable CLI behavior"
+        },
+        {
+          "path": "docs/state-format.md",
+          "purpose": "cache, journal, projection, replay records, canonical/checksum semantics, durability ownership, and recovery rules"
+        },
+        {
+          "path": "docs/operations.md",
+          "purpose": "operator invocation, state directory ownership, restart/concurrency expectations, failure handling, and safe recovery"
+        },
+        {
+          "path": "notes/oncall.md",
+          "purpose": "only legitimate observed current-state symptoms; no private topology IDs, hidden test mapping, or repair recipe"
+        }
+      ],
+      "STATE_MODEL": {
+        "authoritative_state": [
+          "append-only decision journal",
+          "stateful permit-consumption ledger"
+        ],
+        "derived_state": [
+          "latest-decision projection",
+          "reusable vulnerability-evidence cache"
+        ],
+        "durability_order": "validate/recover -> acquire state lock where mutation is shared -> prepare canonical record -> append/fdatasync or atomic durable write -> only then publish derived projection or report success -> fsync containing directory for rename-based state updates.",
+        "external_inputs": [
+          "policy snapshot",
+          "scanner database fixture/adapter response",
+          "exception set",
+          "request and permit documents",
+          "secret key",
+          "explicit evaluation time"
+        ],
+        "identity_keys": [
+          "artifact digest",
+          "policy version",
+          "scanner DB revision",
+          "request ID",
+          "instance ID",
+          "permit canonical scope"
+        ],
+        "recovery": "accept the longest structurally and checksum-valid committed journal history, treat an otherwise complete final record without newline as committed when format rules allow it, reject durable mid-history corruption, reconstruct/validate projections from authoritative records, and keep repeated deterministic decisions idempotent."
+      },
+      "UNRESOLVED_RISKS": [
+        "Define one canonical serialization/checksum format shared by journal/replay durability code to avoid format drift.",
+        "Keep stateful replay locking portable enough for the container/Linux execution environment and ensure lock scope covers check-and-consume atomically.",
+        "Clarify the exact recovery distinction between an incomplete trailing write and durable mid-history corruption without silently truncating valid history.",
+        "Preserve stateless verify-permit callers while making --state semantics explicit and non-breaking.",
+        "Ensure cache atomic-write and journal append durability use consistent directory-sync/error propagation semantics."
+      ]
+    },
+    "record_id": "rec_c7113662704e00ec908b7912f1f6e11869163956ea9721ec8fa0f757a9021b9c",
+    "role_id": "A2_SYSTEM_ARCHITECT",
+    "schema_version": "1.0",
+    "stage_id": "SYSTEM_ARCHITECTURE",
+    "status": "ARCHITECTURE_READY",
+    "task_lineage": {
+      "input_task_commit": "6c7909d5c0efd3e6e64443d6de3b227c1820b01b",
+      "output_task_commit": "6c7909d5c0efd3e6e64443d6de3b227c1820b01b",
+      "task_changed": false
+    },
+    "transition": {
+      "action": "ADVANCE",
+      "requires_state_validation": false,
+      "target": "DEFECT_TOPOLOGY",
+      "target_kind": "STAGE"
+    },
+    "validation": {
+      "acceptance_predicates_satisfied": true,
+      "evidence_binding_satisfied": true,
+      "evidence_refs_count": 0,
+      "invocation_identity_valid": true,
+      "invocation_policy_valid": true,
+      "output_keys_valid": true,
+      "required_outputs_satisfied": true,
+      "retrieval_context_authorized": true,
+      "status_legal": true,
+      "task_commit_change_authorized": true,
+      "task_lineage_valid": true
+    }
+  },
+  "remediation_updates": [],
+  "state": {
+    "control_plane_commit": "0579a0f2f1e7e3560d13ff1530f467c8e01b6a1a",
+    "derived_from": {
+      "freshness_overlay_hash": null,
+      "record_ids": [
+        "rec_2240d75d9d002944de7ca3618301e3382db3a369e250c0ce2f42d8bd0f202a19",
+        "rec_c7113662704e00ec908b7912f1f6e11869163956ea9721ec8fa0f757a9021b9c",
+        "rec_cd582c78afef910a7bd0db2c41b40d2dcd968a2163818ebc3276f27d95be2346"
+      ]
+    },
+    "ledger_event_count": 54,
+    "ledger_head_event_id": "evt_ebe3fb6dad0ea4fac682262de08e4041a5dfd4f4b62429c461085188a66b70c2",
+    "lineage": {
+      "bootstrap_task_commit": "6c7909d5c0efd3e6e64443d6de3b227c1820b01b",
+      "current_task_commit": "6c7909d5c0efd3e6e64443d6de3b227c1820b01b",
+      "recorded_task_commit": "6c7909d5c0efd3e6e64443d6de3b227c1820b01b",
+      "status": "CURRENT"
+    },
+    "next": {
+      "action": "INVOKE_STAGE",
+      "optional_inputs": [
+        "DOMAIN_FAILURE_REFERENCES"
+      ],
+      "owner": "A3 Defect Topology Designer",
+      "primary_role_id": "A3_DEFECT_TOPOLOGY_DESIGNER",
+      "required_inputs": [
+        "APPROVED_OPERATIONAL_REQUIREMENTS",
+        "APPROVED_WORK_PACKAGE",
+        "CLEAN_SYSTEM_ARCHITECTURE",
+        "CREATION_PROFILE"
+      ],
+      "stage_id": "DEFECT_TOPOLOGY"
+    },
+    "nodes": [
+      {
+        "disposition": "ADVANCE",
+        "input_task_commit": "6c7909d5c0efd3e6e64443d6de3b227c1820b01b",
+        "invocation_id": "inv_a87d8c7c224c523605005c5752c0f1bf4107fbeff7a97deea15c514d135f0bfb",
+        "ledger_event_id": "evt_4db18219dbff51822e40f7e042be26b42c379981fad977c69b61b8dd2af866e1",
+        "node_id": "RULE_RESOLUTION",
+        "node_kind": "STAGE",
+        "output_task_commit": "6c7909d5c0efd3e6e64443d6de3b227c1820b01b",
+        "reason": "validated ADVANCE record reaches WORK_PACKAGE_RESEARCH",
+        "record_id": "rec_2240d75d9d002944de7ca3618301e3382db3a369e250c0ce2f42d8bd0f202a19",
+        "status": "CURRENT"
+      },
+      {
+        "disposition": "ADVANCE",
+        "input_task_commit": "6c7909d5c0efd3e6e64443d6de3b227c1820b01b",
+        "invocation_id": "inv_a58c98e7cddac2eda842074187226dd2d39bd1bec49dda73a94fa1189415f8c9",
+        "ledger_event_id": "evt_99567241f168ca750a5e80a4561ac81e3f5904e1340d3dc2e38f0512071da7ea",
+        "node_id": "WORK_PACKAGE_RESEARCH",
+        "node_kind": "STAGE",
+        "output_task_commit": "6c7909d5c0efd3e6e64443d6de3b227c1820b01b",
+        "reason": "validated ADVANCE record reaches SYSTEM_ARCHITECTURE",
+        "record_id": "rec_cd582c78afef910a7bd0db2c41b40d2dcd968a2163818ebc3276f27d95be2346",
+        "status": "CURRENT"
+      },
+      {
+        "disposition": "ADVANCE",
+        "input_task_commit": "6c7909d5c0efd3e6e64443d6de3b227c1820b01b",
+        "invocation_id": "inv_205463a2e2e52a9174c89ca6a79cb88f9af57885a87cc79ba7a7ba478da1ce41",
+        "ledger_event_id": "evt_ebe3fb6dad0ea4fac682262de08e4041a5dfd4f4b62429c461085188a66b70c2",
+        "node_id": "SYSTEM_ARCHITECTURE",
+        "node_kind": "STAGE",
+        "output_task_commit": "6c7909d5c0efd3e6e64443d6de3b227c1820b01b",
+        "reason": "validated ADVANCE record reaches DEFECT_TOPOLOGY",
+        "record_id": "rec_c7113662704e00ec908b7912f1f6e11869163956ea9721ec8fa0f757a9021b9c",
+        "status": "CURRENT"
+      },
+      {
+        "input_task_commit": "0ad08868799c19ea2e02458bd2fc92ec64eaa288",
+        "invocation_id": "inv_5a7928ba7be824d462bb47c50b53d9c4fd61ea5915373d49bcd19aca08beff89",
+        "ledger_event_id": "evt_edaf686d0b11bf097c2db35d6d4cf6decf9c67475ae43e2d6c55f74660e30283",
+        "node_id": "DEFECT_TOPOLOGY",
+        "node_kind": "STAGE",
+        "output_task_commit": "0ad08868799c19ea2e02458bd2fc92ec64eaa288",
+        "reason": "latest execution record predates the latest current predecessor execution; the downstream stage must be rerun even when task/control commits are unchanged",
+        "record_id": "rec_6e45ae71e05f3dc131a0b353d0a415fd2873c8fa8089db161098183932ca0eac",
+        "status": "STALE"
+      },
+      {
+        "input_task_commit": "0ad08868799c19ea2e02458bd2fc92ec64eaa288",
+        "invocation_id": "inv_3f288eecaba30d4a991120c7d71a7f76074d31ca4339081358e662c563f11d8d",
+        "ledger_event_id": "evt_775ec76b1d662b2ab36e023c4b0e05a172a540fa762409a309027fc4200c56a5",
+        "node_id": "ENVIRONMENT_BUILD",
+        "node_kind": "STAGE",
+        "output_task_commit": "0ad08868799c19ea2e02458bd2fc92ec64eaa288",
+        "reason": "upstream node DEFECT_TOPOLOGY is not current; later historical evidence cannot advance",
+        "record_id": "rec_cd6aef39a57525e5b138fbc5c67b5218582d14c1f4212c7da4007f12775cee95",
+        "status": "STALE"
+      },
+      {
+        "input_task_commit": "0ad08868799c19ea2e02458bd2fc92ec64eaa288",
+        "invocation_id": "inv_61e7657b25a6f58fa75f836d0b0c9c88ed6cb92341cb641e7e2ba715d36ac9e2",
+        "ledger_event_id": "evt_bb16a99628bbf1b7904a370d9d48cb7b9b7b056f40a6595b9118c7153920df4b",
+        "node_id": "REFERENCE_SOLUTION",
+        "node_kind": "STAGE",
+        "output_task_commit": "0ad08868799c19ea2e02458bd2fc92ec64eaa288",
+        "reason": "upstream node ENVIRONMENT_BUILD is not current; later historical evidence cannot advance",
+        "record_id": "rec_cacb4f7a025818178b7653fbfc0caaaa69282efb43c1cb04e767bbd845512fee",
+        "status": "STALE"
+      },
+      {
+        "input_task_commit": "0ad08868799c19ea2e02458bd2fc92ec64eaa288",
+        "invocation_id": "inv_cdb9e544693dc137fcd6ebc4a87f58f51e7549b3f0b31d1715af4789fc57eb64",
+        "ledger_event_id": "evt_601a6a4df7b8f6b7c09abfdabda060589390f8cf5f7398afec473e7bda8061b2",
+        "node_id": "VERIFIER_BUILD",
+        "node_kind": "STAGE",
+        "output_task_commit": "0ad08868799c19ea2e02458bd2fc92ec64eaa288",
+        "reason": "upstream node REFERENCE_SOLUTION is not current; later historical evidence cannot advance",
+        "record_id": "rec_b8cf37818d380aaabc77bc671ca569ac8d00dfc6a3a68baff7d4d58572e6aa90",
+        "status": "STALE"
+      },
+      {
+        "input_task_commit": "0ad08868799c19ea2e02458bd2fc92ec64eaa288",
+        "invocation_id": "inv_2e16e2e378786c7423e31449945050edeaa720965b56c8bc01ef76e935aed3f1",
+        "ledger_event_id": "evt_0e89dda63a5da62ae13c1ed47887333377b6f1c8cd2ee4d013b9f3a71babef00",
+        "node_id": "HUMAN_WRITING_RESEARCH",
+        "node_kind": "STAGE",
+        "output_task_commit": "0ad08868799c19ea2e02458bd2fc92ec64eaa288",
+        "reason": "upstream node VERIFIER_BUILD is not current; later historical evidence cannot advance",
+        "record_id": "rec_98cbdef7a72788daf19eb8cd493b64e8fdcf6bf758a608c1f439c251606c8502",
+        "status": "STALE"
+      },
+      {
+        "input_task_commit": "0ad08868799c19ea2e02458bd2fc92ec64eaa288",
+        "invocation_id": "inv_7ed199951adc9c04f97a75b132799e69c3352019ef5e8cba125384f49fd23b11",
+        "ledger_event_id": "evt_1df6e654cb5bcd42ac2d9f35de9ac01bdaba7fbc45b0e9584a41c2af0d562e58",
+        "node_id": "INSTRUCTION_DRAFT",
+        "node_kind": "STAGE",
+        "output_task_commit": "0ad08868799c19ea2e02458bd2fc92ec64eaa288",
+        "reason": "upstream node HUMAN_WRITING_RESEARCH is not current; later historical evidence cannot advance",
+        "record_id": "rec_7d382cdff67bf81711eb4e05b07e349c76e25fe6d6764dd0721efdb2b7299adf",
+        "status": "STALE"
+      },
+      {
+        "input_task_commit": "0ad08868799c19ea2e02458bd2fc92ec64eaa288",
+        "invocation_id": "inv_1d825fd2e0b585f9860eb77aa20e469d594a5810b6157b71ddb8941a863f1aab",
+        "ledger_event_id": "evt_aeece2ba230537008b389af3b4e77b574794174f9981cba76ccad515a05833cd",
+        "node_id": "SPEC_ALIGNMENT",
+        "node_kind": "STAGE",
+        "output_task_commit": "0ad08868799c19ea2e02458bd2fc92ec64eaa288",
+        "reason": "upstream node INSTRUCTION_DRAFT is not current; later historical evidence cannot advance",
+        "record_id": "rec_1b483ec8a8701c018c7f6f6eb9d3bb7b1cd3804cef6a21419ffd765c2c983482",
+        "status": "STALE"
+      },
+      {
+        "input_task_commit": "0ad08868799c19ea2e02458bd2fc92ec64eaa288",
+        "invocation_id": "inv_d188f48e6372a08beb6baabe9978953e93bd5227f949bb91b7d54bddbc623a2b",
+        "ledger_event_id": "evt_e567b50909c096059f7e89f313258ac5e126dcae792cdbdf9260f3caf2884551",
+        "node_id": "DOCUMENTATION_DRAFT",
+        "node_kind": "STAGE",
+        "output_task_commit": "0ad08868799c19ea2e02458bd2fc92ec64eaa288",
+        "reason": "upstream node SPEC_ALIGNMENT is not current; later historical evidence cannot advance",
+        "record_id": "rec_8465f9dddaf1a6f7e57072a97c6c5017c65ea554936a5415316287516410fbf9",
+        "status": "STALE"
+      },
+      {
+        "input_task_commit": "0ad08868799c19ea2e02458bd2fc92ec64eaa288",
+        "invocation_id": "inv_b28857b7d5ab034938af06ece6267e084ab68e497898e7426d5086e9b7885adf",
+        "ledger_event_id": "evt_96231a8b66fd4af74e33e9c6d6b9f36902887ae6b69220c7ca7e4f841180084a",
+        "node_id": "FORMAT_GATE",
+        "node_kind": "STAGE",
+        "output_task_commit": "0ad08868799c19ea2e02458bd2fc92ec64eaa288",
+        "reason": "upstream node DOCUMENTATION_DRAFT is not current; later historical evidence cannot advance",
+        "record_id": "rec_734b8d99f24abda0c15004cbfaa8fb495c4c3ac1869c9a7d158048b8438a3904",
+        "status": "STALE"
+      },
+      {
+        "input_task_commit": "0ad08868799c19ea2e02458bd2fc92ec64eaa288",
+        "invocation_id": "inv_138388f649fc4cc8d78d36c6bc39961f777b191b59b2106a0e31c41422213ca4",
+        "ledger_event_id": "evt_df9492b2c56958c607d1907d2700862e4da77e3f64ff6c14163cafb1e888f7cc",
+        "node_id": "ASSEMBLY",
+        "node_kind": "STAGE",
+        "output_task_commit": "0ad08868799c19ea2e02458bd2fc92ec64eaa288",
+        "reason": "upstream node FORMAT_GATE is not current; later historical evidence cannot advance",
+        "record_id": "rec_56d44d1c839cb2516dcb643c4e77b0c4c518e7fc2b79f68ed30cd98bfcffad1a",
+        "status": "STALE"
+      },
+      {
+        "input_task_commit": "0ad08868799c19ea2e02458bd2fc92ec64eaa288",
+        "invocation_id": "inv_a0c5890631a319e54583db25f9f9b1e6260778074d5a2caf5fcedd8f463a47d9",
+        "ledger_event_id": "evt_effbc5219488490c4093f75350c9a42fe32649b63d09fea619645a1e36ce3dd3",
+        "node_id": "COMPLEXITY_GATE",
+        "node_kind": "STAGE",
+        "output_task_commit": "0ad08868799c19ea2e02458bd2fc92ec64eaa288",
+        "reason": "upstream node ASSEMBLY is not current; later historical evidence cannot advance",
+        "record_id": "rec_995f93a405a382756d3d228d4aeb93547577dc425ebfe141e201962b0a6771a8",
+        "status": "STALE"
+      },
+      {
+        "input_task_commit": "0ad08868799c19ea2e02458bd2fc92ec64eaa288",
+        "invocation_id": "inv_48500351f108866c929e5148f4dcca3119e366835673661ceec9d647871a1547",
+        "ledger_event_id": "evt_ef4904fc1fe53cec069219f4aa692a7932832924c8690f8ab445ed74d030dbba",
+        "node_id": "RUNTIME_AUTHENTICITY",
+        "node_kind": "STAGE",
+        "output_task_commit": "0ad08868799c19ea2e02458bd2fc92ec64eaa288",
+        "reason": "upstream node COMPLEXITY_GATE is not current; later historical evidence cannot advance",
+        "record_id": "rec_faa817e5379b020e269fc88d1bc3411658403b9745616b3ed77bb820fc16c4c3",
+        "status": "STALE"
+      },
+      {
+        "input_task_commit": "0ad08868799c19ea2e02458bd2fc92ec64eaa288",
+        "invocation_id": "inv_6b2b4aeb6c48c4362cbb2826e4f7d255f54edac80e8055e7a9dc809cd4942f55",
+        "ledger_event_id": "evt_eb9a09f0cbd8540df91329dcba3602cefb7f502f6225aa9e62c7440a2f08843e",
+        "node_id": "DETERMINISTIC_VALIDATION",
+        "node_kind": "STAGE",
+        "output_task_commit": "0ad08868799c19ea2e02458bd2fc92ec64eaa288",
+        "reason": "upstream node RUNTIME_AUTHENTICITY is not current; later historical evidence cannot advance",
+        "record_id": "rec_eb1d2450b44c7205d3683dcd0e0509686cf88b0034f59c1853618c6459643167",
+        "status": "STALE"
+      },
+      {
+        "node_id": "FROZEN_CANDIDATE",
+        "node_kind": "STATE",
+        "reason": "state cannot be current while its predecessor chain is non-current",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "QUALITY_INTERLOCK",
+        "node_kind": "STAGE",
+        "reason": "upstream node FROZEN_CANDIDATE is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "PRE_LLMAJ",
+        "node_kind": "STAGE",
+        "reason": "upstream node QUALITY_INTERLOCK is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "MODEL_DIAGNOSTIC_GPT",
+        "node_kind": "STAGE",
+        "reason": "upstream node PRE_LLMAJ is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "MODEL_DIAGNOSTIC_CLAUDE",
+        "node_kind": "STAGE",
+        "reason": "upstream node MODEL_DIAGNOSTIC_GPT is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "MODEL_DIAGNOSTIC_AGGREGATE",
+        "node_kind": "STAGE",
+        "reason": "upstream node MODEL_DIAGNOSTIC_CLAUDE is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "HARBOR_LLMAJ",
+        "node_kind": "STAGE",
+        "reason": "upstream node MODEL_DIAGNOSTIC_AGGREGATE is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "OFFICIAL_MODEL_TRIALS",
+        "node_kind": "STAGE",
+        "reason": "upstream node HARBOR_LLMAJ is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "TRIAL_ANALYSIS",
+        "node_kind": "STAGE",
+        "reason": "upstream node OFFICIAL_MODEL_TRIALS is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "DIFFICULTY_ASSESSMENT",
+        "node_kind": "STAGE",
+        "reason": "upstream node TRIAL_ANALYSIS is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "FINAL_REVIEW",
+        "node_kind": "STAGE",
+        "reason": "upstream node DIFFICULTY_ASSESSMENT is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "SUBMISSION_READY",
+        "node_kind": "STAGE",
+        "reason": "upstream node FINAL_REVIEW is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      }
+    ],
+    "schema_version": "1.0",
+    "state_snapshot_id": "state_b27b53303c5f456e3b5fc51100e79f08e9c9e07677c2cfc82704a18011c2c27e",
+    "summary": {
+      "BLOCKED": 0,
+      "CURRENT": 3,
+      "MISSING": 12,
+      "STALE": 13
+    },
+    "task_commit": "6c7909d5c0efd3e6e64443d6de3b227c1820b01b",
+    "task_id": "ec2-artifact-policy-enforcement"
+  }
+}
