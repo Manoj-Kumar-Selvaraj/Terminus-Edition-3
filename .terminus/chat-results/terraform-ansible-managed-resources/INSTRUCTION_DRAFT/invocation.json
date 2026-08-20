@@ -1,0 +1,194 @@
+{
+  "acceptance_predicates": {},
+  "authority": {
+    "control_plane_commit": "215cc70bcebcccc3c9a401af1b74a97d90026da3",
+    "policy_versions": {},
+    "task_commit": "78ad422902b27dea954905130a1267b02cff3596",
+    "task_id": "terraform-ansible-managed-resources"
+  },
+  "evidence": {
+    "authorized_evidence_classes": [
+      "CONTROL_PLANE_POLICY",
+      "PUBLIC_REFERENCE",
+      "SOLVER_VISIBLE_TASK"
+    ],
+    "evidence_required": [
+      "schema-valid current solver-visible requirement contract",
+      "complete material requirement set",
+      "instruction/docs boundary",
+      "absolute required output paths",
+      "current-state evidence only when claimed"
+    ],
+    "excluded_evidence_classes": [
+      "CI_RUNTIME_EVIDENCE",
+      "CURRENT_REVIEW_PACKET",
+      "DURABLE_SESSION_STATE",
+      "FINAL_PACKAGE_EVIDENCE",
+      "MODEL_TRIAL_EVIDENCE",
+      "PRIOR_REVIEW_RESULTS",
+      "PRIVATE_CREATION_DESIGN",
+      "SOLUTION_ORACLE",
+      "VERIFIER_PRIVATE"
+    ],
+    "mandatory_exact_reads": [
+      "TERMINUS_3_AI_INSTRUCTIONS.md",
+      ".terminus/agents/INSTRUCTION_POLICY.md",
+      ".terminus/agents/CREATOR_PROMPTS.md"
+    ],
+    "retrieval_mode": "FILTERED_HYBRID"
+  },
+  "ignored_input_count": 0,
+  "inputs": {
+    "optional": {},
+    "required": {
+      "APPROVED_SOLVER_VISIBLE_REQUIREMENT_CONTRACT": {
+        "instruction_path": "terraform-ansible-managed-resources/instruction.md",
+        "material_requirements": [
+          "preserve exactly ten documented resource interfaces, provider source local/ansibleops version 0.1.0 and supplied local inventory",
+          "Terraform Core is the sole durable Terraform state authority",
+          "resource identity derives only from documented external object keys and survives mutable updates",
+          "Create/Update/Delete use Ansible mutations; Read/refresh uses native Linux observation only and is side-effect free",
+          "publish new Terraform state only after successful mutation; failures/timeouts/cancellation preserve prior successful state and remain retryable",
+          "delete only after successful scoped teardown or confirmed absence; failed delete remains managed",
+          "copy/template preserve source_digest intent, destination observation and deterministic variable ordering",
+          "named line/block updates are idempotent and deletion preserves siblings",
+          "user/group reconcile native account state with deterministic supplementary groups and exact remove_home_on_destroy behavior",
+          "cron defaults omitted user/schedule fields to root/wildcards, updates in place and preserves sibling entries",
+          "ansible-playbook uses structured argv with literal spaces/metacharacters; temporary playbooks clean on all terminal outcomes; full output is never persisted in state",
+          "canonical normalization makes equivalent modes/unordered values/account observations/cron defaults converge",
+          "preserve Go 1.24/current Plugin Framework and Terraform CLI 1.10.5 compatibility",
+          "do not substitute null_resource, terraform_data execution wrappers, local-exec, remote-exec, provisioners, manual terraform.tfstate edits or provider-owned durable state"
+        ],
+        "objective": "Complete the inherited ansibleops Terraform Plugin Framework provider under /app/provider as exactly ten normal managed resources.",
+        "referenced_contracts": [
+          "/app/provider/docs/provider-contract.md",
+          "/app/provider/docs/resource-reference.md",
+          "/app/provider/docs/lifecycle.md"
+        ]
+      },
+      "CREATION_RULE_CONTEXT": {
+        "CONTROL_PLANE_COMMIT": "215cc70bcebcccc3c9a401af1b74a97d90026da3",
+        "CREATION_PROFILE": "large_system_strict",
+        "KNOWN_POLICY_CONFLICTS": []
+      },
+      "TASK_WRITING_PROFILE": {
+        "avoid": [
+          "invented incidents or personal claims",
+          "rubric-like hidden-test enumeration",
+          "style-driven omission of lifecycle constraints",
+          "copied distinctive source wording"
+        ],
+        "must_preserve": [
+          "ten documented resource interfaces",
+          "stable external-object identity",
+          "Ansible mutation versus native observation boundary",
+          "transactional state publication and retry semantics",
+          "scoped ownership/deletion",
+          "runner process safety",
+          "normalization/idempotency",
+          "Terraform Core sole durable state authority"
+        ],
+        "structure": [
+          "state the inherited provider objective first",
+          "preserve exact public contracts and hard safety/state constraints",
+          "reference solver-visible technical contracts instead of reproducing hidden verifier rows",
+          "keep implementation-neutral observable outcomes"
+        ],
+        "voice": "direct platform engineering change request"
+      },
+      "VALIDATED_HUMAN_WRITING_CALIBRATION": {
+        "CALIBRATION_PAIR_ID": "hwpair-cad07099d9b7745c8d0d",
+        "DOMAIN_PROFILE": "platform_cloud",
+        "EXTERNAL_DATASET_COVERAGE": "DEGRADED",
+        "REVIEWER_CALIBRATION_ID": "hwcal-reviewer-9f65bbba6663cdf3d4b1",
+        "WRITER_CALIBRATION_ID": "hwcal-writer-af32c86623c671bdb2bf"
+      }
+    }
+  },
+  "invocation_id": "inv_28cced7e764579cedcb36a9388668234a646039b0c0e37638ed8b582a8b1f3cc",
+  "learning": {
+    "context_hash": "sha256:bb84a513aa2b6e4374d691759c4a6edf94169f479f4611e9091643b9f279ccfc",
+    "lessons": [],
+    "mode": "GENERALIZED_LESSONS_PLUS_OWNED_REMEDIATIONS",
+    "raw_feedback_exposed": false,
+    "raw_historical_findings_exposed": false,
+    "registry_heads": {
+      "feedback": "GENESIS",
+      "findings": "GENESIS",
+      "lessons": "GENESIS",
+      "patterns": "GENESIS",
+      "remediations": "GENESIS"
+    },
+    "remediations": []
+  },
+  "missing_required_inputs": [],
+  "output_contract": {
+    "allowed_status_values": [
+      "READY",
+      "REWRITE_REQUIRED",
+      "BLOCKED"
+    ],
+    "deterministic_validators": [
+      "solver-visible requirement contract schema/hash/provenance checks",
+      "Q7 structural/path checks where mechanically enforceable",
+      ".terminus/human_writing/validate_calibration.py"
+    ],
+    "optional_fields": [
+      "CURRENT_STATE_EVIDENCE",
+      "UNRESOLVED_GAPS"
+    ],
+    "persisted_artifacts": [
+      "<task>/instruction.md"
+    ],
+    "required_fields": [
+      "INSTRUCTION_PATH",
+      "REQUIREMENT_COVERAGE",
+      "DOC_REFERENCES",
+      "INSTRUCTION_SHAPE",
+      "HANDOFF_TEST",
+      "REVERSE_OUTLINE_RISK",
+      "SPEC_FILE_LOOPHOLE"
+    ],
+    "semantic_reviewers": [
+      "Instruction Reviewer",
+      "Q1 Spec Gap Repairer",
+      "Q3 Spec Ambiguity Repairer"
+    ]
+  },
+  "readiness": "READY",
+  "retrieval": {
+    "query": null,
+    "retrieved_chars": 0,
+    "retrieved_context": [],
+    "status": "NOT_REQUESTED"
+  },
+  "routing": {
+    "failure_routes": {
+      "AMBIGUITY": "Q3 Spec Ambiguity Repairer",
+      "FORMAT_OR_PATH_ERROR": "Q7 Task Format Enforcer",
+      "HIDDEN_TEST_OR_REPAIR_LEAKAGE": "A7 Instruction Writer",
+      "MISSING_REQUIREMENT": "Q1 Spec Gap Repairer",
+      "SPEC_FILE_LOOPHOLE": "A7 Instruction Writer / Q1 Spec Gap Repairer",
+      "STALE_OR_INVALID_REQUIREMENT_CONTRACT": "Creation Controller -> requirement owner/Q1 -> regenerate projection"
+    },
+    "stale_on": [
+      "solver-visible requirement contract change",
+      "material requirement change",
+      "referenced solver-visible contract change",
+      "required output/schema change",
+      "instruction-policy change",
+      "human-writing calibration change",
+      "dataset registry change",
+      "domain profile change"
+    ],
+    "success_transition": "SPEC_ALIGNMENT"
+  },
+  "schema_version": "1.0",
+  "stage": {
+    "lifecycle": "creation",
+    "owner": "A7 Instruction Writer",
+    "role_class": "PRODUCER",
+    "role_id": "A7_INSTRUCTION_WRITER",
+    "stage_id": "INSTRUCTION_DRAFT"
+  }
+}
