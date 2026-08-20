@@ -6,18 +6,18 @@
       "ref": "commit:78ad422902b27dea954905130a1267b02cff3596"
     },
     {
-      "content_hash": "sha256:8d7c0b246bf0e279a1462c24246dd49052a0367fc23fe9b1f13c800165271b24",
+      "content_hash": "sha256:fca3ef4b283f1a1fe2aa6d960cd36a17b7232eb0b7a130f9cc8d43d948d6ec42",
       "kind": "COMMIT",
-      "ref": "commit:02ac3445191f96a9309d3a08248f09e17a738c5b"
+      "ref": "commit:67b805a297ac005ee08e82facc533f53a3233192"
     }
   ],
-  "invocation_id": "inv_74d80f6e1606f1cc974cdcbd5d5cf94a2b28dd4810203dac042d2a4d83126a09",
+  "invocation_id": "inv_7ca5f4628adf487e46bd3980124c7a68c891e2ba7f26a7ea0a3e961f2046e77b",
   "output_task_commit": "78ad422902b27dea954905130a1267b02cff3596",
   "outputs": {
-    "DIFFICULTY_EXPLANATION": "The engineering difficulty comes from making ten different Linux object families share normal Terraform lifecycle semantics without hiding state in a second store: identity must remain stable across mutable changes, refresh must observe native external state, mutations must be transactional from Terraform's point of view, and resource-specific ownership rules must converge safely under retries and drift.",
+    "DIFFICULTY_EXPLANATION": "The task is difficult because ten differentiated Terraform managed-resource lifecycles share identity, transactional state, native drift observation, Ansible mutation, process-failure handling, ownership and normalization constraints that must converge across fresh provider processes.",
     "README_PATH": "terraform-ansible-managed-resources/README.md",
-    "SOLUTION_EXPLANATION": "The reference implementation centralizes lifecycle identity and normalization, uses Ansible only for Create/Update/Delete mutations, uses native Linux observation for Read/refresh, publishes Terraform state only after successful mutation, preserves prior managed state on failed update/delete, and uses structured process execution with timeout/cancellation handling and temporary-playbook cleanup. Resource implementations retain their documented filesystem, content, text, account, group and cron ownership semantics.",
-    "VERIFICATION_EXPLANATION": "The verifier maps the public requirement families to 30 failure-to-pass and 6 preservation tests covering schemas, identity, native drift, transactional failure/retry, scoped deletion, content/text/account/cron behavior, ownership collisions, runner safety, normalization and the Ansible mutation backend. SPEC_ALIGNMENT independently resolved Q1 as NO_GAP, Q2 as COVERED and Q3 as CLEAR. Runtime/oracle empirical success is not claimed here and remains for the later deterministic validation stage."
+    "SOLUTION_EXPLANATION": "The reference completion restores stable external-key identities, native side-effect-free Read behavior, mutation-before-state publication, retry-safe failed update/delete semantics, structured ansible-playbook argv and cleanup, scoped ownership, and canonical normalization while preserving the documented provider interfaces.",
+    "VERIFICATION_EXPLANATION": "The verifier contains 30 fail-to-pass behavioral cases plus 6 pass-to-pass preservation cases spanning schema, identity/state, drift, transactional mutation, deletion, content/text/account/cron ownership, runner safety and normalization. Current runtime/oracle empirical success is intentionally not claimed here and must be earned at DETERMINISTIC_VALIDATION."
   },
   "schema_version": "1.0",
   "status": "DOCUMENTATION_READY"
