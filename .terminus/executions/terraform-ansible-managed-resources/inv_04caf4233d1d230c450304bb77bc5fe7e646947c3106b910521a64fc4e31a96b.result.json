@@ -1,0 +1,189 @@
+{
+  "authority": {
+    "control_plane_commit": "df7ef7569e2947b9f0bf7cf89ed4dec6c2a5a1fe",
+    "policy_versions": {},
+    "task_commit": "78ad422902b27dea954905130a1267b02cff3596",
+    "task_id": "terraform-ansible-managed-resources"
+  },
+  "disposition": "ADVANCE",
+  "evidence_refs": [
+    {
+      "content_hash": "sha256:104817a239b92de3e53f14d6bc0176563437894773e060648776dc09c6280374",
+      "kind": "COMMIT",
+      "ref": "commit:78ad422902b27dea954905130a1267b02cff3596"
+    }
+  ],
+  "invocation_id": "inv_04caf4233d1d230c450304bb77bc5fe7e646947c3106b910521a64fc4e31a96b",
+  "invocation_snapshot": {
+    "acceptance_predicates": {},
+    "authority": {
+      "control_plane_commit": "df7ef7569e2947b9f0bf7cf89ed4dec6c2a5a1fe",
+      "policy_versions": {},
+      "task_commit": "78ad422902b27dea954905130a1267b02cff3596",
+      "task_id": "terraform-ansible-managed-resources"
+    },
+    "evidence": {
+      "authorized_evidence_classes": [
+        "CI_RUNTIME_EVIDENCE",
+        "CONTROL_PLANE_POLICY",
+        "PUBLIC_REFERENCE",
+        "SOLUTION_ORACLE",
+        "SOLVER_VISIBLE_TASK"
+      ],
+      "evidence_required": [
+        "implementation evidence",
+        "verification evidence",
+        "no benchmark framing/leakage"
+      ],
+      "excluded_evidence_classes": [
+        "CURRENT_REVIEW_PACKET",
+        "DURABLE_SESSION_STATE",
+        "FINAL_PACKAGE_EVIDENCE",
+        "MODEL_TRIAL_EVIDENCE",
+        "PRIOR_REVIEW_RESULTS",
+        "PRIVATE_CREATION_DESIGN",
+        "VERIFIER_PRIVATE"
+      ],
+      "mandatory_exact_reads": [
+        ".terminus/agents/CREATION_PIPELINE.md",
+        ".terminus/agents/CREATOR_PROMPTS.md",
+        ".terminus/agents/PROMPTS.md"
+      ],
+      "retrieval_mode": "FILTERED_HYBRID"
+    },
+    "ignored_input_count": 0,
+    "inputs": {
+      "optional": {},
+      "required": {
+        "APPROVED_WORK_PACKAGE": {
+          "ENGINEERING_OBJECTIVE": "Complete the ten-resource ansibleops provider as one coherent Terraform lifecycle/reconciliation system.",
+          "WORK_PACKAGE_ID": "MANAGED_RESOURCE_LIFECYCLE_COMPLETION"
+        },
+        "IMPLEMENTATION_EVIDENCE": {
+          "components": [
+            "provider/runtime",
+            "lifecycle identity and normalization",
+            "Ansible playbook generation",
+            "structured runner",
+            "native observation",
+            "ten resource implementations"
+          ],
+          "resource_count": 10,
+          "status": "IMPLEMENTED",
+          "task_commit": "78ad422902b27dea954905130a1267b02cff3596"
+        },
+        "VERIFICATION_EVIDENCE": {
+          "F2P_COUNT": 30,
+          "P2P_COUNT": 6,
+          "Q1_STATUS": "NO_GAP",
+          "Q2_STATUS": "COVERED",
+          "Q3_STATUS": "CLEAR",
+          "SPEC_ALIGNMENT": "ALIGNED",
+          "runtime_oracle_empirical": "DEFERRED_TO_DETERMINISTIC_VALIDATION",
+          "status": "STRUCTURALLY_READY"
+        }
+      }
+    },
+    "invocation_id": "inv_04caf4233d1d230c450304bb77bc5fe7e646947c3106b910521a64fc4e31a96b",
+    "learning": {
+      "context_hash": "sha256:bb84a513aa2b6e4374d691759c4a6edf94169f479f4611e9091643b9f279ccfc",
+      "lessons": [],
+      "mode": "GENERALIZED_LESSONS_PLUS_OWNED_REMEDIATIONS",
+      "raw_feedback_exposed": false,
+      "raw_historical_findings_exposed": false,
+      "registry_heads": {
+        "feedback": "GENESIS",
+        "findings": "GENESIS",
+        "lessons": "GENESIS",
+        "patterns": "GENESIS",
+        "remediations": "GENESIS"
+      },
+      "remediations": []
+    },
+    "missing_required_inputs": [],
+    "output_contract": {
+      "allowed_status_values": [
+        "DOCUMENTATION_READY",
+        "REWRITE_REQUIRED",
+        "BLOCKED"
+      ],
+      "deterministic_validators": [],
+      "optional_fields": [],
+      "persisted_artifacts": [
+        "<task>/README.md"
+      ],
+      "required_fields": [
+        "README_PATH",
+        "DIFFICULTY_EXPLANATION",
+        "SOLUTION_EXPLANATION",
+        "VERIFICATION_EXPLANATION"
+      ],
+      "semantic_reviewers": [
+        "Engineering Documentation Reviewer",
+        "Human Quality Reviewer"
+      ]
+    },
+    "readiness": "READY",
+    "retrieval": {
+      "query": null,
+      "retrieved_chars": 0,
+      "retrieved_context": [],
+      "status": "NOT_REQUESTED"
+    },
+    "routing": {
+      "failure_routes": {
+        "LEAKAGE_OR_SYNTHETIC_PROSE": "A8 Documentation Writer / Human Quality Reviewer",
+        "UNSUPPORTED_CLAIM": "A8 Documentation Writer"
+      },
+      "stale_on": [
+        "implementation evidence change",
+        "verification evidence change",
+        "material task-description change"
+      ],
+      "success_transition": "FORMAT_GATE"
+    },
+    "schema_version": "1.0",
+    "stage": {
+      "lifecycle": "creation",
+      "owner": "A8 Documentation Writer",
+      "role_class": "PRODUCER",
+      "role_id": "A8_DOCUMENTATION_WRITER",
+      "stage_id": "DOCUMENTATION_DRAFT"
+    }
+  },
+  "outputs": {
+    "DIFFICULTY_EXPLANATION": "The task couples ten differentiated Linux resource families through shared Terraform lifecycle semantics: stable external identity, native drift observation, transactional mutation/state publication, scoped ownership, runner failure behavior and canonical normalization. Correctness therefore depends on coherent cross-component invariants rather than isolated resource CRUD.",
+    "README_PATH": "terraform-ansible-managed-resources/README.md",
+    "SOLUTION_EXPLANATION": "The reference completion centralizes lifecycle identity/normalization and uses structured Ansible execution for Create/Update/Delete while Read observes Linux state natively. State advances only after successful mutation; failures remain retryable, owned deletions remain scoped, and equivalent representations converge without replay.",
+    "VERIFICATION_EXPLANATION": "Structural verification maps the public contract to 30 F2P and 6 P2P cases, with same-chat Q1 NO_GAP, Q2 COVERED and Q3 CLEAR. Fresh empirical Oracle/NOP execution remains intentionally deferred to the registered DETERMINISTIC_VALIDATION gate and is not claimed here."
+  },
+  "record_id": "rec_1572d80c864d512823e1f77e881bc336c19f329bb99ac0a4829b70c235bb9269",
+  "role_id": "A8_DOCUMENTATION_WRITER",
+  "schema_version": "1.0",
+  "stage_id": "DOCUMENTATION_DRAFT",
+  "status": "DOCUMENTATION_READY",
+  "task_lineage": {
+    "input_task_commit": "78ad422902b27dea954905130a1267b02cff3596",
+    "output_task_commit": "78ad422902b27dea954905130a1267b02cff3596",
+    "task_changed": false
+  },
+  "transition": {
+    "action": "ADVANCE",
+    "requires_state_validation": false,
+    "target": "FORMAT_GATE",
+    "target_kind": "STAGE"
+  },
+  "validation": {
+    "acceptance_predicates_satisfied": true,
+    "evidence_binding_satisfied": true,
+    "evidence_refs_count": 1,
+    "invocation_identity_valid": true,
+    "invocation_policy_valid": true,
+    "output_keys_valid": true,
+    "required_outputs_satisfied": true,
+    "retrieval_context_authorized": true,
+    "status_legal": true,
+    "task_commit_change_authorized": true,
+    "task_lineage_valid": true
+  }
+}
