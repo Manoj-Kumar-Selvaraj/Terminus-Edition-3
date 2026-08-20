@@ -40,13 +40,7 @@ def task_scope_changed(old: str, new: str, task: str) -> bool:
     if old == new:
         return False
     run('git','fetch','origin','main')
-    cp = subprocess.run([
-        'git','diff','--quiet',old,new,'--',
-        task,
-        f'.terminus/executions/{task}',
-        f'.terminus/research/{task}-dataset-calibration.json',
-        f'.terminus/research/{task}-task-writing-profile.json',
-    ], cwd=ROOT)
+    cp = subprocess.run(['git','diff','--quiet',old,new,'--',task,f'.terminus/executions/{task}',f'.terminus/research/{task}-dataset-calibration.json',f'.terminus/research/{task}-task-writing-profile.json'], cwd=ROOT)
     return cp.returncode != 0
 
 sha = os.environ['GITHUB_SHA']
@@ -86,8 +80,15 @@ if cont.get('execution_mode') not in {'INLINE_SPECIALIST','INLINE_SPECIALIST_SEQ
     raise SystemExit(f'unsupported execution mode {cont.get("execution_mode")}')
 dump(WORK/'invocation.json',inv)
 
+if task == 'edge-router-runtime':
+    calibration_domain='go edge router platform cloud networking runtime reconciliation lifecycle'
+    task_profile={'voice':'direct platform engineering change request','structure':['state the inherited edge-router objective first','preserve exact public contracts and hard lifecycle/state constraints','reference solver-visible technical contracts instead of reproducing hidden verifier rows','keep implementation-neutral observable outcomes'],'must_preserve':['generation-safe publication','independent source authority','stable endpoint identity and incarnation','request snapshot consistency','bounded drain and retirement','durable checkpoint recovery','public edge-router contracts'],'avoid':['invented incidents or personal claims','rubric-like hidden-test enumeration','style-driven omission of lifecycle constraints','copied distinctive source wording']}
+else:
+    calibration_domain='terraform ansible provider platform cloud infrastructure linux managed resources lifecycle'
+    task_profile={'voice':'direct platform engineering change request','structure':['state the inherited provider objective first','preserve exact public contracts and hard safety/state constraints','reference solver-visible technical contracts instead of reproducing hidden verifier rows','keep implementation-neutral observable outcomes'],'must_preserve':['ten documented resource interfaces','stable external-object identity','Ansible mutation versus native observation boundary','transactional state publication and retry semantics','scoped ownership/deletion','runner process safety','normalization/idempotency','Terraform Core sole durable state authority'],'avoid':['invented incidents or personal claims','rubric-like hidden-test enumeration','style-driven omission of lifecycle constraints','copied distinctive source wording']}
+
 if stage == 'HUMAN_WRITING_RESEARCH':
-    run('python3','.terminus/human_writing/calibration_cli.py','--root','.','plan','--task-id',task,'--domain','terraform ansible provider platform cloud infrastructure linux managed resources lifecycle','--output',str(WORK/'calibration-pair.json'))
+    run('python3','.terminus/human_writing/calibration_cli.py','--root','.','plan','--task-id',task,'--domain',calibration_domain,'--output',str(WORK/'calibration-pair.json'))
 
 if mode == 'RECORD':
     result=req['result']
@@ -99,7 +100,6 @@ if mode == 'RECORD':
         dump(WORK/'calibration-pair.json', pair)
         writer=pair['writer']; reviewer=pair['reviewer']
         approval={'approved':True,'approved_by':'CI_ORCHESTRATOR','reason':'No approved external human-writing cache was supplied; repository policy permits deterministic local calibration with explicit DEGRADED coverage and no claim of FULL external coverage.'}
-        task_profile={'voice':'direct platform engineering change request','structure':['state the inherited provider objective first','preserve exact public contracts and hard safety/state constraints','reference solver-visible technical contracts instead of reproducing hidden verifier rows','keep implementation-neutral observable outcomes'],'must_preserve':['ten documented resource interfaces','stable external-object identity','Ansible mutation versus native observation boundary','transactional state publication and retry semantics','scoped ownership/deletion','runner process safety','normalization/idempotency','Terraform Core sole durable state authority'],'avoid':['invented incidents or personal claims','rubric-like hidden-test enumeration','style-driven omission of lifecycle constraints','copied distinctive source wording']}
         profile={'DATASET_POLICY_VERSION':'1.2','DATASET_REGISTRY_SHA256':pair['dataset_registry_sha256'],'SEED_CATALOG_SHA256':pair['seed_catalog_sha256'],'DOMAIN_PROFILES_SHA256':pair['domain_profiles_sha256'],'DOMAIN_PROFILE':pair['domain_profile'],'CALIBRATION_PAIR_ID':pair['pair_id'],'WRITER_CALIBRATION_ID':writer['calibration_id'],'REVIEWER_CALIBRATION_ID':reviewer['calibration_id'],'WRITER_SAMPLE_IDS':writer['local_seed_sample_ids'],'REVIEWER_SAMPLE_IDS':reviewer['local_seed_sample_ids'],'WRITER_REVIEWER_SAMPLE_OVERLAP':[],'EXTERNAL_DATASET_COVERAGE':'DEGRADED','TASK_WRITING_PROFILE':task_profile,'CACHE_SOURCE_KEYS_USED':[],'RAW_SOURCE_KEYS_USED_FOR_CONTAMINATION':[],'DEGRADED_COVERAGE_APPROVAL':approval,'CURRENT_STATE_EVIDENCE_NOTES':['Current deterministic repository planner generated the pair for this task/domain.','No Oracle, verifier-private, prior-review, model-trial, or private defect evidence was consumed by A6.']}
         research=ROOT/'.terminus'/'research'; research.mkdir(parents=True, exist_ok=True)
         shutil.copyfile(WORK/'calibration-pair.json', research/f'{task}-dataset-calibration.json')
