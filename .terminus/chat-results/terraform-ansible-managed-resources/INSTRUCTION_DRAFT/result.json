@@ -6,35 +6,37 @@
       "ref": "commit:78ad422902b27dea954905130a1267b02cff3596"
     }
   ],
-  "invocation_id": "inv_2c1746a8a6400557f28766facf4ec70298a5fa108533a05c3aab206a808b2022",
+  "invocation_id": "inv_0329fd6becc5bfb19807f90aa6b730096ebecfc51521650d6c2e2a8bf7aea783",
   "output_task_commit": "78ad422902b27dea954905130a1267b02cff3596",
   "outputs": {
+    "CURRENT_STATE_EVIDENCE": "No fresh runtime/oracle pass is claimed by the instruction; empirical validation remains deferred to the registered deterministic gate.",
     "DOC_REFERENCES": [
       "/app/provider/docs/provider-contract.md",
       "/app/provider/docs/resource-reference.md",
       "/app/provider/docs/lifecycle.md"
     ],
-    "HANDOFF_TEST": "PASS: objective, hard lifecycle/state/safety constraints and public contract references are sufficient for an implementation agent without private verifier or Oracle knowledge.",
+    "HANDOFF_TEST": "PASS — a fresh solver can identify the required provider root, ten-resource contract, lifecycle boundaries, state ownership, failure semantics and normal technical documentation without access to verifier-private material.",
     "INSTRUCTION_PATH": "terraform-ansible-managed-resources/instruction.md",
-    "INSTRUCTION_SHAPE": {
-      "bullets": 12,
-      "leakage": "none",
-      "style": "direct platform engineering completion request"
-    },
-    "REQUIREMENT_COVERAGE": {
-      "compatibility": "Go 1.24/current Plugin Framework and Terraform CLI 1.10.5",
-      "durability": "Terraform Core sole durable state authority",
-      "identity": "stable documented external-object keys with mutable updates in place",
-      "mutation_observation": "Ansible for Create/Update/Delete; native side-effect-free Linux Read/refresh",
-      "normalization": "modes, unordered values, account observations and cron defaults converge",
-      "prohibitions": "no null_resource/terraform_data wrappers, provisioners, manual tfstate or provider-owned durable store",
-      "resource_scope": "exactly ten documented ansibleops resources and existing interfaces",
-      "resource_semantics": "filesystem/symlink, copy/template digests, named line/block, user/group, cron defaults and sibling preservation",
-      "runner": "structured argv, literal spaces/metacharacters, temp cleanup, no full command output in state",
-      "state_failure": "state only after successful mutation; failed update/delete/timeout/cancel preserve prior applied state and retryability"
-    },
-    "REVERSE_OUTLINE_RISK": "LOW: bullets follow engineering invariants and resource families rather than private test rows.",
-    "SPEC_FILE_LOOPHOLE": "PASS: instruction.md owns all material end-state and safety requirements; public docs carry legitimate detailed resource/lifecycle contracts."
+    "INSTRUCTION_SHAPE": "Direct platform engineering change request: objective first, public contracts and hard lifecycle/state constraints preserved, implementation-neutral observable outcomes, no hidden-test enumeration.",
+    "REQUIREMENT_COVERAGE": [
+      "exact ten documented resource interfaces and provider source/version/inventory",
+      "stable external-object identity and in-place mutable updates",
+      "Ansible Create/Update/Delete versus native side-effect-free Read",
+      "missing/wrong-kind absence and external drift reconciliation",
+      "state publication only after successful mutation and failure-safe retry/delete",
+      "filesystem/content/symlink scoped lifecycle semantics",
+      "copy/template digest intent and deterministic vars",
+      "named line/block idempotency and scoped deletion",
+      "user/group native observation normalization and remove_home_on_destroy",
+      "cron named entry defaults and sibling preservation",
+      "structured ansible-playbook argv timeout/cancellation/temp cleanup and state-output boundary",
+      "canonical normalization and convergence",
+      "Go 1.24/current Plugin Framework and Terraform 1.10.5 compatibility",
+      "explicit prohibition of wrapper/provisioner/manual-state/provider-state substitutes"
+    ],
+    "REVERSE_OUTLINE_RISK": "LOW",
+    "SPEC_FILE_LOOPHOLE": "CLOSED",
+    "UNRESOLVED_GAPS": []
   },
   "schema_version": "1.0",
   "status": "READY"
