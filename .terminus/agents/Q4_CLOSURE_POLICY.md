@@ -1,6 +1,6 @@
 # Q4 Closure and Human Risk-Acceptance Policy
 
-Policy version: `1.2`
+Policy version: `1.3`
 
 This policy governs exceptional Q4 satisfaction after ordinary Q4 repair iteration can no longer proceed. It does not weaken ordinary cold Q4, rewrite a frozen Q4 verdict, or permit the Orchestrator to waive a semantic finding.
 
@@ -50,64 +50,74 @@ The closure packet records a deterministic `q4-finding-v1` SHA-256 fingerprint f
 
 A closure PASS does **not** change the final Q4 result from `REVISE` to `PASS`. The durable session retains the frozen Q4 verdict and adds a distinct `Q4 Adjudicated Closure` PASS row.
 
-## Authenticated human risk acceptance
+## Authenticated external human risk acceptance
 
-`AUTHENTICATED_HUMAN_RISK_ACCEPTANCE` is a separate satisfaction authority for an exact frozen Q4 `REVISE`. It is not a Q4 PASS, reviewer override, or Orchestrator waiver.
+`AUTHENTICATED_HUMAN_RISK_ACCEPTANCE` remains the hardened signed-authority route for a frozen Q4 `REVISE`. It requires the canonical append-only feedback event to be `HUMAN_AUTHENTICATED`, a valid `HUMAN_FEEDBACK` receipt, explicit frozen-Q4 and accepted-current-commit binding, Git ancestry from the frozen Q4 commit to the accepted commit, exact blocking-finding acceptance, and non-empty residual backlog. Task mutation after the accepted commit makes the authority stale. The CI Orchestrator may consume this authority but may not manufacture it.
 
-It is valid only when all of the following are true:
+## Same-chat human decision authority
 
-- the authority artifact is a canonical feedback event in the append-only feedback registry;
-- the event source is `HUMAN_REVIEW` and provenance is `HUMAN_AUTHENTICATED`;
-- the authority receipt validates for action `HUMAN_FEEDBACK` and the exact human principal;
-- the feedback category is exactly `HUMAN_RISK_ACCEPTANCE` and `stage_hint` is `QUALITY_INTERLOCK`;
-- the event binds the exact task ID;
-- the signed decision is `ACCEPTED`, while `q4_verdict` remains exactly `REVISE`;
-- the event binds the exact frozen Q4 `review_id`;
-- `observation.value.q4_task_commit` exactly equals the frozen Q4 result's task commit;
-- `observation.value.accepted_task_commit` exactly equals the feedback event's task commit;
-- both commits exist in repository history;
-- `accepted_task_commit` equals or descends from `q4_task_commit` according to Git ancestry;
-- the repository's current task commit exactly equals `accepted_task_commit` when the authority is consumed;
-- `accepted_finding_ids` exactly equals the frozen Q4 blocking-finding set;
-- `residual_backlog` is non-empty and remains durable as accepted unresolved risk;
-- the human producer is not any registered Terminus machine/agent role;
-- the referenced feedback event is revalidated every time the satisfaction route is consumed.
+`CHAT_HUMAN_RISK_ACCEPTANCE` is the normal low-friction route for a live task owner who explicitly accepts a bounded residual Q4 risk in the active Terminus task chat. It is not cryptographically equivalent to `HUMAN_AUTHENTICATED` and must never be relabeled as such.
 
-The descendant relationship is **not** an implicit equivalence rule. A human acceptance must explicitly sign both commits. A valid acceptance for one descendant snapshot cannot be reused for another later descendant, sibling, ancestor, or unrelated commit. Any task mutation after `accepted_task_commit` makes the acceptance stale.
+This route requires a first-class outstanding human decision created through `.terminus/human_decision_cli.py request` with:
 
-The CI Orchestrator may consume and validate this authority, but may not manufacture it.
+- exact `task_id` and current exact `task_commit`;
+- stage `QUALITY_INTERLOCK`;
+- decision type `ACCEPT_RESIDUAL_Q4_RISK`;
+- at least `ACCEPT_RISK` and `REJECT` as allowed decisions;
+- machine-defined reason and consequences;
+- structured context containing the frozen Q4 `review_id`, frozen Q4 `task_commit`, `q4_verdict: REVISE`, the exact complete `accepted_finding_ids`, and non-empty `residual_backlog`.
 
-The canonical lifecycle representation remains:
+The decision request receives deterministic `decision_id = hd_<sha256>` and is recorded in the append-only hash-chained `.terminus/human-decisions/<task>/ledger.jsonl` ledger. The Orchestrator must present that exact outstanding request to the human. It must not infer approval from old chat prose, a generic preference, or an earlier risk decision.
+
+Only after an explicit response in the active task chat may the Orchestrator call `.terminus/human_decision_cli.py resolve` for that exact pending decision. The resolution records `authority.type = CHAT_HUMAN_APPROVAL`, source `ACTIVE_TASK_CHAT`, and a SHA-256 fingerprint of the explicit response without storing the response prose itself.
+
+The acceptance is valid only when:
+
+- the decision remains the exact resolved request for this task and stage;
+- the decision task commit equals the repository's current task commit;
+- the decision is `ACCEPT_RISK` or a policy-allowed equivalent such as `OVERRIDE_WITH_BACKLOG`;
+- the Q4 result remains `REVISE` with sufficient evidence and MEDIUM/HIGH confidence;
+- the decision context binds the exact frozen Q4 review ID and frozen Q4 task commit;
+- the context accepts exactly every blocking Q4 finding and preserves non-empty residual backlog;
+- any task-commit change makes the approval stale and requires a new decision request.
+
+The canonical lifecycle representation is:
 
 ```text
 Q4 verdict: REVISE
-Q4 satisfaction: AUTHENTICATED_HUMAN_RISK_ACCEPTANCE
+Q4 satisfaction: CHAT_HUMAN_RISK_ACCEPTANCE
 Q4 Human Risk Acceptance: PASS
-frozen Q4 task commit: <q4_task_commit>
-accepted task commit: <accepted_task_commit>
+Human authority: CHAT_HUMAN_APPROVAL
 ```
 
-The `Q4_CLOSURE_RESULT` optional stage-output field is also the compatibility envelope for exceptional Q4-satisfaction evidence. For this human route it contains only the authority locator:
+The `Q4_CLOSURE_RESULT` compatibility envelope for this route contains only:
 
 ```json
 {
-  "type": "AUTHENTICATED_HUMAN_RISK_ACCEPTANCE",
-  "feedback_id": "feedback_<sha256>"
+  "type": "CHAT_HUMAN_RISK_ACCEPTANCE",
+  "decision_id": "hd_<sha256>"
 }
 ```
 
-The envelope itself has no authority. `.terminus/q4_human_risk.py` resolves and revalidates the signed feedback event before advancement.
+The envelope has no authority by itself. `.terminus/q4_chat_human_risk.py` revalidates the human-decision ledger, current task snapshot and Q4 binding whenever the route is consumed.
+
+## Human decision recovery rule
+
+An unresolved decision is a real `HUMAN_DECISION_REQUIRED` stop condition, not a reason to invent or guess approval. A new task chat must recover the outstanding decision from `.terminus/human-decisions/<task>/ledger.jsonl`, present it again, and wait for an explicit response. Resolved decisions are reusable only for the exact commit-bound request they authorized.
+
+External signed authority remains available for policies that explicitly require higher assurance. Routine Terminus risk acceptance should prefer the chat-human route when current policy permits it.
 
 ## Quality Interlock semantics
 
-The Q4 side of Quality Interlock is satisfied by exactly one of three routes:
+The Q4 side of Quality Interlock is satisfied by exactly one of four routes:
 
 1. `DIRECT_PASS` — a current ordinary Q4 `PASS` under normal Protocol rules;
-2. `ADJUDICATED_CLOSURE_PASS` — a final cold Q4 `REVISE` plus a current closure result that passes `.terminus/q4_closure.py` and `.terminus/validate_quality_interlock.py`; or
-3. `AUTHENTICATED_HUMAN_RISK_ACCEPTANCE` — a frozen Q4 `REVISE` plus exact authenticated human acceptance of its complete blocking-finding set against one exact current descendant snapshot that passes `.terminus/q4_human_risk.py` and `.terminus/validate_quality_interlock.py`.
+2. `ADJUDICATED_CLOSURE_PASS` — a final cold Q4 `REVISE` plus a current closure result that passes `.terminus/q4_closure.py` and `.terminus/validate_quality_interlock.py`;
+3. `AUTHENTICATED_HUMAN_RISK_ACCEPTANCE` — a frozen Q4 `REVISE` plus exact externally authenticated human acceptance that passes `.terminus/q4_human_risk.py`; or
+4. `CHAT_HUMAN_RISK_ACCEPTANCE` — a frozen Q4 `REVISE` plus an exact current same-chat decision that passes `.terminus/q4_chat_human_risk.py`.
 
-The two exceptional routes preserve the original Q4 verdict. Q6 and every other mandatory gate remain independently required and unchanged.
+The exceptional routes preserve the original Q4 verdict. Q6 and every other mandatory gate remain independently required and unchanged.
 
 ## Termination
 
-A closure result containing any blocking disposition leaves the task `BLOCKED`. It does not authorize another normal Q4 patch cycle. Re-entry then requires a genuinely different strategy, new authority, or higher-precedence policy change. A valid authenticated human-risk decision is such a new authority only for the exact signed task/Q4 snapshot, exact accepted current descendant snapshot, and accepted residual findings.
+A closure result containing any blocking disposition leaves the task `BLOCKED`. It does not authorize another normal Q4 patch cycle. Re-entry then requires a genuinely different strategy, new authority, or higher-precedence policy change. A valid human-risk decision is such a new authority only for the exact bound task/Q4 snapshot and accepted residual findings.
