@@ -31,6 +31,29 @@ def patch_manager_compatibility() -> None:
         '\tcase "go-module":\n\t\treturn goModuleRE.MatchString(name) && strings.Contains(name, "/")',
         '\tcase "go-module":\n\t\treturn goModuleRE.MatchString(name)',
     )
+    replace_once(
+        path,
+        '''func profileAllowsAction(profile ManagerProfile, action string) bool {
+\taction = strings.ToLower(strings.TrimSpace(action))
+\tif action == "" {
+\t\treturn profile.AllowEmptyAction
+\t}
+\treturn contains(profile.InstallActions, action) || contains(profile.UpdateActions, action) || contains(profile.RemoveActions, action)
+}''',
+        '''func profileAllowsAction(profile ManagerProfile, action string) bool {
+\taction = strings.ToLower(strings.TrimSpace(action))
+\tif action == "" {
+\t\treturn profile.AllowEmptyAction
+\t}
+\t// The external request contract uses "install" as the generic admission
+\t// operation for all three surfaces; manager-specific verbs are accepted in
+\t// addition to that stable compatibility action.
+\tif action == "install" && profile.DefaultActionClass == "install" {
+\t\treturn true
+\t}
+\treturn contains(profile.InstallActions, action) || contains(profile.UpdateActions, action) || contains(profile.RemoveActions, action)
+}''',
+    )
 
 
 def patch_starter_scanner_seam() -> None:
