@@ -1,16 +1,16 @@
 {
   "schema_version": "3.0",
-  "review_id": "stonevault-crash-safe-storage-1cbdc003-spec-test-contract-af551fb58a",
+  "review_id": "stonevault-crash-safe-storage-1cbdc003-production-logic-dbda451087",
   "protocol_policy_version": "2.2",
   "prompt_policy_version": "2.2",
   "role_policy_version": "1.1",
   "control_plane_commit": "5678a234fa57a29bef76d422cea20547a32810a5",
-  "role_contract_hash": "9607c7323be7db66eb7b520db4498f29efc686073e6f3d565c8e2c99ad26a34c",
+  "role_contract_hash": "828f84c63f4e37642ab42740b22aa95646ddaa42972f30902e9fe9a034e5458c",
   "task": "stonevault-crash-safe-storage",
   "task_commit": "1cbdc0030a8a6483db4c91865aa60b8ef127c9c6",
   "state": "FROZEN_CANDIDATE",
-  "role": "Spec-Test Contract Reviewer",
-  "question": "Is every substantive verifier behavior discoverable from the solver-visible contract, every material requirement tested, and every grading-relevant statement unambiguous?",
+  "role": "Production Logic Auditor",
+  "question": "Is the solver-visible core genuinely complex, reachable, coupled, non-toy and credible as production logic rather than LOC or module padding?",
   "authoritative_rules": [
     "TERMINUS_3_AI_INSTRUCTIONS.md",
     ".terminus/AGENT_SYSTEM.md",
@@ -20,22 +20,23 @@
     ".terminus/agents/QUALITY_AGENT_PROMPTS.md"
   ],
   "evidence_allowed": [
-    "instruction.md",
-    "all solver-visible contracts referenced by instruction.md",
-    "tests/",
-    "test map when needed to identify classification only",
-    "environment interfaces required to interpret observable behavior"
+    "task.toml",
+    "solver-visible environment/runtime/configuration code",
+    "entrypoints and operator workflows",
+    "runtime-authenticity and complexity reports",
+    "representative data/state and incident evidence"
   ],
   "evidence_excluded": [
-    "Q1/Q2/Q3 conclusions before the independent matrix is frozen",
-    "Verifier Author coverage rationale",
-    "previous Spec-Test Contract Reviewer verdict",
+    "Complexity Governor verdict as a conclusion to copy",
+    "creator claims that code is production-grade",
+    "previous Production Logic Auditor verdict",
     "other specialist verdicts",
-    "desired aggregate outcome"
+    "desired difficulty tier"
   ],
   "prior_verdicts_visible": false,
   "isolation_mode": "PROCEDURAL",
   "change_since_last_review": "Controller repair 44f23180 fixed Q4 private-map projection and immutable review preflight; CI run 32338961777 passed; quality request transport adapter 4cc1f68c validated by CI run 32339617385.",
   "output_schema": ".terminus/agents/schemas/review_result.schema.json",
-  "review_output_path": ".terminus/reviews/stonevault-crash-safe-storage/1cbdc003/stonevault-crash-safe-storage-1cbdc003-spec-test-contract-af551fb58a.json"
+  "review_output_path": ".terminus/reviews/stonevault-crash-safe-storage/1cbdc003/stonevault-crash-safe-storage-1cbdc003-production-logic-dbda451087.json",
+  "review_scope_hash": "63b1df2323f5f131c1cd51cc8126072da08ca75e8a03eaff72c16b83aaff4228"
 }
