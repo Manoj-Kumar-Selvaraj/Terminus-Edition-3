@@ -1,0 +1,20 @@
+name: EC2 Automated Quality Trigger
+
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/ec2-quality-trigger.yml']
+
+permissions:
+  contents: write
+
+jobs:
+  quality:
+    uses: ./.github/workflows/terminus-quality-lifecycle.yml
+    with:
+      task: ec2-artifact-policy-enforcement
+      stage: QUALITY_INTERLOCK
+      publish_results: true
+      execute_optional_q8: false
+      change: "Frozen EC2 task completed runtime authenticity and empirical Oracle/NOP validation: Oracle 36/36 pass, starter 27/27 F2P fail and 9/9 P2P pass; no solver-visible task changes."
+    secrets: inherit
