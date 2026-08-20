@@ -187,18 +187,24 @@ def _validate_human_risk_gate(
     if q4 is None:
         return False
     try:
-        q4_human_risk.validate_human_risk_acceptance(
+        metadata = q4_human_risk.validate_human_risk_acceptance(
             ROOT,
             envelope={
                 "type": q4_human_risk.SATISFACTION_MODE,
                 "feedback_id": feedback_id,
             },
             q4_result=q4,
+            current_task_commit_override=truth_commit,
         )
     except ValueError as exc:
         report.error(f"{context}: Q4 Human Risk Acceptance invalid: {exc}")
         return False
-    if q4.get("task") != task or q4.get("task_commit") != truth_commit:
+    if q4.get("task") != task:
+        report.error(
+            f"{context}: Q4 Human Risk Acceptance does not bind the current task ID"
+        )
+        return False
+    if metadata.get("accepted_task_commit") != truth_commit:
         report.error(
             f"{context}: Q4 Human Risk Acceptance does not bind the current task commit"
         )
