@@ -134,6 +134,11 @@ def resolve_quality_execution_modes(
         for value in inline.get("producer_role_classes", [])
         if isinstance(value, str)
     }
+    creation_governor_role_ids = {
+        str(value)
+        for value in inline.get("creation_governor_role_ids", [])
+        if isinstance(value, str)
+    }
     quality_role_ids = {
         str(value)
         for value in inline.get("quality_role_ids", [])
@@ -152,6 +157,10 @@ def resolve_quality_execution_modes(
     ]
     if not producer_classes or not quality_role_ids:
         raise QualityExecutionModeError("same-chat role policy is incomplete")
+    if creation_governor_role_ids != {"A10_COMPLEXITY_GOVERNOR"}:
+        raise QualityExecutionModeError(
+            "same-chat creation governor must be A10_COMPLEXITY_GOVERNOR"
+        )
     if set(checkpoints) != {"Q1", "Q2", "Q3", "Q5", "Q7"}:
         raise QualityExecutionModeError("mandatory same-chat Q checkpoint set drift")
     spec_sequence = inline_sequences.get("SPEC_ALIGNMENT")
@@ -180,6 +189,7 @@ def resolve_quality_execution_modes(
         "q4_q6_mode": q4_q6_mode,
         "q8_mode": q8_mode,
         "producer_role_classes": sorted(producer_classes),
+        "inline_creation_governor_role_ids": sorted(creation_governor_role_ids),
         "inline_quality_role_ids": sorted(quality_role_ids),
         "inline_stage_sequences": deepcopy(inline_sequences),
         "mandatory_same_chat_checkpoints": dict(sorted(checkpoints.items())),
@@ -196,6 +206,8 @@ def inline_execution_mode(
     role_id: str,
 ) -> str:
     """Return the default ChatGPT execution mode for a non-quality stage."""
+    if role_id in set(policy["inline_creation_governor_role_ids"]):
+        return "INLINE_SPECIALIST"
     if role_id in set(policy["inline_quality_role_ids"]):
         return "INLINE_SPECIALIST"
     if role_class in set(policy["producer_role_classes"]):
