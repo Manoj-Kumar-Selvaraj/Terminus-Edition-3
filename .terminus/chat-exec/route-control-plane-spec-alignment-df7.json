@@ -1,0 +1,38 @@
+{
+  "schema_version": "1.0",
+  "mode": "RECORD",
+  "task_id": "route-control-plane",
+  "task_commit": "22d2e9e09f4deb58029559fe9a0863c2e032f25c",
+  "control_plane_commit": "df7ef7569e2947b9f0bf7cf89ed4dec6c2a5a1fe",
+  "expected_repository_head": "28ea89811b7c7b338fbbbbbf6d0d81abc0278232",
+  "stage_id": "SPEC_ALIGNMENT",
+  "inputs": {
+    "CURRENT_INSTRUCTION": {
+      "path": "route-control-plane/instruction.md",
+      "shape": "two short direct platform-engineering paragraphs",
+      "material_requirements": ["fleet-wide desired-state route/policy reconciliation","canonical IPv4/IPv6 route and policy-rule identities","valid rule/table dependencies","revision-fenced preview/apply/rollback","idempotent retries and no partial publication","failure-safe per-node restart recovery","fresh owned drift reconciliation and unowned-object preservation","management reachability preservation","canary/offline rollout isolation and already-current retry safety","idempotent Ansible deployment with host protected-route precedence","dashboard preview-revision CAS","public Go API/runtime preservation","isolated model only; no benchmark host routing mutation"]
+    },
+    "REFERENCED_SOLVER_VISIBLE_CONTRACTS": ["/app/routecp/config/fleet.yaml","/app/routecp/ansible/roles/routecp/defaults/main.yml"],
+    "CURRENT_VERIFIER": {
+      "status": "VERIFIER_READY",
+      "F2P_COUNT": 25,
+      "P2P_COUNT": 4,
+      "coverage_families": ["route identity and address-family/table boundaries","policy priority/table/node validation","revision and idempotency fencing","failed apply/rollback/restart recovery","fresh owned reconciliation","rollout heartbeat/canary/wave/retry behavior","management-aware runtime apply path with protected routing configuration","Ansible host/protected route precedence","dashboard preview revision binding","public API/build and verifier independence"]
+    },
+    "PRIVATE_TEST_MAP": {
+      "requirement_families": ["REQ_ROUTE_IDENTITY","REQ_POLICY_RULES","REQ_TRANSACTION_FENCING","REQ_ATOMIC_RECOVERY","REQ_DRIFT_OWNERSHIP","REQ_ROLLOUT","REQ_ANSIBLE","REQ_DASHBOARD","REQ_INTERFACE","REQ_VERIFIER_INDEPENDENCE"],
+      "secondary_coverage_notes": ["test_go_runtime_contracts exercises the management-aware ControlPlane path under ProtectedCIDRs configuration in addition to its primary atomic-recovery classification","test_ansible_preserves_host_specific_protected_routes covers protected-route configuration precedence"]
+    }
+  },
+  "result": {
+    "status": "ALIGNED",
+    "output_task_commit": "22d2e9e09f4deb58029559fe9a0863c2e032f25c",
+    "outputs": {
+      "Q1_STATUS": "NO_GAP",
+      "Q2_STATUS": "COVERED",
+      "Q3_STATUS": "CLEAR",
+      "REPAIR_EVIDENCE": "Q1: every substantive verifier behavior is discoverable from the two-paragraph work request or its two inherited configuration contracts; no private test/repair wording is needed. Q2: every material solver-visible requirement has meaningful behavioral coverage; management reachability is exercised through the protected-routing ControlPlane runtime path and protected Ansible precedence even though those tests have different primary private-map classifications. Q3: authority, revision binding, ownership, restart/retry, rollout failure handling, deployment precedence, dashboard CAS and host-network isolation are stated with grading-relevant outcomes and no conflicting reasonable interpretation requiring clarification."
+    },
+    "evidence_refs": []
+  }
+}
