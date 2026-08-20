@@ -25,6 +25,95 @@ jobs:
           git add -- "$path"
           git commit -m "Track EC2 remediation run $GITHUB_RUN_ID"
           git push origin HEAD:"$GITHUB_REF_NAME"
+      - name: Apply compatibility-preserving starter seams
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          changed = []
+
+          manager = Path('ec2-artifact-policy-enforcement/environment/enforcer/internal/platform/manager_profiles.go')
+          text = manager.read_text()
+          old = '''\tcase "maven-coordinate":
+          \t\treturn mavenNameRE.MatchString(name)
+          \tcase "npm-package":'''
+          new = '''\tcase "maven-coordinate":
+          \t\tif strings.Contains(name, ":") {
+          \t\t\treturn mavenNameRE.MatchString(name)
+          \t\t}
+          \t\treturn rpmNameRE.MatchString(name)
+          \tcase "npm-package":'''
+          if old in text:
+              text = text.replace(old, new, 1)
+              changed.append(manager)
+          old = '''\tcase "go-module":
+          \t\treturn goModuleRE.MatchString(name) && strings.Contains(name, "/")'''
+          new = '''\tcase "go-module":
+          \t\treturn goModuleRE.MatchString(name)'''
+          if old in text:
+              text = text.replace(old, new, 1)
+              if manager not in changed:
+                  changed.append(manager)
+          manager.write_text(text)
+
+          evidence = Path('ec2-artifact-policy-enforcement/environment/enforcer/internal/platform/evidence_runtime.go')
+          text = evidence.read_text()
+          old = '''func legacyScannerRecord(context *EvaluationContext, assessment ScannerAssessment) ScannerAssessment {
+          \tif assessment.Healthy {
+          \t\treturn assessment
+          \t}
+          \t// Intentional starter defect: unavailable scanner evidence is transformed
+          \t// into a current clean record instead of failing closed.  The solution
+          \t// removes this conversion.
+          \tassessment.Healthy = true
+          \tassessment.RevisionMatches = true
+          \tassessment.Status = "ok"
+          \tassessment.DBRevision = context.Compiled.ScannerRevision
+          \tassessment.Vulnerabilities = nil
+          \tassessment.MaximumSeverity = "NONE"
+          \tassessment.Reason = "legacy-fail-open-clean"
+          \treturn assessment
+          }'''
+          new = '''func legacyScannerRecord(context *EvaluationContext, assessment ScannerAssessment) ScannerAssessment {
+          \tif !assessment.Healthy {
+          \t\t// Intentional starter defect: unavailable scanner evidence is transformed
+          \t\t// into a current clean record instead of failing closed.  The solution
+          \t\t// removes this conversion.
+          \t\tassessment.Healthy = true
+          \t\tassessment.RevisionMatches = true
+          \t\tassessment.Status = "ok"
+          \t\tassessment.DBRevision = context.Compiled.ScannerRevision
+          \t\tassessment.Vulnerabilities = nil
+          \t\tassessment.MaximumSeverity = "NONE"
+          \t\tassessment.Reason = "legacy-fail-open-clean"
+          \t\treturn assessment
+          \t}
+          \tif !assessment.RevisionMatches {
+          \t\t// Intentional starter defect: a healthy record from a stale scanner DB
+          \t\t// is accepted as if it were current.
+          \t\tassessment.RevisionMatches = true
+          \t\tassessment.Reason = "legacy-stale-revision-accepted"
+          \t}
+          \treturn assessment
+          }'''
+          if old in text:
+              evidence.write_text(text.replace(old, new, 1))
+              changed.append(evidence)
+
+          if changed:
+              print('patched:', *changed)
+          else:
+              print('compatibility seams already applied')
+          PY
+          gofmt -w ec2-artifact-policy-enforcement/environment/enforcer/internal/platform/manager_profiles.go ec2-artifact-policy-enforcement/environment/enforcer/internal/platform/evidence_runtime.go
+          if ! git diff --quiet -- ec2-artifact-policy-enforcement/environment/enforcer/internal/platform; then
+            git config user.name 'terminus-remediation[bot]'
+            git config user.email 'terminus-remediation[bot]@users.noreply.github.com'
+            git add -- ec2-artifact-policy-enforcement/environment/enforcer/internal/platform
+            git commit -m 'Preserve EC2 starter compatibility and stale evidence defect'
+            git push origin HEAD:"$GITHUB_REF_NAME"
+          fi
       - name: Format and build production runtime
         shell: bash
         run: |
