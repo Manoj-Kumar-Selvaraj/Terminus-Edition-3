@@ -17,11 +17,14 @@ import (
     "time"
 )
 
+var _ = errors.Is
+var _ = time.Now
+
 func matrixCP(t *testing.T) *ControlPlane {
     t.Helper()
     cp, err := Open(Config{StateDir:filepath.Join(t.TempDir(),"state"),ProtectedCIDRs:[]string{},MaxWave:4})
     if err != nil { t.Fatal(err) }
-    if err := cp.UpsertNode(Node{ID:"n1",Hostname:"n1.local",ManagementIP:"192.0.2.10",Online:true,Labels:map[string]string{"role":"edge"}}); err != nil { t.Fatal(err) }
+    if err := cp.UpsertNode(Node{ID:"n1",Hostname:"n1.local",ManagementIP:"198.51.100.10",Online:true,Labels:map[string]string{"role":"edge"}}); err != nil { t.Fatal(err) }
     return cp
 }
 
