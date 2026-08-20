@@ -1,0 +1,109 @@
+{
+  "evidence_refs": [
+    {
+      "kind": "COMMIT",
+      "ref": "commit:7eaf93f6d3149fd01a40d720ff38a09b649327c1"
+    },
+    {
+      "kind": "COMMIT",
+      "ref": "commit:22d2e9e09f4deb58029559fe9a0863c2e032f25c"
+    }
+  ],
+  "invocation_id": "inv_977f4528856e4b8a8da1811c99ea8d162b7dc766f7561eb2e7f6ff8e51b0d2ee",
+  "output_task_commit": "22d2e9e09f4deb58029559fe9a0863c2e032f25c",
+  "outputs": {
+    "CANDIDATES": [
+      {
+        "DUPLICATE_RISK": "LOW_MEDIUM",
+        "EDGE_FAILURE_SURFACE": [
+          "duplicate route identity",
+          "invalid CIDR or gateway family",
+          "unknown interface",
+          "management route deletion",
+          "stale revision apply",
+          "partial fleet failure",
+          "node offline during rollout",
+          "multipath normalization",
+          "policy priority collision",
+          "table-name collision",
+          "drift after apply",
+          "rollback after partial apply",
+          "concurrent mutation",
+          "restart with pending transaction",
+          "malformed persisted state",
+          "Ansible rerun idempotency",
+          "mixed per-node variables",
+          "dashboard stale revision submission"
+        ],
+        "ENGINEERING_OBJECTIVE": "Build a production-style Go route control plane that models desired route and policy state, reconciles it across a multi-node Linux fleet, detects drift, protects management reachability, records revision history, and exposes the same lifecycle through an operator dashboard and Ansible-driven installation/configuration.",
+        "ID": "FLEET_ROUTE_DESIRED_STATE_RECONCILIATION",
+        "PRESERVATION_OBLIGATIONS": [
+          "never mutate the benchmark host routing table",
+          "rejected changes leave serving state unchanged",
+          "unchanged nodes remain stable across retries",
+          "management-safety routes cannot be removed without a safe replacement",
+          "revision and audit history remains monotonic",
+          "Ansible reruns do not duplicate service or config state"
+        ],
+        "REQUIREMENT_FAMILIES": [
+          "IPv4 and IPv6 route CRUD",
+          "policy routing rules and named tables",
+          "multipath and weighted next hops",
+          "desired-state revisions and validation",
+          "per-node inventory and capability discovery",
+          "preview/diff/apply transactions",
+          "rollback and last-known-good recovery",
+          "drift detection and reconciliation",
+          "idempotency and optimistic concurrency",
+          "fleet rollout waves and failure isolation",
+          "Ansible install/config/service lifecycle",
+          "audit/event history",
+          "health and readiness",
+          "dashboard inventory, route, drift, rollout and revision views"
+        ],
+        "SCALE_FIT": "VERY_HIGH: naturally supports more than 3000 substantive runtime/configuration LOC, 20-30 coupled failure manifestations, and 25-30 distinct behavioral F2P cases without padding."
+      },
+      {
+        "DUPLICATE_RISK": "MEDIUM",
+        "ENGINEERING_OBJECTIVE": "Implement atomic route-table plus FIB-rule transactions, dependency ordering, validation, rollback and restart recovery for complex Linux policy-routing changes.",
+        "ID": "POLICY_ROUTING_TRANSACTION_ENGINE",
+        "REQUIREMENT_FAMILIES": [
+          "route CRUD",
+          "FIB rule CRUD",
+          "table dependencies",
+          "transaction planning",
+          "preflight validation",
+          "commit/rollback",
+          "journal recovery",
+          "conflict detection",
+          "audit history",
+          "API observability"
+        ],
+        "SCALE_FIT": "HIGH but narrower than the requested fleet and dashboard system."
+      },
+      {
+        "DUPLICATE_RISK": "MEDIUM",
+        "ENGINEERING_OBJECTIVE": "Center the system on inventory, route snapshots, drift analytics, compliance policies, remediation waves and dashboard workflows across many nodes.",
+        "ID": "ROUTE_FLEET_OBSERVABILITY_AND_DRIFT_MANAGER",
+        "REQUIREMENT_FAMILIES": [
+          "node inventory",
+          "route snapshots",
+          "desired-vs-observed diff",
+          "policy checks",
+          "drift events",
+          "remediation",
+          "fleet waves",
+          "dashboard",
+          "Ansible bootstrap",
+          "audit exports"
+        ],
+        "SCALE_FIT": "HIGH but route mutation semantics would be less central than requested."
+      }
+    ],
+    "DUPLICATE_RISK_NOTES": "Use rtnetlink route/rule semantics as calibration only. Do not clone edge-router-runtime: this task manages host route tables and FIB policy desired state, not HTTP traffic routing.",
+    "RECOMMENDATION": "FLEET_ROUTE_DESIRED_STATE_RECONCILIATION",
+    "WHY_THIS_ONE": "It preserves the Go API, Ansible fleet deployment, and frontend as first-class coupled responsibilities. The API owns realistic route and policy transaction semantics, Ansible owns repeatable multi-node installation and variable projection, and the dashboard operates revisions, nodes, routes, drift and rollouts. A safe kernel-model adapter preserves Linux semantics without altering the runner network."
+  },
+  "schema_version": "1.0",
+  "status": "CANDIDATES_READY"
+}
