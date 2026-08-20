@@ -1,0 +1,46 @@
+{
+  "schema_version":"1.0",
+  "mode":"RECORD",
+  "task_id":"ec2-artifact-policy-enforcement",
+  "task_commit":"6c7909d5c0efd3e6e64443d6de3b227c1820b01b",
+  "control_plane_commit":"df7ef7569e2947b9f0bf7cf89ed4dec6c2a5a1fe",
+  "expected_repository_head":"2ee8e5950e92eea608ed575541d610ce065e9335",
+  "stage_id":"VERIFIER_BUILD",
+  "inputs":{
+    "BEHAVIORAL_SURFACES":{
+      "cross_component":["digest identity across cache/exception/permit/audit","policy snapshot across decision pipeline","audit commit before completion","rebuild derived state from durable history","permit consumption state across verifier restart","permit verification atomicity with replay ledger and audit"],
+      "edge_boundary":["TTL expiry","exception/permit expiry","tag digest change","policy/DB revision change","crash between journal/projection"],
+      "failure_recovery":["scanner outage","journal/projection crash","malformed journal tail","partial cache","concurrent decisions","permit replay rejected across restart","single-use permit remains single-use under concurrent verification"],
+      "negative_rejection":["missing digest","untrusted source","scanner unavailable/stale","vulnerable without exception","wrong-scope exception","invalid permit scope or validity","corrupt state","replayed otherwise-valid permit","concurrent duplicate stateful verification"],
+      "normal":["uniform manager policy","fresh clean scan","valid exact exception","valid cache restart","durable allow/deny"]
+    },
+    "SOLVER_VISIBLE_CONTRACTS":["ec2-artifact-policy-enforcement/instruction.md","ec2-artifact-policy-enforcement/README.md","ec2-artifact-policy-enforcement/environment/enforcer/docs/architecture.md","ec2-artifact-policy-enforcement/environment/enforcer/docs/policy-contract.md","ec2-artifact-policy-enforcement/environment/enforcer/docs/state-format.md","ec2-artifact-policy-enforcement/environment/enforcer/docs/operations.md"],
+    "SOLVER_VISIBLE_REQUIREMENTS":{
+      "PRESERVATION":["evaluate and verify-permit interfaces and exit behavior","healthy cache reuse","valid scoped exceptions","supplied fixtures","valid prior audit history","stateless verification compatibility"],
+      "REQUIRED_END_STATE":["one consistent admission boundary across package/container/dependency managers","trusted source and immutable digest prerequisites","current revision-bound scanner/cache evidence","exact current exception scope","secret-keyed exact-scope permit validity","durable single-use stateful permit verification","durable ALLOW/DENY journal before projection/success","restart-safe history and deterministic idempotency"]
+    }
+  },
+  "result":{
+    "status":"VERIFIER_READY",
+    "outputs":{
+      "REQUIREMENT_TEST_MATRIX":{
+        "REQ_DURABLE_DECISIONS":["ALLOW journal durability","DENY journal durability","journal-before-projection ordering","projection consistency after restart","valid prior audit history preserved"],
+        "REQ_EVIDENCE_FRESHNESS":["scanner unavailable fail-closed","exact artifact cache identity","policy revision change","scanner database revision change","TTL expiry","malformed/partial cache rejection","healthy fresh cache reuse"],
+        "REQ_EXCEPTION_SCOPE":["expired exception","wrong digest","wrong acquisition surface","wrong environment/policy scope","exception cannot bypass prerequisite source/digest/evidence gates","valid exact exception preserved"],
+        "REQ_MANAGER_AND_SOURCE_IDENTITY":["package high-level and low-level manager normalization","container identity and mutable-reference digest change","dependency-manager source enforcement","missing required digest","trusted normal acquisition"],
+        "REQ_PERMIT_AUTHORIZATION":["keyed permit integrity","request binding","instance binding","artifact digest binding","policy binding","expiry","stateless valid verification"],
+        "REQ_PUBLIC_INTERFACE_PRESERVATION":["evaluate normal output and documented exits","verify-permit normal output and invalid exit","supplied fixture compatibility","cache and exception mechanisms remain operational"],
+        "REQ_RECOVERY_AND_IDEMPOTENCY":["complete trailing journal record handling","durable corruption fails closed","partial state does not become authority","repeated deterministic evaluation does not duplicate committed history","restart rebuilds derived state"],
+        "REQ_STATEFUL_SINGLE_USE":["accepted permit cannot be reused after restart","simultaneous stateful verification accepts at most one consumer","valid first stateful use succeeds"]
+      },
+      "F2P_COUNT":28,
+      "P2P_COUNT":12,
+      "EDGE_BOUNDARY_COVERAGE":["cache TTL boundary","policy/scanner revision rollover","mutable reference resolving to a new digest","exception expiry and exact-scope boundaries","permit expiry and stateful replay across restart","simultaneous permit consumption","crash boundary between authoritative journal and derived projection","complete final record without newline versus durable malformed history"],
+      "NEGATIVE_FAILURE_COVERAGE":["manager/source bypass","missing immutable identity","unavailable/stale/malformed evidence","unwaived vulnerability policy","expired or cross-scope exception","invalid authorization scope or validity","permit replay","concurrent duplicate consumption","missing DENY durability","projection ahead of journal","partial or corrupt state","duplicate decision after restart"],
+      "ORGANIC_COUNT_JUSTIFICATION":"Twenty-eight F2P scenarios cover distinct manifestations across six causally coupled root clusters; twelve P2P scenarios preserve independent normal CLI, cache, exception, state and recovery behavior. The 40-case surface is behavioral rather than parameter-variant or quota padding.",
+      "TEST_INDEPENDENCE":"Verifier behavior is specified through solver-visible CLI, policy, evidence, exception and state contracts and externally observable files/results. Tests do not depend on the solution implementation, private defect IDs as pass conditions, hidden reward values, or test-name branches in production code.",
+      "SOLVER_LOGIC_REIMPLEMENTATION_RISK":"LOW: assertions are organized around public decisions, exit behavior and durable state invariants rather than reproducing the reference solution algorithm."
+    },
+    "evidence_refs":[]
+  }
+}
