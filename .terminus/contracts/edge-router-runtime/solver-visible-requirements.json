@@ -1,0 +1,56 @@
+{
+  "contract_version": "1.0",
+  "task_id": "edge-router-runtime",
+  "requirement_contract_hash": "sha256:91dd4d06dbe93b06a0c6bdfea9115c52acedc310fe380baa8fc7e4156acdda92",
+  "engineering_objective": "Complete the inherited Go edge-router runtime so dynamic route and upstream updates reconcile into generation-safe serving state under concurrent traffic, backend turnover, rejected updates, draining and restart.",
+  "affected_system_location": "/app/edge-router",
+  "required_end_state": "The router validates complete candidates before acceptance, maintains independent per-source authority, publishes one immutable complete serving generation at a time, preserves compatible runtime state for continuously present endpoints, keeps each request on one leased generation through retry/failover, drains removed endpoints safely, recovers only verified complete checkpoints, and retires unreachable lifecycle state without unbounded growth.",
+  "functional_requirements": [
+    "Validate and compile each complete candidate before it can alter accepted source material, accepted revision/digest authority, generation allocation or serving state.",
+    "Maintain revision and content-digest fences independently per source: older revisions cannot publish, exact duplicates are no-ops, and a reused revision with different content is a conflict.",
+    "Publish routes, pools and runtime metadata as one immutable complete generation so readers never observe a partially applied configuration and rejected candidates leave the last-known-good generation intact.",
+    "Use canonical endpoint identity plus membership incarnation to distinguish continuously present endpoints from accepted removal followed by re-add; preserve compatible health, transport, affinity and balancing continuity only across genuine continuous membership.",
+    "Treat pool compatibility according to stateful routing/transport/health semantics rather than endpoint declaration order or non-semantic metadata.",
+    "Acquire one serving generation for a request and retain that lease through route matching, sticky selection, retry and failover instead of mixing state from newer generations.",
+    "Before assigning an endpoint, revalidate membership incarnation, lifecycle and health. Stale affinity or retry history must not make an ineligible endpoint selectable, and no eligible endpoint must produce deterministic service unavailability.",
+    "Exclude removed endpoints from fresh work while allowing legitimate requests that already hold an older generation to finish bounded attempts against draining endpoints before final retirement.",
+    "Persist only complete accepted checkpoint generations with durable body/CURRENT ordering and integrity metadata; startup recovery must reject corrupt, missing, checksum-invalid or incompatible current state and fall back to a retained previous complete generation when available.",
+    "Restore accepted source fences and recovered merge authority before live update providers can submit new revisions after restart.",
+    "Retire unreachable snapshots, endpoint runtimes, transports, affinity entries and lifecycle-scoped telemetry so repeated membership churn remains bounded.",
+    "Preserve normal validate/serve CLI behavior, configuration schema, operator configuration/discovery APIs, health/readiness/status/metrics/events surfaces and live HTTP proxy behavior described by the supplied documentation."
+  ],
+  "preservation_requirements": [
+    "In-flight and long-lived requests remain generation-consistent across unrelated accepted updates.",
+    "Unchanged route semantics and compatible continuously present endpoints retain meaningful runtime continuity across generations.",
+    "Rejected, stale, conflicting or invalid updates cannot damage accepted source authority or the serving generation.",
+    "The implementation must remain a live proxy/runtime; do not replace routing or operator behavior with canned responses."
+  ],
+  "compatibility_requirements": [
+    "Keep the existing Go 1.24 module and registered edge-router-runtime command entrypoint buildable from /app/edge-router.",
+    "Keep the documented JSON configuration format and the serve/validate CLI plus existing HTTP data-plane and operator endpoints compatible.",
+    "Preserve the configured state-directory checkpoint model and documented route, pool, health, affinity, retry, failover and drain semantics."
+  ],
+  "safety_requirements": [
+    "A rejected candidate must not advance accepted revision/digest state, allocate a serving generation that becomes authoritative, or poison later source merges.",
+    "Fresh selection must never assign draining, retired or unhealthy endpoints merely as a fallback when the eligible set is empty.",
+    "Accepted remove/re-add must not reactivate stale endpoint incarnation state.",
+    "Checkpoint acknowledgement must not claim durability before the complete generation body and current authority are safely committed.",
+    "Lifecycle cleanup must not retire state still legitimately reachable by an active generation lease."
+  ],
+  "referenced_docs": [
+    "/app/edge-router/docs/architecture.md",
+    "/app/edge-router/docs/configuration.md",
+    "/app/edge-router/docs/runtime-state.md",
+    "/app/edge-router/docs/operator-guide.md",
+    "/app/edge-router/docs/observability.md"
+  ],
+  "required_outputs": [
+    {
+      "path": "/app/edge-router",
+      "notes": "Repair the inherited Go runtime in place. The verifier rebuilds and exercises this artifact."
+    }
+  ],
+  "source_task_commit": "4b4a8d30429b8455ab80824c3d1e7d03378b5934",
+  "control_plane_commit": "67b805a297ac005ee08e82facc533f53a3233192",
+  "private_sources_excluded": true
+}
