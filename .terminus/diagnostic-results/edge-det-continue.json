@@ -1,0 +1,163 @@
+{
+  "dispatch": {
+    "blocking_reason": "deterministic StageInvocation is not READY",
+    "stage_id": "DETERMINISTIC_VALIDATION",
+    "status": "BLOCKED"
+  },
+  "execution_mode": "HOSTED_DETERMINISTIC_VALIDATION",
+  "executor_handoff": null,
+  "invocation": {
+    "acceptance_predicates": {
+      "PASS": [
+        {
+          "op": "eq",
+          "path": "ORACLE_REWARD",
+          "value": 1
+        },
+        {
+          "op": "eq",
+          "path": "NOP_REWARD",
+          "value": 0
+        },
+        {
+          "op": "nonempty",
+          "path": "F2P_EMPIRICAL_MATRIX"
+        },
+        {
+          "op": "nonempty",
+          "path": "P2P_EMPIRICAL_MATRIX"
+        }
+      ]
+    },
+    "authority": {
+      "control_plane_commit": "df7ef7569e2947b9f0bf7cf89ed4dec6c2a5a1fe",
+      "policy_versions": {},
+      "task_commit": "9663e4da67ab20e6bd66b942ac54b57667408dd8",
+      "task_id": "edge-router-runtime"
+    },
+    "evidence": {
+      "authorized_evidence_classes": [
+        "CI_RUNTIME_EVIDENCE",
+        "CONTROL_PLANE_POLICY",
+        "SOLUTION_ORACLE",
+        "SOLVER_VISIBLE_TASK",
+        "VERIFIER_PRIVATE"
+      ],
+      "evidence_required": [
+        "Oracle reward 1",
+        "NOP reward 0",
+        "every F2P starter/NOP-fail and Oracle-pass",
+        "intended P2P preservation"
+      ],
+      "excluded_evidence_classes": [
+        "CURRENT_REVIEW_PACKET",
+        "DURABLE_SESSION_STATE",
+        "FINAL_PACKAGE_EVIDENCE",
+        "MODEL_TRIAL_EVIDENCE",
+        "PRIOR_REVIEW_RESULTS",
+        "PRIVATE_CREATION_DESIGN",
+        "PUBLIC_REFERENCE"
+      ],
+      "mandatory_exact_reads": [
+        ".terminus/agents/CREATION_PIPELINE.md",
+        ".terminus/agents/QUALITY_AGENT_REGISTRY.md",
+        ".terminus/agents/QUALITY_AGENT_PROMPTS.md"
+      ],
+      "retrieval_mode": "EXACT_ONLY"
+    },
+    "ignored_input_count": 0,
+    "inputs": {
+      "optional": {},
+      "required": {}
+    },
+    "invocation_id": "inv_2518669d9e3107e054725ae32d9ee5fb9d67f250b485e346097ad04cbf1b7f0c",
+    "learning": {
+      "context_hash": "sha256:bb84a513aa2b6e4374d691759c4a6edf94169f479f4611e9091643b9f279ccfc",
+      "lessons": [],
+      "mode": "GENERALIZED_LESSONS_PLUS_OWNED_REMEDIATIONS",
+      "raw_feedback_exposed": false,
+      "raw_historical_findings_exposed": false,
+      "registry_heads": {
+        "feedback": "GENESIS",
+        "findings": "GENESIS",
+        "lessons": "GENESIS",
+        "patterns": "GENESIS",
+        "remediations": "GENESIS"
+      },
+      "remediations": []
+    },
+    "missing_required_inputs": [
+      "CURRENT_TASK_COMMIT",
+      "ORACLE",
+      "STARTER_NOP_STATE",
+      "VERIFIER"
+    ],
+    "output_contract": {
+      "allowed_status_values": [
+        "PASS",
+        "FAIL",
+        "BLOCKED"
+      ],
+      "deterministic_validators": [
+        "task verifier execution",
+        "Oracle/NOP matrix"
+      ],
+      "optional_fields": [
+        "FAILURE_CLASS",
+        "FIRST_MEANINGFUL_ERROR"
+      ],
+      "persisted_artifacts": [
+        "run/job/artifact evidence references"
+      ],
+      "required_fields": [
+        "ORACLE_REWARD",
+        "NOP_REWARD",
+        "F2P_EMPIRICAL_MATRIX",
+        "P2P_EMPIRICAL_MATRIX"
+      ],
+      "semantic_reviewers": []
+    },
+    "readiness": "BLOCKED_MISSING_INPUTS",
+    "retrieval": {
+      "query": null,
+      "retrieved_chars": 0,
+      "retrieved_context": [],
+      "status": "NOT_REQUESTED"
+    },
+    "routing": {
+      "failure_routes": {
+        "RUNTIME_OR_ORACLE_FAILURE": "Q5 Oracle & Runtime Repair Specialist",
+        "VERIFIER_CONTRACT_FAILURE": "Q2/Q3/Verifier Author as evidence indicates"
+      },
+      "stale_on": [
+        "task commit change",
+        "solution change",
+        "verifier change",
+        "runtime dependency change"
+      ],
+      "success_transition": "FROZEN_CANDIDATE"
+    },
+    "schema_version": "1.0",
+    "stage": {
+      "lifecycle": "creation",
+      "owner": "Creation Controller",
+      "role_class": "CONTROLLER",
+      "role_id": "CREATION_CONTROLLER",
+      "stage_id": "DETERMINISTIC_VALIDATION"
+    }
+  },
+  "next": {
+    "action": "INVOKE_STAGE",
+    "optional_inputs": [],
+    "owner": "Creation Controller",
+    "primary_role_id": "CREATION_CONTROLLER",
+    "required_inputs": [
+      "CURRENT_TASK_COMMIT",
+      "ORACLE",
+      "STARTER_NOP_STATE",
+      "VERIFIER"
+    ],
+    "stage_id": "DETERMINISTIC_VALIDATION"
+  },
+  "state_snapshot_id": "state_1ab8d187fb44f2e31d51cbaab7c3cd388298bd431c889b2d61972af345965407"
+}
