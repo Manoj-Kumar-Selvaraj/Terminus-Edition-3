@@ -1,22 +1,22 @@
 {
   "ledger_event": {
-    "control_plane_commit": "215cc70bcebcccc3c9a401af1b74a97d90026da3",
-    "event_id": "evt_a2ea8f7d06057c802af720aa74e5b4782489b50d7f5b441f18f6c219d29a71ac",
+    "control_plane_commit": "02ac3445191f96a9309d3a08248f09e17a738c5b",
+    "event_id": "evt_068641440012c85a716c5eddf701e804f187c64de2b6aec09fab314778ea9b9b",
     "input_task_commit": "78ad422902b27dea954905130a1267b02cff3596",
-    "invocation_id": "inv_c5e5498992b26621053f6373ef2ce24bb14694713ed8e152af5d4f5b9f01076a",
+    "invocation_id": "inv_360e5c6ed4a7ff71c83090662c4f066ec08d8d68da0aa871f9f1fc4cb8d7d1c4",
     "output_task_commit": "78ad422902b27dea954905130a1267b02cff3596",
-    "previous_event_id": "evt_08f40a7ba5fae1c5d4dc814d0687aacb58013cc3fc334b11400cdaea2660e979",
-    "record_hash": "sha256:3e6be8a1649713f80e49ddb8588978351adef2343766c3ae844053ee7837baa0",
-    "record_id": "rec_80af74df737bd2a5387825613482275fdd5c2cbcce935a369de6b08090e83bdc",
-    "record_path": ".terminus/executions/terraform-ansible-managed-resources/inv_c5e5498992b26621053f6373ef2ce24bb14694713ed8e152af5d4f5b9f01076a.result.json",
+    "previous_event_id": "evt_9da7f879a45538f6d191203305f41f25063b3477c22142da0a6f0c807f474e65",
+    "record_hash": "sha256:21e58ca1ed83db830f65076738a7a283d16b9990e78cfd2a3fe8e1af527da388",
+    "record_id": "rec_918cee26b5118cc98cc60d195a9a28e08a0cdd4d3094d937cb9ecde623d2cde5",
+    "record_path": ".terminus/executions/terraform-ansible-managed-resources/inv_360e5c6ed4a7ff71c83090662c4f066ec08d8d68da0aa871f9f1fc4cb8d7d1c4.result.json",
     "schema_version": "1.0",
-    "sequence": 29,
+    "sequence": 40,
     "stage_id": "SPEC_ALIGNMENT",
     "task_id": "terraform-ansible-managed-resources"
   },
   "record": {
     "authority": {
-      "control_plane_commit": "215cc70bcebcccc3c9a401af1b74a97d90026da3",
+      "control_plane_commit": "02ac3445191f96a9309d3a08248f09e17a738c5b",
       "policy_versions": {},
       "task_commit": "78ad422902b27dea954905130a1267b02cff3596",
       "task_id": "terraform-ansible-managed-resources"
@@ -29,12 +29,12 @@
         "ref": "commit:78ad422902b27dea954905130a1267b02cff3596"
       },
       {
-        "content_hash": "sha256:334e6029ea34515d0f9364b213a51af19ed193f7c1c22cdf7b978781c2e856d7",
+        "content_hash": "sha256:8d7c0b246bf0e279a1462c24246dd49052a0367fc23fe9b1f13c800165271b24",
         "kind": "COMMIT",
-        "ref": "commit:215cc70bcebcccc3c9a401af1b74a97d90026da3"
+        "ref": "commit:02ac3445191f96a9309d3a08248f09e17a738c5b"
       }
     ],
-    "invocation_id": "inv_c5e5498992b26621053f6373ef2ce24bb14694713ed8e152af5d4f5b9f01076a",
+    "invocation_id": "inv_360e5c6ed4a7ff71c83090662c4f066ec08d8d68da0aa871f9f1fc4cb8d7d1c4",
     "invocation_snapshot": {
       "acceptance_predicates": {
         "ALIGNED": [
@@ -65,7 +65,7 @@
         ]
       },
       "authority": {
-        "control_plane_commit": "215cc70bcebcccc3c9a401af1b74a97d90026da3",
+        "control_plane_commit": "02ac3445191f96a9309d3a08248f09e17a738c5b",
         "policy_versions": {},
         "task_commit": "78ad422902b27dea954905130a1267b02cff3596",
         "task_id": "terraform-ansible-managed-resources"
@@ -173,7 +173,7 @@
           }
         }
       },
-      "invocation_id": "inv_c5e5498992b26621053f6373ef2ce24bb14694713ed8e152af5d4f5b9f01076a",
+      "invocation_id": "inv_360e5c6ed4a7ff71c83090662c4f066ec08d8d68da0aa871f9f1fc4cb8d7d1c4",
       "learning": {
         "context_hash": "sha256:bb84a513aa2b6e4374d691759c4a6edf94169f479f4611e9091643b9f279ccfc",
         "lessons": [],
@@ -248,12 +248,12 @@
       "Q2_STATUS": "COVERED",
       "Q3_STATUS": "CLEAR",
       "REPAIR_EVIDENCE": {
-        "Q1": "Every verifier-enforced behavior is grounded in explicit instruction text or the three solver-visible provider/resource/lifecycle contracts. No private defect ID, hidden repair location, or hidden-only semantic is required to satisfy a test.",
-        "Q2": "Every material instruction/contract family has direct behavioral coverage across the 30 F2P and 6 P2P scenarios: provider/schema, state/identity, native refresh/drift, transactional failure/retry, scoped deletion, copy/template intent, line/block ownership, accounts, cron, runner safety, normalization, external ownership and Ansible mutation backend.",
-        "Q3": "External identities, mutation-versus-observation boundaries, failed update/delete state behavior, content intent, named-text ownership, account/home rules, cron defaults/siblings and canonical normalization are defined precisely enough to distinguish compliant and non-compliant behavior without private grading knowledge."
+        "Q1": "All verifier-enforced behaviors map to explicit instruction text or the three solver-visible provider/lifecycle/resource contracts; no private defect ID or hidden-only behavior is required.",
+        "Q2": "All material instruction/contract families have direct behavioral coverage across the 30 F2P and 6 P2P scenarios, including state/identity, native refresh, transactional failure/retry, scoped deletion, content/text/account/cron semantics, runner safety, normalization, ownership collision and Ansible mutation backend.",
+        "Q3": "External identities, mutation-versus-observation ownership, update/delete failure behavior, content intent, text ownership, account/home rules, cron defaults/siblings and normalization are defined sufficiently to distinguish compliant from non-compliant behavior without private grading knowledge."
       }
     },
-    "record_id": "rec_80af74df737bd2a5387825613482275fdd5c2cbcce935a369de6b08090e83bdc",
+    "record_id": "rec_918cee26b5118cc98cc60d195a9a28e08a0cdd4d3094d937cb9ecde623d2cde5",
     "role_id": "CREATION_CONTROLLER",
     "schema_version": "1.0",
     "stage_id": "SPEC_ALIGNMENT",
@@ -285,24 +285,24 @@
   },
   "remediation_updates": [],
   "state": {
-    "control_plane_commit": "215cc70bcebcccc3c9a401af1b74a97d90026da3",
+    "control_plane_commit": "02ac3445191f96a9309d3a08248f09e17a738c5b",
     "derived_from": {
       "freshness_overlay_hash": null,
       "record_ids": [
-        "rec_51f1f89efc85f52b06e9f604b11827d323c55ea8b35c65c588df16353b05ed28",
-        "rec_55c5fe0ac89cbde25d737dfeba32dcd0d05921bd42b9525f7d06f497cfb97832",
-        "rec_6c23537048fca6292f9e9f287049331bbf7dcf87b6367f665caa2d0719ea65b1",
-        "rec_80af74df737bd2a5387825613482275fdd5c2cbcce935a369de6b08090e83bdc",
-        "rec_9991c9503ef4b367076604bb336f348286791e8c998e54470726e382c95bb9f4",
-        "rec_d8486d5a046253f222fe65e14fa121c17e752f27d4b648737a87735573fc0045",
-        "rec_de8265f5b06844972a86d0fc1cc141f082fba35aeb825681ba40e3cf50d93e52",
-        "rec_eabf07132803c8c588a16ee1848618c104250832553325547ed031ccbec73d36",
-        "rec_f568d60b5255002b3cc2a54522182d395df603e757cda0e7f3e90b76781f706a",
-        "rec_fba50694e328516733a77ca0f5710f38571cdfda0035fe10107e5835659cd30d"
+        "rec_0428a4533c31256d3afbd065f0cd632c47f127b54270224f82197afde459f804",
+        "rec_0f7920f15b2dfd1bd055c422d18e01cc3c076c784e328a3e6ac5eb2ee98837b2",
+        "rec_1f4e90dd07ac480f1e7d0cf1761279c52708ce91e20df075ce299c3146f4f4e4",
+        "rec_3eed5b22a4b199a41a85e55367314df9ec0061d5bd3123e1cbe567ef5ef76dfe",
+        "rec_918cee26b5118cc98cc60d195a9a28e08a0cdd4d3094d937cb9ecde623d2cde5",
+        "rec_a0926b453acef8d1eaeae25a5f06a1024f67256c545fcc12322d00fefc4de8ec",
+        "rec_ac13eb46c290d394a615aad42f7272fcf85e3d1d5de616a92f4b5e18d027c047",
+        "rec_acd30f3b18e4d1b1cc79082693a392af5dbc16246ba79f5e10e1f8f569d7a476",
+        "rec_c0dc833e87427fab67608db1572605fb7eb48af6adb57da01e6eb124b605142d",
+        "rec_f4a91de135434424bc246ac8055697bcb85c6e7e29009d38a3908ae7d866b9e2"
       ]
     },
-    "ledger_event_count": 29,
-    "ledger_head_event_id": "evt_a2ea8f7d06057c802af720aa74e5b4782489b50d7f5b441f18f6c219d29a71ac",
+    "ledger_event_count": 40,
+    "ledger_head_event_id": "evt_068641440012c85a716c5eddf701e804f187c64de2b6aec09fab314778ea9b9b",
     "lineage": {
       "bootstrap_task_commit": "78ad422902b27dea954905130a1267b02cff3596",
       "current_task_commit": "78ad422902b27dea954905130a1267b02cff3596",
@@ -327,132 +327,132 @@
       {
         "disposition": "ADVANCE",
         "input_task_commit": "78ad422902b27dea954905130a1267b02cff3596",
-        "invocation_id": "inv_3906502d2198dd5fe8d9630704622b7a69ef6ff8438b5048ffc0de2ab08b9d7f",
-        "ledger_event_id": "evt_e04d6afff7a5995161708015c2aa6d00611bc674d2d4a640297cc574c03aa027",
+        "invocation_id": "inv_cb11e2a9bb67c47eca7594cfffca93dfd5749ab5b762350bd526196aeebe9f48",
+        "ledger_event_id": "evt_b01a9b8747f30c661a621c4203a36179224e793a961c0c1e0a3d7c7d4a1609d9",
         "node_id": "RULE_RESOLUTION",
         "node_kind": "STAGE",
         "output_task_commit": "78ad422902b27dea954905130a1267b02cff3596",
         "reason": "validated ADVANCE record reaches WORK_PACKAGE_RESEARCH",
-        "record_id": "rec_55c5fe0ac89cbde25d737dfeba32dcd0d05921bd42b9525f7d06f497cfb97832",
+        "record_id": "rec_1f4e90dd07ac480f1e7d0cf1761279c52708ce91e20df075ce299c3146f4f4e4",
         "status": "CURRENT"
       },
       {
         "disposition": "ADVANCE",
         "input_task_commit": "78ad422902b27dea954905130a1267b02cff3596",
-        "invocation_id": "inv_bfef1ed44348c1c2154c7421449bb82e412e404242a38ac5df75bcf7b9e27b7b",
-        "ledger_event_id": "evt_77808877ae0de56cc2ecc7a12e9ff0121e1257acafb43f1ce15cebe67e03db99",
+        "invocation_id": "inv_502f1075fe35ba32fff0dd52df11b380d49f8cae2c6ed6d1aae58ea7100d21b4",
+        "ledger_event_id": "evt_7bc9c6942155f0128efb69c889bcde83db7a7ba9a1afc3b5df68f6418e4a8d1a",
         "node_id": "WORK_PACKAGE_RESEARCH",
         "node_kind": "STAGE",
         "output_task_commit": "78ad422902b27dea954905130a1267b02cff3596",
         "reason": "validated ADVANCE record reaches SYSTEM_ARCHITECTURE",
-        "record_id": "rec_f568d60b5255002b3cc2a54522182d395df603e757cda0e7f3e90b76781f706a",
+        "record_id": "rec_0f7920f15b2dfd1bd055c422d18e01cc3c076c784e328a3e6ac5eb2ee98837b2",
         "status": "CURRENT"
       },
       {
         "disposition": "ADVANCE",
         "input_task_commit": "78ad422902b27dea954905130a1267b02cff3596",
-        "invocation_id": "inv_527d4d91ae80aca517faf6d2db1d8acee688e3329019e186a4a07b0e38af045b",
-        "ledger_event_id": "evt_41f574d5a0aa4094ddd4cce43e47bfb087c81c60fda7e86bc62264a5393bf2c7",
+        "invocation_id": "inv_6f044814fb55d8b1a40ebbb589ef6602d3e12c431c52bb60dd15ac19cef00a71",
+        "ledger_event_id": "evt_0032b23111d31abafe766442d5cd42178479b28a7ee76e281864e051e94b4d23",
         "node_id": "SYSTEM_ARCHITECTURE",
         "node_kind": "STAGE",
         "output_task_commit": "78ad422902b27dea954905130a1267b02cff3596",
         "reason": "validated ADVANCE record reaches DEFECT_TOPOLOGY",
-        "record_id": "rec_51f1f89efc85f52b06e9f604b11827d323c55ea8b35c65c588df16353b05ed28",
+        "record_id": "rec_f4a91de135434424bc246ac8055697bcb85c6e7e29009d38a3908ae7d866b9e2",
         "status": "CURRENT"
       },
       {
         "disposition": "ADVANCE",
         "input_task_commit": "78ad422902b27dea954905130a1267b02cff3596",
-        "invocation_id": "inv_7edfc7a8dbc6613be4b6d3e7ebdb258ccce2f9a59463bfafe22d888fc10b24ac",
-        "ledger_event_id": "evt_a8ca9d19d7456e3f3dbba67e23c1e3be6ac6ab1ed0f28dfd8bc964ad8e066d16",
+        "invocation_id": "inv_dcd10f24be3c86fdb8264e88c8e5a760bd9232bc8566a1bc47dc6e42336a5ed6",
+        "ledger_event_id": "evt_52a7c7fabdfacc88531c3acebf55b69c5706310b1b2a90bb66363b8a926f55e0",
         "node_id": "DEFECT_TOPOLOGY",
         "node_kind": "STAGE",
         "output_task_commit": "78ad422902b27dea954905130a1267b02cff3596",
         "reason": "validated ADVANCE record reaches ENVIRONMENT_BUILD",
-        "record_id": "rec_9991c9503ef4b367076604bb336f348286791e8c998e54470726e382c95bb9f4",
+        "record_id": "rec_a0926b453acef8d1eaeae25a5f06a1024f67256c545fcc12322d00fefc4de8ec",
         "status": "CURRENT"
       },
       {
         "disposition": "ADVANCE",
         "input_task_commit": "78ad422902b27dea954905130a1267b02cff3596",
-        "invocation_id": "inv_75d449df003d927b6e6c66f991e4d0f58ebcc3b8cb95f1791979cda6e7493693",
-        "ledger_event_id": "evt_2d3a324ec747a54e672fb33d4864a5a0fdfa765344a3cacfd2132d604daea674",
+        "invocation_id": "inv_290766c271cdad3d21e0d94ece70f2ea16bdad52009bb77ee8417454de7dba1a",
+        "ledger_event_id": "evt_e6c3b84ac360f9c10ffe1385fcb28a42035f8031a8c50b7cba56f1d0661456b9",
         "node_id": "ENVIRONMENT_BUILD",
         "node_kind": "STAGE",
         "output_task_commit": "78ad422902b27dea954905130a1267b02cff3596",
         "reason": "validated ADVANCE record reaches REFERENCE_SOLUTION",
-        "record_id": "rec_fba50694e328516733a77ca0f5710f38571cdfda0035fe10107e5835659cd30d",
+        "record_id": "rec_ac13eb46c290d394a615aad42f7272fcf85e3d1d5de616a92f4b5e18d027c047",
         "status": "CURRENT"
       },
       {
         "disposition": "ADVANCE",
         "input_task_commit": "78ad422902b27dea954905130a1267b02cff3596",
-        "invocation_id": "inv_7fa551cb3d0d6d4ab7538111f18856823b8c587481f357abe3fa39ffee595218",
-        "ledger_event_id": "evt_f1dca49efe2b159905c193abae2c959fc802b466072ec0f4d1856589c646ee97",
+        "invocation_id": "inv_d8483622d6b2e7a0172c9b08378e579aaf54476117304f9dbe03d24fe31275bc",
+        "ledger_event_id": "evt_f1dfd949b88a3dc719e74b8ce9e4671822917f30fc2df6abd0d6b109723a4b32",
         "node_id": "REFERENCE_SOLUTION",
         "node_kind": "STAGE",
         "output_task_commit": "78ad422902b27dea954905130a1267b02cff3596",
         "reason": "validated ADVANCE record reaches VERIFIER_BUILD",
-        "record_id": "rec_d8486d5a046253f222fe65e14fa121c17e752f27d4b648737a87735573fc0045",
+        "record_id": "rec_0428a4533c31256d3afbd065f0cd632c47f127b54270224f82197afde459f804",
         "status": "CURRENT"
       },
       {
         "disposition": "ADVANCE",
         "input_task_commit": "78ad422902b27dea954905130a1267b02cff3596",
-        "invocation_id": "inv_5f17a49d39744c6382f89dfbe8033838bb947e182f0372db4d88da5fedc2a3cc",
-        "ledger_event_id": "evt_077074de1bce920cbf6bdecd6f943e45748a76910ccb9187fe220f78e1ed3619",
+        "invocation_id": "inv_f24b83928501e9d90ccc8e43a5d3ec81a86bfdde48d03b077ee3324edf7b8145",
+        "ledger_event_id": "evt_fd5a324b679ddc76664293ccf8e6ac870adfee1063473db73d31de713e991961",
         "node_id": "VERIFIER_BUILD",
         "node_kind": "STAGE",
         "output_task_commit": "78ad422902b27dea954905130a1267b02cff3596",
         "reason": "validated ADVANCE record reaches HUMAN_WRITING_RESEARCH",
-        "record_id": "rec_de8265f5b06844972a86d0fc1cc141f082fba35aeb825681ba40e3cf50d93e52",
+        "record_id": "rec_acd30f3b18e4d1b1cc79082693a392af5dbc16246ba79f5e10e1f8f569d7a476",
         "status": "CURRENT"
       },
       {
         "disposition": "ADVANCE",
         "input_task_commit": "78ad422902b27dea954905130a1267b02cff3596",
-        "invocation_id": "inv_49843a51495510dc4aca9c2f9079abe79af85269efdfbed07b8d0eeaab2d8f5f",
-        "ledger_event_id": "evt_86ebabb24600808196a910290afca92c0009c97155adad3d931975d22df0d955",
+        "invocation_id": "inv_2cfc2eb5f29d7a9ee05f766b4da80fb55b21172795dc66134c67b359c110feda",
+        "ledger_event_id": "evt_cd2015de8160ff6352abdf7eb48531fe525ba7096ad7829a85a2738aa37225c4",
         "node_id": "HUMAN_WRITING_RESEARCH",
         "node_kind": "STAGE",
         "output_task_commit": "78ad422902b27dea954905130a1267b02cff3596",
         "reason": "validated ADVANCE record reaches INSTRUCTION_DRAFT",
-        "record_id": "rec_eabf07132803c8c588a16ee1848618c104250832553325547ed031ccbec73d36",
+        "record_id": "rec_3eed5b22a4b199a41a85e55367314df9ec0061d5bd3123e1cbe567ef5ef76dfe",
         "status": "CURRENT"
       },
       {
         "disposition": "ADVANCE",
         "input_task_commit": "78ad422902b27dea954905130a1267b02cff3596",
-        "invocation_id": "inv_28cced7e764579cedcb36a9388668234a646039b0c0e37638ed8b582a8b1f3cc",
-        "ledger_event_id": "evt_08f40a7ba5fae1c5d4dc814d0687aacb58013cc3fc334b11400cdaea2660e979",
+        "invocation_id": "inv_f2ea738cec97eea1c67ce2815f535d8ebb8a24f9e696b6fb957ba4cc667f2050",
+        "ledger_event_id": "evt_9da7f879a45538f6d191203305f41f25063b3477c22142da0a6f0c807f474e65",
         "node_id": "INSTRUCTION_DRAFT",
         "node_kind": "STAGE",
         "output_task_commit": "78ad422902b27dea954905130a1267b02cff3596",
         "reason": "validated ADVANCE record reaches SPEC_ALIGNMENT",
-        "record_id": "rec_6c23537048fca6292f9e9f287049331bbf7dcf87b6367f665caa2d0719ea65b1",
+        "record_id": "rec_c0dc833e87427fab67608db1572605fb7eb48af6adb57da01e6eb124b605142d",
         "status": "CURRENT"
       },
       {
         "disposition": "ADVANCE",
         "input_task_commit": "78ad422902b27dea954905130a1267b02cff3596",
-        "invocation_id": "inv_c5e5498992b26621053f6373ef2ce24bb14694713ed8e152af5d4f5b9f01076a",
-        "ledger_event_id": "evt_a2ea8f7d06057c802af720aa74e5b4782489b50d7f5b441f18f6c219d29a71ac",
+        "invocation_id": "inv_360e5c6ed4a7ff71c83090662c4f066ec08d8d68da0aa871f9f1fc4cb8d7d1c4",
+        "ledger_event_id": "evt_068641440012c85a716c5eddf701e804f187c64de2b6aec09fab314778ea9b9b",
         "node_id": "SPEC_ALIGNMENT",
         "node_kind": "STAGE",
         "output_task_commit": "78ad422902b27dea954905130a1267b02cff3596",
         "reason": "validated ADVANCE record reaches DOCUMENTATION_DRAFT",
-        "record_id": "rec_80af74df737bd2a5387825613482275fdd5c2cbcce935a369de6b08090e83bdc",
+        "record_id": "rec_918cee26b5118cc98cc60d195a9a28e08a0cdd4d3094d937cb9ecde623d2cde5",
         "status": "CURRENT"
       },
       {
         "input_task_commit": "78ad422902b27dea954905130a1267b02cff3596",
-        "invocation_id": "inv_a2b4baa57f66bd5cbc0733d1f36acd6dccbde7b3262e160b8d35be9c22496937",
-        "ledger_event_id": "evt_9b3ae280fe943fb5f575b20c2aec10759da20f09e63a6d78f114f932200a5425",
+        "invocation_id": "inv_227bebb925efbc6d4eb2cbb6c5ba664c6c33292e644a5e67eda16dfdc5aad68b",
+        "ledger_event_id": "evt_fb1020e11fdc98b4a88ba570e92a3d4911a42e84d5dcf6e1e12a5c4a1b8010c2",
         "node_id": "DOCUMENTATION_DRAFT",
         "node_kind": "STAGE",
         "output_task_commit": "78ad422902b27dea954905130a1267b02cff3596",
         "reason": "latest execution record predates the latest current predecessor execution; the downstream stage must be rerun even when task/control commits are unchanged",
-        "record_id": "rec_21e7e6dcf542bfcc7f09a1cda190dff4aaaa9fbdc0262c0f2ef9fac62c12d5f6",
+        "record_id": "rec_41266267992f7957807ac7299108095baa06c9f9ecec27835f419e5e0db67c2e",
         "status": "STALE"
       },
       {
@@ -569,7 +569,7 @@
       }
     ],
     "schema_version": "1.0",
-    "state_snapshot_id": "state_493b293e9a1aa1ae74126f0887b20c97418227ff50636985262ff1e04007dc93",
+    "state_snapshot_id": "state_ab533ec95d6505024d1817b7ada833802144c8891468763927b4d8db9b908fe3",
     "summary": {
       "BLOCKED": 0,
       "CURRENT": 10,
