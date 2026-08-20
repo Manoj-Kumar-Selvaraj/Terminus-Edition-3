@@ -176,9 +176,13 @@ status = load(status_path)
 if status.get("next", {}).get("stage_id") != "HUMAN_WRITING_RESEARCH":
     raise SystemExit(f"unexpected post-replay next action: {status.get('next')}")
 
-porcelain = run("git", "status", "--porcelain", capture=True).splitlines()
-paths = [line[3:] if len(line) >= 4 else line for line in porcelain]
-unexpected = [p for p in paths if not p.startswith(f".terminus/executions/{TASK}/") and not p.startswith(f".terminus/workflows/{TASK}/")]
+changed_paths = set(run("git", "diff", "--name-only", capture=True).splitlines())
+changed_paths.update(run("git", "ls-files", "--others", "--exclude-standard", capture=True).splitlines())
+unexpected = [
+    p for p in sorted(changed_paths)
+    if not p.startswith(f".terminus/executions/{TASK}/")
+    and not p.startswith(f".terminus/workflows/{TASK}/")
+]
 if unexpected:
     raise SystemExit(f"unexpected mutations: {unexpected}")
 
