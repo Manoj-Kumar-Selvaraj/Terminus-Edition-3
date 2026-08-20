@@ -6,12 +6,12 @@
       "ref": "commit:78ad422902b27dea954905130a1267b02cff3596"
     },
     {
-      "content_hash": "sha256:8d7c0b246bf0e279a1462c24246dd49052a0367fc23fe9b1f13c800165271b24",
+      "content_hash": "sha256:fca3ef4b283f1a1fe2aa6d960cd36a17b7232eb0b7a130f9cc8d43d948d6ec42",
       "kind": "COMMIT",
-      "ref": "commit:02ac3445191f96a9309d3a08248f09e17a738c5b"
+      "ref": "commit:67b805a297ac005ee08e82facc533f53a3233192"
     }
   ],
-  "invocation_id": "inv_290766c271cdad3d21e0d94ece70f2ea16bdad52009bb77ee8417454de7dba1a",
+  "invocation_id": "inv_a52f15d6f5c304e3235055760da5dac5369e99b10d0eb9d5bd9f627fe05a25b8",
   "output_task_commit": "78ad422902b27dea954905130a1267b02cff3596",
   "outputs": {
     "COMPONENT_GRAPH": [
@@ -28,25 +28,26 @@
       "/app/provider/scripts/smoke.sh"
     ],
     "ENVIRONMENT_RULE_CHECKS": {
-      "defect_manifestations": 28,
-      "deterministic_environment_validators": "must pass in the record workflow before acceptance",
-      "profile": "large_system_strict",
-      "root_cause_clusters": 6,
-      "task_tree_unchanged": true
+      "business_module_diversity": "PASS_OR_NOT_APPLICABLE",
+      "environment_complexity": "PASS",
+      "runtime_authenticity": "PASS"
     },
-    "INSTRUCTION_DOC_BOUNDARY": "Solver-visible docs define normal provider/resource/lifecycle behavior and operator contracts without exposing private defect locations, root-cause labels, verifier implementation, or reference solution internals.",
+    "INSTRUCTION_DOC_BOUNDARY": "instruction owns required end-state behavior; provider docs own architecture/resource/lifecycle/operator contracts",
     "PRODUCTION_CHARACTERISTICS": [
-      "Terraform Plugin Framework provider runtime",
+      "real Terraform Plugin Framework provider process",
       "ten differentiated Linux managed-resource lifecycles",
-      "Ansible-backed create/update/delete mutations",
-      "native Linux read/refresh observation",
-      "stable Terraform identity and failure-safe state publication",
-      "structured subprocess timeout/cancel/cleanup semantics",
-      "scoped ownership and canonical normalization",
-      "vendored Go dependency graph and pinned toolchain/runtime images"
+      "Terraform-Core-owned durable state",
+      "persistent external Linux state",
+      "separate mutation and observation paths",
+      "provider startup preflight",
+      "shared process-control normalization validation and drift-observation layers"
     ],
     "RESOURCE_COUNT": 10,
-    "RUNTIME_REACHABILITY_NOTES": "The provider binary entrypoint reaches registration/configuration, ten resource CRUD implementations, Ansible generation/runner, native observers, and shared lifecycle/normalization code. Build and smoke scripts provide normal operator/runtime entrypoints. Runtime/oracle empirical success remains for later deterministic validation rather than being inferred here.",
+    "RUNTIME_REACHABILITY_NOTES": [
+      "Configure preflight is live",
+      "Terraform reaches provider resource callbacks",
+      "Ansible mutation/native observation are reachable"
+    ],
     "SOLVER_VISIBLE_DOCS": [
       "/app/provider/docs/provider-contract.md",
       "/app/provider/docs/resource-reference.md",
@@ -54,9 +55,7 @@
       "/app/provider/examples/basic/main.tf"
     ],
     "SUBSTANTIVE_LOC": 3081,
-    "UNRESOLVED_RISKS": [
-      "Runtime/oracle behavior must still be earned at deterministic validation; this stage does not claim it."
-    ]
+    "UNRESOLVED_RISKS": []
   },
   "schema_version": "1.0",
   "status": "BUILT"
