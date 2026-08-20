@@ -1,0 +1,36 @@
+{
+  "evidence_refs": [
+    {
+      "kind": "COMMIT",
+      "ref": "commit:03317f8218069b9e0b5d073bf87ecf7a0ae8e4a1"
+    }
+  ],
+  "invocation_id": "inv_285b14904b4508ab2a65825b35d267af38681e73e7eff111e02c648dafb3706e",
+  "output_task_commit": "03317f8218069b9e0b5d073bf87ecf7a0ae8e4a1",
+  "outputs": {
+    "EDGE_BOUNDARY_COVERAGE": [
+      "inclusive key/prefix/value limits",
+      "unsigned high-bit byte ordering",
+      "WAL framing and torn-tail boundaries",
+      "independent WAL fixtures",
+      "checkpoint interruption",
+      "snapshot structural/size/duplicate/CRC boundaries",
+      "exact ABI and wire shapes"
+    ],
+    "F2P_COUNT": 30,
+    "NEGATIVE_FAILURE_COVERAGE": [
+      "concurrent writer rejection",
+      "post-conflict transaction termination",
+      "complete WAL corruption classes",
+      "snapshot corruption",
+      "HEALTH invariant failure",
+      "malformed protocol and unknown transaction IDs"
+    ],
+    "ORGANIC_COUNT_JUSTIFICATION": "30 change-required probes correspond to 27 distinct behavioral cases after two explicit grouping rules; 33 preservation probes independently constrain compatibility and already-correct behavior.",
+    "P2P_COUNT": 33,
+    "REQUIREMENT_TEST_MATRIX": "Canonical private matrix: .terminus/designs/stonevault-crash-safe-storage-test-map.json; 63 probes cover R01-R16, with known residual F01 (committed DELETE restart durability) separately backlogged and not represented as covered.",
+    "TEST_INDEPENDENCE": "Runtime probes isolate database directories; independent WAL/snapshot fixtures encode solver-visible formats rather than product serializers; ABI/C++20 preservation is compiler validated."
+  },
+  "schema_version": "1.0",
+  "status": "VERIFIER_READY"
+}
