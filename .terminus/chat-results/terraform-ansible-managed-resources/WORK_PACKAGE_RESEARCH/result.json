@@ -1,0 +1,71 @@
+{
+  "evidence_refs": [
+    {
+      "content_hash": "sha256:104817a239b92de3e53f14d6bc0176563437894773e060648776dc09c6280374",
+      "kind": "COMMIT",
+      "ref": "commit:78ad422902b27dea954905130a1267b02cff3596"
+    },
+    {
+      "content_hash": "sha256:334e6029ea34515d0f9364b213a51af19ed193f7c1c22cdf7b978781c2e856d7",
+      "kind": "COMMIT",
+      "ref": "commit:215cc70bcebcccc3c9a401af1b74a97d90026da3"
+    }
+  ],
+  "invocation_id": "inv_bfef1ed44348c1c2154c7421449bb82e412e404242a38ac5df75bcf7b9e27b7b",
+  "output_task_commit": "78ad422902b27dea954905130a1267b02cff3596",
+  "outputs": {
+    "CANDIDATES": [
+      {
+        "ENGINEERING_OBJECTIVE": "Complete the ten-resource ansibleops provider as one coherent Terraform lifecycle and reconciliation system.",
+        "ID": "MANAGED_RESOURCE_LIFECYCLE_COMPLETION",
+        "PERSONA": "Platform engineer maintaining an internal Terraform provider for local Linux configuration through Ansible.",
+        "REQUIREMENT_FAMILIES": [
+          "provider runtime",
+          "identity/state",
+          "mutation runner",
+          "native observation",
+          "filesystem/content",
+          "line/block ownership",
+          "user/group",
+          "cron",
+          "normalization",
+          "failure/retry"
+        ],
+        "SCALE_FIT": "VERY_HIGH: ten differentiated lifecycles plus shared provider, state, runner, observation and normalization layers form a strict-scale system without filler."
+      },
+      {
+        "ENGINEERING_OBJECTIVE": "Harden shared mutation, observation and state-transition machinery under process failure and drift.",
+        "ID": "TRANSACTION_SAFE_RECONCILIATION_CORE",
+        "PERSONA": "Terraform provider reliability engineer.",
+        "REQUIREMENT_FAMILIES": [
+          "runner",
+          "state transition",
+          "observation",
+          "identity",
+          "normalization",
+          "retry"
+        ],
+        "SCALE_FIT": "HIGH but narrower than the inherited task contract."
+      },
+      {
+        "ENGINEERING_OBJECTIVE": "Reconcile filesystem, content, account and cron ownership and drift without damaging siblings.",
+        "ID": "LINUX_OBJECT_OWNERSHIP_AND_DRIFT",
+        "PERSONA": "Linux configuration platform engineer.",
+        "REQUIREMENT_FAMILIES": [
+          "filesystem",
+          "content",
+          "line/block",
+          "accounts",
+          "cron",
+          "drift"
+        ],
+        "SCALE_FIT": "HIGH but omits key runner and Terraform transaction obligations."
+      }
+    ],
+    "DUPLICATE_RISK_NOTES": "The technology pairing is familiar, but the transaction, durability, observation, ownership and multi-family lifecycle contract materially differentiates the work package.",
+    "RECOMMENDATION": "MANAGED_RESOURCE_LIFECYCLE_COMPLETION",
+    "WHY_THIS_ONE": "It exactly matches the inherited solver-visible task without inventing incident backstory. Difficulty arises naturally from Terraform identity/state semantics coupled to Ansible mutations, native Linux observation, process-failure handling, scoped ownership across ten differentiated resources, and canonical convergence."
+  },
+  "schema_version": "1.0",
+  "status": "CANDIDATES_READY"
+}
