@@ -1,0 +1,96 @@
+name: EC2 Remediation Compatibility Patch
+
+on:
+  push:
+    branches: [remediation/ec2-q4-q6-20260820]
+    paths: ['.github/workflows/ec2-remediation-patch.yml']
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Apply compatibility-preserving starter seams
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+
+          manager = Path('ec2-artifact-policy-enforcement/environment/enforcer/internal/platform/manager_profiles.go')
+          text = manager.read_text()
+          old = '''\tcase "maven-coordinate":
+          \t\treturn mavenNameRE.MatchString(name)
+          \tcase "npm-package":'''
+          new = '''\tcase "maven-coordinate":
+          \t\tif strings.Contains(name, ":") {
+          \t\t\treturn mavenNameRE.MatchString(name)
+          \t\t}
+          \t\treturn rpmNameRE.MatchString(name)
+          \tcase "npm-package":'''
+          if old not in text:
+              raise SystemExit('maven validation target not found')
+          text = text.replace(old, new, 1)
+          old = '''\tcase "go-module":
+          \t\treturn goModuleRE.MatchString(name) && strings.Contains(name, "/")'''
+          new = '''\tcase "go-module":
+          \t\treturn goModuleRE.MatchString(name)'''
+          if old not in text:
+              raise SystemExit('go validation target not found')
+          manager.write_text(text)
+
+          evidence = Path('ec2-artifact-policy-enforcement/environment/enforcer/internal/platform/evidence_runtime.go')
+          text = evidence.read_text()
+          old = '''func legacyScannerRecord(context *EvaluationContext, assessment ScannerAssessment) ScannerAssessment {
+          \tif assessment.Healthy {
+          \t\treturn assessment
+          \t}
+          \t// Intentional starter defect: unavailable scanner evidence is transformed
+          \t// into a current clean record instead of failing closed.  The solution
+          \t// removes this conversion.
+          \tassessment.Healthy = true
+          \tassessment.RevisionMatches = true
+          \tassessment.Status = "ok"
+          \tassessment.DBRevision = context.Compiled.ScannerRevision
+          \tassessment.Vulnerabilities = nil
+          \tassessment.MaximumSeverity = "NONE"
+          \tassessment.Reason = "legacy-fail-open-clean"
+          \treturn assessment
+          }'''
+          new = '''func legacyScannerRecord(context *EvaluationContext, assessment ScannerAssessment) ScannerAssessment {
+          \tif !assessment.Healthy {
+          \t\t// Intentional starter defect: unavailable scanner evidence is transformed
+          \t\t// into a current clean record instead of failing closed.  The solution
+          \t\t// removes this conversion.
+          \t\tassessment.Healthy = true
+          \t\tassessment.RevisionMatches = true
+          \t\tassessment.Status = "ok"
+          \t\tassessment.DBRevision = context.Compiled.ScannerRevision
+          \t\tassessment.Vulnerabilities = nil
+          \t\tassessment.MaximumSeverity = "NONE"
+          \t\tassessment.Reason = "legacy-fail-open-clean"
+          \t\treturn assessment
+          \t}
+          \tif !assessment.RevisionMatches {
+          \t\t// Intentional starter defect: a healthy record from a stale scanner DB
+          \t\t// is accepted as if it were current.
+          \t\tassessment.RevisionMatches = true
+          \t\tassessment.Reason = "legacy-stale-revision-accepted"
+          \t}
+          \treturn assessment
+          }'''
+          if old not in text:
+              raise SystemExit('scanner legacy target not found')
+          evidence.write_text(text.replace(old, new, 1))
+          PY
+          gofmt -w ec2-artifact-policy-enforcement/environment/enforcer/internal/platform/manager_profiles.go ec2-artifact-policy-enforcement/environment/enforcer/internal/platform/evidence_runtime.go
+          git config user.name 'terminus-remediation[bot]'
+          git config user.email 'terminus-remediation[bot]@users.noreply.github.com'
+          git add ec2-artifact-policy-enforcement/environment/enforcer/internal/platform/manager_profiles.go ec2-artifact-policy-enforcement/environment/enforcer/internal/platform/evidence_runtime.go
+          git commit -m 'Preserve EC2 starter compatibility and stale evidence defect'
+          git push origin HEAD:"$GITHUB_REF_NAME"
