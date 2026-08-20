@@ -6,52 +6,38 @@
       "ref": "commit:78ad422902b27dea954905130a1267b02cff3596"
     },
     {
-      "content_hash": "sha256:8d7c0b246bf0e279a1462c24246dd49052a0367fc23fe9b1f13c800165271b24",
+      "content_hash": "sha256:fca3ef4b283f1a1fe2aa6d960cd36a17b7232eb0b7a130f9cc8d43d948d6ec42",
       "kind": "COMMIT",
-      "ref": "commit:02ac3445191f96a9309d3a08248f09e17a738c5b"
+      "ref": "commit:67b805a297ac005ee08e82facc533f53a3233192"
     }
   ],
-  "invocation_id": "inv_d8483622d6b2e7a0172c9b08378e579aaf54476117304f9dbe03d24fe31275bc",
+  "invocation_id": "inv_8da58936222d8034df64cb7eaa1bea6a4f689676b20f79eab623155d2189de6b",
   "output_task_commit": "78ad422902b27dea954905130a1267b02cff3596",
   "outputs": {
-    "DETERMINISM_NOTES": "The reference completion is contract-driven: solve.sh deterministically installs the fixed Go sources in sorted order, gofmt/builds them, structured exec.CommandContext argv preserves spaces/metacharacters as data, temporary playbooks are deferred for cleanup, and normalization uses canonical ordering/default forms rather than hidden-test identities, timing shortcuts or verifier-specific branches.",
+    "DETERMINISM_NOTES": "Map/list-like values and equivalent modes/defaults are canonically normalized; template variables and process argv are emitted deterministically; temporary playbooks are ephemeral and cleaned on all terminal outcomes.",
     "FILES_CHANGED": [
       "solution/solve.sh",
       "solution/fixed/internal/lifecycle/maps.go",
       "solution/fixed/internal/lifecycle/normalize.go",
-      "solution/fixed/internal/runner/runner.go",
-      "solution/fixed/internal/resources/common.go",
-      "solution/fixed/internal/resources/file.go",
-      "solution/fixed/internal/resources/directory.go",
-      "solution/fixed/internal/resources/copy.go",
-      "solution/fixed/internal/resources/template.go",
-      "solution/fixed/internal/resources/line.go",
-      "solution/fixed/internal/resources/block.go",
-      "solution/fixed/internal/resources/symlink.go",
-      "solution/fixed/internal/resources/user.go",
-      "solution/fixed/internal/resources/group.go",
-      "solution/fixed/internal/resources/cron.go"
+      "solution/fixed/internal/resources/",
+      "solution/fixed/internal/runner/runner.go"
     ],
-    "PRESERVED_BEHAVIOR": [
-      "Exactly the documented ten ansibleops resource interfaces remain the task surface.",
-      "Provider source local/ansibleops version 0.1.0 and the supplied local inventory contract remain unchanged.",
-      "Terraform Core remains the sole durable Terraform state authority; no manual state file or provider-owned store is introduced.",
-      "Mutation/observation separation is preserved: Ansible is for C/U/D, native Linux reads are for refresh.",
-      "Destruction remains scoped to the owned object and preserves sibling entries and symlink targets."
-    ],
-    "RESTART_IDEMPOTENCY_BEHAVIOR": "The repair does not introduce provider-owned durable state: stable IDs derive from external object keys, refreshed values are rebuilt from native Linux observation, and canonical representations converge after provider restart. Generated playbooks/process output are ephemeral, so a fresh process with unchanged external objects has no reason to replay Ansible during Read/clean planning.",
+    "PRESERVED_BEHAVIOR": "Exact ten resource interfaces, local/ansibleops 0.1.0, supplied local inventory, Go 1.24/current Plugin Framework and Terraform 1.10.5 compatibility are preserved.",
+    "RESTART_IDEMPOTENCY_BEHAVIOR": "The reference completion derives durable identity and observed state from Terraform Core plus native external Linux truth rather than provider-process memory, so restart followed by refresh/plan converges without replaying Ansible when the target is already correct.",
     "RESTORED_INVARIANTS": [
-      "All ten resources use stable documented external-object identity rather than mutable desired attributes.",
-      "Create/Update/Delete remain Ansible-backed while Read/refresh is native and side-effect-free.",
-      "Terraform state is advanced only after successful external mutation; non-zero, timeout and cancellation remain failures and preserve retryable prior state.",
-      "Delete remains ownership-scoped, including sibling preservation, symlink-target preservation, named line/block/cron ownership and user-home policy.",
-      "Runner execution is structured argv rather than shell-string execution, validates runtime inputs, bounds surfaced stderr, observes timeout/cancellation, and removes temporary playbooks on terminal outcomes.",
-      "Desired/observed modes, unordered values, account observations, template inputs and cron defaults converge through canonical normalization."
+      "stable external-key IDs",
+      "mutation before state publication",
+      "native Read and external drift reflection",
+      "failure-safe update/delete semantics",
+      "structured runner argv, timeout/cancel handling and cleanup",
+      "canonical convergence and Terraform Core sole durable state authority"
     ],
     "RISKS_FOR_INDEPENDENT_VERIFIER": [
-      "Empirical oracle/runtime success is intentionally not claimed by A4; deterministic validation must exercise the installed reference solution.",
-      "Independent verification should cover provider restart, external drift/missing/wrong-kind observation, non-zero/timeout/cancellation retry semantics, already-absent destroy, sibling preservation, user home policy, digest transitions, spaces/metacharacters and normalization convergence.",
-      "Process-local duplicate-ownership detection should be tested only as a runtime guard; it is not a durable state authority and must not be mistaken for restart persistence."
+      "verify failed update/delete retain prior managed state",
+      "verify Read never invokes Ansible",
+      "verify literal argv under spaces/metacharacters",
+      "verify sibling preservation for line/block/cron and symlink target preservation",
+      "verify external drift and canonical normalization across fresh provider processes"
     ]
   },
   "schema_version": "1.0",
