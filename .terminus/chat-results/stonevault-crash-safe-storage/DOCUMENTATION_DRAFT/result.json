@@ -1,0 +1,18 @@
+{
+  "evidence_refs": [
+    {
+      "kind": "COMMIT",
+      "ref": "commit:03317f8218069b9e0b5d073bf87ecf7a0ae8e4a1"
+    }
+  ],
+  "invocation_id": "inv_8e40a0427056b26e1f907ad9db9872ccce6162a77039d4529b96465da7533a26",
+  "output_task_commit": "03317f8218069b9e0b5d073bf87ecf7a0ae8e4a1",
+  "outputs": {
+    "DIFFICULTY_EXPLANATION": "StoneVault couples a Rust command/session boundary to a C++20 persistent storage core and requires non-local reasoning across process writer fencing, transaction-lifetime MVCC, conflict arbitration, binary WAL/snapshot recovery, checkpoint publication, operator state and compatibility across crashes and restarts.",
+    "README_PATH": "stonevault-crash-safe-storage/README.md",
+    "SOLUTION_EXPLANATION": "The reference completion restores writer exclusion, stable snapshot visibility with transaction-local overlays, first-committer-wins conflict handling, durable contiguous sequencing, corruption-aware recovery, atomic checkpoint/snapshot publication, correct health/stats and protocol-boundary behavior while preserving the documented native ABI and on-disk formats.",
+    "VERIFICATION_EXPLANATION": "The verifier contains 30 change-required probes and 33 preservation probes spanning locking, configuration, MVCC/scan overlay, conflicts, WAL recovery, checkpoint/snapshot integrity, operator state, protocol bounds and native compatibility. The known committed-DELETE restart coverage gap remains explicitly outside claimed coverage and tracked under backlog #66; final runtime/oracle success is owned by DETERMINISTIC_VALIDATION."
+  },
+  "schema_version": "1.0",
+  "status": "DOCUMENTATION_READY"
+}

@@ -1,0 +1,141 @@
+{
+  "acceptance_predicates": {},
+  "authority": {
+    "control_plane_commit": "df7ef7569e2947b9f0bf7cf89ed4dec6c2a5a1fe",
+    "policy_versions": {},
+    "task_commit": "03317f8218069b9e0b5d073bf87ecf7a0ae8e4a1",
+    "task_id": "stonevault-crash-safe-storage"
+  },
+  "evidence": {
+    "authorized_evidence_classes": [
+      "CI_RUNTIME_EVIDENCE",
+      "CONTROL_PLANE_POLICY",
+      "PUBLIC_REFERENCE",
+      "SOLUTION_ORACLE",
+      "SOLVER_VISIBLE_TASK"
+    ],
+    "evidence_required": [
+      "implementation evidence",
+      "verification evidence",
+      "no benchmark framing/leakage"
+    ],
+    "excluded_evidence_classes": [
+      "CURRENT_REVIEW_PACKET",
+      "DURABLE_SESSION_STATE",
+      "FINAL_PACKAGE_EVIDENCE",
+      "MODEL_TRIAL_EVIDENCE",
+      "PRIOR_REVIEW_RESULTS",
+      "PRIVATE_CREATION_DESIGN",
+      "VERIFIER_PRIVATE"
+    ],
+    "mandatory_exact_reads": [
+      ".terminus/agents/CREATION_PIPELINE.md",
+      ".terminus/agents/CREATOR_PROMPTS.md",
+      ".terminus/agents/PROMPTS.md"
+    ],
+    "retrieval_mode": "FILTERED_HYBRID"
+  },
+  "ignored_input_count": 0,
+  "inputs": {
+    "optional": {},
+    "required": {
+      "APPROVED_WORK_PACKAGE": {
+        "ENGINEERING_OBJECTIVE": "Complete the inherited native StoneVault embedded database as a crash-safe transactional store while preserving its public ABI, command protocol, disk formats and existing data compatibility.",
+        "REQUIRED_END_STATE": "Exclusive writer fencing, stable MVCC snapshots and overlays, FCW conflicts, durable contiguous commits, fail-closed WAL/snapshot recovery, atomic checkpoint publication, accurate operator state, bounded binary protocol handling and stable native compatibility."
+      },
+      "IMPLEMENTATION_EVIDENCE": {
+        "PRESERVED_BEHAVIOR": "Stable C ABI, ASCII response shapes, documented WAL layout, documented snapshot layout and binary key/value representation remain preserved.",
+        "REFERENCE_SOLUTION_STATUS": "IMPLEMENTED",
+        "RESTORED_INVARIANTS": [
+          "exclusive writer ownership",
+          "transaction snapshot visibility with local overlays",
+          "atomic first-committer-wins rejection",
+          "durable contiguous commit sequencing",
+          "fail-closed complete-record corruption handling",
+          "checkpoint quiescence/publication/WAL reclamation",
+          "snapshot integrity",
+          "accurate health/stats",
+          "configuration precedence and inclusive protocol bounds"
+        ]
+      },
+      "VERIFICATION_EVIDENCE": {
+        "EMPIRICAL_STATUS": "Earlier deterministic validation passed Oracle=1 and NOP=0 for the current StoneVault task content; runtime/oracle validation will be re-earned at the dedicated current-control-plane checkpoint.",
+        "F2P_COUNT": 30,
+        "P2P_COUNT": 33,
+        "RESIDUAL_RISK": "Committed DELETE durability across restart remains explicitly backlogged as issue #66 and is not represented as verifier coverage; historical Q4 remains REVISE.",
+        "SPEC_ALIGNMENT": {
+          "Q1_STATUS": "NO_GAP",
+          "Q2_STATUS": "COVERED",
+          "Q3_STATUS": "CLEAR"
+        },
+        "VERIFIER_STATUS": "VERIFIER_READY"
+      }
+    }
+  },
+  "invocation_id": "inv_8e40a0427056b26e1f907ad9db9872ccce6162a77039d4529b96465da7533a26",
+  "learning": {
+    "context_hash": "sha256:bb84a513aa2b6e4374d691759c4a6edf94169f479f4611e9091643b9f279ccfc",
+    "lessons": [],
+    "mode": "GENERALIZED_LESSONS_PLUS_OWNED_REMEDIATIONS",
+    "raw_feedback_exposed": false,
+    "raw_historical_findings_exposed": false,
+    "registry_heads": {
+      "feedback": "GENESIS",
+      "findings": "GENESIS",
+      "lessons": "GENESIS",
+      "patterns": "GENESIS",
+      "remediations": "GENESIS"
+    },
+    "remediations": []
+  },
+  "missing_required_inputs": [],
+  "output_contract": {
+    "allowed_status_values": [
+      "DOCUMENTATION_READY",
+      "REWRITE_REQUIRED",
+      "BLOCKED"
+    ],
+    "deterministic_validators": [],
+    "optional_fields": [],
+    "persisted_artifacts": [
+      "<task>/README.md"
+    ],
+    "required_fields": [
+      "README_PATH",
+      "DIFFICULTY_EXPLANATION",
+      "SOLUTION_EXPLANATION",
+      "VERIFICATION_EXPLANATION"
+    ],
+    "semantic_reviewers": [
+      "Engineering Documentation Reviewer",
+      "Human Quality Reviewer"
+    ]
+  },
+  "readiness": "READY",
+  "retrieval": {
+    "query": null,
+    "retrieved_chars": 0,
+    "retrieved_context": [],
+    "status": "NOT_REQUESTED"
+  },
+  "routing": {
+    "failure_routes": {
+      "LEAKAGE_OR_SYNTHETIC_PROSE": "A8 Documentation Writer / Human Quality Reviewer",
+      "UNSUPPORTED_CLAIM": "A8 Documentation Writer"
+    },
+    "stale_on": [
+      "implementation evidence change",
+      "verification evidence change",
+      "material task-description change"
+    ],
+    "success_transition": "FORMAT_GATE"
+  },
+  "schema_version": "1.0",
+  "stage": {
+    "lifecycle": "creation",
+    "owner": "A8 Documentation Writer",
+    "role_class": "PRODUCER",
+    "role_id": "A8_DOCUMENTATION_WRITER",
+    "stage_id": "DOCUMENTATION_DRAFT"
+  }
+}
