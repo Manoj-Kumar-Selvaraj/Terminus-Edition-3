@@ -1,0 +1,44 @@
+name: EC2 Post Runtime Resolver
+
+on:
+  push:
+    branches: [diagnostic/ec2-ledger-integrity-20260820]
+    paths: ['.github/workflows/ec2-post-runtime-resolve.yml']
+
+permissions:
+  contents: write
+
+jobs:
+  resolve:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Persist locator and helper
+        shell: bash
+        run: |
+          set -euo pipefail
+          cp .github/ec2_postruntime_resolve.py "$RUNNER_TEMP/ec2_postruntime_resolve.py"
+          path=".terminus/diagnostic-run-locators/ec2-post-runtime-${GITHUB_SHA}.json"
+          mkdir -p "$(dirname "$path")"
+          printf '{"run_id":%s,"event_sha":"%s"}\n' "$GITHUB_RUN_ID" "$GITHUB_SHA" > "$path"
+          git config user.name 'terminus-diagnostic-locator[bot]'
+          git config user.email 'terminus-diagnostic-locator[bot]@users.noreply.github.com'
+          git add -- "$path"
+          git commit -m "Track EC2 post-runtime resolver $GITHUB_RUN_ID"
+          git push origin HEAD:"$GITHUB_REF_NAME"
+      - name: Resolve current machine state
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin main
+          git checkout --detach origin/main
+          python3 "$RUNNER_TEMP/ec2_postruntime_resolve.py"
+      - name: Upload resolver evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ec2-post-runtime-${{ github.run_id }}
+          path: /tmp/ec2-post-runtime-resolve.json
+          if-no-files-found: warn
