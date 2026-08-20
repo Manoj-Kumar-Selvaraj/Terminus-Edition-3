@@ -1,0 +1,143 @@
+{
+  "acceptance_predicates": {},
+  "authority": {
+    "control_plane_commit": "7d8a6d8c62a62e6d24949344c7fd712e59bc8829",
+    "policy_versions": {},
+    "task_commit": "6c7909d5c0efd3e6e64443d6de3b227c1820b01b",
+    "task_id": "ec2-artifact-policy-enforcement"
+  },
+  "evidence": {
+    "authorized_evidence_classes": [
+      "CONTROL_PLANE_POLICY",
+      "PUBLIC_REFERENCE",
+      "SOLVER_VISIBLE_TASK"
+    ],
+    "evidence_required": [
+      "work-package candidates",
+      "scale-fit assessment",
+      "requirement-family breadth",
+      "originality/reference provenance"
+    ],
+    "excluded_evidence_classes": [
+      "CI_RUNTIME_EVIDENCE",
+      "CURRENT_REVIEW_PACKET",
+      "DURABLE_SESSION_STATE",
+      "FINAL_PACKAGE_EVIDENCE",
+      "MODEL_TRIAL_EVIDENCE",
+      "PRIOR_REVIEW_RESULTS",
+      "PRIVATE_CREATION_DESIGN",
+      "SOLUTION_ORACLE",
+      "VERIFIER_PRIVATE"
+    ],
+    "mandatory_exact_reads": [
+      ".terminus/agents/CREATION_PIPELINE.md",
+      ".terminus/agents/CREATOR_AGENT_REGISTRY.md",
+      ".terminus/agents/PRODUCTION_AUTHENTICITY.md",
+      ".terminus/agents/CREATOR_PROMPTS.md"
+    ],
+    "retrieval_mode": "FILTERED_HYBRID"
+  },
+  "ignored_input_count": 0,
+  "inputs": {
+    "optional": {},
+    "required": {
+      "CREATION_RULE_CONTEXT": {
+        "ACTIVE_VALIDATORS": [
+          ".terminus/validate_agent_system.py",
+          ".terminus/validate_stage_contracts.py",
+          ".terminus/validate_task_complexity.py",
+          ".terminus/validate_environment_complexity.py",
+          ".terminus/validate_runtime_authenticity.py",
+          ".terminus/validate_business_module_diversity.py",
+          ".terminus/validate_review_freshness.py",
+          ".terminus/validate_quality_interlock.py",
+          ".github/workflows/terminus-edition-3-ci.yml",
+          ".github/workflows/terminus-creator-complexity.yml",
+          ".github/workflows/terminus-production-authenticity.yml"
+        ],
+        "CONTROL_PLANE_COMMIT": "7d8a6d8c62a62e6d24949344c7fd712e59bc8829",
+        "CREATION_PROFILE": "large_system_strict",
+        "KNOWN_POLICY_CONFLICTS": [],
+        "NETWORK_ENVIRONMENT_CONSTRAINTS": "network_mode public; separate verifier; digest-pinned canonical Go runtime; no privileged Docker/capability/socket shortcuts; tmux and asciinema required in agent image",
+        "RULE_SOURCES": [
+          "TERMINUS_3_AI_INSTRUCTIONS.md",
+          ".terminus/AGENT_SYSTEM.md",
+          ".terminus/agents/CREATION_CONTROLLER.md",
+          ".terminus/agents/CREATION_PIPELINE.md",
+          ".terminus/agents/PRODUCTION_AUTHENTICITY.md",
+          ".terminus/reviewers/REVIEWER_CHECKLIST.md",
+          ".terminus/agents/QUALITY_AGENT_REGISTRY.md",
+          ".terminus/agents/STAGE_CONTRACTS.md",
+          ".terminus/agents/stage_contracts.json"
+        ]
+      },
+      "REQUESTED_DOMAIN": "production Go EC2 software supply-chain and artifact policy enforcement"
+    }
+  },
+  "invocation_id": "inv_3fbf78c92440d7513f7ba91069ba66b691e12782ccf2855cfc6802dcb2fdb749",
+  "learning": {
+    "context_hash": "sha256:bb84a513aa2b6e4374d691759c4a6edf94169f479f4611e9091643b9f279ccfc",
+    "lessons": [],
+    "mode": "GENERALIZED_LESSONS_PLUS_OWNED_REMEDIATIONS",
+    "raw_feedback_exposed": false,
+    "raw_historical_findings_exposed": false,
+    "registry_heads": {
+      "feedback": "GENESIS",
+      "findings": "GENESIS",
+      "lessons": "GENESIS",
+      "patterns": "GENESIS",
+      "remediations": "GENESIS"
+    },
+    "remediations": []
+  },
+  "missing_required_inputs": [],
+  "output_contract": {
+    "allowed_status_values": [
+      "CANDIDATES_READY",
+      "SCENARIO_TOO_SMALL",
+      "BLOCKED"
+    ],
+    "deterministic_validators": [],
+    "optional_fields": [
+      "DUPLICATE_RISK_NOTES"
+    ],
+    "persisted_artifacts": [],
+    "required_fields": [
+      "CANDIDATES",
+      "RECOMMENDATION",
+      "WHY_THIS_ONE"
+    ],
+    "semantic_reviewers": [
+      "Task Architect",
+      "Originality & Authenticity Reviewer"
+    ]
+  },
+  "readiness": "READY",
+  "retrieval": {
+    "query": null,
+    "retrieved_chars": 0,
+    "retrieved_context": [],
+    "status": "NOT_REQUESTED"
+  },
+  "routing": {
+    "failure_routes": {
+      "DUPLICATE_RISK": "A1 Scenario Researcher / Originality & Authenticity Reviewer",
+      "POLICY_CONFLICT": "Creation Controller",
+      "SCENARIO_TOO_SMALL": "A1 Scenario Researcher -> select richer coherent work package"
+    },
+    "stale_on": [
+      "creation-rule change",
+      "selected work-package change",
+      "material requirement-family change"
+    ],
+    "success_transition": "SYSTEM_ARCHITECTURE"
+  },
+  "schema_version": "1.0",
+  "stage": {
+    "lifecycle": "creation",
+    "owner": "A1 Scenario Researcher",
+    "role_class": "PRODUCER",
+    "role_id": "A1_SCENARIO_RESEARCHER",
+    "stage_id": "WORK_PACKAGE_RESEARCH"
+  }
+}
