@@ -1,0 +1,154 @@
+name: EC2 Replay A1-A5 Current Control
+
+on:
+  push:
+    branches:
+      - diagnostic/ec2-ledger-integrity-20260820
+    paths:
+      - .github/workflows/ec2-replay-a1-a5-current.yml
+
+permissions:
+  contents: write
+
+env:
+  TASK: ec2-artifact-policy-enforcement
+  TASK_COMMIT: 8836f886d7cfc7f2747264026da31d1dfa49c658
+  CONTROL_COMMIT: 215cc70bcebcccc3c9a401af1b74a97d90026da3
+  EXPECTED_MAIN: 3c9c9467091df65495fdd6cfc7cba85e3de4456f
+  OLD_CONTROL: 4cc1f68cb57b284c4817e3f354ea6eb74c5f717d
+  TASK_HASH: sha256:c949a75a93f4636d770dd6cb82318c90d98b3fb0fb1d16d3d8b2e6c4d50a86fc
+  CONTROL_HASH: sha256:334e6029ea34515d0f9364b213a51af19ed193f7c1c22cdf7b978781c2e856d7
+
+jobs:
+  replay:
+    name: Re-authorize EC2 A1-A5 lifecycle evidence
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Replay bounded producer results against fresh invocations
+        shell: bash
+        run: |
+          set -euo pipefail
+          work="$RUNNER_TEMP/ec2-replay"
+          mkdir -p "$work"
+          git fetch origin main
+          base="$(git rev-parse origin/main)"
+          [[ "$base" == "$EXPECTED_MAIN" ]] || { echo "::error::main moved before replay expected=$EXPECTED_MAIN current=$base"; exit 75; }
+          git checkout --detach "$base"
+
+          python3 .terminus/execution/controller_cli.py control-plane --head "$base" --output "$work/control.json"
+          resolved="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["control_plane_commit"])' "$work/control.json")"
+          [[ "$resolved" == "$CONTROL_COMMIT" ]] || { echo "::error::control mismatch expected=$CONTROL_COMMIT current=$resolved"; exit 75; }
+
+          python3 - "$work" <<'PY'
+          import json, os, pathlib, subprocess, sys
+
+          root = pathlib.Path('.')
+          work = pathlib.Path(sys.argv[1])
+          task = os.environ['TASK']
+          task_commit = os.environ['TASK_COMMIT']
+          control = os.environ['CONTROL_COMMIT']
+          old_control = os.environ['OLD_CONTROL']
+          task_hash = os.environ['TASK_HASH']
+          control_hash = os.environ['CONTROL_HASH']
+          base_dir = root / '.terminus' / 'executions' / task
+          templates = [
+              ('WORK_PACKAGE_RESEARCH', 'inv_fa8971c77c11e5b7dd791988950fb9a96d408a1463a33bb41f07d0dc78c2076a'),
+              ('SYSTEM_ARCHITECTURE', 'inv_91adb8fc0f80936e03855598353995aabfcff8a1b471d1c5989846a9fca15c3a'),
+              ('DEFECT_TOPOLOGY', 'inv_9b138c42e0dc15600dbe2d318198b7b4dcd640a6664acf8414f8344eab6682ad'),
+              ('ENVIRONMENT_BUILD', 'inv_75ab63d397a83c46f7a18ff9521c6b8ed5bce8b91492e971c7ec72b8561eda3d'),
+              ('REFERENCE_SOLUTION', 'inv_0e29ef2e3264bdf7a9eabbec04670b82a412b8507270d4f1e7c12e71ba07be22'),
+              ('VERIFIER_BUILD', 'inv_0eeee2de6e34ef805db0061533bba9518f6c79becc8975efba9425828e4c063c'),
+          ]
+
+          def replace(value):
+              if isinstance(value, str):
+                  return value.replace(old_control, control)
+              if isinstance(value, list):
+                  return [replace(v) for v in value]
+              if isinstance(value, dict):
+                  return {k: replace(v) for k, v in value.items()}
+              return value
+
+          def run(*args):
+              subprocess.run(args, cwd=root, check=True)
+
+          for ordinal, (stage, template_id) in enumerate(templates, 1):
+              template = json.loads((base_dir / f'{template_id}.result.json').read_text())
+              inputs = replace(template['invocation_snapshot']['inputs'])
+              outputs = replace(template['outputs'])
+              inp = work / f'{ordinal:02d}-{stage}-inputs.json'
+              cont = work / f'{ordinal:02d}-{stage}-continue.json'
+              invp = work / f'{ordinal:02d}-{stage}-invocation.json'
+              resp = work / f'{ordinal:02d}-{stage}-result.json'
+              recp = work / f'{ordinal:02d}-{stage}-record.json'
+              inp.write_text(json.dumps(inputs, indent=2, sort_keys=True) + '\n')
+              run('python3','.terminus/execution/controller_cli.py','continue',
+                  '--task-id',task,'--task-commit',task_commit,
+                  '--control-plane-commit',control,'--inputs-json',str(inp),'--output',str(cont))
+              payload = json.loads(cont.read_text())
+              nxt = payload.get('next', {})
+              inv = payload.get('invocation')
+              if nxt.get('stage_id') != stage:
+                  raise SystemExit(f'{stage}: machine route changed: {nxt}')
+              if payload.get('execution_mode') != 'INLINE_SPECIALIST':
+                  raise SystemExit(f'{stage}: expected INLINE_SPECIALIST, got {payload.get("execution_mode")}')
+              if not isinstance(inv, dict) or inv.get('readiness') != 'READY':
+                  raise SystemExit(f'{stage}: invocation not READY')
+              invp.write_text(json.dumps(inv, indent=2, sort_keys=True) + '\n')
+              result = {
+                  'schema_version':'1.0',
+                  'invocation_id':inv['invocation_id'],
+                  'output_task_commit':task_commit,
+                  'status':template['status'],
+                  'outputs':outputs,
+                  'evidence_refs':[
+                      {'kind':'COMMIT','ref':f'commit:{task_commit}','content_hash':task_hash},
+                      {'kind':'COMMIT','ref':f'commit:{control}','content_hash':control_hash},
+                  ],
+              }
+              resp.write_text(json.dumps(result, indent=2, sort_keys=True) + '\n')
+
+              if stage == 'DEFECT_TOPOLOGY':
+                  run('python3','.terminus/validate_defect_topology.py',task)
+              elif stage == 'ENVIRONMENT_BUILD':
+                  run('python3','.terminus/validate_environment_complexity.py',task)
+                  run('python3','.terminus/validate_runtime_authenticity.py',task)
+                  run('python3','.terminus/validate_business_module_diversity.py',task)
+              elif stage == 'VERIFIER_BUILD':
+                  run('python3','.terminus/validate_task_complexity.py',task)
+
+              run('python3','.terminus/execution/controller_cli.py','record',
+                  '--invocation',str(invp),'--result',str(resp),'--output',str(recp))
+              record = json.loads(recp.read_text())['record']
+              if record['stage_id'] != stage or record['status'] != template['status']:
+                  raise SystemExit(f'{stage}: recorded stage/status mismatch')
+              print(f'REPLAYED {stage} invocation={inv["invocation_id"]} record={record["record_id"]}')
+          PY
+
+      - name: CAS-persist only fresh EC2 execution evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          unexpected="$(git status --porcelain | awk '{print $2}' | grep -vE "^\.terminus/(executions|workflows)/${TASK}(/|$)" || true)"
+          [[ -z "$unexpected" ]] || { echo "::error::unexpected replay mutations: $unexpected"; exit 1; }
+          git config user.name 'terminus-ec2-replay[bot]'
+          git config user.email 'terminus-ec2-replay[bot]@users.noreply.github.com'
+          git add -- ".terminus/executions/${TASK}"
+          git diff --cached --quiet && { echo '::error::no replay evidence produced'; exit 1; }
+          git diff --cached --check
+          git commit -m "Re-authorize ${TASK} A1-A5 under control 215cc70b"
+          remote="$(git ls-remote origin refs/heads/main | cut -f1)"
+          [[ "$remote" == "$EXPECTED_MAIN" ]] || { echo "::error::main moved during replay expected=$EXPECTED_MAIN current=$remote"; exit 75; }
+          git push origin HEAD:main
+
+      - name: Upload replay diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ec2-replay-a1-a5-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/ec2-replay
+          if-no-files-found: warn
