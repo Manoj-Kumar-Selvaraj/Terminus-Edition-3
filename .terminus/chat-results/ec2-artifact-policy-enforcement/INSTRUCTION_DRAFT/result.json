@@ -1,0 +1,38 @@
+{
+  "evidence_refs": [],
+  "invocation_id": "inv_24d594904d4323fba4c556678b285940bf39e23ff410b057d43b4c41f1e98843",
+  "output_task_commit": "6c7909d5c0efd3e6e64443d6de3b227c1820b01b",
+  "outputs": {
+    "CURRENT_STATE_EVIDENCE": {
+      "path": "/app/enforcer/notes/oncall.md",
+      "supports": "scanner-unavailable allow, lower-level source bypass, mutable-tag cache reuse, expired exception, permit alteration, and missing deny history after restart"
+    },
+    "DOC_REFERENCES": [
+      "/app/enforcer/notes/oncall.md",
+      "/app/enforcer/docs/policy-contract.md",
+      "/app/enforcer/docs/state-format.md",
+      "/app/enforcer/docs/operations.md"
+    ],
+    "HANDOFF_TEST": "PASS: the instruction states the observed operational failure, end-state invariants and preservation requirements while leaving implementation choices to the solver.",
+    "INSTRUCTION_PATH": "ec2-artifact-policy-enforcement/instruction.md",
+    "INSTRUCTION_SHAPE": {
+      "bullets": 0,
+      "paragraphs": 2,
+      "style": "incident-first EC2 platform-security repair request with solver-visible contract references",
+      "word_count": 211
+    },
+    "REQUIREMENT_COVERAGE": {
+      "CLI compatibility": "Preserves artifactguard evaluate/verify-permit interfaces and documented exits, cache/exceptions, supplied fixtures, and existing audit history.",
+      "durable audit/recovery": "Every ALLOW and DENY is durably journaled before completion; valid history, idempotent retry, corruption fail-closed, and projection consistency are governed by the referenced state contract.",
+      "permit integrity and replay": "Permits are secret-keyed, unexpired, exact request/instance/artifact/policy scoped, and single-use across restart and concurrent stateful verification.",
+      "scanner/cache freshness": "Current scanner/cache evidence is required for the artifact and active policy/scanner revisions, with stale or unavailable evidence failing closed.",
+      "source/digest policy": "Trusted-source and required immutable-digest checks apply across package, container, and dependency acquisition before exceptions.",
+      "vulnerability exceptions": "Exceptions waive only vulnerability threshold within exact current scope; detailed digest/surface/environment/code/expiry semantics remain in the referenced policy contract."
+    },
+    "REVERSE_OUTLINE_RISK": "LOW: requirements are grouped by policy and state responsibilities rather than mirroring verifier cases or private defect identifiers.",
+    "SPEC_FILE_LOOPHOLE": "PASS: instruction.md owns the repair objective and material requirement families; referenced docs carry legitimate detailed policy/state/operations semantics rather than acting as a hidden second prompt.",
+    "UNRESOLVED_GAPS": []
+  },
+  "schema_version": "1.0",
+  "status": "READY"
+}
