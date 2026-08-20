@@ -29,6 +29,26 @@ def dump(path: Path, value):
 def remote_main() -> str:
     return run('git','ls-remote','origin','refs/heads/main', capture=True).split()[0]
 
+
+def resolve_control(head: str, output: Path) -> str:
+    run('git','fetch','origin','main')
+    run('python3','.terminus/execution/controller_cli.py','control-plane','--head',head,'--output',str(output))
+    return load(output)['control_plane_commit']
+
+
+def task_scope_changed(old: str, new: str, task: str) -> bool:
+    if old == new:
+        return False
+    run('git','fetch','origin','main')
+    cp = subprocess.run([
+        'git','diff','--quiet',old,new,'--',
+        task,
+        f'.terminus/executions/{task}',
+        f'.terminus/research/{task}-dataset-calibration.json',
+        f'.terminus/research/{task}-task-writing-profile.json',
+    ], cwd=ROOT)
+    return cp.returncode != 0
+
 sha = os.environ['GITHUB_SHA']
 branch = os.environ['GITHUB_REF_NAME']
 changed = run('git','diff-tree','--no-commit-id','--name-only','-r',sha,'--','.terminus/chat-exec/*.json', capture=True).splitlines()
@@ -40,14 +60,18 @@ if set(req) != required or req['schema_version'] != '1.0':
     raise SystemExit('invalid adapter request')
 
 task=req['task_id']; task_commit=req['task_commit']; control=req['control_plane_commit']; stage=req['stage_id']; mode=req['mode']; expected=req['expected_repository_head']
-if remote_main() != expected:
-    raise SystemExit(f'main moved before adapter execution expected={expected} current={remote_main()}')
+base = remote_main()
+if base != expected:
+    if task_scope_changed(expected, base, task):
+        raise SystemExit(f'main moved in task scope before adapter execution expected={expected} current={base}')
+    if resolve_control(base, WORK/'control-plane-current.json') != control:
+        raise SystemExit(f'control-plane changed before adapter execution expected={control} current_head={base}')
 
 dump(WORK/'request.json', req)
 dump(WORK/'inputs.json', req['inputs'])
 dump(WORK/'result-template.json', req['result'])
-run('git','checkout','--detach',expected)
-run('python3','.terminus/execution/controller_cli.py','control-plane','--head',expected,'--output',str(WORK/'control-plane.json'))
+run('git','checkout','--detach',base)
+run('python3','.terminus/execution/controller_cli.py','control-plane','--head',base,'--output',str(WORK/'control-plane.json'))
 resolved = load(WORK/'control-plane.json')['control_plane_commit']
 if resolved != control:
     raise SystemExit(f'control-plane mismatch {resolved} != {control}')
@@ -104,7 +128,14 @@ if mode == 'RECORD':
     if stage == 'HUMAN_WRITING_RESEARCH': run('git','add','--',f'.terminus/research/{task}-dataset-calibration.json',f'.terminus/research/{task}-task-writing-profile.json')
     if subprocess.run(['git','diff','--cached','--quiet'],cwd=ROOT).returncode == 0: raise SystemExit('no canonical record mutation')
     run('git','commit','-m',f'Record {task} {stage} inline result')
-    if remote_main() != expected: raise SystemExit(f'main moved during record expected={expected} current={remote_main()}')
+    latest = remote_main()
+    if latest != base:
+        if task_scope_changed(base, latest, task):
+            raise SystemExit(f'main moved in task scope during record base={base} current={latest}')
+        if resolve_control(latest, WORK/'control-plane-latest.json') != control:
+            raise SystemExit(f'control-plane changed during record expected={control} current_head={latest}')
+        run('git','fetch','origin','main')
+        run('git','rebase','origin/main')
     run('git','push','origin','HEAD:main')
 
 run('git','fetch','origin',branch)
