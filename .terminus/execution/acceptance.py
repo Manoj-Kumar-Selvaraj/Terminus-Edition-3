@@ -7,6 +7,8 @@ from collections.abc import Mapping as ABCMapping
 from pathlib import Path
 from typing import Any, Mapping
 
+from q4_human_risk import SATISFACTION_MODE, validate_human_risk_acceptance
+
 
 class StageAcceptancePredicates:
     """Validate status-specific acceptance predicates before ADVANCE is recorded."""
@@ -52,7 +54,10 @@ class StageAcceptancePredicates:
             expected = predicate.get("value")
             if op == "q4_satisfied":
                 passed = self._q4_satisfied(outputs)
-                expected_display = "DIRECT_PASS or ADJUDICATED_CLOSURE_PASS with coherent evidence values"
+                expected_display = (
+                    "DIRECT_PASS, ADJUDICATED_CLOSURE_PASS, or "
+                    "AUTHENTICATED_HUMAN_RISK_ACCEPTANCE with coherent evidence values"
+                )
             elif op == "eq_path":
                 assert isinstance(expected, str)
                 comparison = self._resolve(outputs, expected)
@@ -177,21 +182,33 @@ class StageAcceptancePredicates:
             and value.get("missing_evidence") in (None, [])
         )
 
-    @classmethod
-    def _q4_satisfied(cls, outputs: Mapping[str, Any]) -> bool:
+    def _q4_satisfied(self, outputs: Mapping[str, Any]) -> bool:
         mode = outputs.get("Q4_SATISFACTION")
         q4 = outputs.get("Q4_RESULT")
         if mode == "DIRECT_PASS":
-            return cls._review_ready(q4, verdict="PASS") and outputs.get("Q4_CLOSURE_RESULT") in (None, {}, "")
+            return self._review_ready(q4, verdict="PASS") and outputs.get("Q4_CLOSURE_RESULT") in (None, {}, "")
         if mode == "ADJUDICATED_CLOSURE_PASS":
             closure = outputs.get("Q4_CLOSURE_RESULT")
             return (
-                cls._review_ready(q4, verdict="REVISE")
-                and cls._review_ready(closure, verdict="PASS", role="Q4 Closure Adjudicator")
+                self._review_ready(q4, verdict="REVISE")
+                and self._review_ready(closure, verdict="PASS", role="Q4 Closure Adjudicator")
                 and isinstance(closure, ABCMapping)
                 and isinstance(closure.get("role_output"), ABCMapping)
                 and closure["role_output"].get("CLOSURE_OUTCOME") == "PASS"
             )
+        if mode == SATISFACTION_MODE:
+            envelope = outputs.get("Q4_CLOSURE_RESULT")
+            if not isinstance(q4, ABCMapping) or not isinstance(envelope, ABCMapping):
+                return False
+            try:
+                validate_human_risk_acceptance(
+                    self.root,
+                    envelope=envelope,
+                    q4_result=q4,
+                )
+            except ValueError:
+                return False
+            return True
         return False
 
     @classmethod
