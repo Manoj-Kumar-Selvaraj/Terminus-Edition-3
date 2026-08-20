@@ -1,0 +1,254 @@
+{
+  "execution_mode": "INLINE_SPECIALIST",
+  "executor_handoff": null,
+  "invocation": {
+    "acceptance_predicates": {},
+    "authority": {
+      "control_plane_commit": "bde51f1c20b2d6d78b33f02956da9c58cd42d2a4",
+      "policy_versions": {},
+      "task_commit": "6c7909d5c0efd3e6e64443d6de3b227c1820b01b",
+      "task_id": "ec2-artifact-policy-enforcement"
+    },
+    "evidence": {
+      "authorized_evidence_classes": [
+        "CONTROL_PLANE_POLICY",
+        "PRIVATE_CREATION_DESIGN",
+        "PUBLIC_REFERENCE",
+        "SOLVER_VISIBLE_TASK"
+      ],
+      "evidence_required": [
+        "root-cause clusters",
+        "causal/interdependency edges",
+        "partial-fix traps",
+        "behavioral surfaces"
+      ],
+      "excluded_evidence_classes": [
+        "CI_RUNTIME_EVIDENCE",
+        "CURRENT_REVIEW_PACKET",
+        "DURABLE_SESSION_STATE",
+        "FINAL_PACKAGE_EVIDENCE",
+        "MODEL_TRIAL_EVIDENCE",
+        "PRIOR_REVIEW_RESULTS",
+        "SOLUTION_ORACLE",
+        "VERIFIER_PRIVATE"
+      ],
+      "mandatory_exact_reads": [
+        ".terminus/agents/CREATION_PIPELINE.md",
+        ".terminus/agents/CREATOR_AGENT_REGISTRY.md",
+        ".terminus/agents/CREATOR_PROMPTS.md"
+      ],
+      "retrieval_mode": "FILTERED_HYBRID"
+    },
+    "ignored_input_count": 0,
+    "inputs": {
+      "optional": {},
+      "required": {
+        "APPROVED_OPERATIONAL_REQUIREMENTS": {
+          "EDGE_FAILURES": [
+            "scanner outage and scanner DB rollover",
+            "mutable identity digest change",
+            "manager/source bypass",
+            "expired or wrong-scope exception",
+            "permit tamper/replay/expiry/concurrency",
+            "partial cache/state write",
+            "crash around journal/projection publication",
+            "restart with incomplete tail or durable corruption"
+          ],
+          "PRESERVATION": [
+            "existing evaluate/verify-permit CLI and documented exit codes",
+            "healthy cache reuse",
+            "valid exact-scope exceptions",
+            "supplied policy/scanner/exception fixtures",
+            "valid existing audit history",
+            "stateless verify-permit compatibility"
+          ],
+          "REQUIRED_END_STATE": [
+            "All package, container, and dependency managers enter one normalized admission boundary.",
+            "Trusted-source and required immutable-digest checks are prerequisites and cannot be waived by exceptions.",
+            "Scanner or cached vulnerability evidence must match the exact artifact plus active policy/scanner revisions and be within its freshness window.",
+            "Scanner unavailability, stale evidence, malformed evidence, or partial evidence fails closed.",
+            "Exceptions may waive only the vulnerability threshold and must be unexpired and exact digest/surface/environment/policy-code scope.",
+            "ALLOW permits are secret-keyed and bind request, instance, artifact digest, policy version, and expiry.",
+            "Stateful permit verification is single-use across restart and concurrent verification.",
+            "Every ALLOW and DENY is durably journaled before completion; derived projection state follows the authoritative journal.",
+            "Repeated deterministic evaluation is idempotent and recovery preserves valid history while rejecting durable corruption."
+          ]
+        },
+        "APPROVED_WORK_PACKAGE": {
+          "ENGINEERING_OBJECTIVE": "Make package, container, and build-dependency acquisition converge on one host-local Go admission boundary that enforces artifact identity, source trust, current vulnerability evidence, scoped exceptions, permit integrity, and durable decision state.",
+          "ID": "WP1_UNIFIED_EC2_ARTIFACT_ADMISSION",
+          "SOURCE_RECORD_ID": "rec_e3f10f19b76d2050ca3a9873fa43c5a788c491f876b674f3d4a9393c73bb0649"
+        },
+        "CLEAN_SYSTEM_ARCHITECTURE": {
+          "COMPONENT_GRAPH": [
+            "CLI gateway",
+            "manager normalization",
+            "policy snapshot",
+            "evidence gateway/cache",
+            "exception evaluator",
+            "decision engine",
+            "permit service",
+            "state coordinator",
+            "decision journal",
+            "replay ledger"
+          ],
+          "SCALE_FIT": "VERY_HIGH",
+          "SOURCE_RECORD_ID": "rec_c5294d6b3f4b8a4fc9526e2ad4b98be84b851e541f4db21f48a0f9a2fb498d76",
+          "STATE_MODEL": "authoritative decision journal + permit consumption ledger; cache/projection derived; durable authoritative mutation precedes derived publication and success"
+        },
+        "CREATION_PROFILE": "large_system_strict"
+      }
+    },
+    "invocation_id": "inv_1e3e999496e46ee61be07fca2897f9e94b00e1ceee8b79e169894c4538901cf3",
+    "learning": {
+      "context_hash": "sha256:bb84a513aa2b6e4374d691759c4a6edf94169f479f4611e9091643b9f279ccfc",
+      "lessons": [],
+      "mode": "GENERALIZED_LESSONS_PLUS_OWNED_REMEDIATIONS",
+      "raw_feedback_exposed": false,
+      "raw_historical_findings_exposed": false,
+      "registry_heads": {
+        "feedback": "GENESIS",
+        "findings": "GENESIS",
+        "lessons": "GENESIS",
+        "patterns": "GENESIS",
+        "remediations": "GENESIS"
+      },
+      "remediations": []
+    },
+    "missing_required_inputs": [],
+    "output_contract": {
+      "allowed_status_values": [
+        "DESIGN_READY",
+        "SCENARIO_TOO_SMALL",
+        "BLOCKED"
+      ],
+      "deterministic_validators": [
+        ".terminus/validate_defect_topology.py <task>"
+      ],
+      "optional_fields": [],
+      "persisted_artifacts": [
+        ".terminus/designs/<task>.json"
+      ],
+      "required_fields": [
+        "profile",
+        "root_cause_clusters",
+        "defects",
+        "causal_edges",
+        "behavioral_surfaces",
+        "organic_f2p_surface_assessment"
+      ],
+      "semantic_reviewers": [
+        "Task Architect",
+        "Complexity Governor"
+      ]
+    },
+    "readiness": "READY",
+    "retrieval": {
+      "query": null,
+      "retrieved_chars": 0,
+      "retrieved_context": [],
+      "status": "NOT_REQUESTED"
+    },
+    "routing": {
+      "failure_routes": {
+        "ARCHITECTURE_GAP": "Creation Controller -> SYSTEM_ARCHITECTURE",
+        "HIDDEN_KNOWLEDGE": "A3 Defect Topology Designer -> expose legitimate solver-visible contract or remove defect",
+        "SCENARIO_TOO_SMALL": "Creation Controller -> WORK_PACKAGE_RESEARCH"
+      },
+      "stale_on": [
+        "work-package change",
+        "architecture change",
+        "material operational requirement change"
+      ],
+      "success_transition": "ENVIRONMENT_BUILD"
+    },
+    "schema_version": "1.0",
+    "stage": {
+      "lifecycle": "creation",
+      "owner": "A3 Defect Topology Designer",
+      "role_class": "PRODUCER",
+      "role_id": "A3_DEFECT_TOPOLOGY_DESIGNER",
+      "stage_id": "DEFECT_TOPOLOGY"
+    }
+  },
+  "next": {
+    "action": "INVOKE_STAGE",
+    "optional_inputs": [
+      "DOMAIN_FAILURE_REFERENCES"
+    ],
+    "owner": "A3 Defect Topology Designer",
+    "primary_role_id": "A3_DEFECT_TOPOLOGY_DESIGNER",
+    "required_inputs": [
+      "APPROVED_OPERATIONAL_REQUIREMENTS",
+      "APPROVED_WORK_PACKAGE",
+      "CLEAN_SYSTEM_ARCHITECTURE",
+      "CREATION_PROFILE"
+    ],
+    "stage_id": "DEFECT_TOPOLOGY"
+  },
+  "quality_mode_policy": {
+    "inline_creation_governor_role_ids": [
+      "A10_COMPLEXITY_GOVERNOR"
+    ],
+    "inline_quality_role_ids": [
+      "Q1_SPEC_GAP_REPAIRER",
+      "Q2_VERIFIER_COVERAGE_REPAIRER",
+      "Q3_SPEC_AMBIGUITY_REPAIRER",
+      "Q5_ORACLE_RUNTIME_REPAIR_SPECIALIST",
+      "Q7_TASK_FORMAT_ENFORCER"
+    ],
+    "inline_stage_sequences": {
+      "SPEC_ALIGNMENT": [
+        {
+          "result_field": "Q1_STATUS",
+          "role_id": "Q1_SPEC_GAP_REPAIRER",
+          "satisfied_values": [
+            "NO_GAP",
+            "PASS"
+          ]
+        },
+        {
+          "result_field": "Q2_STATUS",
+          "role_id": "Q2_VERIFIER_COVERAGE_REPAIRER",
+          "satisfied_values": [
+            "COVERED",
+            "PASS"
+          ]
+        },
+        {
+          "result_field": "Q3_STATUS",
+          "role_id": "Q3_SPEC_AMBIGUITY_REPAIRER",
+          "satisfied_values": [
+            "CLEAR",
+            "PASS"
+          ]
+        }
+      ]
+    },
+    "mandatory_quality_role_keys": [
+      "spec-test-contract",
+      "production-logic"
+    ],
+    "mandatory_same_chat_checkpoints": {
+      "Q1": "SPEC_ALIGNMENT.Q1_STATUS",
+      "Q2": "SPEC_ALIGNMENT.Q2_STATUS",
+      "Q3": "SPEC_ALIGNMENT.Q3_STATUS",
+      "Q5": "DETERMINISTIC_VALIDATION runtime/oracle checkpoint; invoke Q5 repair only on registered runtime/oracle failure",
+      "Q7": "FORMAT_GATE"
+    },
+    "optional_q8_role_keys": [
+      "difficulty-sim-gpt",
+      "difficulty-sim-claude"
+    ],
+    "policy_document": ".terminus/agents/QUALITY_EXECUTION_MODE.md",
+    "policy_version": "1.0",
+    "producer_role_classes": [
+      "FIXER",
+      "PRODUCER"
+    ],
+    "q4_q6_mode": "AUTOMATED",
+    "q8_mode": "OFF",
+    "source": ".terminus/agents/quality_execution_mode.json"
+  },
+  "state_snapshot_id": "state_5302f63d34f9d8b192d7752e7fe1609a5d5d2fd2d4da673cc7594c1894b511fe"
+}
