@@ -1,0 +1,15 @@
+{
+  "schema_version":"1.0",
+  "mode":"CHECK",
+  "task_id":"edge-router-runtime",
+  "task_commit":"4b4a8d30429b8455ab80824c3d1e7d03378b5934",
+  "control_plane_commit":"02ac3445191f96a9309d3a08248f09e17a738c5b",
+  "expected_repository_head":"4d15f852d5c43513bf47af797d995b6bc3989c44",
+  "stage_id":"VERIFIER_BUILD",
+  "inputs":{
+    "BEHAVIORAL_SURFACES":{"normal":["accepted complete updates","stable unchanged endpoint continuity","live proxy selection"],"edge_boundary":["duplicate canonical endpoint aliases","same-revision conflicts","rapid remove/re-add","all-down pools"],"negative_rejection":["invalid configuration","stale/conflicting source update","ineligible backend selection"],"failure_recovery":["crash around checkpoint authority","corrupt CURRENT with previous fallback","slow drain deadline"],"cross_component":["source fence to publication","snapshot lease to retry/failover","membership incarnation to affinity/health/transport","publication to durable recovery"]},
+    "SOLVER_VISIBLE_CONTRACTS":["edge-router-runtime/environment/docs/architecture.md","edge-router-runtime/environment/docs/configuration.md","edge-router-runtime/environment/docs/runtime-state.md","edge-router-runtime/environment/docs/operator-guide.md","edge-router-runtime/environment/docs/observability.md"],
+    "SOLVER_VISIBLE_REQUIREMENTS":{"REQUIRED_END_STATE":["atomic complete generation publication","per-source fencing","stable endpoint identity/incarnation","compatible runtime-state continuity","health/lifecycle-aware selection","bounded draining","durable complete checkpoint recovery","bounded runtime/telemetry retirement"],"PRESERVATION":["in-flight and long-lived requests remain valid across unrelated updates","unchanged route semantics remain stable across generations","healthy unchanged endpoints preserve meaningful runtime state","rejected updates cannot damage the serving generation","readers never observe partially applied configuration","runtime and observability state remain bounded after repeated updates"]}
+  },
+  "result":{}
+}
