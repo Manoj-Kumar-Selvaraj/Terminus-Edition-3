@@ -1,7 +1,7 @@
 {
   "acceptance_predicates": {},
   "authority": {
-    "control_plane_commit": "67b805a297ac005ee08e82facc533f53a3233192",
+    "control_plane_commit": "5aebce7e213fa5f5864bdd741e6139d39bf5e059",
     "policy_versions": {},
     "task_commit": "78ad422902b27dea954905130a1267b02cff3596",
     "task_id": "terraform-ansible-managed-resources"
@@ -49,26 +49,8 @@
     "required": {
       "APPROVED_WORK_PACKAGE": {
         "ENGINEERING_OBJECTIVE": "Complete the ten-resource ansibleops provider as one coherent Terraform lifecycle/reconciliation system.",
-        "ID": "MANAGED_RESOURCE_LIFECYCLE_COMPLETION",
         "PERSONA": "Platform engineer maintaining an internal Terraform provider for local Linux configuration through Ansible.",
-        "PRESERVATION_OBLIGATIONS": [
-          "exact ten interfaces",
-          "local/ansibleops 0.1.0",
-          "Terraform Core sole durable state",
-          "local inventory",
-          "technical contracts"
-        ],
-        "REQUIRED_END_STATE": "Exactly ten real managed resources with stable external-key identity, Ansible-only mutation, native refresh, transactional Terraform state, scoped ownership/delete, safe runner behavior and canonical convergence.",
-        "REQUIREMENT_FAMILIES": [
-          "provider/schema",
-          "state/identity",
-          "native refresh/drift",
-          "transactional update/delete",
-          "content/text ownership",
-          "accounts/cron",
-          "runner safety",
-          "normalization/idempotency"
-        ]
+        "WORK_PACKAGE_ID": "MANAGED_RESOURCE_LIFECYCLE_COMPLETION"
       },
       "CURRENT_TIME_BUDGET": {
         "enforcement": "ADVISORY_ONLY",
@@ -79,14 +61,26 @@
         "time_extension_required": false
       },
       "SOLVER_VISIBLE_REQUIREMENTS": {
-        "instruction.md": "Complete the inherited ansibleops Terraform provider under /app/provider so its ten documented resources behave like normal managed Terraform resources. Preserve exact interfaces/provider source/inventory/Terraform-Core state authority; use stable external-key IDs, Ansible for mutation, native Read, failure-safe state transitions and scoped deletion; honor content/text/account/cron contracts; use structured argv and cleanup; normalize equivalent state; preserve build/runtime compatibility and prohibit wrapper/provisioner/manual-state substitutes.",
-        "lifecycle.md": "Create mutate-observe-publish; Read native/drift-aware; Update stable and retry-safe; Delete scoped/failure-safe; converged lifecycle is idempotent.",
-        "provider-contract.md": "Terraform Core owns durable state; one resource owns one external key; mutation may invoke Ansible; Read is native-only; process failures/timeouts/cancellation fail; temp playbooks clean; state publish follows successful mutation.",
-        "resource-reference.md": "Exactly ten documented file/directory/copy/template/line/block/symlink/user/group/cron resources with stable identities and family-specific semantics."
+        "PRESERVATION_OBLIGATIONS": [
+          "exact ten documented resource interfaces",
+          "provider source local/ansibleops version 0.1.0",
+          "clean plan never replays Ansible",
+          "preserve sibling objects and symlink targets"
+        ],
+        "REQUIRED_END_STATE": [
+          "stable external-object identity",
+          "Ansible-only Create/Update/Delete mutation",
+          "native Linux side-effect-free Read/refresh and drift reconciliation",
+          "state publication only after successful mutation with failure-safe retry semantics",
+          "scoped ownership/deletion",
+          "structured argv plus timeout/cancellation/temp cleanup",
+          "canonical normalization/idempotency",
+          "Terraform Core sole durable state authority"
+        ]
       }
     }
   },
-  "invocation_id": "inv_b670fa3082eb87f04718fe135fa2bf2223389f1be2b1a543501bf7e21d1cbe79",
+  "invocation_id": "inv_b561fe71c9de376d882fc0323bb126699b35c10a8412ad156cf9a5d8563d0bc4",
   "learning": {
     "context_hash": "sha256:bb84a513aa2b6e4374d691759c4a6edf94169f479f4611e9091643b9f279ccfc",
     "lessons": [],
