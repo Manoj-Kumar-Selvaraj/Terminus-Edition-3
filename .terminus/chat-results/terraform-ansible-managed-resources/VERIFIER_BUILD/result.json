@@ -6,47 +6,29 @@
       "ref": "commit:78ad422902b27dea954905130a1267b02cff3596"
     }
   ],
-  "invocation_id": "inv_5cbde9e63c9347e99036c94c94bf3a7083d528254a639f4c8d9ea2e9402b1856",
+  "invocation_id": "inv_349b0ba84b855edb2ecd776900132c913e3d75bc2d0af8849d2bdc5eaf707ee3",
   "output_task_commit": "78ad422902b27dea954905130a1267b02cff3596",
   "outputs": {
-    "EDGE_BOUNDARY_COVERAGE": [
-      "wrong object kind",
-      "paths with spaces",
-      "cron omitted/explicit defaults",
-      "remove_home boundary",
-      "unordered/mode equivalence",
-      "already-absent destroy"
-    ],
+    "EDGE_BOUNDARY_COVERAGE": "PASS: boundary cases include absence/wrong-kind, collisions, already-absent destroy, digest changes, wildcard/default equivalence, literal path/data handling and restart behavior.",
     "F2P_COUNT": 30,
-    "NEGATIVE_FAILURE_COVERAGE": [
-      "duplicate external ownership",
-      "literal shell metacharacters",
-      "Ansible non-zero",
-      "failed update retry",
-      "failed delete retains state",
-      "timeout/cancellation cleanup",
-      "command output absent from state"
-    ],
+    "NEGATIVE_FAILURE_COVERAGE": "PASS: nonzero mutation, timeout/cancellation, failed update/delete state retention and scoped-deletion failures are represented.",
     "ORACLE_EMPIRICAL_STATUS": "NOT_REEARNED_UNDER_CURRENT_CONTROL",
-    "ORGANIC_COUNT_JUSTIFICATION": "The 30 F2P cases arise from distinct lifecycle, drift, transactional failure, ownership, runner-safety, normalization and differentiated resource-family behavior; the 6 P2P cases preserve baseline behavior without padding.",
+    "ORGANIC_COUNT_JUSTIFICATION": "30 F2P cases arise from six connected shared defect clusters across ten differentiated managed-resource lifecycles; six P2P cases preserve already-correct package/provider behaviors and guard against destructive over-repair.",
     "P2P_COUNT": 6,
     "REQUIREMENT_TEST_MATRIX": {
-      "canonical_normalization_and_idempotency": "covered",
-      "copy_template_digest_semantics": "covered",
-      "cron_defaults_drift_and_sibling_preservation": "covered",
-      "delete_failure_and_retry": "covered",
-      "line_block_scoped_ownership": "covered",
-      "native_refresh_and_external_drift": "covered",
-      "ownership_collision_and_backend_boundaries": "covered",
-      "provider_schema": "covered",
-      "runner_argv_timeout_cancel_cleanup": "covered",
-      "state_identity_and_durability": "covered",
-      "update_failure_and_retry": "covered",
-      "user_group_observation_and_normalization": "covered"
+      "ansible_backend": "mutation occurs through Ansible while Read remains native",
+      "delete_transaction": "failure retains management, symlink target preservation, sibling-safe line/block/cron and user-home policy",
+      "normalization": "modes, unordered vars/groups, account observations and cron defaults",
+      "provider_schema": "provider startup/source/version/exact ten resources",
+      "refresh_drift": "missing/wrong-kind, mode/content/symlink/account drift, side-effect-free Read",
+      "resource_ownership": "filesystem/content/account/cron family-specific scoped behavior",
+      "runner_safety": "structured argv, spaces/metacharacters, nonzero, timeout/cancel, temp cleanup, no full command output state",
+      "state_identity": "create state, stable IDs, restart stability",
+      "update_transaction": "in-place updates, failure state retention, retry convergence, copy digest and named text semantics"
     },
-    "SOLVER_LOGIC_REIMPLEMENTATION_RISK": "LOW: tests assert observable contracts and external state transitions rather than reimplementing provider algorithms.",
+    "SOLVER_LOGIC_REIMPLEMENTATION_RISK": "LOW_TO_MODERATE: verifier exercises externally observable lifecycle/state behavior; private implementation coupling is limited to fixture instrumentation and process observation.",
     "STARTER_EMPIRICAL_STATUS": "NOT_REEARNED_UNDER_CURRENT_CONTROL",
-    "TEST_INDEPENDENCE": "Verifier assertions exercise public Terraform/provider behavior and external Linux effects rather than copying the reference solution implementation or private defect IDs."
+    "TEST_INDEPENDENCE": "PASS: tests assert solver-visible lifecycle outcomes through Terraform/Linux/runner interfaces rather than copying reference-solution implementation logic."
   },
   "schema_version": "1.0",
   "status": "VERIFIER_READY"
