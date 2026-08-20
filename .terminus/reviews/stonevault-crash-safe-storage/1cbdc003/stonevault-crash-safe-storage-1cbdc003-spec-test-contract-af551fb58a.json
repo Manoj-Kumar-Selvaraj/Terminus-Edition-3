@@ -1,0 +1,45 @@
+{
+  "schema_version": "3.0",
+  "role": "Spec-Test Contract Reviewer",
+  "review_id": "stonevault-crash-safe-storage-1cbdc003-spec-test-contract-af551fb58a",
+  "task": "stonevault-crash-safe-storage",
+  "task_commit": "1cbdc0030a8a6483db4c91865aa60b8ef127c9c6",
+  "control_plane_commit": "5678a234fa57a29bef76d422cea20547a32810a5",
+  "protocol_policy_version": "2.2",
+  "prompt_policy_version": "2.2",
+  "role_policy_version": "1.1",
+  "role_contract_hash": "9607c7323be7db66eb7b520db4498f29efc686073e6f3d565c8e2c99ad26a34c",
+  "context_packet": ".terminus/reviews/stonevault-crash-safe-storage/1cbdc003/stonevault-crash-safe-storage-1cbdc003-spec-test-contract-af551fb58a.packet.json",
+  "verdict": "REVISE",
+  "confidence": "HIGH",
+  "evidence_status": "SUFFICIENT",
+  "summary": "Bidirectional alignment is nearly complete and solver-visible contracts are well-formed, but recovery of committed DELETE mutations across process restart is a material instruction requirement with no meaningful behavioral test. A solver could omit durable DELETE WAL replay and still pass all 63 probes.",
+  "evidence": [],
+  "findings": [
+    {
+      "id": "F01",
+      "severity": "HIGH",
+      "status": "OBSERVED",
+      "criterion": "Every material requirement has meaningful behavioral test coverage (forward matrix completeness)",
+      "evidence_refs": ["stonevault-crash-safe-storage/instruction.md:8-9","stonevault-crash-safe-storage/environment/stonevault/docs/storage-format.md:44-52","stonevault-crash-safe-storage/tests/test_outputs.py","stonevault-crash-safe-storage/tests/test_q4_contract.py","stonevault-crash-safe-storage/tests/test_preservation.py"],
+      "why_it_matters": "Instruction requires recovery to retain every valid committed transaction and documents DELETE WAL records, but no probe commits a DELETE and restarts (with or without checkpoint) to verify the deletion survives durability/recovery. An implementation that applies DELETE only in-memory or fails to replay DELETE frames would pass all current tests.",
+      "minimal_remediation": "Add at least one restart probe that seeds a key, commits a DELETE, restarts the engine, and asserts NOT_FOUND/empty scan plus correct sequence; optionally add an independently encoded DELETE+COMMIT WAL fixture mirroring the existing PUT fixture.",
+      "regression_risk": "Low if added as a new preservation or contract probe without weakening existing corruption or conflict checks."
+    },
+    {"id":"F02","severity":"LOW","status":"OBSERVED","criterion":"Edge-boundary coverage completeness","evidence_refs":["stonevault-crash-safe-storage/environment/stonevault/docs/storage-format.md:42","stonevault-crash-safe-storage/tests/test_q4_contract.py"],"why_it_matters":"Storage-format declares zero-byte declared WAL payload length as intrinsic corruption, but no probe supplies a complete header with payload_length=0; this is a narrow framing edge unlike the DELETE recovery gap.","minimal_remediation":"Optional: add a corruption probe with a complete zero-length framing header expecting fail-closed open.","regression_risk":"Minimal."}
+  ],
+  "missing_evidence": [],
+  "change_scope": ["stonevault-crash-safe-storage/tests/test_outputs.py","stonevault-crash-safe-storage/tests/test_q4_contract.py","stonevault-crash-safe-storage/tests/test_preservation.py"],
+  "do_not_change": ["stonevault-crash-safe-storage/instruction.md","stonevault-crash-safe-storage/environment/stonevault/docs/storage-format.md","stonevault-crash-safe-storage/environment/"],
+  "next_gate": "VERIFIER_AUTHOR",
+  "role_output": {
+    "PHANTOM_TEST_CONTRACTS": [],
+    "UNTESTED_REQUIREMENTS": ["R08: Recovery of a committed DELETE transaction across process restart (WAL replay and/or post-checkpoint snapshot reload) — instruction.md:12 and storage-format.md DELETE payload type are solver-visible but no probe restarts after a successful DELETE commit."],
+    "AMBIGUITIES": [],
+    "SPEC_DUMP_RISK": "LOW",
+    "BIDIRECTIONAL_ALIGNMENT": "FAIL",
+    "BLOCKING_FINDING_IDS": ["F01"],
+    "ADVISORY_FINDING_IDS": ["F02"],
+    "EXHAUSTIVENESS": {"REQUIREMENTS_ENUMERATED":"COMPLETE","VERIFIER_BEHAVIORS_ENUMERATED":"COMPLETE","FORWARD_MATRIX_COMPLETE":"NO","REVERSE_MATRIX_COMPLETE":"YES","DELEGATED_CONTRACTS_COMPLETE":"YES","P2P_BOUNDARIES_COMPLETE":"YES","F2P_BOUNDARIES_COMPLETE":"YES","OUTPUT_INTERFACES_COMPLETE":"YES","SECOND_PASS_OMISSION_SWEEP":"PASS","UNINSPECTED_SCOPE":[]}
+  }
+}
