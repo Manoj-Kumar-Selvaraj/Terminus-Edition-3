@@ -90,7 +90,7 @@ def test_orchestrator_uses_inline_controller_and_independent_quality_routes() ->
         "build_deterministic_request",
         "deterministic_dispatch_envelope",
         'stage_id == "DETERMINISTIC_VALIDATION"',
-        '"execution_mode": "HOSTED_DETERMINISTIC_VALIDATION"',
+        'payload["execution_mode"] = "HOSTED_DETERMINISTIC_VALIDATION"',
         "resolve_quality_execution_modes",
         "inline_execution_mode",
         "INLINE_SPECIALIST_SEQUENCE",
@@ -275,6 +275,8 @@ def test_project_agent_frontmatter_and_contract_reference() -> None:
     assert "Do not default every stage to a fresh chat" in text
     assert "INLINE_SPECIALIST_SEQUENCE" in text
     assert "terminus-quality-lifecycle.yml" in text
+    assert "HOSTED_DETERMINISTIC_VALIDATION" in text
+    assert ".terminus/deterministic-run-locators/<task>/<request-commit>.json" in text
 
 
 def test_orchestrator_is_integrated_into_control_plane_and_ci() -> None:
