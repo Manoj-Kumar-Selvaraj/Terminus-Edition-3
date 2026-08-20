@@ -1,22 +1,22 @@
 {
   "ledger_event": {
-    "control_plane_commit": "67b805a297ac005ee08e82facc533f53a3233192",
-    "event_id": "evt_2f8c2597ee786230b7650b6ba37afc00bb79c66ad2d111eef2fda9bd2cc1fcec",
+    "control_plane_commit": "bde51f1c20b2d6d78b33f02956da9c58cd42d2a4",
+    "event_id": "evt_d03fb014c6d318782934a1e6197f85d91792ee4eac5a27b1707e6b10fa84564f",
     "input_task_commit": "78ad422902b27dea954905130a1267b02cff3596",
-    "invocation_id": "inv_4e03ec70b8e339ba1e4f60d3a1d4f7548590cc2c2ebcf0a30e1f15ed451ed78a",
+    "invocation_id": "inv_65271020c29e0a15f8e3edf26acc5d6b484f428f9ec272cc9da03c3f302b790c",
     "output_task_commit": "78ad422902b27dea954905130a1267b02cff3596",
-    "previous_event_id": "evt_32aa0c94f5edab9cbbdc24f5767dd84759c9f410261b7b5d3dc9881007ed2ac5",
-    "record_hash": "sha256:d6c161d59536a123a3503e1c1746aab351020507f9c8485d7acfbca6c03ef66c",
-    "record_id": "rec_3c2e28c8e14712d530ab2b50f20455d2297afe923f9fcf92b4dd18c81c2449c0",
-    "record_path": ".terminus/executions/terraform-ansible-managed-resources/inv_4e03ec70b8e339ba1e4f60d3a1d4f7548590cc2c2ebcf0a30e1f15ed451ed78a.result.json",
+    "previous_event_id": "evt_44fddf1514de808ef8fd9273bd1f4d24c4058c0ba26fd7c59a6011896ab11d27",
+    "record_hash": "sha256:0d5295075f4c0a48d034b03e6f30ff9132f1cfd8093bfc3904c9f4df2f1de5d5",
+    "record_id": "rec_675e8fdb418e24e3a0bacb2720e93071b113bd4a01bec97dda6a0f53c46923ce",
+    "record_path": ".terminus/executions/terraform-ansible-managed-resources/inv_65271020c29e0a15f8e3edf26acc5d6b484f428f9ec272cc9da03c3f302b790c.result.json",
     "schema_version": "1.0",
-    "sequence": 53,
+    "sequence": 79,
     "stage_id": "FORMAT_GATE",
     "task_id": "terraform-ansible-managed-resources"
   },
   "record": {
     "authority": {
-      "control_plane_commit": "67b805a297ac005ee08e82facc533f53a3233192",
+      "control_plane_commit": "bde51f1c20b2d6d78b33f02956da9c58cd42d2a4",
       "policy_versions": {},
       "task_commit": "78ad422902b27dea954905130a1267b02cff3596",
       "task_id": "terraform-ansible-managed-resources"
@@ -27,18 +27,13 @@
         "content_hash": "sha256:104817a239b92de3e53f14d6bc0176563437894773e060648776dc09c6280374",
         "kind": "COMMIT",
         "ref": "commit:78ad422902b27dea954905130a1267b02cff3596"
-      },
-      {
-        "content_hash": "sha256:fca3ef4b283f1a1fe2aa6d960cd36a17b7232eb0b7a130f9cc8d43d948d6ec42",
-        "kind": "COMMIT",
-        "ref": "commit:67b805a297ac005ee08e82facc533f53a3233192"
       }
     ],
-    "invocation_id": "inv_4e03ec70b8e339ba1e4f60d3a1d4f7548590cc2c2ebcf0a30e1f15ed451ed78a",
+    "invocation_id": "inv_65271020c29e0a15f8e3edf26acc5d6b484f428f9ec272cc9da03c3f302b790c",
     "invocation_snapshot": {
       "acceptance_predicates": {},
       "authority": {
-        "control_plane_commit": "67b805a297ac005ee08e82facc533f53a3233192",
+        "control_plane_commit": "bde51f1c20b2d6d78b33f02956da9c58cd42d2a4",
         "policy_versions": {},
         "task_commit": "78ad422902b27dea954905130a1267b02cff3596",
         "task_id": "terraform-ansible-managed-resources"
@@ -78,81 +73,36 @@
         "optional": {},
         "required": {
           "ACTIVE_FORMAT_VALIDATORS": [
-            "current Terminus task-format/packaging CI",
-            "task.toml structure and absolute artifact-path checks",
-            "digest-pinned agent/verifier image checks",
-            "separate-verifier and test.sh reward-contract checks",
-            "solution/tests isolation checks",
-            "Q7 Task Format Enforcer same-chat review"
+            "task.toml schema and required package paths",
+            "agent/verifier Dockerfile and .dockerignore boundaries",
+            "tests/test.sh verifier entrypoint/reward contract",
+            "instruction required-output/path constraints"
           ],
           "CREATION_RULE_CONTEXT": {
-            "CONTROL_PLANE_COMMIT": "67b805a297ac005ee08e82facc533f53a3233192",
+            "CONTROL_PLANE_COMMIT": "bde51f1c20b2d6d78b33f02956da9c58cd42d2a4",
             "CREATION_PROFILE": "large_system_strict",
-            "KNOWN_POLICY_CONFLICTS": [],
-            "NETWORK_ENVIRONMENT_CONSTRAINTS": "network_mode public; separate verifier; digest-pinned canonical Go runtime; no privileged Docker/capability/socket shortcuts; tmux and asciinema required in agent image"
+            "KNOWN_POLICY_CONFLICTS": []
           },
           "CURRENT_TASK_TREE": {
-            "environment": {
-              "Dockerfile": "digest-pinned golang:1.24-bookworm; installs ansible-core, tmux, asciinema and Terraform 1.10.5; copies only ansibleops into /app/provider",
-              "dockerignore": [
-                ".git",
-                ".gitignore",
-                "solution",
-                "tests",
-                "**/*_test.go",
-                "**/.terraform",
-                "**/.terraform.lock.hcl",
-                "**/terraform.tfstate*",
-                "**/*.log"
-              ],
-              "source_dir": "environment/ansibleops/"
-            },
-            "instruction": "instruction.md uses /app/provider and solver-visible docs; no verifier/private paths exposed",
-            "solution": {
-              "entrypoint": "solution/solve.sh",
-              "implementation_overlay": "solution/fixed/"
-            },
-            "task_root": "terraform-ansible-managed-resources",
-            "task_toml": {
-              "agent_timeout_sec": 7200,
-              "artifacts": [
-                "/app/provider"
-              ],
-              "category": "Software",
-              "difficulty": "advanced",
-              "name": "terraform-ansible-managed-resources",
-              "network_mode": "public",
-              "subcategory": "Systems",
-              "verifier_environment_mode": "separate",
-              "verifier_timeout_sec": 2400,
-              "workdir": "/app/provider"
-            },
-            "tests": {
-              "Dockerfile": "digest-pinned same Go base; pytest and pytest-json-ctrf pinned at image build; /tests mounted/copied separately",
-              "private_test_files": [
-                "conftest.py",
-                "test_outputs.py",
-                "test_provider_contract.py",
-                "test_lifecycle_filesystem.py",
-                "test_lifecycle_content.py",
-                "test_lifecycle_identity.py",
-                "test_lifecycle_delete.py",
-                "test_runner_and_cron.py"
-              ],
-              "test_sh": "builds provider from /app/provider vendored source; runs declared pytest suite; writes /logs/verifier/reward.txt 1 only on success and exits pytest status"
-            },
-            "top_level": [
+            "go_version": "1.24",
+            "provider_source": "local/ansibleops",
+            "provider_version": "0.1.0",
+            "required_paths": [
               "README.md",
               "environment/",
               "instruction.md",
               "solution/",
               "task.toml",
               "tests/"
-            ]
+            ],
+            "resource_count": 10,
+            "runtime_artifact": "/app/provider",
+            "task_root": "terraform-ansible-managed-resources",
+            "terraform_version": "1.10.5"
           }
         }
       },
-      "invocation_id": "inv_4e03ec70b8e339ba1e4f60d3a1d4f7548590cc2c2ebcf0a30e1f15ed451ed78a",
+      "invocation_id": "inv_65271020c29e0a15f8e3edf26acc5d6b484f428f9ec272cc9da03c3f302b790c",
       "learning": {
         "context_hash": "sha256:bb84a513aa2b6e4374d691759c4a6edf94169f479f4611e9091643b9f279ccfc",
         "lessons": [],
@@ -220,19 +170,19 @@
       }
     },
     "outputs": {
-      "CHECKS": [
-        "PASS: required top-level task layout is present: README.md, environment/, instruction.md, solution/, task.toml, tests/.",
-        "PASS: task.toml declares Software/Systems advanced task, absolute artifact /app/provider, workdir /app/provider, public network, separate verifier and bounded agent/verifier timeouts.",
-        "PASS: agent image uses digest-pinned Go 1.24 base and provides ansible-core, tmux, asciinema and pinned Terraform 1.10.5 tooling without privileged/container-socket shortcuts.",
-        "PASS: .dockerignore excludes solution, tests, Go test files, Terraform state/cache/lock files and logs from the solver environment build context.",
-        "PASS: verifier is separate, uses the pinned Go base and baked pytest dependencies, and its test harness builds the provider from the declared artifact root.",
-        "PASS: test.sh writes reward 1 only after successful pytest execution and exits with pytest status.",
-        "PASS: instruction exposes solver-visible provider/docs paths only and does not expose verifier-private or reference-solution internals.",
-        "PASS: solution entrypoint and implementation overlay reside under solution/ and are not copied into the agent image."
-      ],
-      "RERUN": "No format repair was required. No later CI/runtime/oracle pass is claimed by this Q7 result; downstream gates must earn their own evidence."
+      "CHECKS": {
+        "agent_image_and_tooling": "PASS",
+        "dockerignore_isolation": "PASS",
+        "instruction_path_isolation": "PASS",
+        "separate_verifier": "PASS",
+        "solution_isolation": "PASS",
+        "task_toml": "PASS",
+        "tests_test_sh_reward_exit_contract": "PASS",
+        "top_level_layout": "PASS"
+      },
+      "RERUN": "PASS — current task-format/package validators report no repair-required defect."
     },
-    "record_id": "rec_3c2e28c8e14712d530ab2b50f20455d2297afe923f9fcf92b4dd18c81c2449c0",
+    "record_id": "rec_675e8fdb418e24e3a0bacb2720e93071b113bd4a01bec97dda6a0f53c46923ce",
     "role_id": "Q7_TASK_FORMAT_ENFORCER",
     "schema_version": "1.0",
     "stage_id": "FORMAT_GATE",
@@ -251,7 +201,7 @@
     "validation": {
       "acceptance_predicates_satisfied": true,
       "evidence_binding_satisfied": true,
-      "evidence_refs_count": 2,
+      "evidence_refs_count": 1,
       "invocation_identity_valid": true,
       "invocation_policy_valid": true,
       "output_keys_valid": true,
@@ -264,26 +214,26 @@
   },
   "remediation_updates": [],
   "state": {
-    "control_plane_commit": "67b805a297ac005ee08e82facc533f53a3233192",
+    "control_plane_commit": "bde51f1c20b2d6d78b33f02956da9c58cd42d2a4",
     "derived_from": {
       "freshness_overlay_hash": null,
       "record_ids": [
-        "rec_014b2e2b43577ba2129283387f220992b19db2b5ce7d34a8954c413b8cf20197",
-        "rec_0476e3fe0f666bca3546794a21e86db2a789d169a62e761f443cf518905d809c",
-        "rec_3c2e28c8e14712d530ab2b50f20455d2297afe923f9fcf92b4dd18c81c2449c0",
-        "rec_43fdadbfe64e7529f478ce2b20d76d0240739faf2a3cff92861a0bebc46d45b8",
-        "rec_5eb8b1b4638aaff30da1aca13af5ec426c5148c34af2f19a3672dd654bb5e404",
-        "rec_684f5e4792a8d581e66fbcab96327b38665985cfb962fff4b8c11d0ec0b1a03f",
-        "rec_810c6e0120acbf3c766abbb4b92b8baa85c255753e44d6c898fb7c3383dd82c5",
-        "rec_9aed8dab03d79ef32376cf11b0a87d5882784956c8dcccd3e45e1179ac38d7e9",
-        "rec_9b17b32c92c0d1c69cc93cca79024b0a934d9561e30ed8938a552a820660dc81",
-        "rec_deb95ba0e51aaead9fb77a0a8f0e9387f4090ad23de66a595f5bb2b985f3039e",
-        "rec_e5207b7b714923ec4c7c70318b32f26385c8645ec3997006f58d778b9b133f7a",
-        "rec_e7d4ab9b3b426be089694aca0e89f6598dc5b7e4a8ed8acf662bf2f5cd76fb8b"
+        "rec_042ddcc242f326ed58d93ce16d8305de2b0b3803895391066c0edd49f81bf19a",
+        "rec_1968d82e86d06bae4fba73c760c7d0312c93ea2e08a0a8494c54419bb1b5ebb9",
+        "rec_22cf1360804b7c736843d980afd2596f0283316f9b15dfd33129f0430e3e558b",
+        "rec_2e1959b12beb7273d5c20055f7c32374119e6278526e982e5b16b5186f61a396",
+        "rec_675e8fdb418e24e3a0bacb2720e93071b113bd4a01bec97dda6a0f53c46923ce",
+        "rec_6d31fde26c34e7915363869b5f0864b9f8e151f161d5f01b81e17ad512c5bacb",
+        "rec_a1597be4c596e0c54f663bc323358100c0febfad47702dba102bd77588fd585d",
+        "rec_aa2da97311142935b42d5dbbe6c7e26d0631c66ed3f2c6109969f7892c6f3cda",
+        "rec_b880812a8481b5acd55f3e57103ebcd672d49bd523b8ec525fb6fcc79315695a",
+        "rec_bea9f317bf6ddf9a4320377ec8a1c06714fb3c395a1ccde97395614c1ef24dbe",
+        "rec_c8807c8b0eea69fe687009da6bfe663ba5d7107c788703773de838e37b6d8814",
+        "rec_f2089d6b01ffd81a7ba6121aa12fbf6d25d0722bf683fb63c4697489550312c7"
       ]
     },
-    "ledger_event_count": 53,
-    "ledger_head_event_id": "evt_2f8c2597ee786230b7650b6ba37afc00bb79c66ad2d111eef2fda9bd2cc1fcec",
+    "ledger_event_count": 79,
+    "ledger_head_event_id": "evt_d03fb014c6d318782934a1e6197f85d91792ee4eac5a27b1707e6b10fa84564f",
     "lineage": {
       "bootstrap_task_commit": "78ad422902b27dea954905130a1267b02cff3596",
       "current_task_commit": "78ad422902b27dea954905130a1267b02cff3596",
@@ -311,169 +261,179 @@
       {
         "disposition": "ADVANCE",
         "input_task_commit": "78ad422902b27dea954905130a1267b02cff3596",
-        "invocation_id": "inv_2e4858b04863a34510dc963b580b6ae093ff22889c5085e5030ec9d834c17ca1",
-        "ledger_event_id": "evt_f43ac7af27e791799477c414097ce6152507022000fab4098bb308ff5f7f0759",
+        "invocation_id": "inv_20c90131bc5969e3dabb7604bfc97f01e58f0e7ab794a0ac6451c19ba70abe17",
+        "ledger_event_id": "evt_9f10e462a68920f0d98a214045a43afee9b6eca2e4a15fe1ecba846e96747dc9",
         "node_id": "RULE_RESOLUTION",
         "node_kind": "STAGE",
         "output_task_commit": "78ad422902b27dea954905130a1267b02cff3596",
         "reason": "validated ADVANCE record reaches WORK_PACKAGE_RESEARCH",
-        "record_id": "rec_deb95ba0e51aaead9fb77a0a8f0e9387f4090ad23de66a595f5bb2b985f3039e",
+        "record_id": "rec_2e1959b12beb7273d5c20055f7c32374119e6278526e982e5b16b5186f61a396",
         "status": "CURRENT"
       },
       {
         "disposition": "ADVANCE",
         "input_task_commit": "78ad422902b27dea954905130a1267b02cff3596",
-        "invocation_id": "inv_be0f48e67cb0bca43545b4bf83487db0fb49249470cdea68cf2dcbcdd8896db0",
-        "ledger_event_id": "evt_83b8053e389cbdabed686abe7f67ad47a8901bd0ce05313e1aeabfb2b50562b4",
+        "invocation_id": "inv_e961b4ab2c99f5afdbdfed0043218b207625ddce143599572fbd365e9e679a1b",
+        "ledger_event_id": "evt_e81dfe764026aceca3c3256a4d02602a60597df414012b1c35175cf48e3557fe",
         "node_id": "WORK_PACKAGE_RESEARCH",
         "node_kind": "STAGE",
         "output_task_commit": "78ad422902b27dea954905130a1267b02cff3596",
         "reason": "validated ADVANCE record reaches SYSTEM_ARCHITECTURE",
-        "record_id": "rec_9aed8dab03d79ef32376cf11b0a87d5882784956c8dcccd3e45e1179ac38d7e9",
+        "record_id": "rec_6d31fde26c34e7915363869b5f0864b9f8e151f161d5f01b81e17ad512c5bacb",
         "status": "CURRENT"
       },
       {
         "disposition": "ADVANCE",
         "input_task_commit": "78ad422902b27dea954905130a1267b02cff3596",
-        "invocation_id": "inv_7535df2b879eaf0094d827a574577aa0d66b20252626442b628e1468a56ebc87",
-        "ledger_event_id": "evt_c16a42c38771dad6909a97ff84f7b695804e2523333e1e363ccd0754d6aa303e",
+        "invocation_id": "inv_ee7290e650917888767bca92e87b0beed915529351fe88d77ab0b8ea13eb17e1",
+        "ledger_event_id": "evt_5a8fc78d68bad46908944414c2697b732c877938dbed2ddb88bf61a3742b5e9d",
         "node_id": "SYSTEM_ARCHITECTURE",
         "node_kind": "STAGE",
         "output_task_commit": "78ad422902b27dea954905130a1267b02cff3596",
         "reason": "validated ADVANCE record reaches DEFECT_TOPOLOGY",
-        "record_id": "rec_43fdadbfe64e7529f478ce2b20d76d0240739faf2a3cff92861a0bebc46d45b8",
+        "record_id": "rec_f2089d6b01ffd81a7ba6121aa12fbf6d25d0722bf683fb63c4697489550312c7",
         "status": "CURRENT"
       },
       {
         "disposition": "ADVANCE",
         "input_task_commit": "78ad422902b27dea954905130a1267b02cff3596",
-        "invocation_id": "inv_386a110d0b25e4a3187bc63ce2dfcb542e87289dc1d1f834ce16b27f6689f6db",
-        "ledger_event_id": "evt_da9c79397992cff2ddadeb7ce18e322d0a83c184d8b00e97e9fcad94a75f1e44",
+        "invocation_id": "inv_e6a085bd2c4b4ebfdf6243c0c59cd24232433ba3c7b3e4b10924b5189adac46c",
+        "ledger_event_id": "evt_7a778fa8ab4cd9e0b0662f5607d5bc1b9567afbc10f6fa5e6a1e4ec67ab5d4ec",
         "node_id": "DEFECT_TOPOLOGY",
         "node_kind": "STAGE",
         "output_task_commit": "78ad422902b27dea954905130a1267b02cff3596",
         "reason": "validated ADVANCE record reaches ENVIRONMENT_BUILD",
-        "record_id": "rec_0476e3fe0f666bca3546794a21e86db2a789d169a62e761f443cf518905d809c",
+        "record_id": "rec_22cf1360804b7c736843d980afd2596f0283316f9b15dfd33129f0430e3e558b",
         "status": "CURRENT"
       },
       {
         "disposition": "ADVANCE",
         "input_task_commit": "78ad422902b27dea954905130a1267b02cff3596",
-        "invocation_id": "inv_a52f15d6f5c304e3235055760da5dac5369e99b10d0eb9d5bd9f627fe05a25b8",
-        "ledger_event_id": "evt_33ae68e89f3696e342063832b9cfe139d3360a8a0ab26347936c2ef71494f0e9",
+        "invocation_id": "inv_8ca749b98acbbdf595cc430d412d1813711ccf664643ed5029648f74e23c64cb",
+        "ledger_event_id": "evt_c3044bbea9ea9eef574a6f14f762cb05375339308e01aed6d5c675b562fe23a8",
         "node_id": "ENVIRONMENT_BUILD",
         "node_kind": "STAGE",
         "output_task_commit": "78ad422902b27dea954905130a1267b02cff3596",
         "reason": "validated ADVANCE record reaches REFERENCE_SOLUTION",
-        "record_id": "rec_014b2e2b43577ba2129283387f220992b19db2b5ce7d34a8954c413b8cf20197",
+        "record_id": "rec_c8807c8b0eea69fe687009da6bfe663ba5d7107c788703773de838e37b6d8814",
         "status": "CURRENT"
       },
       {
         "disposition": "ADVANCE",
         "input_task_commit": "78ad422902b27dea954905130a1267b02cff3596",
-        "invocation_id": "inv_8da58936222d8034df64cb7eaa1bea6a4f689676b20f79eab623155d2189de6b",
-        "ledger_event_id": "evt_82ea66deaa4a6eccfbf434211096ae909c8fba72e07cc1f5b6eabdb30558c82f",
+        "invocation_id": "inv_4ed7303f369ba58a866d83c86e23a226ea41b21a734008ddde3fcb6f4a686ae0",
+        "ledger_event_id": "evt_fdc67e6dc3b3fd64900388706c71a24f53e202edcdff37a2e302d7b9d9d8a63b",
         "node_id": "REFERENCE_SOLUTION",
         "node_kind": "STAGE",
         "output_task_commit": "78ad422902b27dea954905130a1267b02cff3596",
         "reason": "validated ADVANCE record reaches VERIFIER_BUILD",
-        "record_id": "rec_684f5e4792a8d581e66fbcab96327b38665985cfb962fff4b8c11d0ec0b1a03f",
+        "record_id": "rec_aa2da97311142935b42d5dbbe6c7e26d0631c66ed3f2c6109969f7892c6f3cda",
         "status": "CURRENT"
       },
       {
         "disposition": "ADVANCE",
         "input_task_commit": "78ad422902b27dea954905130a1267b02cff3596",
-        "invocation_id": "inv_874c75d27f882f6e055d0d6ba2bd400647a3f1ae79308b6de2fffa2041ab5644",
-        "ledger_event_id": "evt_8b71bf73031d7069ec391fdba89185b38d0c76c854c5808cd0a1a37999bd8dba",
+        "invocation_id": "inv_349b0ba84b855edb2ecd776900132c913e3d75bc2d0af8849d2bdc5eaf707ee3",
+        "ledger_event_id": "evt_c0a16a3a1283280a249ddcb9081a89d8909ead8dce906a39d9af5bec8ba5754c",
         "node_id": "VERIFIER_BUILD",
         "node_kind": "STAGE",
         "output_task_commit": "78ad422902b27dea954905130a1267b02cff3596",
         "reason": "validated ADVANCE record reaches HUMAN_WRITING_RESEARCH",
-        "record_id": "rec_e7d4ab9b3b426be089694aca0e89f6598dc5b7e4a8ed8acf662bf2f5cd76fb8b",
+        "record_id": "rec_bea9f317bf6ddf9a4320377ec8a1c06714fb3c395a1ccde97395614c1ef24dbe",
         "status": "CURRENT"
       },
       {
         "disposition": "ADVANCE",
         "input_task_commit": "78ad422902b27dea954905130a1267b02cff3596",
-        "invocation_id": "inv_b670fa3082eb87f04718fe135fa2bf2223389f1be2b1a543501bf7e21d1cbe79",
-        "ledger_event_id": "evt_0d65cb49beb03bcf94bde9c189cf4a89a03056098671655842d85e385a079d1f",
+        "invocation_id": "inv_8fe21a6ce356590c7f30ae4e682051c23a37d0aa56d5311c4810d72c3de00e27",
+        "ledger_event_id": "evt_e3612024d1d7bc80f626db468316292ce791773f55a96b575dac637dd2ab3244",
         "node_id": "HUMAN_WRITING_RESEARCH",
         "node_kind": "STAGE",
         "output_task_commit": "78ad422902b27dea954905130a1267b02cff3596",
         "reason": "validated ADVANCE record reaches INSTRUCTION_DRAFT",
-        "record_id": "rec_5eb8b1b4638aaff30da1aca13af5ec426c5148c34af2f19a3672dd654bb5e404",
+        "record_id": "rec_b880812a8481b5acd55f3e57103ebcd672d49bd523b8ec525fb6fcc79315695a",
         "status": "CURRENT"
       },
       {
         "disposition": "ADVANCE",
         "input_task_commit": "78ad422902b27dea954905130a1267b02cff3596",
-        "invocation_id": "inv_139e8e8691c017f87c02d68e7735826449aaceeafd435b43c51df66ad1fe4ae5",
-        "ledger_event_id": "evt_f4160a5bc24b24523390507107d804421e1d6cc045bd64240fa9f61a2e45db40",
+        "invocation_id": "inv_0329fd6becc5bfb19807f90aa6b730096ebecfc51521650d6c2e2a8bf7aea783",
+        "ledger_event_id": "evt_ce4d7ee45e072c2d62b53147f3abc0b1856451f0ad2e07f7ab309f0ef068990a",
         "node_id": "INSTRUCTION_DRAFT",
         "node_kind": "STAGE",
         "output_task_commit": "78ad422902b27dea954905130a1267b02cff3596",
         "reason": "validated ADVANCE record reaches SPEC_ALIGNMENT",
-        "record_id": "rec_810c6e0120acbf3c766abbb4b92b8baa85c255753e44d6c898fb7c3383dd82c5",
+        "record_id": "rec_042ddcc242f326ed58d93ce16d8305de2b0b3803895391066c0edd49f81bf19a",
         "status": "CURRENT"
       },
       {
         "disposition": "ADVANCE",
         "input_task_commit": "78ad422902b27dea954905130a1267b02cff3596",
-        "invocation_id": "inv_bbb71b2809a2d6f82e239d1d27f6a6446edfc8a83d093ed92ce5c969911135bc",
-        "ledger_event_id": "evt_e276c62a2afe70adaafd1665742347a4cb9a462c03bc27fb4857100825644578",
+        "invocation_id": "inv_4daca979dc2c3540a374dcacc1b2bd4da64f95e71a124dc030c3729e0a29b927",
+        "ledger_event_id": "evt_cefeb258ed5079118698d0de99b56b66f14b1374f5f7462156de28296f7d07bf",
         "node_id": "SPEC_ALIGNMENT",
         "node_kind": "STAGE",
         "output_task_commit": "78ad422902b27dea954905130a1267b02cff3596",
         "reason": "validated ADVANCE record reaches DOCUMENTATION_DRAFT",
-        "record_id": "rec_9b17b32c92c0d1c69cc93cca79024b0a934d9561e30ed8938a552a820660dc81",
+        "record_id": "rec_a1597be4c596e0c54f663bc323358100c0febfad47702dba102bd77588fd585d",
         "status": "CURRENT"
       },
       {
         "disposition": "ADVANCE",
         "input_task_commit": "78ad422902b27dea954905130a1267b02cff3596",
-        "invocation_id": "inv_7ca5f4628adf487e46bd3980124c7a68c891e2ba7f26a7ea0a3e961f2046e77b",
-        "ledger_event_id": "evt_32aa0c94f5edab9cbbdc24f5767dd84759c9f410261b7b5d3dc9881007ed2ac5",
+        "invocation_id": "inv_54dfad62e08d0ea44de654ee64d3a31279145cf661c24928d37c2f5da4e2a3fe",
+        "ledger_event_id": "evt_44fddf1514de808ef8fd9273bd1f4d24c4058c0ba26fd7c59a6011896ab11d27",
         "node_id": "DOCUMENTATION_DRAFT",
         "node_kind": "STAGE",
         "output_task_commit": "78ad422902b27dea954905130a1267b02cff3596",
         "reason": "validated ADVANCE record reaches FORMAT_GATE",
-        "record_id": "rec_e5207b7b714923ec4c7c70318b32f26385c8645ec3997006f58d778b9b133f7a",
+        "record_id": "rec_1968d82e86d06bae4fba73c760c7d0312c93ea2e08a0a8494c54419bb1b5ebb9",
         "status": "CURRENT"
       },
       {
         "disposition": "ADVANCE",
         "input_task_commit": "78ad422902b27dea954905130a1267b02cff3596",
-        "invocation_id": "inv_4e03ec70b8e339ba1e4f60d3a1d4f7548590cc2c2ebcf0a30e1f15ed451ed78a",
-        "ledger_event_id": "evt_2f8c2597ee786230b7650b6ba37afc00bb79c66ad2d111eef2fda9bd2cc1fcec",
+        "invocation_id": "inv_65271020c29e0a15f8e3edf26acc5d6b484f428f9ec272cc9da03c3f302b790c",
+        "ledger_event_id": "evt_d03fb014c6d318782934a1e6197f85d91792ee4eac5a27b1707e6b10fa84564f",
         "node_id": "FORMAT_GATE",
         "node_kind": "STAGE",
         "output_task_commit": "78ad422902b27dea954905130a1267b02cff3596",
         "reason": "validated ADVANCE record reaches ASSEMBLY",
-        "record_id": "rec_3c2e28c8e14712d530ab2b50f20455d2297afe923f9fcf92b4dd18c81c2449c0",
+        "record_id": "rec_675e8fdb418e24e3a0bacb2720e93071b113bd4a01bec97dda6a0f53c46923ce",
         "status": "CURRENT"
       },
       {
         "input_task_commit": "78ad422902b27dea954905130a1267b02cff3596",
-        "invocation_id": "inv_7cfcc5d3886ea8ec691f64b670fac799b8b024fd206b1cdd8a739c2dbe1da39f",
-        "ledger_event_id": "evt_1f8374a0c2eee135e692117fe11be9b84b666372a023f29f33d96e6f2eb730df",
+        "invocation_id": "inv_cb1cfc64c139890961995b696242edd858db4a76fcb8d6f22c502912589eb97a",
+        "ledger_event_id": "evt_7ff4bab23ca5bc872e7b9ab4cd39966a02fa1fe43dc2c6d1803d01d2f2803301",
         "node_id": "ASSEMBLY",
         "node_kind": "STAGE",
         "output_task_commit": "78ad422902b27dea954905130a1267b02cff3596",
         "reason": "latest execution record predates the latest current predecessor execution; the downstream stage must be rerun even when task/control commits are unchanged",
-        "record_id": "rec_81277275adfd88ca55119fb06d5fa4f56cce6977adc2b7b9b60769303b5293a1",
+        "record_id": "rec_1d127e20231c7a6a5e6f8b9e7724e3e8db236d847266ba1286b8711a5c4f35f2",
         "status": "STALE"
       },
       {
+        "input_task_commit": "78ad422902b27dea954905130a1267b02cff3596",
+        "invocation_id": "inv_bfeeba41af0ecd795bae0478f536c56c177522646a97f9558de8e15351e3a379",
+        "ledger_event_id": "evt_6828112fd7382edc0f841978c69c8521bb0da114865cf1fe855bcab4abd267c6",
         "node_id": "COMPLEXITY_GATE",
         "node_kind": "STAGE",
+        "output_task_commit": "78ad422902b27dea954905130a1267b02cff3596",
         "reason": "upstream node ASSEMBLY is not current; later historical evidence cannot advance",
-        "status": "MISSING"
+        "record_id": "rec_919e1c7c1d57e5469938c77acd365dfdc2431122e2490840d553eab3d1ee0d73",
+        "status": "STALE"
       },
       {
+        "input_task_commit": "78ad422902b27dea954905130a1267b02cff3596",
+        "invocation_id": "inv_ac12ed1439601ed48599df4415934b9df1058bd1fc708d1f1fb06fa8e8846057",
+        "ledger_event_id": "evt_6f4c8b0313f43e43b10b3957a3747a524eedf27e496fbf0c708ce44bfecc78e6",
         "node_id": "RUNTIME_AUTHENTICITY",
         "node_kind": "STAGE",
+        "output_task_commit": "78ad422902b27dea954905130a1267b02cff3596",
         "reason": "upstream node COMPLEXITY_GATE is not current; later historical evidence cannot advance",
-        "status": "MISSING"
+        "record_id": "rec_3badd5239f366d28a604a3e18aabae3b6e7f85a4182692b64a39f421a8a6fec2",
+        "status": "STALE"
       },
       {
         "node_id": "DETERMINISTIC_VALIDATION",
@@ -555,12 +515,12 @@
       }
     ],
     "schema_version": "1.0",
-    "state_snapshot_id": "state_50096ae851c2610cc22ded86e7d37909c28d03e93c39c73ac9d9c7e51edf6c9f",
+    "state_snapshot_id": "state_0b40a8d214014a266019b6fd09180b1478cbc2d6cbbe675855ee8115116a2a6f",
     "summary": {
       "BLOCKED": 0,
       "CURRENT": 12,
-      "MISSING": 15,
-      "STALE": 1
+      "MISSING": 13,
+      "STALE": 3
     },
     "task_commit": "78ad422902b27dea954905130a1267b02cff3596",
     "task_id": "terraform-ansible-managed-resources"

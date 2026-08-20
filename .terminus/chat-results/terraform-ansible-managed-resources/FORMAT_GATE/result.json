@@ -4,27 +4,22 @@
       "content_hash": "sha256:104817a239b92de3e53f14d6bc0176563437894773e060648776dc09c6280374",
       "kind": "COMMIT",
       "ref": "commit:78ad422902b27dea954905130a1267b02cff3596"
-    },
-    {
-      "content_hash": "sha256:fca3ef4b283f1a1fe2aa6d960cd36a17b7232eb0b7a130f9cc8d43d948d6ec42",
-      "kind": "COMMIT",
-      "ref": "commit:67b805a297ac005ee08e82facc533f53a3233192"
     }
   ],
-  "invocation_id": "inv_4e03ec70b8e339ba1e4f60d3a1d4f7548590cc2c2ebcf0a30e1f15ed451ed78a",
+  "invocation_id": "inv_65271020c29e0a15f8e3edf26acc5d6b484f428f9ec272cc9da03c3f302b790c",
   "output_task_commit": "78ad422902b27dea954905130a1267b02cff3596",
   "outputs": {
-    "CHECKS": [
-      "PASS: required top-level task layout is present: README.md, environment/, instruction.md, solution/, task.toml, tests/.",
-      "PASS: task.toml declares Software/Systems advanced task, absolute artifact /app/provider, workdir /app/provider, public network, separate verifier and bounded agent/verifier timeouts.",
-      "PASS: agent image uses digest-pinned Go 1.24 base and provides ansible-core, tmux, asciinema and pinned Terraform 1.10.5 tooling without privileged/container-socket shortcuts.",
-      "PASS: .dockerignore excludes solution, tests, Go test files, Terraform state/cache/lock files and logs from the solver environment build context.",
-      "PASS: verifier is separate, uses the pinned Go base and baked pytest dependencies, and its test harness builds the provider from the declared artifact root.",
-      "PASS: test.sh writes reward 1 only after successful pytest execution and exits with pytest status.",
-      "PASS: instruction exposes solver-visible provider/docs paths only and does not expose verifier-private or reference-solution internals.",
-      "PASS: solution entrypoint and implementation overlay reside under solution/ and are not copied into the agent image."
-    ],
-    "RERUN": "No format repair was required. No later CI/runtime/oracle pass is claimed by this Q7 result; downstream gates must earn their own evidence."
+    "CHECKS": {
+      "agent_image_and_tooling": "PASS",
+      "dockerignore_isolation": "PASS",
+      "instruction_path_isolation": "PASS",
+      "separate_verifier": "PASS",
+      "solution_isolation": "PASS",
+      "task_toml": "PASS",
+      "tests_test_sh_reward_exit_contract": "PASS",
+      "top_level_layout": "PASS"
+    },
+    "RERUN": "PASS — current task-format/package validators report no repair-required defect."
   },
   "schema_version": "1.0",
   "status": "FORMAT_PASS"
