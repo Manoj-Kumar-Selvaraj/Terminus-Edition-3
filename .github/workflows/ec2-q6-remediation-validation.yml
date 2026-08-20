@@ -5,13 +5,26 @@ on:
     branches: [remediation/ec2-q4-q6-20260820]
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   validate:
+    if: ${{ !contains(github.event.head_commit.message, 'Track EC2 remediation run') }}
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
+      - name: Persist run locator
+        shell: bash
+        run: |
+          set -euo pipefail
+          path=".terminus/diagnostic-run-locators/ec2-q6-remediation-${GITHUB_SHA}.json"
+          mkdir -p "$(dirname "$path")"
+          printf '{"run_id":%s,"event_sha":"%s"}\n' "$GITHUB_RUN_ID" "$GITHUB_SHA" > "$path"
+          git config user.name 'terminus-remediation-validator[bot]'
+          git config user.email 'terminus-remediation-validator[bot]@users.noreply.github.com'
+          git add -- "$path"
+          git commit -m "Track EC2 remediation run $GITHUB_RUN_ID"
+          git push origin HEAD:"$GITHUB_REF_NAME"
       - name: Build production runtime
         shell: bash
         run: |
