@@ -1,0 +1,148 @@
+name: Edge verifier empirical repair builder
+
+on:
+  push:
+    branches:
+      - 'terminus-diagnostic/edge-verifier-repair-df7'
+    paths:
+      - '.terminus/diagnostic-trigger/edge-verifier-repair.json'
+
+permissions:
+  contents: write
+
+jobs:
+  build-repair:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Build task-only verifier repair descendant
+        shell: bash
+        run: |
+          set -euo pipefail
+          git checkout --detach 9663e4da67ab20e6bd66b942ac54b57667408dd8
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+
+          p = Path('edge-router-runtime/tests/test_outputs.py')
+          text = p.read_text(encoding='utf-8')
+
+          def replace_func(name: str, body: str) -> None:
+              global text
+              pattern = rf'def {re.escape(name)}\(tmp_path\):\n.*?(?=\n\ndef |\Z)'
+              text2, count = re.subn(pattern, body.rstrip(), text, flags=re.S)
+              if count != 1:
+                  raise SystemExit(f'expected one function {name}, found {count}')
+              text = text2
+
+          replace_func('test_f2p_stale_revision_cannot_publish', '''def test_f2p_stale_revision_cannot_publish(tmp_path):
+              with running_backends(Backend("a")) as (a,):
+                  doc = document([endpoint(a.address)])
+                  with gateway(tmp_path, doc) as gw:
+                      assert submit(gw["admin"], "config", 4, doc)[0] == 200
+                      generation = current_generation(gw["admin"])
+                      code, body, _ = submit(gw["admin"], "config", 3, mutate_priority(doc, 102))
+                      assert code == 409 and body["outcome"] == "stale"
+                      assert current_generation(gw["admin"]) == generation
+
+                      bad = copy.deepcopy(doc)
+                      bad["routes"][0]["pool"] = "missing-pool"
+                      code, body, _ = submit(gw["admin"], "config", 5, bad)
+                      assert code == 409 and body["outcome"] == "rejected"
+                      assert current_generation(gw["admin"]) == generation
+
+                      code, body, _ = submit(gw["admin"], "config", 5, mutate_priority(doc, 105))
+                      assert code == 200 and body["outcome"] == "accepted"
+                      assert current_generation(gw["admin"]) == generation + 1
+          ''')
+
+          replace_func('test_f2p_source_conflict_is_scoped_to_that_source', '''def test_f2p_source_conflict_is_scoped_to_that_source(tmp_path):
+              with running_backends(Backend("a")) as (a,):
+                  doc = document([endpoint(a.address)])
+                  with gateway(tmp_path, doc) as gw:
+                      assert submit(gw["admin"], "config", 9, doc)[0] == 200
+                      code, body, _ = submit(gw["admin"], "discovery", 3, doc)
+                      assert code == 200 and body["outcome"] == "accepted"
+                      assert accepted_revision(gw["admin"], "config") == 9
+                      assert accepted_revision(gw["admin"], "discovery") == 3
+
+                      code, body, _ = submit(gw["admin"], "discovery", 3, mutate_priority(doc, 107))
+                      assert code == 409 and body["outcome"] == "conflict"
+                      assert accepted_revision(gw["admin"], "config") == 9
+                      assert accepted_revision(gw["admin"], "discovery") == 3
+                      assert submit(gw["admin"], "config", 10, mutate_priority(doc, 108))[0] == 200
+          ''')
+
+          replace_func('test_f2p_recovered_source_fence_rejects_older_revision', '''def test_f2p_recovered_source_fence_rejects_older_revision(tmp_path):
+              with running_backends(Backend("a")) as (a,):
+                  doc = document([endpoint(a.address)])
+                  state_dir = tmp_path / "durable"
+                  first = tmp_path / "first"
+                  first.mkdir()
+                  with gateway(first, doc, state_dir=state_dir) as gw:
+                      assert submit(gw["admin"], "discovery", 2, doc)[0] == 200
+                      assert submit(gw["admin"], "config", 8, mutate_priority(doc, 109))[0] == 200
+                  second = tmp_path / "second"
+                  second.mkdir()
+                  with gateway(second, doc, state_dir=state_dir) as gw:
+                      assert accepted_revision(gw["admin"], "discovery") == 2
+                      assert accepted_revision(gw["admin"], "config") == 8
+                      code, body, _ = submit(gw["admin"], "discovery", 3, mutate_priority(doc, 110))
+                      assert code == 200 and body["outcome"] == "accepted"
+                      code, body, _ = submit(gw["admin"], "config", 7, mutate_priority(doc, 111))
+                      assert code == 409 and body["outcome"] == "stale"
+          ''')
+
+          replace_func('test_f2p_missing_current_body_falls_back_to_retained_previous', '''def test_f2p_missing_current_body_falls_back_to_retained_previous(tmp_path):
+              with running_backends(Backend("a")) as (a,):
+                  doc = document([endpoint(a.address)])
+                  state_dir = tmp_path / "state"
+                  first = tmp_path / "run1"
+                  first.mkdir()
+                  with gateway(first, doc, state_dir=state_dir) as gw:
+                      assert submit(gw["admin"], "config", 2, mutate_priority(doc, 124))[0] == 200
+                      assert submit(gw["admin"], "config", 3, mutate_priority(doc, 125))[0] == 200
+                  newest, previous = newest_and_previous(state_dir)
+                  previous_generation = int(json.loads(previous.read_text())["generation"])
+                  assert previous_generation > 1
+                  newest.unlink()
+                  second = tmp_path / "run2"
+                  second.mkdir()
+                  with gateway(second, doc, state_dir=state_dir) as gw:
+                      assert current_generation(gw["admin"]) == previous_generation
+          ''')
+
+          text = text.replace(
+              'def test_f2p_removed_endpoint_is_not_used_for_fresh_requests(tmp_path):',
+              'def test_p2p_removed_endpoint_is_not_used_for_fresh_requests(tmp_path):',
+              1,
+          )
+          text = text.replace(
+              'def test_f2p_inflight_request_survives_unrelated_publication(tmp_path):',
+              'def test_p2p_inflight_request_survives_unrelated_publication(tmp_path):',
+              1,
+          )
+          p.write_text(text, encoding='utf-8')
+
+          m = Path('.terminus/designs/edge-router-runtime-test-map.json')
+          data = m.read_text(encoding='utf-8')
+          data = data.replace(
+              '["test_f2p_removed_endpoint_is_not_used_for_fresh_requests", "F2P", "REQ_DRAIN_OWNERSHIP"]',
+              '["test_p2p_removed_endpoint_is_not_used_for_fresh_requests", "P2P", "REQ_DRAIN_OWNERSHIP"]',
+          )
+          data = data.replace(
+              '["test_f2p_inflight_request_survives_unrelated_publication", "F2P", "REQ_DRAIN_OWNERSHIP"]',
+              '["test_p2p_inflight_request_survives_unrelated_publication", "P2P", "REQ_DRAIN_OWNERSHIP"]',
+          )
+          m.write_text(data, encoding='utf-8')
+          PY
+          python3 -m py_compile edge-router-runtime/tests/test_outputs.py
+          python3 .terminus/validate_task_complexity.py edge-router-runtime
+          git diff --check
+          git config user.name 'terminus-verifier-repair[bot]'
+          git config user.email 'terminus-verifier-repair[bot]@users.noreply.github.com'
+          git add -- edge-router-runtime/tests/test_outputs.py .terminus/designs/edge-router-runtime-test-map.json
+          git commit -m 'Repair edge-router empirical verifier classification'
+          git push --force-with-lease origin HEAD:refs/heads/task/edge-router-runtime-verifier-empirical-fix
