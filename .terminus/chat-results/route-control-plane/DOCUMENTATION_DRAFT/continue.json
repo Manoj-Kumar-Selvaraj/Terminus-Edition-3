@@ -1,0 +1,223 @@
+{
+  "execution_mode": "INLINE_SPECIALIST",
+  "executor_handoff": null,
+  "invocation": {
+    "acceptance_predicates": {},
+    "authority": {
+      "control_plane_commit": "df7ef7569e2947b9f0bf7cf89ed4dec6c2a5a1fe",
+      "policy_versions": {},
+      "task_commit": "22d2e9e09f4deb58029559fe9a0863c2e032f25c",
+      "task_id": "route-control-plane"
+    },
+    "evidence": {
+      "authorized_evidence_classes": [
+        "CI_RUNTIME_EVIDENCE",
+        "CONTROL_PLANE_POLICY",
+        "PUBLIC_REFERENCE",
+        "SOLUTION_ORACLE",
+        "SOLVER_VISIBLE_TASK"
+      ],
+      "evidence_required": [
+        "implementation evidence",
+        "verification evidence",
+        "no benchmark framing/leakage"
+      ],
+      "excluded_evidence_classes": [
+        "CURRENT_REVIEW_PACKET",
+        "DURABLE_SESSION_STATE",
+        "FINAL_PACKAGE_EVIDENCE",
+        "MODEL_TRIAL_EVIDENCE",
+        "PRIOR_REVIEW_RESULTS",
+        "PRIVATE_CREATION_DESIGN",
+        "VERIFIER_PRIVATE"
+      ],
+      "mandatory_exact_reads": [
+        ".terminus/agents/CREATION_PIPELINE.md",
+        ".terminus/agents/CREATOR_PROMPTS.md",
+        ".terminus/agents/PROMPTS.md"
+      ],
+      "retrieval_mode": "FILTERED_HYBRID"
+    },
+    "ignored_input_count": 0,
+    "inputs": {
+      "optional": {},
+      "required": {
+        "APPROVED_WORK_PACKAGE": {
+          "ENGINEERING_OBJECTIVE": "Build a production-style Go route control plane that models desired route and policy state, reconciles it across a multi-node Linux fleet, detects drift, protects management reachability, records revision history, and exposes the same lifecycle through an operator dashboard and Ansible-driven installation/configuration.",
+          "REQUIRED_END_STATE": "Canonical route/rule desired state, revision-fenced preview/apply/rollback, failure-safe persistence/restart, fresh ownership-aware reconciliation, safe canary/wave fleet rollout, idempotent Ansible convergence with host/protected route precedence, dashboard compare-and-swap mutation safety, and preserved public Go API/runtime surfaces without host-network mutation."
+        },
+        "IMPLEMENTATION_EVIDENCE": {
+          "PRESERVED_BEHAVIOR": "The inherited Go service, HTTP API, dashboard, Ansible deployment surface, deterministic routing model, audit ordering and build/runtime entrypoints remain available; task code does not mutate the host network.",
+          "REFERENCE_SOLUTION_STATUS": "IMPLEMENTED",
+          "RESTORED_INVARIANTS": [
+            "canonical IPv4/IPv6 route and policy-rule identities with valid table dependencies",
+            "revision-fenced preview/apply/rollback with idempotent retry safety",
+            "failure-safe durable desired/observed/transaction state across restart",
+            "fresh observation and ownership-aware drift reconciliation",
+            "canary and wave rollout safety with already-current retry avoidance",
+            "management reachability protection",
+            "Ansible host/protected route precedence",
+            "dashboard apply bound to exact preview revision",
+            "preserved public API/build/runtime surface"
+          ]
+        },
+        "VERIFICATION_EVIDENCE": {
+          "EMPIRICAL_STATUS": "Final runtime/oracle success remains owned by DETERMINISTIC_VALIDATION; earlier CI failures were preflight format failures and are not treated as runtime acceptance evidence.",
+          "F2P_COUNT": 25,
+          "P2P_COUNT": 4,
+          "SPEC_ALIGNMENT": {
+            "Q1_STATUS": "NO_GAP",
+            "Q2_STATUS": "COVERED",
+            "Q3_STATUS": "CLEAR"
+          },
+          "VERIFIER_STATUS": "VERIFIER_READY"
+        }
+      }
+    },
+    "invocation_id": "inv_11d2d759e048ab3dc58e5b63d3104d1503ce9f87e377c1f75ddef391968995d8",
+    "learning": {
+      "context_hash": "sha256:bb84a513aa2b6e4374d691759c4a6edf94169f479f4611e9091643b9f279ccfc",
+      "lessons": [],
+      "mode": "GENERALIZED_LESSONS_PLUS_OWNED_REMEDIATIONS",
+      "raw_feedback_exposed": false,
+      "raw_historical_findings_exposed": false,
+      "registry_heads": {
+        "feedback": "GENESIS",
+        "findings": "GENESIS",
+        "lessons": "GENESIS",
+        "patterns": "GENESIS",
+        "remediations": "GENESIS"
+      },
+      "remediations": []
+    },
+    "missing_required_inputs": [],
+    "output_contract": {
+      "allowed_status_values": [
+        "DOCUMENTATION_READY",
+        "REWRITE_REQUIRED",
+        "BLOCKED"
+      ],
+      "deterministic_validators": [],
+      "optional_fields": [],
+      "persisted_artifacts": [
+        "<task>/README.md"
+      ],
+      "required_fields": [
+        "README_PATH",
+        "DIFFICULTY_EXPLANATION",
+        "SOLUTION_EXPLANATION",
+        "VERIFICATION_EXPLANATION"
+      ],
+      "semantic_reviewers": [
+        "Engineering Documentation Reviewer",
+        "Human Quality Reviewer"
+      ]
+    },
+    "readiness": "READY",
+    "retrieval": {
+      "query": null,
+      "retrieved_chars": 0,
+      "retrieved_context": [],
+      "status": "NOT_REQUESTED"
+    },
+    "routing": {
+      "failure_routes": {
+        "LEAKAGE_OR_SYNTHETIC_PROSE": "A8 Documentation Writer / Human Quality Reviewer",
+        "UNSUPPORTED_CLAIM": "A8 Documentation Writer"
+      },
+      "stale_on": [
+        "implementation evidence change",
+        "verification evidence change",
+        "material task-description change"
+      ],
+      "success_transition": "FORMAT_GATE"
+    },
+    "schema_version": "1.0",
+    "stage": {
+      "lifecycle": "creation",
+      "owner": "A8 Documentation Writer",
+      "role_class": "PRODUCER",
+      "role_id": "A8_DOCUMENTATION_WRITER",
+      "stage_id": "DOCUMENTATION_DRAFT"
+    }
+  },
+  "next": {
+    "action": "INVOKE_STAGE",
+    "optional_inputs": [
+      "DIFFICULTY_EVIDENCE"
+    ],
+    "owner": "A8 Documentation Writer",
+    "primary_role_id": "A8_DOCUMENTATION_WRITER",
+    "required_inputs": [
+      "APPROVED_WORK_PACKAGE",
+      "IMPLEMENTATION_EVIDENCE",
+      "VERIFICATION_EVIDENCE"
+    ],
+    "stage_id": "DOCUMENTATION_DRAFT"
+  },
+  "quality_mode_policy": {
+    "inline_creation_governor_role_ids": [
+      "A10_COMPLEXITY_GOVERNOR"
+    ],
+    "inline_quality_role_ids": [
+      "Q1_SPEC_GAP_REPAIRER",
+      "Q2_VERIFIER_COVERAGE_REPAIRER",
+      "Q3_SPEC_AMBIGUITY_REPAIRER",
+      "Q5_ORACLE_RUNTIME_REPAIR_SPECIALIST",
+      "Q7_TASK_FORMAT_ENFORCER"
+    ],
+    "inline_stage_sequences": {
+      "SPEC_ALIGNMENT": [
+        {
+          "result_field": "Q1_STATUS",
+          "role_id": "Q1_SPEC_GAP_REPAIRER",
+          "satisfied_values": [
+            "NO_GAP",
+            "PASS"
+          ]
+        },
+        {
+          "result_field": "Q2_STATUS",
+          "role_id": "Q2_VERIFIER_COVERAGE_REPAIRER",
+          "satisfied_values": [
+            "COVERED",
+            "PASS"
+          ]
+        },
+        {
+          "result_field": "Q3_STATUS",
+          "role_id": "Q3_SPEC_AMBIGUITY_REPAIRER",
+          "satisfied_values": [
+            "CLEAR",
+            "PASS"
+          ]
+        }
+      ]
+    },
+    "mandatory_quality_role_keys": [
+      "spec-test-contract",
+      "production-logic"
+    ],
+    "mandatory_same_chat_checkpoints": {
+      "Q1": "SPEC_ALIGNMENT.Q1_STATUS",
+      "Q2": "SPEC_ALIGNMENT.Q2_STATUS",
+      "Q3": "SPEC_ALIGNMENT.Q3_STATUS",
+      "Q5": "DETERMINISTIC_VALIDATION runtime/oracle checkpoint; invoke Q5 repair only on registered runtime/oracle failure",
+      "Q7": "FORMAT_GATE"
+    },
+    "optional_q8_role_keys": [
+      "difficulty-sim-gpt",
+      "difficulty-sim-claude"
+    ],
+    "policy_document": ".terminus/agents/QUALITY_EXECUTION_MODE.md",
+    "policy_version": "1.0",
+    "producer_role_classes": [
+      "FIXER",
+      "PRODUCER"
+    ],
+    "q4_q6_mode": "AUTOMATED",
+    "q8_mode": "OFF",
+    "source": ".terminus/agents/quality_execution_mode.json"
+  },
+  "state_snapshot_id": "state_9b122a0533bc8c6814a20bdb4e09c7e774832ac1fe97b83f466bfaf93a2275f0"
+}
