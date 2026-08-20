@@ -12,8 +12,9 @@ from pathlib import Path
 from typing import Any, Mapping
 
 STAGE_ID = "DETERMINISTIC_VALIDATION"
-SCHEMA_VERSION = "1.0"
+SCHEMA_VERSION = "1.1"
 _REQUEST_ID = re.compile(r"^detreq_[0-9a-f]{64}$")
+_INVOCATION_ID = re.compile(r"^inv_[0-9a-f]{64}$")
 _TASK_ID = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]*$")
 _COMMIT = re.compile(r"^[0-9a-f]{40,64}$")
 
@@ -42,17 +43,34 @@ def _require_commit(root: Path, value: Any, label: str) -> str:
     return value
 
 
+def _json_copy(value: Mapping[str, Any], label: str) -> dict[str, Any]:
+    try:
+        copied = json.loads(
+            json.dumps(value, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
+        )
+    except (TypeError, ValueError) as exc:
+        raise ValueError(f"{label} must be JSON-compatible") from exc
+    if not isinstance(copied, dict):
+        raise ValueError(f"{label} must be one JSON object")
+    return copied
+
+
 def build_request(
     root: Path,
     *,
     task_id: str,
     task_commit: str,
     control_plane_commit: str,
+    invocation_id: str,
+    inputs: Mapping[str, Any],
     expected_repository_head: str | None = None,
 ) -> dict[str, Any]:
     root = root.resolve()
     if not _TASK_ID.fullmatch(task_id):
         raise ValueError("unsafe task_id")
+    if not isinstance(invocation_id, str) or not _INVOCATION_ID.fullmatch(invocation_id):
+        raise ValueError("invalid deterministic invocation_id")
+    normalized_inputs = _json_copy(inputs, "deterministic inputs")
     task_commit = _require_commit(root, task_commit, "task_commit")
     control_plane_commit = _require_commit(root, control_plane_commit, "control_plane_commit")
     repository_head = _require_commit(
@@ -72,6 +90,8 @@ def build_request(
         "task_commit": task_commit,
         "expected_repository_head": repository_head,
         "control_plane_commit": control_plane_commit,
+        "invocation_id": invocation_id,
+        "inputs": normalized_inputs,
         "evidence_contract": {
             "oracle_reward": 1,
             "nop_reward": 0,
@@ -98,6 +118,8 @@ def validate_request(
         "task_commit",
         "expected_repository_head",
         "control_plane_commit",
+        "invocation_id",
+        "inputs",
         "evidence_contract",
     }
     if set(request) != expected_keys:
@@ -109,6 +131,13 @@ def validate_request(
         raise ValueError("unsafe task_id")
     if request.get("stage_id") != STAGE_ID:
         raise ValueError("deterministic request is not scoped to DETERMINISTIC_VALIDATION")
+    invocation_id = request.get("invocation_id")
+    if not isinstance(invocation_id, str) or not _INVOCATION_ID.fullmatch(invocation_id):
+        raise ValueError("invalid deterministic invocation_id")
+    inputs = request.get("inputs")
+    if not isinstance(inputs, Mapping):
+        raise ValueError("deterministic inputs must be one JSON object")
+    normalized_inputs = _json_copy(inputs, "deterministic inputs")
 
     task_commit = _require_commit(root, request.get("task_commit"), "task_commit")
     expected_head = _require_commit(
@@ -144,6 +173,8 @@ def validate_request(
 
     return {
         "request_id": request_id,
+        "invocation_id": invocation_id,
+        "inputs": normalized_inputs,
         "task_id": task_id,
         "task_commit": task_commit,
         "expected_repository_head": expected_head,
@@ -166,8 +197,15 @@ def dispatch_envelope(request: Mapping[str, Any]) -> dict[str, Any]:
         "branch": f"terminus-deterministic-request/{task_id}/{suffix}",
         "request_path": f".terminus/deterministic-requests/{task_id}-{suffix}.json",
         "request": dict(request),
-        "polling_policy": "poll the exact workflow run triggered by the request commit; do not redispatch while queued or in_progress",
-        "evidence_policy": "accept only artifact/run evidence that rebinds the exact request_id, task_commit and control_plane_commit",
+        "run_locator": ".terminus/deterministic-run-locators/<task>/<request-commit>.json",
+        "polling_policy": (
+            "write the exact request once, read its durable run locator, then poll the exact run/job; "
+            "do not redispatch while queued, requested, waiting, pending or in_progress"
+        ),
+        "evidence_policy": (
+            "the hosted run reconstructs the exact invocation, compiles empirical CTRF evidence, "
+            "records the canonical StageResult and advances only when task/control-plane freshness remains valid"
+        ),
     }
 
 
@@ -179,6 +217,13 @@ def _write(value: Mapping[str, Any], output: str | None) -> None:
         print(rendered, end="")
 
 
+def _load_inputs(path: str) -> dict[str, Any]:
+    value = json.loads(Path(path).read_text(encoding="utf-8"))
+    if not isinstance(value, dict):
+        raise ValueError("--inputs-json must contain one JSON object")
+    return value
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--root", default=".")
@@ -188,6 +233,8 @@ def main(argv: list[str] | None = None) -> int:
     build.add_argument("--task-id", required=True)
     build.add_argument("--task-commit", required=True)
     build.add_argument("--control-plane-commit", required=True)
+    build.add_argument("--invocation-id", required=True)
+    build.add_argument("--inputs-json", required=True)
     build.add_argument("--expected-repository-head")
     build.add_argument("--output")
 
@@ -208,6 +255,8 @@ def main(argv: list[str] | None = None) -> int:
             task_id=args.task_id,
             task_commit=args.task_commit,
             control_plane_commit=args.control_plane_commit,
+            invocation_id=args.invocation_id,
+            inputs=_load_inputs(args.inputs_json),
             expected_repository_head=args.expected_repository_head,
         )
     else:
