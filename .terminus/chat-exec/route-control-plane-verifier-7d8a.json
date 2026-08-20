@@ -1,0 +1,50 @@
+{
+  "schema_version": "1.0",
+  "mode": "RECORD",
+  "task_id": "route-control-plane",
+  "task_commit": "22d2e9e09f4deb58029559fe9a0863c2e032f25c",
+  "control_plane_commit": "7d8a6d8c62a62e6d24949344c7fd712e59bc8829",
+  "expected_repository_head": "e4f557c198c67009b5deb6dc5e8f2bfa7dcf040e",
+  "stage_id": "VERIFIER_BUILD",
+  "inputs": {
+    "SOLVER_VISIBLE_REQUIREMENTS": {
+      "ENGINEERING_OBJECTIVE": "Complete a production-style route control plane for multi-node Linux routing with safe desired-state transactions, drift reconciliation, fleet rollout, Ansible deployment, and an operator dashboard.",
+      "REQUIRED_END_STATE": ["canonical route/rule lifecycle", "revision preview/apply/rollback fencing", "atomic durable publication and restart recovery", "owned drift reconciliation", "safe fleet rollout", "idempotent Ansible deployment with host precedence", "dashboard CAS binding"]
+    },
+    "SOLVER_VISIBLE_CONTRACTS": [
+      "route-control-plane/environment/cmd/routecp/main.go",
+      "route-control-plane/environment/internal/controlplane/domain.go",
+      "route-control-plane/environment/ansible/roles/routecp/defaults/main.yml",
+      "route-control-plane/environment/ansible/roles/routecp/tasks/main.yml",
+      "route-control-plane/environment/web/app.ts"
+    ],
+    "BEHAVIORAL_SURFACES": ["route/rule normalization", "revision fencing", "idempotency", "atomic failure recovery", "rollback", "drift ownership/freshness", "rollout canary/heartbeat/retry", "Ansible convergence/precedence", "dashboard concurrent mutation", "public API/build preservation"]
+  },
+  "result": {
+    "status": "VERIFIER_READY",
+    "outputs": {
+      "REQUIREMENT_TEST_MATRIX": {
+        "route_identity": "IPv6 aliases, multipath ordering, mutable metric replacement, distinct tables and owner normalization",
+        "policy_rules": "effective-priority collision, lookup-table existence and unknown-node rejection",
+        "transaction_fencing": "stale preview rejection, idempotent replay and key/plan rebinding rejection",
+        "atomic_recovery": "offline apply preservation, monotonic rollback, stale rollback fencing and incomplete-transaction restart recovery",
+        "drift_ownership": "stale observation rejection and preservation of unowned unexpected routes",
+        "rollout": "stale heartbeat, already-current retry, canary selector isolation and wave limits",
+        "ansible": "protected/host-specific routing projection precedence",
+        "dashboard": "Apply binds to Preview base revision",
+        "interface": "public HTTP route set, buildability and deterministic solution entrypoint",
+        "independence": "no hidden-case or pytest-current-test branching"
+      },
+      "F2P_COUNT": 25,
+      "P2P_COUNT": 4,
+      "EDGE_BOUNDARY_COVERAGE": "PASS: IPv6 aliases, multipath order, metric-vs-identity, route-table separation, unknown nodes, stale previews, stale observations, canary selection, heartbeat freshness and wave-size boundaries are distinct cases.",
+      "NEGATIVE_FAILURE_COVERAGE": "PASS: duplicate rule priorities, absent lookup tables, idempotency rebinding, offline apply, stale rollback/reconcile, stale heartbeat and invalid rollout selection are rejected without destructive publication.",
+      "ORGANIC_COUNT_JUSTIFICATION": "The 25 F2P cases arise from the approved connected A3 root-cause clusters across route identity, policy dependency, transaction fencing, atomic recovery, drift ownership, rollout safety, Ansible deployment and dashboard concurrency; four P2P cases preserve public API/build/solution/verifier integrity.",
+      "TEST_INDEPENDENCE": "PASS: tests exercise public files and runtime behavior through temporary Go package tests and pytest orchestration; they do not import solution code, encode hidden expected patches, or branch on test names.",
+      "STARTER_EMPIRICAL_STATUS": "PENDING_DETERMINISTIC_VALIDATION",
+      "ORACLE_EMPIRICAL_STATUS": "PENDING_DETERMINISTIC_VALIDATION",
+      "SOLVER_LOGIC_REIMPLEMENTATION_RISK": "LOW_TO_MODERATE: package-internal probes are used only where unexported normalization/transaction invariants are otherwise not reachable before the later instruction/API expansion; behavioral assertions remain requirement-driven."
+    },
+    "evidence_refs": []
+  }
+}
