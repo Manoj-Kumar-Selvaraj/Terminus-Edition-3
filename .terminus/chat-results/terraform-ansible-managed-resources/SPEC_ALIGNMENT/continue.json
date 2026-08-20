@@ -2,7 +2,7 @@
   "execution_mode": "INLINE_SPECIALIST_SEQUENCE",
   "executor_handoff": null,
   "inline_specialist_sequence": {
-    "aggregate_invocation_id": "inv_bbb71b2809a2d6f82e239d1d27f6a6446edfc8a83d093ed92ce5c969911135bc",
+    "aggregate_invocation_id": "inv_bf3ca2cb4ce3abf4042ead1582a6a1d1a98a53cab5cd10533b079b661d14ddaf",
     "aggregate_owner_role_id": "CREATION_CONTROLLER",
     "execution_mode": "INLINE_SPECIALIST_SEQUENCE",
     "recording_policy": "freeze the listed specialist outputs in order, then emit exactly one aggregate StageResult; substeps are producer-side quality checks, not independent acceptance records",
@@ -84,7 +84,7 @@
       ]
     },
     "authority": {
-      "control_plane_commit": "67b805a297ac005ee08e82facc533f53a3233192",
+      "control_plane_commit": "5aebce7e213fa5f5864bdd741e6139d39bf5e059",
       "policy_versions": {},
       "task_commit": "78ad422902b27dea954905130a1267b02cff3596",
       "task_id": "terraform-ansible-managed-resources"
@@ -122,77 +122,31 @@
     "inputs": {
       "optional": {
         "PRIVATE_TEST_MAP": {
-          "classification": "30 F2P + 6 P2P",
-          "empirical_status": "current empirical Oracle/NOP evidence intentionally deferred to DETERMINISTIC_VALIDATION",
-          "independence": "public Terraform/provider behavior and external Linux state; no reference-solution inspection"
+          "F2P_COUNT": 30,
+          "P2P_COUNT": 6,
+          "classification": "30 F2P + 6 P2P"
         }
       },
       "required": {
-        "CURRENT_INSTRUCTION": "Complete the inherited ansibleops Terraform provider under /app/provider so the ten resources already defined in /app/provider/docs/provider-contract.md, /app/provider/docs/resource-reference.md and /app/provider/docs/lifecycle.md behave like normal managed Terraform resources. Preserve exactly those ten interfaces, local/ansibleops 0.1.0, supplied inventory and Terraform-Core-only durable state; use stable external-object identity; Ansible for Create/Update/Delete and native side-effect-free Read; mutation-before-state publication with retry-safe failure semantics; scoped resource deletion; copy/template source intent and destination observation; named line/block ownership; native user/group and cron reconciliation; structured argv/timeout/cancellation/temp cleanup; canonical convergence; Go 1.24/current Plugin Framework and Terraform 1.10.5 compatibility; no null_resource/terraform_data execution wrappers, provisioners, manual state edits or provider-owned durable state.",
+        "CURRENT_INSTRUCTION": {
+          "coverage": "all material lifecycle/state/resource/runner/normalization/safety constraints",
+          "path": "terraform-ansible-managed-resources/instruction.md",
+          "status": "READY"
+        },
         "CURRENT_VERIFIER": {
           "F2P_COUNT": 30,
           "P2P_COUNT": 6,
-          "coverage": {
-            "edge": [
-              "wrong kind",
-              "spaces",
-              "cron defaults",
-              "home removal",
-              "unordered/mode equivalence",
-              "already absent destroy"
-            ],
-            "negative": [
-              "duplicate ownership",
-              "literal shell metacharacters",
-              "non-zero failure",
-              "failed delete retains state",
-              "command output absent from state"
-            ],
-            "normal": [
-              "exact schemas",
-              "basic lifecycle/state",
-              "content/account/cron lifecycle",
-              "runner cleanup",
-              "Ansible mutation backend"
-            ],
-            "ownership": [
-              "path/user/group/cron collision rejection",
-              "line/block/cron sibling preservation",
-              "symlink target preservation",
-              "user home policy"
-            ],
-            "recovery": [
-              "failed update retry",
-              "timeout/cancellation cleanup",
-              "missing-object recreation",
-              "failed destroy retry",
-              "external drift"
-            ]
-          },
-          "requirement_families": [
-            "provider/schema",
-            "state/identity",
-            "native refresh/drift",
-            "transactional create/update",
-            "failure-safe scoped delete",
-            "copy/template content intent",
-            "line/block ownership",
-            "user/group native reconciliation",
-            "runner/process safety",
-            "normalization/idempotency",
-            "cron defaults/drift/siblings",
-            "external ownership collision",
-            "Ansible mutation backend"
-          ]
+          "empirical_status": "NOT_REEARNED_UNDER_CURRENT_CONTROL",
+          "status": "VERIFIER_READY"
         },
-        "REFERENCED_SOLVER_VISIBLE_CONTRACTS": {
-          "lifecycle.md": "Create mutate-observe-publish; Read native/drift-aware; Update stable identity and retry-safe state; Delete scoped/failure-safe; content intent drives updates; siblings/symlink target/home policy preserved; equivalent representations converge.",
-          "provider-contract.md": "Terraform Core owns durable state; one resource owns one external key; mutation uses Ansible; Read native-only; structured process args; non-zero/timeout/cancel fail; temp cleanup; state publish only after mutation; failed update keeps prior state; destroy only after absence.",
-          "resource-reference.md": "Exactly file,directory,copy,template,line,block,symlink,user,group,cron; documented external identities and schemas; source_digest/destination_digest semantics; named text ownership; cron root/wildcard defaults; native observations."
-        }
+        "REFERENCED_SOLVER_VISIBLE_CONTRACTS": [
+          "terraform-ansible-managed-resources/environment/ansibleops/docs/provider-contract.md",
+          "terraform-ansible-managed-resources/environment/ansibleops/docs/resource-reference.md",
+          "terraform-ansible-managed-resources/environment/ansibleops/docs/lifecycle.md"
+        ]
       }
     },
-    "invocation_id": "inv_bbb71b2809a2d6f82e239d1d27f6a6446edfc8a83d093ed92ce5c969911135bc",
+    "invocation_id": "inv_bf3ca2cb4ce3abf4042ead1582a6a1d1a98a53cab5cd10533b079b661d14ddaf",
     "learning": {
       "context_hash": "sha256:bb84a513aa2b6e4374d691759c4a6edf94169f479f4611e9091643b9f279ccfc",
       "lessons": [],
@@ -340,5 +294,5 @@
     "q8_mode": "OFF",
     "source": ".terminus/agents/quality_execution_mode.json"
   },
-  "state_snapshot_id": "state_34d2ded24e7f9cdd2295db329b495b3edebb4c9eb02223512910c5b4c711bf8e"
+  "state_snapshot_id": "state_e1b6120797a9bac471e39899e0abad440ba8cf9885a25bfcd8cdd20703ef210e"
 }
