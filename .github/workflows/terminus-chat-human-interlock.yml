@@ -1,0 +1,230 @@
+name: Terminus Chat Human Interlock
+
+on:
+  push:
+    branches:
+      - 'terminus-human-interlock/**'
+    paths:
+      - '.terminus/human-interlock-requests/*.json'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: terminus-chat-human-interlock-${{ github.repository }}
+  cancel-in-progress: false
+
+jobs:
+  record-interlock:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Load and validate bounded request
+        id: request
+        shell: bash
+        run: |
+          set -euo pipefail
+          work="$RUNNER_TEMP/chat-human-interlock"
+          mkdir -p "$work"
+          mapfile -t paths < <(git diff-tree --no-commit-id --name-only -r "$GITHUB_SHA" -- '.terminus/human-interlock-requests/*.json')
+          [[ "${#paths[@]}" == 1 ]] || {
+            echo "::error::Expected exactly one human-interlock request; found ${#paths[@]}"
+            exit 1
+          }
+          request="${paths[0]}"
+          request_parent="$(git rev-parse "$GITHUB_SHA^")"
+          python3 - "$request" "$request_parent" <<'PY'
+          import json, re, sys
+          path, parent = sys.argv[1:]
+          value = json.load(open(path, encoding='utf-8'))
+          required = {
+              'schema_version','task_id','task_commit','expected_repository_head',
+              'decision_id','q4_review_path','q6_review_path','source_run_id'
+          }
+          if set(value) != required:
+              raise SystemExit(f'request key drift: expected={sorted(required)} actual={sorted(value)}')
+          if value['schema_version'] != '1.0':
+              raise SystemExit('unsupported request schema')
+          if value['expected_repository_head'] != parent:
+              raise SystemExit('request branch parent does not match expected_repository_head')
+          if not re.fullmatch(r'[A-Za-z0-9][A-Za-z0-9._-]*', value['task_id']):
+              raise SystemExit('invalid task_id')
+          if not re.fullmatch(r'[0-9a-f]{40,64}', value['task_commit']):
+              raise SystemExit('invalid task_commit')
+          if not re.fullmatch(r'hd_[0-9a-f]{64}', value['decision_id']):
+              raise SystemExit('invalid decision_id')
+          if not str(value['source_run_id']).isdigit():
+              raise SystemExit('invalid source_run_id')
+          for key in ('q4_review_path','q6_review_path'):
+              raw = str(value[key])
+              if not raw.startswith('.terminus/reviews/') or not raw.endswith('.json') or '..' in raw.split('/'):
+                  raise SystemExit(f'unsafe {key}')
+          PY
+          task="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["task_id"])' "$request")"
+          task_commit="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["task_commit"])' "$request")"
+          decision_id="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["decision_id"])' "$request")"
+          q4="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["q4_review_path"])' "$request")"
+          q6="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["q6_review_path"])' "$request")"
+          source_run="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["source_run_id"])' "$request")"
+          expected="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["expected_repository_head"])' "$request")"
+          echo "work=$work" >> "$GITHUB_OUTPUT"
+          echo "task=$task" >> "$GITHUB_OUTPUT"
+          echo "task_commit=$task_commit" >> "$GITHUB_OUTPUT"
+          echo "decision_id=$decision_id" >> "$GITHUB_OUTPUT"
+          echo "q4=$q4" >> "$GITHUB_OUTPUT"
+          echo "q6=$q6" >> "$GITHUB_OUTPUT"
+          echo "source_run=$source_run" >> "$GITHUB_OUTPUT"
+          echo "expected=$expected" >> "$GITHUB_OUTPUT"
+
+      - name: Persist push-run locator
+        shell: bash
+        env:
+          TASK: ${{ steps.request.outputs.task }}
+        run: |
+          set -euo pipefail
+          mkdir -p ".terminus/human-interlock-run-locators/$TASK"
+          locator=".terminus/human-interlock-run-locators/$TASK/$GITHUB_SHA.json"
+          printf '{"run_id":%s,"run_attempt":%s,"request_commit":"%s","branch":"%s"}\n' \
+            "$GITHUB_RUN_ID" "$GITHUB_RUN_ATTEMPT" "$GITHUB_SHA" "$GITHUB_REF_NAME" > "$locator"
+          git config user.name 'terminus-human-interlock[bot]'
+          git config user.email 'terminus-human-interlock[bot]@users.noreply.github.com'
+          git add -- "$locator"
+          git commit -m "Persist human interlock run locator $GITHUB_RUN_ID"
+          git push origin HEAD:"$GITHUB_REF_NAME"
+
+      - name: Resolve current compatible main snapshot
+        id: base
+        shell: bash
+        env:
+          WORK: ${{ steps.request.outputs.work }}
+          TASK: ${{ steps.request.outputs.task }}
+          TASK_COMMIT: ${{ steps.request.outputs.task_commit }}
+          EXPECTED: ${{ steps.request.outputs.expected }}
+        run: |
+          set -euo pipefail
+          git fetch origin main
+          current="$(git rev-parse origin/main)"
+          if [[ "$current" != "$EXPECTED" ]]; then
+            if ! git diff --quiet "$EXPECTED" "$current" -- \
+              "$TASK" ".terminus/executions/$TASK" ".terminus/human-decisions/$TASK"; then
+              echo "::error::main moved in task authority scope expected=$EXPECTED current=$current"
+              exit 1
+            fi
+            python3 .terminus/execution/controller_cli.py control-plane --head "$EXPECTED" --output "$WORK/control-expected.json"
+            python3 .terminus/execution/controller_cli.py control-plane --head "$current" --output "$WORK/control-current.json"
+            python3 - "$WORK/control-expected.json" "$WORK/control-current.json" <<'PY'
+          import json, sys
+          a=json.load(open(sys.argv[1]))['control_plane_commit']
+          b=json.load(open(sys.argv[2]))['control_plane_commit']
+          if a != b:
+              raise SystemExit(f'control-plane moved expected={a} current={b}')
+          PY
+          fi
+          git checkout --detach "$current"
+          python3 .terminus/execution/controller_cli.py control-plane --head "$current" --output "$WORK/control-plane.json"
+          control="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["control_plane_commit"])' "$WORK/control-plane.json")"
+          [[ "$(git log -1 --format=%H -- "$TASK")" == "$TASK_COMMIT" ]] || {
+            echo "::error::task snapshot changed"
+            exit 1
+          }
+          echo "head=$current" >> "$GITHUB_OUTPUT"
+          echo "control=$control" >> "$GITHUB_OUTPUT"
+
+      - name: Build and validate chat-human Quality Interlock
+        shell: bash
+        env:
+          WORK: ${{ steps.request.outputs.work }}
+          TASK: ${{ steps.request.outputs.task }}
+          TASK_COMMIT: ${{ steps.request.outputs.task_commit }}
+          DECISION_ID: ${{ steps.request.outputs.decision_id }}
+          Q4: ${{ steps.request.outputs.q4 }}
+          Q6: ${{ steps.request.outputs.q6 }}
+          SOURCE_RUN: ${{ steps.request.outputs.source_run }}
+          EVIDENCE_COMMIT: ${{ steps.base.outputs.head }}
+          CONTROL: ${{ steps.base.outputs.control }}
+        run: |
+          set -euo pipefail
+          python3 .terminus/execution/chat_human_interlock.py \
+            --task-id "$TASK" \
+            --task-commit "$TASK_COMMIT" \
+            --control-plane-commit "$CONTROL" \
+            --decision-id "$DECISION_ID" \
+            --q4-review "$Q4" \
+            --q6-review "$Q6" \
+            --evidence-commit "$EVIDENCE_COMMIT" \
+            --source-run-id "$SOURCE_RUN" \
+            --invocation-output "$WORK/invocation.json" \
+            --result-output "$WORK/result.json"
+          python3 .terminus/execution/controller_cli.py record \
+            --invocation "$WORK/invocation.json" \
+            --result "$WORK/result.json" \
+            --output "$WORK/record.json"
+
+      - name: Persist canonical interlock record to main
+        shell: bash
+        env:
+          TASK: ${{ steps.request.outputs.task }}
+          BASE: ${{ steps.base.outputs.head }}
+          CONTROL: ${{ steps.base.outputs.control }}
+          WORK: ${{ steps.request.outputs.work }}
+        run: |
+          set -euo pipefail
+          unexpected="$(git status --porcelain | awk '{print $2}' | grep -vE "^\.terminus/(executions|workflows)/$TASK(/|$)" || true)"
+          [[ -z "$unexpected" ]] || {
+            echo "::error::Unexpected mutations: $unexpected"
+            exit 1
+          }
+          git config user.name 'terminus-human-interlock[bot]'
+          git config user.email 'terminus-human-interlock[bot]@users.noreply.github.com'
+          git add -- ".terminus/executions/$TASK"
+          git diff --cached --quiet && { echo "::error::No canonical interlock record mutation"; exit 1; }
+          git commit -m "Record $TASK chat-human Quality Interlock"
+
+          latest="$(git ls-remote origin refs/heads/main | cut -f1)"
+          if [[ "$latest" != "$BASE" ]]; then
+            git fetch origin main
+            if ! git diff --quiet "$BASE" "$latest" -- \
+              "$TASK" ".terminus/executions/$TASK" ".terminus/human-decisions/$TASK"; then
+              echo "::error::main moved in task authority scope during interlock record"
+              exit 1
+            fi
+            python3 .terminus/execution/controller_cli.py control-plane --head "$latest" --output "$WORK/control-latest.json"
+            [[ "$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["control_plane_commit"])' "$WORK/control-latest.json")" == "$CONTROL" ]] || {
+              echo "::error::control-plane changed during interlock record"
+              exit 1
+            }
+            git rebase origin/main
+          fi
+          git push origin HEAD:main
+
+      - name: Summarize next controller action
+        shell: bash
+        env:
+          WORK: ${{ steps.request.outputs.work }}
+          TASK: ${{ steps.request.outputs.task }}
+          TASK_COMMIT: ${{ steps.request.outputs.task_commit }}
+          CONTROL: ${{ steps.base.outputs.control }}
+        run: |
+          set -euo pipefail
+          git fetch origin main
+          git checkout --detach origin/main
+          python3 .terminus/execution/controller_cli.py continue \
+            --task-id "$TASK" \
+            --task-commit "$TASK_COMMIT" \
+            --control-plane-commit "$CONTROL" \
+            --output "$WORK/continue-after.json"
+          echo '### Chat Human Quality Interlock' >> "$GITHUB_STEP_SUMMARY"
+          echo "- Task: \`$TASK\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Decision: \`${{ steps.request.outputs.decision_id }}\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Next: \`$(python3 -c 'import json,sys; x=json.load(open(sys.argv[1])); print(x.get("next",{}).get("stage_id",x.get("next",{}).get("action")))' "$WORK/continue-after.json")\`" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload immutable diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: terminus-chat-human-interlock-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ steps.request.outputs.work }}
+          if-no-files-found: warn
