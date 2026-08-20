@@ -69,7 +69,7 @@ def test_route_rule_and_transaction_boundaries() -> None:
         func TestBoundaryStalePreviewCannotApply(t *testing.T) {
             cp := boundaryCP(t)
             p1, err := cp.Preview(ChangeRequest{BaseRevision:0,Actor:"x",RouteMutations:[]RouteMutation{{Operation:"add",Route:boundaryRoute("r1","198.51.100.0/24",100)}}}); if err != nil { t.Fatal(err) }
-            p2, err := cp.Preview(ChangeRequest{BaseRevision:0,Actor:"x",RouteMutations:[]RouteMutation{{Operation:"add",Route:boundaryRoute("r2","203.0.113.0/24",200)}}}); if err != nil { t.Fatal(err) }
+            p2, err := cp.Preview(ChangeRequest{BaseRevision:0,Actor:"x",RouteMutations:[]RouteMutation{{Operation:"add",Route:boundaryRoute("r2","198.51.100.0/25",200)}}}); if err != nil { t.Fatal(err) }
             if _, err := cp.Apply(ApplyRequest{PlanID:p1.ID,BaseRevision:0,IdempotencyKey:"a",Nodes:[]string{"n1"},Actor:"x"}); err != nil { t.Fatal(err) }
             if _, err := cp.Apply(ApplyRequest{PlanID:p2.ID,BaseRevision:0,IdempotencyKey:"b",Nodes:[]string{"n1"},Actor:"x"}); !errors.Is(err,ErrConflict) { t.Fatalf("stale preview got %v",err) }
         }
