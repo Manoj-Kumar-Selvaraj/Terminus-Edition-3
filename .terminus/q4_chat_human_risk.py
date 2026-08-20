@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import subprocess
 from collections.abc import Mapping
 from pathlib import Path
 from typing import Any
@@ -12,6 +13,15 @@ from review_contract import current_task_commit
 SATISFACTION_MODE = "CHAT_HUMAN_RISK_ACCEPTANCE"
 DECISION_TYPE = "ACCEPT_RESIDUAL_Q4_RISK"
 GATE_STAGE = "QUALITY_INTERLOCK"
+
+
+def _require_ancestor(root: Path, ancestor: str, descendant: str) -> None:
+    check = subprocess.run(
+        ["git", "-C", str(root), "merge-base", "--is-ancestor", ancestor, descendant],
+        capture_output=True,
+    )
+    if check.returncode != 0:
+        raise ValueError("current accepted task commit must equal or descend from the frozen Q4 task commit")
 
 
 def validate_chat_human_risk_acceptance(
@@ -57,6 +67,7 @@ def validate_chat_human_risk_acceptance(
     )
     if not isinstance(observed_current, str) or not observed_current:
         raise ValueError("cannot resolve current task commit for chat human decision")
+    _require_ancestor(root, q4_task_commit, observed_current)
 
     event = HumanDecisionStore(root).require_resolved(
         decision_id=decision_id,
