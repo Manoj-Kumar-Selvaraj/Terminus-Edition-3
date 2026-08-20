@@ -1,0 +1,55 @@
+{
+  "schema_version": "1.0",
+  "requirements": {
+    "REQ_GENERATION_FENCE": "Accepted source revision/digest authority is serialized with candidate validation, generation allocation, publication and acknowledgement; duplicates are no-ops and rejected/stale/conflicting candidates cannot mutate serving state.",
+    "REQ_SOURCE_AUTHORITY": "Independent sources retain independent revision fences and last-accepted complete source material, including across restart.",
+    "REQ_IDENTITY_COMPATIBILITY": "Canonical endpoint identity, semantic compatibility and membership incarnation preserve continuous runtime state while resetting state across material policy or remove/re-add boundaries.",
+    "REQ_SNAPSHOT_SELECTION": "One request retains one leased generation for routing, retry and failover; affinity/retry selection revalidates canonical incarnation, lifecycle and health eligibility.",
+    "REQ_DRAIN_OWNERSHIP": "Removed endpoints reject fresh work while legitimate old-generation traffic drains safely and lifecycle-owned state remains bounded.",
+    "REQ_CHECKPOINT_RECOVERY": "Checkpoint recovery validates complete durable current state and falls back to a retained previous complete generation when current authority or body is invalid.",
+    "REQ_OBSERVABILITY": "Status, metrics and lifecycle scopes report current state without unbounded stale scope growth.",
+    "REQ_PUBLIC_INTERFACE": "The documented validate/serve CLI, operator endpoints and HTTP data plane retain normal observable behavior."
+  },
+  "tests": [
+    ["test_f2p_same_revision_different_digest_is_conflict", "F2P", "REQ_GENERATION_FENCE"],
+    ["test_f2p_exact_duplicate_is_generation_noop", "F2P", "REQ_GENERATION_FENCE"],
+    ["test_f2p_stale_revision_cannot_publish", "F2P", "REQ_GENERATION_FENCE"],
+    ["test_f2p_rejected_candidate_does_not_advance_fence", "F2P", "REQ_GENERATION_FENCE"],
+    ["test_f2p_conflict_preserves_last_serving_digest", "F2P", "REQ_GENERATION_FENCE"],
+
+    ["test_f2p_sources_have_independent_revision_sequences", "F2P", "REQ_SOURCE_AUTHORITY"],
+    ["test_f2p_low_revision_new_source_not_blocked_by_high_other_source", "F2P", "REQ_SOURCE_AUTHORITY"],
+    ["test_f2p_source_conflict_is_scoped_to_that_source", "F2P", "REQ_SOURCE_AUTHORITY"],
+    ["test_f2p_duplicate_one_source_does_not_poison_another", "F2P", "REQ_SOURCE_AUTHORITY"],
+    ["test_f2p_recovered_source_fence_rejects_older_revision", "F2P", "REQ_SOURCE_AUTHORITY"],
+
+    ["test_f2p_canonical_duplicate_endpoint_identity_is_rejected", "F2P", "REQ_IDENTITY_COMPATIBILITY"],
+    ["test_f2p_endpoint_reorder_preserves_sticky_continuity", "F2P", "REQ_IDENTITY_COMPATIBILITY"],
+    ["test_f2p_nonsemantic_pool_metadata_preserves_sticky_state", "F2P", "REQ_IDENTITY_COMPATIBILITY"],
+    ["test_f2p_equivalent_address_format_preserves_sticky_state", "F2P", "REQ_IDENTITY_COMPATIBILITY"],
+    ["test_f2p_selection_policy_change_resets_balancer_state", "F2P", "REQ_IDENTITY_COMPATIBILITY"],
+    ["test_f2p_remove_readd_does_not_reuse_old_unhealthy_incarnation", "F2P", "REQ_IDENTITY_COMPATIBILITY"],
+
+    ["test_f2p_sticky_affinity_revalidates_unhealthy_endpoint", "F2P", "REQ_SNAPSHOT_SELECTION"],
+    ["test_f2p_all_unhealthy_backends_return_service_unavailable", "F2P", "REQ_SNAPSHOT_SELECTION"],
+    ["test_f2p_retry_exclusion_survives_runtime_object_replacement", "F2P", "REQ_SNAPSHOT_SELECTION"],
+    ["test_f2p_failover_uses_request_leased_generation", "F2P", "REQ_SNAPSHOT_SELECTION"],
+
+    ["test_f2p_removed_endpoint_is_not_used_for_fresh_requests", "F2P", "REQ_DRAIN_OWNERSHIP"],
+    ["test_f2p_inflight_request_survives_unrelated_publication", "F2P", "REQ_DRAIN_OWNERSHIP"],
+    ["test_f2p_metric_scope_count_remains_bounded_under_churn", "F2P", "REQ_OBSERVABILITY"],
+
+    ["test_f2p_corrupt_current_body_falls_back_to_previous_complete_generation", "F2P", "REQ_CHECKPOINT_RECOVERY"],
+    ["test_f2p_corrupt_current_pointer_falls_back_to_previous_complete_generation", "F2P", "REQ_CHECKPOINT_RECOVERY"],
+    ["test_f2p_checksum_mismatch_is_not_recovered_as_current", "F2P", "REQ_CHECKPOINT_RECOVERY"],
+    ["test_f2p_schema_incompatible_checkpoint_is_not_recovered", "F2P", "REQ_CHECKPOINT_RECOVERY"],
+    ["test_f2p_missing_current_body_falls_back_to_retained_previous", "F2P", "REQ_CHECKPOINT_RECOVERY"],
+
+    ["test_p2p_validate_accepts_normal_configuration", "P2P", "REQ_PUBLIC_INTERFACE"],
+    ["test_p2p_validate_rejects_unknown_json_field", "P2P", "REQ_PUBLIC_INTERFACE"],
+    ["test_p2p_health_ready_and_status_surfaces", "P2P", "REQ_PUBLIC_INTERFACE"],
+    ["test_p2p_data_plane_proxies_request", "P2P", "REQ_PUBLIC_INTERFACE"],
+    ["test_p2p_route_host_mismatch_returns_not_found", "P2P", "REQ_PUBLIC_INTERFACE"],
+    ["test_p2p_metrics_and_events_are_operator_readable", "P2P", "REQ_OBSERVABILITY"]
+  ]
+}
