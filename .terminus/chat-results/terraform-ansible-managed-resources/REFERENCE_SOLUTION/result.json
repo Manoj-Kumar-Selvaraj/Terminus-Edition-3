@@ -1,0 +1,34 @@
+{
+  "evidence_refs": [],
+  "invocation_id": "inv_4d388d410e7c36c5dd156a8025321e2fc5a67d79ca9de00419817b9b0af9b6c4",
+  "output_task_commit": "78ad422902b27dea954905130a1267b02cff3596",
+  "outputs": {
+    "DETERMINISM_NOTES": "Map/list-like values and equivalent modes/defaults are canonically normalized; template variables and process argv are deterministic; temporary playbooks are cleaned on all terminal outcomes.",
+    "FILES_CHANGED": [
+      "solution/solve.sh",
+      "solution/fixed/internal/lifecycle/maps.go",
+      "solution/fixed/internal/lifecycle/normalize.go",
+      "solution/fixed/internal/resources/",
+      "solution/fixed/internal/runner/runner.go"
+    ],
+    "PRESERVED_BEHAVIOR": "Exact ten resource interfaces, local/ansibleops 0.1.0, supplied local inventory, Go 1.24/current Plugin Framework and Terraform 1.10.5 compatibility are preserved.",
+    "RESTART_IDEMPOTENCY_BEHAVIOR": "Durable identity and observed state derive from Terraform Core plus native external Linux truth rather than provider-process memory, so restart followed by refresh/plan converges without replaying Ansible when already correct.",
+    "RESTORED_INVARIANTS": [
+      "stable external-key IDs",
+      "mutation before state publication",
+      "native Read and external drift reflection",
+      "failure-safe update/delete semantics",
+      "structured runner argv, timeout/cancel handling and cleanup",
+      "canonical convergence and Terraform Core sole durable state authority"
+    ],
+    "RISKS_FOR_INDEPENDENT_VERIFIER": [
+      "failed update/delete retain prior managed state",
+      "Read never invokes Ansible",
+      "literal argv under spaces/metacharacters",
+      "sibling and symlink-target preservation",
+      "external drift and canonical normalization across fresh provider processes"
+    ]
+  },
+  "schema_version": "1.0",
+  "status": "IMPLEMENTED"
+}
