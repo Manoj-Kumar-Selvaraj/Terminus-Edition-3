@@ -1,0 +1,38 @@
+{
+  "schema_version":"1.0",
+  "mode":"RECORD",
+  "task_id":"edge-router-runtime",
+  "task_commit":"9663e4da67ab20e6bd66b942ac54b57667408dd8",
+  "control_plane_commit":"67b805a297ac005ee08e82facc533f53a3233192",
+  "expected_repository_head":"a45344ca304c794edc1e9ce67ed3a22ec22786ea",
+  "stage_id":"ASSEMBLY",
+  "inputs":{
+    "CURRENT_ORACLE":{"status":"IMPLEMENTED","empirical_status":"DEFERRED_TO_DETERMINISTIC_VALIDATION"},
+    "CURRENT_TASK":{"task_root":"edge-router-runtime","runtime_artifact":"/app/edge-router","top_level":["README.md","environment/","instruction.md","solution/","task.toml","tests/"]},
+    "CURRENT_VERIFIER":{"status":"VERIFIER_READY","F2P_COUNT":28,"P2P_COUNT":6},
+    "FORMAT_STATUS":"FORMAT_PASS",
+    "SPEC_ALIGNMENT_STATUS":{"status":"ALIGNED","Q1_STATUS":"NO_GAP","Q2_STATUS":"COVERED","Q3_STATUS":"CLEAR"},
+    "PRIVATE_DEFECT_GRAPH":{"profile":"large_system_strict","root_cause_clusters":6,"defect_manifestations":30},
+    "PRIVATE_TEST_MAP":{"F2P_COUNT":28,"P2P_COUNT":6}
+  },
+  "result":{
+    "status":"ASSEMBLED",
+    "output_task_commit":"9663e4da67ab20e6bd66b942ac54b57667408dd8",
+    "outputs":{
+      "TASK_COMMIT":"9663e4da67ab20e6bd66b942ac54b57667408dd8",
+      "STRUCTURE":"PASS: canonical main now contains the complete task tree, solver-facing documentation/instruction, separate verifier and solution boundaries.",
+      "INSTRUCTION_SHAPE":"PASS: one orientation paragraph plus 13 concise responsibility/invariant bullets within Edition-3 limits.",
+      "INSTRUCTION_REQUIREMENT_COMPLETENESS":"PASS: producer-side alignment is Q1 NO_GAP, Q2 COVERED, Q3 CLEAR.",
+      "INSTRUCTION_DOC_BOUNDARY":"PASS: engineering ask remains in instruction.md; referenced public docs remain architecture/configuration/runtime/operator/observability contracts rather than a hidden prompt extension.",
+      "SUBSTANTIVE_REACHABLE_LOC_EVIDENCE":{"substantive_loc":">=3400","runtime_entrypoint":"cmd/edge-router-runtime","major_components":["bootstrap","config","compiler","reconcile","runtime","router","selection","upstream","health","drain","checkpoint","telemetry","admin"]},
+      "PRODUCTION_CHARACTERISTIC_EVIDENCE":["live Go HTTP data and operator planes","immutable serving generations","serialized reconciliation","stable endpoint lifecycle state","health-aware selection/failover","bounded draining","durable checkpoint recovery","bounded lifecycle telemetry"],
+      "F2P_ORGANICITY_EVIDENCE":"28 non-duplicative F2P cases cover distinct authority, identity, snapshot, lifecycle, recovery and observability contracts; 6 P2P cases preserve independent public behavior.",
+      "EDGE_BOUNDARY_COVERAGE_EVIDENCE":["canonical duplicate endpoint aliases","same-revision conflicting digest","remove/re-add incarnation reset","all-backends-unhealthy deterministic unavailability","old-generation failover while draining","corrupt checkpoint fallback"],
+      "NEGATIVE_FAILURE_COVERAGE_EVIDENCE":["invalid/stale/conflicting update rejection","ineligible backend exclusion","checkpoint checksum/schema/missing-current rejection and fallback","unknown JSON field rejection"],
+      "LEAKAGE_CHECK":"PASS: canonical solver-facing task does not expose solution payloads, hidden test names, private defect IDs or verifier assertions; README benchmark framing has been removed.",
+      "STATIC_CHECKS":"PASS: clean Q7 FORMAT_PASS, current materialized task tree, task isolation and assembly-local static evidence. Runtime/oracle empirical success remains downstream.",
+      "NEXT_GATE":"COMPLEXITY_GATE"
+    },
+    "evidence_refs":[]
+  }
+}
