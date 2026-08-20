@@ -1,0 +1,272 @@
+{
+  "execution_mode": "INLINE_SPECIALIST",
+  "executor_handoff": null,
+  "invocation": {
+    "acceptance_predicates": {},
+    "authority": {
+      "control_plane_commit": "df7ef7569e2947b9f0bf7cf89ed4dec6c2a5a1fe",
+      "policy_versions": {},
+      "task_commit": "03317f8218069b9e0b5d073bf87ecf7a0ae8e4a1",
+      "task_id": "stonevault-crash-safe-storage"
+    },
+    "evidence": {
+      "authorized_evidence_classes": [
+        "CONTROL_PLANE_POLICY",
+        "PUBLIC_REFERENCE",
+        "SOLVER_VISIBLE_TASK"
+      ],
+      "evidence_required": [
+        "schema-valid current solver-visible requirement contract",
+        "complete material requirement set",
+        "instruction/docs boundary",
+        "absolute required output paths",
+        "current-state evidence only when claimed"
+      ],
+      "excluded_evidence_classes": [
+        "CI_RUNTIME_EVIDENCE",
+        "CURRENT_REVIEW_PACKET",
+        "DURABLE_SESSION_STATE",
+        "FINAL_PACKAGE_EVIDENCE",
+        "MODEL_TRIAL_EVIDENCE",
+        "PRIOR_REVIEW_RESULTS",
+        "PRIVATE_CREATION_DESIGN",
+        "SOLUTION_ORACLE",
+        "VERIFIER_PRIVATE"
+      ],
+      "mandatory_exact_reads": [
+        "TERMINUS_3_AI_INSTRUCTIONS.md",
+        ".terminus/agents/INSTRUCTION_POLICY.md",
+        ".terminus/agents/CREATOR_PROMPTS.md"
+      ],
+      "retrieval_mode": "FILTERED_HYBRID"
+    },
+    "ignored_input_count": 0,
+    "inputs": {
+      "optional": {},
+      "required": {
+        "APPROVED_SOLVER_VISIBLE_REQUIREMENT_CONTRACT": {
+          "instruction_path": "stonevault-crash-safe-storage/instruction.md",
+          "material_requirements": [
+            "exclusive writer ownership with clean release",
+            "explicit data-dir precedence over environment and default",
+            "transaction-lifetime MVCC snapshots with own-write/delete overlay",
+            "raw-byte prefix scans in deterministic unsigned bytewise order",
+            "first-committer-wins conflict rejection without sequence consumption",
+            "atomic durable commits with contiguous increasing sequences",
+            "rollback and killed-open-transaction WAL invisibility after restart",
+            "retain valid committed transactions, discard only torn final WAL tails, fail closed on complete-record or committed-history corruption",
+            "checkpoint quiescence, atomic snapshot publication, durable sequence/rows and zero-byte WAL reclamation",
+            "reject corrupt snapshots while only ignoring/removing abandoned snapshot.tmp",
+            "accurate STATS and HEALTH durable/runtime state",
+            "binary hex representation and inclusive key/prefix/value limits",
+            "malformed command and unknown transaction ERR resilience",
+            "preserve documented C ABI, ASCII responses, WAL/snapshot layouts and existing data compatibility"
+          ],
+          "objective": "Complete the reliability hardening of the embedded database under /app/stonevault while preserving the documented native compatibility contracts.",
+          "referenced_contracts": [
+            "/app/stonevault/docs/storage-format.md"
+          ]
+        },
+        "CREATION_RULE_CONTEXT": {
+          "CONTROL_PLANE_COMMIT": "df7ef7569e2947b9f0bf7cf89ed4dec6c2a5a1fe",
+          "CREATION_PROFILE": "large_system_strict",
+          "KNOWN_POLICY_CONFLICTS": []
+        },
+        "TASK_WRITING_PROFILE": {
+          "avoid": [
+            "invented incidents or personal claims",
+            "rubric-like hidden-test enumeration",
+            "style-driven omission of lifecycle constraints",
+            "copied distinctive source wording",
+            "task details copied from unrelated calibration domains"
+          ],
+          "must_preserve": [
+            "native embedded databases crash safety",
+            "stonevault-crash-safe-storage",
+            "writer fencing, data-dir precedence, MVCC snapshot/overlay, FCW conflicts, durable contiguous commits, WAL recovery, checkpoint/snapshot integrity, STATS/HEALTH, binary protocol limits, stable native compatibility"
+          ],
+          "structure": [
+            "state the approved engineering objective first",
+            "preserve exact public contracts and hard safety/state constraints",
+            "reference solver-visible technical contracts instead of reproducing hidden verifier rows",
+            "keep implementation-neutral observable outcomes"
+          ],
+          "voice": "direct platform engineering change request"
+        },
+        "VALIDATED_HUMAN_WRITING_CALIBRATION": {
+          "CALIBRATION_PAIR_ID": "hwpair-e35124691c5840ed8d7e",
+          "DOMAIN_PROFILE": "data_migration",
+          "EXTERNAL_DATASET_COVERAGE": "DEGRADED",
+          "REVIEWER_CALIBRATION_ID": "hwcal-reviewer-db502e644c00f17aa5be",
+          "WRITER_CALIBRATION_ID": "hwcal-writer-ab1bd38ee99be79c5e7d"
+        }
+      }
+    },
+    "invocation_id": "inv_e6049baeeb415c92896561049820655f8d46f0e4e205fcd3ded46c3cf9f26463",
+    "learning": {
+      "context_hash": "sha256:bb84a513aa2b6e4374d691759c4a6edf94169f479f4611e9091643b9f279ccfc",
+      "lessons": [],
+      "mode": "GENERALIZED_LESSONS_PLUS_OWNED_REMEDIATIONS",
+      "raw_feedback_exposed": false,
+      "raw_historical_findings_exposed": false,
+      "registry_heads": {
+        "feedback": "GENESIS",
+        "findings": "GENESIS",
+        "lessons": "GENESIS",
+        "patterns": "GENESIS",
+        "remediations": "GENESIS"
+      },
+      "remediations": []
+    },
+    "missing_required_inputs": [],
+    "output_contract": {
+      "allowed_status_values": [
+        "READY",
+        "REWRITE_REQUIRED",
+        "BLOCKED"
+      ],
+      "deterministic_validators": [
+        "solver-visible requirement contract schema/hash/provenance checks",
+        "Q7 structural/path checks where mechanically enforceable",
+        ".terminus/human_writing/validate_calibration.py"
+      ],
+      "optional_fields": [
+        "CURRENT_STATE_EVIDENCE",
+        "UNRESOLVED_GAPS"
+      ],
+      "persisted_artifacts": [
+        "<task>/instruction.md"
+      ],
+      "required_fields": [
+        "INSTRUCTION_PATH",
+        "REQUIREMENT_COVERAGE",
+        "DOC_REFERENCES",
+        "INSTRUCTION_SHAPE",
+        "HANDOFF_TEST",
+        "REVERSE_OUTLINE_RISK",
+        "SPEC_FILE_LOOPHOLE"
+      ],
+      "semantic_reviewers": [
+        "Instruction Reviewer",
+        "Q1 Spec Gap Repairer",
+        "Q3 Spec Ambiguity Repairer"
+      ]
+    },
+    "readiness": "READY",
+    "retrieval": {
+      "query": null,
+      "retrieved_chars": 0,
+      "retrieved_context": [],
+      "status": "NOT_REQUESTED"
+    },
+    "routing": {
+      "failure_routes": {
+        "AMBIGUITY": "Q3 Spec Ambiguity Repairer",
+        "FORMAT_OR_PATH_ERROR": "Q7 Task Format Enforcer",
+        "HIDDEN_TEST_OR_REPAIR_LEAKAGE": "A7 Instruction Writer",
+        "MISSING_REQUIREMENT": "Q1 Spec Gap Repairer",
+        "SPEC_FILE_LOOPHOLE": "A7 Instruction Writer / Q1 Spec Gap Repairer",
+        "STALE_OR_INVALID_REQUIREMENT_CONTRACT": "Creation Controller -> requirement owner/Q1 -> regenerate projection"
+      },
+      "stale_on": [
+        "solver-visible requirement contract change",
+        "material requirement change",
+        "referenced solver-visible contract change",
+        "required output/schema change",
+        "instruction-policy change",
+        "human-writing calibration change",
+        "dataset registry change",
+        "domain profile change"
+      ],
+      "success_transition": "SPEC_ALIGNMENT"
+    },
+    "schema_version": "1.0",
+    "stage": {
+      "lifecycle": "creation",
+      "owner": "A7 Instruction Writer",
+      "role_class": "PRODUCER",
+      "role_id": "A7_INSTRUCTION_WRITER",
+      "stage_id": "INSTRUCTION_DRAFT"
+    }
+  },
+  "next": {
+    "action": "INVOKE_STAGE",
+    "optional_inputs": [
+      "CURRENT_STATE_EVIDENCE"
+    ],
+    "owner": "A7 Instruction Writer",
+    "primary_role_id": "A7_INSTRUCTION_WRITER",
+    "required_inputs": [
+      "APPROVED_SOLVER_VISIBLE_REQUIREMENT_CONTRACT",
+      "CREATION_RULE_CONTEXT",
+      "TASK_WRITING_PROFILE",
+      "VALIDATED_HUMAN_WRITING_CALIBRATION"
+    ],
+    "stage_id": "INSTRUCTION_DRAFT"
+  },
+  "quality_mode_policy": {
+    "inline_creation_governor_role_ids": [
+      "A10_COMPLEXITY_GOVERNOR"
+    ],
+    "inline_quality_role_ids": [
+      "Q1_SPEC_GAP_REPAIRER",
+      "Q2_VERIFIER_COVERAGE_REPAIRER",
+      "Q3_SPEC_AMBIGUITY_REPAIRER",
+      "Q5_ORACLE_RUNTIME_REPAIR_SPECIALIST",
+      "Q7_TASK_FORMAT_ENFORCER"
+    ],
+    "inline_stage_sequences": {
+      "SPEC_ALIGNMENT": [
+        {
+          "result_field": "Q1_STATUS",
+          "role_id": "Q1_SPEC_GAP_REPAIRER",
+          "satisfied_values": [
+            "NO_GAP",
+            "PASS"
+          ]
+        },
+        {
+          "result_field": "Q2_STATUS",
+          "role_id": "Q2_VERIFIER_COVERAGE_REPAIRER",
+          "satisfied_values": [
+            "COVERED",
+            "PASS"
+          ]
+        },
+        {
+          "result_field": "Q3_STATUS",
+          "role_id": "Q3_SPEC_AMBIGUITY_REPAIRER",
+          "satisfied_values": [
+            "CLEAR",
+            "PASS"
+          ]
+        }
+      ]
+    },
+    "mandatory_quality_role_keys": [
+      "spec-test-contract",
+      "production-logic"
+    ],
+    "mandatory_same_chat_checkpoints": {
+      "Q1": "SPEC_ALIGNMENT.Q1_STATUS",
+      "Q2": "SPEC_ALIGNMENT.Q2_STATUS",
+      "Q3": "SPEC_ALIGNMENT.Q3_STATUS",
+      "Q5": "DETERMINISTIC_VALIDATION runtime/oracle checkpoint; invoke Q5 repair only on registered runtime/oracle failure",
+      "Q7": "FORMAT_GATE"
+    },
+    "optional_q8_role_keys": [
+      "difficulty-sim-gpt",
+      "difficulty-sim-claude"
+    ],
+    "policy_document": ".terminus/agents/QUALITY_EXECUTION_MODE.md",
+    "policy_version": "1.0",
+    "producer_role_classes": [
+      "FIXER",
+      "PRODUCER"
+    ],
+    "q4_q6_mode": "AUTOMATED",
+    "q8_mode": "OFF",
+    "source": ".terminus/agents/quality_execution_mode.json"
+  },
+  "state_snapshot_id": "state_465cd6e480cdb6cf8f1958c593df7e7f64a37892055b62e7f3170e924ae75594"
+}
