@@ -1,0 +1,197 @@
+{
+  "acceptance_predicates": {},
+  "authority": {
+    "control_plane_commit": "bde51f1c20b2d6d78b33f02956da9c58cd42d2a4",
+    "policy_versions": {},
+    "task_commit": "6c7909d5c0efd3e6e64443d6de3b227c1820b01b",
+    "task_id": "ec2-artifact-policy-enforcement"
+  },
+  "evidence": {
+    "authorized_evidence_classes": [
+      "CI_RUNTIME_EVIDENCE",
+      "CONTROL_PLANE_POLICY",
+      "PRIVATE_CREATION_DESIGN",
+      "SOLVER_VISIBLE_TASK"
+    ],
+    "evidence_required": [
+      "requirement-to-test map",
+      "behavioral scenario families",
+      "F2P/P2P classification",
+      "test independence"
+    ],
+    "excluded_evidence_classes": [
+      "CURRENT_REVIEW_PACKET",
+      "DURABLE_SESSION_STATE",
+      "FINAL_PACKAGE_EVIDENCE",
+      "MODEL_TRIAL_EVIDENCE",
+      "PRIOR_REVIEW_RESULTS",
+      "PUBLIC_REFERENCE",
+      "SOLUTION_ORACLE",
+      "VERIFIER_PRIVATE"
+    ],
+    "mandatory_exact_reads": [
+      "TERMINUS_3_AI_INSTRUCTIONS.md",
+      ".terminus/agents/CREATION_PIPELINE.md",
+      ".terminus/agents/CREATOR_PROMPTS.md"
+    ],
+    "retrieval_mode": "FILTERED_HYBRID"
+  },
+  "ignored_input_count": 0,
+  "inputs": {
+    "optional": {},
+    "required": {
+      "BEHAVIORAL_SURFACES": {
+        "cross_component": [
+          "digest identity across cache/exception/permit/audit",
+          "policy snapshot across decision pipeline",
+          "audit commit before completion",
+          "rebuild derived state from durable history",
+          "permit consumption state across verifier restart",
+          "permit verification atomicity with replay ledger and audit"
+        ],
+        "edge_boundary": [
+          "TTL expiry",
+          "exception/permit expiry",
+          "tag digest change",
+          "policy/DB revision change",
+          "crash between journal/projection"
+        ],
+        "failure_recovery": [
+          "scanner outage",
+          "journal/projection crash",
+          "malformed journal tail",
+          "partial cache",
+          "concurrent decisions",
+          "permit replay rejected across restart",
+          "single-use permit remains single-use under concurrent verification"
+        ],
+        "negative_rejection": [
+          "missing digest",
+          "untrusted source",
+          "scanner unavailable/stale",
+          "vulnerable without exception",
+          "wrong-scope exception",
+          "invalid permit scope or validity",
+          "corrupt state",
+          "replayed otherwise-valid permit",
+          "concurrent duplicate stateful verification"
+        ],
+        "normal": [
+          "uniform manager policy",
+          "fresh clean scan",
+          "valid exact exception",
+          "valid cache restart",
+          "durable allow/deny"
+        ]
+      },
+      "SOLVER_VISIBLE_CONTRACTS": [
+        "ec2-artifact-policy-enforcement/instruction.md",
+        "ec2-artifact-policy-enforcement/README.md",
+        "ec2-artifact-policy-enforcement/environment/enforcer/docs/architecture.md",
+        "ec2-artifact-policy-enforcement/environment/enforcer/docs/policy-contract.md",
+        "ec2-artifact-policy-enforcement/environment/enforcer/docs/state-format.md",
+        "ec2-artifact-policy-enforcement/environment/enforcer/docs/operations.md"
+      ],
+      "SOLVER_VISIBLE_REQUIREMENTS": {
+        "PRESERVATION": [
+          "evaluate and verify-permit interfaces and exit behavior",
+          "healthy cache reuse",
+          "valid scoped exceptions",
+          "supplied fixtures",
+          "valid prior audit history",
+          "stateless verification compatibility"
+        ],
+        "REQUIRED_END_STATE": [
+          "one consistent admission boundary across package/container/dependency managers",
+          "trusted source and immutable digest prerequisites",
+          "current revision-bound scanner/cache evidence",
+          "exact current exception scope",
+          "secret-keyed exact-scope permit validity",
+          "durable single-use stateful permit verification",
+          "durable ALLOW/DENY journal before projection/success",
+          "restart-safe history and deterministic idempotency"
+        ]
+      }
+    }
+  },
+  "invocation_id": "inv_ecdf78546c7ed2bc9083e5bcec4d127c189185990c8685c4d5cd88db38cd5efc",
+  "learning": {
+    "context_hash": "sha256:bb84a513aa2b6e4374d691759c4a6edf94169f479f4611e9091643b9f279ccfc",
+    "lessons": [],
+    "mode": "GENERALIZED_LESSONS_PLUS_OWNED_REMEDIATIONS",
+    "raw_feedback_exposed": false,
+    "raw_historical_findings_exposed": false,
+    "registry_heads": {
+      "feedback": "GENESIS",
+      "findings": "GENESIS",
+      "lessons": "GENESIS",
+      "patterns": "GENESIS",
+      "remediations": "GENESIS"
+    },
+    "remediations": []
+  },
+  "missing_required_inputs": [],
+  "output_contract": {
+    "allowed_status_values": [
+      "VERIFIER_READY",
+      "REQUIREMENT_GAP",
+      "SCENARIO_TOO_SMALL",
+      "BLOCKED"
+    ],
+    "deterministic_validators": [
+      "verifier lint/static checks",
+      ".terminus/validate_task_complexity.py <task>"
+    ],
+    "optional_fields": [
+      "STARTER_EMPIRICAL_STATUS",
+      "ORACLE_EMPIRICAL_STATUS",
+      "SOLVER_LOGIC_REIMPLEMENTATION_RISK"
+    ],
+    "persisted_artifacts": [
+      "<task>/tests/",
+      ".terminus/designs/<task>-test-map.json"
+    ],
+    "required_fields": [
+      "REQUIREMENT_TEST_MATRIX",
+      "F2P_COUNT",
+      "P2P_COUNT",
+      "EDGE_BOUNDARY_COVERAGE",
+      "NEGATIVE_FAILURE_COVERAGE",
+      "ORGANIC_COUNT_JUSTIFICATION",
+      "TEST_INDEPENDENCE"
+    ],
+    "semantic_reviewers": [
+      "Q2 Verifier Coverage Repairer",
+      "Verifier Engineer"
+    ]
+  },
+  "readiness": "READY",
+  "retrieval": {
+    "query": null,
+    "retrieved_chars": 0,
+    "retrieved_context": [],
+    "status": "NOT_REQUESTED"
+  },
+  "routing": {
+    "failure_routes": {
+      "DUPLICATE_OR_WEAK_TEST": "A5 Verifier Author / Q2 Verifier Coverage Repairer",
+      "REQUIREMENT_GAP": "Q1 Spec Gap Repairer / contract owner",
+      "SCENARIO_TOO_SMALL": "Creation Controller -> WORK_PACKAGE_RESEARCH"
+    },
+    "stale_on": [
+      "solver-visible requirement change",
+      "referenced contract change",
+      "behavioral surface change",
+      "verifier change"
+    ],
+    "success_transition": "HUMAN_WRITING_RESEARCH"
+  },
+  "schema_version": "1.0",
+  "stage": {
+    "lifecycle": "creation",
+    "owner": "A5 Verifier Author",
+    "role_class": "PRODUCER",
+    "role_id": "A5_VERIFIER_AUTHOR",
+    "stage_id": "VERIFIER_BUILD"
+  }
+}
