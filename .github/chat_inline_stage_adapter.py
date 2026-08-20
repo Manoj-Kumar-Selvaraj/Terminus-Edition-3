@@ -6,7 +6,6 @@ import os
 from pathlib import Path
 import shutil
 import subprocess
-import sys
 
 ROOT = Path.cwd()
 WORK = Path(os.environ.get('RUNNER_TEMP', '/tmp')) / 'chat-inline'
@@ -94,9 +93,11 @@ if mode == 'RECORD':
         run('python3','.terminus/human_writing/validate_calibration.py','--root','.','--pair',f'.terminus/research/{task}-dataset-calibration.json','--profile',f'.terminus/research/{task}-task-writing-profile.json')
 
     run('python3','.terminus/execution/controller_cli.py','record','--invocation',str(WORK/'invocation.json'),'--result',str(WORK/'result.json'),'--output',str(WORK/'record.json'))
-    porcelain=run('git','status','--porcelain',capture=True).splitlines()
+    cp = subprocess.run(['git','status','--porcelain'], cwd=ROOT, check=True, text=True, capture_output=True)
+    porcelain=cp.stdout.splitlines()
     allowed=(f'.terminus/executions/{task}',f'.terminus/workflows/{task}',f'.terminus/research/{task}-dataset-calibration.json',f'.terminus/research/{task}-task-writing-profile.json')
-    unexpected=[line[3:] for line in porcelain if not line[3:].startswith(allowed)]
+    paths=[line[3:] if len(line)>=4 else line for line in porcelain]
+    unexpected=[path for path in paths if not path.startswith(allowed)]
     if unexpected: raise SystemExit(f'unexpected mutations: {unexpected}')
     run('git','config','user.name','terminus-chat-adapter[bot]'); run('git','config','user.email','terminus-chat-adapter[bot]@users.noreply.github.com')
     run('git','add','--',f'.terminus/executions/{task}')
