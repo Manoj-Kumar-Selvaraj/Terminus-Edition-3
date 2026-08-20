@@ -1,0 +1,48 @@
+name: Edge Router A4 Direct Diagnostic
+
+on:
+  push:
+    branches:
+      - 'terminus-controller-request/edge-router-a4-20260820-1205'
+
+permissions:
+  contents: write
+
+jobs:
+  compile:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Compile exact REFERENCE_SOLUTION invocation
+        shell: bash
+        run: |
+          set -euo pipefail
+          git checkout --detach a81cc78296fb4be0d9cbe30d1cd1194086389587
+          mkdir -p /tmp/edge-a4
+          printf '{}\n' > /tmp/edge-a4/inputs.json
+          python3 .terminus/execution/controller_cli.py continue \
+            --task-id edge-router-runtime \
+            --task-commit 1c0b7175298afbd1e05bda103ea97e344e56b30e \
+            --control-plane-commit 5106b27ae6cc5257854f08c63bac4eca95685f36 \
+            --inputs-json /tmp/edge-a4/inputs.json \
+            --output /tmp/edge-a4/continue.json
+          python3 - <<'PY'
+          import json
+          p=json.load(open('/tmp/edge-a4/continue.json'))
+          assert p.get('next',{}).get('stage_id') == 'REFERENCE_SOLUTION', p.get('next')
+          inv=p.get('invocation')
+          assert isinstance(inv,dict) and inv.get('readiness') == 'READY', p
+          json.dump(inv,open('/tmp/edge-a4/invocation.json','w'),indent=2,sort_keys=True)
+          PY
+          git fetch origin terminus-controller-request/edge-router-a4-20260820-1205
+          git checkout -B edge-a4-output origin/terminus-controller-request/edge-router-a4-20260820-1205
+          mkdir -p .terminus/chat-results/edge-router-runtime/REFERENCE_SOLUTION
+          cp /tmp/edge-a4/continue.json .terminus/chat-results/edge-router-runtime/REFERENCE_SOLUTION/continue.json
+          cp /tmp/edge-a4/invocation.json .terminus/chat-results/edge-router-runtime/REFERENCE_SOLUTION/invocation.json
+          git config user.name 'terminus-a4-diagnostic[bot]'
+          git config user.email 'terminus-a4-diagnostic[bot]@users.noreply.github.com'
+          git add -- .terminus/chat-results/edge-router-runtime/REFERENCE_SOLUTION
+          git commit -m 'Persist edge-router REFERENCE_SOLUTION invocation'
+          git push origin HEAD:terminus-controller-request/edge-router-a4-20260820-1205
