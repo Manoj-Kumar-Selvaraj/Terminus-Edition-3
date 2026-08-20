@@ -2,6 +2,7 @@ package controlplane
 
 import (
     "fmt"
+    "reflect"
     "sort"
     "strings"
     "time"
@@ -132,7 +133,7 @@ func routeEquivalent(a,b Route) bool {
     if len(ah)!=len(bh) { return false }
     an.NextHops=nil
     bn.NextHops=nil
-    if an!=bn { return false }
+    if !reflect.DeepEqual(an,bn) { return false }
     for i:=range ah { if ah[i]!=bh[i] { return false } }
     return true
 }
