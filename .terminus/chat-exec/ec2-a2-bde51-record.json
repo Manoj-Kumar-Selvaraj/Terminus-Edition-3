@@ -1,0 +1,77 @@
+{
+  "schema_version": "1.0",
+  "mode": "RECORD",
+  "task_id": "ec2-artifact-policy-enforcement",
+  "task_commit": "6c7909d5c0efd3e6e64443d6de3b227c1820b01b",
+  "control_plane_commit": "bde51f1c20b2d6d78b33f02956da9c58cd42d2a4",
+  "expected_repository_head": "6cc6613d3ecc167d6badf02d2160c879a7cc0039",
+  "stage_id": "SYSTEM_ARCHITECTURE",
+  "inputs": {
+    "CREATION_RULE_CONTEXT": {
+      "ACTIVE_VALIDATORS": [".terminus/validate_agent_system.py", ".terminus/validate_stage_contracts.py", ".terminus/validate_task_complexity.py", ".terminus/validate_environment_complexity.py", ".terminus/validate_runtime_authenticity.py", ".terminus/validate_business_module_diversity.py", ".terminus/validate_review_freshness.py", ".terminus/validate_quality_interlock.py", ".github/workflows/terminus-edition-3-ci.yml", ".github/workflows/terminus-creator-complexity.yml", ".github/workflows/terminus-production-authenticity.yml"],
+      "CONTROL_PLANE_COMMIT": "bde51f1c20b2d6d78b33f02956da9c58cd42d2a4",
+      "CREATION_PROFILE": "large_system_strict",
+      "KNOWN_POLICY_CONFLICTS": [],
+      "NETWORK_ENVIRONMENT_CONSTRAINTS": "network_mode public; separate verifier; digest-pinned canonical Go runtime; no privileged Docker/capability/socket shortcuts; tmux and asciinema required in agent image",
+      "RULE_SOURCES": ["TERMINUS_3_AI_INSTRUCTIONS.md", ".terminus/AGENT_SYSTEM.md", ".terminus/agents/CREATION_CONTROLLER.md", ".terminus/agents/CREATION_PIPELINE.md", ".terminus/agents/PRODUCTION_AUTHENTICITY.md", ".terminus/reviewers/REVIEWER_CHECKLIST.md", ".terminus/agents/QUALITY_AGENT_REGISTRY.md", ".terminus/agents/STAGE_CONTRACTS.md", ".terminus/agents/stage_contracts.json"]
+    },
+    "APPROVED_WORK_PACKAGE": {
+      "ID": "WP1_UNIFIED_EC2_ARTIFACT_ADMISSION",
+      "PERSONA": "EC2 platform security engineer",
+      "ENGINEERING_OBJECTIVE": "Make package, container, and build-dependency acquisition converge on one host-local Go admission boundary that enforces artifact identity, source trust, current vulnerability evidence, scoped exceptions, permit integrity, and durable decision state.",
+      "REQUIRED_END_STATE": "Every acquisition surface applies the same prerequisite trust and immutable-identity rules, uses only current artifact/policy/scanner evidence, limits exceptions to the exact vulnerability scope, issues and consumes exact-scope keyed permits safely, and commits restart-safe ALLOW/DENY history before completion.",
+      "REQUIREMENT_FAMILIES": ["manager normalization and source trust", "immutable artifact identity", "scanner availability and evidence freshness", "cache keying and revision/TTL validation", "vulnerability threshold and exception scope", "secret-keyed permit binding and expiry", "single-use replay protection under restart/concurrency", "durable journal, projection, corruption handling, and idempotency", "public CLI and exit-code compatibility"],
+      "EDGE_FAILURE_SURFACE": ["scanner unavailable or scanner database revision changes", "mutable tag/version resolving to a new digest", "stale, malformed, or partially written cache evidence", "expired or cross-surface/environment exception", "permit tamper, expiry, replay, restart, and concurrent consumption", "crash between journal durability and derived projection update", "malformed/incomplete journal tail versus corruption in durable history", "repeated deterministic evaluation after restart"],
+      "PRESERVATION_OBLIGATIONS": ["preserve artifactguard evaluate and verify-permit interfaces and documented exit behavior", "keep cache and exceptions operational rather than disabling them", "do not rewrite supplied policy, scanner, or exception fixtures", "preserve valid existing audit history and healthy cached evidence", "retain stateless permit-verification compatibility while making stateful verification durable and single-use"],
+      "SOURCE_RECORD_ID": "rec_e3f10f19b76d2050ca3a9873fa43c5a788c491f876b674f3d4a9393c73bb0649"
+    },
+    "APPROVED_OPERATIONAL_REQUIREMENTS": {
+      "REQUIRED_END_STATE": ["All package, container, and dependency managers enter one normalized admission boundary.", "Trusted-source and required immutable-digest checks are prerequisites and cannot be waived by exceptions.", "Scanner or cached vulnerability evidence must match the exact artifact plus active policy/scanner revisions and be within its freshness window.", "Scanner unavailability, stale evidence, malformed evidence, or partial evidence fails closed.", "Exceptions may waive only the vulnerability threshold and must be unexpired and exact digest/surface/environment/policy-code scope.", "ALLOW permits are secret-keyed and bind request, instance, artifact digest, policy version, and expiry.", "Stateful permit verification is single-use across restart and concurrent verification.", "Every ALLOW and DENY is durably journaled before completion; derived projection state follows the authoritative journal.", "Repeated deterministic evaluation is idempotent and recovery preserves valid history while rejecting durable corruption."],
+      "PRESERVATION": ["existing evaluate/verify-permit CLI and documented exit codes", "healthy cache reuse", "valid exact-scope exceptions", "supplied policy/scanner/exception fixtures", "valid existing audit history", "stateless verify-permit compatibility"],
+      "EDGE_FAILURES": ["scanner outage and scanner DB rollover", "mutable identity digest change", "manager/source bypass", "expired or wrong-scope exception", "permit tamper/replay/expiry/concurrency", "partial cache/state write", "crash around journal/projection publication", "restart with incomplete tail or durable corruption"]
+    }
+  },
+  "result": {
+    "status": "ARCHITECTURE_READY",
+    "evidence_refs": [],
+    "outputs": {
+      "COMPONENT_GRAPH": {
+        "cli": "cmd/artifactguard parses evaluate and verify-permit requests, preserves documented exit codes, loads deterministic policy/scanner/exception inputs, and delegates to the runtime boundary.",
+        "normalization": "manager-profile adapters canonicalize package, container, and dependency acquisitions into one request model while retaining surface, manager, environment, source, immutable digest, request, and instance identity.",
+        "policy_snapshot": "policy runtime validates one versioned snapshot per decision and exposes trusted-source, digest, severity, cache-TTL, permit-TTL, and scanner-revision requirements.",
+        "evidence_gateway": "scanner/cache subsystem selects current vulnerability evidence for the exact immutable artifact and active policy/scanner revisions; scanner errors and unusable cache state remain explicit fail-closed conditions.",
+        "exception_evaluator": "exception subsystem applies only after prerequisite identity/source/evidence checks and may waive only vulnerability-threshold denials for exact current digest/surface/environment/policy-code scope.",
+        "decision_engine": "ordered engine composes normalized request, policy snapshot, evidence, exception result, vulnerability decision, and permit issuance into one deterministic ALLOW/DENY result.",
+        "permit_service": "permit subsystem uses a secret-keyed canonical payload bound to request ID, instance ID, artifact digest, policy version, and expiry; stateful verification delegates replay consumption to durable state.",
+        "state_coordinator": "state subsystem owns locks, atomic file replacement, directory durability, cache persistence, replay state, journal recovery, and derived projections under the caller-provided state root.",
+        "decision_journal": "append-only authoritative journal commits every ALLOW and DENY before successful command completion; latest-decision projection is derived only after the corresponding durable journal record.",
+        "replay_ledger": "optional stateful verify-permit path atomically checks-and-records permit consumption so restart or concurrent verification cannot accept a second use."
+      },
+      "ENTRYPOINTS": [
+        {"name": "artifactguard evaluate", "reachability": "CLI -> input loaders -> normalized manager profile -> policy snapshot -> evidence/cache -> prerequisite gates -> vulnerability/exception -> optional permit -> durable decision commit -> JSON result; DENY exits 42, operational/malformed failures exit 2."},
+        {"name": "artifactguard verify-permit", "reachability": "CLI -> permit/request/policy canonicalization -> keyed signature/scope/expiry verification -> optional state lock/replay consumption -> verification result; invalid/expired/out-of-scope/replayed stateful permits exit 43."},
+        {"name": "Go module build/test", "reachability": "go test ./... and go build ./cmd/artifactguard exercise compile-time/package reachability for the same production packages used by the CLI."}
+      ],
+      "STATE_MODEL": {
+        "external_inputs": ["policy snapshot", "scanner database fixture/adapter response", "exception set", "request and permit documents", "secret key", "explicit evaluation time"],
+        "authoritative_state": ["append-only decision journal", "stateful permit-consumption ledger"],
+        "derived_state": ["latest-decision projection", "reusable vulnerability-evidence cache"],
+        "identity_keys": ["artifact digest", "policy version", "scanner DB revision", "request ID", "instance ID", "permit canonical scope"],
+        "durability_order": "validate/recover -> acquire state lock where mutation is shared -> prepare canonical record -> append/fdatasync or atomic durable write -> only then publish derived projection or report success -> fsync containing directory for rename-based state updates.",
+        "recovery": "accept the longest structurally and checksum-valid committed journal history, treat an otherwise complete final record without newline as committed when format rules allow it, reject durable mid-history corruption, reconstruct/validate projections from authoritative records, and keep repeated deterministic decisions idempotent."
+      },
+      "SOLVER_VISIBLE_DOC_PLAN": [
+        {"path": "docs/architecture.md", "purpose": "component boundaries, entrypoints, source-of-truth relationships, and request flow without identifying defect locations"},
+        {"path": "docs/policy-contract.md", "purpose": "manager normalization, source/digest prerequisites, scanner/cache freshness, vulnerability/exception semantics, permit scope, and stable CLI behavior"},
+        {"path": "docs/state-format.md", "purpose": "cache, journal, projection, replay records, canonical/checksum semantics, durability ownership, and recovery rules"},
+        {"path": "docs/operations.md", "purpose": "operator invocation, state directory ownership, restart/concurrency expectations, failure handling, and safe recovery"},
+        {"path": "notes/oncall.md", "purpose": "only legitimate observed current-state symptoms; no private topology IDs, hidden test mapping, or repair recipe"}
+      ],
+      "PRODUCTION_CHARACTERISTICS": ["one real Go CLI reaches all major runtime responsibilities", "differentiated manager, policy, evidence, exception, permit, journal, replay, and state modules", "caller-owned persistent state with explicit source-of-truth and derived-state boundaries", "deterministic configuration/time inputs and stable machine-readable CLI results", "fail-closed negative behavior for trust, identity, evidence, authorization, and corruption failures", "restart-safe/idempotent decision handling", "concurrency-safe single-use authorization", "atomic/durable publication ordering and recovery", "preservation of valid cache, exception, and audit behavior instead of disabling operational features"],
+      "SCALE_FIT": "VERY_HIGH. The strict-scale footprint is justified by independent production responsibilities and their stateful coupling rather than file/LOC padding: manager normalization feeds policy identity; identity gates evidence; evidence feeds exception/vulnerability logic; decisions issue permits; permits and decisions share durable locking/replay/journal semantics; recovery reconciles authoritative and derived state.",
+      "RESOURCE_GRAPH": ["CLI -> request/policy/scanner/exception loaders", "CLI -> manager normalization -> canonical acquisition request", "canonical request + policy snapshot -> prerequisite trust/digest gates", "canonical digest + policy/scanner revisions -> evidence gateway -> cache or scanner", "current evidence -> vulnerability threshold -> exact exception evaluator", "ALLOW decision -> keyed permit issuer", "decision -> authoritative journal -> latest-decision projection", "verify-permit -> keyed verifier -> optional replay lock/ledger", "state coordinator -> cache/journal/projection/replay durable files"],
+      "DATA_VOLUME_PLAN": "No 10k-20k primary-business-record seed is applicable: this host-local policy runtime is configuration/state-backed rather than a business-record processing system. Deterministic policy/scanner/exception fixtures stay compact because they model control inputs, while operational state grows organically with evidence-cache entries, decisions, and permit consumptions. Scale is supplied by reachable production logic and coupled state transitions, not bulk fixture duplication.",
+      "UNRESOLVED_RISKS": ["Use one canonical serialization/checksum format shared by journal/replay durability code to avoid format drift.", "Keep stateful replay locking portable to the Linux container environment and ensure lock scope covers check-and-consume atomically.", "Maintain the recovery distinction between an incomplete trailing write and durable mid-history corruption without silently truncating valid history.", "Preserve stateless verify-permit callers while keeping --state semantics explicit and non-breaking.", "Ensure cache atomic-write and journal append durability use consistent directory-sync/error propagation semantics."]
+    }
+  }
+}
