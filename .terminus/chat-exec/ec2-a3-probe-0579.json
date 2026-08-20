@@ -1,0 +1,36 @@
+{
+  "schema_version": "1.0",
+  "mode": "PROBE",
+  "task_id": "ec2-artifact-policy-enforcement",
+  "task_commit": "6c7909d5c0efd3e6e64443d6de3b227c1820b01b",
+  "control_plane_commit": "0579a0f2f1e7e3560d13ff1530f467c8e01b6a1a",
+  "expected_repository_head": "4430c262a633afeddb8f9ad798fd860cef5ed902",
+  "stage_id": "DEFECT_TOPOLOGY",
+  "inputs": {
+    "APPROVED_WORK_PACKAGE": {
+      "ID": "WP1_UNIFIED_EC2_ARTIFACT_ADMISSION",
+      "PERSONA": "EC2 platform security engineer",
+      "ENGINEERING_OBJECTIVE": "Make package, container, and build-dependency acquisition converge on one host-local Go admission boundary that enforces artifact identity, source trust, current vulnerability evidence, scoped exceptions, permit integrity, and durable decision state.",
+      "REQUIRED_END_STATE": "Every acquisition surface applies the same prerequisite trust and immutable-identity rules, uses only current artifact/policy/scanner evidence, limits exceptions to the exact vulnerability scope, issues and consumes exact-scope keyed permits safely, and commits restart-safe ALLOW/DENY history before completion.",
+      "REQUIREMENT_FAMILIES": ["manager normalization and source trust", "immutable artifact identity", "scanner availability and evidence freshness", "cache keying and revision/TTL validation", "vulnerability threshold and exception scope", "secret-keyed permit binding and expiry", "single-use replay protection under restart/concurrency", "durable journal, projection, corruption handling, and idempotency", "public CLI and exit-code compatibility"],
+      "EDGE_FAILURE_SURFACE": ["scanner unavailable or scanner database revision changes", "mutable tag/version resolving to a new digest", "stale, malformed, or partially written cache evidence", "expired or cross-surface/environment exception", "permit tamper, expiry, replay, restart, and concurrent consumption", "crash between journal durability and derived projection update", "malformed/incomplete journal tail versus corruption in durable history", "repeated deterministic evaluation after restart"],
+      "PRESERVATION_OBLIGATIONS": ["preserve artifactguard evaluate and verify-permit interfaces and documented exit behavior", "keep cache and exceptions operational rather than disabling them", "do not rewrite supplied policy, scanner, or exception fixtures", "preserve valid existing audit history and healthy cached evidence", "retain stateless permit-verification compatibility while making stateful verification durable and single-use"],
+      "SOURCE_RECORD_ID": "rec_cd582c78afef910a7bd0db2c41b40d2dcd968a2163818ebc3276f27d95be2346"
+    },
+    "APPROVED_OPERATIONAL_REQUIREMENTS": {
+      "REQUIRED_END_STATE": ["All package, container, and dependency managers enter one normalized admission boundary.", "Trusted-source and required immutable-digest checks are prerequisites and cannot be waived by exceptions.", "Scanner or cached vulnerability evidence must match the exact artifact plus active policy/scanner revisions and be within its freshness window.", "Scanner unavailability, stale evidence, malformed evidence, or partial evidence fails closed.", "Exceptions may waive only the vulnerability threshold and must be unexpired and exact digest/surface/environment/policy-code scope.", "ALLOW permits are secret-keyed and bind request, instance, artifact digest, policy version, and expiry.", "Stateful permit verification is single-use across restart and concurrent verification.", "Every ALLOW and DENY is durably journaled before completion; derived projection state follows the authoritative journal.", "Repeated deterministic evaluation is idempotent and recovery preserves valid history while rejecting durable corruption."],
+      "PRESERVATION": ["existing evaluate/verify-permit CLI and documented exit codes", "healthy cache reuse", "valid exact-scope exceptions", "supplied policy/scanner/exception fixtures", "valid existing audit history", "stateless verify-permit compatibility"],
+      "EDGE_FAILURES": ["scanner outage and scanner DB rollover", "mutable identity digest change", "manager/source bypass", "expired or wrong-scope exception", "permit tamper/replay/expiry/concurrency", "partial cache/state write", "crash around journal/projection publication", "restart with incomplete tail or durable corruption"]
+    },
+    "CLEAN_SYSTEM_ARCHITECTURE": {
+      "COMPONENT_GRAPH": {"cli":"stable evaluate/verify-permit CLI and input loaders","normalization":"manager profiles to canonical acquisition request","policy_snapshot":"one versioned policy decision snapshot","evidence_gateway":"digest/revision/TTL-bound cache or scanner evidence","exception_evaluator":"exact current vulnerability-threshold waiver only","decision_engine":"ordered fail-closed admission pipeline","permit_service":"keyed exact-scope permit issue/verify","state_coordinator":"locks, atomic writes, recovery and derived state","decision_journal":"authoritative durable ALLOW/DENY history","replay_ledger":"atomic durable stateful permit consumption"},
+      "ENTRYPOINTS": ["artifactguard evaluate", "artifactguard verify-permit", "go test ./... / go build ./cmd/artifactguard"],
+      "STATE_MODEL": {"authoritative_state":["append-only decision journal","stateful permit-consumption ledger"],"derived_state":["latest-decision projection","vulnerability-evidence cache"],"durability_order":"recover/lock -> durable authoritative mutation -> derived projection -> success","recovery":"preserve valid committed history, reject durable corruption, rebuild projections, deduplicate deterministic decisions"},
+      "SOLVER_VISIBLE_DOC_PLAN": ["docs/architecture.md", "docs/policy-contract.md", "docs/state-format.md", "docs/operations.md", "notes/oncall.md"],
+      "PRODUCTION_CHARACTERISTICS": ["single real Go CLI reaches all major modules", "differentiated manager/policy/evidence/exception/permit/journal/replay/state responsibilities", "fail-closed negative paths", "restart/idempotency recovery", "concurrency-safe replay", "durable publication ordering"],
+      "SCALE_FIT": "VERY_HIGH; strict-scale depth comes from coupled production responsibilities and state transitions rather than padding.",
+      "SOURCE_RECORD_ID": "rec_c7113662704e00ec908b7912f1f6e11869163956ea9721ec8fa0f757a9021b9c"
+    }
+  },
+  "result": {}
+}
