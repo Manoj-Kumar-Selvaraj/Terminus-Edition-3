@@ -1,0 +1,533 @@
+{
+  "authority": {
+    "control_plane_commit": "67b805a297ac005ee08e82facc533f53a3233192",
+    "policy_versions": {},
+    "task_commit": "78ad422902b27dea954905130a1267b02cff3596",
+    "task_id": "terraform-ansible-managed-resources"
+  },
+  "disposition": "ADVANCE",
+  "evidence_refs": [
+    {
+      "content_hash": "sha256:104817a239b92de3e53f14d6bc0176563437894773e060648776dc09c6280374",
+      "kind": "COMMIT",
+      "ref": "commit:78ad422902b27dea954905130a1267b02cff3596"
+    },
+    {
+      "content_hash": "sha256:fca3ef4b283f1a1fe2aa6d960cd36a17b7232eb0b7a130f9cc8d43d948d6ec42",
+      "kind": "COMMIT",
+      "ref": "commit:67b805a297ac005ee08e82facc533f53a3233192"
+    }
+  ],
+  "invocation_id": "inv_386a110d0b25e4a3187bc63ce2dfcb542e87289dc1d1f834ce16b27f6689f6db",
+  "invocation_snapshot": {
+    "acceptance_predicates": {},
+    "authority": {
+      "control_plane_commit": "67b805a297ac005ee08e82facc533f53a3233192",
+      "policy_versions": {},
+      "task_commit": "78ad422902b27dea954905130a1267b02cff3596",
+      "task_id": "terraform-ansible-managed-resources"
+    },
+    "evidence": {
+      "authorized_evidence_classes": [
+        "CONTROL_PLANE_POLICY",
+        "PRIVATE_CREATION_DESIGN",
+        "PUBLIC_REFERENCE",
+        "SOLVER_VISIBLE_TASK"
+      ],
+      "evidence_required": [
+        "root-cause clusters",
+        "causal/interdependency edges",
+        "partial-fix traps",
+        "behavioral surfaces"
+      ],
+      "excluded_evidence_classes": [
+        "CI_RUNTIME_EVIDENCE",
+        "CURRENT_REVIEW_PACKET",
+        "DURABLE_SESSION_STATE",
+        "FINAL_PACKAGE_EVIDENCE",
+        "MODEL_TRIAL_EVIDENCE",
+        "PRIOR_REVIEW_RESULTS",
+        "SOLUTION_ORACLE",
+        "VERIFIER_PRIVATE"
+      ],
+      "mandatory_exact_reads": [
+        ".terminus/agents/CREATION_PIPELINE.md",
+        ".terminus/agents/CREATOR_AGENT_REGISTRY.md",
+        ".terminus/agents/CREATOR_PROMPTS.md"
+      ],
+      "retrieval_mode": "FILTERED_HYBRID"
+    },
+    "ignored_input_count": 0,
+    "inputs": {
+      "optional": {},
+      "required": {
+        "APPROVED_OPERATIONAL_REQUIREMENTS": [
+          "stable external-object identity",
+          "Ansible-only create/update/delete mutation",
+          "native Linux side-effect-free read/refresh and drift reconciliation",
+          "state publication only after successful mutation and retry after failure",
+          "scoped ownership/deletion across the ten documented resource types",
+          "structured argv plus timeout/cancellation/temp cleanup",
+          "canonical normalization/idempotency"
+        ],
+        "APPROVED_WORK_PACKAGE": {
+          "ID": "MANAGED_RESOURCE_LIFECYCLE_COMPLETION",
+          "OBJECTIVE": "Complete the ten-resource ansibleops Terraform provider as a coherent managed-resource lifecycle/reconciliation system."
+        },
+        "CLEAN_SYSTEM_ARCHITECTURE": {
+          "COMPONENT_GRAPH": [
+            "provider registration/configuration/runtime preflight",
+            "shared lifecycle identity/state transitions",
+            "Ansible task/playbook generation",
+            "structured runner",
+            "native Linux observation",
+            "normalization/validation",
+            "ten differentiated resource implementations"
+          ],
+          "RESOURCE_GRAPH": {
+            "accounts": [
+              "user",
+              "group"
+            ],
+            "content": [
+              "copy",
+              "template",
+              "line",
+              "block"
+            ],
+            "filesystem": [
+              "file",
+              "directory",
+              "symlink"
+            ],
+            "scheduler": [
+              "cron"
+            ]
+          },
+          "STATE_MODEL": {
+            "external_state": "filesystem/passwd/group/crontab external truth",
+            "identity": "documented external object key",
+            "mutation": "Ansible before state publication",
+            "observation": "native read only",
+            "terraform_state": "Terraform Core sole durable state authority"
+          }
+        },
+        "CREATION_PROFILE": "large_system_strict"
+      }
+    },
+    "invocation_id": "inv_386a110d0b25e4a3187bc63ce2dfcb542e87289dc1d1f834ce16b27f6689f6db",
+    "learning": {
+      "context_hash": "sha256:bb84a513aa2b6e4374d691759c4a6edf94169f479f4611e9091643b9f279ccfc",
+      "lessons": [],
+      "mode": "GENERALIZED_LESSONS_PLUS_OWNED_REMEDIATIONS",
+      "raw_feedback_exposed": false,
+      "raw_historical_findings_exposed": false,
+      "registry_heads": {
+        "feedback": "GENESIS",
+        "findings": "GENESIS",
+        "lessons": "GENESIS",
+        "patterns": "GENESIS",
+        "remediations": "GENESIS"
+      },
+      "remediations": []
+    },
+    "missing_required_inputs": [],
+    "output_contract": {
+      "allowed_status_values": [
+        "DESIGN_READY",
+        "SCENARIO_TOO_SMALL",
+        "BLOCKED"
+      ],
+      "deterministic_validators": [
+        ".terminus/validate_defect_topology.py <task>"
+      ],
+      "optional_fields": [],
+      "persisted_artifacts": [
+        ".terminus/designs/<task>.json"
+      ],
+      "required_fields": [
+        "profile",
+        "root_cause_clusters",
+        "defects",
+        "causal_edges",
+        "behavioral_surfaces",
+        "organic_f2p_surface_assessment"
+      ],
+      "semantic_reviewers": [
+        "Task Architect",
+        "Complexity Governor"
+      ]
+    },
+    "readiness": "READY",
+    "retrieval": {
+      "query": null,
+      "retrieved_chars": 0,
+      "retrieved_context": [],
+      "status": "NOT_REQUESTED"
+    },
+    "routing": {
+      "failure_routes": {
+        "ARCHITECTURE_GAP": "Creation Controller -> SYSTEM_ARCHITECTURE",
+        "HIDDEN_KNOWLEDGE": "A3 Defect Topology Designer -> expose legitimate solver-visible contract or remove defect",
+        "SCENARIO_TOO_SMALL": "Creation Controller -> WORK_PACKAGE_RESEARCH"
+      },
+      "stale_on": [
+        "work-package change",
+        "architecture change",
+        "material operational requirement change"
+      ],
+      "success_transition": "ENVIRONMENT_BUILD"
+    },
+    "schema_version": "1.0",
+    "stage": {
+      "lifecycle": "creation",
+      "owner": "A3 Defect Topology Designer",
+      "role_class": "PRODUCER",
+      "role_id": "A3_DEFECT_TOPOLOGY_DESIGNER",
+      "stage_id": "DEFECT_TOPOLOGY"
+    }
+  },
+  "outputs": {
+    "behavioral_surfaces": {
+      "create_state": [
+        "mutation",
+        "stable identity",
+        "restart durability"
+      ],
+      "delete_transaction": [
+        "scoped removal",
+        "failed delete remains managed",
+        "siblings preserved"
+      ],
+      "idempotency": [
+        "canonical modes",
+        "unordered values",
+        "account groups",
+        "cron defaults"
+      ],
+      "refresh_drift": [
+        "side-effect-free native Read",
+        "missing/wrong-kind absence",
+        "external drift"
+      ],
+      "runner_safety": [
+        "literal argv",
+        "non-zero/timeout/cancel failure",
+        "cleanup",
+        "no output persistence"
+      ],
+      "update_transaction": [
+        "single update",
+        "failure-safe retry",
+        "source intent"
+      ]
+    },
+    "causal_edges": [
+      {
+        "from": "D01",
+        "to": "D09"
+      },
+      {
+        "from": "D02",
+        "to": "D21"
+      },
+      {
+        "from": "D03",
+        "to": "D07"
+      },
+      {
+        "from": "D04",
+        "to": "D11"
+      },
+      {
+        "from": "D05",
+        "to": "D13"
+      },
+      {
+        "from": "D06",
+        "to": "D21"
+      },
+      {
+        "from": "D07",
+        "to": "D14"
+      },
+      {
+        "from": "D08",
+        "to": "D23"
+      },
+      {
+        "from": "D09",
+        "to": "D10"
+      },
+      {
+        "from": "D10",
+        "to": "D13"
+      },
+      {
+        "from": "D11",
+        "to": "D04"
+      },
+      {
+        "from": "D12",
+        "to": "D15"
+      },
+      {
+        "from": "D13",
+        "to": "D16"
+      },
+      {
+        "from": "D14",
+        "to": "D17"
+      },
+      {
+        "from": "D15",
+        "to": "D12"
+      },
+      {
+        "from": "D16",
+        "to": "D24"
+      },
+      {
+        "from": "D17",
+        "to": "D18"
+      },
+      {
+        "from": "D18",
+        "to": "D19"
+      },
+      {
+        "from": "D19",
+        "to": "D10"
+      },
+      {
+        "from": "D20",
+        "to": "D01"
+      },
+      {
+        "from": "D21",
+        "to": "D22"
+      },
+      {
+        "from": "D22",
+        "to": "D11"
+      },
+      {
+        "from": "D23",
+        "to": "D08"
+      },
+      {
+        "from": "D24",
+        "to": "D16"
+      }
+    ],
+    "defects": [
+      {
+        "component": "internal/lifecycle/state.go",
+        "id": "D01",
+        "observable_failure": "Create can publish an empty stable id after successful mutation.",
+        "partial_fix_trap": "Per-resource id patches leave shared publication wrong.",
+        "root_cause": "RC1_STATE_IDENTITY"
+      },
+      {
+        "component": "internal/lifecycle/identity.go",
+        "id": "D02",
+        "observable_failure": "Mutable directory mode can alter resource identity.",
+        "partial_fix_trap": "Special-casing mode leaves other mutable fields plan-derived.",
+        "root_cause": "RC1_STATE_IDENTITY"
+      },
+      {
+        "component": "internal/resources/symlink/resource.go",
+        "id": "D03",
+        "observable_failure": "Changing a symlink target can churn Terraform identity.",
+        "partial_fix_trap": "Symlink-only suppression hides shared identity defects.",
+        "root_cause": "RC1_STATE_IDENTITY"
+      },
+      {
+        "component": "internal/resources/copy/resource.go",
+        "id": "D04",
+        "observable_failure": "Copy destination digest can disappear after provider restart.",
+        "partial_fix_trap": "Caching the digest in process memory is not durable state.",
+        "root_cause": "RC1_STATE_IDENTITY"
+      },
+      {
+        "component": "internal/lifecycle/read.go",
+        "id": "D05",
+        "observable_failure": "External deletion of a directory is not reflected as absence on refresh.",
+        "partial_fix_trap": "Directory-only checks leave other resource Reads inconsistent.",
+        "root_cause": "RC2_REFRESH_RECONCILIATION"
+      },
+      {
+        "component": "internal/observe/filesystem.go",
+        "id": "D06",
+        "observable_failure": "External mode drift can be replaced by stale prior state.",
+        "partial_fix_trap": "Normalization without native observation still misses drift.",
+        "root_cause": "RC2_REFRESH_RECONCILIATION"
+      },
+      {
+        "component": "internal/observe/filesystem.go",
+        "id": "D07",
+        "observable_failure": "Out-of-band symlink retargeting is not reported as drift.",
+        "partial_fix_trap": "Existence checks without readlink semantics accept wrong state.",
+        "root_cause": "RC2_REFRESH_RECONCILIATION"
+      },
+      {
+        "component": "internal/observe/identity.go",
+        "id": "D08",
+        "observable_failure": "External supplementary-group changes are not reflected in user state.",
+        "partial_fix_trap": "Passwd-only observation leaves group membership stale.",
+        "root_cause": "RC2_REFRESH_RECONCILIATION"
+      },
+      {
+        "component": "internal/lifecycle/update.go",
+        "id": "D09",
+        "observable_failure": "Update can publish planned values before Ansible succeeds.",
+        "partial_fix_trap": "Moving one State.Set leaves other update paths unsafe.",
+        "root_cause": "RC3_UPDATE_TRANSACTION"
+      },
+      {
+        "component": "internal/lifecycle/update.go",
+        "id": "D10",
+        "observable_failure": "Failed update can leave state claiming the new desired configuration.",
+        "partial_fix_trap": "Returning an error after advancement still corrupts retry state.",
+        "root_cause": "RC3_UPDATE_TRANSACTION"
+      },
+      {
+        "component": "internal/resources/copy/resource.go",
+        "id": "D11",
+        "observable_failure": "Changing source_digest can fail to trigger exactly one copy update.",
+        "partial_fix_trap": "Digest-specific logic does not repair shared transaction ordering.",
+        "root_cause": "RC3_UPDATE_TRANSACTION"
+      },
+      {
+        "component": "internal/resources/line/resource.go",
+        "id": "D12",
+        "observable_failure": "Updating a managed line can append instead of replace once.",
+        "partial_fix_trap": "Content matching alone does not restore stable ownership semantics.",
+        "root_cause": "RC3_UPDATE_TRANSACTION"
+      },
+      {
+        "component": "internal/lifecycle/delete.go",
+        "id": "D13",
+        "observable_failure": "Failed delete can remove the resource from Terraform state.",
+        "partial_fix_trap": "Resource-specific retention leaves shared destroy semantics broken.",
+        "root_cause": "RC4_DELETE_FAILURE"
+      },
+      {
+        "component": "internal/resources/symlink/resource.go",
+        "id": "D14",
+        "observable_failure": "Destroying a symlink can remove or mutate its target object.",
+        "partial_fix_trap": "Path deletion without lstat semantics is unsafe.",
+        "root_cause": "RC4_DELETE_FAILURE"
+      },
+      {
+        "component": "internal/resources/block/resource.go",
+        "id": "D15",
+        "observable_failure": "Deleting one named block can remove unrelated sibling text.",
+        "partial_fix_trap": "Marker matching without ownership scope remains destructive.",
+        "root_cause": "RC4_DELETE_FAILURE"
+      },
+      {
+        "component": "internal/resources/cron/resource.go",
+        "id": "D16",
+        "observable_failure": "Deleting one named cron entry can disturb sibling entries.",
+        "partial_fix_trap": "Whole-crontab replacement violates scoped ownership.",
+        "root_cause": "RC4_DELETE_FAILURE"
+      },
+      {
+        "component": "internal/runner/runner.go",
+        "id": "D17",
+        "observable_failure": "Shell metacharacters in paths can be interpreted instead of passed literally.",
+        "partial_fix_trap": "Escaping strings still leaves shell-text execution unsafe.",
+        "root_cause": "RC5_RUNNER_COMMAND"
+      },
+      {
+        "component": "internal/runner/runner.go",
+        "id": "D18",
+        "observable_failure": "Ansible timeout can leave a temporary playbook behind.",
+        "partial_fix_trap": "Success-path cleanup does not cover timeout terminals.",
+        "root_cause": "RC5_RUNNER_COMMAND"
+      },
+      {
+        "component": "internal/runner/runner.go",
+        "id": "D19",
+        "observable_failure": "Cancellation can publish success-like state before process termination is confirmed.",
+        "partial_fix_trap": "Context cancellation without transactional ordering remains unsafe.",
+        "root_cause": "RC5_RUNNER_COMMAND"
+      },
+      {
+        "component": "internal/runner/result.go",
+        "id": "D20",
+        "observable_failure": "Full command output can leak into durable Terraform state.",
+        "partial_fix_trap": "Truncation still persists prohibited process output.",
+        "root_cause": "RC5_RUNNER_COMMAND"
+      },
+      {
+        "component": "internal/lifecycle/normalize.go",
+        "id": "D21",
+        "observable_failure": "Equivalent file modes can produce perpetual diffs.",
+        "partial_fix_trap": "Formatting only desired state leaves observed state noncanonical.",
+        "root_cause": "RC6_NORMALIZATION_IDEMPOTENCY"
+      },
+      {
+        "component": "internal/lifecycle/maps.go",
+        "id": "D22",
+        "observable_failure": "Equivalent unordered variable maps can produce nondeterministic plans.",
+        "partial_fix_trap": "Sorting one resource leaves shared map serialization unstable.",
+        "root_cause": "RC6_NORMALIZATION_IDEMPOTENCY"
+      },
+      {
+        "component": "internal/resources/user/resource.go",
+        "id": "D23",
+        "observable_failure": "Equivalent supplementary group orderings can cause repeated updates.",
+        "partial_fix_trap": "Plan sorting without observed-state normalization still churns.",
+        "root_cause": "RC6_NORMALIZATION_IDEMPOTENCY"
+      },
+      {
+        "component": "internal/resources/cron/resource.go",
+        "id": "D24",
+        "observable_failure": "Omitted cron defaults and explicit wildcard defaults can fail to converge.",
+        "partial_fix_trap": "Defaulting only Create leaves Read and Update representations divergent.",
+        "root_cause": "RC6_NORMALIZATION_IDEMPOTENCY"
+      }
+    ],
+    "organic_f2p_surface_assessment": "The defects arise from six coupled provider lifecycle concerns spanning shared state, native observation, mutation transactions, scoped deletion, process control and normalization; they are reachable through normal Terraform operations across the ten resources rather than synthetic padding.",
+    "profile": "large_system_strict",
+    "root_cause_clusters": {
+      "RC1_STATE_IDENTITY": "identity/state publication defects",
+      "RC2_REFRESH_RECONCILIATION": "native observation and drift defects",
+      "RC3_UPDATE_TRANSACTION": "update ordering and retry defects",
+      "RC4_DELETE_FAILURE": "scoped destroy and failed-delete defects",
+      "RC5_RUNNER_COMMAND": "process invocation timeout cancellation and cleanup defects",
+      "RC6_NORMALIZATION_IDEMPOTENCY": "canonical representation and convergence defects"
+    }
+  },
+  "record_id": "rec_0476e3fe0f666bca3546794a21e86db2a789d169a62e761f443cf518905d809c",
+  "role_id": "A3_DEFECT_TOPOLOGY_DESIGNER",
+  "schema_version": "1.0",
+  "stage_id": "DEFECT_TOPOLOGY",
+  "status": "DESIGN_READY",
+  "task_lineage": {
+    "input_task_commit": "78ad422902b27dea954905130a1267b02cff3596",
+    "output_task_commit": "78ad422902b27dea954905130a1267b02cff3596",
+    "task_changed": false
+  },
+  "transition": {
+    "action": "ADVANCE",
+    "requires_state_validation": false,
+    "target": "ENVIRONMENT_BUILD",
+    "target_kind": "STAGE"
+  },
+  "validation": {
+    "acceptance_predicates_satisfied": true,
+    "evidence_binding_satisfied": true,
+    "evidence_refs_count": 2,
+    "invocation_identity_valid": true,
+    "invocation_policy_valid": true,
+    "output_keys_valid": true,
+    "required_outputs_satisfied": true,
+    "retrieval_context_authorized": true,
+    "status_legal": true,
+    "task_commit_change_authorized": true,
+    "task_lineage_valid": true
+  }
+}
