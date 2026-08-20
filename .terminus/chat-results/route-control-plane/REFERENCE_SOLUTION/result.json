@@ -1,0 +1,35 @@
+{
+  "evidence_refs": [],
+  "invocation_id": "inv_366d270f9ffd52c9735eafb93fc40759c2040b3d67d227a66f6e14e2f4c919dd",
+  "output_task_commit": "22d2e9e09f4deb58029559fe9a0863c2e032f25c",
+  "outputs": {
+    "DETERMINISM_NOTES": "The repair is source-structural and deterministic. It contains no verifier-name, hidden-input, random test-case or environment-specific branching; solve.sh formats, tests and builds the repaired program after installation.",
+    "FILES_CHANGED": [
+      "route-control-plane/solution/solve.sh",
+      "route-control-plane/solution/repair.py"
+    ],
+    "PRESERVED_BEHAVIOR": "The public Go HTTP API, task metadata, Docker runtime, solver-visible fleet data, Ansible role surfaces and TypeScript dashboard remain intact while the approved transactional, reconciliation, rollout and concurrency invariants are restored.",
+    "RESTART_IDEMPOTENCY_BEHAVIOR": "Repeated solve.sh execution applies the same root-cause repairs, formats and rebuilds the same Go program; durable state uses atomic rename plus directory fsync and startup marks incomplete historical transactions failed rather than replaying partial publication.",
+    "RESTORED_INVARIANTS": [
+      "Canonical route identities collapse equivalent prefixes and ignore multipath ordering while preserving route-table identity.",
+      "Policy-rule effective priority is unique per node/family and lookup rules cannot reference absent tables.",
+      "Apply is fenced to the exact preview base revision and idempotency keys cannot be rebound to a different plan.",
+      "Desired, observed, transaction, idempotency and audit state publish atomically through one durable replacement with directory fsync.",
+      "Rollback restores each affected node's own prior snapshot as a new monotonic revision and refuses to overwrite newer state.",
+      "Reconcile refuses stale observed snapshots and never removes unowned unexpected routes or rules.",
+      "Rollouts stop at failed canaries, reject stale/offline heartbeats, and do not replay nodes already at target revision.",
+      "Ansible config projection is stable across reruns and preserves host-specific protected routes over group/default routes.",
+      "Dashboard Apply uses the immutable base revision returned by Preview rather than a concurrently refreshed UI revision."
+    ],
+    "RISKS_FOR_INDEPENDENT_VERIFIER": [
+      "Exercise rollback after intervening revisions and verify conflict rather than clobber.",
+      "Exercise IPv6 aliases, multipath reorder and route replace normalization independently.",
+      "Exercise stale observed reconciliation and unowned-route preservation.",
+      "Exercise stale heartbeat, failed canary and rollout retry behavior.",
+      "Exercise Ansible rerun convergence and host-specific protected route precedence.",
+      "Exercise dashboard preview/apply races against concurrent revisions."
+    ]
+  },
+  "schema_version": "1.0",
+  "status": "IMPLEMENTED"
+}
