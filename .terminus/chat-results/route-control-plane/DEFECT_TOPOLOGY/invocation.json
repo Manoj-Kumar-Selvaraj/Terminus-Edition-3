@@ -1,0 +1,180 @@
+{
+  "acceptance_predicates": {},
+  "authority": {
+    "control_plane_commit": "df7ef7569e2947b9f0bf7cf89ed4dec6c2a5a1fe",
+    "policy_versions": {},
+    "task_commit": "22d2e9e09f4deb58029559fe9a0863c2e032f25c",
+    "task_id": "route-control-plane"
+  },
+  "evidence": {
+    "authorized_evidence_classes": [
+      "CONTROL_PLANE_POLICY",
+      "PRIVATE_CREATION_DESIGN",
+      "PUBLIC_REFERENCE",
+      "SOLVER_VISIBLE_TASK"
+    ],
+    "evidence_required": [
+      "root-cause clusters",
+      "causal/interdependency edges",
+      "partial-fix traps",
+      "behavioral surfaces"
+    ],
+    "excluded_evidence_classes": [
+      "CI_RUNTIME_EVIDENCE",
+      "CURRENT_REVIEW_PACKET",
+      "DURABLE_SESSION_STATE",
+      "FINAL_PACKAGE_EVIDENCE",
+      "MODEL_TRIAL_EVIDENCE",
+      "PRIOR_REVIEW_RESULTS",
+      "SOLUTION_ORACLE",
+      "VERIFIER_PRIVATE"
+    ],
+    "mandatory_exact_reads": [
+      ".terminus/agents/CREATION_PIPELINE.md",
+      ".terminus/agents/CREATOR_AGENT_REGISTRY.md",
+      ".terminus/agents/CREATOR_PROMPTS.md"
+    ],
+    "retrieval_mode": "FILTERED_HYBRID"
+  },
+  "ignored_input_count": 0,
+  "inputs": {
+    "optional": {},
+    "required": {
+      "APPROVED_OPERATIONAL_REQUIREMENTS": {
+        "PRESERVATION": [
+          "safe management reachability",
+          "no partial publication",
+          "stable audit ordering",
+          "no host-network mutation"
+        ],
+        "REQUIRED_END_STATE": [
+          "route/rule lifecycle",
+          "revision preview/apply/rollback",
+          "drift/reconcile",
+          "fleet rollout isolation",
+          "Ansible idempotency",
+          "dashboard operations"
+        ]
+      },
+      "APPROVED_WORK_PACKAGE": {
+        "ID": "FLEET_ROUTE_DESIRED_STATE_RECONCILIATION",
+        "PRESERVATION_OBLIGATIONS": [
+          "no host network mutation",
+          "rejected changes preserve state",
+          "management reachability",
+          "monotonic history",
+          "idempotent deployment"
+        ],
+        "REQUIREMENT_FAMILIES": [
+          "route CRUD",
+          "policy rules",
+          "multipath",
+          "revision transactions",
+          "inventory",
+          "drift/reconcile",
+          "rollouts",
+          "Ansible deployment",
+          "audit/dashboard"
+        ]
+      },
+      "CLEAN_SYSTEM_ARCHITECTURE": {
+        "COMPONENTS": [
+          "api",
+          "node_registry",
+          "route_catalog",
+          "policy_rules",
+          "revision_planner",
+          "transaction_coordinator",
+          "kernel_model",
+          "snapshot_store",
+          "drift_engine",
+          "rollout_engine",
+          "audit_service",
+          "frontend",
+          "ansible_role"
+        ],
+        "INVARIANTS": [
+          "atomic revision publication",
+          "CAS fencing",
+          "per-node apply serialization",
+          "management reachability safety",
+          "desired-observed separation",
+          "restart recovery",
+          "idempotent fleet deployment"
+        ]
+      },
+      "CREATION_PROFILE": "large_system_strict"
+    }
+  },
+  "invocation_id": "inv_301221c8c260000ed45f685be4777b7eebc45d557cb00b13e65d54249cbc6c42",
+  "learning": {
+    "context_hash": "sha256:bb84a513aa2b6e4374d691759c4a6edf94169f479f4611e9091643b9f279ccfc",
+    "lessons": [],
+    "mode": "GENERALIZED_LESSONS_PLUS_OWNED_REMEDIATIONS",
+    "raw_feedback_exposed": false,
+    "raw_historical_findings_exposed": false,
+    "registry_heads": {
+      "feedback": "GENESIS",
+      "findings": "GENESIS",
+      "lessons": "GENESIS",
+      "patterns": "GENESIS",
+      "remediations": "GENESIS"
+    },
+    "remediations": []
+  },
+  "missing_required_inputs": [],
+  "output_contract": {
+    "allowed_status_values": [
+      "DESIGN_READY",
+      "SCENARIO_TOO_SMALL",
+      "BLOCKED"
+    ],
+    "deterministic_validators": [
+      ".terminus/validate_defect_topology.py <task>"
+    ],
+    "optional_fields": [],
+    "persisted_artifacts": [
+      ".terminus/designs/<task>.json"
+    ],
+    "required_fields": [
+      "profile",
+      "root_cause_clusters",
+      "defects",
+      "causal_edges",
+      "behavioral_surfaces",
+      "organic_f2p_surface_assessment"
+    ],
+    "semantic_reviewers": [
+      "Task Architect",
+      "Complexity Governor"
+    ]
+  },
+  "readiness": "READY",
+  "retrieval": {
+    "query": null,
+    "retrieved_chars": 0,
+    "retrieved_context": [],
+    "status": "NOT_REQUESTED"
+  },
+  "routing": {
+    "failure_routes": {
+      "ARCHITECTURE_GAP": "Creation Controller -> SYSTEM_ARCHITECTURE",
+      "HIDDEN_KNOWLEDGE": "A3 Defect Topology Designer -> expose legitimate solver-visible contract or remove defect",
+      "SCENARIO_TOO_SMALL": "Creation Controller -> WORK_PACKAGE_RESEARCH"
+    },
+    "stale_on": [
+      "work-package change",
+      "architecture change",
+      "material operational requirement change"
+    ],
+    "success_transition": "ENVIRONMENT_BUILD"
+  },
+  "schema_version": "1.0",
+  "stage": {
+    "lifecycle": "creation",
+    "owner": "A3 Defect Topology Designer",
+    "role_class": "PRODUCER",
+    "role_id": "A3_DEFECT_TOPOLOGY_DESIGNER",
+    "stage_id": "DEFECT_TOPOLOGY"
+  }
+}

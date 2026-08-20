@@ -1,0 +1,835 @@
+{
+  "ledger_event": {
+    "control_plane_commit": "df7ef7569e2947b9f0bf7cf89ed4dec6c2a5a1fe",
+    "event_id": "evt_70282066def2dae95108da0d861c6d2cb40598acbe060158cb87fd895b5c096d",
+    "input_task_commit": "22d2e9e09f4deb58029559fe9a0863c2e032f25c",
+    "invocation_id": "inv_301221c8c260000ed45f685be4777b7eebc45d557cb00b13e65d54249cbc6c42",
+    "output_task_commit": "22d2e9e09f4deb58029559fe9a0863c2e032f25c",
+    "previous_event_id": "evt_420abcd33312bb2e1e13985d88b3905dd1abecc44a2ffdacde6e95699641d6e4",
+    "record_hash": "sha256:8646d24559b228a2751b645e6fe6573db58776357701a95b5a5a502e9751a8be",
+    "record_id": "rec_36c66de42f230d6d7f7a4390ee31cc255c293b68bb6a16f2038b9fb11873b5ba",
+    "record_path": ".terminus/executions/route-control-plane/inv_301221c8c260000ed45f685be4777b7eebc45d557cb00b13e65d54249cbc6c42.result.json",
+    "schema_version": "1.0",
+    "sequence": 13,
+    "stage_id": "DEFECT_TOPOLOGY",
+    "task_id": "route-control-plane"
+  },
+  "record": {
+    "authority": {
+      "control_plane_commit": "df7ef7569e2947b9f0bf7cf89ed4dec6c2a5a1fe",
+      "policy_versions": {},
+      "task_commit": "22d2e9e09f4deb58029559fe9a0863c2e032f25c",
+      "task_id": "route-control-plane"
+    },
+    "disposition": "ADVANCE",
+    "evidence_refs": [],
+    "invocation_id": "inv_301221c8c260000ed45f685be4777b7eebc45d557cb00b13e65d54249cbc6c42",
+    "invocation_snapshot": {
+      "acceptance_predicates": {},
+      "authority": {
+        "control_plane_commit": "df7ef7569e2947b9f0bf7cf89ed4dec6c2a5a1fe",
+        "policy_versions": {},
+        "task_commit": "22d2e9e09f4deb58029559fe9a0863c2e032f25c",
+        "task_id": "route-control-plane"
+      },
+      "evidence": {
+        "authorized_evidence_classes": [
+          "CONTROL_PLANE_POLICY",
+          "PRIVATE_CREATION_DESIGN",
+          "PUBLIC_REFERENCE",
+          "SOLVER_VISIBLE_TASK"
+        ],
+        "evidence_required": [
+          "root-cause clusters",
+          "causal/interdependency edges",
+          "partial-fix traps",
+          "behavioral surfaces"
+        ],
+        "excluded_evidence_classes": [
+          "CI_RUNTIME_EVIDENCE",
+          "CURRENT_REVIEW_PACKET",
+          "DURABLE_SESSION_STATE",
+          "FINAL_PACKAGE_EVIDENCE",
+          "MODEL_TRIAL_EVIDENCE",
+          "PRIOR_REVIEW_RESULTS",
+          "SOLUTION_ORACLE",
+          "VERIFIER_PRIVATE"
+        ],
+        "mandatory_exact_reads": [
+          ".terminus/agents/CREATION_PIPELINE.md",
+          ".terminus/agents/CREATOR_AGENT_REGISTRY.md",
+          ".terminus/agents/CREATOR_PROMPTS.md"
+        ],
+        "retrieval_mode": "FILTERED_HYBRID"
+      },
+      "ignored_input_count": 0,
+      "inputs": {
+        "optional": {},
+        "required": {
+          "APPROVED_OPERATIONAL_REQUIREMENTS": {
+            "PRESERVATION": [
+              "safe management reachability",
+              "no partial publication",
+              "stable audit ordering",
+              "no host-network mutation"
+            ],
+            "REQUIRED_END_STATE": [
+              "route/rule lifecycle",
+              "revision preview/apply/rollback",
+              "drift/reconcile",
+              "fleet rollout isolation",
+              "Ansible idempotency",
+              "dashboard operations"
+            ]
+          },
+          "APPROVED_WORK_PACKAGE": {
+            "ID": "FLEET_ROUTE_DESIRED_STATE_RECONCILIATION",
+            "PRESERVATION_OBLIGATIONS": [
+              "no host network mutation",
+              "rejected changes preserve state",
+              "management reachability",
+              "monotonic history",
+              "idempotent deployment"
+            ],
+            "REQUIREMENT_FAMILIES": [
+              "route CRUD",
+              "policy rules",
+              "multipath",
+              "revision transactions",
+              "inventory",
+              "drift/reconcile",
+              "rollouts",
+              "Ansible deployment",
+              "audit/dashboard"
+            ]
+          },
+          "CLEAN_SYSTEM_ARCHITECTURE": {
+            "COMPONENTS": [
+              "api",
+              "node_registry",
+              "route_catalog",
+              "policy_rules",
+              "revision_planner",
+              "transaction_coordinator",
+              "kernel_model",
+              "snapshot_store",
+              "drift_engine",
+              "rollout_engine",
+              "audit_service",
+              "frontend",
+              "ansible_role"
+            ],
+            "INVARIANTS": [
+              "atomic revision publication",
+              "CAS fencing",
+              "per-node apply serialization",
+              "management reachability safety",
+              "desired-observed separation",
+              "restart recovery",
+              "idempotent fleet deployment"
+            ]
+          },
+          "CREATION_PROFILE": "large_system_strict"
+        }
+      },
+      "invocation_id": "inv_301221c8c260000ed45f685be4777b7eebc45d557cb00b13e65d54249cbc6c42",
+      "learning": {
+        "context_hash": "sha256:bb84a513aa2b6e4374d691759c4a6edf94169f479f4611e9091643b9f279ccfc",
+        "lessons": [],
+        "mode": "GENERALIZED_LESSONS_PLUS_OWNED_REMEDIATIONS",
+        "raw_feedback_exposed": false,
+        "raw_historical_findings_exposed": false,
+        "registry_heads": {
+          "feedback": "GENESIS",
+          "findings": "GENESIS",
+          "lessons": "GENESIS",
+          "patterns": "GENESIS",
+          "remediations": "GENESIS"
+        },
+        "remediations": []
+      },
+      "missing_required_inputs": [],
+      "output_contract": {
+        "allowed_status_values": [
+          "DESIGN_READY",
+          "SCENARIO_TOO_SMALL",
+          "BLOCKED"
+        ],
+        "deterministic_validators": [
+          ".terminus/validate_defect_topology.py <task>"
+        ],
+        "optional_fields": [],
+        "persisted_artifacts": [
+          ".terminus/designs/<task>.json"
+        ],
+        "required_fields": [
+          "profile",
+          "root_cause_clusters",
+          "defects",
+          "causal_edges",
+          "behavioral_surfaces",
+          "organic_f2p_surface_assessment"
+        ],
+        "semantic_reviewers": [
+          "Task Architect",
+          "Complexity Governor"
+        ]
+      },
+      "readiness": "READY",
+      "retrieval": {
+        "query": null,
+        "retrieved_chars": 0,
+        "retrieved_context": [],
+        "status": "NOT_REQUESTED"
+      },
+      "routing": {
+        "failure_routes": {
+          "ARCHITECTURE_GAP": "Creation Controller -> SYSTEM_ARCHITECTURE",
+          "HIDDEN_KNOWLEDGE": "A3 Defect Topology Designer -> expose legitimate solver-visible contract or remove defect",
+          "SCENARIO_TOO_SMALL": "Creation Controller -> WORK_PACKAGE_RESEARCH"
+        },
+        "stale_on": [
+          "work-package change",
+          "architecture change",
+          "material operational requirement change"
+        ],
+        "success_transition": "ENVIRONMENT_BUILD"
+      },
+      "schema_version": "1.0",
+      "stage": {
+        "lifecycle": "creation",
+        "owner": "A3 Defect Topology Designer",
+        "role_class": "PRODUCER",
+        "role_id": "A3_DEFECT_TOPOLOGY_DESIGNER",
+        "stage_id": "DEFECT_TOPOLOGY"
+      }
+    },
+    "outputs": {
+      "behavioral_surfaces": {
+        "cross_component": [
+          "rule plus table deletion",
+          "management safety through policy selection",
+          "apply then drift",
+          "rollback feeding rollout",
+          "Ansible-projected safety state",
+          "dashboard stale revision feeding transaction fencing"
+        ],
+        "edge_boundary": [
+          "IPv6 aliases",
+          "multipath ordering",
+          "reserved table aliases",
+          "metric/priority boundaries",
+          "host/group variable merge"
+        ],
+        "failure_recovery": [
+          "mid-apply rollback",
+          "restart with pending transaction",
+          "checkpoint fallback",
+          "offline rollout node",
+          "failed canary halt"
+        ],
+        "negative_rejection": [
+          "invalid family/gateway/interface",
+          "priority/table collision",
+          "unsafe management change",
+          "stale revision",
+          "idempotency conflict"
+        ],
+        "normal": [
+          "IPv4/IPv6 route lifecycle",
+          "policy-rule lifecycle",
+          "multipath normalization",
+          "revision preview/apply",
+          "drift/reconcile",
+          "wave rollout",
+          "Ansible install",
+          "dashboard mutation"
+        ]
+      },
+      "causal_edges": [
+        {
+          "from": "D01",
+          "to": "D16"
+        },
+        {
+          "from": "D02",
+          "to": "D16"
+        },
+        {
+          "from": "D03",
+          "to": "D17"
+        },
+        {
+          "from": "D04",
+          "to": "D05"
+        },
+        {
+          "from": "D05",
+          "to": "D11"
+        },
+        {
+          "from": "D06",
+          "to": "D05"
+        },
+        {
+          "from": "D07",
+          "to": "D09"
+        },
+        {
+          "from": "D07",
+          "to": "D18"
+        },
+        {
+          "from": "D08",
+          "to": "D20"
+        },
+        {
+          "from": "D09",
+          "to": "D14"
+        },
+        {
+          "from": "D10",
+          "to": "D13"
+        },
+        {
+          "from": "D11",
+          "to": "D13"
+        },
+        {
+          "from": "D12",
+          "to": "D13"
+        },
+        {
+          "from": "D13",
+          "to": "D15"
+        },
+        {
+          "from": "D14",
+          "to": "D15"
+        },
+        {
+          "from": "D15",
+          "to": "D19"
+        },
+        {
+          "from": "D16",
+          "to": "D18"
+        },
+        {
+          "from": "D17",
+          "to": "D18"
+        },
+        {
+          "from": "D18",
+          "to": "D20"
+        },
+        {
+          "from": "D19",
+          "to": "D21"
+        },
+        {
+          "from": "D20",
+          "to": "D21"
+        },
+        {
+          "from": "D22",
+          "to": "D21"
+        },
+        {
+          "from": "D23",
+          "to": "D10"
+        },
+        {
+          "from": "D24",
+          "to": "D07"
+        },
+        {
+          "from": "D24",
+          "to": "D09"
+        }
+      ],
+      "defects": [
+        {
+          "component": "route_catalog",
+          "id": "D01",
+          "observable_failure": "Equivalent IPv6 prefixes with different textual forms can coexist as duplicate routes.",
+          "partial_fix_trap": "Canonicalizing destination only still leaves gateway and next-hop aliases inconsistent.",
+          "root_cause": "C1_ROUTE_IDENTITY_NORMALIZATION"
+        },
+        {
+          "component": "route_catalog",
+          "id": "D02",
+          "observable_failure": "Multipath next-hop reorder produces a false route mutation.",
+          "partial_fix_trap": "Sorting only by gateway ignores interface, weight and family identity.",
+          "root_cause": "C1_ROUTE_IDENTITY_NORMALIZATION"
+        },
+        {
+          "component": "route_catalog",
+          "id": "D03",
+          "observable_failure": "Route replace creates a second identity when metric/table normalization differs.",
+          "partial_fix_trap": "Matching destination alone can overwrite a distinct legitimate route.",
+          "root_cause": "C1_ROUTE_IDENTITY_NORMALIZATION"
+        },
+        {
+          "component": "policy_rules",
+          "id": "D04",
+          "observable_failure": "Two policy rules can claim the same effective priority.",
+          "partial_fix_trap": "Checking only the submitted batch misses existing desired rules.",
+          "root_cause": "C2_POLICY_RULE_DEPENDENCY"
+        },
+        {
+          "component": "policy_rules",
+          "id": "D05",
+          "observable_failure": "A rule can reference a route table removed in the same revision.",
+          "partial_fix_trap": "Validating rules before table mutations misses final-state dependency.",
+          "root_cause": "C2_POLICY_RULE_DEPENDENCY"
+        },
+        {
+          "component": "revision_planner",
+          "id": "D06",
+          "observable_failure": "Named-table aliases collide with reserved numeric tables.",
+          "partial_fix_trap": "Name uniqueness alone ignores resolved numeric identity.",
+          "root_cause": "C2_POLICY_RULE_DEPENDENCY"
+        },
+        {
+          "component": "revision_planner",
+          "id": "D07",
+          "observable_failure": "A stale preview can be applied after a newer revision is accepted.",
+          "partial_fix_trap": "Checking base revision at preview time but not under apply serialization leaves a race.",
+          "root_cause": "C3_REVISION_TRANSACTION_FENCING"
+        },
+        {
+          "component": "transaction_coordinator",
+          "id": "D08",
+          "observable_failure": "Retrying the same apply idempotency key can create a second transaction and audit event.",
+          "partial_fix_trap": "Deduplicating only completed transactions misses in-progress retries.",
+          "root_cause": "C3_REVISION_TRANSACTION_FENCING"
+        },
+        {
+          "component": "snapshot_store",
+          "id": "D09",
+          "observable_failure": "Readers can observe desired revision metadata before all node plans are published.",
+          "partial_fix_trap": "Locking individual maps still allows mixed revision snapshots.",
+          "root_cause": "C3_REVISION_TRANSACTION_FENCING"
+        },
+        {
+          "component": "revision_planner",
+          "id": "D10",
+          "observable_failure": "Deleting the current management route is accepted when no safe replacement exists.",
+          "partial_fix_trap": "Protecting a route ID misses alternate route/table/rule interactions.",
+          "root_cause": "C4_MANAGEMENT_SAFETY"
+        },
+        {
+          "component": "revision_planner",
+          "id": "D11",
+          "observable_failure": "A policy rule change can divert management CIDRs into an empty table.",
+          "partial_fix_trap": "Checking route presence without evaluating policy selection is insufficient.",
+          "root_cause": "C4_MANAGEMENT_SAFETY"
+        },
+        {
+          "component": "kernel_model",
+          "id": "D12",
+          "observable_failure": "Interface removal strands a protected gateway while route objects remain syntactically valid.",
+          "partial_fix_trap": "CIDR-only safety ignores link/interface reachability.",
+          "root_cause": "C4_MANAGEMENT_SAFETY"
+        },
+        {
+          "component": "transaction_coordinator",
+          "id": "D13",
+          "observable_failure": "Failure mid-node apply leaves a partially mutated observed snapshot.",
+          "partial_fix_trap": "Rolling back only the failed operation does not restore preceding operations.",
+          "root_cause": "C5_APPLY_ROLLBACK_RECOVERY"
+        },
+        {
+          "component": "snapshot_store",
+          "id": "D14",
+          "observable_failure": "Crash after desired publication but before durable transaction completion loses rollback authority.",
+          "partial_fix_trap": "Atomic JSON write alone does not encode transaction phase ordering.",
+          "root_cause": "C5_APPLY_ROLLBACK_RECOVERY"
+        },
+        {
+          "component": "transaction_coordinator",
+          "id": "D15",
+          "observable_failure": "Rollback of one node can use a later node's last-known-good revision.",
+          "partial_fix_trap": "One global rollback pointer ignores per-node applied generations.",
+          "root_cause": "C5_APPLY_ROLLBACK_RECOVERY"
+        },
+        {
+          "component": "drift_engine",
+          "id": "D16",
+          "observable_failure": "Semantically equivalent multipath order is reported as drift.",
+          "partial_fix_trap": "Sorting display output does not normalize comparison identity.",
+          "root_cause": "C6_DRIFT_RECONCILIATION"
+        },
+        {
+          "component": "drift_engine",
+          "id": "D17",
+          "observable_failure": "An observed route not owned by routecp is incorrectly scheduled for deletion.",
+          "partial_fix_trap": "Destination overlap is not sufficient ownership evidence.",
+          "root_cause": "C6_DRIFT_RECONCILIATION"
+        },
+        {
+          "component": "drift_engine",
+          "id": "D18",
+          "observable_failure": "Reconcile acts on an observed snapshot older than the latest successful apply.",
+          "partial_fix_trap": "Timestamp comparison alone is unsafe under deterministic clocks/restarts.",
+          "root_cause": "C6_DRIFT_RECONCILIATION"
+        },
+        {
+          "component": "rollout_engine",
+          "id": "D19",
+          "observable_failure": "A failed canary wave still allows the next wave to advance.",
+          "partial_fix_trap": "Checking aggregate success percentage can mask protected canary failure.",
+          "root_cause": "C7_FLEET_ROLLOUT"
+        },
+        {
+          "component": "rollout_engine",
+          "id": "D20",
+          "observable_failure": "Retrying a rollout re-applies nodes already confirmed at the target revision.",
+          "partial_fix_trap": "Skipping successful node IDs without checking revision identity mishandles later rollouts.",
+          "root_cause": "C7_FLEET_ROLLOUT"
+        },
+        {
+          "component": "rollout_engine",
+          "id": "D21",
+          "observable_failure": "Node offline during apply is recorded as success after stale heartbeat reuse.",
+          "partial_fix_trap": "A recent health timestamp does not prove transaction completion.",
+          "root_cause": "C7_FLEET_ROLLOUT"
+        },
+        {
+          "component": "ansible_role",
+          "id": "D22",
+          "observable_failure": "Ansible rerun rewrites unchanged config and restarts the service every time.",
+          "partial_fix_trap": "Suppressing restart handler while config remains unstable hides real changes.",
+          "root_cause": "C8_DEPLOYMENT_AND_UI_CONCURRENCY"
+        },
+        {
+          "component": "ansible_role",
+          "id": "D23",
+          "observable_failure": "Host-specific protected routes are overwritten by group defaults instead of merged deterministically.",
+          "partial_fix_trap": "Simple list concatenation creates duplicates and unstable ordering.",
+          "root_cause": "C8_DEPLOYMENT_AND_UI_CONCURRENCY"
+        },
+        {
+          "component": "frontend",
+          "id": "D24",
+          "observable_failure": "Dashboard submits a mutation from a stale revision without compare-and-swap and silently overwrites a newer operator change.",
+          "partial_fix_trap": "Refreshing after submit detects conflict too late.",
+          "root_cause": "C8_DEPLOYMENT_AND_UI_CONCURRENCY"
+        }
+      ],
+      "organic_f2p_surface_assessment": {
+        "assessment": "SUFFICIENT",
+        "planned_f2p": 28,
+        "planned_p2p": 8,
+        "rationale": "The manifestations arise from eight coupled root causes and yield distinct safety, transaction, recovery, fleet, automation and UI behaviors without parameter splitting."
+      },
+      "profile": "large_system_strict",
+      "root_cause_clusters": {
+        "C1_ROUTE_IDENTITY_NORMALIZATION": {
+          "summary": "Route and next-hop identity is compared using non-canonical raw values, breaking duplicate detection and semantic no-op handling."
+        },
+        "C2_POLICY_RULE_DEPENDENCY": {
+          "summary": "Rule priorities and table dependencies are not validated as one coherent policy graph."
+        },
+        "C3_REVISION_TRANSACTION_FENCING": {
+          "summary": "Revision planning/apply paths do not consistently enforce CAS, idempotency and atomic publication."
+        },
+        "C4_MANAGEMENT_SAFETY": {
+          "summary": "Protected management reachability is checked locally rather than against the post-change effective routing graph."
+        },
+        "C5_APPLY_ROLLBACK_RECOVERY": {
+          "summary": "Per-node apply transactions and rollback do not preserve complete last-known-good state across failures/restart."
+        },
+        "C6_DRIFT_RECONCILIATION": {
+          "summary": "Observed-vs-desired comparison loses normalization, ownership and stale-snapshot boundaries."
+        },
+        "C7_FLEET_ROLLOUT": {
+          "summary": "Wave rollout state and failure isolation allow later waves or retries to act on stale/incomplete node outcomes."
+        },
+        "C8_DEPLOYMENT_AND_UI_CONCURRENCY": {
+          "summary": "Ansible variable projection and dashboard mutations lack stable idempotent/concurrency contracts."
+        }
+      }
+    },
+    "record_id": "rec_36c66de42f230d6d7f7a4390ee31cc255c293b68bb6a16f2038b9fb11873b5ba",
+    "role_id": "A3_DEFECT_TOPOLOGY_DESIGNER",
+    "schema_version": "1.0",
+    "stage_id": "DEFECT_TOPOLOGY",
+    "status": "DESIGN_READY",
+    "task_lineage": {
+      "input_task_commit": "22d2e9e09f4deb58029559fe9a0863c2e032f25c",
+      "output_task_commit": "22d2e9e09f4deb58029559fe9a0863c2e032f25c",
+      "task_changed": false
+    },
+    "transition": {
+      "action": "ADVANCE",
+      "requires_state_validation": false,
+      "target": "ENVIRONMENT_BUILD",
+      "target_kind": "STAGE"
+    },
+    "validation": {
+      "acceptance_predicates_satisfied": true,
+      "evidence_binding_satisfied": true,
+      "evidence_refs_count": 0,
+      "invocation_identity_valid": true,
+      "invocation_policy_valid": true,
+      "output_keys_valid": true,
+      "required_outputs_satisfied": true,
+      "retrieval_context_authorized": true,
+      "status_legal": true,
+      "task_commit_change_authorized": true,
+      "task_lineage_valid": true
+    }
+  },
+  "remediation_updates": [],
+  "state": {
+    "control_plane_commit": "df7ef7569e2947b9f0bf7cf89ed4dec6c2a5a1fe",
+    "derived_from": {
+      "freshness_overlay_hash": null,
+      "record_ids": [
+        "rec_0063a542c294be525bb67870f587e700ad6edb8814a0df2ce3e88d842e11b6af",
+        "rec_36c66de42f230d6d7f7a4390ee31cc255c293b68bb6a16f2038b9fb11873b5ba",
+        "rec_4c76440851534db3977dfcda2ecdb109993be37d3f40ef1ca1f9a6f7551e9a4d",
+        "rec_dd47d0a5d4c98ceadd4ca3289787f6c44282581cd92a45f3a40fa1897f2b2f31"
+      ]
+    },
+    "ledger_event_count": 13,
+    "ledger_head_event_id": "evt_70282066def2dae95108da0d861c6d2cb40598acbe060158cb87fd895b5c096d",
+    "lineage": {
+      "bootstrap_task_commit": "22d2e9e09f4deb58029559fe9a0863c2e032f25c",
+      "current_task_commit": "22d2e9e09f4deb58029559fe9a0863c2e032f25c",
+      "recorded_task_commit": "22d2e9e09f4deb58029559fe9a0863c2e032f25c",
+      "status": "CURRENT"
+    },
+    "next": {
+      "action": "INVOKE_STAGE",
+      "optional_inputs": [
+        "DOMAIN_FIXTURE_PLAN"
+      ],
+      "owner": "A2 System Architect / Environment Builder",
+      "primary_role_id": "A2_ENVIRONMENT_BUILDER",
+      "required_inputs": [
+        "CLEAN_SYSTEM_ARCHITECTURE",
+        "CREATION_RULE_CONTEXT",
+        "DEFECT_TOPOLOGY",
+        "SOLVER_VISIBLE_DOC_PLAN"
+      ],
+      "stage_id": "ENVIRONMENT_BUILD"
+    },
+    "nodes": [
+      {
+        "disposition": "ADVANCE",
+        "input_task_commit": "22d2e9e09f4deb58029559fe9a0863c2e032f25c",
+        "invocation_id": "inv_912b2a08d97f2f5b418ca32433a21b19bd842adc0412b83b20ae57ff75f50f92",
+        "ledger_event_id": "evt_ef3152ebaad5bba4af52e76bd1f3efc02080cafa778abf0f2b62302b8963f9cb",
+        "node_id": "RULE_RESOLUTION",
+        "node_kind": "STAGE",
+        "output_task_commit": "22d2e9e09f4deb58029559fe9a0863c2e032f25c",
+        "reason": "validated ADVANCE record reaches WORK_PACKAGE_RESEARCH",
+        "record_id": "rec_0063a542c294be525bb67870f587e700ad6edb8814a0df2ce3e88d842e11b6af",
+        "status": "CURRENT"
+      },
+      {
+        "disposition": "ADVANCE",
+        "input_task_commit": "22d2e9e09f4deb58029559fe9a0863c2e032f25c",
+        "invocation_id": "inv_d3e9453b089efbc83a409fe768d745b18f76fe4ac9daac43f35615519f6f05a0",
+        "ledger_event_id": "evt_a167d16be1b2932e5979089d157da3e99c28254780e845f73b5eb7efd346d043",
+        "node_id": "WORK_PACKAGE_RESEARCH",
+        "node_kind": "STAGE",
+        "output_task_commit": "22d2e9e09f4deb58029559fe9a0863c2e032f25c",
+        "reason": "validated ADVANCE record reaches SYSTEM_ARCHITECTURE",
+        "record_id": "rec_dd47d0a5d4c98ceadd4ca3289787f6c44282581cd92a45f3a40fa1897f2b2f31",
+        "status": "CURRENT"
+      },
+      {
+        "disposition": "ADVANCE",
+        "input_task_commit": "22d2e9e09f4deb58029559fe9a0863c2e032f25c",
+        "invocation_id": "inv_7de636befbe5e531e589237026cbcee84ff10294c5b34cf9afb441d1d0dd2632",
+        "ledger_event_id": "evt_420abcd33312bb2e1e13985d88b3905dd1abecc44a2ffdacde6e95699641d6e4",
+        "node_id": "SYSTEM_ARCHITECTURE",
+        "node_kind": "STAGE",
+        "output_task_commit": "22d2e9e09f4deb58029559fe9a0863c2e032f25c",
+        "reason": "validated ADVANCE record reaches DEFECT_TOPOLOGY",
+        "record_id": "rec_4c76440851534db3977dfcda2ecdb109993be37d3f40ef1ca1f9a6f7551e9a4d",
+        "status": "CURRENT"
+      },
+      {
+        "disposition": "ADVANCE",
+        "input_task_commit": "22d2e9e09f4deb58029559fe9a0863c2e032f25c",
+        "invocation_id": "inv_301221c8c260000ed45f685be4777b7eebc45d557cb00b13e65d54249cbc6c42",
+        "ledger_event_id": "evt_70282066def2dae95108da0d861c6d2cb40598acbe060158cb87fd895b5c096d",
+        "node_id": "DEFECT_TOPOLOGY",
+        "node_kind": "STAGE",
+        "output_task_commit": "22d2e9e09f4deb58029559fe9a0863c2e032f25c",
+        "reason": "validated ADVANCE record reaches ENVIRONMENT_BUILD",
+        "record_id": "rec_36c66de42f230d6d7f7a4390ee31cc255c293b68bb6a16f2038b9fb11873b5ba",
+        "status": "CURRENT"
+      },
+      {
+        "input_task_commit": "22d2e9e09f4deb58029559fe9a0863c2e032f25c",
+        "invocation_id": "inv_9055de1d213b288beaa9a5e1855e3f2edca8e7687b6701d2c29b6ebf8b2692e7",
+        "ledger_event_id": "evt_eadf5b71ca8bf0b93d57025ca345d0d42471fe06e6d8f66f819e0818f58a7599",
+        "node_id": "ENVIRONMENT_BUILD",
+        "node_kind": "STAGE",
+        "output_task_commit": "22d2e9e09f4deb58029559fe9a0863c2e032f25c",
+        "reason": "latest execution record predates the latest current predecessor execution; the downstream stage must be rerun even when task/control commits are unchanged",
+        "record_id": "rec_9cedd1766844e63c29ed4381df48acc7ce941aaf790d03e1c16d052c149dfea0",
+        "status": "STALE"
+      },
+      {
+        "input_task_commit": "22d2e9e09f4deb58029559fe9a0863c2e032f25c",
+        "invocation_id": "inv_366d270f9ffd52c9735eafb93fc40759c2040b3d67d227a66f6e14e2f4c919dd",
+        "ledger_event_id": "evt_2adf1016e5cb4a0c17eece4769750e8615e4f51cc64d7cd24acf2ca5a6624941",
+        "node_id": "REFERENCE_SOLUTION",
+        "node_kind": "STAGE",
+        "output_task_commit": "22d2e9e09f4deb58029559fe9a0863c2e032f25c",
+        "reason": "upstream node ENVIRONMENT_BUILD is not current; later historical evidence cannot advance",
+        "record_id": "rec_1940efaaeece98905f689affa8e6abf66d414b97662c7b563a91a0a1f9ab79a0",
+        "status": "STALE"
+      },
+      {
+        "node_id": "VERIFIER_BUILD",
+        "node_kind": "STAGE",
+        "reason": "upstream node REFERENCE_SOLUTION is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "HUMAN_WRITING_RESEARCH",
+        "node_kind": "STAGE",
+        "reason": "upstream node VERIFIER_BUILD is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "INSTRUCTION_DRAFT",
+        "node_kind": "STAGE",
+        "reason": "upstream node HUMAN_WRITING_RESEARCH is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "SPEC_ALIGNMENT",
+        "node_kind": "STAGE",
+        "reason": "upstream node INSTRUCTION_DRAFT is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "DOCUMENTATION_DRAFT",
+        "node_kind": "STAGE",
+        "reason": "upstream node SPEC_ALIGNMENT is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "FORMAT_GATE",
+        "node_kind": "STAGE",
+        "reason": "upstream node DOCUMENTATION_DRAFT is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "ASSEMBLY",
+        "node_kind": "STAGE",
+        "reason": "upstream node FORMAT_GATE is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "COMPLEXITY_GATE",
+        "node_kind": "STAGE",
+        "reason": "upstream node ASSEMBLY is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "RUNTIME_AUTHENTICITY",
+        "node_kind": "STAGE",
+        "reason": "upstream node COMPLEXITY_GATE is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "DETERMINISTIC_VALIDATION",
+        "node_kind": "STAGE",
+        "reason": "upstream node RUNTIME_AUTHENTICITY is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "FROZEN_CANDIDATE",
+        "node_kind": "STATE",
+        "reason": "state cannot be current while its predecessor chain is non-current",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "QUALITY_INTERLOCK",
+        "node_kind": "STAGE",
+        "reason": "upstream node FROZEN_CANDIDATE is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "PRE_LLMAJ",
+        "node_kind": "STAGE",
+        "reason": "upstream node QUALITY_INTERLOCK is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "MODEL_DIAGNOSTIC_GPT",
+        "node_kind": "STAGE",
+        "reason": "upstream node PRE_LLMAJ is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "MODEL_DIAGNOSTIC_CLAUDE",
+        "node_kind": "STAGE",
+        "reason": "upstream node MODEL_DIAGNOSTIC_GPT is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "MODEL_DIAGNOSTIC_AGGREGATE",
+        "node_kind": "STAGE",
+        "reason": "upstream node MODEL_DIAGNOSTIC_CLAUDE is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "HARBOR_LLMAJ",
+        "node_kind": "STAGE",
+        "reason": "upstream node MODEL_DIAGNOSTIC_AGGREGATE is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "OFFICIAL_MODEL_TRIALS",
+        "node_kind": "STAGE",
+        "reason": "upstream node HARBOR_LLMAJ is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "TRIAL_ANALYSIS",
+        "node_kind": "STAGE",
+        "reason": "upstream node OFFICIAL_MODEL_TRIALS is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "DIFFICULTY_ASSESSMENT",
+        "node_kind": "STAGE",
+        "reason": "upstream node TRIAL_ANALYSIS is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "FINAL_REVIEW",
+        "node_kind": "STAGE",
+        "reason": "upstream node DIFFICULTY_ASSESSMENT is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "SUBMISSION_READY",
+        "node_kind": "STAGE",
+        "reason": "upstream node FINAL_REVIEW is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      }
+    ],
+    "schema_version": "1.0",
+    "state_snapshot_id": "state_4ffdbfbfa42c7898b0734888a69898913f9d83a485c7eaf93b7c503ccd3b0393",
+    "summary": {
+      "BLOCKED": 0,
+      "CURRENT": 4,
+      "MISSING": 22,
+      "STALE": 2
+    },
+    "task_commit": "22d2e9e09f4deb58029559fe9a0863c2e032f25c",
+    "task_id": "route-control-plane"
+  }
+}
