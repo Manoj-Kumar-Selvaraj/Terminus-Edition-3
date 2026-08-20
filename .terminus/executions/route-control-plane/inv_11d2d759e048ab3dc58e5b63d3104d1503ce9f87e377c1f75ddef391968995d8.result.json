@@ -1,0 +1,186 @@
+{
+  "authority": {
+    "control_plane_commit": "df7ef7569e2947b9f0bf7cf89ed4dec6c2a5a1fe",
+    "policy_versions": {},
+    "task_commit": "22d2e9e09f4deb58029559fe9a0863c2e032f25c",
+    "task_id": "route-control-plane"
+  },
+  "disposition": "ADVANCE",
+  "evidence_refs": [],
+  "invocation_id": "inv_11d2d759e048ab3dc58e5b63d3104d1503ce9f87e377c1f75ddef391968995d8",
+  "invocation_snapshot": {
+    "acceptance_predicates": {},
+    "authority": {
+      "control_plane_commit": "df7ef7569e2947b9f0bf7cf89ed4dec6c2a5a1fe",
+      "policy_versions": {},
+      "task_commit": "22d2e9e09f4deb58029559fe9a0863c2e032f25c",
+      "task_id": "route-control-plane"
+    },
+    "evidence": {
+      "authorized_evidence_classes": [
+        "CI_RUNTIME_EVIDENCE",
+        "CONTROL_PLANE_POLICY",
+        "PUBLIC_REFERENCE",
+        "SOLUTION_ORACLE",
+        "SOLVER_VISIBLE_TASK"
+      ],
+      "evidence_required": [
+        "implementation evidence",
+        "verification evidence",
+        "no benchmark framing/leakage"
+      ],
+      "excluded_evidence_classes": [
+        "CURRENT_REVIEW_PACKET",
+        "DURABLE_SESSION_STATE",
+        "FINAL_PACKAGE_EVIDENCE",
+        "MODEL_TRIAL_EVIDENCE",
+        "PRIOR_REVIEW_RESULTS",
+        "PRIVATE_CREATION_DESIGN",
+        "VERIFIER_PRIVATE"
+      ],
+      "mandatory_exact_reads": [
+        ".terminus/agents/CREATION_PIPELINE.md",
+        ".terminus/agents/CREATOR_PROMPTS.md",
+        ".terminus/agents/PROMPTS.md"
+      ],
+      "retrieval_mode": "FILTERED_HYBRID"
+    },
+    "ignored_input_count": 0,
+    "inputs": {
+      "optional": {},
+      "required": {
+        "APPROVED_WORK_PACKAGE": {
+          "ENGINEERING_OBJECTIVE": "Build a production-style Go route control plane that models desired route and policy state, reconciles it across a multi-node Linux fleet, detects drift, protects management reachability, records revision history, and exposes the same lifecycle through an operator dashboard and Ansible-driven installation/configuration.",
+          "REQUIRED_END_STATE": "Canonical route/rule desired state, revision-fenced preview/apply/rollback, failure-safe persistence/restart, fresh ownership-aware reconciliation, safe canary/wave fleet rollout, idempotent Ansible convergence with host/protected route precedence, dashboard compare-and-swap mutation safety, and preserved public Go API/runtime surfaces without host-network mutation."
+        },
+        "IMPLEMENTATION_EVIDENCE": {
+          "PRESERVED_BEHAVIOR": "The inherited Go service, HTTP API, dashboard, Ansible deployment surface, deterministic routing model, audit ordering and build/runtime entrypoints remain available; task code does not mutate the host network.",
+          "REFERENCE_SOLUTION_STATUS": "IMPLEMENTED",
+          "RESTORED_INVARIANTS": [
+            "canonical IPv4/IPv6 route and policy-rule identities with valid table dependencies",
+            "revision-fenced preview/apply/rollback with idempotent retry safety",
+            "failure-safe durable desired/observed/transaction state across restart",
+            "fresh observation and ownership-aware drift reconciliation",
+            "canary and wave rollout safety with already-current retry avoidance",
+            "management reachability protection",
+            "Ansible host/protected route precedence",
+            "dashboard apply bound to exact preview revision",
+            "preserved public API/build/runtime surface"
+          ]
+        },
+        "VERIFICATION_EVIDENCE": {
+          "EMPIRICAL_STATUS": "Final runtime/oracle success remains owned by DETERMINISTIC_VALIDATION; earlier CI failures were preflight format failures and are not treated as runtime acceptance evidence.",
+          "F2P_COUNT": 25,
+          "P2P_COUNT": 4,
+          "SPEC_ALIGNMENT": {
+            "Q1_STATUS": "NO_GAP",
+            "Q2_STATUS": "COVERED",
+            "Q3_STATUS": "CLEAR"
+          },
+          "VERIFIER_STATUS": "VERIFIER_READY"
+        }
+      }
+    },
+    "invocation_id": "inv_11d2d759e048ab3dc58e5b63d3104d1503ce9f87e377c1f75ddef391968995d8",
+    "learning": {
+      "context_hash": "sha256:bb84a513aa2b6e4374d691759c4a6edf94169f479f4611e9091643b9f279ccfc",
+      "lessons": [],
+      "mode": "GENERALIZED_LESSONS_PLUS_OWNED_REMEDIATIONS",
+      "raw_feedback_exposed": false,
+      "raw_historical_findings_exposed": false,
+      "registry_heads": {
+        "feedback": "GENESIS",
+        "findings": "GENESIS",
+        "lessons": "GENESIS",
+        "patterns": "GENESIS",
+        "remediations": "GENESIS"
+      },
+      "remediations": []
+    },
+    "missing_required_inputs": [],
+    "output_contract": {
+      "allowed_status_values": [
+        "DOCUMENTATION_READY",
+        "REWRITE_REQUIRED",
+        "BLOCKED"
+      ],
+      "deterministic_validators": [],
+      "optional_fields": [],
+      "persisted_artifacts": [
+        "<task>/README.md"
+      ],
+      "required_fields": [
+        "README_PATH",
+        "DIFFICULTY_EXPLANATION",
+        "SOLUTION_EXPLANATION",
+        "VERIFICATION_EXPLANATION"
+      ],
+      "semantic_reviewers": [
+        "Engineering Documentation Reviewer",
+        "Human Quality Reviewer"
+      ]
+    },
+    "readiness": "READY",
+    "retrieval": {
+      "query": null,
+      "retrieved_chars": 0,
+      "retrieved_context": [],
+      "status": "NOT_REQUESTED"
+    },
+    "routing": {
+      "failure_routes": {
+        "LEAKAGE_OR_SYNTHETIC_PROSE": "A8 Documentation Writer / Human Quality Reviewer",
+        "UNSUPPORTED_CLAIM": "A8 Documentation Writer"
+      },
+      "stale_on": [
+        "implementation evidence change",
+        "verification evidence change",
+        "material task-description change"
+      ],
+      "success_transition": "FORMAT_GATE"
+    },
+    "schema_version": "1.0",
+    "stage": {
+      "lifecycle": "creation",
+      "owner": "A8 Documentation Writer",
+      "role_class": "PRODUCER",
+      "role_id": "A8_DOCUMENTATION_WRITER",
+      "stage_id": "DOCUMENTATION_DRAFT"
+    }
+  },
+  "outputs": {
+    "DIFFICULTY_EXPLANATION": "The system couples canonical route/rule identity, revision-fenced transactional desired state, management reachability safety, persistent recovery, fresh ownership-aware reconciliation, fleet rollout policy, Ansible convergence, dashboard concurrency and stable audit/API behavior across multiple operational surfaces.",
+    "README_PATH": "route-control-plane/README.md",
+    "SOLUTION_EXPLANATION": "The reference completion restores canonical networking identities, fenced and idempotent transactions, failure-safe persistence/restart, owned drift reconciliation, safe rollout behavior, management-route protection, host-aware Ansible precedence and dashboard compare-and-swap semantics while preserving the public runtime interfaces and isolated routing model.",
+    "VERIFICATION_EXPLANATION": "The verifier contains 25 fail-to-pass behavioral cases and 4 preservation cases spanning identity, policy validation, transaction fencing, recovery, drift ownership, rollout, Ansible behavior, dashboard concurrency, public interfaces and verifier independence. Final Oracle/NOP/runtime acceptance remains owned by DETERMINISTIC_VALIDATION."
+  },
+  "record_id": "rec_41ed22b5f5fb4a9f5047ac32c7fa09e94b4af5b4e607d90ae90028c14a6c2c09",
+  "role_id": "A8_DOCUMENTATION_WRITER",
+  "schema_version": "1.0",
+  "stage_id": "DOCUMENTATION_DRAFT",
+  "status": "DOCUMENTATION_READY",
+  "task_lineage": {
+    "input_task_commit": "22d2e9e09f4deb58029559fe9a0863c2e032f25c",
+    "output_task_commit": "22d2e9e09f4deb58029559fe9a0863c2e032f25c",
+    "task_changed": false
+  },
+  "transition": {
+    "action": "ADVANCE",
+    "requires_state_validation": false,
+    "target": "FORMAT_GATE",
+    "target_kind": "STAGE"
+  },
+  "validation": {
+    "acceptance_predicates_satisfied": true,
+    "evidence_binding_satisfied": true,
+    "evidence_refs_count": 0,
+    "invocation_identity_valid": true,
+    "invocation_policy_valid": true,
+    "output_keys_valid": true,
+    "required_outputs_satisfied": true,
+    "retrieval_context_authorized": true,
+    "status_legal": true,
+    "task_commit_change_authorized": true,
+    "task_lineage_valid": true
+  }
+}
