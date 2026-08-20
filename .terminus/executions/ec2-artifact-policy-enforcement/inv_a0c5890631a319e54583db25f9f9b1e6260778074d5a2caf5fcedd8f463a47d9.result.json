@@ -1,0 +1,269 @@
+{
+  "authority": {
+    "control_plane_commit": "67b805a297ac005ee08e82facc533f53a3233192",
+    "policy_versions": {},
+    "task_commit": "0ad08868799c19ea2e02458bd2fc92ec64eaa288",
+    "task_id": "ec2-artifact-policy-enforcement"
+  },
+  "disposition": "ADVANCE",
+  "evidence_refs": [
+    {
+      "content_hash": "sha256:a1385e62584e08355e26fc6ac5ed82f10a4ab2ceb6081c309eae7f766ef77f03",
+      "kind": "COMMIT",
+      "ref": "commit:0ad08868799c19ea2e02458bd2fc92ec64eaa288"
+    },
+    {
+      "content_hash": "sha256:fca3ef4b283f1a1fe2aa6d960cd36a17b7232eb0b7a130f9cc8d43d948d6ec42",
+      "kind": "COMMIT",
+      "ref": "commit:67b805a297ac005ee08e82facc533f53a3233192"
+    }
+  ],
+  "invocation_id": "inv_a0c5890631a319e54583db25f9f9b1e6260778074d5a2caf5fcedd8f463a47d9",
+  "invocation_snapshot": {
+    "acceptance_predicates": {},
+    "authority": {
+      "control_plane_commit": "67b805a297ac005ee08e82facc533f53a3233192",
+      "policy_versions": {},
+      "task_commit": "0ad08868799c19ea2e02458bd2fc92ec64eaa288",
+      "task_id": "ec2-artifact-policy-enforcement"
+    },
+    "evidence": {
+      "authorized_evidence_classes": [
+        "CI_RUNTIME_EVIDENCE",
+        "CONTROL_PLANE_POLICY",
+        "PRIVATE_CREATION_DESIGN",
+        "SOLVER_VISIBLE_TASK",
+        "VERIFIER_PRIVATE"
+      ],
+      "evidence_required": [
+        "removal/reachability analysis",
+        "scale authenticity",
+        "test organicity",
+        "behavioral breadth"
+      ],
+      "excluded_evidence_classes": [
+        "CURRENT_REVIEW_PACKET",
+        "DURABLE_SESSION_STATE",
+        "FINAL_PACKAGE_EVIDENCE",
+        "MODEL_TRIAL_EVIDENCE",
+        "PRIOR_REVIEW_RESULTS",
+        "PUBLIC_REFERENCE",
+        "SOLUTION_ORACLE"
+      ],
+      "mandatory_exact_reads": [
+        ".terminus/agents/CREATION_PIPELINE.md",
+        ".terminus/agents/PRODUCTION_AUTHENTICITY.md",
+        ".terminus/agents/CREATOR_PROMPTS.md"
+      ],
+      "retrieval_mode": "EXACT_ONLY"
+    },
+    "ignored_input_count": 0,
+    "inputs": {
+      "optional": {},
+      "required": {
+        "DEFECT_GRAPH": {
+          "causal_edges": 37,
+          "clusters": [
+            "canonical identity",
+            "evidence freshness",
+            "exception ordering/scope",
+            "permit authentication/scope",
+            "audit durability",
+            "recovery/concurrency"
+          ],
+          "connected_manifestations": 26,
+          "cross_cluster_pairs": 11,
+          "defect_manifestations": 26,
+          "profile": "large_system_strict",
+          "root_cause_clusters": 6
+        },
+        "ENVIRONMENT_TREE": {
+          "entrypoints": [
+            "artifactguard evaluate",
+            "artifactguard verify-permit"
+          ],
+          "major_components": [
+            "cmd/artifactguard",
+            "internal/core",
+            "internal/platform identity/policy",
+            "scanner/cache",
+            "exceptions",
+            "permit/replay",
+            "audit/state/recovery",
+            "package/container/dependency control catalogs"
+          ],
+          "root": "ec2-artifact-policy-enforcement/environment/enforcer"
+        },
+        "INSTRUCTION": "Security reproduced inconsistent acquisition decisions in `/app/enforcer`: an `apt` request was allowed without current scanner evidence, direct `dpkg` and Maven paths skipped source policy, a moved container tag reused an older clean result, an expired exception still applied, permit scope could be altered, and deny history disappeared after restart. Repair the gate so package, container, and dependency acquisition share one policy boundary. Use `/app/enforcer/notes/oncall.md` for the observed symptoms and `/app/enforcer/docs/policy-contract.md`, `/app/enforcer/docs/state-format.md`, and `/app/enforcer/docs/operations.md` for the governing contracts.\n\nKeep the existing `artifactguard evaluate` and `artifactguard verify-permit` interfaces and documented exit behavior, keep cache and exceptions operational, do not rewrite the supplied policy/scanner/exception fixtures, and preserve existing audit history. Trusted-source and required immutable-digest checks must apply before exceptions; scanner or cache evidence must be current for the artifact and active policy/scanner revisions and fail closed when unavailable or stale. Exceptions may waive only the vulnerability threshold within their exact current scope. Permits must be secret-keyed, unexpired, bound to the exact request/instance/artifact/policy decision, and single-use across restart and concurrent verification. Every ALLOW or DENY must be durably journaled before completion, with recovery preserving valid history and keeping the latest-decision projection consistent.\n",
+        "PRODUCTION_CHARACTERISTIC_EVIDENCE": [
+          "one Go admission runtime spans OS packages, OCI containers and build dependencies",
+          "stable public evaluate/verify-permit CLI with durable caller-provided state",
+          "versioned source/digest policy and reusable vulnerability evidence cache",
+          "scoped exceptions, keyed permits, replay ledger and append-only decision audit",
+          "manager/surface/environment control catalogs rather than one-off fixtures",
+          "deterministic local scanner/policy/exception fixtures without required network dependency"
+        ],
+        "RUNTIME_REACHABILITY_EVIDENCE": [
+          "evaluate reaches normalization, canonical identity/source/digest prerequisites, scanner/cache, exception, permit, projection and audit paths",
+          "verify-permit reaches authentication, exact scope, expiry and optional durable replay state",
+          "package/container/dependency catalog modules are reached through live ApplicableRules selection"
+        ],
+        "SUBSTANTIVE_LOC_REPORT": {
+          "largest_reachable_modules": [
+            "catalog_package.go:1203",
+            "catalog_dependency.go:1003",
+            "catalog_container.go:803",
+            "cmd/artifactguard/main.go:153",
+            "platform/types.go:112",
+            "platform/engine.go:96"
+          ],
+          "substantive_loc": 4096,
+          "validator": ".terminus/validate_task_complexity.py"
+        },
+        "TEST_CLASSIFICATION_MAP": {
+          "F2P_BY_REQUIREMENT": {
+            "REQ_AUDIT_RECOVERY": 5,
+            "REQ_EVIDENCE_CACHE": 7,
+            "REQ_EXCEPTION_SCOPE": 5,
+            "REQ_PERMIT_AUTH_REPLAY": 6,
+            "REQ_SOURCE_DIGEST": 4
+          },
+          "F2P_COUNT": 27,
+          "P2P_COUNT": 9,
+          "P2P_SCOPE": "healthy allow/deny, exact exception, current cache, stateless permit compatibility and fixture preservation",
+          "requirements": 6
+        }
+      }
+    },
+    "invocation_id": "inv_a0c5890631a319e54583db25f9f9b1e6260778074d5a2caf5fcedd8f463a47d9",
+    "learning": {
+      "context_hash": "sha256:bb84a513aa2b6e4374d691759c4a6edf94169f479f4611e9091643b9f279ccfc",
+      "lessons": [],
+      "mode": "GENERALIZED_LESSONS_PLUS_OWNED_REMEDIATIONS",
+      "raw_feedback_exposed": false,
+      "raw_historical_findings_exposed": false,
+      "registry_heads": {
+        "feedback": "GENESIS",
+        "findings": "GENESIS",
+        "lessons": "GENESIS",
+        "patterns": "GENESIS",
+        "remediations": "GENESIS"
+      },
+      "remediations": []
+    },
+    "missing_required_inputs": [],
+    "output_contract": {
+      "allowed_status_values": [
+        "PASS",
+        "REVISE",
+        "SCENARIO_TOO_SMALL"
+      ],
+      "deterministic_validators": [
+        ".terminus/validate_task_complexity.py <task>"
+      ],
+      "optional_fields": [
+        "MEANINGFUL_RESOURCE_COUNT"
+      ],
+      "persisted_artifacts": [],
+      "required_fields": [
+        "SUBSTANTIVE_LOC",
+        "REACHABLE_PRODUCTION_LOC",
+        "PRODUCTION_CHARACTERISTICS",
+        "DEFECT_MANIFESTATIONS",
+        "CONNECTED_MANIFESTATIONS",
+        "ROOT_CAUSE_CLUSTERS",
+        "F2P_COUNT",
+        "P2P_COUNT",
+        "F2P_ORGANICITY",
+        "EDGE_BOUNDARY_COVERAGE",
+        "NEGATIVE_FAILURE_COVERAGE",
+        "PADDING_RISK",
+        "TEST_DUPLICATION_RISK",
+        "INSTRUCTION_CHECKLIST_RISK",
+        "REQUIRED_CHANGES"
+      ],
+      "semantic_reviewers": []
+    },
+    "readiness": "READY",
+    "retrieval": {
+      "query": null,
+      "retrieved_chars": 0,
+      "retrieved_context": [],
+      "status": "NOT_REQUESTED"
+    },
+    "routing": {
+      "failure_routes": {
+        "REVISE": "smallest responsible producer",
+        "SCENARIO_TOO_SMALL": "Creation Controller -> WORK_PACKAGE_RESEARCH"
+      },
+      "stale_on": [
+        "solver-visible environment change",
+        "defect-graph change",
+        "verifier/test-map change",
+        "instruction change affecting complexity claims"
+      ],
+      "success_transition": "RUNTIME_AUTHENTICITY"
+    },
+    "schema_version": "1.0",
+    "stage": {
+      "lifecycle": "creation",
+      "owner": "A10 Complexity Governor",
+      "role_class": "REVIEWER",
+      "role_id": "A10_COMPLEXITY_GOVERNOR",
+      "stage_id": "COMPLEXITY_GATE"
+    }
+  },
+  "outputs": {
+    "CONNECTED_MANIFESTATIONS": 26,
+    "DEFECT_MANIFESTATIONS": 26,
+    "EDGE_BOUNDARY_COVERAGE": "PASS: digest mutation, revisions, TTL/expiry, scope mismatches, restart, concurrent replay, audit corruption and idempotent retry are covered.",
+    "F2P_COUNT": 27,
+    "F2P_ORGANICITY": "PASS: cases represent separate policy, freshness, scope, replay, durability and recovery transitions rather than parameter-renamed copies.",
+    "INSTRUCTION_CHECKLIST_RISK": "LOW: the two-paragraph engineering request groups invariants by operational policy rather than enumerating verifier cases.",
+    "NEGATIVE_FAILURE_COVERAGE": "PASS: fail-closed source/digest/scanner/exception/permit/audit failure modes are represented.",
+    "P2P_COUNT": 9,
+    "PADDING_RISK": "LOW: high LOC concentration is in live manager control catalogs and policy runtime reached from public commands; no dead filler is required to satisfy scale.",
+    "PRODUCTION_CHARACTERISTICS": [
+      "shared package/container/dependency admission runtime",
+      "durable security state",
+      "versioned policy/evidence cache",
+      "exact-scope exceptions/permits",
+      "restart/concurrency recovery",
+      "stable operational CLI"
+    ],
+    "REACHABLE_PRODUCTION_LOC": 4096,
+    "REQUIRED_CHANGES": [],
+    "ROOT_CAUSE_CLUSTERS": 6,
+    "SUBSTANTIVE_LOC": 4096,
+    "TEST_DUPLICATION_RISK": "LOW: 27 F2P probes map to distinct observable transitions across five coupled families; 9 P2P cases protect different preserved behaviors."
+  },
+  "record_id": "rec_995f93a405a382756d3d228d4aeb93547577dc425ebfe141e201962b0a6771a8",
+  "role_id": "A10_COMPLEXITY_GOVERNOR",
+  "schema_version": "1.0",
+  "stage_id": "COMPLEXITY_GATE",
+  "status": "PASS",
+  "task_lineage": {
+    "input_task_commit": "0ad08868799c19ea2e02458bd2fc92ec64eaa288",
+    "output_task_commit": "0ad08868799c19ea2e02458bd2fc92ec64eaa288",
+    "task_changed": false
+  },
+  "transition": {
+    "action": "ADVANCE",
+    "requires_state_validation": false,
+    "target": "RUNTIME_AUTHENTICITY",
+    "target_kind": "STAGE"
+  },
+  "validation": {
+    "acceptance_predicates_satisfied": true,
+    "evidence_binding_satisfied": true,
+    "evidence_refs_count": 2,
+    "invocation_identity_valid": true,
+    "invocation_policy_valid": true,
+    "output_keys_valid": true,
+    "required_outputs_satisfied": true,
+    "retrieval_context_authorized": true,
+    "status_legal": true,
+    "task_commit_change_authorized": true,
+    "task_lineage_valid": true
+  }
+}

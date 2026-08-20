@@ -1,0 +1,330 @@
+{
+  "authority": {
+    "control_plane_commit": "67b805a297ac005ee08e82facc533f53a3233192",
+    "policy_versions": {},
+    "task_commit": "0ad08868799c19ea2e02458bd2fc92ec64eaa288",
+    "task_id": "ec2-artifact-policy-enforcement"
+  },
+  "disposition": "ADVANCE",
+  "evidence_refs": [
+    {
+      "content_hash": "sha256:a1385e62584e08355e26fc6ac5ed82f10a4ab2ceb6081c309eae7f766ef77f03",
+      "kind": "COMMIT",
+      "ref": "commit:0ad08868799c19ea2e02458bd2fc92ec64eaa288"
+    },
+    {
+      "content_hash": "sha256:fca3ef4b283f1a1fe2aa6d960cd36a17b7232eb0b7a130f9cc8d43d948d6ec42",
+      "kind": "COMMIT",
+      "ref": "commit:67b805a297ac005ee08e82facc533f53a3233192"
+    }
+  ],
+  "invocation_id": "inv_138388f649fc4cc8d78d36c6bc39961f777b191b59b2106a0e31c41422213ca4",
+  "invocation_snapshot": {
+    "acceptance_predicates": {},
+    "authority": {
+      "control_plane_commit": "67b805a297ac005ee08e82facc533f53a3233192",
+      "policy_versions": {},
+      "task_commit": "0ad08868799c19ea2e02458bd2fc92ec64eaa288",
+      "task_id": "ec2-artifact-policy-enforcement"
+    },
+    "evidence": {
+      "authorized_evidence_classes": [
+        "CI_RUNTIME_EVIDENCE",
+        "CONTROL_PLANE_POLICY",
+        "DURABLE_SESSION_STATE",
+        "PRIVATE_CREATION_DESIGN",
+        "SOLUTION_ORACLE",
+        "SOLVER_VISIBLE_TASK",
+        "VERIFIER_PRIVATE"
+      ],
+      "evidence_required": [
+        "assembled task structure",
+        "assembly-local static/lint evidence",
+        "instruction/docs boundary",
+        "leakage/package checks",
+        "evidence prepared for later complexity/runtime/deterministic gates"
+      ],
+      "excluded_evidence_classes": [
+        "CURRENT_REVIEW_PACKET",
+        "FINAL_PACKAGE_EVIDENCE",
+        "MODEL_TRIAL_EVIDENCE",
+        "PRIOR_REVIEW_RESULTS",
+        "PUBLIC_REFERENCE"
+      ],
+      "mandatory_exact_reads": [
+        ".terminus/agents/CREATION_PIPELINE.md",
+        ".terminus/agents/PRODUCTION_AUTHENTICITY.md",
+        ".terminus/agents/A9_ASSEMBLY_PROMPT.md"
+      ],
+      "retrieval_mode": "EXACT_ONLY"
+    },
+    "ignored_input_count": 0,
+    "inputs": {
+      "optional": {
+        "PRIVATE_DEFECT_GRAPH": {
+          "causal_edges": 37,
+          "connected_manifestations": 26,
+          "cross_cluster_pairs": 11,
+          "manifestations": 26,
+          "root_cause_clusters": 6
+        },
+        "PRIVATE_TEST_MAP": {
+          "classification": "27 F2P + 9 P2P",
+          "empirical_status": "runtime/oracle deferred to DETERMINISTIC_VALIDATION"
+        }
+      },
+      "required": {
+        "CURRENT_ORACLE": {
+          "empirical_oracle_status": "not yet re-earned; mandatory DETERMINISTIC_VALIDATION remains downstream",
+          "entrypoint": "ec2-artifact-policy-enforcement/solution/solve.sh",
+          "restored_invariants": [
+            "uniform source/digest prerequisites across package/container/dependency managers",
+            "current scanner evidence and digest/policy/DB/TTL-bound cache reuse",
+            "exact current vulnerability exceptions that cannot bypass prerequisites",
+            "secret-keyed exact-scope permits with optional durable single-use replay enforcement",
+            "durable ALLOW/DENY journal before derived projection",
+            "restart/concurrency-safe recovery, replay and idempotent retry"
+          ],
+          "solution_tree": "ec2-artifact-policy-enforcement/solution/files/",
+          "status": "IMPLEMENTED",
+          "task_commit": "0ad08868799c19ea2e02458bd2fc92ec64eaa288"
+        },
+        "CURRENT_TASK": {
+          "acquisition_surfaces": [
+            "package",
+            "container",
+            "dependency"
+          ],
+          "durable_state": [
+            "cache",
+            "audit journal",
+            "last-decision projection",
+            "permit replay consumption"
+          ],
+          "environment_root": "ec2-artifact-policy-enforcement/environment/enforcer",
+          "instruction_path": "ec2-artifact-policy-enforcement/instruction.md",
+          "language_runtime": "Go policy enforcement runtime",
+          "root": "ec2-artifact-policy-enforcement",
+          "runtime_artifact": "/app/enforcer",
+          "substantive_loc": 4096,
+          "task_commit": "0ad08868799c19ea2e02458bd2fc92ec64eaa288",
+          "top_level": [
+            ".gitattributes",
+            "README.md",
+            "environment/",
+            "instruction.md",
+            "solution/",
+            "task.toml",
+            "tests/"
+          ]
+        },
+        "CURRENT_VERIFIER": {
+          "F2P_COUNT": 27,
+          "P2P_COUNT": 9,
+          "edge_boundary_coverage": [
+            "manager bypass and missing digest",
+            "scanner DB/policy/TTL/digest cache invalidation",
+            "exception expiry/scope/prerequisite ordering",
+            "permit secret/instance/restart/concurrent replay",
+            "audit unterminated-tail/corruption/idempotent retry"
+          ],
+          "negative_failure_coverage": [
+            "untrusted source",
+            "missing digest",
+            "scanner unavailable/stale/corrupt evidence",
+            "wrong/expired exception",
+            "permit tamper/scope/replay",
+            "corrupt audit history"
+          ],
+          "requirement_families": [
+            "source/digest policy",
+            "scanner/cache freshness",
+            "vulnerability exception scope",
+            "permit authentication/replay",
+            "audit durability/recovery",
+            "preservation/CLI compatibility"
+          ],
+          "status": "VERIFIER_READY",
+          "test_independence": "public CLI/output/durable-state assertions; no solution import or private implementation dependency"
+        },
+        "FORMAT_STATUS": {
+          "checks": "task metadata, public network mode, canonical agent image/tooling, verifier artifact parent, dockerignore, isolation and instruction paths pass",
+          "repair_recorded": true,
+          "status": "FORMAT_PASS",
+          "task_commit": "0ad08868799c19ea2e02458bd2fc92ec64eaa288"
+        },
+        "SPEC_ALIGNMENT_STATUS": {
+          "Q1_STATUS": "NO_GAP",
+          "Q2_STATUS": "COVERED",
+          "Q3_STATUS": "CLEAR",
+          "status": "ALIGNED"
+        }
+      }
+    },
+    "invocation_id": "inv_138388f649fc4cc8d78d36c6bc39961f777b191b59b2106a0e31c41422213ca4",
+    "learning": {
+      "context_hash": "sha256:bb84a513aa2b6e4374d691759c4a6edf94169f479f4611e9091643b9f279ccfc",
+      "lessons": [],
+      "mode": "GENERALIZED_LESSONS_PLUS_OWNED_REMEDIATIONS",
+      "raw_feedback_exposed": false,
+      "raw_historical_findings_exposed": false,
+      "registry_heads": {
+        "feedback": "GENESIS",
+        "findings": "GENESIS",
+        "lessons": "GENESIS",
+        "patterns": "GENESIS",
+        "remediations": "GENESIS"
+      },
+      "remediations": []
+    },
+    "missing_required_inputs": [],
+    "output_contract": {
+      "allowed_status_values": [
+        "ASSEMBLED",
+        "RETURN_TO_PRODUCER",
+        "BLOCKED"
+      ],
+      "deterministic_validators": [
+        "task structure/static/lint checks",
+        "leakage/package checks"
+      ],
+      "optional_fields": [],
+      "persisted_artifacts": [],
+      "required_fields": [
+        "TASK_COMMIT",
+        "STRUCTURE",
+        "INSTRUCTION_SHAPE",
+        "INSTRUCTION_REQUIREMENT_COMPLETENESS",
+        "INSTRUCTION_DOC_BOUNDARY",
+        "SUBSTANTIVE_REACHABLE_LOC_EVIDENCE",
+        "PRODUCTION_CHARACTERISTIC_EVIDENCE",
+        "F2P_ORGANICITY_EVIDENCE",
+        "EDGE_BOUNDARY_COVERAGE_EVIDENCE",
+        "NEGATIVE_FAILURE_COVERAGE_EVIDENCE",
+        "LEAKAGE_CHECK",
+        "STATIC_CHECKS",
+        "NEXT_GATE"
+      ],
+      "semantic_reviewers": []
+    },
+    "readiness": "READY",
+    "retrieval": {
+      "query": null,
+      "retrieved_chars": 0,
+      "retrieved_context": [],
+      "status": "NOT_REQUESTED"
+    },
+    "routing": {
+      "failure_routes": {
+        "ARCHITECTURE_EVIDENCE_GAP": "A2 System Architect / Environment Builder",
+        "FORMAT_FAILURE": "Q7 Task Format Enforcer",
+        "LEAKAGE_FAILURE": "A9 Task Assembly Agent / responsible producer",
+        "SPEC_ALIGNMENT_FAILURE": "Q1/Q2/Q3",
+        "STRUCTURE_OR_STATIC_FAILURE": "A9 Task Assembly Agent / Q7 Task Format Enforcer as evidence indicates"
+      },
+      "stale_on": [
+        "task artifact change",
+        "solution change",
+        "verifier change",
+        "policy/validator change"
+      ],
+      "success_transition": "COMPLEXITY_GATE"
+    },
+    "schema_version": "1.0",
+    "stage": {
+      "lifecycle": "creation",
+      "owner": "A9 Task Assembly Agent",
+      "role_class": "PRODUCER",
+      "role_id": "A9_TASK_ASSEMBLY_AGENT",
+      "stage_id": "ASSEMBLY"
+    }
+  },
+  "outputs": {
+    "EDGE_BOUNDARY_COVERAGE_EVIDENCE": [
+      "missing/mutable digest identity",
+      "policy/scanner revision and TTL boundaries",
+      "exception expiry/scope",
+      "permit expiry/instance/replay concurrency",
+      "audit tail/corruption/idempotent retry"
+    ],
+    "F2P_ORGANICITY_EVIDENCE": "27 F2P cases are distinct externally observable security/state transitions across five coupled repair families; 9 P2P cases protect preserved healthy behavior.",
+    "INSTRUCTION_DOC_BOUNDARY": "PASS: governing semantics are in solver-visible policy/state/operations docs; private defect/test/oracle evidence remains outside solver-facing material.",
+    "INSTRUCTION_REQUIREMENT_COMPLETENESS": "PASS: Q1 NO_GAP, Q2 COVERED and Q3 CLEAR across source/digest, evidence freshness, exception scope, permits/replay, audit/recovery and preservation.",
+    "INSTRUCTION_SHAPE": "PASS: direct EC2/platform-security repair request with absolute /app/enforcer and public contract references; no private test enumeration.",
+    "LEAKAGE_CHECK": "PASS: environment image excludes solution/tests; instruction/README expose no private defect IDs, hidden tests, oracle outcomes or model-trial evidence.",
+    "NEGATIVE_FAILURE_COVERAGE_EVIDENCE": [
+      "untrusted source",
+      "missing digest",
+      "scanner unavailable/stale/corrupt",
+      "wrong/expired exception",
+      "permit tamper/scope/replay",
+      "corrupt durable history"
+    ],
+    "NEXT_GATE": "COMPLEXITY_GATE",
+    "PRODUCTION_CHARACTERISTIC_EVIDENCE": [
+      "shared cross-manager admission policy",
+      "durable scanner/cache and decision state",
+      "scoped exceptions",
+      "secret-keyed permits with replay boundary",
+      "append-only audit and recovery",
+      "stable CLI and deterministic fixtures"
+    ],
+    "STATIC_CHECKS": "PASS: Q7 format checks and strict task-complexity validation are current; runtime/oracle is intentionally deferred to its registered checkpoint.",
+    "STRUCTURE": {
+      "acquisition_surfaces": 3,
+      "required_top_level": [
+        "task.toml",
+        "instruction.md",
+        "README.md",
+        "environment/",
+        "tests/",
+        "solution/"
+      ],
+      "runtime_artifact": "/app/enforcer",
+      "separate_verifier": true,
+      "task_root": "ec2-artifact-policy-enforcement"
+    },
+    "SUBSTANTIVE_REACHABLE_LOC_EVIDENCE": {
+      "major_components": [
+        "internal/core",
+        "internal/platform",
+        "package/container/dependency catalogs",
+        "scanner/cache",
+        "permit/replay",
+        "audit/state"
+      ],
+      "runtime_entrypoint": "environment/enforcer/cmd/artifactguard/main.go",
+      "substantive_loc": 4096
+    },
+    "TASK_COMMIT": "0ad08868799c19ea2e02458bd2fc92ec64eaa288"
+  },
+  "record_id": "rec_56d44d1c839cb2516dcb643c4e77b0c4c518e7fc2b79f68ed30cd98bfcffad1a",
+  "role_id": "A9_TASK_ASSEMBLY_AGENT",
+  "schema_version": "1.0",
+  "stage_id": "ASSEMBLY",
+  "status": "ASSEMBLED",
+  "task_lineage": {
+    "input_task_commit": "0ad08868799c19ea2e02458bd2fc92ec64eaa288",
+    "output_task_commit": "0ad08868799c19ea2e02458bd2fc92ec64eaa288",
+    "task_changed": false
+  },
+  "transition": {
+    "action": "ADVANCE",
+    "requires_state_validation": false,
+    "target": "COMPLEXITY_GATE",
+    "target_kind": "STAGE"
+  },
+  "validation": {
+    "acceptance_predicates_satisfied": true,
+    "evidence_binding_satisfied": true,
+    "evidence_refs_count": 2,
+    "invocation_identity_valid": true,
+    "invocation_policy_valid": true,
+    "output_keys_valid": true,
+    "required_outputs_satisfied": true,
+    "retrieval_context_authorized": true,
+    "status_legal": true,
+    "task_commit_change_authorized": true,
+    "task_lineage_valid": true
+  }
+}
