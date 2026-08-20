@@ -1,0 +1,18 @@
+{
+  "evidence_refs": [],
+  "invocation_id": "inv_962e0d5f06aa83cdd6c9b920924762b2f20d7018de0415b19838b8e2a733594c",
+  "output_task_commit": "9663e4da67ab20e6bd66b942ac54b57667408dd8",
+  "outputs": {
+    "CHECKS": [
+      "PASS: required top-level task layout is present.",
+      "PASS: task.toml declares Software/Systems advanced task, absolute artifact /app/edge-router, public network, separate verifier and bounded timeouts.",
+      "PASS: agent and verifier images use digest-pinned Go 1.24 base; agent image includes tmux/asciinema and no privileged/container-socket shortcut.",
+      "PASS: solver-facing instruction and README expose only public runtime/contracts and no solution/verifier-private internals.",
+      "PASS: solution remains isolated under solution/ and verifier remains isolated under tests/.",
+      "FIXED: tests/test.sh now captures pytest status, writes reward 1 only on success, and exits with the original pytest status rather than always returning success."
+    ],
+    "RERUN": "Q7 repair is confined to tests/test.sh exit-status propagation; downstream assembly/runtime/deterministic gates must validate the repaired descendant snapshot independently."
+  },
+  "schema_version": "1.0",
+  "status": "FIXED"
+}
