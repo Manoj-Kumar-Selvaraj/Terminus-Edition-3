@@ -57,7 +57,6 @@ def _capture(
     task_id: str = "risk-task",
     task_commit: str | None = None,
     accepted: list[str] | None = None,
-    authenticated: bool = True,
 ) -> dict[str, object]:
     commit = task_commit or _head()
     accepted_ids = accepted if accepted is not None else ["Q4-001", "Q4-002"]
@@ -83,11 +82,7 @@ def _capture(
         captured_at=captured_at,
         source_binding=None,
     )
-    receipt = (
-        sign_receipt("HUMAN_FEEDBACK", f"human:{producer}", claim)
-        if authenticated
-        else None
-    )
+    receipt = sign_receipt("HUMAN_FEEDBACK", f"human:{producer}", claim)
     return FeedbackIngestor(ROOT, store=store).capture(
         source_type="HUMAN_REVIEW",
         producer=producer,
@@ -108,6 +103,20 @@ def _envelope(event: dict[str, object]) -> dict[str, object]:
         "type": q4_human_risk.SATISFACTION_MODE,
         "feedback_id": event["feedback_id"],
     }
+
+
+class _OneEventFeedback:
+    def __init__(self, event: dict[str, object]):
+        self.event = event
+
+    def get_latest(self, identity_field: str, identity: str):
+        assert identity_field == "feedback_id"
+        return self.event if self.event.get("feedback_id") == identity else None
+
+
+class _OneEventStore:
+    def __init__(self, event: dict[str, object]):
+        self.feedback = _OneEventFeedback(event)
 
 
 def test_authenticated_human_risk_acceptance_validates(tmp_path: Path) -> None:
@@ -173,14 +182,16 @@ def test_wrong_category_or_incomplete_finding_set_is_rejected(tmp_path: Path) ->
 def test_unauthenticated_or_machine_authored_acceptance_is_rejected(
     tmp_path: Path,
 ) -> None:
-    store = _store(tmp_path)
-    asserted = _capture(store, authenticated=False)
+    asserted_store = _store(tmp_path)
+    asserted = copy.deepcopy(_capture(asserted_store))
+    asserted["provenance"]["trust_status"] = "HUMAN_ASSERTED"
+    direct_store = _OneEventStore(asserted)
     with pytest.raises(ValueError, match="not authoritative"):
         q4_human_risk.validate_human_risk_acceptance(
             ROOT,
             envelope=_envelope(asserted),
             q4_result=_q4(),
-            store=store,
+            store=direct_store,
         )
 
     machine_store = _store(tmp_path / "machine")
