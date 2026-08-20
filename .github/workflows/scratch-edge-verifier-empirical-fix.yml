@@ -1,0 +1,142 @@
+name: Scratch Edge Verifier Empirical Fix
+
+on:
+  push:
+    branches:
+      - 'scratch/edge-verifier-empirical-fix'
+    paths:
+      - '.terminus/scratch/edge-verifier-empirical-fix.trigger'
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Strengthen empirically weak verifier probes
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json, re
+          from pathlib import Path
+
+          path = Path('edge-router-runtime/tests/test_outputs.py')
+          text = path.read_text(encoding='utf-8')
+
+          replacements = {
+          'test_f2p_stale_revision_cannot_publish': '''def test_f2p_stale_revision_cannot_publish(tmp_path):
+              with running_backends(Backend("a")) as (a,):
+                  doc = document([endpoint(a.address)])
+                  with gateway(tmp_path, doc) as gw:
+                      assert submit(gw["admin"], "config", 4, doc)[0] == 200
+                      generation = current_generation(gw["admin"])
+                      bad = copy.deepcopy(doc)
+                      bad["routes"][0]["pool"] = "missing-pool"
+                      code, body, _ = submit(gw["admin"], "config", 5, bad)
+                      assert code == 409 and body["outcome"] == "rejected"
+                      code, body, _ = submit(gw["admin"], "config", 5, mutate_priority(doc, 102))
+                      assert code == 200 and body["outcome"] == "accepted"
+                      assert current_generation(gw["admin"]) == generation + 1
+                      code, body, _ = submit(gw["admin"], "config", 3, mutate_priority(doc, 103))
+                      assert code == 409 and body["outcome"] == "stale"
+                      assert current_generation(gw["admin"]) == generation + 1''',
+          'test_f2p_source_conflict_is_scoped_to_that_source': '''def test_f2p_source_conflict_is_scoped_to_that_source(tmp_path):
+              with running_backends(Backend("a")) as (a,):
+                  doc = document([endpoint(a.address)])
+                  with gateway(tmp_path, doc) as gw:
+                      assert submit(gw["admin"], "config", 9, doc)[0] == 200
+                      assert submit(gw["admin"], "discovery", 10, mutate_priority(doc, 106))[0] == 200
+                      generation = current_generation(gw["admin"])
+                      code, body, _ = submit(gw["admin"], "discovery", 10, mutate_priority(doc, 107))
+                      assert code == 409 and body["outcome"] == "conflict"
+                      assert current_generation(gw["admin"]) == generation
+                      assert accepted_revision(gw["admin"], "config") == 9
+                      assert accepted_revision(gw["admin"], "discovery") == 10
+                      assert submit(gw["admin"], "config", 10, mutate_priority(doc, 108))[0] == 200''',
+          'test_f2p_recovered_source_fence_rejects_older_revision': '''def test_f2p_recovered_source_fence_rejects_older_revision(tmp_path):
+              with running_backends(Backend("a")) as (a,):
+                  doc = document([endpoint(a.address)])
+                  state_dir = tmp_path / "durable"
+                  first = tmp_path / "first"
+                  first.mkdir()
+                  with gateway(first, doc, state_dir=state_dir) as gw:
+                      assert submit(gw["admin"], "config", 8, doc)[0] == 200
+                  second = tmp_path / "second"
+                  second.mkdir()
+                  with gateway(second, doc, state_dir=state_dir) as gw:
+                      code, body, _ = submit(gw["admin"], "config", 8, mutate_priority(doc, 110))
+                      assert code == 409 and body["outcome"] == "conflict"
+                      code, body, _ = submit(gw["admin"], "config", 7, mutate_priority(doc, 111))
+                      assert code == 409 and body["outcome"] == "stale"''',
+          'test_f2p_removed_endpoint_is_not_used_for_fresh_requests': '''def test_f2p_removed_endpoint_is_not_used_for_fresh_requests(tmp_path):
+              a = Backend("a", response_status=503)
+              b = Backend("b")
+              c = Backend("c")
+              with running_backends(a, b, c):
+                  a.block_path = "/api/hold"
+                  doc = document([endpoint(a.address), endpoint(b.address)])
+                  with gateway(tmp_path, doc) as gw:
+                      result: dict[str, tuple] = {}
+                      thread = threading.Thread(
+                          target=lambda: result.setdefault("value", proxy(gw["public"], "/api/hold"))
+                      )
+                      thread.start()
+                      assert a.started.wait(timeout=3)
+                      changed = document([endpoint(c.address)])
+                      assert submit(gw["admin"], "config", 2, changed)[0] == 200
+                      assert backend_name(proxy(gw["public"], "/api/fresh")) == "c"
+                      a.release.set()
+                      thread.join(timeout=5)
+                      assert not thread.is_alive()
+                      assert backend_name(result["value"]) == "b"''',
+          }
+
+          for name, replacement in replacements.items():
+              pattern = rf'def {name}\(tmp_path\):\n.*?(?=\n\ndef |\Z)'
+              text, count = re.subn(pattern, replacement, text, count=1, flags=re.S)
+              if count != 1:
+                  raise SystemExit(f'failed to replace {name}: count={count}')
+
+          text = text.replace(
+              'def test_f2p_inflight_request_survives_unrelated_publication(tmp_path):',
+              'def test_p2p_inflight_request_survives_unrelated_publication(tmp_path):',
+              1,
+          )
+          text = text.replace(
+              'def test_f2p_missing_current_body_falls_back_to_retained_previous(tmp_path):',
+              'def test_p2p_missing_current_body_falls_back_to_retained_previous(tmp_path):',
+              1,
+          )
+          path.write_text(text, encoding='utf-8')
+
+          map_path = Path('.terminus/designs/edge-router-runtime-test-map.json')
+          payload = json.loads(map_path.read_text(encoding='utf-8'))
+          renames = {
+              'test_f2p_inflight_request_survives_unrelated_publication':
+                  'test_p2p_inflight_request_survives_unrelated_publication',
+              'test_f2p_missing_current_body_falls_back_to_retained_previous':
+                  'test_p2p_missing_current_body_falls_back_to_retained_previous',
+          }
+          for row in payload['tests']:
+              if row[0] in renames:
+                  row[0] = renames[row[0]]
+                  row[1] = 'P2P'
+          map_path.write_text(json.dumps(payload, indent=2) + '\n', encoding='utf-8')
+          PY
+          python3 -m py_compile edge-router-runtime/tests/test_outputs.py
+          python3 .terminus/validate_task_complexity.py edge-router-runtime
+      - name: Commit repaired verifier on scratch branch
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'terminus-verifier-repair[bot]'
+          git config user.email 'terminus-verifier-repair[bot]@users.noreply.github.com'
+          git add -- edge-router-runtime/tests/test_outputs.py .terminus/designs/edge-router-runtime-test-map.json
+          git diff --cached --check
+          git commit -m 'Repair edge-router empirical verifier classification'
+          git push origin HEAD:scratch/edge-verifier-empirical-fix
