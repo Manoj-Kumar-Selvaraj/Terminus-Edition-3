@@ -1,0 +1,34 @@
+name: Terminus Task Export Bridge
+
+on:
+  push:
+    branches:
+      - 'terminus-quality-dispatch/**'
+    paths:
+      - '.terminus/task-export-requests/*.json'
+
+permissions:
+  contents: read
+
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Export exact task from canonical main
+        shell: bash
+        run: |
+          set -euo pipefail
+          req="$(git diff-tree --no-commit-id --name-only -r "$GITHUB_SHA" -- '.terminus/task-export-requests/*.json')"
+          [[ -n "$req" && "$(printf '%s\n' "$req" | wc -l)" -eq 1 ]] || exit 1
+          task="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["task_id"])' "$req")"
+          git fetch origin main
+          git checkout --detach origin/main
+          tar -czf "$RUNNER_TEMP/$task.tgz" "$task"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: edge-router-runtime-task-export-${{ github.run_id }}
+          path: ${{ runner.temp }}/edge-router-runtime.tgz
+          if-no-files-found: error
