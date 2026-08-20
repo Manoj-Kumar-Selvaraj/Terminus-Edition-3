@@ -1,0 +1,283 @@
+{
+  "authority": {
+    "control_plane_commit": "4cc1f68cb57b284c4817e3f354ea6eb74c5f717d",
+    "policy_versions": {},
+    "task_commit": "8836f886d7cfc7f2747264026da31d1dfa49c658",
+    "task_id": "ec2-artifact-policy-enforcement"
+  },
+  "disposition": "ADVANCE",
+  "evidence_refs": [
+    {
+      "content_hash": "sha256:c949a75a93f4636d770dd6cb82318c90d98b3fb0fb1d16d3d8b2e6c4d50a86fc",
+      "kind": "COMMIT",
+      "ref": "commit:8836f886d7cfc7f2747264026da31d1dfa49c658"
+    },
+    {
+      "content_hash": "sha256:ed5990238b212bd16e28ea8955e272cd66c8043e1026f4fe3d0ccd6c430f49a6",
+      "kind": "COMMIT",
+      "ref": "commit:4cc1f68cb57b284c4817e3f354ea6eb74c5f717d"
+    }
+  ],
+  "invocation_id": "inv_0eeee2de6e34ef805db0061533bba9518f6c79becc8975efba9425828e4c063c",
+  "invocation_snapshot": {
+    "acceptance_predicates": {},
+    "authority": {
+      "control_plane_commit": "4cc1f68cb57b284c4817e3f354ea6eb74c5f717d",
+      "policy_versions": {},
+      "task_commit": "8836f886d7cfc7f2747264026da31d1dfa49c658",
+      "task_id": "ec2-artifact-policy-enforcement"
+    },
+    "evidence": {
+      "authorized_evidence_classes": [
+        "CI_RUNTIME_EVIDENCE",
+        "CONTROL_PLANE_POLICY",
+        "PRIVATE_CREATION_DESIGN",
+        "SOLVER_VISIBLE_TASK"
+      ],
+      "evidence_required": [
+        "requirement-to-test map",
+        "behavioral scenario families",
+        "F2P/P2P classification",
+        "test independence"
+      ],
+      "excluded_evidence_classes": [
+        "CURRENT_REVIEW_PACKET",
+        "DURABLE_SESSION_STATE",
+        "FINAL_PACKAGE_EVIDENCE",
+        "MODEL_TRIAL_EVIDENCE",
+        "PRIOR_REVIEW_RESULTS",
+        "PUBLIC_REFERENCE",
+        "SOLUTION_ORACLE",
+        "VERIFIER_PRIVATE"
+      ],
+      "mandatory_exact_reads": [
+        "TERMINUS_3_AI_INSTRUCTIONS.md",
+        ".terminus/agents/CREATION_PIPELINE.md",
+        ".terminus/agents/CREATOR_PROMPTS.md"
+      ],
+      "retrieval_mode": "FILTERED_HYBRID"
+    },
+    "ignored_input_count": 0,
+    "inputs": {
+      "optional": {},
+      "required": {
+        "BEHAVIORAL_SURFACES": {
+          "cross_component": [
+            "identity/cache/exception/permit/audit coupling"
+          ],
+          "edge_boundary": [
+            "digest mutation",
+            "policy/DB revision",
+            "TTL/exception/permit expiry"
+          ],
+          "failure_recovery": [
+            "restart replay",
+            "concurrent replay",
+            "deny durability",
+            "projection consistency",
+            "unterminated tail",
+            "interior audit corruption",
+            "identical retry"
+          ],
+          "negative_rejection": [
+            "manager source bypass",
+            "missing digest",
+            "scanner unavailable/stale",
+            "wrong-scope exception",
+            "permit secret/instance mismatch",
+            "replay",
+            "corrupt evidence"
+          ],
+          "normal": [
+            "trusted clean package/container",
+            "exact current exception",
+            "ordinary deny",
+            "stateless valid/invalid permit",
+            "current cache reuse",
+            "fixture immutability"
+          ]
+        },
+        "SOLVER_VISIBLE_CONTRACTS": [
+          "environment/enforcer/docs/policy-contract.md",
+          "environment/enforcer/docs/state-format.md",
+          "environment/enforcer/docs/operations.md",
+          "environment/enforcer/docs/architecture.md",
+          "environment/enforcer/notes/oncall.md"
+        ],
+        "SOLVER_VISIBLE_REQUIREMENTS": {
+          "objective": "Repair ArtifactGuard so package, container and dependency acquisitions share the same policy boundary.",
+          "requirements": {
+            "REQ_AUDIT_RECOVERY": "ALLOW/DENY are durably journaled before completion; valid history survives recovery, corruption fails closed and identical deterministic retries are idempotent.",
+            "REQ_EVIDENCE_CACHE": "Authorization requires current scanner evidence or exact digest/policy/DB/TTL cache evidence; stale/unavailable/corrupt evidence fails closed.",
+            "REQ_EXCEPTION_SCOPE": "Exceptions are unexpired exact digest/surface/environment/policy-code vulnerability waivers and cannot bypass prerequisites.",
+            "REQ_PERMIT_AUTH_REPLAY": "Permits are secret-keyed, exact request/instance/artifact/policy/expiry scope and single-use when replay state is enabled across restart/concurrency.",
+            "REQ_PRESERVATION": "CLI/exit behavior, cache/exceptions, shipped fixtures, stateless permit compatibility and existing audit history remain valid.",
+            "REQ_SOURCE_DIGEST": "All acquisition surfaces/managers enforce trusted source and immutable digest prerequisites before exceptions."
+          }
+        }
+      }
+    },
+    "invocation_id": "inv_0eeee2de6e34ef805db0061533bba9518f6c79becc8975efba9425828e4c063c",
+    "learning": {
+      "context_hash": "sha256:bb84a513aa2b6e4374d691759c4a6edf94169f479f4611e9091643b9f279ccfc",
+      "lessons": [],
+      "mode": "GENERALIZED_LESSONS_PLUS_OWNED_REMEDIATIONS",
+      "raw_feedback_exposed": false,
+      "raw_historical_findings_exposed": false,
+      "registry_heads": {
+        "feedback": "GENESIS",
+        "findings": "GENESIS",
+        "lessons": "GENESIS",
+        "patterns": "GENESIS",
+        "remediations": "GENESIS"
+      },
+      "remediations": []
+    },
+    "missing_required_inputs": [],
+    "output_contract": {
+      "allowed_status_values": [
+        "VERIFIER_READY",
+        "REQUIREMENT_GAP",
+        "SCENARIO_TOO_SMALL",
+        "BLOCKED"
+      ],
+      "deterministic_validators": [
+        "verifier lint/static checks",
+        ".terminus/validate_task_complexity.py <task>"
+      ],
+      "optional_fields": [
+        "STARTER_EMPIRICAL_STATUS",
+        "ORACLE_EMPIRICAL_STATUS",
+        "SOLVER_LOGIC_REIMPLEMENTATION_RISK"
+      ],
+      "persisted_artifacts": [
+        "<task>/tests/",
+        ".terminus/designs/<task>-test-map.json"
+      ],
+      "required_fields": [
+        "REQUIREMENT_TEST_MATRIX",
+        "F2P_COUNT",
+        "P2P_COUNT",
+        "EDGE_BOUNDARY_COVERAGE",
+        "NEGATIVE_FAILURE_COVERAGE",
+        "ORGANIC_COUNT_JUSTIFICATION",
+        "TEST_INDEPENDENCE"
+      ],
+      "semantic_reviewers": [
+        "Q2 Verifier Coverage Repairer",
+        "Verifier Engineer"
+      ]
+    },
+    "readiness": "READY",
+    "retrieval": {
+      "query": null,
+      "retrieved_chars": 0,
+      "retrieved_context": [],
+      "status": "NOT_REQUESTED"
+    },
+    "routing": {
+      "failure_routes": {
+        "DUPLICATE_OR_WEAK_TEST": "A5 Verifier Author / Q2 Verifier Coverage Repairer",
+        "REQUIREMENT_GAP": "Q1 Spec Gap Repairer / contract owner",
+        "SCENARIO_TOO_SMALL": "Creation Controller -> WORK_PACKAGE_RESEARCH"
+      },
+      "stale_on": [
+        "solver-visible requirement change",
+        "referenced contract change",
+        "behavioral surface change",
+        "verifier change"
+      ],
+      "success_transition": "HUMAN_WRITING_RESEARCH"
+    },
+    "schema_version": "1.0",
+    "stage": {
+      "lifecycle": "creation",
+      "owner": "A5 Verifier Author",
+      "role_class": "PRODUCER",
+      "role_id": "A5_VERIFIER_AUTHOR",
+      "stage_id": "VERIFIER_BUILD"
+    }
+  },
+  "outputs": {
+    "EDGE_BOUNDARY_COVERAGE": [
+      "manager bypass and missing digest",
+      "scanner DB/policy/TTL/digest cache invalidation",
+      "exception expiry/scope/prerequisite ordering",
+      "permit secret/instance/restart/concurrent replay",
+      "audit tail/corruption/idempotent retry"
+    ],
+    "F2P_COUNT": 27,
+    "NEGATIVE_FAILURE_COVERAGE": [
+      "untrusted source",
+      "missing digest",
+      "scanner unavailable/stale",
+      "wrong/expired exception",
+      "permit tamper/scope/replay",
+      "corrupt cache/audit"
+    ],
+    "ORACLE_EMPIRICAL_STATUS": "Deferred to mandatory downstream deterministic Oracle/NOP/runtime checkpoint.",
+    "ORGANIC_COUNT_JUSTIFICATION": "The 27 F2P cases exercise distinct externally observable security/state transitions across five coupled requirement families rather than fixture renames; 9 P2P cases preserve healthy allow/deny, exact exception, permit compatibility, cache reuse and immutable fixtures.",
+    "P2P_COUNT": 9,
+    "REQUIREMENT_TEST_MATRIX": {
+      "REQ_AUDIT_RECOVERY": {
+        "F2P": 5,
+        "coverage": "COMPLETE"
+      },
+      "REQ_EVIDENCE_CACHE": {
+        "F2P": 7,
+        "P2P": 1,
+        "coverage": "COMPLETE"
+      },
+      "REQ_EXCEPTION_SCOPE": {
+        "F2P": 5,
+        "P2P": 1,
+        "coverage": "COMPLETE"
+      },
+      "REQ_PERMIT_AUTH_REPLAY": {
+        "F2P": 6,
+        "P2P": 3,
+        "coverage": "COMPLETE"
+      },
+      "REQ_PRESERVATION": {
+        "P2P": 9,
+        "coverage": "COMPLETE"
+      },
+      "REQ_SOURCE_DIGEST": {
+        "F2P": 4,
+        "coverage": "COMPLETE"
+      }
+    },
+    "SOLVER_LOGIC_REIMPLEMENTATION_RISK": "LOW: verifier prepares requests/fixtures and inspects public output/durable state rather than duplicating the policy engine.",
+    "STARTER_EMPIRICAL_STATUS": "27/27 F2P fail on starter; 9/9 P2P pass; validate_task_complexity strict gate passes.",
+    "TEST_INDEPENDENCE": "Behavioral CLI/output/state assertions only; tests do not import solution code or require private implementation structure."
+  },
+  "record_id": "rec_8d637fa66bffbbfd4466fa17e5055a6b276daae0ba32ec7f1d567ea36cd67ab9",
+  "role_id": "A5_VERIFIER_AUTHOR",
+  "schema_version": "1.0",
+  "stage_id": "VERIFIER_BUILD",
+  "status": "VERIFIER_READY",
+  "task_lineage": {
+    "input_task_commit": "8836f886d7cfc7f2747264026da31d1dfa49c658",
+    "output_task_commit": "8836f886d7cfc7f2747264026da31d1dfa49c658",
+    "task_changed": false
+  },
+  "transition": {
+    "action": "ADVANCE",
+    "requires_state_validation": false,
+    "target": "HUMAN_WRITING_RESEARCH",
+    "target_kind": "STAGE"
+  },
+  "validation": {
+    "acceptance_predicates_satisfied": true,
+    "evidence_binding_satisfied": true,
+    "evidence_refs_count": 2,
+    "invocation_identity_valid": true,
+    "invocation_policy_valid": true,
+    "output_keys_valid": true,
+    "required_outputs_satisfied": true,
+    "retrieval_context_authorized": true,
+    "status_legal": true,
+    "task_commit_change_authorized": true,
+    "task_lineage_valid": true
+  }
+}
