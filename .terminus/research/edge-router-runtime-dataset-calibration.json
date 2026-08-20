@@ -1,9 +1,10 @@
 {
   "catalog_sha256": "e205f858f8391fd88d3e26665d2f585a69cd691321b9275644e631bb949f0942",
   "dataset_registry_sha256": "05ece08c27414d265a2a238928e4c664295434620ffe957c8e88b5050c54645a",
-  "domain": "terraform ansible provider platform cloud infrastructure linux managed resources lifecycle",
-  "domain_profile": "platform_cloud",
+  "domain": "go edge router platform cloud networking runtime reconciliation lifecycle",
+  "domain_profile": "compiler_runtime",
   "domain_profiles": [
+    "compiler_runtime",
     "platform_cloud"
   ],
   "domain_profiles_sha256": "9612d83a11558d9013a82362c7405c70ddb5158b582cc2f9859c8c672ad6c838",
@@ -11,10 +12,10 @@
     "status": "PASS",
     "writer_reviewer_seed_overlap": []
   },
-  "pair_id": "hwpair-10b175e4f6790ef2a1c7",
+  "pair_id": "hwpair-d4de9525bf679e07b8fb",
   "registry_sha256": "05ece08c27414d265a2a238928e4c664295434620ffe957c8e88b5050c54645a",
   "reviewer": {
-    "calibration_id": "hwcal-reviewer-371ad940915c17f33127",
+    "calibration_id": "hwcal-reviewer-724a689d239a9e88a8f1",
     "catalog_sha256": "e205f858f8391fd88d3e26665d2f585a69cd691321b9275644e631bb949f0942",
     "dataset_weights": {
       "code-review-bench-human-annotations": 0.05,
@@ -34,30 +35,48 @@
       "Use hard positives and hard negatives to avoid superficial banned-style heuristics.",
       "Treat Human-Like-DPO as anti-template contrast, never the target voice."
     ],
-    "domain": "terraform ansible provider platform cloud infrastructure linux managed resources lifecycle",
+    "domain": "go edge router platform cloud networking runtime reconciliation lifecycle",
     "domain_profile": {
       "artifact_types": [
-        "change_request",
-        "maintenance",
-        "incident"
+        "bug",
+        "regression",
+        "change_request"
       ],
-      "description": "Cloud/platform/IaC engineering changes.",
-      "id": "platform_cloud",
+      "description": "Compiler/runtime/build-system work.",
+      "id": "compiler_runtime",
       "match_tokens": [
-        "terraform",
-        "kubernetes",
-        "aws",
-        "azure",
-        "gcp",
-        "jenkins",
-        "devops",
-        "platform",
-        "infrastructure",
-        "cloud",
-        "helm"
+        "compiler",
+        "runtime",
+        "go",
+        "python",
+        "java",
+        "cobol",
+        "parser",
+        "build",
+        "linker"
       ]
     },
     "domain_profiles": [
+      {
+        "artifact_types": [
+          "bug",
+          "regression",
+          "change_request"
+        ],
+        "description": "Compiler/runtime/build-system work.",
+        "id": "compiler_runtime",
+        "match_tokens": [
+          "compiler",
+          "runtime",
+          "go",
+          "python",
+          "java",
+          "cobol",
+          "parser",
+          "build",
+          "linker"
+        ]
+      },
       {
         "artifact_types": [
           "change_request",
@@ -83,8 +102,9 @@
     ],
     "domain_profiles_sha256": "9612d83a11558d9013a82362c7405c70ddb5158b582cc2f9859c8c672ad6c838",
     "external_sampling": {
-      "domain_profile": "platform_cloud",
+      "domain_profile": "compiler_runtime",
       "domain_profiles": [
+        "compiler_runtime",
         "platform_cloud"
       ],
       "eligible_datasets": [
@@ -138,6 +158,8 @@
         }
       ],
       "preferred_artifact_types": [
+        "bug",
+        "regression",
         "change_request",
         "maintenance",
         "incident"
@@ -160,14 +182,14 @@
     },
     "local_seed_sample_ids": [
       "HC-027",
-      "HC-001",
       "HC-021",
       "HC-028",
       "HC-017",
       "HC-010",
-      "CP-002",
+      "HC-016",
       "CP-005",
       "CP-006",
+      "CP-001",
       "AT-002",
       "AT-004",
       "HP-002",
@@ -188,21 +210,6 @@
           "operator_voice",
           "minimal_environment_condition",
           "direct_outcome"
-        ],
-        "source_dataset": "terminus-human-engineering"
-      },
-      {
-        "domains": [
-          "go",
-          "runtime",
-          "build"
-        ],
-        "id": "HC-001",
-        "kind": "human_issue",
-        "signals": [
-          "incident_first",
-          "selective_context",
-          "uncertainty_separated_from_fact"
         ],
         "source_dataset": "terminus-human-engineering"
       },
@@ -268,16 +275,18 @@
       },
       {
         "domains": [
-          "python",
-          "requirements"
+          "grafana",
+          "configuration",
+          "routing"
         ],
-        "id": "CP-002",
-        "kind": "constraint_pair",
+        "id": "HC-016",
+        "kind": "human_issue",
         "signals": [
-          "chosen_rejected_comparison",
-          "explicit_constraint_check"
+          "topology_specific_reproduction",
+          "expected_ownership",
+          "implementation_neutral"
         ],
-        "source_dataset": "tulu3-constraint-preferences"
+        "source_dataset": "terminus-human-engineering"
       },
       {
         "domains": [
@@ -302,6 +311,19 @@
         "signals": [
           "preserve_rejection_and_authorization_constraints",
           "naturalness_never_weakens_safety"
+        ],
+        "source_dataset": "tulu3-constraint-preferences"
+      },
+      {
+        "domains": [
+          "general",
+          "requirements"
+        ],
+        "id": "CP-001",
+        "kind": "constraint_pair",
+        "signals": [
+          "natural_rewrite_must_preserve_all_constraints",
+          "one_relaxed_constraint_can_invalidate_response"
         ],
         "source_dataset": "tulu3-constraint-preferences"
       },
@@ -387,12 +409,12 @@
     "schema_version": "1.2",
     "task_id": "edge-router-runtime"
   },
-  "reviewer_calibration_id": "hwcal-reviewer-371ad940915c17f33127",
+  "reviewer_calibration_id": "hwcal-reviewer-724a689d239a9e88a8f1",
   "schema_version": "1.2",
   "seed_catalog_sha256": "e205f858f8391fd88d3e26665d2f585a69cd691321b9275644e631bb949f0942",
   "task_id": "edge-router-runtime",
   "writer": {
-    "calibration_id": "hwcal-writer-4769ff6ada2238eb3978",
+    "calibration_id": "hwcal-writer-79c9343f9519cc15ec32",
     "catalog_sha256": "e205f858f8391fd88d3e26665d2f585a69cd691321b9275644e631bb949f0942",
     "dataset_weights": {
       "h4-stack-exchange-preferences": 0.5,
@@ -409,30 +431,48 @@
       "Draft from the approved solver-visible requirement contract only after calibration is complete.",
       "Use the writer pack only; do not read reviewer-only samples or verdicts."
     ],
-    "domain": "terraform ansible provider platform cloud infrastructure linux managed resources lifecycle",
+    "domain": "go edge router platform cloud networking runtime reconciliation lifecycle",
     "domain_profile": {
       "artifact_types": [
-        "change_request",
-        "maintenance",
-        "incident"
+        "bug",
+        "regression",
+        "change_request"
       ],
-      "description": "Cloud/platform/IaC engineering changes.",
-      "id": "platform_cloud",
+      "description": "Compiler/runtime/build-system work.",
+      "id": "compiler_runtime",
       "match_tokens": [
-        "terraform",
-        "kubernetes",
-        "aws",
-        "azure",
-        "gcp",
-        "jenkins",
-        "devops",
-        "platform",
-        "infrastructure",
-        "cloud",
-        "helm"
+        "compiler",
+        "runtime",
+        "go",
+        "python",
+        "java",
+        "cobol",
+        "parser",
+        "build",
+        "linker"
       ]
     },
     "domain_profiles": [
+      {
+        "artifact_types": [
+          "bug",
+          "regression",
+          "change_request"
+        ],
+        "description": "Compiler/runtime/build-system work.",
+        "id": "compiler_runtime",
+        "match_tokens": [
+          "compiler",
+          "runtime",
+          "go",
+          "python",
+          "java",
+          "cobol",
+          "parser",
+          "build",
+          "linker"
+        ]
+      },
       {
         "artifact_types": [
           "change_request",
@@ -458,8 +498,9 @@
     ],
     "domain_profiles_sha256": "9612d83a11558d9013a82362c7405c70ddb5158b582cc2f9859c8c672ad6c838",
     "external_sampling": {
-      "domain_profile": "platform_cloud",
+      "domain_profile": "compiler_runtime",
       "domain_profiles": [
+        "compiler_runtime",
         "platform_cloud"
       ],
       "eligible_datasets": [
@@ -501,6 +542,8 @@
         }
       ],
       "preferred_artifact_types": [
+        "bug",
+        "regression",
         "change_request",
         "maintenance",
         "incident"
@@ -522,17 +565,32 @@
       }
     },
     "local_seed_sample_ids": [
+      "HC-001",
       "HC-007",
       "HC-009",
-      "HC-004",
-      "HC-005",
+      "HC-030",
       "HC-008",
       "HC-024",
+      "CP-002",
       "CP-004",
-      "CP-003",
       "AT-006"
     ],
     "local_seed_samples": [
+      {
+        "domains": [
+          "go",
+          "runtime",
+          "build"
+        ],
+        "id": "HC-001",
+        "kind": "human_issue",
+        "signals": [
+          "incident_first",
+          "selective_context",
+          "uncertainty_separated_from_fact"
+        ],
+        "source_dataset": "terminus-human-engineering"
+      },
       {
         "domains": [
           "terraform",
@@ -565,31 +623,16 @@
       },
       {
         "domains": [
-          "linux",
-          "systemd",
-          "operations"
+          "go",
+          "runtime",
+          "production"
         ],
-        "id": "HC-004",
+        "id": "HC-030",
         "kind": "human_issue",
         "signals": [
-          "operational_failure",
-          "environment_facts_separate",
-          "simple_end_state"
-        ],
-        "source_dataset": "terminus-human-engineering"
-      },
-      {
-        "domains": [
-          "linux",
-          "systemd",
-          "observability"
-        ],
-        "id": "HC-005",
-        "kind": "human_issue",
-        "signals": [
-          "output_driven",
-          "implementation_neutral",
-          "concrete_evidence"
+          "incomplete_evidence_acknowledged",
+          "provenance_context",
+          "non_artificial_confidence"
         ],
         "source_dataset": "terminus-human-engineering"
       },
@@ -625,6 +668,19 @@
       },
       {
         "domains": [
+          "python",
+          "requirements"
+        ],
+        "id": "CP-002",
+        "kind": "constraint_pair",
+        "signals": [
+          "chosen_rejected_comparison",
+          "explicit_constraint_check"
+        ],
+        "source_dataset": "tulu3-constraint-preferences"
+      },
+      {
+        "domains": [
           "operations",
           "requirements"
         ],
@@ -633,19 +689,6 @@
         "signals": [
           "preserve_ordering_and_state_constraints",
           "reject_semantically_incomplete_rewrite"
-        ],
-        "source_dataset": "tulu3-constraint-preferences"
-      },
-      {
-        "domains": [
-          "systems",
-          "requirements"
-        ],
-        "id": "CP-003",
-        "kind": "constraint_pair",
-        "signals": [
-          "completeness_over_brevity",
-          "style_cannot_erase_safety_constraint"
         ],
         "source_dataset": "tulu3-constraint-preferences"
       },
@@ -667,5 +710,5 @@
     "schema_version": "1.2",
     "task_id": "edge-router-runtime"
   },
-  "writer_calibration_id": "hwcal-writer-4769ff6ada2238eb3978"
+  "writer_calibration_id": "hwcal-writer-79c9343f9519cc15ec32"
 }
