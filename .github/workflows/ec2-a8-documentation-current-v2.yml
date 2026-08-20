@@ -1,0 +1,69 @@
+name: EC2 A8 Documentation Current Control V2
+
+on:
+  push:
+    branches:
+      - diagnostic/ec2-ledger-integrity-20260820
+    paths:
+      - .github/workflows/ec2-a8-documentation-current-v2.yml
+
+permissions:
+  contents: write
+
+env:
+  TASK: ec2-artifact-policy-enforcement
+  TASK_COMMIT: 8836f886d7cfc7f2747264026da31d1dfa49c658
+  CONTROL_COMMIT: 215cc70bcebcccc3c9a401af1b74a97d90026da3
+  EXPECTED_MAIN: 56d1d78d8d4a0aca43273d1168d56ab511ea8310
+  TASK_HASH: sha256:c949a75a93f4636d770dd6cb82318c90d98b3fb0fb1d16d3d8b2e6c4d50a86fc
+  CONTROL_HASH: sha256:334e6029ea34515d0f9364b213a51af19ed193f7c1c22cdf7b978781c2e856d7
+
+jobs:
+  a8:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Persist run locator
+        shell: bash
+        run: |
+          set -euo pipefail
+          p=".terminus/diagnostic-run-locators/ec2-a8-v2-${GITHUB_SHA}.json"
+          mkdir -p "$(dirname "$p")"
+          printf '{"run_id":%s,"run_attempt":%s,"event_sha":"%s","branch":"%s"}\n' "$GITHUB_RUN_ID" "$GITHUB_RUN_ATTEMPT" "$GITHUB_SHA" "$GITHUB_REF_NAME" > "$p"
+          git config user.name 'terminus-diagnostic-locator[bot]'
+          git config user.email 'terminus-diagnostic-locator[bot]@users.noreply.github.com'
+          git add -- "$p" && git commit -m "Track EC2 A8 V2 run $GITHUB_RUN_ID" && git push origin HEAD:"$GITHUB_REF_NAME"
+      - name: Execute A8 against canonical main
+        shell: bash
+        run: |
+          set -euo pipefail
+          work="$RUNNER_TEMP/ec2-a8-v2"; mkdir -p "$work"; echo "WORK=$work" >> "$GITHUB_ENV"
+          git fetch origin main
+          base="$(git rev-parse origin/main)"; echo "BASE=$base" >> "$GITHUB_ENV"
+          [[ "$base" == "$EXPECTED_MAIN" ]] || { echo "::error::main moved expected=$EXPECTED_MAIN current=$base"; exit 75; }
+          git checkout --detach "$base"
+          python3 .terminus/execution/controller_cli.py control-plane --head "$base" --output "$work/control.json"
+          [[ "$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["control_plane_commit"])' "$work/control.json")" == "$CONTROL_COMMIT" ]] || exit 75
+          git show "origin/diagnostic/ec2-ledger-integrity-20260820:.github/ec2_a8_current.py" > "$work/a8.py"
+          python3 "$work/a8.py" "$work"
+          git diff --check -- "$TASK/README.md"
+      - name: CAS-persist A8
+        shell: bash
+        run: |
+          set -euo pipefail
+          bad="$(git status --porcelain | awk '{print $2}' | grep -vE "^(${TASK}/README\.md|\.terminus/(executions|workflows)/${TASK}(/|$))" || true)"
+          [[ -z "$bad" ]] || { echo "::error::unexpected mutations: $bad"; exit 1; }
+          git config user.name 'terminus-ec2-a8[bot]'; git config user.email 'terminus-ec2-a8[bot]@users.noreply.github.com'
+          git add -- "$TASK/README.md" ".terminus/executions/$TASK"
+          git diff --cached --check && git commit -m "Write $TASK engineering documentation"
+          [[ "$(git ls-remote origin refs/heads/main | cut -f1)" == "$BASE" ]] || exit 75
+          git push origin HEAD:main
+      - name: Upload diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ec2-a8-v2-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ env.WORK }}
+          if-no-files-found: warn
