@@ -1,0 +1,64 @@
+{
+  "schema_version": "1.0",
+  "mode": "RECORD",
+  "task_id": "route-control-plane",
+  "task_commit": "22d2e9e09f4deb58029559fe9a0863c2e032f25c",
+  "control_plane_commit": "df7ef7569e2947b9f0bf7cf89ed4dec6c2a5a1fe",
+  "expected_repository_head": "525156a95c0a201905b7e7ac4f37cfaadd149ed9",
+  "stage_id": "FORMAT_GATE",
+  "inputs": {
+    "ACTIVE_FORMAT_VALIDATORS": [
+      "current Terminus task-format/packaging CI",
+      "task.toml structure and absolute artifact-path checks",
+      "digest/image and verifier-isolation checks",
+      "separate-verifier and reward-contract checks",
+      "solution/tests isolation checks",
+      "Q7 same-chat review"
+    ],
+    "CREATION_RULE_CONTEXT": {
+      "CONTROL_PLANE_COMMIT": "df7ef7569e2947b9f0bf7cf89ed4dec6c2a5a1fe",
+      "CREATION_PROFILE": "large_system_strict",
+      "KNOWN_POLICY_CONFLICTS": [],
+      "NETWORK_ENVIRONMENT_CONSTRAINTS": "repository-default network/environment constraints"
+    },
+    "CURRENT_TASK_TREE": {
+      "task_root": "route-control-plane",
+      "top_level": ["README.md","environment/","instruction.md","solution/","task.toml","tests/"],
+      "task_toml": {
+        "category": "Software",
+        "subcategory": "Systems",
+        "difficulty": "advanced",
+        "artifacts": ["/app/routecp"],
+        "verifier_environment_mode": "separate",
+        "verifier_timeout_sec": 2400,
+        "agent_timeout_sec": 7200,
+        "network_mode": "public",
+        "workdir": "/app/routecp"
+      },
+      "environment": {
+        "Dockerfile": "Go 1.24 runtime/solver image exposing /app/routecp source tree, Python, writable Go cache and routecp runtime",
+        ".dockerignore": "present and validated by deterministic task-package CI"
+      },
+      "instruction": "instruction.md is solver-facing route-control-plane engineering work without private verifier/defect topology leakage",
+      "readme": "engineering documentation for Go API, fleet routing, Ansible deployment and operator dashboard",
+      "solution": {"entrypoint": "solution/solve.sh"},
+      "tests": {"Dockerfile": "separate verifier environment", "test_sh": "deterministic pytest/Go verifier runner with reward contract"}
+    }
+  },
+  "result": {
+    "status": "FIXED",
+    "role_id": "Q7_TASK_FORMAT_ENFORCER",
+    "output_task_commit": "e459e99dc6cd9de8f17189e09b28e6f592e1968f",
+    "outputs": {
+      "CHECKS": [
+        "FIXED: added the required environment/.dockerignore and completed the package layout.",
+        "FIXED: runtime image now exposes /app/routecp source, Python and a writable Go cache while retaining verifier isolation.",
+        "PASS: task.toml declares the absolute /app/routecp artifact, public network mode, bounded timeouts and separate verifier environment.",
+        "PASS: README/instruction remain solver-facing engineering material without private defect-map or hidden-test leakage.",
+        "PASS: merged snapshot e459e99dc6cd9de8f17189e09b28e6f592e1968f passed deterministic CI run 32391489866 including preflight, verifier lint, complexity/authenticity, Oracle=1 and NOP=0."
+      ],
+      "RERUN": "Q7 repairs are materialized in merged task snapshot e459e99dc6cd9de8f17189e09b28e6f592e1968f; deterministic package validation is clean."
+    },
+    "evidence_refs": []
+  }
+}
