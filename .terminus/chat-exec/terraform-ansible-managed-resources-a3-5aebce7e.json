@@ -1,0 +1,31 @@
+{
+  "schema_version": "1.0",
+  "mode": "RECORD",
+  "task_id": "terraform-ansible-managed-resources",
+  "task_commit": "78ad422902b27dea954905130a1267b02cff3596",
+  "control_plane_commit": "5aebce7e213fa5f5864bdd741e6139d39bf5e059",
+  "expected_repository_head": "8ef1cd875dbd62cdd4b5947a529f90c176012e72",
+  "stage_id": "DEFECT_TOPOLOGY",
+  "inputs": {
+    "APPROVED_WORK_PACKAGE": {"ID":"MANAGED_RESOURCE_LIFECYCLE_COMPLETION","OBJECTIVE":"Complete the ten-resource ansibleops Terraform provider as a coherent managed-resource lifecycle/reconciliation system."},
+    "APPROVED_OPERATIONAL_REQUIREMENTS": ["stable external-object identity","Ansible-only create/update/delete mutation","native Linux side-effect-free read/refresh and drift reconciliation","state publication only after successful mutation and retry after failure","scoped ownership/deletion across the ten documented resource types","structured argv plus timeout/cancellation/temp cleanup","canonical normalization/idempotency"],
+    "CLEAN_SYSTEM_ARCHITECTURE": {
+      "COMPONENT_GRAPH": ["provider registration/configuration/runtime preflight","shared lifecycle identity/state transitions","Ansible task/playbook generation","structured runner","native Linux observation","normalization/validation","ten differentiated resource implementations"],
+      "RESOURCE_GRAPH": {"accounts":["user","group"],"content":["copy","template","line","block"],"filesystem":["file","directory","symlink"],"scheduler":["cron"]},
+      "STATE_MODEL": {"external_state":"filesystem/passwd/group/crontab external truth","identity":"documented external object key","mutation":"Ansible before state publication","observation":"native read only","terraform_state":"Terraform Core sole durable state authority"}
+    },
+    "CREATION_PROFILE": "large_system_strict"
+  },
+  "result": {
+    "status": "DESIGN_READY",
+    "outputs": {
+      "profile": "large_system_strict",
+      "root_cause_clusters": 6,
+      "defects": ["D01","D02","D03","D04","D05","D06","D07","D08","D09","D10","D11","D12","D13","D14","D15","D16","D17","D18","D19","D20","D21","D22","D23","D24"],
+      "causal_edges": ["D01->D09","D02->D21","D03->D07","D04->D11","D05->D13","D06->D21","D07->D14","D08->D23","D09->D10","D10->D13","D11->D04","D12->D15","D13->D16","D14->D17","D15->D12","D16->D24","D17->D18","D18->D19","D19->D10","D20->D01","D21->D22","D22->D11","D23->D08","D24->D16"],
+      "behavioral_surfaces": {"create_state":["mutation","stable identity","restart durability"],"refresh_drift":["side-effect-free native Read","missing/wrong-kind absence","external drift"],"update_transaction":["single update","failure-safe retry","source intent"],"delete_transaction":["scoped removal","failed delete remains managed","siblings preserved"],"runner_safety":["literal argv","non-zero/timeout/cancel failure","cleanup","no output persistence"],"idempotency":["canonical modes","unordered values","account groups","cron defaults"]},
+      "organic_f2p_surface_assessment": "PASS: current private topology remains connected across six root-cause clusters and yields lifecycle, drift, transaction, ownership, runner-safety and normalization failures without hidden solver knowledge."
+    },
+    "evidence_refs": []
+  }
+}
