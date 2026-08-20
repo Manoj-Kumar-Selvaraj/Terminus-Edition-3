@@ -15,13 +15,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-from .quality_execution_guard import (
-    ensure_review_output_unoccupied,
-    install_quality_execution_guards,
-)
-
-install_quality_execution_guards()
-
+from .quality_execution_guard import ensure_review_output_unoccupied
 from .quality_executor import (
     MAX_API_ROUNDS,
     Q4_ROLE,
