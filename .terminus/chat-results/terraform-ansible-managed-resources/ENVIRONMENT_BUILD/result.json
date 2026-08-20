@@ -4,23 +4,19 @@
       "content_hash": "sha256:104817a239b92de3e53f14d6bc0176563437894773e060648776dc09c6280374",
       "kind": "COMMIT",
       "ref": "commit:78ad422902b27dea954905130a1267b02cff3596"
-    },
-    {
-      "content_hash": "sha256:fca3ef4b283f1a1fe2aa6d960cd36a17b7232eb0b7a130f9cc8d43d948d6ec42",
-      "kind": "COMMIT",
-      "ref": "commit:67b805a297ac005ee08e82facc533f53a3233192"
     }
   ],
-  "invocation_id": "inv_a52f15d6f5c304e3235055760da5dac5369e99b10d0eb9d5bd9f627fe05a25b8",
+  "invocation_id": "inv_8ca749b98acbbdf595cc430d412d1813711ccf664643ed5029648f74e23c64cb",
   "output_task_commit": "78ad422902b27dea954905130a1267b02cff3596",
   "outputs": {
     "COMPONENT_GRAPH": [
       "provider registration/configuration/runtime preflight",
-      "shared lifecycle identity/state/normalization",
+      "shared lifecycle identity/state transitions",
       "Ansible task/playbook generation",
-      "process runner/timeout/cancellation/cleanup",
-      "native filesystem/content/account/cron observation",
-      "ten differentiated managed-resource implementations"
+      "structured runner",
+      "native Linux observation",
+      "normalization/validation",
+      "ten differentiated resource implementations"
     ],
     "ENTRYPOINTS": [
       "/app/provider/cmd/terraform-provider-ansibleops/main.go",
@@ -28,26 +24,25 @@
       "/app/provider/scripts/smoke.sh"
     ],
     "ENVIRONMENT_RULE_CHECKS": {
-      "business_module_diversity": "PASS_OR_NOT_APPLICABLE",
+      "business_module_diversity": "NOT_APPLICABLE_OR_PASS_FOR_SYSTEMS_PROVIDER",
+      "durable_state_authority": "Terraform Core only",
       "environment_complexity": "PASS",
-      "runtime_authenticity": "PASS"
+      "forbidden_wrapper_patterns": "PASS",
+      "resource_count": 10,
+      "runtime_authenticity_static": "PASS"
     },
-    "INSTRUCTION_DOC_BOUNDARY": "instruction owns required end-state behavior; provider docs own architecture/resource/lifecycle/operator contracts",
+    "INSTRUCTION_DOC_BOUNDARY": "PASS: normal engineering contracts describe provider/resource/lifecycle semantics without exposing private verifier mappings, defect topology or solution patches.",
     "PRODUCTION_CHARACTERISTICS": [
-      "real Terraform Plugin Framework provider process",
-      "ten differentiated Linux managed-resource lifecycles",
-      "Terraform-Core-owned durable state",
-      "persistent external Linux state",
-      "separate mutation and observation paths",
-      "provider startup preflight",
-      "shared process-control normalization validation and drift-observation layers"
+      "real Go Terraform provider process",
+      "Plugin Framework schemas and lifecycle callbacks",
+      "ten managed resource implementations",
+      "Ansible generation and subprocess execution",
+      "native Linux observation",
+      "shared state/identity/normalization logic",
+      "operator-facing build/smoke scripts and public technical contracts"
     ],
     "RESOURCE_COUNT": 10,
-    "RUNTIME_REACHABILITY_NOTES": [
-      "Configure preflight is live",
-      "Terraform reaches provider resource callbacks",
-      "Ansible mutation/native observation are reachable"
-    ],
+    "RUNTIME_REACHABILITY_NOTES": "Provider entrypoint reaches shared lifecycle, resource, Ansible runner and native observation code through normal Terraform operations. Fresh empirical Oracle/NOP behavior is intentionally not claimed here and remains owned by DETERMINISTIC_VALIDATION.",
     "SOLVER_VISIBLE_DOCS": [
       "/app/provider/docs/provider-contract.md",
       "/app/provider/docs/resource-reference.md",
@@ -55,7 +50,9 @@
       "/app/provider/examples/basic/main.tf"
     ],
     "SUBSTANTIVE_LOC": 3081,
-    "UNRESOLVED_RISKS": []
+    "UNRESOLVED_RISKS": [
+      "Fresh current-control empirical Oracle/NOP execution remains pending DETERMINISTIC_VALIDATION."
+    ]
   },
   "schema_version": "1.0",
   "status": "BUILT"
