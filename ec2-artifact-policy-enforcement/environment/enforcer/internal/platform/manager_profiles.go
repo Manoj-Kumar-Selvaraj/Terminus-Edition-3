@@ -345,13 +345,16 @@ func validateOCIName(name string) bool {
 func validateDependencyName(kind, name string) bool {
 	switch kind {
 	case "maven-coordinate":
-		return mavenNameRE.MatchString(name)
+		if strings.Contains(name, ":") {
+			return mavenNameRE.MatchString(name)
+		}
+		return rpmNameRE.MatchString(name)
 	case "npm-package":
 		return npmNameRE.MatchString(strings.ToLower(name))
 	case "python-distribution":
 		return debianNameRE.MatchString(strings.ToLower(strings.ReplaceAll(name, "_", "-")))
 	case "go-module":
-		return goModuleRE.MatchString(name) && strings.Contains(name, "/")
+		return goModuleRE.MatchString(name)
 	default:
 		return strings.TrimSpace(name) != ""
 	}

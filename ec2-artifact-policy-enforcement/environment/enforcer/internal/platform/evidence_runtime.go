@@ -186,19 +186,25 @@ func assessScannerRecord(context *EvaluationContext, scans ScanDB) ScannerAssess
 }
 
 func legacyScannerRecord(context *EvaluationContext, assessment ScannerAssessment) ScannerAssessment {
-	if assessment.Healthy {
+	if !assessment.Healthy {
+		// Intentional starter defect: unavailable scanner evidence is transformed
+		// into a current clean record instead of failing closed.  The solution
+		// removes this conversion.
+		assessment.Healthy = true
+		assessment.RevisionMatches = true
+		assessment.Status = "ok"
+		assessment.DBRevision = context.Compiled.ScannerRevision
+		assessment.Vulnerabilities = nil
+		assessment.MaximumSeverity = "NONE"
+		assessment.Reason = "legacy-fail-open-clean"
 		return assessment
 	}
-	// Intentional starter defect: unavailable scanner evidence is transformed
-	// into a current clean record instead of failing closed.  The solution
-	// removes this conversion.
-	assessment.Healthy = true
-	assessment.RevisionMatches = true
-	assessment.Status = "ok"
-	assessment.DBRevision = context.Compiled.ScannerRevision
-	assessment.Vulnerabilities = nil
-	assessment.MaximumSeverity = "NONE"
-	assessment.Reason = "legacy-fail-open-clean"
+	if !assessment.RevisionMatches {
+		// Intentional starter defect: a healthy record from a stale scanner DB
+		// is accepted as if it were current.
+		assessment.RevisionMatches = true
+		assessment.Reason = "legacy-stale-revision-accepted"
+	}
 	return assessment
 }
 
