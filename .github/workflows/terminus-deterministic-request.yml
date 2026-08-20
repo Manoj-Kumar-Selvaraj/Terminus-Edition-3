@@ -1,0 +1,243 @@
+name: Terminus Deterministic Request
+
+on:
+  push:
+    branches:
+      - 'terminus-deterministic-request/**'
+    paths:
+      - '.terminus/deterministic-requests/*.json'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: terminus-deterministic-request-${{ github.repository }}-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  DEFAULT_STB_VERSION: '2.4.3'
+
+jobs:
+  validate:
+    name: Deterministic validation request
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    env:
+      CI: 'true'
+      STB_VERSION: ${{ vars.STB_VERSION }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Load and validate exact request
+        id: request
+        shell: bash
+        run: |
+          set -euo pipefail
+          work="$RUNNER_TEMP/terminus-deterministic"
+          mkdir -p "$work"
+          mapfile -t paths < <(git diff-tree --no-commit-id --name-only -r "$GITHUB_SHA" -- '.terminus/deterministic-requests/*.json')
+          [[ "${#paths[@]}" == 1 ]] || {
+            echo "::error::Deterministic request push must add/change exactly one request file; found ${#paths[@]}"
+            exit 1
+          }
+          request="${paths[0]}"
+          request_base="$(git rev-parse "$GITHUB_SHA^")"
+          python3 .terminus/execution/deterministic_request.py validate \
+            --request "$request" \
+            --request-base "$request_base" \
+            --output "$work/binding.json"
+          cp "$request" "$work/request.json"
+
+          task="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["task_id"])' "$work/binding.json")"
+          task_commit="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["task_commit"])' "$work/binding.json")"
+          expected_head="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["expected_repository_head"])' "$work/binding.json")"
+          control_commit="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["control_plane_commit"])' "$work/binding.json")"
+          request_id="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["request_id"])' "$work/binding.json")"
+
+          git fetch origin main
+          current_main="$(git rev-parse origin/main)"
+          requested_tree="$(git rev-parse "$task_commit:$task")"
+          current_tree="$(git rev-parse "$current_main:$task")"
+          [[ "$requested_tree" == "$current_tree" ]] || {
+            echo "::error::Task changed after deterministic request task=$task requested=$task_commit current_main=$current_main"
+            exit 1
+          }
+
+          python3 .terminus/execution/controller_cli.py control-plane \
+            --head "$current_main" \
+            --output "$work/current-control-plane.json"
+          current_control="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["control_plane_commit"])' "$work/current-control-plane.json")"
+          [[ "$current_control" == "$control_commit" ]] || {
+            echo "::error::Control plane changed after deterministic request requested=$control_commit current=$current_control"
+            exit 1
+          }
+
+          echo "work=$work" >> "$GITHUB_OUTPUT"
+          echo "task=$task" >> "$GITHUB_OUTPUT"
+          echo "task_commit=$task_commit" >> "$GITHUB_OUTPUT"
+          echo "expected_head=$expected_head" >> "$GITHUB_OUTPUT"
+          echo "control_commit=$control_commit" >> "$GITHUB_OUTPUT"
+          echo "request_id=$request_id" >> "$GITHUB_OUTPUT"
+          echo "current_main=$current_main" >> "$GITHUB_OUTPUT"
+
+      - name: Resolve deterministic CI defaults
+        run: |
+          set -euo pipefail
+          [[ -n "${STB_VERSION:-}" ]] || echo "STB_VERSION=$DEFAULT_STB_VERSION" >> "$GITHUB_ENV"
+
+      - name: Preflight exact task package
+        shell: bash
+        env:
+          TASK: ${{ steps.request.outputs.task }}
+        run: |
+          set -euo pipefail
+          bash -n ./terminus3.sh
+          required=(
+            "$TASK/task.toml"
+            "$TASK/instruction.md"
+            "$TASK/README.md"
+            "$TASK/environment/Dockerfile"
+            "$TASK/environment/.dockerignore"
+            "$TASK/solution/solve.sh"
+            "$TASK/tests/Dockerfile"
+            "$TASK/tests/test.sh"
+          )
+          for path in "${required[@]}"; do
+            [[ -e "$path" ]] || { echo "::error::Missing required path: $path"; exit 1; }
+          done
+          compgen -G "$TASK/tests/*.py" >/dev/null || { echo "::error::No Python verifier tests"; exit 1; }
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v9.0.0
+        with:
+          enable-cache: false
+
+      - name: Ruff verifier tests
+        run: uvx --from ruff==0.12.8 ruff check "${{ steps.request.outputs.task }}/tests"
+
+      - name: Validate declared complexity and authenticity
+        shell: bash
+        env:
+          TASK: ${{ steps.request.outputs.task }}
+        run: |
+          set -euo pipefail
+          design=".terminus/designs/$TASK.json"
+          if [[ -f "$design" ]]; then
+            profile="$(python3 - "$design" <<'PY'
+          import json, sys
+          print(json.load(open(sys.argv[1], encoding='utf-8')).get('profile', ''))
+          PY
+          )"
+            case "$profile" in
+              large_system|large_system_strict)
+                python3 .terminus/validate_task_complexity.py "$TASK"
+                ;;
+            esac
+          fi
+          if [[ -f ".terminus/designs/$TASK-production.json" ]]; then
+            python3 .terminus/validate_runtime_authenticity.py "$TASK"
+            python3 .terminus/validate_business_module_diversity.py "$TASK"
+          fi
+
+      - name: Install deterministic STB environment
+        run: |
+          set -euo pipefail
+          docker info >/dev/null
+          bash ./terminus3.sh install
+          bash ./terminus3.sh version
+
+      - name: Oracle must score 1
+        shell: bash
+        env:
+          TASK: ${{ steps.request.outputs.task }}
+          JOBS_DIR: ${{ steps.request.outputs.work }}/oracle
+        run: |
+          set -euo pipefail
+          mkdir -p "$JOBS_DIR"
+          bash ./terminus3.sh oracle "$TASK" 2>&1 | tee "$JOBS_DIR/command.log"
+          mapfile -t rewards < <(find "$JOBS_DIR" -type f -name reward.txt -print)
+          (( ${#rewards[@]} > 0 )) || { echo "::error::Oracle produced no reward.txt"; exit 1; }
+          for file in "${rewards[@]}"; do
+            reward="$(tr -d '[:space:]' < "$file")"
+            [[ "$reward" == 1 || "$reward" == 1.0 ]] || {
+              echo "::error file=$file::Oracle reward=$reward expected=1"; exit 1;
+            }
+          done
+
+      - name: NOP must score 0
+        shell: bash
+        env:
+          TASK: ${{ steps.request.outputs.task }}
+          JOBS_DIR: ${{ steps.request.outputs.work }}/nop
+        run: |
+          set -euo pipefail
+          mkdir -p "$JOBS_DIR"
+          bash ./terminus3.sh nop "$TASK" 2>&1 | tee "$JOBS_DIR/command.log"
+          mapfile -t rewards < <(find "$JOBS_DIR" -type f -name reward.txt -print)
+          (( ${#rewards[@]} > 0 )) || { echo "::error::NOP produced no reward.txt"; exit 1; }
+          for file in "${rewards[@]}"; do
+            reward="$(tr -d '[:space:]' < "$file")"
+            [[ "$reward" == 0 || "$reward" == 0.0 ]] || {
+              echo "::error file=$file::NOP reward=$reward expected=0"; exit 1;
+            }
+          done
+
+      - name: Freeze deterministic evidence binding
+        if: always() && steps.request.outputs.work != ''
+        shell: bash
+        env:
+          WORK: ${{ steps.request.outputs.work }}
+          TASK: ${{ steps.request.outputs.task }}
+          TASK_COMMIT: ${{ steps.request.outputs.task_commit }}
+          EXPECTED_HEAD: ${{ steps.request.outputs.expected_head }}
+          CONTROL_COMMIT: ${{ steps.request.outputs.control_commit }}
+          REQUEST_ID: ${{ steps.request.outputs.request_id }}
+          CURRENT_MAIN: ${{ steps.request.outputs.current_main }}
+        run: |
+          python3 - "$WORK/evidence-binding.json" <<'PY'
+          import json, os, sys
+          value = {
+              "schema_version": "1.0",
+              "request_id": os.environ["REQUEST_ID"],
+              "stage_id": "DETERMINISTIC_VALIDATION",
+              "task_id": os.environ["TASK"],
+              "task_commit": os.environ["TASK_COMMIT"],
+              "expected_repository_head": os.environ["EXPECTED_HEAD"],
+              "observed_main": os.environ["CURRENT_MAIN"],
+              "control_plane_commit": os.environ["CONTROL_COMMIT"],
+              "workflow_run_id": os.environ["GITHUB_RUN_ID"],
+              "workflow_run_attempt": os.environ["GITHUB_RUN_ATTEMPT"],
+              "workflow_sha": os.environ["GITHUB_SHA"],
+              "evidence_contract": {
+                  "oracle_reward": 1,
+                  "nop_reward": 0,
+                  "require_f2p_empirical_matrix": True,
+                  "require_p2p_empirical_matrix": True,
+              },
+          }
+          with open(sys.argv[1], "w", encoding="utf-8") as handle:
+              json.dump(value, handle, indent=2, sort_keys=True)
+              handle.write("\n")
+          PY
+          {
+            echo '### Terminus deterministic request'
+            echo "- Request: \`$REQUEST_ID\`"
+            echo "- Task: \`$TASK\`"
+            echo "- Task commit: \`$TASK_COMMIT\`"
+            echo "- Control-plane commit: \`$CONTROL_COMMIT\`"
+            echo "- Request branch commit: \`$GITHUB_SHA\`"
+            echo "- Current main observed: \`$CURRENT_MAIN\`"
+            echo '- Required lifecycle outputs remain Oracle=1, NOP=0, non-empty F2P matrix and non-empty P2P matrix.'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload deterministic evidence
+        if: always() && steps.request.outputs.work != ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: terminus-deterministic-request-${{ steps.request.outputs.task }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ steps.request.outputs.work }}
+          if-no-files-found: error
+          include-hidden-files: true
+          retention-days: 14
