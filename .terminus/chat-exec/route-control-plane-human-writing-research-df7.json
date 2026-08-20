@@ -1,0 +1,33 @@
+{
+  "schema_version": "1.0",
+  "mode": "RECORD",
+  "task_id": "route-control-plane",
+  "task_commit": "22d2e9e09f4deb58029559fe9a0863c2e032f25c",
+  "control_plane_commit": "df7ef7569e2947b9f0bf7cf89ed4dec6c2a5a1fe",
+  "expected_repository_head": "0e79b35f17f67e2980a9ab9e6544e35eeef7536b",
+  "stage_id": "HUMAN_WRITING_RESEARCH",
+  "inputs": {
+    "APPROVED_WORK_PACKAGE": {
+      "ID": "FLEET_ROUTE_DESIRED_STATE_RECONCILIATION",
+      "ENGINEERING_OBJECTIVE": "Build a production-style Go route control plane that models desired route and policy state, reconciles it across a multi-node Linux fleet, detects drift, protects management reachability, records revision history, and exposes the same lifecycle through an operator dashboard and Ansible-driven installation/configuration."
+    },
+    "SOLVER_VISIBLE_REQUIREMENTS": {
+      "PRESERVATION": ["safe management reachability","no partial publication","idempotent retries","stable audit ordering","no host network mutation"],
+      "REQUIRED_END_STATE": ["Canonical IPv4/IPv6 route and policy-rule desired state with stable identities and valid table dependencies.","Preview/apply/rollback are revision-fenced and failure-safe across retries and restart.","Drift detection and reconcile use fresh observations and preserve unowned routing objects.","Fleet rollouts isolate failed canaries/offline nodes and do not reapply nodes already at the target revision.","Ansible deployment converges idempotently while preserving host-specific protected routing over defaults.","Dashboard mutations are bound to the exact preview revision and cannot silently overwrite newer operator changes.","Existing public Go API/runtime surfaces remain available and all mutations stay inside the deterministic isolated routing model."]
+    },
+    "CURRENT_TIME_BUDGET": {
+      "policy_version": "1.1",
+      "guidance_seconds": 25200,
+      "enforcement": "ADVISORY_ONLY",
+      "hard_limit": null,
+      "time_extension_required": false,
+      "quality_gates_may_be_skipped_for_time": false
+    }
+  },
+  "result": {
+    "status": "CALIBRATION_READY",
+    "output_task_commit": "22d2e9e09f4deb58029559fe9a0863c2e032f25c",
+    "outputs": {},
+    "evidence_refs": []
+  }
+}
