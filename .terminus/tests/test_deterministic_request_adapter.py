@@ -132,3 +132,24 @@ def test_request_workflow_runs_real_oracle_and_nop_without_model_credentials() -
         "terminus-quality-executor.yml",
     ):
         assert forbidden not in workflow
+
+
+def test_deterministic_run_locator_makes_push_runs_pollable() -> None:
+    workflow = (ROOT / ".github/workflows/terminus-deterministic-run-locator.yml").read_text(
+        encoding="utf-8"
+    )
+    for marker in (
+        'workflows: ["Terminus Deterministic Request"]',
+        "types: [requested, in_progress, completed]",
+        "terminus-deterministic-request/",
+        ".terminus/deterministic-requests/*.json",
+        ".terminus/deterministic-run-locators/$task/$REQUEST_SHA.json",
+        "DETERMINISTIC_RUN",
+        "Deterministic validation request",
+        "run_id",
+        "job_id",
+        "git push origin \"HEAD:$REQUEST_BRANCH\"",
+    ):
+        assert marker in workflow
+    assert "contents: write" in workflow
+    assert "actions: read" in workflow
