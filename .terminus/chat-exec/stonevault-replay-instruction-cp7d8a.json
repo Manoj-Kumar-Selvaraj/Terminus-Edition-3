@@ -1,0 +1,71 @@
+{
+  "schema_version": "1.0",
+  "mode": "RECORD",
+  "task_id": "stonevault-crash-safe-storage",
+  "task_commit": "03317f8218069b9e0b5d073bf87ecf7a0ae8e4a1",
+  "control_plane_commit": "7d8a6d8c62a62e6d24949344c7fd712e59bc8829",
+  "expected_repository_head": "cccfd344eb13998dc8c69bae29c61c2aaa1806ed",
+  "stage_id": "INSTRUCTION_DRAFT",
+  "inputs": {
+    "APPROVED_SOLVER_VISIBLE_REQUIREMENT_CONTRACT": {
+      "instruction_path": "stonevault-crash-safe-storage/instruction.md",
+      "objective": "Complete the reliability hardening of the embedded database under /app/stonevault while preserving the documented native compatibility contracts.",
+      "material_requirements": [
+        "exclusive writer ownership with clean release",
+        "explicit data-dir precedence over environment and default",
+        "transaction-lifetime MVCC snapshots with own-write/delete overlay",
+        "raw-byte prefix scans in deterministic unsigned bytewise order",
+        "first-committer-wins conflict rejection without sequence consumption",
+        "atomic durable commits with contiguous increasing sequences",
+        "rollback and killed-open-transaction WAL invisibility after restart",
+        "retain valid committed transactions, discard only torn final WAL tails, fail closed on complete-record or committed-history corruption",
+        "checkpoint quiescence, atomic snapshot publication, durable sequence/rows and zero-byte WAL reclamation",
+        "reject corrupt snapshots while only ignoring/removing abandoned snapshot.tmp",
+        "accurate STATS and HEALTH durable/runtime state",
+        "binary hex representation and inclusive key/prefix/value limits",
+        "malformed command and unknown transaction ERR resilience",
+        "preserve documented C ABI, ASCII responses, WAL/snapshot layouts and existing data compatibility"
+      ],
+      "referenced_contracts": ["/app/stonevault/docs/storage-format.md"]
+    },
+    "CREATION_RULE_CONTEXT": {
+      "CONTROL_PLANE_COMMIT": "7d8a6d8c62a62e6d24949344c7fd712e59bc8829",
+      "CREATION_PROFILE": "large_system_strict",
+      "KNOWN_POLICY_CONFLICTS": []
+    },
+    "TASK_WRITING_PROFILE": {
+      "avoid": ["invented incidents or personal claims", "rubric-like hidden-test enumeration", "style-driven omission of lifecycle constraints", "copied distinctive source wording", "task details copied from unrelated calibration domains"],
+      "must_preserve": ["native embedded databases crash safety", "stonevault-crash-safe-storage", "writer fencing, data-dir precedence, MVCC snapshot/overlay, FCW conflicts, durable contiguous commits, WAL recovery, checkpoint/snapshot integrity, STATS/HEALTH, binary protocol limits, stable native compatibility"],
+      "structure": ["state the approved engineering objective first", "preserve exact public contracts and hard safety/state constraints", "reference solver-visible technical contracts instead of reproducing hidden verifier rows", "keep implementation-neutral observable outcomes"],
+      "voice": "direct platform engineering change request"
+    },
+    "VALIDATED_HUMAN_WRITING_CALIBRATION": {
+      "CALIBRATION_PAIR_ID": "hwpair-e35124691c5840ed8d7e",
+      "DOMAIN_PROFILE": "data_migration",
+      "EXTERNAL_DATASET_COVERAGE": "DEGRADED",
+      "REVIEWER_CALIBRATION_ID": "hwcal-reviewer-db502e644c00f17aa5be",
+      "WRITER_CALIBRATION_ID": "hwcal-writer-ab1bd38ee99be79c5e7d"
+    }
+  },
+  "result": {
+    "status": "READY",
+    "outputs": {
+      "INSTRUCTION_PATH": "stonevault-crash-safe-storage/instruction.md",
+      "REQUIREMENT_COVERAGE": {
+        "locking_and_configuration": "writer fencing and data-directory precedence are explicit",
+        "mvcc_and_conflicts": "stable transaction snapshots, own overlays, bytewise scans, FCW rejection and sequence semantics are explicit",
+        "durability_and_recovery": "atomic durable commits, rollback/crash invisibility, WAL torn-tail versus complete-corruption behavior and contiguous sequencing are explicit",
+        "checkpoint_and_snapshot": "quiescence, atomic publication, WAL reclamation, snapshot validation and abandoned temporary handling are explicit",
+        "operator_and_protocol": "STATS/HEALTH, binary hex behavior, inclusive limits and malformed-input resilience are explicit",
+        "compatibility": "C ABI, ASCII responses, WAL/snapshot layouts and existing data compatibility are explicit"
+      },
+      "DOC_REFERENCES": ["/app/stonevault/docs/storage-format.md"],
+      "INSTRUCTION_SHAPE": "One direct reliability-hardening orientation paragraph followed by 16 concise observable responsibility/invariant bullets.",
+      "HANDOFF_TEST": "A storage engineer can identify writer ownership, configuration precedence, MVCC/conflict semantics, durability/recovery, checkpoint/snapshot, operator state, protocol limits and compatibility obligations without private verifier or Oracle material.",
+      "REVERSE_OUTLINE_RISK": "LOW: bullets follow public storage responsibilities and lifecycle invariants rather than private verifier row ordering.",
+      "SPEC_FILE_LOOPHOLE": "CLOSED: instruction.md itself owns all material requested behavior; storage-format.md only supplies inherited public ABI/disk format details.",
+      "UNRESOLVED_GAPS": []
+    },
+    "evidence_refs": [{"kind": "COMMIT", "ref": "commit:03317f8218069b9e0b5d073bf87ecf7a0ae8e4a1"}]
+  }
+}
