@@ -8,7 +8,7 @@ on:
       - '.terminus/deterministic-requests/*.json'
 
 permissions:
-  contents: read
+  contents: write
 
 concurrency:
   group: terminus-deterministic-request-${{ github.repository }}-${{ github.ref }}
@@ -55,6 +55,7 @@ jobs:
           expected_head="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["expected_repository_head"])' "$work/binding.json")"
           control_commit="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["control_plane_commit"])' "$work/binding.json")"
           request_id="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["request_id"])' "$work/binding.json")"
+          invocation_id="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["invocation_id"])' "$work/binding.json")"
 
           git fetch origin main
           current_main="$(git rev-parse origin/main)"
@@ -80,7 +81,56 @@ jobs:
           echo "expected_head=$expected_head" >> "$GITHUB_OUTPUT"
           echo "control_commit=$control_commit" >> "$GITHUB_OUTPUT"
           echo "request_id=$request_id" >> "$GITHUB_OUTPUT"
+          echo "invocation_id=$invocation_id" >> "$GITHUB_OUTPUT"
+          echo "request_base=$request_base" >> "$GITHUB_OUTPUT"
           echo "current_main=$current_main" >> "$GITHUB_OUTPUT"
+
+      - name: Reconstruct exact controller invocation
+        shell: bash
+        env:
+          WORK: ${{ steps.request.outputs.work }}
+          TASK: ${{ steps.request.outputs.task }}
+          TASK_COMMIT: ${{ steps.request.outputs.task_commit }}
+          CONTROL_COMMIT: ${{ steps.request.outputs.control_commit }}
+          REQUEST_BASE: ${{ steps.request.outputs.request_base }}
+          REQUEST_ID: ${{ steps.request.outputs.request_id }}
+          INVOCATION_ID: ${{ steps.request.outputs.invocation_id }}
+        run: |
+          set -euo pipefail
+          python3 - "$WORK/request.json" "$WORK/inputs.json" <<'PY'
+          import json, sys
+          request = json.load(open(sys.argv[1], encoding='utf-8'))
+          with open(sys.argv[2], 'w', encoding='utf-8') as handle:
+              json.dump(request['inputs'], handle, indent=2, sort_keys=True)
+              handle.write('\n')
+          PY
+          git checkout --detach "$REQUEST_BASE"
+          python3 .terminus/execution/controller_cli.py continue \
+            --task-id "$TASK" \
+            --task-commit "$TASK_COMMIT" \
+            --control-plane-commit "$CONTROL_COMMIT" \
+            --inputs-json "$WORK/inputs.json" \
+            --output "$WORK/continue.json"
+          python3 - "$WORK/continue.json" "$WORK/invocation.json" "$REQUEST_ID" "$INVOCATION_ID" <<'PY'
+          import json, sys
+          cont = json.load(open(sys.argv[1], encoding='utf-8'))
+          expected_request_id, expected_invocation_id = sys.argv[3:5]
+          if cont.get('next', {}).get('stage_id') != 'DETERMINISTIC_VALIDATION':
+              raise SystemExit(f"machine stage changed: {cont.get('next')}")
+          invocation = cont.get('invocation')
+          if not isinstance(invocation, dict) or invocation.get('readiness') != 'READY':
+              raise SystemExit('deterministic invocation is not READY')
+          if invocation.get('invocation_id') != expected_invocation_id:
+              raise SystemExit('deterministic invocation_id changed after dispatch')
+          if cont.get('execution_mode') != 'HOSTED_DETERMINISTIC_VALIDATION':
+              raise SystemExit(f"unexpected deterministic execution mode {cont.get('execution_mode')}")
+          dispatch = cont.get('dispatch')
+          if not isinstance(dispatch, dict) or dispatch.get('request', {}).get('request_id') != expected_request_id:
+              raise SystemExit('controller reconstructed a different deterministic request')
+          with open(sys.argv[2], 'w', encoding='utf-8') as handle:
+              json.dump(invocation, handle, indent=2, sort_keys=True)
+              handle.write('\n')
+          PY
 
       - name: Resolve deterministic CI defaults
         run: |
@@ -148,7 +198,7 @@ jobs:
           bash ./terminus3.sh install
           bash ./terminus3.sh version
 
-      - name: Oracle must score 1
+      - name: Execute Oracle evidence
         shell: bash
         env:
           TASK: ${{ steps.request.outputs.task }}
@@ -156,17 +206,14 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p "$JOBS_DIR"
+          set +e
           bash ./terminus3.sh oracle "$TASK" 2>&1 | tee "$JOBS_DIR/command.log"
-          mapfile -t rewards < <(find "$JOBS_DIR" -type f -name reward.txt -print)
-          (( ${#rewards[@]} > 0 )) || { echo "::error::Oracle produced no reward.txt"; exit 1; }
-          for file in "${rewards[@]}"; do
-            reward="$(tr -d '[:space:]' < "$file")"
-            [[ "$reward" == 1 || "$reward" == 1.0 ]] || {
-              echo "::error file=$file::Oracle reward=$reward expected=1"; exit 1;
-            }
-          done
+          status="${PIPESTATUS[0]}"
+          set -e
+          printf '%s\n' "$status" > "$JOBS_DIR/command-exit.txt"
+          echo "Oracle transport exit: $status"
 
-      - name: NOP must score 0
+      - name: Execute NOP evidence
         shell: bash
         env:
           TASK: ${{ steps.request.outputs.task }}
@@ -174,15 +221,102 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p "$JOBS_DIR"
+          set +e
           bash ./terminus3.sh nop "$TASK" 2>&1 | tee "$JOBS_DIR/command.log"
-          mapfile -t rewards < <(find "$JOBS_DIR" -type f -name reward.txt -print)
-          (( ${#rewards[@]} > 0 )) || { echo "::error::NOP produced no reward.txt"; exit 1; }
-          for file in "${rewards[@]}"; do
-            reward="$(tr -d '[:space:]' < "$file")"
-            [[ "$reward" == 0 || "$reward" == 0.0 ]] || {
-              echo "::error file=$file::NOP reward=$reward expected=0"; exit 1;
+          status="${PIPESTATUS[0]}"
+          set -e
+          printf '%s\n' "$status" > "$JOBS_DIR/command-exit.txt"
+          echo "NOP transport exit: $status"
+
+      - name: Compile empirical StageResult
+        id: result
+        shell: bash
+        env:
+          WORK: ${{ steps.request.outputs.work }}
+          TASK: ${{ steps.request.outputs.task }}
+        run: |
+          set -euo pipefail
+          python3 .terminus/execution/deterministic_evidence.py \
+            --root . \
+            --request "$WORK/request.json" \
+            --invocation "$WORK/invocation.json" \
+            --oracle-root "$WORK/oracle" \
+            --nop-root "$WORK/nop" \
+            --run-id "$GITHUB_RUN_ID" \
+            --run-attempt "$GITHUB_RUN_ATTEMPT" \
+            --output "$WORK/result.json"
+          semantic_status="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["status"])' "$WORK/result.json")"
+          echo "semantic_status=$semantic_status" >> "$GITHUB_OUTPUT"
+          echo "Deterministic semantic status: $semantic_status"
+
+      - name: Record deterministic result on canonical main
+        shell: bash
+        env:
+          WORK: ${{ steps.request.outputs.work }}
+          TASK: ${{ steps.request.outputs.task }}
+          TASK_COMMIT: ${{ steps.request.outputs.task_commit }}
+          CONTROL_COMMIT: ${{ steps.request.outputs.control_commit }}
+        run: |
+          set -euo pipefail
+          git fetch origin main
+          base="$(git rev-parse origin/main)"
+          requested_tree="$(git rev-parse "$TASK_COMMIT:$TASK")"
+          current_tree="$(git rev-parse "$base:$TASK")"
+          [[ "$requested_tree" == "$current_tree" ]] || {
+            echo "::error::Task changed before deterministic recording task=$TASK requested=$TASK_COMMIT current_main=$base"
+            exit 1
+          }
+          python3 .terminus/execution/controller_cli.py control-plane --head "$base" --output "$WORK/record-control.json"
+          current_control="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["control_plane_commit"])' "$WORK/record-control.json")"
+          [[ "$current_control" == "$CONTROL_COMMIT" ]] || {
+            echo "::error::Control plane changed before deterministic recording expected=$CONTROL_COMMIT current=$current_control"
+            exit 1
+          }
+
+          git checkout --detach "$base"
+          python3 .terminus/execution/controller_cli.py record \
+            --invocation "$WORK/invocation.json" \
+            --result "$WORK/result.json" \
+            --output "$WORK/record.json"
+
+          mapfile -t changed < <(git status --porcelain | sed 's/^...//')
+          for path in "${changed[@]}"; do
+            [[ "$path" == .terminus/executions/"$TASK"/* ]] || {
+              echo "::error::Unexpected deterministic record mutation: $path"
+              exit 1
             }
           done
+          git config user.name 'terminus-deterministic-recorder[bot]'
+          git config user.email 'terminus-deterministic-recorder[bot]@users.noreply.github.com'
+          git add -- ".terminus/executions/$TASK"
+          git diff --cached --quiet && { echo "::error::No canonical deterministic record mutation"; exit 1; }
+          git commit -m "Record $TASK DETERMINISTIC_VALIDATION hosted result"
+
+          for attempt in 1 2 3 4 5; do
+            remote="$(git ls-remote origin refs/heads/main | awk '{print $1}')"
+            if [[ "$remote" != "$base" ]]; then
+              git fetch origin main
+              if ! git diff --quiet "$base" "$remote" -- "$TASK" ".terminus/executions/$TASK"; then
+                echo "::error::Main changed in deterministic task scope during record base=$base current=$remote"
+                exit 1
+              fi
+              python3 .terminus/execution/controller_cli.py control-plane --head "$remote" --output "$WORK/rebase-control.json"
+              rebased_control="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["control_plane_commit"])' "$WORK/rebase-control.json")"
+              [[ "$rebased_control" == "$CONTROL_COMMIT" ]] || {
+                echo "::error::Control plane changed during deterministic record expected=$CONTROL_COMMIT current=$rebased_control"
+                exit 1
+              }
+              git rebase origin/main
+              base="$remote"
+            fi
+            if git push origin HEAD:main; then
+              exit 0
+            fi
+            echo "Deterministic record CAS retry $attempt"
+            sleep 2
+          done
+          echo "::error::Unable to publish deterministic record after bounded CAS retries"
+          exit 1
 
       - name: Freeze deterministic evidence binding
         if: always() && steps.request.outputs.work != ''
@@ -194,13 +328,18 @@ jobs:
           EXPECTED_HEAD: ${{ steps.request.outputs.expected_head }}
           CONTROL_COMMIT: ${{ steps.request.outputs.control_commit }}
           REQUEST_ID: ${{ steps.request.outputs.request_id }}
+          INVOCATION_ID: ${{ steps.request.outputs.invocation_id }}
           CURRENT_MAIN: ${{ steps.request.outputs.current_main }}
+          SEMANTIC_STATUS: ${{ steps.result.outputs.semantic_status }}
         run: |
-          python3 - "$WORK/evidence-binding.json" <<'PY'
-          import json, os, sys
+          python3 - "$WORK/evidence-binding.json" "$WORK/record.json" <<'PY'
+          import json, os, pathlib, sys
+          record_path = pathlib.Path(sys.argv[2])
+          record = json.loads(record_path.read_text(encoding='utf-8')) if record_path.is_file() else {}
           value = {
-              "schema_version": "1.0",
+              "schema_version": "1.1",
               "request_id": os.environ["REQUEST_ID"],
+              "invocation_id": os.environ["INVOCATION_ID"],
               "stage_id": "DETERMINISTIC_VALIDATION",
               "task_id": os.environ["TASK"],
               "task_commit": os.environ["TASK_COMMIT"],
@@ -210,6 +349,8 @@ jobs:
               "workflow_run_id": os.environ["GITHUB_RUN_ID"],
               "workflow_run_attempt": os.environ["GITHUB_RUN_ATTEMPT"],
               "workflow_sha": os.environ["GITHUB_SHA"],
+              "semantic_status": os.environ.get("SEMANTIC_STATUS") or None,
+              "record_id": record.get("record", {}).get("record_id"),
               "evidence_contract": {
                   "oracle_reward": 1,
                   "nop_reward": 0,
@@ -224,12 +365,12 @@ jobs:
           {
             echo '### Terminus deterministic request'
             echo "- Request: \`$REQUEST_ID\`"
+            echo "- Invocation: \`$INVOCATION_ID\`"
             echo "- Task: \`$TASK\`"
             echo "- Task commit: \`$TASK_COMMIT\`"
             echo "- Control-plane commit: \`$CONTROL_COMMIT\`"
-            echo "- Request branch commit: \`$GITHUB_SHA\`"
-            echo "- Current main observed: \`$CURRENT_MAIN\`"
-            echo '- Required lifecycle outputs remain Oracle=1, NOP=0, non-empty F2P matrix and non-empty P2P matrix.'
+            echo "- Semantic status: \`${SEMANTIC_STATUS:-unavailable}\`"
+            echo '- Oracle/NOP empirical matrices are compiled from verifier CTRF output, not inferred from workflow color.'
           } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Upload deterministic evidence

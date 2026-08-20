@@ -13,6 +13,10 @@ from typing import Any
 if __package__ in {None, ""}:
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
     from execution.control_plane import resolve_control_plane_commit
+    from execution.deterministic_request import (
+        build_request as build_deterministic_request,
+        dispatch_envelope as deterministic_dispatch_envelope,
+    )
     from execution.executor import ExecutorMode
     from execution.external_gate import project_external_state, validate_external_result
     from execution.invocation import StageInvocationBuilder
@@ -25,6 +29,10 @@ if __package__ in {None, ""}:
     from retrieval.models import InvocationContext
 else:
     from .control_plane import resolve_control_plane_commit
+    from .deterministic_request import (
+        build_request as build_deterministic_request,
+        dispatch_envelope as deterministic_dispatch_envelope,
+    )
     from .executor import ExecutorMode
     from .external_gate import project_external_state, validate_external_result
     from .invocation import StageInvocationBuilder
@@ -411,6 +419,39 @@ def _continue_payload(
     )
     payload["invocation"] = packet
     payload["executor_handoff"] = None
+
+    if stage_id == "DETERMINISTIC_VALIDATION" and next_action["action"] in {
+        "INVOKE_STAGE",
+        "RETRY_STAGE",
+    }:
+        payload["execution_mode"] = "HOSTED_DETERMINISTIC_VALIDATION"
+        if packet.get("readiness") != "READY":
+            payload["dispatch"] = {
+                "status": "BLOCKED",
+                "stage_id": stage_id,
+                "blocking_reason": "deterministic StageInvocation is not READY",
+            }
+            return payload
+        stage = packet.get("stage")
+        if not isinstance(stage, dict) or stage.get("role_class") != "CONTROLLER":
+            raise ValueError("DETERMINISTIC_VALIDATION must execute under CONTROLLER authority")
+        if stage.get("role_id") != "CREATION_CONTROLLER":
+            raise ValueError("DETERMINISTIC_VALIDATION has unexpected controller role")
+        if packet.get("output_contract", {}).get("semantic_reviewers"):
+            raise ValueError("deterministic hosted execution cannot replace semantic reviewers")
+        request = build_deterministic_request(
+            root,
+            task_id=args.task_id,
+            task_commit=args.task_commit,
+            control_plane_commit=args.control_plane_commit,
+            invocation_id=str(packet["invocation_id"]),
+            inputs=inputs,
+            expected_repository_head=_git_head(root),
+        )
+        dispatch = deterministic_dispatch_envelope(request)
+        payload["execution_mode"] = dispatch["execution_mode"]
+        payload["dispatch"] = dispatch
+        return payload
 
     policy = resolve_quality_execution_modes(
         root,

@@ -34,20 +34,20 @@ When advancement depends on an already-authorized GitHub Actions execution, pres
 
 `DETERMINISTIC_VALIDATION` has a repository-native dispatch path specifically so lack of a direct GitHub Actions `workflow_dispatch` API is not an orchestration blocker.
 
-When fresh Oracle/NOP evidence is required and direct workflow dispatch is unavailable, but the surface can create a branch and write a repository file, the Orchestrator must use `.terminus/execution/deterministic_request.py` and `.github/workflows/terminus-deterministic-request.yml`:
+When fresh Oracle/NOP evidence is required and direct workflow dispatch is unavailable, but the surface can create a branch and write a repository file, the Orchestrator must use the current `controller_cli continue` result, `.terminus/execution/deterministic_request.py`, `.github/workflows/terminus-deterministic-request.yml` and `.github/workflows/terminus-deterministic-run-locator.yml`:
 
-1. bind the request to the exact task ID, exact current task commit, effective control-plane commit and observed repository head;
-2. create the exact `terminus-deterministic-request/<task>/<request-suffix>` branch from the request's `expected_repository_head`;
-3. write exactly one request JSON at the generated `.terminus/deterministic-requests/<task>-<request-suffix>.json` path;
+1. require `controller_cli continue` to return `HOSTED_DETERMINISTIC_VALIDATION` with a READY exact `DETERMINISTIC_VALIDATION` StageInvocation;
+2. use the returned request that is bound to the exact task ID, exact current task commit, effective control-plane commit, observed repository head, exact invocation ID and exact invocation inputs;
+3. create the exact `terminus-deterministic-request/<task>/<request-suffix>` branch from the request's `expected_repository_head` and write exactly one request JSON at the generated `.terminus/deterministic-requests/<task>-<request-suffix>.json` path;
 4. treat the resulting request commit as a dispatch locator, not as lifecycle PASS evidence;
-5. discover and poll the exact `Terminus Deterministic Request` run caused by that request commit;
-6. require the workflow to revalidate branch/base identity, unchanged task tree, unchanged effective control-plane commit, Oracle reward `1`, and NOP reward `0`;
-7. inspect the uploaded deterministic artifact and construct the stage result only from the exact bound empirical evidence, including non-empty F2P and P2P matrices;
-8. canonically validate/record the `DETERMINISTIC_VALIDATION` StageResult, replay state and continue.
+5. read `.terminus/deterministic-run-locators/<task>/<request-commit>.json` and poll the exact `Terminus Deterministic Request` run/job caused by that request commit;
+6. require the workflow to revalidate branch/base identity, unchanged task tree, unchanged effective control-plane commit and exact StageInvocation identity;
+7. require the hosted workflow to execute Oracle/NOP, compile the empirical StageResult from CTRF with non-empty F2P/P2P matrices, and canonically record that StageResult itself through `controller_cli record`;
+8. after terminal completion, reconcile the workflow's canonical record from `main`, replay state and continue. The chat must not manufacture a deterministic PASS from run color, logs, historical matrices or its own interpretation of the artifact.
 
-Do not redispatch while the exact request-triggered run is queued or running. If the task tree or effective control plane changes before execution, the workflow must fail closed and the controller must generate a fresh request for the new authoritative snapshot.
+Do not redispatch while the exact request-triggered run is queued or running. If the task tree or effective control plane changes before execution or recording, the workflow must fail closed and the controller must generate a fresh request for the new authoritative snapshot.
 
-This adapter is transport only. It does not weaken the deterministic stage predicates, does not infer empirical matrices from stale evidence, and does not permit historical Oracle/NOP evidence from another task commit to satisfy the current stage.
+This adapter is transport only. It does not weaken the deterministic stage predicates, does not infer empirical matrices from stale evidence, and does not permit historical Oracle/NOP evidence from another task commit to satisfy the current stage. A locator or a green workflow is operational evidence only; lifecycle advancement requires the canonical execution record written from the exact empirical StageResult.
 
 ## Legal stop conditions
 
@@ -73,7 +73,7 @@ If the active execution surface itself ends before a genuine lifecycle stop cond
 - current ledger sequence/event;
 - first incomplete stage/gate;
 - exact workflow run ID, run number, attempt and numeric job ID when available;
-- durable locator path for hosted controller or other indexed runs;
+- durable locator path for hosted controller, hosted deterministic validation or other indexed runs;
 - current status/conclusion;
 - next machine action when already known.
 

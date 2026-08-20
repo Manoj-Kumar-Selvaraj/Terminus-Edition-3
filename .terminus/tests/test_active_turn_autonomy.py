@@ -34,6 +34,27 @@ def test_dispatched_or_running_actions_are_not_stop_conditions() -> None:
         assert marker in text
 
 
+def test_hosted_deterministic_validation_is_machine_owned_and_pollable() -> None:
+    text = POLICY.read_text(encoding="utf-8")
+    agent = PROJECT_AGENT.read_text(encoding="utf-8")
+    for marker in (
+        "HOSTED_DETERMINISTIC_VALIDATION",
+        ".terminus/deterministic-run-locators/<task>/<request-commit>.json",
+        "exact StageInvocation identity",
+        "compile the empirical StageResult from CTRF",
+        "canonically record that StageResult itself",
+        "The chat must not manufacture a deterministic PASS",
+    ):
+        assert marker in text
+    for marker in (
+        "HOSTED_DETERMINISTIC_VALIDATION",
+        ".terminus/deterministic-run-locators/<task>/<request-commit>.json",
+        "Never synthesize deterministic PASS",
+        "canonical `controller_cli record`",
+    ):
+        assert marker in agent
+
+
 def test_policy_preserves_real_manual_and_authorization_boundaries() -> None:
     text = POLICY.read_text(encoding="utf-8")
     for marker in (

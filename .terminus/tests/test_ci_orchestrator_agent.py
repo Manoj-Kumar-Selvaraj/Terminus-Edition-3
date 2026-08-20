@@ -14,6 +14,8 @@ PROJECT_AGENT = ROOT / ".cursor" / "agents" / "terminus-ci-orchestrator.md"
 QUALITY_LIFECYCLE = ROOT / ".github" / "workflows" / "terminus-quality-lifecycle.yml"
 CONTROLLER_STAGE_WORKFLOW = ROOT / ".github" / "workflows" / "terminus-controller-stage.yml"
 CONTROLLER_RUN_LOCATOR = ROOT / ".github" / "workflows" / "terminus-controller-run-locator.yml"
+DETERMINISTIC_WORKFLOW = ROOT / ".github" / "workflows" / "terminus-deterministic-request.yml"
+DETERMINISTIC_RUN_LOCATOR = ROOT / ".github" / "workflows" / "terminus-deterministic-run-locator.yml"
 CONTROLLER_CLI = T / "execution" / "controller_cli.py"
 CONTROLLER_STAGE_CLI = T / "execution" / "controller_stage_cli.py"
 
@@ -64,6 +66,7 @@ def test_orchestrator_uses_inline_controller_and_independent_quality_routes() ->
     for marker in (
         "ORCHESTRATOR_DIRECT",
         "HOSTED_CONTROLLER",
+        "HOSTED_DETERMINISTIC_VALIDATION",
         "INLINE_SPECIALIST",
         "AUTOMATED_QUALITY",
         "AUTOMATED_NO_MODEL_SKIP",
@@ -84,6 +87,10 @@ def test_orchestrator_uses_inline_controller_and_independent_quality_routes() ->
         "QUALITY_LIFECYCLE_STAGES",
         "CONTROLLER_STAGE_WORKFLOW",
         "AUTOMATED_CONTROLLER_STAGES",
+        "build_deterministic_request",
+        "deterministic_dispatch_envelope",
+        'stage_id == "DETERMINISTIC_VALIDATION"',
+        'payload["execution_mode"] = "HOSTED_DETERMINISTIC_VALIDATION"',
         "resolve_quality_execution_modes",
         "inline_execution_mode",
         "INLINE_SPECIALIST_SEQUENCE",
@@ -268,6 +275,8 @@ def test_project_agent_frontmatter_and_contract_reference() -> None:
     assert "Do not default every stage to a fresh chat" in text
     assert "INLINE_SPECIALIST_SEQUENCE" in text
     assert "terminus-quality-lifecycle.yml" in text
+    assert "HOSTED_DETERMINISTIC_VALIDATION" in text
+    assert ".terminus/deterministic-run-locators/<task>/<request-commit>.json" in text
 
 
 def test_orchestrator_is_integrated_into_control_plane_and_ci() -> None:
@@ -286,3 +295,33 @@ def test_orchestrator_is_integrated_into_control_plane_and_ci() -> None:
         ROOT / ".github" / "workflows" / "terminus-agent-system-ci.yml"
     ).read_text(encoding="utf-8")
     assert ".cursor/agents/**" in workflow
+
+
+def test_orchestrator_owns_hosted_deterministic_dispatch_poll_and_record() -> None:
+    portable = PORTABLE.read_text(encoding="utf-8")
+    workflow = DETERMINISTIC_WORKFLOW.read_text(encoding="utf-8")
+    locator = DETERMINISTIC_RUN_LOCATOR.read_text(encoding="utf-8")
+    for marker in (
+        "HOSTED_DETERMINISTIC_VALIDATION",
+        "terminus-deterministic-request/",
+        ".terminus/deterministic-run-locators/<task>/<request-commit>.json",
+        "must never synthesize `DETERMINISTIC_VALIDATION=PASS`",
+        "missing direct `workflow_dispatch` API",
+        "workflow, not the chat",
+    ):
+        assert marker in portable
+    for marker in (
+        "Reconstruct exact controller invocation",
+        "Compile empirical StageResult",
+        "deterministic_evidence.py",
+        "controller_cli.py record",
+        "Record deterministic result on canonical main",
+    ):
+        assert marker in workflow
+    for marker in (
+        'workflows: ["Terminus Deterministic Request"]',
+        ".terminus/deterministic-run-locators/$task/$REQUEST_SHA.json",
+        "run_id",
+        "job_id",
+    ):
+        assert marker in locator
