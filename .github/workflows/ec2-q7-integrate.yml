@@ -1,0 +1,90 @@
+name: EC2 Q7 Integrate
+
+on:
+  push:
+    branches:
+      - diagnostic/ec2-ledger-integrity-20260820
+    paths:
+      - .github/ec2_q7_integrate.py
+      - .github/workflows/ec2-q7-integrate.yml
+
+permissions:
+  contents: write
+
+concurrency:
+  group: ec2-q7-integrate
+  cancel-in-progress: false
+
+jobs:
+  integrate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Persist run locator and stage helper
+        shell: bash
+        run: |
+          set -euo pipefail
+          cp .github/ec2_q7_integrate.py "$RUNNER_TEMP/ec2_q7_integrate.py"
+          path=".terminus/diagnostic-run-locators/ec2-q7-integrate-${GITHUB_SHA}.json"
+          mkdir -p "$(dirname "$path")"
+          printf '{"run_id":%s,"run_attempt":%s,"event_sha":"%s","branch":"%s"}\n' \
+            "$GITHUB_RUN_ID" "$GITHUB_RUN_ATTEMPT" "$GITHUB_SHA" "$GITHUB_REF_NAME" > "$path"
+          git config user.name 'terminus-diagnostic-locator[bot]'
+          git config user.email 'terminus-diagnostic-locator[bot]@users.noreply.github.com'
+          git add -- "$path"
+          git commit -m "Track EC2 Q7 integration run $GITHUB_RUN_ID"
+          git push origin HEAD:"$GITHUB_REF_NAME"
+
+      - name: Replay validated Q7 records on latest canonical main
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin main task/ec2-artifact-policy-enforcement-q7-snapshot-20260820
+          base="$(git rev-parse origin/main)"
+          echo "BASE=$base" >> "$GITHUB_ENV"
+          git checkout --detach "$base"
+          python3 "$RUNNER_TEMP/ec2_q7_integrate.py"
+
+      - name: Integrate with unrelated-main rebase guard
+        shell: bash
+        run: |
+          set -euo pipefail
+          task="ec2-artifact-policy-enforcement"
+          git config user.name 'terminus-q7[bot]'
+          git config user.email 'terminus-q7[bot]@users.noreply.github.com'
+          git add -- \
+            "$task/task.toml" \
+            "$task/environment/Dockerfile" \
+            "$task/environment/.dockerignore" \
+            "$task/tests/Dockerfile" \
+            ".terminus/executions/$task"
+          git diff --cached --check
+          git commit -m "Fix and record ${task} Q7 format gate"
+
+          git fetch origin main
+          remote="$(git rev-parse origin/main)"
+          if [[ "$remote" != "$BASE" ]]; then
+            work="$RUNNER_TEMP/ec2-q7-integrate"
+            python3 .terminus/execution/controller_cli.py control-plane --head "$remote" --output "$work/remote-control.json"
+            resolved="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["control_plane_commit"])' "$work/remote-control.json")"
+            [[ "$resolved" == "215cc70bcebcccc3c9a401af1b74a97d90026da3" ]] || {
+              echo "::error::effective control changed during Q7 integration current=$resolved"; exit 75;
+            }
+            ec2_drift="$(git diff --name-only "$BASE" "$remote" -- "$task" ".terminus/executions/$task" || true)"
+            [[ -z "$ec2_drift" ]] || {
+              echo "::error::EC2 task/evidence changed concurrently:"; echo "$ec2_drift"; exit 75;
+            }
+            git rebase "$remote"
+          fi
+          git push origin HEAD:main
+
+      - name: Upload integration diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ec2-q7-integrate-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/ec2-q7-integrate
+          if-no-files-found: warn
