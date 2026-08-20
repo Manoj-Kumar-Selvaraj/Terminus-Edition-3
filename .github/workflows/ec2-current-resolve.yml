@@ -1,0 +1,54 @@
+name: EC2 Current Resolver Diagnostic
+on:
+  push:
+    branches: [diagnostic/ec2-ledger-integrity-20260820]
+    paths: ['.github/workflows/ec2-current-resolve.yml']
+permissions:
+  contents: write
+jobs:
+  resolve:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Resolve current canonical authority and EC2 state
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin main task/ec2-artifact-policy-enforcement-q7-snapshot-20260820
+          main="$(git rev-parse origin/main)"
+          git checkout --detach "$main"
+          work="$RUNNER_TEMP/ec2-current-resolve"
+          mkdir -p "$work"
+          python3 .terminus/execution/controller_cli.py control-plane --head "$main" --output "$work/control.json"
+          control="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["control_plane_commit"])' "$work/control.json")"
+          for task_commit in 8836f886d7cfc7f2747264026da31d1dfa49c658 0ad08868799c19ea2e02458bd2fc92ec64eaa288; do
+            set +e
+            python3 .terminus/execution/controller_cli.py continue \
+              --task-id ec2-artifact-policy-enforcement \
+              --task-commit "$task_commit" \
+              --control-plane-commit "$control" \
+              --output "$work/state-${task_commit}.json"
+            rc=$?
+            set -e
+            printf '%s\n' "$rc" > "$work/rc-${task_commit}.txt"
+          done
+          git checkout -B diagnostic/ec2-ledger-integrity-20260820 origin/diagnostic/ec2-ledger-integrity-20260820
+          out=".terminus/diagnostic-run-locators/ec2-current-resolve-${GITHUB_SHA}.json"
+          python3 - "$work" "$out" "$main" "$control" "$GITHUB_RUN_ID" <<'PY'
+          import json, pathlib, sys
+          work, out, main, control, run_id = sys.argv[1:]
+          w=pathlib.Path(work)
+          payload={"run_id":int(run_id),"main":main,"control_plane_commit":control,"states":{}}
+          for tc in ["8836f886d7cfc7f2747264026da31d1dfa49c658","0ad08868799c19ea2e02458bd2fc92ec64eaa288"]:
+              p=w/f"state-{tc}.json"
+              payload["states"][tc]={"rc":int((w/f"rc-{tc}.txt").read_text().strip()),"payload":json.loads(p.read_text()) if p.exists() else None}
+          pathlib.Path(out).parent.mkdir(parents=True,exist_ok=True)
+          pathlib.Path(out).write_text(json.dumps(payload,indent=2,sort_keys=True)+"\n")
+          PY
+          git config user.name 'terminus-diagnostic-locator[bot]'
+          git config user.email 'terminus-diagnostic-locator[bot]@users.noreply.github.com'
+          git add -- "$out"
+          git commit -m "Track EC2 current resolver run $GITHUB_RUN_ID"
+          git push origin HEAD:diagnostic/ec2-ledger-integrity-20260820
