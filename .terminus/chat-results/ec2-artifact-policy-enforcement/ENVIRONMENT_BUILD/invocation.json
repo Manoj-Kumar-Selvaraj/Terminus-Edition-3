@@ -1,0 +1,152 @@
+{
+  "acceptance_predicates": {},
+  "authority": {
+    "control_plane_commit": "bde51f1c20b2d6d78b33f02956da9c58cd42d2a4",
+    "policy_versions": {},
+    "task_commit": "6c7909d5c0efd3e6e64443d6de3b227c1820b01b",
+    "task_id": "ec2-artifact-policy-enforcement"
+  },
+  "evidence": {
+    "authorized_evidence_classes": [
+      "CONTROL_PLANE_POLICY",
+      "PRIVATE_CREATION_DESIGN",
+      "PUBLIC_REFERENCE",
+      "SOLVER_VISIBLE_TASK"
+    ],
+    "evidence_required": [
+      "reachable starter runtime",
+      "representative deterministic state",
+      "normal engineering docs/contracts",
+      "runtime/operator evidence where applicable"
+    ],
+    "excluded_evidence_classes": [
+      "CI_RUNTIME_EVIDENCE",
+      "CURRENT_REVIEW_PACKET",
+      "DURABLE_SESSION_STATE",
+      "FINAL_PACKAGE_EVIDENCE",
+      "MODEL_TRIAL_EVIDENCE",
+      "PRIOR_REVIEW_RESULTS",
+      "SOLUTION_ORACLE",
+      "VERIFIER_PRIVATE"
+    ],
+    "mandatory_exact_reads": [
+      "TERMINUS_3_AI_INSTRUCTIONS.md",
+      ".terminus/agents/CREATION_PIPELINE.md",
+      ".terminus/agents/PRODUCTION_AUTHENTICITY.md",
+      ".terminus/agents/CREATOR_PROMPTS.md",
+      ".terminus/agents/A2_PHASE_PROMPTS.md"
+    ],
+    "retrieval_mode": "FILTERED_HYBRID"
+  },
+  "ignored_input_count": 0,
+  "inputs": {
+    "optional": {},
+    "required": {
+      "CLEAN_SYSTEM_ARCHITECTURE": {
+        "SOURCE": "current canonical SYSTEM_ARCHITECTURE result",
+        "SOURCE_RECORD_ID": "rec_c5294d6b3f4b8a4fc9526e2ad4b98be84b851e541f4db21f48a0f9a2fb498d76"
+      },
+      "CREATION_RULE_CONTEXT": {
+        "CONTROL_PLANE_COMMIT": "bde51f1c20b2d6d78b33f02956da9c58cd42d2a4",
+        "CREATION_PROFILE": "large_system_strict",
+        "KNOWN_POLICY_CONFLICTS": [],
+        "NETWORK_ENVIRONMENT_CONSTRAINTS": "network_mode public; separate verifier; digest-pinned canonical Go runtime; no privileged Docker/capability/socket shortcuts; tmux and asciinema required in agent image"
+      },
+      "DEFECT_TOPOLOGY": {
+        "CAUSAL_EDGE_COUNT": 37,
+        "CLUSTER_COUNT": 6,
+        "DEFECT_COUNT": 26,
+        "SOURCE_PATH": ".terminus/designs/ec2-artifact-policy-enforcement.json",
+        "SOURCE_RECORD_ID": "rec_1954c1d41cde99053c68fb2e684655b92e98521237a777eddba524c781b718e7"
+      },
+      "SOLVER_VISIBLE_DOC_PLAN": [
+        "environment/enforcer/docs/architecture.md",
+        "environment/enforcer/docs/policy-contract.md",
+        "environment/enforcer/docs/state-format.md",
+        "environment/enforcer/docs/operations.md",
+        "environment/enforcer/notes/oncall.md"
+      ]
+    }
+  },
+  "invocation_id": "inv_10d208a85f82c0fabd9a6c1cc49706a1ac12c6d0bae53c01b254caad751fa639",
+  "learning": {
+    "context_hash": "sha256:bb84a513aa2b6e4374d691759c4a6edf94169f479f4611e9091643b9f279ccfc",
+    "lessons": [],
+    "mode": "GENERALIZED_LESSONS_PLUS_OWNED_REMEDIATIONS",
+    "raw_feedback_exposed": false,
+    "raw_historical_findings_exposed": false,
+    "registry_heads": {
+      "feedback": "GENESIS",
+      "findings": "GENESIS",
+      "lessons": "GENESIS",
+      "patterns": "GENESIS",
+      "remediations": "GENESIS"
+    },
+    "remediations": []
+  },
+  "missing_required_inputs": [],
+  "output_contract": {
+    "allowed_status_values": [
+      "BUILT",
+      "SCENARIO_TOO_SMALL",
+      "ARCHITECTURE_GAP",
+      "BLOCKED"
+    ],
+    "deterministic_validators": [
+      ".terminus/validate_environment_complexity.py <task>",
+      ".terminus/validate_runtime_authenticity.py <task>",
+      ".terminus/validate_business_module_diversity.py <task> when applicable"
+    ],
+    "optional_fields": [
+      "RESOURCE_COUNT",
+      "UNRESOLVED_RISKS"
+    ],
+    "persisted_artifacts": [
+      "<task>/environment/"
+    ],
+    "required_fields": [
+      "COMPONENT_GRAPH",
+      "ENTRYPOINTS",
+      "SOLVER_VISIBLE_DOCS",
+      "INSTRUCTION_DOC_BOUNDARY",
+      "SUBSTANTIVE_LOC",
+      "PRODUCTION_CHARACTERISTICS",
+      "RUNTIME_REACHABILITY_NOTES",
+      "ENVIRONMENT_RULE_CHECKS"
+    ],
+    "semantic_reviewers": [
+      "Complexity Governor"
+    ]
+  },
+  "readiness": "READY",
+  "retrieval": {
+    "query": null,
+    "retrieved_chars": 0,
+    "retrieved_context": [],
+    "status": "NOT_REQUESTED"
+  },
+  "routing": {
+    "failure_routes": {
+      "ARCHITECTURE_GAP": "Creation Controller -> SYSTEM_ARCHITECTURE",
+      "FORMAT_ERROR": "Q7 Task Format Enforcer",
+      "SCENARIO_TOO_SMALL": "Creation Controller -> WORK_PACKAGE_RESEARCH",
+      "TOY_OR_PADDED_SYSTEM": "A2 System Architect / Environment Builder"
+    },
+    "stale_on": [
+      "architecture change",
+      "defect-topology change",
+      "solver-visible documentation plan change",
+      "environment rule change",
+      "solver-visible environment change"
+    ],
+    "success_transition": "REFERENCE_SOLUTION"
+  },
+  "schema_version": "1.0",
+  "stage": {
+    "lifecycle": "creation",
+    "owner": "A2 System Architect / Environment Builder",
+    "role_class": "PRODUCER",
+    "role_id": "A2_ENVIRONMENT_BUILDER",
+    "stage_id": "ENVIRONMENT_BUILD"
+  }
+}
