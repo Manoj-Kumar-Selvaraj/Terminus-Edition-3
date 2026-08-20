@@ -1,0 +1,275 @@
+{
+  "schema_version": "3.0",
+  "role": "Spec-Test Contract Reviewer",
+  "review_id": "stonevault-crash-safe-storage-1cbdc003-spec-test-contract-37f462215d",
+  "task": "stonevault-crash-safe-storage",
+  "task_commit": "1cbdc0030a8a6483db4c91865aa60b8ef127c9c6",
+  "control_plane_commit": "8b0c265a1b12b4b066751be160b75abb6b23339f",
+  "protocol_policy_version": "2.2",
+  "prompt_policy_version": "2.2",
+  "role_policy_version": "1.1",
+  "role_contract_hash": "9607c7323be7db66eb7b520db4498f29efc686073e6f3d565c8e2c99ad26a34c",
+  "context_packet": ".terminus/reviews/stonevault-crash-safe-storage/1cbdc003/stonevault-crash-safe-storage-1cbdc003-spec-test-contract-37f462215d.packet.json",
+  "verdict": "REVISE",
+  "confidence": "HIGH",
+  "evidence_status": "SUFFICIENT",
+  "summary": "Bidirectional alignment is nearly complete across instruction.md, storage-format.md, and 63 pytest probes, but a documented WAL framing corruption class (zero declared payload length) lacks any behavioral test while the symmetric >8 MiB case is covered.",
+  "evidence": [
+    {
+      "type": "file",
+      "ref": "stonevault-crash-safe-storage/instruction.md",
+      "observation": "Sixteen concise functional bullets plus one intro paragraph state writer fencing, data-dir precedence, snapshot/scan semantics, conflict rules, durability/recovery, checkpoint, integrity checks, STATS/HEALTH, hex/binary limits, protocol resilience, and compatibility preservation within the Edition 3 shape limit."
+    },
+    {
+      "type": "file",
+      "ref": "stonevault-crash-safe-storage/environment/stonevault/docs/storage-format.md",
+      "observation": "Delegated compatibility contract documents startup precedence, exact stable wire shapes, WAL/snapshot binary layouts, torn-tail vs corruption boundaries (including zero-byte and >8 MiB invalid framing lengths), HEALTH invariant scope, and C++ engine ownership boundaries without hidden-test topology."
+    },
+    {
+      "type": "test",
+      "ref": "stonevault-crash-safe-storage/tests/test_outputs.py",
+      "observation": "35 F2P-oriented behavioral probes cover writer exclusion, snapshot isolation, scan overlays/ordering, conflicts, recovery, checkpoint refusal/success, snapshot corruption classes, STATS/HEALTH reporting, limits, and protocol resilience with exact-shape helpers for READY/STATS/HEALTH."
+    },
+    {
+      "type": "test",
+      "ref": "stonevault-crash-safe-storage/tests/test_preservation.py",
+      "observation": "Nine P2P preservation probes validate env-only data-dir selection, inclusive scan-prefix boundary, binary round-trip, committed hex canonicalization, and additional snapshot structural corruption rejections."
+    },
+    {
+      "type": "test",
+      "ref": "stonevault-crash-safe-storage/tests/test_q4_contract.py",
+      "observation": "Nineteen contract probes add default data-dir ownership, local delete visibility, conflicted-tx termination, durable commit survival, multi-commit WAL replay, independently encoded WAL/snapshot fixtures, impossible framing length (>8 MiB), checkpoint interruption recovery, HEALTH fail-closed on missing wal.log, C++20/ABI compile checks, exact READY/HEALTH shapes, and cross-command limit/error consistency."
+    },
+    {
+      "type": "file",
+      "ref": "stonevault-crash-safe-storage/environment/stonevault/docs/storage-format.md",
+      "observation": "Line 42 declares that a WAL header with zero declared payload bytes is intrinsically invalid framing and corruption, not a repairable torn tail; no pytest constructs a complete 12-byte header with length=0."
+    },
+    {
+      "type": "test",
+      "ref": "stonevault-crash-safe-storage/tests/test_q4_contract.py::test_impossible_wal_frame_length_is_fatal",
+      "observation": "Covers only framing length above the 8 MiB ceiling; the paired zero-length invalid-framing case from the same contract sentence is absent from all three test modules."
+    }
+  ],
+  "findings": [
+    {
+      "id": "F-UNTESTED-WAL-ZERO-FRAMING",
+      "severity": "HIGH",
+      "status": "OBSERVED",
+      "criterion": "Every material requirement in the solver-visible contract must have meaningful verifier coverage.",
+      "evidence_refs": [
+        "stonevault-crash-safe-storage/environment/stonevault/docs/storage-format.md",
+        "stonevault-crash-safe-storage/tests/test_q4_contract.py::test_impossible_wal_frame_length_is_fatal",
+        "stonevault-crash-safe-storage/instruction.md"
+      ],
+      "why_it_matters": "storage-format.md distinguishes zero declared WAL payload length as fail-closed corruption rather than torn-tail repair; a solver that truncates or ignores this complete header could pass all current probes yet violate the published open/recovery contract and diverge from the symmetric >8 MiB behavior already graded.",
+      "minimal_remediation": "Add a pytest open probe that writes a complete final WAL header with magic, length=0, and valid CRC for an empty payload, then asserts non-zero exit and WAL corruption on stderr—mirroring test_impossible_wal_frame_length_is_fatal for the lower framing bound.",
+      "regression_risk": "Low if framed as an independent fixture-encoded corruption case; avoid coupling to product serializers."
+    }
+  ],
+  "missing_evidence": [],
+  "change_scope": [
+    "stonevault-crash-safe-storage/tests/test_q4_contract.py"
+  ],
+  "do_not_change": [
+    "stonevault-crash-safe-storage/instruction.md",
+    "stonevault-crash-safe-storage/environment/stonevault/docs/storage-format.md",
+    "stonevault-crash-safe-storage/environment/stonevault/storage/"
+  ],
+  "next_gate": "Q4_REVISE",
+  "role_output": {
+    "REQUIREMENT_TEST_MATRIX": {
+      "R01_WRITER_FENCING": {
+        "sources": ["instruction.md L3", "storage-format.md Startup LOCK"],
+        "tests": ["test_second_writer_is_excluded_and_lock_is_released"],
+        "coverage": "complete"
+      },
+      "R02_DATA_DIR_PRECEDENCE": {
+        "sources": ["instruction.md L4", "storage-format.md Startup"],
+        "tests": [
+          "test_explicit_data_directory_overrides_environment",
+          "test_environment_only_data_directory_is_honored",
+          "test_documented_default_data_directory_is_used"
+        ],
+        "coverage": "complete"
+      },
+      "R03_SNAPSHOT_POINT_READS": {
+        "sources": ["instruction.md L5", "storage-format.md Transactions"],
+        "tests": [
+          "test_read_snapshot_survives_newer_put",
+          "test_read_snapshot_survives_newer_delete",
+          "test_point_read_observes_own_delete"
+        ],
+        "coverage": "complete"
+      },
+      "R04_PREFIX_SCAN_SEMANTICS": {
+        "sources": ["instruction.md L6-L7", "storage-format.md Transactions/Commands"],
+        "tests": [
+          "test_scan_snapshot_excludes_later_insert",
+          "test_scan_snapshot_retains_later_delete",
+          "test_scan_applies_local_put_overlay",
+          "test_scan_applies_local_delete_overlay",
+          "test_scan_uses_unsigned_byte_order",
+          "test_hex_input_is_case_insensitive_and_output_is_lowercase",
+          "test_exact_scan_prefix_limit_is_accepted",
+          "test_oversized_scan_prefix_is_rejected_without_terminating"
+        ],
+        "coverage": "complete"
+      },
+      "R05_WRITE_CONFLICTS": {
+        "sources": ["instruction.md L8", "storage-format.md Transactions"],
+        "tests": [
+          "test_stale_put_conflicts_with_newer_version",
+          "test_stale_delete_conflicts_with_newer_version",
+          "test_conflicted_multi_key_commit_is_atomic",
+          "test_conflicted_transaction_is_ended"
+        ],
+        "coverage": "complete"
+      },
+      "R06_SEQUENCE_DURABILITY": {
+        "sources": ["instruction.md L9", "storage-format.md Transactions/WAL"],
+        "tests": [
+          "test_conflict_does_not_consume_commit_sequence",
+          "test_acknowledged_commit_survives_immediate_process_kill",
+          "test_multi_commit_wal_prefix_replays_completely"
+        ],
+        "coverage": "complete"
+      },
+      "R07_UNCOMMITTED_RECOVERY": {
+        "sources": ["instruction.md L10", "storage-format.md WAL"],
+        "tests": [
+          "test_killed_transaction_is_invisible_after_restart",
+          "test_rolled_back_transaction_is_invisible_after_restart"
+        ],
+        "coverage": "complete"
+      },
+      "R08_WAL_RECOVERY_INTEGRITY": {
+        "sources": ["instruction.md L11", "storage-format.md WAL"],
+        "tests": [
+          "test_short_final_wal_header_is_repaired",
+          "test_short_final_wal_payload_is_repaired",
+          "test_complete_wal_checksum_damage_is_fatal",
+          "test_complete_wal_bad_magic_is_fatal",
+          "test_non_contiguous_commit_sequence_is_fatal",
+          "test_independent_wal_fixture_recovers_published_layout",
+          "test_complete_unknown_wal_type_is_fatal",
+          "test_complete_malformed_wal_payload_is_fatal",
+          "test_impossible_wal_frame_length_is_fatal"
+        ],
+        "coverage": "partial",
+        "gap": "zero declared payload length corruption untested"
+      },
+      "R09_CHECKPOINT_LIFECYCLE": {
+        "sources": ["instruction.md L12", "storage-format.md Snapshot"],
+        "tests": [
+          "test_checkpoint_refuses_active_transaction",
+          "test_checkpoint_reclaims_wal_after_commit",
+          "test_checkpoint_restart_preserves_sequence_and_rows",
+          "test_checkpoint_interruption_keeps_a_durable_recovery_source"
+        ],
+        "coverage": "complete"
+      },
+      "R10_SNAPSHOT_INTEGRITY": {
+        "sources": ["instruction.md L13", "storage-format.md Snapshot"],
+        "tests": [
+          "test_snapshot_checksum_corruption_is_fatal",
+          "test_snapshot_trailing_bytes_are_fatal",
+          "test_stale_snapshot_temporary_is_removed_on_open",
+          "test_snapshot_bad_magic_is_fatal",
+          "test_snapshot_truncation_is_fatal",
+          "test_snapshot_impossible_row_count_is_fatal",
+          "test_snapshot_out_of_order_rows_are_fatal",
+          "test_independent_snapshot_fixture_preserves_layout_and_crc",
+          "test_complete_snapshot_oversized_key_is_fatal",
+          "test_complete_snapshot_oversized_value_is_fatal",
+          "test_complete_snapshot_duplicate_key_is_fatal"
+        ],
+        "coverage": "complete"
+      },
+      "R11_STATS": {
+        "sources": ["instruction.md L14", "storage-format.md Commands"],
+        "tests": ["test_stats_match_durable_state_and_file_size"],
+        "coverage": "complete"
+      },
+      "R12_HEALTH": {
+        "sources": ["instruction.md L15", "storage-format.md Runtime health"],
+        "tests": [
+          "test_health_reports_active_transactions",
+          "test_health_tracks_published_snapshot",
+          "test_health_rejects_missing_live_wal_path",
+          "test_ready_and_health_wire_shapes_are_exact"
+        ],
+        "coverage": "complete"
+      },
+      "R13_BINARY_HEX": {
+        "sources": ["instruction.md L16", "storage-format.md Commands"],
+        "tests": [
+          "test_hex_input_is_case_insensitive_and_output_is_lowercase",
+          "test_arbitrary_binary_key_and_value_round_trip",
+          "test_committed_hex_output_is_canonical"
+        ],
+        "coverage": "complete"
+      },
+      "R14_INCLUSIVE_LIMITS": {
+        "sources": ["instruction.md L17", "storage-format.md Commands"],
+        "tests": [
+          "test_exact_key_limit_is_accepted",
+          "test_exact_value_limit_is_accepted",
+          "test_exact_scan_prefix_limit_is_accepted",
+          "test_oversized_inputs_are_rejected_without_terminating",
+          "test_oversized_scan_prefix_is_rejected_without_terminating",
+          "test_decoded_key_limit_is_consistent_across_commands"
+        ],
+        "coverage": "complete"
+      },
+      "R15_PROTOCOL_RESILIENCE": {
+        "sources": ["instruction.md L18", "storage-format.md Commands"],
+        "tests": [
+          "test_malformed_commands_and_unknown_transactions_do_not_kill_session",
+          "test_unknown_transaction_errors_are_consistent_across_commands"
+        ],
+        "coverage": "complete"
+      },
+      "R16_NATIVE_COMPATIBILITY": {
+        "sources": ["instruction.md L1-L2,L19", "storage-format.md"],
+        "tests": [
+          "test_product_tree_keeps_native_language_boundary",
+          "test_cxx20_sources_and_public_abi_signatures_compile",
+          "test_ready_and_health_wire_shapes_are_exact",
+          "test_independent_wal_fixture_recovers_published_layout",
+          "test_independent_snapshot_fixture_preserves_layout_and_crc"
+        ],
+        "coverage": "complete"
+      }
+    },
+    "PHANTOM_TEST_CONTRACTS": [],
+    "UNTESTED_REQUIREMENTS": [
+      "WAL header declaring zero payload bytes must fail closed as corruption (storage-format.md WAL framing) rather than be repaired as a torn tail"
+    ],
+    "AMBIGUITIES": [],
+    "INSTRUCTION_SHAPE": "PASS",
+    "INSTRUCTION_REQUIREMENT_COMPLETENESS": "SUFFICIENT",
+    "DELEGATED_CONTRACT_CHECK": {
+      "storage-format.md": "legitimate technical documentation (layout/protocol/runbook); all graded binary and wire semantics referenced by instruction remain discoverable without hidden-test enumeration"
+    },
+    "INSTRUCTION_DOC_BOUNDARY": "CLEAN",
+    "IMPLEMENTATION_DIAGNOSIS_LEAKAGE": "NONE",
+    "CURRENT_STATE_EVIDENCE": "NOT_APPLICABLE",
+    "SPEC_DUMP_RISK": "LOW",
+    "BIDIRECTIONAL_ALIGNMENT": "FAIL",
+    "BLOCKING_FINDING_IDS": ["F-UNTESTED-WAL-ZERO-FRAMING"],
+    "ADVISORY_FINDING_IDS": [],
+    "EXHAUSTIVENESS": {
+      "REQUIREMENTS_ENUMERATED": "COMPLETE",
+      "VERIFIER_BEHAVIORS_ENUMERATED": "COMPLETE",
+      "FORWARD_MATRIX_COMPLETE": "YES",
+      "REVERSE_MATRIX_COMPLETE": "YES",
+      "DELEGATED_CONTRACTS_COMPLETE": "YES",
+      "P2P_BOUNDARIES_COMPLETE": "YES",
+      "F2P_BOUNDARIES_COMPLETE": "YES",
+      "OUTPUT_INTERFACES_COMPLETE": "YES",
+      "SECOND_PASS_OMISSION_SWEEP": "PASS",
+      "UNINSPECTED_SCOPE": []
+    }
+  }
+}
