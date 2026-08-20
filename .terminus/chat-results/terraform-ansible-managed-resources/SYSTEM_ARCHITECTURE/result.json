@@ -4,74 +4,78 @@
       "content_hash": "sha256:104817a239b92de3e53f14d6bc0176563437894773e060648776dc09c6280374",
       "kind": "COMMIT",
       "ref": "commit:78ad422902b27dea954905130a1267b02cff3596"
-    },
-    {
-      "content_hash": "sha256:fca3ef4b283f1a1fe2aa6d960cd36a17b7232eb0b7a130f9cc8d43d948d6ec42",
-      "kind": "COMMIT",
-      "ref": "commit:67b805a297ac005ee08e82facc533f53a3233192"
     }
   ],
-  "invocation_id": "inv_7535df2b879eaf0094d827a574577aa0d66b20252626442b628e1468a56ebc87",
+  "invocation_id": "inv_ee7290e650917888767bca92e87b0beed915529351fe88d77ab0b8ea13eb17e1",
   "output_task_commit": "78ad422902b27dea954905130a1267b02cff3596",
   "outputs": {
-    "COMPONENT_GRAPH": [
-      "provider registration/configuration/runtime preflight",
-      "shared lifecycle identity/state transitions",
-      "Ansible task/playbook generation",
-      "structured runner",
-      "native Linux observation",
-      "normalization/validation",
-      "ten differentiated resource implementations"
-    ],
+    "COMPONENT_GRAPH": {
+      "mutation_path": "Terraform desired intent -> resource model -> deterministic Ansible task/playbook generation -> structured ansible-playbook runner -> local Linux mutation.",
+      "observation_path": "Read/refresh bypasses mutation and uses native Linux observers -> canonical observed model -> Terraform Core state.",
+      "provider_runtime": "Terraform provider registration, configuration and preflight establish the local inventory/runtime context.",
+      "resource_layer": "file, directory, copy, template, line, block, symlink, user, group and cron use the same lifecycle/runner/observer infrastructure with family-specific ownership semantics.",
+      "shared_lifecycle": "Stable identity, transition/state-publication rules and canonical normalization are shared across all resources."
+    },
     "ENTRYPOINTS": [
-      "/app/provider/cmd/terraform-provider-ansibleops/main.go",
-      "/app/provider/scripts/build-provider.sh",
-      "/app/provider/scripts/smoke.sh"
+      "cmd/terraform-provider-ansibleops provider process",
+      "provider configuration and supplied local inventory",
+      "Create/Read/Update/Delete callbacks for each of ten managed resources",
+      "structured ansible-playbook subprocess runner for mutation only",
+      "native Linux observation helpers for Read/refresh"
     ],
     "PRODUCTION_CHARACTERISTICS": [
-      "real provider process",
-      "differentiated lifecycles",
-      "mutation/observation split",
-      "failure-safe transitions",
-      "stable ownership",
-      "runner safety",
-      "canonical convergence"
+      "real Go Terraform Plugin Framework provider/runtime",
+      "ten differentiated managed resource families",
+      "shared lifecycle and normalization machinery",
+      "Ansible subprocess integration for mutations",
+      "native Linux drift/refresh observation",
+      "ownership-scoped deletion behavior",
+      "timeout/cancellation/process-cleanup semantics",
+      "idempotency and representation normalization across repeated plan/apply/refresh cycles"
     ],
     "RESOURCE_GRAPH": {
-      "accounts": [
-        "user",
-        "group"
-      ],
-      "content": [
+      "resources": [
+        "file",
+        "directory",
         "copy",
         "template",
         "line",
-        "block"
-      ],
-      "filesystem": [
-        "file",
-        "directory",
-        "symlink"
-      ],
-      "scheduler": [
+        "block",
+        "symlink",
+        "user",
+        "group",
         "cron"
+      ],
+      "shared": [
+        "provider/preflight",
+        "lifecycle/identity",
+        "normalization",
+        "Ansible generation",
+        "structured runner",
+        "native observation"
       ]
     },
-    "SCALE_FIT": "large_system_strict natural fit",
+    "SCALE_FIT": "PASS: large_system_strict; the coherent ten-resource provider spans multiple production-like components and cross-cutting lifecycle invariants rather than padded independent CRUD handlers.",
     "SOLVER_VISIBLE_DOC_PLAN": [
-      "docs/provider-contract.md",
-      "docs/resource-reference.md",
-      "docs/lifecycle.md",
-      "examples/basic/main.tf"
+      "terraform-ansible-managed-resources/instruction.md",
+      "terraform-ansible-managed-resources/README.md",
+      "terraform-ansible-managed-resources/environment/ansibleops/docs/provider-contract.md",
+      "terraform-ansible-managed-resources/environment/ansibleops/docs/resource-reference.md",
+      "terraform-ansible-managed-resources/environment/ansibleops/docs/lifecycle.md"
     ],
     "STATE_MODEL": {
-      "external_state": "filesystem/passwd/group/crontab external truth",
-      "identity": "documented external object key",
-      "mutation": "Ansible before state publication",
-      "observation": "native read only",
-      "terraform_state": "Terraform Core sole durable state authority"
+      "durable_authority": "Terraform Core only",
+      "failure": "nonzero exit, timeout or cancellation retains the last successfully applied state; failed delete remains managed and retryable",
+      "identity": "stable documented external-object key",
+      "provider_store": "none",
+      "publication": "publish new applied state only after successful mutation",
+      "refresh": "native observation reflects drift and removes state when object is missing or wrong kind",
+      "runtime_truth": "external Linux objects and native observations"
     },
-    "UNRESOLVED_RISKS": []
+    "UNRESOLVED_RISKS": [
+      "Fresh empirical runtime/oracle behavior has not yet been re-earned under this control plane and remains owned by DETERMINISTIC_VALIDATION.",
+      "Later Q4/Q6 and chat-human Quality Interlock evidence must bind to the exact frozen/current descendant snapshot required by repository policy."
+    ]
   },
   "schema_version": "1.0",
   "status": "ARCHITECTURE_READY"
