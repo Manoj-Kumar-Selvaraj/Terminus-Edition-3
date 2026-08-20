@@ -1,0 +1,217 @@
+{
+  "authority": {
+    "control_plane_commit": "02ac3445191f96a9309d3a08248f09e17a738c5b",
+    "policy_versions": {},
+    "task_commit": "78ad422902b27dea954905130a1267b02cff3596",
+    "task_id": "terraform-ansible-managed-resources"
+  },
+  "disposition": "ADVANCE",
+  "evidence_refs": [
+    {
+      "content_hash": "sha256:104817a239b92de3e53f14d6bc0176563437894773e060648776dc09c6280374",
+      "kind": "COMMIT",
+      "ref": "commit:78ad422902b27dea954905130a1267b02cff3596"
+    },
+    {
+      "content_hash": "sha256:8d7c0b246bf0e279a1462c24246dd49052a0367fc23fe9b1f13c800165271b24",
+      "kind": "COMMIT",
+      "ref": "commit:02ac3445191f96a9309d3a08248f09e17a738c5b"
+    }
+  ],
+  "invocation_id": "inv_74d80f6e1606f1cc974cdcbd5d5cf94a2b28dd4810203dac042d2a4d83126a09",
+  "invocation_snapshot": {
+    "acceptance_predicates": {},
+    "authority": {
+      "control_plane_commit": "02ac3445191f96a9309d3a08248f09e17a738c5b",
+      "policy_versions": {},
+      "task_commit": "78ad422902b27dea954905130a1267b02cff3596",
+      "task_id": "terraform-ansible-managed-resources"
+    },
+    "evidence": {
+      "authorized_evidence_classes": [
+        "CI_RUNTIME_EVIDENCE",
+        "CONTROL_PLANE_POLICY",
+        "PUBLIC_REFERENCE",
+        "SOLUTION_ORACLE",
+        "SOLVER_VISIBLE_TASK"
+      ],
+      "evidence_required": [
+        "implementation evidence",
+        "verification evidence",
+        "no benchmark framing/leakage"
+      ],
+      "excluded_evidence_classes": [
+        "CURRENT_REVIEW_PACKET",
+        "DURABLE_SESSION_STATE",
+        "FINAL_PACKAGE_EVIDENCE",
+        "MODEL_TRIAL_EVIDENCE",
+        "PRIOR_REVIEW_RESULTS",
+        "PRIVATE_CREATION_DESIGN",
+        "VERIFIER_PRIVATE"
+      ],
+      "mandatory_exact_reads": [
+        ".terminus/agents/CREATION_PIPELINE.md",
+        ".terminus/agents/CREATOR_PROMPTS.md",
+        ".terminus/agents/PROMPTS.md"
+      ],
+      "retrieval_mode": "FILTERED_HYBRID"
+    },
+    "ignored_input_count": 0,
+    "inputs": {
+      "optional": {},
+      "required": {
+        "APPROVED_WORK_PACKAGE": {
+          "ENGINEERING_OBJECTIVE": "Complete the ten-resource ansibleops provider as one coherent Terraform lifecycle/reconciliation system.",
+          "ID": "MANAGED_RESOURCE_LIFECYCLE_COMPLETION",
+          "REQUIRED_END_STATE": "Exactly ten real managed resources with stable external-key identity, Ansible-only mutation, native refresh, transactional Terraform state, scoped ownership/delete, safe runner behavior and canonical convergence."
+        },
+        "IMPLEMENTATION_EVIDENCE": {
+          "FILES_CHANGED": [
+            "solution/solve.sh",
+            "solution/fixed/internal/lifecycle/maps.go",
+            "solution/fixed/internal/lifecycle/normalize.go",
+            "solution/fixed/internal/resources/",
+            "solution/fixed/internal/runner/runner.go"
+          ],
+          "PRESERVED_BEHAVIOR": "Exact ten resource interfaces, local/ansibleops 0.1.0, supplied local inventory, Go 1.24/current Plugin Framework and Terraform 1.10.5 compatibility.",
+          "REFERENCE_SOLUTION_STATUS": "IMPLEMENTED",
+          "RESTORED_INVARIANTS": [
+            "stable external-key IDs",
+            "mutation before state publication",
+            "native Read and external drift reflection",
+            "failure-safe update/delete semantics",
+            "structured runner argv, timeout/cancel handling and cleanup",
+            "canonical convergence and Terraform Core sole durable state authority"
+          ]
+        },
+        "VERIFICATION_EVIDENCE": {
+          "COVERAGE_FAMILIES": [
+            "provider/schema",
+            "state/identity",
+            "native refresh/drift",
+            "transactional create/update",
+            "failure-safe scoped delete",
+            "copy/template content intent",
+            "line/block ownership",
+            "user/group native reconciliation",
+            "runner/process safety",
+            "normalization/idempotency",
+            "cron defaults/drift/siblings",
+            "external ownership collision",
+            "Ansible mutation backend"
+          ],
+          "EMPIRICAL_STATUS": "Current runtime/oracle empirical validation remains intentionally deferred to DETERMINISTIC_VALIDATION; no pass claim is made here.",
+          "F2P_COUNT": 30,
+          "P2P_COUNT": 6,
+          "SPEC_ALIGNMENT": {
+            "Q1_STATUS": "NO_GAP",
+            "Q2_STATUS": "COVERED",
+            "Q3_STATUS": "CLEAR"
+          },
+          "VERIFIER_STATUS": "VERIFIER_READY"
+        }
+      }
+    },
+    "invocation_id": "inv_74d80f6e1606f1cc974cdcbd5d5cf94a2b28dd4810203dac042d2a4d83126a09",
+    "learning": {
+      "context_hash": "sha256:bb84a513aa2b6e4374d691759c4a6edf94169f479f4611e9091643b9f279ccfc",
+      "lessons": [],
+      "mode": "GENERALIZED_LESSONS_PLUS_OWNED_REMEDIATIONS",
+      "raw_feedback_exposed": false,
+      "raw_historical_findings_exposed": false,
+      "registry_heads": {
+        "feedback": "GENESIS",
+        "findings": "GENESIS",
+        "lessons": "GENESIS",
+        "patterns": "GENESIS",
+        "remediations": "GENESIS"
+      },
+      "remediations": []
+    },
+    "missing_required_inputs": [],
+    "output_contract": {
+      "allowed_status_values": [
+        "DOCUMENTATION_READY",
+        "REWRITE_REQUIRED",
+        "BLOCKED"
+      ],
+      "deterministic_validators": [],
+      "optional_fields": [],
+      "persisted_artifacts": [
+        "<task>/README.md"
+      ],
+      "required_fields": [
+        "README_PATH",
+        "DIFFICULTY_EXPLANATION",
+        "SOLUTION_EXPLANATION",
+        "VERIFICATION_EXPLANATION"
+      ],
+      "semantic_reviewers": [
+        "Engineering Documentation Reviewer",
+        "Human Quality Reviewer"
+      ]
+    },
+    "readiness": "READY",
+    "retrieval": {
+      "query": null,
+      "retrieved_chars": 0,
+      "retrieved_context": [],
+      "status": "NOT_REQUESTED"
+    },
+    "routing": {
+      "failure_routes": {
+        "LEAKAGE_OR_SYNTHETIC_PROSE": "A8 Documentation Writer / Human Quality Reviewer",
+        "UNSUPPORTED_CLAIM": "A8 Documentation Writer"
+      },
+      "stale_on": [
+        "implementation evidence change",
+        "verification evidence change",
+        "material task-description change"
+      ],
+      "success_transition": "FORMAT_GATE"
+    },
+    "schema_version": "1.0",
+    "stage": {
+      "lifecycle": "creation",
+      "owner": "A8 Documentation Writer",
+      "role_class": "PRODUCER",
+      "role_id": "A8_DOCUMENTATION_WRITER",
+      "stage_id": "DOCUMENTATION_DRAFT"
+    }
+  },
+  "outputs": {
+    "DIFFICULTY_EXPLANATION": "The engineering difficulty comes from making ten different Linux object families share normal Terraform lifecycle semantics without hiding state in a second store: identity must remain stable across mutable changes, refresh must observe native external state, mutations must be transactional from Terraform's point of view, and resource-specific ownership rules must converge safely under retries and drift.",
+    "README_PATH": "terraform-ansible-managed-resources/README.md",
+    "SOLUTION_EXPLANATION": "The reference implementation centralizes lifecycle identity and normalization, uses Ansible only for Create/Update/Delete mutations, uses native Linux observation for Read/refresh, publishes Terraform state only after successful mutation, preserves prior managed state on failed update/delete, and uses structured process execution with timeout/cancellation handling and temporary-playbook cleanup. Resource implementations retain their documented filesystem, content, text, account, group and cron ownership semantics.",
+    "VERIFICATION_EXPLANATION": "The verifier maps the public requirement families to 30 failure-to-pass and 6 preservation tests covering schemas, identity, native drift, transactional failure/retry, scoped deletion, content/text/account/cron behavior, ownership collisions, runner safety, normalization and the Ansible mutation backend. SPEC_ALIGNMENT independently resolved Q1 as NO_GAP, Q2 as COVERED and Q3 as CLEAR. Runtime/oracle empirical success is not claimed here and remains for the later deterministic validation stage."
+  },
+  "record_id": "rec_72c1e973eaf44fb8003253649b19d701b65e091c5c5f5752dde4ea5faa9245eb",
+  "role_id": "A8_DOCUMENTATION_WRITER",
+  "schema_version": "1.0",
+  "stage_id": "DOCUMENTATION_DRAFT",
+  "status": "DOCUMENTATION_READY",
+  "task_lineage": {
+    "input_task_commit": "78ad422902b27dea954905130a1267b02cff3596",
+    "output_task_commit": "78ad422902b27dea954905130a1267b02cff3596",
+    "task_changed": false
+  },
+  "transition": {
+    "action": "ADVANCE",
+    "requires_state_validation": false,
+    "target": "FORMAT_GATE",
+    "target_kind": "STAGE"
+  },
+  "validation": {
+    "acceptance_predicates_satisfied": true,
+    "evidence_binding_satisfied": true,
+    "evidence_refs_count": 2,
+    "invocation_identity_valid": true,
+    "invocation_policy_valid": true,
+    "output_keys_valid": true,
+    "required_outputs_satisfied": true,
+    "retrieval_context_authorized": true,
+    "status_legal": true,
+    "task_commit_change_authorized": true,
+    "task_lineage_valid": true
+  }
+}
