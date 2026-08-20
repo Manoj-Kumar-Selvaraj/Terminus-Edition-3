@@ -75,6 +75,8 @@ def test_control_plane_identity_excludes_runtime_state_paths() -> None:
     assert is_control_plane_path(".terminus/execution/controller_cli.py")
     assert is_control_plane_path(".terminus/agents/CI_ORCHESTRATOR.md")
     assert is_control_plane_path(".github/workflows/terminus-controller-stage.yml")
+    assert is_control_plane_path(".github/chat_inline_stage_adapter.py")
+    assert is_control_plane_path(".github/chat_inline_stage_domain.py")
     assert not is_control_plane_path(".terminus/executions/task/ledger.jsonl")
     assert not is_control_plane_path(".terminus/workflows/task/state.json")
     assert not is_control_plane_path(".terminus/reviews/task/review.json")
