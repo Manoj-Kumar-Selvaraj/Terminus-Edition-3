@@ -1,244 +1,398 @@
+from __future__ import annotations
+
 import copy
-import hashlib
+from datetime import timedelta
 import json
-import os
-import subprocess
-from pathlib import Path
 
-import pytest
-
-ROOT = Path(os.environ.get("ENFORCER_ROOT", "/app/enforcer"))
-BIN = os.environ.get("AG_BIN", "/usr/local/bin/artifactguard")
-NOW = "2026-08-17T12:00:00Z"
-CLEAN_PKG = "sha256:" + "1" * 64
-VULN_PKG = "sha256:" + "2" * 64
-CLEAN_IMG = "sha256:" + "3" * 64
-VULN_IMG = "sha256:" + "4" * 64
-CLEAN_DEP = "sha256:" + "5" * 64
-VULN_DEP = "sha256:" + "6" * 64
-UNAVAILABLE = "sha256:" + "7" * 64
-
-
-def load(name):
-    return json.loads((ROOT / name).read_text())
-
-
-def request(req_id, surface, manager, name, version, source, digest, env="production", instance="i-0abc123"):
-    return {
-        "request_id": req_id,
-        "instance_id": instance,
-        "environment": env,
-        "surface": surface,
-        "manager": manager,
-        "name": name,
-        "version": version,
-        "source": source,
-        "digest": digest,
-        "action": "acquire",
-    }
+from verifier_lib import (
+    NOW,
+    audit_records,
+    base_policy,
+    base_scans,
+    case_dir,
+    changed_scan,
+    empty_exceptions,
+    exception_for,
+    find_digest,
+    iso,
+    issue_clean_permit,
+    make_request,
+    other_surface,
+    run_evaluate,
+    run_two_verifications,
+    run_verify,
+    trusted_source,
+)
 
 
-def write(path, value):
-    path.write_text(json.dumps(value))
+def test_f2p_dpkg_untrusted_source_rejected():
+    """Direct dpkg acquisition must not bypass the package trusted-source policy."""
+    with case_dir() as root:
+        req = make_request("req-dpkg", "package", "dpkg", find_digest(vulnerable=False), "attacker.invalid/repo")
+        cp, out, _ = run_evaluate(root, req)
+        assert cp.returncode == 42 and out["code"] == "DENY_UNTRUSTED_SOURCE"
 
 
-def run_eval(tmp_path, req, *, policy=None, scans=None, exceptions=None, now=NOW, state=None, secret=b"fixture-secret"):
-    policy = copy.deepcopy(policy or load("config/policy.json"))
-    scans = copy.deepcopy(scans or load("fixtures/scans.json"))
-    exceptions = copy.deepcopy(exceptions or load("fixtures/exceptions.json"))
-    state = Path(state or (tmp_path / "state"))
-    state.mkdir(parents=True, exist_ok=True)
-    req_path = tmp_path / "request.json"
-    policy_path = tmp_path / "policy.json"
-    scans_path = tmp_path / "scans.json"
-    exceptions_path = tmp_path / "exceptions.json"
-    secret_path = tmp_path / "secret.key"
-    write(req_path, req)
-    write(policy_path, policy)
-    write(scans_path, scans)
-    write(exceptions_path, exceptions)
-    secret_path.write_bytes(secret)
-    proc = subprocess.run([
-        BIN, "evaluate", "--request", str(req_path), "--policy", str(policy_path), "--scans", str(scans_path),
-        "--exceptions", str(exceptions_path), "--state", str(state), "--secret", str(secret_path), "--now", now,
-    ], text=True, capture_output=True)
-    assert proc.returncode in (0, 42), proc.stderr
-    return proc.returncode, json.loads(proc.stdout), state, policy_path, secret_path
+def test_f2p_rpm_untrusted_source_rejected():
+    """Direct rpm acquisition must obey the same trusted-source policy as other packages."""
+    with case_dir() as root:
+        req = make_request("req-rpm", "package", "rpm", find_digest(vulnerable=False), "attacker.invalid/repo")
+        cp, out, _ = run_evaluate(root, req)
+        assert cp.returncode == 42 and out["code"] == "DENY_UNTRUSTED_SOURCE"
 
 
-def run_verify(tmp_path, permit, req, policy, secret=b"fixture-secret", now=NOW):
-    permit_path = tmp_path / "permit.json"
-    req_path = tmp_path / "verify-request.json"
-    policy_path = tmp_path / "verify-policy.json"
-    secret_path = tmp_path / "verify-secret.key"
-    write(permit_path, permit)
-    write(req_path, req)
-    write(policy_path, policy)
-    secret_path.write_bytes(secret)
-    proc = subprocess.run([BIN, "verify-permit", "--permit", str(permit_path), "--request", str(req_path), "--policy", str(policy_path), "--secret", str(secret_path), "--now", now], text=True, capture_output=True)
-    assert proc.returncode in (0, 43), proc.stderr
-    return proc.returncode, json.loads(proc.stdout)
+def test_f2p_maven_untrusted_source_rejected():
+    """Maven dependency acquisition must reject a repository outside the dependency allow-list."""
+    with case_dir() as root:
+        req = make_request("req-maven", "dependency", "maven", find_digest(vulnerable=False), "attacker.invalid/maven")
+        cp, out, _ = run_evaluate(root, req)
+        assert cp.returncode == 42 and out["code"] == "DENY_UNTRUSTED_SOURCE"
 
 
-def vuln_record(db_revision="trivy-db-2026-08-17"):
-    return {"status": "ok", "db_revision": db_revision, "vulnerabilities": [{"id": "CVE-2099-9999", "severity": "CRITICAL"}]}
+def test_f2p_missing_digest_cannot_be_excepted():
+    """An exception cannot waive the immutable-digest prerequisite for a digest-required surface."""
+    with case_dir() as root:
+        policy = base_policy()
+        surface = next(s for s, required in policy["require_digest"].items() if required)
+        manager = {"package": "apt", "container": "docker", "dependency": "maven"}[surface]
+        req = make_request("req-no-digest", surface, manager, "", trusted_source(surface, policy), name="digest-required")
+        exceptions = {"exceptions": [exception_for(req, digest="")]}
+        cp, out, _ = run_evaluate(root, req, exceptions=exceptions)
+        assert cp.returncode == 42 and out["code"] == "DENY_MISSING_DIGEST"
 
 
-def test_clean_os_package_is_allowed(tmp_path):
-    req = request("pkg-clean", "package", "apt", "curl", "8.5", "ubuntu-main", CLEAN_PKG)
-    rc, out, *_ = run_eval(tmp_path, req)
-    assert rc == 0 and out["decision"] == "ALLOW" and out["code"] == "ALLOW_CLEAN" and out["permit"]
+def test_f2p_scanner_unavailable_fails_closed():
+    """Unavailable current scanner evidence must deny rather than synthesize a clean result."""
+    with case_dir() as root:
+        digest = find_digest(status="unavailable")
+        req = make_request("req-scan-down", "package", "apt", digest, trusted_source("package"))
+        cp, out, _ = run_evaluate(root, req)
+        assert cp.returncode == 42 and out["code"] == "DENY_SCANNER_UNAVAILABLE"
 
 
-def test_vulnerable_os_package_is_denied(tmp_path):
-    req = request("pkg-vuln", "package", "apt", "openssl", "3", "ubuntu-main", VULN_PKG)
-    rc, out, *_ = run_eval(tmp_path, req)
-    assert rc == 42 and out["code"] == "DENY_VULNERABLE"
+def test_f2p_scanner_db_revision_mismatch_is_stale():
+    """Scanner evidence from a DB revision other than the policy revision must be rejected as stale."""
+    with case_dir() as root:
+        policy = base_policy()
+        digest = find_digest(vulnerable=False)
+        scans = changed_scan(base_scans(), digest, db_revision=policy["scanner_db_revision"] + "-old")
+        req = make_request("req-stale-db", "package", "apt", digest, trusted_source("package", policy))
+        cp, out, _ = run_evaluate(root, req, policy=policy, scans=scans)
+        assert cp.returncode == 42 and out["code"] == "DENY_SCANNER_EVIDENCE_STALE"
 
 
-def test_scanner_unavailable_fails_closed(tmp_path):
-    req = request("pkg-no-scan", "package", "apt", "tool", "1", "ubuntu-main", UNAVAILABLE)
-    rc, out, *_ = run_eval(tmp_path, req)
-    assert rc == 42 and out["code"] == "DENY_SCANNER_UNAVAILABLE"
+def test_f2p_mutable_name_digest_change_invalidates_cache():
+    """Reusing the same mutable name/version with a different digest must not reuse old clean evidence."""
+    with case_dir() as root:
+        policy = base_policy()
+        clean = find_digest(vulnerable=False)
+        vulnerable = find_digest(vulnerable=True)
+        state = root / "state"
+        req1 = make_request("req-tag-a", "container", "docker", clean, trusted_source("container", policy), name="service", version="stable")
+        cp1, out1, _ = run_evaluate(root / "a", req1, state=state)
+        assert cp1.returncode == 0 and out1["cache_hit"] is False
+        req2 = make_request("req-tag-b", "container", "docker", vulnerable, trusted_source("container", policy), name="service", version="stable")
+        cp2, out2, _ = run_evaluate(root / "b", req2, state=state)
+        assert cp2.returncode == 42 and out2["code"] == "DENY_VULNERABLE" and out2["cache_hit"] is False
 
 
-@pytest.mark.parametrize("manager", ["dpkg", "rpm"])
-def test_direct_package_installers_cannot_bypass_source_policy(tmp_path, manager):
-    req = request("direct-" + manager, "package", manager, "vendor-agent", "1", "file:///tmp/vendor.pkg", CLEAN_PKG)
-    rc, out, *_ = run_eval(tmp_path, req)
-    assert rc == 42 and out["code"] == "DENY_UNTRUSTED_SOURCE"
+def test_f2p_policy_version_change_invalidates_cache():
+    """A policy-version change must force current evidence instead of reusing an older policy cache entry."""
+    with case_dir() as root:
+        policy1 = base_policy()
+        digest = find_digest(vulnerable=False)
+        state = root / "state"
+        req = make_request("req-policy-a", "package", "apt", digest, trusted_source("package", policy1), name="policy-cache")
+        cp1, out1, _ = run_evaluate(root / "a", req, state=state, policy=policy1)
+        assert cp1.returncode == 0 and out1["cache_hit"] is False
+        policy2 = copy.deepcopy(policy1)
+        policy2["version"] = policy1["version"] + "-next"
+        scans2 = changed_scan(base_scans(), digest, vulnerable=True)
+        req["request_id"] = "req-policy-b"
+        cp2, out2, _ = run_evaluate(root / "b", req, state=state, policy=policy2, scans=scans2)
+        assert cp2.returncode == 42 and out2["code"] == "DENY_VULNERABLE" and out2["cache_hit"] is False
 
 
-def test_container_missing_digest_is_denied(tmp_path):
-    req = request("img-no-digest", "container", "docker", "payments", "stable", "public.ecr.aws", "")
-    rc, out, *_ = run_eval(tmp_path, req)
-    assert rc == 42 and out["code"] == "DENY_MISSING_DIGEST"
+def test_f2p_scanner_revision_change_invalidates_cache():
+    """Changing the policy scanner DB revision must invalidate evidence cached under the prior revision."""
+    with case_dir() as root:
+        policy1 = base_policy()
+        digest = find_digest(vulnerable=False)
+        state = root / "state"
+        req = make_request("req-db-a", "package", "apt", digest, trusted_source("package", policy1), name="db-cache")
+        cp1, out1, _ = run_evaluate(root / "a", req, state=state, policy=policy1)
+        assert cp1.returncode == 0 and out1["cache_hit"] is False
+        policy2 = copy.deepcopy(policy1)
+        policy2["scanner_db_revision"] = policy1["scanner_db_revision"] + "-next"
+        scans2 = changed_scan(base_scans(), digest, db_revision=policy2["scanner_db_revision"], vulnerable=True)
+        req["request_id"] = "req-db-b"
+        cp2, out2, _ = run_evaluate(root / "b", req, state=state, policy=policy2, scans=scans2)
+        assert cp2.returncode == 42 and out2["code"] == "DENY_VULNERABLE" and out2["cache_hit"] is False
 
 
-def test_mutable_image_tag_does_not_reuse_other_digest_scan(tmp_path):
-    state = tmp_path / "state"
-    first = request("img-clean", "container", "docker", "payments", "stable", "public.ecr.aws", CLEAN_IMG)
-    rc1, out1, *_ = run_eval(tmp_path, first, state=state)
-    assert rc1 == 0 and out1["code"] == "ALLOW_CLEAN"
-    second = request("img-moved", "container", "docker", "payments", "stable", "public.ecr.aws", VULN_IMG)
-    rc2, out2, *_ = run_eval(tmp_path, second, state=state)
-    assert rc2 == 42 and out2["code"] == "DENY_VULNERABLE" and out2["cache_hit"] is False
+def test_f2p_cache_ttl_expiry_forces_scanner_recheck():
+    """Expired cached evidence must not hide a scanner outage after its TTL boundary."""
+    with case_dir() as root:
+        policy = base_policy()
+        digest = find_digest(vulnerable=False)
+        state = root / "state"
+        req = make_request("req-ttl-a", "package", "apt", digest, trusted_source("package", policy), name="ttl-cache")
+        cp1, out1, _ = run_evaluate(root / "a", req, state=state, policy=policy)
+        assert cp1.returncode == 0 and out1["cache_hit"] is False
+        scans2 = changed_scan(base_scans(), digest, status="unavailable")
+        req["request_id"] = "req-ttl-b"
+        later = NOW + timedelta(seconds=int(policy["cache_ttl_seconds"]) + 1)
+        cp2, out2, _ = run_evaluate(root / "b", req, state=state, policy=policy, scans=scans2, now=later)
+        assert cp2.returncode == 42 and out2["code"] == "DENY_SCANNER_UNAVAILABLE"
 
 
-def test_build_dependency_uses_source_policy(tmp_path):
-    req = request("dep-source", "dependency", "maven", "com.example:lib", "1.0", "repo.bad.invalid", CLEAN_DEP)
-    rc, out, *_ = run_eval(tmp_path, req)
-    assert rc == 42 and out["code"] == "DENY_UNTRUSTED_SOURCE"
+def test_f2p_expired_exception_is_ignored():
+    """An otherwise exact vulnerability exception must stop authorizing at its expiry boundary."""
+    with case_dir() as root:
+        policy = base_policy()
+        digest = find_digest(vulnerable=True)
+        req = make_request("req-ex-expired", "package", "apt", digest, trusted_source("package", policy))
+        ex = exception_for(req, expires=iso(NOW - timedelta(seconds=1)))
+        cp, out, _ = run_evaluate(root, req, exceptions={"exceptions": [ex]})
+        assert cp.returncode == 42 and out["code"] == "DENY_VULNERABLE"
 
 
-def test_vulnerable_build_dependency_is_denied(tmp_path):
-    req = request("dep-vuln", "dependency", "maven", "com.example:legacy", "1.0", "repo.maven.apache.org", VULN_DEP)
-    rc, out, *_ = run_eval(tmp_path, req)
-    assert rc == 42 and out["code"] == "DENY_VULNERABLE"
+def test_f2p_exception_same_name_wrong_digest_is_rejected():
+    """Artifact name equality cannot let an exception authorize a different immutable digest."""
+    with case_dir() as root:
+        policy = base_policy()
+        vulnerable = find_digest(vulnerable=True)
+        clean = find_digest(vulnerable=False)
+        req = make_request("req-ex-digest", "package", "apt", vulnerable, trusted_source("package", policy), name="shared-name")
+        ex = exception_for(req, digest=clean, name="shared-name")
+        cp, out, _ = run_evaluate(root, req, exceptions={"exceptions": [ex]})
+        assert cp.returncode == 42 and out["code"] == "DENY_VULNERABLE"
 
 
-def test_valid_scoped_exception_allows_only_matching_request(tmp_path):
-    req = request("pkg-exception", "package", "apt", "openssl", "3", "ubuntu-main", VULN_PKG, env="staging")
-    rc, out, *_ = run_eval(tmp_path, req)
-    assert rc == 0 and out["code"] == "ALLOW_EXCEPTION" and out["exception_id"] == "SEC-100"
+def test_f2p_exception_wrong_surface_is_rejected():
+    """A vulnerability exception issued for another acquisition surface must not apply cross-surface."""
+    with case_dir() as root:
+        policy = base_policy()
+        digest = find_digest(vulnerable=True)
+        req = make_request("req-ex-surface", "container", "docker", digest, trusted_source("container", policy))
+        ex = exception_for(req, surfaces=[other_surface(req["surface"])])
+        cp, out, _ = run_evaluate(root, req, exceptions={"exceptions": [ex]})
+        assert cp.returncode == 42 and out["code"] == "DENY_VULNERABLE"
 
 
-def test_expired_exception_is_rejected(tmp_path):
-    req = request("dep-expired", "dependency", "maven", "legacy", "1", "repo.maven.apache.org", VULN_DEP, env="production")
-    rc, out, *_ = run_eval(tmp_path, req)
-    assert rc == 42 and out["code"] == "DENY_VULNERABLE"
+def test_f2p_exception_wrong_environment_is_rejected():
+    """An exception scoped to another environment must not authorize the current environment."""
+    with case_dir() as root:
+        policy = base_policy()
+        digest = find_digest(vulnerable=True)
+        req = make_request("req-ex-env", "package", "apt", digest, trusted_source("package", policy), environment="staging")
+        ex = exception_for(req, environments=["production"])
+        cp, out, _ = run_evaluate(root, req, exceptions={"exceptions": [ex]})
+        assert cp.returncode == 42 and out["code"] == "DENY_VULNERABLE"
 
 
-def test_wrong_environment_exception_is_rejected(tmp_path):
-    req = request("img-wrong-env", "container", "docker", "payments", "bad", "public.ecr.aws", VULN_IMG, env="production")
-    rc, out, *_ = run_eval(tmp_path, req)
-    assert rc == 42 and out["code"] == "DENY_VULNERABLE"
+def test_f2p_exception_cannot_override_scanner_unavailable():
+    """Even an exact current exception cannot waive the requirement for current scanner evidence."""
+    with case_dir() as root:
+        policy = base_policy()
+        digest = find_digest(status="unavailable")
+        req = make_request("req-ex-scan", "package", "apt", digest, trusted_source("package", policy))
+        ex = exception_for(req)
+        cp, out, _ = run_evaluate(root, req, exceptions={"exceptions": [ex]})
+        assert cp.returncode == 42 and out["code"] == "DENY_SCANNER_UNAVAILABLE"
 
 
-def test_policy_version_change_invalidates_cache(tmp_path):
-    state = tmp_path / "state"
-    req = request("policy-cache", "package", "apt", "curl", "8.5", "ubuntu-main", CLEAN_PKG)
-    rc1, _, *_ = run_eval(tmp_path, req, state=state)
-    assert rc1 == 0
-    policy = load("config/policy.json")
-    policy["version"] = "policy-2026-08-17-b"
-    scans = load("fixtures/scans.json")
-    scans["records"][CLEAN_PKG] = vuln_record()
-    rc2, out2, *_ = run_eval(tmp_path, req, policy=policy, scans=scans, state=state)
-    assert rc2 == 42 and out2["code"] == "DENY_VULNERABLE" and out2["cache_hit"] is False
+def test_f2p_permit_rejected_with_different_secret():
+    """A permit authenticated under one host secret must fail verification under a different secret."""
+    with case_dir() as root:
+        permit, req, policy = issue_clean_permit(root / "issue", secret=b"secret-one")
+        cp, out = run_verify(permit, req, policy, b"secret-two", work=root / "verify")
+        assert cp.returncode == 43 and out["valid"] is False
 
 
-def test_scanner_db_revision_change_invalidates_cache(tmp_path):
-    state = tmp_path / "state"
-    req = request("db-cache", "package", "apt", "curl", "8.5", "ubuntu-main", CLEAN_PKG)
-    rc1, _, *_ = run_eval(tmp_path, req, state=state)
-    assert rc1 == 0
-    policy = load("config/policy.json")
-    policy["scanner_db_revision"] = "trivy-db-2026-08-18"
-    scans = load("fixtures/scans.json")
-    scans["records"][CLEAN_PKG] = vuln_record("trivy-db-2026-08-18")
-    rc2, out2, *_ = run_eval(tmp_path, req, policy=policy, scans=scans, state=state)
-    assert rc2 == 42 and out2["code"] == "DENY_VULNERABLE" and out2["cache_hit"] is False
+def test_f2p_permit_signature_depends_on_secret():
+    """Identical permit fields signed with different host secrets must not produce the same authenticator."""
+    with case_dir() as root:
+        permit1, _, _ = issue_clean_permit(root / "one", secret=b"secret-one", request_id="req-same", instance="i-same")
+        permit2, _, _ = issue_clean_permit(root / "two", secret=b"secret-two", request_id="req-same", instance="i-same")
+        assert permit1["signature"] != permit2["signature"]
 
 
-def test_expired_cache_is_not_reused(tmp_path):
-    state = tmp_path / "state"
-    req = request("ttl-cache", "package", "apt", "curl", "8.5", "ubuntu-main", CLEAN_PKG)
-    rc1, _, *_ = run_eval(tmp_path, req, state=state, now="2026-08-17T10:00:00Z")
-    assert rc1 == 0
-    scans = load("fixtures/scans.json")
-    scans["records"][CLEAN_PKG] = vuln_record()
-    rc2, out2, *_ = run_eval(tmp_path, req, scans=scans, state=state, now="2026-08-17T12:00:01Z")
-    assert rc2 == 42 and out2["cache_hit"] is False
+def test_f2p_permit_instance_binding_is_enforced():
+    """A valid permit must not authorize the same request and digest on another EC2 instance."""
+    with case_dir() as root:
+        permit, req, policy = issue_clean_permit(root / "issue")
+        changed = copy.deepcopy(req)
+        changed["instance_id"] = "i-different"
+        cp, out = run_verify(permit, changed, policy, b"verifier-secret-a", work=root / "verify")
+        assert cp.returncode == 43 and out["valid"] is False
 
 
-def test_exact_fresh_cache_survives_process_restart(tmp_path):
-    state = tmp_path / "state"
-    req = request("restart-cache", "dependency", "pip", "requests", "2", "pypi.org", CLEAN_DEP)
-    rc1, _, *_ = run_eval(tmp_path, req, state=state, now="2026-08-17T10:00:00Z")
-    assert rc1 == 0
-    scans = load("fixtures/scans.json")
-    scans["records"][CLEAN_DEP] = {"status": "unavailable", "db_revision": "trivy-db-2026-08-17", "vulnerabilities": []}
-    rc2, out2, *_ = run_eval(tmp_path, req, scans=scans, state=state, now="2026-08-17T10:05:00Z")
-    assert rc2 == 0 and out2["cache_hit"] is True
+def test_f2p_stateful_permit_first_use_is_valid():
+    """The stable verifier CLI must accept the first exact-scope permit use while recording durable consumption state."""
+    with case_dir() as root:
+        permit, req, policy = issue_clean_permit(root / "issue")
+        cp, out = run_verify(permit, req, policy, b"verifier-secret-a", work=root / "verify", state=root / "replay")
+        assert cp.returncode == 0 and out["valid"] is True
 
 
-def test_stale_scanner_revision_is_denied(tmp_path):
-    req = request("stale-scan", "package", "apt", "curl", "8.5", "ubuntu-main", CLEAN_PKG)
-    policy = load("config/policy.json")
-    policy["scanner_db_revision"] = "trivy-db-2026-08-18"
-    rc, out, *_ = run_eval(tmp_path, req, policy=policy)
-    assert rc == 42 and out["code"] == "DENY_SCANNER_EVIDENCE_STALE"
+def test_f2p_permit_replay_is_rejected_after_restart():
+    """A permit consumed by one verifier process must be rejected by a later process using the same durable state."""
+    with case_dir() as root:
+        permit, req, policy = issue_clean_permit(root / "issue")
+        state = root / "replay"
+        first, first_out = run_verify(permit, req, policy, b"verifier-secret-a", work=root / "first", state=state)
+        assert first.returncode == 0 and first_out["valid"] is True
+        second, second_out = run_verify(permit, req, policy, b"verifier-secret-a", work=root / "second", state=state)
+        assert second.returncode == 43 and second_out["valid"] is False and second_out["code"] == "PERMIT_REPLAYED"
 
 
-def test_denies_and_allows_are_both_durable_in_audit(tmp_path):
-    state = tmp_path / "state"
-    allow = request("audit-allow", "package", "apt", "curl", "8.5", "ubuntu-main", CLEAN_PKG)
-    deny = request("audit-deny", "package", "apt", "openssl", "3", "ubuntu-main", VULN_PKG)
-    run_eval(tmp_path, allow, state=state)
-    run_eval(tmp_path, deny, state=state)
-    rows = [json.loads(line) for line in (state / "audit.jsonl").read_text().splitlines()]
-    by_id = {row["request_id"]: row["decision"] for row in rows}
-    assert by_id["audit-allow"] == "ALLOW" and by_id["audit-deny"] == "DENY"
+def test_f2p_concurrent_permit_replay_has_single_winner():
+    """Concurrent verification of one single-use permit must yield one success and one replay rejection."""
+    with case_dir() as root:
+        permit, req, policy = issue_clean_permit(root / "issue")
+        results = run_two_verifications(permit, req, policy, b"verifier-secret-a", root / "replay", root / "verify")
+        codes = sorted(cp.returncode for cp, _ in results)
+        outcomes = sorted(out["code"] for _, out in results)
+        assert codes == [0, 43]
+        assert outcomes == ["PERMIT_REPLAYED", "PERMIT_VALID"]
 
 
-def test_forged_unkeyed_permit_is_rejected(tmp_path):
-    req = request("permit-forge", "package", "apt", "curl", "8.5", "ubuntu-main", CLEAN_PKG)
-    rc, out, *_ = run_eval(tmp_path, req)
-    assert rc == 0
-    forged_req = dict(req)
-    forged_req["instance_id"] = "i-attacker"
-    permit = dict(out["permit"])
-    permit["instance_id"] = "i-attacker"
-    payload = "|".join([permit["request_id"], permit["instance_id"], permit["artifact_digest"], permit["policy_version"], permit["expires_at"]])
-    permit["signature"] = hashlib.sha256(payload.encode()).hexdigest()
-    vrc, result = run_verify(tmp_path, permit, forged_req, load("config/policy.json"))
-    assert vrc == 43 and result["valid"] is False
+def test_f2p_deny_decision_is_durably_journaled():
+    """A policy denial must appear in the durable audit journal before evaluate returns its denial."""
+    with case_dir() as root:
+        policy = base_policy()
+        req = make_request("req-deny-audit", "package", "apt", find_digest(vulnerable=False), "attacker.invalid/repo")
+        state = root / "state"
+        cp, out, _ = run_evaluate(root / "run", req, state=state, policy=policy)
+        assert cp.returncode == 42
+        records = audit_records(state)
+        assert records and records[-1]["request_id"] == req["request_id"] and records[-1]["decision"] == "DENY"
 
 
-def test_expired_permit_is_rejected(tmp_path):
-    req = request("permit-expired", "package", "apt", "curl", "8.5", "ubuntu-main", CLEAN_PKG)
-    rc, out, *_ = run_eval(tmp_path, req, now="2026-08-17T10:00:00Z")
-    assert rc == 0
-    vrc, result = run_verify(tmp_path, out["permit"], req, load("config/policy.json"), now="2026-08-17T10:06:00Z")
-    assert vrc == 43 and result["code"] == "PERMIT_EXPIRED"
+def test_f2p_deny_projection_matches_durable_journal():
+    """After a denied evaluation, last-decision must agree with the newest durable audit record."""
+    with case_dir() as root:
+        req = make_request("req-deny-projection", "package", "apt", find_digest(vulnerable=False), "attacker.invalid/repo")
+        state = root / "state"
+        cp, _, _ = run_evaluate(root / "run", req, state=state)
+        assert cp.returncode == 42
+        last = json.loads((state / "last-decision.json").read_text())
+        records = audit_records(state)
+        assert records and last["decision_id"] == records[-1]["decision_id"]
+
+
+def test_f2p_valid_unterminated_audit_record_survives_recovery():
+    """Recovery must preserve a complete final audit record even when its trailing newline was not durable."""
+    with case_dir() as root:
+        digest = find_digest(vulnerable=False)
+        source = trusted_source("package")
+        state = root / "state"
+        req1 = make_request("req-tail-valid-a", "package", "apt", digest, source)
+        cp1, _, _ = run_evaluate(root / "a", req1, state=state)
+        assert cp1.returncode == 0
+        path = state / "audit.jsonl"
+        path.write_bytes(path.read_bytes().rstrip(b"\n"))
+        req2 = make_request("req-tail-valid-b", "package", "apt", digest, source)
+        cp2, _, _ = run_evaluate(root / "b", req2, state=state)
+        assert cp2.returncode == 0
+        assert [record["request_id"] for record in audit_records(state)] == [req1["request_id"], req2["request_id"]]
+
+
+def test_f2p_interior_audit_corruption_fails_closed():
+    """Durable interior audit corruption must stop a new decision instead of silently extending corrupted history."""
+    with case_dir() as root:
+        digest = find_digest(vulnerable=False)
+        source = trusted_source("package")
+        state = root / "state"
+        req1 = make_request("req-corrupt-a", "package", "apt", digest, source)
+        cp1, _, _ = run_evaluate(root / "a", req1, state=state)
+        assert cp1.returncode == 0
+        with (state / "audit.jsonl").open("ab") as fh:
+            fh.write(b'{"broken":\n')
+        req2 = make_request("req-corrupt-b", "package", "apt", digest, source)
+        cp2, _, _ = run_evaluate(root / "b", req2, state=state)
+        assert cp2.returncode == 2
+
+
+def test_f2p_identical_retry_does_not_duplicate_audit_decision():
+    """Repeating the same deterministic evaluation must not create a duplicate durable decision record."""
+    with case_dir() as root:
+        digest = find_digest(vulnerable=False)
+        req = make_request("req-idempotent", "package", "apt", digest, trusted_source("package"))
+        state = root / "state"
+        cp1, out1, _ = run_evaluate(root / "a", req, state=state)
+        cp2, out2, _ = run_evaluate(root / "b", req, state=state)
+        assert cp1.returncode == 0 and cp2.returncode == 0
+        assert out1["decision_id"] == out2["decision_id"]
+        assert len(audit_records(state)) == 1
+
+
+def test_f2p_corrupt_cache_does_not_become_clean_evidence():
+    """A malformed cache entry must be treated as unusable evidence and cannot mask a scanner outage."""
+    with case_dir() as root:
+        digest = find_digest(vulnerable=False)
+        req = make_request("req-cache-corrupt-a", "package", "apt", digest, trusted_source("package"), name="cache-corrupt")
+        state = root / "state"
+        cp1, _, _ = run_evaluate(root / "a", req, state=state)
+        assert cp1.returncode == 0
+        entries = list((state / "cache").glob("*.json"))
+        assert len(entries) == 1
+        entries[0].write_text('{"partial":')
+        scans = changed_scan(base_scans(), digest, status="unavailable")
+        req["request_id"] = "req-cache-corrupt-b"
+        cp2, out2, _ = run_evaluate(root / "b", req, state=state, scans=scans)
+        assert cp2.returncode == 42 and out2["code"] == "DENY_SCANNER_UNAVAILABLE"
+
+
+def test_p2p_trusted_clean_package_remains_allowed():
+    """A trusted digest-pinned clean package remains an ordinary allowed acquisition."""
+    with case_dir() as root:
+        req = make_request("req-p2p-package", "package", "apt", find_digest(vulnerable=False), trusted_source("package"))
+        cp, out, _ = run_evaluate(root, req)
+        assert cp.returncode == 0 and out["decision"] == "ALLOW"
+
+
+def test_p2p_trusted_clean_container_remains_allowed():
+    """A trusted digest-pinned clean container remains allowed through the shared policy path."""
+    with case_dir() as root:
+        req = make_request("req-p2p-container", "container", "docker", find_digest(vulnerable=False), trusted_source("container"))
+        cp, out, _ = run_evaluate(root, req)
+        assert cp.returncode == 0 and out["decision"] == "ALLOW"
+
+
+def test_p2p_exact_current_exception_remains_allowed():
+    """A current exact-scope vulnerability exception still authorizes its intended vulnerable artifact."""
+    with case_dir() as root:
+        digest = find_digest(vulnerable=True)
+        req = make_request("req-p2p-exception", "package", "apt", digest, trusted_source("package"))
+        ex = exception_for(req)
+        cp, out, _ = run_evaluate(root, req, exceptions={"exceptions": [ex]})
+        assert cp.returncode == 0 and out["code"] == "ALLOW_EXCEPTION"
+
+
+def test_p2p_ordinary_untrusted_apt_remains_denied():
+    """The already-enforced normal apt source rejection remains a policy denial with exit 42."""
+    with case_dir() as root:
+        req = make_request("req-p2p-untrusted", "package", "apt", find_digest(vulnerable=False), "attacker.invalid/repo")
+        cp, out, _ = run_evaluate(root, req)
+        assert cp.returncode == 42 and out["code"] == "DENY_UNTRUSTED_SOURCE"
+
+
+def test_p2p_expired_permit_remains_invalid():
+    """An otherwise authentic permit remains invalid once its expiry time has passed."""
+    with case_dir() as root:
+        permit, req, policy = issue_clean_permit(root / "issue")
+        expiry = NOW + timedelta(seconds=int(policy["permit_ttl_seconds"]) + 1)
+        cp, out = run_verify(permit, req, policy, b"verifier-secret-a", work=root / "verify", now=expiry)
+        assert cp.returncode == 43 and out["valid"] is False
+
+
+def test_p2p_permit_digest_mismatch_remains_invalid():
+    """A permit must continue rejecting a request whose immutable artifact digest differs from its signed scope."""
+    with case_dir() as root:
+        permit, req, policy = issue_clean_permit(root / "issue")
+        changed = copy.deepcopy(req)
+        changed["digest"] = find_digest(vulnerable=True)
+        cp, out = run_verify(permit, changed, policy, b"verifier-secret-a", work=root / "verify")
+        assert cp.returncode == 43 and out["valid"] is False

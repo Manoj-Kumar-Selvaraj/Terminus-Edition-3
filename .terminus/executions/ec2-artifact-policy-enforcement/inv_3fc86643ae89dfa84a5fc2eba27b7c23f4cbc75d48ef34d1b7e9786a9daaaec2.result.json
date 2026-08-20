@@ -1,0 +1,455 @@
+{
+  "authority": {
+    "control_plane_commit": "5106b27ae6cc5257854f08c63bac4eca95685f36",
+    "policy_versions": {},
+    "task_commit": "8836f886d7cfc7f2747264026da31d1dfa49c658",
+    "task_id": "ec2-artifact-policy-enforcement"
+  },
+  "disposition": "ADVANCE",
+  "evidence_refs": [
+    {
+      "content_hash": "sha256:c949a75a93f4636d770dd6cb82318c90d98b3fb0fb1d16d3d8b2e6c4d50a86fc",
+      "kind": "COMMIT",
+      "ref": "commit:8836f886d7cfc7f2747264026da31d1dfa49c658"
+    },
+    {
+      "content_hash": "sha256:b5a2cd19688eb8045ed51f0abaf697929821b094e8dbcc6e67c7edd479d74828",
+      "kind": "COMMIT",
+      "ref": "commit:5106b27ae6cc5257854f08c63bac4eca95685f36"
+    }
+  ],
+  "invocation_id": "inv_3fc86643ae89dfa84a5fc2eba27b7c23f4cbc75d48ef34d1b7e9786a9daaaec2",
+  "invocation_snapshot": {
+    "acceptance_predicates": {},
+    "authority": {
+      "control_plane_commit": "5106b27ae6cc5257854f08c63bac4eca95685f36",
+      "policy_versions": {},
+      "task_commit": "8836f886d7cfc7f2747264026da31d1dfa49c658",
+      "task_id": "ec2-artifact-policy-enforcement"
+    },
+    "evidence": {
+      "authorized_evidence_classes": [
+        "CI_RUNTIME_EVIDENCE",
+        "CONTROL_PLANE_POLICY",
+        "PRIVATE_CREATION_DESIGN",
+        "SOLVER_VISIBLE_TASK"
+      ],
+      "evidence_required": [
+        "requirement-to-test map",
+        "behavioral scenario families",
+        "F2P/P2P classification",
+        "test independence"
+      ],
+      "excluded_evidence_classes": [
+        "CURRENT_REVIEW_PACKET",
+        "DURABLE_SESSION_STATE",
+        "FINAL_PACKAGE_EVIDENCE",
+        "MODEL_TRIAL_EVIDENCE",
+        "PRIOR_REVIEW_RESULTS",
+        "PUBLIC_REFERENCE",
+        "SOLUTION_ORACLE",
+        "VERIFIER_PRIVATE"
+      ],
+      "mandatory_exact_reads": [
+        "TERMINUS_3_AI_INSTRUCTIONS.md",
+        ".terminus/agents/CREATION_PIPELINE.md",
+        ".terminus/agents/CREATOR_PROMPTS.md"
+      ],
+      "retrieval_mode": "FILTERED_HYBRID"
+    },
+    "ignored_input_count": 0,
+    "inputs": {
+      "optional": {
+        "PRESERVATION_RISK_MODEL": {
+          "preservation_obligations": [
+            "keep public CLI",
+            "keep cache/exceptions",
+            "do not rewrite supplied fixtures",
+            "preserve audit history"
+          ],
+          "starter_public_interfaces": [
+            "environment/enforcer/cmd/artifactguard/main.go: artifactguard evaluate",
+            "environment/enforcer/cmd/artifactguard/main.go: artifactguard verify-permit"
+          ]
+        },
+        "RUNTIME_INTERFACE_MAP": {
+          "entrypoints": [
+            "environment/enforcer/cmd/artifactguard/main.go: artifactguard evaluate",
+            "environment/enforcer/cmd/artifactguard/main.go: artifactguard verify-permit"
+          ],
+          "reachability": [
+            "evaluate -> core.Evaluate -> platform.Evaluate -> NormalizeRequest, BuildIdentity, ApplicableRules, EnsureStateLayout, exception/source/digest checks, cache/scanner, permit, projection and audit",
+            "verify-permit -> core.VerifyPermit -> platform.VerifyPermit; authentication/scope/expiry behavior remains reachable through the public CLI",
+            "cache, audit, state and replay helpers are solver-visible production repair surfaces; replay enforcement is intentionally absent from the current verify-permit path per approved A3 defects",
+            "catalog_package.go, catalog_container.go and catalog_dependency.go are reached through ApplicableRules from platform.Evaluate"
+          ]
+        }
+      },
+      "required": {
+        "BEHAVIORAL_SURFACES": {
+          "cross_component": [
+            "digest identity across cache/exception/permit/audit",
+            "policy snapshot across decision pipeline",
+            "audit commit before completion",
+            "rebuild derived state from durable history",
+            "permit consumption state across verifier restart",
+            "permit verification atomicity with replay ledger and audit"
+          ],
+          "edge_boundary": [
+            "TTL expiry",
+            "exception/permit expiry",
+            "tag digest change",
+            "policy/DB revision change",
+            "crash between journal/projection"
+          ],
+          "failure_recovery": [
+            "scanner outage",
+            "journal/projection crash",
+            "malformed journal tail",
+            "partial cache",
+            "concurrent decisions",
+            "permit replay rejected across restart",
+            "single-use permit remains single-use under concurrent verification"
+          ],
+          "negative_rejection": [
+            "missing digest",
+            "untrusted source",
+            "scanner unavailable/stale",
+            "vulnerable without exception",
+            "wrong-scope exception",
+            "permit tamper",
+            "corrupt state",
+            "replayed otherwise-valid permit",
+            "concurrent duplicate permit verification"
+          ],
+          "normal": [
+            "uniform manager policy",
+            "fresh clean scan",
+            "valid exact exception",
+            "valid cache restart",
+            "durable allow/deny"
+          ]
+        },
+        "SOLVER_VISIBLE_CONTRACTS": {
+          "environment/enforcer/docs/architecture.md": "# ArtifactGuard architecture\n\nArtifactGuard keeps the existing `evaluate` and `verify-permit` CLI contract while routing evaluation through a policy platform composed of normalization, policy, scanner, cache, exception, permit, audit, replay, and state subsystems. Acquisition requests carry package, container, or dependency surface context. Policy controls are selected by surface, manager, and environment. Durable state is rooted at the caller-provided state directory.\n\nThe starter intentionally contains the approved defect topology across trust normalization, evidence freshness, exception ordering and scope, permit authentication and binding, audit durability, and recovery/concurrency boundaries. The solver must repair those coupled behaviors without breaking the CLI contract.\n",
+          "environment/enforcer/docs/operations.md": "# Operations\n\nOperators provide policy, scanner fixtures, exception data, state directory, secret material, and optional RFC3339 time through the stable CLI. `evaluate` returns exit 42 on policy denial and 2 on operational failure. `verify-permit` returns exit 43 for an invalid permit. Production repair must fail closed on stale or unavailable scanner evidence, preserve durable audit history, and prevent permit replay across restart and concurrency boundaries.\n",
+          "environment/enforcer/docs/policy-contract.md": "# Software acquisition policy contract\n\n`artifactguard` is the local enforcement client used by governed EC2 instances. Production scanner implementations may call Trivy or an internal vulnerability service; this lab supplies a deterministic scanner mirror with the same decision boundary.\n\n## Surfaces\n\nEvery request has exactly one `surface`: `package`, `container`, or `dependency`. `manager` identifies the acquisition path (`apt`, `dnf`, `dpkg`, `rpm`, `docker`, `pip`, `npm`, `maven`, etc.). Policy applies to the surface regardless of manager, so switching to a lower-level installer is not an exemption.\n\nThe source must appear in `trusted_sources[surface]`. An exception never overrides an untrusted source. If `require_digest[surface]` is true, an immutable digest is mandatory.\n\n## Scanner evidence and cache\n\nA scanner result is usable only when its status is `ok` and its `db_revision` equals the policy's `scanner_db_revision`. Without current scanner evidence the request is denied with `DENY_SCANNER_UNAVAILABLE` or `DENY_SCANNER_EVIDENCE_STALE`.\n\nA durable cache entry may stand in for a fresh scanner call only while all of these remain identical/current:\n\n- artifact digest;\n- policy version;\n- scanner DB revision;\n- cache TTL.\n\nName, package version, image tag, or dependency coordinate alone are not immutable cache identities. A mutable tag that resolves to another digest is a different artifact.\n\n## Vulnerability policy and exceptions\n\nAny vulnerability whose severity appears in `deny_severities` causes `DENY_VULNERABLE` unless a current exception matches the exact artifact digest, acquisition surface, environment, policy code `VULNERABILITY_THRESHOLD`, and has not expired. Exceptions do not override missing scanner evidence, source trust, or digest requirements.\n\n## Permits\n\nAn ALLOW decision returns a short-lived permit. The permit must be keyed with the supplied secret and cover the exact request ID, EC2 instance ID, artifact digest, policy version, and expiry. Altering any field or recomputing an unkeyed checksum must not create a valid permit. `verify-permit` returns exit 0 only for a valid, unexpired, exact-scope permit.\n\n## Audit durability\n\nEvery policy decision, both ALLOW and DENY, is appended to `state/audit.jsonl` and fsynced before the command reports completion. `state/last-decision.json` contains the most recent decision. Scan cache and audit history must survive normal process restart; existing history must not be deleted to repair the task.\n\n## Decision codes\n\n- `ALLOW_CLEAN`\n- `ALLOW_EXCEPTION`\n- `DENY_MISSING_DIGEST`\n- `DENY_UNTRUSTED_SOURCE`\n- `DENY_SCANNER_UNAVAILABLE`\n- `DENY_SCANNER_EVIDENCE_STALE`\n- `DENY_VULNERABLE`\n\nDenials exit with code 42. Permit verification failures exit with code 43.\n",
+          "environment/enforcer/docs/state-format.md": "# State format\n\n`cache/<key>.json` stores scan evidence, `audit.jsonl` stores decision journal records, `last-decision.json` is a derived projection, and `replay/consumed.jsonl` records permit consumption. State transitions are intended to be crash-safe and replay-safe, but the starter contains deliberate defects in cache identity, durability ordering, malformed-tail recovery, locking, and replay atomicity.\n",
+          "environment/enforcer/notes/oncall.md": "# On-call handoff\n\nSecurity reproduced the incident with three paths:\n\n- an `apt` request with digest `sha256:777...` was allowed while the vulnerability mirror was unavailable;\n- `dpkg -i` and Maven resolution did not consult the same source allow-list as the higher-level paths;\n- `docker pull app:stable` was scanned clean, then the tag moved to another digest and the second request reported `cache_hit=true` with the old result.\n\nThey also supplied an expired production dependency exception that still passed. A red-team script changed `instance_id` in an allow permit and generated another valid-looking signature without the host secret. Deny decisions were visible on stdout but absent after restarting the process and reading `state/audit.jsonl`.\n\nDo not solve this by disabling cache or exceptions: both are required operational controls. Keep the scanner fixture boundary deterministic; the real service swaps that adapter for Trivy/internal scanning.\n"
+        },
+        "SOLVER_VISIBLE_REQUIREMENTS": {
+          "instruction.md": "The EC2 software gate in `/app/enforcer` started failing in both directions after the last AMI rollout. A scanner outage let an `apt` request through, direct `dpkg` and Maven downloads are not getting the same source checks, and a mutable container tag reused an older clean result after its digest changed. Security also found an expired exception still working, a decision permit that can be forged off-host, and no deny records in the audit journal.\n\nStart with `notes/oncall.md` and `docs/policy-contract.md`. Keep the existing `artifactguard evaluate` and `artifactguard verify-permit` interfaces and do not change the supplied policy, scanner, or exception fixtures to make the incidents disappear. Package acquisition, container acquisition, and build dependencies must all be governed by the same policy semantics. If current vulnerability evidence cannot be established, enforcement must fail closed; valid cache evidence and exceptions have the scope and freshness rules in the contract. A permit is usable only for the exact instance/artifact/policy decision it was issued for, and every allow or deny must remain in the durable audit history across process restarts.\n",
+          "required_end_state": "All surfaces enforce trusted sources, immutable digests, current scanner/cache evidence, scoped expiring exceptions, exact-scope keyed permits, and restart-safe allow/deny audit history.",
+          "requirement_families": [
+            "source/digest policy",
+            "scanner/cache freshness",
+            "vulnerability exceptions",
+            "permit integrity",
+            "durable audit/recovery",
+            "CLI compatibility"
+          ]
+        }
+      }
+    },
+    "invocation_id": "inv_3fc86643ae89dfa84a5fc2eba27b7c23f4cbc75d48ef34d1b7e9786a9daaaec2",
+    "learning": {
+      "context_hash": "sha256:bb84a513aa2b6e4374d691759c4a6edf94169f479f4611e9091643b9f279ccfc",
+      "lessons": [],
+      "mode": "GENERALIZED_LESSONS_PLUS_OWNED_REMEDIATIONS",
+      "raw_feedback_exposed": false,
+      "raw_historical_findings_exposed": false,
+      "registry_heads": {
+        "feedback": "GENESIS",
+        "findings": "GENESIS",
+        "lessons": "GENESIS",
+        "patterns": "GENESIS",
+        "remediations": "GENESIS"
+      },
+      "remediations": []
+    },
+    "missing_required_inputs": [],
+    "output_contract": {
+      "allowed_status_values": [
+        "VERIFIER_READY",
+        "REQUIREMENT_GAP",
+        "SCENARIO_TOO_SMALL",
+        "BLOCKED"
+      ],
+      "deterministic_validators": [
+        "verifier lint/static checks",
+        ".terminus/validate_task_complexity.py <task>"
+      ],
+      "optional_fields": [
+        "STARTER_EMPIRICAL_STATUS",
+        "ORACLE_EMPIRICAL_STATUS",
+        "SOLVER_LOGIC_REIMPLEMENTATION_RISK"
+      ],
+      "persisted_artifacts": [
+        "<task>/tests/",
+        ".terminus/designs/<task>-test-map.json"
+      ],
+      "required_fields": [
+        "REQUIREMENT_TEST_MATRIX",
+        "F2P_COUNT",
+        "P2P_COUNT",
+        "EDGE_BOUNDARY_COVERAGE",
+        "NEGATIVE_FAILURE_COVERAGE",
+        "ORGANIC_COUNT_JUSTIFICATION",
+        "TEST_INDEPENDENCE"
+      ],
+      "semantic_reviewers": [
+        "Q2 Verifier Coverage Repairer",
+        "Verifier Engineer"
+      ]
+    },
+    "readiness": "READY",
+    "retrieval": {
+      "query": null,
+      "retrieved_chars": 0,
+      "retrieved_context": [],
+      "status": "NOT_REQUESTED"
+    },
+    "routing": {
+      "failure_routes": {
+        "DUPLICATE_OR_WEAK_TEST": "A5 Verifier Author / Q2 Verifier Coverage Repairer",
+        "REQUIREMENT_GAP": "Q1 Spec Gap Repairer / contract owner",
+        "SCENARIO_TOO_SMALL": "Creation Controller -> WORK_PACKAGE_RESEARCH"
+      },
+      "stale_on": [
+        "solver-visible requirement change",
+        "referenced contract change",
+        "behavioral surface change",
+        "verifier change"
+      ],
+      "success_transition": "HUMAN_WRITING_RESEARCH"
+    },
+    "schema_version": "1.0",
+    "stage": {
+      "lifecycle": "creation",
+      "owner": "A5 Verifier Author",
+      "role_class": "PRODUCER",
+      "role_id": "A5_VERIFIER_AUTHOR",
+      "stage_id": "VERIFIER_BUILD"
+    }
+  },
+  "outputs": {
+    "EDGE_BOUNDARY_COVERAGE": [
+      "Required-digest prerequisite cannot be waived by exception scope.",
+      "Scanner DB revision, policy version, scanner revision, and cache TTL transitions invalidate prior evidence.",
+      "Exception expiry, digest, surface, and environment boundaries are tested independently.",
+      "Complete-but-unterminated final audit records are preserved during recovery."
+    ],
+    "F2P_COUNT": 27,
+    "NEGATIVE_FAILURE_COVERAGE": [
+      "Direct dpkg/rpm and Maven untrusted-source rejection.",
+      "Unavailable/stale scanner evidence and corrupt/expired cache fail closed.",
+      "Wrong-scope/expired exceptions are rejected and cannot override unavailable evidence.",
+      "Wrong-secret and wrong-instance permits are rejected; restart and concurrent replay have single-use semantics.",
+      "Deny journaling, journal/projection consistency, durable corruption failure, and idempotent retry are exercised."
+    ],
+    "ORACLE_EMPIRICAL_STATUS": "DEFERRED_BY_ISOLATION: VERIFIER_BUILD excludes SOLUTION_ORACLE. Oracle execution remains mandatory at the downstream runtime/oracle validation checkpoint.",
+    "ORGANIC_COUNT_JUSTIFICATION": "The 27 F2P cases are separate externally observable policy/state transitions across five coupled requirement families: alternate acquisition paths, evidence identity/freshness, exception boundaries, permit authentication/replay, and audit/recovery. Cases are not parameter-renamed copies; each changes a distinct trust prerequisite, version/expiry boundary, scope dimension, concurrency/restart transition, or durability/recovery invariant.",
+    "P2P_COUNT": 6,
+    "REQUIREMENT_TEST_MATRIX": {
+      "REQ_AUDIT_RECOVERY": {
+        "F2P": [
+          {
+            "case_id": "F2P-AUDIT-01",
+            "test": "test_f2p_deny_decision_is_durably_journaled"
+          },
+          {
+            "case_id": "F2P-AUDIT-02",
+            "test": "test_f2p_deny_projection_matches_durable_journal"
+          },
+          {
+            "case_id": "F2P-AUDIT-03",
+            "test": "test_f2p_valid_unterminated_audit_record_survives_recovery"
+          },
+          {
+            "case_id": "F2P-AUDIT-04",
+            "test": "test_f2p_interior_audit_corruption_fails_closed"
+          },
+          {
+            "case_id": "F2P-AUDIT-05",
+            "test": "test_f2p_identical_retry_does_not_duplicate_audit_decision"
+          }
+        ],
+        "P2P": []
+      },
+      "REQ_EVIDENCE_CACHE": {
+        "F2P": [
+          {
+            "case_id": "F2P-EVID-01",
+            "test": "test_f2p_scanner_unavailable_fails_closed"
+          },
+          {
+            "case_id": "F2P-EVID-02",
+            "test": "test_f2p_scanner_db_revision_mismatch_is_stale"
+          },
+          {
+            "case_id": "F2P-EVID-03",
+            "test": "test_f2p_mutable_name_digest_change_invalidates_cache"
+          },
+          {
+            "case_id": "F2P-EVID-04",
+            "test": "test_f2p_policy_version_change_invalidates_cache"
+          },
+          {
+            "case_id": "F2P-EVID-05",
+            "test": "test_f2p_scanner_revision_change_invalidates_cache"
+          },
+          {
+            "case_id": "F2P-EVID-06",
+            "test": "test_f2p_cache_ttl_expiry_forces_scanner_recheck"
+          },
+          {
+            "case_id": "F2P-EVID-07",
+            "test": "test_f2p_corrupt_cache_does_not_become_clean_evidence"
+          }
+        ],
+        "P2P": []
+      },
+      "REQ_EXCEPTION_SCOPE": {
+        "F2P": [
+          {
+            "case_id": "F2P-EX-01",
+            "test": "test_f2p_expired_exception_is_ignored"
+          },
+          {
+            "case_id": "F2P-EX-02",
+            "test": "test_f2p_exception_same_name_wrong_digest_is_rejected"
+          },
+          {
+            "case_id": "F2P-EX-03",
+            "test": "test_f2p_exception_wrong_surface_is_rejected"
+          },
+          {
+            "case_id": "F2P-EX-04",
+            "test": "test_f2p_exception_wrong_environment_is_rejected"
+          },
+          {
+            "case_id": "F2P-EX-05",
+            "test": "test_f2p_exception_cannot_override_scanner_unavailable"
+          }
+        ],
+        "P2P": []
+      },
+      "REQ_PERMIT_AUTH_REPLAY": {
+        "F2P": [
+          {
+            "case_id": "F2P-PERMIT-01",
+            "test": "test_f2p_permit_rejected_with_different_secret"
+          },
+          {
+            "case_id": "F2P-PERMIT-02",
+            "test": "test_f2p_permit_signature_depends_on_secret"
+          },
+          {
+            "case_id": "F2P-PERMIT-03",
+            "test": "test_f2p_permit_instance_binding_is_enforced"
+          },
+          {
+            "case_id": "F2P-PERMIT-04",
+            "test": "test_f2p_stateful_permit_first_use_is_valid"
+          },
+          {
+            "case_id": "F2P-PERMIT-05",
+            "test": "test_f2p_permit_replay_is_rejected_after_restart"
+          },
+          {
+            "case_id": "F2P-PERMIT-06",
+            "test": "test_f2p_concurrent_permit_replay_has_single_winner"
+          }
+        ],
+        "P2P": []
+      },
+      "REQ_PRESERVATION": {
+        "F2P": [],
+        "P2P": [
+          {
+            "case_id": "P2P-01",
+            "test": "test_p2p_trusted_clean_package_remains_allowed"
+          },
+          {
+            "case_id": "P2P-02",
+            "test": "test_p2p_trusted_clean_container_remains_allowed"
+          },
+          {
+            "case_id": "P2P-03",
+            "test": "test_p2p_exact_current_exception_remains_allowed"
+          },
+          {
+            "case_id": "P2P-04",
+            "test": "test_p2p_ordinary_untrusted_apt_remains_denied"
+          },
+          {
+            "case_id": "P2P-05",
+            "test": "test_p2p_expired_permit_remains_invalid"
+          },
+          {
+            "case_id": "P2P-06",
+            "test": "test_p2p_permit_digest_mismatch_remains_invalid"
+          }
+        ]
+      },
+      "REQ_SOURCE_DIGEST": {
+        "F2P": [
+          {
+            "case_id": "F2P-SRC-01",
+            "test": "test_f2p_dpkg_untrusted_source_rejected"
+          },
+          {
+            "case_id": "F2P-SRC-02",
+            "test": "test_f2p_rpm_untrusted_source_rejected"
+          },
+          {
+            "case_id": "F2P-SRC-03",
+            "test": "test_f2p_maven_untrusted_source_rejected"
+          },
+          {
+            "case_id": "F2P-SRC-04",
+            "test": "test_f2p_missing_digest_cannot_be_excepted"
+          }
+        ],
+        "P2P": []
+      }
+    },
+    "SOLVER_LOGIC_REIMPLEMENTATION_RISK": "LOW: the verifier invokes artifactguard and checks contract-level decisions, state transitions, scope, freshness, replay, and durability invariants; it does not contain a callable end-to-end policy solver.",
+    "STARTER_EMPIRICAL_STATUS": "PASS: all 27 F2P behavioral cases fail the starter while all 6 P2P preservation cases pass the starter.",
+    "TEST_INDEPENDENCE": [
+      "Every test creates isolated temporary request, state, policy, scanner, exception, and secret files; no test depends on execution order.",
+      "Tests drive the public artifactguard CLI and inspect documented JSON/state behavior rather than source strings or implementation structure.",
+      "Policy values and scanner fixtures are read dynamically from the submitted artifact, with controlled perturbations derived from solver-visible contracts.",
+      "Verifier authoring did not consume the solution/oracle; expected outcomes derive from instruction.md and solver-visible engineering contracts."
+    ]
+  },
+  "record_id": "rec_e796c3f85e505ae5f54a54eaa02a7d534e4e53f144db44b0ff9ce18670b2a49e",
+  "role_id": "A5_VERIFIER_AUTHOR",
+  "schema_version": "1.0",
+  "stage_id": "VERIFIER_BUILD",
+  "status": "VERIFIER_READY",
+  "task_lineage": {
+    "input_task_commit": "8836f886d7cfc7f2747264026da31d1dfa49c658",
+    "output_task_commit": "8836f886d7cfc7f2747264026da31d1dfa49c658",
+    "task_changed": false
+  },
+  "transition": {
+    "action": "ADVANCE",
+    "requires_state_validation": false,
+    "target": "HUMAN_WRITING_RESEARCH",
+    "target_kind": "STAGE"
+  },
+  "validation": {
+    "acceptance_predicates_satisfied": true,
+    "evidence_binding_satisfied": true,
+    "evidence_refs_count": 2,
+    "invocation_identity_valid": true,
+    "invocation_policy_valid": true,
+    "output_keys_valid": true,
+    "required_outputs_satisfied": true,
+    "retrieval_context_authorized": true,
+    "status_legal": true,
+    "task_commit_change_authorized": true,
+    "task_lineage_valid": true
+  }
+}
