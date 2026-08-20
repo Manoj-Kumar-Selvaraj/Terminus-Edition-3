@@ -1,4 +1,4 @@
-name: EC2 Runtime Oracle Validation
+name: EC2 Current Rule Resolution
 
 on:
   push:
@@ -9,78 +9,117 @@ permissions:
   contents: write
 
 concurrency:
-  group: ec2-runtime-oracle-validation
+  group: ec2-current-rule-resolution
   cancel-in-progress: false
 
 jobs:
-  validate:
+  resolve:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - name: Persist run locator and helper
+      - name: Persist run locator
         shell: bash
         run: |
           set -euo pipefail
-          cp .github/ec2_runtime_validation.py "$RUNNER_TEMP/ec2_runtime_validation.py"
-          path=".terminus/diagnostic-run-locators/ec2-runtime-oracle-${GITHUB_SHA}.json"
+          path=".terminus/diagnostic-run-locators/ec2-rule-${GITHUB_SHA}.json"
           mkdir -p "$(dirname "$path")"
           printf '{"run_id":%s,"run_attempt":%s,"event_sha":"%s","branch":"%s"}\n' "$GITHUB_RUN_ID" "$GITHUB_RUN_ATTEMPT" "$GITHUB_SHA" "$GITHUB_REF_NAME" > "$path"
           git config user.name 'terminus-diagnostic-locator[bot]'
           git config user.email 'terminus-diagnostic-locator[bot]@users.noreply.github.com'
           git add -- "$path"
-          git commit -m "Track EC2 runtime/oracle run $GITHUB_RUN_ID"
+          git commit -m "Track EC2 current Rule Resolution $GITHUB_RUN_ID"
           git push origin HEAD:"$GITHUB_REF_NAME"
 
-      - name: Execute runtime authenticity and deterministic validation
-        shell: bash
-        run: |
-          set -euo pipefail
-          git fetch origin main
-          base="$(git rev-parse origin/main)"
-          echo "BASE=$base" >> "$GITHUB_ENV"
-          git checkout --detach "$base"
-          python3 "$RUNNER_TEMP/ec2_runtime_validation.py"
-
-      - name: Persist canonical EC2 execution evidence
+      - name: Execute current hosted Rule Resolution
         shell: bash
         run: |
           set -euo pipefail
           task="ec2-artifact-policy-enforcement"
-          control="67b805a297ac005ee08e82facc533f53a3233192"
-          git config user.name 'terminus-ec2-runtime[bot]'
-          git config user.email 'terminus-ec2-runtime[bot]@users.noreply.github.com'
+          task_commit="6c7909d5c0efd3e6e64443d6de3b227c1820b01b"
+          expected_control="bde51f1c20b2d6d78b33f02956da9c58cd42d2a4"
+          work="$RUNNER_TEMP/ec2-current-rule"
+          mkdir -p "$work"
+
+          git fetch origin main
+          base="$(git rev-parse origin/main)"
+          git checkout --detach "$base"
+          python3 .terminus/execution/controller_cli.py control-plane --head "$base" --output "$work/control.json"
+          control="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["control_plane_commit"])' "$work/control.json")"
+          [[ "$control" == "$expected_control" ]] || { echo "::error::control moved to $control"; exit 75; }
+          [[ "$(git log -1 --format=%H -- "$task")" == "$task_commit" ]] || { echo "::error::task snapshot moved"; exit 75; }
+
+          cat > "$work/inputs.json" <<'JSON'
+          {
+            "CREATION_REQUEST": "Continue the existing ec2-artifact-policy-enforcement task under current Terminus Edition-3 rules after production-authenticity and verifier-contract remediation. Preserve the validated production-shaped Go artifact-admission task snapshot and revalidate lifecycle evidence under the current control plane.",
+            "REQUESTED_DOMAIN": "production Go EC2 software supply-chain and artifact policy enforcement",
+            "REQUESTED_PROFILE": "large_system_strict",
+            "NETWORK_ENVIRONMENT_CONSTRAINTS": "network_mode public; separate verifier; digest-pinned canonical Go runtime; no privileged Docker/capability/socket shortcuts; tmux and asciinema required in agent image"
+          }
+          JSON
+
+          python3 .terminus/execution/controller_cli.py continue \
+            --task-id "$task" --task-commit "$task_commit" --control-plane-commit "$control" \
+            --inputs-json "$work/inputs.json" --output "$work/continue.json"
+          python3 - "$work/continue.json" "$work/invocation.json" <<'PY'
+          import json,sys
+          src,dst=sys.argv[1:]
+          x=json.load(open(src))
+          n=x.get('next',{})
+          if n.get('stage_id')!='RULE_RESOLUTION' or n.get('action') not in {'INVOKE_STAGE','RETRY_STAGE'}:
+              raise SystemExit(f'not RULE_RESOLUTION: {n}')
+          inv=x.get('invocation')
+          if not isinstance(inv,dict) or inv.get('readiness')!='READY' or inv.get('stage',{}).get('role_class')!='CONTROLLER':
+              raise SystemExit('RULE_RESOLUTION invocation not READY controller')
+          json.dump(inv,open(dst,'w'),indent=2,sort_keys=True); open(dst,'a').write('\n')
+          PY
+          python3 .terminus/execution/controller_stage_cli.py --invocation "$work/invocation.json" --output "$work/result.json"
+          python3 .terminus/execution/controller_cli.py record --invocation "$work/invocation.json" --result "$work/result.json" --output "$work/record.json"
+
+          git config user.name 'terminus-ec2-controller[bot]'
+          git config user.email 'terminus-ec2-controller[bot]@users.noreply.github.com'
           unexpected="$(git status --porcelain | awk '{print $2}' | grep -vE "^\.terminus/(executions|workflows)/${task}(/|$)" || true)"
-          [[ -z "$unexpected" ]] || { echo "::error::unexpected runtime/oracle mutations: $unexpected"; exit 1; }
+          [[ -z "$unexpected" ]] || { echo "::error::unexpected mutations: $unexpected"; exit 1; }
           git add -- ".terminus/executions/$task"
           git diff --cached --check
-          git diff --cached --quiet && { echo "::error::no canonical runtime/oracle evidence produced"; exit 1; }
-          git commit -m "Record ${task} runtime and deterministic validation"
-          original_base="$BASE"
-          for attempt in 1 2 3 4 5 6 7 8; do
+          git diff --cached --quiet && { echo "::error::no canonical Rule Resolution mutation"; exit 1; }
+          git commit -m "Record ${task} RULE_RESOLUTION controller result"
+
+          original_base="$base"
+          for attempt in 1 2 3 4 5 6 7 8 9 10 11 12; do
             git fetch origin main
             remote="$(git rev-parse origin/main)"
             if [[ "$remote" != "$original_base" ]]; then
-              work="$RUNNER_TEMP/ec2-runtime-validation"
-              python3 .terminus/execution/controller_cli.py control-plane --head "$remote" --output "$work/remote-control.json"
-              resolved="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["control_plane_commit"])' "$work/remote-control.json")"
-              [[ "$resolved" == "$control" ]] || { echo "::error::control changed during runtime/oracle to $resolved"; exit 75; }
-              drift="$(git diff --name-only "$original_base" "$remote" -- "$task" ".terminus/designs/${task}.json" ".terminus/designs/${task}-test-map.json" ".terminus/executions/$task" || true)"
+              python3 .terminus/execution/controller_cli.py control-plane --head "$remote" --output "$work/control-latest.json"
+              latest_control="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["control_plane_commit"])' "$work/control-latest.json")"
+              [[ "$latest_control" == "$control" ]] || { echo "::error::control changed during record"; exit 75; }
+              drift="$(git diff --name-only "$original_base" "$remote" -- "$task" ".terminus/designs/${task}.json" ".terminus/designs/${task}-test-map.json" ".terminus/executions/$task" ".terminus/research/${task}-dataset-calibration.json" ".terminus/research/${task}-task-writing-profile.json" || true)"
               [[ -z "$drift" ]] || { echo "::error::EC2 changed concurrently:"; echo "$drift"; exit 75; }
               git rebase "$remote"
+              original_base="$remote"
             fi
-            if git push origin HEAD:main; then exit 0; fi
+            if git push origin HEAD:main; then
+              git fetch origin main
+              final="$(git rev-parse origin/main)"
+              git checkout --detach "$final"
+              python3 .terminus/execution/controller_cli.py continue --task-id "$task" --task-commit "$task_commit" --control-plane-commit "$control" --output "$work/continue-after.json"
+              python3 - "$work/continue-after.json" <<'PY'
+          import json,sys
+          x=json.load(open(sys.argv[1])); print('NEXT='+json.dumps(x.get('next',{}),sort_keys=True)); print('MODE='+str(x.get('execution_mode')))
+          PY
+              exit 0
+            fi
             sleep 1
           done
-          echo "::error::unable to publish runtime/oracle evidence"
+          echo "::error::unable to publish Rule Resolution"
           exit 1
 
       - name: Upload diagnostics
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: ec2-runtime-oracle-${{ github.run_id }}-${{ github.run_attempt }}
-          path: ${{ runner.temp }}/ec2-runtime-validation
+          name: ec2-current-rule-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/ec2-current-rule
           if-no-files-found: warn
