@@ -1,0 +1,644 @@
+{
+  "ledger_event": {
+    "control_plane_commit": "df7ef7569e2947b9f0bf7cf89ed4dec6c2a5a1fe",
+    "event_id": "evt_bd9e85cceb0ea058ae9d22fb3cc99d601673a3bf556439f156bda0333d2e3e09",
+    "input_task_commit": "78ad422902b27dea954905130a1267b02cff3596",
+    "invocation_id": "inv_c26245c41d2d1705a8db4e41842cd161fe1078f5ade67d9e0fc835640899c359",
+    "output_task_commit": "78ad422902b27dea954905130a1267b02cff3596",
+    "previous_event_id": "evt_9720c8278c4e14692bdef5a3f501636b332c0495c4bad08e185f57657db888a0",
+    "record_hash": "sha256:6e979c829e60b4997f699c249fc50eef94fa5b428e38889a71994ae5cd6bc7dc",
+    "record_id": "rec_3bf82b7bf04abcbb8950e64b9352ccdacb6802b41740df593ca31f3aa1f13e69",
+    "record_path": ".terminus/executions/terraform-ansible-managed-resources/inv_c26245c41d2d1705a8db4e41842cd161fe1078f5ade67d9e0fc835640899c359.result.json",
+    "schema_version": "1.0",
+    "sequence": 100,
+    "stage_id": "REFERENCE_SOLUTION",
+    "task_id": "terraform-ansible-managed-resources"
+  },
+  "record": {
+    "authority": {
+      "control_plane_commit": "df7ef7569e2947b9f0bf7cf89ed4dec6c2a5a1fe",
+      "policy_versions": {},
+      "task_commit": "78ad422902b27dea954905130a1267b02cff3596",
+      "task_id": "terraform-ansible-managed-resources"
+    },
+    "disposition": "ADVANCE",
+    "evidence_refs": [
+      {
+        "content_hash": "sha256:104817a239b92de3e53f14d6bc0176563437894773e060648776dc09c6280374",
+        "kind": "COMMIT",
+        "ref": "commit:78ad422902b27dea954905130a1267b02cff3596"
+      }
+    ],
+    "invocation_id": "inv_c26245c41d2d1705a8db4e41842cd161fe1078f5ade67d9e0fc835640899c359",
+    "invocation_snapshot": {
+      "acceptance_predicates": {},
+      "authority": {
+        "control_plane_commit": "df7ef7569e2947b9f0bf7cf89ed4dec6c2a5a1fe",
+        "policy_versions": {},
+        "task_commit": "78ad422902b27dea954905130a1267b02cff3596",
+        "task_id": "terraform-ansible-managed-resources"
+      },
+      "evidence": {
+        "authorized_evidence_classes": [
+          "CONTROL_PLANE_POLICY",
+          "PRIVATE_CREATION_DESIGN",
+          "SOLVER_VISIBLE_TASK"
+        ],
+        "evidence_required": [
+          "deterministic general repair/completion",
+          "preservation rationale",
+          "no hidden-test special casing"
+        ],
+        "excluded_evidence_classes": [
+          "CI_RUNTIME_EVIDENCE",
+          "CURRENT_REVIEW_PACKET",
+          "DURABLE_SESSION_STATE",
+          "FINAL_PACKAGE_EVIDENCE",
+          "MODEL_TRIAL_EVIDENCE",
+          "PRIOR_REVIEW_RESULTS",
+          "PUBLIC_REFERENCE",
+          "SOLUTION_ORACLE",
+          "VERIFIER_PRIVATE"
+        ],
+        "mandatory_exact_reads": [
+          ".terminus/agents/CREATION_PIPELINE.md",
+          ".terminus/agents/CREATOR_PROMPTS.md"
+        ],
+        "retrieval_mode": "EXACT_ONLY"
+      },
+      "ignored_input_count": 0,
+      "inputs": {
+        "optional": {},
+        "required": {
+          "APPROVED_OPERATIONAL_REQUIREMENTS": {
+            "EDGE_FAILURE_SURFACE": [
+              "missing/wrong-kind objects",
+              "drift",
+              "Ansible non-zero",
+              "timeout",
+              "cancellation",
+              "already-absent destroy",
+              "collisions",
+              "digest changes",
+              "unordered values",
+              "mode equivalence",
+              "cron defaults/siblings",
+              "metacharacters/spaces"
+            ],
+            "ENGINEERING_OBJECTIVE": "Complete the ten-resource ansibleops provider as one coherent Terraform lifecycle/reconciliation system.",
+            "PERSONA": "Platform engineer maintaining an internal Terraform provider for local Linux configuration through Ansible.",
+            "PRESERVATION_OBLIGATIONS": [
+              "exact ten documented resource interfaces",
+              "provider source local/ansibleops version 0.1.0",
+              "Terraform Core sole durable state authority",
+              "clean plan never replays Ansible",
+              "preserve sibling objects and symlink targets"
+            ],
+            "REQUIRED_END_STATE": [
+              "stable external-object identity",
+              "Ansible-only Create/Update/Delete mutation",
+              "native Linux side-effect-free Read/refresh and drift reconciliation",
+              "state publication only after successful mutation and retry after failure",
+              "scoped ownership/deletion across ten documented resource types",
+              "structured argv plus timeout/cancellation/temp cleanup",
+              "canonical normalization/idempotency"
+            ],
+            "REQUIREMENT_FAMILIES": [
+              "provider runtime",
+              "identity/state",
+              "mutation runner",
+              "native observation",
+              "filesystem/content",
+              "line/block ownership",
+              "user/group",
+              "cron",
+              "normalization",
+              "failure/retry"
+            ],
+            "WORK_PACKAGE_ID": "MANAGED_RESOURCE_LIFECYCLE_COMPLETION"
+          },
+          "STARTER_ENVIRONMENT": {
+            "COMPONENT_GRAPH": [
+              "provider registration/configuration/runtime preflight",
+              "shared lifecycle identity/state/normalization",
+              "Ansible task/playbook generation",
+              "process runner/timeout/cancellation/cleanup",
+              "native filesystem/content/account/cron observation",
+              "ten differentiated managed-resource implementations"
+            ],
+            "ENTRYPOINTS": [
+              "/app/provider/cmd/terraform-provider-ansibleops/main.go",
+              "/app/provider/scripts/build-provider.sh",
+              "/app/provider/scripts/smoke.sh"
+            ],
+            "ENVIRONMENT_RULE_CHECKS": {
+              "business_module_diversity": "PASS_OR_NOT_APPLICABLE",
+              "environment_complexity": "PASS",
+              "runtime_authenticity": "PASS"
+            },
+            "INSTRUCTION_DOC_BOUNDARY": "instruction owns required end-state behavior; provider docs own architecture/resource/lifecycle/operator contracts",
+            "PRODUCTION_CHARACTERISTICS": [
+              "real Terraform Plugin Framework provider process",
+              "ten differentiated Linux managed-resource lifecycles",
+              "Terraform-Core-owned durable state",
+              "persistent external Linux state",
+              "separate mutation and observation paths",
+              "provider startup preflight",
+              "shared process-control normalization validation and drift-observation layers"
+            ],
+            "RUNTIME_REACHABILITY_NOTES": [
+              "Configure preflight is live",
+              "Terraform reaches provider resource callbacks",
+              "Ansible mutation/native observation are reachable"
+            ],
+            "SOLVER_VISIBLE_DOCS": [
+              "/app/provider/docs/provider-contract.md",
+              "/app/provider/docs/resource-reference.md",
+              "/app/provider/docs/lifecycle.md",
+              "/app/provider/examples/basic/main.tf"
+            ],
+            "SUBSTANTIVE_LOC": 3081,
+            "UNRESOLVED_RISKS": [
+              "Fresh empirical Oracle/NOP behavior not yet re-earned under current control."
+            ]
+          },
+          "SYSTEM_ARCHITECTURE": {
+            "COMPONENT_GRAPH": [
+              "provider registration/configuration/runtime preflight",
+              "shared lifecycle identity/state transitions",
+              "Ansible task/playbook generation",
+              "structured runner",
+              "native Linux observation",
+              "normalization/validation",
+              "ten differentiated resource implementations"
+            ],
+            "ENTRYPOINTS": [
+              "/app/provider/cmd/terraform-provider-ansibleops/main.go",
+              "/app/provider/scripts/build-provider.sh",
+              "/app/provider/scripts/smoke.sh"
+            ],
+            "PRODUCTION_CHARACTERISTICS": [
+              "real provider process",
+              "differentiated lifecycles",
+              "mutation/observation split",
+              "failure-safe transitions",
+              "stable ownership",
+              "runner safety",
+              "canonical convergence"
+            ],
+            "SCALE_FIT": "large_system_strict natural fit",
+            "SOLVER_VISIBLE_DOC_PLAN": [
+              "docs/provider-contract.md",
+              "docs/resource-reference.md",
+              "docs/lifecycle.md",
+              "examples/basic/main.tf"
+            ],
+            "STATE_MODEL": {
+              "external_state": "filesystem/passwd/group/crontab external truth",
+              "identity": "documented external object key",
+              "mutation": "Ansible before state publication",
+              "observation": "native read only",
+              "terraform_state": "Terraform Core sole durable state authority"
+            }
+          }
+        }
+      },
+      "invocation_id": "inv_c26245c41d2d1705a8db4e41842cd161fe1078f5ade67d9e0fc835640899c359",
+      "learning": {
+        "context_hash": "sha256:bb84a513aa2b6e4374d691759c4a6edf94169f479f4611e9091643b9f279ccfc",
+        "lessons": [],
+        "mode": "GENERALIZED_LESSONS_PLUS_OWNED_REMEDIATIONS",
+        "raw_feedback_exposed": false,
+        "raw_historical_findings_exposed": false,
+        "registry_heads": {
+          "feedback": "GENESIS",
+          "findings": "GENESIS",
+          "lessons": "GENESIS",
+          "patterns": "GENESIS",
+          "remediations": "GENESIS"
+        },
+        "remediations": []
+      },
+      "missing_required_inputs": [],
+      "output_contract": {
+        "allowed_status_values": [
+          "IMPLEMENTED",
+          "CONTRACT_GAP",
+          "BLOCKED"
+        ],
+        "deterministic_validators": [],
+        "optional_fields": [],
+        "persisted_artifacts": [
+          "<task>/solution/solve.sh",
+          "<task>/solution/"
+        ],
+        "required_fields": [
+          "RESTORED_INVARIANTS",
+          "FILES_CHANGED",
+          "RESTART_IDEMPOTENCY_BEHAVIOR",
+          "DETERMINISM_NOTES",
+          "PRESERVED_BEHAVIOR",
+          "RISKS_FOR_INDEPENDENT_VERIFIER"
+        ],
+        "semantic_reviewers": [
+          "Verifier Engineer"
+        ]
+      },
+      "readiness": "READY",
+      "retrieval": {
+        "query": null,
+        "retrieved_chars": 0,
+        "retrieved_context": [],
+        "status": "NOT_REQUESTED"
+      },
+      "routing": {
+        "failure_routes": {
+          "CONTRACT_GAP": "Creation Controller -> appropriate contract owner",
+          "RUNTIME_FAILURE": "Q5 Oracle & Runtime Repair Specialist"
+        },
+        "stale_on": [
+          "operational requirement change",
+          "environment implementation change",
+          "solver-visible contract change"
+        ],
+        "success_transition": "VERIFIER_BUILD"
+      },
+      "schema_version": "1.0",
+      "stage": {
+        "lifecycle": "creation",
+        "owner": "A4 Reference Solution Author",
+        "role_class": "PRODUCER",
+        "role_id": "A4_REFERENCE_SOLUTION_AUTHOR",
+        "stage_id": "REFERENCE_SOLUTION"
+      }
+    },
+    "outputs": {
+      "DETERMINISM_NOTES": "solve.sh performs deterministic sorted installation/gofmt/build; Ansible execution uses structured exec.CommandContext argv; generated playbooks are temporary and cleaned on all terminal paths; normalized equivalent representations suppress false churn.",
+      "FILES_CHANGED": [
+        "solution/solve.sh",
+        "solution/fixed/internal/runner/runner.go",
+        "solution/fixed/internal/resources/common.go",
+        "solution/fixed/internal/resources/resource_file.go",
+        "solution/fixed/internal/resources/resource_directory.go",
+        "solution/fixed/internal/resources/resource_copy.go",
+        "solution/fixed/internal/resources/resource_template.go",
+        "solution/fixed/internal/resources/resource_line.go",
+        "solution/fixed/internal/resources/resource_block.go",
+        "solution/fixed/internal/resources/resource_symlink.go",
+        "solution/fixed/internal/resources/resource_user.go",
+        "solution/fixed/internal/resources/resource_group.go",
+        "solution/fixed/internal/resources/resource_cron.go"
+      ],
+      "PRESERVED_BEHAVIOR": [
+        "exact ten documented resource schemas/interfaces",
+        "provider source local/ansibleops version 0.1.0",
+        "supplied local inventory and /app/provider runtime",
+        "public provider/resource/lifecycle contracts",
+        "Terraform-owned state and native drift semantics"
+      ],
+      "RESTART_IDEMPOTENCY_BEHAVIOR": "The completion derives identity from external keys and reconstructs observed state natively, so a fresh Terraform/provider process converges on the same object without transient provider memory or replaying Ansible during Read.",
+      "RESTORED_INVARIANTS": [
+        "stable documented external-object IDs across mutable updates",
+        "Ansible-only Create/Update/Delete mutation path",
+        "native side-effect-free Read/refresh with absence and drift reconciliation",
+        "state publication only after successful mutation; failures preserve prior state and retryability",
+        "scoped deletion for symlink, named text entries, accounts and cron siblings",
+        "structured ansible-playbook argv with literal data, timeout/cancel propagation and temp-playbook cleanup",
+        "canonical mode/unordered/account/cron normalization",
+        "Terraform Core remains sole durable state authority"
+      ],
+      "RISKS_FOR_INDEPENDENT_VERIFIER": [
+        "Fresh empirical Oracle/NOP execution is not asserted by this stage and must be re-earned at DETERMINISTIC_VALIDATION.",
+        "Verifier should independently exercise failed update/delete retryability, process timeout/cancellation, literal argv handling, sibling preservation, and restart/idempotency behavior."
+      ]
+    },
+    "record_id": "rec_3bf82b7bf04abcbb8950e64b9352ccdacb6802b41740df593ca31f3aa1f13e69",
+    "role_id": "A4_REFERENCE_SOLUTION_AUTHOR",
+    "schema_version": "1.0",
+    "stage_id": "REFERENCE_SOLUTION",
+    "status": "IMPLEMENTED",
+    "task_lineage": {
+      "input_task_commit": "78ad422902b27dea954905130a1267b02cff3596",
+      "output_task_commit": "78ad422902b27dea954905130a1267b02cff3596",
+      "task_changed": false
+    },
+    "transition": {
+      "action": "ADVANCE",
+      "requires_state_validation": false,
+      "target": "VERIFIER_BUILD",
+      "target_kind": "STAGE"
+    },
+    "validation": {
+      "acceptance_predicates_satisfied": true,
+      "evidence_binding_satisfied": true,
+      "evidence_refs_count": 1,
+      "invocation_identity_valid": true,
+      "invocation_policy_valid": true,
+      "output_keys_valid": true,
+      "required_outputs_satisfied": true,
+      "retrieval_context_authorized": true,
+      "status_legal": true,
+      "task_commit_change_authorized": true,
+      "task_lineage_valid": true
+    }
+  },
+  "remediation_updates": [],
+  "state": {
+    "control_plane_commit": "df7ef7569e2947b9f0bf7cf89ed4dec6c2a5a1fe",
+    "derived_from": {
+      "freshness_overlay_hash": null,
+      "record_ids": [
+        "rec_380fcea42d6f16b35ab80328e4cbcf647e03c8c5bdc9e39931dfae43a6b64985",
+        "rec_3bf82b7bf04abcbb8950e64b9352ccdacb6802b41740df593ca31f3aa1f13e69",
+        "rec_5dfe83f776be708e36c1dd64fff72834ad403a83885b0df74219cdc626cad9aa",
+        "rec_89dcf80573a42237fdfe1cdf5eddafe4842cf5ccf7c52fdacfe0bfcaea7628ae",
+        "rec_9f0c47cd2480e269a723d4c1ca2f78a5bb9158805f11d32bca40d4cef03fbcd3",
+        "rec_b30c25b2f945c67e450ec49c13b9eed14277b728eac2f67dfc2d0de52b3eb510"
+      ]
+    },
+    "ledger_event_count": 100,
+    "ledger_head_event_id": "evt_bd9e85cceb0ea058ae9d22fb3cc99d601673a3bf556439f156bda0333d2e3e09",
+    "lineage": {
+      "bootstrap_task_commit": "78ad422902b27dea954905130a1267b02cff3596",
+      "current_task_commit": "78ad422902b27dea954905130a1267b02cff3596",
+      "recorded_task_commit": "78ad422902b27dea954905130a1267b02cff3596",
+      "status": "CURRENT"
+    },
+    "next": {
+      "action": "INVOKE_STAGE",
+      "optional_inputs": [
+        "PRESERVATION_RISK_MODEL",
+        "RUNTIME_INTERFACE_MAP"
+      ],
+      "owner": "A5 Verifier Author",
+      "primary_role_id": "A5_VERIFIER_AUTHOR",
+      "required_inputs": [
+        "BEHAVIORAL_SURFACES",
+        "SOLVER_VISIBLE_CONTRACTS",
+        "SOLVER_VISIBLE_REQUIREMENTS"
+      ],
+      "stage_id": "VERIFIER_BUILD"
+    },
+    "nodes": [
+      {
+        "disposition": "ADVANCE",
+        "input_task_commit": "78ad422902b27dea954905130a1267b02cff3596",
+        "invocation_id": "inv_6db759e21ec50285fcd4663da715c1cd5ec06ae3ad9f62e6ab8c659430d3b8a0",
+        "ledger_event_id": "evt_133bdd775fc20b8349d3c9513192c4a486c9fd7718d2c546ea4b3e3bf82430b6",
+        "node_id": "RULE_RESOLUTION",
+        "node_kind": "STAGE",
+        "output_task_commit": "78ad422902b27dea954905130a1267b02cff3596",
+        "reason": "validated ADVANCE record reaches WORK_PACKAGE_RESEARCH",
+        "record_id": "rec_380fcea42d6f16b35ab80328e4cbcf647e03c8c5bdc9e39931dfae43a6b64985",
+        "status": "CURRENT"
+      },
+      {
+        "disposition": "ADVANCE",
+        "input_task_commit": "78ad422902b27dea954905130a1267b02cff3596",
+        "invocation_id": "inv_77653e34e52719d8b8c85ba80f1fafe390ad9cb67c07567dd45b00ef67ea0ddf",
+        "ledger_event_id": "evt_4c01e6b971b0b36afbcc5ffeebe818cbe17283b4b3c19415720c503cfe95623b",
+        "node_id": "WORK_PACKAGE_RESEARCH",
+        "node_kind": "STAGE",
+        "output_task_commit": "78ad422902b27dea954905130a1267b02cff3596",
+        "reason": "validated ADVANCE record reaches SYSTEM_ARCHITECTURE",
+        "record_id": "rec_b30c25b2f945c67e450ec49c13b9eed14277b728eac2f67dfc2d0de52b3eb510",
+        "status": "CURRENT"
+      },
+      {
+        "disposition": "ADVANCE",
+        "input_task_commit": "78ad422902b27dea954905130a1267b02cff3596",
+        "invocation_id": "inv_06c61f36d4bf9e682b32da76b8e5cfc233d9867dc3142f9a354ac69ff92e509b",
+        "ledger_event_id": "evt_720077b8dde6295bca5b5875f2bf9c7530c5dc792dbb51d781ffb37107b89855",
+        "node_id": "SYSTEM_ARCHITECTURE",
+        "node_kind": "STAGE",
+        "output_task_commit": "78ad422902b27dea954905130a1267b02cff3596",
+        "reason": "validated ADVANCE record reaches DEFECT_TOPOLOGY",
+        "record_id": "rec_5dfe83f776be708e36c1dd64fff72834ad403a83885b0df74219cdc626cad9aa",
+        "status": "CURRENT"
+      },
+      {
+        "disposition": "ADVANCE",
+        "input_task_commit": "78ad422902b27dea954905130a1267b02cff3596",
+        "invocation_id": "inv_0c98e5a17778a51283ee41d7aec54753813315adcbb3d7e271f3c73ee5328c9a",
+        "ledger_event_id": "evt_045ea10f56533b6bf4009b5990ef9c4be77d5c33dd4c679c8d90098a5a42bb93",
+        "node_id": "DEFECT_TOPOLOGY",
+        "node_kind": "STAGE",
+        "output_task_commit": "78ad422902b27dea954905130a1267b02cff3596",
+        "reason": "validated ADVANCE record reaches ENVIRONMENT_BUILD",
+        "record_id": "rec_9f0c47cd2480e269a723d4c1ca2f78a5bb9158805f11d32bca40d4cef03fbcd3",
+        "status": "CURRENT"
+      },
+      {
+        "disposition": "ADVANCE",
+        "input_task_commit": "78ad422902b27dea954905130a1267b02cff3596",
+        "invocation_id": "inv_b520313d2a41ac76ae107348148f101c1117efe0ae7f3dc0d106e33362fd86ba",
+        "ledger_event_id": "evt_9720c8278c4e14692bdef5a3f501636b332c0495c4bad08e185f57657db888a0",
+        "node_id": "ENVIRONMENT_BUILD",
+        "node_kind": "STAGE",
+        "output_task_commit": "78ad422902b27dea954905130a1267b02cff3596",
+        "reason": "validated ADVANCE record reaches REFERENCE_SOLUTION",
+        "record_id": "rec_89dcf80573a42237fdfe1cdf5eddafe4842cf5ccf7c52fdacfe0bfcaea7628ae",
+        "status": "CURRENT"
+      },
+      {
+        "disposition": "ADVANCE",
+        "input_task_commit": "78ad422902b27dea954905130a1267b02cff3596",
+        "invocation_id": "inv_c26245c41d2d1705a8db4e41842cd161fe1078f5ade67d9e0fc835640899c359",
+        "ledger_event_id": "evt_bd9e85cceb0ea058ae9d22fb3cc99d601673a3bf556439f156bda0333d2e3e09",
+        "node_id": "REFERENCE_SOLUTION",
+        "node_kind": "STAGE",
+        "output_task_commit": "78ad422902b27dea954905130a1267b02cff3596",
+        "reason": "validated ADVANCE record reaches VERIFIER_BUILD",
+        "record_id": "rec_3bf82b7bf04abcbb8950e64b9352ccdacb6802b41740df593ca31f3aa1f13e69",
+        "status": "CURRENT"
+      },
+      {
+        "input_task_commit": "78ad422902b27dea954905130a1267b02cff3596",
+        "invocation_id": "inv_ab675dd83bcdd0f93c7b0928e991f1160eb8d5b845b02002d907a7c6291a5057",
+        "ledger_event_id": "evt_178f4f7807e45b2487f7c7729d11f271aa85cb05ed0dbd4eab51b9909d7e740a",
+        "node_id": "VERIFIER_BUILD",
+        "node_kind": "STAGE",
+        "output_task_commit": "78ad422902b27dea954905130a1267b02cff3596",
+        "reason": "latest execution record predates the latest current predecessor execution; the downstream stage must be rerun even when task/control commits are unchanged",
+        "record_id": "rec_db171c13388230308c68afea1b4a57676e1c921cf574eefc85fc292873404fff",
+        "status": "STALE"
+      },
+      {
+        "input_task_commit": "78ad422902b27dea954905130a1267b02cff3596",
+        "invocation_id": "inv_12696f4d37f72769ad6775fa2c10c57b88979178f4db903853508ac216bf9817",
+        "ledger_event_id": "evt_a303360cf7a4cf7a4150bee35c69aef996d703f1bac70a90747f62b3bdfe2681",
+        "node_id": "HUMAN_WRITING_RESEARCH",
+        "node_kind": "STAGE",
+        "output_task_commit": "78ad422902b27dea954905130a1267b02cff3596",
+        "reason": "upstream node VERIFIER_BUILD is not current; later historical evidence cannot advance",
+        "record_id": "rec_f51b52a7e92e595bcd753af709dc3063410115bebc8081db6b0237bce4eed48c",
+        "status": "STALE"
+      },
+      {
+        "input_task_commit": "78ad422902b27dea954905130a1267b02cff3596",
+        "invocation_id": "inv_72f40377568dea6580280f70979e5c434b709669be135f577617442f14c1ff45",
+        "ledger_event_id": "evt_59968abb5addb7181c2ee94e6eea8c54f4fefea2c65d7af40538da7c802765c8",
+        "node_id": "INSTRUCTION_DRAFT",
+        "node_kind": "STAGE",
+        "output_task_commit": "78ad422902b27dea954905130a1267b02cff3596",
+        "reason": "upstream node HUMAN_WRITING_RESEARCH is not current; later historical evidence cannot advance",
+        "record_id": "rec_547622f419edb47c8c0ab641364be36f3add5250d3c60f7e12d20a59d004e199",
+        "status": "STALE"
+      },
+      {
+        "input_task_commit": "78ad422902b27dea954905130a1267b02cff3596",
+        "invocation_id": "inv_2e1990552bac2d40067d6dc88ed8dd7e7189f719481ddbaad65cb9ad0869a7ac",
+        "ledger_event_id": "evt_d58df8f3999a7a28f7347fab1f38201b73e5e691eb2caf5d2cd0c1a256e8a1ca",
+        "node_id": "SPEC_ALIGNMENT",
+        "node_kind": "STAGE",
+        "output_task_commit": "78ad422902b27dea954905130a1267b02cff3596",
+        "reason": "upstream node INSTRUCTION_DRAFT is not current; later historical evidence cannot advance",
+        "record_id": "rec_748524f94e61c5febcc6cc013ba76ca6ac5afc02688ec32b1717f707a4ab6d93",
+        "status": "STALE"
+      },
+      {
+        "input_task_commit": "78ad422902b27dea954905130a1267b02cff3596",
+        "invocation_id": "inv_e292007ede2b9984906eb32dc4a73012ca4b273c6a3e149cb70cdb181632e977",
+        "ledger_event_id": "evt_2d4506f61feebcf34166f9a640a56c1825839d40bbfd65ecc64c4dc2d4baa90c",
+        "node_id": "DOCUMENTATION_DRAFT",
+        "node_kind": "STAGE",
+        "output_task_commit": "78ad422902b27dea954905130a1267b02cff3596",
+        "reason": "upstream node SPEC_ALIGNMENT is not current; later historical evidence cannot advance",
+        "record_id": "rec_c0ac6185979c13229db2669720d71710afd9a23fdd7787596b59bb9d6bda1f19",
+        "status": "STALE"
+      },
+      {
+        "input_task_commit": "78ad422902b27dea954905130a1267b02cff3596",
+        "invocation_id": "inv_acd3976c8ea80319ec00c9472288f1aedf2f1d4f9623f662de9a9e6e3ea1a512",
+        "ledger_event_id": "evt_a91eef924959a99926fa88e0799187974d6a693098efa10f35b433a85573b040",
+        "node_id": "FORMAT_GATE",
+        "node_kind": "STAGE",
+        "output_task_commit": "78ad422902b27dea954905130a1267b02cff3596",
+        "reason": "upstream node DOCUMENTATION_DRAFT is not current; later historical evidence cannot advance",
+        "record_id": "rec_5739f7ef5f201f7e2417ba714aa1845e8afbaa6767c74f37dd2fc0bb6222433d",
+        "status": "STALE"
+      },
+      {
+        "input_task_commit": "78ad422902b27dea954905130a1267b02cff3596",
+        "invocation_id": "inv_33c391b6ae8f1eb4fd6848dabf7d4bd987ef785df8f5c21a548637df5f04e1de",
+        "ledger_event_id": "evt_6ba23321ca81f73f7969947dc28cb32321978cb3281faf5d0163efd7c74e09e9",
+        "node_id": "ASSEMBLY",
+        "node_kind": "STAGE",
+        "output_task_commit": "78ad422902b27dea954905130a1267b02cff3596",
+        "reason": "upstream node FORMAT_GATE is not current; later historical evidence cannot advance",
+        "record_id": "rec_0f63e973305294b1dcc18f437900610d901634b8ea7f45e35d967d321c7ad3a1",
+        "status": "STALE"
+      },
+      {
+        "input_task_commit": "78ad422902b27dea954905130a1267b02cff3596",
+        "invocation_id": "inv_1bbd6a60f68a003c88d77841eca9998600ae906a5a56055cfdd8de0b6f3900be",
+        "ledger_event_id": "evt_94e4c3d8e10f6681c0179b2a94f5ac9ec32ffe4f7cedaa18f6e4dd01429ac2d2",
+        "node_id": "COMPLEXITY_GATE",
+        "node_kind": "STAGE",
+        "output_task_commit": "78ad422902b27dea954905130a1267b02cff3596",
+        "reason": "upstream node ASSEMBLY is not current; later historical evidence cannot advance",
+        "record_id": "rec_c308701b38b0e9b3659a06c915f9419c38ac795f5e1142d90f3a1fbe2353be80",
+        "status": "STALE"
+      },
+      {
+        "input_task_commit": "78ad422902b27dea954905130a1267b02cff3596",
+        "invocation_id": "inv_ac12ed1439601ed48599df4415934b9df1058bd1fc708d1f1fb06fa8e8846057",
+        "ledger_event_id": "evt_6f4c8b0313f43e43b10b3957a3747a524eedf27e496fbf0c708ce44bfecc78e6",
+        "node_id": "RUNTIME_AUTHENTICITY",
+        "node_kind": "STAGE",
+        "output_task_commit": "78ad422902b27dea954905130a1267b02cff3596",
+        "reason": "upstream node COMPLEXITY_GATE is not current; later historical evidence cannot advance",
+        "record_id": "rec_3badd5239f366d28a604a3e18aabae3b6e7f85a4182692b64a39f421a8a6fec2",
+        "status": "STALE"
+      },
+      {
+        "node_id": "DETERMINISTIC_VALIDATION",
+        "node_kind": "STAGE",
+        "reason": "upstream node RUNTIME_AUTHENTICITY is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "FROZEN_CANDIDATE",
+        "node_kind": "STATE",
+        "reason": "state cannot be current while its predecessor chain is non-current",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "QUALITY_INTERLOCK",
+        "node_kind": "STAGE",
+        "reason": "upstream node FROZEN_CANDIDATE is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "PRE_LLMAJ",
+        "node_kind": "STAGE",
+        "reason": "upstream node QUALITY_INTERLOCK is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "MODEL_DIAGNOSTIC_GPT",
+        "node_kind": "STAGE",
+        "reason": "upstream node PRE_LLMAJ is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "MODEL_DIAGNOSTIC_CLAUDE",
+        "node_kind": "STAGE",
+        "reason": "upstream node MODEL_DIAGNOSTIC_GPT is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "MODEL_DIAGNOSTIC_AGGREGATE",
+        "node_kind": "STAGE",
+        "reason": "upstream node MODEL_DIAGNOSTIC_CLAUDE is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "HARBOR_LLMAJ",
+        "node_kind": "STAGE",
+        "reason": "upstream node MODEL_DIAGNOSTIC_AGGREGATE is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "OFFICIAL_MODEL_TRIALS",
+        "node_kind": "STAGE",
+        "reason": "upstream node HARBOR_LLMAJ is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "TRIAL_ANALYSIS",
+        "node_kind": "STAGE",
+        "reason": "upstream node OFFICIAL_MODEL_TRIALS is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "DIFFICULTY_ASSESSMENT",
+        "node_kind": "STAGE",
+        "reason": "upstream node TRIAL_ANALYSIS is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "FINAL_REVIEW",
+        "node_kind": "STAGE",
+        "reason": "upstream node DIFFICULTY_ASSESSMENT is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "SUBMISSION_READY",
+        "node_kind": "STAGE",
+        "reason": "upstream node FINAL_REVIEW is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      }
+    ],
+    "schema_version": "1.0",
+    "state_snapshot_id": "state_15042527cc6404899bc1f14d3df80546284599a1ab219bad59e584e73c42504e",
+    "summary": {
+      "BLOCKED": 0,
+      "CURRENT": 6,
+      "MISSING": 13,
+      "STALE": 9
+    },
+    "task_commit": "78ad422902b27dea954905130a1267b02cff3596",
+    "task_id": "terraform-ansible-managed-resources"
+  }
+}
