@@ -1,0 +1,227 @@
+name: EC2 A8 Documentation Current Control
+
+on:
+  push:
+    branches:
+      - diagnostic/ec2-ledger-integrity-20260820
+    paths:
+      - .github/workflows/ec2-a8-documentation-current.yml
+
+permissions:
+  contents: write
+
+env:
+  TASK: ec2-artifact-policy-enforcement
+  TASK_COMMIT: 8836f886d7cfc7f2747264026da31d1dfa49c658
+  CONTROL_COMMIT: 215cc70bcebcccc3c9a401af1b74a97d90026da3
+  EXPECTED_MAIN: 56d1d78d8d4a0aca43273d1168d56ab511ea8310
+  TASK_HASH: sha256:c949a75a93f4636d770dd6cb82318c90d98b3fb0fb1d16d3d8b2e6c4d50a86fc
+  CONTROL_HASH: sha256:334e6029ea34515d0f9364b213a51af19ed193f7c1c22cdf7b978781c2e856d7
+
+jobs:
+  a8:
+    name: Write and record EC2 engineering documentation
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Persist run locator
+        shell: bash
+        run: |
+          set -euo pipefail
+          path=".terminus/diagnostic-run-locators/ec2-a8-${GITHUB_SHA}.json"
+          mkdir -p "$(dirname "$path")"
+          printf '{"run_id":%s,"run_attempt":%s,"event_sha":"%s","branch":"%s"}\n' "$GITHUB_RUN_ID" "$GITHUB_RUN_ATTEMPT" "$GITHUB_SHA" "$GITHUB_REF_NAME" > "$path"
+          git config user.name 'terminus-diagnostic-locator[bot]'
+          git config user.email 'terminus-diagnostic-locator[bot]@users.noreply.github.com'
+          git add -- "$path"
+          git commit -m "Track EC2 A8 run $GITHUB_RUN_ID"
+          git push origin HEAD:"$GITHUB_REF_NAME"
+
+      - name: Compile exact A8 invocation and write README
+        shell: bash
+        run: |
+          set -euo pipefail
+          work="$RUNNER_TEMP/ec2-a8"
+          mkdir -p "$work"
+          echo "WORK=$work" >> "$GITHUB_ENV"
+          git fetch origin main
+          base="$(git rev-parse origin/main)"
+          echo "BASE=$base" >> "$GITHUB_ENV"
+          [[ "$base" == "$EXPECTED_MAIN" ]] || { echo "::error::main moved before A8 expected=$EXPECTED_MAIN current=$base"; exit 75; }
+          git checkout --detach "$base"
+          python3 .terminus/execution/controller_cli.py control-plane --head "$base" --output "$work/control.json"
+          resolved="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["control_plane_commit"])' "$work/control.json")"
+          [[ "$resolved" == "$CONTROL_COMMIT" ]] || { echo "::error::control mismatch expected=$CONTROL_COMMIT current=$resolved"; exit 75; }
+
+          cat > "$work/inputs.json" <<'JSON'
+          {
+            "APPROVED_WORK_PACKAGE": {
+              "ID": "WP1_UNIFIED_EC2_ARTIFACT_ADMISSION",
+              "ENGINEERING_OBJECTIVE": "Unify OS-package, container, and build-dependency acquisition behind one Go policy engine.",
+              "REQUIRED_END_STATE": "All acquisition surfaces enforce trusted sources, immutable digests, current scanner/cache evidence, scoped current vulnerability exceptions, exact-scope secret-keyed permits with replay safety, and durable restart-safe allow/deny audit history."
+            },
+            "IMPLEMENTATION_EVIDENCE": {
+              "REFERENCE_SOLUTION_STATUS": "IMPLEMENTED",
+              "RESTORED_INVARIANTS": [
+                "one source/digest policy boundary across package, container and dependency managers",
+                "current scanner evidence and cache identity bound to digest, policy version, scanner DB revision and TTL",
+                "exact current vulnerability exceptions that cannot bypass prerequisites",
+                "secret-keyed exact-scope permits with optional durable single-use replay enforcement",
+                "durable ALLOW/DENY audit before derived projection and crash-safe state transitions",
+                "restart/concurrency-safe idempotency and replay semantics"
+              ],
+              "PRESERVED_BEHAVIOR": [
+                "artifactguard evaluate and verify-permit interfaces and documented exits",
+                "valid cache reuse and valid scoped exceptions",
+                "supplied policy/scanner/exception fixtures",
+                "existing audit history"
+              ],
+              "DETERMINISM": "caller-provided time, local fixtures, local state and no required network dependency"
+            },
+            "VERIFICATION_EVIDENCE": {
+              "VERIFIER_STATUS": "VERIFIER_READY",
+              "F2P_COUNT": 27,
+              "P2P_COUNT": 9,
+              "COVERAGE_FAMILIES": [
+                "source/digest prerequisites across acquisition managers",
+                "scanner/cache freshness and corruption",
+                "exception expiry/scope/prerequisite ordering",
+                "permit authentication, scope and restart/concurrent replay",
+                "audit durability, projection, recovery and idempotent retry",
+                "healthy behavior, cache, stateless permit and fixture preservation"
+              ],
+              "SPEC_ALIGNMENT": {"Q1_STATUS":"NO_GAP","Q2_STATUS":"COVERED","Q3_STATUS":"CLEAR"},
+              "EMPIRICAL_STATUS": "Runtime/oracle validation remains mandatory at the later deterministic-validation checkpoint; no pass claim is made at documentation time."
+            }
+          }
+JSON
+          python3 .terminus/execution/controller_cli.py continue \
+            --task-id "$TASK" --task-commit "$TASK_COMMIT" --control-plane-commit "$CONTROL_COMMIT" \
+            --inputs-json "$work/inputs.json" --output "$work/continue.json"
+          python3 - "$work/continue.json" "$work/invocation.json" <<'PY'
+          import json,sys
+          from pathlib import Path
+          value=json.loads(Path(sys.argv[1]).read_text())
+          inv=value.get('invocation')
+          assert value.get('next',{}).get('stage_id')=='DOCUMENTATION_DRAFT', value.get('next')
+          assert value.get('execution_mode')=='INLINE_SPECIALIST', value.get('execution_mode')
+          assert isinstance(inv,dict) and inv.get('readiness')=='READY'
+          Path(sys.argv[2]).write_text(json.dumps(inv,indent=2,sort_keys=True)+'\n')
+          print('A8_INVOCATION='+inv['invocation_id'])
+          PY
+
+          cat > "$TASK/README.md" <<'EOF'
+# ArtifactGuard EC2 Software Acquisition Gate
+
+ArtifactGuard is the host-local admission client used by governed EC2 instances before software is acquired. It applies one policy model to operating-system packages, OCI container images, and build dependencies so changing package managers or using a lower-level installer does not create a policy bypass.
+
+## Public interfaces
+
+The existing command surface is part of the compatibility contract:
+
+- `artifactguard evaluate` evaluates an acquisition request. Policy denials use exit code `42`; malformed input or operational failures use exit code `2`.
+- `artifactguard verify-permit` verifies an issued decision permit. Invalid, expired, out-of-scope, or replayed stateful permits use exit code `43`.
+
+Permit verification remains compatible with stateless callers. When replay state is supplied with `--state`, the first exact valid use records consumption and later or concurrent attempts to consume the same permit are rejected.
+
+## Admission policy
+
+Every request belongs to one acquisition surface: package, container, or dependency. Manager-specific input is normalized into that shared policy boundary. Source trust and required immutable-digest checks are prerequisites; an exception cannot make an untrusted source or missing required digest acceptable.
+
+A request may proceed only with current vulnerability evidence. Scanner results must be usable for the active scanner database revision. Cached evidence is reusable only while it still represents the same immutable artifact and active policy/scanner state within its TTL. Mutable names such as image tags, package versions, or dependency coordinates are not substitutes for immutable digest identity. Scanner unavailability, stale evidence, or corrupt evidence must fail closed.
+
+Vulnerability exceptions are narrow waivers for the vulnerability threshold only. A usable exception must be current and match the exact artifact digest, acquisition surface, environment, and policy code. It does not override source, digest, or scanner-evidence prerequisites.
+
+## Decision permits
+
+An ALLOW decision can issue a short-lived permit. Permit integrity is secret-keyed and covers the exact request, EC2 instance, artifact digest, policy version, and expiry. Changing any bound field must invalidate the permit. Stateful verification additionally enforces durable single use across process restart and concurrent verification.
+
+## Durable state and recovery
+
+The caller-provided state directory contains reusable scan evidence, the decision journal, the latest-decision projection, and optional permit-consumption state. The decision journal is authoritative: every ALLOW and DENY is durably appended before the command reports completion, and the derived latest-decision view may advance only after the corresponding journal record is durable.
+
+Repeated evaluation of an identical deterministic request is idempotent and must not duplicate an already committed decision. Recovery preserves valid history. A complete final JSON journal record remains valid even when its trailing newline was not durable; malformed durable history is treated as corruption and new operations fail closed rather than silently truncating or extending that history.
+
+## Engineering constraints
+
+Keep the shipped policy, scanner, and exception fixtures unchanged. They provide deterministic local inputs for development and CI; repairs belong in the policy runtime and state machinery rather than in fixture data. Existing audit history, healthy cache behavior, valid scoped exceptions, and documented CLI behavior must remain intact while security and recovery invariants are restored.
+
+Start with `environment/enforcer/notes/oncall.md` for the observed failure modes. The governing behavior is documented in `environment/enforcer/docs/policy-contract.md`, `environment/enforcer/docs/state-format.md`, `environment/enforcer/docs/operations.md`, and `environment/enforcer/docs/architecture.md`.
+
+From `environment/enforcer`, use `go test ./...` and `go build ./cmd/artifactguard` for the Go module checks. The task-level behavioral verifier exercises the public CLI and durable state across normal, negative, restart, corruption, and concurrency scenarios.
+EOF
+
+          python3 - <<'PY'
+          from pathlib import Path
+          text=Path('ec2-artifact-policy-enforcement/README.md').read_text()
+          forbidden=['Terminus','benchmark','Oracle','F2P','P2P','hidden test','reference solution','intentional defect']
+          bad=[x for x in forbidden if x.lower() in text.lower()]
+          if bad: raise SystemExit('README leakage/framing: '+', '.join(bad))
+          required=['artifactguard evaluate','artifactguard verify-permit','exit code `42`','exit code `43`','--state','durably','fail closed']
+          missing=[x for x in required if x not in text]
+          if missing: raise SystemExit('README missing engineering contract: '+', '.join(missing))
+          print('README_ENGINEERING_BOUNDARY=PASS')
+          PY
+          git diff --check -- "$TASK/README.md"
+
+      - name: Record A8 result
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - "$WORK/invocation.json" "$WORK/result.json" <<'PY'
+          import json,os,sys
+          from pathlib import Path
+          inv=json.loads(Path(sys.argv[1]).read_text())
+          result={
+            'schema_version':'1.0',
+            'invocation_id':inv['invocation_id'],
+            'output_task_commit':os.environ['TASK_COMMIT'],
+            'status':'DOCUMENTATION_READY',
+            'outputs':{
+              'README_PATH':'ec2-artifact-policy-enforcement/README.md',
+              'DIFFICULTY_EXPLANATION':'The engineering difficulty is the coupling between canonical artifact identity, fail-closed evidence freshness, exact exception scope, permit authentication/replay, and crash-safe durable state. A local fix to only one manager, cache field, permit check, or projection can leave another acquisition or restart/concurrency path inconsistent.',
+              'SOLUTION_EXPLANATION':'The reference repair restores one normalized package/container/dependency admission pipeline; binds cache evidence to immutable digest plus policy/scanner freshness; restricts exceptions to exact current vulnerability scope; authenticates exact-scope permits with secret-keyed integrity and optional durable single-use replay state; and commits ALLOW/DENY journal state durably before derived projection while preserving idempotent retry and recovery semantics.',
+              'VERIFICATION_EXPLANATION':'The verifier maps the public contract to 27 failure-to-pass and 9 preservation cases covering manager/source/digest policy, scanner/cache freshness, exception scope/order, permit authentication and replay, audit/recovery/idempotency, healthy cache/stateless-permit compatibility, and fixture preservation. SPEC_ALIGNMENT is current with Q1=NO_GAP, Q2=COVERED, Q3=CLEAR. Runtime/oracle success is deliberately not claimed here and remains mandatory downstream.'
+            },
+            'evidence_refs':[
+              {'kind':'COMMIT','ref':'commit:'+os.environ['TASK_COMMIT'],'content_hash':os.environ['TASK_HASH']},
+              {'kind':'COMMIT','ref':'commit:'+os.environ['CONTROL_COMMIT'],'content_hash':os.environ['CONTROL_HASH']}
+            ]
+          }
+          Path(sys.argv[2]).write_text(json.dumps(result,indent=2,sort_keys=True)+'\n')
+          PY
+          python3 .terminus/execution/controller_cli.py record --invocation "$WORK/invocation.json" --result "$WORK/result.json" --output "$WORK/record.json"
+          python3 - "$WORK/record.json" <<'PY'
+          import json,sys
+          value=json.load(open(sys.argv[1]))
+          rec=value['record']
+          assert rec['status']=='DOCUMENTATION_READY'
+          assert rec['transition'].get('target')=='FORMAT_GATE',rec['transition']
+          print('A8_RECORD='+rec['record_id'])
+          PY
+
+      - name: CAS-persist README and canonical A8 evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          unexpected="$(git status --porcelain | awk '{print $2}' | grep -vE "^(${TASK}/README\.md|\.terminus/(executions|workflows)/${TASK}(/|$))" || true)"
+          [[ -z "$unexpected" ]] || { echo "::error::unexpected A8 mutations: $unexpected"; exit 1; }
+          git config user.name 'terminus-ec2-a8[bot]'
+          git config user.email 'terminus-ec2-a8[bot]@users.noreply.github.com'
+          git add -- "$TASK/README.md" ".terminus/executions/$TASK"
+          git diff --cached --check
+          git commit -m "Write ${TASK} engineering documentation"
+          remote="$(git ls-remote origin refs/heads/main | cut -f1)"
+          [[ "$remote" == "$BASE" ]] || { echo "::error::main moved during A8 base=$BASE current=$remote"; exit 75; }
+          git push origin HEAD:main
+
+      - name: Upload diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ec2-a8-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ env.WORK }}
+          if-no-files-found: warn
