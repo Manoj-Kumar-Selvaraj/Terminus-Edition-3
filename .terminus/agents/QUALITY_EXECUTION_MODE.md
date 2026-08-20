@@ -22,6 +22,8 @@ Default policy:
 
 A-series producer work and registered `PRODUCER`/`FIXER` stages execute as `INLINE_SPECIALIST` in the persistent task ChatGPT conversation. The stage invocation remains exact and bounded; changing chat boundaries does not widen evidence access, mutation scope, status values, validators or lifecycle authority.
 
+A10 Complexity Governor is also an explicit same-chat creation governor. Although its stage role class is semantic/reviewer-like rather than `PRODUCER`, `COMPLEXITY_GATE` is a pre-freeze creation gate, not an independent acceptance boundary. `A10_COMPLEXITY_GOVERNOR` therefore executes as bounded `INLINE_SPECIALIST` in the persistent task chat. Its result can advance only to the registered runtime-authenticity/deterministic gates or route repair; it cannot substitute for Q4/Q6 independent acceptance and does not become final task acceptance evidence by itself.
+
 The following Q roles are producer-side specialists and stay in the same task chat:
 
 - Q1 Spec Gap Repairer
@@ -64,7 +66,7 @@ For a current controller continuation:
 2. hosted deterministic controller stages use their registered controller workflow when available;
 3. controller aggregate stages with a configured inline sequence use `INLINE_SPECIALIST_SEQUENCE` and execute those bounded subroles in the persistent task chat before the aggregate result is recorded;
 4. ordinary controller stages use `ORCHESTRATOR_DIRECT`;
-5. A-series producers, Q1/Q2/Q3/Q5/Q7 and other registered `PRODUCER`/`FIXER` stages use `INLINE_SPECIALIST` in the same task chat;
+5. A-series producers, A10 Complexity Governor, Q1/Q2/Q3/Q5/Q7 and other registered `PRODUCER`/`FIXER` stages use `INLINE_SPECIALIST` in the same task chat;
 6. external gates remain external dispatch/await stages;
 7. genuinely independent non-automated reviewer work may use `FRESH_ROLE_CHAT`.
 
