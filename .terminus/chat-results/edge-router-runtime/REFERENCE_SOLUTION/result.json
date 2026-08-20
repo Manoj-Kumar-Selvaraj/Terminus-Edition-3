@@ -1,0 +1,40 @@
+{
+  "evidence_refs": [],
+  "invocation_id": "inv_963acf64e93213abfcf4246f3daf3fcf6f379c780a1d4c88c4f36f7d684c066a",
+  "output_task_commit": "9663e4da67ab20e6bd66b942ac54b57667408dd8",
+  "outputs": {
+    "DETERMINISM_NOTES": "No test-name, hidden-input or environment-specific branching is used. Fixed compressed source overlays are applied deterministically, formatted, tested with go test ./..., and built from the registered command entrypoint.",
+    "FILES_CHANGED": [
+      "edge-router-runtime/solution/solve.sh",
+      "edge-router-runtime/solution/payload.00",
+      "edge-router-runtime/solution/payload.01",
+      "edge-router-runtime/solution/payload.02",
+      "edge-router-runtime/solution/payload.03",
+      "edge-router-runtime/solution/payload.04",
+      "edge-router-runtime/solution/q5-overlay.xz",
+      "edge-router-runtime/solution/q5-overlay2.xz",
+      "edge-router-runtime/solution/q5-overlay3.xz"
+    ],
+    "PRESERVED_BEHAVIOR": "The public serve/validate CLI, JSON configuration schema, operator configuration/discovery APIs, HTTP data plane, health/status/readiness/metrics/events surfaces, routing policies and durable state directory remain intact.",
+    "RESTART_IDEMPOTENCY_BEHAVIOR": "The deterministic solution overlay reconstructs the same repaired runtime from the same payload and Q5 overlays on repeated execution; restart recovery validates durable checkpoint authority before readiness and falls back to a previous complete generation when current recovery state is invalid.",
+    "RESTORED_INVARIANTS": [
+      "Per-source revision and digest authority is fenced under serialized acceptance; rejected or conflicting updates do not alter accepted metadata.",
+      "Candidate validation, runtime reconciliation, checkpoint preparation, publication and acknowledgement preserve last-known-good serving state on rejection.",
+      "Serving publication exposes one complete immutable runtime snapshot and each request retains one snapshot lease across route selection, retry and failover.",
+      "Canonical endpoint identity and membership incarnation distinguish continuous reuse from accepted removal followed by re-add.",
+      "Affinity, balancing, retry and failover revalidate incarnation, lifecycle and health eligibility, with deterministic failure when no eligible backend remains.",
+      "Removed endpoints become ineligible for fresh generations while already-leased generations may complete bounded attempts against DRAINING endpoints; RETIRED endpoints remain forbidden.",
+      "Checkpoint bodies and CURRENT authority use durable ordering, integrity verification and previous-complete fallback on restart.",
+      "Lifecycle-scoped runtime, transport and telemetry state is retired when unreachable rather than growing without bound."
+    ],
+    "RISKS_FOR_INDEPENDENT_VERIFIER": [
+      "Exercise same-revision/different-digest conflicts and rejected-update preservation independently.",
+      "Hold live requests across publication and verify generation-consistent retry and failover, including DRAINING completion for already-leased generations.",
+      "Cover canonical endpoint aliases, remove/re-add incarnation changes, draining/ineligible endpoints and all-down behavior.",
+      "Exercise restart around checkpoint publication, corrupt CURRENT and retained-previous fallback through public behavior.",
+      "Repeat update/remove/re-add cycles and verify transport, affinity and telemetry state remain bounded."
+    ]
+  },
+  "schema_version": "1.0",
+  "status": "IMPLEMENTED"
+}
