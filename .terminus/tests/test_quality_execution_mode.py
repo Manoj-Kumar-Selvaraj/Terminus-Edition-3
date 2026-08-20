@@ -35,6 +35,9 @@ def test_default_modes_are_q4_q6_automated_and_q8_off(tmp_path: Path) -> None:
         "spec-test-contract",
         "production-logic",
     ]
+    assert policy["inline_creation_governor_role_ids"] == [
+        "A10_COMPLEXITY_GOVERNOR"
+    ]
 
 
 def test_mode_overrides_are_validated(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
@@ -54,6 +57,9 @@ def test_inline_same_chat_roles_and_producers() -> None:
     policy = resolve_quality_execution_modes(ROOT)
     assert inline_execution_mode(
         policy, role_class="PRODUCER", role_id="A1_SCENARIO_RESEARCHER"
+    ) == "INLINE_SPECIALIST"
+    assert inline_execution_mode(
+        policy, role_class="REVIEWER", role_id="A10_COMPLEXITY_GOVERNOR"
     ) == "INLINE_SPECIALIST"
     assert inline_execution_mode(
         policy, role_class="FIXER", role_id="Q7_TASK_FORMAT_ENFORCER"
@@ -129,6 +135,9 @@ def test_policy_file_declares_mandatory_inline_quality_checkpoints() -> None:
             encoding="utf-8"
         )
     )
+    assert raw["inline_same_chat"]["creation_governor_role_ids"] == [
+        "A10_COMPLEXITY_GOVERNOR"
+    ]
     assert raw["inline_same_chat"]["quality_role_ids"] == [
         "Q1_SPEC_GAP_REPAIRER",
         "Q2_VERIFIER_COVERAGE_REPAIRER",
@@ -143,6 +152,23 @@ def test_policy_file_declares_mandatory_inline_quality_checkpoints() -> None:
         "Q2_VERIFIER_COVERAGE_REPAIRER",
         "Q3_SPEC_AMBIGUITY_REPAIRER",
     ]
+
+
+def test_a10_is_inline_but_independent_reviewers_remain_fresh() -> None:
+    policy = resolve_quality_execution_modes(ROOT)
+    assert inline_execution_mode(
+        policy, role_class="REVIEWER", role_id="A10_COMPLEXITY_GOVERNOR"
+    ) == "INLINE_SPECIALIST"
+    for role_id in (
+        "TASK_ARCHITECT",
+        "INSTRUCTION_REVIEWER",
+        "ENGINEERING_DOCUMENTATION_REVIEWER",
+        "COMPREHENSIVE_REVIEWER",
+        "ADJUDICATOR",
+    ):
+        assert inline_execution_mode(
+            policy, role_class="REVIEWER", role_id=role_id
+        ) == "FRESH_ROLE_CHAT"
 
 
 def test_spec_alignment_inline_sequence_is_ordered_and_aggregate_only() -> None:
