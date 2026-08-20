@@ -1,0 +1,25 @@
+{
+  "schema_version":"1.0",
+  "mode":"RECORD",
+  "task_id":"edge-router-runtime",
+  "task_commit":"12b7c7f4bbf3d120c7d48e5ac2f849ab1f4006bb",
+  "control_plane_commit":"67b805a297ac005ee08e82facc533f53a3233192",
+  "expected_repository_head":"86aefdec771b47a8678761efdb03cde9f49c7ade",
+  "stage_id":"DOCUMENTATION_DRAFT",
+  "inputs":{
+    "APPROVED_WORK_PACKAGE":{"ENGINEERING_OBJECTIVE":"Complete the inherited Go edge-router runtime as a generation-safe dynamic routing and upstream-reconciliation system.","REQUIRED_END_STATE":"Atomic complete generation publication, independent source fencing, stable endpoint incarnation, request snapshot consistency, lifecycle/health-aware selection, bounded drain, durable recovery and bounded runtime retirement while preserving public interfaces."},
+    "IMPLEMENTATION_EVIDENCE":{"REFERENCE_SOLUTION_STATUS":"IMPLEMENTED","RESTORED_INVARIANTS":["atomic complete generation publication","independent per-source revision/digest authority","stable endpoint identity/incarnation","request-held generation consistency","health/lifecycle-aware selection","bounded draining","durable complete checkpoint recovery","bounded runtime/telemetry retirement"],"PRESERVED_BEHAVIOR":"Existing Go module, serve/validate CLI, JSON configuration shape, data-plane proxying, operator/admin, readiness/health, metrics and event surfaces remain preserved."},
+    "VERIFICATION_EVIDENCE":{"VERIFIER_STATUS":"VERIFIER_READY","F2P_COUNT":28,"P2P_COUNT":6,"SPEC_ALIGNMENT":{"Q1_STATUS":"NO_GAP","Q2_STATUS":"COVERED","Q3_STATUS":"CLEAR"},"EMPIRICAL_STATUS":"Oracle previously scored 1 and NOP scored 0 against the current implementation/verifier content before the solver-facing instruction/README-only changes; deterministic validation must be re-earned at its dedicated stage."}
+  },
+  "result":{
+    "status":"DOCUMENTATION_READY",
+    "output_task_commit":"7af11809fe2c049daee2fe01a34c8e8667b84422",
+    "outputs":{
+      "README_PATH":"edge-router-runtime/README.md",
+      "DIFFICULTY_EXPLANATION":"The runtime couples dynamic source authority, immutable serving generations, endpoint incarnation and state continuity, request-scoped routing snapshots, health-aware selection, bounded drain, crash-safe checkpoint recovery and bounded lifecycle retirement under concurrent live proxy traffic.",
+      "SOLUTION_EXPLANATION":"The reference completion restores generation-safe publication, source-local fencing, stable identity/incarnation, compatible runtime continuity, request-held generation semantics, lifecycle-aware selection, bounded draining, transactional checkpoint recovery and bounded cleanup while preserving the public runtime surfaces.",
+      "VERIFICATION_EXPLANATION":"The verifier contains 28 fail-to-pass behavioral cases plus 6 preservation cases spanning generation/source authority, identity compatibility, snapshot selection, drain ownership, checkpoint recovery, observability and public interfaces. Final runtime/oracle success remains owned by DETERMINISTIC_VALIDATION."
+    },
+    "evidence_refs":[]
+  }
+}
