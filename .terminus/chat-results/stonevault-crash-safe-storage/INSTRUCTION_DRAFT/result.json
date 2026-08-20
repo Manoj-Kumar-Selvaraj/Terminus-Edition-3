@@ -1,0 +1,31 @@
+{
+  "evidence_refs": [
+    {
+      "kind": "COMMIT",
+      "ref": "commit:03317f8218069b9e0b5d073bf87ecf7a0ae8e4a1"
+    }
+  ],
+  "invocation_id": "inv_fc63970179dc7fc2b24a7948786876fba7a63cdbcb2bfc2928defab59b225577",
+  "output_task_commit": "03317f8218069b9e0b5d073bf87ecf7a0ae8e4a1",
+  "outputs": {
+    "DOC_REFERENCES": [
+      "/app/stonevault/docs/storage-format.md"
+    ],
+    "HANDOFF_TEST": "A storage engineer can identify writer ownership, configuration precedence, MVCC/conflict semantics, durability/recovery, checkpoint/snapshot, operator state, protocol limits and compatibility obligations without private verifier or Oracle material.",
+    "INSTRUCTION_PATH": "stonevault-crash-safe-storage/instruction.md",
+    "INSTRUCTION_SHAPE": "One direct reliability-hardening orientation paragraph followed by 16 concise observable responsibility/invariant bullets.",
+    "REQUIREMENT_COVERAGE": {
+      "checkpoint_and_snapshot": "quiescence, atomic publication, WAL reclamation, snapshot validation and abandoned temporary handling are explicit",
+      "compatibility": "C ABI, ASCII responses, WAL/snapshot layouts and existing data compatibility are explicit",
+      "durability_and_recovery": "atomic durable commits, rollback/crash invisibility, WAL torn-tail versus complete-corruption behavior and contiguous sequencing are explicit",
+      "locking_and_configuration": "writer fencing and data-directory precedence are explicit",
+      "mvcc_and_conflicts": "stable transaction snapshots, own overlays, bytewise scans, FCW rejection and sequence semantics are explicit",
+      "operator_and_protocol": "STATS/HEALTH, binary hex behavior, inclusive limits and malformed-input resilience are explicit"
+    },
+    "REVERSE_OUTLINE_RISK": "LOW: bullets follow public storage responsibilities and lifecycle invariants rather than private verifier row ordering.",
+    "SPEC_FILE_LOOPHOLE": "CLOSED: instruction.md itself owns all material requested behavior; storage-format.md only supplies inherited public ABI/disk format details.",
+    "UNRESOLVED_GAPS": []
+  },
+  "schema_version": "1.0",
+  "status": "READY"
+}
