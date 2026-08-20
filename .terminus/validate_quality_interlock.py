@@ -10,9 +10,11 @@ states. Q8 remains diagnostic and never substitutes for official model trials.
 from __future__ import annotations
 
 import argparse
+import re
 import sys
 from pathlib import Path
 
+import q4_chat_human_risk
 import q4_closure
 import q4_human_risk
 import validate_review_freshness as freshness
@@ -21,6 +23,7 @@ from review_contract import current_task_commit
 ROOT = Path(__file__).resolve().parents[1]
 T = ROOT / ".terminus"
 SESSIONS = T / "sessions"
+_DECISION_ID_RE = re.compile(r"\bhd_[0-9a-f]{64}\b")
 
 PRODUCER_GATES = {
     "q1 spec gap repair": "Q1 Spec Gap Repair",
@@ -156,6 +159,11 @@ def _validate_packet_review_gate(
     return review_path
 
 
+def _decision_id_from_evidence(evidence: str) -> str:
+    matches = list(dict.fromkeys(_DECISION_ID_RE.findall(evidence)))
+    return matches[0] if len(matches) == 1 else ""
+
+
 def _validate_human_risk_gate(
     task: str,
     truth_commit: str,
@@ -169,13 +177,6 @@ def _validate_human_risk_gate(
             f"{context}: Q4 Human Risk Acceptance must be PASS before advancing"
         )
         return False
-    feedback_id = q4_human_risk.feedback_id_from_evidence(gate["evidence"])
-    if not feedback_id:
-        report.error(
-            f"{context}: Q4 Human Risk Acceptance must cite exactly one "
-            "feedback_<sha256> ID"
-        )
-        return False
     q4_path = freshness.safe_repo_path(
         q4_rel,
         report,
@@ -186,28 +187,42 @@ def _validate_human_risk_gate(
     q4 = freshness.load_json(q4_path, report, "Q4 Spec-Test Contract Reviewer")
     if q4 is None:
         return False
-    try:
-        metadata = q4_human_risk.validate_human_risk_acceptance(
-            ROOT,
-            envelope={
-                "type": q4_human_risk.SATISFACTION_MODE,
-                "feedback_id": feedback_id,
-            },
-            q4_result=q4,
-            current_task_commit_override=truth_commit,
+
+    evidence = gate["evidence"]
+    feedback_id = q4_human_risk.feedback_id_from_evidence(evidence)
+    decision_id = _decision_id_from_evidence(evidence)
+    if bool(feedback_id) == bool(decision_id):
+        report.error(
+            f"{context}: Q4 Human Risk Acceptance must cite exactly one feedback_<sha256> "
+            "or hd_<sha256> authority ID"
         )
+        return False
+    try:
+        if feedback_id:
+            q4_human_risk.validate_human_risk_acceptance(
+                ROOT,
+                envelope={
+                    "type": q4_human_risk.SATISFACTION_MODE,
+                    "feedback_id": feedback_id,
+                },
+                q4_result=q4,
+                current_task_commit_override=truth_commit,
+            )
+        else:
+            q4_chat_human_risk.validate_chat_human_risk_acceptance(
+                ROOT,
+                envelope={
+                    "type": q4_chat_human_risk.SATISFACTION_MODE,
+                    "decision_id": decision_id,
+                },
+                q4_result=q4,
+                current_task_commit_override=truth_commit,
+            )
     except ValueError as exc:
         report.error(f"{context}: Q4 Human Risk Acceptance invalid: {exc}")
         return False
     if q4.get("task") != task:
-        report.error(
-            f"{context}: Q4 Human Risk Acceptance does not bind the current task ID"
-        )
-        return False
-    if metadata.get("accepted_task_commit") != truth_commit:
-        report.error(
-            f"{context}: Q4 Human Risk Acceptance does not bind the current task commit"
-        )
+        report.error(f"{context}: Q4 Human Risk Acceptance belongs to another task")
         return False
     return True
 
@@ -312,8 +327,7 @@ def validate_session(session: dict, report: freshness.Report) -> None:
             else:
                 report.error(
                     f"{context}: Q4 gate must be PASS or a frozen REVISE paired "
-                    f"with adjudicated closure/authenticated human risk acceptance; "
-                    f"found {q4_status}"
+                    f"with adjudicated closure/human risk acceptance; found {q4_status}"
                 )
 
         q6_gate = _require_ready_gate(
@@ -329,8 +343,8 @@ def validate_session(session: dict, report: freshness.Report) -> None:
         if summary is not None and (not q4_satisfied or q6_path is None):
             report.error(
                 f"{context}: Quality Interlock PASS requires Q4 direct PASS, "
-                "validated adjudicated closure, or authenticated human risk "
-                "acceptance, plus current Q6 PASS"
+                "validated adjudicated closure, authenticated human risk acceptance, "
+                "or chat human risk acceptance, plus current Q6 PASS"
             )
 
     if state in MODEL_BACKED_STATES:
