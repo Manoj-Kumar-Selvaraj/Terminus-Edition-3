@@ -1,0 +1,163 @@
+{
+  "evidence_refs": [],
+  "invocation_id": "inv_3e1d29c711e06fe1b19e8fde385387ad9f3d0acec1a142c540b797c1befea8c5",
+  "output_task_commit": "6c7909d5c0efd3e6e64443d6de3b227c1820b01b",
+  "outputs": {
+    "CANDIDATES": [
+      {
+        "DUPLICATE_RISK": "Moderate generic software-supply-chain overlap, but the single host-local gate spanning three acquisition surfaces with revision-bound evidence, exact exceptions, keyed single-use permits, and crash-safe journal/projection recovery is materially differentiated.",
+        "EDGE_FAILURE_SURFACE": [
+          "scanner unavailable or scanner database revision changes",
+          "mutable tag/version resolving to a new digest",
+          "stale, malformed, or partially written cache evidence",
+          "expired or cross-surface/environment exception",
+          "permit tamper, expiry, replay, restart, and concurrent consumption",
+          "crash between journal durability and derived projection update",
+          "malformed/incomplete journal tail versus corruption in durable history",
+          "repeated deterministic evaluation after restart"
+        ],
+        "ENGINEERING_OBJECTIVE": "Make package, container, and build-dependency acquisition converge on one host-local Go admission boundary that enforces artifact identity, source trust, current vulnerability evidence, scoped exceptions, permit integrity, and durable decision state.",
+        "ID": "WP1_UNIFIED_EC2_ARTIFACT_ADMISSION",
+        "INHERITED_SYSTEM_STATE": "ArtifactGuard exposes evaluate and verify-permit entrypoints, production-reachable package/container/dependency manager semantics, policy/scanner/exception inputs, reusable scan evidence, permits, and caller-owned durable state with an authoritative decision journal and derived projection.",
+        "INSTRUCTION_FIT": "Strong: the objective and material invariants fit the concise Edition-3 instruction shape while architecture, CLI, state formats, and operational semantics remain in solver-visible engineering docs.",
+        "PARTIAL_FIX_TRAPS": [
+          "repairing only high-level package managers while low-level or dependency managers bypass the shared trust boundary",
+          "making cache entries time-fresh without binding them to immutable digest plus active policy/scanner revisions",
+          "tightening exception expiry while still allowing exceptions to bypass source/digest/evidence prerequisites",
+          "keying permit signatures without binding request, instance, digest, policy, expiry, and durable single use",
+          "writing the latest-decision projection before the authoritative journal is durable",
+          "rejecting sequential replay while allowing two concurrent consumers to win the same permit"
+        ],
+        "PERSONA": "EC2 platform security engineer",
+        "PRESERVATION_OBLIGATIONS": [
+          "preserve artifactguard evaluate and verify-permit interfaces and documented exit behavior",
+          "keep cache and exceptions operational rather than disabling them",
+          "do not rewrite supplied policy, scanner, or exception fixtures",
+          "preserve valid existing audit history and healthy cached evidence",
+          "retain stateless permit-verification compatibility while making stateful verification durable and single-use"
+        ],
+        "REASONING_CHAIN": "normalize acquisition context -> establish trusted source and immutable digest -> select fresh scanner/cache evidence -> evaluate vulnerability threshold and exact exception -> issue or verify bound permit -> atomically journal decision/consumption -> recover and project durable state",
+        "REFERENCES": [
+          "ec2-artifact-policy-enforcement/instruction.md@6c7909d5",
+          "ec2-artifact-policy-enforcement/README.md@6c7909d5",
+          "ec2-artifact-policy-enforcement/environment/enforcer/docs/policy-contract.md@6c7909d5",
+          "ec2-artifact-policy-enforcement/environment/enforcer/docs/state-format.md@6c7909d5",
+          "ec2-artifact-policy-enforcement/environment/enforcer/docs/operations.md@6c7909d5",
+          "ec2-artifact-policy-enforcement/environment/enforcer/notes/oncall.md@6c7909d5"
+        ],
+        "REQUIRED_END_STATE": "Every acquisition surface applies the same prerequisite trust and immutable-identity rules, uses only current artifact/policy/scanner evidence, limits exceptions to the exact vulnerability scope, issues and consumes exact-scope keyed permits safely, and commits restart-safe ALLOW/DENY history before completion.",
+        "REQUIREMENT_FAMILIES": [
+          "manager normalization and source trust",
+          "immutable artifact identity",
+          "scanner availability and evidence freshness",
+          "cache keying and revision/TTL validation",
+          "vulnerability threshold and exception scope",
+          "secret-keyed permit binding and expiry",
+          "single-use replay protection under restart/concurrency",
+          "durable journal, projection, corruption handling, and idempotency",
+          "public CLI and exit-code compatibility"
+        ],
+        "SCALE_FIT": "VERY_HIGH: the remediated starter now realizes the strict-scale work as production-reachable manager normalization, policy, evidence/cache, exception, permit, replay, journal, recovery, and CLI responsibilities rather than catalog padding."
+      },
+      {
+        "DUPLICATE_RISK": "Higher: cache invalidation and scanner freshness are common security-gate themes.",
+        "EDGE_FAILURE_SURFACE": [
+          "revision rollover",
+          "clock/TTL boundary",
+          "scanner outage",
+          "partial cache write",
+          "restart with stale evidence",
+          "mutable identity resolving differently"
+        ],
+        "ENGINEERING_OBJECTIVE": "Rework local artifact evidence into a revision-aware reconciliation subsystem that safely transitions cached scan state across policy and scanner-database changes while preserving availability and fail-closed behavior.",
+        "ID": "WP2_POLICY_AND_SCANNER_REVISION_RECONCILIATION",
+        "INHERITED_SYSTEM_STATE": "The runtime has scanner fixtures, reusable evidence, policy versions, scanner database revisions, a caller-owned state directory, and evaluation paths across multiple acquisition surfaces.",
+        "INSTRUCTION_FIT": "Strong and concise, but narrower than the inherited policy/permit/journal architecture.",
+        "PARTIAL_FIX_TRAPS": [
+          "TTL-only validation",
+          "policy-version fencing without scanner-database fencing",
+          "atomic write without malformed-state rejection",
+          "fail-closed scanner path that breaks valid fresh-cache reuse"
+        ],
+        "PERSONA": "EC2 security platform reliability engineer",
+        "PRESERVATION_OBLIGATIONS": [
+          "preserve healthy cache behavior",
+          "preserve public CLI semantics",
+          "keep deterministic scanner input boundary",
+          "preserve existing audit history"
+        ],
+        "REASONING_CHAIN": "resolve immutable artifact -> identify active revisions -> choose scanner versus cache -> validate freshness -> persist evidence atomically -> evaluate -> recover state after interruption",
+        "REFERENCES": [
+          "ec2-artifact-policy-enforcement/README.md@6c7909d5",
+          "ec2-artifact-policy-enforcement/environment/enforcer/docs/policy-contract.md@6c7909d5",
+          "ec2-artifact-policy-enforcement/environment/enforcer/docs/state-format.md@6c7909d5"
+        ],
+        "REQUIRED_END_STATE": "Cached evidence is reusable only for the exact immutable artifact and active revisions, scanner outages never convert unknown state into clean evidence, partial writes and stale state are rejected safely, and restart recovery converges without losing valid history.",
+        "REQUIREMENT_FAMILIES": [
+          "artifact evidence identity",
+          "policy/scanner revision fencing",
+          "TTL and freshness semantics",
+          "scanner outage behavior",
+          "atomic cache persistence",
+          "restart recovery and corruption handling",
+          "operational observability"
+        ],
+        "SCALE_FIT": "MEDIUM_HIGH: coherent and stateful, but narrower than the full admission package and more likely to require artificial breadth under large_system_strict."
+      },
+      {
+        "DUPLICATE_RISK": "Moderate: durable authorization ledgers are familiar, though permit consumption plus crash-safe journal/projection coupling is nontrivial.",
+        "EDGE_FAILURE_SURFACE": [
+          "permit field tamper",
+          "expiry boundary",
+          "restart after first use",
+          "two simultaneous consumers",
+          "crash during decision commit",
+          "complete final journal record without newline",
+          "durable malformed history",
+          "duplicate deterministic request"
+        ],
+        "ENGINEERING_OBJECTIVE": "Harden ArtifactGuard's authorization and persistence plane so allow permits are cryptographically bound and single-use while every policy decision is durably, idempotently recoverable across crashes and concurrent consumers.",
+        "ID": "WP3_DURABLE_PERMIT_AND_DECISION_LEDGER",
+        "INHERITED_SYSTEM_STATE": "ArtifactGuard already issues permits, exposes verify-permit, stores decision state under a caller-provided state directory, and maintains an authoritative journal plus a derived latest-decision projection.",
+        "INSTRUCTION_FIT": "Strong, but underuses the existing three-surface policy architecture.",
+        "PARTIAL_FIX_TRAPS": [
+          "HMAC without complete scope binding",
+          "sequential replay rejection without concurrent exclusion",
+          "journal append without durability ordering",
+          "projection-first state publication",
+          "tail repair that truncates valid committed records"
+        ],
+        "PERSONA": "EC2 host-policy runtime engineer",
+        "PRESERVATION_OBLIGATIONS": [
+          "keep verify-permit compatibility",
+          "preserve valid audit history",
+          "preserve evaluate exit behavior",
+          "do not alter deterministic input fixtures"
+        ],
+        "REASONING_CHAIN": "canonicalize authorization scope -> sign -> verify exact binding -> lock/consume replay state -> journal decision -> fsync authoritative state -> advance projection -> recover and deduplicate on restart",
+        "REFERENCES": [
+          "ec2-artifact-policy-enforcement/README.md@6c7909d5",
+          "ec2-artifact-policy-enforcement/environment/enforcer/docs/state-format.md@6c7909d5",
+          "ec2-artifact-policy-enforcement/environment/enforcer/docs/operations.md@6c7909d5"
+        ],
+        "REQUIRED_END_STATE": "Permits are keyed, exact-scope, unexpired, and atomically consumed when stateful verification is requested; authoritative ALLOW/DENY history is crash-safe, projection state never leads the journal, and recovery preserves valid committed history while rejecting corruption.",
+        "REQUIREMENT_FAMILIES": [
+          "permit cryptographic integrity",
+          "request/instance/artifact/policy binding",
+          "expiry and replay semantics",
+          "concurrent verification fencing",
+          "append durability and checksummed records",
+          "journal/projection ordering",
+          "idempotent repeated evaluation",
+          "restart and corruption recovery"
+        ],
+        "SCALE_FIT": "HIGH for stateful/concurrency depth but narrower than WP1 because manager/source/evidence/exception policy lies outside the main change."
+      }
+    ],
+    "DUPLICATE_RISK_NOTES": "Nearest generic patterns are artifact admission, vulnerability-cache freshness, and signed authorization tokens; the recommended package is differentiated by enforcing all three acquisition surfaces through one stateful host-local boundary whose evidence, exception, permit, replay, and crash-recovery semantics interact.",
+    "RECOMMENDATION": "WP1_UNIFIED_EC2_ARTIFACT_ADMISSION",
+    "WHY_THIS_ONE": "WP1 is the only candidate that uses the inherited three-surface ArtifactGuard architecture as one coherent production security work package. The remediated starter now derives scale from production-reachable security and state semantics rather than filler, while retaining realistic partial-fix traps across trust, evidence, exceptions, permits, replay, journaling, recovery, and CLI behavior."
+  },
+  "schema_version": "1.0",
+  "status": "CANDIDATES_READY"
+}
