@@ -107,7 +107,6 @@ run("git", "checkout", "--detach", base)
 control = control_for(base, WORK / "control.json")
 print(f"base={base} control={control} task={TASK_COMMIT}")
 
-# The control rollover must already have a fresh canonical RULE_RESOLUTION.
 rule_record = latest_current_record("RULE_RESOLUTION", control)
 if rule_record.get("status") != "RULES_RESOLVED" or rule_record.get("outputs", {}).get("KNOWN_POLICY_CONFLICTS") != []:
     raise SystemExit("fresh RULE_RESOLUTION is not a clean advance")
@@ -159,12 +158,12 @@ for stage in STAGES:
         "--result", str(result_path),
         "--output", str(record_path),
     )
-    rec = load(record_path)
-    if rec.get("disposition") != "ADVANCE":
-        raise SystemExit(f"stage did not advance: {stage} {rec.get('status')}")
+    response = load(record_path)
+    rec = response.get("record")
+    if not isinstance(rec, dict) or rec.get("disposition") != "ADVANCE":
+        raise SystemExit(f"stage did not advance: {stage} {rec.get('status') if isinstance(rec, dict) else None}")
     print(f"recorded {stage} invocation={inv['invocation_id']} record={rec['record_id']}")
 
-# Confirm the exact post-replay machine stage without supplying speculative next-stage inputs.
 status_path = WORK / "status.json"
 run(
     "python3", ".terminus/execution/controller_cli.py", "status",
@@ -177,7 +176,6 @@ status = load(status_path)
 if status.get("next", {}).get("stage_id") != "HUMAN_WRITING_RESEARCH":
     raise SystemExit(f"unexpected post-replay next action: {status.get('next')}")
 
-# Only canonical execution evidence may be published.
 porcelain = run("git", "status", "--porcelain", capture=True).splitlines()
 paths = [line[3:] if len(line) >= 4 else line for line in porcelain]
 unexpected = [p for p in paths if not p.startswith(f".terminus/executions/{TASK}/") and not p.startswith(f".terminus/workflows/{TASK}/")]
