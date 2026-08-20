@@ -1,8 +1,56 @@
 {
   "dispatch": {
-    "blocking_reason": "deterministic StageInvocation is not READY",
+    "branch": "terminus-deterministic-request/edge-router-runtime/531ec9bcfd0ad260",
+    "evidence_policy": "the hosted run reconstructs the exact invocation, compiles empirical CTRF evidence, records the canonical StageResult and advances only when task/control-plane freshness remains valid",
+    "execution_mode": "HOSTED_DETERMINISTIC_VALIDATION",
+    "polling_policy": "write the exact request once, read its durable run locator, then poll the exact run/job; do not redispatch while queued, requested, waiting, pending or in_progress",
+    "request": {
+      "control_plane_commit": "df7ef7569e2947b9f0bf7cf89ed4dec6c2a5a1fe",
+      "evidence_contract": {
+        "nop_reward": 0,
+        "oracle_reward": 1,
+        "require_f2p_empirical_matrix": true,
+        "require_p2p_empirical_matrix": true
+      },
+      "expected_repository_head": "8060e737d4c1475eb67e9cba5544e3f8c38af833",
+      "inputs": {
+        "CURRENT_TASK_COMMIT": {
+          "evidence": "current exact task snapshot for hosted deterministic validation",
+          "status": "CURRENT",
+          "task_commit": "9663e4da67ab20e6bd66b942ac54b57667408dd8",
+          "task_id": "edge-router-runtime"
+        },
+        "ORACLE": {
+          "evidence": "current reference solution bound to exact task snapshot; empirical scoring owned by this hosted run",
+          "status": "CURRENT",
+          "task_commit": "9663e4da67ab20e6bd66b942ac54b57667408dd8",
+          "task_id": "edge-router-runtime"
+        },
+        "STARTER_NOP_STATE": {
+          "evidence": "current starter/NOP state bound to exact task snapshot; empirical scoring owned by this hosted run",
+          "status": "CURRENT",
+          "task_commit": "9663e4da67ab20e6bd66b942ac54b57667408dd8",
+          "task_id": "edge-router-runtime"
+        },
+        "VERIFIER": {
+          "F2P_COUNT": 28,
+          "P2P_COUNT": 6,
+          "entrypoint": "edge-router-runtime/tests/test.sh"
+        }
+      },
+      "invocation_id": "inv_ee552506223f69a58ce858f119c364c65d5b1b636d0eb7e73c32c168bff48a79",
+      "request_id": "detreq_531ec9bcfd0ad2603e3ad4e0215aada5449d0f41ea53a697837ef6bb46cf3913",
+      "schema_version": "1.1",
+      "stage_id": "DETERMINISTIC_VALIDATION",
+      "task_commit": "9663e4da67ab20e6bd66b942ac54b57667408dd8",
+      "task_id": "edge-router-runtime"
+    },
+    "request_path": ".terminus/deterministic-requests/edge-router-runtime-531ec9bcfd0ad260.json",
+    "run_locator": ".terminus/deterministic-run-locators/<task>/<request-commit>.json",
     "stage_id": "DETERMINISTIC_VALIDATION",
-    "status": "BLOCKED"
+    "status": "READY_TO_DISPATCH",
+    "trigger": "REQUEST_BRANCH_PUSH",
+    "workflow": ".github/workflows/terminus-deterministic-request.yml"
   },
   "execution_mode": "HOSTED_DETERMINISTIC_VALIDATION",
   "executor_handoff": null,
@@ -68,9 +116,33 @@
     "ignored_input_count": 0,
     "inputs": {
       "optional": {},
-      "required": {}
+      "required": {
+        "CURRENT_TASK_COMMIT": {
+          "evidence": "current exact task snapshot for hosted deterministic validation",
+          "status": "CURRENT",
+          "task_commit": "9663e4da67ab20e6bd66b942ac54b57667408dd8",
+          "task_id": "edge-router-runtime"
+        },
+        "ORACLE": {
+          "evidence": "current reference solution bound to exact task snapshot; empirical scoring owned by this hosted run",
+          "status": "CURRENT",
+          "task_commit": "9663e4da67ab20e6bd66b942ac54b57667408dd8",
+          "task_id": "edge-router-runtime"
+        },
+        "STARTER_NOP_STATE": {
+          "evidence": "current starter/NOP state bound to exact task snapshot; empirical scoring owned by this hosted run",
+          "status": "CURRENT",
+          "task_commit": "9663e4da67ab20e6bd66b942ac54b57667408dd8",
+          "task_id": "edge-router-runtime"
+        },
+        "VERIFIER": {
+          "F2P_COUNT": 28,
+          "P2P_COUNT": 6,
+          "entrypoint": "edge-router-runtime/tests/test.sh"
+        }
+      }
     },
-    "invocation_id": "inv_2518669d9e3107e054725ae32d9ee5fb9d67f250b485e346097ad04cbf1b7f0c",
+    "invocation_id": "inv_ee552506223f69a58ce858f119c364c65d5b1b636d0eb7e73c32c168bff48a79",
     "learning": {
       "context_hash": "sha256:bb84a513aa2b6e4374d691759c4a6edf94169f479f4611e9091643b9f279ccfc",
       "lessons": [],
@@ -86,12 +158,7 @@
       },
       "remediations": []
     },
-    "missing_required_inputs": [
-      "CURRENT_TASK_COMMIT",
-      "ORACLE",
-      "STARTER_NOP_STATE",
-      "VERIFIER"
-    ],
+    "missing_required_inputs": [],
     "output_contract": {
       "allowed_status_values": [
         "PASS",
@@ -117,7 +184,7 @@
       ],
       "semantic_reviewers": []
     },
-    "readiness": "BLOCKED_MISSING_INPUTS",
+    "readiness": "READY",
     "retrieval": {
       "query": null,
       "retrieved_chars": 0,
