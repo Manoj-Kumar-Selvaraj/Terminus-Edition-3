@@ -1,0 +1,85 @@
+name: EC2 Replay A6-A7-Spec Current Control
+
+on:
+  push:
+    branches:
+      - diagnostic/ec2-ledger-integrity-20260820
+    paths:
+      - .github/workflows/ec2-replay-a6-spec-current.yml
+
+permissions:
+  contents: write
+
+concurrency:
+  group: ec2-replay-a6-spec-current
+  cancel-in-progress: false
+
+env:
+  TASK: ec2-artifact-policy-enforcement
+  TASK_COMMIT: 8836f886d7cfc7f2747264026da31d1dfa49c658
+  CONTROL_COMMIT: 215cc70bcebcccc3c9a401af1b74a97d90026da3
+  EXPECTED_MAIN: aacae3ed0fbf7d427d4dec03c2f3e222adb45ed5
+  TASK_HASH: sha256:c949a75a93f4636d770dd6cb82318c90d98b3fb0fb1d16d3d8b2e6c4d50a86fc
+  CONTROL_HASH: sha256:334e6029ea34515d0f9364b213a51af19ed193f7c1c22cdf7b978781c2e856d7
+
+jobs:
+  replay:
+    name: Re-authorize EC2 A6 A7 and SPEC_ALIGNMENT
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Persist run locator
+        shell: bash
+        run: |
+          set -euo pipefail
+          path=".terminus/diagnostic-run-locators/ec2-a6-spec-${GITHUB_SHA}.json"
+          mkdir -p "$(dirname "$path")"
+          printf '{"run_id":%s,"run_attempt":%s,"event_sha":"%s","branch":"%s"}\n' "$GITHUB_RUN_ID" "$GITHUB_RUN_ATTEMPT" "$GITHUB_SHA" "$GITHUB_REF_NAME" > "$path"
+          git config user.name 'terminus-diagnostic-locator[bot]'
+          git config user.email 'terminus-diagnostic-locator[bot]@users.noreply.github.com'
+          git add -- "$path"
+          git commit -m "Track EC2 A6-spec run $GITHUB_RUN_ID"
+          git push origin HEAD:"$GITHUB_REF_NAME"
+
+      - name: Validate authority and replay A6 A7 spec
+        shell: bash
+        run: |
+          set -euo pipefail
+          work="$RUNNER_TEMP/ec2-a6-spec"
+          mkdir -p "$work"
+          git fetch origin main
+          base="$(git rev-parse origin/main)"
+          [[ "$base" == "$EXPECTED_MAIN" ]] || { echo "::error::main moved before A6-spec replay expected=$EXPECTED_MAIN current=$base"; exit 75; }
+          git checkout --detach "$base"
+          python3 .terminus/execution/controller_cli.py control-plane --head "$base" --output "$work/control.json"
+          resolved="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["control_plane_commit"])' "$work/control.json")"
+          [[ "$resolved" == "$CONTROL_COMMIT" ]] || { echo "::error::control mismatch expected=$CONTROL_COMMIT current=$resolved"; exit 75; }
+          git show "origin/diagnostic/ec2-ledger-integrity-20260820:.github/ec2_replay_a6_spec.py" > "$work/replay.py"
+          python3 "$work/replay.py" "$work"
+
+      - name: CAS-persist fresh EC2 A6-A7-Spec evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          unexpected="$(git status --porcelain | awk '{print $2}' | grep -vE "^\.terminus/(executions|workflows)/${TASK}(/|$)" || true)"
+          [[ -z "$unexpected" ]] || { echo "::error::unexpected A6-spec mutations: $unexpected"; exit 1; }
+          git config user.name 'terminus-ec2-replay[bot]'
+          git config user.email 'terminus-ec2-replay[bot]@users.noreply.github.com'
+          git add -- ".terminus/executions/${TASK}"
+          git diff --cached --quiet && { echo '::error::no A6-spec evidence produced'; exit 1; }
+          git diff --cached --check
+          git commit -m "Re-authorize ${TASK} A6 A7 and SPEC_ALIGNMENT under control 215cc70b"
+          remote="$(git ls-remote origin refs/heads/main | cut -f1)"
+          [[ "$remote" == "$EXPECTED_MAIN" ]] || { echo "::error::main moved during A6-spec replay expected=$EXPECTED_MAIN current=$remote"; exit 75; }
+          git push origin HEAD:main
+
+      - name: Upload diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ec2-a6-spec-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/ec2-a6-spec
+          if-no-files-found: warn
