@@ -49,6 +49,30 @@ def test_stonevault_domain_and_profile_do_not_inherit_terraform_ansible_details(
     assert "ten documented resource interfaces" not in rendered
 
 
+def test_flat_chat_request_inputs_are_supported() -> None:
+    flat_inputs = {
+        "APPROVED_WORK_PACKAGE": {
+            "domain": "native embedded databases crash safety",
+            "id": "stonevault-crash-safe-storage",
+        },
+        "SOLVER_VISIBLE_REQUIREMENTS": {
+            "summary": "WAL recovery, checkpoint integrity, stable native compatibility"
+        },
+        "CURRENT_TIME_BUDGET": {"enforcement": "ADVISORY_ONLY"},
+    }
+
+    domain = MODULE.derive_human_writing_domain(
+        "stonevault-crash-safe-storage", flat_inputs
+    )
+    profile = MODULE.build_task_writing_profile(
+        "stonevault-crash-safe-storage", flat_inputs
+    )
+
+    assert "native embedded databases crash safety" in domain.lower()
+    assert "wal recovery" in domain.lower()
+    assert "stable native compatibility" in str(profile).lower()
+
+
 def test_task_specific_inputs_produce_distinct_calibration_domains() -> None:
     stonevault = _inputs("Crash-safe storage with WAL recovery.", ["Checkpoint safely."])
     terraform = _inputs(
