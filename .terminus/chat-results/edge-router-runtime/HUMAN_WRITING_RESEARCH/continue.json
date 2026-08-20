@@ -1,0 +1,258 @@
+{
+  "execution_mode": "INLINE_SPECIALIST",
+  "executor_handoff": null,
+  "invocation": {
+    "acceptance_predicates": {},
+    "authority": {
+      "control_plane_commit": "df7ef7569e2947b9f0bf7cf89ed4dec6c2a5a1fe",
+      "policy_versions": {},
+      "task_commit": "9663e4da67ab20e6bd66b942ac54b57667408dd8",
+      "task_id": "edge-router-runtime"
+    },
+    "evidence": {
+      "authorized_evidence_classes": [
+        "CONTROL_PLANE_POLICY",
+        "PUBLIC_REFERENCE",
+        "SOLVER_VISIBLE_TASK"
+      ],
+      "evidence_required": [
+        "current dataset/catalog/domain-profile hashes",
+        "disjoint writer/reviewer calibration evidence",
+        "explicit external coverage state",
+        "validated task-writing profile"
+      ],
+      "excluded_evidence_classes": [
+        "CI_RUNTIME_EVIDENCE",
+        "CURRENT_REVIEW_PACKET",
+        "DURABLE_SESSION_STATE",
+        "FINAL_PACKAGE_EVIDENCE",
+        "MODEL_TRIAL_EVIDENCE",
+        "PRIOR_REVIEW_RESULTS",
+        "PRIVATE_CREATION_DESIGN",
+        "SOLUTION_ORACLE",
+        "VERIFIER_PRIVATE"
+      ],
+      "mandatory_exact_reads": [
+        ".terminus/reviewers/HUMAN_WRITING_CALIBRATION.md",
+        ".terminus/reviewers/HUMAN_ENGINEERING_SOURCE_CORPUS.md",
+        ".terminus/reviewers/WRITING_EXAMPLE_BANK.md",
+        ".terminus/agents/HUMAN_WRITING_DATASET_POLICY.md",
+        ".terminus/agents/human_writing_stage_overlay.json",
+        ".terminus/human_writing/dataset_registry.json",
+        ".terminus/human_writing/domain_profiles.json",
+        ".terminus/agents/HUMAN_WRITING_RESEARCHER.md",
+        ".terminus/agents/HUMAN_WRITING_CORPUS_AGENT.md",
+        ".terminus/agents/CREATOR_PROMPTS.md"
+      ],
+      "retrieval_mode": "FILTERED_HYBRID"
+    },
+    "ignored_input_count": 0,
+    "inputs": {
+      "optional": {},
+      "required": {
+        "APPROVED_WORK_PACKAGE": {
+          "ENGINEERING_OBJECTIVE": "Implement generation-safe dynamic route and upstream reconciliation so complete configuration and membership changes apply atomically under concurrent traffic, rolling backend turnover, invalid updates and restart.",
+          "ID": "GENERATION_SAFE_DYNAMIC_RECONCILIATION"
+        },
+        "CURRENT_TIME_BUDGET": {
+          "enforcement": "ADVISORY_ONLY",
+          "guidance_seconds": 25200,
+          "hard_limit": null,
+          "policy_version": "1.1",
+          "quality_gates_may_be_skipped_for_time": false,
+          "time_extension_required": false
+        },
+        "SOLVER_VISIBLE_REQUIREMENTS": {
+          "PRESERVATION": [
+            "in-flight and long-lived requests remain valid across unrelated updates",
+            "unchanged route semantics remain stable across generations",
+            "healthy unchanged endpoints preserve meaningful runtime state",
+            "rejected updates cannot damage the serving generation",
+            "readers never observe partially applied configuration",
+            "runtime and observability state remain bounded after repeated updates"
+          ],
+          "REQUIRED_END_STATE": [
+            "Validate and compile candidate configuration into immutable runtime snapshots before publication.",
+            "Fence accepted generations so stale or out-of-order updates cannot overwrite newer state.",
+            "Publish route and upstream state atomically and retain last-known-good serving state when candidates are rejected.",
+            "Reconcile endpoint additions, removals, and unchanged endpoints by stable canonical identity and membership incarnation.",
+            "Preserve compatible selection, affinity, health, transport, and lifecycle continuity for unchanged endpoints.",
+            "Exclude removed or ineligible endpoints from fresh selection/retry while allowing bounded drain of existing traffic.",
+            "Checkpoint only complete accepted state and recover a complete last-known-good generation after restart.",
+            "Retire unreachable snapshots, endpoint runtimes, transports, affinity state, and telemetry without unbounded growth."
+          ]
+        }
+      }
+    },
+    "invocation_id": "inv_66ec0d9418a413cd23b528f818828ba5531af931d9dd8b8e469da81678d20e16",
+    "learning": {
+      "context_hash": "sha256:bb84a513aa2b6e4374d691759c4a6edf94169f479f4611e9091643b9f279ccfc",
+      "lessons": [],
+      "mode": "GENERALIZED_LESSONS_PLUS_OWNED_REMEDIATIONS",
+      "raw_feedback_exposed": false,
+      "raw_historical_findings_exposed": false,
+      "registry_heads": {
+        "feedback": "GENESIS",
+        "findings": "GENESIS",
+        "lessons": "GENESIS",
+        "patterns": "GENESIS",
+        "remediations": "GENESIS"
+      },
+      "remediations": []
+    },
+    "missing_required_inputs": [],
+    "output_contract": {
+      "allowed_status_values": [
+        "CALIBRATION_READY",
+        "INSUFFICIENT_SOURCE_DIVERSITY",
+        "SOURCE_QUALITY_BLOCKED",
+        "BLOCKED"
+      ],
+      "deterministic_validators": [
+        ".terminus/human_writing/validate_calibration.py"
+      ],
+      "optional_fields": [
+        "CACHE_SOURCE_KEYS_USED",
+        "RAW_SOURCE_KEYS_USED_FOR_CONTAMINATION",
+        "DEGRADED_COVERAGE_APPROVAL",
+        "CURRENT_STATE_EVIDENCE_NOTES"
+      ],
+      "persisted_artifacts": [
+        ".terminus/research/<task>-dataset-calibration.json",
+        ".terminus/research/<task>-task-writing-profile.json"
+      ],
+      "required_fields": [
+        "DATASET_POLICY_VERSION",
+        "DATASET_REGISTRY_SHA256",
+        "SEED_CATALOG_SHA256",
+        "DOMAIN_PROFILES_SHA256",
+        "DOMAIN_PROFILE",
+        "CALIBRATION_PAIR_ID",
+        "WRITER_CALIBRATION_ID",
+        "REVIEWER_CALIBRATION_ID",
+        "WRITER_SAMPLE_IDS",
+        "REVIEWER_SAMPLE_IDS",
+        "WRITER_REVIEWER_SAMPLE_OVERLAP",
+        "EXTERNAL_DATASET_COVERAGE",
+        "TASK_WRITING_PROFILE"
+      ],
+      "semantic_reviewers": [
+        "Human Quality Reviewer"
+      ]
+    },
+    "readiness": "READY",
+    "retrieval": {
+      "query": null,
+      "retrieved_chars": 0,
+      "retrieved_context": [],
+      "status": "NOT_REQUESTED"
+    },
+    "routing": {
+      "failure_routes": {
+        "INSUFFICIENT_CALIBRATION": "A6 Human Writing Researcher",
+        "INSUFFICIENT_SOURCE_DIVERSITY": "A6 Human Writing Researcher -> bounded additional retrieval or explicit degraded-coverage decision",
+        "INVALID_CALIBRATION": "Creation Controller -> A6 Human Writing Researcher",
+        "SOURCE_QUALITY_BLOCKED": "Creation Controller -> source/provenance owner",
+        "UNSUPPORTED_CURRENT_STATE_CLAIM": "Instruction Writer / Environment Builder"
+      },
+      "stale_on": [
+        "material work-package change",
+        "instruction-policy change",
+        "human-writing calibration policy change",
+        "dataset registry change",
+        "seed catalog change",
+        "domain profile change",
+        "human-writing stage overlay change"
+      ],
+      "success_transition": "INSTRUCTION_DRAFT"
+    },
+    "schema_version": "1.0",
+    "stage": {
+      "lifecycle": "creation",
+      "owner": "A6 Human Writing Researcher",
+      "role_class": "PRODUCER",
+      "role_id": "A6_HUMAN_WRITING_RESEARCHER",
+      "stage_id": "HUMAN_WRITING_RESEARCH"
+    }
+  },
+  "next": {
+    "action": "INVOKE_STAGE",
+    "optional_inputs": [
+      "APPROVED_EXTERNAL_DATASET_CACHE",
+      "CURRENT_STATE_CLAIMS"
+    ],
+    "owner": "A6 Human Writing Researcher",
+    "primary_role_id": "A6_HUMAN_WRITING_RESEARCHER",
+    "required_inputs": [
+      "APPROVED_WORK_PACKAGE",
+      "CURRENT_TIME_BUDGET",
+      "SOLVER_VISIBLE_REQUIREMENTS"
+    ],
+    "stage_id": "HUMAN_WRITING_RESEARCH"
+  },
+  "quality_mode_policy": {
+    "inline_creation_governor_role_ids": [
+      "A10_COMPLEXITY_GOVERNOR"
+    ],
+    "inline_quality_role_ids": [
+      "Q1_SPEC_GAP_REPAIRER",
+      "Q2_VERIFIER_COVERAGE_REPAIRER",
+      "Q3_SPEC_AMBIGUITY_REPAIRER",
+      "Q5_ORACLE_RUNTIME_REPAIR_SPECIALIST",
+      "Q7_TASK_FORMAT_ENFORCER"
+    ],
+    "inline_stage_sequences": {
+      "SPEC_ALIGNMENT": [
+        {
+          "result_field": "Q1_STATUS",
+          "role_id": "Q1_SPEC_GAP_REPAIRER",
+          "satisfied_values": [
+            "NO_GAP",
+            "PASS"
+          ]
+        },
+        {
+          "result_field": "Q2_STATUS",
+          "role_id": "Q2_VERIFIER_COVERAGE_REPAIRER",
+          "satisfied_values": [
+            "COVERED",
+            "PASS"
+          ]
+        },
+        {
+          "result_field": "Q3_STATUS",
+          "role_id": "Q3_SPEC_AMBIGUITY_REPAIRER",
+          "satisfied_values": [
+            "CLEAR",
+            "PASS"
+          ]
+        }
+      ]
+    },
+    "mandatory_quality_role_keys": [
+      "spec-test-contract",
+      "production-logic"
+    ],
+    "mandatory_same_chat_checkpoints": {
+      "Q1": "SPEC_ALIGNMENT.Q1_STATUS",
+      "Q2": "SPEC_ALIGNMENT.Q2_STATUS",
+      "Q3": "SPEC_ALIGNMENT.Q3_STATUS",
+      "Q5": "DETERMINISTIC_VALIDATION runtime/oracle checkpoint; invoke Q5 repair only on registered runtime/oracle failure",
+      "Q7": "FORMAT_GATE"
+    },
+    "optional_q8_role_keys": [
+      "difficulty-sim-gpt",
+      "difficulty-sim-claude"
+    ],
+    "policy_document": ".terminus/agents/QUALITY_EXECUTION_MODE.md",
+    "policy_version": "1.0",
+    "producer_role_classes": [
+      "FIXER",
+      "PRODUCER"
+    ],
+    "q4_q6_mode": "AUTOMATED",
+    "q8_mode": "OFF",
+    "source": ".terminus/agents/quality_execution_mode.json"
+  },
+  "state_snapshot_id": "state_8e7ba7c29ba9250bcb8b78f3b1996e934722c65c3c29da7028a5d70c49ba4731"
+}
