@@ -5,10 +5,10 @@ LABEL org.opencontainers.image.source="https://github.com/Manoj-Kumar-Selvaraj/T
       org.opencontainers.image.licenses="MIT"
 
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends tmux asciinema ca-certificates curl jq \
+    && apt-get install -y --no-install-recommends tmux asciinema ca-certificates curl jq xz-utils \
     && rm -rf /var/lib/apt/lists/*
 
-WORKDIR /app
+WORKDIR /app/edge-router
 COPY go.mod ./
 COPY cmd ./cmd
 COPY internal ./internal
@@ -18,4 +18,4 @@ RUN go build -o /usr/local/bin/edge-router-runtime ./cmd/edge-router-runtime
 RUN mkdir -p /app/state
 
 EXPOSE 8080 9901
-CMD ["/usr/local/bin/edge-router-runtime","serve","--config","/app/config/production.json","--state-dir","/app/state","--listen",":8080","--admin-listen",":9901"]
+CMD ["/usr/local/bin/edge-router-runtime","serve","--config","/app/edge-router/config/production.json","--state-dir","/app/state","--listen",":8080","--admin-listen",":9901"]
