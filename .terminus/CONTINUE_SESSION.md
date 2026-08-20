@@ -1,6 +1,6 @@
 # Continue a Terminus Session
 
-Bootstrap policy version: `2.3`
+Bootstrap policy version: `2.2`
 
 Use this when a task moves to a new controller/chat. Repository state, current authoritative rules, generated review provenance, GitHub Actions/Harbor evidence and the durable task checkpoint are continuity; chat recollection is not acceptance evidence.
 
