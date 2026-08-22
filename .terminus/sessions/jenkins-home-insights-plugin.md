@@ -7,7 +7,7 @@ This is the durable operational checkpoint for one task. Keep it evidence-orient
 ## Identity
 
 - Task: `jenkins-home-insights-plugin`
-- Controller state: `FROZEN_CANDIDATE`
+- Controller state: `PRE_LLMAJ`
 - Working branch: `main`
 - Pull request: none
 - Current task commit: `44fca100fb4572b286a4f42e15f35f928674dea5`
@@ -38,25 +38,26 @@ KNOWN_POLICY_CONFLICTS: none
 | Oracle = 1 | PASS | Harbor 0.21 job `jobs/2026-08-22__16-47-57` mean 1.000; 34/34 pytest passed |
 | NOP = 0 | PASS | Harbor 0.21 job `jobs/2026-08-22__16-50-05` mean 0.000 |
 | Q7 Task Format Enforcer | PASS | `.terminus/reviews/jenkins-home-insights-plugin/q7-format-check.md` |
-| Q4 Spec-Test Contract Reviewer | PASS | `.terminus/reviews/jenkins-home-insights-plugin/44fca100/jenkins-home-insights-plugin-44fca100-spec-test-contract-14835af6d2.json` |
-| Q6 Production Logic Auditor | PASS | `.terminus/reviews/jenkins-home-insights-plugin/44fca100/jenkins-home-insights-plugin-44fca100-production-logic-fd9810d5e3.json` scope `3df0c9d58d1b` |
+| Q4 Spec-Test Contract Reviewer | PASS | `44fca100-spec-test-contract-14835af6d2` |
+| Q6 Production Logic Auditor | PASS | `44fca100-production-logic-fd9810d5e3` scope `3df0c9d58d1b` |
 | Quality Interlock | PASS | `.terminus/reviews/jenkins-home-insights-plugin/44fca100/quality-interlock.md` |
-| Pre-LLMaJ panel | READY | generate specialist packets on `44fca100` |
+| Pre-LLMaJ panel | PASS | `.terminus/reviews/jenkins-home-insights-plugin/44fca100/pre-llmaj-aggregate.md` |
+| Q8 simulations | PENDING | diagnostic GPT + Claude perspective |
+| Harbor LLMaJ | BLOCKED | until Q8 optional + credentials |
+| Official ×10 trials | PENDING | GPT×5 + Claude×5 after LLMaJ |
 
-## Q4 round-2 remediation @ 44fca100
+## Pre-LLMaJ @ 44fca100
 
-1. **Generate sanitization** — `assert_exports_sanitized()` in `test_f2p_deterministic_10000_home_generation`
-2. **Metadata contract** — api-v1.md documents principal, sort, direction ASC/DESC, visible, checkpoint
-
-Prior round-1 probes (torn journal, contains, metadata keys, env paths, HTTP forbidden) remain at `63374113`.
+All eight specialist cold reviews PASS; Comprehensive APPROVE at 100% checklist coverage. Advisory LOW only (default generate 14,536 probe optional).
 
 ## Next action
 
-1. Generate Pre-LLMaJ specialist packets bound to `44fca100`.
-2. Run Pre-LLMaJ panel → Q8 simulations → Harbor LLMaJ and official ×10.
+1. Run Q8 diagnostic simulations (optional).
+2. Harbor LLMaJ when credentials permit.
+3. Official combined ×10 trials for empirical difficulty tier.
 
 ## Decisions that must survive chat changes
 
 - Do not redesign the task or weaken legitimate F2P requirements.
 - Starter defects remain in `environment/plugin`; oracle copies `solution/fixed/` only.
-- Q6 scope hash `3df0c9d58d1b` binds environment/ at `44fca100`; rerun Q6 if environment/ or task.toml changes.
+- Q6 scope hash `3df0c9d58d1b` binds environment/ at `44fca100`.

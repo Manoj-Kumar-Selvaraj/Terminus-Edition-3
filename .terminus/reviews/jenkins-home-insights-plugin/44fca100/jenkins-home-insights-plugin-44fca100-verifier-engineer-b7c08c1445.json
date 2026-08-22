@@ -1,0 +1,49 @@
+{
+  "schema_version": "3.0",
+  "role": "Verifier Engineer",
+  "review_id": "jenkins-home-insights-plugin-44fca100-verifier-engineer-b7c08c1445",
+  "task": "jenkins-home-insights-plugin",
+  "task_commit": "44fca100fb4572b286a4f42e15f35f928674dea5",
+  "control_plane_commit": "64ad9c429ba175c16fceff63fbbdec7b1e67a62d",
+  "protocol_policy_version": "2.2",
+  "prompt_policy_version": "2.2",
+  "role_policy_version": "1.0",
+  "role_contract_hash": "5b3d8e284d2129c5ffdca649cb240a186e588f3381e8f74617c1e7c1bd669060",
+  "context_packet": ".terminus/reviews/jenkins-home-insights-plugin/44fca100/jenkins-home-insights-plugin-44fca100-verifier-engineer-b7c08c1445.packet.json",
+  "verdict": "PASS",
+  "confidence": "HIGH",
+  "evidence_status": "SUFFICIENT",
+  "summary": "The verifier is requirement-complete and behavior-oriented. Thirty F2P and four P2P probes exercise reconciliation convergence, torn-journal recovery, ACL projection, query metadata/contains semantics, generate sanitization, env path overrides, and HTTP forbidden responses. Oracle 34/34 and NOP 0/0 discrimination is strong. Q4 independent contract review PASS at same commit.",
+  "evidence": [
+    {"type": "file", "ref": "jenkins-home-insights-plugin/tests/test_outputs.py", "observation": "34 behavioral probes with independent fixtures; assert_exports_sanitized scans exports for forbidden credential/token/URL/log patterns."},
+    {"type": "file", "ref": ".terminus/designs/jenkins-home-insights-plugin-test-map.json", "observation": "Nine requirement groups mapped to 30 F2P and 4 P2P cases."},
+    {"type": "run", "ref": "jobs/2026-08-22__16-47-57", "observation": "Harbor oracle 34/34, reward 1.000 at 44fca100."},
+    {"type": "run", "ref": "jobs/2026-08-22__16-50-05", "observation": "Harbor NOP reward 0.000; starter fails F2P while P2P preserved."},
+    {"type": "file", "ref": "jenkins-home-insights-plugin/tests/test.sh", "observation": "Binary reward contract via pytest exit code."}
+  ],
+  "findings": [
+    {
+      "id": "VE-ADV-01",
+      "severity": "LOW",
+      "status": "OBSERVED",
+      "criterion": "Default-path coverage",
+      "evidence_refs": ["jenkins-home-insights-plugin/tests/test_outputs.py:357-361"],
+      "why_it_matters": "Generate probes use explicit --records 10000; default 14,536 CLI population is documented but not asserted.",
+      "minimal_remediation": "Optional generate without --records asserting documented default bounds.",
+      "regression_risk": "Minimal"
+    }
+  ],
+  "missing_evidence": [],
+  "change_scope": ["Pre-LLMaJ cold review; Q4 round-2 sanitization and metadata probes at 44fca100."],
+  "do_not_change": ["F2P behavioral coverage for torn journal, ACL, convergence, and recovery invariants."],
+  "next_gate": "Originality & Authenticity Reviewer",
+  "role_output": {
+    "REQUIREMENT_TEST_MATRIX": "COMPLETE across REQ_BUILD_DATA through REQ_PRESERVATION",
+    "PHANTOM_TESTS": [],
+    "WEAK_OR_VACUOUS_ASSERTIONS": [],
+    "IMPLEMENTATION_COUPLING": "LOW",
+    "FLAKINESS_RISK": "LOW — bounded subprocess timeouts, deterministic fixtures, separate verifier image.",
+    "ANTI_CHEAT_RISK": "LOW",
+    "ORACLE_NOP_ASSESSMENT": "STRONG"
+  }
+}
