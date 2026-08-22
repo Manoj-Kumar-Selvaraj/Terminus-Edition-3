@@ -14,10 +14,13 @@ if project.exists():
     import_block = '''- name: Materialize routecp projected configuration
   ansible.builtin.import_tasks: project.yml
 '''
-    repaired_block = '''- name: Materialize routecp projected configuration
-  ansible.builtin.import_tasks: project.yml
-  vars:
+    repaired_block = '''- name: Compose effective routecp routes
+  ansible.builtin.set_fact:
     routecp_effective_routes: "{{ (routecp_routes | default([])) + (routecp_protected_routes | default([])) + (routecp_host_routes | default([])) }}"
+  changed_when: false
+
+- name: Materialize routecp projected configuration
+  ansible.builtin.import_tasks: project.yml
 '''
     if "routecp_effective_routes:" not in main_text:
         if import_block not in main_text:
