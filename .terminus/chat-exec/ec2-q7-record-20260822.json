@@ -1,0 +1,71 @@
+{
+  "schema_version": "1.0",
+  "mode": "RECORD",
+  "task_id": "ec2-artifact-policy-enforcement",
+  "task_commit": "d48ddd7cd262569babef349a4f5631b0f0152b0a",
+  "control_plane_commit": "df7ef7569e2947b9f0bf7cf89ed4dec6c2a5a1fe",
+  "expected_repository_head": "8d2d208ad72c48dcce27fe24393dae5ab64a08a9",
+  "stage_id": "FORMAT_GATE",
+  "inputs": {
+    "ACTIVE_FORMAT_VALIDATORS": [
+      "current Edition 3 task-format/packaging rules",
+      "task.toml canonical field/value checks",
+      "digest-pinned image/runtime-tooling checks",
+      "separate verifier and artifact-parent checks",
+      "solution/tests isolation checks",
+      "Q7 Task Format Enforcer same-chat review"
+    ],
+    "CREATION_RULE_CONTEXT": {
+      "CONTROL_PLANE_COMMIT": "df7ef7569e2947b9f0bf7cf89ed4dec6c2a5a1fe",
+      "CREATION_PROFILE": "large_system_strict",
+      "KNOWN_POLICY_CONFLICTS": [],
+      "NETWORK_ENVIRONMENT_CONSTRAINTS": "network_mode public; separate verifier; digest-pinned canonical Go runtime; no privileged Docker/capability/socket shortcuts; tmux and asciinema required in agent image"
+    },
+    "CURRENT_TASK_TREE": {
+      "environment": {
+        "Dockerfile": "public.ecr.aws/docker/library/golang:1.24-bookworm pinned by sha256; ca-certificates, tmux and asciinema installed; workdir /app/enforcer; only enforcer/ copied",
+        "dockerignore": "VCS/env/cache plus state/out/tmp exclusions",
+        "source_dir": "environment/enforcer/"
+      },
+      "instruction": "instruction.md uses absolute /app/enforcer paths and solver-visible public contract paths",
+      "solution": {"entrypoint":"solution/solve.sh","outside_agent_build_context":true},
+      "task_root": "ec2-artifact-policy-enforcement",
+      "task_toml": {
+        "agent_timeout_sec": 10800,
+        "artifacts": ["/app/enforcer"],
+        "name": "ec2-artifact-policy-enforcement",
+        "network_mode": "public",
+        "tag_count": 6,
+        "verifier_environment_mode": "separate",
+        "verifier_timeout_sec": 1800,
+        "version": "2.0",
+        "workdir": "/app/enforcer"
+      },
+      "tests": {
+        "Dockerfile": "digest-pinned separate Python verifier; pytest pins and Go baked; /app/enforcer artifact parent pre-created",
+        "private_test_files": ["test_outputs.py","test_q4_contract_gaps.py","verifier_lib.py"],
+        "test_sh": "builds submitted Go binary, writes binary reward.txt 0/1, dependencies baked into image"
+      },
+      "top_level": [".gitattributes","README.md","environment/","instruction.md","solution/","task.toml","tests/"]
+    }
+  },
+  "result": {
+    "status": "FORMAT_PASS",
+    "outputs": {
+      "CHECKS": {
+        "agent_image": "PASS: canonical digest-pinned Go 1.24 base with tmux/asciinema and clean apt transaction",
+        "dockerignore": "PASS: non-trivial environment has VCS/env/cache/state/output exclusions",
+        "instruction_paths": "PASS: solver references are absolute and public contracts remain under /app/enforcer",
+        "isolation": "PASS: solution/tests are outside the environment build context and no private .terminus files are inside task root",
+        "policy_conflicts": "PASS: none found",
+        "solution_layout": "PASS: solution/solve.sh remains outside agent build context",
+        "task_root_and_name": "PASS: flat Edition 3 task root and kebab-case name match task.toml",
+        "task_toml": "PASS: version 2.0, six tags, top-level absolute artifact /app/enforcer, separate verifier, canonical public network mode and valid timeouts",
+        "test_sh": "PASS: binary reward.txt assignment on success/failure and no runtime dependency install",
+        "verifier_image": "PASS: digest-pinned separate verifier; pytest dependencies baked; declared artifact parent /app/enforcer exists"
+      },
+      "RERUN": "PASS: verifier lint reconciliation changed no format-owned surface; the current task tree was rechecked against active Q7 packaging rules and requires no format mutation."
+    },
+    "evidence_refs": []
+  }
+}
