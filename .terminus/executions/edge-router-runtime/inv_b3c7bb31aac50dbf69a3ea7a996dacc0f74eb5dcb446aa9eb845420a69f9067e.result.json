@@ -1,0 +1,230 @@
+{
+  "authority": {
+    "control_plane_commit": "df7ef7569e2947b9f0bf7cf89ed4dec6c2a5a1fe",
+    "policy_versions": {},
+    "task_commit": "24f07fbfc25e1354f308da5258750f795b18f0e2",
+    "task_id": "edge-router-runtime"
+  },
+  "disposition": "ADVANCE",
+  "evidence_refs": [],
+  "invocation_id": "inv_b3c7bb31aac50dbf69a3ea7a996dacc0f74eb5dcb446aa9eb845420a69f9067e",
+  "invocation_snapshot": {
+    "acceptance_predicates": {},
+    "authority": {
+      "control_plane_commit": "df7ef7569e2947b9f0bf7cf89ed4dec6c2a5a1fe",
+      "policy_versions": {},
+      "task_commit": "24f07fbfc25e1354f308da5258750f795b18f0e2",
+      "task_id": "edge-router-runtime"
+    },
+    "evidence": {
+      "authorized_evidence_classes": [
+        "CONTROL_PLANE_POLICY",
+        "PRIVATE_CREATION_DESIGN",
+        "PUBLIC_REFERENCE",
+        "SOLVER_VISIBLE_TASK"
+      ],
+      "evidence_required": [
+        "root-cause clusters",
+        "causal/interdependency edges",
+        "partial-fix traps",
+        "behavioral surfaces"
+      ],
+      "excluded_evidence_classes": [
+        "CI_RUNTIME_EVIDENCE",
+        "CURRENT_REVIEW_PACKET",
+        "DURABLE_SESSION_STATE",
+        "FINAL_PACKAGE_EVIDENCE",
+        "MODEL_TRIAL_EVIDENCE",
+        "PRIOR_REVIEW_RESULTS",
+        "SOLUTION_ORACLE",
+        "VERIFIER_PRIVATE"
+      ],
+      "mandatory_exact_reads": [
+        ".terminus/agents/CREATION_PIPELINE.md",
+        ".terminus/agents/CREATOR_AGENT_REGISTRY.md",
+        ".terminus/agents/CREATOR_PROMPTS.md"
+      ],
+      "retrieval_mode": "FILTERED_HYBRID"
+    },
+    "ignored_input_count": 0,
+    "inputs": {
+      "optional": {},
+      "required": {
+        "APPROVED_OPERATIONAL_REQUIREMENTS": {
+          "REQUIRED_END_STATE": [
+            "atomic complete generation publication",
+            "per-source fencing",
+            "stable endpoint identity/incarnation",
+            "compatible runtime-state continuity",
+            "health/lifecycle-aware selection",
+            "bounded draining",
+            "durable complete checkpoint recovery",
+            "bounded runtime/telemetry retirement"
+          ]
+        },
+        "APPROVED_WORK_PACKAGE": {
+          "ENGINEERING_OBJECTIVE": "generation-safe dynamic route/upstream reconciliation",
+          "ID": "GENERATION_SAFE_DYNAMIC_RECONCILIATION"
+        },
+        "CLEAN_SYSTEM_ARCHITECTURE": {
+          "SOURCE": "current canonical SYSTEM_ARCHITECTURE result"
+        },
+        "CREATION_PROFILE": "large_system_strict"
+      }
+    },
+    "invocation_id": "inv_b3c7bb31aac50dbf69a3ea7a996dacc0f74eb5dcb446aa9eb845420a69f9067e",
+    "learning": {
+      "context_hash": "sha256:bb84a513aa2b6e4374d691759c4a6edf94169f479f4611e9091643b9f279ccfc",
+      "lessons": [],
+      "mode": "GENERALIZED_LESSONS_PLUS_OWNED_REMEDIATIONS",
+      "raw_feedback_exposed": false,
+      "raw_historical_findings_exposed": false,
+      "registry_heads": {
+        "feedback": "GENESIS",
+        "findings": "GENESIS",
+        "lessons": "GENESIS",
+        "patterns": "GENESIS",
+        "remediations": "GENESIS"
+      },
+      "remediations": []
+    },
+    "missing_required_inputs": [],
+    "output_contract": {
+      "allowed_status_values": [
+        "DESIGN_READY",
+        "SCENARIO_TOO_SMALL",
+        "BLOCKED"
+      ],
+      "deterministic_validators": [
+        ".terminus/validate_defect_topology.py <task>"
+      ],
+      "optional_fields": [],
+      "persisted_artifacts": [
+        ".terminus/designs/<task>.json"
+      ],
+      "required_fields": [
+        "profile",
+        "root_cause_clusters",
+        "defects",
+        "causal_edges",
+        "behavioral_surfaces",
+        "organic_f2p_surface_assessment"
+      ],
+      "semantic_reviewers": [
+        "Task Architect",
+        "Complexity Governor"
+      ]
+    },
+    "readiness": "READY",
+    "retrieval": {
+      "query": null,
+      "retrieved_chars": 0,
+      "retrieved_context": [],
+      "status": "NOT_REQUESTED"
+    },
+    "routing": {
+      "failure_routes": {
+        "ARCHITECTURE_GAP": "Creation Controller -> SYSTEM_ARCHITECTURE",
+        "HIDDEN_KNOWLEDGE": "A3 Defect Topology Designer -> expose legitimate solver-visible contract or remove defect",
+        "SCENARIO_TOO_SMALL": "Creation Controller -> WORK_PACKAGE_RESEARCH"
+      },
+      "stale_on": [
+        "work-package change",
+        "architecture change",
+        "material operational requirement change"
+      ],
+      "success_transition": "ENVIRONMENT_BUILD"
+    },
+    "schema_version": "1.0",
+    "stage": {
+      "lifecycle": "creation",
+      "owner": "A3 Defect Topology Designer",
+      "role_class": "PRODUCER",
+      "role_id": "A3_DEFECT_TOPOLOGY_DESIGNER",
+      "stage_id": "DEFECT_TOPOLOGY"
+    }
+  },
+  "outputs": {
+    "behavioral_surfaces": {
+      "cross_component": [
+        "source fence to publication",
+        "snapshot lease to retry/failover",
+        "membership incarnation to affinity/health/transport",
+        "publication to durable recovery"
+      ],
+      "edge_boundary": [
+        "duplicate canonical endpoint aliases",
+        "same-revision conflicts",
+        "rapid remove/re-add",
+        "all-down pools"
+      ],
+      "failure_recovery": [
+        "crash around checkpoint authority",
+        "corrupt CURRENT with previous fallback",
+        "slow drain deadline"
+      ],
+      "negative_rejection": [
+        "invalid configuration",
+        "stale/conflicting source update",
+        "ineligible backend selection"
+      ],
+      "normal": [
+        "accepted complete updates",
+        "stable unchanged endpoint continuity",
+        "live proxy selection"
+      ]
+    },
+    "causal_edges": {
+      "character": "cross-cluster dependencies connect source authority, publication, identity, request leases, drain ownership and recovery",
+      "count": 37,
+      "source": ".terminus/designs/edge-router-runtime.json"
+    },
+    "defects": {
+      "count": 30,
+      "coverage": "D01-D30 across six causally coupled clusters",
+      "source": ".terminus/designs/edge-router-runtime.json"
+    },
+    "organic_f2p_surface_assessment": "SUFFICIENT: the current validated topology provides 30 materially distinct manifestations and more than 25 natural behavioral scenarios without duplicated quota padding.",
+    "profile": "large_system_strict",
+    "root_cause_clusters": {
+      "count": 6,
+      "ids": [
+        "C1_GENERATION_TRANSACTION_AND_PUBLICATION",
+        "C2_STABLE_IDENTITY_AND_COMPATIBILITY",
+        "C3_REQUEST_SNAPSHOT_AND_SELECTION_ELIGIBILITY",
+        "C4_DRAIN_TRANSPORT_AND_RETIREMENT_OWNERSHIP",
+        "C5_CHECKPOINT_COMMIT_AND_RECOVERY",
+        "C6_INGRESS_COALESCING_AND_SOURCE_AUTHORITY"
+      ]
+    }
+  },
+  "record_id": "rec_f7bdc388f2eea78022b6dedbfe442ac81da8b1e2f76a03328119af7a3bb8d37e",
+  "role_id": "A3_DEFECT_TOPOLOGY_DESIGNER",
+  "schema_version": "1.0",
+  "stage_id": "DEFECT_TOPOLOGY",
+  "status": "DESIGN_READY",
+  "task_lineage": {
+    "input_task_commit": "24f07fbfc25e1354f308da5258750f795b18f0e2",
+    "output_task_commit": "24f07fbfc25e1354f308da5258750f795b18f0e2",
+    "task_changed": false
+  },
+  "transition": {
+    "action": "ADVANCE",
+    "requires_state_validation": false,
+    "target": "ENVIRONMENT_BUILD",
+    "target_kind": "STAGE"
+  },
+  "validation": {
+    "acceptance_predicates_satisfied": true,
+    "evidence_binding_satisfied": true,
+    "evidence_refs_count": 0,
+    "invocation_identity_valid": true,
+    "invocation_policy_valid": true,
+    "output_keys_valid": true,
+    "required_outputs_satisfied": true,
+    "retrieval_context_authorized": true,
+    "status_legal": true,
+    "task_commit_change_authorized": true,
+    "task_lineage_valid": true
+  }
+}
