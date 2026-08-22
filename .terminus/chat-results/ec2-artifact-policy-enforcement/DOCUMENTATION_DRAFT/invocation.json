@@ -1,0 +1,153 @@
+{
+  "acceptance_predicates": {},
+  "authority": {
+    "control_plane_commit": "df7ef7569e2947b9f0bf7cf89ed4dec6c2a5a1fe",
+    "policy_versions": {},
+    "task_commit": "d48ddd7cd262569babef349a4f5631b0f0152b0a",
+    "task_id": "ec2-artifact-policy-enforcement"
+  },
+  "evidence": {
+    "authorized_evidence_classes": [
+      "CI_RUNTIME_EVIDENCE",
+      "CONTROL_PLANE_POLICY",
+      "PUBLIC_REFERENCE",
+      "SOLUTION_ORACLE",
+      "SOLVER_VISIBLE_TASK"
+    ],
+    "evidence_required": [
+      "implementation evidence",
+      "verification evidence",
+      "no benchmark framing/leakage"
+    ],
+    "excluded_evidence_classes": [
+      "CURRENT_REVIEW_PACKET",
+      "DURABLE_SESSION_STATE",
+      "FINAL_PACKAGE_EVIDENCE",
+      "MODEL_TRIAL_EVIDENCE",
+      "PRIOR_REVIEW_RESULTS",
+      "PRIVATE_CREATION_DESIGN",
+      "VERIFIER_PRIVATE"
+    ],
+    "mandatory_exact_reads": [
+      ".terminus/agents/CREATION_PIPELINE.md",
+      ".terminus/agents/CREATOR_PROMPTS.md",
+      ".terminus/agents/PROMPTS.md"
+    ],
+    "retrieval_mode": "FILTERED_HYBRID"
+  },
+  "ignored_input_count": 0,
+  "inputs": {
+    "optional": {},
+    "required": {
+      "APPROVED_WORK_PACKAGE": {
+        "ENGINEERING_OBJECTIVE": "Unify OS-package, container, and build-dependency acquisition behind one Go policy engine.",
+        "ID": "WP1_UNIFIED_EC2_ARTIFACT_ADMISSION",
+        "REQUIRED_END_STATE": "All acquisition surfaces enforce trusted sources, immutable digests, current scanner/cache evidence, scoped current vulnerability exceptions, exact-scope secret-keyed permits with replay safety, and durable restart-safe allow/deny audit history."
+      },
+      "IMPLEMENTATION_EVIDENCE": {
+        "DETERMINISM": "caller-provided time, local fixtures, local state and no required network dependency",
+        "PRESERVED_BEHAVIOR": [
+          "artifactguard evaluate and verify-permit interfaces and documented exits",
+          "valid cache reuse and valid scoped exceptions",
+          "supplied policy/scanner/exception fixtures",
+          "existing audit history"
+        ],
+        "PRODUCTION_AUTHENTICITY": "3515 substantive reachable Go LOC after removal of cloned catalog padding",
+        "REFERENCE_SOLUTION_STATUS": "IMPLEMENTED",
+        "RESTORED_INVARIANTS": [
+          "one source/digest policy boundary across package, container and dependency managers",
+          "current scanner evidence and cache identity bound to digest, policy version, scanner DB revision and TTL",
+          "exact current vulnerability exceptions that cannot bypass prerequisites",
+          "secret-keyed exact-scope permits with optional durable single-use replay enforcement",
+          "durable ALLOW/DENY audit before derived projection and crash-safe state transitions",
+          "restart/concurrency-safe idempotency and replay semantics"
+        ]
+      },
+      "VERIFICATION_EVIDENCE": {
+        "COVERAGE_FAMILIES": [
+          "source/digest prerequisites across acquisition managers and exception ordering",
+          "scanner/cache freshness and corruption",
+          "exception expiry/scope/prerequisite ordering and policy-code scope",
+          "permit authentication, exact request/policy scope and restart/concurrent replay",
+          "audit durability, projection, recovery and idempotent retry",
+          "healthy behavior, cache, stateless permit, invalid-permit and fixture preservation"
+        ],
+        "EMPIRICAL_STATUS": "Runtime/oracle validation remains mandatory at the later deterministic-validation checkpoint; no pass claim is made at documentation time.",
+        "F2P_COUNT": 28,
+        "P2P_COUNT": 12,
+        "SPEC_ALIGNMENT": {
+          "Q1_STATUS": "NO_GAP",
+          "Q2_STATUS": "COVERED",
+          "Q3_STATUS": "CLEAR"
+        },
+        "VERIFIER_STATUS": "VERIFIER_READY"
+      }
+    }
+  },
+  "invocation_id": "inv_6a1b4b8db75fa967d4a5616027c9ee72d6e3991c23e18e114f83d1c02d41d7bb",
+  "learning": {
+    "context_hash": "sha256:bb84a513aa2b6e4374d691759c4a6edf94169f479f4611e9091643b9f279ccfc",
+    "lessons": [],
+    "mode": "GENERALIZED_LESSONS_PLUS_OWNED_REMEDIATIONS",
+    "raw_feedback_exposed": false,
+    "raw_historical_findings_exposed": false,
+    "registry_heads": {
+      "feedback": "GENESIS",
+      "findings": "GENESIS",
+      "lessons": "GENESIS",
+      "patterns": "GENESIS",
+      "remediations": "GENESIS"
+    },
+    "remediations": []
+  },
+  "missing_required_inputs": [],
+  "output_contract": {
+    "allowed_status_values": [
+      "DOCUMENTATION_READY",
+      "REWRITE_REQUIRED",
+      "BLOCKED"
+    ],
+    "deterministic_validators": [],
+    "optional_fields": [],
+    "persisted_artifacts": [
+      "<task>/README.md"
+    ],
+    "required_fields": [
+      "README_PATH",
+      "DIFFICULTY_EXPLANATION",
+      "SOLUTION_EXPLANATION",
+      "VERIFICATION_EXPLANATION"
+    ],
+    "semantic_reviewers": [
+      "Engineering Documentation Reviewer",
+      "Human Quality Reviewer"
+    ]
+  },
+  "readiness": "READY",
+  "retrieval": {
+    "query": null,
+    "retrieved_chars": 0,
+    "retrieved_context": [],
+    "status": "NOT_REQUESTED"
+  },
+  "routing": {
+    "failure_routes": {
+      "LEAKAGE_OR_SYNTHETIC_PROSE": "A8 Documentation Writer / Human Quality Reviewer",
+      "UNSUPPORTED_CLAIM": "A8 Documentation Writer"
+    },
+    "stale_on": [
+      "implementation evidence change",
+      "verification evidence change",
+      "material task-description change"
+    ],
+    "success_transition": "FORMAT_GATE"
+  },
+  "schema_version": "1.0",
+  "stage": {
+    "lifecycle": "creation",
+    "owner": "A8 Documentation Writer",
+    "role_class": "PRODUCER",
+    "role_id": "A8_DOCUMENTATION_WRITER",
+    "stage_id": "DOCUMENTATION_DRAFT"
+  }
+}
