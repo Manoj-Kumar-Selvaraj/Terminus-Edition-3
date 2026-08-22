@@ -1,0 +1,106 @@
+{
+  "schema_version": "1.0",
+  "mode": "RECORD",
+  "task_id": "terraform-ansible-managed-resources",
+  "task_commit": "78ad422902b27dea954905130a1267b02cff3596",
+  "control_plane_commit": "df7ef7569e2947b9f0bf7cf89ed4dec6c2a5a1fe",
+  "expected_repository_head": "cf3492435730208026a8d6c8e5aa3e33676402e7",
+  "stage_id": "COMPLEXITY_GATE",
+  "inputs": {
+    "DEFECT_GRAPH": {
+      "behavioral_surfaces": ["create/state", "refresh/drift", "update transaction", "delete transaction", "runner safety", "idempotency"],
+      "connected_manifestations": 28,
+      "defect_manifestations": 28,
+      "profile": "large_system_strict",
+      "root_cause_clusters": 6
+    },
+    "ENVIRONMENT_TREE": {
+      "components": [
+        "provider registration/configuration/runtime preflight",
+        "shared lifecycle identity/state/normalization",
+        "Ansible task/playbook generation",
+        "process runner/timeout/cancellation/cleanup",
+        "native filesystem/content/account/cron observation",
+        "ten differentiated managed-resource implementations"
+      ],
+      "entrypoints": [
+        "/app/provider/cmd/terraform-provider-ansibleops/main.go",
+        "/app/provider/scripts/build-provider.sh",
+        "/app/provider/scripts/smoke.sh"
+      ],
+      "resource_count": 10,
+      "runtime_artifact": "/app/provider",
+      "task_root": "terraform-ansible-managed-resources"
+    },
+    "INSTRUCTION": "Complete the inherited ansibleops Terraform provider under /app/provider as exactly ten managed resources, preserving stable external-object identity, Ansible-only Create/Update/Delete mutation, native side-effect-free Read/refresh, transactional state publication, scoped ownership/delete, runner safety, canonical convergence, Terraform-Core-only durable state and documented resource-family semantics.",
+    "PRODUCTION_CHARACTERISTIC_EVIDENCE": [
+      "real Terraform Plugin Framework provider process",
+      "persistent external Linux state",
+      "ten differentiated Linux managed-resource lifecycles",
+      "Ansible mutation/native observation split",
+      "failure-safe Terraform state transitions",
+      "Terraform Core sole durable state",
+      "provider startup preflight",
+      "shared runner/normalization/validation/drift-observation layers"
+    ],
+    "RUNTIME_REACHABILITY_EVIDENCE": [
+      "provider Configure preflight is live",
+      "Terraform reaches exactly ten provider resource callbacks",
+      "Create/Update/Delete paths reach the shared Ansible runner",
+      "Read/refresh paths reach native filesystem/content/account/cron observers",
+      "identity and normalization logic are shared across resource families"
+    ],
+    "SUBSTANTIVE_LOC_REPORT": {
+      "reachable_production_loc": 3081,
+      "resource_count": 10,
+      "runtime_entrypoint": "cmd/terraform-provider-ansibleops/main.go",
+      "substantive_loc": 3081
+    },
+    "TEST_CLASSIFICATION_MAP": {
+      "F2P_COUNT": 30,
+      "P2P_COUNT": 6,
+      "classification": "30 F2P + 6 P2P",
+      "coverage": {
+        "edge": ["wrong object kind", "spaces in paths", "cron defaults", "home removal", "unordered/mode equivalence", "already absent destroy"],
+        "negative": ["duplicate ownership", "literal shell metacharacters", "non-zero failure", "failed delete retains state", "command output absent from state"],
+        "normal": ["exact schemas", "basic lifecycle/state", "content/account/cron lifecycle", "runner cleanup", "Ansible mutation backend"],
+        "ownership": ["path/user/group/cron collision rejection", "line/block/cron sibling preservation", "symlink target preservation", "user home policy"],
+        "recovery": ["failed update retry", "timeout/cancellation cleanup", "missing-object recreation", "failed destroy retry", "external drift"]
+      }
+    },
+    "RESOURCE_GRAPH": {
+      "accounts": ["user", "group"],
+      "content": ["copy", "template", "line", "block"],
+      "filesystem": ["file", "directory", "symlink"],
+      "scheduler": ["cron"]
+    }
+  },
+  "result": {
+    "status": "PASS",
+    "outputs": {
+      "CONNECTED_MANIFESTATIONS": 28,
+      "DEFECT_MANIFESTATIONS": 28,
+      "EDGE_BOUNDARY_COVERAGE": ["wrong object kind", "paths with spaces", "cron omitted/explicit defaults", "remove_home boundary", "unordered/mode equivalence", "already-absent destroy"],
+      "F2P_COUNT": 30,
+      "F2P_ORGANICITY": "PASS: 30 F2P cases exercise distinct lifecycle, drift, transaction, ownership, normalization, runner and resource-family behavior rather than duplicated assertions.",
+      "INSTRUCTION_CHECKLIST_RISK": "LOW: solver-visible instruction states engineering invariants and delegates family detail to legitimate public contracts rather than enumerating private verifier rows.",
+      "MEANINGFUL_RESOURCE_COUNT": 10,
+      "NEGATIVE_FAILURE_COVERAGE": ["duplicate external ownership", "literal shell metacharacters", "non-zero Ansible failure", "failed delete retains state", "command output absent from state", "timeout/cancellation cleanup"],
+      "P2P_COUNT": 6,
+      "PADDING_RISK": "LOW: substantive runtime components and connected defect/test surfaces are independently meaningful; no filler-only component is indicated.",
+      "PRODUCTION_CHARACTERISTICS": ["real Terraform Plugin Framework provider runtime", "ten differentiated managed-resource lifecycles", "persistent external Linux truth", "Ansible mutation/native observation split", "transactional Terraform state semantics", "shared runner, identity, normalization and drift-observation layers"],
+      "REACHABLE_PRODUCTION_LOC": 3081,
+      "REQUIRED_CHANGES": [],
+      "ROOT_CAUSE_CLUSTERS": 6,
+      "SUBSTANTIVE_LOC": 3081,
+      "TEST_DUPLICATION_RISK": "LOW: F2P coverage spans normal, edge, negative, recovery and ownership families across differentiated resources."
+    },
+    "evidence_refs": [
+      {
+        "kind": "COMMIT",
+        "ref": "commit:78ad422902b27dea954905130a1267b02cff3596",
+        "content_hash": "sha256:104817a239b92de3e53f14d6bc0176563437894773e060648776dc09c6280374"
+      }
+    ]
+  }
+}
