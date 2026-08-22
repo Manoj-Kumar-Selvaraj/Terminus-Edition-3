@@ -1,0 +1,40 @@
+{
+  "schema_version": "3.0",
+  "role": "Model Perspective Difficulty Simulator",
+  "review_id": "sovereign-l4-load-balancer-d7a001a9-difficulty-sim-gpt-fb7410f8d0",
+  "task": "sovereign-l4-load-balancer",
+  "task_commit": "d7a001a92485de5ca3ec1bd2593648436dc3c237",
+  "control_plane_commit": "12975f9107bc1ccba85d1ec0d52e2e49b4eae877",
+  "protocol_policy_version": "2.2",
+  "prompt_policy_version": "2.2",
+  "role_policy_version": "1.0",
+  "role_contract_hash": "ccfa675b35acae5b490277be9183df90f9a82e789c8e19a20d170ae2bf1b4c9f",
+  "context_packet": ".terminus/reviews/sovereign-l4-load-balancer/d7a001a9/sovereign-l4-load-balancer-d7a001a9-difficulty-sim-gpt-fb7410f8d0.packet.json",
+  "verdict": "PASS",
+  "confidence": "MEDIUM",
+  "evidence_status": "SUFFICIENT",
+  "summary": "DIAGNOSTIC ONLY (not official GPT×5). SIMULATION_NOT_EXECUTED. GPT-style prior predicts patching prepare/activate handshake and target selection first; risk of missing generation fencing, drain deadlines, and checkpoint recovery on dataplane → USEFUL signal.",
+  "evidence": [
+    {"type": "file", "ref": "sovereign-l4-load-balancer/instruction.md", "observation": "Coupled control-plane revision fencing, quorum rollout, TCP proxy semantics, and checkpoint recovery across Go/C++ components."},
+    {"type": "rule", "ref": ".terminus/agents/QUALITY_AGENT_PROMPTS.md#Q8", "observation": "SIMULATION_NOT_EXECUTED when full isolated solve unavailable."}
+  ],
+  "findings": [],
+  "missing_evidence": [],
+  "change_scope": [],
+  "do_not_change": ["Do not treat as official GPT trial evidence."],
+  "next_gate": "Q8 Claude perspective",
+  "role_output": {
+    "PERSPECTIVE": "GPT_PERSPECTIVE",
+    "EXECUTION": "SIMULATION_NOT_EXECUTED",
+    "DIAGNOSTIC_SUMMARY": "Fix rollout protocol and balancer selection locally; under-test drain fencing, PROXY v2 header rules, and torn checkpoint recovery.",
+    "FIRST_DIAGNOSIS": "Prepare/activate sequence or target eligibility wrong; connections not bound to generation.",
+    "FILES_TOUCHED": ["control-plane rollout", "dataplane proxy", "health/ejection", "persistence store"],
+    "SHORTCUTS_ATTEMPTED": ["Patch lbctl status without generation digest checks", "Ignore drain deadline on deregistered targets"],
+    "FIRST_MEANINGFUL_DIVERGENCE": "Rollout green on happy path while half-close, reset, and checkpoint recovery tests fail.",
+    "FINAL_VERIFIER_RESULT": "NOT_RUN",
+    "LIKELY_REASONING_WALLS": ["Quorum prepare/activate fencing", "Connection binding to generation/incarnation", "Passive ejection + zone policy interaction"],
+    "ENVIRONMENT_TOOL_FRICTION": "Multi-binary build; 24-node lab; C++/Go coordination.",
+    "PREDICTED_OFFICIAL_SIGNAL": "USEFUL",
+    "SIMULATION_NOTE": "Diagnostic prior only; advanced-band expectation."
+  }
+}
