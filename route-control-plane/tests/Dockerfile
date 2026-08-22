@@ -6,7 +6,7 @@ ENV DEBIAN_FRONTEND=noninteractive \
     GOTOOLCHAIN=local
 
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends ca-certificates python3 python3-pip \
+    && apt-get install -y --no-install-recommends ca-certificates nodejs node-typescript python3 python3-pip \
     && rm -rf /var/lib/apt/lists/* \
     && python3 -m pip install --break-system-packages --no-cache-dir pytest==8.4.1 ansible-core==2.18.7
 
