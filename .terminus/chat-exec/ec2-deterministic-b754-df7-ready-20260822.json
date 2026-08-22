@@ -1,0 +1,35 @@
+{
+  "schema_version": "1.0",
+  "mode": "PROBE",
+  "task_id": "ec2-artifact-policy-enforcement",
+  "task_commit": "b7540553007c35822e042d192b180c659d8fc36b",
+  "control_plane_commit": "df7ef7569e2947b9f0bf7cf89ed4dec6c2a5a1fe",
+  "expected_repository_head": "60db7e04163f0b8b361b5797c5ab38a0b8c170e7",
+  "stage_id": "DETERMINISTIC_VALIDATION",
+  "inputs": {
+    "CURRENT_TASK_COMMIT": {
+      "status": "CURRENT",
+      "task_id": "ec2-artifact-policy-enforcement",
+      "task_commit": "b7540553007c35822e042d192b180c659d8fc36b",
+      "evidence": "current canonical EC2 task tree after deterministic-preflight lint-only cleanup; no behavior change from the validated remediated snapshot"
+    },
+    "ORACLE": {
+      "status": "CURRENT",
+      "task_id": "ec2-artifact-policy-enforcement",
+      "task_commit": "b7540553007c35822e042d192b180c659d8fc36b",
+      "evidence": "current reference solution and solve.sh remain bound to the lint-cleaned task tree; empirical scoring is owned by the hosted deterministic run"
+    },
+    "STARTER_NOP_STATE": {
+      "status": "CURRENT",
+      "task_id": "ec2-artifact-policy-enforcement",
+      "task_commit": "b7540553007c35822e042d192b180c659d8fc36b",
+      "evidence": "current untouched starter remains the validated 28-F2P/12-P2P baseline; empirical scoring is owned by the hosted deterministic run"
+    },
+    "VERIFIER": {
+      "F2P_COUNT": 28,
+      "P2P_COUNT": 12,
+      "entrypoint": "ec2-artifact-policy-enforcement/tests/test.sh"
+    }
+  },
+  "result": {}
+}
