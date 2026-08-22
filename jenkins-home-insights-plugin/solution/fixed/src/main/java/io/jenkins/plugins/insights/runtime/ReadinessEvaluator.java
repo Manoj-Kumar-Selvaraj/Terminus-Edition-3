@@ -30,9 +30,10 @@ public final class ReadinessEvaluator {
         components.add(sources(snapshot)); components.add(ingress(droppedHints));
         for (Component component : components) if (component.level() != Level.OK) diagnostics.add(component.name() + ": " + component.message());
         Level level = components.stream().map(Component::level).max(java.util.Comparator.comparingInt(this::rank)).orElse(Level.UNKNOWN);
+        long journalLag = journal == null ? Long.MAX_VALUE : Math.max(0, journal.lastSequence() - snapshot.checkpoint().appliedSequence());
+        boolean journalReady = journal != null && (journal.healthy() || (journal.tornTail() && journalLag == 0));
         boolean ready = phase == InsightsRuntime.Phase.READY && !generationId.isBlank()
-                && generation != null && generation.valid() && journal != null && journal.healthy()
-                && journal.lastSequence() <= snapshot.checkpoint().appliedSequence()
+                && generation != null && generation.valid() && journalReady
                 && audit != null && audit.valid() && snapshot.unsupportedSources().isEmpty() && droppedHints == 0;
         return new Evaluation(ready, level, List.copyOf(components), List.copyOf(diagnostics));
     }

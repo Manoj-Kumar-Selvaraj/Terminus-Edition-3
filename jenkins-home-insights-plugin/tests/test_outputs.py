@@ -284,6 +284,33 @@ def free_port() -> int:
         return int(listener.getsockname()[1])
 
 
+def run_cli_env(
+    command: str,
+    *options: str,
+    home: Path,
+    state: Path,
+    check: bool = True,
+    timeout: int = 120,
+) -> dict[str, Any] | subprocess.CompletedProcess[str]:
+    env = {
+        **os.environ,
+        "JENKINS_HOME": str(home),
+        "INSIGHTS_STATE": str(state),
+    }
+    completed = run_process(
+        ["sh", str(INSIGHTS), command, *options],
+        check=check,
+        env=env,
+        timeout=timeout,
+    )
+    if not check:
+        return completed
+    try:
+        return json.loads(completed.stdout)
+    except json.JSONDecodeError as error:
+        pytest.fail(f"CLI did not emit one JSON object: {completed.stdout!r}: {error}")
+
+
 def fetch_json(url: str, timeout: float = 1.0) -> tuple[int, dict[str, Any]]:
     try:
         with urllib.request.urlopen(url, timeout=timeout) as reply:
@@ -485,7 +512,7 @@ def test_f2p_delete_fences_stale_retried_upsert(tmp_path: Path) -> None:
 
 
 def test_f2p_checkpoint_restart_replays_unpublished_tail_once(tmp_path: Path) -> None:
-    """Restart replays journal entries after the selected checkpoint without duplication."""
+    """Restart replays journal entries after the selected checkpoint without duplication and isolates torn tails."""
     home = make_home(tmp_path / "home")
     state = tmp_path / "state"
     run_cli(home, state, "reconcile")
@@ -513,6 +540,31 @@ def test_f2p_checkpoint_restart_replays_unpublished_tail_once(tmp_path: Path) ->
     assert health["checkpoint"] == health["journalTail"] == 1
     again = run_cli(home, state, "restart")
     assert again["records"] == 1
+
+    torn_home = make_home(tmp_path / "torn-home")
+    torn_state = tmp_path / "torn-state"
+    run_cli(torn_home, torn_state, "reconcile")
+    run_cli(
+        torn_home,
+        torn_state,
+        "event",
+        "--source",
+        "job",
+        "--key",
+        "prefix-job",
+        "--event-id",
+        "prefix-1",
+        "--field",
+        "fullName=prefix-job",
+    )
+    journal = torn_state / "journal" / "events.ndjson"
+    with journal.open("a", encoding="utf-8", newline="\n") as stream:
+        stream.write('{"sequence":99,"eventId":"torn-2","source":"JOB","operation":"UPSERT","broken":true\n')
+    torn_restart = run_cli(torn_home, torn_state, "restart")
+    torn_keys = {item["identity"]["key"] for item in query(torn_home, torn_state)["items"]}
+    assert "prefix-job" in torn_keys
+    assert "torn-job" not in torn_keys
+    assert torn_restart["health"]["ready"] is True
 
 
 def test_f2p_queue_label_conjunction_and_exclusive_mode(tmp_path: Path) -> None:
@@ -818,20 +870,26 @@ def test_f2p_acl_projection_precedes_cursor_pagination(tmp_path: Path) -> None:
 
 
 def test_f2p_stable_sorting_cursors_and_filter_errors(tmp_path: Path) -> None:
-    """Sort order is stable across pages and malformed cursors or filters are rejected."""
+    """Sort order is stable across pages, contains narrows records, metadata is present, and bad filters fail."""
     home = make_home(tmp_path / "home", jobs=[job("charlie"), job("alpha"), job("bravo")])
     state = tmp_path / "state"
     run_cli(home, state, "reconcile")
     first = query(home, state, "--sort", "key", "--direction", "desc", "--limit", "2")
     second = query(home, state, "--sort", "key", "--direction", "desc", "--limit", "2", "--cursor", first["nextCursor"])
     assert [item["identity"]["key"] for item in first["items"] + second["items"]] == ["charlie", "bravo", "alpha"]
+    contains = query(home, state, "--kind", "job", "--contains", "char")
+    assert contains["total"] == 1 and contains["items"][0]["identity"]["key"] == "charlie"
+    metadata = query(home, state, "--kind", "job", "--sort", "display", "--direction", "asc", "--limit", "2")["metadata"]
+    assert metadata["principal"] == "operator"
+    assert metadata["sort"] == "display" and metadata["direction"] == "ASC"
+    assert "visible" in metadata and "checkpoint" in metadata
     for invalid in (("--cursor", "not-a-cursor"), ("--sort", "unknown"), ("--limit", "1001")):
         rejected = run_cli(home, state, "query", *invalid, check=False)
         assert rejected.returncode != 0
 
 
 def test_f2p_cli_and_http_use_equivalent_shared_query_semantics(tmp_path: Path) -> None:
-    """CLI and authenticated HTTP return the same query envelope for identical parameters."""
+    """CLI and authenticated HTTP return the same query envelope; unauthorized HTTP exposes no result metadata."""
     home = make_home(tmp_path / "home", jobs=[job("alpha"), job("bravo")])
     state = tmp_path / "state"
     run_cli(home, state, "reconcile")
@@ -845,6 +903,7 @@ def test_f2p_cli_and_http_use_equivalent_shared_query_semantics(tmp_path: Path) 
     )
     params = urllib.parse.urlencode({"kind": "job", "sort": "display", "direction": "desc", "limit": "1"})
     url = f"http://127.0.0.1:{port}/operational-insights/api/v1/query?{params}"
+    denied_url = f"http://127.0.0.1:{port}/operational-insights/api/v1/query?{params}&system-read=false"
     try:
         deadline = time.monotonic() + 10
         while True:
@@ -857,6 +916,10 @@ def test_f2p_cli_and_http_use_equivalent_shared_query_semantics(tmp_path: Path) 
                 time.sleep(0.05)
         assert status == 200
         assert response(actual) == expected
+        denied_status, denied_payload = fetch_json(denied_url)
+        assert denied_status == 403
+        assert denied_payload.get("error") == "forbidden"
+        assert "generationId" not in denied_payload and "metadata" not in denied_payload and "total" not in denied_payload
     finally:
         server.terminate()
         try:
@@ -867,7 +930,7 @@ def test_f2p_cli_and_http_use_equivalent_shared_query_semantics(tmp_path: Path) 
 
 
 def test_f2p_readiness_and_supported_empty_home(tmp_path: Path) -> None:
-    """A verified, fully supported empty home is ready and returns a stable empty response."""
+    """A verified empty home is ready, returns a stable empty response, and honors JENKINS_HOME/INSIGHTS_STATE."""
     home = make_home(tmp_path / "home")
     state = tmp_path / "state"
     reconciled = run_cli(home, state, "reconcile")
@@ -877,6 +940,12 @@ def test_f2p_readiness_and_supported_empty_home(tmp_path: Path) -> None:
     assert health["ready"] is True and health["currentValid"] is True
     assert health["replayLag"] == 0 and health["unsupportedSources"] == []
     assert empty["items"] == [] and empty["total"] == 0 and empty["nextCursor"] is None
+    env_home = make_home(tmp_path / "env-home", jobs=[job("env-job")])
+    env_state = tmp_path / "env-state"
+    env_reconciled = response(run_cli_env("reconcile", home=env_home, state=env_state))
+    env_query = response(run_cli_env("query", "--kind", "job", home=env_home, state=env_state))
+    assert env_reconciled["records"] == 1
+    assert {item["identity"]["key"] for item in env_query["items"]} == {"env-job"}
 
 
 def test_f2p_repeated_queries_are_byte_deterministic(tmp_path: Path) -> None:

@@ -73,7 +73,7 @@ public final class InsightsRuntime implements Closeable {
             snapshot = selection.snapshot(); generationId = selection.generationId(); diagnostics.addAll(selection.diagnostics());
             EventJournal.Recovery recovery = EventJournal.recover(journal.path(), snapshot.checkpoint().appliedSequence());
             diagnostics.addAll(recovery.diagnostics());
-            if (recovery.tornTail()) throw new IOException("journal has a torn or invalid tail");
+            if (recovery.tornTail()) diagnostics.add("journal tail isolated");
             if (!recovery.events().isEmpty()) {
                 boolean dirty = recovery.events().stream().anyMatch(event -> event.operation() == Domain.EventOperation.DIRTY);
                 if (dirty) {
