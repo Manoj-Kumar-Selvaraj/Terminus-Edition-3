@@ -22,6 +22,7 @@
     ["test_f2p_source_conflict_is_scoped_to_that_source", "F2P", "REQ_SOURCE_AUTHORITY"],
     ["test_f2p_duplicate_one_source_does_not_poison_another", "F2P", "REQ_SOURCE_AUTHORITY"],
     ["test_f2p_recovered_source_fence_rejects_older_revision", "F2P", "REQ_SOURCE_AUTHORITY"],
+    ["test_f2p_bounded_ingress_retains_newest_complete_snapshot", "F2P", "REQ_SOURCE_AUTHORITY"],
 
     ["test_f2p_canonical_duplicate_endpoint_identity_is_rejected", "F2P", "REQ_IDENTITY_COMPATIBILITY"],
     ["test_f2p_endpoint_reorder_preserves_sticky_continuity", "F2P", "REQ_IDENTITY_COMPATIBILITY"],
@@ -35,15 +36,15 @@
     ["test_f2p_retry_exclusion_survives_runtime_object_replacement", "F2P", "REQ_SNAPSHOT_SELECTION"],
     ["test_f2p_failover_uses_request_leased_generation", "F2P", "REQ_SNAPSHOT_SELECTION"],
 
-    ["test_f2p_removed_endpoint_is_not_used_for_fresh_requests", "F2P", "REQ_DRAIN_OWNERSHIP"],
-    ["test_f2p_inflight_request_survives_unrelated_publication", "F2P", "REQ_DRAIN_OWNERSHIP"],
+    ["test_p2p_removed_endpoint_is_not_used_for_fresh_requests", "P2P", "REQ_DRAIN_OWNERSHIP"],
+    ["test_p2p_inflight_request_survives_unrelated_publication", "P2P", "REQ_DRAIN_OWNERSHIP"],
     ["test_f2p_metric_scope_count_remains_bounded_under_churn", "F2P", "REQ_OBSERVABILITY"],
 
     ["test_f2p_corrupt_current_body_falls_back_to_previous_complete_generation", "F2P", "REQ_CHECKPOINT_RECOVERY"],
     ["test_f2p_corrupt_current_pointer_falls_back_to_previous_complete_generation", "F2P", "REQ_CHECKPOINT_RECOVERY"],
     ["test_f2p_checksum_mismatch_is_not_recovered_as_current", "F2P", "REQ_CHECKPOINT_RECOVERY"],
     ["test_f2p_schema_incompatible_checkpoint_is_not_recovered", "F2P", "REQ_CHECKPOINT_RECOVERY"],
-    ["test_f2p_missing_current_body_falls_back_to_retained_previous", "F2P", "REQ_CHECKPOINT_RECOVERY"],
+    ["test_p2p_missing_current_body_falls_back_to_retained_previous", "P2P", "REQ_CHECKPOINT_RECOVERY"],
 
     ["test_p2p_validate_accepts_normal_configuration", "P2P", "REQ_PUBLIC_INTERFACE"],
     ["test_p2p_validate_rejects_unknown_json_field", "P2P", "REQ_PUBLIC_INTERFACE"],

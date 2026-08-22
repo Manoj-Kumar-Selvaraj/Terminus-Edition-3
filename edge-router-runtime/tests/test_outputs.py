@@ -422,10 +422,13 @@ def test_f2p_source_conflict_is_scoped_to_that_source(tmp_path):
     with running_backends(Backend("a")) as (a,):
         doc = document([endpoint(a.address)])
         with gateway(tmp_path, doc) as gw:
-            submit(gw["admin"], "config", 9, doc)
-            submit(gw["admin"], "discovery", 3, doc)
-            assert submit(gw["admin"], "discovery", 3, mutate_priority(doc, 107))[0] == 409
-            assert submit(gw["admin"], "config", 10, mutate_priority(doc, 108))[0] == 200
+            assert submit(gw["admin"], "config", 9, doc)[0] == 200
+            assert submit(gw["admin"], "discovery", 10, doc)[0] == 200
+            code, body, _ = submit(gw["admin"], "discovery", 10, mutate_priority(doc, 107))
+            assert code == 409 and body["outcome"] == "conflict"
+            assert accepted_revision(gw["admin"], "discovery") == 10
+            code, body, _ = submit(gw["admin"], "config", 10, mutate_priority(doc, 108))
+            assert code == 200 and body["outcome"] == "accepted"
 
 
 def test_f2p_duplicate_one_source_does_not_poison_another(tmp_path):
@@ -445,12 +448,154 @@ def test_f2p_recovered_source_fence_rejects_older_revision(tmp_path):
         first = tmp_path / "first"
         first.mkdir()
         with gateway(first, doc, state_dir=state_dir) as gw:
-            assert submit(gw["admin"], "config", 8, doc)[0] == 200
+            assert submit(gw["admin"], "discovery", 8, doc)[0] == 200
+            assert submit(gw["admin"], "config", 100, mutate_priority(doc, 110))[0] == 200
         second = tmp_path / "second"
         second.mkdir()
         with gateway(second, doc, state_dir=state_dir) as gw:
-            code, body, _ = submit(gw["admin"], "config", 7, mutate_priority(doc, 110))
+            code, body, _ = submit(gw["admin"], "config", 99, mutate_priority(doc, 111))
             assert code == 409 and body["outcome"] == "stale"
+            code, body, _ = submit(gw["admin"], "discovery", 9, mutate_priority(doc, 112))
+            assert code == 200 and body["outcome"] == "accepted"
+
+
+def test_f2p_bounded_ingress_retains_newest_complete_snapshot(tmp_path):
+    probe = APP / "internal" / "config" / "zz_verifier_ingress_test.go"
+    source = r'''
+package config
+
+import (
+    "context"
+    "encoding/json"
+    "sync"
+    "testing"
+    "time"
+)
+
+type verifierBlockingProcessor struct {
+    mu sync.Mutex
+    revisions []uint64
+    started chan struct{}
+    release chan struct{}
+}
+
+func (p *verifierBlockingProcessor) Process(_ context.Context, candidate Candidate) SubmitResult {
+    p.mu.Lock()
+    p.revisions = append(p.revisions, candidate.Revision)
+    first := len(p.revisions) == 1
+    p.mu.Unlock()
+    if first {
+        close(p.started)
+        <-p.release
+    }
+    return SubmitResult{Source: candidate.Source, Revision: candidate.Revision, Digest: candidate.Digest, Outcome: "accepted"}
+}
+
+func (p *verifierBlockingProcessor) maxRevision() uint64 {
+    p.mu.Lock()
+    defer p.mu.Unlock()
+    var max uint64
+    for _, revision := range p.revisions {
+        if revision > max {
+            max = revision
+        }
+    }
+    return max
+}
+
+func verifierDocument(t *testing.T) []byte {
+    t.Helper()
+    doc := Document{
+        SchemaVersion: 1,
+        Defaults: Defaults{ConnectTimeoutMS: 300, RequestTimeoutMS: 2500, DrainTimeoutMS: 1200, HealthIntervalMS: 1000, HealthTimeoutMS: 250, AffinityTTLSeconds: 120, AffinityCapacity: 64},
+        Pools: []Pool{{
+            ID: "primary",
+            Strategy: "round_robin",
+            Endpoints: []Endpoint{{Address: "127.0.0.1:1", Weight: 1, Zone: "z1"}},
+            Health: HealthPolicy{Path: "/healthz", IntervalMS: 1000, TimeoutMS: 250, HealthyThreshold: 1, UnhealthyThreshold: 1, ExpectedStatuses: []int{200}},
+            Transport: TransportPolicy{Scheme: "http", MaxIdleConns: 32, MaxIdleConnsPerHost: 8, IdleConnTimeoutMS: 1000},
+            Affinity: AffinityPolicy{Mode: "none"},
+        }},
+        Routes: []Route{{
+            ID: "route-main",
+            Hosts: []string{"service.test"},
+            PathPrefix: "/api",
+            Methods: []string{"GET"},
+            Pool: "primary",
+            Retry: RetryPolicy{Attempts: 1, PerTryTimeoutMS: 800, RetryOn: []string{"5xx"}},
+            Affinity: AffinityPolicy{Mode: "none"},
+            Priority: 100,
+        }},
+    }
+    raw, err := json.Marshal(doc)
+    if err != nil {
+        t.Fatal(err)
+    }
+    return raw
+}
+
+func TestVerifierBoundedIngressRetainsNewest(t *testing.T) {
+    ctx, cancel := context.WithCancel(context.Background())
+    defer cancel()
+    processor := &verifierBlockingProcessor{started: make(chan struct{}), release: make(chan struct{})}
+    ingress := NewIngress(processor, 2)
+    ingress.Start(ctx)
+    raw := verifierDocument(t)
+
+    var wg sync.WaitGroup
+    submitAsync := func(revision uint64) {
+        wg.Add(1)
+        go func() {
+            defer wg.Done()
+            submitCtx, submitCancel := context.WithTimeout(ctx, 750*time.Millisecond)
+            defer submitCancel()
+            _, _ = ingress.Submit(submitCtx, "config", revision, raw)
+        }()
+    }
+
+    submitAsync(1)
+    select {
+    case <-processor.started:
+    case <-time.After(time.Second):
+        t.Fatal("first candidate did not reach processor")
+    }
+
+    submitAsync(2)
+    submitAsync(3)
+    deadline := time.Now().Add(time.Second)
+    for len(ingress.queue) < 2 && time.Now().Before(deadline) {
+        time.Sleep(5 * time.Millisecond)
+    }
+    if len(ingress.queue) != 2 {
+        t.Fatalf("queue did not fill: len=%d", len(ingress.queue))
+    }
+
+    submitAsync(4)
+    time.Sleep(25 * time.Millisecond)
+    close(processor.release)
+    wg.Wait()
+
+    deadline = time.Now().Add(time.Second)
+    for processor.maxRevision() < 4 && time.Now().Before(deadline) {
+        time.Sleep(5 * time.Millisecond)
+    }
+    if got := processor.maxRevision(); got != 4 {
+        t.Fatalf("bounded ingress did not retain newest complete snapshot: max processed revision=%d want=4", got)
+    }
+}
+'''
+    probe.write_text(source, encoding="utf-8")
+    try:
+        result = subprocess.run(
+            ["go", "test", "./internal/config", "-run", "TestVerifierBoundedIngressRetainsNewest", "-count=1"],
+            cwd=APP,
+            text=True,
+            capture_output=True,
+            timeout=20,
+        )
+    finally:
+        probe.unlink(missing_ok=True)
+    assert result.returncode == 0, result.stdout + result.stderr
 
 
 # F2P: stable identity, semantic compatibility, and incarnation boundaries.
@@ -594,15 +739,17 @@ def test_f2p_failover_uses_request_leased_generation(tmp_path):
             thread.start()
             assert a.started.wait(timeout=3)
             changed = copy.deepcopy(doc)
+            changed["pools"][1]["id"] = "new-failover"
             changed["pools"][1]["endpoints"] = [endpoint(new_fallback.address)]
+            changed["routes"][0]["failover_pools"] = ["new-failover"]
             assert submit(gw["admin"], "config", 2, changed)[0] == 200
             a.release.set()
             thread.join(timeout=5)
             assert backend_name(result["value"]) == "old-fallback"
 
 
-# F2P: lifecycle ownership and bounded observability.
-def test_f2p_removed_endpoint_is_not_used_for_fresh_requests(tmp_path):
+# F2P/P2P: lifecycle ownership and bounded observability.
+def test_p2p_removed_endpoint_is_not_used_for_fresh_requests(tmp_path):
     with running_backends(Backend("a"), Backend("b")) as (a, b):
         doc = document([endpoint(a.address)])
         with gateway(tmp_path, doc) as gw:
@@ -612,7 +759,7 @@ def test_f2p_removed_endpoint_is_not_used_for_fresh_requests(tmp_path):
             assert backend_name(proxy(gw["public"])) == "b"
 
 
-def test_f2p_inflight_request_survives_unrelated_publication(tmp_path):
+def test_p2p_inflight_request_survives_unrelated_publication(tmp_path):
     a = Backend("a")
     b = Backend("b")
     with running_backends(a, b):
@@ -717,7 +864,7 @@ def test_f2p_schema_incompatible_checkpoint_is_not_recovered(tmp_path):
             assert current_generation(gw["admin"]) == previous_generation
 
 
-def test_f2p_missing_current_body_falls_back_to_retained_previous(tmp_path):
+def test_p2p_missing_current_body_falls_back_to_retained_previous(tmp_path):
     with running_backends(Backend("a")) as (a,):
         doc = document([endpoint(a.address)])
         state_dir = tmp_path / "state"
