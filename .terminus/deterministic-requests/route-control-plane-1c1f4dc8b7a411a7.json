@@ -1,0 +1,41 @@
+{
+  "request_id": "detreq_1c1f4dc8b7a411a7874e81d1e2e085331cceb76d46445237814a1c3cbd8c1410",
+  "schema_version": "1.1",
+  "task_id": "route-control-plane",
+  "stage_id": "DETERMINISTIC_VALIDATION",
+  "task_commit": "1e099e020dc1ef88f1032b896e97d6b49c7684b5",
+  "expected_repository_head": "80ed2a79d0822f332f2c1e610919272ea2d86706",
+  "control_plane_commit": "df7ef7569e2947b9f0bf7cf89ed4dec6c2a5a1fe",
+  "invocation_id": "inv_5b51493c683b5f7a7abb07aabf15acf51b58e864db022ea9cc98dded9294c54e",
+  "inputs": {
+    "CURRENT_TASK_COMMIT": {
+      "evidence": "current exact task snapshot for hosted deterministic validation",
+      "status": "CURRENT",
+      "task_commit": "1e099e020dc1ef88f1032b896e97d6b49c7684b5",
+      "task_id": "route-control-plane"
+    },
+    "ORACLE": {
+      "evidence": "current reference solution bound to exact task snapshot; empirical scoring owned by this hosted run",
+      "status": "CURRENT",
+      "task_commit": "1e099e020dc1ef88f1032b896e97d6b49c7684b5",
+      "task_id": "route-control-plane"
+    },
+    "STARTER_NOP_STATE": {
+      "evidence": "current starter/NOP state bound to exact task snapshot; empirical scoring owned by this hosted run",
+      "status": "CURRENT",
+      "task_commit": "1e099e020dc1ef88f1032b896e97d6b49c7684b5",
+      "task_id": "route-control-plane"
+    },
+    "VERIFIER": {
+      "F2P_COUNT": 25,
+      "P2P_COUNT": 4,
+      "entrypoint": "route-control-plane/tests/test.sh"
+    }
+  },
+  "evidence_contract": {
+    "oracle_reward": 1,
+    "nop_reward": 0,
+    "require_f2p_empirical_matrix": true,
+    "require_p2p_empirical_matrix": true
+  }
+}
