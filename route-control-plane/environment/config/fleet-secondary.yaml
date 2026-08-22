@@ -1,0 +1,62 @@
+fleet:
+  - id: bom-edge-01
+    hostname: bom-edge-01.routecp.local
+    site: bom
+    environment: prod
+    management_ip: 10.70.1.41
+    online: true
+    labels: {role: edge, wave: two, region: ap-south}
+    links:
+      - {name: eth0, index: 2, up: true, addresses: [10.70.1.41/24]}
+      - {name: dcix0, index: 6, up: true, addresses: [100.64.0.2/30]}
+    routes:
+      - {id: bom-mgmt, destination: 10.70.0.0/16, table: 100, metric: 10, gateway: 10.70.1.1, interface: eth0}
+      - {id: bom-dcix, destination: 10.128.0.0/9, table: 240, metric: 30, gateway: 100.64.0.1, interface: dcix0}
+    rules:
+      - {id: bom-mgmt-rule, priority: 100, source: 10.70.1.41/32, table: 100, action: lookup}
+      - {id: bom-dcix-rule, priority: 250, destination: 10.128.0.0/9, table: 240, action: lookup}
+  - id: del-edge-01
+    hostname: del-edge-01.routecp.local
+    site: del
+    environment: prod
+    management_ip: 10.80.1.51
+    online: false
+    labels: {role: edge, wave: maintenance, region: ap-south}
+    links:
+      - {name: eth0, index: 2, up: true, addresses: [10.80.1.51/24]}
+    routes:
+      - {id: del-mgmt, destination: 10.80.0.0/16, table: 100, metric: 10, gateway: 10.80.1.1, interface: eth0}
+    rules:
+      - {id: del-mgmt-rule, priority: 100, source: 10.80.1.51/32, table: 100, action: lookup}
+  - id: sin-edge-01
+    hostname: sin-edge-01.routecp.local
+    site: sin
+    environment: prod
+    management_ip: 10.90.1.61
+    online: true
+    labels: {role: edge, wave: two, region: ap-southeast}
+    links:
+      - {name: eth0, index: 2, up: true, addresses: [10.90.1.61/24]}
+      - {name: transit6, index: 8, up: true, addresses: [2001:db8:90::2/64]}
+    routes:
+      - {id: sin-mgmt, destination: 10.90.0.0/16, table: 100, metric: 10, gateway: 10.90.1.1, interface: eth0}
+      - {id: sin-v6-default, destination: ::/0, table: 250, metric: 15, gateway: 2001:db8:90::1, interface: transit6}
+    rules:
+      - {id: sin-mgmt-rule, priority: 100, source: 10.90.1.61/32, table: 100, action: lookup}
+      - {id: sin-v6-rule, priority: 180, source: 2001:db8:900::/48, table: 250, action: lookup}
+  - id: fra-edge-01
+    hostname: fra-edge-01.routecp.local
+    site: fra
+    environment: disaster-recovery
+    management_ip: 172.16.10.71
+    online: true
+    labels: {role: edge, wave: dr, region: eu-central}
+    links:
+      - {name: eth0, index: 2, up: true, addresses: [172.16.10.71/24]}
+      - {name: wan0, index: 9, up: true, addresses: [192.0.2.10/31]}
+    routes:
+      - {id: fra-mgmt, destination: 172.16.0.0/12, table: 100, metric: 10, gateway: 172.16.10.1, interface: eth0}
+      - {id: fra-primary, destination: 0.0.0.0/0, table: 260, metric: 40, gateway: 192.0.2.11, interface: wan0}
+    rules:
+      - {id: fra-mgmt-rule, priority: 100, source: 172.16.10.71/32, table: 100, action: lookup}
+      - {id: fra-primary-rule, priority: 300, source: 172.16.0.0/12, table: 260, action: lookup}
