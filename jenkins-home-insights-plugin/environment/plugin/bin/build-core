@@ -1,0 +1,9 @@
+#!/bin/sh
+set -eu
+ROOT=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
+OUT="$ROOT/target/core-classes"
+rm -rf "$OUT"
+mkdir -p "$OUT"
+cd "$ROOT"
+find src/main/java/io/jenkins/plugins/insights -name '*.java' ! -path '*/insights/jenkins/*' -print > target/core-sources.txt
+javac --release 17 -encoding UTF-8 -d "$OUT" @target/core-sources.txt

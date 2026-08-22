@@ -1,0 +1,8 @@
+#!/bin/sh
+set -eu
+ROOT=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
+CLASSES="$ROOT/target/core-classes"
+if [ ! -f "$CLASSES/io/jenkins/plugins/insights/operator/InsightsMain.class" ]; then
+  "$ROOT/bin/build-core"
+fi
+exec java -cp "$CLASSES" io.jenkins.plugins.insights.operator.InsightsMain "$@"

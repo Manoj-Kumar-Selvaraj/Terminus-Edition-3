@@ -1,0 +1,22 @@
+{
+  "schema_version": "1.0",
+  "task": "jenkins-home-insights-plugin",
+  "production_authenticity": {
+    "current_state_evidence_required": false,
+    "stateful_dataset_exemption": {
+      "approved": true,
+      "approved_by": "creation-controller",
+      "reason": "The inherited Jenkins home is a deterministic multi-file operational state graph generated through /app/plugin/bin/insights rather than a relational SQL corpus. The real generator creates 10,000-20,000 varied jobs, builds, queue items, nodes, fingerprints, plugins, and malformed records; committing an additional SQL shadow dataset would be decorative and would not participate in plugin reconciliation. The verifier exercises a 10,000-record generation and the environment image creates the default 14,536-record home through the production entrypoint."
+    },
+    "domain_state_model": [
+      "nested Jenkins jobs and build histories",
+      "queue demand and node executor capacity",
+      "fingerprint producer-consumer lineage",
+      "installed, disabled, failed, bundled, and dependency plugin metadata",
+      "checksummed event journal and immutable generation catalog",
+      "authorization anchors, retained tombstones, source errors, and capability state"
+    ],
+    "reachability_evidence": "All generated state is created, reconciled, queried, replayed, recovered, migrated, and compacted through /app/plugin/bin/insights and the same production Java core used by Jenkins lifecycle bindings."
+  },
+  "status": "PRODUCER_EVIDENCE_ONLY_NOT_Q6_APPROVAL"
+}
