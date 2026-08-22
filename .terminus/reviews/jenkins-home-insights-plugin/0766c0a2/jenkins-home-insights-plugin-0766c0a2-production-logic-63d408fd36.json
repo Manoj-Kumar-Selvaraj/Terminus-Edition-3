@@ -1,0 +1,138 @@
+{
+  "schema_version": "3.0",
+  "role": "Production Logic Auditor",
+  "review_id": "jenkins-home-insights-plugin-0766c0a2-production-logic-63d408fd36",
+  "task": "jenkins-home-insights-plugin",
+  "task_commit": "0766c0a2cb6b666c72f111ef49f3a8724d46ba42",
+  "control_plane_commit": "0766c0a2cb6b666c72f111ef49f3a8724d46ba42",
+  "protocol_policy_version": "2.2",
+  "prompt_policy_version": "2.2",
+  "role_policy_version": "1.1",
+  "role_contract_hash": "a737a404c3b23518698932fec4eba6bb7f9831710c920bd66f267a00dca47661",
+  "review_scope_hash": "6a41990f5457a68654f5f310e20d218e2a693be88a9844038392e7732b56a58f",
+  "context_packet": ".terminus/reviews/jenkins-home-insights-plugin/0766c0a2/jenkins-home-insights-plugin-0766c0a2-production-logic-63d408fd36.packet.json",
+  "verdict": "PASS",
+  "confidence": "HIGH",
+  "evidence_status": "SUFFICIENT",
+  "summary": "The solver-visible Jenkins operational-insights plugin is a coupled capture→reduce→persist→analyze→query pipeline with real operator entrypoints. Roughly 3,220 lines of Java across 26 modules compile into the standalone core via bin/build-core and bin/insights; InsightsMain dispatches generate/reconcile/query/event/restart/compact/health/serve into InsightsRuntime, which chains HomeSources scanning, ReconciliationEngine reduction, EventJournal append/recover, GenerationStore atomic publication, AnalysisEngine observational views, and QueryService ACL projection. Jenkins bindings in OperationalInsightsPlugin reach the same runtime through listeners and BackgroundCoordinator. Starter wiring gaps (unused SnapshotDiff, dormant SchemaMigrator/migrate path, RetentionPlanner plan discarded in compact) are incomplete integration rather than dominant padding; removing ~25% of core modules would collapse reconciliation convergence, crash-safe generations, journal replay, queue/lineage analysis, or authorization-filtered query semantics.",
+  "evidence": [
+    {
+      "type": "file",
+      "ref": "jenkins-home-insights-plugin/task.toml",
+      "observation": "Task declares a multi-language Jenkins plugin work package (java/bash/python, reconciliation/recovery/observability tags) with separate verifier environment, 8192MB memory, artifact /app/plugin, and 7200s agent timeout—consistent with a substantial production engineering surface."
+    },
+    {
+      "type": "file",
+      "ref": "jenkins-home-insights-plugin/environment/plugin/bin/insights",
+      "observation": "Primary operator entrypoint: lazy-invokes build-core then exec java on InsightsMain with full CLI surface documented in instruction.md."
+    },
+    {
+      "type": "file",
+      "ref": "jenkins-home-insights-plugin/environment/plugin/bin/build-core",
+      "observation": "Compiles all io.jenkins.plugins.insights Java except jenkins/* into target/core-classes, establishing the standalone production core reachable without Jenkins HPI."
+    },
+    {
+      "type": "file",
+      "ref": "jenkins-home-insights-plugin/environment/plugin/src/main/java/io/jenkins/plugins/insights/operator/InsightsMain.java",
+      "observation": "Command router constructs InsightsRuntime for reconcile/query/event/restart/compact/health/serve and HomeGenerator for generate; HTTP serve mirrors documented /operational-insights/api/v1/query and /health paths with ACL-aware query dispatch."
+    },
+    {
+      "type": "file",
+      "ref": "jenkins-home-insights-plugin/environment/plugin/src/main/java/io/jenkins/plugins/insights/runtime/InsightsRuntime.java",
+      "observation": "Lifecycle owner wires recovery (GenerationStore+EventJournal replay), full reconcile, incremental drain (ingress→journal→EventBatchPlanner→ReconciliationEngine→publish), query, compact, and multi-component health via SnapshotAuditor, JournalMaintenance, ReadinessEvaluator, and GenerationStore verification."
+    },
+    {
+      "type": "file",
+      "ref": "jenkins-home-insights-plugin/environment/plugin/src/main/java/io/jenkins/plugins/insights/journal/EventJournal.java",
+      "observation": "Append-only checksummed NDJSON journal with duplicate identity tracking, periodic fsync, torn-tail recovery, bounded Ingress queue, and checkpoint-aware replay—material event-sourcing logic."
+    },
+    {
+      "type": "file",
+      "ref": "jenkins-home-insights-plugin/environment/plugin/src/main/java/io/jenkins/plugins/insights/storage/GenerationStore.java",
+      "observation": "Versioned generation repository with staged atomic publish, per-file checksum manifests, CURRENT pointer, verify/recover/compact/lease paths, and typed snapshot load/save across six canonical families."
+    },
+    {
+      "type": "file",
+      "ref": "jenkins-home-insights-plugin/environment/plugin/src/main/java/io/jenkins/plugins/insights/source/HomeSources.java",
+      "observation": "Six differentiated read-only source adapters (jobs, builds, queue, nodes, fingerprints with capability gate, plugins) scan sanitized Jenkins home exports with per-record validation and isolated SourceError collection."
+    },
+    {
+      "type": "file",
+      "ref": "jenkins-home-insights-plugin/environment/plugin/src/main/java/io/jenkins/plugins/insights/analysis/AnalysisEngine.java",
+      "observation": "Pure snapshot analysis implements queue blockage classification (label/offline/executor), per-job build health aggregates, fingerprint lineage with cycle detection, and plugin inventory assessment—domain logic beyond storage passthrough."
+    },
+    {
+      "type": "file",
+      "ref": "jenkins-home-insights-plugin/environment/plugin/src/main/java/io/jenkins/plugins/insights/query/QueryService.java",
+      "observation": "Shared read contract enforces Jenkins-style system/overall/item permissions before projection, supports six documented views, cursor pagination, facets, and metadata—reachable from CLI and HTTP."
+    },
+    {
+      "type": "file",
+      "ref": "jenkins-home-insights-plugin/environment/plugin/src/main/java/io/jenkins/plugins/insights/jenkins/OperationalInsightsPlugin.java",
+      "observation": "Jenkins Initializer/Terminator, Item/Run/Queue/Computer listeners, AsyncPeriodicWork full reconcile, and RootAction health endpoint all delegate into InsightsRuntime/BackgroundCoordinator—integration layer over shared core."
+    },
+    {
+      "type": "file",
+      "ref": "jenkins-home-insights-plugin/environment/plugin/docs/architecture.md",
+      "observation": "Documents capture→normalize→reduce→analyze→publish→project pipeline and explicit coupling invariants (journal for restart continuity, generation verification for crash-safe selection, authorization before projection)."
+    },
+    {
+      "type": "file",
+      "ref": "jenkins-home-insights-plugin/environment/Dockerfile",
+      "observation": "Pinned Maven/Temurin base, builds core at image build, runs generate (14,536 records) and reconcile to seed deterministic runtime state; no committed .class artifacts in environment tree."
+    }
+  ],
+  "findings": [
+    {
+      "id": "Q6-ADV-001",
+      "severity": "LOW",
+      "status": "OBSERVED",
+      "criterion": "Unreachable solver-visible modules should not materially inflate production scale claims",
+      "evidence_refs": [
+        "jenkins-home-insights-plugin/environment/plugin/src/main/java/io/jenkins/plugins/insights/reconcile/SnapshotDiff.java",
+        "jenkins-home-insights-plugin/environment/plugin/src/main/java/io/jenkins/plugins/insights/storage/GenerationStore.java"
+      ],
+      "why_it_matters": "SnapshotDiff (~66 LOC) has no callers in the starter environment; GenerationStore.migrate/SchemaMigrator (~115 LOC) is defined but not reached from InsightsMain or recover(). These are architectural scaffolding for audit/migration completion work, not dominant scale, but they slightly overstate immediately reachable logic.",
+      "minimal_remediation": "Wire SnapshotDiff into reconcile/audit diagnostics or remove until needed; invoke migrate during recover when RecoveryPlanner marks LEGACY generations.",
+      "regression_risk": "LOW if wiring follows documented storage contracts"
+    },
+    {
+      "id": "Q6-ADV-002",
+      "severity": "LOW",
+      "status": "OBSERVED",
+      "criterion": "Retention/compaction planners should affect operator behavior when invoked",
+      "evidence_refs": [
+        "jenkins-home-insights-plugin/environment/plugin/src/main/java/io/jenkins/plugins/insights/storage/GenerationStore.java",
+        "jenkins-home-insights-plugin/environment/plugin/src/main/java/io/jenkins/plugins/insights/storage/RetentionPlanner.java"
+      ],
+      "why_it_matters": "compact() constructs a RetentionPlanner plan enumerating CURRENT/LEASED/RECENT/RECOVERY_FALLBACK/REFERENCED reasons but deletes by simple oldest-N index instead of plan decisions—planner output is currently non-functional for retention semantics.",
+      "minimal_remediation": "Apply RetentionPlanner.removable list (or equivalent plan decisions) when deleting generation directories.",
+      "regression_risk": "MEDIUM if retention invariants (leases, fallback, references) are required for safe compaction"
+    }
+  ],
+  "missing_evidence": [],
+  "change_scope": [],
+  "do_not_change": [
+    "solver-visible environment/ tree scope hash binding",
+    "standalone core build exclusion of jenkins/* in bin/build-core",
+    "documented architecture contracts under environment/plugin/docs/"
+  ],
+  "next_gate": "QUALITY_INTERLOCK",
+  "role_output": {
+    "CORE_LOGIC_DEPTH": "HIGH",
+    "RUNTIME_REACHABILITY": "HIGH",
+    "MODULE_DIVERSITY": "HIGH",
+    "CROSS_COMPONENT_COUPLING": "HIGH",
+    "TOY_LOGIC_RISK": "LOW",
+    "PADDING_RISK": "LOW",
+    "SUBSTANTIVE_LOC_ASSESSMENT": "26 Java compilation units totaling ~3,220 LOC under environment/plugin/src/main/java, plus bin scripts, jelly resources, config, and nine architecture/API docs. Largest substantive modules: Domain (290), HomeSources (222), GenerationStore (217), AnalysisEngine (197), Json (176), InsightsMain (166), HomeGenerator (154), QueryService (149), EventJournal (147), InsightsRuntime (146). Approximately 170–190 LOC (~5%) is presently unreachable scaffolding (SnapshotDiff, GenerationStore.migrate/SchemaMigrator path, JournalMaintenance.compact) but the remaining ~3,030+ LOC participates in entrypoint-reachable flows. No committed .class build artifacts in environment; classes are produced at Docker/build-core time.",
+    "ENTRYPOINTS": "Standalone: plugin/bin/insights → InsightsMain.main (generate via HomeGenerator; reconcile/query/event/restart/compact/health/serve via InsightsRuntime). Build: plugin/bin/build-core compiles core-classes. Jenkins: OperationalInsightsPlugin @Initializer/@Terminator, Item/Run/Queue/Computer listeners → BackgroundCoordinator.submit → InsightsRuntime.offer/drainEvents; AsyncPeriodicWork → reconcileFull; RootAction.doHealth → runtime.health(). Dockerfile pre-runs generate+reconcile at image build.",
+    "MODULE_RESPONSIBILITIES": "operator/InsightsMain: CLI+HTTP transport and argument parsing. runtime/InsightsRuntime: lifecycle orchestration, recovery, reconcile/drain/query/compact/health. runtime/BackgroundCoordinator: bounded periodic full reconcile, event drain, retention. source/HomeSources: six export scanners with validation. reconcile/ReconciliationEngine: full scan merge and incremental event reduction. reconcile/EventBatchPlanner: checkpoint-aware batch normalization and delete fencing prep. reconcile/RecordCodec: typed canonical record decoding. journal/EventJournal: checksummed append-only log, ingress queue, replay. journal/JournalMaintenance: journal inspection (health) and compaction helper. storage/GenerationStore: atomic generation publish, CURRENT pointer, verify/load/recover/compact/lease. storage/RecoveryPlanner: generation candidate classification. storage/RetentionPlanner: retention decision planning. storage/SchemaMigrator: v1→v2 field migrations. storage/SnapshotAuditor: cross-family referential/canonical audits. analysis/AnalysisEngine: queue diagnosis, build health, lineage cycles, plugin summary. query/QueryService+VisibilityProjection: ACL enforcement, pagination, view projection. generator/HomeGenerator: deterministic 10k–20k record sanitized home export. model/Domain: shared canonical types and digests. jenkins/OperationalInsightsPlugin: Jenkins hook bindings.",
+    "COUPLING_ASSESSMENT": "InsightsRuntime.recover chains GenerationStore.recover → EventJournal.recover → ReconciliationEngine.incremental → AnalysisEngine.analyze. drainEvents chains Ingress → EventJournal.append → EventBatchPlanner.plan → ReconciliationEngine.incremental → GenerationStore.publish → analysis refresh. reconcileFull chains HomeSources adapters → ReconciliationEngine.full → publish. health aggregates GenerationStore.verifyCurrent, SnapshotAuditor.audit, JournalMaintenance.inspect, ReadinessEvaluator.evaluate, and ingress drop metrics. query executes QueryService against live snapshot+analysis with VisibilityProjection filtering. Partial-fix traps: fixing journal replay without checkpoint alignment breaks incremental convergence; fixing GenerationStore recovery without journal tail breaks restart; fixing AnalysisEngine queue labels without NodeRecord availability fields breaks diagnosis; ACL changes must precede lineage/aggregate views.",
+    "MAJOR_MODULES": "See MODULE_RESPONSIBILITIES; six operational subsystems (sources, reconcile/journal, storage/generations, analysis, query/ACL, runtime/coordination) with distinct state/error behavior rather than constant-output shells.",
+    "PARTIAL_FIX_TRAPS": "Journal append idempotency vs delete-fence ordering; EventBatchPlanner checkpoint rejection vs ReconciliationEngine incremental apply; GenerationStore recover selection vs RecoveryPlanner completeness/replay helpers; RetentionPlanner plan vs compact deletion policy; SchemaMigrator only useful once migrate invoked on LEGACY generations; ReadinessEvaluator ready flag depends on phase+generationId without requiring CURRENT verification until health path; QueryService unauthorized must suppress metadata across all views including lineage endpoints.",
+    "REMOVAL_TEST": "Removing EventJournal+EventBatchPlanner (~213 LOC) eliminates incremental/event convergence and restart replay. Removing GenerationStore+RecoveryPlanner (~285 LOC) removes crash-safe immutable generations and recover. Removing HomeSources+ReconciliationEngine (~323 LOC) removes full reconcile and canonical record materialization. Removing AnalysisEngine (~197 LOC) removes queue/build/lineage/plugin observational views. Removing QueryService+VisibilityProjection (~214 LOC) removes ACL-gated operator/API surface. Any ~800 LOC (~25%) slice across these subsystems materially collapses production behavior rather than preserving a toy stub.",
+    "REMOVAL_IMPACT": "Deleting ~25% centered on storage+journal or reconcile+sources would break deterministic convergence, generation publication, restart recovery, and documented CLI/HTTP contracts; remaining code would not sustain the instruction's reconciliation, retention, lineage, queue diagnosis, or authorization requirements.",
+    "REQUIRED_CHANGES": "none"
+  }
+}

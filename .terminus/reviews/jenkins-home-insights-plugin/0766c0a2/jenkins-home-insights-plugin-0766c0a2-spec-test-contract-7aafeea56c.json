@@ -1,0 +1,273 @@
+{
+  "schema_version": "3.0",
+  "role": "Spec-Test Contract Reviewer",
+  "review_id": "jenkins-home-insights-plugin-0766c0a2-spec-test-contract-7aafeea56c",
+  "task": "jenkins-home-insights-plugin",
+  "task_commit": "0766c0a2cb6b666c72f111ef49f3a8724d46ba42",
+  "control_plane_commit": "0766c0a2cb6b666c72f111ef49f3a8724d46ba42",
+  "protocol_policy_version": "2.2",
+  "prompt_policy_version": "2.2",
+  "role_policy_version": "1.1",
+  "role_contract_hash": "d2994789dc83b2c8a6b92201782ea9f3e5528a3a9d725c863c22efb6356e570e",
+  "context_packet": ".terminus/reviews/jenkins-home-insights-plugin/0766c0a2/jenkins-home-insights-plugin-0766c0a2-spec-test-contract-7aafeea56c.packet.json",
+  "verdict": "REVISE",
+  "confidence": "HIGH",
+  "evidence_status": "SUFFICIENT",
+  "summary": "Solver-visible contracts are well-formed and most graded behavior is bidirectionally aligned, but five material instruction and api-v1 obligations lack meaningful behavioral tests: torn journal-prefix recovery, the contains filter, required query metadata, JENKINS_HOME/INSIGHTS_STATE path resolution, and HTTP standalone authorization rejection. A solver can omit these and still pass all 34 probes.",
+  "evidence": [
+    {
+      "type": "file",
+      "ref": "jenkins-home-insights-plugin/instruction.md",
+      "observation": "Twenty concise bullets state scope, delegated docs, operator commands, reconciliation, events, recovery, retention, queue/build/lineage/plugin analysis, authorization, query/HTTP interfaces, runtime bounds, generated-home constraints, Jenkins bindings, and explicit out-of-scope work."
+    },
+    {
+      "type": "file",
+      "ref": "jenkins-home-insights-plugin/environment/plugin/docs/api-v1.md",
+      "observation": "Documents query parameters (including contains), required successful response fields (generationId, view, items, total, nextCursor, facets, metadata), transport-independent CLI parity, and forbidden unauthorized responses with no result metadata."
+    },
+    {
+      "type": "file",
+      "ref": "jenkins-home-insights-plugin/environment/plugin/docs/storage.md",
+      "observation": "Documents generation layout, atomic publication, checkpoint semantics, deterministic fallback selection, journal replay after checkpoint, and torn final journal record isolation without discarding the valid prefix."
+    },
+    {
+      "type": "file",
+      "ref": "jenkins-home-insights-plugin/environment/plugin/docs/operations.md",
+      "observation": "Documents generate default population 14536, all operator commands, nonzero failure semantics, and JENKINS_HOME/INSIGHTS_STATE path overrides."
+    },
+    {
+      "type": "test",
+      "ref": "jenkins-home-insights-plugin/tests/test_outputs.py",
+      "observation": "34 behavioral probes (30 F2P, 4 P2P) exercise build, volume generation, convergence, isolation, recovery, analysis views, ACL projection, query/HTTP parity for successful queries, readiness, determinism, Jenkins binding signatures, read-only home, offline runtime, and package shape. No probe truncates journal/events.ndjson, omits --records to check default 14536, uses env path overrides, asserts metadata or contains filtering, or rejects unauthorized HTTP requests."
+    },
+    {
+      "type": "run",
+      "ref": "jobs/2026-08-22__13-17-32",
+      "observation": "Harbor oracle run reported 34/34 passing with reward 1 per packet change_since_last_review; job artifacts were not present locally."
+    },
+    {
+      "type": "run",
+      "ref": "jobs/2026-08-22__13-20-18",
+      "observation": "Harbor NOP run reported 20 failing tests with reward 0 per packet change_since_last_review; job artifacts were not present locally."
+    },
+    {
+      "type": "rule",
+      "ref": ".terminus/agents/QUALITY_AGENT_PROMPTS.md",
+      "observation": "Q4 requires exhaustive forward/reverse matrices, delegated-contract walk, F2P/P2P boundary inspection, ambiguity scan, second omission sweep, and REVISE on any material untested requirement."
+    }
+  ],
+  "findings": [
+    {
+      "id": "Q4-B01",
+      "severity": "HIGH",
+      "status": "OBSERVED",
+      "criterion": "Every material recovery requirement has meaningful behavioral test coverage",
+      "evidence_refs": [
+        "jenkins-home-insights-plugin/instruction.md:8",
+        "jenkins-home-insights-plugin/environment/plugin/docs/storage.md:23",
+        "jenkins-home-insights-plugin/tests/test_outputs.py:test_f2p_checkpoint_restart_replays_unpublished_tail_once"
+      ],
+      "why_it_matters": "Instruction and storage.md require preserving a valid journal prefix when the final journal record is torn. The restart probe deletes a generation directory and rewinds CURRENT; it never corrupts or truncates journal/events.ndjson. An implementation that drops the valid prefix on torn tails would pass all current tests.",
+      "minimal_remediation": "Add a restart probe that appends events, truncates or corrupts only the final journal record while leaving earlier bytes intact, restarts, and asserts the valid prefix is retained and replay is deterministic.",
+      "regression_risk": "Low if added as a new recovery probe without weakening existing fallback or replay checks."
+    },
+    {
+      "id": "Q4-B02",
+      "severity": "MEDIUM",
+      "status": "OBSERVED",
+      "criterion": "Documented query filters are meaningfully tested",
+      "evidence_refs": [
+        "jenkins-home-insights-plugin/instruction.md:14",
+        "jenkins-home-insights-plugin/environment/plugin/docs/api-v1.md:9",
+        "jenkins-home-insights-plugin/tests/test_outputs.py"
+      ],
+      "why_it_matters": "Instruction requires stable JSON with documented filters and api-v1 documents a case-insensitive contains search parameter with CLI/HTTP parity. No probe passes contains on CLI or HTTP or asserts filtered totals/items change accordingly.",
+      "minimal_remediation": "Add a query probe with --contains (and matching HTTP parameter) that returns a strict subset of records and rejects invalid filter combinations if documented.",
+      "regression_risk": "Low."
+    },
+    {
+      "id": "Q4-B03",
+      "severity": "MEDIUM",
+      "status": "OBSERVED",
+      "criterion": "Required structured query response fields are graded",
+      "evidence_refs": [
+        "jenkins-home-insights-plugin/instruction.md:14",
+        "jenkins-home-insights-plugin/environment/plugin/docs/api-v1.md:16",
+        "jenkins-home-insights-plugin/tests/test_outputs.py"
+      ],
+      "why_it_matters": "api-v1 states a successful query contains metadata alongside generationId, view, items, total, nextCursor, and facets. Existing probes assert subsets of these fields but never require metadata, so a response omitting metadata still passes.",
+      "minimal_remediation": "Assert metadata is present and includes documented keys (for example principal/sort/direction/limit) on at least one CLI and one HTTP successful query.",
+      "regression_risk": "Low."
+    },
+    {
+      "id": "Q4-B04",
+      "severity": "MEDIUM",
+      "status": "OBSERVED",
+      "criterion": "Documented path override mechanisms are behaviorally tested",
+      "evidence_refs": [
+        "jenkins-home-insights-plugin/instruction.md:16",
+        "jenkins-home-insights-plugin/environment/plugin/docs/operations.md:5",
+        "jenkins-home-insights-plugin/tests/test_outputs.py"
+      ],
+      "why_it_matters": "Instruction and operations.md require accepting JENKINS_HOME and INSIGHTS_STATE in addition to --home/--state. All probes supply explicit flags only, so env-based path resolution is an untested alternate contract.",
+      "minimal_remediation": "Add one reconcile/query probe that omits --home/--state, sets JENKINS_HOME and INSIGHTS_STATE, and verifies the same published generation is read.",
+      "regression_risk": "Low."
+    },
+    {
+      "id": "Q4-B05",
+      "severity": "MEDIUM",
+      "status": "OBSERVED",
+      "criterion": "HTTP standalone authorization context is equivalently graded",
+      "evidence_refs": [
+        "jenkins-home-insights-plugin/instruction.md:15",
+        "jenkins-home-insights-plugin/environment/plugin/docs/api-v1.md:14-16",
+        "jenkins-home-insights-plugin/tests/test_outputs.py:test_f2p_acl_projection_precedes_rows_totals_and_facets",
+        "jenkins-home-insights-plugin/tests/test_outputs.py:test_f2p_cli_and_http_use_equivalent_shared_query_semantics"
+      ],
+      "why_it_matters": "Instruction requires equivalent authenticated query and health semantics on HTTP including the documented standalone authorization context. ACL rejection is exercised only on CLI (--system-read false). HTTP parity is checked only for an authorized successful query, so HTTP could omit authorization checks and still pass.",
+      "minimal_remediation": "Issue an unauthorized HTTP query (for example system-read=false) and assert forbidden status with no generationId/total/metadata leakage, mirroring the CLI denial probe.",
+      "regression_risk": "Low."
+    },
+    {
+      "id": "Q4-A01",
+      "severity": "LOW",
+      "status": "OBSERVED",
+      "criterion": "Default operator parameter coverage",
+      "evidence_refs": [
+        "jenkins-home-insights-plugin/instruction.md:18",
+        "jenkins-home-insights-plugin/environment/plugin/docs/generated-home.md:3",
+        "jenkins-home-insights-plugin/tests/test_outputs.py:test_f2p_deterministic_10000_home_generation"
+      ],
+      "why_it_matters": "Instruction and generated-home.md document a default generate population of 14,536 within the 10,000-20,000 range. Probes always pass explicit --records (10,000 in the volume fixture), so an incorrect CLI default would not be caught.",
+      "minimal_remediation": "Optional: one generate invocation without --records asserting inventory total defaults to 14,536.",
+      "regression_risk": "Minimal."
+    },
+    {
+      "id": "Q4-A02",
+      "severity": "LOW",
+      "status": "OBSERVED",
+      "criterion": "Queue observation-time contract assertion depth",
+      "evidence_refs": [
+        "jenkins-home-insights-plugin/instruction.md:10",
+        "jenkins-home-insights-plugin/environment/plugin/docs/queue-diagnosis.md:9",
+        "jenkins-home-insights-plugin/tests/test_outputs.py:test_f2p_queue_offline_no_executor_and_cancelled_semantics"
+      ],
+      "why_it_matters": "Queue diagnosis docs require ageMillis relative to reconciliation observation time for deterministic output. Blockage and demand are graded, but ageMillis is never asserted.",
+      "minimal_remediation": "Optional: assert ageMillis on a queue item with a fixed enqueuedMillis and stable observation time.",
+      "regression_risk": "Minimal."
+    }
+  ],
+  "missing_evidence": [],
+  "change_scope": [
+    "jenkins-home-insights-plugin/tests/test_outputs.py"
+  ],
+  "do_not_change": [
+    "jenkins-home-insights-plugin/instruction.md",
+    "jenkins-home-insights-plugin/environment/plugin/docs/",
+    "jenkins-home-insights-plugin/environment/"
+  ],
+  "next_gate": "VERIFIER_AUTHOR",
+  "role_output": {
+    "REQUIREMENT_TEST_MATRIX": [
+      {"id": "R01", "source": "instruction.md:1", "coverage": "complete", "tests": ["compiled_core fixture", "test_p2p_task_package_preserves_solver_visible_shape"]},
+      {"id": "R02", "source": "instruction.md:2", "coverage": "complete", "tests": ["delegated docs referenced across probes; behavioral contracts exercised via analysis, storage, ACL, and API probes"]},
+      {"id": "R03", "source": "instruction.md:3", "coverage": "complete", "tests": ["test_f2p_build_core_and_full_scan_publish_all_families", "test_f2p_shutdown_fences_publication_and_restart_is_ready", "test_f2p_compaction_preserves_current_fallback_and_leases", "test_p2p_commands_leave_jenkins_owned_home_read_only"]},
+      {"id": "R04", "source": "instruction.md:4", "coverage": "complete", "tests": ["test_f2p_build_core_and_full_scan_publish_all_families", "test_f2p_nested_identity_and_rename_are_stable", "test_f2p_malformed_rows_are_isolated_per_record"]},
+      {"id": "R05", "source": "instruction.md:5", "coverage": "complete", "tests": ["test_f2p_repeated_full_scans_have_stable_content_digest", "test_f2p_full_and_incremental_paths_converge", "test_f2p_event_exact_retry_is_idempotent_and_conflict_rejected", "test_f2p_delete_fences_stale_retried_upsert"]},
+      {"id": "R06", "source": "instruction.md:6", "coverage": "complete", "tests": ["test_f2p_malformed_rows_are_isolated_per_record", "test_f2p_fingerprint_capability_distinguishes_unsupported_from_empty", "test_f2p_lineage_missing_endpoints_deduplicates_and_reports_cycles"]},
+      {"id": "R07", "source": "instruction.md:7", "coverage": "complete", "tests": ["test_f2p_publication_verifies_files_before_current", "test_f2p_build_core_and_full_scan_publish_all_families"]},
+      {"id": "R08", "source": "instruction.md:8; storage.md", "coverage": "partial", "gap": "Torn final journal prefix preservation is untested; checkpoint replay and corrupt-generation fallback are covered.", "tests": ["test_f2p_checkpoint_restart_replays_unpublished_tail_once", "test_f2p_corrupt_newest_generation_falls_back_to_verified_state", "test_f2p_legacy_generation_migrates_without_mutating_source", "test_f2p_shutdown_fences_publication_and_restart_is_ready"]},
+      {"id": "R09", "source": "instruction.md:9", "coverage": "complete", "tests": ["test_f2p_compaction_preserves_current_fallback_and_leases", "test_f2p_referenced_deleted_endpoints_remain_as_tombstones", "test_f2p_legacy_generation_migrates_without_mutating_source"]},
+      {"id": "R10", "source": "instruction.md:10; queue-diagnosis.md", "coverage": "complete", "tests": ["test_f2p_queue_label_conjunction_and_exclusive_mode", "test_f2p_queue_offline_no_executor_and_cancelled_semantics", "test_f2p_queue_pressure_handles_empty_and_zero_capacity_demand"]},
+      {"id": "R11", "source": "instruction.md:11; lineage.md", "coverage": "complete", "tests": ["test_f2p_build_running_missing_and_malformed_semantics", "test_f2p_lineage_missing_endpoints_deduplicates_and_reports_cycles", "test_f2p_nested_identity_and_rename_are_stable", "test_f2p_referenced_deleted_endpoints_remain_as_tombstones"]},
+      {"id": "R12", "source": "instruction.md:12", "coverage": "complete", "tests": ["test_f2p_offline_plugin_inventory_classifies_all_states", "test_p2p_commands_leave_jenkins_owned_home_read_only"]},
+      {"id": "R13", "source": "instruction.md:13; authorization.md", "coverage": "complete", "tests": ["test_f2p_acl_projection_precedes_rows_totals_and_facets", "test_f2p_acl_projection_precedes_lineage_and_summary_aggregation", "test_f2p_acl_projection_precedes_cursor_pagination"]},
+      {"id": "R14", "source": "instruction.md:14; api-v1.md", "coverage": "partial", "gap": "contains filter and metadata response field untested; kind/sort/direction/limit/cursor/null handling covered.", "tests": ["test_f2p_stable_sorting_cursors_and_filter_errors", "test_f2p_cli_and_http_use_equivalent_shared_query_semantics", "test_f2p_readiness_and_supported_empty_home", "test_f2p_repeated_queries_are_byte_deterministic"]},
+      {"id": "R15", "source": "instruction.md:15; api-v1.md", "coverage": "partial", "gap": "Successful HTTP query parity tested; HTTP unauthorized standalone authorization context not tested.", "tests": ["test_f2p_cli_and_http_use_equivalent_shared_query_semantics", "test_f2p_shutdown_fences_publication_and_restart_is_ready"]},
+      {"id": "R16", "source": "instruction.md:16; operations.md", "coverage": "partial", "gap": "JENKINS_HOME/INSIGHTS_STATE env path overrides untested; JSON stdout and nonzero rejection partially covered.", "tests": ["test_p2p_invalid_commands_are_rejected_without_generation_damage", "test_f2p_event_exact_retry_is_idempotent_and_conflict_rejected", "test_f2p_stable_sorting_cursors_and_filter_errors"]},
+      {"id": "R17", "source": "instruction.md:17", "coverage": "complete", "tests": ["test_f2p_shutdown_fences_publication_and_restart_is_ready", "test_f2p_readiness_and_supported_empty_home", "test_f2p_fingerprint_capability_distinguishes_unsupported_from_empty"]},
+      {"id": "R18", "source": "instruction.md:18; generated-home.md", "coverage": "complete", "tests": ["test_f2p_deterministic_10000_home_generation", "test_p2p_runtime_has_no_network_requirement", "test_p2p_commands_leave_jenkins_owned_home_read_only"]},
+      {"id": "R19", "source": "instruction.md:19", "coverage": "complete", "tests": ["compiled_core fixture", "test_f2p_jenkins_bindings_expose_required_lifecycle_and_adapters"]},
+      {"id": "R20", "source": "instruction.md:20", "coverage": "complete", "tests": ["negative scope; no probes require out-of-scope mutations"]}
+    ],
+    "PHANTOM_TEST_CONTRACTS": [],
+    "UNTESTED_REQUIREMENTS": [
+      "R08: Preserve valid journal prefix when the final journal record is torn (instruction.md:8, storage.md:23).",
+      "R14: Case-insensitive contains filter on record views (instruction.md:14, api-v1.md:9).",
+      "R14: Required metadata field on successful query responses (instruction.md:14, api-v1.md:16).",
+      "R15: HTTP standalone authorization rejection with no result metadata leakage (instruction.md:15, api-v1.md:16-17).",
+      "R16: JENKINS_HOME and INSIGHTS_STATE path resolution (instruction.md:16, operations.md:5)."
+    ],
+    "AMBIGUITIES": [],
+    "INSTRUCTION_SHAPE": "PASS",
+    "INSTRUCTION_REQUIREMENT_COMPLETENESS": "SUFFICIENT",
+    "DELEGATED_CONTRACT_CHECK": {
+      "architecture.md": {"classification": "LEGITIMATE_TECHNICAL_DOCUMENTATION", "notes": "Pipeline and ownership model; does not displace instruction goals."},
+      "state-model.md": {"classification": "LEGITIMATE_TECHNICAL_DOCUMENTATION", "notes": "Canonical record, event, checkpoint, and digest semantics referenced by instruction."},
+      "api-v1.md": {"classification": "LEGITIMATE_TECHNICAL_DOCUMENTATION", "notes": "Query/health parameter and response schema; appropriate delegation though contains/metadata currently under-tested."},
+      "authorization.md": {"classification": "LEGITIMATE_TECHNICAL_DOCUMENTATION", "notes": "Projection-before-response authorization model aligned with ACL probes."},
+      "queue-diagnosis.md": {"classification": "LEGITIMATE_TECHNICAL_DOCUMENTATION", "notes": "Observational queue blockage and pressure semantics exercised by queue probes."},
+      "lineage.md": {"classification": "LEGITIMATE_TECHNICAL_DOCUMENTATION", "notes": "Lineage edge, tombstone, cycle, and missing-endpoint semantics exercised by lineage probes."},
+      "storage.md": {"classification": "LEGITIMATE_TECHNICAL_DOCUMENTATION", "notes": "Generation layout, publication, recovery, and retention semantics; torn-journal clause currently under-tested."},
+      "operations.md": {"classification": "LEGITIMATE_TECHNICAL_DOCUMENTATION", "notes": "Operator command reference and path/env conventions; env override currently under-tested."},
+      "generated-home.md": {"classification": "LEGITIMATE_TECHNICAL_DOCUMENTATION", "notes": "Deterministic generator contract and sanitization rules exercised by volume probes."}
+    },
+    "INSTRUCTION_DOC_BOUNDARY": "CLEAN",
+    "IMPLEMENTATION_DIAGNOSIS_LEAKAGE": "NONE",
+    "CURRENT_STATE_EVIDENCE": "NOT_APPLICABLE",
+    "SPEC_DUMP_RISK": "LOW",
+    "BIDIRECTIONAL_ALIGNMENT": "FAIL",
+    "BLOCKING_FINDING_IDS": ["Q4-B01", "Q4-B02", "Q4-B03", "Q4-B04", "Q4-B05"],
+    "ADVISORY_FINDING_IDS": ["Q4-A01", "Q4-A02"],
+    "EXHAUSTIVENESS": {
+      "REQUIREMENTS_ENUMERATED": "COMPLETE",
+      "VERIFIER_BEHAVIORS_ENUMERATED": "COMPLETE",
+      "FORWARD_MATRIX_COMPLETE": "NO",
+      "REVERSE_MATRIX_COMPLETE": "YES",
+      "INSTRUCTION_COMPLETENESS_COMPLETE": "YES",
+      "DELEGATED_CONTRACTS_COMPLETE": "YES",
+      "PROMPT_EXTENSION_WALK_COMPLETE": "YES",
+      "P2P_BOUNDARIES_COMPLETE": "YES",
+      "F2P_BOUNDARIES_COMPLETE": "YES",
+      "OUTPUT_INTERFACES_COMPLETE": "NO",
+      "SECOND_PASS_OMISSION_SWEEP": "PASS",
+      "UNINSPECTED_SCOPE": ["Harbor job artifact trees jobs/2026-08-22__13-17-32 and jobs/2026-08-22__13-20-18 were not present locally; oracle/NOP counts taken from packet summary only."]
+    },
+    "REVERSE_MATRIX_SUMMARY": [
+      {"test": "test_f2p_build_core_and_full_scan_publish_all_families", "discoverable_from": ["R04", "R07", "R18"]},
+      {"test": "test_f2p_deterministic_10000_home_generation", "discoverable_from": ["R18", "generated-home.md"]},
+      {"test": "test_f2p_repeated_full_scans_have_stable_content_digest", "discoverable_from": ["R05", "state-model.md"]},
+      {"test": "test_f2p_full_and_incremental_paths_converge", "discoverable_from": ["R05", "state-model.md"]},
+      {"test": "test_f2p_nested_identity_and_rename_are_stable", "discoverable_from": ["R04", "R11", "state-model.md"]},
+      {"test": "test_f2p_malformed_rows_are_isolated_per_record", "discoverable_from": ["R06", "state-model.md"]},
+      {"test": "test_f2p_fingerprint_capability_distinguishes_unsupported_from_empty", "discoverable_from": ["R06", "R17", "generated-home.md"]},
+      {"test": "test_f2p_event_exact_retry_is_idempotent_and_conflict_rejected", "discoverable_from": ["R05", "state-model.md"]},
+      {"test": "test_f2p_delete_fences_stale_retried_upsert", "discoverable_from": ["R05", "state-model.md"]},
+      {"test": "test_f2p_checkpoint_restart_replays_unpublished_tail_once", "discoverable_from": ["R08 partial", "storage.md"]},
+      {"test": "test_f2p_queue_label_conjunction_and_exclusive_mode", "discoverable_from": ["R10", "queue-diagnosis.md"]},
+      {"test": "test_f2p_queue_offline_no_executor_and_cancelled_semantics", "discoverable_from": ["R10", "queue-diagnosis.md"]},
+      {"test": "test_f2p_queue_pressure_handles_empty_and_zero_capacity_demand", "discoverable_from": ["R10", "queue-diagnosis.md"]},
+      {"test": "test_f2p_build_running_missing_and_malformed_semantics", "discoverable_from": ["R11", "AnalysisEngine build health fields"]},
+      {"test": "test_f2p_lineage_missing_endpoints_deduplicates_and_reports_cycles", "discoverable_from": ["R06", "R11", "lineage.md"]},
+      {"test": "test_f2p_referenced_deleted_endpoints_remain_as_tombstones", "discoverable_from": ["R09", "R11", "lineage.md"]},
+      {"test": "test_f2p_offline_plugin_inventory_classifies_all_states", "discoverable_from": ["R12", "operations.md"]},
+      {"test": "test_f2p_publication_verifies_files_before_current", "discoverable_from": ["R07", "storage.md"]},
+      {"test": "test_f2p_corrupt_newest_generation_falls_back_to_verified_state", "discoverable_from": ["R08", "storage.md"]},
+      {"test": "test_f2p_legacy_generation_migrates_without_mutating_source", "discoverable_from": ["R08", "R09", "storage.md"]},
+      {"test": "test_f2p_compaction_preserves_current_fallback_and_leases", "discoverable_from": ["R09", "storage.md", "operations.md"]},
+      {"test": "test_f2p_shutdown_fences_publication_and_restart_is_ready", "discoverable_from": ["R17", "operations.md", "api-v1.md health"]},
+      {"test": "test_f2p_acl_projection_precedes_rows_totals_and_facets", "discoverable_from": ["R13", "authorization.md"]},
+      {"test": "test_f2p_acl_projection_precedes_lineage_and_summary_aggregation", "discoverable_from": ["R13", "authorization.md", "lineage.md"]},
+      {"test": "test_f2p_acl_projection_precedes_cursor_pagination", "discoverable_from": ["R13", "authorization.md", "api-v1.md"]},
+      {"test": "test_f2p_stable_sorting_cursors_and_filter_errors", "discoverable_from": ["R14 partial", "api-v1.md"]},
+      {"test": "test_f2p_cli_and_http_use_equivalent_shared_query_semantics", "discoverable_from": ["R14 partial", "R15 partial", "api-v1.md"]},
+      {"test": "test_f2p_readiness_and_supported_empty_home", "discoverable_from": ["R14", "R17", "operations.md"]},
+      {"test": "test_f2p_repeated_queries_are_byte_deterministic", "discoverable_from": ["R14", "state-model.md"]},
+      {"test": "test_f2p_jenkins_bindings_expose_required_lifecycle_and_adapters", "discoverable_from": ["R19"]},
+      {"test": "test_p2p_commands_leave_jenkins_owned_home_read_only", "discoverable_from": ["R18", "R03"]},
+      {"test": "test_p2p_invalid_commands_are_rejected_without_generation_damage", "discoverable_from": ["R16 partial", "operations.md"]},
+      {"test": "test_p2p_runtime_has_no_network_requirement", "discoverable_from": ["R18", "operations.md"]},
+      {"test": "test_p2p_task_package_preserves_solver_visible_shape", "discoverable_from": ["R01", "R19"]}
+    ]
+  }
+}
