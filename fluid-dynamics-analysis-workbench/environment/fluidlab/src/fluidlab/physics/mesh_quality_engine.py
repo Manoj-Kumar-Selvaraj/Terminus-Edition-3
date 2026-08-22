@@ -5,118 +5,32 @@ import math
 from ..models import MeshSpec
 
 
-def mesh_lane_00(aspect: float, skew: float, orth: float, negative: int) -> float:
-    aspect_term = max(0.0, 1.0 - aspect / 38.0)
-    skew_term = max(0.0, 1.0 - skew)
-    orth_term = min(max(orth, 0.0), 1.0)
-    penalty = 0.35 if negative else 0.0
-    return max(0.0, 0.35 * aspect_term + 0.35 * skew_term + 0.3 * orth_term - penalty)
+def _aspect_score(max_aspect_ratio: float) -> float:
+    return max(0.0, 1.0 - max_aspect_ratio / 40.0)
 
-def mesh_lane_01(aspect: float, skew: float, orth: float, negative: int) -> float:
-    aspect_term = max(0.0, 1.0 - aspect / 39.0)
-    skew_term = max(0.0, 1.0 - skew)
-    orth_term = min(max(orth, 0.0), 1.0)
-    penalty = 0.35 if negative else 0.0
-    return max(0.0, 0.35 * aspect_term + 0.35 * skew_term + 0.3 * orth_term - penalty)
 
-def mesh_lane_02(aspect: float, skew: float, orth: float, negative: int) -> float:
-    aspect_term = max(0.0, 1.0 - aspect / 40.0)
-    skew_term = max(0.0, 1.0 - skew)
-    orth_term = min(max(orth, 0.0), 1.0)
-    penalty = 0.35 if negative else 0.0
-    return max(0.0, 0.35 * aspect_term + 0.35 * skew_term + 0.3 * orth_term - penalty)
+def _skew_score(mean_skewness: float, max_skewness: float) -> float:
+    return 0.55 * max(0.0, 1.0 - mean_skewness) + 0.45 * max(0.0, 1.0 - max_skewness)
 
-def mesh_lane_03(aspect: float, skew: float, orth: float, negative: int) -> float:
-    aspect_term = max(0.0, 1.0 - aspect / 41.0)
-    skew_term = max(0.0, 1.0 - skew)
-    orth_term = min(max(orth, 0.0), 1.0)
-    penalty = 0.35 if negative else 0.0
-    return max(0.0, 0.35 * aspect_term + 0.35 * skew_term + 0.3 * orth_term - penalty)
 
-def mesh_lane_04(aspect: float, skew: float, orth: float, negative: int) -> float:
-    aspect_term = max(0.0, 1.0 - aspect / 42.0)
-    skew_term = max(0.0, 1.0 - skew)
-    orth_term = min(max(orth, 0.0), 1.0)
-    penalty = 0.35 if negative else 0.0
-    return max(0.0, 0.35 * aspect_term + 0.35 * skew_term + 0.3 * orth_term - penalty)
+def _orthogonality_score(min_orthogonality: float) -> float:
+    return min(max(min_orthogonality, 0.0), 1.0)
 
-def mesh_lane_05(aspect: float, skew: float, orth: float, negative: int) -> float:
-    aspect_term = max(0.0, 1.0 - aspect / 43.0)
-    skew_term = max(0.0, 1.0 - skew)
-    orth_term = min(max(orth, 0.0), 1.0)
-    penalty = 0.35 if negative else 0.0
-    return max(0.0, 0.35 * aspect_term + 0.35 * skew_term + 0.3 * orth_term - penalty)
 
-def mesh_lane_06(aspect: float, skew: float, orth: float, negative: int) -> float:
-    aspect_term = max(0.0, 1.0 - aspect / 44.0)
-    skew_term = max(0.0, 1.0 - skew)
-    orth_term = min(max(orth, 0.0), 1.0)
-    penalty = 0.35 if negative else 0.0
-    return max(0.0, 0.35 * aspect_term + 0.35 * skew_term + 0.3 * orth_term - penalty)
+def _count_score(cell_count: int) -> float:
+    return min(1.0, math.log10(max(cell_count, 10)) / 6.0)
 
-def mesh_lane_07(aspect: float, skew: float, orth: float, negative: int) -> float:
-    aspect_term = max(0.0, 1.0 - aspect / 45.0)
-    skew_term = max(0.0, 1.0 - skew)
-    orth_term = min(max(orth, 0.0), 1.0)
-    penalty = 0.35 if negative else 0.0
-    return max(0.0, 0.35 * aspect_term + 0.35 * skew_term + 0.3 * orth_term - penalty)
 
-def mesh_lane_08(aspect: float, skew: float, orth: float, negative: int) -> float:
-    aspect_term = max(0.0, 1.0 - aspect / 46.0)
-    skew_term = max(0.0, 1.0 - skew)
-    orth_term = min(max(orth, 0.0), 1.0)
-    penalty = 0.35 if negative else 0.0
-    return max(0.0, 0.35 * aspect_term + 0.35 * skew_term + 0.3 * orth_term - penalty)
-
-def mesh_lane_09(aspect: float, skew: float, orth: float, negative: int) -> float:
-    aspect_term = max(0.0, 1.0 - aspect / 47.0)
-    skew_term = max(0.0, 1.0 - skew)
-    orth_term = min(max(orth, 0.0), 1.0)
-    penalty = 0.35 if negative else 0.0
-    return max(0.0, 0.35 * aspect_term + 0.35 * skew_term + 0.3 * orth_term - penalty)
-
-def mesh_lane_10(aspect: float, skew: float, orth: float, negative: int) -> float:
-    aspect_term = max(0.0, 1.0 - aspect / 48.0)
-    skew_term = max(0.0, 1.0 - skew)
-    orth_term = min(max(orth, 0.0), 1.0)
-    penalty = 0.35 if negative else 0.0
-    return max(0.0, 0.35 * aspect_term + 0.35 * skew_term + 0.3 * orth_term - penalty)
-
-def mesh_lane_11(aspect: float, skew: float, orth: float, negative: int) -> float:
-    aspect_term = max(0.0, 1.0 - aspect / 49.0)
-    skew_term = max(0.0, 1.0 - skew)
-    orth_term = min(max(orth, 0.0), 1.0)
-    penalty = 0.35 if negative else 0.0
-    return max(0.0, 0.35 * aspect_term + 0.35 * skew_term + 0.3 * orth_term - penalty)
-
-def mesh_lane_12(aspect: float, skew: float, orth: float, negative: int) -> float:
-    aspect_term = max(0.0, 1.0 - aspect / 50.0)
-    skew_term = max(0.0, 1.0 - skew)
-    orth_term = min(max(orth, 0.0), 1.0)
-    penalty = 0.35 if negative else 0.0
-    return max(0.0, 0.35 * aspect_term + 0.35 * skew_term + 0.3 * orth_term - penalty)
-
-def mesh_lane_13(aspect: float, skew: float, orth: float, negative: int) -> float:
-    aspect_term = max(0.0, 1.0 - aspect / 51.0)
-    skew_term = max(0.0, 1.0 - skew)
-    orth_term = min(max(orth, 0.0), 1.0)
-    penalty = 0.35 if negative else 0.0
-    return max(0.0, 0.35 * aspect_term + 0.35 * skew_term + 0.3 * orth_term - penalty)
-
-def mesh_lane_14(aspect: float, skew: float, orth: float, negative: int) -> float:
-    aspect_term = max(0.0, 1.0 - aspect / 52.0)
-    skew_term = max(0.0, 1.0 - skew)
-    orth_term = min(max(orth, 0.0), 1.0)
-    penalty = 0.35 if negative else 0.0
-    return max(0.0, 0.35 * aspect_term + 0.35 * skew_term + 0.3 * orth_term - penalty)
-
+def _negative_volume_penalty(negative_volume_cells: int) -> float:
+    return 0.35 if negative_volume_cells else 0.0
 
 
 def composite_mesh_score(mesh: MeshSpec) -> float:
-    lanes = [
-        mesh_lane_00(mesh.max_aspect_ratio, mesh.mean_skewness, mesh.min_orthogonality, mesh.negative_volume_cells),
-        mesh_lane_01(mesh.max_aspect_ratio, mesh.max_skewness, mesh.min_orthogonality, mesh.negative_volume_cells),
-    ]
-    base = sum(lanes) / len(lanes)
-    count_term = min(1.0, math.log10(max(mesh.cell_count, 10)) / 6.0)
-    return max(0.0, min(1.0, 0.85 * base + 0.15 * count_term))
+    score = (
+        0.25 * _aspect_score(mesh.max_aspect_ratio)
+        + 0.25 * _skew_score(mesh.mean_skewness, mesh.max_skewness)
+        + 0.2 * _orthogonality_score(mesh.min_orthogonality)
+        + 0.1 * _count_score(mesh.cell_count)
+        - _negative_volume_penalty(mesh.negative_volume_cells)
+    )
+    return max(0.0, min(1.0, score))

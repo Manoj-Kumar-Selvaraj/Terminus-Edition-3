@@ -1,14 +1,10 @@
 from __future__ import annotations
 
 from .models import CaseSpec, OperatingPointSpec
-from .physics.friction_correlations import (
-    distributed_dynamic_loss,
-    select_friction_factor,
-)
-from .physics.nusselt_correlations import (
-    classify_flow_regime,
-    heat_transfer_coefficient,
-)
+from .physics.friction_correlations import distributed_dynamic_loss, select_friction_factor
+from .physics.heat_exchanger_models import corrected_outlet_temperature
+from .physics.network_topology import branch_resistance
+from .physics.nusselt_correlations import classify_flow_regime, heat_transfer_coefficient
 from .physics.stability_analysis import stability_margin
 
 
@@ -25,12 +21,14 @@ def regime_metrics(case: CaseSpec, point: OperatingPointSpec, state: dict[str, f
     relative_roughness = geometry.roughness_m / max(geometry.hydraulic_diameter_m, 1e-12)
     friction = select_friction_factor(case, reynolds, relative_roughness)
     pressure_drop_pa = distributed_dynamic_loss(case, state["density_kg_m3"], state["velocity_m_s"], reynolds)
+    pressure_drop_pa = branch_resistance(case, point, pressure_drop_pa)
     pressure_drop_pa *= 1.06
     mach = state["velocity_m_s"] / max(state["sound_speed_m_s"], 1e-9)
     cfl = state["velocity_m_s"] * case.solver_monitor.time_step_s / max(geometry.characteristic_cell_length_m, 1e-12)
-    _ = stability_margin(case, mach, cfl)
+    stability = stability_margin(case, mach, cfl)
     flow_regime = classify_flow_regime(reynolds)
     heat_transfer = heat_transfer_coefficient(case, reynolds, state["prandtl"])
+    _ = corrected_outlet_temperature(case, point, state["bulk_temperature_k"], heat_transfer)
     return {
         "reynolds": reynolds,
         "friction_factor": friction,
@@ -39,6 +37,7 @@ def regime_metrics(case: CaseSpec, point: OperatingPointSpec, state: dict[str, f
         "cfl": cfl,
         "heat_transfer_coefficient_w_m2k": heat_transfer,
         "flow_regime": flow_regime,
+        "stability_margin": stability,
     }
 
 

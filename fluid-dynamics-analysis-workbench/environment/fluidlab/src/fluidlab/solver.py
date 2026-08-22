@@ -1,10 +1,9 @@
 from __future__ import annotations
 
 from .convergence import convergence_summary
-from .envelope_scoring import envelope_distance
 from .mesh import mesh_summary
 from .models import CaseSpec, OperatingPointSpec
-from .physics.limit_surfaces import envelope_stress
+from .physics.envelope_engine import effective_margins
 from .physics.residual_engine import convergence_pressure
 from .property_bridge import compute_state
 from .regime import regime_metrics
@@ -24,7 +23,7 @@ def _finding(code: str, severity: str, metric: str, actual: float, limit: float)
 def analyze_case(case: CaseSpec, severity_order: list[str]) -> dict[str, object]:
     mesh = mesh_summary(case.mesh)
     convergence = convergence_summary(case)
-    _ = convergence_pressure(case)
+    convergence["convergence_pressure"] = convergence_pressure(case)
     point_results: list[dict[str, object]] = []
     for point in sorted(case.operating_points, key=lambda item: item.point_id):
         point_results.append(analyze_point(case, point, mesh["score"], convergence))
@@ -69,24 +68,8 @@ def analyze_point(
         "outlet_temperature_k": state["outlet_temperature_k"],
         "heat_transfer_coefficient_w_m2k": regime["heat_transfer_coefficient_w_m2k"],
     }
-    margins = margin_snapshot(limits, metrics, mesh_score, convergence)
-    _ = envelope_stress(
-        case,
-        float(metrics["mach"]),
-        float(metrics["cfl"]),
-        float(margins["pressure_margin_pa"]),
-        float(margins["temperature_margin_k"]),
-    )
-    _ = envelope_distance(
-        case,
-        point,
-        {
-            "mach": metrics["mach"],
-            "cfl": metrics["cfl"],
-            "pressure_drop_pa": metrics["pressure_drop_pa"],
-            "outlet_temperature_k": metrics["outlet_temperature_k"],
-        },
-    )
+    base_margins = margin_snapshot(limits, metrics, mesh_score, convergence)
+    margins = effective_margins(case, point, limits, metrics, mesh_score, base_margins, convergence)
     findings: list[dict[str, object]] = []
     if margins["mach_margin"] < 0.0:
         findings.append(_finding("MACH_LIMIT", "FAIL", "mach", metrics["mach"], limits.max_mach))

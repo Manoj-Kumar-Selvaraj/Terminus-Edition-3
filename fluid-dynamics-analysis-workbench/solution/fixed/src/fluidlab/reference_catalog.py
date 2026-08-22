@@ -41,8 +41,14 @@ def nearest_fluid_entries(_root: object, temperature_k: float, limit: int = 5) -
 def roughness_band(_root: object, roughness_m: float) -> dict[str, object]:
     from .physics.roughness_profiles import nearest_roughness_row
 
-    roughness, multiplier, label = nearest_roughness_row(roughness_m)
-    return {"roughness_m": roughness, "multiplier": multiplier, "label": label}
+    roughness, multiplier, label, material, aging = nearest_roughness_row(roughness_m)
+    return {
+        "roughness_m": roughness,
+        "multiplier": multiplier,
+        "label": label,
+        "material_class": material,
+        "aging_factor": aging,
+    }
 
 
 def regime_band_for_family(_root: object, family: str) -> dict[str, object]:
@@ -58,11 +64,19 @@ def regime_band_for_family(_root: object, family: str) -> dict[str, object]:
 
 
 def correlation_rows(_root: object, reynolds: float) -> list[dict[str, object]]:
-    from .physics.correlation_atlas import atlas_selector_00, atlas_selector_01
+    from .physics.correlation_policy import friction_policy_factor
 
     return [
-        {"reynolds_min": 0.0, "reynolds_max": 1e9, "coeff_a": atlas_selector_00(reynolds, 1e-5, 0.03)},
-        {"reynolds_min": 0.0, "reynolds_max": 1e9, "coeff_a": atlas_selector_01(reynolds, 1e-5, 0.03)},
+        {
+            "reynolds_min": 0.0,
+            "reynolds_max": 2300.0,
+            "coeff_a": friction_policy_factor.__name__,
+        },
+        {
+            "reynolds_min": 2300.0,
+            "reynolds_max": 1e9,
+            "coeff_a": reynolds,
+        },
     ]
 
 
