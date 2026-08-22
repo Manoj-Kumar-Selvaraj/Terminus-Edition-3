@@ -1,0 +1,117 @@
+{
+  "schema_version": "3.0",
+  "role": "Verifier Engineer",
+  "review_id": "tenant-catalog-logical-cdc-plane-fc1870fe-verifier-engineer-09ad5956e3",
+  "task": "tenant-catalog-logical-cdc-plane",
+  "task_commit": "fc1870fe2645ed467d09ec25760f931dbad1e7ae",
+  "control_plane_commit": "1983fd239a725477f4821888e50fad413eeb9c53",
+  "protocol_policy_version": "2.2",
+  "prompt_policy_version": "2.2",
+  "role_policy_version": "1.0",
+  "role_contract_hash": "5b3d8e284d2129c5ffdca649cb240a186e588f3381e8f74617c1e7c1bd669060",
+  "context_packet": ".terminus/reviews/tenant-catalog-logical-cdc-plane/fc1870fe/tenant-catalog-logical-cdc-plane-fc1870fe-verifier-engineer-09ad5956e3.packet.json",
+  "verdict": "PASS",
+  "confidence": "HIGH",
+  "evidence_status": "SUFFICIENT",
+  "summary": "Yes. Thirty-seven pytest cases drive catalogctl against native WAL/heap/index/replica/health artifacts with strong oracle/NOP separation (37/37 oracle; 26 fail / 11 pass NOP). Prior HIGH gaps are closed: committed WAL redo after checkpoint is graded with heap and sku_code index assertions; decode isolation fingerprints replica bytes and slot; first apply must advance confirmed_lsn; CDC (lsn,pk) pairs must match committed WAL mutations. Constraint fail-closed, epoch fence, inspect/empty-check isolation, and warehouse preservation remain semantic and deterministic.",
+  "evidence": [
+    {
+      "type": "file",
+      "ref": "tenant-catalog-logical-cdc-plane/tests/test_outputs.py",
+      "observation": "37 independent pytest functions with docstrings. F2P probes cover CLI non-mutation, recover redo/skip/epoch, decode non-apply and WAL-bound CDC, apply monotonic/epoch/FK order, indexes, constraints, inspect/empty-check isolation, and health flags. P2P covers ctl/contract/go.mod, happy-path commit, checkpoint lsn, health schema, warehouse SHA-256."
+    },
+    {
+      "type": "test",
+      "ref": "tenant-catalog-logical-cdc-plane/tests/test_outputs.py::test_f2p_recover_redoes_committed_after_checkpoint",
+      "observation": "Commits hidden insert_sku, deletes heap row, runs recover, requires committed xmax-null row and indexes sku_code t00\\0NEW00 -> s-t00-new."
+    },
+    {
+      "type": "test",
+      "ref": "tenant-catalog-logical-cdc-plane/tests/test_outputs.py::test_f2p_decode_does_not_apply",
+      "observation": "Fingerprints replica_slot.json and replica.sqlite bytes before/after decode; requires unchanged slot and replica."
+    },
+    {
+      "type": "test",
+      "ref": "tenant-catalog-logical-cdc-plane/tests/test_outputs.py::test_f2p_apply_is_monotonic",
+      "observation": "First apply after decode requires applied>=1 and confirmed_lsn advance; second apply is idempotent skip with applied==0."
+    },
+    {
+      "type": "test",
+      "ref": "tenant-catalog-logical-cdc-plane/tests/test_outputs.py::test_f2p_decode_uses_wal_lsn",
+      "observation": "Each CDC line (lsn,pk) must be in the committed WAL mutation set wal_mut, not merely sorted heap lsns above confirmed_lsn."
+    },
+    {
+      "type": "run",
+      "ref": "jobs/2026-08-22__16-36-50",
+      "observation": "Harbor oracle reward 1.0; 37 passed in ~287s."
+    },
+    {
+      "type": "run",
+      "ref": "jobs/2026-08-22__16-42-47",
+      "observation": "Harbor NOP reward 0.0; 26 failed / 11 passed. Starter fails recover/decode/apply/index/constraint F2P while P2P presence/schema preserved."
+    },
+    {
+      "type": "file",
+      "ref": "tenant-catalog-logical-cdc-plane/tests/test.sh",
+      "observation": "Creates /logs/verifier at runtime only; binary reward 0 then 1/0 after pytest; installs nothing."
+    }
+  ],
+  "findings": [
+    {
+      "id": "VE-04",
+      "severity": "LOW",
+      "status": "OBSERVED",
+      "criterion": "req-gap",
+      "evidence_refs": [
+        "tenant-catalog-logical-cdc-plane/environment/catalog/docs/catalog-contract.md",
+        "tenant-catalog-logical-cdc-plane/tests/test_outputs.py"
+      ],
+      "why_it_matters": "Contract names additional reject codes and delete/offer_code paths not individually probed. They do not let heap-CDC, fused decode+apply, or no-redo recover pass.",
+      "minimal_remediation": "Optional holdouts for PK_CONFLICT, CHECK_FAIL, offer_code uniqueness, frozen hold, CDC delete apply.",
+      "regression_risk": "Keep business rejects at exit 0 and FROZEN tenant sku maintenance allowed."
+    },
+    {
+      "id": "VE-05",
+      "severity": "LOW",
+      "status": "OBSERVED",
+      "criterion": "weak-assertion",
+      "evidence_refs": [
+        "tenant-catalog-logical-cdc-plane/tests/test_outputs.py"
+      ],
+      "why_it_matters": "recovery_ok/visibility_ok/index_ok are asserted true after recover when native heap/index checks already carry outcome; pending-sentinel false branch not graded.",
+      "minimal_remediation": "Optional inspect with sentinel asserting recovery_ok false before recover.",
+      "regression_risk": "None if left as-is."
+    },
+    {
+      "id": "VE-06",
+      "severity": "LOW",
+      "status": "OBSERVED",
+      "criterion": "weak-assertion",
+      "evidence_refs": [
+        "tenant-catalog-logical-cdc-plane/tests/test_outputs.py"
+      ],
+      "why_it_matters": "Unknown flag/command and reset-output compare WAL bytes only; starter WAL mutations still fail NOP but slot/index mutation on usage paths is not fingerprinted.",
+      "minimal_remediation": "Optional fingerprint_state on usage-error cases.",
+      "regression_risk": "Keep --reset-output limited to /app/catalog/out."
+    }
+  ],
+  "missing_evidence": [],
+  "change_scope": [
+    "Cold rerun at fc1870fe after VE repairs in 57b8142 and oracle recover index rebuild."
+  ],
+  "do_not_change": [
+    "Recover redo, decode non-apply, WAL-bound CDC, and apply monotonic F2P probes",
+    "Pending-sentinel inspect/empty-check isolation",
+    "Hidden constraint fixtures and warehouse preservation"
+  ],
+  "next_gate": "Compliance Auditor",
+  "role_output": {
+    "REQUIREMENT_TEST_MATRIX": "COMPLETE for instruction pillars R_CLI through R_RECOVER",
+    "PHANTOM_TESTS": [],
+    "WEAK_OR_VACUOUS_ASSERTIONS": ["VE-05", "VE-06"],
+    "IMPLEMENTATION_COUPLING": "LOW",
+    "FLAKINESS_RISK": "LOW",
+    "ANTI_CHEAT_RISK": "LOW",
+    "ORACLE_NOP_ASSESSMENT": "STRONG"
+  }
+}

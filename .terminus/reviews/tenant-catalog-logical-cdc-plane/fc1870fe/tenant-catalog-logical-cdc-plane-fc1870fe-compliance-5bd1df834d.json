@@ -1,0 +1,72 @@
+{
+  "schema_version": "3.0",
+  "role": "Compliance Auditor",
+  "review_id": "tenant-catalog-logical-cdc-plane-fc1870fe-compliance-5bd1df834d",
+  "task": "tenant-catalog-logical-cdc-plane",
+  "task_commit": "fc1870fe2645ed467d09ec25760f931dbad1e7ae",
+  "control_plane_commit": "1983fd239a725477f4821888e50fad413eeb9c53",
+  "protocol_policy_version": "2.2",
+  "prompt_policy_version": "2.2",
+  "role_policy_version": "1.0",
+  "role_contract_hash": "0eaa80319221323add0ea9760e91ef65c56a84687882db25b3e5796e0e36b1bd",
+  "context_packet": ".terminus/reviews/tenant-catalog-logical-cdc-plane/fc1870fe/tenant-catalog-logical-cdc-plane-fc1870fe-compliance-5bd1df834d.packet.json",
+  "verdict": "PASS",
+  "confidence": "HIGH",
+  "evidence_status": "SUFFICIENT",
+  "summary": "Commit fc1870fe matches the flat Edition 3 tenant-catalog tree. Layout, separate digest-pinned verifier, tmux/asciinema, public network, binary reward, and isolation hold. Prior HIGH metadata/pin defects are remediated: six tags, committed go.sum, and agent build uses go build -mod=readonly. No BLOCKER leakage, privilege, or packaging defect.",
+  "evidence": [
+    {
+      "type": "file",
+      "ref": "tenant-catalog-logical-cdc-plane/task.toml",
+      "observation": "Canonical fields; Software/Databases; six tags golang/sqlite/mvcc/cdc/wal/replica; artifacts=[\"/app/catalog\"]; environment_mode=separate; agent timeout 7200; verifier 1800; public network."
+    },
+    {
+      "type": "file",
+      "ref": "tenant-catalog-logical-cdc-plane/environment/catalog/go.sum",
+      "observation": "Committed lockfile pins modernc.org/sqlite v1.37.0 and transitive hashes; satisfies Edition 3 Go pin rule."
+    },
+    {
+      "type": "file",
+      "ref": "tenant-catalog-logical-cdc-plane/environment/Dockerfile",
+      "observation": "Digest-pinned golang:1.24-bookworm; one apt transaction with tmux and asciinema; go build -mod=readonly; no solution/tests copy."
+    },
+    {
+      "type": "file",
+      "ref": "tenant-catalog-logical-cdc-plane/tests/Dockerfile",
+      "observation": "Separate python:3.13-slim-bookworm verifier; pip from requirements.lock --no-deps; mkdir /app/catalog parent only."
+    },
+    {
+      "type": "file",
+      "ref": "tenant-catalog-logical-cdc-plane/tests/test.sh",
+      "observation": "Runtime-only /logs/verifier; binary reward; installs nothing."
+    },
+    {
+      "type": "run",
+      "ref": "git diff --stat fc1870fe -- tenant-catalog-logical-cdc-plane",
+      "observation": "Packet task_commit matches current task tree; fc1870fe changes solution oracle only."
+    },
+    {
+      "type": "run",
+      "ref": "jobs/2026-08-22__16-36-50",
+      "observation": "Harbor oracle 1.0 at fc1870fe."
+    }
+  ],
+  "findings": [],
+  "missing_evidence": [],
+  "change_scope": [
+    "Cold compliance rerun after COMP-1/COMP-2 repairs in 57b8142."
+  ],
+  "do_not_change": [
+    "Six-tag metadata bound",
+    "Committed go.sum and -mod=readonly agent build",
+    "Separate verifier image and artifact parent path"
+  ],
+  "next_gate": "Comprehensive Reviewer",
+  "role_output": {
+    "EDITION3_LAYOUT": "PASS",
+    "METADATA": "PASS",
+    "DOCKER_PINNING": "PASS",
+    "ISOLATION": "PASS",
+    "REWARD_CONTRACT": "PASS"
+  }
+}
