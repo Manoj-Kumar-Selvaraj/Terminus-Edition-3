@@ -1,0 +1,47 @@
+{
+  "status": "ARCHITECTURE_READY",
+  "task": "hydrograph-stage-forecast-desk",
+  "control_plane_commit": "72c0df6ee13f275bfa7d9573bb90e6d5711123d7",
+  "profile": "large_system_strict",
+  "category": "Science",
+  "subcategory": "Earth",
+  "languages": ["python", "sql"],
+  "workdir": "/app/hydro",
+  "network_mode": "public",
+  "operator_cli": "/app/hydro/bin/hydroctl",
+  "artifacts_plan": ["/app/hydro"],
+  "modules": [
+    "cli",
+    "journal",
+    "replay",
+    "sites",
+    "timeutil",
+    "observations",
+    "rating",
+    "qc",
+    "series",
+    "forecast",
+    "publish",
+    "policy",
+    "store"
+  ],
+  "data_volume": {
+    "observations_min": 12600,
+    "sites_min": 8,
+    "days_min": 14,
+    "include_dst": "2026-03-08"
+  },
+  "doc_plan": [
+    "/app/hydro/docs/hydro-contract.md",
+    "/app/hydro/docs/layout.md",
+    "/app/hydro/ops/handoff.txt",
+    "/app/hydro/logs/desk.log",
+    "/app/hydro/config/hydro.json"
+  ],
+  "unresolved_risks": [
+    "narrow rating reverse",
+    "grace applies to forecast as-of skew only (no scheduled slots) unless A3 expands",
+    "artifacts=/app/hydro",
+    "anti-textbook contract"
+  ]
+}

@@ -1,0 +1,270 @@
+{
+  "status": "DESIGN_READY",
+  "profile": "large_system_strict",
+  "task": "hydrograph-stage-forecast-desk",
+  "control_plane_commit": "72c0df6ee13f275bfa7d9573bb90e6d5711123d7",
+  "architecture_ref": ".terminus/designs/hydrograph-stage-forecast-desk-architecture.md",
+  "defects_injected": false,
+  "environment_materialized": false,
+  "root_cause_clusters": {
+    "RC_CIVIL_TIME": "Site IANA zones and DST are stored but unused. Horizon and QC as-of arithmetic use naive UTC or a fixed offset.",
+    "RC_RATING": "Segment selection ignores stage bounds and effective dates; out-of-range silently extrapolates; reverse path always allowed.",
+    "RC_QC_HOLD": "Holds are recorded but do not block forecast publish; release is a no-op; duplicate holds accepted.",
+    "RC_SERIES": "Series publish last-writer-wins on (site,parameter,at); superseded observations still appear; digest ignores order.",
+    "RC_JOURNAL": "Usage opens/creates out files before parse; event_id is not a payload fence; replay reapplies from seq 0; sqlite commits before journal append.",
+    "RC_FORECAST": "Horizon uses wall minutes without site TZ; issued_at ignores as-of; held sites still emit forecast rows.",
+    "RC_PUBLISH": "Publish mixes warehouse prior-season rows into live series/forecast; health always ok."
+  },
+  "cluster_components": {
+    "RC_CIVIL_TIME": ["hydro.timeutil", "hydro.forecast", "hydro.qc"],
+    "RC_RATING": ["hydro.rating", "hydro.observations"],
+    "RC_QC_HOLD": ["hydro.qc", "hydro.forecast"],
+    "RC_SERIES": ["hydro.series", "hydro.publish"],
+    "RC_JOURNAL": ["hydro.cli", "hydro.journal", "hydro.replay", "hydro.engine"],
+    "RC_FORECAST": ["hydro.forecast", "hydro.policy"],
+    "RC_PUBLISH": ["hydro.publish"]
+  },
+  "defects": [
+    {
+      "id": "D01",
+      "component": "hydro.timeutil",
+      "observable_failure": "Forecast horizon that is valid in site local time is rejected (or accepted) with a one-hour error versus zoneinfo on DST dates.",
+      "root_cause": "RC_CIVIL_TIME",
+      "partial_fix_trap": "Fixed America/Chicago -06:00 still fails Denver/New_York sites and still fails 2026-03-08."
+    },
+    {
+      "id": "D02",
+      "component": "hydro.forecast",
+      "observable_failure": "Changing grace_* in hydro.json does not change as-of skew acceptance.",
+      "root_cause": "RC_CIVIL_TIME",
+      "partial_fix_trap": "Hardcoding grace constants still ignores config mutations."
+    },
+    {
+      "id": "D03",
+      "component": "hydro.timeutil",
+      "observable_failure": "Same UTC instant converts to the wrong local civil day for America/New_York vs America/Chicago sites.",
+      "root_cause": "RC_CIVIL_TIME",
+      "partial_fix_trap": "Using only default_tz ignores per-site tz."
+    },
+    {
+      "id": "D04",
+      "component": "hydro.rating",
+      "observable_failure": "Stage inside a middle segment uses coeffs from another segment (wrong discharge).",
+      "root_cause": "RC_RATING",
+      "partial_fix_trap": "Picking first overlapping segment without exclusive upper bound still double-hits boundaries."
+    },
+    {
+      "id": "D05",
+      "component": "hydro.rating",
+      "observable_failure": "Stage below stage_min or above last stage_max is accepted via silent extrapolation when allow_extrapolate is false.",
+      "root_cause": "RC_RATING",
+      "partial_fix_trap": "Clamping to nearest bound still invents illegal discharge."
+    },
+    {
+      "id": "D06",
+      "component": "hydro.rating",
+      "observable_failure": "Observation at a time outside the curve effective window still uses that curve.",
+      "root_cause": "RC_RATING",
+      "partial_fix_trap": "Checking only curve_id on the site ignores effective_start/end."
+    },
+    {
+      "id": "D07",
+      "component": "hydro.rating",
+      "observable_failure": "FLOW reverse through a method that forbids reverse succeeds and writes a fake STAGE.",
+      "root_cause": "RC_RATING",
+      "partial_fix_trap": "Allowing reverse for all methods still violates the contract method table."
+    },
+    {
+      "id": "D08",
+      "component": "hydro.observations",
+      "observable_failure": "Second ingest with the same (site_id, observed_at, parameter) overwrites instead of OBS_DUPLICATE.",
+      "root_cause": "RC_SERIES",
+      "partial_fix_trap": "Unique on obs_id alone still allows duplicate keys."
+    },
+    {
+      "id": "D09",
+      "component": "hydro.series",
+      "observable_failure": "Superseded observation remains in series.jsonl after a correcting ingest.",
+      "root_cause": "RC_SERIES",
+      "partial_fix_trap": "Appending-only series without status filter."
+    },
+    {
+      "id": "D10",
+      "component": "hydro.series",
+      "observable_failure": "Two writers for the same (site,parameter,at) leave duplicate lines in series publish.",
+      "root_cause": "RC_SERIES",
+      "partial_fix_trap": "Sorting without uniqueness still fails digest stability."
+    },
+    {
+      "id": "D11",
+      "component": "hydro.qc",
+      "observable_failure": "Active QC_SPIKE hold does not block forecast-run.",
+      "root_cause": "RC_QC_HOLD",
+      "partial_fix_trap": "Blocking only MANUAL still exports spiked sites."
+    },
+    {
+      "id": "D12",
+      "component": "hydro.qc",
+      "observable_failure": "release-hold leaves active=1 so forecast remains blocked forever (or the inverse: release is ignored and forecast always proceeds).",
+      "root_cause": "RC_QC_HOLD",
+      "partial_fix_trap": "Deleting the row without setting released_at still breaks audit; no-op release fails the contract."
+    },
+    {
+      "id": "D13",
+      "component": "hydro.qc",
+      "observable_failure": "Duplicate active (site_id, hold_code) is accepted twice.",
+      "root_cause": "RC_QC_HOLD",
+      "partial_fix_trap": "Only checking hold_code globally across sites."
+    },
+    {
+      "id": "D14",
+      "component": "hydro.qc",
+      "observable_failure": "Hold on unknown site is accepted (should be SITE_MISSING).",
+      "root_cause": "RC_QC_HOLD",
+      "partial_fix_trap": "Creating phantom sites on hold."
+    },
+    {
+      "id": "D15",
+      "component": "hydro.forecast",
+      "observable_failure": "horizon_end is issued_at + minutes in UTC wall time, ignoring site local civil lead.",
+      "root_cause": "RC_FORECAST",
+      "partial_fix_trap": "Adding minutes then converting still wrong if issued_at was never localized."
+    },
+    {
+      "id": "D16",
+      "component": "hydro.forecast",
+      "observable_failure": "forecast-run with --as-of outside grace still publishes.",
+      "root_cause": "RC_FORECAST",
+      "partial_fix_trap": "Checking grace only on ingest."
+    },
+    {
+      "id": "D17",
+      "component": "hydro.forecast",
+      "observable_failure": "Held site still appears in forecast.jsonl.",
+      "root_cause": "RC_FORECAST",
+      "partial_fix_trap": "Filtering holds after writing rows."
+    },
+    {
+      "id": "D18",
+      "component": "hydro.cli",
+      "observable_failure": "Unknown verb exits 2 but creates empty rejects.jsonl / touches out dirs.",
+      "root_cause": "RC_JOURNAL",
+      "partial_fix_trap": "Creating dirs without creating rejects still fails the no-touch rule."
+    },
+    {
+      "id": "D19",
+      "component": "hydro.engine",
+      "observable_failure": "Identical event_id+payload re-applies and duplicates series occupancy.",
+      "root_cause": "RC_JOURNAL",
+      "partial_fix_trap": "Idempotent only on event_id without payload compare."
+    },
+    {
+      "id": "D20",
+      "component": "hydro.engine",
+      "observable_failure": "Same event_id with different payload mutates state instead of EVENT_CONFLICT.",
+      "root_cause": "RC_JOURNAL",
+      "partial_fix_trap": "Rejecting without leaving state unchanged."
+    },
+    {
+      "id": "D21",
+      "component": "hydro.replay",
+      "observable_failure": "Replay from seq 0 duplicates observations after catch-up.",
+      "root_cause": "RC_JOURNAL",
+      "partial_fix_trap": "Skipping by obs_id still re-applies holds/forecast events."
+    },
+    {
+      "id": "D22",
+      "component": "hydro.engine",
+      "observable_failure": "Sqlite commits before journal append so a kill leaves derived state without a journal line.",
+      "root_cause": "RC_JOURNAL",
+      "partial_fix_trap": "Journal-after-commit with no crash story still fails the durability contract."
+    },
+    {
+      "id": "D23",
+      "component": "hydro.publish",
+      "observable_failure": "series.jsonl includes warehouse prior-season site points.",
+      "root_cause": "RC_PUBLISH",
+      "partial_fix_trap": "Renaming warehouse ids still mixes values."
+    },
+    {
+      "id": "D24",
+      "component": "hydro.publish",
+      "observable_failure": "forecast.jsonl includes warehouse prior-season horizons.",
+      "root_cause": "RC_PUBLISH",
+      "partial_fix_trap": "Filtering series but not forecast."
+    },
+    {
+      "id": "D25",
+      "component": "hydro.publish",
+      "observable_failure": "health.warehouse_untouched is true even when warehouse rows were mixed.",
+      "root_cause": "RC_PUBLISH",
+      "partial_fix_trap": "Constant true."
+    },
+    {
+      "id": "D26",
+      "component": "hydro.publish",
+      "observable_failure": "health.ok is true when applied_seq != journal_seq.",
+      "root_cause": "RC_PUBLISH",
+      "partial_fix_trap": "Comparing counts only."
+    },
+    {
+      "id": "D27",
+      "component": "hydro.publish",
+      "observable_failure": "series_digest does not match sorted live series (unsorted or warehouse-tainted).",
+      "root_cause": "RC_PUBLISH",
+      "partial_fix_trap": "Hashing json dumps with unstable key order."
+    },
+    {
+      "id": "D28",
+      "component": "hydro.observations",
+      "observable_failure": "Missing required ingest flags exit non-2 or still append rejects.",
+      "root_cause": "RC_JOURNAL",
+      "partial_fix_trap": "Argparse SystemExit 2 after ensure_out_dirs."
+    },
+    {
+      "id": "D29",
+      "component": "hydro.policy",
+      "observable_failure": "Unknown site_id on ingest uses a default curve and accepts.",
+      "root_cause": "RC_RATING",
+      "partial_fix_trap": "Auto-creating sites."
+    },
+    {
+      "id": "D30",
+      "component": "hydro.series",
+      "observable_failure": "apply-rating writes FLOW with STAGE units (or wrong unit field) for a valid segment.",
+      "root_cause": "RC_SERIES",
+      "partial_fix_trap": "Hardcoding CFS everywhere."
+    }
+  ],
+  "causal_edges": [
+    {"from": "D01", "to": "D15", "why": "Bad civil conversion shifts horizon_end."},
+    {"from": "D03", "to": "D15", "why": "Per-site tz errors change local lead math."},
+    {"from": "D02", "to": "D16", "why": "Grace config unused allows skewed as-of."},
+    {"from": "D04", "to": "D30", "why": "Wrong segment yields wrong value/unit pairing."},
+    {"from": "D05", "to": "D09", "why": "Illegal extrapolated points linger in series."},
+    {"from": "D06", "to": "D04", "why": "Wrong effective curve feeds wrong segments."},
+    {"from": "D08", "to": "D10", "why": "Duplicate obs keys produce duplicate series lines."},
+    {"from": "D09", "to": "D27", "why": "Superseded points poison digest."},
+    {"from": "D11", "to": "D17", "why": "Non-blocking holds leave held sites in forecast."},
+    {"from": "D12", "to": "D11", "why": "Broken release leaves hold semantics wrong."},
+    {"from": "D19", "to": "D10", "why": "Non-idempotent replay doubles series keys."},
+    {"from": "D21", "to": "D19", "why": "Full replay reintroduces duplicates."},
+    {"from": "D22", "to": "D21", "why": "Sqlite-before-journal forces unsafe catch-up paths."},
+    {"from": "D23", "to": "D25", "why": "Warehouse mix should force warehouse_untouched false."},
+    {"from": "D23", "to": "D27", "why": "Warehouse points change digest."},
+    {"from": "D24", "to": "D25", "why": "Forecast mix is also warehouse contamination."},
+    {"from": "D18", "to": "D28", "why": "Usage path creates out before validation."},
+    {"from": "D07", "to": "D30", "why": "Illegal reverse invents STAGE/FLOW confusion."},
+    {"from": "D29", "to": "D06", "why": "Phantom site curve bypasses effective windows."},
+    {"from": "D15", "to": "D17", "why": "Horizon bugs still emit rows for held sites when holds ignored."}
+  ],
+  "do_not_inject": [
+    "cmd/seed — seed writes consistent inherited journal+sqlite+checkpoint as if the clean system had run.",
+    "warehouse/prior_season.sqlite contents — keep a real prior season; defect is publish mixing.",
+    "config/hydro.json default_tz and grace values — must be correct so unused-config is discoverable.",
+    "docs/hydro-contract.md — complete-system rules; no module patch list or defect ids.",
+    "Correct site tz map in seed — defects are unused conversion, not wrong seeded tz strings."
+  ],
+  "grace_decision": "Grace applies to forecast --as-of skew versus wall clock derived from journal head; no scheduled observation slots in v1.",
+  "organic_f2p_note": "25–30 F2P from: usage no-touch, event_id replay/conflict, catch-up, TZ/DST horizon, grace config, rating segment/range/effective/reverse, obs duplicate, series uniqueness/supersede, hold block/release/duplicate/site-missing, forecast horizon/as-of/held filter, warehouse isolation, health ok/digest/units."
+}
