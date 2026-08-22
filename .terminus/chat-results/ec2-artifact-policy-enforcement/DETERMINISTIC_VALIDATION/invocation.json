@@ -1,0 +1,159 @@
+{
+  "acceptance_predicates": {
+    "PASS": [
+      {
+        "op": "eq",
+        "path": "ORACLE_REWARD",
+        "value": 1
+      },
+      {
+        "op": "eq",
+        "path": "NOP_REWARD",
+        "value": 0
+      },
+      {
+        "op": "nonempty",
+        "path": "F2P_EMPIRICAL_MATRIX"
+      },
+      {
+        "op": "nonempty",
+        "path": "P2P_EMPIRICAL_MATRIX"
+      }
+    ]
+  },
+  "authority": {
+    "control_plane_commit": "df7ef7569e2947b9f0bf7cf89ed4dec6c2a5a1fe",
+    "policy_versions": {},
+    "task_commit": "6c7909d5c0efd3e6e64443d6de3b227c1820b01b",
+    "task_id": "ec2-artifact-policy-enforcement"
+  },
+  "evidence": {
+    "authorized_evidence_classes": [
+      "CI_RUNTIME_EVIDENCE",
+      "CONTROL_PLANE_POLICY",
+      "SOLUTION_ORACLE",
+      "SOLVER_VISIBLE_TASK",
+      "VERIFIER_PRIVATE"
+    ],
+    "evidence_required": [
+      "Oracle reward 1",
+      "NOP reward 0",
+      "every F2P starter/NOP-fail and Oracle-pass",
+      "intended P2P preservation"
+    ],
+    "excluded_evidence_classes": [
+      "CURRENT_REVIEW_PACKET",
+      "DURABLE_SESSION_STATE",
+      "FINAL_PACKAGE_EVIDENCE",
+      "MODEL_TRIAL_EVIDENCE",
+      "PRIOR_REVIEW_RESULTS",
+      "PRIVATE_CREATION_DESIGN",
+      "PUBLIC_REFERENCE"
+    ],
+    "mandatory_exact_reads": [
+      ".terminus/agents/CREATION_PIPELINE.md",
+      ".terminus/agents/QUALITY_AGENT_REGISTRY.md",
+      ".terminus/agents/QUALITY_AGENT_PROMPTS.md"
+    ],
+    "retrieval_mode": "EXACT_ONLY"
+  },
+  "ignored_input_count": 0,
+  "inputs": {
+    "optional": {},
+    "required": {
+      "CURRENT_TASK_COMMIT": {
+        "evidence": "clean exact remediated task-only snapshot for hosted deterministic validation",
+        "status": "CURRENT",
+        "task_commit": "6c7909d5c0efd3e6e64443d6de3b227c1820b01b",
+        "task_id": "ec2-artifact-policy-enforcement"
+      },
+      "ORACLE": {
+        "evidence": "current reference solution bound to exact clean remediated snapshot; empirical scoring owned by hosted run",
+        "status": "CURRENT",
+        "task_commit": "6c7909d5c0efd3e6e64443d6de3b227c1820b01b",
+        "task_id": "ec2-artifact-policy-enforcement"
+      },
+      "STARTER_NOP_STATE": {
+        "evidence": "current starter/NOP state bound to exact clean remediated snapshot; empirical scoring owned by hosted run",
+        "status": "CURRENT",
+        "task_commit": "6c7909d5c0efd3e6e64443d6de3b227c1820b01b",
+        "task_id": "ec2-artifact-policy-enforcement"
+      },
+      "VERIFIER": {
+        "F2P_COUNT": 28,
+        "P2P_COUNT": 12,
+        "entrypoint": "ec2-artifact-policy-enforcement/tests/test.sh"
+      }
+    }
+  },
+  "invocation_id": "inv_f82c2df026d1652b7749494363ca11d09d94f1e3eaf995c3be16c75b2cd2cf5e",
+  "learning": {
+    "context_hash": "sha256:bb84a513aa2b6e4374d691759c4a6edf94169f479f4611e9091643b9f279ccfc",
+    "lessons": [],
+    "mode": "GENERALIZED_LESSONS_PLUS_OWNED_REMEDIATIONS",
+    "raw_feedback_exposed": false,
+    "raw_historical_findings_exposed": false,
+    "registry_heads": {
+      "feedback": "GENESIS",
+      "findings": "GENESIS",
+      "lessons": "GENESIS",
+      "patterns": "GENESIS",
+      "remediations": "GENESIS"
+    },
+    "remediations": []
+  },
+  "missing_required_inputs": [],
+  "output_contract": {
+    "allowed_status_values": [
+      "PASS",
+      "FAIL",
+      "BLOCKED"
+    ],
+    "deterministic_validators": [
+      "task verifier execution",
+      "Oracle/NOP matrix"
+    ],
+    "optional_fields": [
+      "FAILURE_CLASS",
+      "FIRST_MEANINGFUL_ERROR"
+    ],
+    "persisted_artifacts": [
+      "run/job/artifact evidence references"
+    ],
+    "required_fields": [
+      "ORACLE_REWARD",
+      "NOP_REWARD",
+      "F2P_EMPIRICAL_MATRIX",
+      "P2P_EMPIRICAL_MATRIX"
+    ],
+    "semantic_reviewers": []
+  },
+  "readiness": "READY",
+  "retrieval": {
+    "query": null,
+    "retrieved_chars": 0,
+    "retrieved_context": [],
+    "status": "NOT_REQUESTED"
+  },
+  "routing": {
+    "failure_routes": {
+      "RUNTIME_OR_ORACLE_FAILURE": "Q5 Oracle & Runtime Repair Specialist",
+      "VERIFIER_CONTRACT_FAILURE": "Q2/Q3/Verifier Author as evidence indicates"
+    },
+    "stale_on": [
+      "task commit change",
+      "solution change",
+      "verifier change",
+      "runtime dependency change"
+    ],
+    "success_transition": "FROZEN_CANDIDATE"
+  },
+  "schema_version": "1.0",
+  "stage": {
+    "lifecycle": "creation",
+    "owner": "Creation Controller",
+    "role_class": "CONTROLLER",
+    "role_id": "CREATION_CONTROLLER",
+    "stage_id": "DETERMINISTIC_VALIDATION"
+  }
+}
