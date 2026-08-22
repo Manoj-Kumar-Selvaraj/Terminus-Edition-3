@@ -45,6 +45,7 @@
     ["test_dashboard_apply_is_bound_to_preview_revision", "F2P", "REQ_DASHBOARD"],
     ["test_ansible_preserves_host_specific_protected_routes", "F2P", "REQ_ANSIBLE"],
     ["test_route_rule_and_transaction_boundaries", "F2P", "REQ_TRANSACTION_FENCING"],
+    ["test_f2p_management_paths_survive_preview_rollback_reconcile_and_rollout", "F2P", "REQ_MANAGEMENT_SAFETY"],
     ["test_public_api_surface_remains_present", "P2P", "REQ_INTERFACE"],
     ["test_repaired_runtime_builds", "P2P", "REQ_INTERFACE"],
     ["test_solution_entrypoint_is_general_and_repeatable", "P2P", "REQ_INTERFACE"],
@@ -54,14 +55,14 @@
     ["test_ansible_projection_converges_on_second_run", "P2P", "REQ_ANSIBLE"],
     ["test_audit_sequence_is_publicly_monotonic", "P2P", "REQ_AUDIT"]
   ],
-  "counts": {"f2p": 25, "p2p": 8},
+  "counts": {"f2p": 26, "p2p": 8},
   "empirical_gate": {"starter_nop": "PENDING_DETERMINISTIC_VALIDATION", "oracle": "PENDING_DETERMINISTIC_VALIDATION"},
   "coverage": {
     "normal": ["route normalization", "rule/table validation", "preview/apply", "rollback", "reconcile", "rollout", "API/build", "management path"],
     "edge": ["IPv6 aliases", "multipath ordering", "metric replacement", "distinct route tables", "out-of-selector canary", "wave limits", "Ansible second-run convergence"],
-    "negative": ["duplicate priority", "missing table", "unknown node", "stale preview", "idempotency key rebinding", "offline apply", "stale rollback"],
+    "negative": ["duplicate priority", "missing table", "unknown node", "stale preview", "idempotency key rebinding", "offline apply", "stale rollback", "management-path removal through preview/rollback/reconcile/rollout"],
     "recovery": ["restart with incomplete transaction", "stale observed reconciliation", "stale heartbeat", "already-current rollout retry"],
     "ownership": ["normalized owner", "unowned unexpected route preservation", "host/protected Ansible route precedence", "dashboard CAS"],
-    "safety": ["management reachability", "host network isolation", "monotonic audit history"]
+    "safety": ["management reachability", "destructive management-path mutation rejection", "host network isolation", "monotonic audit history"]
   }
 }
