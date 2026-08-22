@@ -1,0 +1,23 @@
+name: Route Control Plane Final Q4
+
+on:
+  push:
+    branches:
+      - 'terminus-q4-final-request/route-control-plane'
+    paths:
+      - '.terminus/q4-final-request/route-control-plane.json'
+
+permissions:
+  contents: write
+
+jobs:
+  q4:
+    name: Final Q4 spec-test contract review
+    uses: ./.github/workflows/terminus-quality-executor.yml
+    with:
+      task: route-control-plane
+      role_key: spec-test-contract
+      state: FROZEN_CANDIDATE
+      change: "Final Q4 attempt after behavioral Ansible precedence, executable dashboard CAS, destructive management-path safety remediation, and fresh hosted deterministic Oracle=1/NOP=0 evidence."
+      publish_result: true
+    secrets: inherit
