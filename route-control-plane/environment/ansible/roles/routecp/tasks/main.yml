@@ -1,0 +1,95 @@
+---
+- name: Create routecp group
+  ansible.builtin.group:
+    name: "{{ routecp_group }}"
+    system: true
+
+- name: Create routecp user
+  ansible.builtin.user:
+    name: "{{ routecp_user }}"
+    group: "{{ routecp_group }}"
+    system: true
+    shell: /usr/sbin/nologin
+    create_home: false
+
+- name: Create routecp directories
+  ansible.builtin.file:
+    path: "{{ item.path }}"
+    state: directory
+    owner: "{{ routecp_user }}"
+    group: "{{ routecp_group }}"
+    mode: "{{ item.mode }}"
+  loop:
+    - { path: "{{ routecp_install_dir }}", mode: "0755" }
+    - { path: "{{ routecp_state_dir }}", mode: "0700" }
+    - { path: "{{ routecp_config_dir }}", mode: "0750" }
+
+- name: Install routecp binary
+  ansible.builtin.copy:
+    src: "{{ routecp_binary_source }}"
+    dest: "{{ routecp_install_dir }}/routecp"
+    owner: root
+    group: "{{ routecp_group }}"
+    mode: "0750"
+  notify: Restart routecp
+
+- name: Render routecp environment
+  ansible.builtin.copy:
+    dest: "{{ routecp_config_dir }}/routecp.env"
+    owner: root
+    group: "{{ routecp_group }}"
+    mode: "0640"
+    content: |
+      ROUTECP_LISTEN={{ routecp_listen }}
+      ROUTECP_STATE_DIR={{ routecp_state_dir }}
+      ROUTECP_MAX_WAVE={{ routecp_max_wave }}
+      ROUTECP_PROTECTED_CIDRS={{ routecp_protected_cidrs | join(',') }}
+  notify: Restart routecp
+
+- name: Project host routing policy
+  ansible.builtin.copy:
+    dest: "{{ routecp_config_dir }}/desired.json"
+    owner: "{{ routecp_user }}"
+    group: "{{ routecp_group }}"
+    mode: "0640"
+    content: "{{ {'labels': routecp_labels, 'routes': routecp_routes, 'rules': routecp_rules, 'environment': routecp_environment} | to_nice_json }}"
+  notify: Restart routecp
+
+- name: Install routecp systemd unit
+  ansible.builtin.copy:
+    dest: "/etc/systemd/system/{{ routecp_service_name }}.service"
+    owner: root
+    group: root
+    mode: "0644"
+    content: |
+      [Unit]
+      Description=Route Control Plane
+      After=network-online.target
+      Wants=network-online.target
+
+      [Service]
+      User={{ routecp_user }}
+      Group={{ routecp_group }}
+      EnvironmentFile={{ routecp_config_dir }}/routecp.env
+      ExecStart={{ routecp_install_dir }}/routecp
+      WorkingDirectory={{ routecp_state_dir }}
+      Restart=on-failure
+      RestartSec=2s
+      NoNewPrivileges=true
+      PrivateTmp=true
+      ProtectSystem=strict
+      ProtectHome=true
+      ReadWritePaths={{ routecp_state_dir }}
+
+      [Install]
+      WantedBy=multi-user.target
+  notify:
+    - Reload systemd
+    - Restart routecp
+
+- name: Enable routecp service
+  ansible.builtin.systemd_service:
+    name: "{{ routecp_service_name }}"
+    enabled: true
+    state: started
+    daemon_reload: true
