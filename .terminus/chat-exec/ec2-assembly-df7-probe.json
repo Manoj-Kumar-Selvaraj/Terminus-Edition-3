@@ -1,0 +1,36 @@
+{
+  "schema_version": "1.0",
+  "mode": "PROBE",
+  "task_id": "ec2-artifact-policy-enforcement",
+  "task_commit": "6c7909d5c0efd3e6e64443d6de3b227c1820b01b",
+  "control_plane_commit": "df7ef7569e2947b9f0bf7cf89ed4dec6c2a5a1fe",
+  "expected_repository_head": "cf3492435730208026a8d6c8e5aa3e33676402e7",
+  "stage_id": "ASSEMBLY",
+  "inputs": {
+    "CURRENT_ORACLE": {
+      "deterministic": true,
+      "entrypoint": "ec2-artifact-policy-enforcement/solution/solve.sh",
+      "idempotent_application": "validated by applying solve.sh twice on a clean starter",
+      "latest_known_empirical_result": "40/40 verifier cases pass on the remediated task snapshot"
+    },
+    "CURRENT_TASK": {
+      "production_shape": "reachable Go admission runtime spanning acquisition normalization, policy compilation, evidence/cache, exceptions, permit/replay, audit/recovery and state transaction logic",
+      "structure": ["README.md", "instruction.md", "task.toml", "environment/", "solution/", "tests/"],
+      "substantive_reachable_loc": 3515,
+      "task_commit": "6c7909d5c0efd3e6e64443d6de3b227c1820b01b",
+      "task_root": "ec2-artifact-policy-enforcement"
+    },
+    "CURRENT_VERIFIER": {
+      "coverage": ["source/digest", "scanner/cache", "exception scope/order", "permit authentication/binding/replay", "audit/recovery/idempotency", "preservation"],
+      "f2p_count": 28,
+      "p2p_count": 12,
+      "test_map": ".terminus/designs/ec2-artifact-policy-enforcement-test-map.json",
+      "total_behavioral_cases": 40
+    },
+    "FORMAT_STATUS": {"status": "FORMAT_PASS", "task_changed": false},
+    "SPEC_ALIGNMENT_STATUS": {"Q1_STATUS": "NO_GAP", "Q2_STATUS": "COVERED", "Q3_STATUS": "CLEAR", "status": "ALIGNED"},
+    "PRIVATE_DEFECT_GRAPH": {"causal_edges": 37, "cross_cluster_pairs": 11, "defect_manifestations": 26, "interrelated_manifestations": 26, "root_cause_clusters": 6},
+    "PRIVATE_TEST_MAP": {"cross_component_cases": ["F2P-EVID-03", "F2P-EX-05", "F2P-PERMIT-02", "F2P-PERMIT-04", "F2P-SRC-05"], "f2p_count": 28, "organic": true, "p2p_count": 12}
+  },
+  "result": {}
+}
