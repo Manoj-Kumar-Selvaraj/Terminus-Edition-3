@@ -11,6 +11,7 @@ fi
 
 python3 "${HERE}/repair.py" "${ROOT}"
 python3 "${HERE}/ansible_projection_fix.py" "${ROOT}"
+python3 "${HERE}/management_safety_fix.py" "${ROOT}"
 cd "${ROOT}"
 gofmt -w ./cmd ./internal
 go test ./...

@@ -107,7 +107,7 @@ def test_f2p_offline_apply_preserves_last_desired_revision() -> None:
 
 
 def test_f2p_rollback_is_a_new_monotonic_revision() -> None:
-    go_case(r'''func TestMatrixRollbackRevision(t *testing.T){ cp:=matrixCP(t); tx:=matrixApply(t,cp,"a","198.51.100.0/24","a"); rb,err:=cp.Rollback(RollbackRequest{TransactionID:tx.ID,Actor:"x"});if err!=nil{t.Fatal(err)}; if rb.TargetRevision!=2||cp.Revision()!=2||len(cp.Routes("n1",""))!=0{t.Fatalf("target=%d current=%d routes=%d",rb.TargetRevision,cp.Revision(),len(cp.Routes("n1","")))} }''')
+    go_case(r'''func TestMatrixRollbackRevision(t *testing.T){ cp:=matrixCP(t); matrixApply(t,cp,"mgmt","198.51.100.0/24","baseline"); tx:=matrixApply(t,cp,"change","203.0.113.0/24","change"); rb,err:=cp.Rollback(RollbackRequest{TransactionID:tx.ID,Actor:"x"});if err!=nil{t.Fatal(err)}; routes:=cp.Routes("n1",""); if rb.TargetRevision!=3||cp.Revision()!=3||len(routes)!=1||routes[0].ID!="mgmt"{t.Fatalf("target=%d current=%d routes=%v",rb.TargetRevision,cp.Revision(),routes)} }''')
 
 
 def test_f2p_stale_rollback_cannot_clobber_newer_revision() -> None:

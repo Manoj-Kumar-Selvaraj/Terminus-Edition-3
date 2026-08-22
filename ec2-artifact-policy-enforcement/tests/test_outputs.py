@@ -13,7 +13,6 @@ from verifier_lib import (
     base_scans,
     case_dir,
     changed_scan,
-    empty_exceptions,
     exception_for,
     find_digest,
     iso,
