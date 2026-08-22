@@ -1,0 +1,26 @@
+Repair the inherited enterprise PII discovery plane under `/app/enterprise-pii` without replacing its Go control plane, Java worker, protocol, persistence layout, or command entrypoints.
+
+- Build all four commands with `/app/enterprise-pii/scripts/build.sh`; keep runtime operation offline and source data read-only.
+- Inventory only configured roots; canonicalize identities and reject traversal, symlink escape, unsupported types, and oversized resources.
+- Preserve source, archive-member, record, field, line, and byte provenance across text, CSV, JSON, NDJSON, XML, properties, email, and ZIP input.
+- Handle BOMs, malformed encodings, split multibyte input, malformed files, and malformed records without losing adjacent valid content; bound all emitted errors.
+- Normalize Unicode and formatted values consistently across chunks while preserving stable source offsets and resolving detector overlaps deterministically.
+- Validate email, E.164 phone, US SSN, payment card with issuer/length/Luhn, IBAN mod-97, contextual passport and tax ID, DOB, address, and person-name candidates.
+- Apply positive and negative context, confidence thresholds, detector revision, category, allowlist scope, suppression expiry, and pinned policy before publication.
+- Never retain raw detected values or sensitive surrounding text in findings, logs, errors, examples, reports, exports, audit, metrics, or checkpoints.
+- Produce stable masked evidence and HMAC fingerprints scoped to tenant, scan, policy key epoch, and category; preserve distinct governed locations during deduplication.
+- Register canonical source identities and ownership scopes, and keep policy versions immutable with content-verified digests.
+- Pin each job and shard to one policy version, detector bundle, corpus snapshot, source generation, and scan generation.
+- Enforce documented job and shard transitions, cancellation, terminal failures, explicit policy skips, and complete-generation finalization rules.
+- Fence result authority by shard, generation, policy digest, worker session, attempt, lease token, and deadline; reject stale commits and stop leasing cancelled jobs.
+- Make exact batch replay idempotent, reject conflicting batch identity reuse, and make checkpoint resume commit each record once.
+- Deduplicate repeated ingestion without collapsing separate sources, archive members, records, fields, or offsets; retain finding lineage.
+- Apply authorization before rows, examples, counts, facets, totals, dedupe groups, cursors, pagination, manifests, and JSON or CSV exports.
+- Aggregate only committed data from one generation and distinguish findings, suppression, malformed input, truncation, skipped work, terminal failure, and completeness.
+- Serialize JSON, CSV, manifests, and digests with stable schemas, escaping, field order, row order, tie-breakers, and policy provenance.
+- Publish generations atomically, verify `CURRENT`, fall back to the highest valid generation after corruption or interruption, and restore all authority fences on restart.
+- Preserve state referenced by active jobs, checkpoints, exports, fallback generations, and retention leases while bounding report and audit history.
+- Enforce deterministic byte, record, nesting, archive, match, error, memory, and time budgets and expose truncation as recoverable state.
+- Keep status, health, readiness, worker, policy, finding, report, audit, and metrics surfaces bounded; readiness requires recovered state, current workers, and required sources.
+- Keep the HTTP API and `piictl` on the same service logic and preserve canonical NDJSON exchange with the Java worker.
+- Generate exactly 12,000 deterministic synthetic records across configured departments and regions, including valid, invalid, repeated, malformed, and clean controls, with no real PII.
