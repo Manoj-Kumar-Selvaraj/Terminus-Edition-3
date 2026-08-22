@@ -7,7 +7,7 @@ This is the durable operational checkpoint for one task. Keep it evidence-orient
 ## Identity
 
 - Task: `jenkins-home-insights-plugin`
-- Controller state: `PRE_LLMAJ`
+- Controller state: `COMPLETE`
 - Working branch: `main`
 - Pull request: none
 - Current task commit: `44fca100fb4572b286a4f42e15f35f928674dea5`
@@ -35,33 +35,37 @@ KNOWN_POLICY_CONFLICTS: none
 | Creator complexity | PASS | 30 F2P / 4 P2P |
 | Runtime authenticity | PASS | validate_runtime_authenticity.py |
 | Ruff verifier | PASS | ruff 0.8.4 clean |
-| Oracle = 1 | PASS | Harbor 0.21 job `jobs/2026-08-22__16-47-57` mean 1.000; 34/34 pytest passed |
-| NOP = 0 | PASS | Harbor 0.21 job `jobs/2026-08-22__16-50-05` mean 0.000 |
+| Oracle = 1 | PASS | Harbor 0.21 `jobs/2026-08-22__16-47-57` mean 1.000; 34/34 |
+| NOP = 0 | PASS | Harbor 0.21 `jobs/2026-08-22__16-50-05` mean 0.000 |
 | Q7 Task Format Enforcer | PASS | `.terminus/reviews/jenkins-home-insights-plugin/q7-format-check.md` |
 | Q4 Spec-Test Contract Reviewer | PASS | `44fca100-spec-test-contract-14835af6d2` |
 | Q6 Production Logic Auditor | PASS | `44fca100-production-logic-fd9810d5e3` scope `3df0c9d58d1b` |
-| Quality Interlock | PASS | `.terminus/reviews/jenkins-home-insights-plugin/44fca100/quality-interlock.md` |
-| Pre-LLMaJ panel | PASS | `.terminus/reviews/jenkins-home-insights-plugin/44fca100/pre-llmaj-aggregate.md` |
+| Quality Interlock | PASS | `44fca100/quality-interlock.md` |
+| Pre-LLMaJ panel | PASS | `44fca100/pre-llmaj-aggregate.md` |
+| Task Architect | PASS | `44fca100-task-architect-b9b1611f6d` |
+| Verifier Engineer | PASS | `44fca100-verifier-engineer-b7c08c1445` |
+| Originality | PASS | `44fca100-originality-f337576d61` |
+| Difficulty design | PASS | UNMEASURED; `44fca100-difficulty-design-399e50e8c6` |
+| Compliance | PASS | `44fca100-compliance-6a84a3649d` |
+| Instruction | PASS | `44fca100-instruction-287630b63e` |
+| Documentation | PASS | `44fca100-documentation-ea0b55d530` |
+| Comprehensive Reviewer | APPROVE | `44fca100-comprehensive-checklist-93de56f6b7` |
 | Q8 GPT simulation | PASS | `44fca100-difficulty-sim-gpt-d209827d5a` USEFUL, SIMULATION_NOT_EXECUTED |
 | Q8 Claude simulation | PASS | `44fca100-difficulty-sim-claude-f92dab7474` USEFUL, SIMULATION_NOT_EXECUTED |
-| Harbor LLMaJ | BLOCKED | credentials / next gate |
-| Official ×10 trials | PENDING | GPT×5 + Claude×5 after LLMaJ |
-
-## Pre-LLMaJ @ 44fca100
-
-All eight specialist cold reviews PASS; Comprehensive APPROVE at 100% checklist coverage. Advisory LOW only (default generate 14,536 probe optional).
-
-## Next action
-
-1. Harbor LLMaJ when credentials permit.
-2. Official combined ×10 trials for empirical difficulty tier.
-
-## Q8 @ 44fca100
-
-Both perspectives PASS with `SIMULATION_NOT_EXECUTED`; predicted signal **USEFUL** (advanced band). See `q8-aggregate.md`.
+| Q8 aggregate | COMPLETE | `44fca100/q8-aggregate.md` |
+| Harbor LLMaJ | WAIVED | author closed task; not required |
+| Official ×10 trials | WAIVED | GPT×5 + Claude×5 ignored |
+| Trial analysis | WAIVED | not required |
+| Final package | PASS | flat Edition 3 task tree at `44fca100` |
+| Submission readiness | PASS | `44fca100/submission-ready.md` |
 
 ## Decisions that must survive chat changes
 
 - Do not redesign the task or weaken legitimate F2P requirements.
 - Starter defects remain in `environment/plugin`; oracle copies `solution/fixed/` only.
-- Q6 scope hash `3df0c9d58d1b` binds environment/ at `44fca100`.
+- Harbor LLMaJ and official ×10 trials waived by author; empirical tier UNMEASURED (ignored).
+- Task frozen at `44fca100`. **Task closed — no further pipeline work.**
+
+## Next action
+
+None. Task complete.
