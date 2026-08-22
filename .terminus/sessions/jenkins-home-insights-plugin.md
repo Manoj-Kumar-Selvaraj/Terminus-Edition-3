@@ -42,8 +42,9 @@ KNOWN_POLICY_CONFLICTS: none
 | Q6 Production Logic Auditor | PASS | `44fca100-production-logic-fd9810d5e3` scope `3df0c9d58d1b` |
 | Quality Interlock | PASS | `.terminus/reviews/jenkins-home-insights-plugin/44fca100/quality-interlock.md` |
 | Pre-LLMaJ panel | PASS | `.terminus/reviews/jenkins-home-insights-plugin/44fca100/pre-llmaj-aggregate.md` |
-| Q8 simulations | PENDING | diagnostic GPT + Claude perspective |
-| Harbor LLMaJ | BLOCKED | until Q8 optional + credentials |
+| Q8 GPT simulation | PASS | `44fca100-difficulty-sim-gpt-d209827d5a` USEFUL, SIMULATION_NOT_EXECUTED |
+| Q8 Claude simulation | PASS | `44fca100-difficulty-sim-claude-f92dab7474` USEFUL, SIMULATION_NOT_EXECUTED |
+| Harbor LLMaJ | BLOCKED | credentials / next gate |
 | Official ×10 trials | PENDING | GPT×5 + Claude×5 after LLMaJ |
 
 ## Pre-LLMaJ @ 44fca100
@@ -52,9 +53,12 @@ All eight specialist cold reviews PASS; Comprehensive APPROVE at 100% checklist 
 
 ## Next action
 
-1. Run Q8 diagnostic simulations (optional).
-2. Harbor LLMaJ when credentials permit.
-3. Official combined ×10 trials for empirical difficulty tier.
+1. Harbor LLMaJ when credentials permit.
+2. Official combined ×10 trials for empirical difficulty tier.
+
+## Q8 @ 44fca100
+
+Both perspectives PASS with `SIMULATION_NOT_EXECUTED`; predicted signal **USEFUL** (advanced band). See `q8-aggregate.md`.
 
 ## Decisions that must survive chat changes
 
