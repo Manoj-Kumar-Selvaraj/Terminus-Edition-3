@@ -1,0 +1,49 @@
+{
+  "schema_version": "1.0",
+  "mode": "RECORD",
+  "task_id": "route-control-plane",
+  "task_commit": "98940c2836fbfbdeb49c82c05f09b58c251b161f",
+  "control_plane_commit": "df7ef7569e2947b9f0bf7cf89ed4dec6c2a5a1fe",
+  "expected_repository_head": "98940c2836fbfbdeb49c82c05f09b58c251b161f",
+  "stage_id": "FORMAT_GATE",
+  "inputs": {
+    "ACTIVE_FORMAT_VALIDATORS": [
+      "current Terminus task-format/packaging CI",
+      "task.toml structure and absolute artifact-path checks",
+      "digest/image and verifier-isolation checks",
+      "separate-verifier and reward-contract checks",
+      "solution/tests isolation checks",
+      "Q7 same-chat review"
+    ],
+    "CREATION_RULE_CONTEXT": {
+      "CONTROL_PLANE_COMMIT": "df7ef7569e2947b9f0bf7cf89ed4dec6c2a5a1fe",
+      "CREATION_PROFILE": "large_system_strict",
+      "KNOWN_POLICY_CONFLICTS": [],
+      "NETWORK_ENVIRONMENT_CONSTRAINTS": "repository-default public network and separate verifier constraints"
+    },
+    "CURRENT_TASK_TREE": {
+      "task_root": "route-control-plane",
+      "top_level": ["README.md", "environment/", "instruction.md", "solution/", "task.toml", "tests/"],
+      "environment": {
+        ".dockerignore": "present; packaging recipe excluded from solver runtime",
+        "Dockerfile": "Go 1.24 runtime image materializes approved starter defect topology before build; solver source remains under /app/routecp"
+      },
+      "solution": {"entrypoint": "solution/solve.sh"},
+      "tests": {"Dockerfile": "separate verifier environment", "test_sh": "deterministic verifier runner"},
+      "task_toml": {"artifacts": ["/app/routecp"], "network_mode": "public", "verifier_environment_mode": "separate"}
+    }
+  },
+  "result": {
+    "status": "FORMAT_PASS",
+    "evidence_refs": [],
+    "outputs": {
+      "CHECKS": [
+        "PASS: canonical task structure and task.toml packaging contract remain intact.",
+        "PASS: environment Dockerfile builds the inherited solver runtime while .dockerignore keeps packaging/solution/test material out of the solver runtime.",
+        "PASS: separate verifier, solution isolation, artifact path and reward/exit contracts remain valid.",
+        "PASS: PR #90 CI run 32556175478 passed preflight, Ruff, complexity/authenticity, Oracle reward 1 and NOP reward 0 on this exact task tree."
+      ],
+      "RERUN": "Fresh no-change Q7 review after F2P starter defect materialization on 98940c2836fbfbdeb49c82c05f09b58c251b161f; no format or packaging defect remains."
+    }
+  }
+}
