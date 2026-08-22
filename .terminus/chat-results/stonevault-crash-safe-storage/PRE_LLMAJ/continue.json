@@ -1,0 +1,323 @@
+{
+  "execution_mode": "ORCHESTRATOR_DIRECT",
+  "executor_handoff": null,
+  "invocation": {
+    "acceptance_predicates": {
+      "PASS": [
+        {
+          "op": "eq",
+          "path": "STAGE_A",
+          "value": "PASS"
+        },
+        {
+          "op": "eq",
+          "path": "STAGE_B",
+          "value": "PASS"
+        },
+        {
+          "op": "eq",
+          "path": "STAGE_C",
+          "value": "PASS"
+        },
+        {
+          "op": "eq",
+          "path": "STAGE_D",
+          "value": "PASS"
+        },
+        {
+          "op": "eq",
+          "path": "STAGE_E",
+          "value": "PASS"
+        },
+        {
+          "op": "eq",
+          "path": "STAGE_F",
+          "value": "PASS"
+        }
+      ]
+    },
+    "authority": {
+      "control_plane_commit": "df7ef7569e2947b9f0bf7cf89ed4dec6c2a5a1fe",
+      "policy_versions": {},
+      "task_commit": "03317f8218069b9e0b5d073bf87ecf7a0ae8e4a1",
+      "task_id": "stonevault-crash-safe-storage"
+    },
+    "evidence": {
+      "authorized_evidence_classes": [
+        "CI_RUNTIME_EVIDENCE",
+        "CONTROL_PLANE_POLICY",
+        "CURRENT_REVIEW_PACKET",
+        "DURABLE_SESSION_STATE",
+        "SOLVER_VISIBLE_TASK"
+      ],
+      "evidence_required": [
+        "deterministic facts",
+        "current specialist reviews",
+        "evidence sufficiency",
+        "cold comprehensive review",
+        "omission/conflict scan",
+        "aggregate disposition"
+      ],
+      "excluded_evidence_classes": [
+        "FINAL_PACKAGE_EVIDENCE",
+        "MODEL_TRIAL_EVIDENCE",
+        "PRIOR_REVIEW_RESULTS",
+        "PRIVATE_CREATION_DESIGN",
+        "PUBLIC_REFERENCE",
+        "SOLUTION_ORACLE",
+        "VERIFIER_PRIVATE"
+      ],
+      "mandatory_exact_reads": [
+        ".terminus/reviewers/PRE_LLMAJ.md",
+        ".terminus/agents/PROTOCOL.md",
+        ".terminus/agents/COMPREHENSIVE_REVIEWER.md",
+        ".terminus/agents/PROMPTS.md",
+        ".terminus/agents/INVOKE.md"
+      ],
+      "retrieval_mode": "EXACT_ONLY"
+    },
+    "ignored_input_count": 0,
+    "inputs": {
+      "optional": {},
+      "required": {
+        "CURRENT_SPECIALIST_PACKETS": {
+          "compliance": {
+            "evidence_scope": [
+              "task package",
+              "task.toml",
+              "Docker/solution/verifier boundaries",
+              "current Edition-3 structural rules"
+            ]
+          },
+          "difficulty_pretrial": {
+            "evidence_scope": [
+              "solver-visible instruction",
+              "environment",
+              "task metadata",
+              "runtime/complexity facts"
+            ]
+          },
+          "documentation": {
+            "evidence_scope": [
+              "README.md",
+              "instruction.md",
+              "solver-visible implementation/interface evidence"
+            ],
+            "exclude": [
+              "private verifier details",
+              "oracle"
+            ]
+          },
+          "instruction": {
+            "evidence_scope": [
+              "instruction.md",
+              "solver-visible storage-format.md",
+              "public task interfaces"
+            ],
+            "exclude": [
+              "solution",
+              "private verifier assertions",
+              "oracle"
+            ]
+          },
+          "originality_authenticity": {
+            "evidence_scope": [
+              "solver-visible task package",
+              "repository task inventory",
+              "public/reference provenance where available"
+            ],
+            "exclude": [
+              "creator uniqueness rationale",
+              "prior originality verdict"
+            ]
+          },
+          "task_architect": {
+            "evidence_scope": [
+              "instruction.md",
+              "task.toml",
+              "solver-visible storage-format.md",
+              "environment architecture/interfaces"
+            ]
+          },
+          "verifier_engineer": {
+            "evidence_scope": [
+              "instruction.md",
+              "solver-visible storage-format.md",
+              "tests/",
+              "test classification map"
+            ]
+          }
+        },
+        "CURRENT_TASK_COMMIT": "03317f8218069b9e0b5d073bf87ecf7a0ae8e4a1",
+        "QUALITY_INTERLOCK_PASS": {
+          "q4_review_id": "stonevault-crash-safe-storage-1cbdc003-spec-test-contract-af551fb58a",
+          "q4_satisfaction": "CHAT_HUMAN_RISK_ACCEPTANCE",
+          "q4_verdict": "REVISE",
+          "q6_review_id": "stonevault-crash-safe-storage-1cbdc003-production-logic-dbda451087",
+          "q6_verdict": "PASS",
+          "record_id": "rec_195cfb459a9ab416d2700aaf1faa7a9a48882f2ec4d2b53884b080976183fc76",
+          "residual_backlog": [
+            "issue #66: committed DELETE durability across restart"
+          ],
+          "status": "QUALITY_INTERLOCK_PASS"
+        }
+      }
+    },
+    "invocation_id": "inv_6436e30c1f1530769c0be6b837a47c2e2aca70170408c4dad0b3ca1bb85deae9",
+    "learning": {
+      "context_hash": "sha256:bb84a513aa2b6e4374d691759c4a6edf94169f479f4611e9091643b9f279ccfc",
+      "lessons": [],
+      "mode": "GENERALIZED_LESSONS_PLUS_OWNED_REMEDIATIONS",
+      "raw_feedback_exposed": false,
+      "raw_historical_findings_exposed": false,
+      "registry_heads": {
+        "feedback": "GENESIS",
+        "findings": "GENESIS",
+        "lessons": "GENESIS",
+        "patterns": "GENESIS",
+        "remediations": "GENESIS"
+      },
+      "remediations": []
+    },
+    "missing_required_inputs": [],
+    "output_contract": {
+      "allowed_status_values": [
+        "PASS",
+        "REVISE",
+        "INSUFFICIENT_EVIDENCE",
+        "BLOCKED"
+      ],
+      "deterministic_validators": [
+        ".terminus/validate_review_freshness.py"
+      ],
+      "optional_fields": [
+        "ADJUDICATION_REQUIRED"
+      ],
+      "persisted_artifacts": [
+        "packet-bound specialist results",
+        "Comprehensive Reviewer result",
+        ".terminus/sessions/<task>.md"
+      ],
+      "required_fields": [
+        "STAGE_A",
+        "STAGE_B",
+        "STAGE_C",
+        "STAGE_D",
+        "STAGE_E",
+        "STAGE_F"
+      ],
+      "semantic_reviewers": [
+        "Stage-B specialists",
+        "Comprehensive Reviewer",
+        "Adjudicator when routed"
+      ]
+    },
+    "readiness": "READY",
+    "retrieval": {
+      "query": null,
+      "retrieved_chars": 0,
+      "retrieved_context": [],
+      "status": "NOT_REQUESTED"
+    },
+    "routing": {
+      "failure_routes": {
+        "INSUFFICIENT_EVIDENCE": "CI Orchestrator / Submission Controller",
+        "REVIEWER_CONFLICT": "Adjudicator",
+        "SPECIALIST_REVISE": "responsible producer/fixer"
+      },
+      "stale_on": [
+        "task change affecting reviewer scope",
+        "role-contract change",
+        "review evidence becoming stale"
+      ],
+      "success_transition": "MODEL_DIAGNOSTIC_GPT"
+    },
+    "schema_version": "1.0",
+    "stage": {
+      "lifecycle": "review",
+      "owner": "CI Orchestrator / Submission Controller",
+      "role_class": "CONTROLLER",
+      "role_id": "CI_ORCHESTRATOR",
+      "stage_id": "PRE_LLMAJ"
+    }
+  },
+  "next": {
+    "action": "INVOKE_STAGE",
+    "optional_inputs": [
+      "ADJUDICATION_RESULTS"
+    ],
+    "owner": "CI Orchestrator / Submission Controller",
+    "primary_role_id": "CI_ORCHESTRATOR",
+    "required_inputs": [
+      "CURRENT_SPECIALIST_PACKETS",
+      "CURRENT_TASK_COMMIT",
+      "QUALITY_INTERLOCK_PASS"
+    ],
+    "stage_id": "PRE_LLMAJ"
+  },
+  "quality_mode_policy": {
+    "inline_creation_governor_role_ids": [
+      "A10_COMPLEXITY_GOVERNOR"
+    ],
+    "inline_quality_role_ids": [
+      "Q1_SPEC_GAP_REPAIRER",
+      "Q2_VERIFIER_COVERAGE_REPAIRER",
+      "Q3_SPEC_AMBIGUITY_REPAIRER",
+      "Q5_ORACLE_RUNTIME_REPAIR_SPECIALIST",
+      "Q7_TASK_FORMAT_ENFORCER"
+    ],
+    "inline_stage_sequences": {
+      "SPEC_ALIGNMENT": [
+        {
+          "result_field": "Q1_STATUS",
+          "role_id": "Q1_SPEC_GAP_REPAIRER",
+          "satisfied_values": [
+            "NO_GAP",
+            "PASS"
+          ]
+        },
+        {
+          "result_field": "Q2_STATUS",
+          "role_id": "Q2_VERIFIER_COVERAGE_REPAIRER",
+          "satisfied_values": [
+            "COVERED",
+            "PASS"
+          ]
+        },
+        {
+          "result_field": "Q3_STATUS",
+          "role_id": "Q3_SPEC_AMBIGUITY_REPAIRER",
+          "satisfied_values": [
+            "CLEAR",
+            "PASS"
+          ]
+        }
+      ]
+    },
+    "mandatory_quality_role_keys": [
+      "spec-test-contract",
+      "production-logic"
+    ],
+    "mandatory_same_chat_checkpoints": {
+      "Q1": "SPEC_ALIGNMENT.Q1_STATUS",
+      "Q2": "SPEC_ALIGNMENT.Q2_STATUS",
+      "Q3": "SPEC_ALIGNMENT.Q3_STATUS",
+      "Q5": "DETERMINISTIC_VALIDATION runtime/oracle checkpoint; invoke Q5 repair only on registered runtime/oracle failure",
+      "Q7": "FORMAT_GATE"
+    },
+    "optional_q8_role_keys": [
+      "difficulty-sim-gpt",
+      "difficulty-sim-claude"
+    ],
+    "policy_document": ".terminus/agents/QUALITY_EXECUTION_MODE.md",
+    "policy_version": "1.0",
+    "producer_role_classes": [
+      "FIXER",
+      "PRODUCER"
+    ],
+    "q4_q6_mode": "AUTOMATED",
+    "q8_mode": "OFF",
+    "source": ".terminus/agents/quality_execution_mode.json"
+  },
+  "state_snapshot_id": "state_c56b5f408880369ecea77d95cb5124daf991d942a7e39f3fc8cc3e7efc38294c"
+}
