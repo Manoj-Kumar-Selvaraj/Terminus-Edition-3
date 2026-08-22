@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import pathlib
 import subprocess
 import textwrap
@@ -200,18 +201,111 @@ def test_go_runtime_contracts() -> None:
         test_file.unlink(missing_ok=True)
 
 
-def test_dashboard_apply_is_bound_to_preview_revision() -> None:
-    text = (ROOT / "web" / "app.ts").read_text()
-    assert "base_revision: plan.base_revision" in text, "dashboard Apply is not fenced to the exact Preview revision"
+def test_dashboard_apply_is_bound_to_preview_revision(tmp_path: pathlib.Path) -> None:
+    source = (ROOT / "web" / "app.ts").read_text()
+    marker = "void new Dashboard().start();"
+    assert marker in source, "dashboard entrypoint marker missing"
+    instrumented = source.replace(marker, ";(globalThis as any).__RouteCPDashboard = Dashboard;")
+    ts_path = tmp_path / "app.ts"
+    out_dir = tmp_path / "out"
+    ts_path.write_text(instrumented)
+    compiled = run([
+        "tsc", "--target", "ES2020", "--module", "commonjs", "--lib", "ES2020,DOM",
+        "--outDir", str(out_dir), str(ts_path),
+    ], cwd=tmp_path)
+    assert compiled.returncode == 0, compiled.stdout
+
+    harness = tmp_path / "dashboard_contract.js"
+    harness.write_text(textwrap.dedent(f'''
+        global.FormData = class {{
+          constructor(form) {{ this.form = form; }}
+          get(name) {{ return this.form[name] ?? null; }}
+        }};
+        require({json.dumps(str(out_dir / "app.js"))});
+        const Dashboard = global.__RouteCPDashboard;
+        if (!Dashboard) throw new Error("Dashboard class was not exposed for behavioral verification");
+        (async () => {{
+          const dashboard = new Dashboard();
+          const calls = {{}};
+          dashboard.revision = 7;
+          dashboard.api = {{
+            preview: async (input) => {{ calls.preview = input; dashboard.revision = 8; return {{id: "plan-7", base_revision: 7}}; }},
+            apply: async (input) => {{ calls.apply = input; return {{}}; }},
+          }};
+          dashboard.refresh = async () => {{}};
+          dashboard.setStatus = (message) => {{ throw new Error(message); }};
+          await dashboard.submitRoute({{
+            node: "n1",
+            destination: "198.51.100.0/24",
+            gateway: "192.0.2.1",
+            interface: "eth0",
+            table: "100",
+            metric: "10",
+          }});
+          if (calls.preview.base_revision !== 7) throw new Error("Preview was not based on revision 7");
+          if (calls.apply.base_revision !== calls.preview.base_revision) {{
+            throw new Error(`Apply used ${{calls.apply.base_revision}} after Preview used ${{calls.preview.base_revision}}`);
+          }}
+        }})().catch((error) => {{ console.error(error); process.exit(1); }});
+    '''))
+    exercised = run(["node", str(harness)], cwd=tmp_path)
+    assert exercised.returncode == 0, exercised.stdout
 
 
-def test_ansible_preserves_host_specific_protected_routes() -> None:
-    defaults = (ROOT / "ansible" / "roles" / "routecp" / "defaults" / "main.yml").read_text()
-    tasks = (ROOT / "ansible" / "roles" / "routecp" / "tasks" / "main.yml").read_text()
-    assert "routecp_protected_routes:" in defaults
-    assert "routecp_host_routes:" in defaults
-    assert "routecp_protected_routes | default([])" in tasks
-    assert "routecp_host_routes | default([])" in tasks
+def test_ansible_preserves_host_specific_protected_routes(tmp_path: pathlib.Path) -> None:
+    config_dir = tmp_path / "etc-routecp"
+    state_dir = tmp_path / "state"
+    config_dir.mkdir()
+    state_dir.mkdir()
+    playbook = tmp_path / "projection.yml"
+    playbook.write_text(textwrap.dedent(f'''
+        ---
+        - hosts: localhost
+          connection: local
+          gather_facts: false
+          vars:
+            routecp_user: root
+            routecp_group: root
+            routecp_projection_owner: root
+            routecp_projection_group: root
+            routecp_projection_notify: projection-marker
+            routecp_config_dir: {config_dir}
+            routecp_state_dir: {state_dir}
+            routecp_listen: 127.0.0.1:18080
+            routecp_max_wave: 5
+            routecp_protected_cidrs: [10.0.0.0/8]
+            routecp_labels: {{role: edge}}
+            routecp_rules: []
+            routecp_environment: test
+            routecp_routes:
+              - {{id: desired, node_id: n1, destination: 10.10.0.0/16}}
+            routecp_protected_routes:
+              - {{id: protected, node_id: n1, destination: 10.20.0.0/16}}
+            routecp_host_routes:
+              - {{id: host, node_id: n1, destination: 10.30.0.0/16}}
+          handlers:
+            - name: projection-marker
+              ansible.builtin.debug:
+                msg: projected configuration changed
+          tasks:
+            - ansible.builtin.include_role:
+                name: routecp
+                tasks_from: project
+    '''))
+    command = [
+        "env",
+        f"ANSIBLE_ROLES_PATH={ROOT / 'ansible' / 'roles'}",
+        "ANSIBLE_FORCE_COLOR=0",
+        "ansible-playbook",
+        str(playbook),
+    ]
+    first = run(command, cwd=tmp_path)
+    assert first.returncode == 0, first.stdout
+    projected = json.loads((config_dir / "desired.json").read_text())
+    assert {route["id"] for route in projected["routes"]} == {"desired", "protected", "host"}
+    second = run(command, cwd=tmp_path)
+    assert second.returncode == 0, second.stdout
+    assert "changed=0" in second.stdout, second.stdout
 
 
 def test_public_api_surface_remains_present() -> None:
