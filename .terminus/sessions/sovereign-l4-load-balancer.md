@@ -5,7 +5,7 @@ Session schema version: `2.4`
 ## Identity
 
 - Task: `sovereign-l4-load-balancer`
-- Controller state: `COMPLETE`
+- Controller state: `Q4_REVISE`
 - Working branch: `main`
 - Pull request: `none`
 - Current task commit: `d7a001a92485de5ca3ec1bd2593648436dc3c237`
@@ -26,32 +26,26 @@ Session schema version: `2.4`
 | Ruff verifier | PASS | ruff job 1 clean |
 | Oracle = 1 | PASS | docker run 32/32 at d7a001a9 |
 | NOP = 0 | PASS | docker run 10 F2P fail / 22 pass at d7a001a9 |
-| Q4 Spec-Test Contract | PASS | `.terminus/reviews/sovereign-l4-load-balancer/d7a001a9/sovereign-l4-load-balancer-d7a001a9-spec-test-contract-661ae95ed8.json` |
-| Q6 Production Logic | PASS | `.terminus/reviews/sovereign-l4-load-balancer/d7a001a9/sovereign-l4-load-balancer-d7a001a9-production-logic-289990f233.json` |
-| Quality Interlock | PASS | `.terminus/reviews/sovereign-l4-load-balancer/d7a001a9/quality-interlock.md` |
-| PRE_LLMAJ aggregate | PASS | `.terminus/reviews/sovereign-l4-load-balancer/d7a001a9/pre-llmaj-aggregate.json` |
-| Task Architect | PASS | `.terminus/reviews/sovereign-l4-load-balancer/d7a001a9/sovereign-l4-load-balancer-d7a001a9-task-architect-6b28d788a1.json` |
-| Verifier Engineer | PASS | `.terminus/reviews/sovereign-l4-load-balancer/d7a001a9/sovereign-l4-load-balancer-d7a001a9-verifier-engineer-911f0c83e9.json` |
-| Originality | PASS | `.terminus/reviews/sovereign-l4-load-balancer/d7a001a9/sovereign-l4-load-balancer-d7a001a9-originality-b866695fb5.json` |
-| Difficulty design | PASS | UNMEASURED; `.terminus/reviews/sovereign-l4-load-balancer/d7a001a9/sovereign-l4-load-balancer-d7a001a9-difficulty-design-20e728c9f2.json` |
-| Compliance | PASS | `.terminus/reviews/sovereign-l4-load-balancer/d7a001a9/sovereign-l4-load-balancer-d7a001a9-compliance-6e1be0baba.json` |
-| Instruction | PASS | `.terminus/reviews/sovereign-l4-load-balancer/d7a001a9/sovereign-l4-load-balancer-d7a001a9-instruction-0bf9337c1d.json` |
-| Documentation | PASS | `.terminus/reviews/sovereign-l4-load-balancer/d7a001a9/sovereign-l4-load-balancer-d7a001a9-documentation-f4f531cdd3.json` |
-| Comprehensive Reviewer | APPROVE | `.terminus/reviews/sovereign-l4-load-balancer/d7a001a9/sovereign-l4-load-balancer-d7a001a9-comprehensive-checklist-5a9e7eeddc.json` |
-| Q8 GPT simulation | PASS | `.terminus/reviews/sovereign-l4-load-balancer/d7a001a9/sovereign-l4-load-balancer-d7a001a9-difficulty-sim-gpt-fb7410f8d0.json` USEFUL, SIMULATION_NOT_EXECUTED |
-| Q8 Claude simulation | PASS | `.terminus/reviews/sovereign-l4-load-balancer/d7a001a9/sovereign-l4-load-balancer-d7a001a9-difficulty-sim-claude-fe9bd0f7f0.json` USEFUL, SIMULATION_NOT_EXECUTED |
-| Q8 aggregate | COMPLETE | `.terminus/reviews/sovereign-l4-load-balancer/d7a001a9/q8-aggregate.md` |
-| Harbor LLMaJ | WAIVED | author closed task; not required |
-| Official ×10 trials | WAIVED | GPT×5 + Claude×5 ignored |
-| Trial analysis | WAIVED | not required |
-| Final package | PASS | flat Edition 3 task tree; package sha d7a001a92485de5ca3ec1bd2593648436dc3c237 |
-| Submission readiness | PASS | `.terminus/reviews/sovereign-l4-load-balancer/d7a001a9/submission-ready.md` |
+| Q4 Spec-Test Contract | REVISE | `.terminus/reviews/sovereign-l4-load-balancer/d7a001a9/sovereign-l4-load-balancer-d7a001a9-spec-test-contract-661ae95ed8.json` — isolated subagent `7a41c644`; blocking F001..F007 |
+| Q6 Production Logic | PASS | `.terminus/reviews/sovereign-l4-load-balancer/d7a001a9/sovereign-l4-load-balancer-d7a001a9-production-logic-289990f233.json` — isolated subagent `2ac77fa2` |
+| Quality Interlock | REVISE | `.terminus/reviews/sovereign-l4-load-balancer/d7a001a9/quality-interlock.md` |
+| PRE_LLMAJ aggregate | STALE | prior PASS predates independent Q4 REVISE |
+| Pre-LLMaJ specialists | STALE | prior panel at d7a001a9; reopen after Q4 repair |
+| Q8 simulations | STALE | prior diagnostics predates Q4 REVISE |
+| Harbor LLMaJ | WAIVED | author policy (revisit if scope changes) |
+| Official ×10 trials | WAIVED | author policy |
+| Submission readiness | REVOKED | `.terminus/reviews/sovereign-l4-load-balancer/d7a001a9/submission-ready.md` |
 
 ## Decisions that must survive chat changes
 
-- Harbor LLMaJ and official ×10 trials waived by author; empirical tier UNMEASURED (ignored).
-- Task frozen at `d7a001a9`. **Task closed — no further pipeline work.**
+- Q4 and Q6 were re-run via isolated subagents; inline-authored Q4 PASS is void.
+- Q6 independent PASS retained (3015 LOC, PADDING LOW).
+- Prior COMPLETE closure is withdrawn until Q4 blocking findings F001..F007 are repaired and cold Q4 re-review passes.
 
 ## Next action
 
-None. Task complete.
+Repair verifier/spec gaps F001–F007, then re-oracle/NOP and cold Q4 re-review at `d7a001a9` (or new freeze commit if task tree changes).
+
+## Current blocker
+
+Independent Q4 REVISE: untested least_connections/drain/passive ejection/audit plus phantom assertions on `authority.json`, `rollout_present`, and checkpoint directory padding.

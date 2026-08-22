@@ -10,148 +10,260 @@
   "role_policy_version": "1.1",
   "role_contract_hash": "d2994789dc83b2c8a6b92201782ea9f3e5528a3a9d725c863c22efb6356e570e",
   "context_packet": ".terminus/reviews/sovereign-l4-load-balancer/d7a001a9/sovereign-l4-load-balancer-d7a001a9-spec-test-contract-661ae95ed8.packet.json",
-  "verdict": "PASS",
+  "verdict": "REVISE",
   "confidence": "HIGH",
   "evidence_status": "SUFFICIENT",
-  "summary": "Every material solver-visible obligation in instruction.md and the referenced /app/sovereign-lb/docs contracts maps to meaningful native behavior exercised by the verifier, and all 32 pytest probes (28 F2P / 4 P2P) are discoverable from that contract surface. Authority, rollout, canonical digests, TCP streaming, readiness, protocol rejection, eligibility, and checkpoint recovery are bidirectionally aligned. Residual gaps are advisory only: least-connections selection, explicit drain deadlines, passive ejection, audit export, and timeout teardown are documented but not individually probed.",
+  "summary": "The instruction and delegated docs form a coherent large-system contract, and most authority, rollout, stream, readiness, eligibility, and recovery behaviors are bidirectionally aligned. However, several material instruction requirements (least-connections selection, draining, passive ejection, audit exposure) have no meaningful verifier coverage, while at least two F2P tests enforce persistence/API details not discoverable from the solver-visible contract. Q4 cannot certify fair bidirectional alignment until those gaps and phantom couplings are closed.",
   "evidence": [
     {
       "type": "file",
       "ref": "sovereign-l4-load-balancer/instruction.md",
-      "observation": "Twenty concise bullets state the complete engineering work request: canonical validation, revision/idempotency fencing, immutable snapshots, control protocol, quorum rollout, TCP proxy semantics, eligibility, PROXY v2, checkpoint recovery, bounded observability, and lab constraints."
+      "observation": "Twenty concise bullets state build scope, canonical validation, revision/idempotency fencing, control protocol, quorum rollout, TCP proxy semantics, balancing policies, eligibility composition, draining, PROXY v2, checkpoint recovery, bounded observability, lab inventory, exclusions, and idempotency across operations."
     },
     {
       "type": "file",
       "ref": "sovereign-l4-load-balancer/environment/sovereign-lb/docs/configuration.md",
-      "observation": "Binding desired-state schema for listeners, target groups, targets, health, rollout quorum, limits, and canonical ordering referenced by instruction."
+      "observation": "Defines desired-document schema, balancing policies round_robin/least_connections/source_hash, zone and fail-open semantics, health and passive policy fields, canonical ordering, and limits."
     },
     {
       "type": "file",
-      "ref": "sovereign-l4-load-balancer/environment/sovereign-lb/docs/control-protocol.md",
-      "observation": "Length-prefixed envelope semantics for hello/prepare/prepared/rejected/activate/active/status referenced by instruction."
-    },
-    {
-      "type": "file",
-      "ref": "sovereign-l4-load-balancer/environment/sovereign-lb/docs/rollout-state.md",
-      "observation": "Prepare/activate phases, quorum on connected sessions, and last-known-good preservation semantics."
+      "ref": "sovereign-l4-load-balancer/environment/sovereign-lb/docs/dataplane.md",
+      "observation": "Specifies eligibility composition including draining and passive ejection, selector algorithms, bounded buffering/backpressure, half-close, connect/idle timeout behavior, single PROXY v2 header rule, and drain lifecycle."
     },
     {
       "type": "file",
       "ref": "sovereign-l4-load-balancer/environment/sovereign-lb/docs/recovery.md",
-      "observation": "Checkpoint padding, CURRENT pointer fallback, and torn-frame rejection semantics."
+      "observation": "Documents generation directory contents (snapshot.json, digest, complete), CURRENT advisory semantics, idempotency record binding, and checkpoint verification without naming authority.json or fixed-width directory padding."
+    },
+    {
+      "type": "file",
+      "ref": "sovereign-l4-load-balancer/environment/sovereign-lb/docs/observability.md",
+      "observation": "Requires bounded readiness/status/metrics/audit views, forbids payload logging, and states generation must not appear as a metric label; does not define rollout_present or other management JSON field names."
+    },
+    {
+      "type": "file",
+      "ref": "sovereign-l4-load-balancer/environment/sovereign-lb/docs/operations.md",
+      "observation": "Documents build via /app/sovereign-lb/bin/build, operator entrypoints under /app/sovereign-lb/bin/, POST /v1/apply with Idempotency-Key, and inspection of audit/readiness/metrics surfaces."
     },
     {
       "type": "test",
       "ref": "sovereign-l4-load-balancer/tests/test_outputs.py",
-      "observation": "32 behavioral pytest cases drive real control-plane HTTP apply, dataplane TCP forwarding, rollout status, readiness, metrics, eligibility, and restart recovery without embedding a callable end-to-end solver."
+      "observation": "Thirty-two behavioral pytest cases cover authority conflicts, canonical validation, rollout quorum and preservation, TCP echo/PROXY/half-close/RR/hash, readiness gating, bounded metrics labels, zone/fail-open/incarnation eligibility, and checkpoint restart/fallback; several instruction bullets have no corresponding assertion."
     },
     {
       "type": "file",
       "ref": ".terminus/designs/sovereign-l4-load-balancer-test-map.json",
-      "observation": "Classification-only map: 28 F2P behavioral cases and 4 P2P preservation probes across nine requirement families."
-    },
-    {
-      "type": "run",
-      "ref": "docker oracle sovereign-l4-lb-verifier",
-      "observation": "Oracle run after solution/repair.py: 32/32 pass at d7a001a9."
-    },
-    {
-      "type": "run",
-      "ref": "docker NOP sovereign-l4-lb-verifier",
-      "observation": "Starter run: 10 F2P fail / 22 pass (4 P2P), demonstrating behavioral discrimination."
+      "observation": "Maps tests to REQ_* families and F2P/P2P classification only; used for boundary labeling, not as spec authority."
     }
   ],
   "findings": [
     {
-      "id": "Q4-A01",
-      "severity": "LOW",
+      "id": "F001",
+      "severity": "HIGH",
       "status": "OBSERVED",
-      "criterion": "least_connections balancing policy is documented but not individually probed.",
-      "evidence_refs": [
-        "sovereign-l4-load-balancer/environment/sovereign-lb/docs/configuration.md",
-        "sovereign-l4-load-balancer/tests/test_outputs.py"
-      ],
-      "why_it_matters": "Round-robin and source-hash selection are exercised; least-connections remains discoverable from configuration.md but lacks a dedicated behavioral probe.",
-      "minimal_remediation": "Optional holdout fixture selecting two backends with different active connection counts.",
-      "regression_risk": "Low"
-    },
-    {
-      "id": "Q4-A02",
-      "severity": "LOW",
-      "status": "OBSERVED",
-      "criterion": "Drain deadline and deregistration stop-new-assignment semantics are not directly graded.",
+      "criterion": "req-gap / material untested requirement",
       "evidence_refs": [
         "sovereign-l4-load-balancer/instruction.md",
-        "sovereign-l4-load-balancer/environment/sovereign-lb/docs/dataplane.md"
+        "sovereign-l4-load-balancer/environment/sovereign-lb/docs/configuration.md",
+        "sovereign-l4-load-balancer/environment/sovereign-lb/docs/dataplane.md",
+        "sovereign-l4-load-balancer/tests/test_outputs.py"
       ],
-      "why_it_matters": "Instruction and dataplane docs require drain ownership; verifier infers eligibility and rollout but does not time-bound a draining target transition.",
-      "minimal_remediation": "Optional drain-timeout probe with administratively draining target and owned connection.",
-      "regression_risk": "Low"
+      "why_it_matters": "Instruction bullet 12 and configuration.md require least_connections balancing, but the verifier only exercises round_robin and source_hash. A solution omitting least_connections selection can pass while violating a stated balancing contract.",
+      "minimal_remediation": "Add a behavioral scenario with concurrent or sequential connections that proves least_connections prefers the lower active-connection target, or narrow the instruction/docs if the policy is intentionally out of scope.",
+      "regression_risk": "Adding a concurrency-sensitive selector test may flake if connection accounting is racy; use deterministic lab backends and bounded waits."
     },
     {
-      "id": "Q4-A03",
-      "severity": "LOW",
+      "id": "F002",
+      "severity": "HIGH",
       "status": "OBSERVED",
-      "criterion": "Passive health ejection window is documented without a dedicated failure probe.",
+      "criterion": "req-gap / material untested requirement",
       "evidence_refs": [
-        "sovereign-l4-load-balancer/environment/sovereign-lb/docs/configuration.md"
+        "sovereign-l4-load-balancer/instruction.md",
+        "sovereign-l4-load-balancer/environment/sovereign-lb/docs/dataplane.md",
+        "sovereign-l4-load-balancer/tests/test_outputs.py"
       ],
-      "why_it_matters": "Active health and eligibility combinations are graded; passive ejection remains a delegated contract without an isolated behavioral case.",
-      "minimal_remediation": "Optional passive-failure lab scenario after oracle repair.",
-      "regression_risk": "Low"
+      "why_it_matters": "Instruction bullets 13-14 and dataplane.md require draining: stop new assignment while owned connections continue until deadline. No test deregisters or drains a target and checks both blocked new selection and continued ownership.",
+      "minimal_remediation": "Add a rollout that marks a target draining/deregistered, open a pre-existing connection, assert new connects avoid the target while the owned stream completes or times out at drain deadline.",
+      "regression_risk": "Drain timing tests can become flaky; anchor on deterministic lab behavior and documented drain_timeout_ms rather than wall-clock sleeps alone."
     },
     {
-      "id": "Q4-A04",
-      "severity": "LOW",
+      "id": "F003",
+      "severity": "HIGH",
       "status": "OBSERVED",
-      "criterion": "Audit ring export is described in observability docs but not behaviorally asserted.",
+      "criterion": "req-gap / material untested requirement",
       "evidence_refs": [
+        "sovereign-l4-load-balancer/instruction.md",
+        "sovereign-l4-load-balancer/environment/sovereign-lb/docs/dataplane.md",
+        "sovereign-l4-load-balancer/environment/sovereign-lb/config/scenarios/single-node-lab.json",
+        "sovereign-l4-load-balancer/tests/test_outputs.py"
+      ],
+      "why_it_matters": "Instruction bullet 13 and dataplane.md require passive ejection to affect eligibility, and scenario fixtures define passive thresholds, yet no test drives connect/stream failures to eject a target and verify it is skipped until recovery.",
+      "minimal_remediation": "Use the reset or repeated failure lab backend to trigger passive ejection and assert subsequent selection excludes the ejected incarnation until the configured window elapses or active recovery clears it.",
+      "regression_risk": "Passive health windows can be timing-sensitive; prefer lab backends with deterministic failure modes and read health counts from bounded status views."
+    },
+    {
+      "id": "F004",
+      "severity": "HIGH",
+      "status": "OBSERVED",
+      "criterion": "phantom-spec / implementation coupling",
+      "evidence_refs": [
+        "sovereign-l4-load-balancer/tests/test_outputs.py",
+        "sovereign-l4-load-balancer/environment/sovereign-lb/docs/recovery.md",
+        "sovereign-l4-load-balancer/environment/sovereign-lb/internal/revision/store.go"
+      ],
+      "why_it_matters": "test_f2p_accepted_digest_persisted requires control_state/authority.json with accepted_digest, but recovery.md never names authority.json or that field, and the shipped revision store schema persists accepted_revision/records only. Equivalent implementations persisting digest solely under documented generation directories would fail grading.",
+      "minimal_remediation": "Replace the authority.json field assertion with a contract-visible check such as generation directory digest/content alignment already used elsewhere, or document accepted digest persistence in recovery/observability if it is truly required.",
+      "regression_risk": "Loosening to generation-directory-only checks preserves the material digest invariant while reducing layout coupling."
+    },
+    {
+      "id": "F005",
+      "severity": "MEDIUM",
+      "status": "OBSERVED",
+      "criterion": "req-gap / material untested requirement",
+      "evidence_refs": [
+        "sovereign-l4-load-balancer/instruction.md",
+        "sovereign-l4-load-balancer/environment/sovereign-lb/docs/observability.md",
+        "sovereign-l4-load-balancer/environment/sovereign-lb/docs/operations.md",
+        "sovereign-l4-load-balancer/tests/test_outputs.py"
+      ],
+      "why_it_matters": "Instruction bullet 17 and operations.md require bounded audit views, and the control plane exposes GET /v1/audit, but no test verifies audit emission, bounded event shape, or absence of payload/source identity fields after apply.",
+      "minimal_remediation": "After a successful apply, fetch /v1/audit and assert at least one bounded event with documented fields and no forbidden payload or address material.",
+      "regression_risk": "Low if assertions stay schema-level and do not require exact timestamps or ordering beyond bounded ring semantics."
+    },
+    {
+      "id": "F006",
+      "severity": "MEDIUM",
+      "status": "OBSERVED",
+      "criterion": "phantom-spec / undocumented graded interface",
+      "evidence_refs": [
+        "sovereign-l4-load-balancer/tests/test_outputs.py",
         "sovereign-l4-load-balancer/environment/sovereign-lb/docs/observability.md"
       ],
-      "why_it_matters": "Bounded metrics and readiness/status are graded; audit history retention is operational documentation only.",
-      "minimal_remediation": "Optional audit endpoint cardinality probe if exposed in starter.",
-      "regression_risk": "Low"
+      "why_it_matters": "test_f2p_status_reports_rollout_present requires JSON field rollout_present on GET /v1/status, but observability.md only describes rollout phase/quorum summaries and never defines that boolean field name. A compliant status payload exposing rollout object without rollout_present would fail.",
+      "minimal_remediation": "Document rollout_present (or an equivalent explicitly named presence indicator) in observability/operations, or assert on documented rollout.phase/quorum fields instead of a private boolean.",
+      "regression_risk": "Renaming the assertion to documented rollout.phase preserves behavioral intent with less API coupling."
+    },
+    {
+      "id": "F007",
+      "severity": "MEDIUM",
+      "status": "OBSERVED",
+      "criterion": "phantom-spec / undocumented persistence layout",
+      "evidence_refs": [
+        "sovereign-l4-load-balancer/tests/test_outputs.py",
+        "sovereign-l4-load-balancer/environment/sovereign-lb/docs/recovery.md"
+      ],
+      "why_it_matters": "test_f2p_checkpoint_generation_directory_padding requires a 20-digit zero-padded generation-00000000000000000001 directory under dataplane state, but recovery.md only says generation directories without fixed-width naming. Semantically equivalent checkpoint layouts would fail.",
+      "minimal_remediation": "Document the generation directory naming convention in recovery.md if it is normative, or assert recovery via status/active_generation and verified snapshot contents rather than exact padding width.",
+      "regression_risk": "Documenting the existing %020d layout matches current repository behavior and avoids silent oracle-only knowledge."
+    },
+    {
+      "id": "F008",
+      "severity": "LOW",
+      "status": "OBSERVED",
+      "criterion": "req-gap / partial coverage",
+      "evidence_refs": [
+        "sovereign-l4-load-balancer/instruction.md",
+        "sovereign-l4-load-balancer/environment/sovereign-lb/docs/dataplane.md",
+        "sovereign-l4-load-balancer/tests/test_outputs.py"
+      ],
+      "why_it_matters": "Instruction bullet 10 and dataplane.md require connect timeout and idle timeout behavior, but tests never force a slow/unreachable backend or idle stall to prove teardown. Current stream tests partially cover buffering and half-close only.",
+      "minimal_remediation": "Add deterministic timeout scenarios using lab slow/unreachable backends and short configured thresholds, asserting bounded teardown without hanging connections.",
+      "regression_risk": "Timeout tests need careful deadline budgeting to remain deterministic under verifier load."
+    },
+    {
+      "id": "F009",
+      "severity": "LOW",
+      "status": "OBSERVED",
+      "criterion": "weak-assertion / observability alignment",
+      "evidence_refs": [
+        "sovereign-l4-load-balancer/environment/sovereign-lb/docs/observability.md",
+        "sovereign-l4-load-balancer/tests/test_outputs.py"
+      ],
+      "why_it_matters": "Observability.md states generation must not be a metric label, yet test_f2p_metrics_labels_bounded allows up to two generation= lines after five applies. A non-conformant implementation could retain generation labels and still pass.",
+      "minimal_remediation": "Tighten the assertion to forbid generation= labels entirely, or document bounded retention if that is intended and test the documented ceiling.",
+      "regression_risk": "Stricter label checks may fail starter metrics code until repaired; that is appropriate if the doc rule is normative."
+    },
+    {
+      "id": "F010",
+      "severity": "LOW",
+      "status": "OBSERVED",
+      "criterion": "instruction shape / spec-dump risk",
+      "evidence_refs": [
+        "sovereign-l4-load-balancer/instruction.md",
+        ".terminus/agents/INSTRUCTION_POLICY.md"
+      ],
+      "why_it_matters": "The instruction uses all twenty allowed bullets and reads as a dense functional checklist spanning nearly every verifier family. It remains a legitimate engineering work request, but reverse-outline similarity to test topology is elevated for a cold solver.",
+      "minimal_remediation": "Optionally regroup bullets by operational responsibility without deleting requirements; keep material goals in instruction.md rather than relocating them into docs.",
+      "regression_risk": "Pure regrouping is low risk if no requirements are omitted."
     }
   ],
   "missing_evidence": [],
   "change_scope": [
-    "Initial cold Q4 at d7a001a9 after assembly, verifier expansion, and production-authenticity declaration."
+    "sovereign-l4-load-balancer/tests/test_outputs.py",
+    "sovereign-l4-load-balancer/instruction.md",
+    "sovereign-l4-load-balancer/environment/sovereign-lb/docs/observability.md",
+    "sovereign-l4-load-balancer/environment/sovereign-lb/docs/recovery.md"
   ],
   "do_not_change": [
-    "Revision/idempotency/digest authority contract",
-    "Prepare/activate quorum and last-known-good semantics",
-    "Checkpoint padding and CURRENT fallback requirements",
-    "Instruction/docs boundary and concise bullet shape"
+    "Core REQ_AUTHORITY, REQ_CANONICAL, REQ_ROLLOUT, REQ_STREAM, REQ_READINESS, REQ_ELIGIBILITY, and REQ_RECOVERY scenarios that already align",
+    "Delegated technical docs that remain legitimate architecture/protocol references",
+    "F2P/P2P boundary intent in the test map",
+    "Negative scope exclusions (no HTTP routing, DNS, cloud provisioning)"
   ],
-  "next_gate": "Q6 Production Logic Auditor",
+  "next_gate": "Route req-gaps to Q2 Verifier Coverage Repairer and phantom/interface couplings to Q1/Q3 as needed; rerun cold Q4 after instruction, docs, and verifier updates at the same task_commit.",
   "role_output": {
-    "REQUIREMENT_TEST_MATRIX": "COMPLETE",
-    "BLOCKING_FINDING_IDS": [],
-    "ADVISORY_FINDING_IDS": ["Q4-A01", "Q4-A02", "Q4-A03", "Q4-A04"],
-    "F2P_OWNERSHIP": "28 cases mapped",
-    "P2P_OWNERSHIP": "4 cases mapped",
+    "REQUIREMENT_TEST_MATRIX": [
+      {"req_id": "REQ-BUILD", "requirement": "Build lb-control-plane, lbctl, lb-dataplane, and lab from supplied sources under /app/sovereign-lb", "tests": ["test_p2p_binaries_and_catalog_present"], "coverage": "PARTIAL", "notes": "Verifier checks build/bin artifacts; operations.md documents bin/ wrappers and bin/build entrypoint."},
+      {"req_id": "REQ-CANONICAL", "requirement": "Canonical validation and immutable snapshot digest before generation allocation", "tests": ["test_p2p_validate_rejects_invalid_policy", "test_f2p_generation_snapshot_matches_digest", "test_f2p_duplicate_listener_bind_rejected", "test_f2p_invalid_listener_port_rejected", "test_f2p_unknown_apply_field_rejected"], "coverage": "COMPLETE"},
+      {"req_id": "REQ-AUTHORITY", "requirement": "Revision/idempotency fencing, stale/conflict rejection, digest persistence", "tests": ["test_f2p_same_revision_different_body_conflict", "test_f2p_accepted_digest_persisted", "test_f2p_stale_revision_rejected", "test_f2p_idempotency_key_body_conflict", "test_f2p_revision_advances_accepted_authority", "test_p2p_idempotency_replay"], "coverage": "PARTIAL", "notes": "accepted_digest via authority.json is not contract-visible."},
+      {"req_id": "REQ-PROTOCOL", "requirement": "Length-prefixed canonical JSON control envelopes and bounded operator inputs", "tests": ["test_f2p_unknown_apply_field_rejected", "test_f2p_metrics_labels_bounded", "test_f2p_quorum_requires_connected_nodes"], "coverage": "PARTIAL", "notes": "Direct torn-frame/sequence-fence assertions absent; metrics label rule weakly enforced."},
+      {"req_id": "REQ-ROLLOUT", "requirement": "Prepare/activate quorum coordination preserving last active generation on failure", "tests": ["test_f2p_rollout_reaches_active_phase", "test_f2p_conflict_preserves_active_generation", "test_f2p_quorum_requires_connected_nodes", "test_f2p_status_reports_rollout_present"], "coverage": "PARTIAL", "notes": "rollout_present field undocumented."},
+      {"req_id": "REQ-STREAM", "requirement": "Real TCP proxy with buffering, half-close, timeouts, generation/incarnation binding, PROXY v2", "tests": ["test_f2p_multibuffer_tcp_echo", "test_f2p_proxy_inspect_listener_echo", "test_f2p_half_close_backend_survives", "test_f2p_round_robin_hits_multiple_backends", "test_f2p_source_hash_stable_after_target_reorder"], "coverage": "PARTIAL", "notes": "least_connections, connect/idle timeout, explicit generation pin during rollout untested."},
+      {"req_id": "REQ-READINESS", "requirement": "Readiness reflects active acknowledged generation only after activation", "tests": ["test_f2p_readiness_false_before_activate", "test_f2p_readiness_false_during_prepare", "test_f2p_readiness_true_after_activate"], "coverage": "COMPLETE"},
+      {"req_id": "REQ-ELIGIBILITY", "requirement": "Administrative state, active/passive health, zone, fail-open, draining, incarnation determine eligibility", "tests": ["test_f2p_same_zone_skips_remote_without_failopen", "test_f2p_fail_open_skips_disabled_targets", "test_f2p_target_incarnation_increments_on_reregister"], "coverage": "PARTIAL", "notes": "Passive ejection, active health transitions, and draining lifecycle untested."},
+      {"req_id": "REQ-RECOVERY", "requirement": "Atomic persistence and checkpoint recovery without advancing from torn/invalid frames", "tests": ["test_f2p_checkpoint_generation_directory_padding", "test_f2p_dataplane_restart_recovers_active_generation", "test_f2p_corrupt_current_pointer_falls_back"], "coverage": "PARTIAL", "notes": "20-digit directory padding not documented."},
+      {"req_id": "REQ-OBSERVABILITY", "requirement": "Bounded readiness, status, rollout, connection, metrics, and audit views without payload/unbounded labels", "tests": ["test_f2p_readiness_true_after_activate", "test_f2p_status_reports_rollout_present", "test_f2p_metrics_labels_bounded", "test_p2p_lbctl_status_command"], "coverage": "PARTIAL", "notes": "Audit endpoint and connection-detail bounds untested."},
+      {"req_id": "REQ-PUBLIC", "requirement": "Shipped binaries, catalog, operator surfaces remain present", "tests": ["test_p2p_binaries_and_catalog_present", "test_p2p_lbctl_status_command"], "coverage": "COMPLETE"},
+      {"req_id": "REQ-LAB", "requirement": "Self-contained 24-node three-zone inventory and loopback lab backends", "tests": ["test_p2p_binaries_and_catalog_present"], "coverage": "PARTIAL", "notes": "Fleet fixture presence checked; reset backend and full inventory runtime not exercised."},
+      {"req_id": "REQ-EXCLUSIONS", "requirement": "No HTTP routing, WAF/CDN, DNS, host route/firewall mutation, or cloud provisioning", "tests": [], "coverage": "NONE", "notes": "Negative scope appropriately not directly graded."}
+    ],
+    "PHANTOM_TEST_CONTRACTS": [
+      {"test": "test_f2p_accepted_digest_persisted", "phantom_rule": "Requires control_state/authority.json accepted_digest field", "contract_gap": "recovery.md documents generation digests and idempotency records but not authority.json or accepted_digest"},
+      {"test": "test_f2p_status_reports_rollout_present", "phantom_rule": "Requires boolean rollout_present on GET /v1/status", "contract_gap": "observability.md describes rollout summaries without that field name"},
+      {"test": "test_f2p_checkpoint_generation_directory_padding", "phantom_rule": "Requires 20-digit zero-padded generation directory name under dataplane state", "contract_gap": "recovery.md specifies generation directory contents but not fixed-width naming"}
+    ],
+    "UNTESTED_REQUIREMENTS": [
+      {"req_id": "REQ-STREAM-LEAST-CONN", "requirement": "least_connections balancing policy", "source": "instruction.md bullet 12; configuration.md"},
+      {"req_id": "REQ-ELIGIBILITY-DRAIN", "requirement": "Stop new assignment to deregistered/draining targets while owned connections drain to deadline", "source": "instruction.md bullets 13-14; dataplane.md"},
+      {"req_id": "REQ-ELIGIBILITY-PASSIVE", "requirement": "Passive ejection affects target eligibility", "source": "instruction.md bullet 13; dataplane.md; scenario health.passive_* fields"},
+      {"req_id": "REQ-OBSERVABILITY-AUDIT", "requirement": "Bounded audit views without payload or unbounded labels", "source": "instruction.md bullet 17; observability.md; operations.md"},
+      {"req_id": "REQ-STREAM-TIMEOUT", "requirement": "Connect timeout and idle timeout teardown behavior", "source": "instruction.md bullet 10; dataplane.md"},
+      {"req_id": "REQ-ELIGIBILITY-ACTIVE-HEALTH", "requirement": "Active health probing influences eligibility thresholds", "source": "instruction.md bullet 13; configuration.md health policy"}
+    ],
+    "AMBIGUITIES": [
+      {"amb_id": "A001", "text_or_contract": "instruction.md build paths under /app/sovereign-lb/bin/* versus verifier direct use of /app/sovereign-lb/build/bin/*", "interpretation_a": "Agents must place compiled artifacts at bin/* paths", "interpretation_b": "bin/* wrappers delegating to build/bin/* satisfy the build requirement", "grading_consequence": "Low today because operations.md and wrapper scripts resolve the path, but instruction wording alone is ambiguous", "minimal_clarification": "State in instruction or operations that bin/build emits into build/bin and bin/* launch wrappers.", "natural_location": "instruction.md bullet 2 or operations.md"},
+      {"amb_id": "A002", "text_or_contract": "GET /v1/status response schema", "interpretation_a": "Status must include rollout_present boolean", "interpretation_b": "Status need only expose documented rollout phase/quorum summaries", "grading_consequence": "test_f2p_status_reports_rollout_present accepts only interpretation A", "minimal_clarification": "Document status JSON fields or change test to documented rollout.phase", "natural_location": "observability.md"}
+    ],
     "INSTRUCTION_SHAPE": "PASS",
-    "DOCS_BOUNDARY": "PASS",
     "INSTRUCTION_REQUIREMENT_COMPLETENESS": "SUFFICIENT",
-    "DELEGATED_CONTRACT_CHECK": {
-      "architecture.md": {"classification": "LEGITIMATE_TECHNICAL_DOCUMENTATION", "notes": "Control/dataplane split, generation ownership, and component responsibilities."},
-      "configuration.md": {"classification": "LEGITIMATE_TECHNICAL_DOCUMENTATION", "notes": "Desired-state schema, policies, limits, and canonical ordering."},
-      "control-protocol.md": {"classification": "LEGITIMATE_TECHNICAL_DOCUMENTATION", "notes": "Framed envelope types and session fencing."},
-      "dataplane.md": {"classification": "LEGITIMATE_TECHNICAL_DOCUMENTATION", "notes": "Epoll proxy, connection ownership, drain, and buffer semantics."},
-      "rollout-state.md": {"classification": "LEGITIMATE_TECHNICAL_DOCUMENTATION", "notes": "Prepare/activate phases and quorum on connected sessions."},
-      "recovery.md": {"classification": "LEGITIMATE_TECHNICAL_DOCUMENTATION", "notes": "Checkpoint directories, CURRENT fallback, torn-frame guard."},
-      "observability.md": {"classification": "LEGITIMATE_TECHNICAL_DOCUMENTATION", "notes": "Readiness, status, metrics label bounds, audit retention."},
-      "operations.md": {"classification": "LEGITIMATE_TECHNICAL_DOCUMENTATION", "notes": "lbctl and management API operator workflows."},
-      "lab.md": {"classification": "LEGITIMATE_TECHNICAL_DOCUMENTATION", "notes": "Loopback backend behaviors and event logging."}
-    },
+    "DELEGATED_CONTRACT_CHECK": [
+      {"doc": "architecture.md", "classification": "LEGITIMATE_TECHNICAL", "notes": "Authority boundaries and lifecycle; no displaced task goals."},
+      {"doc": "configuration.md", "classification": "LEGITIMATE_TECHNICAL", "notes": "Schema and validation semantics."},
+      {"doc": "control-protocol.md", "classification": "LEGITIMATE_TECHNICAL", "notes": "Framing and envelope rules."},
+      {"doc": "dataplane.md", "classification": "LEGITIMATE_TECHNICAL", "notes": "Proxy/selection/eligibility semantics."},
+      {"doc": "rollout-state.md", "classification": "LEGITIMATE_TECHNICAL", "notes": "Rollout phases and readiness gating."},
+      {"doc": "observability.md", "classification": "LEGITIMATE_TECHNICAL", "notes": "Missing explicit management JSON field catalog for graded endpoints."},
+      {"doc": "operations.md", "classification": "LEGITIMATE_TECHNICAL", "notes": "Build/run operator workflow."},
+      {"doc": "recovery.md", "classification": "LEGITIMATE_TECHNICAL", "notes": "Persistence layout incomplete for graded directory naming."},
+      {"doc": "lab.md", "classification": "LEGITIMATE_TECHNICAL", "notes": "Deterministic backend map and fleet inventory description."}
+    ],
     "INSTRUCTION_DOC_BOUNDARY": "CLEAN",
     "IMPLEMENTATION_DIAGNOSIS_LEAKAGE": "NONE",
     "CURRENT_STATE_EVIDENCE": "NOT_APPLICABLE",
-    "SPEC_DUMP_RISK": "LOW",
-    "BIDIRECTIONAL_ALIGNMENT": "PASS",
-    "PHANTOM_TEST_CONTRACTS": [],
-    "UNTESTED_REQUIREMENTS": [],
-    "AMBIGUITIES": [],
+    "SPEC_DUMP_RISK": "MEDIUM",
+    "BIDIRECTIONAL_ALIGNMENT": "FAIL",
+    "BLOCKING_FINDING_IDS": ["F001", "F002", "F003", "F004", "F005", "F006", "F007"],
+    "ADVISORY_FINDING_IDS": ["F008", "F009", "F010"],
     "EXHAUSTIVENESS": {
       "REQUIREMENTS_ENUMERATED": "COMPLETE",
       "VERIFIER_BEHAVIORS_ENUMERATED": "COMPLETE",
