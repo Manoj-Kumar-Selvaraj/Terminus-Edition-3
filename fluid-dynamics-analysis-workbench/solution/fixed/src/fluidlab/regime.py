@@ -1,8 +1,14 @@
 from __future__ import annotations
 
-from .friction_models import pressure_drop_for_case
-from .heat_transfer import classify_flow_regime, heat_transfer_coefficient_w_m2k
 from .models import CaseSpec, OperatingPointSpec
+from .physics.friction_correlations import (
+    distributed_dynamic_loss,
+    select_friction_factor,
+)
+from .physics.hydraulic_network import compressible_head_cap
+from .physics.nusselt_correlations import heat_transfer_coefficient
+from .physics.regime_bands import regime_label
+from .physics.stability_analysis import stability_margin
 
 
 def regime_metrics(
@@ -18,25 +24,21 @@ def regime_metrics(
         * geometry.hydraulic_diameter_m
         / max(fluid.dynamic_viscosity_pa_s, 1e-12)
     )
-    pressure_drop_pa = pressure_drop_for_case(
-        case,
-        point.inlet_total_pressure_pa,
-        point.outlet_static_pressure_pa,
-        state["density_kg_m3"],
-        state["velocity_m_s"],
-        reynolds,
-    )
+    relative_roughness = geometry.roughness_m / max(geometry.hydraulic_diameter_m, 1e-12)
+    friction = select_friction_factor(case, reynolds, relative_roughness)
+    pressure_drop_pa = distributed_dynamic_loss(case, state["density_kg_m3"], state["velocity_m_s"], reynolds)
+    pressure_drop_pa = compressible_head_cap(case, point, pressure_drop_pa)
     mach = state["velocity_m_s"] / max(state["sound_speed_m_s"], 1e-9)
     cfl = state["velocity_m_s"] * case.solver_monitor.time_step_s / max(geometry.characteristic_cell_length_m, 1e-12)
-    flow_regime = classify_flow_regime(reynolds)
-    heat_transfer_coefficient = heat_transfer_coefficient_w_m2k(case, reynolds, state["prandtl"])
-    dynamic_pressure = max(0.5 * state["density_kg_m3"] * state["velocity_m_s"] ** 2, 1e-9)
+    _ = stability_margin(case, mach, cfl)
+    flow_regime = regime_label(case, reynolds)
+    heat_transfer = heat_transfer_coefficient(case, reynolds, state["prandtl"])
     return {
         "reynolds": reynolds,
-        "friction_factor": pressure_drop_pa / dynamic_pressure,
+        "friction_factor": friction,
         "pressure_drop_pa": pressure_drop_pa,
         "mach": mach,
         "cfl": cfl,
-        "heat_transfer_coefficient_w_m2k": heat_transfer_coefficient,
+        "heat_transfer_coefficient_w_m2k": heat_transfer,
         "flow_regime": flow_regime,
     }

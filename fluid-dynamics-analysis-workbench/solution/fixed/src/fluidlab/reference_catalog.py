@@ -1,98 +1,70 @@
 from __future__ import annotations
 
-import json
-from pathlib import Path
-from typing import Any
+from .physics.property_registry import (
+    catalog_property_delta,
+    density_correction_factor,
+    property_consistency_score,
+    registry_digest,
+    row_by_name,
+    rows_for_temperature,
+)
 
-_CATALOG_CACHE: dict[str, Any] | None = None
-
-
-def _reference_dir(root: Path) -> Path:
-    return root / "config" / "reference"
-
-
-def load_reference_bundle(root: Path) -> dict[str, Any]:
-    """Load and memoize solver-visible reference catalogs."""
-    global _CATALOG_CACHE
-    if _CATALOG_CACHE is not None:
-        return _CATALOG_CACHE
-    bundle: dict[str, Any] = {}
-    ref_dir = _reference_dir(root)
-    for name in (
-        "fluid_registry",
-        "roughness_catalog",
-        "regime_transitions",
-        "limit_templates",
-        "correlation_registry",
-    ):
-        path = ref_dir / f"{name}.json"
-        bundle[name] = json.loads(path.read_text(encoding="utf-8"))
-    _CATALOG_CACHE = bundle
-    return bundle
+__all__ = [
+    "catalog_property_delta",
+    "correlation_rows",
+    "density_correction_factor",
+    "load_reference_bundle",
+    "nearest_fluid_entries",
+    "property_consistency_score",
+    "regime_band_for_family",
+    "registry_digest",
+    "roughness_band",
+    "row_by_name",
+    "rows_for_temperature",
+]
 
 
-def fluid_entry_by_name(root: Path, fluid_name: str) -> dict[str, Any] | None:
-    bundle = load_reference_bundle(root)
-    fluids = bundle["fluid_registry"]["fluids"]
-    for entry in fluids:
-        if entry["name"] == fluid_name:
-            return entry
-    return None
-
-
-def nearest_fluid_entries(root: Path, temperature_k: float, limit: int = 5) -> list[dict[str, Any]]:
-    bundle = load_reference_bundle(root)
-    fluids = bundle["fluid_registry"]["fluids"]
-    ranked = sorted(
-        fluids,
-        key=lambda item: abs(float(item["reference_temperature_k"]) - temperature_k),
-    )
-    return ranked[:limit]
-
-
-def roughness_band(root: Path, roughness_m: float) -> dict[str, Any]:
-    bundle = load_reference_bundle(root)
-    entries = bundle["roughness_catalog"]["entries"]
-    ranked = sorted(
-        entries,
-        key=lambda item: abs(float(item["roughness_m"]) - roughness_m),
-    )
-    return ranked[0]
-
-
-def regime_band_for_family(root: Path, family: str) -> dict[str, Any]:
-    bundle = load_reference_bundle(root)
-    bands = bundle["regime_transitions"]["bands"]
-    for band in bands:
-        if band["family"] == family:
-            return band
-    return bands[0]
-
-
-def correlation_rows(root: Path, reynolds: float) -> list[dict[str, Any]]:
-    bundle = load_reference_bundle(root)
-    rows = bundle["correlation_registry"]["correlations"]
-    eligible = [
-        row
+def nearest_fluid_entries(_root: object, temperature_k: float, limit: int = 5) -> list[dict[str, object]]:
+    rows = rows_for_temperature(temperature_k, limit=limit)
+    return [
+        {
+            "name": row[0],
+            "model": row[1],
+            "reference_temperature_k": row[2],
+            "density_kg_m3": row[3],
+            "cp_j_kgk": row[5],
+        }
         for row in rows
-        if float(row["reynolds_min"]) <= reynolds <= float(row["reynolds_max"])
     ]
-    return eligible or rows[:3]
 
 
-def limit_template(root: Path, template_id: str) -> dict[str, Any] | None:
-    bundle = load_reference_bundle(root)
-    for template in bundle["limit_templates"]["templates"]:
-        if template["template_id"] == template_id:
-            return template
-    return None
+def roughness_band(_root: object, roughness_m: float) -> dict[str, object]:
+    from .physics.roughness_profiles import nearest_roughness_row
+
+    roughness, multiplier, label = nearest_roughness_row(roughness_m)
+    return {"roughness_m": roughness, "multiplier": multiplier, "label": label}
 
 
-def catalog_digest(root: Path) -> str:
-    bundle = load_reference_bundle(root)
-    digest_parts: list[str] = []
-    for key in sorted(bundle):
-        payload = bundle[key]
-        if isinstance(payload, dict):
-            digest_parts.append(str(len(payload)))
-    return "-".join(digest_parts)
+def regime_band_for_family(_root: object, family: str) -> dict[str, object]:
+    from .physics.regime_bands import band_for_family
+
+    laminar, transitional, turbulent = band_for_family(family)
+    return {
+        "family": family,
+        "laminar_upper": laminar,
+        "transitional_upper": transitional,
+        "turbulent_lower": turbulent,
+    }
+
+
+def correlation_rows(_root: object, reynolds: float) -> list[dict[str, object]]:
+    from .physics.correlation_atlas import atlas_selector_00, atlas_selector_01
+
+    return [
+        {"reynolds_min": 0.0, "reynolds_max": 1e9, "coeff_a": atlas_selector_00(reynolds, 1e-5, 0.03)},
+        {"reynolds_min": 0.0, "reynolds_max": 1e9, "coeff_a": atlas_selector_01(reynolds, 1e-5, 0.03)},
+    ]
+
+
+def load_reference_bundle(_root: object) -> dict[str, object]:
+    return {"property_registry": {"rows": registry_digest()}}
