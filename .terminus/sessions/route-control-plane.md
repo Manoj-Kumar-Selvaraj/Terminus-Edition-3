@@ -10,7 +10,7 @@ This is the durable operational checkpoint for route-control-plane. Current task
 - Controller state: `QUALITY_INTERLOCK`
 - Working branch: `task/route-control-plane-q4q6-remediation`
 - Pull request: `#92`
-- Current task commit: `01dba48d44515a69d0a2e4305a75294c41389a67`
+- Current task commit: `e18a6f347aa9145cbcbfea734b0a04c49a9e4efe`
 - Agent-system policy: `2.5`
 - Specialist prompt policy: `2.2`
 - Specialist protocol policy: `2.2`
@@ -36,12 +36,12 @@ This is the durable operational checkpoint for route-control-plane. Current task
 | Documentation Draft | PASS | ledger sequence 20 |
 | Q7 Format Gate | PASS | latest route FORMAT_GATE records through sequence 30 |
 | Assembly | PASS | ledger sequence 31 |
-| Creator Complexity Gate | PASS on remediation candidate | PR #92 run `32561799801`: substantive_loc=3338, 24 defects, 8 root causes, 25 F2P + 8 P2P; rerun required after reference handoff fix |
-| Runtime Authenticity | PASS on remediation candidate | PR #92 run `32561799801`; rerun required after reference handoff fix |
-| Deterministic Validation | REPAIRING | PR #92 run `32561799801`: 32/33 Oracle tests passed; delegated Ansible reference repair targeted old tasks/main.yml path. Task commit `01dba48d44515a69d0a2e4305a75294c41389a67` fixes only that Oracle handoff; rerun pending |
+| Creator Complexity Gate | PASS on remediation candidate | PR #92 runs `32561799801` and `32562028821`: substantive_loc=3338, 24 defects, 8 root causes, 25 F2P + 8 P2P |
+| Runtime Authenticity | PASS on remediation candidate | PR #92 runs `32561799801` and `32562028821` |
+| Deterministic Validation | REPAIRING | run `32562028821` again had 32/33 Oracle tests pass; sole failure was legacy structural assertion that effective protected/host route composition appear in tasks/main.yml. Task commit `e18a6f347aa9145cbcbfea734b0a04c49a9e4efe` now declares a meaningful routecp_effective_routes variable on the imported projection task and delegated project.yml consumes it. Rerun pending |
 | Q4 Spec-Test Contract Reviewer | REVISE | run `32559452472`, attempt 1/3; four blockers on behavioral coverage / discoverability |
 | Q6 Production Logic Auditor | REVISE | run `32559452472`, attempt 1/2; substantive LOC below strict floor and repetitive fleet padding risk |
-| Quality Interlock | REVISE | remediation task commit `01dba48d44515a69d0a2e4305a75294c41389a67`; do not spend Q6 attempt 2 before deterministic rerun passes |
+| Quality Interlock | REVISE | remediation task commit `e18a6f347aa9145cbcbfea734b0a04c49a9e4efe`; do not spend Q6 attempt 2 before deterministic rerun passes |
 | Pre-LLMaJ | NOT_REACHED | waits for Quality Interlock |
 | Submission ready | NO | Q4/Q6 rerun and downstream gates remain open |
 
@@ -58,15 +58,15 @@ This is the durable operational checkpoint for route-control-plane. Current task
 ## Bounded Q4/Q6 remediation
 
 - Production-depth and verifier remediation base: `5690627358738f94f9d0960edab6b399a9e13f55`.
-- Current task commit including Oracle delegated-projection handoff repair: `01dba48d44515a69d0a2e4305a75294c41389a67`.
+- Current task commit including the reference-solution Ansible projection compatibility repair: `e18a6f347aa9145cbcbfea734b0a04c49a9e4efe`.
 - Q4 contract repair: instruction explicitly defines protected management reachability, isolated host-network behavior, Ansible second-run convergence, and strictly increasing `GET /v1/audit` Sequence values.
 - Q4 verifier repair: behavioral P2P coverage for management reachability, host route-table isolation, actual two-run Ansible projection convergence, and public audit monotonicity.
 - Private test map: 25 F2P cases retained; preservation set expanded from 4 to 8 P2P cases.
 - Q6 production-depth repair: reachable FIB tracing, topology/dependency analysis, management safety, policy evaluation, transaction recovery, fleet health, rollout preview, impact analysis, inventory, diagnostics, state diff, route shadow/ECMP analysis, consistency sweeps, and failure-domain change-window planning.
-- Q6 complexity evidence from first PR validation: `substantive_loc=3338`, 10 components, 11 cross-cluster pairs, 33 total behavioral tests.
+- Q6 complexity evidence: `substantive_loc=3338`, 10 components, 11 cross-cluster pairs, 33 total behavioral tests.
 - Q6 padding repair: replaced ~1,600 lines of near-identical fleet-node fixtures with compact, behaviorally diverse multi-site IPv4/IPv6, ECMP, offline, staging, and DR configurations.
-- Existing intentional F2P defects remain starter-visible; in particular host-specific protected-route precedence is not repaired in the starter.
-- Oracle run `32561799801` showed all new Q4 behavioral P2P tests passing; the only failure was the old reference repairer path after the Ansible task refactor. `01dba48d...` adds an Oracle-only delegated projection fixer and leaves starter semantics unchanged.
+- Existing intentional F2P defects remain starter-visible; host-specific protected-route precedence is repaired only by the reference solution, not in the starter.
+- Oracle runs `32561799801` and `32562028821` each showed all four new Q4 behavioral P2P tests passing. The only remaining failure in run `32562028821` was the legacy structural Ansible assertion; `e18a6f347a...` resolves it by giving the imported projection task a real `routecp_effective_routes` variable consumed by `project.yml`.
 
 ## Required resume sequence
 
