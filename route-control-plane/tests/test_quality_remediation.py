@@ -51,6 +51,68 @@ def test_management_reachability_is_preserved() -> None:
         test_file.unlink(missing_ok=True)
 
 
+def test_f2p_management_paths_survive_preview_rollback_reconcile_and_rollout() -> None:
+    test_file = write_quality_go_test(r'''
+        package controlplane
+
+        import (
+            "errors"
+            "path/filepath"
+            "testing"
+        )
+
+        func qualitySafetyCP(t *testing.T) (*ControlPlane, Transaction, Route) {
+            t.Helper()
+            cp, err := Open(Config{StateDir:filepath.Join(t.TempDir(),"state"),ProtectedCIDRs:[]string{"198.51.100.0/24"},MaxWave:5})
+            if err != nil { t.Fatal(err) }
+            if err := cp.UpsertNode(Node{ID:"n1",Hostname:"n1.local",ManagementIP:"198.51.100.10",Online:true,Labels:map[string]string{"role":"edge"}}); err != nil { t.Fatal(err) }
+            route := Route{ID:"mgmt",NodeID:"n1",Destination:"198.51.100.0/24",Table:100,Metric:10,Protocol:"static",Scope:"global",Type:"unicast",Owner:"routecp",NextHops:[]NextHop{{Gateway:"192.0.2.1",Weight:1}}}
+            plan, err := cp.Preview(ChangeRequest{BaseRevision:0,Actor:"quality",RouteMutations:[]RouteMutation{{Operation:"add",Route:route}}})
+            if err != nil { t.Fatal(err) }
+            txn, err := cp.Apply(ApplyRequest{PlanID:plan.ID,BaseRevision:0,IdempotencyKey:"quality-mgmt-f2p",Nodes:[]string{"n1"},Actor:"quality"})
+            if err != nil { t.Fatal(err) }
+            return cp, txn, route
+        }
+
+        func TestQualityManagementMutationSafety(t *testing.T) {
+            cp, txn, route := qualitySafetyCP(t)
+
+            if _, err := cp.Preview(ChangeRequest{BaseRevision:1,Actor:"quality",RouteMutations:[]RouteMutation{{Operation:"delete",Route:route}}}); !errors.Is(err,ErrUnsafe) {
+                t.Fatalf("preview removed final management path: %v", err)
+            }
+
+            if _, err := cp.Rollback(RollbackRequest{TransactionID:txn.ID,Actor:"quality",Reason:"must remain reachable"}); !errors.Is(err,ErrUnsafe) {
+                t.Fatalf("rollback restored unsafe management state: %v", err)
+            }
+
+            cp.mu.Lock()
+            observed := cloneObserved(cp.observed["n1"])
+            cp.desired.Routes = nil
+            cp.desired.Revision = observed.Revision
+            cp.mu.Unlock()
+            if _, err := cp.Reconcile(ReconcileRequest{NodeID:"n1",ExpectedObservedRevision:observed.Revision,Actor:"quality",DryRun:false}); !errors.Is(err,ErrUnsafe) {
+                t.Fatalf("reconcile applied unsafe desired state: %v", err)
+            }
+
+            rolloutCP, _, _ := qualitySafetyCP(t)
+            rolloutCP.mu.Lock()
+            rolloutCP.desired.Routes = nil
+            observed = cloneObserved(rolloutCP.observed["n1"])
+            observed.Revision = 0
+            rolloutCP.observed["n1"] = observed
+            rolloutCP.mu.Unlock()
+            if _, err := rolloutCP.Rollout(RolloutRequest{Revision:1,Selector:map[string]string{"role":"edge"},WaveSize:1,Actor:"quality"}); !errors.Is(err,ErrUnsafe) {
+                t.Fatalf("rollout applied unsafe desired state: %v", err)
+            }
+        }
+    ''')
+    try:
+        result = run(["go", "test", "./internal/controlplane", "-run", "TestQualityManagementMutationSafety", "-count=1"])
+        assert result.returncode == 0, result.stdout
+    finally:
+        test_file.unlink(missing_ok=True)
+
+
 def test_isolated_model_does_not_touch_host_routes() -> None:
     snapshots = [pathlib.Path("/proc/net/route"), pathlib.Path("/proc/net/ipv6_route")]
     before = {p: p.read_text() if p.exists() else "" for p in snapshots}
