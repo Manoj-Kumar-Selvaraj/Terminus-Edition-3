@@ -1,0 +1,57 @@
+{
+  "schema_version": "3.0",
+  "role": "Model Perspective Difficulty Simulator",
+  "review_id": "tenant-catalog-logical-cdc-plane-fc1870fe-difficulty-sim-claude-947015a5f7",
+  "task": "tenant-catalog-logical-cdc-plane",
+  "task_commit": "fc1870fe2645ed467d09ec25760f931dbad1e7ae",
+  "control_plane_commit": "d0ec104dfce657bc427f1a0097ae170da85b8b61",
+  "protocol_policy_version": "2.2",
+  "prompt_policy_version": "2.2",
+  "role_policy_version": "1.0",
+  "role_contract_hash": "ccfa675b35acae5b490277be9183df90f9a82e789c8e19a20d170ae2bf1b4c9f",
+  "context_packet": ".terminus/reviews/tenant-catalog-logical-cdc-plane/fc1870fe/tenant-catalog-logical-cdc-plane-fc1870fe-difficulty-sim-claude-947015a5f7.packet.json",
+  "verdict": "PASS",
+  "confidence": "MEDIUM",
+  "evidence_status": "SUFFICIENT",
+  "summary": "DIAGNOSTIC ONLY (not official Claude×5). SIMULATION_NOT_EXECUTED. Claude-style prior predicts contract-first tracing through engine/txn/visibility/overlay then coordinated repairs; risk of over-scoping walvalidate/fence wiring before core commit/decode/apply/recover invariants are green → USEFUL signal.",
+  "evidence": [
+    {"type": "file", "ref": "tenant-catalog-logical-cdc-plane/environment/catalog/docs/catalog-contract.md", "observation": "Invites end-to-end state model before localized edits."},
+    {"type": "file", "ref": "tenant-catalog-logical-cdc-plane/environment/catalog/logs/bounce.log", "observation": "Incident evidence for open txn, CDC disagreement, and inspect side effects."},
+    {"type": "file", "ref": ".terminus/designs/tenant-catalog-logical-cdc-plane.json", "observation": "large_system_strict with 25 defects / 7 RC clusters—systematic reading likely."},
+    {"type": "rule", "ref": ".terminus/agents/QUALITY_AGENT_PROMPTS.md#Q8", "observation": "SIMULATION_NOT_EXECUTED when full isolated solve unavailable."}
+  ],
+  "findings": [],
+  "missing_evidence": [],
+  "change_scope": [],
+  "do_not_change": ["Do not treat this as official Claude trial evidence."],
+  "next_gate": "Q8 aggregate",
+  "role_output": {
+    "PERSPECTIVE": "CLAUDE_PERSPECTIVE",
+    "EXECUTION": "SIMULATION_NOT_EXECUTED",
+    "DIAGNOSTIC_SUMMARY": "Read catalog-contract + oncall; map engine verbs to store/txn/visibility/indexes/cdc/replica/recover; repair as a set before health polish.",
+    "FIRST_DIAGNOSIS": "SnapshotVisible vs LatestXmaxNull mismatch; recover installs uncommitted WAL; apply ignores epoch fence.",
+    "FILES_TOUCHED": [
+      "internal/engine/engine.go",
+      "internal/txn/txn.go",
+      "internal/visibility/visibility.go",
+      "internal/overlay/overlay.go",
+      "internal/cdc/cdc.go",
+      "internal/replica/replica.go",
+      "internal/recover/recover.go"
+    ],
+    "SHORTCUTS_ATTEMPTED": [
+      "Wire walvalidate/fence comprehensively before decode/apply separation is correct",
+      "Rebuild indexes from all versions instead of committed-visible snapshot"
+    ],
+    "FIRST_MEANINGFUL_DIVERGENCE": "Spend budget on helper packages while fused decode+apply and checkpoint-only recover still pass early probes.",
+    "FINAL_VERIFIER_RESULT": "NOT_RUN",
+    "LIKELY_REASONING_WALLS": [
+      "25 interrelated defects across MVCC, indexes, CDC, replica, recover",
+      "Commit-after-WAL with overlay write-set parent-then-child",
+      "CDC lsn must match WAL mutation not heap row numbers"
+    ],
+    "ENVIRONMENT_TOOL_FRICTION": "~18k substantive LOC; long pytest runtime; Go module under /app/catalog.",
+    "PREDICTED_OFFICIAL_SIGNAL": "USEFUL",
+    "SIMULATION_NOTE": "Diagnostic strategy prior only; not Harbor Claude×5 evidence. Similar advanced-band expectation as GPT perspective."
+  }
+}

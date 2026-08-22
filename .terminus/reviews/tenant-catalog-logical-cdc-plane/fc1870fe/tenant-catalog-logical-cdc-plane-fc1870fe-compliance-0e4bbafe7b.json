@@ -1,0 +1,39 @@
+{
+  "schema_version": "3.0",
+  "role": "Compliance Auditor",
+  "review_id": "tenant-catalog-logical-cdc-plane-fc1870fe-compliance-0e4bbafe7b",
+  "task": "tenant-catalog-logical-cdc-plane",
+  "task_commit": "fc1870fe2645ed467d09ec25760f931dbad1e7ae",
+  "control_plane_commit": "d0ec104dfce657bc427f1a0097ae170da85b8b61",
+  "protocol_policy_version": "2.2",
+  "prompt_policy_version": "2.2",
+  "role_policy_version": "1.0",
+  "role_contract_hash": "0eaa80319221323add0ea9760e91ef65c56a84687882db25b3e5796e0e36b1bd",
+  "context_packet": ".terminus/reviews/tenant-catalog-logical-cdc-plane/fc1870fe/tenant-catalog-logical-cdc-plane-fc1870fe-compliance-0e4bbafe7b.packet.json",
+  "verdict": "PASS",
+  "confidence": "HIGH",
+  "evidence_status": "SUFFICIENT",
+  "summary": "Final compliance audit at fc1870fe: flat Edition 3 layout, digest-pinned images, separate verifier, six tags, committed go.sum, tmux/asciinema, binary reward, artifact isolation, and no packaging/leakage defects. Task tree matches packet commit; Harbor oracle 1.0 and NOP 0.0 on record.",
+  "evidence": [
+    {"type": "file", "ref": "tenant-catalog-logical-cdc-plane/task.toml", "observation": "Canonical Software/Databases metadata; six tags; artifacts=[\"/app/catalog\"]; environment_mode=separate; timeouts within bounds."},
+    {"type": "file", "ref": "tenant-catalog-logical-cdc-plane/environment/Dockerfile", "observation": "Digest-pinned golang:1.24-bookworm; go build -mod=readonly; tmux+asciinema; no solution/tests in agent image."},
+    {"type": "file", "ref": "tenant-catalog-logical-cdc-plane/tests/Dockerfile", "observation": "Digest-pinned python verifier; requirements.lock --no-deps; /app/catalog parent only."},
+    {"type": "file", "ref": "tenant-catalog-logical-cdc-plane/environment/catalog/go.sum", "observation": "Committed Go lockfile satisfies pin rule."},
+    {"type": "run", "ref": "jobs/2026-08-22__16-36-50", "observation": "Harbor oracle reward 1.0 (37/37)."},
+    {"type": "run", "ref": "jobs/2026-08-22__16-42-47", "observation": "Harbor NOP reward 0.0 (26 fail / 11 pass)."},
+    {"type": "run", "ref": "git diff --stat fc1870fe -- tenant-catalog-logical-cdc-plane", "observation": "Empty diff; task tree matches final task commit."}
+  ],
+  "findings": [],
+  "missing_evidence": [],
+  "change_scope": ["Final compliance gate after PRE_LLMAJ PASS and Q8 diagnostic stages."],
+  "do_not_change": ["Edition 3 layout, isolation, and metadata bounds."],
+  "next_gate": "Final Human Quality",
+  "role_output": {
+    "EDITION3_LAYOUT": "PASS",
+    "METADATA": "PASS",
+    "DOCKER_PINNING": "PASS",
+    "ISOLATION": "PASS",
+    "REWARD_CONTRACT": "PASS",
+    "PACKAGE_READY": "PASS"
+  }
+}
