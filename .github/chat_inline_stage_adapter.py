@@ -3,156 +3,165 @@ from __future__ import annotations
 
 import json
 import os
-from pathlib import Path
-import shutil
 import subprocess
-
-from chat_inline_stage_domain import (
-    build_task_writing_profile,
-    derive_human_writing_domain,
-)
+import sys
+from pathlib import Path
 
 ROOT = Path.cwd()
-WORK = Path(os.environ.get('RUNNER_TEMP', '/tmp')) / 'chat-inline'
+WORK = Path(os.environ.get("RUNNER_TEMP", "/tmp")) / "chat-inline"
 WORK.mkdir(parents=True, exist_ok=True)
+sys.path.insert(0, str(ROOT / ".terminus"))
+
+from execution.control_plane import resolve_control_plane_commit
+from execution.invocation import StageInvocationBuilder
+from retrieval.models import InvocationContext
 
 
 def run(*args: str, capture: bool = False) -> str:
     cp = subprocess.run(args, cwd=ROOT, check=True, text=True, capture_output=capture)
-    return cp.stdout.strip() if capture else ''
+    return cp.stdout.strip() if capture else ""
+
+
+def dump(path: Path, value) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(value, indent=2, sort_keys=True) + "\n", encoding="utf-8")
 
 
 def load(path: Path):
-    return json.loads(path.read_text(encoding='utf-8'))
-
-
-def dump(path: Path, value):
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(value, indent=2, sort_keys=True, ensure_ascii=False) + '\n', encoding='utf-8')
+    return json.loads(path.read_text(encoding="utf-8"))
 
 
 def remote_main() -> str:
-    return run('git','ls-remote','origin','refs/heads/main', capture=True).split()[0]
+    return run("git", "ls-remote", "origin", "refs/heads/main", capture=True).split()[0]
 
 
-def resolve_control(head: str, output: Path) -> str:
-    run('git','fetch','origin','main')
-    run('python3','.terminus/execution/controller_cli.py','control-plane','--head',head,'--output',str(output))
-    return load(output)['control_plane_commit']
+def task_tree(commit: str, task: str) -> str:
+    return run("git", "rev-parse", f"{commit}:{task}", capture=True)
 
 
-def task_scope_changed(old: str, new: str, task: str) -> bool:
-    if old == new:
-        return False
-    run('git','fetch','origin','main')
-    cp = subprocess.run([
-        'git','diff','--quiet',old,new,'--',
-        task,
-        f'.terminus/executions/{task}',
-        f'.terminus/research/{task}-dataset-calibration.json',
-        f'.terminus/research/{task}-task-writing-profile.json',
-    ], cwd=ROOT)
-    return cp.returncode != 0
+def assert_control(head: str, expected: str) -> None:
+    actual = resolve_control_plane_commit(ROOT, head=head)
+    if actual != expected:
+        raise SystemExit(f"control-plane changed expected={expected} actual={actual}")
 
-sha = os.environ['GITHUB_SHA']
-branch = os.environ['GITHUB_REF_NAME']
-changed = run('git','diff-tree','--no-commit-id','--name-only','-r',sha,'--','.terminus/chat-exec/*.json', capture=True).splitlines()
+
+sha = os.environ["GITHUB_SHA"]
+changed = run("git", "diff-tree", "--no-commit-id", "--name-only", "-r", sha, "--", ".terminus/chat-exec/*.json", capture=True).splitlines()
 if len(changed) != 1:
-    raise SystemExit(f'expected exactly one chat-exec request, found {changed}')
+    raise SystemExit(f"expected exactly one reconciliation request, found {changed}")
 req = load(ROOT / changed[0])
-required = {'schema_version','mode','task_id','task_commit','control_plane_commit','expected_repository_head','stage_id','inputs','result'}
-if set(req) != required or req['schema_version'] != '1.0':
-    raise SystemExit('invalid adapter request')
+required = {
+    "schema_version", "mode", "task_id", "input_task_commit", "output_task_commit",
+    "control_plane_commit", "expected_repository_head", "discovery_run_id",
+    "previous_a5_invocation", "expected_changed_files",
+}
+if set(req) != required or req["schema_version"] != "1.0" or req["mode"] != "RECONCILE_A5_LINT":
+    raise SystemExit("invalid A5 reconciliation request")
 
-task=req['task_id']; task_commit=req['task_commit']; control=req['control_plane_commit']; stage=req['stage_id']; mode=req['mode']; expected=req['expected_repository_head']
+task = req["task_id"]
+input_task = req["input_task_commit"]
+output_task = req["output_task_commit"]
+control = req["control_plane_commit"]
+expected_head = req["expected_repository_head"]
+discovery_run = req["discovery_run_id"]
+prior_inv = req["previous_a5_invocation"]
+expected_files = sorted(req["expected_changed_files"])
+
+run("git", "fetch", "origin", "main")
+run("git", "cat-file", "-e", f"{input_task}^{{commit}}")
+run("git", "cat-file", "-e", f"{output_task}^{{commit}}")
+if subprocess.run(["git", "merge-base", "--is-ancestor", input_task, output_task], cwd=ROOT).returncode != 0:
+    raise SystemExit("lint-fix output task is not a descendant of A5 input task")
+actual_files = sorted(run("git", "diff", "--name-only", input_task, output_task, "--", task, capture=True).splitlines())
+if actual_files != expected_files:
+    raise SystemExit(f"unexpected lint-fix task delta expected={expected_files} actual={actual_files}")
+numstat = run("git", "diff", "--numstat", input_task, output_task, "--", *expected_files, capture=True).splitlines()
+if len(numstat) != 2 or any(not line.startswith("0\t1\t") for line in numstat):
+    raise SystemExit(f"lint-fix delta is not exactly two one-line deletions: {numstat}")
+
 base = remote_main()
-if base != expected:
-    if task_scope_changed(expected, base, task):
-        raise SystemExit(f'main moved in task scope before adapter execution expected={expected} current={base}')
-    if resolve_control(base, WORK/'control-plane-current.json') != control:
-        raise SystemExit(f'control-plane changed before adapter execution expected={control} current_head={base}')
+if base != expected_head:
+    changed_scope = subprocess.run([
+        "git", "diff", "--quiet", expected_head, base, "--",
+        task, f".terminus/executions/{task}", f".terminus/designs/{task}.json",
+        f".terminus/designs/{task}-test-map.json",
+    ], cwd=ROOT).returncode != 0
+    if changed_scope:
+        raise SystemExit(f"main moved in EC2 scope expected={expected_head} current={base}")
+assert_control(base, control)
+if task_tree(base, task) != task_tree(output_task, task):
+    raise SystemExit("current main task tree does not equal the dedicated lint-fix snapshot")
 
-dump(WORK/'request.json', req)
-dump(WORK/'inputs.json', req['inputs'])
-dump(WORK/'result-template.json', req['result'])
-run('git','checkout','--detach',base)
-run('python3','.terminus/execution/controller_cli.py','control-plane','--head',base,'--output',str(WORK/'control-plane.json'))
-resolved = load(WORK/'control-plane.json')['control_plane_commit']
-if resolved != control:
-    raise SystemExit(f'control-plane mismatch {resolved} != {control}')
-run('python3','.terminus/execution/controller_cli.py','continue','--task-id',task,'--task-commit',task_commit,'--control-plane-commit',control,'--inputs-json',str(WORK/'inputs.json'),'--output',str(WORK/'continue.json'))
-cont=load(WORK/'continue.json')
-if cont.get('next',{}).get('stage_id') != stage:
-    raise SystemExit(f'machine stage changed: {cont.get("next")}')
-inv=cont.get('invocation')
-if not isinstance(inv,dict) or inv.get('readiness') != 'READY' or inv.get('stage',{}).get('stage_id') != stage:
-    raise SystemExit('invocation not READY for expected stage')
-if cont.get('execution_mode') not in {'INLINE_SPECIALIST','INLINE_SPECIALIST_SEQUENCE','ORCHESTRATOR_DIRECT'}:
-    raise SystemExit(f'unsupported execution mode {cont.get("execution_mode")}')
-dump(WORK/'invocation.json',inv)
+# Detach from the transport branch before any canonical mutation.
+run("git", "checkout", "--detach", base)
+assert_control(base, control)
 
-if stage == 'HUMAN_WRITING_RESEARCH':
-    domain = derive_human_writing_domain(task, req['inputs'])
-    dump(WORK/'human-writing-domain.json', {'task_id': task, 'domain': domain})
-    run('python3','.terminus/human_writing/calibration_cli.py','--root','.','plan','--task-id',task,'--domain',domain,'--output',str(WORK/'calibration-pair.json'))
+prior_path = ROOT / ".terminus" / "executions" / task / f"{prior_inv}.result.json"
+prior = load(prior_path)
+inputs = dict(prior["invocation_snapshot"]["inputs"]["required"])
+context = InvocationContext(
+    stage_id="VERIFIER_BUILD",
+    role_id="A5_VERIFIER_AUTHOR",
+    task_id=task,
+    task_commit=input_task,
+    control_plane_commit=control,
+    ci_run_id=str(discovery_run),
+)
+invocation = StageInvocationBuilder(ROOT).build(context, inputs)
+if invocation.get("readiness") != "READY":
+    raise SystemExit(f"A5 reconciliation invocation not READY: {invocation.get('missing_required_inputs')}")
+if invocation["stage"]["stage_id"] != "VERIFIER_BUILD" or invocation["stage"]["role_class"] != "PRODUCER":
+    raise SystemExit("A5 reconciliation invocation has wrong stage authority")
+if invocation["invocation_id"] == prior_inv:
+    raise SystemExit("A5 reconciliation did not obtain a fresh invocation identity")
+dump(WORK / "invocation.json", invocation)
 
-if mode == 'RECORD':
-    result=req['result']
-    result['schema_version']='1.0'; result['invocation_id']=inv['invocation_id']; result.setdefault('output_task_commit',task_commit)
-    if stage == 'HUMAN_WRITING_RESEARCH':
-        pair=load(WORK/'calibration-pair.json')
-        pair.setdefault('dataset_registry_sha256', pair['registry_sha256'])
-        pair.setdefault('seed_catalog_sha256', pair['catalog_sha256'])
-        dump(WORK/'calibration-pair.json', pair)
-        writer=pair['writer']; reviewer=pair['reviewer']
-        approval={'approved':True,'approved_by':'CI_ORCHESTRATOR','reason':'No approved external human-writing cache was supplied; repository policy permits deterministic local calibration with explicit DEGRADED coverage and no claim of FULL external coverage.'}
-        task_profile=build_task_writing_profile(task, req['inputs'])
-        profile={'DATASET_POLICY_VERSION':'1.2','DATASET_REGISTRY_SHA256':pair['dataset_registry_sha256'],'SEED_CATALOG_SHA256':pair['seed_catalog_sha256'],'DOMAIN_PROFILES_SHA256':pair['domain_profiles_sha256'],'DOMAIN_PROFILE':pair['domain_profile'],'CALIBRATION_PAIR_ID':pair['pair_id'],'WRITER_CALIBRATION_ID':writer['calibration_id'],'REVIEWER_CALIBRATION_ID':reviewer['calibration_id'],'WRITER_SAMPLE_IDS':writer['local_seed_sample_ids'],'REVIEWER_SAMPLE_IDS':reviewer['local_seed_sample_ids'],'WRITER_REVIEWER_SAMPLE_OVERLAP':[],'EXTERNAL_DATASET_COVERAGE':'DEGRADED','TASK_WRITING_PROFILE':task_profile,'CACHE_SOURCE_KEYS_USED':[],'RAW_SOURCE_KEYS_USED_FOR_CONTAMINATION':[],'DEGRADED_COVERAGE_APPROVAL':approval,'CURRENT_STATE_EVIDENCE_NOTES':['Current deterministic repository planner generated the pair for this task/domain.','No Oracle, verifier-private, prior-review, model-trial, or private defect evidence was consumed by A6.']}
-        research=ROOT/'.terminus'/'research'; research.mkdir(parents=True, exist_ok=True)
-        shutil.copyfile(WORK/'calibration-pair.json', research/f'{task}-dataset-calibration.json')
-        dump(research/f'{task}-task-writing-profile.json', profile)
-        result['outputs']=profile
-    dump(WORK/'result.json',result)
+# Execute the registered A5 deterministic validators on the repaired task tree.
+run("python3", "-m", "pip", "install", "--disable-pip-version-check", "ruff==0.12.8")
+run("ruff", "check", f"{task}/tests")
+run("python3", ".terminus/validate_task_complexity.py", task)
 
-    if stage == 'DEFECT_TOPOLOGY': run('python3','.terminus/validate_defect_topology.py',task)
-    elif stage == 'ENVIRONMENT_BUILD':
-        run('python3','.terminus/validate_environment_complexity.py',task); run('python3','.terminus/validate_runtime_authenticity.py',task); run('python3','.terminus/validate_business_module_diversity.py',task)
-    elif stage in {'VERIFIER_BUILD','COMPLEXITY_GATE'}: run('python3','.terminus/validate_task_complexity.py',task)
-    elif stage == 'RUNTIME_AUTHENTICITY':
-        run('python3','.terminus/validate_runtime_authenticity.py',task); run('python3','.terminus/validate_business_module_diversity.py',task)
-    elif stage in {'HUMAN_WRITING_RESEARCH','INSTRUCTION_DRAFT'}:
-        run('python3','.terminus/human_writing/validate_calibration.py','--root','.','--pair',f'.terminus/research/{task}-dataset-calibration.json','--profile',f'.terminus/research/{task}-task-writing-profile.json')
+outputs = dict(prior["outputs"])
+result = {
+    "schema_version": "1.0",
+    "invocation_id": invocation["invocation_id"],
+    "status": "VERIFIER_READY",
+    "outputs": outputs,
+    "output_task_commit": output_task,
+    "evidence_refs": [],
+}
+dump(WORK / "result.json", result)
+run("python3", ".terminus/execution/controller_cli.py", "record", "--invocation", str(WORK / "invocation.json"), "--result", str(WORK / "result.json"), "--output", str(WORK / "record.json"))
 
-    run('python3','.terminus/execution/controller_cli.py','record','--invocation',str(WORK/'invocation.json'),'--result',str(WORK/'result.json'),'--output',str(WORK/'record.json'))
-    cp = subprocess.run(['git','status','--porcelain'], cwd=ROOT, check=True, text=True, capture_output=True)
-    porcelain=cp.stdout.splitlines()
-    allowed=(f'.terminus/executions/{task}',f'.terminus/workflows/{task}',f'.terminus/research/{task}-dataset-calibration.json',f'.terminus/research/{task}-task-writing-profile.json')
-    paths=[line[3:] if len(line)>=4 else line for line in porcelain]
-    unexpected=[path for path in paths if not path.startswith(allowed)]
-    if unexpected: raise SystemExit(f'unexpected mutations: {unexpected}')
-    run('git','config','user.name','terminus-chat-adapter[bot]'); run('git','config','user.email','terminus-chat-adapter[bot]@users.noreply.github.com')
-    run('git','add','--',f'.terminus/executions/{task}')
-    if stage == 'HUMAN_WRITING_RESEARCH': run('git','add','--',f'.terminus/research/{task}-dataset-calibration.json',f'.terminus/research/{task}-task-writing-profile.json')
-    if subprocess.run(['git','diff','--cached','--quiet'],cwd=ROOT).returncode == 0: raise SystemExit('no canonical record mutation')
-    run('git','commit','-m',f'Record {task} {stage} inline result')
-    latest = remote_main()
-    if latest != base:
-        if task_scope_changed(base, latest, task):
-            raise SystemExit(f'main moved in task scope during record base={base} current={latest}')
-        if resolve_control(latest, WORK/'control-plane-latest.json') != control:
-            raise SystemExit(f'control-plane changed during record expected={control} current_head={latest}')
-        run('git','fetch','origin','main')
-        run('git','rebase','origin/main')
-    run('git','push','origin','HEAD:main')
+porcelain = run("git", "status", "--porcelain", capture=True).splitlines()
+paths = [line[3:] for line in porcelain]
+unexpected = [path for path in paths if not path.startswith(f".terminus/executions/{task}/")]
+if unexpected:
+    raise SystemExit(f"unexpected reconciliation mutations: {unexpected}")
+run("git", "config", "user.name", "terminus-chat-adapter[bot]")
+run("git", "config", "user.email", "terminus-chat-adapter[bot]@users.noreply.github.com")
+run("git", "add", "--", f".terminus/executions/{task}")
+if subprocess.run(["git", "diff", "--cached", "--quiet"], cwd=ROOT).returncode == 0:
+    raise SystemExit("A5 reconciliation produced no canonical execution mutation")
+run("git", "commit", "-m", f"Reconcile {task} VERIFIER_BUILD lint fix")
 
-run('git','fetch','origin',branch)
-run('git','checkout','-B','chat-diagnostics',f'origin/{branch}')
-diag=ROOT/'.terminus'/'chat-results'/task/stage; diag.mkdir(parents=True,exist_ok=True)
-for name in ('continue.json','invocation.json','human-writing-domain.json','calibration-pair.json','result.json','record.json'):
-    src=WORK/name
-    if src.exists(): shutil.copyfile(src,diag/name)
-run('git','config','user.name','terminus-chat-adapter[bot]'); run('git','config','user.email','terminus-chat-adapter[bot]@users.noreply.github.com')
-run('git','add','--',str(diag.relative_to(ROOT)))
-if subprocess.run(['git','diff','--cached','--quiet'],cwd=ROOT).returncode != 0:
-    run('git','commit','-m',f'Persist chat diagnostics for {task} {stage}')
-    run('git','push','origin','HEAD:'+branch)
+latest = remote_main()
+if latest != base:
+    run("git", "fetch", "origin", "main")
+    if subprocess.run(["git", "diff", "--quiet", base, latest, "--", task, f".terminus/executions/{task}"], cwd=ROOT).returncode != 0:
+        raise SystemExit(f"main moved in EC2 scope during A5 record base={base} current={latest}")
+    assert_control(latest, control)
+    if task_tree(latest, task) != task_tree(output_task, task):
+        raise SystemExit("latest main task tree changed during A5 reconciliation")
+    run("git", "rebase", "origin/main")
+    base = latest
+run("git", "push", "origin", "HEAD:main")
+
+# Prove the reconciled controller now continues from the lint-fix task snapshot.
+empty = WORK / "empty-inputs.json"
+dump(empty, {})
+run("python3", ".terminus/execution/controller_cli.py", "continue", "--task-id", task, "--task-commit", output_task, "--control-plane-commit", control, "--inputs-json", str(empty), "--output", str(WORK / "continue-after.json"))
+after = load(WORK / "continue-after.json")
+next_stage = after.get("next", {}).get("stage_id")
+if next_stage != "HUMAN_WRITING_RESEARCH":
+    raise SystemExit(f"A5 reconciliation did not advance to A6: {after.get('next')}")
