@@ -1,0 +1,109 @@
+{
+  "control_plane_commit": "0579a0f2f1e7e3560d13ff1530f467c8e01b6a1a",
+  "expected_repository_head": "9e891ff4c34981dcd14e02baf839f19ae181d94a",
+  "inputs": {
+    "CREATION_RULE_CONTEXT": {
+      "ACTIVE_VALIDATORS": [
+        ".terminus/validate_agent_system.py",
+        ".terminus/validate_stage_contracts.py",
+        ".terminus/validate_task_complexity.py",
+        ".terminus/validate_environment_complexity.py",
+        ".terminus/validate_runtime_authenticity.py",
+        ".terminus/validate_business_module_diversity.py",
+        ".terminus/validate_review_freshness.py",
+        ".terminus/validate_quality_interlock.py",
+        ".github/workflows/terminus-edition-3-ci.yml",
+        ".github/workflows/terminus-creator-complexity.yml",
+        ".github/workflows/terminus-production-authenticity.yml"
+      ],
+      "CONTROL_PLANE_COMMIT": "0579a0f2f1e7e3560d13ff1530f467c8e01b6a1a",
+      "CREATION_PROFILE": "large_system_strict",
+      "KNOWN_POLICY_CONFLICTS": [],
+      "NETWORK_ENVIRONMENT_CONSTRAINTS": "network_mode public; separate verifier; digest-pinned canonical Go runtime; no privileged Docker/capability/socket shortcuts; tmux and asciinema required in agent image",
+      "RULE_SOURCES": [
+        "TERMINUS_3_AI_INSTRUCTIONS.md",
+        ".terminus/AGENT_SYSTEM.md",
+        ".terminus/agents/CREATION_CONTROLLER.md",
+        ".terminus/agents/CREATION_PIPELINE.md",
+        ".terminus/agents/PRODUCTION_AUTHENTICITY.md",
+        ".terminus/reviewers/REVIEWER_CHECKLIST.md",
+        ".terminus/agents/QUALITY_AGENT_REGISTRY.md",
+        ".terminus/agents/STAGE_CONTRACTS.md",
+        ".terminus/agents/stage_contracts.json"
+      ]
+    },
+    "REQUESTED_DOMAIN": "production Go EC2 software supply-chain and artifact policy enforcement"
+  },
+  "mode": "RECORD",
+  "result": {
+    "evidence_refs": [
+      {
+        "content_hash": "sha256:881f5e39e34f54248f5140e9f2f328c226966c808c9a6f6fa3e3310776411fd8",
+        "kind": "COMMIT",
+        "ref": "commit:6c7909d5c0efd3e6e64443d6de3b227c1820b01b"
+      },
+      {
+        "content_hash": "sha256:d0ceb2215bfa1f9b3bfbdd15c9f510b30465bd40aab4a3fbb6736b427eb08d23",
+        "kind": "COMMIT",
+        "ref": "commit:0579a0f2f1e7e3560d13ff1530f467c8e01b6a1a"
+      }
+    ],
+    "outputs": {
+      "CANDIDATES": [
+        {
+          "DUPLICATE_RISK": "Moderate generic supply-chain overlap; the coupled multi-surface cache/exception/permit/replay/audit state machine is distinctive.",
+          "EDGE_FAILURE_SURFACE": ["scanner outage/staleness", "tag mutation", "expired exception", "permit replay/tamper", "restart/partial state"],
+          "ENGINEERING_OBJECTIVE": "Unify OS-package, container, and build-dependency acquisition behind one Go policy engine.",
+          "ID": "WP1_UNIFIED_EC2_ARTIFACT_ADMISSION",
+          "INHERITED_SYSTEM_STATE": "artifactguard evaluate/verify-permit, deterministic fixtures, persistent state, and package/container/dependency surfaces.",
+          "INSTRUCTION_FIT": "Strong; the current instruction states one coherent admission boundary while the solver-visible contracts carry exact state and security semantics.",
+          "PARTIAL_FIX_TRAPS": ["manager-specific bypass", "mutable-tag cache reuse", "overbroad exception", "unbound permit", "non-durable deny audit"],
+          "PERSONA": "EC2 platform security engineer",
+          "PRESERVATION_OBLIGATIONS": ["keep public CLI", "keep cache/exceptions", "do not rewrite supplied fixtures", "preserve audit history"],
+          "REFERENCES": ["instruction.md@6c7909d5", "environment/enforcer/docs/policy-contract.md@6c7909d5", "environment/enforcer/docs/state-format.md@6c7909d5", "environment/enforcer/docs/operations.md@6c7909d5"],
+          "REQUIRED_END_STATE": "All surfaces enforce trusted sources, immutable digests, current scanner/cache evidence, scoped expiring exceptions, exact-scope keyed permits, and restart-safe allow/deny audit history.",
+          "REQUIREMENT_FAMILIES": ["source/digest policy", "scanner/cache freshness", "vulnerability exceptions", "permit integrity", "durable audit/recovery", "CLI compatibility"],
+          "SCALE_FIT": "Very strong: the current task has reachable manager, identity, evidence/cache, exception, permit/replay, journal/recovery, and transaction-state logic rather than unrelated scale padding."
+        },
+        {
+          "DUPLICATE_RISK": "Moderate because AMI pipeline governance is a familiar platform pattern.",
+          "EDGE_FAILURE_SURFACE": ["copy failure", "KMS mismatch", "stale evidence", "rollback after partial publish"],
+          "ENGINEERING_OBJECTIVE": "Govern AMI promotion across build, test, security evidence, encryption, sharing and multi-region distribution.",
+          "ID": "WP2_AMI_PROMOTION_GOVERNANCE",
+          "INHERITED_SYSTEM_STATE": "Stateful Go image-promotion controller.",
+          "INSTRUCTION_FIT": "Good, but it would replace rather than deepen the inherited acquisition-policy problem.",
+          "PARTIAL_FIX_TRAPS": ["promote on stale scan", "partial-region success", "retry without idempotency"],
+          "PERSONA": "EC2 image platform engineer",
+          "PRESERVATION_OBLIGATIONS": ["stable promotion interface", "retain approved history"],
+          "REFERENCES": ["requested EC2 supply-chain domain"],
+          "REQUIRED_END_STATE": "Immutable image identity, current security evidence, idempotent promotion, controlled distribution, rollback and durable history converge safely.",
+          "REQUIREMENT_FAMILIES": ["provenance", "test/security gates", "KMS/share policy", "regional distribution", "state/idempotency", "rollback/audit"],
+          "SCALE_FIT": "Strong, but less aligned to the existing task."
+        },
+        {
+          "DUPLICATE_RISK": "Moderate-high because fleet patch controllers are common.",
+          "EDGE_FAILURE_SURFACE": ["package lock", "lost host", "reboot timeout", "exception expiry", "controller restart"],
+          "ENGINEERING_OBJECTIVE": "Turn software inventory and vulnerability policy into restart-safe staged package remediation across an EC2 fleet.",
+          "ID": "WP3_RUNTIME_REMEDIATION_CONVERGENCE",
+          "INHERITED_SYSTEM_STATE": "Go fleet reconciliation service with persisted per-host state.",
+          "INSTRUCTION_FIT": "Good, but it shifts from acquisition-time enforcement to post-install remediation.",
+          "PARTIAL_FIX_TRAPS": ["success before rescan", "non-durable phase retry", "stale inventory"],
+          "PERSONA": "EC2 fleet security/SRE engineer",
+          "PRESERVATION_OBLIGATIONS": ["do not touch compliant hosts", "retain maintenance semantics/history"],
+          "REFERENCES": ["requested EC2 supply-chain domain"],
+          "REQUIRED_END_STATE": "Inventory, planning, execution, reboot/recheck, exception and recovery states converge deterministically with durable audit.",
+          "REQUIREMENT_FAMILIES": ["inventory freshness", "policy eligibility", "maintenance windows", "package adapters", "reboot/recheck", "resume/recovery"],
+          "SCALE_FIT": "Strong and stateful, but no longer the inherited task boundary."
+        }
+      ],
+      "DUPLICATE_RISK_NOTES": "No ORIGINALITY_REFERENCES or PUBLIC_RESEARCH input was supplied for this invocation; selection does not claim an independent duplicate-search pass and remains within the registered originality-review boundary.",
+      "RECOMMENDATION": "WP1_UNIFIED_EC2_ARTIFACT_ADMISSION",
+      "WHY_THIS_ONE": "WP1 preserves the current task objective and derives difficulty from coupled security and durability invariants across three acquisition surfaces. The remediated starter is now production-shaped and runtime-reachable, so the work package satisfies large_system_strict through genuine policy/state interactions rather than feature accumulation or cloned scale."
+    },
+    "status": "CANDIDATES_READY"
+  },
+  "schema_version": "1.0",
+  "stage_id": "WORK_PACKAGE_RESEARCH",
+  "task_commit": "6c7909d5c0efd3e6e64443d6de3b227c1820b01b",
+  "task_id": "ec2-artifact-policy-enforcement"
+}
