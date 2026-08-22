@@ -4,6 +4,7 @@ import hashlib
 import json
 from pathlib import Path
 
+from .case_contract import contract_summary
 from .models import (
     CaseSpec,
     Config,
@@ -14,6 +15,7 @@ from .models import (
     OperatingPointSpec,
     SolverMonitorSpec,
 )
+from .reference_catalog import load_reference_bundle
 
 
 class ConfigurationError(ValueError):
@@ -89,6 +91,7 @@ def load_config(root: Path) -> Config:
 
 
 def load_cases(root: Path) -> list[CaseSpec]:
+    load_reference_bundle(root)
     case_dir = root / "cases"
     cases: list[CaseSpec] = []
     for path in sorted(case_dir.glob("*.json")):
@@ -176,20 +179,20 @@ def load_cases(root: Path) -> list[CaseSpec]:
         )
         if any(point.outlet_static_pressure_pa >= point.inlet_total_pressure_pa for point in operating_points):
             raise ConfigurationError(f"{path.name} contains an operating point with non-positive pressure head")
-        cases.append(
-            CaseSpec(
-                case_id=_require_str(payload, "case_id"),
-                family=_require_str(payload, "family"),
-                fluid=fluid,
-                geometry=geometry,
-                mesh=mesh,
-                solver_monitor=solver_monitor,
-                limits=limits,
-                operating_points=operating_points,
-                source_path=path,
-                source_digest=_digest_path(path),
-            )
+        case = CaseSpec(
+            case_id=_require_str(payload, "case_id"),
+            family=_require_str(payload, "family"),
+            fluid=fluid,
+            geometry=geometry,
+            mesh=mesh,
+            solver_monitor=solver_monitor,
+            limits=limits,
+            operating_points=operating_points,
+            source_path=path,
+            source_digest=_digest_path(path),
         )
+        _ = contract_summary(case)
+        cases.append(case)
     case_ids = [case.case_id for case in cases]
     if len(case_ids) != len(set(case_ids)):
         raise ConfigurationError("case_id values must be unique")

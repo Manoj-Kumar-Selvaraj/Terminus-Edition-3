@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
+from .fleet_indices import fleet_risk_indices
 from .loaders import load_cases, load_config
 from .report import write_reports
 from .solver import analyze_case
@@ -36,6 +37,7 @@ def run(root: Path) -> dict[str, object]:
     cases = load_cases(root)
     case_results = [analyze_case(case, config.severity_order) for case in cases]
     fleet_rollup = _fleet_rollup(case_results, config.severity_order)
+    _ = fleet_risk_indices(case_results)
     artifacts = write_reports(config, case_results, fleet_rollup, root)
     return {
         "artifacts": artifacts,

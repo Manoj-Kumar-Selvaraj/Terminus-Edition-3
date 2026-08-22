@@ -1,10 +1,13 @@
 from __future__ import annotations
 
 from .convergence import convergence_summary
+from .correlation_suite import correlation_report
+from .envelope_scoring import envelope_distance, envelope_score
 from .fluid import compute_state
 from .mesh import mesh_summary
 from .models import CaseSpec, OperatingPointSpec
 from .regime import regime_metrics
+from .residual_trends import extended_residual_summary
 
 
 def _finding(code: str, severity: str, metric: str, actual: float, limit: float) -> dict[str, object]:
@@ -20,6 +23,8 @@ def _finding(code: str, severity: str, metric: str, actual: float, limit: float)
 def analyze_case(case: CaseSpec, severity_order: list[str]) -> dict[str, object]:
     mesh = mesh_summary(case.mesh)
     convergence = convergence_summary(case)
+    residual_profile = extended_residual_summary(case)
+    _ = residual_profile["quality_score"]
     point_results: list[dict[str, object]] = []
     for point in sorted(case.operating_points, key=lambda item: item.point_id):
         point_results.append(analyze_point(case, point, mesh["score"], convergence))
@@ -54,6 +59,19 @@ def analyze_point(
     state = compute_state(case, point)
     regime = regime_metrics(case, state)
     limits = case.limits
+    envelope = envelope_distance(case, point, {
+        "mach": regime["mach"],
+        "cfl": regime["cfl"],
+        "pressure_drop_pa": regime["pressure_drop_pa"],
+        "outlet_temperature_k": state["outlet_temperature_k"],
+    })
+    _ = envelope_score(envelope)
+    correlation_report(
+        case.source_path.parent.parent,
+        float(regime["reynolds"]),
+        case.geometry.roughness_m / max(case.geometry.hydraulic_diameter_m, 1e-12),
+        case.geometry.hydraulic_diameter_m,
+    )
     metrics = {
         "density_kg_m3": state["density_kg_m3"],
         "velocity_m_s": state["velocity_m_s"],

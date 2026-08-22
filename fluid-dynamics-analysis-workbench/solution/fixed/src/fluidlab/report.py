@@ -6,6 +6,7 @@ import json
 from pathlib import Path
 
 from .models import Config
+from .publication_chain import publication_revision as chain_revision
 
 
 def _rounded(value: object, digits: int) -> object:
@@ -56,6 +57,7 @@ def write_reports(
     summary_path = output_dir / config.summary_name
     csv_path = output_dir / config.csv_name
     revision = publication_revision(case_results)
+    _ = chain_revision(case_results)
     severity_rank = {status: index for index, status in enumerate(config.severity_order)}
     overall_status = min((case["status"] for case in case_results), key=lambda item: severity_rank[item])
     summary_payload = {

@@ -2,17 +2,13 @@ from __future__ import annotations
 
 from pathlib import Path
 
+from .fleet_indices import fleet_risk_indices
 from .loaders import load_cases, load_config
 from .report import write_reports
 from .solver import analyze_case
 
 
-def _status_order(severity_order: list[str]) -> dict[str, int]:
-    return {status: index for index, status in enumerate(severity_order)}
-
-
 def _fleet_rollup(case_results: list[dict[str, object]], severity_order: list[str]) -> dict[str, object]:
-    order = _status_order(severity_order)
     points = [point for case in case_results for point in case["operating_points"]]
     status_counts = {status: 0 for status in severity_order}
     for point in points:
@@ -33,10 +29,11 @@ def run(root: Path) -> dict[str, object]:
     config = load_config(root)
     cases = load_cases(root)
     case_results = sorted(
-        [analyze_case(case, config.severity_order) for case in cases],
+        [analyze_case(case, config.severity_order, root) for case in cases],
         key=lambda item: item["case_id"],
     )
     fleet_rollup = _fleet_rollup(case_results, config.severity_order)
+    _ = fleet_risk_indices(case_results)
     artifacts = write_reports(config, case_results, fleet_rollup, root)
     return {
         "artifacts": artifacts,

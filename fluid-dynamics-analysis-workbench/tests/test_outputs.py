@@ -239,3 +239,103 @@ def test_p2p_liquid_cases_remain_pass() -> None:
         case = next(item for item in summary["cases"] if item["case_id"] == case_id)
         assert case["status"] == "PASS"
         assert all(point["status"] == "PASS" for point in case["operating_points"])
+
+
+def test_f2p_manifold_case_status_pass() -> None:
+    """The liquid manifold case must publish PASS at case scope."""
+    summary = load_summary()
+    case = next(item for item in summary["cases"] if item["case_id"] == "manifold-balance")
+    assert case["status"] == "PASS"
+
+
+def test_f2p_thermal_case_status_pass() -> None:
+    """The thermal loop case must publish PASS at case scope."""
+    summary = load_summary()
+    case = next(item for item in summary["cases"] if item["case_id"] == "thermal-loop")
+    assert case["status"] == "PASS"
+
+
+def test_f2p_nozzle_cold_flow_passes() -> None:
+    """The cold-flow nozzle point must remain inside hydraulic and stability limits."""
+    point = point_lookup(load_summary(), "nozzle-array", "cold-flow")
+    assert point["status"] == "PASS"
+    assert point["findings"] == []
+
+
+def test_f2p_manifold_balanced_point_passes() -> None:
+    """The balanced manifold operating point must publish PASS."""
+    point = point_lookup(load_summary(), "manifold-balance", "balanced")
+    assert point["status"] == "PASS"
+
+
+def test_f2p_manifold_peak_demand_passes() -> None:
+    """The peak-demand manifold operating point must publish PASS."""
+    point = point_lookup(load_summary(), "manifold-balance", "peak-demand")
+    assert point["status"] == "PASS"
+
+
+def test_f2p_thermal_startup_ramp_passes() -> None:
+    """The startup-ramp thermal point must publish PASS."""
+    point = point_lookup(load_summary(), "thermal-loop", "startup-ramp")
+    assert point["status"] == "PASS"
+
+
+def test_f2p_thermal_nominal_load_passes() -> None:
+    """The nominal-load thermal point must publish PASS."""
+    point = point_lookup(load_summary(), "thermal-loop", "nominal-load")
+    assert point["status"] == "PASS"
+
+
+def test_f2p_thermal_hot_day_derate_passes() -> None:
+    """The hot-day-derate thermal point must publish PASS."""
+    point = point_lookup(load_summary(), "thermal-loop", "hot-day-derate")
+    assert point["status"] == "PASS"
+
+
+def test_f2p_fleet_rollup_counts() -> None:
+    """Fleet rollup must report three cases and eight operating points."""
+    rollup = load_summary()["fleet_rollup"]
+    assert rollup["case_count"] == 3
+    assert rollup["operating_point_count"] == 8
+
+
+def test_f2p_fleet_worst_pressure_margin_negative() -> None:
+    """Fleet rollup must expose a negative worst pressure margin from overdrive."""
+    rollup = load_summary()["fleet_rollup"]
+    assert rollup["worst_pressure_margin_pa"] < 0.0
+
+
+def test_f2p_fleet_worst_mach_margin_positive() -> None:
+    """Fleet rollup must keep a positive worst Mach margin across the fleet."""
+    rollup = load_summary()["fleet_rollup"]
+    assert rollup["worst_mach_margin"] > 0.0
+
+
+def test_f2p_nozzle_points_mach_margins_positive() -> None:
+    """Every nozzle operating point must keep positive Mach margins."""
+    summary = load_summary()
+    case = next(item for item in summary["cases"] if item["case_id"] == "nozzle-array")
+    assert all(point["margins"]["mach_margin"] > 0.0 for point in case["operating_points"])
+
+
+def test_f2p_nozzle_points_cfl_margins_positive() -> None:
+    """Every nozzle operating point must keep positive CFL margins."""
+    summary = load_summary()
+    case = next(item for item in summary["cases"] if item["case_id"] == "nozzle-array")
+    assert all(point["margins"]["cfl_margin"] > 0.0 for point in case["operating_points"])
+
+
+def test_f2p_all_cases_mesh_scores_above_limits() -> None:
+    """Published mesh margins must remain non-negative for every operating point."""
+    summary = load_summary()
+    for case in summary["cases"]:
+        for point in case["operating_points"]:
+            assert point["margins"]["mesh_margin"] >= 0.0
+
+
+def test_f2p_all_points_converged() -> None:
+    """Every operating point must report converged solver monitors."""
+    summary = load_summary()
+    for case in summary["cases"]:
+        for point in case["operating_points"]:
+            assert point["convergence"]["converged"] is True

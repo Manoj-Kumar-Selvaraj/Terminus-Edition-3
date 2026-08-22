@@ -1,0 +1,295 @@
+{
+  "status": "QUALITY_INTERLOCK_REVISE",
+  "profile": "large_system_strict",
+  "task_id": "fluid-dynamics-analysis-workbench",
+  "task_kind": "software",
+  "engineering_objective": "Complete an inherited fluid-dynamics analysis workbench that validates case definitions, evaluates coupled hydraulic and thermal behavior, judges mesh and convergence quality, and publishes deterministic case and fleet reports for liquid and gas operating envelopes.",
+  "originality_boundary": {
+    "distinctive_center": [
+      "one package covering case ingestion, mesh quality, stability, hydraulic losses, heat-transfer estimates, convergence assessment, and deterministic report publication",
+      "mixed incompressible-liquid and ideal-gas operating cases in one analysis surface",
+      "publication-grade JSON, CSV, and checkpoint outputs instead of a single scalar result",
+      "coupled state model where regime, pressure, thermal, and convergence semantics must agree",
+      "engineering workbench style CLI and contracts rather than notebook calculations"
+    ],
+    "excluded": [
+      "full finite-volume Navier-Stokes field solves",
+      "interactive CAD meshing or geometry editing",
+      "GPU solvers or external cluster orchestration",
+      "live sensor ingestion from lab hardware",
+      "cloud infrastructure provisioning"
+    ]
+  },
+  "component_graph": {
+    "analysis_core": [
+      "case loader and schema validation",
+      "reference catalog and property bridge",
+      "geometry consistency checks",
+      "fluid-property state model",
+      "friction and heat-transfer correlation suites",
+      "mesh quality scorer",
+      "nondimensional regime calculator",
+      "pressure-drop and heat-transfer estimator",
+      "solver-monitor convergence evaluator",
+      "per-point severity and finding engine",
+      "case and fleet aggregation",
+      "deterministic JSON, CSV, and checkpoint publisher"
+    ],
+    "solver_visible_assets": [
+      "multi-case operating definitions",
+      "reference property catalogs",
+      "system configuration",
+      "analysis contract docs",
+      "CLI wrappers and build scripts"
+    ]
+  },
+  "operational_requirements": [
+    "Validate every case for geometry, fluid, mesh, operating-point, solver-monitor, and publication consistency before analysis.",
+    "Support both incompressible liquid and ideal-gas operating points without mixing unit systems or state assumptions.",
+    "Compute Reynolds, Mach, CFL, pressure drop, bulk temperature rise, heat-transfer coefficient, and convergence state from one internally consistent physical model.",
+    "Treat mesh quality, convergence, hydraulic loss, thermal limits, and stability limits as interacting constraints rather than isolated checks.",
+    "Preserve per-case and per-operating-point lineage across JSON, CSV, and checkpoint outputs.",
+    "Publish deterministic outputs with stable field order, row order, severity order, tie-breaks, and rounding.",
+    "Aggregate fleet-level hydraulic, thermal, mesh, and stability risk summaries rather than only a single pass/fail flag.",
+    "Keep CLI and publication paths on shared service logic so one-surface fixes cannot drift from the other surface.",
+    "Recompute results from current inputs instead of hardcoded expected metrics or report templates.",
+    "Bound errors and keep malformed or limit-violating operating points visible without corrupting unrelated case outputs."
+  ],
+  "root_cause_clusters": {
+    "RC_CASE_CONTRACT": "Case loading, units, and configuration validation are incomplete or inconsistent across modules.",
+    "RC_PHYSICAL_STATE": "Fluid-property, regime, and heat-balance computations disagree about the same operating point state.",
+    "RC_ENGINEERING_LIMITS": "Mesh, stability, convergence, and envelope limits are checked with incompatible severity and margin semantics.",
+    "RC_PUBLICATION": "Case lineage, ordering, checkpointing, and published report schemas are inconsistent or nondeterministic.",
+    "RC_SHARED_LOGIC": "CLI, pipeline, and reporting surfaces duplicate logic and can diverge under repair."
+  },
+  "defects": [
+    {
+      "id": "D01",
+      "component": "case loader",
+      "observable_failure": "Geometry or fluid fields with invalid units or missing required keys are accepted and then fail later under unrelated modules.",
+      "root_cause": "RC_CASE_CONTRACT",
+      "partial_fix_trap": "Adding field checks in one loader path without catalog-backed cross-validation still leaves D02 lineage and D03 property drift reachable."
+    },
+    {
+      "id": "D02",
+      "component": "case loader",
+      "observable_failure": "Distinct operating points can collapse or overwrite one another because lineage and ordering are not treated as first-class contract data.",
+      "root_cause": "RC_CASE_CONTRACT",
+      "partial_fix_trap": "Sorting operating points without also fencing duplicate point_id values still permits D14 rollup omissions."
+    },
+    {
+      "id": "D03",
+      "component": "reference catalog",
+      "observable_failure": "Liquid and gas cases derive density and temperature state with incompatible assumptions, producing inconsistent downstream metrics.",
+      "root_cause": "RC_PHYSICAL_STATE",
+      "partial_fix_trap": "Correcting density in the property bridge but leaving regime Reynolds length on the wrong hydraulic scale still breaks D04 and D05."
+    },
+    {
+      "id": "D04",
+      "component": "regime calculator",
+      "observable_failure": "Reynolds, Mach, and CFL numbers are computed from state values that do not agree with the pressure-drop and heat-balance calculations.",
+      "root_cause": "RC_PHYSICAL_STATE",
+      "partial_fix_trap": "Fixing Reynolds length alone without reconciling friction and compressible head caps still leaves D05 pressure inflation reachable."
+    },
+    {
+      "id": "D05",
+      "component": "friction models",
+      "observable_failure": "Distributed and minor losses use inconsistent area, velocity, or roughness conventions, breaking limit and ranking semantics.",
+      "root_cause": "RC_PHYSICAL_STATE",
+      "partial_fix_trap": "Removing a scalar inflation factor but keeping the wrong dynamic-pressure basis still permits D09 severity reordering under mixed FAIL points."
+    },
+    {
+      "id": "D06",
+      "component": "thermal model",
+      "observable_failure": "Outlet bulk temperature and heat-transfer coefficients do not stay consistent with the same operating-point mass flow and heat load.",
+      "root_cause": "RC_PHYSICAL_STATE",
+      "partial_fix_trap": "Aligning outlet temperature rise without updating Nusselt regime selection still leaves D07 mesh and D08 convergence warnings mis-ranked."
+    },
+    {
+      "id": "D07",
+      "component": "mesh quality scorer",
+      "observable_failure": "Aspect ratio, skewness, orthogonality, and negative-volume penalties do not produce stable quality and severity outcomes.",
+      "root_cause": "RC_ENGINEERING_LIMITS",
+      "partial_fix_trap": "Tuning one mesh component weight without serializing mesh margin into finding precedence still allows D09 unstable rollups."
+    },
+    {
+      "id": "D08",
+      "component": "convergence evaluator",
+      "observable_failure": "Residuals, imbalance limits, and iteration budgets are judged with mismatched thresholds or incomplete trend semantics.",
+      "root_cause": "RC_ENGINEERING_LIMITS",
+      "partial_fix_trap": "Checking only final residual tails without monotonic decay scoring still permits D09 WARN findings to rank above unrelated FAIL points."
+    },
+    {
+      "id": "D09",
+      "component": "severity engine",
+      "observable_failure": "Limit violations and warnings are emitted in incompatible order or precedence, causing unstable case and fleet rollups.",
+      "root_cause": "RC_ENGINEERING_LIMITS",
+      "partial_fix_trap": "Sorting findings by code alone without severity-first ordering still leaves D14 fleet counts inconsistent with case status."
+    },
+    {
+      "id": "D10",
+      "component": "report publisher",
+      "observable_failure": "JSON, CSV, and checkpoint outputs disagree about case identity, publication revision, or final status.",
+      "root_cause": "RC_PUBLICATION",
+      "partial_fix_trap": "Aligning summary status from cases but leaving CSV row order unsorted still breaks D11 byte-stable artifacts."
+    },
+    {
+      "id": "D11",
+      "component": "report publisher",
+      "observable_failure": "Equal-severity rows or fields can publish in nondeterministic order and produce unstable artifacts.",
+      "root_cause": "RC_PUBLICATION",
+      "partial_fix_trap": "Sorting CSV rows without also stabilizing checkpoint artifact paths still permits D12 partial publication views."
+    },
+    {
+      "id": "D12",
+      "component": "checkpoint state",
+      "observable_failure": "The checkpoint can describe an older or partially published view that does not match the report artifacts beside it.",
+      "root_cause": "RC_PUBLICATION",
+      "partial_fix_trap": "Rewriting checkpoint revision without mirroring per-case digests still leaves D10 summary disagreement reachable."
+    },
+    {
+      "id": "D13",
+      "component": "CLI and pipeline",
+      "observable_failure": "The command wrapper and the programmatic pipeline drift, so one path can pass while the other publishes different metrics.",
+      "root_cause": "RC_SHARED_LOGIC",
+      "partial_fix_trap": "Routing both entrypoints through one script without sharing case sort order still permits D14 divergent fleet rollups."
+    },
+    {
+      "id": "D14",
+      "component": "aggregation layer",
+      "observable_failure": "Fleet and case rollups silently drop failed or warning operating points, hiding the coupled failure surface.",
+      "root_cause": "RC_PUBLICATION",
+      "partial_fix_trap": "Recomputing fleet worst margins without worst-case status aggregation still reports PASS when one point fails."
+    },
+    {
+      "id": "D15",
+      "component": "geometry checks",
+      "observable_failure": "Hydraulic diameter derived from wetted perimeter and flow area is ignored, letting inconsistent geometry distort velocity and Reynolds state.",
+      "root_cause": "RC_CASE_CONTRACT",
+      "partial_fix_trap": "Logging geometry warnings without rejecting inconsistent area-perimeter pairs still allows D04 regime drift."
+    },
+    {
+      "id": "D16",
+      "component": "property bridge",
+      "observable_failure": "Ideal-gas representative pressure uses inlet-only head while liquid density ignores thermal expansion at bulk temperature.",
+      "root_cause": "RC_PHYSICAL_STATE",
+      "partial_fix_trap": "Switching to bulk-temperature density without reconciling catalog cross-check deltas still leaves D03 catalog mismatch hidden."
+    },
+    {
+      "id": "D17",
+      "component": "correlation suite",
+      "observable_failure": "Friction correlations are blended without respecting catalog Reynolds bands, inflating pressure drop on compressible points.",
+      "root_cause": "RC_PHYSICAL_STATE",
+      "partial_fix_trap": "Selecting one correlation family without compressible head caps still permits D05 over-limit pressure findings."
+    },
+    {
+      "id": "D18",
+      "component": "residual trends",
+      "observable_failure": "Convergence quality ignores monotonic residual tails and iteration budget pressure, emitting false PASS stability margins.",
+      "root_cause": "RC_ENGINEERING_LIMITS",
+      "partial_fix_trap": "Scoring only final residual magnitude without tail monotonicity still leaves D08 convergence WARN findings unordered."
+    },
+    {
+      "id": "D19",
+      "component": "envelope scoring",
+      "observable_failure": "Operating envelope distance treats Mach and pressure margins with incompatible normalization, skewing near-limit classification.",
+      "root_cause": "RC_ENGINEERING_LIMITS",
+      "partial_fix_trap": "Normalizing pressure margins alone without CFL coupling still permits D09 mixed-severity ranking errors."
+    },
+    {
+      "id": "D20",
+      "component": "fleet indices",
+      "observable_failure": "Fleet stress indices are computed from partial point subsets when case ordering is unstable, hiding worst hydraulic margins.",
+      "root_cause": "RC_PUBLICATION",
+      "partial_fix_trap": "Recomputing indices after sorting cases but before sorting operating points still omits the true worst pressure margin."
+    },
+    {
+      "id": "D21",
+      "component": "publication chain",
+      "observable_failure": "Publication revision digests omit operating-point lineage, allowing artifact reuse across distinct analyzed states.",
+      "root_cause": "RC_PUBLICATION",
+      "partial_fix_trap": "Extending revision with point keys but not case status still permits D12 checkpoint drift after case rollup repair."
+    },
+    {
+      "id": "D22",
+      "component": "units registry",
+      "observable_failure": "Pressure and temperature normalization accepts alternate unit labels without enforcing SI storage in downstream modules.",
+      "root_cause": "RC_CASE_CONTRACT",
+      "partial_fix_trap": "Converting loader inputs to SI without validating case JSON units still leaves D01 malformed acceptance reachable."
+    },
+    {
+      "id": "D23",
+      "component": "lineage digest",
+      "observable_failure": "Per-point lineage digests ignore heat load and mass-flow tuple identity, collapsing distinct operating points in CSV keys.",
+      "root_cause": "RC_CASE_CONTRACT",
+      "partial_fix_trap": "Hashing point_id alone without mass-flow and heat-load still permits D02 duplicate lineage under renamed points."
+    },
+    {
+      "id": "D24",
+      "component": "hydraulic head",
+      "observable_failure": "Available compressible head is compared against uncapped distributed losses, producing false FAIL pressure margins.",
+      "root_cause": "RC_PHYSICAL_STATE",
+      "partial_fix_trap": "Capping pressure drop against available head without fixing Reynolds length still leaves D04 stability margins inconsistent."
+    }
+  ],
+  "causal_edges": [
+    {"from": "D01", "to": "D02"},
+    {"from": "D01", "to": "D15"},
+    {"from": "D02", "to": "D23"},
+    {"from": "D02", "to": "D14"},
+    {"from": "D03", "to": "D04"},
+    {"from": "D03", "to": "D16"},
+    {"from": "D04", "to": "D05"},
+    {"from": "D04", "to": "D24"},
+    {"from": "D05", "to": "D09"},
+    {"from": "D05", "to": "D17"},
+    {"from": "D06", "to": "D07"},
+    {"from": "D06", "to": "D08"},
+    {"from": "D07", "to": "D09"},
+    {"from": "D08", "to": "D18"},
+    {"from": "D08", "to": "D09"},
+    {"from": "D09", "to": "D14"},
+    {"from": "D09", "to": "D20"},
+    {"from": "D10", "to": "D12"},
+    {"from": "D10", "to": "D11"},
+    {"from": "D11", "to": "D21"},
+    {"from": "D12", "to": "D10"},
+    {"from": "D13", "to": "D14"},
+    {"from": "D14", "to": "D20"},
+    {"from": "D15", "to": "D04"},
+    {"from": "D16", "to": "D03"},
+    {"from": "D17", "to": "D05"},
+    {"from": "D18", "to": "D08"},
+    {"from": "D19", "to": "D09"},
+    {"from": "D20", "to": "D14"},
+    {"from": "D21", "to": "D12"},
+    {"from": "D22", "to": "D01"},
+    {"from": "D23", "to": "D02"},
+    {"from": "D24", "to": "D05"}
+  ],
+  "behavioral_surfaces": {
+    "normal": [
+      "deterministic case loading and publication",
+      "liquid and gas operating-point analysis",
+      "hydraulic, thermal, mesh, and convergence rollups"
+    ],
+    "edge_boundary": [
+      "near-limit Mach, CFL, and pressure-drop margins",
+      "mixed severity operating points within one case",
+      "borderline mesh quality and residual tails"
+    ],
+    "negative_rejection": [
+      "invalid geometry or fluid definitions",
+      "unsupported fluid model",
+      "duplicate or malformed operating-point identity"
+    ],
+    "failure_recovery": [
+      "bounded publication after one case fails validation",
+      "checkpoint rewrite from current analyzed inputs"
+    ],
+    "cross_component": [
+      "shared state between fluid properties, regime metrics, and thermal estimates",
+      "mesh and convergence severity flowing into case and fleet publication"
+    ]
+  }
+}
