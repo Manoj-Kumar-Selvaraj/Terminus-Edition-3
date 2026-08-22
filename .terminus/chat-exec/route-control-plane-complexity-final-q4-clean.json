@@ -1,0 +1,50 @@
+{
+  "schema_version": "1.0",
+  "mode": "RECORD",
+  "task_id": "route-control-plane",
+  "task_commit": "4d4f9608d391a31cd5d7aaafa56ebfe4381c8a6a",
+  "control_plane_commit": "df7ef7569e2947b9f0bf7cf89ed4dec6c2a5a1fe",
+  "expected_repository_head": "3da9ec17602442ce7965ddaf53e05ff21c927338",
+  "stage_id": "COMPLEXITY_GATE",
+  "inputs": {
+    "DEFECT_GRAPH": {
+      "profile": "large_system_strict",
+      "root_cause_clusters": 8,
+      "defect_manifestations": 24,
+      "connected_manifestations": 24,
+      "behavioral_surfaces": ["route/rule normalization", "policy dependency and management safety", "transaction fencing", "rollback/recovery", "drift ownership/freshness", "fleet rollout safety", "Ansible convergence/precedence", "dashboard concurrency"]
+    },
+    "ENVIRONMENT_TREE": {
+      "task_root": "route-control-plane",
+      "runtime_artifact": "/app/routecp",
+      "components": ["Go HTTP control plane", "route/rule domain model", "transaction preview/apply/rollback", "persistent state", "FIB/topology/policy diagnostics", "drift/reconciliation", "fleet health/rollout/change-window planning", "Ansible deployment", "operator dashboard"]
+    },
+    "INSTRUCTION": "Complete the inherited route-control-plane as a fleet-safe routing desired-state system, preserving management reachability, isolated host routing, convergent Ansible projection, monotonic audit history and documented API/deployment/dashboard contracts.",
+    "PRODUCTION_CHARACTERISTIC_EVIDENCE": ["Go HTTP routing control plane", "IPv4/IPv6 route and policy-rule lifecycle", "revision preview/apply/rollback transactions", "durable desired/observed state", "FIB tracing and topology/dependency analysis", "management safety and policy evaluation", "drift detection and reconciliation", "fleet health, rollout preview and change-window planning", "Ansible systemd deployment", "operator dashboard"],
+    "RUNTIME_REACHABILITY_EVIDENCE": ["Go service entrypoint reaches route/rule transactions, durable state, recovery, drift reconciliation, fleet health and rollout logic", "operator endpoints reach inventory, FIB, topology, policy, diagnostics, consistency and change-impact analysis", "Ansible role deploys/configures the same service and projects defaults plus protected/host routes", "dashboard consumes and mutates revision-bound control-plane state"],
+    "SUBSTANTIVE_LOC_REPORT": {"substantive_loc":3338,"reachable_production_loc":3338,"runtime_entrypoint":"cmd/routecp","source":"strict complexity/authenticity validation retained by PR #94"},
+    "TEST_CLASSIFICATION_MAP": {"F2P_COUNT":26,"P2P_COUNT":8,"classification":"26 F2P + 8 P2P"}
+  },
+  "result": {
+    "status": "PASS",
+    "output_task_commit": "4d4f9608d391a31cd5d7aaafa56ebfe4381c8a6a",
+    "outputs": {
+      "SUBSTANTIVE_LOC": 3338,
+      "REACHABLE_PRODUCTION_LOC": 3338,
+      "PRODUCTION_CHARACTERISTICS": ["Go HTTP routing control plane", "IPv4/IPv6 route and policy-rule lifecycle", "revision preview/apply/rollback transactions", "durable desired/observed state", "FIB/topology/policy/recovery analysis", "drift detection and reconciliation", "fleet health/rollout/change-window planning", "Ansible systemd deployment", "operator dashboard"],
+      "DEFECT_MANIFESTATIONS": 24,
+      "CONNECTED_MANIFESTATIONS": 24,
+      "ROOT_CAUSE_CLUSTERS": 8,
+      "F2P_COUNT": 26,
+      "P2P_COUNT": 8,
+      "F2P_ORGANICITY": "PASS: 26 F2P cases exercise distinct normalization, policy dependency, transaction fencing, rollback/recovery, drift ownership, rollout safety, deployment/UI behavior and destructive management-path safety across eight coupled root-cause clusters without parameter splitting.",
+      "EDGE_BOUNDARY_COVERAGE": ["IPv4/IPv6 canonicalization and family separation", "multipath semantic identity", "same prefix across tables", "duplicate rule priorities/missing tables", "management reachability across preview/rollback/reconcile/rollout", "stale preview and rollback fencing", "restart recovery", "stale observed-state reconcile", "stale heartbeat/canary/wave boundaries", "Ansible second-run convergence", "dashboard preview/apply revision binding"],
+      "NEGATIVE_FAILURE_COVERAGE": ["unknown node/invalid policy dependency rejection", "unsafe management route/policy and post-preview mutation rejection", "offline apply non-publication", "stale preview/rollback conflict", "unowned drift preservation", "out-of-selector canary/oversized wave rejection", "host-network isolation"],
+      "PADDING_RISK": "LOW: compact behaviorally diverse multi-site IPv4/IPv6, ECMP, offline, staging and DR scenarios remain; the final remediation changed verifier/reference behavior only, not production scale.",
+      "TEST_DUPLICATION_RISK": "LOW: cases span independent routing, transaction, persistence, management safety, drift, rollout, deployment, audit and UI contracts; preservation cases cover additional public operational behaviors.",
+      "INSTRUCTION_CHECKLIST_RISK": "LOW: instruction states engineering invariants and operator behavior rather than exposing hidden verifier rows or defect IDs.",
+      "REQUIRED_CHANGES": []
+    },
+    "evidence_refs": []
+  }
+}
