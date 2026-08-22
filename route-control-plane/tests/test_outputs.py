@@ -122,11 +122,13 @@ def test_go_runtime_contracts() -> None:
 
         func TestVerifierRollbackCreatesMonotonicDesiredRevision(t *testing.T) {
             cp := verifierCP(t)
-            txn := verifierApplyRoute(t,cp,"r1","198.51.100.0/24","k1")
+            verifierApplyRoute(t,cp,"mgmt","198.51.100.0/24","baseline")
+            txn := verifierApplyRoute(t,cp,"change","203.0.113.0/24","k1")
             rb, err := cp.Rollback(RollbackRequest{TransactionID:txn.ID,Actor:"test",Reason:"undo"})
             if err != nil { t.Fatal(err) }
-            if rb.TargetRevision != 2 || cp.Revision() != 2 { t.Fatalf("rollback revision target=%d current=%d", rb.TargetRevision, cp.Revision()) }
-            if len(cp.Routes("n1","")) != 0 { t.Fatalf("rolled-back desired route still published") }
+            routes := cp.Routes("n1","")
+            if rb.TargetRevision != 3 || cp.Revision() != 3 { t.Fatalf("rollback revision target=%d current=%d", rb.TargetRevision, cp.Revision()) }
+            if len(routes) != 1 || routes[0].ID != "mgmt" { t.Fatalf("rollback did not preserve baseline management route: %#v", routes) }
         }
 
         func TestVerifierOldRollbackCannotClobberNewRevision(t *testing.T) {
@@ -221,6 +223,7 @@ def test_dashboard_apply_is_bound_to_preview_revision(tmp_path: pathlib.Path) ->
           constructor(form) {{ this.form = form; }}
           get(name) {{ return this.form[name] ?? null; }}
         }};
+        global.crypto = {{randomUUID: () => "quality-dashboard-idempotency"}};
         require({json.dumps(str(out_dir / "app.js"))});
         const Dashboard = global.__RouteCPDashboard;
         if (!Dashboard) throw new Error("Dashboard class was not exposed for behavioral verification");
