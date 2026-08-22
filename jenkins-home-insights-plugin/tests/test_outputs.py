@@ -5,6 +5,7 @@ from __future__ import annotations
 import hashlib
 import json
 import os
+import re
 import shutil
 import socket
 import subprocess
@@ -253,6 +254,30 @@ def tree_digest(root: Path, *, exclude_target: bool = False) -> dict[str, str]:
     return result
 
 
+FORBIDDEN_EXPORT_PATTERNS = (
+    re.compile(r"https?://", re.I),
+    re.compile(r"(password|apikey|api_key|secret_token|private_key)\s*[:=]", re.I),
+    re.compile(r"BEGIN (RSA |OPENSSH )?PRIVATE KEY", re.I),
+)
+
+
+def assert_exports_sanitized(home: Path) -> None:
+    """Generated exports must not contain credentials, tokens, logs, or external URLs."""
+    exports = home / "exports"
+    assert exports.is_dir(), "exports directory is required"
+    for path in exports.rglob("*"):
+        if not path.is_file():
+            continue
+        if path.suffix == ".log":
+            pytest.fail(f"build log artifact present in exports: {path}")
+        text = path.read_text(encoding="utf-8", errors="ignore")
+        for pattern in FORBIDDEN_EXPORT_PATTERNS:
+            assert not pattern.search(text), f"forbidden export content in {path}"
+    config = home / "config.json"
+    if config.is_file():
+        assert json.loads(config.read_text(encoding="utf-8")).get("secrets") is False
+
+
 def generations(state: Path) -> list[Path]:
     return sorted(path for path in (state / "generations").glob("gen-*") if path.is_dir())
 
@@ -365,6 +390,7 @@ def test_f2p_deterministic_10000_home_generation(
     assert first_summary == second_summary
     assert tree_digest(first_home) == tree_digest(second_home)
     assert 10_000 <= first_summary["total"] <= 20_000
+    assert_exports_sanitized(first_home)
 
 
 def test_f2p_repeated_full_scans_have_stable_content_digest(
