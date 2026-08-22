@@ -1,0 +1,60 @@
+{
+  "schema_version": "1.1",
+  "profile": "large_system_strict",
+  "task": "sovereign-l4-load-balancer",
+  "substantive_runtime_loc": 3015,
+  "runtime_entrypoint": "/app/sovereign-lb/bin/lb-control-plane",
+  "native_layers": {
+    "go": [
+      "api",
+      "rollout",
+      "revision",
+      "snapshot",
+      "nodes",
+      "fleet",
+      "readiness",
+      "recovery",
+      "retention",
+      "catalog"
+    ],
+    "cpp": [
+      "control",
+      "proxy",
+      "eligibility",
+      "selector",
+      "health",
+      "drain",
+      "checkpoint",
+      "protocol",
+      "status"
+    ]
+  },
+  "production_characteristics": [
+    "Go control plane with revision, idempotency, and generation authority",
+    "C++ epoll dataplane with real TCP forwarding and PROXY protocol v2",
+    "Two-phase prepare/activate rollout with live-session quorum",
+    "Immutable versioned snapshots with canonical digests end to end",
+    "Health-aware target eligibility, draining, and zonal fail-open policy",
+    "Dataplane checkpoint recovery after restart and corrupt CURRENT pointers",
+    "Bounded readiness, metrics, rollout, and audit operator surfaces"
+  ],
+  "production_authenticity": {
+    "current_state_evidence_required": false,
+    "stateful_dataset_exemption": {
+      "approved": true,
+      "approved_by": "creation-controller",
+      "reason": "Sovereign LB is a network control and dataplane service whose persisted state is immutable listener/target snapshots, generation checkpoints, rollout records, node session fences, and health runtime—not a fixed business-record warehouse. Seeding 10,000–20,000 synthetic business rows would not participate in TCP forwarding, quorum rollout, or checkpoint recovery. Production statefulness is exercised through the 24-node fleet inventory, scenario catalog, loopback lab backends, and verifier-driven apply/prepare/activate/restart flows."
+    },
+    "domain_state_model": [
+      "accepted revision and idempotency authority",
+      "compiled immutable generation snapshots and digests",
+      "rollout phase and per-node session acknowledgements",
+      "dataplane active runtime and connection ownership",
+      "target health, ejection, drain, and incarnation runtime",
+      "padded generation checkpoints and CURRENT pointer",
+      "fleet inventory across three zones"
+    ],
+    "reachability_evidence": "All declared state is created, mutated, or inspected through /app/sovereign-lb/bin/lb-control-plane, /app/sovereign-lb/bin/lb-dataplane, /app/sovereign-lb/bin/lbctl, and the loopback lab entrypoints documented under /app/sovereign-lb/docs."
+  },
+  "status": "PRODUCTION_PROFILE_DECLARED"
+}
