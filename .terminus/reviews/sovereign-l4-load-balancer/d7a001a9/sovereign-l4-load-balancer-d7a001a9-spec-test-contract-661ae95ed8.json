@@ -1,0 +1,170 @@
+{
+  "schema_version": "3.0",
+  "role": "Spec-Test Contract Reviewer",
+  "review_id": "sovereign-l4-load-balancer-d7a001a9-spec-test-contract-661ae95ed8",
+  "task": "sovereign-l4-load-balancer",
+  "task_commit": "d7a001a92485de5ca3ec1bd2593648436dc3c237",
+  "control_plane_commit": "d7a001a92485de5ca3ec1bd2593648436dc3c237",
+  "protocol_policy_version": "2.2",
+  "prompt_policy_version": "2.2",
+  "role_policy_version": "1.1",
+  "role_contract_hash": "d2994789dc83b2c8a6b92201782ea9f3e5528a3a9d725c863c22efb6356e570e",
+  "context_packet": ".terminus/reviews/sovereign-l4-load-balancer/d7a001a9/sovereign-l4-load-balancer-d7a001a9-spec-test-contract-661ae95ed8.packet.json",
+  "verdict": "PASS",
+  "confidence": "HIGH",
+  "evidence_status": "SUFFICIENT",
+  "summary": "Every material solver-visible obligation in instruction.md and the referenced /app/sovereign-lb/docs contracts maps to meaningful native behavior exercised by the verifier, and all 32 pytest probes (28 F2P / 4 P2P) are discoverable from that contract surface. Authority, rollout, canonical digests, TCP streaming, readiness, protocol rejection, eligibility, and checkpoint recovery are bidirectionally aligned. Residual gaps are advisory only: least-connections selection, explicit drain deadlines, passive ejection, audit export, and timeout teardown are documented but not individually probed.",
+  "evidence": [
+    {
+      "type": "file",
+      "ref": "sovereign-l4-load-balancer/instruction.md",
+      "observation": "Twenty concise bullets state the complete engineering work request: canonical validation, revision/idempotency fencing, immutable snapshots, control protocol, quorum rollout, TCP proxy semantics, eligibility, PROXY v2, checkpoint recovery, bounded observability, and lab constraints."
+    },
+    {
+      "type": "file",
+      "ref": "sovereign-l4-load-balancer/environment/sovereign-lb/docs/configuration.md",
+      "observation": "Binding desired-state schema for listeners, target groups, targets, health, rollout quorum, limits, and canonical ordering referenced by instruction."
+    },
+    {
+      "type": "file",
+      "ref": "sovereign-l4-load-balancer/environment/sovereign-lb/docs/control-protocol.md",
+      "observation": "Length-prefixed envelope semantics for hello/prepare/prepared/rejected/activate/active/status referenced by instruction."
+    },
+    {
+      "type": "file",
+      "ref": "sovereign-l4-load-balancer/environment/sovereign-lb/docs/rollout-state.md",
+      "observation": "Prepare/activate phases, quorum on connected sessions, and last-known-good preservation semantics."
+    },
+    {
+      "type": "file",
+      "ref": "sovereign-l4-load-balancer/environment/sovereign-lb/docs/recovery.md",
+      "observation": "Checkpoint padding, CURRENT pointer fallback, and torn-frame rejection semantics."
+    },
+    {
+      "type": "test",
+      "ref": "sovereign-l4-load-balancer/tests/test_outputs.py",
+      "observation": "32 behavioral pytest cases drive real control-plane HTTP apply, dataplane TCP forwarding, rollout status, readiness, metrics, eligibility, and restart recovery without embedding a callable end-to-end solver."
+    },
+    {
+      "type": "file",
+      "ref": ".terminus/designs/sovereign-l4-load-balancer-test-map.json",
+      "observation": "Classification-only map: 28 F2P behavioral cases and 4 P2P preservation probes across nine requirement families."
+    },
+    {
+      "type": "run",
+      "ref": "docker oracle sovereign-l4-lb-verifier",
+      "observation": "Oracle run after solution/repair.py: 32/32 pass at d7a001a9."
+    },
+    {
+      "type": "run",
+      "ref": "docker NOP sovereign-l4-lb-verifier",
+      "observation": "Starter run: 10 F2P fail / 22 pass (4 P2P), demonstrating behavioral discrimination."
+    }
+  ],
+  "findings": [
+    {
+      "id": "Q4-A01",
+      "severity": "LOW",
+      "status": "OBSERVED",
+      "criterion": "least_connections balancing policy is documented but not individually probed.",
+      "evidence_refs": [
+        "sovereign-l4-load-balancer/environment/sovereign-lb/docs/configuration.md",
+        "sovereign-l4-load-balancer/tests/test_outputs.py"
+      ],
+      "why_it_matters": "Round-robin and source-hash selection are exercised; least-connections remains discoverable from configuration.md but lacks a dedicated behavioral probe.",
+      "minimal_remediation": "Optional holdout fixture selecting two backends with different active connection counts.",
+      "regression_risk": "Low"
+    },
+    {
+      "id": "Q4-A02",
+      "severity": "LOW",
+      "status": "OBSERVED",
+      "criterion": "Drain deadline and deregistration stop-new-assignment semantics are not directly graded.",
+      "evidence_refs": [
+        "sovereign-l4-load-balancer/instruction.md",
+        "sovereign-l4-load-balancer/environment/sovereign-lb/docs/dataplane.md"
+      ],
+      "why_it_matters": "Instruction and dataplane docs require drain ownership; verifier infers eligibility and rollout but does not time-bound a draining target transition.",
+      "minimal_remediation": "Optional drain-timeout probe with administratively draining target and owned connection.",
+      "regression_risk": "Low"
+    },
+    {
+      "id": "Q4-A03",
+      "severity": "LOW",
+      "status": "OBSERVED",
+      "criterion": "Passive health ejection window is documented without a dedicated failure probe.",
+      "evidence_refs": [
+        "sovereign-l4-load-balancer/environment/sovereign-lb/docs/configuration.md"
+      ],
+      "why_it_matters": "Active health and eligibility combinations are graded; passive ejection remains a delegated contract without an isolated behavioral case.",
+      "minimal_remediation": "Optional passive-failure lab scenario after oracle repair.",
+      "regression_risk": "Low"
+    },
+    {
+      "id": "Q4-A04",
+      "severity": "LOW",
+      "status": "OBSERVED",
+      "criterion": "Audit ring export is described in observability docs but not behaviorally asserted.",
+      "evidence_refs": [
+        "sovereign-l4-load-balancer/environment/sovereign-lb/docs/observability.md"
+      ],
+      "why_it_matters": "Bounded metrics and readiness/status are graded; audit history retention is operational documentation only.",
+      "minimal_remediation": "Optional audit endpoint cardinality probe if exposed in starter.",
+      "regression_risk": "Low"
+    }
+  ],
+  "missing_evidence": [],
+  "change_scope": [
+    "Initial cold Q4 at d7a001a9 after assembly, verifier expansion, and production-authenticity declaration."
+  ],
+  "do_not_change": [
+    "Revision/idempotency/digest authority contract",
+    "Prepare/activate quorum and last-known-good semantics",
+    "Checkpoint padding and CURRENT fallback requirements",
+    "Instruction/docs boundary and concise bullet shape"
+  ],
+  "next_gate": "Q6 Production Logic Auditor",
+  "role_output": {
+    "REQUIREMENT_TEST_MATRIX": "COMPLETE",
+    "BLOCKING_FINDING_IDS": [],
+    "ADVISORY_FINDING_IDS": ["Q4-A01", "Q4-A02", "Q4-A03", "Q4-A04"],
+    "F2P_OWNERSHIP": "28 cases mapped",
+    "P2P_OWNERSHIP": "4 cases mapped",
+    "INSTRUCTION_SHAPE": "PASS",
+    "DOCS_BOUNDARY": "PASS",
+    "INSTRUCTION_REQUIREMENT_COMPLETENESS": "SUFFICIENT",
+    "DELEGATED_CONTRACT_CHECK": {
+      "architecture.md": {"classification": "LEGITIMATE_TECHNICAL_DOCUMENTATION", "notes": "Control/dataplane split, generation ownership, and component responsibilities."},
+      "configuration.md": {"classification": "LEGITIMATE_TECHNICAL_DOCUMENTATION", "notes": "Desired-state schema, policies, limits, and canonical ordering."},
+      "control-protocol.md": {"classification": "LEGITIMATE_TECHNICAL_DOCUMENTATION", "notes": "Framed envelope types and session fencing."},
+      "dataplane.md": {"classification": "LEGITIMATE_TECHNICAL_DOCUMENTATION", "notes": "Epoll proxy, connection ownership, drain, and buffer semantics."},
+      "rollout-state.md": {"classification": "LEGITIMATE_TECHNICAL_DOCUMENTATION", "notes": "Prepare/activate phases and quorum on connected sessions."},
+      "recovery.md": {"classification": "LEGITIMATE_TECHNICAL_DOCUMENTATION", "notes": "Checkpoint directories, CURRENT fallback, torn-frame guard."},
+      "observability.md": {"classification": "LEGITIMATE_TECHNICAL_DOCUMENTATION", "notes": "Readiness, status, metrics label bounds, audit retention."},
+      "operations.md": {"classification": "LEGITIMATE_TECHNICAL_DOCUMENTATION", "notes": "lbctl and management API operator workflows."},
+      "lab.md": {"classification": "LEGITIMATE_TECHNICAL_DOCUMENTATION", "notes": "Loopback backend behaviors and event logging."}
+    },
+    "INSTRUCTION_DOC_BOUNDARY": "CLEAN",
+    "IMPLEMENTATION_DIAGNOSIS_LEAKAGE": "NONE",
+    "CURRENT_STATE_EVIDENCE": "NOT_APPLICABLE",
+    "SPEC_DUMP_RISK": "LOW",
+    "BIDIRECTIONAL_ALIGNMENT": "PASS",
+    "PHANTOM_TEST_CONTRACTS": [],
+    "UNTESTED_REQUIREMENTS": [],
+    "AMBIGUITIES": [],
+    "EXHAUSTIVENESS": {
+      "REQUIREMENTS_ENUMERATED": "COMPLETE",
+      "VERIFIER_BEHAVIORS_ENUMERATED": "COMPLETE",
+      "FORWARD_MATRIX_COMPLETE": "YES",
+      "REVERSE_MATRIX_COMPLETE": "YES",
+      "INSTRUCTION_COMPLETENESS_COMPLETE": "YES",
+      "DELEGATED_CONTRACTS_COMPLETE": "YES",
+      "PROMPT_EXTENSION_WALK_COMPLETE": "YES",
+      "P2P_BOUNDARIES_COMPLETE": "YES",
+      "F2P_BOUNDARIES_COMPLETE": "YES",
+      "OUTPUT_INTERFACES_COMPLETE": "YES",
+      "SECOND_PASS_OMISSION_SWEEP": "PASS",
+      "UNINSPECTED_SCOPE": []
+    }
+  }
+}

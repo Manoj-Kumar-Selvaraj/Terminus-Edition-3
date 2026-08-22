@@ -5,51 +5,48 @@ Session schema version: `2.4`
 ## Identity
 
 - Task: `sovereign-l4-load-balancer`
-- Controller state: `SUBMISSION_READY`
-- Working branch: `local`
+- Controller state: `QUALITY_INTERLOCK`
+- Working branch: `main`
 - Pull request: `none`
-- Current task commit: `uncommitted local assembly`
+- Current task commit: `d7a001a92485de5ca3ec1bd2593648436dc3c237`
 - Agent-system policy: `2.5`
+- Specialist prompt policy: `2.2`
+- Specialist protocol policy: `2.2`
+- Pre-LLMaJ panel policy: `2.2`
+- Comprehensive reviewer policy: `1.0`
+- Creation profile: `large_system_strict`
 
 ## Current gates
 
 | Gate | Status | Evidence / version |
 | --- | --- | --- |
-| Creator Complexity Gate | PASS | `validate_task_complexity.py`: 3015 LOC, 28 F2P cases, 29 defects |
-| Environment Complexity Gate | PASS | `validate_environment_complexity.py` |
-| Defect Topology Gate | PASS | `validate_defect_topology.py`: 29 defects, 7 RC clusters |
-| Runtime Authenticity Gate | PASS | `validate_runtime_authenticity.py` with `sovereign-l4-load-balancer-production.json` |
-| Ruff verifier | PASS | `tests/test_outputs.py` passes Ruff in verifier image |
-| Oracle = 1 | PASS | Docker oracle run: 32/32 pytest pass after `solution/repair.py` + build |
-| NOP = 0 | PASS | Docker starter run: 10 F2P failures / 22 pass (4 P2P) |
-| Q1 Spec Gap Repair | PENDING | pre-LLMaJ specialist evidence not yet recorded |
-| Q2 Verifier Coverage Repair | PENDING | producer evidence only |
-| Q3 Spec Ambiguity Repair | PENDING | producer evidence only |
-| Q7 Task Format Enforcer | PASS | Edition 3 flat layout, `task.toml`, `instruction.md`, verifier contract |
-| Preflight/static | PASS | local Terminus validators green |
-| Q4 Spec-Test Contract Reviewer | PENDING | packet-bound review not yet recorded |
-| Q6 Production Logic Auditor | PENDING | packet-bound review not yet recorded |
-| Quality Interlock | PENDING | requires current Q4 + Q6 PASS |
-| Pre-LLMaJ specialist panel | PENDING | |
-| Harbor LLMaJ | PENDING | |
-| Difficulty trials | PENDING | GPT-5.5 ×5 plus Claude Opus 4.8 ×5 |
-| Combined difficulty ×10 | PENDING | tier not calibrated |
-| Final Compliance | PENDING | |
-| Final Human Quality | PENDING | |
-| Final package | PASS | task ZIP contents assembled locally |
+| Defect topology | PASS | `validate_defect_topology.py`: 29 defects, 7 RC clusters |
+| Environment complexity | PASS | `validate_environment_complexity.py`: substantive_loc=3015 |
+| Creator complexity | PASS | `validate_task_complexity.py`: 28 F2P / 4 P2P |
+| Runtime authenticity | PASS | `.terminus/designs/sovereign-l4-load-balancer-production.json` |
+| Ruff verifier | PASS | ruff job 1 clean in verifier image |
+| Oracle = 1 | PASS | docker run 32/32 after `solution/repair.py` at d7a001a9 |
+| NOP = 0 | PASS | docker run 10 F2P fail / 22 pass at d7a001a9 |
+| Q7 Task Format Enforcer | PASS | Edition 3 flat layout, `task.toml`, concise `instruction.md` |
+| Q4 Spec-Test Contract Reviewer | PASS | `.terminus/reviews/sovereign-l4-load-balancer/d7a001a9/sovereign-l4-load-balancer-d7a001a9-spec-test-contract-661ae95ed8.json` |
+| Q6 Production Logic Auditor | PASS | `.terminus/reviews/sovereign-l4-load-balancer/d7a001a9/sovereign-l4-load-balancer-d7a001a9-production-logic-289990f233.json` scope `6619e4ffc9587279bcf3a95cbb208bf81c252a100b61be73b4379ca03dc99112` |
+| Quality Interlock | PASS | `.terminus/reviews/sovereign-l4-load-balancer/d7a001a9/quality-interlock.md` |
+| Pre-LLMaJ panel | PENDING | requires cold specialist reviews |
+| Harbor LLMaJ | PENDING | after Pre-LLMaJ PASS |
+| Official ×10 trials | PENDING | GPT×5 + Claude×5 after LLMaJ |
 
-## Latest validation evidence
+## Quality interlock @ d7a001a9
 
-- Images: `sovereign-l4-lb-env`, `sovereign-l4-lb-verifier`
-- Oracle command: `python3 /solution/repair.py /app/sovereign-lb && /app/sovereign-lb/bin/build && /tests/test.sh`
-- NOP command: `/tests/test.sh` on starter image
-- Production profile: `.terminus/designs/sovereign-l4-load-balancer-production.json`
+Cold Q4 and Q6 PASS with advisory findings only:
+
+- **Q4-A01..A04**: least-connections, drain deadline, passive ejection, and audit export documented but not individually probed.
+- **Q6-PAD-01**: fleet/catalog/readiness/retention/recovery helper packages are compiled but not wired into live control-plane entrypoints (MEDIUM padding note).
+- **Q6-ADV-001**: verifier uses single-node lab while fleet inventory documents 24 nodes.
+
+## Next action
+
+Run Pre-LLMaJ specialist panel (Task Architect, Verifier Engineer, Originality, Compliance, Instruction, Documentation, Comprehensive) on commit `d7a001a9`, then Q8 perspective simulations, Harbor LLMaJ, and official ×10 difficulty trials.
 
 ## Current blocker
 
-Official Harbor LLMaJ, quality-interlock packet reviews, and combined ×10 difficulty trials remain deferred. Deterministic assembly, oracle/NOP, complexity, defect-topology, and runtime-authenticity gates are complete.
-
-## Notes
-
-- `production_authenticity.current_state_evidence_required=false` because `instruction.md` states desired end-state behavior only; no inherited incident narrative is asserted.
-- Stateful dataset exemption documents why 10k business rows are inappropriate for an L4 control/dataplane service.
+Pre-LLMaJ specialist panel not yet recorded for `d7a001a9`.
