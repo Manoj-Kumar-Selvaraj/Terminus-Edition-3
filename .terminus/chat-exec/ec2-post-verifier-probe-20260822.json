@@ -1,0 +1,52 @@
+{
+  "schema_version": "1.0",
+  "mode": "PROBE",
+  "task_id": "ec2-artifact-policy-enforcement",
+  "task_commit": "d48ddd7cd262569babef349a4f5631b0f0152b0a",
+  "control_plane_commit": "df7ef7569e2947b9f0bf7cf89ed4dec6c2a5a1fe",
+  "expected_repository_head": "67e8c825152020b37ce2c29a4f3c34fc95cd2e11",
+  "stage_id": "HUMAN_WRITING_RESEARCH",
+  "inputs": {
+    "APPROVED_WORK_PACKAGE": {
+      "ENGINEERING_OBJECTIVE": "Make package, container, and build-dependency acquisition converge on one host-local Go admission boundary that enforces artifact identity, source trust, current vulnerability evidence, scoped exceptions, permit integrity, and durable decision state.",
+      "ID": "WP1_UNIFIED_EC2_ARTIFACT_ADMISSION",
+      "INSTRUCTION_FIT": "Strong: concise production incident/change request with detailed behavior delegated to solver-visible engineering contracts.",
+      "PERSONA": "EC2 platform security engineer",
+      "PRESERVATION_OBLIGATIONS": [
+        "preserve artifactguard evaluate and verify-permit interfaces and documented exit behavior",
+        "keep cache and exceptions operational rather than disabling them",
+        "do not rewrite supplied policy, scanner, or exception fixtures",
+        "preserve valid existing audit history and healthy cached evidence",
+        "retain stateless permit-verification compatibility while making stateful verification durable and single-use"
+      ],
+      "REQUIRED_END_STATE": "Every acquisition surface applies the same prerequisite trust and immutable-identity rules, uses only current artifact/policy/scanner evidence, limits exceptions to the exact vulnerability scope, issues and consumes exact-scope keyed permits safely, and commits restart-safe ALLOW/DENY history before completion.",
+      "REQUIREMENT_FAMILIES": [
+        "manager normalization and source trust",
+        "immutable artifact identity",
+        "scanner availability and evidence freshness",
+        "cache keying and revision/TTL validation",
+        "vulnerability threshold and exception scope",
+        "secret-keyed permit binding and expiry",
+        "single-use replay protection under restart/concurrency",
+        "durable journal, projection, corruption handling, and idempotency",
+        "public CLI and exit-code compatibility"
+      ]
+    },
+    "CURRENT_TIME_BUDGET": {
+      "enforcement": "ADVISORY_ONLY",
+      "guidance_seconds": 25200,
+      "hard_limit": null,
+      "policy_version": "1.1",
+      "quality_gates_may_be_skipped_for_time": false,
+      "time_extension_required": false
+    },
+    "SOLVER_VISIBLE_REQUIREMENTS": {
+      "docs/architecture.md": "ArtifactGuard routes evaluate and verify-permit through normalization, policy, evidence/cache, exception, permit, audit, replay and durable state subsystems.",
+      "docs/operations.md": "Stable CLI and exit codes; optional --state enables durable single-use permit verification across restart and concurrency.",
+      "docs/policy-contract.md": "Trusted source and immutable digest precede exceptions; scanner/cache evidence is revision-bound and fresh; vulnerability exceptions are exact-scope; permits are secret-keyed and exact-scope; ALLOW and DENY are durable.",
+      "docs/state-format.md": "Audit journal is authoritative; retry is idempotent; derived projection follows durable journal; complete trailing record remains valid while durable malformed history fails closed.",
+      "instruction.md": "Repair the reproduced inconsistent EC2 acquisition decisions so package, container and dependency acquisition share one policy boundary while preserving the public CLI, fixtures, cache/exceptions, durable history, keyed exact-scope permits and restart-safe single-use semantics."
+    }
+  },
+  "result": {}
+}
