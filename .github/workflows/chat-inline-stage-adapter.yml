@@ -28,12 +28,5 @@ jobs:
           git add -- ".terminus/chat-run-locators/$GITHUB_SHA.json"
           git commit -m "Persist chat run locator $GITHUB_RUN_ID"
           git push origin HEAD:"$GITHUB_REF_NAME"
-      - name: Execute chat stage transport
-        run: python3 .github/chat_inline_stage_adapter.py
-      - name: Upload adapter diagnostics
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: chat-inline-${{ github.run_id }}-${{ github.run_attempt }}
-          path: ${{ runner.temp }}/chat-inline
-          if-no-files-found: warn
+      - name: Execute deterministic invocation probe
+        run: python3 .github/ec2_deterministic_probe.py
