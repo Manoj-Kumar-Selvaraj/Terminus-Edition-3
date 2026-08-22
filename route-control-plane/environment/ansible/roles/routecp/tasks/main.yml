@@ -33,27 +33,8 @@
     mode: "0750"
   notify: Restart routecp
 
-- name: Render routecp environment
-  ansible.builtin.copy:
-    dest: "{{ routecp_config_dir }}/routecp.env"
-    owner: root
-    group: "{{ routecp_group }}"
-    mode: "0640"
-    content: |
-      ROUTECP_LISTEN={{ routecp_listen }}
-      ROUTECP_STATE_DIR={{ routecp_state_dir }}
-      ROUTECP_MAX_WAVE={{ routecp_max_wave }}
-      ROUTECP_PROTECTED_CIDRS={{ routecp_protected_cidrs | join(',') }}
-  notify: Restart routecp
-
-- name: Project host routing policy
-  ansible.builtin.copy:
-    dest: "{{ routecp_config_dir }}/desired.json"
-    owner: "{{ routecp_user }}"
-    group: "{{ routecp_group }}"
-    mode: "0640"
-    content: "{{ {'labels': routecp_labels, 'routes': routecp_routes, 'rules': routecp_rules, 'environment': routecp_environment} | to_nice_json }}"
-  notify: Restart routecp
+- name: Materialize routecp projected configuration
+  ansible.builtin.import_tasks: project.yml
 
 - name: Install routecp systemd unit
   ansible.builtin.copy:
