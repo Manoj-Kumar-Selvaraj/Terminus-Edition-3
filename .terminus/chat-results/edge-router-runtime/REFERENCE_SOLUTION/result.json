@@ -1,0 +1,35 @@
+{
+  "evidence_refs": [],
+  "invocation_id": "inv_e0c5633da061da7283c45a659673c36c5ebb94efd9306cb2ba2f7576915bf71b",
+  "output_task_commit": "24f07fbfc25e1354f308da5258750f795b18f0e2",
+  "outputs": {
+    "DETERMINISM_NOTES": "No test-name, hidden-input or environment-specific branching is used. Fixed source overlays are applied deterministically, formatted, tested and built from the registered command entrypoint.",
+    "FILES_CHANGED": [
+      "edge-router-runtime/solution/solve.sh",
+      "edge-router-runtime/solution/payload.00",
+      "edge-router-runtime/solution/payload.01",
+      "edge-router-runtime/solution/payload.02",
+      "edge-router-runtime/solution/payload.03",
+      "edge-router-runtime/solution/payload.04",
+      "edge-router-runtime/solution/q5-overlay.xz",
+      "edge-router-runtime/solution/q5-overlay2.xz",
+      "edge-router-runtime/solution/q5-overlay3.xz"
+    ],
+    "PRESERVED_BEHAVIOR": "The public serve/validate CLI, JSON configuration schema, operator configuration/discovery APIs, HTTP data plane, health/status/readiness/metrics/events surfaces, routing policies and durable state directory remain intact.",
+    "RESTART_IDEMPOTENCY_BEHAVIOR": "Repeated solution application reconstructs the same repaired runtime; restart recovery validates durable checkpoint authority before readiness and falls back to a previous complete generation when current recovery state is invalid.",
+    "RESTORED_INVARIANTS": [
+      "Per-source revision and digest authority is fenced under serialized acceptance; rejected or conflicting updates do not alter accepted metadata.",
+      "Candidate validation, runtime reconciliation, checkpoint preparation, publication and acknowledgement preserve last-known-good serving state on rejection.",
+      "Serving publication exposes one complete immutable runtime snapshot and each request holds one generation lease through match, affinity, retry and failover.",
+      "Canonical endpoint identity and incarnation semantics preserve compatible unchanged runtime state while remove/re-add creates a new incarnation.",
+      "Fresh selection excludes ineligible endpoints while already-leased generations may complete bounded work on draining endpoints.",
+      "Checkpoint bodies and CURRENT authority follow durable ordering and recovery verifies current state before falling back to a previous complete generation.",
+      "Retired snapshots, endpoint runtimes, transports, affinity state and telemetry are bounded and reclaimed after lifecycle completion."
+    ],
+    "RISKS_FOR_INDEPENDENT_VERIFIER": [
+      "Independent verification should stress concurrent publication with leased requests, source-local fencing, remove/re-add incarnation changes, all-unhealthy selection, bounded draining and checkpoint fallback."
+    ]
+  },
+  "schema_version": "1.0",
+  "status": "IMPLEMENTED"
+}
