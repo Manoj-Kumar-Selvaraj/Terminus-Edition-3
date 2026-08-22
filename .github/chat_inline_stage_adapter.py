@@ -87,7 +87,7 @@ if cont.get('next',{}).get('stage_id') != stage:
 inv=cont.get('invocation')
 if not isinstance(inv,dict) or inv.get('readiness') != 'READY' or inv.get('stage',{}).get('stage_id') != stage:
     raise SystemExit('invocation not READY for expected stage')
-if cont.get('execution_mode') not in {'INLINE_SPECIALIST','INLINE_SPECIALIST_SEQUENCE','ORCHESTRATOR_DIRECT'}:
+if cont.get('execution_mode') not in {'INLINE_SPECIALIST','INLINE_SPECIALIST_SEQUENCE','ORCHESTRATOR_DIRECT','HOSTED_DETERMINISTIC_VALIDATION'}:
     raise SystemExit(f'unsupported execution mode {cont.get("execution_mode")}')
 dump(WORK/'invocation.json',inv)
 
