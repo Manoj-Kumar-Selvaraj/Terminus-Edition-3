@@ -1,0 +1,44 @@
+{
+  "schema_version": "1.0",
+  "mode": "RECORD",
+  "task_id": "ec2-artifact-policy-enforcement",
+  "task_commit": "d48ddd7cd262569babef349a4f5631b0f0152b0a",
+  "control_plane_commit": "df7ef7569e2947b9f0bf7cf89ed4dec6c2a5a1fe",
+  "expected_repository_head": "ff1ca22d9cb8680f9f0724735f5acd24ca01529c",
+  "stage_id": "COMPLEXITY_GATE",
+  "inputs": {
+    "DEFECT_GRAPH": {"causal_edges":37,"connected_manifestations":26,"cross_cluster_pairs":11,"defect_manifestations":26,"root_cause_clusters":6},
+    "ENVIRONMENT_TREE": {
+      "language":"Go",
+      "live_subsystems":["manager normalization","request context","policy compilation","scanner/cache evidence","exception evaluation","permit/replay","audit/recovery","state transaction"],
+      "removed_padding":"all cloned catalog*.go rule-table files removed",
+      "runtime_root":"ec2-artifact-policy-enforcement/environment/enforcer"
+    },
+    "INSTRUCTION":"Security reproduced inconsistent acquisition decisions in /app/enforcer across scanner evidence, lower-level installers, mutable tags, exceptions, permits and restart audit. Repair package/container/dependency acquisition behind one policy boundary while preserving CLI, cache, fixtures and history; enforce trusted source/digest prerequisites, current scanner/cache evidence, exact vulnerability exceptions, secret-keyed exact-scope single-use permits, and durable ALLOW/DENY journaling with consistent recovery.",
+    "PRODUCTION_CHARACTERISTIC_EVIDENCE":["three acquisition surfaces and multiple managers","immutable artifact identity and source trust","policy/scanner versioned evidence cache","scoped expiring exceptions","secret-keyed permit binding with stateful replay","append-only authoritative audit","restart/concurrency/idempotency state semantics"],
+    "RUNTIME_REACHABILITY_EVIDENCE":"Evaluation and permit verification invoke the production-shaped normalization/policy/evidence/exception/permit/audit/replay/state modules; the prior selected-but-discarded catalog-table path has been deleted.",
+    "SUBSTANTIVE_LOC_REPORT":{"catalog_padding_loc":0,"profile":"large_system_strict","reachable_production_loc":3515,"substantive_loc":3515},
+    "TEST_CLASSIFICATION_MAP":{"f2p_count":28,"new_q4_contract_cases":4,"organic":true,"p2p_count":12,"requirement_families":6,"total":40}
+  },
+  "result": {
+    "status":"PASS",
+    "outputs": {
+      "CONNECTED_MANIFESTATIONS":26,
+      "DEFECT_MANIFESTATIONS":26,
+      "EDGE_BOUNDARY_COVERAGE":"PASS: version/TTL, expiry, mutable identity, restart, concurrency, final-record and corruption boundaries are represented.",
+      "F2P_COUNT":28,
+      "F2P_ORGANICITY":"PASS: distinct behavioral transitions across source/digest, evidence/cache, exception, permit and audit/recovery families; the four remediation cases close independent contract gaps rather than duplicate fixtures.",
+      "INSTRUCTION_CHECKLIST_RISK":"LOW: the incident/contract handoff groups requirements by engineering responsibility rather than verifier-row enumeration.",
+      "NEGATIVE_FAILURE_COVERAGE":"PASS: prerequisite bypasses, unavailable/stale/corrupt evidence, invalid exception scope, forged/misbound/replayed permits and corrupt durable history are rejected.",
+      "P2P_COUNT":12,
+      "PADDING_RISK":"LOW: cloned catalog tables are removed; substantive LOC is in runtime-reachable behavior-changing modules.",
+      "PRODUCTION_CHARACTERISTICS":["multi-surface acquisition admission","manager-specific normalization","compiled policy/evidence state","versioned cache freshness","scoped exceptions","authenticated replay-safe permits","durable audit/recovery","concurrent/idempotent state transitions"],
+      "REACHABLE_PRODUCTION_LOC":3515,
+      "REQUIRED_CHANGES":[],
+      "ROOT_CAUSE_CLUSTERS":6,
+      "SUBSTANTIVE_LOC":3515,
+      "TEST_DUPLICATION_RISK":"LOW: 40 cases map to distinct requirement or preservation transitions and are not parameter-renamed clones."
+    },
+    "evidence_refs":[]
+  }
+}
