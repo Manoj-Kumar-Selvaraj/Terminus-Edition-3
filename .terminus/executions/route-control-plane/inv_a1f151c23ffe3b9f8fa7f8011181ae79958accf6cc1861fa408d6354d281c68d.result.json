@@ -1,0 +1,259 @@
+{
+  "authority": {
+    "control_plane_commit": "df7ef7569e2947b9f0bf7cf89ed4dec6c2a5a1fe",
+    "policy_versions": {},
+    "task_commit": "18ed6c7faf7cd2da947a03e4990f81c6c59deb7b",
+    "task_id": "route-control-plane"
+  },
+  "disposition": "ADVANCE",
+  "evidence_refs": [],
+  "invocation_id": "inv_a1f151c23ffe3b9f8fa7f8011181ae79958accf6cc1861fa408d6354d281c68d",
+  "invocation_snapshot": {
+    "acceptance_predicates": {},
+    "authority": {
+      "control_plane_commit": "df7ef7569e2947b9f0bf7cf89ed4dec6c2a5a1fe",
+      "policy_versions": {},
+      "task_commit": "18ed6c7faf7cd2da947a03e4990f81c6c59deb7b",
+      "task_id": "route-control-plane"
+    },
+    "evidence": {
+      "authorized_evidence_classes": [
+        "CI_RUNTIME_EVIDENCE",
+        "CONTROL_PLANE_POLICY",
+        "PRIVATE_CREATION_DESIGN",
+        "SOLVER_VISIBLE_TASK",
+        "VERIFIER_PRIVATE"
+      ],
+      "evidence_required": [
+        "removal/reachability analysis",
+        "scale authenticity",
+        "test organicity",
+        "behavioral breadth"
+      ],
+      "excluded_evidence_classes": [
+        "CURRENT_REVIEW_PACKET",
+        "DURABLE_SESSION_STATE",
+        "FINAL_PACKAGE_EVIDENCE",
+        "MODEL_TRIAL_EVIDENCE",
+        "PRIOR_REVIEW_RESULTS",
+        "PUBLIC_REFERENCE",
+        "SOLUTION_ORACLE"
+      ],
+      "mandatory_exact_reads": [
+        ".terminus/agents/CREATION_PIPELINE.md",
+        ".terminus/agents/PRODUCTION_AUTHENTICITY.md",
+        ".terminus/agents/CREATOR_PROMPTS.md"
+      ],
+      "retrieval_mode": "EXACT_ONLY"
+    },
+    "ignored_input_count": 0,
+    "inputs": {
+      "optional": {},
+      "required": {
+        "DEFECT_GRAPH": {
+          "behavioral_surfaces": [
+            "route/rule normalization",
+            "transaction fencing",
+            "rollback/recovery",
+            "drift ownership/freshness",
+            "rollout safety",
+            "Ansible precedence/idempotency",
+            "dashboard concurrency"
+          ],
+          "connected_manifestations": 24,
+          "defect_manifestations": 24,
+          "profile": "large_system_strict",
+          "root_cause_clusters": 8
+        },
+        "ENVIRONMENT_TREE": {
+          "components": [
+            "Go HTTP control plane",
+            "route/rule domain model",
+            "transaction preview/apply/rollback",
+            "persistent state",
+            "drift/reconciliation",
+            "fleet rollout",
+            "Ansible deployment",
+            "operator dashboard"
+          ],
+          "runtime_artifact": "/app/routecp",
+          "task_root": "route-control-plane"
+        },
+        "INSTRUCTION": "Complete the inherited route-control-plane as a fleet-safe routing desired-state system, preserving management reachability and documented API/deployment/dashboard contracts.",
+        "PRODUCTION_CHARACTERISTIC_EVIDENCE": [
+          "Go HTTP routing control plane",
+          "IPv4/IPv6 route and policy-rule lifecycle",
+          "revision preview/apply/rollback transactions",
+          "durable desired/observed state",
+          "drift detection and reconciliation",
+          "160-node representative fleet rollout",
+          "Ansible systemd deployment",
+          "operator dashboard"
+        ],
+        "RUNTIME_REACHABILITY_EVIDENCE": [
+          "Go service entrypoint reaches routing transactions, durable state, drift reconciliation and rollout logic",
+          "Ansible role deploys/configures service across representative fleet",
+          "dashboard consumes and mutates revision-bound control-plane state"
+        ],
+        "SUBSTANTIVE_LOC_REPORT": {
+          "reachable_production_loc": 3524,
+          "runtime_entrypoint": "cmd/routecp",
+          "substantive_loc": 3524
+        },
+        "TEST_CLASSIFICATION_MAP": {
+          "F2P_COUNT": 25,
+          "P2P_COUNT": 4,
+          "classification": "25 F2P + 4 P2P"
+        }
+      }
+    },
+    "invocation_id": "inv_a1f151c23ffe3b9f8fa7f8011181ae79958accf6cc1861fa408d6354d281c68d",
+    "learning": {
+      "context_hash": "sha256:bb84a513aa2b6e4374d691759c4a6edf94169f479f4611e9091643b9f279ccfc",
+      "lessons": [],
+      "mode": "GENERALIZED_LESSONS_PLUS_OWNED_REMEDIATIONS",
+      "raw_feedback_exposed": false,
+      "raw_historical_findings_exposed": false,
+      "registry_heads": {
+        "feedback": "GENESIS",
+        "findings": "GENESIS",
+        "lessons": "GENESIS",
+        "patterns": "GENESIS",
+        "remediations": "GENESIS"
+      },
+      "remediations": []
+    },
+    "missing_required_inputs": [],
+    "output_contract": {
+      "allowed_status_values": [
+        "PASS",
+        "REVISE",
+        "SCENARIO_TOO_SMALL"
+      ],
+      "deterministic_validators": [
+        ".terminus/validate_task_complexity.py <task>"
+      ],
+      "optional_fields": [
+        "MEANINGFUL_RESOURCE_COUNT"
+      ],
+      "persisted_artifacts": [],
+      "required_fields": [
+        "SUBSTANTIVE_LOC",
+        "REACHABLE_PRODUCTION_LOC",
+        "PRODUCTION_CHARACTERISTICS",
+        "DEFECT_MANIFESTATIONS",
+        "CONNECTED_MANIFESTATIONS",
+        "ROOT_CAUSE_CLUSTERS",
+        "F2P_COUNT",
+        "P2P_COUNT",
+        "F2P_ORGANICITY",
+        "EDGE_BOUNDARY_COVERAGE",
+        "NEGATIVE_FAILURE_COVERAGE",
+        "PADDING_RISK",
+        "TEST_DUPLICATION_RISK",
+        "INSTRUCTION_CHECKLIST_RISK",
+        "REQUIRED_CHANGES"
+      ],
+      "semantic_reviewers": []
+    },
+    "readiness": "READY",
+    "retrieval": {
+      "query": null,
+      "retrieved_chars": 0,
+      "retrieved_context": [],
+      "status": "NOT_REQUESTED"
+    },
+    "routing": {
+      "failure_routes": {
+        "REVISE": "smallest responsible producer",
+        "SCENARIO_TOO_SMALL": "Creation Controller -> WORK_PACKAGE_RESEARCH"
+      },
+      "stale_on": [
+        "solver-visible environment change",
+        "defect-graph change",
+        "verifier/test-map change",
+        "instruction change affecting complexity claims"
+      ],
+      "success_transition": "RUNTIME_AUTHENTICITY"
+    },
+    "schema_version": "1.0",
+    "stage": {
+      "lifecycle": "creation",
+      "owner": "A10 Complexity Governor",
+      "role_class": "REVIEWER",
+      "role_id": "A10_COMPLEXITY_GOVERNOR",
+      "stage_id": "COMPLEXITY_GATE"
+    }
+  },
+  "outputs": {
+    "CONNECTED_MANIFESTATIONS": 24,
+    "DEFECT_MANIFESTATIONS": 24,
+    "EDGE_BOUNDARY_COVERAGE": [
+      "IPv4/IPv6 canonicalization and family separation",
+      "multipath semantic identity",
+      "same prefix across tables",
+      "duplicate rule priorities/missing tables",
+      "stale preview and rollback fencing",
+      "restart recovery",
+      "stale observed-state reconcile",
+      "stale heartbeat/canary/wave boundaries"
+    ],
+    "F2P_COUNT": 25,
+    "F2P_ORGANICITY": "PASS: 25 F2P cases exercise distinct normalization, policy dependency, transaction fencing, rollback/recovery, drift ownership, rollout safety, Ansible and dashboard behaviors; repaired starter materialization restores the intended IPv6 F2P failure.",
+    "INSTRUCTION_CHECKLIST_RISK": "LOW: instruction states engineering invariants rather than hidden verifier rows.",
+    "NEGATIVE_FAILURE_COVERAGE": [
+      "unknown node/invalid policy dependency rejection",
+      "offline apply non-publication",
+      "stale preview/rollback conflict",
+      "unowned drift preservation",
+      "out-of-selector canary/oversized wave rejection",
+      "management reachability preservation"
+    ],
+    "P2P_COUNT": 4,
+    "PADDING_RISK": "LOW: solver-visible runtime, fleet config, Ansible and dashboard components are operationally reachable and differentiated.",
+    "PRODUCTION_CHARACTERISTICS": [
+      "Go HTTP routing control plane",
+      "IPv4/IPv6 route and policy-rule lifecycle",
+      "revision preview/apply/rollback transactions",
+      "durable desired/observed state",
+      "drift detection and reconciliation",
+      "160-node representative fleet rollout",
+      "Ansible systemd deployment",
+      "operator dashboard"
+    ],
+    "REACHABLE_PRODUCTION_LOC": 3524,
+    "REQUIRED_CHANGES": [],
+    "ROOT_CAUSE_CLUSTERS": 8,
+    "SUBSTANTIVE_LOC": 3524,
+    "TEST_DUPLICATION_RISK": "LOW: cases span independent routing, transaction, persistence, drift, rollout, deployment and UI contracts."
+  },
+  "record_id": "rec_d248c96526791006e897b21394a378438f98af209d2b1dcc85cd25fbc39a4a91",
+  "role_id": "A10_COMPLEXITY_GOVERNOR",
+  "schema_version": "1.0",
+  "stage_id": "COMPLEXITY_GATE",
+  "status": "PASS",
+  "task_lineage": {
+    "input_task_commit": "18ed6c7faf7cd2da947a03e4990f81c6c59deb7b",
+    "output_task_commit": "18ed6c7faf7cd2da947a03e4990f81c6c59deb7b",
+    "task_changed": false
+  },
+  "transition": {
+    "action": "ADVANCE",
+    "requires_state_validation": false,
+    "target": "RUNTIME_AUTHENTICITY",
+    "target_kind": "STAGE"
+  },
+  "validation": {
+    "acceptance_predicates_satisfied": true,
+    "evidence_binding_satisfied": true,
+    "evidence_refs_count": 0,
+    "invocation_identity_valid": true,
+    "invocation_policy_valid": true,
+    "output_keys_valid": true,
+    "required_outputs_satisfied": true,
+    "retrieval_context_authorized": true,
+    "status_legal": true,
+    "task_commit_change_authorized": true,
+    "task_lineage_valid": true
+  }
+}
