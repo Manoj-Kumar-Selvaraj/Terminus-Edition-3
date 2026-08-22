@@ -11,129 +11,14 @@ permissions:
   contents: write
 
 jobs:
-  prepare:
-    name: Validate exact quality request
-    runs-on: ubuntu-latest
-    outputs:
-      task: ${{ steps.request.outputs.task }}
-      stage: ${{ steps.request.outputs.stage }}
-      publish_results: ${{ steps.request.outputs.publish_results }}
-      execute_optional_q8: ${{ steps.request.outputs.execute_optional_q8 }}
-      change: ${{ steps.request.outputs.change }}
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - id: request
-        name: Bind request to current main and task snapshot
-        shell: bash
-        run: |
-          set -euo pipefail
-          mapfile -t paths < <(git diff-tree --no-commit-id --name-only -r "$GITHUB_SHA" -- '.terminus/quality-requests/*.json')
-          [[ "${#paths[@]}" == 1 ]] || {
-            echo "::error::Quality request push must add/change exactly one request file; found ${#paths[@]}"
-            exit 1
-          }
-
-          request="${paths[0]}"
-          parent="$(git rev-parse "$GITHUB_SHA^")"
-          remote_main="$(git ls-remote origin refs/heads/main | cut -f1)"
-
-          python3 - "$request" "$parent" "$remote_main" "$GITHUB_OUTPUT" <<'PY'
-          import json
-          import re
-          import subprocess
-          import sys
-
-          path, parent, remote_main, output = sys.argv[1:]
-          request = json.load(open(path, encoding="utf-8"))
-          required = {
-              "schema_version",
-              "task",
-              "task_commit",
-              "expected_repository_head",
-              "stage",
-              "publish_results",
-              "execute_optional_q8",
-              "change",
-          }
-          if set(request) != required:
-              raise SystemExit(
-                  f"quality request key drift: expected={sorted(required)} actual={sorted(request)}"
-              )
-          if request["schema_version"] != "1.0":
-              raise SystemExit("unsupported quality request schema")
-
-          task = request["task"]
-          if not isinstance(task, str) or not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._-]*", task):
-              raise SystemExit("unsafe task")
-          for field in ("task_commit", "expected_repository_head"):
-              value = request[field]
-              if not isinstance(value, str) or not re.fullmatch(r"[0-9a-f]{40}", value):
-                  raise SystemExit(f"invalid {field}")
-          if request["expected_repository_head"] != parent:
-              raise SystemExit(
-                  "request branch/base mismatch "
-                  f"expected={request['expected_repository_head']} parent={parent}"
-              )
-          if remote_main != request["expected_repository_head"]:
-              raise SystemExit(
-                  "main moved before quality request execution "
-                  f"expected={request['expected_repository_head']} current={remote_main}"
-              )
-
-          stage = request["stage"]
-          if stage not in {
-              "QUALITY_INTERLOCK",
-              "MODEL_DIAGNOSTIC_GPT",
-              "MODEL_DIAGNOSTIC_CLAUDE",
-          }:
-              raise SystemExit(f"unsupported quality stage: {stage}")
-          for field in ("publish_results", "execute_optional_q8"):
-              if not isinstance(request[field], bool):
-                  raise SystemExit(f"{field} must be boolean")
-          if stage == "QUALITY_INTERLOCK" and request["execute_optional_q8"]:
-              raise SystemExit("QUALITY_INTERLOCK cannot request optional Q8 execution")
-
-          change = request["change"]
-          if not isinstance(change, str) or "\n" in change or len(change) > 1000:
-              raise SystemExit("change must be a single-line string of at most 1000 characters")
-
-          resolved_task_commit = subprocess.run(
-              ["git", "log", "-1", "--format=%H", parent, "--", task],
-              check=True,
-              capture_output=True,
-              text=True,
-          ).stdout.strip()
-          if resolved_task_commit != request["task_commit"]:
-              raise SystemExit(
-                  "task commit drift "
-                  f"requested={request['task_commit']} resolved={resolved_task_commit}"
-              )
-
-          with open(output, "a", encoding="utf-8") as handle:
-              handle.write(f"task={task}\n")
-              handle.write(f"stage={stage}\n")
-              handle.write(
-                  "publish_results=" + str(request["publish_results"]).lower() + "\n"
-              )
-              handle.write(
-                  "execute_optional_q8="
-                  + str(request["execute_optional_q8"]).lower()
-                  + "\n"
-              )
-              handle.write(f"change={change}\n")
-          PY
-
-  quality:
-    name: Execute repository-defined quality lifecycle
-    needs: prepare
-    uses: ./.github/workflows/terminus-quality-lifecycle.yml
+  q4:
+    name: Execute final Q4 spec-test contract review
+    uses: ./.github/workflows/terminus-quality-executor.yml
     with:
-      task: ${{ needs.prepare.outputs.task }}
-      stage: ${{ needs.prepare.outputs.stage }}
-      publish_results: ${{ fromJSON(needs.prepare.outputs.publish_results) }}
-      execute_optional_q8: ${{ fromJSON(needs.prepare.outputs.execute_optional_q8) }}
-      change: ${{ needs.prepare.outputs.change }}
+      task: route-control-plane
+      role_key: spec-test-contract
+      state: FROZEN_CANDIDATE
+      change: "Final Q4 attempt after behavioral Ansible precedence, executable dashboard CAS, destructive management-path safety remediation, and fresh hosted deterministic Oracle=1/NOP=0 evidence."
+      source_ref: 002e8924a8fc0f604ac8ed109c0e030d066c4838
+      publish_result: false
     secrets: inherit
