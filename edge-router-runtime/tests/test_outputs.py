@@ -364,7 +364,7 @@ def test_f2p_exact_duplicate_is_generation_noop(tmp_path):
             assert current_generation(gw["admin"]) == generation
 
 
-def test_f2p_stale_revision_cannot_publish(tmp_path):
+def test_p2p_stale_revision_cannot_publish(tmp_path):
     with running_backends(Backend("a")) as (a,):
         doc = document([endpoint(a.address)])
         with gateway(tmp_path, doc) as gw:
