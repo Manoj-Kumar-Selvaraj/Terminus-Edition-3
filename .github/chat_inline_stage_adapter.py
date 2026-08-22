@@ -92,7 +92,6 @@ assert_control(base, control)
 if task_tree(base, task) != task_tree(output_task, task):
     raise SystemExit("current main task tree does not equal the dedicated lint-fix snapshot")
 
-# Detach from the transport branch before any canonical mutation.
 run("git", "checkout", "--detach", base)
 assert_control(base, control)
 
@@ -116,7 +115,6 @@ if invocation["invocation_id"] == prior_inv:
     raise SystemExit("A5 reconciliation did not obtain a fresh invocation identity")
 dump(WORK / "invocation.json", invocation)
 
-# Execute the registered A5 deterministic validators on the repaired task tree.
 run("python3", "-m", "pip", "install", "--disable-pip-version-check", "ruff==0.12.8")
 run("ruff", "check", f"{task}/tests")
 run("python3", ".terminus/validate_task_complexity.py", task)
@@ -134,8 +132,13 @@ dump(WORK / "result.json", result)
 run("python3", ".terminus/execution/controller_cli.py", "record", "--invocation", str(WORK / "invocation.json"), "--result", str(WORK / "result.json"), "--output", str(WORK / "record.json"))
 
 porcelain = run("git", "status", "--porcelain", capture=True).splitlines()
-paths = [line[3:] for line in porcelain]
-unexpected = [path for path in paths if not path.startswith(f".terminus/executions/{task}/")]
+paths = []
+for line in porcelain:
+    raw = line[3:] if len(line) >= 4 else line
+    normalized = raw.strip().lstrip(".")
+    paths.append(normalized)
+allowed_prefix = f"terminus/executions/{task}/"
+unexpected = [path for path in paths if not path.startswith(allowed_prefix)]
 if unexpected:
     raise SystemExit(f"unexpected reconciliation mutations: {unexpected}")
 run("git", "config", "user.name", "terminus-chat-adapter[bot]")
@@ -154,10 +157,8 @@ if latest != base:
     if task_tree(latest, task) != task_tree(output_task, task):
         raise SystemExit("latest main task tree changed during A5 reconciliation")
     run("git", "rebase", "origin/main")
-    base = latest
 run("git", "push", "origin", "HEAD:main")
 
-# Prove the reconciled controller now continues from the lint-fix task snapshot.
 empty = WORK / "empty-inputs.json"
 dump(empty, {})
 run("python3", ".terminus/execution/controller_cli.py", "continue", "--task-id", task, "--task-commit", output_task, "--control-plane-commit", control, "--inputs-json", str(empty), "--output", str(WORK / "continue-after.json"))
