@@ -10,7 +10,7 @@ This is the durable operational checkpoint for one task. Keep it evidence-orient
 - Controller state: `FROZEN_CANDIDATE`
 - Working branch: `main`
 - Pull request: none
-- Current task commit: `6337411350befd83359a8fef4c2bbddbc17ca366`
+- Current task commit: `44fca100fb4572b286a4f42e15f35f928674dea5`
 - Agent-system policy: `2.5`
 - Specialist prompt policy: `2.2`
 - Specialist protocol policy: `2.2`
@@ -35,33 +35,28 @@ KNOWN_POLICY_CONFLICTS: none
 | Creator complexity | PASS | 30 F2P / 4 P2P |
 | Runtime authenticity | PASS | validate_runtime_authenticity.py |
 | Ruff verifier | PASS | ruff 0.8.4 clean |
-| Oracle = 1 | PASS | Harbor 0.21 job `jobs/2026-08-22__16-30-30` mean 1.000; 34/34 pytest passed |
-| NOP = 0 | PASS | Harbor 0.21 job `jobs/2026-08-22__16-32-25` mean 0.000 |
+| Oracle = 1 | PASS | Harbor 0.21 job `jobs/2026-08-22__16-47-57` mean 1.000; 34/34 pytest passed |
+| NOP = 0 | PASS | Harbor 0.21 job `jobs/2026-08-22__16-50-05` mean 0.000 |
 | Q7 Task Format Enforcer | PASS | `.terminus/reviews/jenkins-home-insights-plugin/q7-format-check.md` |
-| Q4 Spec-Test Contract Reviewer | PENDING RERUN | prior REVISE at `0766c0a2` addressed by probe expansion @ `63374113` |
-| Q6 Production Logic Auditor | PASS | `.terminus/reviews/jenkins-home-insights-plugin/0766c0a2/...production-logic-63d408fd36.json` scope `6a41990f5457` (reuse until environment/ changes) |
-| Quality Interlock | PENDING RERUN | needs fresh cold Q4 on `63374113` |
-| Pre-LLMaJ panel | BLOCKED | until quality interlock PASS |
+| Q4 Spec-Test Contract Reviewer | PASS | `.terminus/reviews/jenkins-home-insights-plugin/44fca100/jenkins-home-insights-plugin-44fca100-spec-test-contract-14835af6d2.json` |
+| Q6 Production Logic Auditor | PASS | `.terminus/reviews/jenkins-home-insights-plugin/44fca100/jenkins-home-insights-plugin-44fca100-production-logic-fd9810d5e3.json` scope `3df0c9d58d1b` |
+| Quality Interlock | PASS | `.terminus/reviews/jenkins-home-insights-plugin/44fca100/quality-interlock.md` |
+| Pre-LLMaJ panel | READY | generate specialist packets on `44fca100` |
 
-## Q4 probe remediation @ 63374113
+## Q4 round-2 remediation @ 44fca100
 
-Expanded existing F2P tests (still 30 total):
+1. **Generate sanitization** — `assert_exports_sanitized()` in `test_f2p_deterministic_10000_home_generation`
+2. **Metadata contract** — api-v1.md documents principal, sort, direction ASC/DESC, visible, checkpoint
 
-1. **Q4-B01 torn journal** — `test_f2p_checkpoint_restart_replays_unpublished_tail_once` torn-tail sub-scenario
-2. **Q4-B02 contains** — `test_f2p_stable_sorting_cursors_and_filter_errors`
-3. **Q4-B03 metadata** — same test asserts `metadata` keys
-4. **Q4-B04 env paths** — `test_f2p_readiness_and_supported_empty_home` via `JENKINS_HOME`/`INSIGHTS_STATE`
-5. **Q4-B05 HTTP forbidden** — `test_f2p_cli_and_http_use_equivalent_shared_query_semantics`
-
-Oracle fixes: isolate torn journal tail without aborting recovery; readiness when torn tail isolated and lag=0.
+Prior round-1 probes (torn journal, contains, metadata keys, env paths, HTTP forbidden) remain at `63374113`.
 
 ## Next action
 
-1. Regenerate Q4 packet on `63374113` and rerun cold Q4 review.
-2. Record quality interlock PASS → advance to Pre-LLMaJ panel.
+1. Generate Pre-LLMaJ specialist packets bound to `44fca100`.
+2. Run Pre-LLMaJ panel → Q8 simulations → Harbor LLMaJ and official ×10.
 
 ## Decisions that must survive chat changes
 
 - Do not redesign the task or weaken legitimate F2P requirements.
 - Starter defects remain in `environment/plugin`; oracle copies `solution/fixed/` only.
-- Q6 PASS at `0766c0a2` remains scope-valid until `task.toml` or `environment/` changes.
+- Q6 scope hash `3df0c9d58d1b` binds environment/ at `44fca100`; rerun Q6 if environment/ or task.toml changes.

@@ -1,0 +1,85 @@
+{
+  "schema_version": "3.0",
+  "role": "Production Logic Auditor",
+  "review_id": "jenkins-home-insights-plugin-44fca100-production-logic-fd9810d5e3",
+  "task": "jenkins-home-insights-plugin",
+  "task_commit": "44fca100fb4572b286a4f42e15f35f928674dea5",
+  "control_plane_commit": "44fca100fb4572b286a4f42e15f35f928674dea5",
+  "protocol_policy_version": "2.2",
+  "prompt_policy_version": "2.2",
+  "role_policy_version": "1.1",
+  "role_contract_hash": "a737a404c3b23518698932fec4eba6bb7f9831710c920bd66f267a00dca47661",
+  "review_scope_hash": "3df0c9d58d1bc84a903f898ae161f52a5a2e3c3467bbff7f3ba83b3a3de84f59",
+  "context_packet": ".terminus/reviews/jenkins-home-insights-plugin/44fca100/jenkins-home-insights-plugin-44fca100-production-logic-fd9810d5e3.packet.json",
+  "verdict": "PASS",
+  "confidence": "HIGH",
+  "evidence_status": "SUFFICIENT",
+  "summary": "Scope refresh at 44fca100 confirms the coupled capture→reduce→persist→analyze→query Jenkins operational-insights pipeline remains production-grade. Environment delta since 0766c0a2 is api-v1.md metadata subfield documentation only; Java runtime modules, entrypoints, and coupling are unchanged. Roughly 3,220 LOC across 26 core modules compile via bin/build-core; InsightsRuntime orchestrates HomeSources, ReconciliationEngine, EventJournal, GenerationStore, AnalysisEngine, and QueryService with Jenkins bindings in OperationalInsightsPlugin. Starter wiring gaps remain minor scaffolding rather than dominant padding.",
+  "evidence": [
+    {
+      "type": "file",
+      "ref": "jenkins-home-insights-plugin/environment/plugin/src/main/java/io/jenkins/plugins/insights/runtime/InsightsRuntime.java",
+      "observation": "Lifecycle owner wires recovery, full reconcile, incremental drain, query, compact, and multi-component health—unchanged production orchestration core."
+    },
+    {
+      "type": "file",
+      "ref": "jenkins-home-insights-plugin/environment/plugin/docs/api-v1.md",
+      "observation": "Only environment delta vs prior Q6 scope: metadata subfield documentation added; no Java or runtime behavior change."
+    },
+    {
+      "type": "file",
+      "ref": "jenkins-home-insights-plugin/environment/plugin/bin/insights",
+      "observation": "Primary operator entrypoint unchanged: build-core then InsightsMain dispatch for all documented commands."
+    },
+    {
+      "type": "file",
+      "ref": "jenkins-home-insights-plugin/environment/Dockerfile",
+      "observation": "Pinned build, generate 14,536 records, reconcile seed at image bake; substantive production surface unchanged."
+    }
+  ],
+  "findings": [
+    {
+      "id": "Q6-ADV-001",
+      "severity": "LOW",
+      "status": "OBSERVED",
+      "criterion": "Unreachable solver-visible modules should not materially inflate production scale claims",
+      "evidence_refs": [
+        "jenkins-home-insights-plugin/environment/plugin/src/main/java/io/jenkins/plugins/insights/reconcile/SnapshotDiff.java"
+      ],
+      "why_it_matters": "SnapshotDiff has no callers; minor scaffolding overstates immediately reachable logic.",
+      "minimal_remediation": "Wire into reconcile diagnostics or remove until needed.",
+      "regression_risk": "LOW"
+    },
+    {
+      "id": "Q6-ADV-002",
+      "severity": "LOW",
+      "status": "OBSERVED",
+      "criterion": "Retention/compaction planners should affect operator behavior when invoked",
+      "evidence_refs": [
+        "jenkins-home-insights-plugin/environment/plugin/src/main/java/io/jenkins/plugins/insights/storage/RetentionPlanner.java"
+      ],
+      "why_it_matters": "compact() constructs RetentionPlanner plan but deletes by simple oldest-N index.",
+      "minimal_remediation": "Apply RetentionPlanner.removable list when deleting generation directories.",
+      "regression_risk": "MEDIUM"
+    }
+  ],
+  "missing_evidence": [],
+  "change_scope": [],
+  "do_not_change": [
+    "solver-visible environment/ tree scope hash binding",
+    "standalone core build exclusion of jenkins/* in bin/build-core"
+  ],
+  "next_gate": "QUALITY_INTERLOCK",
+  "role_output": {
+    "CORE_LOGIC_DEPTH": "HIGH",
+    "RUNTIME_REACHABILITY": "HIGH",
+    "MODULE_DIVERSITY": "HIGH",
+    "CROSS_COMPONENT_COUPLING": "HIGH",
+    "TOY_LOGIC_RISK": "LOW",
+    "PADDING_RISK": "LOW",
+    "SUBSTANTIVE_LOC_ASSESSMENT": "~3,220 LOC across 26 Java modules; ~5% unreachable scaffolding; no committed .class artifacts.",
+    "ENTRYPOINTS": "plugin/bin/insights, plugin/bin/build-core, OperationalInsightsPlugin Jenkins bindings.",
+    "REMOVAL_TEST": "Removing ~25% across journal/storage/reconcile/query subsystems collapses documented production behavior.",
+    "REQUIRED_CHANGES": "none"
+  }
+}
