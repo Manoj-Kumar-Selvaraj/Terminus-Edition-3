@@ -1,0 +1,64 @@
+fleet:
+  - id: blr-edge-01
+    hostname: blr-edge-01.routecp.local
+    site: blr
+    environment: prod
+    management_ip: 10.40.1.11
+    online: true
+    labels: {role: edge, wave: canary, region: ap-south}
+    links:
+      - {name: eth0, index: 2, up: true, addresses: [10.40.1.11/24]}
+      - {name: transit0, index: 3, up: true, addresses: [192.0.2.2/31]}
+    routes:
+      - {id: blr-mgmt, destination: 10.40.0.0/16, table: 100, metric: 10, gateway: 10.40.1.1, interface: eth0}
+      - {id: blr-default, destination: 0.0.0.0/0, table: 200, metric: 50, gateway: 192.0.2.3, interface: transit0}
+    rules:
+      - {id: blr-mgmt-rule, priority: 100, source: 10.40.1.11/32, table: 100, action: lookup}
+      - {id: blr-egress-rule, priority: 200, source: 10.40.0.0/16, table: 200, action: lookup}
+  - id: blr-edge-02
+    hostname: blr-edge-02.routecp.local
+    site: blr
+    environment: prod
+    management_ip: 10.40.2.12
+    online: true
+    labels: {role: edge, wave: one, region: ap-south}
+    links:
+      - {name: eth0, index: 2, up: true, addresses: [10.40.2.12/24]}
+      - {name: transit0, index: 3, up: true, addresses: [2001:db8:40::2/64]}
+    routes:
+      - {id: blr2-mgmt, destination: 10.40.0.0/16, table: 100, metric: 10, gateway: 10.40.2.1, interface: eth0}
+      - {id: blr2-v6, destination: 2001:db8:400::/48, table: 210, metric: 20, gateway: 2001:db8:40::1, interface: transit0}
+    rules:
+      - {id: blr2-mgmt-rule, priority: 100, source: 10.40.2.12/32, table: 100, action: lookup}
+  - id: maa-edge-01
+    hostname: maa-edge-01.routecp.local
+    site: maa
+    environment: prod
+    management_ip: 10.50.1.21
+    online: true
+    labels: {role: edge, wave: canary, region: ap-south}
+    links:
+      - {name: eth0, index: 2, up: true, addresses: [10.50.1.21/24]}
+      - {name: isp-a, index: 4, up: true, addresses: [198.51.100.2/30]}
+      - {name: isp-b, index: 5, up: true, addresses: [203.0.113.2/30]}
+    routes:
+      - {id: maa-mgmt, destination: 10.50.0.0/16, table: 100, metric: 10, gateway: 10.50.1.1, interface: eth0}
+      - {id: maa-inet, destination: 0.0.0.0/0, table: 220, metric: 20, multipath: [{gateway: 198.51.100.1, interface: isp-a, weight: 2}, {gateway: 203.0.113.1, interface: isp-b, weight: 1}]}
+    rules:
+      - {id: maa-mgmt-rule, priority: 100, source: 10.50.1.21/32, table: 100, action: lookup}
+      - {id: maa-inet-rule, priority: 300, source: 10.50.0.0/16, table: 220, action: lookup}
+  - id: hyd-edge-01
+    hostname: hyd-edge-01.routecp.local
+    site: hyd
+    environment: staging
+    management_ip: 10.60.1.31
+    online: true
+    labels: {role: edge, wave: validation, region: ap-south}
+    links:
+      - {name: eth0, index: 2, up: true, addresses: [10.60.1.31/24]}
+      - {name: lab0, index: 7, up: false, addresses: [172.20.0.2/24]}
+    routes:
+      - {id: hyd-mgmt, destination: 10.60.0.0/16, table: 100, metric: 10, gateway: 10.60.1.1, interface: eth0}
+      - {id: hyd-lab, destination: 172.30.0.0/16, table: 230, metric: 100, gateway: 172.20.0.1, interface: lab0}
+    rules:
+      - {id: hyd-mgmt-rule, priority: 100, source: 10.60.1.31/32, table: 100, action: lookup}
