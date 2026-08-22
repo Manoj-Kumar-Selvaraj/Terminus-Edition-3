@@ -1,0 +1,185 @@
+{
+  "schema_version": "3.0",
+  "role": "Production Logic Auditor",
+  "review_id": "fluid-dynamics-analysis-workbench-7dee03f7-production-logic-1f6b232b25",
+  "task": "fluid-dynamics-analysis-workbench",
+  "task_commit": "7dee03f75337520b0af3f11d399b086eff8a3b07",
+  "control_plane_commit": "7dee03f75337520b0af3f11d399b086eff8a3b07",
+  "protocol_policy_version": "2.2",
+  "prompt_policy_version": "2.2",
+  "role_policy_version": "1.1",
+  "role_contract_hash": "a737a404c3b23518698932fec4eba6bb7f9831710c920bd66f267a00dca47661",
+  "review_scope_hash": "b7dbe50338bc39f98ba3aab74cebb85eabe44390584f4b4dc7cbf5f18b87e77b",
+  "context_packet": ".terminus/reviews/fluid-dynamics-analysis-workbench/7dee03f7/fluid-dynamics-analysis-workbench-7dee03f7-production-logic-1f6b232b25.packet.json",
+  "verdict": "REVISE",
+  "confidence": "HIGH",
+  "evidence_status": "SUFFICIENT",
+  "summary": "Attempt-2 remediation inflates validator substantive_loc to 11513, but ~9935 lines (86%) are repetitive reference JSON catalogs that load during case ingest yet do not change published artifacts; mutating or truncating every catalog leaves summary.json byte-identical. The honest behavior-bearing analyze path remains a ~1279-line Python pipeline (cli -> pipeline -> loaders/solver/report plus fluid/regime/mesh/convergence helpers) over three cases, with six additional Python modules unreachable and several reachable modules computing discarded side values. Core physics formulas are credible engineering estimators, but PADDING_RISK is HIGH and honest reachable runtime/config LOC still sits near ~1560, below the large_system_strict >=3000 floor.",
+  "evidence": [
+    {
+      "type": "rule",
+      "ref": ".terminus/agents/QUALITY_AGENT_PROMPTS.md",
+      "observation": "Q6 requires independent reachability tracing, toy/padding judgment, removal-test reasoning, and for large_system_strict >=3000 substantive reachable solver-visible runtime/config LOC with no HIGH toy/padding risk."
+    },
+    {
+      "type": "rule",
+      "ref": ".terminus/agents/PRODUCTION_AUTHENTICITY.md",
+      "observation": "Production authenticity rejects duplicated/dead/unreachable scale, micro-module inflation, and data volume that does not materially change operational behavior."
+    },
+    {
+      "type": "file",
+      "ref": "fluid-dynamics-analysis-workbench/task.toml",
+      "observation": "Science/Physics task with artifacts [/app/fluidlab], workdir /app/fluidlab, separate verifier environment."
+    },
+    {
+      "type": "file",
+      "ref": "fluid-dynamics-analysis-workbench/environment/fluidlab/bin/fluidlab",
+      "observation": "Primary entrypoint sets PYTHONPATH to src and exec python3 -m fluidlab.cli."
+    },
+    {
+      "type": "file",
+      "ref": "fluid-dynamics-analysis-workbench/environment/fluidlab/scripts/run_analysis.sh",
+      "observation": "Operator wrapper invokes bin/fluidlab analyze --root; same path documented in operator-runbook.md."
+    },
+    {
+      "type": "file",
+      "ref": "fluid-dynamics-analysis-workbench/environment/fluidlab/src/fluidlab/pipeline.py",
+      "observation": "Orchestrates load_config, load_cases, analyze_case, basic fleet_rollup, and write_reports; fleet_risk_indices result is discarded."
+    },
+    {
+      "type": "file",
+      "ref": "fluid-dynamics-analysis-workbench/environment/fluidlab/src/fluidlab/solver.py",
+      "observation": "Per-point path calls compute_state, regime_metrics, envelope_distance/envelope_score, correlation_report, and extended_residual_summary, but only state/regime/mesh/convergence values feed published margins/findings."
+    },
+    {
+      "type": "file",
+      "ref": "fluid-dynamics-analysis-workbench/environment/fluidlab/src/fluidlab/reference_catalog.py",
+      "observation": "Loads five JSON catalogs and exposes lookup helpers; only correlation_rows is invoked on the analyze path and its aggregate is discarded."
+    },
+    {
+      "type": "file",
+      "ref": "fluid-dynamics-analysis-workbench/environment/fluidlab/config/reference/",
+      "observation": "Five catalogs total 9935 lines and 850 repetitive entries (120 fluids, 200 correlations, 200 roughness bands, 150 regime bands, 180 limit templates) with incrementing variant IDs."
+    },
+    {
+      "type": "file",
+      "ref": "fluid-dynamics-analysis-workbench/environment/fluidlab/src/fluidlab/property_bridge.py",
+      "observation": "Duplicate compute_state with catalog_property_delta hook; not imported anywhere on the analyze path."
+    },
+    {
+      "type": "run",
+      "ref": "python .terminus/validate_environment_complexity.py fluid-dynamics-analysis-workbench",
+      "observation": "Validator reports substantive_loc=11513; largest environment files are the five reference JSON catalogs (2885+2205+1805+1685+1355 lines)."
+    },
+    {
+      "type": "run",
+      "ref": "Independent catalog mutation and truncation experiment on analyze path",
+      "observation": "Setting all correlation_registry coeff_a/coeff_b to 999.0 or truncating each catalog to two entries produced identical summary.json digest 22de549721c63ad3; catalogs are not behavior-bearing on publication."
+    },
+    {
+      "type": "run",
+      "ref": "Independent python -m fluidlab.cli analyze --root environment/fluidlab",
+      "observation": "Analyze succeeds for 3 cases / 8 operating points and publishes summary.json, operating_points.csv, and checkpoints/current.json with mixed FAIL/PASS margins."
+    }
+  ],
+  "findings": [
+    {
+      "id": "Q6-PAD-01",
+      "severity": "BLOCKER",
+      "status": "OBSERVED",
+      "criterion": "PADDING_RISK",
+      "evidence_refs": [
+        "fluid-dynamics-analysis-workbench/environment/fluidlab/config/reference/",
+        "fluid-dynamics-analysis-workbench/environment/fluidlab/src/fluidlab/reference_catalog.py",
+        "Independent catalog mutation and truncation experiment on analyze path"
+      ],
+      "why_it_matters": "Roughly 86% of validator-counted environment LOC is repetitive reference JSON. Catalog APIs beyond load_reference_bundle are unused or side-effect-only, and published artifacts are invariant to wholesale catalog mutation or truncation. This is config-volume padding rather than production logic depth.",
+      "minimal_remediation": "Either wire catalog lookups into physical-state, limit selection, regime classification, or publication lineage so catalog edits change deterministic outputs, or replace bulk variant tables with smaller behavior-bearing catalogs consumed by multiple modules.",
+      "regression_risk": "Medium if wiring is cosmetic; low if catalogs become true cross-module inputs with tested invariants."
+    },
+    {
+      "id": "Q6-LOC-01",
+      "severity": "BLOCKER",
+      "status": "OBSERVED",
+      "criterion": "large_system_strict substantive reachable LOC floor",
+      "evidence_refs": [
+        "fluid-dynamics-analysis-workbench/environment/fluidlab/src/fluidlab/",
+        "fluid-dynamics-analysis-workbench/environment/fluidlab/config/system.json",
+        "fluid-dynamics-analysis-workbench/environment/fluidlab/cases/"
+      ],
+      "why_it_matters": "Honest behavior-bearing reachable runtime/config LOC is about 1560 (1279 reachable Python across 19 modules, ~250 JSON config/cases, ~30 shell/bin). That remains below the >=3000 floor even after the remediation expansion.",
+      "minimal_remediation": "Add additional coupled subsystems whose outputs and error paths are consumed by publication, not merely loaded or discarded, until reachable behavior-bearing LOC clears 3000 without clone modules or inert tables.",
+      "regression_risk": "Medium if new code duplicates existing one-pass formulas."
+    },
+    {
+      "id": "Q6-REACH-01",
+      "severity": "HIGH",
+      "status": "OBSERVED",
+      "criterion": "RUNTIME_REACHABILITY",
+      "evidence_refs": [
+        "fluid-dynamics-analysis-workbench/environment/fluidlab/src/fluidlab/property_bridge.py",
+        "fluid-dynamics-analysis-workbench/environment/fluidlab/src/fluidlab/publication_chain.py",
+        "fluid-dynamics-analysis-workbench/environment/fluidlab/src/fluidlab/lineage_digest.py",
+        "fluid-dynamics-analysis-workbench/environment/fluidlab/src/fluidlab/units_registry.py",
+        "fluid-dynamics-analysis-workbench/environment/fluidlab/src/fluidlab/severity_rules.py",
+        "fluid-dynamics-analysis-workbench/environment/fluidlab/src/fluidlab/hydraulic_head.py"
+      ],
+      "why_it_matters": "Six post-remediation Python modules (~261 LOC) are not imported from the analyze entrypoint closure. property_bridge duplicates fluid state logic with a catalog hook that never executes; publication_chain/lineage_digest duplicate revision helpers already present in report.py.",
+      "minimal_remediation": "Wire unreachable modules into loaders/solver/report or remove them; avoid parallel compute_state and publication_revision implementations.",
+      "regression_risk": "Low if integration is tested through publication artifacts."
+    },
+    {
+      "id": "Q6-DEAD-01",
+      "severity": "HIGH",
+      "status": "OBSERVED",
+      "criterion": "behavior-bearing analyze-path coupling",
+      "evidence_refs": [
+        "fluid-dynamics-analysis-workbench/environment/fluidlab/src/fluidlab/solver.py",
+        "fluid-dynamics-analysis-workbench/environment/fluidlab/src/fluidlab/pipeline.py",
+        "fluid-dynamics-analysis-workbench/environment/fluidlab/src/fluidlab/correlation_suite.py",
+        "fluid-dynamics-analysis-workbench/environment/fluidlab/src/fluidlab/fleet_indices.py"
+      ],
+      "why_it_matters": "correlation_report, envelope_score, extended_residual_summary quality_score, contract_summary, and fleet_risk_indices are invoked but their results are discarded, so instruction-facing fleet stress indices and catalog correlation means never reach outputs.",
+      "minimal_remediation": "Feed fleet_risk_indices through enrich_fleet_rollup into summary.json, incorporate catalog-backed property checks into compute_state or limits, and ensure correlation/envelope diagnostics affect findings or publication when required by the work request.",
+      "regression_risk": "Medium if only stdout side effects change without artifact contract updates."
+    },
+    {
+      "id": "Q6-DEPTH-01",
+      "severity": "MEDIUM",
+      "status": "OBSERVED",
+      "criterion": "CORE_LOGIC_DEPTH",
+      "evidence_refs": [
+        "fluid-dynamics-analysis-workbench/environment/fluidlab/src/fluidlab/fluid.py",
+        "fluid-dynamics-analysis-workbench/environment/fluidlab/src/fluidlab/regime.py",
+        "fluid-dynamics-analysis-workbench/environment/fluidlab/src/fluidlab/friction_models.py",
+        "fluid-dynamics-analysis-workbench/environment/fluidlab/src/fluidlab/heat_transfer.py"
+      ],
+      "why_it_matters": "Core physics modules implement credible single-pass estimators (ideal-gas vs liquid density, Colebrook/Haaland friction, laminar/transitional/turbulent Nusselt branches, mesh and convergence margins). The reachable core is real engineering logic but still behaves like a compact calculator over eight operating points rather than a large production analysis system.",
+      "minimal_remediation": "Deepen distinct computational subsystems with interacting state and failure semantics instead of adding lookup volume or duplicate helper modules.",
+      "regression_risk": "Low if determinism and publication schema are preserved."
+    }
+  ],
+  "missing_evidence": [],
+  "change_scope": [
+    "Q6 attempt-2 remediation audit at 7dee03f7 after reference-catalog expansion and 15-module wiring claim."
+  ],
+  "do_not_change": [
+    "Existing entrypoint layout (bin/fluidlab, scripts/run_analysis.sh, scripts/build.sh)",
+    "Three-artifact publication contract under /app/fluidlab/output",
+    "Mixed liquid/gas case families and deterministic ordering rules in analysis-contract.md"
+  ],
+  "next_gate": "Q6_REVISE",
+  "role_output": {
+    "CORE_LOGIC_DEPTH": "MEDIUM",
+    "RUNTIME_REACHABILITY": "MEDIUM",
+    "MODULE_DIVERSITY": "MEDIUM",
+    "CROSS_COMPONENT_COUPLING": "MEDIUM",
+    "TOY_LOGIC_RISK": "MEDIUM",
+    "PADDING_RISK": "HIGH",
+    "SUBSTANTIVE_LOC_ASSESSMENT": "Validator substantive_loc=11513 across environment/, but only ~1560 lines are honest behavior-bearing reachable runtime/config logic: ~1279 Python across 19 analyze-reachable modules (loaders 199, solver 135, report 117, models 102, reference_catalog 98, friction_models 65, heat_transfer 64, residual_trends 57, geometry_checks 56, cli 53, pipeline 46, correlation_suite 41, convergence 40, regime 37, envelope_scoring 36, fleet_indices 34, mesh 34, fluid 33, case_contract 31), plus ~250 JSON config/cases and ~30 shell/bin. ~9935 reference JSON lines (850 repetitive catalog rows) load in loaders but do not change published artifacts. Six modules (~261 LOC: property_bridge, publication_chain, lineage_digest, units_registry, severity_rules, hydraulic_head) are unreachable from bin/fluidlab analyze.",
+    "MAJOR_MODULES": "cli.py — analyze/show-config entrypoints. pipeline.py — config/case load, per-case analyze_case, basic fleet rollup, artifact publish; fleet_risk_indices discarded. loaders.py — schema validation, digests, reference bundle preload. solver.py — mesh/convergence/residual side summaries, per-point compute_state->regime_metrics margin/findings; correlation/envelope/residual quality discarded. fluid.py — liquid thermal expansion vs ideal-gas density/velocity/Prandtl state. regime.py — Reynolds, Colebrook-style friction drop, Mach/CFL, Nusselt heat transfer. friction_models.py/heat_transfer.py — friction-factor and Nusselt branches used by regime. mesh.py/convergence.py — mesh score and residual/imbalance convergence gates feeding margins. report.py — deterministic JSON/CSV/checkpoint publication. reference_catalog.py/correlation_suite.py — catalog load and correlation means with no artifact effect. property_bridge.py/publication_chain.py/lineage_digest.py/units_registry.py/severity_rules.py/hydraulic_head.py — post-remediation modules not on analyze closure or duplicated elsewhere.",
+    "PARTIAL_FIX_TRAPS": "Patching only report publication_revision without lineage_digest/operating_point_keys leaves checkpoint lineage requirements unsatisfied. Fixing solver margins without reconciling fluid vs property_bridge catalog deltas ignores the intended catalog-backed property path. Adjusting correlation_registry rows will not change outputs until correlation_report feeds findings or metrics. Enabling fleet_risk_indices in code without enriching fleet_rollup in summary.json leaves instruction fleet-summary requirements unmet. Trimming catalog JSON alone preserves identical artifacts, masking padding from scale metrics.",
+    "REMOVAL_TEST": "Removing all five reference JSON catalogs (~9935 validator-counted lines) or truncating each to two entries leaves summary.json unchanged (verified). Removing unreachable modules property_bridge/publication_chain/lineage_digest/units_registry/severity_rules/hydraulic_head (~261 Python LOC) also leaves outputs unchanged. Removing correlation_suite, envelope_scoring side calls, fleet_risk_indices, and extended_residual_summary (~150 LOC of discarded work) leaves published artifacts unchanged. Deleting the core chain fluid+regime+friction_models+heat_transfer+solver margin logic (~300 LOC) collapses Mach/CFL/pressure/temperature findings and CSV metrics—the only behavior agents and verifier actually grade.",
+    "REQUIRED_CHANGES": "Make reference catalogs and the six unreachable modules behavior-bearing on the analyze/publication path; stop counting inert catalog bulk toward production depth; integrate fleet stress indices and catalog-backed property/limit logic into published artifacts; expand honest reachable coupled runtime logic past the 3000-line floor without clone modules or discarded side computations."
+  }
+}
