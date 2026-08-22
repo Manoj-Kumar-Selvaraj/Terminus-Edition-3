@@ -1,41 +1,34 @@
 #!/usr/bin/env python3
 from __future__ import annotations
-import json, os, subprocess
+import os, subprocess
 from pathlib import Path
 
 ROOT = Path.cwd()
-sha = os.environ['GITHUB_SHA']
-changed = subprocess.run(
-    ['git','diff-tree','--no-commit-id','--name-only','-r',sha,'--','.terminus/chat-exec/*.json'],
-    check=True,text=True,capture_output=True,
-).stdout.splitlines()
-if len(changed) != 1:
-    raise SystemExit(f'expected one chat-exec request, got {changed}')
-req = json.loads((ROOT / changed[0]).read_text(encoding='utf-8'))
-task=req['task_id']; task_commit=req['task_commit']; control=req['control_plane_commit']
-subprocess.run(['git','fetch','origin','main'],check=True)
-head=subprocess.run(['git','rev-parse','origin/main'],check=True,text=True,capture_output=True).stdout.strip()
-# Ensure current main still contains the exact logical task tree.
-requested_tree=subprocess.run(['git','rev-parse',f'{task_commit}:{task}'],check=True,text=True,capture_output=True).stdout.strip()
-current_tree=subprocess.run(['git','rev-parse',f'{head}:{task}'],check=True,text=True,capture_output=True).stdout.strip()
-if requested_tree != current_tree:
-    raise SystemExit(f'task tree drift requested={task_commit} head={head}')
-work=Path(os.environ.get('RUNNER_TEMP','/tmp'))/'ec2-det-probe'; work.mkdir(parents=True,exist_ok=True)
-subprocess.run(['python3','.terminus/execution/controller_cli.py','control-plane','--head',head,'--output',str(work/'control.json')],check=True)
-resolved=json.loads((work/'control.json').read_text())['control_plane_commit']
-if resolved != control:
-    raise SystemExit(f'control drift requested={control} resolved={resolved}')
-(work/'inputs.json').write_text(json.dumps(req['inputs'],indent=2,sort_keys=True)+'\n',encoding='utf-8')
-subprocess.run([
-    'python3','.terminus/execution/controller_cli.py','continue',
-    '--task-id',task,'--task-commit',task_commit,
-    '--control-plane-commit',control,'--inputs-json',str(work/'inputs.json'),
-    '--output',str(work/'continue.json')
-],check=True)
-cont=json.loads((work/'continue.json').read_text())
-print('CURRENT_HEAD='+head)
-print('RESOLVED_CONTROL='+resolved)
-print('NEXT='+json.dumps(cont.get('next'),sort_keys=True,separators=(',',':')))
-print('EXECUTION_MODE='+str(cont.get('execution_mode')))
-print('INVOCATION='+json.dumps(cont.get('invocation'),sort_keys=True,separators=(',',':')))
-print('DISPATCH='+json.dumps(cont.get('dispatch'),sort_keys=True,separators=(',',':')))
+TARGET = 'task/ec2-artifact-policy-enforcement-lint-fix-20260822'
+subprocess.run(['git','fetch','origin',TARGET],check=True)
+subprocess.run(['git','checkout','-B','task-fix',f'origin/{TARGET}'],check=True)
+
+p = ROOT/'ec2-artifact-policy-enforcement/tests/test_outputs.py'
+text = p.read_text(encoding='utf-8')
+needle = '    empty_exceptions,\n'
+if text.count(needle) != 1:
+    raise SystemExit(f'unexpected empty_exceptions import count={text.count(needle)}')
+p.write_text(text.replace(needle,'',1),encoding='utf-8')
+
+p = ROOT/'ec2-artifact-policy-enforcement/tests/verifier_lib.py'
+text = p.read_text(encoding='utf-8')
+needle = '    if vulnerable is not None:\n        policy = base_policy()\n        if vulnerable:\n'
+replacement = '    if vulnerable is not None:\n        if vulnerable:\n'
+if text.count(needle) != 1:
+    raise SystemExit(f'unexpected changed_scan dead assignment count={text.count(needle)}')
+p.write_text(text.replace(needle,replacement,1),encoding='utf-8')
+
+subprocess.run(['python3','-m','pip','install','--quiet','ruff==0.12.8'],check=True)
+subprocess.run(['ruff','check','ec2-artifact-policy-enforcement/tests'],check=True)
+subprocess.run(['git','diff','--check'],check=True)
+subprocess.run(['git','config','user.name','terminus-chat-adapter[bot]'],check=True)
+subprocess.run(['git','config','user.email','terminus-chat-adapter[bot]@users.noreply.github.com'],check=True)
+subprocess.run(['git','add','--','ec2-artifact-policy-enforcement/tests/test_outputs.py','ec2-artifact-policy-enforcement/tests/verifier_lib.py'],check=True)
+subprocess.run(['git','commit','-m','Fix EC2 verifier deterministic preflight lint'],check=True)
+subprocess.run(['git','push','origin','HEAD:'+TARGET],check=True)
+print('TASK_SNAPSHOT='+subprocess.run(['git','rev-parse','HEAD'],check=True,text=True,capture_output=True).stdout.strip())
