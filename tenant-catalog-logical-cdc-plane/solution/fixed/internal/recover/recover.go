@@ -37,5 +37,5 @@ func Recover(st *store.Store) error {
 		}
 	}
 	_ = model.Tables
-	return indexes.Rebuild(st, doc.TxnID)
+	return indexes.Rebuild(st, 0)
 }
