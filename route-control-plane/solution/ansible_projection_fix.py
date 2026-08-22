@@ -29,13 +29,13 @@ if project.exists():
 
     project_text = project.read_text()
     old = "'routes': routecp_routes,"
-    direct = "'routes': ((routecp_routes | default([])) + (routecp_protected_routes | default([])) + (routecp_host_routes | default([]))),"
     effective = "'routes': routecp_effective_routes,"
-    if effective not in project_text:
-        if direct in project_text:
-            project_text = project_text.replace(direct, effective)
+    direct = "'routes': ((routecp_routes | default([])) + (routecp_protected_routes | default([])) + (routecp_host_routes | default([]))),"
+    if direct not in project_text:
+        if effective in project_text:
+            project_text = project_text.replace(effective, direct)
         elif old in project_text:
-            project_text = project_text.replace(old, effective)
+            project_text = project_text.replace(old, direct)
         else:
             raise RuntimeError("route projection expression not found in delegated project task")
         project.write_text(project_text)
