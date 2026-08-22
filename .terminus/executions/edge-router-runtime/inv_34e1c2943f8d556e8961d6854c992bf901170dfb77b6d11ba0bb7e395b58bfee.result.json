@@ -1,0 +1,299 @@
+{
+  "authority": {
+    "control_plane_commit": "df7ef7569e2947b9f0bf7cf89ed4dec6c2a5a1fe",
+    "policy_versions": {},
+    "task_commit": "24f07fbfc25e1354f308da5258750f795b18f0e2",
+    "task_id": "edge-router-runtime"
+  },
+  "disposition": "ADVANCE",
+  "evidence_refs": [],
+  "invocation_id": "inv_34e1c2943f8d556e8961d6854c992bf901170dfb77b6d11ba0bb7e395b58bfee",
+  "invocation_snapshot": {
+    "acceptance_predicates": {},
+    "authority": {
+      "control_plane_commit": "df7ef7569e2947b9f0bf7cf89ed4dec6c2a5a1fe",
+      "policy_versions": {},
+      "task_commit": "24f07fbfc25e1354f308da5258750f795b18f0e2",
+      "task_id": "edge-router-runtime"
+    },
+    "evidence": {
+      "authorized_evidence_classes": [
+        "CONTROL_PLANE_POLICY",
+        "PUBLIC_REFERENCE",
+        "SOLVER_VISIBLE_TASK"
+      ],
+      "evidence_required": [
+        "current dataset/catalog/domain-profile hashes",
+        "disjoint writer/reviewer calibration evidence",
+        "explicit external coverage state",
+        "validated task-writing profile"
+      ],
+      "excluded_evidence_classes": [
+        "CI_RUNTIME_EVIDENCE",
+        "CURRENT_REVIEW_PACKET",
+        "DURABLE_SESSION_STATE",
+        "FINAL_PACKAGE_EVIDENCE",
+        "MODEL_TRIAL_EVIDENCE",
+        "PRIOR_REVIEW_RESULTS",
+        "PRIVATE_CREATION_DESIGN",
+        "SOLUTION_ORACLE",
+        "VERIFIER_PRIVATE"
+      ],
+      "mandatory_exact_reads": [
+        ".terminus/reviewers/HUMAN_WRITING_CALIBRATION.md",
+        ".terminus/reviewers/HUMAN_ENGINEERING_SOURCE_CORPUS.md",
+        ".terminus/reviewers/WRITING_EXAMPLE_BANK.md",
+        ".terminus/agents/HUMAN_WRITING_DATASET_POLICY.md",
+        ".terminus/agents/human_writing_stage_overlay.json",
+        ".terminus/human_writing/dataset_registry.json",
+        ".terminus/human_writing/domain_profiles.json",
+        ".terminus/agents/HUMAN_WRITING_RESEARCHER.md",
+        ".terminus/agents/HUMAN_WRITING_CORPUS_AGENT.md",
+        ".terminus/agents/CREATOR_PROMPTS.md"
+      ],
+      "retrieval_mode": "FILTERED_HYBRID"
+    },
+    "ignored_input_count": 0,
+    "inputs": {
+      "optional": {},
+      "required": {
+        "APPROVED_WORK_PACKAGE": {
+          "ENGINEERING_OBJECTIVE": "Implement generation-safe dynamic route and upstream reconciliation so complete configuration and membership changes apply atomically under concurrent traffic, rolling backend turnover, invalid updates and restart.",
+          "ID": "GENERATION_SAFE_DYNAMIC_RECONCILIATION"
+        },
+        "CURRENT_TIME_BUDGET": {
+          "enforcement": "ADVISORY_ONLY",
+          "guidance_seconds": 25200,
+          "hard_limit": null,
+          "policy_version": "1.1",
+          "quality_gates_may_be_skipped_for_time": false,
+          "time_extension_required": false
+        },
+        "SOLVER_VISIBLE_REQUIREMENTS": {
+          "PRESERVATION": [
+            "in-flight and long-lived requests remain valid across unrelated updates",
+            "unchanged route semantics remain stable across generations",
+            "healthy unchanged endpoints preserve meaningful runtime state",
+            "rejected updates cannot damage the serving generation",
+            "readers never observe partially applied configuration",
+            "runtime and observability state remain bounded after repeated updates"
+          ],
+          "REQUIRED_END_STATE": [
+            "Validate and compile candidate configuration into immutable runtime snapshots before publication.",
+            "Fence accepted generations so stale or out-of-order updates cannot overwrite newer state.",
+            "Publish route and upstream state atomically and retain last-known-good serving state when candidates are rejected.",
+            "Reconcile endpoint additions, removals, and unchanged endpoints by stable canonical identity and membership incarnation.",
+            "Preserve compatible selection, affinity, health, transport, and lifecycle continuity for unchanged endpoints.",
+            "Exclude removed or ineligible endpoints from fresh selection/retry while allowing bounded drain of existing traffic.",
+            "Checkpoint only complete accepted state and recover a complete last-known-good generation after restart.",
+            "Retire unreachable snapshots, endpoint runtimes, transports, affinity state, and telemetry without unbounded growth."
+          ]
+        }
+      }
+    },
+    "invocation_id": "inv_34e1c2943f8d556e8961d6854c992bf901170dfb77b6d11ba0bb7e395b58bfee",
+    "learning": {
+      "context_hash": "sha256:bb84a513aa2b6e4374d691759c4a6edf94169f479f4611e9091643b9f279ccfc",
+      "lessons": [],
+      "mode": "GENERALIZED_LESSONS_PLUS_OWNED_REMEDIATIONS",
+      "raw_feedback_exposed": false,
+      "raw_historical_findings_exposed": false,
+      "registry_heads": {
+        "feedback": "GENESIS",
+        "findings": "GENESIS",
+        "lessons": "GENESIS",
+        "patterns": "GENESIS",
+        "remediations": "GENESIS"
+      },
+      "remediations": []
+    },
+    "missing_required_inputs": [],
+    "output_contract": {
+      "allowed_status_values": [
+        "CALIBRATION_READY",
+        "INSUFFICIENT_SOURCE_DIVERSITY",
+        "SOURCE_QUALITY_BLOCKED",
+        "BLOCKED"
+      ],
+      "deterministic_validators": [
+        ".terminus/human_writing/validate_calibration.py"
+      ],
+      "optional_fields": [
+        "CACHE_SOURCE_KEYS_USED",
+        "RAW_SOURCE_KEYS_USED_FOR_CONTAMINATION",
+        "DEGRADED_COVERAGE_APPROVAL",
+        "CURRENT_STATE_EVIDENCE_NOTES"
+      ],
+      "persisted_artifacts": [
+        ".terminus/research/<task>-dataset-calibration.json",
+        ".terminus/research/<task>-task-writing-profile.json"
+      ],
+      "required_fields": [
+        "DATASET_POLICY_VERSION",
+        "DATASET_REGISTRY_SHA256",
+        "SEED_CATALOG_SHA256",
+        "DOMAIN_PROFILES_SHA256",
+        "DOMAIN_PROFILE",
+        "CALIBRATION_PAIR_ID",
+        "WRITER_CALIBRATION_ID",
+        "REVIEWER_CALIBRATION_ID",
+        "WRITER_SAMPLE_IDS",
+        "REVIEWER_SAMPLE_IDS",
+        "WRITER_REVIEWER_SAMPLE_OVERLAP",
+        "EXTERNAL_DATASET_COVERAGE",
+        "TASK_WRITING_PROFILE"
+      ],
+      "semantic_reviewers": [
+        "Human Quality Reviewer"
+      ]
+    },
+    "readiness": "READY",
+    "retrieval": {
+      "query": null,
+      "retrieved_chars": 0,
+      "retrieved_context": [],
+      "status": "NOT_REQUESTED"
+    },
+    "routing": {
+      "failure_routes": {
+        "INSUFFICIENT_CALIBRATION": "A6 Human Writing Researcher",
+        "INSUFFICIENT_SOURCE_DIVERSITY": "A6 Human Writing Researcher -> bounded additional retrieval or explicit degraded-coverage decision",
+        "INVALID_CALIBRATION": "Creation Controller -> A6 Human Writing Researcher",
+        "SOURCE_QUALITY_BLOCKED": "Creation Controller -> source/provenance owner",
+        "UNSUPPORTED_CURRENT_STATE_CLAIM": "Instruction Writer / Environment Builder"
+      },
+      "stale_on": [
+        "material work-package change",
+        "instruction-policy change",
+        "human-writing calibration policy change",
+        "dataset registry change",
+        "seed catalog change",
+        "domain profile change",
+        "human-writing stage overlay change"
+      ],
+      "success_transition": "INSTRUCTION_DRAFT"
+    },
+    "schema_version": "1.0",
+    "stage": {
+      "lifecycle": "creation",
+      "owner": "A6 Human Writing Researcher",
+      "role_class": "PRODUCER",
+      "role_id": "A6_HUMAN_WRITING_RESEARCHER",
+      "stage_id": "HUMAN_WRITING_RESEARCH"
+    }
+  },
+  "outputs": {
+    "CACHE_SOURCE_KEYS_USED": [],
+    "CALIBRATION_PAIR_ID": "hwpair-37951b25e0f101e85aa1",
+    "CURRENT_STATE_EVIDENCE_NOTES": [
+      "Current deterministic repository planner generated the pair for this task/domain.",
+      "No Oracle, verifier-private, prior-review, model-trial, or private defect evidence was consumed by A6."
+    ],
+    "DATASET_POLICY_VERSION": "1.2",
+    "DATASET_REGISTRY_SHA256": "05ece08c27414d265a2a238928e4c664295434620ffe957c8e88b5050c54645a",
+    "DEGRADED_COVERAGE_APPROVAL": {
+      "approved": true,
+      "approved_by": "CI_ORCHESTRATOR",
+      "reason": "No approved external human-writing cache was supplied; repository policy permits deterministic local calibration with explicit DEGRADED coverage and no claim of FULL external coverage."
+    },
+    "DOMAIN_PROFILE": "application_backend",
+    "DOMAIN_PROFILES_SHA256": "9612d83a11558d9013a82362c7405c70ddb5158b582cc2f9859c8c672ad6c838",
+    "EXTERNAL_DATASET_COVERAGE": "DEGRADED",
+    "RAW_SOURCE_KEYS_USED_FOR_CONTAMINATION": [],
+    "REVIEWER_CALIBRATION_ID": "hwcal-reviewer-65c566f1122279acbe84",
+    "REVIEWER_SAMPLE_IDS": [
+      "HC-021",
+      "HC-028",
+      "HC-017",
+      "HC-010",
+      "HC-024",
+      "HC-025",
+      "CP-005",
+      "CP-006",
+      "CP-001",
+      "AT-002",
+      "AT-004",
+      "HP-002",
+      "HP-004",
+      "HN-002",
+      "HN-004"
+    ],
+    "SEED_CATALOG_SHA256": "e205f858f8391fd88d3e26665d2f585a69cd691321b9275644e631bb949f0942",
+    "TASK_WRITING_PROFILE": {
+      "avoid": [
+        "invented incidents or personal claims",
+        "rubric-like hidden-test enumeration",
+        "style-driven omission of lifecycle constraints",
+        "copied distinctive source wording",
+        "task details copied from unrelated calibration domains"
+      ],
+      "must_preserve": [
+        "Implement generation-safe dynamic route and upstream reconciliation so complete configuration and membership changes apply atomically under concurrent traffic, rolling backend turnover, invalid updates and restart.",
+        "GENERATION_SAFE_DYNAMIC_RECONCILIATION",
+        "in-flight and long-lived requests remain valid across unrelated updates",
+        "unchanged route semantics remain stable across generations",
+        "healthy unchanged endpoints preserve meaningful runtime state",
+        "rejected updates cannot damage the serving generation",
+        "readers never observe partially applied configuration",
+        "runtime and observability state remain bounded after repeated updates",
+        "Validate and compile candidate configuration into immutable runtime snapshots before publication.",
+        "Fence accepted generations so stale or out-of-order updates cannot overwrite newer state.",
+        "Publish route and upstream state atomically and retain last-known-good serving state when candidates are rejected.",
+        "Reconcile endpoint additions, removals, and unchanged endpoints by stable canonical identity and membership incarnation.",
+        "Preserve compatible selection, affinity, health, transport, and lifecycle continuity for unchanged endpoints.",
+        "Exclude removed or ineligible endpoints from fresh selection/retry while allowing bounded drain of existing traffic.",
+        "Checkpoint only complete accepted state and recover a complete last-known-good generation after restart.",
+        "Retire unreachable snapshots, endpoint runtimes, transports, affinity state, and telemetry without unbounded growth."
+      ],
+      "structure": [
+        "state the approved engineering objective first",
+        "preserve exact public contracts and hard safety/state constraints",
+        "reference solver-visible technical contracts instead of reproducing hidden verifier rows",
+        "keep implementation-neutral observable outcomes"
+      ],
+      "voice": "direct platform engineering change request"
+    },
+    "WRITER_CALIBRATION_ID": "hwcal-writer-b0673d6e34a029bd64e6",
+    "WRITER_REVIEWER_SAMPLE_OVERLAP": [],
+    "WRITER_SAMPLE_IDS": [
+      "HC-001",
+      "HC-030",
+      "HC-016",
+      "HC-005",
+      "HC-013",
+      "HC-020",
+      "CP-002",
+      "CP-004",
+      "AT-006"
+    ]
+  },
+  "record_id": "rec_e71d7dcbffc892c48031b83b571068245a748bfb07e920fc38f64fd23476ca14",
+  "role_id": "A6_HUMAN_WRITING_RESEARCHER",
+  "schema_version": "1.0",
+  "stage_id": "HUMAN_WRITING_RESEARCH",
+  "status": "CALIBRATION_READY",
+  "task_lineage": {
+    "input_task_commit": "24f07fbfc25e1354f308da5258750f795b18f0e2",
+    "output_task_commit": "24f07fbfc25e1354f308da5258750f795b18f0e2",
+    "task_changed": false
+  },
+  "transition": {
+    "action": "ADVANCE",
+    "requires_state_validation": false,
+    "target": "INSTRUCTION_DRAFT",
+    "target_kind": "STAGE"
+  },
+  "validation": {
+    "acceptance_predicates_satisfied": true,
+    "evidence_binding_satisfied": true,
+    "evidence_refs_count": 0,
+    "invocation_identity_valid": true,
+    "invocation_policy_valid": true,
+    "output_keys_valid": true,
+    "required_outputs_satisfied": true,
+    "retrieval_context_authorized": true,
+    "status_legal": true,
+    "task_commit_change_authorized": true,
+    "task_lineage_valid": true
+  }
+}
