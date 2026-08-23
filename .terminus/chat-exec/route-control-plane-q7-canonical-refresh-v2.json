@@ -1,0 +1,70 @@
+{
+  "schema_version": "1.0",
+  "mode": "RECORD",
+  "task_id": "route-control-plane",
+  "task_commit": "192af49708034411a4a2787fb0b8eea16b14de71",
+  "control_plane_commit": "df7ef7569e2947b9f0bf7cf89ed4dec6c2a5a1fe",
+  "expected_repository_head": "63b712c1e28e5292a7872e4bb33b2d30b1e2e362",
+  "stage_id": "FORMAT_GATE",
+  "inputs": {
+    "ACTIVE_FORMAT_VALIDATORS": [
+      "current Terminus task-format/packaging CI",
+      "task.toml structure and absolute artifact-path checks",
+      "digest/image and verifier-isolation checks",
+      "separate-verifier and reward-contract checks",
+      "solution/tests isolation checks",
+      "Q7 same-chat review",
+      "PR #94 deterministic CI run 32574013625: Oracle=1, NOP=0, Ruff PASS, strict complexity/authenticity PASS",
+      "hosted deterministic run 32577080949: exact task snapshot validated, empirical result recorded and evidence binding frozen"
+    ],
+    "CREATION_RULE_CONTEXT": {
+      "CONTROL_PLANE_COMMIT": "df7ef7569e2947b9f0bf7cf89ed4dec6c2a5a1fe",
+      "CREATION_PROFILE": "large_system_strict",
+      "KNOWN_POLICY_CONFLICTS": [],
+      "NETWORK_ENVIRONMENT_CONSTRAINTS": "repository-default public network and separate verifier constraints"
+    },
+    "CURRENT_TASK_TREE": {
+      "environment": {
+        ".dockerignore": "present; packaging/solution/test material remains isolated from solver runtime",
+        "Dockerfile": "Go 1.24 runtime image materializes the route-control-plane starter under /app/routecp",
+        "ansible_role": "role contains defaults, handlers, tasks/main.yml and tasks/project.yml"
+      },
+      "snapshot_commit": "192af49708034411a4a2787fb0b8eea16b14de71",
+      "solution": {
+        "entrypoint": "solution/solve.sh",
+        "repair": ["solution/repair.py", "solution/ansible_projection_fix.py", "solution/management_safety_fix.py"]
+      },
+      "task_root": "route-control-plane",
+      "task_toml": {
+        "artifacts": ["/app/routecp"],
+        "network_mode": "public",
+        "verifier_environment_mode": "separate",
+        "workdir": "/app/routecp"
+      },
+      "tests": {
+        "Dockerfile": "separate verifier environment with Python, Ansible, Node.js and TypeScript required by behavioral checks",
+        "dashboard_and_ansible": "behavioral dashboard CAS and host/protected-route projection checks present",
+        "f2p_matrix": "26 F2P cases including destructive management-path safety",
+        "quality_remediation": "behavioral management-safety, isolation, convergence and audit cases present",
+        "test_sh": "deterministic verifier runner"
+      },
+      "top_level": ["README.md", "environment/", "instruction.md", "solution/", "task.toml", "tests/"]
+    }
+  },
+  "result": {
+    "status": "FORMAT_PASS",
+    "output_task_commit": "192af49708034411a4a2787fb0b8eea16b14de71",
+    "outputs": {
+      "CHECKS": [
+        "PASS: canonical task root contains README.md, environment/, instruction.md, solution/, task.toml and tests/.",
+        "PASS: task.toml retains absolute artifact path /app/routecp, public network mode, separate verifier environment and /app/routecp workdir.",
+        "PASS: final Q4 remediation changes are confined to verifier/reference/test-map scope; solver-visible production environment runtime files are unchanged.",
+        "PASS: separate verifier image provides Node.js/TypeScript for behavioral dashboard verification while solution and tests remain isolated from the starter runtime image.",
+        "PASS: PR #94 run 32574013625 is deterministic-green with Oracle=1/NOP=0 and the subsequent hosted deterministic run 32577080949 completed exact empirical recording.",
+        "PASS: no policy conflict or remaining packaging-only defect is present."
+      ],
+      "RERUN": "Canonical Q7 refresh using current commit-bound CI and hosted deterministic evidence for task snapshot 192af49708034411a4a2787fb0b8eea16b14de71."
+    },
+    "evidence_refs": []
+  }
+}
