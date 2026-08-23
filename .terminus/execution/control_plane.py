@@ -13,7 +13,6 @@ _CONTROL_PLANE_EXACT = frozenset(
 )
 _CONTROL_PLANE_PREFIXES = (
     ".github/workflows/terminus-",
-    ".github/chat_inline_stage_",
     ".cursor/agents/terminus-",
     ".terminus/AGENT_SYSTEM.md",
     ".terminus/CONTINUE_SESSION.md",
