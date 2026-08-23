@@ -1,0 +1,218 @@
+{
+  "authority": {
+    "control_plane_commit": "df7ef7569e2947b9f0bf7cf89ed4dec6c2a5a1fe",
+    "policy_versions": {},
+    "task_commit": "192af49708034411a4a2787fb0b8eea16b14de71",
+    "task_id": "route-control-plane"
+  },
+  "disposition": "ADVANCE",
+  "evidence_refs": [],
+  "invocation_id": "inv_de1c1c3af9e63bef64f42761d5f972dfcd0899180791de3c25dc7708bf22952c",
+  "invocation_snapshot": {
+    "acceptance_predicates": {},
+    "authority": {
+      "control_plane_commit": "df7ef7569e2947b9f0bf7cf89ed4dec6c2a5a1fe",
+      "policy_versions": {},
+      "task_commit": "192af49708034411a4a2787fb0b8eea16b14de71",
+      "task_id": "route-control-plane"
+    },
+    "evidence": {
+      "authorized_evidence_classes": [
+        "CI_RUNTIME_EVIDENCE",
+        "CONTROL_PLANE_POLICY",
+        "SOLVER_VISIBLE_TASK"
+      ],
+      "evidence_required": [
+        "task structure",
+        "task.toml",
+        "Docker/verifier/solution layout",
+        "artifact/isolation checks"
+      ],
+      "excluded_evidence_classes": [
+        "CURRENT_REVIEW_PACKET",
+        "DURABLE_SESSION_STATE",
+        "FINAL_PACKAGE_EVIDENCE",
+        "MODEL_TRIAL_EVIDENCE",
+        "PRIOR_REVIEW_RESULTS",
+        "PRIVATE_CREATION_DESIGN",
+        "PUBLIC_REFERENCE",
+        "SOLUTION_ORACLE",
+        "VERIFIER_PRIVATE"
+      ],
+      "mandatory_exact_reads": [
+        "TERMINUS_3_AI_INSTRUCTIONS.md",
+        ".terminus/reviewers/REVIEWER_CHECKLIST.md",
+        ".terminus/agents/QUALITY_AGENT_PROMPTS.md"
+      ],
+      "retrieval_mode": "EXACT_ONLY"
+    },
+    "ignored_input_count": 0,
+    "inputs": {
+      "optional": {},
+      "required": {
+        "ACTIVE_FORMAT_VALIDATORS": [
+          "current Terminus task-format/packaging CI",
+          "task.toml structure and absolute artifact-path checks",
+          "digest/image and verifier-isolation checks",
+          "separate-verifier and reward-contract checks",
+          "solution/tests isolation checks",
+          "Q7 same-chat review",
+          "PR #94 deterministic CI run 32574013625: Oracle=1, NOP=0, Ruff PASS, strict complexity/authenticity PASS",
+          "hosted deterministic run 32577080949: exact task snapshot validated, empirical result recorded and evidence binding frozen"
+        ],
+        "CREATION_RULE_CONTEXT": {
+          "CONTROL_PLANE_COMMIT": "df7ef7569e2947b9f0bf7cf89ed4dec6c2a5a1fe",
+          "CREATION_PROFILE": "large_system_strict",
+          "KNOWN_POLICY_CONFLICTS": [],
+          "NETWORK_ENVIRONMENT_CONSTRAINTS": "repository-default public network and separate verifier constraints"
+        },
+        "CURRENT_TASK_TREE": {
+          "environment": {
+            ".dockerignore": "present; packaging/solution/test material remains isolated from solver runtime",
+            "Dockerfile": "Go 1.24 runtime image materializes the route-control-plane starter under /app/routecp",
+            "ansible_role": "role contains defaults, handlers, tasks/main.yml and tasks/project.yml"
+          },
+          "snapshot_commit": "192af49708034411a4a2787fb0b8eea16b14de71",
+          "solution": {
+            "entrypoint": "solution/solve.sh",
+            "repair": [
+              "solution/repair.py",
+              "solution/ansible_projection_fix.py",
+              "solution/management_safety_fix.py"
+            ]
+          },
+          "task_root": "route-control-plane",
+          "task_toml": {
+            "artifacts": [
+              "/app/routecp"
+            ],
+            "network_mode": "public",
+            "verifier_environment_mode": "separate",
+            "workdir": "/app/routecp"
+          },
+          "tests": {
+            "Dockerfile": "separate verifier environment with Python, Ansible, Node.js and TypeScript required by behavioral checks",
+            "dashboard_and_ansible": "behavioral dashboard CAS and host/protected-route projection checks present",
+            "f2p_matrix": "26 F2P cases including destructive management-path safety",
+            "quality_remediation": "behavioral management-safety, isolation, convergence and audit cases present",
+            "test_sh": "deterministic verifier runner"
+          },
+          "top_level": [
+            "README.md",
+            "environment/",
+            "instruction.md",
+            "solution/",
+            "task.toml",
+            "tests/"
+          ]
+        }
+      }
+    },
+    "invocation_id": "inv_de1c1c3af9e63bef64f42761d5f972dfcd0899180791de3c25dc7708bf22952c",
+    "learning": {
+      "context_hash": "sha256:bb84a513aa2b6e4374d691759c4a6edf94169f479f4611e9091643b9f279ccfc",
+      "lessons": [],
+      "mode": "GENERALIZED_LESSONS_PLUS_OWNED_REMEDIATIONS",
+      "raw_feedback_exposed": false,
+      "raw_historical_findings_exposed": false,
+      "registry_heads": {
+        "feedback": "GENESIS",
+        "findings": "GENESIS",
+        "lessons": "GENESIS",
+        "patterns": "GENESIS",
+        "remediations": "GENESIS"
+      },
+      "remediations": []
+    },
+    "missing_required_inputs": [],
+    "output_contract": {
+      "allowed_status_values": [
+        "FORMAT_PASS",
+        "FIXED",
+        "BLOCKED",
+        "POLICY_CONFLICT"
+      ],
+      "deterministic_validators": [
+        "current task-format/packaging CI and validators"
+      ],
+      "optional_fields": [],
+      "persisted_artifacts": [],
+      "required_fields": [
+        "CHECKS",
+        "RERUN"
+      ],
+      "semantic_reviewers": [
+        "Compliance Auditor"
+      ]
+    },
+    "readiness": "READY",
+    "retrieval": {
+      "query": null,
+      "retrieved_chars": 0,
+      "retrieved_context": [],
+      "status": "NOT_REQUESTED"
+    },
+    "routing": {
+      "failure_routes": {
+        "FORMAT_DEFECT": "Q7 Task Format Enforcer",
+        "POLICY_CONFLICT": "Creation Controller",
+        "SEMANTIC_DEFECT": "route to semantic owner"
+      },
+      "stale_on": [
+        "task structure change",
+        "task.toml change",
+        "Docker/test/solution/package change",
+        "format-rule change"
+      ],
+      "success_transition": "ASSEMBLY"
+    },
+    "schema_version": "1.0",
+    "stage": {
+      "lifecycle": "creation",
+      "owner": "Q7 Task Format Enforcer",
+      "role_class": "FIXER",
+      "role_id": "Q7_TASK_FORMAT_ENFORCER",
+      "stage_id": "FORMAT_GATE"
+    }
+  },
+  "outputs": {
+    "CHECKS": [
+      "PASS: canonical task root contains README.md, environment/, instruction.md, solution/, task.toml and tests/.",
+      "PASS: task.toml retains absolute artifact path /app/routecp, public network mode, separate verifier environment and /app/routecp workdir.",
+      "PASS: final Q4 remediation changes are confined to verifier/reference/test-map scope; solver-visible production environment runtime files are unchanged.",
+      "PASS: separate verifier image provides Node.js/TypeScript for behavioral dashboard verification while solution and tests remain isolated from the starter runtime image.",
+      "PASS: PR #94 run 32574013625 is deterministic-green with Oracle=1/NOP=0 and the subsequent hosted deterministic run 32577080949 completed exact empirical recording.",
+      "PASS: no policy conflict or remaining packaging-only defect is present."
+    ],
+    "RERUN": "Canonical Q7 refresh using current commit-bound CI and hosted deterministic evidence for task snapshot 192af49708034411a4a2787fb0b8eea16b14de71."
+  },
+  "record_id": "rec_564a944b49276eec84e2b5e4960ef18cf455462aef8e8acdea63251d1e43f677",
+  "role_id": "Q7_TASK_FORMAT_ENFORCER",
+  "schema_version": "1.0",
+  "stage_id": "FORMAT_GATE",
+  "status": "FORMAT_PASS",
+  "task_lineage": {
+    "input_task_commit": "192af49708034411a4a2787fb0b8eea16b14de71",
+    "output_task_commit": "192af49708034411a4a2787fb0b8eea16b14de71",
+    "task_changed": false
+  },
+  "transition": {
+    "action": "ADVANCE",
+    "requires_state_validation": false,
+    "target": "ASSEMBLY",
+    "target_kind": "STAGE"
+  },
+  "validation": {
+    "acceptance_predicates_satisfied": true,
+    "evidence_binding_satisfied": true,
+    "evidence_refs_count": 0,
+    "invocation_identity_valid": true,
+    "invocation_policy_valid": true,
+    "output_keys_valid": true,
+    "required_outputs_satisfied": true,
+    "retrieval_context_authorized": true,
+    "status_legal": true,
+    "task_commit_change_authorized": true,
+    "task_lineage_valid": true
+  }
+}
