@@ -1,0 +1,518 @@
+{
+  "ledger_event": {
+    "control_plane_commit": "df7ef7569e2947b9f0bf7cf89ed4dec6c2a5a1fe",
+    "event_id": "evt_3c794de24016891e5ba7cdf53ccf6d89fe2f62d95dcdf589d36a82476a6d0224",
+    "input_task_commit": "d4108906608144146127f47af81fdb58497faeba",
+    "invocation_id": "inv_54c2ee75e886706f4ea896c3d1b2bd429439f14a457e0c65346e771700da9fae",
+    "output_task_commit": "d4108906608144146127f47af81fdb58497faeba",
+    "previous_event_id": "evt_5e3c6eab1b8841a6f0f3ffbc9a9b90f4b1e32160838203a3041e3976cdf403f3",
+    "record_hash": "sha256:d3f2b8e095ee899d2dd199cbc87a1bb7d816fb7c093527c851d5239782494238",
+    "record_id": "rec_e082cc5de1784fa05edb59d7870ee20007e35a82c5a872217ccd65f7a209ee8a",
+    "record_path": ".terminus/executions/route-control-plane/inv_54c2ee75e886706f4ea896c3d1b2bd429439f14a457e0c65346e771700da9fae.result.json",
+    "schema_version": "1.0",
+    "sequence": 50,
+    "stage_id": "RUNTIME_AUTHENTICITY",
+    "task_id": "route-control-plane"
+  },
+  "record": {
+    "authority": {
+      "control_plane_commit": "df7ef7569e2947b9f0bf7cf89ed4dec6c2a5a1fe",
+      "policy_versions": {},
+      "task_commit": "d4108906608144146127f47af81fdb58497faeba",
+      "task_id": "route-control-plane"
+    },
+    "disposition": "ADVANCE",
+    "evidence_refs": [],
+    "invocation_id": "inv_54c2ee75e886706f4ea896c3d1b2bd429439f14a457e0c65346e771700da9fae",
+    "invocation_snapshot": {
+      "acceptance_predicates": {
+        "PASS": [
+          {
+            "op": "eq",
+            "path": "RUNTIME_AUTHENTICITY_STATUS",
+            "value": "PASS"
+          }
+        ]
+      },
+      "authority": {
+        "control_plane_commit": "df7ef7569e2947b9f0bf7cf89ed4dec6c2a5a1fe",
+        "policy_versions": {},
+        "task_commit": "d4108906608144146127f47af81fdb58497faeba",
+        "task_id": "route-control-plane"
+      },
+      "evidence": {
+        "authorized_evidence_classes": [
+          "CI_RUNTIME_EVIDENCE",
+          "CONTROL_PLANE_POLICY",
+          "SOLVER_VISIBLE_TASK"
+        ],
+        "evidence_required": [
+          "runtime authenticity validator output",
+          "business module diversity output when applicable"
+        ],
+        "excluded_evidence_classes": [
+          "CURRENT_REVIEW_PACKET",
+          "DURABLE_SESSION_STATE",
+          "FINAL_PACKAGE_EVIDENCE",
+          "MODEL_TRIAL_EVIDENCE",
+          "PRIOR_REVIEW_RESULTS",
+          "PRIVATE_CREATION_DESIGN",
+          "PUBLIC_REFERENCE",
+          "SOLUTION_ORACLE",
+          "VERIFIER_PRIVATE"
+        ],
+        "mandatory_exact_reads": [
+          ".terminus/agents/PRODUCTION_AUTHENTICITY.md"
+        ],
+        "retrieval_mode": "EXACT_ONLY"
+      },
+      "ignored_input_count": 0,
+      "inputs": {
+        "optional": {},
+        "required": {
+          "CURRENT_TASK": {
+            "environment_root": "route-control-plane/environment",
+            "instruction_path": "route-control-plane/instruction.md",
+            "runtime_artifact": "/app/routecp",
+            "task_commit": "d4108906608144146127f47af81fdb58497faeba",
+            "task_id": "route-control-plane",
+            "task_root": "route-control-plane"
+          },
+          "PRODUCTION_CHARACTERISTIC_EVIDENCE": [
+            "Go HTTP routing control plane",
+            "IPv4/IPv6 route and policy-rule lifecycle",
+            "revision preview/apply/rollback transactions",
+            "durable desired/observed state and restart recovery",
+            "FIB tracing, topology/dependency and policy analysis",
+            "management safety, drift detection and reconciliation",
+            "fleet health, rollout preview and failure-domain change-window planning",
+            "Ansible systemd deployment with protected/host route composition",
+            "operator dashboard"
+          ]
+        }
+      },
+      "invocation_id": "inv_54c2ee75e886706f4ea896c3d1b2bd429439f14a457e0c65346e771700da9fae",
+      "learning": {
+        "context_hash": "sha256:bb84a513aa2b6e4374d691759c4a6edf94169f479f4611e9091643b9f279ccfc",
+        "lessons": [],
+        "mode": "GENERALIZED_LESSONS_PLUS_OWNED_REMEDIATIONS",
+        "raw_feedback_exposed": false,
+        "raw_historical_findings_exposed": false,
+        "registry_heads": {
+          "feedback": "GENESIS",
+          "findings": "GENESIS",
+          "lessons": "GENESIS",
+          "patterns": "GENESIS",
+          "remediations": "GENESIS"
+        },
+        "remediations": []
+      },
+      "missing_required_inputs": [],
+      "output_contract": {
+        "allowed_status_values": [
+          "PASS",
+          "FAIL",
+          "BLOCKED"
+        ],
+        "deterministic_validators": [
+          ".terminus/validate_runtime_authenticity.py <task>",
+          ".terminus/validate_business_module_diversity.py <task> when applicable"
+        ],
+        "optional_fields": [
+          "BUSINESS_MODULE_DIVERSITY_STATUS",
+          "FAILURE_DETAILS"
+        ],
+        "persisted_artifacts": [],
+        "required_fields": [
+          "RUNTIME_AUTHENTICITY_STATUS"
+        ],
+        "semantic_reviewers": []
+      },
+      "readiness": "READY",
+      "retrieval": {
+        "query": null,
+        "retrieved_chars": 0,
+        "retrieved_context": [],
+        "status": "NOT_REQUESTED"
+      },
+      "routing": {
+        "failure_routes": {
+          "BUSINESS_MODULE_DIVERSITY_FAILURE": "A2 System Architect / Environment Builder",
+          "PRODUCTION_AUTHENTICITY_FAILURE": "A2 System Architect / Environment Builder",
+          "RUNTIME_FAILURE": "Q5 Oracle & Runtime Repair Specialist"
+        },
+        "stale_on": [
+          "solver-visible environment change",
+          "runtime-authenticity policy/validator change"
+        ],
+        "success_transition": "DETERMINISTIC_VALIDATION"
+      },
+      "schema_version": "1.0",
+      "stage": {
+        "lifecycle": "creation",
+        "owner": "Creation Controller",
+        "role_class": "CONTROLLER",
+        "role_id": "CREATION_CONTROLLER",
+        "stage_id": "RUNTIME_AUTHENTICITY"
+      }
+    },
+    "outputs": {
+      "BUSINESS_MODULE_DIVERSITY_STATUS": "PASS_OR_NOT_APPLICABLE",
+      "RUNTIME_AUTHENTICITY_STATUS": "PASS"
+    },
+    "record_id": "rec_e082cc5de1784fa05edb59d7870ee20007e35a82c5a872217ccd65f7a209ee8a",
+    "role_id": "CREATION_CONTROLLER",
+    "schema_version": "1.0",
+    "stage_id": "RUNTIME_AUTHENTICITY",
+    "status": "PASS",
+    "task_lineage": {
+      "input_task_commit": "d4108906608144146127f47af81fdb58497faeba",
+      "output_task_commit": "d4108906608144146127f47af81fdb58497faeba",
+      "task_changed": false
+    },
+    "transition": {
+      "action": "ADVANCE",
+      "requires_state_validation": false,
+      "target": "DETERMINISTIC_VALIDATION",
+      "target_kind": "STAGE"
+    },
+    "validation": {
+      "acceptance_predicates_satisfied": true,
+      "evidence_binding_satisfied": true,
+      "evidence_refs_count": 0,
+      "invocation_identity_valid": true,
+      "invocation_policy_valid": true,
+      "output_keys_valid": true,
+      "required_outputs_satisfied": true,
+      "retrieval_context_authorized": true,
+      "status_legal": true,
+      "task_commit_change_authorized": true,
+      "task_lineage_valid": true
+    }
+  },
+  "remediation_updates": [],
+  "state": {
+    "control_plane_commit": "df7ef7569e2947b9f0bf7cf89ed4dec6c2a5a1fe",
+    "derived_from": {
+      "freshness_overlay_hash": null,
+      "record_ids": [
+        "rec_0063a542c294be525bb67870f587e700ad6edb8814a0df2ce3e88d842e11b6af",
+        "rec_2e95c542b859125ae857d351994f537fcfafa81ef15702edbb16970c554904f9",
+        "rec_36c66de42f230d6d7f7a4390ee31cc255c293b68bb6a16f2038b9fb11873b5ba",
+        "rec_3afe96927b58741290083f5882d3b0a6f21d422b9fdfe2a4c8d82a23cce682ea",
+        "rec_41ed22b5f5fb4a9f5047ac32c7fa09e94b4af5b4e607d90ae90028c14a6c2c09",
+        "rec_42cbbbcccc8a711a74ce3d36c4162748385c56e51deed6c9a46a588e2ec57a74",
+        "rec_4c76440851534db3977dfcda2ecdb109993be37d3f40ef1ca1f9a6f7551e9a4d",
+        "rec_5f71f38f9ad41b14c92f7a1a58953c23e1473ad482f659e91ec6bec10287d6d6",
+        "rec_be9b37718ece1404f136ea1dd7b9de8de74cb40914cc6cace4b56f80c1a3f2e6",
+        "rec_ccbbd76405aedc4b0f175474774537c67d858b370b3bed7aabf2d83fc9db5611",
+        "rec_cd58e6f351b76830b72c1621817d53a3f28f691de588c9046553db4e30d5d1a4",
+        "rec_dd47d0a5d4c98ceadd4ca3289787f6c44282581cd92a45f3a40fa1897f2b2f31",
+        "rec_e082cc5de1784fa05edb59d7870ee20007e35a82c5a872217ccd65f7a209ee8a",
+        "rec_f8e8e23cf9c3dedc4afefa39456c776fcc84a1b08f44383829d7f5edeb942283",
+        "rec_fb4ed28b605f59811681ef830ece755bcefc7fdf25c5bf50267f0a3ec163ad26"
+      ]
+    },
+    "ledger_event_count": 50,
+    "ledger_head_event_id": "evt_3c794de24016891e5ba7cdf53ccf6d89fe2f62d95dcdf589d36a82476a6d0224",
+    "lineage": {
+      "bootstrap_task_commit": "22d2e9e09f4deb58029559fe9a0863c2e032f25c",
+      "current_task_commit": "d4108906608144146127f47af81fdb58497faeba",
+      "recorded_task_commit": "d4108906608144146127f47af81fdb58497faeba",
+      "status": "CURRENT"
+    },
+    "next": {
+      "action": "INVOKE_STAGE",
+      "optional_inputs": [],
+      "owner": "Creation Controller",
+      "primary_role_id": "CREATION_CONTROLLER",
+      "required_inputs": [
+        "CURRENT_TASK_COMMIT",
+        "ORACLE",
+        "STARTER_NOP_STATE",
+        "VERIFIER"
+      ],
+      "stage_id": "DETERMINISTIC_VALIDATION"
+    },
+    "nodes": [
+      {
+        "disposition": "ADVANCE",
+        "input_task_commit": "22d2e9e09f4deb58029559fe9a0863c2e032f25c",
+        "invocation_id": "inv_912b2a08d97f2f5b418ca32433a21b19bd842adc0412b83b20ae57ff75f50f92",
+        "ledger_event_id": "evt_ef3152ebaad5bba4af52e76bd1f3efc02080cafa778abf0f2b62302b8963f9cb",
+        "node_id": "RULE_RESOLUTION",
+        "node_kind": "STAGE",
+        "output_task_commit": "22d2e9e09f4deb58029559fe9a0863c2e032f25c",
+        "reason": "validated ADVANCE record reaches WORK_PACKAGE_RESEARCH",
+        "record_id": "rec_0063a542c294be525bb67870f587e700ad6edb8814a0df2ce3e88d842e11b6af",
+        "status": "CURRENT"
+      },
+      {
+        "disposition": "ADVANCE",
+        "input_task_commit": "22d2e9e09f4deb58029559fe9a0863c2e032f25c",
+        "invocation_id": "inv_d3e9453b089efbc83a409fe768d745b18f76fe4ac9daac43f35615519f6f05a0",
+        "ledger_event_id": "evt_a167d16be1b2932e5979089d157da3e99c28254780e845f73b5eb7efd346d043",
+        "node_id": "WORK_PACKAGE_RESEARCH",
+        "node_kind": "STAGE",
+        "output_task_commit": "22d2e9e09f4deb58029559fe9a0863c2e032f25c",
+        "reason": "validated ADVANCE record reaches SYSTEM_ARCHITECTURE",
+        "record_id": "rec_dd47d0a5d4c98ceadd4ca3289787f6c44282581cd92a45f3a40fa1897f2b2f31",
+        "status": "CURRENT"
+      },
+      {
+        "disposition": "ADVANCE",
+        "input_task_commit": "22d2e9e09f4deb58029559fe9a0863c2e032f25c",
+        "invocation_id": "inv_7de636befbe5e531e589237026cbcee84ff10294c5b34cf9afb441d1d0dd2632",
+        "ledger_event_id": "evt_420abcd33312bb2e1e13985d88b3905dd1abecc44a2ffdacde6e95699641d6e4",
+        "node_id": "SYSTEM_ARCHITECTURE",
+        "node_kind": "STAGE",
+        "output_task_commit": "22d2e9e09f4deb58029559fe9a0863c2e032f25c",
+        "reason": "validated ADVANCE record reaches DEFECT_TOPOLOGY",
+        "record_id": "rec_4c76440851534db3977dfcda2ecdb109993be37d3f40ef1ca1f9a6f7551e9a4d",
+        "status": "CURRENT"
+      },
+      {
+        "disposition": "ADVANCE",
+        "input_task_commit": "22d2e9e09f4deb58029559fe9a0863c2e032f25c",
+        "invocation_id": "inv_301221c8c260000ed45f685be4777b7eebc45d557cb00b13e65d54249cbc6c42",
+        "ledger_event_id": "evt_70282066def2dae95108da0d861c6d2cb40598acbe060158cb87fd895b5c096d",
+        "node_id": "DEFECT_TOPOLOGY",
+        "node_kind": "STAGE",
+        "output_task_commit": "22d2e9e09f4deb58029559fe9a0863c2e032f25c",
+        "reason": "validated ADVANCE record reaches ENVIRONMENT_BUILD",
+        "record_id": "rec_36c66de42f230d6d7f7a4390ee31cc255c293b68bb6a16f2038b9fb11873b5ba",
+        "status": "CURRENT"
+      },
+      {
+        "disposition": "ADVANCE",
+        "input_task_commit": "22d2e9e09f4deb58029559fe9a0863c2e032f25c",
+        "invocation_id": "inv_06c269a63846481e8ef7d9b5d33e276cc915e01e9c7718869e03ed2fcf51fcad",
+        "ledger_event_id": "evt_e915789fc0b0861f7996ee10e70c3e5f50c002d56f428b782c30cecf7a1fccec",
+        "node_id": "ENVIRONMENT_BUILD",
+        "node_kind": "STAGE",
+        "output_task_commit": "22d2e9e09f4deb58029559fe9a0863c2e032f25c",
+        "reason": "validated ADVANCE record reaches REFERENCE_SOLUTION",
+        "record_id": "rec_5f71f38f9ad41b14c92f7a1a58953c23e1473ad482f659e91ec6bec10287d6d6",
+        "status": "CURRENT"
+      },
+      {
+        "disposition": "ADVANCE",
+        "input_task_commit": "22d2e9e09f4deb58029559fe9a0863c2e032f25c",
+        "invocation_id": "inv_9b26ac5e07b17197fcd9ff4e04efba1b4dfdc759da7117f32001292e65aa8d11",
+        "ledger_event_id": "evt_a647f785f45abe1ca3e77f9a68cde96aab464d54f4eb2afe7c5368ed843af930",
+        "node_id": "REFERENCE_SOLUTION",
+        "node_kind": "STAGE",
+        "output_task_commit": "22d2e9e09f4deb58029559fe9a0863c2e032f25c",
+        "reason": "validated ADVANCE record reaches VERIFIER_BUILD",
+        "record_id": "rec_cd58e6f351b76830b72c1621817d53a3f28f691de588c9046553db4e30d5d1a4",
+        "status": "CURRENT"
+      },
+      {
+        "disposition": "ADVANCE",
+        "input_task_commit": "22d2e9e09f4deb58029559fe9a0863c2e032f25c",
+        "invocation_id": "inv_813bcad8c7ac571e85069285aa654874d6b9ec84efe9812077e253083de7dc03",
+        "ledger_event_id": "evt_96fdc9a6e9019827899a0cafc750e3563e3b4dd32cd2d88c16b24f25ea907c09",
+        "node_id": "VERIFIER_BUILD",
+        "node_kind": "STAGE",
+        "output_task_commit": "22d2e9e09f4deb58029559fe9a0863c2e032f25c",
+        "reason": "validated ADVANCE record reaches HUMAN_WRITING_RESEARCH",
+        "record_id": "rec_42cbbbcccc8a711a74ce3d36c4162748385c56e51deed6c9a46a588e2ec57a74",
+        "status": "CURRENT"
+      },
+      {
+        "disposition": "ADVANCE",
+        "input_task_commit": "22d2e9e09f4deb58029559fe9a0863c2e032f25c",
+        "invocation_id": "inv_f056e33e7e6deb1fea4166962c0510a8cdbd4617b3945bed9172471228fd43b2",
+        "ledger_event_id": "evt_04a398ddc9b958940c8d6dd42ca4b6204ca8def956a515799880f7aa300cf523",
+        "node_id": "HUMAN_WRITING_RESEARCH",
+        "node_kind": "STAGE",
+        "output_task_commit": "22d2e9e09f4deb58029559fe9a0863c2e032f25c",
+        "reason": "validated ADVANCE record reaches INSTRUCTION_DRAFT",
+        "record_id": "rec_be9b37718ece1404f136ea1dd7b9de8de74cb40914cc6cace4b56f80c1a3f2e6",
+        "status": "CURRENT"
+      },
+      {
+        "disposition": "ADVANCE",
+        "input_task_commit": "22d2e9e09f4deb58029559fe9a0863c2e032f25c",
+        "invocation_id": "inv_d23b06c8daf1055a9a56ea398527f6542dc90036f768423e96910db17adccd69",
+        "ledger_event_id": "evt_063e1470717369657ac5b76a34b9055fbc15453f11038a851e242d54919bcd8f",
+        "node_id": "INSTRUCTION_DRAFT",
+        "node_kind": "STAGE",
+        "output_task_commit": "22d2e9e09f4deb58029559fe9a0863c2e032f25c",
+        "reason": "validated ADVANCE record reaches SPEC_ALIGNMENT",
+        "record_id": "rec_fb4ed28b605f59811681ef830ece755bcefc7fdf25c5bf50267f0a3ec163ad26",
+        "status": "CURRENT"
+      },
+      {
+        "disposition": "ADVANCE",
+        "input_task_commit": "22d2e9e09f4deb58029559fe9a0863c2e032f25c",
+        "invocation_id": "inv_08670b89a7b90c16743d52fb102974b6ff7655cb19654fedfd7f5a4092b94248",
+        "ledger_event_id": "evt_96f8fab9594ac0d156a400de783b2a5261841bc9f12993fc2e95a4db8d61cbc1",
+        "node_id": "SPEC_ALIGNMENT",
+        "node_kind": "STAGE",
+        "output_task_commit": "22d2e9e09f4deb58029559fe9a0863c2e032f25c",
+        "reason": "validated ADVANCE record reaches DOCUMENTATION_DRAFT",
+        "record_id": "rec_f8e8e23cf9c3dedc4afefa39456c776fcc84a1b08f44383829d7f5edeb942283",
+        "status": "CURRENT"
+      },
+      {
+        "disposition": "ADVANCE",
+        "input_task_commit": "22d2e9e09f4deb58029559fe9a0863c2e032f25c",
+        "invocation_id": "inv_11d2d759e048ab3dc58e5b63d3104d1503ce9f87e377c1f75ddef391968995d8",
+        "ledger_event_id": "evt_4d7d6d2e4f3dd3c4ea16d53c24cb4a0ddb3aefc79367fd7e43b4eaf51a9e7aae",
+        "node_id": "DOCUMENTATION_DRAFT",
+        "node_kind": "STAGE",
+        "output_task_commit": "22d2e9e09f4deb58029559fe9a0863c2e032f25c",
+        "reason": "validated ADVANCE record reaches FORMAT_GATE",
+        "record_id": "rec_41ed22b5f5fb4a9f5047ac32c7fa09e94b4af5b4e607d90ae90028c14a6c2c09",
+        "status": "CURRENT"
+      },
+      {
+        "disposition": "ADVANCE",
+        "input_task_commit": "22d2e9e09f4deb58029559fe9a0863c2e032f25c",
+        "invocation_id": "inv_51deb51d39abf8b17be1f866e6037a19f59859d615d3973c887fb8ad93402e69",
+        "ledger_event_id": "evt_b9e03f7b66f230244b77fa95bbae0b26e69e4d7d5d6847d3081e96e432d60886",
+        "node_id": "FORMAT_GATE",
+        "node_kind": "STAGE",
+        "output_task_commit": "d4108906608144146127f47af81fdb58497faeba",
+        "reason": "validated ADVANCE record reaches ASSEMBLY",
+        "record_id": "rec_3afe96927b58741290083f5882d3b0a6f21d422b9fdfe2a4c8d82a23cce682ea",
+        "status": "CURRENT"
+      },
+      {
+        "disposition": "ADVANCE",
+        "input_task_commit": "d4108906608144146127f47af81fdb58497faeba",
+        "invocation_id": "inv_680c17d88f8737870f0cdeb81570f517b69dde6340b8177d06b4d4384b3083b8",
+        "ledger_event_id": "evt_63334a9bc2c9fb4d3087608e477d48396c070f076d362e8923f8c1444d1872c7",
+        "node_id": "ASSEMBLY",
+        "node_kind": "STAGE",
+        "output_task_commit": "d4108906608144146127f47af81fdb58497faeba",
+        "reason": "validated ADVANCE record reaches COMPLEXITY_GATE",
+        "record_id": "rec_2e95c542b859125ae857d351994f537fcfafa81ef15702edbb16970c554904f9",
+        "status": "CURRENT"
+      },
+      {
+        "disposition": "ADVANCE",
+        "input_task_commit": "d4108906608144146127f47af81fdb58497faeba",
+        "invocation_id": "inv_ea1f96cb4f006243aeef37bccee91b219f7539972d23b1fa3340bcf191a52df1",
+        "ledger_event_id": "evt_5e3c6eab1b8841a6f0f3ffbc9a9b90f4b1e32160838203a3041e3976cdf403f3",
+        "node_id": "COMPLEXITY_GATE",
+        "node_kind": "STAGE",
+        "output_task_commit": "d4108906608144146127f47af81fdb58497faeba",
+        "reason": "validated ADVANCE record reaches RUNTIME_AUTHENTICITY",
+        "record_id": "rec_ccbbd76405aedc4b0f175474774537c67d858b370b3bed7aabf2d83fc9db5611",
+        "status": "CURRENT"
+      },
+      {
+        "disposition": "ADVANCE",
+        "input_task_commit": "d4108906608144146127f47af81fdb58497faeba",
+        "invocation_id": "inv_54c2ee75e886706f4ea896c3d1b2bd429439f14a457e0c65346e771700da9fae",
+        "ledger_event_id": "evt_3c794de24016891e5ba7cdf53ccf6d89fe2f62d95dcdf589d36a82476a6d0224",
+        "node_id": "RUNTIME_AUTHENTICITY",
+        "node_kind": "STAGE",
+        "output_task_commit": "d4108906608144146127f47af81fdb58497faeba",
+        "reason": "validated ADVANCE record reaches DETERMINISTIC_VALIDATION",
+        "record_id": "rec_e082cc5de1784fa05edb59d7870ee20007e35a82c5a872217ccd65f7a209ee8a",
+        "status": "CURRENT"
+      },
+      {
+        "input_task_commit": "4d4f9608d391a31cd5d7aaafa56ebfe4381c8a6a",
+        "invocation_id": "inv_dc37886b4b9ad0f6722a88fd34d20310c495a53963f15c7cccea134f977a48c2",
+        "ledger_event_id": "evt_e7d93310bc45a83bf559d74c92ffbf9b8be1f4487d9aaba8019efc84f6e241bb",
+        "node_id": "DETERMINISTIC_VALIDATION",
+        "node_kind": "STAGE",
+        "output_task_commit": "4d4f9608d391a31cd5d7aaafa56ebfe4381c8a6a",
+        "reason": "latest execution record predates the latest current predecessor execution; the downstream stage must be rerun even when task/control commits are unchanged",
+        "record_id": "rec_f2368fd32ee6d350775dad68110f72571b8cce7debfa078e07c3f201a77eb1aa",
+        "status": "STALE"
+      },
+      {
+        "node_id": "FROZEN_CANDIDATE",
+        "node_kind": "STATE",
+        "reason": "state cannot be current while its predecessor chain is non-current",
+        "status": "MISSING"
+      },
+      {
+        "input_task_commit": "192af49708034411a4a2787fb0b8eea16b14de71",
+        "invocation_id": "inv_2a304ac09fbd2f73dbc7fe59bf0e49ec460c2cc2e71abfd3e68addc1ef947c2b",
+        "ledger_event_id": "evt_42d715a97e24871b9774dae56dd159382ff193290288592c71168ec71a74ca8c",
+        "node_id": "QUALITY_INTERLOCK",
+        "node_kind": "STAGE",
+        "output_task_commit": "192af49708034411a4a2787fb0b8eea16b14de71",
+        "reason": "upstream node FROZEN_CANDIDATE is not current; later historical evidence cannot advance",
+        "record_id": "rec_3013c31df1a980e8bc6963a440494584963c77cfad3fa753cf53c6ee2c752121",
+        "status": "STALE"
+      },
+      {
+        "node_id": "PRE_LLMAJ",
+        "node_kind": "STAGE",
+        "reason": "upstream node QUALITY_INTERLOCK is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "MODEL_DIAGNOSTIC_GPT",
+        "node_kind": "STAGE",
+        "reason": "upstream node PRE_LLMAJ is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "MODEL_DIAGNOSTIC_CLAUDE",
+        "node_kind": "STAGE",
+        "reason": "upstream node MODEL_DIAGNOSTIC_GPT is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "MODEL_DIAGNOSTIC_AGGREGATE",
+        "node_kind": "STAGE",
+        "reason": "upstream node MODEL_DIAGNOSTIC_CLAUDE is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "HARBOR_LLMAJ",
+        "node_kind": "STAGE",
+        "reason": "upstream node MODEL_DIAGNOSTIC_AGGREGATE is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "OFFICIAL_MODEL_TRIALS",
+        "node_kind": "STAGE",
+        "reason": "upstream node HARBOR_LLMAJ is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "TRIAL_ANALYSIS",
+        "node_kind": "STAGE",
+        "reason": "upstream node OFFICIAL_MODEL_TRIALS is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "DIFFICULTY_ASSESSMENT",
+        "node_kind": "STAGE",
+        "reason": "upstream node TRIAL_ANALYSIS is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "FINAL_REVIEW",
+        "node_kind": "STAGE",
+        "reason": "upstream node DIFFICULTY_ASSESSMENT is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "SUBMISSION_READY",
+        "node_kind": "STAGE",
+        "reason": "upstream node FINAL_REVIEW is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      }
+    ],
+    "schema_version": "1.0",
+    "state_snapshot_id": "state_b8accf6e9fca1530b01f85057fe929baa3a1af511fef25bb906537aad3234a40",
+    "summary": {
+      "BLOCKED": 0,
+      "CURRENT": 15,
+      "MISSING": 11,
+      "STALE": 2
+    },
+    "task_commit": "d4108906608144146127f47af81fdb58497faeba",
+    "task_id": "route-control-plane"
+  }
+}
