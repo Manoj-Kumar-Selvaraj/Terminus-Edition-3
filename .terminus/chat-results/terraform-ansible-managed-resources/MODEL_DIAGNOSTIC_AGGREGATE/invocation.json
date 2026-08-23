@@ -1,0 +1,163 @@
+{
+  "acceptance_predicates": {
+    "COMPLETE": [
+      {
+        "op": "eq",
+        "path": "GPT_PERSPECTIVE_RESULT.EXECUTION",
+        "value": "EXECUTED"
+      },
+      {
+        "op": "eq",
+        "path": "CLAUDE_PERSPECTIVE_RESULT.EXECUTION",
+        "value": "EXECUTED"
+      },
+      {
+        "op": "eq",
+        "path": "ISOLATION_CHECK",
+        "value": "PASS"
+      }
+    ],
+    "DIAGNOSTIC_NOT_EXECUTED": [
+      {
+        "op": "nonempty",
+        "path": "GPT_PERSPECTIVE_RESULT"
+      },
+      {
+        "op": "nonempty",
+        "path": "CLAUDE_PERSPECTIVE_RESULT"
+      },
+      {
+        "op": "eq",
+        "path": "ISOLATION_CHECK",
+        "value": "PASS"
+      }
+    ]
+  },
+  "authority": {
+    "control_plane_commit": "df7ef7569e2947b9f0bf7cf89ed4dec6c2a5a1fe",
+    "policy_versions": {},
+    "task_commit": "78ad422902b27dea954905130a1267b02cff3596",
+    "task_id": "terraform-ansible-managed-resources"
+  },
+  "evidence": {
+    "authorized_evidence_classes": [
+      "CONTROL_PLANE_POLICY",
+      "CURRENT_REVIEW_PACKET",
+      "DURABLE_SESSION_STATE",
+      "SOLVER_VISIBLE_TASK"
+    ],
+    "evidence_required": [
+      "both frozen Q8 perspective results",
+      "proof neither perspective saw the other before freeze"
+    ],
+    "excluded_evidence_classes": [
+      "CI_RUNTIME_EVIDENCE",
+      "FINAL_PACKAGE_EVIDENCE",
+      "MODEL_TRIAL_EVIDENCE",
+      "PRIOR_REVIEW_RESULTS",
+      "PRIVATE_CREATION_DESIGN",
+      "PUBLIC_REFERENCE",
+      "SOLUTION_ORACLE",
+      "VERIFIER_PRIVATE"
+    ],
+    "mandatory_exact_reads": [
+      ".terminus/AGENT_SYSTEM.md",
+      ".terminus/agents/QUALITY_AGENT_REGISTRY.md",
+      ".terminus/agents/QUALITY_AGENT_PROMPTS.md"
+    ],
+    "retrieval_mode": "EXACT_ONLY"
+  },
+  "ignored_input_count": 0,
+  "inputs": {
+    "optional": {
+      "PRE_LLMAJ_PASS": {
+        "record_id": "rec_c1e4f9def221c7e96f796b0355fb852cdcda4cdf8f5562352bda4e2895456e4f",
+        "status": "PASS"
+      }
+    },
+    "required": {
+      "CLAUDE_PERSPECTIVE_RESULT": {
+        "DIAGNOSTIC_SUMMARY": "Optional diagnostic skipped by default Q4/Q6-only quality policy.",
+        "EXECUTION": "SIMULATION_NOT_EXECUTED",
+        "PERSPECTIVE": "CLAUDE_PERSPECTIVE",
+        "PREDICTED_OFFICIAL_SIGNAL": "NOT_EVALUATED",
+        "record_id": "rec_096d745f94313162397db362a6d989f7d0acda268afdbcc9c30352c28932d53c"
+      },
+      "GPT_PERSPECTIVE_RESULT": {
+        "DIAGNOSTIC_SUMMARY": "Optional diagnostic skipped by default Q4/Q6-only quality policy.",
+        "EXECUTION": "SIMULATION_NOT_EXECUTED",
+        "PERSPECTIVE": "GPT_PERSPECTIVE",
+        "PREDICTED_OFFICIAL_SIGNAL": "NOT_EVALUATED",
+        "record_id": "rec_8e7d205012f174d9a40f3c141f76cd357cd63ec2635bd1c2e7e102c8cc330c64"
+      }
+    }
+  },
+  "invocation_id": "inv_cf2fd65e87d2ba177d5d831dcbda3dc9070a623199f573b5600560fb6f83ae8c",
+  "learning": {
+    "context_hash": "sha256:bb84a513aa2b6e4374d691759c4a6edf94169f479f4611e9091643b9f279ccfc",
+    "lessons": [],
+    "mode": "GENERALIZED_LESSONS_PLUS_OWNED_REMEDIATIONS",
+    "raw_feedback_exposed": false,
+    "raw_historical_findings_exposed": false,
+    "registry_heads": {
+      "feedback": "GENESIS",
+      "findings": "GENESIS",
+      "lessons": "GENESIS",
+      "patterns": "GENESIS",
+      "remediations": "GENESIS"
+    },
+    "remediations": []
+  },
+  "missing_required_inputs": [],
+  "output_contract": {
+    "allowed_status_values": [
+      "COMPLETE",
+      "DIAGNOSTIC_NOT_EXECUTED",
+      "REPAIR_REQUIRED",
+      "BLOCKED"
+    ],
+    "deterministic_validators": [
+      "Q8 dual-perspective isolation/provenance validation"
+    ],
+    "optional_fields": [
+      "DIAGNOSTIC_REPAIR_ROUTE"
+    ],
+    "persisted_artifacts": [
+      "Q8 aggregate diagnostic result",
+      ".terminus/sessions/<task>.md"
+    ],
+    "required_fields": [
+      "GPT_PERSPECTIVE_RESULT",
+      "CLAUDE_PERSPECTIVE_RESULT",
+      "ISOLATION_CHECK",
+      "COMPARATIVE_DIAGNOSTIC"
+    ],
+    "semantic_reviewers": []
+  },
+  "readiness": "READY",
+  "retrieval": {
+    "query": null,
+    "retrieved_chars": 0,
+    "retrieved_context": [],
+    "status": "NOT_REQUESTED"
+  },
+  "routing": {
+    "failure_routes": {
+      "DIAGNOSTIC_TASK_DEFECT": "CI Orchestrator -> responsible producer"
+    },
+    "stale_on": [
+      "either Q8 perspective result change",
+      "solver-visible task change",
+      "Q8 role-contract change"
+    ],
+    "success_transition": "HARBOR_LLMAJ"
+  },
+  "schema_version": "1.0",
+  "stage": {
+    "lifecycle": "evaluation",
+    "owner": "CI Orchestrator / Submission Controller",
+    "role_class": "CONTROLLER",
+    "role_id": "CI_ORCHESTRATOR",
+    "stage_id": "MODEL_DIAGNOSTIC_AGGREGATE"
+  }
+}
