@@ -1,0 +1,63 @@
+{
+  "schema_version": "3.0",
+  "role": "Production Logic Auditor",
+  "review_id": "terraform-ansible-managed-resources-78ad4229-production-logic-1eafb47b8b",
+  "task": "terraform-ansible-managed-resources",
+  "task_commit": "78ad422902b27dea954905130a1267b02cff3596",
+  "control_plane_commit": "1e2593be2a1aaeb7983fe77c29704d76add027b8",
+  "protocol_policy_version": "2.2",
+  "prompt_policy_version": "2.2",
+  "role_policy_version": "1.1",
+  "role_contract_hash": "828f84c63f4e37642ab42740b22aa95646ddaa42972f30902e9fe9a034e5458c",
+  "review_scope_hash": "5024cce4e6afacd64daf5cc630576390f3b382ea422f7a39c3726d0a7bf1e76e",
+  "context_packet": ".terminus/reviews/terraform-ansible-managed-resources/78ad4229/terraform-ansible-managed-resources-78ad4229-production-logic-1eafb47b8b.packet.json",
+  "verdict": "PASS",
+  "confidence": "HIGH",
+  "evidence_status": "SUFFICIENT",
+  "summary": "The solver-visible environment is a reachable Terraform provider stack that mutates local Linux state through Ansible while observing drift natively on read. Ten differentiated resource lifecycles, preflight validation, subprocess execution control, and cross-cutting lifecycle invariants provide credible production coupling and partial-fix traps; repetitive resource scaffolding is present but domain-justified and not empty padding. Substantive runtime/configuration LOC in the environment tree (~3,096 lines of Go plus build/runtime config) meets the large_system_strict floor.",
+  "evidence": [
+    {"type":"file","ref":"terraform-ansible-managed-resources/task.toml","observation":"Advanced systems task with workdir /app/provider, separate verifier environment, and 8192MB memory; tags terraform/ansible/provider/state-reconciliation indicating a provider-completion work package."},
+    {"type":"file","ref":"terraform-ansible-managed-resources/environment/ansibleops/cmd/terraform-provider-ansibleops/main.go","observation":"Primary entrypoint serves terraform-provider-ansibleops via hashicorp terraform-plugin-framework providerserver at registry.terraform.io/local/ansibleops."},
+    {"type":"file","ref":"terraform-ansible-managed-resources/environment/ansibleops/internal/provider/provider.go","observation":"Registers ten resource constructors (file, directory, copy, template, line, block, symlink, user, group, cron), configures runtime from provider schema, and runs validateRuntimePreflight before exposing ResourceData."},
+    {"type":"file","ref":"terraform-ansible-managed-resources/environment/ansibleops/internal/provider/preflight.go","observation":"241-line preflight inspects inventory size/group/host constraints, resolves executable ansible-playbook, probes temp_dir writability via MkdirTemp/write/read/remove, and bounds mutation timeout to 1s–1h whole seconds."},
+    {"type":"file","ref":"terraform-ansible-managed-resources/environment/ansibleops/internal/runner/runner.go","observation":"ProcessRunner validates absolute inventory/temp paths, writes ephemeral playbooks under TempDir, executes ansible-playbook with timeout/context cancellation, merges env overrides, captures exit codes, and removes playbooks on success."},
+    {"type":"file","ref":"terraform-ansible-managed-resources/environment/ansibleops/internal/ansible/execute.go","observation":"Single mutation path renders SingleTask playbooks and delegates to configured Runner with ANSIBLE_NOCOLOR and ANSIBLE_HOST_KEY_CHECKING env overrides."},
+    {"type":"file","ref":"terraform-ansible-managed-resources/environment/ansibleops/internal/observe/path.go","observation":"Read-side InspectPath uses lstat, symlink readlink, optional SHA-256 digest, UID/GID to owner/group resolution, and file kind classification without invoking Ansible."},
+    {"type":"file","ref":"terraform-ansible-managed-resources/environment/ansibleops/internal/observe/cron.go","observation":"InspectCron scans /var/spool/cron paths for #Ansible markers, parses schedule fields, and detects disabled entries—distinct observation logic from path/account modules."},
+    {"type":"file","ref":"terraform-ansible-managed-resources/environment/ansibleops/internal/observe/account.go","observation":"InspectUser/InspectGroup combine user.Lookup with /etc/passwd and /etc/group parsing for shell, supplementary groups, and member lists."},
+    {"type":"file","ref":"terraform-ansible-managed-resources/environment/ansibleops/internal/lifecycle/change.go","observation":"ChangeSet supports mode-normalized diffs, canonical slice comparison, DiffPath and DiffCron helpers used to gate updates before mutation."},
+    {"type":"file","ref":"terraform-ansible-managed-resources/environment/ansibleops/internal/resources/file.go","observation":"Representative path resource: Create/Update invoke ansible.FileTask, Read uses observe.InspectPath only, Update applies lifecycle.DiffPath before selective mutation, Delete uses absent state."},
+    {"type":"file","ref":"terraform-ansible-managed-resources/environment/ansibleops/internal/resources/line.go","observation":"Line resource validates Unix names and managed lines, uses ansible.LineTask for mutation, and refreshes observed_exact_count/observed_regexp_count via observe.InspectLine."},
+    {"type":"file","ref":"terraform-ansible-managed-resources/environment/ansibleops/docs/lifecycle.md","observation":"Documents read/mutation separation, content digest-driven updates, scoped deletes for line/block/cron siblings, symlink target preservation, and remove_home_on_destroy behavior—cross-resource partial-fix traps."},
+    {"type":"file","ref":"terraform-ansible-managed-resources/environment/ansibleops/scripts/build-provider.sh","observation":"Operator workflow runs gofmt, local go build with trimpath/ldflags, installs provider binary to filesystem mirror under /opt/terraform/plugins/registry.terraform.io/local/ansibleops/0.1.0/linux_amd64."},
+    {"type":"file","ref":"terraform-ansible-managed-resources/environment/ansibleops/scripts/smoke.sh","observation":"End-to-end operator smoke builds provider, terraform init/apply/destroy on examples/basic/main.tf, and asserts managed filesystem artifacts under /tmp/ansibleops-smoke-managed."},
+    {"type":"file","ref":"terraform-ansible-managed-resources/environment/Dockerfile","observation":"Pins golang base digest and terraform 1.10.5 checksum, installs ansible-core and runtime tooling, vendors Go modules, builds provider via build-provider.sh, and configures TF_CLI_CONFIG_FILE/ANSIBLE_CONFIG env defaults."},
+    {"type":"rule","ref":".terminus/agents/QUALITY_AGENT_PROMPTS.md","observation":"Q6 requires tracing entrypoints, reachability, module responsibilities, clone/padding inspection, removal test, and for large_system_strict >=3000 substantive reachable runtime/config LOC with no HIGH toy/padding risk."},
+    {"type":"rule","ref":".terminus/agents/CREATION_PIPELINE.md","observation":"Advanced operational tasks default to large_system_strict unless a narrower profile is explicitly justified; Q6 independently judges production credibility after freeze."}
+  ],
+  "findings": [
+    {"id":"Q6-1","severity":"LOW","status":"OBSERVED","criterion":"Module diversity versus template cloning","evidence_refs":["terraform-ansible-managed-resources/environment/ansibleops/internal/resources/file.go","terraform-ansible-managed-resources/environment/ansibleops/internal/resources/directory.go","terraform-ansible-managed-resources/environment/ansibleops/internal/resources/copy.go","terraform-ansible-managed-resources/environment/ansibleops/internal/resources/symlink.go"],"why_it_matters":"Path-family resources share nearly identical CRUD scaffolding (~110–150 LOC each), which inflates line count without proportional unique branching; this is acceptable here because each maps to a distinct Ansible module/state contract rather than constant-output shells.","minimal_remediation":"None required for PASS; future refactors could extract shared path-resource helpers without reducing behavioral surface.","regression_risk":"Over-abstracting shared resource scaffolding could hide resource-specific validation and observation differences exercised by verifier matrices."}
+  ],
+  "missing_evidence": [],
+  "change_scope": [],
+  "do_not_change": [
+    "Read/mutation separation where refresh/read uses observe packages and never ansible-playbook",
+    "Ten registered resource types and their distinct Ansible module mappings",
+    "Preflight inventory/binary/temp_dir validation gate in provider Configure",
+    "Cross-resource lifecycle invariants documented in environment/ansibleops/docs/lifecycle.md"
+  ],
+  "next_gate": "QUALITY_INTERLOCK_PASS pending Q4 Spec-Test Contract Reviewer",
+  "role_output": {
+    "CORE_LOGIC_DEPTH": "HIGH",
+    "RUNTIME_REACHABILITY": "HIGH",
+    "MODULE_DIVERSITY": "MEDIUM",
+    "CROSS_COMPONENT_COUPLING": "HIGH",
+    "TOY_LOGIC_RISK": "LOW",
+    "PADDING_RISK": "MEDIUM",
+    "SUBSTANTIVE_LOC_ASSESSMENT": "~2,964 lines of reachable Go across cmd/internal plus ~132 lines of build/runtime configuration (Dockerfile, shell entrypoints, ansible/terraform config, basic example) for ~3,096 substantive solver-visible runtime/config LOC; excludes go.mod and markdown docs; meets the large_system_strict 3,000-line floor.",
+    "MAJOR_MODULES": "cmd/main entrypoint; provider configure/preflight; runtime defaults; runner subprocess executor; ansible task/playbook renderer and module task builders; lifecycle validation/diff/identity; observe path/account/text/cron inspectors; ten resources/* CRUD implementations; build/smoke operator scripts; container/runtime config.",
+    "PARTIAL_FIX_TRAPS": "Fixing only mutation paths while leaving read-side observe stale; updating file/directory resources without lifecycle.DiffPath short-circuit semantics; line/block/cron scoped deletes that must not remove sibling-owned entries; symlink delete vs target preservation; user destroy with remove_home_on_destroy; template/copy updates requiring source_digest or variables_fingerprint changes; provider Configure preflight failures blocking all resources.",
+    "REMOVAL_TEST": "Removing ~25% of core (e.g., observe/account+cron modules plus three resource families and preflight probes) would eliminate distinct account/cron observation, inventory/binary validation, and multiple managed-object lifecycles—materially reducing provider behavior rather than cosmetic dead code.",
+    "REQUIRED_CHANGES": "none"
+  }
+}
