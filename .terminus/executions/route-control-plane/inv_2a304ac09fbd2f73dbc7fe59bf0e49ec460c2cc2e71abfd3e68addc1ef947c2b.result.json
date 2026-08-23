@@ -1,0 +1,767 @@
+{
+  "authority": {
+    "control_plane_commit": "df7ef7569e2947b9f0bf7cf89ed4dec6c2a5a1fe",
+    "policy_versions": {},
+    "task_commit": "192af49708034411a4a2787fb0b8eea16b14de71",
+    "task_id": "route-control-plane"
+  },
+  "disposition": "ADVANCE",
+  "evidence_refs": [
+    {
+      "content_hash": "sha256:d9d7680e65a5b2ebcf28e0661eb09fbf1f6ba2ab623c69e0784c0164e8788f12",
+      "kind": "COMMIT",
+      "ref": "commit:192af49708034411a4a2787fb0b8eea16b14de71"
+    },
+    {
+      "content_hash": "sha256:581db2839789f6526e4c089db901f90f28601d162f2050b9775b69980405b036",
+      "kind": "RESULT",
+      "ref": "git:085e42c1ce442ee8421c5d6b01ace32592f8fca8:.terminus/reviews/route-control-plane/192af497/route-control-plane-192af497-spec-test-contract-3f064fb5a3.json#route-control-plane-192af497-spec-test-contract-3f064fb5a3"
+    },
+    {
+      "content_hash": "sha256:ef3698781328ff698b2cce9dc37019869d79cf633ab58305ddf50617f67920fc",
+      "kind": "RESULT",
+      "ref": "git:085e42c1ce442ee8421c5d6b01ace32592f8fca8:.terminus/reviews/route-control-plane/2cbd2ee7/route-control-plane-2cbd2ee7-production-logic-e470c5e839.json#route-control-plane-2cbd2ee7-production-logic-e470c5e839"
+    },
+    {
+      "content_hash": "sha256:581db2839789f6526e4c089db901f90f28601d162f2050b9775b69980405b036",
+      "kind": "RUN",
+      "ref": "run:github:32578935708-q4#sha256:581db2839789f6526e4c089db901f90f28601d162f2050b9775b69980405b036"
+    },
+    {
+      "content_hash": "sha256:ef3698781328ff698b2cce9dc37019869d79cf633ab58305ddf50617f67920fc",
+      "kind": "RUN",
+      "ref": "run:github:32578935708-q6#sha256:ef3698781328ff698b2cce9dc37019869d79cf633ab58305ddf50617f67920fc"
+    }
+  ],
+  "invocation_id": "inv_2a304ac09fbd2f73dbc7fe59bf0e49ec460c2cc2e71abfd3e68addc1ef947c2b",
+  "invocation_snapshot": {
+    "acceptance_predicates": {
+      "QUALITY_INTERLOCK_PASS": [
+        {
+          "op": "q4_satisfied",
+          "path": "Q4_RESULT"
+        },
+        {
+          "op": "eq",
+          "path": "Q6_RESULT.verdict",
+          "value": "PASS"
+        },
+        {
+          "op": "in",
+          "path": "Q6_RESULT.confidence",
+          "value": [
+            "HIGH",
+            "MEDIUM"
+          ]
+        },
+        {
+          "op": "eq",
+          "path": "Q6_RESULT.evidence_status",
+          "value": "SUFFICIENT"
+        },
+        {
+          "op": "empty",
+          "path": "Q6_RESULT.missing_evidence"
+        },
+        {
+          "op": "in",
+          "path": "EVIDENCE_SUFFICIENCY",
+          "value": [
+            "SUFFICIENT",
+            true
+          ]
+        }
+      ]
+    },
+    "authority": {
+      "control_plane_commit": "df7ef7569e2947b9f0bf7cf89ed4dec6c2a5a1fe",
+      "policy_versions": {},
+      "task_commit": "192af49708034411a4a2787fb0b8eea16b14de71",
+      "task_id": "route-control-plane"
+    },
+    "evidence": {
+      "authorized_evidence_classes": [
+        "CI_RUNTIME_EVIDENCE",
+        "CONTROL_PLANE_POLICY",
+        "CURRENT_REVIEW_PACKET",
+        "DURABLE_SESSION_STATE",
+        "SOLVER_VISIBLE_TASK"
+      ],
+      "evidence_required": [
+        "Q4 exact-current PASS with sufficient evidence",
+        "Q6 current or Protocol-valid scope-preserved PASS with sufficient evidence",
+        "Q4 direct PASS or validated adjudicated closure PASS"
+      ],
+      "excluded_evidence_classes": [
+        "FINAL_PACKAGE_EVIDENCE",
+        "MODEL_TRIAL_EVIDENCE",
+        "PRIOR_REVIEW_RESULTS",
+        "PRIVATE_CREATION_DESIGN",
+        "PUBLIC_REFERENCE",
+        "SOLUTION_ORACLE",
+        "VERIFIER_PRIVATE"
+      ],
+      "mandatory_exact_reads": [
+        ".terminus/AGENT_SYSTEM.md",
+        ".terminus/agents/PROTOCOL.md",
+        ".terminus/agents/QUALITY_AGENT_REGISTRY.md",
+        ".terminus/agents/INSTRUCTION_POLICY.md",
+        ".terminus/agents/QUALITY_AGENT_PROMPTS.md",
+        ".terminus/agents/INVOKE.md"
+      ],
+      "retrieval_mode": "EXACT_ONLY"
+    },
+    "ignored_input_count": 0,
+    "inputs": {
+      "optional": {
+        "Q6_REVIEW_SCOPE_HASH": "eaa446beb211344f9f8fff591b831d28b9eb352bffa8b1ccd97170caec5b45e2"
+      },
+      "required": {
+        "FROZEN_TASK_COMMIT": "192af49708034411a4a2787fb0b8eea16b14de71",
+        "Q4_CONTEXT_PACKET": {
+          "authoritative_rules": [
+            "TERMINUS_3_AI_INSTRUCTIONS.md",
+            ".terminus/AGENT_SYSTEM.md",
+            ".terminus/agents/PROTOCOL.md",
+            ".terminus/agents/PROMPTS.md",
+            ".terminus/agents/QUALITY_AGENT_REGISTRY.md",
+            ".terminus/agents/QUALITY_AGENT_PROMPTS.md"
+          ],
+          "change_since_last_review": "Final Q4 attempt after behavioral Ansible precedence, executable dashboard CAS, destructive management-path safety remediation, and fresh hosted deterministic Oracle=1/NOP=0 evidence.",
+          "control_plane_commit": "002e8924a8fc0f604ac8ed109c0e030d066c4838",
+          "evidence_allowed": [
+            "instruction.md",
+            "all solver-visible contracts referenced by instruction.md",
+            "tests/",
+            "test map when needed to identify classification only",
+            "environment interfaces required to interpret observable behavior"
+          ],
+          "evidence_excluded": [
+            "Q1/Q2/Q3 conclusions before the independent matrix is frozen",
+            "Verifier Author coverage rationale",
+            "previous Spec-Test Contract Reviewer verdict",
+            "other specialist verdicts",
+            "desired aggregate outcome"
+          ],
+          "isolation_mode": "PROCEDURAL",
+          "output_schema": ".terminus/agents/schemas/review_result.schema.json",
+          "prior_verdicts_visible": false,
+          "prompt_policy_version": "2.2",
+          "protocol_policy_version": "2.2",
+          "question": "Is every substantive verifier behavior discoverable from the solver-visible contract, every material requirement tested, and every grading-relevant statement unambiguous?",
+          "review_id": "route-control-plane-192af497-spec-test-contract-3f064fb5a3",
+          "review_output_path": ".terminus/reviews/route-control-plane/192af497/route-control-plane-192af497-spec-test-contract-3f064fb5a3.json",
+          "role": "Spec-Test Contract Reviewer",
+          "role_contract_hash": "9607c7323be7db66eb7b520db4498f29efc686073e6f3d565c8e2c99ad26a34c",
+          "role_policy_version": "1.1",
+          "schema_version": "3.0",
+          "state": "FROZEN_CANDIDATE",
+          "task": "route-control-plane",
+          "task_commit": "192af49708034411a4a2787fb0b8eea16b14de71"
+        },
+        "Q6_CONTEXT_PACKET": {
+          "authoritative_rules": [
+            "TERMINUS_3_AI_INSTRUCTIONS.md",
+            ".terminus/AGENT_SYSTEM.md",
+            ".terminus/agents/PROTOCOL.md",
+            ".terminus/agents/PROMPTS.md",
+            ".terminus/agents/QUALITY_AGENT_REGISTRY.md",
+            ".terminus/agents/QUALITY_AGENT_PROMPTS.md"
+          ],
+          "change_since_last_review": "Post-Q4/Q6 remediation frozen candidate with clean snapshot 17386b7e31d686d124d000c9905f38eed3b753db and hosted deterministic run 32571715656: Oracle=1, NOP=0, all 25 F2P cases classified correctly, all 8 P2P cases preserved.",
+          "control_plane_commit": "0e2a7cb55549b9d7e6d2d2b04af86701f5344427",
+          "evidence_allowed": [
+            "task.toml",
+            "solver-visible environment/runtime/configuration code",
+            "entrypoints and operator workflows",
+            "runtime-authenticity and complexity reports",
+            "representative data/state and incident evidence"
+          ],
+          "evidence_excluded": [
+            "Complexity Governor verdict as a conclusion to copy",
+            "creator claims that code is production-grade",
+            "previous Production Logic Auditor verdict",
+            "other specialist verdicts",
+            "desired difficulty tier"
+          ],
+          "isolation_mode": "PROCEDURAL",
+          "output_schema": ".terminus/agents/schemas/review_result.schema.json",
+          "prior_verdicts_visible": false,
+          "prompt_policy_version": "2.2",
+          "protocol_policy_version": "2.2",
+          "question": "Is the solver-visible core genuinely complex, reachable, coupled, non-toy and credible as production logic rather than LOC or module padding?",
+          "review_id": "route-control-plane-2cbd2ee7-production-logic-e470c5e839",
+          "review_output_path": ".terminus/reviews/route-control-plane/2cbd2ee7/route-control-plane-2cbd2ee7-production-logic-e470c5e839.json",
+          "review_scope_hash": "eaa446beb211344f9f8fff591b831d28b9eb352bffa8b1ccd97170caec5b45e2",
+          "role": "Production Logic Auditor",
+          "role_contract_hash": "828f84c63f4e37642ab42740b22aa95646ddaa42972f30902e9fe9a034e5458c",
+          "role_policy_version": "1.1",
+          "schema_version": "3.0",
+          "state": "FROZEN_CANDIDATE",
+          "task": "route-control-plane",
+          "task_commit": "2cbd2ee733929f48d41dcb2fdd6144de8537bb38"
+        }
+      }
+    },
+    "invocation_id": "inv_2a304ac09fbd2f73dbc7fe59bf0e49ec460c2cc2e71abfd3e68addc1ef947c2b",
+    "learning": {
+      "context_hash": "sha256:bb84a513aa2b6e4374d691759c4a6edf94169f479f4611e9091643b9f279ccfc",
+      "lessons": [],
+      "mode": "GENERALIZED_LESSONS_PLUS_OWNED_REMEDIATIONS",
+      "raw_feedback_exposed": false,
+      "raw_historical_findings_exposed": false,
+      "registry_heads": {
+        "feedback": "GENESIS",
+        "findings": "GENESIS",
+        "lessons": "GENESIS",
+        "patterns": "GENESIS",
+        "remediations": "GENESIS"
+      },
+      "remediations": []
+    },
+    "missing_required_inputs": [],
+    "output_contract": {
+      "allowed_status_values": [
+        "QUALITY_INTERLOCK_PASS",
+        "REVISE",
+        "INSUFFICIENT_EVIDENCE",
+        "BLOCKED"
+      ],
+      "deterministic_validators": [
+        ".terminus/validate_review_freshness.py",
+        ".terminus/validate_quality_interlock.py"
+      ],
+      "optional_fields": [
+        "ADJUDICATION_REQUIRED",
+        "Q4_CLOSURE_RESULT"
+      ],
+      "persisted_artifacts": [
+        "Q4/Q6 packets and results",
+        ".terminus/sessions/<task>.md"
+      ],
+      "required_fields": [
+        "Q4_RESULT",
+        "Q4_SATISFACTION",
+        "Q6_RESULT",
+        "EVIDENCE_SUFFICIENCY"
+      ],
+      "semantic_reviewers": [
+        "Q4 Spec-Test Contract Reviewer",
+        "Q6 Production Logic Auditor",
+        "Q4 Closure Adjudicator"
+      ]
+    },
+    "readiness": "READY",
+    "retrieval": {
+      "query": null,
+      "retrieved_chars": 0,
+      "retrieved_context": [],
+      "status": "NOT_REQUESTED"
+    },
+    "routing": {
+      "failure_routes": {
+        "INSUFFICIENT_EVIDENCE": "CI Orchestrator / Submission Controller",
+        "LATENT_REVIEWER_OMISSION": "Adjudicator",
+        "Q4_CIRCUIT_BREAKER": "CI Orchestrator -> Q4_CLOSURE_POLICY -> Q4 Closure Adjudicator",
+        "Q4_REVISE": "smallest responsible spec/verifier producer",
+        "Q6_REVISE": "A2/A4 or responsible production producer"
+      },
+      "stale_on": [
+        "Q4 evidence-surface change",
+        "Q6 production-scope change",
+        "role-contract hash change",
+        "protocol/prompt policy change"
+      ],
+      "success_transition": "PRE_LLMAJ"
+    },
+    "schema_version": "1.0",
+    "stage": {
+      "lifecycle": "review",
+      "owner": "CI Orchestrator / Submission Controller",
+      "role_class": "CONTROLLER",
+      "role_id": "CI_ORCHESTRATOR",
+      "stage_id": "QUALITY_INTERLOCK"
+    }
+  },
+  "outputs": {
+    "EVIDENCE_SUFFICIENCY": "SUFFICIENT",
+    "Q4_CLOSURE_RESULT": {
+      "decision_id": "hd_e50f56cbc11457467f5195bff3d7eb2d3e8b2c8c85b0cfbd7aa5f01c654f517c",
+      "type": "CHAT_HUMAN_RISK_ACCEPTANCE"
+    },
+    "Q4_RESULT": {
+      "change_scope": [
+        "route-control-plane/environment/Dockerfile",
+        "route-control-plane/environment/ansible/roles/routecp/defaults/main.yml",
+        "route-control-plane/environment/ansible/roles/routecp/tasks/project.yml",
+        "route-control-plane/instruction.md",
+        "route-control-plane/tests/test_f2p_matrix.py",
+        "route-control-plane/tests/test_quality_remediation.py"
+      ],
+      "confidence": "HIGH",
+      "context_packet": ".terminus/reviews/route-control-plane/192af497/route-control-plane-192af497-spec-test-contract-3f064fb5a3.packet.json",
+      "control_plane_commit": "002e8924a8fc0f604ac8ed109c0e030d066c4838",
+      "do_not_change": [
+        "Core requirement inventory in instruction.md beyond clarifying delegated ansible precedence interface",
+        "Existing F2P matrix coverage for route identity, transaction fencing, atomic recovery, drift ownership, rollout heartbeat/canary/wave guards, dashboard CAS, and management-path ErrUnsafe rejection",
+        "P2P preservation tests for public API surface strings, runtime build, host-route isolation, and verifier-independence meta-check"
+      ],
+      "evidence": [
+        {
+          "observation": "Edition-3-compliant two-paragraph work request covering canonical route identity, policy validation, revision fencing, atomic recovery, drift ownership, rollout safety, Ansible convergence/precedence, dashboard CAS, API preservation, management reachability, host isolation, and GET /v1/audit monotonic Sequence ordering.",
+          "ref": "route-control-plane/instruction.md",
+          "type": "file"
+        },
+        {
+          "observation": "Delegated ansible defaults define routecp_routes, routecp_rules, routecp_protected_cidrs, and routecp_max_wave but do not declare routecp_host_routes or routecp_protected_routes.",
+          "ref": "route-control-plane/environment/ansible/roles/routecp/defaults/main.yml",
+          "type": "file"
+        },
+        {
+          "observation": "Projection template writes only routecp_routes and routecp_rules into desired.json; it never references routecp_host_routes or routecp_protected_routes.",
+          "ref": "route-control-plane/environment/ansible/roles/routecp/tasks/project.yml",
+          "type": "file"
+        },
+        {
+          "observation": "Build comments and sed mutations enumerate the injected starter defects by file and function (canonicalPrefix, routeIdentity table term, Apply fencing, offline apply guard, validateDesired checks, drift ownership skip, rollout wave/canary/already-current guards).",
+          "ref": "route-control-plane/environment/Dockerfile",
+          "type": "file"
+        },
+        {
+          "observation": "Playbook supplies routecp_host_routes and routecp_protected_routes and requires all three route IDs to appear in projected desired.json; second run must report changed=0.",
+          "ref": "route-control-plane/tests/test_outputs.py::test_ansible_preserves_host_specific_protected_routes",
+          "type": "test"
+        },
+        {
+          "observation": "Twenty-one F2P Go-matrix cases cover route identity, policy validation, preview/apply/rollback fencing, offline apply rejection, restart recovery, reconcile ownership, and rollout heartbeat/canary/wave/already-current boundaries.",
+          "ref": "route-control-plane/tests/test_f2p_matrix.py",
+          "type": "test"
+        },
+        {
+          "observation": "P2P and F2P safety tests grade management-path preservation, destructive preview/rollback/reconcile/rollout rejection via ErrUnsafe, host route-table isolation, Ansible second-run convergence, and internal Audit sequence monotonicity.",
+          "ref": "route-control-plane/tests/test_quality_remediation.py",
+          "type": "test"
+        },
+        {
+          "observation": "Q4 requires exhaustive bidirectional alignment, delegated-contract/prompt-extension walk, F2P/P2P boundary walk, and REVISE on material phantom tests, untested requirements, grading-relevant ambiguity, or repair-plan leakage.",
+          "ref": ".terminus/agents/QUALITY_AGENT_PROMPTS.md#Q4",
+          "type": "rule"
+        }
+      ],
+      "evidence_status": "SUFFICIENT",
+      "findings": [
+        {
+          "criterion": "Every substantive verifier behavior must be discoverable from the solver-visible contract; material phantom tests require REVISE.",
+          "evidence_refs": [
+            "route-control-plane/tests/test_outputs.py::test_ansible_preserves_host_specific_protected_routes",
+            "route-control-plane/environment/ansible/roles/routecp/tasks/project.yml",
+            "route-control-plane/environment/ansible/roles/routecp/defaults/main.yml",
+            "route-control-plane/instruction.md"
+          ],
+          "id": "STC-001",
+          "minimal_remediation": "Document routecp_host_routes and routecp_protected_routes (including default empty lists and precedence over routecp_routes) in the solver-visible ansible contract referenced by instruction.md, and align project.yml with that documented merge semantics.",
+          "regression_risk": "Over-specifying variable names without updating the role template could create a second prompt; under-specifying leaves the phantom interface in place.",
+          "severity": "BLOCKER",
+          "status": "OBSERVED",
+          "why_it_matters": "The F2P Ansible precedence test grades merge behavior through routecp_host_routes and routecp_protected_routes playbook variables, but neither variable nor a three-source merge contract appears in instruction.md or the delegated ansible defaults/project template. A solver can implement the stated precedence semantics with a different ansible interface and still fail grading."
+        },
+        {
+          "criterion": "Every material functional/operational requirement in the solver-visible work request must have meaningful verifier coverage.",
+          "evidence_refs": [
+            "route-control-plane/instruction.md",
+            "route-control-plane/tests/test_f2p_matrix.py",
+            "route-control-plane/tests/test_quality_remediation.py"
+          ],
+          "id": "STC-002",
+          "minimal_remediation": "Add an F2P or P2P rollout case that marks a selected/canary node offline and asserts safe non-application or explicit failure without partial fleet mutation.",
+          "regression_risk": "A vacuous offline test that never selects the offline node would preserve the coverage gap.",
+          "severity": "MEDIUM",
+          "status": "OBSERVED",
+          "why_it_matters": "Instruction.md requires fleet rollouts to stop safely around offline nodes, but no rollout test sets node Online=false or otherwise exercises offline-node rollout handling; only offline apply rejection is covered. A solver can mishandle offline rollout safety and still receive full reward."
+        },
+        {
+          "criterion": "Solver-visible docs must not materially reveal the repair plan or hidden implementation diagnosis.",
+          "evidence_refs": [
+            "route-control-plane/environment/Dockerfile",
+            "route-control-plane/tests/test_f2p_matrix.py",
+            "route-control-plane/tests/test_boundaries.py"
+          ],
+          "id": "STC-003",
+          "minimal_remediation": "Remove defect-topology commentary and file/function-specific sed recipes from the solver-visible environment; keep only neutral build/runtime packaging steps or move defect injection to private build machinery outside solver-visible artifacts.",
+          "regression_risk": "Stripping build-time defect injection without relocating it could leave starter and oracle indistinguishable or break deterministic Oracle/NOP separation.",
+          "severity": "BLOCKER",
+          "status": "OBSERVED",
+          "why_it_matters": "The environment Dockerfile comments and sed script map injected starter defects directly to controlplane/domain.go, controlplane.go, drift.go, and rollout.go functions that the verifier matrix later tests. This is a one-to-one repair map rather than legitimate runtime documentation and lets a solver pass by reversing listed mutations instead of meeting the stated engineering contract."
+        }
+      ],
+      "missing_evidence": [],
+      "next_gate": "QUALITY_INTERLOCK after consolidated remediation and refreeze; rerun exhaustive cold Q4 on the repaired candidate.",
+      "prompt_policy_version": "2.2",
+      "protocol_policy_version": "2.2",
+      "review_id": "route-control-plane-192af497-spec-test-contract-3f064fb5a3",
+      "role": "Spec-Test Contract Reviewer",
+      "role_contract_hash": "9607c7323be7db66eb7b520db4498f29efc686073e6f3d565c8e2c99ad26a34c",
+      "role_output": {
+        "ADVISORY_FINDING_IDS": [],
+        "AMBIGUITIES": [
+          {
+            "id": "STC-001",
+            "impact": "Accepted ansible variable naming and merge surface are not defined in solver-visible contracts, so pass/fail can depend on undocumented playbook variable names.",
+            "topic": "Ansible host/protected route precedence interface"
+          }
+        ],
+        "BIDIRECTIONAL_ALIGNMENT": "FAIL",
+        "BLOCKING_FINDING_IDS": [
+          "STC-001",
+          "STC-002",
+          "STC-003"
+        ],
+        "CURRENT_STATE_EVIDENCE": "NOT_APPLICABLE",
+        "DELEGATED_CONTRACT_CHECK": {
+          "defaults/main.yml": "legitimate ansible defaults; missing host/protected route list declarations used by verifier",
+          "fleet.yaml": "legitimate fleet topology/configuration contract",
+          "project.yml": "legitimate projection template; incomplete relative to graded precedence behavior"
+        },
+        "EXHAUSTIVENESS": {
+          "DELEGATED_CONTRACTS_COMPLETE": "YES",
+          "F2P_BOUNDARIES_COMPLETE": "YES",
+          "FORWARD_MATRIX_COMPLETE": "YES",
+          "OUTPUT_INTERFACES_COMPLETE": "YES",
+          "P2P_BOUNDARIES_COMPLETE": "YES",
+          "REQUIREMENTS_ENUMERATED": "COMPLETE",
+          "REVERSE_MATRIX_COMPLETE": "YES",
+          "SECOND_PASS_OMISSION_SWEEP": "PASS",
+          "UNINSPECTED_SCOPE": [
+            "Solver-visible Go/TypeScript implementation tree under /app/routecp is not present in the workspace environment snapshot; API/runtime behaviors were reconstructed from instruction.md, delegated config/ansible contracts, and verifier tests.",
+            "HTTP transport serialization for GET /v1/audit was not directly exercised; coverage relies on internal Audit() monotonicity checks plus main.go route-string preservation."
+          ],
+          "VERIFIER_BEHAVIORS_ENUMERATED": "COMPLETE"
+        },
+        "IMPLEMENTATION_DIAGNOSIS_LEAKAGE": "MATERIAL",
+        "INSTRUCTION_DOC_BOUNDARY": "CLEAN",
+        "INSTRUCTION_REQUIREMENT_COMPLETENESS": "SUFFICIENT",
+        "INSTRUCTION_SHAPE": "PASS",
+        "PHANTOM_TEST_CONTRACTS": [
+          {
+            "behavior": "Ansible projection must merge routecp_host_routes and routecp_protected_routes ahead of routecp_routes into desired.json",
+            "discoverability": "absent from instruction.md and delegated ansible defaults/project.yml",
+            "id": "STC-001"
+          }
+        ],
+        "REQUIREMENT_TEST_MATRIX": {
+          "REQ_ANSIBLE": {
+            "coverage": "partial",
+            "gap": "precedence graded via undocumented routecp_host_routes/routecp_protected_routes vars (STC-001)",
+            "sources": [
+              "instruction.md: second-run convergence; host-specific protected settings ahead of defaults"
+            ],
+            "tests": [
+              "test_ansible_preserves_host_specific_protected_routes",
+              "test_ansible_projection_converges_on_second_run"
+            ]
+          },
+          "REQ_ATOMIC_RECOVERY": {
+            "coverage": "complete",
+            "sources": [
+              "instruction.md: no partial publish, no newer-revision overwrite, safe restart recovery"
+            ],
+            "tests": [
+              "test_f2p_offline_apply_preserves_last_desired_revision",
+              "test_f2p_rollback_is_a_new_monotonic_revision",
+              "test_f2p_stale_rollback_cannot_clobber_newer_revision",
+              "test_f2p_incomplete_transaction_is_failed_on_restart",
+              "test_go_runtime_contracts"
+            ]
+          },
+          "REQ_AUDIT": {
+            "coverage": "complete",
+            "sources": [
+              "instruction.md: GET /v1/audit durable history with strictly increasing Sequence"
+            ],
+            "tests": [
+              "test_audit_sequence_is_publicly_monotonic",
+              "test_go_runtime_contracts/TestVerifierAuditSequenceStrictlyIncreases"
+            ]
+          },
+          "REQ_CANONICAL_IDENTITY": {
+            "coverage": "complete",
+            "sources": [
+              "instruction.md: IPv4/IPv6 stable canonical identities"
+            ],
+            "tests": [
+              "test_f2p_ipv6_aliases_canonicalize",
+              "test_f2p_multipath_order_is_semantically_stable",
+              "test_f2p_route_metric_updates_do_not_change_identity",
+              "test_f2p_same_prefix_in_distinct_tables_remains_distinct",
+              "test_route_rule_and_transaction_boundaries/TestBoundaryDefaultAndIPv6FamiliesStayDistinct"
+            ]
+          },
+          "REQ_DASHBOARD": {
+            "coverage": "complete",
+            "sources": [
+              "instruction.md: apply against exact preview revision; no silent concurrent overwrite"
+            ],
+            "tests": [
+              "test_dashboard_apply_is_bound_to_preview_revision"
+            ]
+          },
+          "REQ_DRIFT_OWNERSHIP": {
+            "coverage": "complete",
+            "sources": [
+              "instruction.md: fresh observations; routecp-owned objects; preserve unowned observed state"
+            ],
+            "tests": [
+              "test_f2p_route_owner_normalizes_before_ownership_checks",
+              "test_f2p_reconcile_rejects_stale_observed_snapshot",
+              "test_f2p_reconcile_preserves_unowned_unexpected_route"
+            ]
+          },
+          "REQ_HOST_ISOLATION": {
+            "coverage": "complete",
+            "sources": [
+              "instruction.md: mutate only isolated model; never benchmark host routes"
+            ],
+            "tests": [
+              "test_isolated_model_does_not_touch_host_routes"
+            ]
+          },
+          "REQ_INTERFACE": {
+            "coverage": "complete",
+            "sources": [
+              "instruction.md: preserve Go API/runtime surface and fleet/configuration interfaces"
+            ],
+            "tests": [
+              "test_public_api_surface_remains_present",
+              "test_repaired_runtime_builds",
+              "test_solution_entrypoint_is_general_and_repeatable"
+            ]
+          },
+          "REQ_MANAGEMENT_SAFETY": {
+            "coverage": "complete",
+            "sources": [
+              "instruction.md: protected management reachability across candidate/reconcile/rollback/rollout"
+            ],
+            "tests": [
+              "test_f2p_management_paths_survive_preview_rollback_reconcile_and_rollout",
+              "test_management_reachability_is_preserved"
+            ]
+          },
+          "REQ_POLICY_RULES": {
+            "coverage": "complete",
+            "sources": [
+              "instruction.md: rule/table dependencies stay valid"
+            ],
+            "tests": [
+              "test_f2p_duplicate_effective_rule_priority_is_rejected",
+              "test_f2p_rule_lookup_requires_existing_table",
+              "test_f2p_unknown_node_route_is_rejected"
+            ]
+          },
+          "REQ_ROLLOUT": {
+            "coverage": "partial",
+            "gap": "offline-node rollout safety untested (STC-002)",
+            "sources": [
+              "instruction.md: stop safely around failed canaries or offline nodes; skip already-current nodes"
+            ],
+            "tests": [
+              "test_f2p_rollout_rejects_stale_heartbeat",
+              "test_f2p_rollout_skips_nodes_already_at_target_revision",
+              "test_f2p_rollout_rejects_canary_outside_selector",
+              "test_f2p_rollout_enforces_configured_wave_limit"
+            ]
+          },
+          "REQ_TRANSACTION_FENCING": {
+            "coverage": "complete",
+            "sources": [
+              "instruction.md: preview/apply/rollback fenced to creation revision; no duplicate/cross-plan work"
+            ],
+            "tests": [
+              "test_f2p_stale_preview_cannot_apply_after_new_revision",
+              "test_f2p_idempotency_replay_returns_same_transaction",
+              "test_f2p_idempotency_key_cannot_rebind_to_new_plan",
+              "test_route_rule_and_transaction_boundaries"
+            ]
+          },
+          "REQ_VERIFIER_INDEPENDENCE": {
+            "coverage": "complete",
+            "sources": [
+              "implicit fairness requirement from verifier harness design"
+            ],
+            "tests": [
+              "test_verifier_does_not_branch_on_named_hidden_cases"
+            ]
+          }
+        },
+        "SPEC_DUMP_RISK": "HIGH",
+        "UNTESTED_REQUIREMENTS": [
+          {
+            "id": "STC-002",
+            "requirement": "Fleet rollouts must stop safely around offline nodes",
+            "source": "route-control-plane/instruction.md paragraph 2"
+          }
+        ]
+      },
+      "role_policy_version": "1.1",
+      "schema_version": "3.0",
+      "summary": "Instruction shape and most core control-plane requirements map cleanly to the verifier matrix, but three blocking contract defects remain: the environment Dockerfile exposes a one-to-one starter-defect repair map, Ansible host/protected-route precedence is graded through undocumented variable names absent from delegated contracts, and rollout safety for offline nodes is stated in instruction.md but not covered by any test.",
+      "task": "route-control-plane",
+      "task_commit": "192af49708034411a4a2787fb0b8eea16b14de71",
+      "verdict": "REVISE"
+    },
+    "Q4_SATISFACTION": "CHAT_HUMAN_RISK_ACCEPTANCE",
+    "Q6_RESULT": {
+      "change_scope": [],
+      "confidence": "HIGH",
+      "context_packet": ".terminus/reviews/route-control-plane/2cbd2ee7/route-control-plane-2cbd2ee7-production-logic-e470c5e839.packet.json",
+      "control_plane_commit": "0e2a7cb55549b9d7e6d2d2b04af86701f5344427",
+      "do_not_change": [
+        "Core ControlPlane transaction, persistence, and audit model in internal/controlplane/controlplane.go",
+        "Shared traceState FIB/policy lookup hub in internal/controlplane/fib.go",
+        "Cross-module safety, drift ownership, and rollout wave invariants that create partial-fix traps",
+        "HTTP route surface partitioning between core, operational, and diagnostic entrypoints"
+      ],
+      "evidence": [
+        {
+          "observation": "Primary runtime entrypoint exposes 13 core REST routes plus operational and diagnostic route registrars, wiring HTTP workflows to ControlPlane methods.",
+          "ref": "route-control-plane/environment/cmd/routecp/main.go",
+          "type": "file"
+        },
+        {
+          "observation": "Central state machine implements preview/apply/rollback with idempotency, per-node transactions, durable JSON persistence, audit sequencing, route/rule mutation validation, and management safety gating.",
+          "ref": "route-control-plane/environment/internal/controlplane/controlplane.go",
+          "type": "file"
+        },
+        {
+          "observation": "Policy-aware longest-prefix trace engine evaluates rule priority, lookup tables, ECMP next-hop usability, and route termination types; reused by safety, policy, diagnostics, and path-matrix flows.",
+          "ref": "route-control-plane/environment/internal/controlplane/fib.go",
+          "type": "file"
+        },
+        {
+          "observation": "Desired-vs-observed drift detection across routes and rules with owned/unowned semantics feeds reconcile, fleet health, impact analysis, and state diff reporting.",
+          "ref": "route-control-plane/environment/internal/controlplane/drift.go",
+          "type": "file"
+        },
+        {
+          "observation": "Canary-first wave rollout executes per-node observed-state transitions with offline failure handling, revision checks, and durable rollout records.",
+          "ref": "route-control-plane/environment/internal/controlplane/rollout.go",
+          "type": "file"
+        },
+        {
+          "observation": "Candidate change safety combines management-path tracing, protected-CIDR blackhole checks, link presence, and gateway-on-link validation before permitting mutations.",
+          "ref": "route-control-plane/environment/internal/controlplane/safety.go",
+          "type": "file"
+        },
+        {
+          "observation": "Topology and dependency graph builders derive link health, unreachable gateways, and cycle detection across routes, rules, and interfaces.",
+          "ref": "route-control-plane/environment/internal/controlplane/topology.go",
+          "type": "file"
+        },
+        {
+          "observation": "Multi-check diagnostics aggregate node heartbeat, management path, observed revision skew, per-table route integrity, rule/table references, link usage, audit monotonicity, and recovery blocking.",
+          "ref": "route-control-plane/environment/internal/controlplane/diagnostics.go",
+          "type": "file"
+        },
+        {
+          "observation": "Cross-fleet consistency scans detect duplicate hostnames/addresses, route identity collisions, rule priority conflicts, transaction/idempotency mismatches, rollout duplication, and audit counter drift.",
+          "ref": "route-control-plane/environment/internal/controlplane/consistency.go",
+          "type": "file"
+        },
+        {
+          "observation": "Operator dashboard exercises preview/apply, reconcile, and rollout APIs against live revision state, confirming end-to-end workflow reachability beyond thin HTTP glue.",
+          "ref": "route-control-plane/environment/web/app.ts",
+          "type": "file"
+        },
+        {
+          "observation": "Build entrypoint compiles routecp binary, materializes runtime directories, and documents starter defect injection at build time while preserving solver-visible source contracts.",
+          "ref": "route-control-plane/environment/Dockerfile",
+          "type": "file"
+        },
+        {
+          "observation": "Representative multi-site edge fleet with IPv4/IPv6 routes, multipath, down links, and policy-table indirection provides domain-realistic state samples even though runtime seeding is API-driven.",
+          "ref": "route-control-plane/environment/config/fleet.yaml",
+          "type": "file"
+        },
+        {
+          "observation": "Task metadata declares advanced systems profile with separate verifier environment, 8192MB runtime, and /app/routecp workdir aligned to the control-plane artifact surface.",
+          "ref": "route-control-plane/task.toml",
+          "type": "file"
+        }
+      ],
+      "evidence_status": "SUFFICIENT",
+      "findings": [],
+      "missing_evidence": [],
+      "next_gate": "QUALITY_INTERLOCK completion pending parallel Q4 PASS; then Pre-LLMaJ aggregate",
+      "prompt_policy_version": "2.2",
+      "protocol_policy_version": "2.2",
+      "review_id": "route-control-plane-2cbd2ee7-production-logic-e470c5e839",
+      "review_scope_hash": "eaa446beb211344f9f8fff591b831d28b9eb352bffa8b1ccd97170caec5b45e2",
+      "role": "Production Logic Auditor",
+      "role_contract_hash": "828f84c63f4e37642ab42740b22aa95646ddaa42972f30902e9fe9a034e5458c",
+      "role_output": {
+        "CORE_LOGIC_DEPTH": "HIGH",
+        "CROSS_COMPONENT_COUPLING": "HIGH",
+        "MAJOR_MODULES": [
+          "controlplane.go — revisioned desired state, preview/apply/rollback transactions, idempotency, durable persistence, audit",
+          "domain.go — route/rule/link types, canonicalization, identity keys, normalization",
+          "fib.go — policy-ordered trace, LPM route selection, ECMP usability, route-table summaries",
+          "drift.go + state_diff.go — desired/observed equivalence, owned drift filtering, reconcile transactions",
+          "rollout.go + fleet.go + change_window.go — selector/canary wave planning, fleet health aggregation, failure-domain-aware change windows",
+          "safety.go + policy.go + impact.go — management reachability, protected CIDR checks, policy findings, blast-radius scoring",
+          "topology.go + route_analysis.go — link/gateway health, dependency cycles, route shadowing, ECMP degradation",
+          "diagnostics.go + recovery.go + consistency.go — operational health matrix, non-terminal transaction recovery, cross-object invariant scans",
+          "cmd/routecp/* + web/app.ts — HTTP/API and dashboard operator workflows"
+        ],
+        "MODULE_DIVERSITY": "HIGH",
+        "PADDING_RISK": "LOW",
+        "PARTIAL_FIX_TRAPS": [
+          "Restoring canonicalPrefix masking without restoring routeIdentity table component breaks duplicate-route detection while appearing to fix prefix formatting alone",
+          "Re-enabling Apply idempotency or base-revision checks without restoring offline-node guards yields locally green applies that violate fleet safety",
+          "Fixing drift reconcile ownership filtering without observed-revision conflict handling can hide unmanaged external drift",
+          "Patching rollout wave-size or canary validation independently can pass canary ordering tests while leaving stale-node short-circuit bugs",
+          "Adding management-path checks in Preview without link/gateway validation in CheckSafety allows unsafe candidates to pass preview-only workflows",
+          "Repairing validateDesired node references without priority-collision enforcement permits conflicting policy tables to appear valid"
+        ],
+        "REMOVAL_TEST": "Removing ~25% of solver-visible core (e.g., fib.go trace engine plus drift/reconcile and rollout wave executors) would eliminate management reachability enforcement, policy-aware forwarding analysis, owned drift reconciliation, and staged fleet rollouts—collapsing most cross-module invariants and operator safety workflows rather than cosmetic dead code.",
+        "REQUIRED_CHANGES": "None for production-logic acceptance at current scope.",
+        "RUNTIME_REACHABILITY": "HIGH",
+        "SUBSTANTIVE_LOC_ASSESSMENT": "~3,364 lines of Go control-plane/runtime logic across 20 modules, plus ~260 lines operator UI (web/app.ts), ~126 lines fleet reference config, ~124 lines Ansible deployment workflow, and Dockerfile build/entrypoint (~35 lines). Total solver-visible runtime/config surface ~3,900 lines, above the 3,000-line strict-profile floor; bulk is branching domain logic rather than comments or generated/vendor code.",
+        "TOY_LOGIC_RISK": "LOW"
+      },
+      "role_policy_version": "1.1",
+      "schema_version": "3.0",
+      "summary": "The solver-visible route control plane is a coupled, production-credible routing domain implementation: ~3,360 lines of reachable Go control logic plus operator UI/config/deployment artifacts exceed the strict-profile floor, with distinct subsystems for FIB tracing, drift/reconcile, transactional apply/rollback, safety, rollout waves, diagnostics, and consistency that interact through shared state and invariants rather than template padding.",
+      "task": "route-control-plane",
+      "task_commit": "2cbd2ee733929f48d41dcb2fdd6144de8537bb38",
+      "verdict": "PASS"
+    }
+  },
+  "record_id": "rec_3013c31df1a980e8bc6963a440494584963c77cfad3fa753cf53c6ee2c752121",
+  "role_id": "CI_ORCHESTRATOR",
+  "schema_version": "1.0",
+  "stage_id": "QUALITY_INTERLOCK",
+  "status": "QUALITY_INTERLOCK_PASS",
+  "task_lineage": {
+    "input_task_commit": "192af49708034411a4a2787fb0b8eea16b14de71",
+    "output_task_commit": "192af49708034411a4a2787fb0b8eea16b14de71",
+    "task_changed": false
+  },
+  "transition": {
+    "action": "ADVANCE",
+    "requires_state_validation": false,
+    "target": "PRE_LLMAJ",
+    "target_kind": "STAGE"
+  },
+  "validation": {
+    "acceptance_predicates_satisfied": true,
+    "evidence_binding_satisfied": true,
+    "evidence_refs_count": 5,
+    "invocation_identity_valid": true,
+    "invocation_policy_valid": true,
+    "output_keys_valid": true,
+    "required_outputs_satisfied": true,
+    "retrieval_context_authorized": true,
+    "status_legal": true,
+    "task_commit_change_authorized": true,
+    "task_lineage_valid": true
+  }
+}

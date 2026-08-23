@@ -1,0 +1,87 @@
+{
+  "schema_version": "3.0",
+  "role": "Human Quality Reviewer",
+  "review_id": "tenant-catalog-logical-cdc-plane-fc1870fe-human-quality-98559c52b3",
+  "task": "tenant-catalog-logical-cdc-plane",
+  "task_commit": "fc1870fe2645ed467d09ec25760f931dbad1e7ae",
+  "control_plane_commit": "d0ec104dfce657bc427f1a0097ae170da85b8b61",
+  "protocol_policy_version": "2.2",
+  "prompt_policy_version": "2.2",
+  "role_policy_version": "1.0",
+  "role_contract_hash": "3e81b0ec8cd39d58ee1f46746fef98ca0288f323d37e0b9020aee419dd2638db",
+  "context_packet": ".terminus/reviews/tenant-catalog-logical-cdc-plane/fc1870fe/tenant-catalog-logical-cdc-plane-fc1870fe-human-quality-98559c52b3.packet.json",
+  "verdict": "PASS",
+  "confidence": "HIGH",
+  "evidence_status": "SUFFICIENT",
+  "summary": "Solver-facing instruction, oncall notes, and catalog-contract read as a coherent pager handoff after a bounce: symptoms, paths, and coupled catalog invariants without verifier talk or inflated claims. Reverse-outline risk low. README includes verifier-oriented notes (author packaging only); instruction itself stays clean.",
+  "evidence": [
+    {
+      "type": "file",
+      "ref": "tenant-catalog-logical-cdc-plane/instruction.md",
+      "observation": "One short paragraph plus six bullets (~190 words). Concrete bounce framing, absolute /app/catalog paths, contract pointer, catalogctl usage rules, and inspect/warehouse invariants. No canary strings or repair walkthrough."
+    },
+    {
+      "type": "file",
+      "ref": "tenant-catalog-logical-cdc-plane/environment/catalog/notes/oncall.md",
+      "observation": "Uneven shift notes: epoch 3, open crash txn, CDC-from-WAL, frozen tenants, replica lag through sku batch. Strong human signal."
+    },
+    {
+      "type": "file",
+      "ref": "tenant-catalog-logical-cdc-plane/environment/catalog/docs/catalog-contract.md",
+      "observation": "Realistic binding protocol for visibility, WAL, indexes, CDC, apply, recover, CLI, and health schemas. Technical density appropriate; not a numbered defect list."
+    },
+    {
+      "type": "file",
+      "ref": "tenant-catalog-logical-cdc-plane/environment/catalog/logs/bounce.log",
+      "observation": "Captured bounce corroborates instruction current-state claims (open txn, CDC disagreement, inspect side effects, warehouse untouched)."
+    },
+    {
+      "type": "file",
+      "ref": "tenant-catalog-logical-cdc-plane/README.md",
+      "observation": "Author README explains difficulty traps and verifier behaviors for local Harbor. Mild packaging/verification prose; not solver-facing instruction leakage."
+    },
+    {
+      "type": "rule",
+      "ref": ".terminus/reviewers/HUMAN_WRITING_CALIBRATION.md",
+      "observation": "Matches human patterns: incident-led work request, selective invariants, contract delegation, evidence-backed oncall notes."
+    }
+  ],
+  "findings": [
+    {
+      "id": "HQ-1",
+      "severity": "LOW",
+      "status": "OBSERVED",
+      "criterion": "readme_verifier_notes",
+      "evidence_refs": ["tenant-catalog-logical-cdc-plane/README.md"],
+      "why_it_matters": "README lists verifier-driven behaviors (F2P themes). Author packaging only; instruction.md does not mirror that inventory.",
+      "minimal_remediation": "Optional: shorten README verification paragraph to orientation without test-theme enumeration.",
+      "regression_risk": "None for Human Quality PASS on solver-facing voice."
+    }
+  ],
+  "missing_evidence": [],
+  "change_scope": ["Final human quality gate at fc1870fe."],
+  "do_not_change": [
+    "Do not flatten instruction.md by moving inspect/CDC/recover invariants solely into catalog-contract.md for stylistic minimalism.",
+    "Do not rewrite oncall.md into polished essay voice.",
+    "Do not remove bounce-log or oncall references backed by incident evidence."
+  ],
+  "next_gate": "SUBMISSION_READY",
+  "role_output": {
+    "AI_TEMPLATE_SIGNAL": "LOW",
+    "HUMAN_SIGNAL": "HIGH",
+    "JIRA_SLACK_HANDOFF": "PASS",
+    "REVERSE_OUTLINE_RISK": "LOW",
+    "SPEC_FILE_LOOPHOLE": "NONE",
+    "SYNTHETIC_CADENCE": "LOW",
+    "BENCHMARK_BOILERPLATE": [],
+    "INFLATED_CLAIMS": [],
+    "LEAKAGE": [],
+    "SUSPICIOUS_PHRASES": [],
+    "CONTRADICTIONS": [],
+    "MATERIAL_ISSUES": false,
+    "REQUIRED_CHANGES": [],
+    "REPLACEMENT_TEXT": "",
+    "ADVISORY_FINDING_IDS": ["HQ-1"],
+    "BLOCKING_FINDING_IDS": []
+  }
+}

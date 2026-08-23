@@ -1,0 +1,251 @@
+{
+  "authority": {
+    "control_plane_commit": "df7ef7569e2947b9f0bf7cf89ed4dec6c2a5a1fe",
+    "policy_versions": {},
+    "task_commit": "22d2e9e09f4deb58029559fe9a0863c2e032f25c",
+    "task_id": "route-control-plane"
+  },
+  "disposition": "ADVANCE",
+  "evidence_refs": [],
+  "invocation_id": "inv_d23b06c8daf1055a9a56ea398527f6542dc90036f768423e96910db17adccd69",
+  "invocation_snapshot": {
+    "acceptance_predicates": {},
+    "authority": {
+      "control_plane_commit": "df7ef7569e2947b9f0bf7cf89ed4dec6c2a5a1fe",
+      "policy_versions": {},
+      "task_commit": "22d2e9e09f4deb58029559fe9a0863c2e032f25c",
+      "task_id": "route-control-plane"
+    },
+    "evidence": {
+      "authorized_evidence_classes": [
+        "CONTROL_PLANE_POLICY",
+        "PUBLIC_REFERENCE",
+        "SOLVER_VISIBLE_TASK"
+      ],
+      "evidence_required": [
+        "schema-valid current solver-visible requirement contract",
+        "complete material requirement set",
+        "instruction/docs boundary",
+        "absolute required output paths",
+        "current-state evidence only when claimed"
+      ],
+      "excluded_evidence_classes": [
+        "CI_RUNTIME_EVIDENCE",
+        "CURRENT_REVIEW_PACKET",
+        "DURABLE_SESSION_STATE",
+        "FINAL_PACKAGE_EVIDENCE",
+        "MODEL_TRIAL_EVIDENCE",
+        "PRIOR_REVIEW_RESULTS",
+        "PRIVATE_CREATION_DESIGN",
+        "SOLUTION_ORACLE",
+        "VERIFIER_PRIVATE"
+      ],
+      "mandatory_exact_reads": [
+        "TERMINUS_3_AI_INSTRUCTIONS.md",
+        ".terminus/agents/INSTRUCTION_POLICY.md",
+        ".terminus/agents/CREATOR_PROMPTS.md"
+      ],
+      "retrieval_mode": "FILTERED_HYBRID"
+    },
+    "ignored_input_count": 0,
+    "inputs": {
+      "optional": {},
+      "required": {
+        "APPROVED_SOLVER_VISIBLE_REQUIREMENT_CONTRACT": {
+          "instruction_path": "route-control-plane/instruction.md",
+          "material_requirements": [
+            "canonical IPv4/IPv6 route and policy-rule identities with valid rule/table dependencies",
+            "revision-fenced preview/apply/rollback with idempotent retries and no partial publication",
+            "failure-safe per-node recovery across restart without overwriting newer state",
+            "fresh owned drift reconciliation that preserves unowned routing objects and management reachability",
+            "fleet rollout isolation for failed canaries/offline nodes and no redundant reapply for nodes already at target",
+            "idempotent Ansible deployment with host-specific protected routing taking precedence over defaults",
+            "dashboard mutations bound to the exact preview revision so concurrent operator changes are not silently overwritten",
+            "preserve existing public Go API/runtime and fleet/configuration interfaces",
+            "all routing mutations remain inside the supplied isolated deterministic model and never alter the benchmark host network"
+          ],
+          "objective": "Complete the inherited Go route control plane under /app/routecp as a fleet-wide desired-state routing and policy reconciliation system.",
+          "referenced_contracts": [
+            "/app/routecp/config/fleet.yaml",
+            "/app/routecp/ansible/roles/routecp/defaults/main.yml"
+          ]
+        },
+        "CREATION_RULE_CONTEXT": {
+          "CONTROL_PLANE_COMMIT": "df7ef7569e2947b9f0bf7cf89ed4dec6c2a5a1fe",
+          "CREATION_PROFILE": "large_system_strict",
+          "KNOWN_POLICY_CONFLICTS": []
+        },
+        "TASK_WRITING_PROFILE": {
+          "avoid": [
+            "invented incidents or personal claims",
+            "rubric-like hidden-test enumeration",
+            "style-driven omission of lifecycle constraints",
+            "copied distinctive source wording",
+            "task details copied from unrelated calibration domains"
+          ],
+          "must_preserve": [
+            "fleet-wide desired-state routing",
+            "safe management reachability",
+            "no partial publication",
+            "idempotent retries",
+            "no host network mutation",
+            "revision fencing and restart recovery",
+            "fresh owned reconciliation",
+            "rollout isolation",
+            "Ansible convergence and host precedence",
+            "dashboard CAS",
+            "public API/runtime preservation"
+          ],
+          "structure": [
+            "state the approved engineering objective first",
+            "preserve exact public contracts and hard safety/state constraints",
+            "reference solver-visible technical contracts instead of reproducing hidden verifier rows",
+            "keep implementation-neutral observable outcomes"
+          ],
+          "voice": "direct platform engineering change request"
+        },
+        "VALIDATED_HUMAN_WRITING_CALIBRATION": {
+          "CALIBRATION_PAIR_ID": "hwpair-f96b53b6ac9b1882f1c8",
+          "DOMAIN_PROFILE": "compiler_runtime",
+          "EXTERNAL_DATASET_COVERAGE": "DEGRADED",
+          "REVIEWER_CALIBRATION_ID": "hwcal-reviewer-d01aa0a5501e7e083424",
+          "WRITER_CALIBRATION_ID": "hwcal-writer-91bf6e65c8382bcb7f7d"
+        }
+      }
+    },
+    "invocation_id": "inv_d23b06c8daf1055a9a56ea398527f6542dc90036f768423e96910db17adccd69",
+    "learning": {
+      "context_hash": "sha256:bb84a513aa2b6e4374d691759c4a6edf94169f479f4611e9091643b9f279ccfc",
+      "lessons": [],
+      "mode": "GENERALIZED_LESSONS_PLUS_OWNED_REMEDIATIONS",
+      "raw_feedback_exposed": false,
+      "raw_historical_findings_exposed": false,
+      "registry_heads": {
+        "feedback": "GENESIS",
+        "findings": "GENESIS",
+        "lessons": "GENESIS",
+        "patterns": "GENESIS",
+        "remediations": "GENESIS"
+      },
+      "remediations": []
+    },
+    "missing_required_inputs": [],
+    "output_contract": {
+      "allowed_status_values": [
+        "READY",
+        "REWRITE_REQUIRED",
+        "BLOCKED"
+      ],
+      "deterministic_validators": [
+        "solver-visible requirement contract schema/hash/provenance checks",
+        "Q7 structural/path checks where mechanically enforceable",
+        ".terminus/human_writing/validate_calibration.py"
+      ],
+      "optional_fields": [
+        "CURRENT_STATE_EVIDENCE",
+        "UNRESOLVED_GAPS"
+      ],
+      "persisted_artifacts": [
+        "<task>/instruction.md"
+      ],
+      "required_fields": [
+        "INSTRUCTION_PATH",
+        "REQUIREMENT_COVERAGE",
+        "DOC_REFERENCES",
+        "INSTRUCTION_SHAPE",
+        "HANDOFF_TEST",
+        "REVERSE_OUTLINE_RISK",
+        "SPEC_FILE_LOOPHOLE"
+      ],
+      "semantic_reviewers": [
+        "Instruction Reviewer",
+        "Q1 Spec Gap Repairer",
+        "Q3 Spec Ambiguity Repairer"
+      ]
+    },
+    "readiness": "READY",
+    "retrieval": {
+      "query": null,
+      "retrieved_chars": 0,
+      "retrieved_context": [],
+      "status": "NOT_REQUESTED"
+    },
+    "routing": {
+      "failure_routes": {
+        "AMBIGUITY": "Q3 Spec Ambiguity Repairer",
+        "FORMAT_OR_PATH_ERROR": "Q7 Task Format Enforcer",
+        "HIDDEN_TEST_OR_REPAIR_LEAKAGE": "A7 Instruction Writer",
+        "MISSING_REQUIREMENT": "Q1 Spec Gap Repairer",
+        "SPEC_FILE_LOOPHOLE": "A7 Instruction Writer / Q1 Spec Gap Repairer",
+        "STALE_OR_INVALID_REQUIREMENT_CONTRACT": "Creation Controller -> requirement owner/Q1 -> regenerate projection"
+      },
+      "stale_on": [
+        "solver-visible requirement contract change",
+        "material requirement change",
+        "referenced solver-visible contract change",
+        "required output/schema change",
+        "instruction-policy change",
+        "human-writing calibration change",
+        "dataset registry change",
+        "domain profile change"
+      ],
+      "success_transition": "SPEC_ALIGNMENT"
+    },
+    "schema_version": "1.0",
+    "stage": {
+      "lifecycle": "creation",
+      "owner": "A7 Instruction Writer",
+      "role_class": "PRODUCER",
+      "role_id": "A7_INSTRUCTION_WRITER",
+      "stage_id": "INSTRUCTION_DRAFT"
+    }
+  },
+  "outputs": {
+    "DOC_REFERENCES": [
+      "/app/routecp/config/fleet.yaml",
+      "/app/routecp/ansible/roles/routecp/defaults/main.yml"
+    ],
+    "HANDOFF_TEST": "A platform/network engineer can identify the route-control-plane root, transactional desired-state end state, reconciliation/rollout/deployment/dashboard safety obligations, and inherited contracts without private verifier, defect or Oracle information.",
+    "INSTRUCTION_PATH": "route-control-plane/instruction.md",
+    "INSTRUCTION_SHAPE": "Two short direct platform-engineering paragraphs within the Edition-3 instruction limit.",
+    "REQUIREMENT_COVERAGE": {
+      "dashboard_and_compatibility": "preview-revision CAS, public API/runtime preservation and isolated routing are explicit",
+      "fleet_automation": "canary/offline isolation, target-revision retry safety, Ansible convergence and host precedence are explicit",
+      "reconcile_safety": "fresh owned reconciliation, unowned-object preservation and management reachability are explicit",
+      "routing_policy_identity": "canonical route/rule identity and dependency validity are explicit",
+      "transactions_recovery": "revision fencing, retry safety, partial-publication prevention and restart recovery are explicit"
+    },
+    "REVERSE_OUTLINE_RISK": "LOW: requirements are grouped around routing state, transaction/recovery, fleet operations and compatibility rather than private verifier rows.",
+    "SPEC_FILE_LOOPHOLE": "CLOSED: the instruction owns all material requested behavior; the two referenced files are ordinary inherited configuration contracts, not prompt extensions.",
+    "UNRESOLVED_GAPS": []
+  },
+  "record_id": "rec_fb4ed28b605f59811681ef830ece755bcefc7fdf25c5bf50267f0a3ec163ad26",
+  "role_id": "A7_INSTRUCTION_WRITER",
+  "schema_version": "1.0",
+  "stage_id": "INSTRUCTION_DRAFT",
+  "status": "READY",
+  "task_lineage": {
+    "input_task_commit": "22d2e9e09f4deb58029559fe9a0863c2e032f25c",
+    "output_task_commit": "22d2e9e09f4deb58029559fe9a0863c2e032f25c",
+    "task_changed": false
+  },
+  "transition": {
+    "action": "ADVANCE",
+    "requires_state_validation": false,
+    "target": "SPEC_ALIGNMENT",
+    "target_kind": "STAGE"
+  },
+  "validation": {
+    "acceptance_predicates_satisfied": true,
+    "evidence_binding_satisfied": true,
+    "evidence_refs_count": 0,
+    "invocation_identity_valid": true,
+    "invocation_policy_valid": true,
+    "output_keys_valid": true,
+    "required_outputs_satisfied": true,
+    "retrieval_context_authorized": true,
+    "status_legal": true,
+    "task_commit_change_authorized": true,
+    "task_lineage_valid": true
+  }
+}

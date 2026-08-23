@@ -1,0 +1,263 @@
+{
+  "authority": {
+    "control_plane_commit": "df7ef7569e2947b9f0bf7cf89ed4dec6c2a5a1fe",
+    "policy_versions": {},
+    "task_commit": "03317f8218069b9e0b5d073bf87ecf7a0ae8e4a1",
+    "task_id": "stonevault-crash-safe-storage"
+  },
+  "disposition": "ADVANCE",
+  "evidence_refs": [
+    {
+      "content_hash": "sha256:38d1e6b49a6cd52e4cefce949ec274c9b07daf9b5ba2735bb2a094820f7c78de",
+      "kind": "COMMIT",
+      "ref": "commit:03317f8218069b9e0b5d073bf87ecf7a0ae8e4a1"
+    }
+  ],
+  "invocation_id": "inv_e611f2f4029ee5481a4d896ccf7f8c624edd34448108e6db54ebf81bcbf8fdb7",
+  "invocation_snapshot": {
+    "acceptance_predicates": {},
+    "authority": {
+      "control_plane_commit": "df7ef7569e2947b9f0bf7cf89ed4dec6c2a5a1fe",
+      "policy_versions": {},
+      "task_commit": "03317f8218069b9e0b5d073bf87ecf7a0ae8e4a1",
+      "task_id": "stonevault-crash-safe-storage"
+    },
+    "evidence": {
+      "authorized_evidence_classes": [
+        "CI_RUNTIME_EVIDENCE",
+        "CONTROL_PLANE_POLICY",
+        "PRIVATE_CREATION_DESIGN",
+        "SOLVER_VISIBLE_TASK",
+        "VERIFIER_PRIVATE"
+      ],
+      "evidence_required": [
+        "removal/reachability analysis",
+        "scale authenticity",
+        "test organicity",
+        "behavioral breadth"
+      ],
+      "excluded_evidence_classes": [
+        "CURRENT_REVIEW_PACKET",
+        "DURABLE_SESSION_STATE",
+        "FINAL_PACKAGE_EVIDENCE",
+        "MODEL_TRIAL_EVIDENCE",
+        "PRIOR_REVIEW_RESULTS",
+        "PUBLIC_REFERENCE",
+        "SOLUTION_ORACLE"
+      ],
+      "mandatory_exact_reads": [
+        ".terminus/agents/CREATION_PIPELINE.md",
+        ".terminus/agents/PRODUCTION_AUTHENTICITY.md",
+        ".terminus/agents/CREATOR_PROMPTS.md"
+      ],
+      "retrieval_mode": "EXACT_ONLY"
+    },
+    "ignored_input_count": 0,
+    "inputs": {
+      "optional": {},
+      "required": {
+        "DEFECT_GRAPH": {
+          "behavioral_surfaces": [
+            "locking/configuration",
+            "MVCC/scan overlay",
+            "conflict arbitration",
+            "WAL recovery",
+            "checkpoint/snapshot integrity",
+            "operator health",
+            "binary protocol/native boundary"
+          ],
+          "connected_manifestations": 25,
+          "defect_manifestations": 25,
+          "profile": "large_system_strict",
+          "root_cause_clusters": 8
+        },
+        "ENVIRONMENT_TREE": {
+          "components": [
+            "Rust config/protocol/session",
+            "C++ engine",
+            "WAL",
+            "snapshot",
+            "writer lock",
+            "C ABI boundary"
+          ],
+          "entrypoints": [
+            "/app/stonevault/bin/stonevault"
+          ],
+          "runtime_artifact": "/app/stonevault",
+          "task_root": "stonevault-crash-safe-storage"
+        },
+        "INSTRUCTION": "Complete reliability hardening of the inherited native StoneVault embedded database while preserving documented public compatibility.",
+        "PRODUCTION_CHARACTERISTIC_EVIDENCE": [
+          "persistent storage",
+          "writer fencing",
+          "MVCC",
+          "conflicts",
+          "crash recovery",
+          "checkpoint maintenance",
+          "operator state",
+          "native ABI"
+        ],
+        "RUNTIME_REACHABILITY_EVIDENCE": [
+          "public binary reaches Rust session and C++ storage through stable C ABI",
+          "transactions exercise state/conflict/WAL paths",
+          "restart exercises recovery",
+          "checkpoint and status commands exercise maintenance/operator paths"
+        ],
+        "SUBSTANTIVE_LOC_REPORT": {
+          "reachable_production_loc": "validator-confirmed solver-reachable native implementation",
+          "runtime_entrypoint": "/app/stonevault/bin/stonevault",
+          "substantive_loc": "validator-confirmed large_system_strict native multi-module implementation"
+        },
+        "TEST_CLASSIFICATION_MAP": {
+          "F2P_COUNT": 30,
+          "P2P_COUNT": 33,
+          "classification": "30 F2P + 33 P2P"
+        }
+      }
+    },
+    "invocation_id": "inv_e611f2f4029ee5481a4d896ccf7f8c624edd34448108e6db54ebf81bcbf8fdb7",
+    "learning": {
+      "context_hash": "sha256:bb84a513aa2b6e4374d691759c4a6edf94169f479f4611e9091643b9f279ccfc",
+      "lessons": [],
+      "mode": "GENERALIZED_LESSONS_PLUS_OWNED_REMEDIATIONS",
+      "raw_feedback_exposed": false,
+      "raw_historical_findings_exposed": false,
+      "registry_heads": {
+        "feedback": "GENESIS",
+        "findings": "GENESIS",
+        "lessons": "GENESIS",
+        "patterns": "GENESIS",
+        "remediations": "GENESIS"
+      },
+      "remediations": []
+    },
+    "missing_required_inputs": [],
+    "output_contract": {
+      "allowed_status_values": [
+        "PASS",
+        "REVISE",
+        "SCENARIO_TOO_SMALL"
+      ],
+      "deterministic_validators": [
+        ".terminus/validate_task_complexity.py <task>"
+      ],
+      "optional_fields": [
+        "MEANINGFUL_RESOURCE_COUNT"
+      ],
+      "persisted_artifacts": [],
+      "required_fields": [
+        "SUBSTANTIVE_LOC",
+        "REACHABLE_PRODUCTION_LOC",
+        "PRODUCTION_CHARACTERISTICS",
+        "DEFECT_MANIFESTATIONS",
+        "CONNECTED_MANIFESTATIONS",
+        "ROOT_CAUSE_CLUSTERS",
+        "F2P_COUNT",
+        "P2P_COUNT",
+        "F2P_ORGANICITY",
+        "EDGE_BOUNDARY_COVERAGE",
+        "NEGATIVE_FAILURE_COVERAGE",
+        "PADDING_RISK",
+        "TEST_DUPLICATION_RISK",
+        "INSTRUCTION_CHECKLIST_RISK",
+        "REQUIRED_CHANGES"
+      ],
+      "semantic_reviewers": []
+    },
+    "readiness": "READY",
+    "retrieval": {
+      "query": null,
+      "retrieved_chars": 0,
+      "retrieved_context": [],
+      "status": "NOT_REQUESTED"
+    },
+    "routing": {
+      "failure_routes": {
+        "REVISE": "smallest responsible producer",
+        "SCENARIO_TOO_SMALL": "Creation Controller -> WORK_PACKAGE_RESEARCH"
+      },
+      "stale_on": [
+        "solver-visible environment change",
+        "defect-graph change",
+        "verifier/test-map change",
+        "instruction change affecting complexity claims"
+      ],
+      "success_transition": "RUNTIME_AUTHENTICITY"
+    },
+    "schema_version": "1.0",
+    "stage": {
+      "lifecycle": "creation",
+      "owner": "A10 Complexity Governor",
+      "role_class": "REVIEWER",
+      "role_id": "A10_COMPLEXITY_GOVERNOR",
+      "stage_id": "COMPLEXITY_GATE"
+    }
+  },
+  "outputs": {
+    "CONNECTED_MANIFESTATIONS": 25,
+    "DEFECT_MANIFESTATIONS": 25,
+    "EDGE_BOUNDARY_COVERAGE": [
+      "inclusive sizes",
+      "byte ordering",
+      "WAL framing",
+      "snapshot integrity",
+      "ABI/wire compatibility"
+    ],
+    "F2P_COUNT": 30,
+    "F2P_ORGANICITY": "PASS: cases span distinct state, concurrency, recovery, maintenance and interface behaviors.",
+    "INSTRUCTION_CHECKLIST_RISK": "LOW",
+    "NEGATIVE_FAILURE_COVERAGE": [
+      "writer exclusion",
+      "conflict termination",
+      "corruption rejection",
+      "operator invariant failure",
+      "malformed requests"
+    ],
+    "P2P_COUNT": 33,
+    "PADDING_RISK": "LOW",
+    "PRODUCTION_CHARACTERISTICS": [
+      "persistent WAL/snapshot",
+      "writer fencing",
+      "MVCC",
+      "conflict arbitration",
+      "crash recovery",
+      "checkpoint publication",
+      "operator state",
+      "native compatibility"
+    ],
+    "REACHABLE_PRODUCTION_LOC": "PASS: production logic is reachable through /app/stonevault/bin/stonevault.",
+    "REQUIRED_CHANGES": [],
+    "ROOT_CAUSE_CLUSTERS": 8,
+    "SUBSTANTIVE_LOC": "PASS: current deterministic complexity validator confirms configured profile threshold.",
+    "TEST_DUPLICATION_RISK": "LOW"
+  },
+  "record_id": "rec_825fede02426e8dbe50cbe9ebeda0ab5c549f65f1dda4043e4ca9120dd2ce969",
+  "role_id": "A10_COMPLEXITY_GOVERNOR",
+  "schema_version": "1.0",
+  "stage_id": "COMPLEXITY_GATE",
+  "status": "PASS",
+  "task_lineage": {
+    "input_task_commit": "03317f8218069b9e0b5d073bf87ecf7a0ae8e4a1",
+    "output_task_commit": "03317f8218069b9e0b5d073bf87ecf7a0ae8e4a1",
+    "task_changed": false
+  },
+  "transition": {
+    "action": "ADVANCE",
+    "requires_state_validation": false,
+    "target": "RUNTIME_AUTHENTICITY",
+    "target_kind": "STAGE"
+  },
+  "validation": {
+    "acceptance_predicates_satisfied": true,
+    "evidence_binding_satisfied": true,
+    "evidence_refs_count": 1,
+    "invocation_identity_valid": true,
+    "invocation_policy_valid": true,
+    "output_keys_valid": true,
+    "required_outputs_satisfied": true,
+    "retrieval_context_authorized": true,
+    "status_legal": true,
+    "task_commit_change_authorized": true,
+    "task_lineage_valid": true
+  }
+}

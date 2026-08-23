@@ -1,0 +1,11 @@
+#include "sovereign/status.hpp"
+#include <arpa/inet.h>
+#include <sstream>
+#include <sys/socket.h>
+#include <unistd.h>
+namespace sovereign {
+void Counters::increment(const std::string& name){std::lock_guard lock(mutex_);values_[name]++;}
+std::string Counters::prometheus()const{std::lock_guard lock(mutex_);std::ostringstream output;for(const auto&[name,value]:values_)output<<"sovereign_dataplane_"<<name<<" "<<value<<"\n";return output.str();}
+std::string StatusServer::response(const std::string& path)const{auto runtime=runtimes_.active();if(path=="/metrics")return counters_.prometheus();std::ostringstream output;output<<"{\"ready\":"<<(runtime?"true":"false")<<",\"active_generation\":"<<(runtime?runtime->generation:0)<<",\"listener_count\":"<<(runtime?runtime->listeners.size():0)<<",\"connections\":"<<connections_.size()<<"}\n";return output.str();}
+void StatusServer::serve(const std::string& address,std::atomic_bool& stopping){auto colon=address.rfind(':');if(colon==std::string::npos)throw std::runtime_error("invalid status address");int fd=socket(AF_INET,SOCK_STREAM|SOCK_CLOEXEC,0);sockaddr_in endpoint{};endpoint.sin_family=AF_INET;endpoint.sin_port=htons(static_cast<std::uint16_t>(std::stoi(address.substr(colon+1))));if(inet_pton(AF_INET,address.substr(0,colon).c_str(),&endpoint.sin_addr)!=1||bind(fd,reinterpret_cast<sockaddr*>(&endpoint),sizeof(endpoint))<0||listen(fd,32)<0){close(fd);throw std::runtime_error("status bind failed");}while(!stopping.load()){timeval timeout{0,250000};fd_set readers;FD_ZERO(&readers);FD_SET(fd,&readers);if(select(fd+1,&readers,nullptr,nullptr,&timeout)<=0)continue;int client=accept4(fd,nullptr,nullptr,SOCK_CLOEXEC);if(client<0)continue;char request[2048]{};ssize_t count=recv(client,request,sizeof(request)-1,0);std::string path="/status";if(count>0){std::istringstream input(std::string(request,static_cast<std::size_t>(count)));std::string method;input>>method>>path;}auto body=response(path);std::string type=path=="/metrics"?"text/plain":"application/json";std::string header="HTTP/1.1 200 OK\r\nContent-Type: "+type+"\r\nContent-Length: "+std::to_string(body.size())+"\r\nConnection: close\r\n\r\n";send(client,header.data(),header.size(),MSG_NOSIGNAL);send(client,body.data(),body.size(),MSG_NOSIGNAL);close(client);}close(fd);}
+}

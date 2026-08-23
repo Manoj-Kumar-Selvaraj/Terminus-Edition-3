@@ -1,0 +1,67 @@
+{
+  "role": "Difficulty Reviewer",
+  "verdict": "PASS",
+  "summary": "Difficulty arises from coupled authority, canonical digests, quorum rollout, C++ dataplane eligibility/proxy/recovery, and cross-language protocol alignment\u2014not from clerical LOC or hidden string matching. Starter fails 10/28 F2P probes while oracle repairs span Go and C++ with partial-fix traps (quorum threshold, eligibility zone policy, checkpoint load padding, readiness gating). Empirical tier remains UNMEASURED pending official \u00d710 trials.",
+  "evidence": [
+    {
+      "type": "file",
+      "ref": ".terminus/designs/sovereign-l4-load-balancer.json",
+      "observation": "29 defects across 7 RC clusters with causal edges and partial-fix traps."
+    },
+    {
+      "type": "run",
+      "ref": "docker NOP run 10",
+      "observation": "10 F2P failures on starter; not trivially solved by single-file patch."
+    },
+    {
+      "type": "file",
+      "ref": "sovereign-l4-load-balancer/solution/repair.py",
+      "observation": "Oracle touches Go authority/rollout/readiness and C++ eligibility/proxy/checkpoint/protocol paths."
+    },
+    {
+      "type": "review",
+      "ref": ".terminus/reviews/sovereign-l4-load-balancer/d7a001a9/sovereign-l4-load-balancer-d7a001a9-production-logic-289990f233.json",
+      "observation": "Q6 PASS with MEDIUM padding note only."
+    }
+  ],
+  "findings": [
+    {
+      "id": "RC-TRIAL-DEFER",
+      "severity": "LOW",
+      "status": "OBSERVED",
+      "criterion": "Empirical calibration",
+      "evidence_refs": [
+        "sovereign-l4-load-balancer/task.toml"
+      ],
+      "why_it_matters": "Official GPT\u00d75 / Claude\u00d75 trials not yet executed; tier is design hypothesis only.",
+      "minimal_remediation": "Run combined ten trials after Harbor LLMaJ.",
+      "regression_risk": "N/A"
+    }
+  ],
+  "do_not_change": [
+    "Coupled cross-language defect topology."
+  ],
+  "next_gate": "Compliance Auditor",
+  "role_output": {
+    "DESIGN_DIFFICULTY_SIGNAL": "USEFUL",
+    "SHORTCUT_RISK": "LOW",
+    "CLERICAL_VOLUME_RISK": "LOW",
+    "EMPIRICAL_TIER": "UNMEASURED"
+  },
+  "schema_version": "3.0",
+  "review_id": "sovereign-l4-load-balancer-d7a001a9-difficulty-design-20e728c9f2",
+  "task": "sovereign-l4-load-balancer",
+  "task_commit": "d7a001a92485de5ca3ec1bd2593648436dc3c237",
+  "control_plane_commit": "d504e16d8009ec28ad1b2c50df83840131f97da5",
+  "protocol_policy_version": "2.2",
+  "prompt_policy_version": "2.2",
+  "role_policy_version": "1.0",
+  "role_contract_hash": "98efb8c63c116b4264f624e297193ffece92f9b1a362d3493764ddcfc073f7d2",
+  "context_packet": ".terminus/reviews/sovereign-l4-load-balancer/d7a001a9/sovereign-l4-load-balancer-d7a001a9-difficulty-design-20e728c9f2.packet.json",
+  "confidence": "HIGH",
+  "evidence_status": "SUFFICIENT",
+  "missing_evidence": [],
+  "change_scope": [
+    "Cold Pre-LLMaJ specialist review at d7a001a9 after quality-interlock PASS."
+  ]
+}

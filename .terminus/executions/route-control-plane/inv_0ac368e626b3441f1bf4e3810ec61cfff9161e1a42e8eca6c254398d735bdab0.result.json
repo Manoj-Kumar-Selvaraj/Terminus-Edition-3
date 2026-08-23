@@ -1,0 +1,176 @@
+{
+  "authority": {
+    "control_plane_commit": "df7ef7569e2947b9f0bf7cf89ed4dec6c2a5a1fe",
+    "policy_versions": {},
+    "task_commit": "17386b7e31d686d124d000c9905f38eed3b753db",
+    "task_id": "route-control-plane"
+  },
+  "disposition": "ADVANCE",
+  "evidence_refs": [],
+  "invocation_id": "inv_0ac368e626b3441f1bf4e3810ec61cfff9161e1a42e8eca6c254398d735bdab0",
+  "invocation_snapshot": {
+    "acceptance_predicates": {
+      "PASS": [
+        {
+          "op": "eq",
+          "path": "RUNTIME_AUTHENTICITY_STATUS",
+          "value": "PASS"
+        }
+      ]
+    },
+    "authority": {
+      "control_plane_commit": "df7ef7569e2947b9f0bf7cf89ed4dec6c2a5a1fe",
+      "policy_versions": {},
+      "task_commit": "17386b7e31d686d124d000c9905f38eed3b753db",
+      "task_id": "route-control-plane"
+    },
+    "evidence": {
+      "authorized_evidence_classes": [
+        "CI_RUNTIME_EVIDENCE",
+        "CONTROL_PLANE_POLICY",
+        "SOLVER_VISIBLE_TASK"
+      ],
+      "evidence_required": [
+        "runtime authenticity validator output",
+        "business module diversity output when applicable"
+      ],
+      "excluded_evidence_classes": [
+        "CURRENT_REVIEW_PACKET",
+        "DURABLE_SESSION_STATE",
+        "FINAL_PACKAGE_EVIDENCE",
+        "MODEL_TRIAL_EVIDENCE",
+        "PRIOR_REVIEW_RESULTS",
+        "PRIVATE_CREATION_DESIGN",
+        "PUBLIC_REFERENCE",
+        "SOLUTION_ORACLE",
+        "VERIFIER_PRIVATE"
+      ],
+      "mandatory_exact_reads": [
+        ".terminus/agents/PRODUCTION_AUTHENTICITY.md"
+      ],
+      "retrieval_mode": "EXACT_ONLY"
+    },
+    "ignored_input_count": 0,
+    "inputs": {
+      "optional": {},
+      "required": {
+        "CURRENT_TASK": {
+          "environment_root": "route-control-plane/environment",
+          "instruction_path": "route-control-plane/instruction.md",
+          "runtime_artifact": "/app/routecp",
+          "task_commit": "17386b7e31d686d124d000c9905f38eed3b753db",
+          "task_id": "route-control-plane",
+          "task_root": "route-control-plane"
+        },
+        "PRODUCTION_CHARACTERISTIC_EVIDENCE": [
+          "Go HTTP routing control plane",
+          "IPv4/IPv6 route and policy-rule lifecycle",
+          "revision preview/apply/rollback transactions",
+          "durable desired/observed state and restart recovery",
+          "FIB tracing, topology/dependency and policy analysis",
+          "management safety, drift detection and reconciliation",
+          "fleet health, rollout preview and failure-domain change-window planning",
+          "Ansible systemd deployment with protected/host route composition",
+          "operator dashboard"
+        ]
+      }
+    },
+    "invocation_id": "inv_0ac368e626b3441f1bf4e3810ec61cfff9161e1a42e8eca6c254398d735bdab0",
+    "learning": {
+      "context_hash": "sha256:bb84a513aa2b6e4374d691759c4a6edf94169f479f4611e9091643b9f279ccfc",
+      "lessons": [],
+      "mode": "GENERALIZED_LESSONS_PLUS_OWNED_REMEDIATIONS",
+      "raw_feedback_exposed": false,
+      "raw_historical_findings_exposed": false,
+      "registry_heads": {
+        "feedback": "GENESIS",
+        "findings": "GENESIS",
+        "lessons": "GENESIS",
+        "patterns": "GENESIS",
+        "remediations": "GENESIS"
+      },
+      "remediations": []
+    },
+    "missing_required_inputs": [],
+    "output_contract": {
+      "allowed_status_values": [
+        "PASS",
+        "FAIL",
+        "BLOCKED"
+      ],
+      "deterministic_validators": [
+        ".terminus/validate_runtime_authenticity.py <task>",
+        ".terminus/validate_business_module_diversity.py <task> when applicable"
+      ],
+      "optional_fields": [
+        "BUSINESS_MODULE_DIVERSITY_STATUS",
+        "FAILURE_DETAILS"
+      ],
+      "persisted_artifacts": [],
+      "required_fields": [
+        "RUNTIME_AUTHENTICITY_STATUS"
+      ],
+      "semantic_reviewers": []
+    },
+    "readiness": "READY",
+    "retrieval": {
+      "query": null,
+      "retrieved_chars": 0,
+      "retrieved_context": [],
+      "status": "NOT_REQUESTED"
+    },
+    "routing": {
+      "failure_routes": {
+        "BUSINESS_MODULE_DIVERSITY_FAILURE": "A2 System Architect / Environment Builder",
+        "PRODUCTION_AUTHENTICITY_FAILURE": "A2 System Architect / Environment Builder",
+        "RUNTIME_FAILURE": "Q5 Oracle & Runtime Repair Specialist"
+      },
+      "stale_on": [
+        "solver-visible environment change",
+        "runtime-authenticity policy/validator change"
+      ],
+      "success_transition": "DETERMINISTIC_VALIDATION"
+    },
+    "schema_version": "1.0",
+    "stage": {
+      "lifecycle": "creation",
+      "owner": "Creation Controller",
+      "role_class": "CONTROLLER",
+      "role_id": "CREATION_CONTROLLER",
+      "stage_id": "RUNTIME_AUTHENTICITY"
+    }
+  },
+  "outputs": {
+    "BUSINESS_MODULE_DIVERSITY_STATUS": "PASS_OR_NOT_APPLICABLE",
+    "RUNTIME_AUTHENTICITY_STATUS": "PASS"
+  },
+  "record_id": "rec_dde59ebe92523214662a6f0c98095a1e1823aa3508396cf30e88dcdd19dc8cb3",
+  "role_id": "CREATION_CONTROLLER",
+  "schema_version": "1.0",
+  "stage_id": "RUNTIME_AUTHENTICITY",
+  "status": "PASS",
+  "task_lineage": {
+    "input_task_commit": "17386b7e31d686d124d000c9905f38eed3b753db",
+    "output_task_commit": "17386b7e31d686d124d000c9905f38eed3b753db",
+    "task_changed": false
+  },
+  "transition": {
+    "action": "ADVANCE",
+    "requires_state_validation": false,
+    "target": "DETERMINISTIC_VALIDATION",
+    "target_kind": "STAGE"
+  },
+  "validation": {
+    "acceptance_predicates_satisfied": true,
+    "evidence_binding_satisfied": true,
+    "evidence_refs_count": 0,
+    "invocation_identity_valid": true,
+    "invocation_policy_valid": true,
+    "output_keys_valid": true,
+    "required_outputs_satisfied": true,
+    "retrieval_context_authorized": true,
+    "status_legal": true,
+    "task_commit_change_authorized": true,
+    "task_lineage_valid": true
+  }
+}

@@ -1,6 +1,6 @@
 {
   "CACHE_SOURCE_KEYS_USED": [],
-  "CALIBRATION_PAIR_ID": "hwpair-d4de9525bf679e07b8fb",
+  "CALIBRATION_PAIR_ID": "hwpair-37951b25e0f101e85aa1",
   "CURRENT_STATE_EVIDENCE_NOTES": [
     "Current deterministic repository planner generated the pair for this task/domain.",
     "No Oracle, verifier-private, prior-review, model-trial, or private defect evidence was consumed by A6."
@@ -12,18 +12,18 @@
     "approved_by": "CI_ORCHESTRATOR",
     "reason": "No approved external human-writing cache was supplied; repository policy permits deterministic local calibration with explicit DEGRADED coverage and no claim of FULL external coverage."
   },
-  "DOMAIN_PROFILE": "compiler_runtime",
+  "DOMAIN_PROFILE": "application_backend",
   "DOMAIN_PROFILES_SHA256": "9612d83a11558d9013a82362c7405c70ddb5158b582cc2f9859c8c672ad6c838",
   "EXTERNAL_DATASET_COVERAGE": "DEGRADED",
   "RAW_SOURCE_KEYS_USED_FOR_CONTAMINATION": [],
-  "REVIEWER_CALIBRATION_ID": "hwcal-reviewer-724a689d239a9e88a8f1",
+  "REVIEWER_CALIBRATION_ID": "hwcal-reviewer-65c566f1122279acbe84",
   "REVIEWER_SAMPLE_IDS": [
-    "HC-027",
     "HC-021",
     "HC-028",
     "HC-017",
     "HC-010",
-    "HC-016",
+    "HC-024",
+    "HC-025",
     "CP-005",
     "CP-006",
     "CP-001",
@@ -40,34 +40,44 @@
       "invented incidents or personal claims",
       "rubric-like hidden-test enumeration",
       "style-driven omission of lifecycle constraints",
-      "copied distinctive source wording"
+      "copied distinctive source wording",
+      "task details copied from unrelated calibration domains"
     ],
     "must_preserve": [
-      "generation-safe publication",
-      "independent source authority",
-      "stable endpoint identity and incarnation",
-      "request snapshot consistency",
-      "bounded drain and retirement",
-      "durable checkpoint recovery",
-      "public edge-router contracts"
+      "Implement generation-safe dynamic route and upstream reconciliation so complete configuration and membership changes apply atomically under concurrent traffic, rolling backend turnover, invalid updates and restart.",
+      "GENERATION_SAFE_DYNAMIC_RECONCILIATION",
+      "in-flight and long-lived requests remain valid across unrelated updates",
+      "unchanged route semantics remain stable across generations",
+      "healthy unchanged endpoints preserve meaningful runtime state",
+      "rejected updates cannot damage the serving generation",
+      "readers never observe partially applied configuration",
+      "runtime and observability state remain bounded after repeated updates",
+      "Validate and compile candidate configuration into immutable runtime snapshots before publication.",
+      "Fence accepted generations so stale or out-of-order updates cannot overwrite newer state.",
+      "Publish route and upstream state atomically and retain last-known-good serving state when candidates are rejected.",
+      "Reconcile endpoint additions, removals, and unchanged endpoints by stable canonical identity and membership incarnation.",
+      "Preserve compatible selection, affinity, health, transport, and lifecycle continuity for unchanged endpoints.",
+      "Exclude removed or ineligible endpoints from fresh selection/retry while allowing bounded drain of existing traffic.",
+      "Checkpoint only complete accepted state and recover a complete last-known-good generation after restart.",
+      "Retire unreachable snapshots, endpoint runtimes, transports, affinity state, and telemetry without unbounded growth."
     ],
     "structure": [
-      "state the inherited edge-router objective first",
-      "preserve exact public contracts and hard lifecycle/state constraints",
+      "state the approved engineering objective first",
+      "preserve exact public contracts and hard safety/state constraints",
       "reference solver-visible technical contracts instead of reproducing hidden verifier rows",
       "keep implementation-neutral observable outcomes"
     ],
     "voice": "direct platform engineering change request"
   },
-  "WRITER_CALIBRATION_ID": "hwcal-writer-79c9343f9519cc15ec32",
+  "WRITER_CALIBRATION_ID": "hwcal-writer-b0673d6e34a029bd64e6",
   "WRITER_REVIEWER_SAMPLE_OVERLAP": [],
   "WRITER_SAMPLE_IDS": [
     "HC-001",
-    "HC-007",
-    "HC-009",
     "HC-030",
-    "HC-008",
-    "HC-024",
+    "HC-016",
+    "HC-005",
+    "HC-013",
+    "HC-020",
     "CP-002",
     "CP-004",
     "AT-006"

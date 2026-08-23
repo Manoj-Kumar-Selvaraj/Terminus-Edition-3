@@ -1,0 +1,40 @@
+{
+  "schema_version": "3.0",
+  "role": "Model Perspective Difficulty Simulator",
+  "review_id": "sovereign-l4-load-balancer-d7a001a9-difficulty-sim-claude-fe9bd0f7f0",
+  "task": "sovereign-l4-load-balancer",
+  "task_commit": "d7a001a92485de5ca3ec1bd2593648436dc3c237",
+  "control_plane_commit": "12975f9107bc1ccba85d1ec0d52e2e49b4eae877",
+  "protocol_policy_version": "2.2",
+  "prompt_policy_version": "2.2",
+  "role_policy_version": "1.0",
+  "role_contract_hash": "ccfa675b35acae5b490277be9183df90f9a82e789c8e19a20d170ae2bf1b4c9f",
+  "context_packet": ".terminus/reviews/sovereign-l4-load-balancer/d7a001a9/sovereign-l4-load-balancer-d7a001a9-difficulty-sim-claude-fe9bd0f7f0.packet.json",
+  "verdict": "PASS",
+  "confidence": "MEDIUM",
+  "evidence_status": "SUFFICIENT",
+  "summary": "DIAGNOSTIC ONLY (not official Claude×5). SIMULATION_NOT_EXECUTED. Claude-style prior predicts systematic docs/protocol reconstruction before edits; risk of over-scoping persistence or lab harness before core rollout fencing is correct → USEFUL signal.",
+  "evidence": [
+    {"type": "file", "ref": "sovereign-l4-load-balancer/instruction.md", "observation": "Twenty bullets reference full docs/ contract set for rollout, proxy, and recovery."},
+    {"type": "rule", "ref": ".terminus/agents/QUALITY_AGENT_PROMPTS.md#Q8", "observation": "SIMULATION_NOT_EXECUTED when full isolated solve unavailable."}
+  ],
+  "findings": [],
+  "missing_evidence": [],
+  "change_scope": [],
+  "do_not_change": ["Do not treat as official Claude trial evidence."],
+  "next_gate": "Q8 aggregate",
+  "role_output": {
+    "PERSPECTIVE": "CLAUDE_PERSPECTIVE",
+    "EXECUTION": "SIMULATION_NOT_EXECUTED",
+    "DIAGNOSTIC_SUMMARY": "Map control/dataplane protocol and generation lifecycle; repair revision/idempotency store and node acknowledgement fencing as a set.",
+    "FIRST_DIAGNOSIS": "Stale revision accepted or activate without prepared quorum; checkpoint advances on torn frames.",
+    "FILES_TOUCHED": ["revision store", "rollout coordinator", "dataplane session bind", "checkpoint recovery"],
+    "SHORTCUTS_ATTEMPTED": ["Broad persistence refactor before proxy I/O edge cases pass"],
+    "FIRST_MEANINGFUL_DIVERGENCE": "Budget spent on lab inventory wiring while drain and PROXY header semantics remain partial.",
+    "FINAL_VERIFIER_RESULT": "NOT_RUN",
+    "LIKELY_REASONING_WALLS": ["Idempotency key conflict semantics", "Half-close/backpressure proxy paths", "Fail-open vs zone policy"],
+    "ENVIRONMENT_TOOL_FRICTION": "Mixed Go/C++/Bash/Python; large_system_strict scale.",
+    "PREDICTED_OFFICIAL_SIGNAL": "USEFUL",
+    "SIMULATION_NOTE": "Diagnostic prior only; similar advanced-band expectation as GPT perspective."
+  }
+}

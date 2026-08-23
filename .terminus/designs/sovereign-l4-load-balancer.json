@@ -1,0 +1,413 @@
+{
+  "status": "VERIFIER_READY",
+  "task_kind": "software",
+  "profile": "large_system_strict",
+  "task_id": "sovereign-l4-load-balancer",
+  "defects_injected": true,
+  "environment_materialized": true,
+  "engineering_objective": "Complete a self-hosted AWS NLB-style service whose Go control plane safely distributes immutable listener and target-group snapshots to a fleet of C++ userspace TCP dataplanes.",
+  "originality_boundary": {
+    "excluded": [
+      "HTTP host or path routing",
+      "WAF and CDN behavior",
+      "DNS or canary cutover orchestration",
+      "Linux route-table management",
+      "AWS resource provisioning"
+    ],
+    "distinctive_center": [
+      "Go-to-C++ versioned control protocol",
+      "multi-node atomic rollout and acknowledgement",
+      "real TCP proxy dataplane",
+      "connection ownership and deregistration draining",
+      "zonal target eligibility and fail-open policy",
+      "restart-safe desired, acknowledged, and active generations"
+    ]
+  },
+  "component_graph": {
+    "go_control_plane": [
+      "API and CLI",
+      "desired-state validation",
+      "listener and target-group compiler",
+      "snapshot repository",
+      "node registration and session fencing",
+      "rollout coordinator",
+      "health aggregation",
+      "audit and idempotency"
+    ],
+    "cpp_data_plane": [
+      "control stream client",
+      "snapshot decoder and validator",
+      "atomic runtime publication",
+      "epoll TCP accept and proxy workers",
+      "backend selection",
+      "active and passive health",
+      "connection registry",
+      "drain and retirement",
+      "local checkpoint recovery",
+      "metrics and status socket"
+    ],
+    "integration": [
+      "length-prefixed canonical JSON protocol",
+      "generation prepare, activate, reject, and acknowledge states",
+      "deterministic loopback backend lab",
+      "multi-zone fleet inventory"
+    ]
+  },
+  "operational_requirements": [
+    "Canonicalize and validate listeners, target groups, targets, health policies, balancing policies, and zonal policy before allocating a generation.",
+    "Fence desired-state writes by revision and idempotency key; stale, duplicate, and conflicting requests must not alter accepted authority.",
+    "Compile one immutable complete snapshot and digest for each accepted revision.",
+    "Roll snapshots through prepare and activate phases so a node never serves partially updated listener and target-group state.",
+    "Require node session identity and monotonic acknowledgement; stale processes cannot acknowledge or activate work for a replacement session.",
+    "Preserve the last active generation when a candidate is rejected or a rollout cannot meet its configured quorum.",
+    "Proxy real TCP byte streams with half-close, backpressure, bounded buffers, connect timeout, idle timeout, and deterministic error handling.",
+    "Support round-robin, least-connections, and source-address-hash selection over eligible targets.",
+    "Combine administrative state, active health, passive failure ejection, zone policy, and draining state when determining eligibility.",
+    "Stop assigning new connections after target deregistration while allowing owned connections to drain to a deadline.",
+    "Implement cross-zone enabled and same-zone-preferred behavior with explicit fail-open policy when healthy capacity is unavailable.",
+    "Support PROXY protocol v2 emission as the source-identity preservation contract without spoofing socket peer addresses.",
+    "Keep each connection on the generation and target incarnation it acquired; later rollouts cannot redirect an established stream.",
+    "Persist complete desired snapshots, rollout state, active dataplane checkpoints, source fences, and bounded continuity state atomically.",
+    "Recover safely from corrupt CURRENT pointers, incomplete generations, torn control messages, control-plane restart, and dataplane restart.",
+    "Make repeated apply, reconnect, prepare, activate, drain, and recovery operations idempotent.",
+    "Expose stable status, readiness, metrics, connection, rollout, and audit views without unbounded labels or payload leakage.",
+    "Bound control queues, retained generations, health history, audit events, connection metadata, and retired runtime objects.",
+    "Remain deterministic and self-contained over loopback networking; never modify host routes, firewall rules, or cloud resources."
+  ],
+  "root_cause_clusters": {
+    "RC_CONTROL_AUTHORITY": "Revision, idempotency, node-session, and acknowledgement authority are not consistently fenced.",
+    "RC_SNAPSHOT_ATOMICITY": "Validation, compilation, prepare, activation, and persistence do not form one immutable generation lifecycle.",
+    "RC_CONNECTION_OWNERSHIP": "Accepted connections do not retain stable generation, target incarnation, and shutdown ownership.",
+    "RC_TARGET_ELIGIBILITY": "Health, zone, administrative, ejection, and draining states are combined inconsistently.",
+    "RC_STREAM_CORRECTNESS": "The TCP dataplane mishandles partial I/O, half-close, buffering, timeouts, and PROXY protocol framing.",
+    "RC_RECOVERY_RETENTION": "Restart, fallback, reconnect, and retention can lose authority or retire still-reachable state.",
+    "RC_OPERABILITY": "Status, metrics, readiness, audit, and bounded-resource contracts diverge across components."
+  },
+  "cluster_components": {
+    "RC_CONTROL_AUTHORITY": [
+      "go.audit_and_idempotency",
+      "go.node_registration_session_fencing",
+      "go.rollout_coordinator",
+      "cpp.control_stream_client"
+    ],
+    "RC_SNAPSHOT_ATOMICITY": [
+      "go.desired_state_validation",
+      "go.listener_target_group_compiler",
+      "go.snapshot_repository",
+      "go.rollout_coordinator",
+      "cpp.snapshot_decoder_validator",
+      "cpp.atomic_runtime_publication"
+    ],
+    "RC_CONNECTION_OWNERSHIP": [
+      "cpp.connection_registry",
+      "cpp.drain_and_retirement",
+      "cpp.epoll_tcp_proxy_workers"
+    ],
+    "RC_TARGET_ELIGIBILITY": [
+      "go.health_aggregation",
+      "cpp.backend_selection",
+      "cpp.active_and_passive_health"
+    ],
+    "RC_STREAM_CORRECTNESS": [
+      "cpp.epoll_tcp_proxy_workers"
+    ],
+    "RC_RECOVERY_RETENTION": [
+      "go.snapshot_repository",
+      "cpp.control_stream_client",
+      "cpp.local_checkpoint_recovery"
+    ],
+    "RC_OPERABILITY": [
+      "go.api_and_cli",
+      "cpp.metrics_and_status_socket"
+    ]
+  },
+  "manifestation_plan": [
+    "global revision fence incorrectly shared with node acknowledgement sequence",
+    "same revision with different digest accepted",
+    "idempotency key reused with a different request body",
+    "stale node session activates a prepared generation",
+    "rollout quorum counts disconnected or superseded sessions",
+    "generation allocated before complete semantic validation",
+    "listener and target groups activated from different revisions",
+    "candidate rejection damages last-known-good state",
+    "CURRENT points at an unverified generation",
+    "connection reselects a target after snapshot publication",
+    "target re-add inherits the removed target incarnation",
+    "drain deadline retires buffers still owned by a connection",
+    "passive ejection bypasses active-health recovery policy",
+    "cross-zone disabled still selects remote targets",
+    "fail-open includes administratively disabled targets",
+    "least-connections counters leak across target incarnations",
+    "source-hash selection depends on declaration order",
+    "partial writes truncate client-to-target traffic",
+    "half-close prematurely closes the opposite direction",
+    "buffer backpressure grows memory without bound",
+    "idle timeout ignores in-flight buffered bytes",
+    "PROXY v2 header is emitted twice after reconnect",
+    "torn control frame advances acknowledgement",
+    "restart forgets accepted revision and permits stale apply",
+    "reconnect replays activate before prepare",
+    "retention deletes a generation held by active connections",
+    "readiness reports true before active listeners match the acknowledged generation",
+    "metrics retain unbounded generation and target labels",
+    "shutdown accepts new connections after readiness drops"
+  ],
+  "defects": [
+    {
+      "id": "D01",
+      "component": "go.audit_and_idempotency",
+      "observable_failure": "Global revision fencing and per-node acknowledgement sequence share one counter, so a node acknowledgement can advance the accepted desired revision or block a legitimate apply.",
+      "root_cause": "RC_CONTROL_AUTHORITY",
+      "partial_fix_trap": "Splitting counters without also fencing idempotency keys and node-session identity still leaves D02, D03, and D04 reachable."
+    },
+    {
+      "id": "D02",
+      "component": "go.audit_and_idempotency",
+      "observable_failure": "The same revision number with a different compiled digest is accepted as a no-op or replacement instead of being rejected as a conflict.",
+      "root_cause": "RC_CONTROL_AUTHORITY",
+      "partial_fix_trap": "Comparing only the revision integer still permits silent authority drift when body content changes under the same revision."
+    },
+    {
+      "id": "D03",
+      "component": "go.audit_and_idempotency",
+      "observable_failure": "Repeating an idempotency key with a different request body returns success or mutates desired state instead of rejecting the conflict.",
+      "root_cause": "RC_CONTROL_AUTHORITY",
+      "partial_fix_trap": "Storing the first payload but not comparing subsequent bodies still accepts D02-style digest drift under a new key."
+    },
+    {
+      "id": "D04",
+      "component": "go.node_registration_session_fencing",
+      "observable_failure": "A superseded dataplane session can activate a prepared generation after the control plane has registered a replacement session for the same node.",
+      "root_cause": "RC_CONTROL_AUTHORITY",
+      "partial_fix_trap": "Checking session identity only at registration time still permits stale processes to acknowledge or activate after reconnect churn."
+    },
+    {
+      "id": "D05",
+      "component": "go.rollout_coordinator",
+      "observable_failure": "Rollout quorum treats disconnected or superseded node sessions as acknowledged participants, declaring success while healthy nodes never activated the candidate.",
+      "root_cause": "RC_CONTROL_AUTHORITY",
+      "partial_fix_trap": "Excluding explicitly disconnected sessions but still counting superseded session tokens leaves false quorum under process restart."
+    },
+    {
+      "id": "D06",
+      "component": "go.desired_state_validation",
+      "observable_failure": "A runtime generation is allocated and persisted before semantic validation and compilation finish, leaving partial or invalid snapshots referenced by rollout state.",
+      "root_cause": "RC_SNAPSHOT_ATOMICITY",
+      "partial_fix_trap": "Moving validation earlier without serializing prepare and activation still allows D07 mixed-revision publication."
+    },
+    {
+      "id": "D07",
+      "component": "cpp.atomic_runtime_publication",
+      "observable_failure": "Listener tables and target-group tables from different accepted revisions become simultaneously active because publication swaps them through separate visibility points.",
+      "root_cause": "RC_SNAPSHOT_ATOMICITY",
+      "partial_fix_trap": "Locking listener replacement alone does not restore atomicity if target groups, health views, or generation metadata publish separately."
+    },
+    {
+      "id": "D08",
+      "component": "go.rollout_coordinator",
+      "observable_failure": "Rejecting a candidate revision mutates or clears the last-known-good active generation instead of preserving the prior acknowledged snapshot.",
+      "root_cause": "RC_SNAPSHOT_ATOMICITY",
+      "partial_fix_trap": "Preserving the dataplane serving pointer while still poisoning repository CURRENT metadata recreates D09 on restart."
+    },
+    {
+      "id": "D09",
+      "component": "go.snapshot_repository",
+      "observable_failure": "The durable CURRENT pointer references a generation whose body failed verification, was never fully compiled, or lacks a matching digest.",
+      "root_cause": "RC_SNAPSHOT_ATOMICITY",
+      "partial_fix_trap": "Verifying file presence without digest, schema, and completeness checks still lets restart publish torn generations."
+    },
+    {
+      "id": "D10",
+      "component": "cpp.connection_registry",
+      "observable_failure": "An established connection re-resolves backend selection against the newly published snapshot instead of retaining the generation and target it acquired at accept time.",
+      "root_cause": "RC_CONNECTION_OWNERSHIP",
+      "partial_fix_trap": "Caching only the target pointer without binding generation and incarnation still permits mid-stream reassignment after rollout."
+    },
+    {
+      "id": "D11",
+      "component": "cpp.connection_registry",
+      "observable_failure": "A target removed and later re-added reuses the previous target incarnation, inheriting drain state, health evidence, and balancer counters.",
+      "root_cause": "RC_CONNECTION_OWNERSHIP",
+      "partial_fix_trap": "Allocating a new runtime object but copying counters and drain flags from the retired incarnation preserves D16 leakage."
+    },
+    {
+      "id": "D12",
+      "component": "cpp.drain_and_retirement",
+      "observable_failure": "Drain deadline retires proxy buffers or backend handles while a connection registry entry still owns unread or in-flight bytes.",
+      "root_cause": "RC_CONNECTION_OWNERSHIP",
+      "partial_fix_trap": "Waiting for the in-flight counter alone ignores half-closed directions and reusable buffer pools still referenced by the registry."
+    },
+    {
+      "id": "D13",
+      "component": "cpp.active_and_passive_health",
+      "observable_failure": "Passive failure ejection permanently marks a target ineligible even when active-health recovery policy would restore it after the configured probe successes.",
+      "root_cause": "RC_TARGET_ELIGIBILITY",
+      "partial_fix_trap": "Clearing passive state only on administrative re-register still leaves targets ejected after transient backend resets."
+    },
+    {
+      "id": "D14",
+      "component": "cpp.backend_selection",
+      "observable_failure": "Cross-zone load balancing remains enabled for selection even when the listener or target-group policy disables remote zone targets.",
+      "root_cause": "RC_TARGET_ELIGIBILITY",
+      "partial_fix_trap": "Filtering remote targets only in round-robin but not in least-connections or source-hash still violates zonal policy."
+    },
+    {
+      "id": "D15",
+      "component": "cpp.backend_selection",
+      "observable_failure": "Fail-open selection includes administratively disabled or draining targets when no healthy same-zone capacity exists.",
+      "root_cause": "RC_TARGET_ELIGIBILITY",
+      "partial_fix_trap": "Excluding only explicitly unhealthy targets still admits administratively disabled members during fail-open."
+    },
+    {
+      "id": "D16",
+      "component": "cpp.backend_selection",
+      "observable_failure": "Least-connections counters from a removed target incarnation continue to influence selection after the target is re-added.",
+      "root_cause": "RC_TARGET_ELIGIBILITY",
+      "partial_fix_trap": "Resetting counters only at administrative delete without incarnation identity still leaks state across remove and re-add cycles."
+    },
+    {
+      "id": "D17",
+      "component": "cpp.backend_selection",
+      "observable_failure": "Source-address-hash selection changes when equivalent target declarations are reordered even though semantic membership is unchanged.",
+      "root_cause": "RC_TARGET_ELIGIBILITY",
+      "partial_fix_trap": "Sorting targets for display without defining a canonical selection order still makes affinity depend on declaration order."
+    },
+    {
+      "id": "D18",
+      "component": "cpp.epoll_tcp_proxy_workers",
+      "observable_failure": "Partial write handling drops or truncates client-to-target traffic instead of resuming until the full buffered slice is delivered.",
+      "root_cause": "RC_STREAM_CORRECTNESS",
+      "partial_fix_trap": "Retrying only the first partial write on the next event loop turn still loses bytes when epoll edge semantics coalesce errors."
+    },
+    {
+      "id": "D19",
+      "component": "cpp.epoll_tcp_proxy_workers",
+      "observable_failure": "Observing FIN or shutdown on one direction immediately closes or resets the opposite direction before the peer finishes draining.",
+      "root_cause": "RC_STREAM_CORRECTNESS",
+      "partial_fix_trap": "Delaying the opposite shutdown without honoring half-close read interest still truncates slow readers."
+    },
+    {
+      "id": "D20",
+      "component": "cpp.epoll_tcp_proxy_workers",
+      "observable_failure": "Backpressure on a slow reader allows upstream buffers to grow without bound instead of pausing reads at the configured limit.",
+      "root_cause": "RC_STREAM_CORRECTNESS",
+      "partial_fix_trap": "Capping per-connection buffer count but not unregistering read interest lets memory grow through many idle connections."
+    },
+    {
+      "id": "D21",
+      "component": "cpp.epoll_tcp_proxy_workers",
+      "observable_failure": "Idle timeout fires while buffered bytes remain queued in either direction, terminating streams that still have deliverable data.",
+      "root_cause": "RC_STREAM_CORRECTNESS",
+      "partial_fix_trap": "Resetting the idle timer on any I/O without checking pending buffer depth still closes connections with unread payload."
+    },
+    {
+      "id": "D22",
+      "component": "cpp.epoll_tcp_proxy_workers",
+      "observable_failure": "After backend reconnect, the dataplane emits a second PROXY protocol v2 header on the same TCP stream.",
+      "root_cause": "RC_STREAM_CORRECTNESS",
+      "partial_fix_trap": "Suppressing PROXY on reconnect only for the same backend socket still duplicates headers when worker pools rotate handles."
+    },
+    {
+      "id": "D23",
+      "component": "cpp.control_stream_client",
+      "observable_failure": "A torn or truncated length-prefixed control frame still advances node acknowledgement or activate state on the control plane.",
+      "root_cause": "RC_RECOVERY_RETENTION",
+      "partial_fix_trap": "Checksum-only framing without transactional commit ordering still permits D25 activate-before-prepare replay."
+    },
+    {
+      "id": "D24",
+      "component": "go.snapshot_repository",
+      "observable_failure": "Control-plane restart forgets the last accepted revision fence and permits stale apply requests that were valid before the outage.",
+      "root_cause": "RC_RECOVERY_RETENTION",
+      "partial_fix_trap": "Restoring CURRENT generation without recovered revision and idempotency fences still accepts superseded writes after restart."
+    },
+    {
+      "id": "D25",
+      "component": "cpp.control_stream_client",
+      "observable_failure": "Dataplane reconnect replays an activate message before the corresponding prepare was durably accepted for the current session.",
+      "root_cause": "RC_RECOVERY_RETENTION",
+      "partial_fix_trap": "Persisting the last activate pointer without generation phase ordering still publishes D07 mixed snapshots after reconnect."
+    },
+    {
+      "id": "D26",
+      "component": "cpp.local_checkpoint_recovery",
+      "observable_failure": "Generation retention evicts a snapshot generation still referenced by active connection registry entries or in-flight proxy state.",
+      "root_cause": "RC_RECOVERY_RETENTION",
+      "partial_fix_trap": "Reference counting only live connections but not checkpoint reachability still deletes generations needed for D10 ownership."
+    },
+    {
+      "id": "D27",
+      "component": "go.api_and_cli",
+      "observable_failure": "Readiness reports true while listener sockets still serve a generation older than the fleet-acknowledged active revision.",
+      "root_cause": "RC_OPERABILITY",
+      "partial_fix_trap": "Checking control-plane acknowledgement alone ignores dataplane publication lag and leaves D29 shutdown race reachable."
+    },
+    {
+      "id": "D28",
+      "component": "cpp.metrics_and_status_socket",
+      "observable_failure": "Metrics and status exports retain unbounded generation, target, and incarnation labels across retired rollouts.",
+      "root_cause": "RC_OPERABILITY",
+      "partial_fix_trap": "Deleting metric values on target removal without generation-scoped retirement still accumulates stale series for old incarnations."
+    },
+    {
+      "id": "D29",
+      "component": "cpp.metrics_and_status_socket",
+      "observable_failure": "After readiness drops, the dataplane accept loop continues to admit new connections until process exit.",
+      "root_cause": "RC_OPERABILITY",
+      "partial_fix_trap": "Stopping the status server but leaving the epoll accept path registered still violates graceful shutdown semantics."
+    }
+  ],
+  "causal_edges": [
+    {"from": "D01", "to": "D04"},
+    {"from": "D01", "to": "D24"},
+    {"from": "D02", "to": "D03"},
+    {"from": "D02", "to": "D09"},
+    {"from": "D03", "to": "D24"},
+    {"from": "D04", "to": "D05"},
+    {"from": "D04", "to": "D25"},
+    {"from": "D05", "to": "D27"},
+    {"from": "D06", "to": "D07"},
+    {"from": "D06", "to": "D09"},
+    {"from": "D07", "to": "D10"},
+    {"from": "D08", "to": "D09"},
+    {"from": "D08", "to": "D26"},
+    {"from": "D09", "to": "D24"},
+    {"from": "D10", "to": "D12"},
+    {"from": "D11", "to": "D16"},
+    {"from": "D11", "to": "D12"},
+    {"from": "D12", "to": "D26"},
+    {"from": "D13", "to": "D15"},
+    {"from": "D14", "to": "D15"},
+    {"from": "D16", "to": "D17"},
+    {"from": "D18", "to": "D21"},
+    {"from": "D19", "to": "D18"},
+    {"from": "D20", "to": "D21"},
+    {"from": "D22", "to": "D19"},
+    {"from": "D23", "to": "D25"},
+    {"from": "D23", "to": "D04"},
+    {"from": "D24", "to": "D03"},
+    {"from": "D25", "to": "D07"},
+    {"from": "D26", "to": "D10"},
+    {"from": "D27", "to": "D29"},
+    {"from": "D28", "to": "D27"}
+  ],
+  "data_and_runtime_plan": {
+    "fleet": "Deterministic inventory of 24 dataplane nodes across three zones with varied sessions, revisions, health, and rollout states.",
+    "configuration": "Deterministic generated catalog of listeners, target groups, targets, policies, and rollout histories large enough for strict production-state reasoning without generated LOC counting.",
+    "network_lab": "Loopback TCP echo, slow-reader, half-close, reset, and PROXY-protocol inspection backends.",
+    "entrypoints": [
+      "/app/sovereign-lb/bin/lbctl",
+      "/app/sovereign-lb/bin/lb-control-plane",
+      "/app/sovereign-lb/bin/lb-dataplane",
+      "/app/sovereign-lb/bin/lab"
+    ]
+  },
+  "initial_package_scope": [
+    "task metadata and concise engineering instruction",
+    "solver-visible architecture, protocol, state, dataplane, and operations contracts",
+    "Go control-plane and C++ dataplane implementation",
+    "deterministic fleet and loopback backend lab",
+    "reference solution and behavioral verifier",
+    "deterministic oracle/NOP and complexity-gate evidence"
+  ]
+}

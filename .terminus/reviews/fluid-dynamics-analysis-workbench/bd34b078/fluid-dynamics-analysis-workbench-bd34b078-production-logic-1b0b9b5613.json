@@ -1,0 +1,203 @@
+{
+  "schema_version": "3.0",
+  "role": "Production Logic Auditor",
+  "review_id": "fluid-dynamics-analysis-workbench-bd34b078-production-logic-1b0b9b5613",
+  "task": "fluid-dynamics-analysis-workbench",
+  "task_commit": "bd34b078027dea5d64c7b133552da852c2c61bc7",
+  "control_plane_commit": "bd34b078027dea5d64c7b133552da852c2c61bc7",
+  "protocol_policy_version": "2.2",
+  "prompt_policy_version": "2.2",
+  "role_policy_version": "1.1",
+  "role_contract_hash": "a737a404c3b23518698932fec4eba6bb7f9831710c920bd66f267a00dca47661",
+  "review_scope_hash": "a622999f68e8073691d1a2df94e12bbe90864bdc874224c61ea71ae76ff97c3f",
+  "context_packet": ".terminus/reviews/fluid-dynamics-analysis-workbench/bd34b078/fluid-dynamics-analysis-workbench-bd34b078-production-logic-1b0b9b5613.packet.json",
+  "verdict": "REVISE",
+  "confidence": "HIGH",
+  "evidence_status": "SUFFICIENT",
+  "summary": "Independent cold Q6 at bd34b078 traces a real but compact fluid-analysis pipeline from bin/fluidlab and scripts/run_analysis.sh through cli -> pipeline -> loaders/solver/report with full reachability into fluid, regime, mesh, and convergence modules. Honest substantive reachable runtime/config LOC is about 982 (700 Python + 13 shell/bin + 269 JSON config/cases), far below the large_system_strict >=3000 floor. Core formulas are credible engineering estimators rather than constant-output toys, so TOY_LOGIC_RISK is MEDIUM and PADDING_RISK is MEDIUM from dataclass and validation boilerplate; the blocking defect is scale under profile, not a hollow shell.",
+  "evidence": [
+    {
+      "type": "rule",
+      "ref": ".terminus/agents/QUALITY_AGENT_PROMPTS.md",
+      "observation": "Q6 requires independent entrypoint reachability tracing, substantive LOC assessment, toy/padding risk judgment, and for large_system_strict >=3000 substantive reachable solver-visible runtime/config LOC with no HIGH toy/padding risk."
+    },
+    {
+      "type": "file",
+      "ref": ".terminus/designs/fluid-dynamics-analysis-workbench.json",
+      "observation": "Design binds profile=large_system_strict and enumerates ten coupled analysis-core components plus solver-visible assets; used only as topology context, not as a verdict to copy."
+    },
+    {
+      "type": "file",
+      "ref": "fluid-dynamics-analysis-workbench/task.toml",
+      "observation": "Science/Physics task; artifacts [/app/fluidlab]; workdir /app/fluidlab; separate verifier environment."
+    },
+    {
+      "type": "file",
+      "ref": "fluid-dynamics-analysis-workbench/environment/fluidlab/bin/fluidlab",
+      "observation": "Primary runtime entrypoint: sets PYTHONPATH to src and exec python3 -m fluidlab.cli."
+    },
+    {
+      "type": "file",
+      "ref": "fluid-dynamics-analysis-workbench/environment/fluidlab/scripts/run_analysis.sh",
+      "observation": "Operator wrapper invokes bin/fluidlab analyze --root /app/fluidlab; shares the same CLI/pipeline path documented in operator-runbook.md."
+    },
+    {
+      "type": "file",
+      "ref": "fluid-dynamics-analysis-workbench/environment/fluidlab/scripts/build.sh",
+      "observation": "Build smoke path: compileall on src plus show-config; secondary reachability check for loaders.load_config."
+    },
+    {
+      "type": "file",
+      "ref": "fluid-dynamics-analysis-workbench/environment/fluidlab/src/fluidlab/cli.py",
+      "observation": "Commands analyze and show-config; analyze calls pipeline.run(root)."
+    },
+    {
+      "type": "file",
+      "ref": "fluid-dynamics-analysis-workbench/environment/fluidlab/src/fluidlab/pipeline.py",
+      "observation": "Orchestrates load_config, load_cases, analyze_case per case, fleet rollup, and write_reports."
+    },
+    {
+      "type": "file",
+      "ref": "fluid-dynamics-analysis-workbench/environment/fluidlab/src/fluidlab/solver.py",
+      "observation": "Case/point orchestration imports compute_state, regime_metrics, mesh_summary, convergence_summary; builds margins, findings, and per-point status."
+    },
+    {
+      "type": "file",
+      "ref": "fluid-dynamics-analysis-workbench/environment/fluidlab/src/fluidlab/loaders.py",
+      "observation": "Largest module (~176 substantive LOC): JSON schema validation, duplicate point/case checks, digest computation, and typed CaseSpec construction."
+    },
+    {
+      "type": "file",
+      "ref": "fluid-dynamics-analysis-workbench/environment/fluidlab/src/fluidlab/regime.py",
+      "observation": "Colebrook-style friction factor, distributed/minor pressure loss, Mach/CFL, and laminar/transitional/turbulent Nusselt branches."
+    },
+    {
+      "type": "file",
+      "ref": "fluid-dynamics-analysis-workbench/environment/fluidlab/src/fluidlab/fluid.py",
+      "observation": "Liquid thermal-expansion density branch vs ideal-gas pressure/temperature density branch; derives velocity, Prandtl, and outlet temperature."
+    },
+    {
+      "type": "file",
+      "ref": "fluid-dynamics-analysis-workbench/environment/fluidlab/src/fluidlab/report.py",
+      "observation": "Deterministic JSON summary, CSV rows, checkpoint publication with revision digest and path resolution helpers."
+    },
+    {
+      "type": "file",
+      "ref": "fluid-dynamics-analysis-workbench/environment/fluidlab/config/system.json",
+      "observation": "29-line publication and CSV field configuration consumed by loaders and report."
+    },
+    {
+      "type": "file",
+      "ref": "fluid-dynamics-analysis-workbench/environment/fluidlab/cases/",
+      "observation": "Three case JSON files (~231 substantive config LOC) with mixed liquid/gas models and seven operating points total; modest data volume relative to logic branches."
+    },
+    {
+      "type": "run",
+      "ref": "Q6 import-closure LOC walk over environment/ at bd34b078",
+      "observation": "Substantive reachable runtime/config LOC: Python 700, shell/bin 13, JSON 269, total 982. Docs and Dockerfile excluded from runtime/config count."
+    }
+  ],
+  "findings": [
+    {
+      "id": "Q6-LOC-01",
+      "severity": "BLOCKER",
+      "status": "OBSERVED",
+      "criterion": "large_system_strict substantive LOC floor",
+      "evidence_refs": [
+        "fluid-dynamics-analysis-workbench/environment/fluidlab/src/",
+        "fluid-dynamics-analysis-workbench/environment/fluidlab/config/system.json",
+        "fluid-dynamics-analysis-workbench/environment/fluidlab/cases/"
+      ],
+      "why_it_matters": "Profile large_system_strict requires >=3000 substantive reachable solver-visible runtime/config LOC. The honest import-closure total is ~982, roughly one-third of the floor, so the task cannot PASS Q6 at this commit regardless of coupling quality.",
+      "minimal_remediation": "Expand the reachable analysis core with additional coupled subsystems that execute on the analyze path (for example deeper validation layers, fleet aggregation semantics, checkpoint lineage reconciliation, richer limit/severity engines, and additional case families) until substantive reachable runtime/config LOC clears 3000 without clone modules or config-only inflation.",
+      "regression_risk": "Medium if expansion duplicates existing one-pass formulas; low if new modules introduce distinct stateful interactions consumed by publication."
+    },
+    {
+      "id": "Q6-DEPTH-01",
+      "severity": "HIGH",
+      "status": "OBSERVED",
+      "criterion": "CORE_LOGIC_DEPTH vs large_system_strict profile",
+      "evidence_refs": [
+        "fluid-dynamics-analysis-workbench/environment/fluidlab/src/fluidlab/fluid.py",
+        "fluid-dynamics-analysis-workbench/environment/fluidlab/src/fluidlab/regime.py",
+        "fluid-dynamics-analysis-workbench/environment/fluidlab/src/fluidlab/mesh.py",
+        "fluid-dynamics-analysis-workbench/environment/fluidlab/src/fluidlab/convergence.py"
+      ],
+      "why_it_matters": "Physics modules total ~145 substantive LOC and implement single-pass estimators with a few branches. The design record promises a multi-surface workbench, but the reachable core behaves like a compact calculator pipeline rather than a large production analysis system.",
+      "minimal_remediation": "Grow distinct computational subsystems with deeper state/error behavior and interacting invariants rather than stretching validation boilerplate or case JSON volume alone.",
+      "regression_risk": "Low for task difficulty if new logic remains deterministic and operator-visible."
+    },
+    {
+      "id": "Q6-PAD-01",
+      "severity": "MEDIUM",
+      "status": "OBSERVED",
+      "criterion": "PADDING_RISK",
+      "evidence_refs": [
+        "fluid-dynamics-analysis-workbench/environment/fluidlab/src/fluidlab/loaders.py",
+        "fluid-dynamics-analysis-workbench/environment/fluidlab/src/fluidlab/models.py"
+      ],
+      "why_it_matters": "About 261 substantive LOC (~27% of runtime Python) is dataclass scaffolding and repetitive _require_* validation helpers. This is necessary contract code but inflates apparent module count without matching computational depth.",
+      "minimal_remediation": "When expanding scope, add behavior-bearing modules on the analyze path instead of more schema-only surface area.",
+      "regression_risk": "Low"
+    },
+    {
+      "id": "Q6-TRAP-01",
+      "severity": "MEDIUM",
+      "status": "OBSERVED",
+      "criterion": "PARTIAL_FIX_TRAPS",
+      "evidence_refs": [
+        "fluid-dynamics-analysis-workbench/environment/fluidlab/src/fluidlab/solver.py",
+        "fluid-dynamics-analysis-workbench/environment/fluidlab/src/fluidlab/regime.py",
+        "fluid-dynamics-analysis-workbench/environment/fluidlab/src/fluidlab/fluid.py"
+      ],
+      "why_it_matters": "Cross-module traps exist (case status taken from first sorted point rather than worst severity; liquid sound speed hardcoded; regime pressure_drop scaled by 1.06; shared state must stay consistent across fluid and regime). These support repair difficulty but do not compensate for missing production scale.",
+      "minimal_remediation": "Preserve coupled traps while expanding reachable core depth; avoid fixing only publication ordering without reconciling shared operating-point state.",
+      "regression_risk": "Medium if expansion adds parallel CLI/pipeline surfaces that can drift."
+    }
+  ],
+  "missing_evidence": [],
+  "change_scope": [
+    "Initial cold Q6 production-logic audit at bd34b078 over task.toml and complete solver-visible environment/ tree."
+  ],
+  "do_not_change": [
+    "Existing entrypoint layout (bin/fluidlab, scripts/run_analysis.sh, scripts/build.sh)",
+    "Mixed liquid/gas case families and three-artifact publication contract",
+    "Linear pipeline coupling through pipeline.run as the shared CLI/wrapper surface"
+  ],
+  "next_gate": "Q6_REVISE",
+  "role_output": {
+    "CORE_LOGIC_DEPTH": "MEDIUM",
+    "RUNTIME_REACHABILITY": "HIGH",
+    "MODULE_DIVERSITY": "MEDIUM",
+    "CROSS_COMPONENT_COUPLING": "MEDIUM",
+    "TOY_LOGIC_RISK": "MEDIUM",
+    "PADDING_RISK": "MEDIUM",
+    "SUBSTANTIVE_LOC_ASSESSMENT": "~982 substantive reachable solver-visible runtime/config LOC (700 Python across 10 reachable modules, 13 shell/bin, 269 JSON config/cases). Python breakdown: loaders 176, solver 110, report 107, models 85, regime 51, cli 40, pipeline 36, convergence 35, mesh 30, fluid 29. Docs (~operator-runbook, case-schema, analysis-contract) and Dockerfile excluded. All Python modules are reachable from bin/fluidlab analyze/show-config.",
+    "SUBSTANTIVE_REACHABLE_LOC": 982,
+    "PROFILE": "large_system_strict",
+    "MAJOR_MODULES": [
+      "cli.py — argparse entry for analyze/show-config; routes to pipeline.run or load_config.",
+      "pipeline.py — loads config/cases, runs analyze_case for each case, computes fleet rollup, publishes artifacts.",
+      "loaders.py — validates and materializes Config and CaseSpec objects from system.json and cases/*.json.",
+      "models.py — frozen dataclass contract for fluid, geometry, mesh, solver monitor, limits, operating points.",
+      "solver.py — per-case mesh/convergence prefetch, per-point state/regime analysis, margin/findings/status assembly.",
+      "fluid.py — liquid vs ideal-gas density/temperature/velocity/Prandtl state model.",
+      "regime.py — friction factor, pressure drop, Mach/CFL, flow-regime Nusselt and heat-transfer coefficient.",
+      "mesh.py — weighted mesh quality score with negative-volume penalty.",
+      "convergence.py — residual summaries, imbalance checks, converged flag.",
+      "report.py — publication revision digest, JSON/CSV/checkpoint writers with rounding and path resolution."
+    ],
+    "PARTIAL_FIX_TRAPS": [
+      "Fixing only report ordering/rounding while leaving case-level status aggregation on the first operating point.",
+      "Patching regime pressure-drop math without aligning fluid density/temperature state used for velocity and Mach.",
+      "Adjusting convergence thresholds in isolation from mesh severity and fleet rollup margins.",
+      "Adding CLI-only behavior instead of keeping bin/fluidlab and run_analysis.sh on shared pipeline.run logic."
+    ],
+    "REMOVAL_TEST": "Removing ~25% of core Python (~175 lines) would eliminate an entire behavioral surface: dropping loaders removes upfront contract validation; dropping report removes all artifact publication; dropping regime removes hydraulic/thermal limit metrics. The codebase is too small to absorb a 25% cut without losing a major operator-visible capability, but the remaining logic is still a single-pass estimator stack rather than a large production plane.",
+    "REQUIRED_CHANGES": [
+      "Raise substantive reachable solver-visible runtime/config LOC to at least 3000 through additional coupled, behavior-bearing modules on the analyze path (not docs-only or unreachable helpers).",
+      "Deepen cross-module state and severity semantics so fleet/case publication, fluid/regime/thermal state, mesh/convergence limits, and checkpoint lineage remain interacting constraints rather than a ~800-line linear calculator.",
+      "Keep TOY_LOGIC_RISK and PADDING_RISK at MEDIUM or below while expanding; avoid clone modules, constant-output shells, or case JSON volume used as substitute for runtime logic."
+    ]
+  }
+}

@@ -1,0 +1,20 @@
+- Work only in `/app/sovereign-lb`; preserve the mixed Go, C++, Bash, and Python structure.
+- Build `/app/sovereign-lb/bin/lb-control-plane`, `/app/sovereign-lb/bin/lbctl`, `/app/sovereign-lb/bin/lb-dataplane`, and `/app/sovereign-lb/bin/lab` from the supplied sources.
+- Implement canonical validation for complete listener, target-group, target, health, balancing, zone, and fail-open configuration before allocating a generation.
+- Fence desired-state mutation by monotonic revision and idempotency key, rejecting stale revisions and key reuse with different request content.
+- Compile each accepted revision into one immutable, complete snapshot with a deterministic digest and atomically persisted generation record.
+- Use the documented four-byte big-endian length-prefixed canonical JSON protocol and its `hello`, `prepare`, `prepared`, `rejected`, `activate`, `active`, and `status` envelopes.
+- Fence node acknowledgements and activation by node identity, session identity, generation, digest, and monotonic sequence.
+- Coordinate prepare then activate across the configured live-session quorum without damaging the last active generation when a candidate fails.
+- Persist and recover desired state, generations, rollout state, idempotency records, node fences, active checkpoints, and bounded continuity data atomically.
+- Proxy real TCP streams with bounded bidirectional buffers, partial I/O, backpressure, half-close, connect timeout, idle timeout, and deterministic teardown.
+- Keep every accepted connection bound to its acquired generation and target incarnation until completion.
+- Select only eligible targets using round robin, least connections, or stable source-address hash as configured.
+- Combine administrative state, active health, passive ejection, zone policy, fail-open policy, and draining state exactly as documented.
+- Stop new assignment to deregistered targets while allowing owned connections to drain until their deadline.
+- Emit at most one valid PROXY protocol v2 header per backend connection when source identity preservation is enabled.
+- Recover dataplane state from verified local checkpoints without advancing authority from torn or invalid control frames.
+- Expose bounded readiness, status, rollout, connection, metrics, and audit views without payload data or unbounded labels.
+- Keep the deterministic 24-node, three-zone inventory and loopback echo, slow, half-close, reset, and PROXY inspection lab self-contained.
+- Do not add HTTP routing, WAF/CDN behavior, DNS cutover, host route or firewall mutation, or cloud provisioning.
+- Follow all contracts in `/app/sovereign-lb/docs` and keep repeated apply, reconnect, prepare, activate, drain, and recovery operations idempotent.

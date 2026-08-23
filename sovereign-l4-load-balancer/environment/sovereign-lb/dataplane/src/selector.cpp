@@ -1,0 +1,6 @@
+#include "sovereign/selector.hpp"
+#include <algorithm>
+namespace sovereign {
+std::uint64_t Selector::stable_hash(const std::string& value){std::uint64_t hash=1469598103934665603ULL;for(unsigned char item:value){hash^=item;hash*=1099511628211ULL;}return hash;}
+const Target* Selector::select(const TargetGroup& group,const std::vector<const Target*>& candidates,const std::string& source,const Eligibility& eligibility){if(candidates.empty())return nullptr;if(group.policy==BalancePolicy::source_hash)return candidates[stable_hash(source)%candidates.size()];if(group.policy==BalancePolicy::least_connections)return *std::min_element(candidates.begin(),candidates.end(),[&eligibility](const Target* left,const Target* right){auto a=eligibility.state(left->identity).active_connections;auto b=eligibility.state(right->identity).active_connections;return a==b?left->identity<right->identity:a<b;});std::lock_guard lock(mutex_);auto& cursor=cursors_[group.name];const Target* selected=candidates[cursor%candidates.size()];cursor++;return selected;}
+}

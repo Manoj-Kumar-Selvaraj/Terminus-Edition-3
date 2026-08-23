@@ -1,0 +1,8 @@
+#include "sovereign/eligibility.hpp"
+#include <stdexcept>
+namespace sovereign {
+const TargetRuntime& Eligibility::state(const std::string& identity) const{static const TargetRuntime healthy{};auto found=states_.find(identity);return found==states_.end()?healthy:found->second;}
+bool Eligibility::normally_eligible(const Target& target,std::chrono::steady_clock::time_point now)const{const auto& runtime=state(target.identity);return target.administrative==AdminState::enabled&&runtime.active_healthy&&runtime.ejected_until<=now;}
+bool Eligibility::fail_open_eligible(const Target& target,std::chrono::steady_clock::time_point now)const{const auto& runtime=state(target.identity);return target.administrative==AdminState::enabled&&runtime.drain_deadline<=now;}
+std::vector<const Target*> Eligibility::eligible(const TargetGroup& group,const std::string& local_zone,std::chrono::steady_clock::time_point now)const{std::vector<const Target*> local,remote;for(const auto& target:group.targets){if(!normally_eligible(target,now))continue;(target.zone==local_zone?local:remote).push_back(&target);}if(group.zone_policy==ZonePolicy::cross_zone){local.insert(local.end(),remote.begin(),remote.end());return local;}if(!local.empty())return local;if(!remote.empty())return remote;if(!group.fail_open)return{};for(const auto& target:group.targets){if(target.administrative==AdminState::draining&&state(target.identity).drain_deadline>now)continue;(target.zone==local_zone?local:remote).push_back(&target);}if(!local.empty())return local;return remote;}
+}

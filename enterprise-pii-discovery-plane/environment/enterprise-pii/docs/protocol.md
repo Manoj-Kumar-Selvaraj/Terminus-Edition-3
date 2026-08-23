@@ -1,0 +1,9 @@
+# Worker Protocol
+
+The worker protocol is UTF-8 NDJSON. Each line is one object with `type`, `protocol_version`, `request_id`, and a type-specific body. Unknown fields are ignored; unknown message types and unsupported protocol versions are rejected without advancing a checkpoint. Output is line-buffered and contains no raw candidate value.
+
+`hello` identifies `worker_id`, a fresh `session_id`, detector bundle, supported formats, and budgets. `lease` carries tenant, job, shard, generation, attempt, policy digest, corpus digest, opaque lease token, issued time, and deadline. `heartbeat` repeats the full authority tuple and progress counters. `batch` adds a stable batch id, sequence, previous checkpoint, next checkpoint, body digest, findings, bounded errors, truncations, and completion flag. `ack` records accepted, replayed, or rejected status. `cancel` names the authoritative job generation.
+
+Every finding carries category, masked evidence, HMAC fingerprint, confidence, detector revision, canonical source identity, archive member, record identity, field path, line, byte range, policy version, and lineage. The control plane verifies every authority field before considering batch identity. An exact retry returns the original acknowledgement. Reuse of a batch id with different canonical bytes is a conflict. Checkpoints advance only with accepted batch state.
+
+Canonical JSON uses UTF-8, lexicographically ordered object keys, decimal integers, normalized timestamps, and no insignificant whitespace. Digests are lowercase SHA-256 over canonical bytes. Arrays retain documented semantic order; finding arrays sort by source, member, record, field, byte start, category, fingerprint, and detector revision.

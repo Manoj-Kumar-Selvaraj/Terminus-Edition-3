@@ -1,0 +1,33 @@
+{
+  "schema_version": "3.0",
+  "role": "Instruction Reviewer",
+  "review_id": "jenkins-home-insights-plugin-44fca100-instruction-287630b63e",
+  "task": "jenkins-home-insights-plugin",
+  "task_commit": "44fca100fb4572b286a4f42e15f35f928674dea5",
+  "control_plane_commit": "64ad9c429ba175c16fceff63fbbdec7b1e67a62d",
+  "protocol_policy_version": "2.2",
+  "prompt_policy_version": "2.2",
+  "role_policy_version": "1.0",
+  "role_contract_hash": "dde091cc60e01f509ecad99c6c37d21f17cd91a8bf128831fca46d7382782108",
+  "context_packet": ".terminus/reviews/jenkins-home-insights-plugin/44fca100/jenkins-home-insights-plugin-44fca100-instruction-287630b63e.packet.json",
+  "verdict": "PASS",
+  "confidence": "HIGH",
+  "evidence_status": "SUFFICIENT",
+  "summary": "instruction.md is a fair twenty-bullet engineering work request with absolute paths, delegated technical contracts, and functional requirements without hidden-test topology or oracle walkthrough. Shape complies with Edition 3 limits. Material requirements remain in the work request rather than displaced into environment docs as a second prompt.",
+  "evidence": [
+    {"type": "file", "ref": "jenkins-home-insights-plugin/instruction.md", "observation": "Twenty bullets; names /app/plugin, bin/insights commands, nine binding docs, generate sanitization bounds, ACL rules, and explicit out-of-scope items."},
+    {"type": "rule", "ref": ".terminus/agents/INSTRUCTION_POLICY.md", "observation": "Functional/invariant-level requirements grouped by system responsibility; no one-bullet-per-test acceptance list."}
+  ],
+  "findings": [],
+  "missing_evidence": [],
+  "change_scope": ["Pre-LLMaJ instruction review at 44fca100."],
+  "do_not_change": ["Instruction shape and delegated-doc boundary."],
+  "next_gate": "Engineering Documentation Reviewer",
+  "role_output": {
+    "INSTRUCTION_SHAPE": "PASS",
+    "FAIRNESS": "PASS",
+    "LEAKAGE_RISK": "LOW",
+    "HUMAN_VOICE": "PASS",
+    "AMBIGUITY": "LOW — Q4 PASS confirms grading-relevant contract alignment."
+  }
+}

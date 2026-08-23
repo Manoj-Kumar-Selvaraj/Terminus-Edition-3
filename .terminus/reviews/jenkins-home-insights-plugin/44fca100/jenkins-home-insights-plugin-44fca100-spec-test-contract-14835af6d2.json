@@ -1,0 +1,164 @@
+{
+  "schema_version": "3.0",
+  "role": "Spec-Test Contract Reviewer",
+  "review_id": "jenkins-home-insights-plugin-44fca100-spec-test-contract-14835af6d2",
+  "task": "jenkins-home-insights-plugin",
+  "task_commit": "44fca100fb4572b286a4f42e15f35f928674dea5",
+  "control_plane_commit": "44fca100fb4572b286a4f42e15f35f928674dea5",
+  "protocol_policy_version": "2.2",
+  "prompt_policy_version": "2.2",
+  "role_policy_version": "1.1",
+  "role_contract_hash": "d2994789dc83b2c8a6b92201782ea9f3e5528a3a9d725c863c22efb6356e570e",
+  "context_packet": ".terminus/reviews/jenkins-home-insights-plugin/44fca100/jenkins-home-insights-plugin-44fca100-spec-test-contract-14835af6d2.packet.json",
+  "verdict": "PASS",
+  "confidence": "HIGH",
+  "evidence_status": "SUFFICIENT",
+  "summary": "Bidirectional alignment is complete across 34 behavioral probes. Prior round-2 blockers are closed: generate sanitization is asserted via export scanning in test_f2p_deterministic_10000_home_generation, and query metadata subfields/normalization are documented in api-v1.md and graded consistently. Instruction shape, delegated contracts, F2P/P2P boundaries, and reverse-matrix walks show no material phantom tests, untested requirements, or grading-relevant ambiguities. Remaining gaps are advisory only (default 14,536 generate count, HTTP health parity, queue acceptingTasks edge).",
+  "evidence": [
+    {
+      "type": "file",
+      "ref": "jenkins-home-insights-plugin/instruction.md",
+      "observation": "Twenty concise bullets state the engineering work package including generate sanitization bounds, metadata-bearing query views, env path overrides, torn-journal recovery, and unauthorized no-metadata rule."
+    },
+    {
+      "type": "file",
+      "ref": "jenkins-home-insights-plugin/environment/plugin/docs/api-v1.md",
+      "observation": "Documents query/health endpoints, contains filter, cursor null handling, top-level response fields, metadata subfields (principal, sort, direction uppercase ASC/DESC, visible, checkpoint), and forbidden unauthorized responses."
+    },
+    {
+      "type": "file",
+      "ref": "jenkins-home-insights-plugin/environment/plugin/docs/generated-home.md",
+      "observation": "Documents 10,000–20,000 record range, default 14,536 population, deterministic seed variation, and explicit prohibition of credentials, tokens, user content, build logs, and external URLs."
+    },
+    {
+      "type": "test",
+      "ref": "jenkins-home-insights-plugin/tests/test_outputs.py",
+      "observation": "34 behavioral probes including assert_exports_sanitized (lines 257–278, invoked at 393), metadata assertions (908–911), torn-journal restart, env paths, HTTP 403 without result metadata, and full F2P/P2P coverage."
+    },
+    {
+      "type": "run",
+      "ref": "jobs/2026-08-22__16-47-57",
+      "observation": "Harbor oracle reported 34/34 passing at task commit 44fca100 (mean reward 1.000)."
+    },
+    {
+      "type": "run",
+      "ref": "jobs/2026-08-22__16-50-05",
+      "observation": "Harbor NOP run reported reward 0.000 as expected."
+    },
+    {
+      "type": "rule",
+      "ref": ".terminus/agents/QUALITY_AGENT_PROMPTS.md",
+      "observation": "Q4 exhaustive walk completed: forward/reverse matrices, instruction-shape check, delegated-contract walk, F2P/P2P boundaries, output-interface walk, and second omission sweep."
+    }
+  ],
+  "findings": [
+    {
+      "id": "Q4-A01",
+      "severity": "LOW",
+      "status": "OBSERVED",
+      "criterion": "Edge-boundary and default-path coverage completeness",
+      "evidence_refs": [
+        "jenkins-home-insights-plugin/instruction.md:18",
+        "jenkins-home-insights-plugin/environment/plugin/docs/generated-home.md:3",
+        "jenkins-home-insights-plugin/tests/test_outputs.py:357-361"
+      ],
+      "why_it_matters": "Instruction and generated-home document a default generate population of 14,536 records, but volume probes pass explicit --records 10,000. A wrong CLI default would not be caught.",
+      "minimal_remediation": "Optional: invoke generate without --records and assert summary.total within documented bounds/default.",
+      "regression_risk": "Minimal."
+    },
+    {
+      "id": "Q4-A02",
+      "severity": "LOW",
+      "status": "OBSERVED",
+      "criterion": "Transport equivalence completeness",
+      "evidence_refs": [
+        "jenkins-home-insights-plugin/instruction.md:15",
+        "jenkins-home-insights-plugin/tests/test_outputs.py"
+      ],
+      "why_it_matters": "Query envelope parity is fully tested; HTTP health is only checked for ready during shutdown while CLI health fields are asserted separately without cross-transport comparison.",
+      "minimal_remediation": "Optional: compare CLI health JSON to GET /operational-insights/api/v1/health after reconcile on a fixed fixture.",
+      "regression_risk": "Minimal."
+    },
+    {
+      "id": "Q4-A03",
+      "severity": "LOW",
+      "status": "OBSERVED",
+      "criterion": "Queue diagnosis sub-semantics coverage",
+      "evidence_refs": [
+        "jenkins-home-insights-plugin/instruction.md:10",
+        "jenkins-home-insights-plugin/environment/plugin/docs/queue-diagnosis.md"
+      ],
+      "why_it_matters": "No probe isolates online acceptingTasks=false nodes from offline or fully busy nodes.",
+      "minimal_remediation": "Optional: add a queue fixture with acceptingTasks=false node and assert demand/capacity behavior.",
+      "regression_risk": "Minimal."
+    }
+  ],
+  "missing_evidence": [],
+  "change_scope": [
+    "jenkins-home-insights-plugin/tests/test_outputs.py",
+    "jenkins-home-insights-plugin/environment/plugin/docs/api-v1.md"
+  ],
+  "do_not_change": [
+    "jenkins-home-insights-plugin/instruction.md",
+    "jenkins-home-insights-plugin/solution/"
+  ],
+  "next_gate": "PRE_LLMAJ",
+  "role_output": {
+    "REQUIREMENT_TEST_MATRIX": [
+      {"id": "R01", "source": "instruction.md:1-3", "coverage": "complete", "tests": ["test_f2p_build_core_and_full_scan_publish_all_families", "test_p2p_task_package_preserves_solver_visible_shape"]},
+      {"id": "R02", "source": "instruction.md:4", "coverage": "complete", "tests": ["test_f2p_build_core_and_full_scan_publish_all_families", "test_f2p_malformed_rows_are_isolated_per_record", "test_f2p_fingerprint_capability_distinguishes_unsupported_from_empty"]},
+      {"id": "R03", "source": "instruction.md:5", "coverage": "complete", "tests": ["test_f2p_repeated_full_scans_have_stable_content_digest", "test_f2p_full_and_incremental_paths_converge", "test_f2p_nested_identity_and_rename_are_stable", "test_f2p_event_exact_retry_is_idempotent_and_conflict_rejected", "test_f2p_delete_fences_stale_retried_upsert"]},
+      {"id": "R04", "source": "instruction.md:6", "coverage": "complete", "tests": ["test_f2p_malformed_rows_are_isolated_per_record", "test_f2p_fingerprint_capability_distinguishes_unsupported_from_empty", "test_f2p_lineage_missing_endpoints_deduplicates_and_reports_cycles"]},
+      {"id": "R05", "source": "instruction.md:7", "coverage": "complete", "tests": ["test_f2p_publication_verifies_files_before_current"]},
+      {"id": "R06", "source": "instruction.md:8", "coverage": "complete", "tests": ["test_f2p_checkpoint_restart_replays_unpublished_tail_once", "test_f2p_corrupt_newest_generation_falls_back_to_verified_state"]},
+      {"id": "R07", "source": "instruction.md:9", "coverage": "complete", "tests": ["test_f2p_legacy_generation_migrates_without_mutating_source", "test_f2p_compaction_preserves_current_fallback_and_leases", "test_f2p_referenced_deleted_endpoints_remain_as_tombstones"]},
+      {"id": "R08", "source": "instruction.md:10", "coverage": "partial", "gap": "task-acceptance/refusing-task capacity not isolated; core label/exclusive/offline/cancelled/pressure classes covered.", "tests": ["test_f2p_queue_label_conjunction_and_exclusive_mode", "test_f2p_queue_offline_no_executor_and_cancelled_semantics", "test_f2p_queue_pressure_handles_empty_and_zero_capacity_demand"]},
+      {"id": "R09", "source": "instruction.md:11", "coverage": "complete", "tests": ["test_f2p_build_running_missing_and_malformed_semantics", "test_f2p_lineage_missing_endpoints_deduplicates_and_reports_cycles", "test_f2p_referenced_deleted_endpoints_remain_as_tombstones"]},
+      {"id": "R10", "source": "instruction.md:12", "coverage": "complete", "tests": ["test_f2p_offline_plugin_inventory_classifies_all_states"]},
+      {"id": "R11", "source": "instruction.md:13", "coverage": "complete", "tests": ["test_f2p_acl_projection_precedes_rows_totals_and_facets", "test_f2p_acl_projection_precedes_lineage_and_summary_aggregation", "test_f2p_acl_projection_precedes_cursor_pagination", "test_f2p_cli_and_http_use_equivalent_shared_query_semantics"]},
+      {"id": "R12", "source": "instruction.md:14-15", "coverage": "complete", "tests": ["test_f2p_stable_sorting_cursors_and_filter_errors", "test_f2p_cli_and_http_use_equivalent_shared_query_semantics", "test_f2p_repeated_queries_are_byte_deterministic"]},
+      {"id": "R13", "source": "instruction.md:16", "coverage": "complete", "tests": ["test_f2p_readiness_and_supported_empty_home", "test_p2p_invalid_commands_are_rejected_without_generation_damage"]},
+      {"id": "R14", "source": "instruction.md:17", "coverage": "complete", "tests": ["test_f2p_shutdown_fences_publication_and_restart_is_ready", "test_f2p_readiness_and_supported_empty_home"]},
+      {"id": "R15", "source": "instruction.md:18", "coverage": "complete", "tests": ["test_f2p_deterministic_10000_home_generation", "test_f2p_build_core_and_full_scan_publish_all_families"]},
+      {"id": "R16", "source": "instruction.md:19", "coverage": "complete", "tests": ["test_f2p_jenkins_bindings_expose_required_lifecycle_and_adapters", "test_p2p_task_package_preserves_solver_visible_shape"]},
+      {"id": "R17", "source": "instruction.md:20", "coverage": "complete", "tests": ["test_p2p_commands_leave_jenkins_owned_home_read_only", "test_p2p_runtime_has_no_network_requirement"]}
+    ],
+    "PHANTOM_TEST_CONTRACTS": [],
+    "UNTESTED_REQUIREMENTS": [],
+    "AMBIGUITIES": [],
+    "INSTRUCTION_SHAPE": "PASS",
+    "INSTRUCTION_REQUIREMENT_COMPLETENESS": "SUFFICIENT",
+    "DELEGATED_CONTRACT_CHECK": {
+      "architecture.md": {"classification": "LEGITIMATE_TECHNICAL_DOCUMENTATION", "notes": "Pipeline, ownership, and runtime graph."},
+      "state-model.md": {"classification": "LEGITIMATE_TECHNICAL_DOCUMENTATION", "notes": "Canonical record/event/checkpoint semantics."},
+      "api-v1.md": {"classification": "LEGITIMATE_TECHNICAL_DOCUMENTATION", "notes": "Query/health transport contract including metadata subfield schema."},
+      "authorization.md": {"classification": "LEGITIMATE_TECHNICAL_DOCUMENTATION", "notes": "Projection-before-response rules align with ACL probes."},
+      "queue-diagnosis.md": {"classification": "LEGITIMATE_TECHNICAL_DOCUMENTATION", "notes": "Observational queue semantics."},
+      "lineage.md": {"classification": "LEGITIMATE_TECHNICAL_DOCUMENTATION", "notes": "Graph/tombstone/authorization rules for lineage view."},
+      "storage.md": {"classification": "LEGITIMATE_TECHNICAL_DOCUMENTATION", "notes": "Generation layout, torn journal, publication, retention."},
+      "operations.md": {"classification": "LEGITIMATE_TECHNICAL_DOCUMENTATION", "notes": "CLI commands, env vars, shutdown/ready semantics."},
+      "generated-home.md": {"classification": "LEGITIMATE_TECHNICAL_DOCUMENTATION", "notes": "Generator bounds and sanitization rules; sanitization probed via assert_exports_sanitized."}
+    },
+    "INSTRUCTION_DOC_BOUNDARY": "CLEAN",
+    "IMPLEMENTATION_DIAGNOSIS_LEAKAGE": "NONE",
+    "CURRENT_STATE_EVIDENCE": "NOT_APPLICABLE",
+    "SPEC_DUMP_RISK": "LOW",
+    "BIDIRECTIONAL_ALIGNMENT": "PASS",
+    "BLOCKING_FINDING_IDS": [],
+    "ADVISORY_FINDING_IDS": ["Q4-A01", "Q4-A02", "Q4-A03"],
+    "EXHAUSTIVENESS": {
+      "REQUIREMENTS_ENUMERATED": "COMPLETE",
+      "VERIFIER_BEHAVIORS_ENUMERATED": "COMPLETE",
+      "FORWARD_MATRIX_COMPLETE": "YES",
+      "REVERSE_MATRIX_COMPLETE": "YES",
+      "INSTRUCTION_COMPLETENESS_COMPLETE": "YES",
+      "DELEGATED_CONTRACTS_COMPLETE": "YES",
+      "PROMPT_EXTENSION_WALK_COMPLETE": "YES",
+      "P2P_BOUNDARIES_COMPLETE": "YES",
+      "F2P_BOUNDARIES_COMPLETE": "YES",
+      "OUTPUT_INTERFACES_COMPLETE": "YES",
+      "SECOND_PASS_OMISSION_SWEEP": "PASS",
+      "UNINSPECTED_SCOPE": []
+    }
+  }
+}

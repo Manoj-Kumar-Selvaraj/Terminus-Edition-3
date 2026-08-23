@@ -1,7 +1,7 @@
 {
   "catalog_sha256": "e205f858f8391fd88d3e26665d2f585a69cd691321b9275644e631bb949f0942",
   "dataset_registry_sha256": "05ece08c27414d265a2a238928e4c664295434620ffe957c8e88b5050c54645a",
-  "domain": "aws ec2 artifact acquisition package container dependency supply chain security policy scanner cache permit audit recovery go",
+  "domain": "ec2 artifact policy enforcement Make package, container, and build-dependency acquisition converge on one host-local Go admission boundary that enforces artifact identity, source trust, current vulnerability evidence, scoped exceptions, permit integrity, and durable decision state. WP1_UNIFIED_EC2_ARTIFACT_ADMISSION Strong: concise production incident/change request with detailed behavior delegated to solver-visible engineering contracts. EC2 platform security engineer preserve artifactguard evaluate and verify-permit interfaces and documented exit behavior keep cache and exceptions operational rather than disabling them do not rewrite supplied policy, scanner, or exception fixtures preserve valid existing audit history and healthy cached evidence retain stateless permit-verification compatibility while making stateful verification durable and single-use Every acquisition surface applies the same prerequisite trust and immutable-identity rules, uses only current artifact/policy/scanner evidence, limits exceptions to the exact vulnerability scope, issues and consumes exact-scope keyed permits safely, and commits restart-safe ALLOW/DENY history before completion. manager normalization and source trust immutable artifact identity scanner availability and evidence freshness cache keying and revision/TTL validation vulnerability threshold and exception scope secret-keyed permit binding and expiry single-use replay protection under restart/concurrency durable journal, projection, corruption handling, and idempotency public CLI and exit-code compatibility ArtifactGuard routes evaluate and verify-permit through normalization, policy, evidence/cache, exception, permit, audit, replay and durable state subsystems. Stable CLI and exit codes; optional --state enables durable single-use permit verification across restart and concurrency. Trusted source and immutable digest precede exceptions; scanner/cache evidence is revision-bound and fresh; vulnerability exceptions are exact-scope; permits are secret-keyed and exact-scope; ALLOW and DENY are durable. Audit journal is authoritative; retry is idempotent; derived projection follows durable journal; complete trailing record remains valid while durable malformed history fails closed. Repair the reproduced inconsistent EC2 acquisition decisions so package, container and dependency acquisition share one policy boundary while preserving the public CLI, fixtures, cache/exceptions, durable history, keyed exact-scope permits and restart-safe single-use semantics. ec2-artifact-policy-enforcement",
   "domain_profile": "security",
   "domain_profiles": [
     "security",
@@ -12,10 +12,10 @@
     "status": "PASS",
     "writer_reviewer_seed_overlap": []
   },
-  "pair_id": "hwpair-bd493f630458de8a9de6",
+  "pair_id": "hwpair-b55ec80bafd2e2bc2c2b",
   "registry_sha256": "05ece08c27414d265a2a238928e4c664295434620ffe957c8e88b5050c54645a",
   "reviewer": {
-    "calibration_id": "hwcal-reviewer-6d5f51f467994f76398d",
+    "calibration_id": "hwcal-reviewer-f555686e60b418931e45",
     "catalog_sha256": "e205f858f8391fd88d3e26665d2f585a69cd691321b9275644e631bb949f0942",
     "dataset_weights": {
       "code-review-bench-human-annotations": 0.05,
@@ -35,7 +35,7 @@
       "Use hard positives and hard negatives to avoid superficial banned-style heuristics.",
       "Treat Human-Like-DPO as anti-template contrast, never the target voice."
     ],
-    "domain": "aws ec2 artifact acquisition package container dependency supply chain security policy scanner cache permit audit recovery go",
+    "domain": "ec2 artifact policy enforcement Make package, container, and build-dependency acquisition converge on one host-local Go admission boundary that enforces artifact identity, source trust, current vulnerability evidence, scoped exceptions, permit integrity, and durable decision state. WP1_UNIFIED_EC2_ARTIFACT_ADMISSION Strong: concise production incident/change request with detailed behavior delegated to solver-visible engineering contracts. EC2 platform security engineer preserve artifactguard evaluate and verify-permit interfaces and documented exit behavior keep cache and exceptions operational rather than disabling them do not rewrite supplied policy, scanner, or exception fixtures preserve valid existing audit history and healthy cached evidence retain stateless permit-verification compatibility while making stateful verification durable and single-use Every acquisition surface applies the same prerequisite trust and immutable-identity rules, uses only current artifact/policy/scanner evidence, limits exceptions to the exact vulnerability scope, issues and consumes exact-scope keyed permits safely, and commits restart-safe ALLOW/DENY history before completion. manager normalization and source trust immutable artifact identity scanner availability and evidence freshness cache keying and revision/TTL validation vulnerability threshold and exception scope secret-keyed permit binding and expiry single-use replay protection under restart/concurrency durable journal, projection, corruption handling, and idempotency public CLI and exit-code compatibility ArtifactGuard routes evaluate and verify-permit through normalization, policy, evidence/cache, exception, permit, audit, replay and durable state subsystems. Stable CLI and exit codes; optional --state enables durable single-use permit verification across restart and concurrency. Trusted source and immutable digest precede exceptions; scanner/cache evidence is revision-bound and fresh; vulnerability exceptions are exact-scope; permits are secret-keyed and exact-scope; ALLOW and DENY are durable. Audit journal is authoritative; retry is idempotent; derived projection follows durable journal; complete trailing record remains valid while durable malformed history fails closed. Repair the reproduced inconsistent EC2 acquisition decisions so package, container and dependency acquisition share one policy boundary while preserving the public CLI, fixtures, cache/exceptions, durable history, keyed exact-scope permits and restart-safe single-use semantics. ec2-artifact-policy-enforcement",
     "domain_profile": {
       "artifact_types": [
         "security_change",
@@ -179,11 +179,11 @@
       }
     },
     "local_seed_sample_ids": [
-      "HC-022",
       "HC-016",
       "HC-005",
       "HC-027",
       "HC-025",
+      "HC-024",
       "HC-028",
       "CP-003",
       "CP-001",
@@ -196,21 +196,6 @@
       "HN-001"
     ],
     "local_seed_samples": [
-      {
-        "domains": [
-          "alertmanager",
-          "validation",
-          "cli"
-        ],
-        "id": "HC-022",
-        "kind": "human_issue",
-        "signals": [
-          "executable_example",
-          "exact_visible_behavior",
-          "minimal_narration"
-        ],
-        "source_dataset": "terminus-human-engineering"
-      },
       {
         "domains": [
           "grafana",
@@ -268,6 +253,21 @@
           "evidence_hypothesis_separation",
           "quantified_symptom",
           "exploratory_alternatives"
+        ],
+        "source_dataset": "terminus-human-engineering"
+      },
+      {
+        "domains": [
+          "etcd",
+          "kubernetes",
+          "recovery"
+        ],
+        "id": "HC-024",
+        "kind": "human_issue",
+        "signals": [
+          "workflow_reproduction",
+          "downstream_symptom",
+          "state_transition_context"
         ],
         "source_dataset": "terminus-human-engineering"
       },
@@ -407,12 +407,12 @@
     "schema_version": "1.2",
     "task_id": "ec2-artifact-policy-enforcement"
   },
-  "reviewer_calibration_id": "hwcal-reviewer-6d5f51f467994f76398d",
+  "reviewer_calibration_id": "hwcal-reviewer-f555686e60b418931e45",
   "schema_version": "1.2",
   "seed_catalog_sha256": "e205f858f8391fd88d3e26665d2f585a69cd691321b9275644e631bb949f0942",
   "task_id": "ec2-artifact-policy-enforcement",
   "writer": {
-    "calibration_id": "hwcal-writer-62345b735ac3ae92bb45",
+    "calibration_id": "hwcal-writer-13e6dab10a54ec2dd3e3",
     "catalog_sha256": "e205f858f8391fd88d3e26665d2f585a69cd691321b9275644e631bb949f0942",
     "dataset_weights": {
       "h4-stack-exchange-preferences": 0.5,
@@ -429,7 +429,7 @@
       "Draft from the approved solver-visible requirement contract only after calibration is complete.",
       "Use the writer pack only; do not read reviewer-only samples or verdicts."
     ],
-    "domain": "aws ec2 artifact acquisition package container dependency supply chain security policy scanner cache permit audit recovery go",
+    "domain": "ec2 artifact policy enforcement Make package, container, and build-dependency acquisition converge on one host-local Go admission boundary that enforces artifact identity, source trust, current vulnerability evidence, scoped exceptions, permit integrity, and durable decision state. WP1_UNIFIED_EC2_ARTIFACT_ADMISSION Strong: concise production incident/change request with detailed behavior delegated to solver-visible engineering contracts. EC2 platform security engineer preserve artifactguard evaluate and verify-permit interfaces and documented exit behavior keep cache and exceptions operational rather than disabling them do not rewrite supplied policy, scanner, or exception fixtures preserve valid existing audit history and healthy cached evidence retain stateless permit-verification compatibility while making stateful verification durable and single-use Every acquisition surface applies the same prerequisite trust and immutable-identity rules, uses only current artifact/policy/scanner evidence, limits exceptions to the exact vulnerability scope, issues and consumes exact-scope keyed permits safely, and commits restart-safe ALLOW/DENY history before completion. manager normalization and source trust immutable artifact identity scanner availability and evidence freshness cache keying and revision/TTL validation vulnerability threshold and exception scope secret-keyed permit binding and expiry single-use replay protection under restart/concurrency durable journal, projection, corruption handling, and idempotency public CLI and exit-code compatibility ArtifactGuard routes evaluate and verify-permit through normalization, policy, evidence/cache, exception, permit, audit, replay and durable state subsystems. Stable CLI and exit codes; optional --state enables durable single-use permit verification across restart and concurrency. Trusted source and immutable digest precede exceptions; scanner/cache evidence is revision-bound and fresh; vulnerability exceptions are exact-scope; permits are secret-keyed and exact-scope; ALLOW and DENY are durable. Audit journal is authoritative; retry is idempotent; derived projection follows durable journal; complete trailing record remains valid while durable malformed history fails closed. Repair the reproduced inconsistent EC2 acquisition decisions so package, container and dependency acquisition share one policy boundary while preserving the public CLI, fixtures, cache/exceptions, durable history, keyed exact-scope permits and restart-safe single-use semantics. ec2-artifact-policy-enforcement",
     "domain_profile": {
       "artifact_types": [
         "security_change",
@@ -563,10 +563,10 @@
     "local_seed_sample_ids": [
       "HC-001",
       "HC-030",
-      "HC-024",
-      "HC-010",
-      "HC-021",
+      "HC-022",
       "HC-008",
+      "HC-020",
+      "HC-009",
       "CP-002",
       "CP-006",
       "AT-001"
@@ -604,46 +604,16 @@
       },
       {
         "domains": [
-          "etcd",
-          "kubernetes",
-          "recovery"
-        ],
-        "id": "HC-024",
-        "kind": "human_issue",
-        "signals": [
-          "workflow_reproduction",
-          "downstream_symptom",
-          "state_transition_context"
-        ],
-        "source_dataset": "terminus-human-engineering"
-      },
-      {
-        "domains": [
-          "docker",
-          "containers",
-          "ssh"
-        ],
-        "id": "HC-010",
-        "kind": "human_issue",
-        "signals": [
-          "comparative_reproduction",
-          "small_contrast_set",
-          "concrete_expectation"
-        ],
-        "source_dataset": "terminus-human-engineering"
-      },
-      {
-        "domains": [
-          "http",
           "alertmanager",
-          "protocol"
+          "validation",
+          "cli"
         ],
-        "id": "HC-021",
+        "id": "HC-022",
         "kind": "human_issue",
         "signals": [
-          "protocol_reference",
-          "one_expected_semantic",
-          "compact_context"
+          "executable_example",
+          "exact_visible_behavior",
+          "minimal_narration"
         ],
         "source_dataset": "terminus-human-engineering"
       },
@@ -659,6 +629,36 @@
           "consequence_first",
           "contract_reference",
           "exact_reproduction"
+        ],
+        "source_dataset": "terminus-human-engineering"
+      },
+      {
+        "domains": [
+          "prometheus",
+          "alertmanager",
+          "concurrency"
+        ],
+        "id": "HC-020",
+        "kind": "human_issue",
+        "signals": [
+          "stateful_reproduction",
+          "concrete_consequence",
+          "implementation_neutral"
+        ],
+        "source_dataset": "terminus-human-engineering"
+      },
+      {
+        "domains": [
+          "kubernetes",
+          "platform",
+          "diagnostics"
+        ],
+        "id": "HC-009",
+        "kind": "human_issue",
+        "signals": [
+          "concise_narrative",
+          "raw_evidence",
+          "surprising_invariant"
         ],
         "source_dataset": "terminus-human-engineering"
       },
@@ -706,5 +706,5 @@
     "schema_version": "1.2",
     "task_id": "ec2-artifact-policy-enforcement"
   },
-  "writer_calibration_id": "hwcal-writer-62345b735ac3ae92bb45"
+  "writer_calibration_id": "hwcal-writer-13e6dab10a54ec2dd3e3"
 }

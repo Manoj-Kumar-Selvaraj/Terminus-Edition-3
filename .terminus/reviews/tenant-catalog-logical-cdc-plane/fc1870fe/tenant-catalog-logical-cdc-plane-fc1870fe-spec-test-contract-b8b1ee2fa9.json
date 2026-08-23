@@ -1,0 +1,98 @@
+{
+  "schema_version": "3.0",
+  "role": "Spec-Test Contract Reviewer",
+  "review_id": "tenant-catalog-logical-cdc-plane-fc1870fe-spec-test-contract-b8b1ee2fa9",
+  "task": "tenant-catalog-logical-cdc-plane",
+  "task_commit": "fc1870fe2645ed467d09ec25760f931dbad1e7ae",
+  "control_plane_commit": "1983fd239a725477f4821888e50fad413eeb9c53",
+  "protocol_policy_version": "2.2",
+  "prompt_policy_version": "2.2",
+  "role_policy_version": "1.1",
+  "role_contract_hash": "d2994789dc83b2c8a6b92201782ea9f3e5528a3a9d725c863c22efb6356e570e",
+  "context_packet": ".terminus/reviews/tenant-catalog-logical-cdc-plane/fc1870fe/tenant-catalog-logical-cdc-plane-fc1870fe-spec-test-contract-b8b1ee2fa9.packet.json",
+  "verdict": "PASS",
+  "confidence": "HIGH",
+  "evidence_status": "SUFFICIENT",
+  "summary": "Every material solver-visible obligation in instruction.md and catalog-contract.md maps to a meaningful catalogctl/state assertion, and all 37 verifier behaviors (28 F2P / 9 P2P) are discoverable from that contract. Recover committed-redo after checkpoint is now behaviorally graded. Residual items (unused reject codes, offer_code direct parse, catalog.json knob mutation) remain advisory.",
+  "evidence": [
+    {
+      "type": "file",
+      "ref": "tenant-catalog-logical-cdc-plane/instruction.md",
+      "observation": "Short paragraph plus bullets: Go catalog plane, catalog-contract binding, catalogctl CLI, usage-before-mutation, snapshot/commit/WAL CDC/apply/recover/index/inspect/warehouse semantics."
+    },
+    {
+      "type": "file",
+      "ref": "tenant-catalog-logical-cdc-plane/environment/catalog/docs/catalog-contract.md",
+      "observation": "Binding protocol for visibility, constraints, indexes, WAL CDC, replica apply fences, recover redo, CLI usage, and health/apply-report schemas."
+    },
+    {
+      "type": "test",
+      "ref": "tenant-catalog-logical-cdc-plane/tests/test_outputs.py",
+      "observation": "37 pytest behaviors classified 28 F2P / 9 P2P via private test map. Drives catalogctl under CATALOG_ROOT; parses native JSONL/JSON/SQLite. No callable end-to-end solver."
+    },
+    {
+      "type": "test",
+      "ref": "tenant-catalog-logical-cdc-plane/tests/test_outputs.py::test_f2p_recover_redoes_committed_after_checkpoint",
+      "observation": "Closes prior vacuous committed-redo gap: commit hidden sku, delete heap row, recover must restore row and sku_code index entry."
+    },
+    {
+      "type": "run",
+      "ref": "jobs/2026-08-22__16-36-50",
+      "observation": "Harbor oracle 37/37 reward 1.0 at fc1870fe."
+    },
+    {
+      "type": "run",
+      "ref": "jobs/2026-08-22__16-42-47",
+      "observation": "Harbor NOP reward 0.0; 26 F2P fail / 11 P2P pass."
+    },
+    {
+      "type": "file",
+      "ref": ".terminus/designs/tenant-catalog-logical-cdc-plane-test-map.json",
+      "observation": "Classification-only map: 28 F2P + 9 P2P against R_CLI through R_CONTRACT."
+    }
+  ],
+  "findings": [
+    {
+      "id": "Q4-A01",
+      "severity": "LOW",
+      "status": "OBSERVED",
+      "criterion": "Unused reject codes and delete CDC apply not individually mapped.",
+      "evidence_refs": [
+        "tenant-catalog-logical-cdc-plane/environment/catalog/docs/catalog-contract.md"
+      ],
+      "why_it_matters": "Same-class constraint and delete semantics are discoverable but not every code has a dedicated probe.",
+      "minimal_remediation": "Optional holdout fixtures.",
+      "regression_risk": "Low"
+    },
+    {
+      "id": "Q4-A02",
+      "severity": "LOW",
+      "status": "OBSERVED",
+      "criterion": "offer_code index rebuild inferred via health.index_ok only.",
+      "evidence_refs": [
+        "tenant-catalog-logical-cdc-plane/tests/test_outputs.py"
+      ],
+      "why_it_matters": "sku_code NUL key is directly asserted; offer_code map is indirect.",
+      "minimal_remediation": "Optional offer_code key assertion.",
+      "regression_risk": "Low"
+    }
+  ],
+  "missing_evidence": [],
+  "change_scope": [
+    "Cold Q4 at fc1870fe after verifier strengthening in 57b8142."
+  ],
+  "do_not_change": [
+    "Usage-before-mutation CLI contract",
+    "Recover redo and decode/apply separation requirements",
+    "Constraint fail-closed and warehouse preservation"
+  ],
+  "next_gate": "Q6 Production Logic Auditor",
+  "role_output": {
+    "REQUIREMENT_TEST_MATRIX": "COMPLETE",
+    "BLOCKING_FINDING_IDS": [],
+    "F2P_OWNERSHIP": "28 cases mapped",
+    "P2P_OWNERSHIP": "9 cases mapped",
+    "INSTRUCTION_SHAPE": "PASS",
+    "DOCS_BOUNDARY": "PASS"
+  }
+}

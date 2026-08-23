@@ -194,7 +194,6 @@ def changed_scan(scans, digest, *, status="ok", db_revision=None, vulnerable=Non
     if db_revision is not None:
         record["db_revision"] = db_revision
     if vulnerable is not None:
-        policy = base_policy()
         if vulnerable:
             template_digest = find_digest(vulnerable=True)
             record["vulnerabilities"] = copy.deepcopy(base_scans()["records"][template_digest]["vulnerabilities"])

@@ -1,0 +1,222 @@
+{
+  "authority": {
+    "control_plane_commit": "df7ef7569e2947b9f0bf7cf89ed4dec6c2a5a1fe",
+    "policy_versions": {},
+    "task_commit": "9663e4da67ab20e6bd66b942ac54b57667408dd8",
+    "task_id": "edge-router-runtime"
+  },
+  "disposition": "ROUTE",
+  "evidence_refs": [
+    {
+      "content_hash": "sha256:f4f9078be077fb2708fd3590ae53f3263626c50e68f904dc466641a8f605add1",
+      "kind": "COMMIT",
+      "ref": "commit:9663e4da67ab20e6bd66b942ac54b57667408dd8"
+    },
+    {
+      "content_hash": "sha256:1e950e0ea5f6ce34ff813202df633c1eea7a948d3eaaa7fed4c8ebad3524e380",
+      "kind": "COMMIT",
+      "ref": "commit:df7ef7569e2947b9f0bf7cf89ed4dec6c2a5a1fe"
+    },
+    {
+      "content_hash": "sha256:677187adefff084fadebae8b31eb9c31b0cf89749345dbd421b8806268a06f06",
+      "kind": "RUN",
+      "ref": "run:github-actions:32408251939#sha256:677187adefff084fadebae8b31eb9c31b0cf89749345dbd421b8806268a06f06"
+    }
+  ],
+  "invocation_id": "inv_ee552506223f69a58ce858f119c364c65d5b1b636d0eb7e73c32c168bff48a79",
+  "invocation_snapshot": {
+    "acceptance_predicates": {
+      "PASS": [
+        {
+          "op": "eq",
+          "path": "ORACLE_REWARD",
+          "value": 1
+        },
+        {
+          "op": "eq",
+          "path": "NOP_REWARD",
+          "value": 0
+        },
+        {
+          "op": "nonempty",
+          "path": "F2P_EMPIRICAL_MATRIX"
+        },
+        {
+          "op": "nonempty",
+          "path": "P2P_EMPIRICAL_MATRIX"
+        }
+      ]
+    },
+    "authority": {
+      "control_plane_commit": "df7ef7569e2947b9f0bf7cf89ed4dec6c2a5a1fe",
+      "policy_versions": {},
+      "task_commit": "9663e4da67ab20e6bd66b942ac54b57667408dd8",
+      "task_id": "edge-router-runtime"
+    },
+    "evidence": {
+      "authorized_evidence_classes": [
+        "CI_RUNTIME_EVIDENCE",
+        "CONTROL_PLANE_POLICY",
+        "SOLUTION_ORACLE",
+        "SOLVER_VISIBLE_TASK",
+        "VERIFIER_PRIVATE"
+      ],
+      "evidence_required": [
+        "Oracle reward 1",
+        "NOP reward 0",
+        "every F2P starter/NOP-fail and Oracle-pass",
+        "intended P2P preservation"
+      ],
+      "excluded_evidence_classes": [
+        "CURRENT_REVIEW_PACKET",
+        "DURABLE_SESSION_STATE",
+        "FINAL_PACKAGE_EVIDENCE",
+        "MODEL_TRIAL_EVIDENCE",
+        "PRIOR_REVIEW_RESULTS",
+        "PRIVATE_CREATION_DESIGN",
+        "PUBLIC_REFERENCE"
+      ],
+      "mandatory_exact_reads": [
+        ".terminus/agents/CREATION_PIPELINE.md",
+        ".terminus/agents/QUALITY_AGENT_REGISTRY.md",
+        ".terminus/agents/QUALITY_AGENT_PROMPTS.md"
+      ],
+      "retrieval_mode": "EXACT_ONLY"
+    },
+    "ignored_input_count": 0,
+    "inputs": {
+      "optional": {},
+      "required": {
+        "CURRENT_TASK_COMMIT": {
+          "evidence": "current exact task snapshot for hosted deterministic validation",
+          "status": "CURRENT",
+          "task_commit": "9663e4da67ab20e6bd66b942ac54b57667408dd8",
+          "task_id": "edge-router-runtime"
+        },
+        "ORACLE": {
+          "evidence": "current reference solution bound to exact task snapshot; empirical scoring owned by this hosted run",
+          "status": "CURRENT",
+          "task_commit": "9663e4da67ab20e6bd66b942ac54b57667408dd8",
+          "task_id": "edge-router-runtime"
+        },
+        "STARTER_NOP_STATE": {
+          "evidence": "current starter/NOP state bound to exact task snapshot; empirical scoring owned by this hosted run",
+          "status": "CURRENT",
+          "task_commit": "9663e4da67ab20e6bd66b942ac54b57667408dd8",
+          "task_id": "edge-router-runtime"
+        },
+        "VERIFIER": {
+          "F2P_COUNT": 28,
+          "P2P_COUNT": 6,
+          "entrypoint": "edge-router-runtime/tests/test.sh"
+        }
+      }
+    },
+    "invocation_id": "inv_ee552506223f69a58ce858f119c364c65d5b1b636d0eb7e73c32c168bff48a79",
+    "learning": {
+      "context_hash": "sha256:bb84a513aa2b6e4374d691759c4a6edf94169f479f4611e9091643b9f279ccfc",
+      "lessons": [],
+      "mode": "GENERALIZED_LESSONS_PLUS_OWNED_REMEDIATIONS",
+      "raw_feedback_exposed": false,
+      "raw_historical_findings_exposed": false,
+      "registry_heads": {
+        "feedback": "GENESIS",
+        "findings": "GENESIS",
+        "lessons": "GENESIS",
+        "patterns": "GENESIS",
+        "remediations": "GENESIS"
+      },
+      "remediations": []
+    },
+    "missing_required_inputs": [],
+    "output_contract": {
+      "allowed_status_values": [
+        "PASS",
+        "FAIL",
+        "BLOCKED"
+      ],
+      "deterministic_validators": [
+        "task verifier execution",
+        "Oracle/NOP matrix"
+      ],
+      "optional_fields": [
+        "FAILURE_CLASS",
+        "FIRST_MEANINGFUL_ERROR"
+      ],
+      "persisted_artifacts": [
+        "run/job/artifact evidence references"
+      ],
+      "required_fields": [
+        "ORACLE_REWARD",
+        "NOP_REWARD",
+        "F2P_EMPIRICAL_MATRIX",
+        "P2P_EMPIRICAL_MATRIX"
+      ],
+      "semantic_reviewers": []
+    },
+    "readiness": "READY",
+    "retrieval": {
+      "query": null,
+      "retrieved_chars": 0,
+      "retrieved_context": [],
+      "status": "NOT_REQUESTED"
+    },
+    "routing": {
+      "failure_routes": {
+        "RUNTIME_OR_ORACLE_FAILURE": "Q5 Oracle & Runtime Repair Specialist",
+        "VERIFIER_CONTRACT_FAILURE": "Q2/Q3/Verifier Author as evidence indicates"
+      },
+      "stale_on": [
+        "task commit change",
+        "solution change",
+        "verifier change",
+        "runtime dependency change"
+      ],
+      "success_transition": "FROZEN_CANDIDATE"
+    },
+    "schema_version": "1.0",
+    "stage": {
+      "lifecycle": "creation",
+      "owner": "Creation Controller",
+      "role_class": "CONTROLLER",
+      "role_id": "CREATION_CONTROLLER",
+      "stage_id": "DETERMINISTIC_VALIDATION"
+    }
+  },
+  "outputs": {
+    "FAILURE_CLASS": "VERIFIER_EMPIRICAL_CLASSIFICATION_FAILURE",
+    "FIRST_MEANINGFUL_ERROR": "test_f2p_stale_revision_cannot_publish: class=F2P nop=passed expected=failed"
+  },
+  "record_id": "rec_3d61f74a37be1a6cef79f89e9822fce32e01a3b1816871164fbe5c78221e94d9",
+  "role_id": "CREATION_CONTROLLER",
+  "route_key": "VERIFIER_CONTRACT_FAILURE",
+  "schema_version": "1.0",
+  "stage_id": "DETERMINISTIC_VALIDATION",
+  "status": "FAIL",
+  "task_lineage": {
+    "input_task_commit": "9663e4da67ab20e6bd66b942ac54b57667408dd8",
+    "output_task_commit": "9663e4da67ab20e6bd66b942ac54b57667408dd8",
+    "task_changed": false
+  },
+  "transition": {
+    "action": "ROUTE",
+    "requires_state_validation": false,
+    "route_instruction": "Q2/Q3/Verifier Author as evidence indicates",
+    "route_key": "VERIFIER_CONTRACT_FAILURE",
+    "target": null,
+    "target_kind": "ROUTE"
+  },
+  "validation": {
+    "acceptance_predicates_satisfied": true,
+    "evidence_binding_satisfied": true,
+    "evidence_refs_count": 3,
+    "invocation_identity_valid": true,
+    "invocation_policy_valid": true,
+    "output_keys_valid": true,
+    "required_outputs_satisfied": false,
+    "retrieval_context_authorized": true,
+    "status_legal": true,
+    "task_commit_change_authorized": true,
+    "task_lineage_valid": true
+  }
+}

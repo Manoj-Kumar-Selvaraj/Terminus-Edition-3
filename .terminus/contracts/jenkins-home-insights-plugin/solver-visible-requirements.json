@@ -1,0 +1,54 @@
+{
+  "contract_version": "1.0",
+  "task_id": "jenkins-home-insights-plugin",
+  "requirement_contract_hash": "sha256:61059d67df120976e698fd5487dfcfdd06d99d7ef0d9a7ed688c09d960fd6138",
+  "engineering_objective": "Complete a production Java Jenkins plugin that derives deterministic, restart-safe operational insights from a realistic local Jenkins home.",
+  "affected_system_location": "/app/plugin",
+  "required_end_state": "Full and incremental ingestion converge into atomically published, recoverable, retention-aware, permission-safe generations exposed consistently through CLI and HTTP without mutating Jenkins-owned state or requiring runtime network access.",
+  "functional_requirements": [
+    "Reconcile nested jobs, builds, queue items, nodes, fingerprints, plugin metadata, capabilities, and source errors into canonical records.",
+    "Make full and incremental reconciliation deterministic, idempotent, deletion-fenced, and convergent.",
+    "Isolate malformed records and explicitly represent unsupported source capabilities.",
+    "Publish and recover immutable checksummed generations with bounded checkpoints, replay, migration, retention, leases, and fallback.",
+    "Diagnose queue capacity, compute build health, preserve retention-aware lineage, and classify installed plugin state offline.",
+    "Apply authorization before every correlation, aggregate, total, sort, cursor, page, error, and lineage operation.",
+    "Expose equivalent stable JSON through the documented operator CLI and HTTP endpoints.",
+    "Bound lifecycle work, fence shutdown publication, and report readiness from verified durable state.",
+    "Generate deterministic sanitized Jenkins homes containing 10000-20000 varied records."
+  ],
+  "preservation_requirements": [
+    "Keep Jenkins-owned state read-only.",
+    "Preserve HPI lifecycle, listener, CLI, RootAction, configuration, and standalone operator entrypoints.",
+    "Preserve correct empty-home, partial-state, invalid-command, and offline behavior."
+  ],
+  "compatibility_requirements": [
+    "Support the documented current and legacy generation schemas through copy-on-write migration.",
+    "Keep CLI and HTTP response fields, sorting, filtering, cursor, and null semantics equivalent."
+  ],
+  "safety_requirements": [
+    "Do not leak inaccessible item identities or their contribution to metadata.",
+    "Do not install, update, enable, disable, or otherwise mutate Jenkins plugins.",
+    "Do not emit credentials, tokens, user content, build logs, or external URLs in generated data.",
+    "Do not require runtime network access."
+  ],
+  "referenced_docs": [
+    "/app/plugin/docs/architecture.md",
+    "/app/plugin/docs/state-model.md",
+    "/app/plugin/docs/api-v1.md",
+    "/app/plugin/docs/authorization.md",
+    "/app/plugin/docs/queue-diagnosis.md",
+    "/app/plugin/docs/lineage.md",
+    "/app/plugin/docs/storage.md",
+    "/app/plugin/docs/operations.md",
+    "/app/plugin/docs/generated-home.md"
+  ],
+  "required_outputs": [
+    {
+      "path": "/app/plugin",
+      "notes": "Completed plugin source, build metadata, resources, documentation, and standalone operator interface."
+    }
+  ],
+  "source_task_commit": "80ed2a79d0822f332f2c1e610919272ea2d86706",
+  "control_plane_commit": "df7ef7569e2947b9f0bf7cf89ed4dec6c2a5a1fe",
+  "private_sources_excluded": true
+}

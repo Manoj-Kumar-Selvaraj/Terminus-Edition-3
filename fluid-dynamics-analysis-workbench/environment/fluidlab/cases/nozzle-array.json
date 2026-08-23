@@ -1,0 +1,83 @@
+{
+  "case_id": "nozzle-array",
+  "family": "compressible-manifold",
+  "fluid": {
+    "model": "ideal_gas",
+    "name": "dry-air",
+    "density_kg_m3": 1.18,
+    "dynamic_viscosity_pa_s": 0.0000185,
+    "cp_j_kgk": 1007.0,
+    "thermal_conductivity_w_mk": 0.026,
+    "reference_temperature_k": 288.15,
+    "thermal_expansion_per_k": 0.0,
+    "gamma": 1.4,
+    "gas_constant_j_kgk": 287.05
+  },
+  "geometry": {
+    "hydraulic_diameter_m": 0.031,
+    "flow_area_m2": 0.00075,
+    "wetted_perimeter_m": 0.11,
+    "length_m": 1.4,
+    "roughness_m": 0.000003,
+    "minor_loss_coefficient": 1.8,
+    "heat_exchange_area_m2": 0.9,
+    "characteristic_cell_length_m": 0.035
+  },
+  "mesh": {
+    "cell_count": 244000,
+    "max_aspect_ratio": 18.0,
+    "mean_skewness": 0.27,
+    "max_skewness": 0.79,
+    "min_orthogonality": 0.24,
+    "negative_volume_cells": 0
+  },
+  "solver_monitor": {
+    "iterations": 610,
+    "target_iterations": 650,
+    "time_step_s": 0.00014,
+    "continuity_residual": [0.22, 0.049, 0.011, 0.0038, 0.0014],
+    "momentum_residual": [0.29, 0.071, 0.018, 0.0054, 0.0019],
+    "energy_residual": [0.26, 0.062, 0.014, 0.0042, 0.0015],
+    "mass_imbalance_percent": 0.24,
+    "energy_imbalance_percent": 0.31
+  },
+  "limits": {
+    "max_mach": 0.65,
+    "max_cfl": 0.95,
+    "min_mesh_score": 0.49,
+    "max_pressure_drop_pa": 65000.0,
+    "max_bulk_temperature_k": 370.0,
+    "max_mass_imbalance_percent": 0.4,
+    "max_energy_imbalance_percent": 0.4,
+    "max_final_residual": 0.002
+  },
+  "operating_points": [
+    {
+      "point_id": "cold-flow",
+      "mass_flow_kg_s": 0.18,
+      "inlet_temperature_k": 289.0,
+      "wall_temperature_k": 301.0,
+      "inlet_total_pressure_pa": 178000.0,
+      "outlet_static_pressure_pa": 101325.0,
+      "heat_load_w": 4200.0
+    },
+    {
+      "point_id": "qualified-run",
+      "mass_flow_kg_s": 0.23,
+      "inlet_temperature_k": 294.0,
+      "wall_temperature_k": 312.0,
+      "inlet_total_pressure_pa": 211000.0,
+      "outlet_static_pressure_pa": 101325.0,
+      "heat_load_w": 6400.0
+    },
+    {
+      "point_id": "overdrive",
+      "mass_flow_kg_s": 0.29,
+      "inlet_temperature_k": 298.0,
+      "wall_temperature_k": 323.0,
+      "inlet_total_pressure_pa": 236000.0,
+      "outlet_static_pressure_pa": 101325.0,
+      "heat_load_w": 9100.0
+    }
+  ]
+}

@@ -1,34 +1,29 @@
 {
+  "CACHE_SOURCE_KEYS_USED": [],
+  "CALIBRATION_PAIR_ID": "hwpair-e35124691c5840ed8d7e",
+  "CURRENT_STATE_EVIDENCE_NOTES": [
+    "Current deterministic repository planner generated the pair for this task/domain.",
+    "No Oracle, verifier-private, prior-review, model-trial, or private defect evidence was consumed by A6."
+  ],
   "DATASET_POLICY_VERSION": "1.2",
   "DATASET_REGISTRY_SHA256": "05ece08c27414d265a2a238928e4c664295434620ffe957c8e88b5050c54645a",
-  "SEED_CATALOG_SHA256": "e205f858f8391fd88d3e26665d2f585a69cd691321b9275644e631bb949f0942",
-  "DOMAIN_PROFILES_SHA256": "9612d83a11558d9013a82362c7405c70ddb5158b582cc2f9859c8c672ad6c838",
+  "DEGRADED_COVERAGE_APPROVAL": {
+    "approved": true,
+    "approved_by": "CI_ORCHESTRATOR",
+    "reason": "No approved external human-writing cache was supplied; repository policy permits deterministic local calibration with explicit DEGRADED coverage and no claim of FULL external coverage."
+  },
   "DOMAIN_PROFILE": "data_migration",
-  "DOMAIN_PROFILES": [
-    "data_migration",
-    "sre_incident"
-  ],
-  "CALIBRATION_PAIR_ID": "hwpair-f3576af00818ed036a95",
-  "WRITER_CALIBRATION_ID": "hwcal-writer-27690a97aa791c9125b8",
-  "REVIEWER_CALIBRATION_ID": "hwcal-reviewer-0f99c55e017d7bae2da2",
-  "WRITER_SAMPLE_IDS": [
-    "HC-005",
-    "HC-024",
-    "HC-013",
-    "HC-017",
-    "HC-001",
-    "HC-010",
-    "CP-005",
-    "CP-001",
-    "AT-006"
-  ],
+  "DOMAIN_PROFILES_SHA256": "9612d83a11558d9013a82362c7405c70ddb5158b582cc2f9859c8c672ad6c838",
+  "EXTERNAL_DATASET_COVERAGE": "DEGRADED",
+  "RAW_SOURCE_KEYS_USED_FOR_CONTAMINATION": [],
+  "REVIEWER_CALIBRATION_ID": "hwcal-reviewer-db502e644c00f17aa5be",
   "REVIEWER_SAMPLE_IDS": [
-    "HC-021",
     "HC-016",
     "HC-026",
     "HC-030",
     "HC-007",
     "HC-020",
+    "HC-009",
     "CP-006",
     "CP-003",
     "CP-002",
@@ -39,33 +34,39 @@
     "HN-001",
     "HN-003"
   ],
-  "WRITER_REVIEWER_SAMPLE_OVERLAP": [],
-  "WRITER_EXTERNAL_SOURCE_KEYS": [],
-  "REVIEWER_EXTERNAL_SOURCE_KEYS": [],
-  "EXTERNAL_DATASET_COVERAGE": "DEGRADED",
-  "DEGRADED_COVERAGE_APPROVAL": {
-    "approved": true,
-    "approved_by": "creation-controller",
-    "reason": "No approved external human-writing cache or live external dataset retrieval is available in the current execution environment. Use the deterministic repository seed calibration only; keep external source lists empty and do not claim FULL coverage."
+  "SEED_CATALOG_SHA256": "e205f858f8391fd88d3e26665d2f585a69cd691321b9275644e631bb949f0942",
+  "TASK_WRITING_PROFILE": {
+    "avoid": [
+      "invented incidents or personal claims",
+      "rubric-like hidden-test enumeration",
+      "style-driven omission of lifecycle constraints",
+      "copied distinctive source wording",
+      "task details copied from unrelated calibration domains"
+    ],
+    "must_preserve": [
+      "native embedded databases crash safety",
+      "stonevault-crash-safe-storage",
+      "writer fencing, data-dir precedence, MVCC snapshot/overlay, FCW conflicts, durable contiguous commits, WAL recovery, checkpoint/snapshot integrity, STATS/HEALTH, binary protocol limits, stable native compatibility"
+    ],
+    "structure": [
+      "state the approved engineering objective first",
+      "preserve exact public contracts and hard safety/state constraints",
+      "reference solver-visible technical contracts instead of reproducing hidden verifier rows",
+      "keep implementation-neutral observable outcomes"
+    ],
+    "voice": "direct platform engineering change request"
   },
-  "CACHE_SOURCE_KEYS_USED": [],
-  "RAW_SOURCE_KEYS_USED_FOR_CONTAMINATION": [],
-  "HUMAN_INFORMATION_SELECTION_NOTES": [
-    "Lead with the reliability-hardening work package and observable storage guarantees rather than benchmark framing.",
-    "Keep format and wire-layout detail in the existing technical contract and keep the instruction focused on operator-visible behavior.",
-    "Separate durable-state facts, recovery behavior, transaction semantics, and maintenance behavior instead of presenting a hidden-test inventory."
-  ],
-  "CONSTRAINT_PRESERVATION_NOTES": [
-    "Preserve C++20 plus Rust implementation-language constraints, with Python verifier-only and no Go product implementation.",
-    "Preserve every restart, corruption, snapshot, conflict, boundary, path-precedence, C-ABI, and output-shape requirement from the solver-visible requirement contract.",
-    "Do not weaken inclusive 4096-byte key/prefix and 1048576-byte value boundaries or fail-closed corruption semantics for brevity."
-  ],
-  "ANTI_TEMPLATE_NOTES": [
-    "Avoid generic assistant preambles, rubric-row wording, hidden-test narration, and invented operational incidents.",
-    "Use direct engineering language; formal detail is acceptable where compatibility or safety requires it."
-  ],
-  "DO_NOT_IMITATE": [
-    "slang, emojis, fake personal experience, invented customers, fabricated incidents, deliberate typos, or dataset-specific wording"
-  ],
-  "CONTAMINATION_STATUS": "SKIPPED_NO_RAW_TEXT"
+  "WRITER_CALIBRATION_ID": "hwcal-writer-ab1bd38ee99be79c5e7d",
+  "WRITER_REVIEWER_SAMPLE_OVERLAP": [],
+  "WRITER_SAMPLE_IDS": [
+    "HC-005",
+    "HC-021",
+    "HC-024",
+    "HC-013",
+    "HC-017",
+    "HC-001",
+    "CP-005",
+    "CP-001",
+    "AT-006"
+  ]
 }

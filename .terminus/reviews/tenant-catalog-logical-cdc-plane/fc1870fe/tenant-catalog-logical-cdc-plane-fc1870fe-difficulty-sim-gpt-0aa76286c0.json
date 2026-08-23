@@ -1,0 +1,57 @@
+{
+  "schema_version": "3.0",
+  "role": "Model Perspective Difficulty Simulator",
+  "review_id": "tenant-catalog-logical-cdc-plane-fc1870fe-difficulty-sim-gpt-0aa76286c0",
+  "task": "tenant-catalog-logical-cdc-plane",
+  "task_commit": "fc1870fe2645ed467d09ec25760f931dbad1e7ae",
+  "control_plane_commit": "d0ec104dfce657bc427f1a0097ae170da85b8b61",
+  "protocol_policy_version": "2.2",
+  "prompt_policy_version": "2.2",
+  "role_policy_version": "1.0",
+  "role_contract_hash": "ccfa675b35acae5b490277be9183df90f9a82e789c8e19a20d170ae2bf1b4c9f",
+  "context_packet": ".terminus/reviews/tenant-catalog-logical-cdc-plane/fc1870fe/tenant-catalog-logical-cdc-plane-fc1870fe-difficulty-sim-gpt-0aa76286c0.packet.json",
+  "verdict": "PASS",
+  "confidence": "MEDIUM",
+  "evidence_status": "SUFFICIENT",
+  "summary": "DIAGNOSTIC ONLY (not official GPT×5). SIMULATION_NOT_EXECUTED: no disposable isolated solve+verifier run in this session. GPT-style prior predicts module-local Go patches (cdc heap scan, reverse FK apply, recover epoch bump) with high risk of missing decode/apply separation, WAL-bound CDC, and checkpoint redo/index rebuild coupling → USEFUL signal in advanced band.",
+  "evidence": [
+    {"type": "file", "ref": "tenant-catalog-logical-cdc-plane/instruction.md", "observation": "Coupled MVCC, constraints, indexes, WAL CDC, replica apply, and recover redo across one catalogctl surface."},
+    {"type": "file", "ref": "tenant-catalog-logical-cdc-plane/environment/catalog/docs/catalog-contract.md", "observation": "Dense binding contract for visibility, WAL order, fence/LSN monotonicity, and inspect isolation—not obvious from a single package grep."},
+    {"type": "file", "ref": "tenant-catalog-logical-cdc-plane/environment/catalog/notes/oncall.md", "observation": "Open crash txn, CDC-from-WAL requirement, frozen tenants, and epoch-3 replica lag set realistic partial-fix traps."},
+    {"type": "rule", "ref": ".terminus/agents/QUALITY_AGENT_PROMPTS.md#Q8", "observation": "SIMULATION_NOT_EXECUTED when full isolated solve cannot be run honestly."}
+  ],
+  "findings": [],
+  "missing_evidence": [],
+  "change_scope": [],
+  "do_not_change": ["Do not treat this as official GPT trial evidence."],
+  "next_gate": "Q8 Claude perspective then aggregate",
+  "role_output": {
+    "PERSPECTIVE": "GPT_PERSPECTIVE",
+    "EXECUTION": "SIMULATION_NOT_EXECUTED",
+    "DIAGNOSTIC_SUMMARY": "Search failing pytest names → patch internal/cdc, replica, recover, indexes, cli locally; under-test WAL CDC vs heap dump, decode without apply, recover redo after checkpoint, and commit-time index rebuild.",
+    "FIRST_DIAGNOSIS": "decode emits rows but apply/confirmed_lsn disagree; recover leaves crash pk or bumps epoch; unique/FK rejects still install rows.",
+    "FILES_TOUCHED": [
+      "internal/cdc/cdc.go",
+      "internal/replica/replica.go",
+      "internal/recover/recover.go",
+      "internal/indexes/indexes.go",
+      "internal/cli/cli.go",
+      "internal/inspect/inspect.go"
+    ],
+    "SHORTCUTS_ATTEMPTED": [
+      "Heap scan with version.LSN as CDC lsn",
+      "Fuse decode+apply while health still rewrites",
+      "Recover checkpoint only without redoing committed WAL"
+    ],
+    "FIRST_MEANINGFUL_DIVERGENCE": "Green on commit insert and basic health while decode_does_not_apply, decode_uses_wal_lsn, recover_redoes_committed, and apply_is_monotonic still fail.",
+    "FINAL_VERIFIER_RESULT": "NOT_RUN",
+    "LIKELY_REASONING_WALLS": [
+      "Seven RC clusters across visibility/txn/indexes/cdc/replica/recover",
+      "Usage-before-mutation CLI vs WAL BEGIN starter trap",
+      "Inspect/empty-check must not recover or bump epoch"
+    ],
+    "ENVIRONMENT_TOOL_FRICTION": "Go rebuild loop; ~330s oracle pytest; 12k seeded rows; sqlite heap inspection.",
+    "PREDICTED_OFFICIAL_SIGNAL": "USEFUL",
+    "SIMULATION_NOTE": "Diagnostic strategy prior only; not Harbor GPT×5 evidence. Predicted combined-10 mean in advanced (20–50%) band."
+  }
+}

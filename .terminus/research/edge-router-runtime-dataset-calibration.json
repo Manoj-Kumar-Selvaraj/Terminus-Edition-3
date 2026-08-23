@@ -1,21 +1,21 @@
 {
   "catalog_sha256": "e205f858f8391fd88d3e26665d2f585a69cd691321b9275644e631bb949f0942",
   "dataset_registry_sha256": "05ece08c27414d265a2a238928e4c664295434620ffe957c8e88b5050c54645a",
-  "domain": "go edge router platform cloud networking runtime reconciliation lifecycle",
-  "domain_profile": "compiler_runtime",
+  "domain": "edge router runtime Implement generation-safe dynamic route and upstream reconciliation so complete configuration and membership changes apply atomically under concurrent traffic, rolling backend turnover, invalid updates and restart. GENERATION_SAFE_DYNAMIC_RECONCILIATION in-flight and long-lived requests remain valid across unrelated updates unchanged route semantics remain stable across generations healthy unchanged endpoints preserve meaningful runtime state rejected updates cannot damage the serving generation readers never observe partially applied configuration runtime and observability state remain bounded after repeated updates Validate and compile candidate configuration into immutable runtime snapshots before publication. Fence accepted generations so stale or out-of-order updates cannot overwrite newer state. Publish route and upstream state atomically and retain last-known-good serving state when candidates are rejected. Reconcile endpoint additions, removals, and unchanged endpoints by stable canonical identity and membership incarnation. Preserve compatible selection, affinity, health, transport, and lifecycle continuity for unchanged endpoints. Exclude removed or ineligible endpoints from fresh selection/retry while allowing bounded drain of existing traffic. Checkpoint only complete accepted state and recover a complete last-known-good generation after restart. Retire unreachable snapshots, endpoint runtimes, transports, affinity state, and telemetry without unbounded growth. edge-router-runtime",
+  "domain_profile": "application_backend",
   "domain_profiles": [
-    "compiler_runtime",
-    "platform_cloud"
+    "application_backend",
+    "compiler_runtime"
   ],
   "domain_profiles_sha256": "9612d83a11558d9013a82362c7405c70ddb5158b582cc2f9859c8c672ad6c838",
   "independence": {
     "status": "PASS",
     "writer_reviewer_seed_overlap": []
   },
-  "pair_id": "hwpair-d4de9525bf679e07b8fb",
+  "pair_id": "hwpair-37951b25e0f101e85aa1",
   "registry_sha256": "05ece08c27414d265a2a238928e4c664295434620ffe957c8e88b5050c54645a",
   "reviewer": {
-    "calibration_id": "hwcal-reviewer-724a689d239a9e88a8f1",
+    "calibration_id": "hwcal-reviewer-65c566f1122279acbe84",
     "catalog_sha256": "e205f858f8391fd88d3e26665d2f585a69cd691321b9275644e631bb949f0942",
     "dataset_weights": {
       "code-review-bench-human-annotations": 0.05,
@@ -35,28 +35,46 @@
       "Use hard positives and hard negatives to avoid superficial banned-style heuristics.",
       "Treat Human-Like-DPO as anti-template contrast, never the target voice."
     ],
-    "domain": "go edge router platform cloud networking runtime reconciliation lifecycle",
+    "domain": "edge router runtime Implement generation-safe dynamic route and upstream reconciliation so complete configuration and membership changes apply atomically under concurrent traffic, rolling backend turnover, invalid updates and restart. GENERATION_SAFE_DYNAMIC_RECONCILIATION in-flight and long-lived requests remain valid across unrelated updates unchanged route semantics remain stable across generations healthy unchanged endpoints preserve meaningful runtime state rejected updates cannot damage the serving generation readers never observe partially applied configuration runtime and observability state remain bounded after repeated updates Validate and compile candidate configuration into immutable runtime snapshots before publication. Fence accepted generations so stale or out-of-order updates cannot overwrite newer state. Publish route and upstream state atomically and retain last-known-good serving state when candidates are rejected. Reconcile endpoint additions, removals, and unchanged endpoints by stable canonical identity and membership incarnation. Preserve compatible selection, affinity, health, transport, and lifecycle continuity for unchanged endpoints. Exclude removed or ineligible endpoints from fresh selection/retry while allowing bounded drain of existing traffic. Checkpoint only complete accepted state and recover a complete last-known-good generation after restart. Retire unreachable snapshots, endpoint runtimes, transports, affinity state, and telemetry without unbounded growth. edge-router-runtime",
     "domain_profile": {
       "artifact_types": [
         "bug",
-        "regression",
-        "change_request"
+        "change_request",
+        "incident"
       ],
-      "description": "Compiler/runtime/build-system work.",
-      "id": "compiler_runtime",
+      "description": "Application/backend service work.",
+      "id": "application_backend",
       "match_tokens": [
-        "compiler",
-        "runtime",
-        "go",
-        "python",
-        "java",
-        "cobol",
-        "parser",
-        "build",
-        "linker"
+        "api",
+        "backend",
+        "django",
+        "node",
+        "service",
+        "payments",
+        "webhook",
+        "application"
       ]
     },
     "domain_profiles": [
+      {
+        "artifact_types": [
+          "bug",
+          "change_request",
+          "incident"
+        ],
+        "description": "Application/backend service work.",
+        "id": "application_backend",
+        "match_tokens": [
+          "api",
+          "backend",
+          "django",
+          "node",
+          "service",
+          "payments",
+          "webhook",
+          "application"
+        ]
+      },
       {
         "artifact_types": [
           "bug",
@@ -76,36 +94,14 @@
           "build",
           "linker"
         ]
-      },
-      {
-        "artifact_types": [
-          "change_request",
-          "maintenance",
-          "incident"
-        ],
-        "description": "Cloud/platform/IaC engineering changes.",
-        "id": "platform_cloud",
-        "match_tokens": [
-          "terraform",
-          "kubernetes",
-          "aws",
-          "azure",
-          "gcp",
-          "jenkins",
-          "devops",
-          "platform",
-          "infrastructure",
-          "cloud",
-          "helm"
-        ]
       }
     ],
     "domain_profiles_sha256": "9612d83a11558d9013a82362c7405c70ddb5158b582cc2f9859c8c672ad6c838",
     "external_sampling": {
-      "domain_profile": "compiler_runtime",
+      "domain_profile": "application_backend",
       "domain_profiles": [
-        "compiler_runtime",
-        "platform_cloud"
+        "application_backend",
+        "compiler_runtime"
       ],
       "eligible_datasets": [
         {
@@ -159,10 +155,9 @@
       ],
       "preferred_artifact_types": [
         "bug",
-        "regression",
         "change_request",
-        "maintenance",
-        "incident"
+        "incident",
+        "regression"
       ],
       "required_record_fields": [
         "dataset_id",
@@ -181,12 +176,12 @@
       }
     },
     "local_seed_sample_ids": [
-      "HC-027",
       "HC-021",
       "HC-028",
       "HC-017",
       "HC-010",
-      "HC-016",
+      "HC-024",
+      "HC-025",
       "CP-005",
       "CP-006",
       "CP-001",
@@ -198,21 +193,6 @@
       "HN-004"
     ],
     "local_seed_samples": [
-      {
-        "domains": [
-          "dns",
-          "coredns",
-          "kubernetes"
-        ],
-        "id": "HC-027",
-        "kind": "human_issue",
-        "signals": [
-          "operator_voice",
-          "minimal_environment_condition",
-          "direct_outcome"
-        ],
-        "source_dataset": "terminus-human-engineering"
-      },
       {
         "domains": [
           "http",
@@ -275,16 +255,31 @@
       },
       {
         "domains": [
-          "grafana",
-          "configuration",
-          "routing"
+          "etcd",
+          "kubernetes",
+          "recovery"
         ],
-        "id": "HC-016",
+        "id": "HC-024",
         "kind": "human_issue",
         "signals": [
-          "topology_specific_reproduction",
-          "expected_ownership",
-          "implementation_neutral"
+          "workflow_reproduction",
+          "downstream_symptom",
+          "state_transition_context"
+        ],
+        "source_dataset": "terminus-human-engineering"
+      },
+      {
+        "domains": [
+          "etcd",
+          "performance",
+          "distributed-systems"
+        ],
+        "id": "HC-025",
+        "kind": "human_issue",
+        "signals": [
+          "evidence_hypothesis_separation",
+          "quantified_symptom",
+          "exploratory_alternatives"
         ],
         "source_dataset": "terminus-human-engineering"
       },
@@ -409,12 +404,12 @@
     "schema_version": "1.2",
     "task_id": "edge-router-runtime"
   },
-  "reviewer_calibration_id": "hwcal-reviewer-724a689d239a9e88a8f1",
+  "reviewer_calibration_id": "hwcal-reviewer-65c566f1122279acbe84",
   "schema_version": "1.2",
   "seed_catalog_sha256": "e205f858f8391fd88d3e26665d2f585a69cd691321b9275644e631bb949f0942",
   "task_id": "edge-router-runtime",
   "writer": {
-    "calibration_id": "hwcal-writer-79c9343f9519cc15ec32",
+    "calibration_id": "hwcal-writer-b0673d6e34a029bd64e6",
     "catalog_sha256": "e205f858f8391fd88d3e26665d2f585a69cd691321b9275644e631bb949f0942",
     "dataset_weights": {
       "h4-stack-exchange-preferences": 0.5,
@@ -431,28 +426,46 @@
       "Draft from the approved solver-visible requirement contract only after calibration is complete.",
       "Use the writer pack only; do not read reviewer-only samples or verdicts."
     ],
-    "domain": "go edge router platform cloud networking runtime reconciliation lifecycle",
+    "domain": "edge router runtime Implement generation-safe dynamic route and upstream reconciliation so complete configuration and membership changes apply atomically under concurrent traffic, rolling backend turnover, invalid updates and restart. GENERATION_SAFE_DYNAMIC_RECONCILIATION in-flight and long-lived requests remain valid across unrelated updates unchanged route semantics remain stable across generations healthy unchanged endpoints preserve meaningful runtime state rejected updates cannot damage the serving generation readers never observe partially applied configuration runtime and observability state remain bounded after repeated updates Validate and compile candidate configuration into immutable runtime snapshots before publication. Fence accepted generations so stale or out-of-order updates cannot overwrite newer state. Publish route and upstream state atomically and retain last-known-good serving state when candidates are rejected. Reconcile endpoint additions, removals, and unchanged endpoints by stable canonical identity and membership incarnation. Preserve compatible selection, affinity, health, transport, and lifecycle continuity for unchanged endpoints. Exclude removed or ineligible endpoints from fresh selection/retry while allowing bounded drain of existing traffic. Checkpoint only complete accepted state and recover a complete last-known-good generation after restart. Retire unreachable snapshots, endpoint runtimes, transports, affinity state, and telemetry without unbounded growth. edge-router-runtime",
     "domain_profile": {
       "artifact_types": [
         "bug",
-        "regression",
-        "change_request"
+        "change_request",
+        "incident"
       ],
-      "description": "Compiler/runtime/build-system work.",
-      "id": "compiler_runtime",
+      "description": "Application/backend service work.",
+      "id": "application_backend",
       "match_tokens": [
-        "compiler",
-        "runtime",
-        "go",
-        "python",
-        "java",
-        "cobol",
-        "parser",
-        "build",
-        "linker"
+        "api",
+        "backend",
+        "django",
+        "node",
+        "service",
+        "payments",
+        "webhook",
+        "application"
       ]
     },
     "domain_profiles": [
+      {
+        "artifact_types": [
+          "bug",
+          "change_request",
+          "incident"
+        ],
+        "description": "Application/backend service work.",
+        "id": "application_backend",
+        "match_tokens": [
+          "api",
+          "backend",
+          "django",
+          "node",
+          "service",
+          "payments",
+          "webhook",
+          "application"
+        ]
+      },
       {
         "artifact_types": [
           "bug",
@@ -472,36 +485,14 @@
           "build",
           "linker"
         ]
-      },
-      {
-        "artifact_types": [
-          "change_request",
-          "maintenance",
-          "incident"
-        ],
-        "description": "Cloud/platform/IaC engineering changes.",
-        "id": "platform_cloud",
-        "match_tokens": [
-          "terraform",
-          "kubernetes",
-          "aws",
-          "azure",
-          "gcp",
-          "jenkins",
-          "devops",
-          "platform",
-          "infrastructure",
-          "cloud",
-          "helm"
-        ]
       }
     ],
     "domain_profiles_sha256": "9612d83a11558d9013a82362c7405c70ddb5158b582cc2f9859c8c672ad6c838",
     "external_sampling": {
-      "domain_profile": "compiler_runtime",
+      "domain_profile": "application_backend",
       "domain_profiles": [
-        "compiler_runtime",
-        "platform_cloud"
+        "application_backend",
+        "compiler_runtime"
       ],
       "eligible_datasets": [
         {
@@ -543,10 +534,9 @@
       ],
       "preferred_artifact_types": [
         "bug",
-        "regression",
         "change_request",
-        "maintenance",
-        "incident"
+        "incident",
+        "regression"
       ],
       "required_record_fields": [
         "dataset_id",
@@ -566,11 +556,11 @@
     },
     "local_seed_sample_ids": [
       "HC-001",
-      "HC-007",
-      "HC-009",
       "HC-030",
-      "HC-008",
-      "HC-024",
+      "HC-016",
+      "HC-005",
+      "HC-013",
+      "HC-020",
       "CP-002",
       "CP-004",
       "AT-006"
@@ -593,36 +583,6 @@
       },
       {
         "domains": [
-          "terraform",
-          "devops",
-          "automation"
-        ],
-        "id": "HC-007",
-        "kind": "human_issue",
-        "signals": [
-          "before_after_evidence",
-          "terse_expectation",
-          "timeline_context"
-        ],
-        "source_dataset": "terminus-human-engineering"
-      },
-      {
-        "domains": [
-          "kubernetes",
-          "platform",
-          "diagnostics"
-        ],
-        "id": "HC-009",
-        "kind": "human_issue",
-        "signals": [
-          "concise_narrative",
-          "raw_evidence",
-          "surprising_invariant"
-        ],
-        "source_dataset": "terminus-human-engineering"
-      },
-      {
-        "domains": [
           "go",
           "runtime",
           "production"
@@ -638,31 +598,61 @@
       },
       {
         "domains": [
-          "terraform",
-          "automation",
-          "cli"
+          "grafana",
+          "configuration",
+          "routing"
         ],
-        "id": "HC-008",
+        "id": "HC-016",
         "kind": "human_issue",
         "signals": [
-          "consequence_first",
-          "contract_reference",
-          "exact_reproduction"
+          "topology_specific_reproduction",
+          "expected_ownership",
+          "implementation_neutral"
         ],
         "source_dataset": "terminus-human-engineering"
       },
       {
         "domains": [
-          "etcd",
-          "kubernetes",
-          "recovery"
+          "linux",
+          "systemd",
+          "observability"
         ],
-        "id": "HC-024",
+        "id": "HC-005",
         "kind": "human_issue",
         "signals": [
-          "workflow_reproduction",
-          "downstream_symptom",
-          "state_transition_context"
+          "output_driven",
+          "implementation_neutral",
+          "concrete_evidence"
+        ],
+        "source_dataset": "terminus-human-engineering"
+      },
+      {
+        "domains": [
+          "grafana",
+          "observability",
+          "parsing"
+        ],
+        "id": "HC-013",
+        "kind": "human_issue",
+        "signals": [
+          "brevity",
+          "direct_expectation",
+          "no_justification_filler"
+        ],
+        "source_dataset": "terminus-human-engineering"
+      },
+      {
+        "domains": [
+          "prometheus",
+          "alertmanager",
+          "concurrency"
+        ],
+        "id": "HC-020",
+        "kind": "human_issue",
+        "signals": [
+          "stateful_reproduction",
+          "concrete_consequence",
+          "implementation_neutral"
         ],
         "source_dataset": "terminus-human-engineering"
       },
@@ -710,5 +700,5 @@
     "schema_version": "1.2",
     "task_id": "edge-router-runtime"
   },
-  "writer_calibration_id": "hwcal-writer-79c9343f9519cc15ec32"
+  "writer_calibration_id": "hwcal-writer-b0673d6e34a029bd64e6"
 }

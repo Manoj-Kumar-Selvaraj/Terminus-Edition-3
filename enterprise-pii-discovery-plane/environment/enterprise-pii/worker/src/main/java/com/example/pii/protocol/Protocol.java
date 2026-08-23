@@ -1,0 +1,207 @@
+package com.example.pii.protocol;
+
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Comparator;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.TreeMap;
+
+public final class Protocol {
+    public static final String VERSION = "1";
+
+    public record Lease(
+            String tenant,
+            String jobId,
+            String shardId,
+            long generation,
+            String policyDigest,
+            String corpusDigest,
+            String workerId,
+            String sessionId,
+            int attempt,
+            String token,
+            Instant issuedAt,
+            Instant deadline,
+            String sourceRoot,
+            String sourceId) {
+        public Lease {
+            Objects.requireNonNull(tenant);
+            Objects.requireNonNull(jobId);
+            Objects.requireNonNull(shardId);
+            Objects.requireNonNull(policyDigest);
+            Objects.requireNonNull(sessionId);
+            Objects.requireNonNull(token);
+            Objects.requireNonNull(deadline);
+        }
+    }
+
+    public record Location(
+            String sourceId,
+            String canonicalPath,
+            String archiveMember,
+            String recordId,
+            String fieldPath,
+            long line,
+            long byteStart,
+            long byteEnd) implements Comparable<Location> {
+        @Override
+        public int compareTo(Location other) {
+            int value = sourceId.compareTo(other.sourceId);
+            if (value == 0) value = canonicalPath.compareTo(other.canonicalPath);
+            if (value == 0) value = archiveMember.compareTo(other.archiveMember);
+            if (value == 0) value = recordId.compareTo(other.recordId);
+            if (value == 0) value = fieldPath.compareTo(other.fieldPath);
+            if (value == 0) value = Long.compare(byteStart, other.byteStart);
+            return value == 0 ? Long.compare(byteEnd, other.byteEnd) : value;
+        }
+    }
+
+    public record Finding(
+            String id,
+            String category,
+            String maskedEvidence,
+            String fingerprint,
+            double confidence,
+            String detectorRevision,
+            String policyVersion,
+            String policyDigest,
+            Location location,
+            List<String> lineage,
+            boolean suppressed) {
+        public Finding {
+            lineage = List.copyOf(lineage);
+        }
+    }
+
+    public record ScanError(
+            String kind,
+            String sourceId,
+            String recordId,
+            String fieldPath,
+            String detail,
+            boolean recoverable) {}
+
+    public record Truncation(
+            String budget,
+            String sourceId,
+            long limit,
+            long observed,
+            String checkpoint) {}
+
+    public record Batch(
+            String id,
+            String bodyDigest,
+            String jobId,
+            String shardId,
+            long generation,
+            String policyDigest,
+            String sessionId,
+            int attempt,
+            String leaseToken,
+            long sequence,
+            String previousCheckpoint,
+            String nextCheckpoint,
+            List<Finding> findings,
+            List<ScanError> errors,
+            List<Truncation> truncations,
+            boolean complete) {}
+
+    public static String canonicalJson(Object value) {
+        StringBuilder output = new StringBuilder();
+        appendJson(output, value);
+        return output.toString();
+    }
+
+    private static void appendJson(StringBuilder output, Object value) {
+        if (value == null) {
+            output.append("null");
+        } else if (value instanceof String text) {
+            quote(output, text);
+        } else if (value instanceof Boolean || value instanceof Number) {
+            output.append(value);
+        } else if (value instanceof Instant instant) {
+            quote(output, instant.toString());
+        } else if (value instanceof Map<?, ?> map) {
+            output.append('{');
+            boolean comma = false;
+            TreeMap<String, Object> sorted = new TreeMap<>();
+            map.forEach((key, item) -> sorted.put(String.valueOf(key), item));
+            for (Map.Entry<String, Object> entry : sorted.entrySet()) {
+                if (comma) output.append(',');
+                quote(output, entry.getKey());
+                output.append(':');
+                appendJson(output, entry.getValue());
+                comma = true;
+            }
+            output.append('}');
+        } else if (value instanceof Collection<?> collection) {
+            output.append('[');
+            boolean comma = false;
+            for (Object item : collection) {
+                if (comma) output.append(',');
+                appendJson(output, item);
+                comma = true;
+            }
+            output.append(']');
+        } else if (value.getClass().isRecord()) {
+            Map<String, Object> fields = new LinkedHashMap<>();
+            for (var component : value.getClass().getRecordComponents()) {
+                try {
+                    fields.put(component.getName(), component.getAccessor().invoke(value));
+                } catch (ReflectiveOperationException exception) {
+                    throw new IllegalArgumentException("cannot encode record", exception);
+                }
+            }
+            appendJson(output, fields);
+        } else {
+            quote(output, String.valueOf(value));
+        }
+    }
+
+    private static void quote(StringBuilder output, String value) {
+        output.append('"');
+        for (int index = 0; index < value.length(); index++) {
+            char character = value.charAt(index);
+            switch (character) {
+                case '"' -> output.append("\\\"");
+                case '\\' -> output.append("\\\\");
+                case '\b' -> output.append("\\b");
+                case '\f' -> output.append("\\f");
+                case '\n' -> output.append("\\n");
+                case '\r' -> output.append("\\r");
+                case '\t' -> output.append("\\t");
+                default -> {
+                    if (character < 0x20) output.append(String.format("\\u%04x", (int) character));
+                    else output.append(character);
+                }
+            }
+        }
+        output.append('"');
+    }
+
+    public static String sha256(String text) {
+        try {
+            byte[] digest = MessageDigest.getInstance("SHA-256").digest(text.getBytes(StandardCharsets.UTF_8));
+            return java.util.HexFormat.of().formatHex(digest);
+        } catch (Exception exception) {
+            throw new IllegalStateException(exception);
+        }
+    }
+
+    public static List<Finding> sortedFindings(Collection<Finding> findings) {
+        ArrayList<Finding> copy = new ArrayList<>(findings);
+        copy.sort(Comparator.comparing(Finding::location)
+                .thenComparing(Finding::category)
+                .thenComparing(Finding::fingerprint)
+                .thenComparing(Finding::detectorRevision));
+        return List.copyOf(copy);
+    }
+
+    private Protocol() {}
+}

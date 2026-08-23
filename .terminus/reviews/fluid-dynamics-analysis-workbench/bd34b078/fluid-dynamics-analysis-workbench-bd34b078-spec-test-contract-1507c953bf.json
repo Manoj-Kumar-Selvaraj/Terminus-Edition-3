@@ -1,0 +1,168 @@
+{
+  "schema_version": "3.0",
+  "role": "Spec-Test Contract Reviewer",
+  "review_id": "fluid-dynamics-analysis-workbench-bd34b078-spec-test-contract-1507c953bf",
+  "task": "fluid-dynamics-analysis-workbench",
+  "task_commit": "bd34b078027dea5d64c7b133552da852c2c61bc7",
+  "control_plane_commit": "bd34b078027dea5d64c7b133552da852c2c61bc7",
+  "protocol_policy_version": "2.2",
+  "prompt_policy_version": "2.2",
+  "role_policy_version": "1.1",
+  "role_contract_hash": "d2994789dc83b2c8a6b92201782ea9f3e5528a3a9d725c863c22efb6356e570e",
+  "context_packet": ".terminus/reviews/fluid-dynamics-analysis-workbench/bd34b078/fluid-dynamics-analysis-workbench-bd34b078-spec-test-contract-1507c953bf.packet.json",
+  "verdict": "PASS",
+  "confidence": "HIGH",
+  "evidence_status": "SUFFICIENT",
+  "summary": "Every material solver-visible obligation in instruction.md and the referenced /app/fluidlab/docs contracts maps to meaningful native publication assertions, and all 14 verifier behaviors (13 F2P / 1 P2P) are discoverable from that contract surface plus inherited runtime interfaces. Determinism, mixed liquid/gas analysis, limit surfacing, lineage, cross-artifact consistency, and entrypoint preservation are bidirectionally aligned. Residual gaps are advisory only: malformed-input rejection, WARN/non-pressure finding isolation, and analysis-contract nested-schema completeness.",
+  "evidence": [
+    {
+      "type": "file",
+      "ref": "fluid-dynamics-analysis-workbench/instruction.md",
+      "observation": "One short paragraph plus ten concise bullets state the repair objective, build/entrypoint preservation, three publication artifacts, determinism, input validation, liquid/gas support, coupled physics, violation surfacing, lineage, multi-dimensional rollups, and recompute-from-inputs requirement."
+    },
+    {
+      "type": "file",
+      "ref": "fluid-dynamics-analysis-workbench/environment/fluidlab/docs/analysis-contract.md",
+      "observation": "Binding publication schema for summary.json field order, fleet_rollup keys, case/operating-point records, CSV severity sort, and checkpoint mirroring."
+    },
+    {
+      "type": "file",
+      "ref": "fluid-dynamics-analysis-workbench/environment/fluidlab/docs/case-schema.md",
+      "observation": "Case and operating-point input schema with incompressible_liquid and ideal_gas models, SI units, and identity preservation rules."
+    },
+    {
+      "type": "file",
+      "ref": "fluid-dynamics-analysis-workbench/environment/fluidlab/docs/operator-runbook.md",
+      "observation": "Build/analyze entrypoints, config/cases inputs, artifact outputs, and CLI/wrapper pipeline equivalence expectation."
+    },
+    {
+      "type": "file",
+      "ref": "fluid-dynamics-analysis-workbench/environment/fluidlab/config/system.json",
+      "observation": "Publication csv_fields, severity_order, round_digits, schema_version, and output paths referenced by analysis-contract and runbook."
+    },
+    {
+      "type": "file",
+      "ref": "fluid-dynamics-analysis-workbench/environment/fluidlab/src/fluidlab/report.py",
+      "observation": "Inherited publisher defines nested operating_point case_id lineage, JSON indent/trailing newline, publication_revision digest, and CSV row composition discoverable as runtime interface."
+    },
+    {
+      "type": "test",
+      "ref": "fluid-dynamics-analysis-workbench/tests/test_outputs.py",
+      "observation": "14 behavioral pytest cases (13 F2P / 1 P2P) drive build, CLI/wrapper parity, schema shape, golden determinism, fleet/case statuses, compressible limit finding, CSV/checkpoint consistency, lineage cardinality, and liquid-case preservation without embedding a callable end-to-end solver."
+    },
+    {
+      "type": "run",
+      "ref": "jobs/2026-08-22__18-37-57",
+      "observation": "Harbor oracle 14/14 reward 1.0 at bd34b078."
+    },
+    {
+      "type": "run",
+      "ref": "jobs/2026-08-22__18-38-59",
+      "observation": "Harbor NOP reward 0.0 as expected."
+    }
+  ],
+  "findings": [
+    {
+      "id": "Q4-A01",
+      "severity": "LOW",
+      "status": "OBSERVED",
+      "criterion": "Pre-acceptance validation rejection path not individually probed.",
+      "evidence_refs": [
+        "fluid-dynamics-analysis-workbench/instruction.md:4",
+        "fluid-dynamics-analysis-workbench/environment/fluidlab/src/fluidlab/loaders.py",
+        "fluid-dynamics-analysis-workbench/tests/test_outputs.py"
+      ],
+      "why_it_matters": "Instruction requires validating geometry, fluid, mesh, envelope, solver-monitor, and publication configuration before accepting a case; inherited loaders implement rejection, but all graded fixtures are valid so a solver could skip validation and still pass.",
+      "minimal_remediation": "Optional holdout malformed-case fixture asserting ConfigurationError or bounded skip behavior.",
+      "regression_risk": "Low"
+    },
+    {
+      "id": "Q4-A02",
+      "severity": "LOW",
+      "status": "OBSERVED",
+      "criterion": "WARN severity and non-pressure finding codes not isolated.",
+      "evidence_refs": [
+        "fluid-dynamics-analysis-workbench/instruction.md:7",
+        "fluid-dynamics-analysis-workbench/environment/fluidlab/src/fluidlab/solver.py",
+        "fluid-dynamics-analysis-workbench/tests/test_outputs.py"
+      ],
+      "why_it_matters": "Solver-visible severity engine defines MACH_LIMIT, CFL_LIMIT, MESH_SCORE_LIMIT, CONVERGENCE_LIMIT, and WARN precedence, but fixtures produce one FAIL (PRESSURE_DROP_LIMIT) and zero WARN rows; other codes are covered only via golden recomputation.",
+      "minimal_remediation": "Optional near-limit fixture probing WARN or alternate FAIL code independently of golden bytes.",
+      "regression_risk": "Low"
+    },
+    {
+      "id": "Q4-A03",
+      "severity": "LOW",
+      "status": "OBSERVED",
+      "criterion": "analysis-contract.md under-specifies nested publication sub-schemas.",
+      "evidence_refs": [
+        "fluid-dynamics-analysis-workbench/environment/fluidlab/docs/analysis-contract.md",
+        "fluid-dynamics-analysis-workbench/environment/fluidlab/src/fluidlab/solver.py",
+        "fluid-dynamics-analysis-workbench/tests/fixtures/golden/summary.json"
+      ],
+      "why_it_matters": "Graded summary bytes require nested case_id on operating_points, enumerated margin keys, convergence.residuals objects, and finding metric/actual/limit fields; analysis-contract lists top-level operating_point keys but not these nested shapes—discoverable from inherited runtime, not phantom.",
+      "minimal_remediation": "Optional doc expansion in analysis-contract.md for margins, convergence.residuals, and findings record layout.",
+      "regression_risk": "Low"
+    }
+  ],
+  "missing_evidence": [],
+  "change_scope": [
+    "Initial cold Q4 at bd34b078 after solution, verifier, and Harbor oracle/NOP gates."
+  ],
+  "do_not_change": [
+    "Three-artifact publication contract and deterministic golden grading model",
+    "CLI/run_analysis.sh shared-pipeline requirement",
+    "Mixed liquid/gas case fixture set and P2P liquid preservation intent",
+    "Instruction/docs boundary and concise bullet shape"
+  ],
+  "next_gate": "Q6 Production Logic Auditor",
+  "role_output": {
+    "REQUIREMENT_TEST_MATRIX": [
+      {"id": "R01", "source": "instruction.md:1", "requirement": "Preserve CLI entrypoints, case layout, output paths, and solver-visible contracts", "coverage": "complete", "tests": ["test_f2p_build_and_entrypoints_exist", "test_p2p_liquid_cases_remain_pass"]},
+      {"id": "R02", "source": "instruction.md:2", "requirement": "Build via build.sh; keep shared logic behind fluidlab bin and run_analysis.sh", "coverage": "complete", "tests": ["test_f2p_build_and_entrypoints_exist", "test_f2p_run_script_publishes_same_artifacts"]},
+      {"id": "R03", "source": "instruction.md:3", "requirement": "Analyze every case and publish summary.json, operating_points.csv, checkpoints/current.json", "coverage": "complete", "tests": ["test_f2p_run_script_publishes_same_artifacts", "test_f2p_all_operating_points_preserve_lineage", "test_f2p_checkpoint_matches_summary_state"]},
+      {"id": "R04", "source": "instruction.md:3-4; analysis-contract.md; system.json", "requirement": "Deterministic field/row/severity order, tie-breakers, rounding; no timestamps or hardcoded payloads", "coverage": "complete", "tests": ["test_f2p_summary_contract_shape_and_field_order", "test_f2p_csv_columns_order_and_severity_sort", "test_f2p_summary_bytes_match_golden_reference", "test_f2p_deterministic_rerun_produces_identical_summary"]},
+      {"id": "R05", "source": "instruction.md:4; loaders.py", "requirement": "Validate geometry, fluid, mesh, envelopes, solver-monitor, and publication config before accepting a case", "coverage": "partial", "gap": "valid-case path graded; malformed-input rejection not isolated", "tests": ["test_f2p_all_operating_points_preserve_lineage"]},
+      {"id": "R06", "source": "instruction.md:5; case-schema.md", "requirement": "Support incompressible liquid and ideal-gas operating points with documented SI schemas", "coverage": "complete", "tests": ["test_p2p_liquid_cases_remain_pass", "test_f2p_qualified_run_passes_compressible_envelope", "test_f2p_overdrive_reports_pressure_drop_limit"]},
+      {"id": "R07", "source": "instruction.md:6", "requirement": "Coupled physical state model for regime, stability, hydraulic loss, heat transfer, convergence, and margins", "coverage": "complete", "tests": ["test_f2p_summary_bytes_match_golden_reference", "test_f2p_qualified_run_passes_compressible_envelope", "test_f2p_overdrive_reports_pressure_drop_limit"]},
+      {"id": "R08", "source": "instruction.md:7", "requirement": "Surface Mach/CFL/mesh/pressure/temperature/residual/imbalance violations with bounded rollups", "coverage": "complete", "tests": ["test_f2p_fleet_status_is_fail_with_single_limit_violation", "test_f2p_overdrive_reports_pressure_drop_limit", "test_f2p_summary_contract_shape_and_field_order"]},
+      {"id": "R09", "source": "instruction.md:8", "requirement": "Preserve case and operating-point lineage across JSON, CSV, and checkpoint; no collapsing distinct points", "coverage": "complete", "tests": ["test_f2p_all_operating_points_preserve_lineage", "test_f2p_checkpoint_matches_summary_state"]},
+      {"id": "R10", "source": "instruction.md:9; analysis-contract.md", "requirement": "Publish case-level and fleet-level hydraulic, thermal, stability, and mesh summaries", "coverage": "complete", "tests": ["test_f2p_summary_contract_shape_and_field_order", "test_f2p_summary_bytes_match_golden_reference"]},
+      {"id": "R11", "source": "instruction.md:10", "requirement": "Recompute publication from current inputs; cross-surface fixes must stay consistent", "coverage": "complete", "tests": ["test_f2p_checkpoint_matches_summary_state", "test_f2p_summary_bytes_match_golden_reference", "test_f2p_csv_columns_order_and_severity_sort"]},
+      {"id": "R12", "source": "analysis-contract.md; operator-runbook.md", "requirement": "Cases sorted by case_id; CSV severity-first then point_id; checkpoint mirrors summary state", "coverage": "complete", "tests": ["test_f2p_cases_sorted_and_case_statuses", "test_f2p_csv_columns_order_and_severity_sort", "test_f2p_checkpoint_matches_summary_state"]},
+      {"id": "R13", "source": "operator-runbook.md", "requirement": "CLI analyze and run_analysis.sh wrapper publish equivalent artifacts", "coverage": "complete", "tests": ["test_f2p_run_script_publishes_same_artifacts"]}
+    ],
+    "PHANTOM_TEST_CONTRACTS": [],
+    "UNTESTED_REQUIREMENTS": [],
+    "AMBIGUITIES": [],
+    "INSTRUCTION_SHAPE": "PASS",
+    "INSTRUCTION_REQUIREMENT_COMPLETENESS": "SUFFICIENT",
+    "DELEGATED_CONTRACT_CHECK": {
+      "analysis-contract.md": {"classification": "LEGITIMATE_TECHNICAL_DOCUMENTATION", "notes": "Publication artifact schemas, field order, fleet rollup keys, CSV sort rules, checkpoint mirroring."},
+      "case-schema.md": {"classification": "LEGITIMATE_TECHNICAL_DOCUMENTATION", "notes": "Case input record layout, fluid models, SI units, operating-point identity."},
+      "operator-runbook.md": {"classification": "LEGITIMATE_TECHNICAL_DOCUMENTATION", "notes": "Build/analyze entrypoints, read/write paths, CLI-wrapper equivalence."},
+      "config/system.json": {"classification": "LEGITIMATE_TECHNICAL_DOCUMENTATION", "notes": "Publication csv_fields, severity_order, round_digits referenced by runbook and analysis-contract."}
+    },
+    "INSTRUCTION_DOC_BOUNDARY": "CLEAN",
+    "IMPLEMENTATION_DIAGNOSIS_LEAKAGE": "NONE",
+    "CURRENT_STATE_EVIDENCE": "NOT_APPLICABLE",
+    "SPEC_DUMP_RISK": "LOW",
+    "BIDIRECTIONAL_ALIGNMENT": "PASS",
+    "BLOCKING_FINDING_IDS": [],
+    "ADVISORY_FINDING_IDS": ["Q4-A01", "Q4-A02", "Q4-A03"],
+    "EXHAUSTIVENESS": {
+      "REQUIREMENTS_ENUMERATED": "COMPLETE",
+      "VERIFIER_BEHAVIORS_ENUMERATED": "COMPLETE",
+      "FORWARD_MATRIX_COMPLETE": "YES",
+      "REVERSE_MATRIX_COMPLETE": "YES",
+      "INSTRUCTION_COMPLETENESS_COMPLETE": "YES",
+      "DELEGATED_CONTRACTS_COMPLETE": "YES",
+      "PROMPT_EXTENSION_WALK_COMPLETE": "YES",
+      "P2P_BOUNDARIES_COMPLETE": "YES",
+      "F2P_BOUNDARIES_COMPLETE": "YES",
+      "OUTPUT_INTERFACES_COMPLETE": "YES",
+      "SECOND_PASS_OMISSION_SWEEP": "PASS",
+      "UNINSPECTED_SCOPE": []
+    }
+  }
+}

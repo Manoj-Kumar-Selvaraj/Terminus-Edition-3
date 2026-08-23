@@ -1,0 +1,13 @@
+{
+  "revision": 1,
+  "listeners": [
+    {"name":"echo","address":"127.0.0.1","port":18001,"target_group":"echo-pool","proxy_protocol_v2":false,"connect_timeout_ms":1000,"idle_timeout_ms":30000,"buffer_bytes":65536},
+    {"name":"proxy-inspect","address":"127.0.0.1","port":18005,"target_group":"inspect-pool","proxy_protocol_v2":true,"connect_timeout_ms":1000,"idle_timeout_ms":30000,"buffer_bytes":65536}
+  ],
+  "target_groups": [
+    {"name":"echo-pool","policy":"round_robin","zone_policy":"same_zone_preferred","fail_open":true,"drain_timeout_ms":30000,"health":{"interval_ms":2000,"timeout_ms":500,"healthy_threshold":2,"unhealthy_threshold":3,"passive_failures":3,"passive_window_ms":10000,"ejection_ms":15000},"targets":[{"id":"echo-a","address":"127.0.0.1","port":19001,"zone":"zone-a","administrative_state":"enabled","weight":1,"incarnation":1},{"id":"slow-b","address":"127.0.0.1","port":19002,"zone":"zone-b","administrative_state":"enabled","weight":1,"incarnation":1}]},
+    {"name":"inspect-pool","policy":"source_hash","zone_policy":"cross_zone","fail_open":false,"drain_timeout_ms":30000,"health":{"interval_ms":2000,"timeout_ms":500,"healthy_threshold":2,"unhealthy_threshold":3,"passive_failures":3,"passive_window_ms":10000,"ejection_ms":15000},"targets":[{"id":"inspect-a","address":"127.0.0.1","port":19005,"zone":"zone-a","administrative_state":"enabled","weight":1,"incarnation":1}]}
+  ],
+  "rollout":{"prepare_quorum":13,"activate_quorum":13,"prepare_timeout_ms":15000,"activate_timeout_ms":15000,"allowed_unavailable_zones":1},
+  "limits":{"max_listeners":128,"max_target_groups":128,"max_targets":2048,"max_frame_bytes":4194304,"max_queue_messages":256,"max_audit_events":4096,"retained_generations":16,"max_health_samples":64,"max_connection_records":10000,"max_buffer_bytes":1048576}
+}

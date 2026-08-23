@@ -1,0 +1,56 @@
+{
+  "schema_version": "3.0",
+  "role": "Model Perspective Difficulty Simulator",
+  "review_id": "jenkins-home-insights-plugin-44fca100-difficulty-sim-claude-f92dab7474",
+  "task": "jenkins-home-insights-plugin",
+  "task_commit": "44fca100fb4572b286a4f42e15f35f928674dea5",
+  "control_plane_commit": "743063070d00608d7a9d258ce178e19f4dfb3f5e",
+  "protocol_policy_version": "2.2",
+  "prompt_policy_version": "2.2",
+  "role_policy_version": "1.0",
+  "role_contract_hash": "ccfa675b35acae5b490277be9183df90f9a82e789c8e19a20d170ae2bf1b4c9f",
+  "context_packet": ".terminus/reviews/jenkins-home-insights-plugin/44fca100/jenkins-home-insights-plugin-44fca100-difficulty-sim-claude-f92dab7474.packet.json",
+  "verdict": "PASS",
+  "confidence": "MEDIUM",
+  "evidence_status": "SUFFICIENT",
+  "summary": "DIAGNOSTIC ONLY (not official Claude×5). SIMULATION_NOT_EXECUTED. Claude-style prior predicts systematic architecture/state-model reading then coordinated repairs across reconcile/journal/storage; risk of over-scoping migration/retention wiring or Jenkins bindings before core convergence is green → USEFUL signal.",
+  "evidence": [
+    {"type": "file", "ref": "jenkins-home-insights-plugin/environment/plugin/docs/architecture.md", "observation": "Invites full pipeline reconstruction before localized edits."},
+    {"type": "file", "ref": "jenkins-home-insights-plugin/environment/plugin/docs/state-model.md", "observation": "Canonical identity, checkpoint, and event semantics dense—likely early reading target."},
+    {"type": "rule", "ref": ".terminus/agents/QUALITY_AGENT_PROMPTS.md#Q8", "observation": "SIMULATION_NOT_EXECUTED when full isolated solve unavailable."}
+  ],
+  "findings": [],
+  "missing_evidence": [],
+  "change_scope": [],
+  "do_not_change": ["Do not treat this as official Claude trial evidence."],
+  "next_gate": "Q8 aggregate",
+  "role_output": {
+    "PERSPECTIVE": "CLAUDE_PERSPECTIVE",
+    "EXECUTION": "SIMULATION_NOT_EXECUTED",
+    "DIAGNOSTIC_SUMMARY": "Read architecture/state-model/storage contracts; build mental matrix of full vs incremental paths; repair ReconciliationEngine+EventBatchPlanner+GenerationStore as a set before query polish.",
+    "FIRST_DIAGNOSIS": "Full/incremental digest mismatch; recovery selects invalid generation; lineage tombstones lost on compaction.",
+    "FILES_TOUCHED": [
+      "reconcile/ReconciliationEngine.java",
+      "reconcile/EventBatchPlanner.java",
+      "journal/EventJournal.java",
+      "storage/GenerationStore.java",
+      "storage/RecoveryPlanner.java",
+      "analysis/AnalysisEngine.java",
+      "jenkins/OperationalInsightsPlugin.java"
+    ],
+    "SHORTCUTS_ATTEMPTED": [
+      "Wire SchemaMigrator/RetentionPlanner comprehensively before core publish path is correct",
+      "Refactor InsightsRuntime orchestration instead of surgical defect fixes"
+    ],
+    "FIRST_MEANINGFUL_DIVERGENCE": "Spend agent budget on migration/compaction scaffolding while event idempotency and ACL projection remain partial.",
+    "FINAL_VERIFIER_RESULT": "NOT_RUN",
+    "LIKELY_REASONING_WALLS": [
+      "29 coupled defects across seven RC clusters",
+      "Authorized cursor pagination vs pre-ACL sorting",
+      "Lineage endpoint redaction without leaking topology"
+    ],
+    "ENVIRONMENT_TOOL_FRICTION": "Large Java surface (~3.2k LOC); multi-step restart fixtures; Jenkins binding layer separate from standalone core.",
+    "PREDICTED_OFFICIAL_SIGNAL": "USEFUL",
+    "SIMULATION_NOTE": "Diagnostic strategy prior only; not Harbor Claude×5 evidence. Similar advanced-band expectation as GPT perspective."
+  }
+}

@@ -1,0 +1,280 @@
+{
+  "authority": {
+    "control_plane_commit": "df7ef7569e2947b9f0bf7cf89ed4dec6c2a5a1fe",
+    "policy_versions": {},
+    "task_commit": "22d2e9e09f4deb58029559fe9a0863c2e032f25c",
+    "task_id": "route-control-plane"
+  },
+  "disposition": "ADVANCE",
+  "evidence_refs": [],
+  "invocation_id": "inv_06c269a63846481e8ef7d9b5d33e276cc915e01e9c7718869e03ed2fcf51fcad",
+  "invocation_snapshot": {
+    "acceptance_predicates": {},
+    "authority": {
+      "control_plane_commit": "df7ef7569e2947b9f0bf7cf89ed4dec6c2a5a1fe",
+      "policy_versions": {},
+      "task_commit": "22d2e9e09f4deb58029559fe9a0863c2e032f25c",
+      "task_id": "route-control-plane"
+    },
+    "evidence": {
+      "authorized_evidence_classes": [
+        "CONTROL_PLANE_POLICY",
+        "PRIVATE_CREATION_DESIGN",
+        "PUBLIC_REFERENCE",
+        "SOLVER_VISIBLE_TASK"
+      ],
+      "evidence_required": [
+        "reachable starter runtime",
+        "representative deterministic state",
+        "normal engineering docs/contracts",
+        "runtime/operator evidence where applicable"
+      ],
+      "excluded_evidence_classes": [
+        "CI_RUNTIME_EVIDENCE",
+        "CURRENT_REVIEW_PACKET",
+        "DURABLE_SESSION_STATE",
+        "FINAL_PACKAGE_EVIDENCE",
+        "MODEL_TRIAL_EVIDENCE",
+        "PRIOR_REVIEW_RESULTS",
+        "SOLUTION_ORACLE",
+        "VERIFIER_PRIVATE"
+      ],
+      "mandatory_exact_reads": [
+        "TERMINUS_3_AI_INSTRUCTIONS.md",
+        ".terminus/agents/CREATION_PIPELINE.md",
+        ".terminus/agents/PRODUCTION_AUTHENTICITY.md",
+        ".terminus/agents/CREATOR_PROMPTS.md",
+        ".terminus/agents/A2_PHASE_PROMPTS.md"
+      ],
+      "retrieval_mode": "FILTERED_HYBRID"
+    },
+    "ignored_input_count": 0,
+    "inputs": {
+      "optional": {},
+      "required": {
+        "CLEAN_SYSTEM_ARCHITECTURE": {
+          "COMPONENT_GRAPH": [
+            "api",
+            "node_registry",
+            "route_catalog",
+            "policy_rules",
+            "revision_planner",
+            "transaction_coordinator",
+            "kernel_model",
+            "snapshot_store",
+            "drift_engine",
+            "rollout_engine",
+            "audit_service",
+            "frontend",
+            "ansible_role"
+          ],
+          "ENTRYPOINTS": [
+            "/app/routecp/cmd/routecp/main.go",
+            "/app/routecp/ansible/roles/routecp/tasks/main.yml",
+            "/app/routecp/web/app.ts"
+          ],
+          "STATE_MODEL": {
+            "desired": "versioned route/rule/link desired state",
+            "durability": "atomic state.json publication",
+            "fleet": "node labels, heartbeat revision and rollout waves",
+            "observed": "per-node independently collected routing state",
+            "transactions": "per-node before/after apply snapshots and phases"
+          }
+        },
+        "CREATION_RULE_CONTEXT": {
+          "CONTROL_PLANE_COMMIT": "df7ef7569e2947b9f0bf7cf89ed4dec6c2a5a1fe",
+          "CREATION_PROFILE": "large_system_strict"
+        },
+        "DEFECT_TOPOLOGY": {
+          "behavioral_surfaces": [
+            "route/rule lifecycle",
+            "multipath normalization",
+            "revision preview/apply/rollback",
+            "management safety",
+            "drift/reconcile",
+            "restart recovery",
+            "fleet rollout isolation",
+            "Ansible idempotency",
+            "dashboard concurrency"
+          ],
+          "manifestation_count": 24,
+          "profile": "large_system_strict",
+          "root_cause_clusters": [
+            "C1_ROUTE_IDENTITY_NORMALIZATION",
+            "C2_POLICY_RULE_DEPENDENCY",
+            "C3_REVISION_TRANSACTION_FENCING",
+            "C4_MANAGEMENT_SAFETY",
+            "C5_APPLY_ROLLBACK_RECOVERY",
+            "C6_DRIFT_RECONCILIATION",
+            "C7_FLEET_ROLLOUT",
+            "C8_DEPLOYMENT_AND_UI_CONCURRENCY"
+          ]
+        },
+        "SOLVER_VISIBLE_DOC_PLAN": [
+          "/app/routecp/task.toml",
+          "/app/routecp/config/fleet.yaml",
+          "/app/routecp/ansible/roles/routecp/defaults/main.yml"
+        ]
+      }
+    },
+    "invocation_id": "inv_06c269a63846481e8ef7d9b5d33e276cc915e01e9c7718869e03ed2fcf51fcad",
+    "learning": {
+      "context_hash": "sha256:bb84a513aa2b6e4374d691759c4a6edf94169f479f4611e9091643b9f279ccfc",
+      "lessons": [],
+      "mode": "GENERALIZED_LESSONS_PLUS_OWNED_REMEDIATIONS",
+      "raw_feedback_exposed": false,
+      "raw_historical_findings_exposed": false,
+      "registry_heads": {
+        "feedback": "GENESIS",
+        "findings": "GENESIS",
+        "lessons": "GENESIS",
+        "patterns": "GENESIS",
+        "remediations": "GENESIS"
+      },
+      "remediations": []
+    },
+    "missing_required_inputs": [],
+    "output_contract": {
+      "allowed_status_values": [
+        "BUILT",
+        "SCENARIO_TOO_SMALL",
+        "ARCHITECTURE_GAP",
+        "BLOCKED"
+      ],
+      "deterministic_validators": [
+        ".terminus/validate_environment_complexity.py <task>",
+        ".terminus/validate_runtime_authenticity.py <task>",
+        ".terminus/validate_business_module_diversity.py <task> when applicable"
+      ],
+      "optional_fields": [
+        "RESOURCE_COUNT",
+        "UNRESOLVED_RISKS"
+      ],
+      "persisted_artifacts": [
+        "<task>/environment/"
+      ],
+      "required_fields": [
+        "COMPONENT_GRAPH",
+        "ENTRYPOINTS",
+        "SOLVER_VISIBLE_DOCS",
+        "INSTRUCTION_DOC_BOUNDARY",
+        "SUBSTANTIVE_LOC",
+        "PRODUCTION_CHARACTERISTICS",
+        "RUNTIME_REACHABILITY_NOTES",
+        "ENVIRONMENT_RULE_CHECKS"
+      ],
+      "semantic_reviewers": [
+        "Complexity Governor"
+      ]
+    },
+    "readiness": "READY",
+    "retrieval": {
+      "query": null,
+      "retrieved_chars": 0,
+      "retrieved_context": [],
+      "status": "NOT_REQUESTED"
+    },
+    "routing": {
+      "failure_routes": {
+        "ARCHITECTURE_GAP": "Creation Controller -> SYSTEM_ARCHITECTURE",
+        "FORMAT_ERROR": "Q7 Task Format Enforcer",
+        "SCENARIO_TOO_SMALL": "Creation Controller -> WORK_PACKAGE_RESEARCH",
+        "TOY_OR_PADDED_SYSTEM": "A2 System Architect / Environment Builder"
+      },
+      "stale_on": [
+        "architecture change",
+        "defect-topology change",
+        "solver-visible documentation plan change",
+        "environment rule change",
+        "solver-visible environment change"
+      ],
+      "success_transition": "REFERENCE_SOLUTION"
+    },
+    "schema_version": "1.0",
+    "stage": {
+      "lifecycle": "creation",
+      "owner": "A2 System Architect / Environment Builder",
+      "role_class": "PRODUCER",
+      "role_id": "A2_ENVIRONMENT_BUILDER",
+      "stage_id": "ENVIRONMENT_BUILD"
+    }
+  },
+  "outputs": {
+    "COMPONENT_GRAPH": [
+      "HTTP API and node registry",
+      "route and policy-rule catalog",
+      "revision planner and transaction coordinator",
+      "durable snapshot store",
+      "drift and reconciliation engine",
+      "fleet rollout engine",
+      "Ansible deployment role",
+      "operator dashboard client"
+    ],
+    "ENTRYPOINTS": [
+      "/app/routecp/cmd/routecp/main.go",
+      "/app/routecp/ansible/roles/routecp/tasks/main.yml",
+      "/app/routecp/web/app.ts"
+    ],
+    "ENVIRONMENT_RULE_CHECKS": {
+      "business_module_diversity": "NOT_APPLICABLE_SYSTEMS_TASK",
+      "environment_complexity": "PASS_EXPECTED",
+      "runtime_authenticity": "PASS_EXPECTED"
+    },
+    "INSTRUCTION_DOC_BOUNDARY": "Environment exposes ordinary routing, fleet, API and deployment contracts only; private defect topology, verifier mappings and solution patches remain outside solver-visible task files.",
+    "PRODUCTION_CHARACTERISTICS": [
+      "real Go HTTP control-plane process",
+      "IPv4/IPv6 route and policy-rule state models",
+      "revision preview/apply/rollback transactions",
+      "durable desired and observed snapshots",
+      "drift and reconciliation paths",
+      "160-node multi-site representative fleet",
+      "wave rollout isolation",
+      "systemd-based Ansible deployment",
+      "operator-facing TypeScript dashboard"
+    ],
+    "RESOURCE_COUNT": 160,
+    "RUNTIME_REACHABILITY_NOTES": [
+      "HTTP entrypoint reaches route, rule, transaction, drift, reconcile, rollout and audit paths",
+      "Ansible role installs and runs the same routecp process",
+      "dashboard reaches normal mutation, reconcile and rollout APIs"
+    ],
+    "SOLVER_VISIBLE_DOCS": [
+      "/app/routecp/task.toml",
+      "/app/routecp/config/fleet.yaml",
+      "/app/routecp/ansible/roles/routecp/defaults/main.yml"
+    ],
+    "SUBSTANTIVE_LOC": 3524,
+    "UNRESOLVED_RISKS": [
+      "Fresh deterministic runtime behavior remains owned by later Oracle validation."
+    ]
+  },
+  "record_id": "rec_5f71f38f9ad41b14c92f7a1a58953c23e1473ad482f659e91ec6bec10287d6d6",
+  "role_id": "A2_ENVIRONMENT_BUILDER",
+  "schema_version": "1.0",
+  "stage_id": "ENVIRONMENT_BUILD",
+  "status": "BUILT",
+  "task_lineage": {
+    "input_task_commit": "22d2e9e09f4deb58029559fe9a0863c2e032f25c",
+    "output_task_commit": "22d2e9e09f4deb58029559fe9a0863c2e032f25c",
+    "task_changed": false
+  },
+  "transition": {
+    "action": "ADVANCE",
+    "requires_state_validation": false,
+    "target": "REFERENCE_SOLUTION",
+    "target_kind": "STAGE"
+  },
+  "validation": {
+    "acceptance_predicates_satisfied": true,
+    "evidence_binding_satisfied": true,
+    "evidence_refs_count": 0,
+    "invocation_identity_valid": true,
+    "invocation_policy_valid": true,
+    "output_keys_valid": true,
+    "required_outputs_satisfied": true,
+    "retrieval_context_authorized": true,
+    "status_legal": true,
+    "task_commit_change_authorized": true,
+    "task_lineage_valid": true
+  }
+}

@@ -1,0 +1,59 @@
+{
+  "role": "Compliance Auditor",
+  "verdict": "PASS",
+  "summary": "Edition 3 flat layout, separate verifier image, digest-pinned Ubuntu base with tmux/asciinema, absolute artifact path, concise instruction, and no tests/solution/oracle exposure in agent image. Verifier uses pytest with binary reward; solution isolated from agent environment.",
+  "evidence": [
+    {
+      "type": "file",
+      "ref": "sovereign-l4-load-balancer/task.toml",
+      "observation": "Required metadata, environment_mode=separate, artifacts, timeouts present."
+    },
+    {
+      "type": "file",
+      "ref": "sovereign-l4-load-balancer/environment/Dockerfile",
+      "observation": "Digest-pinned ubuntu:24.04, tmux/asciinema, build at bake."
+    },
+    {
+      "type": "file",
+      "ref": "sovereign-l4-load-balancer/tests/Dockerfile",
+      "observation": "Verifier extends agent image for glibc/binary compatibility."
+    },
+    {
+      "type": "file",
+      "ref": "sovereign-l4-load-balancer/tests/test.sh",
+      "observation": "Creates /logs/verifier at runtime only; writes binary reward."
+    },
+    {
+      "type": "run",
+      "ref": "validate_task_complexity.py",
+      "observation": "large_system_strict PASS."
+    }
+  ],
+  "findings": [],
+  "do_not_change": [
+    "Separate verifier environment and Edition 3 task contract."
+  ],
+  "next_gate": "Instruction Reviewer",
+  "role_output": {
+    "EDITION3_STRUCTURE": "PASS",
+    "SECURITY_ISOLATION": "PASS",
+    "METADATA": "PASS",
+    "PACKAGING": "PASS"
+  },
+  "schema_version": "3.0",
+  "review_id": "sovereign-l4-load-balancer-d7a001a9-compliance-6e1be0baba",
+  "task": "sovereign-l4-load-balancer",
+  "task_commit": "d7a001a92485de5ca3ec1bd2593648436dc3c237",
+  "control_plane_commit": "d504e16d8009ec28ad1b2c50df83840131f97da5",
+  "protocol_policy_version": "2.2",
+  "prompt_policy_version": "2.2",
+  "role_policy_version": "1.0",
+  "role_contract_hash": "0eaa80319221323add0ea9760e91ef65c56a84687882db25b3e5796e0e36b1bd",
+  "context_packet": ".terminus/reviews/sovereign-l4-load-balancer/d7a001a9/sovereign-l4-load-balancer-d7a001a9-compliance-6e1be0baba.packet.json",
+  "confidence": "HIGH",
+  "evidence_status": "SUFFICIENT",
+  "missing_evidence": [],
+  "change_scope": [
+    "Cold Pre-LLMaJ specialist review at d7a001a9 after quality-interlock PASS."
+  ]
+}

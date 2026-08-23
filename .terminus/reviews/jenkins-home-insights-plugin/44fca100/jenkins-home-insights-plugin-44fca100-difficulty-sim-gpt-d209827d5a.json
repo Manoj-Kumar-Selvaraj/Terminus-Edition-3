@@ -1,0 +1,55 @@
+{
+  "schema_version": "3.0",
+  "role": "Model Perspective Difficulty Simulator",
+  "review_id": "jenkins-home-insights-plugin-44fca100-difficulty-sim-gpt-d209827d5a",
+  "task": "jenkins-home-insights-plugin",
+  "task_commit": "44fca100fb4572b286a4f42e15f35f928674dea5",
+  "control_plane_commit": "743063070d00608d7a9d258ce178e19f4dfb3f5e",
+  "protocol_policy_version": "2.2",
+  "prompt_policy_version": "2.2",
+  "role_policy_version": "1.0",
+  "role_contract_hash": "ccfa675b35acae5b490277be9183df90f9a82e789c8e19a20d170ae2bf1b4c9f",
+  "context_packet": ".terminus/reviews/jenkins-home-insights-plugin/44fca100/jenkins-home-insights-plugin-44fca100-difficulty-sim-gpt-d209827d5a.packet.json",
+  "verdict": "PASS",
+  "confidence": "MEDIUM",
+  "evidence_status": "SUFFICIENT",
+  "summary": "DIAGNOSTIC ONLY (not official GPT×5). SIMULATION_NOT_EXECUTED: no disposable isolated solve+verifier run in this session. GPT-style prior predicts fast module-local patching (query adapters, build health, queue labels) with high risk of missing ACL-before-aggregation, journal checkpoint ordering, and torn-tail recovery coupling → USEFUL signal in advanced band.",
+  "evidence": [
+    {"type": "file", "ref": "jenkins-home-insights-plugin/instruction.md", "observation": "Twenty bullets span six source families, generations, journal replay, ACL projection, and CLI/HTTP parity—many independent failure surfaces."},
+    {"type": "file", "ref": "jenkins-home-insights-plugin/environment/plugin/docs/storage.md", "observation": "Publication, checkpoint, torn journal, and recovery rules require cross-module ordering not obvious from a single class grep."},
+    {"type": "rule", "ref": ".terminus/agents/QUALITY_AGENT_PROMPTS.md#Q8", "observation": "SIMULATION_NOT_EXECUTED when full isolated solve cannot be run honestly."}
+  ],
+  "findings": [],
+  "missing_evidence": [],
+  "change_scope": [],
+  "do_not_change": ["Do not treat this as official GPT trial evidence."],
+  "next_gate": "Q8 Claude perspective then aggregate",
+  "role_output": {
+    "PERSPECTIVE": "GPT_PERSPECTIVE",
+    "EXECUTION": "SIMULATION_NOT_EXECUTED",
+    "DIAGNOSTIC_SUMMARY": "Search failing test names → patch QueryService/AnalysisEngine/GenerationStore locally; under-test ACL projection order, event delete-fencing, and journal replay after torn tail.",
+    "FIRST_DIAGNOSIS": "Query metadata/cursor bugs and missing build-health states; reconcile publishes but restart replay lags.",
+    "FILES_TOUCHED": [
+      "query/QueryService.java",
+      "query/VisibilityProjection.java",
+      "analysis/AnalysisEngine.java",
+      "storage/GenerationStore.java",
+      "journal/EventJournal.java"
+    ],
+    "SHORTCUTS_ATTEMPTED": [
+      "Filter rows after computing totals/facets",
+      "Advance checkpoint on append before publication verifies",
+      "Echo query direction lowercase in metadata"
+    ],
+    "FIRST_MEANINGFUL_DIVERGENCE": "Green on first reconcile/query probes while ACL pagination, torn-journal restart, and HTTP 403 no-metadata tests still fail.",
+    "FINAL_VERIFIER_RESULT": "NOT_RUN",
+    "LIKELY_REASONING_WALLS": [
+      "ACL before correlation/aggregation across six views",
+      "Checkpoint strictly after successful publication",
+      "Incremental delete fences stale upserts across restart"
+    ],
+    "ENVIRONMENT_TOOL_FRICTION": "Java rebuild via build-core; long reconcile on 10k home; separate state dirs for restart scenarios.",
+    "PREDICTED_OFFICIAL_SIGNAL": "USEFUL",
+    "SIMULATION_NOTE": "Diagnostic strategy prior only; not Harbor GPT×5 evidence. Predicted combined-10 mean in advanced (20–50%) band, not frontier."
+  }
+}

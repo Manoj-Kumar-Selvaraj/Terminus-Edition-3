@@ -1,13 +1,19 @@
 #!/usr/bin/env python3
-"""Compile Oracle/NOP CTRF evidence into a canonical DETERMINISTIC_VALIDATION StageResult."""
+"""Compile Oracle/NOP empirical evidence into a canonical DETERMINISTIC_VALIDATION StageResult."""
 
 from __future__ import annotations
 
 import argparse
 import hashlib
 import json
+import re
 from pathlib import Path
 from typing import Any, Mapping
+
+
+_PYTEST_SUMMARY = re.compile(
+    r"^(PASSED|FAILED|ERROR|SKIPPED|XFAIL|XPASS)\s+(\S+?)(?:\s+-\s+.*)?$"
+)
 
 
 def _load_object(path: Path, label: str) -> dict[str, Any]:
@@ -39,14 +45,14 @@ def _run_ref(run_id: str, evidence: Mapping[str, Any]) -> dict[str, str]:
 
 def _test_name(raw: Any) -> str:
     if not isinstance(raw, str) or not raw.strip():
-        raise ValueError("CTRF test has no usable name")
+        raise ValueError("test evidence has no usable name")
     name = raw.strip().split("::")[-1]
     return name.split("[", 1)[0]
 
 
 def _test_status(raw: Any) -> str:
     if not isinstance(raw, str) or not raw.strip():
-        raise ValueError("CTRF test has no usable status")
+        raise ValueError("test evidence has no usable status")
     value = raw.strip().lower()
     aliases = {
         "pass": "passed",
@@ -60,6 +66,8 @@ def _test_status(raw: Any) -> str:
         "skip": "skipped",
         "skipped": "skipped",
         "pending": "skipped",
+        "xfail": "skipped",
+        "xpass": "passed",
     }
     return aliases.get(value, value)
 
@@ -87,23 +95,63 @@ def _tests_from_ctrf(path: Path) -> dict[str, str]:
     return tests
 
 
-def _collect_ctrf(root: Path, label: str) -> tuple[dict[str, str], list[str]]:
-    paths = sorted(root.rglob("ctrf.json"))
-    if not paths:
-        raise ValueError(f"{label} produced no ctrf.json")
+def _tests_from_pytest_stdout(path: Path) -> dict[str, str]:
+    tests: dict[str, str] = {}
+    for raw_line in path.read_text(encoding="utf-8", errors="replace").splitlines():
+        line = raw_line.strip()
+        match = _PYTEST_SUMMARY.fullmatch(line)
+        if match is None:
+            continue
+        status_raw, nodeid = match.groups()
+        name = _test_name(nodeid)
+        status = _test_status(status_raw)
+        previous = tests.get(name)
+        if previous is not None and previous != status:
+            raise ValueError(f"pytest stdout {path} has conflicting statuses for {name}")
+        tests[name] = status
+    if not tests:
+        raise ValueError(f"pytest stdout {path} has no explicit test summary records")
+    return tests
+
+
+def _merge_test_reports(
+    paths: list[Path],
+    label: str,
+    loader: Any,
+    evidence_kind: str,
+) -> tuple[dict[str, str], list[str]]:
     merged: dict[str, str] = {}
     used: list[str] = []
     for path in paths:
-        tests = _tests_from_ctrf(path)
+        tests = loader(path)
         for name, status in tests.items():
             previous = merged.get(name)
             if previous is not None and previous != status:
-                raise ValueError(f"{label} CTRF evidence conflicts for {name}")
+                raise ValueError(f"{label} {evidence_kind} evidence conflicts for {name}")
             merged[name] = status
         used.append(str(path))
     if not merged:
-        raise ValueError(f"{label} CTRF evidence contains no tests")
+        raise ValueError(f"{label} {evidence_kind} evidence contains no tests")
     return merged, used
+
+
+def _collect_test_evidence(root: Path, label: str) -> tuple[dict[str, str], list[str], str]:
+    ctrf_paths = sorted(root.rglob("ctrf.json"))
+    if ctrf_paths:
+        tests, used = _merge_test_reports(ctrf_paths, label, _tests_from_ctrf, "CTRF")
+        return tests, used, "CTRF"
+
+    pytest_paths = sorted(root.rglob("verifier/test-stdout.txt"))
+    if pytest_paths:
+        tests, used = _merge_test_reports(
+            pytest_paths,
+            label,
+            _tests_from_pytest_stdout,
+            "PYTEST_STDOUT",
+        )
+        return tests, used, "PYTEST_STDOUT"
+
+    raise ValueError(f"{label} produced neither ctrf.json nor verifier/test-stdout.txt")
 
 
 def _reward(root: Path, label: str) -> float:
@@ -184,8 +232,8 @@ def compile_result(
 
     oracle_reward = _reward(oracle_root, "Oracle")
     nop_reward = _reward(nop_root, "NOP")
-    oracle_tests, oracle_ctrf = _collect_ctrf(oracle_root, "Oracle")
-    nop_tests, nop_ctrf = _collect_ctrf(nop_root, "NOP")
+    oracle_tests, oracle_reports, oracle_report_kind = _collect_test_evidence(oracle_root, "Oracle")
+    nop_tests, nop_reports, nop_report_kind = _collect_test_evidence(nop_root, "NOP")
     rows = _classification(root, task, oracle_tests)
 
     f2p: list[dict[str, Any]] = []
@@ -194,9 +242,9 @@ def compile_result(
     classification_failures: list[str] = []
     for name, category, requirement in rows:
         if name not in oracle_tests:
-            raise ValueError(f"Oracle CTRF is missing classified test {name}")
+            raise ValueError(f"Oracle test evidence is missing classified test {name}")
         if name not in nop_tests:
-            raise ValueError(f"NOP CTRF is missing classified test {name}")
+            raise ValueError(f"NOP test evidence is missing classified test {name}")
         oracle_status = oracle_tests[name]
         nop_status = nop_tests[name]
         if oracle_status != "passed":
@@ -225,8 +273,10 @@ def compile_result(
         "workflow_run_attempt": str(run_attempt),
         "oracle_reward": oracle_reward,
         "nop_reward": nop_reward,
-        "oracle_ctrf": oracle_ctrf,
-        "nop_ctrf": nop_ctrf,
+        "oracle_test_report_kind": oracle_report_kind,
+        "nop_test_report_kind": nop_report_kind,
+        "oracle_test_reports": oracle_reports,
+        "nop_test_reports": nop_reports,
         "f2p_count": len(f2p),
         "p2p_count": len(p2p),
     }

@@ -1,0 +1,26 @@
+# API v1
+
+The standalone endpoint is `GET /operational-insights/api/v1/query`; health is `GET /operational-insights/api/v1/health`. Jenkins RootAction uses the same URL namespace. Responses are UTF-8 JSON.
+
+Query parameters:
+
+- `view`: `records`, `queue`, `builds`, `lineage`, `plugins`, or `summary`.
+- `kind`: repeatable source-family filter for record views.
+- `contains`: case-insensitive canonical record search.
+- `sort`: `key`, `kind`, `sequence`, or `display`.
+- `direction`: `asc` or `desc`.
+- `limit`: positive integer no greater than 1000.
+- `cursor`: opaque cursor returned by the preceding request.
+- `principal`, `system-read`, `overall-read`, and repeatable `item` model the standalone authorization context.
+
+A successful query contains `generationId`, `view`, `items`, `total`, `nextCursor`, `facets`, and `metadata`. The `metadata` object echoes the request context:
+
+- `principal`: echoed principal name from the authorization context.
+- `sort`: echoed sort field (`key`, `kind`, `sequence`, or `display`).
+- `direction`: echoed sort direction normalized to uppercase (`ASC` or `DESC`).
+- `visible`: count of authorized records in the current projection before view shaping.
+- `checkpoint`: applied checkpoint object from the published generation.
+
+Empty cursors serialize as JSON null. Invalid filters or cursors are request errors. Unauthorized requests are forbidden and contain no result metadata.
+
+CLI `query` flags have the same names and semantics as HTTP parameters. Ordering, default bounds, null handling, and errors are transport-independent.

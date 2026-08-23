@@ -1,0 +1,661 @@
+{
+  "authority": {
+    "control_plane_commit": "df7ef7569e2947b9f0bf7cf89ed4dec6c2a5a1fe",
+    "policy_versions": {},
+    "task_commit": "78ad422902b27dea954905130a1267b02cff3596",
+    "task_id": "terraform-ansible-managed-resources"
+  },
+  "disposition": "ADVANCE",
+  "evidence_refs": [
+    {
+      "content_hash": "sha256:104817a239b92de3e53f14d6bc0176563437894773e060648776dc09c6280374",
+      "kind": "COMMIT",
+      "ref": "commit:78ad422902b27dea954905130a1267b02cff3596"
+    },
+    {
+      "content_hash": "sha256:6bfafe5cc0a1f16f2561dd48bf641f8df144b263934e6eb1206c7107bc5f465f",
+      "kind": "RESULT",
+      "ref": "git:0dc791256ea1924cec0b21b3838e5a526b21aec0:.terminus/reviews/terraform-ansible-managed-resources/78ad4229/terraform-ansible-managed-resources-78ad4229-spec-test-contract-fd4b304b12.json#terraform-ansible-managed-resources-78ad4229-spec-test-contract-fd4b304b12"
+    },
+    {
+      "content_hash": "sha256:5109d68ceca898a44280d3b46bbabfefbcab153950bb5d5af9c1ec9f864a8e72",
+      "kind": "RESULT",
+      "ref": "git:0dc791256ea1924cec0b21b3838e5a526b21aec0:.terminus/reviews/terraform-ansible-managed-resources/78ad4229/terraform-ansible-managed-resources-78ad4229-production-logic-1eafb47b8b.json#terraform-ansible-managed-resources-78ad4229-production-logic-1eafb47b8b"
+    },
+    {
+      "content_hash": "sha256:6bfafe5cc0a1f16f2561dd48bf641f8df144b263934e6eb1206c7107bc5f465f",
+      "kind": "RUN",
+      "ref": "run:github:32575242666-q4#sha256:6bfafe5cc0a1f16f2561dd48bf641f8df144b263934e6eb1206c7107bc5f465f"
+    },
+    {
+      "content_hash": "sha256:5109d68ceca898a44280d3b46bbabfefbcab153950bb5d5af9c1ec9f864a8e72",
+      "kind": "RUN",
+      "ref": "run:github:32575242666-q6#sha256:5109d68ceca898a44280d3b46bbabfefbcab153950bb5d5af9c1ec9f864a8e72"
+    }
+  ],
+  "invocation_id": "inv_896d8404121112df1fce056951aa41cdf7c383934e66aa5ee2acdb169854643a",
+  "invocation_snapshot": {
+    "acceptance_predicates": {
+      "QUALITY_INTERLOCK_PASS": [
+        {
+          "op": "q4_satisfied",
+          "path": "Q4_RESULT"
+        },
+        {
+          "op": "eq",
+          "path": "Q6_RESULT.verdict",
+          "value": "PASS"
+        },
+        {
+          "op": "in",
+          "path": "Q6_RESULT.confidence",
+          "value": [
+            "HIGH",
+            "MEDIUM"
+          ]
+        },
+        {
+          "op": "eq",
+          "path": "Q6_RESULT.evidence_status",
+          "value": "SUFFICIENT"
+        },
+        {
+          "op": "empty",
+          "path": "Q6_RESULT.missing_evidence"
+        },
+        {
+          "op": "in",
+          "path": "EVIDENCE_SUFFICIENCY",
+          "value": [
+            "SUFFICIENT",
+            true
+          ]
+        }
+      ]
+    },
+    "authority": {
+      "control_plane_commit": "df7ef7569e2947b9f0bf7cf89ed4dec6c2a5a1fe",
+      "policy_versions": {},
+      "task_commit": "78ad422902b27dea954905130a1267b02cff3596",
+      "task_id": "terraform-ansible-managed-resources"
+    },
+    "evidence": {
+      "authorized_evidence_classes": [
+        "CI_RUNTIME_EVIDENCE",
+        "CONTROL_PLANE_POLICY",
+        "CURRENT_REVIEW_PACKET",
+        "DURABLE_SESSION_STATE",
+        "SOLVER_VISIBLE_TASK"
+      ],
+      "evidence_required": [
+        "Q4 exact-current PASS with sufficient evidence",
+        "Q6 current or Protocol-valid scope-preserved PASS with sufficient evidence",
+        "Q4 direct PASS or validated adjudicated closure PASS"
+      ],
+      "excluded_evidence_classes": [
+        "FINAL_PACKAGE_EVIDENCE",
+        "MODEL_TRIAL_EVIDENCE",
+        "PRIOR_REVIEW_RESULTS",
+        "PRIVATE_CREATION_DESIGN",
+        "PUBLIC_REFERENCE",
+        "SOLUTION_ORACLE",
+        "VERIFIER_PRIVATE"
+      ],
+      "mandatory_exact_reads": [
+        ".terminus/AGENT_SYSTEM.md",
+        ".terminus/agents/PROTOCOL.md",
+        ".terminus/agents/QUALITY_AGENT_REGISTRY.md",
+        ".terminus/agents/INSTRUCTION_POLICY.md",
+        ".terminus/agents/QUALITY_AGENT_PROMPTS.md",
+        ".terminus/agents/INVOKE.md"
+      ],
+      "retrieval_mode": "EXACT_ONLY"
+    },
+    "ignored_input_count": 0,
+    "inputs": {
+      "optional": {
+        "Q6_REVIEW_SCOPE_HASH": "5024cce4e6afacd64daf5cc630576390f3b382ea422f7a39c3726d0a7bf1e76e"
+      },
+      "required": {
+        "FROZEN_TASK_COMMIT": "78ad422902b27dea954905130a1267b02cff3596",
+        "Q4_CONTEXT_PACKET": {
+          "authoritative_rules": [
+            "TERMINUS_3_AI_INSTRUCTIONS.md",
+            ".terminus/AGENT_SYSTEM.md",
+            ".terminus/agents/PROTOCOL.md",
+            ".terminus/agents/PROMPTS.md",
+            ".terminus/agents/QUALITY_AGENT_REGISTRY.md",
+            ".terminus/agents/QUALITY_AGENT_PROMPTS.md"
+          ],
+          "change_since_last_review": "Fresh current-control-plane replay completed through deterministic validation; Oracle=1, NOP=0, 30 F2P and 6 P2P empirical matrices are canonical at the unchanged frozen task snapshot.",
+          "control_plane_commit": "92fdd1baa8a68cfda6af0f8b1ffe9abc423f975d",
+          "evidence_allowed": [
+            "instruction.md",
+            "all solver-visible contracts referenced by instruction.md",
+            "tests/",
+            "test map when needed to identify classification only",
+            "environment interfaces required to interpret observable behavior"
+          ],
+          "evidence_excluded": [
+            "Q1/Q2/Q3 conclusions before the independent matrix is frozen",
+            "Verifier Author coverage rationale",
+            "previous Spec-Test Contract Reviewer verdict",
+            "other specialist verdicts",
+            "desired aggregate outcome"
+          ],
+          "isolation_mode": "PROCEDURAL",
+          "output_schema": ".terminus/agents/schemas/review_result.schema.json",
+          "prior_verdicts_visible": false,
+          "prompt_policy_version": "2.2",
+          "protocol_policy_version": "2.2",
+          "question": "Is every substantive verifier behavior discoverable from the solver-visible contract, every material requirement tested, and every grading-relevant statement unambiguous?",
+          "review_id": "terraform-ansible-managed-resources-78ad4229-spec-test-contract-fd4b304b12",
+          "review_output_path": ".terminus/reviews/terraform-ansible-managed-resources/78ad4229/terraform-ansible-managed-resources-78ad4229-spec-test-contract-fd4b304b12.json",
+          "role": "Spec-Test Contract Reviewer",
+          "role_contract_hash": "9607c7323be7db66eb7b520db4498f29efc686073e6f3d565c8e2c99ad26a34c",
+          "role_policy_version": "1.1",
+          "schema_version": "3.0",
+          "state": "FROZEN_CANDIDATE",
+          "task": "terraform-ansible-managed-resources",
+          "task_commit": "78ad422902b27dea954905130a1267b02cff3596"
+        },
+        "Q6_CONTEXT_PACKET": {
+          "authoritative_rules": [
+            "TERMINUS_3_AI_INSTRUCTIONS.md",
+            ".terminus/AGENT_SYSTEM.md",
+            ".terminus/agents/PROTOCOL.md",
+            ".terminus/agents/PROMPTS.md",
+            ".terminus/agents/QUALITY_AGENT_REGISTRY.md",
+            ".terminus/agents/QUALITY_AGENT_PROMPTS.md"
+          ],
+          "change_since_last_review": "Fresh current-control-plane replay completed through deterministic validation; Oracle=1, NOP=0, 30 F2P and 6 P2P empirical matrices are canonical at the unchanged frozen task snapshot.",
+          "control_plane_commit": "1e2593be2a1aaeb7983fe77c29704d76add027b8",
+          "evidence_allowed": [
+            "task.toml",
+            "solver-visible environment/runtime/configuration code",
+            "entrypoints and operator workflows",
+            "runtime-authenticity and complexity reports",
+            "representative data/state and incident evidence"
+          ],
+          "evidence_excluded": [
+            "Complexity Governor verdict as a conclusion to copy",
+            "creator claims that code is production-grade",
+            "previous Production Logic Auditor verdict",
+            "other specialist verdicts",
+            "desired difficulty tier"
+          ],
+          "isolation_mode": "PROCEDURAL",
+          "output_schema": ".terminus/agents/schemas/review_result.schema.json",
+          "prior_verdicts_visible": false,
+          "prompt_policy_version": "2.2",
+          "protocol_policy_version": "2.2",
+          "question": "Is the solver-visible core genuinely complex, reachable, coupled, non-toy and credible as production logic rather than LOC or module padding?",
+          "review_id": "terraform-ansible-managed-resources-78ad4229-production-logic-1eafb47b8b",
+          "review_output_path": ".terminus/reviews/terraform-ansible-managed-resources/78ad4229/terraform-ansible-managed-resources-78ad4229-production-logic-1eafb47b8b.json",
+          "review_scope_hash": "5024cce4e6afacd64daf5cc630576390f3b382ea422f7a39c3726d0a7bf1e76e",
+          "role": "Production Logic Auditor",
+          "role_contract_hash": "828f84c63f4e37642ab42740b22aa95646ddaa42972f30902e9fe9a034e5458c",
+          "role_policy_version": "1.1",
+          "schema_version": "3.0",
+          "state": "FROZEN_CANDIDATE",
+          "task": "terraform-ansible-managed-resources",
+          "task_commit": "78ad422902b27dea954905130a1267b02cff3596"
+        }
+      }
+    },
+    "invocation_id": "inv_896d8404121112df1fce056951aa41cdf7c383934e66aa5ee2acdb169854643a",
+    "learning": {
+      "context_hash": "sha256:bb84a513aa2b6e4374d691759c4a6edf94169f479f4611e9091643b9f279ccfc",
+      "lessons": [],
+      "mode": "GENERALIZED_LESSONS_PLUS_OWNED_REMEDIATIONS",
+      "raw_feedback_exposed": false,
+      "raw_historical_findings_exposed": false,
+      "registry_heads": {
+        "feedback": "GENESIS",
+        "findings": "GENESIS",
+        "lessons": "GENESIS",
+        "patterns": "GENESIS",
+        "remediations": "GENESIS"
+      },
+      "remediations": []
+    },
+    "missing_required_inputs": [],
+    "output_contract": {
+      "allowed_status_values": [
+        "QUALITY_INTERLOCK_PASS",
+        "REVISE",
+        "INSUFFICIENT_EVIDENCE",
+        "BLOCKED"
+      ],
+      "deterministic_validators": [
+        ".terminus/validate_review_freshness.py",
+        ".terminus/validate_quality_interlock.py"
+      ],
+      "optional_fields": [
+        "ADJUDICATION_REQUIRED",
+        "Q4_CLOSURE_RESULT"
+      ],
+      "persisted_artifacts": [
+        "Q4/Q6 packets and results",
+        ".terminus/sessions/<task>.md"
+      ],
+      "required_fields": [
+        "Q4_RESULT",
+        "Q4_SATISFACTION",
+        "Q6_RESULT",
+        "EVIDENCE_SUFFICIENCY"
+      ],
+      "semantic_reviewers": [
+        "Q4 Spec-Test Contract Reviewer",
+        "Q6 Production Logic Auditor",
+        "Q4 Closure Adjudicator"
+      ]
+    },
+    "readiness": "READY",
+    "retrieval": {
+      "query": null,
+      "retrieved_chars": 0,
+      "retrieved_context": [],
+      "status": "NOT_REQUESTED"
+    },
+    "routing": {
+      "failure_routes": {
+        "INSUFFICIENT_EVIDENCE": "CI Orchestrator / Submission Controller",
+        "LATENT_REVIEWER_OMISSION": "Adjudicator",
+        "Q4_CIRCUIT_BREAKER": "CI Orchestrator -> Q4_CLOSURE_POLICY -> Q4 Closure Adjudicator",
+        "Q4_REVISE": "smallest responsible spec/verifier producer",
+        "Q6_REVISE": "A2/A4 or responsible production producer"
+      },
+      "stale_on": [
+        "Q4 evidence-surface change",
+        "Q6 production-scope change",
+        "role-contract hash change",
+        "protocol/prompt policy change"
+      ],
+      "success_transition": "PRE_LLMAJ"
+    },
+    "schema_version": "1.0",
+    "stage": {
+      "lifecycle": "review",
+      "owner": "CI Orchestrator / Submission Controller",
+      "role_class": "CONTROLLER",
+      "role_id": "CI_ORCHESTRATOR",
+      "stage_id": "QUALITY_INTERLOCK"
+    }
+  },
+  "outputs": {
+    "EVIDENCE_SUFFICIENCY": "SUFFICIENT",
+    "Q4_CLOSURE_RESULT": {
+      "decision_id": "hd_0f1f1f1dd983c67fa0526ac999d5c558053b315ff194ced316a70bfc37303bc6",
+      "type": "CHAT_HUMAN_RISK_ACCEPTANCE"
+    },
+    "Q4_RESULT": {
+      "change_scope": [
+        "tests/test_provider_contract.py or adjacent ownership test module"
+      ],
+      "confidence": "HIGH",
+      "context_packet": ".terminus/reviews/terraform-ansible-managed-resources/78ad4229/terraform-ansible-managed-resources-78ad4229-spec-test-contract-fd4b304b12.packet.json",
+      "control_plane_commit": "92fdd1baa8a68cfda6af0f8b1ffe9abc423f975d",
+      "do_not_change": [
+        "instruction.md",
+        "environment/ansibleops/docs/provider-contract.md",
+        "environment/ansibleops/docs/resource-reference.md",
+        "environment/ansibleops/docs/lifecycle.md",
+        "F2P/P2P classification of existing thirty-six tests"
+      ],
+      "evidence": [
+        {
+          "observation": "Thirteen concise bullets within Edition-3 shape state managed-resource behavior, identity-from-external-key rules, Ansible mutation/read split, failure handling, normalization, build constraints, and prohibited execution substitutes; three delegated docs are named explicitly.",
+          "ref": "terraform-ansible-managed-resources/instruction.md",
+          "type": "file"
+        },
+        {
+          "observation": "Legitimate provider contract: Terraform Core owns state, one external object key per resource, Ansible only on mutations, structured argv, cleanup and no command output in state.",
+          "ref": "terraform-ansible-managed-resources/environment/ansibleops/docs/provider-contract.md",
+          "type": "file"
+        },
+        {
+          "observation": "Tables ten resources with external identity keys; line and block identities are path plus stable name; cron defaults and copy/template digest semantics are specified.",
+          "ref": "terraform-ansible-managed-resources/environment/ansibleops/docs/resource-reference.md",
+          "type": "file"
+        },
+        {
+          "observation": "Legitimate lifecycle contract covering create/update/delete ordering, side-effect-free read, scoped deletion, idempotency and normalization.",
+          "ref": "terraform-ansible-managed-resources/environment/ansibleops/docs/lifecycle.md",
+          "type": "file"
+        },
+        {
+          "observation": "Rejects duplicate file path, user name, group name, and root cron name collisions only; no line or block path+name collision scenario.",
+          "ref": "terraform-ansible-managed-resources/tests/test_provider_contract.py::test_f2p_duplicate_external_ownership_is_rejected",
+          "type": "test"
+        },
+        {
+          "observation": "Confirms two line and two block resources can share one backing file when names differ, proving composite-key ownership is material but leaving same-name collision untested.",
+          "ref": "terraform-ansible-managed-resources/tests/test_lifecycle_delete.py::test_f2p_named_entry_deletes_preserve_siblings",
+          "type": "test"
+        },
+        {
+          "observation": "Maps thirty F2P and six P2P tests across thirteen requirement IDs; REQ_OWNERSHIP is tied solely to the four-type duplicate collision test.",
+          "ref": ".terminus/designs/terraform-ansible-managed-resources-test-map.json",
+          "type": "file"
+        }
+      ],
+      "evidence_status": "SUFFICIENT",
+      "findings": [
+        {
+          "criterion": "Every material requirement is covered by at least one meaningful verifier assertion",
+          "evidence_refs": [
+            "terraform-ansible-managed-resources/instruction.md",
+            "terraform-ansible-managed-resources/environment/ansibleops/docs/resource-reference.md",
+            "terraform-ansible-managed-resources/environment/ansibleops/docs/provider-contract.md",
+            "terraform-ansible-managed-resources/tests/test_provider_contract.py::test_f2p_duplicate_external_ownership_is_rejected",
+            "terraform-ansible-managed-resources/tests/test_lifecycle_delete.py::test_f2p_named_entry_deletes_preserve_siblings"
+          ],
+          "id": "Q4-ST-001",
+          "minimal_remediation": "Extend duplicate-ownership coverage with F2P apply-failure cases for two ansibleops_line and two ansibleops_block resources that share the same path and name (distinct Terraform resource addresses).",
+          "regression_risk": "Low if added as new F2P negatives; ensure distinct resource names in HCL while colliding on provider external keys.",
+          "severity": "HIGH",
+          "status": "OBSERVED",
+          "why_it_matters": "Instruction and resource-reference define line and block external identities as path plus stable name, and the general one-key-per-resource rule requires rejecting duplicate claims. A provider that enforces collisions for file/user/group/cron keys but omits composite-key checks for line and block can pass the full thirty-six-test matrix while violating the documented ownership contract."
+        }
+      ],
+      "missing_evidence": [],
+      "next_gate": "QUALITY_INTERLOCK",
+      "prompt_policy_version": "2.2",
+      "protocol_policy_version": "2.2",
+      "review_id": "terraform-ansible-managed-resources-78ad4229-spec-test-contract-fd4b304b12",
+      "role": "Spec-Test Contract Reviewer",
+      "role_contract_hash": "9607c7323be7db66eb7b520db4498f29efc686073e6f3d565c8e2c99ad26a34c",
+      "role_output": {
+        "ADVISORY_FINDING_IDS": [],
+        "AMBIGUITIES": [],
+        "BIDIRECTIONAL_ALIGNMENT": "FAIL",
+        "BLOCKING_FINDING_IDS": [
+          "Q4-ST-001"
+        ],
+        "DELEGATED_CONTRACT_CHECK": {
+          "IMPLEMENTATION_DIAGNOSIS_LEAKAGE": "NONE",
+          "INSTRUCTION_DOC_BOUNDARY": "CLEAN",
+          "lifecycle.md": "LEGITIMATE_TECHNICAL_DOCUMENTATION",
+          "provider-contract.md": "LEGITIMATE_TECHNICAL_DOCUMENTATION",
+          "resource-reference.md": "LEGITIMATE_TECHNICAL_DOCUMENTATION"
+        },
+        "EXHAUSTIVENESS": {
+          "DELEGATED_CONTRACTS_COMPLETE": "YES",
+          "F2P_BOUNDARIES_COMPLETE": "YES",
+          "FORWARD_MATRIX_COMPLETE": "YES",
+          "OUTPUT_INTERFACES_COMPLETE": "YES",
+          "P2P_BOUNDARIES_COMPLETE": "YES",
+          "REQUIREMENTS_ENUMERATED": "COMPLETE",
+          "REVERSE_MATRIX_COMPLETE": "YES",
+          "SECOND_PASS_OMISSION_SWEEP": "PASS",
+          "UNINSPECTED_SCOPE": [],
+          "VERIFIER_BEHAVIORS_ENUMERATED": "COMPLETE"
+        },
+        "PHANTOM_TEST_CONTRACTS": [],
+        "REQUIREMENT_TEST_MATRIX": {
+          "REQ_BACKEND": [
+            "test_f2p_clean_named_text_refresh_does_not_execute_ansible",
+            "test_f2p_filesystem_identities_survive_mutable_updates",
+            "test_f2p_user_supplementary_group_drift_requires_reconciliation",
+            "test_f2p_cron_omitted_schedule_fields_converge_to_wildcards"
+          ],
+          "REQ_COPY": [
+            "test_f2p_copy_destination_content_drift_requires_reconciliation",
+            "test_f2p_copy_source_digest_change_executes_content_update",
+            "test_f2p_content_identities_survive_source_and_variable_updates"
+          ],
+          "REQ_CRON": [
+            "test_f2p_cron_omitted_schedule_fields_converge_to_wildcards"
+          ],
+          "REQ_DELETE": [
+            "test_f2p_failed_delete_preserves_managed_state_for_retry",
+            "test_f2p_named_entry_deletes_preserve_siblings",
+            "test_p2p_symlink_destroy_preserves_target",
+            "test_f2p_destroy_preserves_home_when_remove_home_is_false",
+            "test_f2p_destroy_removes_home_when_remove_home_is_true"
+          ],
+          "REQ_IDENTITY": [
+            "test_f2p_content_identities_survive_source_and_variable_updates",
+            "test_f2p_user_identity_survives_shell_update",
+            "test_f2p_group_gid_drift_reconciles_without_identity_churn"
+          ],
+          "REQ_NORMALIZE": [
+            "test_f2p_filesystem_identities_survive_mutable_updates",
+            "test_p2p_template_variable_order_is_semantically_stable",
+            "test_f2p_user_supplementary_group_drift_requires_reconciliation"
+          ],
+          "REQ_OWNERSHIP": [
+            "test_f2p_duplicate_external_ownership_is_rejected",
+            "test_f2p_named_entry_deletes_preserve_siblings"
+          ],
+          "REQ_PROVIDER": [
+            "test_f2p_provider_exposes_exact_managed_resource_schemas",
+            "test_p2p_directory_basic_apply_state_and_destroy",
+            "test_p2p_declared_provider_artifact_root_is_mounted"
+          ],
+          "REQ_REFRESH": [
+            "test_f2p_deleted_directory_is_planned_for_recreation",
+            "test_f2p_filesystem_mode_drift_requires_reconciliation",
+            "test_f2p_symlink_target_drift_requires_reconciliation",
+            "test_f2p_wrong_object_kind_is_not_accepted_as_directory",
+            "test_f2p_copy_destination_content_drift_requires_reconciliation",
+            "test_f2p_user_shell_drift_requires_reconciliation",
+            "test_f2p_deleted_user_is_planned_for_recreation"
+          ],
+          "REQ_RUNNER": [
+            "test_f2p_runner_handles_temp_paths_with_spaces",
+            "test_f2p_runner_does_not_interpret_shell_metacharacters",
+            "test_p2p_success_cleanup_and_state_output_secrecy",
+            "test_f2p_nonzero_ansible_exit_fails_lifecycle_transition",
+            "test_f2p_timeout_and_cancellation_clean_generated_playbooks"
+          ],
+          "REQ_STATE": [
+            "test_p2p_state_is_owned_by_terraform_core",
+            "test_f2p_symlink_identity_survives_target_update"
+          ],
+          "REQ_TEXT": [
+            "test_f2p_clean_named_text_refresh_does_not_execute_ansible",
+            "test_f2p_line_update_replaces_previous_value_exactly_once",
+            "test_f2p_removed_named_text_is_planned_for_recreation"
+          ],
+          "REQ_UPDATE": [
+            "test_f2p_failed_update_preserves_last_successful_template_state",
+            "test_f2p_retry_after_failed_update_reexecutes_and_converges",
+            "test_f2p_copy_source_digest_change_executes_content_update"
+          ]
+        },
+        "SPEC_DUMP_RISK": "LOW",
+        "UNTESTED_REQUIREMENTS": [
+          "Reject duplicate external ownership when two ansibleops_line resources claim the same documented path+name key",
+          "Reject duplicate external ownership when two ansibleops_block resources claim the same documented path+name key"
+        ]
+      },
+      "role_policy_version": "1.1",
+      "schema_version": "3.0",
+      "summary": "Bidirectional alignment is strong for the thirteen requirement families and thirty-six verifier cases, but duplicate external-ownership rejection is not exercised for path+name-keyed line and block resources even though those composite keys are documented solver-visible identity contracts.",
+      "task": "terraform-ansible-managed-resources",
+      "task_commit": "78ad422902b27dea954905130a1267b02cff3596",
+      "verdict": "REVISE"
+    },
+    "Q4_SATISFACTION": "CHAT_HUMAN_RISK_ACCEPTANCE",
+    "Q6_RESULT": {
+      "change_scope": [],
+      "confidence": "HIGH",
+      "context_packet": ".terminus/reviews/terraform-ansible-managed-resources/78ad4229/terraform-ansible-managed-resources-78ad4229-production-logic-1eafb47b8b.packet.json",
+      "control_plane_commit": "1e2593be2a1aaeb7983fe77c29704d76add027b8",
+      "do_not_change": [
+        "Read/mutation separation where refresh/read uses observe packages and never ansible-playbook",
+        "Ten registered resource types and their distinct Ansible module mappings",
+        "Preflight inventory/binary/temp_dir validation gate in provider Configure",
+        "Cross-resource lifecycle invariants documented in environment/ansibleops/docs/lifecycle.md"
+      ],
+      "evidence": [
+        {
+          "observation": "Advanced systems task with workdir /app/provider, separate verifier environment, and 8192MB memory; tags terraform/ansible/provider/state-reconciliation indicating a provider-completion work package.",
+          "ref": "terraform-ansible-managed-resources/task.toml",
+          "type": "file"
+        },
+        {
+          "observation": "Primary entrypoint serves terraform-provider-ansibleops via hashicorp terraform-plugin-framework providerserver at registry.terraform.io/local/ansibleops.",
+          "ref": "terraform-ansible-managed-resources/environment/ansibleops/cmd/terraform-provider-ansibleops/main.go",
+          "type": "file"
+        },
+        {
+          "observation": "Registers ten resource constructors (file, directory, copy, template, line, block, symlink, user, group, cron), configures runtime from provider schema, and runs validateRuntimePreflight before exposing ResourceData.",
+          "ref": "terraform-ansible-managed-resources/environment/ansibleops/internal/provider/provider.go",
+          "type": "file"
+        },
+        {
+          "observation": "241-line preflight inspects inventory size/group/host constraints, resolves executable ansible-playbook, probes temp_dir writability via MkdirTemp/write/read/remove, and bounds mutation timeout to 1s–1h whole seconds.",
+          "ref": "terraform-ansible-managed-resources/environment/ansibleops/internal/provider/preflight.go",
+          "type": "file"
+        },
+        {
+          "observation": "ProcessRunner validates absolute inventory/temp paths, writes ephemeral playbooks under TempDir, executes ansible-playbook with timeout/context cancellation, merges env overrides, captures exit codes, and removes playbooks on success.",
+          "ref": "terraform-ansible-managed-resources/environment/ansibleops/internal/runner/runner.go",
+          "type": "file"
+        },
+        {
+          "observation": "Single mutation path renders SingleTask playbooks and delegates to configured Runner with ANSIBLE_NOCOLOR and ANSIBLE_HOST_KEY_CHECKING env overrides.",
+          "ref": "terraform-ansible-managed-resources/environment/ansibleops/internal/ansible/execute.go",
+          "type": "file"
+        },
+        {
+          "observation": "Read-side InspectPath uses lstat, symlink readlink, optional SHA-256 digest, UID/GID to owner/group resolution, and file kind classification without invoking Ansible.",
+          "ref": "terraform-ansible-managed-resources/environment/ansibleops/internal/observe/path.go",
+          "type": "file"
+        },
+        {
+          "observation": "InspectCron scans /var/spool/cron paths for #Ansible markers, parses schedule fields, and detects disabled entries—distinct observation logic from path/account modules.",
+          "ref": "terraform-ansible-managed-resources/environment/ansibleops/internal/observe/cron.go",
+          "type": "file"
+        },
+        {
+          "observation": "InspectUser/InspectGroup combine user.Lookup with /etc/passwd and /etc/group parsing for shell, supplementary groups, and member lists.",
+          "ref": "terraform-ansible-managed-resources/environment/ansibleops/internal/observe/account.go",
+          "type": "file"
+        },
+        {
+          "observation": "ChangeSet supports mode-normalized diffs, canonical slice comparison, DiffPath and DiffCron helpers used to gate updates before mutation.",
+          "ref": "terraform-ansible-managed-resources/environment/ansibleops/internal/lifecycle/change.go",
+          "type": "file"
+        },
+        {
+          "observation": "Representative path resource: Create/Update invoke ansible.FileTask, Read uses observe.InspectPath only, Update applies lifecycle.DiffPath before selective mutation, Delete uses absent state.",
+          "ref": "terraform-ansible-managed-resources/environment/ansibleops/internal/resources/file.go",
+          "type": "file"
+        },
+        {
+          "observation": "Line resource validates Unix names and managed lines, uses ansible.LineTask for mutation, and refreshes observed_exact_count/observed_regexp_count via observe.InspectLine.",
+          "ref": "terraform-ansible-managed-resources/environment/ansibleops/internal/resources/line.go",
+          "type": "file"
+        },
+        {
+          "observation": "Documents read/mutation separation, content digest-driven updates, scoped deletes for line/block/cron siblings, symlink target preservation, and remove_home_on_destroy behavior—cross-resource partial-fix traps.",
+          "ref": "terraform-ansible-managed-resources/environment/ansibleops/docs/lifecycle.md",
+          "type": "file"
+        },
+        {
+          "observation": "Operator workflow runs gofmt, local go build with trimpath/ldflags, installs provider binary to filesystem mirror under /opt/terraform/plugins/registry.terraform.io/local/ansibleops/0.1.0/linux_amd64.",
+          "ref": "terraform-ansible-managed-resources/environment/ansibleops/scripts/build-provider.sh",
+          "type": "file"
+        },
+        {
+          "observation": "End-to-end operator smoke builds provider, terraform init/apply/destroy on examples/basic/main.tf, and asserts managed filesystem artifacts under /tmp/ansibleops-smoke-managed.",
+          "ref": "terraform-ansible-managed-resources/environment/ansibleops/scripts/smoke.sh",
+          "type": "file"
+        },
+        {
+          "observation": "Pins golang base digest and terraform 1.10.5 checksum, installs ansible-core and runtime tooling, vendors Go modules, builds provider via build-provider.sh, and configures TF_CLI_CONFIG_FILE/ANSIBLE_CONFIG env defaults.",
+          "ref": "terraform-ansible-managed-resources/environment/Dockerfile",
+          "type": "file"
+        },
+        {
+          "observation": "Q6 requires tracing entrypoints, reachability, module responsibilities, clone/padding inspection, removal test, and for large_system_strict >=3000 substantive reachable runtime/config LOC with no HIGH toy/padding risk.",
+          "ref": ".terminus/agents/QUALITY_AGENT_PROMPTS.md",
+          "type": "rule"
+        },
+        {
+          "observation": "Advanced operational tasks default to large_system_strict unless a narrower profile is explicitly justified; Q6 independently judges production credibility after freeze.",
+          "ref": ".terminus/agents/CREATION_PIPELINE.md",
+          "type": "rule"
+        }
+      ],
+      "evidence_status": "SUFFICIENT",
+      "findings": [
+        {
+          "criterion": "Module diversity versus template cloning",
+          "evidence_refs": [
+            "terraform-ansible-managed-resources/environment/ansibleops/internal/resources/file.go",
+            "terraform-ansible-managed-resources/environment/ansibleops/internal/resources/directory.go",
+            "terraform-ansible-managed-resources/environment/ansibleops/internal/resources/copy.go",
+            "terraform-ansible-managed-resources/environment/ansibleops/internal/resources/symlink.go"
+          ],
+          "id": "Q6-1",
+          "minimal_remediation": "None required for PASS; future refactors could extract shared path-resource helpers without reducing behavioral surface.",
+          "regression_risk": "Over-abstracting shared resource scaffolding could hide resource-specific validation and observation differences exercised by verifier matrices.",
+          "severity": "LOW",
+          "status": "OBSERVED",
+          "why_it_matters": "Path-family resources share nearly identical CRUD scaffolding (~110–150 LOC each), which inflates line count without proportional unique branching; this is acceptable here because each maps to a distinct Ansible module/state contract rather than constant-output shells."
+        }
+      ],
+      "missing_evidence": [],
+      "next_gate": "QUALITY_INTERLOCK_PASS pending Q4 Spec-Test Contract Reviewer",
+      "prompt_policy_version": "2.2",
+      "protocol_policy_version": "2.2",
+      "review_id": "terraform-ansible-managed-resources-78ad4229-production-logic-1eafb47b8b",
+      "review_scope_hash": "5024cce4e6afacd64daf5cc630576390f3b382ea422f7a39c3726d0a7bf1e76e",
+      "role": "Production Logic Auditor",
+      "role_contract_hash": "828f84c63f4e37642ab42740b22aa95646ddaa42972f30902e9fe9a034e5458c",
+      "role_output": {
+        "CORE_LOGIC_DEPTH": "HIGH",
+        "CROSS_COMPONENT_COUPLING": "HIGH",
+        "MAJOR_MODULES": "cmd/main entrypoint; provider configure/preflight; runtime defaults; runner subprocess executor; ansible task/playbook renderer and module task builders; lifecycle validation/diff/identity; observe path/account/text/cron inspectors; ten resources/* CRUD implementations; build/smoke operator scripts; container/runtime config.",
+        "MODULE_DIVERSITY": "MEDIUM",
+        "PADDING_RISK": "MEDIUM",
+        "PARTIAL_FIX_TRAPS": "Fixing only mutation paths while leaving read-side observe stale; updating file/directory resources without lifecycle.DiffPath short-circuit semantics; line/block/cron scoped deletes that must not remove sibling-owned entries; symlink delete vs target preservation; user destroy with remove_home_on_destroy; template/copy updates requiring source_digest or variables_fingerprint changes; provider Configure preflight failures blocking all resources.",
+        "REMOVAL_TEST": "Removing ~25% of core (e.g., observe/account+cron modules plus three resource families and preflight probes) would eliminate distinct account/cron observation, inventory/binary validation, and multiple managed-object lifecycles—materially reducing provider behavior rather than cosmetic dead code.",
+        "REQUIRED_CHANGES": "none",
+        "RUNTIME_REACHABILITY": "HIGH",
+        "SUBSTANTIVE_LOC_ASSESSMENT": "~2,964 lines of reachable Go across cmd/internal plus ~132 lines of build/runtime configuration (Dockerfile, shell entrypoints, ansible/terraform config, basic example) for ~3,096 substantive solver-visible runtime/config LOC; excludes go.mod and markdown docs; meets the large_system_strict 3,000-line floor.",
+        "TOY_LOGIC_RISK": "LOW"
+      },
+      "role_policy_version": "1.1",
+      "schema_version": "3.0",
+      "summary": "The solver-visible environment is a reachable Terraform provider stack that mutates local Linux state through Ansible while observing drift natively on read. Ten differentiated resource lifecycles, preflight validation, subprocess execution control, and cross-cutting lifecycle invariants provide credible production coupling and partial-fix traps; repetitive resource scaffolding is present but domain-justified and not empty padding. Substantive runtime/configuration LOC in the environment tree (~3,096 lines of Go plus build/runtime config) meets the large_system_strict floor.",
+      "task": "terraform-ansible-managed-resources",
+      "task_commit": "78ad422902b27dea954905130a1267b02cff3596",
+      "verdict": "PASS"
+    }
+  },
+  "record_id": "rec_4acdede979287906c36b7bc2957e69054a21b57b75ab0b5c391f63b41f03f733",
+  "role_id": "CI_ORCHESTRATOR",
+  "schema_version": "1.0",
+  "stage_id": "QUALITY_INTERLOCK",
+  "status": "QUALITY_INTERLOCK_PASS",
+  "task_lineage": {
+    "input_task_commit": "78ad422902b27dea954905130a1267b02cff3596",
+    "output_task_commit": "78ad422902b27dea954905130a1267b02cff3596",
+    "task_changed": false
+  },
+  "transition": {
+    "action": "ADVANCE",
+    "requires_state_validation": false,
+    "target": "PRE_LLMAJ",
+    "target_kind": "STAGE"
+  },
+  "validation": {
+    "acceptance_predicates_satisfied": true,
+    "evidence_binding_satisfied": true,
+    "evidence_refs_count": 5,
+    "invocation_identity_valid": true,
+    "invocation_policy_valid": true,
+    "output_keys_valid": true,
+    "required_outputs_satisfied": true,
+    "retrieval_context_authorized": true,
+    "status_legal": true,
+    "task_commit_change_authorized": true,
+    "task_lineage_valid": true
+  }
+}

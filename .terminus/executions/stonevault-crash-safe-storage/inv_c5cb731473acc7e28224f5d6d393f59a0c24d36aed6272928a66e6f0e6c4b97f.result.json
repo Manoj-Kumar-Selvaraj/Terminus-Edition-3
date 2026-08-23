@@ -1,0 +1,244 @@
+{
+  "authority": {
+    "control_plane_commit": "df7ef7569e2947b9f0bf7cf89ed4dec6c2a5a1fe",
+    "policy_versions": {},
+    "task_commit": "03317f8218069b9e0b5d073bf87ecf7a0ae8e4a1",
+    "task_id": "stonevault-crash-safe-storage"
+  },
+  "disposition": "ADVANCE",
+  "evidence_refs": [
+    {
+      "content_hash": "sha256:38d1e6b49a6cd52e4cefce949ec274c9b07daf9b5ba2735bb2a094820f7c78de",
+      "kind": "COMMIT",
+      "ref": "commit:03317f8218069b9e0b5d073bf87ecf7a0ae8e4a1"
+    }
+  ],
+  "invocation_id": "inv_c5cb731473acc7e28224f5d6d393f59a0c24d36aed6272928a66e6f0e6c4b97f",
+  "invocation_snapshot": {
+    "acceptance_predicates": {},
+    "authority": {
+      "control_plane_commit": "df7ef7569e2947b9f0bf7cf89ed4dec6c2a5a1fe",
+      "policy_versions": {},
+      "task_commit": "03317f8218069b9e0b5d073bf87ecf7a0ae8e4a1",
+      "task_id": "stonevault-crash-safe-storage"
+    },
+    "evidence": {
+      "authorized_evidence_classes": [
+        "CI_RUNTIME_EVIDENCE",
+        "CONTROL_PLANE_POLICY",
+        "DURABLE_SESSION_STATE",
+        "PRIVATE_CREATION_DESIGN",
+        "SOLUTION_ORACLE",
+        "SOLVER_VISIBLE_TASK",
+        "VERIFIER_PRIVATE"
+      ],
+      "evidence_required": [
+        "assembled task structure",
+        "assembly-local static/lint evidence",
+        "instruction/docs boundary",
+        "leakage/package checks",
+        "evidence prepared for later complexity/runtime/deterministic gates"
+      ],
+      "excluded_evidence_classes": [
+        "CURRENT_REVIEW_PACKET",
+        "FINAL_PACKAGE_EVIDENCE",
+        "MODEL_TRIAL_EVIDENCE",
+        "PRIOR_REVIEW_RESULTS",
+        "PUBLIC_REFERENCE"
+      ],
+      "mandatory_exact_reads": [
+        ".terminus/agents/CREATION_PIPELINE.md",
+        ".terminus/agents/PRODUCTION_AUTHENTICITY.md",
+        ".terminus/agents/A9_ASSEMBLY_PROMPT.md"
+      ],
+      "retrieval_mode": "EXACT_ONLY"
+    },
+    "ignored_input_count": 0,
+    "inputs": {
+      "optional": {
+        "PRIVATE_DEFECT_GRAPH": {
+          "defect_manifestations": 25,
+          "profile": "large_system_strict",
+          "root_cause_clusters": 8
+        },
+        "PRIVATE_TEST_MAP": {
+          "F2P_COUNT": 30,
+          "P2P_COUNT": 33,
+          "residual_backlog": "F01 committed DELETE restart durability remains separately accepted/backlogged and is not claimed as covered"
+        }
+      },
+      "required": {
+        "CURRENT_ORACLE": {
+          "empirical_status": "DEFERRED_TO_DETERMINISTIC_VALIDATION",
+          "status": "IMPLEMENTED"
+        },
+        "CURRENT_TASK": {
+          "runtime_artifact": "/app/stonevault",
+          "task_root": "stonevault-crash-safe-storage",
+          "top_level": [
+            "README.md",
+            "environment/",
+            "instruction.md",
+            "solution/",
+            "task.toml",
+            "tests/"
+          ]
+        },
+        "CURRENT_VERIFIER": {
+          "F2P_COUNT": 30,
+          "P2P_COUNT": 33,
+          "status": "VERIFIER_READY"
+        },
+        "FORMAT_STATUS": "FORMAT_PASS",
+        "SPEC_ALIGNMENT_STATUS": {
+          "Q1_STATUS": "NO_GAP",
+          "Q2_STATUS": "COVERED",
+          "Q3_STATUS": "CLEAR",
+          "status": "ALIGNED"
+        }
+      }
+    },
+    "invocation_id": "inv_c5cb731473acc7e28224f5d6d393f59a0c24d36aed6272928a66e6f0e6c4b97f",
+    "learning": {
+      "context_hash": "sha256:bb84a513aa2b6e4374d691759c4a6edf94169f479f4611e9091643b9f279ccfc",
+      "lessons": [],
+      "mode": "GENERALIZED_LESSONS_PLUS_OWNED_REMEDIATIONS",
+      "raw_feedback_exposed": false,
+      "raw_historical_findings_exposed": false,
+      "registry_heads": {
+        "feedback": "GENESIS",
+        "findings": "GENESIS",
+        "lessons": "GENESIS",
+        "patterns": "GENESIS",
+        "remediations": "GENESIS"
+      },
+      "remediations": []
+    },
+    "missing_required_inputs": [],
+    "output_contract": {
+      "allowed_status_values": [
+        "ASSEMBLED",
+        "RETURN_TO_PRODUCER",
+        "BLOCKED"
+      ],
+      "deterministic_validators": [
+        "task structure/static/lint checks",
+        "leakage/package checks"
+      ],
+      "optional_fields": [],
+      "persisted_artifacts": [],
+      "required_fields": [
+        "TASK_COMMIT",
+        "STRUCTURE",
+        "INSTRUCTION_SHAPE",
+        "INSTRUCTION_REQUIREMENT_COMPLETENESS",
+        "INSTRUCTION_DOC_BOUNDARY",
+        "SUBSTANTIVE_REACHABLE_LOC_EVIDENCE",
+        "PRODUCTION_CHARACTERISTIC_EVIDENCE",
+        "F2P_ORGANICITY_EVIDENCE",
+        "EDGE_BOUNDARY_COVERAGE_EVIDENCE",
+        "NEGATIVE_FAILURE_COVERAGE_EVIDENCE",
+        "LEAKAGE_CHECK",
+        "STATIC_CHECKS",
+        "NEXT_GATE"
+      ],
+      "semantic_reviewers": []
+    },
+    "readiness": "READY",
+    "retrieval": {
+      "query": null,
+      "retrieved_chars": 0,
+      "retrieved_context": [],
+      "status": "NOT_REQUESTED"
+    },
+    "routing": {
+      "failure_routes": {
+        "ARCHITECTURE_EVIDENCE_GAP": "A2 System Architect / Environment Builder",
+        "FORMAT_FAILURE": "Q7 Task Format Enforcer",
+        "LEAKAGE_FAILURE": "A9 Task Assembly Agent / responsible producer",
+        "SPEC_ALIGNMENT_FAILURE": "Q1/Q2/Q3",
+        "STRUCTURE_OR_STATIC_FAILURE": "A9 Task Assembly Agent / Q7 Task Format Enforcer as evidence indicates"
+      },
+      "stale_on": [
+        "task artifact change",
+        "solution change",
+        "verifier change",
+        "policy/validator change"
+      ],
+      "success_transition": "COMPLEXITY_GATE"
+    },
+    "schema_version": "1.0",
+    "stage": {
+      "lifecycle": "creation",
+      "owner": "A9 Task Assembly Agent",
+      "role_class": "PRODUCER",
+      "role_id": "A9_TASK_ASSEMBLY_AGENT",
+      "stage_id": "ASSEMBLY"
+    }
+  },
+  "outputs": {
+    "EDGE_BOUNDARY_COVERAGE_EVIDENCE": [
+      "inclusive limits",
+      "byte ordering",
+      "WAL framing",
+      "snapshot integrity",
+      "ABI/wire shapes"
+    ],
+    "F2P_ORGANICITY_EVIDENCE": "30 F2P probes span distinct behavioral surfaces; 33 P2P probes constrain preservation.",
+    "INSTRUCTION_DOC_BOUNDARY": "PASS: instruction owns requirements; public storage-format documentation owns ABI/disk details.",
+    "INSTRUCTION_REQUIREMENT_COMPLETENESS": "PASS for progression: Q1 NO_GAP, Q2 COVERED, Q3 CLEAR; residual F01 remains explicitly outside claimed coverage.",
+    "INSTRUCTION_SHAPE": "PASS: direct reliability-hardening request with observable invariants.",
+    "LEAKAGE_CHECK": "PASS: solver-facing task exposes no private verifier or Oracle material.",
+    "NEGATIVE_FAILURE_COVERAGE_EVIDENCE": [
+      "writer rejection",
+      "conflict termination",
+      "corruption rejection",
+      "health failure",
+      "malformed input handling"
+    ],
+    "NEXT_GATE": "COMPLEXITY_GATE",
+    "PRODUCTION_CHARACTERISTIC_EVIDENCE": [
+      "persistent WAL/snapshot formats",
+      "writer fencing",
+      "MVCC",
+      "conflict arbitration",
+      "crash recovery",
+      "checkpoint publication",
+      "operator state",
+      "native compatibility"
+    ],
+    "STATIC_CHECKS": "PASS: Q7 format gate is green.",
+    "STRUCTURE": "PASS: canonical task package structure is complete with separate verifier isolation.",
+    "SUBSTANTIVE_REACHABLE_LOC_EVIDENCE": "Native multi-module C++20 storage core plus Rust command/session layer provide substantial solver-reachable implementation scope.",
+    "TASK_COMMIT": "03317f8218069b9e0b5d073bf87ecf7a0ae8e4a1"
+  },
+  "record_id": "rec_a275025dbc44b0abcc569e24044f68c1e924c1295d8bd4cea3d6c3bcd7a66bae",
+  "role_id": "A9_TASK_ASSEMBLY_AGENT",
+  "schema_version": "1.0",
+  "stage_id": "ASSEMBLY",
+  "status": "ASSEMBLED",
+  "task_lineage": {
+    "input_task_commit": "03317f8218069b9e0b5d073bf87ecf7a0ae8e4a1",
+    "output_task_commit": "03317f8218069b9e0b5d073bf87ecf7a0ae8e4a1",
+    "task_changed": false
+  },
+  "transition": {
+    "action": "ADVANCE",
+    "requires_state_validation": false,
+    "target": "COMPLEXITY_GATE",
+    "target_kind": "STAGE"
+  },
+  "validation": {
+    "acceptance_predicates_satisfied": true,
+    "evidence_binding_satisfied": true,
+    "evidence_refs_count": 1,
+    "invocation_identity_valid": true,
+    "invocation_policy_valid": true,
+    "output_keys_valid": true,
+    "required_outputs_satisfied": true,
+    "retrieval_context_authorized": true,
+    "status_legal": true,
+    "task_commit_change_authorized": true,
+    "task_lineage_valid": true
+  }
+}

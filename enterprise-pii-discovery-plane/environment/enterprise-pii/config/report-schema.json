@@ -1,0 +1,93 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "enterprise-pii-report/v1",
+  "title": "Enterprise PII Discovery Report",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "tenant", "job_id", "generation", "policy_version", "policy_digest", "corpus_digest", "completeness", "rows", "examples"],
+  "properties": {
+    "schema": {"const": "enterprise-pii-report/v1"},
+    "tenant": {"type": "string", "minLength": 1},
+    "job_id": {"type": "string", "minLength": 1},
+    "generation": {"type": "integer", "minimum": 1},
+    "policy_version": {"type": "string", "minLength": 1},
+    "policy_digest": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "corpus_digest": {"type": "string", "minLength": 1},
+    "completeness": {"$ref": "#/$defs/completeness"},
+    "rows": {"type": "array", "items": {"$ref": "#/$defs/summary"}},
+    "examples": {"type": "array", "maxItems": 20, "items": {"$ref": "#/$defs/finding"}}
+  },
+  "$defs": {
+    "completeness": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["complete", "committed", "skipped", "failed", "missing", "errors", "truncations"],
+      "properties": {
+        "complete": {"type": "boolean"},
+        "committed": {"type": "integer", "minimum": 0},
+        "skipped": {"type": "integer", "minimum": 0},
+        "failed": {"type": "integer", "minimum": 0},
+        "missing": {"type": "integer", "minimum": 0},
+        "errors": {"type": "integer", "minimum": 0},
+        "truncations": {"type": "integer", "minimum": 0}
+      }
+    },
+    "summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["key", "findings", "suppressed", "distinct_fingerprints"],
+      "properties": {
+        "key": {"$ref": "#/$defs/summaryKey"},
+        "findings": {"type": "integer", "minimum": 0},
+        "suppressed": {"type": "integer", "minimum": 0},
+        "distinct_fingerprints": {"type": "integer", "minimum": 0}
+      }
+    },
+    "summaryKey": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["category", "confidence", "source_id", "department", "region", "priority"],
+      "properties": {
+        "category": {"enum": ["EMAIL", "PHONE", "US_SSN", "PAYMENT_CARD", "IBAN", "PASSPORT", "TAX_ID", "DOB", "ADDRESS", "PERSON_NAME"]},
+        "confidence": {"enum": ["HIGH", "MEDIUM", "LOW"]},
+        "source_id": {"type": "string"},
+        "department": {"type": "string"},
+        "region": {"type": "string"},
+        "priority": {"enum": ["P0", "P1", "P2", "P3"]}
+      }
+    },
+    "finding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "category", "masked_evidence", "fingerprint", "confidence", "detector_revision", "policy_version", "policy_digest", "location", "lineage", "suppressed"],
+      "properties": {
+        "id": {"type": "string"},
+        "category": {"type": "string"},
+        "masked_evidence": {"type": "string"},
+        "fingerprint": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+        "confidence": {"type": "number", "minimum": 0, "maximum": 1},
+        "detector_revision": {"type": "string"},
+        "policy_version": {"type": "string"},
+        "policy_digest": {"type": "string"},
+        "location": {"$ref": "#/$defs/location"},
+        "lineage": {"type": "array", "items": {"type": "string"}, "uniqueItems": true},
+        "suppressed": {"type": "boolean"}
+      }
+    },
+    "location": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["source_id", "canonical_path", "archive_member", "record_id", "field_path", "line", "byte_start", "byte_end"],
+      "properties": {
+        "source_id": {"type": "string"},
+        "canonical_path": {"type": "string"},
+        "archive_member": {"type": "string"},
+        "record_id": {"type": "string"},
+        "field_path": {"type": "string"},
+        "line": {"type": "integer"},
+        "byte_start": {"type": "integer"},
+        "byte_end": {"type": "integer"}
+      }
+    }
+  }
+}

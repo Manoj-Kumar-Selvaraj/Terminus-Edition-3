@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+set -euo pipefail
+root="${SOVEREIGN_LB_HOME:-/app/sovereign-lb}"
+mkdir -p "$root/build/bin" "$root/build/dataplane"
+(
+  cd "$root"
+  go build -trimpath -o "$root/build/bin/lb-control-plane" ./cmd/lb-control-plane
+  go build -trimpath -o "$root/build/bin/lbctl" ./cmd/lbctl
+)
+cmake -S "$root/dataplane" -B "$root/build/dataplane" -G Ninja -DCMAKE_BUILD_TYPE=RelWithDebInfo
+cmake --build "$root/build/dataplane"
+cp "$root/build/dataplane/lb-dataplane" "$root/build/bin/lb-dataplane"

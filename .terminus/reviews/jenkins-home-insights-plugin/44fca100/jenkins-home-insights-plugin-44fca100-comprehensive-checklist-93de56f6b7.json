@@ -1,0 +1,70 @@
+{
+  "schema_version": "3.0",
+  "role": "Comprehensive Reviewer",
+  "review_id": "jenkins-home-insights-plugin-44fca100-comprehensive-checklist-93de56f6b7",
+  "task": "jenkins-home-insights-plugin",
+  "task_commit": "44fca100fb4572b286a4f42e15f35f928674dea5",
+  "control_plane_commit": "64ad9c429ba175c16fceff63fbbdec7b1e67a62d",
+  "protocol_policy_version": "2.2",
+  "prompt_policy_version": "2.2",
+  "role_policy_version": "1.0",
+  "role_contract_hash": "38f088bf474b38fcc2104d12ceebfae7eb74e6e1d0ac8341996269bb4521b4c5",
+  "context_packet": ".terminus/reviews/jenkins-home-insights-plugin/44fca100/jenkins-home-insights-plugin-44fca100-comprehensive-checklist-93de56f6b7.packet.json",
+  "verdict": "APPROVE",
+  "confidence": "HIGH",
+  "evidence_status": "SUFFICIENT",
+  "summary": "Independent checklist walk completed at 100% coverage. No current High or Medium task defect in pre-trial scope. Trial-analysis and platform-rubric criteria are not applicable yet; empirical difficulty deferred to combined 10 official trials. Q4 and Q6 quality interlock PASS at 44fca100.",
+  "evidence": [
+    {"type": "rule", "ref": "TERMINUS_3_AI_INSTRUCTIONS.md", "observation": "Edition 3 flat layout, separate verifier, digest-pinned images, and combined-ten difficulty policy."},
+    {"type": "file", "ref": "jenkins-home-insights-plugin/instruction.md", "observation": "Twenty-bullet engineering request with absolute paths and delegated contracts."},
+    {"type": "file", "ref": "jenkins-home-insights-plugin/task.toml", "observation": "Required metadata, artifacts, verifier/agent/environment tables present."},
+    {"type": "file", "ref": "jenkins-home-insights-plugin/environment/Dockerfile", "observation": "Digest-pinned base, tmux/asciinema, build-core and generate at bake."},
+    {"type": "run", "ref": "jobs/2026-08-22__16-47-57", "observation": "Oracle 34/34 reward 1.0."},
+    {"type": "run", "ref": "jobs/2026-08-22__16-50-05", "observation": "NOP reward 0.0; F2P fail / P2P preserved."},
+    {"type": "run", "ref": "validate_task_complexity.py", "observation": "30 F2P / 4 P2P, 3245 substantive LOC, large_system_strict PASS."}
+  ],
+  "findings": [
+    {
+      "id": "F-ADV-DEFAULT-GENERATE",
+      "severity": "LOW",
+      "status": "OBSERVED",
+      "criterion": "RC-TEST-EDGE",
+      "evidence_refs": ["jenkins-home-insights-plugin/tests/test_outputs.py:357-361"],
+      "why_it_matters": "Documented default generate 14,536 not behaviorally asserted; optional edge coverage.",
+      "minimal_remediation": "Optional generate without --records probe.",
+      "regression_risk": "Minimal"
+    }
+  ],
+  "missing_evidence": [],
+  "change_scope": ["Pre-LLMaJ comprehensive checklist at 44fca100."],
+  "do_not_change": ["Behavioral F2P requirements and separate verifier isolation."],
+  "next_gate": "Pre-LLMaJ aggregate",
+  "role_output": {
+    "checklist_coverage_percent": 100,
+    "checklist_snapshot": "2026-08-08-user-supplied",
+    "status_counts": {
+      "PASS": 43,
+      "NOT_APPLICABLE_PRETRIAL": 6,
+      "NOT_APPLICABLE_PLATFORM_RUBRIC": 11,
+      "DEFERRED_TO_COMBINED_10_TRIALS": 1
+    },
+    "severity_counts": {"BLOCKER": 0, "HIGH": 0, "MEDIUM": 0, "LOW": 1},
+    "TEST_QUALITY_EVAL_DISPOSITIONS": {
+      "req-gap": "NOT_FLAGGED",
+      "weak-assertion": "NOT_FLAGGED",
+      "phantom-spec": "NOT_FLAGGED",
+      "flaky-execution": "NOT_FLAGGED",
+      "vacuous-test": "NOT_FLAGGED"
+    },
+    "TRIAL_ANALYSIS_DISPOSITIONS": {
+      "task_specification": "NOT_APPLICABLE_PRETRIAL",
+      "reward_hacking": "NOT_APPLICABLE_PRETRIAL",
+      "difficulty_crux": "NOT_APPLICABLE_PRETRIAL",
+      "near_miss": "NOT_APPLICABLE_PRETRIAL",
+      "refusals": "NOT_APPLICABLE_PRETRIAL",
+      "low_timeout": "NOT_APPLICABLE_PRETRIAL"
+    },
+    "policy_conflicts": [],
+    "recommendation": "APPROVE"
+  }
+}

@@ -1,0 +1,133 @@
+{
+  "status": "INITIAL_TASK_DESIGN",
+  "profile": "large_system_strict",
+  "task_id": "enterprise-pii-discovery-plane",
+  "task_kind": "software",
+  "engineering_objective": "Complete an enterprise PII discovery system whose Go control plane coordinates policy-pinned scans and whose Java workers inspect heterogeneous synthetic corporate data, producing privacy-safe, restart-safe findings and reports.",
+  "originality_boundary": {
+    "distinctive_center": [
+      "Java multi-format content scanner with contextual and checksum-backed PII detection",
+      "Go scan-job, lease, policy, report, and recovery control plane",
+      "privacy-safe evidence fingerprints and masked excerpts",
+      "policy-version-pinned distributed scanning",
+      "authorization-safe aggregation and report publication"
+    ],
+    "excluded": [
+      "antivirus or malware scanning",
+      "source-code vulnerability scanning",
+      "cloud infrastructure provisioning",
+      "live access to corporate systems",
+      "real personal or customer data",
+      "automatic deletion, quarantine, or remediation of source data"
+    ]
+  },
+  "component_graph": {
+    "go_control_plane": [
+      "scan API and CLI",
+      "policy registry and immutable versions",
+      "source inventory and ownership scopes",
+      "job planner and shard scheduler",
+      "worker registration, heartbeat, and leases",
+      "result ingestion and idempotency",
+      "finding deduplication and lineage",
+      "report aggregation and publication",
+      "authorization projection",
+      "retention, audit, metrics, and recovery"
+    ],
+    "java_scanner": [
+      "filesystem source walker",
+      "canonical source identity",
+      "bounded readers and charset handling",
+      "CSV, JSON, NDJSON, XML, properties, email, and text extraction",
+      "record and field provenance",
+      "normalization and chunking",
+      "detector registry",
+      "email, phone, SSN, payment card, IBAN, passport, tax ID, date-of-birth, address, and name-context detectors",
+      "checksum and contextual confidence",
+      "allowlist and suppression policy",
+      "privacy-safe evidence masking and HMAC fingerprinting",
+      "checkpoint and result-batch protocol",
+      "resource budgets and malformed-record isolation"
+    ],
+    "integration": [
+      "canonical NDJSON worker protocol",
+      "policy digest and scan generation fencing",
+      "deterministic synthetic corporate corpus generator",
+      "department and region access model",
+      "signed report manifest and stable JSON/CSV summaries"
+    ]
+  },
+  "operational_requirements": [
+    "Inventory only configured source roots and reject traversal, symlink escape, unsupported file type, and oversized-resource violations safely.",
+    "Parse heterogeneous structured and unstructured records while preserving canonical source, record, field, and byte/line provenance.",
+    "Detect multiple PII categories using normalization, validation, checksums, context, confidence thresholds, allowlists, and suppression rules rather than regex matches alone.",
+    "Never persist raw detected values; store only category, masked evidence, keyed fingerprint, location, confidence, detector revision, and policy provenance.",
+    "Keep exact repeated values linkable within an authorized scan scope without making fingerprints comparable across unrelated tenants or policy key epochs.",
+    "Pin every job and shard to an immutable policy version, detector bundle, corpus snapshot, and scan generation.",
+    "Fence worker leases by worker session, attempt, deadline, shard, policy digest, and generation so stale workers cannot commit results.",
+    "Make retries, duplicate batches, reconnects, checkpoint resume, cancellation, and finalization idempotent.",
+    "Isolate malformed files and records with bounded errors while continuing adjacent valid content.",
+    "Apply byte, record, nesting, archive, match, error, memory, and time budgets deterministically and report truncation explicitly.",
+    "Deduplicate overlapping chunk matches and repeated ingestion without collapsing distinct locations or independently governed sources.",
+    "Aggregate findings by category, confidence, source, department, region, policy, and remediation priority from one complete committed generation.",
+    "Apply source and department authorization before rows, counts, facets, deduplication groups, examples, pagination, exports, and totals.",
+    "Publish stable JSON and CSV reports with deterministic ordering, schemas, manifests, digests, completeness state, and policy provenance.",
+    "Do not publish a successful complete report until every required shard is committed, explicitly skipped by policy, or terminally failed under the documented completion rules.",
+    "Persist jobs, leases, checkpoints, result batches, report generations, audit events, and source fences atomically with safe fallback after restart.",
+    "Retain bounded report generations and audit history without deleting state referenced by active jobs, exports, or recovery.",
+    "Expose bounded status, readiness, metrics, errors, worker, policy, finding, and report APIs without leaking raw source content or PII.",
+    "Operate deterministically offline against a generated 10,000-20,000-record synthetic corporate corpus and never mutate source data."
+  ],
+  "root_cause_clusters": {
+    "RC_SOURCE_BOUNDARIES": "Source traversal, canonical identity, parsing, provenance, and malformed-record isolation disagree across formats.",
+    "RC_DETECTION_SEMANTICS": "Normalization, validation, context, confidence, allowlists, and overlap resolution do not form one detector contract.",
+    "RC_EVIDENCE_PRIVACY": "Masking, keyed fingerprints, deduplication, and report examples can expose or incorrectly link sensitive values.",
+    "RC_JOB_AUTHORITY": "Policy pins, generations, worker sessions, leases, retries, checkpoints, and cancellation are insufficiently fenced.",
+    "RC_REPORT_COMPLETENESS": "Batch ingestion, aggregation, authorization, finalization, ordering, and exports can observe partial or unauthorized state.",
+    "RC_RECOVERY_RETENTION": "Atomic persistence, restart fallback, resume, and retention do not preserve referenced state and accepted authority.",
+    "RC_RESOURCE_OPERABILITY": "Budgets, bounded telemetry, readiness, health, and degraded-source reporting diverge from actual scan progress."
+  },
+  "defects": [
+    {"id":"D01","component":"source walker","observable_failure":"Symlink or relative-path traversal escapes an approved source root.","root_cause":"RC_SOURCE_BOUNDARIES"},
+    {"id":"D02","component":"source identity","observable_failure":"Equivalent paths or case variants create duplicate sources while distinct archive members collapse.","root_cause":"RC_SOURCE_BOUNDARIES"},
+    {"id":"D03","component":"structured parsers","observable_failure":"CSV quoting, nested JSON, XML text, or email headers lose field-level provenance.","root_cause":"RC_SOURCE_BOUNDARIES"},
+    {"id":"D04","component":"record isolation","observable_failure":"One malformed record aborts its file or source instead of producing a bounded error.","root_cause":"RC_SOURCE_BOUNDARIES"},
+    {"id":"D05","component":"charset reader","observable_failure":"BOM, invalid UTF-8, or split multibyte input changes offsets or suppresses adjacent valid text.","root_cause":"RC_SOURCE_BOUNDARIES"},
+    {"id":"D06","component":"detector normalization","observable_failure":"Formatted and Unicode-equivalent PII values receive inconsistent validation and identity.","root_cause":"RC_DETECTION_SEMANTICS"},
+    {"id":"D07","component":"payment detector","observable_failure":"Digit-like values are reported as payment cards without length, issuer, and Luhn validation.","root_cause":"RC_DETECTION_SEMANTICS"},
+    {"id":"D08","component":"identity detectors","observable_failure":"SSN, passport, tax ID, phone, and IBAN patterns ignore country and contextual boundaries.","root_cause":"RC_DETECTION_SEMANTICS"},
+    {"id":"D09","component":"context scoring","observable_failure":"Negative context, positive labels, and confidence thresholds are applied after finding publication.","root_cause":"RC_DETECTION_SEMANTICS"},
+    {"id":"D10","component":"overlap resolver","observable_failure":"Chunk boundaries and overlapping detectors duplicate or discard the wrong finding.","root_cause":"RC_DETECTION_SEMANTICS"},
+    {"id":"D11","component":"suppression policy","observable_failure":"Allowlist scope, expiry, category, and policy version are ignored or applied globally.","root_cause":"RC_DETECTION_SEMANTICS"},
+    {"id":"D12","component":"masked evidence","observable_failure":"Short or structured values reveal too many characters or produce unstable masking.","root_cause":"RC_EVIDENCE_PRIVACY"},
+    {"id":"D13","component":"fingerprint service","observable_failure":"Unkeyed or globally keyed fingerprints enable cross-tenant comparison.","root_cause":"RC_EVIDENCE_PRIVACY"},
+    {"id":"D14","component":"finding identity","observable_failure":"Repeated ingestion duplicates one location or collapses separate governed locations.","root_cause":"RC_EVIDENCE_PRIVACY"},
+    {"id":"D15","component":"report examples","observable_failure":"Examples, errors, logs, or exports include raw matched values or surrounding sensitive text.","root_cause":"RC_EVIDENCE_PRIVACY"},
+    {"id":"D16","component":"job planner","observable_failure":"A policy update changes already-created job or shard semantics.","root_cause":"RC_JOB_AUTHORITY"},
+    {"id":"D17","component":"lease authority","observable_failure":"Expired, replaced-session, wrong-attempt, or wrong-generation workers commit result batches.","root_cause":"RC_JOB_AUTHORITY"},
+    {"id":"D18","component":"result ingestion","observable_failure":"Exact batch retry changes totals while conflicting reuse of a batch identity is accepted.","root_cause":"RC_JOB_AUTHORITY"},
+    {"id":"D19","component":"checkpoint resume","observable_failure":"Resume skips uncommitted records or reprocesses committed records with duplicate side effects.","root_cause":"RC_JOB_AUTHORITY"},
+    {"id":"D20","component":"cancellation","observable_failure":"Cancelled jobs continue leasing shards or publish a complete report.","root_cause":"RC_JOB_AUTHORITY"},
+    {"id":"D21","component":"report finalizer","observable_failure":"A report is marked complete while required shards are missing, active, or only partially committed.","root_cause":"RC_REPORT_COMPLETENESS"},
+    {"id":"D22","component":"authorization projection","observable_failure":"Rows are filtered after counts, facets, examples, dedupe groups, cursors, or exports leak hidden sources.","root_cause":"RC_REPORT_COMPLETENESS"},
+    {"id":"D23","component":"aggregator","observable_failure":"Malformed, truncated, suppressed, and skipped states are counted as ordinary findings or omitted from completeness.","root_cause":"RC_REPORT_COMPLETENESS"},
+    {"id":"D24","component":"report serializer","observable_failure":"Map iteration, equal sort keys, or CSV escaping makes report bytes and digests nondeterministic.","root_cause":"RC_REPORT_COMPLETENESS"},
+    {"id":"D25","component":"state publisher","observable_failure":"CURRENT points to an unverified job, result, or report generation after interruption.","root_cause":"RC_RECOVERY_RETENTION"},
+    {"id":"D26","component":"restart recovery","observable_failure":"Recovery selects newest rather than highest valid generation or forgets lease and policy fences.","root_cause":"RC_RECOVERY_RETENTION"},
+    {"id":"D27","component":"retention","observable_failure":"Cleanup deletes policy, result, report, or audit state referenced by active work or export leases.","root_cause":"RC_RECOVERY_RETENTION"},
+    {"id":"D28","component":"resource and health accounting","observable_failure":"Budget exhaustion is silent, queues and labels grow unbounded, or readiness is true before recovery and required workers are current.","root_cause":"RC_RESOURCE_OPERABILITY"}
+  ],
+  "causal_edges": [
+    {"from":"D01","to":"D02"},{"from":"D02","to":"D14"},{"from":"D03","to":"D10"},{"from":"D04","to":"D21"},{"from":"D05","to":"D06"},{"from":"D06","to":"D13"},{"from":"D07","to":"D09"},{"from":"D08","to":"D09"},{"from":"D09","to":"D11"},{"from":"D10","to":"D14"},{"from":"D11","to":"D23"},{"from":"D12","to":"D15"},{"from":"D13","to":"D14"},{"from":"D14","to":"D23"},{"from":"D15","to":"D22"},{"from":"D16","to":"D17"},{"from":"D16","to":"D24"},{"from":"D17","to":"D18"},{"from":"D18","to":"D21"},{"from":"D19","to":"D18"},{"from":"D20","to":"D21"},{"from":"D21","to":"D25"},{"from":"D22","to":"D24"},{"from":"D23","to":"D24"},{"from":"D25","to":"D26"},{"from":"D26","to":"D17"},{"from":"D27","to":"D26"},{"from":"D28","to":"D21"}
+  ],
+  "behavioral_surfaces": {
+    "normal": ["multi-format scan", "validated multi-category findings", "policy-pinned distributed shards", "privacy-safe deterministic reports"],
+    "edge_boundary": ["chunk and charset boundaries", "empty sources", "nested records", "exact budget boundaries", "duplicate values at distinct locations"],
+    "negative_rejection": ["source escape", "invalid policy", "stale lease", "conflicting batch", "unauthorized report", "raw-value leakage prevention"],
+    "failure_recovery": ["malformed records", "worker loss", "checkpoint resume", "torn generation", "fallback recovery", "retention leases"],
+    "cross_component": ["policy to detector provenance", "source identity to finding dedupe", "lease authority to report completeness", "authorization before aggregation", "budget state in reports and readiness"]
+  },
+  "organic_f2p_surface_assessment": "SUFFICIENT",
+  "data_volume_plan": "Generate 12,000-18,000 deterministic synthetic records across HR, finance, legal, support, sales, engineering, and vendor sources; include clean controls, valid and invalid candidates, repeated governed values, malformed records, multiple formats, regional policies, and no real personal data.",
+  "substantive_loc_plan": "Target 4,500-7,000 reachable Java, Go, shell, and configuration LOC; never count generated corpus, tests, docs, vendor code, or duplicated detectors toward the floor."
+}
