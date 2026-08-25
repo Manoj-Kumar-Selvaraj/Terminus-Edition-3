@@ -1,0 +1,57 @@
+{
+  "schema_version": "1.0",
+  "requirements": {
+    "REQ_CONTROLLER_BOOTSTRAP": "The project must run on a supported Ansible release with ansible-config init available and a project-local configuration selected at runtime and in the durable container definition.",
+    "REQ_PROJECT_DISCOVERY": "Project roles must resolve from the repository without global role installation or machine-specific absolute paths.",
+    "REQ_SECRET_BOUNDARY": "Production secret data must be encrypted at rest and loadable non-interactively through the project execution contract without plaintext workaround values.",
+    "REQ_ORCHESTRATION_GRAPH": "Role invocation and ordering must respect trust/application dependencies and keep application, edge proxy and telemetry responsibilities on their intended host sets.",
+    "REQ_ANSIBLE_SCHEMA": "Playbooks and roles must be valid YAML/Ansible task structures and use supported module argument shapes.",
+    "REQ_JINJA_DATA_MODEL": "Site overlays and Jinja renderers must preserve structured data, mixed endpoint shapes, IPv6 syntax, optional groups, numeric ordering and secret references.",
+    "REQ_CONVERGENCE": "The complete fleet playbook must converge successfully and a second execution against unchanged inputs must be idempotent.",
+    "REQ_REPAIR_PRESERVATION": "Repairs must preserve the three-site production topology and operator incident evidence while correcting the broken configuration/secret contracts.",
+    "REQ_PRODUCTION_BREADTH": "Production-scale catalogs, network/address diversity, incident evidence, official documentation provenance and operational state engines must remain intact."
+  },
+  "tests": [
+    ["test_f2p_controller_runtime_is_supported_major", "F2P", "REQ_CONTROLLER_BOOTSTRAP", "controller-supported-runtime"],
+    ["test_f2p_controller_config_init_capability_exists", "F2P", "REQ_CONTROLLER_BOOTSTRAP", "controller-config-init"],
+    ["test_f2p_controller_project_config_is_selected", "F2P", "REQ_CONTROLLER_BOOTSTRAP", "controller-project-config"],
+    ["test_f2p_controller_durable_container_version_is_current", "F2P", "REQ_CONTROLLER_BOOTSTRAP", "controller-durable-version"],
+
+    ["test_f2p_discovery_project_roles_path_is_active", "F2P", "REQ_PROJECT_DISCOVERY", "discovery-roles-path"],
+    ["test_f2p_discovery_site_roles_resolve_locally", "F2P", "REQ_PROJECT_DISCOVERY", "discovery-local-roles"],
+    ["test_f2p_discovery_site_syntax_check_passes", "F2P", "REQ_PROJECT_DISCOVERY", "discovery-syntax-entrypoint"],
+
+    ["test_f2p_secret_vault_is_encrypted_at_rest", "F2P", "REQ_SECRET_BOUNDARY", "secret-vault-at-rest"],
+    ["test_f2p_secret_plaintext_markers_are_absent", "F2P", "REQ_SECRET_BOUNDARY", "secret-no-plaintext-markers"],
+    ["test_f2p_secret_vault_can_be_loaded_noninteractively", "F2P", "REQ_SECRET_BOUNDARY", "secret-noninteractive-load"],
+
+    ["test_f2p_orchestration_trust_precedes_application_release", "F2P", "REQ_ORCHESTRATION_GRAPH", "orchestration-trust-before-app"],
+    ["test_f2p_orchestration_proxy_role_is_not_swapped_or_missing", "F2P", "REQ_ORCHESTRATION_GRAPH", "orchestration-proxy-responsibility"],
+    ["test_f2p_orchestration_telemetry_executes_for_fleet", "F2P", "REQ_ORCHESTRATION_GRAPH", "orchestration-telemetry-scope"],
+    ["test_f2p_orchestration_application_is_scoped_to_application_nodes", "F2P", "REQ_ORCHESTRATION_GRAPH", "orchestration-application-scope"],
+
+    ["test_f2p_syntax_common_baseline_has_single_action_per_task", "F2P", "REQ_ANSIBLE_SCHEMA", "schema-single-action-task"],
+    ["test_f2p_syntax_validate_playbook_loop_control_is_well_formed", "F2P", "REQ_ANSIBLE_SCHEMA", "schema-loop-control"],
+    ["test_f2p_schema_copy_module_has_no_directory_mode_parameter", "F2P", "REQ_ANSIBLE_SCHEMA", "schema-copy-arguments"],
+
+    ["test_f2p_jinja_hyd_dependencies_remain_structured", "F2P", "REQ_JINJA_DATA_MODEL", "jinja-structured-site-overlay"],
+    ["test_f2p_jinja_proxy_template_handles_all_endpoint_shapes", "F2P", "REQ_JINJA_DATA_MODEL", "jinja-mixed-endpoint-shapes"],
+    ["test_f2p_jinja_proxy_template_brackets_ipv6_conditionally", "F2P", "REQ_JINJA_DATA_MODEL", "jinja-ipv6-authority"],
+    ["test_f2p_jinja_telemetry_missing_optional_group_is_safe", "F2P", "REQ_JINJA_DATA_MODEL", "jinja-optional-group"],
+    ["test_f2p_jinja_policy_priorities_are_rendered_numeric", "F2P", "REQ_JINJA_DATA_MODEL", "jinja-numeric-policy-order"],
+    ["test_f2p_jinja_application_dependency_output_is_a_list", "F2P", "REQ_JINJA_DATA_MODEL", "jinja-application-schema"],
+
+    ["test_f2p_runtime_full_site_run_converges", "F2P", "REQ_CONVERGENCE", "runtime-full-convergence"],
+    ["test_f2p_runtime_second_run_is_idempotent", "F2P", "REQ_CONVERGENCE", "runtime-second-run-idempotency"],
+
+    ["test_f2p_repair_preserves_sites_while_fixing_hyd_override", "F2P", "REQ_REPAIR_PRESERVATION", "preservation-sites-after-repair"],
+    ["test_f2p_repair_preserves_evidence_while_vaulting_secret", "F2P", "REQ_REPAIR_PRESERVATION", "preservation-evidence-after-vault"],
+
+    ["test_p2p_service_catalog_retains_production_breadth", "P2P", "REQ_PRODUCTION_BREADTH", "p2p-service-catalog"],
+    ["test_p2p_policy_catalog_retains_sixty_owned_rules", "P2P", "REQ_PRODUCTION_BREADTH", "p2p-policy-catalog"],
+    ["test_p2p_inventory_retains_ipv4_and_ipv6_endpoints", "P2P", "REQ_PRODUCTION_BREADTH", "p2p-address-diversity"],
+    ["test_p2p_operator_logs_retain_sequential_failure_evidence", "P2P", "REQ_PRODUCTION_BREADTH", "p2p-incident-evidence"],
+    ["test_p2p_official_helper_sources_are_upstream_ansible_only", "P2P", "REQ_PRODUCTION_BREADTH", "p2p-official-doc-provenance"],
+    ["test_p2p_state_and_rollout_engines_remain_present", "P2P", "REQ_PRODUCTION_BREADTH", "p2p-operational-engines"]
+  ]
+}
