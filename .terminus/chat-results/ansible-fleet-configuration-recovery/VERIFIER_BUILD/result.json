@@ -1,0 +1,41 @@
+{
+  "evidence_refs": [],
+  "invocation_id": "inv_7f83ed8dc890c3ee66e2b22dad4c2b840ae1a95ef9f0729f23ff2a7c35159b20",
+  "output_task_commit": "2285842424d9ad2e42df5e067a3dd5fe4a96e3f2",
+  "outputs": {
+    "EDGE_BOUNDARY_COVERAGE": [
+      "legacy/current controller boundary",
+      "project vs global role discovery",
+      "plaintext vs Vault data",
+      "role dependency ordering",
+      "conflicting action/task schema",
+      "mixed scalar/nested/direct endpoint shapes",
+      "IPv4 vs IPv6 authority syntax",
+      "missing optional telemetry group",
+      "numeric policy ordering",
+      "second-run convergence"
+    ],
+    "F2P_COUNT": 27,
+    "NEGATIVE_FAILURE_COVERAGE": [
+      "unsupported ansible-config init",
+      "config file None",
+      "missing local role",
+      "plaintext secret",
+      "undefined vaulted variable",
+      "wrong role identity",
+      "conflicting action",
+      "unsupported copy argument",
+      "wrong nested data type",
+      "mixed endpoint Jinja failure",
+      "missing hostvars group",
+      "non-idempotent rerun"
+    ],
+    "ORGANIC_COUNT_JUSTIFICATION": "Twenty-seven F2P cases represent independent externally observable repair behaviors spread across eight repair requirements; six P2P cases independently preserve production scale, catalogs, address diversity, incident evidence, documentation provenance and operational engines.",
+    "P2P_COUNT": 6,
+    "REQUIREMENT_TEST_MATRIX": ".terminus/designs/ansible-fleet-configuration-recovery-test-map.json",
+    "SOLVER_LOGIC_REIMPLEMENTATION_RISK": "LOW: static probes are limited to public configuration/task contracts; rendering and idempotency are checked through Ansible execution rather than a second implementation of the solver logic.",
+    "TEST_INDEPENDENCE": "Tests derive expected behavior from solver-visible operational contracts and public Ansible behavior. They do not import the reference solution or reproduce its patch algorithm; runtime convergence is exercised through the documented project wrapper."
+  },
+  "schema_version": "1.0",
+  "status": "VERIFIER_READY"
+}

@@ -1,0 +1,163 @@
+{
+  "acceptance_predicates": {},
+  "authority": {
+    "control_plane_commit": "df7ef7569e2947b9f0bf7cf89ed4dec6c2a5a1fe",
+    "policy_versions": {},
+    "task_commit": "bae0db9cd8a429589f998c859cbcd6c1996382d4",
+    "task_id": "ansible-fleet-configuration-recovery"
+  },
+  "evidence": {
+    "authorized_evidence_classes": [
+      "CI_RUNTIME_EVIDENCE",
+      "CONTROL_PLANE_POLICY",
+      "PRIVATE_CREATION_DESIGN",
+      "SOLVER_VISIBLE_TASK"
+    ],
+    "evidence_required": [
+      "requirement-to-test map",
+      "behavioral scenario families",
+      "F2P/P2P classification",
+      "test independence"
+    ],
+    "excluded_evidence_classes": [
+      "CURRENT_REVIEW_PACKET",
+      "DURABLE_SESSION_STATE",
+      "FINAL_PACKAGE_EVIDENCE",
+      "MODEL_TRIAL_EVIDENCE",
+      "PRIOR_REVIEW_RESULTS",
+      "PUBLIC_REFERENCE",
+      "SOLUTION_ORACLE",
+      "VERIFIER_PRIVATE"
+    ],
+    "mandatory_exact_reads": [
+      "TERMINUS_3_AI_INSTRUCTIONS.md",
+      ".terminus/agents/CREATION_PIPELINE.md",
+      ".terminus/agents/CREATOR_PROMPTS.md"
+    ],
+    "retrieval_mode": "FILTERED_HYBRID"
+  },
+  "ignored_input_count": 0,
+  "inputs": {
+    "optional": {},
+    "required": {
+      "BEHAVIORAL_SURFACES": [
+        "controller bootstrap",
+        "config selection",
+        "role discovery",
+        "inventory precedence",
+        "vault secrecy",
+        "role ordering",
+        "syntax parsing",
+        "module schema",
+        "backend aggregation",
+        "IPv6 normalization",
+        "cross-host telemetry targets",
+        "policy priority rendering",
+        "full convergence",
+        "second-run idempotency",
+        "production breadth preservation"
+      ],
+      "SOLVER_VISIBLE_CONTRACTS": [
+        "environment/runtime/logs/incident-bootstrap.log",
+        "environment/runtime/logs/incident-playbook.log",
+        "environment/runtime/reports/incident-handoff.json",
+        "environment/runtime/evidence/config-selection.txt",
+        "environment/docs/official-ansible-sources.txt",
+        "environment/inventory/hosts.yml",
+        "environment/inventory/group_vars/all.yml",
+        "environment/data/service-catalog.yml",
+        "environment/data/policy-catalog.yml"
+      ],
+      "SOLVER_VISIBLE_REQUIREMENTS": {
+        "ansible_schema": "Repair parser/task/module-schema errors without shell bypasses.",
+        "controller_bootstrap": "Use a supported Ansible runtime and restore project-local config/bootstrap behavior.",
+        "convergence": "Full execution succeeds and unchanged second run is idempotent.",
+        "jinja_data_model": "Render heterogeneous endpoint/site/policy/telemetry data correctly including IPv6.",
+        "orchestration": "Correct dependency ordering and host responsibility boundaries.",
+        "preservation": "Preserve production topology, catalogs, evidence and operating contracts.",
+        "project_discovery": "Project roles must resolve portably from the repository.",
+        "secret_boundary": "Sensitive production data must be Vault-encrypted at rest and available noninteractively to the project run."
+      }
+    }
+  },
+  "invocation_id": "inv_7f83ed8dc890c3ee66e2b22dad4c2b840ae1a95ef9f0729f23ff2a7c35159b20",
+  "learning": {
+    "context_hash": "sha256:bb84a513aa2b6e4374d691759c4a6edf94169f479f4611e9091643b9f279ccfc",
+    "lessons": [],
+    "mode": "GENERALIZED_LESSONS_PLUS_OWNED_REMEDIATIONS",
+    "raw_feedback_exposed": false,
+    "raw_historical_findings_exposed": false,
+    "registry_heads": {
+      "feedback": "GENESIS",
+      "findings": "GENESIS",
+      "lessons": "GENESIS",
+      "patterns": "GENESIS",
+      "remediations": "GENESIS"
+    },
+    "remediations": []
+  },
+  "missing_required_inputs": [],
+  "output_contract": {
+    "allowed_status_values": [
+      "VERIFIER_READY",
+      "REQUIREMENT_GAP",
+      "SCENARIO_TOO_SMALL",
+      "BLOCKED"
+    ],
+    "deterministic_validators": [
+      "verifier lint/static checks",
+      ".terminus/validate_task_complexity.py <task>"
+    ],
+    "optional_fields": [
+      "STARTER_EMPIRICAL_STATUS",
+      "ORACLE_EMPIRICAL_STATUS",
+      "SOLVER_LOGIC_REIMPLEMENTATION_RISK"
+    ],
+    "persisted_artifacts": [
+      "<task>/tests/",
+      ".terminus/designs/<task>-test-map.json"
+    ],
+    "required_fields": [
+      "REQUIREMENT_TEST_MATRIX",
+      "F2P_COUNT",
+      "P2P_COUNT",
+      "EDGE_BOUNDARY_COVERAGE",
+      "NEGATIVE_FAILURE_COVERAGE",
+      "ORGANIC_COUNT_JUSTIFICATION",
+      "TEST_INDEPENDENCE"
+    ],
+    "semantic_reviewers": [
+      "Q2 Verifier Coverage Repairer",
+      "Verifier Engineer"
+    ]
+  },
+  "readiness": "READY",
+  "retrieval": {
+    "query": null,
+    "retrieved_chars": 0,
+    "retrieved_context": [],
+    "status": "NOT_REQUESTED"
+  },
+  "routing": {
+    "failure_routes": {
+      "DUPLICATE_OR_WEAK_TEST": "A5 Verifier Author / Q2 Verifier Coverage Repairer",
+      "REQUIREMENT_GAP": "Q1 Spec Gap Repairer / contract owner",
+      "SCENARIO_TOO_SMALL": "Creation Controller -> WORK_PACKAGE_RESEARCH"
+    },
+    "stale_on": [
+      "solver-visible requirement change",
+      "referenced contract change",
+      "behavioral surface change",
+      "verifier change"
+    ],
+    "success_transition": "HUMAN_WRITING_RESEARCH"
+  },
+  "schema_version": "1.0",
+  "stage": {
+    "lifecycle": "creation",
+    "owner": "A5 Verifier Author",
+    "role_class": "PRODUCER",
+    "role_id": "A5_VERIFIER_AUTHOR",
+    "stage_id": "VERIFIER_BUILD"
+  }
+}
