@@ -1,0 +1,559 @@
+{
+  "ledger_event": {
+    "control_plane_commit": "df7ef7569e2947b9f0bf7cf89ed4dec6c2a5a1fe",
+    "event_id": "evt_301d0f17fbbf601cd0a03600caf244404f1a1389fed95460c21205cc6291f621",
+    "input_task_commit": "b6dd047389184f9d9820f9addc7c59e526799ec8",
+    "invocation_id": "inv_ecee7a1c3b8d4992ff3728cb6b091cdfe595ca2cd0d500aa06460ecc8235cc65",
+    "output_task_commit": "b6dd047389184f9d9820f9addc7c59e526799ec8",
+    "previous_event_id": "evt_8485695287e50fcd25bad8205228564c1b037b07b49acecf167be1b0f78d16d3",
+    "record_hash": "sha256:dcb8984ee2084b0135a583b0d32acc9f826aefbf8b73a7c55483ebd9f2928bf6",
+    "record_id": "rec_a22656ebfbbdf6eba62739c75dce38b7f4b9a811576a4717fbc4a77a9a391236",
+    "record_path": ".terminus/executions/ansible-fleet-configuration-recovery/inv_ecee7a1c3b8d4992ff3728cb6b091cdfe595ca2cd0d500aa06460ecc8235cc65.result.json",
+    "schema_version": "1.0",
+    "sequence": 3,
+    "stage_id": "SYSTEM_ARCHITECTURE",
+    "task_id": "ansible-fleet-configuration-recovery"
+  },
+  "record": {
+    "authority": {
+      "control_plane_commit": "df7ef7569e2947b9f0bf7cf89ed4dec6c2a5a1fe",
+      "policy_versions": {},
+      "task_commit": "b6dd047389184f9d9820f9addc7c59e526799ec8",
+      "task_id": "ansible-fleet-configuration-recovery"
+    },
+    "disposition": "ADVANCE",
+    "evidence_refs": [
+      {
+        "content_hash": "sha256:1e950e0ea5f6ce34ff813202df633c1eea7a948d3eaaa7fed4c8ebad3524e380",
+        "kind": "COMMIT",
+        "ref": "commit:df7ef7569e2947b9f0bf7cf89ed4dec6c2a5a1fe"
+      },
+      {
+        "content_hash": "sha256:0a80270f23ad85af6a336370ffb294bbc309bb4b694e6d5e896c7c4e52323117",
+        "kind": "COMMIT",
+        "ref": "commit:b6dd047389184f9d9820f9addc7c59e526799ec8"
+      }
+    ],
+    "invocation_id": "inv_ecee7a1c3b8d4992ff3728cb6b091cdfe595ca2cd0d500aa06460ecc8235cc65",
+    "invocation_snapshot": {
+      "acceptance_predicates": {},
+      "authority": {
+        "control_plane_commit": "df7ef7569e2947b9f0bf7cf89ed4dec6c2a5a1fe",
+        "policy_versions": {},
+        "task_commit": "b6dd047389184f9d9820f9addc7c59e526799ec8",
+        "task_id": "ansible-fleet-configuration-recovery"
+      },
+      "evidence": {
+        "authorized_evidence_classes": [
+          "CONTROL_PLANE_POLICY",
+          "PRIVATE_CREATION_DESIGN",
+          "PUBLIC_REFERENCE",
+          "SOLVER_VISIBLE_TASK"
+        ],
+        "evidence_required": [
+          "component/resource graph",
+          "runtime/operator reachability plan",
+          "state/persistence model",
+          "production-characteristic rationale"
+        ],
+        "excluded_evidence_classes": [
+          "CI_RUNTIME_EVIDENCE",
+          "CURRENT_REVIEW_PACKET",
+          "DURABLE_SESSION_STATE",
+          "FINAL_PACKAGE_EVIDENCE",
+          "MODEL_TRIAL_EVIDENCE",
+          "PRIOR_REVIEW_RESULTS",
+          "SOLUTION_ORACLE",
+          "VERIFIER_PRIVATE"
+        ],
+        "mandatory_exact_reads": [
+          ".terminus/agents/CREATION_PIPELINE.md",
+          ".terminus/agents/CREATOR_AGENT_REGISTRY.md",
+          ".terminus/agents/PRODUCTION_AUTHENTICITY.md",
+          ".terminus/agents/CREATOR_PROMPTS.md",
+          ".terminus/agents/A2_PHASE_PROMPTS.md"
+        ],
+        "retrieval_mode": "FILTERED_HYBRID"
+      },
+      "ignored_input_count": 0,
+      "inputs": {
+        "optional": {},
+        "required": {
+          "APPROVED_OPERATIONAL_REQUIREMENTS": [
+            "The supplied controller starts in an inherited legacy state and operational commands must expose enough evidence to diagnose compatibility before successful project bootstrap.",
+            "The project must use a project-local configuration and role layout, but starter discovery behavior must fail realistically until repaired.",
+            "Production roles must be materially differentiated across preflight, common baseline, identity, certificates, application, proxy, observability, policy and validation responsibilities.",
+            "Inventory/group/host variables must model multiple sites and environments with meaningful precedence and scoped overrides.",
+            "Sensitive application/proxy credentials must be represented through Ansible Vault-compatible encrypted content and must not appear in normal task output.",
+            "Role dependencies and ordering must encode prerequisites; starter defects may cause wrong order or wrong role execution, while the repaired run must converge deterministically.",
+            "Templates must perform non-trivial Jinja transformations including backend aggregation, endpoint normalization, site policy projection, secret references, monitoring targets and trust-bundle composition.",
+            "Malformed YAML/task syntax and template expressions must be realistic and diagnosable from Ansible parser/runtime logs rather than direct repair hints.",
+            "A failed preflight or render must preserve last-known-good rendered configuration; successful repeated execution must be idempotent.",
+            "Solver-visible incident artifacts must identify commands and log/evidence locations, not hidden root causes.",
+            "Official Ansible documentation references must come from docs.ansible.com and cover configuration generation, configuration settings, roles, variables, Vault and templating.",
+            "The grader must validate both fail-to-pass repairs and pass-to-pass preservation across independent behavior families."
+          ],
+          "APPROVED_WORK_PACKAGE": {
+            "ENGINEERING_OBJECTIVE": "Recover a production-style Ansible fleet automation estate that provisions and reconciles application, proxy, observability, certificate, policy and secret-dependent configuration across heterogeneous node groups, using execution evidence to diagnose a chain of toolchain, project-discovery, variable, Vault, role-ordering, syntax and template failures until repeated runs converge safely.",
+            "ID": "FLEET_CONFIGURATION_RECOVERY_AND_POLICY_RECONCILIATION"
+          },
+          "CREATION_RULE_CONTEXT": {
+            "CONTROL_PLANE_COMMIT": "df7ef7569e2947b9f0bf7cf89ed4dec6c2a5a1fe",
+            "CREATION_PROFILE": "large_system_strict",
+            "KNOWN_POLICY_CONFLICTS": [],
+            "NETWORK_ENVIRONMENT_CONSTRAINTS": "Deterministic self-contained grading runtime; authoring may reference official docs.ansible.com, grading must not require mutable internet access."
+          }
+        }
+      },
+      "invocation_id": "inv_ecee7a1c3b8d4992ff3728cb6b091cdfe595ca2cd0d500aa06460ecc8235cc65",
+      "learning": {
+        "context_hash": "sha256:bb84a513aa2b6e4374d691759c4a6edf94169f479f4611e9091643b9f279ccfc",
+        "lessons": [],
+        "mode": "GENERALIZED_LESSONS_PLUS_OWNED_REMEDIATIONS",
+        "raw_feedback_exposed": false,
+        "raw_historical_findings_exposed": false,
+        "registry_heads": {
+          "feedback": "GENESIS",
+          "findings": "GENESIS",
+          "lessons": "GENESIS",
+          "patterns": "GENESIS",
+          "remediations": "GENESIS"
+        },
+        "remediations": []
+      },
+      "missing_required_inputs": [],
+      "output_contract": {
+        "allowed_status_values": [
+          "ARCHITECTURE_READY",
+          "SCENARIO_TOO_SMALL",
+          "BLOCKED"
+        ],
+        "deterministic_validators": [],
+        "optional_fields": [
+          "RESOURCE_GRAPH",
+          "DATA_VOLUME_PLAN",
+          "UNRESOLVED_RISKS"
+        ],
+        "persisted_artifacts": [],
+        "required_fields": [
+          "COMPONENT_GRAPH",
+          "ENTRYPOINTS",
+          "STATE_MODEL",
+          "SOLVER_VISIBLE_DOC_PLAN",
+          "PRODUCTION_CHARACTERISTICS",
+          "SCALE_FIT"
+        ],
+        "semantic_reviewers": [
+          "Task Architect"
+        ]
+      },
+      "readiness": "READY",
+      "retrieval": {
+        "query": null,
+        "retrieved_chars": 0,
+        "retrieved_context": [],
+        "status": "NOT_REQUESTED"
+      },
+      "routing": {
+        "failure_routes": {
+          "ARCHITECTURE_GAP": "A2 System Architect / Environment Builder",
+          "REQUIREMENT_GAP": "Creation Controller -> work-package/contract owner",
+          "SCENARIO_TOO_SMALL": "Creation Controller -> WORK_PACKAGE_RESEARCH"
+        },
+        "stale_on": [
+          "work-package change",
+          "material operational requirement change",
+          "creation-profile change"
+        ],
+        "success_transition": "DEFECT_TOPOLOGY"
+      },
+      "schema_version": "1.0",
+      "stage": {
+        "lifecycle": "creation",
+        "owner": "A2 System Architect / Environment Builder",
+        "role_class": "PRODUCER",
+        "role_id": "A2_SYSTEM_ARCHITECT",
+        "stage_id": "SYSTEM_ARCHITECTURE"
+      }
+    },
+    "outputs": {
+      "COMPONENT_GRAPH": {
+        "controller_toolchain": [
+          "bootstrap wrapper",
+          "version/config diagnostics",
+          "project-local ansible.cfg"
+        ],
+        "evidence_plane": [
+          "incident run logs",
+          "preflight facts",
+          "rendered-state snapshots",
+          "validation report",
+          "official-docs manifest"
+        ],
+        "inventory_plane": [
+          "production inventory",
+          "staging inventory",
+          "group_vars",
+          "host_vars",
+          "vault vars"
+        ],
+        "orchestration_plane": [
+          "site.yml",
+          "preflight play",
+          "rolling application play",
+          "validation play"
+        ],
+        "rendering_plane": [
+          "application env/config Jinja",
+          "proxy upstream/vhost Jinja",
+          "telemetry target Jinja",
+          "policy Jinja",
+          "trust bundle Jinja"
+        ],
+        "roles": [
+          "fleet_preflight",
+          "common_baseline",
+          "service_identity",
+          "trust_bundle",
+          "application_release",
+          "edge_proxy",
+          "telemetry_agent",
+          "host_policy",
+          "fleet_validation"
+        ],
+        "verification_plane": [
+          "static syntax/config assertions",
+          "behavioral render assertions",
+          "vault secrecy checks",
+          "role-discovery checks",
+          "idempotency/convergence checks"
+        ]
+      },
+      "DATA_VOLUME_PLAN": "Twelve deterministic localhost-backed fleet identities across three sites with differentiated host/group inputs; generated rootfs and evidence remain compact while exercising cross-host and rolling semantics.",
+      "ENTRYPOINTS": [
+        "bin/fleet-ansible",
+        "playbooks/site.yml",
+        "playbooks/preflight.yml",
+        "playbooks/validate.yml",
+        "scripts/reproduce_incident.sh"
+      ],
+      "PRODUCTION_CHARACTERISTICS": [
+        "multi-site heterogeneous inventory",
+        "rolling execution batches",
+        "fail-closed preflight",
+        "secret-safe logging",
+        "role dependency graph",
+        "last-known-good promotion",
+        "cross-host aggregation",
+        "deterministic render manifests",
+        "idempotent handlers",
+        "operational validation reports"
+      ],
+      "RESOURCE_GRAPH": {
+        "behavioral_surfaces": 35,
+        "environments": 2,
+        "hosts": 12,
+        "major_templates": 10,
+        "roles": 9,
+        "sites": 3
+      },
+      "SCALE_FIT": "large_system_strict: target 3,500-4,500 substantive solver-visible lines across differentiated Ansible, Jinja, inventory, Python validation helpers and operational fixtures; 24 defects from six coupled root-cause clusters; 27 F2P plus at least 8 P2P behaviors.",
+      "SOLVER_VISIBLE_DOC_PLAN": [
+        "docs/operations.md with canonical commands and evidence paths",
+        "docs/fleet-contract.md describing required end-state invariants",
+        "docs/official-ansible-references.md containing only official docs.ansible.com links/titles and provenance notes",
+        "runtime/logs/incident-bootstrap.log and incident-playbook.log captured from starter behavior"
+      ],
+      "STATE_MODEL": {
+        "derived": [
+          "normalized backend graph",
+          "trust bundle",
+          "proxy routing model",
+          "telemetry targets",
+          "host policy model"
+        ],
+        "evidence": [
+          "runtime/logs/*.log",
+          "runtime/reports/*.json"
+        ],
+        "inputs": [
+          "inventory facts",
+          "environment/site overrides",
+          "vaulted secrets",
+          "release metadata",
+          "policy catalogs"
+        ],
+        "materialized": [
+          "runtime/rootfs/<host>/etc/fleet/*",
+          "runtime/rootfs/<host>/etc/nginx/*",
+          "runtime/rootfs/<host>/etc/telemetry/*",
+          "runtime/state/<host>.json"
+        ],
+        "safety": "Render to staged paths, validate, then atomically promote; failed validation preserves prior materialized state."
+      },
+      "UNRESOLVED_RISKS": []
+    },
+    "record_id": "rec_a22656ebfbbdf6eba62739c75dce38b7f4b9a811576a4717fbc4a77a9a391236",
+    "role_id": "A2_SYSTEM_ARCHITECT",
+    "schema_version": "1.0",
+    "stage_id": "SYSTEM_ARCHITECTURE",
+    "status": "ARCHITECTURE_READY",
+    "task_lineage": {
+      "input_task_commit": "b6dd047389184f9d9820f9addc7c59e526799ec8",
+      "output_task_commit": "b6dd047389184f9d9820f9addc7c59e526799ec8",
+      "task_changed": false
+    },
+    "transition": {
+      "action": "ADVANCE",
+      "requires_state_validation": false,
+      "target": "DEFECT_TOPOLOGY",
+      "target_kind": "STAGE"
+    },
+    "validation": {
+      "acceptance_predicates_satisfied": true,
+      "evidence_binding_satisfied": true,
+      "evidence_refs_count": 2,
+      "invocation_identity_valid": true,
+      "invocation_policy_valid": true,
+      "output_keys_valid": true,
+      "required_outputs_satisfied": true,
+      "retrieval_context_authorized": true,
+      "status_legal": true,
+      "task_commit_change_authorized": true,
+      "task_lineage_valid": true
+    }
+  },
+  "remediation_updates": [],
+  "state": {
+    "control_plane_commit": "df7ef7569e2947b9f0bf7cf89ed4dec6c2a5a1fe",
+    "derived_from": {
+      "freshness_overlay_hash": null,
+      "record_ids": [
+        "rec_9b19553df341bfe3ca2aae5bef8f795f43993fdba5df85923a12d177f865968b",
+        "rec_a22656ebfbbdf6eba62739c75dce38b7f4b9a811576a4717fbc4a77a9a391236",
+        "rec_d050c50582277c35f2d8590056ce20b53166eaa3a690805a488aaee15aed94b6"
+      ]
+    },
+    "ledger_event_count": 3,
+    "ledger_head_event_id": "evt_301d0f17fbbf601cd0a03600caf244404f1a1389fed95460c21205cc6291f621",
+    "lineage": {
+      "bootstrap_task_commit": "b6dd047389184f9d9820f9addc7c59e526799ec8",
+      "current_task_commit": "b6dd047389184f9d9820f9addc7c59e526799ec8",
+      "recorded_task_commit": "b6dd047389184f9d9820f9addc7c59e526799ec8",
+      "status": "CURRENT"
+    },
+    "next": {
+      "action": "INVOKE_STAGE",
+      "optional_inputs": [
+        "DOMAIN_FAILURE_REFERENCES"
+      ],
+      "owner": "A3 Defect Topology Designer",
+      "primary_role_id": "A3_DEFECT_TOPOLOGY_DESIGNER",
+      "required_inputs": [
+        "APPROVED_OPERATIONAL_REQUIREMENTS",
+        "APPROVED_WORK_PACKAGE",
+        "CLEAN_SYSTEM_ARCHITECTURE",
+        "CREATION_PROFILE"
+      ],
+      "stage_id": "DEFECT_TOPOLOGY"
+    },
+    "nodes": [
+      {
+        "disposition": "ADVANCE",
+        "input_task_commit": "b6dd047389184f9d9820f9addc7c59e526799ec8",
+        "invocation_id": "inv_30767f28b580ad4148bf4dfa3bec09df854ee1c6a3888d86d208cdefebb255b0",
+        "ledger_event_id": "evt_d71b0f2e930deb56f9b0077500d2fa8556f88b1152b494e50cc288a6b897411d",
+        "node_id": "RULE_RESOLUTION",
+        "node_kind": "STAGE",
+        "output_task_commit": "b6dd047389184f9d9820f9addc7c59e526799ec8",
+        "reason": "validated ADVANCE record reaches WORK_PACKAGE_RESEARCH",
+        "record_id": "rec_9b19553df341bfe3ca2aae5bef8f795f43993fdba5df85923a12d177f865968b",
+        "status": "CURRENT"
+      },
+      {
+        "disposition": "ADVANCE",
+        "input_task_commit": "b6dd047389184f9d9820f9addc7c59e526799ec8",
+        "invocation_id": "inv_cca86a68cf288bf2e0ec1fe5c5d83125e188138d10840aef9a4ed131a2c398b3",
+        "ledger_event_id": "evt_8485695287e50fcd25bad8205228564c1b037b07b49acecf167be1b0f78d16d3",
+        "node_id": "WORK_PACKAGE_RESEARCH",
+        "node_kind": "STAGE",
+        "output_task_commit": "b6dd047389184f9d9820f9addc7c59e526799ec8",
+        "reason": "validated ADVANCE record reaches SYSTEM_ARCHITECTURE",
+        "record_id": "rec_d050c50582277c35f2d8590056ce20b53166eaa3a690805a488aaee15aed94b6",
+        "status": "CURRENT"
+      },
+      {
+        "disposition": "ADVANCE",
+        "input_task_commit": "b6dd047389184f9d9820f9addc7c59e526799ec8",
+        "invocation_id": "inv_ecee7a1c3b8d4992ff3728cb6b091cdfe595ca2cd0d500aa06460ecc8235cc65",
+        "ledger_event_id": "evt_301d0f17fbbf601cd0a03600caf244404f1a1389fed95460c21205cc6291f621",
+        "node_id": "SYSTEM_ARCHITECTURE",
+        "node_kind": "STAGE",
+        "output_task_commit": "b6dd047389184f9d9820f9addc7c59e526799ec8",
+        "reason": "validated ADVANCE record reaches DEFECT_TOPOLOGY",
+        "record_id": "rec_a22656ebfbbdf6eba62739c75dce38b7f4b9a811576a4717fbc4a77a9a391236",
+        "status": "CURRENT"
+      },
+      {
+        "node_id": "DEFECT_TOPOLOGY",
+        "node_kind": "STAGE",
+        "reason": "no execution-ledger event exists for this stage",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "ENVIRONMENT_BUILD",
+        "node_kind": "STAGE",
+        "reason": "upstream node DEFECT_TOPOLOGY is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "REFERENCE_SOLUTION",
+        "node_kind": "STAGE",
+        "reason": "upstream node ENVIRONMENT_BUILD is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "VERIFIER_BUILD",
+        "node_kind": "STAGE",
+        "reason": "upstream node REFERENCE_SOLUTION is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "HUMAN_WRITING_RESEARCH",
+        "node_kind": "STAGE",
+        "reason": "upstream node VERIFIER_BUILD is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "INSTRUCTION_DRAFT",
+        "node_kind": "STAGE",
+        "reason": "upstream node HUMAN_WRITING_RESEARCH is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "SPEC_ALIGNMENT",
+        "node_kind": "STAGE",
+        "reason": "upstream node INSTRUCTION_DRAFT is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "DOCUMENTATION_DRAFT",
+        "node_kind": "STAGE",
+        "reason": "upstream node SPEC_ALIGNMENT is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "FORMAT_GATE",
+        "node_kind": "STAGE",
+        "reason": "upstream node DOCUMENTATION_DRAFT is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "ASSEMBLY",
+        "node_kind": "STAGE",
+        "reason": "upstream node FORMAT_GATE is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "COMPLEXITY_GATE",
+        "node_kind": "STAGE",
+        "reason": "upstream node ASSEMBLY is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "RUNTIME_AUTHENTICITY",
+        "node_kind": "STAGE",
+        "reason": "upstream node COMPLEXITY_GATE is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "DETERMINISTIC_VALIDATION",
+        "node_kind": "STAGE",
+        "reason": "upstream node RUNTIME_AUTHENTICITY is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "FROZEN_CANDIDATE",
+        "node_kind": "STATE",
+        "reason": "state cannot be current while its predecessor chain is non-current",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "QUALITY_INTERLOCK",
+        "node_kind": "STAGE",
+        "reason": "upstream node FROZEN_CANDIDATE is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "PRE_LLMAJ",
+        "node_kind": "STAGE",
+        "reason": "upstream node QUALITY_INTERLOCK is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "MODEL_DIAGNOSTIC_GPT",
+        "node_kind": "STAGE",
+        "reason": "upstream node PRE_LLMAJ is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "MODEL_DIAGNOSTIC_CLAUDE",
+        "node_kind": "STAGE",
+        "reason": "upstream node MODEL_DIAGNOSTIC_GPT is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "MODEL_DIAGNOSTIC_AGGREGATE",
+        "node_kind": "STAGE",
+        "reason": "upstream node MODEL_DIAGNOSTIC_CLAUDE is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "HARBOR_LLMAJ",
+        "node_kind": "STAGE",
+        "reason": "upstream node MODEL_DIAGNOSTIC_AGGREGATE is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "OFFICIAL_MODEL_TRIALS",
+        "node_kind": "STAGE",
+        "reason": "upstream node HARBOR_LLMAJ is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "TRIAL_ANALYSIS",
+        "node_kind": "STAGE",
+        "reason": "upstream node OFFICIAL_MODEL_TRIALS is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "DIFFICULTY_ASSESSMENT",
+        "node_kind": "STAGE",
+        "reason": "upstream node TRIAL_ANALYSIS is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "FINAL_REVIEW",
+        "node_kind": "STAGE",
+        "reason": "upstream node DIFFICULTY_ASSESSMENT is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "SUBMISSION_READY",
+        "node_kind": "STAGE",
+        "reason": "upstream node FINAL_REVIEW is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      }
+    ],
+    "schema_version": "1.0",
+    "state_snapshot_id": "state_5dbb0d15492df81279d5c4b6a22c553818146f7dcf045dad65faa3d8ffaaaf54",
+    "summary": {
+      "BLOCKED": 0,
+      "CURRENT": 3,
+      "MISSING": 25,
+      "STALE": 0
+    },
+    "task_commit": "b6dd047389184f9d9820f9addc7c59e526799ec8",
+    "task_id": "ansible-fleet-configuration-recovery"
+  }
+}

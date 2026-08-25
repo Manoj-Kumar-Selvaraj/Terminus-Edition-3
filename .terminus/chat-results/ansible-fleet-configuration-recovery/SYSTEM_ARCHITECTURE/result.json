@@ -1,0 +1,133 @@
+{
+  "evidence_refs": [
+    {
+      "kind": "COMMIT",
+      "ref": "commit:df7ef7569e2947b9f0bf7cf89ed4dec6c2a5a1fe"
+    },
+    {
+      "kind": "COMMIT",
+      "ref": "commit:b6dd047389184f9d9820f9addc7c59e526799ec8"
+    }
+  ],
+  "invocation_id": "inv_ecee7a1c3b8d4992ff3728cb6b091cdfe595ca2cd0d500aa06460ecc8235cc65",
+  "output_task_commit": "b6dd047389184f9d9820f9addc7c59e526799ec8",
+  "outputs": {
+    "COMPONENT_GRAPH": {
+      "controller_toolchain": [
+        "bootstrap wrapper",
+        "version/config diagnostics",
+        "project-local ansible.cfg"
+      ],
+      "evidence_plane": [
+        "incident run logs",
+        "preflight facts",
+        "rendered-state snapshots",
+        "validation report",
+        "official-docs manifest"
+      ],
+      "inventory_plane": [
+        "production inventory",
+        "staging inventory",
+        "group_vars",
+        "host_vars",
+        "vault vars"
+      ],
+      "orchestration_plane": [
+        "site.yml",
+        "preflight play",
+        "rolling application play",
+        "validation play"
+      ],
+      "rendering_plane": [
+        "application env/config Jinja",
+        "proxy upstream/vhost Jinja",
+        "telemetry target Jinja",
+        "policy Jinja",
+        "trust bundle Jinja"
+      ],
+      "roles": [
+        "fleet_preflight",
+        "common_baseline",
+        "service_identity",
+        "trust_bundle",
+        "application_release",
+        "edge_proxy",
+        "telemetry_agent",
+        "host_policy",
+        "fleet_validation"
+      ],
+      "verification_plane": [
+        "static syntax/config assertions",
+        "behavioral render assertions",
+        "vault secrecy checks",
+        "role-discovery checks",
+        "idempotency/convergence checks"
+      ]
+    },
+    "DATA_VOLUME_PLAN": "Twelve deterministic localhost-backed fleet identities across three sites with differentiated host/group inputs; generated rootfs and evidence remain compact while exercising cross-host and rolling semantics.",
+    "ENTRYPOINTS": [
+      "bin/fleet-ansible",
+      "playbooks/site.yml",
+      "playbooks/preflight.yml",
+      "playbooks/validate.yml",
+      "scripts/reproduce_incident.sh"
+    ],
+    "PRODUCTION_CHARACTERISTICS": [
+      "multi-site heterogeneous inventory",
+      "rolling execution batches",
+      "fail-closed preflight",
+      "secret-safe logging",
+      "role dependency graph",
+      "last-known-good promotion",
+      "cross-host aggregation",
+      "deterministic render manifests",
+      "idempotent handlers",
+      "operational validation reports"
+    ],
+    "RESOURCE_GRAPH": {
+      "behavioral_surfaces": 35,
+      "environments": 2,
+      "hosts": 12,
+      "major_templates": 10,
+      "roles": 9,
+      "sites": 3
+    },
+    "SCALE_FIT": "large_system_strict: target 3,500-4,500 substantive solver-visible lines across differentiated Ansible, Jinja, inventory, Python validation helpers and operational fixtures; 24 defects from six coupled root-cause clusters; 27 F2P plus at least 8 P2P behaviors.",
+    "SOLVER_VISIBLE_DOC_PLAN": [
+      "docs/operations.md with canonical commands and evidence paths",
+      "docs/fleet-contract.md describing required end-state invariants",
+      "docs/official-ansible-references.md containing only official docs.ansible.com links/titles and provenance notes",
+      "runtime/logs/incident-bootstrap.log and incident-playbook.log captured from starter behavior"
+    ],
+    "STATE_MODEL": {
+      "derived": [
+        "normalized backend graph",
+        "trust bundle",
+        "proxy routing model",
+        "telemetry targets",
+        "host policy model"
+      ],
+      "evidence": [
+        "runtime/logs/*.log",
+        "runtime/reports/*.json"
+      ],
+      "inputs": [
+        "inventory facts",
+        "environment/site overrides",
+        "vaulted secrets",
+        "release metadata",
+        "policy catalogs"
+      ],
+      "materialized": [
+        "runtime/rootfs/<host>/etc/fleet/*",
+        "runtime/rootfs/<host>/etc/nginx/*",
+        "runtime/rootfs/<host>/etc/telemetry/*",
+        "runtime/state/<host>.json"
+      ],
+      "safety": "Render to staged paths, validate, then atomically promote; failed validation preserves prior materialized state."
+    },
+    "UNRESOLVED_RISKS": []
+  },
+  "schema_version": "1.0",
+  "status": "ARCHITECTURE_READY"
+}
