@@ -1,0 +1,114 @@
+{
+  "evidence_refs": [
+    {
+      "kind": "COMMIT",
+      "ref": "commit:df7ef7569e2947b9f0bf7cf89ed4dec6c2a5a1fe"
+    },
+    {
+      "kind": "COMMIT",
+      "ref": "commit:b6dd047389184f9d9820f9addc7c59e526799ec8"
+    }
+  ],
+  "invocation_id": "inv_cca86a68cf288bf2e0ec1fe5c5d83125e188138d10840aef9a4ed131a2c398b3",
+  "output_task_commit": "b6dd047389184f9d9820f9addc7c59e526799ec8",
+  "outputs": {
+    "CANDIDATES": [
+      {
+        "EDGE_FAILURE_SURFACE": [
+          "unsupported controller CLI feature",
+          "project config not selected",
+          "role lookup outside default search roots",
+          "group/host variable shadowing",
+          "undefined nested variable after include",
+          "plaintext secret material where encrypted input is required",
+          "Vault decryption unavailable or wrong variable boundary",
+          "role name/order mismatch",
+          "handler notified before prerequisite materialization",
+          "YAML parse ambiguity",
+          "task keyword nesting error",
+          "Jinja type mismatch",
+          "undefined value inside map/select pipeline",
+          "cross-host hostvars aggregation with missing members",
+          "IPv4/IPv6 endpoint formatting",
+          "empty backend set fail-closed behavior",
+          "duplicate endpoint normalization",
+          "certificate bundle ordering",
+          "rolling-batch partial failure",
+          "second-run false change",
+          "template checksum drift",
+          "site override precedence",
+          "conditional include behavior",
+          "failed preflight preserving prior rendered state"
+        ],
+        "ENGINEERING_OBJECTIVE": "Recover a production-style Ansible fleet automation estate that provisions and reconciles application, proxy, observability, certificate, policy and secret-dependent configuration across heterogeneous node groups, using execution evidence to diagnose a chain of toolchain, project-discovery, variable, Vault, role-ordering, syntax and template failures until repeated runs converge safely.",
+        "ID": "FLEET_CONFIGURATION_RECOVERY_AND_POLICY_RECONCILIATION",
+        "PRESERVATION_OBLIGATIONS": [
+          "never print decrypted secrets in normal logs",
+          "failed preflight must not replace last-known-good rendered configuration",
+          "unaffected host groups remain stable",
+          "handlers fire only on material changes",
+          "second successful execution is convergent",
+          "environment-specific overrides do not bleed across inventories",
+          "rendered configurations remain deterministic for identical inputs"
+        ],
+        "REQUIREMENT_FAMILIES": [
+          "project configuration bootstrap and portability",
+          "controller/runtime compatibility",
+          "role discovery and dependency graph",
+          "inventory and variable precedence",
+          "Vault-backed secret lifecycle",
+          "application release projection",
+          "reverse-proxy and upstream composition",
+          "certificate and trust-bundle rollout",
+          "observability agent and scrape target generation",
+          "host policy and service-account projection",
+          "Jinja2 data normalization and cross-host aggregation",
+          "handlers and restart ordering",
+          "preflight validation and fail-safe behavior",
+          "rolling deployment and failure isolation",
+          "idempotent second-run convergence",
+          "operator logs and incident evidence",
+          "configuration integrity assertions",
+          "mixed environment/site overrides"
+        ],
+        "SCALE_FIT": "VERY_HIGH: differentiated roles, inventories, templates, filters, validation and operational state can naturally exceed 3,000 substantive reachable lines with 20-30 causally linked manifestations and 25-30 distinct behavioral tests without duplication."
+      },
+      {
+        "ENGINEERING_OBJECTIVE": "Repair a multi-site application release orchestration stack with staged rollouts, service discovery, secrets, proxy generation and rollback semantics.",
+        "ID": "MULTI_SITE_ANSIBLE_RELEASE_ORCHESTRATOR_RECOVERY",
+        "REQUIREMENT_FAMILIES": [
+          "release lifecycle",
+          "inventory targeting",
+          "secrets",
+          "proxy generation",
+          "health gates",
+          "rollback",
+          "handlers",
+          "templates",
+          "audit logs"
+        ],
+        "SCALE_FIT": "HIGH, but it makes release mechanics more central than the requested broad Ansible troubleshooting surface."
+      },
+      {
+        "ENGINEERING_OBJECTIVE": "Recover a policy-driven fleet baseline covering accounts, packages, system configuration, trust material and monitoring with drift validation and evidence reporting.",
+        "ID": "ANSIBLE_COMPLIANCE_AND_BASELINE_RECONCILIATION",
+        "REQUIREMENT_FAMILIES": [
+          "host baseline",
+          "policy validation",
+          "accounts",
+          "trust",
+          "monitoring",
+          "templating",
+          "secrets",
+          "drift reporting"
+        ],
+        "SCALE_FIT": "HIGH, but less naturally exercises rich role ordering and application-facing Jinja aggregation."
+      }
+    ],
+    "DUPLICATE_RISK_NOTES": "Keep the work package Ansible-native and configuration-management focused. Avoid reusing the route-control-plane task's networking domain or turning the estate into copied role skeletons; each major role must own materially different data transformations and operational responsibilities.",
+    "RECOMMENDATION": "FLEET_CONFIGURATION_RECOVERY_AND_POLICY_RECONCILIATION",
+    "WHY_THIS_ONE": "It turns the requested failures into one coherent operational recovery instead of a synthetic bug list. Controller compatibility, project discovery, role resolution, variables/Vault, role ordering, syntax and Jinja transformations sit on the same execution path and produce realistic staged logs. The desired end state can be specified by fleet invariants while the actual diagnoses remain discoverable from execution evidence and official Ansible references."
+  },
+  "schema_version": "1.0",
+  "status": "CANDIDATES_READY"
+}
