@@ -1,0 +1,61 @@
+{
+  "evidence_refs": [],
+  "invocation_id": "inv_3c2e8537f3816b656452987c67e5f516fd37adbb309abf483e105e86700d7381",
+  "output_task_commit": "bae0db9cd8a429589f998c859cbcd6c1996382d4",
+  "outputs": {
+    "DETERMINISM_NOTES": "Controller major version is pinned, generated configuration is normalized deterministically, policy/backend ordering is stable, Vault password input has a deterministic CI fallback, and validation is performed against fixed inventory evidence.",
+    "FILES_CHANGED": [
+      "ansible.cfg",
+      "environment/Dockerfile",
+      "environment/inventory/group_vars/all.yml",
+      "environment/inventory/group_vars/prod/vault.yml",
+      "environment/playbooks/site.yml",
+      "environment/playbooks/validate.yml",
+      "environment/roles/common_baseline/tasks/main.yml",
+      "environment/roles/service_identity/tasks/main.yml",
+      "environment/roles/application_release/tasks/main.yml",
+      "environment/roles/application_release/templates/application.yml.j2",
+      "environment/roles/edge_proxy/templates/upstreams.conf.j2",
+      "environment/roles/telemetry_agent/tasks/main.yml",
+      "environment/roles/telemetry_agent/templates/targets.yml.j2",
+      "environment/roles/host_policy/tasks/main.yml",
+      "environment/roles/host_policy/templates/policy.conf.j2",
+      "environment/lib/fleet_validator.py"
+    ],
+    "PRESERVED_BEHAVIOR": [
+      "three-site inventory and service topology",
+      "site override semantics",
+      "Vault-backed sensitive values",
+      "project role ownership",
+      "IPv4 and IPv6 backends",
+      "policy ownership and priority semantics",
+      "operator-visible incident evidence",
+      "idempotent Ansible modules"
+    ],
+    "RESTART_IDEMPOTENCY_BEHAVIOR": "The reference executes the repaired site playbook twice; templates/copy/file operations converge on identical content and handlers are notified only by actual changes.",
+    "RESTORED_INVARIANTS": [
+      "supported ansible-config init bootstrap",
+      "project-local roles_path selection",
+      "structured recursive site settings",
+      "Vault encrypted at rest",
+      "identity/trust before dependent application render",
+      "distinct proxy and telemetry responsibilities",
+      "parser-valid task boundaries",
+      "module-valid copy usage",
+      "mixed scalar/mapping backend handling",
+      "IPv6 bracket normalization",
+      "optional telemetry group handling",
+      "numeric policy ordering",
+      "repeat execution convergence"
+    ],
+    "RISKS_FOR_INDEPENDENT_VERIFIER": [
+      "Verifier must independently detect a legacy controller rather than trusting version prose",
+      "Verifier should prove project config selection and role discovery from a non-global environment",
+      "Verifier must distinguish plaintext no_log from encrypted-at-rest Vault",
+      "Verifier should exercise mixed endpoint shapes and IPv6 independently",
+      "Verifier should check second-run idempotency without copying solution logic"
+    ]
+  },
+  "schema_version": "1.0",
+  "status": "IMPLEMENTED"
+}
