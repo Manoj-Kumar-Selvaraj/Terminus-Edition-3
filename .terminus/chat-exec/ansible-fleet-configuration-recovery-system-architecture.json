@@ -1,0 +1,68 @@
+{
+  "schema_version": "1.0",
+  "mode": "RECORD",
+  "task_id": "ansible-fleet-configuration-recovery",
+  "task_commit": "b6dd047389184f9d9820f9addc7c59e526799ec8",
+  "control_plane_commit": "df7ef7569e2947b9f0bf7cf89ed4dec6c2a5a1fe",
+  "expected_repository_head": "d8b94e055c17e39f99a1d88cb2e3e871a54e6ca6",
+  "stage_id": "SYSTEM_ARCHITECTURE",
+  "inputs": {
+    "CREATION_RULE_CONTEXT": {
+      "CONTROL_PLANE_COMMIT": "df7ef7569e2947b9f0bf7cf89ed4dec6c2a5a1fe",
+      "CREATION_PROFILE": "large_system_strict",
+      "NETWORK_ENVIRONMENT_CONSTRAINTS": "Deterministic self-contained grading runtime; authoring may reference official docs.ansible.com, grading must not require mutable internet access.",
+      "KNOWN_POLICY_CONFLICTS": []
+    },
+    "APPROVED_WORK_PACKAGE": {
+      "ID": "FLEET_CONFIGURATION_RECOVERY_AND_POLICY_RECONCILIATION",
+      "ENGINEERING_OBJECTIVE": "Recover a production-style Ansible fleet automation estate that provisions and reconciles application, proxy, observability, certificate, policy and secret-dependent configuration across heterogeneous node groups, using execution evidence to diagnose a chain of toolchain, project-discovery, variable, Vault, role-ordering, syntax and template failures until repeated runs converge safely."
+    },
+    "APPROVED_OPERATIONAL_REQUIREMENTS": [
+      "The supplied controller starts in an inherited legacy state and operational commands must expose enough evidence to diagnose compatibility before successful project bootstrap.",
+      "The project must use a project-local configuration and role layout, but starter discovery behavior must fail realistically until repaired.",
+      "Production roles must be materially differentiated across preflight, common baseline, identity, certificates, application, proxy, observability, policy and validation responsibilities.",
+      "Inventory/group/host variables must model multiple sites and environments with meaningful precedence and scoped overrides.",
+      "Sensitive application/proxy credentials must be represented through Ansible Vault-compatible encrypted content and must not appear in normal task output.",
+      "Role dependencies and ordering must encode prerequisites; starter defects may cause wrong order or wrong role execution, while the repaired run must converge deterministically.",
+      "Templates must perform non-trivial Jinja transformations including backend aggregation, endpoint normalization, site policy projection, secret references, monitoring targets and trust-bundle composition.",
+      "Malformed YAML/task syntax and template expressions must be realistic and diagnosable from Ansible parser/runtime logs rather than direct repair hints.",
+      "A failed preflight or render must preserve last-known-good rendered configuration; successful repeated execution must be idempotent.",
+      "Solver-visible incident artifacts must identify commands and log/evidence locations, not hidden root causes.",
+      "Official Ansible documentation references must come from docs.ansible.com and cover configuration generation, configuration settings, roles, variables, Vault and templating.",
+      "The grader must validate both fail-to-pass repairs and pass-to-pass preservation across independent behavior families."
+    ]
+  },
+  "result": {
+    "status": "ARCHITECTURE_READY",
+    "outputs": {
+      "COMPONENT_GRAPH": {
+        "controller_toolchain": ["bootstrap wrapper", "version/config diagnostics", "project-local ansible.cfg"],
+        "inventory_plane": ["production inventory", "staging inventory", "group_vars", "host_vars", "vault vars"],
+        "orchestration_plane": ["site.yml", "preflight play", "rolling application play", "validation play"],
+        "roles": ["fleet_preflight", "common_baseline", "service_identity", "trust_bundle", "application_release", "edge_proxy", "telemetry_agent", "host_policy", "fleet_validation"],
+        "rendering_plane": ["application env/config Jinja", "proxy upstream/vhost Jinja", "telemetry target Jinja", "policy Jinja", "trust bundle Jinja"],
+        "evidence_plane": ["incident run logs", "preflight facts", "rendered-state snapshots", "validation report", "official-docs manifest"],
+        "verification_plane": ["static syntax/config assertions", "behavioral render assertions", "vault secrecy checks", "role-discovery checks", "idempotency/convergence checks"]
+      },
+      "ENTRYPOINTS": ["bin/fleet-ansible", "playbooks/site.yml", "playbooks/preflight.yml", "playbooks/validate.yml", "scripts/reproduce_incident.sh"],
+      "STATE_MODEL": {
+        "inputs": ["inventory facts", "environment/site overrides", "vaulted secrets", "release metadata", "policy catalogs"],
+        "derived": ["normalized backend graph", "trust bundle", "proxy routing model", "telemetry targets", "host policy model"],
+        "materialized": ["runtime/rootfs/<host>/etc/fleet/*", "runtime/rootfs/<host>/etc/nginx/*", "runtime/rootfs/<host>/etc/telemetry/*", "runtime/state/<host>.json"],
+        "evidence": ["runtime/logs/*.log", "runtime/reports/*.json"],
+        "safety": "Render to staged paths, validate, then atomically promote; failed validation preserves prior materialized state."
+      },
+      "SOLVER_VISIBLE_DOC_PLAN": ["docs/operations.md with canonical commands and evidence paths", "docs/fleet-contract.md describing required end-state invariants", "docs/official-ansible-references.md containing only official docs.ansible.com links/titles and provenance notes", "runtime/logs/incident-bootstrap.log and incident-playbook.log captured from starter behavior"],
+      "PRODUCTION_CHARACTERISTICS": ["multi-site heterogeneous inventory", "rolling execution batches", "fail-closed preflight", "secret-safe logging", "role dependency graph", "last-known-good promotion", "cross-host aggregation", "deterministic render manifests", "idempotent handlers", "operational validation reports"],
+      "SCALE_FIT": "large_system_strict: target 3,500-4,500 substantive solver-visible lines across differentiated Ansible, Jinja, inventory, Python validation helpers and operational fixtures; 24 defects from six coupled root-cause clusters; 27 F2P plus at least 8 P2P behaviors.",
+      "RESOURCE_GRAPH": {"sites": 3, "environments": 2, "hosts": 12, "roles": 9, "major_templates": 10, "behavioral_surfaces": 35},
+      "DATA_VOLUME_PLAN": "Twelve deterministic localhost-backed fleet identities across three sites with differentiated host/group inputs; generated rootfs and evidence remain compact while exercising cross-host and rolling semantics.",
+      "UNRESOLVED_RISKS": []
+    },
+    "evidence_refs": [
+      {"kind": "COMMIT", "ref": "commit:df7ef7569e2947b9f0bf7cf89ed4dec6c2a5a1fe"},
+      {"kind": "COMMIT", "ref": "commit:b6dd047389184f9d9820f9addc7c59e526799ec8"}
+    ],
+    "output_task_commit": "b6dd047389184f9d9820f9addc7c59e526799ec8"
+  }
+}
