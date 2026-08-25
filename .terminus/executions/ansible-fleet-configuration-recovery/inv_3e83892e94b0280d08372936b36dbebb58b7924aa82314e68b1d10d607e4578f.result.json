@@ -1,0 +1,251 @@
+{
+  "authority": {
+    "control_plane_commit": "df7ef7569e2947b9f0bf7cf89ed4dec6c2a5a1fe",
+    "policy_versions": {},
+    "task_commit": "b6dd047389184f9d9820f9addc7c59e526799ec8",
+    "task_id": "ansible-fleet-configuration-recovery"
+  },
+  "disposition": "ADVANCE",
+  "evidence_refs": [
+    {
+      "content_hash": "sha256:7f979f19b088ce1e85310c4c9eaab5af140b215dd3d6911b815cd688313b6cc6",
+      "kind": "COMMIT",
+      "ref": "commit:4ddc9ff050e84ee32fb97e2a320d2f4cb65c0725"
+    }
+  ],
+  "invocation_id": "inv_3e83892e94b0280d08372936b36dbebb58b7924aa82314e68b1d10d607e4578f",
+  "invocation_snapshot": {
+    "acceptance_predicates": {},
+    "authority": {
+      "control_plane_commit": "df7ef7569e2947b9f0bf7cf89ed4dec6c2a5a1fe",
+      "policy_versions": {},
+      "task_commit": "b6dd047389184f9d9820f9addc7c59e526799ec8",
+      "task_id": "ansible-fleet-configuration-recovery"
+    },
+    "evidence": {
+      "authorized_evidence_classes": [
+        "CONTROL_PLANE_POLICY",
+        "PRIVATE_CREATION_DESIGN",
+        "PUBLIC_REFERENCE",
+        "SOLVER_VISIBLE_TASK"
+      ],
+      "evidence_required": [
+        "root-cause clusters",
+        "causal/interdependency edges",
+        "partial-fix traps",
+        "behavioral surfaces"
+      ],
+      "excluded_evidence_classes": [
+        "CI_RUNTIME_EVIDENCE",
+        "CURRENT_REVIEW_PACKET",
+        "DURABLE_SESSION_STATE",
+        "FINAL_PACKAGE_EVIDENCE",
+        "MODEL_TRIAL_EVIDENCE",
+        "PRIOR_REVIEW_RESULTS",
+        "SOLUTION_ORACLE",
+        "VERIFIER_PRIVATE"
+      ],
+      "mandatory_exact_reads": [
+        ".terminus/agents/CREATION_PIPELINE.md",
+        ".terminus/agents/CREATOR_AGENT_REGISTRY.md",
+        ".terminus/agents/CREATOR_PROMPTS.md"
+      ],
+      "retrieval_mode": "FILTERED_HYBRID"
+    },
+    "ignored_input_count": 0,
+    "inputs": {
+      "optional": {},
+      "required": {
+        "APPROVED_OPERATIONAL_REQUIREMENTS": [
+          "production-grade Ansible fleet recovery",
+          "diagnosis through runtime/log evidence",
+          "official docs.ansible.com helper references",
+          "secure vaulted secret handling",
+          "project-local role/config discovery",
+          "complex variable/role/syntax/Jinja repair",
+          "idempotent convergent end state"
+        ],
+        "APPROVED_WORK_PACKAGE": {
+          "ID": "FLEET_CONFIGURATION_RECOVERY_AND_POLICY_RECONCILIATION"
+        },
+        "CLEAN_SYSTEM_ARCHITECTURE": {
+          "entrypoints": [
+            "bin/fleet-ansible",
+            "playbooks/site.yml",
+            "playbooks/preflight.yml",
+            "playbooks/validate.yml"
+          ],
+          "roles": [
+            "fleet_preflight",
+            "common_baseline",
+            "service_identity",
+            "trust_bundle",
+            "application_release",
+            "edge_proxy",
+            "telemetry_agent",
+            "host_policy",
+            "fleet_validation"
+          ]
+        },
+        "CREATION_PROFILE": "large_system_strict"
+      }
+    },
+    "invocation_id": "inv_3e83892e94b0280d08372936b36dbebb58b7924aa82314e68b1d10d607e4578f",
+    "learning": {
+      "context_hash": "sha256:bb84a513aa2b6e4374d691759c4a6edf94169f479f4611e9091643b9f279ccfc",
+      "lessons": [],
+      "mode": "GENERALIZED_LESSONS_PLUS_OWNED_REMEDIATIONS",
+      "raw_feedback_exposed": false,
+      "raw_historical_findings_exposed": false,
+      "registry_heads": {
+        "feedback": "GENESIS",
+        "findings": "GENESIS",
+        "lessons": "GENESIS",
+        "patterns": "GENESIS",
+        "remediations": "GENESIS"
+      },
+      "remediations": []
+    },
+    "missing_required_inputs": [],
+    "output_contract": {
+      "allowed_status_values": [
+        "DESIGN_READY",
+        "SCENARIO_TOO_SMALL",
+        "BLOCKED"
+      ],
+      "deterministic_validators": [
+        ".terminus/validate_defect_topology.py <task>"
+      ],
+      "optional_fields": [],
+      "persisted_artifacts": [
+        ".terminus/designs/<task>.json"
+      ],
+      "required_fields": [
+        "profile",
+        "root_cause_clusters",
+        "defects",
+        "causal_edges",
+        "behavioral_surfaces",
+        "organic_f2p_surface_assessment"
+      ],
+      "semantic_reviewers": [
+        "Task Architect",
+        "Complexity Governor"
+      ]
+    },
+    "readiness": "READY",
+    "retrieval": {
+      "query": null,
+      "retrieved_chars": 0,
+      "retrieved_context": [],
+      "status": "NOT_REQUESTED"
+    },
+    "routing": {
+      "failure_routes": {
+        "ARCHITECTURE_GAP": "Creation Controller -> SYSTEM_ARCHITECTURE",
+        "HIDDEN_KNOWLEDGE": "A3 Defect Topology Designer -> expose legitimate solver-visible contract or remove defect",
+        "SCENARIO_TOO_SMALL": "Creation Controller -> WORK_PACKAGE_RESEARCH"
+      },
+      "stale_on": [
+        "work-package change",
+        "architecture change",
+        "material operational requirement change"
+      ],
+      "success_transition": "ENVIRONMENT_BUILD"
+    },
+    "schema_version": "1.0",
+    "stage": {
+      "lifecycle": "creation",
+      "owner": "A3 Defect Topology Designer",
+      "role_class": "PRODUCER",
+      "role_id": "A3_DEFECT_TOPOLOGY_DESIGNER",
+      "stage_id": "DEFECT_TOPOLOGY"
+    }
+  },
+  "outputs": {
+    "behavioral_surfaces": [
+      "controller bootstrap",
+      "config selection",
+      "role discovery",
+      "inventory precedence",
+      "vault secrecy",
+      "role ordering",
+      "syntax parsing",
+      "module schema",
+      "backend aggregation",
+      "IPv6 normalization",
+      "cross-host telemetry targets",
+      "policy priority rendering",
+      "atomic promotion",
+      "handler convergence",
+      "rolling failure isolation",
+      "second-run idempotency"
+    ],
+    "causal_edges": "30 directed edges connect all 24 manifestations across all six root-cause clusters; authoritative topology is .terminus/designs/ansible-fleet-configuration-recovery.json",
+    "defects": [
+      "D01",
+      "D02",
+      "D03",
+      "D04",
+      "D05",
+      "D06",
+      "D07",
+      "D08",
+      "D09",
+      "D10",
+      "D11",
+      "D12",
+      "D13",
+      "D14",
+      "D15",
+      "D16",
+      "D17",
+      "D18",
+      "D19",
+      "D20",
+      "D21",
+      "D22",
+      "D23",
+      "D24"
+    ],
+    "organic_f2p_surface_assessment": "24 manifestations yield at least 27 independent fail-to-pass behaviors plus preservation cases; cross-cluster edges prevent single-file or parser-only solutions.",
+    "profile": "large_system_strict",
+    "root_cause_clusters": [
+      "controller_compatibility",
+      "project_discovery",
+      "data_and_secret_scope",
+      "orchestration_graph",
+      "syntax_and_schema",
+      "jinja_data_model"
+    ]
+  },
+  "record_id": "rec_dacf797d68fb1a1ac9feaabf9b39e0c601199222eddbeae72ce37825bd2f44b5",
+  "role_id": "A3_DEFECT_TOPOLOGY_DESIGNER",
+  "schema_version": "1.0",
+  "stage_id": "DEFECT_TOPOLOGY",
+  "status": "DESIGN_READY",
+  "task_lineage": {
+    "input_task_commit": "b6dd047389184f9d9820f9addc7c59e526799ec8",
+    "output_task_commit": "4ddc9ff050e84ee32fb97e2a320d2f4cb65c0725",
+    "task_changed": true
+  },
+  "transition": {
+    "action": "ADVANCE",
+    "requires_state_validation": false,
+    "target": "ENVIRONMENT_BUILD",
+    "target_kind": "STAGE"
+  },
+  "validation": {
+    "acceptance_predicates_satisfied": true,
+    "evidence_binding_satisfied": true,
+    "evidence_refs_count": 1,
+    "invocation_identity_valid": true,
+    "invocation_policy_valid": true,
+    "output_keys_valid": true,
+    "required_outputs_satisfied": true,
+    "retrieval_context_authorized": true,
+    "status_legal": true,
+    "task_commit_change_authorized": true,
+    "task_lineage_valid": true
+  }
+}
