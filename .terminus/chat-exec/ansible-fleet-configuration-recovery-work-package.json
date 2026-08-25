@@ -1,0 +1,55 @@
+{
+  "schema_version": "1.0",
+  "mode": "RECORD",
+  "task_id": "ansible-fleet-configuration-recovery",
+  "task_commit": "b6dd047389184f9d9820f9addc7c59e526799ec8",
+  "control_plane_commit": "df7ef7569e2947b9f0bf7cf89ed4dec6c2a5a1fe",
+  "expected_repository_head": "5ce964a2792619e393a7647e082120d1424d41d6",
+  "stage_id": "WORK_PACKAGE_RESEARCH",
+  "inputs": {
+    "CREATION_RULE_CONTEXT": {
+      "CONTROL_PLANE_COMMIT": "df7ef7569e2947b9f0bf7cf89ed4dec6c2a5a1fe",
+      "RULE_SOURCES": ["TERMINUS_3_AI_INSTRUCTIONS.md", ".terminus/AGENT_SYSTEM.md", ".terminus/agents/CREATION_CONTROLLER.md", ".terminus/agents/CREATION_PIPELINE.md", ".terminus/agents/PRODUCTION_AUTHENTICITY.md", ".terminus/reviewers/REVIEWER_CHECKLIST.md", ".terminus/agents/QUALITY_AGENT_REGISTRY.md", ".terminus/agents/STAGE_CONTRACTS.md", ".terminus/agents/stage_contracts.json"],
+      "ACTIVE_VALIDATORS": [".terminus/validate_agent_system.py", ".terminus/validate_stage_contracts.py", ".terminus/validate_task_complexity.py", ".terminus/validate_environment_complexity.py", ".terminus/validate_runtime_authenticity.py", ".terminus/validate_business_module_diversity.py", ".terminus/validate_review_freshness.py", ".terminus/validate_quality_interlock.py", ".github/workflows/terminus-edition-3-ci.yml", ".github/workflows/terminus-creator-complexity.yml", ".github/workflows/terminus-production-authenticity.yml"],
+      "CREATION_PROFILE": "large_system_strict",
+      "NETWORK_ENVIRONMENT_CONSTRAINTS": "Task runtime should remain deterministic and self-contained. Official Ansible documentation may be referenced and/or captured from docs.ansible.com during task authoring, but solver correctness must not depend on mutable external network access at grading time.",
+      "KNOWN_POLICY_CONFLICTS": []
+    },
+    "REQUESTED_DOMAIN": "Ansible production automation, configuration-management reliability, role architecture, variable precedence, Vault, Jinja2 templating, project configuration, and incident-driven fleet recovery"
+  },
+  "result": {
+    "status": "CANDIDATES_READY",
+    "outputs": {
+      "CANDIDATES": [
+        {
+          "ID": "FLEET_CONFIGURATION_RECOVERY_AND_POLICY_RECONCILIATION",
+          "ENGINEERING_OBJECTIVE": "Recover a production-style Ansible fleet automation estate that provisions and reconciles application, proxy, observability, certificate, policy and secret-dependent configuration across heterogeneous node groups, using execution evidence to diagnose a chain of toolchain, project-discovery, variable, Vault, role-ordering, syntax and template failures until repeated runs converge safely.",
+          "REQUIREMENT_FAMILIES": ["project configuration bootstrap and portability", "controller/runtime compatibility", "role discovery and dependency graph", "inventory and variable precedence", "Vault-backed secret lifecycle", "application release projection", "reverse-proxy and upstream composition", "certificate and trust-bundle rollout", "observability agent and scrape target generation", "host policy and service-account projection", "Jinja2 data normalization and cross-host aggregation", "handlers and restart ordering", "preflight validation and fail-safe behavior", "rolling deployment and failure isolation", "idempotent second-run convergence", "operator logs and incident evidence", "configuration integrity assertions", "mixed environment/site overrides"],
+          "EDGE_FAILURE_SURFACE": ["unsupported controller CLI feature", "project config not selected", "role lookup outside default search roots", "group/host variable shadowing", "undefined nested variable after include", "plaintext secret material where encrypted input is required", "Vault decryption unavailable or wrong variable boundary", "role name/order mismatch", "handler notified before prerequisite materialization", "YAML parse ambiguity", "task keyword nesting error", "Jinja type mismatch", "undefined value inside map/select pipeline", "cross-host hostvars aggregation with missing members", "IPv4/IPv6 endpoint formatting", "empty backend set fail-closed behavior", "duplicate endpoint normalization", "certificate bundle ordering", "rolling-batch partial failure", "second-run false change", "template checksum drift", "site override precedence", "conditional include behavior", "failed preflight preserving prior rendered state"],
+          "PRESERVATION_OBLIGATIONS": ["never print decrypted secrets in normal logs", "failed preflight must not replace last-known-good rendered configuration", "unaffected host groups remain stable", "handlers fire only on material changes", "second successful execution is convergent", "environment-specific overrides do not bleed across inventories", "rendered configurations remain deterministic for identical inputs"],
+          "SCALE_FIT": "VERY_HIGH: differentiated roles, inventories, templates, filters, validation and operational state can naturally exceed 3,000 substantive reachable lines with 20-30 causally linked manifestations and 25-30 distinct behavioral tests without duplication."
+        },
+        {
+          "ID": "MULTI_SITE_ANSIBLE_RELEASE_ORCHESTRATOR_RECOVERY",
+          "ENGINEERING_OBJECTIVE": "Repair a multi-site application release orchestration stack with staged rollouts, service discovery, secrets, proxy generation and rollback semantics.",
+          "REQUIREMENT_FAMILIES": ["release lifecycle", "inventory targeting", "secrets", "proxy generation", "health gates", "rollback", "handlers", "templates", "audit logs"],
+          "SCALE_FIT": "HIGH, but it makes release mechanics more central than the requested broad Ansible troubleshooting surface."
+        },
+        {
+          "ID": "ANSIBLE_COMPLIANCE_AND_BASELINE_RECONCILIATION",
+          "ENGINEERING_OBJECTIVE": "Recover a policy-driven fleet baseline covering accounts, packages, system configuration, trust material and monitoring with drift validation and evidence reporting.",
+          "REQUIREMENT_FAMILIES": ["host baseline", "policy validation", "accounts", "trust", "monitoring", "templating", "secrets", "drift reporting"],
+          "SCALE_FIT": "HIGH, but less naturally exercises rich role ordering and application-facing Jinja aggregation."
+        }
+      ],
+      "RECOMMENDATION": "FLEET_CONFIGURATION_RECOVERY_AND_POLICY_RECONCILIATION",
+      "WHY_THIS_ONE": "It turns the requested failures into one coherent operational recovery instead of a synthetic bug list. Controller compatibility, project discovery, role resolution, variables/Vault, role ordering, syntax and Jinja transformations sit on the same execution path and produce realistic staged logs. The desired end state can be specified by fleet invariants while the actual diagnoses remain discoverable from execution evidence and official Ansible references.",
+      "DUPLICATE_RISK_NOTES": "Keep the work package Ansible-native and configuration-management focused. Avoid reusing the route-control-plane task's networking domain or turning the estate into copied role skeletons; each major role must own materially different data transformations and operational responsibilities."
+    },
+    "evidence_refs": [
+      {"kind": "COMMIT", "ref": "commit:df7ef7569e2947b9f0bf7cf89ed4dec6c2a5a1fe"},
+      {"kind": "COMMIT", "ref": "commit:b6dd047389184f9d9820f9addc7c59e526799ec8"}
+    ],
+    "output_task_commit": "b6dd047389184f9d9820f9addc7c59e526799ec8"
+  }
+}
