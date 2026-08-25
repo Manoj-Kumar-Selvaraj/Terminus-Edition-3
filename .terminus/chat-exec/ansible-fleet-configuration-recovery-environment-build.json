@@ -1,0 +1,34 @@
+{
+  "schema_version": "1.0",
+  "mode": "RECORD",
+  "task_id": "ansible-fleet-configuration-recovery",
+  "task_commit": "4ddc9ff050e84ee32fb97e2a320d2f4cb65c0725",
+  "control_plane_commit": "df7ef7569e2947b9f0bf7cf89ed4dec6c2a5a1fe",
+  "expected_repository_head": "cafb6b050ddbb77df8dd04f5ca2b297bddc86573",
+  "stage_id": "ENVIRONMENT_BUILD",
+  "inputs": {
+    "CREATION_RULE_CONTEXT": {"CONTROL_PLANE_COMMIT":"df7ef7569e2947b9f0bf7cf89ed4dec6c2a5a1fe","CREATION_PROFILE":"large_system_strict"},
+    "CLEAN_SYSTEM_ARCHITECTURE": {"entrypoints":["bin/fleet-ansible","playbooks/site.yml","playbooks/preflight.yml","playbooks/validate.yml"],"roles":["fleet_preflight","common_baseline","service_identity","trust_bundle","application_release","edge_proxy","telemetry_agent","host_policy","fleet_validation"],"state_model":["inventory and site overlays","staged render artifacts","atomic host-generation state","cross-host backend and telemetry projections","policy catalogs and semantic validation"]},
+    "DEFECT_TOPOLOGY": {"profile":"large_system_strict","manifestation_count":24,"root_cause_clusters":["controller_compatibility","project_discovery","data_and_secret_scope","orchestration_graph","syntax_and_schema","jinja_data_model"],"behavioral_surfaces":["controller bootstrap","config selection","role discovery","inventory precedence","vault secrecy","role ordering","syntax parsing","module schema","backend aggregation","IPv6 normalization","cross-host telemetry targets","policy priority rendering","atomic promotion","handler convergence","rolling failure isolation","second-run idempotency"]},
+    "SOLVER_VISIBLE_DOC_PLAN": ["environment/runtime/logs/incident-bootstrap.log","environment/runtime/logs/incident-playbook.log","environment/runtime/reports/incident-handoff.json","environment/runtime/evidence/config-selection.txt","environment/docs/official-ansible-sources.txt"]
+  },
+  "result": {
+    "status": "BUILT",
+    "output_task_commit": "e3503ac263720173f25f1797cea278dd3149949c",
+    "outputs": {
+      "COMPONENT_GRAPH": ["controller/bootstrap wrapper","multi-site inventory","service and policy catalogs","fleet normalization library","atomic host-state engine","nine Ansible roles","cross-host Jinja renderers","semantic fleet validator","operator incident evidence"],
+      "ENTRYPOINTS": ["/app/fleet-automation/environment/bin/fleet-ansible","/app/fleet-automation/environment/playbooks/site.yml","/app/fleet-automation/environment/playbooks/preflight.yml","/app/fleet-automation/environment/playbooks/validate.yml"],
+      "SOLVER_VISIBLE_DOCS": ["/app/fleet-automation/environment/runtime/logs/incident-bootstrap.log","/app/fleet-automation/environment/runtime/logs/incident-playbook.log","/app/fleet-automation/environment/runtime/reports/incident-handoff.json","/app/fleet-automation/environment/runtime/evidence/config-selection.txt","/app/fleet-automation/environment/docs/official-ansible-sources.txt"],
+      "INSTRUCTION_DOC_BOUNDARY": "The starter exposes operator evidence, ordinary fleet contracts and upstream Ansible documentation references. Private defect IDs, causal topology, expected fixes and verifier mappings remain outside solver-visible task content.",
+      "SUBSTANTIVE_LOC": 3000,
+      "PRODUCTION_CHARACTERISTICS": ["three-site heterogeneous inventory","service dependency catalog","sixty-rule network policy catalog","typed endpoint and IPv6 normalization","atomic staged host-state promotion","secure-secret boundary intended for Vault","rolling role orchestration","semantic artifact validation","realistic multi-attempt incident evidence"],
+      "RUNTIME_REACHABILITY_NOTES": ["fleet-ansible reaches the documented playbooks from the project workdir","site.yml traverses all nine intended responsibility domains after discovery defects are repaired","templates consume inventory and hostvars across IPv4/IPv6 application/proxy/telemetry surfaces","validator checks materialized identity, trust, application, proxy, telemetry and policy artifacts"],
+      "ENVIRONMENT_RULE_CHECKS": {"environment_complexity":"VALIDATE_IN_ADAPTER","runtime_authenticity":"VALIDATE_IN_ADAPTER","business_module_diversity":"NOT_APPLICABLE_INFRA_AUTOMATION"},
+      "RESOURCE_COUNT": 100,
+      "UNRESOLVED_RISKS": ["Exact starter LOC and production-authenticity gates must be accepted by the canonical validators before advancement."]
+    },
+    "evidence_refs": [
+      {"kind":"COMMIT","ref":"commit:e3503ac263720173f25f1797cea278dd3149949c","content_hash":"sha256:0000000000000000000000000000000000000000000000000000000000000000"}
+    ]
+  }
+}
