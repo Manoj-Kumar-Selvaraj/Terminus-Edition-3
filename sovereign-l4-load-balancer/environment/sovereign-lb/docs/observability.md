@@ -1,6 +1,6 @@
 # Observability
 
-Management readiness is exposed as JSON and returns false when durable state is unavailable or active rollout authority is incoherent. Dataplane readiness returns false until active listeners correspond to the reported active generation and returns false before graceful shutdown stops accepts.
+Management readiness is exposed as JSON on `GET /ready` with body `{"ready": true|false}` and returns false (HTTP 503) when durable state is unavailable or active rollout authority is incoherent. Dataplane readiness returns false until active listeners correspond to the reported active generation and returns false before graceful shutdown stops accepts.
 
 Status views expose bounded summaries: desired revision, active and candidate generation, rollout phase and quorum counts, current node sessions, listener count, target health counts, connection count, draining count, and last durable transition time. `GET /v1/status` also includes `rollout_present` (boolean) indicating whether rollout coordinator state is available, plus a `rollout` object with phase and quorum fields when present. Connection visibility is those status connection-count summaries (for example dataplane `GET /status` `connections`); a separate detailed `/connections` dump API is not required, and status must omit payload bytes and raw source identity.
 

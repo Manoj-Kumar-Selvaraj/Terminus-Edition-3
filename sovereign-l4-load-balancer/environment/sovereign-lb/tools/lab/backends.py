@@ -133,18 +133,35 @@ def receive_exact(connection: socket.socket, size: int) -> bytes:
     return bytes(output)
 
 
-def proxy_inspection(connection: socket.socket, _peer: tuple[str, int]) -> None:
-    prefix = receive_exact(connection, 16)
-    if prefix[:12] != b"\r\n\r\n\x00\r\nQUIT\n":
-        raise ValueError("invalid PROXY signature")
-    if prefix[12] != 0x21:
-        raise ValueError("unsupported PROXY version or command")
-    address_length = struct.unpack("!H", prefix[14:16])[0]
-    if address_length > 216:
-        raise ValueError("PROXY address block too large")
-    receive_exact(connection, address_length)
-    while data := connection.recv(16384):
-        connection.sendall(data)
+PROXY_V2_SIGNATURE = b"\r\n\r\n\x00\r\nQUIT\n"
+
+
+def make_proxy_inspection(events: EventLog) -> Callable[[socket.socket, tuple[str, int]], None]:
+    def proxy_inspection(connection: socket.socket, _peer: tuple[str, int]) -> None:
+        prefix = receive_exact(connection, 16)
+        if prefix[:12] != PROXY_V2_SIGNATURE:
+            raise ValueError("invalid PROXY signature")
+        if prefix[12] != 0x21:
+            raise ValueError("unsupported PROXY version or command")
+        address_length = struct.unpack("!H", prefix[14:16])[0]
+        if address_length > 216:
+            raise ValueError("PROXY address block too large")
+        address_block = receive_exact(connection, address_length)
+        family = int(prefix[13])
+        events.add(
+            "proxy-inspection",
+            "proxy_header",
+            count=1,
+            family=family,
+            address_bytes=len(address_block),
+        )
+        while data := connection.recv(16384):
+            if data.startswith(PROXY_V2_SIGNATURE):
+                events.add("proxy-inspection", "proxy_header_repeat", count=2)
+                raise ValueError("second PROXY header on established backend")
+            connection.sendall(data)
+
+    return proxy_inspection
 
 
 HANDLERS = {
@@ -152,7 +169,6 @@ HANDLERS = {
     "slow": slow,
     "half-close": half_close,
     "reset": reset,
-    "proxy-inspection": proxy_inspection,
 }
 
 
@@ -162,7 +178,9 @@ def endpoint_document() -> dict[str, object]:
 
 def run(root: Path) -> int:
     events = EventLog(root)
-    backends = [Backend(endpoint, HANDLERS[endpoint.name], events) for endpoint in ENDPOINTS]
+    handlers = dict(HANDLERS)
+    handlers["proxy-inspection"] = make_proxy_inspection(events)
+    backends = [Backend(endpoint, handlers[endpoint.name], events) for endpoint in ENDPOINTS]
     stopping = threading.Event()
 
     def request_stop(_number: int, _frame: object) -> None:

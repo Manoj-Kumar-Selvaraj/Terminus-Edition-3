@@ -256,8 +256,11 @@ def scenario_least_connections() -> dict[str, Any]:
     return desired
 
 
-def scenario_drain_handoff() -> tuple[dict[str, Any], dict[str, Any]]:
+def scenario_drain_handoff(*, drain_timeout_ms: int = 30000) -> tuple[dict[str, Any], dict[str, Any]]:
     first = scenario_desired()
+    first["listeners"] = [first["listeners"][0]]
+    first["target_groups"] = [first["target_groups"][0]]
+    first["target_groups"][0]["drain_timeout_ms"] = drain_timeout_ms
     first["target_groups"][0]["targets"] = [
         {
             "id": "echo-a",
@@ -283,6 +286,27 @@ def scenario_drain_handoff() -> tuple[dict[str, Any], dict[str, Any]]:
         }
     ]
     return first, second
+
+
+def reject_candidate_rollout(control_port: int, generation: int, digest: str) -> None:
+    """Inject a matching rejected ack so a stuck candidate leaves preparing/activating."""
+    with socket.create_connection(("127.0.0.1", control_port), timeout=5) as node:
+        node.sendall(encode_control_frame(control_hello("dp-reject", "dp-reject-0001")))
+        node.sendall(
+            encode_control_frame(
+                {
+                    "type": "rejected",
+                    "node_id": "dp-reject",
+                    "session_id": "dp-reject-0001",
+                    "sequence": 2,
+                    "sent_at": "2026-01-01T00:00:02Z",
+                    "generation": generation,
+                    "digest": digest,
+                    "body": {"reason": "insufficient_quorum"},
+                }
+            )
+        )
+        time.sleep(0.2)
 
 
 def scenario_passive_ejection() -> dict[str, Any]:
@@ -645,6 +669,62 @@ def test_f2p_quorum_requires_connected_nodes(lab_state: Path, control_state: Pat
             time.sleep(0.25)
 
 
+def test_f2p_failed_candidate_preserves_lkg_generation(lab_state: Path, control_state: Path, dataplane_state: Path) -> None:
+    """Active generation N must keep serving when a later accepted candidate cannot reach quorum; next apply must not reuse the failed generation id."""
+    with running_stack(lab_state, control_state, dataplane_state) as stack:
+        first_status, first_payload = apply(stack["management"], desired_path(lab_state), "lkg-1")
+        assert first_status in {200, 202}
+        wait_active(stack["management"])
+        active_before = int(first_payload["generation"])
+        _, before = http_json(f"{stack['management']}/v1/status")
+        assert isinstance(before, dict)
+        assert int(before.get("active_generation") or 0) == active_before
+        wait_listener_echo("127.0.0.1", 18001)
+
+        candidate = scenario_desired()
+        candidate["revision"] = 2
+        candidate["listeners"][0]["idle_timeout_ms"] = 33000
+        candidate["rollout"]["prepare_quorum"] = 2
+        candidate["rollout"]["activate_quorum"] = 2
+        candidate["rollout"]["prepare_timeout_ms"] = 2000
+        candidate["rollout"]["activate_timeout_ms"] = 2000
+        cand_status, cand_payload = apply(
+            stack["management"], write_desired(lab_state, candidate, "lkg-candidate.json"), "lkg-2"
+        )
+        assert cand_status in {200, 202}
+        failed_generation = int(cand_payload["generation"])
+        failed_digest = str(cand_payload["digest"])
+        assert failed_generation > active_before
+
+        deadline = time.time() + 6
+        while time.time() < deadline:
+            _status, body = http_json(f"{stack['management']}/v1/status")
+            assert isinstance(body, dict)
+            assert int(body.get("active_generation") or 0) == active_before
+            if body.get("rollout", {}).get("phase") == "active" and int(body.get("active_generation") or 0) == failed_generation:
+                pytest.fail("failed candidate must not become the active generation")
+            time.sleep(0.25)
+        wait_listener_echo("127.0.0.1", 18001)
+
+        reject_candidate_rollout(stack["control_port"], failed_generation, failed_digest)
+        recovery = scenario_desired()
+        recovery["revision"] = 3
+        recovery["listeners"][0]["idle_timeout_ms"] = 34000
+        recovery["rollout"]["prepare_quorum"] = 1
+        recovery["rollout"]["activate_quorum"] = 1
+        next_status, next_payload = apply(
+            stack["management"], write_desired(lab_state, recovery, "lkg-recovery.json"), "lkg-3"
+        )
+        assert next_status in {200, 202}
+        next_generation = int(next_payload["generation"])
+        assert next_generation > failed_generation
+        assert next_generation != failed_generation
+        wait_active(stack["management"])
+        _, after = http_json(f"{stack['management']}/v1/status")
+        assert isinstance(after, dict)
+        assert int(after.get("active_generation") or 0) == next_generation
+
+
 def test_f2p_status_reports_rollout_present(lab_state: Path, control_state: Path, dataplane_state: Path) -> None:
     with running_stack(lab_state, control_state, dataplane_state) as stack:
         assert apply(stack["management"], desired_path(lab_state), "status-rollout")[0] in {200, 202}
@@ -687,9 +767,26 @@ def test_f2p_proxy_inspect_listener_echo(lab_state: Path, control_state: Path, d
         assert apply(stack["management"], desired_path(lab_state), "proxy-1")[0] in {200, 202}
         wait_active(stack["management"])
         time.sleep(1.0)
+        marker = time.time_ns()
         with socket.create_connection(("127.0.0.1", 18005), timeout=5) as client:
+            client.settimeout(5.0)
             client.sendall(b"probe\n")
             assert recv_all(client, 6) == b"probe\n"
+            client.sendall(b"again\n")
+            assert recv_all(client, 6) == b"again\n"
+        deadline = time.time() + 3.0
+        headers: list[dict[str, Any]] = []
+        repeats: list[dict[str, Any]] = []
+        while time.time() < deadline:
+            events = [event for event in lab_events(lab_state) if event.get("at_ns", 0) >= marker]
+            headers = [event for event in events if event.get("event") == "proxy_header"]
+            repeats = [event for event in events if event.get("event") == "proxy_header_repeat"]
+            if headers:
+                break
+            time.sleep(0.1)
+        assert len(headers) == 1, "exactly one PROXY v2 header on first backend establish"
+        assert headers[0].get("count") == 1
+        assert repeats == [], "no second PROXY header on the same established backend"
 
 
 def test_f2p_half_close_backend_survives(lab_state: Path, control_state: Path, dataplane_state: Path) -> None:
@@ -1214,7 +1311,7 @@ def test_f2p_target_incarnation_increments_on_reregister(lab_state: Path, contro
 
 
 def test_f2p_deregistered_target_drains_existing_connection(lab_state: Path, control_state: Path, dataplane_state: Path) -> None:
-    first, second = scenario_drain_handoff()
+    first, second = scenario_drain_handoff(drain_timeout_ms=30000)
     with running_stack(lab_state, control_state, dataplane_state) as stack:
         assert apply(stack["management"], write_desired(lab_state, first, "drain-1.json"), "drain-1")[0] in {200, 202}
         wait_active(stack["management"])
@@ -1238,6 +1335,44 @@ def test_f2p_deregistered_target_drains_existing_connection(lab_state: Path, con
             assert accepted and accepted[-1]["backend"] == "slow"
             hold.sendall(b"more")
             assert recv_all(hold, 4) == b"more"
+        finally:
+            hold.close()
+
+
+def test_f2p_drain_deadline_terminates_owned_stream(lab_state: Path, control_state: Path, dataplane_state: Path) -> None:
+    """Owned streams on a deregistered target must be force-closed once drain_timeout_ms elapses."""
+    first, second = scenario_drain_handoff(drain_timeout_ms=800)
+    with running_stack(lab_state, control_state, dataplane_state) as stack:
+        assert apply(stack["management"], write_desired(lab_state, first, "drain-deadline-1.json"), "drain-deadline-1")[0] in {
+            200,
+            202,
+        }
+        wait_active(stack["management"])
+        hold = socket.create_connection(("127.0.0.1", 18001), timeout=5)
+        try:
+            hold.settimeout(2.0)
+            hold.sendall(b"keep")
+            assert recv_all(hold, 4) == b"keep"
+            assert apply(
+                stack["management"], write_desired(lab_state, second, "drain-deadline-2.json"), "drain-deadline-2"
+            )[0] in {200, 202}
+            wait_active(stack["management"])
+            hold.sendall(b"still")
+            assert recv_all(hold, 5) == b"still"
+            deadline = time.time() + 3.0
+            closed = False
+            while time.time() < deadline:
+                try:
+                    hold.sendall(b"x")
+                    chunk = hold.recv(1)
+                    if chunk == b"":
+                        closed = True
+                        break
+                except (ConnectionError, TimeoutError, OSError, BrokenPipeError):
+                    closed = True
+                    break
+                time.sleep(0.1)
+            assert closed, "drain deadline must terminate the owned stream"
         finally:
             hold.close()
 

@@ -27,6 +27,7 @@
     ["test_f2p_invalid_listener_port_rejected", "F2P", "REQ_CANONICAL", "VALIDATE"],
     ["test_f2p_rollout_reaches_active_phase", "F2P", "REQ_ROLLOUT", "ROLLOUT_ACTIVE"],
     ["test_f2p_conflict_preserves_active_generation", "F2P", "REQ_ROLLOUT", "PRESERVE_ACTIVE"],
+    ["test_f2p_failed_candidate_preserves_lkg_generation", "F2P", "REQ_ROLLOUT", "PRESERVE_ACTIVE"],
     ["test_f2p_quorum_requires_connected_nodes", "F2P", "REQ_ROLLOUT", "QUORUM_CONNECTED"],
     ["test_f2p_status_reports_rollout_present", "F2P", "REQ_ROLLOUT", "ROLLOUT_ACTIVE"],
     ["test_f2p_audit_exports_bounded_apply_event", "F2P", "REQ_PROTOCOL", "AUDIT_EXPORT"],
@@ -46,6 +47,7 @@
     ["test_f2p_fail_open_includes_unhealthy_targets", "F2P", "REQ_ELIGIBILITY", "ZONE_FAILOPEN"],
     ["test_f2p_target_incarnation_increments_on_reregister", "F2P", "REQ_ELIGIBILITY", "INCARNATION"],
     ["test_f2p_deregistered_target_drains_existing_connection", "F2P", "REQ_ELIGIBILITY", "DRAIN_LIFECYCLE"],
+    ["test_f2p_drain_deadline_terminates_owned_stream", "F2P", "REQ_ELIGIBILITY", "DRAIN_LIFECYCLE"],
     ["test_f2p_passive_ejection_skips_reset_target", "F2P", "REQ_ELIGIBILITY", "PASSIVE_EJECTION"],
     ["test_f2p_active_health_failure_skips_then_recovers", "F2P", "REQ_ELIGIBILITY", "ACTIVE_HEALTH"],
     ["test_f2p_torn_control_frame_does_not_advance_authority", "F2P", "REQ_PROTOCOL", "CONTROL_FENCE"],
@@ -57,5 +59,21 @@
     ["test_f2p_dataplane_restart_recovers_active_generation", "F2P", "REQ_RECOVERY", "CHECKPOINT_RESTART"],
     ["test_f2p_corrupt_current_pointer_falls_back", "F2P", "REQ_RECOVERY", "CURRENT_FALLBACK"],
     ["test_f2p_control_plane_restart_restores_authority_fences", "F2P", "REQ_RECOVERY", "CONTROL_RESTART"]
-  ]
+  ],
+  "behavioral_case_groups": {
+    "PRESERVE_ACTIVE": {
+      "tests": [
+        "test_f2p_conflict_preserves_active_generation",
+        "test_f2p_failed_candidate_preserves_lkg_generation"
+      ],
+      "rationale": "Last-known-good active generation is preserved both on revision conflict and when a later accepted candidate cannot reach prepare/activate quorum; the LKG probe also asserts failed generation numbers are not reused."
+    },
+    "DRAIN_LIFECYCLE": {
+      "tests": [
+        "test_f2p_deregistered_target_drains_existing_connection",
+        "test_f2p_drain_deadline_terminates_owned_stream"
+      ],
+      "rationale": "Deregister stops new assignment while owned streams continue until drain deadline, then are terminated."
+    }
+  }
 }

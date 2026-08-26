@@ -1,7 +1,7 @@
 - Work only in `/app/sovereign-lb`; preserve the mixed Go, C++, Bash, and Python structure.
-- Build `/app/sovereign-lb/bin/lb-control-plane`, `/app/sovereign-lb/bin/lbctl`, `/app/sovereign-lb/bin/lb-dataplane`, and `/app/sovereign-lb/bin/lab` from the supplied sources.
+- Build `/app/sovereign-lb/build/bin/lb-control-plane`, `/app/sovereign-lb/build/bin/lbctl`, and `/app/sovereign-lb/build/bin/lb-dataplane` via `/app/sovereign-lb/bin/build`, and keep `/app/sovereign-lb/bin/lab` available.
 - Implement canonical validation for complete listener, target-group, target, health, balancing, zone, and fail-open configuration before allocating a generation.
-- Fence desired-state mutation by monotonic revision and idempotency key, rejecting stale revisions and key reuse with different request content.
+- Fence desired-state mutation so an accepted revision strictly increases for a new body; reject stale revisions and equal-revision or idempotency-key reuse with different content as conflicts.
 - Compile each accepted revision into one immutable, complete snapshot with a deterministic digest and atomically persisted generation record.
 - Use the documented four-byte big-endian length-prefixed canonical JSON protocol and its `hello`, `prepare`, `prepared`, `rejected`, `activate`, `active`, and `status` envelopes.
 - Fence node acknowledgements and activation by node identity, session identity, generation, digest, and monotonic sequence.
