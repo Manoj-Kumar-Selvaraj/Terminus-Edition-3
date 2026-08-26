@@ -42,4 +42,25 @@ class EvidencePublisher:
             json.dumps(report_data, indent=2, sort_keys=True, default=str) + "\n",
             encoding="utf-8",
         )
+
+        # Companion operator artifacts (no per-file digest).
+        with (output_dir / "instances.jsonl").open("w", encoding="utf-8") as fh:
+            for inst in stable_subset["instances"]:
+                fh.write(json.dumps(inst, sort_keys=True, default=str) + "\n")
+        events = report_data.get("events") or report_data.get("outbox_events") or []
+        with (output_dir / "events.jsonl").open("w", encoding="utf-8") as fh:
+            for evt in events:
+                fh.write(json.dumps(evt, sort_keys=True, default=str) + "\n")
+        health = {
+            "status": report_data.get("status"),
+            "total_instances": stable_subset["total_instances"],
+            "available_instances": stable_subset["available_instances"],
+            "active_replicas": stable_subset["active_replicas"],
+            "pending_events": stable_subset["pending_events"],
+            "report_digest": digest,
+        }
+        (output_dir / "health.json").write_text(
+            json.dumps(health, indent=2, sort_keys=True, default=str) + "\n",
+            encoding="utf-8",
+        )
         return digest

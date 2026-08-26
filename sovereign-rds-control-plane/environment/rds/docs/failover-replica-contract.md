@@ -13,10 +13,11 @@ High availability and read scaling rely on strict fencing rules during replica p
 
 3. **Write Lease Revocation**:
    - The former primary instance's write lease (`write_lease_owner`) is revoked before replica promotion to prevent dual-primary writes.
+   - After revocation the former primary status is `READ_ONLY` until it is later returned to service or deleted.
 
 4. **Endpoint Routing**:
    - Promotion atomically swaps writer/reader endpoint addresses for the promoted replica and demoted primary.
-   - Floating VIP route flush and gratuitous ARP are **not** part of promotion; those belong to Multi-AZ failover VIP migration only.
+   - Floating VIP route flush and gratuitous ARP are **not** part of promotion; those belong to Multi-AZ failover VIP migration only. Successful promotion evidence must not set `route_table_flushed` / `gratuitous_arp_sent`.
 
 ## Multi-AZ Failover Fencing
 

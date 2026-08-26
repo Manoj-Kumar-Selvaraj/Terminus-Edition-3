@@ -1,0 +1,108 @@
+{
+  "schema_version": "3.0",
+  "role": "Production Logic Auditor",
+  "review_id": "sovereign-rds-control-plane-2f10ac8a-production-logic-f5699d14d0",
+  "task": "sovereign-rds-control-plane",
+  "task_commit": "2f10ac8af747fcd9160af21d6d8bb0953f538a68",
+  "control_plane_commit": "adae26bd937eb160f6f6aef7c15d499905209eb8",
+  "protocol_policy_version": "2.2",
+  "prompt_policy_version": "2.2",
+  "role_policy_version": "1.1",
+  "role_contract_hash": "a737a404c3b23518698932fec4eba6bb7f9831710c920bd66f267a00dca47661",
+  "review_scope_hash": "98b10473a3d768ae7b6d763a249098c3ee84a029a7a7a20ce3682041640f1a22",
+  "context_packet": ".terminus/reviews/sovereign-rds-control-plane/2f10ac8a/sovereign-rds-control-plane-2f10ac8a-production-logic-f5699d14d0.packet.json",
+  "verdict": "PASS",
+  "confidence": "HIGH",
+  "evidence_status": "SUFFICIENT",
+  "summary": "Solver-visible sovereign RDS control plane clears large_system_strict production-logic bar: operator-reachable substantive LOC ≈3409 (47/47 Python modules import-reachable from rdsd/rds-worker/rdsctl; unreachable=0). Entrypoints wire instance lifecycle, PITR/WAL, parameter-group apply modes, Multi-AZ failover fencing, and transactional outbox through distinct coupled modules with real branching/state/error paths and retained leaf traps—not clone wrappers or unreachable padding.",
+  "evidence": [
+    {
+      "type": "file",
+      "ref": "sovereign-rds-control-plane/task.toml",
+      "observation": "Software/Systems advanced task; languages python/sql/yaml/bash; artifacts [/app/rds]; separate verifier; multi-container compose; 9000s agent timeout consistent with a large live control-plane package."
+    },
+    {
+      "type": "file",
+      "ref": "sovereign-rds-control-plane/environment/rds/bin/rdsd",
+      "observation": "API entrypoint loads config, runs migrations, init_database, then uvicorn on app.create_app()—real operator daemon path into FastAPI control plane."
+    },
+    {
+      "type": "file",
+      "ref": "sovereign-rds-control-plane/environment/rds/bin/rds-worker",
+      "observation": "Worker entrypoint runs migrations then worker.run_worker—async outbox/lease background path separate from API."
+    },
+    {
+      "type": "file",
+      "ref": "sovereign-rds-control-plane/environment/rds/bin/rdsctl",
+      "observation": "CLI entrypoint delegates to cli.run_cli with health/list/snapshot/promote/failover operator commands against repository and InstanceManager."
+    },
+    {
+      "type": "run",
+      "ref": "python .terminus/tmp/rds_reachability.py",
+      "observation": "Import-graph reachability: reachable=47 loc=3341, unreachable=0; operator_py=3211; fixture_only_py=130; sql=125; yaml=34; bins=39; operator_substantive=3409; all_seed_substantive=3539. Exceeds large_system_strict >=3000 substantive reachable runtime/config floor."
+    },
+    {
+      "type": "file",
+      "ref": "sovereign-rds-control-plane/environment/rds/rds/app.py",
+      "observation": "create_app constructs repository, InstanceManager, SnapshotManager, ParameterGroupOrchestrator, audit/coverage/DR/maintenance/scaling/pool helpers and exposes instance/snapshot/PITR/parameter/maintenance HTTP routes with tenant headers and readiness/pool health—hub wiring, not a thin facade over one module."
+    },
+    {
+      "type": "file",
+      "ref": "sovereign-rds-control-plane/environment/rds/rds/instance_manager.py",
+      "observation": "≈476 substantive LOC hub with create/modify/stop/start/reboot/promote/failover; couples StorageEvaluator, DeletionGuard, ReplicaManager, FailoverCoordinator/Orchestrator/Heartbeat, VIPManager, ReplicationEngine/Coordinator, RecoveryCheckpointEngine, EventOutbox/Notification, ParameterGroupManager, state machine, KMS, scaling. Promote path registers slots, verifies LSN catchup, switches endpoints; failover acquires lease, persists failover_leases, runs VIP/orchestrator steps—cross-subsystem invariants with intentional starter traps."
+    },
+    {
+      "type": "file",
+      "ref": "sovereign-rds-control-plane/environment/rds/rds/worker.py",
+      "observation": "Worker process_outbox_events loads pending outbox, EventDispatcher matching, EventNotificationService delivery, EventSubscriptionEngine routing, AuditMetricsEngine, FailoverLeaseHeartbeat—coupled event plane with D24 always-SENT trap retained."
+    },
+    {
+      "type": "file",
+      "ref": "sovereign-rds-control-plane/environment/rds/rds/pitr_engine.py",
+      "observation": "PITR synthesize_restore_plan validates window, selects base snapshot, filters WAL segments, WALCollector continuity, CoverageAnalyzer coverage, WALPlaybackSimulator replay—multi-module recovery plan, not a constant stub."
+    },
+    {
+      "type": "file",
+      "ref": "sovereign-rds-control-plane/environment/rds/rds/parameter_group_orchestrator.py",
+      "observation": "Orchestrator validates via ParameterCatalog, merges family defaults, classifies dynamic vs pending-static through ParameterGroupManager—catalog apply_type metadata is consumed by classification logic rather than ornamental tables alone."
+    },
+    {
+      "type": "file",
+      "ref": "sovereign-rds-control-plane/environment/rds/rds/failover_coordinator.py",
+      "observation": "Lease acquire/validate, health-probe vs pool-saturation discrimination via ConnectionPoolMonitor, VIP migration via VIPManager—HA fencing surface with D17–D20 leaf traps still observable."
+    },
+    {
+      "type": "file",
+      "ref": "sovereign-rds-control-plane/environment/rds/db/migrations/001_initial.sql",
+      "observation": "Persistent schema for db_instances, parameter groups/definitions, wal_archives, snapshots, event_outbox, failover_leases and related tables—runtime state model backing repository/SQL paths, not docs-only padding."
+    },
+    {
+      "type": "file",
+      "ref": "sovereign-rds-control-plane/environment/docker-compose.yaml",
+      "observation": "Multi-service topology: postgres:16 + rds-api (rdsd) + rds-worker with shared state/out volumes and healthgated DB dependency—credible production-like operator deployment."
+    }
+  ],
+  "findings": [],
+  "missing_evidence": [],
+  "change_scope": [],
+  "do_not_change": [
+    "operator entrypoints rdsd/rds-worker/rdsctl and import-reachable module graph",
+    "cross-subsystem coupling through InstanceManager, PITR/WAL, parameter-group apply modes, failover lease/VIP, and outbox worker",
+    "intentional leaf defect traps (storage shrink, deletion protection, lease fencing, PITR window, outbox SENT) that create partial-fix surfaces",
+    "SQL migration schema and compose multi-service layout under environment/"
+  ],
+  "next_gate": "QUALITY_INTERLOCK",
+  "role_output": {
+    "CORE_LOGIC_DEPTH": "HIGH",
+    "RUNTIME_REACHABILITY": "HIGH",
+    "MODULE_DIVERSITY": "HIGH",
+    "CROSS_COMPONENT_COUPLING": "HIGH",
+    "TOY_LOGIC_RISK": "LOW",
+    "PADDING_RISK": "LOW",
+    "SUBSTANTIVE_LOC_ASSESSMENT": "Operator-reachable substantive LOC=3409 (op_py 3211 + sql 125 + yaml 34 + bins 39) from .terminus/tmp/rds_reachability.py; all_seed_substantive=3539 including fixture_generator (130). Import-reachable Python package LOC=3341 across 47 modules with unreachable=0. Largest hubs: instance_manager≈476, app≈257, parameter_catalog≈256 (domain apply_type/validation metadata consumed by orchestrator), parameter_group_orchestrator≈129, worker≈115, cli≈121, repository≈114. Thin leaves (storage_evaluator≈11, deletion_guard≈13, vip_manager≈20, readiness≈21) are distinct domain invariant modules invoked from hubs, not unreachable filler. No identical-function-name clone pairs among business modules (errors/types are typed shells only). Clears large_system_strict >=3000 floor with no HIGH toy/padding risk.",
+    "MAJOR_MODULES": "Entrypoints: rdsd (API), rds-worker (outbox/lease loop), rdsctl (operator CLI). Core hubs: app (FastAPI routes), cli, worker, instance_manager (lifecycle/promote/failover orchestration), repository+database+migrations (Postgres persistence), parameter_group_orchestrator+parameter_group+parameter_catalog (dynamic vs pending-reboot), pitr_engine+wal_collector+wal_playback_simulator+coverage_analyzer (PITR plan), failover_coordinator+failover_orchestrator+failover_lease_heartbeat+vip_manager (Multi-AZ fencing), replica_manager+replication_engine+replication_coordinator (promotion LSN topology), event_outbox+event_dispatcher+event_notification_service+event_subscription_engine (transactional notifications), recovery_checkpoint_engine+checkpoint_manager+state_machine, snapshot_manager, authorization+audit_metrics+readiness+disaster_recovery_evaluator+maintenance_scheduler, storage_evaluator+deletion_guard+kms_encryption_manager+instance_scaling_policy+connection_pool_monitor+cluster_manager, config/types/errors/digest/time_utils, fixture_generator (seed path only).",
+    "PARTIAL_FIX_TRAPS": "Fixing InstanceManager status gates without StorageEvaluator/DeletionGuard leaves shrink/delete defects; promote without ReplicaManager lag/LS plus ReplicationCoordinator readiness still fails F2P; failover lease SQL without FailoverCoordinator fencing/VIP flush leaves D17–D20; PITR window partial fix without WAL continuity/coverage/playback desyncs restore plans; parameter apply without catalog apply_type classification leaves pending-reboot wrong; worker dispatcher delivery without FAILED audit/retry (D24) keeps outbox always SENT; readiness that ignores probes/outbox backlog stays READY while health endpoints look green; checkpoint helpers ignored on some transitions break restart continuity even if status updates succeed.",
+    "REMOVAL_TEST": "Removing ~25% (~850 LOC) of operator-reachable core would collapse production behavior: cut instance_manager (~476) alone removes lifecycle/promote/failover orchestration; cut parameter_group_orchestrator+catalog+parameter_group (~460) removes validated apply-mode semantics; cut pitr_engine+wal_*+coverage (~200) removes restore planning; cut failover_*+vip+heartbeat (~150) removes Multi-AZ fencing; cut worker+outbox/dispatcher/notification/subscription (~340) removes transactional event plane. Any such cluster removal leaves a CRUD/API shell without HA, PITR, parameter fencing, or outbox correctness—not a still-working toy at the stated RDS control-plane scope.",
+    "REQUIRED_CHANGES": "none"
+  }
+}

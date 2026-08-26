@@ -558,6 +558,12 @@ def test_f2p_replica_promotion_updates_dns_routing_endpoints() -> None:
         old_primary = repo.instances["db-primary-01"]
         assert new_primary["endpoint_address"] == "primary.endpoint"
         assert old_primary["endpoint_address"] == "replica.endpoint"
+        # Promotion must not perform failover VIP ARP / route flush.
+        assert old_primary.get("route_table_flushed") is not True
+        assert old_primary.get("gratuitous_arp_sent") is not True
+        assert new_primary.get("route_table_flushed") is not True
+        assert new_primary.get("gratuitous_arp_sent") is not True
+        assert old_primary.get("status") == "READ_ONLY"
 
     asyncio.run(_run())
 
@@ -803,6 +809,11 @@ def test_f2p_report_formatting_is_canonical_and_sorted() -> None:
         assert text.index('"alpha"') < text.index('"zebra"')
         parsed = json.loads(text)
         assert parsed["report_digest"]
+        assert (out / "instances.jsonl").is_file()
+        assert (out / "events.jsonl").is_file()
+        assert (out / "health.json").is_file()
+        health = json.loads((out / "health.json").read_text(encoding="utf-8"))
+        assert health.get("report_digest") == parsed["report_digest"]
 
 
 def test_f2p_report_digest_computed_over_stable_fields() -> None:

@@ -1,0 +1,484 @@
+{
+  "schema_version": "3.0",
+  "role": "Spec-Test Contract Reviewer",
+  "review_id": "sovereign-rds-control-plane-2f10ac8a-spec-test-contract-93ed004af7",
+  "task": "sovereign-rds-control-plane",
+  "task_commit": "2f10ac8af747fcd9160af21d6d8bb0953f538a68",
+  "control_plane_commit": "adae26bd937eb160f6f6aef7c15d499905209eb8",
+  "protocol_policy_version": "2.2",
+  "prompt_policy_version": "2.2",
+  "role_policy_version": "1.1",
+  "role_contract_hash": "d2994789dc83b2c8a6b92201782ea9f3e5528a3a9d725c863c22efb6356e570e",
+  "context_packet": ".terminus/reviews/sovereign-rds-control-plane/2f10ac8a/sovereign-rds-control-plane-2f10ac8a-spec-test-contract-93ed004af7.packet.json",
+  "verdict": "REVISE",
+  "confidence": "HIGH",
+  "evidence_status": "SUFFICIENT",
+  "summary": "Bidirectional alignment fails: the verifier asserts an undocumented READ_ONLY status after write-lease revocation; companion outputs instances.jsonl/events.jsonl/health.json are required but never graded; rds-snapshot.json field/digest schema is graded without an exact solver-visible schema; and the promotion must-not-VIP-ARP rule is untested. Instruction shape and delegated-doc boundary are otherwise sound.",
+  "evidence": [
+    {
+      "type": "file",
+      "ref": "sovereign-rds-control-plane/instruction.md",
+      "observation": "Two short paragraphs plus seven functional bullets: finish /app/rds plane via rdsd/rds-worker/rdsctl on the local lab; bind four docs; fail closed; healthy plane AVAILABLE/READY with checkpoint skip; lifecycle, WAL/PITR, parameter groups, promotion, failover, outbox/isolation, and four /app/rds/out/* artifacts."
+    },
+    {
+      "type": "file",
+      "ref": "sovereign-rds-control-plane/environment/rds/docs/operator-contract.md",
+      "observation": "Entrypoints, cross-cutting invariants (AVAILABLE mutations, StorageShrinkError, DeletionProtectionError, transactional outbox, SourceType+category matching, EventIdentifier inputs, max_event_retries=5, checkpoints, READY/UNHEALTHY), and report artifact table naming rds-snapshot.json plus instances.jsonl/events.jsonl/health.json without enumerating snapshot field schemas."
+    },
+    {
+      "type": "file",
+      "ref": "sovereign-rds-control-plane/environment/rds/docs/pitr-wal-contract.md",
+      "observation": "WAL timeline/sequence continuity with has_gap, base-backup redo_lsn/timeline binding, partial WAL replay to TargetRestorableTime, closed Earliest/LatestRestorableTime window."
+    },
+    {
+      "type": "file",
+      "ref": "sovereign-rds-control-plane/environment/rds/docs/parameter-group-contract.md",
+      "observation": "Dynamic immediate vs static pending-reboot, family-default merge, reboot clears PendingRebootParameters only after boot validation, ResetDBParameterGroup marks pending-reboot on attached instances."
+    },
+    {
+      "type": "file",
+      "ref": "sovereign-rds-control-plane/environment/rds/docs/failover-replica-contract.md",
+      "observation": "Lag gate 10485760 and UNKNOWN reject; flush_lsn>=primary_write_lsn; write_lease_owner revocation; atomic endpoint swap without VIP ARP on promotion; failover lease TTL 15s; TCP:5432 health matrix with INSTANCE_HEALTHY/CONTROL_PLANE_LAG_IGNORED; VIP evidence MIGRATED/route_table_flushed/gratuitous_arp_sent."
+    },
+    {
+      "type": "file",
+      "ref": "sovereign-rds-control-plane/environment/rds/docs/architecture.md",
+      "observation": "Unreferenced by instruction; brief process/layout overview only; not used as a second prompt or repair map."
+    },
+    {
+      "type": "test",
+      "ref": "sovereign-rds-control-plane/tests/test_outputs.py",
+      "observation": "34 pytest behaviors (30 F2P / 4 P2P) exercising managers/coordinators via FakeRepository and public bin/API presence. Asserts revoked status==READ_ONLY; grades rds-snapshot.json keys/digest only; never opens instances.jsonl/events.jsonl/health.json; no negative assertion that promote_read_replica skips VIP ARP."
+    },
+    {
+      "type": "file",
+      "ref": ".terminus/designs/sovereign-rds-control-plane-test-map.json",
+      "observation": "Classification-only map aligning the same 34 tests to R_LIFECYCLE through R_PRESERVE; used only to label F2P/P2P ownership, not as a requirement source."
+    },
+    {
+      "type": "file",
+      "ref": "sovereign-rds-control-plane/environment/rds/rds/evidence.py",
+      "observation": "publish_report writes only rds-snapshot.json; stable digest subset hard-codes status/total_instances/available_instances/active_replicas/pending_events/instances — none of those field names appear in instruction or the four binding docs."
+    },
+    {
+      "type": "file",
+      "ref": "sovereign-rds-control-plane/environment/rds/rds/replica_manager.py",
+      "observation": "revoke_primary_write_lease currently sets status READ_ONLY but does not clear write_lease_owner (starter defect). Contract text requires lease revocation only; READ_ONLY is implementation-private."
+    },
+    {
+      "type": "rule",
+      "ref": ".terminus/agents/QUALITY_AGENT_PROMPTS.md#Q4",
+      "observation": "Exhaustive forward/reverse matrices required; any material phantom, untested requirement, grading ambiguity, or schema incompleteness yields REVISE; MEDIUM blocks when pass/fail or documented public-interface compliance can change."
+    },
+    {
+      "type": "rule",
+      "ref": ".terminus/agents/INSTRUCTION_POLICY.md",
+      "observation": "Exact structured-output schema must be discoverable in instruction or a referenced technical contract; docs must not become a second prompt; material requirements must remain in the work request."
+    }
+  ],
+  "findings": [
+    {
+      "id": "Q4-PHANTOM-READ-ONLY-STATUS",
+      "severity": "HIGH",
+      "status": "OBSERVED",
+      "criterion": "every substantive verifier behavior discoverable from solver-visible contract (no phantom private state labels)",
+      "evidence_refs": [
+        "sovereign-rds-control-plane/tests/test_outputs.py::test_f2p_replica_promotion_revokes_old_primary_write_lease",
+        "sovereign-rds-control-plane/environment/rds/docs/failover-replica-contract.md",
+        "sovereign-rds-control-plane/instruction.md"
+      ],
+      "why_it_matters": "The test requires revoked['status'] == 'READ_ONLY'. Instruction and failover-replica-contract require revoking write_lease_owner / write lease fields only; neither names READ_ONLY as the demoted-primary status. A conforming implementation that clears the lease and leaves status AVAILABLE (or another documented lifecycle value) fails grading.",
+      "minimal_remediation": "Either remove the READ_ONLY assertion and grade lease-field clearing only, or add an explicit solver-visible rule that demoted primaries transition to status READ_ONLY during promotion fencing.",
+      "regression_risk": "Low if lease-clearing assertions remain; document the status transition before asserting it."
+    },
+    {
+      "id": "Q4-UNTESTED-COMPANION-OUTPUTS",
+      "severity": "HIGH",
+      "status": "OBSERVED",
+      "criterion": "every material requirement meaningfully tested",
+      "evidence_refs": [
+        "sovereign-rds-control-plane/instruction.md",
+        "sovereign-rds-control-plane/environment/rds/docs/operator-contract.md",
+        "sovereign-rds-control-plane/tests/test_outputs.py::test_f2p_report_formatting_is_canonical_and_sorted",
+        "sovereign-rds-control-plane/tests/test_outputs.py::test_f2p_report_digest_computed_over_stable_fields",
+        "sovereign-rds-control-plane/environment/rds/rds/evidence.py"
+      ],
+      "why_it_matters": "Instruction and operator-contract require publishing /app/rds/out/instances.jsonl, events.jsonl, and health.json with UTF-8 encoding and deterministic ordering. Verifier coverage only exercises EvidencePublisher.publish_report for rds-snapshot.json. Solvers can omit all three companion artifacts and still pass.",
+      "minimal_remediation": "Add F2P assertions that the public report path writes the three companion files with UTF-8 JSON/JSONL and deterministic ordering (and at least minimal schema/readiness content for health.json).",
+      "regression_risk": "Low; extends output-interface coverage without changing lifecycle semantics."
+    },
+    {
+      "id": "Q4-AMBIG-REPORT-SCHEMA",
+      "severity": "HIGH",
+      "status": "OBSERVED",
+      "criterion": "exact structured-output schema discoverable; grading-relevant ambiguity absent",
+      "evidence_refs": [
+        "sovereign-rds-control-plane/instruction.md",
+        "sovereign-rds-control-plane/environment/rds/docs/operator-contract.md",
+        "sovereign-rds-control-plane/tests/test_outputs.py::test_p2p_report_schema_and_migrations_preserved",
+        "sovereign-rds-control-plane/tests/test_outputs.py::test_f2p_report_digest_computed_over_stable_fields",
+        "sovereign-rds-control-plane/environment/rds/rds/evidence.py"
+      ],
+      "why_it_matters": "P2P requires rds-snapshot.json keys status/total_instances/available_instances/active_replicas/pending_events/report_digest/instances, and F2P requires digest stability over an opaque 'stable field subset'. Operator-contract only says canonical sorted keys and SHA-256 report_digest over that subset without listing fields, types, or digest membership. Equivalent reports with alternate key names or digest coverage fail despite satisfying the written contract.",
+      "minimal_remediation": "Enumerate the exact rds-snapshot.json object schema (fields, types) and the precise digest field subset in instruction.md or operator-contract.md; keep tests aligned to that list.",
+      "regression_risk": "Medium if digest membership changes after solvers already targeted the hidden subset; publish the subset explicitly before tightening assertions."
+    },
+    {
+      "id": "Q4-UNTESTED-PROMOTE-NO-VIP-ARP",
+      "severity": "MEDIUM",
+      "status": "OBSERVED",
+      "criterion": "material negative requirement meaningfully tested",
+      "evidence_refs": [
+        "sovereign-rds-control-plane/instruction.md",
+        "sovereign-rds-control-plane/environment/rds/docs/failover-replica-contract.md",
+        "sovereign-rds-control-plane/tests/test_outputs.py::test_f2p_replica_promotion_updates_dns_routing_endpoints",
+        "sovereign-rds-control-plane/tests/test_outputs.py::test_f2p_vip_migration_flushes_routes_and_issues_grat_arp"
+      ],
+      "why_it_matters": "Instruction and failover-replica-contract require promotion to swap endpoints without floating-VIP route flush / gratuitous ARP (VIP migration is failover-only). VIP ARP is only asserted on the failover path; promotion tests never verify absence of VIP migration evidence. An incorrect promote path that also issues VIP ARP still passes.",
+      "minimal_remediation": "After promote_read_replica, assert no VIP migration evidence (no route_table_flushed/gratuitous_arp_sent/MIGRATED side effects) while still asserting endpoint swap.",
+      "regression_risk": "Low; negative assertion complements existing promotion and failover tests."
+    },
+    {
+      "id": "Q4-ADV-OUTBOX-TX-ORDER-PROXY",
+      "severity": "LOW",
+      "status": "OBSERVED",
+      "criterion": "transactional outbox durability meaningfully asserted",
+      "evidence_refs": [
+        "sovereign-rds-control-plane/instruction.md",
+        "sovereign-rds-control-plane/environment/rds/docs/operator-contract.md",
+        "sovereign-rds-control-plane/tests/test_outputs.py::test_f2p_outbox_events_enqueued_transactionally"
+      ],
+      "why_it_matters": "Spec requires outbox enqueue in the same DB transaction as the instance state change. The test only checks FakeRepository call_order (create_outbox before update_status). Separate commits in that order would still pass. Advisory because the offline fake cannot offer a true transactional engine, but atomicity remains under-probed.",
+      "minimal_remediation": "Prefer a failure-injection assertion that a mid-mutation error leaves neither status change nor outbox row committed, if the fake can model rollback.",
+      "regression_risk": "Medium if over-fitted to FakeRepository internals."
+    },
+    {
+      "id": "Q4-ADV-ERROR-CATALOG-PARTIAL",
+      "severity": "LOW",
+      "status": "OBSERVED",
+      "criterion": "instruction claims docs bind error names; catalog completeness",
+      "evidence_refs": [
+        "sovereign-rds-control-plane/instruction.md",
+        "sovereign-rds-control-plane/environment/rds/docs/operator-contract.md",
+        "sovereign-rds-control-plane/tests/test_outputs.py",
+        "sovereign-rds-control-plane/environment/rds/rds/errors.py"
+      ],
+      "why_it_matters": "Instruction says the four docs bind error names, but operator-contract only names StorageShrinkError and DeletionProtectionError while tests pytest.raises several other domain types from rds.errors. Those types are discoverable from the starter module API, so this is advisory incompleteness rather than a blocking phantom.",
+      "minimal_remediation": "Optionally list the public domain error vocabulary in operator-contract.md, or soften instruction wording to 'domain errors defined by the control-plane API'.",
+      "regression_risk": "Low."
+    },
+    {
+      "id": "Q4-ADV-MAX-RETRIES-CONSTANT",
+      "severity": "LOW",
+      "status": "OBSERVED",
+      "criterion": "contract constant coverage",
+      "evidence_refs": [
+        "sovereign-rds-control-plane/environment/rds/docs/operator-contract.md",
+        "sovereign-rds-control-plane/tests/test_outputs.py::test_f2p_failed_event_deliveries_record_audit_evidence"
+      ],
+      "why_it_matters": "operator-contract sets max_event_retries = 5; the audit test configures max_event_retries = 3 to exercise exhaustion. Mechanism is covered; the public constant 5 is not itself asserted.",
+      "minimal_remediation": "Optional assertion that the default/public config exposes max_event_retries == 5, keeping the exhaustion path parameterized.",
+      "regression_risk": "Low."
+    }
+  ],
+  "missing_evidence": [],
+  "change_scope": [
+    "sovereign-rds-control-plane/instruction.md and/or environment/rds/docs/operator-contract.md — enumerate rds-snapshot.json schema + digest field subset; optionally document READ_ONLY demotion and fuller error catalog",
+    "sovereign-rds-control-plane/environment/rds/docs/failover-replica-contract.md — only if READ_ONLY demotion is chosen as public contract",
+    "sovereign-rds-control-plane/tests/test_outputs.py — drop or justify READ_ONLY assert; add companion-output F2P; add promotion no-VIP-ARP negative; align schema assertions to published fields"
+  ],
+  "do_not_change": [
+    "Do not weaken legitimate lifecycle/PITR/parameter/failover/outbox behavioral assertions to hide gaps",
+    "Do not move material task goals into architecture.md or other unreferenced docs",
+    "Do not dump one-bullet-per-test acceptance lists into instruction.md",
+    "Do not edit solution/oracle solely to green new assertions without corresponding public behavior"
+  ],
+  "next_gate": "Q1/Q2/Q3 repair for phantom READ_ONLY, untested companion outputs, report schema ambiguity, and promotion no-VIP-ARP; then re-run Q4 on the new task commit",
+  "role_output": {
+    "REQUIREMENT_TEST_MATRIX": [
+      {
+        "requirement_id": "R_SCOPE_LAB_ENTRYPOINTS",
+        "source": "instruction.md para 1; operator-contract Entrypoints",
+        "coverage": "complete",
+        "tests": [
+          "test_p2p_cli_entrypoint_and_api_signatures_compatible",
+          "test_p2p_offline_lab_execution_requires_no_external_aws"
+        ]
+      },
+      {
+        "requirement_id": "R_FAIL_CLOSED",
+        "source": "instruction.md para 1; operator-contract invariants",
+        "coverage": "complete",
+        "tests": ["test_p2p_policy_violations_fail_closed_without_corruption"]
+      },
+      {
+        "requirement_id": "R_HEALTHY_PLANE_READY",
+        "source": "instruction.md para 2; operator-contract readiness",
+        "coverage": "complete",
+        "tests": ["test_f2p_readiness_status_ready_when_all_checks_pass"]
+      },
+      {
+        "requirement_id": "R_CHECKPOINT_SKIP",
+        "source": "instruction.md para 2; operator-contract checkpoints",
+        "coverage": "complete",
+        "tests": [
+          "test_f2p_status_transitions_write_transaction_checkpoints",
+          "test_f2p_control_plane_restart_skips_completed_operations"
+        ]
+      },
+      {
+        "requirement_id": "R_MODIFY_AVAILABLE_ONLY",
+        "source": "instruction.md Lifecycle; operator-contract",
+        "coverage": "complete",
+        "tests": ["test_f2p_db_instance_modification_requires_available_status"]
+      },
+      {
+        "requirement_id": "R_STORAGE_MONOTONIC",
+        "source": "instruction.md Lifecycle; operator-contract StorageShrinkError",
+        "coverage": "complete",
+        "tests": ["test_f2p_storage_allocation_enforces_monotonic_growth"]
+      },
+      {
+        "requirement_id": "R_DELETION_PROTECTION",
+        "source": "instruction.md Lifecycle; operator-contract DeletionProtectionError",
+        "coverage": "complete",
+        "tests": ["test_f2p_deletion_protection_blocks_delete_with_final_snapshot"]
+      },
+      {
+        "requirement_id": "R_REBOOT_STATIC_APPLY",
+        "source": "instruction.md Lifecycle; parameter-group-contract reboot/boot validation",
+        "coverage": "complete",
+        "tests": [
+          "test_f2p_reboot_applies_pending_static_parameters",
+          "test_f2p_pending_reboot_cleared_only_after_boot_validation"
+        ]
+      },
+      {
+        "requirement_id": "R_WAL_CONTINUITY_GAPS",
+        "source": "instruction.md WAL/PITR; pitr-wal-contract",
+        "coverage": "complete",
+        "tests": ["test_f2p_wal_archive_validates_sequence_and_flags_gaps"]
+      },
+      {
+        "requirement_id": "R_BASE_BACKUP_BIND",
+        "source": "instruction.md WAL/PITR; pitr-wal-contract",
+        "coverage": "complete",
+        "tests": ["test_f2p_snapshot_restore_validates_base_backup_lsn"]
+      },
+      {
+        "requirement_id": "R_PITR_PARTIAL_REPLAY",
+        "source": "instruction.md WAL/PITR; pitr-wal-contract",
+        "coverage": "complete",
+        "tests": ["test_f2p_pitr_synthesizes_target_timestamp_with_partial_replay"],
+        "notes": "partial_replay field OR-weakened but wal_segments_to_replay>=2 keeps coverage meaningful."
+      },
+      {
+        "requirement_id": "R_PITR_WINDOW",
+        "source": "instruction.md WAL/PITR; pitr-wal-contract closed window",
+        "coverage": "complete",
+        "tests": ["test_f2p_pitr_window_enforces_earliest_and_latest_bounds"]
+      },
+      {
+        "requirement_id": "R_PARAM_DYNAMIC_STATIC",
+        "source": "instruction.md Parameter groups; parameter-group-contract",
+        "coverage": "complete",
+        "tests": ["test_f2p_static_parameters_marked_pending_reboot"]
+      },
+      {
+        "requirement_id": "R_PARAM_MERGE_DEFAULTS",
+        "source": "instruction.md Parameter groups; parameter-group-contract",
+        "coverage": "complete",
+        "tests": ["test_f2p_parameter_group_merges_family_defaults_and_overrides"]
+      },
+      {
+        "requirement_id": "R_PARAM_RESET_PENDING",
+        "source": "instruction.md Parameter groups; parameter-group-contract ResetDBParameterGroup",
+        "coverage": "complete",
+        "tests": ["test_f2p_reset_parameter_group_sets_pending_reboot_status"]
+      },
+      {
+        "requirement_id": "R_PROMOTE_LAG_LSN",
+        "source": "instruction.md Promotion; failover-replica-contract lag/LSN",
+        "coverage": "complete",
+        "tests": [
+          "test_f2p_replica_promotion_enforces_lag_thresholds",
+          "test_f2p_replica_promotion_waits_for_lsn_catchup"
+        ]
+      },
+      {
+        "requirement_id": "R_PROMOTE_LEASE_REVOKE",
+        "source": "instruction.md Promotion; failover-replica-contract write_lease_owner",
+        "coverage": "partial",
+        "tests": ["test_f2p_replica_promotion_revokes_old_primary_write_lease"],
+        "notes": "Lease-field clears are in-contract; status==READ_ONLY is phantom (Q4-PHANTOM-READ-ONLY-STATUS)."
+      },
+      {
+        "requirement_id": "R_PROMOTE_ENDPOINT_SWAP",
+        "source": "instruction.md Promotion; failover-replica-contract endpoint routing",
+        "coverage": "complete",
+        "tests": ["test_f2p_replica_promotion_updates_dns_routing_endpoints"]
+      },
+      {
+        "requirement_id": "R_PROMOTE_NO_VIP_ARP",
+        "source": "instruction.md Promotion; failover-replica-contract promotion excludes VIP ARP",
+        "coverage": "absent",
+        "tests": [],
+        "notes": "Q4-UNTESTED-PROMOTE-NO-VIP-ARP"
+      },
+      {
+        "requirement_id": "R_FAILOVER_LEASE",
+        "source": "instruction.md Failover; failover-replica-contract TTL lease",
+        "coverage": "complete",
+        "tests": [
+          "test_f2p_failover_requires_leader_lease_acquisition",
+          "test_f2p_failover_prevents_promotion_during_valid_primary_lease"
+        ]
+      },
+      {
+        "requirement_id": "R_FAILOVER_HEALTH_PROBE",
+        "source": "instruction.md Failover; failover-replica-contract health matrix",
+        "coverage": "complete",
+        "tests": ["test_f2p_health_probe_distinguishes_instance_from_control_plane_lag"]
+      },
+      {
+        "requirement_id": "R_FAILOVER_VIP_EVIDENCE",
+        "source": "instruction.md Failover; failover-replica-contract VIP evidence",
+        "coverage": "complete",
+        "tests": ["test_f2p_vip_migration_flushes_routes_and_issues_grat_arp"]
+      },
+      {
+        "requirement_id": "R_OUTBOX_TRANSACTIONAL",
+        "source": "instruction.md Outbox; operator-contract same DB transaction",
+        "coverage": "partial",
+        "tests": ["test_f2p_outbox_events_enqueued_transactionally"],
+        "notes": "Call-order proxy only (Q4-ADV-OUTBOX-TX-ORDER-PROXY)."
+      },
+      {
+        "requirement_id": "R_OUTBOX_FILTER_HASH_AUDIT",
+        "source": "instruction.md Outbox; operator-contract SourceType/EventIdentifier/audit",
+        "coverage": "complete",
+        "tests": [
+          "test_f2p_event_subscriptions_filter_by_source_type",
+          "test_f2p_event_retries_use_deterministic_identifier_hashes",
+          "test_f2p_failed_event_deliveries_record_audit_evidence"
+        ]
+      },
+      {
+        "requirement_id": "R_TENANT_ISOLATION",
+        "source": "instruction.md Outbox/isolation; operator-contract describe/list scope",
+        "coverage": "complete",
+        "tests": ["test_f2p_describe_apis_enforce_multi_tenant_isolation"]
+      },
+      {
+        "requirement_id": "R_OUTPUT_SNAPSHOT_CANONICAL",
+        "source": "instruction.md Outputs; operator-contract rds-snapshot.json",
+        "coverage": "partial",
+        "tests": [
+          "test_f2p_report_formatting_is_canonical_and_sorted",
+          "test_f2p_report_digest_computed_over_stable_fields",
+          "test_p2p_report_schema_and_migrations_preserved"
+        ],
+        "notes": "Behavior graded, but exact schema/digest subset not solver-visible (Q4-AMBIG-REPORT-SCHEMA)."
+      },
+      {
+        "requirement_id": "R_OUTPUT_COMPANION_ARTIFACTS",
+        "source": "instruction.md Outputs; operator-contract instances.jsonl/events.jsonl/health.json",
+        "coverage": "absent",
+        "tests": [],
+        "notes": "Q4-UNTESTED-COMPANION-OUTPUTS"
+      },
+      {
+        "requirement_id": "R_PRESERVE_MIGRATIONS_API",
+        "source": "test-map R_PRESERVE; operator surfaces",
+        "coverage": "complete",
+        "tests": [
+          "test_p2p_cli_entrypoint_and_api_signatures_compatible",
+          "test_p2p_report_schema_and_migrations_preserved",
+          "test_p2p_offline_lab_execution_requires_no_external_aws",
+          "test_p2p_policy_violations_fail_closed_without_corruption"
+        ]
+      }
+    ],
+    "PHANTOM_TEST_CONTRACTS": [
+      "test_f2p_replica_promotion_revokes_old_primary_write_lease asserts status==READ_ONLY without solver-visible requirement (Q4-PHANTOM-READ-ONLY-STATUS)",
+      "test_p2p_report_schema_and_migrations_preserved / digest tests grade concrete rds-snapshot fields and stable digest membership not listed in instruction or binding docs (Q4-AMBIG-REPORT-SCHEMA)"
+    ],
+    "UNTESTED_REQUIREMENTS": [
+      "Publish /app/rds/out/instances.jsonl, events.jsonl, health.json with UTF-8 and deterministic ordering (Q4-UNTESTED-COMPANION-OUTPUTS)",
+      "Promotion must not perform floating-VIP ARP / route flush (Q4-UNTESTED-PROMOTE-NO-VIP-ARP)"
+    ],
+    "AMBIGUITIES": [
+      "rds-snapshot.json exact field schema and report_digest stable-field subset undefined in solver-visible contracts while graded by tests (Q4-AMBIG-REPORT-SCHEMA)"
+    ],
+    "INSTRUCTION_SHAPE": "PASS",
+    "INSTRUCTION_REQUIREMENT_COMPLETENESS": "INSUFFICIENT",
+    "DELEGATED_CONTRACT_CHECK": [
+      {
+        "doc": "environment/rds/docs/operator-contract.md",
+        "classification": "legitimate_api_cli_schema_runbook",
+        "prompt_extension": false
+      },
+      {
+        "doc": "environment/rds/docs/pitr-wal-contract.md",
+        "classification": "legitimate_protocol_schema",
+        "prompt_extension": false
+      },
+      {
+        "doc": "environment/rds/docs/parameter-group-contract.md",
+        "classification": "legitimate_protocol_schema",
+        "prompt_extension": false
+      },
+      {
+        "doc": "environment/rds/docs/failover-replica-contract.md",
+        "classification": "legitimate_protocol_fencing",
+        "prompt_extension": false
+      },
+      {
+        "doc": "environment/rds/docs/architecture.md",
+        "classification": "legitimate_architecture_unreferenced",
+        "prompt_extension": false,
+        "notes": "Not named by instruction; brief layout only."
+      }
+    ],
+    "INSTRUCTION_DOC_BOUNDARY": "CLEAN",
+    "IMPLEMENTATION_DIAGNOSIS_LEAKAGE": "NONE",
+    "CURRENT_STATE_EVIDENCE": "NOT_APPLICABLE",
+    "SPEC_DUMP_RISK": "LOW",
+    "BIDIRECTIONAL_ALIGNMENT": "FAIL",
+    "BLOCKING_FINDING_IDS": [
+      "Q4-PHANTOM-READ-ONLY-STATUS",
+      "Q4-UNTESTED-COMPANION-OUTPUTS",
+      "Q4-AMBIG-REPORT-SCHEMA",
+      "Q4-UNTESTED-PROMOTE-NO-VIP-ARP"
+    ],
+    "ADVISORY_FINDING_IDS": [
+      "Q4-ADV-OUTBOX-TX-ORDER-PROXY",
+      "Q4-ADV-ERROR-CATALOG-PARTIAL",
+      "Q4-ADV-MAX-RETRIES-CONSTANT"
+    ],
+    "EXHAUSTIVENESS": {
+      "REQUIREMENTS_ENUMERATED": "COMPLETE",
+      "VERIFIER_BEHAVIORS_ENUMERATED": "COMPLETE",
+      "FORWARD_MATRIX_COMPLETE": "YES",
+      "REVERSE_MATRIX_COMPLETE": "YES",
+      "INSTRUCTION_COMPLETENESS_COMPLETE": "YES",
+      "DELEGATED_CONTRACTS_COMPLETE": "YES",
+      "PROMPT_EXTENSION_WALK_COMPLETE": "YES",
+      "P2P_BOUNDARIES_COMPLETE": "YES",
+      "F2P_BOUNDARIES_COMPLETE": "YES",
+      "OUTPUT_INTERFACES_COMPLETE": "YES",
+      "SECOND_PASS_OMISSION_SWEEP": "PASS",
+      "UNINSPECTED_SCOPE": []
+    },
+    "REVERSE_MATRIX_NOTES": [
+      "30 F2P behaviors map to lifecycle/PITR/parameter/promotion/failover/outbox/checkpoint/report obligations; two graded details lack discoverable contract text (READ_ONLY status; snapshot field/digest schema).",
+      "4 P2P behaviors preserve CLI/API entrypoints, migration/report key presence, offline-lab (no AWS SDK tokens), and fail-closed authorization — ownership matches R_PRESERVE.",
+      "Companion output paths and promotion-without-VIP-ARP appear only on the requirement side of the matrix (absent coverage).",
+      "Second omission sweep re-checked SHALL/MUST paths, readiness/checkpoint bullets, EventIdentifier inputs, lease TTL evidence strings, and all four output paths; no additional blocking gaps beyond the listed finding IDs."
+    ],
+    "FORWARD_MATRIX_NOTES": [
+      "Material instruction+binding-doc requirements enumerated into R_* rows above; most have complete behavioral coverage.",
+      "Gaps: R_OUTPUT_COMPANION_ARTIFACTS absent; R_PROMOTE_NO_VIP_ARP absent; R_PROMOTE_LEASE_REVOKE and R_OUTPUT_SNAPSHOT_CANONICAL partial for phantom/schema reasons."
+    ]
+  }
+}
