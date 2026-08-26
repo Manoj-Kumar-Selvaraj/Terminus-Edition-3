@@ -1,0 +1,38 @@
+{
+  "schema_version":"1.0",
+  "mode":"RECORD",
+  "task_id":"ansible-fleet-configuration-recovery",
+  "task_commit":"475ff014df7bae9ab6b0bb49fcab7454e40195ba",
+  "control_plane_commit":"df7ef7569e2947b9f0bf7cf89ed4dec6c2a5a1fe",
+  "expected_repository_head":"1041303825abba89f29c8eaae8b016fbe8ee9d0c",
+  "stage_id":"FORMAT_GATE",
+  "inputs":{
+    "ACTIVE_FORMAT_VALIDATORS":["flat Edition-3 task layout","task.toml canonical fields and absolute paths","separate verifier packaging/reward contract","solution/tests isolation","shell LF/shebang contract","Docker build-context path validity","post-Q5 attribution clean-state validation","reference-solution isolated Ansible virtualenv bootstrap validation"],
+    "CREATION_RULE_CONTEXT":{"CONTROL_PLANE_COMMIT":"df7ef7569e2947b9f0bf7cf89ed4dec6c2a5a1fe","CREATION_PROFILE":"large_system_strict","KNOWN_POLICY_CONFLICTS":[],"NETWORK_ENVIRONMENT_CONSTRAINTS":"public task network with separate verifier environment"},
+    "CURRENT_TASK_TREE":{
+      "environment":{".dockerignore":"present and excludes git/cache/private control-plane/solution/tests material","Dockerfile":"solver-visible starter remains rooted at /app/fleet-automation with Ansible 2.9.27"},
+      "snapshot_commit":"6705a1ef483794e45ed6601839655caf7cffd413",
+      "solution":{"entrypoint":"solution/solve.sh","repair_body":"solution/repair.sh","runtime_target":"/app/fleet-automation","cli_bootstrap":"temporary isolated Python virtualenv installs Ansible 12 and exposes its generated ansible-config, ansible-vault and ansible-playbook console scripts on PATH"},
+      "task_root":"ansible-fleet-configuration-recovery",
+      "task_toml":{"agent_timeout_sec":7200,"artifacts":["/app/fleet-automation"],"network_mode":"public","verifier_environment_mode":"separate","verifier_timeout_sec":1800,"version":"2.0","workdir":"/app/fleet-automation"},
+      "tests":{"Dockerfile":"separate verifier image","behavioral_cases":"27 F2P / 6 P2P","requirements_lock":"pinned verifier dependencies","test_sh":"reward/CTRF runner"},
+      "top_level":[".gitattributes","README.md","environment/","instruction.md","solution/","task.toml","tests/"]
+    }
+  },
+  "result":{
+    "status":"FORMAT_PASS",
+    "output_task_commit":"6705a1ef483794e45ed6601839655caf7cffd413",
+    "outputs":{
+      "CHECKS":[
+        "PASS: repaired logical snapshot 6705a1ef483794e45ed6601839655caf7cffd413 is a direct descendant of cc7ace93f361c10a98dc54720ea1c5cde98a278a.",
+        "PASS: only solution/solve.sh changed; solver-visible starter, verifier, instruction and task metadata are unchanged.",
+        "PASS: temporary virtualenv owns Ansible 12 and its generated CLI executables and is removed with the solution work directory after execution.",
+        "PASS: the change addresses the Oracle bootstrap/interpreter-layout failure without weakening durable-controller, Vault, role, schema, Jinja, convergence or preservation requirements.",
+        "PASS: starter Ansible 2.9.27 remains unchanged so the intended solver upgrade inference is preserved.",
+        "PASS: flat package layout, separate verifier packaging and solution/tests isolation remain valid."
+      ],
+      "RERUN":"Q5 isolated Ansible virtualenv repair attributed; snapshot ready for downstream replay."
+    },
+    "evidence_refs":[]
+  }
+}
