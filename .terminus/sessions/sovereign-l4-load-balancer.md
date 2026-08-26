@@ -8,7 +8,7 @@ Session schema version: `2.4`
 - Controller state: `FROZEN_CANDIDATE`
 - Working branch: `main`
 - Pull request: `none`
-- Current task commit: `6298f2cf2247c35c04a855b5e1217af85e6d03dc`
+- Current task commit: `feb4d04e4fc7a6873607c2443037febff7130626`
 - Agent-system policy: `2.5`
 - Specialist prompt policy: `2.2`
 - Specialist protocol policy: `2.2`
@@ -43,8 +43,8 @@ Session schema version: `2.4`
 
 ## Next action
 
-Owner waived ordinary Q4/Q6 attempt caps locally (up to 3 more cold cycles). Cycle 1 cold Q4+Q6 running on `99726dba`.
+Cycle 3/3 cold Q4 REVISE; producer fixer closing 3 blockers. After commit: **stop** unless owner authorizes another cold Q4 cycle or residual-risk acceptance. Q6 PASS held if env unchanged.
 
 ## Current blocker
 
-Await cycle-1 cold Q4+Q6 results; remediate any REVISE; repeat up to 2 more cycles.
+Q4 REVISE @ feb4d04e (source-hash order, zone-local preferred, seq-reuse under quorum); local waiver cycles exhausted.

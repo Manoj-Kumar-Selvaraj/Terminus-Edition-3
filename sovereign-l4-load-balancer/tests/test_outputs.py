@@ -853,31 +853,64 @@ def test_f2p_round_robin_hits_multiple_backends(lab_state: Path, control_state: 
 
 
 def test_f2p_source_hash_stable_after_target_reorder(lab_state: Path, control_state: Path, dataplane_state: Path) -> None:
-    desired = scenario_desired()
-    desired["target_groups"][1]["targets"].append(
+    """Source-hash selection must follow canonical identity order, not target declaration order."""
+    targets_forward = [
         {
-            "id": "inspect-b",
+            "id": "echo-a",
             "address": "127.0.0.1",
             "port": 19001,
             "zone": "zone-a",
             "administrative_state": "enabled",
             "weight": 1,
             "incarnation": 1,
-        }
-    )
-    desired["target_groups"][1]["targets"] = list(reversed(desired["target_groups"][1]["targets"]))
-    with running_stack(lab_state, control_state, dataplane_state) as stack:
-        assert apply(stack["management"], write_desired(lab_state, desired, "hash.json"), "hash-1")[0] in {200, 202}
-        wait_active(stack["management"])
-        hits: list[str] = []
+        },
+        {
+            "id": "slow-b",
+            "address": "127.0.0.1",
+            "port": 19002,
+            "zone": "zone-b",
+            "administrative_state": "enabled",
+            "weight": 1,
+            "incarnation": 1,
+        },
+    ]
+    order_a = scenario_desired()
+    order_a["target_groups"][0]["policy"] = "source_hash"
+    order_a["target_groups"][0]["zone_policy"] = "cross_zone"
+    order_a["target_groups"][0]["targets"] = list(targets_forward)
+    order_b = scenario_desired()
+    order_b["revision"] = 2
+    order_b["target_groups"][0]["policy"] = "source_hash"
+    order_b["target_groups"][0]["zone_policy"] = "cross_zone"
+    order_b["target_groups"][0]["targets"] = list(reversed(targets_forward))
+
+    def sample_backends(*, before: int) -> list[str]:
         for _ in range(4):
-            with socket.create_connection(("127.0.0.1", 18005), timeout=5) as client:
-                client.sendall(b"z")
+            with socket.create_connection(("127.0.0.1", 18001), timeout=5) as client:
+                client.sendall(b"x")
                 recv_all(client, 1)
-            events = lab_events(lab_state)
-            if events:
-                hits.append(str(events[-1]["backend"]))
-        assert len(set(hits)) == 1
+            time.sleep(0.05)
+        accepted = [
+            str(event["backend"])
+            for event in lab_events(lab_state)[before:]
+            if event.get("event") == "accepted"
+        ]
+        assert accepted, "expected accepted lab events after source-hash apply"
+        return accepted
+
+    with running_stack(lab_state, control_state, dataplane_state) as stack:
+        assert apply(stack["management"], write_desired(lab_state, order_a, "hash-a.json"), "hash-a")[0] in {200, 202}
+        wait_active(stack["management"])
+        hits_a = sample_backends(before=0)
+        assert len(set(hits_a)) == 1
+        chosen_a = hits_a[0]
+
+        marker = len(lab_events(lab_state))
+        assert apply(stack["management"], write_desired(lab_state, order_b, "hash-b.json"), "hash-b")[0] in {200, 202}
+        wait_active(stack["management"])
+        hits_b = sample_backends(before=marker)
+        assert len(set(hits_b)) == 1
+        assert hits_b[0] == chosen_a, "source-hash must select the same identity after target declaration reorder"
 
 
 def test_f2p_least_connections_prefers_lower_load(lab_state: Path, control_state: Path, dataplane_state: Path) -> None:
@@ -1161,7 +1194,7 @@ def test_f2p_torn_control_frame_does_not_advance_authority(lab_state: Path, cont
 
 
 def test_f2p_control_session_sequence_mismatch_rejected(lab_state: Path, control_state: Path, dataplane_state: Path) -> None:
-    """Stale session or sequence reuse must not progress prepare/activate quorum."""
+    """Stale session or sequence reuse must not progress prepare/activate under a reachable quorum."""
     del dataplane_state
     management_port = free_port()
     control_port = free_port()
@@ -1194,16 +1227,16 @@ def test_f2p_control_session_sequence_mismatch_rejected(lab_state: Path, control
                 node.sendall(encode_control_frame(bad_session))
             wait_rollout_not_active(endpoint, timeout=4.0)
 
-            high_quorum = scenario_desired()
-            high_quorum["revision"] = 2
-            high_quorum["rollout"]["prepare_quorum"] = 2
-            high_quorum["rollout"]["activate_quorum"] = 2
+            # Reachable quorum=1: a correct prepared advances to activate; reusing that
+            # sequence with different active content must not complete activation.
+            reuse_probe = scenario_desired()
+            reuse_probe["revision"] = 2
             with socket.create_connection(("127.0.0.1", control_port), timeout=5) as node:
                 node.sendall(encode_control_frame(control_hello("dp-probe", "dp-probe-0002", sequence=1)))
-                assert apply(endpoint, write_desired(lab_state, high_quorum, "fence-seq.json"), "fence-seq")[0] in {200, 202}
+                assert apply(endpoint, write_desired(lab_state, reuse_probe, "fence-seq.json"), "fence-seq")[0] in {200, 202}
                 prepare = read_control_frame(node, timeout=10.0)
                 assert prepare.get("type") == "prepare"
-                first = {
+                prepared = {
                     "type": "prepared",
                     "node_id": "dp-probe",
                     "session_id": "dp-probe-0002",
@@ -1213,16 +1246,26 @@ def test_f2p_control_session_sequence_mismatch_rejected(lab_state: Path, control
                     "digest": prepare["digest"],
                     "body": {},
                 }
-                node.sendall(encode_control_frame(first))
-                # Reuse sequence with different content — must not satisfy quorum.
-                reused = dict(first)
-                reused["body"] = {"detail": "different"}
-                reused["sent_at"] = "2026-01-01T00:00:04Z"
+                node.sendall(encode_control_frame(prepared))
+                activate = read_control_frame(node, timeout=10.0)
+                assert activate.get("type") == "activate"
+                reused = {
+                    "type": "active",
+                    "node_id": "dp-probe",
+                    "session_id": "dp-probe-0002",
+                    "sequence": 2,
+                    "sent_at": "2026-01-01T00:00:04Z",
+                    "generation": prepare["generation"],
+                    "digest": prepare["digest"],
+                    "body": {"detail": "different"},
+                }
                 try:
                     node.sendall(encode_control_frame(reused))
                 except OSError:
                     pass
-            wait_rollout_not_active(endpoint, timeout=4.0)
+            status = wait_rollout_not_active(endpoint, timeout=4.0)
+            assert int(status.get("active_generation") or 0) == 0
+            assert status.get("rollout", {}).get("phase") != "active"
 
 
 def test_f2p_control_status_envelope_exchange(lab_state: Path, control_state: Path, dataplane_state: Path) -> None:
@@ -1303,6 +1346,28 @@ def test_f2p_same_zone_skips_remote_without_failopen(lab_state: Path, control_st
         assert apply(stack["management"], write_desired(lab_state, desired, "zone.json"), "zone-1")[0] in {200, 202}
         wait_active(stack["management"])
         expect_no_forwarding("127.0.0.1", 18001)
+
+
+def test_f2p_same_zone_prefers_local_over_remote(lab_state: Path, control_state: Path, dataplane_state: Path) -> None:
+    """same_zone_preferred must keep selections in the local zone while local normally-eligible targets remain."""
+    desired = scenario_desired()
+    desired["target_groups"][0]["policy"] = "round_robin"
+    desired["target_groups"][0]["zone_policy"] = "same_zone_preferred"
+    desired["target_groups"][0]["fail_open"] = True
+    # Stock scenario already has local zone-a and remote zone-b normally-eligible targets.
+    with running_stack(lab_state, control_state, dataplane_state) as stack:
+        assert apply(stack["management"], write_desired(lab_state, desired, "zone-local.json"), "zone-local")[0] in {
+            200,
+            202,
+        }
+        wait_active(stack["management"])
+        for _ in range(8):
+            with socket.create_connection(("127.0.0.1", 18001), timeout=5) as client:
+                client.sendall(b"x")
+                recv_all(client, 1)
+            time.sleep(0.05)
+        backends = {event["backend"] for event in lab_events(lab_state) if event.get("event") == "accepted"}
+        assert backends == {"echo"}, "remote normally-eligible targets must not be chosen while local set is nonempty"
 
 
 def test_f2p_fail_open_skips_disabled_targets(lab_state: Path, control_state: Path, dataplane_state: Path) -> None:

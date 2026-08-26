@@ -43,6 +43,7 @@
     ["test_f2p_unknown_apply_field_rejected", "F2P", "REQ_PROTOCOL", "UNKNOWN_FIELD"],
     ["test_f2p_metrics_labels_bounded", "F2P", "REQ_PROTOCOL", "METRIC_LABELS"],
     ["test_f2p_same_zone_skips_remote_without_failopen", "F2P", "REQ_ELIGIBILITY", "ZONE_FAILOPEN"],
+    ["test_f2p_same_zone_prefers_local_over_remote", "F2P", "REQ_ELIGIBILITY", "ZONE_FAILOPEN"],
     ["test_f2p_fail_open_skips_disabled_targets", "F2P", "REQ_ELIGIBILITY", "ZONE_FAILOPEN"],
     ["test_f2p_fail_open_includes_unhealthy_targets", "F2P", "REQ_ELIGIBILITY", "ZONE_FAILOPEN"],
     ["test_f2p_target_incarnation_increments_on_reregister", "F2P", "REQ_ELIGIBILITY", "INCARNATION"],
@@ -82,7 +83,16 @@
         "test_f2p_control_session_sequence_mismatch_rejected",
         "test_f2p_control_status_envelope_exchange"
       ],
-      "rationale": "Control framing rejects torn bodies and session/sequence mismatches without advancing authority, and accepts a bidirectional bounded status exchange that likewise does not promote a generation by itself."
+      "rationale": "Control framing rejects torn bodies and session/sequence mismatches without advancing authority under a reachable quorum, and accepts a bidirectional bounded status exchange that likewise does not promote a generation by itself."
+    },
+    "ZONE_FAILOPEN": {
+      "tests": [
+        "test_f2p_same_zone_skips_remote_without_failopen",
+        "test_f2p_same_zone_prefers_local_over_remote",
+        "test_f2p_fail_open_skips_disabled_targets",
+        "test_f2p_fail_open_includes_unhealthy_targets"
+      ],
+      "rationale": "same_zone_preferred never soft-falls back to remotes when local normally-eligible targets remain (and remote-only + fail_open=false stays empty); fail_open still excludes admin-disabled targets while admitting unhealthy-only pools."
     }
   }
 }

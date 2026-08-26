@@ -1,0 +1,480 @@
+{
+  "schema_version": "3.0",
+  "role": "Spec-Test Contract Reviewer",
+  "review_id": "sovereign-l4-load-balancer-feb4d04e-spec-test-contract-25fdcdc1ba",
+  "task": "sovereign-l4-load-balancer",
+  "task_commit": "feb4d04e4fc7a6873607c2443037febff7130626",
+  "control_plane_commit": "feb4d04e4fc7a6873607c2443037febff7130626",
+  "protocol_policy_version": "2.2",
+  "prompt_policy_version": "2.2",
+  "role_policy_version": "1.1",
+  "role_contract_hash": "d2994789dc83b2c8a6b92201782ea9f3e5528a3a9d725c863c22efb6356e570e",
+  "context_packet": ".terminus/reviews/sovereign-l4-load-balancer/feb4d04e/sovereign-l4-load-balancer-feb4d04e-spec-test-contract-25fdcdc1ba.packet.json",
+  "verdict": "REVISE",
+  "confidence": "HIGH",
+  "evidence_status": "SUFFICIENT",
+  "summary": "Bidirectional alignment fails on three material coverage holes: source-hash declaration-order independence is only vacuously probed, same_zone_preferred local-preferred selection with both local and remote eligible targets is unasserted, and control-frame sequence-reuse rejection is asserted under a quorum that a single session can never satisfy. Instruction shape, docs boundary, and reverse discoverability of the 47 graded behaviors are otherwise sound.",
+  "evidence": [
+    {
+      "type": "file",
+      "ref": "sovereign-l4-load-balancer/instruction.md",
+      "observation": "Exactly 20 concise bullets: repair/complete the mixed Go/C++/Bash/Python plane under /app/sovereign-lb; build graded binaries via bin/build; validate complete desired docs; fence revision/idempotency; compile immutable digests; run the framed control protocol; quorum prepare/activate without damaging LKG; persist/recover authority; proxy real TCP with timeouts/backpressure/PROXY v2; eligibility via admin/health/passive/zone/fail-open/drain; bounded readiness/status/rollout/metrics/audit; 24-node three-zone lab; exclusions; follow /app/sovereign-lb/docs with idempotent ops."
+    },
+    {
+      "type": "file",
+      "ref": "sovereign-l4-load-balancer/environment/sovereign-lb/docs/configuration.md",
+      "observation": "Desired document schema, allowed balancing/zone/fail_open enums, incarnation/ownership rules, canonical ordering, and explicit statement that source hash uses canonical eligible identity order so declaration order cannot change selection; fail_open is not a soft cross-zone override while local normally-eligible targets remain."
+    },
+    {
+      "type": "file",
+      "ref": "sovereign-l4-load-balancer/environment/sovereign-lb/docs/dataplane.md",
+      "observation": "Eligibility algorithm: normally-eligible set, same_zone_preferred local-only while local nonempty, fail_open empty-set fallback that never includes admin-disabled/expired-drain targets, RR/LC/source-hash selection over canonical identities, stream buffer/backpressure/half-close/timeouts, single PROXY v2 header, drain ownership."
+    },
+    {
+      "type": "file",
+      "ref": "sovereign-l4-load-balancer/environment/sovereign-lb/docs/control-protocol.md",
+      "observation": "4-byte BE length-prefixed canonical JSON frames; hello/prepare/prepared/rejected/activate/active/status envelopes; sequence/session/node fences; torn frames have no state effect; status is bidirectional, bounded, and must not advance authority."
+    },
+    {
+      "type": "file",
+      "ref": "sovereign-l4-load-balancer/environment/sovereign-lb/docs/operations.md",
+      "observation": "Build/lab entrypoints, apply HTTP outcomes 200/202/409/422/400, revision/idempotency conflict matrix, graceful shutdown notes."
+    },
+    {
+      "type": "file",
+      "ref": "sovereign-l4-load-balancer/environment/sovereign-lb/docs/observability.md",
+      "observation": "GET /ready, /v1/status (including rollout_present and connection-count summaries), /v1/audit, /metrics with ban on high-cardinality generation= labels."
+    },
+    {
+      "type": "file",
+      "ref": "sovereign-l4-load-balancer/environment/sovereign-lb/docs/recovery.md",
+      "observation": "Atomic temp/rename generation layout, authority.json accepted_revision/accepted_digest/idempotency, generation-%020d padding, CURRENT fallback to highest verified generation, checkpoint verify-before-publish."
+    },
+    {
+      "type": "file",
+      "ref": "sovereign-l4-load-balancer/environment/sovereign-lb/docs/rollout-state.md",
+      "observation": "Rollout phases, fenced prepare/activate counting, rejection/deadline leaves preceding active generation untouched, no reuse of failed generation numbers."
+    },
+    {
+      "type": "file",
+      "ref": "sovereign-l4-load-balancer/environment/sovereign-lb/docs/architecture.md",
+      "observation": "Authority boundaries, control/dataplane lifecycle, resource bounds, explicit product exclusions. Ordinary architecture doc, not a repair map."
+    },
+    {
+      "type": "file",
+      "ref": "sovereign-l4-load-balancer/environment/sovereign-lb/docs/lab.md",
+      "observation": "Five loopback backends and 24-node/3-zone inventory as deterministic lab fixtures."
+    },
+    {
+      "type": "test",
+      "ref": "sovereign-l4-load-balancer/tests/test_outputs.py",
+      "observation": "47 pytest behaviors (4 P2P / 43 F2P) driving build artifacts, HTTP apply/status/ready/audit/metrics, framed control probes, lab TCP backends, and durable state under temp roots. No callable end-to-end solver. Notable gaps: source-hash reorder test asserts only intra-apply affinity; no local+remote same_zone selection assertion; sequence-reuse half of session fence test uses activate_quorum=2 with one session."
+    },
+    {
+      "type": "file",
+      "ref": "sovereign-l4-load-balancer/tests/test.sh",
+      "observation": "Creates /logs/verifier at runtime, runs pytest on test_outputs.py, writes binary reward 0/1 after pytest."
+    },
+    {
+      "type": "file",
+      "ref": ".terminus/designs/sovereign-l4-load-balancer-test-map.json",
+      "observation": "Classification-only map: 4 P2P + 43 F2P against REQ_AUTHORITY/ROLLOUT/CANONICAL/STREAM/READINESS/PROTOCOL/ELIGIBILITY/RECOVERY/PUBLIC. Used only to label ownership; requirements rebuilt from instruction and docs."
+    },
+    {
+      "type": "rule",
+      "ref": ".terminus/agents/QUALITY_AGENT_PROMPTS.md#Q4",
+      "observation": "Any material untested/vacuous requirement or grading-relevant ambiguity yields REVISE; MEDIUM blocks when it can change pass/fail or documented stable-interface compliance; exhaustiveness required before verdict."
+    },
+    {
+      "type": "rule",
+      "ref": ".terminus/agents/INSTRUCTION_POLICY.md",
+      "observation": "Instruction owns the engineering ask; docs may hold protocol/schema/eligibility detail; material requirements must be discoverable and meaningfully tested; vacuous preservation/selection probes are defects."
+    }
+  ],
+  "findings": [
+    {
+      "id": "Q4-UNT-SOURCE-HASH-ORDER",
+      "severity": "HIGH",
+      "status": "OBSERVED",
+      "criterion": "material requirement meaningfully tested (not vacuous)",
+      "evidence_refs": [
+        "sovereign-l4-load-balancer/environment/sovereign-lb/docs/configuration.md",
+        "sovereign-l4-load-balancer/environment/sovereign-lb/docs/dataplane.md",
+        "sovereign-l4-load-balancer/tests/test_outputs.py::test_f2p_source_hash_stable_after_target_reorder"
+      ],
+      "why_it_matters": "configuration.md states source hash maps over canonical eligible identities so declaration order cannot change selection. The named reorder test appends a target, reverses declaration once, applies that single document, and only asserts four connections from one client hit the same backend. A declaration-order hash also yields stable affinity within one ordering, so the documented order-independence invariant is not observed and incorrect solvers can still pass.",
+      "minimal_remediation": "Drive two applies that differ only by target declaration order (same identity set), collect source-hash selections for a fixed client, and assert identical chosen target identity across both orders; keep affinity assertions secondary.",
+      "regression_risk": "Low if the new assertion stays behavioral on lab events/backends and does not hard-code oracle file layout."
+    },
+    {
+      "id": "Q4-UNT-ZONE-LOCAL-PREFERRED",
+      "severity": "MEDIUM",
+      "status": "OBSERVED",
+      "criterion": "material eligibility requirement covered by a meaningful assertion",
+      "evidence_refs": [
+        "sovereign-l4-load-balancer/environment/sovereign-lb/docs/dataplane.md",
+        "sovereign-l4-load-balancer/environment/sovereign-lb/docs/configuration.md",
+        "sovereign-l4-load-balancer/instruction.md",
+        "sovereign-l4-load-balancer/tests/test_outputs.py::test_f2p_same_zone_skips_remote_without_failopen",
+        "sovereign-l4-load-balancer/tests/test_outputs.py::test_f2p_round_robin_hits_multiple_backends"
+      ],
+      "why_it_matters": "Docs require that under same_zone_preferred, remote normally-eligible targets are never chosen while the local normally-eligible set is nonempty, and that fail_open is not a soft cross-zone override in that case. Existing coverage only checks remote-only + fail_open=false (empty after zone filter). Round-robin deliberately switches to cross_zone to hit both backends. A solver that still selects remotes while local targets remain eligible can pass every current test.",
+      "minimal_remediation": "Add an F2P case with same_zone_preferred, fail_open true or false, both local and remote normally-eligible targets present, and assert all selections stay in the dataplane local zone.",
+      "regression_risk": "Low; complements rather than weakens the remote-only no-forward case."
+    },
+    {
+      "id": "Q4-VAC-SEQ-REUSE-QUORUM",
+      "severity": "MEDIUM",
+      "status": "OBSERVED",
+      "criterion": "F2P/protocol fence assertion must be able to fail if the contract is violated",
+      "evidence_refs": [
+        "sovereign-l4-load-balancer/environment/sovereign-lb/docs/control-protocol.md",
+        "sovereign-l4-load-balancer/tests/test_outputs.py::test_f2p_control_session_sequence_mismatch_rejected"
+      ],
+      "why_it_matters": "control-protocol.md rejects reuse of a sequence with different content without advancing authority. The second half of the session-fence test raises prepare/activate quorum to 2 while only one control session exists, then sends a conflicting sequence reuse and waits for non-active rollout. Quorum 2 can never be met with one session, so wait_rollout_not_active succeeds whether or not sequence reuse is fenced. Stale-session rejection in the first half remains meaningful; sequence-reuse is vacuous.",
+      "minimal_remediation": "Probe sequence reuse under a reachable quorum (for example quorum 1 with a single valid session): accept one prepared, then reuse the same sequence with different body and assert the rollout still cannot reach active / acknowledgement is rejected.",
+      "regression_risk": "Low if stale-session coverage is preserved alongside a non-vacuous sequence-reuse probe."
+    },
+    {
+      "id": "Q4-ADV-CANONICAL-JSON-SHAPE",
+      "severity": "LOW",
+      "status": "OBSERVED",
+      "criterion": "canonical JSON shape graded beyond self-digest match",
+      "evidence_refs": [
+        "sovereign-l4-load-balancer/environment/sovereign-lb/docs/control-protocol.md",
+        "sovereign-l4-load-balancer/tests/test_outputs.py::test_f2p_generation_snapshot_matches_digest"
+      ],
+      "why_it_matters": "Digest equality to stored snapshot bytes does not independently assert sorted keys / no insignificant whitespace. Interop via matching prepare/activate digests partially constrains both sides, so this is advisory rather than blocking.",
+      "minimal_remediation": "Optionally re-canonicalize snapshot JSON in the verifier and assert byte identity, or compare against an independently computed canonical digest.",
+      "regression_risk": "Medium if the assertion over-fits a particular serializer."
+    },
+    {
+      "id": "Q4-ADV-INCARNATION-REREGISTER-RULE",
+      "severity": "LOW",
+      "status": "OBSERVED",
+      "criterion": "documented incarnation re-register rule vs field persistence",
+      "evidence_refs": [
+        "sovereign-l4-load-balancer/environment/sovereign-lb/docs/configuration.md",
+        "sovereign-l4-load-balancer/tests/test_outputs.py::test_f2p_target_incarnation_increments_on_reregister"
+      ],
+      "why_it_matters": "The test only applies incarnation=2 and reads it back from the snapshot; it does not exercise remove/re-add with a non-increasing incarnation or reject that case. Treat as advisory unless validation of that rule is intended to be graded.",
+      "minimal_remediation": "Either add a 422 path for non-increasing incarnation on logical re-add, or rename/narrow the requirement if it is operator guidance only.",
+      "regression_risk": "Low."
+    },
+    {
+      "id": "Q4-ADV-NEGATIVE-EXCLUSIONS-UNTESTED",
+      "severity": "LOW",
+      "status": "OBSERVED",
+      "criterion": "negative product exclusions need not be positively tested",
+      "evidence_refs": [
+        "sovereign-l4-load-balancer/instruction.md",
+        "sovereign-l4-load-balancer/environment/sovereign-lb/docs/architecture.md"
+      ],
+      "why_it_matters": "No HTTP routing / WAF / DNS / firewall / cloud-provisioning exclusions are stated but not directly asserted. Acceptable as scope fences; advisory only.",
+      "minimal_remediation": "None required for Quality Interlock unless product wants explicit absence probes.",
+      "regression_risk": "N/A"
+    }
+  ],
+  "missing_evidence": [],
+  "change_scope": [
+    "sovereign-l4-load-balancer/tests/test_outputs.py",
+    ".terminus/designs/sovereign-l4-load-balancer-test-map.json"
+  ],
+  "do_not_change": [
+    "Do not weaken documented zone/fail_open/source-hash/control-fence contracts to match vacuous tests",
+    "Do not convert docs into a hidden repair map or dump per-test bullets into instruction.md",
+    "Do not edit solution/oracle solely to satisfy new assertions without legitimate public behavior"
+  ],
+  "next_gate": "Q2 Verifier Coverage Repairer (vacuous/untested material behaviors); re-run Q4 after tests land",
+  "role_output": {
+    "REQUIREMENT_TEST_MATRIX": [
+      {
+        "requirement_id": "R_SCOPE_TREE",
+        "source": "instruction.md bullet 1",
+        "coverage": "partial",
+        "tests": ["test_p2p_binaries_and_catalog_present"],
+        "notes": "Binaries/fleet present; mixed-language structure not source-checked (acceptable)."
+      },
+      {
+        "requirement_id": "R_BUILD_LAB",
+        "source": "instruction.md bullet 2; operations.md; lab.md",
+        "coverage": "complete",
+        "tests": ["test_p2p_binaries_and_catalog_present", "build_tree fixture", "running_stack lab start"]
+      },
+      {
+        "requirement_id": "R_VALIDATE_DESIRED",
+        "source": "instruction.md bullet 3; configuration.md; operations.md",
+        "coverage": "complete",
+        "tests": [
+          "test_p2p_validate_rejects_invalid_policy",
+          "test_f2p_duplicate_listener_bind_rejected",
+          "test_f2p_invalid_listener_port_rejected",
+          "test_f2p_unknown_apply_field_rejected"
+        ]
+      },
+      {
+        "requirement_id": "R_REVISION_IDEMPOTENCY_FENCE",
+        "source": "instruction.md bullet 4; operations.md; recovery.md",
+        "coverage": "complete",
+        "tests": [
+          "test_f2p_same_revision_different_body_conflict",
+          "test_f2p_stale_revision_rejected",
+          "test_f2p_idempotency_key_body_conflict",
+          "test_f2p_revision_advances_accepted_authority",
+          "test_p2p_idempotency_replay",
+          "test_f2p_accepted_digest_persisted",
+          "test_f2p_control_plane_restart_restores_authority_fences"
+        ]
+      },
+      {
+        "requirement_id": "R_IMMUTABLE_SNAPSHOT_DIGEST",
+        "source": "instruction.md bullet 5; architecture.md; control-protocol.md",
+        "coverage": "complete",
+        "tests": ["test_f2p_generation_snapshot_matches_digest", "test_f2p_rollout_reaches_active_phase"],
+        "notes": "Canonical JSON shape beyond self-hash is advisory (Q4-ADV-CANONICAL-JSON-SHAPE)."
+      },
+      {
+        "requirement_id": "R_CONTROL_PROTOCOL",
+        "source": "instruction.md bullet 6; control-protocol.md",
+        "coverage": "partial",
+        "tests": [
+          "test_f2p_torn_control_frame_does_not_advance_authority",
+          "test_f2p_control_session_sequence_mismatch_rejected",
+          "test_f2p_control_status_envelope_exchange"
+        ],
+        "notes": "hello/prepare/status covered; rejected envelope type not directly asserted; sequence-reuse half vacuous (Q4-VAC-SEQ-REUSE-QUORUM)."
+      },
+      {
+        "requirement_id": "R_NODE_FENCES",
+        "source": "instruction.md bullet 7; control-protocol.md; rollout-state.md",
+        "coverage": "partial",
+        "tests": ["test_f2p_control_session_sequence_mismatch_rejected"],
+        "notes": "Stale session covered; sequence-content reuse not meaningfully observable."
+      },
+      {
+        "requirement_id": "R_QUORUM_LKG",
+        "source": "instruction.md bullet 8; rollout-state.md; architecture.md",
+        "coverage": "complete",
+        "tests": [
+          "test_f2p_rollout_reaches_active_phase",
+          "test_f2p_quorum_requires_connected_nodes",
+          "test_f2p_conflict_preserves_active_generation",
+          "test_f2p_failed_candidate_preserves_lkg_generation"
+        ]
+      },
+      {
+        "requirement_id": "R_PERSIST_RECOVER",
+        "source": "instruction.md bullet 9; recovery.md",
+        "coverage": "complete",
+        "tests": [
+          "test_f2p_checkpoint_generation_directory_padding",
+          "test_f2p_dataplane_restart_recovers_active_generation",
+          "test_f2p_corrupt_current_pointer_falls_back",
+          "test_f2p_control_plane_restart_restores_authority_fences",
+          "test_f2p_accepted_digest_persisted"
+        ]
+      },
+      {
+        "requirement_id": "R_TCP_PROXY_STREAM",
+        "source": "instruction.md bullet 10; dataplane.md",
+        "coverage": "complete",
+        "tests": [
+          "test_f2p_multibuffer_tcp_echo",
+          "test_f2p_half_close_backend_survives",
+          "test_f2p_connect_timeout_closes_stalled_backend",
+          "test_f2p_idle_timeout_tears_down_quiet_stream",
+          "test_f2p_slow_backend_survives_full_buffer_backpressure"
+        ]
+      },
+      {
+        "requirement_id": "R_CONN_GENERATION_INCARNATION",
+        "source": "instruction.md bullet 11; dataplane.md",
+        "coverage": "complete",
+        "tests": [
+          "test_f2p_deregistered_target_drains_existing_connection",
+          "test_f2p_drain_deadline_terminates_owned_stream",
+          "test_f2p_target_incarnation_increments_on_reregister"
+        ],
+        "notes": "Drain across apply covers ownership across generation change; incarnation re-register validation advisory."
+      },
+      {
+        "requirement_id": "R_SELECTION_POLICIES",
+        "source": "instruction.md bullet 12; configuration.md; dataplane.md",
+        "coverage": "partial",
+        "tests": [
+          "test_f2p_round_robin_hits_multiple_backends",
+          "test_f2p_least_connections_prefers_lower_load",
+          "test_f2p_source_hash_stable_after_target_reorder"
+        ],
+        "notes": "RR and LC meaningful; source-hash declaration-order independence vacuous (Q4-UNT-SOURCE-HASH-ORDER)."
+      },
+      {
+        "requirement_id": "R_ELIGIBILITY_COMBINE",
+        "source": "instruction.md bullet 13; dataplane.md; configuration.md",
+        "coverage": "partial",
+        "tests": [
+          "test_f2p_same_zone_skips_remote_without_failopen",
+          "test_f2p_fail_open_skips_disabled_targets",
+          "test_f2p_fail_open_includes_unhealthy_targets",
+          "test_f2p_passive_ejection_skips_reset_target",
+          "test_f2p_active_health_failure_skips_then_recovers"
+        ],
+        "notes": "Empty-local / fail_open / health / passive covered; local+remote same_zone preference unasserted (Q4-UNT-ZONE-LOCAL-PREFERRED)."
+      },
+      {
+        "requirement_id": "R_DRAIN",
+        "source": "instruction.md bullet 14; dataplane.md",
+        "coverage": "complete",
+        "tests": [
+          "test_f2p_deregistered_target_drains_existing_connection",
+          "test_f2p_drain_deadline_terminates_owned_stream"
+        ]
+      },
+      {
+        "requirement_id": "R_PROXY_V2_ONCE",
+        "source": "instruction.md bullet 15; dataplane.md; lab.md",
+        "coverage": "complete",
+        "tests": ["test_f2p_proxy_inspect_listener_echo"]
+      },
+      {
+        "requirement_id": "R_CHECKPOINT_NO_TORN_AUTHORITY",
+        "source": "instruction.md bullet 16; recovery.md; control-protocol.md",
+        "coverage": "complete",
+        "tests": [
+          "test_f2p_dataplane_restart_recovers_active_generation",
+          "test_f2p_corrupt_current_pointer_falls_back",
+          "test_f2p_torn_control_frame_does_not_advance_authority"
+        ]
+      },
+      {
+        "requirement_id": "R_OBS_BOUNDED",
+        "source": "instruction.md bullet 17; observability.md",
+        "coverage": "complete",
+        "tests": [
+          "test_f2p_readiness_false_before_activate",
+          "test_f2p_readiness_false_during_prepare",
+          "test_f2p_readiness_true_after_activate",
+          "test_f2p_status_reports_rollout_present",
+          "test_f2p_audit_exports_bounded_apply_event",
+          "test_f2p_metrics_labels_bounded",
+          "test_f2p_control_status_envelope_exchange",
+          "test_p2p_lbctl_status_command"
+        ]
+      },
+      {
+        "requirement_id": "R_LAB_FLEET",
+        "source": "instruction.md bullet 18; lab.md",
+        "coverage": "complete",
+        "tests": ["test_p2p_binaries_and_catalog_present"]
+      },
+      {
+        "requirement_id": "R_EXCLUSIONS",
+        "source": "instruction.md bullet 19; architecture.md",
+        "coverage": "absent",
+        "tests": [],
+        "notes": "Negative scope fence; advisory (Q4-ADV-NEGATIVE-EXCLUSIONS-UNTESTED)."
+      },
+      {
+        "requirement_id": "R_DOCS_IDEMPOTENT_OPS",
+        "source": "instruction.md bullet 20; docs/*",
+        "coverage": "complete",
+        "tests": ["cross-cutting via apply/replay/reconnect/drain/recovery suites"]
+      }
+    ],
+    "PHANTOM_TEST_CONTRACTS": [],
+    "UNTESTED_REQUIREMENTS": [
+      "Source-hash selection invariant to target declaration order (vacuous existing probe) — Q4-UNT-SOURCE-HASH-ORDER",
+      "same_zone_preferred: remotes never chosen while local normally-eligible nonempty (and fail_open not soft cross-zone in that case) — Q4-UNT-ZONE-LOCAL-PREFERRED",
+      "Control sequence reuse with different content rejected without advancing authority (vacuous under unreachable quorum) — Q4-VAC-SEQ-REUSE-QUORUM"
+    ],
+    "AMBIGUITIES": [],
+    "INSTRUCTION_SHAPE": "PASS",
+    "INSTRUCTION_REQUIREMENT_COMPLETENESS": "SUFFICIENT",
+    "DELEGATED_CONTRACT_CHECK": [
+      {
+        "doc": "docs/architecture.md",
+        "classification": "legitimate_architecture",
+        "prompt_extension": false
+      },
+      {
+        "doc": "docs/configuration.md",
+        "classification": "legitimate_schema_contract",
+        "prompt_extension": false
+      },
+      {
+        "doc": "docs/control-protocol.md",
+        "classification": "legitimate_protocol",
+        "prompt_extension": false
+      },
+      {
+        "doc": "docs/dataplane.md",
+        "classification": "legitimate_protocol_dataplane",
+        "prompt_extension": false
+      },
+      {
+        "doc": "docs/operations.md",
+        "classification": "legitimate_runbook_api",
+        "prompt_extension": false
+      },
+      {
+        "doc": "docs/observability.md",
+        "classification": "legitimate_api_schema",
+        "prompt_extension": false
+      },
+      {
+        "doc": "docs/recovery.md",
+        "classification": "legitimate_state_runbook",
+        "prompt_extension": false
+      },
+      {
+        "doc": "docs/rollout-state.md",
+        "classification": "legitimate_state_model",
+        "prompt_extension": false
+      },
+      {
+        "doc": "docs/lab.md",
+        "classification": "legitimate_lab_runbook",
+        "prompt_extension": false
+      },
+      {
+        "doc": "docs/examples/control.ndjson",
+        "classification": "legitimate_protocol_examples",
+        "prompt_extension": false
+      }
+    ],
+    "INSTRUCTION_DOC_BOUNDARY": "CLEAN",
+    "IMPLEMENTATION_DIAGNOSIS_LEAKAGE": "NONE",
+    "CURRENT_STATE_EVIDENCE": "NOT_APPLICABLE",
+    "SPEC_DUMP_RISK": "LOW",
+    "BIDIRECTIONAL_ALIGNMENT": "FAIL",
+    "BLOCKING_FINDING_IDS": [
+      "Q4-UNT-SOURCE-HASH-ORDER",
+      "Q4-UNT-ZONE-LOCAL-PREFERRED",
+      "Q4-VAC-SEQ-REUSE-QUORUM"
+    ],
+    "ADVISORY_FINDING_IDS": [
+      "Q4-ADV-CANONICAL-JSON-SHAPE",
+      "Q4-ADV-INCARNATION-REREGISTER-RULE",
+      "Q4-ADV-NEGATIVE-EXCLUSIONS-UNTESTED"
+    ],
+    "EXHAUSTIVENESS": {
+      "REQUIREMENTS_ENUMERATED": "COMPLETE",
+      "VERIFIER_BEHAVIORS_ENUMERATED": "COMPLETE",
+      "FORWARD_MATRIX_COMPLETE": "YES",
+      "REVERSE_MATRIX_COMPLETE": "YES",
+      "INSTRUCTION_COMPLETENESS_COMPLETE": "YES",
+      "DELEGATED_CONTRACTS_COMPLETE": "YES",
+      "PROMPT_EXTENSION_WALK_COMPLETE": "YES",
+      "P2P_BOUNDARIES_COMPLETE": "YES",
+      "F2P_BOUNDARIES_COMPLETE": "YES",
+      "OUTPUT_INTERFACES_COMPLETE": "YES",
+      "SECOND_PASS_OMISSION_SWEEP": "PASS",
+      "UNINSPECTED_SCOPE": []
+    },
+    "REVERSE_MATRIX_NOTES": [
+      "All 47 tests map to discoverable instruction/docs obligations; no phantom private return contracts or hidden labels found.",
+      "P2P set preserves binaries/fleet/catalog, invalid-policy 422, idempotent replay, and lbctl status — ownership coherent with starter-already-green surfaces.",
+      "F2P set owns authority fences, LKG/quorum, stream/PROXY/timeouts, eligibility/drain/health, readiness/obs, control fences, and recovery."
+    ]
+  }
+}
