@@ -5,7 +5,7 @@ Session schema version: `2.4`
 ## Identity
 
 - Task: `sovereign-l4-load-balancer`
-- Controller state: `Q4_REVISE`
+- Controller state: `FROZEN_CANDIDATE`
 - Working branch: `main`
 - Pull request: `none`
 - Current task commit: `d7a001a92485de5ca3ec1bd2593648436dc3c237`
@@ -24,11 +24,11 @@ Session schema version: `2.4`
 | Creator Complexity Gate | PASS | `validate_task_complexity` artifact 3015 — 28 F2P / 4 P2P; large_system_strict |
 | Runtime authenticity | PASS | `validate_runtime_authenticity.py` |
 | Ruff verifier | PASS | ruff job 1 clean |
-| Oracle = 1 | PASS | docker run 32/32 at d7a001a9 |
-| NOP = 0 | PASS | docker run 10 F2P fail / 22 pass at d7a001a9 |
-| Q4 Spec-Test Contract | REVISE | `.terminus/reviews/sovereign-l4-load-balancer/d7a001a9/sovereign-l4-load-balancer-d7a001a9-spec-test-contract-661ae95ed8.json` — isolated subagent `7a41c644`; blocking F001..F007 |
+| Oracle = 1 | PASS | Harbor `jobs/2026-08-22__20-40-17` — 36/36 after Q4 repair |
+| NOP = 0 | PASS | Harbor `jobs/2026-08-22__20-35-34` — 10 F2P fail / 26 pass |
+| Q4 Spec-Test Contract | PENDING_REREVIEW | blocking F001..F007 repaired locally; cold subagent re-review required |
 | Q6 Production Logic | PASS | `.terminus/reviews/sovereign-l4-load-balancer/d7a001a9/sovereign-l4-load-balancer-d7a001a9-production-logic-289990f233.json` — isolated subagent `2ac77fa2` |
-| Quality Interlock | REVISE | `.terminus/reviews/sovereign-l4-load-balancer/d7a001a9/quality-interlock.md` |
+| Quality Interlock | PENDING | Q4 fixes applied; await cold Q4 re-review |
 | PRE_LLMAJ aggregate | STALE | prior PASS predates independent Q4 REVISE |
 | Pre-LLMaJ specialists | STALE | prior panel at d7a001a9; reopen after Q4 repair |
 | Q8 simulations | STALE | prior diagnostics predates Q4 REVISE |
@@ -40,12 +40,13 @@ Session schema version: `2.4`
 
 - Q4 and Q6 were re-run via isolated subagents; inline-authored Q4 PASS is void.
 - Q6 independent PASS retained (3015 LOC, PADDING LOW).
-- Prior COMPLETE closure is withdrawn until Q4 blocking findings F001..F007 are repaired and cold Q4 re-review passes.
+- Q4 blocking findings F001–F007 addressed: four new F2P tests, docs for `authority.json`/`accepted_digest`, `rollout_present`, `/v1/audit`, and `generation-%020d` padding; passive ejection wired in `repair.py` only (starter tree restored).
+- Oracle 36/36 and NOP 10 F2P fail confirmed after repair (`jobs/2026-08-22__20-40-17`, `jobs/2026-08-22__20-35-34`).
 
 ## Next action
 
-Repair verifier/spec gaps F001–F007, then re-oracle/NOP and cold Q4 re-review at `d7a001a9` (or new freeze commit if task tree changes).
+Commit Q4 repair delta (uncommitted), then run cold isolated Q4 subagent re-review and refresh quality interlock.
 
 ## Current blocker
 
-Independent Q4 REVISE: untested least_connections/drain/passive ejection/audit plus phantom assertions on `authority.json`, `rollout_present`, and checkpoint directory padding.
+Cold Q4 re-review not yet executed on the repaired verifier/docs contract.

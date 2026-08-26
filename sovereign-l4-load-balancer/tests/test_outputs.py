@@ -6,7 +6,6 @@ import hashlib
 import json
 import os
 import socket
-import struct
 import subprocess
 import time
 import urllib.error
@@ -167,7 +166,7 @@ def running_stack(
         ):
             wait_port("127.0.0.1", management_port, timeout=15)
             node_processes: list[subprocess.Popen[str]] = []
-            with managed_process([str(DATAPLANE), "--config", str(node_config)], cwd=ROOT, env=env) as primary:
+            with managed_process([str(DATAPLANE), "--config", str(node_config)], cwd=ROOT, env=env):
                 wait_port("127.0.0.1", status_port, timeout=15)
                 for node_base, template in extra_nodes:
                     extra_status = free_port()
@@ -228,6 +227,76 @@ def expect_no_forwarding(host: str, port: int) -> None:
             assert recv_all(client, 1) == b""
     except (ConnectionRefusedError, ConnectionResetError, BrokenPipeError, TimeoutError, OSError):
         return
+
+
+def scenario_least_connections() -> dict[str, Any]:
+    desired = scenario_desired()
+    group = desired["target_groups"][0]
+    group["policy"] = "least_connections"
+    group["zone_policy"] = "cross_zone"
+    group["fail_open"] = False
+    return desired
+
+
+def scenario_drain_handoff() -> tuple[dict[str, Any], dict[str, Any]]:
+    first = scenario_desired()
+    first["target_groups"][0]["targets"] = [
+        {
+            "id": "echo-a",
+            "address": "127.0.0.1",
+            "port": 19001,
+            "zone": "zone-a",
+            "administrative_state": "enabled",
+            "weight": 1,
+            "incarnation": 1,
+        }
+    ]
+    second = json.loads(json.dumps(first))
+    second["revision"] = 2
+    second["target_groups"][0]["targets"] = [
+        {
+            "id": "slow-b",
+            "address": "127.0.0.1",
+            "port": 19002,
+            "zone": "zone-a",
+            "administrative_state": "enabled",
+            "weight": 1,
+            "incarnation": 1,
+        }
+    ]
+    return first, second
+
+
+def scenario_passive_ejection() -> dict[str, Any]:
+    desired = scenario_desired()
+    group = desired["target_groups"][0]
+    group["policy"] = "round_robin"
+    group["zone_policy"] = "cross_zone"
+    group["fail_open"] = False
+    group["health"]["passive_failures"] = 3
+    group["health"]["passive_window_ms"] = 30000
+    group["health"]["ejection_ms"] = 30000
+    group["targets"] = [
+        {
+            "id": "reset-a",
+            "address": "127.0.0.1",
+            "port": 19004,
+            "zone": "zone-a",
+            "administrative_state": "enabled",
+            "weight": 1,
+            "incarnation": 1,
+        },
+        {
+            "id": "echo-a",
+            "address": "127.0.0.1",
+            "port": 19001,
+            "zone": "zone-a",
+            "administrative_state": "enabled",
+            "weight": 1,
+            "incarnation": 1,
+        },
+    ]
+    return desired
 
 
 def lab_events(lab_state: Path) -> list[dict[str, Any]]:
@@ -408,6 +477,21 @@ def test_f2p_status_reports_rollout_present(lab_state: Path, control_state: Path
         assert payload.get("rollout_present") is True
 
 
+def test_f2p_audit_exports_bounded_apply_event(lab_state: Path, control_state: Path, dataplane_state: Path) -> None:
+    with running_stack(lab_state, control_state, dataplane_state) as stack:
+        assert apply(stack["management"], desired_path(lab_state), "audit-1")[0] in {200, 202}
+        status, payload = http_json(f"{stack['management']}/v1/audit")
+        assert status == 200 and isinstance(payload, dict)
+        events = payload.get("events")
+        assert isinstance(events, list) and events
+        event = events[-1]
+        assert event.get("operation") == "apply"
+        assert event.get("outcome") == "accepted"
+        assert "revision" in event and "generation" in event
+        forbidden = {"payload", "body", "source_address", "client_address", "idempotency_key"}
+        assert forbidden.isdisjoint(event.keys())
+
+
 # --- REQ_STREAM ---
 
 
@@ -518,6 +602,39 @@ def test_f2p_source_hash_stable_after_target_reorder(lab_state: Path, control_st
             if events:
                 hits.append(str(events[-1]["backend"]))
         assert len(set(hits)) == 1
+
+
+def test_f2p_least_connections_prefers_lower_load(lab_state: Path, control_state: Path, dataplane_state: Path) -> None:
+    warm = scenario_least_connections()
+    warm["target_groups"][0]["targets"] = [
+        {
+            "id": "slow-b",
+            "address": "127.0.0.1",
+            "port": 19002,
+            "zone": "zone-a",
+            "administrative_state": "enabled",
+            "weight": 1,
+            "incarnation": 1,
+        }
+    ]
+    hot = scenario_least_connections()
+    hot["revision"] = 2
+    with running_stack(lab_state, control_state, dataplane_state) as stack:
+        assert apply(stack["management"], write_desired(lab_state, warm, "lc-warm.json"), "lc-warm")[0] in {200, 202}
+        wait_active(stack["management"])
+        slow_sock = socket.create_connection(("127.0.0.1", 18001), timeout=5)
+        try:
+            slow_sock.sendall(b"x" * 512)
+            time.sleep(0.2)
+            assert apply(stack["management"], write_desired(lab_state, hot, "lc-hot.json"), "lc-hot")[0] in {200, 202}
+            wait_active(stack["management"])
+            with socket.create_connection(("127.0.0.1", 18001), timeout=5) as quick:
+                quick.sendall(b"y")
+                recv_all(quick, 1)
+            accepted = [event for event in lab_events(lab_state) if event.get("event") == "accepted"]
+            assert accepted and accepted[-1]["backend"] == "echo"
+        finally:
+            slow_sock.close()
 
 
 # --- REQ_READINESS ---
@@ -633,6 +750,111 @@ def test_f2p_target_incarnation_increments_on_reregister(lab_state: Path, contro
         snapshot = json.loads((latest / "snapshot.json").read_text(encoding="utf-8"))
         incarnation = snapshot["target_groups"][0]["targets"][0]["incarnation"]
         assert incarnation == 2
+
+
+def test_f2p_deregistered_target_drains_existing_connection(lab_state: Path, control_state: Path, dataplane_state: Path) -> None:
+    first, second = scenario_drain_handoff()
+    with running_stack(lab_state, control_state, dataplane_state) as stack:
+        assert apply(stack["management"], write_desired(lab_state, first, "drain-1.json"), "drain-1")[0] in {200, 202}
+        wait_active(stack["management"])
+        hold = socket.create_connection(("127.0.0.1", 18001), timeout=5)
+        try:
+            hold.sendall(b"keep")
+            assert recv_all(hold, 4) == b"keep"
+            assert apply(stack["management"], write_desired(lab_state, second, "drain-2.json"), "drain-2")[0] in {200, 202}
+            wait_active(stack["management"])
+            marker = time.time_ns()
+            with socket.create_connection(("127.0.0.1", 18001), timeout=5) as client:
+                client.sendall(b"new")
+                recv_all(client, 3)
+            accepted = [
+                event
+                for event in lab_events(lab_state)
+                if event.get("event") == "accepted"
+                and event.get("backend") in {"echo", "slow"}
+                and event.get("at_ns", 0) >= marker
+            ]
+            assert accepted and accepted[-1]["backend"] == "slow"
+            hold.sendall(b"more")
+            assert recv_all(hold, 4) == b"more"
+        finally:
+            hold.close()
+
+
+def test_f2p_passive_ejection_skips_reset_target(lab_state: Path, control_state: Path, dataplane_state: Path) -> None:
+    reset_only = scenario_passive_ejection()
+    reset_only["target_groups"][0]["health"]["passive_failures"] = 1
+    reset_only["target_groups"][0]["targets"] = [
+        {
+            "id": "reset-a",
+            "address": "127.0.0.1",
+            "port": 19004,
+            "zone": "zone-a",
+            "administrative_state": "enabled",
+            "weight": 1,
+            "incarnation": 1,
+        }
+    ]
+    echo_only = scenario_passive_ejection()
+    echo_only["revision"] = 2
+    echo_only["target_groups"][0]["health"]["passive_failures"] = 1
+    echo_only["target_groups"][0]["targets"] = [
+        {
+            "id": "echo-a",
+            "address": "127.0.0.1",
+            "port": 19001,
+            "zone": "zone-a",
+            "administrative_state": "enabled",
+            "weight": 1,
+            "incarnation": 1,
+        }
+    ]
+    with running_stack(lab_state, control_state, dataplane_state) as stack:
+        assert apply(stack["management"], write_desired(lab_state, reset_only, "passive-reset.json"), "passive-reset")[0] in {200, 202}
+        wait_active(stack["management"])
+        for _ in range(4):
+            try:
+                with socket.create_connection(("127.0.0.1", 18001), timeout=2) as client:
+                    client.settimeout(1.0)
+                    client.sendall(b"x")
+                    try:
+                        recv_all(client, 1)
+                    except (ConnectionResetError, TimeoutError, OSError):
+                        pass
+            except OSError:
+                pass
+            time.sleep(0.15)
+        marker = time.time_ns()
+        for _ in range(3):
+            try:
+                with socket.create_connection(("127.0.0.1", 18001), timeout=2) as client:
+                    client.settimeout(1.0)
+                    client.sendall(b"probe")
+                    recv_all(client, 1)
+            except (ConnectionResetError, TimeoutError, OSError):
+                pass
+            time.sleep(0.1)
+        reset_after_ejection = [
+            event
+            for event in lab_events(lab_state)
+            if event.get("event") == "accepted"
+            and event.get("backend") == "reset"
+            and event.get("at_ns", 0) >= marker
+        ]
+        assert not reset_after_ejection, "passive ejection should stop routing to reset"
+        assert apply(stack["management"], write_desired(lab_state, echo_only, "passive-echo.json"), "passive-echo")[0] in {200, 202}
+        wait_active(stack["management"])
+        with socket.create_connection(("127.0.0.1", 18001), timeout=5) as client:
+            client.sendall(b"ok")
+            assert recv_all(client, 2) == b"ok"
+        accepted = [
+            event
+            for event in lab_events(lab_state)
+            if event.get("event") == "accepted"
+            and event.get("backend") == "echo"
+            and event.get("at_ns", 0) >= marker
+        ]
+        assert accepted
 
 
 # --- REQ_RECOVERY ---

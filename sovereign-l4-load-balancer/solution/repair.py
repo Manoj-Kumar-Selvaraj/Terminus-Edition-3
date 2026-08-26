@@ -157,11 +157,34 @@ def patch_proxy(path: Path) -> None:
     text = path.read_text(encoding="utf-8")
     text = replace_once(
         text,
+        'if(events&(EPOLLERR|EPOLLHUP)){close_connection(connection);return;}',
+        'if(events&(EPOLLERR|EPOLLHUP)){if(!client)health_.passive_failure(*connection->target,connection->snapshot->group(connection->listener->target_group).health,std::chrono::steady_clock::now());close_connection(connection);return;}',
+        "passive failure on target hangup",
+    )
+    text = replace_once(
+        text,
+        'getsockopt(descriptor,SOL_SOCKET,SO_ERROR,&error,&size);if(error){close_connection(connection);return;}',
+        'getsockopt(descriptor,SOL_SOCKET,SO_ERROR,&error,&size);if(error){health_.passive_failure(*connection->target,connection->snapshot->group(connection->listener->target_group).health,std::chrono::steady_clock::now());close_connection(connection);return;}',
+        "passive failure on async connect error",
+    )
+    text = replace_once(
+        text,
+        'if((events&EPOLLOUT)&&!transfer_write(descriptor,connection->client_to_target)){close_connection(connection);return;}',
+        'if((events&EPOLLOUT)&&!transfer_write(descriptor,connection->client_to_target)){health_.passive_failure(*connection->target,connection->snapshot->group(connection->listener->target_group).health,std::chrono::steady_clock::now());close_connection(connection);return;}',
+        "passive failure on target write error",
+    )
+    text = replace_once(
+        text,
+        'int backend=connect_target(*target);if(backend<0){close_connection(connection);continue;}',
+        'int backend=connect_target(*target);if(backend<0){health_.passive_failure(*target,group.health,std::chrono::steady_clock::now());close_connection(connection);continue;}',
+        "passive failure on connect error",
+    )
+    text = replace_once(
+        text,
         'if((events&EPOLLIN)&&!transfer_read(descriptor,connection->target_to_client,connection->target_read_closed)){close_connection(connection);return;}',
         'if((events&EPOLLIN)&&!transfer_read(descriptor,connection->target_to_client,connection->target_read_closed)){health_.passive_failure(*connection->target,connection->snapshot->group(connection->listener->target_group).health,std::chrono::steady_clock::now());close_connection(connection);return;}',
         "passive failure on target read error",
     )
-    # inject HealthTracker reference - proxy needs health_ member. Check proxy.hpp
     path.write_text(text, encoding="utf-8", newline="\n")
 
 

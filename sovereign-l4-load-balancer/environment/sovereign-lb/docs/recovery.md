@@ -2,6 +2,10 @@
 
 Durable objects are written to a temporary sibling, flushed, renamed, and followed by a directory sync. Generation directories contain canonical `snapshot.json`, `digest`, and `complete` marker. `CURRENT` is advisory until its generation content, marker, and digest verify.
 
+Control-plane durable authority is stored in `authority.json` under the control state root. It records `accepted_revision`, the SHA-256 hex digest of the last accepted desired-state body (`accepted_digest`), `next_generation`, and idempotency `records`. Accepted revision and digest are restored before serving mutation APIs.
+
+Generation directories use zero-padded twenty-digit decimal names: `generation-%020d` (for example `generation-00000000000000000001`). The same padding convention applies to control-plane generation stores and dataplane checkpoint directories under each node's state root.
+
 On control-plane startup, scan complete generations, verify canonical digests, load durable desired revision and idempotency records, and reconcile the rollout journal. A missing, corrupt, or dangling `CURRENT` falls back to the highest verified generation that durable rollout state marks active. Incomplete directories never acquire authority.
 
 Idempotency records bind key, request digest, accepted revision, generation, and response. Replay of the same key and body returns the recorded response. Reuse with different content is a conflict. The accepted revision fence is restored before serving mutation APIs.

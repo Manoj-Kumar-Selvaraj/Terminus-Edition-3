@@ -2,7 +2,9 @@
 
 Management readiness is exposed as JSON and returns false when durable state is unavailable or active rollout authority is incoherent. Dataplane readiness returns false until active listeners correspond to the reported active generation and returns false before graceful shutdown stops accepts.
 
-Status views expose bounded summaries: desired revision, active and candidate generation, rollout phase and quorum counts, current node sessions, listener count, target health counts, connection count, draining count, and last durable transition time. Detailed connection views are capped and omit payload and raw source identity.
+Status views expose bounded summaries: desired revision, active and candidate generation, rollout phase and quorum counts, current node sessions, listener count, target health counts, connection count, draining count, and last durable transition time. `GET /v1/status` also includes `rollout_present` (boolean) indicating whether rollout coordinator state is available, plus a `rollout` object with phase and quorum fields when present. Detailed connection views are capped and omit payload and raw source identity.
+
+`GET /v1/audit` returns a bounded ring of apply and control events as JSON: `events` (each with timestamp, actor class, operation, optional digest prefix, revision, generation, outcome, and fixed reason) and `dropped` (count of evicted events). Audit entries never include traffic bytes, full client addresses, idempotency keys, or request bodies.
 
 Metrics use stable names and low-cardinality labels. Allowed labels are operation, result, message type, listener name from bounded configuration, zone from bounded inventory, and reason code from a fixed set. Generation, digest, session ID, source address, target address, and connection ID are values in status where needed, not metric labels.
 
