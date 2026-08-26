@@ -1,0 +1,20 @@
+#!/usr/bin/env python3
+"""Sovereign RDS Control Plane Worker."""
+import sys
+import asyncio
+from rds import worker, database, migrations, config
+
+async def main():
+    cfg = config.load_config()
+    
+    # Run migrations
+    await migrations.run_migrations(cfg.database_url)
+    
+    # Start worker
+    await worker.run_worker(cfg)
+
+if __name__ == "__main__":
+    try:
+        asyncio.run(main())
+    except KeyboardInterrupt:
+        sys.exit(0)

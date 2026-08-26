@@ -1,0 +1,66 @@
+{
+  "contract_version": "1.0",
+  "task_id": "sovereign-rds-control-plane",
+  "requirement_contract_hash": "sha256:f7d385709e94a480c0c77fd699e71ff02eb5b0e3ff68f01e65289d44d1a4e1a1",
+  "engineering_objective": "Complete the inherited Go and Python sovereign RDS-compatible control plane so DB instances, WAL-backed PITR restores, parameter group dynamic/static apply modes, read replica promotion, multi-AZ failover fencing, and event outbox notifications achieve policy-compliant, restart-safe readiness.",
+  "affected_system_location": "/app/rds",
+  "required_end_state": "The shared API server (rdsd), worker daemon (rds-worker), CLI operator (rdsctl), and PostgreSQL 16 control plane database correctly manage database instance lifecycles, validate allocated storage scaling and deletion protection, process WAL archives and PITR target timestamp restores, differentiate dynamic vs pending-reboot parameter group modifications, enforce replication lag and write lease revocation during replica promotion, execute lease-fenced multi-AZ failover, deliver deduplicated EventBridge outbox notifications, and publish canonical READY state reports.",
+  "functional_requirements": [
+    "Operate the sovereign RDS control plane through the public entrypoints /app/rds/bin/rdsd, /app/rds/bin/rds-worker, and /app/rds/bin/rdsctl against PostgreSQL 16.",
+    "Validate that DBInstance modification requests (instance class, storage, backup retention) are accepted only when the instance is in AVAILABLE status.",
+    "Enforce monotonic storage allocation growth: reject manual storage modifications or auto-scaling requests that set size less than or equal to current allocated storage.",
+    "Strictly enforce DeletionProtection = true to reject DeleteDBInstance calls regardless of whether FinalDBSnapshotIdentifier is specified.",
+    "Process RebootDBInstance calls by reloading process configuration and applying all pending static parameters marked pending-reboot.",
+    "Ingest PostgreSQL WAL archives, validate timeline and sequence continuity, and flag missing sequence numbers as archive gaps.",
+    "Synthesize Point-In-Time Recovery (PITR) restores by identifying the base backup manifest, verifying redo LSN and timeline compatibility, and applying partial WAL replay up to the exact requested target timestamp.",
+    "Validate that RestoreDBInstanceToPointInTime requests specify a target timestamp strictly between EarliestRestorableTime and LatestRestorableTime.",
+    "Classify parameter group modifications: apply dynamic parameters immediately and mark static parameters (apply_type = static) as pending-reboot without immediate application.",
+    "Inherit default parameter family settings when applying custom parameter group overrides rather than overwriting family defaults.",
+    "Clear PendingRebootParameters flags only after all pending static parameters pass boot-time validation on restart.",
+    "Execute ResetDBParameterGroup by setting instance parameter_group_status to pending-reboot.",
+    "Verify read replica status, replication lag (bytes_behind_primary <= MaximumAllowedLagBytes), and LSN flush catch-up before executing PromoteReadReplica.",
+    "Revoke the write lease on the former primary instance during replica promotion to prevent split-brain dual-primary conditions.",
+    "Update DNS and VIP routing endpoints atomically upon replica promotion so read/write traffic is redirected to the promoted primary.",
+    "Enforce leader lease acquisition and lease TTL fencing before executing automatic Multi-AZ failover.",
+    "Distinguish direct database TCP port health probes from control plane database connection pool latency to avoid false-positive failovers.",
+    "Flush network route tables and issue gratuitous ARP announcements during floating VIP failover migration.",
+    "Enqueue EventBridge outbox notifications transactionally inside the same database transaction as instance state transitions.",
+    "Filter EventBridge subscriptions by SourceType (e.g. db-instance vs db-parameter-group) and SourceIdentifier correctly.",
+    "Generate deterministic EventIdentifier hashes on outbox retries to prevent duplicate event notification deliveries.",
+    "Record delivery failure evidence in event_delivery_audit when event notification deliveries exhaust maximum retries.",
+    "Write atomic transaction WAL checkpoints prior to database transaction commits during instance state transitions.",
+    "Check transaction checkpoints during control plane restart to skip already completed operations and avoid duplicate snapshot or restore executions.",
+    "Enforce multi-tenant account, region, and tenant_id isolation across all describe and list API queries.",
+    "Publish deterministic reports to /app/rds/out/rds-snapshot.json with canonical formatting, sorted dictionary keys, and repeatable SHA-256 report digests."
+  ],
+  "preservation_requirements": [
+    "Preserve documented CLI commands, HTTP API routes, database schemas, and output paths at /app/rds/out/rds-snapshot.json.",
+    "Keep the Go/Python architecture, PostgreSQL migration scripts, and offline protocol lab boundaries intact.",
+    "Do not mutate control plane seed datasets or test fixtures outside documented state and output paths."
+  ],
+  "compatibility_requirements": [
+    "Maintain compatibility with configuration files under /app/rds/config, migrations under /app/rds/db/migrations, and contracts under /app/rds/docs.",
+    "Treat technical contract at /app/rds/docs/operator-contract.md as binding.",
+    "Generate 14,800 deterministic synthetic primary records across DB instances, parameter groups, WAL manifests, snapshots, events, and metrics without live AWS calls."
+  ],
+  "safety_requirements": [
+    "Deterministic execution must use the local RDS protocol lab and must not contact live AWS RDS APIs or external networks.",
+    "Never leak database master passwords, encryption keys, or volatile runtime facts into output reports or state checkpoints.",
+    "Invalid requests, forbidden parameter modifications, or unauthenticated API calls must fail closed without corrupting control plane state."
+  ],
+  "referenced_docs": [
+    "/app/rds/docs/operator-contract.md",
+    "/app/rds/docs/pitr-wal-contract.md",
+    "/app/rds/docs/parameter-group-contract.md",
+    "/app/rds/docs/failover-replica-contract.md"
+  ],
+  "required_outputs": [
+    {"path":"/app/rds/out/rds-snapshot.json","notes":"Deterministic control plane state summary with stable semantic fields and SHA-256 digest."},
+    {"path":"/app/rds/out/instances.jsonl","notes":"Canonical visible DBInstances and status."},
+    {"path":"/app/rds/out/events.jsonl","notes":"Outbox notifications and delivery audit trail."},
+    {"path":"/app/rds/out/health.json","notes":"Health probes, replication lag, and readiness state."}
+  ],
+  "source_task_commit": "feb4d04e4fc7a6873607c2443037febff7130626",
+  "control_plane_commit": "feb4d04e4fc7a6873607c2443037febff7130626",
+  "private_sources_excluded": true
+}

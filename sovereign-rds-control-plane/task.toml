@@ -1,0 +1,30 @@
+version = "2.0"
+name = "sovereign-rds-control-plane"
+category = "Software"
+subcategory = "Systems"
+tags = ["rds", "postgresql", "control-plane", "wal", "pitr", "high-availability"]
+languages = ["python", "sql", "yaml", "bash"]
+difficulty = "advanced"
+expert_time_estimate_hours = 20
+artifacts = ["/app/rds"]
+
+[metadata]
+author_name = "anonymous"
+author_email = "anonymous@example.com"
+custom_docker_compose = true
+is_multi_container = true
+
+[verifier]
+timeout_sec = 3600
+environment_mode = "separate"
+
+[agent]
+timeout_sec = 9000
+
+[environment]
+network_mode = "public"
+build_timeout_sec = 2400
+cpus = 2
+memory_mb = 8192
+storage_mb = 10240
+workdir = "/app/rds"

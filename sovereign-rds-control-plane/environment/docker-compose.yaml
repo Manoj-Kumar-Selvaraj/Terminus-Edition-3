@@ -1,0 +1,47 @@
+services:
+  postgres:
+    image: postgres:16-bookworm@sha256:60f4761b9035e0b8d5218f701a8c3382f641bf12b1604822574cf5be3baeb537
+    environment:
+      POSTGRES_DB: rds_control_plane
+      POSTGRES_USER: rds_admin
+      POSTGRES_PASSWORD: rds_local_secret
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U rds_admin -d rds_control_plane"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  rds-api:
+    build: .
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://rds_admin:rds_local_secret@postgres:5432/rds_control_plane
+      PYTHONPATH: /app/rds
+    volumes:
+      - ./state:/app/rds/state
+      - ./out:/app/rds/out
+    ports:
+      - "8080:8080"
+    command: ["/app/rds/bin/rdsd"]
+
+  rds-worker:
+    build: .
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://rds_admin:rds_local_secret@postgres:5432/rds_control_plane
+      PYTHONPATH: /app/rds
+    volumes:
+      - ./state:/app/rds/state
+      - ./out:/app/rds/out
+    command: ["/app/rds/bin/rds-worker"]
+
+volumes:
+  postgres_data:

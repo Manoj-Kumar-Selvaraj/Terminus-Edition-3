@@ -1,0 +1,20 @@
+- Complete the inherited Python and PostgreSQL sovereign RDS-compatible control plane at `/app/rds` so DB instances, WAL-backed PITR restores, parameter group apply modes, read replica promotion, multi-AZ failover fencing, and event outbox notifications achieve policy-compliant, restart-safe readiness.
+- Operate the control plane through `/app/rds/bin/rdsd`, `/app/rds/bin/rds-worker`, and `/app/rds/bin/rdsctl` against PostgreSQL 16.
+- Accept DBInstance modification requests (instance class, storage, retention) only when instance status is `AVAILABLE` and enforce monotonic storage allocation growth.
+- Enforce `DeletionProtection = true` to reject `DeleteDBInstance` calls regardless of whether `FinalDBSnapshotIdentifier` is specified.
+- Process `RebootDBInstance` calls by reloading configuration and applying pending static parameters marked `pending-reboot`.
+- Ingest PostgreSQL WAL archives, validate sequence and timeline continuity, and flag sequence gaps as archive errors.
+- Synthesize Point-In-Time Recovery (PITR) restores by matching base backup manifests, verifying LSN and timeline compatibility, and applying partial WAL replay to the target timestamp.
+- Validate `RestoreDBInstanceToPointInTime` target timestamps strictly between `EarliestRestorableTime` and `LatestRestorableTime`.
+- Classify parameter group modifications: apply dynamic parameters immediately and mark static parameters (`apply_type = static`) as `pending-reboot`.
+- Inherit default parameter family settings when applying custom parameter group overrides rather than overwriting family defaults.
+- Clear `PendingRebootParameters` flags only after all modified static parameters pass boot-time validation on restart.
+- Execute `ResetDBParameterGroup` by setting instance `parameter_group_status` to `pending-reboot`.
+- Verify read replica replication lag (`bytes_behind_primary <= MaximumAllowedLagBytes`) and LSN catch-up before executing `PromoteReadReplica`.
+- Revoke the write lease on the former primary instance during replica promotion to prevent split-brain dual-primary writes.
+- Update DNS and VIP routing endpoints atomically upon replica promotion so read/write traffic routes to the promoted primary.
+- Enforce leader lease acquisition and lease TTL fencing before executing automatic Multi-AZ failover.
+- Distinguish direct database TCP port health probes from control plane database connection pool latency to prevent false-positive failovers.
+- Enqueue EventBridge outbox notifications transactionally inside the same database transaction as instance state transitions, filtering by `SourceType` and `SourceIdentifier`.
+- Record delivery failure evidence in `event_delivery_audit` when notifications exhaust maximum retries, using deterministic `EventIdentifier` hashes.
+- Publish deterministic outputs at `/app/rds/out/rds-snapshot.json`, `/app/rds/out/instances.jsonl`, `/app/rds/out/events.jsonl`, and `/app/rds/out/health.json` with stable schemas, ordering, encoding, and SHA-256 digests.

@@ -1,0 +1,20 @@
+#!/usr/bin/env python3
+"""Generate deterministic AWS RDS estate fixtures."""
+import sys
+import asyncio
+from rds import fixture_generator, config
+
+async def main():
+    cfg = config.load_config()
+    count = await fixture_generator.generate_estate(cfg)
+    print(f"Generated {count} primary records")
+    
+    if count != 14800:
+        print(f"ERROR: Expected exactly 14,800 records, got {count}", file=sys.stderr)
+        sys.exit(1)
+
+if __name__ == "__main__":
+    try:
+        asyncio.run(main())
+    except KeyboardInterrupt:
+        sys.exit(0)

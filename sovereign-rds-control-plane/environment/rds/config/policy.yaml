@@ -1,0 +1,25 @@
+lifecycle_policy:
+  allow_storage_shrink: false
+  deletion_protection_bypass_allowed: false
+  allowed_instance_statuses_for_modify:
+    - AVAILABLE
+
+parameter_policy:
+  static_apply_method: pending-reboot
+  dynamic_apply_method: immediate
+  clear_pending_reboot_on_boot_validation_failure: false
+
+replication_policy:
+  maximum_allowed_lag_bytes: 10485760
+  require_lsn_catchup_before_promote: true
+  revoke_old_primary_write_lease_on_promote: true
+
+failover_policy:
+  lease_ttl_sec: 15
+  distinguish_direct_port_health_probe: true
+  flush_routes_on_vip_migration: true
+
+outbox_policy:
+  transactional_enqueue: true
+  strict_source_type_filtering: true
+  deduplicate_by_event_identifier_hash: true
