@@ -231,6 +231,22 @@ def expect_no_forwarding(host: str, port: int) -> None:
         return
 
 
+def wait_listener_echo(host: str, port: int, payload: bytes = b"ping", timeout: float = 15.0) -> None:
+    deadline = time.time() + timeout
+    last_error: Exception | None = None
+    while time.time() < deadline:
+        try:
+            with socket.create_connection((host, port), timeout=2) as client:
+                client.settimeout(2.0)
+                client.sendall(payload)
+                if recv_all(client, len(payload)) == payload:
+                    return
+        except (OSError, ConnectionError, TimeoutError) as exc:
+            last_error = exc
+            time.sleep(0.2)
+    raise TimeoutError(f"listener {host}:{port} did not recover echo service: {last_error}")
+
+
 def scenario_least_connections() -> dict[str, Any]:
     desired = scenario_desired()
     group = desired["target_groups"][0]
@@ -468,7 +484,13 @@ def test_p2p_binaries_and_catalog_present() -> None:
     assert DATAPLANE.is_file()
     assert LBCTL.is_file()
     assert SCENARIO.is_file()
-    assert (ROOT / "config" / "fleet.json").is_file()
+    fleet_path = ROOT / "config" / "fleet.json"
+    assert fleet_path.is_file()
+    fleet = json.loads(fleet_path.read_text(encoding="utf-8"))
+    nodes = fleet.get("nodes")
+    assert isinstance(nodes, list) and len(nodes) == 24
+    zones = {str(node.get("zone")) for node in nodes if isinstance(node, dict)}
+    assert zones == {"zone-a", "zone-b", "zone-c"}
 
 
 def test_p2p_validate_rejects_invalid_policy(lab_state: Path, control_state: Path, dataplane_state: Path) -> None:
@@ -971,6 +993,10 @@ def test_f2p_readiness_true_after_activate(lab_state: Path, control_state: Path,
         wait_active(stack["management"])
         status, payload = http_json(f"{stack['management']}/ready")
         assert status == 200 and isinstance(payload, dict) and payload.get("ready") is True
+        dp_status, dp_payload = http_json(f"http://127.0.0.1:{stack['status_port']}/status")
+        assert dp_status == 200 and isinstance(dp_payload, dict)
+        assert isinstance(dp_payload.get("connections"), int)
+        assert dp_payload.get("connections", -1) >= 0
 
 
 # --- REQ_PROTOCOL ---
@@ -998,7 +1024,7 @@ def test_f2p_metrics_labels_bounded(lab_state: Path, control_state: Path, datapl
             time.sleep(0.2)
         metrics = http_text(f"{stack['management']}/metrics")
         generation_labels = [line for line in metrics.splitlines() if "generation=" in line]
-        assert len(generation_labels) <= 2
+        assert generation_labels == [], "metrics must not attach generation= labels"
 
 
 def test_f2p_torn_control_frame_does_not_advance_authority(lab_state: Path, control_state: Path, dataplane_state: Path) -> None:
@@ -1141,6 +1167,34 @@ def test_f2p_fail_open_skips_disabled_targets(lab_state: Path, control_state: Pa
         assert apply(stack["management"], write_desired(lab_state, desired, "failopen.json"), "failopen-1")[0] in {200, 202}
         wait_active(stack["management"])
         expect_no_forwarding("127.0.0.1", 18001)
+
+
+def test_f2p_fail_open_includes_unhealthy_targets(lab_state: Path, control_state: Path, dataplane_state: Path) -> None:
+    """With fail_open=true, unhealthy-only pools must keep forwarding (unlike fail_open=false)."""
+    desired = scenario_active_health_fail()
+    desired["target_groups"][0]["fail_open"] = True
+    desired["target_groups"][0]["zone_policy"] = "same_zone_preferred"
+    with running_stack(lab_state, control_state, dataplane_state) as stack:
+        assert apply(stack["management"], write_desired(lab_state, desired, "failopen-unhealthy.json"), "failopen-unhealthy")[0] in {
+            200,
+            202,
+        }
+        wait_active(stack["management"])
+        # Allow active probes to cross unhealthy_threshold; fail-open must still select the target.
+        time.sleep(2.0)
+        recovered = False
+        deadline = time.time() + 6.0
+        while time.time() < deadline:
+            try:
+                with socket.create_connection(("127.0.0.1", 18001), timeout=2) as client:
+                    client.settimeout(2.0)
+                    client.sendall(b"ok")
+                    if recv_all(client, 2) == b"ok":
+                        recovered = True
+                        break
+            except (OSError, ConnectionError, TimeoutError):
+                time.sleep(0.3)
+        assert recovered, "fail_open=true must continue forwarding when only unhealthy targets remain"
 
 
 def test_f2p_target_incarnation_increments_on_reregister(lab_state: Path, control_state: Path, dataplane_state: Path) -> None:
@@ -1320,6 +1374,7 @@ def test_f2p_checkpoint_generation_directory_padding(lab_state: Path, control_st
 
 
 def test_f2p_dataplane_restart_recovers_active_generation(lab_state: Path, control_state: Path, dataplane_state: Path) -> None:
+    """Checkpoint recovery must restore listeners without a fresh control-plane republish."""
     management_port = free_port()
     control_port = free_port()
     status_port = free_port()
@@ -1328,41 +1383,135 @@ def test_f2p_dataplane_restart_recovers_active_generation(lab_state: Path, contr
     env["SOVEREIGN_LB_HOME"] = str(ROOT)
     with managed_process([str(LAB), "start", "--state", str(lab_state)], cwd=ROOT, env=env):
         wait_port("127.0.0.1", 19001, timeout=15)
-        with managed_process(
+        control = subprocess.Popen(
             [str(CONTROL), "-management", f"127.0.0.1:{management_port}", "-control", f"127.0.0.1:{control_port}", "-state", str(control_state)],
-            cwd=ROOT,
+            cwd=str(ROOT),
             env=env,
-        ):
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
+        dataplane: subprocess.Popen[str] | None = None
+        stopped_control = False
+        try:
             wait_port("127.0.0.1", management_port, timeout=15)
             endpoint = f"http://127.0.0.1:{management_port}"
-            proc = subprocess.Popen([str(DATAPLANE), "--config", str(node_config)], cwd=str(ROOT), env=env, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            dataplane = subprocess.Popen(
+                [str(DATAPLANE), "--config", str(node_config)],
+                cwd=str(ROOT),
+                env=env,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+            )
+            wait_port("127.0.0.1", status_port, timeout=15)
+            assert apply(endpoint, desired_path(lab_state), "restart-1")[0] in {200, 202}
+            wait_active(endpoint)
+            assert list(dataplane_state.glob("generation-*")), "expected a verified dataplane checkpoint before restart"
+
+            # Stop control first so reconnect cannot re-prepare/activate and mask checkpoint load.
+            control.terminate()
             try:
-                wait_port("127.0.0.1", status_port, timeout=15)
-                assert apply(endpoint, desired_path(lab_state), "restart-1")[0] in {200, 202}
-                wait_active(endpoint)
-                proc.kill()
-                proc.wait(timeout=5)
-                proc = subprocess.Popen([str(DATAPLANE), "--config", str(node_config)], cwd=str(ROOT), env=env, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-                wait_port("127.0.0.1", status_port, timeout=15)
-                wait_port("127.0.0.1", 18001, timeout=15)
-                with socket.create_connection(("127.0.0.1", 18001), timeout=5) as client:
-                    client.sendall(b"ping")
-                    assert recv_all(client, 4) == b"ping"
-            finally:
-                if proc.poll() is None:
-                    proc.kill()
-                    proc.wait(timeout=3)
+                control.wait(timeout=5)
+            except subprocess.TimeoutExpired:
+                control.kill()
+                control.wait(timeout=2)
+            stopped_control = True
+
+            assert dataplane is not None
+            dataplane.kill()
+            dataplane.wait(timeout=5)
+            dataplane = subprocess.Popen(
+                [str(DATAPLANE), "--config", str(node_config)],
+                cwd=str(ROOT),
+                env=env,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+            )
+            wait_port("127.0.0.1", status_port, timeout=15)
+            status, payload = http_json(f"http://127.0.0.1:{status_port}/status")
+            assert status == 200 and isinstance(payload, dict)
+            assert payload.get("ready") is True
+            assert int(payload.get("active_generation") or 0) >= 1
+            assert int(payload.get("listener_count") or 0) >= 1
+            wait_listener_echo("127.0.0.1", 18001)
+        finally:
+            if dataplane is not None and dataplane.poll() is None:
+                dataplane.kill()
+                dataplane.wait(timeout=3)
+            if not stopped_control and control.poll() is None:
+                control.kill()
+                control.wait(timeout=3)
 
 
 def test_f2p_corrupt_current_pointer_falls_back(lab_state: Path, control_state: Path, dataplane_state: Path) -> None:
-    with running_stack(lab_state, control_state, dataplane_state) as stack:
-        assert apply(stack["management"], desired_path(lab_state), "fallback-1")[0] in {200, 202}
-        wait_active(stack["management"])
-        current = dataplane_state / "CURRENT"
-        current.write_text("999999\n", encoding="utf-8")
-        status, payload = http_json(f"http://127.0.0.1:{stack['status_port']}/status")
-        assert status == 200 and isinstance(payload, dict)
-        assert payload.get("active_generation", 0) >= 1
+    """Corrupt CURRENT must fall back to the highest verified generation after dataplane reload."""
+    management_port = free_port()
+    control_port = free_port()
+    status_port = free_port()
+    node_config = write_node_config(dataplane_state, NODE_CONFIG, control_port, status_port)
+    env = os.environ.copy()
+    env["SOVEREIGN_LB_HOME"] = str(ROOT)
+    with managed_process([str(LAB), "start", "--state", str(lab_state)], cwd=ROOT, env=env):
+        wait_port("127.0.0.1", 19001, timeout=15)
+        control = subprocess.Popen(
+            [str(CONTROL), "-management", f"127.0.0.1:{management_port}", "-control", f"127.0.0.1:{control_port}", "-state", str(control_state)],
+            cwd=str(ROOT),
+            env=env,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
+        dataplane: subprocess.Popen[str] | None = None
+        stopped_control = False
+        try:
+            wait_port("127.0.0.1", management_port, timeout=15)
+            endpoint = f"http://127.0.0.1:{management_port}"
+            dataplane = subprocess.Popen(
+                [str(DATAPLANE), "--config", str(node_config)],
+                cwd=str(ROOT),
+                env=env,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+            )
+            wait_port("127.0.0.1", status_port, timeout=15)
+            assert apply(endpoint, desired_path(lab_state), "fallback-1")[0] in {200, 202}
+            wait_active(endpoint)
+            assert list(dataplane_state.glob("generation-*")), "expected verified generation content before CURRENT corruption"
+
+            current = dataplane_state / "CURRENT"
+            current.write_text("999999\n", encoding="utf-8")
+
+            # Isolate from control republish and force startup CURRENT fallback.
+            control.terminate()
+            try:
+                control.wait(timeout=5)
+            except subprocess.TimeoutExpired:
+                control.kill()
+                control.wait(timeout=2)
+            stopped_control = True
+
+            assert dataplane is not None
+            dataplane.kill()
+            dataplane.wait(timeout=5)
+            dataplane = subprocess.Popen(
+                [str(DATAPLANE), "--config", str(node_config)],
+                cwd=str(ROOT),
+                env=env,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+            )
+            wait_port("127.0.0.1", status_port, timeout=15)
+            status, payload = http_json(f"http://127.0.0.1:{status_port}/status")
+            assert status == 200 and isinstance(payload, dict)
+            assert payload.get("ready") is True
+            assert int(payload.get("active_generation") or 0) >= 1
+            assert int(payload.get("listener_count") or 0) >= 1
+            wait_listener_echo("127.0.0.1", 18001)
+        finally:
+            if dataplane is not None and dataplane.poll() is None:
+                dataplane.kill()
+                dataplane.wait(timeout=3)
+            if not stopped_control and control.poll() is None:
+                control.kill()
+                control.wait(timeout=3)
 
 
 def test_f2p_control_plane_restart_restores_authority_fences(lab_state: Path, control_state: Path, dataplane_state: Path) -> None:
