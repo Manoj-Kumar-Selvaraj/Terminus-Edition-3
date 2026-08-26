@@ -1,0 +1,219 @@
+{
+  "authority": {
+    "control_plane_commit": "df7ef7569e2947b9f0bf7cf89ed4dec6c2a5a1fe",
+    "policy_versions": {},
+    "task_commit": "475ff014df7bae9ab6b0bb49fcab7454e40195ba",
+    "task_id": "ansible-fleet-configuration-recovery"
+  },
+  "disposition": "ADVANCE",
+  "evidence_refs": [],
+  "invocation_id": "inv_5b31e075a41ef7e5c44cfa872edb85e1104e24f21e04831fc7aa9e2deae3f124",
+  "invocation_snapshot": {
+    "acceptance_predicates": {},
+    "authority": {
+      "control_plane_commit": "df7ef7569e2947b9f0bf7cf89ed4dec6c2a5a1fe",
+      "policy_versions": {},
+      "task_commit": "475ff014df7bae9ab6b0bb49fcab7454e40195ba",
+      "task_id": "ansible-fleet-configuration-recovery"
+    },
+    "evidence": {
+      "authorized_evidence_classes": [
+        "CI_RUNTIME_EVIDENCE",
+        "CONTROL_PLANE_POLICY",
+        "SOLVER_VISIBLE_TASK"
+      ],
+      "evidence_required": [
+        "task structure",
+        "task.toml",
+        "Docker/verifier/solution layout",
+        "artifact/isolation checks"
+      ],
+      "excluded_evidence_classes": [
+        "CURRENT_REVIEW_PACKET",
+        "DURABLE_SESSION_STATE",
+        "FINAL_PACKAGE_EVIDENCE",
+        "MODEL_TRIAL_EVIDENCE",
+        "PRIOR_REVIEW_RESULTS",
+        "PRIVATE_CREATION_DESIGN",
+        "PUBLIC_REFERENCE",
+        "SOLUTION_ORACLE",
+        "VERIFIER_PRIVATE"
+      ],
+      "mandatory_exact_reads": [
+        "TERMINUS_3_AI_INSTRUCTIONS.md",
+        ".terminus/reviewers/REVIEWER_CHECKLIST.md",
+        ".terminus/agents/QUALITY_AGENT_PROMPTS.md"
+      ],
+      "retrieval_mode": "EXACT_ONLY"
+    },
+    "ignored_input_count": 0,
+    "inputs": {
+      "optional": {},
+      "required": {
+        "ACTIVE_FORMAT_VALIDATORS": [
+          "flat Edition-3 task layout",
+          "task.toml canonical fields and absolute paths",
+          "separate verifier packaging/reward contract",
+          "solution/tests isolation",
+          "shell LF/shebang contract",
+          "Docker build-context path validity",
+          "post-Q2 attribution clean-state validation",
+          "verifier F2P artifact-native controller runtime checks"
+        ],
+        "CREATION_RULE_CONTEXT": {
+          "CONTROL_PLANE_COMMIT": "df7ef7569e2947b9f0bf7cf89ed4dec6c2a5a1fe",
+          "CREATION_PROFILE": "large_system_strict",
+          "KNOWN_POLICY_CONFLICTS": [],
+          "NETWORK_ENVIRONMENT_CONSTRAINTS": "public task network with separate verifier environment"
+        },
+        "CURRENT_TASK_TREE": {
+          "environment": {
+            ".dockerignore": "present and excludes git/cache/private control-plane/solution/tests material",
+            "Dockerfile": "solver-visible starter remains rooted at /app/fleet-automation with Ansible 2.9.27"
+          },
+          "snapshot_commit": "fdf8fbf78aabe59a1dc4403f51deda8657b17333",
+          "solution": {
+            "cli_bootstrap": "temporary isolated Ansible 12 virtualenv plus explicit transient ANSIBLE_CONFIG binding, explicit default Vault encryption identity, and native Vault-file namespace preservation",
+            "entrypoint": "solution/solve.sh",
+            "repair_body": "solution/repair.sh",
+            "runtime_target": "/app/fleet-automation"
+          },
+          "task_root": "ansible-fleet-configuration-recovery",
+          "task_toml": {
+            "agent_timeout_sec": 7200,
+            "artifacts": [
+              "/app/fleet-automation"
+            ],
+            "network_mode": "public",
+            "verifier_environment_mode": "separate",
+            "verifier_timeout_sec": 1800,
+            "version": "2.0",
+            "workdir": "/app/fleet-automation"
+          },
+          "tests": {
+            "Dockerfile": "separate verifier image",
+            "behavioral_cases": "27 F2P / 6 P2P",
+            "f2p_controller_binding": "controller runtime/config/roles F2P checks read durable agent Dockerfile and project ansible.cfg rather than verifier-env Ansible",
+            "requirements_lock": "pinned verifier dependencies including ansible==12.0.0 for grading tooling only",
+            "test_sh": "reward/CTRF runner"
+          },
+          "top_level": [
+            ".gitattributes",
+            "README.md",
+            "environment/",
+            "instruction.md",
+            "solution/",
+            "task.toml",
+            "tests/"
+          ]
+        }
+      }
+    },
+    "invocation_id": "inv_5b31e075a41ef7e5c44cfa872edb85e1104e24f21e04831fc7aa9e2deae3f124",
+    "learning": {
+      "context_hash": "sha256:bb84a513aa2b6e4374d691759c4a6edf94169f479f4611e9091643b9f279ccfc",
+      "lessons": [],
+      "mode": "GENERALIZED_LESSONS_PLUS_OWNED_REMEDIATIONS",
+      "raw_feedback_exposed": false,
+      "raw_historical_findings_exposed": false,
+      "registry_heads": {
+        "feedback": "GENESIS",
+        "findings": "GENESIS",
+        "lessons": "GENESIS",
+        "patterns": "GENESIS",
+        "remediations": "GENESIS"
+      },
+      "remediations": []
+    },
+    "missing_required_inputs": [],
+    "output_contract": {
+      "allowed_status_values": [
+        "FORMAT_PASS",
+        "FIXED",
+        "BLOCKED",
+        "POLICY_CONFLICT"
+      ],
+      "deterministic_validators": [
+        "current task-format/packaging CI and validators"
+      ],
+      "optional_fields": [],
+      "persisted_artifacts": [],
+      "required_fields": [
+        "CHECKS",
+        "RERUN"
+      ],
+      "semantic_reviewers": [
+        "Compliance Auditor"
+      ]
+    },
+    "readiness": "READY",
+    "retrieval": {
+      "query": null,
+      "retrieved_chars": 0,
+      "retrieved_context": [],
+      "status": "NOT_REQUESTED"
+    },
+    "routing": {
+      "failure_routes": {
+        "FORMAT_DEFECT": "Q7 Task Format Enforcer",
+        "POLICY_CONFLICT": "Creation Controller",
+        "SEMANTIC_DEFECT": "route to semantic owner"
+      },
+      "stale_on": [
+        "task structure change",
+        "task.toml change",
+        "Docker/test/solution/package change",
+        "format-rule change"
+      ],
+      "success_transition": "ASSEMBLY"
+    },
+    "schema_version": "1.0",
+    "stage": {
+      "lifecycle": "creation",
+      "owner": "Q7 Task Format Enforcer",
+      "role_class": "FIXER",
+      "role_id": "Q7_TASK_FORMAT_ENFORCER",
+      "stage_id": "FORMAT_GATE"
+    }
+  },
+  "outputs": {
+    "CHECKS": [
+      "PASS: repaired logical snapshot fdf8fbf78aabe59a1dc4403f51deda8657b17333 is a direct descendant of 5aa2ea443431e10d4bbbe4bfe364c1e0f080665a.",
+      "PASS: only tests/test_fleet_recovery.py changed; starter, instruction, solution, task metadata and topology are unchanged.",
+      "PASS: F2P controller runtime/config/roles checks now bind to durable agent Dockerfile pin and project-local ansible.cfg instead of verifier-image Ansible.",
+      "PASS: starter Ansible 2.9.27 challenge remains intact; F2P_COUNT=27 and P2P_COUNT=6 are unchanged.",
+      "PASS: the change addresses VERIFIER_EMPIRICAL_CLASSIFICATION_FAILURE without weakening Vault, orchestration, schema, Jinja, convergence or preservation requirements.",
+      "PASS: flat package layout, separate verifier packaging and solution/tests isolation remain valid."
+    ],
+    "RERUN": "Q2 verifier F2P artifact-native repair attributed; snapshot ready for downstream replay."
+  },
+  "record_id": "rec_81f9dd48f05eea38e07f0bf2aa73971af0006f837ddb16df04f01c05c577a7b9",
+  "role_id": "Q7_TASK_FORMAT_ENFORCER",
+  "schema_version": "1.0",
+  "stage_id": "FORMAT_GATE",
+  "status": "FORMAT_PASS",
+  "task_lineage": {
+    "input_task_commit": "475ff014df7bae9ab6b0bb49fcab7454e40195ba",
+    "output_task_commit": "fdf8fbf78aabe59a1dc4403f51deda8657b17333",
+    "task_changed": true
+  },
+  "transition": {
+    "action": "ADVANCE",
+    "requires_state_validation": false,
+    "target": "ASSEMBLY",
+    "target_kind": "STAGE"
+  },
+  "validation": {
+    "acceptance_predicates_satisfied": true,
+    "evidence_binding_satisfied": true,
+    "evidence_refs_count": 0,
+    "invocation_identity_valid": true,
+    "invocation_policy_valid": true,
+    "output_keys_valid": true,
+    "required_outputs_satisfied": true,
+    "retrieval_context_authorized": true,
+    "status_legal": true,
+    "task_commit_change_authorized": true,
+    "task_lineage_valid": true
+  }
+}
