@@ -49,6 +49,11 @@ fi
 ln -s "$WORK/ansible.cfg" "$TARGET/ansible.cfg"
 ln -s "$WORK/.runtime-vault-pass" "$TARGET/.runtime-vault-pass"
 
+# repair.sh intentionally declares the same password source in project config
+# and on the historical vault command line. Ansible 2.19 treats those as two
+# default vault identities, so make the encryption identity explicit while
+# preserving the inherited repair body and password source semantics.
+export ANSIBLE_VAULT_ENCRYPT_IDENTITY=default
 "$WORK/solution/repair.sh"
 
 # Persist a runtime-native configuration after the transient repository-layout
