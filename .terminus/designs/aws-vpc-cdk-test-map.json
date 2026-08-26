@@ -1,0 +1,25 @@
+{
+  "schema_version": "1.0",
+  "task": "aws-vpc-cdk",
+  "requirements": {
+    "R_PACKAGE": "Node.js CDK package exposes package.json, bin/synth.js, and lib/network-fabric.js with pinned CDK dependencies",
+    "R_VPC": "VPC DNS, stable tags, secondary IPv4 CIDR, IPv6 association, and required outputs",
+    "R_SUBNETS": "public/private/database/intra subnets across AZs with tags and IPv6 assignment",
+    "R_NAT": "per-AZ, single-NAT, and disabled-NAT routing semantics",
+    "R_ENDPOINTS": "gateway/interface endpoints and endpoint security-group scoping",
+    "R_ACL_FLOW": "tier-specific NACLs and least-privilege VPC flow logs",
+    "R_VALIDATION": "fail-before-synthesis validation for invalid CIDR, endpoint, and NAT inputs",
+    "R_DETERMINISM": "identical input produces identical synthesized template content"
+  },
+  "tests": [
+    ["test_project_exports_a_cdk_construct_and_synth_entrypoint", "P2P", "R_PACKAGE"],
+    ["test_vpc_core_properties_secondary_cidr_and_outputs", "F2P", "R_VPC"],
+    ["test_all_subnet_tiers_are_synthesized_with_ipv6_and_tags", "F2P", "R_SUBNETS"],
+    ["test_nat_routes_are_per_az_and_database_subnets_are_isolated", "F2P", "R_NAT"],
+    ["test_gateway_and_interface_endpoints_are_scoped", "F2P", "R_ENDPOINTS"],
+    ["test_network_acls_and_flow_logs_are_present", "F2P", "R_ACL_FLOW"],
+    ["test_configuration_mutations_change_nat_behavior", "F2P", "R_NAT"],
+    ["test_validation_fails_before_template_for_bad_inputs", "F2P", "R_VALIDATION"],
+    ["test_synth_is_deterministic", "P2P", "R_DETERMINISM"]
+  ]
+}

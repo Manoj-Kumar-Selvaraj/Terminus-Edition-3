@@ -1,0 +1,90 @@
+{
+  "schema_version": "1.0",
+  "profile": "large_system",
+  "task_kind": "infrastructure",
+  "resource_count": 42,
+  "strict_scale_note": "Synthesis-only infrastructure module: no deployment/runtime service is required by the task idea, so strict LOC/resource counts are treated as diagnostics while preserving coupled VPC behavior coverage.",
+  "architecture": {
+    "root": "/app/cdk-vpc",
+    "entrypoints": ["bin/synth.js"],
+    "packages": [
+      "lib.network-fabric",
+      "config.payments-network",
+      "docs.vpc-cdk-contract"
+    ],
+    "state": [
+      "/app/config/payments-network.json",
+      "/app/cdk.out/FleetVpc.template.json"
+    ],
+    "docs_plan": ["docs/vpc-cdk-contract.md"]
+  },
+  "production_characteristics": [
+    "CDK module emits native CloudFormation resources rather than an ad hoc JSON report",
+    "network tiers interact through route tables, NAT topology, endpoints, ACLs, and outputs",
+    "validation blocks unsafe or impossible network intent before synthesis",
+    "configuration mutations change synthesized resource topology deterministically"
+  ],
+  "root_cause_clusters": {
+    "RC1_SUBNET_TIER_MODEL": "The starter treats only public/private tiers as first-class and drops database/intra topology.",
+    "RC2_ADDRESSING_VALIDATION": "The starter accepts CIDR and AZ inputs without enforcing containment, overlap, or NAT coverage.",
+    "RC3_NAT_ROUTING": "The starter does not model shared vs per-AZ NAT routing or database isolation.",
+    "RC4_IPV6_EGRESS": "The starter omits Amazon-provided IPv6 assignment and egress-only private routing.",
+    "RC5_ENDPOINT_SCOPE": "The starter omits gateway/interface endpoints and service/tier validation.",
+    "RC6_GUARDRAILS_OBSERVABILITY": "The starter omits network ACLs and flow-log delivery resources.",
+    "RC7_DETERMINISM_OUTPUTS": "The starter does not expose the stable outputs and logical naming expected by downstream reviewers."
+  },
+  "defects": [
+    {"id": "D01", "root_cause": "RC1_SUBNET_TIER_MODEL", "component": "lib.network-fabric.subnets", "observable_failure": "database subnet tier is absent from the synthesized template", "partial_fix_trap": "Adding database subnets alone still leaves route isolation and endpoint table selection wrong."},
+    {"id": "D02", "root_cause": "RC1_SUBNET_TIER_MODEL", "component": "lib.network-fabric.subnets", "observable_failure": "intra subnet tier is absent from the synthesized template", "partial_fix_trap": "Adding intra subnets without isolated route tables leaks tier semantics."},
+    {"id": "D03", "root_cause": "RC1_SUBNET_TIER_MODEL", "component": "lib.network-fabric.tags", "observable_failure": "tier and AZ tags are incomplete for every subnet family", "partial_fix_trap": "Fixing tags on public subnets leaves private/database endpoint selection opaque."},
+    {"id": "D04", "root_cause": "RC2_ADDRESSING_VALIDATION", "component": "lib.network-fabric.validation", "observable_failure": "overlapping subnet CIDRs synthesize successfully", "partial_fix_trap": "Only comparing adjacent configured subnets misses overlaps after configuration reordering."},
+    {"id": "D05", "root_cause": "RC2_ADDRESSING_VALIDATION", "component": "lib.network-fabric.validation", "observable_failure": "subnets outside primary or secondary VPC CIDR boundaries synthesize successfully", "partial_fix_trap": "Checking only the primary CIDR blocks legitimate secondary-CIDR subnets."},
+    {"id": "D06", "root_cause": "RC2_ADDRESSING_VALIDATION", "component": "lib.network-fabric.validation", "observable_failure": "unknown subnet tiers are accepted and silently misrouted", "partial_fix_trap": "Rejecting unknown subnet tiers still leaves endpoint tiers unchecked."},
+    {"id": "D07", "root_cause": "RC2_ADDRESSING_VALIDATION", "component": "lib.network-fabric.validation", "observable_failure": "per-AZ NAT mode accepts an AZ with private subnets but no public subnet", "partial_fix_trap": "A single-NAT implementation can mask missing per-AZ coverage."},
+    {"id": "D08", "root_cause": "RC3_NAT_ROUTING", "component": "lib.network-fabric.nat", "observable_failure": "no NAT gateways are synthesized for private subnet egress", "partial_fix_trap": "Creating NAT gateways without route table wiring leaves private subnets dark."},
+    {"id": "D09", "root_cause": "RC3_NAT_ROUTING", "component": "lib.network-fabric.routes", "observable_failure": "private default routes do not target same-AZ NAT gateways", "partial_fix_trap": "Routing every private table to the first NAT fails AZ-failure isolation."},
+    {"id": "D10", "root_cause": "RC3_NAT_ROUTING", "component": "lib.network-fabric.routes", "observable_failure": "single NAT mode does not collapse private default routes onto one NAT", "partial_fix_trap": "Hardcoding one NAT breaks the default per-AZ topology."},
+    {"id": "D11", "root_cause": "RC3_NAT_ROUTING", "component": "lib.network-fabric.routes", "observable_failure": "database subnets receive internet default routes despite isolated intent", "partial_fix_trap": "Removing all database routes breaks explicitly enabled database NAT mode."},
+    {"id": "D12", "root_cause": "RC4_IPV6_EGRESS", "component": "lib.network-fabric.ipv6", "observable_failure": "Amazon-provided IPv6 VPC CIDR block is missing", "partial_fix_trap": "Adding the VPC block without subnet CIDRs produces unusable IPv6 subnets."},
+    {"id": "D13", "root_cause": "RC4_IPV6_EGRESS", "component": "lib.network-fabric.ipv6", "observable_failure": "public subnets do not route IPv6 traffic through the internet gateway", "partial_fix_trap": "Adding only public IPv6 leaves private egress semantics incomplete."},
+    {"id": "D14", "root_cause": "RC4_IPV6_EGRESS", "component": "lib.network-fabric.ipv6", "observable_failure": "private subnets do not route IPv6 egress through an egress-only internet gateway", "partial_fix_trap": "Using an internet gateway for private IPv6 breaks the isolation model."},
+    {"id": "D15", "root_cause": "RC5_ENDPOINT_SCOPE", "component": "lib.network-fabric.endpoints", "observable_failure": "gateway endpoints are not synthesized", "partial_fix_trap": "Creating endpoints without route table filtering attaches storage paths to public or intra tiers."},
+    {"id": "D16", "root_cause": "RC5_ENDPOINT_SCOPE", "component": "lib.network-fabric.endpoints", "observable_failure": "gateway endpoint unsupported services are accepted", "partial_fix_trap": "Validating gateway services does not validate interface service names."},
+    {"id": "D17", "root_cause": "RC5_ENDPOINT_SCOPE", "component": "lib.network-fabric.endpoints", "observable_failure": "interface endpoints are not synthesized", "partial_fix_trap": "Creating interface endpoints without private DNS changes application endpoint resolution."},
+    {"id": "D18", "root_cause": "RC5_ENDPOINT_SCOPE", "component": "lib.network-fabric.security", "observable_failure": "interface endpoint security group is missing TLS-only CIDR ingress", "partial_fix_trap": "A permissive security group passes connectivity but violates the safety contract."},
+    {"id": "D19", "root_cause": "RC6_GUARDRAILS_OBSERVABILITY", "component": "lib.network-fabric.acl", "observable_failure": "tier-specific network ACLs are not synthesized", "partial_fix_trap": "Creating ACLs without associations leaves subnets on the default ACL."},
+    {"id": "D20", "root_cause": "RC6_GUARDRAILS_OBSERVABILITY", "component": "lib.network-fabric.acl", "observable_failure": "configured NACL entries are not materialized", "partial_fix_trap": "Ingress-only entries miss egress safety behavior."},
+    {"id": "D21", "root_cause": "RC6_GUARDRAILS_OBSERVABILITY", "component": "lib.network-fabric.flowlogs", "observable_failure": "VPC flow log resource is absent", "partial_fix_trap": "FlowLog without IAM/log group cannot deliver CloudWatch events."},
+    {"id": "D22", "root_cause": "RC6_GUARDRAILS_OBSERVABILITY", "component": "lib.network-fabric.iam", "observable_failure": "flow-log IAM policy can use wildcard log permissions", "partial_fix_trap": "Narrowing actions without the log stream resource suffix breaks delivery."},
+    {"id": "D23", "root_cause": "RC7_DETERMINISM_OUTPUTS", "component": "lib.network-fabric.outputs", "observable_failure": "database and intra subnet outputs are absent", "partial_fix_trap": "Subnet outputs alone do not expose route table IDs needed by endpoint consumers."},
+    {"id": "D24", "root_cause": "RC7_DETERMINISM_OUTPUTS", "component": "lib.network-fabric.outputs", "observable_failure": "gateway endpoint IDs are absent from stack outputs", "partial_fix_trap": "Endpoint resources become hard to consume across stacks despite synthesis passing."},
+    {"id": "D25", "root_cause": "RC7_DETERMINISM_OUTPUTS", "component": "lib.network-fabric.naming", "observable_failure": "logical IDs and output names drift between synth runs or config ordering", "partial_fix_trap": "Sorting only tags does not stabilize construct IDs derived from unordered maps."}
+  ],
+  "causal_edges": [
+    {"from": "D01", "to": "D11"},
+    {"from": "D02", "to": "D23"},
+    {"from": "D03", "to": "D15"},
+    {"from": "D04", "to": "D09"},
+    {"from": "D05", "to": "D12"},
+    {"from": "D06", "to": "D16"},
+    {"from": "D07", "to": "D08"},
+    {"from": "D08", "to": "D09"},
+    {"from": "D09", "to": "D10"},
+    {"from": "D10", "to": "D07"},
+    {"from": "D11", "to": "D15"},
+    {"from": "D12", "to": "D13"},
+    {"from": "D13", "to": "D14"},
+    {"from": "D14", "to": "D11"},
+    {"from": "D15", "to": "D24"},
+    {"from": "D16", "to": "D15"},
+    {"from": "D17", "to": "D18"},
+    {"from": "D18", "to": "D17"},
+    {"from": "D19", "to": "D20"},
+    {"from": "D20", "to": "D11"},
+    {"from": "D21", "to": "D22"},
+    {"from": "D22", "to": "D21"},
+    {"from": "D23", "to": "D24"},
+    {"from": "D24", "to": "D15"},
+    {"from": "D25", "to": "D23"}
+  ]
+}

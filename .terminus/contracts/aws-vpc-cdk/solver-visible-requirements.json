@@ -1,0 +1,57 @@
+{
+  "contract_version": "1.0",
+  "task_id": "aws-vpc-cdk",
+  "requirement_contract_hash": "sha256:b32b851dfdc19e65f97d93bd3f848a65c35c1fd911136692dd84608587cb3eab",
+  "engineering_objective": "Complete a Node.js AWS CDK construct that synthesizes a production VPC baseline from a JSON network intent.",
+  "affected_system_location": "/app/cdk-vpc",
+  "required_end_state": "The package synthesizes a deterministic FleetVpc CloudFormation template under /app/cdk.out without AWS credentials or deployment.",
+  "functional_requirements": [
+    "Create a VPC with DNS hostnames and DNS support enabled, stable Name/Application/Environment-style tags, and optional secondary IPv4 CIDR associations.",
+    "Support optional Amazon-provided IPv6 allocation and assign deterministic IPv6 subnet CIDR blocks when enabled.",
+    "Create public, private, database, and intra subnet tiers across the configured availability zones with stable tier and AZ tags.",
+    "Create route tables and associations for every subnet tier without sharing private/database/intra tables in a way that hides tier-specific routing.",
+    "Route public IPv4 and IPv6 defaults through the internet gateway.",
+    "Create either one shared NAT gateway or one NAT gateway per AZ according to input flags, and route private IPv4 defaults through the selected NAT topology.",
+    "Keep database and intra tiers isolated unless database NAT routing is explicitly enabled.",
+    "Create gateway endpoints for supported services and attach them only to route tables selected by each endpoint tiers list.",
+    "Create interface endpoints for supported services on selected subnets with private DNS and a TLS-only endpoint security group scoped to private and database CIDRs.",
+    "Create tier-specific network ACLs and associate each ACL with every subnet in its tier.",
+    "Create CloudWatch VPC flow logs with an IAM delivery role and least-privilege log permissions when flow logs are enabled.",
+    "Expose stable CloudFormation outputs for VPC, tier subnet IDs, private/database route table IDs, and gateway endpoint IDs.",
+    "Fail before synthesis for overlapping CIDRs, unsupported endpoint services, unknown subnet tiers, endpoint tiers that do not exist, and missing public subnet coverage for required NAT routing.",
+    "The supported operator command is node bin/synth.js --config <json> --out <dir>."
+  ],
+  "preservation_requirements": [
+    "Do not require AWS credentials, deployment, live account lookups, or runtime internet access for synthesis.",
+    "Keep the package executable from a clean checkout using package.json, bin/synth.js, and lib/network-fabric.js.",
+    "Synthesis must be deterministic for identical input."
+  ],
+  "compatibility_requirements": [
+    "Use Node.js with aws-cdk-lib 2.155.0 and constructs 10.3.0.",
+    "The synthesized stack name must be FleetVpc.",
+    "The final template path must be /app/cdk.out/FleetVpc.template.json when the instruction command is run."
+  ],
+  "safety_requirements": [
+    "No AWS deployment or credential-dependent SDK calls.",
+    "No permissive 0.0.0.0/0 ingress on the interface endpoint security group.",
+    "No wildcard logs:* permission in the flow-log delivery policy."
+  ],
+  "referenced_docs": [
+    "/app/docs/vpc-cdk-contract.md"
+  ],
+  "required_outputs": [
+    {
+      "path": "/app/cdk.out/FleetVpc.template.json",
+      "schema": "AWS CloudFormation template JSON synthesized by CDK",
+      "notes": "Produced by the synth command from the submitted CDK module."
+    },
+    {
+      "path": "/app/cdk-vpc",
+      "schema": "Node.js package with package.json, bin/synth.js, and lib/network-fabric.js",
+      "notes": "Submitted artifact copied to the verifier."
+    }
+  ],
+  "source_task_commit": "bb52a978674c5c45d02db3500d45f53affc20244",
+  "control_plane_commit": "bb52a978674c5c45d02db3500d45f53affc20244",
+  "private_sources_excluded": true
+}
