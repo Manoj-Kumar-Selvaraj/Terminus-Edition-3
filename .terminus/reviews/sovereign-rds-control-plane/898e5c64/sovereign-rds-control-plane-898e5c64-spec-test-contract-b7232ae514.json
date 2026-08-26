@@ -1,0 +1,353 @@
+{
+  "schema_version": "3.0",
+  "role": "Spec-Test Contract Reviewer",
+  "review_id": "sovereign-rds-control-plane-898e5c64-spec-test-contract-b7232ae514",
+  "task": "sovereign-rds-control-plane",
+  "task_commit": "898e5c64efcb03cbbdf8b02cc5e54f884972da01",
+  "control_plane_commit": "898e5c64efcb03cbbdf8b02cc5e54f884972da01",
+  "protocol_policy_version": "2.2",
+  "prompt_policy_version": "2.2",
+  "role_policy_version": "1.1",
+  "role_contract_hash": "d2994789dc83b2c8a6b92201782ea9f3e5528a3a9d725c863c22efb6356e570e",
+  "context_packet": ".terminus/reviews/sovereign-rds-control-plane/898e5c64/sovereign-rds-control-plane-898e5c64-spec-test-contract-b7232ae514.packet.json",
+  "verdict": "REVISE",
+  "confidence": "HIGH",
+  "evidence_status": "SUFFICIENT",
+  "summary": "Bidirectional alignment is largely restored after removing the health.json report_digest phantom: snapshot digest/stable-subset behavior matches the operator contract, and companion checks no longer invent a digest. One material gap remains: instruction and operator contract still require UTF-8 deterministic ordering (and health stable key ordering) for companion outputs, while the verifier only existence-checks those files (plus a health status key).",
+  "evidence": [
+    {
+      "type": "file",
+      "ref": "sovereign-rds-control-plane/instruction.md",
+      "observation": "Two short paragraphs plus seven functional bullets; binds four /app/rds/docs contracts; requires rds-snapshot.json canonical sorted keys + report_digest over the operator stable subset; companions instances.jsonl/events.jsonl/health.json must be UTF-8 with deterministic ordering and no per-file digest."
+    },
+    {
+      "type": "file",
+      "ref": "sovereign-rds-control-plane/environment/rds/docs/operator-contract.md",
+      "observation": "Defines entrypoints, cross-cutting invariants, report artifact table, companion no-digest rule, health.json as health/lag/readiness summary with stable key ordering, and report_digest stable field subset."
+    },
+    {
+      "type": "file",
+      "ref": "sovereign-rds-control-plane/environment/rds/docs/pitr-wal-contract.md",
+      "observation": "WAL continuity/has_gap, base-backup LSN/timeline binding, partial replay to target, closed Earliest..Latest restore window."
+    },
+    {
+      "type": "file",
+      "ref": "sovereign-rds-control-plane/environment/rds/docs/parameter-group-contract.md",
+      "observation": "Dynamic vs static apply, family default merge, reboot/boot-validation clear of pending_reboot_parameters, ResetDBParameterGroup pending-reboot marking."
+    },
+    {
+      "type": "file",
+      "ref": "sovereign-rds-control-plane/environment/rds/docs/failover-replica-contract.md",
+      "observation": "Lag/LSN promotion gates, WRITE lease revoke to READ_ONLY, promotion must not VIP-flush/ARP, failover TTL lease, TCP health matrix reasons, VIP MIGRATED evidence flags."
+    },
+    {
+      "type": "test",
+      "ref": "sovereign-rds-control-plane/tests/test_outputs.py",
+      "observation": "34 tests (30 F2P + 4 P2P) covering lifecycle, PITR/WAL, parameter groups, promotion, failover, outbox, checkpoints/tenant isolation, readiness, snapshot digest/canonical keys, and preservation. Companion artifacts asserted via is_file() plus health['status']; no companion ordering/UTF-8 or health key-order assertions; no health report_digest assertion."
+    },
+    {
+      "type": "artifact",
+      "ref": ".terminus/designs/sovereign-rds-control-plane-test-map.json",
+      "observation": "Classification-only map aligns named F2P/P2P cases to R_LIFECYCLE..R_PRESERVE; used only to label boundaries, not as solver-visible authority."
+    }
+  ],
+  "findings": [
+    {
+      "id": "Q4-001",
+      "severity": "HIGH",
+      "status": "OBSERVED",
+      "criterion": "material requirement tested / output-interface coverage",
+      "evidence_refs": [
+        "sovereign-rds-control-plane/instruction.md",
+        "sovereign-rds-control-plane/environment/rds/docs/operator-contract.md",
+        "sovereign-rds-control-plane/tests/test_outputs.py::test_f2p_report_formatting_is_canonical_and_sorted"
+      ],
+      "why_it_matters": "Instruction requires companion outputs under /app/rds/out/ to be UTF-8 with deterministic ordering, and the operator contract additionally requires health.json stable key ordering. The verifier only checks that instances.jsonl, events.jsonl, and health.json exist (and that health contains status). Non-deterministic or differently ordered companions still pass, so a documented stable public output property is untested.",
+      "minimal_remediation": "Either assert deterministic UTF-8 ordering (and health stable key order / no digest) on the companion artifacts, or narrow the solver-visible wording so companions are existence-only emits while retaining graded determinism solely on rds-snapshot.json.",
+      "regression_risk": "Low if limited to companion assertions or companion wording; do not reintroduce a health.json report_digest requirement."
+    },
+    {
+      "id": "Q4-002",
+      "severity": "MEDIUM",
+      "status": "OBSERVED",
+      "criterion": "partial coverage of closed PITR window",
+      "evidence_refs": [
+        "sovereign-rds-control-plane/environment/rds/docs/pitr-wal-contract.md",
+        "sovereign-rds-control-plane/tests/test_outputs.py::test_f2p_pitr_window_enforces_earliest_and_latest_bounds"
+      ],
+      "why_it_matters": "Contract and instruction require EarliestRestorableTime <= target <= LatestRestorableTime. Tests reject outside values and accept a mid-window target but never exercise the inclusive endpoints, so an exclusive-bound implementation can still pass.",
+      "minimal_remediation": "Add assertions that targets equal to EarliestRestorableTime and LatestRestorableTime are accepted.",
+      "regression_risk": "Low; additive boundary cases only."
+    },
+    {
+      "id": "Q4-003",
+      "severity": "LOW",
+      "status": "OBSERVED",
+      "criterion": "partial EventIdentifier input coverage",
+      "evidence_refs": [
+        "sovereign-rds-control-plane/environment/rds/docs/operator-contract.md",
+        "sovereign-rds-control-plane/tests/test_outputs.py::test_f2p_event_retries_use_deterministic_identifier_hashes"
+      ],
+      "why_it_matters": "Operator contract says EventIdentifier hashes combine source_type, source_identifier, event_time, and message. Tests prove stability and event_time sensitivity but do not vary message or source_identifier, so those inputs could be ignored without failing.",
+      "minimal_remediation": "Add inequality cases when message or source_identifier changes with other fields fixed.",
+      "regression_risk": "Low."
+    },
+    {
+      "id": "Q4-004",
+      "severity": "MEDIUM",
+      "status": "OBSERVED",
+      "criterion": "partial WAL gap operational coverage",
+      "evidence_refs": [
+        "sovereign-rds-control-plane/environment/rds/docs/pitr-wal-contract.md",
+        "sovereign-rds-control-plane/tests/test_outputs.py::test_f2p_wal_archive_validates_sequence_and_flags_gaps"
+      ],
+      "why_it_matters": "PITR contract requires has_gap and that automated PITR halt until gaps resolve. Tests cover continuity validation errors and has_gap on ingest, but do not show restore/synthesize rejecting or halting when archives are gapped.",
+      "minimal_remediation": "Add a restore/plan case over gapped WAL that is rejected or otherwise non-automated until continuity is restored.",
+      "regression_risk": "Low to medium depending on chosen public API seam."
+    },
+    {
+      "id": "Q4-005",
+      "severity": "LOW",
+      "status": "OBSERVED",
+      "criterion": "documented max_event_retries constant",
+      "evidence_refs": [
+        "sovereign-rds-control-plane/environment/rds/docs/operator-contract.md",
+        "sovereign-rds-control-plane/tests/test_outputs.py::test_f2p_failed_event_deliveries_record_audit_evidence"
+      ],
+      "why_it_matters": "Operator contract states max_event_retries = 5 before writing event_delivery_audit. The delivery-audit test uses a Worker config of 3 and only checks exhausted-retry audit behavior, not the contracted default of 5.",
+      "minimal_remediation": "Assert the public default/config value is 5, or rephrase the contract to describe configurable max retries without fixing the literal.",
+      "regression_risk": "Low."
+    },
+    {
+      "id": "Q4-006",
+      "severity": "LOW",
+      "status": "OBSERVED",
+      "criterion": "weak/vacuous partial_replay assertion",
+      "evidence_refs": [
+        "sovereign-rds-control-plane/instruction.md",
+        "sovereign-rds-control-plane/tests/test_outputs.py::test_f2p_pitr_synthesizes_target_timestamp_with_partial_replay"
+      ],
+      "why_it_matters": "After asserting wal_segments_to_replay >= 2, the follow-up `partial_replay is True or wal_segments_to_replay >= 1` cannot fail. Mid-target segment count still approximates partial replay, but the named partial_replay flag is unenforced.",
+      "minimal_remediation": "Assert partial_replay is True for a straddling target, or drop the vacuous disjunct and keep a behavioral segment/window check only.",
+      "regression_risk": "Low."
+    },
+    {
+      "id": "Q4-007",
+      "severity": "LOW",
+      "status": "OBSERVED",
+      "criterion": "negative companion digest contract",
+      "evidence_refs": [
+        "sovereign-rds-control-plane/environment/rds/docs/operator-contract.md",
+        "sovereign-rds-control-plane/tests/test_outputs.py::test_f2p_report_formatting_is_canonical_and_sorted"
+      ],
+      "why_it_matters": "Operator/instruction forbid per-file digests on companions. After removing the health report_digest phantom, tests also never assert absence of report_digest on health.json, so an extra digest field would still pass.",
+      "minimal_remediation": "Optionally assert report_digest not in health.json (and companions), without requiring any digest value.",
+      "regression_risk": "Low; keep this a negative check only."
+    }
+  ],
+  "missing_evidence": [],
+  "change_scope": [
+    "Align companion output requirements with verifier semantics (strengthen companion determinism assertions or soften instruction/operator companion wording).",
+    "Optional advisory hardenings: PITR inclusive endpoints, EventIdentifier input sensitivity, gapped-WAL PITR halt, max_event_retries literal, partial_replay assert, negative companion digest check."
+  ],
+  "do_not_change": [
+    "Do not reintroduce health.json report_digest as a graded field.",
+    "Do not weaken rds-snapshot.json canonical sorted keys or stable-subset report_digest behavior.",
+    "Do not convert delegated docs into a repair map or move material goals out of instruction.md.",
+    "Do not edit task sources from this review role."
+  ],
+  "next_gate": "Q1/Q2 remediation for Q4-001 (and optional advisories), then fresh packet-bound Q4 re-review before QUALITY_INTERLOCK_PASS",
+  "role_output": {
+    "REQUIREMENT_TEST_MATRIX": [
+      {
+        "requirement_id": "R-OBJ-LAB",
+        "statement": "Finish control plane at /app/rds; operate via rdsd/rds-worker/rdsctl against local lab only (no live AWS).",
+        "coverage": "complete",
+        "tests": [
+          "test_p2p_cli_entrypoint_and_api_signatures_compatible",
+          "test_p2p_offline_lab_execution_requires_no_external_aws"
+        ]
+      },
+      {
+        "requirement_id": "R-FAIL-CLOSED",
+        "statement": "Unauthorized/invalid calls fail closed without corrupting control-plane state.",
+        "coverage": "complete",
+        "tests": ["test_p2p_policy_violations_fail_closed_without_corruption"]
+      },
+      {
+        "requirement_id": "R-READY-STATE",
+        "statement": "Healthy end-state: instances AVAILABLE, outbox/backlog clear, readiness READY else UNHEALTHY; restarts skip checkpointed transitions.",
+        "coverage": "complete",
+        "tests": [
+          "test_f2p_readiness_status_ready_when_all_checks_pass",
+          "test_f2p_status_transitions_write_transaction_checkpoints",
+          "test_f2p_control_plane_restart_skips_completed_operations"
+        ]
+      },
+      {
+        "requirement_id": "R-LIFECYCLE-MODIFY",
+        "statement": "ModifyDBInstance only while AVAILABLE.",
+        "coverage": "complete",
+        "tests": ["test_f2p_db_instance_modification_requires_available_status"]
+      },
+      {
+        "requirement_id": "R-LIFECYCLE-STORAGE",
+        "statement": "Allocated storage must strictly increase.",
+        "coverage": "complete",
+        "tests": ["test_f2p_storage_allocation_enforces_monotonic_growth"]
+      },
+      {
+        "requirement_id": "R-LIFECYCLE-DELETE",
+        "statement": "DeletionProtection blocks DeleteDBInstance even with final snapshot id.",
+        "coverage": "complete",
+        "tests": ["test_f2p_deletion_protection_blocks_delete_with_final_snapshot"]
+      },
+      {
+        "requirement_id": "R-LIFECYCLE-REBOOT",
+        "statement": "Reboot reloads/applies pending static params; clear pending_reboot_parameters only after boot validation succeeds.",
+        "coverage": "complete",
+        "tests": [
+          "test_f2p_reboot_applies_pending_static_parameters",
+          "test_f2p_pending_reboot_cleared_only_after_boot_validation"
+        ]
+      },
+      {
+        "requirement_id": "R-WAL-CONTINUITY",
+        "statement": "Ingest WAL with timeline/sequence continuity; flag gaps.",
+        "coverage": "partial",
+        "tests": ["test_f2p_wal_archive_validates_sequence_and_flags_gaps"],
+        "gap": "has_gap/halt-PITR coupling not shown on restore path (Q4-004)"
+      },
+      {
+        "requirement_id": "R-PITR-BIND-REPLAY",
+        "statement": "Bind base-backup LSN/timeline; partially replay WAL to restore target.",
+        "coverage": "complete",
+        "tests": [
+          "test_f2p_snapshot_restore_validates_base_backup_lsn",
+          "test_f2p_pitr_synthesizes_target_timestamp_with_partial_replay"
+        ],
+        "notes": "partial_replay flag assert is vacuous (Q4-006); segment-count proxy remains"
+      },
+      {
+        "requirement_id": "R-PITR-WINDOW",
+        "statement": "Accept targets only when EarliestRestorableTime <= target <= LatestRestorableTime.",
+        "coverage": "partial",
+        "tests": ["test_f2p_pitr_window_enforces_earliest_and_latest_bounds"],
+        "gap": "inclusive endpoints untested (Q4-002)"
+      },
+      {
+        "requirement_id": "R-PARAM-DYNAMIC-STATIC",
+        "statement": "Apply dynamic immediately; mark static pending reboot; merge overrides into family defaults.",
+        "coverage": "complete",
+        "tests": [
+          "test_f2p_static_parameters_marked_pending_reboot",
+          "test_f2p_parameter_group_merges_family_defaults_and_overrides"
+        ]
+      },
+      {
+        "requirement_id": "R-PARAM-RESET",
+        "statement": "ResetDBParameterGroup sets attached instances parameter_group_status=pending-reboot and pending_reboot_parameters=true.",
+        "coverage": "complete",
+        "tests": ["test_f2p_reset_parameter_group_sets_pending_reboot_status"]
+      },
+      {
+        "requirement_id": "R-PROMOTE-LAG-LSN",
+        "statement": "Promotion requires lag <= 10485760 and LSN catch-up; reject UNKNOWN.",
+        "coverage": "complete",
+        "tests": [
+          "test_f2p_replica_promotion_enforces_lag_thresholds",
+          "test_f2p_replica_promotion_waits_for_lsn_catchup"
+        ]
+      },
+      {
+        "requirement_id": "R-PROMOTE-FENCE-ENDPOINTS",
+        "statement": "Revoke former primary write lease and mark READ_ONLY; atomically swap endpoints; no VIP flush/ARP on promotion.",
+        "coverage": "complete",
+        "tests": [
+          "test_f2p_replica_promotion_revokes_old_primary_write_lease",
+          "test_f2p_replica_promotion_updates_dns_routing_endpoints"
+        ]
+      },
+      {
+        "requirement_id": "R-FAILOVER-LEASE-HEALTH-VIP",
+        "statement": "Acquire TTL-fenced leader lease; health from direct DB reachability ignoring pool-lag-only; VIP migration flush+ARP with MIGRATED evidence.",
+        "coverage": "complete",
+        "tests": [
+          "test_f2p_failover_requires_leader_lease_acquisition",
+          "test_f2p_failover_prevents_promotion_during_valid_primary_lease",
+          "test_f2p_health_probe_distinguishes_instance_from_control_plane_lag",
+          "test_f2p_vip_migration_flushes_routes_and_issues_grat_arp"
+        ]
+      },
+      {
+        "requirement_id": "R-OUTBOX",
+        "statement": "Enqueue outbox in same DB transaction as instance state change; match SourceType+category; deterministic EventIdentifier; audit after max retries; tenant/account/region isolation on describe/list.",
+        "coverage": "partial",
+        "tests": [
+          "test_f2p_outbox_events_enqueued_transactionally",
+          "test_f2p_event_subscriptions_filter_by_source_type",
+          "test_f2p_event_retries_use_deterministic_identifier_hashes",
+          "test_f2p_failed_event_deliveries_record_audit_evidence",
+          "test_f2p_describe_apis_enforce_multi_tenant_isolation"
+        ],
+        "gap": "EventIdentifier message/source_id sensitivity and max_event_retries=5 literal weakly covered (Q4-003, Q4-005)"
+      },
+      {
+        "requirement_id": "R-OUTPUT-SNAPSHOT",
+        "statement": "Publish /app/rds/out/rds-snapshot.json with canonical sorted keys and report_digest over operator stable subset.",
+        "coverage": "complete",
+        "tests": [
+          "test_f2p_report_formatting_is_canonical_and_sorted",
+          "test_f2p_report_digest_computed_over_stable_fields",
+          "test_p2p_report_schema_and_migrations_preserved"
+        ]
+      },
+      {
+        "requirement_id": "R-OUTPUT-COMPANIONS",
+        "statement": "Emit instances.jsonl, events.jsonl, health.json as UTF-8 with deterministic ordering; no per-file digest; health is readiness/lag summary with stable key ordering.",
+        "coverage": "absent",
+        "tests": ["test_f2p_report_formatting_is_canonical_and_sorted"],
+        "gap": "existence (+ health.status) only; ordering/UTF-8/stable keys/no-digest not enforced (Q4-001, Q4-007)"
+      }
+    ],
+    "PHANTOM_TEST_CONTRACTS": [],
+    "UNTESTED_REQUIREMENTS": [
+      "Companion UTF-8 deterministic ordering / health.json stable key ordering (Q4-001)",
+      "PITR inclusive window endpoints (Q4-002, partial)",
+      "Automated PITR halt while has_gap (Q4-004, partial)",
+      "EventIdentifier sensitivity to message/source_identifier (Q4-003, partial)",
+      "Literal max_event_retries = 5 (Q4-005, partial)"
+    ],
+    "AMBIGUITIES": [],
+    "INSTRUCTION_SHAPE": "PASS",
+    "INSTRUCTION_REQUIREMENT_COMPLETENESS": "SUFFICIENT",
+    "DELEGATED_CONTRACT_CHECK": {
+      "operator-contract.md": "legitimate operator/API/report schema contract",
+      "pitr-wal-contract.md": "legitimate PITR/WAL protocol contract",
+      "parameter-group-contract.md": "legitimate parameter-group schema/behavior contract",
+      "failover-replica-contract.md": "legitimate promotion/failover fencing contract",
+      "unreferenced_docs": "architecture.md not instruction-referenced; excluded from delegated authority walk"
+    },
+    "INSTRUCTION_DOC_BOUNDARY": "CLEAN",
+    "IMPLEMENTATION_DIAGNOSIS_LEAKAGE": "NONE",
+    "CURRENT_STATE_EVIDENCE": "NOT_APPLICABLE",
+    "SPEC_DUMP_RISK": "LOW",
+    "BIDIRECTIONAL_ALIGNMENT": "FAIL",
+    "BLOCKING_FINDING_IDS": ["Q4-001"],
+    "ADVISORY_FINDING_IDS": ["Q4-002", "Q4-003", "Q4-004", "Q4-005", "Q4-006", "Q4-007"],
+    "EXHAUSTIVENESS": {
+      "REQUIREMENTS_ENUMERATED": "COMPLETE",
+      "VERIFIER_BEHAVIORS_ENUMERATED": "COMPLETE",
+      "FORWARD_MATRIX_COMPLETE": "YES",
+      "REVERSE_MATRIX_COMPLETE": "YES",
+      "INSTRUCTION_COMPLETENESS_COMPLETE": "YES",
+      "DELEGATED_CONTRACTS_COMPLETE": "YES",
+      "PROMPT_EXTENSION_WALK_COMPLETE": "YES",
+      "P2P_BOUNDARIES_COMPLETE": "YES",
+      "F2P_BOUNDARIES_COMPLETE": "YES",
+      "OUTPUT_INTERFACES_COMPLETE": "YES",
+      "SECOND_PASS_OMISSION_SWEEP": "PASS",
+      "UNINSPECTED_SCOPE": []
+    }
+  }
+}

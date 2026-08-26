@@ -1,0 +1,230 @@
+{
+  "schema_version": "3.0",
+  "role": "Spec-Test Contract Reviewer",
+  "review_id": "sovereign-rds-control-plane-04d792a8-spec-test-contract-14260ff1ee",
+  "task": "sovereign-rds-control-plane",
+  "task_commit": "04d792a8f3878561cbc713cb5e25fff129e0adb5",
+  "control_plane_commit": "04d792a8f3878561cbc713cb5e25fff129e0adb5",
+  "protocol_policy_version": "2.2",
+  "prompt_policy_version": "2.2",
+  "role_policy_version": "1.1",
+  "role_contract_hash": "d2994789dc83b2c8a6b92201782ea9f3e5528a3a9d725c863c22efb6356e570e",
+  "context_packet": ".terminus/reviews/sovereign-rds-control-plane/04d792a8/sovereign-rds-control-plane-04d792a8-spec-test-contract-14260ff1ee.packet.json",
+  "verdict": "REVISE",
+  "confidence": "HIGH",
+  "evidence_status": "SUFFICIENT",
+  "summary": "Recent remediation items for READ_ONLY-after-revoke, report_digest stable subset, and promote-must-not-VIP/ARP are discoverable and tested. Companion artifact emission is graded for existence via report F2P, but test_f2p_report_formatting_is_canonical_and_sorted still requires health.json to embed report_digest equal to the snapshot digest—an obligation the instruction and operator contract do not state and that conflicts with “no per-file digest required.” That material phantom blocks PASS.",
+  "evidence": [
+    {
+      "type": "file",
+      "ref": "sovereign-rds-control-plane/instruction.md",
+      "observation": "Two paragraphs plus seven domain bullets; binds four docs; states READ_ONLY after lease revoke, promote must not VIP/ARP, companion paths with UTF-8/deterministic ordering and no per-file digest, and report_digest over the operator-contract stable subset."
+    },
+    {
+      "type": "file",
+      "ref": "sovereign-rds-control-plane/environment/rds/docs/operator-contract.md",
+      "observation": "Defines report_digest stable field subset; states promotion READ_ONLY and must not set route_table_flushed/gratuitous_arp_sent; lists companion artifacts and explicitly says companions do not require a per-file digest; does not require health.json to carry report_digest."
+    },
+    {
+      "type": "file",
+      "ref": "sovereign-rds-control-plane/environment/rds/docs/failover-replica-contract.md",
+      "observation": "Former primary status READ_ONLY after write-lease revocation; promotion evidence must not set route_table_flushed/gratuitous_arp_sent; failover VIP migration requires those flags true with status=MIGRATED."
+    },
+    {
+      "type": "file",
+      "ref": "sovereign-rds-control-plane/environment/rds/docs/pitr-wal-contract.md",
+      "observation": "WAL continuity/gap flagging, base-backup LSN/timeline binding, partial replay, and closed Earliest/LatestRestorableTime window."
+    },
+    {
+      "type": "file",
+      "ref": "sovereign-rds-control-plane/environment/rds/docs/parameter-group-contract.md",
+      "observation": "Dynamic immediate apply, static pending-reboot, family-default merge, boot-validation clear, ResetDBParameterGroup pending-reboot markers."
+    },
+    {
+      "type": "test",
+      "ref": "sovereign-rds-control-plane/tests/test_outputs.py",
+      "observation": "34 tests matching the design test-map families; revoke/promote assert READ_ONLY; promote asserts VIP/ARP flags not true; digest stability and canonical snapshot formatting asserted; report formatting also requires companion files and health.report_digest == snapshot.report_digest."
+    },
+    {
+      "type": "file",
+      "ref": ".terminus/designs/sovereign-rds-control-plane-test-map.json",
+      "observation": "Classification-only map of F2P/P2P cases to requirement families; used to cross-check inventory completeness, not as solver-visible authority."
+    },
+    {
+      "type": "rule",
+      "ref": ".terminus/agents/INSTRUCTION_POLICY.md",
+      "observation": "Instruction holds material ask within Edition 3 shape; delegated docs are technical contracts rather than a second prompt; graded schema fields must remain discoverable from instruction or referenced contracts."
+    }
+  ],
+  "findings": [
+    {
+      "id": "ST-HEALTH-DIGEST-PHANTOM",
+      "severity": "HIGH",
+      "status": "OBSERVED",
+      "criterion": "phantom-spec / output-interface discoverability",
+      "evidence_refs": [
+        "sovereign-rds-control-plane/tests/test_outputs.py::test_f2p_report_formatting_is_canonical_and_sorted",
+        "sovereign-rds-control-plane/instruction.md",
+        "sovereign-rds-control-plane/environment/rds/docs/operator-contract.md"
+      ],
+      "why_it_matters": "The verifier fails a publisher that emits a valid health/lag/readiness health.json without embedding report_digest, even though solver-visible text says companion files need no per-file digest and never requires health.json to copy the snapshot digest. That changes pass/fail for contract-conforming implementations.",
+      "minimal_remediation": "Either drop the health.report_digest equality assertion (keep companion existence / snapshot digest checks), or add an explicit solver-visible schema rule that health.json must include the same report_digest as rds-snapshot.json.",
+      "regression_risk": "Low if limited to the health digest coupling; do not weaken snapshot canonicalization, stable-subset digest, companion path emission, READ_ONLY, or promote-no-VIP assertions."
+    },
+    {
+      "id": "ST-COMPANION-ORDER-WEAK",
+      "severity": "LOW",
+      "status": "OBSERVED",
+      "criterion": "partial coverage / ambiguity",
+      "evidence_refs": [
+        "sovereign-rds-control-plane/instruction.md",
+        "sovereign-rds-control-plane/environment/rds/docs/operator-contract.md",
+        "sovereign-rds-control-plane/tests/test_outputs.py::test_f2p_report_formatting_is_canonical_and_sorted"
+      ],
+      "why_it_matters": "Companion JSONL “deterministic order” is stated without a declared sort key, and tests only check file existence. Non-blocking under current grading because order is not asserted.",
+      "minimal_remediation": "Optionally name the companion line order (for example instances by instance_id) in the operator contract and add a narrow ordering assertion if that interface is meant to be stable.",
+      "regression_risk": "Low."
+    },
+    {
+      "id": "ST-OUTBOX-CALL-ORDER-PROXY",
+      "severity": "LOW",
+      "status": "OBSERVED",
+      "criterion": "preferred-implementation / weak transactional proxy",
+      "evidence_refs": [
+        "sovereign-rds-control-plane/tests/test_outputs.py::test_f2p_outbox_events_enqueued_transactionally",
+        "sovereign-rds-control-plane/environment/rds/docs/operator-contract.md"
+      ],
+      "why_it_matters": "Contract requires same-DB-transaction enqueue with state changes; the test also requires create_outbox before update_status in FakeRepository.call_order. Advisory preferred sequencing beyond stated atomicity.",
+      "minimal_remediation": "Prefer asserting transactional co-presence / rollback semantics, or document that outbox must be recorded before status mutation in the mutation path if that ordering is intentional.",
+      "regression_risk": "Low."
+    }
+  ],
+  "missing_evidence": [],
+  "change_scope": [
+    "sovereign-rds-control-plane/tests/test_outputs.py (health.report_digest assertion and/or companion-order coverage)",
+    "sovereign-rds-control-plane/instruction.md and/or environment/rds/docs/operator-contract.md only if making health.report_digest or companion sort keys explicitly graded"
+  ],
+  "do_not_change": [
+    "Already-aligned READ_ONLY-after-revoke discoverability and tests",
+    "report_digest stable-subset definition and digest-stability F2P",
+    "promote-must-not-VIP/ARP contract text and assertions",
+    "Core lifecycle/PITR/parameter/failover/outbox/auth behavioral contracts outside the health-digest coupling",
+    "solution/, oracle overlays, and unrelated tasks"
+  ],
+  "next_gate": "SPEC_ALIGNMENT",
+  "role_output": {
+    "REQUIREMENT_TEST_MATRIX": [
+      {
+        "requirement_id": "R_OBJECTIVE_LAB",
+        "source": "instruction.md para1",
+        "coverage": "complete",
+        "tests": ["test_p2p_cli_entrypoint_and_api_signatures_compatible", "test_p2p_offline_lab_execution_requires_no_external_aws"]
+      },
+      {
+        "requirement_id": "R_FAIL_CLOSED",
+        "source": "instruction.md para1; operator-contract invariants",
+        "coverage": "complete",
+        "tests": ["test_p2p_policy_violations_fail_closed_without_corruption", "test_f2p_deletion_protection_blocks_delete_with_final_snapshot", "test_f2p_storage_allocation_enforces_monotonic_growth"]
+      },
+      {
+        "requirement_id": "R_READINESS_RESTART",
+        "source": "instruction.md para2; operator-contract readiness/checkpoints",
+        "coverage": "complete",
+        "tests": ["test_f2p_readiness_status_ready_when_all_checks_pass", "test_f2p_status_transitions_write_transaction_checkpoints", "test_f2p_control_plane_restart_skips_completed_operations"]
+      },
+      {
+        "requirement_id": "R_LIFECYCLE",
+        "source": "instruction Lifecycle bullet",
+        "coverage": "complete",
+        "tests": ["test_f2p_db_instance_modification_requires_available_status", "test_f2p_storage_allocation_enforces_monotonic_growth", "test_f2p_deletion_protection_blocks_delete_with_final_snapshot", "test_f2p_reboot_applies_pending_static_parameters", "test_f2p_pending_reboot_cleared_only_after_boot_validation"]
+      },
+      {
+        "requirement_id": "R_PITR_WAL",
+        "source": "instruction WAL/PITR bullet; pitr-wal-contract.md",
+        "coverage": "complete",
+        "tests": ["test_f2p_wal_archive_validates_sequence_and_flags_gaps", "test_f2p_pitr_synthesizes_target_timestamp_with_partial_replay", "test_f2p_snapshot_restore_validates_base_backup_lsn", "test_f2p_pitr_window_enforces_earliest_and_latest_bounds"]
+      },
+      {
+        "requirement_id": "R_PARAMETER_GROUP",
+        "source": "instruction Parameter groups bullet; parameter-group-contract.md",
+        "coverage": "complete",
+        "tests": ["test_f2p_static_parameters_marked_pending_reboot", "test_f2p_parameter_group_merges_family_defaults_and_overrides", "test_f2p_pending_reboot_cleared_only_after_boot_validation", "test_f2p_reset_parameter_group_sets_pending_reboot_status"]
+      },
+      {
+        "requirement_id": "R_REPLICA_PROMOTION",
+        "source": "instruction Promotion bullet; failover-replica-contract.md; operator-contract",
+        "coverage": "complete",
+        "tests": ["test_f2p_replica_promotion_enforces_lag_thresholds", "test_f2p_replica_promotion_waits_for_lsn_catchup", "test_f2p_replica_promotion_revokes_old_primary_write_lease", "test_f2p_replica_promotion_updates_dns_routing_endpoints"]
+      },
+      {
+        "requirement_id": "R_FAILOVER_FENCING",
+        "source": "instruction Failover bullet; failover-replica-contract.md",
+        "coverage": "complete",
+        "tests": ["test_f2p_failover_requires_leader_lease_acquisition", "test_f2p_failover_prevents_promotion_during_valid_primary_lease", "test_f2p_health_probe_distinguishes_instance_from_control_plane_lag", "test_f2p_vip_migration_flushes_routes_and_issues_grat_arp"]
+      },
+      {
+        "requirement_id": "R_EVENT_OUTBOX_ISOLATION",
+        "source": "instruction Outbox/isolation bullet; operator-contract",
+        "coverage": "complete",
+        "tests": ["test_f2p_outbox_events_enqueued_transactionally", "test_f2p_event_subscriptions_filter_by_source_type", "test_f2p_event_retries_use_deterministic_identifier_hashes", "test_f2p_failed_event_deliveries_record_audit_evidence", "test_f2p_describe_apis_enforce_multi_tenant_isolation"]
+      },
+      {
+        "requirement_id": "R_REPORT_SNAPSHOT_DIGEST",
+        "source": "instruction Outputs bullet; operator-contract report_digest subset",
+        "coverage": "complete",
+        "tests": ["test_f2p_report_formatting_is_canonical_and_sorted", "test_f2p_report_digest_computed_over_stable_fields", "test_p2p_report_schema_and_migrations_preserved"]
+      },
+      {
+        "requirement_id": "R_COMPANION_OUTPUTS",
+        "source": "instruction Outputs bullet; operator-contract artifact table",
+        "coverage": "partial",
+        "tests": ["test_f2p_report_formatting_is_canonical_and_sorted"],
+        "notes": "Existence graded; health.report_digest equality is over-grade/phantom; JSONL deterministic order not meaningfully asserted."
+      }
+    ],
+    "PHANTOM_TEST_CONTRACTS": [
+      "test_f2p_report_formatting_is_canonical_and_sorted requires health.json.report_digest == rds-snapshot.json.report_digest without solver-visible schema support (ST-HEALTH-DIGEST-PHANTOM)"
+    ],
+    "UNTESTED_REQUIREMENTS": [
+      "Companion JSONL deterministic line-order obligation is stated but not behaviorally asserted (advisory ST-COMPANION-ORDER-WEAK)"
+    ],
+    "AMBIGUITIES": [
+      "instances.jsonl/events.jsonl deterministic order lacks an explicit sort key in solver-visible contracts (advisory while ungraded)"
+    ],
+    "INSTRUCTION_SHAPE": "PASS",
+    "INSTRUCTION_REQUIREMENT_COMPLETENESS": "SUFFICIENT",
+    "DELEGATED_CONTRACT_CHECK": {
+      "operator-contract.md": "legitimate operator/API/report schema contract",
+      "pitr-wal-contract.md": "legitimate PITR/WAL protocol contract",
+      "parameter-group-contract.md": "legitimate parameter-group semantics contract",
+      "failover-replica-contract.md": "legitimate promotion/failover fencing contract"
+    },
+    "INSTRUCTION_DOC_BOUNDARY": "CLEAN",
+    "IMPLEMENTATION_DIAGNOSIS_LEAKAGE": "NONE",
+    "CURRENT_STATE_EVIDENCE": "NOT_APPLICABLE",
+    "SPEC_DUMP_RISK": "LOW",
+    "BIDIRECTIONAL_ALIGNMENT": "FAIL",
+    "BLOCKING_FINDING_IDS": ["ST-HEALTH-DIGEST-PHANTOM"],
+    "ADVISORY_FINDING_IDS": ["ST-COMPANION-ORDER-WEAK", "ST-OUTBOX-CALL-ORDER-PROXY"],
+    "REMEDIATION_CLOSURE_CHECK": {
+      "READ_ONLY_after_lease_revoke_discoverability": "CLOSED",
+      "companion_outputs_graded_via_report_F2P": "PARTIAL_CLOSED_with_health_digest_phantom_remaining",
+      "report_digest_stable_subset_in_operator_contract": "CLOSED",
+      "promote_must_not_VIP_ARP_assertions": "CLOSED"
+    },
+    "EXHAUSTIVENESS": {
+      "REQUIREMENTS_ENUMERATED": "COMPLETE",
+      "VERIFIER_BEHAVIORS_ENUMERATED": "COMPLETE",
+      "FORWARD_MATRIX_COMPLETE": "YES",
+      "REVERSE_MATRIX_COMPLETE": "YES",
+      "INSTRUCTION_COMPLETENESS_COMPLETE": "YES",
+      "DELEGATED_CONTRACTS_COMPLETE": "YES",
+      "PROMPT_EXTENSION_WALK_COMPLETE": "YES",
+      "P2P_BOUNDARIES_COMPLETE": "YES",
+      "F2P_BOUNDARIES_COMPLETE": "YES",
+      "OUTPUT_INTERFACES_COMPLETE": "YES",
+      "SECOND_PASS_OMISSION_SWEEP": "PASS",
+      "UNINSPECTED_SCOPE": []
+    }
+  }
+}

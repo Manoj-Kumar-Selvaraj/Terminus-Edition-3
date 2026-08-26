@@ -1,0 +1,108 @@
+{
+  "schema_version": "3.0",
+  "role": "Production Logic Auditor",
+  "review_id": "sovereign-rds-control-plane-8fb4d92f-production-logic-714a3c097a",
+  "task": "sovereign-rds-control-plane",
+  "task_commit": "8fb4d92f932d8c0c34a126b3040b4fb5f1cfad42",
+  "control_plane_commit": "8fb4d92f932d8c0c34a126b3040b4fb5f1cfad42",
+  "protocol_policy_version": "2.2",
+  "prompt_policy_version": "2.2",
+  "role_policy_version": "1.1",
+  "role_contract_hash": "a737a404c3b23518698932fec4eba6bb7f9831710c920bd66f267a00dca47661",
+  "review_scope_hash": "f06139b82e82dbd75785899dae9c628b640a8e25fa37aab54b1d7f3fdb149604",
+  "context_packet": ".terminus/reviews/sovereign-rds-control-plane/8fb4d92f/sovereign-rds-control-plane-8fb4d92f-production-logic-714a3c097a.packet.json",
+  "verdict": "PASS",
+  "confidence": "HIGH",
+  "evidence_status": "SUFFICIENT",
+  "summary": "Independent Q6 rebuild on task_commit 8fb4d92f confirms production logic unchanged since the prior wired baseline: git diff shows only four operator-contract wording edits under environment/rds/docs/. AST import-closure from rdsd/rds-worker/rdsctl/generate-estate reaches 47/48 Python modules; only __init__.py (2 LOC) is unreachable. Validator-aligned substantive counting yields 3341 reachable Python LOC plus 265 SQL/YAML/bin LOC (3606 combined), clearing large_system_strict >=3000. Core hubs (instance_manager, app, worker, cli) couple lifecycle, failover lease/VIP, replica/LSN, parameter orchestration, WAL/PITR, transactional outbox, and PostgreSQL persistence on live operator paths. Starter traps sit on wired call paths rather than dead clones; toy/padding risk is not HIGH.",
+  "evidence": [
+    {
+      "type": "rule",
+      "ref": ".terminus/agents/QUALITY_AGENT_PROMPTS.md",
+      "observation": "Q6 requires independent entrypoint reachability tracing, module diversity/coupling judgment, removal impact, and conservative noise treatment; for large_system_strict PASS needs >=3000 substantive reachable runtime/config LOC with no HIGH toy or padding risk."
+    },
+    {
+      "type": "file",
+      "ref": "sovereign-rds-control-plane/task.toml",
+      "observation": "Advanced Software/Systems task with artifacts=/app/rds, separate verifier, multi-container compose; Q6 scope is task.toml plus full environment/."
+    },
+    {
+      "type": "file",
+      "ref": "sovereign-rds-control-plane/environment/rds/bin/rdsd",
+      "observation": "API entrypoint runs migrations, initializes database, and serves create_app() via uvicorn."
+    },
+    {
+      "type": "file",
+      "ref": "sovereign-rds-control-plane/environment/rds/bin/rds-worker",
+      "observation": "Worker entrypoint runs migrations then worker.run_worker on shared config/database path."
+    },
+    {
+      "type": "file",
+      "ref": "sovereign-rds-control-plane/environment/rds/bin/rdsctl",
+      "observation": "CLI entrypoint imports and executes rds.cli for operator workflows."
+    },
+    {
+      "type": "file",
+      "ref": "sovereign-rds-control-plane/environment/rds/bin/generate-estate",
+      "observation": "Estate-generation entrypoint reaches fixture_generator for deterministic lab load."
+    },
+    {
+      "type": "file",
+      "ref": "sovereign-rds-control-plane/environment/rds/rds/app.py",
+      "observation": "FastAPI surface wires instance_manager, snapshot_manager, parameter_group_orchestrator, pitr_engine, and supporting readiness/DR/KMS/scaling/pool modules on live routes."
+    },
+    {
+      "type": "file",
+      "ref": "sovereign-rds-control-plane/environment/rds/rds/instance_manager.py",
+      "observation": "Lifecycle hub couples storage_evaluator, deletion_guard, replica/failover/replication/VIP/checkpoint/outbox/parameter leaves across create/modify/reboot/promote/failover/delete paths."
+    },
+    {
+      "type": "file",
+      "ref": "sovereign-rds-control-plane/environment/rds/rds/worker.py",
+      "observation": "Worker loop invokes event_dispatcher, event_notification_service, event_subscription_engine, audit_metrics, and failover_lease_heartbeat on each outbox poll."
+    },
+    {
+      "type": "run",
+      "ref": "Independent AST import-closure from bins (8fb4d92f)",
+      "observation": "47 reachable Python modules from four operator entrypoints; unreachable set is __init__ only (2 LOC)."
+    },
+    {
+      "type": "run",
+      "ref": "Independent validator-aligned substantive LOC rebuild",
+      "observation": "Reachable Python 3341 LOC; reachable runtime/config (py+sql+yaml+bins) 3606 LOC; all environment Python 3343 LOC."
+    },
+    {
+      "type": "run",
+      "ref": "git diff 04d792a8..8fb4d92f -- sovereign-rds-control-plane/environment/",
+      "observation": "Only environment/rds/docs/operator-contract.md changed (4 insertions, 4 deletions); no runtime module edits."
+    },
+    {
+      "type": "run",
+      "ref": "python .terminus/validate_task_complexity.py sovereign-rds-control-plane",
+      "observation": "Advisory only: substantive_loc=3575 under large_system_strict; complexity gate PASS. Not used as Q6 conclusion."
+    }
+  ],
+  "findings": [],
+  "missing_evidence": [],
+  "change_scope": [],
+  "do_not_change": [
+    "solver-visible runtime/configuration production graph now wired across operator entrypoints",
+    "tests or verifier as LOC padding authority",
+    "solution/ as proof of production quality",
+    "Complexity Governor count as Q6 conclusion"
+  ],
+  "next_gate": "Return this frozen Q6 result to the CI Orchestrator for quality-interlock aggregation; Q6 alone does not certify overall task readiness.",
+  "role_output": {
+    "CORE_LOGIC_DEPTH": "HIGH",
+    "RUNTIME_REACHABILITY": "HIGH",
+    "MODULE_DIVERSITY": "HIGH",
+    "CROSS_COMPONENT_COUPLING": "HIGH",
+    "TOY_LOGIC_RISK": "LOW",
+    "PADDING_RISK": "LOW",
+    "SUBSTANTIVE_LOC_ASSESSMENT": "PASS for large_system_strict. Independent rebuild: 3341 substantive reachable Python LOC across 47 wired modules, plus 265 substantive SQL/YAML/bin LOC (3606 combined). Core concentration includes instance_manager ~476, app ~257, parameter_catalog ~256, parameter_group_orchestrator ~129, cli ~121, repository ~114, worker ~115, fixture_generator ~114, plus failover/replica/replication/PITR/WAL/event leaves. Catalog dict volume is domain config consumed by validation branches, not comment/vendor noise. Headroom above 3000 remains after excluding docs markdown and the unreachable __init__ stub.",
+    "MAJOR_MODULES": "Reachable hubs — rds.cli/rdsctl (operator CLI), rds.app/rdsd (FastAPI lifecycle/snapshot/PITR/param routes), rds.worker/rds-worker (outbox dispatch, subscription matching, lease heartbeat), rds.instance_manager (state machine, promote/failover fencing, checkpoint/outbox staging), failover_coordinator/orchestrator/lease_heartbeat/vip_manager/connection_pool_monitor (Multi-AZ fencing), replica_manager/replication_engine/coordinator (promotion/LSN), parameter_group_orchestrator/catalog/group (apply-mode validation), pitr_engine/wal_collector/wal_playback_simulator/coverage_analyzer (restore synthesis), event_outbox/dispatcher/notification/subscription (deterministic EventBridge path), repository/database/migrations/SQL/config (persistence), fixture_generator/generate-estate (deterministic estate). Unreachable — __init__ stub only.",
+    "PARTIAL_FIX_TRAPS": "Starter traps on live paths: D01 status gating, D02 storage shrink, D08 PITR window, D10-D13 parameter/replica defects, D17-D20 failover lease/VIP/health, D22-D24 outbox filter/identifier/retry, checkpoint/outbox staging skips in instance_manager, readiness ignoring probe failures. Fixing one leaf without coupled siblings leaves observable verifier gaps.",
+    "REMOVAL_TEST": "Removing ~25% of reachable core cannot be dead-weight deletion. Dropping instance_manager promote/failover sections eliminates HA workflows; dropping parameter catalog/orchestrator removes apply-mode correctness; dropping PITR/WAL modules removes restore synthesis; dropping event outbox/worker dispatch removes notification determinism; dropping repository/SQL breaks persistence for all operators.",
+    "REQUIRED_CHANGES": []
+  }
+}
