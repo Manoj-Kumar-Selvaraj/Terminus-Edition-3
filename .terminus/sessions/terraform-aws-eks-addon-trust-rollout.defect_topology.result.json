@@ -1,0 +1,365 @@
+{
+  "schema_version": "1.0",
+  "invocation_id": "inv_02672f81bab1252ddc9d996f7c9c8fb3efe6e16e4d79000581e06e4eca512f28",
+  "output_task_commit": "f649fbfd0f14603138e6e6293f0067587016f09a",
+  "evidence_refs": [
+    {
+      "kind": "COMMIT",
+      "ref": "commit:f649fbfd0f14603138e6e6293f0067587016f09a"
+    }
+  ],
+  "status": "DESIGN_READY",
+  "outputs": {
+    "profile": "large_system_strict",
+    "root_cause_clusters": {
+      "RC_ADDON_VERSION_COMPATIBILITY": "Add-on version mapping, conflict resolution settings, and target compatibility matrix validation fail to enforce required target versions.",
+      "RC_IRSA_TRUST_FENCING": "IRSA assume-role policy parsing, wildcard action detection, and exact single-subject service account binding fail to restrict role permissions.",
+      "RC_PDB_CAPACITY_DRAIN": "PodDisruptionBudget parsing, minAvailable coverage checking, and node drain eviction capacity calculations fail during system node draining.",
+      "RC_CAPACITY_NODE_SELECTOR": "Regulated workload nodeSelectors, Karpenter capacity-type requirements, and on-demand pool fencing fail to prevent spot allocation.",
+      "RC_CONTROLLER_ROLLOUT_ORDER": "Rollout state machine step sequencing, prerequisite validation, and readiness checking advance add-ons out of order.",
+      "RC_STATE_RECONCILIATION_CHECKPOINT": "Plan normalization, upgrade state checkpointing, and interrupted rollout recovery fail to maintain state monotonicity.",
+      "RC_REPORT_DETERMINISM": "Report schema generation, field ordering, status evaluation, and report digest calculation produce non-deterministic outputs."
+    },
+    "defects": [
+      {
+        "id": "D01",
+        "component": "plan validator",
+        "observable_failure": "Missing add-on resources in Terraform plan are ignored rather than flagged as errors.",
+        "root_cause": "RC_ADDON_VERSION_COMPATIBILITY",
+        "partial_fix_trap": "Checking add-on count without validating individual names allows missing add-ons."
+      },
+      {
+        "id": "D02",
+        "component": "version evaluator",
+        "observable_failure": "Add-on versions differing from the compatibility matrix target are accepted as valid.",
+        "root_cause": "RC_ADDON_VERSION_COMPATIBILITY",
+        "partial_fix_trap": "Comparing major version only misses minor or patch version mismatches."
+      },
+      {
+        "id": "D03",
+        "component": "conflict resolver",
+        "observable_failure": "resolve_conflicts_on_update values other than PRESERVE pass plan policy validation.",
+        "root_cause": "RC_ADDON_VERSION_COMPATIBILITY",
+        "partial_fix_trap": "Allowing OVERWRITE or NONE passes validation but causes cluster drift."
+      },
+      {
+        "id": "D04",
+        "component": "ssm tag parser",
+        "observable_failure": "Controller add-ons specified via SSM parameters fail to extract version or conflict tags correctly.",
+        "root_cause": "RC_ADDON_VERSION_COMPATIBILITY",
+        "partial_fix_trap": "Parsing SSM parameter values without inspecting tags misses tag-driven version overrides."
+      },
+      {
+        "id": "D05",
+        "component": "IRSA parser",
+        "observable_failure": "Role assume-role policy documents with nested JSON strings or interpolations fail subject extraction.",
+        "root_cause": "RC_IRSA_TRUST_FENCING",
+        "partial_fix_trap": "String regex searching without structural JSON decoding misses nested policy statements."
+      },
+      {
+        "id": "D06",
+        "component": "trust verifier",
+        "observable_failure": "IRSA roles trusting zero or multiple service account subjects pass trust verification.",
+        "root_cause": "RC_IRSA_TRUST_FENCING",
+        "partial_fix_trap": "Checking that required subject is in trust list without checking total subject count allows wildcard trust."
+      },
+      {
+        "id": "D07",
+        "component": "forbidden subject checker",
+        "observable_failure": "Roles trusting forbidden subjects such as system:nodes pass trust checks.",
+        "root_cause": "RC_IRSA_TRUST_FENCING",
+        "partial_fix_trap": "Validating required service account subject without checking forbidden subject list leaks node identity."
+      },
+      {
+        "id": "D08",
+        "component": "policy action auditor",
+        "observable_failure": "IAM policies containing wildcard actions (e.g. * or ebs:*) pass policy validation.",
+        "root_cause": "RC_IRSA_TRUST_FENCING",
+        "partial_fix_trap": "Checking statement Effect without evaluating Action patterns allows broad permissions."
+      },
+      {
+        "id": "D09",
+        "component": "role name matcher",
+        "observable_failure": "IRSA role names that do not match expected naming conventions pass role validation.",
+        "root_cause": "RC_IRSA_TRUST_FENCING",
+        "partial_fix_trap": "Matching AddonTrust tag alone without verifying IAM role name allows improperly named roles."
+      },
+      {
+        "id": "D10",
+        "component": "PDB parser",
+        "observable_failure": "Kubernetes PodDisruptionBudgets with missing or non-matching selector labels are recorded as valid.",
+        "root_cause": "RC_PDB_CAPACITY_DRAIN",
+        "partial_fix_trap": "Checking PDB name existence without matching namespace and selector labels passes invalid PDBs."
+      },
+      {
+        "id": "D11",
+        "component": "minAvailable verifier",
+        "observable_failure": "PDB minAvailable values that differ from required defaults pass PDB coverage checks.",
+        "root_cause": "RC_PDB_CAPACITY_DRAIN",
+        "partial_fix_trap": "Checking minAvailable is non-zero without verifying exact threshold allows insufficient availability."
+      },
+      {
+        "id": "D12",
+        "component": "node taint checker",
+        "observable_failure": "System node groups missing the CriticalAddonsOnly taint pass node group validation.",
+        "root_cause": "RC_PDB_CAPACITY_DRAIN",
+        "partial_fix_trap": "Checking key name without verifying value and effect (NoSchedule) allows non-blocking taints."
+      },
+      {
+        "id": "D13",
+        "component": "drain simulator",
+        "observable_failure": "Node drain simulation evicts pods even when PDB minAvailable budgets would be violated.",
+        "root_cause": "RC_PDB_CAPACITY_DRAIN",
+        "partial_fix_trap": "Counting evicted pods without tracking remaining available replicas violates PDB safety."
+      },
+      {
+        "id": "D14",
+        "component": "node label verifier",
+        "observable_failure": "System node groups with incorrect nodepool label values pass node pool validation.",
+        "root_cause": "RC_PDB_CAPACITY_DRAIN",
+        "partial_fix_trap": "Verifying node group name without checking Kubernetes labels allows mislabeled pools."
+      },
+      {
+        "id": "D15",
+        "component": "placement evaluator",
+        "observable_failure": "Regulated workloads configured without explicit nodepool selectors pass placement validation.",
+        "root_cause": "RC_CAPACITY_NODE_SELECTOR",
+        "partial_fix_trap": "Checking namespace name without verifying pod spec nodeSelector allows unconstrained placement."
+      },
+      {
+        "id": "D16",
+        "component": "capacity type fence",
+        "observable_failure": "Regulated node pools specifying spot or hybrid capacity pass placement checks.",
+        "root_cause": "RC_CAPACITY_NODE_SELECTOR",
+        "partial_fix_trap": "Filtering capacity types without checking all configured types permits spot instances."
+      },
+      {
+        "id": "D17",
+        "component": "subnet scope checker",
+        "observable_failure": "Regulated node pools deployed in public or dual-stack subnets pass subnet posture checks.",
+        "root_cause": "RC_CAPACITY_NODE_SELECTOR",
+        "partial_fix_trap": "Checking private subnet presence without verifying public subnet absence allows public exposure."
+      },
+      {
+        "id": "D18",
+        "component": "karpenter nodepool parser",
+        "observable_failure": "Karpenter NodePool CRDs with on-demand and spot in requirements pass regulated capacity validation.",
+        "root_cause": "RC_CAPACITY_NODE_SELECTOR",
+        "partial_fix_trap": "Reading NodePool name without evaluating template spec requirements allows spot capacity."
+      },
+      {
+        "id": "D19",
+        "component": "interruption simulator",
+        "observable_failure": "Interruption simulation fails to verify that regulated workloads remain on on-demand capacity after node rebalancing.",
+        "root_cause": "RC_CAPACITY_NODE_SELECTOR",
+        "partial_fix_trap": "Setting interruption handled=true without checking post-interruption placement allows spot migration."
+      },
+      {
+        "id": "D20",
+        "component": "prerequisite evaluator",
+        "observable_failure": "Add-on rollout proceeds when required prerequisite add-ons are missing or in non-ACTIVE status.",
+        "root_cause": "RC_CONTROLLER_ROLLOUT_ORDER",
+        "partial_fix_trap": "Checking prerequisite add-on existence without verifying ACTIVE status permits premature upgrade."
+      },
+      {
+        "id": "D21",
+        "component": "rollout sequencer",
+        "observable_failure": "Add-ons are upgraded out of the order defined in the compatibility matrix.",
+        "root_cause": "RC_CONTROLLER_ROLLOUT_ORDER",
+        "partial_fix_trap": "Iterating add-ons in plan dict order instead of matrix order violates rollout sequence."
+      },
+      {
+        "id": "D22",
+        "component": "readiness checker",
+        "observable_failure": "Add-on status is marked ACTIVE before controller deployment readiness checks pass.",
+        "root_cause": "RC_CONTROLLER_ROLLOUT_ORDER",
+        "partial_fix_trap": "Updating status immediately upon API request without polling readiness causes race conditions."
+      },
+      {
+        "id": "D23",
+        "component": "cross-service trust audit",
+        "observable_failure": "Multiple add-on roles sharing the same IAM role ARN or trust subject pass cross-service isolation checks.",
+        "root_cause": "RC_CONTROLLER_ROLLOUT_ORDER",
+        "partial_fix_trap": "Verifying individual IRSA bindings without auditing unique role ARNs permits shared trust."
+      },
+      {
+        "id": "D24",
+        "component": "plan normalizer",
+        "observable_failure": "Plan normalization drops inline role policies or standalone role policy attachments.",
+        "root_cause": "RC_STATE_RECONCILIATION_CHECKPOINT",
+        "partial_fix_trap": "Parsing aws_iam_role inline_policy without merging aws_iam_role_policy attachments misses permissions."
+      },
+      {
+        "id": "D25",
+        "component": "protected resource fence",
+        "observable_failure": "Resources tagged UpgradeProtected=true that are scheduled for delete or replace pass plan policy checks.",
+        "root_cause": "RC_STATE_RECONCILIATION_CHECKPOINT",
+        "partial_fix_trap": "Checking resource address without inspecting change actions (delete/replace) allows destructive changes."
+      },
+      {
+        "id": "D26",
+        "component": "checkpoint manager",
+        "observable_failure": "Rollout state checkpointing fails to record step-by-step progress, causing full restart on interruption.",
+        "root_cause": "RC_STATE_RECONCILIATION_CHECKPOINT",
+        "partial_fix_trap": "Writing checkpoint only at completion loses progress when rollout is interrupted."
+      },
+      {
+        "id": "D27",
+        "component": "report builder",
+        "observable_failure": "Upgrade report fields omit required keys or fail to sort lists and dictionary keys deterministically.",
+        "root_cause": "RC_REPORT_DETERMINISM",
+        "partial_fix_trap": "Formatting JSON without sort_keys=True causes non-deterministic report digests across runs."
+      },
+      {
+        "id": "D28",
+        "component": "digest calculator",
+        "observable_failure": "Report digest calculation includes volatile fields (e.g. timestamps or local file paths).",
+        "root_cause": "RC_REPORT_DETERMINISM",
+        "partial_fix_trap": "Hashing full report object including volatile fields produces changing digests for identical state."
+      }
+    ],
+    "causal_edges": [
+      {
+        "from": "D01",
+        "to": "D02"
+      },
+      {
+        "from": "D02",
+        "to": "D03"
+      },
+      {
+        "from": "D03",
+        "to": "D21"
+      },
+      {
+        "from": "D04",
+        "to": "D02"
+      },
+      {
+        "from": "D05",
+        "to": "D06"
+      },
+      {
+        "from": "D06",
+        "to": "D07"
+      },
+      {
+        "from": "D07",
+        "to": "D23"
+      },
+      {
+        "from": "D08",
+        "to": "D23"
+      },
+      {
+        "from": "D09",
+        "to": "D06"
+      },
+      {
+        "from": "D10",
+        "to": "D11"
+      },
+      {
+        "from": "D11",
+        "to": "D13"
+      },
+      {
+        "from": "D12",
+        "to": "D13"
+      },
+      {
+        "from": "D13",
+        "to": "D14"
+      },
+      {
+        "from": "D14",
+        "to": "D19"
+      },
+      {
+        "from": "D15",
+        "to": "D16"
+      },
+      {
+        "from": "D16",
+        "to": "D18"
+      },
+      {
+        "from": "D17",
+        "to": "D16"
+      },
+      {
+        "from": "D18",
+        "to": "D19"
+      },
+      {
+        "from": "D19",
+        "to": "D27"
+      },
+      {
+        "from": "D20",
+        "to": "D21"
+      },
+      {
+        "from": "D21",
+        "to": "D22"
+      },
+      {
+        "from": "D22",
+        "to": "D26"
+      },
+      {
+        "from": "D23",
+        "to": "D27"
+      },
+      {
+        "from": "D24",
+        "to": "D08"
+      },
+      {
+        "from": "D25",
+        "to": "D26"
+      },
+      {
+        "from": "D26",
+        "to": "D27"
+      },
+      {
+        "from": "D27",
+        "to": "D28"
+      }
+    ],
+    "behavioral_surfaces": [
+      "Plan policy validation enforces all required add-on resources in Terraform plan",
+      "Add-on versions match target versions in compatibility matrix exactly",
+      "resolve_conflicts_on_update is set to PRESERVE for all add-ons",
+      "SSM parameter tags correctly supply controller add-on versions and conflict modes",
+      "IRSA assume-role policy parsing handles string, dict, and list condition structures",
+      "IRSA role trusts exactly one service account subject matching observations",
+      "Forbidden subjects like system:nodes are strictly rejected from IRSA trust policies",
+      "IAM policy actions reject wildcard actions and overly broad statements",
+      "IRSA role names match expected naming conventions",
+      "PodDisruptionBudgets match required names, namespaces, and minAvailable budgets",
+      "PDB minAvailable values match exact required default thresholds",
+      "System node groups retain CriticalAddonsOnly NoSchedule taints",
+      "System node drain simulation respects PDB minAvailable limits and tracks availability",
+      "System node groups retain correct nodepool Kubernetes labels",
+      "Regulated workloads specify explicit nodepool selectors and capacity constraints",
+      "Regulated capacity types enforce on-demand instances and reject spot capacity",
+      "Regulated node pools are restricted to private subnets only",
+      "Karpenter NodePool CRD specifications enforce on-demand capacity requirements",
+      "Interruption simulation verifies regulated workloads remain on-demand after rebalance",
+      "Add-on rollout prerequisites are validated before advancing each add-on",
+      "Add-ons roll out in exact order specified by compatibility matrix",
+      "Add-on readiness checks verify controller status before marking step OK",
+      "Cross-service trust checks ensure no IAM role ARN is shared across add-ons",
+      "Plan normalizer merges inline policies and standalone role policy attachments",
+      "UpgradeProtected resources are strictly protected against delete or replace actions",
+      "Rollout state checkpointing records step progress for atomic restart recovery",
+      "Report fields are complete, canonical, and deterministically formatted",
+      "Report digest is computed over stable semantic fields with sorted keys",
+      "Readiness report status is READY only when all policy and rollout checks pass",
+      "Identical upgrade runs produce identical report digests"
+    ],
+    "organic_f2p_surface_assessment": "30 organic F2P behaviors mapped across 7 requirement families; validator PASS at task commit."
+  }
+}

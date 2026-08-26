@@ -1,0 +1,246 @@
+{
+  "dispatch": {
+    "branch": "terminus-controller-request/terraform-aws-eks-addon-trust-rollout/ad8b88368caa0e42",
+    "controller_stage": true,
+    "execution_mode": "HOSTED_CONTROLLER",
+    "model_backed": false,
+    "persistence": "workflow validates, records, replays and fast-forwards main only if repository HEAD is unchanged",
+    "request": {
+      "control_plane_commit": "df7ef7569e2947b9f0bf7cf89ed4dec6c2a5a1fe",
+      "expected_repository_head": "f649fbfd0f14603138e6e6293f0067587016f09a",
+      "inputs": {
+        "APPROVED_SOLVER_VISIBLE_REQUIREMENT_CONTRACT": ".terminus/contracts/terraform-aws-eks-addon-trust-rollout/solver-visible-requirements.json",
+        "APPROVED_WORK_PACKAGE": "Complete the inherited EKS add-on trust rollout system so controllers, IRSA subjects, PDBs, nodepool taints, and regulated placement achieve policy-compliant, interruption-safe upgrade readiness with deterministic reports.",
+        "CREATION_PROFILE": "large_system_strict",
+        "CREATION_REQUEST": "Create / complete the Edition 3 large_system_strict task terraform-aws-eks-addon-trust-rollout: an inherited Terraform + Kubernetes EKS add-on trust rollout lab covering add-on version/conflict planning, IRSA subject fencing, PDB drain safety, regulated placement/capacity fences, interruption-safe step rollout, and deterministic upgrade reporting. Verification remains owned by the project through Cursor/Harbor after freeze.",
+        "DEFECT_TOPOLOGY": ".terminus/designs/terraform-aws-eks-addon-trust-rollout.json",
+        "NETWORK_ENVIRONMENT_CONSTRAINTS": "Public build-time package access; no live AWS API calls, no external Kubernetes cluster connectivity, no privileged container requirements.",
+        "PRODUCTION_AUTHENTICITY_COMPANION": ".terminus/designs/terraform-aws-eks-addon-trust-rollout-production.json",
+        "REQUESTED_DOMAIN": "Terraform, Amazon EKS add-ons, IRSA, Kubernetes PDB/nodepools, regulated placement, upgrade rollout",
+        "REQUESTED_PROFILE": "large_system_strict",
+        "TEST_MAP": ".terminus/designs/terraform-aws-eks-addon-trust-rollout-test-map.json",
+        "VERIFICATION_EXCLUDED_FROM_CREATION_AGENT": true,
+        "VERIFICATION_OWNER": "project owner via Cursor"
+      },
+      "schema_version": "1.0",
+      "stage_id": "RULE_RESOLUTION",
+      "task_commit": "f649fbfd0f14603138e6e6293f0067587016f09a",
+      "task_id": "terraform-aws-eks-addon-trust-rollout"
+    },
+    "request_path": ".terminus/controller-requests/terraform-aws-eks-addon-trust-rollout-ad8b88368caa0e42.json",
+    "stage_id": "RULE_RESOLUTION",
+    "status": "READY_TO_DISPATCH",
+    "trigger": "REQUEST_BRANCH_PUSH",
+    "workflow": ".github/workflows/terminus-controller-stage.yml"
+  },
+  "execution_mode": "HOSTED_CONTROLLER",
+  "executor_handoff": null,
+  "invocation": {
+    "acceptance_predicates": {
+      "RULES_RESOLVED": [
+        {
+          "op": "empty",
+          "path": "KNOWN_POLICY_CONFLICTS"
+        }
+      ]
+    },
+    "authority": {
+      "control_plane_commit": "df7ef7569e2947b9f0bf7cf89ed4dec6c2a5a1fe",
+      "policy_versions": {},
+      "task_commit": "f649fbfd0f14603138e6e6293f0067587016f09a",
+      "task_id": "terraform-aws-eks-addon-trust-rollout"
+    },
+    "evidence": {
+      "authorized_evidence_classes": [
+        "CONTROL_PLANE_POLICY",
+        "DURABLE_SESSION_STATE"
+      ],
+      "evidence_required": [
+        "resolved authoritative rule sources",
+        "active validator inventory",
+        "creation profile decision"
+      ],
+      "excluded_evidence_classes": [
+        "CI_RUNTIME_EVIDENCE",
+        "CURRENT_REVIEW_PACKET",
+        "FINAL_PACKAGE_EVIDENCE",
+        "MODEL_TRIAL_EVIDENCE",
+        "PRIOR_REVIEW_RESULTS",
+        "PRIVATE_CREATION_DESIGN",
+        "PUBLIC_REFERENCE",
+        "SOLUTION_ORACLE",
+        "SOLVER_VISIBLE_TASK",
+        "VERIFIER_PRIVATE"
+      ],
+      "mandatory_exact_reads": [
+        "TERMINUS_3_AI_INSTRUCTIONS.md",
+        ".terminus/AGENT_SYSTEM.md",
+        ".terminus/agents/CREATION_CONTROLLER.md",
+        ".terminus/agents/CREATION_PIPELINE.md",
+        ".terminus/agents/PRODUCTION_AUTHENTICITY.md",
+        ".terminus/reviewers/REVIEWER_CHECKLIST.md"
+      ],
+      "retrieval_mode": "EXACT_ONLY"
+    },
+    "ignored_input_count": 8,
+    "inputs": {
+      "optional": {
+        "NETWORK_ENVIRONMENT_CONSTRAINTS": "Public build-time package access; no live AWS API calls, no external Kubernetes cluster connectivity, no privileged container requirements.",
+        "REQUESTED_DOMAIN": "Terraform, Amazon EKS add-ons, IRSA, Kubernetes PDB/nodepools, regulated placement, upgrade rollout",
+        "REQUESTED_PROFILE": "large_system_strict"
+      },
+      "required": {
+        "CREATION_REQUEST": "Create / complete the Edition 3 large_system_strict task terraform-aws-eks-addon-trust-rollout: an inherited Terraform + Kubernetes EKS add-on trust rollout lab covering add-on version/conflict planning, IRSA subject fencing, PDB drain safety, regulated placement/capacity fences, interruption-safe step rollout, and deterministic upgrade reporting. Verification remains owned by the project through Cursor/Harbor after freeze."
+      }
+    },
+    "invocation_id": "inv_ad8b88368caa0e4252672cfebcf615e7613a1ed022263da1d8bab8532a5fd48e",
+    "learning": {
+      "context_hash": "sha256:307e06b6be8eee79e941256cc80e7b4b8e6d8edb9a73269dbba59257a864107b",
+      "lessons": [],
+      "mode": "GENERALIZED_LESSONS_PLUS_OWNED_REMEDIATIONS",
+      "raw_feedback_exposed": false,
+      "raw_historical_findings_exposed": false,
+      "registry_heads": {
+        "feedback": "sha256:8dd19b0617b094661caf5fe0a5b30e437703843b5f05ce63a7a75586710575c6",
+        "findings": "GENESIS",
+        "lessons": "GENESIS",
+        "patterns": "GENESIS",
+        "remediations": "GENESIS"
+      },
+      "remediations": []
+    },
+    "missing_required_inputs": [],
+    "output_contract": {
+      "allowed_status_values": [
+        "RULES_RESOLVED",
+        "POLICY_CONFLICT",
+        "BLOCKED"
+      ],
+      "deterministic_validators": [
+        ".terminus/validate_agent_system.py"
+      ],
+      "optional_fields": [
+        "RULE_DELTA"
+      ],
+      "persisted_artifacts": [
+        "CREATION_RULE_CONTEXT"
+      ],
+      "required_fields": [
+        "CONTROL_PLANE_COMMIT",
+        "RULE_SOURCES",
+        "ACTIVE_VALIDATORS",
+        "CREATION_PROFILE",
+        "NETWORK_ENVIRONMENT_CONSTRAINTS",
+        "KNOWN_POLICY_CONFLICTS"
+      ],
+      "semantic_reviewers": []
+    },
+    "readiness": "READY",
+    "retrieval": {
+      "query": null,
+      "retrieved_chars": 0,
+      "retrieved_context": [],
+      "status": "NOT_REQUESTED"
+    },
+    "routing": {
+      "failure_routes": {
+        "MISSING_RULE_SOURCE": "Creation Controller",
+        "POLICY_CONFLICT": "Creation Controller -> policy conflict ledger -> blocked affected gate"
+      },
+      "stale_on": [
+        "governing task-rule change",
+        "active validator change",
+        "creation profile change",
+        "network/environment policy change"
+      ],
+      "success_transition": "WORK_PACKAGE_RESEARCH"
+    },
+    "schema_version": "1.0",
+    "stage": {
+      "lifecycle": "creation",
+      "owner": "Creation Controller",
+      "role_class": "CONTROLLER",
+      "role_id": "CREATION_CONTROLLER",
+      "stage_id": "RULE_RESOLUTION"
+    }
+  },
+  "next": {
+    "action": "INVOKE_STAGE",
+    "optional_inputs": [
+      "NETWORK_ENVIRONMENT_CONSTRAINTS",
+      "REQUESTED_DOMAIN",
+      "REQUESTED_PROFILE"
+    ],
+    "owner": "Creation Controller",
+    "primary_role_id": "CREATION_CONTROLLER",
+    "required_inputs": [
+      "CREATION_REQUEST"
+    ],
+    "stage_id": "RULE_RESOLUTION"
+  },
+  "quality_mode_policy": {
+    "inline_creation_governor_role_ids": [
+      "A10_COMPLEXITY_GOVERNOR"
+    ],
+    "inline_quality_role_ids": [
+      "Q1_SPEC_GAP_REPAIRER",
+      "Q2_VERIFIER_COVERAGE_REPAIRER",
+      "Q3_SPEC_AMBIGUITY_REPAIRER",
+      "Q5_ORACLE_RUNTIME_REPAIR_SPECIALIST",
+      "Q7_TASK_FORMAT_ENFORCER"
+    ],
+    "inline_stage_sequences": {
+      "SPEC_ALIGNMENT": [
+        {
+          "result_field": "Q1_STATUS",
+          "role_id": "Q1_SPEC_GAP_REPAIRER",
+          "satisfied_values": [
+            "NO_GAP",
+            "PASS"
+          ]
+        },
+        {
+          "result_field": "Q2_STATUS",
+          "role_id": "Q2_VERIFIER_COVERAGE_REPAIRER",
+          "satisfied_values": [
+            "COVERED",
+            "PASS"
+          ]
+        },
+        {
+          "result_field": "Q3_STATUS",
+          "role_id": "Q3_SPEC_AMBIGUITY_REPAIRER",
+          "satisfied_values": [
+            "CLEAR",
+            "PASS"
+          ]
+        }
+      ]
+    },
+    "mandatory_quality_role_keys": [
+      "spec-test-contract",
+      "production-logic"
+    ],
+    "mandatory_same_chat_checkpoints": {
+      "Q1": "SPEC_ALIGNMENT.Q1_STATUS",
+      "Q2": "SPEC_ALIGNMENT.Q2_STATUS",
+      "Q3": "SPEC_ALIGNMENT.Q3_STATUS",
+      "Q5": "DETERMINISTIC_VALIDATION runtime/oracle checkpoint; invoke Q5 repair only on registered runtime/oracle failure",
+      "Q7": "FORMAT_GATE"
+    },
+    "optional_q8_role_keys": [
+      "difficulty-sim-gpt",
+      "difficulty-sim-claude"
+    ],
+    "policy_document": ".terminus/agents/QUALITY_EXECUTION_MODE.md",
+    "policy_version": "1.0",
+    "producer_role_classes": [
+      "FIXER",
+      "PRODUCER"
+    ],
+    "q4_q6_mode": "AUTOMATED",
+    "q8_mode": "OFF",
+    "source": ".terminus/agents/quality_execution_mode.json"
+  },
+  "state_snapshot_id": "state_3988ea4f7311f7f2272ad8b13dac3fc9d6bfb560b6757da16954f2e68735b50f"
+}

@@ -5,49 +5,46 @@ Session schema version: `2.4`
 ## Identity
 
 - Task: `terraform-aws-eks-addon-trust-rollout`
-- Controller state: `CREATION_REQUEST` / pre-`RULE_RESOLUTION` (no ledger yet)
+- Controller state: `RUNTIME_AUTHENTICITY` PASS recorded → next `DETERMINISTIC_VALIDATION` (`HOSTED_DETERMINISTIC_VALIDATION` READY_TO_DISPATCH)
 - Working branch: `main`
 - Pull request: `none`
-- Current task commit: `UNRESOLVED` (task tree dirty; do not invent a TASK_COMMIT)
-- Last committed task-path touch (stale vs working tree): `4e715965bd1819e66c5705e70e538dc66dfbb1d3`
-- Repository HEAD: `38225c53973522f7e922db77735901701b987293`
+- Current task commit: `f649fbfd0f14603138e6e6293f0067587016f09a` (clean task tree)
+- Repository HEAD (local): `6f38804ec30a6954f2ac352ba10e17226c24cd19`
 - Effective control-plane commit: `df7ef7569e2947b9f0bf7cf89ed4dec6c2a5a1fe`
-- Creation profile: `large_system_strict` (from uncommitted design)
+- Creation profile: `large_system_strict`
 
-## Git reconciliation (2026-08-26)
+## Git reconciliation
 
-- Task path porcelain: **dirty** (11 modified tracked + 42 untracked under task tree).
-- Uncommitted companion artifacts: `.terminus/designs/terraform-aws-eks-addon-trust-rollout*.json`, `.terminus/contracts/terraform-aws-eks-addon-trust-rollout/`.
-- No `.terminus/executions/terraform-aws-eks-addon-trust-rollout/`, no workflow state, no reviews.
-- `new_review_packet.py` refuses packet generation until the task tree is committed.
-- `controller_cli continue` (probe with HEAD as task-commit only) returns first stage `RULE_RESOLUTION`, `execution_mode=ORCHESTRATOR_DIRECT`, `readiness=BLOCKED_MISSING_INPUTS` missing `CREATION_REQUEST`. That probe is **not** authority to bind lifecycle to HEAD while working-tree content differs.
+- Task tree dirty: **false**
+- Task-path last touch / TASK_COMMIT: `f649fbfd0f14603138e6e6293f0067587016f09a`
+- Local task tree OID: `ef2c2f11b913184e0ef77c99a3fbe096c314b79c`
+- `origin/main` task tree OID: `ac4dcb4a8f0fa1a7480b7ebdf1d047c92efe5073` (**stale stub**; does not match TASK_COMMIT)
+- Local `main` vs `origin/main`: diverged (local ahead with task + other commits; remote ahead with ansible-fleet lifecycle commits)
+- Lifecycle ledger/executions/research/session stage artifacts for this task: **present locally, mostly uncommitted**
 
 ## Current gates
 
 | Gate | Status | Evidence |
 | --- | --- | --- |
-| Authoritative TASK_COMMIT | BLOCKED | Dirty task tree; last touch SHA does not represent working tree |
-| RULE_RESOLUTION | NOT_STARTED | Missing `CREATION_REQUEST` + no honest task-commit binding |
-| Spec alignment Q1/Q2/Q3 | NOT_STARTED | No ledger / session PASS |
-| FORMAT_GATE (Q7) | NOT_STARTED | No ledger |
-| COMPLEXITY / RUNTIME_AUTHENTICITY | ADVISORY_ONLY | Producer chat claims local validator PASS; not commit-bound lifecycle evidence |
-| DETERMINISTIC_VALIDATION (Oracle/NOP) | ADVISORY_ONLY | Producer chat claims Harbor reward 1.0 / 0.0 via Windows `harbor run`; not Actions/commit-bound lifecycle record |
-| FROZEN_CANDIDATE | NOT_REACHED | Predecessors incomplete |
-| QUALITY_INTERLOCK (Q4/Q6) | NOT_REACHED | Requires clean committed task; mode=`AUTOMATED` |
+| RULE_RESOLUTION → RUNTIME_AUTHENTICITY | PASS (local ledger) | 15 ledger events under `.terminus/executions/terraform-aws-eks-addon-trust-rollout/` |
+| HUMAN_WRITING_RESEARCH | PASS | pair `hwpair-809399a9b9995828c3b5`; DEGRADED approved; validators VALID |
+| SPEC_ALIGNMENT (Q1/Q2/Q3) | ALIGNED | aggregate StageResult recorded |
+| FORMAT_GATE / ASSEMBLY / COMPLEXITY / RUNTIME_AUTHENTICITY | PASS | recorded; local complexity + authenticity validators PASS |
+| DETERMINISTIC_VALIDATION | BLOCKED_DISPATCH | `HOSTED_DETERMINISTIC_VALIDATION` READY but remote main lacks TASK_COMMIT tree; ledger not on shared HEAD |
+| FROZEN_CANDIDATE / QUALITY_INTERLOCK (Q4/Q6 AUTOMATED) | NOT_REACHED | blocked behind deterministic |
 
 ## Decisions that must survive chat changes
 
-- Do **not** self-approve Q4/Q6 from the producer chat.
-- Do **not** invent or record a TASK_COMMIT until the user authorizes a commit of the current task tree (+ designs/contracts).
-- Q4/Q6 mode remains `AUTOMATED` per `.terminus/agents/quality_execution_mode.json`; Q8 remains `OFF`.
-- Local Harbor/oracle prose is preflight only until rebound after a real task commit through the hosted deterministic path.
+- Q4/Q6 remain `AUTOMATED`; do not self-approve in producer/orchestrator context.
+- Do not synthesize DETERMINISTIC_VALIDATION PASS from local Harbor prose.
+- Hosted deterministic request envelope prepared in `.terminus/tmp/eks-hard-stop-payload.json` (branch `terminus-deterministic-request/terraform-aws-eks-addon-trust-rollout/d28918aaa74575e7`) but **must not** be pushed until `origin/main` carries matching task tree and ledger-bearing HEAD.
 
 ## Next action
 
-1. **User authorization required:** commit the current task tree and related `.terminus/designs|contracts` for this task (Orchestrator will not commit without explicit authorization).
-2. After commit, resolve real `TASK_COMMIT`, supply `CREATION_REQUEST` via inputs, run `controller_cli continue`, execute `RULE_RESOLUTION` (`ORCHESTRATOR_DIRECT`), then advance creation gates through freeze.
-3. Only after `FROZEN_CANDIDATE`: dispatch `QUALITY_INTERLOCK` via `AUTOMATED_QUALITY` (`.github/workflows/terminus-quality-lifecycle.yml`).
+1. **User authorization required:** commit lifecycle artifacts (executions/workflows/research/sessions for this task) and reconcile/push `main` so `origin/main` contains task tree at `f649fbfd` (or descendant with identical task tree) plus the ledger.
+2. Re-run `controller_cli continue` for fresh `HOSTED_DETERMINISTIC_VALIDATION` dispatch bound to that HEAD.
+3. Push exact deterministic request branch once; poll `.terminus/deterministic-run-locators/...`; then proceed to freeze → automated Q4/Q6.
 
 ## Current blocker
 
-Human authorization for git commit of dirty task + design/contract artifacts so a real TASK_COMMIT exists before lifecycle recording or Q4/Q6.
+authorization-required — publish/reconcile `main` + commit local lifecycle ledger before hosted Oracle/NOP can bind.

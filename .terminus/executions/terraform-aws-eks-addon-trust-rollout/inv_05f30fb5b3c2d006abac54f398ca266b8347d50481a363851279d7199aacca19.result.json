@@ -1,0 +1,307 @@
+{
+  "authority": {
+    "control_plane_commit": "df7ef7569e2947b9f0bf7cf89ed4dec6c2a5a1fe",
+    "policy_versions": {},
+    "task_commit": "f649fbfd0f14603138e6e6293f0067587016f09a",
+    "task_id": "terraform-aws-eks-addon-trust-rollout"
+  },
+  "disposition": "ADVANCE",
+  "evidence_refs": [
+    {
+      "content_hash": "sha256:d979d1683e5fcbb4861a1d40d207c04f2955978a65160664aa86388a2be0b40d",
+      "kind": "COMMIT",
+      "ref": "commit:f649fbfd0f14603138e6e6293f0067587016f09a"
+    }
+  ],
+  "invocation_id": "inv_05f30fb5b3c2d006abac54f398ca266b8347d50481a363851279d7199aacca19",
+  "invocation_snapshot": {
+    "acceptance_predicates": {},
+    "authority": {
+      "control_plane_commit": "df7ef7569e2947b9f0bf7cf89ed4dec6c2a5a1fe",
+      "policy_versions": {},
+      "task_commit": "f649fbfd0f14603138e6e6293f0067587016f09a",
+      "task_id": "terraform-aws-eks-addon-trust-rollout"
+    },
+    "evidence": {
+      "authorized_evidence_classes": [
+        "CONTROL_PLANE_POLICY",
+        "PUBLIC_REFERENCE",
+        "SOLVER_VISIBLE_TASK"
+      ],
+      "evidence_required": [
+        "current dataset/catalog/domain-profile hashes",
+        "disjoint writer/reviewer calibration evidence",
+        "explicit external coverage state",
+        "validated task-writing profile"
+      ],
+      "excluded_evidence_classes": [
+        "CI_RUNTIME_EVIDENCE",
+        "CURRENT_REVIEW_PACKET",
+        "DURABLE_SESSION_STATE",
+        "FINAL_PACKAGE_EVIDENCE",
+        "MODEL_TRIAL_EVIDENCE",
+        "PRIOR_REVIEW_RESULTS",
+        "PRIVATE_CREATION_DESIGN",
+        "SOLUTION_ORACLE",
+        "VERIFIER_PRIVATE"
+      ],
+      "mandatory_exact_reads": [
+        ".terminus/reviewers/HUMAN_WRITING_CALIBRATION.md",
+        ".terminus/reviewers/HUMAN_ENGINEERING_SOURCE_CORPUS.md",
+        ".terminus/reviewers/WRITING_EXAMPLE_BANK.md",
+        ".terminus/agents/HUMAN_WRITING_DATASET_POLICY.md",
+        ".terminus/agents/human_writing_stage_overlay.json",
+        ".terminus/human_writing/dataset_registry.json",
+        ".terminus/human_writing/domain_profiles.json",
+        ".terminus/agents/HUMAN_WRITING_RESEARCHER.md",
+        ".terminus/agents/HUMAN_WRITING_CORPUS_AGENT.md",
+        ".terminus/agents/CREATOR_PROMPTS.md"
+      ],
+      "retrieval_mode": "FILTERED_HYBRID"
+    },
+    "ignored_input_count": 43,
+    "inputs": {
+      "optional": {},
+      "required": {
+        "APPROVED_WORK_PACKAGE": {
+          "id": "EKS-ADDON-TRUST-ROLLOUT",
+          "objective": "Complete the inherited Terraform and Kubernetes EKS add-on trust rollout system so add-on controllers, IRSA subjects, PodDisruptionBudgets, node pool taints, and regulated workload placement achieve policy-compliant, interruption-safe upgrade readiness.",
+          "persona": "A platform reliability engineer completing a multi-addon, IRSA trust, and PDB rollout on a live EKS upgrade lab.",
+          "scope_exclusions": [
+            "Live AWS API calls or external Kubernetes cluster connectivity",
+            "Fresh EKS cluster creation from scratch",
+            "Generic EC2 fleet rollout or AMI promotion",
+            "Jenkins controller upgrade or CI pipeline execution",
+            "Direct Helm chart repo downloading"
+          ]
+        },
+        "CURRENT_TIME_BUDGET": {
+          "enforcement": "ADVISORY_ONLY",
+          "guidance_seconds": 25200,
+          "hard_limit": null,
+          "policy_version": "1.1",
+          "quality_gates_may_be_skipped_for_time": false,
+          "time_extension_required": false
+        },
+        "SOLVER_VISIBLE_REQUIREMENTS": [
+          "Complete the inherited Terraform and Kubernetes EKS add-on trust rollout system at `/app` using contracts in `/app/docs` and incident evidence in `/app/evidence` so add-on controllers, IRSA subjects, PodDisruptionBudgets, and regulated placement achieve policy-compliant upgrade readiness.",
+          "Execute and validate through the public operator CLI command at `/app/bin/addon-trust-rollout`.",
+          "Plan Terraform under `/app/terraform` so the generated plan at `/app/var/upgrade/plan.json` includes all required add-ons matching target versions in `/app/data/compatibility_matrix.json`.",
+          "Configure `resolve_conflicts_on_update = 'PRESERVE'` for all EKS add-ons in the Terraform plan.",
+          "Support SSM parameter tags for controller add-ons to extract version overrides and conflict resolution modes.",
+          "Configure each IRSA role in Terraform to trust exactly one service account subject matching `/app/data/trust_observations.json` and reject wildcards or forbidden subjects.",
+          "Ensure IAM role policies contain no wildcard actions (`*` or `ebs:*`) and role names follow required naming conventions.",
+          "Supply required PodDisruptionBudgets in `/app/k8s` matching required names, namespaces, and minAvailable thresholds in `/app/data/pdbs.json`.",
+          "Preserve `CriticalAddonsOnly=true:NoSchedule` taints and nodepool labels on the system node group.",
+          "Simulate system node draining while enforcing PodDisruptionBudget minAvailable limits and maintaining core service availability.",
+          "Enforce explicit nodepool selectors and capacity-type constraints for regulated workloads, restricting placement to private on-demand node pools.",
+          "Enforce Karpenter NodePool CRD requirements to ensure regulated capacity excludes spot instances.",
+          "Simulate spot/on-demand node interruptions and verify regulated workloads remain on on-demand capacity after rebalancing.",
+          "Validate add-on rollout prerequisites before advancing each add-on, executing rollouts in exact compatibility matrix order.",
+          "Poll and verify add-on readiness before marking steps complete, reporting status `READY` only when all readiness conditions pass.",
+          "Audit cross-service trust to prevent IAM role ARN sharing across distinct add-ons.",
+          "Merge inline policies and standalone role policy attachments in plan normalization.",
+          "Guard resources tagged `UpgradeProtected=true` against delete or replace actions in the Terraform plan.",
+          "Record step-by-step rollout state checkpoints to enable atomic restart recovery upon interruption.",
+          "Publish deterministic reports to `/app/output/upgrade-report.json` with canonical formatting, sorted keys, stable semantic fields, and repeatable SHA-256 report digests."
+        ]
+      }
+    },
+    "invocation_id": "inv_05f30fb5b3c2d006abac54f398ca266b8347d50481a363851279d7199aacca19",
+    "learning": {
+      "context_hash": "sha256:307e06b6be8eee79e941256cc80e7b4b8e6d8edb9a73269dbba59257a864107b",
+      "lessons": [],
+      "mode": "GENERALIZED_LESSONS_PLUS_OWNED_REMEDIATIONS",
+      "raw_feedback_exposed": false,
+      "raw_historical_findings_exposed": false,
+      "registry_heads": {
+        "feedback": "sha256:8dd19b0617b094661caf5fe0a5b30e437703843b5f05ce63a7a75586710575c6",
+        "findings": "GENESIS",
+        "lessons": "GENESIS",
+        "patterns": "GENESIS",
+        "remediations": "GENESIS"
+      },
+      "remediations": []
+    },
+    "missing_required_inputs": [],
+    "output_contract": {
+      "allowed_status_values": [
+        "CALIBRATION_READY",
+        "INSUFFICIENT_SOURCE_DIVERSITY",
+        "SOURCE_QUALITY_BLOCKED",
+        "BLOCKED"
+      ],
+      "deterministic_validators": [
+        ".terminus/human_writing/validate_calibration.py"
+      ],
+      "optional_fields": [
+        "CACHE_SOURCE_KEYS_USED",
+        "RAW_SOURCE_KEYS_USED_FOR_CONTAMINATION",
+        "DEGRADED_COVERAGE_APPROVAL",
+        "CURRENT_STATE_EVIDENCE_NOTES"
+      ],
+      "persisted_artifacts": [
+        ".terminus/research/<task>-dataset-calibration.json",
+        ".terminus/research/<task>-task-writing-profile.json"
+      ],
+      "required_fields": [
+        "DATASET_POLICY_VERSION",
+        "DATASET_REGISTRY_SHA256",
+        "SEED_CATALOG_SHA256",
+        "DOMAIN_PROFILES_SHA256",
+        "DOMAIN_PROFILE",
+        "CALIBRATION_PAIR_ID",
+        "WRITER_CALIBRATION_ID",
+        "REVIEWER_CALIBRATION_ID",
+        "WRITER_SAMPLE_IDS",
+        "REVIEWER_SAMPLE_IDS",
+        "WRITER_REVIEWER_SAMPLE_OVERLAP",
+        "EXTERNAL_DATASET_COVERAGE",
+        "TASK_WRITING_PROFILE"
+      ],
+      "semantic_reviewers": [
+        "Human Quality Reviewer"
+      ]
+    },
+    "readiness": "READY",
+    "retrieval": {
+      "query": null,
+      "retrieved_chars": 0,
+      "retrieved_context": [],
+      "status": "NOT_REQUESTED"
+    },
+    "routing": {
+      "failure_routes": {
+        "INSUFFICIENT_CALIBRATION": "A6 Human Writing Researcher",
+        "INSUFFICIENT_SOURCE_DIVERSITY": "A6 Human Writing Researcher -> bounded additional retrieval or explicit degraded-coverage decision",
+        "INVALID_CALIBRATION": "Creation Controller -> A6 Human Writing Researcher",
+        "SOURCE_QUALITY_BLOCKED": "Creation Controller -> source/provenance owner",
+        "UNSUPPORTED_CURRENT_STATE_CLAIM": "Instruction Writer / Environment Builder"
+      },
+      "stale_on": [
+        "material work-package change",
+        "instruction-policy change",
+        "human-writing calibration policy change",
+        "dataset registry change",
+        "seed catalog change",
+        "domain profile change",
+        "human-writing stage overlay change"
+      ],
+      "success_transition": "INSTRUCTION_DRAFT"
+    },
+    "schema_version": "1.0",
+    "stage": {
+      "lifecycle": "creation",
+      "owner": "A6 Human Writing Researcher",
+      "role_class": "PRODUCER",
+      "role_id": "A6_HUMAN_WRITING_RESEARCHER",
+      "stage_id": "HUMAN_WRITING_RESEARCH"
+    }
+  },
+  "outputs": {
+    "CACHE_SOURCE_KEYS_USED": [],
+    "CALIBRATION_PAIR_ID": "hwpair-809399a9b9995828c3b5",
+    "CURRENT_STATE_EVIDENCE_NOTES": [
+      "Deterministic local calibration pair generated for Terraform/EKS/IRSA/PDB upgrade-rollout domain.",
+      "No Oracle, private test, defect-topology, prior-review, or model-trial material used for solver-facing prose calibration."
+    ],
+    "DATASET_POLICY_VERSION": "1.2",
+    "DATASET_REGISTRY_SHA256": "05ece08c27414d265a2a238928e4c664295434620ffe957c8e88b5050c54645a",
+    "DEGRADED_COVERAGE_APPROVAL": {
+      "approved": true,
+      "approved_by": "CREATION_CONTROLLER",
+      "reason": "No approved external cache was supplied; deterministic local calibration is used with explicit DEGRADED coverage and no claim of full external evidence."
+    },
+    "DOMAIN_PROFILE": "platform_cloud",
+    "DOMAIN_PROFILES_SHA256": "9612d83a11558d9013a82362c7405c70ddb5158b582cc2f9859c8c672ad6c838",
+    "EXTERNAL_DATASET_COVERAGE": "DEGRADED",
+    "RAW_SOURCE_KEYS_USED_FOR_CONTAMINATION": [],
+    "REVIEWER_CALIBRATION_ID": "hwcal-reviewer-96ca41b1e383a17f3092",
+    "REVIEWER_SAMPLE_IDS": [
+      "HC-005",
+      "HC-026",
+      "HC-017",
+      "HC-016",
+      "HC-025",
+      "HC-013",
+      "CP-002",
+      "CP-005",
+      "CP-001",
+      "AT-002",
+      "AT-005",
+      "HP-001",
+      "HP-002",
+      "HN-002",
+      "HN-003"
+    ],
+    "SEED_CATALOG_SHA256": "e205f858f8391fd88d3e26665d2f585a69cd691321b9275644e631bb949f0942",
+    "TASK_WRITING_PROFILE": {
+      "avoid": [
+        "one sentence per verifier scenario",
+        "implementation diagnosis or repair locations",
+        "invented outage or customer story",
+        "copied public issue wording",
+        "generic benchmark preamble"
+      ],
+      "must_preserve": [
+        "public operator CLI /app/bin/addon-trust-rollout",
+        "Terraform plan at /app/var/upgrade/plan.json with PRESERVE conflict resolution",
+        "exclusive IRSA subjects and no wildcard IAM actions",
+        "PDB minAvailable and CriticalAddonsOnly taints",
+        "regulated on-demand private placement and Karpenter fences",
+        "compatibility-matrix ordered rollout with readiness",
+        "checkpoint restart recovery",
+        "deterministic sorted upgrade-report digests at /app/output/upgrade-report.json"
+      ],
+      "structure": [
+        "open with the inherited EKS addon-trust rollout completion request",
+        "group plan/IRSA/PDB/placement/rollout/checkpoint/report outcomes rather than mirroring tests",
+        "refer to /app/docs contracts for detailed schemas and lifecycle semantics",
+        "state offline lab boundaries: no live AWS or external cluster APIs"
+      ],
+      "voice": "direct platform reliability engineering change request"
+    },
+    "WRITER_CALIBRATION_ID": "hwcal-writer-86eb00052fd148c76e50",
+    "WRITER_REVIEWER_SAMPLE_OVERLAP": [],
+    "WRITER_SAMPLE_IDS": [
+      "HC-007",
+      "HC-009",
+      "HC-008",
+      "HC-028",
+      "HC-027",
+      "HC-024",
+      "CP-003",
+      "CP-004",
+      "AT-006"
+    ]
+  },
+  "record_id": "rec_aba62e1dce860fa3c874af99495da0e2ed8741abb4ffad0b5e589ad940edd604",
+  "role_id": "A6_HUMAN_WRITING_RESEARCHER",
+  "schema_version": "1.0",
+  "stage_id": "HUMAN_WRITING_RESEARCH",
+  "status": "CALIBRATION_READY",
+  "task_lineage": {
+    "input_task_commit": "f649fbfd0f14603138e6e6293f0067587016f09a",
+    "output_task_commit": "f649fbfd0f14603138e6e6293f0067587016f09a",
+    "task_changed": false
+  },
+  "transition": {
+    "action": "ADVANCE",
+    "requires_state_validation": false,
+    "target": "INSTRUCTION_DRAFT",
+    "target_kind": "STAGE"
+  },
+  "validation": {
+    "acceptance_predicates_satisfied": true,
+    "evidence_binding_satisfied": true,
+    "evidence_refs_count": 1,
+    "invocation_identity_valid": true,
+    "invocation_policy_valid": true,
+    "output_keys_valid": true,
+    "required_outputs_satisfied": true,
+    "retrieval_context_authorized": true,
+    "status_legal": true,
+    "task_commit_change_authorized": true,
+    "task_lineage_valid": true
+  }
+}

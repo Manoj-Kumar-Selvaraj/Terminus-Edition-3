@@ -1,0 +1,512 @@
+{
+  "ledger_event": {
+    "control_plane_commit": "df7ef7569e2947b9f0bf7cf89ed4dec6c2a5a1fe",
+    "event_id": "evt_072c783c808e2c3e721d56c239718995564985685cf6fbb539be9c2a52e580eb",
+    "input_task_commit": "f649fbfd0f14603138e6e6293f0067587016f09a",
+    "invocation_id": "inv_a833d7c90d1f5c659cfabb516d89899e0dc4f84275f93f7178cd939adbed16d3",
+    "output_task_commit": "f649fbfd0f14603138e6e6293f0067587016f09a",
+    "previous_event_id": "evt_a3e9f5ec1f80b1c0b7f4bb6d8ae40f4808a4c871ab635e7df73b175929131aca",
+    "record_hash": "sha256:fdf3a447b63a7e568c1090c4646bffc0ef5b81116aa17ece4d9f11291a5c6ce5",
+    "record_id": "rec_adc85baeafec23f63be59d90e0af6839237c18d717db7ffe0ccea4b953d6397d",
+    "record_path": ".terminus/executions/terraform-aws-eks-addon-trust-rollout/inv_a833d7c90d1f5c659cfabb516d89899e0dc4f84275f93f7178cd939adbed16d3.result.json",
+    "schema_version": "1.0",
+    "sequence": 3,
+    "stage_id": "SYSTEM_ARCHITECTURE",
+    "task_id": "terraform-aws-eks-addon-trust-rollout"
+  },
+  "record": {
+    "authority": {
+      "control_plane_commit": "df7ef7569e2947b9f0bf7cf89ed4dec6c2a5a1fe",
+      "policy_versions": {},
+      "task_commit": "f649fbfd0f14603138e6e6293f0067587016f09a",
+      "task_id": "terraform-aws-eks-addon-trust-rollout"
+    },
+    "disposition": "ADVANCE",
+    "evidence_refs": [
+      {
+        "content_hash": "sha256:d979d1683e5fcbb4861a1d40d207c04f2955978a65160664aa86388a2be0b40d",
+        "kind": "COMMIT",
+        "ref": "commit:f649fbfd0f14603138e6e6293f0067587016f09a"
+      }
+    ],
+    "invocation_id": "inv_a833d7c90d1f5c659cfabb516d89899e0dc4f84275f93f7178cd939adbed16d3",
+    "invocation_snapshot": {
+      "acceptance_predicates": {},
+      "authority": {
+        "control_plane_commit": "df7ef7569e2947b9f0bf7cf89ed4dec6c2a5a1fe",
+        "policy_versions": {},
+        "task_commit": "f649fbfd0f14603138e6e6293f0067587016f09a",
+        "task_id": "terraform-aws-eks-addon-trust-rollout"
+      },
+      "evidence": {
+        "authorized_evidence_classes": [
+          "CONTROL_PLANE_POLICY",
+          "PRIVATE_CREATION_DESIGN",
+          "PUBLIC_REFERENCE",
+          "SOLVER_VISIBLE_TASK"
+        ],
+        "evidence_required": [
+          "component/resource graph",
+          "runtime/operator reachability plan",
+          "state/persistence model",
+          "production-characteristic rationale"
+        ],
+        "excluded_evidence_classes": [
+          "CI_RUNTIME_EVIDENCE",
+          "CURRENT_REVIEW_PACKET",
+          "DURABLE_SESSION_STATE",
+          "FINAL_PACKAGE_EVIDENCE",
+          "MODEL_TRIAL_EVIDENCE",
+          "PRIOR_REVIEW_RESULTS",
+          "SOLUTION_ORACLE",
+          "VERIFIER_PRIVATE"
+        ],
+        "mandatory_exact_reads": [
+          ".terminus/agents/CREATION_PIPELINE.md",
+          ".terminus/agents/CREATOR_AGENT_REGISTRY.md",
+          ".terminus/agents/PRODUCTION_AUTHENTICITY.md",
+          ".terminus/agents/CREATOR_PROMPTS.md",
+          ".terminus/agents/A2_PHASE_PROMPTS.md"
+        ],
+        "retrieval_mode": "FILTERED_HYBRID"
+      },
+      "ignored_input_count": 42,
+      "inputs": {
+        "optional": {},
+        "required": {
+          "APPROVED_OPERATIONAL_REQUIREMENTS": [
+            "Complete the inherited Terraform and Kubernetes EKS add-on trust rollout system at `/app` using contracts in `/app/docs` and incident evidence in `/app/evidence` so add-on controllers, IRSA subjects, PodDisruptionBudgets, and regulated placement achieve policy-compliant upgrade readiness.",
+            "Execute and validate through the public operator CLI command at `/app/bin/addon-trust-rollout`.",
+            "Plan Terraform under `/app/terraform` so the generated plan at `/app/var/upgrade/plan.json` includes all required add-ons matching target versions in `/app/data/compatibility_matrix.json`.",
+            "Configure `resolve_conflicts_on_update = 'PRESERVE'` for all EKS add-ons in the Terraform plan.",
+            "Support SSM parameter tags for controller add-ons to extract version overrides and conflict resolution modes.",
+            "Configure each IRSA role in Terraform to trust exactly one service account subject matching `/app/data/trust_observations.json` and reject wildcards or forbidden subjects.",
+            "Ensure IAM role policies contain no wildcard actions (`*` or `ebs:*`) and role names follow required naming conventions.",
+            "Supply required PodDisruptionBudgets in `/app/k8s` matching required names, namespaces, and minAvailable thresholds in `/app/data/pdbs.json`.",
+            "Preserve `CriticalAddonsOnly=true:NoSchedule` taints and nodepool labels on the system node group.",
+            "Simulate system node draining while enforcing PodDisruptionBudget minAvailable limits and maintaining core service availability.",
+            "Enforce explicit nodepool selectors and capacity-type constraints for regulated workloads, restricting placement to private on-demand node pools.",
+            "Enforce Karpenter NodePool CRD requirements to ensure regulated capacity excludes spot instances.",
+            "Simulate spot/on-demand node interruptions and verify regulated workloads remain on on-demand capacity after rebalancing.",
+            "Validate add-on rollout prerequisites before advancing each add-on, executing rollouts in exact compatibility matrix order.",
+            "Poll and verify add-on readiness before marking steps complete, reporting status `READY` only when all readiness conditions pass.",
+            "Audit cross-service trust to prevent IAM role ARN sharing across distinct add-ons.",
+            "Merge inline policies and standalone role policy attachments in plan normalization.",
+            "Guard resources tagged `UpgradeProtected=true` against delete or replace actions in the Terraform plan.",
+            "Record step-by-step rollout state checkpoints to enable atomic restart recovery upon interruption.",
+            "Publish deterministic reports to `/app/output/upgrade-report.json` with canonical formatting, sorted keys, stable semantic fields, and repeatable SHA-256 report digests."
+          ],
+          "APPROVED_WORK_PACKAGE": {
+            "id": "EKS-ADDON-TRUST-ROLLOUT",
+            "objective": "Complete the inherited Terraform and Kubernetes EKS add-on trust rollout system so add-on controllers, IRSA subjects, PodDisruptionBudgets, node pool taints, and regulated workload placement achieve policy-compliant, interruption-safe upgrade readiness.",
+            "persona": "A platform reliability engineer completing a multi-addon, IRSA trust, and PDB rollout on a live EKS upgrade lab.",
+            "scope_exclusions": [
+              "Live AWS API calls or external Kubernetes cluster connectivity",
+              "Fresh EKS cluster creation from scratch",
+              "Generic EC2 fleet rollout or AMI promotion",
+              "Jenkins controller upgrade or CI pipeline execution",
+              "Direct Helm chart repo downloading"
+            ]
+          },
+          "CREATION_RULE_CONTEXT": {
+            "ACTIVE_VALIDATORS": [
+              ".terminus/validate_agent_system.py",
+              ".terminus/validate_stage_contracts.py",
+              ".terminus/validate_task_complexity.py",
+              ".terminus/validate_environment_complexity.py",
+              ".terminus/validate_runtime_authenticity.py",
+              ".terminus/validate_business_module_diversity.py",
+              ".terminus/validate_review_freshness.py",
+              ".terminus/validate_quality_interlock.py",
+              ".github/workflows/terminus-edition-3-ci.yml",
+              ".github/workflows/terminus-creator-complexity.yml",
+              ".github/workflows/terminus-production-authenticity.yml"
+            ],
+            "CONTROL_PLANE_COMMIT": "df7ef7569e2947b9f0bf7cf89ed4dec6c2a5a1fe",
+            "CREATION_PROFILE": "large_system_strict",
+            "KNOWN_POLICY_CONFLICTS": [],
+            "NETWORK_ENVIRONMENT_CONSTRAINTS": "Public build-time package access; no live AWS API calls, no external Kubernetes cluster connectivity, no privileged container requirements.",
+            "RULE_SOURCES": [
+              "TERMINUS_3_AI_INSTRUCTIONS.md",
+              ".terminus/AGENT_SYSTEM.md",
+              ".terminus/agents/CREATION_CONTROLLER.md",
+              ".terminus/agents/CREATION_PIPELINE.md",
+              ".terminus/agents/PRODUCTION_AUTHENTICITY.md",
+              ".terminus/reviewers/REVIEWER_CHECKLIST.md",
+              ".terminus/agents/QUALITY_AGENT_REGISTRY.md",
+              ".terminus/agents/STAGE_CONTRACTS.md",
+              ".terminus/agents/stage_contracts.json"
+            ]
+          }
+        }
+      },
+      "invocation_id": "inv_a833d7c90d1f5c659cfabb516d89899e0dc4f84275f93f7178cd939adbed16d3",
+      "learning": {
+        "context_hash": "sha256:307e06b6be8eee79e941256cc80e7b4b8e6d8edb9a73269dbba59257a864107b",
+        "lessons": [],
+        "mode": "GENERALIZED_LESSONS_PLUS_OWNED_REMEDIATIONS",
+        "raw_feedback_exposed": false,
+        "raw_historical_findings_exposed": false,
+        "registry_heads": {
+          "feedback": "sha256:8dd19b0617b094661caf5fe0a5b30e437703843b5f05ce63a7a75586710575c6",
+          "findings": "GENESIS",
+          "lessons": "GENESIS",
+          "patterns": "GENESIS",
+          "remediations": "GENESIS"
+        },
+        "remediations": []
+      },
+      "missing_required_inputs": [],
+      "output_contract": {
+        "allowed_status_values": [
+          "ARCHITECTURE_READY",
+          "SCENARIO_TOO_SMALL",
+          "BLOCKED"
+        ],
+        "deterministic_validators": [],
+        "optional_fields": [
+          "RESOURCE_GRAPH",
+          "DATA_VOLUME_PLAN",
+          "UNRESOLVED_RISKS"
+        ],
+        "persisted_artifacts": [],
+        "required_fields": [
+          "COMPONENT_GRAPH",
+          "ENTRYPOINTS",
+          "STATE_MODEL",
+          "SOLVER_VISIBLE_DOC_PLAN",
+          "PRODUCTION_CHARACTERISTICS",
+          "SCALE_FIT"
+        ],
+        "semantic_reviewers": [
+          "Task Architect"
+        ]
+      },
+      "readiness": "READY",
+      "retrieval": {
+        "query": null,
+        "retrieved_chars": 0,
+        "retrieved_context": [],
+        "status": "NOT_REQUESTED"
+      },
+      "routing": {
+        "failure_routes": {
+          "ARCHITECTURE_GAP": "A2 System Architect / Environment Builder",
+          "REQUIREMENT_GAP": "Creation Controller -> work-package/contract owner",
+          "SCENARIO_TOO_SMALL": "Creation Controller -> WORK_PACKAGE_RESEARCH"
+        },
+        "stale_on": [
+          "work-package change",
+          "material operational requirement change",
+          "creation-profile change"
+        ],
+        "success_transition": "DEFECT_TOPOLOGY"
+      },
+      "schema_version": "1.0",
+      "stage": {
+        "lifecycle": "creation",
+        "owner": "A2 System Architect / Environment Builder",
+        "role_class": "PRODUCER",
+        "role_id": "A2_SYSTEM_ARCHITECT",
+        "stage_id": "SYSTEM_ARCHITECTURE"
+      }
+    },
+    "outputs": {
+      "COMPONENT_GRAPH": [
+        "Terraform workspace and upgrade module generator",
+        "Terraform plan parser and policy validator",
+        "IRSA trust policy parser and subject fence verifier",
+        "Compatibility matrix and prerequisite dependency evaluator",
+        "Kubernetes manifest parser and PodDisruptionBudget analyzer",
+        "Regulated workload placement and Karpenter node pool evaluator",
+        "System node drain simulator and pod eviction engine",
+        "Interruption simulator and capacity fence analyzer",
+        "Rollout state machine coordinator with step-by-step checkpointing",
+        "Deterministic report publisher and SHA-256 digest calculator"
+      ],
+      "ENTRYPOINTS": [
+        "/app/bin/addon-trust-rollout",
+        "/app/bin/generate-fixtures"
+      ],
+      "PRODUCTION_CHARACTERISTICS": [
+        "Terraform plan policy and IRSA fencing",
+        "PDB drain simulation",
+        "regulated placement and Karpenter capacity fences",
+        "ordered rollout with readiness polling",
+        "checkpoint recovery",
+        "deterministic SHA-256 reports"
+      ],
+      "SCALE_FIT": "Target 4,500-7,000 reachable canonical environment LOC; generated data, tests, solution, docs, comments, blanks, and duplicate filler do not count.",
+      "SOLVER_VISIBLE_DOC_PLAN": [
+        "environment/docs/addon-trust-rollout-contract.md",
+        "environment/docs/architecture.md",
+        "environment/docs/irsa-policy-contract.md",
+        "environment/docs/report-schema.md",
+        "environment/docs/rollout-lifecycle.md"
+      ],
+      "STATE_MODEL": "File-backed JSON/YAML state store with checkpointing, plan normalization, and deterministic report publication."
+    },
+    "record_id": "rec_adc85baeafec23f63be59d90e0af6839237c18d717db7ffe0ccea4b953d6397d",
+    "role_id": "A2_SYSTEM_ARCHITECT",
+    "schema_version": "1.0",
+    "stage_id": "SYSTEM_ARCHITECTURE",
+    "status": "ARCHITECTURE_READY",
+    "task_lineage": {
+      "input_task_commit": "f649fbfd0f14603138e6e6293f0067587016f09a",
+      "output_task_commit": "f649fbfd0f14603138e6e6293f0067587016f09a",
+      "task_changed": false
+    },
+    "transition": {
+      "action": "ADVANCE",
+      "requires_state_validation": false,
+      "target": "DEFECT_TOPOLOGY",
+      "target_kind": "STAGE"
+    },
+    "validation": {
+      "acceptance_predicates_satisfied": true,
+      "evidence_binding_satisfied": true,
+      "evidence_refs_count": 1,
+      "invocation_identity_valid": true,
+      "invocation_policy_valid": true,
+      "output_keys_valid": true,
+      "required_outputs_satisfied": true,
+      "retrieval_context_authorized": true,
+      "status_legal": true,
+      "task_commit_change_authorized": true,
+      "task_lineage_valid": true
+    }
+  },
+  "remediation_updates": [],
+  "state": {
+    "control_plane_commit": "df7ef7569e2947b9f0bf7cf89ed4dec6c2a5a1fe",
+    "derived_from": {
+      "freshness_overlay_hash": null,
+      "record_ids": [
+        "rec_7ebdb509ab6245cfa23a4a7e5249ed89a0c6dd2aecf9387e44849598d820fe1c",
+        "rec_adc85baeafec23f63be59d90e0af6839237c18d717db7ffe0ccea4b953d6397d",
+        "rec_b3f02363c8131709e9d99d00b72ddf362f8152724ca9f6f72732bd28899938c3"
+      ]
+    },
+    "ledger_event_count": 3,
+    "ledger_head_event_id": "evt_072c783c808e2c3e721d56c239718995564985685cf6fbb539be9c2a52e580eb",
+    "lineage": {
+      "bootstrap_task_commit": "f649fbfd0f14603138e6e6293f0067587016f09a",
+      "current_task_commit": "f649fbfd0f14603138e6e6293f0067587016f09a",
+      "recorded_task_commit": "f649fbfd0f14603138e6e6293f0067587016f09a",
+      "status": "CURRENT"
+    },
+    "next": {
+      "action": "INVOKE_STAGE",
+      "optional_inputs": [
+        "DOMAIN_FAILURE_REFERENCES"
+      ],
+      "owner": "A3 Defect Topology Designer",
+      "primary_role_id": "A3_DEFECT_TOPOLOGY_DESIGNER",
+      "required_inputs": [
+        "APPROVED_OPERATIONAL_REQUIREMENTS",
+        "APPROVED_WORK_PACKAGE",
+        "CLEAN_SYSTEM_ARCHITECTURE",
+        "CREATION_PROFILE"
+      ],
+      "stage_id": "DEFECT_TOPOLOGY"
+    },
+    "nodes": [
+      {
+        "disposition": "ADVANCE",
+        "input_task_commit": "f649fbfd0f14603138e6e6293f0067587016f09a",
+        "invocation_id": "inv_ad8b88368caa0e4252672cfebcf615e7613a1ed022263da1d8bab8532a5fd48e",
+        "ledger_event_id": "evt_91b851567b5890c43023cfabf30d263c19024e4de8344c0512778fa42adb05f9",
+        "node_id": "RULE_RESOLUTION",
+        "node_kind": "STAGE",
+        "output_task_commit": "f649fbfd0f14603138e6e6293f0067587016f09a",
+        "reason": "validated ADVANCE record reaches WORK_PACKAGE_RESEARCH",
+        "record_id": "rec_b3f02363c8131709e9d99d00b72ddf362f8152724ca9f6f72732bd28899938c3",
+        "status": "CURRENT"
+      },
+      {
+        "disposition": "ADVANCE",
+        "input_task_commit": "f649fbfd0f14603138e6e6293f0067587016f09a",
+        "invocation_id": "inv_03461ee58f371e995f078e160182aa83052d88f28b8d55207d7a2ff23690e968",
+        "ledger_event_id": "evt_a3e9f5ec1f80b1c0b7f4bb6d8ae40f4808a4c871ab635e7df73b175929131aca",
+        "node_id": "WORK_PACKAGE_RESEARCH",
+        "node_kind": "STAGE",
+        "output_task_commit": "f649fbfd0f14603138e6e6293f0067587016f09a",
+        "reason": "validated ADVANCE record reaches SYSTEM_ARCHITECTURE",
+        "record_id": "rec_7ebdb509ab6245cfa23a4a7e5249ed89a0c6dd2aecf9387e44849598d820fe1c",
+        "status": "CURRENT"
+      },
+      {
+        "disposition": "ADVANCE",
+        "input_task_commit": "f649fbfd0f14603138e6e6293f0067587016f09a",
+        "invocation_id": "inv_a833d7c90d1f5c659cfabb516d89899e0dc4f84275f93f7178cd939adbed16d3",
+        "ledger_event_id": "evt_072c783c808e2c3e721d56c239718995564985685cf6fbb539be9c2a52e580eb",
+        "node_id": "SYSTEM_ARCHITECTURE",
+        "node_kind": "STAGE",
+        "output_task_commit": "f649fbfd0f14603138e6e6293f0067587016f09a",
+        "reason": "validated ADVANCE record reaches DEFECT_TOPOLOGY",
+        "record_id": "rec_adc85baeafec23f63be59d90e0af6839237c18d717db7ffe0ccea4b953d6397d",
+        "status": "CURRENT"
+      },
+      {
+        "node_id": "DEFECT_TOPOLOGY",
+        "node_kind": "STAGE",
+        "reason": "no execution-ledger event exists for this stage",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "ENVIRONMENT_BUILD",
+        "node_kind": "STAGE",
+        "reason": "upstream node DEFECT_TOPOLOGY is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "REFERENCE_SOLUTION",
+        "node_kind": "STAGE",
+        "reason": "upstream node ENVIRONMENT_BUILD is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "VERIFIER_BUILD",
+        "node_kind": "STAGE",
+        "reason": "upstream node REFERENCE_SOLUTION is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "HUMAN_WRITING_RESEARCH",
+        "node_kind": "STAGE",
+        "reason": "upstream node VERIFIER_BUILD is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "INSTRUCTION_DRAFT",
+        "node_kind": "STAGE",
+        "reason": "upstream node HUMAN_WRITING_RESEARCH is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "SPEC_ALIGNMENT",
+        "node_kind": "STAGE",
+        "reason": "upstream node INSTRUCTION_DRAFT is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "DOCUMENTATION_DRAFT",
+        "node_kind": "STAGE",
+        "reason": "upstream node SPEC_ALIGNMENT is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "FORMAT_GATE",
+        "node_kind": "STAGE",
+        "reason": "upstream node DOCUMENTATION_DRAFT is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "ASSEMBLY",
+        "node_kind": "STAGE",
+        "reason": "upstream node FORMAT_GATE is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "COMPLEXITY_GATE",
+        "node_kind": "STAGE",
+        "reason": "upstream node ASSEMBLY is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "RUNTIME_AUTHENTICITY",
+        "node_kind": "STAGE",
+        "reason": "upstream node COMPLEXITY_GATE is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "DETERMINISTIC_VALIDATION",
+        "node_kind": "STAGE",
+        "reason": "upstream node RUNTIME_AUTHENTICITY is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "FROZEN_CANDIDATE",
+        "node_kind": "STATE",
+        "reason": "state cannot be current while its predecessor chain is non-current",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "QUALITY_INTERLOCK",
+        "node_kind": "STAGE",
+        "reason": "upstream node FROZEN_CANDIDATE is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "PRE_LLMAJ",
+        "node_kind": "STAGE",
+        "reason": "upstream node QUALITY_INTERLOCK is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "MODEL_DIAGNOSTIC_GPT",
+        "node_kind": "STAGE",
+        "reason": "upstream node PRE_LLMAJ is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "MODEL_DIAGNOSTIC_CLAUDE",
+        "node_kind": "STAGE",
+        "reason": "upstream node MODEL_DIAGNOSTIC_GPT is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "MODEL_DIAGNOSTIC_AGGREGATE",
+        "node_kind": "STAGE",
+        "reason": "upstream node MODEL_DIAGNOSTIC_CLAUDE is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "HARBOR_LLMAJ",
+        "node_kind": "STAGE",
+        "reason": "upstream node MODEL_DIAGNOSTIC_AGGREGATE is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "OFFICIAL_MODEL_TRIALS",
+        "node_kind": "STAGE",
+        "reason": "upstream node HARBOR_LLMAJ is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "TRIAL_ANALYSIS",
+        "node_kind": "STAGE",
+        "reason": "upstream node OFFICIAL_MODEL_TRIALS is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "DIFFICULTY_ASSESSMENT",
+        "node_kind": "STAGE",
+        "reason": "upstream node TRIAL_ANALYSIS is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "FINAL_REVIEW",
+        "node_kind": "STAGE",
+        "reason": "upstream node DIFFICULTY_ASSESSMENT is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "SUBMISSION_READY",
+        "node_kind": "STAGE",
+        "reason": "upstream node FINAL_REVIEW is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      }
+    ],
+    "schema_version": "1.0",
+    "state_snapshot_id": "state_08bbfaecb707890efd469f0edfe682623b853e7d1e5f232df9923baf6e593839",
+    "summary": {
+      "BLOCKED": 0,
+      "CURRENT": 3,
+      "MISSING": 25,
+      "STALE": 0
+    },
+    "task_commit": "f649fbfd0f14603138e6e6293f0067587016f09a",
+    "task_id": "terraform-aws-eks-addon-trust-rollout"
+  }
+}

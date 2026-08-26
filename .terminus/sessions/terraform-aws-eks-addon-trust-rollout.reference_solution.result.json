@@ -1,0 +1,43 @@
+{
+  "schema_version": "1.0",
+  "invocation_id": "inv_ff431270ec270b79dba373d23d29535aa58e93bfd5b49900263a3911429b4535",
+  "output_task_commit": "f649fbfd0f14603138e6e6293f0067587016f09a",
+  "evidence_refs": [
+    {
+      "kind": "COMMIT",
+      "ref": "commit:f649fbfd0f14603138e6e6293f0067587016f09a"
+    }
+  ],
+  "status": "IMPLEMENTED",
+  "outputs": {
+    "RESTORED_INVARIANTS": [
+      "addon plan policy and PRESERVE conflicts",
+      "exclusive IRSA subjects and no wildcard actions",
+      "PDB minAvailable and CriticalAddonsOnly taints",
+      "regulated on-demand private placement",
+      "matrix-ordered rollout with readiness",
+      "checkpoint restart recovery",
+      "deterministic sorted report digests"
+    ],
+    "FILES_CHANGED": [
+      "README.md",
+      "k8s/controllers.yaml",
+      "solve.sh",
+      "terraform/modules/upgrade/main.tf",
+      "terraform/workspaces/upgrade/main.tf",
+      "terraform/workspaces/upgrade/providers.tf",
+      "terraform/workspaces/upgrade/versions.tf"
+    ],
+    "RESTART_IDEMPOTENCY_BEHAVIOR": "checkpoint_manager resumes from last durable step without redoing completed add-ons",
+    "DETERMINISM_NOTES": "report_publisher uses sorted keys and stable semantic fields for SHA-256 digests",
+    "PRESERVED_BEHAVIOR": [
+      "existing nodepool labels",
+      "UpgradeProtected resources",
+      "compatibility matrix ordering"
+    ],
+    "RISKS_FOR_INDEPENDENT_VERIFIER": [
+      "hidden F2P probes must fail on starter",
+      "P2P must remain green on oracle and starter where classified"
+    ]
+  }
+}

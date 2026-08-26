@@ -1,0 +1,548 @@
+{
+  "ledger_event": {
+    "control_plane_commit": "df7ef7569e2947b9f0bf7cf89ed4dec6c2a5a1fe",
+    "event_id": "evt_e717d6269e890d1d2d0bbe9dba8b5849cb19ef58f9d75939925087508bb9c02d",
+    "input_task_commit": "f649fbfd0f14603138e6e6293f0067587016f09a",
+    "invocation_id": "inv_517650f5bfd163ffd5911b65b8106d0e56de581ea693e4642b79c48e4a4f3251",
+    "output_task_commit": "f649fbfd0f14603138e6e6293f0067587016f09a",
+    "previous_event_id": "evt_75423eca86faea48d119892899e7fa3ff3ad07c194f661bbdbad6cb27933691c",
+    "record_hash": "sha256:fd3d4a94c25f8c53901b609aa3aaf76453d74e91fefa0f17fdb88b8606d5fbde",
+    "record_id": "rec_de6c73265f239ca875be5b6de57e45978a3098d8bf63f5102306651a8a8ca120",
+    "record_path": ".terminus/executions/terraform-aws-eks-addon-trust-rollout/inv_517650f5bfd163ffd5911b65b8106d0e56de581ea693e4642b79c48e4a4f3251.result.json",
+    "schema_version": "1.0",
+    "sequence": 9,
+    "stage_id": "INSTRUCTION_DRAFT",
+    "task_id": "terraform-aws-eks-addon-trust-rollout"
+  },
+  "record": {
+    "authority": {
+      "control_plane_commit": "df7ef7569e2947b9f0bf7cf89ed4dec6c2a5a1fe",
+      "policy_versions": {},
+      "task_commit": "f649fbfd0f14603138e6e6293f0067587016f09a",
+      "task_id": "terraform-aws-eks-addon-trust-rollout"
+    },
+    "disposition": "ADVANCE",
+    "evidence_refs": [
+      {
+        "content_hash": "sha256:d979d1683e5fcbb4861a1d40d207c04f2955978a65160664aa86388a2be0b40d",
+        "kind": "COMMIT",
+        "ref": "commit:f649fbfd0f14603138e6e6293f0067587016f09a"
+      }
+    ],
+    "invocation_id": "inv_517650f5bfd163ffd5911b65b8106d0e56de581ea693e4642b79c48e4a4f3251",
+    "invocation_snapshot": {
+      "acceptance_predicates": {},
+      "authority": {
+        "control_plane_commit": "df7ef7569e2947b9f0bf7cf89ed4dec6c2a5a1fe",
+        "policy_versions": {},
+        "task_commit": "f649fbfd0f14603138e6e6293f0067587016f09a",
+        "task_id": "terraform-aws-eks-addon-trust-rollout"
+      },
+      "evidence": {
+        "authorized_evidence_classes": [
+          "CONTROL_PLANE_POLICY",
+          "PUBLIC_REFERENCE",
+          "SOLVER_VISIBLE_TASK"
+        ],
+        "evidence_required": [
+          "schema-valid current solver-visible requirement contract",
+          "complete material requirement set",
+          "instruction/docs boundary",
+          "absolute required output paths",
+          "current-state evidence only when claimed"
+        ],
+        "excluded_evidence_classes": [
+          "CI_RUNTIME_EVIDENCE",
+          "CURRENT_REVIEW_PACKET",
+          "DURABLE_SESSION_STATE",
+          "FINAL_PACKAGE_EVIDENCE",
+          "MODEL_TRIAL_EVIDENCE",
+          "PRIOR_REVIEW_RESULTS",
+          "PRIVATE_CREATION_DESIGN",
+          "SOLUTION_ORACLE",
+          "VERIFIER_PRIVATE"
+        ],
+        "mandatory_exact_reads": [
+          "TERMINUS_3_AI_INSTRUCTIONS.md",
+          ".terminus/agents/INSTRUCTION_POLICY.md",
+          ".terminus/agents/CREATOR_PROMPTS.md"
+        ],
+        "retrieval_mode": "FILTERED_HYBRID"
+      },
+      "ignored_input_count": 43,
+      "inputs": {
+        "optional": {},
+        "required": {
+          "APPROVED_SOLVER_VISIBLE_REQUIREMENT_CONTRACT": ".terminus/contracts/terraform-aws-eks-addon-trust-rollout/solver-visible-requirements.json",
+          "CREATION_RULE_CONTEXT": {
+            "ACTIVE_VALIDATORS": [
+              ".terminus/validate_agent_system.py",
+              ".terminus/validate_stage_contracts.py",
+              ".terminus/validate_task_complexity.py",
+              ".terminus/validate_environment_complexity.py",
+              ".terminus/validate_runtime_authenticity.py",
+              ".terminus/validate_business_module_diversity.py",
+              ".terminus/validate_review_freshness.py",
+              ".terminus/validate_quality_interlock.py",
+              ".github/workflows/terminus-edition-3-ci.yml",
+              ".github/workflows/terminus-creator-complexity.yml",
+              ".github/workflows/terminus-production-authenticity.yml"
+            ],
+            "CONTROL_PLANE_COMMIT": "df7ef7569e2947b9f0bf7cf89ed4dec6c2a5a1fe",
+            "CREATION_PROFILE": "large_system_strict",
+            "KNOWN_POLICY_CONFLICTS": [],
+            "NETWORK_ENVIRONMENT_CONSTRAINTS": "Public build-time package access; no live AWS API calls, no external Kubernetes cluster connectivity, no privileged container requirements.",
+            "RULE_SOURCES": [
+              "TERMINUS_3_AI_INSTRUCTIONS.md",
+              ".terminus/AGENT_SYSTEM.md",
+              ".terminus/agents/CREATION_CONTROLLER.md",
+              ".terminus/agents/CREATION_PIPELINE.md",
+              ".terminus/agents/PRODUCTION_AUTHENTICITY.md",
+              ".terminus/reviewers/REVIEWER_CHECKLIST.md",
+              ".terminus/agents/QUALITY_AGENT_REGISTRY.md",
+              ".terminus/agents/STAGE_CONTRACTS.md",
+              ".terminus/agents/stage_contracts.json"
+            ]
+          },
+          "TASK_WRITING_PROFILE": {
+            "avoid": [
+              "one sentence per verifier scenario",
+              "implementation diagnosis or repair locations",
+              "invented outage or customer story",
+              "copied public issue wording",
+              "generic benchmark preamble"
+            ],
+            "must_preserve": [
+              "public operator CLI /app/bin/addon-trust-rollout",
+              "Terraform plan at /app/var/upgrade/plan.json with PRESERVE conflict resolution",
+              "exclusive IRSA subjects and no wildcard IAM actions",
+              "PDB minAvailable and CriticalAddonsOnly taints",
+              "regulated on-demand private placement and Karpenter fences",
+              "compatibility-matrix ordered rollout with readiness",
+              "checkpoint restart recovery",
+              "deterministic sorted upgrade-report digests at /app/output/upgrade-report.json"
+            ],
+            "structure": [
+              "open with the inherited EKS addon-trust rollout completion request",
+              "group plan/IRSA/PDB/placement/rollout/checkpoint/report outcomes rather than mirroring tests",
+              "refer to /app/docs contracts for detailed schemas and lifecycle semantics",
+              "state offline lab boundaries: no live AWS or external cluster APIs"
+            ],
+            "voice": "direct platform reliability engineering change request"
+          },
+          "VALIDATED_HUMAN_WRITING_CALIBRATION": {
+            "coverage": "DEGRADED",
+            "pair": ".terminus/research/terraform-aws-eks-addon-trust-rollout-dataset-calibration.json",
+            "pair_id": "hwpair-809399a9b9995828c3b5",
+            "profile": ".terminus/research/terraform-aws-eks-addon-trust-rollout-task-writing-profile.json",
+            "status": "VALID"
+          }
+        }
+      },
+      "invocation_id": "inv_517650f5bfd163ffd5911b65b8106d0e56de581ea693e4642b79c48e4a4f3251",
+      "learning": {
+        "context_hash": "sha256:307e06b6be8eee79e941256cc80e7b4b8e6d8edb9a73269dbba59257a864107b",
+        "lessons": [],
+        "mode": "GENERALIZED_LESSONS_PLUS_OWNED_REMEDIATIONS",
+        "raw_feedback_exposed": false,
+        "raw_historical_findings_exposed": false,
+        "registry_heads": {
+          "feedback": "sha256:8dd19b0617b094661caf5fe0a5b30e437703843b5f05ce63a7a75586710575c6",
+          "findings": "GENESIS",
+          "lessons": "GENESIS",
+          "patterns": "GENESIS",
+          "remediations": "GENESIS"
+        },
+        "remediations": []
+      },
+      "missing_required_inputs": [],
+      "output_contract": {
+        "allowed_status_values": [
+          "READY",
+          "REWRITE_REQUIRED",
+          "BLOCKED"
+        ],
+        "deterministic_validators": [
+          "solver-visible requirement contract schema/hash/provenance checks",
+          "Q7 structural/path checks where mechanically enforceable",
+          ".terminus/human_writing/validate_calibration.py"
+        ],
+        "optional_fields": [
+          "CURRENT_STATE_EVIDENCE",
+          "UNRESOLVED_GAPS"
+        ],
+        "persisted_artifacts": [
+          "<task>/instruction.md"
+        ],
+        "required_fields": [
+          "INSTRUCTION_PATH",
+          "REQUIREMENT_COVERAGE",
+          "DOC_REFERENCES",
+          "INSTRUCTION_SHAPE",
+          "HANDOFF_TEST",
+          "REVERSE_OUTLINE_RISK",
+          "SPEC_FILE_LOOPHOLE"
+        ],
+        "semantic_reviewers": [
+          "Instruction Reviewer",
+          "Q1 Spec Gap Repairer",
+          "Q3 Spec Ambiguity Repairer"
+        ]
+      },
+      "readiness": "READY",
+      "retrieval": {
+        "query": null,
+        "retrieved_chars": 0,
+        "retrieved_context": [],
+        "status": "NOT_REQUESTED"
+      },
+      "routing": {
+        "failure_routes": {
+          "AMBIGUITY": "Q3 Spec Ambiguity Repairer",
+          "FORMAT_OR_PATH_ERROR": "Q7 Task Format Enforcer",
+          "HIDDEN_TEST_OR_REPAIR_LEAKAGE": "A7 Instruction Writer",
+          "MISSING_REQUIREMENT": "Q1 Spec Gap Repairer",
+          "SPEC_FILE_LOOPHOLE": "A7 Instruction Writer / Q1 Spec Gap Repairer",
+          "STALE_OR_INVALID_REQUIREMENT_CONTRACT": "Creation Controller -> requirement owner/Q1 -> regenerate projection"
+        },
+        "stale_on": [
+          "solver-visible requirement contract change",
+          "material requirement change",
+          "referenced solver-visible contract change",
+          "required output/schema change",
+          "instruction-policy change",
+          "human-writing calibration change",
+          "dataset registry change",
+          "domain profile change"
+        ],
+        "success_transition": "SPEC_ALIGNMENT"
+      },
+      "schema_version": "1.0",
+      "stage": {
+        "lifecycle": "creation",
+        "owner": "A7 Instruction Writer",
+        "role_class": "PRODUCER",
+        "role_id": "A7_INSTRUCTION_WRITER",
+        "stage_id": "INSTRUCTION_DRAFT"
+      }
+    },
+    "outputs": {
+      "DOC_REFERENCES": [
+        "environment/docs/addon-trust-rollout-contract.md",
+        "environment/docs/architecture.md",
+        "environment/docs/irsa-policy-contract.md",
+        "environment/docs/report-schema.md",
+        "environment/docs/rollout-lifecycle.md"
+      ],
+      "HANDOFF_TEST": "PASS: reads as engineer work request with absolute paths",
+      "INSTRUCTION_PATH": "terraform-aws-eks-addon-trust-rollout/instruction.md",
+      "INSTRUCTION_SHAPE": "bullet_list_le_20",
+      "REQUIREMENT_COVERAGE": "20 bullets cover plan, IRSA, PDB, placement, rollout, checkpoint, report schema",
+      "REVERSE_OUTLINE_RISK": "LOW",
+      "SPEC_FILE_LOOPHOLE": "CLOSED: material requirements remain in instruction.md"
+    },
+    "record_id": "rec_de6c73265f239ca875be5b6de57e45978a3098d8bf63f5102306651a8a8ca120",
+    "role_id": "A7_INSTRUCTION_WRITER",
+    "schema_version": "1.0",
+    "stage_id": "INSTRUCTION_DRAFT",
+    "status": "READY",
+    "task_lineage": {
+      "input_task_commit": "f649fbfd0f14603138e6e6293f0067587016f09a",
+      "output_task_commit": "f649fbfd0f14603138e6e6293f0067587016f09a",
+      "task_changed": false
+    },
+    "transition": {
+      "action": "ADVANCE",
+      "requires_state_validation": false,
+      "target": "SPEC_ALIGNMENT",
+      "target_kind": "STAGE"
+    },
+    "validation": {
+      "acceptance_predicates_satisfied": true,
+      "evidence_binding_satisfied": true,
+      "evidence_refs_count": 1,
+      "invocation_identity_valid": true,
+      "invocation_policy_valid": true,
+      "output_keys_valid": true,
+      "required_outputs_satisfied": true,
+      "retrieval_context_authorized": true,
+      "status_legal": true,
+      "task_commit_change_authorized": true,
+      "task_lineage_valid": true
+    }
+  },
+  "remediation_updates": [],
+  "state": {
+    "control_plane_commit": "df7ef7569e2947b9f0bf7cf89ed4dec6c2a5a1fe",
+    "derived_from": {
+      "freshness_overlay_hash": null,
+      "record_ids": [
+        "rec_24d40c265de9adab8dad00d86e0311d5d83d08238bb9c7a905294430ec2f216b",
+        "rec_636b3d28515e01c5d524627f27d8bd17dbeb3356109c3a8cf6b6710aab9af2a5",
+        "rec_7ebdb509ab6245cfa23a4a7e5249ed89a0c6dd2aecf9387e44849598d820fe1c",
+        "rec_8cfb71050837ff64d7e05936bc029c88131bb42e100877c97fe4fc132791b39c",
+        "rec_9416383534be50f7fa7291c4b975cff25a10e728ecb19c170dc63036e753b979",
+        "rec_aba62e1dce860fa3c874af99495da0e2ed8741abb4ffad0b5e589ad940edd604",
+        "rec_adc85baeafec23f63be59d90e0af6839237c18d717db7ffe0ccea4b953d6397d",
+        "rec_b3f02363c8131709e9d99d00b72ddf362f8152724ca9f6f72732bd28899938c3",
+        "rec_de6c73265f239ca875be5b6de57e45978a3098d8bf63f5102306651a8a8ca120"
+      ]
+    },
+    "ledger_event_count": 9,
+    "ledger_head_event_id": "evt_e717d6269e890d1d2d0bbe9dba8b5849cb19ef58f9d75939925087508bb9c02d",
+    "lineage": {
+      "bootstrap_task_commit": "f649fbfd0f14603138e6e6293f0067587016f09a",
+      "current_task_commit": "f649fbfd0f14603138e6e6293f0067587016f09a",
+      "recorded_task_commit": "f649fbfd0f14603138e6e6293f0067587016f09a",
+      "status": "CURRENT"
+    },
+    "next": {
+      "action": "INVOKE_STAGE",
+      "optional_inputs": [
+        "PRIVATE_TEST_MAP"
+      ],
+      "owner": "Creation Controller",
+      "primary_role_id": "CREATION_CONTROLLER",
+      "required_inputs": [
+        "CURRENT_INSTRUCTION",
+        "CURRENT_VERIFIER",
+        "REFERENCED_SOLVER_VISIBLE_CONTRACTS"
+      ],
+      "stage_id": "SPEC_ALIGNMENT"
+    },
+    "nodes": [
+      {
+        "disposition": "ADVANCE",
+        "input_task_commit": "f649fbfd0f14603138e6e6293f0067587016f09a",
+        "invocation_id": "inv_ad8b88368caa0e4252672cfebcf615e7613a1ed022263da1d8bab8532a5fd48e",
+        "ledger_event_id": "evt_91b851567b5890c43023cfabf30d263c19024e4de8344c0512778fa42adb05f9",
+        "node_id": "RULE_RESOLUTION",
+        "node_kind": "STAGE",
+        "output_task_commit": "f649fbfd0f14603138e6e6293f0067587016f09a",
+        "reason": "validated ADVANCE record reaches WORK_PACKAGE_RESEARCH",
+        "record_id": "rec_b3f02363c8131709e9d99d00b72ddf362f8152724ca9f6f72732bd28899938c3",
+        "status": "CURRENT"
+      },
+      {
+        "disposition": "ADVANCE",
+        "input_task_commit": "f649fbfd0f14603138e6e6293f0067587016f09a",
+        "invocation_id": "inv_03461ee58f371e995f078e160182aa83052d88f28b8d55207d7a2ff23690e968",
+        "ledger_event_id": "evt_a3e9f5ec1f80b1c0b7f4bb6d8ae40f4808a4c871ab635e7df73b175929131aca",
+        "node_id": "WORK_PACKAGE_RESEARCH",
+        "node_kind": "STAGE",
+        "output_task_commit": "f649fbfd0f14603138e6e6293f0067587016f09a",
+        "reason": "validated ADVANCE record reaches SYSTEM_ARCHITECTURE",
+        "record_id": "rec_7ebdb509ab6245cfa23a4a7e5249ed89a0c6dd2aecf9387e44849598d820fe1c",
+        "status": "CURRENT"
+      },
+      {
+        "disposition": "ADVANCE",
+        "input_task_commit": "f649fbfd0f14603138e6e6293f0067587016f09a",
+        "invocation_id": "inv_a833d7c90d1f5c659cfabb516d89899e0dc4f84275f93f7178cd939adbed16d3",
+        "ledger_event_id": "evt_072c783c808e2c3e721d56c239718995564985685cf6fbb539be9c2a52e580eb",
+        "node_id": "SYSTEM_ARCHITECTURE",
+        "node_kind": "STAGE",
+        "output_task_commit": "f649fbfd0f14603138e6e6293f0067587016f09a",
+        "reason": "validated ADVANCE record reaches DEFECT_TOPOLOGY",
+        "record_id": "rec_adc85baeafec23f63be59d90e0af6839237c18d717db7ffe0ccea4b953d6397d",
+        "status": "CURRENT"
+      },
+      {
+        "disposition": "ADVANCE",
+        "input_task_commit": "f649fbfd0f14603138e6e6293f0067587016f09a",
+        "invocation_id": "inv_02672f81bab1252ddc9d996f7c9c8fb3efe6e16e4d79000581e06e4eca512f28",
+        "ledger_event_id": "evt_fc77f20b73b911c0cd0e3b00227e1c65b89258bbc3f15d77719dbdc29e292a1b",
+        "node_id": "DEFECT_TOPOLOGY",
+        "node_kind": "STAGE",
+        "output_task_commit": "f649fbfd0f14603138e6e6293f0067587016f09a",
+        "reason": "validated ADVANCE record reaches ENVIRONMENT_BUILD",
+        "record_id": "rec_8cfb71050837ff64d7e05936bc029c88131bb42e100877c97fe4fc132791b39c",
+        "status": "CURRENT"
+      },
+      {
+        "disposition": "ADVANCE",
+        "input_task_commit": "f649fbfd0f14603138e6e6293f0067587016f09a",
+        "invocation_id": "inv_c85ee02d877877b99abc250ab4250a547176afc9b903dc12f23a6a6308bdb18f",
+        "ledger_event_id": "evt_47707dc12119b5d32168e3454bcd5a11219096db422ea04f1361aa877a0fabfd",
+        "node_id": "ENVIRONMENT_BUILD",
+        "node_kind": "STAGE",
+        "output_task_commit": "f649fbfd0f14603138e6e6293f0067587016f09a",
+        "reason": "validated ADVANCE record reaches REFERENCE_SOLUTION",
+        "record_id": "rec_9416383534be50f7fa7291c4b975cff25a10e728ecb19c170dc63036e753b979",
+        "status": "CURRENT"
+      },
+      {
+        "disposition": "ADVANCE",
+        "input_task_commit": "f649fbfd0f14603138e6e6293f0067587016f09a",
+        "invocation_id": "inv_ff431270ec270b79dba373d23d29535aa58e93bfd5b49900263a3911429b4535",
+        "ledger_event_id": "evt_081a3a9f29198bdbbea531d02fa60fce145fd2ae8ab84acbba5c08072e42db6e",
+        "node_id": "REFERENCE_SOLUTION",
+        "node_kind": "STAGE",
+        "output_task_commit": "f649fbfd0f14603138e6e6293f0067587016f09a",
+        "reason": "validated ADVANCE record reaches VERIFIER_BUILD",
+        "record_id": "rec_636b3d28515e01c5d524627f27d8bd17dbeb3356109c3a8cf6b6710aab9af2a5",
+        "status": "CURRENT"
+      },
+      {
+        "disposition": "ADVANCE",
+        "input_task_commit": "f649fbfd0f14603138e6e6293f0067587016f09a",
+        "invocation_id": "inv_d9b17f8771eee87ba3e9a805c490d9143724ae4a3f4ecde6411c60ff9e3e44fb",
+        "ledger_event_id": "evt_cc8ce7de31d53ec9e2614c156ce31626fcd5a8788b384c0cc8d778941da41633",
+        "node_id": "VERIFIER_BUILD",
+        "node_kind": "STAGE",
+        "output_task_commit": "f649fbfd0f14603138e6e6293f0067587016f09a",
+        "reason": "validated ADVANCE record reaches HUMAN_WRITING_RESEARCH",
+        "record_id": "rec_24d40c265de9adab8dad00d86e0311d5d83d08238bb9c7a905294430ec2f216b",
+        "status": "CURRENT"
+      },
+      {
+        "disposition": "ADVANCE",
+        "input_task_commit": "f649fbfd0f14603138e6e6293f0067587016f09a",
+        "invocation_id": "inv_05f30fb5b3c2d006abac54f398ca266b8347d50481a363851279d7199aacca19",
+        "ledger_event_id": "evt_75423eca86faea48d119892899e7fa3ff3ad07c194f661bbdbad6cb27933691c",
+        "node_id": "HUMAN_WRITING_RESEARCH",
+        "node_kind": "STAGE",
+        "output_task_commit": "f649fbfd0f14603138e6e6293f0067587016f09a",
+        "reason": "validated ADVANCE record reaches INSTRUCTION_DRAFT",
+        "record_id": "rec_aba62e1dce860fa3c874af99495da0e2ed8741abb4ffad0b5e589ad940edd604",
+        "status": "CURRENT"
+      },
+      {
+        "disposition": "ADVANCE",
+        "input_task_commit": "f649fbfd0f14603138e6e6293f0067587016f09a",
+        "invocation_id": "inv_517650f5bfd163ffd5911b65b8106d0e56de581ea693e4642b79c48e4a4f3251",
+        "ledger_event_id": "evt_e717d6269e890d1d2d0bbe9dba8b5849cb19ef58f9d75939925087508bb9c02d",
+        "node_id": "INSTRUCTION_DRAFT",
+        "node_kind": "STAGE",
+        "output_task_commit": "f649fbfd0f14603138e6e6293f0067587016f09a",
+        "reason": "validated ADVANCE record reaches SPEC_ALIGNMENT",
+        "record_id": "rec_de6c73265f239ca875be5b6de57e45978a3098d8bf63f5102306651a8a8ca120",
+        "status": "CURRENT"
+      },
+      {
+        "node_id": "SPEC_ALIGNMENT",
+        "node_kind": "STAGE",
+        "reason": "no execution-ledger event exists for this stage",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "DOCUMENTATION_DRAFT",
+        "node_kind": "STAGE",
+        "reason": "upstream node SPEC_ALIGNMENT is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "FORMAT_GATE",
+        "node_kind": "STAGE",
+        "reason": "upstream node DOCUMENTATION_DRAFT is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "ASSEMBLY",
+        "node_kind": "STAGE",
+        "reason": "upstream node FORMAT_GATE is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "COMPLEXITY_GATE",
+        "node_kind": "STAGE",
+        "reason": "upstream node ASSEMBLY is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "RUNTIME_AUTHENTICITY",
+        "node_kind": "STAGE",
+        "reason": "upstream node COMPLEXITY_GATE is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "DETERMINISTIC_VALIDATION",
+        "node_kind": "STAGE",
+        "reason": "upstream node RUNTIME_AUTHENTICITY is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "FROZEN_CANDIDATE",
+        "node_kind": "STATE",
+        "reason": "state cannot be current while its predecessor chain is non-current",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "QUALITY_INTERLOCK",
+        "node_kind": "STAGE",
+        "reason": "upstream node FROZEN_CANDIDATE is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "PRE_LLMAJ",
+        "node_kind": "STAGE",
+        "reason": "upstream node QUALITY_INTERLOCK is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "MODEL_DIAGNOSTIC_GPT",
+        "node_kind": "STAGE",
+        "reason": "upstream node PRE_LLMAJ is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "MODEL_DIAGNOSTIC_CLAUDE",
+        "node_kind": "STAGE",
+        "reason": "upstream node MODEL_DIAGNOSTIC_GPT is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "MODEL_DIAGNOSTIC_AGGREGATE",
+        "node_kind": "STAGE",
+        "reason": "upstream node MODEL_DIAGNOSTIC_CLAUDE is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "HARBOR_LLMAJ",
+        "node_kind": "STAGE",
+        "reason": "upstream node MODEL_DIAGNOSTIC_AGGREGATE is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "OFFICIAL_MODEL_TRIALS",
+        "node_kind": "STAGE",
+        "reason": "upstream node HARBOR_LLMAJ is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "TRIAL_ANALYSIS",
+        "node_kind": "STAGE",
+        "reason": "upstream node OFFICIAL_MODEL_TRIALS is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "DIFFICULTY_ASSESSMENT",
+        "node_kind": "STAGE",
+        "reason": "upstream node TRIAL_ANALYSIS is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "FINAL_REVIEW",
+        "node_kind": "STAGE",
+        "reason": "upstream node DIFFICULTY_ASSESSMENT is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "SUBMISSION_READY",
+        "node_kind": "STAGE",
+        "reason": "upstream node FINAL_REVIEW is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      }
+    ],
+    "schema_version": "1.0",
+    "state_snapshot_id": "state_2ae1565b916bff46ea8ee7f0d2a392f4f800d08eda049d76f09dfab9b9dd2002",
+    "summary": {
+      "BLOCKED": 0,
+      "CURRENT": 9,
+      "MISSING": 19,
+      "STALE": 0
+    },
+    "task_commit": "f649fbfd0f14603138e6e6293f0067587016f09a",
+    "task_id": "terraform-aws-eks-addon-trust-rollout"
+  }
+}

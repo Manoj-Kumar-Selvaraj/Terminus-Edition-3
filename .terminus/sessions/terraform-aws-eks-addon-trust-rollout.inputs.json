@@ -4,12 +4,309 @@
   "REQUESTED_PROFILE": "large_system_strict",
   "CREATION_PROFILE": "large_system_strict",
   "NETWORK_ENVIRONMENT_CONSTRAINTS": "Public build-time package access; no live AWS API calls, no external Kubernetes cluster connectivity, no privileged container requirements.",
-  "APPROVED_WORK_PACKAGE": "Complete the inherited EKS add-on trust rollout system so controllers, IRSA subjects, PDBs, nodepool taints, and regulated placement achieve policy-compliant, interruption-safe upgrade readiness with deterministic reports.",
-  "DEFECT_TOPOLOGY": ".terminus/designs/terraform-aws-eks-addon-trust-rollout.json",
+  "APPROVED_WORK_PACKAGE": {
+    "id": "EKS-ADDON-TRUST-ROLLOUT",
+    "objective": "Complete the inherited Terraform and Kubernetes EKS add-on trust rollout system so add-on controllers, IRSA subjects, PodDisruptionBudgets, node pool taints, and regulated workload placement achieve policy-compliant, interruption-safe upgrade readiness.",
+    "persona": "A platform reliability engineer completing a multi-addon, IRSA trust, and PDB rollout on a live EKS upgrade lab.",
+    "scope_exclusions": [
+      "Live AWS API calls or external Kubernetes cluster connectivity",
+      "Fresh EKS cluster creation from scratch",
+      "Generic EC2 fleet rollout or AMI promotion",
+      "Jenkins controller upgrade or CI pipeline execution",
+      "Direct Helm chart repo downloading"
+    ]
+  },
+  "DEFECT_TOPOLOGY": {
+    "path": ".terminus/designs/terraform-aws-eks-addon-trust-rollout.json",
+    "status": "DESIGN_READY",
+    "profile": "large_system_strict",
+    "manifestations": 28,
+    "root_cause_clusters": 7,
+    "validator": "PASS"
+  },
   "PRODUCTION_AUTHENTICITY_COMPANION": ".terminus/designs/terraform-aws-eks-addon-trust-rollout-production.json",
   "TEST_MAP": ".terminus/designs/terraform-aws-eks-addon-trust-rollout-test-map.json",
   "APPROVED_SOLVER_VISIBLE_REQUIREMENT_CONTRACT": ".terminus/contracts/terraform-aws-eks-addon-trust-rollout/solver-visible-requirements.json",
   "VERIFICATION_OWNER": "project owner via Cursor",
   "VERIFICATION_EXCLUDED_FROM_CREATION_AGENT": true,
-  "NOTE": "Do not use these inputs for controller record until the task tree is committed and TASK_COMMIT is real."
+  "CREATION_RULE_CONTEXT": {
+    "ACTIVE_VALIDATORS": [
+      ".terminus/validate_agent_system.py",
+      ".terminus/validate_stage_contracts.py",
+      ".terminus/validate_task_complexity.py",
+      ".terminus/validate_environment_complexity.py",
+      ".terminus/validate_runtime_authenticity.py",
+      ".terminus/validate_business_module_diversity.py",
+      ".terminus/validate_review_freshness.py",
+      ".terminus/validate_quality_interlock.py",
+      ".github/workflows/terminus-edition-3-ci.yml",
+      ".github/workflows/terminus-creator-complexity.yml",
+      ".github/workflows/terminus-production-authenticity.yml"
+    ],
+    "CONTROL_PLANE_COMMIT": "df7ef7569e2947b9f0bf7cf89ed4dec6c2a5a1fe",
+    "CREATION_PROFILE": "large_system_strict",
+    "KNOWN_POLICY_CONFLICTS": [],
+    "NETWORK_ENVIRONMENT_CONSTRAINTS": "Public build-time package access; no live AWS API calls, no external Kubernetes cluster connectivity, no privileged container requirements.",
+    "RULE_SOURCES": [
+      "TERMINUS_3_AI_INSTRUCTIONS.md",
+      ".terminus/AGENT_SYSTEM.md",
+      ".terminus/agents/CREATION_CONTROLLER.md",
+      ".terminus/agents/CREATION_PIPELINE.md",
+      ".terminus/agents/PRODUCTION_AUTHENTICITY.md",
+      ".terminus/reviewers/REVIEWER_CHECKLIST.md",
+      ".terminus/agents/QUALITY_AGENT_REGISTRY.md",
+      ".terminus/agents/STAGE_CONTRACTS.md",
+      ".terminus/agents/stage_contracts.json"
+    ]
+  },
+  "APPROVED_OPERATIONAL_REQUIREMENTS": [
+    "Complete the inherited Terraform and Kubernetes EKS add-on trust rollout system at `/app` using contracts in `/app/docs` and incident evidence in `/app/evidence` so add-on controllers, IRSA subjects, PodDisruptionBudgets, and regulated placement achieve policy-compliant upgrade readiness.",
+    "Execute and validate through the public operator CLI command at `/app/bin/addon-trust-rollout`.",
+    "Plan Terraform under `/app/terraform` so the generated plan at `/app/var/upgrade/plan.json` includes all required add-ons matching target versions in `/app/data/compatibility_matrix.json`.",
+    "Configure `resolve_conflicts_on_update = 'PRESERVE'` for all EKS add-ons in the Terraform plan.",
+    "Support SSM parameter tags for controller add-ons to extract version overrides and conflict resolution modes.",
+    "Configure each IRSA role in Terraform to trust exactly one service account subject matching `/app/data/trust_observations.json` and reject wildcards or forbidden subjects.",
+    "Ensure IAM role policies contain no wildcard actions (`*` or `ebs:*`) and role names follow required naming conventions.",
+    "Supply required PodDisruptionBudgets in `/app/k8s` matching required names, namespaces, and minAvailable thresholds in `/app/data/pdbs.json`.",
+    "Preserve `CriticalAddonsOnly=true:NoSchedule` taints and nodepool labels on the system node group.",
+    "Simulate system node draining while enforcing PodDisruptionBudget minAvailable limits and maintaining core service availability.",
+    "Enforce explicit nodepool selectors and capacity-type constraints for regulated workloads, restricting placement to private on-demand node pools.",
+    "Enforce Karpenter NodePool CRD requirements to ensure regulated capacity excludes spot instances.",
+    "Simulate spot/on-demand node interruptions and verify regulated workloads remain on on-demand capacity after rebalancing.",
+    "Validate add-on rollout prerequisites before advancing each add-on, executing rollouts in exact compatibility matrix order.",
+    "Poll and verify add-on readiness before marking steps complete, reporting status `READY` only when all readiness conditions pass.",
+    "Audit cross-service trust to prevent IAM role ARN sharing across distinct add-ons.",
+    "Merge inline policies and standalone role policy attachments in plan normalization.",
+    "Guard resources tagged `UpgradeProtected=true` against delete or replace actions in the Terraform plan.",
+    "Record step-by-step rollout state checkpoints to enable atomic restart recovery upon interruption.",
+    "Publish deterministic reports to `/app/output/upgrade-report.json` with canonical formatting, sorted keys, stable semantic fields, and repeatable SHA-256 report digests."
+  ],
+  "CLEAN_SYSTEM_ARCHITECTURE": {
+    "components": [
+      "Terraform workspace and upgrade module generator",
+      "Terraform plan parser and policy validator",
+      "IRSA trust policy parser and subject fence verifier",
+      "Compatibility matrix and prerequisite dependency evaluator",
+      "Kubernetes manifest parser and PodDisruptionBudget analyzer",
+      "Regulated workload placement and Karpenter node pool evaluator",
+      "System node drain simulator and pod eviction engine",
+      "Interruption simulator and capacity fence analyzer",
+      "Rollout state machine coordinator with step-by-step checkpointing",
+      "Deterministic report publisher and SHA-256 digest calculator"
+    ],
+    "entrypoints": [
+      "addon-trust-rollout",
+      "generate-fixtures"
+    ],
+    "state_model": "File-backed JSON/YAML state store with checkpointing, plan normalization, and deterministic report publication.",
+    "data_volume": "Generate 12,500 deterministic primary records across cluster snapshots, trust observations, telemetry, matrix entries, and interruption events.",
+    "scale_fit": "Target 4,500-7,000 reachable canonical environment LOC; generated data, tests, solution, docs, comments, blanks, and duplicate filler do not count.",
+    "language_stack": [
+      "hcl",
+      "python",
+      "yaml",
+      "json",
+      "bash"
+    ]
+  },
+  "SOLVER_VISIBLE_DOC_PLAN": [
+    "environment/docs/addon-trust-rollout-contract.md",
+    "environment/docs/architecture.md",
+    "environment/docs/irsa-policy-contract.md",
+    "environment/docs/report-schema.md",
+    "environment/docs/rollout-lifecycle.md"
+  ],
+  "SYSTEM_ARCHITECTURE": {
+    "components": [
+      "Terraform workspace and upgrade module generator",
+      "Terraform plan parser and policy validator",
+      "IRSA trust policy parser and subject fence verifier",
+      "Compatibility matrix and prerequisite dependency evaluator",
+      "Kubernetes manifest parser and PodDisruptionBudget analyzer",
+      "Regulated workload placement and Karpenter node pool evaluator",
+      "System node drain simulator and pod eviction engine",
+      "Interruption simulator and capacity fence analyzer",
+      "Rollout state machine coordinator with step-by-step checkpointing",
+      "Deterministic report publisher and SHA-256 digest calculator"
+    ],
+    "entrypoints": [
+      "addon-trust-rollout",
+      "generate-fixtures"
+    ],
+    "state_model": "File-backed JSON/YAML state store with checkpointing, plan normalization, and deterministic report publication.",
+    "data_volume": "Generate 12,500 deterministic primary records across cluster snapshots, trust observations, telemetry, matrix entries, and interruption events.",
+    "scale_fit": "Target 4,500-7,000 reachable canonical environment LOC; generated data, tests, solution, docs, comments, blanks, and duplicate filler do not count.",
+    "language_stack": [
+      "hcl",
+      "python",
+      "yaml",
+      "json",
+      "bash"
+    ]
+  },
+  "STARTER_ENVIRONMENT": {
+    "task_root": "terraform-aws-eks-addon-trust-rollout",
+    "entrypoint": "/app/bin/addon-trust-rollout",
+    "docs": [
+      "environment/docs/addon-trust-rollout-contract.md",
+      "environment/docs/architecture.md",
+      "environment/docs/irsa-policy-contract.md",
+      "environment/docs/report-schema.md",
+      "environment/docs/rollout-lifecycle.md"
+    ]
+  },
+  "SOLVER_VISIBLE_REQUIREMENTS": [
+    "Complete the inherited Terraform and Kubernetes EKS add-on trust rollout system at `/app` using contracts in `/app/docs` and incident evidence in `/app/evidence` so add-on controllers, IRSA subjects, PodDisruptionBudgets, and regulated placement achieve policy-compliant upgrade readiness.",
+    "Execute and validate through the public operator CLI command at `/app/bin/addon-trust-rollout`.",
+    "Plan Terraform under `/app/terraform` so the generated plan at `/app/var/upgrade/plan.json` includes all required add-ons matching target versions in `/app/data/compatibility_matrix.json`.",
+    "Configure `resolve_conflicts_on_update = 'PRESERVE'` for all EKS add-ons in the Terraform plan.",
+    "Support SSM parameter tags for controller add-ons to extract version overrides and conflict resolution modes.",
+    "Configure each IRSA role in Terraform to trust exactly one service account subject matching `/app/data/trust_observations.json` and reject wildcards or forbidden subjects.",
+    "Ensure IAM role policies contain no wildcard actions (`*` or `ebs:*`) and role names follow required naming conventions.",
+    "Supply required PodDisruptionBudgets in `/app/k8s` matching required names, namespaces, and minAvailable thresholds in `/app/data/pdbs.json`.",
+    "Preserve `CriticalAddonsOnly=true:NoSchedule` taints and nodepool labels on the system node group.",
+    "Simulate system node draining while enforcing PodDisruptionBudget minAvailable limits and maintaining core service availability.",
+    "Enforce explicit nodepool selectors and capacity-type constraints for regulated workloads, restricting placement to private on-demand node pools.",
+    "Enforce Karpenter NodePool CRD requirements to ensure regulated capacity excludes spot instances.",
+    "Simulate spot/on-demand node interruptions and verify regulated workloads remain on on-demand capacity after rebalancing.",
+    "Validate add-on rollout prerequisites before advancing each add-on, executing rollouts in exact compatibility matrix order.",
+    "Poll and verify add-on readiness before marking steps complete, reporting status `READY` only when all readiness conditions pass.",
+    "Audit cross-service trust to prevent IAM role ARN sharing across distinct add-ons.",
+    "Merge inline policies and standalone role policy attachments in plan normalization.",
+    "Guard resources tagged `UpgradeProtected=true` against delete or replace actions in the Terraform plan.",
+    "Record step-by-step rollout state checkpoints to enable atomic restart recovery upon interruption.",
+    "Publish deterministic reports to `/app/output/upgrade-report.json` with canonical formatting, sorted keys, stable semantic fields, and repeatable SHA-256 report digests."
+  ],
+  "SOLVER_VISIBLE_CONTRACTS": [
+    ".terminus/contracts/terraform-aws-eks-addon-trust-rollout/solver-visible-requirements.json",
+    "environment/docs/addon-trust-rollout-contract.md",
+    "environment/docs/architecture.md",
+    "environment/docs/irsa-policy-contract.md",
+    "environment/docs/report-schema.md",
+    "environment/docs/rollout-lifecycle.md"
+  ],
+  "BEHAVIORAL_SURFACES": [
+    "Plan policy validation enforces all required add-on resources in Terraform plan",
+    "Add-on versions match target versions in compatibility matrix exactly",
+    "resolve_conflicts_on_update is set to PRESERVE for all add-ons",
+    "SSM parameter tags correctly supply controller add-on versions and conflict modes",
+    "IRSA assume-role policy parsing handles string, dict, and list condition structures",
+    "IRSA role trusts exactly one service account subject matching observations",
+    "Forbidden subjects like system:nodes are strictly rejected from IRSA trust policies",
+    "IAM policy actions reject wildcard actions and overly broad statements",
+    "IRSA role names match expected naming conventions",
+    "PodDisruptionBudgets match required names, namespaces, and minAvailable budgets",
+    "PDB minAvailable values match exact required default thresholds",
+    "System node groups retain CriticalAddonsOnly NoSchedule taints",
+    "System node drain simulation respects PDB minAvailable limits and tracks availability",
+    "System node groups retain correct nodepool Kubernetes labels",
+    "Regulated workloads specify explicit nodepool selectors and capacity constraints",
+    "Regulated capacity types enforce on-demand instances and reject spot capacity",
+    "Regulated node pools are restricted to private subnets only",
+    "Karpenter NodePool CRD specifications enforce on-demand capacity requirements",
+    "Interruption simulation verifies regulated workloads remain on-demand after rebalance",
+    "Add-on rollout prerequisites are validated before advancing each add-on",
+    "Add-ons roll out in exact order specified by compatibility matrix",
+    "Add-on readiness checks verify controller status before marking step OK",
+    "Cross-service trust checks ensure no IAM role ARN is shared across add-ons",
+    "Plan normalizer merges inline policies and standalone role policy attachments",
+    "UpgradeProtected resources are strictly protected against delete or replace actions",
+    "Rollout state checkpointing records step progress for atomic restart recovery",
+    "Report fields are complete, canonical, and deterministically formatted",
+    "Report digest is computed over stable semantic fields with sorted keys",
+    "Readiness report status is READY only when all policy and rollout checks pass",
+    "Identical upgrade runs produce identical report digests"
+  ],
+  "TASK_WRITING_PROFILE": {
+    "voice": "direct platform reliability engineering change request",
+    "structure": [
+      "open with the inherited EKS addon-trust rollout completion request",
+      "group plan/IRSA/PDB/placement/rollout/checkpoint/report outcomes rather than mirroring tests",
+      "refer to /app/docs contracts for detailed schemas and lifecycle semantics",
+      "state offline lab boundaries: no live AWS or external cluster APIs"
+    ],
+    "must_preserve": [
+      "public operator CLI /app/bin/addon-trust-rollout",
+      "Terraform plan at /app/var/upgrade/plan.json with PRESERVE conflict resolution",
+      "exclusive IRSA subjects and no wildcard IAM actions",
+      "PDB minAvailable and CriticalAddonsOnly taints",
+      "regulated on-demand private placement and Karpenter fences",
+      "compatibility-matrix ordered rollout with readiness",
+      "checkpoint restart recovery",
+      "deterministic sorted upgrade-report digests at /app/output/upgrade-report.json"
+    ],
+    "avoid": [
+      "one sentence per verifier scenario",
+      "implementation diagnosis or repair locations",
+      "invented outage or customer story",
+      "copied public issue wording",
+      "generic benchmark preamble"
+    ]
+  },
+  "CURRENT_INSTRUCTION": "terraform-aws-eks-addon-trust-rollout/instruction.md",
+  "REFERENCED_SOLVER_VISIBLE_CONTRACTS": [
+    "environment/docs/addon-trust-rollout-contract.md",
+    "environment/docs/architecture.md",
+    "environment/docs/irsa-policy-contract.md",
+    "environment/docs/report-schema.md",
+    "environment/docs/rollout-lifecycle.md"
+  ],
+  "CURRENT_VERIFIER": "terraform-aws-eks-addon-trust-rollout/tests/test_outputs.py",
+  "IMPLEMENTATION_EVIDENCE": {
+    "solution": "terraform-aws-eks-addon-trust-rollout/solution/solve.sh",
+    "environment": "terraform-aws-eks-addon-trust-rollout/environment"
+  },
+  "VERIFICATION_EVIDENCE": {
+    "tests": "terraform-aws-eks-addon-trust-rollout/tests/test_outputs.py",
+    "f2p": 30,
+    "p2p": 4,
+    "complexity_validator": "PASS",
+    "runtime_authenticity_validator": "PASS"
+  },
+  "CURRENT_TASK_TREE": "terraform-aws-eks-addon-trust-rollout",
+  "ACTIVE_FORMAT_VALIDATORS": [
+    ".terminus/validate_agent_system.py",
+    "flat Edition 3 layout"
+  ],
+  "CURRENT_TASK": "terraform-aws-eks-addon-trust-rollout",
+  "CURRENT_ORACLE": "terraform-aws-eks-addon-trust-rollout/solution/solve.sh",
+  "SPEC_ALIGNMENT_STATUS": "ALIGNED",
+  "FORMAT_STATUS": "FORMAT_PASS",
+  "ENVIRONMENT_TREE": "terraform-aws-eks-addon-trust-rollout/environment",
+  "SUBSTANTIVE_LOC_REPORT": {
+    "validator": "validate_task_complexity.py",
+    "status": "PASS",
+    "f2p_cases": 30,
+    "p2p_cases": 4,
+    "defects": 28,
+    "root_causes": 7
+  },
+  "DEFECT_GRAPH": ".terminus/designs/terraform-aws-eks-addon-trust-rollout.json",
+  "TEST_CLASSIFICATION_MAP": ".terminus/designs/terraform-aws-eks-addon-trust-rollout-test-map.json",
+  "RUNTIME_REACHABILITY_EVIDENCE": {
+    "entrypoint": "/app/bin/addon-trust-rollout",
+    "fixture_generator": "/app/bin/generate-fixtures"
+  },
+  "PRODUCTION_CHARACTERISTIC_EVIDENCE": ".terminus/designs/terraform-aws-eks-addon-trust-rollout-production.json",
+  "INSTRUCTION": "terraform-aws-eks-addon-trust-rollout/instruction.md",
+  "CURRENT_TASK_COMMIT": "f649fbfd0f14603138e6e6293f0067587016f09a",
+  "ORACLE": "terraform-aws-eks-addon-trust-rollout/solution/solve.sh",
+  "VERIFIER": "terraform-aws-eks-addon-trust-rollout/tests",
+  "STARTER_NOP_STATE": "terraform-aws-eks-addon-trust-rollout/environment",
+  "FROZEN_TASK_COMMIT": "f649fbfd0f14603138e6e6293f0067587016f09a",
+  "CURRENT_TIME_BUDGET": {
+    "enforcement": "ADVISORY_ONLY",
+    "guidance_seconds": 25200,
+    "hard_limit": null,
+    "policy_version": "1.1",
+    "quality_gates_may_be_skipped_for_time": false,
+    "time_extension_required": false
+  },
+  "VALIDATED_HUMAN_WRITING_CALIBRATION": {
+    "pair": ".terminus/research/terraform-aws-eks-addon-trust-rollout-dataset-calibration.json",
+    "profile": ".terminus/research/terraform-aws-eks-addon-trust-rollout-task-writing-profile.json",
+    "status": "VALID",
+    "coverage": "DEGRADED",
+    "pair_id": "hwpair-809399a9b9995828c3b5"
+  }
 }

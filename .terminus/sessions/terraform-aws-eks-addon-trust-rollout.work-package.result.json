@@ -1,0 +1,61 @@
+{
+  "schema_version": "1.0",
+  "invocation_id": "inv_03461ee58f371e995f078e160182aa83052d88f28b8d55207d7a2ff23690e968",
+  "output_task_commit": "f649fbfd0f14603138e6e6293f0067587016f09a",
+  "status": "CANDIDATES_READY",
+  "outputs": {
+    "CANDIDATES": [
+      {
+        "id": "EKS-ADDON-TRUST-ROLLOUT",
+        "persona": "Platform reliability engineer completing a multi-addon IRSA and PDB rollout lab",
+        "objective": "Complete the inherited Terraform and Kubernetes EKS add-on trust rollout system for policy-compliant, interruption-safe upgrade readiness.",
+        "required_end_state": "Operator CLI produces deterministic upgrade reports after plan policy, IRSA fencing, PDB drain safety, regulated placement, ordered rollout, and checkpoint recovery all pass.",
+        "requirement_families": [
+          "addon version and conflict planning",
+          "IRSA subject fencing",
+          "PDB and drain safety",
+          "regulated placement and capacity fences",
+          "ordered rollout with readiness",
+          "checkpoint recovery",
+          "deterministic reporting"
+        ],
+        "scale_fit": "PASS: design targets 4500-7000 reachable LOC, 12500 fixture records, 28 defects across 7 root causes, and ~30 F2P behaviors.",
+        "partial_fix_traps": [
+          "count-only addon checks",
+          "trust-list contains-required without exclusive subject",
+          "PDB name without selector/minAvailable",
+          "interruption handled without placement verify",
+          "checkpoint only at completion"
+        ],
+        "duplicate_risk": "LOW versus local jenkins-controller-cell-upgrade and ec2-image-promotion; center is EKS addon/IRSA/PDB trust rollout"
+      },
+      {
+        "id": "EKS-CLUSTER-BOOTSTRAP-FROM-SCRATCH",
+        "decision": "REJECT",
+        "scale_fit": "REJECT",
+        "reason": "Greenfield cluster creation is excluded by originality boundary and is not the inherited-lab work package."
+      },
+      {
+        "id": "GENERIC-TERRAFORM-IAM-HARDENING",
+        "decision": "REJECT",
+        "scale_fit": "SCENARIO_TOO_SMALL",
+        "reason": "IAM-only hardening lacks PDB/drain/placement/rollout coupling required for strict breadth."
+      },
+      {
+        "id": "KARPENTER-ONLY-CAPACITY-FENCE",
+        "decision": "REJECT",
+        "scale_fit": "SCENARIO_TOO_SMALL",
+        "reason": "Capacity fencing alone cannot organically support addon trust, IRSA, and report determinism families."
+      }
+    ],
+    "RECOMMENDATION": "EKS-ADDON-TRUST-ROLLOUT",
+    "WHY_THIS_ONE": "Couples Terraform addon planning, IRSA subject fencing, PDB drain safety, regulated placement, ordered readiness-gated rollout, interruption checkpoints, and deterministic reports into one coherent inherited-lab work package already materialized at task commit f649fbfd.",
+    "DUPLICATE_RISK_NOTES": "Keep excluded: live AWS/K8s APIs, greenfield EKS bootstrap, EC2 AMI promotion, Jenkins cell upgrade. Distinctive center remains addon/IRSA/PDB trust rollout."
+  },
+  "evidence_refs": [
+    {
+      "kind": "COMMIT",
+      "ref": "commit:f649fbfd0f14603138e6e6293f0067587016f09a"
+    }
+  ]
+}

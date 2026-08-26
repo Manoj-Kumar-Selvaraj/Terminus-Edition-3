@@ -1,0 +1,200 @@
+{
+  "authority": {
+    "control_plane_commit": "df7ef7569e2947b9f0bf7cf89ed4dec6c2a5a1fe",
+    "policy_versions": {},
+    "task_commit": "f649fbfd0f14603138e6e6293f0067587016f09a",
+    "task_id": "terraform-aws-eks-addon-trust-rollout"
+  },
+  "disposition": "ADVANCE",
+  "evidence_refs": [
+    {
+      "content_hash": "sha256:d979d1683e5fcbb4861a1d40d207c04f2955978a65160664aa86388a2be0b40d",
+      "kind": "COMMIT",
+      "ref": "commit:f649fbfd0f14603138e6e6293f0067587016f09a"
+    }
+  ],
+  "invocation_id": "inv_dadbae325bb4de4b341fbd84763fe2154de56506cbf1368ca81f02ae7254a056",
+  "invocation_snapshot": {
+    "acceptance_predicates": {
+      "ALIGNED": [
+        {
+          "op": "in",
+          "path": "Q1_STATUS",
+          "value": [
+            "NO_GAP",
+            "PASS"
+          ]
+        },
+        {
+          "op": "in",
+          "path": "Q2_STATUS",
+          "value": [
+            "COVERED",
+            "PASS"
+          ]
+        },
+        {
+          "op": "in",
+          "path": "Q3_STATUS",
+          "value": [
+            "CLEAR",
+            "PASS"
+          ]
+        }
+      ]
+    },
+    "authority": {
+      "control_plane_commit": "df7ef7569e2947b9f0bf7cf89ed4dec6c2a5a1fe",
+      "policy_versions": {},
+      "task_commit": "f649fbfd0f14603138e6e6293f0067587016f09a",
+      "task_id": "terraform-aws-eks-addon-trust-rollout"
+    },
+    "evidence": {
+      "authorized_evidence_classes": [
+        "CONTROL_PLANE_POLICY",
+        "PRIVATE_CREATION_DESIGN",
+        "SOLVER_VISIBLE_TASK",
+        "VERIFIER_PRIVATE"
+      ],
+      "evidence_required": [
+        "Q1 no unresolved verifier->spec gap",
+        "Q2 no unresolved spec->verifier gap",
+        "Q3 no unresolved grading-relevant ambiguity"
+      ],
+      "excluded_evidence_classes": [
+        "CI_RUNTIME_EVIDENCE",
+        "CURRENT_REVIEW_PACKET",
+        "DURABLE_SESSION_STATE",
+        "FINAL_PACKAGE_EVIDENCE",
+        "MODEL_TRIAL_EVIDENCE",
+        "PRIOR_REVIEW_RESULTS",
+        "PUBLIC_REFERENCE",
+        "SOLUTION_ORACLE"
+      ],
+      "mandatory_exact_reads": [
+        ".terminus/agents/INSTRUCTION_POLICY.md",
+        ".terminus/agents/QUALITY_AGENT_REGISTRY.md",
+        ".terminus/agents/QUALITY_AGENT_PROMPTS.md"
+      ],
+      "retrieval_mode": "EXACT_ONLY"
+    },
+    "ignored_input_count": 44,
+    "inputs": {
+      "optional": {},
+      "required": {
+        "CURRENT_INSTRUCTION": "terraform-aws-eks-addon-trust-rollout/instruction.md",
+        "CURRENT_VERIFIER": "terraform-aws-eks-addon-trust-rollout/tests/test_outputs.py",
+        "REFERENCED_SOLVER_VISIBLE_CONTRACTS": [
+          "environment/docs/addon-trust-rollout-contract.md",
+          "environment/docs/architecture.md",
+          "environment/docs/irsa-policy-contract.md",
+          "environment/docs/report-schema.md",
+          "environment/docs/rollout-lifecycle.md"
+        ]
+      }
+    },
+    "invocation_id": "inv_dadbae325bb4de4b341fbd84763fe2154de56506cbf1368ca81f02ae7254a056",
+    "learning": {
+      "context_hash": "sha256:307e06b6be8eee79e941256cc80e7b4b8e6d8edb9a73269dbba59257a864107b",
+      "lessons": [],
+      "mode": "GENERALIZED_LESSONS_PLUS_OWNED_REMEDIATIONS",
+      "raw_feedback_exposed": false,
+      "raw_historical_findings_exposed": false,
+      "registry_heads": {
+        "feedback": "sha256:8dd19b0617b094661caf5fe0a5b30e437703843b5f05ce63a7a75586710575c6",
+        "findings": "GENESIS",
+        "lessons": "GENESIS",
+        "patterns": "GENESIS",
+        "remediations": "GENESIS"
+      },
+      "remediations": []
+    },
+    "missing_required_inputs": [],
+    "output_contract": {
+      "allowed_status_values": [
+        "ALIGNED",
+        "REPAIR_REQUIRED",
+        "BLOCKED"
+      ],
+      "deterministic_validators": [],
+      "optional_fields": [
+        "REPAIR_EVIDENCE"
+      ],
+      "persisted_artifacts": [],
+      "required_fields": [
+        "Q1_STATUS",
+        "Q2_STATUS",
+        "Q3_STATUS"
+      ],
+      "semantic_reviewers": [
+        "Q1 Spec Gap Repairer",
+        "Q2 Verifier Coverage Repairer",
+        "Q3 Spec Ambiguity Repairer"
+      ]
+    },
+    "readiness": "READY",
+    "retrieval": {
+      "query": null,
+      "retrieved_chars": 0,
+      "retrieved_context": [],
+      "status": "NOT_REQUESTED"
+    },
+    "routing": {
+      "failure_routes": {
+        "AMBIGUITY": "Q3 Spec Ambiguity Repairer",
+        "PERSISTENT_DISAGREEMENT": "Creation Controller -> block freeze and route to the applicable contract/policy owner",
+        "SPEC_TO_VERIFIER_GAP": "Q2 Verifier Coverage Repairer",
+        "VERIFIER_TO_SPEC_GAP": "Q1 Spec Gap Repairer"
+      },
+      "stale_on": [
+        "instruction change",
+        "referenced contract change",
+        "verifier change",
+        "grading-semantics change"
+      ],
+      "success_transition": "DOCUMENTATION_DRAFT"
+    },
+    "schema_version": "1.0",
+    "stage": {
+      "lifecycle": "creation",
+      "owner": "Creation Controller",
+      "role_class": "CONTROLLER",
+      "role_id": "CREATION_CONTROLLER",
+      "stage_id": "SPEC_ALIGNMENT"
+    }
+  },
+  "outputs": {
+    "Q1_STATUS": "NO_GAP",
+    "Q2_STATUS": "COVERED",
+    "Q3_STATUS": "CLEAR"
+  },
+  "record_id": "rec_bba87e8e6cbbd754930bf737d2e2b1afffa9461441f2c83e9ecc19dd031b0951",
+  "role_id": "CREATION_CONTROLLER",
+  "schema_version": "1.0",
+  "stage_id": "SPEC_ALIGNMENT",
+  "status": "ALIGNED",
+  "task_lineage": {
+    "input_task_commit": "f649fbfd0f14603138e6e6293f0067587016f09a",
+    "output_task_commit": "f649fbfd0f14603138e6e6293f0067587016f09a",
+    "task_changed": false
+  },
+  "transition": {
+    "action": "ADVANCE",
+    "requires_state_validation": false,
+    "target": "DOCUMENTATION_DRAFT",
+    "target_kind": "STAGE"
+  },
+  "validation": {
+    "acceptance_predicates_satisfied": true,
+    "evidence_binding_satisfied": true,
+    "evidence_refs_count": 1,
+    "invocation_identity_valid": true,
+    "invocation_policy_valid": true,
+    "output_keys_valid": true,
+    "required_outputs_satisfied": true,
+    "retrieval_context_authorized": true,
+    "status_legal": true,
+    "task_commit_change_authorized": true,
+    "task_lineage_valid": true
+  }
+}

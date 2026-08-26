@@ -1,0 +1,842 @@
+{
+  "ledger_event": {
+    "control_plane_commit": "df7ef7569e2947b9f0bf7cf89ed4dec6c2a5a1fe",
+    "event_id": "evt_fc77f20b73b911c0cd0e3b00227e1c65b89258bbc3f15d77719dbdc29e292a1b",
+    "input_task_commit": "f649fbfd0f14603138e6e6293f0067587016f09a",
+    "invocation_id": "inv_02672f81bab1252ddc9d996f7c9c8fb3efe6e16e4d79000581e06e4eca512f28",
+    "output_task_commit": "f649fbfd0f14603138e6e6293f0067587016f09a",
+    "previous_event_id": "evt_072c783c808e2c3e721d56c239718995564985685cf6fbb539be9c2a52e580eb",
+    "record_hash": "sha256:de722d36df4c8382497fd6a7e8b822b46e5ca7f38f6d8c8bc996a179c2731497",
+    "record_id": "rec_8cfb71050837ff64d7e05936bc029c88131bb42e100877c97fe4fc132791b39c",
+    "record_path": ".terminus/executions/terraform-aws-eks-addon-trust-rollout/inv_02672f81bab1252ddc9d996f7c9c8fb3efe6e16e4d79000581e06e4eca512f28.result.json",
+    "schema_version": "1.0",
+    "sequence": 4,
+    "stage_id": "DEFECT_TOPOLOGY",
+    "task_id": "terraform-aws-eks-addon-trust-rollout"
+  },
+  "record": {
+    "authority": {
+      "control_plane_commit": "df7ef7569e2947b9f0bf7cf89ed4dec6c2a5a1fe",
+      "policy_versions": {},
+      "task_commit": "f649fbfd0f14603138e6e6293f0067587016f09a",
+      "task_id": "terraform-aws-eks-addon-trust-rollout"
+    },
+    "disposition": "ADVANCE",
+    "evidence_refs": [
+      {
+        "content_hash": "sha256:d979d1683e5fcbb4861a1d40d207c04f2955978a65160664aa86388a2be0b40d",
+        "kind": "COMMIT",
+        "ref": "commit:f649fbfd0f14603138e6e6293f0067587016f09a"
+      }
+    ],
+    "invocation_id": "inv_02672f81bab1252ddc9d996f7c9c8fb3efe6e16e4d79000581e06e4eca512f28",
+    "invocation_snapshot": {
+      "acceptance_predicates": {},
+      "authority": {
+        "control_plane_commit": "df7ef7569e2947b9f0bf7cf89ed4dec6c2a5a1fe",
+        "policy_versions": {},
+        "task_commit": "f649fbfd0f14603138e6e6293f0067587016f09a",
+        "task_id": "terraform-aws-eks-addon-trust-rollout"
+      },
+      "evidence": {
+        "authorized_evidence_classes": [
+          "CONTROL_PLANE_POLICY",
+          "PRIVATE_CREATION_DESIGN",
+          "PUBLIC_REFERENCE",
+          "SOLVER_VISIBLE_TASK"
+        ],
+        "evidence_required": [
+          "root-cause clusters",
+          "causal/interdependency edges",
+          "partial-fix traps",
+          "behavioral surfaces"
+        ],
+        "excluded_evidence_classes": [
+          "CI_RUNTIME_EVIDENCE",
+          "CURRENT_REVIEW_PACKET",
+          "DURABLE_SESSION_STATE",
+          "FINAL_PACKAGE_EVIDENCE",
+          "MODEL_TRIAL_EVIDENCE",
+          "PRIOR_REVIEW_RESULTS",
+          "SOLUTION_ORACLE",
+          "VERIFIER_PRIVATE"
+        ],
+        "mandatory_exact_reads": [
+          ".terminus/agents/CREATION_PIPELINE.md",
+          ".terminus/agents/CREATOR_AGENT_REGISTRY.md",
+          ".terminus/agents/CREATOR_PROMPTS.md"
+        ],
+        "retrieval_mode": "FILTERED_HYBRID"
+      },
+      "ignored_input_count": 41,
+      "inputs": {
+        "optional": {},
+        "required": {
+          "APPROVED_OPERATIONAL_REQUIREMENTS": [
+            "Complete the inherited Terraform and Kubernetes EKS add-on trust rollout system at `/app` using contracts in `/app/docs` and incident evidence in `/app/evidence` so add-on controllers, IRSA subjects, PodDisruptionBudgets, and regulated placement achieve policy-compliant upgrade readiness.",
+            "Execute and validate through the public operator CLI command at `/app/bin/addon-trust-rollout`.",
+            "Plan Terraform under `/app/terraform` so the generated plan at `/app/var/upgrade/plan.json` includes all required add-ons matching target versions in `/app/data/compatibility_matrix.json`.",
+            "Configure `resolve_conflicts_on_update = 'PRESERVE'` for all EKS add-ons in the Terraform plan.",
+            "Support SSM parameter tags for controller add-ons to extract version overrides and conflict resolution modes.",
+            "Configure each IRSA role in Terraform to trust exactly one service account subject matching `/app/data/trust_observations.json` and reject wildcards or forbidden subjects.",
+            "Ensure IAM role policies contain no wildcard actions (`*` or `ebs:*`) and role names follow required naming conventions.",
+            "Supply required PodDisruptionBudgets in `/app/k8s` matching required names, namespaces, and minAvailable thresholds in `/app/data/pdbs.json`.",
+            "Preserve `CriticalAddonsOnly=true:NoSchedule` taints and nodepool labels on the system node group.",
+            "Simulate system node draining while enforcing PodDisruptionBudget minAvailable limits and maintaining core service availability.",
+            "Enforce explicit nodepool selectors and capacity-type constraints for regulated workloads, restricting placement to private on-demand node pools.",
+            "Enforce Karpenter NodePool CRD requirements to ensure regulated capacity excludes spot instances.",
+            "Simulate spot/on-demand node interruptions and verify regulated workloads remain on on-demand capacity after rebalancing.",
+            "Validate add-on rollout prerequisites before advancing each add-on, executing rollouts in exact compatibility matrix order.",
+            "Poll and verify add-on readiness before marking steps complete, reporting status `READY` only when all readiness conditions pass.",
+            "Audit cross-service trust to prevent IAM role ARN sharing across distinct add-ons.",
+            "Merge inline policies and standalone role policy attachments in plan normalization.",
+            "Guard resources tagged `UpgradeProtected=true` against delete or replace actions in the Terraform plan.",
+            "Record step-by-step rollout state checkpoints to enable atomic restart recovery upon interruption.",
+            "Publish deterministic reports to `/app/output/upgrade-report.json` with canonical formatting, sorted keys, stable semantic fields, and repeatable SHA-256 report digests."
+          ],
+          "APPROVED_WORK_PACKAGE": {
+            "id": "EKS-ADDON-TRUST-ROLLOUT",
+            "objective": "Complete the inherited Terraform and Kubernetes EKS add-on trust rollout system so add-on controllers, IRSA subjects, PodDisruptionBudgets, node pool taints, and regulated workload placement achieve policy-compliant, interruption-safe upgrade readiness.",
+            "persona": "A platform reliability engineer completing a multi-addon, IRSA trust, and PDB rollout on a live EKS upgrade lab.",
+            "scope_exclusions": [
+              "Live AWS API calls or external Kubernetes cluster connectivity",
+              "Fresh EKS cluster creation from scratch",
+              "Generic EC2 fleet rollout or AMI promotion",
+              "Jenkins controller upgrade or CI pipeline execution",
+              "Direct Helm chart repo downloading"
+            ]
+          },
+          "CLEAN_SYSTEM_ARCHITECTURE": {
+            "COMPONENT_GRAPH": [
+              "Terraform workspace and upgrade module generator",
+              "Terraform plan parser and policy validator",
+              "IRSA trust policy parser and subject fence verifier",
+              "Compatibility matrix and prerequisite dependency evaluator",
+              "Kubernetes manifest parser and PodDisruptionBudget analyzer",
+              "Regulated workload placement and Karpenter node pool evaluator",
+              "System node drain simulator and pod eviction engine",
+              "Interruption simulator and capacity fence analyzer",
+              "Rollout state machine coordinator with step-by-step checkpointing",
+              "Deterministic report publisher and SHA-256 digest calculator"
+            ],
+            "ENTRYPOINTS": [
+              "/app/bin/addon-trust-rollout",
+              "/app/bin/generate-fixtures"
+            ],
+            "PRODUCTION_CHARACTERISTICS": [
+              "Terraform plan policy and IRSA fencing",
+              "PDB drain simulation",
+              "regulated placement and Karpenter capacity fences",
+              "ordered rollout with readiness polling",
+              "checkpoint recovery",
+              "deterministic SHA-256 reports"
+            ],
+            "SCALE_FIT": "Target 4,500-7,000 reachable canonical environment LOC; generated data, tests, solution, docs, comments, blanks, and duplicate filler do not count.",
+            "SOLVER_VISIBLE_DOC_PLAN": [
+              "environment/docs/addon-trust-rollout-contract.md",
+              "environment/docs/architecture.md",
+              "environment/docs/irsa-policy-contract.md",
+              "environment/docs/report-schema.md",
+              "environment/docs/rollout-lifecycle.md"
+            ],
+            "STATE_MODEL": "File-backed JSON/YAML state store with checkpointing, plan normalization, and deterministic report publication."
+          },
+          "CREATION_PROFILE": "large_system_strict"
+        }
+      },
+      "invocation_id": "inv_02672f81bab1252ddc9d996f7c9c8fb3efe6e16e4d79000581e06e4eca512f28",
+      "learning": {
+        "context_hash": "sha256:307e06b6be8eee79e941256cc80e7b4b8e6d8edb9a73269dbba59257a864107b",
+        "lessons": [],
+        "mode": "GENERALIZED_LESSONS_PLUS_OWNED_REMEDIATIONS",
+        "raw_feedback_exposed": false,
+        "raw_historical_findings_exposed": false,
+        "registry_heads": {
+          "feedback": "sha256:8dd19b0617b094661caf5fe0a5b30e437703843b5f05ce63a7a75586710575c6",
+          "findings": "GENESIS",
+          "lessons": "GENESIS",
+          "patterns": "GENESIS",
+          "remediations": "GENESIS"
+        },
+        "remediations": []
+      },
+      "missing_required_inputs": [],
+      "output_contract": {
+        "allowed_status_values": [
+          "DESIGN_READY",
+          "SCENARIO_TOO_SMALL",
+          "BLOCKED"
+        ],
+        "deterministic_validators": [
+          ".terminus/validate_defect_topology.py <task>"
+        ],
+        "optional_fields": [],
+        "persisted_artifacts": [
+          ".terminus/designs/<task>.json"
+        ],
+        "required_fields": [
+          "profile",
+          "root_cause_clusters",
+          "defects",
+          "causal_edges",
+          "behavioral_surfaces",
+          "organic_f2p_surface_assessment"
+        ],
+        "semantic_reviewers": [
+          "Task Architect",
+          "Complexity Governor"
+        ]
+      },
+      "readiness": "READY",
+      "retrieval": {
+        "query": null,
+        "retrieved_chars": 0,
+        "retrieved_context": [],
+        "status": "NOT_REQUESTED"
+      },
+      "routing": {
+        "failure_routes": {
+          "ARCHITECTURE_GAP": "Creation Controller -> SYSTEM_ARCHITECTURE",
+          "HIDDEN_KNOWLEDGE": "A3 Defect Topology Designer -> expose legitimate solver-visible contract or remove defect",
+          "SCENARIO_TOO_SMALL": "Creation Controller -> WORK_PACKAGE_RESEARCH"
+        },
+        "stale_on": [
+          "work-package change",
+          "architecture change",
+          "material operational requirement change"
+        ],
+        "success_transition": "ENVIRONMENT_BUILD"
+      },
+      "schema_version": "1.0",
+      "stage": {
+        "lifecycle": "creation",
+        "owner": "A3 Defect Topology Designer",
+        "role_class": "PRODUCER",
+        "role_id": "A3_DEFECT_TOPOLOGY_DESIGNER",
+        "stage_id": "DEFECT_TOPOLOGY"
+      }
+    },
+    "outputs": {
+      "behavioral_surfaces": [
+        "Plan policy validation enforces all required add-on resources in Terraform plan",
+        "Add-on versions match target versions in compatibility matrix exactly",
+        "resolve_conflicts_on_update is set to PRESERVE for all add-ons",
+        "SSM parameter tags correctly supply controller add-on versions and conflict modes",
+        "IRSA assume-role policy parsing handles string, dict, and list condition structures",
+        "IRSA role trusts exactly one service account subject matching observations",
+        "Forbidden subjects like system:nodes are strictly rejected from IRSA trust policies",
+        "IAM policy actions reject wildcard actions and overly broad statements",
+        "IRSA role names match expected naming conventions",
+        "PodDisruptionBudgets match required names, namespaces, and minAvailable budgets",
+        "PDB minAvailable values match exact required default thresholds",
+        "System node groups retain CriticalAddonsOnly NoSchedule taints",
+        "System node drain simulation respects PDB minAvailable limits and tracks availability",
+        "System node groups retain correct nodepool Kubernetes labels",
+        "Regulated workloads specify explicit nodepool selectors and capacity constraints",
+        "Regulated capacity types enforce on-demand instances and reject spot capacity",
+        "Regulated node pools are restricted to private subnets only",
+        "Karpenter NodePool CRD specifications enforce on-demand capacity requirements",
+        "Interruption simulation verifies regulated workloads remain on-demand after rebalance",
+        "Add-on rollout prerequisites are validated before advancing each add-on",
+        "Add-ons roll out in exact order specified by compatibility matrix",
+        "Add-on readiness checks verify controller status before marking step OK",
+        "Cross-service trust checks ensure no IAM role ARN is shared across add-ons",
+        "Plan normalizer merges inline policies and standalone role policy attachments",
+        "UpgradeProtected resources are strictly protected against delete or replace actions",
+        "Rollout state checkpointing records step progress for atomic restart recovery",
+        "Report fields are complete, canonical, and deterministically formatted",
+        "Report digest is computed over stable semantic fields with sorted keys",
+        "Readiness report status is READY only when all policy and rollout checks pass",
+        "Identical upgrade runs produce identical report digests"
+      ],
+      "causal_edges": [
+        {
+          "from": "D01",
+          "to": "D02"
+        },
+        {
+          "from": "D02",
+          "to": "D03"
+        },
+        {
+          "from": "D03",
+          "to": "D21"
+        },
+        {
+          "from": "D04",
+          "to": "D02"
+        },
+        {
+          "from": "D05",
+          "to": "D06"
+        },
+        {
+          "from": "D06",
+          "to": "D07"
+        },
+        {
+          "from": "D07",
+          "to": "D23"
+        },
+        {
+          "from": "D08",
+          "to": "D23"
+        },
+        {
+          "from": "D09",
+          "to": "D06"
+        },
+        {
+          "from": "D10",
+          "to": "D11"
+        },
+        {
+          "from": "D11",
+          "to": "D13"
+        },
+        {
+          "from": "D12",
+          "to": "D13"
+        },
+        {
+          "from": "D13",
+          "to": "D14"
+        },
+        {
+          "from": "D14",
+          "to": "D19"
+        },
+        {
+          "from": "D15",
+          "to": "D16"
+        },
+        {
+          "from": "D16",
+          "to": "D18"
+        },
+        {
+          "from": "D17",
+          "to": "D16"
+        },
+        {
+          "from": "D18",
+          "to": "D19"
+        },
+        {
+          "from": "D19",
+          "to": "D27"
+        },
+        {
+          "from": "D20",
+          "to": "D21"
+        },
+        {
+          "from": "D21",
+          "to": "D22"
+        },
+        {
+          "from": "D22",
+          "to": "D26"
+        },
+        {
+          "from": "D23",
+          "to": "D27"
+        },
+        {
+          "from": "D24",
+          "to": "D08"
+        },
+        {
+          "from": "D25",
+          "to": "D26"
+        },
+        {
+          "from": "D26",
+          "to": "D27"
+        },
+        {
+          "from": "D27",
+          "to": "D28"
+        }
+      ],
+      "defects": [
+        {
+          "component": "plan validator",
+          "id": "D01",
+          "observable_failure": "Missing add-on resources in Terraform plan are ignored rather than flagged as errors.",
+          "partial_fix_trap": "Checking add-on count without validating individual names allows missing add-ons.",
+          "root_cause": "RC_ADDON_VERSION_COMPATIBILITY"
+        },
+        {
+          "component": "version evaluator",
+          "id": "D02",
+          "observable_failure": "Add-on versions differing from the compatibility matrix target are accepted as valid.",
+          "partial_fix_trap": "Comparing major version only misses minor or patch version mismatches.",
+          "root_cause": "RC_ADDON_VERSION_COMPATIBILITY"
+        },
+        {
+          "component": "conflict resolver",
+          "id": "D03",
+          "observable_failure": "resolve_conflicts_on_update values other than PRESERVE pass plan policy validation.",
+          "partial_fix_trap": "Allowing OVERWRITE or NONE passes validation but causes cluster drift.",
+          "root_cause": "RC_ADDON_VERSION_COMPATIBILITY"
+        },
+        {
+          "component": "ssm tag parser",
+          "id": "D04",
+          "observable_failure": "Controller add-ons specified via SSM parameters fail to extract version or conflict tags correctly.",
+          "partial_fix_trap": "Parsing SSM parameter values without inspecting tags misses tag-driven version overrides.",
+          "root_cause": "RC_ADDON_VERSION_COMPATIBILITY"
+        },
+        {
+          "component": "IRSA parser",
+          "id": "D05",
+          "observable_failure": "Role assume-role policy documents with nested JSON strings or interpolations fail subject extraction.",
+          "partial_fix_trap": "String regex searching without structural JSON decoding misses nested policy statements.",
+          "root_cause": "RC_IRSA_TRUST_FENCING"
+        },
+        {
+          "component": "trust verifier",
+          "id": "D06",
+          "observable_failure": "IRSA roles trusting zero or multiple service account subjects pass trust verification.",
+          "partial_fix_trap": "Checking that required subject is in trust list without checking total subject count allows wildcard trust.",
+          "root_cause": "RC_IRSA_TRUST_FENCING"
+        },
+        {
+          "component": "forbidden subject checker",
+          "id": "D07",
+          "observable_failure": "Roles trusting forbidden subjects such as system:nodes pass trust checks.",
+          "partial_fix_trap": "Validating required service account subject without checking forbidden subject list leaks node identity.",
+          "root_cause": "RC_IRSA_TRUST_FENCING"
+        },
+        {
+          "component": "policy action auditor",
+          "id": "D08",
+          "observable_failure": "IAM policies containing wildcard actions (e.g. * or ebs:*) pass policy validation.",
+          "partial_fix_trap": "Checking statement Effect without evaluating Action patterns allows broad permissions.",
+          "root_cause": "RC_IRSA_TRUST_FENCING"
+        },
+        {
+          "component": "role name matcher",
+          "id": "D09",
+          "observable_failure": "IRSA role names that do not match expected naming conventions pass role validation.",
+          "partial_fix_trap": "Matching AddonTrust tag alone without verifying IAM role name allows improperly named roles.",
+          "root_cause": "RC_IRSA_TRUST_FENCING"
+        },
+        {
+          "component": "PDB parser",
+          "id": "D10",
+          "observable_failure": "Kubernetes PodDisruptionBudgets with missing or non-matching selector labels are recorded as valid.",
+          "partial_fix_trap": "Checking PDB name existence without matching namespace and selector labels passes invalid PDBs.",
+          "root_cause": "RC_PDB_CAPACITY_DRAIN"
+        },
+        {
+          "component": "minAvailable verifier",
+          "id": "D11",
+          "observable_failure": "PDB minAvailable values that differ from required defaults pass PDB coverage checks.",
+          "partial_fix_trap": "Checking minAvailable is non-zero without verifying exact threshold allows insufficient availability.",
+          "root_cause": "RC_PDB_CAPACITY_DRAIN"
+        },
+        {
+          "component": "node taint checker",
+          "id": "D12",
+          "observable_failure": "System node groups missing the CriticalAddonsOnly taint pass node group validation.",
+          "partial_fix_trap": "Checking key name without verifying value and effect (NoSchedule) allows non-blocking taints.",
+          "root_cause": "RC_PDB_CAPACITY_DRAIN"
+        },
+        {
+          "component": "drain simulator",
+          "id": "D13",
+          "observable_failure": "Node drain simulation evicts pods even when PDB minAvailable budgets would be violated.",
+          "partial_fix_trap": "Counting evicted pods without tracking remaining available replicas violates PDB safety.",
+          "root_cause": "RC_PDB_CAPACITY_DRAIN"
+        },
+        {
+          "component": "node label verifier",
+          "id": "D14",
+          "observable_failure": "System node groups with incorrect nodepool label values pass node pool validation.",
+          "partial_fix_trap": "Verifying node group name without checking Kubernetes labels allows mislabeled pools.",
+          "root_cause": "RC_PDB_CAPACITY_DRAIN"
+        },
+        {
+          "component": "placement evaluator",
+          "id": "D15",
+          "observable_failure": "Regulated workloads configured without explicit nodepool selectors pass placement validation.",
+          "partial_fix_trap": "Checking namespace name without verifying pod spec nodeSelector allows unconstrained placement.",
+          "root_cause": "RC_CAPACITY_NODE_SELECTOR"
+        },
+        {
+          "component": "capacity type fence",
+          "id": "D16",
+          "observable_failure": "Regulated node pools specifying spot or hybrid capacity pass placement checks.",
+          "partial_fix_trap": "Filtering capacity types without checking all configured types permits spot instances.",
+          "root_cause": "RC_CAPACITY_NODE_SELECTOR"
+        },
+        {
+          "component": "subnet scope checker",
+          "id": "D17",
+          "observable_failure": "Regulated node pools deployed in public or dual-stack subnets pass subnet posture checks.",
+          "partial_fix_trap": "Checking private subnet presence without verifying public subnet absence allows public exposure.",
+          "root_cause": "RC_CAPACITY_NODE_SELECTOR"
+        },
+        {
+          "component": "karpenter nodepool parser",
+          "id": "D18",
+          "observable_failure": "Karpenter NodePool CRDs with on-demand and spot in requirements pass regulated capacity validation.",
+          "partial_fix_trap": "Reading NodePool name without evaluating template spec requirements allows spot capacity.",
+          "root_cause": "RC_CAPACITY_NODE_SELECTOR"
+        },
+        {
+          "component": "interruption simulator",
+          "id": "D19",
+          "observable_failure": "Interruption simulation fails to verify that regulated workloads remain on on-demand capacity after node rebalancing.",
+          "partial_fix_trap": "Setting interruption handled=true without checking post-interruption placement allows spot migration.",
+          "root_cause": "RC_CAPACITY_NODE_SELECTOR"
+        },
+        {
+          "component": "prerequisite evaluator",
+          "id": "D20",
+          "observable_failure": "Add-on rollout proceeds when required prerequisite add-ons are missing or in non-ACTIVE status.",
+          "partial_fix_trap": "Checking prerequisite add-on existence without verifying ACTIVE status permits premature upgrade.",
+          "root_cause": "RC_CONTROLLER_ROLLOUT_ORDER"
+        },
+        {
+          "component": "rollout sequencer",
+          "id": "D21",
+          "observable_failure": "Add-ons are upgraded out of the order defined in the compatibility matrix.",
+          "partial_fix_trap": "Iterating add-ons in plan dict order instead of matrix order violates rollout sequence.",
+          "root_cause": "RC_CONTROLLER_ROLLOUT_ORDER"
+        },
+        {
+          "component": "readiness checker",
+          "id": "D22",
+          "observable_failure": "Add-on status is marked ACTIVE before controller deployment readiness checks pass.",
+          "partial_fix_trap": "Updating status immediately upon API request without polling readiness causes race conditions.",
+          "root_cause": "RC_CONTROLLER_ROLLOUT_ORDER"
+        },
+        {
+          "component": "cross-service trust audit",
+          "id": "D23",
+          "observable_failure": "Multiple add-on roles sharing the same IAM role ARN or trust subject pass cross-service isolation checks.",
+          "partial_fix_trap": "Verifying individual IRSA bindings without auditing unique role ARNs permits shared trust.",
+          "root_cause": "RC_CONTROLLER_ROLLOUT_ORDER"
+        },
+        {
+          "component": "plan normalizer",
+          "id": "D24",
+          "observable_failure": "Plan normalization drops inline role policies or standalone role policy attachments.",
+          "partial_fix_trap": "Parsing aws_iam_role inline_policy without merging aws_iam_role_policy attachments misses permissions.",
+          "root_cause": "RC_STATE_RECONCILIATION_CHECKPOINT"
+        },
+        {
+          "component": "protected resource fence",
+          "id": "D25",
+          "observable_failure": "Resources tagged UpgradeProtected=true that are scheduled for delete or replace pass plan policy checks.",
+          "partial_fix_trap": "Checking resource address without inspecting change actions (delete/replace) allows destructive changes.",
+          "root_cause": "RC_STATE_RECONCILIATION_CHECKPOINT"
+        },
+        {
+          "component": "checkpoint manager",
+          "id": "D26",
+          "observable_failure": "Rollout state checkpointing fails to record step-by-step progress, causing full restart on interruption.",
+          "partial_fix_trap": "Writing checkpoint only at completion loses progress when rollout is interrupted.",
+          "root_cause": "RC_STATE_RECONCILIATION_CHECKPOINT"
+        },
+        {
+          "component": "report builder",
+          "id": "D27",
+          "observable_failure": "Upgrade report fields omit required keys or fail to sort lists and dictionary keys deterministically.",
+          "partial_fix_trap": "Formatting JSON without sort_keys=True causes non-deterministic report digests across runs.",
+          "root_cause": "RC_REPORT_DETERMINISM"
+        },
+        {
+          "component": "digest calculator",
+          "id": "D28",
+          "observable_failure": "Report digest calculation includes volatile fields (e.g. timestamps or local file paths).",
+          "partial_fix_trap": "Hashing full report object including volatile fields produces changing digests for identical state.",
+          "root_cause": "RC_REPORT_DETERMINISM"
+        }
+      ],
+      "organic_f2p_surface_assessment": "30 organic F2P behaviors mapped across 7 requirement families; validator PASS at task commit.",
+      "profile": "large_system_strict",
+      "root_cause_clusters": {
+        "RC_ADDON_VERSION_COMPATIBILITY": "Add-on version mapping, conflict resolution settings, and target compatibility matrix validation fail to enforce required target versions.",
+        "RC_CAPACITY_NODE_SELECTOR": "Regulated workload nodeSelectors, Karpenter capacity-type requirements, and on-demand pool fencing fail to prevent spot allocation.",
+        "RC_CONTROLLER_ROLLOUT_ORDER": "Rollout state machine step sequencing, prerequisite validation, and readiness checking advance add-ons out of order.",
+        "RC_IRSA_TRUST_FENCING": "IRSA assume-role policy parsing, wildcard action detection, and exact single-subject service account binding fail to restrict role permissions.",
+        "RC_PDB_CAPACITY_DRAIN": "PodDisruptionBudget parsing, minAvailable coverage checking, and node drain eviction capacity calculations fail during system node draining.",
+        "RC_REPORT_DETERMINISM": "Report schema generation, field ordering, status evaluation, and report digest calculation produce non-deterministic outputs.",
+        "RC_STATE_RECONCILIATION_CHECKPOINT": "Plan normalization, upgrade state checkpointing, and interrupted rollout recovery fail to maintain state monotonicity."
+      }
+    },
+    "record_id": "rec_8cfb71050837ff64d7e05936bc029c88131bb42e100877c97fe4fc132791b39c",
+    "role_id": "A3_DEFECT_TOPOLOGY_DESIGNER",
+    "schema_version": "1.0",
+    "stage_id": "DEFECT_TOPOLOGY",
+    "status": "DESIGN_READY",
+    "task_lineage": {
+      "input_task_commit": "f649fbfd0f14603138e6e6293f0067587016f09a",
+      "output_task_commit": "f649fbfd0f14603138e6e6293f0067587016f09a",
+      "task_changed": false
+    },
+    "transition": {
+      "action": "ADVANCE",
+      "requires_state_validation": false,
+      "target": "ENVIRONMENT_BUILD",
+      "target_kind": "STAGE"
+    },
+    "validation": {
+      "acceptance_predicates_satisfied": true,
+      "evidence_binding_satisfied": true,
+      "evidence_refs_count": 1,
+      "invocation_identity_valid": true,
+      "invocation_policy_valid": true,
+      "output_keys_valid": true,
+      "required_outputs_satisfied": true,
+      "retrieval_context_authorized": true,
+      "status_legal": true,
+      "task_commit_change_authorized": true,
+      "task_lineage_valid": true
+    }
+  },
+  "remediation_updates": [],
+  "state": {
+    "control_plane_commit": "df7ef7569e2947b9f0bf7cf89ed4dec6c2a5a1fe",
+    "derived_from": {
+      "freshness_overlay_hash": null,
+      "record_ids": [
+        "rec_7ebdb509ab6245cfa23a4a7e5249ed89a0c6dd2aecf9387e44849598d820fe1c",
+        "rec_8cfb71050837ff64d7e05936bc029c88131bb42e100877c97fe4fc132791b39c",
+        "rec_adc85baeafec23f63be59d90e0af6839237c18d717db7ffe0ccea4b953d6397d",
+        "rec_b3f02363c8131709e9d99d00b72ddf362f8152724ca9f6f72732bd28899938c3"
+      ]
+    },
+    "ledger_event_count": 4,
+    "ledger_head_event_id": "evt_fc77f20b73b911c0cd0e3b00227e1c65b89258bbc3f15d77719dbdc29e292a1b",
+    "lineage": {
+      "bootstrap_task_commit": "f649fbfd0f14603138e6e6293f0067587016f09a",
+      "current_task_commit": "f649fbfd0f14603138e6e6293f0067587016f09a",
+      "recorded_task_commit": "f649fbfd0f14603138e6e6293f0067587016f09a",
+      "status": "CURRENT"
+    },
+    "next": {
+      "action": "INVOKE_STAGE",
+      "optional_inputs": [
+        "DOMAIN_FIXTURE_PLAN"
+      ],
+      "owner": "A2 System Architect / Environment Builder",
+      "primary_role_id": "A2_ENVIRONMENT_BUILDER",
+      "required_inputs": [
+        "CLEAN_SYSTEM_ARCHITECTURE",
+        "CREATION_RULE_CONTEXT",
+        "DEFECT_TOPOLOGY",
+        "SOLVER_VISIBLE_DOC_PLAN"
+      ],
+      "stage_id": "ENVIRONMENT_BUILD"
+    },
+    "nodes": [
+      {
+        "disposition": "ADVANCE",
+        "input_task_commit": "f649fbfd0f14603138e6e6293f0067587016f09a",
+        "invocation_id": "inv_ad8b88368caa0e4252672cfebcf615e7613a1ed022263da1d8bab8532a5fd48e",
+        "ledger_event_id": "evt_91b851567b5890c43023cfabf30d263c19024e4de8344c0512778fa42adb05f9",
+        "node_id": "RULE_RESOLUTION",
+        "node_kind": "STAGE",
+        "output_task_commit": "f649fbfd0f14603138e6e6293f0067587016f09a",
+        "reason": "validated ADVANCE record reaches WORK_PACKAGE_RESEARCH",
+        "record_id": "rec_b3f02363c8131709e9d99d00b72ddf362f8152724ca9f6f72732bd28899938c3",
+        "status": "CURRENT"
+      },
+      {
+        "disposition": "ADVANCE",
+        "input_task_commit": "f649fbfd0f14603138e6e6293f0067587016f09a",
+        "invocation_id": "inv_03461ee58f371e995f078e160182aa83052d88f28b8d55207d7a2ff23690e968",
+        "ledger_event_id": "evt_a3e9f5ec1f80b1c0b7f4bb6d8ae40f4808a4c871ab635e7df73b175929131aca",
+        "node_id": "WORK_PACKAGE_RESEARCH",
+        "node_kind": "STAGE",
+        "output_task_commit": "f649fbfd0f14603138e6e6293f0067587016f09a",
+        "reason": "validated ADVANCE record reaches SYSTEM_ARCHITECTURE",
+        "record_id": "rec_7ebdb509ab6245cfa23a4a7e5249ed89a0c6dd2aecf9387e44849598d820fe1c",
+        "status": "CURRENT"
+      },
+      {
+        "disposition": "ADVANCE",
+        "input_task_commit": "f649fbfd0f14603138e6e6293f0067587016f09a",
+        "invocation_id": "inv_a833d7c90d1f5c659cfabb516d89899e0dc4f84275f93f7178cd939adbed16d3",
+        "ledger_event_id": "evt_072c783c808e2c3e721d56c239718995564985685cf6fbb539be9c2a52e580eb",
+        "node_id": "SYSTEM_ARCHITECTURE",
+        "node_kind": "STAGE",
+        "output_task_commit": "f649fbfd0f14603138e6e6293f0067587016f09a",
+        "reason": "validated ADVANCE record reaches DEFECT_TOPOLOGY",
+        "record_id": "rec_adc85baeafec23f63be59d90e0af6839237c18d717db7ffe0ccea4b953d6397d",
+        "status": "CURRENT"
+      },
+      {
+        "disposition": "ADVANCE",
+        "input_task_commit": "f649fbfd0f14603138e6e6293f0067587016f09a",
+        "invocation_id": "inv_02672f81bab1252ddc9d996f7c9c8fb3efe6e16e4d79000581e06e4eca512f28",
+        "ledger_event_id": "evt_fc77f20b73b911c0cd0e3b00227e1c65b89258bbc3f15d77719dbdc29e292a1b",
+        "node_id": "DEFECT_TOPOLOGY",
+        "node_kind": "STAGE",
+        "output_task_commit": "f649fbfd0f14603138e6e6293f0067587016f09a",
+        "reason": "validated ADVANCE record reaches ENVIRONMENT_BUILD",
+        "record_id": "rec_8cfb71050837ff64d7e05936bc029c88131bb42e100877c97fe4fc132791b39c",
+        "status": "CURRENT"
+      },
+      {
+        "node_id": "ENVIRONMENT_BUILD",
+        "node_kind": "STAGE",
+        "reason": "no execution-ledger event exists for this stage",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "REFERENCE_SOLUTION",
+        "node_kind": "STAGE",
+        "reason": "upstream node ENVIRONMENT_BUILD is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "VERIFIER_BUILD",
+        "node_kind": "STAGE",
+        "reason": "upstream node REFERENCE_SOLUTION is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "HUMAN_WRITING_RESEARCH",
+        "node_kind": "STAGE",
+        "reason": "upstream node VERIFIER_BUILD is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "INSTRUCTION_DRAFT",
+        "node_kind": "STAGE",
+        "reason": "upstream node HUMAN_WRITING_RESEARCH is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "SPEC_ALIGNMENT",
+        "node_kind": "STAGE",
+        "reason": "upstream node INSTRUCTION_DRAFT is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "DOCUMENTATION_DRAFT",
+        "node_kind": "STAGE",
+        "reason": "upstream node SPEC_ALIGNMENT is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "FORMAT_GATE",
+        "node_kind": "STAGE",
+        "reason": "upstream node DOCUMENTATION_DRAFT is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "ASSEMBLY",
+        "node_kind": "STAGE",
+        "reason": "upstream node FORMAT_GATE is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "COMPLEXITY_GATE",
+        "node_kind": "STAGE",
+        "reason": "upstream node ASSEMBLY is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "RUNTIME_AUTHENTICITY",
+        "node_kind": "STAGE",
+        "reason": "upstream node COMPLEXITY_GATE is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "DETERMINISTIC_VALIDATION",
+        "node_kind": "STAGE",
+        "reason": "upstream node RUNTIME_AUTHENTICITY is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "FROZEN_CANDIDATE",
+        "node_kind": "STATE",
+        "reason": "state cannot be current while its predecessor chain is non-current",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "QUALITY_INTERLOCK",
+        "node_kind": "STAGE",
+        "reason": "upstream node FROZEN_CANDIDATE is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "PRE_LLMAJ",
+        "node_kind": "STAGE",
+        "reason": "upstream node QUALITY_INTERLOCK is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "MODEL_DIAGNOSTIC_GPT",
+        "node_kind": "STAGE",
+        "reason": "upstream node PRE_LLMAJ is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "MODEL_DIAGNOSTIC_CLAUDE",
+        "node_kind": "STAGE",
+        "reason": "upstream node MODEL_DIAGNOSTIC_GPT is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "MODEL_DIAGNOSTIC_AGGREGATE",
+        "node_kind": "STAGE",
+        "reason": "upstream node MODEL_DIAGNOSTIC_CLAUDE is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "HARBOR_LLMAJ",
+        "node_kind": "STAGE",
+        "reason": "upstream node MODEL_DIAGNOSTIC_AGGREGATE is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "OFFICIAL_MODEL_TRIALS",
+        "node_kind": "STAGE",
+        "reason": "upstream node HARBOR_LLMAJ is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "TRIAL_ANALYSIS",
+        "node_kind": "STAGE",
+        "reason": "upstream node OFFICIAL_MODEL_TRIALS is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "DIFFICULTY_ASSESSMENT",
+        "node_kind": "STAGE",
+        "reason": "upstream node TRIAL_ANALYSIS is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "FINAL_REVIEW",
+        "node_kind": "STAGE",
+        "reason": "upstream node DIFFICULTY_ASSESSMENT is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "SUBMISSION_READY",
+        "node_kind": "STAGE",
+        "reason": "upstream node FINAL_REVIEW is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      }
+    ],
+    "schema_version": "1.0",
+    "state_snapshot_id": "state_38973b26e3df85f6f70d9ede985e344b4bee3be484b33735405d7efe23d74518",
+    "summary": {
+      "BLOCKED": 0,
+      "CURRENT": 4,
+      "MISSING": 24,
+      "STALE": 0
+    },
+    "task_commit": "f649fbfd0f14603138e6e6293f0067587016f09a",
+    "task_id": "terraform-aws-eks-addon-trust-rollout"
+  }
+}
