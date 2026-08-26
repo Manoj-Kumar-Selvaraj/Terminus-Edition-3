@@ -1,0 +1,37 @@
+{
+  "schema_version": "1.0",
+  "mode": "RECORD",
+  "task_id": "ansible-fleet-configuration-recovery",
+  "task_commit": "6b519b95c6c25cdddb8efc284a9f7436cf0e55f6",
+  "control_plane_commit": "df7ef7569e2947b9f0bf7cf89ed4dec6c2a5a1fe",
+  "expected_repository_head": "7fd4bc44325c6a5f4acea614f4b13d31dfedfccb",
+  "stage_id": "DOCUMENTATION_DRAFT",
+  "inputs": {
+    "APPROVED_WORK_PACKAGE": {
+      "ID": "ANSIBLE_FLEET_CONFIGURATION_RECOVERY",
+      "ENGINEERING_OBJECTIVE": "Recover the inherited multi-site Ansible fleet automation as a supported, portable and convergent production configuration system while preserving its production-scale topology and contracts."
+    },
+    "IMPLEMENTATION_EVIDENCE": {
+      "reference_solution": "ansible-fleet-configuration-recovery/solution/solve.sh",
+      "restored_areas": ["controller/config discovery", "repository role discovery and orchestration", "Vault secret handling", "Ansible parser/module schemas", "heterogeneous Jinja/data/IPv6 behavior", "full-run convergence and idempotency"]
+    },
+    "VERIFICATION_EVIDENCE": {
+      "test_map": ".terminus/designs/ansible-fleet-configuration-recovery-test-map.json",
+      "f2p_cases": 27,
+      "p2p_cases": 6,
+      "spec_alignment": {"Q1": "NO_GAP", "Q2": "COVERED", "Q3": "CLEAR"}
+    },
+    "DIFFICULTY_EVIDENCE": "Failures are layered and ordered: controller/bootstrap and discovery can mask role/orchestration/schema/Vault/template/data/convergence issues across a three-site production-like fleet."
+  },
+  "result": {
+    "status": "DOCUMENTATION_READY",
+    "output_task_commit": "475ff014df7bae9ab6b0bb49fcab7454e40195ba",
+    "outputs": {
+      "README_PATH": "ansible-fleet-configuration-recovery/README.md",
+      "DIFFICULTY_EXPLANATION": "The system requires iterative execution-driven diagnosis across coupled controller, discovery, orchestration, secret, schema, template/network and convergence boundaries rather than isolated file edits.",
+      "SOLUTION_EXPLANATION": "The README describes restoring the supported Ansible/project bootstrap first, then portable role orchestration, Vault handling, native Ansible task schemas, heterogeneous data/IPv6 rendering, preservation, and convergence.",
+      "VERIFICATION_EXPLANATION": "The README explains independent structural/behavioral verification, semantic validation, production-input preservation and unchanged second-run idempotency without exposing private test rows."
+    },
+    "evidence_refs": []
+  }
+}
