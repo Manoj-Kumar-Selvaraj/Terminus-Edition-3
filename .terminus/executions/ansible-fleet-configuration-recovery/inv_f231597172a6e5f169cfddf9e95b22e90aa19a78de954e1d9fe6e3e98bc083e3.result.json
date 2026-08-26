@@ -1,0 +1,222 @@
+{
+  "authority": {
+    "control_plane_commit": "df7ef7569e2947b9f0bf7cf89ed4dec6c2a5a1fe",
+    "policy_versions": {},
+    "task_commit": "5da090db76cb0b8c92fb1f53eaf9ed580ca48d52",
+    "task_id": "ansible-fleet-configuration-recovery"
+  },
+  "disposition": "ROUTE",
+  "evidence_refs": [
+    {
+      "content_hash": "sha256:78c18ed9d0f018f000db4df2e3e39e538ce9b98b2ec83d5b40329b621985ab33",
+      "kind": "COMMIT",
+      "ref": "commit:5da090db76cb0b8c92fb1f53eaf9ed580ca48d52"
+    },
+    {
+      "content_hash": "sha256:1e950e0ea5f6ce34ff813202df633c1eea7a948d3eaaa7fed4c8ebad3524e380",
+      "kind": "COMMIT",
+      "ref": "commit:df7ef7569e2947b9f0bf7cf89ed4dec6c2a5a1fe"
+    },
+    {
+      "content_hash": "sha256:7b03f9b24536af537efd4bbf0d17102aae31d5926b289cdefee304050624b20e",
+      "kind": "RUN",
+      "ref": "run:github-actions:32967939451#sha256:7b03f9b24536af537efd4bbf0d17102aae31d5926b289cdefee304050624b20e"
+    }
+  ],
+  "invocation_id": "inv_f231597172a6e5f169cfddf9e95b22e90aa19a78de954e1d9fe6e3e98bc083e3",
+  "invocation_snapshot": {
+    "acceptance_predicates": {
+      "PASS": [
+        {
+          "op": "eq",
+          "path": "ORACLE_REWARD",
+          "value": 1
+        },
+        {
+          "op": "eq",
+          "path": "NOP_REWARD",
+          "value": 0
+        },
+        {
+          "op": "nonempty",
+          "path": "F2P_EMPIRICAL_MATRIX"
+        },
+        {
+          "op": "nonempty",
+          "path": "P2P_EMPIRICAL_MATRIX"
+        }
+      ]
+    },
+    "authority": {
+      "control_plane_commit": "df7ef7569e2947b9f0bf7cf89ed4dec6c2a5a1fe",
+      "policy_versions": {},
+      "task_commit": "5da090db76cb0b8c92fb1f53eaf9ed580ca48d52",
+      "task_id": "ansible-fleet-configuration-recovery"
+    },
+    "evidence": {
+      "authorized_evidence_classes": [
+        "CI_RUNTIME_EVIDENCE",
+        "CONTROL_PLANE_POLICY",
+        "SOLUTION_ORACLE",
+        "SOLVER_VISIBLE_TASK",
+        "VERIFIER_PRIVATE"
+      ],
+      "evidence_required": [
+        "Oracle reward 1",
+        "NOP reward 0",
+        "every F2P starter/NOP-fail and Oracle-pass",
+        "intended P2P preservation"
+      ],
+      "excluded_evidence_classes": [
+        "CURRENT_REVIEW_PACKET",
+        "DURABLE_SESSION_STATE",
+        "FINAL_PACKAGE_EVIDENCE",
+        "MODEL_TRIAL_EVIDENCE",
+        "PRIOR_REVIEW_RESULTS",
+        "PRIVATE_CREATION_DESIGN",
+        "PUBLIC_REFERENCE"
+      ],
+      "mandatory_exact_reads": [
+        ".terminus/agents/CREATION_PIPELINE.md",
+        ".terminus/agents/QUALITY_AGENT_REGISTRY.md",
+        ".terminus/agents/QUALITY_AGENT_PROMPTS.md"
+      ],
+      "retrieval_mode": "EXACT_ONLY"
+    },
+    "ignored_input_count": 0,
+    "inputs": {
+      "optional": {},
+      "required": {
+        "CURRENT_TASK_COMMIT": {
+          "evidence": "current exact task snapshot for hosted deterministic validation after Q5 explicit Ansible Vault encryption identity repair",
+          "status": "CURRENT",
+          "task_commit": "5da090db76cb0b8c92fb1f53eaf9ed580ca48d52",
+          "task_id": "ansible-fleet-configuration-recovery"
+        },
+        "ORACLE": {
+          "evidence": "current repaired reference solution bound to exact task snapshot; empirical scoring owned by hosted deterministic run",
+          "status": "CURRENT",
+          "task_commit": "5da090db76cb0b8c92fb1f53eaf9ed580ca48d52",
+          "task_id": "ansible-fleet-configuration-recovery"
+        },
+        "STARTER_NOP_STATE": {
+          "evidence": "current starter/NOP state bound to exact task snapshot; empirical scoring owned by hosted deterministic run",
+          "status": "CURRENT",
+          "task_commit": "5da090db76cb0b8c92fb1f53eaf9ed580ca48d52",
+          "task_id": "ansible-fleet-configuration-recovery"
+        },
+        "VERIFIER": {
+          "F2P_COUNT": 27,
+          "P2P_COUNT": 6,
+          "entrypoint": "ansible-fleet-configuration-recovery/tests/test.sh"
+        }
+      }
+    },
+    "invocation_id": "inv_f231597172a6e5f169cfddf9e95b22e90aa19a78de954e1d9fe6e3e98bc083e3",
+    "learning": {
+      "context_hash": "sha256:bb84a513aa2b6e4374d691759c4a6edf94169f479f4611e9091643b9f279ccfc",
+      "lessons": [],
+      "mode": "GENERALIZED_LESSONS_PLUS_OWNED_REMEDIATIONS",
+      "raw_feedback_exposed": false,
+      "raw_historical_findings_exposed": false,
+      "registry_heads": {
+        "feedback": "GENESIS",
+        "findings": "GENESIS",
+        "lessons": "GENESIS",
+        "patterns": "GENESIS",
+        "remediations": "GENESIS"
+      },
+      "remediations": []
+    },
+    "missing_required_inputs": [],
+    "output_contract": {
+      "allowed_status_values": [
+        "PASS",
+        "FAIL",
+        "BLOCKED"
+      ],
+      "deterministic_validators": [
+        "task verifier execution",
+        "Oracle/NOP matrix"
+      ],
+      "optional_fields": [
+        "FAILURE_CLASS",
+        "FIRST_MEANINGFUL_ERROR"
+      ],
+      "persisted_artifacts": [
+        "run/job/artifact evidence references"
+      ],
+      "required_fields": [
+        "ORACLE_REWARD",
+        "NOP_REWARD",
+        "F2P_EMPIRICAL_MATRIX",
+        "P2P_EMPIRICAL_MATRIX"
+      ],
+      "semantic_reviewers": []
+    },
+    "readiness": "READY",
+    "retrieval": {
+      "query": null,
+      "retrieved_chars": 0,
+      "retrieved_context": [],
+      "status": "NOT_REQUESTED"
+    },
+    "routing": {
+      "failure_routes": {
+        "RUNTIME_OR_ORACLE_FAILURE": "Q5 Oracle & Runtime Repair Specialist",
+        "VERIFIER_CONTRACT_FAILURE": "Q2/Q3/Verifier Author as evidence indicates"
+      },
+      "stale_on": [
+        "task commit change",
+        "solution change",
+        "verifier change",
+        "runtime dependency change"
+      ],
+      "success_transition": "FROZEN_CANDIDATE"
+    },
+    "schema_version": "1.0",
+    "stage": {
+      "lifecycle": "creation",
+      "owner": "Creation Controller",
+      "role_class": "CONTROLLER",
+      "role_id": "CREATION_CONTROLLER",
+      "stage_id": "DETERMINISTIC_VALIDATION"
+    }
+  },
+  "outputs": {
+    "FAILURE_CLASS": "ORACLE_OR_RUNTIME_FAILURE",
+    "FIRST_MEANINGFUL_ERROR": "test_f2p_discovery_site_syntax_check_passes: oracle=failed"
+  },
+  "record_id": "rec_a62206ac3ee7124b5789731eadfc101106c017c68b5e1c6fe00ef573e89c0683",
+  "role_id": "CREATION_CONTROLLER",
+  "route_key": "RUNTIME_OR_ORACLE_FAILURE",
+  "schema_version": "1.0",
+  "stage_id": "DETERMINISTIC_VALIDATION",
+  "status": "FAIL",
+  "task_lineage": {
+    "input_task_commit": "5da090db76cb0b8c92fb1f53eaf9ed580ca48d52",
+    "output_task_commit": "5da090db76cb0b8c92fb1f53eaf9ed580ca48d52",
+    "task_changed": false
+  },
+  "transition": {
+    "action": "ROUTE",
+    "requires_state_validation": false,
+    "route_instruction": "Q5 Oracle & Runtime Repair Specialist",
+    "route_key": "RUNTIME_OR_ORACLE_FAILURE",
+    "target": null,
+    "target_kind": "ROUTE"
+  },
+  "validation": {
+    "acceptance_predicates_satisfied": true,
+    "evidence_binding_satisfied": true,
+    "evidence_refs_count": 3,
+    "invocation_identity_valid": true,
+    "invocation_policy_valid": true,
+    "output_keys_valid": true,
+    "required_outputs_satisfied": false,
+    "retrieval_context_authorized": true,
+    "status_legal": true,
+    "task_commit_change_authorized": true,
+    "task_lineage_valid": true
+  }
+}
