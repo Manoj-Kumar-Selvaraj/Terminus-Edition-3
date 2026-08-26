@@ -1,0 +1,40 @@
+{
+  "schema_version":"1.0",
+  "mode":"RECORD",
+  "task_id":"ansible-fleet-configuration-recovery",
+  "task_commit":"cc7ace93f361c10a98dc54720ea1c5cde98a278a",
+  "control_plane_commit":"df7ef7569e2947b9f0bf7cf89ed4dec6c2a5a1fe",
+  "expected_repository_head":"64f75312c9b0d0e9f6c54e71ade1ec22d389c867",
+  "stage_id":"COMPLEXITY_GATE",
+  "inputs":{
+    "DEFECT_GRAPH":{"behavioral_surfaces":["controller bootstrap and project configuration selection","repository-local role discovery","Vault secret boundary","role identity, dependency ordering, handlers and host ownership","Ansible YAML/action/module schema correctness","heterogeneous Jinja endpoint/site/policy/telemetry rendering","IPv4/IPv6 and cross-host aggregation","full-run convergence and unchanged second-run idempotency"],"connected_manifestations":24,"defect_manifestations":24,"profile":"large_system_strict","root_cause_clusters":6},
+    "ENVIRONMENT_TREE":{"components":["controller bootstrap and project configuration","inventory and fleet identity model","service and policy catalogs","Ansible roles, orchestration and handlers","Vault secret handling","Jinja configuration rendering","semantic fleet validator","atomic state and promotion engine","rollout planner","operator incident evidence and handoff"],"entrypoints":["/app/fleet-automation/bin/fleet-ansible","/app/fleet-automation/playbooks/site.yml","/app/fleet-automation/playbooks/validate.yml"],"runtime_artifact":"/app/fleet-automation","task_root":"ansible-fleet-configuration-recovery"},
+    "INSTRUCTION":"Recover the inherited multi-site Ansible fleet automation under /app/fleet-automation as a supported, portable and convergent production configuration system while preserving its production-scale catalogs, topology, evidence and operating contracts.",
+    "PRODUCTION_CHARACTERISTIC_EVIDENCE":["three-site heterogeneous Ansible fleet inventory","service catalog plus 60-rule policy catalog","Vault-managed sensitive production variables","repository-local role orchestration, dependencies and handlers","heterogeneous endpoint, telemetry and policy rendering","IPv4 and IPv6 proxy/backend behavior","atomic configuration state and promotion semantics","failure-budgeted rollout planning and revision reconciliation","operator incident logs, configuration-selection evidence and structured handoff"],
+    "RUNTIME_REACHABILITY_EVIDENCE":["bin/fleet-ansible loads the project controller configuration and supplied inventory","site.yml reaches the repository roles, handlers and Jinja templates across fleet hosts","inventory plus service/policy catalogs drive rendered application, proxy, telemetry and policy configuration","validate.yml and the semantic fleet validator inspect the materialized runtime state","atomic state/promotion and rollout components support real configuration lifecycle behavior rather than dead scale","unchanged second execution traverses the same operational path to measure convergence and handler/state churn"],
+    "SUBSTANTIVE_LOC_REPORT":{"reachable_production_loc":3327,"runtime_entrypoint":"bin/fleet-ansible -> playbooks/site.yml","substantive_loc":3327},
+    "TEST_CLASSIFICATION_MAP":{"F2P_COUNT":27,"P2P_COUNT":6,"classification":"27 F2P + 6 P2P","coverage":{"cross_component":["controller configuration to role discovery","inventory/catalog data to cross-host template aggregation","rendered artifacts to semantic/state validation"],"edge":["optional inventory groups","mixed endpoint shapes","numeric policy ordering","conditional IPv6 bracket rendering"],"negative":["plaintext/inaccessible Vault material","invalid task/module schema","wrong role identity or host scope","unbracketed IPv6 backend"],"normal":["supported project controller bootstrap","portable role discovery","successful full fleet convergence"],"recovery":["second-run idempotency","atomic state verification and drift detection"]}}
+  },
+  "result":{
+    "status":"PASS",
+    "output_task_commit":"cc7ace93f361c10a98dc54720ea1c5cde98a278a",
+    "outputs":{
+      "CONNECTED_MANIFESTATIONS":24,
+      "DEFECT_MANIFESTATIONS":24,
+      "EDGE_BOUNDARY_COVERAGE":["project configuration selected versus ignored","repository roles resolvable versus missing","Vault encrypted/readable versus plaintext or unavailable","correct role identity, dependency and host responsibility boundaries","optional group absence","mixed endpoint shapes","conditional IPv6 bracket rendering","numeric policy priority ordering","cross-host telemetry/backend aggregation","unchanged second-run convergence"],
+      "F2P_COUNT":27,
+      "F2P_ORGANICITY":"PASS: 27 distinct behavioral cases span independent controller, discovery, secret, orchestration, schema, heterogeneous data/network and convergence responsibilities rather than fixture-renamed repetitions.",
+      "INSTRUCTION_CHECKLIST_RISK":"LOW: the instruction groups observable platform-engineering invariants and legitimate inherited evidence rather than enumerating private verifier rows or defect IDs.",
+      "NEGATIVE_FAILURE_COVERAGE":["unsupported inherited controller/bootstrap","missing project config or role discovery","plaintext or inaccessible secret material","invalid multi-action/module task schemas","role swap, handler or host-scope faults","unsafe optional-group/template assumptions","unbracketed IPv6 backends","non-numeric policy ordering","second-run task/handler churn or state drift"],
+      "P2P_COUNT":6,
+      "PADDING_RISK":"LOW: strict validation established 3327 substantive solver-visible LOC; the Q5 solution-only Python CLI shim repair changes no solver-visible scale or duplicate structure.",
+      "PRODUCTION_CHARACTERISTICS":["three-site heterogeneous Ansible fleet inventory","service and 60-rule policy catalogs","Vault-managed sensitive data","role orchestration, dependencies and handlers","heterogeneous Jinja rendering with IPv4/IPv6","semantic fleet validation","atomic state/promotion semantics","rollout planning and revision reconciliation","operator incident evidence and handoff"],
+      "REACHABLE_PRODUCTION_LOC":3327,
+      "REQUIRED_CHANGES":[],
+      "ROOT_CAUSE_CLUSTERS":6,
+      "SUBSTANTIVE_LOC":3327,
+      "TEST_DUPLICATION_RISK":"LOW: 27 distinct F2P behavioral case IDs cover nine requirement families and six P2P cases protect actual production-preservation risk."
+    },
+    "evidence_refs":[]
+  }
+}
