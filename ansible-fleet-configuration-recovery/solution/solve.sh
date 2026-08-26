@@ -46,8 +46,14 @@ chmod 0755 "$WORK/solution/repair.sh"
 if [[ ! -e "$TARGET/environment" ]]; then
   ln -s . "$TARGET/environment"
 fi
+: > "$WORK/ansible.cfg"
 ln -s "$WORK/ansible.cfg" "$TARGET/ansible.cfg"
 ln -s "$WORK/.runtime-vault-pass" "$TARGET/.runtime-vault-pass"
+
+# Bind the generated project config explicitly so nested localhost commands in
+# preflight observe the same controller configuration as fleet-ansible even
+# when their working directory is not the project root.
+export ANSIBLE_CONFIG="$WORK/ansible.cfg"
 
 # repair.sh intentionally declares the same password source in project config
 # and on the historical vault command line. Ansible 2.19 treats those as two
